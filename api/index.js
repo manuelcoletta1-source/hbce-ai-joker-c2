@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     assistant: CORPUS_CORE.identity.assistant,
     doctrine: CORPUS_CORE.identity.doctrine,
     mode: "hybrid-corpus-web-search",
-    source: "hbce-corpus-core + alien-code-core + web-search",
+    source: "hbce-corpus-core + alien-code-core + web-search + ipr-core",
     alien_mode: ALIEN_CODE_CORE.meta.mode,
     web_layer: {
       configured_provider: process.env.TAVILY_API_KEY ? "tavily" : "mock-web",
@@ -23,7 +23,8 @@ export default async function handler(req, res) {
       "/api/chat",
       "/api/health",
       "/api/glossary",
-      "/api/docs"
+      "/api/docs",
+      "/api/ipr"
     ]
   });
 }
