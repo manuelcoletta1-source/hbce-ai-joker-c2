@@ -94,8 +94,10 @@
       border-radius:14px;
       color:var(--muted);
       background:rgba(255,255,255,.015);
+      transition:.2s ease;
     }
 
+    .nav a:hover,
     .nav a.is-active{
       color:var(--text);
       border-color:rgba(125,211,252,.3);
@@ -159,6 +161,7 @@
       display:flex;
       flex-direction:column;
       justify-content:space-between;
+      min-height:0;
     }
 
     .messages{
@@ -169,6 +172,7 @@
       display:flex;
       flex-direction:column;
       gap:18px;
+      overflow:auto;
     }
 
     .message{
@@ -353,6 +357,7 @@
     const promptInput = document.getElementById("prompt");
     const messagesEl = document.getElementById("messages");
     const sendBtn = document.getElementById("sendBtn");
+    const isMobile = window.matchMedia("(max-width: 920px)").matches;
 
     function addMessage(role, text) {
       const wrap = document.createElement("div");
@@ -373,6 +378,13 @@
 
       return bubble;
     }
+
+    promptInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey && !isMobile) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -409,6 +421,7 @@
       } finally {
         sendBtn.disabled = false;
         sendBtn.textContent = "Send";
+        promptInput.focus();
       }
     });
   </script>
