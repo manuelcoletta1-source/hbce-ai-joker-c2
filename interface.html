@@ -1,21 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI JOKER-C2 Interface</title>
-  <meta name="description" content="Operational interface for AI JOKER-C2 within the HBCE ecosystem.">
+  <meta name="description" content="Interfaccia operativa di AI JOKER-C2 per ricerca locale sul corpus HBCE.">
   <style>
     :root{
       --bg:#0b0f14;
       --panel:#111821;
       --panel2:#0f1720;
+      --panel3:#0c131b;
       --text:#e8eef7;
       --muted:#8fa3b8;
       --accent:#7dd3fc;
       --accent2:#60a5fa;
       --line:rgba(255,255,255,0.08);
       --shadow:0 12px 34px rgba(0,0,0,.35);
+      --ok:#86efac;
+      --warn:#facc15;
     }
 
     *{box-sizing:border-box}
@@ -193,7 +196,7 @@
 
     .messages{
       padding:24px;
-      max-width:960px;
+      max-width:980px;
       width:100%;
       margin:0 auto;
       display:flex;
@@ -230,7 +233,7 @@
     }
 
     .bubble{
-      max-width:760px;
+      max-width:780px;
       padding:16px 18px;
       border:1px solid var(--line);
       border-radius:18px;
@@ -244,6 +247,84 @@
       background:linear-gradient(180deg, rgba(125,211,252,.08), rgba(125,211,252,.04));
     }
 
+    .bubble__mode{
+      display:inline-block;
+      margin-bottom:10px;
+      padding:4px 8px;
+      border:1px solid rgba(125,211,252,.28);
+      border-radius:999px;
+      color:var(--accent);
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      background:rgba(125,211,252,.08);
+    }
+
+    .bubble__domain{
+      display:inline-block;
+      margin-left:8px;
+      margin-bottom:10px;
+      padding:4px 8px;
+      border:1px solid rgba(250,204,21,.20);
+      border-radius:999px;
+      color:var(--warn);
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      background:rgba(250,204,21,.08);
+    }
+
+    .bubble__text{
+      white-space:pre-wrap;
+    }
+
+    .bubble__matches{
+      margin-top:14px;
+      padding-top:12px;
+      border-top:1px solid var(--line);
+    }
+
+    .bubble__matches-title{
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:var(--muted);
+      margin-bottom:10px;
+    }
+
+    .match-list{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .match-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:var(--panel3);
+      font-size:12px;
+      line-height:1.2;
+    }
+
+    .match-chip__layer{
+      color:var(--accent);
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      font-size:10px;
+    }
+
+    .match-chip__title{
+      color:var(--text);
+    }
+
     .composer-wrap{
       padding:18px 24px 24px;
       border-top:1px solid var(--line);
@@ -251,7 +332,7 @@
     }
 
     .composer{
-      max-width:960px;
+      max-width:980px;
       margin:0 auto;
       display:flex;
       gap:12px;
@@ -300,7 +381,7 @@
     }
 
     .hint{
-      max-width:960px;
+      max-width:980px;
       margin:10px auto 0;
       color:var(--muted);
       font-size:12px;
@@ -332,11 +413,11 @@
         <div class="brand__kicker">HBCE Research</div>
         <h1 class="brand__title">AI JOKER-C2</h1>
         <p class="brand__text">
-          Operational interface layer connected to identity-bound logic, registry structures and evidence-oriented flows.
+          Interfaccia operativa in modalità ricerca locale sul corpus HBCE, layer alieno e struttura UNEBDO.
         </p>
       </div>
 
-      <nav class="nav" aria-label="Portal navigation">
+      <nav class="nav" aria-label="Navigazione portale">
         <a href="index.html">Home</a>
         <a class="is-active" href="interface.html">Interface</a>
         <a href="ipr.html">IPR</a>
@@ -345,10 +426,10 @@
       </nav>
 
       <div class="mini">
-        <div class="mini__label">Status</div>
-        <div class="mini__value">Session Memory Mode</div>
+        <div class="mini__label">Stato</div>
+        <div class="mini__value">Ricerca corpus + match visibili</div>
         <p class="mini__text">
-          This interface keeps the current chat in browser session storage.
+          La console salva la sessione, interroga il corpus locale e mostra i match trovati per ogni risposta.
         </p>
       </div>
     </aside>
@@ -357,7 +438,7 @@
       <div class="topbar">
         <div>
           <div class="topbar__title">Joker-C2 Interface Console</div>
-          <div class="topbar__meta">Connected to /api/chat</div>
+          <div class="topbar__meta">Motore locale: corpus-core + corpus-alien-code</div>
         </div>
 
         <div class="topbar__actions">
@@ -370,11 +451,11 @@
 
         <div class="composer-wrap">
           <form class="composer" id="chatForm">
-            <textarea id="prompt" placeholder="Type your message..." aria-label="Message input"></textarea>
+            <textarea id="prompt" placeholder="Scrivi un termine del corpus..." aria-label="Messaggio"></textarea>
             <button class="btn" id="sendBtn" type="submit">Send</button>
           </form>
           <div class="hint">
-            Current mode: session-based chat memory with Vercel API connection.
+            Modalità ricerca. Esempi: ipr, manuel, ipr-c, enterprise space, matrix europa, phiomega, codice madre, qt_l, unebdo, inrim.
           </div>
         </div>
       </section>
@@ -388,23 +469,68 @@
     const sendBtn = document.getElementById("sendBtn");
     const clearBtn = document.getElementById("clearBtn");
     const isMobile = window.matchMedia("(max-width: 920px)").matches;
-    const storageKey = "hbce-joker-c2-chat-session";
-    const initialMessage = "Interface initialized. Send a message to test the API route.";
+    const storageKey = "hbce-joker-c2-chat-session-v2";
+    const initialMessage = {
+      role: "assistant",
+      text: "Interfaccia inizializzata. La modalità ricerca sul corpus locale è attiva.",
+      mode: "local-corpus-search",
+      domain: "general",
+      matches: []
+    };
 
     function saveChat() {
       const items = Array.from(messagesEl.querySelectorAll(".message")).map((messageEl) => {
         const isUser = messageEl.classList.contains("user");
-        const bubble = messageEl.querySelector(".bubble");
+        const bubbleTextEl = messageEl.querySelector(".bubble__text");
+        const modeEl = messageEl.querySelector(".bubble__mode");
+        const domainEl = messageEl.querySelector(".bubble__domain");
+        const matchEls = Array.from(messageEl.querySelectorAll(".match-chip"));
+
         return {
           role: isUser ? "user" : "assistant",
-          text: bubble ? bubble.textContent : ""
+          text: bubbleTextEl ? bubbleTextEl.textContent : "",
+          mode: modeEl ? modeEl.textContent : "",
+          domain: domainEl ? domainEl.textContent : "",
+          matches: matchEls.map((el) => ({
+            layer: el.dataset.layer || "",
+            title: el.dataset.title || ""
+          }))
         };
       });
 
       sessionStorage.setItem(storageKey, JSON.stringify(items));
     }
 
-    function addMessage(role, text, shouldSave = true) {
+    function createMatchChip(match) {
+      const chip = document.createElement("div");
+      chip.className = "match-chip";
+      chip.dataset.layer = match.layer || "";
+      chip.dataset.title = match.title || "";
+
+      const layer = document.createElement("span");
+      layer.className = "match-chip__layer";
+      layer.textContent = match.layer || "match";
+
+      const title = document.createElement("span");
+      title.className = "match-chip__title";
+      title.textContent = match.title || "voce";
+
+      chip.appendChild(layer);
+      chip.appendChild(title);
+
+      return chip;
+    }
+
+    function addMessage(role, payload, shouldSave = true) {
+      const normalized = typeof payload === "string"
+        ? { text: payload, mode: "", domain: "", matches: [] }
+        : {
+            text: payload.text || "",
+            mode: payload.mode || "",
+            domain: payload.domain || "",
+            matches: Array.isArray(payload.matches) ? payload.matches : []
+          };
+
       const wrap = document.createElement("div");
       wrap.className = role === "user" ? "message user" : "message";
 
@@ -414,7 +540,48 @@
 
       const bubble = document.createElement("div");
       bubble.className = "bubble";
-      bubble.textContent = text;
+
+      if (normalized.mode && role !== "user") {
+        const modeEl = document.createElement("div");
+        modeEl.className = "bubble__mode";
+        modeEl.textContent = normalized.mode;
+        bubble.appendChild(modeEl);
+      }
+
+      if (normalized.domain && role !== "user") {
+        const domainEl = document.createElement("div");
+        domainEl.className = "bubble__domain";
+        domainEl.textContent = normalized.domain;
+        bubble.appendChild(domainEl);
+      }
+
+      const textEl = document.createElement("div");
+      textEl.className = "bubble__text";
+      textEl.textContent = normalized.text;
+      bubble.appendChild(textEl);
+
+      let matchesWrap = null;
+      let matchList = null;
+
+      if (normalized.matches.length && role !== "user") {
+        matchesWrap = document.createElement("div");
+        matchesWrap.className = "bubble__matches";
+
+        const matchesTitle = document.createElement("div");
+        matchesTitle.className = "bubble__matches-title";
+        matchesTitle.textContent = "Match del corpus";
+
+        matchList = document.createElement("div");
+        matchList.className = "match-list";
+
+        normalized.matches.forEach((match) => {
+          matchList.appendChild(createMatchChip(match));
+        });
+
+        matchesWrap.appendChild(matchesTitle);
+        matchesWrap.appendChild(matchList);
+        bubble.appendChild(matchesWrap);
+      }
 
       wrap.appendChild(avatar);
       wrap.appendChild(bubble);
@@ -425,7 +592,67 @@
         saveChat();
       }
 
-      return bubble;
+      return {
+        bubble,
+        textEl,
+        setMeta(meta = {}) {
+          let modeEl = bubble.querySelector(".bubble__mode");
+          let domainEl = bubble.querySelector(".bubble__domain");
+          let matchesSection = bubble.querySelector(".bubble__matches");
+          let matchesContainer = bubble.querySelector(".match-list");
+
+          if (meta.mode) {
+            if (!modeEl) {
+              modeEl = document.createElement("div");
+              modeEl.className = "bubble__mode";
+              bubble.insertBefore(modeEl, bubble.firstChild);
+            }
+            modeEl.textContent = meta.mode;
+          }
+
+          if (meta.domain) {
+            if (!domainEl) {
+              domainEl = document.createElement("div");
+              domainEl.className = "bubble__domain";
+              if (modeEl && modeEl.nextSibling) {
+                bubble.insertBefore(domainEl, modeEl.nextSibling);
+              } else if (modeEl) {
+                bubble.appendChild(domainEl);
+              } else {
+                bubble.insertBefore(domainEl, bubble.firstChild);
+              }
+            }
+            domainEl.textContent = meta.domain;
+          }
+
+          if (Array.isArray(meta.matches)) {
+            if (meta.matches.length) {
+              if (!matchesSection) {
+                matchesSection = document.createElement("div");
+                matchesSection.className = "bubble__matches";
+
+                const matchesTitle = document.createElement("div");
+                matchesTitle.className = "bubble__matches-title";
+                matchesTitle.textContent = "Match del corpus";
+
+                matchesContainer = document.createElement("div");
+                matchesContainer.className = "match-list";
+
+                matchesSection.appendChild(matchesTitle);
+                matchesSection.appendChild(matchesContainer);
+                bubble.appendChild(matchesSection);
+              }
+
+              matchesContainer.innerHTML = "";
+              meta.matches.forEach((match) => {
+                matchesContainer.appendChild(createMatchChip(match));
+              });
+            } else if (matchesSection) {
+              matchesSection.remove();
+            }
+          }
+        }
+      };
     }
 
     function loadChat() {
@@ -439,7 +666,7 @@
       try {
         const items = JSON.parse(raw);
 
-        if (!Array.isArray(items) || items.length === 0) {
+        if (!Array.isArray(items) || !items.length) {
           addMessage("assistant", initialMessage, true);
           return;
         }
@@ -447,13 +674,22 @@
         messagesEl.innerHTML = "";
 
         items.forEach((item) => {
-          if (item && (item.role === "user" || item.role === "assistant") && typeof item.text === "string") {
-            addMessage(item.role, item.text, false);
+          if (!item || typeof item.text !== "string") {
+            return;
           }
+
+          addMessage(item.role === "user" ? "user" : "assistant", {
+            text: item.text,
+            mode: item.mode || "",
+            domain: item.domain || "",
+            matches: Array.isArray(item.matches) ? item.matches : []
+          }, false);
         });
 
         if (!messagesEl.children.length) {
           addMessage("assistant", initialMessage, true);
+        } else {
+          saveChat();
         }
       } catch (error) {
         messagesEl.innerHTML = "";
@@ -487,9 +723,14 @@
       if (!text) return;
 
       promptInput.value = "";
-      addMessage("user", text, true);
+      addMessage("user", { text }, true);
 
-      const thinkingBubble = addMessage("assistant", "Joker-C2 is processing...", true);
+      const pending = addMessage("assistant", {
+        text: "Joker-C2 sta interrogando il corpus locale...",
+        mode: "pending",
+        domain: "search",
+        matches: []
+      }, true);
 
       sendBtn.disabled = true;
       clearBtn.disabled = true;
@@ -507,13 +748,23 @@
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Request failed");
+          throw new Error(data.error || "Richiesta fallita");
         }
 
-        thinkingBubble.textContent = data.reply || "No reply.";
+        pending.textEl.textContent = data.reply || "Nessuna risposta.";
+        pending.setMeta({
+          mode: data.mode || "response",
+          domain: data.domain || "general",
+          matches: Array.isArray(data.matches) ? data.matches : []
+        });
         saveChat();
       } catch (error) {
-        thinkingBubble.textContent = "Error: " + error.message;
+        pending.textEl.textContent = "Errore: " + error.message;
+        pending.setMeta({
+          mode: "error",
+          domain: "failure",
+          matches: []
+        });
         saveChat();
       } finally {
         sendBtn.disabled = false;
