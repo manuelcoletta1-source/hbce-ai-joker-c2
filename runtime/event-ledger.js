@@ -1,3 +1,5 @@
+import { buildMerkleRoot } from "./event-merkle-chain.js";
+
 const eventLedger = [];
 
 function buildEventId() {
@@ -18,6 +20,7 @@ function buildHash(input) {
 }
 
 export function appendEvent(payload) {
+
   const previousEvent = eventLedger[eventLedger.length - 1] || null;
 
   const event = {
@@ -37,6 +40,10 @@ export function appendEvent(payload) {
   });
 
   eventLedger.push(event);
+
+  const merkle = buildMerkleRoot();
+
+  event.merkle_root = merkle.merkle_root || null;
 
   return event;
 }
