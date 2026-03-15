@@ -1,25 +1,25 @@
-import { executeJoker } from "../../runtime/joker-executor.js";
+import { validateRequest } from "../../core/execution-governor.js";
+import { bindIdentity } from "../../core/ipr-binding.js";
+import { recordEvent } from "../../ledger/event-ledger.js";
 
 export default async function handler(req, res) {
 
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      status: "DENY",
-      reason: "method_not_allowed"
-    });
+  const validation = validateRequest(req.body);
+
+  if (validation.status === "DENY") {
+    return res.status(403).json(validation);
   }
 
-  const payload = req.body;
+  const identity = bindIdentity();
 
-  if (!payload) {
-    return res.status(400).json({
-      status: "DENY",
-      reason: "missing_payload"
-    });
-  }
+  const event = recordEvent({
+    identity,
+    request: req.body.message
+  });
 
-  const result = await executeJoker(payload);
-
-  return res.status(200).json(result);
+  res.status(200).json({
+    reply: "Joker-C2 received the request.",
+    event
+  });
 
 }
