@@ -370,6 +370,8 @@
       wrap.appendChild(bubble);
       messagesEl.appendChild(wrap);
       messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      return bubble;
     }
 
     form.addEventListener("submit", async (event) => {
@@ -380,6 +382,8 @@
 
       promptInput.value = "";
       addMessage("user", text);
+
+      const thinkingBubble = addMessage("assistant", "Joker-C2 is processing...");
 
       sendBtn.disabled = true;
       sendBtn.textContent = "Sending...";
@@ -399,9 +403,9 @@
           throw new Error(data.error || "Request failed");
         }
 
-        addMessage("assistant", data.reply || "No reply.");
+        thinkingBubble.textContent = data.reply || "No reply.";
       } catch (error) {
-        addMessage("assistant", "Error: " + error.message);
+        thinkingBubble.textContent = "Error: " + error.message;
       } finally {
         sendBtn.disabled = false;
         sendBtn.textContent = "Send";
