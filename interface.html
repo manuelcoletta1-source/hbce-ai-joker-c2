@@ -1,57 +1,398 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Joker-C2 Interface</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI JOKER-C2 Interface</title>
+  <meta name="description" content="Operational interface for AI JOKER-C2 within the HBCE ecosystem.">
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#111821;
+      --panel2:#0f1720;
+      --text:#e8eef7;
+      --muted:#8fa3b8;
+      --accent:#7dd3fc;
+      --accent2:#60a5fa;
+      --line:rgba(255,255,255,0.08);
+      --shadow:0 12px 34px rgba(0,0,0,.35);
+      --radius:18px;
+      --max:1200px;
+    }
 
-<style>
-body{
-margin:0;
-font-family:system-ui;
-background:#0b0f14;
-color:#e8eef7;
-display:flex;
-align-items:center;
-justify-content:center;
-height:100vh;
-}
+    *{box-sizing:border-box}
 
-.box{
-text-align:center;
-max-width:600px;
-}
+    html,body{height:100%}
 
-h1{
-font-size:40px;
-margin-bottom:10px;
-}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(96,165,250,.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(125,211,252,.08), transparent 24%),
+        linear-gradient(180deg, #081019 0%, #0b0f14 100%);
+    }
 
-p{
-color:#8fa3b8;
-}
+    a{
+      color:inherit;
+      text-decoration:none;
+    }
 
-a{
-display:inline-block;
-margin-top:20px;
-color:#7dd3fc;
-text-decoration:none;
-}
-</style>
+    .shell{
+      min-height:100%;
+      display:grid;
+      grid-template-columns:280px 1fr;
+    }
 
+    .sidebar{
+      border-right:1px solid var(--line);
+      background:rgba(10,15,22,.82);
+      backdrop-filter:blur(10px);
+      padding:20px;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+
+    .brand{
+      padding:14px 14px 16px;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      box-shadow:var(--shadow);
+    }
+
+    .brand__kicker{
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.16em;
+      color:var(--accent);
+      font-weight:700;
+      margin-bottom:8px;
+    }
+
+    .brand__title{
+      font-size:22px;
+      font-weight:800;
+      letter-spacing:-0.03em;
+      margin:0 0 8px;
+    }
+
+    .brand__text{
+      margin:0;
+      color:var(--muted);
+      line-height:1.55;
+      font-size:14px;
+    }
+
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .nav a{
+      padding:12px 14px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      color:var(--muted);
+      transition:.2s ease;
+      background:rgba(255,255,255,.015);
+    }
+
+    .nav a:hover,
+    .nav a.is-active{
+      color:var(--text);
+      border-color:rgba(125,211,252,.3);
+      background:rgba(125,211,252,.08);
+    }
+
+    .mini{
+      margin-top:auto;
+      padding:14px;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:var(--panel2);
+    }
+
+    .mini__label{
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      color:var(--muted);
+      margin-bottom:8px;
+    }
+
+    .mini__value{
+      font-size:15px;
+      font-weight:700;
+      margin-bottom:6px;
+    }
+
+    .mini__text{
+      font-size:13px;
+      line-height:1.55;
+      color:var(--muted);
+      margin:0;
+    }
+
+    .main{
+      display:flex;
+      flex-direction:column;
+      min-width:0;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:18px 22px;
+      border-bottom:1px solid var(--line);
+      background:rgba(8,12,18,.58);
+      backdrop-filter:blur(10px);
+      position:sticky;
+      top:0;
+      z-index:20;
+    }
+
+    .topbar__title{
+      font-size:18px;
+      font-weight:800;
+      letter-spacing:-0.02em;
+    }
+
+    .topbar__meta{
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .chat{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      min-height:0;
+    }
+
+    .messages{
+      padding:24px;
+      max-width:960px;
+      width:100%;
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+
+    .message{
+      display:flex;
+      gap:14px;
+      align-items:flex-start;
+    }
+
+    .avatar{
+      width:42px;
+      height:42px;
+      border-radius:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:800;
+      flex:0 0 auto;
+      border:1px solid var(--line);
+      background:linear-gradient(135deg, rgba(125,211,252,.18), rgba(96,165,250,.12));
+    }
+
+    .avatar.user{
+      background:linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+    }
+
+    .bubble{
+      max-width:760px;
+      padding:16px 18px;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      box-shadow:var(--shadow);
+    }
+
+    .bubble h3{
+      margin:0 0 8px;
+      font-size:15px;
+    }
+
+    .bubble p{
+      margin:0;
+      color:var(--text);
+      line-height:1.7;
+      font-size:15px;
+    }
+
+    .bubble p + p{
+      margin-top:10px;
+      color:var(--muted);
+    }
+
+    .composer-wrap{
+      padding:18px 24px 24px;
+      border-top:1px solid var(--line);
+      background:rgba(8,12,18,.65);
+      backdrop-filter:blur(10px);
+    }
+
+    .composer{
+      max-width:960px;
+      margin:0 auto;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:12px;
+      box-shadow:var(--shadow);
+    }
+
+    .composer input{
+      flex:1;
+      min-width:0;
+      background:transparent;
+      border:none;
+      outline:none;
+      color:var(--text);
+      font-size:15px;
+      padding:10px 12px;
+    }
+
+    .composer input::placeholder{
+      color:var(--muted);
+    }
+
+    .btn{
+      border:none;
+      border-radius:14px;
+      min-height:44px;
+      padding:0 16px;
+      font-weight:800;
+      cursor:pointer;
+      color:#06111b;
+      background:linear-gradient(135deg, var(--accent), var(--accent2));
+    }
+
+    .hint{
+      max-width:960px;
+      margin:10px auto 0;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.5;
+    }
+
+    @media (max-width: 920px){
+      .shell{
+        grid-template-columns:1fr;
+      }
+
+      .sidebar{
+        border-right:none;
+        border-bottom:1px solid var(--line);
+      }
+
+      .messages,
+      .composer-wrap{
+        padding-left:16px;
+        padding-right:16px;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__kicker">HBCE Research</div>
+        <h1 class="brand__title">AI JOKER-C2</h1>
+        <p class="brand__text">
+          Operational interface layer connected to identity-bound logic, registry structures and evidence-oriented flows.
+        </p>
+      </div>
 
-<div class="box">
-<h1>AI JOKER-C2 Interface</h1>
+      <nav class="nav" aria-label="Portal navigation">
+        <a href="index.html">Home</a>
+        <a class="is-active" href="interface.html">Interface</a>
+        <a href="ipr.html">IPR</a>
+        <a href="registry.html">Registry</a>
+        <a href="evidence.html">Evidence</a>
+      </nav>
 
-<p>
-Operational interface layer for Joker-C2.
-Future AI interaction console will be deployed here.
-</p>
+      <div class="mini">
+        <div class="mini__label">Status</div>
+        <div class="mini__value">Interface Prototype Active</div>
+        <p class="mini__text">
+          This page is currently a visual prototype of the Joker-C2 operational console.
+        </p>
+      </div>
+    </aside>
 
-<a href="index.html">← Back to portal</a>
-</div>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <div class="topbar__title">Joker-C2 Interface Console</div>
+          <div class="topbar__meta">Identity-bound operational AI presentation layer</div>
+        </div>
+      </div>
 
+      <section class="chat">
+        <div class="messages">
+          <div class="message">
+            <div class="avatar">J</div>
+            <div class="bubble">
+              <h3>AI JOKER-C2</h3>
+              <p>
+                Interface initialized. Welcome to the operational presentation layer of Joker-C2 inside the HBCE ecosystem.
+              </p>
+              <p>
+                Available architectural directions include identity logic, registry logic, evidence flow design and future AI interaction deployment.
+              </p>
+            </div>
+          </div>
+
+          <div class="message">
+            <div class="avatar user">U</div>
+            <div class="bubble">
+              <h3>Operator Input</h3>
+              <p>
+                Show current operational role of Joker-C2.
+              </p>
+            </div>
+          </div>
+
+          <div class="message">
+            <div class="avatar">J</div>
+            <div class="bubble">
+              <h3>AI JOKER-C2</h3>
+              <p>
+                Joker-C2 is presented as the operational AI application layer of the HBCE environment.
+              </p>
+              <p>
+                In this portal phase, the interface acts as a visual command surface for future integration with live AI services, identity-bound workflows and verifiable evidence pipelines.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer-wrap">
+          <div class="composer">
+            <input type="text" placeholder="Type a message... prototype mode only" aria-label="Message input">
+            <button class="btn" type="button">Send</button>
+          </div>
+          <div class="hint">
+            Prototype mode only. The visual console is active, but live backend inference is not connected yet.
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
 </body>
 </html>
