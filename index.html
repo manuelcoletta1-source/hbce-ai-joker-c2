@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI JOKER-C2 | HBCE</title>
+
+<style>
+
+:root{
+--bg:#0b0f14;
+--panel:#111821;
+--text:#e8eef7;
+--muted:#8fa3b8;
+--accent:#7dd3fc;
+--line:rgba(255,255,255,0.08);
+--radius:16px;
+--max:1100px;
+}
+
+*{box-sizing:border-box}
+
+body{
+margin:0;
+font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
+background:
+radial-gradient(circle at top left, rgba(96,165,250,.1), transparent 30%),
+linear-gradient(180deg,#0b0f14,#0a1017);
+color:var(--text);
+}
+
+a{
+color:var(--accent);
+text-decoration:none;
+}
+
+.container{
+max-width:var(--max);
+margin:auto;
+padding:40px 20px;
+}
+
+.header{
+margin-bottom:40px;
+}
+
+.kicker{
+font-size:12px;
+letter-spacing:.15em;
+text-transform:uppercase;
+color:var(--accent);
+}
+
+.title{
+font-size:40px;
+font-weight:800;
+margin:8px 0;
+}
+
+.subtitle{
+color:var(--muted);
+font-size:16px;
+max-width:700px;
+line-height:1.7;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+gap:20px;
+margin-top:40px;
+}
+
+.card{
+background:var(--panel);
+border:1px solid var(--line);
+border-radius:var(--radius);
+padding:22px;
+}
+
+.card h3{
+margin-top:0;
+font-size:18px;
+}
+
+.card p{
+color:var(--muted);
+line-height:1.6;
+}
+
+.button{
+display:inline-block;
+margin-top:14px;
+padding:10px 14px;
+border-radius:10px;
+border:1px solid var(--line);
+background:#16202b;
+}
+
+.section{
+margin-top:60px;
+}
+
+.section h2{
+font-size:28px;
+margin-bottom:12px;
+}
+
+.footer{
+margin-top:80px;
+font-size:12px;
+color:var(--muted);
+border-top:1px solid var(--line);
+padding-top:20px;
+}
+
+.repo{
+font-family:monospace;
+font-size:13px;
+background:#111821;
+padding:12px;
+border-radius:10px;
+border:1px solid var(--line);
+margin-top:12px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header class="header">
+
+<div class="kicker">HBCE Application Layer</div>
+
+<div class="title">AI JOKER-C2</div>
+
+<div class="subtitle">
+Identity-bound operational AI application designed to operate within the
+HBCE infrastructure.  
+AI JOKER-C2 connects persistent identity (IPR), governance validation,
+event registration and verification pipelines.
+</div>
+
+</header>
+
+<section class="grid">
+
+<div class="card">
+<h3>Operational AI Interface</h3>
+<p>
+AI JOKER-C2 provides a conversational and operational interface
+designed to execute requests under identity-bound governance.
+</p>
+
+<a class="button" href="./app.html">Open Interface</a>
+</div>
+
+<div class="card">
+<h3>IPR Identity Layer</h3>
+<p>
+Every runtime instance can be associated with an Identity Primary Record
+allowing deterministic attribution of digital actions.
+</p>
+</div>
+
+<div class="card">
+<h3>Evidence Pipeline</h3>
+<p>
+Operations may produce verifiable evidence traces,
+supporting append-only registries and external verification.
+</p>
+</div>
+
+<div class="card">
+<h3>HBCE Infrastructure</h3>
+<p>
+AI JOKER-C2 operates as part of the HBCE ecosystem
+developed by HERMETICUM B.C.E. S.r.l.
+</p>
+
+<a class="button" href="https://manuelcoletta1-source.github.io/manuhell/">
+IPR Verification
+</a>
+</div>
+
+</section>
+
+<section class="section">
+
+<h2>Repository</h2>
+
+<p>
+This repository contains the prototype interface and runtime structure
+for the AI JOKER-C2 application layer.
+</p>
+
+<div class="repo">
+
+hbce-ai-joker-c2  
+├─ index.html  
+├─ app.html  
+├─ app.js  
+└─ assets/
+
+</div>
+
+</section>
+
+<footer class="footer">
+
+HBCE Research · HERMETICUM B.C.E. S.r.l.
+
+</footer>
+
+</div>
+
+</body>
+</html>
