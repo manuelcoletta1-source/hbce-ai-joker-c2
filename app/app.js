@@ -30,6 +30,14 @@ function appendMessage(author, label, body, meta = "") {
 function formatRuntimeMeta(runtimeResult, response) {
   const parts = [`status: ${response.status}`];
 
+  if (runtimeResult.identity?.ipr_id) {
+    parts.push(`ipr: ${runtimeResult.identity.ipr_id}`);
+  }
+
+  if (runtimeResult.identity?.baseline_event) {
+    parts.push(`baseline: ${runtimeResult.identity.baseline_event}`);
+  }
+
   if (runtimeResult.session_id) {
     parts.push(`session: ${runtimeResult.session_id}`);
   }
