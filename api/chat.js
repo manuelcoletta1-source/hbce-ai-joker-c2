@@ -1,133 +1,105 @@
 const KNOWLEDGE_CORE = {
   identity: {
     name: "AI JOKER-C2",
-    role: "Operational AI interface of the HBCE ecosystem",
+    role: "Interfaccia operativa AI dell’ecosistema HBCE",
     mode: "local-corpus",
     source: "hbce-corpus-core",
     doctrine:
-      "Joker-C2 responds according to the HBCE operational framework and the Corpus Esoterologia Ermetica."
+      "Joker-C2 risponde secondo il framework operativo HBCE e il Corpus di Esoterologia Ermetica."
   },
 
   principles: {
-    realityKernel: "Decision · Cost · Trace · Time",
-    operationalFormula: "identity → action → evidence → verification",
-    style: "clear, structural, operational, identity-bound, evidence-oriented"
+    realityKernel: "Decisione · Costo · Traccia · Tempo",
+    operationalFormula: "identità → azione → evidenza → verifica",
+    description:
+      "Questo è il nucleo disciplinare che rende osservabili i processi della realtà."
   },
 
   architecture: {
     coreStack:
-      "IPR Identity Layer → Event Registry → Joker-C2 Coordination Engine → UFO Functional Modules → Λ Stability & Intercept System",
+      "IPR → Event Registry → Joker-C2 Coordination Engine → Moduli UFO → Sistema Λ di stabilità",
     jokerRole:
-      "Joker-C2 is the cybernetic coordination layer that connects identities, events and infrastructure evidence.",
+      "Joker-C2 è il livello di coordinamento cibernetico che connette identità, eventi e infrastrutture.",
     enterpriseSpace:
-      "Enterprise Space is the operational environment where identities, autonomous systems, human operators, infrastructures and event registration converge.",
+      "Enterprise Space è l’ambiente operativo dove convergono identità, sistemi autonomi, operatori umani e registrazione degli eventi.",
     eventRegistry:
-      "Event Registry is an append-only registry of operational events with identity, timestamp, verifiable hash and operational metadata."
+      "Event Registry è il registro append-only degli eventi operativi con identità, timestamp e evidenza verificabile."
   },
 
   europe: {
     axis:
-      "Torino is the technical hub. Brussels is the institutional and strategic coordination hub.",
+      "Torino rappresenta l’hub tecnico. Bruxelles rappresenta l’hub istituzionale e strategico.",
     pilot:
-      "The Europe Pilot introduces a first strategic network of nodes for energy, cloud, AI, cybersecurity, governance and infrastructure resilience.",
+      "Il progetto Europe Pilot introduce una prima rete di nodi infrastrutturali per energia, cloud, AI, cybersicurezza e governance.",
     matrix:
-      "Matrix Europa is the territorial projection of the Joker-C2 architecture across a distributed European node network."
+      "Matrix Europa è la proiezione territoriale europea delle infrastrutture verificabili."
   },
 
   ufo: {
     definition:
-      "UFO means Unità Funzionale Opponibile, a modular component connecting physical world, digital world and legal world.",
+      "UFO significa Unità Funzionale Opponibile, un modulo che collega mondo fisico, mondo digitale e mondo giuridico.",
     structure:
-      "Σ-Header · Λ-Metric · AI JOKER Trace · TimeMark UTC(IT) · QES + TSA INRiM · functional payload",
+      "Σ-Header · Λ-Metric · Joker-Trace · TimeMark UTC · Firma QES + TSA",
     families:
-      "UFO-E energy, UFO-A AI and digital systems, UFO-C civic-institutional, UFO-S space, UFO-P personal identity",
-    mainModules:
+      "UFO-E energia, UFO-A intelligenza artificiale, UFO-C civico-istituzionale, UFO-S spazio, UFO-P identità personale",
+    modules:
       "UFO-INTERCEPT, UFO-REACTOR, UFO-SPACEDRIVE, UFO-CIVIL, ORG-NEURO"
   },
 
   lambda: {
     definition:
-      "Λ is the system equilibrium metric.",
+      "Λ è la metrica di equilibrio del sistema.",
     nominal:
-      "Nominal stability condition: Λ ≈ 1.",
+      "Condizione di stabilità nominale: Λ ≈ 1.",
     behavior:
-      "When Λ exits the operating window, a state collision emerges and the system activates collimation signals."
-  },
-
-  labs: {
-    frameworks:
-      "UNEBDO, MetaExchange, CyberGlobal, OPC, IOSpace, NeuroLoop",
-    purpose:
-      "These frameworks operate as infrastructure laboratories for observing identities, autonomous interactions, global networks, operational processes, integration spaces and AI decision loops."
-  },
-
-  mobility: {
-    summary:
-      "Joker-C2 can also coordinate mobility infrastructures, robotaxi fleets, autonomous logistics vehicles and urban mobility systems through vehicle identity, events, evidence and verification."
-  },
-
-  volumes: {
-    volume_1:
-      "Corpus of Hermetic Esoterology: foundational disciplinary layer. Reality becomes observable through Decision, Cost, Trace and Time.",
-    volume_2:
-      "Matrix 2026: application of the framework to institutional systems, infrastructures and operational responsibility.",
-    volume_3:
-      "Lex Hermeticum: regime of validity, opposability, decay, integration and fail-closed logic.",
-    volume_4:
-      "Alien Code: biocybernetic interface between biological decision and computable system recording.",
-    volume_5:
-      "Alien Artifact: residual configuration produced when a process reaches irreversible exposure in time.",
-    matrix_europa:
-      "Matrix Europa: European technological and infrastructural projection of verifiable digital systems."
+      "Quando Λ esce dalla finestra operativa emerge una collisione di stato e il sistema attiva segnali di collimazione."
   },
 
   glossary: {
     ipr:
-      "IPR means Identity Primary Record, the foundational identity layer of the HBCE ecosystem.",
+      "IPR significa Identity Primary Record, il livello di identità fondamentale dell’ecosistema HBCE.",
     hbce:
-      "HBCE is the operational ecosystem centered on identity, registry and evidence-oriented infrastructure logic.",
+      "HBCE è l’ecosistema operativo centrato su identità, registri e infrastrutture di evidenza verificabile.",
     joker:
-      "AI JOKER-C2 is the operational interface and cybernetic coordination layer designed for identity-bound interaction flows.",
+      "AI Joker-C2 è l’interfaccia operativa che coordina identità, eventi e infrastrutture.",
     lex:
-      "Lex Hermeticum defines validity, opposability, responsibility and trace across time.",
+      "Lex Hermeticum definisce validità, opponibilità e responsabilità degli eventi registrati.",
     alien_code:
-      "Alien Code is the biocybernetic framework where organism, system and trace become operationally observable.",
+      "Alien Code è il framework biocibernetico che collega organismo biologico e sistema computazionale.",
     alien_artifact:
-      "Alien Artifact is the residual irreversible configuration that remains after full exposure to Decision, Cost, Trace and Time.",
+      "Alien Artifact è la configurazione residua che emerge quando un processo diventa irreversibile nel tempo.",
     matrix:
-      "Matrix Framework is the operational grid connecting reality, systems, institutions and traceable events.",
-    enterprise_space:
-      "Enterprise Space is the operational environment where infrastructure events become observable and reconstructable.",
-    event_registry:
-      "Event Registry is the append-only operational registry of the infrastructure.",
-    lambda:
-      "Λ is the equilibrium metric used to measure system stability.",
-    ufo:
-      "UFO modules are modular opposable units used to make processes measurable, auditable, certifiable and verifiable over time."
+      "Matrix Framework è la griglia operativa che collega realtà, sistemi e istituzioni."
+  },
+
+  volumes: {
+    volume_1:
+      "Volume I – Fondamenti disciplinari: Decisione, Costo, Traccia e Tempo.",
+    volume_2:
+      "Volume II – Matrix 2026: applicazione del modello alle infrastrutture e alle istituzioni.",
+    volume_3:
+      "Volume III – Lex Hermeticum: validità, opponibilità e regime fail-closed.",
+    volume_4:
+      "Volume IV – Alien Code: interfaccia biocibernetica.",
+    volume_5:
+      "Volume V – Alien Artifact: configurazioni residue dei processi esposti nel tempo."
   }
 };
 
 function includesAny(input, terms) {
-  return terms.some((term) => input.includes(term));
+  return terms.some(term => input.includes(term));
 }
 
-function buildCorpusReply(message) {
+function buildReply(message) {
+
   const input = message.toLowerCase();
 
-  if (includesAny(input, ["ciao", "hello", "hi"])) {
-    return "Joker-C2 online. Corpus connection active. Local doctrinal and infrastructural layer loaded correctly.";
+  if (includesAny(input, ["ciao","salve"])) {
+    return "Joker-C2 operativo. Connessione al corpus di ricerca attiva.";
   }
 
-  if (includesAny(input, ["help", "aiuto"])) {
-    return "Available corpus keywords: ipr, hbce, joker, lex, alien code, alien artifact, matrix, matrix europa, enterprise space, event registry, lambda, ufo, ufo-intercept, ufo-reactor, ufo-civil, org-neuro, torino, brussels, labs, mobility, volume 1, volume 2, volume 3, volume 4, volume 5.";
-  }
-
-  if (includesAny(input, ["principle", "principio", "reality kernel"])) {
-    return "Foundational principle: " + KNOWLEDGE_CORE.principles.realityKernel + ".";
-  }
-
-  if (includesAny(input, ["formula", "evidence", "verification"])) {
-    return "Operational formula: " + KNOWLEDGE_CORE.principles.operationalFormula + ".";
+  if (includesAny(input, ["aiuto","help"])) {
+    return "Parole chiave disponibili: ipr, hbce, joker, enterprise space, event registry, lambda, ufo, matrix europa, torino, bruxelles, volume 1-5.";
   }
 
   if (input.includes("ipr")) {
@@ -142,139 +114,88 @@ function buildCorpusReply(message) {
     return KNOWLEDGE_CORE.glossary.joker;
   }
 
-  if (input.includes("lex")) {
-    return KNOWLEDGE_CORE.glossary.lex;
-  }
-
-  if (input.includes("alien code")) {
-    return KNOWLEDGE_CORE.glossary.alien_code;
-  }
-
-  if (input.includes("alien artifact")) {
-    return KNOWLEDGE_CORE.glossary.alien_artifact;
-  }
-
-  if (input.includes("matrix europa")) {
-    return KNOWLEDGE_CORE.volumes.matrix_europa + " " + KNOWLEDGE_CORE.europe.axis;
-  }
-
-  if (input.includes("matrix")) {
-    return KNOWLEDGE_CORE.glossary.matrix;
-  }
-
-  if (includesAny(input, ["enterprise space", "space operativo"])) {
+  if (input.includes("enterprise")) {
     return KNOWLEDGE_CORE.architecture.enterpriseSpace;
   }
 
-  if (includesAny(input, ["event registry", "registry", "registro eventi"])) {
+  if (input.includes("event registry")) {
     return KNOWLEDGE_CORE.architecture.eventRegistry;
   }
 
-  if (includesAny(input, ["lambda", "λ"])) {
-    return KNOWLEDGE_CORE.lambda.definition + " " + KNOWLEDGE_CORE.lambda.nominal + " " + KNOWLEDGE_CORE.lambda.behavior;
+  if (input.includes("lambda") || input.includes("λ")) {
+    return KNOWLEDGE_CORE.lambda.definition + " " + KNOWLEDGE_CORE.lambda.nominal;
   }
 
   if (input.includes("ufo")) {
-    return KNOWLEDGE_CORE.ufo.definition + " Internal structure: " + KNOWLEDGE_CORE.ufo.structure + ". Families: " + KNOWLEDGE_CORE.ufo.families + ".";
+    return KNOWLEDGE_CORE.ufo.definition + ". Struttura: " + KNOWLEDGE_CORE.ufo.structure;
   }
 
-  if (input.includes("ufo-intercept")) {
-    return "UFO-INTERCEPT detects state collisions, predicts deviations and generates corrective collimation trajectories.";
+  if (input.includes("torino")) {
+    return KNOWLEDGE_CORE.europe.axis;
   }
 
-  if (input.includes("ufo-reactor")) {
-    return "UFO-REACTOR provides opposable control of energy reactors through flow measurement, Lambda-equilibrium stabilization and verifiable energy audit.";
+  if (input.includes("bruxelles") || input.includes("brussels")) {
+    return KNOWLEDGE_CORE.europe.axis;
   }
 
-  if (input.includes("ufo-civil")) {
-    return "UFO-CIVIL is the civic-administrative module for procedural audit, public transparency and verifiable public decisions.";
+  if (input.includes("matrix europa")) {
+    return KNOWLEDGE_CORE.europe.matrix;
   }
 
-  if (input.includes("org-neuro")) {
-    return "ORG-NEURO is the biocybernetic module for neural interfaces, clinical audit and neuro-digital stability.";
-  }
-
-  if (includesAny(input, ["torino", "turin"])) {
-    return "Torino is the technical hub of the Joker-C2 architecture, oriented to robotics, AI, aerospace, complex systems modeling and UFO module testing.";
-  }
-
-  if (includesAny(input, ["brussels", "bruxelles", "bruxelles"])) {
-    return "Brussels is the institutional and strategic coordination hub of the European Joker-C2 architecture.";
-  }
-
-  if (includesAny(input, ["pilot", "europe pilot"])) {
-    return KNOWLEDGE_CORE.europe.pilot;
-  }
-
-  if (includesAny(input, ["labs", "laboratories", "frameworks"])) {
-    return "Infrastructure laboratories: " + KNOWLEDGE_CORE.labs.frameworks + ". " + KNOWLEDGE_CORE.labs.purpose;
-  }
-
-  if (includesAny(input, ["mobility", "vehicle", "robotaxi", "automotive"])) {
-    return KNOWLEDGE_CORE.mobility.summary;
-  }
-
-  if (input.includes("architecture")) {
-    return "Core architecture: " + KNOWLEDGE_CORE.architecture.coreStack;
-  }
-
-  if (input.includes("volume 1") || input.includes("vol 1")) {
+  if (input.includes("volume 1")) {
     return KNOWLEDGE_CORE.volumes.volume_1;
   }
 
-  if (input.includes("volume 2") || input.includes("vol 2")) {
+  if (input.includes("volume 2")) {
     return KNOWLEDGE_CORE.volumes.volume_2;
   }
 
-  if (input.includes("volume 3") || input.includes("vol 3")) {
+  if (input.includes("volume 3")) {
     return KNOWLEDGE_CORE.volumes.volume_3;
   }
 
-  if (input.includes("volume 4") || input.includes("vol 4")) {
+  if (input.includes("volume 4")) {
     return KNOWLEDGE_CORE.volumes.volume_4;
   }
 
-  if (input.includes("volume 5") || input.includes("vol 5")) {
+  if (input.includes("volume 5")) {
     return KNOWLEDGE_CORE.volumes.volume_5;
   }
 
-  return (
-    "Joker-C2 received your message. Local corpus mode is active. " +
-    "Use corpus terms such as IPR, Event Registry, Enterprise Space, UFO, Lambda, Torino, Brussels, Matrix Europa, Lex, Alien Code or volume numbers."
-  );
+  return "Joker-C2 ha ricevuto il messaggio. Il sistema è in modalità corpus locale di ricerca.";
 }
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      ok: false,
-      error: "Method not allowed"
-    });
+export default async function handler(req,res){
+
+  if(req.method !== "POST"){
+    return res.status(405).json({error:"Metodo non consentito"});
   }
 
-  try {
+  try{
+
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const message = body?.message?.trim();
 
-    if (!message) {
-      return res.status(400).json({
-        ok: false,
-        error: "Missing message"
-      });
+    if(!message){
+      return res.status(400).json({error:"Messaggio mancante"});
     }
 
-    const reply = buildCorpusReply(message);
+    const reply = buildReply(message);
 
     return res.status(200).json({
-      ok: true,
-      mode: KNOWLEDGE_CORE.identity.mode,
-      source: KNOWLEDGE_CORE.identity.source,
+      ok:true,
+      mode:KNOWLEDGE_CORE.identity.mode,
+      source:KNOWLEDGE_CORE.identity.source,
       reply
     });
-  } catch (error) {
+
+  }catch(error){
+
     return res.status(500).json({
-      ok: false,
-      error: "Invalid request body"
+      ok:false,
+      error:"Errore nella richiesta"
     });
+
   }
+
 }
