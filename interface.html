@@ -36,7 +36,10 @@
         linear-gradient(180deg, #081019 0%, #0b0f14 100%);
     }
 
-    a{color:inherit;text-decoration:none}
+    a{
+      color:inherit;
+      text-decoration:none;
+    }
 
     .shell{
       min-height:100%;
@@ -334,68 +337,6 @@
       line-height:1.45;
     }
 
-    .bubble__details{
-      margin-top:12px;
-      border-top:1px solid var(--line);
-      padding-top:12px;
-    }
-
-    .bubble__details-toggle{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      border:1px solid var(--line);
-      border-radius:10px;
-      background:rgba(255,255,255,.03);
-      color:var(--text);
-      padding:8px 10px;
-      cursor:pointer;
-      font-size:12px;
-      font-weight:700;
-    }
-
-    .bubble__details-panel{
-      display:none;
-      margin-top:10px;
-      padding:12px;
-      border:1px solid var(--line);
-      border-radius:12px;
-      background:var(--panel3);
-    }
-
-    .bubble__details-panel.is-open{
-      display:block;
-    }
-
-    .detail-grid{
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0, 1fr));
-      gap:10px;
-    }
-
-    .detail-item{
-      padding:10px;
-      border:1px solid var(--line);
-      border-radius:10px;
-      background:rgba(255,255,255,.02);
-    }
-
-    .detail-item__label{
-      font-size:11px;
-      text-transform:uppercase;
-      letter-spacing:.08em;
-      color:var(--muted);
-      margin-bottom:4px;
-      font-weight:700;
-    }
-
-    .detail-item__value{
-      font-size:13px;
-      color:var(--text);
-      line-height:1.4;
-      word-break:break-word;
-    }
-
     .bubble__text{
       white-space:pre-wrap;
     }
@@ -519,9 +460,6 @@
         padding-left:16px;
         padding-right:16px;
       }
-      .detail-grid{
-        grid-template-columns:1fr;
-      }
     }
   </style>
 </head>
@@ -546,9 +484,9 @@
 
       <div class="mini">
         <div class="mini__label">Stato</div>
-        <div class="mini__value">Dettagli risposta</div>
+        <div class="mini__value">Recovery mode</div>
         <p class="mini__text">
-          La console espone un pannello tecnico apribile con preset, query, confidence, summary e mappa del corpus.
+          Versione semplificata e stabile della console Joker-C2 con preset visibile, query canonica e match del corpus.
         </p>
       </div>
     </aside>
@@ -574,7 +512,7 @@
             <button class="btn" id="sendBtn" type="submit">Send</button>
           </form>
           <div class="hint">
-            Modalità ricerca. Esempi: ipr, manuel, ipr-c, enterprise space, matrix europa, phiomega, codice madre, qt_l, unebdo, inrim.
+            Esempi: ipr, manuel, ipr-c, enterprise space, matrix europa, phiomega, codice madre, qt_l, unebdo, inrim.
           </div>
         </div>
       </section>
@@ -588,10 +526,9 @@
     const sendBtn = document.getElementById("sendBtn");
     const clearBtn = document.getElementById("clearBtn");
     const isMobile = window.matchMedia("(max-width: 920px)").matches;
-    const storageKey = "hbce-joker-c2-chat-session-v7";
+    const storageKey = "hbce-joker-c2-chat-session-recovery-v1";
 
     const initialMessage = {
-      role: "assistant",
       text: "Interfaccia inizializzata. La modalità ricerca sul corpus locale è attiva.",
       mode: "local-corpus-search",
       domain: "general",
@@ -600,48 +537,8 @@
       query_normalized: "init",
       preset_title: "Research",
       preset_description: "Ricerca generale sul corpus locale HBCE e layer alieno.",
-      corpus_map: { core_count: 0, alien_count: 0, origin_count: 0 },
       matches: []
     };
-
-    function saveChat() {
-      const items = Array.from(messagesEl.querySelectorAll(".message")).map((messageEl) => {
-        const isUser = messageEl.classList.contains("user");
-        const bubbleTextEl = messageEl.querySelector(".bubble__text");
-        const modeEl = messageEl.querySelector(".bubble__mode");
-        const domainEl = messageEl.querySelector(".bubble__domain");
-        const summaryEl = messageEl.querySelector(".bubble__summary");
-        const confidenceEl = messageEl.querySelector(".bubble__confidence");
-        const queryEl = messageEl.querySelector(".bubble__query");
-        const presetTitleEl = messageEl.querySelector(".bubble__preset-title");
-        const presetDescriptionEl = messageEl.querySelector(".bubble__preset-description");
-        const detailValues = Array.from(messageEl.querySelectorAll(".detail-item__value")).map((el) => el.textContent);
-        const matchEls = Array.from(messageEl.querySelectorAll(".match-chip"));
-
-        return {
-          role: isUser ? "user" : "assistant",
-          text: bubbleTextEl ? bubbleTextEl.textContent : "",
-          mode: modeEl ? modeEl.textContent : "",
-          domain: domainEl ? domainEl.textContent : "",
-          summary: summaryEl ? summaryEl.textContent : "",
-          confidence: confidenceEl ? confidenceEl.textContent : "",
-          query_normalized: queryEl ? queryEl.textContent : "",
-          preset_title: presetTitleEl ? presetTitleEl.textContent : "",
-          preset_description: presetDescriptionEl ? presetDescriptionEl.textContent : "",
-          corpus_map: {
-            core_count: detailValues[0] || "",
-            alien_count: detailValues[1] || "",
-            origin_count: detailValues[2] || ""
-          },
-          matches: matchEls.map((el) => ({
-            layer: el.dataset.layer || "",
-            title: el.dataset.title || ""
-          }))
-        };
-      });
-
-      sessionStorage.setItem(storageKey, JSON.stringify(items));
-    }
 
     function createMatchChip(match) {
       const chip = document.createElement("div");
@@ -662,186 +559,89 @@
       return chip;
     }
 
-    function ensureHeader(bubble) {
-      let header = bubble.querySelector(".bubble__header");
-      if (!header) {
-        header = document.createElement("div");
-        header.className = "bubble__header";
-        bubble.insertBefore(header, bubble.firstChild);
-      }
-      return header;
+    function setConfidenceClass(el, value) {
+      el.classList.remove("is-medium", "is-low");
+      const normalized = String(value || "").toLowerCase();
+      if (normalized === "medium") el.classList.add("is-medium");
+      if (normalized === "low") el.classList.add("is-low");
     }
 
-    function ensurePresetBox(bubble) {
-      let presetBox = bubble.querySelector(".bubble__preset");
-      if (!presetBox) {
-        presetBox = document.createElement("div");
-        presetBox.className = "bubble__preset";
-
-        const title = document.createElement("div");
-        title.className = "bubble__preset-title";
-
-        const description = document.createElement("div");
-        description.className = "bubble__preset-description";
-
-        presetBox.appendChild(title);
-        presetBox.appendChild(description);
-        bubble.appendChild(presetBox);
-      }
-      return presetBox;
-    }
-
-    function ensureDetailsBox(bubble) {
-      let detailsWrap = bubble.querySelector(".bubble__details");
-      if (!detailsWrap) {
-        detailsWrap = document.createElement("div");
-        detailsWrap.className = "bubble__details";
-
-        const toggle = document.createElement("button");
-        toggle.type = "button";
-        toggle.className = "bubble__details-toggle";
-        toggle.textContent = "Dettagli risposta";
-
-        const panel = document.createElement("div");
-        panel.className = "bubble__details-panel";
-
-        toggle.addEventListener("click", () => {
-          panel.classList.toggle("is-open");
-        });
-
-        detailsWrap.appendChild(toggle);
-        detailsWrap.appendChild(panel);
-        bubble.appendChild(detailsWrap);
-      }
-      return detailsWrap.querySelector(".bubble__details-panel");
-    }
-
-    function renderDetailsPanel(panel, meta = {}) {
-      const corpusMap = meta.corpus_map || {};
-      panel.innerHTML = "";
-
-      const grid = document.createElement("div");
-      grid.className = "detail-grid";
-
-      const details = [
-        { label: "Core count", value: corpusMap.core_count ?? "" },
-        { label: "Alien count", value: corpusMap.alien_count ?? "" },
-        { label: "Origin count", value: corpusMap.origin_count ?? "" },
-        { label: "Preset", value: meta.preset_title || "" },
-        { label: "Summary", value: meta.summary || "" },
-        { label: "Confidence", value: meta.confidence || "" }
-      ];
-
-      details.forEach((item) => {
-        const box = document.createElement("div");
-        box.className = "detail-item";
-
-        const label = document.createElement("div");
-        label.className = "detail-item__label";
-        label.textContent = item.label;
-
-        const value = document.createElement("div");
-        value.className = "detail-item__value";
-        value.textContent = item.value;
-
-        box.appendChild(label);
-        box.appendChild(value);
-        grid.appendChild(box);
-      });
-
-      panel.appendChild(grid);
-    }
-
-    function setHeaderBadge(header, className, value) {
-      let el = header.querySelector("." + className);
-
-      if (!value) {
-        if (el) el.remove();
-        return;
-      }
-
-      if (!el) {
-        el = document.createElement("div");
-        el.className = className;
-        header.appendChild(el);
-      }
-
-      el.textContent = value;
-
-      if (className === "bubble__confidence") {
-        el.classList.remove("is-medium", "is-low");
-        const normalized = String(value).toLowerCase();
-        if (normalized === "medium") {
-          el.classList.add("is-medium");
-        } else if (normalized === "low") {
-          el.classList.add("is-low");
-        }
-      }
-    }
-
-    function addMessage(role, payload, shouldSave = true) {
-      const normalized = typeof payload === "string"
-        ? {
-            text: payload,
-            mode: "",
-            domain: "",
-            summary: "",
-            confidence: "",
-            query_normalized: "",
-            preset_title: "",
-            preset_description: "",
-            corpus_map: {},
-            matches: []
-          }
-        : {
-            text: payload.text || "",
-            mode: payload.mode || "",
-            domain: payload.domain || "",
-            summary: payload.summary || "",
-            confidence: payload.confidence || "",
-            query_normalized: payload.query_normalized || "",
-            preset_title: payload.preset_title || "",
-            preset_description: payload.preset_description || "",
-            corpus_map: payload.corpus_map || {},
-            matches: Array.isArray(payload.matches) ? payload.matches : []
-          };
+    function addAssistantMessage(payload, shouldSave = true) {
+      const data = {
+        text: payload.text || "",
+        mode: payload.mode || "",
+        domain: payload.domain || "",
+        summary: payload.summary || "",
+        confidence: payload.confidence || "",
+        query_normalized: payload.query_normalized || "",
+        preset_title: payload.preset_title || "",
+        preset_description: payload.preset_description || "",
+        matches: Array.isArray(payload.matches) ? payload.matches : []
+      };
 
       const wrap = document.createElement("div");
-      wrap.className = role === "user" ? "message user" : "message";
+      wrap.className = "message";
 
       const avatar = document.createElement("div");
-      avatar.className = role === "user" ? "avatar user" : "avatar";
-      avatar.textContent = role === "user" ? "U" : "J";
+      avatar.className = "avatar";
+      avatar.textContent = "J";
 
       const bubble = document.createElement("div");
       bubble.className = "bubble";
 
-      if (role !== "user" && (normalized.mode || normalized.domain || normalized.summary || normalized.confidence || normalized.query_normalized)) {
-        const header = ensureHeader(bubble);
-        setHeaderBadge(header, "bubble__mode", normalized.mode);
-        setHeaderBadge(header, "bubble__domain", normalized.domain);
-        setHeaderBadge(header, "bubble__summary", normalized.summary);
-        setHeaderBadge(header, "bubble__confidence", normalized.confidence);
-        setHeaderBadge(header, "bubble__query", normalized.query_normalized);
-      }
+      const header = document.createElement("div");
+      header.className = "bubble__header";
 
-      const textEl = document.createElement("div");
-      textEl.className = "bubble__text";
-      textEl.textContent = normalized.text;
-      bubble.appendChild(textEl);
+      const mode = document.createElement("div");
+      mode.className = "bubble__mode";
+      mode.textContent = data.mode;
 
-      if (role !== "user" && (normalized.preset_title || normalized.preset_description)) {
-        const presetBox = ensurePresetBox(bubble);
-        presetBox.querySelector(".bubble__preset-title").textContent = normalized.preset_title || "";
-        presetBox.querySelector(".bubble__preset-description").textContent = normalized.preset_description || "";
-      }
+      const domain = document.createElement("div");
+      domain.className = "bubble__domain";
+      domain.textContent = data.domain;
 
-      if (role !== "user") {
-        const panel = ensureDetailsBox(bubble);
-        renderDetailsPanel(panel, normalized);
-      }
+      const summary = document.createElement("div");
+      summary.className = "bubble__summary";
+      summary.textContent = data.summary;
 
-      if (normalized.matches.length && role !== "user") {
+      const confidence = document.createElement("div");
+      confidence.className = "bubble__confidence";
+      confidence.textContent = data.confidence;
+      setConfidenceClass(confidence, data.confidence);
+
+      const query = document.createElement("div");
+      query.className = "bubble__query";
+      query.textContent = data.query_normalized;
+
+      header.appendChild(mode);
+      header.appendChild(domain);
+      header.appendChild(summary);
+      header.appendChild(confidence);
+      header.appendChild(query);
+
+      const text = document.createElement("div");
+      text.className = "bubble__text";
+      text.textContent = data.text;
+
+      const preset = document.createElement("div");
+      preset.className = "bubble__preset";
+
+      const presetTitle = document.createElement("div");
+      presetTitle.className = "bubble__preset-title";
+      presetTitle.textContent = data.preset_title;
+
+      const presetDescription = document.createElement("div");
+      presetDescription.className = "bubble__preset-description";
+      presetDescription.textContent = data.preset_description;
+
+      preset.appendChild(presetTitle);
+      preset.appendChild(presetDescription);
+
+      bubble.appendChild(header);
+      bubble.appendChild(text);
+      bubble.appendChild(preset);
+
+      if (data.matches.length) {
         const matchesWrap = document.createElement("div");
         matchesWrap.className = "bubble__matches";
 
@@ -852,7 +652,7 @@
         const matchList = document.createElement("div");
         matchList.className = "match-list";
 
-        normalized.matches.forEach((match) => {
+        data.matches.forEach((match) => {
           matchList.appendChild(createMatchChip(match));
         });
 
@@ -869,110 +669,119 @@
       if (shouldSave) saveChat();
 
       return {
-        bubble,
-        textEl,
-        setMeta(meta = {}) {
-          if (meta.mode || meta.domain || meta.summary || meta.confidence || meta.query_normalized) {
-            const header = ensureHeader(bubble);
-            setHeaderBadge(header, "bubble__mode", meta.mode || "");
-            setHeaderBadge(header, "bubble__domain", meta.domain || "");
-            setHeaderBadge(header, "bubble__summary", meta.summary || "");
-            setHeaderBadge(header, "bubble__confidence", meta.confidence || "");
-            setHeaderBadge(header, "bubble__query", meta.query_normalized || "");
-          }
-
-          if (meta.preset_title || meta.preset_description) {
-            const presetBox = ensurePresetBox(bubble);
-            presetBox.querySelector(".bubble__preset-title").textContent = meta.preset_title || "";
-            presetBox.querySelector(".bubble__preset-description").textContent = meta.preset_description || "";
-          }
-
-          const panel = ensureDetailsBox(bubble);
-          renderDetailsPanel(panel, meta);
-
-          let matchesSection = bubble.querySelector(".bubble__matches");
-          let matchesContainer = bubble.querySelector(".match-list");
-
-          if (Array.isArray(meta.matches)) {
-            if (meta.matches.length) {
-              if (!matchesSection) {
-                matchesSection = document.createElement("div");
-                matchesSection.className = "bubble__matches";
-
-                const matchesTitle = document.createElement("div");
-                matchesTitle.className = "bubble__matches-title";
-                matchesTitle.textContent = "Match del corpus";
-
-                matchesContainer = document.createElement("div");
-                matchesContainer.className = "match-list";
-
-                matchesSection.appendChild(matchesTitle);
-                matchesSection.appendChild(matchesContainer);
-                bubble.appendChild(matchesSection);
-              }
-
-              matchesContainer.innerHTML = "";
-              meta.matches.forEach((match) => {
-                matchesContainer.appendChild(createMatchChip(match));
-              });
-            } else if (matchesSection) {
-              matchesSection.remove();
-            }
-          }
-        }
+        textEl: text,
+        modeEl: mode,
+        domainEl: domain,
+        summaryEl: summary,
+        confidenceEl: confidence,
+        queryEl: query,
+        presetTitleEl: presetTitle,
+        presetDescriptionEl: presetDescription,
+        bubble
       };
+    }
+
+    function addUserMessage(text, shouldSave = true) {
+      const wrap = document.createElement("div");
+      wrap.className = "message user";
+
+      const avatar = document.createElement("div");
+      avatar.className = "avatar user";
+      avatar.textContent = "U";
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+
+      wrap.appendChild(avatar);
+      wrap.appendChild(bubble);
+      messagesEl.appendChild(wrap);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      if (shouldSave) saveChat();
+    }
+
+    function saveChat() {
+      const items = Array.from(messagesEl.querySelectorAll(".message")).map((messageEl) => {
+        const isUser = messageEl.classList.contains("user");
+
+        if (isUser) {
+          return {
+            role: "user",
+            text: messageEl.querySelector(".bubble")?.textContent || ""
+          };
+        }
+
+        const matchEls = Array.from(messageEl.querySelectorAll(".match-chip"));
+
+        return {
+          role: "assistant",
+          text: messageEl.querySelector(".bubble__text")?.textContent || "",
+          mode: messageEl.querySelector(".bubble__mode")?.textContent || "",
+          domain: messageEl.querySelector(".bubble__domain")?.textContent || "",
+          summary: messageEl.querySelector(".bubble__summary")?.textContent || "",
+          confidence: messageEl.querySelector(".bubble__confidence")?.textContent || "",
+          query_normalized: messageEl.querySelector(".bubble__query")?.textContent || "",
+          preset_title: messageEl.querySelector(".bubble__preset-title")?.textContent || "",
+          preset_description: messageEl.querySelector(".bubble__preset-description")?.textContent || "",
+          matches: matchEls.map((el) => ({
+            layer: el.dataset.layer || "",
+            title: el.dataset.title || ""
+          }))
+        };
+      });
+
+      sessionStorage.setItem(storageKey, JSON.stringify(items));
     }
 
     function loadChat() {
       const raw = sessionStorage.getItem(storageKey);
 
       if (!raw) {
-        addMessage("assistant", initialMessage, true);
+        addAssistantMessage(initialMessage, true);
         return;
       }
 
       try {
         const items = JSON.parse(raw);
+        messagesEl.innerHTML = "";
 
         if (!Array.isArray(items) || !items.length) {
-          addMessage("assistant", initialMessage, true);
+          addAssistantMessage(initialMessage, true);
           return;
         }
-
-        messagesEl.innerHTML = "";
 
         items.forEach((item) => {
           if (!item || typeof item.text !== "string") return;
 
-          addMessage(item.role === "user" ? "user" : "assistant", {
-            text: item.text,
-            mode: item.mode || "",
-            domain: item.domain || "",
-            summary: item.summary || "",
-            confidence: item.confidence || "",
-            query_normalized: item.query_normalized || "",
-            preset_title: item.preset_title || "",
-            preset_description: item.preset_description || "",
-            corpus_map: item.corpus_map || {},
-            matches: Array.isArray(item.matches) ? item.matches : []
-          }, false);
+          if (item.role === "user") {
+            addUserMessage(item.text, false);
+          } else {
+            addAssistantMessage({
+              text: item.text,
+              mode: item.mode || "",
+              domain: item.domain || "",
+              summary: item.summary || "",
+              confidence: item.confidence || "",
+              query_normalized: item.query_normalized || "",
+              preset_title: item.preset_title || "",
+              preset_description: item.preset_description || "",
+              matches: Array.isArray(item.matches) ? item.matches : []
+            }, false);
+          }
         });
 
-        if (!messagesEl.children.length) {
-          addMessage("assistant", initialMessage, true);
-        } else {
-          saveChat();
-        }
+        saveChat();
       } catch (error) {
         messagesEl.innerHTML = "";
-        addMessage("assistant", initialMessage, true);
+        addAssistantMessage(initialMessage, true);
       }
     }
 
     function resetChat() {
       sessionStorage.removeItem(storageKey);
       messagesEl.innerHTML = "";
-      addMessage("assistant", initialMessage, true);
+      addAssistantMessage(initialMessage, true);
       promptInput.value = "";
       promptInput.focus();
     }
@@ -981,12 +790,14 @@
       if (domain === "hybrid") return "HYBRID";
       if (domain === "alien-code") return "ALIEN";
       if (domain === "hbce-core") return "CORE";
+
       if (Array.isArray(matches) && matches.length) {
         const layers = new Set(matches.map((m) => (m.layer || "").toLowerCase()));
         if (layers.has("core") && layers.has("alien")) return "HYBRID";
         if (layers.has("alien")) return "ALIEN";
         if (layers.has("core")) return "CORE";
       }
+
       return "GENERAL";
     }
 
@@ -1006,9 +817,9 @@
       if (!text) return;
 
       promptInput.value = "";
-      addMessage("user", { text }, true);
+      addUserMessage(text, true);
 
-      const pending = addMessage("assistant", {
+      const pending = addAssistantMessage({
         text: "Joker-C2 sta interrogando il corpus locale...",
         mode: "pending",
         domain: "search",
@@ -1017,7 +828,6 @@
         query_normalized: text.trim().toLowerCase(),
         preset_title: "Detecting preset",
         preset_description: "Analisi del dominio di ricerca in corso.",
-        corpus_map: { core_count: "-", alien_count: "-", origin_count: "-" },
         matches: []
       }, true);
 
@@ -1042,31 +852,49 @@
         const summary = summarizeLayer(data.domain || "", matches);
 
         pending.textEl.textContent = data.reply || "Nessuna risposta.";
-        pending.setMeta({
-          mode: data.mode || "response",
-          domain: data.domain || "general",
-          summary,
-          confidence: data.confidence || "low",
-          query_normalized: data.query_normalized || "",
-          preset_title: data.preset_title || "",
-          preset_description: data.preset_description || "",
-          corpus_map: data.corpus_map || {},
-          matches
-        });
+        pending.modeEl.textContent = data.mode || "response";
+        pending.domainEl.textContent = data.domain || "general";
+        pending.summaryEl.textContent = summary;
+        pending.confidenceEl.textContent = data.confidence || "low";
+        setConfidenceClass(pending.confidenceEl, data.confidence || "low");
+        pending.queryEl.textContent = data.query_normalized || "";
+        pending.presetTitleEl.textContent = data.preset_title || "";
+        pending.presetDescriptionEl.textContent = data.preset_description || "";
+
+        const oldMatches = pending.bubble.querySelector(".bubble__matches");
+        if (oldMatches) oldMatches.remove();
+
+        if (matches.length) {
+          const matchesWrap = document.createElement("div");
+          matchesWrap.className = "bubble__matches";
+
+          const matchesTitle = document.createElement("div");
+          matchesTitle.className = "bubble__matches-title";
+          matchesTitle.textContent = "Match del corpus";
+
+          const matchList = document.createElement("div");
+          matchList.className = "match-list";
+
+          matches.forEach((match) => {
+            matchList.appendChild(createMatchChip(match));
+          });
+
+          matchesWrap.appendChild(matchesTitle);
+          matchesWrap.appendChild(matchList);
+          pending.bubble.appendChild(matchesWrap);
+        }
+
         saveChat();
       } catch (error) {
         pending.textEl.textContent = "Errore: " + error.message;
-        pending.setMeta({
-          mode: "error",
-          domain: "failure",
-          summary: "ERROR",
-          confidence: "low",
-          query_normalized: "",
-          preset_title: "Failure",
-          preset_description: "La richiesta non è stata completata correttamente.",
-          corpus_map: { core_count: "-", alien_count: "-", origin_count: "-" },
-          matches: []
-        });
+        pending.modeEl.textContent = "error";
+        pending.domainEl.textContent = "failure";
+        pending.summaryEl.textContent = "ERROR";
+        pending.confidenceEl.textContent = "low";
+        setConfidenceClass(pending.confidenceEl, "low");
+        pending.queryEl.textContent = "";
+        pending.presetTitleEl.textContent = "Failure";
+        pending.presetDescriptionEl.textContent = "La richiesta non è stata completata correttamente.";
         saveChat();
       } finally {
         sendBtn.disabled = false;
