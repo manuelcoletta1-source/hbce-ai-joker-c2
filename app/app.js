@@ -2,6 +2,7 @@ import { buildRequest } from "../lib/request-builder.js";
 import { sendRequest } from "../lib/joker-core-client.js";
 import { buildResponse } from "../lib/response-builder.js";
 import { updateRuntimeStatus } from "./runtime-status.js";
+import { inspectSession } from "./session-viewer.js";
 
 const textarea = document.querySelector("textarea");
 const sendButton = document.querySelector(".btn--primary");
@@ -73,6 +74,10 @@ async function handleSend() {
   const response = buildResponse(runtimeResult);
 
   updateRuntimeStatus(runtimeResult);
+
+  if (runtimeResult.session_id) {
+    inspectSession(runtimeResult.session_id);
+  }
 
   appendMessage(
     "AI JOKER-C2",
