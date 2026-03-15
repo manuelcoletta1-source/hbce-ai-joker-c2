@@ -1,201 +1,164 @@
-const KNOWLEDGE_CORE = {
-  identity: {
-    name: "AI JOKER-C2",
-    role: "Interfaccia operativa AI dell’ecosistema HBCE",
-    mode: "local-corpus",
-    source: "hbce-corpus-core",
-    doctrine:
-      "Joker-C2 risponde secondo il framework operativo HBCE e il Corpus di Esoterologia Ermetica."
-  },
+import { CORPUS_CORE, searchCorpusEntries } from "./corpus-core.js";
+import { ALIEN_CODE_CORE, searchAlienCodeEntries } from "./corpus-alien-code.js";
 
-  principles: {
-    realityKernel: "Decisione · Costo · Traccia · Tempo",
-    operationalFormula: "identità → azione → evidenza → verifica",
-    description:
-      "Questo è il nucleo disciplinare che rende osservabili i processi della realtà."
-  },
-
-  architecture: {
-    coreStack:
-      "IPR → Event Registry → Joker-C2 Coordination Engine → Moduli UFO → Sistema Λ di stabilità",
-    jokerRole:
-      "Joker-C2 è il livello di coordinamento cibernetico che connette identità, eventi e infrastrutture.",
-    enterpriseSpace:
-      "Enterprise Space è l’ambiente operativo dove convergono identità, sistemi autonomi, operatori umani e registrazione degli eventi.",
-    eventRegistry:
-      "Event Registry è il registro append-only degli eventi operativi con identità, timestamp e evidenza verificabile."
-  },
-
-  europe: {
-    axis:
-      "Torino rappresenta l’hub tecnico. Bruxelles rappresenta l’hub istituzionale e strategico.",
-    pilot:
-      "Il progetto Europe Pilot introduce una prima rete di nodi infrastrutturali per energia, cloud, AI, cybersicurezza e governance.",
-    matrix:
-      "Matrix Europa è la proiezione territoriale europea delle infrastrutture verificabili."
-  },
-
-  ufo: {
-    definition:
-      "UFO significa Unità Funzionale Opponibile, un modulo che collega mondo fisico, mondo digitale e mondo giuridico.",
-    structure:
-      "Σ-Header · Λ-Metric · Joker-Trace · TimeMark UTC · Firma QES + TSA",
-    families:
-      "UFO-E energia, UFO-A intelligenza artificiale, UFO-C civico-istituzionale, UFO-S spazio, UFO-P identità personale",
-    modules:
-      "UFO-INTERCEPT, UFO-REACTOR, UFO-SPACEDRIVE, UFO-CIVIL, ORG-NEURO"
-  },
-
-  lambda: {
-    definition:
-      "Λ è la metrica di equilibrio del sistema.",
-    nominal:
-      "Condizione di stabilità nominale: Λ ≈ 1.",
-    behavior:
-      "Quando Λ esce dalla finestra operativa emerge una collisione di stato e il sistema attiva segnali di collimazione."
-  },
-
-  glossary: {
-    ipr:
-      "IPR significa Identity Primary Record, il livello di identità fondamentale dell’ecosistema HBCE.",
-    hbce:
-      "HBCE è l’ecosistema operativo centrato su identità, registri e infrastrutture di evidenza verificabile.",
-    joker:
-      "AI Joker-C2 è l’interfaccia operativa che coordina identità, eventi e infrastrutture.",
-    lex:
-      "Lex Hermeticum definisce validità, opponibilità e responsabilità degli eventi registrati.",
-    alien_code:
-      "Alien Code è il framework biocibernetico che collega organismo biologico e sistema computazionale.",
-    alien_artifact:
-      "Alien Artifact è la configurazione residua che emerge quando un processo diventa irreversibile nel tempo.",
-    matrix:
-      "Matrix Framework è la griglia operativa che collega realtà, sistemi e istituzioni."
-  },
-
-  volumes: {
-    volume_1:
-      "Volume I – Fondamenti disciplinari: Decisione, Costo, Traccia e Tempo.",
-    volume_2:
-      "Volume II – Matrix 2026: applicazione del modello alle infrastrutture e alle istituzioni.",
-    volume_3:
-      "Volume III – Lex Hermeticum: validità, opponibilità e regime fail-closed.",
-    volume_4:
-      "Volume IV – Alien Code: interfaccia biocibernetica.",
-    volume_5:
-      "Volume V – Alien Artifact: configurazioni residue dei processi esposti nel tempo."
-  }
-};
-
-function includesAny(input, terms) {
-  return terms.some(term => input.includes(term));
+function normalizeQuery(message) {
+  return String(message || "").trim();
 }
 
-function buildReply(message) {
-
-  const input = message.toLowerCase();
-
-  if (includesAny(input, ["ciao","salve"])) {
-    return "Joker-C2 operativo. Connessione al corpus di ricerca attiva.";
-  }
-
-  if (includesAny(input, ["aiuto","help"])) {
-    return "Parole chiave disponibili: ipr, hbce, joker, enterprise space, event registry, lambda, ufo, matrix europa, torino, bruxelles, volume 1-5.";
-  }
-
-  if (input.includes("ipr")) {
-    return KNOWLEDGE_CORE.glossary.ipr;
-  }
-
-  if (input.includes("hbce")) {
-    return KNOWLEDGE_CORE.glossary.hbce;
-  }
-
-  if (input.includes("joker")) {
-    return KNOWLEDGE_CORE.glossary.joker;
-  }
-
-  if (input.includes("enterprise")) {
-    return KNOWLEDGE_CORE.architecture.enterpriseSpace;
-  }
-
-  if (input.includes("event registry")) {
-    return KNOWLEDGE_CORE.architecture.eventRegistry;
-  }
-
-  if (input.includes("lambda") || input.includes("λ")) {
-    return KNOWLEDGE_CORE.lambda.definition + " " + KNOWLEDGE_CORE.lambda.nominal;
-  }
-
-  if (input.includes("ufo")) {
-    return KNOWLEDGE_CORE.ufo.definition + ". Struttura: " + KNOWLEDGE_CORE.ufo.structure;
-  }
-
-  if (input.includes("torino")) {
-    return KNOWLEDGE_CORE.europe.axis;
-  }
-
-  if (input.includes("bruxelles") || input.includes("brussels")) {
-    return KNOWLEDGE_CORE.europe.axis;
-  }
-
-  if (input.includes("matrix europa")) {
-    return KNOWLEDGE_CORE.europe.matrix;
-  }
-
-  if (input.includes("volume 1")) {
-    return KNOWLEDGE_CORE.volumes.volume_1;
-  }
-
-  if (input.includes("volume 2")) {
-    return KNOWLEDGE_CORE.volumes.volume_2;
-  }
-
-  if (input.includes("volume 3")) {
-    return KNOWLEDGE_CORE.volumes.volume_3;
-  }
-
-  if (input.includes("volume 4")) {
-    return KNOWLEDGE_CORE.volumes.volume_4;
-  }
-
-  if (input.includes("volume 5")) {
-    return KNOWLEDGE_CORE.volumes.volume_5;
-  }
-
-  return "Joker-C2 ha ricevuto il messaggio. Il sistema è in modalità corpus locale di ricerca.";
+function buildIntro() {
+  return {
+    ok: true,
+    mode: "local-corpus-search",
+    source: "hbce-corpus-core + alien-code-core"
+  };
 }
 
-export default async function handler(req,res){
+function rankCombinedResults(query) {
+  const coreMatches = searchCorpusEntries(query).map((entry) => ({
+    layer: "core",
+    entry
+  }));
 
-  if(req.method !== "POST"){
-    return res.status(405).json({error:"Metodo non consentito"});
+  const alienMatches = searchAlienCodeEntries(query).map((entry) => ({
+    layer: "alien",
+    entry
+  }));
+
+  const combined = [...coreMatches, ...alienMatches];
+
+  const unique = [];
+  const seen = new Set();
+
+  for (const item of combined) {
+    const key = `${item.layer}:${item.entry.id}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(item);
+    }
   }
 
-  try{
+  return unique.slice(0, 5);
+}
 
+function buildReplyFromMatches(query, matches) {
+  const input = query.toLowerCase();
+
+  if (["ciao", "salve", "hello", "hi"].includes(input)) {
+    return {
+      reply: "Joker-C2 operativo. Modalità ricerca attiva. Corpus locale e layer alieno caricati correttamente.",
+      matches: []
+    };
+  }
+
+  if (["help", "aiuto"].includes(input)) {
+    return {
+      reply:
+        "Parole chiave disponibili: ipr, hbce, joker, manuel, ipr-b, ipr-c, matrix europa, enterprise space, event registry, lambda, ufo, phiomega, ethic token, safe halt, deny and log, codice madre, esper-simento, psi, lambda fenomenica, kappa, sigma, tau, omega, pi star, xiomega, qt_d, qt_l, unebdo, slq, inrim.",
+      matches: []
+    };
+  }
+
+  if (!matches.length) {
+    return {
+      reply:
+        "Joker-C2 ha ricevuto il messaggio, ma non ha trovato un allineamento forte nel corpus locale. Prova con termini più canonici del sistema.",
+      matches: []
+    };
+  }
+
+  if (matches.length === 1) {
+    const item = matches[0];
+    return {
+      reply: item.entry.text,
+      matches: [
+        {
+          id: item.entry.id,
+          title: item.entry.title,
+          layer: item.layer
+        }
+      ]
+    };
+  }
+
+  const primary = matches[0];
+  const secondary = matches.slice(1, 3);
+
+  const replyParts = [];
+  replyParts.push(primary.entry.text);
+
+  if (secondary.length) {
+    replyParts.push("");
+    replyParts.push("Raccordi utili nel corpus:");
+
+    for (const item of secondary) {
+      replyParts.push(`- ${item.entry.title}: ${item.entry.text}`);
+    }
+  }
+
+  return {
+    reply: replyParts.join("\n"),
+    matches: matches.map((item) => ({
+      id: item.entry.id,
+      title: item.entry.title,
+      layer: item.layer
+    }))
+  };
+}
+
+function detectDomain(matches) {
+  if (!matches.length) {
+    return "general";
+  }
+
+  const layers = new Set(matches.map((item) => item.layer));
+
+  if (layers.has("core") && layers.has("alien")) {
+    return "hybrid";
+  }
+
+  if (layers.has("alien")) {
+    return "alien-code";
+  }
+
+  return "hbce-core";
+}
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      ok: false,
+      error: "Metodo non consentito"
+    });
+  }
+
+  try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-    const message = body?.message?.trim();
+    const message = normalizeQuery(body?.message);
 
-    if(!message){
-      return res.status(400).json({error:"Messaggio mancante"});
+    if (!message) {
+      return res.status(400).json({
+        ok: false,
+        error: "Messaggio mancante"
+      });
     }
 
-    const reply = buildReply(message);
+    const matches = rankCombinedResults(message);
+    const result = buildReplyFromMatches(message, matches);
+    const domain = detectDomain(matches);
 
     return res.status(200).json({
-      ok:true,
-      mode:KNOWLEDGE_CORE.identity.mode,
-      source:KNOWLEDGE_CORE.identity.source,
-      reply
+      ...buildIntro(),
+      domain,
+      assistant: CORPUS_CORE.identity.assistant,
+      doctrine: CORPUS_CORE.identity.doctrine,
+      alien_mode: ALIEN_CODE_CORE.meta.mode,
+      reply: result.reply,
+      matches: result.matches
     });
-
-  }catch(error){
-
+  } catch (error) {
     return res.status(500).json({
-      ok:false,
-      error:"Errore nella richiesta"
+      ok: false,
+      error: "Errore nella richiesta"
     });
-
   }
-
 }
