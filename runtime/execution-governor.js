@@ -1,6 +1,7 @@
 import { resolveIprBinding } from "./ipr-binding-engine.js";
 import { routeModel } from "./model-router.js";
 import { appendEvent } from "./event-ledger.js";
+import { buildPublicVerificationProof } from "./public-verification-proof.js";
 
 export async function executeRequest(payload) {
 
@@ -51,11 +52,14 @@ export async function executeRequest(payload) {
     response: modelResult.output
   });
 
+  const proof = buildPublicVerificationProof();
+
   return {
     status: "ALLOW",
     event_id: event.event_id,
     entity: binding.binding,
     model: modelResult.model,
-    result: modelResult.output
+    result: modelResult.output,
+    verification_proof: proof
   };
 }
