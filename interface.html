@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI JOKER-C2 Interface</title>
-  <meta name="description" content="Interfaccia di ricerca ibrida Joker-C2.">
+  <meta name="description" content="Interfaccia stabile di recovery per Joker-C2.">
   <style>
     :root{
       --bg:#0b0f14;
@@ -50,7 +50,7 @@
       gap:18px;
     }
 
-    .brand,.mini{
+    .card{
       padding:14px;
       border:1px solid var(--line);
       border-radius:18px;
@@ -58,7 +58,7 @@
       box-shadow:var(--shadow);
     }
 
-    .brand__kicker,.mini__label{
+    .kicker{
       font-size:11px;
       text-transform:uppercase;
       letter-spacing:.16em;
@@ -67,13 +67,13 @@
       margin-bottom:8px;
     }
 
-    .brand__title,.mini__value{
-      font-size:20px;
+    .title{
+      font-size:22px;
       font-weight:800;
       margin:0 0 8px;
     }
 
-    .brand__text,.mini__text{
+    .text{
       margin:0;
       color:var(--muted);
       line-height:1.55;
@@ -218,11 +218,11 @@
       background:rgba(255,255,255,.03);
     }
 
-    .badge.mode{color:var(--accent)}
-    .badge.summary{color:var(--violet)}
-    .badge.high{color:var(--ok)}
-    .badge.medium{color:var(--warn)}
-    .badge.low{color:var(--low)}
+    .mode{color:var(--accent)}
+    .summary{color:var(--violet)}
+    .high{color:var(--ok)}
+    .medium{color:var(--warn)}
+    .low{color:var(--low)}
 
     .meta{
       margin-top:10px;
@@ -316,27 +316,27 @@
 <body>
   <div class="shell">
     <aside class="sidebar">
-      <div class="brand">
-        <div class="brand__kicker">HBCE Research</div>
-        <div class="brand__title">AI JOKER-C2</div>
-        <p class="brand__text">
-          Console di ricerca ibrida coerente con la pipeline Joker-C2: query, corpus, web, fusione, risposta.
+      <div class="card">
+        <div class="kicker">HBCE Research</div>
+        <div class="title">AI JOKER-C2</div>
+        <p class="text">
+          Console stabile di recovery. Prima rimettiamo online Joker, poi riaccendiamo i layer avanzati.
         </p>
       </div>
 
       <div class="quick">
-        <button type="button" data-query="ciao">Test connessione</button>
+        <button type="button" data-query="ciao">Ciao</button>
+        <button type="button" data-query="chi sei">Chi sei</button>
+        <button type="button" data-query="manuel">Manuel</button>
         <button type="button" data-query="ipr">IPR</button>
         <button type="button" data-query="matrix europa">Matrix Europa</button>
-        <button type="button" data-query="ufo modules">UFO Modules</button>
-        <button type="button" data-query="torino bruxelles">Torino / Bruxelles</button>
       </div>
 
-      <div class="mini">
-        <div class="mini__label">Spec attiva</div>
-        <div class="mini__value">Hybrid Search</div>
-        <p class="mini__text">
-          Motore orientato a ricerca corpus + ricerca web + fusione risultati + coordinamento cognitivo. 2
+      <div class="card">
+        <div class="kicker">Stato</div>
+        <div class="title" style="font-size:18px;">Safe Recovery</div>
+        <p class="text">
+          API senza dipendenze esterne, senza web provider, senza import fragili.
         </p>
       </div>
     </aside>
@@ -344,8 +344,8 @@
     <main class="main">
       <div class="topbar">
         <div>
-          <div class="topbar__title">Joker-C2 Research Console</div>
-          <div class="topbar__meta">IPR → Event Registry → Coordination Engine → UFO → Lambda</div>
+          <div class="topbar__title">Joker-C2 Recovery Console</div>
+          <div class="topbar__meta">safe-recovery → local response → stable JSON</div>
         </div>
         <button class="ghost-btn" id="clearBtn" type="button">Clear Chat</button>
       </div>
@@ -355,11 +355,11 @@
 
         <div class="composer-wrap">
           <form class="composer" id="chatForm">
-            <textarea id="prompt" placeholder="Scrivi una query tecnica..." aria-label="Messaggio"></textarea>
+            <textarea id="prompt" placeholder="Scrivi una query..." aria-label="Messaggio"></textarea>
             <button class="btn" id="sendBtn" type="submit">Send</button>
           </form>
           <div class="hint">
-            Specifiche: motore di ricerca interno, ricerca web, RAG, Event Registry, Joker-C2 Coordination Engine, UFO Modules, Lambda Stability Layer. 
+            Test rapidi: ciao, chi sei, manuel, ipr, matrix europa
           </div>
         </div>
       </section>
@@ -373,8 +373,8 @@
     const sendBtn = document.getElementById("sendBtn");
     const clearBtn = document.getElementById("clearBtn");
     const quickButtons = Array.from(document.querySelectorAll("[data-query]"));
+    const storageKey = "hbce-joker-c2-recovery-stable-v1";
     const isMobile = window.matchMedia("(max-width: 920px)").matches;
-    const storageKey = "hbce-joker-c2-search-refactor-v1";
 
     function createBadge(text, extraClass = "") {
       const el = document.createElement("div");
@@ -450,7 +450,7 @@
 
       if (shouldSave) saveChat();
 
-      return { wrap, bubble, text, badges, metaTitle, metaText };
+      return wrap;
     }
 
     function saveChat() {
@@ -463,18 +463,19 @@
 
     function loadChat() {
       const raw = sessionStorage.getItem(storageKey);
+
       if (!raw) {
         addAssistantMessage({
-          mode: "hybrid-corpus-web-search",
+          mode: "safe-recovery",
           domain: "general",
           summary: "GENERAL",
           confidence: "medium",
           query_normalized: "init",
-          preset_title: "General Research",
-          preset_description: "Console inizializzata. Pipeline Joker-C2 pronta.",
+          preset_title: "Recovery",
+          preset_description: "Joker-C2 inizializzato in modalità stabile di recupero.",
           web_provider: "none",
           web_enabled: false,
-          text: "Interfaccia inizializzata. Joker-C2 è pronto per la ricerca ibrida."
+          text: "Interfaccia inizializzata. Joker-C2 è tornato online in recovery mode."
         }, true);
         return;
       }
@@ -513,10 +514,10 @@
         confidence: "medium",
         query_normalized: text.trim().toLowerCase(),
         preset_title: "Searching",
-        preset_description: "Analisi query e attivazione pipeline in corso.",
+        preset_description: "Analisi query in recovery mode.",
         web_provider: "none",
         web_enabled: false,
-        text: "Joker-C2 sta eseguendo la pipeline di ricerca..."
+        text: "Joker-C2 sta elaborando la richiesta..."
       }, true);
 
       sendBtn.disabled = true;
@@ -543,22 +544,22 @@
           throw new Error(data.error || "Richiesta fallita");
         }
 
-        pending.wrap.remove();
+        pending.remove();
 
         addAssistantMessage({
-          mode: data.mode || "hybrid-corpus-web-search",
+          mode: data.mode || "safe-recovery",
           domain: data.domain || "general",
           summary: data.summary || "GENERAL",
           confidence: data.confidence || "low",
           query_normalized: data.query_normalized || "",
-          preset_title: data.preset_title || "Preset",
+          preset_title: data.preset_title || "Recovery",
           preset_description: data.preset_description || "",
           web_provider: data.web_provider || "none",
           web_enabled: Boolean(data.web_enabled),
           text: data.reply || "Nessuna risposta."
         }, true);
       } catch (error) {
-        pending.wrap.remove();
+        pending.remove();
 
         addAssistantMessage({
           mode: "error",
