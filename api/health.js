@@ -1,6 +1,7 @@
 import { CORPUS_CORE } from "./corpus-core.js";
 import { ALIEN_CODE_CORE } from "./corpus-alien-code.js";
 import { getCorpusMapSummary } from "./corpus-map.js";
+import { IPR_EVENT_FORMAT } from "./ipr-format.js";
 
 export default async function handler(req, res) {
   return res.status(200).json({
@@ -12,6 +13,11 @@ export default async function handler(req, res) {
     alien_mode: ALIEN_CODE_CORE.meta.mode,
     web_layer: {
       tavily_configured: Boolean(process.env.TAVILY_API_KEY)
+    },
+    ipr_layer: {
+      format_name: IPR_EVENT_FORMAT.name,
+      format_version: IPR_EVENT_FORMAT.version,
+      hash_algorithm: IPR_EVENT_FORMAT.hash_algorithm
     },
     corpus_map: getCorpusMapSummary()
   });
