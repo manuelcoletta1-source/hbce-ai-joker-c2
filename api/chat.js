@@ -6,16 +6,21 @@ import { detectPreset } from "./session-presets.js";
 import { getCorpusMapSummary } from "./corpus-map.js";
 import { buildInterfaceState } from "./interface-state.js";
 import { mergeUniqueMatches } from "./match-utils.js";
+import { runWebSearch } from "./web-search.js";
 
 function buildIntro() {
   return {
     ok: true,
-    mode: "local-corpus-search",
-    source: "hbce-corpus-core + alien-code-core"
+    mode: "hybrid-corpus-web-search",
+    source: "hbce-corpus-core + alien-code-core + web-search"
   };
 }
 
-function summarizeLayer(domain, matches) {
+function summarizeLayer(domain, matches, webResults) {
+  if (Array.isArray(webResults) && webResults.length > 0 && (!matches || !matches.length)) {
+    return "WEB";
+  }
+
   if (domain === "hybrid") return "HYBRID";
   if (domain === "alien-code") return "ALIEN";
   if (domain === "hbce-core") return "CORE";
@@ -44,11 +49,21 @@ function rankCombinedResults(query) {
   return mergeUniqueMatches(coreMatches, alienMatches, 5);
 }
 
-function buildReplyFromMatches(query, matches) {
+function formatWebResults(results = []) {
+  return results.slice(0, 3).map((item) => ({
+    title: item.title || "Untitled result",
+    snippet: item.snippet || "",
+    url: item.url || "",
+    source: item.source || "web"
+  }));
+}
+
+function buildReplyFromMatches(query, matches, webPayload) {
   if (isGreeting(query)) {
     return {
-      reply: "Joker-C2 operativo. Modalità ricerca attiva. Corpus locale e layer alieno caricati correttamente.",
-      matches: []
+      reply: "Joker-C2 operativo. Modalità ibrida attiva. Corpus locale e layer web caricati correttamente.",
+      matches: [],
+      web_results: []
     };
   }
 
@@ -56,22 +71,55 @@ function buildReplyFromMatches(query, matches) {
     return {
       reply:
         "Parole chiave disponibili: ipr, hbce, joker, manuel, ipr-b, ipr-c, matrix europa, enterprise space, event registry, lambda, ufo, phiomega, ethic token, safe halt, deny and log, codice madre, esper-simento, psi, lambda fenomenica, kappa, sigma, tau, omega, pi star, xiomega, qt_d, qt_l, unebdo, inrim.",
-      matches: []
+      matches: [],
+      web_results: []
+    };
+  }
+
+  const webResults = formatWebResults(webPayload?.results || []);
+
+  if (!matches.length && webResults.length) {
+    const first = webResults[0];
+
+    const lines = [
+      "Joker-C2 non ha trovato un allineamento forte nel corpus locale, quindi ha aperto il layer web.",
+      "",
+      `Risultato principale: ${first.title}`,
+      first.snippet ? `Sintesi: ${first.snippet}` : "",
+      first.url ? `URL: ${first.url}` : ""
+    ].filter(Boolean);
+
+    return {
+      reply: lines.join("\n"),
+      matches: [],
+      web_results: webResults
     };
   }
 
   if (!matches.length) {
     return {
       reply:
-        "Joker-C2 ha ricevuto il messaggio, ma non ha trovato un allineamento forte nel corpus locale. Prova con termini più canonici del sistema.",
-      matches: []
+        "Joker-C2 ha ricevuto il messaggio, ma non ha trovato un allineamento forte nel corpus locale e il layer web non ha restituito risultati utili.",
+      matches: [],
+      web_results: webResults
     };
   }
 
   if (matches.length === 1) {
+    const replyParts = [matches[0].entry.text];
+
+    if (webResults.length) {
+      replyParts.push("");
+      replyParts.push("Segnali dal layer web:");
+      webResults.forEach((item) => {
+        replyParts.push(`- ${item.title}: ${item.snippet}`);
+      });
+    }
+
     return {
-      reply: matches[0].entry.text,
-      matches: formatMatches([matches[0]])
+      reply: replyParts.join("\n"),
+      matches: formatMatches([matches[0]]),
+      web_results: webResults
     };
   }
 
@@ -87,9 +135,18 @@ function buildReplyFromMatches(query, matches) {
     }
   }
 
+  if (webResults.length) {
+    replyParts.push("");
+    replyParts.push("Segnali dal layer web:");
+    webResults.forEach((item) => {
+      replyParts.push(`- ${item.title}: ${item.snippet}`);
+    });
+  }
+
   return {
     reply: replyParts.join("\n"),
-    matches: formatMatches(matches)
+    matches: formatMatches(matches),
+    web_results: webResults
   };
 }
 
@@ -117,14 +174,15 @@ export default async function handler(req, res) {
     const preset = detectPreset(normalizedMessage);
     const domain = detectDomain(matches);
     const confidence = detectConfidence(normalizedMessage, matches);
-    const summary = summarizeLayer(domain, matches);
+    const webPayload = await runWebSearch(normalizedMessage);
+    const summary = summarizeLayer(domain, matches, webPayload.results || []);
     const corpusMap = getCorpusMapSummary();
-    const result = buildReplyFromMatches(normalizedMessage, matches);
+    const result = buildReplyFromMatches(normalizedMessage, matches, webPayload);
 
     return res.status(200).json({
       ...buildIntro(),
       ...buildInterfaceState({
-        mode: "local-corpus-search",
+        mode: "hybrid-corpus-web-search",
         domain,
         summary,
         confidence,
@@ -137,8 +195,12 @@ export default async function handler(req, res) {
       assistant: CORPUS_CORE.identity.assistant,
       doctrine: CORPUS_CORE.identity.doctrine,
       alien_mode: ALIEN_CODE_CORE.meta.mode,
+      web_provider: webPayload.provider || "none",
+      web_enabled: Boolean(webPayload.enabled),
+      web_error: webPayload.error || "",
       reply: result.reply,
-      matches: result.matches
+      matches: result.matches,
+      web_results: result.web_results
     });
   } catch (error) {
     return res.status(500).json({
