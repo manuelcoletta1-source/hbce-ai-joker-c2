@@ -16,8 +16,6 @@
       --accent2:#60a5fa;
       --line:rgba(255,255,255,0.08);
       --shadow:0 12px 34px rgba(0,0,0,.35);
-      --radius:18px;
-      --max:1200px;
     }
 
     *{box-sizing:border-box}
@@ -48,7 +46,6 @@
     .sidebar{
       border-right:1px solid var(--line);
       background:rgba(10,15,22,.82);
-      backdrop-filter:blur(10px);
       padding:20px;
       display:flex;
       flex-direction:column;
@@ -56,7 +53,7 @@
     }
 
     .brand{
-      padding:14px 14px 16px;
+      padding:14px;
       border:1px solid var(--line);
       border-radius:18px;
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
@@ -75,7 +72,6 @@
     .brand__title{
       font-size:22px;
       font-weight:800;
-      letter-spacing:-0.03em;
       margin:0 0 8px;
     }
 
@@ -97,11 +93,9 @@
       border:1px solid var(--line);
       border-radius:14px;
       color:var(--muted);
-      transition:.2s ease;
       background:rgba(255,255,255,.015);
     }
 
-    .nav a:hover,
     .nav a.is-active{
       color:var(--text);
       border-color:rgba(125,211,252,.3);
@@ -144,28 +138,20 @@
     }
 
     .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:16px;
       padding:18px 22px;
       border-bottom:1px solid var(--line);
       background:rgba(8,12,18,.58);
-      backdrop-filter:blur(10px);
-      position:sticky;
-      top:0;
-      z-index:20;
     }
 
     .topbar__title{
       font-size:18px;
       font-weight:800;
-      letter-spacing:-0.02em;
     }
 
     .topbar__meta{
       color:var(--muted);
       font-size:13px;
+      margin-top:4px;
     }
 
     .chat{
@@ -173,7 +159,6 @@
       display:flex;
       flex-direction:column;
       justify-content:space-between;
-      min-height:0;
     }
 
     .messages{
@@ -192,6 +177,10 @@
       align-items:flex-start;
     }
 
+    .message.user{
+      flex-direction:row-reverse;
+    }
+
     .avatar{
       width:42px;
       height:42px;
@@ -200,9 +189,9 @@
       align-items:center;
       justify-content:center;
       font-weight:800;
-      flex:0 0 auto;
       border:1px solid var(--line);
       background:linear-gradient(135deg, rgba(125,211,252,.18), rgba(96,165,250,.12));
+      flex:0 0 auto;
     }
 
     .avatar.user{
@@ -216,30 +205,18 @@
       border-radius:18px;
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
       box-shadow:var(--shadow);
-    }
-
-    .bubble h3{
-      margin:0 0 8px;
-      font-size:15px;
-    }
-
-    .bubble p{
-      margin:0;
-      color:var(--text);
       line-height:1.7;
-      font-size:15px;
+      white-space:pre-wrap;
     }
 
-    .bubble p + p{
-      margin-top:10px;
-      color:var(--muted);
+    .message.user .bubble{
+      background:linear-gradient(180deg, rgba(125,211,252,.08), rgba(125,211,252,.04));
     }
 
     .composer-wrap{
       padding:18px 24px 24px;
       border-top:1px solid var(--line);
       background:rgba(8,12,18,.65);
-      backdrop-filter:blur(10px);
     }
 
     .composer{
@@ -247,7 +224,7 @@
       margin:0 auto;
       display:flex;
       gap:12px;
-      align-items:center;
+      align-items:flex-end;
       background:var(--panel);
       border:1px solid var(--line);
       border-radius:20px;
@@ -255,18 +232,22 @@
       box-shadow:var(--shadow);
     }
 
-    .composer input{
+    textarea{
       flex:1;
       min-width:0;
+      min-height:52px;
+      max-height:180px;
+      resize:vertical;
       background:transparent;
       border:none;
       outline:none;
       color:var(--text);
       font-size:15px;
       padding:10px 12px;
+      font-family:inherit;
     }
 
-    .composer input::placeholder{
+    textarea::placeholder{
       color:var(--muted);
     }
 
@@ -279,6 +260,11 @@
       cursor:pointer;
       color:#06111b;
       background:linear-gradient(135deg, var(--accent), var(--accent2));
+    }
+
+    .btn:disabled{
+      opacity:.6;
+      cursor:not-allowed;
     }
 
     .hint{
@@ -328,71 +314,99 @@
 
       <div class="mini">
         <div class="mini__label">Status</div>
-        <div class="mini__value">Interface Prototype Active</div>
+        <div class="mini__value">API Test Mode</div>
         <p class="mini__text">
-          This page is currently a visual prototype of the Joker-C2 operational console.
+          This page is connected to the basic Vercel API route.
         </p>
       </div>
     </aside>
 
     <main class="main">
       <div class="topbar">
-        <div>
-          <div class="topbar__title">Joker-C2 Interface Console</div>
-          <div class="topbar__meta">Identity-bound operational AI presentation layer</div>
-        </div>
+        <div class="topbar__title">Joker-C2 Interface Console</div>
+        <div class="topbar__meta">Connected to /api/chat</div>
       </div>
 
       <section class="chat">
-        <div class="messages">
+        <div class="messages" id="messages">
           <div class="message">
             <div class="avatar">J</div>
-            <div class="bubble">
-              <h3>AI JOKER-C2</h3>
-              <p>
-                Interface initialized. Welcome to the operational presentation layer of Joker-C2 inside the HBCE ecosystem.
-              </p>
-              <p>
-                Available architectural directions include identity logic, registry logic, evidence flow design and future AI interaction deployment.
-              </p>
-            </div>
-          </div>
-
-          <div class="message">
-            <div class="avatar user">U</div>
-            <div class="bubble">
-              <h3>Operator Input</h3>
-              <p>
-                Show current operational role of Joker-C2.
-              </p>
-            </div>
-          </div>
-
-          <div class="message">
-            <div class="avatar">J</div>
-            <div class="bubble">
-              <h3>AI JOKER-C2</h3>
-              <p>
-                Joker-C2 is presented as the operational AI application layer of the HBCE environment.
-              </p>
-              <p>
-                In this portal phase, the interface acts as a visual command surface for future integration with live AI services, identity-bound workflows and verifiable evidence pipelines.
-              </p>
-            </div>
+            <div class="bubble">Interface initialized. Send a message to test the API route.</div>
           </div>
         </div>
 
         <div class="composer-wrap">
-          <div class="composer">
-            <input type="text" placeholder="Type a message... prototype mode only" aria-label="Message input">
-            <button class="btn" type="button">Send</button>
-          </div>
+          <form class="composer" id="chatForm">
+            <textarea id="prompt" placeholder="Type your message..." aria-label="Message input"></textarea>
+            <button class="btn" id="sendBtn" type="submit">Send</button>
+          </form>
           <div class="hint">
-            Prototype mode only. The visual console is active, but live backend inference is not connected yet.
+            Current mode: test connection between interface and Vercel API.
           </div>
         </div>
       </section>
     </main>
   </div>
+
+  <script>
+    const form = document.getElementById("chatForm");
+    const promptInput = document.getElementById("prompt");
+    const messagesEl = document.getElementById("messages");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function addMessage(role, text) {
+      const wrap = document.createElement("div");
+      wrap.className = role === "user" ? "message user" : "message";
+
+      const avatar = document.createElement("div");
+      avatar.className = role === "user" ? "avatar user" : "avatar";
+      avatar.textContent = role === "user" ? "U" : "J";
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+
+      wrap.appendChild(avatar);
+      wrap.appendChild(bubble);
+      messagesEl.appendChild(wrap);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const text = promptInput.value.trim();
+      if (!text) return;
+
+      promptInput.value = "";
+      addMessage("user", text);
+
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Sending...";
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ message: text })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Request failed");
+        }
+
+        addMessage("assistant", data.reply || "No reply.");
+      } catch (error) {
+        addMessage("assistant", "Error: " + error.message);
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Send";
+      }
+    });
+  </script>
 </body>
 </html>
