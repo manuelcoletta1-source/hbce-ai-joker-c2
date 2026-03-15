@@ -249,6 +249,7 @@
       flex-direction: column;
       gap: 14px;
       flex: 1;
+      overflow: auto;
     }
 
     .message {
@@ -497,7 +498,7 @@
         <div class="hero">
           <h1 class="hero__title">AI JOKER-C2 Interface</h1>
           <p class="hero__lead">
-            This interface represents the application layer of the HBCE ecosystem. Requests are intended to pass through identity context, governance validation, operational decision flow, evidence generation and verification reference.
+            This interface represents the application layer of the HBCE ecosystem. Requests pass through identity context, governance validation, operational decision flow, evidence generation and verification reference.
           </p>
         </div>
 
@@ -511,34 +512,7 @@
               </div>
               <div class="message__body">
                 <p>AI JOKER-C2 is ready.</p>
-                <p>Identity context, governance pipeline and evidence model can be connected to this interface.</p>
-              </div>
-            </div>
-          </article>
-
-          <article class="message">
-            <div class="message__avatar">USER</div>
-            <div class="message__bubble">
-              <div class="message__meta">
-                <span class="message__author">Operator</span>
-                <span>Input example</span>
-              </div>
-              <div class="message__body">
-                <p>Show the operational state of the current session and describe how governance validation affects execution.</p>
-              </div>
-            </div>
-          </article>
-
-          <article class="message">
-            <div class="message__avatar">J-C2</div>
-            <div class="message__bubble">
-              <div class="message__meta">
-                <span class="message__author">AI JOKER-C2</span>
-                <span>Governed response</span>
-              </div>
-              <div class="message__body">
-                <p>The current session is initialized as an identity-bound operational context.</p>
-                <p>Before any action is executed, the request may pass through validation, governance checks and an allow-or-deny decision. If the operation is denied, the system remains fail-closed and can still generate evidence of the denied state.</p>
+                <p>Identity context, governance pipeline and evidence model are available for this session.</p>
               </div>
             </div>
           </article>
@@ -555,7 +529,7 @@
 
         <div class="composer__actions">
           <div class="composer__hint">
-            Requests in this interface are intended to be normalized, validated and forwarded to the governance layer before execution.
+            Requests in this interface are normalized, validated and forwarded to the governance layer before execution.
           </div>
           <div class="btn-row">
             <button class="btn">Normalize</button>
@@ -570,5 +544,7 @@
       </div>
     </main>
   </div>
+
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
