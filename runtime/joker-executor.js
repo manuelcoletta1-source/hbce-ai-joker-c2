@@ -8,6 +8,7 @@ import {
   appendRuntimeSessionEvent
 } from "./session-runtime.js";
 import { resolveJokerIdentity } from "./joker-identity.js";
+import { appendMemory } from "./memory-engine.js";
 
 export async function executeJoker(payload) {
 
@@ -41,6 +42,11 @@ export async function executeJoker(payload) {
     request: runtimePayload.request || null
   });
 
+  appendMemory(session.session_id, {
+    role: "user",
+    content: runtimePayload.request || null
+  });
+
   const decision = await evaluateRequest(runtimePayload);
 
   appendRuntimeSessionEvent(session.session_id, {
@@ -61,6 +67,14 @@ export async function executeJoker(payload) {
       evidence_id: evidence.evidence_id,
       registry_ref: registryEntry.registry_ref,
       status: evidence.status
+    });
+
+    appendMemory(session.session_id, {
+      role: "assistant",
+      content: {
+        status: "DENY",
+        reason: decision.reason || null
+      }
     });
 
     return {
@@ -105,6 +119,15 @@ export async function executeJoker(payload) {
     evidence_id: evidence.evidence_id,
     registry_ref: registryEntry.registry_ref,
     status: evidence.status
+  });
+
+  appendMemory(session.session_id, {
+    role: "assistant",
+    content: {
+      status: finalDecision.status,
+      output: finalDecision.output || null,
+      reason: finalDecision.reason || null
+    }
   });
 
   return {
