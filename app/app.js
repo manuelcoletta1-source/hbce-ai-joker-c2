@@ -1,36 +1,55 @@
-import { inspectPublicProof } from "./proof-viewer.js";
+async function sendRequest() {
 
-function initProofButton() {
+  const textarea = document.querySelector("textarea");
+  const message = textarea.value;
 
-  const proofButton = document.createElement("button");
+  if (!message) return;
 
-  proofButton.innerText = "Verify Joker-C2";
-  proofButton.className = "btn";
+  const chat = document.querySelector(".chat");
 
-  proofButton.addEventListener("click", async () => {
+  const userBlock = `
+  <article class="message">
+    <div class="message__avatar">YOU</div>
+    <div class="message__bubble">
+      <div class="message__meta">
+        <span class="message__author">User</span>
+      </div>
+      <div class="message__body">${message}</div>
+    </div>
+  </article>
+  `;
 
-    const proof = await fetch("/api/joker-c2/proof");
-    const data = await proof.json();
+  chat.insertAdjacentHTML("beforeend", userBlock);
 
-    appendMessage(
-      "VERIFY",
-      JSON.stringify(data, null, 2)
-    );
+  textarea.value = "";
 
-    inspectPublicProof();
-
+  const response = await fetch("/api/joker-c2/execute", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      message: message
+    })
   });
 
-  const actions = document.querySelector(".btn-row");
+  const data = await response.json();
 
-  if (actions) {
-    actions.appendChild(proofButton);
-  }
+  const aiBlock = `
+  <article class="message">
+    <div class="message__avatar">AI</div>
+    <div class="message__bubble">
+      <div class="message__meta">
+        <span class="message__author">Joker-C2</span>
+      </div>
+      <div class="message__body">${data.reply}</div>
+    </div>
+  </article>
+  `;
+
+  chat.insertAdjacentHTML("beforeend", aiBlock);
+
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-
-  initComposer();
-  initProofButton();
-
-});
+document.querySelector(".btn--primary")
+  .addEventListener("click", sendRequest);
