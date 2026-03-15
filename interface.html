@@ -346,9 +346,9 @@
 
       <div class="mini">
         <div class="mini__label">Status</div>
-        <div class="mini__value">API Test Mode</div>
+        <div class="mini__value">Session Memory Mode</div>
         <p class="mini__text">
-          This page is connected to the basic Vercel API route.
+          This interface keeps the current chat in browser session storage.
         </p>
       </div>
     </aside>
@@ -366,12 +366,7 @@
       </div>
 
       <section class="chat">
-        <div class="messages" id="messages">
-          <div class="message">
-            <div class="avatar">J</div>
-            <div class="bubble">Interface initialized. Send a message to test the API route.</div>
-          </div>
-        </div>
+        <div class="messages" id="messages"></div>
 
         <div class="composer-wrap">
           <form class="composer" id="chatForm">
@@ -379,7 +374,7 @@
             <button class="btn" id="sendBtn" type="submit">Send</button>
           </form>
           <div class="hint">
-            Current mode: test connection between interface and Vercel API.
+            Current mode: session-based chat memory with Vercel API connection.
           </div>
         </div>
       </section>
@@ -393,9 +388,23 @@
     const sendBtn = document.getElementById("sendBtn");
     const clearBtn = document.getElementById("clearBtn");
     const isMobile = window.matchMedia("(max-width: 920px)").matches;
+    const storageKey = "hbce-joker-c2-chat-session";
     const initialMessage = "Interface initialized. Send a message to test the API route.";
 
-    function addMessage(role, text) {
+    function saveChat() {
+      const items = Array.from(messagesEl.querySelectorAll(".message")).map((messageEl) => {
+        const isUser = messageEl.classList.contains("user");
+        const bubble = messageEl.querySelector(".bubble");
+        return {
+          role: isUser ? "user" : "assistant",
+          text: bubble ? bubble.textContent : ""
+        };
+      });
+
+      sessionStorage.setItem(storageKey, JSON.stringify(items));
+    }
+
+    function addMessage(role, text, shouldSave = true) {
       const wrap = document.createElement("div");
       wrap.className = role === "user" ? "message user" : "message";
 
@@ -412,12 +421,50 @@
       messagesEl.appendChild(wrap);
       messagesEl.scrollTop = messagesEl.scrollHeight;
 
+      if (shouldSave) {
+        saveChat();
+      }
+
       return bubble;
     }
 
+    function loadChat() {
+      const raw = sessionStorage.getItem(storageKey);
+
+      if (!raw) {
+        addMessage("assistant", initialMessage, true);
+        return;
+      }
+
+      try {
+        const items = JSON.parse(raw);
+
+        if (!Array.isArray(items) || items.length === 0) {
+          addMessage("assistant", initialMessage, true);
+          return;
+        }
+
+        messagesEl.innerHTML = "";
+
+        items.forEach((item) => {
+          if (item && (item.role === "user" || item.role === "assistant") && typeof item.text === "string") {
+            addMessage(item.role, item.text, false);
+          }
+        });
+
+        if (!messagesEl.children.length) {
+          addMessage("assistant", initialMessage, true);
+        }
+      } catch (error) {
+        messagesEl.innerHTML = "";
+        addMessage("assistant", initialMessage, true);
+      }
+    }
+
     function resetChat() {
+      sessionStorage.removeItem(storageKey);
       messagesEl.innerHTML = "";
-      addMessage("assistant", initialMessage);
+      addMessage("assistant", initialMessage, true);
       promptInput.value = "";
       promptInput.focus();
     }
@@ -440,9 +487,9 @@
       if (!text) return;
 
       promptInput.value = "";
-      addMessage("user", text);
+      addMessage("user", text, true);
 
-      const thinkingBubble = addMessage("assistant", "Joker-C2 is processing...");
+      const thinkingBubble = addMessage("assistant", "Joker-C2 is processing...", true);
 
       sendBtn.disabled = true;
       clearBtn.disabled = true;
@@ -464,8 +511,10 @@
         }
 
         thinkingBubble.textContent = data.reply || "No reply.";
+        saveChat();
       } catch (error) {
         thinkingBubble.textContent = "Error: " + error.message;
+        saveChat();
       } finally {
         sendBtn.disabled = false;
         clearBtn.disabled = false;
@@ -473,6 +522,8 @@
         promptInput.focus();
       }
     });
+
+    loadChat();
   </script>
 </body>
 </html>
