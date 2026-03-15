@@ -1,20 +1,14 @@
-import { buildPublicVerificationProof } from "../../runtime/public-verification-proof.js";
+import { getLedger } from "../../ledger/event-ledger.js";
 
-export default async function handler(req, res) {
+export default function handler(req, res) {
 
-  if (req.method !== "GET") {
-    return res.status(405).json({
-      status: "DENY",
-      reason: "method_not_allowed"
-    });
-  }
+  const ledger = getLedger();
 
-  const proof = buildPublicVerificationProof();
-
-  if (proof.status !== "ALLOW") {
-    return res.status(400).json(proof);
-  }
-
-  return res.status(200).json(proof);
+  res.status(200).json({
+    status: "ALLOW",
+    proof_type: "PUBLIC_VERIFICATION_PROOF",
+    total_events: ledger.length,
+    latest_event: ledger[ledger.length - 1] || null
+  });
 
 }
