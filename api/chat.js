@@ -1,9 +1,11 @@
 import { CORPUS_CORE, searchCorpusEntries } from "./corpus-core.js";
 import { ALIEN_CODE_CORE, searchAlienCodeEntries } from "./corpus-alien-code.js";
-
-function normalizeQuery(message) {
-  return String(message || "").trim();
-}
+import { normalizeQuery, isGreeting, isHelp } from "./query-utils.js";
+import { detectDomain, detectConfidence, formatMatches } from "./response-utils.js";
+import { detectPreset } from "./session-presets.js";
+import { getCorpusMapSummary } from "./corpus-map.js";
+import { buildInterfaceState } from "./interface-state.js";
+import { mergeUniqueMatches } from "./match-utils.js";
 
 function buildIntro() {
   return {
@@ -11,6 +13,21 @@ function buildIntro() {
     mode: "local-corpus-search",
     source: "hbce-corpus-core + alien-code-core"
   };
+}
+
+function summarizeLayer(domain, matches) {
+  if (domain === "hybrid") return "HYBRID";
+  if (domain === "alien-code") return "ALIEN";
+  if (domain === "hbce-core") return "CORE";
+
+  if (Array.isArray(matches) && matches.length) {
+    const layers = new Set(matches.map((item) => item.layer));
+    if (layers.has("core") && layers.has("alien")) return "HYBRID";
+    if (layers.has("alien")) return "ALIEN";
+    if (layers.has("core")) return "CORE";
+  }
+
+  return "GENERAL";
 }
 
 function rankCombinedResults(query) {
@@ -24,36 +41,21 @@ function rankCombinedResults(query) {
     entry
   }));
 
-  const combined = [...coreMatches, ...alienMatches];
-
-  const unique = [];
-  const seen = new Set();
-
-  for (const item of combined) {
-    const key = `${item.layer}:${item.entry.id}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      unique.push(item);
-    }
-  }
-
-  return unique.slice(0, 5);
+  return mergeUniqueMatches(coreMatches, alienMatches, 5);
 }
 
 function buildReplyFromMatches(query, matches) {
-  const input = query.toLowerCase();
-
-  if (["ciao", "salve", "hello", "hi"].includes(input)) {
+  if (isGreeting(query)) {
     return {
       reply: "Joker-C2 operativo. Modalità ricerca attiva. Corpus locale e layer alieno caricati correttamente.",
       matches: []
     };
   }
 
-  if (["help", "aiuto"].includes(input)) {
+  if (isHelp(query)) {
     return {
       reply:
-        "Parole chiave disponibili: ipr, hbce, joker, manuel, ipr-b, ipr-c, matrix europa, enterprise space, event registry, lambda, ufo, phiomega, ethic token, safe halt, deny and log, codice madre, esper-simento, psi, lambda fenomenica, kappa, sigma, tau, omega, pi star, xiomega, qt_d, qt_l, unebdo, slq, inrim.",
+        "Parole chiave disponibili: ipr, hbce, joker, manuel, ipr-b, ipr-c, matrix europa, enterprise space, event registry, lambda, ufo, phiomega, ethic token, safe halt, deny and log, codice madre, esper-simento, psi, lambda fenomenica, kappa, sigma, tau, omega, pi star, xiomega, qt_d, qt_l, unebdo, inrim.",
       matches: []
     };
   }
@@ -67,29 +69,19 @@ function buildReplyFromMatches(query, matches) {
   }
 
   if (matches.length === 1) {
-    const item = matches[0];
     return {
-      reply: item.entry.text,
-      matches: [
-        {
-          id: item.entry.id,
-          title: item.entry.title,
-          layer: item.layer
-        }
-      ]
+      reply: matches[0].entry.text,
+      matches: formatMatches([matches[0]])
     };
   }
 
   const primary = matches[0];
   const secondary = matches.slice(1, 3);
-
-  const replyParts = [];
-  replyParts.push(primary.entry.text);
+  const replyParts = [primary.entry.text];
 
   if (secondary.length) {
     replyParts.push("");
     replyParts.push("Raccordi utili nel corpus:");
-
     for (const item of secondary) {
       replyParts.push(`- ${item.entry.title}: ${item.entry.text}`);
     }
@@ -97,30 +89,8 @@ function buildReplyFromMatches(query, matches) {
 
   return {
     reply: replyParts.join("\n"),
-    matches: matches.map((item) => ({
-      id: item.entry.id,
-      title: item.entry.title,
-      layer: item.layer
-    }))
+    matches: formatMatches(matches)
   };
-}
-
-function detectDomain(matches) {
-  if (!matches.length) {
-    return "general";
-  }
-
-  const layers = new Set(matches.map((item) => item.layer));
-
-  if (layers.has("core") && layers.has("alien")) {
-    return "hybrid";
-  }
-
-  if (layers.has("alien")) {
-    return "alien-code";
-  }
-
-  return "hbce-core";
 }
 
 export default async function handler(req, res) {
@@ -133,22 +103,37 @@ export default async function handler(req, res) {
 
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-    const message = normalizeQuery(body?.message);
+    const originalMessage = String(body?.message || "").trim();
+    const normalizedMessage = normalizeQuery(originalMessage);
 
-    if (!message) {
+    if (!normalizedMessage) {
       return res.status(400).json({
         ok: false,
         error: "Messaggio mancante"
       });
     }
 
-    const matches = rankCombinedResults(message);
-    const result = buildReplyFromMatches(message, matches);
+    const matches = rankCombinedResults(normalizedMessage);
+    const preset = detectPreset(normalizedMessage);
     const domain = detectDomain(matches);
+    const confidence = detectConfidence(normalizedMessage, matches);
+    const summary = summarizeLayer(domain, matches);
+    const corpusMap = getCorpusMapSummary();
+    const result = buildReplyFromMatches(normalizedMessage, matches);
 
     return res.status(200).json({
       ...buildIntro(),
-      domain,
+      ...buildInterfaceState({
+        mode: "local-corpus-search",
+        domain,
+        summary,
+        confidence,
+        query_normalized: normalizedMessage,
+        preset: preset.id,
+        preset_title: preset.title,
+        preset_description: preset.description,
+        corpus_map: corpusMap
+      }),
       assistant: CORPUS_CORE.identity.assistant,
       doctrine: CORPUS_CORE.identity.doctrine,
       alien_mode: ALIEN_CODE_CORE.meta.mode,
