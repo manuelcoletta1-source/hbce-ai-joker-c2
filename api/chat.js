@@ -4,44 +4,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { messages } = req.body || {};
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const message = body?.message;
 
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({ error: "Missing messages" });
+    if (!message) {
+      return res.status(400).json({ error: "Missing message" });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
-
-    if (!apiKey) {
-      return res.status(500).json({ error: "Missing OPENAI_API_KEY" });
-    }
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages,
-        temperature: 0.7
-      })
+    return res.status(200).json({
+      reply: "Joker-C2 online. Message received: " + message
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: data.error?.message || "OpenAI API error"
-      });
-    }
-
-    const reply = data.choices?.[0]?.message?.content || "No response generated.";
-    return res.status(200).json({ reply });
   } catch (error) {
     return res.status(500).json({
-      error: error.message || "Internal server error"
+      error: "Invalid request body"
     });
   }
 }
