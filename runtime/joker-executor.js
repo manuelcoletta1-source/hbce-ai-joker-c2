@@ -7,18 +7,41 @@ import {
   ensureRuntimeSession,
   appendRuntimeSessionEvent
 } from "./session-runtime.js";
+import { resolveJokerIdentity } from "./joker-identity.js";
 
 export async function executeJoker(payload) {
 
-  const session = ensureRuntimeSession(payload);
+  const identityResult = resolveJokerIdentity();
+
+  if (identityResult.status === "DENY") {
+    return {
+      status: "DENY",
+      reason: identityResult.reason || "identity_resolution_failed",
+      output: null,
+      state: null,
+      evidence: null,
+      registry: null,
+      session_id: null
+    };
+  }
+
+  const jokerIdentity = identityResult.identity;
+
+  const runtimePayload = {
+    ...payload,
+    subject: jokerIdentity.ipr_id,
+    joker_identity: jokerIdentity
+  };
+
+  const session = ensureRuntimeSession(runtimePayload);
 
   appendRuntimeSessionEvent(session.session_id, {
     type: "REQUEST_RECEIVED",
-    subject: payload.subject || null,
-    request: payload.request || null
+    subject: runtimePayload.subject || null,
+    request: runtimePayload.request || null
   });
 
-  const decision = await evaluateRequest(payload);
+  const decision = await evaluateRequest(runtimePayload);
 
   appendRuntimeSessionEvent(session.session_id, {
     type: "GOVERNANCE_DECISION",
@@ -26,11 +49,11 @@ export async function executeJoker(payload) {
     reason: decision.reason || null
   });
 
-  const state = buildStateFlow(payload, decision);
+  const state = buildStateFlow(runtimePayload, decision);
 
   if (decision.status === "DENY") {
 
-    const evidence = createEvidence(payload, decision);
+    const evidence = createEvidence(runtimePayload, decision);
     const registryEntry = appendToRegistry(evidence);
 
     appendRuntimeSessionEvent(session.session_id, {
@@ -47,11 +70,12 @@ export async function executeJoker(payload) {
       state: state,
       evidence: evidence,
       registry: registryEntry,
-      session_id: session.session_id
+      session_id: session.session_id,
+      identity: jokerIdentity
     };
   }
 
-  const modelResult = await generateModelResponse(payload);
+  const modelResult = await generateModelResponse(runtimePayload);
 
   const finalDecision =
     modelResult.status === "DENY"
@@ -72,8 +96,8 @@ export async function executeJoker(payload) {
     model: modelResult.model || null
   });
 
-  const finalState = buildStateFlow(payload, finalDecision);
-  const evidence = createEvidence(payload, finalDecision);
+  const finalState = buildStateFlow(runtimePayload, finalDecision);
+  const evidence = createEvidence(runtimePayload, finalDecision);
   const registryEntry = appendToRegistry(evidence);
 
   appendRuntimeSessionEvent(session.session_id, {
@@ -91,7 +115,8 @@ export async function executeJoker(payload) {
     evidence: evidence,
     registry: registryEntry,
     model: modelResult.model || null,
-    session_id: session.session_id
+    session_id: session.session_id,
+    identity: jokerIdentity
   };
 
 }
