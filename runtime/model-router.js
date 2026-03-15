@@ -1,5 +1,6 @@
 import { generateModelResponse } from "./llm-bridge.js";
 import { runAgents } from "./ai-agents-engine.js";
+import { runBrainOrchestrator } from "./joker-c2-brain/brain-orchestrator.js";
 
 function getLocalModelResponse(payload) {
   const userText =
@@ -37,6 +38,10 @@ export async function routeModel(payload) {
 
   const preferredModel =
     payload?.model_preferences?.preferred_model || "openai";
+
+  if (preferredModel === "brain") {
+    return runBrainOrchestrator(payload);
+  }
 
   if (preferredModel === "agents") {
     return runAgents(payload);
