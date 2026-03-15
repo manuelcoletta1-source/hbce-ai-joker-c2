@@ -6,7 +6,7 @@ const textarea = document.querySelector("textarea");
 const sendButton = document.querySelector(".btn--primary");
 const chatContainer = document.querySelector(".chat");
 
-function appendMessage(author, label, body) {
+function appendMessage(author, label, body, meta = "") {
   const article = document.createElement("article");
   article.className = "message";
 
@@ -15,7 +15,7 @@ function appendMessage(author, label, body) {
     <div class="message__bubble">
       <div class="message__meta">
         <span class="message__author">${author}</span>
-        <span>${new Date().toLocaleString()}</span>
+        <span>${meta || new Date().toLocaleString()}</span>
       </div>
       <div class="message__body">
         <p>${body}</p>
@@ -27,6 +27,20 @@ function appendMessage(author, label, body) {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+function formatRuntimeMeta(response) {
+  const parts = [`status: ${response.status}`];
+
+  if (response.reason) {
+    parts.push(`reason: ${response.reason}`);
+  }
+
+  if (response.evidence?.evidence_id) {
+    parts.push(`evidence: ${response.evidence.evidence_id}`);
+  }
+
+  return parts.join(" · ");
+}
+
 async function handleSend() {
   const userInput = textarea.value.trim();
 
@@ -34,14 +48,19 @@ async function handleSend() {
     return;
   }
 
-  appendMessage("Operator", "USER", userInput);
+  appendMessage("Operator", "USER", userInput, "request submitted");
   textarea.value = "";
 
   const structuredRequest = buildRequest(userInput);
   const runtimeResult = await sendRequest(structuredRequest);
   const response = buildResponse(runtimeResult);
 
-  appendMessage("AI JOKER-C2", "J-C2", response.message);
+  appendMessage(
+    "AI JOKER-C2",
+    "J-C2",
+    response.message,
+    formatRuntimeMeta(response)
+  );
 }
 
 sendButton.addEventListener("click", handleSend);
