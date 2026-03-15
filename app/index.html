@@ -111,7 +111,8 @@
     }
 
     .nav-card,
-    .session-card {
+    .session-card,
+    .selector-card {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 14px;
@@ -132,6 +133,33 @@
     .nav-card__meta {
       font-size: 12px;
       color: var(--muted);
+    }
+
+    .selector-card {
+      display: grid;
+      gap: 10px;
+    }
+
+    .selector-card__label {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .selector-card__meta {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .selector-card select {
+      width: 100%;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      outline: none;
     }
 
     .session-list {
@@ -456,6 +484,22 @@
             <div class="nav-card__meta">Operational traceability</div>
           </div>
           <span class="pill">Ready</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section__title">Model Routing</div>
+        <div class="selector-card">
+          <div class="selector-card__label">Preferred Model</div>
+          <div class="selector-card__meta">
+            Select the execution path used by AI JOKER-C2.
+          </div>
+          <select id="model-selector">
+            <option value="openai">OpenAI</option>
+            <option value="local">Local Model</option>
+            <option value="mistral">Mistral Path</option>
+            <option value="agents">Multi-Agent Mode</option>
+          </select>
         </div>
       </div>
 
