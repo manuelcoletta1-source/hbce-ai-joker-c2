@@ -6,36 +6,39 @@
   <title>AI JOKER-C2</title>
   <style>
     :root {
-      --bg: #0b0f14;
-      --panel: #111821;
-      --panel-2: #16202b;
-      --line: rgba(255, 255, 255, 0.08);
-      --text: #e8eef7;
-      --muted: #91a0b3;
-      --accent: #7dd3fc;
-      --accent-2: #60a5fa;
-      --danger: #f87171;
-      --ok: #34d399;
-      --warn: #fbbf24;
-      --radius: 18px;
-      --max: 1280px;
-      --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      --hbce-bg: #0b0f14;
+      --hbce-panel: #111821;
+      --hbce-panel-2: #16202b;
+      --hbce-text: #e8eef7;
+      --hbce-muted: #91a0b3;
+      --hbce-line: rgba(255, 255, 255, 0.08);
+      --hbce-line-2: rgba(255, 255, 255, 0.14);
+      --hbce-accent: #7dd3fc;
+      --hbce-accent-2: #60a5fa;
+      --hbce-ok: #34d399;
+      --hbce-warn: #fbbf24;
+      --hbce-danger: #f87171;
+      --hbce-radius: 18px;
+      --hbce-radius-2: 14px;
+      --hbce-max: 1280px;
+      --hbce-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
     }
 
     * {
       box-sizing: border-box;
     }
 
-    html, body {
+    html,
+    body {
       margin: 0;
       padding: 0;
+      min-height: 100%;
       background:
         radial-gradient(circle at top left, rgba(96, 165, 250, 0.10), transparent 32%),
         radial-gradient(circle at top right, rgba(125, 211, 252, 0.10), transparent 28%),
         linear-gradient(180deg, #0b0f14 0%, #0a1017 100%);
-      color: var(--text);
+      color: var(--hbce-text);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      min-height: 100%;
     }
 
     a {
@@ -43,306 +46,288 @@
       text-decoration: none;
     }
 
-    .shell {
-      max-width: var(--max);
+    .hbce-shell {
+      max-width: var(--hbce-max);
       margin: 0 auto;
       padding: 20px;
       min-height: 100vh;
       display: grid;
-      grid-template-columns: 280px 1fr;
+      grid-template-columns: 300px 1fr;
       gap: 20px;
     }
 
-    .sidebar,
-    .main-panel,
-    .status-panel,
-    .composer {
+    .hbce-sidebar,
+    .hbce-status,
+    .hbce-main,
+    .hbce-composer {
       background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      border: 1px solid var(--hbce-line);
+      border-radius: var(--hbce-radius);
+      box-shadow: var(--hbce-shadow);
     }
 
-    .sidebar {
+    .hbce-sidebar {
       padding: 18px;
       display: flex;
       flex-direction: column;
       gap: 18px;
     }
 
-    .brand {
+    .hbce-brand {
       display: flex;
       flex-direction: column;
       gap: 6px;
       padding-bottom: 14px;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid var(--hbce-line);
     }
 
-    .brand__kicker {
-      color: var(--accent);
+    .hbce-brand__kicker {
+      color: var(--hbce-accent);
       font-size: 12px;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
-    .brand__title {
+    .hbce-brand__title {
       font-size: 24px;
-      font-weight: 700;
+      font-weight: 800;
       line-height: 1.1;
     }
 
-    .brand__sub {
-      color: var(--muted);
+    .hbce-brand__lead {
+      color: var(--hbce-muted);
       font-size: 13px;
       line-height: 1.5;
     }
 
-    .sidebar-section {
+    .hbce-section {
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
-    .sidebar-section__title {
-      color: var(--muted);
+    .hbce-section__title {
+      color: var(--hbce-muted);
       font-size: 12px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
-    .nav-card,
-    .session-card,
-    .selector-card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 14px;
+    .hbce-card {
+      background: var(--hbce-panel);
+      border: 1px solid var(--hbce-line);
+      border-radius: var(--hbce-radius-2);
       padding: 12px 14px;
     }
 
-    .nav-card {
+    .hbce-nav-card {
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-
-    .nav-card__label {
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .nav-card__meta {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .selector-card {
-      display: grid;
       gap: 10px;
     }
 
-    .selector-card__label {
-      font-size: 13px;
+    .hbce-card__title {
+      font-size: 14px;
       font-weight: 700;
-    }
-
-    .selector-card__meta {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .selector-card select {
-      width: 100%;
-      background: var(--panel-2);
-      color: var(--text);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 10px 12px;
-      font: inherit;
-      outline: none;
-    }
-
-    .session-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .session-card__title {
-      font-size: 14px;
-      font-weight: 600;
       margin-bottom: 6px;
     }
 
-    .session-card__meta {
-      color: var(--muted);
+    .hbce-card__meta {
+      color: var(--hbce-muted);
       font-size: 12px;
-      line-height: 1.4;
+      line-height: 1.5;
     }
 
-    .content {
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      gap: 20px;
-      min-width: 0;
-    }
-
-    .status-panel {
-      padding: 16px 18px;
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .status-card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-      min-width: 0;
-    }
-
-    .status-card__label {
-      color: var(--muted);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 8px;
-    }
-
-    .status-card__value {
-      font-size: 14px;
-      font-weight: 700;
-      line-height: 1.4;
-      word-break: break-word;
-    }
-
-    .pill {
+    .hbce-badge {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
       border-radius: 999px;
       padding: 6px 10px;
       font-size: 12px;
       font-weight: 700;
       background: rgba(255,255,255,0.04);
-      border: 1px solid var(--line);
+      border: 1px solid var(--hbce-line);
+      white-space: nowrap;
     }
 
-    .pill--ok {
-      color: var(--ok);
+    .hbce-badge--ok {
+      color: var(--hbce-ok);
     }
 
-    .pill--warn {
-      color: var(--warn);
+    .hbce-badge--warn {
+      color: var(--hbce-warn);
     }
 
-    .pill--deny {
-      color: var(--danger);
+    .hbce-badge--danger {
+      color: var(--hbce-danger);
     }
 
-    .main-panel {
+    .hbce-selector {
+      display: grid;
+      gap: 10px;
+    }
+
+    .hbce-selector label {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .hbce-selector select {
+      width: 100%;
+      background: var(--hbce-panel-2);
+      color: var(--hbce-text);
+      border: 1px solid var(--hbce-line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      outline: none;
+    }
+
+    .hbce-content {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 20px;
+      min-width: 0;
+    }
+
+    .hbce-status {
+      padding: 16px 18px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .hbce-status-card {
+      background: var(--hbce-panel);
+      border: 1px solid var(--hbce-line);
+      border-radius: var(--hbce-radius-2);
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .hbce-status-card__label {
+      color: var(--hbce-muted);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .hbce-status-card__value {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .hbce-main {
       padding: 22px;
       display: flex;
       flex-direction: column;
       gap: 18px;
-      min-height: 560px;
+      min-height: 580px;
     }
 
-    .hero {
+    .hbce-hero {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--line);
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--hbce-line);
     }
 
-    .hero__title {
-      font-size: 28px;
+    .hbce-hero__title {
+      margin: 0;
+      font-size: 30px;
       font-weight: 800;
       line-height: 1.1;
-      margin: 0;
     }
 
-    .hero__lead {
-      color: var(--muted);
+    .hbce-hero__lead {
+      margin: 0;
+      color: var(--hbce-muted);
       font-size: 15px;
-      line-height: 1.6;
-      max-width: 860px;
-      margin: 0;
+      line-height: 1.7;
+      max-width: 900px;
     }
 
-    .chat {
+    .hbce-chat {
       display: flex;
       flex-direction: column;
       gap: 14px;
       flex: 1;
       overflow: auto;
+      min-height: 300px;
     }
 
-    .message {
+    .hbce-message {
       display: grid;
       grid-template-columns: 48px 1fr;
       gap: 14px;
       align-items: start;
     }
 
-    .message__avatar {
+    .hbce-message__avatar {
       width: 48px;
       height: 48px;
       border-radius: 14px;
-      background: linear-gradient(180deg, var(--panel-2), var(--panel));
-      border: 1px solid var(--line);
+      border: 1px solid var(--hbce-line);
+      background: linear-gradient(180deg, var(--hbce-panel-2), var(--hbce-panel));
       display: grid;
       place-items: center;
+      color: var(--hbce-accent);
       font-size: 13px;
       font-weight: 800;
-      color: var(--accent);
     }
 
-    .message__bubble {
-      background: var(--panel);
-      border: 1px solid var(--line);
+    .hbce-message__bubble {
+      background: var(--hbce-panel);
+      border: 1px solid var(--hbce-line);
       border-radius: 18px;
       padding: 16px 18px;
     }
 
-    .message__meta {
+    .hbce-message__meta {
       display: flex;
       justify-content: space-between;
       gap: 10px;
       margin-bottom: 10px;
       font-size: 12px;
-      color: var(--muted);
+      color: var(--hbce-muted);
       flex-wrap: wrap;
     }
 
-    .message__author {
+    .hbce-message__author {
       font-weight: 700;
-      color: var(--text);
+      color: var(--hbce-text);
     }
 
-    .message__body {
+    .hbce-message__body {
       font-size: 15px;
       line-height: 1.7;
-      color: var(--text);
+      color: var(--hbce-text);
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
-    .message__body p {
+    .hbce-message__body p {
       margin: 0 0 12px 0;
     }
 
-    .message__body p:last-child {
+    .hbce-message__body p:last-child {
       margin-bottom: 0;
     }
 
-    .composer {
+    .hbce-composer {
       padding: 16px;
       display: grid;
       gap: 14px;
     }
 
-    .composer__top {
+    .hbce-composer__top {
       display: flex;
       justify-content: space-between;
       gap: 12px;
@@ -350,23 +335,23 @@
       align-items: center;
     }
 
-    .composer__title {
+    .hbce-composer__title {
       font-size: 14px;
       font-weight: 700;
     }
 
-    .composer__meta {
+    .hbce-composer__meta {
+      color: var(--hbce-muted);
       font-size: 12px;
-      color: var(--muted);
     }
 
-    .composer textarea {
+    .hbce-composer textarea {
       width: 100%;
-      min-height: 130px;
+      min-height: 140px;
       resize: vertical;
-      background: var(--panel);
-      color: var(--text);
-      border: 1px solid var(--line);
+      background: var(--hbce-panel);
+      color: var(--hbce-text);
+      border: 1px solid var(--hbce-line);
       border-radius: 16px;
       padding: 16px;
       font: inherit;
@@ -374,216 +359,236 @@
       outline: none;
     }
 
-    .composer textarea::placeholder {
-      color: var(--muted);
+    .hbce-composer textarea::placeholder {
+      color: var(--hbce-muted);
     }
 
-    .composer__actions {
+    .hbce-composer__actions {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
       align-items: center;
+      gap: 12px;
       flex-wrap: wrap;
     }
 
-    .composer__hint {
+    .hbce-composer__hint {
+      color: var(--hbce-muted);
       font-size: 12px;
-      color: var(--muted);
       line-height: 1.5;
+      max-width: 720px;
     }
 
-    .btn-row {
+    .hbce-btn-row {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
     }
 
-    .btn {
+    .hbce-btn {
       appearance: none;
-      border: 1px solid var(--line);
-      background: var(--panel);
-      color: var(--text);
+      border: 1px solid var(--hbce-line);
+      background: var(--hbce-panel);
+      color: var(--hbce-text);
       padding: 10px 14px;
       border-radius: 12px;
       font-weight: 700;
       cursor: pointer;
+      transition: border-color 0.2s ease, transform 0.2s ease;
     }
 
-    .btn--primary {
+    .hbce-btn:hover {
+      border-color: var(--hbce-line-2);
+      transform: translateY(-1px);
+    }
+
+    .hbce-btn--primary {
       background: linear-gradient(180deg, rgba(125, 211, 252, 0.18), rgba(96, 165, 250, 0.12));
       border-color: rgba(125, 211, 252, 0.35);
     }
 
-    .footer-note {
-      color: var(--muted);
+    .hbce-footer {
+      color: var(--hbce-muted);
       font-size: 12px;
       text-align: center;
       margin-top: 6px;
     }
 
     @media (max-width: 1080px) {
-      .shell {
+      .hbce-shell {
         grid-template-columns: 1fr;
       }
 
-      .status-panel {
+      .hbce-status {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
     @media (max-width: 720px) {
-      .status-panel {
+      .hbce-status {
         grid-template-columns: 1fr;
       }
 
-      .message {
+      .hbce-message {
         grid-template-columns: 1fr;
       }
 
-      .message__avatar {
+      .hbce-message__avatar {
         width: 40px;
         height: 40px;
       }
 
-      .hero__title {
+      .hbce-hero__title {
         font-size: 24px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand__kicker">HBCE Application Layer</div>
-        <div class="brand__title">AI JOKER-C2</div>
-        <div class="brand__sub">
-          Identity-bound operational AI interface connected to the HBCE infrastructure.
+  <div class="hbce-shell">
+    <aside class="hbce-sidebar">
+      <div class="hbce-brand">
+        <div class="hbce-brand__kicker">HBCE Application Layer</div>
+        <div class="hbce-brand__title">AI JOKER-C2</div>
+        <div class="hbce-brand__lead">
+          Identity-bound operational AI interface connected to HBCE infrastructure, IPR identity, governance runtime and public verification logic.
         </div>
       </div>
 
-      <div class="sidebar-section">
-        <div class="sidebar-section__title">Navigation</div>
-        <div class="nav-card">
-          <div>
-            <div class="nav-card__label">Chat</div>
-            <div class="nav-card__meta">Conversational interface</div>
-          </div>
-          <span class="pill pill--ok">Active</span>
-        </div>
-        <div class="nav-card">
-          <div>
-            <div class="nav-card__label">Identity</div>
-            <div class="nav-card__meta">IPR binding status</div>
-          </div>
-          <span class="pill pill--warn">Bound</span>
-        </div>
-        <div class="nav-card">
-          <div>
-            <div class="nav-card__label">Evidence</div>
-            <div class="nav-card__meta">Operational traceability</div>
-          </div>
-          <span class="pill">Ready</span>
-        </div>
-      </div>
+      <section class="hbce-section">
+        <div class="hbce-section__title">Navigation</div>
 
-      <div class="sidebar-section">
-        <div class="sidebar-section__title">Model Routing</div>
-        <div class="selector-card">
-          <div class="selector-card__label">Preferred Model</div>
-          <div class="selector-card__meta">
-            Select the execution path used by AI JOKER-C2.
+        <div class="hbce-card hbce-nav-card">
+          <div>
+            <div class="hbce-card__title">Chat</div>
+            <div class="hbce-card__meta">Conversational and operational interface</div>
+          </div>
+          <span class="hbce-badge hbce-badge--ok">Active</span>
+        </div>
+
+        <div class="hbce-card hbce-nav-card">
+          <div>
+            <div class="hbce-card__title">Identity</div>
+            <div class="hbce-card__meta">IPR and baseline binding status</div>
+          </div>
+          <span class="hbce-badge hbce-badge--warn">Bound</span>
+        </div>
+
+        <div class="hbce-card hbce-nav-card">
+          <div>
+            <div class="hbce-card__title">Evidence</div>
+            <div class="hbce-card__meta">Event ledger and verification trace</div>
+          </div>
+          <span class="hbce-badge">Ready</span>
+        </div>
+      </section>
+
+      <section class="hbce-section">
+        <div class="hbce-section__title">Model Routing</div>
+
+        <div class="hbce-card hbce-selector">
+          <label for="model-selector">Preferred Execution Path</label>
+          <div class="hbce-card__meta">
+            Select the runtime path used by AI JOKER-C2 for governed execution.
           </div>
           <select id="model-selector">
             <option value="openai">OpenAI</option>
             <option value="local">Local Model</option>
             <option value="mistral">Mistral Path</option>
-            <option value="agents">Multi-Agent Mode</option>
+            <option value="agents">Agents Mode</option>
+            <option value="brain">Joker-C2 Brain</option>
           </select>
-        </div>
-      </div>
-
-      <div class="sidebar-section">
-        <div class="sidebar-section__title">Sessions</div>
-        <div class="session-list">
-          <div class="session-card">
-            <div class="session-card__title">Session 0001</div>
-            <div class="session-card__meta">Identity-bound session initialized under HBCE governance.</div>
-          </div>
-          <div class="session-card">
-            <div class="session-card__title">Session 0002</div>
-            <div class="session-card__meta">Operational request trace available for verification workflow.</div>
-          </div>
-        </div>
-      </div>
-    </aside>
-
-    <main class="content">
-      <section class="status-panel">
-        <div class="status-card">
-          <div class="status-card__label">Identity</div>
-          <div class="status-card__value">IPR-AI-0001</div>
-        </div>
-        <div class="status-card">
-          <div class="status-card__label">State</div>
-          <div class="status-card__value">Governance Ready</div>
-        </div>
-        <div class="status-card">
-          <div class="status-card__label">Execution</div>
-          <div class="status-card__value">Fail-Closed</div>
-        </div>
-        <div class="status-card">
-          <div class="status-card__label">Registry</div>
-          <div class="status-card__value">Append-Only Reference Enabled</div>
         </div>
       </section>
 
-      <section class="main-panel">
-        <div class="hero">
-          <h1 class="hero__title">AI JOKER-C2 Interface</h1>
-          <p class="hero__lead">
-            This interface represents the application layer of the HBCE ecosystem. Requests pass through identity context, governance validation, operational decision flow, evidence generation and verification reference.
+      <section class="hbce-section">
+        <div class="hbce-section__title">Sessions</div>
+
+        <div class="hbce-card">
+          <div class="hbce-card__title">Session 0001</div>
+          <div class="hbce-card__meta">
+            Identity-bound runtime session initialized under HBCE governance.
+          </div>
+        </div>
+
+        <div class="hbce-card">
+          <div class="hbce-card__title">Session 0002</div>
+          <div class="hbce-card__meta">
+            Operational request trace available for inspection and verification.
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <main class="hbce-content">
+      <section class="hbce-status">
+        <div class="hbce-status-card">
+          <div class="hbce-status-card__label">Identity</div>
+          <div class="hbce-status-card__value">IPR-AI-0001</div>
+        </div>
+
+        <div class="hbce-status-card">
+          <div class="hbce-status-card__label">State</div>
+          <div class="hbce-status-card__value">Governance Ready</div>
+        </div>
+
+        <div class="hbce-status-card">
+          <div class="hbce-status-card__label">Execution</div>
+          <div class="hbce-status-card__value">Fail-Closed</div>
+        </div>
+
+        <div class="hbce-status-card">
+          <div class="hbce-status-card__label">Registry</div>
+          <div class="hbce-status-card__value">Append-Only Reference Enabled</div>
+        </div>
+      </section>
+
+      <section class="hbce-main">
+        <div class="hbce-hero">
+          <h1 class="hbce-hero__title">AI JOKER-C2 Interface</h1>
+          <p class="hbce-hero__lead">
+            This interface represents the application layer of the HBCE ecosystem. Requests are intended to pass through identity context, governance validation, model routing, execution control, event recording, evidence generation and public verification.
           </p>
         </div>
 
-        <div class="chat">
-          <article class="message">
-            <div class="message__avatar">HBCE</div>
-            <div class="message__bubble">
-              <div class="message__meta">
-                <span class="message__author">System</span>
+        <div class="hbce-chat chat">
+          <article class="hbce-message message">
+            <div class="hbce-message__avatar message__avatar">HBCE</div>
+            <div class="hbce-message__bubble message__bubble">
+              <div class="hbce-message__meta message__meta">
+                <span class="hbce-message__author message__author">System</span>
                 <span>Session initialized</span>
               </div>
-              <div class="message__body">
+              <div class="hbce-message__body message__body">
                 <p>AI JOKER-C2 is ready.</p>
-                <p>Identity context, governance pipeline and evidence model are available for this session.</p>
+                <p>Identity context, governance runtime, event ledger and verification proof pipeline are available for this session.</p>
               </div>
             </div>
           </article>
         </div>
       </section>
 
-      <section class="composer">
-        <div class="composer__top">
-          <div class="composer__title">Operational Request Composer</div>
-          <div class="composer__meta">Application layer prototype</div>
+      <section class="hbce-composer">
+        <div class="hbce-composer__top">
+          <div class="hbce-composer__title">Operational Request Composer</div>
+          <div class="hbce-composer__meta">HBCE application runtime prototype</div>
         </div>
 
         <textarea placeholder="Enter an operational request for AI JOKER-C2..."></textarea>
 
-        <div class="composer__actions">
-          <div class="composer__hint">
-            Requests in this interface are normalized, validated and forwarded to the governance layer before execution.
+        <div class="hbce-composer__actions">
+          <div class="hbce-composer__hint">
+            Requests in this interface are normalized, validated and forwarded to the HBCE governance layer before execution. Event traces, evidence and verification metadata can be generated as part of the operational flow.
           </div>
-          <div class="btn-row">
-            <button class="btn">Normalize</button>
-            <button class="btn">Validate</button>
-            <button class="btn btn--primary">Send Request</button>
+
+          <div class="hbce-btn-row btn-row">
+            <button class="hbce-btn btn" type="button">Normalize</button>
+            <button class="hbce-btn btn" type="button">Validate</button>
+            <button class="hbce-btn hbce-btn--primary btn btn--primary" type="button">Send Request</button>
           </div>
         </div>
       </section>
 
-      <div class="footer-note">
+      <div class="hbce-footer">
         HBCE Research · HERMETICUM B.C.E. S.r.l.
       </div>
     </main>
