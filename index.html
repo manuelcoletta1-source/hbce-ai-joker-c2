@@ -6,7 +6,6 @@
 <title>AI JOKER-C2 | HBCE</title>
 
 <style>
-
 :root{
 --bg:#0b0f14;
 --panel:#111821;
@@ -22,16 +21,11 @@
 
 body{
 margin:0;
-font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
+font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;
 background:
 radial-gradient(circle at top left, rgba(96,165,250,.1), transparent 30%),
 linear-gradient(180deg,#0b0f14,#0a1017);
 color:var(--text);
-}
-
-a{
-color:var(--accent);
-text-decoration:none;
 }
 
 .container{
@@ -88,15 +82,6 @@ color:var(--muted);
 line-height:1.6;
 }
 
-.button{
-display:inline-block;
-margin-top:14px;
-padding:10px 14px;
-border-radius:10px;
-border:1px solid var(--line);
-background:#16202b;
-}
-
 .section{
 margin-top:60px;
 }
@@ -122,8 +107,8 @@ padding:12px;
 border-radius:10px;
 border:1px solid var(--line);
 margin-top:12px;
+white-space:pre-wrap;
 }
-
 </style>
 </head>
 
@@ -138,8 +123,8 @@ margin-top:12px;
 <div class="title">AI JOKER-C2</div>
 
 <div class="subtitle">
-Identity-bound operational AI application designed to operate within the
-HBCE infrastructure.  
+Identity-bound operational AI application designed to operate within
+the HBCE infrastructure.  
 AI JOKER-C2 connects persistent identity (IPR), governance validation,
 event registration and verification pipelines.
 </div>
@@ -154,14 +139,12 @@ event registration and verification pipelines.
 AI JOKER-C2 provides a conversational and operational interface
 designed to execute requests under identity-bound governance.
 </p>
-
-<a class="button" href="./app.html">Open Interface</a>
 </div>
 
 <div class="card">
 <h3>IPR Identity Layer</h3>
 <p>
-Every runtime instance can be associated with an Identity Primary Record
+Every runtime instance can be associated with an Identity Primary Record,
 allowing deterministic attribution of digital actions.
 </p>
 </div>
@@ -180,10 +163,6 @@ supporting append-only registries and external verification.
 AI JOKER-C2 operates as part of the HBCE ecosystem
 developed by HERMETICUM B.C.E. S.r.l.
 </p>
-
-<a class="button" href="https://manuelcoletta1-source.github.io/manuhell/">
-IPR Verification
-</a>
 </div>
 
 </section>
@@ -193,26 +172,20 @@ IPR Verification
 <h2>Repository</h2>
 
 <p>
-This repository contains the prototype interface and runtime structure
+This repository contains the prototype homepage
 for the AI JOKER-C2 application layer.
 </p>
 
 <div class="repo">
-
-hbce-ai-joker-c2  
-├─ index.html  
-├─ app.html  
-├─ app.js  
+hbce-ai-joker-c2
+├─ index.html
 └─ assets/
-
 </div>
 
 </section>
 
 <footer class="footer">
-
 HBCE Research · HERMETICUM B.C.E. S.r.l.
-
 </footer>
 
 </div>
