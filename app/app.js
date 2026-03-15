@@ -27,15 +27,23 @@ function appendMessage(author, label, body, meta = "") {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-function formatRuntimeMeta(response) {
+function formatRuntimeMeta(runtimeResult, response) {
   const parts = [`status: ${response.status}`];
+
+  if (runtimeResult.session_id) {
+    parts.push(`session: ${runtimeResult.session_id}`);
+  }
+
+  if (runtimeResult.registry?.registry_ref) {
+    parts.push(`registry: ${runtimeResult.registry.registry_ref}`);
+  }
+
+  if (runtimeResult.evidence?.evidence_id) {
+    parts.push(`evidence: ${runtimeResult.evidence.evidence_id}`);
+  }
 
   if (response.reason) {
     parts.push(`reason: ${response.reason}`);
-  }
-
-  if (response.evidence?.evidence_id) {
-    parts.push(`evidence: ${response.evidence.evidence_id}`);
   }
 
   return parts.join(" · ");
@@ -59,7 +67,7 @@ async function handleSend() {
     "AI JOKER-C2",
     "J-C2",
     response.message,
-    formatRuntimeMeta(response)
+    formatRuntimeMeta(runtimeResult, response)
   );
 }
 
