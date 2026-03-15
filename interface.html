@@ -143,6 +143,11 @@
       padding:18px 22px;
       border-bottom:1px solid var(--line);
       background:rgba(8,12,18,.58);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
     }
 
     .topbar__title{
@@ -154,6 +159,28 @@
       color:var(--muted);
       font-size:13px;
       margin-top:4px;
+    }
+
+    .topbar__actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .ghost-btn{
+      border:1px solid var(--line);
+      border-radius:12px;
+      min-height:40px;
+      padding:0 14px;
+      font-weight:700;
+      cursor:pointer;
+      color:var(--text);
+      background:rgba(255,255,255,.03);
+    }
+
+    .ghost-btn:hover{
+      border-color:rgba(125,211,252,.3);
+      background:rgba(125,211,252,.08);
     }
 
     .chat{
@@ -266,7 +293,8 @@
       background:linear-gradient(135deg, var(--accent), var(--accent2));
     }
 
-    .btn:disabled{
+    .btn:disabled,
+    .ghost-btn:disabled{
       opacity:.6;
       cursor:not-allowed;
     }
@@ -327,8 +355,14 @@
 
     <main class="main">
       <div class="topbar">
-        <div class="topbar__title">Joker-C2 Interface Console</div>
-        <div class="topbar__meta">Connected to /api/chat</div>
+        <div>
+          <div class="topbar__title">Joker-C2 Interface Console</div>
+          <div class="topbar__meta">Connected to /api/chat</div>
+        </div>
+
+        <div class="topbar__actions">
+          <button class="ghost-btn" id="clearBtn" type="button">Clear Chat</button>
+        </div>
       </div>
 
       <section class="chat">
@@ -357,7 +391,9 @@
     const promptInput = document.getElementById("prompt");
     const messagesEl = document.getElementById("messages");
     const sendBtn = document.getElementById("sendBtn");
+    const clearBtn = document.getElementById("clearBtn");
     const isMobile = window.matchMedia("(max-width: 920px)").matches;
+    const initialMessage = "Interface initialized. Send a message to test the API route.";
 
     function addMessage(role, text) {
       const wrap = document.createElement("div");
@@ -379,11 +415,22 @@
       return bubble;
     }
 
+    function resetChat() {
+      messagesEl.innerHTML = "";
+      addMessage("assistant", initialMessage);
+      promptInput.value = "";
+      promptInput.focus();
+    }
+
     promptInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && !event.shiftKey && !isMobile) {
         event.preventDefault();
         form.requestSubmit();
       }
+    });
+
+    clearBtn.addEventListener("click", () => {
+      resetChat();
     });
 
     form.addEventListener("submit", async (event) => {
@@ -398,6 +445,7 @@
       const thinkingBubble = addMessage("assistant", "Joker-C2 is processing...");
 
       sendBtn.disabled = true;
+      clearBtn.disabled = true;
       sendBtn.textContent = "Sending...";
 
       try {
@@ -420,6 +468,7 @@
         thinkingBubble.textContent = "Error: " + error.message;
       } finally {
         sendBtn.disabled = false;
+        clearBtn.disabled = false;
         sendBtn.textContent = "Send";
         promptInput.focus();
       }
