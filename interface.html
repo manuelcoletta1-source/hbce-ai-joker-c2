@@ -4,23 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI JOKER-C2 Interface</title>
-  <meta name="description" content="Interfaccia operativa di AI JOKER-C2 per ricerca locale sul corpus HBCE.">
+  <meta name="description" content="Interfaccia di ricerca ibrida Joker-C2.">
   <style>
     :root{
       --bg:#0b0f14;
       --panel:#111821;
       --panel2:#0f1720;
-      --panel3:#0c131b;
       --text:#e8eef7;
       --muted:#8fa3b8;
       --accent:#7dd3fc;
       --accent2:#60a5fa;
       --line:rgba(255,255,255,0.08);
       --shadow:0 12px 34px rgba(0,0,0,.35);
-      --warn:#facc15;
-      --violet:#c4b5fd;
       --ok:#86efac;
+      --warn:#facc15;
       --low:#fda4af;
+      --violet:#c4b5fd;
     }
 
     *{box-sizing:border-box}
@@ -34,11 +33,6 @@
         radial-gradient(circle at top left, rgba(96,165,250,.12), transparent 28%),
         radial-gradient(circle at top right, rgba(125,211,252,.08), transparent 24%),
         linear-gradient(180deg, #081019 0%, #0b0f14 100%);
-    }
-
-    a{
-      color:inherit;
-      text-decoration:none;
     }
 
     .shell{
@@ -56,7 +50,7 @@
       gap:18px;
     }
 
-    .brand{
+    .brand,.mini{
       padding:14px;
       border:1px solid var(--line);
       border-radius:18px;
@@ -64,7 +58,7 @@
       box-shadow:var(--shadow);
     }
 
-    .brand__kicker{
+    .brand__kicker,.mini__label{
       font-size:11px;
       text-transform:uppercase;
       letter-spacing:.16em;
@@ -73,68 +67,38 @@
       margin-bottom:8px;
     }
 
-    .brand__title{
-      font-size:22px;
+    .brand__title,.mini__value{
+      font-size:20px;
       font-weight:800;
       margin:0 0 8px;
     }
 
-    .brand__text{
+    .brand__text,.mini__text{
       margin:0;
       color:var(--muted);
       line-height:1.55;
       font-size:14px;
     }
 
-    .nav{
-      display:flex;
-      flex-direction:column;
+    .quick{
+      display:grid;
       gap:10px;
     }
 
-    .nav a{
-      padding:12px 14px;
+    .quick button{
       border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      padding:12px;
       border-radius:14px;
-      color:var(--muted);
-      background:rgba(255,255,255,.015);
-      transition:.2s ease;
+      text-align:left;
+      cursor:pointer;
+      font-weight:700;
     }
 
-    .nav a:hover,
-    .nav a.is-active{
-      color:var(--text);
+    .quick button:hover{
       border-color:rgba(125,211,252,.3);
       background:rgba(125,211,252,.08);
-    }
-
-    .mini{
-      margin-top:auto;
-      padding:14px;
-      border:1px solid var(--line);
-      border-radius:18px;
-      background:var(--panel2);
-    }
-
-    .mini__label{
-      font-size:11px;
-      text-transform:uppercase;
-      letter-spacing:.14em;
-      color:var(--muted);
-      margin-bottom:8px;
-    }
-
-    .mini__value{
-      font-size:15px;
-      font-weight:700;
-      margin-bottom:6px;
-    }
-
-    .mini__text{
-      font-size:13px;
-      line-height:1.55;
-      color:var(--muted);
-      margin:0;
     }
 
     .main{
@@ -148,7 +112,6 @@
       border-bottom:1px solid var(--line);
       background:rgba(8,12,18,.58);
       display:flex;
-      align-items:center;
       justify-content:space-between;
       gap:12px;
       flex-wrap:wrap;
@@ -165,12 +128,6 @@
       margin-top:4px;
     }
 
-    .topbar__actions{
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-
     .ghost-btn{
       border:1px solid var(--line);
       border-radius:12px;
@@ -182,16 +139,10 @@
       background:rgba(255,255,255,.03);
     }
 
-    .ghost-btn:hover{
-      border-color:rgba(125,211,252,.3);
-      background:rgba(125,211,252,.08);
-    }
-
     .chat{
       flex:1;
       display:flex;
       flex-direction:column;
-      justify-content:space-between;
       min-height:0;
     }
 
@@ -248,18 +199,14 @@
       background:linear-gradient(180deg, rgba(125,211,252,.08), rgba(125,211,252,.04));
     }
 
-    .bubble__header{
+    .badges{
       display:flex;
       flex-wrap:wrap;
       gap:8px;
       margin-bottom:10px;
     }
 
-    .bubble__mode,
-    .bubble__domain,
-    .bubble__summary,
-    .bubble__confidence,
-    .bubble__query{
+    .badge{
       display:inline-block;
       padding:4px 8px;
       border-radius:999px;
@@ -267,123 +214,36 @@
       font-weight:700;
       letter-spacing:.08em;
       text-transform:uppercase;
-    }
-
-    .bubble__mode{
-      border:1px solid rgba(125,211,252,.28);
-      color:var(--accent);
-      background:rgba(125,211,252,.08);
-    }
-
-    .bubble__domain{
-      border:1px solid rgba(250,204,21,.20);
-      color:var(--warn);
-      background:rgba(250,204,21,.08);
-    }
-
-    .bubble__summary{
-      border:1px solid rgba(196,181,253,.22);
-      color:var(--violet);
-      background:rgba(196,181,253,.08);
-    }
-
-    .bubble__confidence{
-      border:1px solid rgba(134,239,172,.20);
-      color:var(--ok);
-      background:rgba(134,239,172,.08);
-    }
-
-    .bubble__confidence.is-medium{
-      border-color:rgba(250,204,21,.20);
-      color:var(--warn);
-      background:rgba(250,204,21,.08);
-    }
-
-    .bubble__confidence.is-low{
-      border-color:rgba(253,164,175,.20);
-      color:var(--low);
-      background:rgba(253,164,175,.08);
-    }
-
-    .bubble__query{
-      border:1px solid rgba(255,255,255,.12);
-      color:var(--muted);
+      border:1px solid var(--line);
       background:rgba(255,255,255,.03);
-      text-transform:none;
-      letter-spacing:0;
-      font-weight:600;
     }
 
-    .bubble__preset{
+    .badge.mode{color:var(--accent)}
+    .badge.summary{color:var(--violet)}
+    .badge.high{color:var(--ok)}
+    .badge.medium{color:var(--warn)}
+    .badge.low{color:var(--low)}
+
+    .meta{
       margin-top:10px;
       padding:10px 12px;
       border:1px solid var(--line);
       border-radius:12px;
-      background:var(--panel3);
+      background:var(--panel2);
     }
 
-    .bubble__preset-title{
+    .meta__title{
       font-size:12px;
       font-weight:800;
-      color:var(--text);
       margin-bottom:4px;
       text-transform:uppercase;
       letter-spacing:.08em;
     }
 
-    .bubble__preset-description{
+    .meta__text{
+      color:var(--muted);
       font-size:13px;
-      color:var(--muted);
       line-height:1.45;
-    }
-
-    .bubble__text{
-      white-space:pre-wrap;
-    }
-
-    .bubble__matches{
-      margin-top:14px;
-      padding-top:12px;
-      border-top:1px solid var(--line);
-    }
-
-    .bubble__matches-title{
-      font-size:12px;
-      font-weight:700;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      color:var(--muted);
-      margin-bottom:10px;
-    }
-
-    .match-list{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
-
-    .match-chip{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 10px;
-      border:1px solid var(--line);
-      border-radius:999px;
-      background:var(--panel3);
-      font-size:12px;
-      line-height:1.2;
-    }
-
-    .match-chip__layer{
-      color:var(--accent);
-      font-weight:700;
-      text-transform:uppercase;
-      letter-spacing:.06em;
-      font-size:10px;
-    }
-
-    .match-chip__title{
-      color:var(--text);
     }
 
     .composer-wrap{
@@ -420,10 +280,6 @@
       font-family:inherit;
     }
 
-    textarea::placeholder{
-      color:var(--muted);
-    }
-
     .btn{
       border:none;
       border-radius:14px;
@@ -433,12 +289,6 @@
       cursor:pointer;
       color:#06111b;
       background:linear-gradient(135deg, var(--accent), var(--accent2));
-    }
-
-    .btn:disabled,
-    .ghost-btn:disabled{
-      opacity:.6;
-      cursor:not-allowed;
     }
 
     .hint{
@@ -468,25 +318,25 @@
     <aside class="sidebar">
       <div class="brand">
         <div class="brand__kicker">HBCE Research</div>
-        <h1 class="brand__title">AI JOKER-C2</h1>
+        <div class="brand__title">AI JOKER-C2</div>
         <p class="brand__text">
-          Interfaccia operativa in modalità ricerca locale sul corpus HBCE, layer alieno e struttura UNEBDO.
+          Console di ricerca ibrida coerente con la pipeline Joker-C2: query, corpus, web, fusione, risposta.
         </p>
       </div>
 
-      <nav class="nav" aria-label="Navigazione portale">
-        <a href="index.html">Home</a>
-        <a class="is-active" href="interface.html">Interface</a>
-        <a href="ipr.html">IPR</a>
-        <a href="registry.html">Registry</a>
-        <a href="evidence.html">Evidence</a>
-      </nav>
+      <div class="quick">
+        <button type="button" data-query="ciao">Test connessione</button>
+        <button type="button" data-query="ipr">IPR</button>
+        <button type="button" data-query="matrix europa">Matrix Europa</button>
+        <button type="button" data-query="ufo modules">UFO Modules</button>
+        <button type="button" data-query="torino bruxelles">Torino / Bruxelles</button>
+      </div>
 
       <div class="mini">
-        <div class="mini__label">Stato</div>
-        <div class="mini__value">Recovery mode</div>
+        <div class="mini__label">Spec attiva</div>
+        <div class="mini__value">Hybrid Search</div>
         <p class="mini__text">
-          Versione semplificata e stabile della console Joker-C2 con preset visibile, query canonica e match del corpus.
+          Motore orientato a ricerca corpus + ricerca web + fusione risultati + coordinamento cognitivo. 2
         </p>
       </div>
     </aside>
@@ -494,13 +344,10 @@
     <main class="main">
       <div class="topbar">
         <div>
-          <div class="topbar__title">Joker-C2 Interface Console</div>
-          <div class="topbar__meta">Motore locale: corpus-core + corpus-alien-code</div>
+          <div class="topbar__title">Joker-C2 Research Console</div>
+          <div class="topbar__meta">IPR → Event Registry → Coordination Engine → UFO → Lambda</div>
         </div>
-
-        <div class="topbar__actions">
-          <button class="ghost-btn" id="clearBtn" type="button">Clear Chat</button>
-        </div>
+        <button class="ghost-btn" id="clearBtn" type="button">Clear Chat</button>
       </div>
 
       <section class="chat">
@@ -508,11 +355,11 @@
 
         <div class="composer-wrap">
           <form class="composer" id="chatForm">
-            <textarea id="prompt" placeholder="Scrivi un termine del corpus..." aria-label="Messaggio"></textarea>
+            <textarea id="prompt" placeholder="Scrivi una query tecnica..." aria-label="Messaggio"></textarea>
             <button class="btn" id="sendBtn" type="submit">Send</button>
           </form>
           <div class="hint">
-            Esempi: ipr, manuel, ipr-c, enterprise space, matrix europa, phiomega, codice madre, qt_l, unebdo, inrim.
+            Specifiche: motore di ricerca interno, ricerca web, RAG, Event Registry, Joker-C2 Coordination Engine, UFO Modules, Lambda Stability Layer. 
           </div>
         </div>
       </section>
@@ -525,160 +372,15 @@
     const messagesEl = document.getElementById("messages");
     const sendBtn = document.getElementById("sendBtn");
     const clearBtn = document.getElementById("clearBtn");
+    const quickButtons = Array.from(document.querySelectorAll("[data-query]"));
     const isMobile = window.matchMedia("(max-width: 920px)").matches;
-    const storageKey = "hbce-joker-c2-chat-session-recovery-v1";
+    const storageKey = "hbce-joker-c2-search-refactor-v1";
 
-    const initialMessage = {
-      text: "Interfaccia inizializzata. La modalità ricerca sul corpus locale è attiva.",
-      mode: "local-corpus-search",
-      domain: "general",
-      summary: "GENERAL",
-      confidence: "medium",
-      query_normalized: "init",
-      preset_title: "Research",
-      preset_description: "Ricerca generale sul corpus locale HBCE e layer alieno.",
-      matches: []
-    };
-
-    function createMatchChip(match) {
-      const chip = document.createElement("div");
-      chip.className = "match-chip";
-      chip.dataset.layer = match.layer || "";
-      chip.dataset.title = match.title || "";
-
-      const layer = document.createElement("span");
-      layer.className = "match-chip__layer";
-      layer.textContent = match.layer || "match";
-
-      const title = document.createElement("span");
-      title.className = "match-chip__title";
-      title.textContent = match.title || "voce";
-
-      chip.appendChild(layer);
-      chip.appendChild(title);
-      return chip;
-    }
-
-    function setConfidenceClass(el, value) {
-      el.classList.remove("is-medium", "is-low");
-      const normalized = String(value || "").toLowerCase();
-      if (normalized === "medium") el.classList.add("is-medium");
-      if (normalized === "low") el.classList.add("is-low");
-    }
-
-    function addAssistantMessage(payload, shouldSave = true) {
-      const data = {
-        text: payload.text || "",
-        mode: payload.mode || "",
-        domain: payload.domain || "",
-        summary: payload.summary || "",
-        confidence: payload.confidence || "",
-        query_normalized: payload.query_normalized || "",
-        preset_title: payload.preset_title || "",
-        preset_description: payload.preset_description || "",
-        matches: Array.isArray(payload.matches) ? payload.matches : []
-      };
-
-      const wrap = document.createElement("div");
-      wrap.className = "message";
-
-      const avatar = document.createElement("div");
-      avatar.className = "avatar";
-      avatar.textContent = "J";
-
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-
-      const header = document.createElement("div");
-      header.className = "bubble__header";
-
-      const mode = document.createElement("div");
-      mode.className = "bubble__mode";
-      mode.textContent = data.mode;
-
-      const domain = document.createElement("div");
-      domain.className = "bubble__domain";
-      domain.textContent = data.domain;
-
-      const summary = document.createElement("div");
-      summary.className = "bubble__summary";
-      summary.textContent = data.summary;
-
-      const confidence = document.createElement("div");
-      confidence.className = "bubble__confidence";
-      confidence.textContent = data.confidence;
-      setConfidenceClass(confidence, data.confidence);
-
-      const query = document.createElement("div");
-      query.className = "bubble__query";
-      query.textContent = data.query_normalized;
-
-      header.appendChild(mode);
-      header.appendChild(domain);
-      header.appendChild(summary);
-      header.appendChild(confidence);
-      header.appendChild(query);
-
-      const text = document.createElement("div");
-      text.className = "bubble__text";
-      text.textContent = data.text;
-
-      const preset = document.createElement("div");
-      preset.className = "bubble__preset";
-
-      const presetTitle = document.createElement("div");
-      presetTitle.className = "bubble__preset-title";
-      presetTitle.textContent = data.preset_title;
-
-      const presetDescription = document.createElement("div");
-      presetDescription.className = "bubble__preset-description";
-      presetDescription.textContent = data.preset_description;
-
-      preset.appendChild(presetTitle);
-      preset.appendChild(presetDescription);
-
-      bubble.appendChild(header);
-      bubble.appendChild(text);
-      bubble.appendChild(preset);
-
-      if (data.matches.length) {
-        const matchesWrap = document.createElement("div");
-        matchesWrap.className = "bubble__matches";
-
-        const matchesTitle = document.createElement("div");
-        matchesTitle.className = "bubble__matches-title";
-        matchesTitle.textContent = "Match del corpus";
-
-        const matchList = document.createElement("div");
-        matchList.className = "match-list";
-
-        data.matches.forEach((match) => {
-          matchList.appendChild(createMatchChip(match));
-        });
-
-        matchesWrap.appendChild(matchesTitle);
-        matchesWrap.appendChild(matchList);
-        bubble.appendChild(matchesWrap);
-      }
-
-      wrap.appendChild(avatar);
-      wrap.appendChild(bubble);
-      messagesEl.appendChild(wrap);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-
-      if (shouldSave) saveChat();
-
-      return {
-        textEl: text,
-        modeEl: mode,
-        domainEl: domain,
-        summaryEl: summary,
-        confidenceEl: confidence,
-        queryEl: query,
-        presetTitleEl: presetTitle,
-        presetDescriptionEl: presetDescription,
-        bubble
-      };
+    function createBadge(text, extraClass = "") {
+      const el = document.createElement("div");
+      el.className = `badge ${extraClass}`.trim();
+      el.textContent = text;
+      return el;
     }
 
     function addUserMessage(text, shouldSave = true) {
@@ -701,134 +403,120 @@
       if (shouldSave) saveChat();
     }
 
+    function addAssistantMessage(payload, shouldSave = true) {
+      const wrap = document.createElement("div");
+      wrap.className = "message";
+
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = "J";
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+
+      const badges = document.createElement("div");
+      badges.className = "badges";
+      badges.appendChild(createBadge(payload.mode || "mode", "mode"));
+      badges.appendChild(createBadge(payload.domain || "domain"));
+      badges.appendChild(createBadge(payload.summary || "summary", "summary"));
+      badges.appendChild(createBadge(payload.confidence || "low", (payload.confidence || "low").toLowerCase()));
+
+      const text = document.createElement("div");
+      text.textContent = payload.text || "";
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+
+      const metaTitle = document.createElement("div");
+      metaTitle.className = "meta__title";
+      metaTitle.textContent = payload.preset_title || "Preset";
+
+      const metaText = document.createElement("div");
+      metaText.className = "meta__text";
+      metaText.textContent =
+        `${payload.preset_description || ""}\nQuery: ${payload.query_normalized || ""}\nWeb: ${payload.web_provider || "none"}${payload.web_enabled ? " (live)" : " (fallback)"}`;
+
+      meta.appendChild(metaTitle);
+      meta.appendChild(metaText);
+
+      bubble.appendChild(badges);
+      bubble.appendChild(text);
+      bubble.appendChild(meta);
+
+      wrap.appendChild(avatar);
+      wrap.appendChild(bubble);
+      messagesEl.appendChild(wrap);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      if (shouldSave) saveChat();
+
+      return { wrap, bubble, text, badges, metaTitle, metaText };
+    }
+
     function saveChat() {
-      const items = Array.from(messagesEl.querySelectorAll(".message")).map((messageEl) => {
-        const isUser = messageEl.classList.contains("user");
-
-        if (isUser) {
-          return {
-            role: "user",
-            text: messageEl.querySelector(".bubble")?.textContent || ""
-          };
-        }
-
-        const matchEls = Array.from(messageEl.querySelectorAll(".match-chip"));
-
-        return {
-          role: "assistant",
-          text: messageEl.querySelector(".bubble__text")?.textContent || "",
-          mode: messageEl.querySelector(".bubble__mode")?.textContent || "",
-          domain: messageEl.querySelector(".bubble__domain")?.textContent || "",
-          summary: messageEl.querySelector(".bubble__summary")?.textContent || "",
-          confidence: messageEl.querySelector(".bubble__confidence")?.textContent || "",
-          query_normalized: messageEl.querySelector(".bubble__query")?.textContent || "",
-          preset_title: messageEl.querySelector(".bubble__preset-title")?.textContent || "",
-          preset_description: messageEl.querySelector(".bubble__preset-description")?.textContent || "",
-          matches: matchEls.map((el) => ({
-            layer: el.dataset.layer || "",
-            title: el.dataset.title || ""
-          }))
-        };
-      });
-
-      sessionStorage.setItem(storageKey, JSON.stringify(items));
+      const data = Array.from(messagesEl.children).map((node) => ({
+        html: node.innerHTML,
+        className: node.className
+      }));
+      sessionStorage.setItem(storageKey, JSON.stringify(data));
     }
 
     function loadChat() {
       const raw = sessionStorage.getItem(storageKey);
-
       if (!raw) {
-        addAssistantMessage(initialMessage, true);
+        addAssistantMessage({
+          mode: "hybrid-corpus-web-search",
+          domain: "general",
+          summary: "GENERAL",
+          confidence: "medium",
+          query_normalized: "init",
+          preset_title: "General Research",
+          preset_description: "Console inizializzata. Pipeline Joker-C2 pronta.",
+          web_provider: "none",
+          web_enabled: false,
+          text: "Interfaccia inizializzata. Joker-C2 è pronto per la ricerca ibrida."
+        }, true);
         return;
       }
 
       try {
         const items = JSON.parse(raw);
         messagesEl.innerHTML = "";
-
-        if (!Array.isArray(items) || !items.length) {
-          addAssistantMessage(initialMessage, true);
-          return;
-        }
-
         items.forEach((item) => {
-          if (!item || typeof item.text !== "string") return;
-
-          if (item.role === "user") {
-            addUserMessage(item.text, false);
-          } else {
-            addAssistantMessage({
-              text: item.text,
-              mode: item.mode || "",
-              domain: item.domain || "",
-              summary: item.summary || "",
-              confidence: item.confidence || "",
-              query_normalized: item.query_normalized || "",
-              preset_title: item.preset_title || "",
-              preset_description: item.preset_description || "",
-              matches: Array.isArray(item.matches) ? item.matches : []
-            }, false);
-          }
+          const div = document.createElement("div");
+          div.className = item.className;
+          div.innerHTML = item.html;
+          messagesEl.appendChild(div);
         });
-
-        saveChat();
       } catch (error) {
         messagesEl.innerHTML = "";
-        addAssistantMessage(initialMessage, true);
       }
     }
 
     function resetChat() {
       sessionStorage.removeItem(storageKey);
       messagesEl.innerHTML = "";
-      addAssistantMessage(initialMessage, true);
+      loadChat();
       promptInput.value = "";
       promptInput.focus();
     }
 
-    function summarizeLayer(domain, matches) {
-      if (domain === "hybrid") return "HYBRID";
-      if (domain === "alien-code") return "ALIEN";
-      if (domain === "hbce-core") return "CORE";
+    async function sendQuery(text) {
+      if (!text.trim()) return;
 
-      if (Array.isArray(matches) && matches.length) {
-        const layers = new Set(matches.map((m) => (m.layer || "").toLowerCase()));
-        if (layers.has("core") && layers.has("alien")) return "HYBRID";
-        if (layers.has("alien")) return "ALIEN";
-        if (layers.has("core")) return "CORE";
-      }
-
-      return "GENERAL";
-    }
-
-    promptInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !event.shiftKey && !isMobile) {
-        event.preventDefault();
-        form.requestSubmit();
-      }
-    });
-
-    clearBtn.addEventListener("click", resetChat);
-
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const text = promptInput.value.trim();
-      if (!text) return;
-
-      promptInput.value = "";
       addUserMessage(text, true);
 
       const pending = addAssistantMessage({
-        text: "Joker-C2 sta interrogando il corpus locale...",
         mode: "pending",
         domain: "search",
         summary: "SEARCH",
         confidence: "medium",
         query_normalized: text.trim().toLowerCase(),
-        preset_title: "Detecting preset",
-        preset_description: "Analisi del dominio di ricerca in corso.",
-        matches: []
+        preset_title: "Searching",
+        preset_description: "Analisi query e attivazione pipeline in corso.",
+        web_provider: "none",
+        web_enabled: false,
+        text: "Joker-C2 sta eseguendo la pipeline di ricerca..."
       }, true);
 
       sendBtn.disabled = true;
@@ -842,66 +530,78 @@
           body: JSON.stringify({ message: text })
         });
 
-        const data = await response.json();
+        const raw = await response.text();
+
+        let data;
+        try {
+          data = JSON.parse(raw);
+        } catch (parseError) {
+          throw new Error(raw || "Risposta non valida del server");
+        }
 
         if (!response.ok) {
           throw new Error(data.error || "Richiesta fallita");
         }
 
-        const matches = Array.isArray(data.matches) ? data.matches : [];
-        const summary = summarizeLayer(data.domain || "", matches);
+        pending.wrap.remove();
 
-        pending.textEl.textContent = data.reply || "Nessuna risposta.";
-        pending.modeEl.textContent = data.mode || "response";
-        pending.domainEl.textContent = data.domain || "general";
-        pending.summaryEl.textContent = summary;
-        pending.confidenceEl.textContent = data.confidence || "low";
-        setConfidenceClass(pending.confidenceEl, data.confidence || "low");
-        pending.queryEl.textContent = data.query_normalized || "";
-        pending.presetTitleEl.textContent = data.preset_title || "";
-        pending.presetDescriptionEl.textContent = data.preset_description || "";
-
-        const oldMatches = pending.bubble.querySelector(".bubble__matches");
-        if (oldMatches) oldMatches.remove();
-
-        if (matches.length) {
-          const matchesWrap = document.createElement("div");
-          matchesWrap.className = "bubble__matches";
-
-          const matchesTitle = document.createElement("div");
-          matchesTitle.className = "bubble__matches-title";
-          matchesTitle.textContent = "Match del corpus";
-
-          const matchList = document.createElement("div");
-          matchList.className = "match-list";
-
-          matches.forEach((match) => {
-            matchList.appendChild(createMatchChip(match));
-          });
-
-          matchesWrap.appendChild(matchesTitle);
-          matchesWrap.appendChild(matchList);
-          pending.bubble.appendChild(matchesWrap);
-        }
-
-        saveChat();
+        addAssistantMessage({
+          mode: data.mode || "hybrid-corpus-web-search",
+          domain: data.domain || "general",
+          summary: data.summary || "GENERAL",
+          confidence: data.confidence || "low",
+          query_normalized: data.query_normalized || "",
+          preset_title: data.preset_title || "Preset",
+          preset_description: data.preset_description || "",
+          web_provider: data.web_provider || "none",
+          web_enabled: Boolean(data.web_enabled),
+          text: data.reply || "Nessuna risposta."
+        }, true);
       } catch (error) {
-        pending.textEl.textContent = "Errore: " + error.message;
-        pending.modeEl.textContent = "error";
-        pending.domainEl.textContent = "failure";
-        pending.summaryEl.textContent = "ERROR";
-        pending.confidenceEl.textContent = "low";
-        setConfidenceClass(pending.confidenceEl, "low");
-        pending.queryEl.textContent = "";
-        pending.presetTitleEl.textContent = "Failure";
-        pending.presetDescriptionEl.textContent = "La richiesta non è stata completata correttamente.";
-        saveChat();
+        pending.wrap.remove();
+
+        addAssistantMessage({
+          mode: "error",
+          domain: "failure",
+          summary: "ERROR",
+          confidence: "low",
+          query_normalized: "",
+          preset_title: "Failure",
+          preset_description: "La pipeline Joker-C2 non ha completato correttamente la richiesta.",
+          web_provider: "none",
+          web_enabled: false,
+          text: `Errore: ${error.message}`
+        }, true);
       } finally {
         sendBtn.disabled = false;
         clearBtn.disabled = false;
         sendBtn.textContent = "Send";
         promptInput.focus();
       }
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const text = promptInput.value.trim();
+      if (!text) return;
+      promptInput.value = "";
+      await sendQuery(text);
+    });
+
+    promptInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey && !isMobile) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    clearBtn.addEventListener("click", resetChat);
+
+    quickButtons.forEach((button) => {
+      button.addEventListener("click", async () => {
+        const query = button.getAttribute("data-query") || "";
+        await sendQuery(query);
+      });
     });
 
     loadChat();
