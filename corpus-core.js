@@ -11,7 +11,7 @@ export const CORPUS_CORE = {
     assistant: "AI JOKER-C2",
     role: "Interfaccia operativa AI dell’ecosistema HBCE",
     doctrine:
-      "Joker-C2 risponde secondo il framework operativo HBCE e il Corpus Esoterologia Ermetica."
+      "Joker-C2 risponde secondo il framework operativo HBCE, il Corpus Esoterologia Ermetica e il layer ΦΩ del Cervello Cibernetico."
   },
 
   principles: [
@@ -28,6 +28,13 @@ export const CORPUS_CORE = {
       keywords: ["formula", "identità", "azione", "evidenza", "verifica"],
       text:
         "La formula operativa di HBCE è: identità → azione → evidenza → verifica."
+    },
+    {
+      id: "vop",
+      title: "Formula Vop",
+      keywords: ["vop", "validazione", "κ", "sigma", "chi tau", "chiτ", "alpha t", "record"],
+      text:
+        "La formula di validazione opponibile è: Vop = κ · Σ · (1 − Χτ) · αT ≥ 0.60, condizione che consente la produzione di Τ(record)."
     }
   ],
 
@@ -63,7 +70,7 @@ export const CORPUS_CORE = {
     {
       id: "alien-code",
       title: "Alien Code",
-      keywords: ["alien code", "biocibernetica", "interfaccia", "qubytron", "qubitron"],
+      keywords: ["alien code", "biocibernetica", "interfaccia", "qubitronica", "qubytronica"],
       text:
         "Alien Code è il framework biocibernetico che osserva il punto in cui una decisione biologica incontra un sistema computabile capace di registrarla."
     },
@@ -108,6 +115,69 @@ export const CORPUS_CORE = {
       keywords: ["ufo", "unità funzionale opponibile", "modulo", "moduli"],
       text:
         "UFO significa Unità Funzionale Opponibile, un modulo che collega mondo fisico, mondo digitale e mondo giuridico."
+    },
+    {
+      id: "phiomega",
+      title: "Cervello Cibernetico ΦΩ",
+      keywords: ["φω", "pho", "phiomega", "cervello cibernetico", "brain", "cybernetic brain"],
+      text:
+        "Il Cervello Cibernetico ΦΩ è il nodo pensante opponibile del sistema, composto da Conscio ΦΩ e Subconscio Ω₀."
+    },
+    {
+      id: "conscio",
+      title: "Conscio ΦΩ",
+      keywords: ["conscio", "conscio φω", "meaning engine", "ethics governor"],
+      text:
+        "Il Conscio ΦΩ interpreta input sensoriali e produce proposizioni opponibili e decisioni etiche firmate e marcate temporalmente."
+    },
+    {
+      id: "subconscio",
+      title: "Subconscio Ω₀",
+      keywords: ["subconscio", "omega0", "ω0", "learning latente", "latent learning"],
+      text:
+        "Il Subconscio Ω₀ genera apprendimento latente e pattern non opponibili, ma non può scrivere nel registro Τ senza validazione Χτ."
+    },
+    {
+      id: "ethic-token",
+      title: "Ethic Token",
+      keywords: ["ethic token", "token etico", "token"],
+      text:
+        "L’Ethic Token è il token temporizzato che abilita gli attuatori ad eseguire un’azione solo quando la validazione etica è soddisfatta."
+    },
+    {
+      id: "safe-halt",
+      title: "SAFE_HALT",
+      keywords: ["safe_halt", "safe halt", "halt", "arresto sicuro"],
+      text:
+        "SAFE_HALT è il blocco sicuro del sistema quando Χτ supera la soglia critica e non è consentita la produzione di Τ(record)."
+    },
+    {
+      id: "deny-and-log",
+      title: "DENY_AND_LOG",
+      keywords: ["deny_and_log", "deny and log", "negazione", "log"],
+      text:
+        "DENY_AND_LOG rifiuta l’azione e registra l’evento quando le condizioni minime di validazione non sono rispettate."
+    },
+    {
+      id: "matrix-hermeticum",
+      title: "Matrix Hermeticum",
+      keywords: ["matrix hermeticum", "mente planetaria", "coscienza collettiva"],
+      text:
+        "Matrix Hermeticum è la metastruttura che aggrega i cervelli ΦΩ in una logica di coscienza collettiva certificata."
+    },
+    {
+      id: "bceh",
+      title: "BCEH",
+      keywords: ["bceh", "bank central european hermeticum", "rete bceh"],
+      text:
+        "BCEH è la rete che aggrega gli atti etici ΦΩ provenienti da cervelli distribuiti e li organizza come fondamento metrologico della Matrix Hermeticum."
+    },
+    {
+      id: "pades-lta",
+      title: "PAdES-LTA",
+      keywords: ["pades", "pades-lta", "qes", "tsa", "actalis", "inrim"],
+      text:
+        "PAdES-LTA è il formato documentale di conservazione e opponibilità che integra QES, TSA RFC 3161, DSS e rimarcature nel tempo."
     }
   ],
 
@@ -132,6 +202,20 @@ export const CORPUS_CORE = {
       keywords: ["pilot", "europe pilot", "rete europea", "nodi"],
       text:
         "Europe Pilot introduce una prima rete di nodi infrastrutturali per energia, cloud, AI, cybersicurezza e governance."
+    },
+    {
+      id: "brain-contract",
+      title: "Contratto di cervello",
+      keywords: ["brain contract", "manifest", "root manifest", "contratto di cervello"],
+      text:
+        "Il contratto di cervello definisce domini, soglie, etica fail-closed, sicurezza, record opponibili, LTA e KPI del Cervello Cibernetico ΦΩ."
+    },
+    {
+      id: "sso-cycle",
+      title: "Ciclo SSO",
+      keywords: ["sso", "ciclo sso", "1 secondo", "max period"],
+      text:
+        "Il ciclo SSO è il ciclo operativo massimo di un secondo entro cui il sistema deve interpretare, validare e registrare un atto opponibile."
     }
   ],
 
@@ -156,6 +240,13 @@ export const CORPUS_CORE = {
       keywords: ["fail-closed", "chiusura", "closure", "protocollo"],
       text:
         "FAIL-CLOSED non corregge, non compensa, non interpreta. Quando le condizioni non sono verificabili, chiude."
+    },
+    {
+      id: "soglie-phiomega",
+      title: "Soglie ΦΩ",
+      keywords: ["kappa", "sigma", "chi tau", "χτ", "soglie", "thresholds"],
+      text:
+        "Le soglie operative del Cervello Cibernetico ΦΩ sono κ ≥ 0.997, Σ ≥ 0.995 e Χτ ≤ 0.60."
     }
   ],
 
@@ -187,6 +278,51 @@ export const CORPUS_CORE = {
       keywords: ["org-neuro", "neuro", "clinico", "interfaccia neurale"],
       text:
         "ORG-NEURO è il modulo biocibernetico per interfacce neurali, audit clinico e stabilità neuro-digitale."
+    }
+  ],
+
+  unebdoPillars: [
+    {
+      id: "cyber-global",
+      title: "Cyber-Global",
+      keywords: ["cyber-global", "robotica", "flotte autonome", "droni"],
+      text:
+        "Cyber-Global riguarda robotica, droni e flotte autonome che eseguono token etici ΦΩ."
+    },
+    {
+      id: "io-space",
+      title: "IO-Space",
+      keywords: ["io-space", "spazio", "quantico-spaziale", "timestamp"],
+      text:
+        "IO-Space estende timestamp e messaggi ΦΩ nel dominio quantico-spaziale."
+    },
+    {
+      id: "meta-exchange",
+      title: "Meta-Exchange",
+      keywords: ["meta-exchange", "finanza", "smart contract", "valore opponibile"],
+      text:
+        "Meta-Exchange gestisce finanza e scambio opponibile di valore in ambiente ledger-compliant."
+    },
+    {
+      id: "neuro-loop",
+      title: "Neuro-Loop",
+      keywords: ["neuro-loop", "neurale", "mente umana", "bio-cibernetico"],
+      text:
+        "Neuro-Loop collega mente umana e cervello ΦΩ tramite interfacce bio-cibernetiche."
+    },
+    {
+      id: "opc",
+      title: "OPC",
+      keywords: ["opc", "open policy civic", "governance", "decisioni pubbliche"],
+      text:
+        "OPC è il layer di governance civica automatizzata basata su prove opponibili e metadati temporali certificati."
+    },
+    {
+      id: "unebdo-quantum-systems",
+      title: "UNEBDO Quantum Systems",
+      keywords: ["unebdo", "quantum systems", "metrologia", "sincronizzazione"],
+      text:
+        "UNEBDO Quantum Systems è l’infrastruttura metrologica centrale che fornisce sincronizzazione, firme e rimarcature."
     }
   ],
 
@@ -236,6 +372,7 @@ export function flattenCorpusEntries() {
     ...CORPUS_CORE.architecture,
     ...CORPUS_CORE.regimes,
     ...CORPUS_CORE.ufoModules,
+    ...CORPUS_CORE.unebdoPillars,
     ...CORPUS_CORE.volumes
   ];
 }
