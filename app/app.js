@@ -1,97 +1,101 @@
-import { buildRequest } from "../lib/request-builder.js";
-import { sendRequest } from "../lib/joker-core-client.js";
-import { buildResponse } from "../lib/response-builder.js";
-import { updateRuntimeStatus } from "./runtime-status.js";
-import { inspectSession } from "./session-viewer.js";
+async function sendRequest(message) {
 
-const textarea = document.querySelector("textarea");
-const sendButton = document.querySelector(".btn--primary");
-const chatContainer = document.querySelector(".chat");
+  const modelSelector = document.getElementById("model-selector");
+  const preferredModel = modelSelector ? modelSelector.value : "openai";
 
-function appendMessage(author, label, body, meta = "") {
-  const article = document.createElement("article");
-  article.className = "message";
+  const payload = {
+    model_preferences: {
+      preferred_model: preferredModel
+    },
+    request: {
+      payload: {
+        message: message
+      }
+    }
+  };
 
-  article.innerHTML = `
-    <div class="message__avatar">${label}</div>
-    <div class="message__bubble">
-      <div class="message__meta">
-        <span class="message__author">${author}</span>
-        <span>${meta || new Date().toLocaleString()}</span>
-      </div>
-      <div class="message__body">
-        <p>${body}</p>
-      </div>
-    </div>
-  `;
+  try {
 
-  chatContainer.appendChild(article);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
+    const response = await fetch("/api/joker-c2/execute", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    appendMessage("JOKER-C2", data.output || JSON.stringify(data));
+
+  } catch (err) {
+
+    appendMessage("SYSTEM", "Execution error: " + err.message);
+
+  }
 }
 
-function formatRuntimeMeta(runtimeResult, response) {
-  const parts = [`status: ${response.status}`];
+function appendMessage(author, text) {
 
-  if (runtimeResult.identity?.ipr_id) {
-    parts.push(`ipr: ${runtimeResult.identity.ipr_id}`);
-  }
+  const chat = document.querySelector(".chat");
 
-  if (runtimeResult.identity?.baseline_event) {
-    parts.push(`baseline: ${runtimeResult.identity.baseline_event}`);
-  }
+  const wrapper = document.createElement("article");
+  wrapper.className = "message";
 
-  if (runtimeResult.session_id) {
-    parts.push(`session: ${runtimeResult.session_id}`);
-  }
+  const avatar = document.createElement("div");
+  avatar.className = "message__avatar";
+  avatar.innerText = author.substring(0,4);
 
-  if (runtimeResult.registry?.registry_ref) {
-    parts.push(`registry: ${runtimeResult.registry.registry_ref}`);
-  }
+  const bubble = document.createElement("div");
+  bubble.className = "message__bubble";
 
-  if (runtimeResult.evidence?.evidence_id) {
-    parts.push(`evidence: ${runtimeResult.evidence.evidence_id}`);
-  }
+  const meta = document.createElement("div");
+  meta.className = "message__meta";
 
-  if (response.reason) {
-    parts.push(`reason: ${response.reason}`);
-  }
+  const authorNode = document.createElement("span");
+  authorNode.className = "message__author";
+  authorNode.innerText = author;
 
-  return parts.join(" · ");
+  meta.appendChild(authorNode);
+
+  const body = document.createElement("div");
+  body.className = "message__body";
+  body.innerText = text;
+
+  bubble.appendChild(meta);
+  bubble.appendChild(body);
+
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(bubble);
+
+  chat.appendChild(wrapper);
+
+  chat.scrollTop = chat.scrollHeight;
 }
 
-async function handleSend() {
-  const userInput = textarea.value.trim();
+function initComposer() {
 
-  if (!userInput) {
-    return;
-  }
+  const textarea = document.querySelector("textarea");
+  const sendBtn = document.querySelector(".btn--primary");
 
-  appendMessage("Operator", "USER", userInput, "request submitted");
-  textarea.value = "";
+  if (!textarea || !sendBtn) return;
 
-  const structuredRequest = buildRequest(userInput);
-  const runtimeResult = await sendRequest(structuredRequest);
-  const response = buildResponse(runtimeResult);
+  sendBtn.addEventListener("click", () => {
 
-  updateRuntimeStatus(runtimeResult);
+    const message = textarea.value.trim();
 
-  if (runtimeResult.session_id) {
-    inspectSession(runtimeResult.session_id);
-  }
+    if (!message) return;
 
-  appendMessage(
-    "AI JOKER-C2",
-    "J-C2",
-    response.message,
-    formatRuntimeMeta(runtimeResult, response)
-  );
+    appendMessage("USER", message);
+
+    textarea.value = "";
+
+    sendRequest(message);
+
+  });
+
 }
 
-sendButton.addEventListener("click", handleSend);
-
-textarea.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && !event.shiftKey) {
-    event.preventDefault();
-    handleSend();
-  }
+document.addEventListener("DOMContentLoaded", () => {
+  initComposer();
 });
