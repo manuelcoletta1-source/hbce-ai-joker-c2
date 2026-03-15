@@ -2,6 +2,7 @@ import { evaluateRequest } from "./governance-engine.js";
 import { createEvidence } from "./evidence-engine.js";
 import { buildStateFlow } from "./state-engine.js";
 import { generateModelResponse } from "./llm-bridge.js";
+import { appendToRegistry } from "./registry-bridge.js";
 
 export async function executeJoker(payload) {
 
@@ -10,14 +11,17 @@ export async function executeJoker(payload) {
   const state = buildStateFlow(payload, decision);
 
   if (decision.status === "DENY") {
+
     const evidence = createEvidence(payload, decision);
+    const registryEntry = appendToRegistry(evidence);
 
     return {
       status: decision.status,
       reason: decision.reason || null,
       output: null,
       state: state,
-      evidence: evidence
+      evidence: evidence,
+      registry: registryEntry
     };
   }
 
@@ -35,7 +39,10 @@ export async function executeJoker(payload) {
         };
 
   const finalState = buildStateFlow(payload, finalDecision);
+
   const evidence = createEvidence(payload, finalDecision);
+
+  const registryEntry = appendToRegistry(evidence);
 
   return {
     status: finalDecision.status,
@@ -43,6 +50,7 @@ export async function executeJoker(payload) {
     output: finalDecision.output || null,
     state: finalState,
     evidence: evidence,
+    registry: registryEntry,
     model: modelResult.model || null
   };
 
