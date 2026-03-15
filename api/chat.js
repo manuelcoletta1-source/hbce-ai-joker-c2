@@ -1,153 +1,231 @@
-import { CORPUS_CORE, searchCorpusEntries } from "./corpus-core.js";
-import { ALIEN_CODE_CORE, searchAlienCodeEntries } from "./corpus-alien-code.js";
-import { normalizeQuery, isGreeting, isHelp } from "./query-utils.js";
-import { detectDomain, detectConfidence, formatMatches } from "./response-utils.js";
-import { detectPreset } from "./session-presets.js";
-import { getCorpusMapSummary } from "./corpus-map.js";
-import { buildInterfaceState } from "./interface-state.js";
-import { mergeUniqueMatches } from "./match-utils.js";
-import { runWebSearch } from "./web-search.js";
+import { detectSearchPreset, JOKER_SEARCH_SPEC } from "./search-spec.js";
 
-function buildIntro() {
-  return {
-    ok: true,
-    mode: "hybrid-corpus-web-search",
-    source: "hbce-corpus-core + alien-code-core + web-search"
-  };
+function normalizeQuery(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
 }
 
-function summarizeLayer(domain, matches, webResults) {
-  if (Array.isArray(webResults) && webResults.length > 0 && (!matches || !matches.length)) {
-    return "WEB";
+function buildCorpus() {
+  return [
+    {
+      id: "core-001",
+      layer: "core",
+      title: "IPR — Identity Primary Record",
+      keywords: ["ipr", "identity primary record", "identità operativa", "event registry"],
+      text:
+        "IPR è il protocollo di identità operativa persistente progettato per associare azioni digitali a entità verificabili, registrare eventi e consentire verifica cronologica e auditabilità."
+    },
+    {
+      id: "core-002",
+      layer: "core",
+      title: "Joker-C2 Coordination Engine",
+      keywords: ["joker-c2", "coordination engine", "correlazione", "orchestrazione"],
+      text:
+        "Joker-C2 Coordination Engine è il motore di correlazione e orchestrazione. Le sue funzioni principali sono la correlazione eventi multi-infrastruttura, l’analisi anomalie e il coordinamento operativo."
+    },
+    {
+      id: "core-003",
+      layer: "core",
+      title: "Matrix Europa",
+      keywords: ["matrix europa", "nodi", "europa", "torino", "bruxelles"],
+      text:
+        "Matrix Europa descrive una rete di nodi tecnologici distribuiti sul territorio europeo, coordinati da sistemi di analisi cognitiva e collegati a infrastrutture digitali condivise."
+    },
+    {
+      id: "core-004",
+      layer: "core",
+      title: "Pipeline Joker-C2",
+      keywords: ["pipeline", "rag", "ricerca", "query", "web"],
+      text:
+        "La pipeline operativa Joker-C2 segue una sequenza deterministica: query utente, analisi linguistica, ricerca corpus, ricerca web, fusione risultati, ragionamento AI, risposta."
+    },
+    {
+      id: "ufo-001",
+      layer: "ufo",
+      title: "UFO Modules",
+      keywords: ["ufo", "unità funzionale opponibile", "opponibile", "moduli"],
+      text:
+        "I moduli UFO sono unità funzionali opponibili che collegano mondo fisico, mondo digitale e mondo legale. Rendono un processo misurabile, verificabile, auditabile, certificabile e opponibile nel tempo."
+    },
+    {
+      id: "ufo-002",
+      layer: "ufo",
+      title: "Lambda Stability Layer",
+      keywords: ["lambda", "stability", "stabilità", "collimazione"],
+      text:
+        "La metrica Lambda rappresenta lo stato di equilibrio di un sistema complesso. Quando Lambda esce dalla finestra operativa, Joker-C2 attiva meccanismi di collimazione e stabilizzazione."
+    },
+    {
+      id: "origin-001",
+      layer: "origin",
+      title: "Torino Technical Hub",
+      keywords: ["torino", "hub tecnico", "laboratorio", "pilot"],
+      text:
+        "Torino è il nodo tecnico ideale del progetto Joker-C2 grazie a robotica, aerospazio, AI, modellazione di sistemi complessi e test dei moduli opponibili."
+    },
+    {
+      id: "origin-002",
+      layer: "origin",
+      title: "Bruxelles Strategic Coordination",
+      keywords: ["bruxelles", "commissione", "coordinamento", "europa"],
+      text:
+        "Bruxelles è l’hub istituzionale per il coordinamento europeo, l’integrazione normativa e la governance transnazionale dell’architettura Joker-C2."
+    }
+  ];
+}
+
+async function runWebSearch(query) {
+  const normalized = normalizeQuery(query);
+
+  if (!normalized) {
+    return {
+      provider: "none",
+      enabled: false,
+      results: []
+    };
   }
 
-  if (domain === "hybrid") return "HYBRID";
-  if (domain === "alien-code") return "ALIEN";
-  if (domain === "hbce-core") return "CORE";
-
-  if (Array.isArray(matches) && matches.length) {
-    const layers = new Set(matches.map((item) => item.layer));
-    if (layers.has("core") && layers.has("alien")) return "HYBRID";
-    if (layers.has("alien")) return "ALIEN";
-    if (layers.has("core")) return "CORE";
+  if (!process.env.TAVILY_API_KEY) {
+    return {
+      provider: "mock-web",
+      enabled: false,
+      results: [
+        {
+          title: `Mock result for "${normalized}"`,
+          snippet: "Web layer non ancora configurato. Aggiungere una API key reale per attivare la ricerca Internet.",
+          url: "https://example.com/mock-web-result"
+        }
+      ]
+    };
   }
 
+  try {
+    const response = await fetch("https://api.tavily.com/search", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        api_key: process.env.TAVILY_API_KEY,
+        query: normalized,
+        search_depth: "advanced",
+        include_answer: false,
+        include_images: false,
+        max_results: 3
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Web provider failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    const results = Array.isArray(data.results)
+      ? data.results.map((item) => ({
+          title: String(item.title || "").trim(),
+          snippet: String(item.content || "").trim(),
+          url: String(item.url || "").trim()
+        }))
+      : [];
+
+    return {
+      provider: "tavily",
+      enabled: true,
+      results
+    };
+  } catch (error) {
+    return {
+      provider: "tavily",
+      enabled: true,
+      error: error.message,
+      results: []
+    };
+  }
+}
+
+function scoreEntry(query, entry) {
+  const q = normalizeQuery(query);
+  const title = normalizeQuery(entry.title);
+  const text = normalizeQuery(entry.text);
+  const keywords = Array.isArray(entry.keywords)
+    ? entry.keywords.map((item) => normalizeQuery(item))
+    : [];
+
+  let score = 0;
+
+  if (title.includes(q) && q) score += 5;
+  if (keywords.includes(q) && q) score += 5;
+
+  const tokens = q.split(" ").filter(Boolean);
+
+  for (const token of tokens) {
+    if (title.includes(token)) score += 3;
+    if (text.includes(token)) score += 2;
+    if (keywords.some((keyword) => keyword.includes(token))) score += 2;
+  }
+
+  return score;
+}
+
+function searchCorpus(query) {
+  const corpus = buildCorpus();
+
+  return corpus
+    .map((entry) => ({
+      ...entry,
+      score: scoreEntry(query, entry)
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+}
+
+function buildSummary(matches, webResults) {
+  if (matches.length && webResults.length) return "HYBRID";
+  if (matches.length) return "CORE";
+  if (webResults.length) return "WEB";
   return "GENERAL";
 }
 
-function rankCombinedResults(query) {
-  const coreMatches = searchCorpusEntries(query).map((entry) => ({
-    layer: "core",
-    entry
-  }));
-
-  const alienMatches = searchAlienCodeEntries(query).map((entry) => ({
-    layer: "alien",
-    entry
-  }));
-
-  return mergeUniqueMatches(coreMatches, alienMatches, 5);
+function buildConfidence(matches, webResults) {
+  if (matches.length >= 3) return "high";
+  if (matches.length >= 1 || webResults.length >= 1) return "medium";
+  return "low";
 }
 
-function formatWebResults(results = []) {
-  return results.slice(0, 3).map((item) => ({
-    title: item.title || "Untitled result",
-    snippet: item.snippet || "",
-    url: item.url || "",
-    source: item.source || "web"
-  }));
-}
+function buildReply(query, preset, matches, webResults) {
+  const q = normalizeQuery(query);
 
-function buildReplyFromMatches(query, matches, webPayload) {
-  if (isGreeting(query)) {
-    return {
-      reply: "Joker-C2 operativo. Modalità ibrida attiva. Corpus locale e layer web caricati correttamente.",
-      matches: [],
-      web_results: []
-    };
+  if (q === "ciao") {
+    return "Joker-C2 online. Modalità di ricerca ibrida attiva. Corpus locale e pipeline di ricerca inizializzati.";
   }
 
-  if (isHelp(query)) {
-    return {
-      reply:
-        "Parole chiave disponibili: ipr, hbce, joker, manuel, ipr-b, ipr-c, matrix europa, enterprise space, event registry, lambda, ufo, phiomega, ethic token, safe halt, deny and log, codice madre, esper-simento, psi, lambda fenomenica, kappa, sigma, tau, omega, pi star, xiomega, qt_d, qt_l, unebdo, inrim.",
-      matches: [],
-      web_results: []
-    };
+  if (!matches.length && !webResults.length) {
+    return "Joker-C2 non ha trovato corrispondenze né nel corpus locale né nel layer web. Riformula la query con termini più tecnici.";
   }
 
-  const webResults = formatWebResults(webPayload?.results || []);
+  const lines = [];
+  lines.push(`Preset attivo: ${preset.title}.`);
 
-  if (!matches.length && webResults.length) {
-    const first = webResults[0];
-
-    const lines = [
-      "Joker-C2 non ha trovato un allineamento forte nel corpus locale, quindi ha aperto il layer web.",
-      "",
-      `Risultato principale: ${first.title}`,
-      first.snippet ? `Sintesi: ${first.snippet}` : "",
-      first.url ? `URL: ${first.url}` : ""
-    ].filter(Boolean);
-
-    return {
-      reply: lines.join("\n"),
-      matches: [],
-      web_results: webResults
-    };
-  }
-
-  if (!matches.length) {
-    return {
-      reply:
-        "Joker-C2 ha ricevuto il messaggio, ma non ha trovato un allineamento forte nel corpus locale e il layer web non ha restituito risultati utili.",
-      matches: [],
-      web_results: webResults
-    };
-  }
-
-  if (matches.length === 1) {
-    const replyParts = [matches[0].entry.text];
-
-    if (webResults.length) {
-      replyParts.push("");
-      replyParts.push("Segnali dal layer web:");
-      webResults.forEach((item) => {
-        replyParts.push(`- ${item.title}: ${item.snippet}`);
-      });
-    }
-
-    return {
-      reply: replyParts.join("\n"),
-      matches: formatMatches([matches[0]]),
-      web_results: webResults
-    };
-  }
-
-  const primary = matches[0];
-  const secondary = matches.slice(1, 3);
-  const replyParts = [primary.entry.text];
-
-  if (secondary.length) {
-    replyParts.push("");
-    replyParts.push("Raccordi utili nel corpus:");
-    for (const item of secondary) {
-      replyParts.push(`- ${item.entry.title}: ${item.entry.text}`);
-    }
-  }
-
-  if (webResults.length) {
-    replyParts.push("");
-    replyParts.push("Segnali dal layer web:");
-    webResults.forEach((item) => {
-      replyParts.push(`- ${item.title}: ${item.snippet}`);
+  if (matches.length) {
+    lines.push("");
+    lines.push("Risultati corpus:");
+    matches.slice(0, 3).forEach((item) => {
+      lines.push(`- ${item.title}: ${item.text}`);
     });
   }
 
-  return {
-    reply: replyParts.join("\n"),
-    matches: formatMatches(matches),
-    web_results: webResults
-  };
+  if (webResults.length) {
+    lines.push("");
+    lines.push("Segnali layer web:");
+    webResults.slice(0, 2).forEach((item) => {
+      lines.push(`- ${item.title}: ${item.snippet}`);
+    });
+  }
+
+  return lines.join("\n");
 }
 
 export default async function handler(req, res) {
@@ -161,51 +239,58 @@ export default async function handler(req, res) {
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const originalMessage = String(body?.message || "").trim();
-    const normalizedMessage = normalizeQuery(originalMessage);
+    const query = normalizeQuery(originalMessage);
 
-    if (!normalizedMessage) {
+    if (!query) {
       return res.status(400).json({
         ok: false,
         error: "Messaggio mancante"
       });
     }
 
-    const matches = rankCombinedResults(normalizedMessage);
-    const preset = detectPreset(normalizedMessage);
-    const domain = detectDomain(matches);
-    const confidence = detectConfidence(normalizedMessage, matches);
-    const webPayload = await runWebSearch(normalizedMessage);
-    const summary = summarizeLayer(domain, matches, webPayload.results || []);
-    const corpusMap = getCorpusMapSummary();
-    const result = buildReplyFromMatches(normalizedMessage, matches, webPayload);
+    const preset = detectSearchPreset(query);
+    const corpusMatches = searchCorpus(query);
+    const webPayload = await runWebSearch(query);
+    const webResults = Array.isArray(webPayload.results) ? webPayload.results : [];
+
+    const summary = buildSummary(corpusMatches, webResults);
+    const confidence = buildConfidence(corpusMatches, webResults);
+    const reply = buildReply(query, preset, corpusMatches, webResults);
 
     return res.status(200).json({
-      ...buildIntro(),
-      ...buildInterfaceState({
-        mode: "hybrid-corpus-web-search",
-        domain,
-        summary,
-        confidence,
-        query_normalized: normalizedMessage,
-        preset: preset.id,
-        preset_title: preset.title,
-        preset_description: preset.description,
-        corpus_map: corpusMap
-      }),
-      assistant: CORPUS_CORE.identity.assistant,
-      doctrine: CORPUS_CORE.identity.doctrine,
-      alien_mode: ALIEN_CODE_CORE.meta.mode,
+      ok: true,
+      mode: JOKER_SEARCH_SPEC.mode,
+      domain: preset.id,
+      summary,
+      confidence,
+      query_normalized: query,
+      preset: preset.id,
+      preset_title: preset.title,
+      preset_description: preset.description,
+      search_pipeline: JOKER_SEARCH_SPEC.architecture.pipeline,
+      architecture_layers: JOKER_SEARCH_SPEC.architecture.layers,
+      corpus_map: {
+        core_count: buildCorpus().filter((item) => item.layer === "core").length,
+        ufo_count: buildCorpus().filter((item) => item.layer === "ufo").length,
+        origin_count: buildCorpus().filter((item) => item.layer === "origin").length
+      },
       web_provider: webPayload.provider || "none",
       web_enabled: Boolean(webPayload.enabled),
       web_error: webPayload.error || "",
-      reply: result.reply,
-      matches: result.matches,
-      web_results: result.web_results
+      matches: corpusMatches.map((item) => ({
+        id: item.id,
+        layer: item.layer,
+        title: item.title,
+        score: item.score
+      })),
+      web_results: webResults,
+      reply
     });
   } catch (error) {
     return res.status(500).json({
       ok: false,
-      error: "Errore nella richiesta"
+      error: "Errore nella richiesta",
+      detail: error.message
     });
   }
 }
