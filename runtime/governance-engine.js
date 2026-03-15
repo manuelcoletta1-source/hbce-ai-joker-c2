@@ -1,23 +1,22 @@
+import { evaluatePolicy } from "./policy-engine.js";
+
 export async function evaluateRequest(payload) {
 
-  if (!payload.subject) {
-    return {
-      status: "DENY",
-      reason: "missing_subject"
-    };
-  }
+  const policyResult = evaluatePolicy(payload);
 
-  if (payload.subject !== "IPR-AI-0001") {
+  if (policyResult.status === "DENY") {
     return {
       status: "DENY",
-      reason: "invalid_identity_binding"
+      reason: policyResult.reason || "policy_denied",
+      policy: policyResult.policy || null
     };
   }
 
   if (!payload.request) {
     return {
       status: "DENY",
-      reason: "missing_request"
+      reason: "missing_request",
+      policy: policyResult.policy || null
     };
   }
 
@@ -29,7 +28,8 @@ export async function evaluateRequest(payload) {
   if (!text || text.trim().length === 0) {
     return {
       status: "DENY",
-      reason: "empty_request"
+      reason: "empty_request",
+      policy: policyResult.policy || null
     };
   }
 
@@ -49,24 +49,15 @@ export async function evaluateRequest(payload) {
   if (matchedDeniedPattern) {
     return {
       status: "DENY",
-      reason: "policy_denied",
-      evidence: {
-        decision: "DENY",
-        timestamp: new Date().toISOString(),
-        subject: payload.subject,
-        rule: matchedDeniedPattern
-      }
+      reason: "governance_denied",
+      policy: policyResult.policy || null,
+      rule: matchedDeniedPattern
     };
   }
 
   return {
     status: "ALLOW",
-    output: `JOKER-C2 accepted the request: ${text}`,
-    evidence: {
-      decision: "ALLOW",
-      timestamp: new Date().toISOString(),
-      subject: payload.subject
-    }
+    policy: policyResult.policy || "HBCE_BASE_POLICY"
   };
 
 }
