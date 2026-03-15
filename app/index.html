@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI JOKER-C2</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #111821;
+      --panel-2: #16202b;
+      --line: rgba(255, 255, 255, 0.08);
+      --text: #e8eef7;
+      --muted: #91a0b3;
+      --accent: #7dd3fc;
+      --accent-2: #60a5fa;
+      --danger: #f87171;
+      --ok: #34d399;
+      --warn: #fbbf24;
+      --radius: 18px;
+      --max: 1280px;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background:
+        radial-gradient(circle at top left, rgba(96, 165, 250, 0.10), transparent 32%),
+        radial-gradient(circle at top right, rgba(125, 211, 252, 0.10), transparent 28%),
+        linear-gradient(180deg, #0b0f14 0%, #0a1017 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .shell {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 20px;
+    }
+
+    .sidebar,
+    .main-panel,
+    .status-panel,
+    .composer {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand__kicker {
+      color: var(--accent);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .brand__title {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .brand__sub {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .sidebar-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sidebar-section__title {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav-card,
+    .session-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+    }
+
+    .nav-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-card__label {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .nav-card__meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .session-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .session-card__title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .session-card__meta {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .content {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 20px;
+      min-width: 0;
+    }
+
+    .status-panel {
+      padding: 16px 18px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .status-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .status-card__label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .status-card__value {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+    }
+
+    .pill--ok {
+      color: var(--ok);
+    }
+
+    .pill--warn {
+      color: var(--warn);
+    }
+
+    .pill--deny {
+      color: var(--danger);
+    }
+
+    .main-panel {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-height: 560px;
+    }
+
+    .hero {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero__title {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin: 0;
+    }
+
+    .hero__lead {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      max-width: 860px;
+      margin: 0;
+    }
+
+    .chat {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .message {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .message__avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, var(--panel-2), var(--panel));
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .message__bubble {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px 18px;
+    }
+
+    .message__meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .message__author {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .message__body {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    .message__body p {
+      margin: 0 0 12px 0;
+    }
+
+    .message__body p:last-child {
+      margin-bottom: 0;
+    }
+
+    .composer {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .composer__top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .composer__title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .composer__meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .composer textarea {
+      width: 100%;
+      min-height: 130px;
+      resize: vertical;
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      font: inherit;
+      line-height: 1.6;
+      outline: none;
+    }
+
+    .composer textarea::placeholder {
+      color: var(--muted);
+    }
+
+    .composer__actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .composer__hint {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn--primary {
+      background: linear-gradient(180deg, rgba(125, 211, 252, 0.18), rgba(96, 165, 250, 0.12));
+      border-color: rgba(125, 211, 252, 0.35);
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 1080px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .status-panel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .status-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .message {
+        grid-template-columns: 1fr;
+      }
+
+      .message__avatar {
+        width: 40px;
+        height: 40px;
+      }
+
+      .hero__title {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__kicker">HBCE Application Layer</div>
+        <div class="brand__title">AI JOKER-C2</div>
+        <div class="brand__sub">
+          Identity-bound operational AI interface connected to the HBCE infrastructure.
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section__title">Navigation</div>
+        <div class="nav-card">
+          <div>
+            <div class="nav-card__label">Chat</div>
+            <div class="nav-card__meta">Conversational interface</div>
+          </div>
+          <span class="pill pill--ok">Active</span>
+        </div>
+        <div class="nav-card">
+          <div>
+            <div class="nav-card__label">Identity</div>
+            <div class="nav-card__meta">IPR binding status</div>
+          </div>
+          <span class="pill pill--warn">Bound</span>
+        </div>
+        <div class="nav-card">
+          <div>
+            <div class="nav-card__label">Evidence</div>
+            <div class="nav-card__meta">Operational traceability</div>
+          </div>
+          <span class="pill">Ready</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section__title">Sessions</div>
+        <div class="session-list">
+          <div class="session-card">
+            <div class="session-card__title">Session 0001</div>
+            <div class="session-card__meta">Identity-bound session initialized under HBCE governance.</div>
+          </div>
+          <div class="session-card">
+            <div class="session-card__title">Session 0002</div>
+            <div class="session-card__meta">Operational request trace available for verification workflow.</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="status-panel">
+        <div class="status-card">
+          <div class="status-card__label">Identity</div>
+          <div class="status-card__value">IPR-AI-0001</div>
+        </div>
+        <div class="status-card">
+          <div class="status-card__label">State</div>
+          <div class="status-card__value">Governance Ready</div>
+        </div>
+        <div class="status-card">
+          <div class="status-card__label">Execution</div>
+          <div class="status-card__value">Fail-Closed</div>
+        </div>
+        <div class="status-card">
+          <div class="status-card__label">Registry</div>
+          <div class="status-card__value">Append-Only Reference Enabled</div>
+        </div>
+      </section>
+
+      <section class="main-panel">
+        <div class="hero">
+          <h1 class="hero__title">AI JOKER-C2 Interface</h1>
+          <p class="hero__lead">
+            This interface represents the application layer of the HBCE ecosystem. Requests are intended to pass through identity context, governance validation, operational decision flow, evidence generation and verification reference.
+          </p>
+        </div>
+
+        <div class="chat">
+          <article class="message">
+            <div class="message__avatar">HBCE</div>
+            <div class="message__bubble">
+              <div class="message__meta">
+                <span class="message__author">System</span>
+                <span>Session initialized</span>
+              </div>
+              <div class="message__body">
+                <p>AI JOKER-C2 is ready.</p>
+                <p>Identity context, governance pipeline and evidence model can be connected to this interface.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="message">
+            <div class="message__avatar">USER</div>
+            <div class="message__bubble">
+              <div class="message__meta">
+                <span class="message__author">Operator</span>
+                <span>Input example</span>
+              </div>
+              <div class="message__body">
+                <p>Show the operational state of the current session and describe how governance validation affects execution.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="message">
+            <div class="message__avatar">J-C2</div>
+            <div class="message__bubble">
+              <div class="message__meta">
+                <span class="message__author">AI JOKER-C2</span>
+                <span>Governed response</span>
+              </div>
+              <div class="message__body">
+                <p>The current session is initialized as an identity-bound operational context.</p>
+                <p>Before any action is executed, the request may pass through validation, governance checks and an allow-or-deny decision. If the operation is denied, the system remains fail-closed and can still generate evidence of the denied state.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="composer">
+        <div class="composer__top">
+          <div class="composer__title">Operational Request Composer</div>
+          <div class="composer__meta">Application layer prototype</div>
+        </div>
+
+        <textarea placeholder="Enter an operational request for AI JOKER-C2..."></textarea>
+
+        <div class="composer__actions">
+          <div class="composer__hint">
+            Requests in this interface are intended to be normalized, validated and forwarded to the governance layer before execution.
+          </div>
+          <div class="btn-row">
+            <button class="btn">Normalize</button>
+            <button class="btn">Validate</button>
+            <button class="btn btn--primary">Send Request</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer-note">
+        HBCE Research · HERMETICUM B.C.E. S.r.l.
+      </div>
+    </main>
+  </div>
+</body>
+</html>
