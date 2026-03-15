@@ -1,4 +1,4 @@
-import { evaluateRequest } from "../../runtime/governance-engine.js";
+import { executeJoker } from "../../runtime/joker-executor.js";
 
 export default async function handler(req, res) {
 
@@ -18,8 +18,8 @@ export default async function handler(req, res) {
     });
   }
 
-  const decision = await evaluateRequest(payload);
+  const result = await executeJoker(payload);
 
-  return res.status(200).json(decision);
+  return res.status(200).json(result);
 
 }
