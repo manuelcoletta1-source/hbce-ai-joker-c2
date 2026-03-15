@@ -1,7 +1,6 @@
 import { evaluateRequest } from "./governance-engine.js";
 import { createEvidence } from "./evidence-engine.js";
 import { buildStateFlow } from "./state-engine.js";
-import { generateModelResponse } from "./llm-bridge.js";
 import { appendToRegistry } from "./registry-bridge.js";
 import {
   ensureRuntimeSession,
@@ -9,6 +8,7 @@ import {
 } from "./session-runtime.js";
 import { resolveJokerIdentity } from "./joker-identity.js";
 import { appendMemory } from "./memory-engine.js";
+import { routeModel } from "./model-router.js";
 
 export async function executeJoker(payload) {
 
@@ -89,7 +89,7 @@ export async function executeJoker(payload) {
     };
   }
 
-  const modelResult = await generateModelResponse(runtimePayload);
+  const modelResult = await routeModel(runtimePayload);
 
   const finalDecision =
     modelResult.status === "DENY"
@@ -126,7 +126,8 @@ export async function executeJoker(payload) {
     content: {
       status: finalDecision.status,
       output: finalDecision.output || null,
-      reason: finalDecision.reason || null
+      reason: finalDecision.reason || null,
+      model: modelResult.model || null
     }
   });
 
