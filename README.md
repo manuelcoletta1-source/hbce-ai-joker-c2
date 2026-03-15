@@ -1,101 +1,150 @@
 # AI JOKER-C2
-
 Identity-Bound Operational AI Application
 
 HBCE Research  
+HERMETICUM — BLINDATA · COMPUTABILE · EVOLUTIVA  
 HERMETICUM B.C.E. S.r.l.
 
 ---
 
-## Overview
+# Identity
+
+AI JOKER-C2 operates as an application layer connected to the HBCE infrastructure.
+
+Operational Identity  
+IPR-AI-0001
+
+Context  
+HBCE Infrastructure
+
+Jurisdiction  
+European Union
+
+---
+
+# Overview
 
 AI JOKER-C2 is the operational AI application of the HBCE ecosystem.
 
-The application provides a conversational and operational interface that allows users to interact with technological systems under deterministic governance rules.
+The application provides a conversational and operational interface allowing users to interact with technological systems within a deterministic governance environment.
 
-Unlike traditional AI assistants, AI JOKER-C2 operates within an identity-bound execution environment.
+Unlike conventional AI assistants, AI JOKER-C2 operates in an identity-bound execution context.
 
-Every interaction can be linked to an operational identity and processed through a controlled execution pipeline.
+Every request can be associated with an operational identity and processed through a controlled execution pipeline.
 
 The system connects user interaction, operational governance and verifiable evidence generation within a single application layer.
 
 ---
 
-## Relationship to HBCE
+# Position in HBCE Infrastructure
 
-AI JOKER-C2 is the application layer of the HBCE infrastructure.
+AI JOKER-C2 represents the application interface of the HBCE system.
 
-HBCE Infrastructure │ ├── Identity Layer │   Identity Primary Record (IPR) │ ├── Governance Layer │   JOKER-C2 Core Runtime │ ├── Verification Layer │   Append-only Registry │ └── Application Layer AI JOKER-C2
+HBCE Infrastructure
+
+Identity Layer
+Identity Primary Record (IPR)
+
+Governance Layer
+JOKER-C2 Core Runtime
+
+Verification Layer
+Append-Only Registry
+
+Application Layer
+AI JOKER-C2
 
 The application connects user interaction to the infrastructure components of the HBCE ecosystem.
 
 ---
 
-## Core Principles
+# Operating Model
 
-AI JOKER-C2 is built around several operational principles.
+AI JOKER-C2 processes operational requests through a deterministic pipeline.
 
-### Identity-Bound Interaction
+request → identity binding → governance validation → execution → evidence generation → verification reference
 
-User interactions can be associated with persistent operational identity.
-
-### Deterministic Governance
-
-Operational decisions can pass through governance checks before execution.
-
-### Fail-Closed Operation
-
-If validation or policy checks fail, execution is denied.
-
-### Evidence Generation
-
-Each operation can produce verifiable evidence.
-
-### Public Verifiability
-
-Operational traces can be linked to append-only registry records.
+This structure allows technological operations to be processed under controlled conditions while maintaining traceability.
 
 ---
 
-## Functional Scope
+# Core Principles
+
+## Identity-Bound Interaction
+
+Operational requests may be associated with a persistent operational identity.
+
+## Deterministic Governance
+
+Requests may pass governance validation checks before execution.
+
+## Fail-Closed Operation
+
+If validation fails, execution is denied.
+
+## Evidence Generation
+
+Operational actions may generate verifiable evidence.
+
+## Public Verifiability
+
+Evidence traces can be linked to append-only registry records.
+
+---
+
+# Functional Scope
 
 The AI JOKER-C2 application may include:
 
 - conversational interface for technological interaction
-- operational request handling
+- operational request execution
 - identity-bound session management
-- deterministic governance checks
-- evidence generation and traceability
+- governance validation pipeline
+- operational evidence generation
 - integration with HBCE infrastructure components
 
 ---
 
-## Repository Structure
+# Execution Environment
 
-app/ components/ lib/ docs/
+AI JOKER-C2 may operate through multiple execution paths.
 
-The repository contains the application layer responsible for user interaction with the HBCE infrastructure.
+Possible execution modes include:
+
+- AI model routing
+- multi-agent execution
+- local inference environment
+- external AI model integration
+
+The application layer routes requests through the governance model before execution.
 
 ---
 
-## Context
+# Repository Structure
+
+app/ components/ lib/ docs/
+
+The repository contains the application layer responsible for interaction between users and the HBCE infrastructure.
+
+---
+
+# Context
 
 AI JOKER-C2 is developed within the HBCE Research program.
 
-The broader infrastructure explores:
+The broader HBCE infrastructure explores:
 
 - operational identity systems
 - governance architectures for autonomous systems
 - verifiable digital infrastructures
-- technological accountability mechanisms
+- technological accountability frameworks
 
 ---
 
-## Status
+# Status
 
-Application layer — development phase.
-
----
+Application Layer  
+Development Phase
 
 HBCE Research  
 HERMETICUM — BLINDATA · COMPUTABILE · EVOLUTIVA  
@@ -105,4 +154,5 @@ HERMETICUM B.C.E. S.r.l.
 
 
 
-Se vuoi, nel prossimo passo creiamo anche la struttura interna dell’app (cartelle app, components, lib, docs) così il repo sembra già una vera applicazione AI tipo ChatGPT.
+
+
