@@ -51,14 +51,22 @@ export default function InterfacePage() {
 
   const endRef = useRef<HTMLDivElement | null>(null);
 
-  /* ---------------- persistence ---------------- */
-
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return;
+
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) setConversation(parsed);
+      if (Array.isArray(parsed)) {
+        const safe = parsed.filter(
+          (item) =>
+            item &&
+            (item.role === "user" || item.role === "assistant") &&
+            typeof item.content === "string" &&
+            item.content.trim().length > 0
+        );
+        setConversation(safe);
+      }
     } catch {}
   }, []);
 
@@ -70,13 +78,9 @@ export default function InterfacePage() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation]);
 
-  const turns = useMemo(() => {
-    return conversation.length;
-  }, [conversation]);
+  const turns = useMemo(() => conversation.length, [conversation]);
 
-  /* ---------------- chat logic ---------------- */
-
-  function add(role: Role, content: string) {
+  function addMessage(role: Role, content: string) {
     setConversation((prev) => [...prev, { role, content }]);
   }
 
@@ -90,25 +94,25 @@ export default function InterfacePage() {
     setVerification("-");
   }
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-    const msg = input.trim();
-    if (!msg || sending) return;
+    const message = input.trim();
+    if (!message || sending) return;
 
-    add("user", msg);
+    addMessage("user", message);
     setInput("");
     setSending(true);
     setStatus("Sending...");
 
     try {
-      const res = await fetch("/api/chat", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          message: msg,
+          message,
           mode,
           actor_identity: actorIdentity,
           entity: "AI_JOKER-C2",
@@ -117,10 +121,10 @@ export default function InterfacePage() {
         })
       });
 
-      const data: ApiResponse = await res.json();
+      const data: ApiResponse = await response.json();
 
-      if (!res.ok || !data.ok) {
-        add("assistant", data.error || "Execution error.");
+      if (!response.ok || !data.ok) {
+        addMessage("assistant", data.error || "Execution error.");
         setStatus("Error");
         return;
       }
@@ -132,7 +136,7 @@ export default function InterfacePage() {
             data.matrix?.reply?.content ||
             "Joker-C2 completed the request.";
 
-      add("assistant", reply);
+      addMessage("assistant", reply);
 
       setRequestId(data.request_id || data.matrix?.request_id || "-");
       setMetaMode(data.mode || data.matrix?.mode || "-");
@@ -143,118 +147,202 @@ export default function InterfacePage() {
 
       setStatus("Completed");
     } catch {
-      add("assistant", "Execution failed. API not reachable.");
+      addMessage("assistant", "Execution failed. API not reachable.");
       setStatus("Offline");
     } finally {
       setSending(false);
     }
   }
 
-  /* ---------------- UI ---------------- */
-
   return (
-    <main style={styles.page}>
-      <div style={styles.layout}>
-        <section style={styles.chatArea}>
-          <header style={styles.header}>
+    <main className="hbce-page">
+      <div className="hbce-wrap" style={styles.layout}>
+        <section style={styles.mainColumn}>
+          <header className="hbce-card" style={styles.header}>
             <div>
-              <div style={styles.kicker}>HBCE Research</div>
-              <h1 style={styles.title}>AI JOKER-C2</h1>
-              <p style={styles.subtitle}>
-                Conversational interface connected to the Torino Matrix node.
+              <div className="hbce-kicker" style={styles.kickerSpacing}>
+                HBCE Research
+              </div>
+
+              <h1 style={styles.title}>AI JOKER-C2 Interface</h1>
+
+              <p className="hbce-muted" style={styles.subtitle}>
+                Conversational shell connected to the Torino Matrix node.
               </p>
             </div>
 
             <div style={styles.headerActions}>
-              <button onClick={clearChat} style={styles.ghostBtn}>
-                Clear
+              <button
+                type="button"
+                className="hbce-button-secondary"
+                onClick={clearChat}
+              >
+                Clear conversation
               </button>
 
               <div style={styles.status}>
                 <span style={styles.dot} />
-                {status}
+                <span>{status}</span>
               </div>
             </div>
           </header>
 
-          <div style={styles.messages}>
-            {conversation.length === 0 ? (
-              <div style={styles.welcome}>
-                Joker-C2 ready. Default node: Torino.
-              </div>
-            ) : (
-              conversation.map((m, i) => (
-                <div
-                  key={i}
-                  style={{
-                    ...styles.row,
-                    justifyContent:
-                      m.role === "user" ? "flex-end" : "flex-start"
-                  }}
-                >
+          <section className="hbce-card" style={styles.chatShell}>
+            <div style={styles.chatTop}>
+              <h2 style={styles.chatTitle}>Operational Chat</h2>
+              <p className="hbce-muted" style={styles.chatSubtitle}>
+                Direct interaction first. Metadata remains available in the side
+                panel.
+              </p>
+            </div>
+
+            <div style={styles.messages}>
+              {conversation.length === 0 ? (
+                <div className="hbce-muted" style={styles.welcome}>
+                  Joker-C2 ready. Default node: Torino.
+                </div>
+              ) : (
+                conversation.map((item, index) => (
                   <div
+                    key={`${item.role}-${index}`}
                     style={{
-                      ...styles.bubble,
-                      ...(m.role === "user"
-                        ? styles.user
-                        : styles.assistant)
+                      ...styles.messageRow,
+                      justifyContent:
+                        item.role === "user" ? "flex-end" : "flex-start"
                     }}
                   >
-                    <div style={styles.role}>
-                      {m.role === "user" ? "You" : "AI JOKER-C2"}
+                    <div
+                      style={{
+                        ...styles.bubble,
+                        ...(item.role === "user"
+                          ? styles.userBubble
+                          : styles.assistantBubble)
+                      }}
+                    >
+                      <div className="hbce-kicker" style={styles.role}>
+                        {item.role === "user" ? "You" : "AI JOKER-C2"}
+                      </div>
+                      <div style={styles.messageText}>{item.content}</div>
                     </div>
-                    {m.content}
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
 
-            <div ref={endRef} />
-          </div>
+              <div ref={endRef} />
+            </div>
+          </section>
 
-          <form onSubmit={send} style={styles.composer}>
+          <form className="hbce-card" style={styles.composer} onSubmit={onSubmit}>
             <textarea
+              className="hbce-textarea"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Send request to Joker-C2..."
               style={styles.textarea}
             />
 
-            <button disabled={sending} style={styles.send}>
-              {sending ? "Sending..." : "Send"}
-            </button>
+            <div style={styles.composerBottom}>
+              <details style={styles.details}>
+                <summary className="hbce-muted" style={styles.summary}>
+                  Advanced execution settings
+                </summary>
+
+                <div style={styles.advancedGrid}>
+                  <select
+                    className="hbce-select"
+                    value={mode}
+                    onChange={(e) => setMode(e.target.value)}
+                  >
+                    <option value="analysis">analysis</option>
+                    <option value="verification">verification</option>
+                  </select>
+
+                  <input
+                    className="hbce-input"
+                    value={actorIdentity}
+                    onChange={(e) => setActorIdentity(e.target.value)}
+                    placeholder="Actor identity"
+                  />
+
+                  <input
+                    className="hbce-input"
+                    value={nodeId}
+                    onChange={(e) => setNodeId(e.target.value)}
+                    placeholder="Node ID"
+                  />
+                </div>
+              </details>
+
+              <button
+                type="submit"
+                className="hbce-button-primary"
+                disabled={sending}
+                style={styles.sendButton}
+              >
+                {sending ? "Sending..." : "Send"}
+              </button>
+            </div>
           </form>
         </section>
 
         <aside style={styles.sidebar}>
-          <h3 style={styles.sideTitle}>Execution Context</h3>
-
-          <div style={styles.meta}>
-            <div>
-              <b>Node</b>
-              <div>{metaNode}</div>
+          <section className="hbce-card" style={styles.sideCard}>
+            <div className="hbce-kicker" style={styles.sideLabel}>
+              Execution Context
             </div>
 
-            <div>
-              <b>Mode</b>
-              <div>{metaMode}</div>
+            <div style={styles.metaList}>
+              <div style={styles.metaItem}>
+                <div className="hbce-kicker">Default Node</div>
+                <div style={styles.metaValue}>{DEFAULT_NODE}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div className="hbce-kicker">Identity Layer</div>
+                <div style={styles.metaValue}>{DEFAULT_IDENTITY}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div className="hbce-kicker">Execution Model</div>
+                <div style={styles.metaValue}>
+                  request → identity → evidence → verification
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="hbce-card" style={styles.sideCard}>
+            <div className="hbce-kicker" style={styles.sideLabel}>
+              Live Execution Metadata
             </div>
 
-            <div>
-              <b>Request ID</b>
-              <div>{requestId}</div>
-            </div>
+            <div style={styles.metaList}>
+              <div style={styles.metaItem}>
+                <div className="hbce-kicker">Request ID</div>
+                <div style={styles.metaValue}>{requestId}</div>
+              </div>
 
-            <div>
-              <b>Verification</b>
-              <div>{verification}</div>
-            </div>
+              <div style={styles.metaItem}>
+                <div className="hbce-kicker">Mode</div>
+                <div style={styles.metaValue}>{metaMode}</div>
+              </div>
 
-            <div>
-              <b>Conversation Turns</b>
-              <div>{turns}</div>
+              <div style={styles.metaItem}>
+                <div className="hbce-kicker">Node</div>
+                <div style={styles.metaValue}>{metaNode}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div className="hbce-kicker">Verification</div>
+                <div style={styles.metaValue}>{verification}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div className="hbce-kicker">Conversation Turns</div>
+                <div style={styles.metaValue}>{turns}</div>
+              </div>
             </div>
-          </div>
+          </section>
         </aside>
       </div>
     </main>
@@ -262,132 +350,177 @@ export default function InterfacePage() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background: "#0b0f14",
-    color: "#e8eef7",
-    fontFamily: "system-ui"
-  },
-
   layout: {
-    maxWidth: 1400,
-    margin: "0 auto",
     display: "grid",
-    gridTemplateColumns: "1fr 320px",
-    gap: 20,
-    padding: 20
+    gridTemplateColumns: "minmax(0, 1.65fr) 340px",
+    gap: 20
   },
-
-  chatArea: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 16
+  mainColumn: {
+    display: "grid",
+    gridTemplateRows: "auto 1fr auto",
+    gap: 16,
+    minWidth: 0
   },
-
   header: {
+    padding: 18,
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
+    gap: 16,
+    flexWrap: "wrap"
   },
-
-  kicker: {
-    fontSize: 12,
-    color: "#8fa3b8"
+  kickerSpacing: {
+    marginBottom: 8
   },
-
   title: {
-    margin: 0
+    margin: "0 0 6px",
+    fontSize: 24
   },
-
   subtitle: {
     margin: 0,
-    color: "#8fa3b8"
+    fontSize: 14,
+    lineHeight: 1.6
   },
-
   headerActions: {
     display: "flex",
     gap: 10,
-    alignItems: "center"
-  },
-
-  ghostBtn: {
-    padding: "6px 12px"
-  },
-
-  status: {
-    display: "flex",
     alignItems: "center",
-    gap: 6
+    flexWrap: "wrap"
   },
-
+  status: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    border: "1px solid var(--line)",
+    background: "rgba(255,255,255,.02)",
+    color: "var(--muted)",
+    padding: "8px 12px",
+    borderRadius: 999,
+    fontSize: 12
+  },
   dot: {
     width: 8,
     height: 8,
-    background: "#7dd3fc",
-    borderRadius: 4
+    borderRadius: "50%",
+    background: "var(--accent)",
+    boxShadow: "0 0 12px rgba(125,211,252,.7)"
   },
-
+  chatShell: {
+    minHeight: "62vh",
+    display: "grid",
+    gridTemplateRows: "auto 1fr"
+  },
+  chatTop: {
+    padding: "18px 20px",
+    borderBottom: "1px solid var(--line-2)"
+  },
+  chatTitle: {
+    margin: "0 0 6px",
+    fontSize: 22
+  },
+  chatSubtitle: {
+    margin: 0,
+    fontSize: 14,
+    lineHeight: 1.6
+  },
   messages: {
-    flex: 1,
+    padding: 20,
     overflow: "auto",
     display: "flex",
     flexDirection: "column",
+    gap: 18,
+    minHeight: 0
+  },
+  welcome: {
+    fontSize: 14,
+    lineHeight: 1.6
+  },
+  messageRow: {
+    display: "flex",
+    width: "100%"
+  },
+  bubble: {
+    maxWidth: "86%",
+    padding: "14px 16px",
+    borderRadius: 22
+  },
+  userBubble: {
+    background:
+      "linear-gradient(180deg, rgba(56,189,248,.18), rgba(56,189,248,.11))",
+    border: "1px solid rgba(56,189,248,.30)"
+  },
+  assistantBubble: {
+    background: "rgba(255,255,255,.03)",
+    border: "1px solid var(--line)"
+  },
+  role: {
+    marginBottom: 8,
+    letterSpacing: "0.08em"
+  },
+  messageText: {
+    lineHeight: 1.7,
+    fontSize: 15,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word"
+  },
+  composer: {
+    padding: 14,
+    display: "grid",
     gap: 12
   },
-
-  welcome: {
-    color: "#8fa3b8"
-  },
-
-  row: {
-    display: "flex"
-  },
-
-  bubble: {
-    maxWidth: "80%",
-    padding: 12,
-    borderRadius: 14
-  },
-
-  user: {
-    background: "#38bdf8"
-  },
-
-  assistant: {
-    background: "#1f2933"
-  },
-
-  role: {
-    fontSize: 11,
-    marginBottom: 4
-  },
-
-  composer: {
-    display: "flex",
-    gap: 10
-  },
-
   textarea: {
-    flex: 1,
-    minHeight: 60
+    minHeight: 110
   },
-
-  send: {
-    padding: "10px 16px"
+  composerBottom: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 14,
+    flexWrap: "wrap"
   },
-
+  details: {
+    flex: 1
+  },
+  summary: {
+    cursor: "pointer",
+    fontSize: 13
+  },
+  advancedGrid: {
+    marginTop: 12,
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: 12
+  },
+  sendButton: {
+    minWidth: 160
+  },
   sidebar: {
-    borderLeft: "1px solid rgba(255,255,255,0.1)",
-    paddingLeft: 20
-  },
-
-  sideTitle: {
-    marginTop: 0
-  },
-
-  meta: {
     display: "flex",
     flexDirection: "column",
-    gap: 14
+    gap: 16,
+    minWidth: 0
+  },
+  sideCard: {
+    padding: 18
+  },
+  sideLabel: {
+    marginBottom: 12
+  },
+  metaList: {
+    display: "grid",
+    gap: 10
+  },
+  metaItem: {
+    padding: "12px 14px",
+    borderRadius: 14,
+    background: "rgba(255,255,255,.02)",
+    border: "1px solid rgba(255,255,255,.06)"
+  },
+  metaValue: {
+    marginTop: 6,
+    fontSize: 14,
+    lineHeight: 1.5,
+    color: "var(--text)",
+    wordBreak: "break-word"
   }
 };
