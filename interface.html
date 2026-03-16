@@ -38,6 +38,10 @@
       text-decoration:none;
     }
 
+    code{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+    }
+
     .wrap{
       width:min(100% - 32px, var(--max));
       margin:0 auto;
@@ -152,7 +156,7 @@
       padding:20px;
       display:flex;
       flex-direction:column;
-      min-height:640px;
+      min-height:680px;
     }
 
     .chat-head{
@@ -172,6 +176,14 @@
       margin:0;
       color:var(--muted);
       font-size:14px;
+    }
+
+    .head-actions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
     }
 
     .status{
@@ -195,6 +207,22 @@
       box-shadow:0 0 12px rgba(125,211,252,.7);
     }
 
+    .ghost-btn{
+      appearance:none;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:8px 12px;
+      font:inherit;
+      font-size:12px;
+      cursor:pointer;
+      color:var(--text);
+      background:rgba(255,255,255,.02);
+    }
+
+    .ghost-btn:hover{
+      background:rgba(255,255,255,.05);
+    }
+
     .messages{
       flex:1;
       border:1px solid var(--line);
@@ -205,7 +233,7 @@
       display:flex;
       flex-direction:column;
       gap:14px;
-      min-height:380px;
+      min-height:420px;
     }
 
     .msg{
@@ -269,7 +297,7 @@
       line-height:1.5;
     }
 
-    button{
+    .send-btn{
       appearance:none;
       border:none;
       border-radius:16px;
@@ -282,8 +310,8 @@
       transition:transform .12s ease, opacity .12s ease;
     }
 
-    button:hover{transform:translateY(-1px)}
-    button:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .send-btn:hover{transform:translateY(-1px)}
+    .send-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
 
     .side{
       display:flex;
@@ -355,6 +383,16 @@
       .msg{
         max-width:100%;
       }
+
+      .topbar,
+      .chat-head{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+
+      .head-actions{
+        justify-content:flex-start;
+      }
     }
   </style>
 </head>
@@ -374,7 +412,8 @@
         <h1>Joker-C2 console linked to the Torino experimental node.</h1>
         <p>
           This interface routes user prompts to the Joker-C2 application layer through the internal chat API,
-          binds execution to the Matrix Europa territorial context, and returns a node-aware operational response.
+          binds execution to the Matrix Europa territorial context, and now preserves conversational memory
+          across messages in the browser session.
         </p>
       </div>
 
@@ -401,17 +440,20 @@
             <h2>Operational Chat</h2>
             <p>Send a request to Joker-C2 through the internal API route.</p>
           </div>
-          <div class="status" id="statusBadge">
-            <span class="dot"></span>
-            <span id="statusText">Ready</span>
+
+          <div class="head-actions">
+            <button class="ghost-btn" id="clearConversationButton" type="button">
+              Clear conversation
+            </button>
+
+            <div class="status" id="statusBadge">
+              <span class="dot"></span>
+              <span id="statusText">Ready</span>
+            </div>
           </div>
         </div>
 
-        <div class="messages" id="messages">
-          <div class="msg system">
-            Joker-C2 interface initialized. Default Matrix Europa node: Torino.
-          </div>
-        </div>
+        <div class="messages" id="messages"></div>
 
         <form class="composer" id="chatForm">
           <textarea
@@ -440,7 +482,7 @@
             >
           </div>
 
-          <button id="sendButton" type="submit">Send to Joker-C2</button>
+          <button class="send-btn" id="sendButton" type="submit">Send to Joker-C2</button>
         </form>
       </div>
 
@@ -464,6 +506,10 @@
               <div class="kv-key">Verification Reference</div>
               <div class="kv-val" id="metaVerify">-</div>
             </div>
+            <div class="kv-item">
+              <div class="kv-key">Conversation Turns</div>
+              <div class="kv-val" id="metaConversationTurns">0</div>
+            </div>
           </div>
         </div>
 
@@ -474,8 +520,8 @@
 
         <div class="footer-note">
           This console expects a server-side API endpoint at <code>/api/chat</code>.
-          When deployed as a static GitHub Pages site, the endpoint will not exist.
-          For live Joker-C2 execution, deploy the app on Vercel with the backend route enabled.
+          For live Joker-C2 execution with GPT-style replies, deploy on Vercel with the backend route enabled
+          and <code>OPENAI_API_KEY</code> configured on the server.
         </div>
       </aside>
     </section>
@@ -491,23 +537,112 @@
     const sendButton = document.getElementById("sendButton");
     const statusText = document.getElementById("statusText");
     const rawResponse = document.getElementById("rawResponse");
+    const clearConversationButton = document.getElementById("clearConversationButton");
 
     const metaRequestId = document.getElementById("metaRequestId");
     const metaMode = document.getElementById("metaMode");
     const metaNode = document.getElementById("metaNode");
     const metaVerify = document.getElementById("metaVerify");
+    const metaConversationTurns = document.getElementById("metaConversationTurns");
 
-    function appendMessage(role, content) {
-      const div = document.createElement("div");
-      div.className = `msg ${role}`;
-      div.textContent = content;
-      messages.appendChild(div);
-      messages.scrollTop = messages.scrollHeight;
-    }
+    const STORAGE_KEY = "joker-c2-conversation-v1";
+
+    let conversation = [];
 
     function setStatus(text) {
       statusText.textContent = text;
     }
+
+    function createMessageElement(role, content) {
+      const div = document.createElement("div");
+      div.className = `msg ${role}`;
+      div.textContent = content;
+      return div;
+    }
+
+    function appendMessageToUI(role, content) {
+      const div = createMessageElement(role, content);
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function persistConversation() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(conversation));
+      updateConversationMeta();
+    }
+
+    function loadConversation() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          conversation = [];
+          return;
+        }
+
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) {
+          conversation = [];
+          return;
+        }
+
+        conversation = parsed.filter((item) => {
+          return (
+            item &&
+            (item.role === "user" || item.role === "assistant" || item.role === "system") &&
+            typeof item.content === "string" &&
+            item.content.trim().length > 0
+          );
+        });
+      } catch {
+        conversation = [];
+      }
+    }
+
+    function renderConversation() {
+      messages.innerHTML = "";
+
+      if (conversation.length === 0) {
+        appendMessageToUI(
+          "system",
+          "Joker-C2 interface initialized. Default Matrix Europa node: Torino."
+        );
+        return;
+      }
+
+      for (const item of conversation) {
+        appendMessageToUI(item.role, item.content);
+      }
+    }
+
+    function updateConversationMeta() {
+      const turns = conversation.filter(
+        (item) => item.role === "user" || item.role === "assistant"
+      ).length;
+      metaConversationTurns.textContent = String(turns);
+    }
+
+    function pushConversationItem(role, content) {
+      conversation.push({ role, content });
+      persistConversation();
+      appendMessageToUI(role, content);
+    }
+
+    function clearConversation() {
+      conversation = [];
+      localStorage.removeItem(STORAGE_KEY);
+      renderConversation();
+      updateConversationMeta();
+      metaRequestId.textContent = "Not executed yet";
+      metaMode.textContent = "-";
+      metaNode.textContent = "HBCE-MATRIX-NODE-0001-TORINO";
+      metaVerify.textContent = "-";
+      rawResponse.textContent = "No response yet.";
+      setStatus("Ready");
+    }
+
+    clearConversationButton.addEventListener("click", () => {
+      clearConversation();
+    });
 
     chatForm.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -519,7 +654,8 @@
 
       if (!message) return;
 
-      appendMessage("user", message);
+      pushConversationItem("user", message);
+      messageInput.value = "";
       setStatus("Sending...");
       sendButton.disabled = true;
 
@@ -534,7 +670,8 @@
             mode,
             actor_identity,
             entity: "AI_JOKER-C2",
-            nodeId
+            nodeId,
+            conversation
           })
         });
 
@@ -542,19 +679,21 @@
         rawResponse.textContent = JSON.stringify(data, null, 2);
 
         if (!response.ok || !data.ok) {
-          appendMessage("assistant", `Request failed: ${data.error || "Unknown error"}`);
+          const errorText = `Request failed: ${data.error || "Unknown error"}`;
+          pushConversationItem("assistant", errorText);
           setStatus("Error");
           return;
         }
 
         const replyText =
           data.reply?.content ||
+          data.matrix?.reply?.content ||
           "Joker-C2 completed the request.";
 
-        appendMessage("assistant", replyText);
+        pushConversationItem("assistant", replyText);
 
         metaRequestId.textContent = data.request_id || data.matrix?.request_id || "-";
-        metaMode.textContent = data.mode || "-";
+        metaMode.textContent = data.mode || data.matrix?.mode || mode || "-";
         metaNode.textContent =
           data.matrix?.execution?.matrix_node?.node_id || nodeId || "-";
         metaVerify.textContent =
@@ -562,20 +701,24 @@
 
         setStatus("Completed");
       } catch (error) {
-        const message =
+        const errorText =
           error instanceof Error ? error.message : "Unknown client error";
 
-        appendMessage(
+        pushConversationItem(
           "assistant",
-          `Request failed before Joker-C2 execution. ${message}`
+          `Request failed before Joker-C2 execution. ${errorText}`
         );
 
-        rawResponse.textContent = String(message);
+        rawResponse.textContent = String(errorText);
         setStatus("Offline / Missing API");
       } finally {
         sendButton.disabled = false;
       }
     });
+
+    loadConversation();
+    renderConversation();
+    updateConversationMeta();
   </script>
 </body>
 </html>
