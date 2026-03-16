@@ -1,29 +1,27 @@
-import OpenAI from "openai"
-import { NextResponse } from "next/server"
-import { executeJokerMatrixRequest } from "../../../runtime/execute-joker-matrix-request"
+import OpenAI from "openai";
+import { NextResponse } from "next/server";
+import { executeJokerMatrixRequest } from "../../../runtime/execute-joker-matrix-request";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
+export const dynamic = "force-dynamic";
 
 type ChatRequestBody = {
-  message?: string
-  request_id?: string
-  mode?: string
-  actor_identity?: string
-  entity?: string
-  nodeId?: string
+  message?: string;
+  request_id?: string;
+  mode?: string;
+  actor_identity?: string;
+  entity?: string;
+  nodeId?: string;
   conversation?: Array<{
-    role: "user" | "assistant" | "system"
-    content: string
-  }>
-}
+    role: "user" | "assistant" | "system";
+    content: string;
+  }>;
+};
 
 function buildRequestId(): string {
-  return `REQ-${Date.now()}`
+  return `REQ-${Date.now()}`;
 }
 
-function buildSystemPrompt(nodeId: string) {
+function buildSystemPrompt(nodeId: string): string {
   return [
     "You are AI JOKER-C2.",
     "You are the operational AI layer of the HBCE infrastructure.",
@@ -37,39 +35,41 @@ function buildSystemPrompt(nodeId: string) {
     "Give natural, useful, well-structured answers.",
     "If the user asks for strategic, technical, architectural, or geopolitical analysis, answer in depth.",
     "If the user asks for implementation help, produce concrete engineering guidance."
-  ].join(" ")
+  ].join(" ");
 }
 
 function normalizeConversation(
   conversation?: ChatRequestBody["conversation"]
 ): Array<{ role: "user" | "assistant" | "system"; content: string }> {
   if (!Array.isArray(conversation)) {
-    return []
+    return [];
   }
 
   return conversation.filter(
     (item) =>
       item &&
-      (item.role === "user" || item.role === "assistant" || item.role === "system") &&
+      (item.role === "user" ||
+        item.role === "assistant" ||
+        item.role === "system") &&
       typeof item.content === "string" &&
       item.content.trim().length > 0
-  )
+  );
+}
+
+function getOpenAIClient(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Missing OPENAI_API_KEY on server");
+  }
+
+  return new OpenAI({ apiKey });
 }
 
 export async function POST(request: Request) {
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Missing OPENAI_API_KEY on server"
-        },
-        { status: 500 }
-      )
-    }
-
-    const body = (await request.json()) as ChatRequestBody
-    const message = body.message?.trim()
+    const body = (await request.json()) as ChatRequestBody;
+    const message = body.message?.trim();
 
     if (!message) {
       return NextResponse.json(
@@ -78,11 +78,11 @@ export async function POST(request: Request) {
           error: "Missing message"
         },
         { status: 400 }
-      )
+      );
     }
 
-    const requestId = body.request_id?.trim() || buildRequestId()
-    const nodeId = body.nodeId || "HBCE-MATRIX-NODE-0001-TORINO"
+    const requestId = body.request_id?.trim() || buildRequestId();
+    const nodeId = body.nodeId || "HBCE-MATRIX-NODE-0001-TORINO";
 
     const matrixResponse = executeJokerMatrixRequest({
       request_id: requestId,
@@ -91,9 +91,9 @@ export async function POST(request: Request) {
       actor_identity: body.actor_identity || "IPR-AI-0001",
       entity: body.entity || "AI_JOKER-C2",
       nodeId
-    })
+    });
 
-    const priorConversation = normalizeConversation(body.conversation)
+    const priorConversation = normalizeConversation(body.conversation);
 
     const input = [
       {
@@ -105,17 +105,18 @@ export async function POST(request: Request) {
         role: "user" as const,
         content: message
       }
-    ]
+    ];
+
+    const client = getOpenAIClient();
 
     const response = await client.responses.create({
       model: "gpt-4.1-mini",
-      input,
-      temperature: 0.7
-    })
+      input
+    });
 
     const reply =
       response.output_text?.trim() ||
-      "Joker-C2 completed the request but returned no textual output."
+      "Joker-C2 completed the request but returned no textual output.";
 
     return NextResponse.json({
       ok: true,
@@ -125,10 +126,10 @@ export async function POST(request: Request) {
         content: reply
       },
       matrix: matrixResponse
-    })
+    });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Unknown server error"
+      error instanceof Error ? error.message : "Unknown server error";
 
     return NextResponse.json(
       {
@@ -136,6 +137,6 @@ export async function POST(request: Request) {
         error: message
       },
       { status: 500 }
-    )
+    );
   }
 }
