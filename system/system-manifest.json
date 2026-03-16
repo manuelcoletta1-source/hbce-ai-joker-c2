@@ -1,0 +1,80 @@
+{
+  "system": "AI JOKER-C2",
+  "framework": "HBCE",
+  "organization": "HERMETICUM B.C.E. S.r.l.",
+  "maintainer": "HBCE Research",
+  "version": "1.0.0",
+  "updated_at": "2026-03-16T00:00:00Z",
+
+  "identity": {
+    "ipr_id": "IPR-AI-0001",
+    "type": "AI Coordination Engine",
+    "domain": "HBCE"
+  },
+
+  "architecture": {
+    "model": "identity → action → evidence → verification",
+    "layers": [
+      "IPR Identity Layer",
+      "Event Registry",
+      "Joker-C2 Coordination Engine",
+      "UFO Functional Modules",
+      "Lambda Stability Layer"
+    ]
+  },
+
+  "components": {
+    "interface": {
+      "type": "web-chat",
+      "entry_point": "public/interface.html"
+    },
+
+    "api": {
+      "chat_endpoint": "api/chat.js",
+      "runtime": "node"
+    },
+
+    "corpus": {
+      "registry": "api/corpus-registry.js",
+      "topics": [
+        "joker-c2",
+        "ipr",
+        "matrix-europa",
+        "ufo",
+        "lambda",
+        "campi-operativi"
+      ]
+    }
+  },
+
+  "registries": {
+    "ipr_registry": "registry/ipr-registry.json",
+    "node_registry": "registry/node-registry.json",
+    "event_registry": "registry/events.log.json",
+    "matrix_registry": "registry/matrix-europa-grid.json"
+  },
+
+  "matrix_europa": {
+    "primary_node": "HBCE-MATRIX-NODE-0001-TORINO",
+    "institutional_node": "HBCE-MATRIX-NODE-0010-BRUSSELS",
+    "grid_model": "10x10 European node grid"
+  },
+
+  "documents": [
+    "docs/hbce-operational-model.md",
+    "docs/matrix-europa-grid.md",
+    "docs/matrix-europa-100-cities.md",
+    "docs/matrix-europa-infrastructure-layers.md",
+    "docs/matrix-europa-vulnerability-map.md"
+  ],
+
+  "execution_flow": [
+    "user_request",
+    "joker_interface",
+    "ipr_identity_layer",
+    "joker_c2_engine",
+    "matrix_context",
+    "event_registry",
+    "response_generation"
+  ]
+}
