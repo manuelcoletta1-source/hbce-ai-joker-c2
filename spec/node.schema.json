@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hbce.example/spec/node.schema.json",
+  "title": "HBCE Matrix Node",
+  "type": "object",
+  "required": ["node_id", "location", "status"],
+  "properties": {
+    "node_id": {
+      "type": "string",
+      "pattern": "^HBCE-MATRIX-NODE-[0-9]{4}-[A-Z]+$"
+    },
+    "location": {
+      "type": "object",
+      "required": ["city", "country"],
+      "properties": {
+        "city": { "type": "string" },
+        "country": { "type": "string" }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ACTIVE", "INACTIVE", "EXPERIMENTAL"]
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}
