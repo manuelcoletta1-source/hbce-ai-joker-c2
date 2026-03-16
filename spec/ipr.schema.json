@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hbce.example/spec/ipr.schema.json",
+  "title": "IPR - Identity Primary Record",
+  "type": "object",
+  "required": ["ipr_id", "type", "status", "created_at"],
+  "properties": {
+    "ipr_id": {
+      "type": "string",
+      "description": "Identificatore IPR",
+      "pattern": "^IPR-(HUMAN|AI|ROBOT|NODE|SERVICE)-[0-9]{4,}$"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["HUMAN", "AI", "ROBOT", "NODE", "SERVICE"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ACTIVE", "SUSPENDED", "REVOKED"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
