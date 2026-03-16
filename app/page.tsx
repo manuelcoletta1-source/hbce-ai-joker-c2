@@ -51,13 +51,26 @@ export default function HomePage() {
             background: "rgba(255,255,255,0.02)"
           }}
         >
+          <strong>Identity Layer</strong>
+          <div>IPR-AI-0001</div>
+        </div>
+
+        <div
+          style={{
+            marginTop: "24px",
+            padding: "16px",
+            borderRadius: "12px",
+            border: "1px solid rgba(255,255,255,0.08)",
+            background: "rgba(255,255,255,0.02)"
+          }}
+        >
           <strong>Execution Model</strong>
           <div>request → identity → evidence → verification</div>
         </div>
 
         <div style={{ marginTop: "32px" }}>
           <a
-            href="/interface.html"
+            href="/interface"
             style={{
               display: "inline-block",
               padding: "12px 20px",
@@ -77,5 +90,5 @@ export default function HomePage() {
         </p>
       </div>
     </main>
-  )
+  );
 }
