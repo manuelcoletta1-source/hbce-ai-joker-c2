@@ -42,76 +42,94 @@ const STATUS_ITEMS = [
 
 export default function IprPage() {
   return (
-    <main style={styles.page}>
-      <section style={styles.hero}>
-        <div style={styles.kicker}>HBCE Research</div>
+    <main className="hbce-page">
+      <section className="hbce-wrap" style={styles.hero}>
+        <div className="hbce-kicker" style={styles.kickerSpacing}>
+          HBCE Research
+        </div>
 
         <h1 style={styles.title}>IPR</h1>
 
-        <p style={styles.subtitle}>
+        <p className="hbce-muted" style={styles.subtitle}>
           Identity Primary Record is the operational identity layer of the HBCE
           framework. It is designed to connect identity, action, context, and
           verification in structured digital environments.
         </p>
 
         <div style={styles.actions}>
-          <Link href="/interface" style={styles.primaryButton}>
+          <Link href="/interface" className="hbce-button-primary">
             Open Interface
           </Link>
 
-          <Link href="/" style={styles.secondaryButton}>
+          <Link href="/" className="hbce-button-secondary">
             Back Home
           </Link>
         </div>
       </section>
 
-      <section style={styles.grid}>
+      <section className="hbce-wrap hbce-grid-3" style={styles.sectionGap}>
         {IPR_ITEMS.map((item) => (
-          <article key={item.title} style={styles.card}>
-            <div style={styles.cardLabel}>{item.label}</div>
+          <article key={item.title} className="hbce-card" style={styles.card}>
+            <div className="hbce-kicker" style={styles.cardLabel}>
+              {item.label}
+            </div>
+
             <h2 style={styles.cardTitle}>{item.title}</h2>
-            <p style={styles.cardText}>{item.text}</p>
+
+            <p className="hbce-muted" style={styles.cardText}>
+              {item.text}
+            </p>
           </article>
         ))}
       </section>
 
-      <section style={styles.panel}>
-        <div style={styles.panelLabel}>Current IPR Context</div>
+      <section className="hbce-wrap" style={styles.sectionGap}>
+        <div className="hbce-card" style={styles.panel}>
+          <div className="hbce-kicker" style={styles.panelLabel}>
+            Current IPR Context
+          </div>
 
-        <div style={styles.statusGrid}>
-          {STATUS_ITEMS.map((item) => (
-            <div key={item.key} style={styles.statusItem}>
-              <span style={styles.statusKey}>{item.key}</span>
-              <span style={styles.statusValue}>{item.value}</span>
-            </div>
-          ))}
+          <div className="hbce-grid-2">
+            {STATUS_ITEMS.map((item) => (
+              <div key={item.key} style={styles.statusItem}>
+                <span className="hbce-kicker" style={styles.statusKey}>
+                  {item.key}
+                </span>
+                <span style={styles.statusValue}>{item.value}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section style={styles.longPanel}>
-        <div style={styles.panelLabel}>Operational Interpretation</div>
+      <section className="hbce-wrap">
+        <div className="hbce-card" style={styles.panel}>
+          <div className="hbce-kicker" style={styles.panelLabel}>
+            Operational Interpretation
+          </div>
 
-        <div style={styles.longText}>
-          <p style={styles.paragraph}>
-            In the current Joker-C2 application, IPR is treated as the
-            foundational operational identity layer used to frame requests,
-            contextualize execution, and expose structured metadata during
-            response generation.
-          </p>
+          <div style={styles.longText}>
+            <p className="hbce-muted" style={styles.paragraph}>
+              In the current Joker-C2 application, IPR is treated as the
+              foundational operational identity layer used to frame requests,
+              contextualize execution, and expose structured metadata during
+              response generation.
+            </p>
 
-          <p style={styles.paragraph}>
-            This page is not intended as a legal registry or full protocol
-            specification. It functions as an application-level explanation of
-            how the IPR concept supports the broader architecture of identity,
-            node context, and operational interaction within the HBCE
-            environment.
-          </p>
+            <p className="hbce-muted" style={styles.paragraph}>
+              This page is not intended as a legal registry or full protocol
+              specification. It functions as an application-level explanation of
+              how the IPR concept supports the broader architecture of identity,
+              node context, and operational interaction within the HBCE
+              environment.
+            </p>
 
-          <p style={styles.paragraph}>
-            Future versions may extend this route with richer registry logic,
-            protocol documentation, verification references, and tighter
-            integration with Matrix Europa deployment models.
-          </p>
+            <p className="hbce-muted" style={styles.paragraph}>
+              Future versions may extend this route with richer registry logic,
+              protocol documentation, verification references, and tighter
+              integration with Matrix Europa deployment models.
+            </p>
+          </div>
         </div>
       </section>
     </main>
@@ -119,24 +137,10 @@ export default function IprPage() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background:
-      "radial-gradient(circle at top left, rgba(56,189,248,.10), transparent 30%), radial-gradient(circle at bottom right, rgba(125,211,252,.08), transparent 30%), #0b0f14",
-    color: "#e8eef7",
-    fontFamily:
-      "system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif",
-    padding: "40px 20px 64px"
-  },
   hero: {
-    maxWidth: 960,
-    margin: "0 auto 32px"
+    marginBottom: 32
   },
-  kicker: {
-    fontSize: 12,
-    letterSpacing: "0.16em",
-    textTransform: "uppercase",
-    color: "#8fa3b8",
+  kickerSpacing: {
     marginBottom: 12
   },
   title: {
@@ -148,7 +152,6 @@ const styles: Record<string, React.CSSProperties> = {
   subtitle: {
     margin: 0,
     maxWidth: 780,
-    color: "#8fa3b8",
     fontSize: 18,
     lineHeight: 1.7
   },
@@ -158,43 +161,13 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: "wrap",
     marginTop: 28
   },
-  primaryButton: {
-    textDecoration: "none",
-    background: "linear-gradient(180deg, #7dd3fc, #38bdf8)",
-    color: "#06121a",
-    padding: "14px 18px",
-    borderRadius: 14,
-    fontWeight: 700
-  },
-  secondaryButton: {
-    textDecoration: "none",
-    background: "rgba(255,255,255,.03)",
-    color: "#e8eef7",
-    padding: "14px 18px",
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,.08)",
-    fontWeight: 600
-  },
-  grid: {
-    maxWidth: 1200,
-    margin: "0 auto 24px",
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 18
+  sectionGap: {
+    marginBottom: 24
   },
   card: {
-    background:
-      "linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95))",
-    border: "1px solid rgba(255,255,255,.08)",
-    borderRadius: 24,
-    boxShadow: "0 10px 30px rgba(0,0,0,.35)",
     padding: 22
   },
   cardLabel: {
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: "0.1em",
-    color: "#8fa3b8",
     marginBottom: 10
   },
   cardTitle: {
@@ -203,41 +176,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardText: {
     margin: 0,
-    color: "#8fa3b8",
     fontSize: 15,
     lineHeight: 1.7
   },
   panel: {
-    maxWidth: 1200,
-    margin: "0 auto 24px",
-    background:
-      "linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95))",
-    border: "1px solid rgba(255,255,255,.08)",
-    borderRadius: 24,
-    boxShadow: "0 10px 30px rgba(0,0,0,.35)",
-    padding: 22
-  },
-  longPanel: {
-    maxWidth: 1200,
-    margin: "0 auto",
-    background:
-      "linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95))",
-    border: "1px solid rgba(255,255,255,.08)",
-    borderRadius: 24,
-    boxShadow: "0 10px 30px rgba(0,0,0,.35)",
     padding: 22
   },
   panelLabel: {
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: "0.1em",
-    color: "#8fa3b8",
     marginBottom: 14
-  },
-  statusGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: 14
   },
   statusItem: {
     display: "flex",
@@ -249,10 +195,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(255,255,255,.06)"
   },
   statusKey: {
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    color: "#8fa3b8"
+    letterSpacing: "0.08em"
   },
   statusValue: {
     fontSize: 15,
@@ -265,7 +208,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   paragraph: {
     margin: 0,
-    color: "#8fa3b8",
     fontSize: 16,
     lineHeight: 1.8
   }
