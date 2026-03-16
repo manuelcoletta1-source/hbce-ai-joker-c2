@@ -5,38 +5,41 @@ import {
   getTopicEntries
 } from "./corpus-registry.js";
 
-function parseBody(req) {
-  if (!req || !req.body) return {};
+function parseRequestBody(req) {
+  if (!req || req.body == null) return {};
   return typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 }
 
-function badRequest(res, error) {
-  return res.status(400).json({
-    ok: false,
-    error
-  });
+function sendJson(res, status, payload) {
+  return res.status(status).json(payload);
 }
 
-function methodNotAllowed(res) {
-  return res.status(405).json({
+function sendMethodNotAllowed(res) {
+  return sendJson(res, 405, {
     ok: false,
     error: "Metodo non consentito"
   });
 }
 
-function internalError(res, error) {
-  return res.status(500).json({
+function sendBadRequest(res, error) {
+  return sendJson(res, 400, {
+    ok: false,
+    error
+  });
+}
+
+function sendInternalError(res, error) {
+  return sendJson(res, 500, {
     ok: false,
     error: "Errore nella richiesta",
     detail: error instanceof Error ? error.message : String(error)
   });
 }
 
-function getDefaultResponseShell() {
+function getDefaultMeta() {
   return {
     domain: "general",
     summary: "GENERAL",
-    confidence: "medium",
     preset: "general",
     presetTitle: "General Research",
     presetDescription:
@@ -179,7 +182,7 @@ function getTopicMeta(topic) {
       };
 
     default:
-      return getDefaultResponseShell();
+      return getDefaultMeta();
   }
 }
 
@@ -191,12 +194,13 @@ function resolveTopic(message, previousTopic) {
     const followupEntries = getTopicEntries(previousTopic);
 
     if (followupEntries.length) {
-      selectedTopic = previousTopic;
-      selectedEntries = followupEntries.map((entry) => ({
-        ...entry,
-        score: 100
-      }));
-      return { selectedTopic, selectedEntries };
+      return {
+        selectedTopic: previousTopic,
+        selectedEntries: followupEntries.map((entry) => ({
+          ...entry,
+          score: 100
+        }))
+      };
     }
   }
 
@@ -207,13 +211,13 @@ function resolveTopic(message, previousTopic) {
   return { selectedTopic, selectedEntries };
 }
 
-function buildSpecialReply(message) {
+function resolveSpecialReply(message) {
   if (message.includes("ciao") && message.includes("chi sei")) {
     return {
-      selectedTopic: "joker-c2",
+      topic: "joker-c2",
       reply:
         "Ciao Manuel. Io sono AI Joker-C2, il Coordination Engine del framework HBCE. Questo endpoint legacy risponde ancora tramite corpus locale.",
-      forcedMeta: {
+      meta: {
         domain: "identity",
         summary: "CORE",
         preset: "identity",
@@ -237,19 +241,59 @@ function buildMatches(entries) {
   }));
 }
 
+function buildResponsePayload(message, topic, entries, meta, confidence, reply) {
+  return {
+    ok: true,
+    mode: "context-recovery-legacy",
+    domain: meta.domain,
+    summary: meta.summary,
+    confidence,
+    query_normalized: message,
+    detected_topic: topic,
+    preset: meta.preset,
+    preset_title: meta.presetTitle,
+    preset_description: meta.presetDescription,
+    search_pipeline: [
+      "query_input",
+      "query_normalization",
+      "topic_detection",
+      "followup_resolution",
+      "local_corpus_response"
+    ],
+    architecture_layers: [
+      "IPR Identity Layer",
+      "Event Registry",
+      "Joker-C2 Coordination Engine",
+      "UFO Functional Modules",
+      "Lambda Stability Layer"
+    ],
+    corpus_map: {
+      core_count: 5,
+      ufo_count: 2,
+      origin_count: 1
+    },
+    web_provider: "none",
+    web_enabled: false,
+    web_error: "",
+    matches: buildMatches(entries),
+    web_results: [],
+    reply
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return methodNotAllowed(res);
+    return sendMethodNotAllowed(res);
   }
 
   try {
-    const body = parseBody(req);
+    const body = parseRequestBody(req);
     const rawMessage = String(body.message || "").trim();
     const message = normalizeQuery(rawMessage);
     const previousTopic = normalizeQuery(body.previous_topic || "");
 
     if (!rawMessage) {
-      return badRequest(res, "Messaggio mancante");
+      return sendBadRequest(res, "Messaggio mancante");
     }
 
     const { selectedTopic, selectedEntries } = resolveTopic(
@@ -259,67 +303,32 @@ export default async function handler(req, res) {
 
     let topic = selectedTopic;
     let entries = selectedEntries;
-    let reply =
-      topic !== "general" && entries.length
-        ? buildReplyFromTopic(topic, entries)
-        : buildFallbackReply();
+    let meta = topic !== "general" && entries.length
+      ? getTopicMeta(topic)
+      : getDefaultMeta();
+    let confidence = topic !== "general" && entries.length >= 2
+      ? "high"
+      : "medium";
+    let reply = topic !== "general" && entries.length
+      ? buildReplyFromTopic(topic, entries)
+      : buildFallbackReply();
 
-    let meta = getDefaultResponseShell();
-    let confidence = "medium";
+    const special = resolveSpecialReply(message);
 
-    if (topic !== "general" && entries.length) {
-      meta = getTopicMeta(topic);
-      confidence = entries.length >= 2 ? "high" : "medium";
-    }
-
-    const specialReply = buildSpecialReply(message);
-
-    if (specialReply) {
-      topic = specialReply.selectedTopic;
-      reply = specialReply.reply;
-      meta = specialReply.forcedMeta;
+    if (special) {
+      topic = special.topic;
+      entries = entries.length ? entries : getTopicEntries(topic);
+      meta = special.meta;
       confidence = "medium";
-      entries = entries.length ? entries : getTopicEntries("joker-c2");
+      reply = special.reply;
     }
 
-    return res.status(200).json({
-      ok: true,
-      mode: "context-recovery-legacy",
-      domain: meta.domain,
-      summary: meta.summary,
-      confidence,
-      query_normalized: message,
-      detected_topic: topic,
-      preset: meta.preset,
-      preset_title: meta.presetTitle,
-      preset_description: meta.presetDescription,
-      search_pipeline: [
-        "query_input",
-        "query_normalization",
-        "topic_detection",
-        "followup_resolution",
-        "local_corpus_response"
-      ],
-      architecture_layers: [
-        "IPR Identity Layer",
-        "Event Registry",
-        "Joker-C2 Coordination Engine",
-        "UFO Functional Modules",
-        "Lambda Stability Layer"
-      ],
-      corpus_map: {
-        core_count: 5,
-        ufo_count: 2,
-        origin_count: 1
-      },
-      web_provider: "none",
-      web_enabled: false,
-      web_error: "",
-      matches: buildMatches(entries),
-      web_results: [],
-      reply
-    });
+    return sendJson(
+      res,
+      200,
+      buildResponsePayload(message, topic, entries, meta, confidence, reply)
+    );
   } catch (error) {
-    return internalError(res, error);
+    return sendInternalError(res, error);
   }
 }
