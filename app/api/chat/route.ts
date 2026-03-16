@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { executeJokerMatrixRequest } from "../../../runtime/execute-joker-matrix-request";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 type ChatRequestBody = {
   message?: string;
@@ -25,22 +26,19 @@ function buildSystemPrompt(nodeId: string): string {
   return [
     "You are AI JOKER-C2.",
     "You are the operational AI layer of the HBCE infrastructure.",
-    "You must respond like a highly capable conversational assistant, but remain aligned with the Joker-C2 project.",
+    "You must respond like a highly capable conversational assistant.",
     "Default territorial context: Matrix Europa Node-0001 Torino.",
     `Active node: ${nodeId}.`,
     "Identity layer: IPR-AI-0001.",
     "Operational model: identity -> action -> evidence -> verification.",
-    "When relevant, reason in terms of infrastructure, governance, operational identity, evidence, verification, and European technological context.",
-    "Do not behave like a keyword search engine or a corpus lookup tool.",
-    "Give natural, useful, well-structured answers.",
-    "If the user asks for strategic, technical, architectural, or geopolitical analysis, answer in depth.",
-    "If the user asks for implementation help, produce concrete engineering guidance."
+    "Provide useful and well structured responses."
   ].join(" ");
 }
 
 function normalizeConversation(
   conversation?: ChatRequestBody["conversation"]
 ): Array<{ role: "user" | "assistant" | "system"; content: string }> {
+
   if (!Array.isArray(conversation)) {
     return [];
   }
@@ -57,6 +55,7 @@ function normalizeConversation(
 }
 
 function getOpenAIClient(): OpenAI {
+
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
@@ -67,21 +66,22 @@ function getOpenAIClient(): OpenAI {
 }
 
 export async function POST(request: Request) {
+
   try {
+
     const body = (await request.json()) as ChatRequestBody;
+
     const message = body.message?.trim();
 
     if (!message) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "Missing message"
-        },
+        { ok: false, error: "Missing message" },
         { status: 400 }
       );
     }
 
     const requestId = body.request_id?.trim() || buildRequestId();
+
     const nodeId = body.nodeId || "HBCE-MATRIX-NODE-0001-TORINO";
 
     const matrixResponse = executeJokerMatrixRequest({
@@ -127,16 +127,16 @@ export async function POST(request: Request) {
       },
       matrix: matrixResponse
     });
+
   } catch (error) {
+
     const message =
       error instanceof Error ? error.message : "Unknown server error";
 
     return NextResponse.json(
-      {
-        ok: false,
-        error: message
-      },
+      { ok: false, error: message },
       { status: 500 }
     );
   }
+
 }
