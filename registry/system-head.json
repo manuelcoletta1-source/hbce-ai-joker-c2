@@ -1,0 +1,37 @@
+{
+  "system": "HBCE Operational Identity Network",
+  "component": "AI JOKER-C2",
+  "organization": "HERMETICUM B.C.E. S.r.l.",
+  "maintainer": "HBCE Research",
+  "version": "1.0.0",
+  "protocol": "HBCE-IPR-JOKER",
+  "updated_at": "2026-03-16T00:00:00Z",
+
+  "active_identity": "IPR-AI-0001",
+
+  "active_node": {
+    "node_id": "HBCE-MATRIX-NODE-0001-TORINO",
+    "status": "EXPERIMENTAL",
+    "role": "technical_hub"
+  },
+
+  "execution_model": "request → identity → evidence → verification",
+
+  "architecture_layers": [
+    "IPR Identity Layer",
+    "Event Registry",
+    "Joker-C2 Coordination Engine",
+    "UFO Functional Modules",
+    "Lambda Stability Layer"
+  ],
+
+  "interfaces": {
+    "chat_api": "/api/chat",
+    "web_interface": "/interface"
+  },
+
+  "references": {
+    "ipr_registry": "registry/ipr-registry.json",
+    "node_registry": "registry/node-registry.json"
+  }
+}
