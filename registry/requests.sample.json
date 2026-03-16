@@ -1,0 +1,34 @@
+{
+  "sample_requests": [
+    {
+      "request_id": "HBCE-REQ-0001",
+      "timestamp": "2026-03-16T00:00:00Z",
+      "actor_identity": "IPR-AI-0001",
+      "entity": "AI_JOKER-C2",
+      "nodeId": "HBCE-MATRIX-NODE-0001-TORINO",
+      "mode": "analysis",
+      "message": "Esegui analisi del nodo Torino",
+      "description": "Richiesta di analisi del nodo Matrix Europa associato alla città di Torino."
+    },
+    {
+      "request_id": "HBCE-REQ-0002",
+      "timestamp": "2026-03-16T00:05:00Z",
+      "actor_identity": "IPR-AI-0001",
+      "entity": "AI_JOKER-C2",
+      "nodeId": "HBCE-MATRIX-NODE-0001-TORINO",
+      "mode": "verification",
+      "message": "Verifica integrità del registro eventi Joker-C2",
+      "description": "Richiesta di verifica dei metadati registrati nel sistema di eventi."
+    },
+    {
+      "request_id": "HBCE-REQ-0003",
+      "timestamp": "2026-03-16T00:10:00Z",
+      "actor_identity": "IPR-AI-0001",
+      "entity": "AI_JOKER-C2",
+      "nodeId": "HBCE-MATRIX-NODE-0001-TORINO",
+      "mode": "context-recovery",
+      "message": "Recupera contesto operativo del nodo Matrix Europa",
+      "description": "Richiesta di recupero del contesto operativo del nodo infrastrutturale."
+    }
+  ]
+}
