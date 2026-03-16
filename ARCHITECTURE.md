@@ -1,247 +1,180 @@
-# AI JOKER-C2
-## Architettura del sistema
+# AI JOKER-C2 — System Architecture
 
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
 
 ---
 
-# 1. Panoramica
+# 1. System Overview
 
-AI JOKER-C2 è progettato come **Coordination Engine cognitivo** dell’ecosistema HBCE.
+AI JOKER-C2 è il Coordination Engine del framework HBCE.
 
-Il sistema opera come interfaccia operativa tra:
+Il sistema integra tre elementi principali:
 
-- richieste utente
+- Identity Primary Record (IPR)
+- Joker-C2 Coordination Engine
+- Matrix Europa territorial network
+
+L'obiettivo è costruire un ambiente nel quale identità operative, eventi e contesto infrastrutturale possano essere collegati in modo verificabile.
+
+---
+
+# 2. Architectural Model
+
+Il modello operativo del sistema segue la sequenza:
+
+Identity → Action → Evidence → Verification
+
+Questo modello consente di collegare:
+
 - identità operative
-- moduli funzionali
-- contesto infrastrutturale
-
-L’architettura è progettata per supportare ambienti tecnologici complessi nei quali è necessario associare le operazioni digitali a contesti verificabili.
-
----
-
-# 2. Pipeline operativa
-
-Il funzionamento del sistema segue una pipeline logica composta da quattro fasi principali.
-
-request → identity → evidence → verification
-
-### request
-
-L’utente o il sistema invia una richiesta operativa.
-
-Esempi:
-
-- analisi informazionale
-- richiesta di ricerca
-- correlazione eventi
-- analisi nodo Matrix Europa
+- azioni digitali
+- registrazione degli eventi
+- verifica delle informazioni
 
 ---
 
-### identity
+# 3. System Layers
 
-La richiesta viene associata a una identità operativa.
+L'architettura HBCE è organizzata in diversi livelli funzionali.
 
-Questa identità può rappresentare:
+### Identity Layer
 
-- utente umano
-- agente AI
-- sistema autonomo
-- nodo infrastrutturale
+Gestisce le identità operative attraverso il modello IPR.
 
-Nel caso di Joker-C2:
+File principali:
 
-IPR-AI-0001
+registry/ipr-registry.json
 
 ---
 
-### evidence
+### Coordination Layer
 
-Durante l’esecuzione il sistema produce evidenze operative.
-
-Le evidenze possono includere:
-
-- contesto di esecuzione
-- metadati di richiesta
-- correlazioni informative
-- risultati della ricerca
-
----
-
-### verification
-
-Le evidenze prodotte possono essere verificate a posteriori tramite registri e sistemi di audit.
-
-Questo approccio consente di costruire ambienti tecnologici **verificabili**.
-
----
-
-# 3. Livelli architetturali
-
-L’architettura Joker-C2 può essere rappresentata attraverso cinque livelli principali.
-
-IPR Identity Layer Event Registry Joker-C2 Coordination Engine UFO Functional Modules Lambda Stability Layer
-
----
-
-# 4. Identity Layer
-
-Il livello di identità utilizza il modello **IPR (Identity Primary Record)**.
-
-L’IPR rappresenta un identificatore persistente associato a entità operative.
-
-Possibili entità:
-
-- operatori umani
-- agenti AI
-- sistemi autonomi
-- robot
-- infrastrutture digitali
-
-L’obiettivo è consentire l’attribuzione delle azioni nei sistemi tecnologici complessi.
-
----
-
-# 5. Event Registry
-
-Il registro eventi memorizza informazioni strutturate sulle operazioni effettuate.
-
-Esempi di dati registrabili:
-
-- identificatore richiesta
-- contesto di esecuzione
-- nodo infrastrutturale
-- timestamp operativo
-- output generato
-
-Questo consente la ricostruzione delle operazioni.
-
----
-
-# 6. Joker-C2 Coordination Engine
-
-Il Coordination Engine rappresenta il cuore del sistema.
-
-Responsabilità principali:
-
-- analisi del contesto
-- normalizzazione della richiesta
-- rilevazione del dominio operativo
-- selezione corpus informativo
-- generazione risposta
-
-Il motore può operare in diverse modalità:
-
-- analysis
-- verification
-- context recovery
-
----
-
-# 7. UFO Functional Modules
-
-Gli UFO Modules sono moduli applicativi specializzati.
-
-Ogni modulo è progettato per operare in uno specifico dominio tecnologico.
-
-Esempi di moduli:
-
-- UFO-ENERGY
-- UFO-AI
-- UFO-CIVIL
-- UFO-SPACE
-- UFO-INTERCEPT
-
-Questi moduli permettono l'estensione delle capacità del sistema.
-
----
-
-# 8. Lambda Stability Layer
-
-Il Lambda layer monitora la stabilità operativa del sistema.
+Joker-C2 opera come motore cognitivo di coordinamento.
 
 Funzioni:
 
-- rilevazione instabilità
-- correzione operativa
-- monitoraggio stato del sistema
+- analisi informazionale
+- correlazione eventi
+- sintesi operativa
 
-Questo livello è progettato per garantire la resilienza del sistema in ambienti complessi.
+File principali:
 
----
-
-# 9. Matrix Europa
-
-Matrix Europa rappresenta il contesto territoriale nel quale il sistema può operare.
-
-La rete Matrix è composta da nodi distribuiti.
-
-Esempio nodo:
-
-HBCE-MATRIX-NODE-0001-TORINO
-
-I nodi possono rappresentare:
-
-- centri di ricerca
-- infrastrutture tecnologiche
-- ambienti urbani sperimentali
-- gateway istituzionali
+api/chat.js api/corpus-registry.js
 
 ---
 
-# 10. Interfaccia operativa
+### Territorial Layer
 
-L’interfaccia Joker-C2 consente l’interazione diretta con il Coordination Engine.
+La Matrix Europa rappresenta la dimensione territoriale del sistema.
 
-Funzioni principali:
+File principali:
 
-- invio richieste operative
-- visualizzazione conversazione
-- accesso metadati di esecuzione
-- monitoraggio contesto nodo
-
-L’interfaccia è implementata tramite **Next.js**.
+registry/matrix-europa-grid.json docs/matrix-europa-grid.md
 
 ---
 
-# 11. Endpoint API
+### Event Layer
 
-Endpoint principale:
+Gli eventi operativi possono essere registrati in registri append-only.
+
+File principale:
+
+registry/events.log.json
+
+---
+
+# 4. Joker-C2 Processing Pipeline
+
+Il motore Joker-C2 segue una pipeline di elaborazione.
+
+User Request ↓ Query Normalization ↓ Topic Detection ↓ Corpus Search ↓ Context Assembly ↓ Response Generation
+
+Questa pipeline trasforma richieste in linguaggio naturale in risposte contestualizzate.
+
+---
+
+# 5. Repository Structure
+
+Il repository è organizzato nei seguenti moduli principali.
+
+api/ chat.js corpus-registry.js
+
+public/ interface.html
+
+registry/ ipr-registry.json node-registry.json events.log.json matrix-europa-grid.json
+
+system/ system-manifest.json
+
+docs/ hbce-operational-model.md joker-c2-architecture.md joker-c2-protocol.md matrix-europa-grid.md matrix-europa-100-cities.md matrix-europa-infrastructure-layers.md matrix-europa-vulnerability-map.md
+
+---
+
+# 6. Interface Layer
+
+L'interfaccia utente è una console web conversazionale.
+
+File principale:
+
+public/interface.html
+
+L'interfaccia comunica con Joker-C2 attraverso l'endpoint API:
 
 POST /api/chat
 
-Esempio richiesta:
+---
 
-{ "message": "Analizza il nodo Torino", "mode": "analysis", "actor_identity": "IPR-AI-0001", "entity": "AI_JOKER-C2" }
+# 7. Matrix Europa Integration
+
+Le richieste Joker-C2 possono essere contestualizzate territorialmente attraverso i nodi Matrix Europa.
+
+Nodo tecnico principale:
+
+HBCE-MATRIX-NODE-0001-TORINO
+
+Nodo istituzionale europeo:
+
+HBCE-MATRIX-NODE-0010-BRUSSELS
 
 ---
 
-# 12. Deployment
+# 8. System Manifest
 
-Il sistema è progettato per deployment tramite **Vercel**.
+Il manifest del sistema descrive la configurazione generale del progetto.
 
-Pipeline di distribuzione:
+File:
 
-GitHub ↓ Vercel ↓ Next.js runtime ↓ API serverless
+system/system-manifest.json
 
 ---
 
-# 13. Obiettivo
+# 9. Documentation
 
-L'obiettivo di Joker-C2 è esplorare nuovi modelli di integrazione tra:
+La documentazione del sistema è contenuta nella directory `docs/`.
 
-- identità digitale persistente
-- sistemi AI
-- infrastrutture tecnologiche complesse
+Include:
 
-Questa architettura consente lo sviluppo di ambienti tecnologici nei quali le azioni digitali possano essere attribuite, registrate e verificate.
+- architettura HBCE
+- protocollo Joker-C2
+- rete Matrix Europa
+- analisi infrastrutturale europea
+
+---
+
+# 10. Future Development
+
+Le evoluzioni previste includono:
+
+- integrazione ricerca web
+- memoria conversazionale
+- analisi multi-nodo Matrix Europa
+- integrazione con dati infrastrutturali esterni
 
 ---
 
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
+
 
 
 
