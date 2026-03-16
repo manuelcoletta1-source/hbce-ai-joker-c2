@@ -1,156 +1,135 @@
 # AI JOKER-C2
+## Identity-Bound Operational AI Application
 
-Identity-Bound Operational AI Application  
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
 
 ---
 
-## Introduzione
+# Overview
 
-AI JOKER-C2 è il motore cognitivo operativo dell'ecosistema **HBCE (Hermeticum B.C.E.)**.
+AI JOKER-C2 è il Coordination Engine del framework HBCE.
 
-L'applicazione implementa un modello di intelligenza artificiale legato a identità verificabile, progettato per operare in ambienti infrastrutturali, istituzionali e tecnologici complessi.
+Il sistema è progettato come un motore di analisi informazionale e coordinamento operativo capace di collegare:
 
-Joker-C2 non è progettato come semplice chatbot.  
-È un **Coordination Engine** capace di:
+- identità operative persistenti
+- infrastrutture digitali
+- contesto territoriale europeo
+- registri di evidenza verificabili
 
-- analisi informazionale
-- correlazione di eventi
-- supporto decisionale tecnico-strategico
-- integrazione con identità operative persistenti (IPR)
+L'architettura del sistema integra tre componenti principali:
 
----
-
-## Architettura
-
-Il sistema si basa su una pipeline operativa composta da quattro livelli principali.
-
-request → identity → evidence → verification
-
-Questa architettura consente di:
-
-- associare ogni richiesta ad una identità operativa
-- registrare eventi generati dal sistema
-- produrre evidenze verificabili
-- consentire audit tecnico successivo
+- **Identity Primary Record (IPR)**
+- **Joker-C2 Coordination Engine**
+- **Matrix Europa territorial network**
 
 ---
 
-## Componenti principali
+# Core Principle
 
-### Identity Primary Record (IPR)
+Il modello operativo del sistema segue la sequenza:
 
-L'IPR è il registro di identità persistente dell'ecosistema HBCE.
+Identity → Action → Evidence → Verification
 
-Ogni entità operativa può essere associata a un IPR:
+Questo modello consente di associare identità operative, eventi e contesto infrastrutturale in un ambiente verificabile.
 
-- esseri umani
-- agenti AI
-- sistemi autonomi
-- nodi infrastrutturali
+---
 
-Nel caso di Joker-C2:
+# System Components
+
+## Identity Layer
+
+Il sistema utilizza il modello **Identity Primary Record (IPR)** per rappresentare identità operative persistenti.
+
+Le identità possono essere associate a:
+
+- individui
+- sistemi AI
+- robot
+- droni
+- infrastrutture tecnologiche
+
+Identità principale Joker-C2:
 
 IPR-AI-0001
 
 ---
 
-### Joker-C2 Coordination Engine
+## Joker-C2 Coordination Engine
 
-Joker-C2 agisce come motore di coordinamento cognitivo.
+Joker-C2 è il motore cognitivo del sistema.
 
 Funzioni principali:
 
 - analisi informazionale
-- recupero corpus strutturato
-- correlazione semantica
-- generazione di risposta operativa
+- correlazione eventi
+- sintesi operativa
+- supporto tecnico-strategico
+
+Il sistema può ricevere richieste attraverso una interfaccia conversazionale e generare risposte contestualizzate.
 
 ---
 
-### Matrix Europa
+## Matrix Europa Network
 
-Matrix Europa rappresenta la rete territoriale dei nodi Joker-C2 distribuiti nel contesto europeo.
+Matrix Europa rappresenta la rete territoriale del sistema.
 
-Ogni nodo può rappresentare:
+È concepita come una griglia europea di nodi tecnologici collegati attraverso corridoi infrastrutturali.
 
-- laboratorio tecnologico
-- infrastruttura digitale
-- nodo di ricerca
-- gateway istituzionale
+Asse principale della rete:
 
-Esempio nodo attivo nel prototipo:
+Torino → Brussels
 
-HBCE-MATRIX-NODE-0001-TORINO
+- **Torino** — nodo tecnico sperimentale
+- **Brussels** — nodo istituzionale europeo
 
 ---
 
-### UFO Modules
+# Repository Structure
 
-Gli UFO Modules (Unità Funzionali Opponibili) sono moduli applicativi specializzati collegati al motore Joker-C2.
+api/ chat.js corpus-registry.js
 
-Esempi:
+public/ interface.html
 
-- UFO-ENERGY
-- UFO-AI
-- UFO-CIVIL
-- UFO-SPACE
-- UFO-INTERCEPT
-- UFO-REACTOR
+registry/ ipr-registry.json node-registry.json events.log.json matrix-europa-grid.json
 
-Tutti i moduli condividono il motore di stabilità **Lambda**.
+system/ system-manifest.json
+
+docs/ hbce-operational-model.md matrix-europa-grid.md matrix-europa-100-cities.md matrix-europa-infrastructure-layers.md matrix-europa-vulnerability-map.md
 
 ---
 
-## Struttura del repository
+# Operational Flow
 
-app/ layout.tsx page.tsx interface/page.tsx ipr/page.tsx api/chat/route.ts
+Il flusso operativo del sistema è il seguente:
 
-api/ chat.js
-
-globals.css not-found.tsx
-
-vercel.json
+User Request ↓ Joker-C2 Interface ↓ IPR Identity Layer ↓ Joker-C2 Coordination Engine ↓ Matrix Europa Context ↓ Event Registry ↓ Response + Metadata
 
 ---
 
-## API principale
+# Purpose
 
-Endpoint operativo:
+Il progetto esplora modelli sperimentali per la gestione di infrastrutture digitali complesse attraverso:
 
-POST /api/chat
-
-Esempio richiesta:
-
-{ "message": "Esegui analisi del nodo Torino", "mode": "analysis", "actor_identity": "IPR-AI-0001", "entity": "AI_JOKER-C2" }
-
----
-
-## Deploy
-
-Il progetto è progettato per essere distribuito tramite **Vercel**.
-
-git push origin main
-
-Il deployment genera automaticamente:
-
-- frontend Next.js
-- endpoint serverless `/api/chat`
+- identità operative verificabili
+- registrazione deterministica degli eventi
+- coordinamento informazionale
+- analisi territoriale delle infrastrutture tecnologiche
 
 ---
 
-## Licenza
-
-Copyright © 2026 Manuel Coletta
-
-All rights reserved.
+# Maintainer
 
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
 
+---
 
+# License
 
+Progetto di ricerca sperimentale.
+
+All rights reserved.
 
 
 
