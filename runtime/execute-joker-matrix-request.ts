@@ -1,6 +1,7 @@
 /**
  * Execute Joker-C2 Matrix Request
  * Bridge layer between Joker-C2 incoming requests and Matrix Europa node-aware execution
+ * with persistent append-only ledger export
  *
  * HBCE Research
  * HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA
@@ -12,6 +13,12 @@ import {
   getMatrixNodeExecutionSnapshot,
   type MatrixNodeExecutionResult
 } from "./matrix-node-execution"
+
+import {
+  appendPersistentMatrixNodeLedgerSnapshot,
+  resolveMatrixNodeLedgerFilePath,
+  type MatrixNodeLedgerFileShape
+} from "../ledger/matrix-node-ledger-persistence"
 
 export type JokerMatrixRequest = {
   request_id: string
@@ -29,6 +36,10 @@ export type JokerMatrixResponse = {
   prompt: string
   execution: MatrixNodeExecutionResult
   ledger_snapshot: ReturnType<typeof getMatrixNodeExecutionSnapshot>
+  persistent_ledger: {
+    file_path: string
+    snapshot: MatrixNodeLedgerFileShape
+  }
 }
 
 function normalizeMode(mode?: string): string {
@@ -64,6 +75,8 @@ export function executeJokerMatrixRequest(
   })
 
   const ledgerSnapshot = getMatrixNodeExecutionSnapshot()
+  const persistentSnapshot = appendPersistentMatrixNodeLedgerSnapshot(request.nodeId)
+  const persistentLedgerPath = resolveMatrixNodeLedgerFilePath(request.nodeId)
 
   return {
     ok: true,
@@ -71,6 +84,10 @@ export function executeJokerMatrixRequest(
     mode,
     prompt: request.prompt,
     execution,
-    ledger_snapshot: ledgerSnapshot
+    ledger_snapshot: ledgerSnapshot,
+    persistent_ledger: {
+      file_path: persistentLedgerPath,
+      snapshot: persistentSnapshot
+    }
   }
 }
