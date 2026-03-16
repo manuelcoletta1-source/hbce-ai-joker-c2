@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type ChatItem = {
-  role: "user" | "assistant" | "system";
+type Role = "user" | "assistant";
+
+type ChatMessage = {
+  role: Role;
   content: string;
 };
 
@@ -26,101 +28,87 @@ type ApiResponse = {
     };
   };
   error?: string;
-  [key: string]: unknown;
 };
 
-const STORAGE_KEY = "joker-c2-next-conversation-v1";
+const STORAGE_KEY = "joker-c2-conversation";
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 const DEFAULT_IDENTITY = "IPR-AI-0001";
 
 export default function InterfacePage() {
-  const [conversation, setConversation] = useState<ChatItem[]>([]);
-  const [message, setMessage] = useState("");
+  const [conversation, setConversation] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [status, setStatus] = useState("Ready");
+  const [sending, setSending] = useState(false);
+
   const [mode, setMode] = useState("analysis");
   const [actorIdentity, setActorIdentity] = useState(DEFAULT_IDENTITY);
   const [nodeId, setNodeId] = useState(DEFAULT_NODE);
-  const [status, setStatus] = useState("Ready");
-  const [isSending, setIsSending] = useState(false);
-  const [rawResponse, setRawResponse] = useState("No response yet.");
-  const [requestId, setRequestId] = useState("Not executed yet");
+
+  const [requestId, setRequestId] = useState("-");
   const [metaMode, setMetaMode] = useState("-");
   const [metaNode, setMetaNode] = useState(DEFAULT_NODE);
-  const [verificationReference, setVerificationReference] = useState("-");
+  const [verification, setVerification] = useState("-");
 
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const endRef = useRef<HTMLDivElement | null>(null);
+
+  /* ---------------- persistence ---------------- */
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return;
-
-      const safeConversation = parsed.filter((item) => {
-        return (
-          item &&
-          (item.role === "user" ||
-            item.role === "assistant" ||
-            item.role === "system") &&
-          typeof item.content === "string" &&
-          item.content.trim().length > 0
-        );
-      });
-
-      setConversation(safeConversation);
-    } catch {
-      setConversation([]);
-    }
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) setConversation(parsed);
+    } catch {}
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(conversation));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversation));
   }, [conversation]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation]);
 
   const turns = useMemo(() => {
-    return conversation.filter(
-      (item) => item.role === "user" || item.role === "assistant"
-    ).length;
+    return conversation.length;
   }, [conversation]);
 
-  function pushMessage(role: ChatItem["role"], content: string) {
+  /* ---------------- chat logic ---------------- */
+
+  function add(role: Role, content: string) {
     setConversation((prev) => [...prev, { role, content }]);
   }
 
-  function clearConversation() {
+  function clearChat() {
     setConversation([]);
-    window.localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
     setStatus("Ready");
-    setRawResponse("No response yet.");
-    setRequestId("Not executed yet");
+    setRequestId("-");
     setMetaMode("-");
     setMetaNode(DEFAULT_NODE);
-    setVerificationReference("-");
+    setVerification("-");
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
 
-    const trimmed = message.trim();
-    if (!trimmed || isSending) return;
+    const msg = input.trim();
+    if (!msg || sending) return;
 
-    pushMessage("user", trimmed);
-    setMessage("");
+    add("user", msg);
+    setInput("");
+    setSending(true);
     setStatus("Sending...");
-    setIsSending(true);
 
     try {
-      const response = await fetch("/api/chat", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          message: trimmed,
+          message: msg,
           mode,
           actor_identity: actorIdentity,
           entity: "AI_JOKER-C2",
@@ -129,223 +117,144 @@ export default function InterfacePage() {
         })
       });
 
-      const data: ApiResponse = await response.json();
-      setRawResponse(JSON.stringify(data, null, 2));
+      const data: ApiResponse = await res.json();
 
-      if (!response.ok || !data.ok) {
-        const errorText = `Request failed: ${data.error || "Unknown error"}`;
-        pushMessage("assistant", errorText);
+      if (!res.ok || !data.ok) {
+        add("assistant", data.error || "Execution error.");
         setStatus("Error");
         return;
       }
 
-      const replyText =
+      const reply =
         typeof data.reply === "string"
           ? data.reply
           : data.reply?.content ||
             data.matrix?.reply?.content ||
             "Joker-C2 completed the request.";
 
-      pushMessage("assistant", replyText);
+      add("assistant", reply);
 
       setRequestId(data.request_id || data.matrix?.request_id || "-");
-      setMetaMode(data.mode || data.matrix?.mode || mode || "-");
-      setMetaNode(data.matrix?.execution?.matrix_node?.node_id || nodeId || "-");
-      setVerificationReference(
+      setMetaMode(data.mode || data.matrix?.mode || "-");
+      setMetaNode(data.matrix?.execution?.matrix_node?.node_id || nodeId);
+      setVerification(
         data.matrix?.execution?.verification_reference || "-"
       );
-      setStatus("Completed");
-    } catch (error) {
-      const errorText =
-        error instanceof Error ? error.message : "Unknown client error";
 
-      pushMessage(
-        "assistant",
-        `Request failed before Joker-C2 execution. ${errorText}`
-      );
-      setRawResponse(String(errorText));
-      setStatus("Offline / Missing API");
+      setStatus("Completed");
+    } catch {
+      add("assistant", "Execution failed. API not reachable.");
+      setStatus("Offline");
     } finally {
-      setIsSending(false);
+      setSending(false);
     }
   }
 
+  /* ---------------- UI ---------------- */
+
   return (
     <main style={styles.page}>
-      <div style={styles.app}>
-        <section style={styles.mainColumn}>
-          <header style={styles.topbar}>
+      <div style={styles.layout}>
+        <section style={styles.chatArea}>
+          <header style={styles.header}>
             <div>
               <div style={styles.kicker}>HBCE Research</div>
-              <h1 style={styles.title}>AI JOKER-C2 Interface</h1>
+              <h1 style={styles.title}>AI JOKER-C2</h1>
               <p style={styles.subtitle}>
-                Conversational shell connected to the Torino Matrix node.
+                Conversational interface connected to the Torino Matrix node.
               </p>
             </div>
 
-            <div style={styles.topbarActions}>
-              <a href="/index.html" style={styles.ghostLink}>
-                Back to portal
-              </a>
-              <button
-                type="button"
-                onClick={clearConversation}
-                style={styles.ghostButton}
-              >
-                Clear conversation
+            <div style={styles.headerActions}>
+              <button onClick={clearChat} style={styles.ghostBtn}>
+                Clear
               </button>
+
               <div style={styles.status}>
                 <span style={styles.dot} />
-                <span>{status}</span>
+                {status}
               </div>
             </div>
           </header>
 
-          <section style={styles.chatCard}>
-            <div style={styles.chatHeader}>
-              <h2 style={styles.chatTitle}>Operational Chat</h2>
-              <p style={styles.chatSubtitle}>
-                Direct conversation first. Technical telemetry stays in the side
-                panel.
-              </p>
-            </div>
-
-            <div style={styles.messages}>
-              {conversation.length === 0 ? (
-                <div style={styles.welcome}>
-                  Joker-C2 interface initialized. Default Matrix Europa node:
-                  Torino.
-                </div>
-              ) : (
-                conversation.map((item, index) => (
+          <div style={styles.messages}>
+            {conversation.length === 0 ? (
+              <div style={styles.welcome}>
+                Joker-C2 ready. Default node: Torino.
+              </div>
+            ) : (
+              conversation.map((m, i) => (
+                <div
+                  key={i}
+                  style={{
+                    ...styles.row,
+                    justifyContent:
+                      m.role === "user" ? "flex-end" : "flex-start"
+                  }}
+                >
                   <div
-                    key={`${item.role}-${index}`}
                     style={{
-                      ...styles.row,
-                      justifyContent:
-                        item.role === "user" ? "flex-end" : "flex-start"
+                      ...styles.bubble,
+                      ...(m.role === "user"
+                        ? styles.user
+                        : styles.assistant)
                     }}
                   >
-                    <div
-                      style={{
-                        ...styles.bubble,
-                        ...(item.role === "user"
-                          ? styles.userBubble
-                          : item.role === "assistant"
-                            ? styles.assistantBubble
-                            : styles.systemBubble)
-                      }}
-                    >
-                      <div style={styles.roleTag}>
-                        {item.role === "user"
-                          ? "You"
-                          : item.role === "assistant"
-                            ? "AI JOKER-C2"
-                            : "System"}
-                      </div>
-                      <div>{item.content}</div>
+                    <div style={styles.role}>
+                      {m.role === "user" ? "You" : "AI JOKER-C2"}
                     </div>
+                    {m.content}
                   </div>
-                ))
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </section>
+                </div>
+              ))
+            )}
 
-          <form onSubmit={handleSubmit} style={styles.composer}>
-            <div style={styles.composerRow}>
-              <textarea
-                value={message}
-                onChange={(event) => setMessage(event.target.value)}
-                placeholder="Send a request to Joker-C2..."
-                style={styles.textarea}
-              />
-              <button type="submit" disabled={isSending} style={styles.sendButton}>
-                {isSending ? "Sending..." : "Send to Joker-C2"}
-              </button>
-            </div>
+            <div ref={endRef} />
+          </div>
 
-            <details style={styles.details}>
-              <summary style={styles.summary}>Advanced execution settings</summary>
-              <div style={styles.advancedGrid}>
-                <select
-                  value={mode}
-                  onChange={(event) => setMode(event.target.value)}
-                  style={styles.field}
-                >
-                  <option value="analysis">analysis</option>
-                  <option value="verification">verification</option>
-                </select>
+          <form onSubmit={send} style={styles.composer}>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Send request to Joker-C2..."
+              style={styles.textarea}
+            />
 
-                <input
-                  value={actorIdentity}
-                  onChange={(event) => setActorIdentity(event.target.value)}
-                  placeholder="Actor identity"
-                  style={styles.field}
-                />
-
-                <input
-                  value={nodeId}
-                  onChange={(event) => setNodeId(event.target.value)}
-                  placeholder="Node ID"
-                  style={styles.field}
-                />
-              </div>
-            </details>
+            <button disabled={sending} style={styles.send}>
+              {sending ? "Sending..." : "Send"}
+            </button>
           </form>
         </section>
 
         <aside style={styles.sidebar}>
-          <section style={styles.sideCard}>
-            <h3 style={styles.sideTitle}>Execution Context</h3>
-            <div style={styles.stack}>
-              <div style={styles.kvItem}>
-                <div style={styles.kvKey}>Default node</div>
-                <div style={styles.kvVal}>{DEFAULT_NODE}</div>
-              </div>
-              <div style={styles.kvItem}>
-                <div style={styles.kvKey}>Identity layer</div>
-                <div style={styles.kvVal}>{DEFAULT_IDENTITY}</div>
-              </div>
-              <div style={styles.kvItem}>
-                <div style={styles.kvKey}>Execution model</div>
-                <div style={styles.kvVal}>
-                  request → identity → evidence → verification
-                </div>
-              </div>
-            </div>
-          </section>
+          <h3 style={styles.sideTitle}>Execution Context</h3>
 
-          <section style={styles.sideCard}>
-            <h3 style={styles.sideTitle}>Live Execution Metadata</h3>
-            <div style={styles.stack}>
-              <div style={styles.kvItem}>
-                <div style={styles.kvKey}>Request ID</div>
-                <div style={styles.kvVal}>{requestId}</div>
-              </div>
-              <div style={styles.kvItem}>
-                <div style={styles.kvKey}>Mode</div>
-                <div style={styles.kvVal}>{metaMode}</div>
-              </div>
-              <div style={styles.kvItem}>
-                <div style={styles.kvKey}>Node</div>
-                <div style={styles.kvVal}>{metaNode}</div>
-              </div>
-              <div style={styles.kvItem}>
-                <div style={styles.kvKey}>Verification Reference</div>
-                <div style={styles.kvVal}>{verificationReference}</div>
-              </div>
-              <div style={styles.kvItem}>
-                <div style={styles.kvKey}>Conversation Turns</div>
-                <div style={styles.kvVal}>{String(turns)}</div>
-              </div>
+          <div style={styles.meta}>
+            <div>
+              <b>Node</b>
+              <div>{metaNode}</div>
             </div>
-          </section>
 
-          <section style={styles.sideCard}>
-            <h3 style={styles.sideTitle}>Last Raw Response</h3>
-            <pre style={styles.pre}>{rawResponse}</pre>
-          </section>
+            <div>
+              <b>Mode</b>
+              <div>{metaMode}</div>
+            </div>
+
+            <div>
+              <b>Request ID</b>
+              <div>{requestId}</div>
+            </div>
+
+            <div>
+              <b>Verification</b>
+              <div>{verification}</div>
+            </div>
+
+            <div>
+              <b>Conversation Turns</b>
+              <div>{turns}</div>
+            </div>
+          </div>
         </aside>
       </div>
     </main>
@@ -355,273 +264,130 @@ export default function InterfacePage() {
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
-    background:
-      "radial-gradient(circle at top left, rgba(56,189,248,.10), transparent 30%), radial-gradient(circle at bottom right, rgba(125,211,252,.08), transparent 30%), #0b0f14",
+    background: "#0b0f14",
     color: "#e8eef7",
-    fontFamily:
-      "system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif"
+    fontFamily: "system-ui"
   },
-  app: {
-    width: "min(100%, 1400px)",
+
+  layout: {
+    maxWidth: 1400,
     margin: "0 auto",
-    padding: 20,
     display: "grid",
-    gridTemplateColumns: "minmax(0,1.65fr) 340px",
-    gap: 20
+    gridTemplateColumns: "1fr 320px",
+    gap: 20,
+    padding: 20
   },
-  mainColumn: {
-    display: "grid",
-    gridTemplateRows: "auto 1fr auto",
-    gap: 16,
-    minWidth: 0
+
+  chatArea: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 16
   },
-  topbar: {
-    border: "1px solid rgba(255,255,255,.08)",
-    borderRadius: 24,
-    background:
-      "linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95))",
-    boxShadow: "0 10px 30px rgba(0,0,0,.35)",
-    padding: 18,
+
+  header: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-    gap: 16,
-    flexWrap: "wrap"
+    alignItems: "center"
   },
+
   kicker: {
     fontSize: 12,
-    letterSpacing: "0.16em",
-    textTransform: "uppercase",
     color: "#8fa3b8"
   },
+
   title: {
-    margin: "4px 0 6px",
-    fontSize: 24
+    margin: 0
   },
+
   subtitle: {
     margin: 0,
-    color: "#8fa3b8",
-    fontSize: 14,
-    lineHeight: 1.6
+    color: "#8fa3b8"
   },
-  topbarActions: {
+
+  headerActions: {
     display: "flex",
     gap: 10,
-    alignItems: "center",
-    flexWrap: "wrap"
+    alignItems: "center"
   },
-  ghostLink: {
-    textDecoration: "none",
-    color: "#e8eef7",
-    border: "1px solid rgba(255,255,255,.08)",
-    borderRadius: 999,
-    padding: "9px 13px",
-    background: "rgba(255,255,255,.02)"
+
+  ghostBtn: {
+    padding: "6px 12px"
   },
-  ghostButton: {
-    border: "1px solid rgba(255,255,255,.08)",
-    borderRadius: 999,
-    padding: "9px 13px",
-    background: "rgba(255,255,255,.02)",
-    color: "#e8eef7",
-    cursor: "pointer"
-  },
+
   status: {
-    display: "inline-flex",
+    display: "flex",
     alignItems: "center",
-    gap: 8,
-    border: "1px solid rgba(255,255,255,.08)",
-    background: "rgba(255,255,255,.02)",
-    color: "#8fa3b8",
-    padding: "8px 12px",
-    borderRadius: 999,
-    fontSize: 12
+    gap: 6
   },
+
   dot: {
     width: 8,
     height: 8,
-    borderRadius: "50%",
     background: "#7dd3fc",
-    boxShadow: "0 0 12px rgba(125,211,252,.7)"
+    borderRadius: 4
   },
-  chatCard: {
-    border: "1px solid rgba(255,255,255,.08)",
-    borderRadius: 24,
-    background:
-      "linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95))",
-    boxShadow: "0 10px 30px rgba(0,0,0,.35)",
-    minHeight: "65vh",
-    display: "grid",
-    gridTemplateRows: "auto 1fr"
-  },
-  chatHeader: {
-    padding: "18px 20px",
-    borderBottom: "1px solid rgba(255,255,255,.05)"
-  },
-  chatTitle: {
-    margin: "0 0 6px",
-    fontSize: 22
-  },
-  chatSubtitle: {
-    margin: 0,
-    color: "#8fa3b8",
-    fontSize: 14,
-    lineHeight: 1.6
-  },
+
   messages: {
-    padding: 20,
+    flex: 1,
     overflow: "auto",
     display: "flex",
     flexDirection: "column",
-    gap: 18,
-    minHeight: 0
-  },
-  welcome: {
-    border: "1px dashed rgba(255,255,255,.08)",
-    background: "rgba(255,255,255,.02)",
-    color: "#8fa3b8",
-    borderRadius: 18,
-    padding: "16px 18px",
-    lineHeight: 1.6,
-    fontSize: 14
-  },
-  row: {
-    display: "flex",
-    width: "100%"
-  },
-  bubble: {
-    maxWidth: "88%",
-    borderRadius: 22,
-    padding: "14px 16px",
-    lineHeight: 1.7,
-    fontSize: 15,
-    whiteSpace: "pre-wrap",
-    wordBreak: "break-word"
-  },
-  userBubble: {
-    background:
-      "linear-gradient(180deg, rgba(56,189,248,.18), rgba(56,189,248,.11))",
-    border: "1px solid rgba(56,189,248,.30)"
-  },
-  assistantBubble: {
-    background: "rgba(255,255,255,.03)",
-    border: "1px solid rgba(255,255,255,.08)"
-  },
-  systemBubble: {
-    background: "rgba(255,255,255,.02)",
-    border: "1px dashed rgba(255,255,255,.08)",
-    color: "#8fa3b8"
-  },
-  roleTag: {
-    display: "block",
-    fontSize: 11,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    marginBottom: 8,
-    color: "#8fa3b8"
-  },
-  composer: {
-    border: "1px solid rgba(255,255,255,.08)",
-    borderRadius: 24,
-    background:
-      "linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95))",
-    boxShadow: "0 10px 30px rgba(0,0,0,.35)",
-    padding: 14
-  },
-  composerRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr auto",
-    gap: 12,
-    alignItems: "end"
-  },
-  textarea: {
-    width: "100%",
-    minHeight: 100,
-    borderRadius: 18,
-    border: "1px solid rgba(255,255,255,.08)",
-    background: "rgba(255,255,255,.02)",
-    color: "#e8eef7",
-    padding: 14,
-    resize: "vertical"
-  },
-  sendButton: {
-    border: "none",
-    borderRadius: 16,
-    padding: "14px 18px",
-    minWidth: 180,
-    fontWeight: 700,
-    cursor: "pointer",
-    background: "linear-gradient(180deg, #7dd3fc, #38bdf8)",
-    color: "#06121a"
-  },
-  details: {
-    marginTop: 12
-  },
-  summary: {
-    cursor: "pointer",
-    color: "#8fa3b8",
-    fontSize: 13
-  },
-  advancedGrid: {
-    marginTop: 12,
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
     gap: 12
   },
-  field: {
-    width: "100%",
-    border: "1px solid rgba(255,255,255,.08)",
-    borderRadius: 14,
-    background: "rgba(255,255,255,.02)",
-    color: "#e8eef7",
-    padding: "12px 14px"
+
+  welcome: {
+    color: "#8fa3b8"
   },
-  sidebar: {
+
+  row: {
+    display: "flex"
+  },
+
+  bubble: {
+    maxWidth: "80%",
+    padding: 12,
+    borderRadius: 14
+  },
+
+  user: {
+    background: "#38bdf8"
+  },
+
+  assistant: {
+    background: "#1f2933"
+  },
+
+  role: {
+    fontSize: 11,
+    marginBottom: 4
+  },
+
+  composer: {
     display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    minWidth: 0
-  },
-  sideCard: {
-    border: "1px solid rgba(255,255,255,.08)",
-    borderRadius: 24,
-    background:
-      "linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95))",
-    boxShadow: "0 10px 30px rgba(0,0,0,.35)",
-    padding: 18
-  },
-  sideTitle: {
-    margin: "0 0 12px",
-    fontSize: 16
-  },
-  stack: {
-    display: "grid",
     gap: 10
   },
-  kvItem: {
-    padding: "12px 14px",
-    border: "1px solid rgba(255,255,255,.08)",
-    borderRadius: 14,
-    background: "rgba(255,255,255,.02)"
+
+  textarea: {
+    flex: 1,
+    minHeight: 60
   },
-  kvKey: {
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    color: "#8fa3b8",
-    marginBottom: 6
+
+  send: {
+    padding: "10px 16px"
   },
-  kvVal: {
-    fontSize: 14,
-    lineHeight: 1.5,
-    wordBreak: "break-word"
+
+  sidebar: {
+    borderLeft: "1px solid rgba(255,255,255,0.1)",
+    paddingLeft: 20
   },
-  pre: {
-    margin: 0,
-    whiteSpace: "pre-wrap",
-    wordBreak: "break-word",
-    fontSize: 12,
-    lineHeight: 1.55,
-    color: "#cfe8ff"
+
+  sideTitle: {
+    marginTop: 0
+  },
+
+  meta: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 14
   }
 };
