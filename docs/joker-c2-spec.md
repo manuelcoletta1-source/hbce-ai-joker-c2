@@ -29,36 +29,27 @@ Il Coordination Engine svolge le seguenti funzioni:
 
 Il sistema supporta diverse modalità di esecuzione:
 analysis verification context-recovery
----
-
-## Struttura dei nodi
-
-Ogni nodo può includere:
-
-- infrastrutture digitali
-- sistemi di calcolo
-- sistemi AI
-- infrastrutture di rete
-- sistemi di audit
+Copia codice
 
 ---
 
-## Ruolo dei nodi
+## Integrazione con IPR
 
-I nodi Matrix possono svolgere diverse funzioni:
+Le operazioni del sistema possono essere associate a identità operative.
 
-- sperimentazione tecnologica
-- coordinamento informazionale
-- supervisione infrastrutturale
-- ricerca e sviluppo
+Esempio:
+IPR-AI-0001
+Questo consente l'attribuzione delle azioni generate dal sistema.
 
 ---
 
-## Visione
+## Integrazione con Matrix Europa
 
-La rete Matrix può essere estesa progressivamente attraverso nuovi nodi distribuiti nel territorio europeo.
+Joker-C2 può operare in contesti territoriali specifici.
 
-Questo consente la costruzione di una infrastruttura tecnologica federata basata su identità operative e registrazione verificabile delle azioni digitali.
+Esempio nodo:
+HBCE-MATRIX-NODE-0001-TORINO
+Questo consente l'associazione delle operazioni a contesti infrastrutturali specifici.
 
 ---
 
