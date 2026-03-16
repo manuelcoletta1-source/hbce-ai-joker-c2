@@ -1,0 +1,31 @@
+{
+  "log": "HBCE Operational Event Log",
+  "version": "1.0.0",
+  "maintainer": "HBCE Research",
+  "organization": "HERMETICUM B.C.E. S.r.l.",
+  "updated_at": "2026-03-16T00:00:00Z",
+  "events": [
+    {
+      "event_id": "HBCE-EVT-0001",
+      "timestamp": "2026-03-16T00:00:00Z",
+      "type": "SYSTEM_INIT",
+      "component": "AI_JOKER-C2",
+      "actor_identity": "IPR-AI-0001",
+      "node_id": "HBCE-MATRIX-NODE-0001-TORINO",
+      "status": "RECORDED",
+      "summary": "Inizializzazione del registro eventi operativo Joker-C2.",
+      "evidence": {
+        "request_id": "init-0001",
+        "mode": "context-recovery",
+        "verification_reference": "verify-init-0001"
+      },
+      "tags": [
+        "hbce",
+        "joker-c2",
+        "registry",
+        "system-init",
+        "event-log"
+      ]
+    }
+  ]
+}
