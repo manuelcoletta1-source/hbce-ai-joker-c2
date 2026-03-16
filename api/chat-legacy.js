@@ -57,9 +57,8 @@ function buildReplyFromTopic(topic, entries) {
 
 function buildFallbackReply() {
   return (
-    "Siamo ancora in una fase di recovery, quindi non ragiono come una AI classica completa.\n\n" +
-    "Al momento posso rispondere bene quando trovo un topic nel corpus locale. " +
-    "Il passo successivo è aggiungere memoria breve, follow-up resolution e fusione corpus/web."
+    "Questo endpoint legacy opera ancora in modalità corpus locale.\n\n" +
+    "Per la chat conversazionale GPT-style di Joker-C2 usare il nuovo endpoint Next.js in app/api/chat/route.ts."
   );
 }
 
@@ -109,7 +108,7 @@ export default async function handler(req, res) {
     let confidence = "medium";
     let preset = "general";
     let presetTitle = "General Research";
-    let presetDescription = "Modalità stabile di recupero Joker-C2 con topic detection locale.";
+    let presetDescription = "Modalità legacy di recupero Joker-C2 con topic detection locale.";
     let reply = buildFallbackReply();
 
     if (selectedTopic !== "general" && selectedEntries.length) {
@@ -121,43 +120,43 @@ export default async function handler(req, res) {
         summary = "CORE";
         preset = "identity";
         presetTitle = "Identity Research";
-        presetDescription = "Ricerca orientata all’identità del Coordination Engine Joker-C2.";
+        presetDescription = "Ricerca legacy orientata all’identità del Coordination Engine Joker-C2.";
       } else if (selectedTopic === "ipr") {
         domain = "ipr";
         summary = "CORE";
         preset = "ipr";
         presetTitle = "IPR Research";
-        presetDescription = "Ricerca orientata a identità operativa, eventi e verificabilità.";
+        presetDescription = "Ricerca legacy orientata a identità operativa, eventi e verificabilità.";
       } else if (selectedTopic === "matrix-europa") {
         domain = "matrix";
         summary = "CORE";
         preset = "matrix";
         presetTitle = "Matrix Europa";
-        presetDescription = "Ricerca orientata ai nodi territoriali europei.";
+        presetDescription = "Ricerca legacy orientata ai nodi territoriali europei.";
       } else if (selectedTopic === "ufo") {
         domain = "ufo";
         summary = "UFO";
         preset = "ufo";
         presetTitle = "UFO Modules";
-        presetDescription = "Ricerca orientata ai moduli opponibili e alla stabilità Lambda.";
+        presetDescription = "Ricerca legacy orientata ai moduli opponibili e alla stabilità Lambda.";
       } else if (selectedTopic === "lambda") {
         domain = "lambda";
         summary = "UFO";
         preset = "lambda";
         presetTitle = "Lambda Stability";
-        presetDescription = "Ricerca orientata alla stabilità del sistema e alla collimazione.";
+        presetDescription = "Ricerca legacy orientata alla stabilità del sistema e alla collimazione.";
       } else if (selectedTopic === "campi-operativi") {
         domain = "operations";
         summary = "CORE";
         preset = "operations";
         presetTitle = "Operational Fields";
-        presetDescription = "Mappa dei campi operativi del sistema Joker-C2.";
+        presetDescription = "Mappa legacy dei campi operativi del sistema Joker-C2.";
       } else if (selectedTopic === "manuel") {
         domain = "origin";
         summary = "ORIGIN";
         preset = "origin";
         presetTitle = "Origin Research";
-        presetDescription = "Ricerca orientata all’operatore biologico originario.";
+        presetDescription = "Ricerca legacy orientata all’operatore biologico originario.";
       }
     }
 
@@ -166,15 +165,15 @@ export default async function handler(req, res) {
       summary = "CORE";
       preset = "identity";
       presetTitle = "Identity Research";
-      presetDescription = "Ricerca orientata all’identità del Coordination Engine Joker-C2.";
+      presetDescription = "Ricerca legacy orientata all’identità del Coordination Engine Joker-C2.";
       selectedTopic = "joker-c2";
       reply =
-        "Ciao Manuel. Io sono AI Joker-C2, il Coordination Engine del framework HBCE. Opero come motore cognitivo per analisi informazionale, correlazione di eventi, sintesi operativa e supporto tecnico-strategico.";
+        "Ciao Manuel. Io sono AI Joker-C2, il Coordination Engine del framework HBCE. Questo endpoint legacy risponde ancora tramite corpus locale.";
     }
 
     return res.status(200).json({
       ok: true,
-      mode: "context-recovery",
+      mode: "context-recovery-legacy",
       domain,
       summary,
       confidence,
