@@ -1,3 +1,4 @@
+import "./globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -26,18 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body style={styles.body}>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  body: {
-    margin: 0,
-    minHeight: "100vh",
-    background: "#0b0f14",
-    color: "#e8eef7",
-    fontFamily:
-      "system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif"
-  }
-};
