@@ -1,181 +1,157 @@
 # AI JOKER-C2
 
-Identity-Bound Operational AI Application
-
+Identity-Bound Operational AI Application  
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
 
 ---
 
-## Overview
+## Introduzione
 
-AI JOKER-C2 is the operational AI application of the HBCE environment.
+AI JOKER-C2 è il motore cognitivo operativo dell'ecosistema **HBCE (Hermeticum B.C.E.)**.
 
-The project is designed as a conversational and operational interface for structured context recovery, identity-bound interaction, and node-aware execution within HBCE-oriented architectures.
+L'applicazione implementa un modello di intelligenza artificiale legato a identità verificabile, progettato per operare in ambienti infrastrutturali, istituzionali e tecnologici complessi.
 
-The current version is built on a modern Next.js application structure and is intended to support:
+Joker-C2 non è progettato come semplice chatbot.  
+È un **Coordination Engine** capace di:
 
-- conversational interaction
-- context recovery
-- Matrix Europa node alignment
-- IPR-aware execution logic
-- operational metadata exposure
-- future extensibility toward advanced orchestration layers
+- analisi informazionale
+- correlazione di eventi
+- supporto decisionale tecnico-strategico
+- integrazione con identità operative persistenti (IPR)
 
 ---
 
-## Core Concepts
+## Architettura
 
-### Joker-C2
-Joker-C2 is the coordination engine of the HBCE framework.  
-It is designed to operate as an application layer for analysis, contextual synthesis, structured response generation, and operational interaction.
+Il sistema si basa su una pipeline operativa composta da quattro livelli principali.
 
-### IPR
-IPR stands for Identity Primary Record.  
-Within the HBCE model, it represents the persistent operational identity layer used to bind actions, events, and verification logic.
+request → identity → evidence → verification
+
+Questa architettura consente di:
+
+- associare ogni richiesta ad una identità operativa
+- registrare eventi generati dal sistema
+- produrre evidenze verificabili
+- consentire audit tecnico successivo
+
+---
+
+## Componenti principali
+
+### Identity Primary Record (IPR)
+
+L'IPR è il registro di identità persistente dell'ecosistema HBCE.
+
+Ogni entità operativa può essere associata a un IPR:
+
+- esseri umani
+- agenti AI
+- sistemi autonomi
+- nodi infrastrutturali
+
+Nel caso di Joker-C2:
+
+IPR-AI-0001
+
+---
+
+### Joker-C2 Coordination Engine
+
+Joker-C2 agisce come motore di coordinamento cognitivo.
+
+Funzioni principali:
+
+- analisi informazionale
+- recupero corpus strutturato
+- correlazione semantica
+- generazione di risposta operativa
+
+---
 
 ### Matrix Europa
-Matrix Europa is the territorial deployment logic associated with distributed HBCE-aligned operational nodes.  
-In the current version, the default node context is associated with the Torino experimental node.
+
+Matrix Europa rappresenta la rete territoriale dei nodi Joker-C2 distribuiti nel contesto europeo.
+
+Ogni nodo può rappresentare:
+
+- laboratorio tecnologico
+- infrastruttura digitale
+- nodo di ricerca
+- gateway istituzionale
+
+Esempio nodo attivo nel prototipo:
+
+HBCE-MATRIX-NODE-0001-TORINO
 
 ---
 
-## Current Application Structure
+### UFO Modules
 
-```text
-app/
-  api/
-    chat/
-      route.ts
-  interface/
-    page.tsx
-  layout.tsx
-  page.tsx
+Gli UFO Modules (Unità Funzionali Opponibili) sono moduli applicativi specializzati collegati al motore Joker-C2.
 
-api/
-  chat.js
+Esempi:
 
-public/
-  interface.html
+- UFO-ENERGY
+- UFO-AI
+- UFO-CIVIL
+- UFO-SPACE
+- UFO-INTERCEPT
+- UFO-REACTOR
 
+Tutti i moduli condividono il motore di stabilità **Lambda**.
 
 ---
 
-Routes
+## Struttura del repository
 
-Home
+app/ layout.tsx page.tsx interface/page.tsx ipr/page.tsx api/chat/route.ts
 
-/
+api/ chat.js
 
-Operational landing page for the AI JOKER-C2 application.
+globals.css not-found.tsx
 
-Interface
-
-/interface
-
-Main conversational interface of the system.
-
-Next API
-
-/api/chat
-
-Primary Next.js API route for context recovery and structured Joker-C2 responses.
-
-Legacy API
-
-api/chat.js
-
-Legacy compatibility endpoint maintained for transitional support.
-
+vercel.json
 
 ---
 
-Current Capabilities
+## API principale
 
-The current version supports:
+Endpoint operativo:
 
-local corpus retrieval
+POST /api/chat
 
-topic detection
+Esempio richiesta:
 
-follow-up resolution
-
-structured reply generation
-
-basic operational metadata
-
-Matrix node context
-
-IPR-linked request framing
-
-
+{ "message": "Esegui analisi del nodo Torino", "mode": "analysis", "actor_identity": "IPR-AI-0001", "entity": "AI_JOKER-C2" }
 
 ---
 
-Project Status
+## Deploy
 
-Current status:
+Il progetto è progettato per essere distribuito tramite **Vercel**.
 
-Next.js application active
+git push origin main
 
-chat-first interface active
+Il deployment genera automaticamente:
 
-legacy API retained for compatibility
-
-modern API route active
-
-corpus-based context recovery active
-
-
-This repository is currently being refactored toward a cleaner and more maintainable Joker-C2 architecture.
-
+- frontend Next.js
+- endpoint serverless `/api/chat`
 
 ---
 
-Development Direction
+## Licenza
 
-The next architectural phase may include:
+Copyright © 2026 Manuel Coletta
 
-persistent conversation memory
+All rights reserved.
 
-advanced retrieval pipelines
-
-web-assisted research layers
-
-identity-aware orchestration
-
-deterministic evidence generation
-
-richer Matrix Europa node logic
-
-modular HBCE service integration
-
-
-
----
-
-Deployment
-
-The project is designed to run on Vercel using a Next.js-compatible deployment model.
-
-Main expected flow:
-
-User Interface
-    ↓
-/interface
-    ↓
-/api/chat
-    ↓
-Joker-C2 Context Recovery
-    ↓
-Structured Response + Metadata
-
-
----
-
-Maintained By
-
-HBCE Research
+HBCE Research  
 HERMETICUM B.C.E. S.r.l.
+
+
+
+
+
 
 
