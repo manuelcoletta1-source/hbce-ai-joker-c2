@@ -55,7 +55,9 @@ L'IPR consente:
 ## Integrazione
 
 L'IPR è integrato nella pipeline HBCE:
-request → identity → evidence → verification
+equest → identity → evidence → verification
+Copia codice
+
 ---
 
 HBCE Research  
