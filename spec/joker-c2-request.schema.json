@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hbce.example/spec/joker-c2-request.schema.json",
+  "title": "Joker-C2 API Request",
+  "type": "object",
+  "required": ["message", "actor_identity", "entity"],
+  "properties": {
+    "message": {
+      "type": "string",
+      "description": "Richiesta inviata al motore Joker-C2"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["analysis", "verification", "context-recovery"],
+      "default": "analysis"
+    },
+    "actor_identity": {
+      "type": "string",
+      "pattern": "^IPR-[A-Z]+-[0-9]{4,}$"
+    },
+    "entity": {
+      "type": "string",
+      "enum": ["AI_JOKER-C2"]
+    },
+    "nodeId": {
+      "type": "string"
+    },
+    "conversation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["user", "assistant"]
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
