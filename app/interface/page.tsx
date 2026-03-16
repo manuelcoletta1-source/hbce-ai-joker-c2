@@ -1,66 +1,117 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-type ChatMessage = {
-  role: "user" | "assistant";
+type ChatItem = {
+  role: "user" | "assistant" | "system";
   content: string;
 };
 
 type ApiResponse = {
-  ok: boolean;
+  ok?: boolean;
+  reply?: string | { content?: string };
+  mode?: string;
   request_id?: string;
-  reply?: {
-    role: "assistant";
-    content: string;
-  };
   matrix?: {
-    verification_reference?: string;
+    request_id?: string;
     mode?: string;
     execution?: {
+      matrix_node?: {
+        node_id?: string;
+      };
       verification_reference?: string;
+    };
+    reply?: {
+      content?: string;
     };
   };
   error?: string;
+  [key: string]: unknown;
 };
 
-export default function JokerInterfacePage() {
+const STORAGE_KEY = "joker-c2-next-conversation-v1";
+const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
+const DEFAULT_IDENTITY = "IPR-AI-0001";
+
+export default function InterfacePage() {
+  const [conversation, setConversation] = useState<ChatItem[]>([]);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content:
-        "Joker-C2 interface initialized. Default Matrix Europa node: Torino."
-    }
-  ]);
-  const [requestId, setRequestId] = useState("-");
   const [mode, setMode] = useState("analysis");
-  const [node] = useState("HBCE-MATRIX-NODE-0001-TORINO");
+  const [actorIdentity, setActorIdentity] = useState(DEFAULT_IDENTITY);
+  const [nodeId, setNodeId] = useState(DEFAULT_NODE);
+  const [status, setStatus] = useState("Ready");
+  const [isSending, setIsSending] = useState(false);
+  const [rawResponse, setRawResponse] = useState("No response yet.");
+  const [requestId, setRequestId] = useState("Not executed yet");
+  const [metaMode, setMetaMode] = useState("-");
+  const [metaNode, setMetaNode] = useState(DEFAULT_NODE);
   const [verificationReference, setVerificationReference] = useState("-");
-  const [rawResponse, setRawResponse] = useState<string>("");
-  const [loading, setLoading] = useState(false);
 
-  const canSend = useMemo(() => {
-    return message.trim().length > 0 && !loading;
-  }, [message, loading]);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  async function sendRequest() {
-    const trimmed = message.trim();
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
 
-    if (!trimmed || loading) {
-      return;
+      const safeConversation = parsed.filter((item) => {
+        return (
+          item &&
+          (item.role === "user" ||
+            item.role === "assistant" ||
+            item.role === "system") &&
+          typeof item.content === "string" &&
+          item.content.trim().length > 0
+        );
+      });
+
+      setConversation(safeConversation);
+    } catch {
+      setConversation([]);
     }
+  }, []);
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        content: trimmed
-      }
-    ]);
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(conversation));
+  }, [conversation]);
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [conversation]);
+
+  const turns = useMemo(() => {
+    return conversation.filter(
+      (item) => item.role === "user" || item.role === "assistant"
+    ).length;
+  }, [conversation]);
+
+  function pushMessage(role: ChatItem["role"], content: string) {
+    setConversation((prev) => [...prev, { role, content }]);
+  }
+
+  function clearConversation() {
+    setConversation([]);
+    window.localStorage.removeItem(STORAGE_KEY);
+    setStatus("Ready");
+    setRawResponse("No response yet.");
+    setRequestId("Not executed yet");
+    setMetaMode("-");
+    setMetaNode(DEFAULT_NODE);
+    setVerificationReference("-");
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const trimmed = message.trim();
+    if (!trimmed || isSending) return;
+
+    pushMessage("user", trimmed);
     setMessage("");
-    setLoading(true);
+    setStatus("Sending...");
+    setIsSending(true);
 
     try {
       const response = await fetch("/api/chat", {
@@ -71,411 +122,506 @@ export default function JokerInterfacePage() {
         body: JSON.stringify({
           message: trimmed,
           mode,
-          nodeId: node
+          actor_identity: actorIdentity,
+          entity: "AI_JOKER-C2",
+          nodeId,
+          conversation
         })
       });
 
-      const data = (await response.json()) as ApiResponse;
-
+      const data: ApiResponse = await response.json();
       setRawResponse(JSON.stringify(data, null, 2));
-      setRequestId(data.request_id || "-");
 
-      const derivedVerificationReference =
-        data?.matrix?.execution?.verification_reference ||
-        data?.matrix?.verification_reference ||
-        "-";
-
-      setVerificationReference(derivedVerificationReference);
-
-      if (data.ok && data.reply?.content) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: data.reply?.content || "Joker-C2 returned no response."
-          }
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: data.error || "Joker-C2 returned an unknown error."
-          }
-        ]);
+      if (!response.ok || !data.ok) {
+        const errorText = `Request failed: ${data.error || "Unknown error"}`;
+        pushMessage("assistant", errorText);
+        setStatus("Error");
+        return;
       }
+
+      const replyText =
+        typeof data.reply === "string"
+          ? data.reply
+          : data.reply?.content ||
+            data.matrix?.reply?.content ||
+            "Joker-C2 completed the request.";
+
+      pushMessage("assistant", replyText);
+
+      setRequestId(data.request_id || data.matrix?.request_id || "-");
+      setMetaMode(data.mode || data.matrix?.mode || mode || "-");
+      setMetaNode(data.matrix?.execution?.matrix_node?.node_id || nodeId || "-");
+      setVerificationReference(
+        data.matrix?.execution?.verification_reference || "-"
+      );
+      setStatus("Completed");
     } catch (error) {
-      console.error(error);
+      const errorText =
+        error instanceof Error ? error.message : "Unknown client error";
 
-      const fallback = {
-        ok: false,
-        error: "Network or runtime error while contacting /api/chat."
-      };
-
-      setRawResponse(JSON.stringify(fallback, null, 2));
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Network or runtime error while contacting /api/chat."
-        }
-      ]);
+      pushMessage(
+        "assistant",
+        `Request failed before Joker-C2 execution. ${errorText}`
+      );
+      setRawResponse(String(errorText));
+      setStatus("Offline / Missing API");
     } finally {
-      setLoading(false);
-    }
-  }
-
-  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      void sendRequest();
+      setIsSending(false);
     }
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#0b0f14",
-        color: "#e8eef7",
-        fontFamily:
-          "system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif",
-        padding: "32px"
-      }}
-    >
-      <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: "16px",
-            alignItems: "center",
-            marginBottom: "24px",
-            flexWrap: "wrap"
-          }}
-        >
-          <div>
-            <div style={{ fontSize: "12px", color: "#8fa3b8" }}>
-              HBCE Research
+    <main style={styles.page}>
+      <div style={styles.app}>
+        <section style={styles.mainColumn}>
+          <header style={styles.topbar}>
+            <div>
+              <div style={styles.kicker}>HBCE Research</div>
+              <h1 style={styles.title}>AI JOKER-C2 Interface</h1>
+              <p style={styles.subtitle}>
+                Conversational shell connected to the Torino Matrix node.
+              </p>
             </div>
-            <h1 style={{ margin: "6px 0 8px 0" }}>AI JOKER-C2 Interface</h1>
-            <div style={{ color: "#8fa3b8" }}>
-              Identity-Bound Operational AI Application · Torino Matrix Node
-              Enabled
+
+            <div style={styles.topbarActions}>
+              <a href="/index.html" style={styles.ghostLink}>
+                Back to portal
+              </a>
+              <button
+                type="button"
+                onClick={clearConversation}
+                style={styles.ghostButton}
+              >
+                Clear conversation
+              </button>
+              <div style={styles.status}>
+                <span style={styles.dot} />
+                <span>{status}</span>
+              </div>
             </div>
-          </div>
+          </header>
 
-          <a
-            href="/"
-            style={{
-              display: "inline-block",
-              padding: "10px 16px",
-              borderRadius: "12px",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "#e8eef7",
-              textDecoration: "none",
-              background: "rgba(255,255,255,0.03)"
-            }}
-          >
-            Back to portal
-          </a>
-        </div>
+          <section style={styles.chatCard}>
+            <div style={styles.chatHeader}>
+              <h2 style={styles.chatTitle}>Operational Chat</h2>
+              <p style={styles.chatSubtitle}>
+                Direct conversation first. Technical telemetry stays in the side
+                panel.
+              </p>
+            </div>
 
-        <div
-          style={{
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: "18px",
-            background: "rgba(17,24,33,0.9)",
-            padding: "24px",
-            marginBottom: "24px"
-          }}
-        >
-          <h2 style={{ marginTop: 0, marginBottom: "12px" }}>
-            Joker-C2 console linked to the Torino experimental node.
-          </h2>
-
-          <p style={{ lineHeight: 1.7, color: "#8fa3b8", marginBottom: "20px" }}>
-            This interface routes user prompts to the Joker-C2 application
-            layer through the internal chat API, binds execution to the Matrix
-            Europa territorial context, and returns a node-aware operational
-            response.
-          </p>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "16px"
-            }}
-          >
-            <InfoCard label="Default node" value="HBCE-MATRIX-NODE-0001-TORINO" />
-            <InfoCard label="Identity layer" value="IPR-AI-0001" />
-            <InfoCard
-              label="Execution model"
-              value="request → identity → evidence → verification"
-            />
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1.35fr 0.9fr",
-            gap: "24px"
-          }}
-        >
-          <section
-            style={{
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: "18px",
-              background: "rgba(17,24,33,0.9)",
-              padding: "24px"
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>Operational Chat</h2>
-            <p style={{ color: "#8fa3b8", marginBottom: "16px" }}>
-              Send a request to Joker-C2 through the internal API route.
-            </p>
-
-            <div
-              style={{
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "16px",
-                background: "rgba(255,255,255,0.02)",
-                padding: "16px",
-                minHeight: "360px",
-                maxHeight: "520px",
-                overflowY: "auto",
-                marginBottom: "16px"
-              }}
-            >
-              {messages.map((item, index) => (
-                <div
-                  key={`${item.role}-${index}`}
-                  style={{
-                    display: "flex",
-                    gap: "12px",
-                    marginBottom: "14px",
-                    alignItems: "flex-start"
-                  }}
-                >
+            <div style={styles.messages}>
+              {conversation.length === 0 ? (
+                <div style={styles.welcome}>
+                  Joker-C2 interface initialized. Default Matrix Europa node:
+                  Torino.
+                </div>
+              ) : (
+                conversation.map((item, index) => (
                   <div
+                    key={`${item.role}-${index}`}
                     style={{
-                      minWidth: "46px",
-                      height: "46px",
-                      borderRadius: "999px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      background:
-                        item.role === "user"
-                          ? "rgba(125,211,252,0.18)"
-                          : "rgba(255,255,255,0.06)",
-                      color:
-                        item.role === "user" ? "#7dd3fc" : "#e8eef7",
-                      border: "1px solid rgba(255,255,255,0.08)"
-                    }}
-                  >
-                    {item.role === "user" ? "YOU" : "AI"}
-                  </div>
-
-                  <div
-                    style={{
-                      flex: 1,
-                      borderRadius: "14px",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      background: "rgba(255,255,255,0.03)",
-                      padding: "14px"
+                      ...styles.row,
+                      justifyContent:
+                        item.role === "user" ? "flex-end" : "flex-start"
                     }}
                   >
                     <div
                       style={{
-                        fontSize: "12px",
-                        color: "#8fa3b8",
-                        marginBottom: "8px",
-                        fontWeight: 600
+                        ...styles.bubble,
+                        ...(item.role === "user"
+                          ? styles.userBubble
+                          : item.role === "assistant"
+                            ? styles.assistantBubble
+                            : styles.systemBubble)
                       }}
                     >
-                      {item.role === "user" ? "User" : "Joker-C2"}
-                    </div>
-                    <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.65 }}>
-                      {item.content}
+                      <div style={styles.roleTag}>
+                        {item.role === "user"
+                          ? "You"
+                          : item.role === "assistant"
+                            ? "AI JOKER-C2"
+                            : "System"}
+                      </div>
+                      <div>{item.content}</div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
+              <div ref={messagesEndRef} />
             </div>
-
-            <div
-              style={{
-                display: "flex",
-                gap: "12px",
-                marginBottom: "12px",
-                flexWrap: "wrap"
-              }}
-            >
-              <ModeButton
-                label="analysis"
-                active={mode === "analysis"}
-                onClick={() => setMode("analysis")}
-              />
-              <ModeButton
-                label="verification"
-                active={mode === "verification"}
-                onClick={() => setMode("verification")}
-              />
-            </div>
-
-            <textarea
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Send to Joker-C2"
-              style={{
-                width: "100%",
-                minHeight: "120px",
-                borderRadius: "16px",
-                border: "1px solid rgba(255,255,255,0.08)",
-                background: "rgba(255,255,255,0.03)",
-                color: "#e8eef7",
-                padding: "16px",
-                resize: "vertical",
-                outline: "none",
-                fontFamily: "inherit",
-                fontSize: "15px",
-                marginBottom: "16px"
-              }}
-            />
-
-            <button
-              onClick={() => void sendRequest()}
-              disabled={!canSend}
-              style={{
-                display: "inline-block",
-                padding: "12px 20px",
-                borderRadius: "12px",
-                border: "none",
-                background: canSend ? "#7dd3fc" : "#5f7280",
-                color: "#06121a",
-                fontWeight: 700,
-                cursor: canSend ? "pointer" : "not-allowed"
-              }}
-            >
-              {loading ? "Processing..." : "Send to Joker-C2"}
-            </button>
           </section>
 
-          <aside
-            style={{
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: "18px",
-              background: "rgba(17,24,33,0.9)",
-              padding: "24px"
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>Live Execution Metadata</h2>
+          <form onSubmit={handleSubmit} style={styles.composer}>
+            <div style={styles.composerRow}>
+              <textarea
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                placeholder="Send a request to Joker-C2..."
+                style={styles.textarea}
+              />
+              <button type="submit" disabled={isSending} style={styles.sendButton}>
+                {isSending ? "Sending..." : "Send to Joker-C2"}
+              </button>
+            </div>
 
-            <MetaRow label="Request ID" value={requestId} />
-            <MetaRow label="Mode" value={mode} />
-            <MetaRow label="Node" value={node} />
-            <MetaRow
-              label="Verification Reference"
-              value={verificationReference}
-            />
+            <details style={styles.details}>
+              <summary style={styles.summary}>Advanced execution settings</summary>
+              <div style={styles.advancedGrid}>
+                <select
+                  value={mode}
+                  onChange={(event) => setMode(event.target.value)}
+                  style={styles.field}
+                >
+                  <option value="analysis">analysis</option>
+                  <option value="verification">verification</option>
+                </select>
 
-            <h3 style={{ marginTop: "24px", marginBottom: "12px" }}>
-              Last Raw Response
-            </h3>
+                <input
+                  value={actorIdentity}
+                  onChange={(event) => setActorIdentity(event.target.value)}
+                  placeholder="Actor identity"
+                  style={styles.field}
+                />
 
-            <pre
-              style={{
-                margin: 0,
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-                fontSize: "12px",
-                lineHeight: 1.55,
-                borderRadius: "14px",
-                border: "1px solid rgba(255,255,255,0.08)",
-                background: "rgba(255,255,255,0.03)",
-                padding: "14px",
-                color: "#8fa3b8",
-                minHeight: "220px"
-              }}
-            >
-              {rawResponse || "No response yet."}
-            </pre>
-          </aside>
-        </div>
+                <input
+                  value={nodeId}
+                  onChange={(event) => setNodeId(event.target.value)}
+                  placeholder="Node ID"
+                  style={styles.field}
+                />
+              </div>
+            </details>
+          </form>
+        </section>
+
+        <aside style={styles.sidebar}>
+          <section style={styles.sideCard}>
+            <h3 style={styles.sideTitle}>Execution Context</h3>
+            <div style={styles.stack}>
+              <div style={styles.kvItem}>
+                <div style={styles.kvKey}>Default node</div>
+                <div style={styles.kvVal}>{DEFAULT_NODE}</div>
+              </div>
+              <div style={styles.kvItem}>
+                <div style={styles.kvKey}>Identity layer</div>
+                <div style={styles.kvVal}>{DEFAULT_IDENTITY}</div>
+              </div>
+              <div style={styles.kvItem}>
+                <div style={styles.kvKey}>Execution model</div>
+                <div style={styles.kvVal}>
+                  request → identity → evidence → verification
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section style={styles.sideCard}>
+            <h3 style={styles.sideTitle}>Live Execution Metadata</h3>
+            <div style={styles.stack}>
+              <div style={styles.kvItem}>
+                <div style={styles.kvKey}>Request ID</div>
+                <div style={styles.kvVal}>{requestId}</div>
+              </div>
+              <div style={styles.kvItem}>
+                <div style={styles.kvKey}>Mode</div>
+                <div style={styles.kvVal}>{metaMode}</div>
+              </div>
+              <div style={styles.kvItem}>
+                <div style={styles.kvKey}>Node</div>
+                <div style={styles.kvVal}>{metaNode}</div>
+              </div>
+              <div style={styles.kvItem}>
+                <div style={styles.kvKey}>Verification Reference</div>
+                <div style={styles.kvVal}>{verificationReference}</div>
+              </div>
+              <div style={styles.kvItem}>
+                <div style={styles.kvKey}>Conversation Turns</div>
+                <div style={styles.kvVal}>{String(turns)}</div>
+              </div>
+            </div>
+          </section>
+
+          <section style={styles.sideCard}>
+            <h3 style={styles.sideTitle}>Last Raw Response</h3>
+            <pre style={styles.pre}>{rawResponse}</pre>
+          </section>
+        </aside>
       </div>
     </main>
   );
 }
 
-function InfoCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        padding: "16px",
-        borderRadius: "14px",
-        border: "1px solid rgba(255,255,255,0.08)",
-        background: "rgba(255,255,255,0.02)"
-      }}
-    >
-      <div style={{ fontSize: "12px", color: "#8fa3b8", marginBottom: "6px" }}>
-        {label}
-      </div>
-      <div style={{ fontWeight: 700 }}>{value}</div>
-    </div>
-  );
-}
-
-function MetaRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ marginBottom: "14px" }}>
-      <div style={{ fontSize: "12px", color: "#8fa3b8", marginBottom: "4px" }}>
-        {label}
-      </div>
-      <div
-        style={{
-          padding: "10px 12px",
-          borderRadius: "12px",
-          border: "1px solid rgba(255,255,255,0.08)",
-          background: "rgba(255,255,255,0.03)",
-          wordBreak: "break-word"
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function ModeButton({
-  label,
-  active,
-  onClick
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "10px 14px",
-        borderRadius: "999px",
-        border: "1px solid rgba(255,255,255,0.08)",
-        background: active ? "#7dd3fc" : "rgba(255,255,255,0.03)",
-        color: active ? "#06121a" : "#e8eef7",
-        fontWeight: 700,
-        cursor: "pointer"
-      }}
-    >
-      {label}
-    </button>
-  );
-}
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    background:
+      "radial-gradient(circle at top left, rgba(56,189,248,.10), transparent 30%), radial-gradient(circle at bottom right, rgba(125,211,252,.08), transparent 30%), #0b0f14",
+    color: "#e8eef7",
+    fontFamily:
+      "system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif"
+  },
+  app: {
+    width: "min(100%, 1400px)",
+    margin: "0 auto",
+    padding: 20,
+    display: "grid",
+    gridTemplateColumns: "minmax(0,1.65fr) 340px",
+    gap: 20
+  },
+  mainColumn: {
+    display: "grid",
+    gridTemplateRows: "auto 1fr auto",
+    gap: 16,
+    minWidth: 0
+  },
+  topbar: {
+    border: "1px solid rgba(255,255,255,.08)",
+    borderRadius: 24,
+    background:
+      "linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95))",
+    boxShadow: "0 10px 30px rgba(0,0,0,.35)",
+    padding: 18,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 16,
+    flexWrap: "wrap"
+  },
+  kicker: {
+    fontSize: 12,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    color: "#8fa3b8"
+  },
+  title: {
+    margin: "4px 0 6px",
+    fontSize: 24
+  },
+  subtitle: {
+    margin: 0,
+    color: "#8fa3b8",
+    fontSize: 14,
+    lineHeight: 1.6
+  },
+  topbarActions: {
+    display: "flex",
+    gap: 10,
+    alignItems: "center",
+    flexWrap: "wrap"
+  },
+  ghostLink: {
+    textDecoration: "none",
+    color: "#e8eef7",
+    border: "1px solid rgba(255,255,255,.08)",
+    borderRadius: 999,
+    padding: "9px 13px",
+    background: "rgba(255,255,255,.02)"
+  },
+  ghostButton: {
+    border: "1px solid rgba(255,255,255,.08)",
+    borderRadius: 999,
+    padding: "9px 13px",
+    background: "rgba(255,255,255,.02)",
+    color: "#e8eef7",
+    cursor: "pointer"
+  },
+  status: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    border: "1px solid rgba(255,255,255,.08)",
+    background: "rgba(255,255,255,.02)",
+    color: "#8fa3b8",
+    padding: "8px 12px",
+    borderRadius: 999,
+    fontSize: 12
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+    background: "#7dd3fc",
+    boxShadow: "0 0 12px rgba(125,211,252,.7)"
+  },
+  chatCard: {
+    border: "1px solid rgba(255,255,255,.08)",
+    borderRadius: 24,
+    background:
+      "linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95))",
+    boxShadow: "0 10px 30px rgba(0,0,0,.35)",
+    minHeight: "65vh",
+    display: "grid",
+    gridTemplateRows: "auto 1fr"
+  },
+  chatHeader: {
+    padding: "18px 20px",
+    borderBottom: "1px solid rgba(255,255,255,.05)"
+  },
+  chatTitle: {
+    margin: "0 0 6px",
+    fontSize: 22
+  },
+  chatSubtitle: {
+    margin: 0,
+    color: "#8fa3b8",
+    fontSize: 14,
+    lineHeight: 1.6
+  },
+  messages: {
+    padding: 20,
+    overflow: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: 18,
+    minHeight: 0
+  },
+  welcome: {
+    border: "1px dashed rgba(255,255,255,.08)",
+    background: "rgba(255,255,255,.02)",
+    color: "#8fa3b8",
+    borderRadius: 18,
+    padding: "16px 18px",
+    lineHeight: 1.6,
+    fontSize: 14
+  },
+  row: {
+    display: "flex",
+    width: "100%"
+  },
+  bubble: {
+    maxWidth: "88%",
+    borderRadius: 22,
+    padding: "14px 16px",
+    lineHeight: 1.7,
+    fontSize: 15,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word"
+  },
+  userBubble: {
+    background:
+      "linear-gradient(180deg, rgba(56,189,248,.18), rgba(56,189,248,.11))",
+    border: "1px solid rgba(56,189,248,.30)"
+  },
+  assistantBubble: {
+    background: "rgba(255,255,255,.03)",
+    border: "1px solid rgba(255,255,255,.08)"
+  },
+  systemBubble: {
+    background: "rgba(255,255,255,.02)",
+    border: "1px dashed rgba(255,255,255,.08)",
+    color: "#8fa3b8"
+  },
+  roleTag: {
+    display: "block",
+    fontSize: 11,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    marginBottom: 8,
+    color: "#8fa3b8"
+  },
+  composer: {
+    border: "1px solid rgba(255,255,255,.08)",
+    borderRadius: 24,
+    background:
+      "linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95))",
+    boxShadow: "0 10px 30px rgba(0,0,0,.35)",
+    padding: 14
+  },
+  composerRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr auto",
+    gap: 12,
+    alignItems: "end"
+  },
+  textarea: {
+    width: "100%",
+    minHeight: 100,
+    borderRadius: 18,
+    border: "1px solid rgba(255,255,255,.08)",
+    background: "rgba(255,255,255,.02)",
+    color: "#e8eef7",
+    padding: 14,
+    resize: "vertical"
+  },
+  sendButton: {
+    border: "none",
+    borderRadius: 16,
+    padding: "14px 18px",
+    minWidth: 180,
+    fontWeight: 700,
+    cursor: "pointer",
+    background: "linear-gradient(180deg, #7dd3fc, #38bdf8)",
+    color: "#06121a"
+  },
+  details: {
+    marginTop: 12
+  },
+  summary: {
+    cursor: "pointer",
+    color: "#8fa3b8",
+    fontSize: 13
+  },
+  advancedGrid: {
+    marginTop: 12,
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: 12
+  },
+  field: {
+    width: "100%",
+    border: "1px solid rgba(255,255,255,.08)",
+    borderRadius: 14,
+    background: "rgba(255,255,255,.02)",
+    color: "#e8eef7",
+    padding: "12px 14px"
+  },
+  sidebar: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    minWidth: 0
+  },
+  sideCard: {
+    border: "1px solid rgba(255,255,255,.08)",
+    borderRadius: 24,
+    background:
+      "linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95))",
+    boxShadow: "0 10px 30px rgba(0,0,0,.35)",
+    padding: 18
+  },
+  sideTitle: {
+    margin: "0 0 12px",
+    fontSize: 16
+  },
+  stack: {
+    display: "grid",
+    gap: 10
+  },
+  kvItem: {
+    padding: "12px 14px",
+    border: "1px solid rgba(255,255,255,.08)",
+    borderRadius: 14,
+    background: "rgba(255,255,255,.02)"
+  },
+  kvKey: {
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: "#8fa3b8",
+    marginBottom: 6
+  },
+  kvVal: {
+    fontSize: 14,
+    lineHeight: 1.5,
+    wordBreak: "break-word"
+  },
+  pre: {
+    margin: 0,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+    fontSize: 12,
+    lineHeight: 1.55,
+    color: "#cfe8ff"
+  }
+};
