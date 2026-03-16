@@ -43,14 +43,30 @@ function getDefaultMeta() {
     preset: "general",
     presetTitle: "General Research",
     presetDescription:
-      "Modalità legacy di recupero Joker-C2 con topic detection locale."
+      "Modalità Joker-C2 di recupero contestuale con topic detection locale."
   };
 }
 
-function buildFallbackReply() {
+function buildFallbackReply(message) {
+  const normalized = normalizeQuery(message);
+
+  if (normalized.includes("ciao") || normalized.includes("salve")) {
+    return (
+      "Ciao Manuel. Sono AI Joker-C2.\n\n" +
+      "Posso aiutarti con analisi informazionale, IPR, Matrix Europa, architetture HBCE, moduli UFO e documenti tecnico-strategici.\n\n" +
+      "Scrivimi una richiesta diretta e la tratto come operazione contestuale."
+    );
+  }
+
   return (
-    "Questo endpoint legacy opera ancora in modalità corpus locale.\n\n" +
-    "Per la chat conversazionale GPT-style di Joker-C2 usare il nuovo endpoint Next.js in app/api/chat/route.ts."
+    "Sto operando in modalità di recupero contestuale sul corpus locale.\n\n" +
+    "Posso aiutarti su:\n" +
+    "- Joker-C2\n" +
+    "- IPR\n" +
+    "- Matrix Europa\n" +
+    "- moduli UFO\n" +
+    "- architetture HBCE\n\n" +
+    "Se vuoi una risposta più precisa, formula una richiesta più specifica."
   );
 }
 
@@ -79,7 +95,7 @@ function buildOperationalFieldsReply() {
     "4. Matrix Europa e nodi territoriali\n" +
     "5. UFO Modules e stabilità Lambda\n" +
     "6. Documenti tecnici, strategici e istituzionali\n\n" +
-    "In una fase più avanzata posso evolvere verso ricerca corpus + ricerca web + fusione risultati + memoria conversazionale, che sono proprio i requisiti indicati nelle specifiche Joker-C2."
+    "In una fase più avanzata posso evolvere verso ricerca corpus + ricerca web + fusione risultati + memoria conversazionale."
   );
 }
 
@@ -100,9 +116,12 @@ function buildReplyFromTopic(topic, entries) {
     return entries[0].text;
   }
 
-  const lines = [entries[0].text, "", "Raccordi interni del topic:"];
+  const lines = [];
+  lines.push(entries[0].text);
+  lines.push("");
+  lines.push("Raccordi interni del topic:");
 
-  for (const entry of entries.slice(1)) {
+  for (const entry of entries.slice(1, 4)) {
     lines.push(`- ${entry.title}: ${entry.text}`);
   }
 
@@ -118,7 +137,7 @@ function getTopicMeta(topic) {
         preset: "identity",
         presetTitle: "Identity Research",
         presetDescription:
-          "Ricerca legacy orientata all’identità del Coordination Engine Joker-C2."
+          "Ricerca orientata all’identità del Coordination Engine Joker-C2."
       };
 
     case "ipr":
@@ -128,7 +147,7 @@ function getTopicMeta(topic) {
         preset: "ipr",
         presetTitle: "IPR Research",
         presetDescription:
-          "Ricerca legacy orientata a identità operativa, eventi e verificabilità."
+          "Ricerca orientata a identità operativa, eventi e verificabilità."
       };
 
     case "matrix-europa":
@@ -138,7 +157,7 @@ function getTopicMeta(topic) {
         preset: "matrix",
         presetTitle: "Matrix Europa",
         presetDescription:
-          "Ricerca legacy orientata ai nodi territoriali europei."
+          "Ricerca orientata ai nodi territoriali europei."
       };
 
     case "ufo":
@@ -148,7 +167,7 @@ function getTopicMeta(topic) {
         preset: "ufo",
         presetTitle: "UFO Modules",
         presetDescription:
-          "Ricerca legacy orientata ai moduli opponibili e alla stabilità Lambda."
+          "Ricerca orientata ai moduli opponibili e alla stabilità Lambda."
       };
 
     case "lambda":
@@ -158,7 +177,7 @@ function getTopicMeta(topic) {
         preset: "lambda",
         presetTitle: "Lambda Stability",
         presetDescription:
-          "Ricerca legacy orientata alla stabilità del sistema e alla collimazione."
+          "Ricerca orientata alla stabilità del sistema e alla collimazione."
       };
 
     case "campi-operativi":
@@ -168,7 +187,7 @@ function getTopicMeta(topic) {
         preset: "operations",
         presetTitle: "Operational Fields",
         presetDescription:
-          "Mappa legacy dei campi operativi del sistema Joker-C2."
+          "Mappa dei campi operativi del sistema Joker-C2."
       };
 
     case "manuel":
@@ -178,7 +197,7 @@ function getTopicMeta(topic) {
         preset: "origin",
         presetTitle: "Origin Research",
         presetDescription:
-          "Ricerca legacy orientata all’operatore biologico originario."
+          "Ricerca orientata all’operatore biologico originario."
       };
 
     default:
@@ -216,14 +235,15 @@ function resolveSpecialReply(message) {
     return {
       topic: "joker-c2",
       reply:
-        "Ciao Manuel. Io sono AI Joker-C2, il Coordination Engine del framework HBCE. Questo endpoint legacy risponde ancora tramite corpus locale.",
+        "Ciao Manuel. Io sono AI Joker-C2, il Coordination Engine del framework HBCE.\n\n" +
+        "Opero come motore cognitivo per analisi informazionale, correlazione di eventi, sintesi operativa e supporto tecnico-strategico.",
       meta: {
         domain: "identity",
         summary: "CORE",
         preset: "identity",
         presetTitle: "Identity Research",
         presetDescription:
-          "Ricerca legacy orientata all’identità del Coordination Engine Joker-C2."
+          "Ricerca orientata all’identità del Coordination Engine Joker-C2."
       }
     };
   }
@@ -244,7 +264,7 @@ function buildMatches(entries) {
 function buildResponsePayload(message, topic, entries, meta, confidence, reply) {
   return {
     ok: true,
-    mode: "context-recovery-legacy",
+    mode: "context-recovery",
     domain: meta.domain,
     summary: meta.summary,
     confidence,
@@ -303,15 +323,19 @@ export default async function handler(req, res) {
 
     let topic = selectedTopic;
     let entries = selectedEntries;
-    let meta = topic !== "general" && entries.length
-      ? getTopicMeta(topic)
-      : getDefaultMeta();
-    let confidence = topic !== "general" && entries.length >= 2
-      ? "high"
-      : "medium";
-    let reply = topic !== "general" && entries.length
-      ? buildReplyFromTopic(topic, entries)
-      : buildFallbackReply();
+
+    let meta =
+      topic !== "general" && entries.length
+        ? getTopicMeta(topic)
+        : getDefaultMeta();
+
+    let confidence =
+      topic !== "general" && entries.length >= 2 ? "high" : "medium";
+
+    let reply =
+      topic !== "general" && entries.length
+        ? buildReplyFromTopic(topic, entries)
+        : buildFallbackReply(message);
 
     const special = resolveSpecialReply(message);
 
