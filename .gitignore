@@ -1,13 +1,16 @@
 # dependencies
-node_modules
+node_modules/
 
-# next.js build output
-.next
-out
+# next build
+.next/
+out/
 
-# production
-dist
-build
+# local env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # logs
 npm-debug.log*
@@ -15,18 +18,23 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# env files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# system files
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/
+.idea/
 
 # vercel
-.vercel
+.vercel/
 
-# macOS
-.DS_Store
+# coverage
+coverage/
 
 # misc
 *.pem
