@@ -1,158 +1,181 @@
 # AI JOKER-C2
+
 Identity-Bound Operational AI Application
 
 HBCE Research  
-HERMETICUM — BLINDATA · COMPUTABILE · EVOLUTIVA  
 HERMETICUM B.C.E. S.r.l.
 
 ---
 
-# Identity
+## Overview
 
-AI JOKER-C2 operates as an application layer connected to the HBCE infrastructure.
+AI JOKER-C2 is the operational AI application of the HBCE environment.
 
-Operational Identity  
-IPR-AI-0001
+The project is designed as a conversational and operational interface for structured context recovery, identity-bound interaction, and node-aware execution within HBCE-oriented architectures.
 
-Context  
-HBCE Infrastructure
+The current version is built on a modern Next.js application structure and is intended to support:
 
-Jurisdiction  
-European Union
-
----
-
-# Overview
-
-AI JOKER-C2 is the operational AI application of the HBCE ecosystem.
-
-The application provides a conversational and operational interface allowing users to interact with technological systems within a deterministic governance environment.
-
-Unlike conventional AI assistants, AI JOKER-C2 operates in an identity-bound execution context.
-
-Every request can be associated with an operational identity and processed through a controlled execution pipeline.
-
-The system connects user interaction, operational governance and verifiable evidence generation within a single application layer.
+- conversational interaction
+- context recovery
+- Matrix Europa node alignment
+- IPR-aware execution logic
+- operational metadata exposure
+- future extensibility toward advanced orchestration layers
 
 ---
 
-# Position in HBCE Infrastructure
+## Core Concepts
 
-AI JOKER-C2 represents the application interface of the HBCE system.
+### Joker-C2
+Joker-C2 is the coordination engine of the HBCE framework.  
+It is designed to operate as an application layer for analysis, contextual synthesis, structured response generation, and operational interaction.
 
-HBCE Infrastructure
+### IPR
+IPR stands for Identity Primary Record.  
+Within the HBCE model, it represents the persistent operational identity layer used to bind actions, events, and verification logic.
 
-Identity Layer
-Identity Primary Record (IPR)
-
-Governance Layer
-JOKER-C2 Core Runtime
-
-Verification Layer
-Append-Only Registry
-
-Application Layer
-AI JOKER-C2
-
-The application connects user interaction to the infrastructure components of the HBCE ecosystem.
+### Matrix Europa
+Matrix Europa is the territorial deployment logic associated with distributed HBCE-aligned operational nodes.  
+In the current version, the default node context is associated with the Torino experimental node.
 
 ---
 
-# Operating Model
+## Current Application Structure
 
-AI JOKER-C2 processes operational requests through a deterministic pipeline.
+```text
+app/
+  api/
+    chat/
+      route.ts
+  interface/
+    page.tsx
+  layout.tsx
+  page.tsx
 
-request → identity binding → governance validation → execution → evidence generation → verification reference
+api/
+  chat.js
 
-This structure allows technological operations to be processed under controlled conditions while maintaining traceability.
+public/
+  interface.html
 
----
-
-# Core Principles
-
-## Identity-Bound Interaction
-
-Operational requests may be associated with a persistent operational identity.
-
-## Deterministic Governance
-
-Requests may pass governance validation checks before execution.
-
-## Fail-Closed Operation
-
-If validation fails, execution is denied.
-
-## Evidence Generation
-
-Operational actions may generate verifiable evidence.
-
-## Public Verifiability
-
-Evidence traces can be linked to append-only registry records.
 
 ---
 
-# Functional Scope
+Routes
 
-The AI JOKER-C2 application may include:
+Home
 
-- conversational interface for technological interaction
-- operational request execution
-- identity-bound session management
-- governance validation pipeline
-- operational evidence generation
-- integration with HBCE infrastructure components
+/
 
----
+Operational landing page for the AI JOKER-C2 application.
 
-# Execution Environment
+Interface
 
-AI JOKER-C2 may operate through multiple execution paths.
+/interface
 
-Possible execution modes include:
+Main conversational interface of the system.
 
-- AI model routing
-- multi-agent execution
-- local inference environment
-- external AI model integration
+Next API
 
-The application layer routes requests through the governance model before execution.
+/api/chat
 
----
+Primary Next.js API route for context recovery and structured Joker-C2 responses.
 
-# Repository Structure
+Legacy API
 
-app/ components/ lib/ docs/
+api/chat.js
 
-The repository contains the application layer responsible for interaction between users and the HBCE infrastructure.
+Legacy compatibility endpoint maintained for transitional support.
+
 
 ---
 
-# Context
+Current Capabilities
 
-AI JOKER-C2 is developed within the HBCE Research program.
+The current version supports:
 
-The broader HBCE infrastructure explores:
+local corpus retrieval
 
-- operational identity systems
-- governance architectures for autonomous systems
-- verifiable digital infrastructures
-- technological accountability frameworks
+topic detection
+
+follow-up resolution
+
+structured reply generation
+
+basic operational metadata
+
+Matrix node context
+
+IPR-linked request framing
+
+
 
 ---
 
-# Status
+Project Status
 
-Application Layer  
-Development Phase
+Current status:
 
-HBCE Research  
-HERMETICUM — BLINDATA · COMPUTABILE · EVOLUTIVA  
+Next.js application active
+
+chat-first interface active
+
+legacy API retained for compatibility
+
+modern API route active
+
+corpus-based context recovery active
+
+
+This repository is currently being refactored toward a cleaner and more maintainable Joker-C2 architecture.
+
+
+---
+
+Development Direction
+
+The next architectural phase may include:
+
+persistent conversation memory
+
+advanced retrieval pipelines
+
+web-assisted research layers
+
+identity-aware orchestration
+
+deterministic evidence generation
+
+richer Matrix Europa node logic
+
+modular HBCE service integration
+
+
+
+---
+
+Deployment
+
+The project is designed to run on Vercel using a Next.js-compatible deployment model.
+
+Main expected flow:
+
+User Interface
+    ↓
+/interface
+    ↓
+/api/chat
+    ↓
+Joker-C2 Context Recovery
+    ↓
+Structured Response + Metadata
+
+
+---
+
+Maintained By
+
+HBCE Research
 HERMETICUM B.C.E. S.r.l.
-
-
-
-
-
 
 
