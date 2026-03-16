@@ -13,10 +13,12 @@
       --muted:#8fa3b8;
       --accent:#7dd3fc;
       --accent2:#38bdf8;
-      --line:rgba(255,255,255,0.08);
-      --radius:16px;
-      --max:1100px;
+      --line:rgba(255,255,255,.08);
+      --line2:rgba(255,255,255,.05);
+      --radius:18px;
       --shadow:0 10px 30px rgba(0,0,0,.35);
+      --max:1400px;
+      --composer-h:170px;
     }
 
     *{box-sizing:border-box}
@@ -24,13 +26,17 @@
     html,body{
       margin:0;
       padding:0;
+      min-height:100%;
       background:
         radial-gradient(circle at top left, rgba(56,189,248,.10), transparent 30%),
         radial-gradient(circle at bottom right, rgba(125,211,252,.08), transparent 30%),
         var(--bg);
       color:var(--text);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
-      min-height:100%;
+    }
+
+    body{
+      min-height:100vh;
     }
 
     a{
@@ -38,58 +44,41 @@
       text-decoration:none;
     }
 
-    code{
+    button,
+    input,
+    select,
+    textarea{
+      font:inherit;
+    }
+
+    code,
+    pre{
       font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
     }
 
-    .wrap{
-      width:min(100% - 32px, var(--max));
+    .app{
+      width:min(100%, var(--max));
       margin:0 auto;
-      padding:24px 0 40px;
+      padding:20px;
+      display:grid;
+      grid-template-columns:minmax(0, 1.65fr) 340px;
+      gap:20px;
+      min-height:100vh;
     }
 
-    .topbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
+    .main-shell{
+      min-width:0;
+      display:grid;
+      grid-template-rows:auto 1fr auto;
       gap:16px;
-      margin-bottom:24px;
-      padding:14px 18px;
-      border:1px solid var(--line);
-      border-radius:20px;
-      background:rgba(17,24,33,.7);
-      backdrop-filter:blur(10px);
-      box-shadow:var(--shadow);
+      min-height:calc(100vh - 40px);
     }
 
-    .brand{
+    .sidebar{
+      min-width:0;
       display:flex;
       flex-direction:column;
-      gap:4px;
-    }
-
-    .brand-kicker{
-      font-size:12px;
-      letter-spacing:.18em;
-      text-transform:uppercase;
-      color:var(--muted);
-    }
-
-    .brand-title{
-      font-size:20px;
-      font-weight:700;
-    }
-
-    .brand-sub{
-      font-size:13px;
-      color:var(--muted);
-    }
-
-    .hero{
-      display:grid;
-      grid-template-columns:1.3fr .9fr;
-      gap:20px;
-      margin-bottom:20px;
+      gap:16px;
     }
 
     .card{
@@ -97,91 +86,47 @@
       border:1px solid var(--line);
       border-radius:24px;
       box-shadow:var(--shadow);
+      min-width:0;
     }
 
-    .hero-main{
-      padding:24px;
-    }
-
-    .hero-main h1{
-      margin:0 0 12px;
-      font-size:34px;
-      line-height:1.05;
-    }
-
-    .hero-main p{
-      margin:0;
-      color:var(--muted);
-      font-size:15px;
-      line-height:1.6;
-      max-width:62ch;
-    }
-
-    .hero-side{
-      padding:20px;
-      display:flex;
-      flex-direction:column;
-      gap:14px;
-      justify-content:center;
-    }
-
-    .mini{
-      padding:14px 16px;
-      background:rgba(255,255,255,.02);
-      border:1px solid var(--line);
-      border-radius:16px;
-    }
-
-    .mini-label{
-      font-size:12px;
-      color:var(--muted);
-      text-transform:uppercase;
-      letter-spacing:.08em;
-      margin-bottom:6px;
-    }
-
-    .mini-value{
-      font-size:14px;
-      font-weight:600;
-      word-break:break-word;
-    }
-
-    .layout{
-      display:grid;
-      grid-template-columns:1.35fr .85fr;
-      gap:20px;
-    }
-
-    .chat{
-      padding:20px;
-      display:flex;
-      flex-direction:column;
-      min-height:680px;
-    }
-
-    .chat-head{
+    .topbar{
+      padding:16px 18px;
       display:flex;
       justify-content:space-between;
-      align-items:flex-start;
-      gap:16px;
-      margin-bottom:16px;
-    }
-
-    .chat-head h2{
-      margin:0 0 4px;
-      font-size:20px;
-    }
-
-    .chat-head p{
-      margin:0;
-      color:var(--muted);
-      font-size:14px;
-    }
-
-    .head-actions{
-      display:flex;
-      gap:10px;
       align-items:center;
+      gap:16px;
+    }
+
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:0;
+    }
+
+    .brand-kicker{
+      font-size:12px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+
+    .brand-title{
+      font-size:22px;
+      font-weight:700;
+      line-height:1.1;
+    }
+
+    .brand-sub{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .topbar-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
       flex-wrap:wrap;
       justify-content:flex-end;
     }
@@ -192,10 +137,10 @@
       gap:8px;
       border:1px solid var(--line);
       background:rgba(255,255,255,.02);
+      color:var(--muted);
       padding:8px 12px;
       border-radius:999px;
       font-size:12px;
-      color:var(--muted);
       white-space:nowrap;
     }
 
@@ -210,91 +155,157 @@
     .ghost-btn{
       appearance:none;
       border:1px solid var(--line);
-      border-radius:999px;
-      padding:8px 12px;
-      font:inherit;
-      font-size:12px;
-      cursor:pointer;
-      color:var(--text);
       background:rgba(255,255,255,.02);
+      color:var(--text);
+      border-radius:999px;
+      padding:9px 13px;
+      cursor:pointer;
+      font-size:12px;
     }
 
     .ghost-btn:hover{
       background:rgba(255,255,255,.05);
     }
 
+    .chat-shell{
+      display:grid;
+      grid-template-rows:auto 1fr;
+      min-height:0;
+      overflow:hidden;
+    }
+
+    .chat-head{
+      padding:18px 20px;
+      border-bottom:1px solid var(--line2);
+      display:flex;
+      justify-content:space-between;
+      gap:16px;
+      align-items:flex-start;
+    }
+
+    .chat-head-left h1{
+      margin:0 0 6px;
+      font-size:22px;
+      line-height:1.1;
+    }
+
+    .chat-head-left p{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.6;
+      max-width:70ch;
+    }
+
     .messages{
-      flex:1;
-      border:1px solid var(--line);
-      border-radius:20px;
-      background:rgba(255,255,255,.02);
-      padding:16px;
+      min-height:0;
       overflow:auto;
+      padding:24px 18px calc(var(--composer-h) + 18px);
       display:flex;
       flex-direction:column;
-      gap:14px;
-      min-height:420px;
+      gap:18px;
+      scroll-behavior:smooth;
     }
 
-    .msg{
-      max-width:85%;
-      padding:14px 16px;
+    .welcome{
+      border:1px dashed var(--line);
+      background:rgba(255,255,255,.02);
+      color:var(--muted);
       border-radius:18px;
-      line-height:1.55;
+      padding:16px 18px;
+      line-height:1.6;
       font-size:14px;
+    }
+
+    .message-row{
+      display:flex;
+      width:100%;
+    }
+
+    .message-row.user{
+      justify-content:flex-end;
+    }
+
+    .message-row.assistant,
+    .message-row.system{
+      justify-content:flex-start;
+    }
+
+    .bubble{
+      max-width:min(840px, 88%);
+      border-radius:22px;
+      padding:14px 16px;
+      line-height:1.7;
+      font-size:15px;
       white-space:pre-wrap;
       word-break:break-word;
+      position:relative;
     }
 
-    .msg.user{
-      align-self:flex-end;
-      background:rgba(56,189,248,.13);
-      border:1px solid rgba(56,189,248,.25);
+    .bubble.user{
+      background:linear-gradient(180deg, rgba(56,189,248,.18), rgba(56,189,248,.11));
+      border:1px solid rgba(56,189,248,.30);
+      border-bottom-right-radius:8px;
     }
 
-    .msg.assistant{
-      align-self:flex-start;
+    .bubble.assistant{
       background:rgba(255,255,255,.03);
       border:1px solid var(--line);
+      border-bottom-left-radius:8px;
     }
 
-    .msg.system{
-      align-self:center;
-      max-width:100%;
+    .bubble.system{
       background:rgba(255,255,255,.02);
       border:1px dashed var(--line);
       color:var(--muted);
-      font-size:13px;
+      max-width:100%;
+    }
+
+    .role-tag{
+      display:block;
+      font-size:11px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      margin-bottom:8px;
+      color:var(--muted);
+    }
+
+    .composer-wrap{
+      position:sticky;
+      bottom:0;
+      z-index:5;
+      padding-top:8px;
+      background:linear-gradient(180deg, rgba(11,15,20,0), rgba(11,15,20,.75) 30%, rgba(11,15,20,.95) 100%);
     }
 
     .composer{
-      margin-top:16px;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-
-    .row{
-      display:grid;
-      grid-template-columns:1fr 180px 220px;
-      gap:12px;
-    }
-
-    textarea, select, input{
-      width:100%;
+      padding:14px;
       border:1px solid var(--line);
-      border-radius:16px;
+      background:rgba(17,24,33,.92);
+      backdrop-filter:blur(10px);
+      border-radius:22px;
+      box-shadow:var(--shadow);
+    }
+
+    .composer-main{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:12px;
+      align-items:end;
+    }
+
+    .composer textarea{
+      width:100%;
+      min-height:88px;
+      max-height:220px;
+      resize:vertical;
+      border:1px solid var(--line);
+      border-radius:18px;
       background:rgba(255,255,255,.02);
       color:var(--text);
       padding:14px 16px;
-      font:inherit;
       outline:none;
-    }
-
-    textarea{
-      resize:vertical;
-      min-height:120px;
-      line-height:1.5;
+      line-height:1.6;
     }
 
     .send-btn{
@@ -302,33 +313,82 @@
       border:none;
       border-radius:16px;
       padding:14px 18px;
-      font:inherit;
-      font-weight:700;
+      min-width:170px;
       cursor:pointer;
+      font-weight:700;
       background:linear-gradient(180deg, var(--accent), var(--accent2));
       color:#06121a;
       transition:transform .12s ease, opacity .12s ease;
+      align-self:stretch;
     }
 
-    .send-btn:hover{transform:translateY(-1px)}
-    .send-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .send-btn:hover{
+      transform:translateY(-1px);
+    }
 
-    .side{
-      display:flex;
-      flex-direction:column;
-      gap:20px;
+    .send-btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    .advanced{
+      margin-top:12px;
+      border-top:1px solid var(--line2);
+      padding-top:12px;
+    }
+
+    details{
+      width:100%;
+    }
+
+    summary{
+      cursor:pointer;
+      color:var(--muted);
+      font-size:13px;
+      list-style:none;
+    }
+
+    summary::-webkit-details-marker{
+      display:none;
+    }
+
+    .advanced-grid{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:12px;
+    }
+
+    input,
+    select{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:rgba(255,255,255,.02);
+      color:var(--text);
+      padding:12px 14px;
+      outline:none;
     }
 
     .panel{
       padding:18px;
     }
 
+    .panel h2,
     .panel h3{
       margin:0 0 12px;
-      font-size:17px;
+      font-size:16px;
     }
 
-    .kv{
+    .panel p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
+    }
+
+    .stack{
       display:grid;
       gap:10px;
     }
@@ -338,19 +398,34 @@
       border:1px solid var(--line);
       border-radius:14px;
       background:rgba(255,255,255,.02);
+      min-width:0;
     }
 
     .kv-key{
-      font-size:12px;
-      color:var(--muted);
+      font-size:11px;
       text-transform:uppercase;
       letter-spacing:.08em;
+      color:var(--muted);
       margin-bottom:6px;
     }
 
     .kv-val{
       font-size:14px;
       word-break:break-word;
+      line-height:1.5;
+    }
+
+    .mono{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+    }
+
+    .raw-box{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:rgba(255,255,255,.02);
+      padding:12px 14px;
+      max-height:340px;
+      overflow:auto;
     }
 
     pre{
@@ -358,173 +433,194 @@
       white-space:pre-wrap;
       word-break:break-word;
       font-size:12px;
-      line-height:1.5;
+      line-height:1.55;
       color:#cfe8ff;
     }
 
-    .footer-note{
-      margin-top:18px;
-      color:var(--muted);
+    .small-note{
       font-size:12px;
+      color:var(--muted);
       line-height:1.6;
     }
 
-    @media (max-width: 980px){
-      .hero,
-      .layout,
-      .row{
+    @media (max-width: 1120px){
+      .app{
         grid-template-columns:1fr;
       }
 
-      .chat{
-        min-height:unset;
+      .sidebar{
+        order:2;
       }
 
-      .msg{
-        max-width:100%;
+      .main-shell{
+        min-height:auto;
+      }
+    }
+
+    @media (max-width: 720px){
+      .app{
+        padding:14px;
       }
 
       .topbar,
-      .chat-head{
-        flex-direction:column;
-        align-items:flex-start;
+      .chat-head,
+      .composer-main{
+        grid-template-columns:1fr;
+        display:grid;
       }
 
-      .head-actions{
+      .topbar-actions{
         justify-content:flex-start;
+      }
+
+      .advanced-grid{
+        grid-template-columns:1fr;
+      }
+
+      .send-btn{
+        min-width:unset;
+        width:100%;
+      }
+
+      .bubble{
+        max-width:100%;
       }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-kicker">HBCE Research</div>
-        <div class="brand-title">AI JOKER-C2 Interface</div>
-        <div class="brand-sub">Identity-Bound Operational AI Application · Torino Matrix Node Enabled</div>
-      </div>
-      <a href="./index.html">Back to portal</a>
-    </header>
-
-    <section class="hero">
-      <div class="card hero-main">
-        <h1>Joker-C2 console linked to the Torino experimental node.</h1>
-        <p>
-          This interface routes user prompts to the Joker-C2 application layer through the internal chat API,
-          binds execution to the Matrix Europa territorial context, and now preserves conversational memory
-          across messages in the browser session.
-        </p>
-      </div>
-
-      <div class="card hero-side">
-        <div class="mini">
-          <div class="mini-label">Default node</div>
-          <div class="mini-value">HBCE-MATRIX-NODE-0001-TORINO</div>
+  <div class="app">
+    <main class="main-shell">
+      <header class="card topbar">
+        <div class="brand">
+          <div class="brand-kicker">HBCE Research</div>
+          <div class="brand-title">AI JOKER-C2 Interface</div>
+          <div class="brand-sub">Identity-Bound Operational AI Application · Conversational shell linked to the Torino Matrix node</div>
         </div>
-        <div class="mini">
-          <div class="mini-label">Identity layer</div>
-          <div class="mini-value">IPR-AI-0001</div>
-        </div>
-        <div class="mini">
-          <div class="mini-label">Execution model</div>
-          <div class="mini-value">request → identity → evidence → verification</div>
-        </div>
-      </div>
-    </section>
 
-    <section class="layout">
-      <div class="card chat">
-        <div class="chat-head">
-          <div>
-            <h2>Operational Chat</h2>
-            <p>Send a request to Joker-C2 through the internal API route.</p>
+        <div class="topbar-actions">
+          <a class="ghost-btn" href="./index.html">Back to portal</a>
+          <button class="ghost-btn" id="clearConversationButton" type="button">Clear conversation</button>
+          <div class="status">
+            <span class="dot"></span>
+            <span id="statusText">Ready</span>
           </div>
+        </div>
+      </header>
 
-          <div class="head-actions">
-            <button class="ghost-btn" id="clearConversationButton" type="button">
-              Clear conversation
-            </button>
-
-            <div class="status" id="statusBadge">
-              <span class="dot"></span>
-              <span id="statusText">Ready</span>
-            </div>
+      <section class="card chat-shell">
+        <div class="chat-head">
+          <div class="chat-head-left">
+            <h1>Operational Chat</h1>
+            <p>
+              This interface is optimized for direct conversation. Technical execution metadata remains available in the right-side panel without taking over the chat flow.
+            </p>
           </div>
         </div>
 
         <div class="messages" id="messages"></div>
+      </section>
 
+      <div class="composer-wrap">
         <form class="composer" id="chatForm">
-          <textarea
-            id="messageInput"
-            placeholder="Type an operational request for Joker-C2..."
-          >Esegui analisi del nodo Torino.</textarea>
+          <div class="composer-main">
+            <textarea
+              id="messageInput"
+              placeholder="Send a request to Joker-C2..."
+            ></textarea>
 
-          <div class="row">
-            <select id="modeInput">
-              <option value="analysis" selected>analysis</option>
-              <option value="verification">verification</option>
-            </select>
-
-            <input
-              id="identityInput"
-              type="text"
-              value="IPR-AI-0001"
-              placeholder="Actor identity"
-            >
-
-            <input
-              id="nodeInput"
-              type="text"
-              value="HBCE-MATRIX-NODE-0001-TORINO"
-              placeholder="Node ID"
-            >
+            <button class="send-btn" id="sendButton" type="submit">Send to Joker-C2</button>
           </div>
 
-          <button class="send-btn" id="sendButton" type="submit">Send to Joker-C2</button>
+          <div class="advanced">
+            <details>
+              <summary>Advanced execution settings</summary>
+
+              <div class="advanced-grid">
+                <select id="modeInput">
+                  <option value="analysis" selected>analysis</option>
+                  <option value="verification">verification</option>
+                </select>
+
+                <input
+                  id="identityInput"
+                  type="text"
+                  value="IPR-AI-0001"
+                  placeholder="Actor identity"
+                >
+
+                <input
+                  id="nodeInput"
+                  type="text"
+                  value="HBCE-MATRIX-NODE-0001-TORINO"
+                  placeholder="Node ID"
+                >
+              </div>
+            </details>
+          </div>
         </form>
       </div>
+    </main>
 
-      <aside class="side">
-        <div class="card panel">
-          <h3>Live Execution Metadata</h3>
-          <div class="kv" id="metaBox">
-            <div class="kv-item">
-              <div class="kv-key">Request ID</div>
-              <div class="kv-val" id="metaRequestId">Not executed yet</div>
-            </div>
-            <div class="kv-item">
-              <div class="kv-key">Mode</div>
-              <div class="kv-val" id="metaMode">-</div>
-            </div>
-            <div class="kv-item">
-              <div class="kv-key">Node</div>
-              <div class="kv-val" id="metaNode">HBCE-MATRIX-NODE-0001-TORINO</div>
-            </div>
-            <div class="kv-item">
-              <div class="kv-key">Verification Reference</div>
-              <div class="kv-val" id="metaVerify">-</div>
-            </div>
-            <div class="kv-item">
-              <div class="kv-key">Conversation Turns</div>
-              <div class="kv-val" id="metaConversationTurns">0</div>
-            </div>
+    <aside class="sidebar">
+      <section class="card panel">
+        <h2>Execution Context</h2>
+        <div class="stack">
+          <div class="kv-item">
+            <div class="kv-key">Default node</div>
+            <div class="kv-val mono">HBCE-MATRIX-NODE-0001-TORINO</div>
+          </div>
+          <div class="kv-item">
+            <div class="kv-key">Identity layer</div>
+            <div class="kv-val mono">IPR-AI-0001</div>
+          </div>
+          <div class="kv-item">
+            <div class="kv-key">Execution model</div>
+            <div class="kv-val">request → identity → evidence → verification</div>
           </div>
         </div>
+      </section>
 
-        <div class="card panel">
-          <h3>Last Raw Response</h3>
+      <section class="card panel">
+        <h3>Live Execution Metadata</h3>
+        <div class="stack">
+          <div class="kv-item">
+            <div class="kv-key">Request ID</div>
+            <div class="kv-val mono" id="metaRequestId">Not executed yet</div>
+          </div>
+          <div class="kv-item">
+            <div class="kv-key">Mode</div>
+            <div class="kv-val mono" id="metaMode">-</div>
+          </div>
+          <div class="kv-item">
+            <div class="kv-key">Node</div>
+            <div class="kv-val mono" id="metaNode">HBCE-MATRIX-NODE-0001-TORINO</div>
+          </div>
+          <div class="kv-item">
+            <div class="kv-key">Verification Reference</div>
+            <div class="kv-val mono" id="metaVerify">-</div>
+          </div>
+          <div class="kv-item">
+            <div class="kv-key">Conversation Turns</div>
+            <div class="kv-val mono" id="metaConversationTurns">0</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card panel">
+        <h3>Last Raw Response</h3>
+        <div class="raw-box">
           <pre id="rawResponse">No response yet.</pre>
         </div>
+      </section>
 
-        <div class="footer-note">
-          This console expects a server-side API endpoint at <code>/api/chat</code>.
-          For live Joker-C2 execution with GPT-style replies, deploy on Vercel with the backend route enabled
-          and <code>OPENAI_API_KEY</code> configured on the server.
-        </div>
-      </aside>
-    </section>
+      <section class="card panel">
+        <h3>Backend Note</h3>
+        <p class="small-note">
+          This interface uses <code>/api/chat</code>. For full GPT-style live execution, keep the backend route enabled on Vercel and configure <code>OPENAI_API_KEY</code> server-side.
+        </p>
+      </section>
+    </aside>
   </div>
 
   <script>
@@ -545,7 +641,7 @@
     const metaVerify = document.getElementById("metaVerify");
     const metaConversationTurns = document.getElementById("metaConversationTurns");
 
-    const STORAGE_KEY = "joker-c2-conversation-v1";
+    const STORAGE_KEY = "joker-c2-conversation-v2";
 
     let conversation = [];
 
@@ -553,17 +649,47 @@
       statusText.textContent = text;
     }
 
+    function scrollMessagesToBottom() {
+      messages.scrollTop = messages.scrollHeight;
+    }
+
     function createMessageElement(role, content) {
-      const div = document.createElement("div");
-      div.className = `msg ${role}`;
-      div.textContent = content;
-      return div;
+      const row = document.createElement("div");
+      row.className = `message-row ${role}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = `bubble ${role}`;
+
+      const roleTag = document.createElement("span");
+      roleTag.className = "role-tag";
+      roleTag.textContent =
+        role === "user"
+          ? "You"
+          : role === "assistant"
+            ? "AI JOKER-C2"
+            : "System";
+
+      const body = document.createElement("div");
+      body.textContent = content;
+
+      bubble.appendChild(roleTag);
+      bubble.appendChild(body);
+      row.appendChild(bubble);
+
+      return row;
     }
 
     function appendMessageToUI(role, content) {
-      const div = createMessageElement(role, content);
-      messages.appendChild(div);
-      messages.scrollTop = messages.scrollHeight;
+      const element = createMessageElement(role, content);
+      messages.appendChild(element);
+      scrollMessagesToBottom();
+    }
+
+    function updateConversationMeta() {
+      const turns = conversation.filter(
+        (item) => item.role === "user" || item.role === "assistant"
+      ).length;
+      metaConversationTurns.textContent = String(turns);
     }
 
     function persistConversation() {
@@ -574,12 +700,14 @@
     function loadConversation() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
+
         if (!raw) {
           conversation = [];
           return;
         }
 
         const parsed = JSON.parse(raw);
+
         if (!Array.isArray(parsed)) {
           conversation = [];
           return;
@@ -602,23 +730,17 @@
       messages.innerHTML = "";
 
       if (conversation.length === 0) {
-        appendMessageToUI(
-          "system",
-          "Joker-C2 interface initialized. Default Matrix Europa node: Torino."
-        );
+        const welcome = document.createElement("div");
+        welcome.className = "welcome";
+        welcome.textContent =
+          "Joker-C2 interface initialized. Conversational shell ready. Default Matrix Europa node: Torino.";
+        messages.appendChild(welcome);
         return;
       }
 
       for (const item of conversation) {
         appendMessageToUI(item.role, item.content);
       }
-    }
-
-    function updateConversationMeta() {
-      const turns = conversation.filter(
-        (item) => item.role === "user" || item.role === "assistant"
-      ).length;
-      metaConversationTurns.textContent = String(turns);
     }
 
     function pushConversationItem(role, content) {
@@ -642,6 +764,7 @@
 
     clearConversationButton.addEventListener("click", () => {
       clearConversation();
+      messageInput.focus();
     });
 
     chatForm.addEventListener("submit", async (event) => {
@@ -686,9 +809,11 @@
         }
 
         const replyText =
-          data.reply?.content ||
-          data.matrix?.reply?.content ||
-          "Joker-C2 completed the request.";
+          typeof data.reply === "string"
+            ? data.reply
+            : data.reply?.content ||
+              data.matrix?.reply?.content ||
+              "Joker-C2 completed the request.";
 
         pushConversationItem("assistant", replyText);
 
@@ -713,12 +838,21 @@
         setStatus("Offline / Missing API");
       } finally {
         sendButton.disabled = false;
+        messageInput.focus();
+      }
+    });
+
+    messageInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        chatForm.requestSubmit();
       }
     });
 
     loadConversation();
     renderConversation();
     updateConversationMeta();
+    messageInput.focus();
   </script>
 </body>
 </html>
