@@ -65,13 +65,13 @@
   },
 
   "signature": {
-    "status": "PENDING",
+    "status": "SIGNED",
     "algorithm": "ED25519",
     "scope": "same-as-binding_hash_scope",
     "signed_by": "HERMETICUM B.C.E. S.r.l.",
     "signed_by_unit": "HBCE Research",
     "public_key": "MCowBQYDK2VwAyEAU6MG4DK0kxMGrZLbYeVwwfsMZNBy3cYYCb0ez7BdNlc=",
-    "value": "PENDING_SIGNATURE"
+    "value": "Zfab8tWl20AHjZeglxIGiLZQonExkEzrJWY3uGgOrNVIXsCMcelJIBITWY3XE3vGrej/eZQyLWXP634ziZSDBA=="
   },
 
   "policy": {
