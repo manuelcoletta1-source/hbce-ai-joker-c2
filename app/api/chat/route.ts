@@ -101,9 +101,11 @@ function normalizeHistory(value: unknown): HistoryTurn[] {
     .filter((item) => item && typeof item === "object")
     .map((item) => {
       const raw = item as Partial<HistoryTurn>;
+      const role: HistoryTurn["role"] =
+        raw.role === "assistant" ? "assistant" : "user";
 
       return {
-        role: raw.role === "assistant" ? "assistant" : "user",
+        role,
         content: typeof raw.content === "string" ? raw.content.trim() : ""
       };
     })
