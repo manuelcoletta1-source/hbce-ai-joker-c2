@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import {
+  getMemoryByKey,
+  listMemoryRecords,
+  saveMemoryRecord,
+  searchMemory
+} from "@/lib/joker-memory";
 
 export const runtime = "nodejs";
 
@@ -39,11 +45,18 @@ type SourceItem = {
   url?: string;
 };
 
+type MemoryInstruction = {
+  key: string;
+  value: string;
+  category: string;
+} | null;
+
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
 const MAX_HISTORY_TURNS = 6;
+const MAX_MEMORY_MATCHES = 5;
 
 function isTextAttachment(type: string, name: string): boolean {
   const lower = name.toLowerCase();
@@ -124,10 +137,12 @@ function buildSystemPrompt(research: boolean): string {
     "Default node: HBCE-MATRIX-NODE-0001-TORINO.",
     "You process requests from the biological operator and return structured, precise, operational answers.",
     "Conversation history is part of the active operational context and must be used when provided.",
+    "Server-side memory is part of the operational context when available.",
     "If attachments are provided, use them as contextual evidence.",
     "When a text attachment is present, read it and integrate its content into the answer.",
     "When an image attachment is present, analyze the image and describe relevant details.",
-    "Do not claim permanent memory unless the user explicitly asks to save information.",
+    "If memory context is provided, use it directly and consistently.",
+    "Do not claim permanent memory unless the memory layer actually saved the information.",
     "Be clear, operational, and consistent with HBCE language."
   ];
 
@@ -195,7 +210,11 @@ function extractSources(rawResponse: any): SourceItem[] {
       }
     }
 
-    if (value.type === "url_citation" || value.type === "citation" || value.type === "source") {
+    if (
+      value.type === "url_citation" ||
+      value.type === "citation" ||
+      value.type === "source"
+    ) {
       pushSource(
         value.title || value.source_title,
         value.url || value.source_url
@@ -214,12 +233,20 @@ function extractSources(rawResponse: any): SourceItem[] {
 function buildInput(
   history: HistoryTurn[],
   message: string,
-  attachments: Attachment[]
+  attachments: Attachment[],
+  memoryContext: string
 ): Array<
   | { role: "user" | "assistant"; content: string }
   | { role: "user"; content: InputPart[] }
 > {
   const inputParts: InputPart[] = [];
+
+  if (memoryContext) {
+    inputParts.push({
+      type: "input_text",
+      text: memoryContext
+    });
+  }
 
   if (message) {
     inputParts.push({
@@ -282,6 +309,82 @@ function buildInput(
   ];
 }
 
+function extractMemoryInstruction(message: string): MemoryInstruction {
+  const trimmed = message.trim();
+  const lower = trimmed.toLowerCase();
+
+  if (lower.startsWith("ricorda:")) {
+    const value = trimmed.slice("ricorda:".length).trim();
+    if (!value) return null;
+
+    return {
+      key: value,
+      value,
+      category: "operator-memory"
+    };
+  }
+
+  if (lower.startsWith("ricorda che ")) {
+    const value = trimmed.slice("ricorda che ".length).trim();
+    if (!value) return null;
+
+    return {
+      key: value,
+      value,
+      category: "operator-memory"
+    };
+  }
+
+  const namedPattern =
+    /^ricorda(?:\s+che)?\s+(.+?)\s+(?:si chiama|è)\s+(.+)$/i;
+  const match = trimmed.match(namedPattern);
+
+  if (match) {
+    const key = match[1].trim();
+    const value = match[2].trim();
+
+    if (key && value) {
+      return {
+        key,
+        value,
+        category: "named-fact"
+      };
+    }
+  }
+
+  return null;
+}
+
+function isMemoryListingRequest(message: string): boolean {
+  const lower = message.trim().toLowerCase();
+
+  return (
+    lower === "cosa ricordi?" ||
+    lower === "cosa ricordi" ||
+    lower === "mostra memoria" ||
+    lower === "mostra la memoria" ||
+    lower === "elenca memoria" ||
+    lower === "elenca la memoria"
+  );
+}
+
+async function buildMemoryContext(message: string): Promise<string> {
+  const direct = await getMemoryByKey(message);
+  const matches = direct ? [direct] : await searchMemory(message);
+
+  const selected = matches.slice(0, MAX_MEMORY_MATCHES);
+
+  if (selected.length === 0) return "";
+
+  return [
+    "Server-side memory context:",
+    ...selected.map(
+      (record, index) =>
+        `${index + 1}. [${record.category}] ${record.key} => ${record.value}`
+    )
+  ].join("\n");
+}
+
 export async function POST(req: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -310,7 +413,78 @@ export async function POST(req: Request) {
       );
     }
 
-    const input = buildInput(history, message, attachments);
+    if (isMemoryListingRequest(message)) {
+      const records = await listMemoryRecords();
+      const response =
+        records.length === 0
+          ? "JOKER-C2 memory is currently empty."
+          : [
+              "JOKER-C2 memory records:",
+              ...records.map(
+                (record, index) =>
+                  `${index + 1}. [${record.category}] ${record.key} => ${record.value}`
+              )
+            ].join("\n");
+
+      return NextResponse.json({
+        ok: true,
+        joker: "C2",
+        response,
+        sources: [],
+        meta: {
+          model: "memory-layer",
+          ts: new Date().toISOString(),
+          node: "HBCE-MATRIX-NODE-0001-TORINO",
+          identity: "IPR-AI-0001",
+          research: false,
+          memory: {
+            history_turns_used: history.length,
+            history_turns_max: MAX_HISTORY_TURNS,
+            persistent_records: records.length
+          },
+          attachments: {
+            total: attachments.length,
+            text: 0,
+            images: 0,
+            unsupported: 0
+          }
+        }
+      });
+    }
+
+    const memoryInstruction = extractMemoryInstruction(message);
+
+    if (memoryInstruction) {
+      const saved = await saveMemoryRecord(memoryInstruction);
+
+      return NextResponse.json({
+        ok: true,
+        joker: "C2",
+        response: `Memory saved. ${saved.key} => ${saved.value}`,
+        sources: [],
+        meta: {
+          model: "memory-layer",
+          ts: new Date().toISOString(),
+          node: "HBCE-MATRIX-NODE-0001-TORINO",
+          identity: "IPR-AI-0001",
+          research: false,
+          memory: {
+            history_turns_used: history.length,
+            history_turns_max: MAX_HISTORY_TURNS,
+            persistent_records: 1
+          },
+          attachments: {
+            total: attachments.length,
+            text: 0,
+            images: 0,
+            unsupported: 0
+          }
+        }
+      });
+    }
+
+    const memoryContext = await buildMemoryContext(message);
+    const input = buildInput(history, message, attachments, memoryContext);
 
     const textAttachments = attachments.filter((item) =>
       isTextAttachment(item.type, item.name)
@@ -357,7 +531,8 @@ export async function POST(req: Request) {
         research,
         memory: {
           history_turns_used: history.length,
-          history_turns_max: MAX_HISTORY_TURNS
+          history_turns_max: MAX_HISTORY_TURNS,
+          persistent_matches_used: memoryContext ? 1 : 0
         },
         attachments: {
           total: attachments.length,
