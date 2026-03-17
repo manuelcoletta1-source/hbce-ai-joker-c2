@@ -134,9 +134,9 @@ function buildSystemPrompt(research: boolean): string {
   const researchBlock = research
     ? [
         "Research mode is active.",
-        "Use web research when needed to acquire current facts and supporting sources.",
-        "When web evidence is available, prefer traceable, source-grounded statements.",
-        "At the end of the answer, add a compact source-aware summary if relevant."
+        "You must perform current web research before answering when the question asks for latest, current, recent, news, laws, regulations, standards, dates, or sources.",
+        "Do not answer from stale internal knowledge when research mode is active.",
+        "Return a concise answer first, then a compact source list."
       ]
     : [];
 
@@ -178,28 +178,24 @@ function extractSources(rawResponse: any): SourceItem[] {
 
     if (Array.isArray(value.annotations)) {
       for (const annotation of value.annotations) {
-        if (annotation && typeof annotation === "object") {
-          const maybeTitle =
-            annotation.title ||
-            annotation.source_title ||
-            annotation.url_citation?.title ||
-            annotation.file_citation?.title;
+        if (!annotation || typeof annotation !== "object") continue;
 
-          const maybeUrl =
-            annotation.url ||
-            annotation.source_url ||
-            annotation.url_citation?.url;
+        const maybeTitle =
+          annotation.title ||
+          annotation.source_title ||
+          annotation.url_citation?.title ||
+          annotation.file_citation?.title;
 
-          pushSource(maybeTitle, maybeUrl);
-        }
+        const maybeUrl =
+          annotation.url ||
+          annotation.source_url ||
+          annotation.url_citation?.url;
+
+        pushSource(maybeTitle, maybeUrl);
       }
     }
 
-    if (
-      value.type === "url_citation" ||
-      value.type === "citation" ||
-      value.type === "source"
-    ) {
+    if (value.type === "url_citation" || value.type === "citation" || value.type === "source") {
       pushSource(
         value.title || value.source_title,
         value.url || value.source_url
@@ -213,6 +209,77 @@ function extractSources(rawResponse: any): SourceItem[] {
 
   walk(rawResponse);
   return results;
+}
+
+function buildInput(
+  history: HistoryTurn[],
+  message: string,
+  attachments: Attachment[]
+): Array<
+  | { role: "user" | "assistant"; content: string }
+  | { role: "user"; content: InputPart[] }
+> {
+  const inputParts: InputPart[] = [];
+
+  if (message) {
+    inputParts.push({
+      type: "input_text",
+      text: message
+    });
+  }
+
+  const textAttachments = attachments.filter((item) =>
+    isTextAttachment(item.type, item.name)
+  );
+
+  const imageAttachments = attachments.filter((item) =>
+    isImageAttachment(item.type)
+  );
+
+  for (const attachment of textAttachments) {
+    inputParts.push({
+      type: "input_text",
+      text: extractTextAttachmentBlock(attachment)
+    });
+  }
+
+  for (const attachment of imageAttachments) {
+    inputParts.push({
+      type: "input_image",
+      image_url: attachment.content,
+      detail: "auto"
+    });
+  }
+
+  const unsupportedAttachments = attachments.filter(
+    (item) =>
+      !isTextAttachment(item.type, item.name) && !isImageAttachment(item.type)
+  );
+
+  if (unsupportedAttachments.length > 0) {
+    inputParts.push({
+      type: "input_text",
+      text: [
+        "Unsupported attachments were provided.",
+        "They were not parsed in this step.",
+        "Unsupported files:",
+        ...unsupportedAttachments.map(
+          (item) => `- ${item.name} (${item.type})`
+        )
+      ].join("\n")
+    });
+  }
+
+  return [
+    ...history.map((turn) => ({
+      role: turn.role,
+      content: turn.content
+    })),
+    {
+      role: "user" as const,
+      content: inputParts
+    }
+  ];
 }
 
 export async function POST(req: Request) {
@@ -243,69 +310,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const inputParts: InputPart[] = [];
-
-    if (message) {
-      inputParts.push({
-        type: "input_text",
-        text: message
-      });
-    }
+    const input = buildInput(history, message, attachments);
 
     const textAttachments = attachments.filter((item) =>
       isTextAttachment(item.type, item.name)
     );
-
     const imageAttachments = attachments.filter((item) =>
       isImageAttachment(item.type)
     );
-
-    for (const attachment of textAttachments) {
-      inputParts.push({
-        type: "input_text",
-        text: extractTextAttachmentBlock(attachment)
-      });
-    }
-
-    for (const attachment of imageAttachments) {
-      inputParts.push({
-        type: "input_image",
-        image_url: attachment.content,
-        detail: "auto"
-      });
-    }
-
     const unsupportedAttachments = attachments.filter(
       (item) =>
         !isTextAttachment(item.type, item.name) && !isImageAttachment(item.type)
     );
 
-    if (unsupportedAttachments.length > 0) {
-      inputParts.push({
-        type: "input_text",
-        text: [
-          "Unsupported attachments were provided.",
-          "They were not parsed in this step.",
-          "Unsupported files:",
-          ...unsupportedAttachments.map(
-            (item) => `- ${item.name} (${item.type})`
-          )
-        ].join("\n")
-      });
-    }
-
-    const input = [
-      ...history.map((turn) => ({
-        role: turn.role,
-        content: turn.content
-      })),
-      {
-        role: "user" as const,
-        content: inputParts
-      }
-    ];
-
-    const requestBody: Record<string, unknown> = {
+    const requestBody: any = {
       model: "gpt-4.1-mini",
       instructions: buildSystemPrompt(research),
       input
@@ -313,11 +331,11 @@ export async function POST(req: Request) {
 
     if (research) {
       requestBody.tools = [{ type: "web_search_preview" }];
+      requestBody.tool_choice = "required";
+      requestBody.include = ["web_search_call.action.sources"];
     }
 
-    const rawResponse = (await client.responses.create(
-      requestBody as any
-    )) as any;
+    const rawResponse: any = await client.responses.create(requestBody);
 
     const outputText =
       typeof rawResponse.output_text === "string" && rawResponse.output_text.trim()
