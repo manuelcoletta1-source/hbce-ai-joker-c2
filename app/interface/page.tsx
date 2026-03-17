@@ -26,6 +26,10 @@ type ApiResponse = {
     ts?: string;
     node?: string;
     identity?: string;
+    memory?: {
+      history_turns_used: number;
+      history_turns_max: number;
+    };
     attachments?: {
       total: number;
       text: number;
@@ -37,8 +41,8 @@ type ApiResponse = {
 
 const MAX_TEXT_FILE_SIZE = 1024 * 1024 * 2;
 const MAX_IMAGE_FILE_SIZE = 1024 * 1024 * 5;
-
 const MEMORY_KEY = "hbce-joker-c2-memory-v1";
+const MAX_HISTORY_TURNS = 6;
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -177,6 +181,19 @@ function saveMemory(state: PersistedState) {
   window.localStorage.setItem(MEMORY_KEY, JSON.stringify(state));
 }
 
+function buildOperationalHistory(messages: ChatMessage[]) {
+  return messages
+    .filter(
+      (message) =>
+        message.role === "user" || message.role === "assistant"
+    )
+    .slice(-MAX_HISTORY_TURNS)
+    .map((message) => ({
+      role: message.role,
+      content: message.content
+    }));
+}
+
 export default function InterfacePage() {
   const [messages, setMessages] = useState<ChatMessage[]>(getDefaultMessages);
   const [input, setInput] = useState("");
@@ -258,11 +275,15 @@ export default function InterfacePage() {
     if (isSending) return;
     if (!input.trim() && attachments.length === 0) return;
 
+    const trimmedInput = input.trim();
+
     const userMessage: ChatMessage = {
       id: makeId(),
       role: "user",
-      content: input.trim() || "[attachments only]"
+      content: trimmedInput || "[attachments only]"
     };
+
+    const history = buildOperationalHistory(messages);
 
     setMessages((prev) => [...prev, userMessage]);
     setIsSending(true);
@@ -282,8 +303,9 @@ export default function InterfacePage() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          message: input.trim(),
-          attachments: preparedAttachments
+          message: trimmedInput,
+          attachments: preparedAttachments,
+          history
         })
       });
 
@@ -752,8 +774,8 @@ export default function InterfacePage() {
                 Memory Layer
               </div>
               <div style={{ color: "#edf4ff", lineHeight: 1.7 }}>
-                Local browser memory active. Conversation persists across refresh until
-                cleared.
+                Local browser memory active. Last 6 turns are sent to the route as
+                operational context.
               </div>
             </div>
           </div>
