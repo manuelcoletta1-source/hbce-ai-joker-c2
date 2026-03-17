@@ -16,16 +16,23 @@ type PreparedAttachment = {
   content: string;
 };
 
+type SourceItem = {
+  title: string;
+  url?: string;
+};
+
 type ApiResponse = {
   ok: boolean;
   joker?: string;
   response?: string;
   error?: string;
+  sources?: SourceItem[];
   meta?: {
     model?: string;
     ts?: string;
     node?: string;
     identity?: string;
+    research?: boolean;
     memory?: {
       history_turns_used: number;
       history_turns_max: number;
@@ -129,7 +136,7 @@ function getDefaultMessages(): ChatMessage[] {
     {
       id: makeId(),
       role: "assistant",
-      content: "JOKER-C2 online. Send a request, document, or image."
+      content: "JOKER-C2 online. Send a request, document, image, or research query."
     }
   ];
 }
@@ -142,6 +149,7 @@ type PersistedState = {
   verification: string;
   turns: number;
   input: string;
+  researchEnabled: boolean;
 };
 
 function loadMemory(): PersistedState | null {
@@ -168,7 +176,8 @@ function loadMemory(): PersistedState | null {
       mode: typeof parsed.mode === "string" ? parsed.mode : "-",
       verification: typeof parsed.verification === "string" ? parsed.verification : "-",
       turns: typeof parsed.turns === "number" ? parsed.turns : 1,
-      input: typeof parsed.input === "string" ? parsed.input : ""
+      input: typeof parsed.input === "string" ? parsed.input : "",
+      researchEnabled: parsed.researchEnabled === true
     };
   } catch {
     return null;
@@ -177,21 +186,31 @@ function loadMemory(): PersistedState | null {
 
 function saveMemory(state: PersistedState) {
   if (typeof window === "undefined") return;
-
   window.localStorage.setItem(MEMORY_KEY, JSON.stringify(state));
 }
 
 function buildOperationalHistory(messages: ChatMessage[]) {
   return messages
-    .filter(
-      (message) =>
-        message.role === "user" || message.role === "assistant"
-    )
+    .filter((message) => message.role === "user" || message.role === "assistant")
     .slice(-MAX_HISTORY_TURNS)
     .map((message) => ({
       role: message.role,
       content: message.content
     }));
+}
+
+function formatSources(sources: SourceItem[]) {
+  if (sources.length === 0) return "";
+
+  return [
+    "",
+    "Sources:",
+    ...sources.map((source, index) =>
+      source.url
+        ? `${index + 1}. ${source.title} — ${source.url}`
+        : `${index + 1}. ${source.title}`
+    )
+  ].join("\n");
 }
 
 export default function InterfacePage() {
@@ -205,6 +224,7 @@ export default function InterfacePage() {
   const [verification, setVerification] = useState("-");
   const [turns, setTurns] = useState(1);
   const [memoryLoaded, setMemoryLoaded] = useState(false);
+  const [researchEnabled, setResearchEnabled] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -219,6 +239,7 @@ export default function InterfacePage() {
       setVerification(stored.verification);
       setTurns(stored.turns);
       setInput(stored.input);
+      setResearchEnabled(stored.researchEnabled);
     }
 
     setMemoryLoaded(true);
@@ -234,9 +255,20 @@ export default function InterfacePage() {
       mode,
       verification,
       turns,
-      input
+      input,
+      researchEnabled
     });
-  }, [messages, status, requestId, mode, verification, turns, input, memoryLoaded]);
+  }, [
+    messages,
+    status,
+    requestId,
+    mode,
+    verification,
+    turns,
+    input,
+    researchEnabled,
+    memoryLoaded
+  ]);
 
   const attachmentSummary = useMemo(() => {
     if (attachments.length === 0) return "No attachments";
@@ -258,9 +290,14 @@ export default function InterfacePage() {
     setMode("-");
     setVerification("-");
     setTurns(1);
+    setResearchEnabled(false);
 
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(MEMORY_KEY);
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   }
 
@@ -289,7 +326,15 @@ export default function InterfacePage() {
     setIsSending(true);
     setStatus("Processing");
     setRequestId(makeId());
-    setMode(attachments.length > 0 ? "message+attachments" : "message");
+    setMode(
+      researchEnabled
+        ? attachments.length > 0
+          ? "research+attachments"
+          : "research"
+        : attachments.length > 0
+          ? "message+attachments"
+          : "message"
+    );
     setVerification("pending");
 
     try {
@@ -305,7 +350,8 @@ export default function InterfacePage() {
         body: JSON.stringify({
           message: trimmedInput,
           attachments: preparedAttachments,
-          history
+          history,
+          research: researchEnabled
         })
       });
 
@@ -315,12 +361,15 @@ export default function InterfacePage() {
         throw new Error(data.error || "Unknown chat error");
       }
 
+      const sourceBlock = formatSources(data.sources || []);
+      const assistantText = `${data.response || "No response received."}${sourceBlock}`;
+
       setMessages((prev) => [
         ...prev,
         {
           id: makeId(),
           role: "assistant",
-          content: data.response || "No response received."
+          content: assistantText
         }
       ]);
 
@@ -591,6 +640,61 @@ export default function InterfacePage() {
 
             <div
               style={{
+                marginTop: "14px",
+                borderRadius: "18px",
+                border: "1px solid rgba(125,211,252,0.14)",
+                background: "rgba(125,211,252,0.07)",
+                padding: "14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "16px"
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "#7dd3fc",
+                    marginBottom: "8px"
+                  }}
+                >
+                  Research Mode
+                </div>
+                <div
+                  style={{
+                    color: "#edf4ff",
+                    fontSize: "14px",
+                    lineHeight: 1.6
+                  }}
+                >
+                  Enable web acquisition and source-aware answers.
+                </div>
+              </div>
+
+              <label
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  cursor: "pointer",
+                  color: "#edf4ff",
+                  fontSize: "14px"
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={researchEnabled}
+                  onChange={(event) => setResearchEnabled(event.target.checked)}
+                />
+                Research
+              </label>
+            </div>
+
+            <div
+              style={{
                 display: "flex",
                 gap: "12px",
                 flexWrap: "wrap",
@@ -776,6 +880,31 @@ export default function InterfacePage() {
               <div style={{ color: "#edf4ff", lineHeight: 1.7 }}>
                 Local browser memory active. Last 6 turns are sent to the route as
                 operational context.
+              </div>
+            </div>
+
+            <div
+              style={{
+                border: "1px solid rgba(125,211,252,0.14)",
+                background: "rgba(125,211,252,0.07)",
+                borderRadius: "18px",
+                padding: "14px"
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "11px",
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "#7dd3fc",
+                  marginBottom: "8px"
+                }}
+              >
+                Research Layer
+              </div>
+              <div style={{ color: "#edf4ff", lineHeight: 1.7 }}>
+                Web research can be enabled to acquire current data and source-aware
+                answers when needed.
               </div>
             </div>
           </div>
