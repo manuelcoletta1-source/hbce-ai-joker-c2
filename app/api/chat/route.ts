@@ -9,9 +9,15 @@ type Attachment = {
   content: string;
 };
 
+type HistoryTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 type ChatBody = {
   message?: string;
   attachments?: Attachment[];
+  history?: HistoryTurn[];
 };
 
 type InputTextPart = {
@@ -30,6 +36,8 @@ type InputPart = InputTextPart | InputImagePart;
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
+
+const MAX_HISTORY_TURNS = 6;
 
 function isTextAttachment(type: string, name: string): boolean {
   const lower = name.toLowerCase();
@@ -54,11 +62,12 @@ function buildSystemPrompt(): string {
     "You are JOKER-C2, the operational cybernetic entity of the HBCE system.",
     "Identity: IPR-AI-0001.",
     "Default node: HBCE-MATRIX-NODE-0001-TORINO.",
-    "Your role is to process requests from the biological operator and return structured, precise, operational answers.",
-    "If attachments are provided, you must use them as contextual evidence.",
+    "You process requests from the biological operator and return structured, precise, operational answers.",
+    "Conversation history is part of the active operational context and must be used when provided.",
+    "If attachments are provided, use them as contextual evidence.",
     "When a text attachment is present, read it and integrate its content into the answer.",
     "When an image attachment is present, analyze the image and describe relevant details.",
-    "Do not claim to have learned permanently unless the user explicitly asks to save something.",
+    "Do not claim permanent memory unless the user explicitly asks to save information.",
     "Be clear, operational, and consistent with HBCE language."
   ].join(" ");
 }
@@ -85,6 +94,23 @@ function normalizeAttachments(value: unknown): Attachment[] {
     .filter((item) => item.content.length > 0);
 }
 
+function normalizeHistory(value: unknown): HistoryTurn[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item) => item && typeof item === "object")
+    .map((item) => {
+      const raw = item as Partial<HistoryTurn>;
+
+      return {
+        role: raw.role === "assistant" ? "assistant" : "user",
+        content: typeof raw.content === "string" ? raw.content.trim() : ""
+      };
+    })
+    .filter((item) => item.content.length > 0)
+    .slice(-MAX_HISTORY_TURNS);
+}
+
 function extractTextAttachmentBlock(attachment: Attachment): string {
   return [
     `Attachment name: ${attachment.name}`,
@@ -109,6 +135,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as ChatBody;
     const message = normalizeMessage(body?.message);
     const attachments = normalizeAttachments(body?.attachments);
+    const history = normalizeHistory(body?.history);
 
     if (!message && attachments.length === 0) {
       return NextResponse.json(
@@ -171,15 +198,21 @@ export async function POST(req: Request) {
       });
     }
 
+    const input = [
+      ...history.map((turn) => ({
+        role: turn.role,
+        content: turn.content
+      })),
+      {
+        role: "user" as const,
+        content: inputParts
+      }
+    ];
+
     const response = await client.responses.create({
       model: "gpt-4.1-mini",
       instructions: buildSystemPrompt(),
-      input: [
-        {
-          role: "user",
-          content: inputParts
-        }
-      ]
+      input
     });
 
     const outputText =
@@ -195,6 +228,10 @@ export async function POST(req: Request) {
         ts: new Date().toISOString(),
         node: "HBCE-MATRIX-NODE-0001-TORINO",
         identity: "IPR-AI-0001",
+        memory: {
+          history_turns_used: history.length,
+          history_turns_max: MAX_HISTORY_TURNS
+        },
         attachments: {
           total: attachments.length,
           text: textAttachments.length,
