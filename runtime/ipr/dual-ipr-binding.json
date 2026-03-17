@@ -1,0 +1,72 @@
+{
+  "schema": "HBCE-DUAL-IPR-1.0",
+  "record_type": "BINDING",
+  "status": "ACTIVE",
+  "event": {
+    "id": "EVT-0008",
+    "prev": "EVT-0007",
+    "timestamp": "2026-01-19T15:30:00+01:00",
+    "state": "LOCKED",
+    "binding_mode": "SUBJECT-BOUND",
+    "checkpoint": "CHECKPOINT_FREEZE"
+  },
+  "origin": {
+    "id": "IPR-MANUEL",
+    "type": "IPR-BIO",
+    "role": "ORIGIN",
+    "semantic_role": "INPUT",
+    "sovereignty": "PRIMARY",
+    "functions": [
+      "initiative",
+      "intent-generation",
+      "mother-decision",
+      "validation"
+    ]
+  },
+  "derived": {
+    "id": "IPR-JOKER-C2",
+    "type": "IPR-CYB",
+    "role": "DERIVED",
+    "semantic_role": "OUTPUT",
+    "sovereignty": "SECONDARY",
+    "functions": [
+      "normalization",
+      "computation",
+      "structured-response",
+      "continuation"
+    ]
+  },
+  "relation": {
+    "type": "DUAL-LOCK",
+    "logic": {
+      "origin_is_primary": true,
+      "derived_is_secondary": true,
+      "origin_is_biological": true,
+      "derived_is_cybernetic": true,
+      "transfer_allowed": false,
+      "duplication_allowed": false,
+      "detach_allowed": false,
+      "autonomous_execution_without_origin": false
+    }
+  },
+  "anchors": {
+    "origin_root": {
+      "label": "IPR-3",
+      "role": "ORIGIN_ROOT",
+      "ipfs": "bafkreidhv73vqrxoweog33ls3rnwrgyicio234pcuks6mnep76yh56pj5q",
+      "btc": "9eeb29b67f4a649d563b95560fda5ddaa84777b13515f936837fc93d28554b45",
+      "evm": "0xf65eb314a1edd392fc15fcd9c65d22060ca39cbac04fcfcb48b978062500a7eff"
+    },
+    "binding_hash": "TO_BE_COMPUTED_SHA256"
+  },
+  "policy": {
+    "mode": "FAIL-CLOSED",
+    "append_only": true,
+    "hash_only": true,
+    "audit_first": true
+  },
+  "issuer": {
+    "organization": "HERMETICUM B.C.E. S.r.l.",
+    "research_unit": "HBCE Research"
+  }
+}
