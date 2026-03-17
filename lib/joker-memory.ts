@@ -14,7 +14,7 @@ type JokerMemoryStore = {
   records: JokerMemoryRecord[];
 };
 
-const MEMORY_DIR = path.join(process.cwd(), "runtime", "memory");
+const MEMORY_DIR = "/tmp/joker-memory";
 const MEMORY_FILE = path.join(MEMORY_DIR, "joker-memory.json");
 
 function makeId(): string {
@@ -56,6 +56,7 @@ async function readStore(): Promise<JokerMemoryStore> {
 
 async function writeStore(store: JokerMemoryStore): Promise<void> {
   await ensureStore();
+
   await fs.writeFile(
     MEMORY_FILE,
     JSON.stringify(store, null, 2),
