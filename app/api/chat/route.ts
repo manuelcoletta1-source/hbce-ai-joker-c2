@@ -6,6 +6,11 @@ import {
   saveMemoryRecord,
   searchMemory
 } from "@/lib/joker-memory";
+import { appendLedgerEvent } from "@/lib/joker-ledger";
+import {
+  signJokerPayload,
+  signatureIsConfigured
+} from "@/lib/joker-signature";
 
 export const runtime = "nodejs";
 
@@ -413,6 +418,16 @@ export async function POST(req: Request) {
       );
     }
 
+    await appendLedgerEvent({
+      kind: "USER_REQUEST",
+      payload: {
+        message,
+        attachments_count: attachments.length,
+        history_count: history.length,
+        research
+      }
+    });
+
     if (isMemoryListingRequest(message)) {
       const records = await listMemoryRecords();
       const response =
@@ -426,11 +441,40 @@ export async function POST(req: Request) {
               )
             ].join("\n");
 
+      const ledgerEvent = await appendLedgerEvent({
+        kind: "MEMORY_LIST",
+        payload: {
+          records_count: records.length
+        }
+      });
+
+      const signablePayload = {
+        joker: "C2",
+        response,
+        node: "HBCE-MATRIX-NODE-0001-TORINO",
+        identity: "IPR-AI-0001",
+        ledger: {
+          event_id: ledgerEvent.id,
+          hash: ledgerEvent.hash,
+          prev_hash: ledgerEvent.prev_hash
+        }
+      };
+
+      const signature = signatureIsConfigured()
+        ? signJokerPayload(signablePayload)
+        : null;
+
       return NextResponse.json({
         ok: true,
         joker: "C2",
         response,
         sources: [],
+        ledger: {
+          event_id: ledgerEvent.id,
+          hash: ledgerEvent.hash,
+          prev_hash: ledgerEvent.prev_hash
+        },
+        signature,
         meta: {
           model: "memory-layer",
           ts: new Date().toISOString(),
@@ -457,11 +501,52 @@ export async function POST(req: Request) {
     if (memoryInstruction) {
       const saved = await saveMemoryRecord(memoryInstruction);
 
+      await appendLedgerEvent({
+        kind: "MEMORY_WRITE",
+        payload: {
+          key: memoryInstruction.key,
+          category: memoryInstruction.category
+        }
+      });
+
+      const ledgerEvent = await appendLedgerEvent({
+        kind: "JOKER_RESPONSE",
+        payload: {
+          response_length: saved.value.length,
+          model: "memory-layer",
+          memory_write: true
+        }
+      });
+
+      const response = `Memory saved. ${saved.key} => ${saved.value}`;
+
+      const signablePayload = {
+        joker: "C2",
+        response,
+        node: "HBCE-MATRIX-NODE-0001-TORINO",
+        identity: "IPR-AI-0001",
+        ledger: {
+          event_id: ledgerEvent.id,
+          hash: ledgerEvent.hash,
+          prev_hash: ledgerEvent.prev_hash
+        }
+      };
+
+      const signature = signatureIsConfigured()
+        ? signJokerPayload(signablePayload)
+        : null;
+
       return NextResponse.json({
         ok: true,
         joker: "C2",
-        response: `Memory saved. ${saved.key} => ${saved.value}`,
+        response,
         sources: [],
+        ledger: {
+          event_id: ledgerEvent.id,
+          hash: ledgerEvent.hash,
+          prev_hash: ledgerEvent.prev_hash
+        },
+        signature,
         meta: {
           model: "memory-layer",
           ts: new Date().toISOString(),
@@ -518,11 +603,44 @@ export async function POST(req: Request) {
 
     const sources = research ? extractSources(rawResponse) : [];
 
+    const ledgerEvent = await appendLedgerEvent({
+      kind: "JOKER_RESPONSE",
+      payload: {
+        response_length: outputText.length,
+        model: rawResponse.model,
+        research,
+        sources_count: sources.length
+      }
+    });
+
+    const signablePayload = {
+      joker: "C2",
+      response: outputText,
+      sources,
+      node: "HBCE-MATRIX-NODE-0001-TORINO",
+      identity: "IPR-AI-0001",
+      ledger: {
+        event_id: ledgerEvent.id,
+        hash: ledgerEvent.hash,
+        prev_hash: ledgerEvent.prev_hash
+      }
+    };
+
+    const signature = signatureIsConfigured()
+      ? signJokerPayload(signablePayload)
+      : null;
+
     return NextResponse.json({
       ok: true,
       joker: "C2",
       response: outputText,
       sources,
+      ledger: {
+        event_id: ledgerEvent.id,
+        hash: ledgerEvent.hash,
+        prev_hash: ledgerEvent.prev_hash
+      },
+      signature,
       meta: {
         model: rawResponse.model,
         ts: new Date().toISOString(),
@@ -545,6 +663,13 @@ export async function POST(req: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Internal server error";
+
+    await appendLedgerEvent({
+      kind: "JOKER_ERROR",
+      payload: {
+        message
+      }
+    }).catch(() => null);
 
     return NextResponse.json(
       {
