@@ -14,6 +14,19 @@ type ChatBody = {
   attachments?: Attachment[];
 };
 
+type InputTextPart = {
+  type: "input_text";
+  text: string;
+};
+
+type InputImagePart = {
+  type: "input_image";
+  image_url: string;
+  detail: "auto";
+};
+
+type InputPart = InputTextPart | InputImagePart;
+
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
@@ -107,10 +120,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const inputParts: Array<
-      | { type: "input_text"; text: string }
-      | { type: "input_image"; image_url: string }
-    > = [];
+    const inputParts: InputPart[] = [];
 
     if (message) {
       inputParts.push({
@@ -137,7 +147,8 @@ export async function POST(req: Request) {
     for (const attachment of imageAttachments) {
       inputParts.push({
         type: "input_image",
-        image_url: attachment.content
+        image_url: attachment.content,
+        detail: "auto"
       });
     }
 
