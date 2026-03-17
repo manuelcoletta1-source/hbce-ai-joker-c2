@@ -1,142 +1,207 @@
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
-import { executeJokerMatrixRequest } from "../../../runtime/execute-joker-matrix-request";
+import OpenAI from "openai";
 
-export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type ChatRequestBody = {
-  message?: string;
-  request_id?: string;
-  mode?: string;
-  actor_identity?: string;
-  entity?: string;
-  nodeId?: string;
-  conversation?: Array<{
-    role: "user" | "assistant" | "system";
-    content: string;
-  }>;
+type Attachment = {
+  name: string;
+  type: string;
+  content: string;
 };
 
-function buildRequestId(): string {
-  return `REQ-${Date.now()}`;
-}
+type ChatBody = {
+  message?: string;
+  attachments?: Attachment[];
+};
 
-function buildSystemPrompt(nodeId: string): string {
-  return [
-    "You are AI JOKER-C2.",
-    "You are the operational AI layer of the HBCE infrastructure.",
-    "You must respond like a highly capable conversational assistant.",
-    "Default territorial context: Matrix Europa Node-0001 Torino.",
-    `Active node: ${nodeId}.`,
-    "Identity layer: IPR-AI-0001.",
-    "Operational model: identity -> action -> evidence -> verification.",
-    "Provide useful and well structured responses."
-  ].join(" ");
-}
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
-function normalizeConversation(
-  conversation?: ChatRequestBody["conversation"]
-): Array<{ role: "user" | "assistant" | "system"; content: string }> {
+function isTextAttachment(type: string, name: string): boolean {
+  const lower = name.toLowerCase();
 
-  if (!Array.isArray(conversation)) {
-    return [];
-  }
-
-  return conversation.filter(
-    (item) =>
-      item &&
-      (item.role === "user" ||
-        item.role === "assistant" ||
-        item.role === "system") &&
-      typeof item.content === "string" &&
-      item.content.trim().length > 0
+  return (
+    type.startsWith("text/") ||
+    type === "application/json" ||
+    type === "text/markdown" ||
+    lower.endsWith(".txt") ||
+    lower.endsWith(".md") ||
+    lower.endsWith(".json") ||
+    lower.endsWith(".csv")
   );
 }
 
-function getOpenAIClient(): OpenAI {
-
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("Missing OPENAI_API_KEY on server");
-  }
-
-  return new OpenAI({ apiKey });
+function isImageAttachment(type: string): boolean {
+  return type.startsWith("image/");
 }
 
-export async function POST(request: Request) {
+function buildSystemPrompt(): string {
+  return [
+    "You are JOKER-C2, the operational cybernetic entity of the HBCE system.",
+    "Identity: IPR-AI-0001.",
+    "Default node: HBCE-MATRIX-NODE-0001-TORINO.",
+    "Your role is to process requests from the biological operator and return structured, precise, operational answers.",
+    "If attachments are provided, you must use them as contextual evidence.",
+    "When a text attachment is present, read it and integrate its content into the answer.",
+    "When an image attachment is present, analyze the image and describe relevant details.",
+    "Do not claim to have learned permanently unless the user explicitly asks to save something.",
+    "Be clear, operational, and consistent with HBCE language."
+  ].join(" ");
+}
 
+function normalizeMessage(message?: string): string {
+  if (!message || typeof message !== "string") return "";
+  return message.trim();
+}
+
+function normalizeAttachments(value: unknown): Attachment[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item) => item && typeof item === "object")
+    .map((item) => {
+      const raw = item as Partial<Attachment>;
+
+      return {
+        name: typeof raw.name === "string" ? raw.name : "attachment",
+        type: typeof raw.type === "string" ? raw.type : "application/octet-stream",
+        content: typeof raw.content === "string" ? raw.content : ""
+      };
+    })
+    .filter((item) => item.content.length > 0);
+}
+
+function extractTextAttachmentBlock(attachment: Attachment): string {
+  return [
+    `Attachment name: ${attachment.name}`,
+    `Attachment type: ${attachment.type}`,
+    "Attachment content:",
+    attachment.content
+  ].join("\n");
+}
+
+export async function POST(req: Request) {
   try {
-
-    const body = (await request.json()) as ChatRequestBody;
-
-    const message = body.message?.trim();
-
-    if (!message) {
+    if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { ok: false, error: "Missing message" },
+        {
+          ok: false,
+          error: "Missing OPENAI_API_KEY on server"
+        },
+        { status: 500 }
+      );
+    }
+
+    const body = (await req.json()) as ChatBody;
+    const message = normalizeMessage(body?.message);
+    const attachments = normalizeAttachments(body?.attachments);
+
+    if (!message && attachments.length === 0) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Missing message or attachments"
+        },
         { status: 400 }
       );
     }
 
-    const requestId = body.request_id?.trim() || buildRequestId();
+    const inputParts: Array<
+      | { type: "input_text"; text: string }
+      | { type: "input_image"; image_url: string }
+    > = [];
 
-    const nodeId = body.nodeId || "HBCE-MATRIX-NODE-0001-TORINO";
+    if (message) {
+      inputParts.push({
+        type: "input_text",
+        text: message
+      });
+    }
 
-    const matrixResponse = executeJokerMatrixRequest({
-      request_id: requestId,
-      prompt: message,
-      mode: body.mode || "analysis",
-      actor_identity: body.actor_identity || "IPR-AI-0001",
-      entity: body.entity || "AI_JOKER-C2",
-      nodeId
-    });
+    const textAttachments = attachments.filter((item) =>
+      isTextAttachment(item.type, item.name)
+    );
 
-    const priorConversation = normalizeConversation(body.conversation);
+    const imageAttachments = attachments.filter((item) =>
+      isImageAttachment(item.type)
+    );
 
-    const input = [
-      {
-        role: "system" as const,
-        content: buildSystemPrompt(nodeId)
-      },
-      ...priorConversation,
-      {
-        role: "user" as const,
-        content: message
-      }
-    ];
+    for (const attachment of textAttachments) {
+      inputParts.push({
+        type: "input_text",
+        text: extractTextAttachmentBlock(attachment)
+      });
+    }
 
-    const client = getOpenAIClient();
+    for (const attachment of imageAttachments) {
+      inputParts.push({
+        type: "input_image",
+        image_url: attachment.content
+      });
+    }
+
+    const unsupportedAttachments = attachments.filter(
+      (item) =>
+        !isTextAttachment(item.type, item.name) && !isImageAttachment(item.type)
+    );
+
+    if (unsupportedAttachments.length > 0) {
+      inputParts.push({
+        type: "input_text",
+        text: [
+          "Unsupported attachments were provided.",
+          "They were not parsed in this step.",
+          "Unsupported files:",
+          ...unsupportedAttachments.map(
+            (item) => `- ${item.name} (${item.type})`
+          )
+        ].join("\n")
+      });
+    }
 
     const response = await client.responses.create({
       model: "gpt-4.1-mini",
-      input
+      instructions: buildSystemPrompt(),
+      input: [
+        {
+          role: "user",
+          content: inputParts
+        }
+      ]
     });
 
-    const reply =
+    const outputText =
       response.output_text?.trim() ||
-      "Joker-C2 completed the request but returned no textual output.";
+      "JOKER-C2 processed the request but returned no text output.";
 
     return NextResponse.json({
       ok: true,
-      request_id: requestId,
-      reply: {
-        role: "assistant",
-        content: reply
-      },
-      matrix: matrixResponse
+      joker: "C2",
+      response: outputText,
+      meta: {
+        model: response.model,
+        ts: new Date().toISOString(),
+        node: "HBCE-MATRIX-NODE-0001-TORINO",
+        identity: "IPR-AI-0001",
+        attachments: {
+          total: attachments.length,
+          text: textAttachments.length,
+          images: imageAttachments.length,
+          unsupported: unsupportedAttachments.length
+        }
+      }
     });
-
   } catch (error) {
-
     const message =
-      error instanceof Error ? error.message : "Unknown server error";
+      error instanceof Error ? error.message : "Internal server error";
 
     return NextResponse.json(
-      { ok: false, error: message },
+      {
+        ok: false,
+        error: message
+      },
       { status: 500 }
     );
   }
-
 }
