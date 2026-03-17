@@ -1,526 +1,422 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useRef, useState } from "react";
 
 type Role = "user" | "assistant";
 
 type ChatMessage = {
+  id: string;
   role: Role;
   content: string;
 };
 
-type ApiResponse = {
-  ok?: boolean;
-  reply?: string | { content?: string };
-  mode?: string;
-  request_id?: string;
-  matrix?: {
-    request_id?: string;
-    mode?: string;
-    execution?: {
-      matrix_node?: {
-        node_id?: string;
-      };
-      verification_reference?: string;
-    };
-    reply?: {
-      content?: string;
-    };
-  };
-  error?: string;
+type PreparedAttachment = {
+  name: string;
+  type: string;
+  content: string;
 };
 
-const STORAGE_KEY = "joker-c2-conversation";
-const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
-const DEFAULT_IDENTITY = "IPR-AI-0001";
+type ApiResponse = {
+  ok: boolean;
+  joker?: string;
+  response?: string;
+  error?: string;
+  meta?: {
+    model?: string;
+    ts?: string;
+    node?: string;
+    identity?: string;
+    attachments?: {
+      total: number;
+      text: number;
+      images: number;
+      unsupported: number;
+    };
+  };
+};
+
+const MAX_TEXT_FILE_SIZE = 1024 * 1024 * 2;
+const MAX_IMAGE_FILE_SIZE = 1024 * 1024 * 5;
+
+function makeId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function readFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error(`Unable to read file: ${file.name}`));
+
+    reader.readAsText(file);
+  });
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error(`Unable to read image: ${file.name}`));
+
+    reader.readAsDataURL(file);
+  });
+}
+
+function isTextFile(file: File) {
+  const lower = file.name.toLowerCase();
+
+  return (
+    file.type.startsWith("text/") ||
+    file.type === "application/json" ||
+    file.type === "text/markdown" ||
+    lower.endsWith(".txt") ||
+    lower.endsWith(".md") ||
+    lower.endsWith(".json") ||
+    lower.endsWith(".csv")
+  );
+}
+
+function isImageFile(file: File) {
+  return file.type.startsWith("image/");
+}
+
+async function prepareAttachment(file: File): Promise<PreparedAttachment | null> {
+  if (isTextFile(file)) {
+    if (file.size > MAX_TEXT_FILE_SIZE) {
+      throw new Error(`Text file too large: ${file.name}`);
+    }
+
+    const content = await readFileAsText(file);
+
+    return {
+      name: file.name,
+      type: file.type || "text/plain",
+      content
+    };
+  }
+
+  if (isImageFile(file)) {
+    if (file.size > MAX_IMAGE_FILE_SIZE) {
+      throw new Error(`Image file too large: ${file.name}`);
+    }
+
+    const content = await readFileAsDataUrl(file);
+
+    return {
+      name: file.name,
+      type: file.type || "image/*",
+      content
+    };
+  }
+
+  return {
+    name: file.name,
+    type: file.type || "application/octet-stream",
+    content: "UNSUPPORTED_ATTACHMENT"
+  };
+}
 
 export default function InterfacePage() {
-  const [conversation, setConversation] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: makeId(),
+      role: "assistant",
+      content: "JOKER-C2 online. Send a request, document, or image."
+    }
+  ]);
   const [input, setInput] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [status, setStatus] = useState("Ready");
-  const [sending, setSending] = useState(false);
-
-  const [mode, setMode] = useState("analysis");
-  const [actorIdentity, setActorIdentity] = useState(DEFAULT_IDENTITY);
-  const [nodeId, setNodeId] = useState(DEFAULT_NODE);
-
   const [requestId, setRequestId] = useState("-");
-  const [metaMode, setMetaMode] = useState("-");
-  const [metaNode, setMetaNode] = useState(DEFAULT_NODE);
+  const [mode, setMode] = useState("-");
   const [verification, setVerification] = useState("-");
+  const [turns, setTurns] = useState(1);
 
-  const endRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return;
+  const attachmentSummary = useMemo(() => {
+    if (attachments.length === 0) return "No attachments";
 
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
-        const safe = parsed.filter(
-          (item) =>
-            item &&
-            (item.role === "user" || item.role === "assistant") &&
-            typeof item.content === "string" &&
-            item.content.trim().length > 0
-        );
-        setConversation(safe);
-      }
-    } catch {}
-  }, []);
+    return attachments.map((file) => file.name).join(", ");
+  }, [attachments]);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversation));
-  }, [conversation]);
-
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversation]);
-
-  const turns = useMemo(() => conversation.length, [conversation]);
-
-  function addMessage(role: Role, content: string) {
-    setConversation((prev) => [...prev, { role, content }]);
+  function openPicker() {
+    fileInputRef.current?.click();
   }
 
-  function clearChat() {
-    setConversation([]);
-    localStorage.removeItem(STORAGE_KEY);
+  function clearConversation() {
+    setMessages([
+      {
+        id: makeId(),
+        role: "assistant",
+        content: "JOKER-C2 online. Send a request, document, or image."
+      }
+    ]);
+    setInput("");
+    setAttachments([]);
     setStatus("Ready");
     setRequestId("-");
-    setMetaMode("-");
-    setMetaNode(DEFAULT_NODE);
+    setMode("-");
     setVerification("-");
+    setTurns(1);
   }
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function onFilesSelected(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+    setAttachments(files);
+  }
+
+  async function onSubmit(event: FormEvent) {
     event.preventDefault();
 
-    const message = input.trim();
-    if (!message || sending) return;
+    if (isSending) return;
+    if (!input.trim() && attachments.length === 0) return;
 
-    addMessage("user", message);
-    setInput("");
-    setSending(true);
-    setStatus("Sending...");
+    const userMessage: ChatMessage = {
+      id: makeId(),
+      role: "user",
+      content: input.trim() || "[attachments only]"
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsSending(true);
+    setStatus("Processing");
+    setRequestId(makeId());
+    setMode(attachments.length > 0 ? "message+attachments" : "message");
+    setVerification("pending");
 
     try {
-      const response = await fetch("/api/chat", {
+      const preparedAttachments = (
+        await Promise.all(attachments.map((file) => prepareAttachment(file)))
+      ).filter(Boolean) as PreparedAttachment[];
+
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          message,
-          mode,
-          actor_identity: actorIdentity,
-          entity: "AI_JOKER-C2",
-          nodeId,
-          conversation
+          message: input.trim(),
+          attachments: preparedAttachments
         })
       });
 
-      const data: ApiResponse = await response.json();
+      const data = (await res.json()) as ApiResponse;
 
-      if (!response.ok || !data.ok) {
-        addMessage("assistant", data.error || "Execution error.");
-        setStatus("Error");
-        return;
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Unknown chat error");
       }
 
-      const reply =
-        typeof data.reply === "string"
-          ? data.reply
-          : data.reply?.content ||
-            data.matrix?.reply?.content ||
-            "Joker-C2 completed the request.";
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: makeId(),
+          role: "assistant",
+          content: data.response || "No response received."
+        }
+      ]);
 
-      addMessage("assistant", reply);
+      setStatus("Ready");
+      setVerification("ok");
+      setTurns((prev) => prev + 2);
+      setInput("");
+      setAttachments([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unexpected interface error";
 
-      setRequestId(data.request_id || data.matrix?.request_id || "-");
-      setMetaMode(data.mode || data.matrix?.mode || "-");
-      setMetaNode(data.matrix?.execution?.matrix_node?.node_id || nodeId);
-      setVerification(
-        data.matrix?.execution?.verification_reference || "-"
-      );
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: makeId(),
+          role: "assistant",
+          content: `ERROR: ${message}`
+        }
+      ]);
 
-      setStatus("Completed");
-    } catch {
-      addMessage("assistant", "Execution failed. API not reachable.");
-      setStatus("Offline");
+      setStatus("Error");
+      setVerification("failed");
+      setTurns((prev) => prev + 2);
     } finally {
-      setSending(false);
+      setIsSending(false);
     }
   }
 
   return (
-    <main className="hbce-page">
-      <div className="hbce-wrap" style={styles.layout}>
-        <section style={styles.mainColumn}>
-          <header className="hbce-card" style={styles.header}>
+    <main className="min-h-screen bg-[#0b1020] text-white">
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:grid lg:grid-cols-[1.4fr_0.6fr]">
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-2xl">
+          <div className="mb-4 flex items-start justify-between gap-4">
             <div>
-              <div className="hbce-kicker" style={styles.kickerSpacing}>
+              <div className="text-xs uppercase tracking-[0.25em] text-cyan-300">
                 HBCE Research
               </div>
-
-              <h1 style={styles.title}>AI JOKER-C2 Interface</h1>
-
-              <p className="hbce-muted" style={styles.subtitle}>
+              <h1 className="mt-2 text-2xl font-semibold">AI JOKER-C2 Interface</h1>
+              <p className="mt-2 text-sm text-white/70">
                 Conversational shell connected to the Torino Matrix node.
               </p>
             </div>
 
-            <div style={styles.headerActions}>
-              <button
-                type="button"
-                className="hbce-button-secondary"
-                onClick={clearChat}
+            <button
+              type="button"
+              onClick={clearConversation}
+              className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:bg-white/10"
+            >
+              Clear conversation
+            </button>
+          </div>
+
+          <div className="mb-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
+            {status}
+          </div>
+
+          <div className="mb-4">
+            <h2 className="text-lg font-medium">Operational Chat</h2>
+            <p className="mt-1 text-sm text-white/60">
+              Direct interaction first. Metadata remains available in the side panel.
+            </p>
+          </div>
+
+          <div className="mb-4 flex max-h-[55vh] flex-col gap-3 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-3">
+            {messages.map((message) => (
+              <article
+                key={message.id}
+                className={`rounded-2xl px-4 py-3 ${
+                  message.role === "user"
+                    ? "ml-auto w-[85%] border border-cyan-400/20 bg-cyan-400/10"
+                    : "mr-auto w-[85%] border border-white/10 bg-white/5"
+                }`}
               >
-                Clear conversation
-              </button>
-
-              <div style={styles.status}>
-                <span style={styles.dot} />
-                <span>{status}</span>
-              </div>
-            </div>
-          </header>
-
-          <section className="hbce-card" style={styles.chatShell}>
-            <div style={styles.chatTop}>
-              <h2 style={styles.chatTitle}>Operational Chat</h2>
-              <p className="hbce-muted" style={styles.chatSubtitle}>
-                Direct interaction first. Metadata remains available in the side
-                panel.
-              </p>
-            </div>
-
-            <div style={styles.messages}>
-              {conversation.length === 0 ? (
-                <div className="hbce-muted" style={styles.welcome}>
-                  Joker-C2 ready. Default node: Torino.
+                <div className="mb-2 text-xs uppercase tracking-[0.2em] text-white/50">
+                  {message.role === "user" ? "You" : "AI JOKER-C2"}
                 </div>
-              ) : (
-                conversation.map((item, index) => (
-                  <div
-                    key={`${item.role}-${index}`}
-                    style={{
-                      ...styles.messageRow,
-                      justifyContent:
-                        item.role === "user" ? "flex-end" : "flex-start"
-                    }}
-                  >
-                    <div
-                      style={{
-                        ...styles.bubble,
-                        ...(item.role === "user"
-                          ? styles.userBubble
-                          : styles.assistantBubble)
-                      }}
-                    >
-                      <div className="hbce-kicker" style={styles.role}>
-                        {item.role === "user" ? "You" : "AI JOKER-C2"}
-                      </div>
-                      <div style={styles.messageText}>{item.content}</div>
-                    </div>
-                  </div>
-                ))
-              )}
+                <div className="whitespace-pre-wrap text-sm leading-6 text-white/90">
+                  {message.content}
+                </div>
+              </article>
+            ))}
+          </div>
 
-              <div ref={endRef} />
-            </div>
-          </section>
-
-          <form className="hbce-card" style={styles.composer} onSubmit={onSubmit}>
+          <form onSubmit={onSubmit} className="space-y-3">
             <textarea
-              className="hbce-textarea"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Send request to Joker-C2..."
-              style={styles.textarea}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="Write your request to Joker-C2..."
+              className="min-h-[120px] w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35"
             />
 
-            <div style={styles.composerBottom}>
-              <details style={styles.details}>
-                <summary className="hbce-muted" style={styles.summary}>
-                  Advanced execution settings
-                </summary>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".txt,.md,.json,.csv,image/*"
+              onChange={onFilesSelected}
+              className="hidden"
+            />
 
-                <div style={styles.advancedGrid}>
-                  <select
-                    className="hbce-select"
-                    value={mode}
-                    onChange={(e) => setMode(e.target.value)}
-                  >
-                    <option value="analysis">analysis</option>
-                    <option value="verification">verification</option>
-                  </select>
+            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/70">
+              <div className="text-xs uppercase tracking-[0.2em] text-white/45">
+                Attachments
+              </div>
+              <div className="mt-2">{attachmentSummary}</div>
+            </div>
 
-                  <input
-                    className="hbce-input"
-                    value={actorIdentity}
-                    onChange={(e) => setActorIdentity(e.target.value)}
-                    placeholder="Actor identity"
-                  />
-
-                  <input
-                    className="hbce-input"
-                    value={nodeId}
-                    onChange={(e) => setNodeId(e.target.value)}
-                    placeholder="Node ID"
-                  />
-                </div>
-              </details>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={openPicker}
+                className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white/90 transition hover:bg-white/10"
+              >
+                Insert document / photo
+              </button>
 
               <button
                 type="submit"
-                className="hbce-button-primary"
-                disabled={sending}
-                style={styles.sendButton}
+                disabled={isSending}
+                className="rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-medium text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {sending ? "Sending..." : "Send"}
+                {isSending ? "Sending..." : "Send"}
               </button>
             </div>
           </form>
         </section>
 
-        <aside style={styles.sidebar}>
-          <section className="hbce-card" style={styles.sideCard}>
-            <div className="hbce-kicker" style={styles.sideLabel}>
-              Execution Context
+        <aside className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-2xl">
+          <h2 className="text-lg font-medium">Execution Context</h2>
+
+          <div className="mt-4 space-y-4 text-sm">
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="text-xs uppercase tracking-[0.2em] text-white/45">
+                Default Node
+              </div>
+              <div className="mt-2 text-white/90">HBCE-MATRIX-NODE-0001-TORINO</div>
             </div>
 
-            <div style={styles.metaList}>
-              <div style={styles.metaItem}>
-                <div className="hbce-kicker">Default Node</div>
-                <div style={styles.metaValue}>{DEFAULT_NODE}</div>
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="text-xs uppercase tracking-[0.2em] text-white/45">
+                Identity Layer
+              </div>
+              <div className="mt-2 text-white/90">IPR-AI-0001</div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="text-xs uppercase tracking-[0.2em] text-white/45">
+                Execution Model
+              </div>
+              <div className="mt-2 text-white/90">
+                request → identity → evidence → verification
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="text-xs uppercase tracking-[0.2em] text-white/45">
+                Live Execution Metadata
               </div>
 
-              <div style={styles.metaItem}>
-                <div className="hbce-kicker">Identity Layer</div>
-                <div style={styles.metaValue}>{DEFAULT_IDENTITY}</div>
-              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3 text-white/85">
+                <div>
+                  <div className="text-xs text-white/45">Request ID</div>
+                  <div className="mt-1 break-all">{requestId}</div>
+                </div>
 
-              <div style={styles.metaItem}>
-                <div className="hbce-kicker">Execution Model</div>
-                <div style={styles.metaValue}>
-                  request → identity → evidence → verification
+                <div>
+                  <div className="text-xs text-white/45">Mode</div>
+                  <div className="mt-1">{mode}</div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-white/45">Node</div>
+                  <div className="mt-1">HBCE-MATRIX-NODE-0001-TORINO</div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-white/45">Verification</div>
+                  <div className="mt-1">{verification}</div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-white/45">Conversation Turns</div>
+                  <div className="mt-1">{turns}</div>
                 </div>
               </div>
             </div>
-          </section>
 
-          <section className="hbce-card" style={styles.sideCard}>
-            <div className="hbce-kicker" style={styles.sideLabel}>
-              Live Execution Metadata
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="text-xs uppercase tracking-[0.2em] text-white/45">
+                Advanced execution settings
+              </div>
+              <div className="mt-2 text-white/80">analysis</div>
+              <div className="mt-1 text-white/80">verification</div>
             </div>
-
-            <div style={styles.metaList}>
-              <div style={styles.metaItem}>
-                <div className="hbce-kicker">Request ID</div>
-                <div style={styles.metaValue}>{requestId}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div className="hbce-kicker">Mode</div>
-                <div style={styles.metaValue}>{metaMode}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div className="hbce-kicker">Node</div>
-                <div style={styles.metaValue}>{metaNode}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div className="hbce-kicker">Verification</div>
-                <div style={styles.metaValue}>{verification}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div className="hbce-kicker">Conversation Turns</div>
-                <div style={styles.metaValue}>{turns}</div>
-              </div>
-            </div>
-          </section>
+          </div>
         </aside>
       </div>
     </main>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  layout: {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1.65fr) 340px",
-    gap: 20
-  },
-  mainColumn: {
-    display: "grid",
-    gridTemplateRows: "auto 1fr auto",
-    gap: 16,
-    minWidth: 0
-  },
-  header: {
-    padding: 18,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 16,
-    flexWrap: "wrap"
-  },
-  kickerSpacing: {
-    marginBottom: 8
-  },
-  title: {
-    margin: "0 0 6px",
-    fontSize: 24
-  },
-  subtitle: {
-    margin: 0,
-    fontSize: 14,
-    lineHeight: 1.6
-  },
-  headerActions: {
-    display: "flex",
-    gap: 10,
-    alignItems: "center",
-    flexWrap: "wrap"
-  },
-  status: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    border: "1px solid var(--line)",
-    background: "rgba(255,255,255,.02)",
-    color: "var(--muted)",
-    padding: "8px 12px",
-    borderRadius: 999,
-    fontSize: 12
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: "50%",
-    background: "var(--accent)",
-    boxShadow: "0 0 12px rgba(125,211,252,.7)"
-  },
-  chatShell: {
-    minHeight: "62vh",
-    display: "grid",
-    gridTemplateRows: "auto 1fr"
-  },
-  chatTop: {
-    padding: "18px 20px",
-    borderBottom: "1px solid var(--line-2)"
-  },
-  chatTitle: {
-    margin: "0 0 6px",
-    fontSize: 22
-  },
-  chatSubtitle: {
-    margin: 0,
-    fontSize: 14,
-    lineHeight: 1.6
-  },
-  messages: {
-    padding: 20,
-    overflow: "auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: 18,
-    minHeight: 0
-  },
-  welcome: {
-    fontSize: 14,
-    lineHeight: 1.6
-  },
-  messageRow: {
-    display: "flex",
-    width: "100%"
-  },
-  bubble: {
-    maxWidth: "86%",
-    padding: "14px 16px",
-    borderRadius: 22
-  },
-  userBubble: {
-    background:
-      "linear-gradient(180deg, rgba(56,189,248,.18), rgba(56,189,248,.11))",
-    border: "1px solid rgba(56,189,248,.30)"
-  },
-  assistantBubble: {
-    background: "rgba(255,255,255,.03)",
-    border: "1px solid var(--line)"
-  },
-  role: {
-    marginBottom: 8,
-    letterSpacing: "0.08em"
-  },
-  messageText: {
-    lineHeight: 1.7,
-    fontSize: 15,
-    whiteSpace: "pre-wrap",
-    wordBreak: "break-word"
-  },
-  composer: {
-    padding: 14,
-    display: "grid",
-    gap: 12
-  },
-  textarea: {
-    minHeight: 110
-  },
-  composerBottom: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 14,
-    flexWrap: "wrap"
-  },
-  details: {
-    flex: 1
-  },
-  summary: {
-    cursor: "pointer",
-    fontSize: 13
-  },
-  advancedGrid: {
-    marginTop: 12,
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 12
-  },
-  sendButton: {
-    minWidth: 160
-  },
-  sidebar: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    minWidth: 0
-  },
-  sideCard: {
-    padding: 18
-  },
-  sideLabel: {
-    marginBottom: 12
-  },
-  metaList: {
-    display: "grid",
-    gap: 10
-  },
-  metaItem: {
-    padding: "12px 14px",
-    borderRadius: 14,
-    background: "rgba(255,255,255,.02)",
-    border: "1px solid rgba(255,255,255,.06)"
-  },
-  metaValue: {
-    marginTop: 6,
-    fontSize: 14,
-    lineHeight: 1.5,
-    color: "var(--text)",
-    wordBreak: "break-word"
-  }
-};
