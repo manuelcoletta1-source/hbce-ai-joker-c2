@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type Role = "user" | "assistant";
 
@@ -37,6 +37,8 @@ type ApiResponse = {
 
 const MAX_TEXT_FILE_SIZE = 1024 * 1024 * 2;
 const MAX_IMAGE_FILE_SIZE = 1024 * 1024 * 5;
+
+const MEMORY_KEY = "hbce-joker-c2-memory-v1";
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -118,14 +120,65 @@ async function prepareAttachment(file: File): Promise<PreparedAttachment | null>
   };
 }
 
-export default function InterfacePage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
+function getDefaultMessages(): ChatMessage[] {
+  return [
     {
       id: makeId(),
       role: "assistant",
       content: "JOKER-C2 online. Send a request, document, or image."
     }
-  ]);
+  ];
+}
+
+type PersistedState = {
+  messages: ChatMessage[];
+  status: string;
+  requestId: string;
+  mode: string;
+  verification: string;
+  turns: number;
+  input: string;
+};
+
+function loadMemory(): PersistedState | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(MEMORY_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as Partial<PersistedState>;
+
+    if (!Array.isArray(parsed.messages)) return null;
+
+    return {
+      messages: parsed.messages.filter(
+        (item): item is ChatMessage =>
+          !!item &&
+          typeof item.id === "string" &&
+          (item.role === "user" || item.role === "assistant") &&
+          typeof item.content === "string"
+      ),
+      status: typeof parsed.status === "string" ? parsed.status : "Ready",
+      requestId: typeof parsed.requestId === "string" ? parsed.requestId : "-",
+      mode: typeof parsed.mode === "string" ? parsed.mode : "-",
+      verification: typeof parsed.verification === "string" ? parsed.verification : "-",
+      turns: typeof parsed.turns === "number" ? parsed.turns : 1,
+      input: typeof parsed.input === "string" ? parsed.input : ""
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveMemory(state: PersistedState) {
+  if (typeof window === "undefined") return;
+
+  window.localStorage.setItem(MEMORY_KEY, JSON.stringify(state));
+}
+
+export default function InterfacePage() {
+  const [messages, setMessages] = useState<ChatMessage[]>(getDefaultMessages);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -134,8 +187,39 @@ export default function InterfacePage() {
   const [mode, setMode] = useState("-");
   const [verification, setVerification] = useState("-");
   const [turns, setTurns] = useState(1);
+  const [memoryLoaded, setMemoryLoaded] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const stored = loadMemory();
+
+    if (stored) {
+      setMessages(stored.messages.length > 0 ? stored.messages : getDefaultMessages());
+      setStatus(stored.status);
+      setRequestId(stored.requestId);
+      setMode(stored.mode);
+      setVerification(stored.verification);
+      setTurns(stored.turns);
+      setInput(stored.input);
+    }
+
+    setMemoryLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!memoryLoaded) return;
+
+    saveMemory({
+      messages,
+      status,
+      requestId,
+      mode,
+      verification,
+      turns,
+      input
+    });
+  }, [messages, status, requestId, mode, verification, turns, input, memoryLoaded]);
 
   const attachmentSummary = useMemo(() => {
     if (attachments.length === 0) return "No attachments";
@@ -147,13 +231,9 @@ export default function InterfacePage() {
   }
 
   function clearConversation() {
-    setMessages([
-      {
-        id: makeId(),
-        role: "assistant",
-        content: "JOKER-C2 online. Send a request, document, or image."
-      }
-    ]);
+    const defaultMessages = getDefaultMessages();
+
+    setMessages(defaultMessages);
     setInput("");
     setAttachments([]);
     setStatus("Ready");
@@ -161,6 +241,10 @@ export default function InterfacePage() {
     setMode("-");
     setVerification("-");
     setTurns(1);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(MEMORY_KEY);
+    }
   }
 
   function onFilesSelected(event: ChangeEvent<HTMLInputElement>) {
@@ -223,6 +307,7 @@ export default function InterfacePage() {
       setTurns((prev) => prev + 2);
       setInput("");
       setAttachments([]);
+
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -645,6 +730,31 @@ export default function InterfacePage() {
               </div>
               <div style={{ color: "#edf4ff", lineHeight: 1.7 }}>analysis</div>
               <div style={{ color: "#edf4ff", lineHeight: 1.7 }}>verification</div>
+            </div>
+
+            <div
+              style={{
+                border: "1px solid rgba(125,211,252,0.14)",
+                background: "rgba(125,211,252,0.07)",
+                borderRadius: "18px",
+                padding: "14px"
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "11px",
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "#7dd3fc",
+                  marginBottom: "8px"
+                }}
+              >
+                Memory Layer
+              </div>
+              <div style={{ color: "#edf4ff", lineHeight: 1.7 }}>
+                Local browser memory active. Conversation persists across refresh until
+                cleared.
+              </div>
             </div>
           </div>
         </aside>
