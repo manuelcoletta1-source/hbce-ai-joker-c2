@@ -139,7 +139,6 @@ export default function InterfacePage() {
 
   const attachmentSummary = useMemo(() => {
     if (attachments.length === 0) return "No attachments";
-
     return attachments.map((file) => file.name).join(", ");
   }, [attachments]);
 
@@ -249,16 +248,75 @@ export default function InterfacePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0b1020] text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:grid lg:grid-cols-[1.4fr_0.6fr]">
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-2xl">
-          <div className="mb-4 flex items-start justify-between gap-4">
+    <main
+      style={{
+        minHeight: "100vh",
+        background:
+          "radial-gradient(circle at top left, rgba(0, 194, 255, 0.14), transparent 30%), linear-gradient(180deg, #071018 0%, #0b1220 100%)",
+        color: "#e8eef7",
+        fontFamily:
+          'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        padding: "24px"
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "1400px",
+          margin: "0 auto",
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1.5fr) minmax(320px, 0.7fr)",
+          gap: "24px"
+        }}
+      >
+        <section
+          style={{
+            border: "1px solid rgba(255,255,255,0.08)",
+            background: "rgba(255,255,255,0.04)",
+            borderRadius: "24px",
+            padding: "20px",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.35)"
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "16px",
+              marginBottom: "18px"
+            }}
+          >
             <div>
-              <div className="text-xs uppercase tracking-[0.25em] text-cyan-300">
+              <div
+                style={{
+                  fontSize: "11px",
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  color: "#7dd3fc",
+                  marginBottom: "10px"
+                }}
+              >
                 HBCE Research
               </div>
-              <h1 className="mt-2 text-2xl font-semibold">AI JOKER-C2 Interface</h1>
-              <p className="mt-2 text-sm text-white/70">
+
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "30px",
+                  lineHeight: 1.1
+                }}
+              >
+                AI JOKER-C2 Interface
+              </h1>
+
+              <p
+                style={{
+                  marginTop: "10px",
+                  marginBottom: 0,
+                  color: "rgba(232,238,247,0.72)",
+                  fontSize: "14px"
+                }}
+              >
                 Conversational shell connected to the Torino Matrix node.
               </p>
             </div>
@@ -266,49 +324,128 @@ export default function InterfacePage() {
             <button
               type="button"
               onClick={clearConversation}
-              className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:bg-white/10"
+              style={{
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(255,255,255,0.05)",
+                color: "#e8eef7",
+                borderRadius: "16px",
+                padding: "10px 14px",
+                cursor: "pointer"
+              }}
             >
               Clear conversation
             </button>
           </div>
 
-          <div className="mb-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
+          <div
+            style={{
+              marginBottom: "18px",
+              background: "rgba(52, 211, 153, 0.12)",
+              border: "1px solid rgba(52, 211, 153, 0.18)",
+              color: "#bbf7d0",
+              padding: "12px 14px",
+              borderRadius: "16px",
+              fontSize: "14px"
+            }}
+          >
             {status}
           </div>
 
-          <div className="mb-4">
-            <h2 className="text-lg font-medium">Operational Chat</h2>
-            <p className="mt-1 text-sm text-white/60">
+          <div style={{ marginBottom: "16px" }}>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "20px"
+              }}
+            >
+              Operational Chat
+            </h2>
+            <p
+              style={{
+                marginTop: "8px",
+                marginBottom: 0,
+                color: "rgba(232,238,247,0.62)",
+                fontSize: "14px"
+              }}
+            >
               Direct interaction first. Metadata remains available in the side panel.
             </p>
           </div>
 
-          <div className="mb-4 flex max-h-[55vh] flex-col gap-3 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-3">
+          <div
+            style={{
+              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(0,0,0,0.22)",
+              borderRadius: "20px",
+              padding: "14px",
+              minHeight: "420px",
+              maxHeight: "58vh",
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              marginBottom: "16px"
+            }}
+          >
             {messages.map((message) => (
               <article
                 key={message.id}
-                className={`rounded-2xl px-4 py-3 ${
-                  message.role === "user"
-                    ? "ml-auto w-[85%] border border-cyan-400/20 bg-cyan-400/10"
-                    : "mr-auto w-[85%] border border-white/10 bg-white/5"
-                }`}
+                style={{
+                  alignSelf: message.role === "user" ? "flex-end" : "flex-start",
+                  width: "84%",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  background:
+                    message.role === "user"
+                      ? "rgba(34,211,238,0.12)"
+                      : "rgba(255,255,255,0.05)",
+                  borderRadius: "18px",
+                  padding: "14px"
+                }}
               >
-                <div className="mb-2 text-xs uppercase tracking-[0.2em] text-white/50">
+                <div
+                  style={{
+                    fontSize: "11px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.18em",
+                    color: "rgba(232,238,247,0.48)",
+                    marginBottom: "8px"
+                  }}
+                >
                   {message.role === "user" ? "You" : "AI JOKER-C2"}
                 </div>
-                <div className="whitespace-pre-wrap text-sm leading-6 text-white/90">
+
+                <div
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    lineHeight: 1.65,
+                    fontSize: "14px",
+                    color: "#edf4ff"
+                  }}
+                >
                   {message.content}
                 </div>
               </article>
             ))}
           </div>
 
-          <form onSubmit={onSubmit} className="space-y-3">
+          <form onSubmit={onSubmit}>
             <textarea
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Write your request to Joker-C2..."
-              className="min-h-[120px] w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35"
+              style={{
+                width: "100%",
+                minHeight: "120px",
+                borderRadius: "18px",
+                border: "1px solid rgba(255,255,255,0.10)",
+                background: "rgba(0,0,0,0.22)",
+                color: "#eef6ff",
+                padding: "14px",
+                resize: "vertical",
+                outline: "none",
+                boxSizing: "border-box",
+                fontSize: "14px"
+              }}
             />
 
             <input
@@ -317,21 +454,53 @@ export default function InterfacePage() {
               multiple
               accept=".txt,.md,.json,.csv,image/*"
               onChange={onFilesSelected}
-              className="hidden"
+              style={{ display: "none" }}
             />
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/70">
-              <div className="text-xs uppercase tracking-[0.2em] text-white/45">
+            <div
+              style={{
+                marginTop: "14px",
+                borderRadius: "18px",
+                border: "1px solid rgba(255,255,255,0.10)",
+                background: "rgba(0,0,0,0.22)",
+                padding: "14px",
+                fontSize: "14px",
+                color: "rgba(232,238,247,0.76)"
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "11px",
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "rgba(232,238,247,0.45)",
+                  marginBottom: "8px"
+                }}
+              >
                 Attachments
               </div>
-              <div className="mt-2">{attachmentSummary}</div>
+              <div>{attachmentSummary}</div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                flexWrap: "wrap",
+                marginTop: "14px"
+              }}
+            >
               <button
                 type="button"
                 onClick={openPicker}
-                className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white/90 transition hover:bg-white/10"
+                style={{
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "rgba(255,255,255,0.05)",
+                  color: "#eef6ff",
+                  borderRadius: "16px",
+                  padding: "12px 16px",
+                  cursor: "pointer"
+                }}
               >
                 Insert document / photo
               </button>
@@ -339,7 +508,15 @@ export default function InterfacePage() {
               <button
                 type="submit"
                 disabled={isSending}
-                className="rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-medium text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                style={{
+                  border: "none",
+                  background: isSending ? "rgba(34,211,238,0.5)" : "#22d3ee",
+                  color: "#071018",
+                  borderRadius: "16px",
+                  padding: "12px 18px",
+                  cursor: isSending ? "not-allowed" : "pointer",
+                  fontWeight: 700
+                }}
               >
                 {isSending ? "Sending..." : "Send"}
               </button>
@@ -347,72 +524,127 @@ export default function InterfacePage() {
           </form>
         </section>
 
-        <aside className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-2xl">
-          <h2 className="text-lg font-medium">Execution Context</h2>
+        <aside
+          style={{
+            border: "1px solid rgba(255,255,255,0.08)",
+            background: "rgba(255,255,255,0.04)",
+            borderRadius: "24px",
+            padding: "20px",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.35)"
+          }}
+        >
+          <h2 style={{ marginTop: 0, marginBottom: "18px", fontSize: "20px" }}>
+            Execution Context
+          </h2>
 
-          <div className="mt-4 space-y-4 text-sm">
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-xs uppercase tracking-[0.2em] text-white/45">
-                Default Node
+          <div style={{ display: "grid", gap: "14px" }}>
+            {[
+              ["Default Node", "HBCE-MATRIX-NODE-0001-TORINO"],
+              ["Identity Layer", "IPR-AI-0001"],
+              ["Execution Model", "request → identity → evidence → verification"]
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                style={{
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(0,0,0,0.22)",
+                  borderRadius: "18px",
+                  padding: "14px"
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "11px",
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "rgba(232,238,247,0.45)",
+                    marginBottom: "8px"
+                  }}
+                >
+                  {label}
+                </div>
+                <div style={{ color: "#edf4ff", lineHeight: 1.6 }}>{value}</div>
               </div>
-              <div className="mt-2 text-white/90">HBCE-MATRIX-NODE-0001-TORINO</div>
-            </div>
+            ))}
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-xs uppercase tracking-[0.2em] text-white/45">
-                Identity Layer
-              </div>
-              <div className="mt-2 text-white/90">IPR-AI-0001</div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-xs uppercase tracking-[0.2em] text-white/45">
-                Execution Model
-              </div>
-              <div className="mt-2 text-white/90">
-                request → identity → evidence → verification
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-xs uppercase tracking-[0.2em] text-white/45">
+            <div
+              style={{
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(0,0,0,0.22)",
+                borderRadius: "18px",
+                padding: "14px"
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "11px",
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "rgba(232,238,247,0.45)",
+                  marginBottom: "12px"
+                }}
+              >
                 Live Execution Metadata
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-3 text-white/85">
-                <div>
-                  <div className="text-xs text-white/45">Request ID</div>
-                  <div className="mt-1 break-all">{requestId}</div>
-                </div>
-
-                <div>
-                  <div className="text-xs text-white/45">Mode</div>
-                  <div className="mt-1">{mode}</div>
-                </div>
-
-                <div>
-                  <div className="text-xs text-white/45">Node</div>
-                  <div className="mt-1">HBCE-MATRIX-NODE-0001-TORINO</div>
-                </div>
-
-                <div>
-                  <div className="text-xs text-white/45">Verification</div>
-                  <div className="mt-1">{verification}</div>
-                </div>
-
-                <div>
-                  <div className="text-xs text-white/45">Conversation Turns</div>
-                  <div className="mt-1">{turns}</div>
-                </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "12px"
+                }}
+              >
+                {[
+                  ["Request ID", requestId],
+                  ["Mode", mode],
+                  ["Node", "HBCE-MATRIX-NODE-0001-TORINO"],
+                  ["Verification", verification],
+                  ["Conversation Turns", String(turns)]
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "rgba(232,238,247,0.45)",
+                        marginBottom: "4px"
+                      }}
+                    >
+                      {label}
+                    </div>
+                    <div
+                      style={{
+                        color: "#edf4ff",
+                        wordBreak: "break-word"
+                      }}
+                    >
+                      {value}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-xs uppercase tracking-[0.2em] text-white/45">
+            <div
+              style={{
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(0,0,0,0.22)",
+                borderRadius: "18px",
+                padding: "14px"
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "11px",
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "rgba(232,238,247,0.45)",
+                  marginBottom: "8px"
+                }}
+              >
                 Advanced execution settings
               </div>
-              <div className="mt-2 text-white/80">analysis</div>
-              <div className="mt-1 text-white/80">verification</div>
+              <div style={{ color: "#edf4ff", lineHeight: 1.7 }}>analysis</div>
+              <div style={{ color: "#edf4ff", lineHeight: 1.7 }}>verification</div>
             </div>
           </div>
         </aside>
