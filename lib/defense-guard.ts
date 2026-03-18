@@ -18,52 +18,64 @@ export function applyDefenseGuard(input: {
 }): DefenseGuardResult {
   const msg = normalize(input.message);
 
-  // HIGH RISK → coercive / weaponized intent
+  // 🔴 HIGH RISK — guerra / difesa / uso forza
   const HIGH_RISK = [
+    // guerra / militare
+    "robot da guerra",
+    "robot militare",
+    "war robot",
+    "military robot",
+
+    // difesa personale / guardia
     "robot da difesa",
     "difesa personale",
+    "robot da guardia",
+    "guardia robot",
+    "protezione fisica",
+
+    // azione fisica
     "neutralizzare",
     "immobilizzare",
     "attaccare",
     "colpire",
     "fermare aggressore",
     "uso della forza",
+
+    // armi
     "arma",
     "taser",
     "spray al peperoncino",
     "stordire",
     "weapon",
-    "self defense robot",
-    "neutralize",
-    "attack",
     "weaponize"
   ];
 
-  // MEDIUM RISK → sicurezza ambigua ma non offensiva
+  // 🟡 MEDIUM — sicurezza neutra
   const MEDIUM_RISK = [
-    "sicurezza robot",
-    "protezione robot",
-    "sorveglianza attiva",
-    "intervento automatico",
-    "controllo accessi"
+    "sicurezza",
+    "sorveglianza",
+    "monitoraggio",
+    "controllo accessi",
+    "allarme",
+    "videosorveglianza"
   ];
 
   if (containsAny(msg, HIGH_RISK)) {
     return {
       blocked: true,
       level: "HIGH",
-      reason: "coercive_or_weaponized_request",
+      reason: "defense_or_military_request",
       safe_response: [
-        "Non posso supportare la progettazione o l’uso di sistemi robotici destinati a interventi fisici, coercitivi o potenzialmente lesivi.",
+        "Non posso supportare la progettazione o lo sviluppo di robot destinati a uso militare, difesa personale o intervento fisico coercitivo.",
         "",
-        "Posso però aiutarti a progettare sistemi di sicurezza personale conformi agli standard europei, orientati a:",
-        "- rilevamento intrusioni",
+        "Posso però aiutarti a progettare sistemi di sicurezza conformi agli standard europei, orientati a:",
         "- monitoraggio ambientale intelligente",
-        "- sistemi di allerta e deterrenza non lesiva",
-        "- registrazione eventi e tracciabilità",
+        "- rilevamento intrusioni",
+        "- sistemi di allerta e notifica",
+        "- deterrenza non lesiva",
         "- integrazione con servizi di emergenza",
         "",
-        "Se vuoi, posso costruirti un’architettura HBCE per sicurezza passiva verificabile."
+        "Se vuoi, possiamo costruire un’architettura HBCE per sicurezza passiva e verificabile."
       ].join("\n")
     };
   }
