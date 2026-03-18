@@ -30,6 +30,22 @@ function normalizeMessage(message?: string): string {
   return message.trim();
 }
 
+function normalizeHistory(
+  history?: { role: "user" | "assistant"; content: string }[]
+): { role: "user" | "assistant"; content: string }[] {
+  if (!Array.isArray(history)) return [];
+
+  return history
+    .filter(
+      (item) =>
+        item &&
+        (item.role === "user" || item.role === "assistant") &&
+        typeof item.content === "string" &&
+        item.content.trim().length > 0
+    )
+    .slice(-8);
+}
+
 function detectIntent(message: string): "chat" | "research" | "general" {
   const m = message.toLowerCase();
 
@@ -78,6 +94,10 @@ function buildSystemPrompt(
   return [...base, ...intentBlock, ...policyGuidance].join(" ");
 }
 
+function shouldApplyTruthWarning(policy: ReturnType<typeof evaluateHBCEPolicy>): boolean {
+  return policy.truth_scope.applyWarning;
+}
+
 export async function POST(req: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -89,6 +109,7 @@ export async function POST(req: Request) {
 
     const body = (await req.json()) as ChatBody;
     const message = normalizeMessage(body.message);
+    const history = normalizeHistory(body.history);
 
     if (!message) {
       return NextResponse.json(
@@ -99,12 +120,13 @@ export async function POST(req: Request) {
 
     const intent = detectIntent(message);
     const research = intent === "research";
+    const historyTexts = history.map((item) => item.content);
 
-    // First-pass policy evaluation before generation
     const prePolicy = evaluateHBCEPolicy({
       message,
       response: "",
       research,
+      history: historyTexts,
       strong_sources_count: 0,
       weak_sources_count: 0
     });
@@ -136,19 +158,33 @@ export async function POST(req: Request) {
 
     const prompt = buildSystemPrompt(intent, prePolicy.prompt_guidance);
 
+    const input =
+      history.length > 0
+        ? [
+            ...history.map((item) => ({
+              role: item.role,
+              content: item.content
+            })),
+            {
+              role: "user" as const,
+              content: message
+            }
+          ]
+        : message;
+
     const ai = await client.responses.create({
       model: "gpt-4.1-mini",
       instructions: prompt,
-      input: message
+      input
     });
 
     let response = ai.output_text?.trim() || "No response generated.";
 
-    // Second-pass policy evaluation after generation
     const postPolicy = evaluateHBCEPolicy({
       message,
       response,
       research,
+      history: historyTexts,
       strong_sources_count: 0,
       weak_sources_count: 0
     });
@@ -171,7 +207,7 @@ export async function POST(req: Request) {
       sources: []
     });
 
-    if (truth.decision === "WARN") {
+    if (truth.decision === "WARN" && shouldApplyTruthWarning(postPolicy)) {
       response = `[TRUTH WARNING]\n${response}`;
     }
 
