@@ -17,15 +17,27 @@ function buildAnchor(text: string): string {
   return crypto.createHash("sha256").update(text).digest("hex");
 }
 
-function normalizePem(value: string | undefined): string {
-  if (!value) {
-    throw new Error("Missing federation signature key material");
+function normalizePem(value: string | undefined): string | null {
+  if (!value || !value.trim()) {
+    return null;
   }
 
   return value.replace(/\\n/g, "\n").trim();
 }
 
-function stablePayload(nodeId: string, response: string, anchor: string, timestamp: string): string {
+function getAvailablePrivateKey(): string | null {
+  return (
+    normalizePem(process.env.JOKER_SIGN_PRIVATE_KEY) ||
+    normalizePem(process.env.JOKER_PRIVATE_KEY)
+  );
+}
+
+function stablePayload(
+  nodeId: string,
+  response: string,
+  anchor: string,
+  timestamp: string
+): string {
   return JSON.stringify({
     node_id: nodeId,
     response,
@@ -34,11 +46,19 @@ function stablePayload(nodeId: string, response: string, anchor: string, timesta
   });
 }
 
+export function federationSignatureIsConfigured(): boolean {
+  return Boolean(getAvailablePrivateKey());
+}
+
 export function signFederationResponse(
   nodeId: string,
   response: string
-): FederationSignedEnvelope {
-  const privateKeyPem = normalizePem(process.env.JOKER_SIGN_PRIVATE_KEY);
+): FederationSignedEnvelope | null {
+  const privateKeyPem = getAvailablePrivateKey();
+
+  if (!privateKeyPem) {
+    return null;
+  }
 
   const timestamp = nowIso();
   const anchor = buildAnchor(response);
@@ -65,6 +85,10 @@ export function verifyFederationResponse(
   publicKeyPem: string
 ): boolean {
   const normalizedPublicKey = normalizePem(publicKeyPem);
+
+  if (!normalizedPublicKey) {
+    return false;
+  }
 
   const payload = stablePayload(
     envelope.node_id,
