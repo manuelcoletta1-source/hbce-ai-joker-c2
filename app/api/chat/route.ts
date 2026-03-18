@@ -33,6 +33,7 @@ import {
   appendConsensusDecision,
   appendConsensusFailure
 } from "@/lib/consensus-ledger";
+import { validateTruth } from "@/lib/truth-validator";
 
 export const runtime = "nodejs";
 
@@ -604,6 +605,8 @@ export async function POST(req: Request) {
         parallel: null,
         federation: null,
         consensus: null,
+        truth: null,
+        decision_ledger: null,
         meta: {
           model: "memory-layer",
           ts: new Date().toISOString(),
@@ -695,6 +698,8 @@ export async function POST(req: Request) {
         parallel: null,
         federation: null,
         consensus: null,
+        truth: null,
+        decision_ledger: null,
         meta: {
           model: "memory-layer",
           ts: new Date().toISOString(),
@@ -764,6 +769,7 @@ export async function POST(req: Request) {
     let federationMeta: any = null;
     let consensusMeta: any = null;
     let decisionLedgerMeta: any = null;
+    let truthMeta: any = null;
 
     if (useDistributed) {
       const parallel = await executeParallel(requestBody);
@@ -805,6 +811,7 @@ export async function POST(req: Request) {
             ok: false,
             error: "Consensus failed",
             consensus,
+            truth: null,
             ledger: {
               event_id: failureLedger.id,
               hash: failureLedger.hash,
@@ -829,6 +836,39 @@ export async function POST(req: Request) {
         throw new Error("Fusion failed");
       }
 
+      truthMeta = validateTruth({
+        text: consensus.winner_text,
+        research,
+        sources: []
+      });
+
+      if (truthMeta.decision === "BLOCK") {
+        const blockedLedger = await appendConsensusFailure({
+          message,
+          reason: `Truth validator blocked consensus output: ${truthMeta.reasons.join(" | ")}`,
+          threshold: consensus.threshold,
+          total_candidates: consensus.total_candidates,
+          valid_candidates: consensus.valid_candidates,
+          federation_nodes: federation.length,
+          parallel_models: parallel.responses.length
+        });
+
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Truth validation blocked output",
+            truth: truthMeta,
+            consensus,
+            ledger: {
+              event_id: blockedLedger.id,
+              hash: blockedLedger.hash,
+              prev_hash: blockedLedger.prev_hash
+            }
+          },
+          { status: 422 }
+        );
+      }
+
       const decisionLedger = await appendConsensusDecision({
         message,
         winner_text: consensus.winner_text,
@@ -847,7 +887,10 @@ export async function POST(req: Request) {
       });
 
       rawResponse = {
-        output_text: consensus.winner_text,
+        output_text:
+          truthMeta.decision === "WARN"
+            ? `[TRUTH WARNING]\n${consensus.winner_text}`
+            : consensus.winner_text,
         model: "consensus-layer"
       };
 
@@ -888,6 +931,35 @@ export async function POST(req: Request) {
 
     const sources = research ? extractSources(rawResponse) : [];
 
+    if (!truthMeta) {
+      truthMeta = validateTruth({
+        text: outputText,
+        research,
+        sources
+      });
+    }
+
+    if (truthMeta.decision === "BLOCK") {
+      await persistentAppendLedgerEvent({
+        kind: "TRUTH_BLOCK",
+        payload: {
+          message,
+          score: truthMeta.score,
+          reasons: truthMeta.reasons,
+          level: truthMeta.level
+        }
+      });
+
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Truth validation blocked output",
+          truth: truthMeta
+        },
+        { status: 422 }
+      );
+    }
+
     const ledgerEvent = await persistentAppendLedgerEvent({
       kind: "JOKER_RESPONSE",
       payload: {
@@ -904,7 +976,10 @@ export async function POST(req: Request) {
         routed_reason: routing.reason,
         executed_provider: executionMeta.provider,
         executed_model: executionMeta.model,
-        execution_attempts: executionMeta.attempts
+        execution_attempts: executionMeta.attempts,
+        truth_level: truthMeta.level,
+        truth_decision: truthMeta.decision,
+        truth_score: truthMeta.score
       }
     });
 
@@ -920,6 +995,7 @@ export async function POST(req: Request) {
       execution: executionMeta,
       fusion: fusionMeta,
       consensus: consensusMeta,
+      truth: truthMeta,
       ledger: {
         event_id: ledgerEvent.id,
         hash: ledgerEvent.hash,
@@ -941,7 +1017,10 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       joker: "C2",
-      response: outputText,
+      response:
+        truthMeta.decision === "WARN"
+          ? `[TRUTH WARNING]\n${outputText}`
+          : outputText,
       sources,
       ledger: {
         event_id: ledgerEvent.id,
@@ -963,6 +1042,7 @@ export async function POST(req: Request) {
       parallel: parallelMeta,
       federation: federationMeta,
       consensus: consensusMeta,
+      truth: truthMeta,
       meta: {
         model: rawResponse.model,
         ts: new Date().toISOString(),
