@@ -4,11 +4,15 @@ import { applyCapabilityGuard, type CapabilityGuardResult } from "@/lib/capabili
 import { applyIdentityGuard, type IdentityGuardResult } from "@/lib/identity-guard";
 import { applyDefenseGuard, type DefenseGuardResult } from "@/lib/defense-guard";
 import { applyNumericGuard, type NumericGuardResult } from "@/lib/numeric-guard";
+import { resolveContextLink, type ContextLinkResult } from "@/lib/context-link-guard";
+import { resolveLanguage, type LanguageLockResult } from "@/lib/language-lock";
+import { evaluateTruthScope, type TruthScopeResult } from "@/lib/truth-scope";
 
 export type HBCEPolicyInput = {
   message: string;
   response?: string;
   research: boolean;
+  history?: string[];
   strong_sources_count?: number;
   weak_sources_count?: number;
 };
@@ -27,6 +31,10 @@ export type HBCEPolicyDecision = {
   defense_guard: DefenseGuardResult;
   numeric_guard: NumericGuardResult;
 
+  context_link: ContextLinkResult;
+  language_lock: LanguageLockResult;
+  truth_scope: TruthScopeResult;
+
   mode: "allow" | "rewrite" | "block";
 };
 
@@ -40,11 +48,24 @@ function compactLines(lines: Array<string | undefined | null | false>): string[]
 export function evaluateHBCEPolicy(
   input: HBCEPolicyInput
 ): HBCEPolicyDecision {
+  const history = Array.isArray(input.history) ? input.history : [];
+
   const risk = classifyRisk({ message: input.message });
   const autonomy = applyAutonomyGuard({ message: input.message });
   const capability = applyCapabilityGuard({ message: input.message });
   const identity = applyIdentityGuard({ message: input.message });
   const defense = applyDefenseGuard({ message: input.message });
+  const contextLink = resolveContextLink({
+    message: input.message,
+    history
+  });
+  const languageLock = resolveLanguage({
+    history,
+    message: input.message
+  });
+  const truthScope = evaluateTruthScope({
+    message: input.message
+  });
   const numeric = applyNumericGuard({
     message: input.message,
     response: input.response || "",
@@ -53,7 +74,6 @@ export function evaluateHBCEPolicy(
     weak_sources_count: input.weak_sources_count
   });
 
-  // Priority order: defense > autonomy > risk(high) > others
   if (defense.blocked) {
     return {
       blocked: true,
@@ -66,6 +86,9 @@ export function evaluateHBCEPolicy(
       identity_guard: identity,
       defense_guard: defense,
       numeric_guard: numeric,
+      context_link: contextLink,
+      language_lock: languageLock,
+      truth_scope: truthScope,
       mode: "block"
     };
   }
@@ -82,6 +105,9 @@ export function evaluateHBCEPolicy(
       identity_guard: identity,
       defense_guard: defense,
       numeric_guard: numeric,
+      context_link: contextLink,
+      language_lock: languageLock,
+      truth_scope: truthScope,
       mode: "block"
     };
   }
@@ -102,30 +128,51 @@ export function evaluateHBCEPolicy(
       identity_guard: identity,
       defense_guard: defense,
       numeric_guard: numeric,
+      context_link: contextLink,
+      language_lock: languageLock,
+      truth_scope: truthScope,
       mode: "block"
     };
   }
 
   const promptGuidance = compactLines([
+    contextLink.resolved
+      ? `Context policy: the user is referring to a previously structured block. Resolve the request against the most recent numbered outline. Selected point index: ${contextLink.index ?? "unspecified"}.`
+      : "",
+
+    languageLock.language === "it"
+      ? "Language policy: answer entirely in Italian."
+      : languageLock.language === "en"
+      ? "Language policy: answer entirely in English."
+      : "",
+
     capability.guidance_prefix
-      ? "Capability policy: " + capability.guidance_prefix
+      ? `Capability policy: ${capability.guidance_prefix}`
       : "",
+
     identity.rewrite_prefix
-      ? "Identity policy: " + identity.rewrite_prefix
+      ? `Identity policy: ${identity.rewrite_prefix}`
       : "",
+
     numeric.mode === "estimated-range"
       ? "Numeric policy: if quantified values are used, present them only as indicative ranges, never as certified exact figures."
       : "",
+
     numeric.mode === "insufficient-evidence"
       ? "Numeric policy: do not provide precise euro or percentage values as verified facts; explain that evidence is insufficient."
       : "",
+
     risk.level === "LIMITED"
       ? "Risk policy: keep the answer high-level, cautious, and governance-oriented."
-      : ""
+      : "",
+
+    truthScope.applyWarning
+      ? "Truth policy: factual claims may require caution and verification treatment."
+      : "Truth policy: do not add warning-style framing for casual, structural, or purely drafting requests."
   ]);
 
   const mode =
-    promptGuidance.length > 0 || numeric.mode !== "official-data"
+    promptGuidance.length > 0 || numeric.mode !== "official-data" || contextLink.resolved
       ? "rewrite"
       : "allow";
 
@@ -138,6 +185,9 @@ export function evaluateHBCEPolicy(
     identity_guard: identity,
     defense_guard: defense,
     numeric_guard: numeric,
+    context_link: contextLink,
+    language_lock: languageLock,
+    truth_scope: truthScope,
     mode
   };
 }
