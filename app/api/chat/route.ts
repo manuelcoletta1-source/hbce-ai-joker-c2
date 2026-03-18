@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+
 import {
   getMemoryByKey,
   listMemoryRecords,
@@ -8,9 +9,21 @@ import {
 } from "@/lib/joker-memory";
 import { appendLedgerEvent } from "@/lib/joker-ledger";
 import {
+  dbAppendLedgerEvent,
+  dbGetMemoryByKey,
+  dbIsConfigured,
+  dbListMemoryRecords,
+  dbSaveMemoryRecord,
+  dbSearchMemory
+} from "@/lib/joker-db";
+import {
   signJokerPayload,
   signatureIsConfigured
 } from "@/lib/joker-signature";
+import {
+  buildIPRPromptBlock,
+  buildIPRResponseMeta
+} from "@/lib/joker-ipr";
 
 export const runtime = "nodejs";
 
@@ -55,6 +68,18 @@ type MemoryInstruction = {
   value: string;
   category: string;
 } | null;
+
+type LedgerEventLike = {
+  id: string;
+  hash: string;
+  prev_hash: string;
+};
+
+type MemoryRecordLike = {
+  key: string;
+  value: string;
+  category: string;
+};
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -143,6 +168,7 @@ function buildSystemPrompt(research: boolean): string {
     "You process requests from the biological operator and return structured, precise, operational answers.",
     "Conversation history is part of the active operational context and must be used when provided.",
     "Server-side memory is part of the operational context when available.",
+    "IPR binding context is authoritative and must be preserved in reasoning and outputs.",
     "If attachments are provided, use them as contextual evidence.",
     "When a text attachment is present, read it and integrate its content into the answer.",
     "When an image attachment is present, analyze the image and describe relevant details.",
@@ -239,12 +265,20 @@ function buildInput(
   history: HistoryTurn[],
   message: string,
   attachments: Attachment[],
-  memoryContext: string
+  memoryContext: string,
+  iprContext: string
 ): Array<
   | { role: "user" | "assistant"; content: string }
   | { role: "user"; content: InputPart[] }
 > {
   const inputParts: InputPart[] = [];
+
+  if (iprContext) {
+    inputParts.push({
+      type: "input_text",
+      text: iprContext
+    });
+  }
 
   if (memoryContext) {
     inputParts.push({
@@ -373,9 +407,62 @@ function isMemoryListingRequest(message: string): boolean {
   );
 }
 
+async function persistentGetMemoryByKey(
+  key: string
+): Promise<MemoryRecordLike | null> {
+  if (dbIsConfigured()) {
+    return dbGetMemoryByKey(key);
+  }
+
+  return getMemoryByKey(key);
+}
+
+async function persistentSearchMemory(
+  query: string
+): Promise<MemoryRecordLike[]> {
+  if (dbIsConfigured()) {
+    return dbSearchMemory(query);
+  }
+
+  return searchMemory(query);
+}
+
+async function persistentListMemoryRecords(): Promise<MemoryRecordLike[]> {
+  if (dbIsConfigured()) {
+    return dbListMemoryRecords();
+  }
+
+  return listMemoryRecords();
+}
+
+async function persistentSaveMemoryRecord(input: {
+  key: string;
+  value: string;
+  category?: string;
+}): Promise<MemoryRecordLike> {
+  if (dbIsConfigured()) {
+    return dbSaveMemoryRecord(input);
+  }
+
+  return saveMemoryRecord(input);
+}
+
+async function persistentAppendLedgerEvent(input: {
+  kind: string;
+  actor?: string;
+  node?: string;
+  payload?: Record<string, unknown>;
+}): Promise<LedgerEventLike> {
+  if (dbIsConfigured()) {
+    return dbAppendLedgerEvent(input);
+  }
+
+  return appendLedgerEvent(input);
+}
+
 async function buildMemoryContext(message: string): Promise<string> {
-  const direct = await getMemoryByKey(message);
-  const matches = direct ? [direct] : await searchMemory(message);
+  const direct = await persistentGetMemoryByKey(message);
+  const matches = direct ? [direct] : await persistentSearchMemory(message);
 
   const selected = matches.slice(0, MAX_MEMORY_MATCHES);
 
@@ -418,18 +505,25 @@ export async function POST(req: Request) {
       );
     }
 
-    await appendLedgerEvent({
+    const iprMeta = buildIPRResponseMeta();
+    const iprPromptBlock = buildIPRPromptBlock();
+
+    await persistentAppendLedgerEvent({
       kind: "USER_REQUEST",
       payload: {
         message,
         attachments_count: attachments.length,
         history_count: history.length,
-        research
+        research,
+        storage: dbIsConfigured() ? "redis" : "runtime",
+        ipr_subject: iprMeta.subject_id,
+        ipr_operator: iprMeta.operator_id,
+        ipr_node: iprMeta.node_id
       }
     });
 
     if (isMemoryListingRequest(message)) {
-      const records = await listMemoryRecords();
+      const records = await persistentListMemoryRecords();
       const response =
         records.length === 0
           ? "JOKER-C2 memory is currently empty."
@@ -441,18 +535,22 @@ export async function POST(req: Request) {
               )
             ].join("\n");
 
-      const ledgerEvent = await appendLedgerEvent({
+      const ledgerEvent = await persistentAppendLedgerEvent({
         kind: "MEMORY_LIST",
         payload: {
-          records_count: records.length
+          records_count: records.length,
+          ipr_subject: iprMeta.subject_id,
+          ipr_operator: iprMeta.operator_id
         }
       });
 
       const signablePayload = {
         joker: "C2",
         response,
-        node: "HBCE-MATRIX-NODE-0001-TORINO",
-        identity: "IPR-AI-0001",
+        node: iprMeta.node_id,
+        identity: iprMeta.subject_id,
+        operator_id: iprMeta.operator_id,
+        ipr: iprMeta,
         ledger: {
           event_id: ledgerEvent.id,
           hash: ledgerEvent.hash,
@@ -475,16 +573,19 @@ export async function POST(req: Request) {
           prev_hash: ledgerEvent.prev_hash
         },
         signature,
+        ipr: iprMeta,
         meta: {
           model: "memory-layer",
           ts: new Date().toISOString(),
-          node: "HBCE-MATRIX-NODE-0001-TORINO",
-          identity: "IPR-AI-0001",
+          node: iprMeta.node_id,
+          identity: iprMeta.subject_id,
+          operator_id: iprMeta.operator_id,
           research: false,
           memory: {
             history_turns_used: history.length,
             history_turns_max: MAX_HISTORY_TURNS,
-            persistent_records: records.length
+            persistent_records: records.length,
+            backend: dbIsConfigured() ? "redis" : "runtime"
           },
           attachments: {
             total: attachments.length,
@@ -499,22 +600,26 @@ export async function POST(req: Request) {
     const memoryInstruction = extractMemoryInstruction(message);
 
     if (memoryInstruction) {
-      const saved = await saveMemoryRecord(memoryInstruction);
+      const saved = await persistentSaveMemoryRecord(memoryInstruction);
 
-      await appendLedgerEvent({
+      await persistentAppendLedgerEvent({
         kind: "MEMORY_WRITE",
         payload: {
           key: memoryInstruction.key,
-          category: memoryInstruction.category
+          category: memoryInstruction.category,
+          ipr_subject: iprMeta.subject_id,
+          ipr_operator: iprMeta.operator_id
         }
       });
 
-      const ledgerEvent = await appendLedgerEvent({
+      const ledgerEvent = await persistentAppendLedgerEvent({
         kind: "JOKER_RESPONSE",
         payload: {
           response_length: saved.value.length,
           model: "memory-layer",
-          memory_write: true
+          memory_write: true,
+          ipr_subject: iprMeta.subject_id,
+          ipr_operator: iprMeta.operator_id
         }
       });
 
@@ -523,8 +628,10 @@ export async function POST(req: Request) {
       const signablePayload = {
         joker: "C2",
         response,
-        node: "HBCE-MATRIX-NODE-0001-TORINO",
-        identity: "IPR-AI-0001",
+        node: iprMeta.node_id,
+        identity: iprMeta.subject_id,
+        operator_id: iprMeta.operator_id,
+        ipr: iprMeta,
         ledger: {
           event_id: ledgerEvent.id,
           hash: ledgerEvent.hash,
@@ -547,16 +654,19 @@ export async function POST(req: Request) {
           prev_hash: ledgerEvent.prev_hash
         },
         signature,
+        ipr: iprMeta,
         meta: {
           model: "memory-layer",
           ts: new Date().toISOString(),
-          node: "HBCE-MATRIX-NODE-0001-TORINO",
-          identity: "IPR-AI-0001",
+          node: iprMeta.node_id,
+          identity: iprMeta.subject_id,
+          operator_id: iprMeta.operator_id,
           research: false,
           memory: {
             history_turns_used: history.length,
             history_turns_max: MAX_HISTORY_TURNS,
-            persistent_records: 1
+            persistent_records: 1,
+            backend: dbIsConfigured() ? "redis" : "runtime"
           },
           attachments: {
             total: attachments.length,
@@ -569,7 +679,13 @@ export async function POST(req: Request) {
     }
 
     const memoryContext = await buildMemoryContext(message);
-    const input = buildInput(history, message, attachments, memoryContext);
+    const input = buildInput(
+      history,
+      message,
+      attachments,
+      memoryContext,
+      iprPromptBlock
+    );
 
     const textAttachments = attachments.filter((item) =>
       isTextAttachment(item.type, item.name)
@@ -603,13 +719,16 @@ export async function POST(req: Request) {
 
     const sources = research ? extractSources(rawResponse) : [];
 
-    const ledgerEvent = await appendLedgerEvent({
+    const ledgerEvent = await persistentAppendLedgerEvent({
       kind: "JOKER_RESPONSE",
       payload: {
         response_length: outputText.length,
         model: rawResponse.model,
         research,
-        sources_count: sources.length
+        sources_count: sources.length,
+        ipr_subject: iprMeta.subject_id,
+        ipr_operator: iprMeta.operator_id,
+        ipr_node: iprMeta.node_id
       }
     });
 
@@ -617,8 +736,10 @@ export async function POST(req: Request) {
       joker: "C2",
       response: outputText,
       sources,
-      node: "HBCE-MATRIX-NODE-0001-TORINO",
-      identity: "IPR-AI-0001",
+      node: iprMeta.node_id,
+      identity: iprMeta.subject_id,
+      operator_id: iprMeta.operator_id,
+      ipr: iprMeta,
       ledger: {
         event_id: ledgerEvent.id,
         hash: ledgerEvent.hash,
@@ -641,16 +762,19 @@ export async function POST(req: Request) {
         prev_hash: ledgerEvent.prev_hash
       },
       signature,
+      ipr: iprMeta,
       meta: {
         model: rawResponse.model,
         ts: new Date().toISOString(),
-        node: "HBCE-MATRIX-NODE-0001-TORINO",
-        identity: "IPR-AI-0001",
+        node: iprMeta.node_id,
+        identity: iprMeta.subject_id,
+        operator_id: iprMeta.operator_id,
         research,
         memory: {
           history_turns_used: history.length,
           history_turns_max: MAX_HISTORY_TURNS,
-          persistent_matches_used: memoryContext ? 1 : 0
+          persistent_matches_used: memoryContext ? 1 : 0,
+          backend: dbIsConfigured() ? "redis" : "runtime"
         },
         attachments: {
           total: attachments.length,
@@ -664,7 +788,7 @@ export async function POST(req: Request) {
     const message =
       error instanceof Error ? error.message : "Internal server error";
 
-    await appendLedgerEvent({
+    await persistentAppendLedgerEvent({
       kind: "JOKER_ERROR",
       payload: {
         message
