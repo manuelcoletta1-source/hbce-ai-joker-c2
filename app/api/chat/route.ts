@@ -66,11 +66,15 @@ function validateTruth(text: string) {
 
 function generateResponse(message: string, intent: string): string {
   if (intent === "chat") {
+    if (message.toLowerCase().includes("chi sei")) {
+      return "Sono JOKER-C2, sistema operativo HBCE associato a IPR-AI-0001 e al nodo HBCE-MATRIX-NODE-0001-TORINO.";
+    }
+
     return "Ciao. Sono JOKER-C2, sistema operativo HBCE. Come posso aiutarti?";
   }
 
   if (intent === "research") {
-    return "Richiesta di tipo informativo rilevata. Elaborazione dati in corso (simulazione).";
+    return "Richiesta di tipo informativo rilevata. Elaborazione dati in corso.";
   }
 
   return "Richiesta ricevuta. Elaborazione completata.";
@@ -81,14 +85,24 @@ export async function POST(req: Request) {
     const body = await req.json();
     const message = typeof body?.message === "string" ? body.message : "";
 
+    if (!message.trim()) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Missing message"
+        },
+        { status: 400 }
+      );
+    }
+
     const intent = detectIntent(message);
     const research = intent === "research";
-    const outputText = generateResponse(message, intent);
+    const responseText = generateResponse(message, intent);
 
     let truthMeta;
 
     if (shouldApplyTruth(message, research)) {
-      truthMeta = validateTruth(outputText);
+      truthMeta = validateTruth(responseText);
 
       if (truthMeta.decision === "BLOCK") {
         return NextResponse.json(
@@ -112,17 +126,24 @@ export async function POST(req: Request) {
       message,
       intent,
       research,
-      output: outputText,
+      response: responseText,
       truth: truthMeta
     });
 
     return NextResponse.json({
       ok: true,
+      joker: "C2",
+      response: responseText,
+      sources: [],
       intent,
       research,
-      output: outputText,
       truth: truthMeta,
-      anchor
+      anchor,
+      meta: {
+        ts: new Date().toISOString(),
+        node: "HBCE-MATRIX-NODE-0001-TORINO",
+        identity: "IPR-AI-0001"
+      }
     });
   } catch {
     return NextResponse.json(
