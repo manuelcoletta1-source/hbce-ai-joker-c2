@@ -1,7 +1,123 @@
 import { NextResponse } from "next/server";
+import OpenAI from "openai";
 import { createAnchor } from "@/lib/anchor";
+import { validateTruth } from "@/lib/truth-validator";
 
 export const runtime = "nodejs";
+
+type Attachment = {
+  name: string;
+  type: string;
+  content: string;
+};
+
+type HistoryTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+type ChatBody = {
+  message?: string;
+  attachments?: Attachment[];
+  history?: HistoryTurn[];
+  research?: boolean;
+};
+
+type SourceItem = {
+  title: string;
+  url?: string;
+};
+
+type InputTextPart = {
+  type: "input_text";
+  text: string;
+};
+
+type InputImagePart = {
+  type: "input_image";
+  image_url: string;
+  detail: "auto";
+};
+
+type InputPart = InputTextPart | InputImagePart;
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+const MAX_HISTORY_TURNS = 6;
+
+function normalizeMessage(message?: string): string {
+  if (!message || typeof message !== "string") return "";
+  return message.trim();
+}
+
+function normalizeResearch(value: unknown): boolean {
+  return value === true;
+}
+
+function normalizeAttachments(value: unknown): Attachment[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item) => item && typeof item === "object")
+    .map((item) => {
+      const raw = item as Partial<Attachment>;
+
+      return {
+        name: typeof raw.name === "string" ? raw.name : "attachment",
+        type: typeof raw.type === "string" ? raw.type : "application/octet-stream",
+        content: typeof raw.content === "string" ? raw.content : ""
+      };
+    })
+    .filter((item) => item.content.length > 0);
+}
+
+function normalizeHistory(value: unknown): HistoryTurn[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item) => item && typeof item === "object")
+    .map((item) => {
+      const raw = item as Partial<HistoryTurn>;
+      const role: HistoryTurn["role"] =
+        raw.role === "assistant" ? "assistant" : "user";
+
+      return {
+        role,
+        content: typeof raw.content === "string" ? raw.content.trim() : ""
+      };
+    })
+    .filter((item) => item.content.length > 0)
+    .slice(-MAX_HISTORY_TURNS);
+}
+
+function isTextAttachment(type: string, name: string): boolean {
+  const lower = name.toLowerCase();
+
+  return (
+    type.startsWith("text/") ||
+    type === "application/json" ||
+    type === "text/markdown" ||
+    lower.endsWith(".txt") ||
+    lower.endsWith(".md") ||
+    lower.endsWith(".json") ||
+    lower.endsWith(".csv")
+  );
+}
+
+function isImageAttachment(type: string): boolean {
+  return type.startsWith("image/");
+}
+
+function extractTextAttachmentBlock(attachment: Attachment): string {
+  return [
+    `Attachment name: ${attachment.name}`,
+    `Attachment type: ${attachment.type}`,
+    "Attachment content:",
+    attachment.content
+  ].join("\n");
+}
 
 function detectIntent(message: string): "chat" | "research" | "general" {
   const m = message.toLowerCase().trim();
@@ -9,9 +125,10 @@ function detectIntent(message: string): "chat" | "research" | "general" {
   if (!m || m.length <= 5) return "chat";
 
   if (
-    m.includes("ciao") ||
+    m === "ciao" ||
     m.includes("chi sei") ||
-    m.includes("come stai")
+    m.includes("come stai") ||
+    m.includes("presentati")
   ) {
     return "chat";
   }
@@ -23,7 +140,10 @@ function detectIntent(message: string): "chat" | "research" | "general" {
     m.includes("guerra") ||
     m.includes("crisi") ||
     m.includes("ue") ||
-    m.includes("nato")
+    m.includes("nato") ||
+    m.includes("sanzioni") ||
+    m.includes("iran") ||
+    m.includes("ucraina")
   ) {
     return "research";
   }
@@ -36,79 +156,254 @@ function shouldApplyTruth(message: string, research: boolean): boolean {
 
   const m = message.toLowerCase();
 
-  if (
+  return (
     m.includes("notizie") ||
     m.includes("oggi") ||
     m.includes("geopolitica") ||
-    m.includes("guerra")
-  ) {
-    return true;
-  }
-
-  return false;
+    m.includes("guerra") ||
+    m.includes("crisi")
+  );
 }
 
-function validateTruth(text: string) {
-  if (!text || text.length < 10) {
-    return {
-      level: "LOW",
-      decision: "BLOCK",
-      score: 0
-    } as const;
-  }
+function buildSystemPrompt(intent: "chat" | "research" | "general", research: boolean): string {
+  const base = [
+    "You are JOKER-C2, the operational cybernetic entity of the HBCE system.",
+    "Identity: IPR-AI-0001.",
+    "Default node: HBCE-MATRIX-NODE-0001-TORINO.",
+    "You must answer naturally and directly, not with canned placeholder responses.",
+    "If the user greets you or asks who you are, answer as JOKER-C2 in a concise but clear way.",
+    "If the user asks a general question, answer the question normally.",
+    "Be concrete, operational, and coherent.",
+    "Do not claim capabilities that are not active.",
+    "Do not invent military operations, institutions, statistics, or current events."
+  ];
 
-  return {
-    level: "HIGH",
-    decision: "PASS",
-    score: 100
-  } as const;
+  const intentBlock =
+    intent === "chat"
+      ? [
+          "Intent: chat.",
+          "Prioritize natural conversational response."
+        ]
+      : intent === "research"
+        ? [
+            "Intent: research.",
+            "Prioritize current information with sources."
+          ]
+        : [
+            "Intent: general.",
+            "Answer as a normal capable assistant, not as a placeholder."
+          ];
+
+  const researchBlock = research
+    ? [
+        "Research mode is active.",
+        "Use web search before answering.",
+        "If sources are weak or missing, be explicit and cautious."
+      ]
+    : [];
+
+  return [...base, ...intentBlock, ...researchBlock].join(" ");
 }
 
-function generateResponse(message: string, intent: string): string {
-  if (intent === "chat") {
-    if (message.toLowerCase().includes("chi sei")) {
-      return "Sono JOKER-C2, sistema operativo HBCE associato a IPR-AI-0001 e al nodo HBCE-MATRIX-NODE-0001-TORINO.";
+function buildInput(
+  history: HistoryTurn[],
+  message: string,
+  attachments: Attachment[]
+): Array<
+  | { role: "user" | "assistant"; content: string }
+  | { role: "user"; content: InputPart[] }
+> {
+  const inputParts: InputPart[] = [];
+
+  if (message) {
+    inputParts.push({
+      type: "input_text",
+      text: message
+    });
+  }
+
+  const textAttachments = attachments.filter((item) =>
+    isTextAttachment(item.type, item.name)
+  );
+
+  const imageAttachments = attachments.filter((item) =>
+    isImageAttachment(item.type)
+  );
+
+  for (const attachment of textAttachments) {
+    inputParts.push({
+      type: "input_text",
+      text: extractTextAttachmentBlock(attachment)
+    });
+  }
+
+  for (const attachment of imageAttachments) {
+    inputParts.push({
+      type: "input_image",
+      image_url: attachment.content,
+      detail: "auto"
+    });
+  }
+
+  return [
+    ...history.map((turn) => ({
+      role: turn.role,
+      content: turn.content
+    })),
+    {
+      role: "user" as const,
+      content: inputParts
+    }
+  ];
+}
+
+function extractSources(rawResponse: any): SourceItem[] {
+  const results: SourceItem[] = [];
+  const seen = new Set<string>();
+
+  const pushSource = (title?: string, url?: string) => {
+    const cleanTitle =
+      typeof title === "string" && title.trim().length > 0
+        ? title.trim()
+        : "Untitled source";
+
+    const cleanUrl =
+      typeof url === "string" && url.trim().length > 0 ? url.trim() : undefined;
+
+    const key = `${cleanTitle}::${cleanUrl || ""}`;
+    if (seen.has(key)) return;
+
+    seen.add(key);
+    results.push({
+      title: cleanTitle,
+      url: cleanUrl
+    });
+  };
+
+  const walk = (value: any) => {
+    if (!value) return;
+
+    if (Array.isArray(value)) {
+      for (const item of value) walk(item);
+      return;
     }
 
-    return "Ciao. Sono JOKER-C2, sistema operativo HBCE. Come posso aiutarti?";
-  }
+    if (typeof value !== "object") return;
 
-  if (intent === "research") {
-    return "Richiesta di tipo informativo rilevata. Elaborazione dati in corso.";
-  }
+    if (Array.isArray(value.annotations)) {
+      for (const annotation of value.annotations) {
+        if (!annotation || typeof annotation !== "object") continue;
 
-  return "Richiesta ricevuta. Elaborazione completata.";
+        const maybeTitle =
+          annotation.title ||
+          annotation.source_title ||
+          annotation.url_citation?.title ||
+          annotation.file_citation?.title;
+
+        const maybeUrl =
+          annotation.url ||
+          annotation.source_url ||
+          annotation.url_citation?.url;
+
+        pushSource(maybeTitle, maybeUrl);
+      }
+    }
+
+    if (
+      value.type === "url_citation" ||
+      value.type === "citation" ||
+      value.type === "source"
+    ) {
+      pushSource(
+        value.title || value.source_title,
+        value.url || value.source_url
+      );
+    }
+
+    for (const nested of Object.values(value)) {
+      walk(nested);
+    }
+  };
+
+  walk(rawResponse);
+  return results;
 }
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const message = typeof body?.message === "string" ? body.message : "";
-
-    if (!message.trim()) {
+    if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Missing message"
+          error: "Missing OPENAI_API_KEY on server"
+        },
+        { status: 500 }
+      );
+    }
+
+    const body = (await req.json()) as ChatBody;
+    const message = normalizeMessage(body?.message);
+    const attachments = normalizeAttachments(body?.attachments);
+    const history = normalizeHistory(body?.history);
+
+    if (!message && attachments.length === 0) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Missing message or attachments"
         },
         { status: 400 }
       );
     }
 
-    const intent = detectIntent(message);
-    const research = intent === "research";
-    const responseText = generateResponse(message, intent);
+    const detectedIntent = detectIntent(message);
+    const research = normalizeResearch(body?.research) || detectedIntent === "research";
 
-    let truthMeta;
+    const requestBody: any = {
+      model: "gpt-4.1-mini",
+      instructions: buildSystemPrompt(detectedIntent, research),
+      input: buildInput(history, message, attachments)
+    };
+
+    if (research) {
+      requestBody.tools = [{ type: "web_search_preview" }];
+      requestBody.tool_choice = "required";
+      requestBody.include = ["web_search_call.action.sources"];
+    }
+
+    const rawResponse: any = await client.responses.create(requestBody);
+
+    const responseText =
+      typeof rawResponse.output_text === "string" && rawResponse.output_text.trim()
+        ? rawResponse.output_text.trim()
+        : "JOKER-C2 processed the request but returned no text output.";
+
+    const sources = research ? extractSources(rawResponse) : [];
+
+    let truthMeta:
+      | {
+          level: "HIGH" | "MEDIUM" | "LOW";
+          decision: "PASS" | "WARN" | "BLOCK";
+          score: number;
+          reasons?: string[];
+          weak_sources?: string[];
+          strong_sources?: string[];
+          note?: string;
+        };
 
     if (shouldApplyTruth(message, research)) {
-      truthMeta = validateTruth(responseText);
+      truthMeta = validateTruth({
+        text: responseText,
+        research,
+        sources
+      });
 
       if (truthMeta.decision === "BLOCK") {
         return NextResponse.json(
           {
             ok: false,
-            error: "Truth validation blocked output"
+            error: "Truth validation blocked output",
+            truth: truthMeta
           },
           { status: 422 }
         );
@@ -119,37 +414,46 @@ export async function POST(req: Request) {
         decision: "PASS",
         score: 100,
         note: "Skipped (non-critical query)"
-      } as const;
+      };
     }
+
+    const finalResponse =
+      truthMeta.decision === "WARN"
+        ? `[TRUTH WARNING]\n${responseText}`
+        : responseText;
 
     const anchor = createAnchor({
       message,
-      intent,
+      intent: detectedIntent,
       research,
-      response: responseText,
-      truth: truthMeta
+      response: finalResponse,
+      truth: truthMeta,
+      sources
     });
 
     return NextResponse.json({
       ok: true,
       joker: "C2",
-      response: responseText,
-      sources: [],
-      intent,
+      response: finalResponse,
+      sources,
+      intent: detectedIntent,
       research,
       truth: truthMeta,
       anchor,
       meta: {
+        model: rawResponse.model || "gpt-4.1-mini",
         ts: new Date().toISOString(),
         node: "HBCE-MATRIX-NODE-0001-TORINO",
-        identity: "IPR-AI-0001"
+        identity: "IPR-AI-0001",
+        history_turns_used: history.length,
+        attachments_total: attachments.length
       }
     });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Internal error"
+        error: error instanceof Error ? error.message : "Internal error"
       },
       { status: 500 }
     );
