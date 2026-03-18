@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { queryFederation } from "@/lib/federation-query";
+import {
+  queryFederation,
+  pickOrchestratedWinner
+} from "@/lib/federation-query";
 import { buildConsensus } from "@/lib/consensus-engine";
 
 export const runtime = "nodejs";
@@ -27,13 +30,19 @@ export async function POST(req: Request) {
     const federationResults = await queryFederation(message);
 
     const successfulResponses = federationResults
-      .filter((item) => item.success && typeof item.response === "string" && item.response.trim().length > 0)
+      .filter(
+        (item) =>
+          item.success &&
+          typeof item.response === "string" &&
+          item.response.trim().length > 0
+      )
       .map((item) => ({
         model: item.node_id,
         text: item.response as string
       }));
 
     const consensus = buildConsensus(successfulResponses);
+    const orchestratedWinner = pickOrchestratedWinner(federationResults);
 
     return NextResponse.json({
       ok: true,
@@ -44,6 +53,16 @@ export async function POST(req: Request) {
         successful_nodes: federationResults.filter((item) => item.success).length,
         failed_nodes: federationResults.filter((item) => !item.success).length,
         responses: federationResults
+      },
+      orchestrator: {
+        winner: orchestratedWinner
+          ? {
+              node_id: orchestratedWinner.node_id,
+              trust_level: orchestratedWinner.trust_level,
+              score: orchestratedWinner.score,
+              response: orchestratedWinner.response
+            }
+          : null
       },
       consensus
     });
