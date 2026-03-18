@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
 
 import {
   getMemoryByKey,
@@ -25,6 +24,7 @@ import {
   buildIPRResponseMeta
 } from "@/lib/joker-ipr";
 import { routeJokerModel } from "@/lib/model-router";
+import { executeWithFallback } from "@/lib/model-executor";
 
 export const runtime = "nodejs";
 
@@ -81,10 +81,6 @@ type MemoryRecordLike = {
   value: string;
   category: string;
 };
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
 
 const MAX_HISTORY_TURNS = 6;
 const MAX_MEMORY_MATCHES = 5;
@@ -706,17 +702,6 @@ export async function POST(req: Request) {
       iprPromptBlock
     );
 
-    if (routing.provider !== "openai") {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: `Provider ${routing.provider} is routed but not yet implemented in the execution layer.`,
-          routing
-        },
-        { status: 501 }
-      );
-    }
-
     const textAttachments = attachments.filter((item) =>
       isTextAttachment(item.type, item.name)
     );
@@ -740,7 +725,16 @@ export async function POST(req: Request) {
       requestBody.include = ["web_search_call.action.sources"];
     }
 
-    const rawResponse: any = await client.responses.create(requestBody);
+    const exec = await executeWithFallback({
+      routing,
+      requestBody
+    });
+
+    if (!exec.ok) {
+      throw new Error(exec.error || "Model execution failed");
+    }
+
+    const rawResponse: any = exec.data;
 
     const outputText =
       typeof rawResponse.output_text === "string" && rawResponse.output_text.trim()
@@ -762,7 +756,9 @@ export async function POST(req: Request) {
         routed_provider: routing.provider,
         routed_model: routing.model,
         routed_mode: routing.mode,
-        routed_reason: routing.reason
+        routed_reason: routing.reason,
+        executed_provider: exec.provider,
+        executed_model: exec.model
       }
     });
 
@@ -775,6 +771,10 @@ export async function POST(req: Request) {
       operator_id: iprMeta.operator_id,
       ipr: iprMeta,
       routing,
+      execution: {
+        provider: exec.provider,
+        model: exec.model
+      },
       ledger: {
         event_id: ledgerEvent.id,
         hash: ledgerEvent.hash,
@@ -799,6 +799,10 @@ export async function POST(req: Request) {
       signature,
       ipr: iprMeta,
       routing,
+      execution: {
+        provider: exec.provider,
+        model: exec.model
+      },
       meta: {
         model: rawResponse.model,
         ts: new Date().toISOString(),
