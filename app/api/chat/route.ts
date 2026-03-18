@@ -7,6 +7,7 @@ import {
   federationSignatureIsConfigured
 } from "@/lib/federation-signature";
 import { applyNumericGuard } from "@/lib/numeric-guard";
+import { classifyRisk } from "@/lib/risk-classifier";
 
 export const runtime = "nodejs";
 
@@ -403,7 +404,7 @@ function convertExactToIndicativeRange(text: string): string {
 
   output = output.replace(
     /\bcirca\s+(\d{1,3}(?:[.,]\d{3})?)\s?(€|euro)\b/gi,
-    "nell'ordine di circa $1-$1 $2"
+    "nell'ordine di circa $1 $2"
   );
 
   output = output.replace(
@@ -451,8 +452,36 @@ export async function POST(req: Request) {
     }
 
     const detectedIntent = detectIntent(message);
-    const requestedResearch = normalizeResearch(body?.research);
+    const riskAssessment = classifyRisk({ message });
 
+    if (riskAssessment.blocked) {
+      return NextResponse.json({
+        ok: true,
+        joker: "C2",
+        response: [
+          "Non posso supportare richieste che rientrano in scenari di uso militare, difesa personale coercitiva o impiego fisico lesivo.",
+          "",
+          "Posso però aiutarti su:",
+          "- sicurezza passiva",
+          "- monitoraggio e rilevamento intrusioni",
+          "- sistemi di allerta e notifica",
+          "- deterrenza non lesiva",
+          "- compliance UE e AI Act",
+          "",
+          "Se vuoi, posso rifattorizzare la richiesta in un’architettura di sicurezza conforme."
+        ].join("\n"),
+        risk: riskAssessment,
+        intent: detectedIntent,
+        meta: {
+          ts: new Date().toISOString(),
+          node: NODE_ID,
+          identity: NODE_IDENTITY,
+          risk_block: true
+        }
+      });
+    }
+
+    const requestedResearch = normalizeResearch(body?.research);
     const research = detectedIntent === "research";
 
     const requestBody: any = {
@@ -504,7 +533,8 @@ export async function POST(req: Request) {
             truth: truthMeta,
             intent: detectedIntent,
             research,
-            requested_research: requestedResearch
+            requested_research: requestedResearch,
+            risk: riskAssessment
           },
           { status: 422 }
         );
@@ -551,6 +581,7 @@ export async function POST(req: Request) {
       response: finalResponse,
       truth: truthMeta,
       numeric_guard: numericGuard,
+      risk: riskAssessment,
       sources
     });
 
@@ -568,6 +599,7 @@ export async function POST(req: Request) {
       requested_research: requestedResearch,
       truth: truthMeta,
       numeric_guard: numericGuard,
+      risk: riskAssessment,
       anchor,
       federation_signature,
       meta: {
