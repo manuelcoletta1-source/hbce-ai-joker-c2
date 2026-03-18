@@ -1,4 +1,5 @@
 import { getFederationNodes } from "./federation-live";
+import { getTrustScore, updateTrust } from "./trust-engine";
 
 export type FederationResponse = {
   node_id: string;
@@ -7,6 +8,8 @@ export type FederationResponse = {
   error?: string;
   trust_level?: string;
   score?: number;
+  trust_score?: number;
+  final_score?: number;
 };
 
 function trustWeight(level?: string): number {
@@ -42,12 +45,16 @@ async function callNode(
   prompt: string
 ): Promise<FederationResponse> {
   if (!node.endpoint) {
+    updateTrust(node.node_id, false, 0);
+
     return {
       node_id: node.node_id,
       success: false,
       error: "No endpoint configured",
       trust_level: node.trust_level,
-      score: 0
+      score: 0,
+      trust_score: getTrustScore(node.node_id),
+      final_score: 0
     };
   }
 
@@ -72,24 +79,37 @@ async function callNode(
           ? data.output
           : "";
 
-    const score =
+    const baseScore =
       trustWeight(node.trust_level) * 10 + responseQualityScore(responseText);
+
+    const success = res.ok && Boolean(responseText);
+
+    updateTrust(node.node_id, success, baseScore);
+
+    const dynamicTrust = getTrustScore(node.node_id);
+    const finalScore = baseScore + dynamicTrust;
 
     return {
       node_id: node.node_id,
-      success: res.ok && Boolean(responseText),
+      success,
       response: responseText || undefined,
       error: res.ok ? undefined : `HTTP ${res.status}`,
       trust_level: node.trust_level,
-      score
+      score: baseScore,
+      trust_score: dynamicTrust,
+      final_score: finalScore
     };
   } catch (error) {
+    updateTrust(node.node_id, false, 0);
+
     return {
       node_id: node.node_id,
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
       trust_level: node.trust_level,
-      score: 0
+      score: 0,
+      trust_score: getTrustScore(node.node_id),
+      final_score: 0
     };
   }
 }
@@ -99,7 +119,7 @@ export async function queryFederation(prompt: string): Promise<FederationRespons
 
   const results = await Promise.all(nodes.map((node) => callNode(node, prompt)));
 
-  return results.sort((a, b) => (b.score || 0) - (a.score || 0));
+  return results.sort((a, b) => (b.final_score || 0) - (a.final_score || 0));
 }
 
 export function pickOrchestratedWinner(
@@ -113,5 +133,5 @@ export function pickOrchestratedWinner(
     return null;
   }
 
-  return successful.sort((a, b) => (b.score || 0) - (a.score || 0))[0];
+  return successful.sort((a, b) => (b.final_score || 0) - (a.final_score || 0))[0];
 }
