@@ -1,5 +1,6 @@
 import { getFederationNodes } from "./federation-live";
 import { getTrustScore, updateTrust } from "./trust-engine";
+import { verifyFederationEnvelope } from "./federation-verify";
 
 export type FederationResponse = {
   node_id: string;
@@ -10,6 +11,7 @@ export type FederationResponse = {
   score?: number;
   trust_score?: number;
   final_score?: number;
+  signature_valid?: boolean;
 };
 
 function trustWeight(level?: string): number {
@@ -54,7 +56,8 @@ async function callNode(
       trust_level: node.trust_level,
       score: 0,
       trust_score: getTrustScore(node.node_id),
-      final_score: 0
+      final_score: 0,
+      signature_valid: false
     };
   }
 
@@ -79,6 +82,24 @@ async function callNode(
           ? data.output
           : "";
 
+    const envelope = data?.federation_signature;
+    const signatureValid = verifyFederationEnvelope(envelope);
+
+    if (!signatureValid) {
+      updateTrust(node.node_id, false, 0);
+
+      return {
+        node_id: node.node_id,
+        success: false,
+        error: "Invalid federation signature",
+        trust_level: node.trust_level,
+        score: 0,
+        trust_score: getTrustScore(node.node_id),
+        final_score: 0,
+        signature_valid: false
+      };
+    }
+
     const baseScore =
       trustWeight(node.trust_level) * 10 + responseQualityScore(responseText);
 
@@ -97,7 +118,8 @@ async function callNode(
       trust_level: node.trust_level,
       score: baseScore,
       trust_score: dynamicTrust,
-      final_score: finalScore
+      final_score: finalScore,
+      signature_valid: true
     };
   } catch (error) {
     updateTrust(node.node_id, false, 0);
@@ -109,7 +131,8 @@ async function callNode(
       trust_level: node.trust_level,
       score: 0,
       trust_score: getTrustScore(node.node_id),
-      final_score: 0
+      final_score: 0,
+      signature_valid: false
     };
   }
 }
@@ -126,7 +149,11 @@ export function pickOrchestratedWinner(
   results: FederationResponse[]
 ): FederationResponse | null {
   const successful = results.filter(
-    (item) => item.success && typeof item.response === "string" && item.response.trim().length > 0
+    (item) =>
+      item.success &&
+      item.signature_valid === true &&
+      typeof item.response === "string" &&
+      item.response.trim().length > 0
   );
 
   if (successful.length === 0) {
