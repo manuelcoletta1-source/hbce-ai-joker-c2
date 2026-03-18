@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
+import { createAnchor } from "@/lib/anchor";
 
 export const runtime = "nodejs";
 
-/**
- * 🧠 INTENT DETECTION
- */
 function detectIntent(message: string): "chat" | "research" | "general" {
   const m = message.toLowerCase().trim();
 
@@ -33,9 +31,6 @@ function detectIntent(message: string): "chat" | "research" | "general" {
   return "general";
 }
 
-/**
- * 🔐 TRUTH CONTROL
- */
 function shouldApplyTruth(message: string, research: boolean): boolean {
   if (research) return true;
 
@@ -53,31 +48,22 @@ function shouldApplyTruth(message: string, research: boolean): boolean {
   return false;
 }
 
-/**
- * 🔍 MOCK TRUTH VALIDATION
- * (puoi collegarlo al tuo vero modulo)
- */
 function validateTruth(text: string) {
-  // semplice placeholder
   if (!text || text.length < 10) {
     return {
       level: "LOW",
       decision: "BLOCK",
       score: 0
-    };
+    } as const;
   }
 
   return {
     level: "HIGH",
     decision: "PASS",
     score: 100
-  };
+  } as const;
 }
 
-/**
- * 🤖 MOCK MODEL RESPONSE
- * (sostituisci con GPT reale)
- */
 function generateResponse(message: string, intent: string): string {
   if (intent === "chat") {
     return "Ciao. Sono JOKER-C2, sistema operativo HBCE. Come posso aiutarti?";
@@ -90,42 +76,28 @@ function generateResponse(message: string, intent: string): string {
   return "Richiesta ricevuta. Elaborazione completata.";
 }
 
-/**
- * 🚀 API ROUTE
- */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const message = body?.message || "";
+    const message = typeof body?.message === "string" ? body.message : "";
 
-    /**
-     * 1. INTENT
-     */
     const intent = detectIntent(message);
-
-    /**
-     * 2. RESEARCH MODE
-     */
     const research = intent === "research";
-
-    /**
-     * 3. GENERAZIONE
-     */
     const outputText = generateResponse(message, intent);
 
-    /**
-     * 4. TRUTH LAYER
-     */
     let truthMeta;
 
     if (shouldApplyTruth(message, research)) {
       truthMeta = validateTruth(outputText);
 
       if (truthMeta.decision === "BLOCK") {
-        return NextResponse.json({
-          ok: false,
-          error: "Truth validation blocked output"
-        });
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Truth validation blocked output"
+          },
+          { status: 422 }
+        );
       }
     } else {
       truthMeta = {
@@ -133,21 +105,26 @@ export async function POST(req: Request) {
         decision: "PASS",
         score: 100,
         note: "Skipped (non-critical query)"
-      };
+      } as const;
     }
 
-    /**
-     * 5. RESPONSE
-     */
-    return NextResponse.json({
-      ok: true,
+    const anchor = createAnchor({
+      message,
       intent,
       research,
       output: outputText,
       truth: truthMeta
     });
 
-  } catch (error) {
+    return NextResponse.json({
+      ok: true,
+      intent,
+      research,
+      output: outputText,
+      truth: truthMeta,
+      anchor
+    });
+  } catch {
     return NextResponse.json(
       {
         ok: false,
