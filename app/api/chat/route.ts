@@ -197,7 +197,8 @@ function buildSystemPrompt(
         "Use web search before answering.",
         "If sources are weak or missing, be explicit and cautious.",
         "Provide structured analysis and keep claims grounded.",
-        "If the user asks for precise numbers, percentages, euro values, or quantified impacts, do not present speculative values as certified facts."
+        "If the user asks for precise numbers, percentages, euro values, or quantified impacts, do not present speculative values as certified facts.",
+        "When evidence is partial, prefer indicative ranges over single exact figures."
       ]
     : [];
 
@@ -361,13 +362,71 @@ function countWeakSources(sources: SourceItem[]): number {
     "blogspot.",
     "medium.com",
     "substack.com",
-    "wordpress.com"
+    "wordpress.com",
+    "idealista.it",
+    "rainews.it"
   ];
 
   return sources.filter((source) => {
     const url = (source.url || "").toLowerCase();
     return weakDomains.some((domain) => url.includes(domain));
   }).length;
+}
+
+function stripExactNumericConclusion(text: string): string {
+  const lines = text
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line, index, arr) => !(line === "" && arr[index - 1] === ""));
+
+  const filtered = lines.filter((line) => {
+    const lower = line.toLowerCase();
+
+    const isSummaryLine =
+      lower.startsWith("in sintesi") ||
+      lower.startsWith("conclusione") ||
+      lower.startsWith("quindi") ||
+      lower.startsWith("in conclusione");
+
+    const hasEuroOrPercent =
+      /\b\d{1,3}(?:[.,]\d{3})*(?:\s?€|\s?euro|\s?%)\b/i.test(line) ||
+      /\b\d+(?:[.,]\d+)?\s?(?:miliardi|milioni)\b/i.test(line);
+
+    return !(isSummaryLine && hasEuroOrPercent);
+  });
+
+  return filtered.join("\n").trim();
+}
+
+function convertExactToIndicativeRange(text: string): string {
+  let output = stripExactNumericConclusion(text);
+
+  output = output.replace(
+    /\bcirca\s+(\d{1,3}(?:[.,]\d{3})?)\s?(€|euro)\b/gi,
+    "nell'ordine di circa $1-$1 $2"
+  );
+
+  output = output.replace(
+    /\b(\d{1,3}(?:[.,]\d{3})?)\s?(€|euro)\b/gi,
+    "nell'ordine di $1 $2 circa"
+  );
+
+  output = output.replace(
+    /\b(\d+(?:[.,]\d+)?)\s?%\b/g,
+    "un ordine di grandezza vicino a $1%"
+  );
+
+  output = output.replace(
+    /\btra\s+(\d+(?:[.,]\d+)?)\s?(?:e|ed|-)\s?(\d+(?:[.,]\d+)?)\s?%\b/gi,
+    "in una forchetta orientativa compresa tra $1% e $2%"
+  );
+
+  output = output.replace(
+    /\btra\s+(\d{1,3}(?:[.,]\d{3})?)\s?(?:e|ed|-)\s?(\d{1,3}(?:[.,]\d{3})?)\s?(€|euro)\b/gi,
+    "in una forchetta orientativa compresa tra $1 e $2 $3"
+  );
+
+  return output.trim();
 }
 
 export async function POST(req: Request) {
@@ -471,7 +530,9 @@ export async function POST(req: Request) {
 
     if (numericGuard.numeric_request) {
       if (numericGuard.mode === "estimated-range") {
-        finalResponse = `${numericGuard.guidance_prefix}\n\n${responseText}`;
+        finalResponse = `${numericGuard.guidance_prefix}\n\n${convertExactToIndicativeRange(
+          responseText
+        )}`;
       }
 
       if (numericGuard.mode === "insufficient-evidence") {
