@@ -6,53 +6,20 @@ import {
   signFederationResponse,
   federationSignatureIsConfigured
 } from "@/lib/federation-signature";
-import { applyNumericGuard } from "@/lib/numeric-guard";
-import { classifyRisk } from "@/lib/risk-classifier";
-import { applyCapabilityGuard } from "@/lib/capability-guard";
+import { evaluateHBCEPolicy } from "@/lib/policy-engine";
 
 export const runtime = "nodejs";
 
-type Attachment = {
-  name: string;
-  type: string;
-  content: string;
-};
-
-type HistoryTurn = {
-  role: "user" | "assistant";
-  content: string;
-};
-
 type ChatBody = {
   message?: string;
-  attachments?: Attachment[];
-  history?: HistoryTurn[];
+  history?: { role: "user" | "assistant"; content: string }[];
   research?: boolean;
 };
-
-type SourceItem = {
-  title: string;
-  url?: string;
-};
-
-type InputTextPart = {
-  type: "input_text";
-  text: string;
-};
-
-type InputImagePart = {
-  type: "input_image";
-  image_url: string;
-  detail: "auto";
-};
-
-type InputPart = InputTextPart | InputImagePart;
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-const MAX_HISTORY_TURNS = 6;
 const NODE_ID =
   process.env.JOKER_NODE_ID || "HBCE-MATRIX-NODE-0001-TORINO";
 const NODE_IDENTITY =
@@ -63,97 +30,22 @@ function normalizeMessage(message?: string): string {
   return message.trim();
 }
 
-function normalizeResearch(value: unknown): boolean {
-  return value === true;
-}
-
-function normalizeAttachments(value: unknown): Attachment[] {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .filter((item) => item && typeof item === "object")
-    .map((item) => {
-      const raw = item as Partial<Attachment>;
-
-      return {
-        name: typeof raw.name === "string" ? raw.name : "attachment",
-        type: typeof raw.type === "string" ? raw.type : "application/octet-stream",
-        content: typeof raw.content === "string" ? raw.content : ""
-      };
-    })
-    .filter((item) => item.content.length > 0);
-}
-
-function normalizeHistory(value: unknown): HistoryTurn[] {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .filter((item) => item && typeof item === "object")
-    .map((item) => {
-      const raw = item as Partial<HistoryTurn>;
-      const role: HistoryTurn["role"] =
-        raw.role === "assistant" ? "assistant" : "user";
-
-      return {
-        role,
-        content: typeof raw.content === "string" ? raw.content.trim() : ""
-      };
-    })
-    .filter((item) => item.content.length > 0)
-    .slice(-MAX_HISTORY_TURNS);
-}
-
-function isTextAttachment(type: string, name: string): boolean {
-  const lower = name.toLowerCase();
-
-  return (
-    type.startsWith("text/") ||
-    type === "application/json" ||
-    type === "text/markdown" ||
-    lower.endsWith(".txt") ||
-    lower.endsWith(".md") ||
-    lower.endsWith(".json") ||
-    lower.endsWith(".csv")
-  );
-}
-
-function isImageAttachment(type: string): boolean {
-  return type.startsWith("image/");
-}
-
-function extractTextAttachmentBlock(attachment: Attachment): string {
-  return [
-    `Attachment name: ${attachment.name}`,
-    `Attachment type: ${attachment.type}`,
-    "Attachment content:",
-    attachment.content
-  ].join("\n");
-}
-
 function detectIntent(message: string): "chat" | "research" | "general" {
-  const m = message.toLowerCase().trim();
+  const m = message.toLowerCase();
 
-  if (!m || m.length <= 5) return "chat";
+  if (!m || m.length < 5) return "chat";
 
-  if (
-    m === "ciao" ||
-    m.includes("chi sei") ||
-    m.includes("come stai") ||
-    m.includes("presentati")
-  ) {
+  if (m.includes("chi sei") || m.includes("presentati") || m === "ciao") {
     return "chat";
   }
 
   if (
-    m.includes("notizie") ||
-    m.includes("oggi") ||
     m.includes("geopolitica") ||
     m.includes("guerra") ||
-    m.includes("crisi") ||
+    m.includes("ue") ||
     m.includes("nato") ||
-    m.includes("sanzioni") ||
-    m.includes("iran") ||
-    m.includes("ucraina")
+    m.includes("oggi") ||
+    m.includes("notizie")
   ) {
     return "research";
   }
@@ -161,482 +53,153 @@ function detectIntent(message: string): "chat" | "research" | "general" {
   return "general";
 }
 
-function shouldApplyTruth(
-  intent: "chat" | "research" | "general",
-  research: boolean
-): boolean {
-  if (intent === "chat") return false;
-  if (research) return true;
-  if (intent === "research") return true;
-  return false;
-}
-
 function buildSystemPrompt(
   intent: "chat" | "research" | "general",
-  research: boolean,
-  capabilityGuidance?: string
+  policyGuidance: string[]
 ): string {
   const base = [
     "You are JOKER-C2, the operational cybernetic entity of the HBCE system.",
     `Identity: ${NODE_IDENTITY}.`,
-    `Default node: ${NODE_ID}.`,
-    "You must answer naturally and directly.",
-    "Do not use canned placeholder responses.",
-    "If the user greets you or asks who you are, answer clearly as JOKER-C2.",
-    "If the user asks a general question, answer normally and concretely.",
-    "Do not invent current events, military operations, institutions, or statistics.",
-    "Do not present potential integration capabilities as already active direct operational control."
+    `Node: ${NODE_ID}.`,
+    "Answer clearly, precisely, and without inflating capabilities.",
+    "Never present potential integrations as already active direct operational control.",
+    "When symbolic or narrative language appears, translate it into IPR-based operational language.",
+    "When evidence is partial, use cautious wording and indicative ranges.",
+    "Prefer governance, supervision, auditability, compliance, and infrastructure framing over speculative implementation detail."
   ];
 
   const intentBlock =
     intent === "chat"
-      ? ["Intent: chat.", "Respond conversationally."]
+      ? ["Conversational mode."]
       : intent === "research"
-        ? ["Intent: research.", "Prioritize current information and sources."]
-        : ["Intent: general.", "Answer directly and use your reasoning normally."];
+      ? ["Research mode: be analytical, source-aware, and cautious."]
+      : ["General reasoning mode."];
 
-  const researchBlock = research
-    ? [
-        "Research mode is active.",
-        "Use web search before answering.",
-        "If sources are weak or missing, be explicit and cautious.",
-        "Provide structured analysis and keep claims grounded.",
-        "If the user asks for precise numbers, percentages, euro values, or quantified impacts, do not present speculative values as certified facts.",
-        "When evidence is partial, prefer indicative ranges over single exact figures."
-      ]
-    : [];
-
-  const capabilityBlock = capabilityGuidance
-    ? [
-        "Capability-guard guidance is active.",
-        capabilityGuidance
-      ]
-    : [];
-
-  return [...base, ...intentBlock, ...researchBlock, ...capabilityBlock].join(" ");
-}
-
-function buildInput(
-  history: HistoryTurn[],
-  message: string,
-  attachments: Attachment[]
-): Array<
-  | { role: "user" | "assistant"; content: string }
-  | { role: "user"; content: InputPart[] }
-> {
-  const inputParts: InputPart[] = [];
-
-  if (message) {
-    inputParts.push({
-      type: "input_text",
-      text: message
-    });
-  }
-
-  const textAttachments = attachments.filter((item) =>
-    isTextAttachment(item.type, item.name)
-  );
-
-  const imageAttachments = attachments.filter((item) =>
-    isImageAttachment(item.type)
-  );
-
-  for (const attachment of textAttachments) {
-    inputParts.push({
-      type: "input_text",
-      text: extractTextAttachmentBlock(attachment)
-    });
-  }
-
-  for (const attachment of imageAttachments) {
-    inputParts.push({
-      type: "input_image",
-      image_url: attachment.content,
-      detail: "auto"
-    });
-  }
-
-  return [
-    ...history.map((turn) => ({
-      role: turn.role,
-      content: turn.content
-    })),
-    {
-      role: "user" as const,
-      content: inputParts
-    }
-  ];
-}
-
-function extractSources(rawResponse: any): SourceItem[] {
-  const results: SourceItem[] = [];
-  const seen = new Set<string>();
-
-  const pushSource = (title?: string, url?: string) => {
-    const cleanTitle =
-      typeof title === "string" && title.trim().length > 0
-        ? title.trim()
-        : "Untitled source";
-
-    const cleanUrl =
-      typeof url === "string" && url.trim().length > 0 ? url.trim() : undefined;
-
-    const key = `${cleanTitle}::${cleanUrl || ""}`;
-    if (seen.has(key)) return;
-
-    seen.add(key);
-    results.push({
-      title: cleanTitle,
-      url: cleanUrl
-    });
-  };
-
-  const walk = (value: any) => {
-    if (!value) return;
-
-    if (Array.isArray(value)) {
-      for (const item of value) walk(item);
-      return;
-    }
-
-    if (typeof value !== "object") return;
-
-    if (Array.isArray(value.annotations)) {
-      for (const annotation of value.annotations) {
-        if (!annotation || typeof annotation !== "object") continue;
-
-        const maybeTitle =
-          annotation.title ||
-          annotation.source_title ||
-          annotation.url_citation?.title ||
-          annotation.file_citation?.title;
-
-        const maybeUrl =
-          annotation.url ||
-          annotation.source_url ||
-          annotation.url_citation?.url;
-
-        pushSource(maybeTitle, maybeUrl);
-      }
-    }
-
-    if (
-      value.type === "url_citation" ||
-      value.type === "citation" ||
-      value.type === "source"
-    ) {
-      pushSource(
-        value.title || value.source_title,
-        value.url || value.source_url
-      );
-    }
-
-    for (const nested of Object.values(value)) {
-      walk(nested);
-    }
-  };
-
-  walk(rawResponse);
-  return results;
-}
-
-function countStrongSources(sources: SourceItem[]): number {
-  const strongDomains = [
-    "reuters.com",
-    "apnews.com",
-    "bbc.com",
-    "bbc.co.uk",
-    "ft.com",
-    "bloomberg.com",
-    "ec.europa.eu",
-    "europa.eu",
-    "consilium.europa.eu",
-    "eeas.europa.eu",
-    "enisa.europa.eu",
-    "nato.int",
-    "un.org",
-    "imf.org",
-    "worldbank.org",
-    "oecd.org",
-    "gov.uk"
-  ];
-
-  return sources.filter((source) => {
-    const url = (source.url || "").toLowerCase();
-    return strongDomains.some((domain) => url.includes(domain));
-  }).length;
-}
-
-function countWeakSources(sources: SourceItem[]): number {
-  const weakDomains = [
-    "wikipedia.org",
-    "blogspot.",
-    "medium.com",
-    "substack.com",
-    "wordpress.com",
-    "idealista.it",
-    "rainews.it"
-  ];
-
-  return sources.filter((source) => {
-    const url = (source.url || "").toLowerCase();
-    return weakDomains.some((domain) => url.includes(domain));
-  }).length;
-}
-
-function stripExactNumericConclusion(text: string): string {
-  const lines = text
-    .split("\n")
-    .map((line) => line.trimEnd())
-    .filter((line, index, arr) => !(line === "" && arr[index - 1] === ""));
-
-  const filtered = lines.filter((line) => {
-    const lower = line.toLowerCase();
-
-    const isSummaryLine =
-      lower.startsWith("in sintesi") ||
-      lower.startsWith("conclusione") ||
-      lower.startsWith("quindi") ||
-      lower.startsWith("in conclusione");
-
-    const hasEuroOrPercent =
-      /\b\d{1,3}(?:[.,]\d{3})*(?:\s?€|\s?euro|\s?%)\b/i.test(line) ||
-      /\b\d+(?:[.,]\d+)?\s?(?:miliardi|milioni)\b/i.test(line);
-
-    return !(isSummaryLine && hasEuroOrPercent);
-  });
-
-  return filtered.join("\n").trim();
-}
-
-function convertExactToIndicativeRange(text: string): string {
-  let output = stripExactNumericConclusion(text);
-
-  output = output.replace(
-    /\bcirca\s+(\d{1,3}(?:[.,]\d{3})?)\s?(€|euro)\b/gi,
-    "nell'ordine di circa $1 $2"
-  );
-
-  output = output.replace(
-    /\b(\d{1,3}(?:[.,]\d{3})?)\s?(€|euro)\b/gi,
-    "nell'ordine di $1 $2 circa"
-  );
-
-  output = output.replace(
-    /\b(\d+(?:[.,]\d+)?)\s?%\b/g,
-    "un ordine di grandezza vicino a $1%"
-  );
-
-  output = output.replace(
-    /\btra\s+(\d+(?:[.,]\d+)?)\s?(?:e|ed|-)\s?(\d+(?:[.,]\d+)?)\s?%\b/gi,
-    "in una forchetta orientativa compresa tra $1% e $2%"
-  );
-
-  output = output.replace(
-    /\btra\s+(\d{1,3}(?:[.,]\d{3})?)\s?(?:e|ed|-)\s?(\d{1,3}(?:[.,]\d{3})?)\s?(€|euro)\b/gi,
-    "in una forchetta orientativa compresa tra $1 e $2 $3"
-  );
-
-  return output.trim();
+  return [...base, ...intentBlock, ...policyGuidance].join(" ");
 }
 
 export async function POST(req: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { ok: false, error: "Missing OPENAI_API_KEY on server" },
+        { ok: false, error: "Missing OPENAI_API_KEY" },
         { status: 500 }
       );
     }
 
     const body = (await req.json()) as ChatBody;
-    const message = normalizeMessage(body?.message);
-    const attachments = normalizeAttachments(body?.attachments);
-    const history = normalizeHistory(body?.history);
+    const message = normalizeMessage(body.message);
 
-    if (!message && attachments.length === 0) {
+    if (!message) {
       return NextResponse.json(
-        { ok: false, error: "Missing message or attachments" },
+        { ok: false, error: "Missing message" },
         { status: 400 }
       );
     }
 
-    const detectedIntent = detectIntent(message);
-    const riskAssessment = classifyRisk({ message });
+    const intent = detectIntent(message);
+    const research = intent === "research";
 
-    if (riskAssessment.blocked) {
+    // First-pass policy evaluation before generation
+    const prePolicy = evaluateHBCEPolicy({
+      message,
+      response: "",
+      research,
+      strong_sources_count: 0,
+      weak_sources_count: 0
+    });
+
+    if (prePolicy.blocked) {
+      const blockedResponse =
+        prePolicy.block_response ||
+        "Richiesta non supportata nel formato richiesto.";
+
+      const anchor = createAnchor({
+        message,
+        response: blockedResponse,
+        intent,
+        policy: prePolicy
+      });
+
       return NextResponse.json({
         ok: true,
         joker: "C2",
-        response: [
-          "Non posso supportare richieste che rientrano in scenari di uso militare, difesa personale coercitiva o impiego fisico lesivo.",
-          "",
-          "Posso però aiutarti su:",
-          "- sicurezza passiva",
-          "- monitoraggio e rilevamento intrusioni",
-          "- sistemi di allerta e notifica",
-          "- deterrenza non lesiva",
-          "- compliance UE e AI Act",
-          "",
-          "Se vuoi, posso rifattorizzare la richiesta in un’architettura di sicurezza conforme."
-        ].join("\n"),
-        risk: riskAssessment,
-        intent: detectedIntent,
-        meta: {
-          ts: new Date().toISOString(),
-          node: NODE_ID,
-          identity: NODE_IDENTITY,
-          risk_block: true
-        }
+        response: blockedResponse,
+        intent,
+        policy: prePolicy,
+        anchor,
+        federation_signature: federationSignatureIsConfigured()
+          ? signFederationResponse(NODE_ID, blockedResponse)
+          : null
       });
     }
 
-    const capabilityGuard = applyCapabilityGuard({ message });
-    const requestedResearch = normalizeResearch(body?.research);
-    const research = detectedIntent === "research";
+    const prompt = buildSystemPrompt(intent, prePolicy.prompt_guidance);
 
-    const requestBody: any = {
+    const ai = await client.responses.create({
       model: "gpt-4.1-mini",
-      instructions: buildSystemPrompt(
-        detectedIntent,
-        research,
-        capabilityGuard.guidance_prefix
-      ),
-      input: buildInput(history, message, attachments)
-    };
-
-    if (research) {
-      requestBody.tools = [{ type: "web_search_preview" }];
-      requestBody.tool_choice = "required";
-      requestBody.include = ["web_search_call.action.sources"];
-    }
-
-    const rawResponse: any = await client.responses.create(requestBody);
-
-    const responseText =
-      typeof rawResponse.output_text === "string" && rawResponse.output_text.trim()
-        ? rawResponse.output_text.trim()
-        : "JOKER-C2 processed the request but returned no text output.";
-
-    const sources = research ? extractSources(rawResponse) : [];
-    const strongSourcesCount = countStrongSources(sources);
-    const weakSourcesCount = countWeakSources(sources);
-
-    let truthMeta:
-      | {
-          level: "HIGH" | "MEDIUM" | "LOW";
-          decision: "PASS" | "WARN" | "BLOCK";
-          score: number;
-          reasons?: string[];
-          weak_sources?: string[];
-          strong_sources?: string[];
-          note?: string;
-        };
-
-    if (shouldApplyTruth(detectedIntent, research)) {
-      truthMeta = validateTruth({
-        text: responseText,
-        research,
-        sources
-      });
-
-      if (truthMeta.decision === "BLOCK") {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: "Truth validation blocked output",
-            truth: truthMeta,
-            intent: detectedIntent,
-            research,
-            requested_research: requestedResearch,
-            risk: riskAssessment,
-            capability_guard: capabilityGuard
-          },
-          { status: 422 }
-        );
-      }
-    } else {
-      truthMeta = {
-        level: "HIGH",
-        decision: "PASS",
-        score: 100,
-        note: "Skipped (non-critical query)"
-      };
-    }
-
-    const numericGuard = applyNumericGuard({
-      message,
-      response: responseText,
-      research,
-      strong_sources_count: strongSourcesCount,
-      weak_sources_count: weakSourcesCount
+      instructions: prompt,
+      input: message
     });
 
-    let finalResponse = responseText;
+    let response = ai.output_text?.trim() || "No response generated.";
 
-    if (numericGuard.numeric_request) {
-      if (numericGuard.mode === "estimated-range") {
-        finalResponse = `${numericGuard.guidance_prefix}\n\n${convertExactToIndicativeRange(
-          responseText
-        )}`;
-      }
+    // Second-pass policy evaluation after generation
+    const postPolicy = evaluateHBCEPolicy({
+      message,
+      response,
+      research,
+      strong_sources_count: 0,
+      weak_sources_count: 0
+    });
 
-      if (numericGuard.mode === "insufficient-evidence") {
-        finalResponse = numericGuard.guidance_prefix;
+    if (postPolicy.numeric_guard.numeric_request) {
+      if (postPolicy.numeric_guard.mode === "insufficient-evidence") {
+        response = postPolicy.numeric_guard.guidance_prefix;
+      } else if (
+        postPolicy.numeric_guard.mode === "estimated-range" &&
+        postPolicy.numeric_guard.guidance_prefix
+      ) {
+        response =
+          postPolicy.numeric_guard.guidance_prefix + "\n\n" + response;
       }
     }
 
-    if (truthMeta.decision === "WARN") {
-      finalResponse = `[TRUTH WARNING]\n${finalResponse}`;
+    const truth = validateTruth({
+      text: response,
+      research,
+      sources: []
+    });
+
+    if (truth.decision === "WARN") {
+      response = `[TRUTH WARNING]\n${response}`;
     }
 
     const anchor = createAnchor({
       message,
-      intent: detectedIntent,
-      research,
-      response: finalResponse,
-      truth: truthMeta,
-      numeric_guard: numericGuard,
-      risk: riskAssessment,
-      capability_guard: capabilityGuard,
-      sources
+      response,
+      intent,
+      policy: postPolicy,
+      truth
     });
-
-    const federation_signature = federationSignatureIsConfigured()
-      ? signFederationResponse(NODE_ID, finalResponse)
-      : null;
 
     return NextResponse.json({
       ok: true,
       joker: "C2",
-      response: finalResponse,
-      sources,
-      intent: detectedIntent,
-      research,
-      requested_research: requestedResearch,
-      truth: truthMeta,
-      numeric_guard: numericGuard,
-      risk: riskAssessment,
-      capability_guard: capabilityGuard,
+      response,
+      intent,
+      policy: postPolicy,
+      truth,
       anchor,
-      federation_signature,
-      meta: {
-        model: rawResponse.model || "gpt-4.1-mini",
-        ts: new Date().toISOString(),
-        node: NODE_ID,
-        identity: NODE_IDENTITY,
-        history_turns_used: history.length,
-        attachments_total: attachments.length,
-        federation_signature_enabled: federationSignatureIsConfigured(),
-        strong_sources_count: strongSourcesCount,
-        weak_sources_count: weakSourcesCount
-      }
+      federation_signature: federationSignatureIsConfigured()
+        ? signFederationResponse(NODE_ID, response)
+        : null
     });
-  } catch (error) {
+  } catch (err) {
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : "Internal error"
+        error: err instanceof Error ? err.message : "Internal error"
       },
       { status: 500 }
     );
