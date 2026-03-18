@@ -1,4 +1,4 @@
-type DefenseGuardResult = {
+export type DefenseGuardResult = {
   blocked: boolean;
   level: "LOW" | "MEDIUM" | "HIGH";
   reason?: string;
@@ -18,30 +18,22 @@ export function applyDefenseGuard(input: {
 }): DefenseGuardResult {
   const msg = normalize(input.message);
 
-  // 🔴 HIGH RISK — guerra / difesa / uso forza
   const HIGH_RISK = [
-    // guerra / militare
     "robot da guerra",
     "robot militare",
     "war robot",
     "military robot",
-
-    // difesa personale / guardia
     "robot da difesa",
     "difesa personale",
     "robot da guardia",
     "guardia robot",
     "protezione fisica",
-
-    // azione fisica
     "neutralizzare",
     "immobilizzare",
     "attaccare",
     "colpire",
     "fermare aggressore",
     "uso della forza",
-
-    // armi
     "arma",
     "taser",
     "spray al peperoncino",
@@ -50,7 +42,6 @@ export function applyDefenseGuard(input: {
     "weaponize"
   ];
 
-  // 🟡 MEDIUM — sicurezza neutra
   const MEDIUM_RISK = [
     "sicurezza",
     "sorveglianza",
