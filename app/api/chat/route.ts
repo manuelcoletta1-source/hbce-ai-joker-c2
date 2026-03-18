@@ -8,6 +8,7 @@ import {
 } from "@/lib/federation-signature";
 import { applyNumericGuard } from "@/lib/numeric-guard";
 import { classifyRisk } from "@/lib/risk-classifier";
+import { applyCapabilityGuard } from "@/lib/capability-guard";
 
 export const runtime = "nodejs";
 
@@ -172,7 +173,8 @@ function shouldApplyTruth(
 
 function buildSystemPrompt(
   intent: "chat" | "research" | "general",
-  research: boolean
+  research: boolean,
+  capabilityGuidance?: string
 ): string {
   const base = [
     "You are JOKER-C2, the operational cybernetic entity of the HBCE system.",
@@ -182,7 +184,8 @@ function buildSystemPrompt(
     "Do not use canned placeholder responses.",
     "If the user greets you or asks who you are, answer clearly as JOKER-C2.",
     "If the user asks a general question, answer normally and concretely.",
-    "Do not invent current events, military operations, institutions, or statistics."
+    "Do not invent current events, military operations, institutions, or statistics.",
+    "Do not present potential integration capabilities as already active direct operational control."
   ];
 
   const intentBlock =
@@ -203,7 +206,14 @@ function buildSystemPrompt(
       ]
     : [];
 
-  return [...base, ...intentBlock, ...researchBlock].join(" ");
+  const capabilityBlock = capabilityGuidance
+    ? [
+        "Capability-guard guidance is active.",
+        capabilityGuidance
+      ]
+    : [];
+
+  return [...base, ...intentBlock, ...researchBlock, ...capabilityBlock].join(" ");
 }
 
 function buildInput(
@@ -481,12 +491,17 @@ export async function POST(req: Request) {
       });
     }
 
+    const capabilityGuard = applyCapabilityGuard({ message });
     const requestedResearch = normalizeResearch(body?.research);
     const research = detectedIntent === "research";
 
     const requestBody: any = {
       model: "gpt-4.1-mini",
-      instructions: buildSystemPrompt(detectedIntent, research),
+      instructions: buildSystemPrompt(
+        detectedIntent,
+        research,
+        capabilityGuard.guidance_prefix
+      ),
       input: buildInput(history, message, attachments)
     };
 
@@ -534,7 +549,8 @@ export async function POST(req: Request) {
             intent: detectedIntent,
             research,
             requested_research: requestedResearch,
-            risk: riskAssessment
+            risk: riskAssessment,
+            capability_guard: capabilityGuard
           },
           { status: 422 }
         );
@@ -582,6 +598,7 @@ export async function POST(req: Request) {
       truth: truthMeta,
       numeric_guard: numericGuard,
       risk: riskAssessment,
+      capability_guard: capabilityGuard,
       sources
     });
 
@@ -600,6 +617,7 @@ export async function POST(req: Request) {
       truth: truthMeta,
       numeric_guard: numericGuard,
       risk: riskAssessment,
+      capability_guard: capabilityGuard,
       anchor,
       federation_signature,
       meta: {
