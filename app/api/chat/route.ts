@@ -24,6 +24,7 @@ import {
   buildIPRPromptBlock,
   buildIPRResponseMeta
 } from "@/lib/joker-ipr";
+import { routeJokerModel } from "@/lib/model-router";
 
 export const runtime = "nodejs";
 
@@ -160,11 +161,12 @@ function extractTextAttachmentBlock(attachment: Attachment): string {
   ].join("\n");
 }
 
-function buildSystemPrompt(research: boolean): string {
+function buildSystemPrompt(research: boolean, mode: string): string {
   const base = [
     "You are JOKER-C2, the operational cybernetic entity of the HBCE system.",
     "Identity: IPR-AI-0001.",
     "Default node: HBCE-MATRIX-NODE-0001-TORINO.",
+    `Operational mode: ${mode}.`,
     "You process requests from the biological operator and return structured, precise, operational answers.",
     "Conversation history is part of the active operational context and must be used when provided.",
     "Server-side memory is part of the operational context when available.",
@@ -505,6 +507,13 @@ export async function POST(req: Request) {
       );
     }
 
+    const hasImages = attachments.some((item) => isImageAttachment(item.type));
+    const routing = routeJokerModel({
+      message,
+      hasImages,
+      research
+    });
+
     const iprMeta = buildIPRResponseMeta();
     const iprPromptBlock = buildIPRPromptBlock();
 
@@ -518,7 +527,10 @@ export async function POST(req: Request) {
         storage: dbIsConfigured() ? "redis" : "runtime",
         ipr_subject: iprMeta.subject_id,
         ipr_operator: iprMeta.operator_id,
-        ipr_node: iprMeta.node_id
+        ipr_node: iprMeta.node_id,
+        routed_provider: routing.provider,
+        routed_model: routing.model,
+        routed_mode: routing.mode
       }
     });
 
@@ -551,6 +563,7 @@ export async function POST(req: Request) {
         identity: iprMeta.subject_id,
         operator_id: iprMeta.operator_id,
         ipr: iprMeta,
+        routing,
         ledger: {
           event_id: ledgerEvent.id,
           hash: ledgerEvent.hash,
@@ -574,6 +587,7 @@ export async function POST(req: Request) {
         },
         signature,
         ipr: iprMeta,
+        routing,
         meta: {
           model: "memory-layer",
           ts: new Date().toISOString(),
@@ -619,7 +633,10 @@ export async function POST(req: Request) {
           model: "memory-layer",
           memory_write: true,
           ipr_subject: iprMeta.subject_id,
-          ipr_operator: iprMeta.operator_id
+          ipr_operator: iprMeta.operator_id,
+          routed_provider: routing.provider,
+          routed_model: routing.model,
+          routed_mode: routing.mode
         }
       });
 
@@ -632,6 +649,7 @@ export async function POST(req: Request) {
         identity: iprMeta.subject_id,
         operator_id: iprMeta.operator_id,
         ipr: iprMeta,
+        routing,
         ledger: {
           event_id: ledgerEvent.id,
           hash: ledgerEvent.hash,
@@ -655,6 +673,7 @@ export async function POST(req: Request) {
         },
         signature,
         ipr: iprMeta,
+        routing,
         meta: {
           model: "memory-layer",
           ts: new Date().toISOString(),
@@ -687,6 +706,17 @@ export async function POST(req: Request) {
       iprPromptBlock
     );
 
+    if (routing.provider !== "openai") {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Provider ${routing.provider} is routed but not yet implemented in the execution layer.`,
+          routing
+        },
+        { status: 501 }
+      );
+    }
+
     const textAttachments = attachments.filter((item) =>
       isTextAttachment(item.type, item.name)
     );
@@ -699,8 +729,8 @@ export async function POST(req: Request) {
     );
 
     const requestBody: any = {
-      model: "gpt-4.1-mini",
-      instructions: buildSystemPrompt(research),
+      model: routing.model,
+      instructions: buildSystemPrompt(research, routing.mode),
       input
     };
 
@@ -728,7 +758,11 @@ export async function POST(req: Request) {
         sources_count: sources.length,
         ipr_subject: iprMeta.subject_id,
         ipr_operator: iprMeta.operator_id,
-        ipr_node: iprMeta.node_id
+        ipr_node: iprMeta.node_id,
+        routed_provider: routing.provider,
+        routed_model: routing.model,
+        routed_mode: routing.mode,
+        routed_reason: routing.reason
       }
     });
 
@@ -740,6 +774,7 @@ export async function POST(req: Request) {
       identity: iprMeta.subject_id,
       operator_id: iprMeta.operator_id,
       ipr: iprMeta,
+      routing,
       ledger: {
         event_id: ledgerEvent.id,
         hash: ledgerEvent.hash,
@@ -763,6 +798,7 @@ export async function POST(req: Request) {
       },
       signature,
       ipr: iprMeta,
+      routing,
       meta: {
         model: rawResponse.model,
         ts: new Date().toISOString(),
