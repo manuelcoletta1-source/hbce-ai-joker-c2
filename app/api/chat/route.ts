@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createAnchor } from "@/lib/anchor";
 import { validateTruth } from "@/lib/truth-validator";
+import { signFederationResponse } from "@/lib/federation-signature";
 
 export const runtime = "nodejs";
 
@@ -46,6 +47,10 @@ const client = new OpenAI({
 });
 
 const MAX_HISTORY_TURNS = 6;
+const NODE_ID =
+  process.env.JOKER_NODE_ID || "HBCE-MATRIX-NODE-0001-TORINO";
+const NODE_IDENTITY =
+  process.env.JOKER_IDENTITY || "IPR-AI-0001";
 
 function normalizeMessage(message?: string): string {
   if (!message || typeof message !== "string") return "";
@@ -150,18 +155,24 @@ function detectIntent(message: string): "chat" | "research" | "general" {
   return "general";
 }
 
-function shouldApplyTruth(intent: "chat" | "research" | "general", research: boolean): boolean {
+function shouldApplyTruth(
+  intent: "chat" | "research" | "general",
+  research: boolean
+): boolean {
   if (intent === "chat") return false;
   if (research) return true;
   if (intent === "research") return true;
   return false;
 }
 
-function buildSystemPrompt(intent: "chat" | "research" | "general", research: boolean): string {
+function buildSystemPrompt(
+  intent: "chat" | "research" | "general",
+  research: boolean
+): string {
   const base = [
     "You are JOKER-C2, the operational cybernetic entity of the HBCE system.",
-    "Identity: IPR-AI-0001.",
-    "Default node: HBCE-MATRIX-NODE-0001-TORINO.",
+    `Identity: ${NODE_IDENTITY}.`,
+    `Default node: ${NODE_ID}.`,
     "You must answer naturally and directly.",
     "Do not use canned placeholder responses.",
     "If the user greets you or asks who you are, answer clearly as JOKER-C2.",
@@ -180,7 +191,8 @@ function buildSystemPrompt(intent: "chat" | "research" | "general", research: bo
     ? [
         "Research mode is active.",
         "Use web search before answering.",
-        "If sources are weak or missing, be explicit and cautious."
+        "If sources are weak or missing, be explicit and cautious.",
+        "Provide structured analysis and keep claims grounded."
       ]
     : [];
 
@@ -335,11 +347,7 @@ export async function POST(req: Request) {
     const detectedIntent = detectIntent(message);
     const requestedResearch = normalizeResearch(body?.research);
 
-    // Regola cruciale: niente research su chat/general, anche se il frontend lo manda.
-    const research =
-      detectedIntent === "research"
-        ? true
-        : false;
+    const research = detectedIntent === "research";
 
     const requestBody: any = {
       model: "gpt-4.1-mini",
@@ -416,6 +424,11 @@ export async function POST(req: Request) {
       sources
     });
 
+    const federation_signature = signFederationResponse(
+      NODE_ID,
+      finalResponse
+    );
+
     return NextResponse.json({
       ok: true,
       joker: "C2",
@@ -426,11 +439,12 @@ export async function POST(req: Request) {
       requested_research: requestedResearch,
       truth: truthMeta,
       anchor,
+      federation_signature,
       meta: {
         model: rawResponse.model || "gpt-4.1-mini",
         ts: new Date().toISOString(),
-        node: "HBCE-MATRIX-NODE-0001-TORINO",
-        identity: "IPR-AI-0001",
+        node: NODE_ID,
+        identity: NODE_IDENTITY,
         history_turns_used: history.length,
         attachments_total: attachments.length
       }
