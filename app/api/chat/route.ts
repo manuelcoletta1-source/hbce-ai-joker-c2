@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createAnchor } from "@/lib/anchor";
 import { validateTruth } from "@/lib/truth-validator";
-import { signFederationResponse } from "@/lib/federation-signature";
+import {
+  signFederationResponse,
+  federationSignatureIsConfigured
+} from "@/lib/federation-signature";
 
 export const runtime = "nodejs";
 
@@ -424,10 +427,9 @@ export async function POST(req: Request) {
       sources
     });
 
-    const federation_signature = signFederationResponse(
-      NODE_ID,
-      finalResponse
-    );
+    const federation_signature = federationSignatureIsConfigured()
+      ? signFederationResponse(NODE_ID, finalResponse)
+      : null;
 
     return NextResponse.json({
       ok: true,
@@ -446,7 +448,8 @@ export async function POST(req: Request) {
         node: NODE_ID,
         identity: NODE_IDENTITY,
         history_turns_used: history.length,
-        attachments_total: attachments.length
+        attachments_total: attachments.length,
+        federation_signature_enabled: federationSignatureIsConfigured()
       }
     });
   } catch (error) {
