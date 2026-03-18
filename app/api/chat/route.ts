@@ -139,7 +139,6 @@ function detectIntent(message: string): "chat" | "research" | "general" {
     m.includes("geopolitica") ||
     m.includes("guerra") ||
     m.includes("crisi") ||
-    m.includes("ue") ||
     m.includes("nato") ||
     m.includes("sanzioni") ||
     m.includes("iran") ||
@@ -151,18 +150,11 @@ function detectIntent(message: string): "chat" | "research" | "general" {
   return "general";
 }
 
-function shouldApplyTruth(message: string, research: boolean): boolean {
+function shouldApplyTruth(intent: "chat" | "research" | "general", research: boolean): boolean {
+  if (intent === "chat") return false;
   if (research) return true;
-
-  const m = message.toLowerCase();
-
-  return (
-    m.includes("notizie") ||
-    m.includes("oggi") ||
-    m.includes("geopolitica") ||
-    m.includes("guerra") ||
-    m.includes("crisi")
-  );
+  if (intent === "research") return true;
+  return false;
 }
 
 function buildSystemPrompt(intent: "chat" | "research" | "general", research: boolean): string {
@@ -170,29 +162,19 @@ function buildSystemPrompt(intent: "chat" | "research" | "general", research: bo
     "You are JOKER-C2, the operational cybernetic entity of the HBCE system.",
     "Identity: IPR-AI-0001.",
     "Default node: HBCE-MATRIX-NODE-0001-TORINO.",
-    "You must answer naturally and directly, not with canned placeholder responses.",
-    "If the user greets you or asks who you are, answer as JOKER-C2 in a concise but clear way.",
-    "If the user asks a general question, answer the question normally.",
-    "Be concrete, operational, and coherent.",
-    "Do not claim capabilities that are not active.",
-    "Do not invent military operations, institutions, statistics, or current events."
+    "You must answer naturally and directly.",
+    "Do not use canned placeholder responses.",
+    "If the user greets you or asks who you are, answer clearly as JOKER-C2.",
+    "If the user asks a general question, answer normally and concretely.",
+    "Do not invent current events, military operations, institutions, or statistics."
   ];
 
   const intentBlock =
     intent === "chat"
-      ? [
-          "Intent: chat.",
-          "Prioritize natural conversational response."
-        ]
+      ? ["Intent: chat.", "Respond conversationally."]
       : intent === "research"
-        ? [
-            "Intent: research.",
-            "Prioritize current information with sources."
-          ]
-        : [
-            "Intent: general.",
-            "Answer as a normal capable assistant, not as a placeholder."
-          ];
+        ? ["Intent: research.", "Prioritize current information and sources."]
+        : ["Intent: general.", "Answer directly and use your reasoning normally."];
 
   const researchBlock = research
     ? [
@@ -333,10 +315,7 @@ export async function POST(req: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "Missing OPENAI_API_KEY on server"
-        },
+        { ok: false, error: "Missing OPENAI_API_KEY on server" },
         { status: 500 }
       );
     }
@@ -348,16 +327,19 @@ export async function POST(req: Request) {
 
     if (!message && attachments.length === 0) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "Missing message or attachments"
-        },
+        { ok: false, error: "Missing message or attachments" },
         { status: 400 }
       );
     }
 
     const detectedIntent = detectIntent(message);
-    const research = normalizeResearch(body?.research) || detectedIntent === "research";
+    const requestedResearch = normalizeResearch(body?.research);
+
+    // Regola cruciale: niente research su chat/general, anche se il frontend lo manda.
+    const research =
+      detectedIntent === "research"
+        ? true
+        : false;
 
     const requestBody: any = {
       model: "gpt-4.1-mini",
@@ -391,7 +373,7 @@ export async function POST(req: Request) {
           note?: string;
         };
 
-    if (shouldApplyTruth(message, research)) {
+    if (shouldApplyTruth(detectedIntent, research)) {
       truthMeta = validateTruth({
         text: responseText,
         research,
@@ -403,7 +385,10 @@ export async function POST(req: Request) {
           {
             ok: false,
             error: "Truth validation blocked output",
-            truth: truthMeta
+            truth: truthMeta,
+            intent: detectedIntent,
+            research,
+            requested_research: requestedResearch
           },
           { status: 422 }
         );
@@ -438,6 +423,7 @@ export async function POST(req: Request) {
       sources,
       intent: detectedIntent,
       research,
+      requested_research: requestedResearch,
       truth: truthMeta,
       anchor,
       meta: {
