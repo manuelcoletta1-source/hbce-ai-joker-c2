@@ -6,6 +6,7 @@ import {
   signFederationResponse,
   federationSignatureIsConfigured
 } from "@/lib/federation-signature";
+import { applyNumericGuard } from "@/lib/numeric-guard";
 
 export const runtime = "nodejs";
 
@@ -195,7 +196,8 @@ function buildSystemPrompt(
         "Research mode is active.",
         "Use web search before answering.",
         "If sources are weak or missing, be explicit and cautious.",
-        "Provide structured analysis and keep claims grounded."
+        "Provide structured analysis and keep claims grounded.",
+        "If the user asks for precise numbers, percentages, euro values, or quantified impacts, do not present speculative values as certified facts."
       ]
     : [];
 
@@ -326,6 +328,48 @@ function extractSources(rawResponse: any): SourceItem[] {
   return results;
 }
 
+function countStrongSources(sources: SourceItem[]): number {
+  const strongDomains = [
+    "reuters.com",
+    "apnews.com",
+    "bbc.com",
+    "bbc.co.uk",
+    "ft.com",
+    "bloomberg.com",
+    "ec.europa.eu",
+    "europa.eu",
+    "consilium.europa.eu",
+    "eeas.europa.eu",
+    "enisa.europa.eu",
+    "nato.int",
+    "un.org",
+    "imf.org",
+    "worldbank.org",
+    "oecd.org",
+    "gov.uk"
+  ];
+
+  return sources.filter((source) => {
+    const url = (source.url || "").toLowerCase();
+    return strongDomains.some((domain) => url.includes(domain));
+  }).length;
+}
+
+function countWeakSources(sources: SourceItem[]): number {
+  const weakDomains = [
+    "wikipedia.org",
+    "blogspot.",
+    "medium.com",
+    "substack.com",
+    "wordpress.com"
+  ];
+
+  return sources.filter((source) => {
+    const url = (source.url || "").toLowerCase();
+    return weakDomains.some((domain) => url.includes(domain));
+  }).length;
+}
+
 export async function POST(req: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -372,6 +416,8 @@ export async function POST(req: Request) {
         : "JOKER-C2 processed the request but returned no text output.";
 
     const sources = research ? extractSources(rawResponse) : [];
+    const strongSourcesCount = countStrongSources(sources);
+    const weakSourcesCount = countWeakSources(sources);
 
     let truthMeta:
       | {
@@ -413,10 +459,29 @@ export async function POST(req: Request) {
       };
     }
 
-    const finalResponse =
-      truthMeta.decision === "WARN"
-        ? `[TRUTH WARNING]\n${responseText}`
-        : responseText;
+    const numericGuard = applyNumericGuard({
+      message,
+      response: responseText,
+      research,
+      strong_sources_count: strongSourcesCount,
+      weak_sources_count: weakSourcesCount
+    });
+
+    let finalResponse = responseText;
+
+    if (numericGuard.numeric_request) {
+      if (numericGuard.mode === "estimated-range") {
+        finalResponse = `${numericGuard.guidance_prefix}\n\n${responseText}`;
+      }
+
+      if (numericGuard.mode === "insufficient-evidence") {
+        finalResponse = numericGuard.guidance_prefix;
+      }
+    }
+
+    if (truthMeta.decision === "WARN") {
+      finalResponse = `[TRUTH WARNING]\n${finalResponse}`;
+    }
 
     const anchor = createAnchor({
       message,
@@ -424,6 +489,7 @@ export async function POST(req: Request) {
       research,
       response: finalResponse,
       truth: truthMeta,
+      numeric_guard: numericGuard,
       sources
     });
 
@@ -440,6 +506,7 @@ export async function POST(req: Request) {
       research,
       requested_research: requestedResearch,
       truth: truthMeta,
+      numeric_guard: numericGuard,
       anchor,
       federation_signature,
       meta: {
@@ -449,7 +516,9 @@ export async function POST(req: Request) {
         identity: NODE_IDENTITY,
         history_turns_used: history.length,
         attachments_total: attachments.length,
-        federation_signature_enabled: federationSignatureIsConfigured()
+        federation_signature_enabled: federationSignatureIsConfigured(),
+        strong_sources_count: strongSourcesCount,
+        weak_sources_count: weakSourcesCount
       }
     });
   } catch (error) {
