@@ -16,6 +16,7 @@ type ExecuteResult = {
   error?: string;
   provider: string;
   model: string;
+  attempts: number;
 };
 
 async function executeOpenAI(requestBody: any): Promise<ExecuteResult> {
@@ -26,42 +27,70 @@ async function executeOpenAI(requestBody: any): Promise<ExecuteResult> {
       ok: true,
       data: response,
       provider: "openai",
-      model: requestBody.model
+      model: requestBody.model,
+      attempts: 1
     };
   } catch (err: any) {
     return {
       ok: false,
       error: err?.message || "OpenAI error",
       provider: "openai",
-      model: requestBody.model
+      model: requestBody.model,
+      attempts: 1
     };
   }
 }
+
+// fallback order (puoi espandere dopo)
+const FALLBACK_CHAIN = ["openai"]; 
 
 export async function executeWithFallback(
   input: ExecuteInput
 ): Promise<ExecuteResult> {
   const { routing, requestBody } = input;
 
-  // 1. Primary execution
-  if (routing.provider === "openai") {
-    const result = await executeOpenAI(requestBody);
+  const providersToTry = [
+    routing.provider,
+    ...FALLBACK_CHAIN.filter((p) => p !== routing.provider)
+  ];
 
-    if (result.ok) return result;
+  let lastError: string | undefined;
 
-    // fallback automatico
-    return {
-      ok: false,
-      error: `Primary provider failed: ${result.error}`,
-      provider: routing.provider,
-      model: routing.model
-    };
+  for (let i = 0; i < providersToTry.length; i++) {
+    const provider = providersToTry[i];
+
+    let result: ExecuteResult;
+
+    switch (provider) {
+      case "openai":
+        result = await executeOpenAI(requestBody);
+        break;
+
+      default:
+        result = {
+          ok: false,
+          error: `Provider ${provider} not implemented`,
+          provider,
+          model: requestBody.model,
+          attempts: i + 1
+        };
+    }
+
+    if (result.ok) {
+      return {
+        ...result,
+        attempts: i + 1
+      };
+    }
+
+    lastError = result.error;
   }
 
   return {
     ok: false,
-    error: `Provider ${routing.provider} not implemented yet`,
+    error: `All providers failed: ${lastError}`,
     provider: routing.provider,
-    model: routing.model
+    model: routing.model,
+    attempts: providersToTry.length
   };
 }
