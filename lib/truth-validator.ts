@@ -55,15 +55,14 @@ const WEAK_SOURCE_PATTERNS = [
 
 const SUSPICIOUS_PATTERNS = [
   /\boperazione\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+\b/u,
-  /\bultim[ea]\s+notizi[ea]\b/i,
-  /\bin tempo reale\b/i,
   /\bsecondo fonti non confermate\b/i
 ];
 
 const HARD_BLOCK_PATTERNS = [
   /\bnon dispongo di accesso diretto\b/i,
   /\bknowledge cutoff\b/i,
-  /\bfino a giugno 2024\b/i
+  /\bfino a giugno 2024\b/i,
+  /\bnon ho accesso in tempo reale\b/i
 ];
 
 function normalizeUrl(url?: string): string {
@@ -112,7 +111,7 @@ export function validateTruth(
   const sources = Array.isArray(input.sources) ? input.sources : [];
 
   const reasons: string[] = [];
-  let score = 50;
+  let score = 60;
 
   if (!text) {
     return {
@@ -127,64 +126,76 @@ export function validateTruth(
 
   const { strong, weak } = scoreSources(sources);
 
+  const hardBlockMatches = countPatternMatches(text, HARD_BLOCK_PATTERNS);
+  if (hardBlockMatches > 0) {
+    return {
+      level: "LOW",
+      decision: "BLOCK",
+      score: 0,
+      reasons: ["Response contains a hard-block stale-access pattern."],
+      weak_sources: weak,
+      strong_sources: strong
+    };
+  }
+
   if (input.research) {
     if (sources.length === 0) {
-      score -= 30;
+      score -= 20;
       reasons.push("Research mode active but no sources returned.");
     }
 
     if (strong.length > 0) {
-      score += Math.min(strong.length * 10, 30);
+      score += Math.min(strong.length * 8, 24);
       reasons.push("Strong sources detected.");
     }
 
     if (weak.length > 0) {
-      score -= Math.min(weak.length * 8, 24);
+      score -= Math.min(weak.length * 6, 18);
       reasons.push("Weak or low-authority sources detected.");
     }
   } else {
-    if (sources.length > 0 && strong.length > 0) {
-      score += 10;
-      reasons.push("Supporting sources present outside research mode.");
+    if (strong.length > 0) {
+      score += 8;
+      reasons.push("Supporting sources present.");
     }
   }
 
   const suspiciousMatches = countPatternMatches(text, SUSPICIOUS_PATTERNS);
   if (suspiciousMatches > 0) {
-    score -= suspiciousMatches * 8;
-    reasons.push("Suspicious geopolitical or recency phrasing detected.");
+    score -= suspiciousMatches * 10;
+    reasons.push("Suspicious unsupported event naming detected.");
   }
 
-  const hardBlockMatches = countPatternMatches(text, HARD_BLOCK_PATTERNS);
-  if (hardBlockMatches > 0 && input.research) {
-    score -= 50;
-    reasons.push("Response claims lack of live access during research mode.");
-  }
-
-  if (/\b\d{1,3}(?:[.,]\d{3})*(?:\s*miliardi|\s*milioni|\s*%)\b/i.test(text) && strong.length === 0) {
-    score -= 12;
+  if (
+    /\b\d{1,3}(?:[.,]\d{3})*(?:\s*miliardi|\s*milioni|\s*%)\b/i.test(text) &&
+    strong.length === 0
+  ) {
+    score -= 10;
     reasons.push("Precise quantitative claims without strong sources.");
   }
 
-  if (/\bsi conferma\b|\bè certo\b|\bsicuramente\b/i.test(text) && strong.length === 0) {
-    score -= 10;
+  if (
+    /\bsi conferma\b|\bè certo\b|\bsicuramente\b/i.test(text) &&
+    strong.length === 0
+  ) {
+    score -= 8;
     reasons.push("High-confidence wording without strong sourcing.");
   }
 
   score = Math.max(0, Math.min(100, score));
 
-  let level: TruthLevel = "MEDIUM";
-  let decision: TruthDecision = "WARN";
+  let level: TruthLevel;
+  let decision: TruthDecision;
 
   if (score >= 75) {
     level = "HIGH";
     decision = "PASS";
-  } else if (score >= 45) {
+  } else if (score >= 35) {
     level = "MEDIUM";
     decision = "WARN";
   } else {
     level = "LOW";
-    decision = "BLOCK";
+    decision = "WARN";
   }
 
   if (reasons.length === 0) {
