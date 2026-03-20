@@ -1,5 +1,8 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import scenarios from "@/public/data/c2-lex-scenarios.json";
-import { runC2LexEngine } from "@/lib/c2-lex-engine";
 
 type ScenarioRecord = {
   id: string;
@@ -11,40 +14,152 @@ type ScenarioRecord = {
   message: string;
 };
 
-export default function C2LexPage({
-  searchParams
-}: {
-  searchParams?: { scenario?: string };
-}) {
-  const dataset = scenarios as ScenarioRecord[];
-  const requestedScenarioId = searchParams?.scenario;
-  const selectedScenario =
-    dataset.find((scenario) => scenario.id === requestedScenarioId) ?? dataset[0];
+type EngineCheckStatus = "passed" | "limited" | "blocked" | "insufficient";
 
-  const result = runC2LexEngine({
-    sessionId: selectedScenario.id,
-    message: selectedScenario.message,
-    role: selectedScenario.role,
-    nodeContext: selectedScenario.nodeContext,
-    continuityReference: selectedScenario.continuityReference
-  });
+type EngineRisk = "ordinary" | "sensitive" | "elevated";
 
-  const governanceItems = [
-    { label: "Origine", value: formatCheck(result.governanceChecks.origin) },
-    { label: "Ruolo", value: formatCheck(result.governanceChecks.role) },
-    { label: "Intento", value: formatCheck(result.governanceChecks.intent) },
-    { label: "Contesto", value: formatCheck(result.governanceChecks.context) },
-    { label: "Policy", value: formatCheck(result.governanceChecks.policy) },
-    {
-      label: "Ammissibilità",
-      value: formatCheck(result.governanceChecks.admissibility)
-    },
-    { label: "Rischio", value: formatRisk(result.governanceChecks.risk) },
-    {
-      label: "Tracciabilità",
-      value: formatCheck(result.governanceChecks.traceability)
+type EngineResult = {
+  sessionId: string;
+  sessionState: string;
+  intentClass: string;
+  outcomeClass: string;
+  policyScope: string;
+  continuityReference: string;
+  summary: string;
+  nextStep: string;
+  response: string;
+  governanceChecks: {
+    origin: EngineCheckStatus;
+    role: EngineCheckStatus;
+    intent: EngineCheckStatus;
+    context: EngineCheckStatus;
+    policy: EngineCheckStatus;
+    admissibility: EngineCheckStatus;
+    risk: EngineRisk;
+    traceability: EngineCheckStatus;
+  };
+};
+
+type ApiResponse =
+  | {
+      ok: true;
+      input: {
+        sessionId: string;
+        role: string;
+        nodeContext: string;
+        continuityReference: string;
+        message: string;
+      };
+      result: EngineResult;
     }
-  ];
+  | {
+      ok: false;
+      error: string;
+    };
+
+export default function C2LexPage() {
+  const searchParams = useSearchParams();
+  const dataset = scenarios as ScenarioRecord[];
+
+  const requestedScenarioId = searchParams.get("scenario");
+  const selectedScenario = useMemo(
+    () =>
+      dataset.find((scenario) => scenario.id === requestedScenarioId) ?? dataset[0],
+    [dataset, requestedScenarioId]
+  );
+
+  const [sessionId, setSessionId] = useState(selectedScenario.id);
+  const [role, setRole] = useState(selectedScenario.role);
+  const [nodeContext, setNodeContext] = useState(selectedScenario.nodeContext);
+  const [continuityReference, setContinuityReference] = useState(
+    selectedScenario.continuityReference
+  );
+  const [message, setMessage] = useState(selectedScenario.message);
+  const [result, setResult] = useState<EngineResult | null>(null);
+  const [error, setError] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setSessionId(selectedScenario.id);
+    setRole(selectedScenario.role);
+    setNodeContext(selectedScenario.nodeContext);
+    setContinuityReference(selectedScenario.continuityReference);
+    setMessage(selectedScenario.message);
+    void submitToEngine({
+      sessionId: selectedScenario.id,
+      role: selectedScenario.role,
+      nodeContext: selectedScenario.nodeContext,
+      continuityReference: selectedScenario.continuityReference,
+      message: selectedScenario.message
+    });
+  }, [selectedScenario]);
+
+  async function submitToEngine(payload: {
+    sessionId: string;
+    role: string;
+    nodeContext: string;
+    continuityReference: string;
+    message: string;
+  }) {
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/c2-lex", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = (await response.json()) as ApiResponse;
+
+      if (!response.ok || !data.ok) {
+        setResult(null);
+        setError(data.ok ? "Errore inatteso del motore C2-Lex." : data.error);
+        return;
+      }
+
+      setResult(data.result);
+    } catch {
+      setResult(null);
+      setError("Impossibile contattare il motore C2-Lex.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    await submitToEngine({
+      sessionId,
+      role,
+      nodeContext,
+      continuityReference,
+      message
+    });
+  }
+
+  const governanceItems = result
+    ? [
+        { label: "Origine", value: formatCheck(result.governanceChecks.origin) },
+        { label: "Ruolo", value: formatCheck(result.governanceChecks.role) },
+        { label: "Intento", value: formatCheck(result.governanceChecks.intent) },
+        { label: "Contesto", value: formatCheck(result.governanceChecks.context) },
+        { label: "Policy", value: formatCheck(result.governanceChecks.policy) },
+        {
+          label: "Ammissibilità",
+          value: formatCheck(result.governanceChecks.admissibility)
+        },
+        { label: "Rischio", value: formatRisk(result.governanceChecks.risk) },
+        {
+          label: "Tracciabilità",
+          value: formatCheck(result.governanceChecks.traceability)
+        }
+      ]
+    : [];
 
   return (
     <main className="min-h-screen bg-[#0b0f14] text-[#e8eef7]">
@@ -69,14 +184,14 @@ export default function C2LexPage({
             <div className="grid min-w-[280px] grid-cols-1 gap-3 sm:grid-cols-2">
               <StatusCard
                 label="Stato sessione"
-                value={formatLabel(result.sessionState)}
+                value={result ? formatLabel(result.sessionState) : "Inizializzazione"}
               />
               <StatusCard
                 label="Classe esito"
-                value={formatLabel(result.outcomeClass)}
+                value={result ? formatLabel(result.outcomeClass) : "In attesa"}
               />
-              <StatusCard label="Ruolo" value={selectedScenario.role} />
-              <StatusCard label="Nodo" value={selectedScenario.nodeContext} />
+              <StatusCard label="Ruolo" value={role} />
+              <StatusCard label="Nodo" value={nodeContext} />
             </div>
           </div>
         </header>
@@ -111,62 +226,139 @@ export default function C2LexPage({
           </div>
         </Panel>
 
-        <section className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
-          <div className="space-y-6">
-            <Panel title="Contesto operativo">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <InfoRow label="Scenario" value={selectedScenario.title} />
-                <InfoRow label="Categoria" value={formatLabel(selectedScenario.category)} />
-                <InfoRow
-                  label="Intent class"
-                  value={formatLabel(result.intentClass)}
+        <section className="grid gap-6 lg:grid-cols-[1.25fr_1.25fr]">
+          <Panel title="Input live C2-Lex">
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <InputField
+                  label="Session ID"
+                  value={sessionId}
+                  onChange={setSessionId}
                 />
-                <InfoRow label="Policy scope" value={result.policyScope} />
-                <InfoRow label="Session ref" value={result.sessionId} />
-                <InfoRow
+                <InputField label="Ruolo" value={role} onChange={setRole} />
+                <InputField
+                  label="Nodo"
+                  value={nodeContext}
+                  onChange={setNodeContext}
+                />
+                <InputField
                   label="Continuity reference"
-                  value={result.continuityReference}
+                  value={continuityReference}
+                  onChange={setContinuityReference}
                 />
               </div>
-            </Panel>
 
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                  Messaggio
+                </div>
+                <textarea
+                  value={message}
+                  onChange={(event) => setMessage(event.target.value)}
+                  className="mt-3 min-h-[150px] w-full rounded-2xl border border-white/10 bg-[#0b0f14] p-4 text-sm leading-7 text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-cyan-400/30"
+                  placeholder="Scrivi l’input da inviare al motore governato C2-Lex..."
+                />
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm text-slate-400">
+                  Il motore classifica intento, controlli di governance, classe
+                  di esito e stato della sessione.
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-5 py-3 text-sm font-medium text-cyan-100 transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSubmitting ? "Elaborazione..." : "Invia al motore C2-Lex"}
+                </button>
+              </div>
+            </form>
+          </Panel>
+
+          <Panel title="Contesto operativo">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoRow label="Scenario" value={selectedScenario.title} />
+              <InfoRow label="Categoria" value={formatLabel(selectedScenario.category)} />
+              <InfoRow
+                label="Intent class"
+                value={result ? formatLabel(result.intentClass) : "In attesa"}
+              />
+              <InfoRow
+                label="Policy scope"
+                value={result ? result.policyScope : "In attesa"}
+              />
+              <InfoRow label="Session ref" value={sessionId} />
+              <InfoRow label="Continuity reference" value={continuityReference} />
+            </div>
+          </Panel>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
+          <div className="space-y-6">
             <Panel title="Interazione C2-Lex">
               <div className="space-y-4">
                 <MessageBubble
                   kind="input"
                   title="Input operatore"
-                  body={selectedScenario.message}
+                  body={message}
                 />
 
-                <MessageBubble
-                  kind={result.outcomeClass === "blocked" ? "blocked" : "qualified"}
-                  title="Esito C2-Lex"
-                  body={result.response}
-                />
+                {error ? (
+                  <MessageBubble kind="blocked" title="Errore C2-Lex" body={error} />
+                ) : result ? (
+                  <MessageBubble
+                    kind={result.outcomeClass === "blocked" ? "blocked" : "qualified"}
+                    title="Esito C2-Lex"
+                    body={result.response}
+                  />
+                ) : (
+                  <MessageBubble
+                    kind="qualified"
+                    title="Esito C2-Lex"
+                    body="In attesa di elaborazione del motore."
+                  />
+                )}
 
                 <div className="grid gap-3 sm:grid-cols-3">
                   <MiniBadge
                     label="Classe"
-                    value={formatLabel(result.outcomeClass)}
+                    value={result ? formatLabel(result.outcomeClass) : "In Attesa"}
                   />
                   <MiniBadge
                     label="Stato"
-                    value={formatLabel(result.sessionState)}
+                    value={result ? formatLabel(result.sessionState) : "In Attesa"}
                   />
-                  <MiniBadge label="Next step" value={result.nextStep} />
+                  <MiniBadge
+                    label="Next step"
+                    value={result ? result.nextStep : "Non disponibile"}
+                  />
                 </div>
               </div>
             </Panel>
 
             <Panel title="Esito operativo">
               <div className="grid gap-4 sm:grid-cols-2">
-                <OutcomeCard title="Sintesi" body={result.summary} />
-                <OutcomeCard title="Risposta qualificata" body={result.response} />
+                <OutcomeCard
+                  title="Sintesi"
+                  body={result ? result.summary : "Nessun esito disponibile."}
+                />
+                <OutcomeCard
+                  title="Risposta qualificata"
+                  body={
+                    result
+                      ? result.response
+                      : "Il motore non ha ancora restituito una risposta."
+                  }
+                />
                 <OutcomeCard
                   title="Policy scope"
-                  body={result.policyScope}
+                  body={result ? result.policyScope : "Non disponibile"}
                 />
-                <OutcomeCard title="Passo successivo" body={result.nextStep} />
+                <OutcomeCard
+                  title="Passo successivo"
+                  body={result ? result.nextStep : "Non disponibile"}
+                />
               </div>
             </Panel>
           </div>
@@ -178,26 +370,28 @@ export default function C2LexPage({
                   step="01"
                   title="OPEN"
                   body="Sessione aperta in contesto governato."
-                  active={result.sessionState === "OPEN"}
+                  active={result?.sessionState === "OPEN"}
                 />
                 <TimelineItem
                   step="02"
                   title="INTERPRETING"
-                  body={`Intento classificato come ${formatLabel(result.intentClass)}.`}
-                  active={result.sessionState === "INTERPRETING"}
+                  body={`Intento classificato come ${
+                    result ? formatLabel(result.intentClass) : "in attesa"
+                  }.`}
+                  active={result?.sessionState === "INTERPRETING"}
                 />
                 <TimelineItem
                   step="03"
                   title="VALIDATING"
                   body="Verifica di ruolo, contesto, policy e ammissibilità."
-                  active={result.sessionState === "VALIDATING"}
+                  active={result?.sessionState === "VALIDATING"}
                 />
                 <TimelineItem
                   step="04"
-                  title={result.sessionState}
-                  body={`Esito finale della sessione: ${formatLabel(
-                    result.outcomeClass
-                  )}.`}
+                  title={result?.sessionState ?? "PENDING"}
+                  body={`Esito finale della sessione: ${
+                    result ? formatLabel(result.outcomeClass) : "in attesa"
+                  }.`}
                   active
                 />
               </div>
@@ -205,15 +399,21 @@ export default function C2LexPage({
 
             <Panel title="Controlli di governance">
               <ul className="space-y-3 text-sm leading-6 text-slate-300">
-                {governanceItems.map((item) => (
-                  <li
-                    key={item.label}
-                    className="rounded-2xl border border-white/10 bg-black/20 p-3"
-                  >
-                    <span className="font-medium text-white">{item.label}</span>
-                    <div>{item.value}</div>
+                {governanceItems.length > 0 ? (
+                  governanceItems.map((item) => (
+                    <li
+                      key={item.label}
+                      className="rounded-2xl border border-white/10 bg-black/20 p-3"
+                    >
+                      <span className="font-medium text-white">{item.label}</span>
+                      <div>{item.value}</div>
+                    </li>
+                  ))
+                ) : (
+                  <li className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                    In attesa dei controlli del motore.
                   </li>
-                ))}
+                )}
               </ul>
             </Panel>
 
@@ -221,24 +421,23 @@ export default function C2LexPage({
               <div className="space-y-3 text-sm leading-6 text-slate-300">
                 <InfoRow
                   label="Session state"
-                  value={formatLabel(result.sessionState)}
+                  value={result ? formatLabel(result.sessionState) : "In attesa"}
                 />
                 <InfoRow
                   label="Outcome class"
-                  value={formatLabel(result.outcomeClass)}
+                  value={result ? formatLabel(result.outcomeClass) : "In attesa"}
                 />
                 <InfoRow
                   label="Audit mode"
                   value={
-                    result.governanceChecks.traceability === "passed"
-                      ? "Session-linked"
-                      : "Limited"
+                    result
+                      ? result.governanceChecks.traceability === "passed"
+                        ? "Session-linked"
+                        : "Limited"
+                      : "In attesa"
                   }
                 />
-                <InfoRow
-                  label="Continuity reference"
-                  value={result.continuityReference}
-                />
+                <InfoRow label="Continuity reference" value={continuityReference} />
               </div>
             </Panel>
           </div>
@@ -252,6 +451,29 @@ export default function C2LexPage({
         </footer>
       </section>
     </main>
+  );
+}
+
+function InputField({
+  label,
+  value,
+  onChange
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="rounded-2xl border border-white/10 bg-black/20 p-4">
+      <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+        {label}
+      </div>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-3 w-full border-none bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-600"
+      />
+    </label>
   );
 }
 
