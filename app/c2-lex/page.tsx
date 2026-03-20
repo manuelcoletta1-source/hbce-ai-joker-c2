@@ -1,12 +1,33 @@
+import { runC2LexEngine } from "@/lib/c2-lex-engine";
+
 export default function C2LexPage() {
-  const sessionState = "CONTEXTUALIZING";
-  const intentClass = "Consultazione operativa";
-  const policyScope = "HBCE / Governed Interaction";
-  const roleProfile = "Operatore supervisionato";
-  const nodeContext = "HBCE-MATRIX-NODE-0001-TORINO";
-  const continuityRef = "C2L-SESSION-DEMO-0001";
-  const outcomeClass = "Risposta qualificata";
-  const governanceCheck = "Ruolo verificato · contesto coerente · nessuna attivazione implicita";
+  const demoInput =
+    "Mostrami lo stato corrente del modulo C2-Lex e chiarisci se questa sessione è in semplice consultazione oppure in attivazione operativa.";
+
+  const result = runC2LexEngine({
+    sessionId: "C2L-SESSION-DEMO-0001",
+    message: demoInput,
+    role: "Operatore supervisionato",
+    nodeContext: "HBCE-MATRIX-NODE-0001-TORINO",
+    continuityReference: "C2L-SESSION-DEMO-0001"
+  });
+
+  const governanceItems = [
+    { label: "Origine", value: formatCheck(result.governanceChecks.origin) },
+    { label: "Ruolo", value: formatCheck(result.governanceChecks.role) },
+    { label: "Intento", value: formatCheck(result.governanceChecks.intent) },
+    { label: "Contesto", value: formatCheck(result.governanceChecks.context) },
+    { label: "Policy", value: formatCheck(result.governanceChecks.policy) },
+    {
+      label: "Ammissibilità",
+      value: formatCheck(result.governanceChecks.admissibility)
+    },
+    { label: "Rischio", value: formatRisk(result.governanceChecks.risk) },
+    {
+      label: "Tracciabilità",
+      value: formatCheck(result.governanceChecks.traceability)
+    }
+  ];
 
   return (
     <main className="min-h-screen bg-[#0b0f14] text-[#e8eef7]">
@@ -29,10 +50,16 @@ export default function C2LexPage() {
             </div>
 
             <div className="grid min-w-[280px] grid-cols-1 gap-3 sm:grid-cols-2">
-              <StatusCard label="Stato sessione" value={sessionState} />
-              <StatusCard label="Classe esito" value={outcomeClass} />
-              <StatusCard label="Ruolo" value={roleProfile} />
-              <StatusCard label="Nodo" value={nodeContext} />
+              <StatusCard
+                label="Stato sessione"
+                value={formatLabel(result.sessionState)}
+              />
+              <StatusCard
+                label="Classe esito"
+                value={formatLabel(result.outcomeClass)}
+              />
+              <StatusCard label="Ruolo" value="Operatore supervisionato" />
+              <StatusCard label="Nodo" value="HBCE-MATRIX-NODE-0001-TORINO" />
             </div>
           </div>
         </header>
@@ -41,10 +68,16 @@ export default function C2LexPage() {
           <div className="space-y-6">
             <Panel title="Contesto operativo">
               <div className="grid gap-3 sm:grid-cols-2">
-                <InfoRow label="Intent class" value={intentClass} />
-                <InfoRow label="Policy scope" value={policyScope} />
-                <InfoRow label="Session ref" value={continuityRef} />
-                <InfoRow label="Governance check" value={governanceCheck} />
+                <InfoRow
+                  label="Intent class"
+                  value={formatLabel(result.intentClass)}
+                />
+                <InfoRow label="Policy scope" value={result.policyScope} />
+                <InfoRow label="Session ref" value={result.sessionId} />
+                <InfoRow
+                  label="Continuity reference"
+                  value={result.continuityReference}
+                />
               </div>
             </Panel>
 
@@ -53,41 +86,38 @@ export default function C2LexPage() {
                 <MessageBubble
                   kind="input"
                   title="Input operatore"
-                  body="Mostrami lo stato corrente del modulo C2-Lex e chiarisci se questa sessione è in semplice consultazione oppure in attivazione operativa."
+                  body={demoInput}
                 />
 
                 <MessageBubble
-                  kind="qualified"
+                  kind={result.outcomeClass === "blocked" ? "blocked" : "qualified"}
                   title="Esito C2-Lex"
-                  body="La sessione corrente è classificata come consultazione operativa. Il contesto è stato associato correttamente al nodo HBCE-MATRIX-NODE-0001-TORINO e il ruolo risulta compatibile con la visibilità dello stato. Nessuna attivazione implicita è stata eseguita."
+                  body={result.response}
                 />
 
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <MiniBadge label="Classe" value="Informativa" />
-                  <MiniBadge label="Vincolo" value="No action" />
-                  <MiniBadge label="Next step" value="Richiesta guida" />
+                  <MiniBadge
+                    label="Classe"
+                    value={formatLabel(result.outcomeClass)}
+                  />
+                  <MiniBadge
+                    label="Stato"
+                    value={formatLabel(result.sessionState)}
+                  />
+                  <MiniBadge label="Next step" value={result.nextStep} />
                 </div>
               </div>
             </Panel>
 
             <Panel title="Esito operativo">
               <div className="grid gap-4 sm:grid-cols-2">
+                <OutcomeCard title="Sintesi" body={result.summary} />
+                <OutcomeCard title="Risposta qualificata" body={result.response} />
                 <OutcomeCard
-                  title="Stato osservato"
-                  body="Sessione leggibile, contesto disponibile, ruolo coerente, policy di sola consultazione attiva."
+                  title="Policy scope"
+                  body={result.policyScope}
                 />
-                <OutcomeCard
-                  title="Qualificazione"
-                  body="Output informativo contestualizzato, non equivalente a comando, procedura o transizione di stato."
-                />
-                <OutcomeCard
-                  title="Vincolo"
-                  body="La distinzione tra consultazione e attivazione resta preservata. Nessun workflow è stato avviato."
-                />
-                <OutcomeCard
-                  title="Passo successivo"
-                  body="L’operatore può richiedere spiegazione, guida procedurale o verifica ulteriore entro il perimetro consentito."
-                />
+                <OutcomeCard title="Passo successivo" body={result.nextStep} />
               </div>
             </Panel>
           </div>
@@ -99,53 +129,67 @@ export default function C2LexPage() {
                   step="01"
                   title="OPEN"
                   body="Sessione aperta in contesto governato."
+                  active={result.sessionState === "OPEN"}
                 />
                 <TimelineItem
                   step="02"
                   title="INTERPRETING"
-                  body="Intento classificato come consultazione."
+                  body={`Intento classificato come ${formatLabel(result.intentClass)}.`}
+                  active={result.sessionState === "INTERPRETING"}
                 />
                 <TimelineItem
                   step="03"
-                  title="CONTEXTUALIZING"
-                  body="Associazione a ruolo, nodo e policy scope."
-                  active
+                  title="VALIDATING"
+                  body="Verifica di ruolo, contesto, policy e ammissibilità."
+                  active={result.sessionState === "VALIDATING"}
                 />
                 <TimelineItem
                   step="04"
-                  title="RESPONDING"
-                  body="Esito qualificato pronto alla restituzione."
+                  title={result.sessionState}
+                  body={`Esito finale della sessione: ${formatLabel(
+                    result.outcomeClass
+                  )}.`}
+                  active
                 />
               </div>
             </Panel>
 
             <Panel title="Controlli di governance">
               <ul className="space-y-3 text-sm leading-6 text-slate-300">
-                <li className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                  <span className="font-medium text-white">Origine</span>
-                  <div>Risolta e coerente con la sessione corrente.</div>
-                </li>
-                <li className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                  <span className="font-medium text-white">Ruolo</span>
-                  <div>Compatibile con consultazione e lettura dello stato.</div>
-                </li>
-                <li className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                  <span className="font-medium text-white">Policy</span>
-                  <div>Nessuna attivazione ammessa senza richiesta qualificata.</div>
-                </li>
-                <li className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                  <span className="font-medium text-white">Esito</span>
-                  <div>Informativo, attribuibile, auditabile.</div>
-                </li>
+                {governanceItems.map((item) => (
+                  <li
+                    key={item.label}
+                    className="rounded-2xl border border-white/10 bg-black/20 p-3"
+                  >
+                    <span className="font-medium text-white">{item.label}</span>
+                    <div>{item.value}</div>
+                  </li>
+                ))}
               </ul>
             </Panel>
 
             <Panel title="Continuità ed evidenza">
               <div className="space-y-3 text-sm leading-6 text-slate-300">
-                <InfoRow label="Continuity reference" value={continuityRef} />
-                <InfoRow label="Audit mode" value="Session-linked" />
-                <InfoRow label="Escalation state" value="Assente" />
-                <InfoRow label="Confirmation state" value="Non richiesta" />
+                <InfoRow
+                  label="Session state"
+                  value={formatLabel(result.sessionState)}
+                />
+                <InfoRow
+                  label="Outcome class"
+                  value={formatLabel(result.outcomeClass)}
+                />
+                <InfoRow
+                  label="Audit mode"
+                  value={
+                    result.governanceChecks.traceability === "passed"
+                      ? "Session-linked"
+                      : "Limited"
+                  }
+                />
+                <InfoRow
+                  label="Continuity reference"
+                  value={result.continuityReference}
+                />
               </div>
             </Panel>
           </div>
@@ -160,6 +204,42 @@ export default function C2LexPage() {
       </section>
     </main>
   );
+}
+
+function formatCheck(value: string): string {
+  switch (value) {
+    case "passed":
+      return "Superato";
+    case "limited":
+      return "Limitato";
+    case "blocked":
+      return "Bloccato";
+    case "insufficient":
+      return "Insufficiente";
+    default:
+      return value;
+  }
+}
+
+function formatRisk(value: string): string {
+  switch (value) {
+    case "ordinary":
+      return "Ordinario";
+    case "sensitive":
+      return "Sensibile";
+    case "elevated":
+      return "Elevato";
+    default:
+      return value;
+  }
+}
+
+function formatLabel(value: string): string {
+  return value
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .trim()
+    .replace(/\b\w/g, (match) => match.toUpperCase());
 }
 
 function Panel({
@@ -206,13 +286,15 @@ function MessageBubble({
   title,
   body
 }: {
-  kind: "input" | "qualified";
+  kind: "input" | "qualified" | "blocked";
   title: string;
   body: string;
 }) {
   const bubbleClass =
     kind === "input"
       ? "border-white/10 bg-black/20"
+      : kind === "blocked"
+      ? "border-red-400/20 bg-red-400/10"
       : "border-cyan-400/20 bg-cyan-400/10";
 
   return (
