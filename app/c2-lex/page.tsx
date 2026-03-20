@@ -1,15 +1,32 @@
+import scenarios from "@/public/data/c2-lex-scenarios.json";
 import { runC2LexEngine } from "@/lib/c2-lex-engine";
 
-export default function C2LexPage() {
-  const demoInput =
-    "Mostrami lo stato corrente del modulo C2-Lex e chiarisci se questa sessione è in semplice consultazione oppure in attivazione operativa.";
+type ScenarioRecord = {
+  id: string;
+  title: string;
+  category: string;
+  role: string;
+  nodeContext: string;
+  continuityReference: string;
+  message: string;
+};
+
+export default function C2LexPage({
+  searchParams
+}: {
+  searchParams?: { scenario?: string };
+}) {
+  const dataset = scenarios as ScenarioRecord[];
+  const requestedScenarioId = searchParams?.scenario;
+  const selectedScenario =
+    dataset.find((scenario) => scenario.id === requestedScenarioId) ?? dataset[0];
 
   const result = runC2LexEngine({
-    sessionId: "C2L-SESSION-DEMO-0001",
-    message: demoInput,
-    role: "Operatore supervisionato",
-    nodeContext: "HBCE-MATRIX-NODE-0001-TORINO",
-    continuityReference: "C2L-SESSION-DEMO-0001"
+    sessionId: selectedScenario.id,
+    message: selectedScenario.message,
+    role: selectedScenario.role,
+    nodeContext: selectedScenario.nodeContext,
+    continuityReference: selectedScenario.continuityReference
   });
 
   const governanceItems = [
@@ -58,16 +75,48 @@ export default function C2LexPage() {
                 label="Classe esito"
                 value={formatLabel(result.outcomeClass)}
               />
-              <StatusCard label="Ruolo" value="Operatore supervisionato" />
-              <StatusCard label="Nodo" value="HBCE-MATRIX-NODE-0001-TORINO" />
+              <StatusCard label="Ruolo" value={selectedScenario.role} />
+              <StatusCard label="Nodo" value={selectedScenario.nodeContext} />
             </div>
           </div>
         </header>
+
+        <Panel title="Selettore scenari">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {dataset.map((scenario) => {
+              const isActive = scenario.id === selectedScenario.id;
+
+              return (
+                <a
+                  key={scenario.id}
+                  href={`/c2-lex?scenario=${encodeURIComponent(scenario.id)}`}
+                  className={`rounded-2xl border p-4 transition ${
+                    isActive
+                      ? "border-cyan-400/30 bg-cyan-400/10"
+                      : "border-white/10 bg-black/20 hover:border-white/20 hover:bg-white/[0.04]"
+                  }`}
+                >
+                  <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                    {scenario.id}
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-white">
+                    {scenario.title}
+                  </div>
+                  <div className="mt-2 text-sm text-slate-400">
+                    {formatLabel(scenario.category)}
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </Panel>
 
         <section className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
           <div className="space-y-6">
             <Panel title="Contesto operativo">
               <div className="grid gap-3 sm:grid-cols-2">
+                <InfoRow label="Scenario" value={selectedScenario.title} />
+                <InfoRow label="Categoria" value={formatLabel(selectedScenario.category)} />
                 <InfoRow
                   label="Intent class"
                   value={formatLabel(result.intentClass)}
@@ -86,7 +135,7 @@ export default function C2LexPage() {
                 <MessageBubble
                   kind="input"
                   title="Input operatore"
-                  body={demoInput}
+                  body={selectedScenario.message}
                 />
 
                 <MessageBubble
