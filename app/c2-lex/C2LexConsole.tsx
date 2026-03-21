@@ -162,295 +162,361 @@ export default function C2LexConsole() {
     : [];
 
   return (
-    <main className="min-h-screen bg-[#0b0f14] text-[#e8eef7]">
-      <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-        <header className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-3">
-              <div className="text-xs uppercase tracking-[0.28em] text-cyan-300/80">
-                HBCE Research
-              </div>
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                C2-Lex
-              </h1>
-              <p className="max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-                Console semantica di comando dell’ambiente IPR/HBCE.
-                Superficie conversazionale-operativa governata, progettata per
-                rendere leggibili contesto, stato, vincoli, esiti e continuità
-                dell’interazione.
-              </p>
+    <main className="h-screen overflow-hidden bg-black text-neutral-100">
+      <div className="flex h-full">
+        <aside className="hidden w-[290px] shrink-0 border-r border-white/10 bg-[#0a0a0a] xl:flex xl:flex-col">
+          <div className="border-b border-white/10 px-5 py-4">
+            <div className="text-[11px] uppercase tracking-[0.28em] text-neutral-500">
+              HBCE Research
             </div>
-
-            <div className="grid min-w-[280px] grid-cols-1 gap-3 sm:grid-cols-2">
-              <StatusCard
-                label="Stato sessione"
-                value={result ? formatLabel(result.sessionState) : "Inizializzazione"}
-              />
-              <StatusCard
-                label="Classe esito"
-                value={result ? formatLabel(result.outcomeClass) : "In attesa"}
-              />
-              <StatusCard label="Ruolo" value={role} />
-              <StatusCard label="Nodo" value={nodeContext} />
+            <div className="mt-2 text-lg font-semibold text-white">C2-Lex</div>
+            <div className="mt-1 text-sm text-neutral-400">
+              Semantic command console
             </div>
           </div>
-        </header>
 
-        <Panel title="Selettore scenari">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {dataset.map((scenario) => {
-              const isActive = scenario.id === selectedScenario.id;
-
-              return (
-                <a
-                  key={scenario.id}
-                  href={`/c2-lex?scenario=${encodeURIComponent(scenario.id)}`}
-                  className={`rounded-2xl border p-4 transition ${
-                    isActive
-                      ? "border-cyan-400/30 bg-cyan-400/10"
-                      : "border-white/10 bg-black/20 hover:border-white/20 hover:bg-white/[0.04]"
-                  }`}
-                >
-                  <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                    {scenario.id}
-                  </div>
-                  <div className="mt-2 text-sm font-medium text-white">
-                    {scenario.title}
-                  </div>
-                  <div className="mt-2 text-sm text-slate-400">
-                    {formatLabel(scenario.category)}
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-        </Panel>
-
-        <section className="grid gap-6 lg:grid-cols-[1.25fr_1.25fr]">
-          <Panel title="Input live C2-Lex">
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <InputField
-                  label="Session ID"
-                  value={sessionId}
-                  onChange={setSessionId}
-                />
-                <InputField label="Ruolo" value={role} onChange={setRole} />
-                <InputField
-                  label="Nodo"
-                  value={nodeContext}
-                  onChange={setNodeContext}
-                />
-                <InputField
-                  label="Continuity reference"
-                  value={continuityReference}
-                  onChange={setContinuityReference}
-                />
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                  Messaggio
-                </div>
-                <textarea
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  className="mt-3 min-h-[150px] w-full rounded-2xl border border-white/10 bg-[#0b0f14] p-4 text-sm leading-7 text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-cyan-400/30"
-                  placeholder="Scrivi l’input da inviare al motore governato C2-Lex..."
-                />
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-sm text-slate-400">
-                  Il motore classifica intento, controlli di governance, classe
-                  di esito e stato della sessione.
-                </div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-5 py-3 text-sm font-medium text-cyan-100 transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isSubmitting ? "Elaborazione..." : "Invia al motore C2-Lex"}
-                </button>
-              </div>
-            </form>
-          </Panel>
-
-          <Panel title="Contesto operativo">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <InfoRow label="Scenario" value={selectedScenario.title} />
-              <InfoRow label="Categoria" value={formatLabel(selectedScenario.category)} />
-              <InfoRow
-                label="Intent class"
-                value={result ? formatLabel(result.intentClass) : "In attesa"}
-              />
-              <InfoRow
-                label="Policy scope"
-                value={result ? result.policyScope : "In attesa"}
-              />
-              <InfoRow label="Session ref" value={sessionId} />
-              <InfoRow label="Continuity reference" value={continuityReference} />
+          <div className="flex-1 overflow-y-auto px-3 py-3">
+            <div className="mb-3 px-2 text-[11px] uppercase tracking-[0.22em] text-neutral-500">
+              Scenari
             </div>
-          </Panel>
+
+            <div className="space-y-2">
+              {dataset.map((scenario) => {
+                const isActive = scenario.id === selectedScenario.id;
+
+                return (
+                  <a
+                    key={scenario.id}
+                    href={`/c2-lex?scenario=${encodeURIComponent(scenario.id)}`}
+                    className={`block rounded-2xl border px-3 py-3 transition ${
+                      isActive
+                        ? "border-white/15 bg-[#171717]"
+                        : "border-transparent bg-transparent hover:border-white/10 hover:bg-[#111111]"
+                    }`}
+                  >
+                    <div className="text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+                      {scenario.id}
+                    </div>
+                    <div className="mt-2 text-sm font-medium text-white">
+                      {scenario.title}
+                    </div>
+                    <div className="mt-1 text-xs text-neutral-400">
+                      {formatLabel(scenario.category)}
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+
+        <section className="flex min-w-0 flex-1 flex-col bg-[#0f0f0f]">
+          <header className="shrink-0 border-b border-white/10 bg-[#0f0f0f]/95 px-4 py-3 backdrop-blur sm:px-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-[11px] uppercase tracking-[0.24em] text-neutral-500">
+                  AI JOKER-C2 / IPR / HBCE
+                </div>
+                <div className="mt-1 truncate text-lg font-semibold text-white">
+                  {selectedScenario.title}
+                </div>
+              </div>
+
+              <div className="hidden items-center gap-2 md:flex">
+                <TopBadge
+                  label="Sessione"
+                  value={result ? formatLabel(result.sessionState) : "Init"}
+                />
+                <TopBadge
+                  label="Esito"
+                  value={result ? formatLabel(result.outcomeClass) : "Pending"}
+                />
+                <TopBadge label="Ruolo" value={role} />
+              </div>
+            </div>
+          </header>
+
+          <div className="flex min-h-0 flex-1">
+            <section className="flex min-w-0 flex-1 flex-col">
+              <div className="flex-1 overflow-y-auto">
+                <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+                  <section className="rounded-3xl border border-white/10 bg-[#111111] p-5">
+                    <div className="text-[11px] uppercase tracking-[0.22em] text-neutral-500">
+                      Contesto operativo
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <InfoRow label="Scenario" value={selectedScenario.title} />
+                      <InfoRow
+                        label="Categoria"
+                        value={formatLabel(selectedScenario.category)}
+                      />
+                      <InfoRow
+                        label="Intent class"
+                        value={result ? formatLabel(result.intentClass) : "In attesa"}
+                      />
+                      <InfoRow
+                        label="Policy scope"
+                        value={result ? result.policyScope : "In attesa"}
+                      />
+                      <InfoRow label="Session ref" value={sessionId} />
+                      <InfoRow
+                        label="Continuity reference"
+                        value={continuityReference}
+                      />
+                    </div>
+                  </section>
+
+                  <section className="space-y-5">
+                    <MessageBlock
+                      title="Input operatore"
+                      kind="input"
+                      body={message}
+                    />
+
+                    {error ? (
+                      <MessageBlock
+                        title="Errore C2-Lex"
+                        kind="blocked"
+                        body={error}
+                      />
+                    ) : result ? (
+                      <MessageBlock
+                        title="Esito C2-Lex"
+                        kind={result.outcomeClass === "blocked" ? "blocked" : "output"}
+                        body={result.response}
+                      />
+                    ) : (
+                      <MessageBlock
+                        title="Esito C2-Lex"
+                        kind="output"
+                        body="In attesa di elaborazione del motore."
+                      />
+                    )}
+
+                    <section className="grid gap-3 sm:grid-cols-3">
+                      <MetricCard
+                        label="Classe"
+                        value={result ? formatLabel(result.outcomeClass) : "In attesa"}
+                      />
+                      <MetricCard
+                        label="Stato"
+                        value={result ? formatLabel(result.sessionState) : "In attesa"}
+                      />
+                      <MetricCard
+                        label="Next step"
+                        value={result ? result.nextStep : "Non disponibile"}
+                      />
+                    </section>
+
+                    <section className="rounded-3xl border border-white/10 bg-[#111111] p-5">
+                      <div className="text-[11px] uppercase tracking-[0.22em] text-neutral-500">
+                        Esito operativo
+                      </div>
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <OutcomeCard
+                          title="Sintesi"
+                          body={result ? result.summary : "Nessun esito disponibile."}
+                        />
+                        <OutcomeCard
+                          title="Risposta qualificata"
+                          body={
+                            result
+                              ? result.response
+                              : "Il motore non ha ancora restituito una risposta."
+                          }
+                        />
+                        <OutcomeCard
+                          title="Policy scope"
+                          body={result ? result.policyScope : "Non disponibile"}
+                        />
+                        <OutcomeCard
+                          title="Passo successivo"
+                          body={result ? result.nextStep : "Non disponibile"}
+                        />
+                      </div>
+                    </section>
+                  </section>
+                </div>
+              </div>
+
+              <div className="shrink-0 border-t border-white/10 bg-[#0f0f0f]">
+                <div className="mx-auto w-full max-w-4xl px-4 py-4 sm:px-6 lg:px-8">
+                  <form className="space-y-4" onSubmit={handleSubmit}>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      <InputField
+                        label="Session ID"
+                        value={sessionId}
+                        onChange={setSessionId}
+                      />
+                      <InputField
+                        label="Ruolo"
+                        value={role}
+                        onChange={setRole}
+                      />
+                      <InputField
+                        label="Nodo"
+                        value={nodeContext}
+                        onChange={setNodeContext}
+                      />
+                      <InputField
+                        label="Continuity reference"
+                        value={continuityReference}
+                        onChange={setContinuityReference}
+                      />
+                    </div>
+
+                    <div className="rounded-3xl border border-white/10 bg-[#111111] p-3">
+                      <textarea
+                        value={message}
+                        onChange={(event) => setMessage(event.target.value)}
+                        className="min-h-[120px] w-full resize-none rounded-2xl border border-white/10 bg-[#0d0d0d] px-4 py-4 text-sm leading-7 text-neutral-100 outline-none transition placeholder:text-neutral-600 focus:border-white/20"
+                        placeholder="Scrivi l’input da inviare al motore governato C2-Lex..."
+                      />
+                      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="text-sm text-neutral-400">
+                          Motore governato con intent classification, governance
+                          checks, session state e outcome class.
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="rounded-2xl border border-white/10 bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isSubmitting ? "Elaborazione..." : "Invia a C2-Lex"}
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+
+            <aside className="hidden w-[360px] shrink-0 border-l border-white/10 bg-[#0b0b0b] lg:flex lg:flex-col">
+              <div className="flex-1 overflow-y-auto px-4 py-4">
+                <div className="space-y-4">
+                  <SidePanel title="Stato della sessione">
+                    <div className="space-y-3">
+                      <TimelineItem
+                        step="01"
+                        title="OPEN"
+                        body="Sessione aperta in contesto governato."
+                        active={result?.sessionState === "OPEN"}
+                      />
+                      <TimelineItem
+                        step="02"
+                        title="INTERPRETING"
+                        body={`Intento classificato come ${
+                          result ? formatLabel(result.intentClass) : "in attesa"
+                        }.`}
+                        active={result?.sessionState === "INTERPRETING"}
+                      />
+                      <TimelineItem
+                        step="03"
+                        title="VALIDATING"
+                        body="Verifica di ruolo, contesto, policy e ammissibilità."
+                        active={result?.sessionState === "VALIDATING"}
+                      />
+                      <TimelineItem
+                        step="04"
+                        title={result?.sessionState ?? "PENDING"}
+                        body={`Esito finale della sessione: ${
+                          result ? formatLabel(result.outcomeClass) : "in attesa"
+                        }.`}
+                        active
+                      />
+                    </div>
+                  </SidePanel>
+
+                  <SidePanel title="Governance checks">
+                    <div className="space-y-2">
+                      {governanceItems.length > 0 ? (
+                        governanceItems.map((item) => (
+                          <CheckRow
+                            key={item.label}
+                            label={item.label}
+                            value={item.value}
+                          />
+                        ))
+                      ) : (
+                        <div className="rounded-2xl border border-white/10 bg-[#111111] px-3 py-3 text-sm text-neutral-400">
+                          In attesa dei controlli del motore.
+                        </div>
+                      )}
+                    </div>
+                  </SidePanel>
+
+                  <SidePanel title="Continuità ed evidenza">
+                    <div className="space-y-2">
+                      <CheckRow
+                        label="Session state"
+                        value={result ? formatLabel(result.sessionState) : "In attesa"}
+                      />
+                      <CheckRow
+                        label="Outcome class"
+                        value={result ? formatLabel(result.outcomeClass) : "In attesa"}
+                      />
+                      <CheckRow
+                        label="Audit mode"
+                        value={
+                          result
+                            ? result.governanceChecks.traceability === "passed"
+                              ? "Session-linked"
+                              : "Limited"
+                            : "In attesa"
+                        }
+                      />
+                      <CheckRow
+                        label="Continuity reference"
+                        value={continuityReference}
+                      />
+                    </div>
+                  </SidePanel>
+                </div>
+              </div>
+            </aside>
+          </div>
         </section>
-
-        <section className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
-          <div className="space-y-6">
-            <Panel title="Interazione C2-Lex">
-              <div className="space-y-4">
-                <MessageBubble
-                  kind="input"
-                  title="Input operatore"
-                  body={message}
-                />
-
-                {error ? (
-                  <MessageBubble kind="blocked" title="Errore C2-Lex" body={error} />
-                ) : result ? (
-                  <MessageBubble
-                    kind={result.outcomeClass === "blocked" ? "blocked" : "qualified"}
-                    title="Esito C2-Lex"
-                    body={result.response}
-                  />
-                ) : (
-                  <MessageBubble
-                    kind="qualified"
-                    title="Esito C2-Lex"
-                    body="In attesa di elaborazione del motore."
-                  />
-                )}
-
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <MiniBadge
-                    label="Classe"
-                    value={result ? formatLabel(result.outcomeClass) : "In Attesa"}
-                  />
-                  <MiniBadge
-                    label="Stato"
-                    value={result ? formatLabel(result.sessionState) : "In Attesa"}
-                  />
-                  <MiniBadge
-                    label="Next step"
-                    value={result ? result.nextStep : "Non disponibile"}
-                  />
-                </div>
-              </div>
-            </Panel>
-
-            <Panel title="Esito operativo">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <OutcomeCard
-                  title="Sintesi"
-                  body={result ? result.summary : "Nessun esito disponibile."}
-                />
-                <OutcomeCard
-                  title="Risposta qualificata"
-                  body={
-                    result
-                      ? result.response
-                      : "Il motore non ha ancora restituito una risposta."
-                  }
-                />
-                <OutcomeCard
-                  title="Policy scope"
-                  body={result ? result.policyScope : "Non disponibile"}
-                />
-                <OutcomeCard
-                  title="Passo successivo"
-                  body={result ? result.nextStep : "Non disponibile"}
-                />
-              </div>
-            </Panel>
-          </div>
-
-          <div className="space-y-6">
-            <Panel title="Stato della sessione">
-              <div className="space-y-3">
-                <TimelineItem
-                  step="01"
-                  title="OPEN"
-                  body="Sessione aperta in contesto governato."
-                  active={result?.sessionState === "OPEN"}
-                />
-                <TimelineItem
-                  step="02"
-                  title="INTERPRETING"
-                  body={`Intento classificato come ${
-                    result ? formatLabel(result.intentClass) : "in attesa"
-                  }.`}
-                  active={result?.sessionState === "INTERPRETING"}
-                />
-                <TimelineItem
-                  step="03"
-                  title="VALIDATING"
-                  body="Verifica di ruolo, contesto, policy e ammissibilità."
-                  active={result?.sessionState === "VALIDATING"}
-                />
-                <TimelineItem
-                  step="04"
-                  title={result?.sessionState ?? "PENDING"}
-                  body={`Esito finale della sessione: ${
-                    result ? formatLabel(result.outcomeClass) : "in attesa"
-                  }.`}
-                  active
-                />
-              </div>
-            </Panel>
-
-            <Panel title="Controlli di governance">
-              <ul className="space-y-3 text-sm leading-6 text-slate-300">
-                {governanceItems.length > 0 ? (
-                  governanceItems.map((item) => (
-                    <li
-                      key={item.label}
-                      className="rounded-2xl border border-white/10 bg-black/20 p-3"
-                    >
-                      <span className="font-medium text-white">{item.label}</span>
-                      <div>{item.value}</div>
-                    </li>
-                  ))
-                ) : (
-                  <li className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                    In attesa dei controlli del motore.
-                  </li>
-                )}
-              </ul>
-            </Panel>
-
-            <Panel title="Continuità ed evidenza">
-              <div className="space-y-3 text-sm leading-6 text-slate-300">
-                <InfoRow
-                  label="Session state"
-                  value={result ? formatLabel(result.sessionState) : "In attesa"}
-                />
-                <InfoRow
-                  label="Outcome class"
-                  value={result ? formatLabel(result.outcomeClass) : "In attesa"}
-                />
-                <InfoRow
-                  label="Audit mode"
-                  value={
-                    result
-                      ? result.governanceChecks.traceability === "passed"
-                        ? "Session-linked"
-                        : "Limited"
-                      : "In attesa"
-                  }
-                />
-                <InfoRow label="Continuity reference" value={continuityReference} />
-              </div>
-            </Panel>
-          </div>
-        </section>
-
-        <footer className="rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-5 text-sm text-slate-400">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>HERMETICUM B.C.E. S.r.l.</div>
-            <div>HBCE Research · C2-Lex semantic command console</div>
-          </div>
-        </footer>
-      </section>
+      </div>
     </main>
+  );
+}
+
+function TopBadge({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-full border border-white/10 bg-[#171717] px-3 py-2">
+      <div className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">
+        {label}
+      </div>
+      <div className="mt-1 text-xs font-medium text-white">{value}</div>
+    </div>
+  );
+}
+
+function SidePanel({
+  title,
+  children
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-3xl border border-white/10 bg-[#0f0f0f] p-4">
+      <div className="mb-3 text-[11px] uppercase tracking-[0.22em] text-neutral-500">
+        {title}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function CheckRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#111111] px-3 py-3">
+      <div className="text-[11px] uppercase tracking-[0.18em] text-neutral-500">
+        {label}
+      </div>
+      <div className="mt-2 text-sm text-neutral-200">{value}</div>
+    </div>
   );
 }
 
@@ -464,14 +530,14 @@ function InputField({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="rounded-2xl border border-white/10 bg-black/20 p-4">
-      <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+    <label className="rounded-2xl border border-white/10 bg-[#111111] px-4 py-3">
+      <div className="text-[11px] uppercase tracking-[0.18em] text-neutral-500">
         {label}
       </div>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-3 w-full border-none bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-600"
+        className="mt-2 w-full border-none bg-transparent text-sm text-neutral-100 outline-none placeholder:text-neutral-600"
       />
     </label>
   );
@@ -513,75 +579,49 @@ function formatLabel(value: string): string {
     .replace(/\b\w/g, (match) => match.toUpperCase());
 }
 
-function Panel({
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#0d0d0d] p-3">
+      <div className="text-[11px] uppercase tracking-[0.18em] text-neutral-500">
+        {label}
+      </div>
+      <div className="mt-2 text-sm text-neutral-200">{value}</div>
+    </div>
+  );
+}
+
+function MessageBlock({
   title,
-  children
+  body,
+  kind
 }: {
   title: string;
-  children: React.ReactNode;
+  body: string;
+  kind: "input" | "output" | "blocked";
 }) {
+  const tone =
+    kind === "input"
+      ? "border-white/10 bg-[#111111]"
+      : kind === "blocked"
+      ? "border-red-500/20 bg-[#170d0d]"
+      : "border-white/10 bg-[#141414]";
+
   return (
-    <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.25)]">
-      <div className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-cyan-300/80">
+    <section className={`rounded-3xl border p-5 ${tone}`}>
+      <div className="text-[11px] uppercase tracking-[0.22em] text-neutral-500">
         {title}
       </div>
-      {children}
+      <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-neutral-100">
+        {body}
+      </p>
     </section>
   );
 }
 
-function StatusCard({ label, value }: { label: string; value: string }) {
+function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-      <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-        {label}
-      </div>
-      <div className="mt-2 text-sm font-medium text-white">{value}</div>
-    </div>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-      <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-        {label}
-      </div>
-      <div className="mt-2 text-sm text-slate-200">{value}</div>
-    </div>
-  );
-}
-
-function MessageBubble({
-  kind,
-  title,
-  body
-}: {
-  kind: "input" | "qualified" | "blocked";
-  title: string;
-  body: string;
-}) {
-  const bubbleClass =
-    kind === "input"
-      ? "border-white/10 bg-black/20"
-      : kind === "blocked"
-      ? "border-red-400/20 bg-red-400/10"
-      : "border-cyan-400/20 bg-cyan-400/10";
-
-  return (
-    <div className={`rounded-3xl border p-4 ${bubbleClass}`}>
-      <div className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-400">
-        {title}
-      </div>
-      <p className="text-sm leading-7 text-slate-100">{body}</p>
-    </div>
-  );
-}
-
-function MiniBadge({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3 text-center">
-      <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+    <div className="rounded-2xl border border-white/10 bg-[#111111] p-4">
+      <div className="text-[11px] uppercase tracking-[0.18em] text-neutral-500">
         {label}
       </div>
       <div className="mt-2 text-sm font-medium text-white">{value}</div>
@@ -591,9 +631,9 @@ function MiniBadge({ label, value }: { label: string; value: string }) {
 
 function OutcomeCard({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+    <div className="rounded-2xl border border-white/10 bg-[#0d0d0d] p-4">
       <div className="mb-2 text-sm font-medium text-white">{title}</div>
-      <p className="text-sm leading-6 text-slate-300">{body}</p>
+      <p className="text-sm leading-6 text-neutral-300">{body}</p>
     </div>
   );
 }
@@ -613,17 +653,17 @@ function TimelineItem({
     <div
       className={`rounded-2xl border p-3 ${
         active
-          ? "border-cyan-400/30 bg-cyan-400/10"
-          : "border-white/10 bg-black/20"
+          ? "border-white/15 bg-[#171717]"
+          : "border-white/10 bg-[#111111]"
       }`}
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/30 text-xs text-slate-300">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black text-xs text-neutral-300">
           {step}
         </div>
         <div className="text-sm font-medium text-white">{title}</div>
       </div>
-      <p className="mt-3 text-sm leading-6 text-slate-300">{body}</p>
+      <p className="mt-3 text-sm leading-6 text-neutral-300">{body}</p>
     </div>
   );
 }
