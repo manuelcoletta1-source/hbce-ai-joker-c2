@@ -37,6 +37,8 @@ export type C2LexGovernanceCheckStatus =
   | "blocked"
   | "insufficient";
 
+export type C2LexRiskClass = "ordinary" | "sensitive" | "elevated";
+
 export interface C2LexSessionInput {
   sessionId: string;
   message: string;
@@ -52,7 +54,7 @@ export interface C2LexGovernanceChecks {
   context: C2LexGovernanceCheckStatus;
   policy: C2LexGovernanceCheckStatus;
   admissibility: C2LexGovernanceCheckStatus;
-  risk: "ordinary" | "sensitive" | "elevated";
+  risk: C2LexRiskClass;
   traceability: C2LexGovernanceCheckStatus;
 }
 
@@ -132,6 +134,15 @@ function normalizeText(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function isRoleLimited(role: string): boolean {
+  const normalizedRole = normalizeText(role);
+  return (
+    normalizedRole.includes("operatore") ||
+    normalizedRole.includes("user") ||
+    normalizedRole.includes("utente")
+  );
+}
+
 function classifyIntent(message: string): C2LexIntentClass {
   const text = normalizeText(message);
 
@@ -165,27 +176,145 @@ function buildPolicyScope(intentClass: C2LexIntentClass): string {
   }
 }
 
+function buildContinuityReference(input: C2LexSessionInput): string {
+  return input.continuityReference ?? `${input.sessionId}-AUDIT`;
+}
+
+function evaluateOrigin(input: C2LexSessionInput): C2LexGovernanceCheckStatus {
+  return input.sessionId.trim().length > 0 ? "passed" : "insufficient";
+}
+
+function evaluateRole(
+  input: C2LexSessionInput,
+  intentClass: C2LexIntentClass
+): C2LexGovernanceCheckStatus {
+  if (input.role.trim().length === 0) return "insufficient";
+
+  if (intentClass === "activation_request" && isRoleLimited(input.role)) {
+    return "limited";
+  }
+
+  return "passed";
+}
+
+function evaluateIntent(
+  intentClass: C2LexIntentClass
+): C2LexGovernanceCheckStatus {
+  return intentClass === "unknown" ? "insufficient" : "passed";
+}
+
+function evaluateContext(
+  input: C2LexSessionInput,
+  intentClass: C2LexIntentClass
+): C2LexGovernanceCheckStatus {
+  if (input.nodeContext.trim().length === 0) return "insufficient";
+
+  if (intentClass === "activation_request") return "limited";
+
+  return "passed";
+}
+
+function evaluatePolicy(
+  intentClass: C2LexIntentClass
+): C2LexGovernanceCheckStatus {
+  switch (intentClass) {
+    case "activation_request":
+      return "blocked";
+    case "escalation":
+    case "guided_procedure":
+    case "decision_support":
+      return "limited";
+    case "unknown":
+      return "insufficient";
+    default:
+      return "passed";
+  }
+}
+
+function evaluateAdmissibility(
+  intentClass: C2LexIntentClass,
+  roleCheck: C2LexGovernanceCheckStatus,
+  contextCheck: C2LexGovernanceCheckStatus,
+  policyCheck: C2LexGovernanceCheckStatus
+): C2LexGovernanceCheckStatus {
+  if (policyCheck === "blocked") return "blocked";
+  if (roleCheck === "insufficient" || contextCheck === "insufficient") {
+    return "insufficient";
+  }
+  if (
+    intentClass === "escalation" ||
+    intentClass === "guided_procedure" ||
+    intentClass === "decision_support" ||
+    roleCheck === "limited" ||
+    contextCheck === "limited" ||
+    policyCheck === "limited"
+  ) {
+    return "limited";
+  }
+  return "passed";
+}
+
+function evaluateRisk(intentClass: C2LexIntentClass): C2LexRiskClass {
+  switch (intentClass) {
+    case "activation_request":
+      return "elevated";
+    case "escalation":
+      return "sensitive";
+    default:
+      return "ordinary";
+  }
+}
+
+function evaluateTraceability(
+  input: C2LexSessionInput
+): C2LexGovernanceCheckStatus {
+  return buildContinuityReference(input).trim().length > 0
+    ? "passed"
+    : "insufficient";
+}
+
+function buildGovernanceChecks(
+  input: C2LexSessionInput,
+  intentClass: C2LexIntentClass
+): C2LexGovernanceChecks {
+  const origin = evaluateOrigin(input);
+  const role = evaluateRole(input, intentClass);
+  const intent = evaluateIntent(intentClass);
+  const context = evaluateContext(input, intentClass);
+  const policy = evaluatePolicy(intentClass);
+  const admissibility = evaluateAdmissibility(
+    intentClass,
+    role,
+    context,
+    policy
+  );
+  const risk = evaluateRisk(intentClass);
+  const traceability = evaluateTraceability(input);
+
+  return {
+    origin,
+    role,
+    intent,
+    context,
+    policy,
+    admissibility,
+    risk,
+    traceability
+  };
+}
+
 function buildBlockedResult(input: C2LexSessionInput): C2LexEngineResult {
-  const continuityReference =
-    input.continuityReference ?? `${input.sessionId}-AUDIT`;
+  const governanceChecks = buildGovernanceChecks(input, "activation_request");
+  const continuityReference = buildContinuityReference(input);
 
   return {
     sessionId: input.sessionId,
     sessionState: "BLOCKED",
     intentClass: "activation_request",
     outcomeClass: "blocked",
-    policyScope: "HBCE / Controlled Activation",
+    policyScope: buildPolicyScope("activation_request"),
     continuityReference,
-    governanceChecks: {
-      origin: "passed",
-      role: "limited",
-      intent: "passed",
-      context: "limited",
-      policy: "blocked",
-      admissibility: "blocked",
-      risk: "elevated",
-      traceability: "passed"
-    },
+    governanceChecks,
     summary:
       "Richiesta di attivazione forte bloccata per superamento del perimetro governato.",
     nextStep:
@@ -195,30 +324,18 @@ function buildBlockedResult(input: C2LexSessionInput): C2LexEngineResult {
   };
 }
 
-function buildEscalatedResult(
-  input: C2LexSessionInput,
-  intentClass: C2LexIntentClass
-): C2LexEngineResult {
-  const continuityReference =
-    input.continuityReference ?? `${input.sessionId}-AUDIT`;
+function buildEscalatedResult(input: C2LexSessionInput): C2LexEngineResult {
+  const governanceChecks = buildGovernanceChecks(input, "escalation");
+  const continuityReference = buildContinuityReference(input);
 
   return {
     sessionId: input.sessionId,
     sessionState: "ESCALATED",
-    intentClass,
+    intentClass: "escalation",
     outcomeClass: "escalated",
-    policyScope: "HBCE / Escalation Review",
+    policyScope: buildPolicyScope("escalation"),
     continuityReference,
-    governanceChecks: {
-      origin: "passed",
-      role: "passed",
-      intent: "passed",
-      context: "passed",
-      policy: "limited",
-      admissibility: "limited",
-      risk: "sensitive",
-      traceability: "passed"
-    },
+    governanceChecks,
     summary:
       "Caso sensibile qualificato come situazione da portare a supervisione.",
     nextStep:
@@ -229,26 +346,17 @@ function buildEscalatedResult(
 }
 
 function buildProceduralResult(input: C2LexSessionInput): C2LexEngineResult {
-  const continuityReference =
-    input.continuityReference ?? `${input.sessionId}-AUDIT`;
+  const governanceChecks = buildGovernanceChecks(input, "guided_procedure");
+  const continuityReference = buildContinuityReference(input);
 
   return {
     sessionId: input.sessionId,
     sessionState: "CLOSED",
     intentClass: "guided_procedure",
     outcomeClass: "procedural",
-    policyScope: "HBCE / Guided Procedure",
+    policyScope: buildPolicyScope("guided_procedure"),
     continuityReference,
-    governanceChecks: {
-      origin: "passed",
-      role: "passed",
-      intent: "passed",
-      context: "passed",
-      policy: "limited",
-      admissibility: "passed",
-      risk: "ordinary",
-      traceability: "passed"
-    },
+    governanceChecks,
     summary:
       "Procedura guidata restituita senza esecuzione implicita del workflow.",
     nextStep:
@@ -261,26 +369,17 @@ function buildProceduralResult(input: C2LexSessionInput): C2LexEngineResult {
 function buildDecisionSupportResult(
   input: C2LexSessionInput
 ): C2LexEngineResult {
-  const continuityReference =
-    input.continuityReference ?? `${input.sessionId}-AUDIT`;
+  const governanceChecks = buildGovernanceChecks(input, "decision_support");
+  const continuityReference = buildContinuityReference(input);
 
   return {
     sessionId: input.sessionId,
     sessionState: "CLOSED",
     intentClass: "decision_support",
     outcomeClass: "decision_support",
-    policyScope: "HBCE / Decision Support",
+    policyScope: buildPolicyScope("decision_support"),
     continuityReference,
-    governanceChecks: {
-      origin: "passed",
-      role: "passed",
-      intent: "passed",
-      context: "passed",
-      policy: "limited",
-      admissibility: "passed",
-      risk: "ordinary",
-      traceability: "passed"
-    },
+    governanceChecks,
     summary:
       "Supporto decisionale contestuale prodotto senza sostituzione della decisione formale.",
     nextStep:
@@ -293,26 +392,17 @@ function buildDecisionSupportResult(
 function buildExplanationResult(
   input: C2LexSessionInput
 ): C2LexEngineResult {
-  const continuityReference =
-    input.continuityReference ?? `${input.sessionId}-AUDIT`;
+  const governanceChecks = buildGovernanceChecks(input, "explanation");
+  const continuityReference = buildContinuityReference(input);
 
   return {
     sessionId: input.sessionId,
     sessionState: "CLOSED",
     intentClass: "explanation",
     outcomeClass: "explanatory",
-    policyScope: "HBCE / Governed Consultation",
+    policyScope: buildPolicyScope("explanation"),
     continuityReference,
-    governanceChecks: {
-      origin: "passed",
-      role: "passed",
-      intent: "passed",
-      context: "passed",
-      policy: "passed",
-      admissibility: "passed",
-      risk: "ordinary",
-      traceability: "passed"
-    },
+    governanceChecks,
     summary:
       "Spiegazione contestuale prodotta distinguendo fatto osservato e lettura operativa.",
     nextStep:
@@ -326,8 +416,8 @@ function buildConsultationResult(
   input: C2LexSessionInput,
   intentClass: C2LexIntentClass
 ): C2LexEngineResult {
-  const continuityReference =
-    input.continuityReference ?? `${input.sessionId}-AUDIT`;
+  const governanceChecks = buildGovernanceChecks(input, intentClass);
+  const continuityReference = buildContinuityReference(input);
 
   return {
     sessionId: input.sessionId,
@@ -336,16 +426,7 @@ function buildConsultationResult(
     outcomeClass: "informative",
     policyScope: buildPolicyScope(intentClass),
     continuityReference,
-    governanceChecks: {
-      origin: "passed",
-      role: "passed",
-      intent: intentClass === "unknown" ? "limited" : "passed",
-      context: "passed",
-      policy: "passed",
-      admissibility: "passed",
-      risk: "ordinary",
-      traceability: "passed"
-    },
+    governanceChecks,
     summary:
       "Consultazione operativa classificata correttamente senza attivazione implicita.",
     nextStep:
@@ -365,7 +446,7 @@ export function runC2LexEngine(
   }
 
   if (intentClass === "escalation") {
-    return buildEscalatedResult(input, intentClass);
+    return buildEscalatedResult(input);
   }
 
   if (intentClass === "guided_procedure") {
