@@ -1,117 +1,187 @@
-# Documentazione C2-Lex
-Indice canonico dei documenti del layer semantico di comando
-
+# AI JOKER-C2
+Identity-Bound Operational AI Application  
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
 
-## Scopo
+---
 
-Questa cartella raccoglie la documentazione canonica di **C2-Lex**, il modulo conversazionale-operativo nativo dell’ambiente **AI JOKER-C2** e il **layer semantico di comando** dell’ecosistema **IPR/HBCE**.
+## Overview
 
-L’obiettivo di questo indice è:
+AI JOKER-C2 is the operational AI layer of the HBCE ecosystem.
 
-- rendere leggibile la struttura documentale del modulo
-- ordinare i documenti per funzione
-- facilitare consultazione, sviluppo e allineamento interno
-- preservare coerenza tra definizione, architettura, modello operativo, glossario e roadmap
+It is not a generic chatbot.  
+It is a structured, identity-bound, governance-oriented AI system designed for:
 
-## Definizione sintetica
+- operational environments
+- controlled interaction
+- auditability
+- decision support
 
-**C2-Lex** è la superficie semantica attraverso cui linguaggio, contesto, telemetria, policy e workflow vengono trasformati in processi attribuibili, verificabili e governabili all’interno di ambienti supervisionati.
+---
 
-Non è una semplice chat.  
-È il modulo che collega interazione, governance e operatività nel paradigma **IPR/HBCE**.
+## Core Architecture
 
-## Struttura documentale
+The system is built on three distinct and non-overlapping layers.
 
-### 1. Definizione canonica
-- [`C2-LEX.md`](./C2-LEX.md)  
-  Documento base che definisce C2-Lex come modulo conversazionale-operativo nativo e layer semantico di comando.
+### Canonical Model
 
-### 2. Architettura
-- [`ARCHITECTURE-C2-LEX.md`](./ARCHITECTURE-C2-LEX.md)  
-  Documento architetturale che chiarisce la relazione tra **IPR**, **HBCE**, **AI JOKER-C2** e **C2-Lex**.
+IPR → Identity  
+C2-Lex → Interaction  
+JOKER-C2 → Intelligence
 
-### 3. Specifica tecnica
-- [`C2-LEX-SPEC.md`](./C2-LEX-SPEC.md)  
-  Specifica tecnica e funzionale del modulo, con pipeline logica, stati, vincoli e requisiti minimi.
+---
 
-### 4. Modello operativo
-- [`C2-LEX-MODEL.md`](./C2-LEX-MODEL.md)  
-  Documento dedicato ad attori, flussi, eventi, punti di controllo, casi d’uso e fallimenti gestiti.
+## Layer Description
 
-### 5. Glossario
-- [`C2-LEX-GLOSSARY.md`](./C2-LEX-GLOSSARY.md)  
-  Vocabolario canonico del modulo, utile per mantenere stabile il linguaggio del repository.
+### IPR — Identity Layer
 
-### 6. Roadmap
-- [`C2-LEX-ROADMAP.md`](./C2-LEX-ROADMAP.md)  
-  Piano evolutivo del modulo, dalla base concettuale fino alla maturità operativa e alla traduzione in componente reale.
+The Identity Primary Record (IPR) defines:
 
-## Logica di lettura consigliata
+- persistent identity
+- continuity
+- traceability
+- auditability
 
-Per comprendere il modulo in modo progressivo, l’ordine di lettura consigliato è il seguente:
+Each interaction is anchored to an identity.
 
-1. `C2-LEX.md`
-2. `ARCHITECTURE-C2-LEX.md`
-3. `C2-LEX-SPEC.md`
-4. `C2-LEX-MODEL.md`
-5. `C2-LEX-GLOSSARY.md`
-6. `C2-LEX-ROADMAP.md`
+---
 
-Questo ordine permette di passare da:
+### C2-Lex — Semantic Command Layer
 
-- definizione
-- posizione architetturale
-- specifica tecnica
-- funzionamento operativo
-- stabilizzazione del vocabolario
-- visione evolutiva del modulo
+C2-Lex is the interface between biological entities and the system.
 
-## Principi di coerenza
+It provides:
 
-Tutta la documentazione C2-Lex deve mantenere le seguenti distinzioni:
+- intent classification
+- governance checks
+- session structuring
+- controlled output
 
-- **IPR** è il fondamento di identità persistente
-- **HBCE** è il quadro infrastrutturale, di governance e audit
-- **AI JOKER-C2** è il livello di intelligenza operativa supervisionata
-- **C2-Lex** è il layer semantico di comando e la superficie conversazionale-operativa
+C2-Lex is not an identity.  
+C2-Lex is not intelligence.  
+C2-Lex is the interaction layer.
 
-Inoltre devono restare sempre distinguibili:
+---
 
-- consultazione e attivazione
-- suggerimento e decisione
-- supporto e autorità
-- interfaccia e governance
+### JOKER-C2 — Operational Intelligence
 
-## Utilità del pacchetto documentale
+JOKER-C2 is the cognitive and operational entity of the system.
 
-L’insieme di questi documenti serve a:
+It performs:
 
-- posizionare C2-Lex nel repository `hbce-ai-joker-c2`
-- costruire una base canonica stabile per futuri sviluppi
-- preparare README, pagine, interfacce e componenti
-- evitare ambiguità terminologiche o architetturali
-- rendere il modulo presentabile in modo coerente a livello tecnico e strategico
+- analysis
+- correlation
+- decision support
+- orchestration
 
-## Sviluppi documentali successivi consigliati
+It operates under supervision and within defined governance constraints.
 
-I prossimi documenti utili per estendere il pacchetto sono:
+---
 
-- `C2-LEX-CAPABILITIES.md`
-- `C2-LEX-LIMITS.md`
-- `C2-LEX-USE-CASES.md`
-- `C2-LEX-UI.md`
-- `C2-LEX-SESSION-MODEL.md`
-- `C2-LEX-JOKER-C2-INTEGRATION.md`
-- `C2-LEX-IPR-INTEGRATION.md`
-- `C2-LEX-AUDIT-MODEL.md`
+## Interaction Flow
 
-## Formula finale
+```text
+Biological Entity
+      ↓
+C2-Lex (interaction layer)
+      ↓
+IPR (identity binding)
+      ↓
+JOKER-C2 (cognitive processing)
+      ↓
+C2-Lex (governed output)
 
-**La cartella `docs/` costituisce il nucleo documentale canonico di C2-Lex all’interno del repository `hbce-ai-joker-c2`, ordinando definizione, architettura, specifica, modello operativo, glossario e roadmap del layer semantico di comando dell’ambiente IPR/HBCE.**
 
-## Firma
+---
 
-HBCE Research  
+Repository Structure
+
+/app → Next.js application (UI + API routes)
+
+/app/api/c2-lex → governed engine endpoint
+
+/app/c2-lex → semantic command console
+
+/lib → core logic and engines
+
+/public/data → structured scenarios
+
+/docs → architectural and operational specifications
+
+
+
+---
+
+Key Documents
+
+docs/ARCHITECTURE-C2LEX-JOKER-IPR.md
+
+docs/C2-LEX-API.md
+
+docs/C2-LEX-SPEC.md
+
+docs/C2-LEX-SESSION-MODEL.md
+
+
+
+---
+
+Current Status
+
+C2-Lex API: active (minimum governed engine)
+
+UI Console: active
+
+Architecture: defined
+
+Identity layer (IPR): conceptual / partially implemented
+
+Governance: structured (minimum model)
+
+
+
+---
+
+Design Principles
+
+fail-closed
+
+audit-first
+
+identity-bound interaction
+
+no uncontrolled autonomy
+
+EU-first compliance orientation
+
+
+
+---
+
+Important Notes
+
+This is a controlled system, not a free-form AI.
+
+Identity, interaction, and intelligence are strictly separated.
+
+No real personal data should be used in demo environments.
+
+
+
+---
+
+Canonical Statement
+
+In the HBCE system, identity is defined by IPR, interaction occurs through C2-Lex, and cognitive processing is performed by JOKER-C2.
+
+
+---
+
+Signature
+
+HBCE Research
 HERMETICUM B.C.E. S.r.l.
+
+
+
+
