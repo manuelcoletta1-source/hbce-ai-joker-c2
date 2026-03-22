@@ -1,19 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
 import { createAnchor } from "@/lib/anchor";
 import { validateTruth } from "@/lib/truth-validator";
+import { evaluateHBCEPolicy } from "@/lib/policy-engine";
 import {
   signFederationResponse,
   federationSignatureIsConfigured
 } from "@/lib/federation-signature";
-import { evaluateHBCEPolicy } from "@/lib/policy-engine";
-import { runNodeRuntime } from "@/lib/node/node-runtime";
-import { nodeAppendEvent } from "@/lib/node/node-ledger";
 import {
-  nodeGetMemoryByKey,
+  runNodeRuntime,
+  finalizeNodeRuntime
+} from "@/lib/node/node-runtime";
+import {
   nodeMemoryIsConfigured,
   nodeSaveMemory,
+  nodeGetMemoryByKey,
   nodeSearchMemories
 } from "@/lib/node/node-memory";
 
@@ -130,6 +132,41 @@ function buildAttachmentContext(attachments: ChatAttachment[]): string {
   return ["Attached document context:", ...usable].join("\n\n");
 }
 
+function normalizeSessionId(sessionId?: string): string {
+  if (typeof sessionId !== "string" || !sessionId.trim()) {
+    return "JOKER-CHAT-SESSION-0001";
+  }
+
+  return sessionId.trim();
+}
+
+function normalizeRole(role?: string): string {
+  if (typeof role !== "string" || !role.trim()) {
+    return "Operatore supervisionato";
+  }
+
+  return role.trim();
+}
+
+function normalizeNodeContext(nodeContext?: string): string {
+  if (typeof nodeContext !== "string" || !nodeContext.trim()) {
+    return NODE_ID;
+  }
+
+  return nodeContext.trim();
+}
+
+function normalizeContinuityReference(
+  continuityReference: string | undefined,
+  sessionId: string
+): string {
+  if (typeof continuityReference !== "string" || !continuityReference.trim()) {
+    return `${sessionId}-AUDIT`;
+  }
+
+  return continuityReference.trim();
+}
+
 function detectIntent(
   message: string,
   attachments: ChatAttachment[]
@@ -239,7 +276,6 @@ function detectCorpusMode(
     m.includes("approvazione") ||
     m.includes("passare a bruxelles") ||
     m.includes("readiness") ||
-    m.includes("ue") ||
     m.includes("commissione europea");
 
   if (brusselsHints && gapHints) {
@@ -266,8 +302,7 @@ function buildInterpretiveGuidance(): string[] {
     "Explain what the document really does, what function it has, and what role it plays inside the broader system.",
     "When relevant, explain what changes compared to earlier documents or prior stages.",
     "Prioritize purpose, architecture, strategic meaning, implications, and internal logic over repetition.",
-    "Use compact, precise, non-bloated language.",
-    "When possible, answer in this order: function of the document, central thesis, what it adds, strategic implication, concise interpretive conclusion."
+    "Use compact, precise, non-bloated language."
   ];
 }
 
@@ -277,29 +312,24 @@ function buildCorpusModeGuidance(corpusMode: CorpusMode): string[] {
       return [
         "Multiple related documents are present.",
         "Treat them as a connected set, not as isolated files.",
-        "Look for continuity, sequence, overlap, and dependency across documents.",
-        "Do not summarize each file one by one unless the user explicitly asks for it."
+        "Look for continuity, sequence, overlap, and dependency across documents."
       ];
 
     case "collection-analysis":
       return [
         "Collection-analysis mode is active.",
         "Treat the attached documents as a coherent corpus or series.",
-        "Your task is not to summarize each volume separately.",
+        "Do not summarize each volume separately.",
         "Reconstruct the progression of the whole collection.",
-        "Explain the role of each document inside the sequence and the architectural movement from one to the next.",
-        "Highlight the logic of the collection as a whole.",
-        "Prefer: sequence, progression, function of each volume, cumulative thesis, system-level meaning."
+        "Explain the role of each document inside the sequence and the architectural movement from one to the next."
       ];
 
     case "gap-analysis":
       return [
         "Gap-analysis mode is active.",
         "Do not explain the project again unless strictly necessary.",
-        "Identify what is missing, weak, immature, under-specified, non-enforceable, or not yet operational.",
+        "Identify what is missing, weak, immature, under-specified, or not yet enforceable.",
         "Separate foundational gaps from secondary gaps.",
-        "Prioritize deficiencies by impact on execution, governance, interoperability, compliance, and institutional credibility.",
-        "Use compact diagnostic language.",
         "Prefer: critical gap, why it matters, where it appears, what must be fixed."
       ];
 
@@ -308,11 +338,8 @@ function buildCorpusModeGuidance(corpusMode: CorpusMode): string[] {
         "Brussels-readiness mode is active.",
         "Treat the corpus as a single project seeking European-level credibility, enforceability, and institutional readiness.",
         "Do not produce a generic summary.",
-        "Evaluate the corpus as if preparing it for Brussels-level scrutiny.",
         "Distinguish clearly between what is already strong, what is immature, what is missing, and what blocks enforceability or EU readiness.",
-        "Focus on governance, legal framing, standardization, compliance, KPI system, pilot credibility, consortium structure, industrialization, and implementation sequencing.",
-        "Order the analysis by dependency and priority, not by document order alone.",
-        "Prefer: already solid, blockers, required corrections, enforcement layer, Brussels readiness conclusion."
+        "Order the analysis by dependency and priority."
       ];
 
     default:
@@ -336,15 +363,15 @@ function buildMemoryPromptBlock(input: {
   ];
 }
 
-function buildSystemPrompt(
-  intent: "chat" | "research" | "general",
-  policyGuidance: string[],
-  hasAttachments: boolean,
-  interpretiveMode: boolean,
-  memoryContext: string,
-  hasMemory: boolean,
-  corpusMode: CorpusMode
-): string {
+function buildSystemPrompt(input: {
+  intent: "chat" | "research" | "general";
+  policyGuidance: string[];
+  hasAttachments: boolean;
+  interpretiveMode: boolean;
+  memoryContext: string;
+  hasMemory: boolean;
+  corpusMode: CorpusMode;
+}): string {
   const base = [
     "You are JOKER-C2, the operational cybernetic entity of the HBCE system.",
     `Identity: ${NODE_IDENTITY}.`,
@@ -358,29 +385,28 @@ function buildSystemPrompt(
   ];
 
   const intentBlock =
-    intent === "chat"
+    input.intent === "chat"
       ? ["Conversational mode."]
-      : intent === "research"
+      : input.intent === "research"
         ? ["Research mode: be analytical, source-aware, and cautious."]
         : ["General reasoning mode."];
 
-  const attachmentBlock = hasAttachments
+  const attachmentBlock = input.hasAttachments
     ? [
         "One or more document attachments are included in the request.",
-        "If attachment text is present, use it as primary context for reading, summarizing, extracting, or analyzing the document.",
-        "If the user asks to read the file, explicitly rely on attached document context."
+        "If attachment text is present, use it as primary context for reading or analysis."
       ]
     : [];
 
-  const interpretiveBlock = interpretiveMode
+  const interpretiveBlock = input.interpretiveMode
     ? buildInterpretiveGuidance()
     : [];
 
-  const corpusBlock = buildCorpusModeGuidance(corpusMode);
+  const corpusBlock = buildCorpusModeGuidance(input.corpusMode);
 
   const memoryBlock = buildMemoryPromptBlock({
-    memoryContext,
-    hasMemory
+    memoryContext: input.memoryContext,
+    hasMemory: input.hasMemory
   });
 
   return [
@@ -390,67 +416,8 @@ function buildSystemPrompt(
     ...interpretiveBlock,
     ...corpusBlock,
     ...memoryBlock,
-    ...policyGuidance
+    ...input.policyGuidance
   ].join(" ");
-}
-
-function shouldApplyTruthWarning(
-  policy: ReturnType<typeof evaluateHBCEPolicy>
-): boolean {
-  return policy.truth_scope.applyWarning;
-}
-
-function normalizeSessionId(sessionId?: string): string {
-  if (typeof sessionId !== "string" || !sessionId.trim()) {
-    return "JOKER-CHAT-SESSION-0001";
-  }
-
-  return sessionId.trim();
-}
-
-function normalizeRole(role?: string): string {
-  if (typeof role !== "string" || !role.trim()) {
-    return "Operatore supervisionato";
-  }
-
-  return role.trim();
-}
-
-function normalizeNodeContext(nodeContext?: string): string {
-  if (typeof nodeContext !== "string" || !nodeContext.trim()) {
-    return NODE_ID;
-  }
-
-  return nodeContext.trim();
-}
-
-function normalizeContinuityReference(
-  continuityReference: string | undefined,
-  sessionId: string
-): string {
-  if (typeof continuityReference !== "string" || !continuityReference.trim()) {
-    return `${sessionId}-AUDIT`;
-  }
-
-  return continuityReference.trim();
-}
-
-function buildMemoryKeys(input: {
-  sessionId: string;
-}): {
-  sessionSummaryKey: string;
-  recentIntentKey: string;
-  recentDocumentsKey: string;
-  corpusSummaryKey: string;
-  corpusGapKey: string;
-} {
-  return {
-    sessionSummaryKey: `session:${input.sessionId}:summary`,
-    recentIntentKey: `session:${input.sessionId}:recent_intent`,
-    recentDocumentsKey: `session:${input.sessionId}:recent_documents`,
-    corpusSummaryKey: `session:${input.sessionId}:corpus_summary`,
-    corpusGapKey: `session:${input.sessionId}:corpus_gaps`
-  };
 }
 
 function summarizeMessageForMemory(message: string): string {
@@ -473,11 +440,20 @@ function buildAttachmentNamesSummary(attachments: ChatAttachment[]): string {
   return names.join(", ").slice(0, 300);
 }
 
+function buildMemoryKeys(sessionId: string) {
+  return {
+    sessionSummaryKey: `session:${sessionId}:summary`,
+    recentIntentKey: `session:${sessionId}:recent_intent`,
+    recentDocumentsKey: `session:${sessionId}:recent_documents`,
+    corpusSummaryKey: `session:${sessionId}:corpus_summary`,
+    corpusGapKey: `session:${sessionId}:corpus_gaps`
+  };
+}
+
 async function buildMemoryContext(input: {
   sessionId: string;
   effectiveMessage: string;
   hasAttachments: boolean;
-  attachments: ChatAttachment[];
   corpusMode: CorpusMode;
 }): Promise<{
   enabled: boolean;
@@ -490,7 +466,7 @@ async function buildMemoryContext(input: {
     };
   }
 
-  const keys = buildMemoryKeys({ sessionId: input.sessionId });
+  const keys = buildMemoryKeys(input.sessionId);
 
   const [
     sessionSummary,
@@ -575,8 +551,7 @@ async function persistMemoryState(input: {
     return;
   }
 
-  const keys = buildMemoryKeys({ sessionId: input.sessionId });
-
+  const keys = buildMemoryKeys(input.sessionId);
   const tasks: Promise<unknown>[] = [];
 
   tasks.push(
@@ -654,7 +629,7 @@ async function persistMemoryState(input: {
   await Promise.allSettled(tasks);
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
@@ -664,6 +639,7 @@ export async function POST(req: Request) {
     }
 
     const body = (await req.json()) as ChatBody;
+
     const message = normalizeMessage(body.message);
     const history = normalizeHistory(body.history);
     const attachments = normalizeAttachments(body.attachments);
@@ -696,43 +672,32 @@ export async function POST(req: Request) {
       : "Read and analyze the attached file.";
 
     const sessionId = normalizeSessionId(body.sessionId);
-    const role = normalizeRole(body.role);
-    const nodeContext = normalizeNodeContext(body.nodeContext);
+    normalizeRole(body.role);
+    normalizeNodeContext(body.nodeContext);
     const continuityReference = normalizeContinuityReference(
       body.continuityReference,
       sessionId
     );
-
-    let nodeRuntime: Awaited<ReturnType<typeof runNodeRuntime>> | null = null;
-    let nodeRuntimeError: string | null = null;
-
-    try {
-      nodeRuntime = await runNodeRuntime({
-        sessionId,
-        message: effectiveMessage,
-        role,
-        nodeContext,
-        continuityReference,
-        actor: NODE_IDENTITY
-      });
-    } catch (error) {
-      nodeRuntimeError =
-        error instanceof Error ? error.message : "Node runtime unavailable";
-    }
 
     const intent = detectIntent(message, attachments);
     const research = body.research === true || intent === "research";
     const interpretiveMode =
       hasAttachments && wantsInterpretiveMode(effectiveMessage);
     const corpusMode = detectCorpusMode(effectiveMessage, attachments);
+
     const historyTexts = history.map((item) => item.content);
 
     const memoryState = await buildMemoryContext({
       sessionId,
       effectiveMessage,
       hasAttachments,
-      attachments,
       corpusMode
+    });
+
+    const runtimeStart = await runNodeRuntime({
+      sessionId,
+      userMessage: effectiveMessage,
+      actor: NODE_IDENTITY
     });
 
     const prePolicy = evaluateHBCEPolicy({
@@ -749,38 +714,11 @@ export async function POST(req: Request) {
         prePolicy.block_response ||
         "Richiesta non supportata nel formato richiesto.";
 
-      const anchor = createAnchor({
-        message: effectiveMessage,
-        response: blockedResponse,
-        intent,
-        policy: prePolicy,
-        session_id: sessionId,
-        continuity_reference:
-          nodeRuntime?.execution.result.continuityReference ||
-          continuityReference
+      const runtimeEnd = await finalizeNodeRuntime({
+        sessionId,
+        assistantResponse: blockedResponse,
+        actor: NODE_IDENTITY
       });
-
-      try {
-        await nodeAppendEvent({
-          kind: "chat.response.blocked",
-          actor: NODE_IDENTITY,
-          node: nodeContext,
-          payload: {
-            session_id: sessionId,
-            continuity_reference:
-              nodeRuntime?.execution.result.continuityReference ||
-              continuityReference,
-            intent,
-            blocked: true,
-            block_reason: prePolicy.block_reason || "policy_block",
-            attachment_count: attachments.length,
-            anchor_hash: anchor.hash,
-            corpus_mode: corpusMode
-          }
-        });
-      } catch {
-        // non bloccare la risposta chat se il ledger fallisce
-      }
 
       await persistMemoryState({
         sessionId,
@@ -792,77 +730,78 @@ export async function POST(req: Request) {
         corpusMode
       });
 
+      const anchor = createAnchor({
+        message: effectiveMessage,
+        response: blockedResponse,
+        intent,
+        policy: prePolicy,
+        session_id: sessionId,
+        continuity_reference:
+          runtimeEnd.session.continuity_reference || continuityReference
+      });
+
       return NextResponse.json({
         ok: true,
         joker: "C2",
         response: blockedResponse,
         intent,
-        policy: prePolicy,
-        anchor,
         interpretive_mode: interpretiveMode,
         corpus_mode: corpusMode,
         memory: {
           enabled: memoryState.enabled,
           context_used: memoryState.context.length > 0
         },
-        node_runtime: nodeRuntime
-          ? {
-              session_id: nodeRuntime.execution.session.sessionId,
-              session_state: nodeRuntime.execution.result.sessionState,
-              continuity_reference:
-                nodeRuntime.execution.result.continuityReference,
-              continuity_status: nodeRuntime.continuity_status,
-              ledger_events: nodeRuntime.ledger_events
-            }
-          : {
-              session_id: sessionId,
-              session_state: "NODE-RUNTIME-OFFLINE",
-              continuity_reference: continuityReference,
-              continuity_status: "UNKNOWN",
-              ledger_events: [],
-              warning: nodeRuntimeError || "Node runtime unavailable"
-            },
+        anchor,
+        node_runtime: {
+          session_id: runtimeEnd.session.session_id,
+          session_state: runtimeEnd.session.state,
+          continuity_reference: runtimeEnd.session.continuity_reference,
+          continuity_status: runtimeEnd.continuity_status,
+          ledger_valid: runtimeEnd.ledger_valid,
+          last_event_id: runtimeEnd.last_event_id
+        },
         federation_signature: federationSignatureIsConfigured()
           ? signFederationResponse(NODE_ID, blockedResponse)
           : null
       });
     }
 
-    const prompt = buildSystemPrompt(
+    const prompt = buildSystemPrompt({
       intent,
-      prePolicy.prompt_guidance,
+      policyGuidance: prePolicy.prompt_guidance,
       hasAttachments,
       interpretiveMode,
-      memoryState.context,
-      memoryState.enabled,
+      memoryContext: memoryState.context,
+      hasMemory: memoryState.enabled,
       corpusMode
-    );
+    });
 
     const userContent = attachmentContext
       ? `${effectiveMessage}\n\n${attachmentContext}`
       : effectiveMessage;
 
-    const input =
-      history.length > 0
-        ? [
-            ...history.map((item) => ({
-              role: item.role,
-              content: item.content
-            })),
-            {
-              role: "user" as const,
-              content: userContent
-            }
-          ]
-        : userContent;
+    const messages = [
+      {
+        role: "system" as const,
+        content: prompt
+      },
+      ...history.map((item) => ({
+        role: item.role as "user" | "assistant",
+        content: item.content
+      })),
+      {
+        role: "user" as const,
+        content: userContent
+      }
+    ];
 
-    const ai = await client.responses.create({
-      model: "gpt-4.1-mini",
-      instructions: prompt,
-      input
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages
     });
 
-    let response = ai.output_text?.trim() || "No response generated.";
+    let response =
+      completion.choices[0]?.message?.content?.trim() || "No response generated.";
 
     const postPolicy = evaluateHBCEPolicy({
       message: effectiveMessage,
@@ -891,48 +830,15 @@ export async function POST(req: Request) {
       sources: []
     });
 
-    if (truth.decision === "WARN" && shouldApplyTruthWarning(postPolicy)) {
+    if (truth.decision === "WARN" && postPolicy.truth_scope.applyWarning) {
       response = `[TRUTH WARNING]\n${response}`;
     }
 
-    const anchor = createAnchor({
-      message: effectiveMessage,
-      response,
-      intent,
-      policy: postPolicy,
-      truth,
-      session_id: sessionId,
-      continuity_reference:
-        nodeRuntime?.execution.result.continuityReference ||
-        continuityReference
+    const runtimeEnd = await finalizeNodeRuntime({
+      sessionId,
+      assistantResponse: response,
+      actor: NODE_IDENTITY
     });
-
-    let chatLedgerEvent: unknown = null;
-
-    try {
-      chatLedgerEvent = await nodeAppendEvent({
-        kind: "chat.response.emitted",
-        actor: NODE_IDENTITY,
-        node: nodeContext,
-        payload: {
-          session_id: sessionId,
-          continuity_reference:
-            nodeRuntime?.execution.result.continuityReference ||
-            continuityReference,
-          intent,
-          research,
-          attachment_count: attachments.length,
-          anchor_hash: anchor.hash,
-          truth_decision: truth.decision,
-          truth_score: truth.score,
-          interpretive_mode: interpretiveMode,
-          memory_enabled: memoryState.enabled,
-          corpus_mode: corpusMode
-        }
-      });
-    } catch {
-      chatLedgerEvent = null;
-    }
 
     await persistMemoryState({
       sessionId,
@@ -942,6 +848,17 @@ export async function POST(req: Request) {
       attachments,
       interpretiveMode,
       corpusMode
+    });
+
+    const anchor = createAnchor({
+      message: effectiveMessage,
+      response,
+      intent,
+      policy: postPolicy,
+      truth,
+      session_id: sessionId,
+      continuity_reference:
+        runtimeEnd.session.continuity_reference || continuityReference
     });
 
     return NextResponse.json({
@@ -959,26 +876,15 @@ export async function POST(req: Request) {
         enabled: memoryState.enabled,
         context_used: memoryState.context.length > 0
       },
-      node_runtime: nodeRuntime
-        ? {
-            session_id: nodeRuntime.execution.session.sessionId,
-            session_state: nodeRuntime.execution.result.sessionState,
-            continuity_reference:
-              nodeRuntime.execution.result.continuityReference,
-            continuity_status: nodeRuntime.continuity_status,
-            ledger_events: [
-              ...nodeRuntime.ledger_events,
-              ...(chatLedgerEvent ? [chatLedgerEvent] : [])
-            ]
-          }
-        : {
-            session_id: sessionId,
-            session_state: "NODE-RUNTIME-OFFLINE",
-            continuity_reference: continuityReference,
-            continuity_status: "UNKNOWN",
-            ledger_events: [],
-            warning: nodeRuntimeError || "Node runtime unavailable"
-          },
+      node_runtime: {
+        session_id: runtimeEnd.session.session_id,
+        session_state: runtimeEnd.session.state,
+        continuity_reference: runtimeEnd.session.continuity_reference,
+        continuity_status: runtimeEnd.continuity_status,
+        ledger_valid: runtimeEnd.ledger_valid,
+        last_event_id: runtimeEnd.last_event_id,
+        runtime_start_state: runtimeStart.runtime_state
+      },
       federation_signature: federationSignatureIsConfigured()
         ? signFederationResponse(NODE_ID, response)
         : null
