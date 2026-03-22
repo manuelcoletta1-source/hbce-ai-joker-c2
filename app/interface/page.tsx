@@ -19,6 +19,10 @@ type ApiResponse = {
     url?: string;
   }>;
   interpretive_mode?: boolean;
+  memory?: {
+    enabled?: boolean;
+    context_used?: boolean;
+  };
   node_runtime?: {
     session_id?: string;
     session_state?: string;
@@ -28,7 +32,7 @@ type ApiResponse = {
   };
 };
 
-const STORAGE_KEY = "hbce-joker-c2-interface-v3";
+const STORAGE_KEY = "hbce-joker-c2-interface-v4";
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 
 function makeId() {
@@ -127,6 +131,8 @@ export default function InterfacePage() {
   const [continuityReference, setContinuityReference] = useState("-");
   const [continuityStatus, setContinuityStatus] = useState("-");
   const [interpretiveMode, setInterpretiveMode] = useState("OFF");
+  const [memoryEnabled, setMemoryEnabled] = useState("OFF");
+  const [memoryContextUsed, setMemoryContextUsed] = useState("NO");
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -173,6 +179,8 @@ export default function InterfacePage() {
     setContinuityReference("-");
     setContinuityStatus("-");
     setInterpretiveMode("OFF");
+    setMemoryEnabled("OFF");
+    setMemoryContextUsed("NO");
     localStorage.removeItem(STORAGE_KEY);
     textareaRef.current?.focus();
   }
@@ -238,6 +246,8 @@ export default function InterfacePage() {
       );
       setContinuityStatus(data.node_runtime?.continuity_status || "-");
       setInterpretiveMode(data.interpretive_mode ? "ON" : "OFF");
+      setMemoryEnabled(data.memory?.enabled ? "ON" : "OFF");
+      setMemoryContextUsed(data.memory?.context_used ? "YES" : "NO");
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -307,6 +317,16 @@ export default function InterfacePage() {
               </div>
 
               <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Node Memory</div>
+                <div style={styles.metaValue}>{memoryEnabled}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Memory Context Used</div>
+                <div style={styles.metaValue}>{memoryContextUsed}</div>
+              </div>
+
+              <div style={styles.metaItem}>
                 <div style={styles.metaLabel}>Status</div>
                 <div style={styles.metaValue}>{sending ? "Sending..." : status}</div>
               </div>
@@ -321,7 +341,7 @@ export default function InterfacePage() {
           <section style={styles.sidebarCard}>
             <div style={styles.cardTitle}>Runtime Model</div>
             <div style={styles.infoText}>
-              request → session → continuity → response → audit
+              request → session → continuity → memory → response → audit
             </div>
           </section>
         </aside>
