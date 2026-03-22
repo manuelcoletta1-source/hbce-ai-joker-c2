@@ -5,19 +5,19 @@ const CARDS = [
     label: "Operational Core",
     title: "Coordination Engine",
     text:
-      "Joker-C2 operates as a coordination engine for analysis, contextual recovery, structured response generation, and node-aware operational interaction."
+      "JOKER-C2 opera come motore di coordinamento per analisi, recupero contestuale, risposta strutturata e interazione operativa consapevole del nodo."
   },
   {
     label: "Identity Layer",
     title: "IPR-Bound Logic",
     text:
-      "The application is designed to align response execution with identity-bound workflows, persistent operational attribution, and verifiable event logic."
+      "L’applicazione allinea esecuzione, attribuzione operativa persistente e logica verificabile nel quadro IPR / HBCE."
   },
   {
-    label: "Territorial Layer",
-    title: "Matrix Europa Node",
+    label: "Node Layer",
+    title: "Torino Pilot Node",
     text:
-      "The current interface is aligned with the Torino experimental node and prepared for wider Matrix Europa territorial deployment logic."
+      "Il sistema integra il primo nodo operativo HBCE, con continuità runtime, ledger persistente, verify surface, trust layer e snapshot federativo."
   }
 ];
 
@@ -27,16 +27,16 @@ const STATUS_ITEMS = [
     value: "Online"
   },
   {
-    key: "Interface",
-    value: "Next.js Route"
-  },
-  {
-    key: "Chat API",
-    value: "Context Recovery Active"
+    key: "Runtime",
+    value: "JOKER-C2 Node-Aware"
   },
   {
     key: "Default Node",
     value: "HBCE-MATRIX-NODE-0001-TORINO"
+  },
+  {
+    key: "Verify Surface",
+    value: "/api/verify"
   }
 ];
 
@@ -51,13 +51,18 @@ export default function HomePage() {
         <h1 style={styles.title}>AI JOKER-C2</h1>
 
         <p className="hbce-muted" style={styles.subtitle}>
-          Identity-Bound Operational AI Application for HBCE environments,
-          Matrix Europa nodes, and structured operational context recovery.
+          Identity-Bound Operational AI Application and Torino Pilot Node for
+          HBCE environments, Matrix Europa deployment logic, structured context
+          recovery, and verifiable operational continuity.
         </p>
 
         <div style={styles.actions}>
           <Link href="/interface" className="hbce-button-primary">
             Open Interface
+          </Link>
+
+          <Link href="/node" className="hbce-button-secondary">
+            Open Node
           </Link>
 
           <Link href="/ipr" className="hbce-button-secondary">
@@ -82,7 +87,7 @@ export default function HomePage() {
         ))}
       </section>
 
-      <section className="hbce-wrap">
+      <section className="hbce-wrap" style={styles.sectionGap}>
         <div className="hbce-card" style={styles.panel}>
           <div className="hbce-kicker" style={styles.panelLabel}>
             Current Status
@@ -97,6 +102,26 @@ export default function HomePage() {
                 <span style={styles.statusValue}>{item.value}</span>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="hbce-wrap">
+        <div className="hbce-card" style={styles.panel}>
+          <div className="hbce-kicker" style={styles.panelLabel}>
+            Operational Access
+          </div>
+
+          <div className="hbce-grid-3">
+            <Link href="/node" className="hbce-button-secondary" style={styles.inlineButton}>
+              Torino Pilot Node
+            </Link>
+            <Link href="/api/verify" className="hbce-button-secondary" style={styles.inlineButton}>
+              Verify API
+            </Link>
+            <Link href="/api/network" className="hbce-button-secondary" style={styles.inlineButton}>
+              Network API
+            </Link>
           </div>
         </div>
       </section>
@@ -119,7 +144,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   subtitle: {
     margin: 0,
-    maxWidth: 760,
+    maxWidth: 820,
     fontSize: 18,
     lineHeight: 1.7
   },
@@ -169,5 +194,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 15,
     color: "#e8eef7",
     wordBreak: "break-word"
+  },
+  inlineButton: {
+    justifyContent: "center"
   }
 };
