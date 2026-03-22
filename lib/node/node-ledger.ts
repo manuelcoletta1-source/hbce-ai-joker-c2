@@ -1,122 +1,89 @@
-import {
-  dbAppendLedgerEvent,
-  dbGetLedgerTail,
-  dbIsConfigured,
-  dbVerifyLedger,
-  type JokerPersistentLedgerEvent
-} from "@/lib/joker-db";
+import crypto from "crypto";
 
-import type {
-  HBCELedgerEvent,
-  HBCELedgerVerification,
-  HBCENodeRuntimeEventInput,
-  HBCENodeRuntimeEventResult
-} from "@/lib/node/node-types";
+type LedgerEvent = {
+  id: string;
+  kind: string;
+  actor: string;
+  node: string;
+  timestamp: string;
+  payload: Record<string, unknown>;
+  hash: string;
+};
 
-function mapLedgerEvent(
-  event: JokerPersistentLedgerEvent
-): HBCELedgerEvent {
-  return {
-    seq: event.seq,
-    id: event.id,
-    ts: event.ts,
-    kind: event.kind,
-    actor: event.actor,
-    node: event.node,
-    payload: event.payload,
-    prev_hash: event.prev_hash,
-    hash: event.hash
-  };
+const inMemoryLedger: LedgerEvent[] = [];
+
+function generateHash(input: string): string {
+  return crypto.createHash("sha256").update(input).digest("hex");
 }
 
-export function nodeLedgerIsConfigured(): boolean {
-  return dbIsConfigured();
+function generateId(): string {
+  return crypto.randomBytes(16).toString("hex");
 }
 
-export async function nodeAppendEvent(
-  input: HBCENodeRuntimeEventInput
-): Promise<HBCENodeRuntimeEventResult> {
-  if (!dbIsConfigured()) {
-    return {
-      ok: false,
-      event: null
-    };
-  }
+export async function nodeAppendEvent(input: {
+  kind: string;
+  actor: string;
+  node: string;
+  payload: Record<string, unknown>;
+}): Promise<LedgerEvent> {
+  const timestamp = new Date().toISOString();
 
-  const event = await dbAppendLedgerEvent({
+  const base = {
     kind: input.kind,
     actor: input.actor,
     node: input.node,
+    timestamp,
     payload: input.payload
-  });
-
-  return {
-    ok: true,
-    event: mapLedgerEvent(event)
   };
-}
 
-export async function nodeGetLedgerTail(
-  limit = 10
-): Promise<HBCELedgerEvent[]> {
-  if (!dbIsConfigured()) {
-    return [];
-  }
+  const hash = generateHash(JSON.stringify(base));
 
-  const tail = await dbGetLedgerTail(limit);
-  return tail.map(mapLedgerEvent);
-}
-
-export async function nodeVerifyLedger(): Promise<HBCELedgerVerification> {
-  if (!dbIsConfigured()) {
-    return {
-      ok: false,
-      checked: 0,
-      broken_seq: null
-    };
-  }
-
-  const result = await dbVerifyLedger();
-
-  return {
-    ok: result.ok,
-    checked: result.checked,
-    broken_seq: result.broken_seq
+  const event: LedgerEvent = {
+    id: generateId(),
+    ...base,
+    hash
   };
+
+  inMemoryLedger.push(event);
+
+  return event;
 }
 
-export async function nodeGetLastLedgerEvent(): Promise<HBCELedgerEvent | null> {
-  const tail = await nodeGetLedgerTail(1);
-  return tail[0] ?? null;
+export async function nodeGetLedger(): Promise<LedgerEvent[]> {
+  return [...inMemoryLedger];
 }
 
-export async function nodeGetLedgerSummary(): Promise<{
-  integrity: boolean;
-  checked_events: number;
-  broken_at: number | null;
-  last_seq: number | null;
-  last_hash: string | null;
+export async function nodeGetLastEvent(): Promise<LedgerEvent | null> {
+  if (inMemoryLedger.length === 0) return null;
+  return inMemoryLedger[inMemoryLedger.length - 1];
+}
+
+export async function nodeVerifyLedger(): Promise<{
+  valid: boolean;
+  errors: string[];
 }> {
-  if (!dbIsConfigured()) {
-    return {
-      integrity: false,
-      checked_events: 0,
-      broken_at: null,
-      last_seq: null,
-      last_hash: null
-    };
+  const errors: string[] = [];
+
+  for (let i = 0; i < inMemoryLedger.length; i++) {
+    const event = inMemoryLedger[i];
+
+    const recalculatedHash = generateHash(
+      JSON.stringify({
+        kind: event.kind,
+        actor: event.actor,
+        node: event.node,
+        timestamp: event.timestamp,
+        payload: event.payload
+      })
+    );
+
+    if (recalculatedHash !== event.hash) {
+      errors.push(`Hash mismatch at event ${event.id}`);
+    }
   }
 
-  const [verification, last] = await Promise.all([
-    nodeVerifyLedger(),
-    nodeGetLastLedgerEvent()
-  ]);
-
   return {
-    integrity: verification.ok,
-    checked_events: verification.checked,
-    broken_at: verification.broken_seq,
-    last_seq: last?.seq ?? null,
-    last_hash: last?.hash ?? null
+    valid: errors.length === 0,
+    errors
   };
 }
