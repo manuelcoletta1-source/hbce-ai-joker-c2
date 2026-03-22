@@ -1,56 +1,35 @@
 import { NextResponse } from "next/server";
 
-import {
-  dbGetLedgerTail,
-  dbIsConfigured,
-  dbVerifyLedger
-} from "@/lib/joker-db";
-
-import {
-  signatureIsConfigured
-} from "@/lib/joker-signature";
+import { nodeGetPublicVerifySnapshot } from "@/lib/node/node-verify";
+import { nodeLedgerIsConfigured } from "@/lib/node/node-ledger";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    if (!dbIsConfigured()) {
+    if (!nodeLedgerIsConfigured()) {
       return NextResponse.json({
         ok: false,
         error: "Persistent DB not configured",
         node: "HBCE-MATRIX-NODE-0001-TORINO",
-        identity: "IPR-AI-0001"
+        identity: "IPR-AI-0001",
+        system: "JOKER-C2"
       });
     }
 
-    const verification = await dbVerifyLedger();
-    const tail = await dbGetLedgerTail(10);
+    const snapshot = await nodeGetPublicVerifySnapshot(10);
 
     return NextResponse.json({
       ok: true,
-      node: "HBCE-MATRIX-NODE-0001-TORINO",
-      identity: "IPR-AI-0001",
-      system: "JOKER-C2",
-      verify: {
-        ledger_integrity: verification.ok,
-        checked_events: verification.checked,
-        broken_at: verification.broken_seq
-      },
-      signature: {
-        enabled: signatureIsConfigured()
-      },
-      storage: {
-        type: "redis"
-      },
-      ledger_tail: tail.map((event) => ({
-        seq: event.seq,
-        id: event.id,
-        kind: event.kind,
-        ts: event.ts,
-        hash: event.hash,
-        prev_hash: event.prev_hash
-      })),
-      ts: new Date().toISOString()
+      node: snapshot.node,
+      identity: snapshot.identity,
+      system: snapshot.system,
+      verify: snapshot.verify,
+      continuity: snapshot.continuity,
+      signature: snapshot.signature,
+      storage: snapshot.storage,
+      ledger_tail: snapshot.ledger_tail,
+      ts: snapshot.ts
     });
   } catch (error) {
     const message =
