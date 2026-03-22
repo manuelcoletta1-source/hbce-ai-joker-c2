@@ -1,108 +1,321 @@
-# [hbce-ai-joker-c2](https://manuelcoletta1-source.github.io/hbce-ai-joker-c2/)
 # AI JOKER-C2
-Applicazione di intelligenza artificiale operativa vincolata all’identità
+
+**Identity-Bound Operational AI Application and Torino Pilot Node**
 
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
 
-## Panoramica
+---
 
-AI JOKER-C2 è l’applicazione di intelligenza artificiale operativa dell’ecosistema HBCE.
+## Overview
 
-L’applicazione è progettata come livello di intelligenza operativa vincolato all’identità, connesso all’ambiente IPR/HBCE, nel quale interazione attribuibile, workflow supervisionati e logiche operative verificabili vengono trattati come funzioni di livello infrastrutturale.
+AI JOKER-C2 is the operational AI application of the HBCE ecosystem.
 
-AI JOKER-C2 non è presentata come una chatbot generica.  
-È posizionata come livello cibernetico di intelligenza operativa capace di assistere interpretazione, coordinamento, tracciabilità e supporto decisionale in ambienti strutturati.
+It is not a generic conversational system.
 
-## Posizionamento centrale
+It is a **node-aware runtime** that combines:
 
-AI JOKER-C2 opera all’interno del framework HBCE come modulo operativo nativo dell’AI associato a identità persistente, interazione governata e workflow compatibili con l’evidenza.
+- identity-bound interaction (IPR logic)
+- governed session execution (C2-Lex)
+- persistent ledger recording (hash-linked events)
+- public verification surface
+- federated network visibility
 
-Il suo ruolo è supportare:
+The system represents the **first operational instance of a Matrix Europa node**.
 
-- interpretazione operativa
-- assistenza contestuale
-- interazione di comando supervisionata
-- coordinamento dei workflow orientato all’audit
-- generazione di output collegati all’evidenza
-- supporto decisionale strutturato
+---
 
-## Contesto architetturale
+## Core Concept
 
-AI JOKER-C2 fa parte della più ampia architettura IPR/HBCE.
+AI JOKER-C2 operates as:
 
-### IPR
+> **Application + Runtime + Node**
 
-L’Identity Primary Record (IPR) è il livello di attribuzione e continuità dell’ecosistema.
+Where:
 
-Fornisce la base per persistenza dell’identità, associazione di ruolo, continuità dell’evidenza e attribuzione operativa.
+- the **application layer** handles interaction (chat, interface, UI)
+- the **runtime layer** manages governance, sessions, and continuity
+- the **node layer** exposes verification, ledger, and network state
 
-### HBCE
+This fusion defines a new class of system:
 
-HBCE fornisce il contesto di governance, infrastruttura, policy e audit all’interno del quale AI JOKER-C2 opera.
+> **Identity-Bound Operational Node**
 
-Questo include logica fail-closed, design audit-first, esposizione minima necessaria e gestione operativa verificabile.
+---
 
-### C2-Lex
+## Architecture Layers
 
-C2-Lex è il modulo conversazionale-operativo nativo dell’ambiente AI JOKER-C2.
+### 1. Interface Layer
 
-È definito come il layer semantico di comando del sistema IPR/HBCE.
+User interaction surface.
 
-Attraverso C2-Lex, l’interazione viene trasformata da semplice scambio testuale in esecuzione di workflow attribuibili, coerenti con le policy e operativamente significativi.
+- `/` → homepage
+- `/interface` → chat interface
+- `/node` → node surface
+- `/ipr` → identity layer exploration
 
-Per la definizione canonica, vedere:
+---
 
-- [docs/C2-LEX.md](docs/C2-LEX.md)
+### 2. Runtime Layer (JOKER-C2)
 
-## Ruolo funzionale
+Handles execution logic:
 
-AI JOKER-C2 è progettata per operare come livello di intelligenza supervisionata capace di:
+- C2-Lex governed sessions
+- intent classification
+- policy enforcement (HBCE Policy Engine)
+- continuity tracking
+- anchor generation (SHA-256)
 
-- interpretare richieste operative
-- correlare il contesto tra input di sistema
-- assistere l’attivazione dei workflow
-- supportare la reportistica operativa
-- strutturare l’interazione orientata alla decisione
-- migliorare la visibilità situazionale in ambienti controllati
+Main entrypoints:
 
-La piattaforma è pensata per contesti governati nei quali comunicazione, ragionamento e stato operativo devono rimanere attribuibili e verificabili.
+- `/api/chat`
+- `/api/c2-lex`
 
-## Principi di progettazione
+---
 
-Il sistema segue l’approccio canonico HBCE:
+### 3. Node Layer (HBCE Node)
 
-- fail-closed
-- audit-first
-- interazione attribuibile
-- esecuzione vincolata alle policy
-- design attento alla privacy
-- compatibilità con l’evidenza
-- evoluzione modulare
-- logica operativa supervisionata
+Represents the operational infrastructure unit.
 
-## Significato strategico
+Capabilities:
 
-AI JOKER-C2 rappresenta il passaggio dall’AI conversazionale generica all’intelligenza operativa vincolata all’identità.
+- persistent ledger (hash-linked events)
+- signature layer (ED25519)
+- continuity layer (session tracking)
+- public verification
+- network federation
 
-All’interno dell’ecosistema HBCE, questo significa che l’interazione AI non viene trattata come un livello isolato di interfaccia, ma come parte di un ambiente operativo responsabile e governabile.
+Main endpoints:
 
-## Ambito del repository
+- `/api/verify`
+- `/api/network`
+- `/api/evidence`
+- `/api/signature/*`
 
-Questo repository documenta e sviluppa l’applicazione AI JOKER-C2 e il suo contesto operativo all’interno dell’ecosistema HBCE.
+---
 
-Include logiche orientate all’identità, definizioni di interfaccia, documenti operativi e specifiche canoniche relative al ruolo di AI JOKER-C2 nell’ambiente IPR/HBCE.
+## Node Identity
 
-## Stato
+Node:      HBCE-MATRIX-NODE-0001-TORINO Identity:  IPR-AI-0001 System:    JOKER-C2
 
-Stato applicazione: ACTIVE  
-Modello di integrazione: nativo IPR/HBCE  
-Modalità operativa: supervisionata  
-Modulo primario: AI JOKER-C2  
-Layer semantico di comando: C2-Lex
+The node is the first experimental deployment within the **Matrix Europa framework**.
 
-## Firma
+---
+
+## Key Features
+
+### Identity-Bound Logic
+Every interaction is linked to:
+
+- session
+- continuity reference
+- node context
+
+---
+
+### Governed Execution (C2-Lex)
+All requests are classified into:
+
+- consultation
+- explanation
+- procedure
+- decision support
+- escalation
+- blocked activation
+
+No implicit execution is allowed.
+
+---
+
+### Persistent Ledger
+Each relevant event is:
+
+- appended to a Redis-backed ledger
+- hash-linked (SHA-256)
+- traceable
+- auditable
+
+---
+
+### Verification Surface
+Public verification endpoint:
+
+GET /api/verify
+
+Provides:
+
+- ledger integrity
+- continuity status
+- signature availability
+- recent ledger tail
+
+---
+
+### Federation Layer
+Network endpoint:
+
+GET /api/network
+
+Provides:
+
+- node registry
+- federation status
+- live probes
+- reachability
+
+---
+
+### Evidence Export
+
+GET /api/evidence
+
+Exports:
+
+- signed evidence pack
+- ledger tail
+- cryptographic signature
+
+---
+
+## Cryptographic Model
+
+- Hashing: SHA-256
+- Signatures: ED25519
+- Payload serialization: stable deterministic JSON
+
+Each output can be:
+
+- hashed (anchor)
+- signed (federation / evidence)
+- verified externally
+
+---
+
+## Continuity Model
+
+Each session produces:
+
+- `sessionId`
+- `continuityReference`
+- timeline events
+- governance checks
+
+Continuity ensures:
+
+- traceability
+- replay capability
+- audit alignment
+
+---
+
+## Node Runtime Integration
+
+All major flows pass through:
+
+runNodeRuntime(...)
+
+This ensures:
+
+- session governance
+- continuity update
+- ledger persistence
+- node-level traceability
+
+---
+
+## Development Stack
+
+- Next.js (App Router)
+- TypeScript
+- OpenAI API
+- Upstash Redis (ledger + memory)
+- Vercel Blob (evidence storage)
+
+---
+
+## Deployment
+
+Recommended:
+
+- Vercel (primary)
+- Edge-compatible APIs disabled where cryptography required
+- Node.js runtime enforced
+
+---
+
+## Environment Variables
+
+Required:
+
+OPENAI_API_KEY=
+
+UPSTASH_REDIS_REST_URL= UPSTASH_REDIS_REST_TOKEN=
+
+JOKER_SIGN_PRIVATE_KEY= JOKER_SIGN_PUBLIC_KEY=
+
+NEXT_PUBLIC_BASE_URL=
+
+Optional (federation):
+
+HBCE_NODE_BRUXELLES_URL= HBCE_NODE_BERLIN_URL=
+
+---
+
+## Operational Positioning
+
+AI JOKER-C2 is designed for:
+
+- B2B
+- B2G
+- institutional environments
+
+It is aligned with:
+
+- EU governance logic
+- audit-first architecture
+- no-custody principles
+- verifiable infrastructure design
+
+---
+
+## Conceptual Definition
+
+AI JOKER-C2 is not:
+
+- a chatbot
+- a personal assistant
+- a generic AI interface
+
+It is:
+
+> **a governed operational node with identity-bound intelligence**
+
+---
+
+## Future Direction
+
+Planned evolution:
+
+- multi-node federation (EU cities)
+- expanded network probes
+- automated trust weighting
+- integration with robotics and autonomous systems
+- Matrix Europa deployment (100 cities target)
+
+---
+
+## License
+
+Proprietary — HBCE Research  
+HERMETICUM B.C.E. S.r.l.
+
+---
+
+## Signature
 
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
+
+
+
 
