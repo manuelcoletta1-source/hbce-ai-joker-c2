@@ -43,6 +43,13 @@ type ChatBody = {
   continuityReference?: string;
 };
 
+type CorpusMode =
+  | "off"
+  | "multi-document"
+  | "collection-analysis"
+  | "gap-analysis"
+  | "brussels-readiness";
+
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
@@ -138,7 +145,11 @@ function detectIntent(
       m.includes("document") ||
       m.includes("estrai") ||
       m.includes("interpreta") ||
-      m.includes("spiegamelo")
+      m.includes("spiegamelo") ||
+      m.includes("criticità") ||
+      m.includes("criticita") ||
+      m.includes("dossier") ||
+      m.includes("bruxelles")
     ) {
       return "research";
     }
@@ -150,7 +161,12 @@ function detectIntent(
 
   if (!m || m.length < 5) return "chat";
 
-  if (m.includes("chi sei") || m.includes("presentati") || m === "ciao") {
+  if (
+    m.includes("chi sei") ||
+    m.includes("presentati") ||
+    m === "ciao" ||
+    m.includes("ciao chi sei")
+  ) {
     return "chat";
   }
 
@@ -185,6 +201,62 @@ function wantsInterpretiveMode(message: string): boolean {
   );
 }
 
+function detectCorpusMode(
+  message: string,
+  attachments: ChatAttachment[]
+): CorpusMode {
+  const m = message.toLowerCase();
+  const hasManyAttachments = attachments.length >= 2;
+
+  if (!hasManyAttachments) {
+    return "off";
+  }
+
+  const collectionHints =
+    m.includes("tutti") ||
+    m.includes("insieme") ||
+    m.includes("assieme") ||
+    m.includes("collana") ||
+    m.includes("corpus") ||
+    m.includes("trasvers") ||
+    m.includes("volumi") ||
+    m.includes("5 volumi") ||
+    m.includes("cinque volumi");
+
+  const gapHints =
+    m.includes("criticità") ||
+    m.includes("criticita") ||
+    m.includes("cosa manca") ||
+    m.includes("lacune") ||
+    m.includes("gap") ||
+    m.includes("dove va sistemato") ||
+    m.includes("dove sistemare") ||
+    m.includes("enforcement");
+
+  const brusselsHints =
+    m.includes("bruxelles") ||
+    m.includes("dossier") ||
+    m.includes("approvazione") ||
+    m.includes("passare a bruxelles") ||
+    m.includes("readiness") ||
+    m.includes("ue") ||
+    m.includes("commissione europea");
+
+  if (brusselsHints && gapHints) {
+    return "brussels-readiness";
+  }
+
+  if (gapHints) {
+    return "gap-analysis";
+  }
+
+  if (collectionHints) {
+    return "collection-analysis";
+  }
+
+  return "multi-document";
+}
+
 function buildInterpretiveGuidance(): string[] {
   return [
     "Interpretive mode is active.",
@@ -197,6 +269,55 @@ function buildInterpretiveGuidance(): string[] {
     "Use compact, precise, non-bloated language.",
     "When possible, answer in this order: function of the document, central thesis, what it adds, strategic implication, concise interpretive conclusion."
   ];
+}
+
+function buildCorpusModeGuidance(corpusMode: CorpusMode): string[] {
+  switch (corpusMode) {
+    case "multi-document":
+      return [
+        "Multiple related documents are present.",
+        "Treat them as a connected set, not as isolated files.",
+        "Look for continuity, sequence, overlap, and dependency across documents.",
+        "Do not summarize each file one by one unless the user explicitly asks for it."
+      ];
+
+    case "collection-analysis":
+      return [
+        "Collection-analysis mode is active.",
+        "Treat the attached documents as a coherent corpus or series.",
+        "Your task is not to summarize each volume separately.",
+        "Reconstruct the progression of the whole collection.",
+        "Explain the role of each document inside the sequence and the architectural movement from one to the next.",
+        "Highlight the logic of the collection as a whole.",
+        "Prefer: sequence, progression, function of each volume, cumulative thesis, system-level meaning."
+      ];
+
+    case "gap-analysis":
+      return [
+        "Gap-analysis mode is active.",
+        "Do not explain the project again unless strictly necessary.",
+        "Identify what is missing, weak, immature, under-specified, non-enforceable, or not yet operational.",
+        "Separate foundational gaps from secondary gaps.",
+        "Prioritize deficiencies by impact on execution, governance, interoperability, compliance, and institutional credibility.",
+        "Use compact diagnostic language.",
+        "Prefer: critical gap, why it matters, where it appears, what must be fixed."
+      ];
+
+    case "brussels-readiness":
+      return [
+        "Brussels-readiness mode is active.",
+        "Treat the corpus as a single project seeking European-level credibility, enforceability, and institutional readiness.",
+        "Do not produce a generic summary.",
+        "Evaluate the corpus as if preparing it for Brussels-level scrutiny.",
+        "Distinguish clearly between what is already strong, what is immature, what is missing, and what blocks enforceability or EU readiness.",
+        "Focus on governance, legal framing, standardization, compliance, KPI system, pilot credibility, consortium structure, industrialization, and implementation sequencing.",
+        "Order the analysis by dependency and priority, not by document order alone.",
+        "Prefer: already solid, blockers, required corrections, enforcement layer, Brussels readiness conclusion."
+      ];
+
+    default:
+      return [];
+  }
 }
 
 function buildMemoryPromptBlock(input: {
@@ -221,7 +342,8 @@ function buildSystemPrompt(
   hasAttachments: boolean,
   interpretiveMode: boolean,
   memoryContext: string,
-  hasMemory: boolean
+  hasMemory: boolean,
+  corpusMode: CorpusMode
 ): string {
   const base = [
     "You are JOKER-C2, the operational cybernetic entity of the HBCE system.",
@@ -231,7 +353,8 @@ function buildSystemPrompt(
     "Never present potential integrations as already active direct operational control.",
     "When symbolic or narrative language appears, translate it into IPR-based operational language.",
     "When evidence is partial, use cautious wording and indicative ranges.",
-    "Prefer governance, supervision, auditability, compliance, and infrastructure framing over speculative implementation detail."
+    "Prefer governance, supervision, auditability, compliance, and infrastructure framing over speculative implementation detail.",
+    "When the user asks for analysis, prioritize diagnosis and structure over descriptive repetition."
   ];
 
   const intentBlock =
@@ -253,6 +376,8 @@ function buildSystemPrompt(
     ? buildInterpretiveGuidance()
     : [];
 
+  const corpusBlock = buildCorpusModeGuidance(corpusMode);
+
   const memoryBlock = buildMemoryPromptBlock({
     memoryContext,
     hasMemory
@@ -263,6 +388,7 @@ function buildSystemPrompt(
     ...intentBlock,
     ...attachmentBlock,
     ...interpretiveBlock,
+    ...corpusBlock,
     ...memoryBlock,
     ...policyGuidance
   ].join(" ");
@@ -315,11 +441,15 @@ function buildMemoryKeys(input: {
   sessionSummaryKey: string;
   recentIntentKey: string;
   recentDocumentsKey: string;
+  corpusSummaryKey: string;
+  corpusGapKey: string;
 } {
   return {
     sessionSummaryKey: `session:${input.sessionId}:summary`,
     recentIntentKey: `session:${input.sessionId}:recent_intent`,
-    recentDocumentsKey: `session:${input.sessionId}:recent_documents`
+    recentDocumentsKey: `session:${input.sessionId}:recent_documents`,
+    corpusSummaryKey: `session:${input.sessionId}:corpus_summary`,
+    corpusGapKey: `session:${input.sessionId}:corpus_gaps`
   };
 }
 
@@ -348,6 +478,7 @@ async function buildMemoryContext(input: {
   effectiveMessage: string;
   hasAttachments: boolean;
   attachments: ChatAttachment[];
+  corpusMode: CorpusMode;
 }): Promise<{
   enabled: boolean;
   context: string;
@@ -361,16 +492,29 @@ async function buildMemoryContext(input: {
 
   const keys = buildMemoryKeys({ sessionId: input.sessionId });
 
-  const [sessionSummary, recentIntent, recentDocuments, searchResults] =
-    await Promise.all([
-      nodeGetMemoryByKey(keys.sessionSummaryKey),
-      nodeGetMemoryByKey(keys.recentIntentKey),
-      nodeGetMemoryByKey(keys.recentDocumentsKey),
-      nodeSearchMemories(input.effectiveMessage.slice(0, 120))
-    ]);
+  const [
+    sessionSummary,
+    recentIntent,
+    recentDocuments,
+    corpusSummary,
+    corpusGap,
+    searchResults
+  ] = await Promise.all([
+    nodeGetMemoryByKey(keys.sessionSummaryKey),
+    nodeGetMemoryByKey(keys.recentIntentKey),
+    nodeGetMemoryByKey(keys.recentDocumentsKey),
+    nodeGetMemoryByKey(keys.corpusSummaryKey),
+    nodeGetMemoryByKey(keys.corpusGapKey),
+    nodeSearchMemories(input.effectiveMessage.slice(0, 120))
+  ]);
 
   const relevantSearch = searchResults
-    .filter((item) => item.key !== keys.sessionSummaryKey)
+    .filter(
+      (item) =>
+        item.key !== keys.sessionSummaryKey &&
+        item.key !== keys.corpusSummaryKey &&
+        item.key !== keys.corpusGapKey
+    )
     .slice(0, 3);
 
   const blocks: string[] = [];
@@ -385,6 +529,23 @@ async function buildMemoryContext(input: {
 
   if (input.hasAttachments && recentDocuments?.value) {
     blocks.push(`Recent document memory: ${recentDocuments.value}`);
+  }
+
+  if (
+    (input.corpusMode === "collection-analysis" ||
+      input.corpusMode === "brussels-readiness" ||
+      input.corpusMode === "gap-analysis") &&
+    corpusSummary?.value
+  ) {
+    blocks.push(`Corpus continuity memory: ${corpusSummary.value}`);
+  }
+
+  if (
+    (input.corpusMode === "gap-analysis" ||
+      input.corpusMode === "brussels-readiness") &&
+    corpusGap?.value
+  ) {
+    blocks.push(`Previous gap memory: ${corpusGap.value}`);
   }
 
   if (relevantSearch.length > 0) {
@@ -408,6 +569,7 @@ async function persistMemoryState(input: {
   response: string;
   attachments: ChatAttachment[];
   interpretiveMode: boolean;
+  corpusMode: CorpusMode;
 }): Promise<void> {
   if (!nodeMemoryIsConfigured()) {
     return;
@@ -423,6 +585,7 @@ async function persistMemoryState(input: {
       value: [
         `intent=${input.intent}`,
         `interpretive_mode=${input.interpretiveMode ? "on" : "off"}`,
+        `corpus_mode=${input.corpusMode}`,
         `message=${summarizeMessageForMemory(input.effectiveMessage)}`
       ].join(" | "),
       category: "session"
@@ -449,6 +612,41 @@ async function persistMemoryState(input: {
           `last_request=${summarizeMessageForMemory(input.effectiveMessage)}`
         ].join(" | "),
         category: "documents"
+      })
+    );
+  }
+
+  if (
+    input.corpusMode === "multi-document" ||
+    input.corpusMode === "collection-analysis" ||
+    input.corpusMode === "brussels-readiness"
+  ) {
+    tasks.push(
+      nodeSaveMemory({
+        key: keys.corpusSummaryKey,
+        value: [
+          `corpus_mode=${input.corpusMode}`,
+          `attachments=${buildAttachmentNamesSummary(input.attachments)}`,
+          `response=${summarizeResponseForMemory(input.response)}`
+        ].join(" | "),
+        category: "corpus"
+      })
+    );
+  }
+
+  if (
+    input.corpusMode === "gap-analysis" ||
+    input.corpusMode === "brussels-readiness"
+  ) {
+    tasks.push(
+      nodeSaveMemory({
+        key: keys.corpusGapKey,
+        value: [
+          `corpus_mode=${input.corpusMode}`,
+          `request=${summarizeMessageForMemory(input.effectiveMessage)}`,
+          `response=${summarizeResponseForMemory(input.response)}`
+        ].join(" | "),
+        category: "corpus"
       })
     );
   }
@@ -526,13 +724,15 @@ export async function POST(req: Request) {
     const research = body.research === true || intent === "research";
     const interpretiveMode =
       hasAttachments && wantsInterpretiveMode(effectiveMessage);
+    const corpusMode = detectCorpusMode(effectiveMessage, attachments);
     const historyTexts = history.map((item) => item.content);
 
     const memoryState = await buildMemoryContext({
       sessionId,
       effectiveMessage,
       hasAttachments,
-      attachments
+      attachments,
+      corpusMode
     });
 
     const prePolicy = evaluateHBCEPolicy({
@@ -574,7 +774,8 @@ export async function POST(req: Request) {
             blocked: true,
             block_reason: prePolicy.block_reason || "policy_block",
             attachment_count: attachments.length,
-            anchor_hash: anchor.hash
+            anchor_hash: anchor.hash,
+            corpus_mode: corpusMode
           }
         });
       } catch {
@@ -587,7 +788,8 @@ export async function POST(req: Request) {
         effectiveMessage,
         response: blockedResponse,
         attachments,
-        interpretiveMode
+        interpretiveMode,
+        corpusMode
       });
 
       return NextResponse.json({
@@ -598,6 +800,7 @@ export async function POST(req: Request) {
         policy: prePolicy,
         anchor,
         interpretive_mode: interpretiveMode,
+        corpus_mode: corpusMode,
         memory: {
           enabled: memoryState.enabled,
           context_used: memoryState.context.length > 0
@@ -631,7 +834,8 @@ export async function POST(req: Request) {
       hasAttachments,
       interpretiveMode,
       memoryState.context,
-      memoryState.enabled
+      memoryState.enabled,
+      corpusMode
     );
 
     const userContent = attachmentContext
@@ -722,7 +926,8 @@ export async function POST(req: Request) {
           truth_decision: truth.decision,
           truth_score: truth.score,
           interpretive_mode: interpretiveMode,
-          memory_enabled: memoryState.enabled
+          memory_enabled: memoryState.enabled,
+          corpus_mode: corpusMode
         }
       });
     } catch {
@@ -735,7 +940,8 @@ export async function POST(req: Request) {
       effectiveMessage,
       response,
       attachments,
-      interpretiveMode
+      interpretiveMode,
+      corpusMode
     });
 
     return NextResponse.json({
@@ -748,6 +954,7 @@ export async function POST(req: Request) {
       anchor,
       attachment_count: attachments.length,
       interpretive_mode: interpretiveMode,
+      corpus_mode: corpusMode,
       memory: {
         enabled: memoryState.enabled,
         context_used: memoryState.context.length > 0
