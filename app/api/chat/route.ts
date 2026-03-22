@@ -160,10 +160,42 @@ function detectIntent(
   return "general";
 }
 
+function wantsInterpretiveMode(message: string): boolean {
+  const m = message.toLowerCase();
+
+  return (
+    m.includes("interpret") ||
+    m.includes("spiegamelo") ||
+    m.includes("spiegami") ||
+    m.includes("dal tuo punto di vista") ||
+    m.includes("senza ripetere") ||
+    m.includes("senza riassumere") ||
+    m.includes("non ripetere") ||
+    m.includes("dimmi cosa significa") ||
+    m.includes("che vuol dire") ||
+    m.includes("che significa")
+  );
+}
+
+function buildInterpretiveGuidance(): string[] {
+  return [
+    "Interpretive mode is active.",
+    "Do not produce a long descriptive summary of the attached document.",
+    "Do not restate the structure of the source text section by section.",
+    "Do not paraphrase the file at length.",
+    "Explain what the document really does, what function it has, and what role it plays inside the broader system.",
+    "When relevant, explain what changes compared to earlier documents or prior stages.",
+    "Prioritize purpose, architecture, strategic meaning, implications, and internal logic over repetition.",
+    "Use compact, precise, non-bloated language.",
+    "When possible, answer in this order: function of the document, central thesis, what it adds, strategic implication, concise interpretive conclusion."
+  ];
+}
+
 function buildSystemPrompt(
   intent: "chat" | "research" | "general",
   policyGuidance: string[],
-  hasAttachments: boolean
+  hasAttachments: boolean,
+  interpretiveMode: boolean
 ): string {
   const base = [
     "You are JOKER-C2, the operational cybernetic entity of the HBCE system.",
@@ -191,9 +223,17 @@ function buildSystemPrompt(
       ]
     : [];
 
-  return [...base, ...intentBlock, ...attachmentBlock, ...policyGuidance].join(
-    " "
-  );
+  const interpretiveBlock = interpretiveMode
+    ? buildInterpretiveGuidance()
+    : [];
+
+  return [
+    ...base,
+    ...intentBlock,
+    ...attachmentBlock,
+    ...interpretiveBlock,
+    ...policyGuidance
+  ].join(" ");
 }
 
 function shouldApplyTruthWarning(
@@ -241,7 +281,7 @@ export async function POST(req: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { ok: false, error: "Missing OPENAI_API_KEY" },
+        { ok: false, error: "Missing OPENAI_API_KEY on server" },
         { status: 500 }
       );
     }
@@ -286,17 +326,27 @@ export async function POST(req: Request) {
       sessionId
     );
 
-    const nodeRuntime = await runNodeRuntime({
-      sessionId,
-      message: effectiveMessage,
-      role,
-      nodeContext,
-      continuityReference,
-      actor: NODE_IDENTITY
-    });
+    let nodeRuntime: Awaited<ReturnType<typeof runNodeRuntime>> | null = null;
+    let nodeRuntimeError: string | null = null;
+
+    try {
+      nodeRuntime = await runNodeRuntime({
+        sessionId,
+        message: effectiveMessage,
+        role,
+        nodeContext,
+        continuityReference,
+        actor: NODE_IDENTITY
+      });
+    } catch (error) {
+      nodeRuntimeError =
+        error instanceof Error ? error.message : "Node runtime unavailable";
+    }
 
     const intent = detectIntent(message, attachments);
     const research = body.research === true || intent === "research";
+    const interpretiveMode =
+      hasAttachments && wantsInterpretiveMode(effectiveMessage);
     const historyTexts = history.map((item) => item.content);
 
     const prePolicy = evaluateHBCEPolicy({
@@ -320,24 +370,30 @@ export async function POST(req: Request) {
         policy: prePolicy,
         session_id: sessionId,
         continuity_reference:
-          nodeRuntime.execution.result.continuityReference
+          nodeRuntime?.execution.result.continuityReference ||
+          continuityReference
       });
 
-      await nodeAppendEvent({
-        kind: "chat.response.blocked",
-        actor: NODE_IDENTITY,
-        node: nodeContext,
-        payload: {
-          session_id: sessionId,
-          continuity_reference:
-            nodeRuntime.execution.result.continuityReference,
-          intent,
-          blocked: true,
-          block_reason: prePolicy.block_reason || "policy_block",
-          attachment_count: attachments.length,
-          anchor_hash: anchor.hash
-        }
-      });
+      try {
+        await nodeAppendEvent({
+          kind: "chat.response.blocked",
+          actor: NODE_IDENTITY,
+          node: nodeContext,
+          payload: {
+            session_id: sessionId,
+            continuity_reference:
+              nodeRuntime?.execution.result.continuityReference ||
+              continuityReference,
+            intent,
+            blocked: true,
+            block_reason: prePolicy.block_reason || "policy_block",
+            attachment_count: attachments.length,
+            anchor_hash: anchor.hash
+          }
+        });
+      } catch {
+        // non bloccare la risposta chat se il ledger fallisce
+      }
 
       return NextResponse.json({
         ok: true,
@@ -346,14 +402,24 @@ export async function POST(req: Request) {
         intent,
         policy: prePolicy,
         anchor,
-        node_runtime: {
-          session_id: nodeRuntime.execution.session.sessionId,
-          session_state: nodeRuntime.execution.result.sessionState,
-          continuity_reference:
-            nodeRuntime.execution.result.continuityReference,
-          continuity_status: nodeRuntime.continuity_status,
-          ledger_events: nodeRuntime.ledger_events
-        },
+        interpretive_mode: interpretiveMode,
+        node_runtime: nodeRuntime
+          ? {
+              session_id: nodeRuntime.execution.session.sessionId,
+              session_state: nodeRuntime.execution.result.sessionState,
+              continuity_reference:
+                nodeRuntime.execution.result.continuityReference,
+              continuity_status: nodeRuntime.continuity_status,
+              ledger_events: nodeRuntime.ledger_events
+            }
+          : {
+              session_id: sessionId,
+              session_state: "NODE-RUNTIME-OFFLINE",
+              continuity_reference: continuityReference,
+              continuity_status: "UNKNOWN",
+              ledger_events: [],
+              warning: nodeRuntimeError || "Node runtime unavailable"
+            },
         federation_signature: federationSignatureIsConfigured()
           ? signFederationResponse(NODE_ID, blockedResponse)
           : null
@@ -363,7 +429,8 @@ export async function POST(req: Request) {
     const prompt = buildSystemPrompt(
       intent,
       prePolicy.prompt_guidance,
-      hasAttachments
+      hasAttachments,
+      interpretiveMode
     );
 
     const userContent = attachmentContext
@@ -430,25 +497,35 @@ export async function POST(req: Request) {
       policy: postPolicy,
       truth,
       session_id: sessionId,
-      continuity_reference: nodeRuntime.execution.result.continuityReference
+      continuity_reference:
+        nodeRuntime?.execution.result.continuityReference ||
+        continuityReference
     });
 
-    const chatLedgerEvent = await nodeAppendEvent({
-      kind: "chat.response.emitted",
-      actor: NODE_IDENTITY,
-      node: nodeContext,
-      payload: {
-        session_id: sessionId,
-        continuity_reference:
-          nodeRuntime.execution.result.continuityReference,
-        intent,
-        research,
-        attachment_count: attachments.length,
-        anchor_hash: anchor.hash,
-        truth_decision: truth.decision,
-        truth_score: truth.score
-      }
-    });
+    let chatLedgerEvent: unknown = null;
+
+    try {
+      chatLedgerEvent = await nodeAppendEvent({
+        kind: "chat.response.emitted",
+        actor: NODE_IDENTITY,
+        node: nodeContext,
+        payload: {
+          session_id: sessionId,
+          continuity_reference:
+            nodeRuntime?.execution.result.continuityReference ||
+            continuityReference,
+          intent,
+          research,
+          attachment_count: attachments.length,
+          anchor_hash: anchor.hash,
+          truth_decision: truth.decision,
+          truth_score: truth.score,
+          interpretive_mode: interpretiveMode
+        }
+      });
+    } catch {
+      chatLedgerEvent = null;
+    }
 
     return NextResponse.json({
       ok: true,
@@ -459,17 +536,27 @@ export async function POST(req: Request) {
       truth,
       anchor,
       attachment_count: attachments.length,
-      node_runtime: {
-        session_id: nodeRuntime.execution.session.sessionId,
-        session_state: nodeRuntime.execution.result.sessionState,
-        continuity_reference:
-          nodeRuntime.execution.result.continuityReference,
-        continuity_status: nodeRuntime.continuity_status,
-        ledger_events: [
-          ...nodeRuntime.ledger_events,
-          chatLedgerEvent
-        ]
-      },
+      interpretive_mode: interpretiveMode,
+      node_runtime: nodeRuntime
+        ? {
+            session_id: nodeRuntime.execution.session.sessionId,
+            session_state: nodeRuntime.execution.result.sessionState,
+            continuity_reference:
+              nodeRuntime.execution.result.continuityReference,
+            continuity_status: nodeRuntime.continuity_status,
+            ledger_events: [
+              ...nodeRuntime.ledger_events,
+              ...(chatLedgerEvent ? [chatLedgerEvent] : [])
+            ]
+          }
+        : {
+            session_id: sessionId,
+            session_state: "NODE-RUNTIME-OFFLINE",
+            continuity_reference: continuityReference,
+            continuity_status: "UNKNOWN",
+            ledger_events: [],
+            warning: nodeRuntimeError || "Node runtime unavailable"
+          },
       federation_signature: federationSignatureIsConfigured()
         ? signFederationResponse(NODE_ID, response)
         : null
