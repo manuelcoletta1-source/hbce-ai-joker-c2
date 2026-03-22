@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+
 import { createAnchor } from "@/lib/anchor";
 import { validateTruth } from "@/lib/truth-validator";
 import {
@@ -7,6 +8,8 @@ import {
   federationSignatureIsConfigured
 } from "@/lib/federation-signature";
 import { evaluateHBCEPolicy } from "@/lib/policy-engine";
+import { runNodeRuntime } from "@/lib/node/node-runtime";
+import { nodeAppendEvent } from "@/lib/node/node-ledger";
 
 export const runtime = "nodejs";
 
@@ -28,6 +31,10 @@ type ChatBody = {
   history?: ChatHistoryItem[];
   research?: boolean;
   attachments?: ChatAttachment[];
+  sessionId?: string;
+  role?: string;
+  nodeContext?: string;
+  continuityReference?: string;
 };
 
 const client = new OpenAI({
@@ -75,8 +82,7 @@ function normalizeAttachments(
       text: typeof item.text === "string" ? item.text.trim() : undefined
     }))
     .filter(
-      (item) =>
-        Boolean(item.name || item.id || item.content || item.text)
+      (item) => Boolean(item.name || item.id || item.content || item.text)
     )
     .slice(0, 5);
 }
@@ -99,20 +105,16 @@ function buildAttachmentContext(attachments: ChatAttachment[]): string {
       const text = getAttachmentText(attachment);
       if (!text) return "";
 
-      const label = attachment.name || attachment.id || `attachment-${index + 1}`;
-      return [
-        `Attachment ${index + 1}: ${label}`,
-        text
-      ].join("\n");
+      const label =
+        attachment.name || attachment.id || `attachment-${index + 1}`;
+
+      return [`Attachment ${index + 1}: ${label}`, text].join("\n");
     })
     .filter(Boolean);
 
   if (usable.length === 0) return "";
 
-  return [
-    "Attached document context:",
-    ...usable
-  ].join("\n\n");
+  return ["Attached document context:", ...usable].join("\n\n");
 }
 
 function detectIntent(
@@ -178,8 +180,8 @@ function buildSystemPrompt(
     intent === "chat"
       ? ["Conversational mode."]
       : intent === "research"
-      ? ["Research mode: be analytical, source-aware, and cautious."]
-      : ["General reasoning mode."];
+        ? ["Research mode: be analytical, source-aware, and cautious."]
+        : ["General reasoning mode."];
 
   const attachmentBlock = hasAttachments
     ? [
@@ -189,13 +191,50 @@ function buildSystemPrompt(
       ]
     : [];
 
-  return [...base, ...intentBlock, ...attachmentBlock, ...policyGuidance].join(" ");
+  return [...base, ...intentBlock, ...attachmentBlock, ...policyGuidance].join(
+    " "
+  );
 }
 
 function shouldApplyTruthWarning(
   policy: ReturnType<typeof evaluateHBCEPolicy>
 ): boolean {
   return policy.truth_scope.applyWarning;
+}
+
+function normalizeSessionId(sessionId?: string): string {
+  if (typeof sessionId !== "string" || !sessionId.trim()) {
+    return "JOKER-CHAT-SESSION-0001";
+  }
+
+  return sessionId.trim();
+}
+
+function normalizeRole(role?: string): string {
+  if (typeof role !== "string" || !role.trim()) {
+    return "Operatore supervisionato";
+  }
+
+  return role.trim();
+}
+
+function normalizeNodeContext(nodeContext?: string): string {
+  if (typeof nodeContext !== "string" || !nodeContext.trim()) {
+    return NODE_ID;
+  }
+
+  return nodeContext.trim();
+}
+
+function normalizeContinuityReference(
+  continuityReference: string | undefined,
+  sessionId: string
+): string {
+  if (typeof continuityReference !== "string" || !continuityReference.trim()) {
+    return `${sessionId}-AUDIT`;
+  }
+
+  return continuityReference.trim();
 }
 
 export async function POST(req: Request) {
@@ -239,6 +278,23 @@ export async function POST(req: Request) {
       ? message
       : "Read and analyze the attached file.";
 
+    const sessionId = normalizeSessionId(body.sessionId);
+    const role = normalizeRole(body.role);
+    const nodeContext = normalizeNodeContext(body.nodeContext);
+    const continuityReference = normalizeContinuityReference(
+      body.continuityReference,
+      sessionId
+    );
+
+    const nodeRuntime = await runNodeRuntime({
+      sessionId,
+      message: effectiveMessage,
+      role,
+      nodeContext,
+      continuityReference,
+      actor: NODE_IDENTITY
+    });
+
     const intent = detectIntent(message, attachments);
     const research = body.research === true || intent === "research";
     const historyTexts = history.map((item) => item.content);
@@ -261,7 +317,26 @@ export async function POST(req: Request) {
         message: effectiveMessage,
         response: blockedResponse,
         intent,
-        policy: prePolicy
+        policy: prePolicy,
+        session_id: sessionId,
+        continuity_reference:
+          nodeRuntime.execution.result.continuityReference
+      });
+
+      await nodeAppendEvent({
+        kind: "chat.response.blocked",
+        actor: NODE_IDENTITY,
+        node: nodeContext,
+        payload: {
+          session_id: sessionId,
+          continuity_reference:
+            nodeRuntime.execution.result.continuityReference,
+          intent,
+          blocked: true,
+          block_reason: prePolicy.block_reason || "policy_block",
+          attachment_count: attachments.length,
+          anchor_hash: anchor.hash
+        }
       });
 
       return NextResponse.json({
@@ -271,6 +346,14 @@ export async function POST(req: Request) {
         intent,
         policy: prePolicy,
         anchor,
+        node_runtime: {
+          session_id: nodeRuntime.execution.session.sessionId,
+          session_state: nodeRuntime.execution.result.sessionState,
+          continuity_reference:
+            nodeRuntime.execution.result.continuityReference,
+          continuity_status: nodeRuntime.continuity_status,
+          ledger_events: nodeRuntime.ledger_events
+        },
         federation_signature: federationSignatureIsConfigured()
           ? signFederationResponse(NODE_ID, blockedResponse)
           : null
@@ -345,7 +428,26 @@ export async function POST(req: Request) {
       response,
       intent,
       policy: postPolicy,
-      truth
+      truth,
+      session_id: sessionId,
+      continuity_reference: nodeRuntime.execution.result.continuityReference
+    });
+
+    const chatLedgerEvent = await nodeAppendEvent({
+      kind: "chat.response.emitted",
+      actor: NODE_IDENTITY,
+      node: nodeContext,
+      payload: {
+        session_id: sessionId,
+        continuity_reference:
+          nodeRuntime.execution.result.continuityReference,
+        intent,
+        research,
+        attachment_count: attachments.length,
+        anchor_hash: anchor.hash,
+        truth_decision: truth.decision,
+        truth_score: truth.score
+      }
     });
 
     return NextResponse.json({
@@ -357,6 +459,17 @@ export async function POST(req: Request) {
       truth,
       anchor,
       attachment_count: attachments.length,
+      node_runtime: {
+        session_id: nodeRuntime.execution.session.sessionId,
+        session_state: nodeRuntime.execution.result.sessionState,
+        continuity_reference:
+          nodeRuntime.execution.result.continuityReference,
+        continuity_status: nodeRuntime.continuity_status,
+        ledger_events: [
+          ...nodeRuntime.ledger_events,
+          chatLedgerEvent
+        ]
+      },
       federation_signature: federationSignatureIsConfigured()
         ? signFederationResponse(NODE_ID, response)
         : null
