@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import {
   getC2LexSession,
   listC2LexSessions,
-  resetC2LexSession,
-  runC2LexSession
+  resetC2LexSession
 } from "@/lib/c2-lex-session-store";
+
+import { runNodeRuntime } from "@/lib/node/node-runtime";
+import { nodeGetContinuityBySessionId } from "@/lib/node/node-continuity";
 
 type C2LexApiPayload = {
   sessionId?: string;
@@ -27,6 +30,41 @@ function badRequest(error: string) {
     },
     { status: 400 }
   );
+}
+
+function normalizeSessionId(sessionId?: string): string {
+  if (!isNonEmptyString(sessionId)) {
+    return "C2L-SESSION-API-0001";
+  }
+
+  return sessionId.trim();
+}
+
+function normalizeRole(role?: string): string {
+  if (!isNonEmptyString(role)) {
+    return "Operatore supervisionato";
+  }
+
+  return role.trim();
+}
+
+function normalizeNodeContext(nodeContext?: string): string {
+  if (!isNonEmptyString(nodeContext)) {
+    return "HBCE-MATRIX-NODE-0001-TORINO";
+  }
+
+  return nodeContext.trim();
+}
+
+function normalizeContinuityReference(
+  continuityReference: string | undefined,
+  sessionId: string
+): string {
+  if (!isNonEmptyString(continuityReference)) {
+    return `${sessionId}-AUDIT`;
+  }
+
+  return continuityReference.trim();
 }
 
 export async function POST(request: NextRequest) {
@@ -68,7 +106,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       action: "get",
-      session
+      session,
+      continuity: nodeGetContinuityBySessionId(payload.sessionId)
     });
   }
 
@@ -91,32 +130,27 @@ export async function POST(request: NextRequest) {
     return badRequest("Il campo 'message' è obbligatorio.");
   }
 
-  const sessionId =
-    isNonEmptyString(payload.sessionId) ? payload.sessionId : "C2L-SESSION-API-0001";
+  const sessionId = normalizeSessionId(payload.sessionId);
+  const role = normalizeRole(payload.role);
+  const nodeContext = normalizeNodeContext(payload.nodeContext);
+  const continuityReference = normalizeContinuityReference(
+    payload.continuityReference,
+    sessionId
+  );
 
-  const role =
-    isNonEmptyString(payload.role) ? payload.role : "Operatore supervisionato";
-
-  const nodeContext = isNonEmptyString(payload.nodeContext)
-    ? payload.nodeContext
-    : "HBCE-MATRIX-NODE-0001-TORINO";
-
-  const continuityReference = isNonEmptyString(payload.continuityReference)
-    ? payload.continuityReference
-    : `${sessionId}-AUDIT`;
-
-  const execution = runC2LexSession({
+  const runtime = await runNodeRuntime({
     sessionId,
     message: payload.message,
     role,
     nodeContext,
-    continuityReference
+    continuityReference,
+    actor: role
   });
 
   return NextResponse.json({
     ok: true,
     action: "run",
-    created: execution.created,
+    created: runtime.execution.created,
     input: {
       sessionId,
       role,
@@ -124,8 +158,15 @@ export async function POST(request: NextRequest) {
       continuityReference,
       message: payload.message
     },
-    result: execution.result,
-    session: execution.session
+    result: runtime.execution.result,
+    session: runtime.execution.session,
+    continuity: {
+      continuity_status: runtime.continuity_status,
+      reference: runtime.execution.result.continuityReference
+    },
+    node_runtime: {
+      ledger_events: runtime.ledger_events
+    }
   });
 }
 
@@ -157,7 +198,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       action: "get",
-      session
+      session,
+      continuity: nodeGetContinuityBySessionId(sessionId)
     });
   }
 
@@ -167,7 +209,7 @@ export async function GET(request: NextRequest) {
     endpoint: "/api/c2-lex",
     methods: ["GET", "POST"],
     description:
-      "Endpoint del motore governato C2-Lex con supporto a sessioni, timeline e governance checks.",
+      "Endpoint del motore governato C2-Lex integrato nel Node Layer di JOKER-C2 con supporto a sessioni, timeline, continuità e ledger events.",
     post_actions: ["run", "get", "reset", "list"],
     get_actions: [
       "GET /api/c2-lex",
