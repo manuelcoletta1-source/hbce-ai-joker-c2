@@ -1,438 +1,626 @@
-import Link from "next/link";
+"use client";
 
-import { nodeGetPublicVerifySnapshot } from "@/lib/node/node-verify";
-import { nodeGetNetworkSnapshot } from "@/lib/node/node-network";
-import { nodeGetHealth } from "@/lib/node/node-verify";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-function pillStyle(value: string): React.CSSProperties {
-  const normalized = value.toUpperCase();
+type Role = "user" | "assistant";
 
-  if (
-    normalized.includes("ACTIVE") ||
-    normalized.includes("ONLINE") ||
-    normalized.includes("STABLE") ||
-    normalized === "TRUE"
-  ) {
-    return {
-      border: "1px solid rgba(34,197,94,.35)",
-      background: "rgba(34,197,94,.10)",
-      color: "#bbf7d0"
-    };
-  }
+type ChatMessage = {
+  id: string;
+  role: Role;
+  content: string;
+};
 
-  if (
-    normalized.includes("DEGRADED") ||
-    normalized.includes("LIMITED") ||
-    normalized.includes("UNKNOWN")
-  ) {
-    return {
-      border: "1px solid rgba(250,204,21,.30)",
-      background: "rgba(250,204,21,.10)",
-      color: "#fde68a"
-    };
-  }
-
-  if (
-    normalized.includes("BROKEN") ||
-    normalized.includes("OFFLINE") ||
-    normalized.includes("INACTIVE") ||
-    normalized === "FALSE"
-  ) {
-    return {
-      border: "1px solid rgba(248,113,113,.30)",
-      background: "rgba(248,113,113,.10)",
-      color: "#fecaca"
-    };
-  }
-
-  return {
-    border: "1px solid rgba(255,255,255,.10)",
-    background: "rgba(255,255,255,.04)",
-    color: "#e8eef7"
+type ApiResponse = {
+  ok: boolean;
+  response?: string;
+  error?: string;
+  sources?: Array<{
+    title: string;
+    url?: string;
+  }>;
+  interpretive_mode?: boolean;
+  node_runtime?: {
+    session_id?: string;
+    session_state?: string;
+    continuity_reference?: string;
+    continuity_status?: string;
+    warning?: string;
   };
+};
+
+const STORAGE_KEY = "hbce-joker-c2-interface-v3";
+const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
+
+function makeId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function Pill({ value }: { value: string }) {
-  return (
-    <span
-      style={{
-        ...pillStyle(value),
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "8px 12px",
-        borderRadius: 999,
-        fontSize: 12,
-        letterSpacing: "0.08em",
-        textTransform: "uppercase",
-        fontWeight: 700
-      }}
-    >
-      {value}
-    </span>
-  );
+function makeSessionId() {
+  return `JOKER-UI-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
-function SectionTitle({
-  kicker,
-  title,
-  text
-}: {
-  kicker: string;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div style={{ marginBottom: 18 }}>
-      <div className="hbce-kicker" style={{ marginBottom: 10 }}>
-        {kicker}
-      </div>
-      <h2 style={{ margin: "0 0 10px", fontSize: 24 }}>{title}</h2>
-      <p className="hbce-muted" style={{ margin: 0, lineHeight: 1.7 }}>
-        {text}
-      </p>
-    </div>
-  );
+type PersistedState = {
+  messages: ChatMessage[];
+  sessionId: string;
+};
+
+function loadState(): PersistedState | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as Partial<PersistedState>;
+
+    return {
+      messages: Array.isArray(parsed.messages)
+        ? parsed.messages.filter(
+            (item): item is ChatMessage =>
+              !!item &&
+              typeof item.id === "string" &&
+              (item.role === "user" || item.role === "assistant") &&
+              typeof item.content === "string"
+          )
+        : [],
+      sessionId:
+        typeof parsed.sessionId === "string" && parsed.sessionId.trim()
+          ? parsed.sessionId
+          : makeSessionId()
+    };
+  } catch {
+    return null;
+  }
 }
 
-export default async function NodePage() {
-  const [health, verifySnapshot, networkSnapshot] = await Promise.all([
-    nodeGetHealth(),
-    nodeGetPublicVerifySnapshot(12),
-    nodeGetNetworkSnapshot()
+function saveState(state: PersistedState) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function cleanAssistantResponse(text: string) {
+  if (!text) return "Nessuna risposta ricevuta.";
+
+  const runtimeMarker = "[Node Runtime]";
+  if (text.includes(runtimeMarker)) {
+    return text.split(runtimeMarker)[0].trim();
+  }
+
+  return text.trim();
+}
+
+function formatSources(
+  sources?: Array<{
+    title: string;
+    url?: string;
+  }>
+) {
+  if (!sources || sources.length === 0) return "";
+
+  return [
+    "",
+    "Fonti:",
+    ...sources.map((source, index) =>
+      source.url
+        ? `${index + 1}. ${source.title} — ${source.url}`
+        : `${index + 1}. ${source.title}`
+    )
+  ].join("\n");
+}
+
+export default function InterfacePage() {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: makeId(),
+      role: "assistant",
+      content:
+        "JOKER-C2 online. Invia una richiesta operativa, una domanda o un testo da analizzare."
+    }
   ]);
 
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sessionId, setSessionId] = useState(makeSessionId());
+
+  const [status, setStatus] = useState("Ready");
+  const [sessionState, setSessionState] = useState("-");
+  const [continuityReference, setContinuityReference] = useState("-");
+  const [continuityStatus, setContinuityStatus] = useState("-");
+  const [interpretiveMode, setInterpretiveMode] = useState("OFF");
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const stored = loadState();
+    if (!stored) return;
+
+    if (stored.messages.length > 0) {
+      setMessages(stored.messages);
+    }
+
+    setSessionId(stored.sessionId);
+  }, []);
+
+  useEffect(() => {
+    saveState({
+      messages,
+      sessionId
+    });
+  }, [messages, sessionId]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, sending]);
+
+  const turns = useMemo(() => messages.length, [messages]);
+
+  function clearConversation() {
+    const newSession = makeSessionId();
+
+    setMessages([
+      {
+        id: makeId(),
+        role: "assistant",
+        content:
+          "JOKER-C2 online. Nuova sessione inizializzata. Invia una richiesta operativa."
+      }
+    ]);
+    setInput("");
+    setSessionId(newSession);
+    setStatus("Ready");
+    setSessionState("-");
+    setContinuityReference("-");
+    setContinuityStatus("-");
+    setInterpretiveMode("OFF");
+    localStorage.removeItem(STORAGE_KEY);
+    textareaRef.current?.focus();
+  }
+
+  async function sendMessage() {
+    const message = input.trim();
+    if (!message || sending) return;
+
+    const userMessage: ChatMessage = {
+      id: makeId(),
+      role: "user",
+      content: message
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setSending(true);
+    setStatus("Processing");
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          message,
+          sessionId,
+          role: "Operatore supervisionato",
+          nodeContext: DEFAULT_NODE,
+          continuityReference: `${sessionId}-AUDIT`
+        })
+      });
+
+      const contentType = response.headers.get("content-type") || "";
+
+      if (!contentType.includes("application/json")) {
+        const text = await response.text();
+        throw new Error(`Risposta non JSON: ${text.slice(0, 200)}`);
+      }
+
+      const data = (await response.json()) as ApiResponse;
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || "Execution error");
+      }
+
+      const cleaned = cleanAssistantResponse(data.response || "");
+      const assistantText = `${cleaned}${formatSources(data.sources)}`;
+
+      const assistantMessage: ChatMessage = {
+        id: makeId(),
+        role: "assistant",
+        content: assistantText
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+      setStatus("Ready");
+      setSessionState(data.node_runtime?.session_state || "-");
+      setContinuityReference(
+        data.node_runtime?.continuity_reference || `${sessionId}-AUDIT`
+      );
+      setContinuityStatus(data.node_runtime?.continuity_status || "-");
+      setInterpretiveMode(data.interpretive_mode ? "ON" : "OFF");
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: makeId(),
+          role: "assistant",
+          content:
+            error instanceof Error
+              ? `Errore: ${error.message}`
+              : "Errore imprevisto di esecuzione."
+        }
+      ]);
+      setStatus("Error");
+    } finally {
+      setSending(false);
+      textareaRef.current?.focus();
+    }
+  }
+
   return (
-    <main className="hbce-page">
-      <section className="hbce-wrap" style={{ marginBottom: 28 }}>
-        <div className="hbce-kicker" style={{ marginBottom: 12 }}>
-          HBCE Research
-        </div>
-
-        <h1
-          style={{
-            margin: "0 0 14px",
-            fontSize: "clamp(34px, 7vw, 64px)",
-            lineHeight: 1,
-            letterSpacing: "-0.03em"
-          }}
-        >
-          Torino Pilot Node
-        </h1>
-
-        <p
-          className="hbce-muted"
-          style={{
-            margin: 0,
-            maxWidth: 880,
-            fontSize: 18,
-            lineHeight: 1.7
-          }}
-        >
-          Superficie operativa del nodo HBCE integrato in AI JOKER-C2. Questa
-          pagina rende leggibili stato locale, continuità, integrità del
-          ledger, trust layer e stato di rete della prima istanza operativa del
-          sistema.
-        </p>
-
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 12,
-            marginTop: 24
-          }}
-        >
-          <Pill value={health.status} />
-          <Pill value={health.continuity_status} />
-          <Pill value={health.signature_enabled ? "SIGNATURE ON" : "SIGNATURE OFF"} />
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 14,
-            marginTop: 26
-          }}
-        >
-          <Link href="/interface" className="hbce-button-primary">
-            Open Interface
-          </Link>
-          <Link href="/ipr" className="hbce-button-secondary">
-            Explore IPR
-          </Link>
-          <Link href="/api/verify" className="hbce-button-secondary">
-            Open Verify API
-          </Link>
-          <Link href="/api/network" className="hbce-button-secondary">
-            Open Network API
-          </Link>
-        </div>
-      </section>
-
-      <section className="hbce-wrap hbce-grid-3" style={{ marginBottom: 24 }}>
-        <article className="hbce-card" style={{ padding: 22 }}>
-          <div className="hbce-kicker" style={{ marginBottom: 10 }}>
-            Identity
-          </div>
-          <h2 style={{ margin: "0 0 12px", fontSize: 22 }}>Node Identity</h2>
-          <div style={{ display: "grid", gap: 10 }}>
+    <main style={styles.page}>
+      <div style={styles.shell}>
+        <aside style={styles.sidebar}>
+          <div style={styles.sidebarHeader}>
             <div>
-              <div className="hbce-kicker">Node</div>
-              <div style={valueStyle}>{health.node}</div>
+              <div style={styles.sidebarKicker}>HBCE Research</div>
+              <div style={styles.sidebarTitle}>JOKER-C2</div>
             </div>
-            <div>
-              <div className="hbce-kicker">Identity</div>
-              <div style={valueStyle}>{health.identity}</div>
-            </div>
-            <div>
-              <div className="hbce-kicker">System</div>
-              <div style={valueStyle}>{health.system}</div>
-            </div>
-          </div>
-        </article>
 
-        <article className="hbce-card" style={{ padding: 22 }}>
-          <div className="hbce-kicker" style={{ marginBottom: 10 }}>
-            Ledger
+            <button onClick={clearConversation} style={styles.newChatButton}>
+              Nuova sessione
+            </button>
           </div>
-          <h2 style={{ margin: "0 0 12px", fontSize: 22 }}>Integrity State</h2>
-          <div style={{ display: "grid", gap: 10 }}>
-            <div>
-              <div className="hbce-kicker">Integrity</div>
-              <div style={valueStyle}>
-                {health.ledger.integrity ? "Verified" : "Not verified"}
+
+          <section style={styles.sidebarCard}>
+            <div style={styles.cardTitle}>Execution Context</div>
+
+            <div style={styles.metaGrid}>
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Default Node</div>
+                <div style={styles.metaValue}>{DEFAULT_NODE}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Session ID</div>
+                <div style={styles.metaValue}>{sessionId}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Session State</div>
+                <div style={styles.metaValue}>{sessionState}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Continuity Reference</div>
+                <div style={styles.metaValue}>{continuityReference}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Continuity Status</div>
+                <div style={styles.metaValue}>{continuityStatus}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Interpretive Mode</div>
+                <div style={styles.metaValue}>{interpretiveMode}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Status</div>
+                <div style={styles.metaValue}>{sending ? "Sending..." : status}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Conversation Turns</div>
+                <div style={styles.metaValue}>{String(turns)}</div>
               </div>
             </div>
+          </section>
+
+          <section style={styles.sidebarCard}>
+            <div style={styles.cardTitle}>Runtime Model</div>
+            <div style={styles.infoText}>
+              request → session → continuity → response → audit
+            </div>
+          </section>
+        </aside>
+
+        <section style={styles.chatArea}>
+          <header style={styles.chatHeader}>
             <div>
-              <div className="hbce-kicker">Checked events</div>
-              <div style={valueStyle}>{String(health.ledger.checked_events)}</div>
+              <div style={styles.chatKicker}>Operational Interface</div>
+              <h1 style={styles.chatTitle}>AI JOKER-C2</h1>
+              <p style={styles.chatSubtitle}>
+                Interfaccia conversazionale operativa collegata al nodo Torino.
+              </p>
             </div>
-            <div>
-              <div className="hbce-kicker">Last seq</div>
-              <div style={valueStyle}>
-                {health.ledger.last_seq !== null
-                  ? String(health.ledger.last_seq)
-                  : "N/A"}
-              </div>
-            </div>
-          </div>
-        </article>
+          </header>
 
-        <article className="hbce-card" style={{ padding: 22 }}>
-          <div className="hbce-kicker" style={{ marginBottom: 10 }}>
-            Continuity
-          </div>
-          <h2 style={{ margin: "0 0 12px", fontSize: 22 }}>Runtime Continuity</h2>
-          <div style={{ display: "grid", gap: 10 }}>
-            <div>
-              <div className="hbce-kicker">Status</div>
-              <div style={valueStyle}>{verifySnapshot.continuity.continuity_status}</div>
-            </div>
-            <div>
-              <div className="hbce-kicker">Active sessions</div>
-              <div style={valueStyle}>
-                {String(verifySnapshot.continuity.active_sessions)}
-              </div>
-            </div>
-            <div>
-              <div className="hbce-kicker">Latest reference</div>
-              <div style={valueStyle}>
-                {verifySnapshot.continuity.latest?.continuity_reference || "N/A"}
-              </div>
-            </div>
-          </div>
-        </article>
-      </section>
-
-      <section className="hbce-wrap" style={{ marginBottom: 24 }}>
-        <div className="hbce-card" style={{ padding: 22 }}>
-          <SectionTitle
-            kicker="Verify Surface"
-            title="Public Verification Snapshot"
-            text="Vista sintetica della leggibilità pubblica del nodo. Qui convergono integrità del ledger, continuità del runtime e disponibilità del trust layer."
-          />
-
-          <div className="hbce-grid-2" style={{ marginBottom: 18 }}>
-            <div style={panelItemStyle}>
-              <div className="hbce-kicker">Ledger integrity</div>
-              <div style={valueStyle}>
-                {verifySnapshot.verify.ledger_integrity ? "true" : "false"}
-              </div>
-            </div>
-            <div style={panelItemStyle}>
-              <div className="hbce-kicker">Broken at</div>
-              <div style={valueStyle}>
-                {verifySnapshot.verify.broken_at !== null
-                  ? String(verifySnapshot.verify.broken_at)
-                  : "none"}
-              </div>
-            </div>
-            <div style={panelItemStyle}>
-              <div className="hbce-kicker">Signature</div>
-              <div style={valueStyle}>
-                {verifySnapshot.signature.enabled ? "enabled" : "disabled"}
-              </div>
-            </div>
-            <div style={panelItemStyle}>
-              <div className="hbce-kicker">Storage</div>
-              <div style={valueStyle}>{verifySnapshot.storage.type}</div>
-            </div>
-          </div>
-
-          <div style={monoPanelStyle}>
-            <div className="hbce-kicker" style={{ marginBottom: 10 }}>
-              Last hash
-            </div>
-            <code style={codeStyle}>{health.ledger.last_hash || "N/A"}</code>
-          </div>
-        </div>
-      </section>
-
-      <section className="hbce-wrap" style={{ marginBottom: 24 }}>
-        <div className="hbce-card" style={{ padding: 22 }}>
-          <SectionTitle
-            kicker="Ledger Tail"
-            title="Recent Node Events"
-            text="Coda pubblica sintetica degli eventi più recenti emessi dal nodo. È il bordo visibile della catena hash-linked persistente."
-          />
-
-          <div style={{ display: "grid", gap: 12 }}>
-            {verifySnapshot.ledger_tail.length === 0 ? (
-              <div style={panelItemStyle}>Nessun evento disponibile.</div>
-            ) : (
-              verifySnapshot.ledger_tail.map((event) => (
-                <div key={`${event.seq}-${event.hash}`} style={panelItemStyle}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 12,
-                      flexWrap: "wrap",
-                      marginBottom: 10
-                    }}
-                  >
-                    <div>
-                      <div className="hbce-kicker">Kind</div>
-                      <div style={valueStyle}>{event.kind}</div>
-                    </div>
-                    <div>
-                      <div className="hbce-kicker">Seq</div>
-                      <div style={valueStyle}>{String(event.seq)}</div>
-                    </div>
-                    <div>
-                      <div className="hbce-kicker">Timestamp</div>
-                      <div style={valueStyle}>{event.ts}</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "grid", gap: 8 }}>
-                    <div>
-                      <div className="hbce-kicker">Hash</div>
-                      <code style={codeStyle}>{event.hash}</code>
-                    </div>
-                    <div>
-                      <div className="hbce-kicker">Prev hash</div>
-                      <code style={codeStyle}>{event.prev_hash}</code>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="hbce-wrap" style={{ marginBottom: 24 }}>
-        <div className="hbce-card" style={{ padding: 22 }}>
-          <SectionTitle
-            kicker="Network Layer"
-            title="Federation Snapshot"
-            text="Lettura locale della rete HBCE. Il nodo Torino viene mostrato insieme ai descrittori federativi e ai probe di raggiungibilità."
-          />
-
-          <div className="hbce-grid-2" style={{ marginBottom: 18 }}>
-            <div style={panelItemStyle}>
-              <div className="hbce-kicker">Local node</div>
-              <div style={valueStyle}>{networkSnapshot.local_node.node_id}</div>
-            </div>
-            <div style={panelItemStyle}>
-              <div className="hbce-kicker">Active nodes</div>
-              <div style={valueStyle}>
-                {String(networkSnapshot.status.active_nodes)} /{" "}
-                {String(networkSnapshot.status.total_nodes)}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gap: 12 }}>
-            {networkSnapshot.probes.map((probe) => (
-              <div key={`${probe.node_id}-${probe.checked_at}`} style={panelItemStyle}>
-                <div
+          <div style={styles.messagesWrap}>
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                style={{
+                  ...styles.messageRow,
+                  justifyContent:
+                    message.role === "user" ? "flex-end" : "flex-start"
+                }}
+              >
+                <article
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    flexWrap: "wrap",
-                    marginBottom: 10
+                    ...styles.messageBubble,
+                    ...(message.role === "user"
+                      ? styles.userBubble
+                      : styles.assistantBubble)
                   }}
                 >
-                  <div>
-                    <div className="hbce-kicker">Node</div>
-                    <div style={valueStyle}>{probe.node_id}</div>
+                  <div style={styles.messageRole}>
+                    {message.role === "user" ? "You" : "AI JOKER-C2"}
                   </div>
-                  <div>
-                    <div className="hbce-kicker">Status</div>
-                    <Pill value={probe.status} />
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gap: 8 }}>
-                  <div>
-                    <div className="hbce-kicker">Endpoint</div>
-                    <code style={codeStyle}>{probe.endpoint || "N/A"}</code>
-                  </div>
-                  <div>
-                    <div className="hbce-kicker">Checked at</div>
-                    <div style={valueStyle}>{probe.checked_at}</div>
-                  </div>
-                </div>
+                  <div style={styles.messageText}>{message.content}</div>
+                </article>
               </div>
             ))}
+
+            {sending && (
+              <div style={styles.messageRow}>
+                <article
+                  style={{
+                    ...styles.messageBubble,
+                    ...styles.assistantBubble
+                  }}
+                >
+                  <div style={styles.messageRole}>AI JOKER-C2</div>
+                  <div style={styles.messageText}>Elaborazione in corso...</div>
+                </article>
+              </div>
+            )}
+
+            <div ref={scrollRef} />
           </div>
-        </div>
-      </section>
+
+          <div style={styles.composerShell}>
+            <div style={styles.composerInner}>
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Scrivi la tua richiesta a JOKER-C2..."
+                style={styles.textarea}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void sendMessage();
+                  }
+                }}
+              />
+
+              <div style={styles.composerBottom}>
+                <div style={styles.composerHint}>
+                  Enter invia · Shift + Enter va a capo
+                </div>
+
+                <button
+                  onClick={() => void sendMessage()}
+                  disabled={sending || !input.trim()}
+                  style={{
+                    ...styles.sendButton,
+                    opacity: sending || !input.trim() ? 0.6 : 1
+                  }}
+                >
+                  {sending ? "Sending..." : "Send"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
 
-const valueStyle: React.CSSProperties = {
-  fontSize: 15,
-  color: "#e8eef7",
-  lineHeight: 1.6,
-  wordBreak: "break-word"
-};
-
-const panelItemStyle: React.CSSProperties = {
-  padding: 16,
-  borderRadius: 18,
-  background: "rgba(255,255,255,.02)",
-  border: "1px solid rgba(255,255,255,.07)"
-};
-
-const monoPanelStyle: React.CSSProperties = {
-  padding: 16,
-  borderRadius: 18,
-  background: "rgba(255,255,255,.02)",
-  border: "1px solid rgba(255,255,255,.07)"
-};
-
-const codeStyle: React.CSSProperties = {
-  display: "block",
-  whiteSpace: "pre-wrap",
-  wordBreak: "break-all",
-  fontSize: 12,
-  lineHeight: 1.7,
-  color: "#cbd5e1"
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    background:
+      "radial-gradient(circle at top left, rgba(0,194,255,0.12), transparent 30%), linear-gradient(180deg, #071018 0%, #0b1220 100%)",
+    color: "#e8eef7",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+  },
+  shell: {
+    minHeight: "100vh",
+    display: "grid",
+    gridTemplateColumns: "320px minmax(0, 1fr)"
+  },
+  sidebar: {
+    borderRight: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(255,255,255,0.04)",
+    padding: 18,
+    display: "flex",
+    flexDirection: "column",
+    gap: 16
+  },
+  sidebarHeader: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12
+  },
+  sidebarKicker: {
+    fontSize: 11,
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+    color: "#7dd3fc",
+    marginBottom: 6
+  },
+  sidebarTitle: {
+    fontSize: 24,
+    fontWeight: 700,
+    lineHeight: 1.1
+  },
+  newChatButton: {
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.05)",
+    color: "#eef6ff",
+    borderRadius: 14,
+    padding: "12px 14px",
+    cursor: "pointer",
+    fontWeight: 600
+  },
+  sidebarCard: {
+    border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(0,0,0,0.20)",
+    borderRadius: 18,
+    padding: 14
+  },
+  cardTitle: {
+    fontSize: 14,
+    marginBottom: 12,
+    color: "#7dd3fc",
+    textTransform: "uppercase",
+    letterSpacing: "0.12em"
+  },
+  metaGrid: {
+    display: "grid",
+    gap: 10
+  },
+  metaItem: {
+    border: "1px solid rgba(255,255,255,0.06)",
+    background: "rgba(255,255,255,0.02)",
+    borderRadius: 14,
+    padding: 12
+  },
+  metaLabel: {
+    fontSize: 10,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    color: "rgba(232,238,247,0.45)",
+    marginBottom: 6
+  },
+  metaValue: {
+    color: "#edf4ff",
+    lineHeight: 1.55,
+    wordBreak: "break-word",
+    fontSize: 13
+  },
+  infoText: {
+    color: "#edf4ff",
+    lineHeight: 1.7,
+    fontSize: 14
+  },
+  chatArea: {
+    display: "grid",
+    gridTemplateRows: "auto 1fr auto",
+    minHeight: "100vh"
+  },
+  chatHeader: {
+    padding: "24px 28px 16px",
+    borderBottom: "1px solid rgba(255,255,255,0.06)"
+  },
+  chatKicker: {
+    fontSize: 11,
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+    color: "#7dd3fc",
+    marginBottom: 8
+  },
+  chatTitle: {
+    margin: 0,
+    fontSize: 30,
+    lineHeight: 1.1
+  },
+  chatSubtitle: {
+    marginTop: 10,
+    marginBottom: 0,
+    color: "rgba(232,238,247,0.70)",
+    fontSize: 14
+  },
+  messagesWrap: {
+    padding: "24px 28px 140px",
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: 16
+  },
+  messageRow: {
+    display: "flex",
+    width: "100%"
+  },
+  messageBubble: {
+    maxWidth: 820,
+    borderRadius: 18,
+    padding: 16,
+    border: "1px solid rgba(255,255,255,0.08)"
+  },
+  userBubble: {
+    background: "rgba(34,211,238,0.12)"
+  },
+  assistantBubble: {
+    background: "rgba(255,255,255,0.05)"
+  },
+  messageRole: {
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: "0.16em",
+    color: "rgba(232,238,247,0.48)",
+    marginBottom: 8
+  },
+  messageText: {
+    whiteSpace: "pre-wrap",
+    lineHeight: 1.7,
+    fontSize: 15,
+    color: "#edf4ff"
+  },
+  composerShell: {
+    position: "sticky",
+    bottom: 0,
+    padding: "16px 24px 24px",
+    background:
+      "linear-gradient(180deg, rgba(7,16,24,0) 0%, rgba(7,16,24,0.85) 30%, rgba(7,16,24,1) 100%)"
+  },
+  composerInner: {
+    maxWidth: 920,
+    margin: "0 auto",
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(0,0,0,0.30)",
+    borderRadius: 22,
+    padding: 14,
+    boxShadow: "0 20px 60px rgba(0,0,0,0.35)"
+  },
+  textarea: {
+    width: "100%",
+    minHeight: 90,
+    maxHeight: 220,
+    border: "none",
+    background: "transparent",
+    color: "#eef6ff",
+    padding: 8,
+    resize: "vertical",
+    outline: "none",
+    boxSizing: "border-box",
+    fontSize: 15,
+    lineHeight: 1.6
+  },
+  composerBottom: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+    paddingTop: 8
+  },
+  composerHint: {
+    fontSize: 13,
+    color: "rgba(232,238,247,0.60)"
+  },
+  sendButton: {
+    border: "none",
+    background: "#22d3ee",
+    color: "#071018",
+    borderRadius: 14,
+    padding: "12px 18px",
+    cursor: "pointer",
+    fontWeight: 700
+  }
 };
