@@ -19,6 +19,12 @@ type ApiResponse = {
     url?: string;
   }>;
   interpretive_mode?: boolean;
+  corpus_mode?:
+    | "off"
+    | "multi-document"
+    | "collection-analysis"
+    | "gap-analysis"
+    | "brussels-readiness";
   memory?: {
     enabled?: boolean;
     context_used?: boolean;
@@ -28,11 +34,14 @@ type ApiResponse = {
     session_state?: string;
     continuity_reference?: string;
     continuity_status?: string;
+    ledger_valid?: boolean;
+    last_event_id?: string | null;
+    runtime_start_state?: string;
     warning?: string;
   };
 };
 
-const STORAGE_KEY = "hbce-joker-c2-interface-v4";
+const STORAGE_KEY = "hbce-joker-c2-interface-v5";
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 
 function makeId() {
@@ -40,7 +49,10 @@ function makeId() {
 }
 
 function makeSessionId() {
-  return `JOKER-UI-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  return `JOKER-UI-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)
+    .toUpperCase()}`;
 }
 
 type PersistedState = {
@@ -112,6 +124,30 @@ function formatSources(
   ].join("\n");
 }
 
+function formatCorpusMode(
+  mode:
+    | "off"
+    | "multi-document"
+    | "collection-analysis"
+    | "gap-analysis"
+    | "brussels-readiness"
+    | undefined
+) {
+  switch (mode) {
+    case "multi-document":
+      return "MULTI-DOCUMENT";
+    case "collection-analysis":
+      return "COLLECTION-ANALYSIS";
+    case "gap-analysis":
+      return "GAP-ANALYSIS";
+    case "brussels-readiness":
+      return "BRUSSELS-READINESS";
+    case "off":
+    default:
+      return "OFF";
+  }
+}
+
 export default function InterfacePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -131,8 +167,12 @@ export default function InterfacePage() {
   const [continuityReference, setContinuityReference] = useState("-");
   const [continuityStatus, setContinuityStatus] = useState("-");
   const [interpretiveMode, setInterpretiveMode] = useState("OFF");
+  const [corpusMode, setCorpusMode] = useState("OFF");
   const [memoryEnabled, setMemoryEnabled] = useState("OFF");
   const [memoryContextUsed, setMemoryContextUsed] = useState("NO");
+  const [ledgerValid, setLedgerValid] = useState("-");
+  const [lastEventId, setLastEventId] = useState("-");
+  const [runtimeStartState, setRuntimeStartState] = useState("-");
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -179,8 +219,12 @@ export default function InterfacePage() {
     setContinuityReference("-");
     setContinuityStatus("-");
     setInterpretiveMode("OFF");
+    setCorpusMode("OFF");
     setMemoryEnabled("OFF");
     setMemoryContextUsed("NO");
+    setLedgerValid("-");
+    setLastEventId("-");
+    setRuntimeStartState("-");
     localStorage.removeItem(STORAGE_KEY);
     textareaRef.current?.focus();
   }
@@ -246,8 +290,18 @@ export default function InterfacePage() {
       );
       setContinuityStatus(data.node_runtime?.continuity_status || "-");
       setInterpretiveMode(data.interpretive_mode ? "ON" : "OFF");
+      setCorpusMode(formatCorpusMode(data.corpus_mode));
       setMemoryEnabled(data.memory?.enabled ? "ON" : "OFF");
       setMemoryContextUsed(data.memory?.context_used ? "YES" : "NO");
+      setLedgerValid(
+        typeof data.node_runtime?.ledger_valid === "boolean"
+          ? data.node_runtime.ledger_valid
+            ? "TRUE"
+            : "FALSE"
+          : "-"
+      );
+      setLastEventId(data.node_runtime?.last_event_id || "-");
+      setRuntimeStartState(data.node_runtime?.runtime_start_state || "-");
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -302,6 +356,11 @@ export default function InterfacePage() {
               </div>
 
               <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Runtime Start State</div>
+                <div style={styles.metaValue}>{runtimeStartState}</div>
+              </div>
+
+              <div style={styles.metaItem}>
                 <div style={styles.metaLabel}>Continuity Reference</div>
                 <div style={styles.metaValue}>{continuityReference}</div>
               </div>
@@ -317,6 +376,11 @@ export default function InterfacePage() {
               </div>
 
               <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Corpus Mode</div>
+                <div style={styles.metaValue}>{corpusMode}</div>
+              </div>
+
+              <div style={styles.metaItem}>
                 <div style={styles.metaLabel}>Node Memory</div>
                 <div style={styles.metaValue}>{memoryEnabled}</div>
               </div>
@@ -327,8 +391,20 @@ export default function InterfacePage() {
               </div>
 
               <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Ledger Valid</div>
+                <div style={styles.metaValue}>{ledgerValid}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Last Event ID</div>
+                <div style={styles.metaValue}>{lastEventId}</div>
+              </div>
+
+              <div style={styles.metaItem}>
                 <div style={styles.metaLabel}>Status</div>
-                <div style={styles.metaValue}>{sending ? "Sending..." : status}</div>
+                <div style={styles.metaValue}>
+                  {sending ? "Sending..." : status}
+                </div>
               </div>
 
               <div style={styles.metaItem}>
@@ -341,7 +417,8 @@ export default function InterfacePage() {
           <section style={styles.sidebarCard}>
             <div style={styles.cardTitle}>Runtime Model</div>
             <div style={styles.infoText}>
-              request → session → continuity → memory → response → audit
+              request → session → continuity → memory → corpus reasoning →
+              response → audit
             </div>
           </section>
         </aside>
