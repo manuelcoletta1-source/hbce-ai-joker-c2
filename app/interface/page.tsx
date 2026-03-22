@@ -14,16 +14,21 @@ type ApiResponse = {
   ok: boolean;
   response?: string;
   error?: string;
+  sources?: Array<{
+    title: string;
+    url?: string;
+  }>;
+  interpretive_mode?: boolean;
   node_runtime?: {
     session_id?: string;
     session_state?: string;
     continuity_reference?: string;
     continuity_status?: string;
-    node?: string;
+    warning?: string;
   };
 };
 
-const STORAGE_KEY = "hbce-joker-c2-interface-v1";
+const STORAGE_KEY = "hbce-joker-c2-interface-v2";
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 
 function makeId() {
@@ -76,11 +81,31 @@ function saveState(state: PersistedState) {
 function cleanAssistantResponse(text: string) {
   if (!text) return "Nessuna risposta ricevuta.";
 
-  if (text.includes("[Node Runtime]")) {
-    return text.split("[Node Runtime]")[0].trim();
+  const runtimeMarker = "[Node Runtime]";
+  if (text.includes(runtimeMarker)) {
+    return text.split(runtimeMarker)[0].trim();
   }
 
   return text.trim();
+}
+
+function formatSources(
+  sources?: Array<{
+    title: string;
+    url?: string;
+  }>
+) {
+  if (!sources || sources.length === 0) return "";
+
+  return [
+    "",
+    "Fonti:",
+    ...sources.map((source, index) =>
+      source.url
+        ? `${index + 1}. ${source.title} — ${source.url}`
+        : `${index + 1}. ${source.title}`
+    )
+  ].join("\n");
 }
 
 export default function InterfacePage() {
@@ -92,13 +117,17 @@ export default function InterfacePage() {
         "JOKER-C2 online. Invia una richiesta operativa, una domanda o un testo da analizzare."
     }
   ]);
+
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [sessionId, setSessionId] = useState(makeSessionId());
+
   const [status, setStatus] = useState("Ready");
   const [sessionState, setSessionState] = useState("-");
   const [continuityReference, setContinuityReference] = useState("-");
   const [continuityStatus, setContinuityStatus] = useState("-");
+  const [interpretiveMode, setInterpretiveMode] = useState("OFF");
+
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -142,6 +171,7 @@ export default function InterfacePage() {
     setSessionState("-");
     setContinuityReference("-");
     setContinuityStatus("-");
+    setInterpretiveMode("OFF");
     localStorage.removeItem(STORAGE_KEY);
   }
 
@@ -189,10 +219,13 @@ export default function InterfacePage() {
         throw new Error(data.error || "Execution error");
       }
 
+      const cleaned = cleanAssistantResponse(data.response || "");
+      const assistantText = `${cleaned}${formatSources(data.sources)}`;
+
       const assistantMessage: ChatMessage = {
         id: makeId(),
         role: "assistant",
-        content: cleanAssistantResponse(data.response || "")
+        content: assistantText
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -202,6 +235,7 @@ export default function InterfacePage() {
         data.node_runtime?.continuity_reference || `${sessionId}-AUDIT`
       );
       setContinuityStatus(data.node_runtime?.continuity_status || "-");
+      setInterpretiveMode(data.interpretive_mode ? "ON" : "OFF");
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -342,6 +376,11 @@ export default function InterfacePage() {
               <div style={styles.metaItem}>
                 <div style={styles.metaLabel}>Continuity Status</div>
                 <div style={styles.metaValue}>{continuityStatus}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Interpretive Mode</div>
+                <div style={styles.metaValue}>{interpretiveMode}</div>
               </div>
 
               <div style={styles.metaItem}>
