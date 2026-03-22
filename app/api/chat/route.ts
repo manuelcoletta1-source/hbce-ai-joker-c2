@@ -10,6 +10,12 @@ import {
 import { evaluateHBCEPolicy } from "@/lib/policy-engine";
 import { runNodeRuntime } from "@/lib/node/node-runtime";
 import { nodeAppendEvent } from "@/lib/node/node-ledger";
+import {
+  nodeGetMemoryByKey,
+  nodeMemoryIsConfigured,
+  nodeSaveMemory,
+  nodeSearchMemories
+} from "@/lib/node/node-memory";
 
 export const runtime = "nodejs";
 
@@ -130,7 +136,9 @@ function detectIntent(
       m.includes("legg") ||
       m.includes("file") ||
       m.includes("document") ||
-      m.includes("estrai")
+      m.includes("estrai") ||
+      m.includes("interpreta") ||
+      m.includes("spiegamelo")
     ) {
       return "research";
     }
@@ -191,11 +199,29 @@ function buildInterpretiveGuidance(): string[] {
   ];
 }
 
+function buildMemoryPromptBlock(input: {
+  memoryContext: string;
+  hasMemory: boolean;
+}): string[] {
+  if (!input.hasMemory || !input.memoryContext.trim()) {
+    return [];
+  }
+
+  return [
+    "Persistent node memory context is available.",
+    "Use it only as supporting operational continuity context.",
+    "Do not pretend the memory is a source document for claims it does not contain.",
+    input.memoryContext
+  ];
+}
+
 function buildSystemPrompt(
   intent: "chat" | "research" | "general",
   policyGuidance: string[],
   hasAttachments: boolean,
-  interpretiveMode: boolean
+  interpretiveMode: boolean,
+  memoryContext: string,
+  hasMemory: boolean
 ): string {
   const base = [
     "You are JOKER-C2, the operational cybernetic entity of the HBCE system.",
@@ -227,11 +253,17 @@ function buildSystemPrompt(
     ? buildInterpretiveGuidance()
     : [];
 
+  const memoryBlock = buildMemoryPromptBlock({
+    memoryContext,
+    hasMemory
+  });
+
   return [
     ...base,
     ...intentBlock,
     ...attachmentBlock,
     ...interpretiveBlock,
+    ...memoryBlock,
     ...policyGuidance
   ].join(" ");
 }
@@ -275,6 +307,153 @@ function normalizeContinuityReference(
   }
 
   return continuityReference.trim();
+}
+
+function buildMemoryKeys(input: {
+  sessionId: string;
+}): {
+  sessionSummaryKey: string;
+  recentIntentKey: string;
+  recentDocumentsKey: string;
+} {
+  return {
+    sessionSummaryKey: `session:${input.sessionId}:summary`,
+    recentIntentKey: `session:${input.sessionId}:recent_intent`,
+    recentDocumentsKey: `session:${input.sessionId}:recent_documents`
+  };
+}
+
+function summarizeMessageForMemory(message: string): string {
+  if (!message.trim()) return "";
+  return message.trim().replace(/\s+/g, " ").slice(0, 280);
+}
+
+function summarizeResponseForMemory(response: string): string {
+  if (!response.trim()) return "";
+  return response.trim().replace(/\s+/g, " ").slice(0, 500);
+}
+
+function buildAttachmentNamesSummary(attachments: ChatAttachment[]): string {
+  const names = attachments
+    .map((item) => item.name?.trim())
+    .filter((value): value is string => Boolean(value));
+
+  if (names.length === 0) return "no_named_attachments";
+
+  return names.join(", ").slice(0, 300);
+}
+
+async function buildMemoryContext(input: {
+  sessionId: string;
+  effectiveMessage: string;
+  hasAttachments: boolean;
+  attachments: ChatAttachment[];
+}): Promise<{
+  enabled: boolean;
+  context: string;
+}> {
+  if (!nodeMemoryIsConfigured()) {
+    return {
+      enabled: false,
+      context: ""
+    };
+  }
+
+  const keys = buildMemoryKeys({ sessionId: input.sessionId });
+
+  const [sessionSummary, recentIntent, recentDocuments, searchResults] =
+    await Promise.all([
+      nodeGetMemoryByKey(keys.sessionSummaryKey),
+      nodeGetMemoryByKey(keys.recentIntentKey),
+      nodeGetMemoryByKey(keys.recentDocumentsKey),
+      nodeSearchMemories(input.effectiveMessage.slice(0, 120))
+    ]);
+
+  const relevantSearch = searchResults
+    .filter((item) => item.key !== keys.sessionSummaryKey)
+    .slice(0, 3);
+
+  const blocks: string[] = [];
+
+  if (sessionSummary?.value) {
+    blocks.push(`Session summary: ${sessionSummary.value}`);
+  }
+
+  if (recentIntent?.value) {
+    blocks.push(`Recent intent memory: ${recentIntent.value}`);
+  }
+
+  if (input.hasAttachments && recentDocuments?.value) {
+    blocks.push(`Recent document memory: ${recentDocuments.value}`);
+  }
+
+  if (relevantSearch.length > 0) {
+    blocks.push(
+      `Related persistent memories: ${relevantSearch
+        .map((item) => `[${item.category}] ${item.key} => ${item.value}`)
+        .join(" | ")}`
+    );
+  }
+
+  return {
+    enabled: true,
+    context: blocks.join("\n")
+  };
+}
+
+async function persistMemoryState(input: {
+  sessionId: string;
+  intent: "chat" | "research" | "general";
+  effectiveMessage: string;
+  response: string;
+  attachments: ChatAttachment[];
+  interpretiveMode: boolean;
+}): Promise<void> {
+  if (!nodeMemoryIsConfigured()) {
+    return;
+  }
+
+  const keys = buildMemoryKeys({ sessionId: input.sessionId });
+
+  const tasks: Promise<unknown>[] = [];
+
+  tasks.push(
+    nodeSaveMemory({
+      key: keys.recentIntentKey,
+      value: [
+        `intent=${input.intent}`,
+        `interpretive_mode=${input.interpretiveMode ? "on" : "off"}`,
+        `message=${summarizeMessageForMemory(input.effectiveMessage)}`
+      ].join(" | "),
+      category: "session"
+    })
+  );
+
+  tasks.push(
+    nodeSaveMemory({
+      key: keys.sessionSummaryKey,
+      value: [
+        `last_user_request=${summarizeMessageForMemory(input.effectiveMessage)}`,
+        `last_response=${summarizeResponseForMemory(input.response)}`
+      ].join(" | "),
+      category: "session"
+    })
+  );
+
+  if (input.attachments.length > 0) {
+    tasks.push(
+      nodeSaveMemory({
+        key: keys.recentDocumentsKey,
+        value: [
+          `attachments=${buildAttachmentNamesSummary(input.attachments)}`,
+          `last_request=${summarizeMessageForMemory(input.effectiveMessage)}`
+        ].join(" | "),
+        category: "documents"
+      })
+    );
+  }
+
+  await Promise.allSettled(tasks);
 }
 
 export async function POST(req: Request) {
@@ -349,6 +528,13 @@ export async function POST(req: Request) {
       hasAttachments && wantsInterpretiveMode(effectiveMessage);
     const historyTexts = history.map((item) => item.content);
 
+    const memoryState = await buildMemoryContext({
+      sessionId,
+      effectiveMessage,
+      hasAttachments,
+      attachments
+    });
+
     const prePolicy = evaluateHBCEPolicy({
       message: effectiveMessage,
       response: "",
@@ -395,6 +581,15 @@ export async function POST(req: Request) {
         // non bloccare la risposta chat se il ledger fallisce
       }
 
+      await persistMemoryState({
+        sessionId,
+        intent,
+        effectiveMessage,
+        response: blockedResponse,
+        attachments,
+        interpretiveMode
+      });
+
       return NextResponse.json({
         ok: true,
         joker: "C2",
@@ -403,6 +598,10 @@ export async function POST(req: Request) {
         policy: prePolicy,
         anchor,
         interpretive_mode: interpretiveMode,
+        memory: {
+          enabled: memoryState.enabled,
+          context_used: memoryState.context.length > 0
+        },
         node_runtime: nodeRuntime
           ? {
               session_id: nodeRuntime.execution.session.sessionId,
@@ -430,7 +629,9 @@ export async function POST(req: Request) {
       intent,
       prePolicy.prompt_guidance,
       hasAttachments,
-      interpretiveMode
+      interpretiveMode,
+      memoryState.context,
+      memoryState.enabled
     );
 
     const userContent = attachmentContext
@@ -520,12 +721,22 @@ export async function POST(req: Request) {
           anchor_hash: anchor.hash,
           truth_decision: truth.decision,
           truth_score: truth.score,
-          interpretive_mode: interpretiveMode
+          interpretive_mode: interpretiveMode,
+          memory_enabled: memoryState.enabled
         }
       });
     } catch {
       chatLedgerEvent = null;
     }
+
+    await persistMemoryState({
+      sessionId,
+      intent,
+      effectiveMessage,
+      response,
+      attachments,
+      interpretiveMode
+    });
 
     return NextResponse.json({
       ok: true,
@@ -537,6 +748,10 @@ export async function POST(req: Request) {
       anchor,
       attachment_count: attachments.length,
       interpretive_mode: interpretiveMode,
+      memory: {
+        enabled: memoryState.enabled,
+        context_used: memoryState.context.length > 0
+      },
       node_runtime: nodeRuntime
         ? {
             session_id: nodeRuntime.execution.session.sessionId,
