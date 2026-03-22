@@ -6,8 +6,9 @@ export type LedgerEvent = {
   kind: string;
   actor: string;
   node: string;
-  timestamp: string;
+  ts: string;
   payload: Record<string, unknown>;
+  prev_hash: string;
   hash: string;
 };
 
@@ -21,6 +22,45 @@ function generateId(): string {
   return crypto.randomBytes(16).toString("hex");
 }
 
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+
+  const obj = value as Record<string, unknown>;
+  const keys = Object.keys(obj).sort();
+
+  return `{${keys
+    .map((key) => `${JSON.stringify(key)}:${stableStringify(obj[key])}`)
+    .join(",")}}`;
+}
+
+function computeEventHash(input: {
+  seq: number;
+  kind: string;
+  actor: string;
+  node: string;
+  ts: string;
+  payload: Record<string, unknown>;
+  prev_hash: string;
+}): string {
+  return generateHash(
+    stableStringify({
+      seq: input.seq,
+      kind: input.kind,
+      actor: input.actor,
+      node: input.node,
+      ts: input.ts,
+      payload: input.payload,
+      prev_hash: input.prev_hash
+    })
+  );
+}
+
 export function nodeLedgerIsConfigured(): boolean {
   return true;
 }
@@ -31,25 +71,25 @@ export async function nodeAppendEvent(input: {
   node: string;
   payload: Record<string, unknown>;
 }): Promise<LedgerEvent> {
-  const timestamp = new Date().toISOString();
-
   const seq = inMemoryLedger.length + 1;
+  const ts = new Date().toISOString();
+  const prev = inMemoryLedger[inMemoryLedger.length - 1] || null;
+  const prev_hash = prev?.hash || "GENESIS";
 
   const base = {
     seq,
     kind: input.kind,
     actor: input.actor,
     node: input.node,
-    timestamp,
-    payload: input.payload
+    ts,
+    payload: input.payload,
+    prev_hash
   };
-
-  const hash = generateHash(JSON.stringify(base));
 
   const event: LedgerEvent = {
     id: generateId(),
     ...base,
-    hash
+    hash: computeEventHash(base)
   };
 
   inMemoryLedger.push(event);
@@ -76,24 +116,30 @@ export async function nodeVerifyLedger(): Promise<{
   errors: string[];
 }> {
   const errors: string[] = [];
+  let expectedPrevHash = "GENESIS";
 
   for (let i = 0; i < inMemoryLedger.length; i++) {
     const event = inMemoryLedger[i];
 
-    const recalculatedHash = generateHash(
-      JSON.stringify({
-        seq: event.seq,
-        kind: event.kind,
-        actor: event.actor,
-        node: event.node,
-        timestamp: event.timestamp,
-        payload: event.payload
-      })
-    );
+    if (event.prev_hash !== expectedPrevHash) {
+      errors.push(`prev_hash mismatch at event ${event.id}`);
+    }
+
+    const recalculatedHash = computeEventHash({
+      seq: event.seq,
+      kind: event.kind,
+      actor: event.actor,
+      node: event.node,
+      ts: event.ts,
+      payload: event.payload,
+      prev_hash: event.prev_hash
+    });
 
     if (recalculatedHash !== event.hash) {
-      errors.push(`Hash mismatch at event ${event.id}`);
+      errors.push(`hash mismatch at event ${event.id}`);
     }
+
+    expectedPrevHash = event.hash;
   }
 
   return {
