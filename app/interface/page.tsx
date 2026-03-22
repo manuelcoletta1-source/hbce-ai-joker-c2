@@ -28,7 +28,7 @@ type ApiResponse = {
   };
 };
 
-const STORAGE_KEY = "hbce-joker-c2-interface-v2";
+const STORAGE_KEY = "hbce-joker-c2-interface-v3";
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 
 function makeId() {
@@ -129,6 +129,7 @@ export default function InterfacePage() {
   const [interpretiveMode, setInterpretiveMode] = useState("OFF");
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     const stored = loadState();
@@ -173,6 +174,7 @@ export default function InterfacePage() {
     setContinuityStatus("-");
     setInterpretiveMode("OFF");
     localStorage.removeItem(STORAGE_KEY);
+    textareaRef.current?.focus();
   }
 
   async function sendMessage() {
@@ -251,105 +253,26 @@ export default function InterfacePage() {
       setStatus("Error");
     } finally {
       setSending(false);
+      textareaRef.current?.focus();
     }
   }
 
   return (
     <main style={styles.page}>
       <div style={styles.shell}>
-        <section style={styles.chatPane}>
-          <header style={styles.chatHeader}>
-            <div>
-              <div style={styles.kicker}>HBCE Research</div>
-              <h1 style={styles.title}>AI JOKER-C2 Interface</h1>
-              <p style={styles.subtitle}>
-                Interfaccia operativa collegata al nodo Torino del sistema HBCE.
-              </p>
-            </div>
-
-            <button onClick={clearConversation} style={styles.secondaryButton}>
-              Clear conversation
-            </button>
-          </header>
-
-          <div style={styles.statusBar}>
-            <span style={styles.statusDot} />
-            <span>{sending ? "Sending..." : status}</span>
-          </div>
-
-          <div style={styles.messages}>
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                style={{
-                  ...styles.messageRow,
-                  justifyContent:
-                    message.role === "user" ? "flex-end" : "flex-start"
-                }}
-              >
-                <article
-                  style={{
-                    ...styles.bubble,
-                    ...(message.role === "user"
-                      ? styles.userBubble
-                      : styles.assistantBubble)
-                  }}
-                >
-                  <div style={styles.roleLabel}>
-                    {message.role === "user" ? "You" : "AI JOKER-C2"}
-                  </div>
-                  <div style={styles.messageText}>{message.content}</div>
-                </article>
-              </div>
-            ))}
-
-            {sending && (
-              <div style={styles.messageRow}>
-                <article style={{ ...styles.bubble, ...styles.assistantBubble }}>
-                  <div style={styles.roleLabel}>AI JOKER-C2</div>
-                  <div style={styles.messageText}>Elaborazione in corso...</div>
-                </article>
-              </div>
-            )}
-
-            <div ref={scrollRef} />
-          </div>
-
-          <div style={styles.composer}>
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Scrivi la tua richiesta a JOKER-C2..."
-              style={styles.textarea}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  void sendMessage();
-                }
-              }}
-            />
-
-            <div style={styles.composerBottom}>
-              <div style={styles.hint}>
-                Enter invia. Shift + Enter va a capo.
-              </div>
-
-              <button
-                onClick={() => void sendMessage()}
-                disabled={sending || !input.trim()}
-                style={{
-                  ...styles.primaryButton,
-                  opacity: sending || !input.trim() ? 0.6 : 1
-                }}
-              >
-                {sending ? "Sending..." : "Send"}
-              </button>
-            </div>
-          </div>
-        </section>
-
         <aside style={styles.sidebar}>
-          <section style={styles.card}>
+          <div style={styles.sidebarHeader}>
+            <div>
+              <div style={styles.sidebarKicker}>HBCE Research</div>
+              <div style={styles.sidebarTitle}>JOKER-C2</div>
+            </div>
+
+            <button onClick={clearConversation} style={styles.newChatButton}>
+              Nuova sessione
+            </button>
+          </div>
+
+          <section style={styles.sidebarCard}>
             <div style={styles.cardTitle}>Execution Context</div>
 
             <div style={styles.metaGrid}>
@@ -364,13 +287,13 @@ export default function InterfacePage() {
               </div>
 
               <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Continuity Reference</div>
-                <div style={styles.metaValue}>{continuityReference}</div>
+                <div style={styles.metaLabel}>Session State</div>
+                <div style={styles.metaValue}>{sessionState}</div>
               </div>
 
               <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Session State</div>
-                <div style={styles.metaValue}>{sessionState}</div>
+                <div style={styles.metaLabel}>Continuity Reference</div>
+                <div style={styles.metaValue}>{continuityReference}</div>
               </div>
 
               <div style={styles.metaItem}>
@@ -384,19 +307,114 @@ export default function InterfacePage() {
               </div>
 
               <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Status</div>
+                <div style={styles.metaValue}>{sending ? "Sending..." : status}</div>
+              </div>
+
+              <div style={styles.metaItem}>
                 <div style={styles.metaLabel}>Conversation Turns</div>
                 <div style={styles.metaValue}>{String(turns)}</div>
               </div>
             </div>
           </section>
 
-          <section style={styles.card}>
+          <section style={styles.sidebarCard}>
             <div style={styles.cardTitle}>Runtime Model</div>
             <div style={styles.infoText}>
               request → session → continuity → response → audit
             </div>
           </section>
         </aside>
+
+        <section style={styles.chatArea}>
+          <header style={styles.chatHeader}>
+            <div>
+              <div style={styles.chatKicker}>Operational Interface</div>
+              <h1 style={styles.chatTitle}>AI JOKER-C2</h1>
+              <p style={styles.chatSubtitle}>
+                Interfaccia conversazionale operativa collegata al nodo Torino.
+              </p>
+            </div>
+          </header>
+
+          <div style={styles.messagesWrap}>
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                style={{
+                  ...styles.messageRow,
+                  justifyContent:
+                    message.role === "user" ? "flex-end" : "flex-start"
+                }}
+              >
+                <article
+                  style={{
+                    ...styles.messageBubble,
+                    ...(message.role === "user"
+                      ? styles.userBubble
+                      : styles.assistantBubble)
+                  }}
+                >
+                  <div style={styles.messageRole}>
+                    {message.role === "user" ? "You" : "AI JOKER-C2"}
+                  </div>
+                  <div style={styles.messageText}>{message.content}</div>
+                </article>
+              </div>
+            ))}
+
+            {sending && (
+              <div style={styles.messageRow}>
+                <article
+                  style={{
+                    ...styles.messageBubble,
+                    ...styles.assistantBubble
+                  }}
+                >
+                  <div style={styles.messageRole}>AI JOKER-C2</div>
+                  <div style={styles.messageText}>Elaborazione in corso...</div>
+                </article>
+              </div>
+            )}
+
+            <div ref={scrollRef} />
+          </div>
+
+          <div style={styles.composerShell}>
+            <div style={styles.composerInner}>
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Scrivi la tua richiesta a JOKER-C2..."
+                style={styles.textarea}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void sendMessage();
+                  }
+                }}
+              />
+
+              <div style={styles.composerBottom}>
+                <div style={styles.composerHint}>
+                  Enter invia · Shift + Enter va a capo
+                </div>
+
+                <button
+                  onClick={() => void sendMessage()}
+                  disabled={sending || !input.trim()}
+                  style={{
+                    ...styles.sendButton,
+                    opacity: sending || !input.trim() ? 0.6 : 1
+                  }}
+                >
+                  {sending ? "Sending..." : "Send"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   );
@@ -408,91 +426,131 @@ const styles: Record<string, React.CSSProperties> = {
     background:
       "radial-gradient(circle at top left, rgba(0,194,255,0.12), transparent 30%), linear-gradient(180deg, #071018 0%, #0b1220 100%)",
     color: "#e8eef7",
-    padding: 24,
     fontFamily:
       'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
   },
   shell: {
-    maxWidth: 1440,
-    margin: "0 auto",
+    minHeight: "100vh",
     display: "grid",
-    gridTemplateColumns: "minmax(0, 1.6fr) 340px",
-    gap: 24
+    gridTemplateColumns: "320px minmax(0, 1fr)"
   },
-  chatPane: {
-    border: "1px solid rgba(255,255,255,0.08)",
+  sidebar: {
+    borderRight: "1px solid rgba(255,255,255,0.08)",
     background: "rgba(255,255,255,0.04)",
-    borderRadius: 24,
-    padding: 20,
-    boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
-    display: "grid",
-    gridTemplateRows: "auto auto 1fr auto",
-    gap: 16,
-    minHeight: "calc(100vh - 48px)"
-  },
-  chatHeader: {
+    padding: 18,
     display: "flex",
-    justifyContent: "space-between",
-    gap: 16,
-    alignItems: "flex-start",
-    flexWrap: "wrap"
+    flexDirection: "column",
+    gap: 16
   },
-  kicker: {
+  sidebarHeader: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12
+  },
+  sidebarKicker: {
     fontSize: 11,
-    letterSpacing: "0.22em",
+    letterSpacing: "0.18em",
     textTransform: "uppercase",
     color: "#7dd3fc",
-    marginBottom: 10
+    marginBottom: 6
   },
-  title: {
+  sidebarTitle: {
+    fontSize: 24,
+    fontWeight: 700,
+    lineHeight: 1.1
+  },
+  newChatButton: {
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.05)",
+    color: "#eef6ff",
+    borderRadius: 14,
+    padding: "12px 14px",
+    cursor: "pointer",
+    fontWeight: 600
+  },
+  sidebarCard: {
+    border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(0,0,0,0.20)",
+    borderRadius: 18,
+    padding: 14
+  },
+  cardTitle: {
+    fontSize: 14,
+    marginBottom: 12,
+    color: "#7dd3fc",
+    textTransform: "uppercase",
+    letterSpacing: "0.12em"
+  },
+  metaGrid: {
+    display: "grid",
+    gap: 10
+  },
+  metaItem: {
+    border: "1px solid rgba(255,255,255,0.06)",
+    background: "rgba(255,255,255,0.02)",
+    borderRadius: 14,
+    padding: 12
+  },
+  metaLabel: {
+    fontSize: 10,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    color: "rgba(232,238,247,0.45)",
+    marginBottom: 6
+  },
+  metaValue: {
+    color: "#edf4ff",
+    lineHeight: 1.55,
+    wordBreak: "break-word",
+    fontSize: 13
+  },
+  infoText: {
+    color: "#edf4ff",
+    lineHeight: 1.7,
+    fontSize: 14
+  },
+  chatArea: {
+    display: "grid",
+    gridTemplateRows: "auto 1fr auto",
+    minHeight: "100vh"
+  },
+  chatHeader: {
+    padding: "24px 28px 16px",
+    borderBottom: "1px solid rgba(255,255,255,0.06)"
+  },
+  chatKicker: {
+    fontSize: 11,
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+    color: "#7dd3fc",
+    marginBottom: 8
+  },
+  chatTitle: {
     margin: 0,
     fontSize: 30,
     lineHeight: 1.1
   },
-  subtitle: {
+  chatSubtitle: {
     marginTop: 10,
     marginBottom: 0,
-    color: "rgba(232,238,247,0.72)",
+    color: "rgba(232,238,247,0.70)",
     fontSize: 14
   },
-  statusBar: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
-    borderRadius: 999,
-    padding: "10px 14px",
-    fontSize: 14,
-    width: "fit-content"
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: "50%",
-    background: "#22d3ee",
-    boxShadow: "0 0 10px rgba(34,211,238,0.8)"
-  },
-  messages: {
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(0,0,0,0.22)",
-    borderRadius: 20,
-    padding: 16,
+  messagesWrap: {
+    padding: "24px 28px 140px",
     overflowY: "auto",
     display: "flex",
     flexDirection: "column",
-    gap: 14,
-    minHeight: 420,
-    maxHeight: "58vh"
+    gap: 16
   },
   messageRow: {
     display: "flex",
     width: "100%"
   },
-  bubble: {
-    maxWidth: "84%",
+  messageBubble: {
+    maxWidth: 820,
     borderRadius: 18,
-    padding: 14,
+    padding: 16,
     border: "1px solid rgba(255,255,255,0.08)"
   },
   userBubble: {
@@ -501,107 +559,68 @@ const styles: Record<string, React.CSSProperties> = {
   assistantBubble: {
     background: "rgba(255,255,255,0.05)"
   },
-  roleLabel: {
+  messageRole: {
     fontSize: 11,
     textTransform: "uppercase",
-    letterSpacing: "0.18em",
-    color: "rgba(232,238,247,0.50)",
+    letterSpacing: "0.16em",
+    color: "rgba(232,238,247,0.48)",
     marginBottom: 8
   },
   messageText: {
     whiteSpace: "pre-wrap",
-    lineHeight: 1.65,
-    fontSize: 14,
+    lineHeight: 1.7,
+    fontSize: 15,
     color: "#edf4ff"
   },
-  composer: {
-    display: "grid",
-    gap: 12
+  composerShell: {
+    position: "sticky",
+    bottom: 0,
+    padding: "16px 24px 24px",
+    background:
+      "linear-gradient(180deg, rgba(7,16,24,0) 0%, rgba(7,16,24,0.85) 30%, rgba(7,16,24,1) 100%)"
+  },
+  composerInner: {
+    maxWidth: 920,
+    margin: "0 auto",
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(0,0,0,0.30)",
+    borderRadius: 22,
+    padding: 14,
+    boxShadow: "0 20px 60px rgba(0,0,0,0.35)"
   },
   textarea: {
     width: "100%",
-    minHeight: 110,
-    borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(0,0,0,0.22)",
+    minHeight: 90,
+    maxHeight: 220,
+    border: "none",
+    background: "transparent",
     color: "#eef6ff",
-    padding: 14,
+    padding: 8,
     resize: "vertical",
     outline: "none",
     boxSizing: "border-box",
-    fontSize: 14
+    fontSize: 15,
+    lineHeight: 1.6
   },
   composerBottom: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     gap: 12,
-    flexWrap: "wrap"
+    flexWrap: "wrap",
+    paddingTop: 8
   },
-  hint: {
+  composerHint: {
     fontSize: 13,
     color: "rgba(232,238,247,0.60)"
   },
-  primaryButton: {
+  sendButton: {
     border: "none",
     background: "#22d3ee",
     color: "#071018",
-    borderRadius: 16,
+    borderRadius: 14,
     padding: "12px 18px",
     cursor: "pointer",
     fontWeight: 700
-  },
-  secondaryButton: {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.05)",
-    color: "#eef6ff",
-    borderRadius: 16,
-    padding: "10px 14px",
-    cursor: "pointer"
-  },
-  sidebar: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 16
-  },
-  card: {
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(255,255,255,0.04)",
-    borderRadius: 24,
-    padding: 20,
-    boxShadow: "0 20px 60px rgba(0,0,0,0.35)"
-  },
-  cardTitle: {
-    fontSize: 18,
-    marginBottom: 14,
-    color: "#e8eef7"
-  },
-  metaGrid: {
-    display: "grid",
-    gap: 12
-  },
-  metaItem: {
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(0,0,0,0.22)",
-    borderRadius: 18,
-    padding: 14
-  },
-  metaLabel: {
-    fontSize: 11,
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-    color: "rgba(232,238,247,0.45)",
-    marginBottom: 8
-  },
-  metaValue: {
-    color: "#edf4ff",
-    lineHeight: 1.6,
-    wordBreak: "break-word",
-    fontSize: 14
-  },
-  infoText: {
-    color: "#edf4ff",
-    lineHeight: 1.7,
-    fontSize: 14
   }
 };
