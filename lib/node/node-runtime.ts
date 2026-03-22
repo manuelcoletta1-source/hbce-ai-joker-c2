@@ -1,153 +1,223 @@
-import {
-  runC2LexSession,
-  type C2LexSessionRunResult
-} from "@/lib/c2-lex-session-store";
+import { nodeAppendEvent, nodeGetLastEvent, nodeVerifyLedger } from "@/lib/node/node-ledger";
 
-import { nodeAppendEvent } from "@/lib/node/node-ledger";
-import { nodeGetContinuityStatus } from "@/lib/node/node-continuity";
+export type NodeRuntimeState =
+  | "BOOTING"
+  | "READY"
+  | "PROCESSING"
+  | "RESPONDING"
+  | "STABLE"
+  | "DEGRADED"
+  | "ERROR";
 
-import type {
-  HBCEContinuityStatus,
-  HBCENodeRuntimeEventResult
-} from "@/lib/node/node-types";
+export type NodeRuntimeSession = {
+  session_id: string;
+  node_id: string;
+  continuity_reference: string;
+  state: NodeRuntimeState;
+  opened_at: string;
+  updated_at: string;
+  turn_count: number;
+  last_user_message?: string;
+  last_assistant_response?: string;
+};
 
-export type HBCENodeRuntimeInput = {
+export type NodeRuntimeExecutionResult = {
+  session: NodeRuntimeSession;
+  continuity_status: "STABLE" | "LIMITED" | "DEGRADED" | "UNKNOWN";
+  last_event_id: string | null;
+  ledger_valid: boolean;
+  runtime_state: NodeRuntimeState;
+};
+
+const NODE_ID = process.env.JOKER_NODE_ID || "HBCE-MATRIX-NODE-0001-TORINO";
+
+const sessionStore = new Map<string, NodeRuntimeSession>();
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function buildContinuityReference(sessionId: string): string {
+  return `${sessionId}-AUDIT`;
+}
+
+function getContinuityStatus(
+  state: NodeRuntimeState
+): "STABLE" | "LIMITED" | "DEGRADED" | "UNKNOWN" {
+  switch (state) {
+    case "READY":
+    case "RESPONDING":
+    case "STABLE":
+      return "STABLE";
+    case "PROCESSING":
+      return "LIMITED";
+    case "DEGRADED":
+    case "ERROR":
+      return "DEGRADED";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+function getOrCreateSession(sessionId: string): NodeRuntimeSession {
+  const existing = sessionStore.get(sessionId);
+  if (existing) {
+    return existing;
+  }
+
+  const created: NodeRuntimeSession = {
+    session_id: sessionId,
+    node_id: NODE_ID,
+    continuity_reference: buildContinuityReference(sessionId),
+    state: "BOOTING",
+    opened_at: nowIso(),
+    updated_at: nowIso(),
+    turn_count: 0
+  };
+
+  sessionStore.set(sessionId, created);
+  return created;
+}
+
+function updateSession(
+  sessionId: string,
+  patch: Partial<NodeRuntimeSession>
+): NodeRuntimeSession {
+  const current = getOrCreateSession(sessionId);
+
+  const updated: NodeRuntimeSession = {
+    ...current,
+    ...patch,
+    updated_at: nowIso()
+  };
+
+  sessionStore.set(sessionId, updated);
+  return updated;
+}
+
+export async function runNodeRuntime(input: {
   sessionId: string;
-  message: string;
-  role: string;
-  nodeContext: string;
-  continuityReference?: string;
+  userMessage: string;
   actor?: string;
-};
+}): Promise<NodeRuntimeExecutionResult> {
+  const actor = input.actor || "IPR-AI-0001";
 
-export type HBCENodeRuntimeResult = {
-  execution: C2LexSessionRunResult;
-  continuity_status: HBCEContinuityStatus;
-  ledger_events: HBCENodeRuntimeEventResult[];
-};
+  let session = getOrCreateSession(input.sessionId);
 
-function buildLedgerActor(input: HBCENodeRuntimeInput): string {
-  return input.actor?.trim() || input.role?.trim() || "JOKER-C2";
-}
+  if (session.state === "BOOTING") {
+    await nodeAppendEvent({
+      kind: "node.session.opened",
+      actor,
+      node: NODE_ID,
+      payload: {
+        session_id: session.session_id,
+        continuity_reference: session.continuity_reference,
+        opened_at: session.opened_at
+      }
+    });
 
-async function appendSessionOpenedEvent(
-  input: HBCENodeRuntimeInput,
-  execution: C2LexSessionRunResult
-): Promise<HBCENodeRuntimeEventResult | null> {
-  if (!execution.created) {
-    return null;
+    session = updateSession(input.sessionId, {
+      state: "READY"
+    });
   }
 
-  return nodeAppendEvent({
-    kind: "c2lex.session.opened",
-    actor: buildLedgerActor(input),
-    node: input.nodeContext,
+  session = updateSession(input.sessionId, {
+    state: "PROCESSING",
+    turn_count: session.turn_count + 1,
+    last_user_message: input.userMessage
+  });
+
+  await nodeAppendEvent({
+    kind: "node.request.received",
+    actor,
+    node: NODE_ID,
     payload: {
-      session_id: execution.session.sessionId,
-      role: execution.session.role,
-      node_context: execution.session.nodeContext,
-      continuity_reference: execution.session.continuityReference,
-      opened_at: execution.session.openedAt
+      session_id: session.session_id,
+      continuity_reference: session.continuity_reference,
+      turn_count: session.turn_count,
+      message: input.userMessage
     }
   });
-}
 
-async function appendInputReceivedEvent(
-  input: HBCENodeRuntimeInput,
-  execution: C2LexSessionRunResult
-): Promise<HBCENodeRuntimeEventResult> {
-  return nodeAppendEvent({
-    kind: "c2lex.input.received",
-    actor: buildLedgerActor(input),
-    node: input.nodeContext,
-    payload: {
-      session_id: execution.session.sessionId,
-      continuity_reference: execution.result.continuityReference,
-      message: input.message,
-      turn_count: execution.session.turnCount
-    }
-  });
-}
+  const verify = await nodeVerifyLedger();
 
-async function appendIntentClassifiedEvent(
-  input: HBCENodeRuntimeInput,
-  execution: C2LexSessionRunResult
-): Promise<HBCENodeRuntimeEventResult> {
-  return nodeAppendEvent({
-    kind: "c2lex.intent.classified",
-    actor: buildLedgerActor(input),
-    node: input.nodeContext,
-    payload: {
-      session_id: execution.session.sessionId,
-      continuity_reference: execution.result.continuityReference,
-      intent_class: execution.result.intentClass,
-      policy_scope: execution.result.policyScope
-    }
-  });
-}
+  if (!verify.valid) {
+    session = updateSession(input.sessionId, {
+      state: "DEGRADED"
+    });
 
-async function appendGovernanceEvaluatedEvent(
-  input: HBCENodeRuntimeInput,
-  execution: C2LexSessionRunResult
-): Promise<HBCENodeRuntimeEventResult> {
-  return nodeAppendEvent({
-    kind: "c2lex.governance.evaluated",
-    actor: buildLedgerActor(input),
-    node: input.nodeContext,
-    payload: {
-      session_id: execution.session.sessionId,
-      continuity_reference: execution.result.continuityReference,
-      governance_checks: execution.result.governanceChecks,
-      session_state: execution.result.sessionState
-    }
-  });
-}
+    const lastEvent = await nodeGetLastEvent();
 
-async function appendOutcomeEmittedEvent(
-  input: HBCENodeRuntimeInput,
-  execution: C2LexSessionRunResult
-): Promise<HBCENodeRuntimeEventResult> {
-  return nodeAppendEvent({
-    kind: "c2lex.outcome.emitted",
-    actor: buildLedgerActor(input),
-    node: input.nodeContext,
-    payload: {
-      session_id: execution.session.sessionId,
-      continuity_reference: execution.result.continuityReference,
-      outcome_class: execution.result.outcomeClass,
-      summary: execution.result.summary,
-      next_step: execution.result.nextStep,
-      session_state: execution.result.sessionState
-    }
-  });
-}
-
-export async function runNodeRuntime(
-  input: HBCENodeRuntimeInput
-): Promise<HBCENodeRuntimeResult> {
-  const execution = runC2LexSession({
-    sessionId: input.sessionId,
-    message: input.message,
-    role: input.role,
-    nodeContext: input.nodeContext,
-    continuityReference: input.continuityReference
-  });
-
-  const ledgerEvents: HBCENodeRuntimeEventResult[] = [];
-
-  const openedEvent = await appendSessionOpenedEvent(input, execution);
-  if (openedEvent) {
-    ledgerEvents.push(openedEvent);
+    return {
+      session,
+      continuity_status: getContinuityStatus(session.state),
+      last_event_id: lastEvent?.id || null,
+      ledger_valid: false,
+      runtime_state: session.state
+    };
   }
 
-  ledgerEvents.push(await appendInputReceivedEvent(input, execution));
-  ledgerEvents.push(await appendIntentClassifiedEvent(input, execution));
-  ledgerEvents.push(await appendGovernanceEvaluatedEvent(input, execution));
-  ledgerEvents.push(await appendOutcomeEmittedEvent(input, execution));
+  session = updateSession(input.sessionId, {
+    state: "RESPONDING"
+  });
+
+  const lastEvent = await nodeGetLastEvent();
 
   return {
-    execution,
-    continuity_status: nodeGetContinuityStatus(),
-    ledger_events: ledgerEvents
+    session,
+    continuity_status: getContinuityStatus(session.state),
+    last_event_id: lastEvent?.id || null,
+    ledger_valid: true,
+    runtime_state: session.state
   };
+}
+
+export async function finalizeNodeRuntime(input: {
+  sessionId: string;
+  assistantResponse: string;
+  actor?: string;
+}): Promise<NodeRuntimeExecutionResult> {
+  const actor = input.actor || "IPR-AI-0001";
+
+  let session = getOrCreateSession(input.sessionId);
+
+  session = updateSession(input.sessionId, {
+    state: "STABLE",
+    last_assistant_response: input.assistantResponse
+  });
+
+  await nodeAppendEvent({
+    kind: "node.response.emitted",
+    actor,
+    node: NODE_ID,
+    payload: {
+      session_id: session.session_id,
+      continuity_reference: session.continuity_reference,
+      turn_count: session.turn_count,
+      response: input.assistantResponse
+    }
+  });
+
+  const verify = await nodeVerifyLedger();
+  const lastEvent = await nodeGetLastEvent();
+
+  return {
+    session,
+    continuity_status: getContinuityStatus(session.state),
+    last_event_id: lastEvent?.id || null,
+    ledger_valid: verify.valid,
+    runtime_state: session.state
+  };
+}
+
+export function getNodeRuntimeSession(
+  sessionId: string
+): NodeRuntimeSession | null {
+  return sessionStore.get(sessionId) || null;
+}
+
+export function listNodeRuntimeSessions(): NodeRuntimeSession[] {
+  return Array.from(sessionStore.values()).sort((a, b) =>
+    a.updated_at < b.updated_at ? 1 : -1
+  );
 }
