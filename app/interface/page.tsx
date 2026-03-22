@@ -44,15 +44,28 @@ type ApiResponse = {
       unsupported: number;
     };
   };
+  node_runtime?: {
+    session_id?: string;
+    session_state?: string;
+    continuity_reference?: string;
+    continuity_status?: string;
+    ledger_events?: unknown[];
+  };
 };
 
 const MAX_TEXT_FILE_SIZE = 1024 * 1024 * 2;
 const MAX_IMAGE_FILE_SIZE = 1024 * 1024 * 5;
-const MEMORY_KEY = "hbce-joker-c2-memory-v1";
+const MEMORY_KEY = "hbce-joker-c2-memory-v2";
 const MAX_HISTORY_TURNS = 6;
+const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
+const DEFAULT_IDENTITY = "IPR-AI-0001";
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function makeSessionId() {
+  return `JOKER-UI-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
 function readFileAsText(file: File): Promise<string> {
@@ -136,7 +149,7 @@ function getDefaultMessages(): ChatMessage[] {
     {
       id: makeId(),
       role: "assistant",
-      content: "JOKER-C2 online. Send a request, document, image, or research query."
+      content: "JOKER-C2 online. Invia una richiesta, un documento, un'immagine o una query di ricerca."
     }
   ];
 }
@@ -150,6 +163,7 @@ type PersistedState = {
   turns: number;
   input: string;
   researchEnabled: boolean;
+  sessionId: string;
 };
 
 function loadMemory(): PersistedState | null {
@@ -177,7 +191,11 @@ function loadMemory(): PersistedState | null {
       verification: typeof parsed.verification === "string" ? parsed.verification : "-",
       turns: typeof parsed.turns === "number" ? parsed.turns : 1,
       input: typeof parsed.input === "string" ? parsed.input : "",
-      researchEnabled: parsed.researchEnabled === true
+      researchEnabled: parsed.researchEnabled === true,
+      sessionId:
+        typeof parsed.sessionId === "string" && parsed.sessionId.trim()
+          ? parsed.sessionId
+          : makeSessionId()
     };
   } catch {
     return null;
@@ -213,6 +231,21 @@ function formatSources(sources: SourceItem[]) {
   ].join("\n");
 }
 
+async function parseApiResponse(res: Response): Promise<ApiResponse> {
+  const contentType = res.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    return (await res.json()) as ApiResponse;
+  }
+
+  const text = await res.text();
+  const compact = text.replace(/\s+/g, " ").trim().slice(0, 220);
+
+  throw new Error(
+    `Request failed before Joker-C2 execution. Risposta non JSON: ${compact || "empty response"}`
+  );
+}
+
 export default function InterfacePage() {
   const [messages, setMessages] = useState<ChatMessage[]>(getDefaultMessages);
   const [input, setInput] = useState("");
@@ -225,6 +258,7 @@ export default function InterfacePage() {
   const [turns, setTurns] = useState(1);
   const [memoryLoaded, setMemoryLoaded] = useState(false);
   const [researchEnabled, setResearchEnabled] = useState(false);
+  const [sessionId, setSessionId] = useState(makeSessionId());
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -240,6 +274,7 @@ export default function InterfacePage() {
       setTurns(stored.turns);
       setInput(stored.input);
       setResearchEnabled(stored.researchEnabled);
+      setSessionId(stored.sessionId);
     }
 
     setMemoryLoaded(true);
@@ -256,7 +291,8 @@ export default function InterfacePage() {
       verification,
       turns,
       input,
-      researchEnabled
+      researchEnabled,
+      sessionId
     });
   }, [
     messages,
@@ -267,6 +303,7 @@ export default function InterfacePage() {
     turns,
     input,
     researchEnabled,
+    sessionId,
     memoryLoaded
   ]);
 
@@ -291,6 +328,7 @@ export default function InterfacePage() {
     setVerification("-");
     setTurns(1);
     setResearchEnabled(false);
+    setSessionId(makeSessionId());
 
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(MEMORY_KEY);
@@ -345,24 +383,40 @@ export default function InterfacePage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          Accept: "application/json"
         },
         body: JSON.stringify({
           message: trimmedInput,
           attachments: preparedAttachments,
           history,
-          research: researchEnabled
+          research: researchEnabled,
+          sessionId,
+          role: "Operatore supervisionato",
+          nodeContext: DEFAULT_NODE,
+          continuityReference: `${sessionId}-AUDIT`
         })
       });
 
-      const data = (await res.json()) as ApiResponse;
+      const data = await parseApiResponse(res);
 
       if (!res.ok || !data.ok) {
         throw new Error(data.error || "Unknown chat error");
       }
 
       const sourceBlock = formatSources(data.sources || []);
-      const assistantText = `${data.response || "No response received."}${sourceBlock}`;
+      const runtimeBlock = data.node_runtime
+        ? [
+            "",
+            "[Node Runtime]",
+            `session_id: ${data.node_runtime.session_id || sessionId}`,
+            `session_state: ${data.node_runtime.session_state || "N/A"}`,
+            `continuity_reference: ${data.node_runtime.continuity_reference || "N/A"}`,
+            `continuity_status: ${data.node_runtime.continuity_status || "N/A"}`
+          ].join("\n")
+        : "";
+
+      const assistantText = `${data.response || "No response received."}${sourceBlock}${runtimeBlock}`;
 
       setMessages((prev) => [
         ...prev,
@@ -473,7 +527,7 @@ export default function InterfacePage() {
                   fontSize: "14px"
                 }}
               >
-                Conversational shell connected to the Torino Matrix node.
+                Shell conversazionale collegata al nodo Torino Matrix.
               </p>
             </div>
 
@@ -524,7 +578,7 @@ export default function InterfacePage() {
                 fontSize: "14px"
               }}
             >
-              Direct interaction first. Metadata remains available in the side panel.
+              Interazione diretta prima di tutto. I metadati del nodo restano leggibili nel pannello laterale.
             </p>
           </div>
 
@@ -588,7 +642,7 @@ export default function InterfacePage() {
             <textarea
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Write your request to Joker-C2..."
+              placeholder="Scrivi la tua richiesta a Joker-C2..."
               style={{
                 width: "100%",
                 minHeight: "120px",
@@ -670,7 +724,7 @@ export default function InterfacePage() {
                     lineHeight: 1.6
                   }}
                 >
-                  Enable web acquisition and source-aware answers.
+                  Abilita acquisizione web e risposte source-aware quando necessario.
                 </div>
               </div>
 
@@ -750,8 +804,9 @@ export default function InterfacePage() {
 
           <div style={{ display: "grid", gap: "14px" }}>
             {[
-              ["Default Node", "HBCE-MATRIX-NODE-0001-TORINO"],
-              ["Identity Layer", "IPR-AI-0001"],
+              ["Default Node", DEFAULT_NODE],
+              ["Identity Layer", DEFAULT_IDENTITY],
+              ["Session ID", sessionId],
               ["Execution Model", "request → identity → evidence → verification"]
             ].map(([label, value]) => (
               <div
@@ -808,7 +863,7 @@ export default function InterfacePage() {
                 {[
                   ["Request ID", requestId],
                   ["Mode", mode],
-                  ["Node", "HBCE-MATRIX-NODE-0001-TORINO"],
+                  ["Node", DEFAULT_NODE],
                   ["Verification", verification],
                   ["Conversation Turns", String(turns)]
                 ].map(([label, value]) => (
@@ -878,8 +933,7 @@ export default function InterfacePage() {
                 Memory Layer
               </div>
               <div style={{ color: "#edf4ff", lineHeight: 1.7 }}>
-                Local browser memory active. Last 6 turns are sent to the route as
-                operational context.
+                Memoria locale browser attiva. Gli ultimi 6 turni vengono inviati alla route come contesto operativo.
               </div>
             </div>
 
@@ -903,8 +957,7 @@ export default function InterfacePage() {
                 Research Layer
               </div>
               <div style={{ color: "#edf4ff", lineHeight: 1.7 }}>
-                Web research can be enabled to acquire current data and source-aware
-                answers when needed.
+                La ricerca web può essere abilitata per acquisire dati correnti e risposte source-aware quando serve.
               </div>
             </div>
           </div>
