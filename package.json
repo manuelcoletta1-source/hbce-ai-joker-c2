@@ -12,6 +12,7 @@
   "dependencies": {
     "@upstash/redis": "^1.35.3",
     "@vercel/blob": "^2.3.0",
+    "@vercel/postgres": "^0.10.0",
     "next": "15.2.8",
     "openai": "^6.31.0",
     "react": "19.0.0",
