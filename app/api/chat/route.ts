@@ -818,8 +818,8 @@ export async function POST(req: NextRequest) {
       });
 
       const memoryResponse = pinned.stored
-        ? "Ricevuto. Ho registrato questo contenuto come riferimento operativo persistente del nodo e lo possiamo riutilizzare nei passaggi successivi."
-        : "Ricevuto. La memoria persistente del nodo non è configurata; mantengo però questo riferimento nella continuità della sessione corrente e lo trattiamo come base di lavoro attiva.";
+        ? "MEMORY_BRANCH_OK_PERSISTENT"
+        : "MEMORY_BRANCH_OK_SESSION_ONLY";
 
       const runtimeEnd = await finalizeNodeRuntime({
         sessionId,
