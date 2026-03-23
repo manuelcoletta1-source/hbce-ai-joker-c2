@@ -1,27 +1,30 @@
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const preferredRegion = "iad1";
 
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-/**
- * 🔥 NUOVO: causality engine
- */
 import { resolveCausality } from "@/lib/causality-engine";
-
 import { createAnchor } from "@/lib/anchor";
 import { validateTruth } from "@/lib/truth-validator";
 import { evaluateHBCEPolicy } from "@/lib/policy-engine";
+
 import {
   signFederationResponse,
   federationSignatureIsConfigured
 } from "@/lib/federation-signature";
+
 import {
   runNodeRuntime,
   finalizeNodeRuntime
 } from "@/lib/node/node-runtime";
 
-export const preferredRegion = "iad1";
+/**
+ * =========================
+ * CONFIG
+ * =========================
+ */
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -29,8 +32,30 @@ const client = new OpenAI({
 
 const NODE_ID =
   process.env.JOKER_NODE_ID || "HBCE-MATRIX-NODE-0001-TORINO";
+
 const NODE_IDENTITY =
   process.env.JOKER_IDENTITY || "IPR-AI-0001";
+
+/**
+ * =========================
+ * HELPERS
+ * =========================
+ */
+
+function normalizeMessage(message?: string): string {
+  if (!message || typeof message !== "string") return "";
+  return message.trim();
+}
+
+function buildSystemPrompt(): string {
+  return [
+    "You are JOKER-C2, HBCE operational AI node.",
+    "Operate with precision, auditability and governance awareness.",
+    "Do not exaggerate capabilities.",
+    "Translate conceptual inputs into operational reasoning.",
+    "Prefer structured, clear, non-redundant output."
+  ].join(" ");
+}
 
 /**
  * =========================
@@ -40,12 +65,13 @@ const NODE_IDENTITY =
 
 export async function POST(req: NextRequest) {
   try {
+    /**
+     * =========================
+     * INPUT
+     * =========================
+     */
     const body = await req.json().catch(() => ({}));
-
-    const message =
-      typeof body?.message === "string"
-        ? body.message.trim()
-        : "";
+    const message = normalizeMessage(body?.message);
 
     if (!message) {
       return NextResponse.json(
@@ -63,6 +89,28 @@ export async function POST(req: NextRequest) {
 
     /**
      * =========================
+     * 🏛️ POLICY GOVERNANCE
+     * =========================
+     */
+    const causalityPolicyCheck = evaluateHBCEPolicy({
+      message,
+      response: causality.effect || "",
+      research: false,
+      history: [],
+      strong_sources_count: 0,
+      weak_sources_count: 0
+    });
+
+    let finalDecision = causality.decision;
+    let finalActivation = causality.activation;
+
+    if (causalityPolicyCheck.blocked) {
+      finalDecision = "BLOCK";
+      finalActivation = "BLOCKED";
+    }
+
+    /**
+     * =========================
      * NODE RUNTIME START
      * =========================
      */
@@ -74,10 +122,10 @@ export async function POST(req: NextRequest) {
 
     /**
      * =========================
-     * POLICY
+     * POLICY (CHAT LEVEL)
      * =========================
      */
-    const policy = evaluateHBCEPolicy({
+    const chatPolicy = evaluateHBCEPolicy({
       message,
       response: "",
       research: false,
@@ -86,10 +134,26 @@ export async function POST(req: NextRequest) {
       weak_sources_count: 0
     });
 
-    if (policy.blocked) {
+    if (chatPolicy.blocked) {
+      const blockedResponse = "Request blocked by HBCE policy.";
+
+      const runtimeEnd = await finalizeNodeRuntime({
+        sessionId: "SESSION-001",
+        assistantResponse: blockedResponse,
+        actor: NODE_IDENTITY
+      });
+
       return NextResponse.json({
         ok: false,
-        error: "Blocked by policy"
+        error: blockedResponse,
+        causality: {
+          state: "FAIL_CLOSED",
+          decision: "BLOCK",
+          activation: "BLOCKED"
+        },
+        node_runtime: {
+          session_id: runtimeEnd.session.session_id
+        }
       });
     }
 
@@ -103,8 +167,7 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: "system",
-          content:
-            "You are JOKER-C2. Answer clearly and operationally."
+          content: buildSystemPrompt()
         },
         {
           role: "user",
@@ -148,7 +211,8 @@ export async function POST(req: NextRequest) {
       message,
       response,
       causality,
-      truth
+      truth,
+      decision: finalDecision
     });
 
     /**
@@ -164,13 +228,22 @@ export async function POST(req: NextRequest) {
       response,
 
       /**
-       * 🔥 NUOVO BLOCCO CAUSALE
+       * 🔥 CAUSALITY BLOCK
        */
       causality: {
         state: causality.state,
         cause: message,
         effect: causality.effect,
-        probability: causality.probability
+        probability: causality.probability,
+
+        decision: finalDecision,
+        activation: finalActivation,
+        risk_level: causality.risk_level,
+
+        governance: {
+          policy_blocked: causalityPolicyCheck.blocked,
+          policy_notes: causalityPolicyCheck.prompt_guidance || []
+        }
       },
 
       truth,
@@ -179,7 +252,8 @@ export async function POST(req: NextRequest) {
       node_runtime: {
         session_id: runtimeEnd.session.session_id,
         continuity_reference:
-          runtimeEnd.session.continuity_reference
+          runtimeEnd.session.continuity_reference,
+        runtime_start_state: runtimeStart.runtime_state
       },
 
       federation_signature: federationSignatureIsConfigured()
