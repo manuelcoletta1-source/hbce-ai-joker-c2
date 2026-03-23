@@ -1,5 +1,4 @@
-import { Redis } from "@upstash/redis";
-import crypto from "crypto";
+import { sql } from "@vercel/postgres";
 
 export type JokerPersistentMemoryRecord = {
   id: string;
@@ -11,107 +10,60 @@ export type JokerPersistentMemoryRecord = {
   updatedAt: string;
 };
 
-export type JokerPersistentLedgerEvent = {
-  seq: number;
-  id: string;
-  ts: string;
-  kind: string;
-  actor: string;
-  node: string;
-  payload: Record<string, unknown>;
-  prev_hash: string;
-  hash: string;
-};
+let memoryTableReady = false;
 
-let redisClient: Redis | null = null;
-
-function nowIso(): string {
-  return new Date().toISOString();
+function normalizeKey(key: string): string {
+  return key.trim().toLowerCase();
 }
 
-function makeId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function normalizeKey(input: string): string {
-  return input.trim().toLowerCase();
-}
-
-function stableStringify(value: unknown): string {
-  if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
-  }
-
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
-  }
-
-  const obj = value as Record<string, unknown>;
-  const keys = Object.keys(obj).sort();
-
-  return `{${keys
-    .map((key) => `${JSON.stringify(key)}:${stableStringify(obj[key])}`)
-    .join(",")}}`;
-}
-
-function sha256(input: string): string {
-  return crypto.createHash("sha256").update(input).digest("hex");
-}
-
-function computeLedgerHash(input: {
-  seq: number;
-  id: string;
-  ts: string;
-  kind: string;
-  actor: string;
-  node: string;
-  payload: Record<string, unknown>;
-  prev_hash: string;
-}): string {
-  return sha256(
-    stableStringify({
-      seq: input.seq,
-      id: input.id,
-      ts: input.ts,
-      kind: input.kind,
-      actor: input.actor,
-      node: input.node,
-      payload: input.payload,
-      prev_hash: input.prev_hash
-    })
-  );
+function mapRow(row: Record<string, unknown>): JokerPersistentMemoryRecord {
+  return {
+    id: String(row.id),
+    key: String(row.key),
+    normalized_key: String(row.normalized_key),
+    value: String(row.value),
+    category: String(row.category),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at)
+  };
 }
 
 export function dbIsConfigured(): boolean {
-  return Boolean(
-    process.env.UPSTASH_REDIS_REST_URL &&
-      process.env.UPSTASH_REDIS_REST_TOKEN
-  );
+  return Boolean(process.env.POSTGRES_URL);
 }
 
-function getRedis(): Redis {
+async function ensureMemoryTable(): Promise<void> {
   if (!dbIsConfigured()) {
-    throw new Error(
-      "Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN"
+    throw new Error("POSTGRES_URL not configured");
+  }
+
+  if (memoryTableReady) {
+    return;
+  }
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS joker_persistent_memory (
+      id BIGSERIAL PRIMARY KEY,
+      key TEXT NOT NULL UNIQUE,
+      normalized_key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'general',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-  }
+  `;
 
-  if (!redisClient) {
-    redisClient = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!
-    });
-  }
+  await sql`
+    CREATE INDEX IF NOT EXISTS joker_persistent_memory_normalized_key_idx
+    ON joker_persistent_memory (normalized_key);
+  `;
 
-  return redisClient;
-}
+  await sql`
+    CREATE INDEX IF NOT EXISTS joker_persistent_memory_category_idx
+    ON joker_persistent_memory (category);
+  `;
 
-function memoryRecordKey(normalizedKey: string): string {
-  return `joker:memory:record:${normalizedKey}`;
-}
-
-function ledgerEventKey(seq: number): string {
-  return `joker:ledger:event:${seq}`;
+  memoryTableReady = true;
 }
 
 export async function dbSaveMemoryRecord(input: {
@@ -119,12 +71,12 @@ export async function dbSaveMemoryRecord(input: {
   value: string;
   category?: string;
 }): Promise<JokerPersistentMemoryRecord> {
-  const redis = getRedis();
+  await ensureMemoryTable();
 
   const key = input.key.trim();
+  const normalizedKey = normalizeKey(input.key);
   const value = input.value.trim();
-  const category = (input.category || "general").trim() || "general";
-  const normalized = normalizeKey(key);
+  const category = (input.category || "general").trim();
 
   if (!key) {
     throw new Error("Memory key is required");
@@ -134,234 +86,131 @@ export async function dbSaveMemoryRecord(input: {
     throw new Error("Memory value is required");
   }
 
-  const existing = await redis.get<JokerPersistentMemoryRecord>(
-    memoryRecordKey(normalized)
-  );
-
-  if (existing) {
-    const updated: JokerPersistentMemoryRecord = {
-      ...existing,
+  const result = await sql`
+    INSERT INTO joker_persistent_memory (
       key,
+      normalized_key,
+      value,
+      category
+    )
+    VALUES (
+      ${key},
+      ${normalizedKey},
+      ${value},
+      ${category}
+    )
+    ON CONFLICT (key)
+    DO UPDATE SET
+      normalized_key = EXCLUDED.normalized_key,
+      value = EXCLUDED.value,
+      category = EXCLUDED.category,
+      updated_at = NOW()
+    RETURNING
+      id,
+      key,
+      normalized_key,
       value,
       category,
-      updatedAt: nowIso()
-    };
+      created_at,
+      updated_at;
+  `;
 
-    await redis.set(memoryRecordKey(normalized), updated);
-    return updated;
-  }
-
-  const created: JokerPersistentMemoryRecord = {
-    id: makeId(),
-    key,
-    normalized_key: normalized,
-    value,
-    category,
-    createdAt: nowIso(),
-    updatedAt: nowIso()
-  };
-
-  await redis.set(memoryRecordKey(normalized), created);
-  return created;
+  return mapRow(result.rows[0]);
 }
 
 export async function dbGetMemoryByKey(
   key: string
 ): Promise<JokerPersistentMemoryRecord | null> {
-  const redis = getRedis();
-  const normalized = normalizeKey(key);
+  await ensureMemoryTable();
 
-  if (!normalized) return null;
+  const normalizedKey = normalizeKey(key);
 
-  const found = await redis.get<JokerPersistentMemoryRecord>(
-    memoryRecordKey(normalized)
-  );
+  const result = await sql`
+    SELECT
+      id,
+      key,
+      normalized_key,
+      value,
+      category,
+      created_at,
+      updated_at
+    FROM joker_persistent_memory
+    WHERE normalized_key = ${normalizedKey}
+    ORDER BY updated_at DESC
+    LIMIT 1;
+  `;
 
-  return found ?? null;
+  if (result.rows.length === 0) {
+    return null;
+  }
+
+  return mapRow(result.rows[0]);
 }
 
 export async function dbDeleteMemoryByKey(key: string): Promise<boolean> {
-  const redis = getRedis();
-  const normalized = normalizeKey(key);
+  await ensureMemoryTable();
 
-  if (!normalized) return false;
+  const normalizedKey = normalizeKey(key);
 
-  const result = await redis.del(memoryRecordKey(normalized));
-  return Number(result) > 0;
+  const result = await sql`
+    DELETE FROM joker_persistent_memory
+    WHERE normalized_key = ${normalizedKey};
+  `;
+
+  return (result.rowCount || 0) > 0;
 }
 
-export async function dbListMemoryRecords(): Promise<
-  JokerPersistentMemoryRecord[]
-> {
-  const redis = getRedis();
-  const keys = await redis.keys("joker:memory:record:*");
+export async function dbListMemoryRecords(): Promise<JokerPersistentMemoryRecord[]> {
+  await ensureMemoryTable();
 
-  if (!Array.isArray(keys) || keys.length === 0) {
-    return [];
-  }
+  const result = await sql`
+    SELECT
+      id,
+      key,
+      normalized_key,
+      value,
+      category,
+      created_at,
+      updated_at
+    FROM joker_persistent_memory
+    ORDER BY updated_at DESC, id DESC;
+  `;
 
-  const records = await Promise.all(
-    keys.map((key) => redis.get<JokerPersistentMemoryRecord>(String(key)))
-  );
-
-  return records
-    .filter(
-      (record): record is JokerPersistentMemoryRecord =>
-        Boolean(record && typeof record.key === "string")
-    )
-    .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+  return result.rows.map(mapRow);
 }
 
 export async function dbSearchMemory(
   query: string
 ): Promise<JokerPersistentMemoryRecord[]> {
-  const normalizedQuery = query.trim().toLowerCase();
-  if (!normalizedQuery) return [];
+  await ensureMemoryTable();
 
-  const all = await dbListMemoryRecords();
+  const q = query.trim();
 
-  return all.filter((record) => {
-    const haystack = [
-      record.key,
-      record.value,
-      record.category,
-      record.normalized_key
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    return haystack.includes(normalizedQuery);
-  });
-}
-
-export async function dbAppendLedgerEvent(input: {
-  kind: string;
-  actor?: string;
-  node?: string;
-  payload?: Record<string, unknown>;
-}): Promise<JokerPersistentLedgerEvent> {
-  const redis = getRedis();
-
-  const seq = Number(await redis.incr("joker:ledger:seq"));
-  const prevSeq = seq - 1;
-
-  let prevHash = "GENESIS";
-
-  if (prevSeq > 0) {
-    const prev = await redis.get<JokerPersistentLedgerEvent>(
-      ledgerEventKey(prevSeq)
-    );
-    prevHash = prev?.hash || "GENESIS";
+  if (!q) {
+    return dbListMemoryRecords();
   }
 
-  const base = {
-    seq,
-    id: makeId(),
-    ts: nowIso(),
-    kind: input.kind.trim() || "unknown",
-    actor: input.actor?.trim() || "JOKER-C2",
-    node: input.node?.trim() || "HBCE-MATRIX-NODE-0001-TORINO",
-    payload: input.payload || {},
-    prev_hash: prevHash
-  };
+  const likeValue = `%${q}%`;
+  const normalizedLikeValue = `%${q.toLowerCase()}%`;
 
-  const event: JokerPersistentLedgerEvent = {
-    ...base,
-    hash: computeLedgerHash(base)
-  };
+  const result = await sql`
+    SELECT
+      id,
+      key,
+      normalized_key,
+      value,
+      category,
+      created_at,
+      updated_at
+    FROM joker_persistent_memory
+    WHERE
+      normalized_key LIKE ${normalizedLikeValue}
+      OR key LIKE ${likeValue}
+      OR value LIKE ${likeValue}
+      OR category LIKE ${likeValue}
+    ORDER BY updated_at DESC, id DESC
+    LIMIT 25;
+  `;
 
-  await redis.set(ledgerEventKey(seq), event);
-
-  return event;
-}
-
-export async function dbGetLedgerTail(
-  limit = 10
-): Promise<JokerPersistentLedgerEvent[]> {
-  const redis = getRedis();
-  const maxSeqRaw = await redis.get<number>("joker:ledger:seq");
-  const maxSeq = Number(maxSeqRaw || 0);
-
-  if (!maxSeq) return [];
-
-  const seqs: number[] = [];
-  for (let seq = maxSeq; seq >= 1 && seqs.length < limit; seq -= 1) {
-    seqs.push(seq);
-  }
-
-  const events = await Promise.all(
-    seqs.map((seq) => redis.get<JokerPersistentLedgerEvent>(ledgerEventKey(seq)))
-  );
-
-  return events.filter(
-    (event): event is JokerPersistentLedgerEvent =>
-      Boolean(event && typeof event.hash === "string")
-  );
-}
-
-export async function dbVerifyLedger(): Promise<{
-  ok: boolean;
-  checked: number;
-  broken_seq: number | null;
-}> {
-  const redis = getRedis();
-  const maxSeqRaw = await redis.get<number>("joker:ledger:seq");
-  const maxSeq = Number(maxSeqRaw || 0);
-
-  if (!maxSeq) {
-    return {
-      ok: true,
-      checked: 0,
-      broken_seq: null
-    };
-  }
-
-  let prevHash = "GENESIS";
-
-  for (let seq = 1; seq <= maxSeq; seq += 1) {
-    const event = await redis.get<JokerPersistentLedgerEvent>(ledgerEventKey(seq));
-
-    if (!event) {
-      return {
-        ok: false,
-        checked: seq,
-        broken_seq: seq
-      };
-    }
-
-    if (event.prev_hash !== prevHash) {
-      return {
-        ok: false,
-        checked: seq,
-        broken_seq: seq
-      };
-    }
-
-    const expectedHash = computeLedgerHash({
-      seq: event.seq,
-      id: event.id,
-      ts: event.ts,
-      kind: event.kind,
-      actor: event.actor,
-      node: event.node,
-      payload: event.payload,
-      prev_hash: event.prev_hash
-    });
-
-    if (event.hash !== expectedHash) {
-      return {
-        ok: false,
-        checked: seq,
-        broken_seq: seq
-      };
-    }
-
-    prevHash = event.hash;
-  }
-
-  return {
-    ok: true,
-    checked: maxSeq,
-    broken_seq: null
-  };
+  return result.rows.map(mapRow);
 }
