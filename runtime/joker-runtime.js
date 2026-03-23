@@ -8,7 +8,6 @@ export function runJokerPhi(input) {
   if (result.status === "FAIL_CLOSED") {
     return {
       ok: false,
-      message: "No valid operational effect generated.",
       result
     };
   }
