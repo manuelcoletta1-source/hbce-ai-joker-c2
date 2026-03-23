@@ -1,9 +1,12 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const preferredRegion = "iad1";
+
 import { NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
+import crypto from "crypto";
 
 import { dbIsConfigured } from "@/lib/joker-db";
-
-export const runtime = "nodejs";
 
 const redis = dbIsConfigured()
   ? new Redis({
@@ -17,6 +20,21 @@ type RouteContext = {
     hash: string;
   }>;
 };
+
+/**
+ * =========================
+ * HASH VERIFICATION
+ * =========================
+ */
+function computeHash(event: any) {
+  const clone = { ...event };
+  delete clone.hash;
+
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(clone))
+    .digest("hex");
+}
 
 export async function GET(
   _request: Request,
@@ -46,12 +64,22 @@ export async function GET(
     }
 
     let found: any = null;
+    let prev: any = null;
 
     for (let seq = 1; seq <= maxSeq; seq += 1) {
       const event = await redis.get<any>(`joker:ledger:event:${seq}`);
 
-      if (event?.hash === targetHash) {
+      if (!event) continue;
+
+      if (event.hash === targetHash) {
         found = event;
+
+        if (seq > 1) {
+          prev = await redis.get<any>(
+            `joker:ledger:event:${seq - 1}`
+          );
+        }
+
         break;
       }
     }
@@ -64,11 +92,38 @@ export async function GET(
       });
     }
 
+    /**
+     * =========================
+     * 🔥 INTEGRITY CHECK
+     * =========================
+     */
+    const recalculatedHash = computeHash(found);
+    const hashValid = recalculatedHash === found.hash;
+
+    /**
+     * =========================
+     * 🔗 CHAIN CHECK
+     * =========================
+     */
+    let chainValid = true;
+
+    if (prev) {
+      chainValid = found.prev_hash === prev.hash;
+    }
+
     return NextResponse.json({
       ok: true,
       found: true,
+
       node: "HBCE-MATRIX-NODE-0001-TORINO",
       identity: "IPR-AI-0001",
+
+      verification: {
+        hash_valid: hashValid,
+        chain_valid: chainValid,
+        integrity: hashValid && chainValid
+      },
+
       event: {
         seq: found.seq,
         id: found.id,
@@ -79,6 +134,7 @@ export async function GET(
         payload: found.payload
       }
     });
+
   } catch {
     return NextResponse.json(
       {
