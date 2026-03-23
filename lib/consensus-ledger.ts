@@ -1,5 +1,4 @@
 import { appendLedgerEvent } from "@/lib/joker-ledger";
-import { dbAppendLedgerEvent, dbIsConfigured } from "@/lib/joker-db";
 
 export type ConsensusLedgerPayload = {
   message: string;
@@ -28,19 +27,6 @@ async function appendEvent(input: {
   kind: string;
   payload: Record<string, unknown>;
 }): Promise<ConsensusLedgerEvent> {
-  if (dbIsConfigured()) {
-    const event = await dbAppendLedgerEvent({
-      kind: input.kind,
-      payload: input.payload
-    });
-
-    return {
-      id: event.id,
-      hash: event.hash,
-      prev_hash: event.prev_hash
-    };
-  }
-
   const event = await appendLedgerEvent({
     kind: input.kind,
     payload: input.payload
