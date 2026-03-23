@@ -23,17 +23,88 @@ type RouteContext = {
 
 /**
  * =========================
+ * CANONICAL SERIALIZATION
+ * =========================
+ */
+function stableStringify(value: any): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(",")}]`;
+  }
+
+  const keys = Object.keys(value).sort();
+
+  return `{${keys
+    .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+    .join(",")}}`;
+}
+
+/**
+ * =========================
  * HASH VERIFICATION
  * =========================
  */
-function computeHash(event: any) {
+function buildHashPayload(event: any) {
   const clone = { ...event };
   delete clone.hash;
+  delete clone.signature;
+  delete clone.public_key;
+  delete clone.key_id;
+  return clone;
+}
+
+function computeHash(event: any) {
+  const payload = buildHashPayload(event);
 
   return crypto
     .createHash("sha256")
-    .update(JSON.stringify(clone))
+    .update(stableStringify(payload))
     .digest("hex");
+}
+
+/**
+ * =========================
+ * SIGNATURE VERIFICATION
+ * =========================
+ */
+function verifyEventSignature(event: any) {
+  if (!event?.signature || !event?.public_key) {
+    return {
+      configured: false,
+      valid: false
+    };
+  }
+
+  try {
+    const signablePayload = {
+      ...buildHashPayload(event),
+      hash: event.hash
+    };
+
+    const canonical = stableStringify(signablePayload);
+
+    const publicKey = crypto.createPublicKey(event.public_key);
+
+    const valid = crypto.verify(
+      null,
+      Buffer.from(canonical),
+      publicKey,
+      Buffer.from(event.signature, "hex")
+    );
+
+    return {
+      configured: true,
+      valid
+    };
+  } catch {
+    return {
+      configured: true,
+      valid: false
+    };
+  }
 }
 
 export async function GET(
@@ -75,9 +146,7 @@ export async function GET(
         found = event;
 
         if (seq > 1) {
-          prev = await redis.get<any>(
-            `joker:ledger:event:${seq - 1}`
-          );
+          prev = await redis.get<any>(`joker:ledger:event:${seq - 1}`);
         }
 
         break;
@@ -94,7 +163,7 @@ export async function GET(
 
     /**
      * =========================
-     * 🔥 INTEGRITY CHECK
+     * HASH INTEGRITY
      * =========================
      */
     const recalculatedHash = computeHash(found);
@@ -102,7 +171,7 @@ export async function GET(
 
     /**
      * =========================
-     * 🔗 CHAIN CHECK
+     * CHAIN INTEGRITY
      * =========================
      */
     let chainValid = true;
@@ -110,6 +179,13 @@ export async function GET(
     if (prev) {
       chainValid = found.prev_hash === prev.hash;
     }
+
+    /**
+     * =========================
+     * SIGNATURE INTEGRITY
+     * =========================
+     */
+    const signatureCheck = verifyEventSignature(found);
 
     return NextResponse.json({
       ok: true,
@@ -121,7 +197,12 @@ export async function GET(
       verification: {
         hash_valid: hashValid,
         chain_valid: chainValid,
-        integrity: hashValid && chainValid
+        signature_configured: signatureCheck.configured,
+        signature_valid: signatureCheck.valid,
+        integrity:
+          hashValid &&
+          chainValid &&
+          (!signatureCheck.configured || signatureCheck.valid)
       },
 
       event: {
@@ -131,10 +212,10 @@ export async function GET(
         ts: found.ts,
         hash: found.hash,
         prev_hash: found.prev_hash,
+        key_id: found.key_id || null,
         payload: found.payload
       }
     });
-
   } catch {
     return NextResponse.json(
       {
