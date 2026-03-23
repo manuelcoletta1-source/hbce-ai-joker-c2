@@ -8,6 +8,13 @@ type ChatMessage = {
   id: string;
   role: Role;
   content: string;
+  evt?: {
+    ok?: boolean;
+    evt?: string;
+    hash?: string;
+    prev?: string | null;
+    error?: string;
+  };
 };
 
 type ApiResponse = {
@@ -28,6 +35,15 @@ type ApiResponse = {
   memory?: {
     enabled?: boolean;
     context_used?: boolean;
+    stored?: boolean;
+    key?: string | null;
+  };
+  evt?: {
+    ok?: boolean;
+    evt?: string;
+    hash?: string;
+    prev?: string | null;
+    error?: string;
   };
   node_runtime?: {
     session_id?: string;
@@ -41,7 +57,7 @@ type ApiResponse = {
   };
 };
 
-const STORAGE_KEY = "hbce-joker-c2-interface-v5";
+const STORAGE_KEY = "hbce-joker-c2-interface-v6";
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 
 function makeId() {
@@ -148,6 +164,12 @@ function formatCorpusMode(
   }
 }
 
+function shortenHash(value?: string | null, start = 12, end = 10) {
+  if (!value) return "-";
+  if (value.length <= start + end + 3) return value;
+  return `${value.slice(0, start)}...${value.slice(-end)}`;
+}
+
 export default function InterfacePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -173,6 +195,9 @@ export default function InterfacePage() {
   const [ledgerValid, setLedgerValid] = useState("-");
   const [lastEventId, setLastEventId] = useState("-");
   const [runtimeStartState, setRuntimeStartState] = useState("-");
+  const [lastEvt, setLastEvt] = useState("-");
+  const [lastEvtPrev, setLastEvtPrev] = useState("-");
+  const [lastEvtHash, setLastEvtHash] = useState("-");
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -225,6 +250,9 @@ export default function InterfacePage() {
     setLedgerValid("-");
     setLastEventId("-");
     setRuntimeStartState("-");
+    setLastEvt("-");
+    setLastEvtPrev("-");
+    setLastEvtHash("-");
     localStorage.removeItem(STORAGE_KEY);
     textareaRef.current?.focus();
   }
@@ -279,7 +307,8 @@ export default function InterfacePage() {
       const assistantMessage: ChatMessage = {
         id: makeId(),
         role: "assistant",
-        content: assistantText
+        content: assistantText,
+        evt: data.evt
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -302,6 +331,9 @@ export default function InterfacePage() {
       );
       setLastEventId(data.node_runtime?.last_event_id || "-");
       setRuntimeStartState(data.node_runtime?.runtime_start_state || "-");
+      setLastEvt(data.evt?.evt || "-");
+      setLastEvtPrev(data.evt?.prev || "-");
+      setLastEvtHash(shortenHash(data.evt?.hash));
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -396,8 +428,23 @@ export default function InterfacePage() {
               </div>
 
               <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Last Event ID</div>
+                <div style={styles.metaLabel}>Last Runtime Event</div>
                 <div style={styles.metaValue}>{lastEventId}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Last EVT</div>
+                <div style={styles.metaValue}>{lastEvt}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Last EVT Prev</div>
+                <div style={styles.metaValue}>{lastEvtPrev}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Last EVT Hash</div>
+                <div style={styles.metaValue}>{lastEvtHash}</div>
               </div>
 
               <div style={styles.metaItem}>
@@ -418,7 +465,7 @@ export default function InterfacePage() {
             <div style={styles.cardTitle}>Runtime Model</div>
             <div style={styles.infoText}>
               request → session → continuity → memory → corpus reasoning →
-              response → audit
+              response → audit → evt
             </div>
           </section>
         </aside>
@@ -456,6 +503,40 @@ export default function InterfacePage() {
                     {message.role === "user" ? "You" : "AI JOKER-C2"}
                   </div>
                   <div style={styles.messageText}>{message.content}</div>
+
+                  {message.role === "assistant" && message.evt?.evt && (
+                    <div style={styles.evtBox}>
+                      <div style={styles.evtTitle}>EVT Chain</div>
+
+                      <div style={styles.evtRow}>
+                        <span style={styles.evtLabel}>EVT</span>
+                        <span style={styles.evtValue}>{message.evt.evt}</span>
+                      </div>
+
+                      <div style={styles.evtRow}>
+                        <span style={styles.evtLabel}>Prev</span>
+                        <span style={styles.evtValue}>
+                          {message.evt.prev || "-"}
+                        </span>
+                      </div>
+
+                      <div style={styles.evtRow}>
+                        <span style={styles.evtLabel}>Hash</span>
+                        <span style={styles.evtValue}>
+                          {shortenHash(message.evt.hash, 16, 12)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {message.role === "assistant" &&
+                    message.evt &&
+                    !message.evt.ok &&
+                    message.evt.error && (
+                      <div style={styles.evtError}>
+                        EVT error: {message.evt.error}
+                      </div>
+                    )}
                 </article>
               </div>
             ))}
@@ -668,6 +749,42 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.7,
     fontSize: 15,
     color: "#edf4ff"
+  },
+  evtBox: {
+    marginTop: 14,
+    borderTop: "1px solid rgba(255,255,255,0.08)",
+    paddingTop: 12,
+    display: "grid",
+    gap: 8
+  },
+  evtTitle: {
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: "0.16em",
+    color: "#7dd3fc"
+  },
+  evtRow: {
+    display: "grid",
+    gridTemplateColumns: "64px minmax(0,1fr)",
+    gap: 8,
+    alignItems: "start"
+  },
+  evtLabel: {
+    fontSize: 12,
+    color: "rgba(232,238,247,0.55)",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em"
+  },
+  evtValue: {
+    fontSize: 13,
+    color: "#edf4ff",
+    wordBreak: "break-word",
+    lineHeight: 1.5
+  },
+  evtError: {
+    marginTop: 12,
+    fontSize: 13,
+    color: "#fca5a5"
   },
   composerShell: {
     position: "sticky",
