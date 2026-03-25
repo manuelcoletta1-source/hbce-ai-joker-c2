@@ -5,21 +5,22 @@ export const preferredRegion = "iad1";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-import { resolveCausality } from "@/lib/causality-engine";
-import { evaluateHBCEPolicy } from "@/lib/policy-engine";
-import { validateTruth } from "@/lib/truth-validator";
+// 🔥 IMPORT FIXATI (NO alias @)
+import { resolveCausality } from "../../../lib/causality-engine.js";
+import { evaluateHBCEPolicy } from "../../../lib/policy-engine";
+import { validateTruth } from "../../../lib/truth-validator";
 
 import {
   runNodeRuntime,
   finalizeNodeRuntime
-} from "@/lib/node/node-runtime";
+} from "../../../lib/node/node-runtime";
 
 import {
   appendEVTRecord,
   computeEVTHash,
   readEVTLedger,
   type EVTRecord
-} from "@/lib/evt-registry";
+} from "../../../lib/evt-registry";
 
 /**
  * =========================
