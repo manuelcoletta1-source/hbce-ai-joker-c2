@@ -2,12 +2,12 @@ import {
   getC2LexSession,
   listC2LexSessions,
   type C2LexStoredSession
-} from "@/lib/c2-lex-session-store";
+} from "../c2-lex-session-store";
 
 import type {
   HBCEContinuityRef,
   HBCEContinuityStatus
-} from "@/lib/node/node-types";
+} from "./node-types";
 
 function mapSessionToContinuity(
   session: C2LexStoredSession
