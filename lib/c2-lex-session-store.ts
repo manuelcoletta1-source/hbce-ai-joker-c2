@@ -3,7 +3,7 @@ import {
   C2LexSessionInput,
   C2LexSessionState,
   runC2LexEngine
-} from "@/lib/c2-lex-engine";
+} from "./c2-lex-engine";
 
 export type C2LexSessionTimelineEventType =
   | "session_opened"
