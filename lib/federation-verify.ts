@@ -1,5 +1,8 @@
-import { verifyFederationResponse, type FederationSignedEnvelope } from "./federation-signature";
-import nodesRegistry from "@/registry/hbce-nodes.json";
+import {
+  verifyFederationResponse,
+  type FederationSignedEnvelope
+} from "./federation-signature";
+import nodesRegistry from "../registry/hbce-nodes.json";
 
 type RegistryNode = {
   node_id: string;
