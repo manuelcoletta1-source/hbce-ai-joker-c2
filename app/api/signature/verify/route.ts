@@ -1,10 +1,12 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const preferredRegion = "iad1";
+
 import { NextResponse } from "next/server";
 import {
   verifyJokerSignature,
   type JokerSignatureEnvelope
-} from "@/lib/joker-signature";
-
-export const runtime = "nodejs";
+} from "../../../../lib/joker-signature";
 
 type VerifyBody = {
   payload?: Record<string, unknown>;
