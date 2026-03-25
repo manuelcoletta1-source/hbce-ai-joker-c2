@@ -1,8 +1,11 @@
-import { nodeGetLedgerSummary, nodeGetLedgerTail } from "@/lib/node/node-ledger";
-import { nodeGetTrustSummary } from "@/lib/node/node-trust";
-import { nodeGetContinuitySummary } from "@/lib/node/node-continuity";
+import {
+  nodeGetLedgerSummary,
+  nodeGetLedgerTail
+} from "./node-ledger";
+import { nodeGetTrustSummary } from "./node-trust";
+import { nodeGetContinuitySummary } from "./node-continuity";
 
-import type { HBCENodeHealth } from "@/lib/node/node-types";
+import type { HBCENodeHealth } from "./node-types";
 
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 const DEFAULT_IDENTITY = "IPR-AI-0001";
@@ -23,8 +26,8 @@ export async function nodeGetHealth(): Promise<HBCENodeHealth> {
     ledger.integrity && trust.enabled
       ? "ACTIVE"
       : ledger.integrity || trust.enabled
-      ? "DEGRADED"
-      : "UNKNOWN";
+        ? "DEGRADED"
+        : "UNKNOWN";
 
   return {
     node: DEFAULT_NODE,
@@ -33,7 +36,8 @@ export async function nodeGetHealth(): Promise<HBCENodeHealth> {
     status,
     continuity_status: continuity.continuity_status,
     signature_enabled: trust.enabled,
-    db_configured: ledger.last_seq !== null || ledger.checked_events > 0 || ledger.integrity,
+    db_configured:
+      ledger.last_seq !== null || ledger.checked_events > 0 || ledger.integrity,
     storage: {
       type: "redis"
     },
