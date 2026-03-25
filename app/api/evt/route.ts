@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readEVTLedger, verifyEVTChain } from "@/lib/evt-registry";
+import { readEVTLedger, verifyEVTChain } from "../../../lib/evt-registry";
 
 export async function GET(_req: NextRequest) {
   try {
