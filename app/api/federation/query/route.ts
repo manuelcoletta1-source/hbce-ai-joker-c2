@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import {
   queryFederation,
   pickOrchestratedWinner
-} from "@/lib/federation-query";
-import { buildConsensus } from "@/lib/consensus-engine";
+} from "../../../../lib/federation-query";
+import { buildConsensus } from "../../../../lib/consensus-engine";
 
 export const runtime = "nodejs";
 
