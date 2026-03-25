@@ -177,6 +177,16 @@ export async function writeEVTLedger(records: EVTRecord[]): Promise<void> {
   const incomingMap = new Map(normalized.map((item) => [item.evt, item]));
 
   for (const record of normalized) {
+    const stored = existingMap.get(record.evt);
+
+    if (stored && stored.prev !== record.prev) {
+      throw new Error(
+        `Existing EVT chain conflict detected for ${record.evt}; abort destructive rewrite`
+      );
+    }
+  }
+
+  for (const record of normalized) {
     await sql`
       INSERT INTO evt_registry (
         evt,
@@ -205,24 +215,11 @@ export async function writeEVTLedger(records: EVTRecord[]): Promise<void> {
     .filter((item) => !incomingMap.has(item.evt))
     .map((item) => item.evt);
 
-  if (toDelete.length > 0) {
+  for (const evt of toDelete) {
     await sql`
       DELETE FROM evt_registry
-      WHERE evt = ANY(${toDelete});
+      WHERE evt = ${evt};
     `;
-  }
-
-  for (const record of normalized) {
-    const stored = existingMap.get(record.evt);
-    if (!stored) {
-      continue;
-    }
-
-    if (stored.prev !== record.prev) {
-      throw new Error(
-        `Existing EVT chain conflict detected for ${record.evt}; abort destructive rewrite`
-      );
-    }
   }
 }
 
