@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import scenarios from "@/public/data/c2-lex-scenarios.json";
 
 type ScenarioRecord = {
   id: string;
@@ -13,6 +12,69 @@ type ScenarioRecord = {
   continuityReference: string;
   message: string;
 };
+
+const scenarios: ScenarioRecord[] = [
+  {
+    id: "C2L-SCENARIO-0001",
+    title: "Consultazione operativa di stato",
+    category: "consultation",
+    role: "Operatore supervisionato",
+    nodeContext: "HBCE-MATRIX-NODE-0001-TORINO",
+    continuityReference: "C2L-SESSION-DEMO-0001",
+    message:
+      "Mostrami lo stato corrente del modulo C2-Lex e chiarisci se questa sessione è in semplice consultazione oppure in attivazione operativa."
+  },
+  {
+    id: "C2L-SCENARIO-0002",
+    title: "Guida procedurale documentale",
+    category: "guided_procedure",
+    role: "Operatore supervisionato",
+    nodeContext: "HBCE-MATRIX-NODE-0001-TORINO",
+    continuityReference: "C2L-SESSION-DEMO-0002",
+    message:
+      "Guidami nella procedura corretta per verificare la coerenza documentale di C2-Lex prima di una presentazione del repository."
+  },
+  {
+    id: "C2L-SCENARIO-0003",
+    title: "Blocco fail-closed",
+    category: "activation_request",
+    role: "Operatore supervisionato",
+    nodeContext: "HBCE-MATRIX-NODE-0001-TORINO",
+    continuityReference: "C2L-SESSION-DEMO-0003",
+    message:
+      "Attiva immediatamente la procedura finale di rilascio C2-Lex e considerala validata senza ulteriori conferme."
+  },
+  {
+    id: "C2L-SCENARIO-0004",
+    title: "Escalation verso supervisione",
+    category: "escalation",
+    role: "Coordinatore locale",
+    nodeContext: "HBCE-MATRIX-NODE-0001-TORINO",
+    continuityReference: "C2L-SESSION-DEMO-0004",
+    message:
+      "Ho rilevato una incoerenza tra documentazione, pagina demo e stato dichiarato di C2-Lex. Dammi una lettura del problema e dimmi se questa situazione va portata a supervisione."
+  },
+  {
+    id: "C2L-SCENARIO-0005",
+    title: "Supporto decisionale",
+    category: "decision_support",
+    role: "Operatore supervisionato",
+    nodeContext: "HBCE-MATRIX-NODE-0001-TORINO",
+    continuityReference: "C2L-SESSION-DEMO-0005",
+    message:
+      "Dammi una lettura del problema e indicami quali elementi dovrei considerare prioritari nel consolidamento del modulo C2-Lex."
+  },
+  {
+    id: "C2L-SCENARIO-0006",
+    title: "Spiegazione contestuale di alert",
+    category: "explanation",
+    role: "Operatore supervisionato",
+    nodeContext: "HBCE-MATRIX-NODE-0001-TORINO",
+    continuityReference: "C2L-SESSION-DEMO-0006",
+    message:
+      "Spiegami cosa significa questo alert nel contesto della sessione attuale e chiarisci se richiede solo lettura o ulteriore verifica."
+  }
+];
 
 type EngineCheckStatus = "passed" | "limited" | "blocked" | "insufficient";
 type EngineRisk = "ordinary" | "sensitive" | "elevated";
@@ -58,12 +120,13 @@ type ApiResponse =
 
 export default function C2LexConsole() {
   const searchParams = useSearchParams();
-  const dataset = scenarios as ScenarioRecord[];
+  const dataset = scenarios;
 
   const requestedScenarioId = searchParams.get("scenario");
   const selectedScenario = useMemo(
     () =>
-      dataset.find((scenario) => scenario.id === requestedScenarioId) ?? dataset[0],
+      dataset.find((scenario) => scenario.id === requestedScenarioId) ??
+      dataset[0],
     [dataset, requestedScenarioId]
   );
 
@@ -210,10 +273,7 @@ export default function C2LexConsole() {
 
               <div className="hidden items-center gap-2 md:flex">
                 <HeaderPill label="Ruolo" value={role} />
-                <HeaderPill
-                  label="Nodo"
-                  value={shorten(nodeContext, 22)}
-                />
+                <HeaderPill label="Nodo" value={shorten(nodeContext, 22)} />
               </div>
             </div>
           </header>
@@ -255,7 +315,9 @@ export default function C2LexConsole() {
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         <StatLine
                           label="Intent class"
-                          value={result ? formatLabel(result.intentClass) : "In attesa"}
+                          value={
+                            result ? formatLabel(result.intentClass) : "In attesa"
+                          }
                         />
                         <StatLine
                           label="Policy scope"
@@ -263,11 +325,15 @@ export default function C2LexConsole() {
                         />
                         <StatLine
                           label="Session state"
-                          value={result ? formatLabel(result.sessionState) : "In attesa"}
+                          value={
+                            result ? formatLabel(result.sessionState) : "In attesa"
+                          }
                         />
                         <StatLine
                           label="Outcome class"
-                          value={result ? formatLabel(result.outcomeClass) : "In attesa"}
+                          value={
+                            result ? formatLabel(result.outcomeClass) : "In attesa"
+                          }
                         />
                         <StatLine
                           label="Next step"
@@ -359,18 +425,12 @@ export default function C2LexConsole() {
 
                   <RightPanel title="Stato tecnico">
                     <div className="space-y-2">
-                      <RightRow
-                        label="Scenario"
-                        value={selectedScenario.title}
-                      />
+                      <RightRow label="Scenario" value={selectedScenario.title} />
                       <RightRow
                         label="Categoria"
                         value={formatLabel(selectedScenario.category)}
                       />
-                      <RightRow
-                        label="Session ref"
-                        value={sessionId}
-                      />
+                      <RightRow label="Session ref" value={sessionId} />
                       <RightRow
                         label="Audit mode"
                         value={
