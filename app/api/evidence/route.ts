@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import crypto from "crypto";
 
-import { dbIsConfigured } from "@/lib/joker-db";
+import { dbIsConfigured } from "../../../lib/joker-db";
 
 const redis = dbIsConfigured()
   ? new Redis({
