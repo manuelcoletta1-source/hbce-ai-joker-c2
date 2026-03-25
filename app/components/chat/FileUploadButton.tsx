@@ -1,87 +1,106 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
+import FileUploadButton from "./FileUploadButton";
 
-type FileUploadButtonProps = {
-  onFilesSelected: (files: File[]) => void;
-  accept?: string;
-  multiple?: boolean;
+type JokerChatInputProps = {
+  onSubmit: (payload: { message: string; files: File[] }) => void;
   disabled?: boolean;
 };
 
-export default function FileUploadButton({
-  onFilesSelected,
-  accept = "image/*,.pdf,.txt,.json",
-  multiple = true,
+export default function JokerChatInput({
+  onSubmit,
   disabled = false
-}: FileUploadButtonProps) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [isHover, setIsHover] = useState(false);
+}: JokerChatInputProps) {
+  const [message, setMessage] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
 
-  function openFileDialog() {
-    if (!disabled) {
-      inputRef.current?.click();
-    }
+  function handleFilesSelected(selected: File[]) {
+    setFiles((prev) => [...prev, ...selected]);
   }
 
-  function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const list = event.target.files;
-    if (!list) return;
+  function removeFile(index: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  }
 
-    const files = Array.from(list);
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-    if (files.length > 0) {
-      onFilesSelected(files);
+    const trimmed = message.trim();
+
+    if (!trimmed && files.length === 0) {
+      return;
     }
 
-    // reset per consentire re-upload stesso file
-    event.target.value = "";
+    onSubmit({
+      message: trimmed,
+      files
+    });
+
+    setMessage("");
+    setFiles([]);
   }
 
   return (
-    <div className="flex items-center">
-      {/* INPUT NASCOSTO */}
-      <input
-        ref={inputRef}
-        type="file"
-        accept={accept}
-        multiple={multiple}
-        onChange={handleChange}
-        className="hidden"
-      />
-
-      {/* BUTTON */}
-      <button
-        type="button"
-        onClick={openFileDialog}
-        onMouseEnter={() => setIsHover(true)}
-        onMouseLeave={() => setIsHover(false)}
-        disabled={disabled}
-        className={`
-          flex h-10 w-10 items-center justify-center
-          rounded-full
-          transition-all duration-200
-          ${disabled ? "opacity-40 cursor-not-allowed" : ""}
-          ${isHover ? "bg-[#3a3a3a]" : "bg-[#2f2f2f]"}
-        `}
-        title="Carica file o immagini"
-      >
-        {/* ICONA */}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5 text-neutral-300"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.8}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828L18 9.828a4 4 0 10-5.656-5.656L5.757 10.757a6 6 0 108.486 8.486L20 13"
+    <form
+      onSubmit={handleSubmit}
+      className="border-t border-white/10 bg-[#212121] px-4 py-4"
+    >
+      <div className="mx-auto w-full max-w-3xl">
+        <div className="rounded-[28px] border border-white/10 bg-[#2f2f2f] p-3">
+          <textarea
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            disabled={disabled}
+            className="min-h-[110px] w-full resize-none border-none bg-transparent px-3 py-3 text-sm leading-7 text-white outline-none placeholder:text-neutral-500 disabled:opacity-60"
+            placeholder="Scrivi l’input per JOKER-C2..."
           />
-        </svg>
-      </button>
-    </div>
+
+          {files.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2 px-2">
+              {files.map((file, index) => (
+                <div
+                  key={`${file.name}-${file.size}-${index}`}
+                  className="flex items-center gap-2 rounded-full border border-white/10 bg-[#1f1f1f] px-3 py-2 text-xs text-neutral-300"
+                >
+                  <span className="max-w-[180px] truncate">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(index)}
+                    className="text-neutral-400 hover:text-white"
+                    aria-label={`Rimuovi ${file.name}`}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="mt-3 flex items-center justify-between gap-3 px-2">
+            <div className="flex items-center gap-2">
+              <FileUploadButton
+                onFilesSelected={handleFilesSelected}
+                disabled={disabled}
+                accept="image/*,.pdf,.txt,.md,.json,.csv"
+                multiple
+              />
+
+              <div className="text-xs text-neutral-400">
+                File e foto
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={disabled}
+              className="rounded-full bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Invia
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
   );
 }
