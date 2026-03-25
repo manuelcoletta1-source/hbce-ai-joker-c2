@@ -1,4 +1,4 @@
-import nodesRegistry from "@/registry/hbce-nodes.json";
+import nodesRegistry from "../registry/hbce-nodes.json";
 
 export type HBCERegistryNode = {
   node_id: string;
@@ -45,7 +45,6 @@ function normalizeEndpoint(node: HBCERegistryNode): string | null {
 
 export function getFederationNodes(): HBCERegistryNode[] {
   const registry = nodesRegistry as RegistryShape;
-
   return Array.isArray(registry.nodes) ? registry.nodes : [];
 }
 
@@ -107,13 +106,15 @@ export async function probeFederationNode(
       registry_status: node.status,
       trust_level: node.trust_level,
       capabilities: Array.isArray(node.capabilities) ? node.capabilities : [],
-      error: error instanceof Error ? error.message : "Unknown federation probe error"
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unknown federation probe error"
     };
   }
 }
 
 export async function probeFederationLive(): Promise<HBCEFederationProbe[]> {
   const nodes = getFederationNodes();
-
   return Promise.all(nodes.map((node) => probeFederationNode(node)));
 }
