@@ -1,12 +1,9 @@
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { verifyEVTChain } from "@/lib/evt-registry";
 
-export async function GET() {
+export async function GET(_req: NextRequest) {
   try {
-    const result = verifyEVTChain();
+    const result = await verifyEVTChain();
 
     return NextResponse.json({
       ok: true,
@@ -19,10 +16,7 @@ export async function GET() {
     return NextResponse.json(
       {
         ok: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Chain verification failed"
+        error: error instanceof Error ? error.message : "Internal error"
       },
       { status: 500 }
     );
