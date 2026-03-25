@@ -575,8 +575,31 @@ export default function InterfacePage() {
               />
 
               <div style={styles.composerBottom}>
-                <div style={styles.composerHint}>
-                  Enter invia · Shift + Enter va a capo
+                <div style={styles.composerLeft}>
+                  <button
+                    type="button"
+                    style={styles.attachButton}
+                    title="Allega file o foto"
+                    aria-label="Allega file o foto"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21.44 11.05l-8.49 8.49a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 115.66 5.66l-9.2 9.19a2 2 0 01-2.82-2.83l8.48-8.48" />
+                    </svg>
+                  </button>
+
+                  <div style={styles.composerHint}>
+                    Enter invia · Shift + Enter va a capo
+                  </div>
                 </div>
 
                 <button
@@ -824,9 +847,26 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: "wrap",
     paddingTop: 8
   },
+  composerLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10
+  },
   composerHint: {
     fontSize: 13,
     color: "rgba(232,238,247,0.60)"
+  },
+  attachButton: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 38,
+    height: 38,
+    borderRadius: 999,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.04)",
+    color: "#d7e8f8",
+    cursor: "pointer"
   },
   sendButton: {
     border: "none",
