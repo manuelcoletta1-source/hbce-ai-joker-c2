@@ -1,4 +1,8 @@
-import { nodeAppendEvent, nodeGetLastEvent, nodeVerifyLedger } from "@/lib/node/node-ledger";
+import {
+  nodeAppendEvent,
+  nodeGetLastEvent,
+  nodeVerifyLedger
+} from "./node-ledger";
 
 export type NodeRuntimeState =
   | "BOOTING"
@@ -29,7 +33,8 @@ export type NodeRuntimeExecutionResult = {
   runtime_state: NodeRuntimeState;
 };
 
-const NODE_ID = process.env.JOKER_NODE_ID || "HBCE-MATRIX-NODE-0001-TORINO";
+const NODE_ID =
+  process.env.JOKER_NODE_ID || "HBCE-MATRIX-NODE-0001-TORINO";
 
 const sessionStore = new Map<string, NodeRuntimeSession>();
 
