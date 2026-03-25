@@ -17,6 +17,13 @@ type ChatMessage = {
   };
 };
 
+type SelectedAttachment = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+};
+
 type ApiResponse = {
   ok: boolean;
   response?: string;
@@ -170,6 +177,12 @@ function shortenHash(value?: string | null, start = 12, end = 10) {
   return `${value.slice(0, start)}...${value.slice(-end)}`;
 }
 
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function InterfacePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -183,6 +196,7 @@ export default function InterfacePage() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [sessionId, setSessionId] = useState(makeSessionId());
+  const [attachments, setAttachments] = useState<SelectedAttachment[]>([]);
 
   const [status, setStatus] = useState("Ready");
   const [sessionState, setSessionState] = useState("-");
@@ -201,6 +215,7 @@ export default function InterfacePage() {
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const stored = loadState();
@@ -238,6 +253,7 @@ export default function InterfacePage() {
       }
     ]);
     setInput("");
+    setAttachments([]);
     setSessionId(newSession);
     setStatus("Ready");
     setSessionState("-");
@@ -257,14 +273,45 @@ export default function InterfacePage() {
     textareaRef.current?.focus();
   }
 
+  function handleOpenFilePicker() {
+    fileInputRef.current?.click();
+  }
+
+  function handleFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+
+    if (files.length === 0) {
+      return;
+    }
+
+    const mapped = files.map((file) => ({
+      id: makeId(),
+      name: file.name,
+      type: file.type || "unknown",
+      size: file.size
+    }));
+
+    setAttachments((prev) => [...prev, ...mapped]);
+    event.target.value = "";
+  }
+
+  function removeAttachment(id: string) {
+    setAttachments((prev) => prev.filter((item) => item.id !== id));
+  }
+
   async function sendMessage() {
     const message = input.trim();
-    if (!message || sending) return;
+    if ((!message && attachments.length === 0) || sending) return;
 
     const userMessage: ChatMessage = {
       id: makeId(),
       role: "user",
-      content: message
+      content:
+        attachments.length > 0
+          ? `${message || "[Allegati selezionati]"}\n\nAllegati:\n${attachments
+              .map((item) => `- ${item.name} (${formatBytes(item.size)})`)
+              .join("\n")}`
+          : message
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -280,7 +327,7 @@ export default function InterfacePage() {
           Accept: "application/json"
         },
         body: JSON.stringify({
-          message,
+          message: message || "Analizza gli allegati selezionati.",
           sessionId,
           role: "Operatore supervisionato",
           nodeContext: DEFAULT_NODE,
@@ -312,6 +359,7 @@ export default function InterfacePage() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      setAttachments([]);
       setStatus("Ready");
       setSessionState(data.node_runtime?.session_state || "-");
       setContinuityReference(
@@ -560,6 +608,15 @@ export default function InterfacePage() {
 
           <div style={styles.composerShell}>
             <div style={styles.composerInner}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.pdf,.txt,.md,.json,.csv"
+                onChange={handleFilesSelected}
+                style={{ display: "none" }}
+              />
+
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -574,6 +631,24 @@ export default function InterfacePage() {
                 }}
               />
 
+              {attachments.length > 0 && (
+                <div style={styles.attachmentsWrap}>
+                  {attachments.map((item) => (
+                    <div key={item.id} style={styles.attachmentChip}>
+                      <span style={styles.attachmentName}>{item.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(item.id)}
+                        style={styles.attachmentRemove}
+                        aria-label={`Rimuovi ${item.name}`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div style={styles.composerBottom}>
                 <div style={styles.composerLeft}>
                   <button
@@ -581,6 +656,7 @@ export default function InterfacePage() {
                     style={styles.attachButton}
                     title="Allega file o foto"
                     aria-label="Allega file o foto"
+                    onClick={handleOpenFilePicker}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -604,10 +680,13 @@ export default function InterfacePage() {
 
                 <button
                   onClick={() => void sendMessage()}
-                  disabled={sending || !input.trim()}
+                  disabled={sending || (!input.trim() && attachments.length === 0)}
                   style={{
                     ...styles.sendButton,
-                    opacity: sending || !input.trim() ? 0.6 : 1
+                    opacity:
+                      sending || (!input.trim() && attachments.length === 0)
+                        ? 0.6
+                        : 1
                   }}
                 >
                   {sending ? "Sending..." : "Send"}
@@ -838,6 +917,39 @@ const styles: Record<string, React.CSSProperties> = {
     boxSizing: "border-box",
     fontSize: 15,
     lineHeight: 1.6
+  },
+  attachmentsWrap: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+    padding: "6px 8px 10px"
+  },
+  attachmentChip: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    borderRadius: 999,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.05)",
+    color: "#e8eef7",
+    padding: "6px 10px",
+    fontSize: 12,
+    maxWidth: "100%"
+  },
+  attachmentName: {
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: 220
+  },
+  attachmentRemove: {
+    border: "none",
+    background: "transparent",
+    color: "#cbd5e1",
+    cursor: "pointer",
+    fontSize: 16,
+    lineHeight: 1,
+    padding: 0
   },
   composerBottom: {
     display: "flex",
