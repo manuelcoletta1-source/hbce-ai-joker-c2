@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { probeFederationLive } from "@/lib/federation-live";
+import { probeFederationLive } from "../../../../lib/federation-live";
 
 export const runtime = "nodejs";
 
