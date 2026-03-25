@@ -1,12 +1,36 @@
-import { classifyRisk, type RiskAssessment } from "@/lib/risk-classifier";
-import { applyAutonomyGuard, type AutonomyGuardResult } from "@/lib/autonomy-guard";
-import { applyCapabilityGuard, type CapabilityGuardResult } from "@/lib/capability-guard";
-import { applyIdentityGuard, type IdentityGuardResult } from "@/lib/identity-guard";
-import { applyDefenseGuard, type DefenseGuardResult } from "@/lib/defense-guard";
-import { applyNumericGuard, type NumericGuardResult } from "@/lib/numeric-guard";
-import { resolveContextLink, type ContextLinkResult } from "@/lib/context-link-guard";
-import { resolveLanguage, type LanguageLockResult } from "@/lib/language-lock";
-import { evaluateTruthScope, type TruthScopeResult } from "@/lib/truth-scope";
+import { classifyRisk, type RiskAssessment } from "./risk-classifier";
+import {
+  applyAutonomyGuard,
+  type AutonomyGuardResult
+} from "./autonomy-guard";
+import {
+  applyCapabilityGuard,
+  type CapabilityGuardResult
+} from "./capability-guard";
+import {
+  applyIdentityGuard,
+  type IdentityGuardResult
+} from "./identity-guard";
+import {
+  applyDefenseGuard,
+  type DefenseGuardResult
+} from "./defense-guard";
+import {
+  applyNumericGuard,
+  type NumericGuardResult
+} from "./numeric-guard";
+import {
+  resolveContextLink,
+  type ContextLinkResult
+} from "./context-link-guard";
+import {
+  resolveLanguage,
+  type LanguageLockResult
+} from "./language-lock";
+import {
+  evaluateTruthScope,
+  type TruthScopeResult
+} from "./truth-scope";
 
 export type HBCEPolicyInput = {
   message: string;
@@ -21,20 +45,16 @@ export type HBCEPolicyDecision = {
   blocked: boolean;
   block_reason?: string;
   block_response?: string;
-
   prompt_guidance: string[];
-
   risk: RiskAssessment;
   autonomy_guard: AutonomyGuardResult;
   capability_guard: CapabilityGuardResult;
   identity_guard: IdentityGuardResult;
   defense_guard: DefenseGuardResult;
   numeric_guard: NumericGuardResult;
-
   context_link: ContextLinkResult;
   language_lock: LanguageLockResult;
   truth_scope: TruthScopeResult;
-
   mode: "allow" | "rewrite" | "block";
 };
 
@@ -143,8 +163,8 @@ export function evaluateHBCEPolicy(
     languageLock.language === "it"
       ? "Language policy: answer entirely in Italian."
       : languageLock.language === "en"
-      ? "Language policy: answer entirely in English."
-      : "",
+        ? "Language policy: answer entirely in English."
+        : "",
 
     capability.guidance_prefix
       ? `Capability policy: ${capability.guidance_prefix}`
@@ -172,7 +192,9 @@ export function evaluateHBCEPolicy(
   ]);
 
   const mode =
-    promptGuidance.length > 0 || numeric.mode !== "official-data" || contextLink.resolved
+    promptGuidance.length > 0 ||
+    numeric.mode !== "official-data" ||
+    contextLink.resolved
       ? "rewrite"
       : "allow";
 
