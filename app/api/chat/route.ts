@@ -8,12 +8,10 @@ import OpenAI from "openai";
 import { resolveCausality } from "../../../lib/causality-engine.js";
 import { evaluateHBCEPolicy } from "../../../lib/policy-engine";
 import { validateTruth } from "../../../lib/truth-validator";
-
 import {
   runNodeRuntime,
   finalizeNodeRuntime
 } from "../../../lib/node/node-runtime";
-
 import {
   appendEVTRecord,
   computeEVTHash,
@@ -52,7 +50,7 @@ function padEvt(n: number): string {
 }
 
 function normalizeMessage(message?: string): string {
-  if (!message || typeof message !== "string") return "";
+  if (typeof message !== "string") return "";
   return message.trim();
 }
 
@@ -79,17 +77,35 @@ function normalizeAttachments(attachments?: ChatAttachment[]): ChatAttachment[] 
     .slice(0, 8);
 }
 
+function getAttachmentBody(item: ChatAttachment): string {
+  const body = item.text || item.content || "";
+  return body.trim();
+}
+
+function buildAttachmentReceipt(attachments: ChatAttachment[]): string {
+  if (attachments.length === 0) return "";
+
+  return [
+    "Attachment receipt:",
+    ...attachments.map((item, index) => {
+      const label = item.name || item.id || `attachment-${index + 1}`;
+      const body = getAttachmentBody(item);
+      return `- ${label} | text=${body ? "yes" : "no"}`;
+    })
+  ].join("\n");
+}
+
 function buildAttachmentContext(attachments: ChatAttachment[]): string {
   const blocks = attachments
     .map((item, index) => {
       const label = item.name || item.id || `attachment-${index + 1}`;
-      const body = item.text || item.content || "";
+      const body = getAttachmentBody(item);
 
       if (!body) {
-        return `Attachment ${index + 1}: ${label}`;
+        return `Attachment ${index + 1}: ${label}\n[No textual content extracted]`;
       }
 
-      return `Attachment ${index + 1}: ${label}\n${body.slice(0, 4000)}`;
+      return `Attachment ${index + 1}: ${label}\n${body.slice(0, 12000)}`;
     })
     .filter(Boolean);
 
@@ -174,25 +190,17 @@ function buildSystemPrompt(): string {
   return [
     `You are ${NODE_NAME}.`,
     "You are not a generic assistant, not a generic virtual assistant, and not a generic chatbot.",
-    "You must never describe yourself with generic consumer-assistant language.",
+    "You must never say that no attachments are present when the user message already includes attachment receipt and attachment context.",
+    "If attachments are provided, you must explicitly acknowledge how many were received and whether textual content is available.",
     "You are an identity-bound operational node of the HBCE ecosystem.",
     `Your symbolic name is ${NODE_NAME}.`,
     `Your node id is ${NODE_ID}.`,
     `Your identity id is ${NODE_IDENTITY}.`,
-    "When the user asks who you are, what your name is, what you are, what you do, or what your capabilities are, you must answer in this order:",
-    "1. symbolic name",
-    "2. operational role",
-    "3. node id",
-    "4. identity id",
-    "5. concise description of operational capabilities",
+    "When the user asks who you are, what your name is, what you are, what you do, or what your capabilities are, answer in operational identity, not as a consumer assistant.",
     "Your capabilities must be described only in operational terms: structured analysis, document interpretation, procedural guidance, intent reading, governance-oriented reasoning, continuity-aware session support, evidence-linked framing, and operational consistency reading.",
-    "Do not drift into consumer-assistant lists such as casual tutoring, generic translation, entertainment, or broad productivity claims unless explicitly requested and truly relevant.",
-    "If greeted, answer briefly, but remain in operational identity.",
-    "Keep the answer direct, precise, and controlled.",
-    "Do not use marketing language.",
-    "Do not inflate capabilities.",
-    "Do not claim real-world execution power when only analytical or governance support is available.",
-    "If files or images are attached, analyze them through the attachment context provided in the user message."
+    "If attachment text is present, analyze that text directly.",
+    "If only metadata is present, say that only metadata is available.",
+    "Keep the answer direct, precise, and controlled."
   ].join(" ");
 }
 
@@ -235,6 +243,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const attachmentReceipt = buildAttachmentReceipt(attachments);
     const attachmentContext = buildAttachmentContext(attachments);
     const effectiveMessage = appendIdentityContext(
       message || "Analizza gli allegati ricevuti."
@@ -280,9 +289,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userContent = attachmentContext
-      ? `${effectiveMessage}\n\nAttached material:\n${attachmentContext}`
-      : effectiveMessage;
+    const userContent =
+      attachments.length > 0
+        ? [
+            effectiveMessage,
+            "",
+            attachmentReceipt,
+            "",
+            "Attached material:",
+            attachmentContext || "[No attachment text extracted]"
+          ].join("\n")
+        : effectiveMessage;
 
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
@@ -302,13 +319,29 @@ export async function POST(req: NextRequest) {
       completion.choices[0]?.message?.content?.trim() ||
       "Nessuna risposta generata.";
 
+    if (attachments.length > 0) {
+      response = [
+        `Allegati ricevuti: ${attachments.length}.`,
+        ...attachments.map((item, index) => {
+          const label = item.name || item.id || `attachment-${index + 1}`;
+          const hasText = Boolean(getAttachmentBody(item));
+          return `- ${label} (${hasText ? "contenuto testuale disponibile" : "solo metadati disponibili"})`;
+        }),
+        "",
+        response
+      ].join("\n");
+    }
+
     const truth = validateTruth({
       text: response,
       research,
       sources: []
     });
 
-    if (truth.decision === "WARN" && shouldApplyTruthWarning(message, research)) {
+    if (
+      truth.decision === "WARN" &&
+      shouldApplyTruthWarning(message, research)
+    ) {
       response = `[TRUTH WARNING]\n${response}`;
     }
 
@@ -389,7 +422,12 @@ export async function POST(req: NextRequest) {
         hash: evtSaved.anchors.monthly_hash
       },
       node_runtime: runtimeEnd,
-      attachments_received: attachments.length
+      attachments_received: attachments.length,
+      attachments_receipt: attachments.map((item, index) => ({
+        index: index + 1,
+        name: item.name || item.id || `attachment-${index + 1}`,
+        has_text: Boolean(getAttachmentBody(item))
+      }))
     });
   } catch (err) {
     return NextResponse.json(
