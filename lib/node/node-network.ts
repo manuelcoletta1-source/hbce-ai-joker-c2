@@ -5,13 +5,13 @@ import {
   probeNetwork,
   type JokerNode,
   type JokerNodeProbe
-} from "@/lib/joker-network";
+} from "../joker-network";
 
 import type {
   HBCENetworkStatus,
   HBCENodeDescriptor,
   HBCENodeProbe
-} from "@/lib/node/node-types";
+} from "./node-types";
 
 function mapNode(node: JokerNode): HBCENodeDescriptor {
   return {
@@ -63,7 +63,7 @@ export async function nodeGetNetworkSnapshot(): Promise<{
   status: HBCENetworkStatus;
   probes: HBCENodeProbe[];
 }> {
-  const [probes] = await Promise.all([nodeProbeNetwork()]);
+  const probes = await nodeProbeNetwork();
 
   return {
     local_node: nodeGetLocalDescriptor(),
