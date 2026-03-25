@@ -1,6 +1,5 @@
-import fs from "fs";
-import path from "path";
 import crypto from "crypto";
+import { sql } from "@vercel/postgres";
 
 export type EVTRecord = {
   evt: string;
@@ -39,16 +38,17 @@ export type EVTRecord = {
   };
 };
 
-const EVT_DIR = path.join(process.cwd(), "registry", "evt");
-const EVT_FILE = path.join(EVT_DIR, "evt-ledger.json");
+type EVTRegistryRow = {
+  evt: string;
+  prev: string | null;
+  payload_json: unknown;
+  monthly_hash: string;
+  created_at?: string;
+};
 
-function ensureRegistry() {
-  if (!fs.existsSync(EVT_DIR)) {
-    fs.mkdirSync(EVT_DIR, { recursive: true });
-  }
-
-  if (!fs.existsSync(EVT_FILE)) {
-    fs.writeFileSync(EVT_FILE, JSON.stringify([], null, 2), "utf-8");
+function assertDbConfigured() {
+  if (!process.env.POSTGRES_URL) {
+    throw new Error("POSTGRES_URL not configured");
   }
 }
 
@@ -67,6 +67,36 @@ function stableStringify(value: unknown): string {
   return `{${keys
     .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
     .join(",")}}`;
+}
+
+function mapRowToRecord(row: EVTRegistryRow): EVTRecord {
+  const payload =
+    typeof row.payload_json === "string"
+      ? (JSON.parse(row.payload_json) as EVTRecord)
+      : (row.payload_json as EVTRecord);
+
+  if (!payload || typeof payload !== "object") {
+    throw new Error(`Invalid EVT payload for record ${row.evt}`);
+  }
+
+  return {
+    ...payload,
+    evt: String(row.evt),
+    prev: row.prev ? String(row.prev) : null,
+    anchors: {
+      ...payload.anchors,
+      monthly_hash: String(row.monthly_hash)
+    }
+  };
+}
+
+function extractNumericSuffix(evt: string): number {
+  const match = evt.match(/^EVT-(\d+)$/);
+  if (!match) {
+    return 0;
+  }
+
+  return Number(match[1] || 0);
 }
 
 export function computeEVTHash(
@@ -91,23 +121,113 @@ export function computeEVTHash(
     .digest("hex");
 }
 
-export function readEVTLedger(): EVTRecord[] {
-  ensureRegistry();
-  const raw = fs.readFileSync(EVT_FILE, "utf-8");
-  return JSON.parse(raw) as EVTRecord[];
+export async function readEVTLedger(): Promise<EVTRecord[]> {
+  assertDbConfigured();
+
+  const result = await sql`
+    SELECT
+      evt,
+      prev,
+      payload_json,
+      monthly_hash,
+      created_at
+    FROM evt_registry
+    ORDER BY
+      CAST(SUBSTRING(evt FROM 'EVT-(\d+)') AS INTEGER) ASC,
+      created_at ASC,
+      evt ASC;
+  `;
+
+  return result.rows.map((row) => mapRowToRecord(row as EVTRegistryRow));
 }
 
-export function writeEVTLedger(records: EVTRecord[]) {
-  ensureRegistry();
-  fs.writeFileSync(EVT_FILE, JSON.stringify(records, null, 2), "utf-8");
-}
+export async function writeEVTLedger(records: EVTRecord[]): Promise<void> {
+  assertDbConfigured();
 
-export function appendEVTRecord(record: EVTRecord): EVTRecord {
-  const ledger = readEVTLedger();
+  const normalized = [...records].sort(
+    (a, b) => extractNumericSuffix(a.evt) - extractNumericSuffix(b.evt)
+  );
 
-  if (ledger.some((item) => item.evt === record.evt)) {
-    throw new Error(`EVT already exists: ${record.evt}`);
+  for (let i = 0; i < normalized.length; i++) {
+    const record = normalized[i];
+    const expectedHash = computeEVTHash(record);
+
+    if (record.anchors.monthly_hash !== expectedHash) {
+      throw new Error(
+        `monthly_hash does not match canonical SHA-512 payload for ${record.evt}`
+      );
+    }
+
+    if (i === 0) {
+      if (record.prev !== null) {
+        throw new Error(`First EVT must not have prev: ${record.evt}`);
+      }
+    } else {
+      const expectedPrev = normalized[i - 1]?.evt || null;
+      if (record.prev !== expectedPrev) {
+        throw new Error(
+          `Invalid chain while writing ledger: ${record.evt} prev must be ${expectedPrev}`
+        );
+      }
+    }
   }
+
+  const existing = await readEVTLedger();
+  const existingMap = new Map(existing.map((item) => [item.evt, item]));
+  const incomingMap = new Map(normalized.map((item) => [item.evt, item]));
+
+  for (const record of normalized) {
+    await sql`
+      INSERT INTO evt_registry (
+        evt,
+        prev,
+        t,
+        monthly_hash,
+        payload_json
+      )
+      VALUES (
+        ${record.evt},
+        ${record.prev},
+        ${record.t},
+        ${record.anchors.monthly_hash},
+        ${JSON.stringify(record)}
+      )
+      ON CONFLICT (evt)
+      DO UPDATE SET
+        prev = EXCLUDED.prev,
+        t = EXCLUDED.t,
+        monthly_hash = EXCLUDED.monthly_hash,
+        payload_json = EXCLUDED.payload_json;
+    `;
+  }
+
+  const toDelete = existing
+    .filter((item) => !incomingMap.has(item.evt))
+    .map((item) => item.evt);
+
+  if (toDelete.length > 0) {
+    await sql`
+      DELETE FROM evt_registry
+      WHERE evt = ANY(${toDelete});
+    `;
+  }
+
+  for (const record of normalized) {
+    const stored = existingMap.get(record.evt);
+    if (!stored) {
+      continue;
+    }
+
+    if (stored.prev !== record.prev) {
+      throw new Error(
+        `Existing EVT chain conflict detected for ${record.evt}; abort destructive rewrite`
+      );
+    }
+  }
+}
+
+export async function appendEVTRecord(record: EVTRecord): Promise<EVTRecord> {
+  assertDbConfigured();
 
   const expectedHash = computeEVTHash(record);
 
@@ -115,22 +235,68 @@ export function appendEVTRecord(record: EVTRecord): EVTRecord {
     throw new Error("monthly_hash does not match canonical SHA-512 payload");
   }
 
-  if (record.prev) {
-    const prevExists = ledger.some((item) => item.evt === record.prev);
-    if (!prevExists) {
-      throw new Error(`Previous EVT not found: ${record.prev}`);
-    }
+  const currentLedger = await readEVTLedger();
+  const lastRecord =
+    currentLedger.length > 0 ? currentLedger[currentLedger.length - 1] : null;
+
+  if (lastRecord && record.prev !== lastRecord.evt) {
+    throw new Error(
+      `Invalid EVT chain append: expected prev=${lastRecord.evt}, received prev=${record.prev}`
+    );
   }
 
-  ledger.push(record);
-  writeEVTLedger(ledger);
+  if (!lastRecord && record.prev !== null) {
+    throw new Error(`First EVT must not define prev: ${record.evt}`);
+  }
+
+  try {
+    await sql`
+      INSERT INTO evt_registry (
+        evt,
+        prev,
+        t,
+        monthly_hash,
+        payload_json
+      )
+      VALUES (
+        ${record.evt},
+        ${record.prev},
+        ${record.t},
+        ${record.anchors.monthly_hash},
+        ${JSON.stringify(record)}
+      );
+    `;
+  } catch (error) {
+    if (error instanceof Error && /duplicate key/i.test(error.message)) {
+      throw new Error(`EVT already exists: ${record.evt}`);
+    }
+
+    throw error;
+  }
 
   return record;
 }
 
-export function getEVTRecord(evt: string): EVTRecord | null {
-  const ledger = readEVTLedger();
-  return ledger.find((item) => item.evt === evt) || null;
+export async function getEVTRecord(evt: string): Promise<EVTRecord | null> {
+  assertDbConfigured();
+
+  const result = await sql`
+    SELECT
+      evt,
+      prev,
+      payload_json,
+      monthly_hash,
+      created_at
+    FROM evt_registry
+    WHERE evt = ${evt}
+    LIMIT 1;
+  `;
+
+  if (result.rows.length === 0) {
+    return null;
+  }
+
+  return mapRowToRecord(result.rows[0] as EVTRegistryRow);
 }
 
 export function verifyEVTRecord(record: EVTRecord) {
@@ -144,14 +310,22 @@ export function verifyEVTRecord(record: EVTRecord) {
   };
 }
 
-export function verifyEVTChain() {
-  const ledger = readEVTLedger();
+export async function verifyEVTChain(): Promise<{
+  total: number;
+  valid: boolean;
+  results: Array<{
+    evt: string;
+    hash_valid: boolean;
+    prev_valid: boolean;
+  }>;
+}> {
+  const ledger = await readEVTLedger();
 
   const results = ledger.map((record, index) => {
     const self = verifyEVTRecord(record);
 
     const prevValid =
-      index === 0 ? true : record.prev === ledger[index - 1]?.evt;
+      index === 0 ? record.prev === null : record.prev === ledger[index - 1]?.evt;
 
     return {
       evt: record.evt,
