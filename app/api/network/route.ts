@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { nodeGetNetworkSnapshot } from "@/lib/node/node-network";
-import { nodeGetHealth } from "@/lib/node/node-verify";
+import { nodeGetNetworkSnapshot } from "../../../lib/node/node-network";
+import { nodeGetHealth } from "../../../lib/node/node-verify";
 
 export const runtime = "nodejs";
 
