@@ -10,8 +10,6 @@ export type JokerPersistentMemoryRecord = {
   updatedAt: string;
 };
 
-let memoryTableReady = false;
-
 function normalizeKey(key: string): string {
   return key.trim().toLowerCase();
 }
@@ -28,50 +26,39 @@ function mapRow(row: Record<string, unknown>): JokerPersistentMemoryRecord {
   };
 }
 
+/**
+ * =========================
+ * CONFIG CHECK
+ * =========================
+ */
+
 export function dbIsConfigured(): boolean {
   return Boolean(process.env.POSTGRES_URL);
 }
 
-async function ensureMemoryTable(): Promise<void> {
+function assertDbConfigured() {
   if (!dbIsConfigured()) {
     throw new Error("POSTGRES_URL not configured");
   }
-
-  if (memoryTableReady) {
-    return;
-  }
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS joker_persistent_memory (
-      id BIGSERIAL PRIMARY KEY,
-      key TEXT NOT NULL UNIQUE,
-      normalized_key TEXT NOT NULL,
-      value TEXT NOT NULL,
-      category TEXT NOT NULL DEFAULT 'general',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-  `;
-
-  await sql`
-    CREATE INDEX IF NOT EXISTS joker_persistent_memory_normalized_key_idx
-    ON joker_persistent_memory (normalized_key);
-  `;
-
-  await sql`
-    CREATE INDEX IF NOT EXISTS joker_persistent_memory_category_idx
-    ON joker_persistent_memory (category);
-  `;
-
-  memoryTableReady = true;
 }
+
+/**
+ * =========================
+ * CORE MEMORY OPERATIONS
+ * =========================
+ * NOTE:
+ * - NO schema creation here
+ * - NO CREATE TABLE
+ * - NO CREATE INDEX
+ * - DB must be pre-initialized via migration/script
+ */
 
 export async function dbSaveMemoryRecord(input: {
   key: string;
   value: string;
   category?: string;
 }): Promise<JokerPersistentMemoryRecord> {
-  await ensureMemoryTable();
+  assertDbConfigured();
 
   const key = input.key.trim();
   const normalizedKey = normalizeKey(input.key);
@@ -121,7 +108,7 @@ export async function dbSaveMemoryRecord(input: {
 export async function dbGetMemoryByKey(
   key: string
 ): Promise<JokerPersistentMemoryRecord | null> {
-  await ensureMemoryTable();
+  assertDbConfigured();
 
   const normalizedKey = normalizeKey(key);
 
@@ -148,7 +135,7 @@ export async function dbGetMemoryByKey(
 }
 
 export async function dbDeleteMemoryByKey(key: string): Promise<boolean> {
-  await ensureMemoryTable();
+  assertDbConfigured();
 
   const normalizedKey = normalizeKey(key);
 
@@ -161,7 +148,7 @@ export async function dbDeleteMemoryByKey(key: string): Promise<boolean> {
 }
 
 export async function dbListMemoryRecords(): Promise<JokerPersistentMemoryRecord[]> {
-  await ensureMemoryTable();
+  assertDbConfigured();
 
   const result = await sql`
     SELECT
@@ -182,7 +169,7 @@ export async function dbListMemoryRecords(): Promise<JokerPersistentMemoryRecord
 export async function dbSearchMemory(
   query: string
 ): Promise<JokerPersistentMemoryRecord[]> {
-  await ensureMemoryTable();
+  assertDbConfigured();
 
   const q = query.trim();
 
