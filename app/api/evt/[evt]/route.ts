@@ -1,13 +1,5 @@
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-export const preferredRegion = "iad1";
-
-import { NextResponse } from "next/server";
-import {
-  getEVTRecord,
-  verifyEVTRecord,
-  type EVTRecord
-} from "@/lib/evt-registry";
+import { NextRequest, NextResponse } from "next/server";
+import { getEVTRecord, verifyEVTRecord } from "@/lib/evt-registry";
 
 type RouteContext = {
   params: Promise<{
@@ -15,54 +7,32 @@ type RouteContext = {
   }>;
 };
 
-function buildChainView(record: EVTRecord) {
-  return {
-    evt: record.evt,
-    prev: record.prev,
-    continuity: {
-      checkpoint_type: record.continuity.checkpoint_type,
-      elapsed_months: record.continuity.elapsed_months,
-      origin_lock: record.continuity.origin_lock,
-      origin_ipr: record.continuity.origin_ipr,
-      rule: record.continuity.rule,
-      note: record.continuity.note || null
-    },
-    upstream: {
-      root_evt: record.upstream.root_evt,
-      root_prev: record.upstream.root_prev,
-      root_t: record.upstream.root_t,
-      proto: record.upstream.proto,
-      inrim: record.upstream.inrim,
-      t0: record.upstream.t0
-    }
-  };
+function normalizeEvt(evt: string): string {
+  return evt.trim().toUpperCase();
 }
 
-export async function GET(
-  _request: Request,
-  context: RouteContext
-) {
+export async function GET(_req: NextRequest, context: RouteContext) {
   try {
-    const { evt } = await context.params;
+    const params = await context.params;
+    const evt = normalizeEvt(params.evt || "");
 
-    if (!evt || !evt.trim()) {
+    if (!evt) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Missing evt identifier"
+          error: "Missing EVT identifier"
         },
         { status: 400 }
       );
     }
 
-    const record = getEVTRecord(evt.trim());
+    const record = await getEVTRecord(evt);
 
     if (!record) {
       return NextResponse.json(
         {
           ok: false,
-          found: false,
-          evt: evt.trim()
+          error: `EVT not found: ${evt}`
         },
         { status: 404 }
       );
@@ -72,22 +42,14 @@ export async function GET(
 
     return NextResponse.json({
       ok: true,
-      found: true,
-      registry: "EVT",
-      evt: record.evt,
-      verification: {
-        valid: verification.valid,
-        computed_hash: verification.computed_hash,
-        stored_hash: verification.stored_hash
-      },
-      chain: buildChainView(record),
-      event: record
+      record,
+      verification
     });
   } catch (error) {
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : "EVT lookup failed"
+        error: error instanceof Error ? error.message : "Internal error"
       },
       { status: 500 }
     );
