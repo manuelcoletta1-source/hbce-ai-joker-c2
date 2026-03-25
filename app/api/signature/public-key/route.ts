@@ -4,12 +4,6 @@ export const preferredRegion = "iad1";
 
 import { NextResponse } from "next/server";
 
-/**
- * =========================
- * PUBLIC KEY ENDPOINT
- * =========================
- */
-
 export async function GET() {
   try {
     const publicKey = process.env.JOKER_SIGN_PUBLIC_KEY || null;
@@ -27,17 +21,14 @@ export async function GET() {
 
     return NextResponse.json({
       ok: true,
-
       node: "HBCE-MATRIX-NODE-0001-TORINO",
       identity: "IPR-AI-0001",
-
       signature: {
         algorithm: "ed25519",
         key_id: keyId,
         public_key: publicKey
       }
     });
-
   } catch {
     return NextResponse.json(
       {
