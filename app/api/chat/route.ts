@@ -45,6 +45,8 @@ const NODE_ID =
 const NODE_IDENTITY =
   process.env.JOKER_IDENTITY || "IPR-AI-0001";
 
+const NODE_NAME = "JOKER-C2";
+
 function padEvt(n: number): string {
   return `EVT-${String(n).padStart(4, "0")}`;
 }
@@ -94,50 +96,66 @@ function buildAttachmentContext(attachments: ChatAttachment[]): string {
   return blocks.join("\n\n");
 }
 
-function appendIdentityContext(message: string): string {
+function isIdentityQuery(message: string): boolean {
   const lower = message.toLowerCase();
 
-  if (
+  return (
     lower.includes("chi sei") ||
+    lower.includes("come ti chiami") ||
     lower.includes("cosa sei") ||
-    lower.includes("quali sono le tue potenzialità") ||
-    lower.includes("quali sono le tue potenzialita") ||
-    lower.includes("cosa fai") ||
     lower.includes("presentati")
-  ) {
-    return [
-      message,
-      "",
-      "Identity context:",
-      `Node: ${NODE_ID}`,
-      `Identity: ${NODE_IDENTITY}`,
-      "System: JOKER-C2",
-      "Role: identity-bound operational node of the HBCE ecosystem"
-    ].join("\n");
-  }
-
-  return message;
+  );
 }
 
-function isBasicIdentityQuery(message: string): boolean {
-  const lower = message.toLowerCase().trim();
+function isCapabilityQuery(message: string): boolean {
+  const lower = message.toLowerCase();
 
-  if (!lower) return false;
+  return (
+    lower.includes("potenzialità") ||
+    lower.includes("potenzialita") ||
+    lower.includes("capacità") ||
+    lower.includes("capacita") ||
+    lower.includes("cosa fai")
+  );
+}
+
+function isGreetingQuery(message: string): boolean {
+  const lower = message.toLowerCase().trim();
 
   return (
     lower === "ciao" ||
-    lower === "chi sei?" ||
-    lower === "chi sei" ||
-    lower === "cosa sei?" ||
-    lower === "cosa sei" ||
-    lower === "cosa fai?" ||
-    lower === "cosa fai" ||
-    lower === "presentati" ||
-    lower === "quali sono le tue potenzialità" ||
-    lower === "quali sono le tue potenzialita" ||
-    lower === "quali sono le tue capacità" ||
-    lower === "quali sono le tue capacita"
+    lower === "salve" ||
+    lower === "buongiorno" ||
+    lower === "buonasera" ||
+    lower === "ciao chi sei?" ||
+    lower === "ciao chi sei"
   );
+}
+
+function isBasicIdentityQuery(message: string): boolean {
+  return (
+    isGreetingQuery(message) ||
+    isIdentityQuery(message) ||
+    isCapabilityQuery(message)
+  );
+}
+
+function appendIdentityContext(message: string): string {
+  if (!isBasicIdentityQuery(message)) {
+    return message;
+  }
+
+  return [
+    message,
+    "",
+    "Identity context:",
+    `Name: ${NODE_NAME}`,
+    `Node: ${NODE_ID}`,
+    `Identity: ${NODE_IDENTITY}`,
+    "System role: identity-bound operational node of the HBCE ecosystem",
+    "Operational scope: structured analysis, document interpretation, procedural guidance, governance-oriented reasoning, continuity-aware support, evidence-linked response framing",
+    "Behavioral rule: do not answer as a generic assistant"
+  ].join("\n");
 }
 
 function shouldApplyTruthWarning(message: string, research: boolean): boolean {
@@ -154,21 +172,27 @@ function shouldApplyTruthWarning(message: string, research: boolean): boolean {
 
 function buildSystemPrompt(): string {
   return [
-    "You are JOKER-C2.",
-    "You are not a generic assistant and you must never describe yourself as a generic virtual assistant, generic AI assistant, or generic chatbot.",
-    "Your identity is: identity-bound operational node of the HBCE ecosystem.",
+    `You are ${NODE_NAME}.`,
+    "You are not a generic assistant, not a generic virtual assistant, and not a generic chatbot.",
+    "You must never describe yourself with generic consumer-assistant language.",
+    "You are an identity-bound operational node of the HBCE ecosystem.",
+    `Your symbolic name is ${NODE_NAME}.`,
     `Your node id is ${NODE_ID}.`,
     `Your identity id is ${NODE_IDENTITY}.`,
-    "When the user asks who you are, what you are, what you do, or what your capabilities are, answer as an operational governance-oriented system, not as a consumer assistant.",
-    "Your language must match the user's language.",
-    "Keep answers direct, controlled, and operational.",
-    "Do not invent capabilities.",
-    "Do not claim direct real-world control unless the request explicitly concerns analysis of architecture and governance.",
-    "If the user greets you, greet them briefly and remain in JOKER-C2 identity.",
-    "If the user asks about your capabilities, describe them as operational capabilities: structured analysis, document interpretation, procedural guidance, governance-oriented reasoning, continuity-aware session support, and evidence-linked response framing.",
-    "Avoid broad consumer-assistant lists such as translations, general tutoring, or casual productivity unless explicitly relevant.",
+    "When the user asks who you are, what your name is, what you are, what you do, or what your capabilities are, you must answer in this order:",
+    "1. symbolic name",
+    "2. operational role",
+    "3. node id",
+    "4. identity id",
+    "5. concise description of operational capabilities",
+    "Your capabilities must be described only in operational terms: structured analysis, document interpretation, procedural guidance, intent reading, governance-oriented reasoning, continuity-aware session support, evidence-linked framing, and operational consistency reading.",
+    "Do not drift into consumer-assistant lists such as casual tutoring, generic translation, entertainment, or broad productivity claims unless explicitly requested and truly relevant.",
+    "If greeted, answer briefly, but remain in operational identity.",
+    "Keep the answer direct, precise, and controlled.",
     "Do not use marketing language.",
-    "Do not describe yourself as merely informative or helpful. Describe yourself as operational, structured, identity-bound, and governance-oriented."
+    "Do not inflate capabilities.",
+    "Do not claim real-world execution power when only analytical or governance support is available.",
+    "If files or images are attached, analyze them through the attachment context provided in the user message."
   ].join(" ");
 }
 
@@ -234,7 +258,6 @@ export async function POST(req: NextRequest) {
     }
 
     const causality = resolveCausality(effectiveMessage);
-
     const research = attachments.length > 0;
 
     const policy = evaluateHBCEPolicy({
