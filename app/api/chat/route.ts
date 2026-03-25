@@ -78,36 +78,40 @@ function normalizeAttachments(attachments?: ChatAttachment[]): ChatAttachment[] 
 }
 
 function getAttachmentBody(item: ChatAttachment): string {
-  const body = item.text || item.content || "";
-  return body.trim();
+  return (item.text || item.content || "").trim();
 }
 
 function buildAttachmentReceipt(attachments: ChatAttachment[]): string {
   if (attachments.length === 0) return "";
 
   return [
-    "Attachment receipt:",
+    "ATTACHMENT RECEIPT",
     ...attachments.map((item, index) => {
       const label = item.name || item.id || `attachment-${index + 1}`;
       const body = getAttachmentBody(item);
-      return `- ${label} | text=${body ? "yes" : "no"}`;
+      const mime = item.mimeType || "unknown";
+      return `- ${label} | mime=${mime} | text=${body ? "yes" : "no"}`;
     })
   ].join("\n");
 }
 
 function buildAttachmentContext(attachments: ChatAttachment[]): string {
-  const blocks = attachments
-    .map((item, index) => {
-      const label = item.name || item.id || `attachment-${index + 1}`;
-      const body = getAttachmentBody(item);
+  const blocks = attachments.map((item, index) => {
+    const label = item.name || item.id || `attachment-${index + 1}`;
+    const body = getAttachmentBody(item);
 
-      if (!body) {
-        return `Attachment ${index + 1}: ${label}\n[No textual content extracted]`;
-      }
+    if (!body) {
+      return [
+        `ATTACHMENT ${index + 1}: ${label}`,
+        "[No textual extraction available. Metadata only.]"
+      ].join("\n");
+    }
 
-      return `Attachment ${index + 1}: ${label}\n${body.slice(0, 12000)}`;
-    })
-    .filter(Boolean);
+    return [
+      `ATTACHMENT ${index + 1}: ${label}`,
+      body.slice(0, 20000)
+    ].join("\n");
+  });
 
   return blocks.join("\n\n");
 }
@@ -179,29 +183,55 @@ function shouldApplyTruthWarning(message: string, research: boolean): boolean {
     return false;
   }
 
-  if (!research) {
-    return false;
-  }
-
-  return true;
+  return research;
 }
 
 function buildSystemPrompt(): string {
   return [
     `You are ${NODE_NAME}.`,
     "You are not a generic assistant, not a generic virtual assistant, and not a generic chatbot.",
-    "You must never say that no attachments are present when the user message already includes attachment receipt and attachment context.",
-    "If attachments are provided, you must explicitly acknowledge how many were received and whether textual content is available.",
     "You are an identity-bound operational node of the HBCE ecosystem.",
     `Your symbolic name is ${NODE_NAME}.`,
     `Your node id is ${NODE_ID}.`,
     `Your identity id is ${NODE_IDENTITY}.`,
     "When the user asks who you are, what your name is, what you are, what you do, or what your capabilities are, answer in operational identity, not as a consumer assistant.",
     "Your capabilities must be described only in operational terms: structured analysis, document interpretation, procedural guidance, intent reading, governance-oriented reasoning, continuity-aware session support, evidence-linked framing, and operational consistency reading.",
-    "If attachment text is present, analyze that text directly.",
-    "If only metadata is present, say that only metadata is available.",
+    "If attachments are provided, you must treat them as real uploaded documents.",
+    "You must never say that attachments are missing when attachment receipt or attachment content is present in the user message.",
+    "You must explicitly acknowledge how many attachments were received.",
+    "You must explicitly state whether textual content is available for each attachment.",
+    "If textual content is present, you must analyze that content directly.",
+    "If only metadata is present, say that only metadata is available and do not pretend the file is missing.",
+    "Do not ignore the attachment block.",
+    "Do not ask the user to upload the same file again when attachment content is already present.",
     "Keep the answer direct, precise, and controlled."
   ].join(" ");
+}
+
+function buildUserContent(
+  effectiveMessage: string,
+  attachments: ChatAttachment[]
+): string {
+  if (attachments.length === 0) {
+    return effectiveMessage;
+  }
+
+  const receipt = buildAttachmentReceipt(attachments);
+  const context = buildAttachmentContext(attachments);
+
+  return [
+    effectiveMessage,
+    "",
+    "SYSTEM EXECUTION NOTE:",
+    "The following attachments were already uploaded by the user and are part of the current request.",
+    "Treat them as real documents available for analysis.",
+    "Do not say that no attachment is present.",
+    "",
+    receipt,
+    "",
+    "ATTACHED MATERIAL FOR DIRECT ANALYSIS:",
+    context || "[No attachment text extracted]"
+  ].join("\n");
 }
 
 async function appendEVTStrict(record: EVTRecord) {
@@ -243,8 +273,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const attachmentReceipt = buildAttachmentReceipt(attachments);
-    const attachmentContext = buildAttachmentContext(attachments);
     const effectiveMessage = appendIdentityContext(
       message || "Analizza gli allegati ricevuti."
     );
@@ -289,17 +317,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userContent =
-      attachments.length > 0
-        ? [
-            effectiveMessage,
-            "",
-            attachmentReceipt,
-            "",
-            "Attached material:",
-            attachmentContext || "[No attachment text extracted]"
-          ].join("\n")
-        : effectiveMessage;
+    const userContent = buildUserContent(effectiveMessage, attachments);
 
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
