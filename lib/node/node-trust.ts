@@ -3,12 +3,12 @@ import {
   signatureIsConfigured,
   verifyJokerSignature,
   type JokerSignatureEnvelope
-} from "@/lib/joker-signature";
+} from "../joker-signature";
 
 import type {
   HBCEPublicKeyInfo,
   HBCESignatureRef
-} from "@/lib/node/node-types";
+} from "./node-types";
 
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 const DEFAULT_ISSUER = "JOKER-C2";
