@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getEVTRecord, verifyEVTRecord } from "@/lib/evt-registry";
+import {
+  getEVTRecord,
+  verifyEVTRecord
+} from "../../../../lib/evt-registry";
 
 type RouteContext = {
   params: Promise<{
