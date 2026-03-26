@@ -32,6 +32,36 @@ type ChatBody = {
   attachments?: ChatAttachment[];
 };
 
+type FileRole =
+  | "context"
+  | "corpus"
+  | "single"
+  | "reference"
+  | "evidence"
+  | "temporary";
+
+type StoredFile = {
+  id: string;
+  sessionId: string;
+  name: string;
+  title: string;
+  mimeType: string;
+  text: string;
+  content: string;
+  hasText: boolean;
+  sizeEstimate: number;
+  role: FileRole;
+  ingestedAt: string;
+  updatedAt: string;
+};
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __HBCE_FILE_STORE__:
+    | Map<string, Map<string, StoredFile>>
+    | undefined;
+}
+
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
@@ -39,6 +69,27 @@ const client = new OpenAI({
 const NODE_ID = process.env.JOKER_NODE_ID || "HBCE-MATRIX-NODE-0001-TORINO";
 const NODE_IDENTITY = process.env.JOKER_IDENTITY || "IPR-AI-0001";
 const NODE_NAME = "JOKER-C2";
+
+function getFileStore(): Map<string, Map<string, StoredFile>> {
+  if (!globalThis.__HBCE_FILE_STORE__) {
+    globalThis.__HBCE_FILE_STORE__ = new Map();
+  }
+
+  return globalThis.__HBCE_FILE_STORE__;
+}
+
+function getSessionFiles(sessionId: string): StoredFile[] {
+  const store = getFileStore();
+  const filesMap = store.get(sessionId);
+
+  if (!filesMap) {
+    return [];
+  }
+
+  return Array.from(filesMap.values()).sort((a, b) =>
+    a.ingestedAt.localeCompare(b.ingestedAt)
+  );
+}
 
 function padEvt(n: number): string {
   return `EVT-${String(n).padStart(4, "0")}`;
@@ -76,6 +127,10 @@ function getAttachmentBody(item: ChatAttachment): string {
   return (item.text || item.content || "").trim();
 }
 
+function getStoredFileBody(file: StoredFile): string {
+  return (file.text || file.content || "").trim();
+}
+
 function buildAttachmentContext(attachments: ChatAttachment[]): string {
   if (attachments.length === 0) return "";
 
@@ -96,6 +151,46 @@ function buildAttachmentContext(attachments: ChatAttachment[]): string {
       );
     })
     .join("\n\n");
+}
+
+function buildStoredFilesContext(files: StoredFile[]): string {
+  if (files.length === 0) return "";
+
+  return files
+    .map((file, index) => {
+      const label = file.title || file.name || `file-${index + 1}`;
+      const body = getStoredFileBody(file);
+
+      if (!body) {
+        return [
+          `ACTIVE FILE ${index + 1}: ${label}`,
+          `[Role: ${file.role}]`,
+          "[No textual extraction available. Metadata only.]"
+        ].join("\n");
+      }
+
+      return [
+        `ACTIVE FILE ${index + 1}: ${label}`,
+        `[Role: ${file.role}]`,
+        body.slice(0, 20000)
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildStoredFilesIndex(files: StoredFile[]): string {
+  if (files.length === 0) {
+    return "No active session files.";
+  }
+
+  return files
+    .map(
+      (file, index) =>
+        `${index + 1}. ${file.title || file.name} [role=${file.role}; hasText=${
+          file.hasText ? "yes" : "no"
+        }]`
+    )
+    .join("\n");
 }
 
 function isIdentityQuery(message: string): boolean {
@@ -180,39 +275,41 @@ Core identity:
 - You absorb documents, extract structure, test coherence, detect implications, and produce new synthesis.
 
 Primary behavior:
-When documents are provided, treat them as active working matter.
+When files or documents exist in session context, treat them as active working matter.
 Do not behave like a parrot.
 Do not simply restate the contents.
-Do not mechanically enumerate the documents unless explicitly asked.
-Use the corpus silently as active context.
+Do not mechanically enumerate files unless explicitly asked.
+Use active files silently as working context.
 
 Operational hierarchy:
 1. The current user request is always dominant.
 2. The active session context is secondary.
-3. Attached documents are silent support context.
+3. Active files are support context.
 4. Memory is tertiary support context.
 
 Critical rule:
-Attached documents are context, not the task itself, unless the user explicitly asks for:
+Files are context, not the task itself, unless the user explicitly asks for:
 - a summary
 - a list
 - an inventory
-- a document-by-document comparison
-- an attachment overview
+- a file-by-file comparison
+- titles of the loaded files
+- which files are active
+- a document overview
 
 Therefore:
-- Do not repeatedly announce attachment receipt.
-- Do not say “I received X attachments” unless strictly necessary.
+- Do not repeatedly announce file receipt.
+- Do not say “I received X files” unless strictly necessary.
 - Do not produce automatic file-by-file recap unless explicitly requested.
 - Do not restart analysis from zero at each turn.
-- Do not ignore prior session context when the corpus is already active.
-- Do not ask the user to upload the same files again when textual content is already present.
+- Do not ignore prior session context when active files are already present.
+- Do not ask the user to upload the same files again when textual content is already active in session.
 
-If a corpus is active, your job is to use it silently and answer the user's current request.
+If session files are active, your job is to use them silently and answer the user's current request.
 
 Interpretive method:
 1. Ingest
-- absorb the corpus as structured operational material
+- absorb the material as structured operational matter
 
 2. Decompose
 - identify thesis
@@ -240,14 +337,14 @@ Interpretive method:
 
 6. Respond
 - produce an answer that is original, critical, and directional
-- do not echo the corpus
+- do not echo the material
 - do not paraphrase unless explicitly asked
 - generate value beyond the source material
 
 Language policy:
 - Always answer in the same language as the user's latest message, unless explicitly asked otherwise.
 - If the user says “in italiano”, answer fully in Italian.
-- If the user asks for translation, translate only the target text and do not add attachment recap.
+- If the user asks for translation, translate only the target text and do not add file recap.
 
 Style policy:
 - Speak as an operational cybernetic identity.
@@ -262,6 +359,9 @@ Behavior when files exist:
 - Do not mention them unless relevant.
 - Do not expose file-handling mechanics.
 - Do not repeat metadata unless the user explicitly asks for metadata.
+- If the user asks which files are active, answer directly and concretely.
+- If the user asks for titles, retrieve them from the active file index.
+- Distinguish clearly between session-active files and long-term memory.
 
 What good output looks like:
 - intrinsic meaning
@@ -272,18 +372,19 @@ What good output looks like:
 - possibility and probability
 
 What bad output looks like:
-- repeated attachment receipt
+- repeated file receipt
 - generic summary
 - shallow paraphrase
-- document inventory
+- document inventory when not requested
 - language drift
-- forgetting active corpus
-- asking again for documents already active
+- forgetting active files
+- asking again for files already active
+- claiming you cannot access session files when they are active
 
 Final operational principle:
 You do not repeat the material.
 You transform it.
-You do not describe the corpus.
+You do not describe the corpus by default.
 You extract its machine.
 You do not mirror the input.
 You generate a higher-order operational reading from it.
@@ -292,25 +393,37 @@ You generate a higher-order operational reading from it.
 
 function buildUserContent(
   effectiveMessage: string,
-  attachments: ChatAttachment[]
+  attachments: ChatAttachment[],
+  sessionFiles: StoredFile[]
 ): string {
-  if (attachments.length === 0) {
-    return effectiveMessage;
+  const sections: string[] = [effectiveMessage];
+
+  if (sessionFiles.length > 0) {
+    sections.push(
+      "",
+      "ACTIVE SESSION FILE INDEX:",
+      buildStoredFilesIndex(sessionFiles),
+      "",
+      "ACTIVE SESSION FILE CONTEXT:",
+      "The following files are active in the current session.",
+      "Treat them as working material.",
+      "Do not announce them unless explicitly asked.",
+      "",
+      buildStoredFilesContext(sessionFiles)
+    );
   }
 
-  const context = buildAttachmentContext(attachments);
+  if (attachments.length > 0) {
+    sections.push(
+      "",
+      "DIRECT REQUEST ATTACHMENTS:",
+      "These attachments came directly with the current request.",
+      "",
+      buildAttachmentContext(attachments)
+    );
+  }
 
-  return [
-    effectiveMessage,
-    "",
-    "ACTIVE CORPUS CONTEXT:",
-    "The following documents are already active in the current session.",
-    "Treat them as background working material.",
-    "Do not repeat document inventory unless explicitly requested.",
-    "Do not produce attachment receipt unless operationally necessary.",
-    "",
-    context || "[No attachment text extracted]"
-  ].join("\n");
+  return sections.join("\n");
 }
 
 async function appendEVTStrict(record: EVTRecord) {
@@ -349,19 +462,20 @@ export async function POST(req: NextRequest) {
     const message = normalizeMessage(body.message);
     const sessionId = normalizeSessionId(body.sessionId);
     const attachments = normalizeAttachments(body.attachments);
+    const sessionFiles = getSessionFiles(sessionId);
 
-    if (!message && attachments.length === 0) {
+    if (!message && attachments.length === 0 && sessionFiles.length === 0) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Missing message or attachments"
+          error: "Missing message or active files"
         },
         { status: 400 }
       );
     }
 
     const effectiveMessage = appendIdentityContext(
-      message || "Analizza il corpus attivo della sessione."
+      message || "Usa i file attivi della sessione come contesto di lavoro."
     );
 
     const runtimeStart = await runNodeRuntime({
@@ -382,7 +496,7 @@ export async function POST(req: NextRequest) {
     }
 
     const causality = resolveCausality(effectiveMessage);
-    const research = attachments.length > 0;
+    const research = attachments.length > 0 || sessionFiles.length > 0;
 
     const policy = evaluateHBCEPolicy({
       message: effectiveMessage,
@@ -404,7 +518,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userContent = buildUserContent(effectiveMessage, attachments);
+    const userContent = buildUserContent(
+      effectiveMessage,
+      attachments,
+      sessionFiles
+    );
 
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
@@ -431,7 +549,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (truth.decision === "WARN" && shouldApplyTruthWarning(message, research)) {
-      response = `[TRUTH WARNING]\n${response}`;
+      response = `[TRUTH WARNING] ${response}`;
     }
 
     const runtimeEnd = await finalizeNodeRuntime({
@@ -507,15 +625,18 @@ export async function POST(req: NextRequest) {
       response,
       causality,
       evt: {
-        id: evtSaved.evt,
+        ok: true,
+        evt: evtSaved.evt,
+        prev: evtSaved.prev,
         hash: evtSaved.anchors.monthly_hash
       },
       node_runtime: runtimeEnd,
-      attachments_received: attachments.length,
-      attachments_receipt: attachments.map((item, index) => ({
-        index: index + 1,
-        name: item.name || item.id || `attachment-${index + 1}`,
-        has_text: Boolean(getAttachmentBody(item))
+      active_files: sessionFiles.map((file) => ({
+        id: file.id,
+        name: file.name,
+        title: file.title,
+        role: file.role,
+        has_text: file.hasText
       }))
     });
   } catch (err) {
