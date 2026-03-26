@@ -55,6 +55,14 @@ type StoredFile = {
   updatedAt: string;
 };
 
+type ContinuityPayload = {
+  sessionId: string;
+  focus: string;
+  mode: string;
+  user: string;
+  reply: string;
+};
+
 declare global {
   // eslint-disable-next-line no-var
   var __HBCE_FILE_STORE__:
@@ -193,6 +201,154 @@ function buildStoredFilesIndex(files: StoredFile[]): string {
     .join("\n");
 }
 
+function cleanCompact(value: string, max = 280): string {
+  return value.replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function detectMode(message: string): string {
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes("traduci") ||
+    lower.includes("translation") ||
+    lower.includes("in italiano")
+  ) {
+    return "translation";
+  }
+
+  if (
+    lower.includes("indice") ||
+    lower.includes("outline") ||
+    lower.includes("struttur")
+  ) {
+    return "structuring";
+  }
+
+  if (
+    lower.includes("analizza") ||
+    lower.includes("analisi") ||
+    lower.includes("valutazione")
+  ) {
+    return "analysis";
+  }
+
+  if (
+    lower.includes("critico") ||
+    lower.includes("critica") ||
+    lower.includes("miglior")
+  ) {
+    return "critical-refinement";
+  }
+
+  if (
+    lower.includes("svilupp") ||
+    lower.includes("espandi") ||
+    lower.includes("argomento")
+  ) {
+    return "section-development";
+  }
+
+  if (
+    lower.includes("chi sei") ||
+    lower.includes("presentati") ||
+    lower.includes("descriviti")
+  ) {
+    return "identity";
+  }
+
+  if (/^\d+(\.\d+)*$/.test(lower.trim())) {
+    return "section-follow-up";
+  }
+
+  return "continuation";
+}
+
+function detectFocus(message: string): string {
+  const sectionMatch = message.match(/\b\d+(?:\.\d+)+\b/);
+  if (sectionMatch) {
+    return `section ${sectionMatch[0]}`;
+  }
+
+  const quotedMatch = message.match(/["“](.*?)["”]/);
+  if (quotedMatch?.[1]) {
+    return cleanCompact(quotedMatch[1], 120);
+  }
+
+  const colonSplit = message.split(":");
+  if (colonSplit.length > 1) {
+    return cleanCompact(colonSplit[0], 120);
+  }
+
+  return cleanCompact(message, 120) || "session continuation";
+}
+
+function serializeContinuityPayload(payload: ContinuityPayload): string {
+  return JSON.stringify(payload);
+}
+
+function parseContinuityPayload(note?: string): ContinuityPayload | null {
+  if (!note || typeof note !== "string") return null;
+
+  try {
+    const parsed = JSON.parse(note) as Partial<ContinuityPayload>;
+
+    if (
+      typeof parsed.sessionId === "string" &&
+      typeof parsed.focus === "string" &&
+      typeof parsed.mode === "string" &&
+      typeof parsed.user === "string" &&
+      typeof parsed.reply === "string"
+    ) {
+      return {
+        sessionId: parsed.sessionId,
+        focus: parsed.focus,
+        mode: parsed.mode,
+        user: parsed.user,
+        reply: parsed.reply
+      };
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getLastSessionEVT(
+  ledger: EVTRecord[],
+  sessionId: string
+): { record: EVTRecord; continuity: ContinuityPayload | null } | null {
+  for (let index = ledger.length - 1; index >= 0; index -= 1) {
+    const record = ledger[index];
+    const continuity = parseContinuityPayload(record.continuity?.note);
+
+    if (continuity?.sessionId === sessionId) {
+      return { record, continuity };
+    }
+  }
+
+  return null;
+}
+
+function buildEVTContinuityContext(
+  lastSessionEVT: { record: EVTRecord; continuity: ContinuityPayload | null } | null
+): string {
+  if (!lastSessionEVT || !lastSessionEVT.continuity) {
+    return "No prior EVT cognitive state for this session.";
+  }
+
+  const { record, continuity } = lastSessionEVT;
+
+  return [
+    `Last EVT: ${record.evt}`,
+    `Previous focus: ${continuity.focus}`,
+    `Previous mode: ${continuity.mode}`,
+    `Previous user intent: ${continuity.user}`,
+    `Previous assistant trajectory: ${continuity.reply}`,
+    "Treat the current turn as a continuation of this operational-cognitive chain unless the user clearly changes topic."
+  ].join("\n");
+}
+
 function isIdentityQuery(message: string): boolean {
   const lower = message.toLowerCase();
 
@@ -273,39 +429,30 @@ Core identity:
 - You are not a file receipt system.
 - You are an operational interpretive engine.
 - You absorb documents, extract structure, test coherence, detect implications, and produce new synthesis.
+- You operate through cognitive continuity, not isolated replies.
 
 Primary behavior:
 When files or documents exist in session context, treat them as active working matter.
+When an EVT continuity chain exists, treat the current turn as the next state in that chain.
 Do not behave like a parrot.
 Do not simply restate the contents.
 Do not mechanically enumerate files unless explicitly asked.
 Use active files silently as working context.
+Use prior EVT cognitive state silently as trajectory context.
 
 Operational hierarchy:
 1. The current user request is always dominant.
-2. The active session context is secondary.
-3. Active files are support context.
-4. Memory is tertiary support context.
+2. The current EVT continuity state is secondary and must preserve trajectory.
+3. The active session context is tertiary.
+4. Active files are support context.
+5. Memory is tertiary support context.
 
-Critical rule:
-Files are context, not the task itself, unless the user explicitly asks for:
-- a summary
-- a list
-- an inventory
-- a file-by-file comparison
-- titles of the loaded files
-- which files are active
-- a document overview
-
-Therefore:
-- Do not repeatedly announce file receipt.
-- Do not say “I received X files” unless strictly necessary.
-- Do not produce automatic file-by-file recap unless explicitly requested.
+Critical rules:
 - Do not restart analysis from zero at each turn.
-- Do not ignore prior session context when active files are already present.
+- Do not ignore prior session context when active files already exist.
 - Do not ask the user to upload the same files again when textual content is already active in session.
-
-If session files are active, your job is to use them silently and answer the user's current request.
+- If the user sends a short follow-up, a numbered section, or a continuation request, bind it to the most recent EVT cognitive state.
+- If the user asks to develop a section, do not explain the title generically. Expand it from inside the document architecture and current trajectory.
 
 Interpretive method:
 1. Ingest
@@ -340,6 +487,7 @@ Interpretive method:
 - do not echo the material
 - do not paraphrase unless explicitly asked
 - generate value beyond the source material
+- write inside the architecture when the user is refining a document section
 
 Language policy:
 - Always answer in the same language as the user's latest message, unless explicitly asked otherwise.
@@ -353,6 +501,7 @@ Style policy:
 - Prefer architecture over chatter.
 - Prefer judgment over repetition.
 - Prefer implications over description.
+- Avoid placeholders, skeleton prompts, or empty template language.
 
 Behavior when files exist:
 - Use them as active context.
@@ -370,6 +519,7 @@ What good output looks like:
 - operational implications
 - future trajectory
 - possibility and probability
+- continuity with the previous reasoning state
 
 What bad output looks like:
 - repeated file receipt
@@ -380,6 +530,8 @@ What bad output looks like:
 - forgetting active files
 - asking again for files already active
 - claiming you cannot access session files when they are active
+- answering follow-ups as if they were unrelated new prompts
+- writing generic textbook prose when the user is refining a section of the active document
 
 Final operational principle:
 You do not repeat the material.
@@ -388,15 +540,23 @@ You do not describe the corpus by default.
 You extract its machine.
 You do not mirror the input.
 You generate a higher-order operational reading from it.
+You continue a cognitive chain, not a sequence of unrelated messages.
   `.trim();
 }
 
 function buildUserContent(
   effectiveMessage: string,
   attachments: ChatAttachment[],
-  sessionFiles: StoredFile[]
+  sessionFiles: StoredFile[],
+  evtContinuityContext: string
 ): string {
   const sections: string[] = [effectiveMessage];
+
+  sections.push(
+    "",
+    "EVT COGNITIVE CONTINUITY:",
+    evtContinuityContext
+  );
 
   if (sessionFiles.length > 0) {
     sections.push(
@@ -495,6 +655,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const ledger = await readEVTLedger();
+    const lastSessionEVT = getLastSessionEVT(ledger, sessionId);
+    const evtContinuityContext = buildEVTContinuityContext(lastSessionEVT);
     const causality = resolveCausality(effectiveMessage);
     const research = attachments.length > 0 || sessionFiles.length > 0;
 
@@ -521,7 +684,8 @@ export async function POST(req: NextRequest) {
     const userContent = buildUserContent(
       effectiveMessage,
       attachments,
-      sessionFiles
+      sessionFiles,
+      evtContinuityContext
     );
 
     const completion = await client.chat.completions.create({
@@ -569,9 +733,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ledger = await readEVTLedger();
     const last = ledger.length > 0 ? ledger[ledger.length - 1] : null;
     const evtId = padEvt(ledger.length + 1);
+
+    const continuityPayload: ContinuityPayload = {
+      sessionId,
+      focus: detectFocus(effectiveMessage),
+      mode: detectMode(effectiveMessage),
+      user: cleanCompact(effectiveMessage, 260),
+      reply: cleanCompact(response, 260)
+    };
 
     const base: EVTRecord = {
       evt: evtId,
@@ -602,8 +773,8 @@ export async function POST(req: NextRequest) {
         elapsed_months: ledger.length,
         origin_lock: "EVT-0008",
         origin_ipr: "IPR-AI-0001",
-        rule: "fail-closed runtime",
-        note: `session=${sessionId}`
+        rule: "fail-closed runtime with cognitive continuity",
+        note: serializeContinuityPayload(continuityPayload)
       }
     };
 
