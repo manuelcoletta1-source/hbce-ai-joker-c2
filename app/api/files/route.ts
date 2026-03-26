@@ -2,14 +2,12 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-
-type FileRole =
-  | "context"
-  | "corpus"
-  | "single"
-  | "reference"
-  | "evidence"
-  | "temporary";
+import {
+  getFileStore,
+  getSessionFiles,
+  type FileRole,
+  type StoredFile
+} from "../../../lib/joker/session-files";
 
 type FileInput = {
   id?: string;
@@ -24,36 +22,6 @@ type FilesBody = {
   sessionId?: string;
   files?: FileInput[];
 };
-
-type StoredFile = {
-  id: string;
-  sessionId: string;
-  name: string;
-  title: string;
-  mimeType: string;
-  text: string;
-  content: string;
-  hasText: boolean;
-  sizeEstimate: number;
-  role: FileRole;
-  ingestedAt: string;
-  updatedAt: string;
-};
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __HBCE_FILE_STORE__:
-    | Map<string, Map<string, StoredFile>>
-    | undefined;
-}
-
-function getFileStore(): Map<string, Map<string, StoredFile>> {
-  if (!globalThis.__HBCE_FILE_STORE__) {
-    globalThis.__HBCE_FILE_STORE__ = new Map();
-  }
-
-  return globalThis.__HBCE_FILE_STORE__;
-}
 
 function normalizeSessionId(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -169,20 +137,14 @@ function summarizeFile(file: StoredFile) {
   };
 }
 
-function getSessionFilesMap(sessionId: string): Map<string, StoredFile> {
+function getOrCreateSessionFilesMap(sessionId: string): Map<string, StoredFile> {
   const store = getFileStore();
 
   if (!store.has(sessionId)) {
-    store.set(sessionId, new Map());
+    store.set(sessionId, new Map<string, StoredFile>());
   }
 
   return store.get(sessionId)!;
-}
-
-function sortFiles(files: StoredFile[]): StoredFile[] {
-  return [...files].sort((a, b) => {
-    return a.ingestedAt.localeCompare(b.ingestedAt);
-  });
 }
 
 export async function GET(req: NextRequest) {
@@ -200,8 +162,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const filesMap = getSessionFilesMap(sessionId);
-  const files = sortFiles(Array.from(filesMap.values()));
+  const files = getSessionFiles(sessionId);
 
   return NextResponse.json({
     ok: true,
@@ -237,7 +198,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const filesMap = getSessionFilesMap(sessionId);
+    const filesMap = getOrCreateSessionFilesMap(sessionId);
     const stored = files.map((file, index) =>
       buildStoredFile(sessionId, file, index)
     );
@@ -246,7 +207,7 @@ export async function POST(req: NextRequest) {
       filesMap.set(item.id, item);
     }
 
-    const allFiles = sortFiles(Array.from(filesMap.values()));
+    const allFiles = getSessionFiles(sessionId);
 
     return NextResponse.json({
       ok: true,
@@ -300,11 +261,12 @@ export async function DELETE(req: NextRequest) {
 
   if (fileId) {
     const removed = filesMap.delete(fileId);
-    const remaining = sortFiles(Array.from(filesMap.values()));
 
     if (filesMap.size === 0) {
       store.delete(sessionId);
     }
+
+    const remaining = getSessionFiles(sessionId);
 
     return NextResponse.json({
       ok: true,
