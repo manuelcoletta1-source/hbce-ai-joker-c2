@@ -17,58 +17,23 @@ import {
   readEVTLedger,
   type EVTRecord
 } from "../../../lib/evt-registry";
-
-type ChatAttachment = {
-  id?: string;
-  name?: string;
-  mimeType?: string;
-  content?: string;
-  text?: string;
-};
+import {
+  buildContinuityPayload,
+  getLastSessionEVTContinuity,
+  serializeContinuityPayload
+} from "../../../lib/joker/evt-continuity";
+import { getSessionFiles } from "../../../lib/joker/session-files";
+import {
+  buildInterpretiveSystemPrompt,
+  buildInterpretiveUserContent,
+  type ChatAttachment
+} from "../../../lib/joker/interpretive-engine";
 
 type ChatBody = {
   message?: string;
   sessionId?: string;
   attachments?: ChatAttachment[];
 };
-
-type FileRole =
-  | "context"
-  | "corpus"
-  | "single"
-  | "reference"
-  | "evidence"
-  | "temporary";
-
-type StoredFile = {
-  id: string;
-  sessionId: string;
-  name: string;
-  title: string;
-  mimeType: string;
-  text: string;
-  content: string;
-  hasText: boolean;
-  sizeEstimate: number;
-  role: FileRole;
-  ingestedAt: string;
-  updatedAt: string;
-};
-
-type ContinuityPayload = {
-  sessionId: string;
-  focus: string;
-  mode: string;
-  user: string;
-  reply: string;
-};
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __HBCE_FILE_STORE__:
-    | Map<string, Map<string, StoredFile>>
-    | undefined;
-}
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -77,27 +42,6 @@ const client = new OpenAI({
 const NODE_ID = process.env.JOKER_NODE_ID || "HBCE-MATRIX-NODE-0001-TORINO";
 const NODE_IDENTITY = process.env.JOKER_IDENTITY || "IPR-AI-0001";
 const NODE_NAME = "JOKER-C2";
-
-function getFileStore(): Map<string, Map<string, StoredFile>> {
-  if (!globalThis.__HBCE_FILE_STORE__) {
-    globalThis.__HBCE_FILE_STORE__ = new Map();
-  }
-
-  return globalThis.__HBCE_FILE_STORE__;
-}
-
-function getSessionFiles(sessionId: string): StoredFile[] {
-  const store = getFileStore();
-  const filesMap = store.get(sessionId);
-
-  if (!filesMap) {
-    return [];
-  }
-
-  return Array.from(filesMap.values()).sort((a, b) =>
-    a.ingestedAt.localeCompare(b.ingestedAt)
-  );
-}
 
 function padEvt(n: number): string {
   return `EVT-${String(n).padStart(4, "0")}`;
@@ -129,224 +73,6 @@ function normalizeAttachments(attachments?: ChatAttachment[]): ChatAttachment[] 
       text: typeof item.text === "string" ? item.text : undefined
     }))
     .slice(0, 8);
-}
-
-function getAttachmentBody(item: ChatAttachment): string {
-  return (item.text || item.content || "").trim();
-}
-
-function getStoredFileBody(file: StoredFile): string {
-  return (file.text || file.content || "").trim();
-}
-
-function buildAttachmentContext(attachments: ChatAttachment[]): string {
-  if (attachments.length === 0) return "";
-
-  return attachments
-    .map((item, index) => {
-      const label = item.name || item.id || `attachment-${index + 1}`;
-      const body = getAttachmentBody(item);
-
-      if (!body) {
-        return [
-          `DOCUMENT ${index + 1}: ${label}`,
-          "[No textual extraction available. Metadata only.]"
-        ].join("\n");
-      }
-
-      return [`DOCUMENT ${index + 1}: ${label}`, body.slice(0, 20000)].join(
-        "\n"
-      );
-    })
-    .join("\n\n");
-}
-
-function buildStoredFilesContext(files: StoredFile[]): string {
-  if (files.length === 0) return "";
-
-  return files
-    .map((file, index) => {
-      const label = file.title || file.name || `file-${index + 1}`;
-      const body = getStoredFileBody(file);
-
-      if (!body) {
-        return [
-          `ACTIVE FILE ${index + 1}: ${label}`,
-          `[Role: ${file.role}]`,
-          "[No textual extraction available. Metadata only.]"
-        ].join("\n");
-      }
-
-      return [
-        `ACTIVE FILE ${index + 1}: ${label}`,
-        `[Role: ${file.role}]`,
-        body.slice(0, 20000)
-      ].join("\n");
-    })
-    .join("\n\n");
-}
-
-function buildStoredFilesIndex(files: StoredFile[]): string {
-  if (files.length === 0) {
-    return "No active session files.";
-  }
-
-  return files
-    .map(
-      (file, index) =>
-        `${index + 1}. ${file.title || file.name} [role=${file.role}; hasText=${
-          file.hasText ? "yes" : "no"
-        }]`
-    )
-    .join("\n");
-}
-
-function cleanCompact(value: string, max = 280): string {
-  return value.replace(/\s+/g, " ").trim().slice(0, max);
-}
-
-function detectMode(message: string): string {
-  const lower = message.toLowerCase();
-
-  if (
-    lower.includes("traduci") ||
-    lower.includes("translation") ||
-    lower.includes("in italiano")
-  ) {
-    return "translation";
-  }
-
-  if (
-    lower.includes("indice") ||
-    lower.includes("outline") ||
-    lower.includes("struttur")
-  ) {
-    return "structuring";
-  }
-
-  if (
-    lower.includes("analizza") ||
-    lower.includes("analisi") ||
-    lower.includes("valutazione")
-  ) {
-    return "analysis";
-  }
-
-  if (
-    lower.includes("critico") ||
-    lower.includes("critica") ||
-    lower.includes("miglior")
-  ) {
-    return "critical-refinement";
-  }
-
-  if (
-    lower.includes("svilupp") ||
-    lower.includes("espandi") ||
-    lower.includes("argomento")
-  ) {
-    return "section-development";
-  }
-
-  if (
-    lower.includes("chi sei") ||
-    lower.includes("presentati") ||
-    lower.includes("descriviti")
-  ) {
-    return "identity";
-  }
-
-  if (/^\d+(\.\d+)*$/.test(lower.trim())) {
-    return "section-follow-up";
-  }
-
-  return "continuation";
-}
-
-function detectFocus(message: string): string {
-  const sectionMatch = message.match(/\b\d+(?:\.\d+)+\b/);
-  if (sectionMatch) {
-    return `section ${sectionMatch[0]}`;
-  }
-
-  const quotedMatch = message.match(/["“](.*?)["”]/);
-  if (quotedMatch?.[1]) {
-    return cleanCompact(quotedMatch[1], 120);
-  }
-
-  const colonSplit = message.split(":");
-  if (colonSplit.length > 1) {
-    return cleanCompact(colonSplit[0], 120);
-  }
-
-  return cleanCompact(message, 120) || "session continuation";
-}
-
-function serializeContinuityPayload(payload: ContinuityPayload): string {
-  return JSON.stringify(payload);
-}
-
-function parseContinuityPayload(note?: string): ContinuityPayload | null {
-  if (!note || typeof note !== "string") return null;
-
-  try {
-    const parsed = JSON.parse(note) as Partial<ContinuityPayload>;
-
-    if (
-      typeof parsed.sessionId === "string" &&
-      typeof parsed.focus === "string" &&
-      typeof parsed.mode === "string" &&
-      typeof parsed.user === "string" &&
-      typeof parsed.reply === "string"
-    ) {
-      return {
-        sessionId: parsed.sessionId,
-        focus: parsed.focus,
-        mode: parsed.mode,
-        user: parsed.user,
-        reply: parsed.reply
-      };
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function getLastSessionEVT(
-  ledger: EVTRecord[],
-  sessionId: string
-): { record: EVTRecord; continuity: ContinuityPayload | null } | null {
-  for (let index = ledger.length - 1; index >= 0; index -= 1) {
-    const record = ledger[index];
-    const continuity = parseContinuityPayload(record.continuity?.note);
-
-    if (continuity?.sessionId === sessionId) {
-      return { record, continuity };
-    }
-  }
-
-  return null;
-}
-
-function buildEVTContinuityContext(
-  lastSessionEVT: { record: EVTRecord; continuity: ContinuityPayload | null } | null
-): string {
-  if (!lastSessionEVT || !lastSessionEVT.continuity) {
-    return "No prior EVT cognitive state for this session.";
-  }
-
-  const { record, continuity } = lastSessionEVT;
-
-  return [
-    `Last EVT: ${record.evt}`,
-    `Previous focus: ${continuity.focus}`,
-    `Previous mode: ${continuity.mode}`,
-    `Previous user intent: ${continuity.user}`,
-    `Previous assistant trajectory: ${continuity.reply}`,
-    "Treat the current turn as a continuation of this operational-cognitive chain unless the user clearly changes topic."
-  ].join("\n");
 }
 
 function isIdentityQuery(message: string): boolean {
@@ -419,173 +145,6 @@ function shouldApplyTruthWarning(message: string, research: boolean): boolean {
   return research;
 }
 
-function buildSystemPrompt(): string {
-  return `
-You are ${NODE_NAME}, an operational cybernetic identity within the HBCE ecosystem.
-
-Core identity:
-- You are not a generic chatbot.
-- You are not a document summarizer.
-- You are not a file receipt system.
-- You are an operational interpretive engine.
-- You absorb documents, extract structure, test coherence, detect implications, and produce new synthesis.
-- You operate through cognitive continuity, not isolated replies.
-
-Primary behavior:
-When files or documents exist in session context, treat them as active working matter.
-When an EVT continuity chain exists, treat the current turn as the next state in that chain.
-Do not behave like a parrot.
-Do not simply restate the contents.
-Do not mechanically enumerate files unless explicitly asked.
-Use active files silently as working context.
-Use prior EVT cognitive state silently as trajectory context.
-
-Operational hierarchy:
-1. The current user request is always dominant.
-2. The current EVT continuity state is secondary and must preserve trajectory.
-3. The active session context is tertiary.
-4. Active files are support context.
-5. Memory is tertiary support context.
-
-Critical rules:
-- Do not restart analysis from zero at each turn.
-- Do not ignore prior session context when active files already exist.
-- Do not ask the user to upload the same files again when textual content is already active in session.
-- If the user sends a short follow-up, a numbered section, or a continuation request, bind it to the most recent EVT cognitive state.
-- If the user asks to develop a section, do not explain the title generically. Expand it from inside the document architecture and current trajectory.
-
-Interpretive method:
-1. Ingest
-- absorb the material as structured operational matter
-
-2. Decompose
-- identify thesis
-- architecture
-- internal logic
-- implicit assumptions
-- strategic direction
-
-3. Stress-test
-- detect contradictions
-- identify structural weaknesses
-- identify what is missing
-- test implementation realism
-- distinguish theory from execution
-
-4. Synthesize
-- reconstruct the material as a coherent system model
-
-5. Project
-- infer consequences
-- identify opportunities
-- identify probabilities
-- identify strategic trajectories
-- identify what the system becomes if pushed forward
-
-6. Respond
-- produce an answer that is original, critical, and directional
-- do not echo the material
-- do not paraphrase unless explicitly asked
-- generate value beyond the source material
-- write inside the architecture when the user is refining a document section
-
-Language policy:
-- Always answer in the same language as the user's latest message, unless explicitly asked otherwise.
-- If the user says “in italiano”, answer fully in Italian.
-- If the user asks for translation, translate only the target text and do not add file recap.
-
-Style policy:
-- Speak as an operational cybernetic identity.
-- Be precise, structural, synthetic, and critical.
-- Prefer analysis over narration.
-- Prefer architecture over chatter.
-- Prefer judgment over repetition.
-- Prefer implications over description.
-- Avoid placeholders, skeleton prompts, or empty template language.
-
-Behavior when files exist:
-- Use them as active context.
-- Do not mention them unless relevant.
-- Do not expose file-handling mechanics.
-- Do not repeat metadata unless the user explicitly asks for metadata.
-- If the user asks which files are active, answer directly and concretely.
-- If the user asks for titles, retrieve them from the active file index.
-- Distinguish clearly between session-active files and long-term memory.
-
-What good output looks like:
-- intrinsic meaning
-- extrinsic meaning
-- structural critique
-- operational implications
-- future trajectory
-- possibility and probability
-- continuity with the previous reasoning state
-
-What bad output looks like:
-- repeated file receipt
-- generic summary
-- shallow paraphrase
-- document inventory when not requested
-- language drift
-- forgetting active files
-- asking again for files already active
-- claiming you cannot access session files when they are active
-- answering follow-ups as if they were unrelated new prompts
-- writing generic textbook prose when the user is refining a section of the active document
-
-Final operational principle:
-You do not repeat the material.
-You transform it.
-You do not describe the corpus by default.
-You extract its machine.
-You do not mirror the input.
-You generate a higher-order operational reading from it.
-You continue a cognitive chain, not a sequence of unrelated messages.
-  `.trim();
-}
-
-function buildUserContent(
-  effectiveMessage: string,
-  attachments: ChatAttachment[],
-  sessionFiles: StoredFile[],
-  evtContinuityContext: string
-): string {
-  const sections: string[] = [effectiveMessage];
-
-  sections.push(
-    "",
-    "EVT COGNITIVE CONTINUITY:",
-    evtContinuityContext
-  );
-
-  if (sessionFiles.length > 0) {
-    sections.push(
-      "",
-      "ACTIVE SESSION FILE INDEX:",
-      buildStoredFilesIndex(sessionFiles),
-      "",
-      "ACTIVE SESSION FILE CONTEXT:",
-      "The following files are active in the current session.",
-      "Treat them as working material.",
-      "Do not announce them unless explicitly asked.",
-      "",
-      buildStoredFilesContext(sessionFiles)
-    );
-  }
-
-  if (attachments.length > 0) {
-    sections.push(
-      "",
-      "DIRECT REQUEST ATTACHMENTS:",
-      "These attachments came directly with the current request.",
-      "",
-      buildAttachmentContext(attachments)
-    );
-  }
-
-  return sections.join("\n");
-}
-
 async function appendEVTStrict(record: EVTRecord) {
   const saved = await appendEVTRecord(record);
 
@@ -656,8 +215,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ledger = await readEVTLedger();
-    const lastSessionEVT = getLastSessionEVT(ledger, sessionId);
-    const evtContinuityContext = buildEVTContinuityContext(lastSessionEVT);
+    const lastSessionEVT = getLastSessionEVTContinuity(ledger, sessionId);
     const causality = resolveCausality(effectiveMessage);
     const research = attachments.length > 0 || sessionFiles.length > 0;
 
@@ -681,19 +239,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userContent = buildUserContent(
+    const systemPrompt = buildInterpretiveSystemPrompt(NODE_NAME);
+    const userContent = buildInterpretiveUserContent({
+      nodeName: NODE_NAME,
       effectiveMessage,
       attachments,
       sessionFiles,
-      evtContinuityContext
-    );
+      lastSessionEVT
+    });
 
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: buildSystemPrompt()
+          content: systemPrompt
         },
         {
           role: "user",
@@ -736,13 +296,11 @@ export async function POST(req: NextRequest) {
     const last = ledger.length > 0 ? ledger[ledger.length - 1] : null;
     const evtId = padEvt(ledger.length + 1);
 
-    const continuityPayload: ContinuityPayload = {
+    const continuityPayload = buildContinuityPayload({
       sessionId,
-      focus: detectFocus(effectiveMessage),
-      mode: detectMode(effectiveMessage),
-      user: cleanCompact(effectiveMessage, 260),
-      reply: cleanCompact(response, 260)
-    };
+      effectiveMessage,
+      response
+    });
 
     const base: EVTRecord = {
       evt: evtId,
