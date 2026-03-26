@@ -22,6 +22,9 @@ type SelectedAttachment = {
   name: string;
   type: string;
   size: number;
+  text?: string;
+  content?: string;
+  note?: string;
 };
 
 type ApiResponse = {
@@ -183,6 +186,52 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function isTextReadableFile(file: File) {
+  const name = (file.name || "").toLowerCase();
+
+  return (
+    name.endsWith(".txt") ||
+    name.endsWith(".md") ||
+    name.endsWith(".json") ||
+    file.type.startsWith("text/")
+  );
+}
+
+async function mapSelectedFile(file: File): Promise<SelectedAttachment> {
+  const base = {
+    id: makeId(),
+    name: file.name,
+    type: file.type || "unknown",
+    size: file.size
+  };
+
+  if (!isTextReadableFile(file)) {
+    return {
+      ...base,
+      text: "",
+      content: "",
+      note: "Metadata only. Text extraction not available in client runtime."
+    };
+  }
+
+  try {
+    const text = await file.text();
+
+    return {
+      ...base,
+      text,
+      content: text
+    };
+  } catch {
+    return {
+      ...base,
+      text: "",
+      content: "",
+      note: "Read failed in client runtime."
+    };
+  }
+}
+
 export default function InterfacePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -277,20 +326,14 @@ export default function InterfacePage() {
     fileInputRef.current?.click();
   }
 
-  function handleFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files || []);
 
     if (files.length === 0) {
       return;
     }
 
-    const mapped = files.map((file) => ({
-      id: makeId(),
-      name: file.name,
-      type: file.type || "unknown",
-      size: file.size
-    }));
-
+    const mapped = await Promise.all(files.map(mapSelectedFile));
     setAttachments((prev) => [...prev, ...mapped]);
     event.target.value = "";
   }
@@ -331,7 +374,14 @@ export default function InterfacePage() {
           sessionId,
           role: "Operatore supervisionato",
           nodeContext: DEFAULT_NODE,
-          continuityReference: `${sessionId}-AUDIT`
+          continuityReference: `${sessionId}-AUDIT`,
+          attachments: attachments.map((item) => ({
+            id: item.id,
+            name: item.name,
+            mimeType: item.type,
+            text: item.text || "",
+            content: item.content || ""
+          }))
         })
       });
 
