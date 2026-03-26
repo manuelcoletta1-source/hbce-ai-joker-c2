@@ -29,6 +29,25 @@ type SelectedAttachment = {
   role?: "context" | "corpus" | "single" | "reference" | "evidence" | "temporary";
 };
 
+type JokerState = {
+  sessionId?: string;
+  identity?: {
+    biologicalName?: string;
+    biologicalIPR?: string;
+    cyberneticName?: string;
+    cyberneticIPR?: string;
+  };
+  work?: {
+    activeProject?: string;
+    activeDocument?: string;
+    activeSection?: string;
+    activeIndex?: string[];
+    activeFocus?: string;
+  };
+  lastEVT?: string;
+  updatedAt?: string;
+};
+
 type ApiResponse = {
   ok: boolean;
   response?: string;
@@ -37,19 +56,6 @@ type ApiResponse = {
     title: string;
     url?: string;
   }>;
-  interpretive_mode?: boolean;
-  corpus_mode?:
-    | "off"
-    | "multi-document"
-    | "collection-analysis"
-    | "gap-analysis"
-    | "brussels-readiness";
-  memory?: {
-    enabled?: boolean;
-    context_used?: boolean;
-    stored?: boolean;
-    key?: string | null;
-  };
   evt?: {
     ok?: boolean;
     evt?: string;
@@ -67,9 +73,10 @@ type ApiResponse = {
     runtime_start_state?: string;
     warning?: string;
   };
+  joker_state?: JokerState;
 };
 
-const STORAGE_KEY = "hbce-joker-c2-interface-v6";
+const STORAGE_KEY = "hbce-joker-c2-interface-v7";
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 
 function makeId() {
@@ -150,30 +157,6 @@ function formatSources(
         : `${index + 1}. ${source.title}`
     )
   ].join("\n");
-}
-
-function formatCorpusMode(
-  mode:
-    | "off"
-    | "multi-document"
-    | "collection-analysis"
-    | "gap-analysis"
-    | "brussels-readiness"
-    | undefined
-) {
-  switch (mode) {
-    case "multi-document":
-      return "MULTI-DOCUMENT";
-    case "collection-analysis":
-      return "COLLECTION-ANALYSIS";
-    case "gap-analysis":
-      return "GAP-ANALYSIS";
-    case "brussels-readiness":
-      return "BRUSSELS-READINESS";
-    case "off":
-    default:
-      return "OFF";
-  }
 }
 
 function shortenHash(value?: string | null, start = 12, end = 10) {
@@ -300,15 +283,12 @@ export default function InterfacePage() {
   const [sending, setSending] = useState(false);
   const [sessionId, setSessionId] = useState(makeSessionId());
   const [attachments, setAttachments] = useState<SelectedAttachment[]>([]);
+  const [jokerState, setJokerState] = useState<JokerState | null>(null);
 
   const [status, setStatus] = useState("Ready");
   const [sessionState, setSessionState] = useState("-");
   const [continuityReference, setContinuityReference] = useState("-");
   const [continuityStatus, setContinuityStatus] = useState("-");
-  const [interpretiveMode, setInterpretiveMode] = useState("OFF");
-  const [corpusMode, setCorpusMode] = useState("OFF");
-  const [memoryEnabled, setMemoryEnabled] = useState("OFF");
-  const [memoryContextUsed, setMemoryContextUsed] = useState("NO");
   const [ledgerValid, setLedgerValid] = useState("-");
   const [lastEventId, setLastEventId] = useState("-");
   const [runtimeStartState, setRuntimeStartState] = useState("-");
@@ -360,15 +340,12 @@ export default function InterfacePage() {
     ]);
     setInput("");
     setAttachments([]);
+    setJokerState(null);
     setSessionId(newSession);
     setStatus("Ready");
     setSessionState("-");
     setContinuityReference("-");
     setContinuityStatus("-");
-    setInterpretiveMode("OFF");
-    setCorpusMode("OFF");
-    setMemoryEnabled("OFF");
-    setMemoryContextUsed("NO");
     setLedgerValid("-");
     setLastEventId("-");
     setRuntimeStartState("-");
@@ -457,10 +434,7 @@ export default function InterfacePage() {
         },
         body: JSON.stringify({
           message: message || "Usa i file attivi della sessione come contesto di lavoro.",
-          sessionId,
-          role: "Operatore supervisionato",
-          nodeContext: DEFAULT_NODE,
-          continuityReference: `${sessionId}-AUDIT`
+          sessionId
         })
       });
 
@@ -494,10 +468,6 @@ export default function InterfacePage() {
         data.node_runtime?.continuity_reference || `${sessionId}-AUDIT`
       );
       setContinuityStatus(data.node_runtime?.continuity_status || "-");
-      setInterpretiveMode(data.interpretive_mode ? "ON" : "OFF");
-      setCorpusMode(formatCorpusMode(data.corpus_mode));
-      setMemoryEnabled(data.memory?.enabled ? "ON" : "OFF");
-      setMemoryContextUsed(data.memory?.context_used ? "YES" : "NO");
       setLedgerValid(
         typeof data.node_runtime?.ledger_valid === "boolean"
           ? data.node_runtime.ledger_valid
@@ -510,6 +480,7 @@ export default function InterfacePage() {
       setLastEvt(data.evt?.evt || "-");
       setLastEvtPrev(data.evt?.prev || "-");
       setLastEvtHash(shortenHash(data.evt?.hash));
+      setJokerState(data.joker_state || null);
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -579,26 +550,6 @@ export default function InterfacePage() {
               </div>
 
               <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Interpretive Mode</div>
-                <div style={styles.metaValue}>{interpretiveMode}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Corpus Mode</div>
-                <div style={styles.metaValue}>{corpusMode}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Node Memory</div>
-                <div style={styles.metaValue}>{memoryEnabled}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Memory Context Used</div>
-                <div style={styles.metaValue}>{memoryContextUsed}</div>
-              </div>
-
-              <div style={styles.metaItem}>
                 <div style={styles.metaLabel}>Ledger Valid</div>
                 <div style={styles.metaValue}>{ledgerValid}</div>
               </div>
@@ -643,9 +594,98 @@ export default function InterfacePage() {
           </section>
 
           <section style={styles.sidebarCard}>
+            <div style={styles.cardTitle}>Joker State</div>
+
+            <div style={styles.metaGrid}>
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Biological Name</div>
+                <div style={styles.metaValue}>
+                  {jokerState?.identity?.biologicalName || "-"}
+                </div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Biological IPR</div>
+                <div style={styles.metaValue}>
+                  {jokerState?.identity?.biologicalIPR || "-"}
+                </div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Cybernetic Name</div>
+                <div style={styles.metaValue}>
+                  {jokerState?.identity?.cyberneticName || "-"}
+                </div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Cybernetic IPR</div>
+                <div style={styles.metaValue}>
+                  {jokerState?.identity?.cyberneticIPR || "-"}
+                </div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Active Project</div>
+                <div style={styles.metaValue}>
+                  {jokerState?.work?.activeProject || "-"}
+                </div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Active Document</div>
+                <div style={styles.metaValue}>
+                  {jokerState?.work?.activeDocument || "-"}
+                </div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Active Section</div>
+                <div style={styles.metaValue}>
+                  {jokerState?.work?.activeSection || "-"}
+                </div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Active Focus</div>
+                <div style={styles.metaValue}>
+                  {jokerState?.work?.activeFocus || "-"}
+                </div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>State EVT</div>
+                <div style={styles.metaValue}>{jokerState?.lastEVT || "-"}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>State Updated</div>
+                <div style={styles.metaValue}>
+                  {jokerState?.updatedAt || "-"}
+                </div>
+              </div>
+            </div>
+
+            {jokerState?.work?.activeIndex &&
+              jokerState.work.activeIndex.length > 0 && (
+                <div style={styles.indexBox}>
+                  <div style={styles.indexTitle}>Active Editorial Index</div>
+                  <div style={styles.indexList}>
+                    {jokerState.work.activeIndex.map((entry, index) => (
+                      <div key={`${index}-${entry}`} style={styles.indexEntry}>
+                        {entry}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+          </section>
+
+          <section style={styles.sidebarCard}>
             <div style={styles.cardTitle}>Runtime Model</div>
             <div style={styles.infoText}>
-              request → session → files → reasoning → response → audit → evt
+              input → file → stato Joker → ontologia → continuità EVT →
+              interpretazione → risposta → nuovo EVT
             </div>
           </section>
         </aside>
@@ -923,6 +963,31 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#edf4ff",
     lineHeight: 1.7,
     fontSize: 14
+  },
+  indexBox: {
+    marginTop: 14,
+    borderTop: "1px solid rgba(255,255,255,0.08)",
+    paddingTop: 12
+  },
+  indexTitle: {
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: "0.16em",
+    color: "#7dd3fc",
+    marginBottom: 8
+  },
+  indexList: {
+    display: "grid",
+    gap: 6
+  },
+  indexEntry: {
+    fontSize: 13,
+    lineHeight: 1.5,
+    color: "#edf4ff",
+    border: "1px solid rgba(255,255,255,0.06)",
+    background: "rgba(255,255,255,0.02)",
+    borderRadius: 10,
+    padding: "8px 10px"
   },
   chatArea: {
     display: "grid",
