@@ -1,285 +1,304 @@
-# AI JOKER-C2 — Architettura Canonica del Repository
+# JOKER-C2 ARCHITECTURE
+## Identity-Bound Operational Node
 
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
 
 ---
 
-## 1. Scopo
+# 0. Scopo
 
-Questo repository definisce l’implementazione canonica di **AI JOKER-C2** come:
+Questo documento definisce l’architettura del sistema JOKER-C2.
 
-- nodo operativo a identità vincolata
-- runtime governato
-- sistema con continuità EVT
-- infrastruttura verificabile
-- superficie federabile (Matrix Europa)
+Obiettivo:
 
-Principio fondamentale:
-
-> una sola app canonica  
-> un solo runtime canonico  
-> una sola ontologia canonica  
-> una sola continuità EVT  
+tradurre il protocollo HBCE e l’EVT Engine in un sistema operativo implementabile.
 
 ---
 
-## 2. Regola Fondamentale
+# 1. Visione architetturale
 
-Il repository è diviso in 4 categorie:
+JOKER-C2 è composto da tre dimensioni integrate:
 
-1. **Runtime canonico**
-2. **Interfaccia canonica**
-3. **Infrastruttura canonica**
-4. **Materiale non canonico (legacy / test / esperimenti)**
-
-Solo i primi 3 definiscono il sistema reale.
-
-Tutto il resto NON deve influenzare il comportamento.
+- Application Layer (interfaccia)
+- Runtime Layer (logica operativa)
+- Node Layer (infrastruttura verificabile)
 
 ---
 
-## 3. Superficie Canonica
+# 2. Strati del sistema
 
-### 3.1 Application Layer (UI)
+## 2.1 Interface Layer
 
-Cartella:
+Gestisce l’interazione con l’utente.
 
-app/
+Componenti:
 
-Contiene:
+- `/` homepage
+- `/interface` chat
+- `/ipr` identità
+- `/registry` nodo
 
-- homepage
-- interfaccia chat
-- nodo
-- ipr
-- verify
-- tutte le API
+Funzione:
 
-⚠️ Regola:
-I file `.html` in root NON sono più validi.
+raccolta input e visualizzazione output
 
 ---
 
-### 3.2 Runtime / Logica
+## 2.2 Runtime Layer (JOKER-C2)
 
-Cartelle:
+Core del sistema.
 
-lib/ runtime/ ledger/ registry/ system/
+Responsabilità:
 
-Qui vive tutto ciò che conta davvero:
-
-- logica Joker
-- continuità EVT
 - gestione sessioni
-- file
-- nodo
-- verifica
+- continuità EVT
+- interpretazione input
+- esecuzione pipeline
+- generazione eventi
 
 ---
 
-### 3.3 Cuore Joker (OBBLIGATORIO)
+## 2.3 Governance Layer (HBCE)
 
-Cartella:
+Valuta:
+
+- policy
+- rischio
+- validità operativa
+
+Output:
+
+- allowed / blocked
+- livello rischio
+
+---
+
+## 2.4 Continuity Layer (TRAC)
+
+Gestisce:
+
+- EVT chain
+- coerenza sequenziale
+- stato operativo
+
+---
+
+## 2.5 Ledger Layer
+
+Persistenza:
+
+- append-only
+- hash-linked
+- verificabile
+
+---
+
+# 3. Flusso operativo
+
+Pipeline completa:
+
+IDENTITY  
+→ INPUT  
+→ INTENT  
+→ POLICY  
+→ RISK  
+→ DECISION  
+→ EXECUTION  
+→ EVT GENERATION  
+→ LEDGER  
+→ OUTPUT  
+
+---
+
+# 4. EVT Engine Integration
+
+Ogni richiesta passa da:
+
+1. load ultimo EVT
+2. verifica hash
+3. ricostruzione stato
+4. generazione nuovo EVT
+
+---
+
+## 4.1 Regola
+
+Se EVT non viene usato:
+
+→ sistema degradato
+
+---
+
+# 5. Stato sistema
+
+## Stati
+
+- OPERATIONAL
+- DEGRADED
+- BLOCKED
+- INVALID
+
+---
+
+## Condizioni
+
+OPERATIONAL:
+
+- continuità valida
+- policy valida
+
+---
+
+# 6. Struttura codice
+
+## 6.1 Core
 
 lib/joker/
 
-Deve contenere:
+File principali:
 
-- `canonical-ontology.ts`
-- `evt-continuity.ts`
-- `session-files.ts`
+- `evt-engine.ts`
+- `continuity.ts`
+- `identity.ts`
+- `validation.ts`
 - `interpretive-engine.ts`
-
-⚠️ Nessuna route deve reinventare queste logiche.
 
 ---
 
-## 4. API Canoniche
+## 6.2 Runtime
 
-Cartella:
+runtime/
+
+- pipeline
+- orchestrazione
+- gestione stato
+
+---
+
+## 6.3 Ledger
+
+ledger/
+
+- persistenza EVT
+- evidence pack
+
+---
+
+## 6.4 API
 
 app/api/
 
-Endpoint principali:
-
-- `/api/chat`
-- `/api/files`
-- `/api/verify`
-- `/api/network`
-- `/api/evidence`
-- `/api/signature/*`
-
-### Regola API
-
-Le API NON devono:
-
-- pensare
-- contenere logica duplicata
-- diventare monoliti
-
-Devono SOLO:
-
-- normalizzare input
-- chiamare il core
-- salvare EVT
-- rispondere
+- `/chat`
+- `/verify`
+- `/evidence`
 
 ---
 
-## 5. Modello Cognitivo
+## 6.5 Spec
 
-Pipeline reale di JOKER-C2:
+spec/
 
-input → file sessione → ontologia canonica → continuità EVT → interpretazione → risposta governata → nuovo EVT
-
-Questa è la differenza tra:
-
-❌ chatbot  
-✅ nodo operativo
+- HBCE Protocol
+- EVT Engine
+- schema JSON
 
 ---
 
-## 6. Regola Ontologica (CRITICA)
+# 7. Integrazione con Next.js
 
-I termini NON sono generici.
+Framework:
 
-Sono vincolati.
-
-Esempi:
-
-- IPR = Identity Primary Record
-- HBCE = sistema operativo europeo
-- TRAC = layer di continuità/verifica
-- JOKER-C2 = intelligenza esecutiva governata
-- EVT = unità di continuità
-
-⚠️ Se una risposta usa significati “internet-style” → errore architetturale.
+- Next.js App Router
+- API routes server-side
 
 ---
 
-## 7. Regola File (IMPORTANTISSIMA)
+## 7.1 Entry point
 
-Errore attuale: tratti i file come allegati temporanei.
+app/api/chat/route.ts
 
-In realtà:
+Funzione:
 
-> i file SONO il contesto
-
-Quindi:
-
-- i file devono essere salvati
-- devono vivere nella sessione
-- la chat li deve usare automaticamente
-
-Flusso corretto:
-
-UI → /api/files → store sessione → /api/chat → uso automatico
+- ricezione input
+- attivazione runtime
+- risposta EVT-bound
 
 ---
 
-## 8. Regola EVT
+# 8. Fail-Closed Design
 
-EVT NON è log.
+Default:
 
-È:
-
-- continuità cognitiva
-- prova
-- stato
-- memoria minima
-
-Ogni risposta importante:
-
-→ genera EVT  
-→ collega al precedente  
+BLOCK
 
 ---
 
-## 9. Cosa NON è Canonico
+## Trigger
 
-### HTML root (da eliminare / archiviare)
-
-- index.html  
-- interface.html  
-- ipr.html  
-- registry.html  
-- evidence.html  
+- identity missing
+- EVT rotto
+- policy fallita
 
 ---
 
-### API legacy
+# 9. Nodo operativo
 
-- legacy-api/
-- hbce-ai-joker-c2/api/
+JOKER-C2 è un nodo.
 
----
+Caratteristiche:
 
-### File sperimentali
-
-- corpus-core.js  
-- corpus-alien-code.js  
-- search-spec.js  
-- web-search.js  
+- identity-bound
+- verificabile
+- federabile
 
 ---
 
-## 10. Archivio
+## Nodo Torino
 
-Creare:
-
-archive/ legacy/ experimental/
-
-### legacy
-- vecchie pagine
-- vecchie API
-
-### experimental
-- test
-- prototipi
-- codice non integrato
+Primo nodo reale del sistema Matrix Europa.
 
 ---
 
-## 11. Regole di Rifattorizzazione
+# 10. Federation
 
-Sempre:
+Il sistema supporta:
 
-1. partire dal core (lib/joker)
-2. mantenere una sola verità
-3. evitare duplicazioni
-4. evitare logica dentro le route
-5. evitare patch → rifare interi moduli
-6. mantenere ontologia coerente
-7. eliminare superfici inutili
+- multi-node
+- registri distribuiti
+- interoperabilità
 
 ---
 
-## 12. Struttura Finale
+# 11. Deployment
 
-app/ lib/ joker/ runtime/ ledger/ registry/ system/ spec/ docs/
+Target:
 
-archive/ legacy/ experimental/
-
----
-
-## 13. Obiettivo
-
-Questo repo NON è una demo.
-
-È:
-
-> un nodo operativo europeo verificabile  
-> con identità, continuità, prova e governance  
+- Vercel (primary)
+- Node runtime
 
 ---
 
-## 14. Firma
+## Requisiti
 
-HBCE Research  
-HERMETICUM B.C.E. S.r.l.
+- Redis (ledger)
+- storage evidenze
+- chiavi firma
+
+---
+
+# 12. Definizione finale
+
+JOKER-C2 è un nodo operativo identity-bound che integra:
+
+- protocollo HBCE
+- EVT Engine
+- runtime deterministico
+
+per trasformare interazioni in continuità verificabile.
 
 
+---
 
 
 
