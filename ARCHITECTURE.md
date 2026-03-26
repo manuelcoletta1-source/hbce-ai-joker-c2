@@ -1,176 +1,280 @@
-# AI JOKER-C2 — System Architecture
+# AI JOKER-C2 — Architettura Canonica del Repository
 
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
 
 ---
 
-# 1. System Overview
+## 1. Scopo
 
-AI JOKER-C2 è il Coordination Engine del framework HBCE.
+Questo repository definisce l’implementazione canonica di **AI JOKER-C2** come:
 
-Il sistema integra tre elementi principali:
+- nodo operativo a identità vincolata
+- runtime governato
+- sistema con continuità EVT
+- infrastruttura verificabile
+- superficie federabile (Matrix Europa)
 
-- Identity Primary Record (IPR)
-- Joker-C2 Coordination Engine
-- Matrix Europa territorial network
+Principio fondamentale:
 
-L'obiettivo è costruire un ambiente nel quale identità operative, eventi e contesto infrastrutturale possano essere collegati in modo verificabile.
-
----
-
-# 2. Architectural Model
-
-Il modello operativo del sistema segue la sequenza:
-
-Identity → Action → Evidence → Verification
-
-Questo modello consente di collegare:
-
-- identità operative
-- azioni digitali
-- registrazione degli eventi
-- verifica delle informazioni
+> una sola app canonica  
+> un solo runtime canonico  
+> una sola ontologia canonica  
+> una sola continuità EVT  
 
 ---
 
-# 3. System Layers
+## 2. Regola Fondamentale
 
-L'architettura HBCE è organizzata in diversi livelli funzionali.
+Il repository è diviso in 4 categorie:
 
-### Identity Layer
+1. **Runtime canonico**
+2. **Interfaccia canonica**
+3. **Infrastruttura canonica**
+4. **Materiale non canonico (legacy / test / esperimenti)**
 
-Gestisce le identità operative attraverso il modello IPR.
+Solo i primi 3 definiscono il sistema reale.
 
-File principali:
-
-registry/ipr-registry.json
-
----
-
-### Coordination Layer
-
-Joker-C2 opera come motore cognitivo di coordinamento.
-
-Funzioni:
-
-- analisi informazionale
-- correlazione eventi
-- sintesi operativa
-
-File principali:
-
-api/chat.js api/corpus-registry.js
+Tutto il resto NON deve influenzare il comportamento.
 
 ---
 
-### Territorial Layer
+## 3. Superficie Canonica
 
-La Matrix Europa rappresenta la dimensione territoriale del sistema.
+### 3.1 Application Layer (UI)
 
-File principali:
+Cartella:
 
-registry/matrix-europa-grid.json docs/matrix-europa-grid.md
+app/
 
----
+Contiene:
 
-### Event Layer
+- homepage
+- interfaccia chat
+- nodo
+- ipr
+- verify
+- tutte le API
 
-Gli eventi operativi possono essere registrati in registri append-only.
-
-File principale:
-
-registry/events.log.json
-
----
-
-# 4. Joker-C2 Processing Pipeline
-
-Il motore Joker-C2 segue una pipeline di elaborazione.
-
-User Request ↓ Query Normalization ↓ Topic Detection ↓ Corpus Search ↓ Context Assembly ↓ Response Generation
-
-Questa pipeline trasforma richieste in linguaggio naturale in risposte contestualizzate.
+⚠️ Regola:
+I file `.html` in root NON sono più validi.
 
 ---
 
-# 5. Repository Structure
+### 3.2 Runtime / Logica
 
-Il repository è organizzato nei seguenti moduli principali.
+Cartelle:
 
-api/ chat.js corpus-registry.js
+lib/ runtime/ ledger/ registry/ system/
 
-public/ interface.html
+Qui vive tutto ciò che conta davvero:
 
-registry/ ipr-registry.json node-registry.json events.log.json matrix-europa-grid.json
-
-system/ system-manifest.json
-
-docs/ hbce-operational-model.md joker-c2-architecture.md joker-c2-protocol.md matrix-europa-grid.md matrix-europa-100-cities.md matrix-europa-infrastructure-layers.md matrix-europa-vulnerability-map.md
-
----
-
-# 6. Interface Layer
-
-L'interfaccia utente è una console web conversazionale.
-
-File principale:
-
-public/interface.html
-
-L'interfaccia comunica con Joker-C2 attraverso l'endpoint API:
-
-POST /api/chat
+- logica Joker
+- continuità EVT
+- gestione sessioni
+- file
+- nodo
+- verifica
 
 ---
 
-# 7. Matrix Europa Integration
+### 3.3 Cuore Joker (OBBLIGATORIO)
 
-Le richieste Joker-C2 possono essere contestualizzate territorialmente attraverso i nodi Matrix Europa.
+Cartella:
 
-Nodo tecnico principale:
+lib/joker/
 
-HBCE-MATRIX-NODE-0001-TORINO
+Deve contenere:
 
-Nodo istituzionale europeo:
+- `canonical-ontology.ts`
+- `evt-continuity.ts`
+- `session-files.ts`
+- `interpretive-engine.ts`
 
-HBCE-MATRIX-NODE-0010-BRUSSELS
-
----
-
-# 8. System Manifest
-
-Il manifest del sistema descrive la configurazione generale del progetto.
-
-File:
-
-system/system-manifest.json
+⚠️ Nessuna route deve reinventare queste logiche.
 
 ---
 
-# 9. Documentation
+## 4. API Canoniche
 
-La documentazione del sistema è contenuta nella directory `docs/`.
+Cartella:
 
-Include:
+app/api/
 
-- architettura HBCE
-- protocollo Joker-C2
-- rete Matrix Europa
-- analisi infrastrutturale europea
+Endpoint principali:
+
+- `/api/chat`
+- `/api/files`
+- `/api/verify`
+- `/api/network`
+- `/api/evidence`
+- `/api/signature/*`
+
+### Regola API
+
+Le API NON devono:
+
+- pensare
+- contenere logica duplicata
+- diventare monoliti
+
+Devono SOLO:
+
+- normalizzare input
+- chiamare il core
+- salvare EVT
+- rispondere
 
 ---
 
-# 10. Future Development
+## 5. Modello Cognitivo
 
-Le evoluzioni previste includono:
+Pipeline reale di JOKER-C2:
 
-- integrazione ricerca web
-- memoria conversazionale
-- analisi multi-nodo Matrix Europa
-- integrazione con dati infrastrutturali esterni
+input → file sessione → ontologia canonica → continuità EVT → interpretazione → risposta governata → nuovo EVT
+
+Questa è la differenza tra:
+
+❌ chatbot  
+✅ nodo operativo
 
 ---
+
+## 6. Regola Ontologica (CRITICA)
+
+I termini NON sono generici.
+
+Sono vincolati.
+
+Esempi:
+
+- IPR = Identity Primary Record
+- HBCE = sistema operativo europeo
+- TRAC = layer di continuità/verifica
+- JOKER-C2 = intelligenza esecutiva governata
+- EVT = unità di continuità
+
+⚠️ Se una risposta usa significati “internet-style” → errore architetturale.
+
+---
+
+## 7. Regola File (IMPORTANTISSIMA)
+
+Errore attuale: tratti i file come allegati temporanei.
+
+In realtà:
+
+> i file SONO il contesto
+
+Quindi:
+
+- i file devono essere salvati
+- devono vivere nella sessione
+- la chat li deve usare automaticamente
+
+Flusso corretto:
+
+UI → /api/files → store sessione → /api/chat → uso automatico
+
+---
+
+## 8. Regola EVT
+
+EVT NON è log.
+
+È:
+
+- continuità cognitiva
+- prova
+- stato
+- memoria minima
+
+Ogni risposta importante:
+
+→ genera EVT  
+→ collega al precedente  
+
+---
+
+## 9. Cosa NON è Canonico
+
+### HTML root (da eliminare / archiviare)
+
+- index.html  
+- interface.html  
+- ipr.html  
+- registry.html  
+- evidence.html  
+
+---
+
+### API legacy
+
+- legacy-api/
+- hbce-ai-joker-c2/api/
+
+---
+
+### File sperimentali
+
+- corpus-core.js  
+- corpus-alien-code.js  
+- search-spec.js  
+- web-search.js  
+
+---
+
+## 10. Archivio
+
+Creare:
+
+archive/ legacy/ experimental/
+
+### legacy
+- vecchie pagine
+- vecchie API
+
+### experimental
+- test
+- prototipi
+- codice non integrato
+
+---
+
+## 11. Regole di Rifattorizzazione
+
+Sempre:
+
+1. partire dal core (lib/joker)
+2. mantenere una sola verità
+3. evitare duplicazioni
+4. evitare logica dentro le route
+5. evitare patch → rifare interi moduli
+6. mantenere ontologia coerente
+7. eliminare superfici inutili
+
+---
+
+## 12. Struttura Finale
+
+app/ lib/ joker/ runtime/ ledger/ registry/ system/ spec/ docs/
+
+archive/ legacy/ experimental/
+
+---
+
+## 13. Obiettivo
+
+Questo repo NON è una demo.
+
+È:
+
+> un nodo operativo europeo verificabile  
+> con identità, continuità, prova e governance  
+
+---
+
+## 14. Firma
 
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
