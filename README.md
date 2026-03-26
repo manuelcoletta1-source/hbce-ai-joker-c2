@@ -1,320 +1,224 @@
-# AI JOKER-C2
-
-**Identity-Bound Operational AI Application and Torino Pilot Node**
+# AI JOKER-C2  
+## Nodo Operativo a Identità Vincolata — Matrix Europa (Torino Pilot)
 
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
 
 ---
 
-## Overview
+## 1. Definizione
 
-AI JOKER-C2 is the operational AI application of the HBCE ecosystem.
+AI JOKER-C2 è un:
 
-It is not a generic conversational system.
+> **nodo operativo governato, basato su identità, continuità EVT e verificabilità**
 
-It is a **node-aware runtime** that combines:
+Non è:
 
-- identity-bound interaction (IPR logic)
-- governed session execution (C2-Lex)
-- persistent ledger recording (hash-linked events)
-- public verification surface
-- federated network visibility
+- un chatbot
+- un assistente generico
+- una semplice interfaccia AI
 
-The system represents the **first operational instance of a Matrix Europa node**.
+È:
+
+> **un'unità operativa che trasforma input in azione tracciabile, verificabile e governata**
 
 ---
 
-## Core Concept
+## 2. Posizionamento
 
-AI JOKER-C2 operates as:
+JOKER-C2 rappresenta:
 
-> **Application + Runtime + Node**
+- la **prima istanza operativa reale** del framework Matrix Europa
+- un **nodo sperimentale Torino**
+- un **runtime AI con vincoli architetturali forti**
 
-Where:
+Target:
 
-- the **application layer** handles interaction (chat, interface, UI)
-- the **runtime layer** manages governance, sessions, and continuity
-- the **node layer** exposes verification, ledger, and network state
+- B2B
+- B2G
+- istituzioni europee
+- infrastrutture critiche
 
-This fusion defines a new class of system:
+---
+
+## 3. Concetto chiave
+
+Il sistema fonde tre livelli:
+
+### Applicazione
+- interfaccia utente
+- chat
+- input/output
+
+### Runtime
+- governance (C2-Lex)
+- continuità EVT
+- interpretazione
+- policy
+
+### Nodo
+- ledger
+- firma
+- verifica
+- rete
+
+👉 risultato:
 
 > **Identity-Bound Operational Node**
 
 ---
 
-## Architecture Layers
+## 4. Pipeline reale (cuore del sistema)
 
-### 1. Interface Layer
+input → file sessione → ontologia canonica → continuità EVT → interpretazione governata → risposta → nuovo EVT
 
-User interaction surface.
-
-- `/` → homepage
-- `/interface` → chat interface
-- `/node` → node surface
-- `/ipr` → identity layer exploration
+Questo è ciò che lo distingue da qualsiasi AI standard.
 
 ---
 
-### 2. Runtime Layer (JOKER-C2)
+## 5. Architettura
 
-Handles execution logic:
+### Application Layer
 
-- C2-Lex governed sessions
-- intent classification
-- policy enforcement (HBCE Policy Engine)
-- continuity tracking
-- anchor generation (SHA-256)
+app/
 
-Main entrypoints:
-
-- `/api/chat`
-- `/api/c2-lex`
+- UI
+- API (`/api/chat`, `/api/files`, ecc.)
 
 ---
 
-### 3. Node Layer (HBCE Node)
+### Runtime Layer
 
-Represents the operational infrastructure unit.
+lib/ runtime/ ledger/ registry/ system/
 
-Capabilities:
+Gestisce:
 
-- persistent ledger (hash-linked events)
-- signature layer (ED25519)
-- continuity layer (session tracking)
-- public verification
-- network federation
-
-Main endpoints:
-
-- `/api/verify`
-- `/api/network`
-- `/api/evidence`
-- `/api/signature/*`
+- sessioni
+- continuità
+- file
+- nodo
+- verifica
 
 ---
 
-## Node Identity
+### Joker Core (cuore cognitivo)
 
-Node:      HBCE-MATRIX-NODE-0001-TORINO Identity:  IPR-AI-0001 System:    JOKER-C2
+lib/joker/
 
-The node is the first experimental deployment within the **Matrix Europa framework**.
+Contiene:
 
----
+- ontologia
+- EVT
+- gestione file
+- interpretazione
 
-## Key Features
-
-### Identity-Bound Logic
-Every interaction is linked to:
-
-- session
-- continuity reference
-- node context
+⚠️ Questo è il cervello del sistema.
 
 ---
 
-### Governed Execution (C2-Lex)
-All requests are classified into:
+## 6. API principali
 
-- consultation
-- explanation
-- procedure
-- decision support
-- escalation
-- blocked activation
-
-No implicit execution is allowed.
+- `/api/chat` → interpretazione
+- `/api/files` → ingestione documenti
+- `/api/verify` → verifica stato nodo
+- `/api/network` → rete nodi
+- `/api/evidence` → export prova
+- `/api/signature/*` → firma
 
 ---
 
-### Persistent Ledger
-Each relevant event is:
+## 7. Modello EVT
 
-- appended to a Redis-backed ledger
-- hash-linked (SHA-256)
-- traceable
-- auditable
+EVT è:
 
----
+- continuità
+- prova
+- stato
+- memoria minima
 
-### Verification Surface
-Public verification endpoint:
+Ogni risposta significativa:
 
-GET /api/verify
+- genera EVT
+- collega al precedente
 
-Provides:
-
-- ledger integrity
-- continuity status
-- signature availability
-- recent ledger tail
+👉 crea una **catena verificabile**
 
 ---
 
-### Federation Layer
-Network endpoint:
+## 8. Modello File
 
-GET /api/network
+I file NON sono allegati.
 
-Provides:
+Sono:
 
-- node registry
-- federation status
-- live probes
-- reachability
+> **contesto operativo vivo**
 
----
+Flusso:
 
-### Evidence Export
-
-GET /api/evidence
-
-Exports:
-
-- signed evidence pack
-- ledger tail
-- cryptographic signature
+UI → /api/files → sessione → /api/chat
 
 ---
 
-## Cryptographic Model
+## 9. Modello crittografico
 
-- Hashing: SHA-256
-- Signatures: ED25519
-- Payload serialization: stable deterministic JSON
+- Hash: SHA-256
+- Firma: ED25519
+- JSON deterministico
 
-Each output can be:
+Ogni output può essere:
 
-- hashed (anchor)
-- signed (federation / evidence)
-- verified externally
-
----
-
-## Continuity Model
-
-Each session produces:
-
-- `sessionId`
-- `continuityReference`
-- timeline events
-- governance checks
-
-Continuity ensures:
-
-- traceability
-- replay capability
-- audit alignment
+- ancorato
+- firmato
+- verificato
 
 ---
 
-## Node Runtime Integration
+## 10. Deployment
 
-All major flows pass through:
+Stack:
 
-runNodeRuntime(...)
-
-This ensures:
-
-- session governance
-- continuity update
-- ledger persistence
-- node-level traceability
-
----
-
-## Development Stack
-
-- Next.js (App Router)
+- Next.js
 - TypeScript
 - OpenAI API
-- Upstash Redis (ledger + memory)
-- Vercel Blob (evidence storage)
+- Upstash Redis
+- Vercel
+
+Ambiente:
+
+- runtime Node.js obbligatorio
+- Edge disabilitato per crypto
 
 ---
 
-## Deployment
+## 11. Variabili ambiente
 
-Recommended:
-
-- Vercel (primary)
-- Edge-compatible APIs disabled where cryptography required
-- Node.js runtime enforced
+OPENAI_API_KEY= UPSTASH_REDIS_REST_URL= UPSTASH_REDIS_REST_TOKEN= JOKER_SIGN_PRIVATE_KEY= JOKER_SIGN_PUBLIC_KEY= NEXT_PUBLIC_BASE_URL=
 
 ---
 
-## Environment Variables
+## 12. Direzione futura
 
-Required:
-
-OPENAI_API_KEY=
-
-UPSTASH_REDIS_REST_URL= UPSTASH_REDIS_REST_TOKEN=
-
-JOKER_SIGN_PRIVATE_KEY= JOKER_SIGN_PUBLIC_KEY=
-
-NEXT_PUBLIC_BASE_URL=
-
-Optional (federation):
-
-HBCE_NODE_BRUXELLES_URL= HBCE_NODE_BERLIN_URL=
+- rete nodi europei (100 città)
+- federazione
+- pesatura trust automatica
+- integrazione sistemi autonomi
+- Matrix Europa
 
 ---
 
-## Operational Positioning
+## 13. Definizione finale
 
-AI JOKER-C2 is designed for:
+AI JOKER-C2 è:
 
-- B2B
-- B2G
-- institutional environments
-
-It is aligned with:
-
-- EU governance logic
-- audit-first architecture
-- no-custody principles
-- verifiable infrastructure design
+> **un nodo operativo europeo con intelligenza vincolata, continuità verificabile e governance computabile**
 
 ---
 
-## Conceptual Definition
-
-AI JOKER-C2 is not:
-
-- a chatbot
-- a personal assistant
-- a generic AI interface
-
-It is:
-
-> **a governed operational node with identity-bound intelligence**
-
----
-
-## Future Direction
-
-Planned evolution:
-
-- multi-node federation (EU cities)
-- expanded network probes
-- automated trust weighting
-- integration with robotics and autonomous systems
-- Matrix Europa deployment (100 cities target)
-
----
-
-## License
-
-Proprietary — HBCE Research  
-HERMETICUM B.C.E. S.r.l.
-
----
-
-## Signature
+## 14. Firma
 
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
+
 
 
 
