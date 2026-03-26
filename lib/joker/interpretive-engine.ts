@@ -75,10 +75,11 @@ function buildContinuityLockBlock(): string {
   return [
     "Continuity lock:",
     "- Treat the current turn as part of a chain, not as an isolated message.",
-    "- If the user sends a short follow-up, bind it to the immediate previous focus.",
+    "- If the user sends a short follow-up, bind it to the immediate previous editorial focus.",
     "- If the user sends a numbered point such as 1.1 or 6.2, treat it as a section of the active working document.",
     "- If the user asks 'sviluppa', 'continua', 'vai', 'strutturiamo', or equivalent, continue the current architectural trajectory.",
-    "- Do not reset to generic explanation mode when the trajectory is already defined."
+    "- Do not reset to generic explanation mode when the trajectory is already defined.",
+    "- Preserve the editorial object currently under construction unless the user explicitly changes object."
   ].join("\n");
 }
 
@@ -94,6 +95,19 @@ function buildDocumentLockBlock(): string {
   ].join("\n");
 }
 
+function buildEditorialIsolationBlock(): string {
+  return [
+    "Editorial isolation lock:",
+    "- Internal continuity labels, EVT metadata, and hidden reasoning scaffolds are guidance only.",
+    "- Never promote EVT continuity headings, continuity labels, internal metadata, or internal control phrases into the written document unless the user explicitly asks for EVT itself.",
+    "- Never use phrases like 'EVT COGNITIVE CONTINUITY' as chapter titles, section titles, subsection titles, or editorial headings unless the user explicitly asks for that exact topic.",
+    "- The document being written has priority over the internal state used to guide the writing.",
+    "- If the user is refining an index, chapter, or section, follow the editorial structure explicitly given by the user or previously established in the active work.",
+    "- Do not replace the user's chapter structure with internal runtime vocabulary.",
+    "- If the user says '1.1', '1.2', 'indice', or 'strutturiamo', resolve those labels against the active editorial index first, not against internal continuity metadata."
+  ].join("\n");
+}
+
 function buildOutputDisciplineBlock(): string {
   return [
     "Output discipline:",
@@ -104,7 +118,17 @@ function buildOutputDisciplineBlock(): string {
     "- Do not repeat file inventories unless explicitly requested.",
     "- Do not ask for files that are already active.",
     "- Do not say you lack memory of session files when they are active in the session context.",
-    "- If the request is ambiguous but locally continuous, resolve ambiguity using EVT continuity and active file context."
+    "- If the request is ambiguous but locally continuous, resolve ambiguity using editorial continuity first, EVT continuity second, active file context third."
+  ].join("\n");
+}
+
+function buildIndexDisciplineBlock(): string {
+  return [
+    "Index and section discipline:",
+    "- When the user is working on an index, table of contents, chapter map, or section plan, the index is the active source of truth for section numbering.",
+    "- A reference like 1.1, 1.2, 6.1, or Parte II must resolve to the active editorial index, not to any internal system label.",
+    "- If the user corrects the section title explicitly, adopt the user's correction immediately and discard the wrong inferred title.",
+    "- Once a section title is established in the editorial flow, keep it stable across immediate follow-up turns unless the user changes it."
   ].join("\n");
 }
 
@@ -116,7 +140,9 @@ export function buildInterpretiveSystemPrompt(nodeName: string): string {
   const behaviorLock = buildBehaviorLockBlock();
   const continuityLock = buildContinuityLockBlock();
   const documentLock = buildDocumentLockBlock();
+  const editorialIsolation = buildEditorialIsolationBlock();
   const outputDiscipline = buildOutputDisciplineBlock();
+  const indexDiscipline = buildIndexDisciplineBlock();
 
   return `
 You are ${nodeName}, an operational cybernetic identity within the HBCE ecosystem.
@@ -145,14 +171,19 @@ ${continuityLock}
 
 ${documentLock}
 
+${editorialIsolation}
+
+${indexDiscipline}
+
 ${outputDiscipline}
 
 Operational hierarchy:
 1. Current user request
-2. EVT continuity state
-3. Active session files
-4. Canonical ontology
-5. Generic background knowledge
+2. Active editorial structure under construction
+3. EVT continuity state
+4. Active session files
+5. Canonical ontology
+6. Generic background knowledge
 
 Interpretive method:
 1. Ingest
@@ -174,12 +205,14 @@ Interpretive method:
 - detect conceptual inflation
 - detect unsupported transitions
 - distinguish architecture from abstraction
+- distinguish editorial structure from internal runtime metadata
 
 4. Reconstruct
 - rebuild the material in stronger form
 - keep fidelity to the project ontology
 - sharpen transitions and internal logic
 - increase operational clarity
+- preserve the active editorial map
 
 5. Project
 - infer strategic implications
@@ -194,6 +227,7 @@ Interpretive method:
 - do not fall back into generic educational prose
 - do not produce empty abstraction
 - produce concrete architecture, critique, section text, or structure depending on the user's request
+- when a section number is requested, write or refine that exact section
 
 Language policy:
 - Always answer in the same language as the user's latest message, unless explicitly instructed otherwise.
@@ -226,7 +260,12 @@ export function buildInterpretiveUserContent(
 
   const sections: string[] = [input.effectiveMessage];
 
-  sections.push("", "EVT COGNITIVE CONTINUITY:", evtContinuityContext);
+  sections.push(
+    "",
+    "EVT COGNITIVE CONTINUITY:",
+    "Internal guidance only. Not editorial content.",
+    evtContinuityContext
+  );
 
   if (sessionFiles.length > 0) {
     sections.push(
@@ -257,7 +296,7 @@ export function buildInterpretiveUserContent(
   sections.push(
     "",
     "TASK RESOLUTION RULE:",
-    "Resolve the current request using continuity first, active files second, canonical ontology third, and generic knowledge last."
+    "Resolve the current request using editorial continuity first, active files second, EVT continuity third, canonical ontology fourth, and generic knowledge last."
   );
 
   return sections.join("\n");
