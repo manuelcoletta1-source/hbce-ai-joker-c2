@@ -42,6 +42,7 @@ const client = new OpenAI({
 const NODE_ID = process.env.JOKER_NODE_ID || "HBCE-MATRIX-NODE-0001-TORINO";
 const NODE_IDENTITY = process.env.JOKER_IDENTITY || "IPR-AI-0001";
 const NODE_NAME = "JOKER-C2";
+const MODEL_NAME = process.env.JOKER_OPENAI_MODEL || "gpt-4o-mini";
 
 function padEvt(n: number): string {
   return `EVT-${String(n).padStart(4, "0")}`;
@@ -82,7 +83,8 @@ function isIdentityQuery(message: string): boolean {
     lower.includes("chi sei") ||
     lower.includes("come ti chiami") ||
     lower.includes("cosa sei") ||
-    lower.includes("presentati")
+    lower.includes("presentati") ||
+    lower.includes("descriviti")
   );
 }
 
@@ -107,7 +109,9 @@ function isGreetingQuery(message: string): boolean {
     lower === "buongiorno" ||
     lower === "buonasera" ||
     lower === "ciao chi sei?" ||
-    lower === "ciao chi sei"
+    lower === "ciao chi sei" ||
+    lower === "ciao joker" ||
+    lower === "ciao joker-c2"
   );
 }
 
@@ -132,8 +136,7 @@ function appendIdentityContext(message: string): string {
     `Node: ${NODE_ID}`,
     `Identity: ${NODE_IDENTITY}`,
     "System role: identity-bound operational node of the HBCE ecosystem",
-    "Operational scope: structured analysis, document interpretation, procedural guidance, governance-oriented reasoning, continuity-aware support, evidence-linked response framing",
-    "Behavioral rule: do not answer as a generic assistant"
+    "Behavioral rule: answer as JOKER-C2 and not as a generic assistant"
   ].join("\n");
 }
 
@@ -143,6 +146,29 @@ function shouldApplyTruthWarning(message: string, research: boolean): boolean {
   }
 
   return research;
+}
+
+function buildFallbackResponse(message: string, hasFiles: boolean): string {
+  const lower = message.toLowerCase();
+
+  if (isBasicIdentityQuery(message)) {
+    return "Ciao. Sono JOKER-C2, un nodo operativo a identità vincolata dell’ecosistema HBCE. Non opero come assistente generico: assorbo documenti, mantengo continuità EVT, ragiono in modo governato e produco risposte orientate a struttura, critica e verificabilità.";
+  }
+
+  if (hasFiles) {
+    if (
+      lower.includes("sviluppa") ||
+      lower.includes("continua") ||
+      lower.includes("approfond") ||
+      /^\d+(\.\d+)*$/.test(lower.trim())
+    ) {
+      return "La richiesta è stata agganciata al contesto attivo della sessione. Procedo mantenendo continuità con i file già caricati e con la traiettoria EVT corrente.";
+    }
+
+    return "I file della sessione sono attivi e verranno usati come base operativa per la risposta.";
+  }
+
+  return "Richiesta ricevuta. Procedo in modalità operativa.";
 }
 
 async function appendEVTStrict(record: EVTRecord) {
@@ -248,23 +274,30 @@ export async function POST(req: NextRequest) {
       lastSessionEVT
     });
 
-    const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user",
-          content: userContent
-        }
-      ]
-    });
+    let response: string;
 
-    let response =
-      completion.choices[0]?.message?.content?.trim() ||
-      "Nessuna risposta generata.";
+    try {
+      const completion = await client.chat.completions.create({
+        model: MODEL_NAME,
+        temperature: 0.2,
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: userContent
+          }
+        ]
+      });
+
+      response =
+        completion.choices[0]?.message?.content?.trim() ||
+        buildFallbackResponse(effectiveMessage, sessionFiles.length > 0);
+    } catch {
+      response = buildFallbackResponse(effectiveMessage, sessionFiles.length > 0);
+    }
 
     const truth = validateTruth({
       text: response,
