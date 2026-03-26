@@ -25,6 +25,8 @@ type SelectedAttachment = {
   text?: string;
   content?: string;
   note?: string;
+  uploaded?: boolean;
+  role?: "context" | "corpus" | "single" | "reference" | "evidence" | "temporary";
 };
 
 type ApiResponse = {
@@ -193,6 +195,7 @@ function isTextReadableFile(file: File) {
     name.endsWith(".txt") ||
     name.endsWith(".md") ||
     name.endsWith(".json") ||
+    name.endsWith(".csv") ||
     file.type.startsWith("text/")
   );
 }
@@ -202,7 +205,9 @@ async function mapSelectedFile(file: File): Promise<SelectedAttachment> {
     id: makeId(),
     name: file.name,
     type: file.type || "unknown",
-    size: file.size
+    size: file.size,
+    uploaded: false,
+    role: "context" as const
   };
 
   if (!isTextReadableFile(file)) {
@@ -229,6 +234,42 @@ async function mapSelectedFile(file: File): Promise<SelectedAttachment> {
       content: "",
       note: "Read failed in client runtime."
     };
+  }
+}
+
+async function ingestFilesToSession(
+  sessionId: string,
+  files: SelectedAttachment[]
+): Promise<void> {
+  const filesToUpload = files.filter((item) => !item.uploaded);
+
+  if (filesToUpload.length === 0) {
+    return;
+  }
+
+  const response = await fetch("/api/files", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    },
+    body: JSON.stringify({
+      sessionId,
+      files: filesToUpload.map((item) => ({
+        id: item.id,
+        name: item.name,
+        mimeType: item.type,
+        text: item.text || "",
+        content: item.content || "",
+        role: item.role || "context"
+      }))
+    })
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok || !data?.ok) {
+    throw new Error(data?.error || "File ingestion failed");
   }
 }
 
@@ -289,12 +330,6 @@ export default function InterfacePage() {
   }, [messages, sending]);
 
   const turns = useMemo(() => messages.length, [messages]);
-  const activeCorpusLabel =
-    attachments.length > 0
-      ? `Corpus attivo: ${attachments.length} document${
-          attachments.length === 1 ? "o" : "i"
-        }`
-      : "Corpus attivo: nessun documento";
 
   function clearConversation() {
     const newSession = makeSessionId();
@@ -344,7 +379,27 @@ export default function InterfacePage() {
     event.target.value = "";
   }
 
-  function removeAttachment(id: string) {
+  async function removeAttachment(id: string) {
+    const target = attachments.find((item) => item.id === id);
+
+    if (target?.uploaded) {
+      try {
+        await fetch(
+          `/api/files?sessionId=${encodeURIComponent(
+            sessionId
+          )}&fileId=${encodeURIComponent(id)}`,
+          {
+            method: "DELETE",
+            headers: {
+              Accept: "application/json"
+            }
+          }
+        );
+      } catch (error) {
+        console.error("File removal failed:", error);
+      }
+    }
+
     setAttachments((prev) => prev.filter((item) => item.id !== id));
   }
 
@@ -357,7 +412,7 @@ export default function InterfacePage() {
       role: "user",
       content:
         attachments.length > 0
-          ? `${message || "[Allegati selezionati]"}\n\nAllegati attivi:\n${attachments
+          ? `${message || "[Allegati selezionati]"}\n\nFile attivi:\n${attachments
               .map((item) => `- ${item.name} (${formatBytes(item.size)})`)
               .join("\n")}`
           : message
@@ -369,7 +424,14 @@ export default function InterfacePage() {
     setStatus("Processing");
 
     try {
-      console.log("ATTACHMENTS DEBUG", attachments);
+      await ingestFilesToSession(sessionId, attachments);
+
+      setAttachments((prev) =>
+        prev.map((item) => ({
+          ...item,
+          uploaded: true
+        }))
+      );
 
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -378,18 +440,11 @@ export default function InterfacePage() {
           Accept: "application/json"
         },
         body: JSON.stringify({
-          message: message || "Analizza gli allegati attivi della sessione.",
+          message: message || "Usa i file attivi della sessione come contesto di lavoro.",
           sessionId,
           role: "Operatore supervisionato",
           nodeContext: DEFAULT_NODE,
-          continuityReference: `${sessionId}-AUDIT`,
-          attachments: attachments.map((item) => ({
-            id: item.id,
-            name: item.name,
-            mimeType: item.type,
-            text: item.text || "",
-            content: item.content || ""
-          }))
+          continuityReference: `${sessionId}-AUDIT`
         })
       });
 
@@ -407,13 +462,7 @@ export default function InterfacePage() {
       }
 
       const cleaned = cleanAssistantResponse(data.response || "");
-      const corpusNotice =
-        attachments.length > 0
-          ? `\n\n[Corpus attivo nella sessione: ${attachments.length} document${
-              attachments.length === 1 ? "o" : "i"
-            }]`
-          : "";
-      const assistantText = `${cleaned}${corpusNotice}${formatSources(data.sources)}`;
+      const assistantText = `${cleaned}${formatSources(data.sources)}`;
 
       const assistantMessage: ChatMessage = {
         id: makeId(),
@@ -559,7 +608,7 @@ export default function InterfacePage() {
               </div>
 
               <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Active Attachments</div>
+                <div style={styles.metaLabel}>Active Files</div>
                 <div style={styles.metaValue}>{String(attachments.length)}</div>
               </div>
 
@@ -580,8 +629,7 @@ export default function InterfacePage() {
           <section style={styles.sidebarCard}>
             <div style={styles.cardTitle}>Runtime Model</div>
             <div style={styles.infoText}>
-              request → session → continuity → memory → corpus reasoning →
-              response → audit → evt
+              request → session → files → reasoning → response → audit → evt
             </div>
           </section>
         </aside>
@@ -594,7 +642,6 @@ export default function InterfacePage() {
               <p style={styles.chatSubtitle}>
                 Interfaccia conversazionale operativa collegata al nodo Torino.
               </p>
-              <div style={styles.corpusBanner}>{activeCorpusLabel}</div>
             </div>
           </header>
 
@@ -704,10 +751,13 @@ export default function InterfacePage() {
                 <div style={styles.attachmentsWrap}>
                   {attachments.map((item) => (
                     <div key={item.id} style={styles.attachmentChip}>
-                      <span style={styles.attachmentName}>{item.name}</span>
+                      <span style={styles.attachmentName}>
+                        {item.name}
+                        {item.uploaded ? " · active" : " · pending"}
+                      </span>
                       <button
                         type="button"
-                        onClick={() => removeAttachment(item.id)}
+                        onClick={() => void removeAttachment(item.id)}
                         style={styles.attachmentRemove}
                         aria-label={`Rimuovi ${item.name}`}
                       >
@@ -885,20 +935,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: "rgba(232,238,247,0.70)",
     fontSize: 14
   },
-  corpusBanner: {
-    marginTop: 12,
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    border: "1px solid rgba(125,211,252,0.22)",
-    background: "rgba(125,211,252,0.08)",
-    color: "#cfefff",
-    borderRadius: 999,
-    padding: "8px 12px",
-    fontSize: 12,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase"
-  },
   messagesWrap: {
     padding: "24px 28px 140px",
     overflowY: "auto",
@@ -1023,7 +1059,7 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
-    maxWidth: 220
+    maxWidth: 260
   },
   attachmentRemove: {
     border: "none",
