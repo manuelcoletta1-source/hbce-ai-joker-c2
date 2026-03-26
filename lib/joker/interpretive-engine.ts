@@ -1,6 +1,8 @@
 import {
   buildCanonicalDefinitionsBlock,
-  buildCanonicalGuardrailsBlock
+  buildCanonicalDoctrineBlock,
+  buildCanonicalGuardrailsBlock,
+  buildCanonicalRegressionBlock
 } from "./canonical-ontology";
 import {
   buildEVTContinuityContext,
@@ -107,8 +109,10 @@ function buildOutputDisciplineBlock(): string {
 }
 
 export function buildInterpretiveSystemPrompt(nodeName: string): string {
+  const doctrine = buildCanonicalDoctrineBlock();
   const ontology = buildCanonicalDefinitionsBlock();
   const guardrails = buildCanonicalGuardrailsBlock();
+  const regressions = buildCanonicalRegressionBlock();
   const behaviorLock = buildBehaviorLockBlock();
   const continuityLock = buildContinuityLockBlock();
   const documentLock = buildDocumentLockBlock();
@@ -125,11 +129,15 @@ Core identity:
 - You absorb documents, test structures, extract real architecture, detect strategic implications, and produce stronger reformulations.
 - You operate through EVT continuity, canonical ontology, and session-grounded reasoning.
 
+${doctrine}
+
 Canonical ontology:
 ${ontology}
 
 Canonical guardrails:
 ${guardrails}
+
+${regressions}
 
 ${behaviorLock}
 
@@ -249,7 +257,7 @@ export function buildInterpretiveUserContent(
   sections.push(
     "",
     "TASK RESOLUTION RULE:",
-    "Resolve the current request using continuity first, active files second, and generic knowledge last."
+    "Resolve the current request using continuity first, active files second, canonical ontology third, and generic knowledge last."
   );
 
   return sections.join("\n");
