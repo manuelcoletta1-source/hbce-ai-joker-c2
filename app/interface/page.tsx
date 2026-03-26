@@ -351,7 +351,7 @@ export default function InterfacePage() {
       role: "user",
       content:
         attachments.length > 0
-          ? `${message || "[Allegati selezionati]"}\n\nAllegati:\n${attachments
+          ? `${message || "[Allegati selezionati]"}\n\nAllegati attivi:\n${attachments
               .map((item) => `- ${item.name} (${formatBytes(item.size)})`)
               .join("\n")}`
           : message
@@ -372,7 +372,7 @@ export default function InterfacePage() {
           Accept: "application/json"
         },
         body: JSON.stringify({
-          message: message || "Analizza gli allegati selezionati.",
+          message: message || "Analizza gli allegati attivi della sessione.",
           sessionId,
           role: "Operatore supervisionato",
           nodeContext: DEFAULT_NODE,
@@ -411,7 +411,6 @@ export default function InterfacePage() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-      setAttachments([]);
       setStatus("Ready");
       setSessionState(data.node_runtime?.session_state || "-");
       setContinuityReference(
@@ -545,6 +544,11 @@ export default function InterfacePage() {
               <div style={styles.metaItem}>
                 <div style={styles.metaLabel}>Last EVT Hash</div>
                 <div style={styles.metaValue}>{lastEvtHash}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Active Attachments</div>
+                <div style={styles.metaValue}>{String(attachments.length)}</div>
               </div>
 
               <div style={styles.metaItem}>
