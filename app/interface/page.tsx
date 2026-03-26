@@ -289,6 +289,12 @@ export default function InterfacePage() {
   }, [messages, sending]);
 
   const turns = useMemo(() => messages.length, [messages]);
+  const activeCorpusLabel =
+    attachments.length > 0
+      ? `Corpus attivo: ${attachments.length} document${
+          attachments.length === 1 ? "o" : "i"
+        }`
+      : "Corpus attivo: nessun documento";
 
   function clearConversation() {
     const newSession = makeSessionId();
@@ -401,7 +407,13 @@ export default function InterfacePage() {
       }
 
       const cleaned = cleanAssistantResponse(data.response || "");
-      const assistantText = `${cleaned}${formatSources(data.sources)}`;
+      const corpusNotice =
+        attachments.length > 0
+          ? `\n\n[Corpus attivo nella sessione: ${attachments.length} document${
+              attachments.length === 1 ? "o" : "i"
+            }]`
+          : "";
+      const assistantText = `${cleaned}${corpusNotice}${formatSources(data.sources)}`;
 
       const assistantMessage: ChatMessage = {
         id: makeId(),
@@ -582,6 +594,7 @@ export default function InterfacePage() {
               <p style={styles.chatSubtitle}>
                 Interfaccia conversazionale operativa collegata al nodo Torino.
               </p>
+              <div style={styles.corpusBanner}>{activeCorpusLabel}</div>
             </div>
           </header>
 
@@ -871,6 +884,20 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 0,
     color: "rgba(232,238,247,0.70)",
     fontSize: 14
+  },
+  corpusBanner: {
+    marginTop: 12,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    border: "1px solid rgba(125,211,252,0.22)",
+    background: "rgba(125,211,252,0.08)",
+    color: "#cfefff",
+    borderRadius: 999,
+    padding: "8px 12px",
+    fontSize: 12,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase"
   },
   messagesWrap: {
     padding: "24px 28px 140px",
