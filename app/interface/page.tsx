@@ -363,6 +363,8 @@ export default function InterfacePage() {
     setStatus("Processing");
 
     try {
+      console.log("ATTACHMENTS DEBUG", attachments);
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
