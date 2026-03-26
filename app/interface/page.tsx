@@ -273,6 +273,19 @@ async function ingestFilesToSession(
   }
 }
 
+async function clearSessionFiles(sessionId: string): Promise<void> {
+  try {
+    await fetch(`/api/files?sessionId=${encodeURIComponent(sessionId)}`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json"
+      }
+    });
+  } catch (error) {
+    console.error("Session file cleanup failed:", error);
+  }
+}
+
 export default function InterfacePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -331,8 +344,11 @@ export default function InterfacePage() {
 
   const turns = useMemo(() => messages.length, [messages]);
 
-  function clearConversation() {
+  async function clearConversation() {
+    const oldSessionId = sessionId;
     const newSession = makeSessionId();
+
+    await clearSessionFiles(oldSessionId);
 
     setMessages([
       {
@@ -523,7 +539,7 @@ export default function InterfacePage() {
               <div style={styles.sidebarTitle}>JOKER-C2</div>
             </div>
 
-            <button onClick={clearConversation} style={styles.newChatButton}>
+            <button onClick={() => void clearConversation()} style={styles.newChatButton}>
               Nuova sessione
             </button>
           </div>
