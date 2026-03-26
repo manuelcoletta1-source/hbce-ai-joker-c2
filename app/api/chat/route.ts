@@ -17,17 +17,22 @@ import {
   readEVTLedger,
   type EVTRecord
 } from "../../../lib/evt-registry";
-import {
-  buildContinuityPayload,
-  getLastSessionEVTContinuity,
-  serializeContinuityPayload
-} from "../../../lib/joker/evt-continuity";
 import { getSessionFiles } from "../../../lib/joker/session-files";
 import {
   buildInterpretiveSystemPrompt,
   buildInterpretiveUserContent,
   type ChatAttachment
 } from "../../../lib/joker/interpretive-engine";
+import {
+  attachEVTToState,
+  buildDefaultJokerState,
+  buildJokerStatePromptBlock,
+  evolveJokerState,
+  persistJokerState,
+  recoverStateFromEVTLedger,
+  serializeJokerEVTPayload,
+  type JokerSessionState
+} from "../../../lib/joker/evt-engine";
 
 type ChatBody = {
   message?: string;
@@ -148,11 +153,26 @@ function shouldApplyTruthWarning(message: string, research: boolean): boolean {
   return research;
 }
 
-function buildFallbackResponse(message: string, hasFiles: boolean): string {
+function buildFallbackResponse(
+  message: string,
+  hasFiles: boolean,
+  state: JokerSessionState
+): string {
   const lower = message.toLowerCase();
 
+  if (state.identity.biologicalName && lower.includes("come mi chiamo")) {
+    return `Ti chiami ${state.identity.biologicalName}. Identità biologica già agganciata allo stato operativo della sessione.`;
+  }
+
+  if (
+    state.identity.biologicalName &&
+    (lower.includes("chi sono io") || lower.includes("io chi sono"))
+  ) {
+    return `Sei ${state.identity.biologicalName}, entità biologica della sessione attiva.${state.identity.biologicalIPR ? ` IPR: ${state.identity.biologicalIPR}.` : ""}`;
+  }
+
   if (isBasicIdentityQuery(message)) {
-    return "Ciao. Sono JOKER-C2, un nodo operativo a identità vincolata dell’ecosistema HBCE. Non opero come assistente generico: assorbo documenti, mantengo continuità EVT, ragiono in modo governato e produco risposte orientate a struttura, critica e verificabilità.";
+    return "Ciao. Sono JOKER-C2, nodo operativo a identità vincolata dell’ecosistema HBCE. Non opero come assistente generico: mantengo continuità EVT, assorbo file attivi, ragiono in modo governato e trasformo il lavoro in stati operativi verificabili.";
   }
 
   if (hasFiles) {
@@ -162,10 +182,10 @@ function buildFallbackResponse(message: string, hasFiles: boolean): string {
       lower.includes("approfond") ||
       /^\d+(\.\d+)*$/.test(lower.trim())
     ) {
-      return "La richiesta è stata agganciata al contesto attivo della sessione. Procedo mantenendo continuità con i file già caricati e con la traiettoria EVT corrente.";
+      return "La richiesta è stata agganciata al contesto editoriale e ai file attivi della sessione. Procedo mantenendo continuità con stato, sezione e traiettoria EVT correnti.";
     }
 
-    return "I file della sessione sono attivi e verranno usati come base operativa per la risposta.";
+    return "I file attivi della sessione sono stati mantenuti come contesto operativo dominante.";
   }
 
   return "Richiesta ricevuta. Procedo in modalità operativa.";
@@ -241,7 +261,19 @@ export async function POST(req: NextRequest) {
     }
 
     const ledger = await readEVTLedger();
-    const lastSessionEVT = getLastSessionEVTContinuity(ledger, sessionId);
+    const recoveredState =
+      recoverStateFromEVTLedger(ledger, sessionId) ||
+      buildDefaultJokerState(sessionId);
+
+    const stateContext = evolveJokerState({
+      sessionId,
+      userMessage: effectiveMessage,
+      previousState: recoveredState
+    });
+
+    persistJokerState(stateContext.current);
+
+    const statePromptBlock = buildJokerStatePromptBlock(stateContext);
     const causality = resolveCausality(effectiveMessage);
     const research = attachments.length > 0 || sessionFiles.length > 0;
 
@@ -265,13 +297,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const systemPrompt = buildInterpretiveSystemPrompt(NODE_NAME);
+    const systemPrompt = [
+      buildInterpretiveSystemPrompt(NODE_NAME),
+      "",
+      "RUNTIME STATE BLOCK:",
+      statePromptBlock
+    ].join("\n");
+
     const userContent = buildInterpretiveUserContent({
       nodeName: NODE_NAME,
       effectiveMessage,
       attachments,
       sessionFiles,
-      lastSessionEVT
+      lastSessionEVT: null
     });
 
     let response: string;
@@ -294,9 +332,17 @@ export async function POST(req: NextRequest) {
 
       response =
         completion.choices[0]?.message?.content?.trim() ||
-        buildFallbackResponse(effectiveMessage, sessionFiles.length > 0);
+        buildFallbackResponse(
+          effectiveMessage,
+          sessionFiles.length > 0,
+          stateContext.current
+        );
     } catch {
-      response = buildFallbackResponse(effectiveMessage, sessionFiles.length > 0);
+      response = buildFallbackResponse(
+        effectiveMessage,
+        sessionFiles.length > 0,
+        stateContext.current
+      );
     }
 
     const truth = validateTruth({
@@ -308,6 +354,13 @@ export async function POST(req: NextRequest) {
     if (truth.decision === "WARN" && shouldApplyTruthWarning(message, research)) {
       response = `[TRUTH WARNING] ${response}`;
     }
+
+    const evolvedAfterResponse = evolveJokerState({
+      sessionId,
+      userMessage: effectiveMessage,
+      assistantMessage: response,
+      previousState: stateContext.current
+    });
 
     const runtimeEnd = await finalizeNodeRuntime({
       sessionId,
@@ -329,11 +382,7 @@ export async function POST(req: NextRequest) {
     const last = ledger.length > 0 ? ledger[ledger.length - 1] : null;
     const evtId = padEvt(ledger.length + 1);
 
-    const continuityPayload = buildContinuityPayload({
-      sessionId,
-      effectiveMessage,
-      response
-    });
+    const stateWithEVT = attachEVTToState(evolvedAfterResponse.current, evtId);
 
     const base: EVTRecord = {
       evt: evtId,
@@ -364,8 +413,11 @@ export async function POST(req: NextRequest) {
         elapsed_months: ledger.length,
         origin_lock: "EVT-0008",
         origin_ipr: "IPR-AI-0001",
-        rule: "fail-closed runtime with cognitive continuity",
-        note: serializeContinuityPayload(continuityPayload)
+        rule: "fail-closed runtime with joker evt engine v1",
+        note: serializeJokerEVTPayload({
+          sessionId,
+          state: stateWithEVT
+        })
       }
     };
 
@@ -393,6 +445,13 @@ export async function POST(req: NextRequest) {
         hash: evtSaved.anchors.monthly_hash
       },
       node_runtime: runtimeEnd,
+      joker_state: {
+        sessionId: stateWithEVT.sessionId,
+        identity: stateWithEVT.identity,
+        work: stateWithEVT.work,
+        lastEVT: stateWithEVT.lastEVT,
+        updatedAt: stateWithEVT.updatedAt
+      },
       active_files: sessionFiles.map((file) => ({
         id: file.id,
         name: file.name,
