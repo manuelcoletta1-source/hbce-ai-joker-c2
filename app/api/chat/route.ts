@@ -28,9 +28,11 @@ import {
   buildDefaultJokerState,
   buildJokerStatePromptBlock,
   evolveJokerState,
+  markJokerStateBroken,
   persistJokerState,
   recoverStateFromEVTLedger,
   serializeJokerEVTPayload,
+  validateRecoveredContinuity,
   type JokerSessionState
 } from "../../../lib/joker/evt-engine";
 
@@ -101,7 +103,8 @@ function isCapabilityQuery(message: string): boolean {
     lower.includes("potenzialita") ||
     lower.includes("capacità") ||
     lower.includes("capacita") ||
-    lower.includes("cosa fai")
+    lower.includes("cosa fai") ||
+    lower.includes("potenzial")
   );
 }
 
@@ -160,8 +163,11 @@ function buildFallbackResponse(
 ): string {
   const lower = message.toLowerCase();
 
-  if (state.identity.biologicalName && lower.includes("come mi chiamo")) {
-    return `Ti chiami ${state.identity.biologicalName}. Identità biologica già agganciata allo stato operativo della sessione.`;
+  if (
+    state.identity.biologicalName &&
+    (lower.includes("come mi chiamo") || lower.includes("joker io come mi chiamo"))
+  ) {
+    return `Ti chiami ${state.identity.biologicalName}. Identità biologica già agganciata allo stato operativo della sessione.${state.identity.biologicalIPR ? ` IPR: ${state.identity.biologicalIPR}.` : ""}`;
   }
 
   if (
@@ -169,6 +175,12 @@ function buildFallbackResponse(
     (lower.includes("chi sono io") || lower.includes("io chi sono"))
   ) {
     return `Sei ${state.identity.biologicalName}, entità biologica della sessione attiva.${state.identity.biologicalIPR ? ` IPR: ${state.identity.biologicalIPR}.` : ""}`;
+  }
+
+  if (lower.includes("quale è il progetto attivo") || lower.includes("qual è il progetto attivo")) {
+    return state.work.activeProject
+      ? `Il progetto attivo è ${state.work.activeProject}.`
+      : "Non è ancora stato fissato un progetto attivo nella sessione.";
   }
 
   if (isBasicIdentityQuery(message)) {
@@ -261,9 +273,10 @@ export async function POST(req: NextRequest) {
     }
 
     const ledger = await readEVTLedger();
-    const recoveredState =
-      recoverStateFromEVTLedger(ledger, sessionId) ||
-      buildDefaultJokerState(sessionId);
+    const recoveredState = validateRecoveredContinuity(
+      recoverStateFromEVTLedger(ledger, sessionId),
+      sessionId
+    ) || buildDefaultJokerState(sessionId);
 
     const stateContext = evolveJokerState({
       sessionId,
@@ -287,11 +300,21 @@ export async function POST(req: NextRequest) {
     });
 
     if (policy.blocked) {
+      const broken = markJokerStateBroken(sessionId, stateContext.current);
+
       return NextResponse.json(
         {
           ok: false,
           error: "Blocked by policy",
-          causality
+          causality,
+          joker_state: {
+            sessionId: broken.sessionId,
+            identity: broken.identity,
+            work: broken.work,
+            lastEVT: broken.lastEVT,
+            continuityStatus: broken.continuityStatus,
+            updatedAt: broken.updatedAt
+          }
         },
         { status: 403 }
       );
@@ -362,6 +385,8 @@ export async function POST(req: NextRequest) {
       previousState: stateContext.current
     });
 
+    persistJokerState(evolvedAfterResponse.current);
+
     const runtimeEnd = await finalizeNodeRuntime({
       sessionId,
       assistantResponse: response,
@@ -369,11 +394,21 @@ export async function POST(req: NextRequest) {
     });
 
     if (!runtimeEnd.ledger_valid) {
+      const broken = markJokerStateBroken(sessionId, evolvedAfterResponse.current);
+
       return NextResponse.json(
         {
           ok: false,
           error: "Ledger invalid after execution (fail-closed)",
-          node_runtime: runtimeEnd
+          node_runtime: runtimeEnd,
+          joker_state: {
+            sessionId: broken.sessionId,
+            identity: broken.identity,
+            work: broken.work,
+            lastEVT: broken.lastEVT,
+            continuityStatus: broken.continuityStatus,
+            updatedAt: broken.updatedAt
+          }
         },
         { status: 503 }
       );
@@ -450,6 +485,7 @@ export async function POST(req: NextRequest) {
         identity: stateWithEVT.identity,
         work: stateWithEVT.work,
         lastEVT: stateWithEVT.lastEVT,
+        continuityStatus: stateWithEVT.continuityStatus,
         updatedAt: stateWithEVT.updatedAt
       },
       active_files: sessionFiles.map((file) => ({
