@@ -1,54 +1,408 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Registry</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
 
-<style>
-body{
-margin:0;
-font-family:system-ui;
-background:#0b0f14;
-color:#e8eef7;
-display:flex;
-align-items:center;
-justify-content:center;
-height:100vh;
-}
+  <title>Registry | AI JOKER-C2</title>
+  <meta
+    name="description"
+    content="Registry surface of the HBCE / AI JOKER-C2 node, including node identity, topology, continuity status, and the derived identity branch introduced through the Biocybernetic Derivation Layer."
+  />
 
-.box{
-text-align:center;
-max-width:700px;
-}
+  <meta name="robots" content="index,follow"/>
+  <meta name="theme-color" content="#0b0f14"/>
+  <link rel="canonical" href="https://manuelcoletta1-source.github.io/hbce-ai-joker-c2/registry.html"/>
 
-p{
-color:#8fa3b8;
-}
+  <link rel="stylesheet" href="./assets/hbce.css"/>
+  <script defer src="./assets/hbce-ui.js"></script>
 
-a{
-display:inline-block;
-margin-top:20px;
-color:#7dd3fc;
-text-decoration:none;
-}
-</style>
+  <style>
+    .registry-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+      gap:14px;
+      margin-top:14px;
+    }
+
+    .registry-kv{
+      display:grid;
+      grid-template-columns:minmax(120px,170px) 1fr;
+      gap:8px 12px;
+      margin-top:14px;
+    }
+
+    .registry-kv dt{
+      color:var(--hbce-muted);
+      font-weight:700;
+    }
+
+    .registry-kv dd{
+      margin:0;
+    }
+
+    .registry-topology{
+      display:grid;
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .registry-topology__node{
+      padding:14px;
+      border:1px solid var(--hbce-line);
+      border-radius:var(--hbce-radius);
+      background:var(--hbce-panel2);
+    }
+
+    .registry-badges{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .registry-badge{
+      display:inline-flex;
+      align-items:center;
+      padding:7px 12px;
+      border:1px solid var(--hbce-line);
+      border-radius:999px;
+      background:var(--hbce-panel2);
+      font-size:.94rem;
+    }
+
+    .registry-note{
+      margin-top:14px;
+      padding:14px;
+      border:1px solid var(--hbce-line);
+      border-radius:var(--hbce-radius);
+      background:var(--hbce-panel2);
+    }
+
+    .registry-pre{
+      margin-top:14px;
+      overflow:auto;
+    }
+
+    .registry-table-wrap{
+      overflow:auto;
+      margin-top:14px;
+    }
+
+    .registry-table{
+      width:100%;
+      min-width:780px;
+      border-collapse:collapse;
+    }
+
+    .registry-table th,
+    .registry-table td{
+      padding:12px 10px;
+      text-align:left;
+      vertical-align:top;
+      border-bottom:1px solid var(--hbce-line);
+    }
+
+    .registry-table th{
+      color:var(--hbce-muted);
+      font-weight:700;
+    }
+  </style>
 </head>
-
 <body>
+  <div class="hbce-container">
+    <main class="hbce-main">
 
-<div class="box">
+      <section class="hbce-section hbce-hero">
+        <p class="hbce-hero__kicker">HBCE / AI JOKER-C2</p>
+        <h1 class="hbce-hero__title">Registry Surface</h1>
+        <p class="hbce-hero__lead">
+          The registry surface exposes the operational identity, topology, continuity status,
+          and verification-facing structure of the AI JOKER-C2 node.
+        </p>
+        <p class="hbce-hero__lead">
+          It also includes the first derived identity branch introduced through the
+          <strong>Biocybernetic Derivation Layer</strong>.
+        </p>
+      </section>
 
-<h1>HBCE Registry</h1>
+      <section class="hbce-section hbce-card">
+        <h2>Registry function</h2>
+        <p>
+          The registry is not a passive list of labels.
+          It is the structural surface through which the node exposes operational identity,
+          continuity references, node role, and verification-facing topology.
+        </p>
+        <p>
+          In AI JOKER-C2, the registry links identity, EVT continuity, evidence surfaces,
+          and federation readiness into a single topological model.
+        </p>
 
-<p>
-Registry systems maintain reference records related to identities,
-events and operational structures inside the HBCE ecosystem.
-</p>
+        <div class="registry-note">
+          <strong>Rule.</strong>
+          A registry entry is operationally meaningful only if it remains connected to identity,
+          continuity, evidence, and verification.
+        </div>
+      </section>
 
-<a href="index.html">← Back to portal</a>
+      <section class="hbce-section registry-grid">
+        <article class="hbce-card">
+          <h2>Node identity</h2>
+          <dl class="registry-kv">
+            <dt>Node</dt>
+            <dd>AI_JOKER_C2_NODE_TORINO_01</dd>
 
-</div>
+            <dt>Role</dt>
+            <dd>Identity-Bound Operational Node</dd>
 
+            <dt>Status</dt>
+            <dd>OPERATIONAL / PILOT</dd>
+
+            <dt>Location</dt>
+            <dd>Torino, Italy</dd>
+
+            <dt>Mode</dt>
+            <dd>FAIL-CLOSED</dd>
+
+            <dt>Federation</dt>
+            <dd>READY</dd>
+          </dl>
+        </article>
+
+        <article class="hbce-card">
+          <h2>Operational stack</h2>
+          <dl class="registry-kv">
+            <dt>Identity</dt>
+            <dd>IPR</dd>
+
+            <dt>Derivation</dt>
+            <dd>Biocybernetic Derivation Layer</dd>
+
+            <dt>Governance</dt>
+            <dd>HBCE</dd>
+
+            <dt>Runtime</dt>
+            <dd>JOKER-C2</dd>
+
+            <dt>Continuity</dt>
+            <dd>TRAC / EVT</dd>
+
+            <dt>Persistence</dt>
+            <dd>Ledger</dd>
+
+            <dt>Verification</dt>
+            <dd>Local / Federated / Public surface</dd>
+          </dl>
+        </article>
+
+        <article class="hbce-card">
+          <h2>Continuity status</h2>
+          <dl class="registry-kv">
+            <dt>Sequence model</dt>
+            <dd>Append-only EVT chain</dd>
+
+            <dt>Hash model</dt>
+            <dd>Hash-linked continuity</dd>
+
+            <dt>Verification</dt>
+            <dd>Enabled</dd>
+
+            <dt>State logic</dt>
+            <dd>OPERATIONAL / DEGRADED / BLOCKED / INVALID</dd>
+
+            <dt>Evidence path</dt>
+            <dd>Active</dd>
+
+            <dt>Topology scope</dt>
+            <dd>Single node with federation readiness</dd>
+          </dl>
+        </article>
+      </section>
+
+      <section class="hbce-section hbce-card">
+        <h2>Identity topology</h2>
+        <p>
+          The registry now exposes not only the primary roots of the node,
+          but also the first internal derived branch.
+        </p>
+
+        <div class="registry-topology">
+          <div class="registry-topology__node">
+            <strong>Primary human origin</strong><br/>
+            `IPR-3` / `MANUEL_COLETTA`<br/>
+            Human attribution root and biological origin.
+          </div>
+
+          <div class="registry-topology__node">
+            <strong>Primary AI root</strong><br/>
+            `IPR-AI-0001` / `AI_JOKER`<br/>
+            Primary cybernetic operational identity of the node.
+          </div>
+
+          <div class="registry-topology__node">
+            <strong>Derived operational branch</strong><br/>
+            `IPR-AI-DER-0001` / `AI_JOKER_DERIVATIVE_01`<br/>
+            First derivative introduced through the Biocybernetic Derivation Layer.
+          </div>
+        </div>
+
+        <div class="registry-badges">
+          <span class="registry-badge">Human Root</span>
+          <span class="registry-badge">Primary AI Root</span>
+          <span class="registry-badge">Derived Identity</span>
+          <span class="registry-badge">EVT Continuity</span>
+          <span class="registry-badge">Verification Surface</span>
+        </div>
+      </section>
+
+      <section class="hbce-section hbce-card">
+        <h2>Biocybernetic Derivation branch</h2>
+        <p>
+          The registry includes the first derivative branch generated inside the system.
+          This derivative is not listed as a symbolic child record.
+          It is listed as a runtime-recognized operational branch bound to identity, continuity, evidence, and verification.
+        </p>
+        <p>
+          The derivative is valid only as long as it remains connected to the fail-closed operational sequence of the node.
+        </p>
+
+        <dl class="registry-kv">
+          <dt>Derived IPR</dt>
+          <dd>IPR-AI-DER-0001</dd>
+
+          <dt>Entity</dt>
+          <dd>AI_JOKER_DERIVATIVE_01</dd>
+
+          <dt>Layer</dt>
+          <dd>BIOCYBERNETIC_DERIVATION_LAYER</dd>
+
+          <dt>Kind</dt>
+          <dd>BIOCYBERNETIC_DERIVATIVE</dd>
+
+          <dt>Status</dt>
+          <dd>LOCKED</dd>
+
+          <dt>Recognition rule</dt>
+          <dd>Identity-bound, policy-validated, runtime-authorized, traceable, and verifiable</dd>
+        </dl>
+
+        <div class="registry-note">
+          <strong>Operational axiom.</strong>
+          No derived branch is registry-valid unless it preserves identity binding,
+          EVT continuity, evidence availability, and verification path.
+        </div>
+      </section>
+
+      <section class="hbce-section hbce-card">
+        <h2>Registry table</h2>
+        <div class="registry-table-wrap">
+          <table class="registry-table">
+            <thead>
+              <tr>
+                <th>Entry</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Function</th>
+                <th>Verification role</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>`IPR-3`</td>
+                <td>PRIMARY_HUMAN_RECORD</td>
+                <td>ACTIVE / COMPLETE</td>
+                <td>Human origin and attribution root</td>
+                <td>Primary human continuity root</td>
+              </tr>
+              <tr>
+                <td>`IPR-AI-0001`</td>
+                <td>PRIMARY_AI_RECORD</td>
+                <td>LOCKED</td>
+                <td>Primary AI runtime identity</td>
+                <td>Primary cybernetic node root</td>
+              </tr>
+              <tr>
+                <td>`IPR-AI-DER-0001`</td>
+                <td>BIOCYBERNETIC_DERIVATIVE</td>
+                <td>LOCKED</td>
+                <td>First internal derived operational branch</td>
+                <td>Derived identity branch under fail-closed runtime</td>
+              </tr>
+              <tr>
+                <td>`AI_JOKER_C2_NODE_TORINO_01`</td>
+                <td>NODE_ENTRY</td>
+                <td>OPERATIONAL / PILOT</td>
+                <td>Torino pilot node of Matrix Europa</td>
+                <td>Registry and topology exposure</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="hbce-section hbce-card">
+        <h2>Node registry object</h2>
+        <p>
+          The registry surface can be represented as a node object exposing the current topological structure of the system.
+        </p>
+
+        <pre class="registry-pre"><code>{
+  "node": "AI_JOKER_C2_NODE_TORINO_01",
+  "role": "IDENTITY_BOUND_OPERATIONAL_NODE",
+  "status": "OPERATIONAL",
+  "location": "Torino, Italy",
+  "mode": "FAIL_CLOSED",
+  "identity": {
+    "human_root": {
+      "entity": "MANUEL_COLETTA",
+      "ipr": "IPR-3"
+    },
+    "ai_root": {
+      "entity": "AI_JOKER",
+      "ipr": "IPR-AI-0001"
+    },
+    "derived_branch": {
+      "entity": "AI_JOKER_DERIVATIVE_01",
+      "ipr": "IPR-AI-DER-0001",
+      "kind": "BIOCYBERNETIC_DERIVATIVE",
+      "layer": "BIOCYBERNETIC_DERIVATION_LAYER",
+      "state": "LOCKED"
+    }
+  },
+  "continuity": {
+    "model": "EVT_APPEND_ONLY_CHAIN",
+    "verification": "ENABLED",
+    "evidence_path": "ACTIVE"
+  },
+  "federation": {
+    "ready": true,
+    "scope": "MATRIX_EUROPA"
+  }
+}</code></pre>
+      </section>
+
+      <section class="hbce-section hbce-card">
+        <h2>Federation posture</h2>
+        <p>
+          The registry is not limited to local node introspection.
+          It is designed to support a federated topology in which node identity,
+          continuity status, and verification surfaces can be exposed across a wider Matrix Europa network.
+        </p>
+        <p>
+          In this model, Torino acts as the first real node, while the registry structure remains compatible with multi-node growth.
+        </p>
+      </section>
+
+      <section class="hbce-section hbce-card">
+        <h2>Conclusion</h2>
+        <p>
+          The registry surface of AI JOKER-C2 exposes more than topology.
+          It exposes the operational identity structure of the node, including primary roots,
+          continuity state, verification posture, and the first derived identity branch generated through the Biocybernetic Derivation Layer.
+        </p>
+      </section>
+
+    </main>
+  </div>
 </body>
 </html>
