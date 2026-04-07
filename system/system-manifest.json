@@ -1,80 +1,144 @@
 {
-  "system": "AI JOKER-C2",
-  "framework": "HBCE",
-  "organization": "HERMETICUM B.C.E. S.r.l.",
-  "maintainer": "HBCE Research",
+  "name": "AI JOKER-C2",
   "version": "1.0.0",
-  "updated_at": "2026-03-16T00:00:00Z",
-
+  "org": "HERMETICUM B.C.E. S.r.l.",
+  "research": "HBCE Research",
+  "classification": "IDENTITY_BOUND_OPERATIONAL_NODE",
+  "status": "OPERATIONAL_PILOT",
+  "location": {
+    "city": "Torino",
+    "country": "Italy",
+    "scope": "Matrix Europa"
+  },
+  "purpose": "Governed operational node for identity-bound runtime execution, EVT continuity, verifiable evidence, fail-closed control, and derivative-aware legitimacy.",
+  "stack": {
+    "identity_layer": "IPR",
+    "derivation_layer": "BIOCYBERNETIC_DERIVATION_LAYER",
+    "governance_layer": "HBCE",
+    "runtime_layer": "JOKER_C2",
+    "continuity_layer": "TRAC_EVT",
+    "ledger_layer": "APPEND_ONLY_LEDGER",
+    "verification_layer": "HASH_SIGNATURE_VERIFICATION",
+    "federation_layer": "MATRIX_EUROPA_NODE_TOPOLOGY"
+  },
   "identity": {
-    "ipr_id": "IPR-AI-0001",
-    "type": "AI Coordination Engine",
-    "domain": "HBCE"
-  },
-
-  "architecture": {
-    "model": "identity → action → evidence → verification",
-    "layers": [
-      "IPR Identity Layer",
-      "Event Registry",
-      "Joker-C2 Coordination Engine",
-      "UFO Functional Modules",
-      "Lambda Stability Layer"
-    ]
-  },
-
-  "components": {
-    "interface": {
-      "type": "web-chat",
-      "entry_point": "public/interface.html"
+    "human_root": {
+      "entity": "MANUEL_COLETTA",
+      "ipr": "IPR-3",
+      "type": "PRIMARY_HUMAN_RECORD",
+      "status": "ACTIVE_COMPLETE"
     },
-
-    "api": {
-      "chat_endpoint": "api/chat.js",
-      "runtime": "node"
+    "ai_root": {
+      "entity": "AI_JOKER",
+      "ipr": "IPR-AI-0001",
+      "type": "PRIMARY_AI_RECORD",
+      "status": "LOCKED"
     },
-
-    "corpus": {
-      "registry": "api/corpus-registry.js",
-      "topics": [
-        "joker-c2",
-        "ipr",
-        "matrix-europa",
-        "ufo",
-        "lambda",
-        "campi-operativi"
-      ]
+    "derived_branch": {
+      "entity": "AI_JOKER_DERIVATIVE_01",
+      "ipr": "IPR-AI-DER-0001",
+      "type": "BIOCYBERNETIC_DERIVATIVE",
+      "status": "LOCKED",
+      "layer": "BIOCYBERNETIC_DERIVATION_LAYER",
+      "recognition_rule": "Valid only under identity binding, policy validation, runtime authorization, EVT continuity, evidence generation, and verification."
     }
   },
-
-  "registries": {
-    "ipr_registry": "registry/ipr-registry.json",
-    "node_registry": "registry/node-registry.json",
-    "event_registry": "registry/events.log.json",
-    "matrix_registry": "registry/matrix-europa-grid.json"
+  "runtime": {
+    "mode": "FAIL_CLOSED",
+    "sequence": [
+      "IDENTITY",
+      "INPUT",
+      "INTENT",
+      "POLICY",
+      "RISK",
+      "DECISION",
+      "EXECUTION",
+      "EVT",
+      "LEDGER",
+      "VERIFICATION",
+      "CONTINUITY"
+    ],
+    "decision_outputs": [
+      "ALLOW",
+      "BLOCK",
+      "ESCALATE"
+    ],
+    "state_model": [
+      "OPERATIONAL",
+      "DEGRADED",
+      "BLOCKED",
+      "INVALID"
+    ]
   },
-
-  "matrix_europa": {
-    "primary_node": "HBCE-MATRIX-NODE-0001-TORINO",
-    "institutional_node": "HBCE-MATRIX-NODE-0010-BRUSSELS",
-    "grid_model": "10x10 European node grid"
+  "evt": {
+    "model": "APPEND_ONLY_HASH_LINKED_CONTINUITY",
+    "minimum_fields": [
+      "evt",
+      "prev",
+      "t",
+      "entity",
+      "ipr",
+      "kind",
+      "state",
+      "decision",
+      "anchors"
+    ],
+    "rule": "No EVT, no continuity. No continuity, no trusted operational state."
   },
-
-  "documents": [
-    "docs/hbce-operational-model.md",
-    "docs/matrix-europa-grid.md",
-    "docs/matrix-europa-100-cities.md",
-    "docs/matrix-europa-infrastructure-layers.md",
-    "docs/matrix-europa-vulnerability-map.md"
-  ],
-
-  "execution_flow": [
-    "user_request",
-    "joker_interface",
-    "ipr_identity_layer",
-    "joker_c2_engine",
-    "matrix_context",
-    "event_registry",
-    "response_generation"
-  ]
+  "evidence": {
+    "mode": "STRUCTURED_OPERATIONAL_PROOF",
+    "properties": [
+      "identity_bound",
+      "evt_linked",
+      "append_only",
+      "hash_linked",
+      "verifiable",
+      "persistent"
+    ],
+    "rule": "No evidence, no operational existence. No verification, no recognized persistence."
+  },
+  "verification": {
+    "levels": [
+      "LOCAL",
+      "FEDERATED",
+      "PUBLIC_PROOF_SURFACE"
+    ],
+    "methods": [
+      "HASH_VALIDATION",
+      "SIGNATURE_VALIDATION",
+      "CHAIN_INTEGRITY_CHECK"
+    ]
+  },
+  "federation": {
+    "node_id": "AI_JOKER_C2_NODE_TORINO_01",
+    "role": "FIRST_OPERATIONAL_MATRIX_EUROPA_NODE",
+    "ready": true,
+    "future_scope": [
+      "ITALY_TERRITORIAL_SCALING",
+      "BRUSSELS_COORDINATION",
+      "EU_FEDERATED_TOPOLOGY"
+    ]
+  },
+  "security": {
+    "posture": "FAIL_CLOSED",
+    "principles": [
+      "NO_VALIDATION_NO_EXECUTION",
+      "NO_CONTINUITY_NO_TRUSTED_STATE",
+      "NO_EVIDENCE_NO_OPERATIONAL_EXISTENCE",
+      "NO_VERIFICATION_NO_RECOGNIZED_PERSISTENCE"
+    ]
+  },
+  "deployment": {
+    "primary_target": "VERCEL",
+    "runtime": "NODE_JS",
+    "requirements": [
+      "OPENAI_API_KEY",
+      "UPSTASH_REDIS_REST_URL",
+      "UPSTASH_REDIS_REST_TOKEN",
+      "JOKER_SIGN_PRIVATE_KEY",
+      "JOKER_SIGN_PUBLIC_KEY",
+      "NEXT_PUBLIC_BASE_URL"
+    ]
+  },
+  "final_definition": "AI JOKER-C2 is an identity-bound operational node that integrates governed runtime, Biocybernetic Derivation Layer, EVT continuity, verifiable evidence, fail-closed execution, and federation-ready topology."
 }
