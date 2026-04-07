@@ -14,9 +14,9 @@ function buildNodeObject() {
     posture: corpusCore.NODE_PROFILE.posture,
     stack: corpusCore.HBCE_STACK,
     identity: {
-      human_root: corpusCore.IDENTITY_ROOTS.human_root,
-      ai_root: corpusCore.IDENTITY_ROOTS.ai_root,
-      derived_root: corpusCore.IDENTITY_ROOTS.derived_root
+      human_root: corpusCore.IDENTITY_LINEAGE.human_root,
+      ai_root: corpusCore.IDENTITY_LINEAGE.ai_root,
+      derived_root: corpusCore.IDENTITY_LINEAGE.derived_root
     },
     continuity: {
       sequence: corpusCore.RUNTIME_SEQUENCE,
@@ -47,18 +47,18 @@ function buildTopology() {
     identity_topology: [
       {
         layer: "PRIMARY_HUMAN_ROOT",
-        ipr: corpusCore.IDENTITY_ROOTS.human_root.ipr,
-        entity: corpusCore.IDENTITY_ROOTS.human_root.entity
+        ipr: corpusCore.IDENTITY_LINEAGE.human_root.ipr,
+        entity: corpusCore.IDENTITY_LINEAGE.human_root.entity
       },
       {
         layer: "PRIMARY_AI_ROOT",
-        ipr: corpusCore.IDENTITY_ROOTS.ai_root.ipr,
-        entity: corpusCore.IDENTITY_ROOTS.ai_root.entity
+        ipr: corpusCore.IDENTITY_LINEAGE.ai_root.ipr,
+        entity: corpusCore.IDENTITY_LINEAGE.ai_root.entity
       },
       {
         layer: "DERIVED_OPERATIONAL_BRANCH",
-        ipr: corpusCore.IDENTITY_ROOTS.derived_root.ipr,
-        entity: corpusCore.IDENTITY_ROOTS.derived_root.entity,
+        ipr: corpusCore.IDENTITY_LINEAGE.derived_root.ipr,
+        entity: corpusCore.IDENTITY_LINEAGE.derived_root.entity,
         derivation_layer: corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code
       }
     ],
