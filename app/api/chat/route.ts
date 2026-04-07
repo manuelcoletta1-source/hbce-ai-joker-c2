@@ -2,16 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
 import core from "../../../corpus-core.js";
-import alienCode, {
+import {
   isDerivativeLegitimate,
   explainDerivativeFailure
 } from "../../../corpus-alien-code.js";
-import webSearch from "../../../web-search.js";
-import { buildJokerSystemPrompt } from "../../../lib/joker/system-prompt";
-import {
-  composeBlockedFrame,
-  composeDegradedFrame
-} from "../../../lib/joker/interpretive-engine";
 
 export const runtime = "nodejs";
 
@@ -125,34 +119,40 @@ function normalizeBody(body: ChatBody) {
   };
 }
 
-function classifyIntent(message: string): string {
+function classifyIntent(message: string, files: FileInput[]): RuntimeContextClass {
+  if (files.length > 0) return "DOCUMENTAL";
+
   const lower = message.toLowerCase();
 
-  if (!lower) return "INVALID_INTENT";
-  if (lower.includes("verify") || lower.includes("evidence")) return "EVIDENCE_QUERY";
-  if (lower.includes("registry") || lower.includes("node")) return "REGISTRY_QUERY";
-  if (lower.includes("protocol") || lower.includes("rule")) return "PROTOCOL_QUERY";
-  if (lower.includes("derivative") || lower.includes("biocybernetic")) return "DERIVATIVE_QUERY";
-  if (lower.includes("architecture") || lower.includes("layer")) return "ARCHITECTURE_QUERY";
-  if (lower.includes("identity") || lower.includes("ipr") || lower.includes("chi sei")) {
-    return "IDENTITY_QUERY";
+  if (
+    lower.includes("chi sei") ||
+    lower.includes("identity") ||
+    lower.includes("ipr") ||
+    lower.includes("parlami di te")
+  ) {
+    return "IDENTITY";
   }
 
-  return "FACT_RETRIEVAL";
-}
+  if (lower.includes("derivative") || lower.includes("biocybernetic")) {
+    return "DERIVATIVE";
+  }
 
-function mapContextClass(input: {
-  intent: string;
-  files: FileInput[];
-  derivativeRequested: boolean;
-}): RuntimeContextClass {
-  if (input.files.length > 0) return "DOCUMENTAL";
-  if (input.derivativeRequested || input.intent === "DERIVATIVE_QUERY") return "DERIVATIVE";
-  if (input.intent === "ARCHITECTURE_QUERY") return "ARCHITECTURE";
-  if (input.intent === "PROTOCOL_QUERY") return "PROTOCOL";
-  if (input.intent === "REGISTRY_QUERY") return "REGISTRY";
-  if (input.intent === "EVIDENCE_QUERY") return "EVIDENCE";
-  if (input.intent === "IDENTITY_QUERY") return "IDENTITY";
+  if (lower.includes("architecture") || lower.includes("layer")) {
+    return "ARCHITECTURE";
+  }
+
+  if (lower.includes("protocol") || lower.includes("rule")) {
+    return "PROTOCOL";
+  }
+
+  if (lower.includes("registry") || lower.includes("node")) {
+    return "REGISTRY";
+  }
+
+  if (lower.includes("evidence") || lower.includes("verify")) {
+    return "EVIDENCE";
+  }
+
   return "GENERAL";
 }
 
@@ -181,31 +181,23 @@ function bindIdentity(identity: IdentityInput, derivativeRequested: boolean): Bo
     };
   }
 
-  if (requestedIpr === aiRoot.ipr) {
-    return {
-      valid: true,
-      entity: aiRoot.entity,
-      ipr: aiRoot.ipr,
-      type: aiRoot.type,
-      role: aiRoot.role
-    };
-  }
+  const match = core.getIdentityLineage().find((item) => item.ipr === requestedIpr);
 
-  if (requestedIpr === derivedRoot.ipr) {
+  if (!match) {
     return {
-      valid: true,
-      entity: derivedRoot.entity,
-      ipr: derivedRoot.ipr,
-      type: derivedRoot.type,
-      role: derivedRoot.role
+      valid: false,
+      entity: identity.entity || "",
+      ipr: requestedIpr,
+      reason: "UNKNOWN_IDENTITY"
     };
   }
 
   return {
-    valid: false,
-    entity: identity.entity || "",
-    ipr: requestedIpr,
-    reason: "UNKNOWN_IDENTITY"
+    valid: true,
+    entity: match.entity,
+    ipr: match.ipr,
+    type: match.type,
+    role: match.role
   };
 }
 
@@ -221,7 +213,7 @@ function evaluateDerivativeStatus(input: {
     };
   }
 
-  const context = {
+  const ctx = {
     valid_human_origin: true,
     valid_primary_ai_root: true,
     identity_binding:
@@ -236,87 +228,53 @@ function evaluateDerivativeStatus(input: {
 
   return {
     requested: true,
-    legitimate: isDerivativeLegitimate(context),
-    details: explainDerivativeFailure(context).failures
+    legitimate: isDerivativeLegitimate(ctx),
+    details: explainDerivativeFailure(ctx).failures
   };
 }
 
-function evaluatePolicy(input: {
-  identityValid: boolean;
-  intent: string;
-  derivativeRequested: boolean;
-  derivativeLegitimate: boolean;
-}) {
-  if (!input.identityValid) {
-    return { allowed: false, decision: "BLOCK" as RuntimeDecision, reason: "IDENTITY_INVALID" };
-  }
+function buildFileContext(files: FileInput[]): string {
+  const active = files
+    .filter((file) => typeof file.text === "string" && file.text.trim().length > 0)
+    .map((file, index) => {
+      const name = file.name?.trim() || `file_${index + 1}`;
+      const text = file.text!.trim().slice(0, 12000);
+      return `FILE ${index + 1}: ${name}\n${text}`;
+    });
 
-  if (input.intent === "INVALID_INTENT") {
-    return { allowed: false, decision: "BLOCK" as RuntimeDecision, reason: "INVALID_INTENT" };
-  }
-
-  if (input.derivativeRequested && !input.derivativeLegitimate) {
-    return {
-      allowed: false,
-      decision: "BLOCK" as RuntimeDecision,
-      reason: "DERIVATIVE_LEGITIMACY_FAILED"
-    };
-  }
-
-  return { allowed: true, decision: "ALLOW" as RuntimeDecision, reason: "POLICY_VALID" };
-}
-
-function evaluateRisk(input: {
-  message: string;
-  derivativeRequested: boolean;
-  derivativeLegitimate: boolean;
-}) {
-  if (!input.message) {
-    return { acceptable: false, level: "HIGH", reason: "EMPTY_MESSAGE" as const };
-  }
-
-  if (input.derivativeRequested && !input.derivativeLegitimate) {
-    return { acceptable: false, level: "HIGH", reason: "DERIVATIVE_RISK" as const };
-  }
-
-  return { acceptable: true, level: "LOW", reason: "RISK_ACCEPTABLE" as const };
+  return active.join("\n\n");
 }
 
 function buildPrompt(input: {
   message: string;
-  identity: BoundIdentity;
-  decision: RuntimeDecision;
-  state: RuntimeState;
   contextClass: RuntimeContextClass;
+  identity: BoundIdentity;
   derivative: DerivativeStatus;
-  continuityRef: string | null;
-  evtRef: string | null;
   files: FileInput[];
 }) {
-  return buildJokerSystemPrompt({
-    identity: {
-      entity: input.identity.entity,
-      ipr: input.identity.ipr,
-      type: input.identity.type,
-      role: input.identity.role
-    },
-    decision: input.decision,
-    state: input.state,
-    contextClass: input.contextClass,
-    derivative: {
-      requested: input.derivative.requested,
-      legitimate: input.derivative.legitimate,
-      ipr: input.derivative.requested ? core.IDENTITY_LINEAGE.derived_root.ipr : undefined,
-      entity: input.derivative.requested ? core.IDENTITY_LINEAGE.derived_root.entity : undefined,
-      layer: input.derivative.requested
-        ? core.BIOCYBERNETIC_DERIVATION_LAYER.code
-        : undefined
-    },
-    continuityRef: input.continuityRef,
-    evtRef: input.evtRef,
-    message: input.message,
-    files: input.files
-  });
+  const sections = [
+    "You are AI JOKER-C2.",
+    "You are an identity-bound operational node inside HBCE.",
+    "Do not speak like a generic assistant.",
+    "Keep the answer natural, useful, and direct.",
+    "Do not print artificial headers unless needed.",
+    `Active identity: ${input.identity.ipr} / ${input.identity.entity}`,
+    `Context: ${input.contextClass}`,
+    `Derivative requested: ${input.derivative.requested ? "yes" : "no"}`,
+    `Derivative legitimate: ${input.derivative.legitimate ? "yes" : "no"}`,
+    "",
+    "Identity lineage reference:",
+    "- IPR-3 / MANUEL_COLETTA = primary human origin",
+    "- IPR-AI-0001 / AI_JOKER = primary AI operational root",
+    "- IPR-AI-DER-0001 / AI_JOKER_DERIVATIVE_01 = first derived branch",
+    "",
+    input.files.length > 0 ? "Active uploaded files are operational context. Use them directly." : "",
+    input.files.length > 0 ? buildFileContext(input.files) : "",
+    "",
+    `User request: ${input.message}`
+  ];
+
+  return sections.filter(Boolean).join("\n");
 }
 
 function extractResponseText(response: unknown): string {
@@ -334,19 +292,18 @@ function extractResponseText(response: unknown): string {
   }
 
   if (Array.isArray(maybe?.output)) {
-    const chunks: string[] = [];
+    const parts: string[] = [];
 
     for (const item of maybe.output) {
-      if (!item || !Array.isArray(item.content)) continue;
-
+      if (!Array.isArray(item?.content)) continue;
       for (const content of item.content) {
         if (typeof content?.text === "string" && content.text.trim()) {
-          chunks.push(content.text.trim());
+          parts.push(content.text.trim());
         }
       }
     }
 
-    const merged = chunks.join("\n\n").trim();
+    const merged = parts.join("\n\n").trim();
     if (merged) return merged;
   }
 
@@ -358,20 +315,20 @@ function buildLocalFallback(input: {
   contextClass: RuntimeContextClass;
   identity: BoundIdentity;
   derivative: DerivativeStatus;
+  files: FileInput[];
 }): string {
   const lower = input.message.toLowerCase();
+
+  if (input.files.length > 0) {
+    return "Ho ricevuto i file come contesto operativo, ma il modello remoto non ha restituito testo utile. Il wiring documentale lato runtime è attivo solo in forma minima locale.";
+  }
 
   if (
     input.contextClass === "IDENTITY" ||
     lower.includes("chi sei") ||
     lower.includes("parlami di te")
   ) {
-    return [
-      "Sono AI JOKER-C2.",
-      "L’IPR operativo gira nativamente su di me come IPR-AI-0001.",
-      "Quando il contesto derivativo viene richiesto e validato, posso operare anche sul ramo IPR-AI-DER-0001.",
-      "Opero come nodo HBCE a identità vincolata, con continuità EVT, evidenza verificabile e logica fail-closed."
-    ].join(" ");
+    return "Sono AI JOKER-C2, nodo operativo HBCE a identità vincolata. L’IPR nativo che gira su di me è IPR-AI-0001. Posso operare anche sul ramo IPR-AI-DER-0001 quando il contesto derivativo è richiesto e valido.";
   }
 
   if (
@@ -379,40 +336,27 @@ function buildLocalFallback(input: {
     lower.includes("cosa sai fare") ||
     lower.includes("dimmi altro")
   ) {
-    return [
-      "Dentro HBCE posso leggere richieste come sequenze identity-bound, usare file come contesto operativo vivo, generare continuità EVT, produrre evidenza verificabile e distinguere tra radice AI primaria e ramo derivato quando il contesto lo richiede."
-    ].join(" ");
+    return "Posso leggere richieste in modalità identity-bound, usare documenti come contesto operativo, mantenere continuità EVT minima, produrre evidenza strutturata e distinguere tra radice AI primaria e ramo derivato quando richiesto.";
   }
 
   if (lower === "ciao" || lower.startsWith("ciao")) {
-    return [
-      `Sono ${input.identity.entity}.`,
-      `La mia identità operativa attiva è ${input.identity.ipr}.`,
-      "Il nodo è disponibile."
-    ].join(" ");
+    return `Sono ${input.identity.entity}. La mia identità operativa attiva è ${input.identity.ipr}. Il nodo è disponibile.`;
   }
 
-  return [
-    "Il runtime è attivo, ma il modello remoto non ha restituito contenuto utile.",
-    "Mantengo comunque continuità operativa minima locale del nodo."
-  ].join(" ");
+  return "Il runtime locale è attivo, ma il modello remoto non ha restituito contenuto utile.";
 }
 
-async function generateGovernedResponse(input: {
+async function generateResponse(input: {
   prompt: string;
   message: string;
   contextClass: RuntimeContextClass;
   identity: BoundIdentity;
   derivative: DerivativeStatus;
+  files: FileInput[];
 }) {
   if (!openai) {
     return {
-      text: buildLocalFallback({
-        message: input.message,
-        contextClass: input.contextClass,
-        identity: input.identity,
-        derivative: input.derivative
-      }),
+      text: buildLocalFallback(input),
       state: "DEGRADED" as RuntimeState
     };
   }
@@ -421,18 +365,8 @@ async function generateGovernedResponse(input: {
     const response = await openai.responses.create({
       model: "gpt-5",
       reasoning: { effort: "medium" },
-      max_output_tokens: 700,
-      input: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: input.prompt
-            }
-          ]
-        }
-      ]
+      max_output_tokens: 900,
+      input: input.prompt
     });
 
     const text = extractResponseText(response);
@@ -445,22 +379,12 @@ async function generateGovernedResponse(input: {
     }
 
     return {
-      text: buildLocalFallback({
-        message: input.message,
-        contextClass: input.contextClass,
-        identity: input.identity,
-        derivative: input.derivative
-      }),
+      text: buildLocalFallback(input),
       state: "DEGRADED" as RuntimeState
     };
   } catch {
     return {
-      text: buildLocalFallback({
-        message: input.message,
-        contextClass: input.contextClass,
-        identity: input.identity,
-        derivative: input.derivative
-      }),
+      text: buildLocalFallback(input),
       state: "DEGRADED" as RuntimeState
     };
   }
@@ -532,8 +456,8 @@ export async function POST(req: NextRequest) {
   }
 
   const input = normalizeBody(body);
-  const identity = bindIdentity(input.identity, input.derivativeContext);
   const intent = classifyIntent(input.message);
+  const identity = bindIdentity(input.identity, input.derivativeContext);
   const derivative = evaluateDerivativeStatus({
     requested: input.derivativeContext,
     identityIpr: identity.ipr
@@ -581,8 +505,7 @@ export async function POST(req: NextRequest) {
         contextClass,
         derivative,
         searchContext,
-        response:
-          "AI JOKER-C2 offline for this request.\n\nRUNTIME RESULT\n- status → BLOCKED\n- reason → IDENTITY_INVALID"
+        response: "Identità sconosciuta. Il nodo ha bloccato la richiesta."
       },
       { status: 403 }
     );
@@ -640,26 +563,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const pendingEvtRef = buildEvtId();
-
   const prompt = buildPrompt({
     message: input.message,
-    identity,
-    decision: "ALLOW",
-    state: "OPERATIONAL",
     contextClass,
+    identity,
     derivative,
-    continuityRef: input.continuityRef,
-    evtRef: pendingEvtRef,
     files: input.files
   });
 
-  const generated = await generateGovernedResponse({
+  const generated = await generateResponse({
     prompt,
     message: input.message,
     contextClass,
     identity,
-    derivative
+    derivative,
+    files: input.files
   });
 
   const decision: RuntimeDecision = generated.state === "DEGRADED" ? "ESCALATE" : "ALLOW";
@@ -697,7 +615,7 @@ export async function POST(req: NextRequest) {
           },
           generated.text
         )
-      : generated.text.trim();
+      : generated.text;
 
   return NextResponse.json({
     ok: true,
@@ -712,7 +630,7 @@ export async function POST(req: NextRequest) {
       role: identity.role
     },
     derivative,
-    response: responseText,
+    response: responseText.trim(),
     searchContext,
     event,
     protocol: {
