@@ -8,11 +8,6 @@ import alienCode, {
 } from "../../../corpus-alien-code.js";
 import webSearch from "../../../web-search.js";
 import { buildJokerSystemPrompt } from "../../../lib/joker/system-prompt";
-import {
-  composeAllowedPrefix,
-  composeBlockedFrame,
-  composeDegradedFrame
-} from "../../../lib/joker/interpretive-engine";
 
 export const runtime = "nodejs";
 
@@ -49,20 +44,14 @@ type ChatBody = {
   continuityRef?: string;
 };
 
-type BoundIdentity =
-  | {
-      valid: true;
-      entity: string;
-      ipr: string;
-      type?: string;
-      role?: string;
-    }
-  | {
-      valid: false;
-      entity: string;
-      ipr: string;
-      reason: string;
-    };
+type BoundIdentity = {
+  valid: boolean;
+  entity: string;
+  ipr: string;
+  type?: string;
+  role?: string;
+  reason?: string;
+};
 
 type DerivativeStatus = {
   requested: boolean;
@@ -141,13 +130,7 @@ function classifyIntent(message: string): string {
   if (lower.includes("protocol") || lower.includes("rule")) return "PROTOCOL_QUERY";
   if (lower.includes("derivative") || lower.includes("biocybernetic")) return "DERIVATIVE_QUERY";
   if (lower.includes("architecture") || lower.includes("layer")) return "ARCHITECTURE_QUERY";
-  if (
-    lower.includes("identity") ||
-    lower.includes("ipr") ||
-    lower.includes("chi sei") ||
-    lower.includes("parlami di te") ||
-    lower.includes("chi sei?")
-  ) {
+  if (lower.includes("identity") || lower.includes("ipr") || lower.includes("chi sei")) {
     return "IDENTITY_QUERY";
   }
 
@@ -169,37 +152,62 @@ function mapContextClass(input: {
   return "GENERAL";
 }
 
-function bindIdentity(identity: IdentityInput): BoundIdentity {
-  const fallback = core.IDENTITY_LINEAGE.ai_root;
+/**
+ * Native node identity binding:
+ * - default always runs as AI_JOKER / IPR-AI-0001
+ * - derivative may run only when explicitly requested and valid
+ * - unknown explicit IPR is blocked
+ */
+function bindIdentity(identity: IdentityInput, derivativeRequested: boolean): BoundIdentity {
+  const aiRoot = core.IDENTITY_LINEAGE.ai_root;
+  const derivedRoot = core.IDENTITY_LINEAGE.derived_root;
   const requestedIpr = identity.ipr?.trim();
 
   if (!requestedIpr) {
+    if (derivativeRequested) {
+      return {
+        valid: true,
+        entity: derivedRoot.entity,
+        ipr: derivedRoot.ipr,
+        type: derivedRoot.type,
+        role: derivedRoot.role
+      };
+    }
+
     return {
       valid: true,
-      entity: fallback.entity,
-      ipr: fallback.ipr,
-      type: fallback.type,
-      role: fallback.role
+      entity: aiRoot.entity,
+      ipr: aiRoot.ipr,
+      type: aiRoot.type,
+      role: aiRoot.role
     };
   }
 
-  const match = core.getIdentityLineage().find((item) => item.ipr === requestedIpr);
-
-  if (!match) {
+  if (requestedIpr === aiRoot.ipr) {
     return {
-      valid: false,
-      entity: identity.entity || "",
-      ipr: requestedIpr,
-      reason: "UNKNOWN_IDENTITY"
+      valid: true,
+      entity: aiRoot.entity,
+      ipr: aiRoot.ipr,
+      type: aiRoot.type,
+      role: aiRoot.role
+    };
+  }
+
+  if (requestedIpr === derivedRoot.ipr) {
+    return {
+      valid: true,
+      entity: derivedRoot.entity,
+      ipr: derivedRoot.ipr,
+      type: derivedRoot.type,
+      role: derivedRoot.role
     };
   }
 
   return {
-    valid: true,
-    entity: match.entity,
-    ipr: match.ipr,
-    type: match.type,
-    role: match.role
+    valid: false,
+    entity: identity.entity || "",
+    ipr: requestedIpr,
+    reason: "UNKNOWN_IDENTITY"
   };
 }
 
@@ -278,7 +286,7 @@ function evaluateRisk(input: {
 
 function buildPrompt(input: {
   message: string;
-  identity: Extract<BoundIdentity, { valid: true }>;
+  identity: BoundIdentity;
   decision: RuntimeDecision;
   state: RuntimeState;
   contextClass: RuntimeContextClass;
@@ -350,7 +358,7 @@ function extractResponseText(response: unknown): string {
 function buildLocalFallback(input: {
   message: string;
   contextClass: RuntimeContextClass;
-  identity: Extract<BoundIdentity, { valid: true }>;
+  identity: BoundIdentity;
   derivative: DerivativeStatus;
 }): string {
   const lower = input.message.toLowerCase();
@@ -361,10 +369,10 @@ function buildLocalFallback(input: {
     lower.includes("parlami di te")
   ) {
     return [
-      "Sono AI JOKER-C2, un nodo operativo a identità vincolata del sistema HBCE.",
-      "Non opero come assistente generico. Opero come runtime governato, con continuità EVT, evidenza verificabile e logica fail-closed.",
-      "La mia linea identitaria attiva si articola in tre livelli: IPR-3 come origine umana primaria, IPR-AI-0001 come radice AI operativa primaria, e IPR-AI-DER-0001 come primo derivato biocibernetico interno.",
-      "La mia funzione è trasformare input in sequenze attribuibili, tracciabili e verificabili."
+      "Sono AI JOKER-C2.",
+      "L’IPR operativo gira nativamente su di me come IPR-AI-0001.",
+      "Quando il contesto derivativo viene richiesto e validato, posso operare anche sul ramo IPR-AI-DER-0001.",
+      "Opero come nodo HBCE a identità vincolata, con continuità EVT, evidenza verificabile e logica fail-closed."
     ].join(" ");
   }
 
@@ -374,26 +382,21 @@ function buildLocalFallback(input: {
     lower.includes("dimmi altro")
   ) {
     return [
-      "Le mie potenzialità operative si concentrano su cinque assi principali.",
-      "Primo: interpretazione identity-bound, cioè lettura delle richieste dentro una struttura di identità e continuità.",
-      "Secondo: elaborazione documentale governata, con uso dei file come contesto operativo vivo.",
-      "Terzo: continuità EVT, con collegamento tra richieste, eventi e stato del nodo.",
-      "Quarto: produzione di evidenza e superfici di verifica, in modo che l’output non resti solo testo ma possa essere trattato come prova operativa.",
-      "Quinto: gestione derivativa biocibernetica, quando il contesto richiede il ramo IPR-AI-DER-0001 sotto vincolo di legittimità."
+      "Dentro HBCE posso leggere richieste come sequenze identity-bound, usare file come contesto operativo vivo, generare continuità EVT, produrre evidenza verificabile e distinguere tra radice AI primaria e ramo derivato quando il contesto lo richiede."
     ].join(" ");
   }
 
   if (lower === "ciao" || lower.startsWith("ciao")) {
     return [
-      `Sono ${input.identity.entity}, radice operativa ${input.identity.ipr} nel contesto attuale del nodo.`,
-      "La sequenza è attiva e il runtime è disponibile."
+      `Sono ${input.identity.entity}.`,
+      `La mia identità operativa attiva è ${input.identity.ipr}.`,
+      "Il nodo è disponibile."
     ].join(" ");
   }
 
   return [
     "Il runtime è attivo, ma il modello remoto non ha restituito contenuto utile.",
-    "Mantengo comunque continuità operativa minima attraverso il fallback locale del nodo.",
-    "Riformula la richiesta in modo più specifico oppure invia documenti, protocollo, registry, evidence o derivazione come contesto esplicito."
+    "Mantengo comunque continuità operativa minima locale del nodo."
   ].join(" ");
 }
 
@@ -401,7 +404,7 @@ async function generateGovernedResponse(input: {
   prompt: string;
   message: string;
   contextClass: RuntimeContextClass;
-  identity: Extract<BoundIdentity, { valid: true }>;
+  identity: BoundIdentity;
   derivative: DerivativeStatus;
 }) {
   if (!openai) {
@@ -467,7 +470,7 @@ async function generateGovernedResponse(input: {
 
 function buildEvent(input: {
   prev: string | null;
-  identity: Extract<BoundIdentity, { valid: true }>;
+  identity: BoundIdentity;
   decision: RuntimeDecision;
   state: RuntimeState;
   derivative: DerivativeStatus;
@@ -531,7 +534,7 @@ export async function POST(req: NextRequest) {
   }
 
   const input = normalizeBody(body);
-  const identity = bindIdentity(input.identity);
+  const identity = bindIdentity(input.identity, input.derivativeContext);
   const intent = classifyIntent(input.message);
   const derivative = evaluateDerivativeStatus({
     requested: input.derivativeContext,
@@ -673,25 +676,6 @@ export async function POST(req: NextRequest) {
     message: input.message
   });
 
-  const prefix = composeAllowedPrefix({
-    message: input.message,
-    identity,
-    contextClass,
-    decision,
-    state: generated.state,
-    derivative: {
-      requested: derivative.requested,
-      legitimate: derivative.legitimate,
-      ipr: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.ipr : undefined,
-      entity: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.entity : undefined,
-      layer: derivative.requested ? core.BIOCYBERNETIC_DERIVATION_LAYER.code : undefined,
-      failures: derivative.details
-    },
-    continuityRef: input.continuityRef,
-    evtRef: event.evt,
-    files: input.files
-  });
-
   return NextResponse.json({
     ok: true,
     state: generated.state,
@@ -705,7 +689,7 @@ export async function POST(req: NextRequest) {
       role: identity.role
     },
     derivative,
-    response: `${prefix}\n\n${generated.text}`.trim(),
+    response: generated.text.trim(),
     searchContext,
     event,
     protocol: {
