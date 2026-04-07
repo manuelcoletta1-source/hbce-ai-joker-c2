@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-import corpusCore from "../../../corpus-core.js";
-import alienCodeCore, {
+import core from "../../../corpus-core.js";
+import alienCode, {
   isDerivativeLegitimate,
   explainDerivativeFailure
 } from "../../../corpus-alien-code.js";
-import webSearchLayer from "../../../web-search.js";
+import webSearch from "../../../web-search.js";
 import { buildJokerSystemPrompt } from "../../../lib/joker/system-prompt";
 import {
   composeAllowedPrefix,
@@ -28,21 +28,46 @@ type RuntimeContextClass =
   | "DERIVATIVE"
   | "GENERAL";
 
+type IdentityInput = {
+  entity?: string;
+  ipr?: string;
+  role?: string;
+  type?: string;
+};
+
+type FileInput = {
+  name?: string;
+  text?: string;
+};
+
 type ChatBody = {
   message?: string;
   sessionId?: string;
-  identity?: {
-    entity?: string;
-    ipr?: string;
-    role?: string;
-    type?: string;
-  };
-  files?: Array<{
-    name?: string;
-    text?: string;
-  }>;
+  identity?: IdentityInput;
+  files?: FileInput[];
   derivativeContext?: boolean;
   continuityRef?: string;
+};
+
+type BoundIdentity =
+  | {
+      valid: true;
+      entity: string;
+      ipr: string;
+      type?: string;
+      role?: string;
+    }
+  | {
+      valid: false;
+      entity: string;
+      ipr: string;
+      reason: string;
+    };
+
+type DerivativeStatus = {
+  requested: boolean;
+  legitimate: boolean;
+  details: string[];
 };
 
 type RuntimeEvent = {
@@ -69,7 +94,7 @@ const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
-function jsonHash(input: unknown): string {
+function pseudoHash(input: unknown): string {
   const data = JSON.stringify(input);
   let hash = 0;
   for (let i = 0; i < data.length; i += 1) {
@@ -83,7 +108,7 @@ function buildEvtId(): string {
   return `EVT-${Date.now()}`;
 }
 
-function getNowIso(): string {
+function nowIso(): string {
   return new Date().toISOString();
 }
 
@@ -123,7 +148,7 @@ function classifyIntent(message: string): string {
 
 function mapContextClass(input: {
   intent: string;
-  files: Array<{ name?: string; text?: string }>;
+  files: FileInput[];
   derivativeRequested: boolean;
 }): RuntimeContextClass {
   if (input.files.length > 0) return "DOCUMENTAL";
@@ -136,26 +161,25 @@ function mapContextClass(input: {
   return "GENERAL";
 }
 
-function bindIdentity(identity: ChatBody["identity"]) {
-  if (!identity?.ipr) {
+function bindIdentity(identity: IdentityInput): BoundIdentity {
+  if (!identity.ipr) {
     return {
       valid: false,
       entity: "",
       ipr: "",
       reason: "MISSING_IDENTITY"
-    } as const;
+    };
   }
 
-  const lineage = corpusCore.getIdentityLineage();
-  const match = lineage.find((item) => item.ipr === identity.ipr);
+  const match = core.getIdentityLineage().find((item) => item.ipr === identity.ipr);
 
   if (!match) {
     return {
       valid: false,
-      entity: identity.entity ?? "",
+      entity: identity.entity || "",
       ipr: identity.ipr,
       reason: "UNKNOWN_IDENTITY"
-    } as const;
+    };
   }
 
   return {
@@ -164,27 +188,27 @@ function bindIdentity(identity: ChatBody["identity"]) {
     ipr: match.ipr,
     type: match.type,
     role: match.role
-  } as const;
+  };
 }
 
-function evaluateDerivativeLegitimacy(input: {
-  derivativeContext: boolean;
+function evaluateDerivativeStatus(input: {
+  requested: boolean;
   identityIpr: string;
-}) {
-  if (!input.derivativeContext) {
+}): DerivativeStatus {
+  if (!input.requested) {
     return {
-      derivativeRequested: false,
+      requested: false,
       legitimate: true,
       details: []
-    } as const;
+    };
   }
 
   const context = {
     valid_human_origin: true,
     valid_primary_ai_root: true,
     identity_binding:
-      input.identityIpr === corpusCore.IDENTITY_ROOTS.ai_root.ipr ||
-      input.identityIpr === corpusCore.IDENTITY_ROOTS.derived_root.ipr,
+      input.identityIpr === core.IDENTITY_LINEAGE.ai_root.ipr ||
+      input.identityIpr === core.IDENTITY_LINEAGE.derived_root.ipr,
     policy_validation: true,
     runtime_authorization: true,
     evt_continuity: true,
@@ -192,14 +216,11 @@ function evaluateDerivativeLegitimacy(input: {
     verification: true
   };
 
-  const legitimate = isDerivativeLegitimate(context);
-  const details = explainDerivativeFailure(context);
-
   return {
-    derivativeRequested: true,
-    legitimate,
-    details: details.failures
-  } as const;
+    requested: true,
+    legitimate: isDerivativeLegitimate(context),
+    details: explainDerivativeFailure(context).failures
+  };
 }
 
 function evaluatePolicy(input: {
@@ -233,27 +254,26 @@ function evaluateRisk(input: {
   derivativeLegitimate: boolean;
 }) {
   if (!input.message) {
-    return { acceptable: false, level: "HIGH", reason: "EMPTY_MESSAGE" } as const;
+    return { acceptable: false, level: "HIGH", reason: "EMPTY_MESSAGE" as const };
   }
 
   if (input.derivativeRequested && !input.derivativeLegitimate) {
-    return { acceptable: false, level: "HIGH", reason: "DERIVATIVE_RISK" } as const;
+    return { acceptable: false, level: "HIGH", reason: "DERIVATIVE_RISK" as const };
   }
 
-  return { acceptable: true, level: "LOW", reason: "RISK_ACCEPTABLE" } as const;
+  return { acceptable: true, level: "LOW", reason: "RISK_ACCEPTABLE" as const };
 }
 
 function buildPrompt(input: {
   message: string;
-  identity: ReturnType<typeof bindIdentity>;
+  identity: Extract<BoundIdentity, { valid: true }>;
   decision: RuntimeDecision;
   state: RuntimeState;
   contextClass: RuntimeContextClass;
-  derivativeRequested: boolean;
-  derivativeLegitimate: boolean;
+  derivative: DerivativeStatus;
   continuityRef: string | null;
   evtRef: string | null;
-  files: Array<{ name?: string; text?: string }>;
+  files: FileInput[];
 }) {
   return buildJokerSystemPrompt({
     identity: {
@@ -266,12 +286,12 @@ function buildPrompt(input: {
     state: input.state,
     contextClass: input.contextClass,
     derivative: {
-      requested: input.derivativeRequested,
-      legitimate: input.derivativeLegitimate,
-      ipr: input.derivativeRequested ? corpusCore.IDENTITY_ROOTS.derived_root.ipr : undefined,
-      entity: input.derivativeRequested ? corpusCore.IDENTITY_ROOTS.derived_root.entity : undefined,
-      layer: input.derivativeRequested
-        ? corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code
+      requested: input.derivative.requested,
+      legitimate: input.derivative.legitimate,
+      ipr: input.derivative.requested ? core.IDENTITY_LINEAGE.derived_root.ipr : undefined,
+      entity: input.derivative.requested ? core.IDENTITY_LINEAGE.derived_root.entity : undefined,
+      layer: input.derivative.requested
+        ? core.BIOCYBERNETIC_DERIVATION_LAYER.code
         : undefined
     },
     continuityRef: input.continuityRef,
@@ -293,7 +313,6 @@ async function generateGovernedResponse(prompt: string) {
   const response = await openai.responses.create({
     model: "gpt-5",
     reasoning: { effort: "medium" },
-    text: { verbosity: "medium" },
     max_output_tokens: 700,
     input: prompt
   });
@@ -306,21 +325,20 @@ async function generateGovernedResponse(prompt: string) {
 
 function buildEvent(input: {
   prev: string | null;
-  identity: ReturnType<typeof bindIdentity>;
+  identity: Extract<BoundIdentity, { valid: true }>;
   decision: RuntimeDecision;
   state: RuntimeState;
-  derivativeRequested: boolean;
-  derivativeLegitimate: boolean;
+  derivative: DerivativeStatus;
   continuityRef: string | null;
   message: string;
-}) {
-  const evtPayload = {
+}): RuntimeEvent {
+  const payload = {
     evt: buildEvtId(),
     prev: input.prev || "GENESIS",
-    t: getNowIso(),
+    t: nowIso(),
     entity: input.identity.entity,
     ipr: input.identity.ipr,
-    kind: input.derivativeRequested ? "DERIVATIVE_CHAT_OPERATION" : "CHAT_OPERATION",
+    kind: input.derivative.requested ? "DERIVATIVE_CHAT_OPERATION" : "CHAT_OPERATION",
     state: input.state,
     decision: input.decision,
     continuityRef: input.continuityRef,
@@ -328,25 +346,25 @@ function buildEvent(input: {
   };
 
   const event: RuntimeEvent = {
-    evt: evtPayload.evt,
-    prev: evtPayload.prev,
-    t: evtPayload.t,
-    entity: evtPayload.entity,
-    ipr: evtPayload.ipr,
-    kind: evtPayload.kind,
-    state: evtPayload.state,
-    decision: evtPayload.decision,
+    evt: payload.evt,
+    prev: payload.prev,
+    t: payload.t,
+    entity: payload.entity,
+    ipr: payload.ipr,
+    kind: payload.kind,
+    state: payload.state,
+    decision: payload.decision,
     anchors: {
-      hash: jsonHash(evtPayload)
+      hash: pseudoHash(payload)
     },
-    continuityRef: evtPayload.continuityRef
+    continuityRef: payload.continuityRef
   };
 
-  if (input.derivativeRequested) {
+  if (input.derivative.requested) {
     event.derivative = {
-      ipr: corpusCore.IDENTITY_ROOTS.derived_root.ipr,
-      layer: corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code,
-      legitimate: input.derivativeLegitimate
+      ipr: core.IDENTITY_LINEAGE.derived_root.ipr,
+      layer: core.BIOCYBERNETIC_DERIVATION_LAYER.code,
+      legitimate: input.derivative.legitimate
     };
   }
 
@@ -360,12 +378,7 @@ export async function POST(req: NextRequest) {
     body = (await req.json()) as ChatBody;
   } catch {
     return NextResponse.json(
-      {
-        ok: false,
-        state: "INVALID",
-        decision: "BLOCK",
-        error: "INVALID_JSON_BODY"
-      },
+      { ok: false, state: "INVALID", decision: "BLOCK", error: "INVALID_JSON_BODY" },
       { status: 400 }
     );
   }
@@ -373,47 +386,58 @@ export async function POST(req: NextRequest) {
   const input = normalizeBody(body);
   const identity = bindIdentity(input.identity);
   const intent = classifyIntent(input.message);
-
-  const derivative = evaluateDerivativeLegitimacy({
-    derivativeContext: input.derivativeContext,
+  const derivative = evaluateDerivativeStatus({
+    requested: input.derivativeContext,
     identityIpr: identity.ipr
   });
-
   const contextClass = mapContextClass({
     intent,
     files: input.files,
-    derivativeRequested: derivative.derivativeRequested
+    derivativeRequested: derivative.requested
   });
 
   const policy = evaluatePolicy({
     identityValid: identity.valid,
     intent,
-    derivativeRequested: derivative.derivativeRequested,
+    derivativeRequested: derivative.requested,
     derivativeLegitimate: derivative.legitimate
   });
 
   const risk = evaluateRisk({
     message: input.message,
-    derivativeRequested: derivative.derivativeRequested,
+    derivativeRequested: derivative.requested,
     derivativeLegitimate: derivative.legitimate
   });
 
-  const searchContext = webSearchLayer.buildWebSearchContext({
+  const searchContext = webSearch.authorizeWebSearch({
     query: input.message,
     identity: { ipr: identity.ipr, entity: identity.entity },
-    session_id: input.sessionId,
     intent,
-    derivative_context: derivative.derivativeRequested,
-    continuity_ref: input.continuityRef,
-    verification_path: true,
+    derivative_context: derivative.requested,
     evt_continuity: true,
+    verification_path: true,
     policy_validation: policy.allowed,
     runtime_authorization: policy.allowed && risk.acceptable,
     valid_human_origin: true,
     valid_primary_ai_root: true,
-    evidence_production_path: true,
-    scope_compatibility: true
+    evidence_production_path: true
   });
+
+  if (!identity.valid) {
+    return NextResponse.json(
+      {
+        ok: false,
+        state: "BLOCKED",
+        decision: "BLOCK",
+        reason: identity.reason,
+        contextClass,
+        derivative,
+        searchContext,
+        response: "AI JOKER-C2 offline for this request.\n\nRUNTIME RESULT\n- status → BLOCKED\n- reason → IDENTITY_INVALID"
+      },
+      { status: 403 }
+    );
+  }
 
   if (!policy.allowed || !risk.acceptable) {
     const blockedEvent = buildEvent({
@@ -421,8 +445,7 @@ export async function POST(req: NextRequest) {
       identity,
       decision: "BLOCK",
       state: "BLOCKED",
-      derivativeRequested: derivative.derivativeRequested,
-      derivativeLegitimate: derivative.legitimate,
+      derivative,
       continuityRef: input.continuityRef,
       message: input.message
     });
@@ -441,27 +464,16 @@ export async function POST(req: NextRequest) {
         response: composeBlockedFrame(
           {
             message: input.message,
-            identity: {
-              entity: identity.entity,
-              ipr: identity.ipr,
-              type: identity.type,
-              role: identity.role
-            },
+            identity,
             contextClass,
             decision: "BLOCK",
             state: "BLOCKED",
             derivative: {
-              requested: derivative.derivativeRequested,
+              requested: derivative.requested,
               legitimate: derivative.legitimate,
-              ipr: derivative.derivativeRequested
-                ? corpusCore.IDENTITY_ROOTS.derived_root.ipr
-                : undefined,
-              entity: derivative.derivativeRequested
-                ? corpusCore.IDENTITY_ROOTS.derived_root.entity
-                : undefined,
-              layer: derivative.derivativeRequested
-                ? corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code
-                : undefined,
+              ipr: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.ipr : undefined,
+              entity: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.entity : undefined,
+              layer: derivative.requested ? core.BIOCYBERNETIC_DERIVATION_LAYER.code : undefined,
               failures: derivative.details
             },
             continuityRef: input.continuityRef,
@@ -471,8 +483,8 @@ export async function POST(req: NextRequest) {
           policy.allowed ? risk.reason : policy.reason
         ),
         protocol: {
-          sequence: corpusCore.RUNTIME_SEQUENCE,
-          failClosed: corpusCore.FAIL_CLOSED_RULES
+          sequence: core.RUNTIME_SEQUENCE,
+          failClosed: core.FAIL_CLOSED_RULES
         }
       },
       { status: 403 }
@@ -480,15 +492,13 @@ export async function POST(req: NextRequest) {
   }
 
   const pendingEvtRef = buildEvtId();
-
   const prompt = buildPrompt({
     message: input.message,
     identity,
     decision: "ALLOW",
     state: "OPERATIONAL",
     contextClass,
-    derivativeRequested: derivative.derivativeRequested,
-    derivativeLegitimate: derivative.legitimate,
+    derivative,
     continuityRef: input.continuityRef,
     evtRef: pendingEvtRef,
     files: input.files
@@ -503,8 +513,7 @@ export async function POST(req: NextRequest) {
       identity,
       decision: "ESCALATE",
       state: "DEGRADED",
-      derivativeRequested: derivative.derivativeRequested,
-      derivativeLegitimate: derivative.legitimate,
+      derivative,
       continuityRef: input.continuityRef,
       message: input.message
     });
@@ -523,27 +532,16 @@ export async function POST(req: NextRequest) {
         response: composeDegradedFrame(
           {
             message: input.message,
-            identity: {
-              entity: identity.entity,
-              ipr: identity.ipr,
-              type: identity.type,
-              role: identity.role
-            },
+            identity,
             contextClass,
             decision: "ESCALATE",
             state: "DEGRADED",
             derivative: {
-              requested: derivative.derivativeRequested,
+              requested: derivative.requested,
               legitimate: derivative.legitimate,
-              ipr: derivative.derivativeRequested
-                ? corpusCore.IDENTITY_ROOTS.derived_root.ipr
-                : undefined,
-              entity: derivative.derivativeRequested
-                ? corpusCore.IDENTITY_ROOTS.derived_root.entity
-                : undefined,
-              layer: derivative.derivativeRequested
-                ? corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code
-                : undefined,
+              ipr: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.ipr : undefined,
+              entity: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.entity : undefined,
+              layer: derivative.requested ? core.BIOCYBERNETIC_DERIVATION_LAYER.code : undefined,
               failures: derivative.details
             },
             continuityRef: input.continuityRef,
@@ -553,8 +551,8 @@ export async function POST(req: NextRequest) {
           error instanceof Error ? error.message : "MODEL_EXECUTION_FAILED"
         ),
         protocol: {
-          sequence: corpusCore.RUNTIME_SEQUENCE,
-          failClosed: corpusCore.FAIL_CLOSED_RULES
+          sequence: core.RUNTIME_SEQUENCE,
+          failClosed: core.FAIL_CLOSED_RULES
         }
       },
       { status: 500 }
@@ -566,35 +564,23 @@ export async function POST(req: NextRequest) {
     identity,
     decision: "ALLOW",
     state: generated.state,
-    derivativeRequested: derivative.derivativeRequested,
-    derivativeLegitimate: derivative.legitimate,
+    derivative,
     continuityRef: input.continuityRef,
     message: input.message
   });
 
   const prefix = composeAllowedPrefix({
     message: input.message,
-    identity: {
-      entity: identity.entity,
-      ipr: identity.ipr,
-      type: identity.type,
-      role: identity.role
-    },
+    identity,
     contextClass,
     decision: "ALLOW",
     state: generated.state,
     derivative: {
-      requested: derivative.derivativeRequested,
+      requested: derivative.requested,
       legitimate: derivative.legitimate,
-      ipr: derivative.derivativeRequested
-        ? corpusCore.IDENTITY_ROOTS.derived_root.ipr
-        : undefined,
-      entity: derivative.derivativeRequested
-        ? corpusCore.IDENTITY_ROOTS.derived_root.entity
-        : undefined,
-      layer: derivative.derivativeRequested
-        ? corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code
-        : undefined,
+      ipr: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.ipr : undefined,
+      entity: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.entity : undefined,
+      layer: derivative.requested ? core.BIOCYBERNETIC_DERIVATION_LAYER.code : undefined,
       failures: derivative.details
     },
     continuityRef: input.continuityRef,
@@ -619,12 +605,12 @@ export async function POST(req: NextRequest) {
     searchContext,
     event,
     protocol: {
-      sequence: corpusCore.RUNTIME_SEQUENCE,
-      failClosed: corpusCore.FAIL_CLOSED_RULES
+      sequence: core.RUNTIME_SEQUENCE,
+      failClosed: core.FAIL_CLOSED_RULES
     },
     alienCode: {
-      interface: alienCodeCore.ORGANISM_SYSTEM_INTERFACE,
-      derivationLayer: corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code
+      interface: alienCode.ORGANISM_SYSTEM_INTERFACE,
+      derivationLayer: core.BIOCYBERNETIC_DERIVATION_LAYER.code
     }
   });
 }
