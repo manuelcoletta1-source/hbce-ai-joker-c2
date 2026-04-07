@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
 import core from "../../../corpus-core.js";
-import {
+import alienCode, {
   isDerivativeLegitimate,
   explainDerivativeFailure
 } from "../../../corpus-alien-code.js";
+import webSearch from "../../../web-search.js";
+import { buildJokerSystemPrompt } from "../../../lib/joker/system-prompt";
+import {
+  composeBlockedFrame,
+  composeDegradedFrame
+} from "../../../lib/joker/interpretive-engine";
 
 export const runtime = "nodejs";
 
@@ -213,7 +219,7 @@ function evaluateDerivativeStatus(input: {
     };
   }
 
-  const ctx = {
+  const context = {
     valid_human_origin: true,
     valid_primary_ai_root: true,
     identity_binding:
@@ -228,9 +234,50 @@ function evaluateDerivativeStatus(input: {
 
   return {
     requested: true,
-    legitimate: isDerivativeLegitimate(ctx),
-    details: explainDerivativeFailure(ctx).failures
+    legitimate: isDerivativeLegitimate(context),
+    details: explainDerivativeFailure(context).failures
   };
+}
+
+function evaluatePolicy(input: {
+  identityValid: boolean;
+  contextClass: RuntimeContextClass;
+  derivativeRequested: boolean;
+  derivativeLegitimate: boolean;
+}) {
+  if (!input.identityValid) {
+    return { allowed: false, decision: "BLOCK" as RuntimeDecision, reason: "IDENTITY_INVALID" };
+  }
+
+  if (input.contextClass === "GENERAL" && !input.derivativeRequested) {
+    return { allowed: true, decision: "ALLOW" as RuntimeDecision, reason: "POLICY_VALID" };
+  }
+
+  if (input.derivativeRequested && !input.derivativeLegitimate) {
+    return {
+      allowed: false,
+      decision: "BLOCK" as RuntimeDecision,
+      reason: "DERIVATIVE_LEGITIMACY_FAILED"
+    };
+  }
+
+  return { allowed: true, decision: "ALLOW" as RuntimeDecision, reason: "POLICY_VALID" };
+}
+
+function evaluateRisk(input: {
+  message: string;
+  derivativeRequested: boolean;
+  derivativeLegitimate: boolean;
+}) {
+  if (!input.message) {
+    return { acceptable: false, level: "HIGH", reason: "EMPTY_MESSAGE" as const };
+  }
+
+  if (input.derivativeRequested && !input.derivativeLegitimate) {
+    return { acceptable: false, level: "HIGH", reason: "DERIVATIVE_RISK" as const };
+  }
+
+  return { acceptable: true, level: "LOW", reason: "RISK_ACCEPTABLE" as const };
 }
 
 function buildFileContext(files: FileInput[]): string {
@@ -456,21 +503,16 @@ export async function POST(req: NextRequest) {
   }
 
   const input = normalizeBody(body);
-  const intent = classifyIntent(input.message);
+  const contextClass = classifyIntent(input.message, input.files);
   const identity = bindIdentity(input.identity, input.derivativeContext);
   const derivative = evaluateDerivativeStatus({
     requested: input.derivativeContext,
     identityIpr: identity.ipr
   });
-  const contextClass = mapContextClass({
-    intent,
-    files: input.files,
-    derivativeRequested: derivative.requested
-  });
 
   const policy = evaluatePolicy({
     identityValid: identity.valid,
-    intent,
+    contextClass,
     derivativeRequested: derivative.requested,
     derivativeLegitimate: derivative.legitimate
   });
@@ -484,7 +526,7 @@ export async function POST(req: NextRequest) {
   const searchContext = webSearch.authorizeWebSearch({
     query: input.message,
     identity: { ipr: identity.ipr, entity: identity.entity },
-    intent,
+    intent: contextClass,
     derivative_context: derivative.requested,
     evt_continuity: true,
     verification_path: true,
@@ -528,7 +570,6 @@ export async function POST(req: NextRequest) {
         state: "BLOCKED",
         decision: "BLOCK",
         reason: policy.allowed ? risk.reason : policy.reason,
-        intent,
         contextClass,
         derivative,
         searchContext,
@@ -563,16 +604,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const prompt = buildPrompt({
-    message: input.message,
-    contextClass,
-    identity,
-    derivative,
-    files: input.files
-  });
-
   const generated = await generateResponse({
-    prompt,
+    prompt: buildPrompt({
+      message: input.message,
+      contextClass,
+      identity,
+      derivative,
+      files: input.files
+    }),
     message: input.message,
     contextClass,
     identity,
@@ -621,7 +660,6 @@ export async function POST(req: NextRequest) {
     ok: true,
     state: generated.state,
     decision,
-    intent,
     contextClass,
     identity: {
       entity: identity.entity,
