@@ -307,11 +307,45 @@ function buildPrompt(input: {
   });
 }
 
+function extractResponseText(response: unknown): string {
+  const maybe = response as {
+    output_text?: string;
+    output?: Array<{
+      content?: Array<{
+        text?: string;
+      }>;
+    }>;
+  };
+
+  if (typeof maybe?.output_text === "string" && maybe.output_text.trim()) {
+    return maybe.output_text.trim();
+  }
+
+  if (Array.isArray(maybe?.output)) {
+    const chunks: string[] = [];
+
+    for (const item of maybe.output) {
+      if (!item || !Array.isArray(item.content)) continue;
+
+      for (const content of item.content) {
+        if (typeof content?.text === "string" && content.text.trim()) {
+          chunks.push(content.text.trim());
+        }
+      }
+    }
+
+    const merged = chunks.join("\n\n").trim();
+    if (merged) return merged;
+  }
+
+  return "";
+}
+
 async function generateGovernedResponse(prompt: string) {
   if (!openai) {
     return {
       text:
-        "OPENAI_API_KEY is not configured. Runtime remains structurally valid, but model execution is unavailable.",
+        "AI JOKER-C2 online in DEGRADED mode. OPENAI_API_KEY is not configured, so model execution is unavailable.",
       state: "DEGRADED" as RuntimeState
     };
   }
@@ -320,11 +354,31 @@ async function generateGovernedResponse(prompt: string) {
     model: "gpt-5",
     reasoning: { effort: "medium" },
     max_output_tokens: 700,
-    input: prompt
+    input: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: prompt
+          }
+        ]
+      }
+    ]
   });
 
+  const text = extractResponseText(response);
+
+  if (!text) {
+    return {
+      text:
+        "AI JOKER-C2 online in DEGRADED mode. The model returned an empty content payload.",
+      state: "DEGRADED" as RuntimeState
+    };
+  }
+
   return {
-    text: response.output_text || "No output generated.",
+    text,
     state: "OPERATIONAL" as RuntimeState
   };
 }
