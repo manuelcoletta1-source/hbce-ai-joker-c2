@@ -8,6 +8,9 @@ import alienCodeCore, {
 
 export const runtime = "nodejs";
 
+type RuntimeDecision = "ALLOW" | "BLOCK" | "ESCALATE";
+type RuntimeState = "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID";
+
 type EvidenceRequestBody = {
   message?: string;
   sessionId?: string;
@@ -17,8 +20,8 @@ type EvidenceRequestBody = {
     ipr?: string;
   };
   derivativeContext?: boolean;
-  decision?: "ALLOW" | "BLOCK" | "ESCALATE";
-  state?: "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID";
+  decision?: RuntimeDecision;
+  state?: RuntimeState;
 };
 
 type EvidenceRecord = {
@@ -28,8 +31,8 @@ type EvidenceRecord = {
   entity: string;
   ipr: string;
   kind: string;
-  state: "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID";
-  decision: "ALLOW" | "BLOCK" | "ESCALATE";
+  state: RuntimeState;
+  decision: RuntimeDecision;
   message: string;
   continuityRef: string | null;
   derivative?: {
@@ -44,13 +47,15 @@ type EvidenceRecord = {
   };
 };
 
-function jsonHash(input: unknown): string {
+function pseudoHash(input: unknown): string {
   const data = JSON.stringify(input);
   let hash = 0;
+
   for (let i = 0; i < data.length; i += 1) {
     hash = (hash << 5) - hash + data.charCodeAt(i);
     hash |= 0;
   }
+
   return `sha256:${Math.abs(hash).toString(16)}`;
 }
 
@@ -75,35 +80,38 @@ function normalizeBody(body: EvidenceRequestBody) {
     identity: {
       entity:
         typeof body.identity?.entity === "string" ? body.identity.entity.trim() : "",
-      ipr: typeof body.identity?.ipr === "string" ? body.identity.ipr.trim() : ""
+      ipr:
+        typeof body.identity?.ipr === "string" ? body.identity.ipr.trim() : ""
     },
     derivativeContext: body.derivativeContext === true,
-    decision: body.decision || "ALLOW",
-    state: body.state || "OPERATIONAL"
+    decision: body.decision ?? "ALLOW",
+    state: body.state ?? "OPERATIONAL"
   };
 }
 
 function resolveIdentity(ipr?: string) {
   if (!ipr) return null;
-  const lineage = corpusCore.getIdentityLineage();
-  return lineage.find((item) => item.ipr === ipr) || null;
+  return corpusCore.getIdentityLineage().find((item) => item.ipr === ipr) ?? null;
 }
 
-function evaluateDerivative(derivativeContext: boolean, identityIpr: string) {
-  if (!derivativeContext) {
+function evaluateDerivative(input: {
+  derivativeContext: boolean;
+  identityIpr: string;
+}) {
+  if (!input.derivativeContext) {
     return {
       requested: false,
       legitimate: true,
-      failures: []
-    } as const;
+      failures: [] as string[]
+    };
   }
 
   const ctx = {
     valid_human_origin: true,
     valid_primary_ai_root: true,
     identity_binding:
-      identityIpr === corpusCore.IDENTITY_ROOTS.ai_root.ipr ||
-      identityIpr === corpusCore.IDENTITY_ROOTS.derived_root.ipr,
+      input.identityIpr === corpusCore.IDENTITY_LINEAGE.ai_root.ipr ||
+      input.identityIpr === corpusCore.IDENTITY_LINEAGE.derived_root.ipr,
     policy_validation: true,
     runtime_authorization: true,
     evt_continuity: true,
@@ -115,18 +123,21 @@ function evaluateDerivative(derivativeContext: boolean, identityIpr: string) {
     requested: true,
     legitimate: isDerivativeLegitimate(ctx),
     failures: explainDerivativeFailure(ctx).failures
-  } as const;
+  };
 }
 
 function buildEvidenceRecord(input: {
   message: string;
   continuityRef: string | null;
-  identity: NonNullable<ReturnType<typeof resolveIdentity>>;
-  decision: "ALLOW" | "BLOCK" | "ESCALATE";
-  state: "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID";
+  identity: {
+    entity: string;
+    ipr: string;
+  };
+  decision: RuntimeDecision;
+  state: RuntimeState;
   derivativeRequested: boolean;
   derivativeLegitimate: boolean;
-}) {
+}): EvidenceRecord {
   const payload = {
     evt: buildEvtId(),
     prev: input.continuityRef || "GENESIS",
@@ -140,7 +151,7 @@ function buildEvidenceRecord(input: {
     continuityRef: input.continuityRef
   };
 
-  const hash = jsonHash(payload);
+  const hash = pseudoHash(payload);
 
   const record: EvidenceRecord = {
     ...payload,
@@ -152,8 +163,8 @@ function buildEvidenceRecord(input: {
 
   if (input.derivativeRequested) {
     record.derivative = {
-      ipr: corpusCore.IDENTITY_ROOTS.derived_root.ipr,
-      entity: corpusCore.IDENTITY_ROOTS.derived_root.entity,
+      ipr: corpusCore.IDENTITY_LINEAGE.derived_root.ipr,
+      entity: corpusCore.IDENTITY_LINEAGE.derived_root.entity,
       layer: corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code,
       legitimate: input.derivativeLegitimate
     };
@@ -197,7 +208,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const derivative = evaluateDerivative(input.derivativeContext, identity.ipr);
+  const derivative = evaluateDerivative({
+    derivativeContext: input.derivativeContext,
+    identityIpr: identity.ipr
+  });
 
   if (derivative.requested && !derivative.legitimate) {
     return NextResponse.json(
@@ -216,7 +230,10 @@ export async function POST(req: NextRequest) {
   const record = buildEvidenceRecord({
     message: input.message || "Operational evidence emission",
     continuityRef: input.continuityRef,
-    identity,
+    identity: {
+      entity: identity.entity,
+      ipr: identity.ipr
+    },
     decision: input.decision,
     state: input.state,
     derivativeRequested: derivative.requested,
@@ -234,7 +251,7 @@ export async function POST(req: NextRequest) {
       axiom: corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.axiom
     },
     alienCode: {
-      runtimeBridge: alienCodeCore.ALIEN_CODE_RUNTIME_BRIDGE,
+      runtimeBridge: alienCodeCore.ALIEN_CODE,
       derivativeLegitimacy: alienCodeCore.DERIVATIVE_LEGITIMACY
     }
   });
