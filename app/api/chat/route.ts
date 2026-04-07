@@ -97,10 +97,12 @@ const openai = process.env.OPENAI_API_KEY
 function pseudoHash(input: unknown): string {
   const data = JSON.stringify(input);
   let hash = 0;
+
   for (let i = 0; i < data.length; i += 1) {
     hash = (hash << 5) - hash + data.charCodeAt(i);
     hash |= 0;
   }
+
   return `sha256:${Math.abs(hash).toString(16)}`;
 }
 
@@ -162,22 +164,26 @@ function mapContextClass(input: {
 }
 
 function bindIdentity(identity: IdentityInput): BoundIdentity {
-  if (!identity.ipr) {
+  const fallback = core.IDENTITY_LINEAGE.ai_root;
+  const requestedIpr = identity.ipr?.trim();
+
+  if (!requestedIpr) {
     return {
-      valid: false,
-      entity: "",
-      ipr: "",
-      reason: "MISSING_IDENTITY"
+      valid: true,
+      entity: fallback.entity,
+      ipr: fallback.ipr,
+      type: fallback.type,
+      role: fallback.role
     };
   }
 
-  const match = core.getIdentityLineage().find((item) => item.ipr === identity.ipr);
+  const match = core.getIdentityLineage().find((item) => item.ipr === requestedIpr);
 
   if (!match) {
     return {
       valid: false,
       entity: identity.entity || "",
-      ipr: identity.ipr,
+      ipr: requestedIpr,
       reason: "UNKNOWN_IDENTITY"
     };
   }
@@ -378,7 +384,12 @@ export async function POST(req: NextRequest) {
     body = (await req.json()) as ChatBody;
   } catch {
     return NextResponse.json(
-      { ok: false, state: "INVALID", decision: "BLOCK", error: "INVALID_JSON_BODY" },
+      {
+        ok: false,
+        state: "INVALID",
+        decision: "BLOCK",
+        error: "INVALID_JSON_BODY"
+      },
       { status: 400 }
     );
   }
@@ -433,7 +444,8 @@ export async function POST(req: NextRequest) {
         contextClass,
         derivative,
         searchContext,
-        response: "AI JOKER-C2 offline for this request.\n\nRUNTIME RESULT\n- status → BLOCKED\n- reason → IDENTITY_INVALID"
+        response:
+          "AI JOKER-C2 offline for this request.\n\nRUNTIME RESULT\n- status → BLOCKED\n- reason → IDENTITY_INVALID"
       },
       { status: 403 }
     );
@@ -492,6 +504,7 @@ export async function POST(req: NextRequest) {
   }
 
   const pendingEvtRef = buildEvtId();
+
   const prompt = buildPrompt({
     message: input.message,
     identity,
