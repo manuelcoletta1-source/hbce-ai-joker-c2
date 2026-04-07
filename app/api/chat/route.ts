@@ -7,11 +7,25 @@ import alienCodeCore, {
   explainDerivativeFailure
 } from "../../../corpus-alien-code.js";
 import webSearchLayer from "../../../web-search.js";
+import {
+  buildJokerSystemPrompt,
+  getOpeningLine,
+  getIdentityFrame
+} from "../../../lib/joker/system-prompt";
 
 export const runtime = "nodejs";
 
 type RuntimeDecision = "ALLOW" | "BLOCK" | "ESCALATE";
 type RuntimeState = "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID";
+type RuntimeContextClass =
+  | "IDENTITY"
+  | "DOCUMENTAL"
+  | "ARCHITECTURE"
+  | "PROTOCOL"
+  | "REGISTRY"
+  | "EVIDENCE"
+  | "DERIVATIVE"
+  | "GENERAL";
 
 type ChatBody = {
   message?: string;
@@ -99,8 +113,26 @@ function classifyIntent(message: string): string {
   if (lower.includes("protocol") || lower.includes("rule")) return "PROTOCOL_QUERY";
   if (lower.includes("derivative") || lower.includes("biocybernetic")) return "DERIVATIVE_QUERY";
   if (lower.includes("architecture") || lower.includes("layer")) return "ARCHITECTURE_QUERY";
+  if (lower.includes("identity") || lower.includes("ipr") || lower.includes("chi sei")) {
+    return "IDENTITY_QUERY";
+  }
 
   return "FACT_RETRIEVAL";
+}
+
+function mapContextClass(input: {
+  intent: string;
+  files: Array<{ name?: string; text?: string }>;
+  derivativeRequested: boolean;
+}): RuntimeContextClass {
+  if (input.files.length > 0) return "DOCUMENTAL";
+  if (input.derivativeRequested || input.intent === "DERIVATIVE_QUERY") return "DERIVATIVE";
+  if (input.intent === "ARCHITECTURE_QUERY") return "ARCHITECTURE";
+  if (input.intent === "PROTOCOL_QUERY") return "PROTOCOL";
+  if (input.intent === "REGISTRY_QUERY") return "REGISTRY";
+  if (input.intent === "EVIDENCE_QUERY") return "EVIDENCE";
+  if (input.intent === "IDENTITY_QUERY") return "IDENTITY";
+  return "GENERAL";
 }
 
 function bindIdentity(identity: ChatBody["identity"]) {
@@ -213,34 +245,78 @@ function evaluateRisk(input: {
 function buildPrompt(input: {
   message: string;
   identity: ReturnType<typeof bindIdentity>;
+  decision: RuntimeDecision;
+  state: RuntimeState;
   intent: string;
+  contextClass: RuntimeContextClass;
   derivativeRequested: boolean;
+  derivativeLegitimate: boolean;
+  continuityRef: string | null;
+  evtRef: string | null;
   files: Array<{ name?: string; text?: string }>;
 }) {
-  const fileContext = input.files
-    .filter((file) => typeof file.text === "string" && file.text.trim())
-    .map((file) => `FILE: ${file.name || "unnamed"}\n${file.text}`)
-    .join("\n\n");
-
-  return [
-    "You are AI JOKER-C2 inside the HBCE identity-bound operational runtime.",
-    "You must produce a governed, concise, structured response.",
-    "Do not simulate autonomy outside the protocol.",
-    `Identity: ${input.identity.ipr} / ${input.identity.entity}`,
-    `Intent: ${input.intent}`,
-    `Derivative context: ${input.derivativeRequested ? "YES" : "NO"}`,
-    fileContext ? `Operational file context:\n${fileContext}` : "",
-    `User message:\n${input.message}`
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+  return buildJokerSystemPrompt({
+    identity: {
+      entity: input.identity.entity,
+      ipr: input.identity.ipr,
+      type: input.identity.type,
+      role: input.identity.role
+    },
+    decision: input.decision,
+    state: input.state,
+    contextClass: input.contextClass,
+    derivative: {
+      requested: input.derivativeRequested,
+      legitimate: input.derivativeLegitimate,
+      ipr: input.derivativeRequested ? corpusCore.IDENTITY_ROOTS.derived_root.ipr : undefined,
+      entity: input.derivativeRequested ? corpusCore.IDENTITY_ROOTS.derived_root.entity : undefined,
+      layer: input.derivativeRequested
+        ? corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code
+        : undefined
+    },
+    continuityRef: input.continuityRef,
+    evtRef: input.evtRef,
+    message: input.message,
+    files: input.files
+  });
 }
 
-async function generateGovernedResponse(prompt: string) {
+function buildStructuredPrefix(input: {
+  state: RuntimeState;
+  contextClass: RuntimeContextClass;
+  derivativeRequested: boolean;
+  derivativeLegitimate: boolean;
+}) {
+  const opening = getOpeningLine({
+    state: input.state,
+    contextClass: input.contextClass,
+    derivative: {
+      requested: input.derivativeRequested,
+      legitimate: input.derivativeLegitimate,
+      ipr: input.derivativeRequested ? corpusCore.IDENTITY_ROOTS.derived_root.ipr : undefined,
+      entity: input.derivativeRequested ? corpusCore.IDENTITY_ROOTS.derived_root.entity : undefined,
+      layer: input.derivativeRequested
+        ? corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code
+        : undefined
+    }
+  });
+
+  return `${opening}\n\n${getIdentityFrame()}\n`;
+}
+
+async function generateGovernedResponse(input: {
+  prompt: string;
+  state: RuntimeState;
+  contextClass: RuntimeContextClass;
+  derivativeRequested: boolean;
+  derivativeLegitimate: boolean;
+}) {
+  const prefix = buildStructuredPrefix(input);
+
   if (!openai) {
     return {
       text:
-        "OPENAI_API_KEY is not configured. Runtime remains structurally valid, but model execution is unavailable.",
+        `${prefix}\nOPENAI_API_KEY is not configured. Runtime remains structurally valid, but model execution is unavailable.`,
       state: "DEGRADED" as RuntimeState
     };
   }
@@ -250,11 +326,12 @@ async function generateGovernedResponse(prompt: string) {
     reasoning: { effort: "medium" },
     text: { verbosity: "medium" },
     max_output_tokens: 700,
-    input: prompt
+    input: input.prompt
   });
 
+  const output = response.output_text || "No output generated.";
   return {
-    text: response.output_text || "No output generated.",
+    text: `${prefix}\n${output}`.trim(),
     state: "OPERATIONAL" as RuntimeState
   };
 }
@@ -334,6 +411,12 @@ export async function POST(req: NextRequest) {
     identityIpr: identity.ipr
   });
 
+  const contextClass = mapContextClass({
+    intent,
+    files: input.files,
+    derivativeRequested: derivative.derivativeRequested
+  });
+
   const policy = evaluatePolicy({
     identityValid: identity.valid,
     intent,
@@ -383,25 +466,61 @@ export async function POST(req: NextRequest) {
         decision: "BLOCK",
         reason: policy.allowed ? risk.reason : policy.reason,
         intent,
+        contextClass,
         derivative,
         searchContext,
-        event: blockedEvent
+        event: blockedEvent,
+        response: `${getOpeningLine({
+          state: "BLOCKED",
+          contextClass,
+          derivative: {
+            requested: derivative.derivativeRequested,
+            legitimate: derivative.legitimate,
+            ipr: derivative.derivativeRequested
+              ? corpusCore.IDENTITY_ROOTS.derived_root.ipr
+              : undefined,
+            entity: derivative.derivativeRequested
+              ? corpusCore.IDENTITY_ROOTS.derived_root.entity
+              : undefined,
+            layer: derivative.derivativeRequested
+              ? corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code
+              : undefined
+          }
+        })}\n\nRequest blocked. Reason: ${policy.allowed ? risk.reason : policy.reason}.`,
+        protocol: {
+          sequence: corpusCore.RUNTIME_SEQUENCE,
+          failClosed: corpusCore.FAIL_CLOSED_RULES
+        }
       },
       { status: 403 }
     );
   }
 
+  const pendingEvtRef = buildEvtId();
+
   const prompt = buildPrompt({
     message: input.message,
     identity,
+    decision: "ALLOW",
+    state: "OPERATIONAL",
     intent,
+    contextClass,
     derivativeRequested: derivative.derivativeRequested,
+    derivativeLegitimate: derivative.legitimate,
+    continuityRef: input.continuityRef,
+    evtRef: pendingEvtRef,
     files: input.files
   });
 
   let generated;
   try {
-    generated = await generateGovernedResponse(prompt);
+    generated = await generateGovernedResponse({
+      prompt,
+      state: "OPERATIONAL",
+      contextClass,
+      derivativeRequested: derivative.derivativeRequested,
+      derivativeLegitimate: derivative.legitimate
+    });
   } catch (error) {
     const degradedEvent = buildEvent({
       prev: input.continuityRef,
@@ -420,9 +539,32 @@ export async function POST(req: NextRequest) {
         state: "DEGRADED",
         decision: "ESCALATE",
         reason: error instanceof Error ? error.message : "MODEL_EXECUTION_FAILED",
+        intent,
+        contextClass,
         derivative,
         searchContext,
-        event: degradedEvent
+        event: degradedEvent,
+        response: `${getOpeningLine({
+          state: "DEGRADED",
+          contextClass,
+          derivative: {
+            requested: derivative.derivativeRequested,
+            legitimate: derivative.legitimate,
+            ipr: derivative.derivativeRequested
+              ? corpusCore.IDENTITY_ROOTS.derived_root.ipr
+              : undefined,
+            entity: derivative.derivativeRequested
+              ? corpusCore.IDENTITY_ROOTS.derived_root.entity
+              : undefined,
+            layer: derivative.derivativeRequested
+              ? corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code
+              : undefined
+          }
+        })}\n\nRuntime degraded. Model execution failed.`,
+        protocol: {
+          sequence: corpusCore.RUNTIME_SEQUENCE,
+          failClosed: corpusCore.FAIL_CLOSED_RULES
+        }
       },
       { status: 500 }
     );
@@ -444,6 +586,7 @@ export async function POST(req: NextRequest) {
     state: generated.state,
     decision: "ALLOW",
     intent,
+    contextClass,
     identity: {
       entity: identity.entity,
       ipr: identity.ipr,
