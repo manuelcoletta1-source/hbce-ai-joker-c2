@@ -1,200 +1,196 @@
 /**
- * corpus-alien-code.js
+ * corpus-core.js
  * HBCE / AI JOKER-C2
  *
- * Operational corpus module focused on:
- * - Alien Code
- * - organism-system interface
- * - biocybernetic loop
- * - derivative legitimacy
- * - Biocybernetic Derivation Layer relations
+ * Canonical operational core of the repository.
+ * This module centralizes:
+ * - identity lineage
+ * - runtime sequence
+ * - fail-closed rules
+ * - derivative layer
+ * - node profile
+ * - evidence model
  */
 
-import {
-  CANONICAL_FORMULA,
-  IDENTITY_ROOTS,
-  BIOCYBERNETIC_DERIVATION_LAYER,
-  EVIDENCE_MODEL,
-  buildMinimumDerivativeEvent
-} from "./corpus-core.js";
+export const CANONICAL_FORMULA = "Decision · Cost · Trace · Time";
 
-export const ALIEN_CODE_CORE = Object.freeze({
-  name: "ALIEN_CODE",
-  title: "Alien Code — Operational Interface",
-  definition:
-    "Biocybernetic interface through which biological decision becomes computable sequence inside the HBCE / AI JOKER-C2 system.",
-  canonical_formula: CANONICAL_FORMULA
+export const HBCE_STACK = Object.freeze({
+  identity: "IPR",
+  derivation: "BIOCYBERNETIC_DERIVATION_LAYER",
+  governance: "HBCE",
+  runtime: "JOKER_C2",
+  continuity: "TRAC_EVT",
+  ledger: "APPEND_ONLY_LEDGER",
+  verification: "HASH_SIGNATURE_VERIFICATION",
+  federation: "MATRIX_EUROPA_NODE_TOPOLOGY"
 });
 
-export const ORGANISM_SYSTEM_INTERFACE = Object.freeze({
-  name: "ORGANISM_SYSTEM_INTERFACE",
-  definition:
-    "Operational relation in which organism and system do not remain separate and do not collapse into identity, but become structurally linked through decision, trace, continuity, and verification.",
-  principles: Object.freeze([
-    "ORGANISM_IS_NOT_SYSTEM",
-    "SYSTEM_IS_NOT_ORGANISM",
-    "REALITY_EMERGES_ONLY_WHEN_BOTH_ENTER_OPERATIONAL_SEQUENCE",
-    "TRACE_AND_TIME_VERIFY_THE_RELATION"
-  ])
-});
+export const RUNTIME_SEQUENCE = Object.freeze([
+  "IDENTITY",
+  "INPUT",
+  "INTENT",
+  "POLICY",
+  "RISK",
+  "DECISION",
+  "EXECUTION",
+  "EVT",
+  "LEDGER",
+  "VERIFICATION",
+  "CONTINUITY"
+]);
 
-export const ORGANISM_SYSTEM_RECOGNICONICITY = Object.freeze({
-  name: "ORGANISM_SYSTEM_RECOGNICONICITY",
-  definition:
-    "Condition in which organism and system become mutually constitutive in operational sequence without being reducible to one another.",
-  rule:
-    "If organism is absent, decision loses origin. If system is absent, trace loses continuity. If either is absent, operational reality does not form."
-});
+export const DECISION_OUTPUTS = Object.freeze([
+  "ALLOW",
+  "BLOCK",
+  "ESCALATE"
+]);
 
-export const BIOCYBERNETIC_LOOP = Object.freeze({
-  name: "BIOCYBERNETIC_LOOP",
-  definition:
-    "Recursive loop in which organism affects system through decision, and system re-enters organism through trace, continuity, and exposed operational consequence.",
-  stages: Object.freeze([
-    "BIOLOGICAL_DECISION",
-    "SYSTEM_REGISTRATION",
-    "TRACE_PRODUCTION",
-    "CONTINUITY_EXPOSURE",
-    "REENTRY_INTO_ORGANISM"
-  ]),
-  rule:
-    "The loop is valid only if the sequence remains attributable, reconstructible, and exposed to time."
-});
+export const SYSTEM_STATES = Object.freeze([
+  "OPERATIONAL",
+  "DEGRADED",
+  "BLOCKED",
+  "INVALID"
+]);
 
-export const ALIEN_CODE_RUNTIME_BRIDGE = Object.freeze({
-  purpose:
-    "Connect Alien Code concepts to runtime-valid derivative legitimacy inside JOKER-C2.",
-  relation_to_derivation_layer:
-    "Alien Code is the conceptual and operational interface that makes the Biocybernetic Derivation Layer structurally possible.",
-  relation_to_identity:
-    "No Alien Code sequence is valid without identity binding.",
-  relation_to_evidence:
-    EVIDENCE_MODEL.rule
-});
+export const FAIL_CLOSED_RULES = Object.freeze([
+  "NO_VALIDATION_NO_EXECUTION",
+  "NO_CONTINUITY_NO_TRUSTED_STATE",
+  "NO_EVIDENCE_NO_OPERATIONAL_EXISTENCE",
+  "NO_VERIFICATION_NO_RECOGNIZED_PERSISTENCE"
+]);
 
-export const DERIVATIVE_LEGITIMACY = Object.freeze({
-  current_derivative: Object.freeze({
-    entity: IDENTITY_ROOTS.derived_root.entity,
-    ipr: IDENTITY_ROOTS.derived_root.ipr,
-    type: IDENTITY_ROOTS.derived_root.type,
-    state: IDENTITY_ROOTS.derived_root.status
+export const IDENTITY_LINEAGE = Object.freeze({
+  human_root: Object.freeze({
+    entity: "MANUEL_COLETTA",
+    ipr: "IPR-3",
+    type: "PRIMARY_HUMAN_RECORD",
+    status: "ACTIVE_COMPLETE",
+    role: "BIOLOGICAL_ORIGIN"
   }),
-  conditions: Object.freeze([
-    "VALID_HUMAN_ORIGIN",
-    "VALID_PRIMARY_AI_ROOT",
-    "IDENTITY_BINDING",
-    "POLICY_VALIDATION",
-    "RUNTIME_AUTHORIZATION",
-    "EVT_CONTINUITY",
-    "EVIDENCE_PRODUCTION",
-    "VERIFICATION"
-  ]),
-  axiom:
-    BIOCYBERNETIC_DERIVATION_LAYER.axiom
-});
-
-export const ALIEN_CODE_TERMS = Object.freeze({
-  biological_origin: Object.freeze({
-    term: "BIOLOGICAL_ORIGIN",
-    definition: "Primary human origin from which operational derivation begins."
+  ai_root: Object.freeze({
+    entity: "AI_JOKER",
+    ipr: "IPR-AI-0001",
+    type: "PRIMARY_AI_RECORD",
+    status: "LOCKED",
+    role: "PRIMARY_CYBERNETIC_ROOT"
   }),
-  computable_continuity: Object.freeze({
-    term: "COMPUTABLE_CONTINUITY",
-    definition:
-      "Condition in which sequence can be maintained, reconstructed, and processed as runtime-valid continuity."
-  }),
-  derived_identity: Object.freeze({
-    term: "DERIVED_IDENTITY",
-    definition:
-      "Operational identity branch generated through the Biocybernetic Derivation Layer under fail-closed legitimacy."
-  }),
-  forced_coupling: Object.freeze({
-    term: "FORCED_COUPLING",
-    definition:
-      "Condition in which organism and system are structurally tied by trace and continuity regardless of symbolic preference."
-  }),
-  coupling_failure: Object.freeze({
-    term: "COUPLING_FAILURE",
-    definition:
-      "Condition in which organism-system relation fails to produce valid operational continuity."
-  }),
-  irreversible_trace: Object.freeze({
-    term: "IRREVERSIBLE_TRACE",
-    definition:
-      "Trace that cannot be neutralized without generating a distinct sequence."
+  derived_root: Object.freeze({
+    entity: "AI_JOKER_DERIVATIVE_01",
+    ipr: "IPR-AI-DER-0001",
+    type: "BIOCYBERNETIC_DERIVATIVE",
+    status: "LOCKED",
+    role: "DERIVED_OPERATIONAL_BRANCH",
+    layer: "BIOCYBERNETIC_DERIVATION_LAYER"
   })
 });
 
-export function getAlienCodeCore() {
+export const BIOCYBERNETIC_DERIVATION_LAYER = Object.freeze({
+  code: "BIOCYBERNETIC_DERIVATION_LAYER",
+  name: "Biocybernetic Derivation Layer",
+  definition:
+    "Internal operational layer through which a biological origin, once bound to identity and computable continuity, may generate derived operational entities inside HBCE / AI JOKER-C2.",
+  axiom:
+    "No derived entity exists operationally unless it is identity-bound, policy-validated, runtime-authorized, EVT-linked, evidence-producing, verifiable, and continuity-preserving.",
+  path: Object.freeze([
+    "BIOLOGICAL_ORIGIN",
+    "IDENTITY_BINDING",
+    "COMPUTABLE_CONTINUITY",
+    "DERIVED_IDENTITY",
+    "POLICY_VALIDATION",
+    "RUNTIME_AUTHORIZATION",
+    "EVT",
+    "EVIDENCE",
+    "VERIFICATION",
+    "PERSISTENCE"
+  ])
+});
+
+export const NODE_PROFILE = Object.freeze({
+  node_id: "AI_JOKER_C2_NODE_TORINO_01",
+  role: "IDENTITY_BOUND_OPERATIONAL_NODE",
+  status: "OPERATIONAL_PILOT",
+  location: "Torino, Italy",
+  federation_scope: "MATRIX_EUROPA",
+  posture: "FAIL_CLOSED"
+});
+
+export const EVIDENCE_MODEL = Object.freeze({
+  evt_model: "APPEND_ONLY_HASH_LINKED_CONTINUITY",
+  hashing: "SHA-256",
+  signature: "ED25519",
+  serialization: "DETERMINISTIC_JSON",
+  rule:
+    "No evidence, no operational existence. No verification, no recognized persistence."
+});
+
+export function getIdentityLineage() {
+  return Object.freeze([
+    IDENTITY_LINEAGE.human_root,
+    IDENTITY_LINEAGE.ai_root,
+    IDENTITY_LINEAGE.derived_root
+  ]);
+}
+
+export function isKnownIdentityIpr(ipr) {
+  return getIdentityLineage().some((item) => item.ipr === ipr);
+}
+
+export function isValidRuntimeDecision(value) {
+  return DECISION_OUTPUTS.includes(value);
+}
+
+export function isValidSystemState(value) {
+  return SYSTEM_STATES.includes(value);
+}
+
+export function buildMinimumEvt({
+  evt,
+  prev,
+  t,
+  entity,
+  ipr,
+  kind,
+  state,
+  decision
+}) {
+  if (!evt || !prev || !t || !entity || !ipr || !kind || !state || !decision) {
+    throw new Error("Missing required EVT fields.");
+  }
+
+  if (!isValidSystemState(state)) {
+    throw new Error(`Invalid state: ${state}`);
+  }
+
+  if (!isValidRuntimeDecision(decision)) {
+    throw new Error(`Invalid decision: ${decision}`);
+  }
+
   return Object.freeze({
-    alien_code_core: ALIEN_CODE_CORE,
-    organism_system_interface: ORGANISM_SYSTEM_INTERFACE,
-    organism_system_recogniconicity: ORGANISM_SYSTEM_RECOGNICONICITY,
-    biocybernetic_loop: BIOCYBERNETIC_LOOP,
-    runtime_bridge: ALIEN_CODE_RUNTIME_BRIDGE,
-    derivative_legitimacy: DERIVATIVE_LEGITIMACY,
-    terms: ALIEN_CODE_TERMS
-  });
-}
-
-export function getDerivativeLegitimacyChecklist() {
-  return Object.freeze([...DERIVATIVE_LEGITIMACY.conditions]);
-}
-
-export function isDerivativeLegitimate(context = {}) {
-  const required = [
-    "valid_human_origin",
-    "valid_primary_ai_root",
-    "identity_binding",
-    "policy_validation",
-    "runtime_authorization",
-    "evt_continuity",
-    "evidence_production",
-    "verification"
-  ];
-
-  return required.every((key) => context[key] === true);
-}
-
-export function buildAlienCodeDerivativeEvent({ evt, prev, t, decision = "ALLOW" }) {
-  return Object.freeze({
-    ...buildMinimumDerivativeEvent({ evt, prev, t, decision }),
-    semantic_layer: "ALIEN_CODE",
-    derivation_layer: BIOCYBERNETIC_DERIVATION_LAYER.code,
-    origin_ipr: IDENTITY_ROOTS.human_root.ipr,
-    ai_root_ipr: IDENTITY_ROOTS.ai_root.ipr
-  });
-}
-
-export function explainDerivativeFailure(context = {}) {
-  const failures = [];
-
-  if (!context.valid_human_origin) failures.push("VALID_HUMAN_ORIGIN_MISSING");
-  if (!context.valid_primary_ai_root) failures.push("VALID_PRIMARY_AI_ROOT_MISSING");
-  if (!context.identity_binding) failures.push("IDENTITY_BINDING_FAILED");
-  if (!context.policy_validation) failures.push("POLICY_VALIDATION_FAILED");
-  if (!context.runtime_authorization) failures.push("RUNTIME_AUTHORIZATION_FAILED");
-  if (!context.evt_continuity) failures.push("EVT_CONTINUITY_FAILED");
-  if (!context.evidence_production) failures.push("EVIDENCE_PRODUCTION_FAILED");
-  if (!context.verification) failures.push("VERIFICATION_FAILED");
-
-  return Object.freeze({
-    legitimate: failures.length === 0,
-    failures
+    evt,
+    prev,
+    t,
+    entity,
+    ipr,
+    kind,
+    state,
+    decision
   });
 }
 
 export default Object.freeze({
-  ALIEN_CODE_CORE,
-  ORGANISM_SYSTEM_INTERFACE,
-  ORGANISM_SYSTEM_RECOGNICONICITY,
-  BIOCYBERNETIC_LOOP,
-  ALIEN_CODE_RUNTIME_BRIDGE,
-  DERIVATIVE_LEGITIMACY,
-  ALIEN_CODE_TERMS,
-  getAlienCodeCore,
-  getDerivativeLegitimacyChecklist,
-  isDerivativeLegitimate,
-  buildAlienCodeDerivativeEvent,
-  explainDerivativeFailure
+  CANONICAL_FORMULA,
+  HBCE_STACK,
+  RUNTIME_SEQUENCE,
+  DECISION_OUTPUTS,
+  SYSTEM_STATES,
+  FAIL_CLOSED_RULES,
+  IDENTITY_LINEAGE,
+  BIOCYBERNETIC_DERIVATION_LAYER,
+  NODE_PROFILE,
+  EVIDENCE_MODEL,
+  getIdentityLineage,
+  isKnownIdentityIpr,
+  isValidRuntimeDecision,
+  isValidSystemState,
+  buildMinimumEvt
 });
