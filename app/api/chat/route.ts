@@ -8,6 +8,10 @@ import alienCode, {
 } from "../../../corpus-alien-code.js";
 import webSearch from "../../../web-search.js";
 import { buildJokerSystemPrompt } from "../../../lib/joker/system-prompt";
+import {
+  composeBlockedFrame,
+  composeDegradedFrame
+} from "../../../lib/joker/interpretive-engine";
 
 export const runtime = "nodejs";
 
@@ -152,12 +156,6 @@ function mapContextClass(input: {
   return "GENERAL";
 }
 
-/**
- * Native node identity binding:
- * - default always runs as AI_JOKER / IPR-AI-0001
- * - derivative may run only when explicitly requested and valid
- * - unknown explicit IPR is blocked
- */
 function bindIdentity(identity: IdentityInput, derivativeRequested: boolean): BoundIdentity {
   const aiRoot = core.IDENTITY_LINEAGE.ai_root;
   const derivedRoot = core.IDENTITY_LINEAGE.derived_root;
@@ -676,6 +674,31 @@ export async function POST(req: NextRequest) {
     message: input.message
   });
 
+  const responseText =
+    generated.state === "DEGRADED"
+      ? composeDegradedFrame(
+          {
+            message: input.message,
+            identity,
+            contextClass,
+            decision,
+            state: generated.state,
+            derivative: {
+              requested: derivative.requested,
+              legitimate: derivative.legitimate,
+              ipr: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.ipr : undefined,
+              entity: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.entity : undefined,
+              layer: derivative.requested ? core.BIOCYBERNETIC_DERIVATION_LAYER.code : undefined,
+              failures: derivative.details
+            },
+            continuityRef: input.continuityRef,
+            evtRef: event.evt,
+            files: input.files
+          },
+          generated.text
+        )
+      : generated.text.trim();
+
   return NextResponse.json({
     ok: true,
     state: generated.state,
@@ -689,7 +712,7 @@ export async function POST(req: NextRequest) {
       role: identity.role
     },
     derivative,
-    response: generated.text.trim(),
+    response: responseText,
     searchContext,
     event,
     protocol: {
