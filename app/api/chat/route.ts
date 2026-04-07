@@ -141,7 +141,13 @@ function classifyIntent(message: string): string {
   if (lower.includes("protocol") || lower.includes("rule")) return "PROTOCOL_QUERY";
   if (lower.includes("derivative") || lower.includes("biocybernetic")) return "DERIVATIVE_QUERY";
   if (lower.includes("architecture") || lower.includes("layer")) return "ARCHITECTURE_QUERY";
-  if (lower.includes("identity") || lower.includes("ipr") || lower.includes("chi sei")) {
+  if (
+    lower.includes("identity") ||
+    lower.includes("ipr") ||
+    lower.includes("chi sei") ||
+    lower.includes("parlami di te") ||
+    lower.includes("chi sei?")
+  ) {
     return "IDENTITY_QUERY";
   }
 
@@ -341,46 +347,122 @@ function extractResponseText(response: unknown): string {
   return "";
 }
 
-async function generateGovernedResponse(prompt: string) {
+function buildLocalFallback(input: {
+  message: string;
+  contextClass: RuntimeContextClass;
+  identity: Extract<BoundIdentity, { valid: true }>;
+  derivative: DerivativeStatus;
+}): string {
+  const lower = input.message.toLowerCase();
+
+  if (
+    input.contextClass === "IDENTITY" ||
+    lower.includes("chi sei") ||
+    lower.includes("parlami di te")
+  ) {
+    return [
+      "Sono AI JOKER-C2, un nodo operativo a identità vincolata del sistema HBCE.",
+      "Non opero come assistente generico. Opero come runtime governato, con continuità EVT, evidenza verificabile e logica fail-closed.",
+      "La mia linea identitaria attiva si articola in tre livelli: IPR-3 come origine umana primaria, IPR-AI-0001 come radice AI operativa primaria, e IPR-AI-DER-0001 come primo derivato biocibernetico interno.",
+      "La mia funzione è trasformare input in sequenze attribuibili, tracciabili e verificabili."
+    ].join(" ");
+  }
+
+  if (
+    lower.includes("potenzialità") ||
+    lower.includes("cosa sai fare") ||
+    lower.includes("dimmi altro")
+  ) {
+    return [
+      "Le mie potenzialità operative si concentrano su cinque assi principali.",
+      "Primo: interpretazione identity-bound, cioè lettura delle richieste dentro una struttura di identità e continuità.",
+      "Secondo: elaborazione documentale governata, con uso dei file come contesto operativo vivo.",
+      "Terzo: continuità EVT, con collegamento tra richieste, eventi e stato del nodo.",
+      "Quarto: produzione di evidenza e superfici di verifica, in modo che l’output non resti solo testo ma possa essere trattato come prova operativa.",
+      "Quinto: gestione derivativa biocibernetica, quando il contesto richiede il ramo IPR-AI-DER-0001 sotto vincolo di legittimità."
+    ].join(" ");
+  }
+
+  if (lower === "ciao" || lower.startsWith("ciao")) {
+    return [
+      `Sono ${input.identity.entity}, radice operativa ${input.identity.ipr} nel contesto attuale del nodo.`,
+      "La sequenza è attiva e il runtime è disponibile."
+    ].join(" ");
+  }
+
+  return [
+    "Il runtime è attivo, ma il modello remoto non ha restituito contenuto utile.",
+    "Mantengo comunque continuità operativa minima attraverso il fallback locale del nodo.",
+    "Riformula la richiesta in modo più specifico oppure invia documenti, protocollo, registry, evidence o derivazione come contesto esplicito."
+  ].join(" ");
+}
+
+async function generateGovernedResponse(input: {
+  prompt: string;
+  message: string;
+  contextClass: RuntimeContextClass;
+  identity: Extract<BoundIdentity, { valid: true }>;
+  derivative: DerivativeStatus;
+}) {
   if (!openai) {
     return {
-      text:
-        "AI JOKER-C2 online in DEGRADED mode. OPENAI_API_KEY is not configured, so model execution is unavailable.",
+      text: buildLocalFallback({
+        message: input.message,
+        contextClass: input.contextClass,
+        identity: input.identity,
+        derivative: input.derivative
+      }),
       state: "DEGRADED" as RuntimeState
     };
   }
 
-  const response = await openai.responses.create({
-    model: "gpt-5",
-    reasoning: { effort: "medium" },
-    max_output_tokens: 700,
-    input: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: prompt
-          }
-        ]
-      }
-    ]
-  });
+  try {
+    const response = await openai.responses.create({
+      model: "gpt-5",
+      reasoning: { effort: "medium" },
+      max_output_tokens: 700,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: input.prompt
+            }
+          ]
+        }
+      ]
+    });
 
-  const text = extractResponseText(response);
+    const text = extractResponseText(response);
 
-  if (!text) {
+    if (text) {
+      return {
+        text,
+        state: "OPERATIONAL" as RuntimeState
+      };
+    }
+
     return {
-      text:
-        "AI JOKER-C2 online in DEGRADED mode. The model returned an empty content payload.",
+      text: buildLocalFallback({
+        message: input.message,
+        contextClass: input.contextClass,
+        identity: input.identity,
+        derivative: input.derivative
+      }),
+      state: "DEGRADED" as RuntimeState
+    };
+  } catch {
+    return {
+      text: buildLocalFallback({
+        message: input.message,
+        contextClass: input.contextClass,
+        identity: input.identity,
+        derivative: input.derivative
+      }),
       state: "DEGRADED" as RuntimeState
     };
   }
-
-  return {
-    text,
-    state: "OPERATIONAL" as RuntimeState
-  };
 }
 
 function buildEvent(input: {
@@ -571,65 +653,20 @@ export async function POST(req: NextRequest) {
     files: input.files
   });
 
-  let generated;
-  try {
-    generated = await generateGovernedResponse(prompt);
-  } catch (error) {
-    const degradedEvent = buildEvent({
-      prev: input.continuityRef,
-      identity,
-      decision: "ESCALATE",
-      state: "DEGRADED",
-      derivative,
-      continuityRef: input.continuityRef,
-      message: input.message
-    });
+  const generated = await generateGovernedResponse({
+    prompt,
+    message: input.message,
+    contextClass,
+    identity,
+    derivative
+  });
 
-    return NextResponse.json(
-      {
-        ok: false,
-        state: "DEGRADED",
-        decision: "ESCALATE",
-        reason: error instanceof Error ? error.message : "MODEL_EXECUTION_FAILED",
-        intent,
-        contextClass,
-        derivative,
-        searchContext,
-        event: degradedEvent,
-        response: composeDegradedFrame(
-          {
-            message: input.message,
-            identity,
-            contextClass,
-            decision: "ESCALATE",
-            state: "DEGRADED",
-            derivative: {
-              requested: derivative.requested,
-              legitimate: derivative.legitimate,
-              ipr: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.ipr : undefined,
-              entity: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.entity : undefined,
-              layer: derivative.requested ? core.BIOCYBERNETIC_DERIVATION_LAYER.code : undefined,
-              failures: derivative.details
-            },
-            continuityRef: input.continuityRef,
-            evtRef: degradedEvent.evt,
-            files: input.files
-          },
-          error instanceof Error ? error.message : "MODEL_EXECUTION_FAILED"
-        ),
-        protocol: {
-          sequence: core.RUNTIME_SEQUENCE,
-          failClosed: core.FAIL_CLOSED_RULES
-        }
-      },
-      { status: 500 }
-    );
-  }
+  const decision: RuntimeDecision = generated.state === "DEGRADED" ? "ESCALATE" : "ALLOW";
 
   const event = buildEvent({
     prev: input.continuityRef,
     identity,
-    decision: "ALLOW",
+    decision,
     state: generated.state,
     derivative,
     continuityRef: input.continuityRef,
@@ -640,7 +677,7 @@ export async function POST(req: NextRequest) {
     message: input.message,
     identity,
     contextClass,
-    decision: "ALLOW",
+    decision,
     state: generated.state,
     derivative: {
       requested: derivative.requested,
@@ -658,7 +695,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     state: generated.state,
-    decision: "ALLOW",
+    decision,
     intent,
     contextClass,
     identity: {
