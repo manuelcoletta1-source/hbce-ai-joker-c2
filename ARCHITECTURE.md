@@ -1,162 +1,393 @@
 # JOKER-C2 ARCHITECTURE
-## Identity-Bound Operational Node
-
+## Identity-Bound Operational Node with Biocybernetic Derivation
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.
 
 ---
 
-# 0. Scopo
+# 0. Purpose
 
-Questo documento definisce l’architettura del sistema JOKER-C2.
+This document defines the system architecture of JOKER-C2.
 
-Obiettivo:
+Its purpose is to translate the HBCE protocol, the EVT Engine, and the governed runtime model into an implementable operational system.
 
-tradurre il protocollo HBCE e l’EVT Engine in un sistema operativo implementabile.
+JOKER-C2 is not described here as a generic AI interface, a chatbot, or a standalone assistant.
 
----
+It is defined as:
 
-# 1. Visione architetturale
-
-JOKER-C2 è composto da tre dimensioni integrate:
-
-- Application Layer (interfaccia)
-- Runtime Layer (logica operativa)
-- Node Layer (infrastruttura verificabile)
+**an identity-bound operational node that transforms interaction into governed execution, EVT continuity, verifiable evidence, and operational persistence**
 
 ---
 
-# 2. Strati del sistema
+# 1. Architectural vision
+
+JOKER-C2 is composed of integrated architectural layers.
+
+The system operates as a single identity-bound stack in which each layer has a distinct function and no layer is sufficient on its own.
+
+Core layers:
+
+- Interface Layer
+- Identity Layer
+- Biocybernetic Derivation Layer
+- Runtime Layer
+- Governance Layer
+- Continuity Layer
+- Ledger Layer
+- Verification Layer
+- Node / Federation Layer
+
+The system exists operationally only when these layers remain connected through a valid sequence.
+
+---
+
+# 2. System layers
 
 ## 2.1 Interface Layer
 
-Gestisce l’interazione con l’utente.
+The Interface Layer manages the interaction surface of the system.
 
-Componenti:
+It is responsible for:
 
-- `/` homepage
-- `/interface` chat
-- `/ipr` identità
-- `/registry` nodo
+- collecting input
+- displaying output
+- exposing identity, registry, and evidence surfaces
+- connecting human interaction to the governed runtime
 
-Funzione:
+Main surfaces:
 
-raccolta input e visualizzazione output
+- `/` → homepage
+- `/interface` → controlled interaction surface
+- `/ipr` → identity layer
+- `/registry` → node and network surface
+- `/evidence` → evidence and verification surface
 
----
+This layer does not decide, validate, or authorize operations.
 
-## 2.2 Runtime Layer (JOKER-C2)
-
-Core del sistema.
-
-Responsabilità:
-
-- gestione sessioni
-- continuità EVT
-- interpretazione input
-- esecuzione pipeline
-- generazione eventi
+Its role is limited to controlled input and output exposure.
 
 ---
 
-## 2.3 Governance Layer (HBCE)
+## 2.2 Identity Layer (IPR)
 
-Valuta:
+The Identity Layer defines the persistent operational identity model of the system.
 
-- policy
-- rischio
-- validità operativa
+It is responsible for:
 
-Output:
+- identity binding
+- attribution
+- role association
+- operational legitimacy
+- continuity of the identity root
 
-- allowed / blocked
-- livello rischio
+The Identity Layer includes:
+
+- primary human origin records
+- primary AI records
+- derived operational records
+
+Examples:
+
+- `IPR-3` → primary human origin
+- `IPR-AI-0001` → primary AI operational root
+- `IPR-AI-DER-0001` → first derived operational record
+
+Operational rule:
+
+**no identity-bound request, no valid operational sequence**
 
 ---
 
-## 2.4 Continuity Layer (TRAC)
+## 2.3 Biocybernetic Derivation Layer
 
-Gestisce:
+The Biocybernetic Derivation Layer is the internal layer through which a biological origin, once bound to computable continuity, can generate derived operational entities inside the HBCE / JOKER-C2 system.
 
-- EVT chain
-- coerenza sequenziale
-- stato operativo
+This layer is responsible for:
+
+- linking biological origin to computable continuity
+- transforming continuity into derived operational identity
+- enabling runtime recognition of derived entities
+- constraining derivative existence to governance, evidence, and verification
+
+A derivative is not treated as symbolic projection or abstract extension.
+
+A derivative exists only as:
+
+**a runtime-recognized operational configuration bound to identity, policy, decision, evidence, verification, and continuity**
+
+Current derivative family:
+
+- `IPR-AI-DER-0001` → first AI-derived operational identity
+
+Future derivative classes may include:
+
+- robotic derivatives
+- terrestrial infrastructure derivatives
+- orbital derivatives
+- lunar derivatives
+- martian derivatives
+
+Operational axiom:
+
+**no derived entity exists operationally unless it is identity-bound, policy-validated, runtime-authorized, traceable, and verifiable**
 
 ---
 
-## 2.5 Ledger Layer
+## 2.4 Runtime Layer (JOKER-C2)
 
-Persistenza:
+The Runtime Layer is the core execution environment of the system.
+
+It is responsible for:
+
+- session management
+- input interpretation
+- state transition logic
+- pipeline execution
+- EVT generation
+- controlled output production
+
+The runtime does not operate as a free generative layer.
+
+It operates as:
+
+**a governed execution machine with deterministic state transitions**
+
+Main responsibilities:
+
+- load session state
+- classify input intent
+- bind identity
+- invoke governance checks
+- apply runtime decision logic
+- emit EVT output
+- forward evidence to persistence
+
+---
+
+## 2.5 Governance Layer (HBCE)
+
+The Governance Layer evaluates whether a sequence may continue operationally.
+
+It is responsible for:
+
+- policy evaluation
+- risk evaluation
+- operational validity checks
+- compliance enforcement
+- allow / block / escalate decisions
+
+The Governance Layer produces:
+
+- `ALLOWED`
+- `BLOCKED`
+- `ESCALATED`
+
+It transforms governance from documentation into executable control.
+
+Operational rule:
+
+**policy is not advisory. Policy is runtime-enforced**
+
+---
+
+## 2.6 Continuity Layer (TRAC)
+
+The Continuity Layer preserves the operational chain of the system.
+
+It is responsible for:
+
+- EVT continuity
+- sequence coherence
+- previous-event linkage
+- continuity validation
+- state reconstruction
+
+Main functions:
+
+- load last valid EVT
+- verify sequence coherence
+- reconstruct operational state
+- connect each new EVT to the prior sequence
+
+The Continuity Layer ensures that the system is not event-based only, but sequence-based.
+
+Without continuity, the node degrades from operational system to disconnected response engine.
+
+---
+
+## 2.7 Ledger Layer
+
+The Ledger Layer persists the operational history of the node.
+
+It is responsible for:
+
+- append-only event persistence
+- hash-linked continuity
+- evidence serialization
+- immutable sequence retention
+- replay support
+
+Properties:
 
 - append-only
 - hash-linked
-- verificabile
+- deterministic
+- verifiable
+
+The Ledger Layer does not interpret meaning.
+
+It preserves operational fact.
 
 ---
 
-# 3. Flusso operativo
+## 2.8 Verification Layer
 
-Pipeline completa:
+The Verification Layer exposes the system to internal and external checking.
 
-IDENTITY  
-→ INPUT  
-→ INTENT  
-→ POLICY  
-→ RISK  
-→ DECISION  
-→ EXECUTION  
-→ EVT GENERATION  
-→ LEDGER  
-→ OUTPUT  
+It is responsible for:
 
----
+- event verification
+- hash validation
+- signature validation
+- chain integrity checking
+- proof surface exposure
 
-# 4. EVT Engine Integration
+Verification can occur at multiple levels:
 
-Ogni richiesta passa da:
+- local
+- node-to-node
+- public proof surface
 
-1. load ultimo EVT
-2. verifica hash
-3. ricostruzione stato
-4. generazione nuovo EVT
+Operational rule:
+
+**if the result cannot be verified, the result cannot be treated as fully valid**
 
 ---
 
-## 4.1 Regola
+## 2.9 Node / Federation Layer
 
-Se EVT non viene usato:
+JOKER-C2 is not only a runtime instance.
 
-→ sistema degradato
+It is an operational node.
 
----
+The Node / Federation Layer is responsible for:
 
-# 5. Stato sistema
+- node identity
+- network registration
+- federation readiness
+- interoperability
+- distributed trust surfaces
 
-## Stati
+Core properties:
 
-- OPERATIONAL
-- DEGRADED
-- BLOCKED
-- INVALID
+- identity-bound
+- verifiable
+- federable
+- continuity-preserving
 
----
-
-## Condizioni
-
-OPERATIONAL:
-
-- continuità valida
-- policy valida
+The Torino node is treated as the first real operational node of the Matrix Europa system.
 
 ---
 
-# 6. Struttura codice
+# 3. Operational sequence
+
+The complete governed sequence is:
+
+`IDENTITY → INPUT → INTENT → POLICY → RISK → DECISION → EXECUTION → EVT GENERATION → LEDGER → VERIFICATION → OUTPUT → CONTINUITY`
+
+This sequence is mandatory.
+
+No operationally valid shortcut exists outside it.
+
+If one critical state fails, the sequence does not partially continue as valid.
+
+It is blocked, degraded, or invalidated according to system rules.
+
+---
+
+# 4. EVT Engine integration
+
+The EVT Engine is the continuity core of JOKER-C2.
+
+Every meaningful request passes through the EVT process.
+
+Base sequence:
+
+1. load last valid EVT
+2. verify hash continuity
+3. reconstruct operational state
+4. bind request to current session state
+5. execute governed runtime sequence
+6. generate new EVT
+7. persist EVT in ledger
+8. expose evidence and verification surface
+
+The EVT Engine is not an optional logging mechanism.
+
+It is the continuity core that allows the node to maintain operational identity through time.
+
+## 4.1 Core rule
+
+If EVT continuity is bypassed:
+
+**the system is degraded**
+
+If EVT continuity is invalid and fail-closed rules apply:
+
+**the operation is blocked**
+
+---
+
+# 5. System state model
+
+## 5.1 States
+
+The system may exist in the following states:
+
+- `OPERATIONAL`
+- `DEGRADED`
+- `BLOCKED`
+- `INVALID`
+
+## 5.2 Conditions
+
+### OPERATIONAL
+- identity valid
+- continuity valid
+- policy valid
+- risk acceptable
+- runtime sequence complete
+
+### DEGRADED
+- continuity partially unavailable
+- fallback sequence limited
+- verification reduced
+- runtime still responsive under constrained mode
+
+### BLOCKED
+- identity missing
+- policy failure
+- broken EVT continuity
+- invalid derivative recognition
+- risk above threshold
+
+### INVALID
+- chain corruption
+- unrecoverable state conflict
+- invalid evidence
+- signature or structural failure
+
+---
+
+# 6. Code structure
 
 ## 6.1 Core
 
-lib/joker/
+Primary cognitive and continuity logic is centered in:
 
-File principali:
+`lib/joker/`
+
+Main files include:
 
 - `evt-engine.ts`
 - `continuity.ts`
@@ -164,141 +395,265 @@ File principali:
 - `validation.ts`
 - `interpretive-engine.ts`
 
+These files define the minimum internal logic for operational continuity, interpretation, validation, and identity-bound execution.
+
 ---
 
 ## 6.2 Runtime
 
-runtime/
+Primary runtime execution surfaces include:
 
-- pipeline
-- orchestrazione
-- gestione stato
+`runtime/`
+
+Responsibilities:
+
+- pipeline orchestration
+- state transitions
+- governed execution
+- runtime state handling
 
 ---
 
 ## 6.3 Ledger
 
-ledger/
+Persistence layer:
 
-- persistenza EVT
-- evidence pack
+`ledger/`
+
+Responsibilities:
+
+- EVT persistence
+- evidence serialization
+- append-only sequence storage
+- replay support
 
 ---
 
-## 6.4 API
+## 6.4 Registry
 
-app/api/
+Registry and network surfaces include:
+
+`registry/`
+
+Responsibilities:
+
+- node metadata
+- topology exposure
+- registry expansion
+- federated node awareness
+
+---
+
+## 6.5 API
+
+Primary API surfaces include:
+
+`app/api/`
+
+Examples:
 
 - `/chat`
 - `/verify`
 - `/evidence`
+- `/network`
+- `/signature`
+
+These APIs do not bypass architecture.
+
+They expose controlled system functions.
 
 ---
 
-## 6.5 Spec
+## 6.6 Spec
 
-spec/
+Formal specifications include:
+
+`spec/`
+
+Examples:
 
 - HBCE Protocol
-- EVT Engine
-- schema JSON
+- EVT Engine specification
+- JSON schemas
+- runtime state model
 
 ---
 
-# 7. Integrazione con Next.js
+## 6.7 System manifests and architecture docs
+
+Repository-level architectural definition is also supported by:
+
+- `ARCHITECTURE.md`
+- `PROTOCOL.md`
+- `NETWORK.md`
+- `HBCE-WHITEPAPER.md`
+- `system/`
+
+These files define the explanatory and formal architecture around the implementation.
+
+---
+
+# 7. Next.js integration
 
 Framework:
 
 - Next.js App Router
-- API routes server-side
-
----
-
-## 7.1 Entry point
-
-app/api/chat/route.ts
-
-Funzione:
-
-- ricezione input
-- attivazione runtime
-- risposta EVT-bound
-
----
-
-# 8. Fail-Closed Design
-
-Default:
-
-BLOCK
-
----
-
-## Trigger
-
-- identity missing
-- EVT rotto
-- policy fallita
-
----
-
-# 9. Nodo operativo
-
-JOKER-C2 è un nodo.
-
-Caratteristiche:
-
-- identity-bound
-- verificabile
-- federabile
-
----
-
-## Nodo Torino
-
-Primo nodo reale del sistema Matrix Europa.
-
----
-
-# 10. Federation
-
-Il sistema supporta:
-
-- multi-node
-- registri distribuiti
-- interoperabilità
-
----
-
-# 11. Deployment
-
-Target:
-
-- Vercel (primary)
+- server-side API routes
 - Node runtime
 
+The application layer uses Next.js as controlled interface and execution surface.
+
+JOKER-C2 is not reduced to a frontend app.
+
+The frontend is only one boundary of the node.
+
+## 7.1 Main entry point
+
+Primary entry point:
+
+`app/api/chat/route.ts`
+
+Responsibilities:
+
+- receive input
+- activate runtime flow
+- bind request to continuity
+- produce EVT-bound response
+- return governed output
+
 ---
 
-## Requisiti
+# 8. Fail-closed design
 
-- Redis (ledger)
-- storage evidenze
-- chiavi firma
+Default system posture:
+
+**BLOCK**
+
+The node does not assume validity by default.
+
+It assumes invalidity until operational conditions are satisfied.
+
+## 8.1 Block triggers
+
+Examples of fail-closed triggers:
+
+- missing identity
+- broken EVT chain
+- invalid policy result
+- high risk result
+- invalid derivative recognition
+- missing evidence path
+- verification failure
+
+## 8.2 Rule
+
+No validation  
+→ No execution
+
+No continuity  
+→ No trusted state
+
+No evidence  
+→ No operational existence
+
+No verification  
+→ No recognized persistence
 
 ---
 
-# 12. Definizione finale
+# 9. Operational node definition
 
-JOKER-C2 è un nodo operativo identity-bound che integra:
+JOKER-C2 is an operational node.
 
-- protocollo HBCE
+It combines:
+
+- identity
+- governed runtime
+- EVT continuity
+- evidence generation
+- ledger persistence
+- verification surfaces
+- federation readiness
+
+Its core properties are:
+
+- identity-bound
+- EVT-continuous
+- verifiable
+- policy-governed
+- fail-closed
+- federable
+
+## 9.1 Torino node
+
+The Torino node is the first real node of the Matrix Europa system.
+
+Its role is:
+
+- technical origin node
+- pilot execution environment
+- first runtime validation surface
+- first federable operational instance
+
+---
+
+# 10. Federation model
+
+The architecture supports federated evolution.
+
+Capabilities include:
+
+- multi-node topology
+- distributed registries
+- cross-node verification
+- interoperable runtime surfaces
+- future trust-weighting models
+
+JOKER-C2 is therefore not limited to a single local instance.
+
+It is designed as a node that can participate in a wider operational network.
+
+---
+
+# 11. Deployment model
+
+Primary deployment target:
+
+- Vercel
+
+Runtime requirement:
+
+- Node.js runtime required
+
+## 11.1 Infrastructure requirements
+
+- Redis or equivalent continuity / state support
+- ledger persistence
+- evidence storage
+- signing keys
+- verification surface
+- environment-bound runtime configuration
+
+---
+
+# 12. Final definition
+
+JOKER-C2 is an identity-bound operational node that integrates:
+
+- HBCE protocol
+- Biocybernetic Derivation Layer
 - EVT Engine
-- runtime deterministico
+- governed runtime
+- deterministic continuity
+- verifiable evidence
+- fail-closed execution
 
-per trasformare interazioni in continuità verificabile.
+Its function is to transform interaction into governed operational continuity.
 
+Its architectural value is not generic intelligence.
 
----
+Its architectural value is:
 
+**the ability to bind identity, continuity, governance, and evidence into a single operational node**
 
 
