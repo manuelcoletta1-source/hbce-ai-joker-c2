@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import corpusCore from "../../../corpus-core.js";
-import alienCodeCore, {
+import core from "../../../corpus-core.js";
+import alienCode, {
   isDerivativeLegitimate,
   explainDerivativeFailure
 } from "../../../corpus-alien-code.js";
@@ -21,6 +21,7 @@ type VerifyBody = {
     hash?: string;
     signature?: string;
   };
+  continuityRef?: string | null;
   derivative?: {
     ipr?: string;
     layer?: string;
@@ -28,7 +29,7 @@ type VerifyBody = {
   };
 };
 
-function jsonHash(input: unknown): string {
+function pseudoHash(input: unknown): string {
   const data = JSON.stringify(input);
   let hash = 0;
   for (let i = 0; i < data.length; i += 1) {
@@ -36,11 +37,6 @@ function jsonHash(input: unknown): string {
     hash |= 0;
   }
   return `sha256:${Math.abs(hash).toString(16)}`;
-}
-
-function isKnownIpr(ipr?: string) {
-  if (!ipr) return false;
-  return corpusCore.isKnownIdentityIpr(ipr);
 }
 
 function verifyRequiredFields(payload: VerifyBody) {
@@ -56,14 +52,14 @@ function verifyRequiredFields(payload: VerifyBody) {
   if (!payload.decision) missing.push("decision");
   if (!payload.anchors?.hash) missing.push("anchors.hash");
 
-  return {
+  return Object.freeze({
     ok: missing.length === 0,
     missing
-  } as const;
+  });
 }
 
 function verifyHash(payload: VerifyBody) {
-  const recalculated = jsonHash({
+  const calculated = pseudoHash({
     evt: payload.evt,
     prev: payload.prev,
     t: payload.t,
@@ -71,76 +67,89 @@ function verifyHash(payload: VerifyBody) {
     ipr: payload.ipr,
     kind: payload.kind,
     state: payload.state,
-    decision: payload.decision
+    decision: payload.decision,
+    continuityRef: payload.continuityRef ?? null
   });
 
-  return {
-    ok: payload.anchors?.hash === recalculated,
-    expected: recalculated,
-    actual: payload.anchors?.hash || null
-  } as const;
+  return Object.freeze({
+    ok: payload.anchors?.hash === calculated,
+    expected: calculated,
+    actual: payload.anchors?.hash ?? null
+  });
 }
 
-function verifyDecision(value?: string) {
-  return corpusCore.isValidRuntimeDecision(value || "");
+function verifyIdentity(ipr?: string) {
+  return !!ipr && core.isKnownIdentityIpr(ipr);
 }
 
-function verifyState(value?: string) {
-  return corpusCore.isValidSystemState(value || "");
+function verifyDecision(decision?: string) {
+  return !!decision && core.isValidRuntimeDecision(decision);
+}
+
+function verifyState(state?: string) {
+  return !!state && core.isValidSystemState(state);
 }
 
 function verifyDerivative(payload: VerifyBody) {
   if (!payload.derivative) {
-    return {
+    return Object.freeze({
       requested: false,
       ok: true,
-      reasons: []
-    } as const;
+      failures: [] as string[]
+    });
   }
 
   const context = {
     valid_human_origin: true,
     valid_primary_ai_root: true,
     identity_binding:
-      payload.derivative.ipr === corpusCore.IDENTITY_ROOTS.derived_root.ipr ||
-      payload.ipr === corpusCore.IDENTITY_ROOTS.derived_root.ipr,
+      payload.derivative.ipr === core.IDENTITY_LINEAGE.derived_root.ipr ||
+      payload.ipr === core.IDENTITY_LINEAGE.derived_root.ipr,
     policy_validation: true,
     runtime_authorization: payload.decision === "ALLOW",
-    evt_continuity: true,
+    evt_continuity: !!payload.prev && !!payload.evt,
     evidence_production: !!payload.anchors?.hash,
     verification: true
   };
 
   const legitimate = isDerivativeLegitimate(context);
-  const details = explainDerivativeFailure(context);
+  const failures = [...explainDerivativeFailure(context).failures];
 
-  const layerOk =
-    payload.derivative.layer === corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code;
-  const iprOk =
-    payload.derivative.ipr === corpusCore.IDENTITY_ROOTS.derived_root.ipr;
+  if (payload.derivative.ipr !== core.IDENTITY_LINEAGE.derived_root.ipr) {
+    failures.push("INVALID_DERIVATIVE_IPR");
+  }
 
-  return {
+  if (payload.derivative.layer !== core.BIOCYBERNETIC_DERIVATION_LAYER.code) {
+    failures.push("INVALID_DERIVATION_LAYER");
+  }
+
+  if (
+    typeof payload.derivative.legitimate === "boolean" &&
+    payload.derivative.legitimate !== legitimate
+  ) {
+    failures.push("DERIVATIVE_LEGITIMACY_MISMATCH");
+  }
+
+  return Object.freeze({
     requested: true,
-    ok: legitimate && layerOk && iprOk,
-    reasons: [
-      ...details.failures,
-      ...(layerOk ? [] : ["INVALID_DERIVATION_LAYER"]),
-      ...(iprOk ? [] : ["INVALID_DERIVATIVE_IPR"])
-    ]
-  } as const;
+    ok: legitimate && failures.length === 0,
+    failures
+  });
 }
 
 function buildVerificationReport(payload: VerifyBody) {
   const required = verifyRequiredFields(payload);
-  const knownIdentity = isKnownIpr(payload.ipr);
-  const hashCheck = required.ok ? verifyHash(payload) : { ok: false, expected: null, actual: payload.anchors?.hash || null };
+  const identityOk = verifyIdentity(payload.ipr);
   const decisionOk = verifyDecision(payload.decision);
   const stateOk = verifyState(payload.state);
+  const hashCheck = required.ok
+    ? verifyHash(payload)
+    : { ok: false, expected: null, actual: payload.anchors?.hash ?? null };
   const derivative = verifyDerivative(payload);
 
   const checks = {
     required_fields: required.ok,
-    identity_known: knownIdentity,
+    identity_known: identityOk,
     decision_valid: decisionOk,
     state_valid: stateOk,
     hash_valid: hashCheck.ok,
@@ -148,18 +157,16 @@ function buildVerificationReport(payload: VerifyBody) {
   };
 
   const failures = [
-    ...(required.ok ? [] : required.missing.map((field) => `MISSING_${field.toUpperCase()}`)),
-    ...(knownIdentity ? [] : ["UNKNOWN_IDENTITY"]),
+    ...required.missing.map((field) => `MISSING_${field.toUpperCase()}`),
+    ...(identityOk ? [] : ["UNKNOWN_IDENTITY"]),
     ...(decisionOk ? [] : ["INVALID_DECISION"]),
     ...(stateOk ? [] : ["INVALID_STATE"]),
     ...(hashCheck.ok ? [] : ["HASH_MISMATCH"]),
-    ...derivative.reasons
+    ...derivative.failures
   ];
 
-  const valid = Object.values(checks).every(Boolean);
-
   return Object.freeze({
-    valid,
+    valid: Object.values(checks).every(Boolean),
     checks,
     failures,
     derivative,
@@ -184,25 +191,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const report = buildVerificationReport(body);
+  const verification = buildVerificationReport(body);
 
   return NextResponse.json({
-    ok: report.valid,
-    state: report.valid ? "OPERATIONAL" : "INVALID",
-    decision: report.valid ? "ALLOW" : "BLOCK",
+    ok: verification.valid,
+    state: verification.valid ? "OPERATIONAL" : "INVALID",
+    decision: verification.valid ? "ALLOW" : "BLOCK",
+    verification,
     protocol: {
-      sequence: corpusCore.RUNTIME_SEQUENCE,
-      failClosed: corpusCore.FAIL_CLOSED_RULES
+      sequence: core.RUNTIME_SEQUENCE,
+      failClosed: core.FAIL_CLOSED_RULES
     },
-    verification: report,
-    evidenceModel: corpusCore.EVIDENCE_MODEL,
+    evidenceModel: core.EVIDENCE_MODEL,
     derivationLayer: {
-      code: corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code,
-      axiom: corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.axiom
+      code: core.BIOCYBERNETIC_DERIVATION_LAYER.code,
+      axiom: core.BIOCYBERNETIC_DERIVATION_LAYER.axiom
     },
     alienCode: {
-      interface: alienCodeCore.ORGANISM_SYSTEM_INTERFACE,
-      loop: alienCodeCore.BIOCYBERNETIC_LOOP
+      interface: alienCode.ORGANISM_SYSTEM_INTERFACE,
+      loop: alienCode.BIOCYBERNETIC_LOOP
     }
   });
 }
@@ -211,13 +218,14 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     endpoint: "/api/verify",
-    purpose: "Verify EVT-shaped operational objects, identity lineage, hash integrity, and derivative legitimacy.",
+    purpose:
+      "Verify EVT-shaped operational objects, identity lineage, hash integrity, and derivative legitimacy.",
     supports: {
-      knownIdentityRoots: corpusCore.getIdentityLineage(),
-      validDecisions: corpusCore.DECISION_OUTPUTS,
-      validStates: corpusCore.SYSTEM_STATES,
-      derivativeRoot: corpusCore.IDENTITY_ROOTS.derived_root,
-      derivationLayer: corpusCore.BIOCYBERNETIC_DERIVATION_LAYER.code
+      identityLineage: core.getIdentityLineage(),
+      decisions: core.DECISION_OUTPUTS,
+      states: core.SYSTEM_STATES,
+      derivativeRoot: core.IDENTITY_LINEAGE.derived_root,
+      derivationLayer: core.BIOCYBERNETIC_DERIVATION_LAYER.code
     }
   });
 }
