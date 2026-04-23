@@ -1,207 +1,720 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI JOKER-C2 Chat</title>
 
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#111821;
+      --panel2:#0f1720;
+      --text:#e8eef7;
+      --muted:#8fa3b8;
+      --accent:#7dd3fc;
+      --accent2:#38bdf8;
+      --line:rgba(255,255,255,.08);
+      --line2:rgba(255,255,255,.05);
+      --radius:18px;
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --sidebar:290px;
+    }
 
-<title>Joker-C2 Chat</title>
+    *{box-sizing:border-box}
 
-<style>
+    html,body{
+      margin:0;
+      padding:0;
+      height:100%;
+      background:var(--bg);
+      color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+    }
 
-:root{
---bg:#0b0f14;
---panel:#121923;
---text:#e8eef7;
---muted:#8fa3b8;
---accent:#7dd3fc;
---line:rgba(255,255,255,0.08);
-}
+    body{
+      display:grid;
+      grid-template-columns:var(--sidebar) minmax(0,1fr);
+      overflow:hidden;
+      background:
+        radial-gradient(circle at top left, rgba(56,189,248,.10), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(125,211,252,.08), transparent 30%),
+        var(--bg);
+    }
 
-*{box-sizing:border-box}
+    button,
+    input,
+    textarea{
+      font:inherit;
+    }
 
-body{
-margin:0;
-font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
-background:var(--bg);
-color:var(--text);
-display:flex;
-flex-direction:column;
-height:100vh;
-}
+    .sidebar{
+      border-right:1px solid var(--line);
+      background:rgba(10,15,22,.92);
+      display:flex;
+      flex-direction:column;
+      min-width:0;
+    }
 
-header{
-padding:16px 20px;
-border-bottom:1px solid var(--line);
-background:var(--panel);
-}
+    .sidebar-head{
+      padding:16px;
+      border-bottom:1px solid var(--line);
+      display:grid;
+      gap:12px;
+    }
 
-header h1{
-margin:0;
-font-size:18px;
-letter-spacing:.04em;
-}
+    .brand{
+      display:grid;
+      gap:4px;
+    }
 
-#chat{
-flex:1;
-overflow:auto;
-padding:20px;
-display:flex;
-flex-direction:column;
-gap:14px;
-}
+    .brand-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
 
-.message{
-max-width:700px;
-padding:14px 16px;
-border-radius:14px;
-line-height:1.5;
-white-space:pre-wrap;
-}
+    .brand-title{
+      font-size:18px;
+      font-weight:700;
+    }
 
-.user{
-align-self:flex-end;
-background:#1e293b;
-}
+    .brand-sub{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
+    }
 
-.bot{
-align-self:flex-start;
-background:#0f172a;
-border:1px solid var(--line);
-}
+    .new-chat-btn{
+      appearance:none;
+      border:none;
+      border-radius:14px;
+      padding:12px 14px;
+      cursor:pointer;
+      font-weight:700;
+      background:linear-gradient(180deg,var(--accent),var(--accent2));
+      color:#06121a;
+    }
 
-footer{
-border-top:1px solid var(--line);
-background:var(--panel);
-padding:12px;
-display:flex;
-gap:10px;
-}
+    .chat-list{
+      flex:1;
+      overflow:auto;
+      padding:12px;
+      display:grid;
+      gap:10px;
+    }
 
-input{
-flex:1;
-padding:12px;
-border-radius:10px;
-border:1px solid var(--line);
-background:#0f172a;
-color:white;
-}
+    .chat-item{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:rgba(255,255,255,.02);
+      padding:12px;
+      cursor:pointer;
+      display:grid;
+      gap:8px;
+      transition:background .12s ease,border-color .12s ease;
+    }
 
-button{
-padding:12px 16px;
-border-radius:10px;
-border:none;
-background:var(--accent);
-cursor:pointer;
-}
+    .chat-item:hover{
+      background:rgba(255,255,255,.04);
+    }
 
-button:hover{
-opacity:.9;
-}
+    .chat-item.active{
+      border-color:rgba(125,211,252,.45);
+      background:rgba(125,211,252,.08);
+    }
 
-</style>
+    .chat-item-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+    }
+
+    .chat-item-title{
+      font-size:14px;
+      font-weight:600;
+      line-height:1.4;
+      word-break:break-word;
+    }
+
+    .chat-item-meta{
+      font-size:11px;
+      color:var(--muted);
+    }
+
+    .chat-delete{
+      appearance:none;
+      border:none;
+      background:transparent;
+      color:var(--muted);
+      cursor:pointer;
+      padding:0;
+      font-size:14px;
+      line-height:1;
+    }
+
+    .sidebar-footer{
+      padding:14px 16px;
+      border-top:1px solid var(--line);
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .main{
+      min-width:0;
+      display:grid;
+      grid-template-rows:auto 1fr auto;
+      height:100vh;
+    }
+
+    .topbar{
+      border-bottom:1px solid var(--line);
+      background:rgba(17,24,33,.72);
+      backdrop-filter:blur(10px);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      padding:16px 22px;
+    }
+
+    .topbar-left{
+      display:grid;
+      gap:4px;
+      min-width:0;
+    }
+
+    .topbar-title{
+      font-size:18px;
+      font-weight:700;
+    }
+
+    .topbar-sub{
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .status{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:8px 12px;
+      background:rgba(255,255,255,.02);
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    .dot{
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:var(--accent);
+      box-shadow:0 0 12px rgba(125,211,252,.7);
+    }
+
+    .messages{
+      overflow:auto;
+      padding:24px 22px 12px;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+
+    .welcome{
+      width:min(900px,100%);
+      margin:0 auto;
+      border:1px dashed var(--line);
+      background:rgba(255,255,255,.02);
+      border-radius:20px;
+      padding:18px 20px;
+      color:var(--muted);
+      line-height:1.7;
+    }
+
+    .row{
+      width:min(900px,100%);
+      margin:0 auto;
+      display:flex;
+    }
+
+    .row.user{
+      justify-content:flex-end;
+    }
+
+    .row.assistant{
+      justify-content:flex-start;
+    }
+
+    .bubble{
+      max-width:82%;
+      border-radius:20px;
+      padding:14px 16px;
+      line-height:1.7;
+      white-space:pre-wrap;
+      word-break:break-word;
+      box-shadow:var(--shadow);
+    }
+
+    .bubble.user{
+      background:linear-gradient(180deg, rgba(56,189,248,.18), rgba(56,189,248,.10));
+      border:1px solid rgba(56,189,248,.28);
+    }
+
+    .bubble.assistant{
+      background:linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95));
+      border:1px solid var(--line);
+    }
+
+    .role{
+      display:block;
+      margin-bottom:8px;
+      font-size:11px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+
+    .composer-wrap{
+      padding:14px 18px 18px;
+      border-top:1px solid var(--line);
+      background:rgba(11,15,20,.82);
+    }
+
+    .composer{
+      width:min(900px,100%);
+      margin:0 auto;
+      border:1px solid var(--line);
+      border-radius:22px;
+      background:linear-gradient(180deg, rgba(17,24,33,.95), rgba(15,23,32,.95));
+      box-shadow:var(--shadow);
+      padding:14px;
+      display:grid;
+      gap:12px;
+    }
+
+    .input{
+      width:100%;
+      min-height:100px;
+      resize:vertical;
+      border:none;
+      background:transparent;
+      color:var(--text);
+      outline:none;
+      line-height:1.6;
+    }
+
+    .composer-bottom{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .meta-strip{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .meta-pill{
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:7px 10px;
+      background:rgba(255,255,255,.02);
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .send-btn{
+      appearance:none;
+      border:none;
+      border-radius:14px;
+      padding:12px 16px;
+      cursor:pointer;
+      font-weight:700;
+      background:linear-gradient(180deg,var(--accent),var(--accent2));
+      color:#06121a;
+    }
+
+    .send-btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
+    .typing{
+      width:min(900px,100%);
+      margin:0 auto;
+      color:var(--muted);
+      font-size:13px;
+      padding:0 4px;
+    }
+
+    @media (max-width:980px){
+      body{
+        grid-template-columns:1fr;
+      }
+
+      .sidebar{
+        display:none;
+      }
+
+      .bubble{
+        max-width:100%;
+      }
+
+      .topbar{
+        padding:14px 16px;
+      }
+
+      .messages{
+        padding:18px 14px 10px;
+      }
+
+      .composer-wrap{
+        padding:10px 12px 14px;
+      }
+    }
+  </style>
 </head>
-
 <body>
 
-<header>
-<h1>AI JOKER-C2</h1>
-</header>
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div class="brand">
+        <div class="brand-kicker">HBCE Research</div>
+        <div class="brand-title">AI JOKER-C2</div>
+        <div class="brand-sub">
+          Chat operativa con memoria locale e struttura conversazionale stile GPT.
+        </div>
+      </div>
 
-<div id="chat"></div>
+      <button class="new-chat-btn" id="newChatButton">+ Nuova chat</button>
+    </div>
 
-<footer>
+    <div class="chat-list" id="chatList"></div>
 
-<input
-id="input"
-placeholder="Scrivi un messaggio..."
-autocomplete="off"
-/>
+    <div class="sidebar-footer">
+      Nodo predefinito: <strong>HBCE-MATRIX-NODE-0001-TORINO</strong><br>
+      Identità: <strong>IPR-AI-0001</strong>
+    </div>
+  </aside>
 
-<button id="send">Invia</button>
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">Joker-C2 Chat</div>
+        <div class="topbar-sub" id="chatSubtitle">Conversazione operativa attiva</div>
+      </div>
 
-</footer>
+      <div class="status">
+        <span class="dot"></span>
+        <span id="statusText">Pronto</span>
+      </div>
+    </header>
 
-<script>
+    <section class="messages" id="messages"></section>
 
-const chat = document.getElementById("chat")
-const input = document.getElementById("input")
-const send = document.getElementById("send")
+    <div class="typing" id="typingText"></div>
 
-let previousTopic = ""
+    <div class="composer-wrap">
+      <form class="composer" id="chatForm">
+        <textarea
+          id="input"
+          class="input"
+          placeholder="Scrivi un messaggio a Joker-C2..."
+        ></textarea>
 
-function addMessage(text,role){
+        <div class="composer-bottom">
+          <div class="meta-strip">
+            <div class="meta-pill">mode: context-recovery</div>
+            <div class="meta-pill">ipr: IPR-AI-0001</div>
+            <div class="meta-pill">node: TORINO</div>
+          </div>
 
-const div = document.createElement("div")
+          <button class="send-btn" id="sendButton" type="submit">Invia</button>
+        </div>
+      </form>
+    </div>
+  </main>
 
-div.className = "message " + role
+  <script>
+    const STORAGE_KEY = "joker-c2-gpt-style-chats-v1";
 
-div.textContent = text
+    const messagesEl = document.getElementById("messages");
+    const inputEl = document.getElementById("input");
+    const chatForm = document.getElementById("chatForm");
+    const sendButton = document.getElementById("sendButton");
+    const statusText = document.getElementById("statusText");
+    const typingText = document.getElementById("typingText");
+    const chatListEl = document.getElementById("chatList");
+    const newChatButton = document.getElementById("newChatButton");
+    const chatSubtitle = document.getElementById("chatSubtitle");
 
-chat.appendChild(div)
+    let chats = [];
+    let activeChatId = null;
+    let isSending = false;
 
-chat.scrollTop = chat.scrollHeight
+    function uid() {
+      return "chat-" + Date.now() + "-" + Math.random().toString(16).slice(2,8);
+    }
 
-}
+    function setStatus(text) {
+      statusText.textContent = text;
+    }
 
-async function sendMessage(){
+    function saveChats() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+    }
 
-const message = input.value.trim()
+    function loadChats() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          chats = [];
+          return;
+        }
+        const parsed = JSON.parse(raw);
+        chats = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        chats = [];
+      }
+    }
 
-if(!message) return
+    function createEmptyChat() {
+      return {
+        id: uid(),
+        title: "Nuova conversazione",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        previousTopic: "",
+        messages: []
+      };
+    }
 
-addMessage(message,"user")
+    function getActiveChat() {
+      return chats.find(chat => chat.id === activeChatId) || null;
+    }
 
-input.value = ""
+    function ensureChatExists() {
+      if (!chats.length) {
+        const first = createEmptyChat();
+        chats.push(first);
+        activeChatId = first.id;
+        saveChats();
+      } else if (!activeChatId || !getActiveChat()) {
+        activeChatId = chats[0].id;
+      }
+    }
 
-try{
+    function titleFromMessage(text) {
+      const clean = String(text || "").trim().replace(/\s+/g, " ");
+      return clean.length > 42 ? clean.slice(0, 42) + "…" : clean || "Nuova conversazione";
+    }
 
-const res = await fetch("/api/chat",{
+    function renderChatList() {
+      chatListEl.innerHTML = "";
 
-method:"POST",
+      chats
+        .slice()
+        .sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+        .forEach((chat) => {
+          const item = document.createElement("div");
+          item.className = "chat-item" + (chat.id === activeChatId ? " active" : "");
 
-headers:{
-"Content-Type":"application/json"
-},
+          const top = document.createElement("div");
+          top.className = "chat-item-top";
 
-body:JSON.stringify({
+          const title = document.createElement("div");
+          title.className = "chat-item-title";
+          title.textContent = chat.title || "Nuova conversazione";
 
-message:message,
-previous_topic:previousTopic
+          const del = document.createElement("button");
+          del.className = "chat-delete";
+          del.type = "button";
+          del.textContent = "×";
+          del.title = "Elimina chat";
+          del.addEventListener("click", (event) => {
+            event.stopPropagation();
+            deleteChat(chat.id);
+          });
 
-})
+          top.appendChild(title);
+          top.appendChild(del);
 
-})
+          const meta = document.createElement("div");
+          meta.className = "chat-item-meta";
+          meta.textContent = new Date(chat.updatedAt).toLocaleString("it-IT");
 
-const data = await res.json()
+          item.appendChild(top);
+          item.appendChild(meta);
 
-if(data.detected_topic){
+          item.addEventListener("click", () => {
+            activeChatId = chat.id;
+            renderAll();
+          });
 
-previousTopic = data.detected_topic
+          chatListEl.appendChild(item);
+        });
+    }
 
-}
+    function renderMessages() {
+      messagesEl.innerHTML = "";
 
-addMessage(data.reply || "Nessuna risposta","bot")
+      const chat = getActiveChat();
+      if (!chat || !chat.messages.length) {
+        const welcome = document.createElement("div");
+        welcome.className = "welcome";
+        welcome.textContent =
+          "Joker-C2 operativo. Questa interfaccia usa una struttura conversazionale stile GPT, con memoria locale delle chat e collegamento all'endpoint /api/chat.";
+        messagesEl.appendChild(welcome);
+        return;
+      }
 
-}catch(e){
+      chat.messages.forEach((message) => {
+        const row = document.createElement("div");
+        row.className = "row " + message.role;
 
-addMessage("Errore di connessione API","bot")
+        const bubble = document.createElement("div");
+        bubble.className = "bubble " + message.role;
 
-}
+        const role = document.createElement("span");
+        role.className = "role";
+        role.textContent = message.role === "user" ? "Tu" : "AI JOKER-C2";
 
-}
+        const body = document.createElement("div");
+        body.textContent = message.content;
 
-send.onclick = sendMessage
+        bubble.appendChild(role);
+        bubble.appendChild(body);
+        row.appendChild(bubble);
+        messagesEl.appendChild(row);
+      });
 
-input.addEventListener("keypress",e=>{
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
 
-if(e.key==="Enter") sendMessage()
+    function updateSubtitle() {
+      const chat = getActiveChat();
+      chatSubtitle.textContent = chat ? chat.title : "Conversazione operativa attiva";
+    }
 
-})
+    function renderAll() {
+      renderChatList();
+      renderMessages();
+      updateSubtitle();
+    }
 
-addMessage("Joker-C2 operativo. Inserisci una domanda.","bot")
+    function newChat() {
+      const chat = createEmptyChat();
+      chats.unshift(chat);
+      activeChatId = chat.id;
+      saveChats();
+      renderAll();
+      inputEl.focus();
+    }
 
-</script>
+    function deleteChat(chatId) {
+      const index = chats.findIndex(chat => chat.id === chatId);
+      if (index === -1) return;
 
+      chats.splice(index, 1);
+
+      if (!chats.length) {
+        const fresh = createEmptyChat();
+        chats.push(fresh);
+        activeChatId = fresh.id;
+      } else if (activeChatId === chatId) {
+        activeChatId = chats[0].id;
+      }
+
+      saveChats();
+      renderAll();
+    }
+
+    function pushMessage(role, content) {
+      const chat = getActiveChat();
+      if (!chat) return;
+
+      chat.messages.push({ role, content });
+      chat.updatedAt = new Date().toISOString();
+
+      if (chat.messages.length === 1 && role === "user") {
+        chat.title = titleFromMessage(content);
+      }
+
+      saveChats();
+      renderAll();
+    }
+
+    async function handleSubmit(event) {
+      event.preventDefault();
+
+      if (isSending) return;
+
+      const message = inputEl.value.trim();
+      if (!message) return;
+
+      const chat = getActiveChat();
+      if (!chat) return;
+
+      pushMessage("user", message);
+      inputEl.value = "";
+      isSending = true;
+      sendButton.disabled = true;
+      setStatus("Invio...");
+      typingText.textContent = "Joker-C2 sta elaborando la richiesta...";
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message,
+            previous_topic: chat.previousTopic || ""
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.detected_topic) {
+          chat.previousTopic = data.detected_topic;
+        }
+
+        if (!response.ok || !data.ok) {
+          pushMessage("assistant", data.error || "Errore nella richiesta.");
+          setStatus("Errore");
+          return;
+        }
+
+        pushMessage("assistant", data.reply || "Nessuna risposta generata.");
+        setStatus("Completato");
+      } catch (error) {
+        pushMessage("assistant", "Errore di connessione API.");
+        setStatus("Offline");
+      } finally {
+        typingText.textContent = "";
+        isSending = false;
+        sendButton.disabled = false;
+        saveChats();
+        renderAll();
+      }
+    }
+
+    newChatButton.addEventListener("click", newChat);
+    chatForm.addEventListener("submit", handleSubmit);
+
+    loadChats();
+    ensureChatExists();
+    renderAll();
+  </script>
 </body>
 </html>
