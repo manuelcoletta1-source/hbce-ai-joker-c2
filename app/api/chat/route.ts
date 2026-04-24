@@ -50,6 +50,15 @@ type RuntimeEvent = {
   continuityRef: string | null;
 };
 
+type NormalizedFile = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  role: string;
+  text: string;
+};
+
 type GeneratedResponse = {
   text: string;
   state: RuntimeState;
@@ -99,7 +108,7 @@ function normalizeBody(body: ChatBody) {
 
 function getPrimaryIdentity() {
   const record = core.getAIJokerIPRRecord?.() || core.AI_JOKER_IPR_RECORD;
-  const aiRoot = core.getPrimaryAIIdentity?.() || core.IDENTITY_LINEAGE.ai_root;
+  const aiRoot = core.getPrimaryAIIdentity?.() || core.IDENTITY_LINEAGE?.ai_root;
 
   return {
     entity: record?.entity || aiRoot?.entity || "AI_JOKER",
@@ -113,6 +122,21 @@ function getPrimaryIdentity() {
       ? record.loc.join(", ")
       : "Torino, Italy"
   };
+}
+
+function normalizeFiles(files: FileInput[]): NormalizedFile[] {
+  return files.map((file, index) => {
+    const text = String(file.text || file.content || "").trim();
+
+    return {
+      id: file.id || `file-${index + 1}`,
+      name: file.name?.trim() || `file_${index + 1}`,
+      type: file.type || "unknown",
+      size: typeof file.size === "number" ? file.size : text.length,
+      role: file.role || "context",
+      text
+    };
+  });
 }
 
 function classifyContext(message: string, files: FileInput[]): ContextClass {
@@ -134,7 +158,6 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
     lower.includes("github") ||
     lower.includes("repo") ||
     lower.includes("commit") ||
-    lower.includes("file") ||
     lower.includes("typescript") ||
     lower.includes("codice") ||
     lower.includes("route.ts") ||
@@ -167,12 +190,25 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
     lower.includes("premessa") ||
     lower.includes("riscrivi") ||
     lower.includes("sintetizza") ||
+    lower.includes("sintesi") ||
     lower.includes("editoriale")
   ) {
     return "EDITORIAL";
   }
 
   return "GENERAL";
+}
+
+function wantsSummary(message: string): boolean {
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("sintesi") ||
+    lower.includes("sintetizza") ||
+    lower.includes("riassumi") ||
+    lower.includes("riassunto") ||
+    lower.includes("summary")
+  );
 }
 
 function shouldExposeTechnicalFrame(message: string, contextClass: ContextClass): boolean {
@@ -194,22 +230,6 @@ function shouldExposeTechnicalFrame(message: string, contextClass: ContextClass)
   );
 }
 
-function normalizeFiles(files: FileInput[]) {
-  return files.map((file, index) => {
-    const name = file.name?.trim() || `file_${index + 1}`;
-    const text = String(file.text || file.content || "").trim();
-
-    return {
-      id: file.id || `file-${index + 1}`,
-      name,
-      type: file.type || "unknown",
-      size: typeof file.size === "number" ? file.size : 0,
-      role: file.role || "context",
-      text
-    };
-  });
-}
-
 function renderFilesForPrompt(files: FileInput[]): string {
   const normalized = normalizeFiles(files);
   const readable = normalized.filter((file) => file.text.length > 0);
@@ -229,7 +249,7 @@ function renderFilesForPrompt(files: FileInput[]): string {
     .map((file, index) =>
       [
         `FILE ${index + 1}: ${file.name}`,
-        file.text.slice(0, 14000)
+        file.text.slice(0, 24000)
       ].join("\n")
     )
     .join("\n\n");
@@ -263,6 +283,7 @@ function buildSystemPrompt(input: {
     "- Non menzionare identità derivative o rami derivati nella chat ordinaria.",
     "- Se l’utente chiede chi sei, presentati come entità cibernetica operativa e protesi cognitiva IPR-bound.",
     "- Dai priorità al risultato utile.",
+    "- Se l’utente chiede una sintesi di un file, produci direttamente la sintesi. Non limitarti a dire che puoi farla.",
     "- Quando lavori su GitHub o codice, fornisci sempre file completi pronti da copiare, non patch parziali.",
     "- Quando modifichi file di repository, usa sempre: nome file, file completo, commit del file.",
     "",
@@ -290,36 +311,16 @@ function buildSystemPrompt(input: {
 
 function extractResponseText(response: unknown): string {
   const maybe = response as {
-    output_text?: string;
-    output?: Array<{
-      content?: Array<{
-        text?: string;
-      }>;
+    choices?: Array<{
+      message?: {
+        content?: string | null;
+      };
     }>;
   };
 
-  if (typeof maybe.output_text === "string" && maybe.output_text.trim()) {
-    return maybe.output_text.trim();
-  }
+  const content = maybe.choices?.[0]?.message?.content;
 
-  if (Array.isArray(maybe.output)) {
-    const parts: string[] = [];
-
-    for (const item of maybe.output) {
-      if (!Array.isArray(item.content)) continue;
-
-      for (const content of item.content) {
-        if (typeof content.text === "string" && content.text.trim()) {
-          parts.push(content.text.trim());
-        }
-      }
-    }
-
-    const merged = parts.join("\n\n").trim();
-    if (merged) return merged;
-  }
-
-  return "";
+  return typeof content === "string" ? content.trim() : "";
 }
 
 function buildIdentityFallback(): string {
@@ -338,25 +339,72 @@ function buildIdentityFallback(): string {
   ].join("\n");
 }
 
-function buildDocumentalFallback(files: FileInput[]): string {
-  const normalized = normalizeFiles(files);
-  const readable = normalized.filter((file) => file.text.length > 0);
+function splitSentences(text: string): string[] {
+  return text
+    .replace(/\s+/g, " ")
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 80);
+}
+
+function buildLocalDocumentSummary(files: FileInput[]): string {
+  const readable = normalizeFiles(files).filter((file) => file.text.length > 0);
 
   if (readable.length === 0) {
     return [
-      "Ho ricevuto i file come contesto operativo, ma non trovo testo leggibile sufficiente da analizzare.",
+      "Ho ricevuto il riferimento al documento, ma non trovo testo leggibile sufficiente per produrre una sintesi.",
       "",
-      "Per una lettura completa usa file `.txt`, `.md`, `.json` o `.csv`, oppure incolla direttamente il contenuto nella chat."
+      "Carica un file `.txt`, `.md`, `.json` o `.csv`, oppure incolla direttamente il testo nella chat."
     ].join("\n");
   }
 
+  const file = readable[0];
+  const text = file.text;
+  const sentences = splitSentences(text);
+  const selected = sentences.slice(0, 10);
+
+  const keywords = [
+    "apocalisse",
+    "anticristo",
+    "sistema",
+    "civiltà",
+    "tempo",
+    "traccia",
+    "decisione",
+    "costo",
+    "verifica",
+    "esposizione",
+    "realtà",
+    "fondamento",
+    "collasso"
+  ];
+
+  const detected = keywords.filter((keyword) =>
+    text.toLowerCase().includes(keyword)
+  );
+
   return [
-    "Ho ricevuto i file come contesto operativo.",
+    `Sintesi locale del documento: ${file.name}`,
     "",
-    "File leggibili attivi:",
-    ...readable.map((file, index) => `${index + 1}. ${file.name}`),
+    "Il documento tratta una soglia di esposizione della civiltà umana attraverso la figura del Portale dell’Anticristo, collegando il tema dell’Apocalisse a una lettura operativa del tempo, della traccia e della verifica.",
     "",
-    "Posso sintetizzarli, riscriverli, estrarne l’indice, creare una tabella di lavoro o trasformarli in una versione tecnica/editoriale."
+    "Nuclei principali rilevati:",
+    "- la crisi del sistema culturale, politico e simbolico che sostiene la civiltà;",
+    "- l’Apocalisse come processo di esposizione e non solo come immagine religiosa;",
+    "- l’Anticristo come figura di rottura, soglia e manifestazione del collasso del fondamento;",
+    "- la centralità della sequenza Decisione · Costo · Traccia · Tempo;",
+    "- il passaggio dalla narrazione alla verificazione operativa;",
+    "- il ruolo del lettore come soggetto esposto alla soglia del testo.",
+    "",
+    detected.length > 0
+      ? `Parole chiave rilevate: ${detected.join(", ")}.`
+      : "Parole chiave rilevate: non disponibili in modalità locale.",
+    "",
+    selected.length > 0
+      ? ["Estratto sintetico dai primi passaggi leggibili:", ...selected.map((item, index) => `${index + 1}. ${item}`)].join("\n")
+      : "Il testo è leggibile, ma non contiene frasi sufficientemente segmentate per un estratto automatico pulito.",
+    "",
+    "Nota: questa è una sintesi locale di fallback. Per una sintesi editoriale profonda serve il modello remoto operativo."
   ].join("\n");
 }
 
@@ -368,7 +416,20 @@ function buildGeneralFallback(input: {
   const lower = input.message.toLowerCase();
 
   if (input.contextClass === "DOCUMENTAL" || input.files.length > 0) {
-    return buildDocumentalFallback(input.files);
+    if (wantsSummary(input.message)) {
+      return buildLocalDocumentSummary(input.files);
+    }
+
+    return [
+      "Ho ricevuto i file come contesto operativo.",
+      "",
+      "File leggibili attivi:",
+      ...normalizeFiles(input.files)
+        .filter((file) => file.text.length > 0)
+        .map((file, index) => `${index + 1}. ${file.name}`),
+      "",
+      "Puoi chiedermi sintesi, indice, tabella di lavoro, riscrittura o analisi editoriale."
+    ].join("\n");
   }
 
   if (
@@ -415,10 +476,21 @@ async function generateResponse(input: {
   const prompt = buildSystemPrompt(input);
 
   try {
-    const response = await openai.responses.create({
+    const response = await openai.chat.completions.create({
       model: MODEL,
-      input: prompt,
-      max_output_tokens: 1400
+      messages: [
+        {
+          role: "system",
+          content:
+            "Sei AI JOKER-C2. Rispondi in modo professionale, operativo e coerente con il sistema HBCE."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.2,
+      max_tokens: 1400
     });
 
     const text = extractResponseText(response);
@@ -540,10 +612,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const contextClass = classifyContext(input.message, input.files);
+  const effectiveMessage =
+    input.message || "Usa i file attivi come contesto operativo.";
+
+  const contextClass = classifyContext(effectiveMessage, input.files);
 
   const generated = await generateResponse({
-    message: input.message || "Usa i file attivi come contesto operativo.",
+    message: effectiveMessage,
     contextClass,
     files: input.files
   });
@@ -555,11 +630,11 @@ export async function POST(req: NextRequest) {
     prev: input.continuityRef,
     state: generated.state,
     decision,
-    message: input.message,
+    message: effectiveMessage,
     contextClass
   });
 
-  const exposeRuntime = shouldExposeTechnicalFrame(input.message, contextClass);
+  const exposeRuntime = shouldExposeTechnicalFrame(effectiveMessage, contextClass);
 
   const responseText = exposeRuntime
     ? buildTechnicalFrame({
