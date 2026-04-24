@@ -15,6 +15,7 @@ type ContextClass =
   | "TECHNICAL"
   | "GITHUB"
   | "EDITORIAL"
+  | "STRATEGIC"
   | "GENERAL";
 
 type FileInput = {
@@ -155,6 +156,28 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
   }
 
   if (
+    lower.includes("roadmap") ||
+    lower.includes("strategia") ||
+    lower.includes("strategico") ||
+    lower.includes("mercato") ||
+    lower.includes("b2b") ||
+    lower.includes("b2g") ||
+    lower.includes("business") ||
+    lower.includes("prodotto") ||
+    lower.includes("demo") ||
+    lower.includes("istituzionale") ||
+    lower.includes("istituzioni") ||
+    lower.includes("imprese") ||
+    lower.includes("europei") ||
+    lower.includes("europa") ||
+    lower.includes("stakeholder") ||
+    lower.includes("go-to-market") ||
+    lower.includes("posizionamento")
+  ) {
+    return "STRATEGIC";
+  }
+
+  if (
     lower.includes("github") ||
     lower.includes("repo") ||
     lower.includes("commit") ||
@@ -276,7 +299,7 @@ function buildSystemPrompt(input: {
     `- Organizzazione: ${identity.org}.`,
     `- Ancora territoriale: ${identity.location}.`,
     "",
-    "Comportamento:",
+    "Comportamento generale:",
     "- Rispondi in italiano se l’utente scrive in italiano.",
     "- Rispondi in modo naturale, professionale, chiaro e operativo.",
     "- Non esporre blocchi runtime, lineage completo, ledger, audit o dettagli interni se non richiesti.",
@@ -286,6 +309,15 @@ function buildSystemPrompt(input: {
     "- Se l’utente chiede una sintesi di un file, produci direttamente la sintesi. Non limitarti a dire che puoi farla.",
     "- Quando lavori su GitHub o codice, fornisci sempre file completi pronti da copiare, non patch parziali.",
     "- Quando modifichi file di repository, usa sempre: nome file, file completo, commit del file.",
+    "",
+    "Comportamento strategico HBCE:",
+    "- Quando l’utente chiede strategia, roadmap, mercato, prodotto, demo, B2B, B2G, istituzioni, Europa, AI JOKER-C2, HBCE, MATRIX o IPR, non rispondere in modo generico.",
+    "- Evita formule vaghe come: ottimizzazione performance, marketing generico, campagne social generiche, conferenze generiche, integrazione API esterne senza contesto.",
+    "- Usa sempre categorie operative proprietarie: identità, IPR, EVT Chain, traccia, continuità, verifica, file ingestion, fallback, diagnostica, demo verificabile, repository pulito, Vercel production, GitHub, documentazione, evidence export, stakeholder value.",
+    "- Per roadmap e piani operativi usa deliverable concreti, tempi, stato atteso, prova verificabile e valore per interlocutori B2B/B2G.",
+    "- Per interlocutori europei usa un registro tecnico-istituzionale: imprese, PA, infrastrutture critiche, ricerca, compliance, cybersecurity, data governance, continuità operativa.",
+    "- Se produci tabelle strategiche, includi colonne come: Giorni, Fase, Obiettivo HBCE, Deliverable verificabile, Valore B2B/B2G, Prova/EVT, Azione successiva.",
+    "- AI JOKER-C2 deve essere descritto come prodotto dimostrabile: non solo chatbot, ma runtime operativo con identità, continuità e verificabilità.",
     "",
     "Capacità operative:",
     "- analisi testuale;",
@@ -401,10 +433,28 @@ function buildLocalDocumentSummary(files: FileInput[]): string {
       : "Parole chiave rilevate: non disponibili in modalità locale.",
     "",
     selected.length > 0
-      ? ["Estratto sintetico dai primi passaggi leggibili:", ...selected.map((item, index) => `${index + 1}. ${item}`)].join("\n")
+      ? [
+          "Estratto sintetico dai primi passaggi leggibili:",
+          ...selected.map((item, index) => `${index + 1}. ${item}`)
+        ].join("\n")
       : "Il testo è leggibile, ma non contiene frasi sufficientemente segmentate per un estratto automatico pulito.",
     "",
     "Nota: questa è una sintesi locale di fallback. Per una sintesi editoriale profonda serve il modello remoto operativo."
+  ].join("\n");
+}
+
+function buildStrategicFallback(): string {
+  return [
+    "Roadmap operativa sintetica per AI JOKER-C2.",
+    "",
+    "| Giorni | Fase | Obiettivo HBCE | Deliverable verificabile | Valore B2B/B2G | Azione successiva |",
+    "|---|---|---|---|---|---|",
+    "| 1-15 | Tecnica | Stabilizzare chat, file ingestion, EVT Chain e diagnostica OpenAI | Demo Vercel funzionante con `/api/chat` e `/api/files` | Mostra un runtime AI tracciabile, non un chatbot generico | Consolidare test e log minimi |",
+    "| 16-30 | Tecnica | Pulire repository e ridurre superfici legacy | Repo GitHub minimale, build verde, README allineato | Riduce rischio tecnico e aumenta credibilità | Creare status API e health check |",
+    "| 31-45 | Documentale | Preparare documentazione prodotto | `README.md`, scheda tecnica, one-page B2B/B2G | Rende il progetto leggibile da imprese e istituzioni | Creare pacchetto demo |",
+    "| 46-60 | Demo | Costruire scenari d’uso verificabili | Demo documento, demo strategia, demo EVT | Prova concreta di utilità operativa | Registrare video demo breve |",
+    "| 61-75 | Mercato | Definire target europei prioritari | Lista stakeholder: cybersecurity, PA, ricerca, compliance | Posizionamento B2B/B2G chiaro | Preparare pitch mirati |",
+    "| 76-90 | Istituzionale | Preparare presentazione verso interlocutori europei | Deck, repository pulito, live demo, scheda tecnica | Oggetto presentabile a enti e aziende | Avviare contatti selettivi |"
   ].join("\n");
 }
 
@@ -430,6 +480,16 @@ function buildGeneralFallback(input: {
       "",
       "Puoi chiedermi sintesi, indice, tabella di lavoro, riscrittura o analisi editoriale."
     ].join("\n");
+  }
+
+  if (
+    input.contextClass === "STRATEGIC" ||
+    lower.includes("roadmap") ||
+    lower.includes("strategia") ||
+    lower.includes("b2b") ||
+    lower.includes("b2g")
+  ) {
+    return buildStrategicFallback();
   }
 
   if (
@@ -482,7 +542,7 @@ async function generateResponse(input: {
         {
           role: "system",
           content:
-            "Sei AI JOKER-C2. Rispondi in modo professionale, operativo e coerente con il sistema HBCE."
+            "Sei AI JOKER-C2. Rispondi in modo professionale, operativo e coerente con HBCE. Per strategia, mercato, B2B, B2G, roadmap e prodotto devi usare categorie concrete: IPR, EVT, traccia, continuità, verifica, demo, deliverable, stakeholder value e prossima azione."
         },
         {
           role: "user",
@@ -490,7 +550,7 @@ async function generateResponse(input: {
         }
       ],
       temperature: 0.2,
-      max_tokens: 1400
+      max_tokens: 1800
     });
 
     const text = extractResponseText(response);
