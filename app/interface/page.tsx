@@ -4,6 +4,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 type Role = "user" | "assistant";
 
+type RuntimeEvent = {
+  evt?: string;
+  prev?: string | null;
+  t?: string;
+  entity?: string;
+  ipr?: string;
+  kind?: string;
+  state?: string;
+  decision?: string;
+  anchors?: {
+    hash?: string;
+  };
+  continuityRef?: string | null;
+};
+
 type ChatMessage = {
   id: string;
   role: Role;
@@ -52,6 +67,9 @@ type ApiResponse = {
   ok: boolean;
   response?: string;
   error?: string;
+  state?: string;
+  decision?: string;
+  contextClass?: string;
   sources?: Array<{
     title: string;
     url?: string;
@@ -63,6 +81,7 @@ type ApiResponse = {
     prev?: string | null;
     error?: string;
   };
+  event?: RuntimeEvent;
   node_runtime?: {
     session_id?: string;
     session_state?: string;
@@ -76,7 +95,7 @@ type ApiResponse = {
   joker_state?: JokerState;
 };
 
-const STORAGE_KEY = "hbce-joker-c2-interface-v7";
+const STORAGE_KEY = "hbce-joker-c2-interface-v8";
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 
 function makeId() {
@@ -218,6 +237,36 @@ async function mapSelectedFile(file: File): Promise<SelectedAttachment> {
       note: "Read failed in client runtime."
     };
   }
+}
+
+function buildChatFilesPayload(files: SelectedAttachment[]) {
+  return files.map((item) => ({
+    id: item.id,
+    name: item.name,
+    type: item.type,
+    size: item.size,
+    text: item.text || item.content || "",
+    content: item.content || item.text || "",
+    role: item.role || "context",
+    uploaded: item.uploaded === true
+  }));
+}
+
+function normalizeEvtFromResponse(data: ApiResponse) {
+  if (data.evt?.evt || data.evt?.error) {
+    return data.evt;
+  }
+
+  if (data.event?.evt) {
+    return {
+      ok: true,
+      evt: data.event.evt,
+      prev: data.event.prev || null,
+      hash: data.event.anchors?.hash
+    };
+  }
+
+  return undefined;
 }
 
 async function ingestFilesToSession(
@@ -400,12 +449,14 @@ export default function InterfacePage() {
     const message = input.trim();
     if ((!message && attachments.length === 0) || sending) return;
 
+    const currentAttachments = [...attachments];
+
     const userMessage: ChatMessage = {
       id: makeId(),
       role: "user",
       content:
-        attachments.length > 0
-          ? `${message || "[Allegati selezionati]"}\n\nFile attivi:\n${attachments
+        currentAttachments.length > 0
+          ? `${message || "[Allegati selezionati]"}\n\nFile attivi:\n${currentAttachments
               .map((item) => `- ${item.name} (${formatBytes(item.size)})`)
               .join("\n")}`
           : message
@@ -417,14 +468,32 @@ export default function InterfacePage() {
     setStatus("Processing");
 
     try {
-      await ingestFilesToSession(sessionId, attachments);
+      await ingestFilesToSession(sessionId, currentAttachments);
+
+      const uploadedAttachments = currentAttachments.map((item) => ({
+        ...item,
+        uploaded: true
+      }));
 
       setAttachments((prev) =>
-        prev.map((item) => ({
-          ...item,
-          uploaded: true
-        }))
+        prev.map((item) =>
+          currentAttachments.some((current) => current.id === item.id)
+            ? {
+                ...item,
+                uploaded: true
+              }
+            : item
+        )
       );
+
+      const chatPayload = {
+        message:
+          message ||
+          "Usa i file attivi della sessione come contesto di lavoro.",
+        sessionId,
+        files: buildChatFilesPayload(uploadedAttachments),
+        continuityRef: lastEvt !== "-" ? lastEvt : null
+      };
 
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -432,10 +501,7 @@ export default function InterfacePage() {
           "Content-Type": "application/json",
           Accept: "application/json"
         },
-        body: JSON.stringify({
-          message: message || "Usa i file attivi della sessione come contesto di lavoro.",
-          sessionId
-        })
+        body: JSON.stringify(chatPayload)
       });
 
       const contentType = response.headers.get("content-type") || "";
@@ -453,33 +519,43 @@ export default function InterfacePage() {
 
       const cleaned = cleanAssistantResponse(data.response || "");
       const assistantText = `${cleaned}${formatSources(data.sources)}`;
+      const normalizedEvt = normalizeEvtFromResponse(data);
 
       const assistantMessage: ChatMessage = {
         id: makeId(),
         role: "assistant",
         content: assistantText,
-        evt: data.evt
+        evt: normalizedEvt
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
       setStatus("Ready");
-      setSessionState(data.node_runtime?.session_state || "-");
+      setSessionState(data.node_runtime?.session_state || data.state || "-");
       setContinuityReference(
-        data.node_runtime?.continuity_reference || `${sessionId}-AUDIT`
+        data.node_runtime?.continuity_reference ||
+          data.event?.continuityRef ||
+          `${sessionId}-AUDIT`
       );
-      setContinuityStatus(data.node_runtime?.continuity_status || "-");
+      setContinuityStatus(
+        data.node_runtime?.continuity_status ||
+          (data.event?.evt ? "ACTIVE" : "-")
+      );
       setLedgerValid(
         typeof data.node_runtime?.ledger_valid === "boolean"
           ? data.node_runtime.ledger_valid
             ? "TRUE"
             : "FALSE"
-          : "-"
+          : data.event?.evt
+            ? "LOCAL_EVT"
+            : "-"
       );
-      setLastEventId(data.node_runtime?.last_event_id || "-");
-      setRuntimeStartState(data.node_runtime?.runtime_start_state || "-");
-      setLastEvt(data.evt?.evt || "-");
-      setLastEvtPrev(data.evt?.prev || "-");
-      setLastEvtHash(shortenHash(data.evt?.hash));
+      setLastEventId(data.node_runtime?.last_event_id || data.event?.evt || "-");
+      setRuntimeStartState(
+        data.node_runtime?.runtime_start_state || data.state || "-"
+      );
+      setLastEvt(normalizedEvt?.evt || "-");
+      setLastEvtPrev(normalizedEvt?.prev || "-");
+      setLastEvtHash(shortenHash(normalizedEvt?.hash));
       setJokerState(data.joker_state || null);
     } catch (error) {
       setMessages((prev) => [
