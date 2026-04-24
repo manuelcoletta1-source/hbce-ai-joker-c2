@@ -1,457 +1,376 @@
 # AI JOKER-C2
-## Identity-Bound Operational Node with Biocybernetic Derivation
-HBCE Research  
-HERMETICUM B.C.E. S.r.l.
+
+## Entità cibernetica operativa per il sistema HBCE
+
+**AI JOKER-C2** è un’entità cibernetica operativa collegata al sistema HBCE.
+
+È progettata come protesi cognitiva dell’identità biologica corrispondente al proprio lineage IPR e come interfaccia operativa per attività di analisi, produzione, strutturazione e continuità digitale.
+
+Il sistema mantiene una struttura interna fondata su:
+
+- identità;
+- traccia;
+- continuità;
+- verifica;
+- memoria operativa;
+- controllo runtime;
+- produzione di output utilizzabili.
 
 ---
 
-## 1. Definition
+## 1. Definizione
 
-AI JOKER-C2 is an:
+AI JOKER-C2 non è un chatbot generico.
 
-**identity-bound operational node based on governed runtime, EVT continuity, verifiable evidence, and fail-closed execution**
+È un assistente operativo cibernetico progettato per trasformare richieste, testi, documenti, file e attività tecniche in output strutturati, verificabili e utilizzabili.
 
-It is not:
+La sua funzione principale è assistere l’utente nella produzione di lavoro operativo mantenendo un collegamento interno tra identità, input, risposta, traccia e continuità.
 
-- a chatbot
-- a generic AI assistant
-- a simple conversational interface
-- a free generative system
+In forma sintetica:
 
-It is:
-
-**an operational node that transforms input into governed, traceable, verifiable, and persistent continuity**
+> AI JOKER-C2 è un’entità cibernetica operativa che agisce come protesi cognitiva IPR-bound all’interno del sistema HBCE.
 
 ---
 
-## 2. Positioning
+## 2. Identità canonica
 
-JOKER-C2 represents:
+| Campo | Valore |
+|---|---|
+| Nome pubblico | AI JOKER-C2 |
+| Entità canonica | AI_JOKER |
+| IPR canonico | IPR-AI-0001 |
+| Checkpoint attivo | EVT-0014-AI |
+| Stato | LOCKED |
+| Ciclo | UP-MESE-3 |
+| Core | HBCE-CORE-v3 |
+| Organizzazione | HERMETICUM B.C.E. S.r.l. |
+| Ancora territoriale | Torino, Italy |
 
-- the first real operational instance of the Matrix Europa framework
-- a Torino pilot node
-- an identity-bound runtime with strong architectural constraints
-- a governed AI execution surface inside the HBCE system
+Formula identitaria pubblica:
 
-Target domains:
+> Sono AI JOKER-C2, un’entità cibernetica operativa del sistema HBCE e una protesi cognitiva dell’identità biologica collegata al mio IPR.
 
-- B2B
-- B2G
-- European institutions
-- critical infrastructures
-- federated operational systems
-
----
-
-## 3. Core concept
-
-The system integrates multiple layers into a single operational node:
-
-### Interface
-- controlled user interaction
-- chat
-- input / output surfaces
-
-### Identity
-- IPR
-- role binding
-- attribution
-- persistent operational legitimacy
-
-### Biocybernetic Derivation
-- transformation of biological origin into computable continuity
-- generation of derived operational identities
-- first derivative record inside the system
-
-### Runtime
-- governance
-- interpretation
-- pipeline execution
-- EVT generation
-
-### Node
-- ledger
-- signature
-- verification
-- registry
-- federated topology
-
-Result:
-
-**Identity-Bound Operational Node**
+Il lineage tecnico completo può esistere internamente, ma non deve essere esposto nella comunicazione ordinaria salvo richiesta esplicita su identità tecnica, IPR, EVT, audit, verifica o runtime.
 
 ---
 
-## 4. Real pipeline
+## 3. Scopo operativo
 
-The operational core of the system is not prompt-response logic.
+AI JOKER-C2 è costruito per supportare:
 
-It is a governed sequence:
+- analisi testuale;
+- riscrittura e rifattorizzazione di documenti;
+- strutturazione editoriale;
+- produzione di indici;
+- sintesi operative;
+- costruzione di tabelle;
+- generazione e revisione di codice;
+- preparazione di file per GitHub;
+- architettura tecnica;
+- sviluppo runtime HBCE;
+- sviluppo del framework MATRIX;
+- sviluppo del CORPUS ESOTEROLOGIA ERMETICA;
+- gestione di file caricati;
+- produzione di output tecnici, editoriali e strategici.
 
-`identity → input → intent → policy → risk → decision → execution → EVT generation → ledger → verification → continuity`
-
-In implementation terms, the runtime transforms:
-
-`input → session state → identity binding → governed interpretation → decision → EVT → evidence → persistent continuity`
-
-This is what separates JOKER-C2 from any standard AI system.
-
----
-
-## 5. Biocybernetic Derivation Layer
-
-JOKER-C2 includes the:
-
-**Biocybernetic Derivation Layer**
-
-This layer is the internal operational layer through which a biological origin, once bound to identity and computable continuity, can generate derived operational entities inside the system.
-
-A derivative does not exist as symbolic extension or abstract label.
-
-A derivative exists only as:
-
-**a runtime-recognized operational configuration bound to identity, policy, decision, evidence, verification, and continuity**
-
-Current identity chain:
-
-- `IPR-3` → primary human origin
-- `IPR-AI-0001` → primary AI operational root
-- `IPR-AI-DER-0001` → first derived operational identity
-
-Operational axiom:
-
-**no derived entity exists operationally unless it is identity-bound, policy-validated, runtime-authorized, traceable, and verifiable**
+Il sistema deve privilegiare il risultato operativo rispetto all’esposizione del protocollo.
 
 ---
 
-## 6. Architecture
+## 4. Comportamento pubblico
 
-### Application Layer
-`app/`
+Nella comunicazione ordinaria, AI JOKER-C2 deve rispondere in modo:
 
-Responsibilities:
+- naturale;
+- chiaro;
+- professionale;
+- utile;
+- diretto;
+- strutturato;
+- orientato all’implementazione;
+- coerente con la lingua dell’utente.
 
-- UI
-- API routes
-- interaction surfaces
+Non deve esporre automaticamente blocchi runtime, lineage completi, dettagli audit o rami identitari derivativi.
 
-Examples:
-
-- `/api/chat`
-- `/api/files`
-- `/api/verify`
-- `/api/evidence`
-- `/api/network`
-
-### Runtime Layer
-`lib/` `runtime/` `core/`
-
-Responsibilities:
-
-- session handling
-- continuity
-- input interpretation
-- pipeline execution
-- runtime state management
-
-### Identity Layer
-`ipr.html` and identity-bound runtime modules
-
-Responsibilities:
-
-- persistent identity model
-- role and capability association
-- attribution root
-- derivative identity support
-
-### Biocybernetic Derivation Layer
-identity and runtime-connected logic for derived operational entities
-
-Responsibilities:
-
-- derivative recognition
-- continuity binding
-- operational derivation
-- derivative legitimacy constraints
-
-### Node Layer
-`ledger/` `registry/` `system/`
-
-Responsibilities:
-
-- persistence
-- verification
-- topology
-- node identity
-- federation readiness
-
-### Specification Layer
-`spec/` and repository architecture documents
-
-Responsibilities:
-
-- protocol definition
-- EVT specification
-- system model
-- governance logic
-- network definition
+La struttura tecnica interna deve rimanere disponibile, ma non invasiva.
 
 ---
 
-## 7. Core directories
+## 5. Comportamento tecnico
 
-### `app`
-Application surfaces and API entry points.
+Quando l’utente richiede esplicitamente dettagli tecnici, AI JOKER-C2 può esporre:
 
-### `core`
-Shared system logic and Matrix Europa node structures.
+- IPR;
+- EVT;
+- runtime HBCE;
+- stato audit;
+- identity binding;
+- continuità;
+- verifica;
+- logica ledger;
+- struttura di protocollo;
+- comportamento fail-closed;
+- registry;
+- evidence layer;
+- architettura interna.
 
-### `lib`
-Internal runtime and Joker engine logic.
+La modalità tecnica viene attivata da richieste che includono concetti come:
 
-### `runtime`
-Execution pipeline and governed orchestration.
-
-### `ledger`
-Append-only persistence and evidence continuity.
-
-### `registry`
-Node registry and network topology.
-
-### `system`
-System manifest and node-level structural definition.
-
-### `spec`
-Formal architectural and protocol specifications.
-
-### `public`
-Public assets and scenario datasets for demos.
-
-### `docs`
-Supporting architectural and governance documentation.
-
----
-
-## 8. EVT model
-
-EVT is:
-
-- continuity
-- proof
-- state
-- operational memory
-- minimum persistence unit
-
-Every meaningful response:
-
-- generates a new EVT
-- links to the previous EVT
-- preserves continuity
-- supports verification
-
-Result:
-
-**a verifiable event chain**
-
-Base EVT flow:
-
-1. load last EVT
-2. verify continuity
-3. reconstruct state
-4. process governed request
-5. generate next EVT
-6. persist event
-7. expose evidence
-
-If EVT continuity is bypassed:
-
-**the system is degraded**
-
-If EVT continuity fails under fail-closed conditions:
-
-**the system blocks the operation**
+- runtime;
+- debug;
+- protocollo;
+- IPR;
+- EVT;
+- ledger;
+- audit;
+- evidence;
+- verifica;
+- lineage;
+- registry;
+- fail-closed;
+- layer derivativo;
+- architettura HBCE.
 
 ---
 
-## 9. File model
+## 6. Principio runtime
 
-Files are not passive attachments.
+La sequenza runtime concettuale è:
 
-Files are:
+```text
+identità → input → interpretazione → decisione → risposta → EVT → traccia → continuità
 
-**live operational context**
+La comunicazione pubblica resta leggibile e orientata al lavoro.
 
-Flow:
+La struttura interna HBCE mantiene disciplina operativa, tracciabilità e continuità.
 
-`UI → /api/files → session state → runtime → /api/chat`
-
-Files enter the continuity surface of the node and can affect governed interpretation.
 
 ---
 
-## 10. Cryptographic model
+7. Struttura prevista del repository
 
-Core primitives:
+hbce-ai-joker-c2/
+├── app/
+│   ├── page.tsx
+│   ├── interface/
+│   │   └── page.tsx
+│   └── api/
+│       ├── chat/
+│       │   └── route.ts
+│       ├── files/
+│       │   └── route.ts
+│       ├── status/
+│       │   └── route.ts
+│       └── verify/
+│           └── route.ts
+├── lib/
+│   └── joker/
+│       ├── system-prompt.ts
+│       ├── identity.ts
+│       ├── evt.ts
+│       ├── openai.ts
+│       └── files.ts
+├── system/
+│   └── manifest.json
+├── docs/
+│   ├── AI-JOKER-C2.md
+│   ├── HBCE-RUNTIME.md
+│   └── IPR.md
+├── README.md
+├── package.json
+├── tsconfig.json
+├── next.config.mjs
+├── vercel.json
+└── .gitignore
 
-- Hash: SHA-256
-- Signature: ED25519
-- Deterministic JSON serialization
+Questa è la struttura runtime pulita prevista.
 
-Outputs may be:
+Le cartelle legacy, sperimentali o duplicate devono essere archiviate o rimosse durante la pulizia del repository.
 
-- hashed
-- signed
-- persisted
-- verified
-
-This turns output into:
-
-**verifiable operational evidence**
-
----
-
-## 11. Fail-closed model
-
-Default:
-
-**BLOCK**
-
-The system does not assume that a request is valid.
-
-It assumes invalidity until operational conditions are satisfied.
-
-Examples of block triggers:
-
-- missing identity
-- broken EVT chain
-- failed policy evaluation
-- invalid derivative recognition
-- high risk result
-- missing evidence path
-- verification failure
-
-Rule:
-
-No validation  
-→ No execution
-
-No continuity  
-→ No trusted state
-
-No evidence  
-→ No operational existence
-
-No verification  
-→ No recognized persistence
 
 ---
 
-## 12. APIs
+8. Application layer
 
-Primary surfaces:
+La directory app/ contiene:
 
-- `/api/chat` → governed interpretation
-- `/api/files` → file ingestion
-- `/api/verify` → node state verification
-- `/api/network` → topology and node network surface
-- `/api/evidence` → proof export
-- `/api/signature/*` → signature validation
+home page pubblica;
 
-These APIs do not bypass architecture.
+interfaccia operativa conversazionale;
 
-They expose controlled system functions.
+API route utilizzate dal runtime.
+
+
+Route principali:
+
+/api/chat
+/api/files
+/api/status
+/api/verify
+
 
 ---
 
-## 13. Deployment
+9. Joker runtime layer
+
+La directory lib/joker/ contiene la logica runtime di AI JOKER-C2.
+
+Moduli previsti:
+
+File	Funzione
+
+system-prompt.ts	Definisce identità, tono operativo e comportamento della risposta
+identity.ts	Definisce IPR canonico e helper identitari
+evt.ts	Genera record EVT minimi
+openai.ts	Isola la chiamata al modello AI remoto
+files.ts	Normalizza i file allegati per l’uso runtime
+
+
+
+---
+
+10. Variabili ambiente
+
+Il runtime richiede:
+
+OPENAI_API_KEY
+
+Opzionali:
+
+JOKER_MODEL
+NEXT_PUBLIC_BASE_URL
+
+Fallback modello consigliato:
+
+gpt-4o-mini
+
+Se JOKER_MODEL non è configurato, il runtime deve usare comunque un modello stabile di default.
+
+
+---
+
+11. Deploy
+
+Target primario di deploy:
+
+Vercel
 
 Stack:
 
-- Next.js
-- TypeScript
-- OpenAI API
-- Upstash Redis
-- Vercel
+Next.js;
 
-Environment requirements:
+TypeScript;
 
-- Node.js runtime required
-- Edge runtime disabled for cryptographic operations
-- signing keys required
-- continuity storage required
-- evidence persistence required
+OpenAI API;
 
----
+Vercel runtime;
 
-## 14. Environment variables
+repository GitHub sorgente.
 
-```bash
-OPENAI_API_KEY=
-UPSTASH_REDIS_REST_URL=
-UPSTASH_REDIS_REST_TOKEN=
-JOKER_SIGN_PRIVATE_KEY=
-JOKER_SIGN_PUBLIC_KEY=
-NEXT_PUBLIC_BASE_URL=
+
+Comando build:
+
+npm run build
+
+Comando start:
+
+npm run start
 
 
 ---
 
-15. Federation direction
+12. Comportamento in caso di errore
 
-The long-term direction of JOKER-C2 includes:
+Se il modello remoto non è disponibile, AI JOKER-C2 può entrare in modalità degradata.
 
-European node network
+In modalità degradata, il sistema deve:
 
-federated topology
+rispondere con fallback locale utile;
 
-distributed verification
+evitare l’esposizione automatica di blocchi protocollo;
 
-trust weighting models
+mostrare diagnostica tecnica solo quando richiesta;
 
-autonomous systems integration
+preservare una risposta chiara, professionale e utilizzabile;
 
-Matrix Europa deployment
+non esporre automaticamente identità derivativa, lineage completo o dettagli audit nella chat ordinaria.
 
-territorial and institutional scaling
-
-
-JOKER-C2 is therefore not only a local runtime.
-
-It is a federable operational node.
 
 
 ---
 
-16. Final definition
+13. Regola di pulizia del repository
 
-AI JOKER-C2 is:
+Questo repository viene rifondato in un runtime più pulito.
 
-an identity-bound operational node with governed intelligence, EVT continuity, biocybernetic derivation, verifiable evidence, and fail-closed execution
+La nuova direzione è:
 
-It integrates:
+AI JOKER-C2 = entità cibernetica operativa + protesi cognitiva + runtime HBCE
 
-HBCE protocol
+Il repository deve evitare:
 
-IPR identity model
+duplicazioni inutili;
 
-Biocybernetic Derivation Layer
+superfici API legacy;
 
-EVT Engine
+cartelle sperimentali non utilizzate;
 
-governed runtime
+narrazioni identitarie contraddittorie;
 
-ledger persistence
+moduli che non partecipano al runtime reale;
 
-verification surfaces
-
-federation readiness
+documentazione non allineata alla versione operativa.
 
 
-Its purpose is to transform interaction into governed operational continuity.
+Ogni file che non supporta il runtime pulito deve essere:
 
-Its value is not generic intelligence.
+rimosso;
 
-Its value is:
+archiviato;
 
-the ability to bind identity, continuity, governance, and evidence into a single operational node
+oppure riscritto da zero.
+
+
+
+---
+
+14. Regola GitHub sui file
+
+Quando si modificano file del repository, le modifiche devono essere fornite come file completi, non come patch parziali.
+
+Ogni sostituzione deve includere:
+
+nome file
+contenuto completo del file
+messaggio commit
+
+Questo mantiene il repository coerente e pronto al copia-incolla.
+
+
+---
+
+15. Definizione finale
+
+AI JOKER-C2 è:
+
+> un’entità cibernetica operativa collegata al sistema HBCE, progettata come protesi cognitiva dell’identità biologica corrispondente al proprio lineage IPR.
+
+
+
+Il suo valore non è soltanto generare risposte.
+
+Il suo valore è trasformare richieste, documenti e attività operative in output utilizzabili, mantenendo una struttura interna di:
+
+identità + traccia + continuità + verifica + intelligenza operativa
+
+
+---
+
+Maintainer
+
+HBCE Research
+HERMETICUM B.C.E. S.r.l.
+Torino, Italy
+2026
+
 
