@@ -17,7 +17,7 @@ AI JOKER-C2 non è un chatbot generico.
 ```text
 identità + input + risposta + EVT + traccia + continuità
 
-Il sistema è costruito per supportare attività documentali, tecniche e strategiche, mantenendo una struttura minima di identità e verificabilità.
+Il sistema è costruito per supportare attività documentali, tecniche e strategiche, mantenendo una struttura minima di identità, tracciabilità e verificabilità.
 
 
 ---
@@ -205,7 +205,75 @@ Questi limiti sono parte della roadmap evolutiva e non impediscono la dimostrazi
 
 ---
 
-10. Prossimi sviluppi
+10. Nota dual-use e governance
+
+AI JOKER-C2 può avere rilevanza dual-use perché opera su funzioni utili sia in ambito civile sia in contesti ad alta criticità operativa, come:
+
+analisi documentale;
+
+supporto decisionale;
+
+continuità informativa;
+
+diagnostica runtime;
+
+tracciabilità minima degli eventi;
+
+classificazione di richieste;
+
+produzione di output tecnici;
+
+supporto a processi di governance.
+
+
+Nel contesto HBCE, la rilevanza dual-use non viene trattata come capacità offensiva, ma come esigenza di controllo, auditabilità e responsabilità operativa.
+
+Il sistema deve quindi essere presentato come prototipo orientato a:
+
+uso civile;
+
+ricerca;
+
+compliance;
+
+governance AI;
+
+infrastrutture documentali;
+
+continuità operativa;
+
+valutazione tecnica controllata;
+
+dimostrazione B2B/B2G.
+
+
+Ogni sviluppo futuro deve mantenere vincoli di:
+
+uso lecito;
+
+controllo umano;
+
+auditabilità;
+
+tracciabilità;
+
+limitazione dei rischi;
+
+trasparenza verso gli interlocutori;
+
+coerenza con il quadro normativo europeo.
+
+
+Formula sintetica:
+
+dual-use = rilevanza operativa controllata, non impiego offensivo
+
+AI JOKER-C2 deve quindi essere comunicato come sistema dimostrativo per la gestione verificabile di informazione, documenti e continuità operativa, non come strumento autonomo di azione o intervento.
+
+
+---
+
+11. Prossimi sviluppi
 
 Priorità operative:
 
@@ -237,7 +305,7 @@ Priorità operative:
 
 ---
 
-11. Formula finale
+12. Formula finale
 
 AI JOKER-C2 = runtime AI operativo con identità, file ingestion, EVT Chain e output strutturati
 
@@ -257,4 +325,3 @@ PEC HERMETICUM B.C.E. S.r.l.: hermeticum@pec.it
 Telefono: +39 351 572 4982
 Torino, Italy
 2026
-
