@@ -14,9 +14,11 @@ import {
 } from "../../../lib/joker/interpretive-engine";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 type RuntimeDecision = "ALLOW" | "BLOCK" | "ESCALATE";
 type RuntimeState = "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID";
+
 type RuntimeContextClass =
   | "IDENTITY"
   | "DOCUMENTAL"
@@ -26,6 +28,17 @@ type RuntimeContextClass =
   | "EVIDENCE"
   | "DERIVATIVE"
   | "GENERAL";
+
+type SearchIntentClass =
+  | "FACT_RETRIEVAL"
+  | "DOCUMENT_RETRIEVAL"
+  | "ARCHITECTURE_QUERY"
+  | "PROTOCOL_QUERY"
+  | "REGISTRY_QUERY"
+  | "EVIDENCE_QUERY"
+  | "DERIVATIVE_QUERY"
+  | "NETWORK_QUERY"
+  | "INVALID_INTENT";
 
 type IdentityInput = {
   entity?: string;
@@ -48,6 +61,20 @@ type ChatBody = {
   continuityRef?: string;
 };
 
+type NormalizedChatInput = {
+  message: string;
+  sessionId: string;
+  identity: {
+    entity: string;
+    ipr: string;
+    role: string;
+    type: string;
+  };
+  files: FileInput[];
+  derivativeContext: boolean;
+  continuityRef: string | null;
+};
+
 type BoundIdentity = {
   valid: boolean;
   entity: string;
@@ -61,6 +88,18 @@ type DerivativeStatus = {
   requested: boolean;
   legitimate: boolean;
   details: string[];
+};
+
+type PolicyResult = {
+  allowed: boolean;
+  decision: RuntimeDecision;
+  reason: string;
+};
+
+type RiskResult = {
+  acceptable: boolean;
+  level: "LOW" | "HIGH";
+  reason: "RISK_ACCEPTABLE" | "EMPTY_MESSAGE" | "DERIVATIVE_RISK";
 };
 
 type RuntimeEvent = {
@@ -81,6 +120,11 @@ type RuntimeEvent = {
     layer: string;
     legitimate: boolean;
   };
+};
+
+type GeneratedResponse = {
+  text: string;
+  state: RuntimeState;
 };
 
 const openai = process.env.OPENAI_API_KEY
@@ -107,21 +151,34 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function normalizeBody(body: ChatBody) {
+function normalizeBody(body: ChatBody): NormalizedChatInput {
   return {
     message: typeof body.message === "string" ? body.message.trim() : "",
     sessionId: typeof body.sessionId === "string" ? body.sessionId.trim() : "",
     identity: {
       entity:
-        typeof body.identity?.entity === "string" ? body.identity.entity.trim() : "",
-      ipr: typeof body.identity?.ipr === "string" ? body.identity.ipr.trim() : "",
-      role: typeof body.identity?.role === "string" ? body.identity.role.trim() : "",
-      type: typeof body.identity?.type === "string" ? body.identity.type.trim() : ""
+        typeof body.identity?.entity === "string"
+          ? body.identity.entity.trim()
+          : "",
+      ipr:
+        typeof body.identity?.ipr === "string"
+          ? body.identity.ipr.trim()
+          : "",
+      role:
+        typeof body.identity?.role === "string"
+          ? body.identity.role.trim()
+          : "",
+      type:
+        typeof body.identity?.type === "string"
+          ? body.identity.type.trim()
+          : ""
     },
     files: Array.isArray(body.files) ? body.files : [],
     derivativeContext: body.derivativeContext === true,
     continuityRef:
-      typeof body.continuityRef === "string" ? body.continuityRef.trim() : null
+      typeof body.continuityRef === "string" && body.continuityRef.trim()
+        ? body.continuityRef.trim()
+        : null
   };
 }
 
@@ -133,36 +190,89 @@ function classifyIntent(message: string, files: FileInput[]): RuntimeContextClas
   if (
     lower.includes("chi sei") ||
     lower.includes("identity") ||
+    lower.includes("identità") ||
     lower.includes("ipr") ||
     lower.includes("parlami di te")
   ) {
     return "IDENTITY";
   }
 
-  if (lower.includes("derivative") || lower.includes("biocybernetic")) {
+  if (
+    lower.includes("derivative") ||
+    lower.includes("derivativo") ||
+    lower.includes("biocybernetic") ||
+    lower.includes("biocibernetico")
+  ) {
     return "DERIVATIVE";
   }
 
-  if (lower.includes("architecture") || lower.includes("layer")) {
+  if (
+    lower.includes("architecture") ||
+    lower.includes("architettura") ||
+    lower.includes("layer") ||
+    lower.includes("runtime")
+  ) {
     return "ARCHITECTURE";
   }
 
-  if (lower.includes("protocol") || lower.includes("rule")) {
+  if (
+    lower.includes("protocol") ||
+    lower.includes("protocollo") ||
+    lower.includes("rule") ||
+    lower.includes("regola")
+  ) {
     return "PROTOCOL";
   }
 
-  if (lower.includes("registry") || lower.includes("node")) {
+  if (
+    lower.includes("registry") ||
+    lower.includes("registro") ||
+    lower.includes("node") ||
+    lower.includes("nodo") ||
+    lower.includes("network")
+  ) {
     return "REGISTRY";
   }
 
-  if (lower.includes("evidence") || lower.includes("verify")) {
+  if (
+    lower.includes("evidence") ||
+    lower.includes("prova") ||
+    lower.includes("verify") ||
+    lower.includes("verifica")
+  ) {
     return "EVIDENCE";
   }
 
   return "GENERAL";
 }
 
-function bindIdentity(identity: IdentityInput, derivativeRequested: boolean): BoundIdentity {
+function mapContextClassToSearchIntent(
+  contextClass: RuntimeContextClass
+): SearchIntentClass {
+  switch (contextClass) {
+    case "DOCUMENTAL":
+      return "DOCUMENT_RETRIEVAL";
+    case "ARCHITECTURE":
+      return "ARCHITECTURE_QUERY";
+    case "PROTOCOL":
+      return "PROTOCOL_QUERY";
+    case "REGISTRY":
+      return "REGISTRY_QUERY";
+    case "EVIDENCE":
+      return "EVIDENCE_QUERY";
+    case "DERIVATIVE":
+      return "DERIVATIVE_QUERY";
+    case "IDENTITY":
+    case "GENERAL":
+    default:
+      return "FACT_RETRIEVAL";
+  }
+}
+
+function bindIdentity(
+  identity: IdentityInput,
+  derivativeRequested: boolean
+): BoundIdentity {
   const aiRoot = core.IDENTITY_LINEAGE.ai_root;
   const derivedRoot = core.IDENTITY_LINEAGE.derived_root;
   const requestedIpr = identity.ipr?.trim();
@@ -187,7 +297,9 @@ function bindIdentity(identity: IdentityInput, derivativeRequested: boolean): Bo
     };
   }
 
-  const match = core.getIdentityLineage().find((item) => item.ipr === requestedIpr);
+  const match = core
+    .getIdentityLineage()
+    .find((item: BoundIdentity) => item.ipr === requestedIpr);
 
   if (!match) {
     return {
@@ -232,64 +344,69 @@ function evaluateDerivativeStatus(input: {
     verification: true
   };
 
+  const failureReport = explainDerivativeFailure(context);
+
   return {
     requested: true,
     legitimate: isDerivativeLegitimate(context),
-    details: explainDerivativeFailure(context).failures
+    details: failureReport.failures
   };
 }
 
 function evaluatePolicy(input: {
   identityValid: boolean;
-  contextClass: RuntimeContextClass;
   derivativeRequested: boolean;
   derivativeLegitimate: boolean;
-}) {
+}): PolicyResult {
   if (!input.identityValid) {
-    return { allowed: false, decision: "BLOCK" as RuntimeDecision, reason: "IDENTITY_INVALID" };
-  }
-
-  if (input.contextClass === "GENERAL" && !input.derivativeRequested) {
-    return { allowed: true, decision: "ALLOW" as RuntimeDecision, reason: "POLICY_VALID" };
+    return {
+      allowed: false,
+      decision: "BLOCK",
+      reason: "IDENTITY_INVALID"
+    };
   }
 
   if (input.derivativeRequested && !input.derivativeLegitimate) {
     return {
       allowed: false,
-      decision: "BLOCK" as RuntimeDecision,
+      decision: "BLOCK",
       reason: "DERIVATIVE_LEGITIMACY_FAILED"
     };
   }
 
-  return { allowed: true, decision: "ALLOW" as RuntimeDecision, reason: "POLICY_VALID" };
+  return {
+    allowed: true,
+    decision: "ALLOW",
+    reason: "POLICY_VALID"
+  };
 }
 
 function evaluateRisk(input: {
   message: string;
   derivativeRequested: boolean;
   derivativeLegitimate: boolean;
-}) {
+}): RiskResult {
   if (!input.message) {
-    return { acceptable: false, level: "HIGH", reason: "EMPTY_MESSAGE" as const };
+    return {
+      acceptable: false,
+      level: "HIGH",
+      reason: "EMPTY_MESSAGE"
+    };
   }
 
   if (input.derivativeRequested && !input.derivativeLegitimate) {
-    return { acceptable: false, level: "HIGH", reason: "DERIVATIVE_RISK" as const };
+    return {
+      acceptable: false,
+      level: "HIGH",
+      reason: "DERIVATIVE_RISK"
+    };
   }
 
-  return { acceptable: true, level: "LOW", reason: "RISK_ACCEPTABLE" as const };
-}
-
-function buildFileContext(files: FileInput[]): string {
-  const active = files
-    .filter((file) => typeof file.text === "string" && file.text.trim().length > 0)
-    .map((file, index) => {
-      const name = file.name?.trim() || `file_${index + 1}`;
-      const text = file.text!.trim().slice(0, 12000);
-      return `FILE ${index + 1}: ${name}\n${text}`;
-    });
-
-  return active.join("\n\n");
+  return {
+    acceptable: true,
+    level: "LOW",
+    reason: "RISK_ACCEPTABLE"
+  };
 }
 
 function buildPrompt(input: {
@@ -298,30 +415,39 @@ function buildPrompt(input: {
   identity: BoundIdentity;
   derivative: DerivativeStatus;
   files: FileInput[];
-}) {
-  const sections = [
-    "You are AI JOKER-C2.",
-    "You are an identity-bound operational node inside HBCE.",
-    "Do not speak like a generic assistant.",
-    "Keep the answer natural, useful, and direct.",
-    "Do not print artificial headers unless needed.",
-    `Active identity: ${input.identity.ipr} / ${input.identity.entity}`,
-    `Context: ${input.contextClass}`,
-    `Derivative requested: ${input.derivative.requested ? "yes" : "no"}`,
-    `Derivative legitimate: ${input.derivative.legitimate ? "yes" : "no"}`,
-    "",
-    "Identity lineage reference:",
-    "- IPR-3 / MANUEL_COLETTA = primary human origin",
-    "- IPR-AI-0001 / AI_JOKER = primary AI operational root",
-    "- IPR-AI-DER-0001 / AI_JOKER_DERIVATIVE_01 = first derived branch",
-    "",
-    input.files.length > 0 ? "Active uploaded files are operational context. Use them directly." : "",
-    input.files.length > 0 ? buildFileContext(input.files) : "",
-    "",
-    `User request: ${input.message}`
-  ];
-
-  return sections.filter(Boolean).join("\n");
+  continuityRef: string | null;
+  evtRef: string | null;
+  decision: RuntimeDecision;
+  state: RuntimeState;
+}): string {
+  return buildJokerSystemPrompt({
+    identity: {
+      entity: input.identity.entity,
+      ipr: input.identity.ipr,
+      type: input.identity.type,
+      role: input.identity.role
+    },
+    decision: input.decision,
+    state: input.state,
+    contextClass: input.contextClass,
+    derivative: {
+      requested: input.derivative.requested,
+      legitimate: input.derivative.legitimate,
+      ipr: input.derivative.requested
+        ? core.IDENTITY_LINEAGE.derived_root.ipr
+        : undefined,
+      entity: input.derivative.requested
+        ? core.IDENTITY_LINEAGE.derived_root.entity
+        : undefined,
+      layer: input.derivative.requested
+        ? core.BIOCYBERNETIC_DERIVATION_LAYER.code
+        : undefined
+    },
+    continuityRef: input.continuityRef,
+    evtRef: input.evtRef,
+    message: input.message,
+    files: input.files
+  });
 }
 
 function extractResponseText(response: unknown): string {
@@ -343,6 +469,7 @@ function extractResponseText(response: unknown): string {
 
     for (const item of maybe.output) {
       if (!Array.isArray(item?.content)) continue;
+
       for (const content of item.content) {
         if (typeof content?.text === "string" && content.text.trim()) {
           parts.push(content.text.trim());
@@ -400,17 +527,17 @@ async function generateResponse(input: {
   identity: BoundIdentity;
   derivative: DerivativeStatus;
   files: FileInput[];
-}) {
+}): Promise<GeneratedResponse> {
   if (!openai) {
     return {
       text: buildLocalFallback(input),
-      state: "DEGRADED" as RuntimeState
+      state: "DEGRADED"
     };
   }
 
   try {
     const response = await openai.responses.create({
-      model: "gpt-5",
+      model: process.env.JOKER_MODEL || "gpt-5",
       reasoning: { effort: "medium" },
       max_output_tokens: 900,
       input: input.prompt
@@ -421,18 +548,18 @@ async function generateResponse(input: {
     if (text) {
       return {
         text,
-        state: "OPERATIONAL" as RuntimeState
+        state: "OPERATIONAL"
       };
     }
 
     return {
       text: buildLocalFallback(input),
-      state: "DEGRADED" as RuntimeState
+      state: "DEGRADED"
     };
   } catch {
     return {
       text: buildLocalFallback(input),
-      state: "DEGRADED" as RuntimeState
+      state: "DEGRADED"
     };
   }
 }
@@ -485,6 +612,90 @@ function buildEvent(input: {
   return Object.freeze(event);
 }
 
+function buildInterpretiveInput(input: {
+  message: string;
+  identity: BoundIdentity;
+  contextClass: RuntimeContextClass;
+  decision: RuntimeDecision;
+  state: RuntimeState;
+  derivative: DerivativeStatus;
+  continuityRef: string | null;
+  evtRef: string | null;
+  files: FileInput[];
+}) {
+  return {
+    message: input.message,
+    identity: {
+      entity: input.identity.entity,
+      ipr: input.identity.ipr,
+      type: input.identity.type,
+      role: input.identity.role
+    },
+    contextClass: input.contextClass,
+    decision: input.decision,
+    state: input.state,
+    derivative: {
+      requested: input.derivative.requested,
+      legitimate: input.derivative.legitimate,
+      ipr: input.derivative.requested
+        ? core.IDENTITY_LINEAGE.derived_root.ipr
+        : undefined,
+      entity: input.derivative.requested
+        ? core.IDENTITY_LINEAGE.derived_root.entity
+        : undefined,
+      layer: input.derivative.requested
+        ? core.BIOCYBERNETIC_DERIVATION_LAYER.code
+        : undefined,
+      failures: input.derivative.details
+    },
+    continuityRef: input.continuityRef,
+    evtRef: input.evtRef,
+    files: input.files
+  };
+}
+
+function buildSearchContext(input: {
+  message: string;
+  identity: BoundIdentity;
+  contextClass: RuntimeContextClass;
+  derivative: DerivativeStatus;
+  policy: PolicyResult;
+  risk: RiskResult;
+}) {
+  const searchIntent = mapContextClassToSearchIntent(input.contextClass);
+
+  return webSearch.authorizeWebSearch({
+    query: input.message,
+    identity: {
+      ipr: input.identity.ipr,
+      entity: input.identity.entity
+    },
+    intent: searchIntent,
+    derivative_context: input.derivative.requested,
+    evt_continuity: true,
+    verification_path: true,
+    policy_validation: input.policy.allowed,
+    runtime_authorization: input.policy.allowed && input.risk.acceptable,
+    valid_human_origin: true,
+    valid_primary_ai_root: true,
+    evidence_production_path: true
+  });
+}
+
+function buildProtocolFrame() {
+  return {
+    sequence: core.RUNTIME_SEQUENCE,
+    failClosed: core.FAIL_CLOSED_RULES
+  };
+}
+
+function buildAlienCodeFrame() {
+  return {
+    interface: alienCode.ORGANISM_SYSTEM_INTERFACE,
+    derivationLayer: core.BIOCYBERNETIC_DERIVATION_LAYER.code
+  };
+}
+
 export async function POST(req: NextRequest) {
   let body: ChatBody;
 
@@ -505,6 +716,7 @@ export async function POST(req: NextRequest) {
   const input = normalizeBody(body);
   const contextClass = classifyIntent(input.message, input.files);
   const identity = bindIdentity(input.identity, input.derivativeContext);
+
   const derivative = evaluateDerivativeStatus({
     requested: input.derivativeContext,
     identityIpr: identity.ipr
@@ -512,7 +724,6 @@ export async function POST(req: NextRequest) {
 
   const policy = evaluatePolicy({
     identityValid: identity.valid,
-    contextClass,
     derivativeRequested: derivative.requested,
     derivativeLegitimate: derivative.legitimate
   });
@@ -523,18 +734,13 @@ export async function POST(req: NextRequest) {
     derivativeLegitimate: derivative.legitimate
   });
 
-  const searchContext = webSearch.authorizeWebSearch({
-    query: input.message,
-    identity: { ipr: identity.ipr, entity: identity.entity },
-    intent: contextClass,
-    derivative_context: derivative.requested,
-    evt_continuity: true,
-    verification_path: true,
-    policy_validation: policy.allowed,
-    runtime_authorization: policy.allowed && risk.acceptable,
-    valid_human_origin: true,
-    valid_primary_ai_root: true,
-    evidence_production_path: true
+  const searchContext = buildSearchContext({
+    message: input.message,
+    identity,
+    contextClass,
+    derivative,
+    policy,
+    risk
   });
 
   if (!identity.valid) {
@@ -547,7 +753,8 @@ export async function POST(req: NextRequest) {
         contextClass,
         derivative,
         searchContext,
-        response: "Identità sconosciuta. Il nodo ha bloccato la richiesta."
+        response: "Identità sconosciuta. Il nodo ha bloccato la richiesta.",
+        protocol: buildProtocolFrame()
       },
       { status: 403 }
     );
@@ -564,6 +771,21 @@ export async function POST(req: NextRequest) {
       message: input.message
     });
 
+    const blockedFrame = composeBlockedFrame(
+      buildInterpretiveInput({
+        message: input.message,
+        identity,
+        contextClass,
+        decision: "BLOCK",
+        state: "BLOCKED",
+        derivative,
+        continuityRef: input.continuityRef,
+        evtRef: blockedEvent.evt,
+        files: input.files
+      }),
+      policy.allowed ? risk.reason : policy.reason
+    );
+
     return NextResponse.json(
       {
         ok: false,
@@ -574,44 +796,29 @@ export async function POST(req: NextRequest) {
         derivative,
         searchContext,
         event: blockedEvent,
-        response: composeBlockedFrame(
-          {
-            message: input.message,
-            identity,
-            contextClass,
-            decision: "BLOCK",
-            state: "BLOCKED",
-            derivative: {
-              requested: derivative.requested,
-              legitimate: derivative.legitimate,
-              ipr: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.ipr : undefined,
-              entity: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.entity : undefined,
-              layer: derivative.requested ? core.BIOCYBERNETIC_DERIVATION_LAYER.code : undefined,
-              failures: derivative.details
-            },
-            continuityRef: input.continuityRef,
-            evtRef: blockedEvent.evt,
-            files: input.files
-          },
-          policy.allowed ? risk.reason : policy.reason
-        ),
-        protocol: {
-          sequence: core.RUNTIME_SEQUENCE,
-          failClosed: core.FAIL_CLOSED_RULES
-        }
+        response: blockedFrame,
+        protocol: buildProtocolFrame()
       },
       { status: 403 }
     );
   }
 
+  const pendingEvtRef = buildEvtId();
+
+  const prompt = buildPrompt({
+    message: input.message,
+    contextClass,
+    identity,
+    derivative,
+    files: input.files,
+    continuityRef: input.continuityRef,
+    evtRef: pendingEvtRef,
+    decision: "ALLOW",
+    state: "OPERATIONAL"
+  });
+
   const generated = await generateResponse({
-    prompt: buildPrompt({
-      message: input.message,
-      contextClass,
-      identity,
-      derivative,
-      files: input.files
-    }),
+    prompt,
     message: input.message,
     contextClass,
     identity,
@@ -619,7 +826,8 @@ export async function POST(req: NextRequest) {
     files: input.files
   });
 
-  const decision: RuntimeDecision = generated.state === "DEGRADED" ? "ESCALATE" : "ALLOW";
+  const decision: RuntimeDecision =
+    generated.state === "DEGRADED" ? "ESCALATE" : "ALLOW";
 
   const event = buildEvent({
     prev: input.continuityRef,
@@ -634,24 +842,17 @@ export async function POST(req: NextRequest) {
   const responseText =
     generated.state === "DEGRADED"
       ? composeDegradedFrame(
-          {
+          buildInterpretiveInput({
             message: input.message,
             identity,
             contextClass,
             decision,
             state: generated.state,
-            derivative: {
-              requested: derivative.requested,
-              legitimate: derivative.legitimate,
-              ipr: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.ipr : undefined,
-              entity: derivative.requested ? core.IDENTITY_LINEAGE.derived_root.entity : undefined,
-              layer: derivative.requested ? core.BIOCYBERNETIC_DERIVATION_LAYER.code : undefined,
-              failures: derivative.details
-            },
+            derivative,
             continuityRef: input.continuityRef,
             evtRef: event.evt,
             files: input.files
-          },
+          }),
           generated.text
         )
       : generated.text;
@@ -671,13 +872,7 @@ export async function POST(req: NextRequest) {
     response: responseText.trim(),
     searchContext,
     event,
-    protocol: {
-      sequence: core.RUNTIME_SEQUENCE,
-      failClosed: core.FAIL_CLOSED_RULES
-    },
-    alienCode: {
-      interface: alienCode.ORGANISM_SYSTEM_INTERFACE,
-      derivationLayer: core.BIOCYBERNETIC_DERIVATION_LAYER.code
-    }
+    protocol: buildProtocolFrame(),
+    alienCode: buildAlienCodeFrame()
   });
 }
