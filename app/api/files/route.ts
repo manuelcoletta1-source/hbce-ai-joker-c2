@@ -1,291 +1,161 @@
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getFileStore,
-  getSessionFiles,
-  type FileRole,
-  type StoredFile
-} from "../../../lib/joker/session-files";
 
-type FileInput = {
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type RuntimeFile = {
   id?: string;
   name?: string;
   mimeType?: string;
+  type?: string;
   text?: string;
   content?: string;
-  role?: FileRole;
+  role?: string;
 };
 
 type FilesBody = {
   sessionId?: string;
-  files?: FileInput[];
+  files?: RuntimeFile[];
 };
 
+const memoryStore = new Map<string, RuntimeFile[]>();
+
 function normalizeSessionId(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function normalizeRole(value: unknown): FileRole {
-  const allowed: FileRole[] = [
-    "context",
-    "corpus",
-    "single",
-    "reference",
-    "evidence",
-    "temporary"
-  ];
-
-  return allowed.includes(value as FileRole)
-    ? (value as FileRole)
-    : "context";
-}
-
-function cleanTitleFromName(name: string): string {
-  return name
-    .replace(/\.[^/.]+$/, "")
-    .replace(/[_]+/g, " ")
-    .replace(/[()]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function inferTitle(name: string, text: string, content: string): string {
-  const body = (text || content).trim();
-
-  if (body) {
-    const firstNonEmptyLine = body
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .find((line) => line.length > 0);
-
-    if (firstNonEmptyLine && firstNonEmptyLine.length <= 160) {
-      return firstNonEmptyLine;
-    }
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
   }
 
-  return cleanTitleFromName(name) || "Untitled file";
+  return `JOKER-SESSION-${Date.now()}`;
 }
 
-function normalizeFiles(files: unknown): FileInput[] {
+function normalizeFiles(files: unknown): RuntimeFile[] {
   if (!Array.isArray(files)) return [];
 
-  return files
-    .filter((item) => item && typeof item === "object")
-    .map((item) => {
-      const file = item as FileInput;
+  return files.map((file, index) => {
+    const item = file as RuntimeFile;
 
-      return {
-        id: typeof file.id === "string" ? file.id.trim() : undefined,
-        name:
-          typeof file.name === "string" && file.name.trim()
-            ? file.name.trim()
-            : undefined,
-        mimeType:
-          typeof file.mimeType === "string" && file.mimeType.trim()
-            ? file.mimeType.trim()
-            : undefined,
-        text: typeof file.text === "string" ? file.text : undefined,
-        content: typeof file.content === "string" ? file.content : undefined,
-        role: normalizeRole(file.role)
-      };
-    })
-    .filter((file) => Boolean(file.name))
-    .slice(0, 20);
-}
-
-function buildStoredFile(
-  sessionId: string,
-  file: FileInput,
-  index: number
-): StoredFile {
-  const now = new Date().toISOString();
-  const text = (file.text || "").trim();
-  const content = (file.content || "").trim();
-  const merged = text || content;
-  const name = file.name || `file-${index + 1}`;
-
-  return {
-    id: file.id || `${sessionId}-file-${Date.now()}-${index + 1}`,
-    sessionId,
-    name,
-    title: inferTitle(name, text, content),
-    mimeType: file.mimeType || "application/octet-stream",
-    text,
-    content,
-    hasText: Boolean(merged),
-    sizeEstimate: merged.length,
-    role: normalizeRole(file.role),
-    ingestedAt: now,
-    updatedAt: now
-  };
-}
-
-function summarizeFile(file: StoredFile) {
-  return {
-    id: file.id,
-    sessionId: file.sessionId,
-    name: file.name,
-    title: file.title,
-    mimeType: file.mimeType,
-    hasText: file.hasText,
-    sizeEstimate: file.sizeEstimate,
-    role: file.role,
-    ingestedAt: file.ingestedAt,
-    updatedAt: file.updatedAt
-  };
-}
-
-function getOrCreateSessionFilesMap(sessionId: string): Map<string, StoredFile> {
-  const store = getFileStore();
-
-  if (!store.has(sessionId)) {
-    store.set(sessionId, new Map<string, StoredFile>());
-  }
-
-  return store.get(sessionId)!;
-}
-
-export async function GET(req: NextRequest) {
-  const sessionId = normalizeSessionId(
-    req.nextUrl.searchParams.get("sessionId")
-  );
-
-  if (!sessionId) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Missing sessionId"
-      },
-      { status: 400 }
-    );
-  }
-
-  const files = getSessionFiles(sessionId);
-
-  return NextResponse.json({
-    ok: true,
-    sessionId,
-    count: files.length,
-    files: files.map(summarizeFile)
+    return {
+      id:
+        typeof item.id === "string" && item.id.trim()
+          ? item.id.trim()
+          : `file-${Date.now()}-${index}`,
+      name:
+        typeof item.name === "string" && item.name.trim()
+          ? item.name.trim()
+          : `file_${index + 1}`,
+      mimeType:
+        typeof item.mimeType === "string" && item.mimeType.trim()
+          ? item.mimeType.trim()
+          : typeof item.type === "string" && item.type.trim()
+            ? item.type.trim()
+            : "text/plain",
+      type:
+        typeof item.type === "string" && item.type.trim()
+          ? item.type.trim()
+          : typeof item.mimeType === "string" && item.mimeType.trim()
+            ? item.mimeType.trim()
+            : "text/plain",
+      text:
+        typeof item.text === "string"
+          ? item.text
+          : typeof item.content === "string"
+            ? item.content
+            : "",
+      content:
+        typeof item.content === "string"
+          ? item.content
+          : typeof item.text === "string"
+            ? item.text
+            : "",
+      role:
+        typeof item.role === "string" && item.role.trim()
+          ? item.role.trim()
+          : "context"
+    };
   });
 }
 
 export async function POST(req: NextRequest) {
+  let body: FilesBody;
+
   try {
-    const body = (await req.json()) as FilesBody;
-    const sessionId = normalizeSessionId(body.sessionId);
-    const files = normalizeFiles(body.files);
-
-    if (!sessionId) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Missing sessionId"
-        },
-        { status: 400 }
-      );
-    }
-
-    if (files.length === 0) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Missing files"
-        },
-        { status: 400 }
-      );
-    }
-
-    const filesMap = getOrCreateSessionFilesMap(sessionId);
-    const stored = files.map((file, index) =>
-      buildStoredFile(sessionId, file, index)
-    );
-
-    for (const item of stored) {
-      filesMap.set(item.id, item);
-    }
-
-    const allFiles = getSessionFiles(sessionId);
-
-    return NextResponse.json({
-      ok: true,
-      message: "Files ingested",
-      sessionId,
-      ingested: stored.map(summarizeFile),
-      count: allFiles.length,
-      files: allFiles.map(summarizeFile)
-    });
-  } catch (error) {
+    body = (await req.json()) as FilesBody;
+  } catch {
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : "Invalid files request"
-      },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(req: NextRequest) {
-  const sessionId = normalizeSessionId(
-    req.nextUrl.searchParams.get("sessionId")
-  );
-  const fileId = normalizeSessionId(req.nextUrl.searchParams.get("fileId"));
-
-  if (!sessionId) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Missing sessionId"
+        error: "INVALID_JSON_BODY"
       },
       { status: 400 }
     );
   }
 
-  const store = getFileStore();
+  const sessionId = normalizeSessionId(body.sessionId);
+  const incomingFiles = normalizeFiles(body.files);
 
-  if (!store.has(sessionId)) {
-    return NextResponse.json({
-      ok: true,
-      sessionId,
-      cleared: false,
-      removed: false,
-      count: 0,
-      files: []
-    });
-  }
+  const existingFiles = memoryStore.get(sessionId) || [];
+  const nextFiles = [...existingFiles, ...incomingFiles];
 
-  const filesMap = store.get(sessionId)!;
-
-  if (fileId) {
-    const removed = filesMap.delete(fileId);
-
-    if (filesMap.size === 0) {
-      store.delete(sessionId);
-    }
-
-    const remaining = getSessionFiles(sessionId);
-
-    return NextResponse.json({
-      ok: true,
-      sessionId,
-      removed,
-      cleared: false,
-      count: remaining.length,
-      files: remaining.map(summarizeFile)
-    });
-  }
-
-  store.delete(sessionId);
+  memoryStore.set(sessionId, nextFiles);
 
   return NextResponse.json({
     ok: true,
     sessionId,
-    removed: false,
-    cleared: true,
-    count: 0,
-    files: []
+    files: nextFiles.map((file) => ({
+      id: file.id,
+      name: file.name,
+      mimeType: file.mimeType,
+      type: file.type,
+      role: file.role,
+      textLength: file.text?.length || 0
+    }))
+  });
+}
+
+export async function GET(req: NextRequest) {
+  const url = new URL(req.url);
+  const sessionId = normalizeSessionId(url.searchParams.get("sessionId"));
+
+  const files = memoryStore.get(sessionId) || [];
+
+  return NextResponse.json({
+    ok: true,
+    sessionId,
+    files: files.map((file) => ({
+      id: file.id,
+      name: file.name,
+      mimeType: file.mimeType,
+      type: file.type,
+      role: file.role,
+      textLength: file.text?.length || 0,
+      text: file.text || file.content || ""
+    }))
+  });
+}
+
+export async function DELETE(req: NextRequest) {
+  const url = new URL(req.url);
+  const sessionId = normalizeSessionId(url.searchParams.get("sessionId"));
+  const fileId = url.searchParams.get("fileId");
+
+  if (!fileId) {
+    memoryStore.delete(sessionId);
+
+    return NextResponse.json({
+      ok: true,
+      sessionId,
+      deleted: "SESSION_FILES"
+    });
+  }
+
+  const files = memoryStore.get(sessionId) || [];
+  const nextFiles = files.filter((file) => file.id !== fileId);
+
+  memoryStore.set(sessionId, nextFiles);
+
+  return NextResponse.json({
+    ok: true,
+    sessionId,
+    deleted: fileId
   });
 }
