@@ -205,7 +205,8 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
     lower.includes("ipr") ||
     lower.includes("ledger") ||
     lower.includes("audit") ||
-    lower.includes("verifica")
+    lower.includes("verifica") ||
+    lower.includes("diagnostica")
   ) {
     return "TECHNICAL";
   }
@@ -235,6 +236,18 @@ function wantsSummary(message: string): boolean {
     lower.includes("riassumi") ||
     lower.includes("riassunto") ||
     lower.includes("summary")
+  );
+}
+
+function isRuntimeDiagnosticRequest(message: string): boolean {
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("diagnostica runtime") ||
+    lower.includes("debug runtime") ||
+    lower.includes("runtime openai") ||
+    lower.includes("stato runtime") ||
+    lower.includes("diagnostics runtime")
   );
 }
 
@@ -313,6 +326,7 @@ function buildSystemPrompt(input: {
     "- Se l’utente chiede una sintesi di un file, produci direttamente la sintesi. Non limitarti a dire che puoi farla.",
     "- Quando lavori su GitHub o codice, fornisci sempre file completi pronti da copiare, non patch parziali.",
     "- Quando modifichi file di repository, usa sempre: nome file, file completo, commit del file.",
+    "- Quando l’utente chiede diagnostica runtime, restituisci stato tecnico diretto. Non produrre una roadmap o un piano di diagnostica.",
     "",
     "Comportamento strategico HBCE vincolante:",
     "- Quando l’utente chiede strategia, roadmap, mercato, prodotto, demo, B2B, B2G, istituzioni, Europa, AI JOKER-C2, HBCE, MATRIX o IPR, non rispondere in modo generico.",
@@ -323,8 +337,8 @@ function buildSystemPrompt(input: {
     "- Ogni fase deve indicare il valore per stakeholder B2B/B2G: riduzione rischio, auditabilità, continuità operativa, verifica documentale, supporto decisionale, compliance, cybersecurity, data governance, infrastrutture critiche, ricerca.",
     "- Evita formule vaghe come: ottimizzazione performance, versione beta, funzionalità complete, piano marketing generico, campagne social generiche, conferenze generiche, feedback stakeholder generico.",
     "- Puoi usare quelle formule solo se sono collegate a un deliverable concreto, una prova verificabile e una prossima azione.",
-    "- Sostituisci 'marketing' con oggetti concreti: one-page B2B/B2G, scheda tecnica, demo script, target list, email istituzionale, pitch deck, pagina demo, video demo breve.",
-    "- Sostituisci 'integrazione API esterne' con oggetti reali: health check OpenAI, diagnostica API key, test /api/chat, test /api/files, log di errore controllato, fallback documentale.",
+    "- Sostituisci marketing con oggetti concreti: one-page B2B/B2G, scheda tecnica, demo script, target list, email istituzionale, pitch deck, pagina demo, video demo breve.",
+    "- Sostituisci integrazione API esterne con oggetti reali: health check OpenAI, diagnostica API key, test /api/chat, test /api/files, log di errore controllato, fallback documentale.",
     "- Per roadmap e piani operativi usa deliverable concreti, tempi, stato atteso, prova verificabile e valore per interlocutori B2B/B2G.",
     "- Per interlocutori europei usa un registro tecnico-istituzionale: imprese, PA, infrastrutture critiche, ricerca, compliance, cybersecurity, data governance, continuità operativa.",
     "- Se produci tabelle strategiche, includi colonne come: Giorni, Fase, Obiettivo HBCE, Deliverable verificabile, Valore B2B/B2G, Prova/EVT, Azione successiva.",
@@ -379,6 +393,40 @@ function buildIdentityFallback(): string {
     `La mia identità canonica è ${identity.entity}, associata a ${identity.ipr}. Il checkpoint operativo attivo è ${identity.evt}, collegato a ${identity.core}.`,
     "",
     "Nella comunicazione ordinaria rispondo in modo naturale e professionale. La struttura HBCE resta sotto il cofano: identità, traccia, continuità e verifica."
+  ].join("\n");
+}
+
+function buildRuntimeDiagnosticText(input: {
+  state: RuntimeState;
+  decision: RuntimeDecision;
+  contextClass: ContextClass;
+  event: RuntimeEvent;
+  degradedReason?: string | null;
+}): string {
+  const identity = getPrimaryIdentity();
+
+  return [
+    "Diagnostica runtime OpenAI",
+    "",
+    `Runtime OpenAI: ${input.state}`,
+    `Decision: ${input.decision}`,
+    `Context: ${input.contextClass}`,
+    `Model: ${MODEL}`,
+    `OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "configured" : "missing"}`,
+    `JOKER_MODEL: ${process.env.JOKER_MODEL ? "configured" : "default"}`,
+    "",
+    "Identità runtime:",
+    `- entity: ${identity.entity}`,
+    `- ipr: ${identity.ipr}`,
+    `- checkpoint: ${identity.evt}`,
+    `- core: ${identity.core}`,
+    "",
+    "EVT Chain:",
+    `- evt: ${input.event.evt}`,
+    `- prev: ${input.event.prev}`,
+    `- hash: ${input.event.anchors.hash}`,
+    "",
+    `degradedReason: ${input.degradedReason || "none"}`
   ].join("\n");
 }
 
@@ -553,7 +601,7 @@ async function generateResponse(input: {
         {
           role: "system",
           content:
-            "Sei AI JOKER-C2. Rispondi in modo professionale, operativo e coerente con HBCE. Per strategia, mercato, B2B, B2G, roadmap e prodotto devi usare categorie concrete: IPR, EVT Chain, traccia, continuità, verifica, file ingestion, diagnostica runtime, repository pulito, Vercel build, GitHub, demo verificabile, deliverable, stakeholder value e prossima azione. Evita risposte consulenziali generiche."
+            "Sei AI JOKER-C2. Rispondi in modo professionale, operativo e coerente con HBCE. Per strategia, mercato, B2B, B2G, roadmap e prodotto devi usare categorie concrete: IPR, EVT Chain, traccia, continuità, verifica, file ingestion, diagnostica runtime, repository pulito, Vercel build, GitHub, demo verificabile, deliverable, stakeholder value e prossima azione. Per diagnostica runtime devi restituire stato tecnico diretto, non un piano."
         },
         {
           role: "user",
@@ -687,6 +735,58 @@ export async function POST(req: NextRequest) {
     input.message || "Usa i file attivi come contesto operativo.";
 
   const contextClass = classifyContext(effectiveMessage, input.files);
+
+  if (isRuntimeDiagnosticRequest(effectiveMessage)) {
+    const diagnosticState: RuntimeState = openai ? "OPERATIONAL" : "DEGRADED";
+    const diagnosticDecision: RuntimeDecision = openai ? "ALLOW" : "ESCALATE";
+    const degradedReason = openai ? null : "OPENAI_API_KEY_NOT_CONFIGURED";
+
+    const event = buildEvent({
+      prev: input.continuityRef,
+      state: diagnosticState,
+      decision: diagnosticDecision,
+      message: effectiveMessage,
+      contextClass
+    });
+
+    const identity = getPrimaryIdentity();
+
+    const responseText = buildRuntimeDiagnosticText({
+      state: diagnosticState,
+      decision: diagnosticDecision,
+      contextClass,
+      event,
+      degradedReason
+    });
+
+    return NextResponse.json({
+      ok: true,
+      response: responseText.trim(),
+      state: diagnosticState,
+      decision: diagnosticDecision,
+      contextClass,
+      identity: {
+        entity: identity.entity,
+        ipr: identity.ipr,
+        evt: identity.evt,
+        state: identity.state,
+        cycle: identity.cycle,
+        core: identity.core
+      },
+      event,
+      evt: {
+        ok: true,
+        evt: event.evt,
+        prev: event.prev,
+        hash: event.anchors.hash
+      },
+      diagnostics: {
+        openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
+        modelUsed: MODEL,
+        degradedReason
+      }
+    });
+  }
 
   const generated = await generateResponse({
     message: effectiveMessage,
