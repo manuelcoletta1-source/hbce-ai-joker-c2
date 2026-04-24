@@ -172,7 +172,11 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
     lower.includes("europa") ||
     lower.includes("stakeholder") ||
     lower.includes("go-to-market") ||
-    lower.includes("posizionamento")
+    lower.includes("posizionamento") ||
+    lower.includes("commerciale") ||
+    lower.includes("clienti") ||
+    lower.includes("pa ") ||
+    lower.includes("pubblica amministrazione")
   ) {
     return "STRATEGIC";
   }
@@ -310,10 +314,17 @@ function buildSystemPrompt(input: {
     "- Quando lavori su GitHub o codice, fornisci sempre file completi pronti da copiare, non patch parziali.",
     "- Quando modifichi file di repository, usa sempre: nome file, file completo, commit del file.",
     "",
-    "Comportamento strategico HBCE:",
+    "Comportamento strategico HBCE vincolante:",
     "- Quando l’utente chiede strategia, roadmap, mercato, prodotto, demo, B2B, B2G, istituzioni, Europa, AI JOKER-C2, HBCE, MATRIX o IPR, non rispondere in modo generico.",
-    "- Evita formule vaghe come: ottimizzazione performance, marketing generico, campagne social generiche, conferenze generiche, integrazione API esterne senza contesto.",
-    "- Usa sempre categorie operative proprietarie: identità, IPR, EVT Chain, traccia, continuità, verifica, file ingestion, fallback, diagnostica, demo verificabile, repository pulito, Vercel production, GitHub, documentazione, evidence export, stakeholder value.",
+    "- Ogni analisi strategica deve partire dal fatto che AI JOKER-C2 è un runtime operativo dimostrabile con identità, traccia, continuità e verifica.",
+    "- Ogni roadmap deve citare componenti reali del runtime quando pertinenti: /api/chat, /api/files, OPENAI_API_KEY, JOKER_MODEL, Vercel build verde, GitHub repository, README.md, corpus-core.js, EVT Chain, file ingestion, diagnostica runtime, demo live.",
+    "- Ogni fase deve avere almeno un deliverable verificabile. Un deliverable verificabile è un file, una route, una demo, un log, un EVT, una tabella target, un documento, una pagina Vercel o un test ripetibile.",
+    "- Ogni fase deve indicare la prova concreta: EVT generato, build verde, screenshot demo, file README, endpoint funzionante, documento prodotto, elenco stakeholder, test file upload.",
+    "- Ogni fase deve indicare il valore per stakeholder B2B/B2G: riduzione rischio, auditabilità, continuità operativa, verifica documentale, supporto decisionale, compliance, cybersecurity, data governance, infrastrutture critiche, ricerca.",
+    "- Evita formule vaghe come: ottimizzazione performance, versione beta, funzionalità complete, piano marketing generico, campagne social generiche, conferenze generiche, feedback stakeholder generico.",
+    "- Puoi usare quelle formule solo se sono collegate a un deliverable concreto, una prova verificabile e una prossima azione.",
+    "- Sostituisci 'marketing' con oggetti concreti: one-page B2B/B2G, scheda tecnica, demo script, target list, email istituzionale, pitch deck, pagina demo, video demo breve.",
+    "- Sostituisci 'integrazione API esterne' con oggetti reali: health check OpenAI, diagnostica API key, test /api/chat, test /api/files, log di errore controllato, fallback documentale.",
     "- Per roadmap e piani operativi usa deliverable concreti, tempi, stato atteso, prova verificabile e valore per interlocutori B2B/B2G.",
     "- Per interlocutori europei usa un registro tecnico-istituzionale: imprese, PA, infrastrutture critiche, ricerca, compliance, cybersecurity, data governance, continuità operativa.",
     "- Se produci tabelle strategiche, includi colonne come: Giorni, Fase, Obiettivo HBCE, Deliverable verificabile, Valore B2B/B2G, Prova/EVT, Azione successiva.",
@@ -447,14 +458,14 @@ function buildStrategicFallback(): string {
   return [
     "Roadmap operativa sintetica per AI JOKER-C2.",
     "",
-    "| Giorni | Fase | Obiettivo HBCE | Deliverable verificabile | Valore B2B/B2G | Azione successiva |",
-    "|---|---|---|---|---|---|",
-    "| 1-15 | Tecnica | Stabilizzare chat, file ingestion, EVT Chain e diagnostica OpenAI | Demo Vercel funzionante con `/api/chat` e `/api/files` | Mostra un runtime AI tracciabile, non un chatbot generico | Consolidare test e log minimi |",
-    "| 16-30 | Tecnica | Pulire repository e ridurre superfici legacy | Repo GitHub minimale, build verde, README allineato | Riduce rischio tecnico e aumenta credibilità | Creare status API e health check |",
-    "| 31-45 | Documentale | Preparare documentazione prodotto | `README.md`, scheda tecnica, one-page B2B/B2G | Rende il progetto leggibile da imprese e istituzioni | Creare pacchetto demo |",
-    "| 46-60 | Demo | Costruire scenari d’uso verificabili | Demo documento, demo strategia, demo EVT | Prova concreta di utilità operativa | Registrare video demo breve |",
-    "| 61-75 | Mercato | Definire target europei prioritari | Lista stakeholder: cybersecurity, PA, ricerca, compliance | Posizionamento B2B/B2G chiaro | Preparare pitch mirati |",
-    "| 76-90 | Istituzionale | Preparare presentazione verso interlocutori europei | Deck, repository pulito, live demo, scheda tecnica | Oggetto presentabile a enti e aziende | Avviare contatti selettivi |"
+    "| Giorni | Fase | Obiettivo HBCE | Deliverable verificabile | Valore B2B/B2G | Prova/EVT | Azione successiva |",
+    "|---|---|---|---|---|---|---|",
+    "| 1-15 | Tecnica | Stabilizzare runtime minimo | `/api/chat` operativo, `/api/files` operativo, OPENAI_API_KEY valida, fallback locale documentale | Dimostra che AI JOKER-C2 è un runtime operativo e non una pagina statica | Build Vercel verde + EVT di test identità + EVT di test documento | Registrare demo video da 3 minuti |",
+    "| 16-30 | Tecnica | Consolidare continuità e diagnostica | EVT Chain visibile, diagnostica runtime, test OpenAI, test file ingestion `.txt` | Aumenta affidabilità tecnica per imprese e PA | Test `diagnostica runtime openai` + sintesi file con EVT | Creare `/api/status` pulita |",
+    "| 31-45 | Documentale | Rendere il progetto leggibile a stakeholder tecnici | `README.md`, scheda tecnica AI JOKER-C2, one-page B2B/B2G, documento HBCE Runtime | Trasforma prototipo in oggetto presentabile | Commit documentale + pagina Vercel aggiornata | Preparare pitch tecnico |",
+    "| 46-60 | Demo | Costruire demo verificabile | Scenario 1 documento, scenario 2 roadmap strategica, scenario 3 diagnostica runtime | Mostra casi d’uso reali in compliance, ricerca, governance documentale | EVT per ogni scenario + screenshot | Preparare live demo guidata |",
+    "| 61-75 | Mercato | Definire target B2B/B2G europei | Target list: cybersecurity, PA, ricerca, compliance, infrastrutture critiche, data governance | Crea canali di contatto coerenti con valore HBCE | Tabella target + messaggi email | Selezionare 20 interlocutori prioritari |",
+    "| 76-90 | Istituzionale | Preparare pacchetto presentazione | Pitch deck, one-page, repository pulito, demo live, scheda tecnica, pagina Vercel | Rende AI JOKER-C2 presentabile a enti, imprese e istituzioni | Pacchetto demo completo + EVT finale | Avviare contatti selettivi B2B/B2G |"
   ].join("\n");
 }
 
@@ -542,15 +553,15 @@ async function generateResponse(input: {
         {
           role: "system",
           content:
-            "Sei AI JOKER-C2. Rispondi in modo professionale, operativo e coerente con HBCE. Per strategia, mercato, B2B, B2G, roadmap e prodotto devi usare categorie concrete: IPR, EVT, traccia, continuità, verifica, demo, deliverable, stakeholder value e prossima azione."
+            "Sei AI JOKER-C2. Rispondi in modo professionale, operativo e coerente con HBCE. Per strategia, mercato, B2B, B2G, roadmap e prodotto devi usare categorie concrete: IPR, EVT Chain, traccia, continuità, verifica, file ingestion, diagnostica runtime, repository pulito, Vercel build, GitHub, demo verificabile, deliverable, stakeholder value e prossima azione. Evita risposte consulenziali generiche."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      temperature: 0.2,
-      max_tokens: 1800
+      temperature: 0.15,
+      max_tokens: 2200
     });
 
     const text = extractResponseText(response);
