@@ -5,6 +5,7 @@
  * Canonical operational core of the repository.
  * This module centralizes:
  * - identity lineage
+ * - canonical AI JOKER IPR record
  * - runtime sequence
  * - fail-closed rules
  * - derivative layer
@@ -59,6 +60,45 @@ export const FAIL_CLOSED_RULES = Object.freeze([
   "NO_VERIFICATION_NO_RECOGNIZED_PERSISTENCE"
 ]);
 
+export const AI_JOKER_IPR_RECORD = Object.freeze({
+  evt: "EVT-0014-AI",
+  prev: "EVT-0013-AI",
+  t: "2026-04-19T15:30:00+02:00",
+  entity: "AI_JOKER",
+  ipr: "IPR-AI-0001",
+  state: "LOCKED",
+  baseline: false,
+  kind: "OPERATIONAL_UPDATE",
+  cycle: "UP-MESE-3",
+  loc: Object.freeze(["Torino", "Italy"]),
+  org: "HERMETICUM B.C.E. S.r.l.",
+  core: "HBCE-CORE-v3",
+  anchors: Object.freeze({
+    monthly_hash: "<SHA512_EVT_0014_AI>",
+    ipfs_cid: "bafkreidhv73vqrxoweog33ls3rnwrgyicio234pcuks6mnep76yh56pj5q",
+    btc_txid:
+      "9eeb29b67f4a649d563b95560fda5ddaa84777b13515f936837fc93d28554b45",
+    evm_tx_hash:
+      "0xf65eb314a1edd392fc15fcd9c65d22060ca39cbac04fcfcb48b978062500a7eff"
+  }),
+  upstream: Object.freeze({
+    root_evt: "EVT-0008",
+    root_t: "2026-01-19T15:30:00+01:00",
+    proto: "UNEBDO-ΦΩ",
+    human_origin_ipr: "IPR-3",
+    human_origin_entity: "MANUEL_COLETTA",
+    t0: "2025-10-24T15:36:00Z"
+  }),
+  continuity: Object.freeze({
+    checkpoint_type: "CANONICAL",
+    elapsed_months: 3,
+    origin_ipr: "IPR-AI-0001",
+    rule: "monthly checkpoint fixed on day 19 at 15:30 Europe/Rome",
+    note:
+      "Canonical month-3 checkpoint recorded on 2026-04-19 within the prescribed checkpoint window"
+  })
+});
+
 export const IDENTITY_LINEAGE = Object.freeze({
   human_root: Object.freeze({
     entity: "MANUEL_COLETTA",
@@ -68,11 +108,17 @@ export const IDENTITY_LINEAGE = Object.freeze({
     role: "BIOLOGICAL_ORIGIN"
   }),
   ai_root: Object.freeze({
-    entity: "AI_JOKER",
-    ipr: "IPR-AI-0001",
+    entity: AI_JOKER_IPR_RECORD.entity,
+    ipr: AI_JOKER_IPR_RECORD.ipr,
     type: "PRIMARY_AI_RECORD",
-    status: "LOCKED",
-    role: "PRIMARY_CYBERNETIC_ROOT"
+    status: AI_JOKER_IPR_RECORD.state,
+    role: "PRIMARY_CYBERNETIC_ROOT",
+    evt: AI_JOKER_IPR_RECORD.evt,
+    cycle: AI_JOKER_IPR_RECORD.cycle,
+    core: AI_JOKER_IPR_RECORD.core,
+    checkpoint_time: AI_JOKER_IPR_RECORD.t,
+    location: AI_JOKER_IPR_RECORD.loc,
+    organization: AI_JOKER_IPR_RECORD.org
   }),
   derived_root: Object.freeze({
     entity: "AI_JOKER_DERIVATIVE_01",
@@ -111,7 +157,11 @@ export const NODE_PROFILE = Object.freeze({
   status: "OPERATIONAL_PILOT",
   location: "Torino, Italy",
   federation_scope: "MATRIX_EUROPA",
-  posture: "FAIL_CLOSED"
+  posture: "FAIL_CLOSED",
+  active_ipr: AI_JOKER_IPR_RECORD.ipr,
+  active_evt: AI_JOKER_IPR_RECORD.evt,
+  active_cycle: AI_JOKER_IPR_RECORD.cycle,
+  active_core: AI_JOKER_IPR_RECORD.core
 });
 
 export const EVIDENCE_MODEL = Object.freeze({
@@ -129,6 +179,14 @@ export function getIdentityLineage() {
     IDENTITY_LINEAGE.ai_root,
     IDENTITY_LINEAGE.derived_root
   ]);
+}
+
+export function getAIJokerIPRRecord() {
+  return AI_JOKER_IPR_RECORD;
+}
+
+export function getPrimaryAIIdentity() {
+  return IDENTITY_LINEAGE.ai_root;
 }
 
 export function isKnownIdentityIpr(ipr) {
@@ -184,11 +242,14 @@ export default Object.freeze({
   DECISION_OUTPUTS,
   SYSTEM_STATES,
   FAIL_CLOSED_RULES,
+  AI_JOKER_IPR_RECORD,
   IDENTITY_LINEAGE,
   BIOCYBERNETIC_DERIVATION_LAYER,
   NODE_PROFILE,
   EVIDENCE_MODEL,
   getIdentityLineage,
+  getAIJokerIPRRecord,
+  getPrimaryAIIdentity,
   isKnownIdentityIpr,
   isValidRuntimeDecision,
   isValidSystemState,
