@@ -299,7 +299,7 @@ function bindIdentity(
 
   const match = core
     .getIdentityLineage()
-    .find((item: BoundIdentity) => item.ipr === requestedIpr);
+    .find((item) => item.ipr === requestedIpr);
 
   if (!match) {
     return {
