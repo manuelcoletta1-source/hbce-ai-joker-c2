@@ -147,7 +147,33 @@ La struttura interna HBCE mantiene disciplina operativa, tracciabilità e contin
 
 ---
 
-7. Struttura prevista del repository
+7. Stato operativo attuale
+
+Il runtime attuale è stato rifondato in forma minima e funzionante.
+
+Componenti attivi:
+
+Componente	Stato
+
+Vercel build	verde
+/api/chat	operativo
+/api/files	operativo
+OPENAI_API_KEY	attiva in ambiente Production
+JOKER_MODEL	configurabile tramite variabile ambiente
+EVT Chain	attiva
+File ingestion	attiva
+Diagnostica runtime	attiva
+Fallback locale documentale	attivo
+Identità pubblica AI JOKER-C2	corretta
+Esposizione derivativa in chat ordinaria	rimossa
+
+
+
+---
+
+8. Struttura runtime pulita
+
+Struttura prevista del repository:
 
 hbce-ai-joker-c2/
 ├── app/
@@ -157,40 +183,29 @@ hbce-ai-joker-c2/
 │   └── api/
 │       ├── chat/
 │       │   └── route.ts
-│       ├── files/
-│       │   └── route.ts
-│       ├── status/
-│       │   └── route.ts
-│       └── verify/
+│       └── files/
 │           └── route.ts
-├── lib/
-│   └── joker/
-│       ├── system-prompt.ts
-│       ├── identity.ts
-│       ├── evt.ts
-│       ├── openai.ts
-│       └── files.ts
+├── docs/
 ├── system/
 │   └── manifest.json
-├── docs/
-│   ├── AI-JOKER-C2.md
-│   ├── HBCE-RUNTIME.md
-│   └── IPR.md
 ├── README.md
+├── corpus-core.js
 ├── package.json
+├── package-lock.json
 ├── tsconfig.json
 ├── next.config.mjs
 ├── vercel.json
+├── next-env.d.ts
 └── .gitignore
 
-Questa è la struttura runtime pulita prevista.
+Questa è la struttura essenziale del runtime funzionante.
 
-Le cartelle legacy, sperimentali o duplicate devono essere archiviate o rimosse durante la pulizia del repository.
+Le superfici legacy, sperimentali o duplicate devono rimanere rimosse oppure essere ricostruite in modo separato e controllato.
 
 
 ---
 
-8. Application layer
+9. Application layer
 
 La directory app/ contiene:
 
@@ -201,55 +216,87 @@ interfaccia operativa conversazionale;
 API route utilizzate dal runtime.
 
 
-Route principali:
+Route operative attuali:
 
 /api/chat
 /api/files
-/api/status
-/api/verify
+
+La route /api/chat gestisce:
+
+richiesta utente;
+
+classificazione del contesto;
+
+chiamata al modello remoto;
+
+fallback locale;
+
+generazione EVT;
+
+diagnostica;
+
+risposta finale.
+
+
+La route /api/files gestisce:
+
+caricamento file di sessione;
+
+lettura file testuali;
+
+mantenimento temporaneo del contesto;
+
+rimozione file;
+
+supporto a sintesi e analisi documentale.
+
 
 
 ---
 
-9. Joker runtime layer
+10. Core identitario
 
-La directory lib/joker/ contiene la logica runtime di AI JOKER-C2.
+Il file:
 
-Moduli previsti:
+corpus-core.js
 
-File	Funzione
+mantiene il riferimento identitario canonico di AI JOKER-C2.
 
-system-prompt.ts	Definisce identità, tono operativo e comportamento della risposta
-identity.ts	Definisce IPR canonico e helper identitari
-evt.ts	Genera record EVT minimi
-openai.ts	Isola la chiamata al modello AI remoto
-files.ts	Normalizza i file allegati per l’uso runtime
+Identità attiva:
 
+AI_JOKER / IPR-AI-0001 / EVT-0014-AI
+
+AI JOKER-C2 deve usare questa identità come base operativa e comunicativa.
 
 
 ---
 
-10. Variabili ambiente
+11. Variabili ambiente
 
 Il runtime richiede:
 
 OPENAI_API_KEY
 
-Opzionali:
+La variabile deve essere configurata su Vercel per:
+
+Production
+Preview
+Development
+
+Variabile opzionale:
 
 JOKER_MODEL
-NEXT_PUBLIC_BASE_URL
 
-Fallback modello consigliato:
+Valore consigliato:
 
 gpt-4o-mini
 
-Se JOKER_MODEL non è configurato, il runtime deve usare comunque un modello stabile di default.
+Se JOKER_MODEL non è configurato, il runtime deve usare un modello stabile di default.
 
 
 ---
 
-11. Deploy
+12. Deploy
 
 Target primario di deploy:
 
@@ -279,7 +326,7 @@ npm run start
 
 ---
 
-12. Comportamento in caso di errore
+13. Comportamento in caso di errore
 
 Se il modello remoto non è disponibile, AI JOKER-C2 può entrare in modalità degradata.
 
@@ -296,14 +343,145 @@ preservare una risposta chiara, professionale e utilizzabile;
 non esporre automaticamente identità derivativa, lineage completo o dettagli audit nella chat ordinaria.
 
 
+La modalità degradata deve comunque mantenere:
+
+identità;
+
+risposta utile;
+
+EVT Chain;
+
+continuità;
+
+indicazione tecnica del problema se richiesta.
+
+
 
 ---
 
-13. Regola di pulizia del repository
+14. Funzione documentale
 
-Questo repository viene rifondato in un runtime più pulito.
+AI JOKER-C2 può ricevere file testuali e usarli come contesto operativo.
 
-La nuova direzione è:
+Formati consigliati:
+
+.txt
+.md
+.json
+.csv
+
+Il runtime può:
+
+sintetizzare documenti;
+
+estrarre nuclei principali;
+
+produrre indici;
+
+creare tabelle di lavoro;
+
+riscrivere in stile tecnico, editoriale o istituzionale;
+
+trasformare contenuti grezzi in output utilizzabili.
+
+
+In caso di errore del modello remoto, il sistema deve produrre almeno una sintesi locale minima se il testo è leggibile.
+
+
+---
+
+15. Funzione strategica
+
+Quando l’utente chiede strategia, roadmap, mercato, prodotto, B2B, B2G, istituzioni, Europa, MATRIX, HBCE o AI JOKER-C2, il sistema deve rispondere in modo operativo e non generico.
+
+Le analisi strategiche devono usare categorie concrete:
+
+IPR;
+
+EVT Chain;
+
+traccia;
+
+continuità;
+
+verifica;
+
+file ingestion;
+
+diagnostica runtime;
+
+repository pulito;
+
+Vercel build;
+
+GitHub repository;
+
+demo verificabile;
+
+deliverable;
+
+stakeholder value;
+
+azione successiva.
+
+
+Una roadmap strategica deve preferire colonne come:
+
+Giorni | Fase | Obiettivo HBCE | Deliverable verificabile | Valore B2B/B2G | Prova/EVT | Azione successiva
+
+Il sistema deve evitare formule generiche non verificabili come:
+
+marketing generico;
+
+networking generico;
+
+versione beta senza deliverable;
+
+funzionalità complete senza prova;
+
+conferenze generiche;
+
+feedback stakeholder non tracciato.
+
+
+Queste formule possono essere usate solo se collegate a un deliverable concreto, una prova e una prossima azione.
+
+
+---
+
+16. Valore B2B/B2G
+
+AI JOKER-C2 è orientato a interlocutori:
+
+imprese;
+
+pubbliche amministrazioni;
+
+istituzioni;
+
+centri di ricerca;
+
+infrastrutture critiche;
+
+soggetti attivi in cybersecurity;
+
+soggetti attivi in compliance e data governance.
+
+
+Il valore operativo consiste nella capacità di trasformare interazioni e documenti in output strutturati collegati a:
+
+identità + traccia + continuità + verifica
+
+Questo lo distingue da una semplice interfaccia conversazionale.
+
+
+---
+
+17. Regola di pulizia del repository
+
+Il repository è stato rifondato in un runtime più pulito.
+
+La direzione attiva è:
 
 AI JOKER-C2 = entità cibernetica operativa + protesi cognitiva + runtime HBCE
 
@@ -334,7 +512,7 @@ oppure riscritto da zero.
 
 ---
 
-14. Regola GitHub sui file
+18. Regola GitHub sui file
 
 Quando si modificano file del repository, le modifiche devono essere fornite come file completi, non come patch parziali.
 
@@ -349,7 +527,7 @@ Questo mantiene il repository coerente e pronto al copia-incolla.
 
 ---
 
-15. Definizione finale
+19. Definizione finale
 
 AI JOKER-C2 è:
 
