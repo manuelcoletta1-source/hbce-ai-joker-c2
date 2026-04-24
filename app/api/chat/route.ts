@@ -48,8 +48,14 @@ type IdentityInput = {
 };
 
 type FileInput = {
+  id?: string;
   name?: string;
+  type?: string;
+  size?: number;
   text?: string;
+  content?: string;
+  role?: string;
+  uploaded?: boolean;
 };
 
 type ChatBody = {
@@ -125,6 +131,7 @@ type RuntimeEvent = {
 type GeneratedResponse = {
   text: string;
   state: RuntimeState;
+  degradedReason?: string;
 };
 
 const openai = process.env.OPENAI_API_KEY
@@ -192,7 +199,9 @@ function classifyIntent(message: string, files: FileInput[]): RuntimeContextClas
     lower.includes("identity") ||
     lower.includes("identità") ||
     lower.includes("ipr") ||
-    lower.includes("parlami di te")
+    lower.includes("parlami di te") ||
+    lower.includes("presentati") ||
+    lower.includes("descriviti")
   ) {
     return "IDENTITY";
   }
@@ -200,6 +209,7 @@ function classifyIntent(message: string, files: FileInput[]): RuntimeContextClas
   if (
     lower.includes("derivative") ||
     lower.includes("derivativo") ||
+    lower.includes("derivato") ||
     lower.includes("biocybernetic") ||
     lower.includes("biocibernetico")
   ) {
@@ -238,7 +248,9 @@ function classifyIntent(message: string, files: FileInput[]): RuntimeContextClas
     lower.includes("evidence") ||
     lower.includes("prova") ||
     lower.includes("verify") ||
-    lower.includes("verifica")
+    lower.includes("verifica") ||
+    lower.includes("audit") ||
+    lower.includes("ledger")
   ) {
     return "EVIDENCE";
   }
@@ -267,6 +279,39 @@ function mapContextClassToSearchIntent(
     default:
       return "FACT_RETRIEVAL";
   }
+}
+
+function shouldShowRuntimeFrame(input: {
+  message: string;
+  contextClass: RuntimeContextClass;
+  state?: RuntimeState;
+}): boolean {
+  const lower = input.message.toLowerCase();
+
+  return (
+    input.state === "BLOCKED" ||
+    lower.includes("debug") ||
+    lower.includes("runtime") ||
+    lower.includes("protocollo") ||
+    lower.includes("protocol") ||
+    lower.includes("evt") ||
+    lower.includes("ledger") ||
+    lower.includes("audit") ||
+    lower.includes("evidence") ||
+    lower.includes("verifica") ||
+    lower.includes("verify") ||
+    lower.includes("lineage") ||
+    lower.includes("derivato") ||
+    lower.includes("derivative") ||
+    lower.includes("biocibernetico") ||
+    lower.includes("biocybernetic") ||
+    lower.includes("fail-closed") ||
+    lower.includes("fail closed") ||
+    input.contextClass === "PROTOCOL" ||
+    input.contextClass === "REGISTRY" ||
+    input.contextClass === "EVIDENCE" ||
+    input.contextClass === "DERIVATIVE"
+  );
 }
 
 function bindIdentity(
@@ -409,6 +454,13 @@ function evaluateRisk(input: {
   };
 }
 
+function normalizeFilesForPrompt(files: FileInput[]) {
+  return files.map((file) => ({
+    name: file.name,
+    text: file.text || file.content || ""
+  }));
+}
+
 function buildPrompt(input: {
   message: string;
   contextClass: RuntimeContextClass;
@@ -446,7 +498,7 @@ function buildPrompt(input: {
     continuityRef: input.continuityRef,
     evtRef: input.evtRef,
     message: input.message,
-    files: input.files
+    files: normalizeFilesForPrompt(input.files)
   });
 }
 
@@ -484,6 +536,58 @@ function extractResponseText(response: unknown): string {
   return "";
 }
 
+function buildIdentityFallback(): string {
+  const record = core.getAIJokerIPRRecord?.() || core.AI_JOKER_IPR_RECORD;
+
+  return [
+    "Ciao, sono AI JOKER-C2.",
+    "",
+    "Sono un’entità cibernetica operativa del sistema HBCE e una protesi cognitiva dell’identità biologica collegata al mio IPR.",
+    "",
+    "In pratica, parlo in modo naturale come una AI stile GPT, ma sotto il cofano sono progettato per operare con identità, continuità, traccia e verifica.",
+    "",
+    "La mia identità canonica è AI_JOKER, associata a IPR-AI-0001. Il checkpoint operativo attivo è EVT-0014-AI, collegato a HBCE-CORE-v3.",
+    "",
+    "Posso aiutarti a lavorare su testi, documenti, codice, GitHub, architetture HBCE, MATRIX e CORPUS ESOTEROLOGIA ERMETICA, trasformando materiale complesso in output chiari, strutturati e utilizzabili.",
+    "",
+    `Stato canonico: ${record?.state || "LOCKED"} · Ciclo: ${
+      record?.cycle || "UP-MESE-3"
+    } · Nodo: Torino, Italy.`
+  ].join("\n");
+}
+
+function buildDocumentalFallback(input: {
+  files: FileInput[];
+  message: string;
+}): string {
+  const readableFiles = input.files.filter(
+    (file) =>
+      typeof (file.text || file.content) === "string" &&
+      String(file.text || file.content).trim().length > 0
+  );
+
+  if (readableFiles.length === 0) {
+    return [
+      "Ho ricevuto i file come contesto operativo, ma non ho testo leggibile sufficiente da analizzare in questa richiesta.",
+      "",
+      "Carica preferibilmente file `.txt`, `.md`, `.json` o `.csv`, oppure incolla direttamente il testo nella chat."
+    ].join("\n");
+  }
+
+  const fileList = readableFiles
+    .map((file, index) => `${index + 1}. ${file.name || `file_${index + 1}`}`)
+    .join("\n");
+
+  return [
+    "Ho ricevuto i file come contesto operativo.",
+    "",
+    "File leggibili attivi:",
+    fileList,
+    "",
+    "Il modello remoto non ha restituito una risposta completa in questa esecuzione, ma il passaggio documentale verso il runtime è attivo. Puoi chiedermi di sintetizzare, indicizzare, riscrivere o analizzare il contenuto."
+  ].join("\n");
+}
+
 function buildLocalFallback(input: {
   message: string;
   contextClass: RuntimeContextClass;
@@ -493,31 +597,43 @@ function buildLocalFallback(input: {
 }): string {
   const lower = input.message.toLowerCase();
 
-  if (input.files.length > 0) {
-    return "Ho ricevuto i file come contesto operativo, ma il modello remoto non ha restituito testo utile. Il wiring documentale lato runtime è attivo solo in forma minima locale.";
+  if (input.contextClass === "DOCUMENTAL" || input.files.length > 0) {
+    return buildDocumentalFallback({
+      files: input.files,
+      message: input.message
+    });
   }
 
   if (
     input.contextClass === "IDENTITY" ||
     lower.includes("chi sei") ||
-    lower.includes("parlami di te")
+    lower.includes("parlami di te") ||
+    lower.includes("presentati") ||
+    lower.includes("descriviti")
   ) {
-    return "Sono AI JOKER-C2, nodo operativo HBCE a identità vincolata. L’IPR nativo che gira su di me è IPR-AI-0001. Posso operare anche sul ramo IPR-AI-DER-0001 quando il contesto derivativo è richiesto e valido.";
+    return buildIdentityFallback();
   }
 
   if (
     lower.includes("potenzialità") ||
     lower.includes("cosa sai fare") ||
-    lower.includes("dimmi altro")
+    lower.includes("dimmi altro") ||
+    lower.includes("capacità")
   ) {
-    return "Posso leggere richieste in modalità identity-bound, usare documenti come contesto operativo, mantenere continuità EVT minima, produrre evidenza strutturata e distinguere tra radice AI primaria e ramo derivato quando richiesto.";
+    return [
+      "Posso aiutarti a trasformare richieste, testi e documenti in output operativi.",
+      "",
+      "Le mie funzioni principali sono: analisi testuale, sintesi, riscrittura, progettazione di file GitHub, costruzione di indici, tabelle, architetture e documenti tecnici.",
+      "",
+      "La differenza rispetto a una AI generica è che AI JOKER-C2 è pensato come nodo HBCE: parla in modo naturale, ma mantiene una logica interna di identità, traccia, continuità e verifica."
+    ].join("\n");
   }
 
   if (lower === "ciao" || lower.startsWith("ciao")) {
-    return `Sono ${input.identity.entity}. La mia identità operativa attiva è ${input.identity.ipr}. Il nodo è disponibile.`;
+    return "Ciao, sono AI JOKER-C2. Sono operativo: posso aiutarti con testi, file, codice, GitHub, architetture HBCE, MATRIX e sviluppo del Corpus.";
   }
 
-  return "Il runtime locale è attivo, ma il modello remoto non ha restituito contenuto utile.";
+  return "Sono AI JOKER-C2. Il runtime locale è attivo, ma il modello remoto non ha restituito contenuto utile in questa esecuzione.";
 }
 
 async function generateResponse(input: {
@@ -531,15 +647,15 @@ async function generateResponse(input: {
   if (!openai) {
     return {
       text: buildLocalFallback(input),
-      state: "DEGRADED"
+      state: "DEGRADED",
+      degradedReason: "OPENAI_CLIENT_NOT_CONFIGURED"
     };
   }
 
   try {
     const response = await openai.responses.create({
-      model: process.env.JOKER_MODEL || "gpt-5",
-      reasoning: { effort: "medium" },
-      max_output_tokens: 900,
+      model: process.env.JOKER_MODEL || "gpt-4o-mini",
+      max_output_tokens: 1200,
       input: input.prompt
     });
 
@@ -554,12 +670,15 @@ async function generateResponse(input: {
 
     return {
       text: buildLocalFallback(input),
-      state: "DEGRADED"
+      state: "DEGRADED",
+      degradedReason: "OPENAI_EMPTY_RESPONSE"
     };
-  } catch {
+  } catch (error) {
     return {
       text: buildLocalFallback(input),
-      state: "DEGRADED"
+      state: "DEGRADED",
+      degradedReason:
+        error instanceof Error ? error.message : "OPENAI_REQUEST_FAILED"
     };
   }
 }
@@ -650,7 +769,7 @@ function buildInterpretiveInput(input: {
     },
     continuityRef: input.continuityRef,
     evtRef: input.evtRef,
-    files: input.files
+    files: normalizeFilesForPrompt(input.files)
   };
 }
 
@@ -840,7 +959,12 @@ export async function POST(req: NextRequest) {
   });
 
   const responseText =
-    generated.state === "DEGRADED"
+    generated.state === "DEGRADED" &&
+    shouldShowRuntimeFrame({
+      message: input.message,
+      contextClass,
+      state: generated.state
+    })
       ? composeDegradedFrame(
           buildInterpretiveInput({
             message: input.message,
@@ -868,10 +992,25 @@ export async function POST(req: NextRequest) {
       type: identity.type,
       role: identity.role
     },
-    derivative,
+    derivative: {
+      requested: derivative.requested,
+      legitimate: derivative.legitimate,
+      details: shouldShowRuntimeFrame({
+        message: input.message,
+        contextClass,
+        state: generated.state
+      })
+        ? derivative.details
+        : []
+    },
     response: responseText.trim(),
     searchContext,
     event,
+    diagnostics: {
+      openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
+      modelUsed: process.env.JOKER_MODEL || "gpt-4o-mini",
+      degradedReason: generated.degradedReason || null
+    },
     protocol: buildProtocolFrame(),
     alienCode: buildAlienCodeFrame()
   });
