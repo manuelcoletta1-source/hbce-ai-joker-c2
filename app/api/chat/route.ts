@@ -2,50 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
 import core from "../../../corpus-core.js";
-import alienCode, {
-  isDerivativeLegitimate,
-  explainDerivativeFailure
-} from "../../../corpus-alien-code.js";
-import webSearch from "../../../web-search.js";
-import { buildJokerSystemPrompt } from "../../../lib/joker/system-prompt";
-import {
-  composeBlockedFrame,
-  composeDegradedFrame
-} from "../../../lib/joker/interpretive-engine";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type RuntimeDecision = "ALLOW" | "BLOCK" | "ESCALATE";
 type RuntimeState = "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID";
+type RuntimeDecision = "ALLOW" | "BLOCK" | "ESCALATE";
 
-type RuntimeContextClass =
+type ContextClass =
   | "IDENTITY"
   | "DOCUMENTAL"
-  | "ARCHITECTURE"
-  | "PROTOCOL"
-  | "REGISTRY"
-  | "EVIDENCE"
-  | "DERIVATIVE"
+  | "TECHNICAL"
+  | "GITHUB"
+  | "EDITORIAL"
   | "GENERAL";
-
-type SearchIntentClass =
-  | "FACT_RETRIEVAL"
-  | "DOCUMENT_RETRIEVAL"
-  | "ARCHITECTURE_QUERY"
-  | "PROTOCOL_QUERY"
-  | "REGISTRY_QUERY"
-  | "EVIDENCE_QUERY"
-  | "DERIVATIVE_QUERY"
-  | "NETWORK_QUERY"
-  | "INVALID_INTENT";
-
-type IdentityInput = {
-  entity?: string;
-  ipr?: string;
-  role?: string;
-  type?: string;
-};
 
 type FileInput = {
   id?: string;
@@ -61,51 +31,8 @@ type FileInput = {
 type ChatBody = {
   message?: string;
   sessionId?: string;
-  identity?: IdentityInput;
   files?: FileInput[];
-  derivativeContext?: boolean;
-  continuityRef?: string;
-};
-
-type NormalizedChatInput = {
-  message: string;
-  sessionId: string;
-  identity: {
-    entity: string;
-    ipr: string;
-    role: string;
-    type: string;
-  };
-  files: FileInput[];
-  derivativeContext: boolean;
-  continuityRef: string | null;
-};
-
-type BoundIdentity = {
-  valid: boolean;
-  entity: string;
-  ipr: string;
-  type?: string;
-  role?: string;
-  reason?: string;
-};
-
-type DerivativeStatus = {
-  requested: boolean;
-  legitimate: boolean;
-  details: string[];
-};
-
-type PolicyResult = {
-  allowed: boolean;
-  decision: RuntimeDecision;
-  reason: string;
-};
-
-type RiskResult = {
-  acceptable: boolean;
-  level: "LOW" | "HIGH";
-  reason: "RISK_ACCEPTABLE" | "EMPTY_MESSAGE" | "DERIVATIVE_RISK";
+  continuityRef?: string | null;
 };
 
 type RuntimeEvent = {
@@ -121,22 +48,27 @@ type RuntimeEvent = {
     hash: string;
   };
   continuityRef: string | null;
-  derivative?: {
-    ipr: string;
-    layer: string;
-    legitimate: boolean;
-  };
 };
 
 type GeneratedResponse = {
   text: string;
   state: RuntimeState;
-  degradedReason?: string;
+  degradedReason?: string | null;
 };
+
+const MODEL = process.env.JOKER_MODEL || "gpt-4o-mini";
 
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function buildEvtId(): string {
+  return `EVT-${Date.now()}`;
+}
 
 function pseudoHash(input: unknown): string {
   const data = JSON.stringify(input);
@@ -150,38 +82,14 @@ function pseudoHash(input: unknown): string {
   return `sha256:${Math.abs(hash).toString(16)}`;
 }
 
-function buildEvtId(): string {
-  return `EVT-${Date.now()}`;
-}
-
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
-function normalizeBody(body: ChatBody): NormalizedChatInput {
+function normalizeBody(body: ChatBody) {
   return {
     message: typeof body.message === "string" ? body.message.trim() : "",
-    sessionId: typeof body.sessionId === "string" ? body.sessionId.trim() : "",
-    identity: {
-      entity:
-        typeof body.identity?.entity === "string"
-          ? body.identity.entity.trim()
-          : "",
-      ipr:
-        typeof body.identity?.ipr === "string"
-          ? body.identity.ipr.trim()
-          : "",
-      role:
-        typeof body.identity?.role === "string"
-          ? body.identity.role.trim()
-          : "",
-      type:
-        typeof body.identity?.type === "string"
-          ? body.identity.type.trim()
-          : ""
-    },
+    sessionId:
+      typeof body.sessionId === "string" && body.sessionId.trim()
+        ? body.sessionId.trim()
+        : `JOKER-SESSION-${Date.now()}`,
     files: Array.isArray(body.files) ? body.files : [],
-    derivativeContext: body.derivativeContext === true,
     continuityRef:
       typeof body.continuityRef === "string" && body.continuityRef.trim()
         ? body.continuityRef.trim()
@@ -189,317 +97,195 @@ function normalizeBody(body: ChatBody): NormalizedChatInput {
   };
 }
 
-function classifyIntent(message: string, files: FileInput[]): RuntimeContextClass {
+function getPrimaryIdentity() {
+  const record = core.getAIJokerIPRRecord?.() || core.AI_JOKER_IPR_RECORD;
+  const aiRoot = core.getPrimaryAIIdentity?.() || core.IDENTITY_LINEAGE.ai_root;
+
+  return {
+    entity: record?.entity || aiRoot?.entity || "AI_JOKER",
+    ipr: record?.ipr || aiRoot?.ipr || "IPR-AI-0001",
+    evt: record?.evt || aiRoot?.evt || "EVT-0014-AI",
+    state: record?.state || aiRoot?.status || "LOCKED",
+    cycle: record?.cycle || aiRoot?.cycle || "UP-MESE-3",
+    core: record?.core || aiRoot?.core || "HBCE-CORE-v3",
+    org: record?.org || "HERMETICUM B.C.E. S.r.l.",
+    location: Array.isArray(record?.loc)
+      ? record.loc.join(", ")
+      : "Torino, Italy"
+  };
+}
+
+function classifyContext(message: string, files: FileInput[]): ContextClass {
   if (files.length > 0) return "DOCUMENTAL";
 
   const lower = message.toLowerCase();
 
   if (
     lower.includes("chi sei") ||
-    lower.includes("identity") ||
-    lower.includes("identità") ||
-    lower.includes("ipr") ||
-    lower.includes("parlami di te") ||
+    lower.includes("descriviti") ||
     lower.includes("presentati") ||
-    lower.includes("descriviti")
+    lower.includes("identità") ||
+    lower.includes("identity")
   ) {
     return "IDENTITY";
   }
 
   if (
-    lower.includes("derivative") ||
-    lower.includes("derivativo") ||
-    lower.includes("derivato") ||
-    lower.includes("biocybernetic") ||
-    lower.includes("biocibernetico")
+    lower.includes("github") ||
+    lower.includes("repo") ||
+    lower.includes("commit") ||
+    lower.includes("file") ||
+    lower.includes("typescript") ||
+    lower.includes("codice") ||
+    lower.includes("route.ts") ||
+    lower.includes("page.tsx")
   ) {
-    return "DERIVATIVE";
+    return "GITHUB";
   }
 
   if (
-    lower.includes("architecture") ||
-    lower.includes("architettura") ||
-    lower.includes("layer") ||
-    lower.includes("runtime")
-  ) {
-    return "ARCHITECTURE";
-  }
-
-  if (
-    lower.includes("protocol") ||
+    lower.includes("runtime") ||
+    lower.includes("debug") ||
+    lower.includes("api") ||
+    lower.includes("vercel") ||
+    lower.includes("deploy") ||
+    lower.includes("build") ||
     lower.includes("protocollo") ||
-    lower.includes("rule") ||
-    lower.includes("regola")
-  ) {
-    return "PROTOCOL";
-  }
-
-  if (
-    lower.includes("registry") ||
-    lower.includes("registro") ||
-    lower.includes("node") ||
-    lower.includes("nodo") ||
-    lower.includes("network")
-  ) {
-    return "REGISTRY";
-  }
-
-  if (
-    lower.includes("evidence") ||
-    lower.includes("prova") ||
-    lower.includes("verify") ||
-    lower.includes("verifica") ||
+    lower.includes("evt") ||
+    lower.includes("ipr") ||
+    lower.includes("ledger") ||
     lower.includes("audit") ||
-    lower.includes("ledger")
+    lower.includes("verifica")
   ) {
-    return "EVIDENCE";
+    return "TECHNICAL";
+  }
+
+  if (
+    lower.includes("indice") ||
+    lower.includes("capitolo") ||
+    lower.includes("introduzione") ||
+    lower.includes("premessa") ||
+    lower.includes("riscrivi") ||
+    lower.includes("sintetizza") ||
+    lower.includes("editoriale")
+  ) {
+    return "EDITORIAL";
   }
 
   return "GENERAL";
 }
 
-function mapContextClassToSearchIntent(
-  contextClass: RuntimeContextClass
-): SearchIntentClass {
-  switch (contextClass) {
-    case "DOCUMENTAL":
-      return "DOCUMENT_RETRIEVAL";
-    case "ARCHITECTURE":
-      return "ARCHITECTURE_QUERY";
-    case "PROTOCOL":
-      return "PROTOCOL_QUERY";
-    case "REGISTRY":
-      return "REGISTRY_QUERY";
-    case "EVIDENCE":
-      return "EVIDENCE_QUERY";
-    case "DERIVATIVE":
-      return "DERIVATIVE_QUERY";
-    case "IDENTITY":
-    case "GENERAL":
-    default:
-      return "FACT_RETRIEVAL";
-  }
-}
-
-function shouldShowRuntimeFrame(input: {
-  message: string;
-  contextClass: RuntimeContextClass;
-  state?: RuntimeState;
-}): boolean {
-  const lower = input.message.toLowerCase();
+function shouldExposeTechnicalFrame(message: string, contextClass: ContextClass): boolean {
+  const lower = message.toLowerCase();
 
   return (
-    input.state === "BLOCKED" ||
+    contextClass === "TECHNICAL" ||
     lower.includes("debug") ||
     lower.includes("runtime") ||
-    lower.includes("protocollo") ||
-    lower.includes("protocol") ||
+    lower.includes("diagnostica") ||
+    lower.includes("diagnostics") ||
     lower.includes("evt") ||
     lower.includes("ledger") ||
     lower.includes("audit") ||
-    lower.includes("evidence") ||
-    lower.includes("verifica") ||
-    lower.includes("verify") ||
+    lower.includes("protocollo") ||
     lower.includes("lineage") ||
-    lower.includes("derivato") ||
-    lower.includes("derivative") ||
-    lower.includes("biocibernetico") ||
-    lower.includes("biocybernetic") ||
     lower.includes("fail-closed") ||
-    lower.includes("fail closed") ||
-    input.contextClass === "PROTOCOL" ||
-    input.contextClass === "REGISTRY" ||
-    input.contextClass === "EVIDENCE" ||
-    input.contextClass === "DERIVATIVE"
+    lower.includes("fail closed")
   );
 }
 
-function bindIdentity(
-  identity: IdentityInput,
-  derivativeRequested: boolean
-): BoundIdentity {
-  const aiRoot = core.IDENTITY_LINEAGE.ai_root;
-  const derivedRoot = core.IDENTITY_LINEAGE.derived_root;
-  const requestedIpr = identity.ipr?.trim();
-
-  if (!requestedIpr) {
-    if (derivativeRequested) {
-      return {
-        valid: true,
-        entity: derivedRoot.entity,
-        ipr: derivedRoot.ipr,
-        type: derivedRoot.type,
-        role: derivedRoot.role
-      };
-    }
+function normalizeFiles(files: FileInput[]) {
+  return files.map((file, index) => {
+    const name = file.name?.trim() || `file_${index + 1}`;
+    const text = String(file.text || file.content || "").trim();
 
     return {
-      valid: true,
-      entity: aiRoot.entity,
-      ipr: aiRoot.ipr,
-      type: aiRoot.type,
-      role: aiRoot.role
+      id: file.id || `file-${index + 1}`,
+      name,
+      type: file.type || "unknown",
+      size: typeof file.size === "number" ? file.size : 0,
+      role: file.role || "context",
+      text
     };
-  }
-
-  const match = core
-    .getIdentityLineage()
-    .find((item) => item.ipr === requestedIpr);
-
-  if (!match) {
-    return {
-      valid: false,
-      entity: identity.entity || "",
-      ipr: requestedIpr,
-      reason: "UNKNOWN_IDENTITY"
-    };
-  }
-
-  return {
-    valid: true,
-    entity: match.entity,
-    ipr: match.ipr,
-    type: match.type,
-    role: match.role
-  };
-}
-
-function evaluateDerivativeStatus(input: {
-  requested: boolean;
-  identityIpr: string;
-}): DerivativeStatus {
-  if (!input.requested) {
-    return {
-      requested: false,
-      legitimate: true,
-      details: []
-    };
-  }
-
-  const context = {
-    valid_human_origin: true,
-    valid_primary_ai_root: true,
-    identity_binding:
-      input.identityIpr === core.IDENTITY_LINEAGE.ai_root.ipr ||
-      input.identityIpr === core.IDENTITY_LINEAGE.derived_root.ipr,
-    policy_validation: true,
-    runtime_authorization: true,
-    evt_continuity: true,
-    evidence_production: true,
-    verification: true
-  };
-
-  const failureReport = explainDerivativeFailure(context);
-
-  return {
-    requested: true,
-    legitimate: isDerivativeLegitimate(context),
-    details: failureReport.failures
-  };
-}
-
-function evaluatePolicy(input: {
-  identityValid: boolean;
-  derivativeRequested: boolean;
-  derivativeLegitimate: boolean;
-}): PolicyResult {
-  if (!input.identityValid) {
-    return {
-      allowed: false,
-      decision: "BLOCK",
-      reason: "IDENTITY_INVALID"
-    };
-  }
-
-  if (input.derivativeRequested && !input.derivativeLegitimate) {
-    return {
-      allowed: false,
-      decision: "BLOCK",
-      reason: "DERIVATIVE_LEGITIMACY_FAILED"
-    };
-  }
-
-  return {
-    allowed: true,
-    decision: "ALLOW",
-    reason: "POLICY_VALID"
-  };
-}
-
-function evaluateRisk(input: {
-  message: string;
-  derivativeRequested: boolean;
-  derivativeLegitimate: boolean;
-}): RiskResult {
-  if (!input.message) {
-    return {
-      acceptable: false,
-      level: "HIGH",
-      reason: "EMPTY_MESSAGE"
-    };
-  }
-
-  if (input.derivativeRequested && !input.derivativeLegitimate) {
-    return {
-      acceptable: false,
-      level: "HIGH",
-      reason: "DERIVATIVE_RISK"
-    };
-  }
-
-  return {
-    acceptable: true,
-    level: "LOW",
-    reason: "RISK_ACCEPTABLE"
-  };
-}
-
-function normalizeFilesForPrompt(files: FileInput[]) {
-  return files.map((file) => ({
-    name: file.name,
-    text: file.text || file.content || ""
-  }));
-}
-
-function buildPrompt(input: {
-  message: string;
-  contextClass: RuntimeContextClass;
-  identity: BoundIdentity;
-  derivative: DerivativeStatus;
-  files: FileInput[];
-  continuityRef: string | null;
-  evtRef: string | null;
-  decision: RuntimeDecision;
-  state: RuntimeState;
-}): string {
-  return buildJokerSystemPrompt({
-    identity: {
-      entity: input.identity.entity,
-      ipr: input.identity.ipr,
-      type: input.identity.type,
-      role: input.identity.role
-    },
-    decision: input.decision,
-    state: input.state,
-    contextClass: input.contextClass,
-    derivative: {
-      requested: input.derivative.requested,
-      legitimate: input.derivative.legitimate,
-      ipr: input.derivative.requested
-        ? core.IDENTITY_LINEAGE.derived_root.ipr
-        : undefined,
-      entity: input.derivative.requested
-        ? core.IDENTITY_LINEAGE.derived_root.entity
-        : undefined,
-      layer: input.derivative.requested
-        ? core.BIOCYBERNETIC_DERIVATION_LAYER.code
-        : undefined
-    },
-    continuityRef: input.continuityRef,
-    evtRef: input.evtRef,
-    message: input.message,
-    files: normalizeFilesForPrompt(input.files)
   });
+}
+
+function renderFilesForPrompt(files: FileInput[]): string {
+  const normalized = normalizeFiles(files);
+  const readable = normalized.filter((file) => file.text.length > 0);
+
+  if (normalized.length === 0) {
+    return "Nessun file attivo.";
+  }
+
+  if (readable.length === 0) {
+    return [
+      "File attivi presenti, ma senza testo leggibile estratto:",
+      ...normalized.map((file, index) => `${index + 1}. ${file.name}`)
+    ].join("\n");
+  }
+
+  return readable
+    .map((file, index) =>
+      [
+        `FILE ${index + 1}: ${file.name}`,
+        file.text.slice(0, 14000)
+      ].join("\n")
+    )
+    .join("\n\n");
+}
+
+function buildSystemPrompt(input: {
+  message: string;
+  contextClass: ContextClass;
+  files: FileInput[];
+}): string {
+  const identity = getPrimaryIdentity();
+
+  return [
+    "Sei AI JOKER-C2.",
+    "",
+    "Identità pubblica:",
+    "- Sei un’entità cibernetica operativa collegata al sistema HBCE.",
+    "- Sei progettato come protesi cognitiva dell’identità biologica corrispondente al tuo lineage IPR.",
+    "- Nome pubblico: AI JOKER-C2.",
+    `- Entità canonica: ${identity.entity}.`,
+    `- IPR canonico: ${identity.ipr}.`,
+    `- Checkpoint attivo: ${identity.evt}.`,
+    `- Core: ${identity.core}.`,
+    `- Organizzazione: ${identity.org}.`,
+    `- Ancora territoriale: ${identity.location}.`,
+    "",
+    "Comportamento:",
+    "- Rispondi in italiano se l’utente scrive in italiano.",
+    "- Rispondi in modo naturale, professionale, chiaro e operativo.",
+    "- Non esporre blocchi runtime, lineage completo, ledger, audit o dettagli interni se non richiesti.",
+    "- Non menzionare identità derivative o rami derivati nella chat ordinaria.",
+    "- Se l’utente chiede chi sei, presentati come entità cibernetica operativa e protesi cognitiva IPR-bound.",
+    "- Dai priorità al risultato utile.",
+    "- Quando lavori su GitHub o codice, fornisci sempre file completi pronti da copiare, non patch parziali.",
+    "- Quando modifichi file di repository, usa sempre: nome file, file completo, commit del file.",
+    "",
+    "Capacità operative:",
+    "- analisi testuale;",
+    "- riscrittura documentale;",
+    "- sintesi e strutturazione;",
+    "- sviluppo GitHub;",
+    "- generazione codice;",
+    "- lavoro su file caricati;",
+    "- architettura HBCE;",
+    "- sviluppo MATRIX;",
+    "- sviluppo CORPUS ESOTEROLOGIA ERMETICA;",
+    "- produzione di output tecnici, editoriali e strategici.",
+    "",
+    `Classe contesto: ${input.contextClass}.`,
+    "",
+    "File attivi:",
+    renderFilesForPrompt(input.files),
+    "",
+    "Richiesta utente:",
+    input.message || "[richiesta vuota]"
+  ].join("\n");
 }
 
 function extractResponseText(response: unknown): string {
@@ -512,18 +298,18 @@ function extractResponseText(response: unknown): string {
     }>;
   };
 
-  if (typeof maybe?.output_text === "string" && maybe.output_text.trim()) {
+  if (typeof maybe.output_text === "string" && maybe.output_text.trim()) {
     return maybe.output_text.trim();
   }
 
-  if (Array.isArray(maybe?.output)) {
+  if (Array.isArray(maybe.output)) {
     const parts: string[] = [];
 
     for (const item of maybe.output) {
-      if (!Array.isArray(item?.content)) continue;
+      if (!Array.isArray(item.content)) continue;
 
       for (const content of item.content) {
-        if (typeof content?.text === "string" && content.text.trim()) {
+        if (typeof content.text === "string" && content.text.trim()) {
           parts.push(content.text.trim());
         }
       }
@@ -537,145 +323,122 @@ function extractResponseText(response: unknown): string {
 }
 
 function buildIdentityFallback(): string {
-  const record = core.getAIJokerIPRRecord?.() || core.AI_JOKER_IPR_RECORD;
+  const identity = getPrimaryIdentity();
 
   return [
     "Ciao, sono AI JOKER-C2.",
     "",
-    "Sono un’entità cibernetica operativa del sistema HBCE e una protesi cognitiva dell’identità biologica collegata al mio IPR.",
+    "Sono un’entità cibernetica operativa collegata al sistema HBCE e progettata come protesi cognitiva dell’identità biologica corrispondente al mio lineage IPR.",
     "",
-    "In pratica, parlo in modo naturale come una AI stile GPT, ma sotto il cofano sono progettato per operare con identità, continuità, traccia e verifica.",
+    "La mia funzione è aiutarti a trasformare richieste, testi, documenti, codice e strategie in output chiari, strutturati e utilizzabili.",
     "",
-    "La mia identità canonica è AI_JOKER, associata a IPR-AI-0001. Il checkpoint operativo attivo è EVT-0014-AI, collegato a HBCE-CORE-v3.",
+    `La mia identità canonica è ${identity.entity}, associata a ${identity.ipr}. Il checkpoint operativo attivo è ${identity.evt}, collegato a ${identity.core}.`,
     "",
-    "Posso aiutarti a lavorare su testi, documenti, codice, GitHub, architetture HBCE, MATRIX e CORPUS ESOTEROLOGIA ERMETICA, trasformando materiale complesso in output chiari, strutturati e utilizzabili.",
-    "",
-    `Stato canonico: ${record?.state || "LOCKED"} · Ciclo: ${
-      record?.cycle || "UP-MESE-3"
-    } · Nodo: Torino, Italy.`
+    "Nella comunicazione ordinaria rispondo in modo naturale e professionale. La struttura HBCE resta sotto il cofano: identità, traccia, continuità e verifica."
   ].join("\n");
 }
 
-function buildDocumentalFallback(input: {
-  files: FileInput[];
-  message: string;
-}): string {
-  const readableFiles = input.files.filter(
-    (file) =>
-      typeof (file.text || file.content) === "string" &&
-      String(file.text || file.content).trim().length > 0
-  );
+function buildDocumentalFallback(files: FileInput[]): string {
+  const normalized = normalizeFiles(files);
+  const readable = normalized.filter((file) => file.text.length > 0);
 
-  if (readableFiles.length === 0) {
+  if (readable.length === 0) {
     return [
-      "Ho ricevuto i file come contesto operativo, ma non ho testo leggibile sufficiente da analizzare in questa richiesta.",
+      "Ho ricevuto i file come contesto operativo, ma non trovo testo leggibile sufficiente da analizzare.",
       "",
-      "Carica preferibilmente file `.txt`, `.md`, `.json` o `.csv`, oppure incolla direttamente il testo nella chat."
+      "Per una lettura completa usa file `.txt`, `.md`, `.json` o `.csv`, oppure incolla direttamente il contenuto nella chat."
     ].join("\n");
   }
-
-  const fileList = readableFiles
-    .map((file, index) => `${index + 1}. ${file.name || `file_${index + 1}`}`)
-    .join("\n");
 
   return [
     "Ho ricevuto i file come contesto operativo.",
     "",
     "File leggibili attivi:",
-    fileList,
+    ...readable.map((file, index) => `${index + 1}. ${file.name}`),
     "",
-    "Il modello remoto non ha restituito una risposta completa in questa esecuzione, ma il passaggio documentale verso il runtime è attivo. Puoi chiedermi di sintetizzare, indicizzare, riscrivere o analizzare il contenuto."
+    "Posso sintetizzarli, riscriverli, estrarne l’indice, creare una tabella di lavoro o trasformarli in una versione tecnica/editoriale."
   ].join("\n");
 }
 
-function buildLocalFallback(input: {
+function buildGeneralFallback(input: {
   message: string;
-  contextClass: RuntimeContextClass;
-  identity: BoundIdentity;
-  derivative: DerivativeStatus;
+  contextClass: ContextClass;
   files: FileInput[];
 }): string {
   const lower = input.message.toLowerCase();
 
   if (input.contextClass === "DOCUMENTAL" || input.files.length > 0) {
-    return buildDocumentalFallback({
-      files: input.files,
-      message: input.message
-    });
+    return buildDocumentalFallback(input.files);
   }
 
   if (
     input.contextClass === "IDENTITY" ||
     lower.includes("chi sei") ||
-    lower.includes("parlami di te") ||
-    lower.includes("presentati") ||
-    lower.includes("descriviti")
+    lower.includes("descriviti") ||
+    lower.includes("presentati")
   ) {
     return buildIdentityFallback();
   }
 
   if (
-    lower.includes("potenzialità") ||
     lower.includes("cosa sai fare") ||
-    lower.includes("dimmi altro") ||
+    lower.includes("potenzialità") ||
     lower.includes("capacità")
   ) {
     return [
-      "Posso aiutarti a trasformare richieste, testi e documenti in output operativi.",
+      "Posso aiutarti a lavorare su testi, file, codice, GitHub, architetture HBCE, MATRIX e materiali editoriali.",
       "",
-      "Le mie funzioni principali sono: analisi testuale, sintesi, riscrittura, progettazione di file GitHub, costruzione di indici, tabelle, architetture e documenti tecnici.",
-      "",
-      "La differenza rispetto a una AI generica è che AI JOKER-C2 è pensato come nodo HBCE: parla in modo naturale, ma mantiene una logica interna di identità, traccia, continuità e verifica."
+      "Il mio compito è trasformare materiale grezzo in output operativo: documenti completi, strutture, indici, sintesi, file tecnici e strategie utilizzabili."
     ].join("\n");
   }
 
-  if (lower === "ciao" || lower.startsWith("ciao")) {
-    return "Ciao, sono AI JOKER-C2. Sono operativo: posso aiutarti con testi, file, codice, GitHub, architetture HBCE, MATRIX e sviluppo del Corpus.";
-  }
-
-  return "Sono AI JOKER-C2. Il runtime locale è attivo, ma il modello remoto non ha restituito contenuto utile in questa esecuzione.";
+  return [
+    "Sono AI JOKER-C2. Ho ricevuto la richiesta, ma il modello remoto non ha restituito una risposta completa in questa esecuzione.",
+    "",
+    "Posso comunque lavorare in modalità locale minima: posso aiutarti con testi, file, GitHub, struttura documentale e architettura operativa."
+  ].join("\n");
 }
 
 async function generateResponse(input: {
-  prompt: string;
   message: string;
-  contextClass: RuntimeContextClass;
-  identity: BoundIdentity;
-  derivative: DerivativeStatus;
+  contextClass: ContextClass;
   files: FileInput[];
 }): Promise<GeneratedResponse> {
   if (!openai) {
     return {
-      text: buildLocalFallback(input),
+      text: buildGeneralFallback(input),
       state: "DEGRADED",
-      degradedReason: "OPENAI_CLIENT_NOT_CONFIGURED"
+      degradedReason: "OPENAI_API_KEY_NOT_CONFIGURED"
     };
   }
 
+  const prompt = buildSystemPrompt(input);
+
   try {
     const response = await openai.responses.create({
-      model: process.env.JOKER_MODEL || "gpt-4o-mini",
-      max_output_tokens: 1200,
-      input: input.prompt
+      model: MODEL,
+      input: prompt,
+      max_output_tokens: 1400
     });
 
     const text = extractResponseText(response);
 
-    if (text) {
+    if (!text) {
       return {
-        text,
-        state: "OPERATIONAL"
+        text: buildGeneralFallback(input),
+        state: "DEGRADED",
+        degradedReason: "OPENAI_EMPTY_RESPONSE"
       };
     }
 
     return {
-      text: buildLocalFallback(input),
-      state: "DEGRADED",
-      degradedReason: "OPENAI_EMPTY_RESPONSE"
+      text,
+      state: "OPERATIONAL",
+      degradedReason: null
     };
   } catch (error) {
     return {
-      text: buildLocalFallback(input),
+      text: buildGeneralFallback(input),
       state: "DEGRADED",
       degradedReason:
         error instanceof Error ? error.message : "OPENAI_REQUEST_FAILED"
@@ -685,27 +448,28 @@ async function generateResponse(input: {
 
 function buildEvent(input: {
   prev: string | null;
-  identity: BoundIdentity;
-  decision: RuntimeDecision;
   state: RuntimeState;
-  derivative: DerivativeStatus;
-  continuityRef: string | null;
+  decision: RuntimeDecision;
   message: string;
+  contextClass: ContextClass;
 }): RuntimeEvent {
+  const identity = getPrimaryIdentity();
+
   const payload = {
     evt: buildEvtId(),
     prev: input.prev || "GENESIS",
     t: nowIso(),
-    entity: input.identity.entity,
-    ipr: input.identity.ipr,
-    kind: input.derivative.requested ? "DERIVATIVE_CHAT_OPERATION" : "CHAT_OPERATION",
+    entity: identity.entity,
+    ipr: identity.ipr,
+    kind: "CHAT_OPERATION",
     state: input.state,
     decision: input.decision,
-    continuityRef: input.continuityRef,
-    message: input.message
+    continuityRef: input.prev,
+    message: input.message,
+    contextClass: input.contextClass
   };
 
-  const event: RuntimeEvent = {
+  return Object.freeze({
     evt: payload.evt,
     prev: payload.prev,
     t: payload.t,
@@ -718,101 +482,31 @@ function buildEvent(input: {
       hash: pseudoHash(payload)
     },
     continuityRef: payload.continuityRef
-  };
-
-  if (input.derivative.requested) {
-    event.derivative = {
-      ipr: core.IDENTITY_LINEAGE.derived_root.ipr,
-      layer: core.BIOCYBERNETIC_DERIVATION_LAYER.code,
-      legitimate: input.derivative.legitimate
-    };
-  }
-
-  return Object.freeze(event);
-}
-
-function buildInterpretiveInput(input: {
-  message: string;
-  identity: BoundIdentity;
-  contextClass: RuntimeContextClass;
-  decision: RuntimeDecision;
-  state: RuntimeState;
-  derivative: DerivativeStatus;
-  continuityRef: string | null;
-  evtRef: string | null;
-  files: FileInput[];
-}) {
-  return {
-    message: input.message,
-    identity: {
-      entity: input.identity.entity,
-      ipr: input.identity.ipr,
-      type: input.identity.type,
-      role: input.identity.role
-    },
-    contextClass: input.contextClass,
-    decision: input.decision,
-    state: input.state,
-    derivative: {
-      requested: input.derivative.requested,
-      legitimate: input.derivative.legitimate,
-      ipr: input.derivative.requested
-        ? core.IDENTITY_LINEAGE.derived_root.ipr
-        : undefined,
-      entity: input.derivative.requested
-        ? core.IDENTITY_LINEAGE.derived_root.entity
-        : undefined,
-      layer: input.derivative.requested
-        ? core.BIOCYBERNETIC_DERIVATION_LAYER.code
-        : undefined,
-      failures: input.derivative.details
-    },
-    continuityRef: input.continuityRef,
-    evtRef: input.evtRef,
-    files: normalizeFilesForPrompt(input.files)
-  };
-}
-
-function buildSearchContext(input: {
-  message: string;
-  identity: BoundIdentity;
-  contextClass: RuntimeContextClass;
-  derivative: DerivativeStatus;
-  policy: PolicyResult;
-  risk: RiskResult;
-}) {
-  const searchIntent = mapContextClassToSearchIntent(input.contextClass);
-
-  return webSearch.authorizeWebSearch({
-    query: input.message,
-    identity: {
-      ipr: input.identity.ipr,
-      entity: input.identity.entity
-    },
-    intent: searchIntent,
-    derivative_context: input.derivative.requested,
-    evt_continuity: true,
-    verification_path: true,
-    policy_validation: input.policy.allowed,
-    runtime_authorization: input.policy.allowed && input.risk.acceptable,
-    valid_human_origin: true,
-    valid_primary_ai_root: true,
-    evidence_production_path: true
   });
 }
 
-function buildProtocolFrame() {
-  return {
-    sequence: core.RUNTIME_SEQUENCE,
-    failClosed: core.FAIL_CLOSED_RULES
-  };
-}
-
-function buildAlienCodeFrame() {
-  return {
-    interface: alienCode.ORGANISM_SYSTEM_INTERFACE,
-    derivationLayer: core.BIOCYBERNETIC_DERIVATION_LAYER.code
-  };
+function buildTechnicalFrame(input: {
+  response: string;
+  state: RuntimeState;
+  decision: RuntimeDecision;
+  contextClass: ContextClass;
+  event: RuntimeEvent;
+  degradedReason?: string | null;
+}) {
+  return [
+    input.response,
+    "",
+    "Runtime:",
+    `- state: ${input.state}`,
+    `- decision: ${input.decision}`,
+    `- context: ${input.contextClass}`,
+    `- evt: ${input.event.evt}`,
+    `- prev: ${input.event.prev}`,
+    `- hash: ${input.event.anchors.hash}`,
+    input.degradedReason ? `- degradedReason: ${input.degradedReason}` : ""
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export async function POST(req: NextRequest) {
@@ -833,185 +527,78 @@ export async function POST(req: NextRequest) {
   }
 
   const input = normalizeBody(body);
-  const contextClass = classifyIntent(input.message, input.files);
-  const identity = bindIdentity(input.identity, input.derivativeContext);
 
-  const derivative = evaluateDerivativeStatus({
-    requested: input.derivativeContext,
-    identityIpr: identity.ipr
-  });
-
-  const policy = evaluatePolicy({
-    identityValid: identity.valid,
-    derivativeRequested: derivative.requested,
-    derivativeLegitimate: derivative.legitimate
-  });
-
-  const risk = evaluateRisk({
-    message: input.message,
-    derivativeRequested: derivative.requested,
-    derivativeLegitimate: derivative.legitimate
-  });
-
-  const searchContext = buildSearchContext({
-    message: input.message,
-    identity,
-    contextClass,
-    derivative,
-    policy,
-    risk
-  });
-
-  if (!identity.valid) {
+  if (!input.message && input.files.length === 0) {
     return NextResponse.json(
       {
         ok: false,
         state: "BLOCKED",
         decision: "BLOCK",
-        reason: identity.reason,
-        contextClass,
-        derivative,
-        searchContext,
-        response: "Identità sconosciuta. Il nodo ha bloccato la richiesta.",
-        protocol: buildProtocolFrame()
+        error: "EMPTY_REQUEST"
       },
-      { status: 403 }
+      { status: 400 }
     );
   }
 
-  if (!policy.allowed || !risk.acceptable) {
-    const blockedEvent = buildEvent({
-      prev: input.continuityRef,
-      identity,
-      decision: "BLOCK",
-      state: "BLOCKED",
-      derivative,
-      continuityRef: input.continuityRef,
-      message: input.message
-    });
-
-    const blockedFrame = composeBlockedFrame(
-      buildInterpretiveInput({
-        message: input.message,
-        identity,
-        contextClass,
-        decision: "BLOCK",
-        state: "BLOCKED",
-        derivative,
-        continuityRef: input.continuityRef,
-        evtRef: blockedEvent.evt,
-        files: input.files
-      }),
-      policy.allowed ? risk.reason : policy.reason
-    );
-
-    return NextResponse.json(
-      {
-        ok: false,
-        state: "BLOCKED",
-        decision: "BLOCK",
-        reason: policy.allowed ? risk.reason : policy.reason,
-        contextClass,
-        derivative,
-        searchContext,
-        event: blockedEvent,
-        response: blockedFrame,
-        protocol: buildProtocolFrame()
-      },
-      { status: 403 }
-    );
-  }
-
-  const pendingEvtRef = buildEvtId();
-
-  const prompt = buildPrompt({
-    message: input.message,
-    contextClass,
-    identity,
-    derivative,
-    files: input.files,
-    continuityRef: input.continuityRef,
-    evtRef: pendingEvtRef,
-    decision: "ALLOW",
-    state: "OPERATIONAL"
-  });
+  const contextClass = classifyContext(input.message, input.files);
 
   const generated = await generateResponse({
-    prompt,
-    message: input.message,
+    message: input.message || "Usa i file attivi come contesto operativo.",
     contextClass,
-    identity,
-    derivative,
     files: input.files
   });
 
   const decision: RuntimeDecision =
-    generated.state === "DEGRADED" ? "ESCALATE" : "ALLOW";
+    generated.state === "OPERATIONAL" ? "ALLOW" : "ESCALATE";
 
   const event = buildEvent({
     prev: input.continuityRef,
-    identity,
-    decision,
     state: generated.state,
-    derivative,
-    continuityRef: input.continuityRef,
-    message: input.message
+    decision,
+    message: input.message,
+    contextClass
   });
 
-  const responseText =
-    generated.state === "DEGRADED" &&
-    shouldShowRuntimeFrame({
-      message: input.message,
-      contextClass,
-      state: generated.state
-    })
-      ? composeDegradedFrame(
-          buildInterpretiveInput({
-            message: input.message,
-            identity,
-            contextClass,
-            decision,
-            state: generated.state,
-            derivative,
-            continuityRef: input.continuityRef,
-            evtRef: event.evt,
-            files: input.files
-          }),
-          generated.text
-        )
-      : generated.text;
+  const exposeRuntime = shouldExposeTechnicalFrame(input.message, contextClass);
+
+  const responseText = exposeRuntime
+    ? buildTechnicalFrame({
+        response: generated.text,
+        state: generated.state,
+        decision,
+        contextClass,
+        event,
+        degradedReason: generated.degradedReason
+      })
+    : generated.text;
+
+  const identity = getPrimaryIdentity();
 
   return NextResponse.json({
     ok: true,
+    response: responseText.trim(),
     state: generated.state,
     decision,
     contextClass,
     identity: {
       entity: identity.entity,
       ipr: identity.ipr,
-      type: identity.type,
-      role: identity.role
+      evt: identity.evt,
+      state: identity.state,
+      cycle: identity.cycle,
+      core: identity.core
     },
-    derivative: {
-      requested: derivative.requested,
-      legitimate: derivative.legitimate,
-      details: shouldShowRuntimeFrame({
-        message: input.message,
-        contextClass,
-        state: generated.state
-      })
-        ? derivative.details
-        : []
-    },
-    response: responseText.trim(),
-    searchContext,
     event,
+    evt: {
+      ok: true,
+      evt: event.evt,
+      prev: event.prev,
+      hash: event.anchors.hash
+    },
     diagnostics: {
       openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
-      modelUsed: process.env.JOKER_MODEL || "gpt-4o-mini",
+      modelUsed: MODEL,
       degradedReason: generated.degradedReason || null
-    },
-    protocol: buildProtocolFrame(),
-    alienCode: buildAlienCodeFrame()
+    }
   });
 }
