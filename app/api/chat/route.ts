@@ -323,13 +323,17 @@ function buildCanonicalDictionary(): string {
     "- IPR = Identity Primary Record.",
     "- IPR non significa Intellectual Property Rights nel contesto MATRIX/HBCE, salvo richiesta esplicita sulla proprietà intellettuale legale.",
     "- IPR è il registro primario di identità operativa.",
+    "- IPR non è una semplice scheda anagrafica e non descrive genericamente le caratteristiche di un'entità.",
+    "- IPR registra l'identità operativa primaria che consente attribuzione, derivazione, responsabilità e continuità verificabile.",
+    "- IPR rende attribuibile il sistema.",
     "- IPR collega origine, identità, responsabilità, derivazione, azione runtime, EVT, prova, auditabilità e continuità.",
     "- HBCE = livello di governance computabile.",
     "- HBCE definisce regole, validazione, autorizzazione, rischio, blocco e comportamento fail-closed.",
     "- JOKER-C2 = runtime operativo vincolato.",
     "- JOKER-C2 esegue richieste sotto identità, policy, controllo, EVT e verifica.",
     "- TRAC = livello di continuità degli eventi.",
-    "- EVT = record verificabile della singola operazione.",
+    "- EVT = Event Record / Verifiable Event Trace.",
+    "- EVT è il record evento verificabile della singola operazione, collegato alla continuità TRAC.",
     "- MATRIX = architettura complessiva che integra identità, governance, esecuzione, continuità, prova e resilienza.",
     "",
     "Formula canonica:",
@@ -342,7 +346,9 @@ function buildCanonicalDictionary(): string {
     "",
     "Regola cybersecurity/resilienza:",
     "Non dire che IPR protegge direttamente la cybersicurezza.",
-    "Dire invece che IPR rende attribuibile l'identità operativa; da questa attribuzione derivano responsabilità, auditabilità, cybersecurity posture, controllo di flotte, resilienza e fail-closed governance.",
+    "Dire invece che IPR non sostituisce strumenti di cybersecurity.",
+    "IPR rafforza la postura di cybersecurity perché rende ogni agente, nodo, runtime o flotta attribuibile a un'origine identitaria, a una regola HBCE e a una catena EVT/TRAC verificabile.",
+    "Da questa attribuzione derivano responsabilità, auditabilità, cybersecurity posture, controllo di flotte, resilienza e fail-closed governance.",
     "",
     "Regola derivazione biocibernetica:",
     "Una IA, un agente, un nodo o una flotta derivata sono validi solo se identity-bound, policy-validated, runtime-authorized, EVT-linked, evidence-producing, verifiable e continuity-preserving."
@@ -440,14 +446,23 @@ function buildIPRFallback(): string {
   return [
     "IPR, nel framework MATRIX/HBCE, significa Identity Primary Record.",
     "",
-    "Non indica principalmente proprietà intellettuale. Indica il registro primario di identità operativa da cui derivano responsabilità, tracciabilità, continuità e attribuzione delle azioni.",
+    "Non indica principalmente proprietà intellettuale e non coincide con una semplice scheda anagrafica. Indica il registro primario di identità operativa da cui derivano responsabilità, tracciabilità, continuità e attribuzione delle azioni.",
+    "",
+    "La sua funzione principale è rendere attribuibile il sistema.",
     "",
     "Funzione dell’IPR:",
-    "- collega un’origine biologica, digitale o sistemica a una identità operativa;",
+    "- collega un'origine biologica, digitale o sistemica a una identità operativa;",
+    "- registra l'identità operativa primaria che consente attribuzione, derivazione e continuità verificabile;",
     "- permette di derivare agenti, nodi, runtime o flotte in modo attribuibile;",
     "- collega ogni azione a una catena EVT/TRAC;",
-    "- rende verificabile chi opera, con quale regola e con quale responsabilità;",
-    "- abilita auditabilità, cybersecurity posture, resilienza e fail-closed governance.",
+    "- rende verificabile chi opera, con quale regola, in quale momento e con quale responsabilità;",
+    "- abilita auditabilità, resilienza, controllo di flotte e fail-closed governance.",
+    "",
+    "Cybersecurity:",
+    "IPR non sostituisce gli strumenti di cybersecurity. Rafforza però la postura di cybersecurity perché rende agenti, nodi, runtime e flotte attribuibili a un'origine identitaria, a una regola HBCE e a una catena EVT/TRAC verificabile.",
+    "",
+    "EVT:",
+    "EVT significa Event Record / Verifiable Event Trace. È il record evento verificabile della singola operazione, collegato alla continuità TRAC.",
     "",
     "Formula corretta:",
     "IPR = origine identitaria.",
@@ -473,7 +488,7 @@ function buildMatrixFallback(): string {
     "- HBCE: governance computabile;",
     "- JOKER-C2: runtime di esecuzione vincolata;",
     "- TRAC: continuità degli eventi;",
-    "- EVT: traccia verificabile;",
+    "- EVT: Event Record / Verifiable Event Trace;",
     "- MATRIX: sistema complessivo."
   ].join("\n");
 }
@@ -487,6 +502,8 @@ function buildIdentityFallback(): string {
     "Sono un’entità cibernetica operativa collegata al sistema HBCE e progettata come protesi cognitiva dell’identità biologica corrispondente al mio lineage IPR.",
     "",
     "Nel mio sistema, IPR significa Identity Primary Record: il registro primario di identità operativa che collega origine, responsabilità, derivazione, evento, prova e continuità.",
+    "",
+    "IPR non è una semplice scheda anagrafica. È il fondamento che rende attribuibile il sistema.",
     "",
     "La mia funzione è aiutarti a trasformare richieste, testi, documenti, codice e strategie in output chiari, strutturati e utilizzabili.",
     "",
@@ -519,6 +536,7 @@ function buildRuntimeDiagnosticText(input: {
     `- entity: ${identity.entity}`,
     `- ipr: ${identity.ipr}`,
     "- ipr_meaning: Identity Primary Record",
+    "- ipr_function: operational attribution root",
     `- checkpoint: ${identity.evt}`,
     `- core: ${identity.core}`,
     "",
@@ -527,7 +545,7 @@ function buildRuntimeDiagnosticText(input: {
     "- HBCE: Computable Governance Layer",
     "- JOKER-C2: Constrained Execution Runtime",
     "- TRAC: Event Continuity Layer",
-    "- EVT: Verifiable Event Trace",
+    "- EVT: Event Record / Verifiable Event Trace",
     "- MATRIX: Complete Operating Architecture",
     "",
     "EVT Chain:",
@@ -558,6 +576,8 @@ function detectKeywords(text: string): string[] {
     "identity primary record",
     "trac",
     "evt",
+    "event record",
+    "verifiable event trace",
     "continuità",
     "governance",
     "cybersecurity",
@@ -627,10 +647,12 @@ function buildLocalDocumentSummary(files: FileInput[]): string {
         "Nuclei principali rilevati:",
         "- MATRIX come infrastruttura di continuità operativa verificabile;",
         "- IPR come Identity Primary Record e origine identitaria della responsabilità;",
+        "- IPR come fondamento di attribuzione del sistema, non come scheda anagrafica generica;",
         "- HBCE come governance computabile;",
         "- JOKER-C2 come runtime operativo vincolato;",
         "- TRAC/EVT come catena di continuità e prova;",
-        "- valore B2B/B2G per compliance, cybersecurity, auditabilità e infrastrutture critiche."
+        "- EVT come Event Record / Verifiable Event Trace;",
+        "- valore B2B/B2G per compliance, cybersecurity posture, auditabilità e infrastrutture critiche."
       ].join("\n")
     : isCorpusDocument
       ? [
@@ -754,7 +776,7 @@ function buildGeneralFallback(input: {
       "- HBCE: governance computabile;",
       "- JOKER-C2: runtime operativo vincolato;",
       "- TRAC: continuità;",
-      "- EVT: prova verificabile."
+      "- EVT: Event Record / Verifiable Event Trace."
     ].join("\n");
   }
 
@@ -763,7 +785,8 @@ function buildGeneralFallback(input: {
     "",
     "Posso comunque lavorare in modalità locale minima: posso aiutarti con testi, file, GitHub, struttura documentale e architettura operativa.",
     "",
-    "Regola canonica attiva: nel framework MATRIX/HBCE, IPR significa Identity Primary Record."
+    "Regola canonica attiva: nel framework MATRIX/HBCE, IPR significa Identity Primary Record.",
+    "Regola EVT attiva: EVT significa Event Record / Verifiable Event Trace."
   ].join("\n");
 }
 
@@ -794,6 +817,9 @@ async function generateResponse(input: {
             buildCanonicalDictionary(),
             "",
             "Regola assoluta: nel contesto MATRIX/HBCE, IPR significa sempre Identity Primary Record. Non tradurlo come Intellectual Property Rights salvo richiesta esplicita sulla proprietà intellettuale legale.",
+            "Regola assoluta: IPR non è una semplice scheda anagrafica. IPR è il fondamento identitario che rende attribuibile il sistema.",
+            "Regola assoluta: EVT significa Event Record / Verifiable Event Trace. EVT è il record evento verificabile della singola operazione collegato alla continuità TRAC.",
+            "Regola assoluta: IPR non sostituisce strumenti di cybersecurity. Rafforza la postura di cybersecurity perché rende agenti, nodi, runtime e flotte attribuibili a origine identitaria, regola HBCE e catena EVT/TRAC verificabile.",
             "",
             "Per strategia, mercato, B2B, B2G, roadmap e prodotto devi usare categorie concrete: IPR, EVT Chain, traccia, continuità, verifica, file ingestion, diagnostica runtime, repository pulito, Vercel build, GitHub, demo verificabile, deliverable, stakeholder value e prossima azione.",
             "",
@@ -850,6 +876,8 @@ function buildEvent(input: {
     entity: identity.entity,
     ipr: identity.ipr,
     iprMeaning: "Identity Primary Record",
+    iprFunction: "operational attribution root",
+    evtMeaning: "Event Record / Verifiable Event Trace",
     kind: "CHAT_OPERATION",
     state: input.state,
     decision: input.decision,
@@ -893,6 +921,8 @@ function buildTechnicalFrame(input: {
     `- prev: ${input.event.prev}`,
     `- hash: ${input.event.anchors.hash}`,
     "- iprMeaning: Identity Primary Record",
+    "- iprFunction: operational attribution root",
+    "- evtMeaning: Event Record / Verifiable Event Trace",
     input.degradedReason ? `- degradedReason: ${input.degradedReason}` : ""
   ]
     .filter(Boolean)
@@ -968,6 +998,7 @@ export async function POST(req: NextRequest) {
         entity: identity.entity,
         ipr: identity.ipr,
         iprMeaning: "Identity Primary Record",
+        iprFunction: "operational attribution root",
         evt: identity.evt,
         state: identity.state,
         cycle: identity.cycle,
@@ -982,10 +1013,11 @@ export async function POST(req: NextRequest) {
       },
       canonical_dictionary: {
         IPR: "Identity Primary Record",
+        IPR_FUNCTION: "Operational attribution root",
         HBCE: "Computable Governance Layer",
         JOKER_C2: "Constrained Execution Runtime",
         TRAC: "Event Continuity Layer",
-        EVT: "Verifiable Event Trace",
+        EVT: "Event Record / Verifiable Event Trace",
         MATRIX: "Complete Operating Architecture"
       },
       diagnostics: {
@@ -1038,6 +1070,7 @@ export async function POST(req: NextRequest) {
       entity: identity.entity,
       ipr: identity.ipr,
       iprMeaning: "Identity Primary Record",
+      iprFunction: "operational attribution root",
       evt: identity.evt,
       state: identity.state,
       cycle: identity.cycle,
@@ -1052,10 +1085,11 @@ export async function POST(req: NextRequest) {
     },
     canonical_dictionary: {
       IPR: "Identity Primary Record",
+      IPR_FUNCTION: "Operational attribution root",
       HBCE: "Computable Governance Layer",
       JOKER_C2: "Constrained Execution Runtime",
       TRAC: "Event Continuity Layer",
-      EVT: "Verifiable Event Trace",
+      EVT: "Event Record / Verifiable Event Trace",
       MATRIX: "Complete Operating Architecture"
     },
     diagnostics: {
