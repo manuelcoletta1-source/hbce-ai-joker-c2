@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { createHash } from "crypto";
 
 import core from "../../../corpus-core.js";
 
@@ -11,6 +12,7 @@ type RuntimeDecision = "ALLOW" | "BLOCK" | "ESCALATE";
 
 type ContextClass =
   | "IDENTITY"
+  | "MATRIX"
   | "DOCUMENTAL"
   | "TECHNICAL"
   | "GITHUB"
@@ -80,16 +82,10 @@ function buildEvtId(): string {
   return `EVT-${Date.now()}`;
 }
 
-function pseudoHash(input: unknown): string {
+function buildTraceHash(input: unknown): string {
   const data = JSON.stringify(input);
-  let hash = 0;
-
-  for (let i = 0; i < data.length; i += 1) {
-    hash = (hash << 5) - hash + data.charCodeAt(i);
-    hash |= 0;
-  }
-
-  return `sha256:${Math.abs(hash).toString(16)}`;
+  const hash = createHash("sha256").update(data).digest("hex");
+  return `sha256:${hash.slice(0, 16)}`;
 }
 
 function normalizeBody(body: ChatBody) {
@@ -146,13 +142,65 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
   const lower = message.toLowerCase();
 
   if (
+    lower.includes("ipr") ||
+    lower.includes("identity primary record") ||
+    lower.includes("identità") ||
+    lower.includes("identity") ||
+    lower.includes("lineage") ||
+    lower.includes("biologico") ||
+    lower.includes("biocibernet") ||
     lower.includes("chi sei") ||
     lower.includes("descriviti") ||
-    lower.includes("presentati") ||
-    lower.includes("identità") ||
-    lower.includes("identity")
+    lower.includes("presentati")
   ) {
     return "IDENTITY";
+  }
+
+  if (
+    lower.includes("github") ||
+    lower.includes("repo") ||
+    lower.includes("commit") ||
+    lower.includes("typescript") ||
+    lower.includes("codice") ||
+    lower.includes("route.ts") ||
+    lower.includes("page.tsx") ||
+    lower.includes("pull request") ||
+    lower.includes("branch")
+  ) {
+    return "GITHUB";
+  }
+
+  if (
+    lower.includes("runtime") ||
+    lower.includes("debug") ||
+    lower.includes("api") ||
+    lower.includes("vercel") ||
+    lower.includes("deploy") ||
+    lower.includes("build") ||
+    lower.includes("protocollo") ||
+    lower.includes("evt") ||
+    lower.includes("ledger") ||
+    lower.includes("audit") ||
+    lower.includes("verifica") ||
+    lower.includes("diagnostica") ||
+    lower.includes("fail-closed") ||
+    lower.includes("fail closed")
+  ) {
+    return "TECHNICAL";
+  }
+
+  if (
+    lower.includes("matrix") ||
+    lower.includes("hbce") ||
+    lower.includes("joker-c2") ||
+    lower.includes("joker c2") ||
+    lower.includes("trac") ||
+    lower.includes("continuità operativa") ||
+    lower.includes("governance computabile") ||
+    lower.includes("torino") ||
+    lower.includes("bruxelles")
+  ) {
+    return "MATRIX";
   }
 
   if (
@@ -160,6 +208,7 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
     lower.includes("strategia") ||
     lower.includes("strategico") ||
     lower.includes("mercato") ||
+    lower.includes("startup") ||
     lower.includes("b2b") ||
     lower.includes("b2g") ||
     lower.includes("business") ||
@@ -179,36 +228,6 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
     lower.includes("pubblica amministrazione")
   ) {
     return "STRATEGIC";
-  }
-
-  if (
-    lower.includes("github") ||
-    lower.includes("repo") ||
-    lower.includes("commit") ||
-    lower.includes("typescript") ||
-    lower.includes("codice") ||
-    lower.includes("route.ts") ||
-    lower.includes("page.tsx")
-  ) {
-    return "GITHUB";
-  }
-
-  if (
-    lower.includes("runtime") ||
-    lower.includes("debug") ||
-    lower.includes("api") ||
-    lower.includes("vercel") ||
-    lower.includes("deploy") ||
-    lower.includes("build") ||
-    lower.includes("protocollo") ||
-    lower.includes("evt") ||
-    lower.includes("ipr") ||
-    lower.includes("ledger") ||
-    lower.includes("audit") ||
-    lower.includes("verifica") ||
-    lower.includes("diagnostica")
-  ) {
-    return "TECHNICAL";
   }
 
   if (
@@ -251,7 +270,10 @@ function isRuntimeDiagnosticRequest(message: string): boolean {
   );
 }
 
-function shouldExposeTechnicalFrame(message: string, contextClass: ContextClass): boolean {
+function shouldExposeTechnicalFrame(
+  message: string,
+  contextClass: ContextClass
+): boolean {
   const lower = message.toLowerCase();
 
   return (
@@ -295,6 +317,38 @@ function renderFilesForPrompt(files: FileInput[]): string {
     .join("\n\n");
 }
 
+function buildCanonicalDictionary(): string {
+  return [
+    "Dizionario canonico MATRIX/HBCE:",
+    "- IPR = Identity Primary Record.",
+    "- IPR non significa Intellectual Property Rights nel contesto MATRIX/HBCE, salvo richiesta esplicita sulla proprietà intellettuale legale.",
+    "- IPR è il registro primario di identità operativa.",
+    "- IPR collega origine, identità, responsabilità, derivazione, azione runtime, EVT, prova, auditabilità e continuità.",
+    "- HBCE = livello di governance computabile.",
+    "- HBCE definisce regole, validazione, autorizzazione, rischio, blocco e comportamento fail-closed.",
+    "- JOKER-C2 = runtime operativo vincolato.",
+    "- JOKER-C2 esegue richieste sotto identità, policy, controllo, EVT e verifica.",
+    "- TRAC = livello di continuità degli eventi.",
+    "- EVT = record verificabile della singola operazione.",
+    "- MATRIX = architettura complessiva che integra identità, governance, esecuzione, continuità, prova e resilienza.",
+    "",
+    "Formula canonica:",
+    "IPR = origine identitaria.",
+    "HBCE = regola operativa.",
+    "JOKER-C2 = esecuzione vincolata.",
+    "TRAC = continuità.",
+    "EVT = prova.",
+    "MATRIX = sistema complessivo.",
+    "",
+    "Regola cybersecurity/resilienza:",
+    "Non dire che IPR protegge direttamente la cybersicurezza.",
+    "Dire invece che IPR rende attribuibile l'identità operativa; da questa attribuzione derivano responsabilità, auditabilità, cybersecurity posture, controllo di flotte, resilienza e fail-closed governance.",
+    "",
+    "Regola derivazione biocibernetica:",
+    "Una IA, un agente, un nodo o una flotta derivata sono validi solo se identity-bound, policy-validated, runtime-authorized, EVT-linked, evidence-producing, verifiable e continuity-preserving."
+  ].join("\n");
+}
+
 function buildSystemPrompt(input: {
   message: string;
   contextClass: ContextClass;
@@ -315,6 +369,8 @@ function buildSystemPrompt(input: {
     `- Core: ${identity.core}.`,
     `- Organizzazione: ${identity.org}.`,
     `- Ancora territoriale: ${identity.location}.`,
+    "",
+    buildCanonicalDictionary(),
     "",
     "Comportamento generale:",
     "- Rispondi in italiano se l’utente scrive in italiano.",
@@ -380,6 +436,48 @@ function extractResponseText(response: unknown): string {
   return typeof content === "string" ? content.trim() : "";
 }
 
+function buildIPRFallback(): string {
+  return [
+    "IPR, nel framework MATRIX/HBCE, significa Identity Primary Record.",
+    "",
+    "Non indica principalmente proprietà intellettuale. Indica il registro primario di identità operativa da cui derivano responsabilità, tracciabilità, continuità e attribuzione delle azioni.",
+    "",
+    "Funzione dell’IPR:",
+    "- collega un’origine biologica, digitale o sistemica a una identità operativa;",
+    "- permette di derivare agenti, nodi, runtime o flotte in modo attribuibile;",
+    "- collega ogni azione a una catena EVT/TRAC;",
+    "- rende verificabile chi opera, con quale regola e con quale responsabilità;",
+    "- abilita auditabilità, cybersecurity posture, resilienza e fail-closed governance.",
+    "",
+    "Formula corretta:",
+    "IPR = origine identitaria.",
+    "HBCE = regola operativa.",
+    "JOKER-C2 = esecuzione vincolata.",
+    "TRAC = continuità.",
+    "EVT = prova.",
+    "MATRIX = architettura complessiva."
+  ].join("\n");
+}
+
+function buildMatrixFallback(): string {
+  return [
+    "MATRIX è l’architettura operativa che collega identità, governance, esecuzione, continuità, prova e resilienza.",
+    "",
+    "Serve a rendere sistemi digitali, intelligenza artificiale, infrastrutture critiche e processi istituzionali non solo funzionanti, ma attribuibili, verificabili, auditabili e governabili.",
+    "",
+    "Nucleo operativo:",
+    "IPR -> HBCE -> JOKER-C2 -> TRAC -> EVT -> verifica.",
+    "",
+    "Significato dei livelli:",
+    "- IPR: identità primaria operativa;",
+    "- HBCE: governance computabile;",
+    "- JOKER-C2: runtime di esecuzione vincolata;",
+    "- TRAC: continuità degli eventi;",
+    "- EVT: traccia verificabile;",
+    "- MATRIX: sistema complessivo."
+  ].join("\n");
+}
+
 function buildIdentityFallback(): string {
   const identity = getPrimaryIdentity();
 
@@ -387,6 +485,8 @@ function buildIdentityFallback(): string {
     "Ciao, sono AI JOKER-C2.",
     "",
     "Sono un’entità cibernetica operativa collegata al sistema HBCE e progettata come protesi cognitiva dell’identità biologica corrispondente al mio lineage IPR.",
+    "",
+    "Nel mio sistema, IPR significa Identity Primary Record: il registro primario di identità operativa che collega origine, responsabilità, derivazione, evento, prova e continuità.",
     "",
     "La mia funzione è aiutarti a trasformare richieste, testi, documenti, codice e strategie in output chiari, strutturati e utilizzabili.",
     "",
@@ -418,8 +518,17 @@ function buildRuntimeDiagnosticText(input: {
     "Identità runtime:",
     `- entity: ${identity.entity}`,
     `- ipr: ${identity.ipr}`,
+    "- ipr_meaning: Identity Primary Record",
     `- checkpoint: ${identity.evt}`,
     `- core: ${identity.core}`,
+    "",
+    "Dizionario operativo:",
+    "- IPR: Identity Primary Record",
+    "- HBCE: Computable Governance Layer",
+    "- JOKER-C2: Constrained Execution Runtime",
+    "- TRAC: Event Continuity Layer",
+    "- EVT: Verifiable Event Trace",
+    "- MATRIX: Complete Operating Architecture",
     "",
     "EVT Chain:",
     `- evt: ${input.event.evt}`,
@@ -438,6 +547,43 @@ function splitSentences(text: string): string[] {
     .filter((sentence) => sentence.length > 80);
 }
 
+function detectKeywords(text: string): string[] {
+  const lower = text.toLowerCase();
+
+  const keywords = [
+    "matrix",
+    "hbce",
+    "joker-c2",
+    "ipr",
+    "identity primary record",
+    "trac",
+    "evt",
+    "continuità",
+    "governance",
+    "cybersecurity",
+    "compliance",
+    "resilienza",
+    "torino",
+    "bruxelles",
+    "europa",
+    "energia",
+    "infrastruttura",
+    "intelligenza artificiale",
+    "audit",
+    "fail-closed",
+    "decisione",
+    "costo",
+    "traccia",
+    "tempo",
+    "apocalisse",
+    "anticristo",
+    "sistema",
+    "civiltà"
+  ];
+
+  return keywords.filter((keyword) => lower.includes(keyword));
+}
+
 function buildLocalDocumentSummary(files: FileInput[]): string {
   const readable = normalizeFiles(files).filter((file) => file.text.length > 0);
 
@@ -451,41 +597,61 @@ function buildLocalDocumentSummary(files: FileInput[]): string {
 
   const file = readable[0];
   const text = file.text;
+  const lower = text.toLowerCase();
   const sentences = splitSentences(text);
   const selected = sentences.slice(0, 10);
+  const detected = detectKeywords(text);
 
-  const keywords = [
-    "apocalisse",
-    "anticristo",
-    "sistema",
-    "civiltà",
-    "tempo",
-    "traccia",
-    "decisione",
-    "costo",
-    "verifica",
-    "esposizione",
-    "realtà",
-    "fondamento",
-    "collasso"
-  ];
+  const isMatrixDocument =
+    lower.includes("matrix") ||
+    lower.includes("hbce") ||
+    lower.includes("joker-c2") ||
+    lower.includes("trac") ||
+    lower.includes("continuità operativa");
 
-  const detected = keywords.filter((keyword) =>
-    text.toLowerCase().includes(keyword)
-  );
+  const isCorpusDocument =
+    lower.includes("apocalisse") ||
+    lower.includes("anticristo") ||
+    lower.includes("esoterologia") ||
+    lower.includes("decisione") ||
+    lower.includes("costo") ||
+    lower.includes("traccia") ||
+    lower.includes("tempo");
+
+  const opening = isMatrixDocument
+    ? [
+        `Sintesi locale del documento: ${file.name}`,
+        "",
+        "Il documento appartiene al campo MATRIX/HBCE e tratta la costruzione di un’architettura operativa basata su identità, governance, esecuzione controllata, continuità degli eventi, verifica e resilienza.",
+        "",
+        "Nuclei principali rilevati:",
+        "- MATRIX come infrastruttura di continuità operativa verificabile;",
+        "- IPR come Identity Primary Record e origine identitaria della responsabilità;",
+        "- HBCE come governance computabile;",
+        "- JOKER-C2 come runtime operativo vincolato;",
+        "- TRAC/EVT come catena di continuità e prova;",
+        "- valore B2B/B2G per compliance, cybersecurity, auditabilità e infrastrutture critiche."
+      ].join("\n")
+    : isCorpusDocument
+      ? [
+          `Sintesi locale del documento: ${file.name}`,
+          "",
+          "Il documento appartiene al campo del CORPUS ESOTEROLOGIA ERMETICA e tratta il reale come sequenza verificabile, con centralità di Decisione, Costo, Traccia e Tempo.",
+          "",
+          "Nuclei principali rilevati:",
+          "- esposizione del sistema culturale e simbolico;",
+          "- passaggio dalla narrazione alla verifica;",
+          "- ruolo della traccia come prova;",
+          "- soglia, responsabilità e tempo come criteri di realtà operativa."
+        ].join("\n")
+      : [
+          `Sintesi locale del documento: ${file.name}`,
+          "",
+          "Il documento contiene materiale testuale leggibile. La sintesi locale rileva temi, parole chiave e passaggi iniziali senza accesso alla piena analisi remota."
+        ].join("\n");
 
   return [
-    `Sintesi locale del documento: ${file.name}`,
-    "",
-    "Il documento tratta una soglia di esposizione della civiltà umana attraverso la figura del Portale dell’Anticristo, collegando il tema dell’Apocalisse a una lettura operativa del tempo, della traccia e della verifica.",
-    "",
-    "Nuclei principali rilevati:",
-    "- la crisi del sistema culturale, politico e simbolico che sostiene la civiltà;",
-    "- l’Apocalisse come processo di esposizione e non solo come immagine religiosa;",
-    "- l’Anticristo come figura di rottura, soglia e manifestazione del collasso del fondamento;",
-    "- la centralità della sequenza Decisione · Costo · Traccia · Tempo;",
-    "- il passaggio dalla narrazione alla verificazione operativa;",
-    "- il ruolo del lettore come soggetto esposto alla soglia del testo.",
+    opening,
     "",
     detected.length > 0
       ? `Parole chiave rilevate: ${detected.join(", ")}.`
@@ -524,6 +690,20 @@ function buildGeneralFallback(input: {
 }): string {
   const lower = input.message.toLowerCase();
 
+  if (lower.includes("ipr") || input.contextClass === "IDENTITY") {
+    return buildIPRFallback();
+  }
+
+  if (
+    input.contextClass === "MATRIX" ||
+    lower.includes("matrix") ||
+    lower.includes("hbce") ||
+    lower.includes("joker-c2") ||
+    lower.includes("trac")
+  ) {
+    return buildMatrixFallback();
+  }
+
   if (input.contextClass === "DOCUMENTAL" || input.files.length > 0) {
     if (wantsSummary(input.message)) {
       return buildLocalDocumentSummary(input.files);
@@ -552,7 +732,6 @@ function buildGeneralFallback(input: {
   }
 
   if (
-    input.contextClass === "IDENTITY" ||
     lower.includes("chi sei") ||
     lower.includes("descriviti") ||
     lower.includes("presentati")
@@ -568,14 +747,23 @@ function buildGeneralFallback(input: {
     return [
       "Posso aiutarti a lavorare su testi, file, codice, GitHub, architetture HBCE, MATRIX e materiali editoriali.",
       "",
-      "Il mio compito è trasformare materiale grezzo in output operativo: documenti completi, strutture, indici, sintesi, file tecnici e strategie utilizzabili."
+      "Il mio compito è trasformare materiale grezzo in output operativo: documenti completi, strutture, indici, sintesi, file tecnici e strategie utilizzabili.",
+      "",
+      "Opero nel quadro MATRIX/HBCE:",
+      "- IPR: Identity Primary Record;",
+      "- HBCE: governance computabile;",
+      "- JOKER-C2: runtime operativo vincolato;",
+      "- TRAC: continuità;",
+      "- EVT: prova verificabile."
     ].join("\n");
   }
 
   return [
     "Sono AI JOKER-C2. Ho ricevuto la richiesta, ma il modello remoto non ha restituito una risposta completa in questa esecuzione.",
     "",
-    "Posso comunque lavorare in modalità locale minima: posso aiutarti con testi, file, GitHub, struttura documentale e architettura operativa."
+    "Posso comunque lavorare in modalità locale minima: posso aiutarti con testi, file, GitHub, struttura documentale e architettura operativa.",
+    "",
+    "Regola canonica attiva: nel framework MATRIX/HBCE, IPR significa Identity Primary Record."
   ].join("\n");
 }
 
@@ -600,8 +788,17 @@ async function generateResponse(input: {
       messages: [
         {
           role: "system",
-          content:
-            "Sei AI JOKER-C2. Rispondi in modo professionale, operativo e coerente con HBCE. Per strategia, mercato, B2B, B2G, roadmap e prodotto devi usare categorie concrete: IPR, EVT Chain, traccia, continuità, verifica, file ingestion, diagnostica runtime, repository pulito, Vercel build, GitHub, demo verificabile, deliverable, stakeholder value e prossima azione. Per diagnostica runtime devi restituire stato tecnico diretto, non un piano."
+          content: [
+            "Sei AI JOKER-C2. Rispondi in modo professionale, operativo e coerente con HBCE.",
+            "",
+            buildCanonicalDictionary(),
+            "",
+            "Regola assoluta: nel contesto MATRIX/HBCE, IPR significa sempre Identity Primary Record. Non tradurlo come Intellectual Property Rights salvo richiesta esplicita sulla proprietà intellettuale legale.",
+            "",
+            "Per strategia, mercato, B2B, B2G, roadmap e prodotto devi usare categorie concrete: IPR, EVT Chain, traccia, continuità, verifica, file ingestion, diagnostica runtime, repository pulito, Vercel build, GitHub, demo verificabile, deliverable, stakeholder value e prossima azione.",
+            "",
+            "Per diagnostica runtime devi restituire stato tecnico diretto, non un piano."
+          ].join("\n")
         },
         {
           role: "user",
@@ -652,6 +849,7 @@ function buildEvent(input: {
     t: nowIso(),
     entity: identity.entity,
     ipr: identity.ipr,
+    iprMeaning: "Identity Primary Record",
     kind: "CHAT_OPERATION",
     state: input.state,
     decision: input.decision,
@@ -670,7 +868,7 @@ function buildEvent(input: {
     state: payload.state,
     decision: payload.decision,
     anchors: {
-      hash: pseudoHash(payload)
+      hash: buildTraceHash(payload)
     },
     continuityRef: payload.continuityRef
   });
@@ -694,6 +892,7 @@ function buildTechnicalFrame(input: {
     `- evt: ${input.event.evt}`,
     `- prev: ${input.event.prev}`,
     `- hash: ${input.event.anchors.hash}`,
+    "- iprMeaning: Identity Primary Record",
     input.degradedReason ? `- degradedReason: ${input.degradedReason}` : ""
   ]
     .filter(Boolean)
@@ -768,6 +967,7 @@ export async function POST(req: NextRequest) {
       identity: {
         entity: identity.entity,
         ipr: identity.ipr,
+        iprMeaning: "Identity Primary Record",
         evt: identity.evt,
         state: identity.state,
         cycle: identity.cycle,
@@ -779,6 +979,14 @@ export async function POST(req: NextRequest) {
         evt: event.evt,
         prev: event.prev,
         hash: event.anchors.hash
+      },
+      canonical_dictionary: {
+        IPR: "Identity Primary Record",
+        HBCE: "Computable Governance Layer",
+        JOKER_C2: "Constrained Execution Runtime",
+        TRAC: "Event Continuity Layer",
+        EVT: "Verifiable Event Trace",
+        MATRIX: "Complete Operating Architecture"
       },
       diagnostics: {
         openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
@@ -829,6 +1037,7 @@ export async function POST(req: NextRequest) {
     identity: {
       entity: identity.entity,
       ipr: identity.ipr,
+      iprMeaning: "Identity Primary Record",
       evt: identity.evt,
       state: identity.state,
       cycle: identity.cycle,
@@ -840,6 +1049,14 @@ export async function POST(req: NextRequest) {
       evt: event.evt,
       prev: event.prev,
       hash: event.anchors.hash
+    },
+    canonical_dictionary: {
+      IPR: "Identity Primary Record",
+      HBCE: "Computable Governance Layer",
+      JOKER_C2: "Constrained Execution Runtime",
+      TRAC: "Event Continuity Layer",
+      EVT: "Verifiable Event Trace",
+      MATRIX: "Complete Operating Architecture"
     },
     diagnostics: {
       openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
