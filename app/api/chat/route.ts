@@ -327,8 +327,11 @@ function buildCanonicalDictionary(): string {
     "- IPR registra l'identità operativa primaria che consente attribuzione, derivazione, responsabilità e continuità verificabile.",
     "- IPR rende attribuibile il sistema.",
     "- IPR collega origine, identità, responsabilità, derivazione, azione runtime, EVT, prova, auditabilità e continuità.",
-    "- HBCE = livello di governance computabile.",
-    "- HBCE definisce regole, validazione, autorizzazione, rischio, blocco e comportamento fail-closed.",
+    "- HBCE = framework/livello di governance computabile sviluppato nel contesto HERMETICUM B.C.E.",
+    "- HBCE non deve essere espanso come Higher Business Control Environment.",
+    "- HBCE non deve ricevere espansioni acronimiche inventate.",
+    "- Se l'utente chiede cosa significa HBCE, rispondi che HBCE indica il framework/livello di governance computabile di HERMETICUM B.C.E. nel sistema MATRIX.",
+    "- HBCE definisce regole, validazione, autorizzazione, gestione del rischio, blocco operativo e comportamento fail-closed.",
     "- JOKER-C2 = runtime operativo vincolato.",
     "- JOKER-C2 esegue richieste sotto identità, policy, controllo, EVT e verifica.",
     "- TRAC = livello di continuità degli eventi.",
@@ -338,7 +341,7 @@ function buildCanonicalDictionary(): string {
     "",
     "Formula canonica:",
     "IPR = origine identitaria.",
-    "HBCE = regola operativa.",
+    "HBCE = governance computabile HERMETICUM B.C.E.",
     "JOKER-C2 = esecuzione vincolata.",
     "TRAC = continuità.",
     "EVT = prova.",
@@ -442,6 +445,27 @@ function extractResponseText(response: unknown): string {
   return typeof content === "string" ? content.trim() : "";
 }
 
+function buildHBCEFallback(): string {
+  return [
+    "HBCE, nel framework MATRIX, indica il framework/livello di governance computabile sviluppato nel contesto HERMETICUM B.C.E.",
+    "",
+    "HBCE non deve essere espanso come acronimo inventato. Non significa Higher Business Control Environment.",
+    "",
+    "La sua funzione non è produrre direttamente l'azione, ma stabilire le condizioni perché un'azione possa essere autorizzata, validata, tracciata o bloccata.",
+    "",
+    "HBCE definisce:",
+    "- regole operative;",
+    "- criteri di autorizzazione;",
+    "- validazione delle richieste;",
+    "- gestione del rischio;",
+    "- blocco operativo;",
+    "- comportamento fail-closed;",
+    "- collegamento tra identità IPR, runtime JOKER-C2, eventi EVT e continuità TRAC.",
+    "",
+    "In pratica, HBCE è il livello che impedisce al sistema di operare in modo opaco, non attribuibile o non verificabile."
+  ].join("\n");
+}
+
 function buildIPRFallback(): string {
   return [
     "IPR, nel framework MATRIX/HBCE, significa Identity Primary Record.",
@@ -466,11 +490,21 @@ function buildIPRFallback(): string {
     "",
     "Formula corretta:",
     "IPR = origine identitaria.",
-    "HBCE = regola operativa.",
+    "HBCE = governance computabile HERMETICUM B.C.E.",
     "JOKER-C2 = esecuzione vincolata.",
     "TRAC = continuità.",
     "EVT = prova.",
     "MATRIX = architettura complessiva."
+  ].join("\n");
+}
+
+function buildHBCEAndIPRFallback(): string {
+  return [
+    buildHBCEFallback(),
+    "",
+    "---",
+    "",
+    buildIPRFallback()
   ].join("\n");
 }
 
@@ -485,7 +519,7 @@ function buildMatrixFallback(): string {
     "",
     "Significato dei livelli:",
     "- IPR: identità primaria operativa;",
-    "- HBCE: governance computabile;",
+    "- HBCE: governance computabile HERMETICUM B.C.E.;",
     "- JOKER-C2: runtime di esecuzione vincolata;",
     "- TRAC: continuità degli eventi;",
     "- EVT: Event Record / Verifiable Event Trace;",
@@ -504,6 +538,8 @@ function buildIdentityFallback(): string {
     "Nel mio sistema, IPR significa Identity Primary Record: il registro primario di identità operativa che collega origine, responsabilità, derivazione, evento, prova e continuità.",
     "",
     "IPR non è una semplice scheda anagrafica. È il fondamento che rende attribuibile il sistema.",
+    "",
+    "HBCE indica il framework/livello di governance computabile di HERMETICUM B.C.E. nel sistema MATRIX.",
     "",
     "La mia funzione è aiutarti a trasformare richieste, testi, documenti, codice e strategie in output chiari, strutturati e utilizzabili.",
     "",
@@ -542,7 +578,7 @@ function buildRuntimeDiagnosticText(input: {
     "",
     "Dizionario operativo:",
     "- IPR: Identity Primary Record",
-    "- HBCE: Computable Governance Layer",
+    "- HBCE: HERMETICUM B.C.E. computable governance layer",
     "- JOKER-C2: Constrained Execution Runtime",
     "- TRAC: Event Continuity Layer",
     "- EVT: Event Record / Verifiable Event Trace",
@@ -571,6 +607,7 @@ function detectKeywords(text: string): string[] {
   const keywords = [
     "matrix",
     "hbce",
+    "hermeticum b.c.e.",
     "joker-c2",
     "ipr",
     "identity primary record",
@@ -648,7 +685,7 @@ function buildLocalDocumentSummary(files: FileInput[]): string {
         "- MATRIX come infrastruttura di continuità operativa verificabile;",
         "- IPR come Identity Primary Record e origine identitaria della responsabilità;",
         "- IPR come fondamento di attribuzione del sistema, non come scheda anagrafica generica;",
-        "- HBCE come governance computabile;",
+        "- HBCE come governance computabile di HERMETICUM B.C.E.;",
         "- JOKER-C2 come runtime operativo vincolato;",
         "- TRAC/EVT come catena di continuità e prova;",
         "- EVT come Event Record / Verifiable Event Trace;",
@@ -712,14 +749,21 @@ function buildGeneralFallback(input: {
 }): string {
   const lower = input.message.toLowerCase();
 
+  if (lower.includes("hbce") && lower.includes("ipr")) {
+    return buildHBCEAndIPRFallback();
+  }
+
   if (lower.includes("ipr") || input.contextClass === "IDENTITY") {
     return buildIPRFallback();
+  }
+
+  if (lower.includes("hbce")) {
+    return buildHBCEFallback();
   }
 
   if (
     input.contextClass === "MATRIX" ||
     lower.includes("matrix") ||
-    lower.includes("hbce") ||
     lower.includes("joker-c2") ||
     lower.includes("trac")
   ) {
@@ -773,7 +817,7 @@ function buildGeneralFallback(input: {
       "",
       "Opero nel quadro MATRIX/HBCE:",
       "- IPR: Identity Primary Record;",
-      "- HBCE: governance computabile;",
+      "- HBCE: governance computabile HERMETICUM B.C.E.;",
       "- JOKER-C2: runtime operativo vincolato;",
       "- TRAC: continuità;",
       "- EVT: Event Record / Verifiable Event Trace."
@@ -786,6 +830,7 @@ function buildGeneralFallback(input: {
     "Posso comunque lavorare in modalità locale minima: posso aiutarti con testi, file, GitHub, struttura documentale e architettura operativa.",
     "",
     "Regola canonica attiva: nel framework MATRIX/HBCE, IPR significa Identity Primary Record.",
+    "Regola HBCE attiva: HBCE indica la governance computabile HERMETICUM B.C.E. e non deve essere espanso con acronimi inventati.",
     "Regola EVT attiva: EVT significa Event Record / Verifiable Event Trace."
   ].join("\n");
 }
@@ -818,6 +863,8 @@ async function generateResponse(input: {
             "",
             "Regola assoluta: nel contesto MATRIX/HBCE, IPR significa sempre Identity Primary Record. Non tradurlo come Intellectual Property Rights salvo richiesta esplicita sulla proprietà intellettuale legale.",
             "Regola assoluta: IPR non è una semplice scheda anagrafica. IPR è il fondamento identitario che rende attribuibile il sistema.",
+            "Regola assoluta: HBCE indica il framework/livello di governance computabile di HERMETICUM B.C.E. nel sistema MATRIX.",
+            "Regola assoluta: non inventare espansioni dell'acronimo HBCE. Non dire che HBCE significa Higher Business Control Environment.",
             "Regola assoluta: EVT significa Event Record / Verifiable Event Trace. EVT è il record evento verificabile della singola operazione collegato alla continuità TRAC.",
             "Regola assoluta: IPR non sostituisce strumenti di cybersecurity. Rafforza la postura di cybersecurity perché rende agenti, nodi, runtime e flotte attribuibili a origine identitaria, regola HBCE e catena EVT/TRAC verificabile.",
             "",
@@ -877,6 +924,7 @@ function buildEvent(input: {
     ipr: identity.ipr,
     iprMeaning: "Identity Primary Record",
     iprFunction: "operational attribution root",
+    hbceMeaning: "HERMETICUM B.C.E. computable governance layer",
     evtMeaning: "Event Record / Verifiable Event Trace",
     kind: "CHAT_OPERATION",
     state: input.state,
@@ -922,6 +970,7 @@ function buildTechnicalFrame(input: {
     `- hash: ${input.event.anchors.hash}`,
     "- iprMeaning: Identity Primary Record",
     "- iprFunction: operational attribution root",
+    "- hbceMeaning: HERMETICUM B.C.E. computable governance layer",
     "- evtMeaning: Event Record / Verifiable Event Trace",
     input.degradedReason ? `- degradedReason: ${input.degradedReason}` : ""
   ]
@@ -999,6 +1048,7 @@ export async function POST(req: NextRequest) {
         ipr: identity.ipr,
         iprMeaning: "Identity Primary Record",
         iprFunction: "operational attribution root",
+        hbceMeaning: "HERMETICUM B.C.E. computable governance layer",
         evt: identity.evt,
         state: identity.state,
         cycle: identity.cycle,
@@ -1014,7 +1064,8 @@ export async function POST(req: NextRequest) {
       canonical_dictionary: {
         IPR: "Identity Primary Record",
         IPR_FUNCTION: "Operational attribution root",
-        HBCE: "Computable Governance Layer",
+        HBCE: "HERMETICUM B.C.E. computable governance layer",
+        HBCE_RULE: "Do not expand HBCE with invented acronyms",
         JOKER_C2: "Constrained Execution Runtime",
         TRAC: "Event Continuity Layer",
         EVT: "Event Record / Verifiable Event Trace",
@@ -1071,6 +1122,7 @@ export async function POST(req: NextRequest) {
       ipr: identity.ipr,
       iprMeaning: "Identity Primary Record",
       iprFunction: "operational attribution root",
+      hbceMeaning: "HERMETICUM B.C.E. computable governance layer",
       evt: identity.evt,
       state: identity.state,
       cycle: identity.cycle,
@@ -1086,7 +1138,8 @@ export async function POST(req: NextRequest) {
     canonical_dictionary: {
       IPR: "Identity Primary Record",
       IPR_FUNCTION: "Operational attribution root",
-      HBCE: "Computable Governance Layer",
+      HBCE: "HERMETICUM B.C.E. computable governance layer",
+      HBCE_RULE: "Do not expand HBCE with invented acronyms",
       JOKER_C2: "Constrained Execution Runtime",
       TRAC: "Event Continuity Layer",
       EVT: "Event Record / Verifiable Event Trace",
