@@ -843,17 +843,6 @@ function buildEvent(input: {
   });
 }
 
-function isRuntimeDiagnosticRequest(message: string): boolean {
-  const lower = message.toLowerCase();
-
-  return (
-    lower.includes("diagnostica runtime") ||
-    lower.includes("debug runtime") ||
-    lower.includes("runtime openai") ||
-    lower.includes("stato runtime")
-  );
-}
-
 function buildRuntimeDiagnosticText(input: {
   state: RuntimeState;
   decision: RuntimeDecision;
