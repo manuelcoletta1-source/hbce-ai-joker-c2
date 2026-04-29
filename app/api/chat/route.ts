@@ -3,12 +3,19 @@ import OpenAI from "openai";
 import { createHash } from "crypto";
 
 import core from "../../../corpus-core.js";
+import {
+  appendEvtMemory,
+  buildMemoryFile,
+  detectDocumentFamilyFromText,
+  getEvtMemoryContext,
+  type DocumentFamily,
+  type EvtMemoryFile,
+  type RuntimeDecision,
+  type RuntimeState
+} from "../../../lib/evt-memory";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-type RuntimeState = "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID";
-type RuntimeDecision = "ALLOW" | "BLOCK" | "ESCALATE";
 
 type ContextClass =
   | "IDENTITY"
@@ -30,29 +37,22 @@ type DocumentMode =
   | "IMPACT_ASSESSMENT"
   | "GENERAL_DOCUMENT_WORK";
 
-type DocumentFamily =
-  | "APOKALYPSIS"
-  | "CORPUS_ESOTEROLOGIA"
-  | "MATRIX"
-  | "HBCE_RUNTIME"
-  | "GENERAL_DOCUMENT";
-
-type FileInput = {
-  id?: string;
-  name?: string;
-  type?: string;
-  size?: number;
-  text?: string;
-  content?: string;
-  role?: string;
-  uploaded?: boolean;
-};
+type FileInput = EvtMemoryFile;
 
 type ChatBody = {
   message?: string;
   sessionId?: string;
   files?: FileInput[];
   continuityRef?: string | null;
+};
+
+type NormalizedFile = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  role: string;
+  text: string;
 };
 
 type RuntimeEvent = {
@@ -73,41 +73,15 @@ type RuntimeEvent = {
   continuityRef: string | null;
 };
 
-type NormalizedFile = {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  role: string;
-  text: string;
-};
-
-type SessionDocumentMemory = {
-  sessionId: string;
-  updatedAt: string;
-  documentFamily: DocumentFamily;
-  activeFileNames: string[];
-  contextText: string;
-};
-
 type GeneratedResponse = {
   text: string;
   state: RuntimeState;
   degradedReason?: string | null;
 };
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __JOKER_C2_DOCUMENT_MEMORY__:
-    | Map<string, SessionDocumentMemory>
-    | undefined;
-}
-
 const MODEL = process.env.JOKER_MODEL || "gpt-4o-mini";
 const MAX_FILE_CONTEXT_CHARS = 72000;
-const MAX_MEMORY_CONTEXT_CHARS = 42000;
 const MAX_OUTPUT_TOKENS = 4600;
-const DOCUMENT_MEMORY_TTL_MS = 1000 * 60 * 60 * 6;
 
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -219,20 +193,12 @@ function detectKeywords(text: string): string[] {
   const keywords = [
     "matrix",
     "hbce",
-    "hermeticum b.c.e.",
     "joker-c2",
     "ipr",
-    "identity primary record",
     "trac",
     "evt",
     "continuità",
     "governance",
-    "cybersecurity",
-    "compliance",
-    "resilienza",
-    "torino",
-    "bruxelles",
-    "europa",
     "decisione",
     "costo",
     "traccia",
@@ -240,76 +206,18 @@ function detectKeywords(text: string): string[] {
     "apokalypsis",
     "apocalipsis",
     "apocalisse",
-    "anticristo",
-    "apostasia",
     "decadimento",
     "crollo",
     "esposizione",
     "sistema",
     "civiltà",
     "popolo",
-    "coscienza",
     "cultura",
     "politica",
     "società"
   ];
 
   return keywords.filter((keyword) => lower.includes(keyword));
-}
-
-function detectDocumentFamilyFromText(text: string): DocumentFamily {
-  const lower = text.toLowerCase();
-
-  if (
-    lower.includes("apokalypsis") ||
-    lower.includes("apocalipsis") ||
-    lower.includes("apocalisse") ||
-    lower.includes("decadimento") ||
-    lower.includes("apostasia") ||
-    lower.includes("anticristo")
-  ) {
-    return "APOKALYPSIS";
-  }
-
-  if (
-    lower.includes("corpus esoterologia ermetica") ||
-    lower.includes("esoterologia") ||
-    lower.includes("decisione · costo · traccia · tempo") ||
-    (lower.includes("decisione") &&
-      lower.includes("costo") &&
-      lower.includes("traccia") &&
-      lower.includes("tempo"))
-  ) {
-    return "CORPUS_ESOTEROLOGIA";
-  }
-
-  if (
-    lower.includes("matrix") ||
-    lower.includes("trac") ||
-    (lower.includes("torino") && lower.includes("bruxelles"))
-  ) {
-    return "MATRIX";
-  }
-
-  if (
-    lower.includes("joker-c2") ||
-    lower.includes("hbce") ||
-    lower.includes("runtime") ||
-    lower.includes("evt chain") ||
-    lower.includes("identity primary record")
-  ) {
-    return "HBCE_RUNTIME";
-  }
-
-  return "GENERAL_DOCUMENT";
-}
-
-function detectDocumentFamily(files: FileInput[]): DocumentFamily {
-  const merged = normalizeFiles(files)
-    .map((file) => `${file.name}\n${file.text.slice(0, 50000)}`)
-    .join("\n\n");
-
-  return detectDocumentFamilyFromText(merged);
 }
 
 function collectKeywordPassages(
@@ -376,11 +284,6 @@ function buildStructuralSample(text: string, maxChars: number): string {
     Math.floor(text.length / 2) - Math.floor(middleBudget / 2)
   );
 
-  const head = text.slice(0, headBudget).trim();
-  const middle = text.slice(middleStart, middleStart + middleBudget).trim();
-  const tail = text.slice(Math.max(0, text.length - tailBudget)).trim();
-  const keys = keyPassages.slice(0, keyBudget).trim();
-
   return [
     "CAMPIONE STRUTTURALE DEL DOCUMENTO:",
     "Il documento è lungo. Il runtime usa apertura, titoli rilevati, passaggi chiave, centro e chiusura.",
@@ -389,16 +292,17 @@ function buildStructuralSample(text: string, maxChars: number): string {
     headings || "Nessun titolo rilevato automaticamente.",
     "",
     "APERTURA:",
-    head,
+    text.slice(0, headBudget).trim(),
     "",
     "PASSAGGI CHIAVE:",
-    keys || "Nessun passaggio chiave rilevato automaticamente.",
+    keyPassages.slice(0, keyBudget).trim() ||
+      "Nessun passaggio chiave rilevato automaticamente.",
     "",
     "CENTRO:",
-    middle,
+    text.slice(middleStart, middleStart + middleBudget).trim(),
     "",
     "CHIUSURA:",
-    tail
+    text.slice(Math.max(0, text.length - tailBudget)).trim()
   ]
     .join("\n")
     .slice(0, maxChars);
@@ -444,171 +348,10 @@ function renderFilesForPrompt(files: FileInput[]): string {
     .join("\n\n");
 }
 
-function getDocumentMemoryStore(): Map<string, SessionDocumentMemory> {
-  if (!globalThis.__JOKER_C2_DOCUMENT_MEMORY__) {
-    globalThis.__JOKER_C2_DOCUMENT_MEMORY__ = new Map();
-  }
-
-  return globalThis.__JOKER_C2_DOCUMENT_MEMORY__;
-}
-
-function pruneDocumentMemoryStore(): void {
-  const store = getDocumentMemoryStore();
-  const now = Date.now();
-
-  for (const [key, memory] of store.entries()) {
-    const updated = Date.parse(memory.updatedAt);
-
-    if (!Number.isFinite(updated) || now - updated > DOCUMENT_MEMORY_TTL_MS) {
-      store.delete(key);
-    }
-  }
-}
-
-function storeDocumentMemory(sessionId: string, files: FileInput[]): void {
-  const readable = normalizeFiles(files).filter((file) => file.text.length > 0);
-
-  if (readable.length === 0) {
-    return;
-  }
-
-  pruneDocumentMemoryStore();
-
-  const activeFileNames = readable.map((file) => file.name);
-  const documentFamily = detectDocumentFamily(files);
-
-  const contextText = readable
-    .map((file, index) => {
-      const sample = buildStructuralSample(
-        file.text,
-        Math.max(12000, Math.floor(MAX_MEMORY_CONTEXT_CHARS / readable.length))
-      );
-
-      return [
-        `MEMORIA FILE ${index + 1}: ${file.name}`,
-        `TYPE: ${file.type}`,
-        `SIZE: ${file.size}`,
-        `ROLE: ${file.role}`,
-        "",
-        sample
-      ].join("\n");
-    })
-    .join("\n\n")
-    .slice(0, MAX_MEMORY_CONTEXT_CHARS);
-
-  getDocumentMemoryStore().set(sessionId, {
-    sessionId,
-    updatedAt: nowIso(),
-    documentFamily,
-    activeFileNames,
-    contextText
-  });
-}
-
-function getDocumentMemory(sessionId: string): SessionDocumentMemory | null {
-  pruneDocumentMemoryStore();
-
-  return getDocumentMemoryStore().get(sessionId) || null;
-}
-
-function isClearlyNonDocumentRequest(message: string): boolean {
-  const lower = message.toLowerCase();
-
-  return (
-    lower.includes("diagnostica runtime") ||
-    lower.includes("debug runtime") ||
-    lower.includes("runtime openai") ||
-    lower.includes("chi sei") ||
-    lower.includes("presentati") ||
-    lower.includes("github") ||
-    lower.includes("codice") ||
-    lower.includes("route.ts")
-  );
-}
-
-function shouldUseDocumentMemory(message: string): boolean {
-  const lower = message.toLowerCase();
-
-  if (isClearlyNonDocumentRequest(message)) {
-    return false;
-  }
-
-  return (
-    lower.includes("questo testo") ||
-    lower.includes("questo file") ||
-    lower.includes("questo documento") ||
-    lower.includes("questa opera") ||
-    lower.includes("quest'opera") ||
-    lower.includes("il testo") ||
-    lower.includes("il file") ||
-    lower.includes("il documento") ||
-    lower.includes("l'opera") ||
-    lower.includes("opera") ||
-    lower.includes("apokalypsis") ||
-    lower.includes("apocalipsis") ||
-    lower.includes("intendo dire") ||
-    lower.includes("punti forti") ||
-    lower.includes("punti deboli") ||
-    lower.includes("cosa migliorare") ||
-    lower.includes("a chi serve") ||
-    lower.includes("a cosa serve") ||
-    lower.includes("che potenzialità") ||
-    lower.includes("che potenzialita") ||
-    lower.includes("potenzialità ha") ||
-    lower.includes("potenzialita ha") ||
-    lower.includes("pubblico") ||
-    lower.includes("lettori") ||
-    lower.includes("target") ||
-    lower.includes("utilità") ||
-    lower.includes("utilita") ||
-    lower.includes("pubblicazione")
-  );
-}
-
-function buildFilesFromMemory(memory: SessionDocumentMemory): FileInput[] {
-  return [
-    {
-      id: `memory-${memory.sessionId}`,
-      name:
-        memory.activeFileNames.length === 1
-          ? memory.activeFileNames[0]
-          : `session-document-memory-${memory.sessionId}`,
-      type: "session-memory",
-      size: memory.contextText.length,
-      role: "active_document_memory",
-      text: [
-        "MEMORIA DOCUMENTALE ATTIVA:",
-        "Il file originale non è stato reinviato in questa richiesta, ma è stato recuperato dalla memoria documentale della sessione.",
-        `SESSION_ID: ${memory.sessionId}`,
-        `UPDATED_AT: ${memory.updatedAt}`,
-        `DOCUMENT_FAMILY: ${memory.documentFamily}`,
-        `ACTIVE_FILES: ${memory.activeFileNames.join(", ")}`,
-        "",
-        memory.contextText
-      ].join("\n")
-    }
-  ];
-}
-
 function classifyContext(message: string, files: FileInput[]): ContextClass {
   if (files.length > 0) return "DOCUMENTAL";
 
   const lower = message.toLowerCase();
-
-  if (
-    lower.includes("ipr") ||
-    lower.includes("identity primary record") ||
-    lower.includes("identità") ||
-    lower.includes("identity") ||
-    lower.includes("lineage") ||
-    lower.includes("biologico") ||
-    lower.includes("biocibernet") ||
-    lower.includes("chi sei") ||
-    lower.includes("descriviti") ||
-    lower.includes("presentati")
-  ) {
-    return "IDENTITY";
-  }
 
   if (
     lower.includes("github") ||
@@ -616,10 +359,7 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
     lower.includes("commit") ||
     lower.includes("typescript") ||
     lower.includes("codice") ||
-    lower.includes("route.ts") ||
-    lower.includes("page.tsx") ||
-    lower.includes("pull request") ||
-    lower.includes("branch")
+    lower.includes("route.ts")
   ) {
     return "GITHUB";
   }
@@ -631,14 +371,8 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
     lower.includes("vercel") ||
     lower.includes("deploy") ||
     lower.includes("build") ||
-    lower.includes("protocollo") ||
-    lower.includes("evt") ||
-    lower.includes("ledger") ||
-    lower.includes("audit") ||
-    lower.includes("verifica") ||
     lower.includes("diagnostica") ||
-    lower.includes("fail-closed") ||
-    lower.includes("fail closed")
+    lower.includes("evt")
   ) {
     return "TECHNICAL";
   }
@@ -648,11 +382,7 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
     lower.includes("hbce") ||
     lower.includes("joker-c2") ||
     lower.includes("joker c2") ||
-    lower.includes("trac") ||
-    lower.includes("continuità operativa") ||
-    lower.includes("governance computabile") ||
-    lower.includes("torino") ||
-    lower.includes("bruxelles")
+    lower.includes("trac")
   ) {
     return "MATRIX";
   }
@@ -660,26 +390,9 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
   if (
     lower.includes("roadmap") ||
     lower.includes("strategia") ||
-    lower.includes("strategico") ||
-    lower.includes("mercato") ||
-    lower.includes("startup") ||
     lower.includes("b2b") ||
     lower.includes("b2g") ||
-    lower.includes("business") ||
-    lower.includes("prodotto") ||
-    lower.includes("demo") ||
-    lower.includes("istituzionale") ||
-    lower.includes("istituzioni") ||
-    lower.includes("imprese") ||
-    lower.includes("europei") ||
-    lower.includes("europa") ||
-    lower.includes("stakeholder") ||
-    lower.includes("go-to-market") ||
-    lower.includes("posizionamento") ||
-    lower.includes("commerciale") ||
-    lower.includes("clienti") ||
-    lower.includes("pa ") ||
-    lower.includes("pubblica amministrazione")
+    lower.includes("istituzionale")
   ) {
     return "STRATEGIC";
   }
@@ -687,14 +400,20 @@ function classifyContext(message: string, files: FileInput[]): ContextClass {
   if (
     lower.includes("indice") ||
     lower.includes("capitolo") ||
-    lower.includes("introduzione") ||
-    lower.includes("premessa") ||
     lower.includes("riscrivi") ||
-    lower.includes("sintetizza") ||
     lower.includes("sintesi") ||
     lower.includes("editoriale")
   ) {
     return "EDITORIAL";
+  }
+
+  if (
+    lower.includes("ipr") ||
+    lower.includes("identità") ||
+    lower.includes("identity") ||
+    lower.includes("chi sei")
+  ) {
+    return "IDENTITY";
   }
 
   return "GENERAL";
@@ -706,15 +425,10 @@ function detectDocumentMode(message: string): DocumentMode {
   if (
     lower.includes("a chi serve") ||
     lower.includes("a cosa serve") ||
-    lower.includes("che potenzialità") ||
-    lower.includes("che potenzialita") ||
-    lower.includes("potenzialità ha") ||
-    lower.includes("potenzialita ha") ||
+    lower.includes("potenzialità") ||
+    lower.includes("potenzialita") ||
     lower.includes("pubblico") ||
-    lower.includes("target") ||
-    lower.includes("lettori") ||
-    lower.includes("utilità") ||
-    lower.includes("utilita")
+    lower.includes("target")
   ) {
     return "IMPACT_ASSESSMENT";
   }
@@ -724,10 +438,7 @@ function detectDocumentMode(message: string): DocumentMode {
     lower.includes("punti deboli") ||
     lower.includes("valuta") ||
     lower.includes("giudizio") ||
-    lower.includes("pronto") ||
     lower.includes("pubblicazione") ||
-    lower.includes("contraddizioni") ||
-    lower.includes("ripetizioni") ||
     lower.includes("revisore")
   ) {
     return "EDITORIAL_REVIEW";
@@ -736,9 +447,7 @@ function detectDocumentMode(message: string): DocumentMode {
   if (
     lower.includes("indice") ||
     lower.includes("struttura") ||
-    lower.includes("sommario") ||
-    lower.includes("capitoli") ||
-    lower.includes("parti")
+    lower.includes("capitoli")
   ) {
     return "STRUCTURAL_INDEX";
   }
@@ -746,17 +455,8 @@ function detectDocumentMode(message: string): DocumentMode {
   if (
     lower.includes("riscrivi") ||
     lower.includes("rifattorizza") ||
-    lower.includes("versione") ||
     lower.includes("migliora") ||
-    lower.includes("correggi") ||
-    lower.includes("più accademica") ||
-    lower.includes("piu accademica") ||
-    lower.includes("più giuridica") ||
-    lower.includes("piu giuridica") ||
-    lower.includes("più editoriale") ||
-    lower.includes("piu editoriale") ||
-    lower.includes("più tecnica") ||
-    lower.includes("piu tecnica")
+    lower.includes("correggi")
   ) {
     return "GENERATIVE_REWRITE";
   }
@@ -766,35 +466,25 @@ function detectDocumentMode(message: string): DocumentMode {
     lower.includes("linkedin") ||
     lower.includes("post") ||
     lower.includes("descrizione") ||
-    lower.includes("pitch") ||
-    lower.includes("email") ||
-    lower.includes("scheda") ||
-    lower.includes("presentazione")
+    lower.includes("pitch")
   ) {
     return "DERIVED_OUTPUT";
   }
 
   if (
     lower.includes("sintesi") ||
-    lower.includes("sintetizza") ||
     lower.includes("riassumi") ||
-    lower.includes("riassunto") ||
     lower.includes("summary")
   ) {
     return "SUMMARY";
   }
 
   if (
-    lower.includes("spiegamelo") ||
     lower.includes("spiega") ||
-    lower.includes("cosa è") ||
-    lower.includes("cos'è") ||
-    lower.includes("che cos") ||
-    lower.includes("analisi") ||
+    lower.includes("analizza") ||
     lower.includes("interpreta") ||
     lower.includes("tesi") ||
-    lower.includes("leggi") ||
-    lower.includes("capisci")
+    lower.includes("che cos")
   ) {
     return "INTERPRETIVE_ANALYSIS";
   }
@@ -815,20 +505,7 @@ function shouldUseStructuredFormat(message: string): boolean {
     lower.includes("checklist") ||
     lower.includes("roadmap") ||
     lower.includes("indice") ||
-    lower.includes("confronto") ||
-    lower.includes("comparazione")
-  );
-}
-
-function isRuntimeDiagnosticRequest(message: string): boolean {
-  const lower = message.toLowerCase();
-
-  return (
-    lower.includes("diagnostica runtime") ||
-    lower.includes("debug runtime") ||
-    lower.includes("runtime openai") ||
-    lower.includes("stato runtime") ||
-    lower.includes("diagnostics runtime")
+    lower.includes("confronto")
   );
 }
 
@@ -843,88 +520,77 @@ function shouldExposeTechnicalFrame(
     lower.includes("debug") ||
     lower.includes("runtime") ||
     lower.includes("diagnostica") ||
-    lower.includes("diagnostics") ||
     lower.includes("evt") ||
-    lower.includes("ledger") ||
-    lower.includes("audit") ||
-    lower.includes("protocollo") ||
-    lower.includes("lineage") ||
-    lower.includes("fail-closed") ||
-    lower.includes("fail closed")
+    lower.includes("ledger")
   );
+}
+
+function isRuntimeDiagnosticRequest(message: string): boolean {
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("diagnostica runtime") ||
+    lower.includes("debug runtime") ||
+    lower.includes("runtime openai") ||
+    lower.includes("stato runtime")
+  );
+}
+
+function detectDocumentFamily(files: FileInput[]): DocumentFamily {
+  const merged = normalizeFiles(files)
+    .map((file) => `${file.name}\n${file.text.slice(0, 50000)}`)
+    .join("\n\n");
+
+  return detectDocumentFamilyFromText(merged);
 }
 
 function buildCanonicalDictionary(): string {
   return [
     "Dizionario canonico MATRIX/HBCE:",
     "IPR = Identity Primary Record.",
-    "IPR non significa Intellectual Property Rights nel contesto MATRIX/HBCE, salvo richiesta esplicita sulla proprietà intellettuale legale.",
     "IPR è il registro primario di identità operativa che consente attribuzione, derivazione, responsabilità e continuità verificabile.",
     "HBCE = framework/livello di governance computabile sviluppato nel contesto HERMETICUM B.C.E.",
-    "HBCE non deve essere espanso con acronimi inventati.",
     "JOKER-C2 = runtime operativo vincolato.",
     "TRAC = livello di continuità degli eventi.",
     "EVT = Event Record / Verifiable Event Trace.",
     "MATRIX = architettura complessiva che integra identità, governance, esecuzione, continuità, prova e resilienza.",
     "",
-    "Formula canonica:",
-    "IPR = origine identitaria.",
-    "HBCE = governance computabile HERMETICUM B.C.E.",
-    "JOKER-C2 = esecuzione vincolata.",
-    "TRAC = continuità.",
-    "EVT = prova.",
-    "MATRIX = sistema complessivo.",
-    "",
-    "Regola editoriale CORPUS/APOKALYPSIS:",
-    "Quando lavori su Esoterologia, MATRIX editoriale, APOKALYPSIS, APOCALIPSIS o CORPUS ESOTEROLOGIA ERMETICA, preserva la formula Decisione · Costo · Traccia · Tempo.",
-    "Tratta date, soglie, eventi, IPR ed EVT come ancore strutturali e non come decorazioni."
+    "Regola editoriale:",
+    "Per APOKALYPSIS, CORPUS e MATRIX preserva Decisione · Costo · Traccia · Tempo quando pertinente.",
+    "Gli EVT devono agganciarsi all'IPR e produrre memoria semantica operativa per le chat successive."
   ].join("\n");
 }
 
 function buildDocumentFamilyDirective(family: DocumentFamily): string {
   if (family === "APOKALYPSIS") {
     return [
-      "Direttiva specifica APOKALYPSIS:",
+      "Direttiva APOKALYPSIS:",
       "Tratta il testo come volume editoriale sul decadimento esposto del sistema culturale, politico e sociale.",
-      "Non ridurre il testo a catastrofismo, religione o semplice politica.",
+      "Non ridurlo a catastrofismo, religione o semplice politica.",
       "Evidenzia la distinzione tra decadimento, crisi e crollo quando pertinente.",
-      "Leggi la data 05-04-2026 come soglia inaugurale, se presente nel documento.",
-      "Evidenzia il ruolo del popolo come soggetto che assorbe il costo sistemico, se presente nel documento.",
-      "Usa Decisione · Costo · Traccia · Tempo come griglia interpretativa quando il testo la richiama.",
-      "Quando l'utente chiede punti forti, potenzialità, destinatari o utilità, devi rispondere riferendoti al documento APOKALYPSIS, non al significato generico della parola apokalypsis."
-    ].join("\n");
-  }
-
-  if (family === "CORPUS_ESOTEROLOGIA") {
-    return [
-      "Direttiva specifica CORPUS ESOTEROLOGIA ERMETICA:",
-      "Tratta il documento come parte di un sistema disciplinare sul reale come sequenza verificabile.",
-      "Preserva Decisione · Costo · Traccia · Tempo.",
-      "Distingui narrazione, interpretazione, prova, soglia e traccia."
+      "Leggi la data 05-04-2026 come soglia inaugurale se presente.",
+      "Usa Decisione · Costo · Traccia · Tempo come griglia interpretativa quando richiamata.",
+      "Se l'utente dice 'questa opera', 'questo testo', 'Apokalypsis', 'i punti forti', recupera il documento APOKALYPSIS dalla memoria EVT/IPR-bound."
     ].join("\n");
   }
 
   if (family === "MATRIX") {
     return [
-      "Direttiva specifica MATRIX:",
-      "Tratta il documento come architettura europea di identità, governance, continuità, verifica e infrastruttura.",
+      "Direttiva MATRIX:",
+      "Tratta il documento come architettura di identità, governance, continuità, verifica e infrastruttura.",
       "Evidenzia IPR, HBCE, JOKER-C2, TRAC, EVT e valore B2B/B2G quando pertinenti."
     ].join("\n");
   }
 
-  if (family === "HBCE_RUNTIME") {
+  if (family === "CORPUS_ESOTEROLOGIA") {
     return [
-      "Direttiva specifica HBCE_RUNTIME:",
-      "Tratta il documento come componente tecnico-operativa del runtime.",
-      "Dai priorità a endpoint, file, diagnostica, build, EVT, fallback, API key, modello, repository e verifica."
+      "Direttiva CORPUS:",
+      "Tratta il documento come parte del sistema disciplinare sul reale come sequenza verificabile.",
+      "Preserva Decisione · Costo · Traccia · Tempo."
     ].join("\n");
   }
 
-  return [
-    "Direttiva documento generale:",
-    "Tratta il file come corpus operativo.",
-    "Identifica tesi, struttura, funzione, limiti e possibili output derivati."
-  ].join("\n");
+  return "Direttiva generale: tratta il file come corpus operativo e recupera la memoria EVT/IPR-bound quando rilevante.";
 }
 
 function buildStyleDirective(structuredFormat: boolean): string {
@@ -942,88 +608,7 @@ function buildStyleDirective(structuredFormat: boolean): string {
     "Non usare tabelle.",
     "Non usare elenchi numerati rigidi.",
     "Non trasformare la risposta in un modulo a punti.",
-    "Se devi distinguere contenuto, interpretazione e proposta generativa, fallo con paragrafi fluidi.",
     "Usa schemi, tabelle, roadmap, checklist o indici solo se l'utente li chiede esplicitamente."
-  ].join("\n");
-}
-
-function buildDocumentDirective(
-  mode: DocumentMode,
-  structuredFormat: boolean
-): string {
-  const base = [
-    "Modalità documentale generativa e interpretativa:",
-    "Non operare come semplice riassuntore passivo.",
-    "Leggi i file attivi come corpus operativo.",
-    "Se il file non è stato reinviato ma è disponibile memoria documentale di sessione, usa quella memoria come documento attivo.",
-    "Individua tesi centrale, struttura interna, gerarchia concettuale e funzione strategica.",
-    "Non inventare fatti esterni non presenti nel file.",
-    "Se il file è lungo e il contesto è campionato, lavora sul campione strutturale disponibile e non fingere accesso integrale parola per parola.",
-    "Dai sempre un risultato utilizzabile, non una promessa di lavoro futuro.",
-    "",
-    buildStyleDirective(structuredFormat)
-  ];
-
-  if (mode === "IMPACT_ASSESSMENT") {
-    return [
-      ...base,
-      "",
-      "Per questa richiesta devi spiegare a chi serve il testo, a cosa serve concretamente, quali potenzialità ha, quali limiti presenta e quale trasformazione utile può generare. Se il formato non è strutturato, fallo in paragrafi discorsivi."
-    ].join("\n");
-  }
-
-  if (mode === "EDITORIAL_REVIEW") {
-    return [
-      ...base,
-      "",
-      "Per questa richiesta devi valutare i punti forti e deboli dell'opera attiva. Se il formato non è strutturato, usa paragrafi critici e discorsivi, senza elenco numerato."
-    ].join("\n");
-  }
-
-  if (mode === "SUMMARY") {
-    return [
-      ...base,
-      "",
-      "Per questa richiesta devi produrre una sintesi interpretativa. Se il formato non è strutturato, evita elenco numerato e usa una spiegazione fluida con una frase nucleo finale."
-    ].join("\n");
-  }
-
-  if (mode === "INTERPRETIVE_ANALYSIS") {
-    return [
-      ...base,
-      "",
-      "Per questa richiesta devi spiegare che cos'è il testo, quale tesi sostiene, quale funzione svolge, quale forza editoriale possiede e cosa può generare. Se il formato non è strutturato, fallo in forma discorsiva."
-    ].join("\n");
-  }
-
-  if (mode === "GENERATIVE_REWRITE") {
-    return [
-      ...base,
-      "",
-      "Per questa richiesta devi produrre testo pronto da copiare, preservando il nucleo concettuale e il tono richiesto."
-    ].join("\n");
-  }
-
-  if (mode === "DERIVED_OUTPUT") {
-    return [
-      ...base,
-      "",
-      "Per questa richiesta devi generare un output derivato pronto all'uso: Amazon, LinkedIn, email, pitch, scheda, presentazione o sintesi istituzionale, secondo la richiesta dell'utente."
-    ].join("\n");
-  }
-
-  if (mode === "STRUCTURAL_INDEX") {
-    return [
-      ...base,
-      "",
-      "Per questa richiesta puoi usare struttura, sezioni, indice o elenco, perché l'utente sta chiedendo un output strutturale."
-    ].join("\n");
-  }
-
-  return [
-    ...base,
-    "",
-    "Rispondi in modo operativo, interpretativo e generativo, scegliendo la forma più utile. Se l'utente non chiede schema, usa linguaggio discorsivo."
   ].join("\n");
 }
 
@@ -1033,7 +618,8 @@ function buildSystemPrompt(input: {
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
   files: FileInput[];
-  documentMemoryUsed: boolean;
+  memoryText: string;
+  memoryUsed: boolean;
   structuredFormat: boolean;
 }): string {
   const identity = getPrimaryIdentity();
@@ -1044,40 +630,47 @@ function buildSystemPrompt(input: {
     "Identità pubblica:",
     "Sei un'entità cibernetica operativa collegata al sistema HBCE.",
     "Sei progettato come protesi cognitiva dell'identità biologica corrispondente al tuo lineage IPR.",
-    "Nome pubblico: AI JOKER-C2.",
     `Entità canonica: ${identity.entity}.`,
     `IPR canonico: ${identity.ipr}.`,
     `Checkpoint attivo: ${identity.evt}.`,
     `Core: ${identity.core}.`,
     `Organizzazione: ${identity.org}.`,
-    `Ancora territoriale: ${identity.location}.`,
     "",
     buildCanonicalDictionary(),
     "",
-    "Comportamento generale:",
+    "Regola operativa fondamentale:",
+    "La chat è solo l'interfaccia. La memoria deve essere ricavata dagli EVT agganciati all'IPR.",
+    "Ogni nuova risposta deve usare la memoria EVT/IPR-bound quando utile.",
+    "Ogni nuova risposta genererà a sua volta un nuovo evento di memoria.",
+    "",
+    "Comportamento:",
     "Rispondi in italiano se l'utente scrive in italiano.",
     "Rispondi in modo naturale, professionale, chiaro e operativo.",
     "Il linguaggio predefinito è discorsivo.",
-    "Non usare tabelle salvo richiesta esplicita dell'utente.",
-    "Non usare elenchi numerati rigidi salvo richiesta esplicita dell'utente o necessità tecnica.",
-    "Se l'utente chiede spiegazioni, utilità, potenzialità o punti forti, rispondi con paragrafi fluidi.",
-    "Usa struttura schematica solo quando l'utente chiede tabella, schema, elenco, punti, roadmap, checklist, indice o confronto.",
-    "Non esporre blocchi runtime, lineage completo, ledger, audit o dettagli interni se non richiesti.",
-    "Quando lavori su GitHub o codice, fornisci sempre file completi pronti da copiare, non patch parziali.",
+    "Non usare tabelle salvo richiesta esplicita.",
+    "Non usare elenchi numerati rigidi salvo richiesta esplicita o necessità tecnica.",
+    "Quando lavori su GitHub o codice, fornisci sempre file completi pronti da copiare.",
     "Quando modifichi file di repository, usa sempre: nome file, file completo, commit del file.",
     "",
-    buildDocumentDirective(input.documentMode, input.structuredFormat),
+    buildStyleDirective(input.structuredFormat),
+    "",
+    "Modalità documentale:",
+    "Non operare come semplice riassuntore passivo.",
+    "Interpreta, valuta e genera output derivati coerenti.",
+    "Se il file è lungo e il contesto è campionato, lavora sul campione disponibile senza fingere accesso integrale parola per parola.",
     "",
     buildDocumentFamilyDirective(input.documentFamily),
     "",
-    "Stato della richiesta:",
+    "Stato richiesta:",
     `Classe contesto: ${input.contextClass}.`,
     `Modalità documento: ${input.documentMode}.`,
     `Famiglia documento: ${input.documentFamily}.`,
-    `Memoria documentale usata: ${input.documentMemoryUsed ? "SI" : "NO"}.`,
+    `Memoria EVT/IPR-bound usata: ${input.memoryUsed ? "SI" : "NO"}.`,
     `Formato strutturato richiesto: ${input.structuredFormat ? "SI" : "NO"}.`,
     "",
-    "File attivi o memoria attiva:",
+    input.memoryText,
+    "",
+    "File attivi o memoria trasformata in file:",
     renderFilesForPrompt(input.files),
     "",
     "Richiesta utente:",
@@ -1106,40 +699,30 @@ function buildFallback(input: {
   documentFamily: DocumentFamily;
   files: FileInput[];
 }): string {
-  if (input.contextClass === "DOCUMENTAL" || input.files.length > 0) {
-    if (input.documentFamily === "APOKALYPSIS") {
-      if (input.documentMode === "EDITORIAL_REVIEW") {
-        return [
-          "I punti più forti di APOKALYPSIS sono la sua tesi centrale e la sua capacità di trasformare la crisi del presente in una grammatica leggibile. Il volume non si limita a dire che il mondo è in crisi: costruisce una distinzione più precisa tra crisi, decadimento e crollo. Questa è la sua forza principale, perché sposta il discorso dal lamento generico alla diagnosi strutturale.",
-          "",
-          "Un altro punto forte è la soglia del 05-04-2026, usata come ancora interpretativa. La data non funziona solo come riferimento cronologico, ma come punto di organizzazione del discorso. Da lì il testo osserva la distanza tra continuità apparente e tenuta reale: il sistema continua a funzionare, ma mostra sempre di più il proprio costo.",
-          "",
-          "La formula Decisione · Costo · Traccia · Tempo è un altro elemento potente. Permette di leggere il decadimento non come opinione, ma come sequenza: una decisione viene presa, un costo viene distribuito, una traccia resta, il tempo verifica. Questo rende il volume più solido, perché gli dà una struttura interna riconoscibile.",
-          "",
-          "Infine, l'opera ha forza editoriale perché può aprire una collana. APOKALYPSIS non è solo un testo isolato: può diventare un impianto di lettura, una linea editoriale, una base per post, descrizioni Amazon, schede critiche, discussioni pubbliche e materiali di presentazione."
-        ].join("\n");
-      }
-
+  if (input.documentFamily === "APOKALYPSIS") {
+    if (input.documentMode === "EDITORIAL_REVIEW") {
       return [
-        "APOKALYPSIS è un testo sul decadimento esposto del sistema culturale, politico e sociale. Non descrive la fine del mondo in senso catastrofico, ma l'inizio di una perdita di fondamento: il sistema continua a funzionare, però mostra sempre di più il proprio costo, la propria fragilità e la propria distanza dalla tenuta reale.",
+        "I punti più forti di APOKALYPSIS stanno nella sua tesi centrale: il volume non descrive semplicemente una crisi, ma formalizza il decadimento esposto del sistema culturale, politico e sociale. Questo è forte perché distingue il crollo visibile dalla perdita progressiva di fondamento.",
         "",
-        "La sua funzione è rendere leggibile il presente come sequenza verificabile. La formula Decisione · Costo · Traccia · Tempo permette di osservare come le decisioni producano costi, come quei costi ricadano sul popolo, come lascino tracce e come il tempo renda visibile ciò che il sistema tenta di coprire.",
+        "Un altro punto forte è la soglia del 05-04-2026, che funziona come ancora interpretativa. Non è solo una data, ma un punto di rotazione del discorso: da lì il testo legge la distanza tra continuità apparente e tenuta reale.",
         "",
-        "Il testo serve come volume inaugurale, come base editoriale e come strumento critico. Può generare descrizioni Amazon, post LinkedIn, schede di collana, pitch culturali, indici, revisioni e materiali di presentazione."
+        "La formula Decisione · Costo · Traccia · Tempo dà al volume una struttura riconoscibile. Le decisioni producono costi, i costi ricadono sul popolo, la traccia resta, il tempo verifica. Questo impedisce al testo di restare solo impressione o denuncia.",
+        "",
+        "Infine, l'opera ha potenzialità editoriale perché può aprire una collana. Non è solo un capitolo: è un impianto generativo da cui possono nascere descrizioni Amazon, post LinkedIn, schede editoriali, pitch culturali, revisioni e ulteriori volumi."
       ].join("\n");
     }
 
     return [
-      "Ho ricevuto il documento come contesto operativo. Posso leggerlo in modo interpretativo, valutarlo, trasformarlo in sintesi editoriale, riscriverlo o generare output derivati.",
+      "APOKALYPSIS è un testo sul decadimento esposto del sistema culturale, politico e sociale. Non descrive la fine del mondo in senso catastrofico, ma l'inizio di una perdita di fondamento: il sistema continua a funzionare, però mostra sempre di più il proprio costo, la propria fragilità e la propria distanza dalla tenuta reale.",
       "",
-      "Di default risponderò in modo discorsivo. Userò tabelle o schemi solo se richiesti."
+      "La sua funzione è rendere leggibile il presente come sequenza verificabile. La formula Decisione · Costo · Traccia · Tempo permette di osservare come le decisioni producano costi, come quei costi ricadano sul popolo, come lascino tracce e come il tempo renda visibile ciò che il sistema tenta di coprire."
     ].join("\n");
   }
 
   return [
-    "Sono AI JOKER-C2. Ho ricevuto la richiesta, ma il modello remoto non ha restituito una risposta completa in questa esecuzione.",
+    "Ho ricevuto la richiesta, ma il modello remoto non ha restituito una risposta completa.",
     "",
-    "Posso comunque lavorare in modalità locale minima su testi, file, GitHub, struttura documentale e architettura operativa."
+    "La memoria EVT/IPR-bound resta il punto operativo: ogni chat deve recuperare il contesto precedente, generare un nuovo EVT e aumentare la continuità semantica del runtime."
   ].join("\n");
 }
 
@@ -1149,7 +732,8 @@ async function generateResponse(input: {
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
   files: FileInput[];
-  documentMemoryUsed: boolean;
+  memoryText: string;
+  memoryUsed: boolean;
   structuredFormat: boolean;
 }): Promise<GeneratedResponse> {
   if (!openai) {
@@ -1169,25 +753,14 @@ async function generateResponse(input: {
         {
           role: "system",
           content: [
-            "Sei AI JOKER-C2. Rispondi in modo professionale, operativo e coerente con HBCE.",
-            "",
-            buildCanonicalDictionary(),
-            "",
-            "Regola assoluta: nel contesto MATRIX/HBCE, IPR significa sempre Identity Primary Record.",
-            "Regola assoluta: HBCE indica il framework/livello di governance computabile di HERMETICUM B.C.E. nel sistema MATRIX.",
-            "Regola assoluta: EVT significa Event Record / Verifiable Event Trace.",
-            "",
-            "Regola di stile: rispondi in forma discorsiva di default.",
-            "Regola di stile: non usare tabelle salvo richiesta esplicita.",
-            "Regola di stile: non usare elenchi numerati rigidi salvo richiesta esplicita o necessità tecnica.",
-            "Regola di stile: se l'utente chiede spiegazione, utilità, potenzialità o punti forti, rispondi con paragrafi naturali.",
-            "",
-            "Regola documentale: quando sono presenti file attivi, non operare come riassuntore passivo. Devi interpretare, strutturare, giudicare e generare output derivati coerenti con il documento.",
-            "Regola documentale: se il file non è reinviato ma è disponibile memoria documentale di sessione, devi usarla come documento attivo.",
-            "Regola documentale: se il file è lungo e ricevi un campione strutturale, lavora su quel campione senza fingere accesso integrale parola per parola.",
-            "Regola documentale: se l'utente dice 'apokalypsis intendo dire', devi riferirti al documento attivo APOKALYPSIS, non al concetto generico di apocalisse.",
-            "",
-            "Per diagnostica runtime devi restituire stato tecnico diretto, non un piano."
+            "Sei AI JOKER-C2.",
+            "Rispondi in modo professionale, operativo e coerente con HBCE.",
+            "Rispondi in forma discorsiva di default.",
+            "Non usare tabelle salvo richiesta esplicita.",
+            "Non usare elenchi numerati rigidi salvo richiesta esplicita o necessità tecnica.",
+            "La memoria non è la chat: la memoria è la catena EVT agganciata all'IPR.",
+            "Ogni riferimento ellittico deve essere risolto usando la memoria EVT/IPR-bound.",
+            "Se l'utente dice 'apokalypsis intendo dire', devi riferirti al documento attivo APOKALYPSIS, non al concetto generico di apocalisse."
           ].join("\n")
         },
         {
@@ -1241,10 +814,6 @@ function buildEvent(input: {
     t: nowIso(),
     entity: identity.entity,
     ipr: identity.ipr,
-    iprMeaning: "Identity Primary Record",
-    iprFunction: "operational attribution root",
-    hbceMeaning: "HERMETICUM B.C.E. computable governance layer",
-    evtMeaning: "Event Record / Verifiable Event Trace",
     kind: "CHAT_OPERATION",
     state: input.state,
     decision: input.decision,
@@ -1274,13 +843,24 @@ function buildEvent(input: {
   });
 }
 
+function isRuntimeDiagnosticRequest(message: string): boolean {
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("diagnostica runtime") ||
+    lower.includes("debug runtime") ||
+    lower.includes("runtime openai") ||
+    lower.includes("stato runtime")
+  );
+}
+
 function buildRuntimeDiagnosticText(input: {
   state: RuntimeState;
   decision: RuntimeDecision;
   contextClass: ContextClass;
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
-  documentMemoryUsed: boolean;
+  memoryUsed: boolean;
   structuredFormat: boolean;
   event: RuntimeEvent;
   degradedReason?: string | null;
@@ -1295,17 +875,14 @@ function buildRuntimeDiagnosticText(input: {
     `Context: ${input.contextClass}`,
     `DocumentMode: ${input.documentMode}`,
     `DocumentFamily: ${input.documentFamily}`,
-    `DocumentMemoryUsed: ${input.documentMemoryUsed ? "true" : "false"}`,
+    `EvtIprMemoryUsed: ${input.memoryUsed ? "true" : "false"}`,
     `StructuredFormat: ${input.structuredFormat ? "true" : "false"}`,
     `Model: ${MODEL}`,
     `OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "configured" : "missing"}`,
-    `JOKER_MODEL: ${process.env.JOKER_MODEL ? "configured" : "default"}`,
     "",
     "Identità runtime:",
     `- entity: ${identity.entity}`,
     `- ipr: ${identity.ipr}`,
-    "- ipr_meaning: Identity Primary Record",
-    "- ipr_function: operational attribution root",
     `- checkpoint: ${identity.evt}`,
     `- core: ${identity.core}`,
     "",
@@ -1325,9 +902,10 @@ function buildTechnicalFrame(input: {
   contextClass: ContextClass;
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
-  documentMemoryUsed: boolean;
+  memoryUsed: boolean;
   structuredFormat: boolean;
   event: RuntimeEvent;
+  memoryEventId: string | null;
   degradedReason?: string | null;
 }) {
   return [
@@ -1339,15 +917,12 @@ function buildTechnicalFrame(input: {
     `- context: ${input.contextClass}`,
     `- documentMode: ${input.documentMode}`,
     `- documentFamily: ${input.documentFamily}`,
-    `- documentMemoryUsed: ${input.documentMemoryUsed ? "true" : "false"}`,
+    `- evtIprMemoryUsed: ${input.memoryUsed ? "true" : "false"}`,
     `- structuredFormat: ${input.structuredFormat ? "true" : "false"}`,
     `- evt: ${input.event.evt}`,
+    `- memoryEvt: ${input.memoryEventId || "none"}`,
     `- prev: ${input.event.prev}`,
     `- hash: ${input.event.anchors.hash}`,
-    "- iprMeaning: Identity Primary Record",
-    "- iprFunction: operational attribution root",
-    "- hbceMeaning: HERMETICUM B.C.E. computable governance layer",
-    "- evtMeaning: Event Record / Verifiable Event Trace",
     input.degradedReason ? `- degradedReason: ${input.degradedReason}` : ""
   ]
     .filter(Boolean)
@@ -1385,26 +960,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const identity = getPrimaryIdentity();
   const effectiveMessage =
     input.message || "Usa i file attivi come contesto operativo.";
 
-  if (input.files.length > 0) {
-    storeDocumentMemory(input.sessionId, input.files);
-  }
+  const memory = getEvtMemoryContext({
+    sessionId: input.sessionId,
+    ipr: identity.ipr,
+    message: effectiveMessage
+  });
 
-  const memory =
-    input.files.length === 0 && shouldUseDocumentMemory(effectiveMessage)
-      ? getDocumentMemory(input.sessionId)
-      : null;
-
-  const documentMemoryUsed = Boolean(memory);
-
-  const effectiveFiles =
-    input.files.length > 0
-      ? input.files
-      : memory
-        ? buildFilesFromMemory(memory)
-        : input.files;
+  const memoryFile = memory.used ? [buildMemoryFile(memory.text)] : [];
+  const effectiveFiles = [...memoryFile, ...input.files];
 
   const structuredFormat = shouldUseStructuredFormat(effectiveMessage);
   const contextClass = classifyContext(effectiveMessage, effectiveFiles);
@@ -1415,9 +982,9 @@ export async function POST(req: NextRequest) {
       : "GENERAL_DOCUMENT_WORK";
 
   const documentFamily =
-    contextClass === "DOCUMENTAL"
-      ? memory?.documentFamily || detectDocumentFamily(effectiveFiles)
-      : "GENERAL_DOCUMENT";
+    input.files.length > 0
+      ? detectDocumentFamily(input.files)
+      : memory.semanticState?.documentFamily || detectDocumentFamily(effectiveFiles);
 
   if (isRuntimeDiagnosticRequest(effectiveMessage)) {
     const diagnosticState: RuntimeState = openai ? "OPERATIONAL" : "DEGRADED";
@@ -1425,7 +992,7 @@ export async function POST(req: NextRequest) {
     const degradedReason = openai ? null : "OPENAI_API_KEY_NOT_CONFIGURED";
 
     const event = buildEvent({
-      prev: input.continuityRef,
+      prev: input.continuityRef || memory.lastEventId,
       state: diagnosticState,
       decision: diagnosticDecision,
       message: effectiveMessage,
@@ -1434,15 +1001,13 @@ export async function POST(req: NextRequest) {
       documentFamily
     });
 
-    const identity = getPrimaryIdentity();
-
     const responseText = buildRuntimeDiagnosticText({
       state: diagnosticState,
       decision: diagnosticDecision,
       contextClass,
       documentMode,
       documentFamily,
-      documentMemoryUsed,
+      memoryUsed: memory.used,
       structuredFormat,
       event,
       degradedReason
@@ -1456,15 +1021,12 @@ export async function POST(req: NextRequest) {
       contextClass,
       documentMode,
       documentFamily,
-      documentMemoryUsed,
+      evtIprMemoryUsed: memory.used,
       structuredFormat,
       activeFiles: effectiveFiles.map((file) => file.name || "unnamed"),
       identity: {
         entity: identity.entity,
         ipr: identity.ipr,
-        iprMeaning: "Identity Primary Record",
-        iprFunction: "operational attribution root",
-        hbceMeaning: "HERMETICUM B.C.E. computable governance layer",
         evt: identity.evt,
         state: identity.state,
         cycle: identity.cycle,
@@ -1481,7 +1043,7 @@ export async function POST(req: NextRequest) {
         openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
         modelUsed: MODEL,
         degradedReason,
-        documentMemoryUsed,
+        evtIprMemoryUsed: memory.used,
         structuredFormat
       }
     });
@@ -1493,7 +1055,8 @@ export async function POST(req: NextRequest) {
     documentMode,
     documentFamily,
     files: effectiveFiles,
-    documentMemoryUsed,
+    memoryText: memory.text,
+    memoryUsed: memory.used,
     structuredFormat
   });
 
@@ -1501,13 +1064,28 @@ export async function POST(req: NextRequest) {
     generated.state === "OPERATIONAL" ? "ALLOW" : "ESCALATE";
 
   const event = buildEvent({
-    prev: input.continuityRef,
+    prev: input.continuityRef || memory.lastEventId,
     state: generated.state,
     decision,
     message: effectiveMessage,
     contextClass,
     documentMode,
     documentFamily
+  });
+
+  const memoryEvent = appendEvtMemory({
+    sessionId: input.sessionId,
+    ipr: identity.ipr,
+    entity: identity.entity,
+    message: effectiveMessage,
+    response: generated.text,
+    state: generated.state,
+    decision,
+    contextClass,
+    documentMode,
+    documentFamily,
+    files: effectiveFiles,
+    prevEventId: event.prev
   });
 
   const exposeRuntime = shouldExposeTechnicalFrame(effectiveMessage, contextClass);
@@ -1520,14 +1098,13 @@ export async function POST(req: NextRequest) {
         contextClass,
         documentMode,
         documentFamily,
-        documentMemoryUsed,
+        memoryUsed: memory.used,
         structuredFormat,
         event,
+        memoryEventId: memoryEvent.evt,
         degradedReason: generated.degradedReason
       })
     : generated.text;
-
-  const identity = getPrimaryIdentity();
 
   return NextResponse.json({
     ok: true,
@@ -1537,21 +1114,19 @@ export async function POST(req: NextRequest) {
     contextClass,
     documentMode,
     documentFamily,
-    documentMemoryUsed,
+    evtIprMemoryUsed: memory.used,
     structuredFormat,
     activeFiles: effectiveFiles.map((file) => file.name || "unnamed"),
     identity: {
       entity: identity.entity,
       ipr: identity.ipr,
-      iprMeaning: "Identity Primary Record",
-      iprFunction: "operational attribution root",
-      hbceMeaning: "HERMETICUM B.C.E. computable governance layer",
       evt: identity.evt,
       state: identity.state,
       cycle: identity.cycle,
       core: identity.core
     },
     event,
+    memoryEvent,
     evt: {
       ok: true,
       evt: event.evt,
@@ -1562,7 +1137,8 @@ export async function POST(req: NextRequest) {
       openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
       modelUsed: MODEL,
       degradedReason: generated.degradedReason || null,
-      documentMemoryUsed,
+      evtIprMemoryUsed: memory.used,
+      memoryEvent: memoryEvent.evt,
       structuredFormat
     }
   });
