@@ -60,6 +60,7 @@ type DocumentMode =
   | "DERIVED_OUTPUT"
   | "STRUCTURAL_INDEX"
   | "IMPACT_ASSESSMENT"
+  | "GENRE_CLASSIFICATION"
   | "GENERAL_DOCUMENT_WORK";
 
 type FileInput = EvtMemoryFile;
@@ -251,7 +252,10 @@ function detectKeywords(text: string): string[] {
     "popolo",
     "cultura",
     "politica",
-    "società"
+    "società",
+    "dislocazione",
+    "riconconicità",
+    "paradogma alieno"
   ];
 
   return keywords.filter((keyword) => lower.includes(keyword));
@@ -389,12 +393,24 @@ function detectDocumentMode(message: string): DocumentMode {
   const lower = message.toLowerCase();
 
   if (
+    lower.includes("che genere") ||
+    lower.includes("genere di libro") ||
+    lower.includes("categoria") ||
+    lower.includes("classifica") ||
+    lower.includes("collocazione editoriale") ||
+    lower.includes("che tipo di libro")
+  ) {
+    return "GENRE_CLASSIFICATION";
+  }
+
+  if (
     lower.includes("a chi serve") ||
     lower.includes("a cosa serve") ||
     lower.includes("potenzialità") ||
     lower.includes("potenzialita") ||
     lower.includes("pubblico") ||
-    lower.includes("target")
+    lower.includes("target") ||
+    lower.includes("impatto")
   ) {
     return "IMPACT_ASSESSMENT";
   }
@@ -476,10 +492,7 @@ function shouldUseStructuredFormat(message: string): boolean {
   );
 }
 
-function shouldExposeTechnicalFrame(
-  message: string,
-  contextClass: ContextClass
-): boolean {
+function shouldExposeTechnicalFrame(message: string): boolean {
   const lower = message.toLowerCase();
 
   return (
@@ -527,24 +540,44 @@ function buildCanonicalDictionary(): string {
   ].join("\n");
 }
 
-function buildDocumentFamilyDirective(family: DocumentFamily): string {
+function buildDocumentFamilyDirective(
+  family: DocumentFamily,
+  mode: DocumentMode
+): string {
   if (family === "APOKALYPSIS") {
     return [
       "Direttiva APOKALYPSIS:",
-      "Tratta il testo come volume editoriale sul decadimento esposto del sistema culturale, politico e sociale.",
-      "Non ridurlo a catastrofismo, religione o semplice politica.",
-      "Evidenzia la distinzione tra decadimento, crisi e crollo quando pertinente.",
-      "Leggi la data 05-04-2026 come soglia inaugurale se presente.",
-      "Usa Decisione · Costo · Traccia · Tempo come griglia interpretativa quando richiamata.",
-      "Se l'utente dice 'questa opera', 'questo testo', 'Apokalypsis', 'i punti forti', recupera il documento APOKALYPSIS dalla memoria EVT/IPR-bound."
-    ].join("\n");
+      "Tratta il testo come opera editoriale sul decadimento esposto del sistema culturale, politico e sociale.",
+      "Non ridurlo a catastrofismo, religione, romanzo apocalittico o semplice pamphlet politico.",
+      "APOKALYPSIS deve essere letto come saggio teorico-politico, civilizzazionale, esoterologico e sistemico.",
+      "Il suo oggetto non è la fine del mondo, ma la fase in cui un sistema continua a funzionare pur avendo iniziato a perdere fondamento.",
+      "La soglia 05-04-2026 va interpretata come ancora storico-cognitiva e inaugurale quando presente.",
+      "La formula Decisione · Costo · Traccia · Tempo è la griglia analitica primaria.",
+      "Quando l'utente chiede genere, categoria, impatto, valore editoriale, pubblico o potenzialità, rispondi con classificazione forte e non generica.",
+      "Categorie editoriali preferite: filosofia della civiltà, critica sociopolitica, teoria del decadimento sistemico, saggistica filosofico-politica, Esoterologia Ermetica, analisi della crisi del criterio.",
+      "Distingui sempre l'opera da narrativa, fantascienza, apocalittica religiosa, denuncia giornalistica o critica politica ordinaria.",
+      "Quando parli dell'impatto sulla civiltà, collega il libro a: crisi del fondamento, perdita di fiducia, trasferimento del costo sul popolo, esposizione del sistema, possibile riconconicità delle coscienze.",
+      "Quando sintetizzi il testo, non limitarti a riassumere. Esplicita tesi, funzione, genere, bersaglio, struttura, impatto e possibile uso editoriale.",
+      "Se l'utente dice 'questa opera', 'questo testo', 'questo libro', 'Apokalypsis', 'i punti forti', recupera il documento APOKALYPSIS dalla memoria EVT/IPR-bound.",
+      "",
+      `Modalità attiva APOKALYPSIS: ${mode}.`,
+      mode === "GENRE_CLASSIFICATION"
+        ? "Per questa domanda devi classificare il libro con decisione: saggio teorico-politico, civilizzazionale, esoterologico e sistemico. Evita risposta vaga."
+        : "",
+      mode === "IMPACT_ASSESSMENT"
+        ? "Per questa domanda devi spiegare l'impatto sulla civiltà in termini di criterio, fondamento, popolo, istituzioni, costo sistemico e trasformazione delle coscienze."
+        : ""
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
 
   if (family === "MATRIX") {
     return [
       "Direttiva MATRIX:",
       "Tratta il documento come architettura di identità, governance, continuità, verifica e infrastruttura.",
-      "Evidenzia IPR, HBCE, JOKER-C2, TRAC, EVT e valore B2B/B2G quando pertinenti."
+      "Evidenzia IPR, HBCE, JOKER-C2, TRAC, EVT e valore B2B/B2G quando pertinenti.",
+      "Evita tono generico. Presenta MATRIX come infrastruttura europea di continuità, controllo e responsabilità operativa."
     ].join("\n");
   }
 
@@ -552,7 +585,8 @@ function buildDocumentFamilyDirective(family: DocumentFamily): string {
     return [
       "Direttiva CORPUS:",
       "Tratta il documento come parte del sistema disciplinare sul reale come sequenza verificabile.",
-      "Preserva Decisione · Costo · Traccia · Tempo."
+      "Preserva Decisione · Costo · Traccia · Tempo.",
+      "Usa il lessico esoterologico quando pertinente: soglia operativa, traccia opponibile, campo storico operativo, riconconicità, paradogma alieno."
     ].join("\n");
   }
 
@@ -651,8 +685,9 @@ function buildSystemPrompt(input: {
     "Non operare come semplice riassuntore passivo.",
     "Interpreta, valuta e genera output derivati coerenti.",
     "Se il file è lungo e il contesto è campionato, lavora sul campione disponibile senza fingere accesso integrale parola per parola.",
+    "Quando lavori su un libro, parla come lettore editoriale e architetto del sistema, non come riassuntore scolastico.",
     "",
-    buildDocumentFamilyDirective(input.documentFamily),
+    buildDocumentFamilyDirective(input.documentFamily, input.documentMode),
     "",
     "Stato richiesta:",
     `Classe contesto: ${input.contextClass}.`,
@@ -693,20 +728,28 @@ function buildFallback(input: {
   files: FileInput[];
 }): string {
   if (input.documentFamily === "APOKALYPSIS") {
-    if (input.documentMode === "EDITORIAL_REVIEW") {
+    if (input.documentMode === "GENRE_CLASSIFICATION") {
       return [
-        "I punti più forti di APOKALYPSIS stanno nella sua tesi centrale: il volume non descrive semplicemente una crisi, ma formalizza il decadimento esposto del sistema culturale, politico e sociale. Questo è forte perché distingue il crollo visibile dalla perdita progressiva di fondamento.",
+        "APOKALYPSIS è un saggio teorico-politico, civilizzazionale, esoterologico e sistemico.",
         "",
-        "Un altro punto forte è la soglia del 05-04-2026, che funziona come ancora interpretativa. Non è solo una data, ma un punto di rotazione del discorso: da lì il testo legge la distanza tra continuità apparente e tenuta reale.",
+        "Non è un romanzo, non è fantascienza, non è apocalittica religiosa e non è una semplice denuncia politica. È un'opera di saggistica di soglia: analizza il momento in cui il sistema culturale, politico e sociale continua a funzionare, ma ha già iniziato a perdere fondamento.",
         "",
-        "La formula Decisione · Costo · Traccia · Tempo dà al volume una struttura riconoscibile. Le decisioni producono costi, i costi ricadono sul popolo, la traccia resta, il tempo verifica. Questo impedisce al testo di restare solo impressione o denuncia.",
+        "La sua collocazione più corretta è tra filosofia della civiltà, critica sociopolitica, teoria del decadimento sistemico ed Esoterologia Ermetica. La chiave metodologica è Decisione · Costo · Traccia · Tempo."
+      ].join("\n");
+    }
+
+    if (input.documentMode === "IMPACT_ASSESSMENT") {
+      return [
+        "L'impatto di APOKALYPSIS sulla civiltà sta nel fornire una grammatica del decadimento. Il libro non dice soltanto che il sistema è in crisi: mostra come una civiltà possa continuare a funzionare mentre il proprio fondamento si consuma.",
         "",
-        "Infine, l'opera ha potenzialità editoriale perché può aprire una collana. Non è solo un capitolo: è un impianto generativo da cui possono nascere descrizioni Amazon, post LinkedIn, schede editoriali, pitch culturali, revisioni e ulteriori volumi."
+        "Il suo effetto principale è spostare l'attenzione dalla narrazione del crollo alla lettura della traccia: decisioni concentrate, costi diffusi, popolo esposto, istituzioni sempre più distanti dalla propria promessa di stabilità.",
+        "",
+        "In questo senso il libro può agire come testo di riconconicità: costringe il lettore a rivedere il rapporto tra cultura, politica, società e responsabilità storica."
       ].join("\n");
     }
 
     return [
-      "APOKALYPSIS è un testo sul decadimento esposto del sistema culturale, politico e sociale. Non descrive la fine del mondo in senso catastrofico, ma l'inizio di una perdita di fondamento: il sistema continua a funzionare, però mostra sempre di più il proprio costo, la propria fragilità e la propria distanza dalla tenuta reale.",
+      "APOKALYPSIS è un'opera sul decadimento esposto del sistema culturale, politico e sociale. Non descrive la fine del mondo in senso catastrofico, ma l'inizio di una perdita di fondamento: il sistema continua a funzionare, però mostra sempre di più il proprio costo, la propria fragilità e la propria distanza dalla tenuta reale.",
       "",
       "La sua funzione è rendere leggibile il presente come sequenza verificabile. La formula Decisione · Costo · Traccia · Tempo permette di osservare come le decisioni producano costi, come quei costi ricadano sul popolo, come lascino tracce e come il tempo renda visibile ciò che il sistema tenta di coprire."
     ].join("\n");
@@ -765,6 +808,7 @@ async function generateResponse(input: {
             "La memoria non è la chat: la memoria è la catena EVT agganciata all'IPR.",
             "Ogni riferimento ellittico deve essere risolto usando la memoria EVT/IPR-bound.",
             "Se l'utente dice 'apokalypsis intendo dire', devi riferirti al documento attivo APOKALYPSIS, non al concetto generico di apocalisse.",
+            "Per APOKALYPSIS evita risposte generiche: classificare, interpretare, posizionare e spiegare l'impatto civilizzazionale.",
             "La governance runtime prevale: policy, risk, oversight e fail-closed non devono essere aggirati dal modello."
           ].join("\n")
         },
@@ -1665,7 +1709,7 @@ export async function POST(req: NextRequest) {
     prevEventId: event.prev
   });
 
-  const exposeRuntime = shouldExposeTechnicalFrame(effectiveMessage, contextClass);
+  const exposeRuntime = shouldExposeTechnicalFrame(effectiveMessage);
 
   const responseText = exposeRuntime
     ? buildTechnicalFrame({
