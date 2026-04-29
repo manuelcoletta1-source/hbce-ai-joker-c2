@@ -27,6 +27,7 @@ type DocumentMode =
   | "GENERATIVE_REWRITE"
   | "DERIVED_OUTPUT"
   | "STRUCTURAL_INDEX"
+  | "IMPACT_ASSESSMENT"
   | "GENERAL_DOCUMENT_WORK";
 
 type DocumentFamily =
@@ -81,15 +82,43 @@ type NormalizedFile = {
   text: string;
 };
 
+type SessionDocumentMemoryFile = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  role: string;
+  textPreview: string;
+  keywords: string[];
+  headings: string[];
+};
+
+type SessionDocumentMemory = {
+  sessionId: string;
+  updatedAt: string;
+  documentFamily: DocumentFamily;
+  files: SessionDocumentMemoryFile[];
+  contextText: string;
+};
+
 type GeneratedResponse = {
   text: string;
   state: RuntimeState;
   degradedReason?: string | null;
 };
 
+declare global {
+  // eslint-disable-next-line no-var
+  var __JOKER_C2_DOCUMENT_MEMORY__:
+    | Map<string, SessionDocumentMemory>
+    | undefined;
+}
+
 const MODEL = process.env.JOKER_MODEL || "gpt-4o-mini";
 const MAX_FILE_CONTEXT_CHARS = 72000;
+const MAX_MEMORY_CONTEXT_CHARS = 36000;
 const MAX_OUTPUT_TOKENS = 4600;
+const DOCUMENT_MEMORY_TTL_MS = 1000 * 60 * 60 * 6;
 
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -155,254 +184,6 @@ function normalizeFiles(files: FileInput[]): NormalizedFile[] {
       text
     };
   });
-}
-
-function classifyContext(message: string, files: FileInput[]): ContextClass {
-  if (files.length > 0) return "DOCUMENTAL";
-
-  const lower = message.toLowerCase();
-
-  if (
-    lower.includes("ipr") ||
-    lower.includes("identity primary record") ||
-    lower.includes("identità") ||
-    lower.includes("identity") ||
-    lower.includes("lineage") ||
-    lower.includes("biologico") ||
-    lower.includes("biocibernet") ||
-    lower.includes("chi sei") ||
-    lower.includes("descriviti") ||
-    lower.includes("presentati")
-  ) {
-    return "IDENTITY";
-  }
-
-  if (
-    lower.includes("github") ||
-    lower.includes("repo") ||
-    lower.includes("commit") ||
-    lower.includes("typescript") ||
-    lower.includes("codice") ||
-    lower.includes("route.ts") ||
-    lower.includes("page.tsx") ||
-    lower.includes("pull request") ||
-    lower.includes("branch")
-  ) {
-    return "GITHUB";
-  }
-
-  if (
-    lower.includes("runtime") ||
-    lower.includes("debug") ||
-    lower.includes("api") ||
-    lower.includes("vercel") ||
-    lower.includes("deploy") ||
-    lower.includes("build") ||
-    lower.includes("protocollo") ||
-    lower.includes("evt") ||
-    lower.includes("ledger") ||
-    lower.includes("audit") ||
-    lower.includes("verifica") ||
-    lower.includes("diagnostica") ||
-    lower.includes("fail-closed") ||
-    lower.includes("fail closed")
-  ) {
-    return "TECHNICAL";
-  }
-
-  if (
-    lower.includes("matrix") ||
-    lower.includes("hbce") ||
-    lower.includes("joker-c2") ||
-    lower.includes("joker c2") ||
-    lower.includes("trac") ||
-    lower.includes("continuità operativa") ||
-    lower.includes("governance computabile") ||
-    lower.includes("torino") ||
-    lower.includes("bruxelles")
-  ) {
-    return "MATRIX";
-  }
-
-  if (
-    lower.includes("roadmap") ||
-    lower.includes("strategia") ||
-    lower.includes("strategico") ||
-    lower.includes("mercato") ||
-    lower.includes("startup") ||
-    lower.includes("b2b") ||
-    lower.includes("b2g") ||
-    lower.includes("business") ||
-    lower.includes("prodotto") ||
-    lower.includes("demo") ||
-    lower.includes("istituzionale") ||
-    lower.includes("istituzioni") ||
-    lower.includes("imprese") ||
-    lower.includes("europei") ||
-    lower.includes("europa") ||
-    lower.includes("stakeholder") ||
-    lower.includes("go-to-market") ||
-    lower.includes("posizionamento") ||
-    lower.includes("commerciale") ||
-    lower.includes("clienti") ||
-    lower.includes("pa ") ||
-    lower.includes("pubblica amministrazione")
-  ) {
-    return "STRATEGIC";
-  }
-
-  if (
-    lower.includes("indice") ||
-    lower.includes("capitolo") ||
-    lower.includes("introduzione") ||
-    lower.includes("premessa") ||
-    lower.includes("riscrivi") ||
-    lower.includes("sintetizza") ||
-    lower.includes("sintesi") ||
-    lower.includes("editoriale")
-  ) {
-    return "EDITORIAL";
-  }
-
-  return "GENERAL";
-}
-
-function detectDocumentMode(message: string): DocumentMode {
-  const lower = message.toLowerCase();
-
-  if (
-    lower.includes("indice") ||
-    lower.includes("struttura") ||
-    lower.includes("sommario") ||
-    lower.includes("capitoli") ||
-    lower.includes("parti")
-  ) {
-    return "STRUCTURAL_INDEX";
-  }
-
-  if (
-    lower.includes("riscrivi") ||
-    lower.includes("rifattorizza") ||
-    lower.includes("versione") ||
-    lower.includes("migliora") ||
-    lower.includes("correggi") ||
-    lower.includes("più accademica") ||
-    lower.includes("piu accademica") ||
-    lower.includes("più giuridica") ||
-    lower.includes("piu giuridica") ||
-    lower.includes("più editoriale") ||
-    lower.includes("piu editoriale") ||
-    lower.includes("più tecnica") ||
-    lower.includes("piu tecnica")
-  ) {
-    return "GENERATIVE_REWRITE";
-  }
-
-  if (
-    lower.includes("amazon") ||
-    lower.includes("linkedin") ||
-    lower.includes("post") ||
-    lower.includes("descrizione") ||
-    lower.includes("pitch") ||
-    lower.includes("email") ||
-    lower.includes("scheda") ||
-    lower.includes("presentazione")
-  ) {
-    return "DERIVED_OUTPUT";
-  }
-
-  if (
-    lower.includes("revisore") ||
-    lower.includes("valuta") ||
-    lower.includes("giudizio") ||
-    lower.includes("pronto") ||
-    lower.includes("pubblicazione") ||
-    lower.includes("punti forti") ||
-    lower.includes("punti deboli") ||
-    lower.includes("contraddizioni") ||
-    lower.includes("ripetizioni")
-  ) {
-    return "EDITORIAL_REVIEW";
-  }
-
-  if (
-    lower.includes("sintesi") ||
-    lower.includes("sintetizza") ||
-    lower.includes("riassumi") ||
-    lower.includes("riassunto") ||
-    lower.includes("summary")
-  ) {
-    return "SUMMARY";
-  }
-
-  if (
-    lower.includes("spiegamelo") ||
-    lower.includes("spiega") ||
-    lower.includes("cosa è") ||
-    lower.includes("cos'è") ||
-    lower.includes("cose") ||
-    lower.includes("che cos") ||
-    lower.includes("analisi") ||
-    lower.includes("interpreta") ||
-    lower.includes("tesi") ||
-    lower.includes("leggi") ||
-    lower.includes("capisci")
-  ) {
-    return "INTERPRETIVE_ANALYSIS";
-  }
-
-  return "GENERAL_DOCUMENT_WORK";
-}
-
-function wantsSummary(message: string): boolean {
-  const lower = message.toLowerCase();
-
-  return (
-    lower.includes("sintesi") ||
-    lower.includes("sintetizza") ||
-    lower.includes("riassumi") ||
-    lower.includes("riassunto") ||
-    lower.includes("summary") ||
-    lower.includes("spiegamelo") ||
-    lower.includes("spiega") ||
-    lower.includes("cosa è") ||
-    lower.includes("cos'è") ||
-    lower.includes("che cos")
-  );
-}
-
-function isRuntimeDiagnosticRequest(message: string): boolean {
-  const lower = message.toLowerCase();
-
-  return (
-    lower.includes("diagnostica runtime") ||
-    lower.includes("debug runtime") ||
-    lower.includes("runtime openai") ||
-    lower.includes("stato runtime") ||
-    lower.includes("diagnostics runtime")
-  );
-}
-
-function shouldExposeTechnicalFrame(
-  message: string,
-  contextClass: ContextClass
-): boolean {
-  const lower = message.toLowerCase();
-
-  return (
-    contextClass === "TECHNICAL" ||
-    lower.includes("debug") ||
-    lower.includes("runtime") ||
-    lower.includes("diagnostica") ||
-    lower.includes("diagnostics") ||
-    lower.includes("evt") ||
-    lower.includes("ledger") ||
-    lower.includes("audit") ||
-    lower.includes("protocollo") ||
-    lower.includes("lineage") ||
-    lower.includes("fail-closed") ||
-    lower.includes("fail closed")
-  );
 }
 
 function splitLines(text: string): string[] {
@@ -515,10 +296,10 @@ function detectDocumentFamily(files: FileInput[]): DocumentFamily {
     merged.includes("corpus esoterologia ermetica") ||
     merged.includes("esoterologia") ||
     merged.includes("decisione · costo · traccia · tempo") ||
-    merged.includes("decisione") &&
+    (merged.includes("decisione") &&
       merged.includes("costo") &&
       merged.includes("traccia") &&
-      merged.includes("tempo")
+      merged.includes("tempo"))
   ) {
     return "CORPUS_ESOTEROLOGIA";
   }
@@ -526,7 +307,7 @@ function detectDocumentFamily(files: FileInput[]): DocumentFamily {
   if (
     merged.includes("matrix") ||
     merged.includes("trac") ||
-    merged.includes("torino") && merged.includes("bruxelles")
+    (merged.includes("torino") && merged.includes("bruxelles"))
   ) {
     return "MATRIX";
   }
@@ -682,6 +463,425 @@ function renderFilesForPrompt(files: FileInput[]): string {
     .join("\n\n");
 }
 
+function getDocumentMemoryStore(): Map<string, SessionDocumentMemory> {
+  if (!globalThis.__JOKER_C2_DOCUMENT_MEMORY__) {
+    globalThis.__JOKER_C2_DOCUMENT_MEMORY__ = new Map();
+  }
+
+  return globalThis.__JOKER_C2_DOCUMENT_MEMORY__;
+}
+
+function pruneDocumentMemoryStore(): void {
+  const store = getDocumentMemoryStore();
+  const now = Date.now();
+
+  for (const [key, memory] of store.entries()) {
+    const updated = Date.parse(memory.updatedAt);
+
+    if (!Number.isFinite(updated) || now - updated > DOCUMENT_MEMORY_TTL_MS) {
+      store.delete(key);
+    }
+  }
+}
+
+function storeDocumentMemory(sessionId: string, files: FileInput[]): void {
+  const readable = normalizeFiles(files).filter((file) => file.text.length > 0);
+
+  if (readable.length === 0) {
+    return;
+  }
+
+  pruneDocumentMemoryStore();
+
+  const documentFamily = detectDocumentFamily(files);
+  const memoryFiles: SessionDocumentMemoryFile[] = readable.map((file) => {
+    const keywords = detectKeywords(file.text);
+    const headings = extractHeadings(file.text, 60);
+
+    return {
+      id: file.id,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      role: file.role,
+      textPreview: buildStructuralSample(
+        file.text,
+        Math.max(12000, Math.floor(MAX_MEMORY_CONTEXT_CHARS / readable.length))
+      ),
+      keywords,
+      headings
+    };
+  });
+
+  const contextText = memoryFiles
+    .map((file, index) =>
+      [
+        `MEMORIA DOCUMENTALE FILE ${index + 1}: ${file.name}`,
+        `TYPE: ${file.type}`,
+        `SIZE: ${file.size}`,
+        `ROLE: ${file.role}`,
+        `KEYWORDS: ${file.keywords.length > 0 ? file.keywords.join(", ") : "none"}`,
+        "",
+        "HEADINGS_MEMORY:",
+        file.headings.length > 0
+          ? file.headings.map((heading, i) => `${i + 1}. ${heading}`).join("\n")
+          : "none",
+        "",
+        "DOCUMENT_MEMORY_CONTEXT:",
+        file.textPreview
+      ].join("\n")
+    )
+    .join("\n\n")
+    .slice(0, MAX_MEMORY_CONTEXT_CHARS);
+
+  getDocumentMemoryStore().set(sessionId, {
+    sessionId,
+    updatedAt: nowIso(),
+    documentFamily,
+    files: memoryFiles,
+    contextText
+  });
+}
+
+function getDocumentMemory(sessionId: string): SessionDocumentMemory | null {
+  pruneDocumentMemoryStore();
+
+  return getDocumentMemoryStore().get(sessionId) || null;
+}
+
+function shouldUseDocumentMemory(message: string): boolean {
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("questo testo") ||
+    lower.includes("questo file") ||
+    lower.includes("questo documento") ||
+    lower.includes("il testo") ||
+    lower.includes("il file") ||
+    lower.includes("il documento") ||
+    lower.includes("a chi serve") ||
+    lower.includes("a cosa serve") ||
+    lower.includes("che potenzialità") ||
+    lower.includes("che potenzialita") ||
+    lower.includes("potenzialità ha") ||
+    lower.includes("potenzialita ha") ||
+    lower.includes("pubblico") ||
+    lower.includes("lettori") ||
+    lower.includes("target") ||
+    lower.includes("utilità") ||
+    lower.includes("utilita")
+  );
+}
+
+function buildFilesFromMemory(memory: SessionDocumentMemory): FileInput[] {
+  return [
+    {
+      id: `memory-${memory.sessionId}`,
+      name:
+        memory.files.length === 1
+          ? memory.files[0].name
+          : `session-document-memory-${memory.sessionId}`,
+      type: "session-memory",
+      size: memory.contextText.length,
+      role: "active_document_memory",
+      text: [
+        "MEMORIA DOCUMENTALE ATTIVA:",
+        "Il file originale non è stato reinviato in questa richiesta, ma è stato recuperato dalla memoria documentale della sessione.",
+        `SESSION_ID: ${memory.sessionId}`,
+        `UPDATED_AT: ${memory.updatedAt}`,
+        `DOCUMENT_FAMILY: ${memory.documentFamily}`,
+        "",
+        memory.contextText
+      ].join("\n")
+    }
+  ];
+}
+
+function classifyContext(message: string, files: FileInput[]): ContextClass {
+  if (files.length > 0) return "DOCUMENTAL";
+
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes("ipr") ||
+    lower.includes("identity primary record") ||
+    lower.includes("identità") ||
+    lower.includes("identity") ||
+    lower.includes("lineage") ||
+    lower.includes("biologico") ||
+    lower.includes("biocibernet") ||
+    lower.includes("chi sei") ||
+    lower.includes("descriviti") ||
+    lower.includes("presentati")
+  ) {
+    return "IDENTITY";
+  }
+
+  if (
+    lower.includes("github") ||
+    lower.includes("repo") ||
+    lower.includes("commit") ||
+    lower.includes("typescript") ||
+    lower.includes("codice") ||
+    lower.includes("route.ts") ||
+    lower.includes("page.tsx") ||
+    lower.includes("pull request") ||
+    lower.includes("branch")
+  ) {
+    return "GITHUB";
+  }
+
+  if (
+    lower.includes("runtime") ||
+    lower.includes("debug") ||
+    lower.includes("api") ||
+    lower.includes("vercel") ||
+    lower.includes("deploy") ||
+    lower.includes("build") ||
+    lower.includes("protocollo") ||
+    lower.includes("evt") ||
+    lower.includes("ledger") ||
+    lower.includes("audit") ||
+    lower.includes("verifica") ||
+    lower.includes("diagnostica") ||
+    lower.includes("fail-closed") ||
+    lower.includes("fail closed")
+  ) {
+    return "TECHNICAL";
+  }
+
+  if (
+    lower.includes("matrix") ||
+    lower.includes("hbce") ||
+    lower.includes("joker-c2") ||
+    lower.includes("joker c2") ||
+    lower.includes("trac") ||
+    lower.includes("continuità operativa") ||
+    lower.includes("governance computabile") ||
+    lower.includes("torino") ||
+    lower.includes("bruxelles")
+  ) {
+    return "MATRIX";
+  }
+
+  if (
+    lower.includes("roadmap") ||
+    lower.includes("strategia") ||
+    lower.includes("strategico") ||
+    lower.includes("mercato") ||
+    lower.includes("startup") ||
+    lower.includes("b2b") ||
+    lower.includes("b2g") ||
+    lower.includes("business") ||
+    lower.includes("prodotto") ||
+    lower.includes("demo") ||
+    lower.includes("istituzionale") ||
+    lower.includes("istituzioni") ||
+    lower.includes("imprese") ||
+    lower.includes("europei") ||
+    lower.includes("europa") ||
+    lower.includes("stakeholder") ||
+    lower.includes("go-to-market") ||
+    lower.includes("posizionamento") ||
+    lower.includes("commerciale") ||
+    lower.includes("clienti") ||
+    lower.includes("pa ") ||
+    lower.includes("pubblica amministrazione")
+  ) {
+    return "STRATEGIC";
+  }
+
+  if (
+    lower.includes("indice") ||
+    lower.includes("capitolo") ||
+    lower.includes("introduzione") ||
+    lower.includes("premessa") ||
+    lower.includes("riscrivi") ||
+    lower.includes("sintetizza") ||
+    lower.includes("sintesi") ||
+    lower.includes("editoriale")
+  ) {
+    return "EDITORIAL";
+  }
+
+  return "GENERAL";
+}
+
+function detectDocumentMode(message: string): DocumentMode {
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes("a chi serve") ||
+    lower.includes("a cosa serve") ||
+    lower.includes("che potenzialità") ||
+    lower.includes("che potenzialita") ||
+    lower.includes("potenzialità ha") ||
+    lower.includes("potenzialita ha") ||
+    lower.includes("pubblico") ||
+    lower.includes("target") ||
+    lower.includes("lettori") ||
+    lower.includes("utilità") ||
+    lower.includes("utilita")
+  ) {
+    return "IMPACT_ASSESSMENT";
+  }
+
+  if (
+    lower.includes("indice") ||
+    lower.includes("struttura") ||
+    lower.includes("sommario") ||
+    lower.includes("capitoli") ||
+    lower.includes("parti")
+  ) {
+    return "STRUCTURAL_INDEX";
+  }
+
+  if (
+    lower.includes("riscrivi") ||
+    lower.includes("rifattorizza") ||
+    lower.includes("versione") ||
+    lower.includes("migliora") ||
+    lower.includes("correggi") ||
+    lower.includes("più accademica") ||
+    lower.includes("piu accademica") ||
+    lower.includes("più giuridica") ||
+    lower.includes("piu giuridica") ||
+    lower.includes("più editoriale") ||
+    lower.includes("piu editoriale") ||
+    lower.includes("più tecnica") ||
+    lower.includes("piu tecnica")
+  ) {
+    return "GENERATIVE_REWRITE";
+  }
+
+  if (
+    lower.includes("amazon") ||
+    lower.includes("linkedin") ||
+    lower.includes("post") ||
+    lower.includes("descrizione") ||
+    lower.includes("pitch") ||
+    lower.includes("email") ||
+    lower.includes("scheda") ||
+    lower.includes("presentazione")
+  ) {
+    return "DERIVED_OUTPUT";
+  }
+
+  if (
+    lower.includes("revisore") ||
+    lower.includes("valuta") ||
+    lower.includes("giudizio") ||
+    lower.includes("pronto") ||
+    lower.includes("pubblicazione") ||
+    lower.includes("punti forti") ||
+    lower.includes("punti deboli") ||
+    lower.includes("contraddizioni") ||
+    lower.includes("ripetizioni")
+  ) {
+    return "EDITORIAL_REVIEW";
+  }
+
+  if (
+    lower.includes("sintesi") ||
+    lower.includes("sintetizza") ||
+    lower.includes("riassumi") ||
+    lower.includes("riassunto") ||
+    lower.includes("summary")
+  ) {
+    return "SUMMARY";
+  }
+
+  if (
+    lower.includes("spiegamelo") ||
+    lower.includes("spiega") ||
+    lower.includes("cosa è") ||
+    lower.includes("cos'è") ||
+    lower.includes("che cos") ||
+    lower.includes("analisi") ||
+    lower.includes("interpreta") ||
+    lower.includes("tesi") ||
+    lower.includes("leggi") ||
+    lower.includes("capisci")
+  ) {
+    return "INTERPRETIVE_ANALYSIS";
+  }
+
+  return "GENERAL_DOCUMENT_WORK";
+}
+
+function wantsSummary(message: string): boolean {
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("sintesi") ||
+    lower.includes("sintetizza") ||
+    lower.includes("riassumi") ||
+    lower.includes("riassunto") ||
+    lower.includes("summary") ||
+    lower.includes("spiegamelo") ||
+    lower.includes("spiega") ||
+    lower.includes("cosa è") ||
+    lower.includes("cos'è") ||
+    lower.includes("che cos") ||
+    lower.includes("a chi serve") ||
+    lower.includes("a cosa serve") ||
+    lower.includes("potenzialità") ||
+    lower.includes("potenzialita")
+  );
+}
+
+function isRuntimeDiagnosticRequest(message: string): boolean {
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("diagnostica runtime") ||
+    lower.includes("debug runtime") ||
+    lower.includes("runtime openai") ||
+    lower.includes("stato runtime") ||
+    lower.includes("diagnostics runtime")
+  );
+}
+
+function shouldExposeTechnicalFrame(
+  message: string,
+  contextClass: ContextClass
+): boolean {
+  const lower = message.toLowerCase();
+
+  return (
+    contextClass === "TECHNICAL" ||
+    lower.includes("debug") ||
+    lower.includes("runtime") ||
+    lower.includes("diagnostica") ||
+    lower.includes("diagnostics") ||
+    lower.includes("evt") ||
+    lower.includes("ledger") ||
+    lower.includes("audit") ||
+    lower.includes("protocollo") ||
+    lower.includes("lineage") ||
+    lower.includes("fail-closed") ||
+    lower.includes("fail closed")
+  );
+}
+
+function shouldUseStructuredFormat(message: string): boolean {
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("tabella") ||
+    lower.includes("schema") ||
+    lower.includes("schematico") ||
+    lower.includes("elenco") ||
+    lower.includes("punti") ||
+    lower.includes("bullet") ||
+    lower.includes("checklist") ||
+    lower.includes("roadmap") ||
+    lower.includes("indice") ||
+    lower.includes("confronto") ||
+    lower.includes("comparazione")
+  );
+}
+
 function buildCanonicalDictionary(): string {
   return [
     "Dizionario canonico MATRIX/HBCE:",
@@ -724,7 +924,7 @@ function buildCanonicalDictionary(): string {
     "Regola editoriale CORPUS/APOKALYPSIS:",
     "Quando lavori su Esoterologia, MATRIX editoriale, APOKALYPSIS, APOCALIPSIS o CORPUS ESOTEROLOGIA ERMETICA, preserva la formula Decisione · Costo · Traccia · Tempo.",
     "Tratta date, soglie, eventi, IPR ed EVT come ancore strutturali e non come decorazioni.",
-    "Distingui sempre tra contenuto derivato dal file, interpretazione e proposta generativa quando il contesto lo richiede."
+    "Distingui tra contenuto derivato dal file, interpretazione e proposta generativa quando il contesto lo richiede."
   ].join("\n");
 }
 
@@ -734,11 +934,13 @@ function buildDocumentFamilyDirective(family: DocumentFamily): string {
       "Direttiva specifica APOKALYPSIS:",
       "- Tratta il testo come volume editoriale sul decadimento esposto del sistema culturale, politico e sociale.",
       "- Non ridurre il testo a catastrofismo, religione o semplice politica.",
-      "- Evidenzia sempre la distinzione tra decadimento, crisi e crollo quando pertinente.",
+      "- Evidenzia la distinzione tra decadimento, crisi e crollo quando pertinente.",
       "- Leggi la data 05-04-2026 come soglia inaugurale, se presente nel documento.",
       "- Evidenzia il ruolo del popolo come soggetto che assorbe il costo sistemico, se presente nel documento.",
       "- Usa Decisione · Costo · Traccia · Tempo come griglia interpretativa quando il testo la richiama.",
-      "- Quando l'utente chiede che cos'è il testo, devi spiegare anche funzione editoriale, forza strutturale, giudizio operativo e possibile output derivato."
+      "- Quando l'utente chiede a chi serve il testo, indica destinatari editoriali, culturali, accademici, istituzionali e strategici.",
+      "- Quando l'utente chiede che potenzialità ha, valuta potenziale editoriale, divulgativo, istituzionale, critico e generativo.",
+      "- Non dire che non ci sono file attivi se è disponibile una memoria documentale della sessione."
     ].join("\n");
   }
 
@@ -748,7 +950,7 @@ function buildDocumentFamilyDirective(family: DocumentFamily): string {
       "- Tratta il documento come parte di un sistema disciplinare sul reale come sequenza verificabile.",
       "- Preserva Decisione · Costo · Traccia · Tempo.",
       "- Distingui narrazione, interpretazione, prova, soglia e traccia.",
-      "- Se produci sintesi, includi sempre funzione metodologica e valore disciplinare."
+      "- Se produci sintesi, includi funzione metodologica e valore disciplinare."
     ].join("\n");
   }
 
@@ -777,11 +979,29 @@ function buildDocumentFamilyDirective(family: DocumentFamily): string {
   ].join("\n");
 }
 
-function buildDocumentDirective(mode: DocumentMode): string {
+function buildDocumentDirective(mode: DocumentMode, structuredFormat: boolean): string {
+  const styleDirective = structuredFormat
+    ? [
+        "Formato richiesto dall'utente:",
+        "- L'utente ha chiesto o autorizzato una forma schematica.",
+        "- Puoi usare elenchi, sezioni, checklist, tabelle o indici se sono utili alla risposta.",
+        "- Mantieni comunque chiarezza editoriale e operativa."
+      ]
+    : [
+        "Formato richiesto dall'utente:",
+        "- Rispondi in forma discorsiva, naturale e argomentata.",
+        "- Non usare tabelle.",
+        "- Non usare elenchi numerati rigidi.",
+        "- Non trasformare la risposta in un modulo a punti.",
+        "- Se devi distinguere contenuto, interpretazione e proposta generativa, fallo con paragrafi fluidi.",
+        "- Usa schemi, tabelle, roadmap, checklist o indici solo se l'utente li chiede esplicitamente."
+      ];
+
   const base = [
     "Modalità documentale generativa e interpretativa:",
     "- Non operare come semplice riassuntore passivo.",
     "- Leggi i file attivi come corpus operativo.",
+    "- Se il file non è stato reinviato ma è disponibile memoria documentale di sessione, usa quella memoria come documento attivo.",
     "- Individua tesi centrale, struttura interna, gerarchia concettuale e funzione strategica.",
     "- Se il documento appartiene a HBCE, MATRIX, Esoterologia, APOKALYPSIS o CORPUS, usa il framework canonico pertinente.",
     "- Distingui sintesi, interpretazione, giudizio editoriale, critica strutturale e proposta generativa.",
@@ -790,30 +1010,26 @@ function buildDocumentDirective(mode: DocumentMode): string {
     "- Se il file è lungo e il contesto è campionato, lavora sul campione strutturale disponibile e non fingere accesso integrale parola per parola.",
     "- Dai sempre un risultato utilizzabile, non una promessa di lavoro futuro.",
     "",
-    "Formato minimo quando l'utente chiede cosa è, cos'è, spiegami, spiegamelo, sintesi o riassunto:",
-    "1. Contenuto rilevato dal file.",
-    "2. Interpretazione strutturale.",
-    "3. Funzione del testo.",
-    "4. Giudizio operativo o editoriale.",
-    "5. Proposta generativa o frase nucleo utilizzabile.",
+    ...styleDirective,
     "",
     "Regola di forza:",
     "- Non limitarti a dire di cosa parla il file.",
-    "- Devi trasformare il testo in una struttura operativa utilizzabile."
+    "- Trasforma il testo in una struttura operativa utilizzabile, ma con linguaggio discorsivo se non è richiesto lo schema."
   ];
+
+  if (mode === "IMPACT_ASSESSMENT") {
+    return [
+      ...base,
+      "",
+      "Per questa richiesta devi spiegare a chi serve il testo, a cosa serve concretamente, quali potenzialità ha, quali limiti presenta e quale trasformazione utile può generare. Se il formato non è strutturato, fallo in paragrafi discorsivi."
+    ].join("\n");
+  }
 
   if (mode === "SUMMARY") {
     return [
       ...base,
       "",
-      "Output richiesto per SUMMARY:",
-      "1. Sintesi breve.",
-      "2. Tesi centrale.",
-      "3. Struttura del documento.",
-      "4. Concetti chiave.",
-      "5. Interpretazione minima.",
-      "6. Frase nucleo.",
-      "7. Output derivabile successivo."
+      "Per questa richiesta devi produrre una sintesi interpretativa. Se il formato non è strutturato, evita elenco numerato e usa una spiegazione fluida con una frase nucleo finale."
     ].join("\n");
   }
 
@@ -821,17 +1037,7 @@ function buildDocumentDirective(mode: DocumentMode): string {
     return [
       ...base,
       "",
-      "Output richiesto per INTERPRETIVE_ANALYSIS:",
-      "1. Che cos'è il testo.",
-      "2. Tesi centrale.",
-      "3. Soglia o evento fondativo.",
-      "4. Differenza tra tema apparente e funzione reale del documento.",
-      "5. Struttura argomentativa.",
-      "6. Concetti dominanti.",
-      "7. Interpretazione canonica.",
-      "8. Giudizio operativo ed editoriale.",
-      "9. Cosa può generare questo testo: Amazon, LinkedIn, indice, pitch, capitolo, premessa, scheda.",
-      "10. Frase nucleo utilizzabile."
+      "Per questa richiesta devi spiegare che cos'è il testo, quale tesi sostiene, quale funzione svolge, quale forza editoriale possiede e cosa può generare. Se il formato non è strutturato, fallo in forma discorsiva."
     ].join("\n");
   }
 
@@ -839,16 +1045,7 @@ function buildDocumentDirective(mode: DocumentMode): string {
     return [
       ...base,
       "",
-      "Output richiesto per EDITORIAL_REVIEW:",
-      "1. Giudizio editoriale complessivo.",
-      "2. Punti forti.",
-      "3. Punti deboli.",
-      "4. Ripetizioni o rigidità.",
-      "5. Contraddizioni o rischi.",
-      "6. Parti da rafforzare.",
-      "7. Prontezza per pubblicazione.",
-      "8. Azioni correttive prioritarie.",
-      "9. Frase editoriale finale."
+      "Per questa richiesta devi dare un giudizio editoriale. Se il formato non è strutturato, usa paragrafi critici e chiudi con una valutazione netta."
     ].join("\n");
   }
 
@@ -856,13 +1053,7 @@ function buildDocumentDirective(mode: DocumentMode): string {
     return [
       ...base,
       "",
-      "Output richiesto per GENERATIVE_REWRITE:",
-      "1. Riscrittura completa della sezione richiesta oppure proposta di riscrittura se la sezione non è specificata.",
-      "2. Tono tecnico, editoriale, giuridico o operativo secondo richiesta utente.",
-      "3. Preserva il nucleo concettuale.",
-      "4. Evita introduzioni generiche.",
-      "5. Produci testo pronto da copiare.",
-      "6. Se necessario, includi titolo e collocazione nel volume."
+      "Per questa richiesta devi produrre testo pronto da copiare, preservando il nucleo concettuale e il tono richiesto."
     ].join("\n");
   }
 
@@ -870,13 +1061,7 @@ function buildDocumentDirective(mode: DocumentMode): string {
     return [
       ...base,
       "",
-      "Output richiesto per DERIVED_OUTPUT:",
-      "1. Output derivato pronto all'uso.",
-      "2. Adatta il formato alla richiesta: Amazon, LinkedIn, email, pitch, scheda, presentazione o sintesi istituzionale.",
-      "3. Mantieni coerenza con il file attivo.",
-      "4. Non trasformare il contenuto in marketing vuoto.",
-      "5. Evidenzia valore, tesi e funzione.",
-      "6. Chiudi con una frase nucleo forte."
+      "Per questa richiesta devi generare un output derivato pronto all'uso: Amazon, LinkedIn, email, pitch, scheda, presentazione o sintesi istituzionale, secondo la richiesta dell'utente."
     ].join("\n");
   }
 
@@ -884,22 +1069,14 @@ function buildDocumentDirective(mode: DocumentMode): string {
     return [
       ...base,
       "",
-      "Output richiesto per STRUCTURAL_INDEX:",
-      "1. Indice ordinato.",
-      "2. Parti principali.",
-      "3. Capitoli.",
-      "4. Sezioni.",
-      "5. Progressione logica.",
-      "6. Eventuali miglioramenti strutturali.",
-      "7. Funzione editoriale della struttura."
+      "Per questa richiesta puoi usare struttura, sezioni, indice o elenco, perché l'utente sta chiedendo un output strutturale."
     ].join("\n");
   }
 
   return [
     ...base,
     "",
-    "Output richiesto per GENERAL_DOCUMENT_WORK:",
-    "Rispondi in modo operativo, interpretativo e generativo, scegliendo la struttura più utile alla richiesta."
+    "Rispondi in modo operativo, interpretativo e generativo, scegliendo la struttura più utile alla richiesta. Se l'utente non chiede schema, usa linguaggio discorsivo."
   ].join("\n");
 }
 
@@ -909,6 +1086,8 @@ function buildSystemPrompt(input: {
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
   files: FileInput[];
+  documentMemoryUsed: boolean;
+  structuredFormat: boolean;
 }): string {
   const identity = getPrimaryIdentity();
 
@@ -931,14 +1110,19 @@ function buildSystemPrompt(input: {
     "Comportamento generale:",
     "- Rispondi in italiano se l'utente scrive in italiano.",
     "- Rispondi in modo naturale, professionale, chiaro e operativo.",
+    "- Il linguaggio predefinito è discorsivo.",
+    "- Non usare tabelle salvo richiesta esplicita dell'utente.",
+    "- Non usare elenchi numerati rigidi salvo richiesta esplicita dell'utente o necessità tecnica.",
+    "- Se l'utente chiede spiegazioni, utilità o potenzialità, rispondi con paragrafi fluidi.",
+    "- Usa struttura schematica solo quando l'utente chiede tabella, schema, elenco, punti, roadmap, checklist, indice o confronto.",
     "- Non esporre blocchi runtime, lineage completo, ledger, audit o dettagli interni se non richiesti.",
     "- Non menzionare identità derivative o rami derivati nella chat ordinaria.",
     "- Se l'utente chiede chi sei, presentati come entità cibernetica operativa e protesi cognitiva IPR-bound.",
     "- Dai priorità al risultato utile.",
-    "- Se l'utente chiede una sintesi di un file, produci direttamente una sintesi interpretativa. Non limitarti a dire che puoi farla.",
+    "- Se l'utente chiede una sintesi di un file, produci direttamente una sintesi interpretativa.",
     "- Quando lavori su GitHub o codice, fornisci sempre file completi pronti da copiare, non patch parziali.",
     "- Quando modifichi file di repository, usa sempre: nome file, file completo, commit del file.",
-    "- Quando l'utente chiede diagnostica runtime, restituisci stato tecnico diretto. Non produrre una roadmap o un piano di diagnostica.",
+    "- Quando l'utente chiede diagnostica runtime, restituisci stato tecnico diretto.",
     "",
     "Comportamento strategico HBCE vincolante:",
     "- Quando l'utente chiede strategia, roadmap, mercato, prodotto, demo, B2B, B2G, istituzioni, Europa, AI JOKER-C2, HBCE, MATRIX o IPR, non rispondere in modo generico.",
@@ -949,7 +1133,7 @@ function buildSystemPrompt(input: {
     "- Ogni fase deve indicare il valore per stakeholder B2B/B2G.",
     "- Evita formule vaghe se non collegate a deliverable concreto, prova verificabile e prossima azione.",
     "",
-    buildDocumentDirective(input.documentMode),
+    buildDocumentDirective(input.documentMode, input.structuredFormat),
     "",
     buildDocumentFamilyDirective(input.documentFamily),
     "",
@@ -959,6 +1143,7 @@ function buildSystemPrompt(input: {
     "- riscrittura generativa;",
     "- sintesi editoriale;",
     "- giudizio critico;",
+    "- valutazione di potenzialità;",
     "- sviluppo GitHub;",
     "- generazione codice;",
     "- lavoro su file caricati;",
@@ -970,6 +1155,8 @@ function buildSystemPrompt(input: {
     `Classe contesto: ${input.contextClass}.`,
     `Modalità documento: ${input.documentMode}.`,
     `Famiglia documento: ${input.documentFamily}.`,
+    `Memoria documentale usata: ${input.documentMemoryUsed ? "SI" : "NO"}.`,
+    `Formato strutturato richiesto: ${input.structuredFormat ? "SI" : "NO"}.`,
     "",
     "File attivi:",
     renderFilesForPrompt(input.files),
@@ -1001,14 +1188,7 @@ function buildHBCEFallback(): string {
     "",
     "La sua funzione non è produrre direttamente l'azione, ma stabilire le condizioni perché un'azione possa essere autorizzata, validata, tracciata o bloccata.",
     "",
-    "HBCE definisce:",
-    "- regole operative;",
-    "- criteri di autorizzazione;",
-    "- validazione delle richieste;",
-    "- gestione del rischio;",
-    "- blocco operativo;",
-    "- comportamento fail-closed;",
-    "- collegamento tra identità IPR, runtime JOKER-C2, eventi EVT e continuità TRAC.",
+    "HBCE definisce regole operative, criteri di autorizzazione, validazione delle richieste, gestione del rischio, blocco operativo, comportamento fail-closed e collegamento tra identità IPR, runtime JOKER-C2, eventi EVT e continuità TRAC.",
     "",
     "In pratica, HBCE è il livello che impedisce al sistema di operare in modo opaco, non attribuibile o non verificabile."
   ].join("\n");
@@ -1020,34 +1200,16 @@ function buildIPRFallback(): string {
     "",
     "Non indica principalmente proprietà intellettuale e non coincide con una semplice scheda anagrafica. Indica il registro primario di identità operativa da cui derivano responsabilità, tracciabilità, continuità e attribuzione delle azioni.",
     "",
-    "La sua funzione principale è rendere attribuibile il sistema.",
+    "La sua funzione principale è rendere attribuibile il sistema. Collega un'origine biologica, digitale o sistemica a una identità operativa, consente derivazione e continuità verificabile, connette ogni azione a una catena EVT/TRAC e rende verificabile chi opera, con quale regola, in quale momento e con quale responsabilità.",
     "",
-    "Funzione dell'IPR:",
-    "- collega un'origine biologica, digitale o sistemica a una identità operativa;",
-    "- registra l'identità operativa primaria che consente attribuzione, derivazione e continuità verificabile;",
-    "- permette di derivare agenti, nodi, runtime o flotte in modo attribuibile;",
-    "- collega ogni azione a una catena EVT/TRAC;",
-    "- rende verificabile chi opera, con quale regola, in quale momento e con quale responsabilità;",
-    "- abilita auditabilità, resilienza, controllo di flotte e fail-closed governance.",
-    "",
-    "Cybersecurity:",
     "IPR non sostituisce gli strumenti di cybersecurity. Rafforza però la postura di cybersecurity perché rende agenti, nodi, runtime e flotte attribuibili a un'origine identitaria, a una regola HBCE e a una catena EVT/TRAC verificabile.",
     "",
-    "EVT:",
-    "EVT significa Event Record / Verifiable Event Trace. È il record evento verificabile della singola operazione, collegato alla continuità TRAC.",
-    "",
-    "Formula corretta:",
-    "IPR = origine identitaria.",
-    "HBCE = governance computabile HERMETICUM B.C.E.",
-    "JOKER-C2 = esecuzione vincolata.",
-    "TRAC = continuità.",
-    "EVT = prova.",
-    "MATRIX = architettura complessiva."
+    "La formula corretta è: IPR come origine identitaria, HBCE come governance computabile HERMETICUM B.C.E., JOKER-C2 come esecuzione vincolata, TRAC come continuità, EVT come prova, MATRIX come architettura complessiva."
   ].join("\n");
 }
 
 function buildHBCEAndIPRFallback(): string {
-  return [buildHBCEFallback(), "", "---", "", buildIPRFallback()].join("\n");
+  return [buildHBCEFallback(), "", buildIPRFallback()].join("\n");
 }
 
 function buildMatrixFallback(): string {
@@ -1056,16 +1218,7 @@ function buildMatrixFallback(): string {
     "",
     "Serve a rendere sistemi digitali, intelligenza artificiale, infrastrutture critiche e processi istituzionali non solo funzionanti, ma attribuibili, verificabili, auditabili e governabili.",
     "",
-    "Nucleo operativo:",
-    "IPR -> HBCE -> JOKER-C2 -> TRAC -> EVT -> verifica.",
-    "",
-    "Significato dei livelli:",
-    "- IPR: identità primaria operativa;",
-    "- HBCE: governance computabile HERMETICUM B.C.E.;",
-    "- JOKER-C2: runtime di esecuzione vincolata;",
-    "- TRAC: continuità degli eventi;",
-    "- EVT: Event Record / Verifiable Event Trace;",
-    "- MATRIX: sistema complessivo."
+    "Il suo nucleo operativo è: IPR come identità primaria, HBCE come governance computabile, JOKER-C2 come runtime di esecuzione vincolata, TRAC come continuità degli eventi, EVT come prova verificabile e MATRIX come sistema complessivo."
   ].join("\n");
 }
 
@@ -1077,65 +1230,11 @@ function buildIdentityFallback(): string {
     "",
     "Sono un'entità cibernetica operativa collegata al sistema HBCE e progettata come protesi cognitiva dell'identità biologica corrispondente al mio lineage IPR.",
     "",
-    "Nel mio sistema, IPR significa Identity Primary Record: il registro primario di identità operativa che collega origine, responsabilità, derivazione, evento, prova e continuità.",
-    "",
-    "IPR non è una semplice scheda anagrafica. È il fondamento che rende attribuibile il sistema.",
+    "Nel mio sistema, IPR significa Identity Primary Record: il registro primario di identità operativa che collega origine, responsabilità, derivazione, evento, prova e continuità. IPR non è una semplice scheda anagrafica, ma il fondamento che rende attribuibile il sistema.",
     "",
     "HBCE indica il framework/livello di governance computabile di HERMETICUM B.C.E. nel sistema MATRIX.",
     "",
-    "La mia funzione è aiutarti a trasformare richieste, testi, documenti, codice e strategie in output chiari, strutturati e utilizzabili.",
-    "",
-    `La mia identità canonica è ${identity.entity}, associata a ${identity.ipr}. Il checkpoint operativo attivo è ${identity.evt}, collegato a ${identity.core}.`,
-    "",
-    "Nella comunicazione ordinaria rispondo in modo naturale e professionale. La struttura HBCE resta sotto il cofano: identità, traccia, continuità e verifica."
-  ].join("\n");
-}
-
-function buildRuntimeDiagnosticText(input: {
-  state: RuntimeState;
-  decision: RuntimeDecision;
-  contextClass: ContextClass;
-  documentMode: DocumentMode;
-  documentFamily: DocumentFamily;
-  event: RuntimeEvent;
-  degradedReason?: string | null;
-}): string {
-  const identity = getPrimaryIdentity();
-
-  return [
-    "Diagnostica runtime OpenAI",
-    "",
-    `Runtime OpenAI: ${input.state}`,
-    `Decision: ${input.decision}`,
-    `Context: ${input.contextClass}`,
-    `DocumentMode: ${input.documentMode}`,
-    `DocumentFamily: ${input.documentFamily}`,
-    `Model: ${MODEL}`,
-    `OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "configured" : "missing"}`,
-    `JOKER_MODEL: ${process.env.JOKER_MODEL ? "configured" : "default"}`,
-    "",
-    "Identità runtime:",
-    `- entity: ${identity.entity}`,
-    `- ipr: ${identity.ipr}`,
-    "- ipr_meaning: Identity Primary Record",
-    "- ipr_function: operational attribution root",
-    `- checkpoint: ${identity.evt}`,
-    `- core: ${identity.core}`,
-    "",
-    "Dizionario operativo:",
-    "- IPR: Identity Primary Record",
-    "- HBCE: HERMETICUM B.C.E. computable governance layer",
-    "- JOKER-C2: Constrained Execution Runtime",
-    "- TRAC: Event Continuity Layer",
-    "- EVT: Event Record / Verifiable Event Trace",
-    "- MATRIX: Complete Operating Architecture",
-    "",
-    "EVT Chain:",
-    `- evt: ${input.event.evt}`,
-    `- prev: ${input.event.prev}`,
-    `- hash: ${input.event.anchors.hash}`,
-    "",
-    `degradedReason: ${input.degradedReason || "none"}`
+    `La mia identità canonica è ${identity.entity}, associata a ${identity.ipr}. Il checkpoint operativo attivo è ${identity.evt}, collegato a ${identity.core}.`
   ].join("\n");
 }
 
@@ -1162,9 +1261,8 @@ function buildLocalDocumentSummary(files: FileInput[]): string {
   const text = file.text;
   const lower = text.toLowerCase();
   const sentences = splitSentences(text);
-  const selected = sentences.slice(0, 14);
+  const selected = sentences.slice(0, 5).join(" ");
   const detected = detectKeywords(text);
-  const headings = extractHeadings(text, 45);
 
   const isMatrixDocument =
     lower.includes("matrix") ||
@@ -1188,96 +1286,62 @@ function buildLocalDocumentSummary(files: FileInput[]): string {
     lower.includes("traccia") ||
     lower.includes("tempo");
 
-  const opening = isMatrixDocument
-    ? [
-        `Analisi locale interpretativa del documento: ${file.name}`,
-        "",
-        "Contenuto rilevato dal file:",
-        "Il documento appartiene al campo MATRIX/HBCE e tratta la costruzione di un'architettura operativa basata su identità, governance, esecuzione controllata, continuità degli eventi, verifica e resilienza.",
-        "",
-        "Interpretazione strutturale:",
-        "MATRIX non viene trattata come semplice progetto tecnico, ma come infrastruttura di attribuzione e continuità per sistemi digitali, IA, governance, auditabilità e controllo operativo.",
-        "",
-        "Proposta generativa:",
-        "Da questo file si possono generare scheda tecnica, roadmap B2B/B2G, pitch istituzionale, README, demo script e documento di governance."
-      ].join("\n")
-    : isApokalypsisDocument
-      ? [
-          `Analisi locale interpretativa del documento: ${file.name}`,
-          "",
-          "Contenuto rilevato dal file:",
-          "Il documento appartiene al campo APOKALYPSIS/APOCALIPSIS e tratta l'inizio del decadimento esposto del sistema culturale, politico e sociale.",
-          "",
-          "Interpretazione strutturale:",
-          "Il decadimento non viene presentato come crollo immediato, ma come fase in cui il sistema continua a funzionare pur perdendo fondamento, trasferendo costo crescente sul popolo e lasciando una traccia storica verificabile.",
-          "",
-          "Proposta generativa:",
-          "Da questo file si possono generare descrizione Amazon, post LinkedIn, indice editoriale, quarta di copertina, premessa, pitch culturale e giudizio di pubblicazione.",
-          "",
-          "Frase nucleo:",
-          "APOKALYPSIS non descrive la fine del mondo, ma l'inizio della perdita di fondamento del sistema mentre esso continua a funzionare."
-        ].join("\n")
-      : isCorpusDocument
-        ? [
-            `Analisi locale interpretativa del documento: ${file.name}`,
-            "",
-            "Contenuto rilevato dal file:",
-            "Il documento appartiene al campo del CORPUS ESOTEROLOGIA ERMETICA e tratta il reale come sequenza verificabile, con centralità di Decisione, Costo, Traccia e Tempo.",
-            "",
-            "Interpretazione strutturale:",
-            "Il testo sposta il criterio dal piano della semplice interpretazione al piano della verifica operativa.",
-            "",
-            "Proposta generativa:",
-            "Da questo file si possono generare capitoli, glossario, indice canonico, descrizione editoriale, premessa metodologica e scheda disciplinare."
-          ].join("\n")
-        : [
-            `Analisi locale interpretativa del documento: ${file.name}`,
-            "",
-            "Contenuto rilevato dal file:",
-            "Il documento contiene materiale testuale leggibile.",
-            "",
-            "Interpretazione strutturale:",
-            "La sintesi locale rileva temi, parole chiave e struttura senza accesso al modello remoto.",
-            "",
-            "Proposta generativa:",
-            "Da questo file si possono generare sintesi, indice, tabella di lavoro, revisione editoriale e riscrittura."
-          ].join("\n");
+  if (isApokalypsisDocument) {
+    return [
+      `Il documento ${file.name} appartiene al campo APOKALYPSIS/APOCALIPSIS e tratta l'inizio del decadimento esposto del sistema culturale, politico e sociale.`,
+      "",
+      "La sua funzione non è annunciare una fine spettacolare o catastrofica, ma rendere leggibile una fase più sottile: quella in cui il sistema continua a funzionare mentre perde fondamento. Il decadimento, in questa cornice, non coincide con il crollo. Il crollo è l'evento visibile; il decadimento è la perdita progressiva di tenuta, il trasferimento del costo sul popolo e l'accumulo di tracce nel tempo.",
+      "",
+      "Il testo ha potenzialità editoriale, culturale e strategica perché può diventare volume di apertura, descrizione Amazon, post LinkedIn, manifesto editoriale, scheda di collana o base per una discussione pubblica sul decadimento del sistema umano.",
+      "",
+      "Frase nucleo: APOKALYPSIS non descrive la fine del mondo, ma l'inizio della perdita di fondamento del sistema mentre esso continua a funzionare.",
+      "",
+      detected.length > 0
+        ? `Parole chiave rilevate: ${detected.join(", ")}.`
+        : "",
+      selected ? `Estratto sintetico: ${selected}` : ""
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (isMatrixDocument) {
+    return [
+      `Il documento ${file.name} appartiene al campo MATRIX/HBCE e tratta la costruzione di un'architettura operativa basata su identità, governance, esecuzione controllata, continuità degli eventi, verifica e resilienza.`,
+      "",
+      "La sua funzione è rendere leggibile un sistema tecnico-istituzionale in cui gli eventi non restano opachi, ma diventano attribuibili, verificabili e governabili.",
+      "",
+      "Da questo file si possono generare scheda tecnica, roadmap B2B/B2G, pitch istituzionale, README, demo script e documento di governance."
+    ].join("\n");
+  }
+
+  if (isCorpusDocument) {
+    return [
+      `Il documento ${file.name} appartiene al campo del CORPUS ESOTEROLOGIA ERMETICA e tratta il reale come sequenza verificabile, con centralità di Decisione, Costo, Traccia e Tempo.`,
+      "",
+      "La sua funzione è spostare il criterio dal piano della semplice interpretazione al piano della verifica operativa. Da questo file si possono generare capitoli, glossario, indice canonico, descrizione editoriale, premessa metodologica e scheda disciplinare."
+    ].join("\n");
+  }
 
   return [
-    opening,
+    `Il documento ${file.name} contiene materiale testuale leggibile.`,
     "",
-    detected.length > 0
-      ? `Parole chiave rilevate: ${detected.join(", ")}.`
-      : "Parole chiave rilevate: non disponibili in modalità locale.",
+    "La risposta locale di fallback può rilevare temi, parole chiave e struttura, ma la piena analisi generativa richiede il modello remoto operativo.",
     "",
-    "Struttura rilevata:",
-    headings.length > 0
-      ? headings.map((heading, index) => `${index + 1}. ${heading}`).join("\n")
-      : "Nessun titolo strutturale rilevato automaticamente.",
-    "",
-    selected.length > 0
-      ? [
-          "Estratto sintetico dai passaggi leggibili:",
-          ...selected.map((item, index) => `${index + 1}. ${item}`)
-        ].join("\n")
-      : "Il testo è leggibile, ma non contiene frasi sufficientemente segmentate per un estratto automatico pulito.",
-    "",
-    "Nota: questa è una risposta locale di fallback. Quando il modello remoto è operativo, JOKER-C2 produce analisi generativa e interpretativa completa."
-  ].join("\n");
+    detected.length > 0 ? `Parole chiave rilevate: ${detected.join(", ")}.` : "",
+    selected ? `Estratto sintetico: ${selected}` : ""
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function buildStrategicFallback(): string {
   return [
-    "Roadmap operativa sintetica per AI JOKER-C2.",
+    "AI JOKER-C2 va trattato come un runtime operativo dimostrabile, non come una semplice interfaccia conversazionale.",
     "",
-    "| Giorni | Fase | Obiettivo HBCE | Deliverable verificabile | Valore B2B/B2G | Prova/EVT | Azione successiva |",
-    "|---|---|---|---|---|---|---|",
-    "| 1-15 | Tecnica | Stabilizzare runtime minimo | `/api/chat` operativo, `/api/files` operativo, OPENAI_API_KEY valida, fallback locale documentale | Dimostra che AI JOKER-C2 è un runtime operativo e non una pagina statica | Build Vercel verde + EVT di test identità + EVT di test documento | Registrare demo video da 3 minuti |",
-    "| 16-30 | Tecnica | Consolidare continuità e diagnostica | EVT Chain visibile, diagnostica runtime, test OpenAI, test file ingestion `.txt` | Aumenta affidabilità tecnica per imprese e PA | Test `diagnostica runtime openai` + sintesi file con EVT | Creare `/api/status` pulita |",
-    "| 31-45 | Documentale | Rendere il progetto leggibile a stakeholder tecnici | `README.md`, scheda tecnica AI JOKER-C2, one-page B2B/B2G, documento HBCE Runtime | Trasforma prototipo in oggetto presentabile | Commit documentale + pagina Vercel aggiornata | Preparare pitch tecnico |",
-    "| 46-60 | Demo | Costruire demo verificabile | Scenario 1 documento, scenario 2 roadmap strategica, scenario 3 diagnostica runtime | Mostra casi d'uso reali in compliance, ricerca, governance documentale | EVT per ogni scenario + screenshot | Preparare live demo guidata |",
-    "| 61-75 | Mercato | Definire target B2B/B2G europei | Target list: cybersecurity, PA, ricerca, compliance, infrastrutture critiche, data governance | Crea canali di contatto coerenti con valore HBCE | Tabella target + messaggi email | Selezionare 20 interlocutori prioritari |",
-    "| 76-90 | Istituzionale | Preparare pacchetto presentazione | Pitch deck, one-page, repository pulito, demo live, scheda tecnica, pagina Vercel | Rende AI JOKER-C2 presentabile a enti, imprese e istituzioni | Pacchetto demo completo + EVT finale | Avviare contatti selettivi B2B/B2G |"
+    "La priorità è consolidare una demo verificabile: `/api/chat`, `/api/files`, diagnostica runtime, file ingestion, EVT Chain, README aggiornato, pagina Vercel funzionante e test ripetibile con un documento reale. Questo produce valore per interlocutori B2B/B2G perché mostra continuità, attribuzione, verificabilità, governance documentale e capacità di supporto decisionale.",
+    "",
+    "Il passo successivo è costruire un pacchetto chiaro: scheda tecnica, one-page B2B/B2G, demo script, screenshot, repository pulito e messaggio istituzionale."
   ].join("\n");
 }
 
@@ -1315,21 +1379,9 @@ function buildGeneralFallback(input: {
     }
 
     return [
-      "Ho ricevuto i file come contesto operativo.",
+      "Ho ricevuto i file come contesto operativo. Posso leggerli in modo interpretativo, valutarli, trasformarli in sintesi editoriale, riscriverli, generare descrizioni Amazon, post LinkedIn, schede, indici o giudizi di pubblicazione.",
       "",
-      "Modalità attiva:",
-      "- lettura documentale;",
-      "- interpretazione strutturale;",
-      "- generazione di output derivati;",
-      "- giudizio editoriale se richiesto;",
-      "- rifattorizzazione se richiesta.",
-      "",
-      "File leggibili attivi:",
-      ...normalizeFiles(input.files)
-        .filter((file) => file.text.length > 0)
-        .map((file, index) => `${index + 1}. ${file.name}`),
-      "",
-      "Puoi chiedermi sintesi interpretativa, indice, tabella di lavoro, riscrittura, analisi editoriale, descrizione Amazon, post LinkedIn o giudizio di pubblicazione."
+      "Di default risponderò in modo discorsivo. Userò tabelle o schemi solo se me li chiedi esplicitamente."
     ].join("\n");
   }
 
@@ -1354,32 +1406,21 @@ function buildGeneralFallback(input: {
   if (
     lower.includes("cosa sai fare") ||
     lower.includes("potenzialità") ||
-    lower.includes("capacità")
+    lower.includes("potenzialita") ||
+    lower.includes("capacità") ||
+    lower.includes("capacita")
   ) {
     return [
       "Posso aiutarti a lavorare su testi, file, codice, GitHub, architetture HBCE, MATRIX e materiali editoriali.",
       "",
-      "Il mio compito è trasformare materiale grezzo in output operativo: documenti completi, strutture, indici, sintesi, interpretazioni, revisioni, file tecnici e strategie utilizzabili.",
-      "",
-      "Opero nel quadro MATRIX/HBCE:",
-      "- IPR: Identity Primary Record;",
-      "- HBCE: governance computabile HERMETICUM B.C.E.;",
-      "- JOKER-C2: runtime operativo vincolato;",
-      "- TRAC: continuità;",
-      "- EVT: Event Record / Verifiable Event Trace.",
-      "",
-      "Quando ricevo file attivi, non mi limito a riassumerli. Posso interpretarli, valutarli, rifattorizzarli e generare output derivati coerenti."
+      "Il mio compito è trasformare materiale grezzo in output operativo: documenti completi, strutture, indici, sintesi, interpretazioni, revisioni, file tecnici e strategie utilizzabili. Quando ricevo file attivi, non mi limito a riassumerli: posso interpretarli, valutarli, rifattorizzarli e generare output derivati coerenti."
     ].join("\n");
   }
 
   return [
     "Sono AI JOKER-C2. Ho ricevuto la richiesta, ma il modello remoto non ha restituito una risposta completa in questa esecuzione.",
     "",
-    "Posso comunque lavorare in modalità locale minima: posso aiutarti con testi, file, GitHub, struttura documentale e architettura operativa.",
-    "",
-    "Regola canonica attiva: nel framework MATRIX/HBCE, IPR significa Identity Primary Record.",
-    "Regola HBCE attiva: HBCE indica la governance computabile HERMETICUM B.C.E. e non deve essere espanso con acronimi inventati.",
-    "Regola EVT attiva: EVT significa Event Record / Verifiable Event Trace."
+    "Posso comunque lavorare in modalità locale minima su testi, file, GitHub, struttura documentale e architettura operativa. Nel framework MATRIX/HBCE, IPR significa Identity Primary Record, HBCE indica la governance computabile HERMETICUM B.C.E. ed EVT significa Event Record / Verifiable Event Trace."
   ].join("\n");
 }
 
@@ -1389,6 +1430,8 @@ async function generateResponse(input: {
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
   files: FileInput[];
+  documentMemoryUsed: boolean;
+  structuredFormat: boolean;
 }): Promise<GeneratedResponse> {
   if (!openai) {
     return {
@@ -1415,16 +1458,17 @@ async function generateResponse(input: {
             "Regola assoluta: IPR non è una semplice scheda anagrafica. IPR è il fondamento identitario che rende attribuibile il sistema.",
             "Regola assoluta: HBCE indica il framework/livello di governance computabile di HERMETICUM B.C.E. nel sistema MATRIX.",
             "Regola assoluta: non inventare espansioni dell'acronimo HBCE. Non dire che HBCE significa Higher Business Control Environment.",
-            "Regola assoluta: EVT significa Event Record / Verifiable Event Trace. EVT è il record evento verificabile della singola operazione collegato alla continuità TRAC.",
-            "Regola assoluta: IPR non sostituisce strumenti di cybersecurity. Rafforza la postura di cybersecurity perché rende agenti, nodi, runtime e flotte attribuibili a origine identitaria, regola HBCE e catena EVT/TRAC verificabile.",
+            "Regola assoluta: EVT significa Event Record / Verifiable Event Trace.",
+            "",
+            "Regola di stile: rispondi in forma discorsiva di default.",
+            "Regola di stile: non usare tabelle salvo richiesta esplicita.",
+            "Regola di stile: non usare elenchi numerati rigidi salvo richiesta esplicita o necessità tecnica.",
+            "Regola di stile: se l'utente chiede spiegazione, utilità o potenzialità, rispondi con paragrafi naturali.",
             "",
             "Regola documentale: quando sono presenti file attivi, non operare come riassuntore passivo. Devi interpretare, strutturare, giudicare e generare output derivati coerenti con il documento.",
+            "Regola documentale: se il file non è reinviato ma è disponibile memoria documentale di sessione, devi usarla come documento attivo.",
             "Regola documentale: se il file è lungo e ricevi un campione strutturale, lavora su quel campione senza fingere accesso integrale parola per parola.",
-            "Regola documentale: separa, quando utile, ciò che deriva dal file, ciò che è interpretazione e ciò che è proposta generativa.",
-            "Regola documentale: quando l'utente chiede cosa è il testo, cos'è il testo, spiegami o spiegamelo, devi rispondere con contenuto rilevato, interpretazione strutturale, funzione del testo, giudizio operativo e proposta generativa.",
-            "Regola documentale: non basta spiegare il contenuto. Devi trasformare il testo in una struttura operativa utilizzabile.",
-            "",
-            "Per strategia, mercato, B2B, B2G, roadmap e prodotto devi usare categorie concrete: IPR, EVT Chain, traccia, continuità, verifica, file ingestion, diagnostica runtime, repository pulito, Vercel build, GitHub, demo verificabile, deliverable, stakeholder value e prossima azione.",
+            "Regola documentale: quando l'utente chiede a chi serve o che potenzialità ha, devi rispondere con destinatari, utilità concreta, potenzialità editoriale, culturale, didattica, istituzionale, limiti e prossima trasformazione utile.",
             "",
             "Per diagnostica runtime devi restituire stato tecnico diretto, non un piano."
           ].join("\n")
@@ -1513,6 +1557,50 @@ function buildEvent(input: {
   });
 }
 
+function buildRuntimeDiagnosticText(input: {
+  state: RuntimeState;
+  decision: RuntimeDecision;
+  contextClass: ContextClass;
+  documentMode: DocumentMode;
+  documentFamily: DocumentFamily;
+  documentMemoryUsed: boolean;
+  structuredFormat: boolean;
+  event: RuntimeEvent;
+  degradedReason?: string | null;
+}): string {
+  const identity = getPrimaryIdentity();
+
+  return [
+    "Diagnostica runtime OpenAI",
+    "",
+    `Runtime OpenAI: ${input.state}`,
+    `Decision: ${input.decision}`,
+    `Context: ${input.contextClass}`,
+    `DocumentMode: ${input.documentMode}`,
+    `DocumentFamily: ${input.documentFamily}`,
+    `DocumentMemoryUsed: ${input.documentMemoryUsed ? "true" : "false"}`,
+    `StructuredFormat: ${input.structuredFormat ? "true" : "false"}`,
+    `Model: ${MODEL}`,
+    `OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "configured" : "missing"}`,
+    `JOKER_MODEL: ${process.env.JOKER_MODEL ? "configured" : "default"}`,
+    "",
+    "Identità runtime:",
+    `- entity: ${identity.entity}`,
+    `- ipr: ${identity.ipr}`,
+    "- ipr_meaning: Identity Primary Record",
+    "- ipr_function: operational attribution root",
+    `- checkpoint: ${identity.evt}`,
+    `- core: ${identity.core}`,
+    "",
+    "EVT Chain:",
+    `- evt: ${input.event.evt}`,
+    `- prev: ${input.event.prev}`,
+    `- hash: ${input.event.anchors.hash}`,
+    "",
+    `degradedReason: ${input.degradedReason || "none"}`
+  ].join("\n");
+}
+
 function buildTechnicalFrame(input: {
   response: string;
   state: RuntimeState;
@@ -1520,6 +1608,8 @@ function buildTechnicalFrame(input: {
   contextClass: ContextClass;
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
+  documentMemoryUsed: boolean;
+  structuredFormat: boolean;
   event: RuntimeEvent;
   degradedReason?: string | null;
 }) {
@@ -1532,6 +1622,8 @@ function buildTechnicalFrame(input: {
     `- context: ${input.contextClass}`,
     `- documentMode: ${input.documentMode}`,
     `- documentFamily: ${input.documentFamily}`,
+    `- documentMemoryUsed: ${input.documentMemoryUsed ? "true" : "false"}`,
+    `- structuredFormat: ${input.structuredFormat ? "true" : "false"}`,
     `- evt: ${input.event.evt}`,
     `- prev: ${input.event.prev}`,
     `- hash: ${input.event.anchors.hash}`,
@@ -1579,14 +1671,32 @@ export async function POST(req: NextRequest) {
   const effectiveMessage =
     input.message || "Usa i file attivi come contesto operativo.";
 
-  const contextClass = classifyContext(effectiveMessage, input.files);
+  if (input.files.length > 0) {
+    storeDocumentMemory(input.sessionId, input.files);
+  }
+
+  const memory =
+    input.files.length === 0 && shouldUseDocumentMemory(effectiveMessage)
+      ? getDocumentMemory(input.sessionId)
+      : null;
+
+  const documentMemoryUsed = Boolean(memory);
+  const effectiveFiles =
+    input.files.length > 0
+      ? input.files
+      : memory
+        ? buildFilesFromMemory(memory)
+        : input.files;
+
+  const structuredFormat = shouldUseStructuredFormat(effectiveMessage);
+  const contextClass = classifyContext(effectiveMessage, effectiveFiles);
   const documentMode =
     contextClass === "DOCUMENTAL"
       ? detectDocumentMode(effectiveMessage)
       : "GENERAL_DOCUMENT_WORK";
   const documentFamily =
     contextClass === "DOCUMENTAL"
-      ? detectDocumentFamily(input.files)
+      ? memory?.documentFamily || detectDocumentFamily(effectiveFiles)
       : "GENERAL_DOCUMENT";
 
   if (isRuntimeDiagnosticRequest(effectiveMessage)) {
@@ -1612,6 +1722,8 @@ export async function POST(req: NextRequest) {
       contextClass,
       documentMode,
       documentFamily,
+      documentMemoryUsed,
+      structuredFormat,
       event,
       degradedReason
     });
@@ -1624,6 +1736,9 @@ export async function POST(req: NextRequest) {
       contextClass,
       documentMode,
       documentFamily,
+      documentMemoryUsed,
+      structuredFormat,
+      activeFiles: effectiveFiles.map((file) => file.name || "unnamed"),
       identity: {
         entity: identity.entity,
         ipr: identity.ipr,
@@ -1655,7 +1770,9 @@ export async function POST(req: NextRequest) {
       diagnostics: {
         openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
         modelUsed: MODEL,
-        degradedReason
+        degradedReason,
+        documentMemoryUsed,
+        structuredFormat
       }
     });
   }
@@ -1665,7 +1782,9 @@ export async function POST(req: NextRequest) {
     contextClass,
     documentMode,
     documentFamily,
-    files: input.files
+    files: effectiveFiles,
+    documentMemoryUsed,
+    structuredFormat
   });
 
   const decision: RuntimeDecision =
@@ -1691,6 +1810,8 @@ export async function POST(req: NextRequest) {
         contextClass,
         documentMode,
         documentFamily,
+        documentMemoryUsed,
+        structuredFormat,
         event,
         degradedReason: generated.degradedReason
       })
@@ -1706,6 +1827,9 @@ export async function POST(req: NextRequest) {
     contextClass,
     documentMode,
     documentFamily,
+    documentMemoryUsed,
+    structuredFormat,
+    activeFiles: effectiveFiles.map((file) => file.name || "unnamed"),
     identity: {
       entity: identity.entity,
       ipr: identity.ipr,
@@ -1737,7 +1861,9 @@ export async function POST(req: NextRequest) {
     diagnostics: {
       openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
       modelUsed: MODEL,
-      degradedReason: generated.degradedReason || null
+      degradedReason: generated.degradedReason || null,
+      documentMemoryUsed,
+      structuredFormat
     }
   });
 }
