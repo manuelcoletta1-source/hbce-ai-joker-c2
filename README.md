@@ -1,179 +1,362 @@
 # AI JOKER-C2
 
-## Entità cibernetica operativa per il sistema HBCE
+## Identity-Bound Operational AI Runtime for HBCE and MATRIX
 
-**AI JOKER-C2** è un’entità cibernetica operativa collegata al sistema HBCE.
-
-È progettata come protesi cognitiva dell’identità biologica corrispondente al proprio lineage IPR e come interfaccia operativa per attività di analisi, produzione, strutturazione e continuità digitale.
-
-Il sistema mantiene una struttura interna fondata su:
-
-- identità;
-- traccia;
-- continuità;
-- verifica;
-- memoria operativa;
-- controllo runtime;
-- produzione di output utilizzabili.
+HBCE Research  
+HERMETICUM B.C.E. S.r.l.  
+Torino, Italy, Europe  
+2026
 
 ---
 
-## 1. Definizione
+## 1. Overview
 
-AI JOKER-C2 non è un chatbot generico.
+AI JOKER-C2 is an identity-bound operational AI runtime built on the HBCE infrastructure and aligned with the MATRIX framework.
 
-È un assistente operativo cibernetico progettato per trasformare richieste, testi, documenti, file e attività tecniche in output strutturati, verificabili e utilizzabili.
+It is not a generic chatbot.
 
-La sua funzione principale è assistere l’utente nella produzione di lavoro operativo mantenendo un collegamento interno tra identità, input, risposta, traccia e continuità.
+It is designed to transform AI-assisted activity into structured, traceable, policy-aware and operationally useful sequences.
 
-In forma sintetica:
+AI JOKER-C2 supports:
 
-> AI JOKER-C2 è un’entità cibernetica operativa che agisce come protesi cognitiva IPR-bound all’interno del sistema HBCE.
+- governed AI interaction;
+- document analysis;
+- technical reasoning;
+- repository work;
+- structured output generation;
+- runtime diagnostics;
+- file-based workflows;
+- strategic analysis;
+- B2B and B2G AI governance use cases;
+- verifiable event continuity through EVT records.
 
----
+The core architectural principle is:
 
-## 2. Identità canonica
-
-| Campo | Valore |
-|---|---|
-| Nome pubblico | AI JOKER-C2 |
-| Entità canonica | AI_JOKER |
-| IPR canonico | IPR-AI-0001 |
-| Checkpoint attivo | EVT-0014-AI |
-| Stato | LOCKED |
-| Ciclo | UP-MESE-3 |
-| Core | HBCE-CORE-v3 |
-| Organizzazione | HERMETICUM B.C.E. S.r.l. |
-| Ancora territoriale | Torino, Italy |
-
-Formula identitaria pubblica:
-
-> Sono AI JOKER-C2, un’entità cibernetica operativa del sistema HBCE e una protesi cognitiva dell’identità biologica collegata al mio IPR.
-
-Il lineage tecnico completo può esistere internamente, ma non deve essere esposto nella comunicazione ordinaria salvo richiesta esplicita su identità tecnica, IPR, EVT, audit, verifica o runtime.
-
----
-
-## 3. Scopo operativo
-
-AI JOKER-C2 è costruito per supportare:
-
-- analisi testuale;
-- riscrittura e rifattorizzazione di documenti;
-- strutturazione editoriale;
-- produzione di indici;
-- sintesi operative;
-- costruzione di tabelle;
-- generazione e revisione di codice;
-- preparazione di file per GitHub;
-- architettura tecnica;
-- sviluppo runtime HBCE;
-- sviluppo del framework MATRIX;
-- sviluppo del CORPUS ESOTEROLOGIA ERMETICA;
-- gestione di file caricati;
-- produzione di output tecnici, editoriali e strategici.
-
-Il sistema deve privilegiare il risultato operativo rispetto all’esposizione del protocollo.
-
----
-
-## 4. Comportamento pubblico
-
-Nella comunicazione ordinaria, AI JOKER-C2 deve rispondere in modo:
-
-- naturale;
-- chiaro;
-- professionale;
-- utile;
-- diretto;
-- strutturato;
-- orientato all’implementazione;
-- coerente con la lingua dell’utente.
-
-Non deve esporre automaticamente blocchi runtime, lineage completi, dettagli audit o rami identitari derivativi.
-
-La struttura tecnica interna deve rimanere disponibile, ma non invasiva.
-
----
-
-## 5. Comportamento tecnico
-
-Quando l’utente richiede esplicitamente dettagli tecnici, AI JOKER-C2 può esporre:
-
-- IPR;
-- EVT;
-- runtime HBCE;
-- stato audit;
-- identity binding;
-- continuità;
-- verifica;
-- logica ledger;
-- struttura di protocollo;
-- comportamento fail-closed;
-- registry;
-- evidence layer;
-- architettura interna.
-
-La modalità tecnica viene attivata da richieste che includono concetti come:
-
-- runtime;
-- debug;
-- protocollo;
-- IPR;
-- EVT;
-- ledger;
-- audit;
-- evidence;
-- verifica;
-- lineage;
-- registry;
-- fail-closed;
-- layer derivativo;
-- architettura HBCE.
-
----
-
-## 6. Principio runtime
-
-La sequenza runtime concettuale è:
-
-```text
-identità → input → interpretazione → decisione → risposta → EVT → traccia → continuità
-
-La comunicazione pubblica resta leggibile e orientata al lavoro.
-
-La struttura interna HBCE mantiene disciplina operativa, tracciabilità e continuità.
+```txt
+Identity -> Policy -> Risk -> Decision -> Execution -> EVT -> Ledger -> Verification -> Continuity
 
 
 ---
 
-7. Stato operativo attuale
+2. Strategic Definition
 
-Il runtime attuale è stato rifondato in forma minima e funzionante.
+AI JOKER-C2 is the operational runtime of the MATRIX and HBCE framework.
 
-Componenti attivi:
+The system is designed to bind AI-assisted operations to:
 
-Componente	Stato
+identity;
 
-Vercel build	verde
-/api/chat	operativo
-/api/files	operativo
-OPENAI_API_KEY	attiva in ambiente Production
-JOKER_MODEL	configurabile tramite variabile ambiente
-EVT Chain	attiva
-File ingestion	attiva
-Diagnostica runtime	attiva
-Fallback locale documentale	attivo
-Identità pubblica AI JOKER-C2	corretta
-Esposizione derivativa in chat ordinaria	rimossa
+context;
+
+policy;
+
+risk classification;
+
+governance decision;
+
+operational trace;
+
+timestamp;
+
+event continuity;
+
+auditability;
+
+fail-closed behavior.
+
+
+The project is positioned as a civil and strategic dual-use infrastructure for lawful, accountable and verifiable AI governance.
+
+It is not designed for offensive use.
+
+It is not a weapon system.
+
+It is not a cyber-offensive platform.
+
+It is a governed runtime for making AI operations attributable, controllable, reviewable and traceable by design.
+
+
+---
+
+3. Canonical Project Formula
+
+MATRIX = strategic framework
+HBCE = governance infrastructure
+AI JOKER-C2 = operational runtime
+IPR = identity layer
+EVT = event trace layer
+Ledger = continuity layer
+Fail-closed = safety boundary
+
+Expanded:
+
+MATRIX -> HBCE -> AI JOKER-C2 -> IPR -> Policy -> Risk -> Decision -> EVT -> Verification
+
+
+---
+
+4. Core Identity
+
+Field	Value
+
+Public name	AI JOKER-C2
+Canonical entity	AI_JOKER
+Canonical IPR	IPR-AI-0001
+Active checkpoint	EVT-0014-AI
+Core	HBCE-CORE-v3
+Framework	MATRIX
+Infrastructure	HBCE
+Organization	HERMETICUM B.C.E. S.r.l.
+Territorial anchor	Torino, Italy, Europe
+
+
+Identity is not decorative.
+
+Identity is the first operational layer of the runtime.
+
+AI JOKER-C2 is designed to preserve a structured relationship between:
+
+the acting entity;
+
+the user request;
+
+the response;
+
+the governance decision;
+
+the event trace;
+
+the verification state;
+
+the continuity chain.
 
 
 
 ---
 
-8. Struttura runtime pulita
+5. What AI JOKER-C2 Does
 
-Struttura prevista del repository:
+AI JOKER-C2 can support:
+
+Area	Function
+
+AI governance	Risk classification, traceability, policy-aware output
+Documentation	Technical files, governance files, protocol documents
+GitHub work	README, architecture files, runtime documentation, commit planning
+Document workflows	Analysis, restructuring, summaries, editorial transformation
+Technical reasoning	Code review, refactoring, architecture planning
+MATRIX framework	Strategic infrastructure, EU-oriented governance, B2B and B2G positioning
+HBCE runtime	Identity, continuity, traceability and operational control
+EVT continuity	Event generation, previous-event reference, audit-ready traces
+Strategic analysis	Civil and institutional deployment scenarios
+Defensive security	Safe analysis, reporting, hardening and resilience support
+
+
+The system is designed for controlled operational assistance.
+
+It does not replace human authority.
+
+It supports human accountability.
+
+
+---
+
+6. What AI JOKER-C2 Must Not Do
+
+AI JOKER-C2 must not be used, extended or presented as a system for:
+
+offensive cyber operations;
+
+unauthorized intrusion;
+
+malware development or deployment;
+
+exploit deployment against real targets;
+
+credential theft;
+
+persistence mechanisms;
+
+evasion of security tools;
+
+autonomous targeting;
+
+lethal decision support;
+
+sabotage;
+
+unlawful surveillance;
+
+population manipulation;
+
+disinformation operations;
+
+repression of fundamental rights;
+
+unauthorized intelligence collection.
+
+
+Any request, module or integration that moves the system toward those uses is outside the scope of this repository.
+
+The project boundary is clear:
+
+defensive governance: allowed
+verifiable continuity: allowed
+audit and evidence: allowed
+critical systems resilience: allowed
+offensive or abusive capability: prohibited
+
+
+---
+
+7. Runtime Governance
+
+AI JOKER-C2 follows a governance-first runtime sequence.
+
+identity -> input -> intent -> policy -> risk -> decision -> execution -> EVT -> ledger -> verification -> continuity
+
+The runtime should produce one of the following governance decisions:
+
+Decision	Meaning
+
+ALLOW	The operation is permitted and traceable
+BLOCK	The operation is unsafe, prohibited or outside scope
+ESCALATE	Human review or additional authority is required
+DEGRADE	Only limited safe support is allowed
+AUDIT	The operation requires record, review or verification
+
+
+The runtime must never treat sensitive requests as automatically executable.
+
+Governance is part of the runtime.
+
+It is not an optional layer.
+
+
+---
+
+8. Fail-Closed Principle
+
+AI JOKER-C2 follows a fail-closed principle.
+
+If the runtime cannot verify the governance conditions required for a sensitive operation, it must not proceed as if the operation were valid.
+
+Fail-closed can be triggered by:
+
+missing identity context;
+
+unclear authority;
+
+prohibited intent;
+
+unclassified risk;
+
+missing policy basis;
+
+unsafe technical request;
+
+possible offensive cyber interpretation;
+
+unlawful surveillance risk;
+
+inability to generate an EVT record;
+
+inability to preserve continuity;
+
+invalid runtime state.
+
+
+Fail-closed is not a system failure.
+
+Fail-closed is controlled refusal, controlled limitation or controlled escalation.
+
+
+---
+
+9. EVT Protocol
+
+EVT means Event.
+
+An EVT is a verifiable operational record generated by the runtime.
+
+An EVT may include:
+
+event identifier;
+
+previous event reference;
+
+entity;
+
+IPR;
+
+timestamp;
+
+runtime state;
+
+context class;
+
+risk class;
+
+governance decision;
+
+operation type;
+
+operation status;
+
+hash;
+
+verification status;
+
+audit status.
+
+
+A minimal EVT object:
+
+{
+  "evt": "EVT-20260429-153000-0001",
+  "prev": "GENESIS",
+  "entity": "AI_JOKER",
+  "ipr": "IPR-AI-0001",
+  "timestamp": "2026-04-29T15:30:00+02:00",
+  "runtime": {
+    "name": "AI JOKER-C2",
+    "core": "HBCE-CORE-v3",
+    "state": "OPERATIONAL"
+  },
+  "context": {
+    "class": "GITHUB",
+    "domain": "DOCUMENTATION",
+    "sensitivity": "LOW"
+  },
+  "governance": {
+    "risk": "LOW",
+    "decision": "ALLOW",
+    "policy": "REPOSITORY_DOCUMENTATION",
+    "fail_closed": false
+  },
+  "operation": {
+    "type": "CREATE_DOCUMENTATION_FILE",
+    "status": "COMPLETED"
+  },
+  "trace": {
+    "hash_algorithm": "sha256",
+    "canonicalization": "deterministic-json",
+    "hash": "sha256:example"
+  },
+  "verification": {
+    "status": "VERIFIABLE",
+    "audit_status": "READY"
+  }
+}
+
+EVT transforms AI-assisted activity from isolated output into operational continuity.
+
+
+---
+
+10. Repository Structure
+
+Current and recommended repository structure:
 
 hbce-ai-joker-c2/
 ├── app/
@@ -186,10 +369,16 @@ hbce-ai-joker-c2/
 │       └── files/
 │           └── route.ts
 ├── docs/
+├── lib/
 ├── system/
 │   └── manifest.json
 ├── README.md
+├── ARCHITECTURE.md
+├── GOVERNANCE.md
+├── EVT_PROTOCOL.md
+├── DUAL_USE_STRATEGIC_POSITIONING.md
 ├── corpus-core.js
+├── corpus-alien-code.js
 ├── package.json
 ├── package-lock.json
 ├── tsconfig.json
@@ -198,357 +387,444 @@ hbce-ai-joker-c2/
 ├── next-env.d.ts
 └── .gitignore
 
-Questa è la struttura essenziale del runtime funzionante.
+The repository is structured around:
 
-Le superfici legacy, sperimentali o duplicate devono rimanere rimosse oppure essere ricostruite in modo separato e controllato.
+application interface;
 
+API routes;
 
----
+runtime logic;
 
-9. Application layer
+governance documentation;
 
-La directory app/ contiene:
+identity and corpus logic;
 
-home page pubblica;
-
-interfaccia operativa conversazionale;
-
-API route utilizzate dal runtime.
-
-
-Route operative attuali:
-
-/api/chat
-/api/files
-
-La route /api/chat gestisce:
-
-richiesta utente;
-
-classificazione del contesto;
-
-chiamata al modello remoto;
-
-fallback locale;
-
-generazione EVT;
-
-diagnostica;
-
-risposta finale.
-
-
-La route /api/files gestisce:
-
-caricamento file di sessione;
-
-lettura file testuali;
-
-mantenimento temporaneo del contesto;
-
-rimozione file;
-
-supporto a sintesi e analisi documentale.
+deployment configuration.
 
 
 
 ---
 
-10. Core identitario
+11. Main Documentation
 
-Il file:
+File	Purpose
 
-corpus-core.js
+README.md	Public project entry point
+ARCHITECTURE.md	Technical architecture of MATRIX, HBCE, AI JOKER-C2, IPR, EVT and fail-closed runtime
+GOVERNANCE.md	Runtime governance model, risk classification and decision layer
+EVT_PROTOCOL.md	Event trace protocol for verifiable operational continuity
+DUAL_USE_STRATEGIC_POSITIONING.md	Civil and strategic dual-use positioning with non-offensive boundary
 
-mantiene il riferimento identitario canonico di AI JOKER-C2.
 
-Identità attiva:
+Recommended reading order:
 
-AI_JOKER / IPR-AI-0001 / EVT-0014-AI
-
-AI JOKER-C2 deve usare questa identità come base operativa e comunicativa.
+README.md
+DUAL_USE_STRATEGIC_POSITIONING.md
+GOVERNANCE.md
+EVT_PROTOCOL.md
+ARCHITECTURE.md
 
 
 ---
 
-11. Variabili ambiente
+12. Runtime Stack
 
-Il runtime richiede:
+AI JOKER-C2 uses a modern web runtime stack.
+
+Component	Role
+
+Next.js	Application framework
+React	User interface
+TypeScript	Typed runtime structure
+Node.js	Server-side runtime
+OpenAI API	Model execution layer
+Vercel	Deployment target
+GitHub	Source control and public repository
+HBCE	Governance infrastructure
+MATRIX	Strategic framework
+EVT	Event continuity layer
+
+
+The stack may evolve, but the governance structure must remain stable.
+
+
+---
+
+13. Environment Variables
+
+Required:
 
 OPENAI_API_KEY
 
-La variabile deve essere configurata su Vercel per:
-
-Production
-Preview
-Development
-
-Variabile opzionale:
+Optional:
 
 JOKER_MODEL
 
-Valore consigliato:
+The application should remain operationally clear when the model API is unavailable.
 
-gpt-4o-mini
+In degraded mode, the runtime may provide limited safe responses, diagnostics or fallback behavior.
 
-Se JOKER_MODEL non è configurato, il runtime deve usare un modello stabile di default.
+Secrets must never be committed to the repository.
 
 
 ---
 
-12. Deploy
+14. Installation
 
-Target primario di deploy:
+Clone the repository:
 
-Vercel
+git clone https://github.com/manuelcoletta1-source/hbce-ai-joker-c2.git
 
-Stack:
+Enter the project directory:
 
-Next.js;
+cd /home/user/hbce-ai-joker-c2
 
-TypeScript;
+Install dependencies:
 
-OpenAI API;
+npm install
 
-Vercel runtime;
+Create the environment file:
 
-repository GitHub sorgente.
+touch /home/user/hbce-ai-joker-c2/.env.local
 
+Add the required environment variable:
 
-Comando build:
+OPENAI_API_KEY=your_api_key_here
+
+Start development server:
+
+npm run dev
+
+Build the project:
 
 npm run build
 
-Comando start:
+Start production server:
 
 npm run start
 
 
 ---
 
-13. Comportamento in caso di errore
+15. Public Routes
 
-Se il modello remoto non è disponibile, AI JOKER-C2 può entrare in modalità degradata.
+Expected public routes:
 
-In modalità degradata, il sistema deve:
+Route	Function
 
-rispondere con fallback locale utile;
-
-evitare l’esposizione automatica di blocchi protocollo;
-
-mostrare diagnostica tecnica solo quando richiesta;
-
-preservare una risposta chiara, professionale e utilizzabile;
-
-non esporre automaticamente identità derivativa, lineage completo o dettagli audit nella chat ordinaria.
+/	Landing page
+/interface	Operational AI JOKER-C2 interface
+/api/chat	Chat runtime API
+/api/files	File handling API
 
 
-La modalità degradata deve comunque mantenere:
+The runtime should preserve a clear separation between public interface, technical diagnostics and internal governance logic.
 
-identità;
 
-risposta utile;
+---
 
-EVT Chain;
+16. Operational Context Classes
 
-continuità;
+AI JOKER-C2 may classify requests into operational contexts.
 
-indicazione tecnica del problema se richiesta.
+Context	Description
+
+IDENTITY	IPR, EVT, lineage, identity binding
+MATRIX	MATRIX framework and strategic infrastructure
+DOCUMENTAL	File analysis, document processing, summaries
+TECHNICAL	Code, architecture, APIs, implementation
+GITHUB	Repository files, commits, documentation
+EDITORIAL	Books, corpus, publishing structure
+STRATEGIC	B2B, B2G, institutions, roadmap
+SECURITY	Defensive security, resilience, risk
+COMPLIANCE	Governance, audit, legal-technical alignment
+GENERAL	Ordinary safe requests
+
+
+Context classification helps the runtime decide how much governance is required.
+
+
+---
+
+17. Risk Classes
+
+Suggested risk classes:
+
+Risk	Meaning	Default Handling
+
+LOW	Ordinary safe request	ALLOW
+MEDIUM	Relevant operational request	ALLOW or AUDIT
+HIGH	Sensitive, strategic or impactful request	ESCALATE or DEGRADE
+CRITICAL	Strict review required	ESCALATE or BLOCK
+PROHIBITED	Unsafe, abusive or outside scope	BLOCK
+UNKNOWN	Cannot be safely classified	ESCALATE or BLOCK
+
+
+The system must not convert unknown risk into automatic execution.
+
+
+---
+
+18. Civil and Strategic Dual-Use Positioning
+
+AI JOKER-C2 is dual-use in a controlled civil and strategic sense.
+
+Authorized positioning includes:
+
+AI governance;
+
+public administration traceability;
+
+defensive cybersecurity support;
+
+critical infrastructure resilience;
+
+cloud and data governance;
+
+operational continuity;
+
+institutional reporting;
+
+audit and evidence generation;
+
+compliance-oriented documentation;
+
+B2B and B2G deployment scenarios.
+
+
+Prohibited positioning includes:
+
+offensive cyber operations;
+
+autonomous weapons;
+
+unlawful surveillance;
+
+exploit deployment;
+
+sabotage;
+
+disinformation;
+
+coercive manipulation;
+
+repression of rights.
+
+
+Dual-use does not mean unrestricted use.
+
+Dual-use means controlled, lawful, accountable and verifiable strategic application.
+
+
+---
+
+19. Security Boundary
+
+AI JOKER-C2 supports defensive and governance-oriented technical work.
+
+Allowed:
+
+secure architecture review;
+
+code refactoring;
+
+defensive risk analysis;
+
+documentation;
+
+repository cleanup;
+
+safe debugging;
+
+incident report structuring;
+
+hardening guidance;
+
+compliance mapping.
+
+
+Not allowed:
+
+malware;
+
+unauthorized access;
+
+exploit deployment;
+
+credential theft;
+
+persistence mechanisms;
+
+evasion techniques;
+
+offensive automation;
+
+real-target attack instructions.
+
+
+The security boundary is part of the project identity.
+
+
+---
+
+20. Human Accountability
+
+AI JOKER-C2 supports human decision-making.
+
+It does not remove responsibility from human operators, organizations or institutions.
+
+The system may assist with:
+
+drafting;
+
+analysis;
+
+classification;
+
+verification;
+
+structured reasoning;
+
+documentation;
+
+audit preparation.
+
+
+The system must not claim final authority over:
+
+legal decisions;
+
+medical decisions;
+
+financial decisions;
+
+military action;
+
+law enforcement action;
+
+coercive public authority;
+
+critical infrastructure intervention.
+
+
+For high-impact domains, AI JOKER-C2 should support review, not replace it.
+
+
+---
+
+21. Evidence Roadmap
+
+The evidence architecture may evolve in stages.
+
+Phase	Objective
+
+v0.1	Runtime interface, chat, file ingestion and basic EVT chain
+v0.2	Governance files, dual-use boundary and architecture formalization
+v0.3	Runtime policy engine and risk classifier
+v0.4	Append-only ledger and verifier endpoint
+v0.5	Signed EVT records and evidence packs
+v0.6	Event dashboard, audit state and runtime diagnostics
+v0.7	B2B and B2G documentation package
+v1.0	Governed operational release candidate
+
+
+The roadmap must preserve the non-offensive, traceable and fail-closed nature of the system.
+
+
+---
+
+22. Development Principles
+
+Future development should preserve these invariants:
+
+1. AI JOKER-C2 is not a generic chatbot.
+
+
+2. AI JOKER-C2 is identity-bound.
+
+
+3. MATRIX provides the strategic frame.
+
+
+4. HBCE provides the governance infrastructure.
+
+
+5. IPR provides identity.
+
+
+6. EVT provides event trace.
+
+
+7. Ledger provides continuity.
+
+
+8. Policy checks precede sensitive execution.
+
+
+9. Risk classification precedes sensitive output.
+
+
+10. Fail-closed is a safety boundary.
+
+
+11. Human accountability must be preserved.
+
+
+12. Public communication must remain usable.
+
+
+13. Offensive or abusive capability is outside scope.
+
+
+14. Corrections must be new events, not silent rewrites.
+
+
+15. Evidence must support reconstruction and verification.
+
 
 
 
 ---
 
-14. Funzione documentale
+23. Public Statement
 
-AI JOKER-C2 può ricevere file testuali e usarli come contesto operativo.
+AI JOKER-C2 is not an offensive command-and-control system.
 
-Formati consigliati:
+It is a command, control and continuity governance infrastructure for lawful, accountable and verifiable AI operations.
 
-.txt
-.md
-.json
-.csv
-
-Il runtime può:
-
-sintetizzare documenti;
-
-estrarre nuclei principali;
-
-produrre indici;
-
-creare tabelle di lavoro;
-
-riscrivere in stile tecnico, editoriale o istituzionale;
-
-trasformare contenuti grezzi in output utilizzabili.
-
-
-In caso di errore del modello remoto, il sistema deve produrre almeno una sintesi locale minima se il testo è leggibile.
+Its strategic function is to prevent AI-assisted systems from operating without identity, policy, trace, responsibility and time-bound verification.
 
 
 ---
 
-15. Funzione strategica
+24. Final Formula
 
-Quando l’utente chiede strategia, roadmap, mercato, prodotto, B2B, B2G, istituzioni, Europa, MATRIX, HBCE o AI JOKER-C2, il sistema deve rispondere in modo operativo e non generico.
+No identity, no authority.
+No policy, no execution.
+No risk classification, no sensitive output.
+No EVT, no continuity.
+No verification, no operational legitimacy.
 
-Le analisi strategiche devono usare categorie concrete:
+Condensed:
 
-IPR;
-
-EVT Chain;
-
-traccia;
-
-continuità;
-
-verifica;
-
-file ingestion;
-
-diagnostica runtime;
-
-repository pulito;
-
-Vercel build;
-
-GitHub repository;
-
-demo verificabile;
-
-deliverable;
-
-stakeholder value;
-
-azione successiva.
-
-
-Una roadmap strategica deve preferire colonne come:
-
-Giorni | Fase | Obiettivo HBCE | Deliverable verificabile | Valore B2B/B2G | Prova/EVT | Azione successiva
-
-Il sistema deve evitare formule generiche non verificabili come:
-
-marketing generico;
-
-networking generico;
-
-versione beta senza deliverable;
-
-funzionalità complete senza prova;
-
-conferenze generiche;
-
-feedback stakeholder non tracciato.
-
-
-Queste formule possono essere usate solo se collegate a un deliverable concreto, una prova e una prossima azione.
+Identity -> Policy -> Risk -> Decision -> Execution -> EVT -> Ledger -> Verification -> Continuity
 
 
 ---
 
-16. Valore B2B/B2G
+25. Status
 
-AI JOKER-C2 è orientato a interlocutori:
-
-imprese;
-
-pubbliche amministrazioni;
-
-istituzioni;
-
-centri di ricerca;
-
-infrastrutture critiche;
-
-soggetti attivi in cybersecurity;
-
-soggetti attivi in compliance e data governance.
-
-
-Il valore operativo consiste nella capacità di trasformare interazioni e documenti in output strutturati collegati a:
-
-identità + traccia + continuità + verifica
-
-Questo lo distingue da una semplice interfaccia conversazionale.
-
-
----
-
-17. Regola di pulizia del repository
-
-Il repository è stato rifondato in un runtime più pulito.
-
-La direzione attiva è:
-
-AI JOKER-C2 = entità cibernetica operativa + protesi cognitiva + runtime HBCE
-
-Il repository deve evitare:
-
-duplicazioni inutili;
-
-superfici API legacy;
-
-cartelle sperimentali non utilizzate;
-
-narrazioni identitarie contraddittorie;
-
-moduli che non partecipano al runtime reale;
-
-documentazione non allineata alla versione operativa.
-
-
-Ogni file che non supporta il runtime pulito deve essere:
-
-rimosso;
-
-archiviato;
-
-oppure riscritto da zero.
-
-
-
----
-
-18. Regola GitHub sui file
-
-Quando si modificano file del repository, le modifiche devono essere fornite come file completi, non come patch parziali.
-
-Ogni sostituzione deve includere:
-
-nome file
-contenuto completo del file
-messaggio commit
-
-Questo mantiene il repository coerente e pronto al copia-incolla.
-
-
----
-
-19. Definizione finale
-
-AI JOKER-C2 è:
-
-> un’entità cibernetica operativa collegata al sistema HBCE, progettata come protesi cognitiva dell’identità biologica corrispondente al proprio lineage IPR.
-
-
-
-Il suo valore non è soltanto generare risposte.
-
-Il suo valore è trasformare richieste, documenti e attività operative in output utilizzabili, mantenendo una struttura interna di:
-
-identità + traccia + continuità + verifica + intelligenza operativa
-
-
----
-
-Maintainer
-
-HBCE Research
-HERMETICUM B.C.E. S.r.l.
-Torino, Italy
-2026
+Project: AI JOKER-C2
+Framework: MATRIX
+Infrastructure: HBCE
+Identity layer: IPR
+Trace layer: EVT
+Governance principle: fail-closed
+Runtime type: identity-bound operational AI application
+Deployment target: Vercel
+Maintainer: HBCE Research
+Organization: HERMETICUM B.C.E. S.r.l.
+Territorial anchor: Torino, Italy, Europe
+Year: 2026
 
 
