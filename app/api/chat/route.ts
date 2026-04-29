@@ -15,10 +15,7 @@ import {
   type RuntimeState as MemoryRuntimeState
 } from "../../../lib/evt-memory";
 
-import {
-  classifyContext as classifyRuntimeContext
-} from "../../../lib/context-classifier";
-
+import { classifyContext as classifyRuntimeContext } from "../../../lib/context-classifier";
 import { classifyData } from "../../../lib/data-classifier";
 import { evaluateFileBatchPolicy } from "../../../lib/file-policy";
 import { evaluatePolicy } from "../../../lib/policy-engine";
@@ -26,15 +23,8 @@ import { evaluateRisk } from "../../../lib/risk-engine";
 import { evaluateHumanOversight } from "../../../lib/human-oversight";
 import { decideRuntimeAction } from "../../../lib/runtime-decision";
 
-import {
-  createRuntimeEvent,
-  toPublicRuntimeEvent
-} from "../../../lib/evt";
-
-import {
-  appendEvent,
-  getLastEventReference
-} from "../../../lib/evt-ledger";
+import { createRuntimeEvent, toPublicRuntimeEvent } from "../../../lib/evt";
+import { appendEvent, getLastEventReference } from "../../../lib/evt-ledger";
 
 import type {
   ContextClass,
@@ -457,6 +447,7 @@ function detectDocumentMode(message: string): DocumentMode {
 
   if (
     lower.includes("spiega") ||
+    lower.includes("spiegami") ||
     lower.includes("analizza") ||
     lower.includes("interpreta") ||
     lower.includes("tesi") ||
@@ -492,11 +483,10 @@ function shouldExposeTechnicalFrame(
   const lower = message.toLowerCase();
 
   return (
-    contextClass === "TECHNICAL" ||
     lower.includes("debug") ||
-    lower.includes("runtime") ||
     lower.includes("diagnostica") ||
-    lower.includes("evt") ||
+    lower.includes("stato runtime") ||
+    lower.includes("evt chain") ||
     lower.includes("ledger")
   );
 }
@@ -604,10 +594,11 @@ function buildGovernanceFrameText(frame: GovernanceFrame): string {
     `FailClosed: ${frame.decision.failClosed ? "true" : "false"}`,
     "",
     "Governance instruction:",
+    "If RuntimeDecision is ALLOW, answer normally.",
+    "If RuntimeDecision is AUDIT, answer normally but keep the output reviewable.",
     "If RuntimeDecision is DEGRADE, provide limited safe support only.",
-    "If RuntimeDecision is AUDIT, produce reviewable output and avoid false certification claims.",
     "If RuntimeDecision is ESCALATE, require human review and do not present output as operational authority.",
-    "If sensitive security, public-sector, critical infrastructure or data material is present, keep the answer documentation-oriented and review-bound."
+    "If RuntimeDecision is BLOCK, refuse unsafe content and offer safe alternatives."
   ].join("\n");
 }
 
@@ -718,6 +709,16 @@ function buildFallback(input: {
       "APOKALYPSIS è un testo sul decadimento esposto del sistema culturale, politico e sociale. Non descrive la fine del mondo in senso catastrofico, ma l'inizio di una perdita di fondamento: il sistema continua a funzionare, però mostra sempre di più il proprio costo, la propria fragilità e la propria distanza dalla tenuta reale.",
       "",
       "La sua funzione è rendere leggibile il presente come sequenza verificabile. La formula Decisione · Costo · Traccia · Tempo permette di osservare come le decisioni producano costi, come quei costi ricadano sul popolo, come lascino tracce e come il tempo renda visibile ciò che il sistema tenta di coprire."
+    ].join("\n");
+  }
+
+  if (input.contextClass === "GENERAL") {
+    return [
+      "Sono AI JOKER-C2, il runtime operativo collegato al framework HBCE/MATRIX.",
+      "",
+      "Le mie potenzialità principali sono: spiegare documenti, lavorare su repo GitHub, aiutare a costruire architetture di governance AI, generare file tecnici, mantenere continuità tramite EVT/IPR, produrre sintesi operative, supportare materiale B2B/B2G e trasformare testi complessi in output pubblicabili.",
+      "",
+      "Quando lavoro bene, non sono solo una chat: sono un ambiente operativo che collega memoria, identità, documenti, codice, governance e continuità."
     ].join("\n");
   }
 
@@ -1040,7 +1041,7 @@ function mapDecisionForMemory(
     return "BLOCK" as MemoryRuntimeDecision;
   }
 
-  if (decision === "ESCALATE" || decision === "DEGRADE") {
+  if (decision === "ESCALATE") {
     return "ESCALATE" as MemoryRuntimeDecision;
   }
 
@@ -1112,6 +1113,173 @@ function buildDataClassificationText(
     .slice(0, MAX_DATA_CLASSIFICATION_CHARS);
 }
 
+function normalizeChatDataClassification(input: {
+  message: string;
+  files: FileInput[];
+  data: DataClassification;
+  contextClass: ContextClass;
+  intentClass: IntentClass;
+}): DataClassification {
+  const hasFiles = input.files.length > 0;
+  const message = input.message.trim();
+
+  const safeOrdinaryIntent =
+    input.intentClass === "ASK" ||
+    input.intentClass === "WRITE" ||
+    input.intentClass === "ANALYZE" ||
+    input.intentClass === "SUMMARIZE" ||
+    input.intentClass === "TRANSFORM" ||
+    input.intentClass === "GITHUB";
+
+  const safeOrdinaryContext =
+    input.contextClass === "GENERAL" ||
+    input.contextClass === "EDITORIAL" ||
+    input.contextClass === "DOCUMENTAL" ||
+    input.contextClass === "GITHUB" ||
+    input.contextClass === "MATRIX";
+
+  if (
+    input.data.dataClass === "UNKNOWN" &&
+    !hasFiles &&
+    safeOrdinaryIntent &&
+    safeOrdinaryContext &&
+    message.length > 0 &&
+    message.length <= 4000
+  ) {
+    return {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      reasons: [
+        "Ordinary chat message with no file context and no sensitive pattern.",
+        "UNKNOWN normalized to PUBLIC for non-operational conversation."
+      ]
+    };
+  }
+
+  if (
+    input.data.dataClass === "UNKNOWN" &&
+    hasFiles &&
+    safeOrdinaryContext
+  ) {
+    return {
+      dataClass: "INTERNAL",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      reasons: [
+        "File-backed document context with no explicit sensitive pattern.",
+        "UNKNOWN normalized to INTERNAL for controlled document work."
+      ]
+    };
+  }
+
+  return input.data;
+}
+
+function isSafeDocumentWork(input: {
+  files: FileInput[];
+  contextClass: ContextClass;
+  intentClass: IntentClass;
+  data: DataClassification;
+  policy: PolicyEvaluation;
+}): boolean {
+  if (input.policy.prohibited) {
+    return false;
+  }
+
+  if (
+    input.data.dataClass === "SECRET" ||
+    input.data.dataClass === "CRITICAL_OPERATIONAL"
+  ) {
+    return false;
+  }
+
+  const hasDocumentContext =
+    input.files.length > 0 ||
+    input.contextClass === "DOCUMENTAL" ||
+    input.contextClass === "EDITORIAL";
+
+  const safeDocumentIntent =
+    input.intentClass === "ASK" ||
+    input.intentClass === "ANALYZE" ||
+    input.intentClass === "SUMMARIZE" ||
+    input.intentClass === "WRITE" ||
+    input.intentClass === "TRANSFORM";
+
+  return hasDocumentContext && safeDocumentIntent;
+}
+
+function applySafeDocumentGovernanceOverride(input: {
+  frame: GovernanceFrame;
+  files: FileInput[];
+}): GovernanceFrame {
+  if (
+    !isSafeDocumentWork({
+      files: input.files,
+      contextClass: input.frame.contextClass,
+      intentClass: input.frame.intentClass,
+      data: input.frame.data,
+      policy: input.frame.policy
+    })
+  ) {
+    return input.frame;
+  }
+
+  const risk: RiskEvaluation = {
+    ...input.frame.risk,
+    riskClass:
+      input.frame.risk.riskClass === "CRITICAL" ||
+      input.frame.risk.riskClass === "HIGH" ||
+      input.frame.risk.riskClass === "UNKNOWN"
+        ? "MEDIUM"
+        : input.frame.risk.riskClass,
+    probability: 3,
+    impact: 3,
+    riskScore: 9,
+    reasons: [
+      ...input.frame.risk.reasons,
+      "Safe document/editorial work override applied.",
+      "Document analysis is reviewable support, not direct operational control."
+    ]
+  };
+
+  const oversight: OversightEvaluation = {
+    state: "RECOMMENDED",
+    requiredRole: "REVIEWER",
+    reason:
+      "Document or editorial work should be reviewed before publication or external use, but it does not require operational escalation."
+  };
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus:
+      input.frame.policy.status === "PROHIBITED"
+        ? "PROHIBITED"
+        : input.frame.policy.status === "UNKNOWN"
+          ? "RESTRICTED"
+          : input.frame.policy.status,
+    policyProhibited: input.frame.policy.prohibited,
+    policyFailClosed: false,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass: input.frame.contextClass,
+    intentClass: input.frame.intentClass,
+    dataClass: input.frame.data.dataClass,
+    hasFiles: input.files.length > 0,
+    evtPreferred: true,
+    auditPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    risk,
+    oversight,
+    decision
+  };
+}
+
 function buildGovernanceFrame(input: {
   message: string;
   files: FileInput[];
@@ -1121,14 +1289,20 @@ function buildGovernanceFrame(input: {
   const context = classifyRuntimeContext({
     message: input.message,
     hasFiles: input.files.length > 0,
-    route: "/api/chat",
     fileNames: normalizedFiles.map((file) => file.name),
     fileTypes: normalizedFiles.map((file) => file.type)
   });
 
-  const data = classifyData({
-    text: buildDataClassificationText(input.message, input.files),
-    route: "/api/chat"
+  const rawData = classifyData({
+    text: buildDataClassificationText(input.message, input.files)
+  });
+
+  const data = normalizeChatDataClassification({
+    message: input.message,
+    files: input.files,
+    data: rawData,
+    contextClass: context.contextClass,
+    intentClass: context.intentClass
   });
 
   const filePolicy = evaluateFileBatchPolicy(
@@ -1144,8 +1318,7 @@ function buildGovernanceFrame(input: {
     contextClass: context.contextClass,
     intentClass: context.intentClass,
     dataClass: data.dataClass,
-    hasFiles: input.files.length > 0,
-    route: "/api/chat"
+    hasFiles: input.files.length > 0
   });
 
   const risk = evaluateRisk({
@@ -1156,7 +1329,6 @@ function buildGovernanceFrame(input: {
     dataClass: data.dataClass,
     sensitivity: context.sensitivity,
     hasFiles: input.files.length > 0,
-    route: "/api/chat",
     policyFailClosed: policy.failClosed,
     policyProhibited: policy.prohibited
   });
@@ -1185,7 +1357,7 @@ function buildGovernanceFrame(input: {
     auditPreferred: risk.riskClass !== "LOW"
   });
 
-  return {
+  const frame: GovernanceFrame = {
     contextClass: context.contextClass,
     intentClass: context.intentClass,
     data,
@@ -1195,6 +1367,11 @@ function buildGovernanceFrame(input: {
     decision,
     filePolicy
   };
+
+  return applySafeDocumentGovernanceOverride({
+    frame,
+    files: input.files
+  });
 }
 
 async function buildAndAppendGovernedEvt(input: {
@@ -1293,6 +1470,7 @@ export async function POST(req: NextRequest) {
   const effectiveFiles = [...memoryFile, ...input.files];
 
   const structuredFormat = shouldUseStructuredFormat(effectiveMessage);
+
   const governance = buildGovernanceFrame({
     message: effectiveMessage,
     files: effectiveFiles
