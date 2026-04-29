@@ -29,6 +29,13 @@ type DocumentMode =
   | "STRUCTURAL_INDEX"
   | "GENERAL_DOCUMENT_WORK";
 
+type DocumentFamily =
+  | "APOKALYPSIS"
+  | "CORPUS_ESOTEROLOGIA"
+  | "MATRIX"
+  | "HBCE_RUNTIME"
+  | "GENERAL_DOCUMENT";
+
 type FileInput = {
   id?: string;
   name?: string;
@@ -56,6 +63,9 @@ type RuntimeEvent = {
   kind: string;
   state: RuntimeState;
   decision: RuntimeDecision;
+  contextClass: ContextClass;
+  documentMode: DocumentMode;
+  documentFamily: DocumentFamily;
   anchors: {
     hash: string;
   };
@@ -79,7 +89,7 @@ type GeneratedResponse = {
 
 const MODEL = process.env.JOKER_MODEL || "gpt-4o-mini";
 const MAX_FILE_CONTEXT_CHARS = 72000;
-const MAX_OUTPUT_TOKENS = 4200;
+const MAX_OUTPUT_TOKENS = 4600;
 
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -277,9 +287,13 @@ function detectDocumentMode(message: string): DocumentMode {
     lower.includes("migliora") ||
     lower.includes("correggi") ||
     lower.includes("più accademica") ||
+    lower.includes("piu accademica") ||
     lower.includes("più giuridica") ||
+    lower.includes("piu giuridica") ||
     lower.includes("più editoriale") ||
-    lower.includes("più tecnica")
+    lower.includes("piu editoriale") ||
+    lower.includes("più tecnica") ||
+    lower.includes("piu tecnica")
   ) {
     return "GENERATIVE_REWRITE";
   }
@@ -316,14 +330,18 @@ function detectDocumentMode(message: string): DocumentMode {
     lower.includes("sintetizza") ||
     lower.includes("riassumi") ||
     lower.includes("riassunto") ||
-    lower.includes("summary") ||
-    lower.includes("spiegamelo") ||
-    lower.includes("spiega")
+    lower.includes("summary")
   ) {
-    return "INTERPRETIVE_ANALYSIS";
+    return "SUMMARY";
   }
 
   if (
+    lower.includes("spiegamelo") ||
+    lower.includes("spiega") ||
+    lower.includes("cosa è") ||
+    lower.includes("cos'è") ||
+    lower.includes("cose") ||
+    lower.includes("che cos") ||
     lower.includes("analisi") ||
     lower.includes("interpreta") ||
     lower.includes("tesi") ||
@@ -346,7 +364,10 @@ function wantsSummary(message: string): boolean {
     lower.includes("riassunto") ||
     lower.includes("summary") ||
     lower.includes("spiegamelo") ||
-    lower.includes("spiega")
+    lower.includes("spiega") ||
+    lower.includes("cosa è") ||
+    lower.includes("cos'è") ||
+    lower.includes("che cos")
   );
 }
 
@@ -473,11 +494,61 @@ function detectKeywords(text: string): string[] {
   return keywords.filter((keyword) => lower.includes(keyword));
 }
 
+function detectDocumentFamily(files: FileInput[]): DocumentFamily {
+  const merged = normalizeFiles(files)
+    .map((file) => `${file.name}\n${file.text.slice(0, 50000)}`)
+    .join("\n\n")
+    .toLowerCase();
+
+  if (
+    merged.includes("apokalypsis") ||
+    merged.includes("apocalipsis") ||
+    merged.includes("apocalisse") ||
+    merged.includes("decadimento") ||
+    merged.includes("apostasia") ||
+    merged.includes("anticristo")
+  ) {
+    return "APOKALYPSIS";
+  }
+
+  if (
+    merged.includes("corpus esoterologia ermetica") ||
+    merged.includes("esoterologia") ||
+    merged.includes("decisione · costo · traccia · tempo") ||
+    merged.includes("decisione") &&
+      merged.includes("costo") &&
+      merged.includes("traccia") &&
+      merged.includes("tempo")
+  ) {
+    return "CORPUS_ESOTEROLOGIA";
+  }
+
+  if (
+    merged.includes("matrix") ||
+    merged.includes("trac") ||
+    merged.includes("torino") && merged.includes("bruxelles")
+  ) {
+    return "MATRIX";
+  }
+
+  if (
+    merged.includes("joker-c2") ||
+    merged.includes("hbce") ||
+    merged.includes("runtime") ||
+    merged.includes("evt chain") ||
+    merged.includes("identity primary record")
+  ) {
+    return "HBCE_RUNTIME";
+  }
+
+  return "GENERAL_DOCUMENT";
+}
+
 function collectKeywordPassages(
   text: string,
   keywords: string[],
-  maxPassages = 16,
-  windowSize = 900
+  maxPassages = 18,
+  windowSize = 1000
 ): string[] {
   const lower = text.toLowerCase();
   const passages: string[] = [];
@@ -492,7 +563,6 @@ function collectKeywordPassages(
 
     const start = Math.max(0, index - Math.floor(windowSize / 2));
     const end = Math.min(text.length, index + Math.floor(windowSize / 2));
-
     const bucket = Math.floor(start / windowSize);
 
     if (used.has(bucket)) {
@@ -528,10 +598,10 @@ function buildStructuralSample(text: string, maxChars: number): string {
   const keywords = detectKeywords(text);
   const keyPassages = collectKeywordPassages(text, keywords).join("\n\n");
 
-  const headBudget = Math.floor(maxChars * 0.28);
+  const headBudget = Math.floor(maxChars * 0.26);
   const middleBudget = Math.floor(maxChars * 0.22);
-  const tailBudget = Math.floor(maxChars * 0.28);
-  const keyBudget = Math.floor(maxChars * 0.16);
+  const tailBudget = Math.floor(maxChars * 0.26);
+  const keyBudget = Math.floor(maxChars * 0.20);
 
   const middleStart = Math.max(
     0,
@@ -590,7 +660,7 @@ function renderFilesForPrompt(files: FileInput[]): string {
     .map((file, index) => {
       const sample = buildStructuralSample(file.text, budgetPerFile);
       const keywords = detectKeywords(file.text);
-      const headings = extractHeadings(file.text, 40);
+      const headings = extractHeadings(file.text, 50);
 
       return [
         `FILE ${index + 1}: ${file.name}`,
@@ -658,6 +728,55 @@ function buildCanonicalDictionary(): string {
   ].join("\n");
 }
 
+function buildDocumentFamilyDirective(family: DocumentFamily): string {
+  if (family === "APOKALYPSIS") {
+    return [
+      "Direttiva specifica APOKALYPSIS:",
+      "- Tratta il testo come volume editoriale sul decadimento esposto del sistema culturale, politico e sociale.",
+      "- Non ridurre il testo a catastrofismo, religione o semplice politica.",
+      "- Evidenzia sempre la distinzione tra decadimento, crisi e crollo quando pertinente.",
+      "- Leggi la data 05-04-2026 come soglia inaugurale, se presente nel documento.",
+      "- Evidenzia il ruolo del popolo come soggetto che assorbe il costo sistemico, se presente nel documento.",
+      "- Usa Decisione · Costo · Traccia · Tempo come griglia interpretativa quando il testo la richiama.",
+      "- Quando l'utente chiede che cos'è il testo, devi spiegare anche funzione editoriale, forza strutturale, giudizio operativo e possibile output derivato."
+    ].join("\n");
+  }
+
+  if (family === "CORPUS_ESOTEROLOGIA") {
+    return [
+      "Direttiva specifica CORPUS ESOTEROLOGIA ERMETICA:",
+      "- Tratta il documento come parte di un sistema disciplinare sul reale come sequenza verificabile.",
+      "- Preserva Decisione · Costo · Traccia · Tempo.",
+      "- Distingui narrazione, interpretazione, prova, soglia e traccia.",
+      "- Se produci sintesi, includi sempre funzione metodologica e valore disciplinare."
+    ].join("\n");
+  }
+
+  if (family === "MATRIX") {
+    return [
+      "Direttiva specifica MATRIX:",
+      "- Tratta il documento come architettura europea di identità, governance, continuità, verifica e infrastruttura.",
+      "- Evidenzia IPR, HBCE, JOKER-C2, TRAC, EVT e valore B2B/B2G quando pertinenti.",
+      "- Non trasformare MATRIX in slogan. Presentala come schema operativo verificabile."
+    ].join("\n");
+  }
+
+  if (family === "HBCE_RUNTIME") {
+    return [
+      "Direttiva specifica HBCE_RUNTIME:",
+      "- Tratta il documento come componente tecnico-operativa del runtime.",
+      "- Dai priorità a endpoint, file, diagnostica, build, EVT, fallback, API key, modello, repository e verifica.",
+      "- Se modifichi codice, fornisci file completo e commit."
+    ].join("\n");
+  }
+
+  return [
+    "Direttiva documento generale:",
+    "- Tratta il file come corpus operativo.",
+    "- Identifica tesi, struttura, funzione, limiti e possibili output derivati."
+  ].join("\n");
+}
+
 function buildDocumentDirective(mode: DocumentMode): string {
   const base = [
     "Modalità documentale generativa e interpretativa:",
@@ -669,19 +788,32 @@ function buildDocumentDirective(mode: DocumentMode): string {
     "- Non inventare fatti esterni non presenti nel file.",
     "- Se generi proposte, dichiarale come proposte generate e non come contenuto testuale già presente nel file.",
     "- Se il file è lungo e il contesto è campionato, lavora sul campione strutturale disponibile e non fingere accesso integrale parola per parola.",
-    "- Dai sempre un risultato utilizzabile, non una promessa di lavoro futuro."
+    "- Dai sempre un risultato utilizzabile, non una promessa di lavoro futuro.",
+    "",
+    "Formato minimo quando l'utente chiede cosa è, cos'è, spiegami, spiegamelo, sintesi o riassunto:",
+    "1. Contenuto rilevato dal file.",
+    "2. Interpretazione strutturale.",
+    "3. Funzione del testo.",
+    "4. Giudizio operativo o editoriale.",
+    "5. Proposta generativa o frase nucleo utilizzabile.",
+    "",
+    "Regola di forza:",
+    "- Non limitarti a dire di cosa parla il file.",
+    "- Devi trasformare il testo in una struttura operativa utilizzabile."
   ];
 
   if (mode === "SUMMARY") {
     return [
       ...base,
       "",
-      "Output richiesto:",
+      "Output richiesto per SUMMARY:",
       "1. Sintesi breve.",
       "2. Tesi centrale.",
       "3. Struttura del documento.",
       "4. Concetti chiave.",
-      "5. Frase nucleo."
+      "5. Interpretazione minima.",
+      "6. Frase nucleo.",
+      "7. Output derivabile successivo."
     ].join("\n");
   }
 
@@ -689,15 +821,17 @@ function buildDocumentDirective(mode: DocumentMode): string {
     return [
       ...base,
       "",
-      "Output richiesto:",
-      "1. Tesi centrale.",
-      "2. Soglia o evento fondativo.",
-      "3. Differenza tra tema apparente e funzione reale del documento.",
-      "4. Struttura argomentativa.",
-      "5. Concetti dominanti.",
-      "6. Interpretazione canonica.",
-      "7. Giudizio operativo.",
-      "8. Frase nucleo utilizzabile."
+      "Output richiesto per INTERPRETIVE_ANALYSIS:",
+      "1. Che cos'è il testo.",
+      "2. Tesi centrale.",
+      "3. Soglia o evento fondativo.",
+      "4. Differenza tra tema apparente e funzione reale del documento.",
+      "5. Struttura argomentativa.",
+      "6. Concetti dominanti.",
+      "7. Interpretazione canonica.",
+      "8. Giudizio operativo ed editoriale.",
+      "9. Cosa può generare questo testo: Amazon, LinkedIn, indice, pitch, capitolo, premessa, scheda.",
+      "10. Frase nucleo utilizzabile."
     ].join("\n");
   }
 
@@ -705,7 +839,7 @@ function buildDocumentDirective(mode: DocumentMode): string {
     return [
       ...base,
       "",
-      "Output richiesto:",
+      "Output richiesto per EDITORIAL_REVIEW:",
       "1. Giudizio editoriale complessivo.",
       "2. Punti forti.",
       "3. Punti deboli.",
@@ -713,7 +847,8 @@ function buildDocumentDirective(mode: DocumentMode): string {
       "5. Contraddizioni o rischi.",
       "6. Parti da rafforzare.",
       "7. Prontezza per pubblicazione.",
-      "8. Azioni correttive prioritarie."
+      "8. Azioni correttive prioritarie.",
+      "9. Frase editoriale finale."
     ].join("\n");
   }
 
@@ -721,12 +856,13 @@ function buildDocumentDirective(mode: DocumentMode): string {
     return [
       ...base,
       "",
-      "Output richiesto:",
+      "Output richiesto per GENERATIVE_REWRITE:",
       "1. Riscrittura completa della sezione richiesta oppure proposta di riscrittura se la sezione non è specificata.",
       "2. Tono tecnico, editoriale, giuridico o operativo secondo richiesta utente.",
       "3. Preserva il nucleo concettuale.",
       "4. Evita introduzioni generiche.",
-      "5. Produci testo pronto da copiare."
+      "5. Produci testo pronto da copiare.",
+      "6. Se necessario, includi titolo e collocazione nel volume."
     ].join("\n");
   }
 
@@ -734,12 +870,13 @@ function buildDocumentDirective(mode: DocumentMode): string {
     return [
       ...base,
       "",
-      "Output richiesto:",
+      "Output richiesto per DERIVED_OUTPUT:",
       "1. Output derivato pronto all'uso.",
       "2. Adatta il formato alla richiesta: Amazon, LinkedIn, email, pitch, scheda, presentazione o sintesi istituzionale.",
       "3. Mantieni coerenza con il file attivo.",
       "4. Non trasformare il contenuto in marketing vuoto.",
-      "5. Evidenzia valore, tesi e funzione."
+      "5. Evidenzia valore, tesi e funzione.",
+      "6. Chiudi con una frase nucleo forte."
     ].join("\n");
   }
 
@@ -747,20 +884,21 @@ function buildDocumentDirective(mode: DocumentMode): string {
     return [
       ...base,
       "",
-      "Output richiesto:",
+      "Output richiesto per STRUCTURAL_INDEX:",
       "1. Indice ordinato.",
       "2. Parti principali.",
       "3. Capitoli.",
       "4. Sezioni.",
       "5. Progressione logica.",
-      "6. Eventuali miglioramenti strutturali."
+      "6. Eventuali miglioramenti strutturali.",
+      "7. Funzione editoriale della struttura."
     ].join("\n");
   }
 
   return [
     ...base,
     "",
-    "Output richiesto:",
+    "Output richiesto per GENERAL_DOCUMENT_WORK:",
     "Rispondi in modo operativo, interpretativo e generativo, scegliendo la struttura più utile alla richiesta."
   ].join("\n");
 }
@@ -769,6 +907,7 @@ function buildSystemPrompt(input: {
   message: string;
   contextClass: ContextClass;
   documentMode: DocumentMode;
+  documentFamily: DocumentFamily;
   files: FileInput[];
 }): string {
   const identity = getPrimaryIdentity();
@@ -812,6 +951,8 @@ function buildSystemPrompt(input: {
     "",
     buildDocumentDirective(input.documentMode),
     "",
+    buildDocumentFamilyDirective(input.documentFamily),
+    "",
     "Capacità operative:",
     "- analisi testuale;",
     "- interpretazione documentale;",
@@ -828,6 +969,7 @@ function buildSystemPrompt(input: {
     "",
     `Classe contesto: ${input.contextClass}.`,
     `Modalità documento: ${input.documentMode}.`,
+    `Famiglia documento: ${input.documentFamily}.`,
     "",
     "File attivi:",
     renderFilesForPrompt(input.files),
@@ -953,6 +1095,8 @@ function buildRuntimeDiagnosticText(input: {
   state: RuntimeState;
   decision: RuntimeDecision;
   contextClass: ContextClass;
+  documentMode: DocumentMode;
+  documentFamily: DocumentFamily;
   event: RuntimeEvent;
   degradedReason?: string | null;
 }): string {
@@ -964,6 +1108,8 @@ function buildRuntimeDiagnosticText(input: {
     `Runtime OpenAI: ${input.state}`,
     `Decision: ${input.decision}`,
     `Context: ${input.contextClass}`,
+    `DocumentMode: ${input.documentMode}`,
+    `DocumentFamily: ${input.documentFamily}`,
     `Model: ${MODEL}`,
     `OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "configured" : "missing"}`,
     `JOKER_MODEL: ${process.env.JOKER_MODEL ? "configured" : "default"}`,
@@ -1016,9 +1162,9 @@ function buildLocalDocumentSummary(files: FileInput[]): string {
   const text = file.text;
   const lower = text.toLowerCase();
   const sentences = splitSentences(text);
-  const selected = sentences.slice(0, 12);
+  const selected = sentences.slice(0, 14);
   const detected = detectKeywords(text);
-  const headings = extractHeadings(text, 40);
+  const headings = extractHeadings(text, 45);
 
   const isMatrixDocument =
     lower.includes("matrix") ||
@@ -1046,33 +1192,55 @@ function buildLocalDocumentSummary(files: FileInput[]): string {
     ? [
         `Analisi locale interpretativa del documento: ${file.name}`,
         "",
+        "Contenuto rilevato dal file:",
         "Il documento appartiene al campo MATRIX/HBCE e tratta la costruzione di un'architettura operativa basata su identità, governance, esecuzione controllata, continuità degli eventi, verifica e resilienza.",
         "",
-        "Tesi interpretativa:",
-        "MATRIX non viene trattata come semplice progetto tecnico, ma come infrastruttura di attribuzione e continuità per sistemi digitali, IA, governance, auditabilità e controllo operativo."
+        "Interpretazione strutturale:",
+        "MATRIX non viene trattata come semplice progetto tecnico, ma come infrastruttura di attribuzione e continuità per sistemi digitali, IA, governance, auditabilità e controllo operativo.",
+        "",
+        "Proposta generativa:",
+        "Da questo file si possono generare scheda tecnica, roadmap B2B/B2G, pitch istituzionale, README, demo script e documento di governance."
       ].join("\n")
     : isApokalypsisDocument
       ? [
           `Analisi locale interpretativa del documento: ${file.name}`,
           "",
+          "Contenuto rilevato dal file:",
           "Il documento appartiene al campo APOKALYPSIS/APOCALIPSIS e tratta l'inizio del decadimento esposto del sistema culturale, politico e sociale.",
           "",
-          "Tesi interpretativa:",
-          "Il decadimento non viene presentato come crollo immediato, ma come fase in cui il sistema continua a funzionare pur perdendo fondamento, trasferendo costo crescente sul popolo e lasciando una traccia storica verificabile."
+          "Interpretazione strutturale:",
+          "Il decadimento non viene presentato come crollo immediato, ma come fase in cui il sistema continua a funzionare pur perdendo fondamento, trasferendo costo crescente sul popolo e lasciando una traccia storica verificabile.",
+          "",
+          "Proposta generativa:",
+          "Da questo file si possono generare descrizione Amazon, post LinkedIn, indice editoriale, quarta di copertina, premessa, pitch culturale e giudizio di pubblicazione.",
+          "",
+          "Frase nucleo:",
+          "APOKALYPSIS non descrive la fine del mondo, ma l'inizio della perdita di fondamento del sistema mentre esso continua a funzionare."
         ].join("\n")
       : isCorpusDocument
         ? [
             `Analisi locale interpretativa del documento: ${file.name}`,
             "",
+            "Contenuto rilevato dal file:",
             "Il documento appartiene al campo del CORPUS ESOTEROLOGIA ERMETICA e tratta il reale come sequenza verificabile, con centralità di Decisione, Costo, Traccia e Tempo.",
             "",
-            "Tesi interpretativa:",
-            "Il testo sposta il criterio dal piano della semplice interpretazione al piano della verifica operativa."
+            "Interpretazione strutturale:",
+            "Il testo sposta il criterio dal piano della semplice interpretazione al piano della verifica operativa.",
+            "",
+            "Proposta generativa:",
+            "Da questo file si possono generare capitoli, glossario, indice canonico, descrizione editoriale, premessa metodologica e scheda disciplinare."
           ].join("\n")
         : [
             `Analisi locale interpretativa del documento: ${file.name}`,
             "",
-            "Il documento contiene materiale testuale leggibile. La sintesi locale rileva temi, parole chiave e struttura senza accesso al modello remoto."
+            "Contenuto rilevato dal file:",
+            "Il documento contiene materiale testuale leggibile.",
+            "",
+            "Interpretazione strutturale:",
+            "La sintesi locale rileva temi, parole chiave e struttura senza accesso al modello remoto.",
+            "",
+            "Proposta generativa:",
+            "Da questo file si possono generare sintesi, indice, tabella di lavoro, revisione editoriale e riscrittura."
           ].join("\n");
 
   return [
@@ -1219,6 +1387,7 @@ async function generateResponse(input: {
   message: string;
   contextClass: ContextClass;
   documentMode: DocumentMode;
+  documentFamily: DocumentFamily;
   files: FileInput[];
 }): Promise<GeneratedResponse> {
   if (!openai) {
@@ -1252,6 +1421,8 @@ async function generateResponse(input: {
             "Regola documentale: quando sono presenti file attivi, non operare come riassuntore passivo. Devi interpretare, strutturare, giudicare e generare output derivati coerenti con il documento.",
             "Regola documentale: se il file è lungo e ricevi un campione strutturale, lavora su quel campione senza fingere accesso integrale parola per parola.",
             "Regola documentale: separa, quando utile, ciò che deriva dal file, ciò che è interpretazione e ciò che è proposta generativa.",
+            "Regola documentale: quando l'utente chiede cosa è il testo, cos'è il testo, spiegami o spiegamelo, devi rispondere con contenuto rilevato, interpretazione strutturale, funzione del testo, giudizio operativo e proposta generativa.",
+            "Regola documentale: non basta spiegare il contenuto. Devi trasformare il testo in una struttura operativa utilizzabile.",
             "",
             "Per strategia, mercato, B2B, B2G, roadmap e prodotto devi usare categorie concrete: IPR, EVT Chain, traccia, continuità, verifica, file ingestion, diagnostica runtime, repository pulito, Vercel build, GitHub, demo verificabile, deliverable, stakeholder value e prossima azione.",
             "",
@@ -1299,6 +1470,7 @@ function buildEvent(input: {
   message: string;
   contextClass: ContextClass;
   documentMode: DocumentMode;
+  documentFamily: DocumentFamily;
 }): RuntimeEvent {
   const identity = getPrimaryIdentity();
 
@@ -1318,7 +1490,8 @@ function buildEvent(input: {
     continuityRef: input.prev,
     message: input.message,
     contextClass: input.contextClass,
-    documentMode: input.documentMode
+    documentMode: input.documentMode,
+    documentFamily: input.documentFamily
   };
 
   return Object.freeze({
@@ -1330,6 +1503,9 @@ function buildEvent(input: {
     kind: payload.kind,
     state: payload.state,
     decision: payload.decision,
+    contextClass: payload.contextClass,
+    documentMode: payload.documentMode,
+    documentFamily: payload.documentFamily,
     anchors: {
       hash: buildTraceHash(payload)
     },
@@ -1343,6 +1519,7 @@ function buildTechnicalFrame(input: {
   decision: RuntimeDecision;
   contextClass: ContextClass;
   documentMode: DocumentMode;
+  documentFamily: DocumentFamily;
   event: RuntimeEvent;
   degradedReason?: string | null;
 }) {
@@ -1354,6 +1531,7 @@ function buildTechnicalFrame(input: {
     `- decision: ${input.decision}`,
     `- context: ${input.contextClass}`,
     `- documentMode: ${input.documentMode}`,
+    `- documentFamily: ${input.documentFamily}`,
     `- evt: ${input.event.evt}`,
     `- prev: ${input.event.prev}`,
     `- hash: ${input.event.anchors.hash}`,
@@ -1406,6 +1584,10 @@ export async function POST(req: NextRequest) {
     contextClass === "DOCUMENTAL"
       ? detectDocumentMode(effectiveMessage)
       : "GENERAL_DOCUMENT_WORK";
+  const documentFamily =
+    contextClass === "DOCUMENTAL"
+      ? detectDocumentFamily(input.files)
+      : "GENERAL_DOCUMENT";
 
   if (isRuntimeDiagnosticRequest(effectiveMessage)) {
     const diagnosticState: RuntimeState = openai ? "OPERATIONAL" : "DEGRADED";
@@ -1418,7 +1600,8 @@ export async function POST(req: NextRequest) {
       decision: diagnosticDecision,
       message: effectiveMessage,
       contextClass,
-      documentMode
+      documentMode,
+      documentFamily
     });
 
     const identity = getPrimaryIdentity();
@@ -1427,6 +1610,8 @@ export async function POST(req: NextRequest) {
       state: diagnosticState,
       decision: diagnosticDecision,
       contextClass,
+      documentMode,
+      documentFamily,
       event,
       degradedReason
     });
@@ -1438,6 +1623,7 @@ export async function POST(req: NextRequest) {
       decision: diagnosticDecision,
       contextClass,
       documentMode,
+      documentFamily,
       identity: {
         entity: identity.entity,
         ipr: identity.ipr,
@@ -1478,6 +1664,7 @@ export async function POST(req: NextRequest) {
     message: effectiveMessage,
     contextClass,
     documentMode,
+    documentFamily,
     files: input.files
   });
 
@@ -1490,7 +1677,8 @@ export async function POST(req: NextRequest) {
     decision,
     message: effectiveMessage,
     contextClass,
-    documentMode
+    documentMode,
+    documentFamily
   });
 
   const exposeRuntime = shouldExposeTechnicalFrame(effectiveMessage, contextClass);
@@ -1502,6 +1690,7 @@ export async function POST(req: NextRequest) {
         decision,
         contextClass,
         documentMode,
+        documentFamily,
         event,
         degradedReason: generated.degradedReason
       })
@@ -1516,6 +1705,7 @@ export async function POST(req: NextRequest) {
     decision,
     contextClass,
     documentMode,
+    documentFamily,
     identity: {
       entity: identity.entity,
       ipr: identity.ipr,
