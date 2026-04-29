@@ -73,23 +73,23 @@ export type SemanticState = {
   updatedAt: string;
 };
 
-type MemorySlot = {
-  semanticState: SemanticState;
-  events: EvtMemoryEvent[];
-};
-
-type MemoryContext = {
+export type MemoryContext = {
   used: boolean;
   text: string;
   semanticState: SemanticState | null;
   lastEventId: string | null;
 };
 
+type MemorySlot = {
+  semanticState: SemanticState;
+  events: EvtMemoryEvent[];
+};
+
+const EVENT_KIND = "IPR_BOUND_CHAT_MEMORY" as const;
+
 declare global {
   // eslint-disable-next-line no-var
-  var __JOKER_C2_EVT_MEMORY__:
-    | Map<string, MemorySlot>
-    | undefined;
+  var __JOKER_C2_EVT_MEMORY__: Map<string, MemorySlot> | undefined;
 }
 
 const MAX_EVENTS_PER_SLOT = 80;
@@ -108,7 +108,7 @@ export function sha256Short(input: unknown): string {
 
 function getStore(): Map<string, MemorySlot> {
   if (!globalThis.__JOKER_C2_EVT_MEMORY__) {
-    globalThis.__JOKER_C2_EVT_MEMORY__ = new Map();
+    globalThis.__JOKER_C2_EVT_MEMORY__ = new Map<string, MemorySlot>();
   }
 
   return globalThis.__JOKER_C2_EVT_MEMORY__;
@@ -235,7 +235,9 @@ function inferCentralThesis(input: EvtMemoryInput): string | null {
   const merged = [
     input.message,
     input.response,
-    ...input.files.map((file) => `${file.name || ""}\n${normalizeFileText(file).slice(0, 12000)}`)
+    ...input.files.map((file) =>
+      [file.name || "", normalizeFileText(file).slice(0, 12000)].join("\n")
+    )
   ].join("\n\n");
 
   const lower = merged.toLowerCase();
@@ -410,10 +412,7 @@ function updateSemanticState(
     newReferenceRules.push(`documento attivo = ${activeDocument}`);
   }
 
-  const accumulatedMeaning = [
-    previous.accumulatedMeaning,
-    event.memoryDelta
-  ]
+  const accumulatedMeaning = [previous.accumulatedMeaning, event.memoryDelta]
     .filter(Boolean)
     .join(" ")
     .slice(-3500);
@@ -443,18 +442,24 @@ export function appendEvtMemory(input: EvtMemoryInput): EvtMemoryEvent {
   const existing = store.get(key);
 
   const previousState =
-    existing?.semanticState || createInitialSemanticState(input.sessionId, input.ipr);
+    existing?.semanticState ||
+    createInitialSemanticState(input.sessionId, input.ipr);
 
   const prev = input.prevEventId || previousState.lastEventId || "GENESIS";
   const evt = `EVT-MEM-${Date.now()}`;
+  const t = nowIso();
   const activeDocument = getActiveDocument(input.files);
+
   const mergedText = [
     input.message,
     input.response,
-    ...input.files.map((file) => `${file.name || ""}\n${normalizeFileText(file).slice(0, 6000)}`)
+    ...input.files.map((file) =>
+      [file.name || "", normalizeFileText(file).slice(0, 6000)].join("\n")
+    )
   ].join("\n\n");
 
   const semanticTags = detectTags(mergedText);
+  const userIntent = inferUserIntent(input.message);
   const memoryDelta = buildMemoryDelta(input);
   const nextContext = buildNextContext(input);
 
@@ -470,14 +475,14 @@ export function appendEvtMemory(input: EvtMemoryInput): EvtMemoryEvent {
 
   const outputHash = sha256Short(input.response);
 
-  const eventPayload = {
+  const tracePayload = {
     evt,
     prev,
-    t: nowIso(),
+    t,
     entity: input.entity,
     ipr: input.ipr,
     sessionId: input.sessionId,
-    kind: "IPR_BOUND_CHAT_MEMORY",
+    kind: EVENT_KIND,
     state: input.state,
     decision: input.decision,
     contextClass: input.contextClass,
@@ -485,7 +490,7 @@ export function appendEvtMemory(input: EvtMemoryInput): EvtMemoryEvent {
     documentFamily: input.documentFamily,
     activeDocument,
     semanticTags,
-    userIntent: inferUserIntent(input.message),
+    userIntent,
     memoryDelta,
     nextContext,
     inputHash,
@@ -493,27 +498,27 @@ export function appendEvtMemory(input: EvtMemoryInput): EvtMemoryEvent {
   };
 
   const event: EvtMemoryEvent = {
-    evt: eventPayload.evt,
-    prev: eventPayload.prev,
-    t: eventPayload.t,
-    entity: eventPayload.entity,
-    ipr: eventPayload.ipr,
-    sessionId: eventPayload.sessionId,
-    kind: eventPayload.kind,
-    state: eventPayload.state,
-    decision: eventPayload.decision,
-    contextClass: eventPayload.contextClass,
-    documentMode: eventPayload.documentMode,
-    documentFamily: eventPayload.documentFamily,
-    activeDocument: eventPayload.activeDocument,
-    semanticTags: eventPayload.semanticTags,
-    userIntent: eventPayload.userIntent,
-    memoryDelta: eventPayload.memoryDelta,
-    nextContext: eventPayload.nextContext,
+    evt,
+    prev,
+    t,
+    entity: input.entity,
+    ipr: input.ipr,
+    sessionId: input.sessionId,
+    kind: EVENT_KIND,
+    state: input.state,
+    decision: input.decision,
+    contextClass: input.contextClass,
+    documentMode: input.documentMode,
+    documentFamily: input.documentFamily,
+    activeDocument,
+    semanticTags,
+    userIntent,
+    memoryDelta,
+    nextContext,
     anchors: {
       inputHash,
       outputHash,
-      traceHash: sha256Short(eventPayload)
+      traceHash: sha256Short(tracePayload)
     }
   };
 
