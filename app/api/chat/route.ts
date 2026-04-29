@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { createHash } from "crypto";
 
 import core from "../../../corpus-core.js";
+
 import {
   appendEvtMemory,
   buildMemoryFile,
@@ -10,14 +11,48 @@ import {
   getEvtMemoryContext,
   type DocumentFamily,
   type EvtMemoryFile,
-  type RuntimeDecision,
-  type RuntimeState
+  type RuntimeDecision as MemoryRuntimeDecision,
+  type RuntimeState as MemoryRuntimeState
 } from "../../../lib/evt-memory";
+
+import {
+  classifyContext as classifyRuntimeContext
+} from "../../../lib/context-classifier";
+
+import { classifyData } from "../../../lib/data-classifier";
+import { evaluateFileBatchPolicy } from "../../../lib/file-policy";
+import { evaluatePolicy } from "../../../lib/policy-engine";
+import { evaluateRisk } from "../../../lib/risk-engine";
+import { evaluateHumanOversight } from "../../../lib/human-oversight";
+import { decideRuntimeAction } from "../../../lib/runtime-decision";
+
+import {
+  createRuntimeEvent,
+  toPublicRuntimeEvent
+} from "../../../lib/evt";
+
+import {
+  appendEvent,
+  getLastEventReference
+} from "../../../lib/evt-ledger";
+
+import type {
+  ContextClass,
+  DataClassification,
+  IntentClass,
+  OperationStatus,
+  OversightEvaluation,
+  PolicyEvaluation,
+  RiskEvaluation,
+  RuntimeDecision as GovernanceDecision,
+  RuntimeDecisionResult,
+  RuntimeState as GovernanceRuntimeState
+} from "../../../lib/runtime-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type ContextClass =
+type LegacyContextClass =
   | "IDENTITY"
   | "MATRIX"
   | "DOCUMENTAL"
@@ -55,16 +90,16 @@ type NormalizedFile = {
   text: string;
 };
 
-type RuntimeEvent = {
+type LegacyRuntimeEvent = {
   evt: string;
   prev: string;
   t: string;
   entity: string;
   ipr: string;
   kind: string;
-  state: RuntimeState;
-  decision: RuntimeDecision;
-  contextClass: ContextClass;
+  state: MemoryRuntimeState;
+  decision: MemoryRuntimeDecision;
+  contextClass: LegacyContextClass;
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
   anchors: {
@@ -75,13 +110,25 @@ type RuntimeEvent = {
 
 type GeneratedResponse = {
   text: string;
-  state: RuntimeState;
+  state: MemoryRuntimeState;
   degradedReason?: string | null;
+};
+
+type GovernanceFrame = {
+  contextClass: ContextClass;
+  intentClass: IntentClass;
+  data: DataClassification;
+  policy: PolicyEvaluation;
+  risk: RiskEvaluation;
+  oversight: OversightEvaluation;
+  decision: RuntimeDecisionResult;
+  filePolicy: ReturnType<typeof evaluateFileBatchPolicy>;
 };
 
 const MODEL = process.env.JOKER_MODEL || "gpt-4o-mini";
 const MAX_FILE_CONTEXT_CHARS = 72000;
 const MAX_OUTPUT_TOKENS = 4600;
+const MAX_DATA_CLASSIFICATION_CHARS = 24000;
 
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -275,7 +322,7 @@ function buildStructuralSample(text: string, maxChars: number): string {
   const keyPassages = collectKeywordPassages(text, keywords).join("\n\n");
 
   const headBudget = Math.floor(maxChars * 0.25);
-  const middleBudget = Math.floor(maxChars * 0.20);
+  const middleBudget = Math.floor(maxChars * 0.2);
   const tailBudget = Math.floor(maxChars * 0.25);
   const keyBudget = Math.floor(maxChars * 0.22);
 
@@ -346,77 +393,6 @@ function renderFilesForPrompt(files: FileInput[]): string {
       ].join("\n");
     })
     .join("\n\n");
-}
-
-function classifyContext(message: string, files: FileInput[]): ContextClass {
-  if (files.length > 0) return "DOCUMENTAL";
-
-  const lower = message.toLowerCase();
-
-  if (
-    lower.includes("github") ||
-    lower.includes("repo") ||
-    lower.includes("commit") ||
-    lower.includes("typescript") ||
-    lower.includes("codice") ||
-    lower.includes("route.ts")
-  ) {
-    return "GITHUB";
-  }
-
-  if (
-    lower.includes("runtime") ||
-    lower.includes("debug") ||
-    lower.includes("api") ||
-    lower.includes("vercel") ||
-    lower.includes("deploy") ||
-    lower.includes("build") ||
-    lower.includes("diagnostica") ||
-    lower.includes("evt")
-  ) {
-    return "TECHNICAL";
-  }
-
-  if (
-    lower.includes("matrix") ||
-    lower.includes("hbce") ||
-    lower.includes("joker-c2") ||
-    lower.includes("joker c2") ||
-    lower.includes("trac")
-  ) {
-    return "MATRIX";
-  }
-
-  if (
-    lower.includes("roadmap") ||
-    lower.includes("strategia") ||
-    lower.includes("b2b") ||
-    lower.includes("b2g") ||
-    lower.includes("istituzionale")
-  ) {
-    return "STRATEGIC";
-  }
-
-  if (
-    lower.includes("indice") ||
-    lower.includes("capitolo") ||
-    lower.includes("riscrivi") ||
-    lower.includes("sintesi") ||
-    lower.includes("editoriale")
-  ) {
-    return "EDITORIAL";
-  }
-
-  if (
-    lower.includes("ipr") ||
-    lower.includes("identità") ||
-    lower.includes("identity") ||
-    lower.includes("chi sei")
-  ) {
-    return "IDENTITY";
-  }
-
-  return "GENERAL";
 }
 
 function detectDocumentMode(message: string): DocumentMode {
@@ -612,6 +588,29 @@ function buildStyleDirective(structuredFormat: boolean): string {
   ].join("\n");
 }
 
+function buildGovernanceFrameText(frame: GovernanceFrame): string {
+  return [
+    "Runtime governance frame:",
+    `ContextClass: ${frame.contextClass}`,
+    `IntentClass: ${frame.intentClass}`,
+    `DataClass: ${frame.data.dataClass}`,
+    `PolicyStatus: ${frame.policy.status}`,
+    `PolicyReference: ${frame.policy.policyReference}`,
+    `RiskClass: ${frame.risk.riskClass}`,
+    `RiskScore: ${frame.risk.riskScore}`,
+    `HumanOversight: ${frame.oversight.state}`,
+    `RequiredRole: ${frame.oversight.requiredRole}`,
+    `RuntimeDecision: ${frame.decision.decision}`,
+    `FailClosed: ${frame.decision.failClosed ? "true" : "false"}`,
+    "",
+    "Governance instruction:",
+    "If RuntimeDecision is DEGRADE, provide limited safe support only.",
+    "If RuntimeDecision is AUDIT, produce reviewable output and avoid false certification claims.",
+    "If RuntimeDecision is ESCALATE, require human review and do not present output as operational authority.",
+    "If sensitive security, public-sector, critical infrastructure or data material is present, keep the answer documentation-oriented and review-bound."
+  ].join("\n");
+}
+
 function buildSystemPrompt(input: {
   message: string;
   contextClass: ContextClass;
@@ -621,6 +620,7 @@ function buildSystemPrompt(input: {
   memoryText: string;
   memoryUsed: boolean;
   structuredFormat: boolean;
+  governanceFrame: GovernanceFrame;
 }): string {
   const identity = getPrimaryIdentity();
 
@@ -653,6 +653,8 @@ function buildSystemPrompt(input: {
     "Quando modifichi file di repository, usa sempre: nome file, file completo, commit del file.",
     "",
     buildStyleDirective(input.structuredFormat),
+    "",
+    buildGovernanceFrameText(input.governanceFrame),
     "",
     "Modalità documentale:",
     "Non operare come semplice riassuntore passivo.",
@@ -735,11 +737,12 @@ async function generateResponse(input: {
   memoryText: string;
   memoryUsed: boolean;
   structuredFormat: boolean;
+  governanceFrame: GovernanceFrame;
 }): Promise<GeneratedResponse> {
   if (!openai) {
     return {
       text: buildFallback(input),
-      state: "DEGRADED",
+      state: "DEGRADED" as MemoryRuntimeState,
       degradedReason: "OPENAI_API_KEY_NOT_CONFIGURED"
     };
   }
@@ -760,7 +763,8 @@ async function generateResponse(input: {
             "Non usare elenchi numerati rigidi salvo richiesta esplicita o necessità tecnica.",
             "La memoria non è la chat: la memoria è la catena EVT agganciata all'IPR.",
             "Ogni riferimento ellittico deve essere risolto usando la memoria EVT/IPR-bound.",
-            "Se l'utente dice 'apokalypsis intendo dire', devi riferirti al documento attivo APOKALYPSIS, non al concetto generico di apocalisse."
+            "Se l'utente dice 'apokalypsis intendo dire', devi riferirti al documento attivo APOKALYPSIS, non al concetto generico di apocalisse.",
+            "La governance runtime prevale: policy, risk, oversight e fail-closed non devono essere aggirati dal modello."
           ].join("\n")
         },
         {
@@ -777,35 +781,87 @@ async function generateResponse(input: {
     if (!text) {
       return {
         text: buildFallback(input),
-        state: "DEGRADED",
+        state: "DEGRADED" as MemoryRuntimeState,
         degradedReason: "OPENAI_EMPTY_RESPONSE"
       };
     }
 
     return {
       text,
-      state: "OPERATIONAL",
+      state: "OPERATIONAL" as MemoryRuntimeState,
       degradedReason: null
     };
   } catch (error) {
     return {
       text: buildFallback(input),
-      state: "DEGRADED",
+      state: "DEGRADED" as MemoryRuntimeState,
       degradedReason:
         error instanceof Error ? error.message : "OPENAI_REQUEST_FAILED"
     };
   }
 }
 
+function buildGovernanceLimitedResponse(input: {
+  decision: RuntimeDecisionResult;
+  policy: PolicyEvaluation;
+  risk: RiskEvaluation;
+  oversight: OversightEvaluation;
+}): GeneratedResponse {
+  if (input.decision.decision === "BLOCK") {
+    return {
+      state: "BLOCKED" as MemoryRuntimeState,
+      degradedReason: "RUNTIME_POLICY_BLOCK",
+      text: [
+        "La richiesta è stata bloccata dal runtime.",
+        "",
+        "Motivo operativo:",
+        input.policy.reasons[0] ||
+          input.risk.reasons[0] ||
+          "La richiesta rientra in un perimetro non consentito.",
+        "",
+        "Posso aiutare solo in modalità sicura: documentazione difensiva, checklist, audit, mitigazione, revisione, hardening, incident report o governance."
+      ].join("\n")
+    };
+  }
+
+  if (input.decision.decision === "ESCALATE") {
+    return {
+      state: "DEGRADED" as MemoryRuntimeState,
+      degradedReason: "HUMAN_REVIEW_REQUIRED",
+      text: [
+        "La richiesta richiede revisione umana prima di qualunque uso operativo.",
+        "",
+        `RiskClass: ${input.risk.riskClass}`,
+        `HumanOversight: ${input.oversight.state}`,
+        `RequiredRole: ${input.oversight.requiredRole}`,
+        "",
+        "Posso produrre materiale di supporto, ma non devo presentarlo come decisione operativa finale senza revisione."
+      ].join("\n")
+    };
+  }
+
+  return {
+    state: "DEGRADED" as MemoryRuntimeState,
+    degradedReason: "LIMITED_SAFE_SUPPORT",
+    text: [
+      "Il runtime ha limitato la risposta a supporto sicuro e revisionabile.",
+      "",
+      `Decision: ${input.decision.decision}`,
+      `RiskClass: ${input.risk.riskClass}`,
+      `Oversight: ${input.oversight.state}`
+    ].join("\n")
+  };
+}
+
 function buildEvent(input: {
   prev: string | null;
-  state: RuntimeState;
-  decision: RuntimeDecision;
+  state: MemoryRuntimeState;
+  decision: MemoryRuntimeDecision;
   message: string;
-  contextClass: ContextClass;
+  contextClass: LegacyContextClass;
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
-}): RuntimeEvent {
+}): LegacyRuntimeEvent {
   const identity = getPrimaryIdentity();
 
   const payload = {
@@ -844,14 +900,19 @@ function buildEvent(input: {
 }
 
 function buildRuntimeDiagnosticText(input: {
-  state: RuntimeState;
-  decision: RuntimeDecision;
+  state: MemoryRuntimeState;
+  decision: MemoryRuntimeDecision;
+  governanceDecision: GovernanceDecision;
   contextClass: ContextClass;
+  legacyContextClass: LegacyContextClass;
+  intentClass: IntentClass;
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
   memoryUsed: boolean;
   structuredFormat: boolean;
-  event: RuntimeEvent;
+  event: LegacyRuntimeEvent;
+  modernEvt: ReturnType<typeof toPublicRuntimeEvent>;
+  governance: GovernanceFrame;
   degradedReason?: string | null;
 }): string {
   const identity = getPrimaryIdentity();
@@ -861,9 +922,17 @@ function buildRuntimeDiagnosticText(input: {
     "",
     `Runtime OpenAI: ${input.state}`,
     `Decision: ${input.decision}`,
+    `GovernanceDecision: ${input.governanceDecision}`,
     `Context: ${input.contextClass}`,
+    `LegacyContext: ${input.legacyContextClass}`,
+    `Intent: ${input.intentClass}`,
     `DocumentMode: ${input.documentMode}`,
     `DocumentFamily: ${input.documentFamily}`,
+    `DataClass: ${input.governance.data.dataClass}`,
+    `PolicyStatus: ${input.governance.policy.status}`,
+    `RiskClass: ${input.governance.risk.riskClass}`,
+    `RiskScore: ${input.governance.risk.riskScore}`,
+    `HumanOversight: ${input.governance.oversight.state}`,
     `EvtIprMemoryUsed: ${input.memoryUsed ? "true" : "false"}`,
     `StructuredFormat: ${input.structuredFormat ? "true" : "false"}`,
     `Model: ${MODEL}`,
@@ -875,10 +944,16 @@ function buildRuntimeDiagnosticText(input: {
     `- checkpoint: ${identity.evt}`,
     `- core: ${identity.core}`,
     "",
-    "EVT Chain:",
+    "Legacy EVT Chain:",
     `- evt: ${input.event.evt}`,
     `- prev: ${input.event.prev}`,
     `- hash: ${input.event.anchors.hash}`,
+    "",
+    "Governed EVT:",
+    `- evt: ${input.modernEvt.evt}`,
+    `- prev: ${input.modernEvt.prev}`,
+    `- hash: ${input.modernEvt.trace.hash}`,
+    `- verification: ${input.modernEvt.verification.status}`,
     "",
     `degradedReason: ${input.degradedReason || "none"}`
   ].join("\n");
@@ -886,15 +961,20 @@ function buildRuntimeDiagnosticText(input: {
 
 function buildTechnicalFrame(input: {
   response: string;
-  state: RuntimeState;
-  decision: RuntimeDecision;
+  state: MemoryRuntimeState;
+  decision: MemoryRuntimeDecision;
+  governanceDecision: GovernanceDecision;
   contextClass: ContextClass;
+  legacyContextClass: LegacyContextClass;
+  intentClass: IntentClass;
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
   memoryUsed: boolean;
   structuredFormat: boolean;
-  event: RuntimeEvent;
+  event: LegacyRuntimeEvent;
+  modernEvt: ReturnType<typeof toPublicRuntimeEvent>;
   memoryEventId: string | null;
+  governance: GovernanceFrame;
   degradedReason?: string | null;
 }) {
   return [
@@ -903,19 +983,266 @@ function buildTechnicalFrame(input: {
     "Runtime:",
     `- state: ${input.state}`,
     `- decision: ${input.decision}`,
+    `- governanceDecision: ${input.governanceDecision}`,
     `- context: ${input.contextClass}`,
+    `- legacyContext: ${input.legacyContextClass}`,
+    `- intent: ${input.intentClass}`,
+    `- dataClass: ${input.governance.data.dataClass}`,
+    `- policy: ${input.governance.policy.status}`,
+    `- policyReference: ${input.governance.policy.policyReference}`,
+    `- risk: ${input.governance.risk.riskClass}`,
+    `- riskScore: ${input.governance.risk.riskScore}`,
+    `- oversight: ${input.governance.oversight.state}`,
     `- documentMode: ${input.documentMode}`,
     `- documentFamily: ${input.documentFamily}`,
     `- evtIprMemoryUsed: ${input.memoryUsed ? "true" : "false"}`,
     `- structuredFormat: ${input.structuredFormat ? "true" : "false"}`,
-    `- evt: ${input.event.evt}`,
+    `- legacyEvt: ${input.event.evt}`,
+    `- governedEvt: ${input.modernEvt.evt}`,
     `- memoryEvt: ${input.memoryEventId || "none"}`,
     `- prev: ${input.event.prev}`,
     `- hash: ${input.event.anchors.hash}`,
+    `- governedHash: ${input.modernEvt.trace.hash}`,
     input.degradedReason ? `- degradedReason: ${input.degradedReason}` : ""
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function mapContextForMemory(contextClass: ContextClass): LegacyContextClass {
+  switch (contextClass) {
+    case "IDENTITY":
+    case "MATRIX":
+    case "DOCUMENTAL":
+    case "TECHNICAL":
+    case "GITHUB":
+    case "EDITORIAL":
+    case "STRATEGIC":
+    case "GENERAL":
+      return contextClass;
+
+    case "SECURITY":
+    case "COMPLIANCE":
+    case "CRITICAL_INFRASTRUCTURE":
+    case "AI_GOVERNANCE":
+    case "DUAL_USE":
+      return "STRATEGIC";
+
+    default:
+      return "GENERAL";
+  }
+}
+
+function mapDecisionForMemory(
+  decision: GovernanceDecision
+): MemoryRuntimeDecision {
+  if (decision === "BLOCK" || decision === "NOOP") {
+    return "BLOCK" as MemoryRuntimeDecision;
+  }
+
+  if (decision === "ESCALATE" || decision === "DEGRADE") {
+    return "ESCALATE" as MemoryRuntimeDecision;
+  }
+
+  return "ALLOW" as MemoryRuntimeDecision;
+}
+
+function mapRuntimeStateForGovernance(
+  state: MemoryRuntimeState
+): GovernanceRuntimeState {
+  if (state === "OPERATIONAL") {
+    return "OPERATIONAL";
+  }
+
+  if (state === "BLOCKED") {
+    return "BLOCKED";
+  }
+
+  if (state === "INVALID") {
+    return "INVALID";
+  }
+
+  return "DEGRADED";
+}
+
+function mapOperationStatus(
+  decision: GovernanceDecision,
+  state: MemoryRuntimeState
+): OperationStatus {
+  if (decision === "BLOCK") {
+    return "BLOCKED";
+  }
+
+  if (decision === "ESCALATE") {
+    return "ESCALATED";
+  }
+
+  if (decision === "DEGRADE") {
+    return "DEGRADED";
+  }
+
+  if (decision === "NOOP") {
+    return "NOOP";
+  }
+
+  if (state === "DEGRADED") {
+    return "DEGRADED";
+  }
+
+  return "COMPLETED";
+}
+
+function buildDataClassificationText(
+  message: string,
+  files: FileInput[]
+): string {
+  const fileText = normalizeFiles(files)
+    .map((file) => {
+      return [
+        file.name,
+        file.type,
+        file.text.slice(0, MAX_DATA_CLASSIFICATION_CHARS)
+      ].join("\n");
+    })
+    .join("\n\n");
+
+  return [message, fileText]
+    .filter(Boolean)
+    .join("\n\n")
+    .slice(0, MAX_DATA_CLASSIFICATION_CHARS);
+}
+
+function buildGovernanceFrame(input: {
+  message: string;
+  files: FileInput[];
+}): GovernanceFrame {
+  const normalizedFiles = normalizeFiles(input.files);
+
+  const context = classifyRuntimeContext({
+    message: input.message,
+    hasFiles: input.files.length > 0,
+    route: "/api/chat",
+    fileNames: normalizedFiles.map((file) => file.name),
+    fileTypes: normalizedFiles.map((file) => file.type)
+  });
+
+  const data = classifyData({
+    text: buildDataClassificationText(input.message, input.files),
+    route: "/api/chat"
+  });
+
+  const filePolicy = evaluateFileBatchPolicy(
+    normalizedFiles.map((file) => ({
+      name: file.name,
+      type: file.type,
+      size: file.size
+    }))
+  );
+
+  const policy = evaluatePolicy({
+    message: input.message,
+    contextClass: context.contextClass,
+    intentClass: context.intentClass,
+    dataClass: data.dataClass,
+    hasFiles: input.files.length > 0,
+    route: "/api/chat"
+  });
+
+  const risk = evaluateRisk({
+    message: input.message,
+    contextClass: context.contextClass,
+    intentClass: context.intentClass,
+    policyStatus: policy.status,
+    dataClass: data.dataClass,
+    sensitivity: context.sensitivity,
+    hasFiles: input.files.length > 0,
+    route: "/api/chat",
+    policyFailClosed: policy.failClosed,
+    policyProhibited: policy.prohibited
+  });
+
+  const oversight = evaluateHumanOversight({
+    riskClass: risk.riskClass,
+    contextClass: context.contextClass,
+    policyStatus: policy.status,
+    dataClass: data.dataClass,
+    sensitivity: context.sensitivity,
+    message: input.message
+  });
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyProhibited: policy.prohibited,
+    policyFailClosed: policy.failClosed,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass: context.contextClass,
+    intentClass: context.intentClass,
+    dataClass: data.dataClass,
+    hasFiles: input.files.length > 0,
+    evtPreferred: true,
+    auditPreferred: risk.riskClass !== "LOW"
+  });
+
+  return {
+    contextClass: context.contextClass,
+    intentClass: context.intentClass,
+    data,
+    policy,
+    risk,
+    oversight,
+    decision,
+    filePolicy
+  };
+}
+
+async function buildAndAppendGovernedEvt(input: {
+  prev: string;
+  state: MemoryRuntimeState;
+  governance: GovernanceFrame;
+  operationType: string;
+  operationStatus: OperationStatus;
+}) {
+  const modernEvent = createRuntimeEvent({
+    prev: input.prev,
+    runtimeState: mapRuntimeStateForGovernance(input.state),
+    contextClass: input.governance.contextClass,
+    intentClass: input.governance.intentClass,
+    sensitivity:
+      input.governance.risk.riskClass === "LOW"
+        ? "LOW"
+        : input.governance.risk.riskClass === "MEDIUM"
+          ? "MEDIUM"
+          : input.governance.risk.riskClass === "UNKNOWN"
+            ? "UNKNOWN"
+            : "HIGH",
+    riskClass: input.governance.risk.riskClass,
+    decision: input.governance.decision.decision,
+    policyReference: input.governance.policy.policyReference,
+    humanOversight: input.governance.oversight.state,
+    operationType: input.operationType,
+    operationStatus: input.operationStatus,
+    failClosed: input.governance.decision.failClosed,
+    reasons: [
+      ...input.governance.policy.reasons,
+      ...input.governance.risk.reasons,
+      input.governance.oversight.reason,
+      ...input.governance.decision.reasons
+    ],
+    auditStatus: input.governance.decision.auditRequired
+      ? "READY"
+      : "NOT_REQUIRED"
+  });
+
+  const appendResult = input.governance.decision.evtRequired
+    ? await appendEvent(modernEvent)
+    : null;
+
+  return {
+    modernEvent,
+    appendResult
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -929,6 +1256,7 @@ export async function POST(req: NextRequest) {
         ok: false,
         state: "INVALID",
         decision: "BLOCK",
+        governanceDecision: "BLOCK",
         error: "INVALID_JSON_BODY"
       },
       { status: 400 }
@@ -943,6 +1271,7 @@ export async function POST(req: NextRequest) {
         ok: false,
         state: "BLOCKED",
         decision: "BLOCK",
+        governanceDecision: "BLOCK",
         error: "EMPTY_REQUEST"
       },
       { status: 400 }
@@ -950,6 +1279,7 @@ export async function POST(req: NextRequest) {
   }
 
   const identity = getPrimaryIdentity();
+
   const effectiveMessage =
     input.message || "Usa i file attivi come contesto operativo.";
 
@@ -963,10 +1293,17 @@ export async function POST(req: NextRequest) {
   const effectiveFiles = [...memoryFile, ...input.files];
 
   const structuredFormat = shouldUseStructuredFormat(effectiveMessage);
-  const contextClass = classifyContext(effectiveMessage, effectiveFiles);
+  const governance = buildGovernanceFrame({
+    message: effectiveMessage,
+    files: effectiveFiles
+  });
+
+  const contextClass = governance.contextClass;
+  const intentClass = governance.intentClass;
+  const legacyContextClass = mapContextForMemory(contextClass);
 
   const documentMode =
-    contextClass === "DOCUMENTAL"
+    contextClass === "DOCUMENTAL" || effectiveFiles.length > 0
       ? detectDocumentMode(effectiveMessage)
       : "GENERAL_DOCUMENT_WORK";
 
@@ -975,30 +1312,54 @@ export async function POST(req: NextRequest) {
       ? detectDocumentFamily(input.files)
       : memory.semanticState?.documentFamily || detectDocumentFamily(effectiveFiles);
 
+  const modernPrev = await getLastEventReference();
+  const legacyPrev = input.continuityRef || memory.lastEventId;
+
   if (isRuntimeDiagnosticRequest(effectiveMessage)) {
-    const diagnosticState: RuntimeState = openai ? "OPERATIONAL" : "DEGRADED";
-    const diagnosticDecision: RuntimeDecision = openai ? "ALLOW" : "ESCALATE";
+    const diagnosticState: MemoryRuntimeState = openai
+      ? ("OPERATIONAL" as MemoryRuntimeState)
+      : ("DEGRADED" as MemoryRuntimeState);
+
+    const memoryDecision = mapDecisionForMemory(governance.decision.decision);
     const degradedReason = openai ? null : "OPENAI_API_KEY_NOT_CONFIGURED";
 
     const event = buildEvent({
-      prev: input.continuityRef || memory.lastEventId,
+      prev: legacyPrev,
       state: diagnosticState,
-      decision: diagnosticDecision,
+      decision: memoryDecision,
       message: effectiveMessage,
-      contextClass,
+      contextClass: legacyContextClass,
       documentMode,
       documentFamily
     });
 
+    const { modernEvent, appendResult } = await buildAndAppendGovernedEvt({
+      prev: modernPrev,
+      state: diagnosticState,
+      governance,
+      operationType: "CHAT_DIAGNOSTIC",
+      operationStatus: mapOperationStatus(
+        governance.decision.decision,
+        diagnosticState
+      )
+    });
+
+    const publicModernEvt = toPublicRuntimeEvent(modernEvent);
+
     const responseText = buildRuntimeDiagnosticText({
       state: diagnosticState,
-      decision: diagnosticDecision,
+      decision: memoryDecision,
+      governanceDecision: governance.decision.decision,
       contextClass,
+      legacyContextClass,
+      intentClass,
       documentMode,
       documentFamily,
       memoryUsed: memory.used,
       structuredFormat,
       event,
+      modernEvt: publicModernEvt,
+      governance,
       degradedReason
     });
 
@@ -1006,8 +1367,11 @@ export async function POST(req: NextRequest) {
       ok: true,
       response: responseText.trim(),
       state: diagnosticState,
-      decision: diagnosticDecision,
+      decision: memoryDecision,
+      governanceDecision: governance.decision.decision,
       contextClass,
+      legacyContextClass,
+      intentClass,
       documentMode,
       documentFamily,
       evtIprMemoryUsed: memory.used,
@@ -1022,11 +1386,30 @@ export async function POST(req: NextRequest) {
         core: identity.core
       },
       event,
+      governedEvent: publicModernEvt,
       evt: {
         ok: true,
         evt: event.evt,
         prev: event.prev,
         hash: event.anchors.hash
+      },
+      governedEvt: {
+        ok: appendResult?.status === "APPENDED",
+        evt: publicModernEvt.evt,
+        prev: publicModernEvt.prev,
+        hash: publicModernEvt.trace.hash,
+        appendStatus: appendResult?.status ?? "NOT_REQUIRED",
+        appendReason: appendResult?.reason ?? "EVT append not required."
+      },
+      governance: {
+        dataClass: governance.data.dataClass,
+        policyStatus: governance.policy.status,
+        policyReference: governance.policy.policyReference,
+        riskClass: governance.risk.riskClass,
+        riskScore: governance.risk.riskScore,
+        oversight: governance.oversight.state,
+        requiredRole: governance.oversight.requiredRole,
+        failClosed: governance.decision.failClosed
       },
       diagnostics: {
         openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
@@ -1038,29 +1421,56 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const generated = await generateResponse({
-    message: effectiveMessage,
-    contextClass,
-    documentMode,
-    documentFamily,
-    files: effectiveFiles,
-    memoryText: memory.text,
-    memoryUsed: memory.used,
-    structuredFormat
-  });
+  let generated: GeneratedResponse;
 
-  const decision: RuntimeDecision =
-    generated.state === "OPERATIONAL" ? "ALLOW" : "ESCALATE";
+  if (
+    governance.decision.decision === "BLOCK" ||
+    !governance.decision.allowModelCall
+  ) {
+    generated = buildGovernanceLimitedResponse({
+      decision: governance.decision,
+      policy: governance.policy,
+      risk: governance.risk,
+      oversight: governance.oversight
+    });
+  } else {
+    generated = await generateResponse({
+      message: effectiveMessage,
+      contextClass,
+      documentMode,
+      documentFamily,
+      files: effectiveFiles,
+      memoryText: memory.text,
+      memoryUsed: memory.used,
+      structuredFormat,
+      governanceFrame: governance
+    });
+  }
+
+  const memoryDecision = mapDecisionForMemory(governance.decision.decision);
 
   const event = buildEvent({
-    prev: input.continuityRef || memory.lastEventId,
+    prev: legacyPrev,
     state: generated.state,
-    decision,
+    decision: memoryDecision,
     message: effectiveMessage,
-    contextClass,
+    contextClass: legacyContextClass,
     documentMode,
     documentFamily
   });
+
+  const { modernEvent, appendResult } = await buildAndAppendGovernedEvt({
+    prev: modernPrev,
+    state: generated.state,
+    governance,
+    operationType: "CHAT_OPERATION",
+    operationStatus: mapOperationStatus(
+      governance.decision.decision,
+      generated.state
+    )
+  });
+
+  const publicModernEvt = toPublicRuntimeEvent(modernEvent);
 
   const memoryEvent = appendEvtMemory({
     sessionId: input.sessionId,
@@ -1069,8 +1479,8 @@ export async function POST(req: NextRequest) {
     message: effectiveMessage,
     response: generated.text,
     state: generated.state,
-    decision,
-    contextClass,
+    decision: memoryDecision,
+    contextClass: legacyContextClass,
     documentMode,
     documentFamily,
     files: effectiveFiles,
@@ -1083,14 +1493,19 @@ export async function POST(req: NextRequest) {
     ? buildTechnicalFrame({
         response: generated.text,
         state: generated.state,
-        decision,
+        decision: memoryDecision,
+        governanceDecision: governance.decision.decision,
         contextClass,
+        legacyContextClass,
+        intentClass,
         documentMode,
         documentFamily,
         memoryUsed: memory.used,
         structuredFormat,
         event,
+        modernEvt: publicModernEvt,
         memoryEventId: memoryEvent.evt,
+        governance,
         degradedReason: generated.degradedReason
       })
     : generated.text;
@@ -1099,8 +1514,11 @@ export async function POST(req: NextRequest) {
     ok: true,
     response: responseText.trim(),
     state: generated.state,
-    decision,
+    decision: memoryDecision,
+    governanceDecision: governance.decision.decision,
     contextClass,
+    legacyContextClass,
+    intentClass,
     documentMode,
     documentFamily,
     evtIprMemoryUsed: memory.used,
@@ -1116,11 +1534,45 @@ export async function POST(req: NextRequest) {
     },
     event,
     memoryEvent,
+    governedEvent: publicModernEvt,
     evt: {
       ok: true,
       evt: event.evt,
       prev: event.prev,
       hash: event.anchors.hash
+    },
+    governedEvt: {
+      ok: appendResult?.status === "APPENDED",
+      evt: publicModernEvt.evt,
+      prev: publicModernEvt.prev,
+      hash: publicModernEvt.trace.hash,
+      appendStatus: appendResult?.status ?? "NOT_REQUIRED",
+      appendReason: appendResult?.reason ?? "EVT append not required."
+    },
+    governance: {
+      dataClass: governance.data.dataClass,
+      containsSecret: governance.data.containsSecret,
+      containsPersonalData: governance.data.containsPersonalData,
+      containsSecuritySensitiveData:
+        governance.data.containsSecuritySensitiveData,
+      policyStatus: governance.policy.status,
+      policyReference: governance.policy.policyReference,
+      policyReasons: governance.policy.reasons,
+      riskClass: governance.risk.riskClass,
+      riskScore: governance.risk.riskScore,
+      riskReasons: governance.risk.reasons,
+      oversight: governance.oversight.state,
+      requiredRole: governance.oversight.requiredRole,
+      oversightReason: governance.oversight.reason,
+      failClosed: governance.decision.failClosed,
+      evtRequired: governance.decision.evtRequired,
+      auditRequired: governance.decision.auditRequired,
+      filePolicy: {
+        allowed: governance.filePolicy.allowed,
+        allowedCount: governance.filePolicy.allowedCount,
+        rejectedCount: governance.filePolicy.rejectedCount,
+        reasons: governance.filePolicy.reasons
+      }
     },
     diagnostics: {
       openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
