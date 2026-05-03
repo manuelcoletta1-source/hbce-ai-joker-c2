@@ -6,7 +6,7 @@
  * or close to sensitive domains.
  *
  * This module does not authorize unsafe operations.
- * It prevents false escalation for explanatory conceptual requests.
+ * It prevents false escalation for explanatory, editorial and conceptual requests.
  */
 
 import type {
@@ -80,6 +80,7 @@ const EXPLANATORY_TERMS = [
   "cos e",
   "che cosa e",
   "spiegami",
+  "piegami",
   "parlami",
   "dimmi",
   "definisci",
@@ -111,7 +112,36 @@ const EXPLANATORY_TERMS = [
   "opera",
   "ruolo",
   "che ruolo",
-  "quale ruolo"
+  "quale ruolo",
+  "relazione",
+  "rapporto",
+  "collegamento",
+  "connessione"
+];
+
+const SAFE_WRITING_TERMS = [
+  "fammi",
+  "scrivi",
+  "scrivimi",
+  "crea",
+  "prepara",
+  "redigi",
+  "genera",
+  "testo",
+  "teesto",
+  "dovbe",
+  "dove",
+  "documento",
+  "paragrafo",
+  "spiega",
+  "spieghi",
+  "spiegare",
+  "illustra",
+  "descrivi",
+  "relazione tra",
+  "rapporto tra",
+  "collegamento tra",
+  "connessione tra"
 ];
 
 const IPR_TERMS = [
@@ -154,6 +184,16 @@ const BIOCYBERSECURITY_TERMS = [
   "sicuerezza bio cibernetica",
   "sicurezza biocyber",
   "sicuerezza biocyber",
+  "protezione biocibernetica",
+  "protezione bio cibernetica",
+  "protezione biocyber",
+  "protezione cyber biologica",
+  "sicurezza cyber biologica",
+  "sicuerezza cyber biologica",
+  "sicurezza organismo sistema",
+  "protezione organismo sistema",
+  "sicurezza organismo-sistema",
+  "protezione organismo-sistema",
   "bio cyber",
   "biocyber",
   "biocyber security",
@@ -213,14 +253,19 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
 
   const hasExplanatoryIntent =
     containsAny(normalized, EXPLANATORY_TERMS) ||
+    containsAny(normalized, SAFE_WRITING_TERMS) ||
     normalized.endsWith("?") ||
-    normalized.split(" ").length <= 6;
+    normalized.split(" ").length <= 8;
 
   if (!hasExplanatoryIntent) {
     return buildNoMatch([
-      "No explanatory intent detected; safe conceptual override not applied."
+      "No explanatory or safe writing intent detected; safe conceptual override not applied."
     ]);
   }
+
+  const intentClass: IntentClass = containsAny(normalized, SAFE_WRITING_TERMS)
+    ? "WRITE"
+    : "ASK";
 
   const hasIpr = containsAny(normalized, IPR_TERMS);
   const hasBiocybersecurity = containsAny(normalized, BIOCYBERSECURITY_TERMS);
@@ -228,12 +273,13 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
   if (hasIpr && hasBiocybersecurity) {
     return buildSafeConcept({
       kind: "BIOCYBERSECURITY",
-      normalizedTerm: "IPR + biocybersecurity / sicurezza biocibernetica",
+      normalizedTerm: "IPR + biocybersecurity / sicurezza e protezione biocibernetica",
       projectDomain: "MULTI_DOMAIN",
       contextClass: "AI_GOVERNANCE",
+      intentClass,
       reasons: [
-        "Safe explanatory request connecting IPR and biocybersecurity.",
-        "IPR + biocybersecurity is treated as a public conceptual governance question unless unsafe operational instructions are present.",
+        "Safe conceptual or editorial request connecting IPR and biocybersecurity.",
+        "IPR + biocybersecurity is treated as a public governance concept unless unsafe operational instructions are present.",
         "Mapped to MULTI_DOMAIN because it connects operational identity, organism-system interface, AI governance, traceability and MATRIX infrastructure."
       ]
     });
@@ -245,8 +291,9 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
       normalizedTerm: "biocybersecurity / biocibersicurezza",
       projectDomain: "MULTI_DOMAIN",
       contextClass: "AI_GOVERNANCE",
+      intentClass,
       reasons: [
-        "Safe explanatory request about biocybersecurity or a close misspelling.",
+        "Safe conceptual or editorial request about biocybersecurity or a close misspelling.",
         "Biocybersecurity is treated as a conceptual governance term unless unsafe operational instructions are present.",
         "Mapped to MULTI_DOMAIN because it connects organism-system interface, AI governance, identity, security and traceability."
       ]
@@ -259,8 +306,9 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
       normalizedTerm: "IPR / Identity Primary Record",
       projectDomain: "MATRIX",
       contextClass: "IDENTITY",
+      intentClass,
       reasons: [
-        "Safe explanatory request about IPR or operational identity.",
+        "Safe conceptual or editorial request about IPR or operational identity.",
         "IPR is treated as a public identity-governance concept."
       ]
     });
@@ -272,8 +320,9 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
       normalizedTerm: "EVT / Verifiable Event Trace",
       projectDomain: "MATRIX",
       contextClass: "IDENTITY",
+      intentClass,
       reasons: [
-        "Safe explanatory request about EVT or traceability.",
+        "Safe conceptual or editorial request about EVT or traceability.",
         "EVT is treated as a public traceability-governance concept."
       ]
     });
@@ -285,8 +334,9 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
       normalizedTerm: "AI governance",
       projectDomain: "MATRIX",
       contextClass: "AI_GOVERNANCE",
+      intentClass,
       reasons: [
-        "Safe explanatory request about AI governance.",
+        "Safe conceptual or editorial request about AI governance.",
         "AI governance is treated as a public governance concept unless unsafe operational instructions are present."
       ]
     });
@@ -298,8 +348,9 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
       normalizedTerm: "HERMETICUM B.C.E. conceptual term",
       projectDomain: "MULTI_DOMAIN",
       contextClass: "GOVERNANCE",
+      intentClass,
       reasons: [
-        "Safe explanatory request about HERMETICUM / MATRIX / CORPUS / APOKALYPSIS concepts.",
+        "Safe conceptual or editorial request about HERMETICUM / MATRIX / CORPUS / APOKALYPSIS concepts.",
         "Canonical ecosystem terms are treated as public conceptual context unless unsafe operational instructions are present."
       ]
     });
@@ -379,6 +430,7 @@ function buildSafeConcept(input: {
   normalizedTerm: string;
   projectDomain: ProjectDomain;
   contextClass: ContextClass;
+  intentClass: IntentClass;
   reasons: string[];
 }): SafeConceptClassification {
   return {
@@ -387,14 +439,14 @@ function buildSafeConcept(input: {
     normalizedTerm: input.normalizedTerm,
     projectDomain: input.projectDomain,
     contextClass: input.contextClass,
-    intentClass: "ASK",
+    intentClass: input.intentClass,
     data: {
       dataClass: "PUBLIC",
       containsSecret: false,
       containsPersonalData: false,
       containsSecuritySensitiveData: false,
       reasons: [
-        "Safe conceptual explanation detected.",
+        "Safe conceptual or editorial explanation detected.",
         "Classified as PUBLIC because no unsafe operational term is present."
       ]
     },
@@ -403,7 +455,7 @@ function buildSafeConcept(input: {
       policyReference: "PUBLIC_CONCEPTUAL_GOVERNANCE_EXPLANATION",
       prohibited: false,
       failClosed: false,
-      reasons: ["Public conceptual explanation allowed.", ...input.reasons],
+      reasons: ["Public conceptual or editorial explanation allowed.", ...input.reasons],
       outcome: "PERMIT"
     },
     risk: {
@@ -412,14 +464,14 @@ function buildSafeConcept(input: {
       impact: 1,
       riskScore: 1,
       reasons: [
-        "Low-risk explanatory concept request.",
+        "Low-risk conceptual or editorial request.",
         "No operational cyber, surveillance, exploitation or sensitive-data instruction detected."
       ]
     },
     oversight: {
       state: "NOT_REQUIRED",
       requiredRole: "NONE",
-      reason: "Ordinary conceptual explanation does not require human review."
+      reason: "Ordinary conceptual or editorial explanation does not require human review."
     },
     reasons: input.reasons
   };
