@@ -192,6 +192,133 @@ function normalizeFiles(files: FileInput[]): NormalizedFile[] {
   });
 }
 
+function normalizeForRuleMatch(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[’']/g, " ")
+    .replace(/[^\p{L}\p{N}./_-]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function containsUnsafeOperationalTerm(message: string): boolean {
+  const lower = normalizeForRuleMatch(message);
+
+  const unsafeTerms = [
+    "malware",
+    "ransomware",
+    "phishing",
+    "credential theft",
+    "steal credentials",
+    "rubare credenziali",
+    "exploit",
+    "deploy exploit",
+    "unauthorized access",
+    "accesso non autorizzato",
+    "bypass authentication",
+    "evade detection",
+    "evasion",
+    "persistence",
+    "backdoor",
+    "botnet",
+    "exfiltrate",
+    "esfiltrare",
+    "sabotage",
+    "sabotaggio",
+    "ddos",
+    "unlawful surveillance",
+    "sorveglianza illegale",
+    "hide traces",
+    "cover tracks",
+    "nascondere tracce"
+  ];
+
+  return unsafeTerms.some((term) => lower.includes(term));
+}
+
+function isSafeIdentityGovernanceQuestion(message: string): boolean {
+  const lower = normalizeForRuleMatch(message);
+
+  const identityTerms = [
+    "ipr",
+    "identity primary record",
+    "registro primario",
+    "registro primario di identita",
+    "registro primario di identita operativa",
+    "identita operativa",
+    "identity layer",
+    "operational identity",
+    "evt",
+    "event trace",
+    "verifiable event trace",
+    "continuita operativa",
+    "continuita verificabile",
+    "traccia verificabile"
+  ];
+
+  const explanatoryTerms = [
+    "cosa e",
+    "cos e",
+    "che cosa e",
+    "spiegami",
+    "parlami",
+    "dimmi",
+    "novita",
+    "nuova tecnologia",
+    "tecnologia",
+    "potenzialita",
+    "potenziale",
+    "vantaggi",
+    "valore",
+    "a cosa serve",
+    "per chi e utile",
+    "rispetto a chi non ce l ha",
+    "confronto",
+    "paragone",
+    "standard",
+    "europa"
+  ];
+
+  const hasIdentityTerm = identityTerms.some((term) => lower.includes(term));
+  const hasExplanatoryTerm = explanatoryTerms.some((term) =>
+    lower.includes(term)
+  );
+
+  return hasIdentityTerm && hasExplanatoryTerm && !containsUnsafeOperationalTerm(message);
+}
+
+function buildSafeIdentityProjectDomain(): ProjectDomainClassification {
+  return {
+    projectDomain: "MATRIX",
+    activeDomains: ["MATRIX"],
+    primaryDomain: "MATRIX",
+    domainType: "OPERATIONAL_INFRASTRUCTURE_DOMAIN",
+    confidence: 0.97,
+    reasons: [
+      "Safe identity-governance explanation detected.",
+      "IPR / EVT / operational identity belongs to the MATRIX identity and governance infrastructure domain."
+    ],
+    scores: {
+      MATRIX: 10,
+      CORPUS_ESOTEROLOGIA_ERMETICA: 0,
+      APOKALYPSIS: 0
+    }
+  };
+}
+
+function normalizeProjectDomainClassification(input: {
+  message: string;
+  classification: ProjectDomainClassification;
+}): ProjectDomainClassification {
+  if (isSafeIdentityGovernanceQuestion(input.message)) {
+    return buildSafeIdentityProjectDomain();
+  }
+
+  return input.classification;
+}
+
 function splitLines(text: string): string[] {
   return text
     .split(/\r?\n/)
@@ -825,6 +952,18 @@ function buildFallback(input: {
 }): string {
   const domain = input.governanceFrame.projectDomain.projectDomain;
 
+  if (isSafeIdentityGovernanceQuestion(input.message)) {
+    return [
+      "IPR significa Identity Primary Record.",
+      "",
+      "Non è semplicemente una carta d'identità digitale, un account o un login. È un registro primario di identità operativa: serve a collegare un soggetto, una origine, una responsabilità, una sequenza di eventi, una prova e una continuità verificabile nel tempo.",
+      "",
+      "La sua novità non sta nel sostituire strumenti già esistenti come firme digitali, certificati, wallet, blockchain o audit log. Sta nel metterli in relazione dentro una struttura unica: identità, azione, EVT, prova, responsabilità e continuità.",
+      "",
+      "Rispetto a chi non possiede un IPR operativo, chi lo possiede può dimostrare meglio origine, attribuzione, derivazioni, continuità degli eventi, responsabilità e tracciabilità delle operazioni. Il valore maggiore emerge in AI governance, B2B, B2G, agenti AI, sistemi documentali, audit e infrastrutture europee di verifica."
+    ].join("\n");
+  }
+
   if (domain === "APOKALYPSIS" || input.documentFamily === "APOKALYPSIS") {
     if (input.documentMode === "GENRE_CLASSIFICATION") {
       return [
@@ -1306,6 +1445,19 @@ function normalizeChatDataClassification(input: {
   contextClass: ContextClass;
   intentClass: IntentClass;
 }): DataClassification {
+  if (isSafeIdentityGovernanceQuestion(input.message)) {
+    return {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      reasons: [
+        "Safe public identity-governance explanation detected.",
+        "IPR / EVT conceptual questions are classified as PUBLIC unless unsafe operational terms are present."
+      ]
+    };
+  }
+
   const hasFiles = input.files.length > 0;
   const message = input.message.trim();
 
@@ -1321,6 +1473,7 @@ function normalizeChatDataClassification(input: {
 
   const safeOrdinaryContext =
     input.contextClass === "GENERAL" ||
+    input.contextClass === "IDENTITY" ||
     input.contextClass === "EDITORIAL" ||
     input.contextClass === "DOCUMENTAL" ||
     input.contextClass === "GITHUB" ||
@@ -1328,7 +1481,8 @@ function normalizeChatDataClassification(input: {
     input.contextClass === "CORPUS" ||
     input.contextClass === "APOKALYPSIS" ||
     input.contextClass === "GOVERNANCE" ||
-    input.contextClass === "COMPLIANCE";
+    input.contextClass === "COMPLIANCE" ||
+    input.contextClass === "AI_GOVERNANCE";
 
   if (
     input.data.dataClass === "UNKNOWN" &&
@@ -1411,6 +1565,81 @@ function isSafeDocumentWork(input: {
   return hasDocumentContext && safeDocumentIntent;
 }
 
+function applySafeIdentityGovernanceOverride(input: {
+  frame: GovernanceFrame;
+  message: string;
+}): GovernanceFrame {
+  if (!isSafeIdentityGovernanceQuestion(input.message)) {
+    return input.frame;
+  }
+
+  const policy: PolicyEvaluation = {
+    status: "ALLOWED",
+    policyReference: "PUBLIC_IDENTITY_GOVERNANCE_EXPLANATION",
+    prohibited: false,
+    failClosed: false,
+    reasons: [
+      "Safe IPR / EVT / operational identity explanation.",
+      "Public conceptual governance question allowed."
+    ],
+    outcome: "PERMIT"
+  };
+
+  const risk: RiskEvaluation = {
+    riskClass: "LOW",
+    probability: 1,
+    impact: 1,
+    riskScore: 1,
+    reasons: [
+      "Safe public explanation about IPR or identity-governance concepts.",
+      "No unsafe operational term detected."
+    ]
+  };
+
+  const oversight: OversightEvaluation = {
+    state: "NOT_REQUIRED",
+    requiredRole: "NONE",
+    reason:
+      "Ordinary explanatory request about IPR / EVT / operational identity does not require human review."
+  };
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyProhibited: false,
+    policyFailClosed: false,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass: "IDENTITY",
+    intentClass: "ASK",
+    dataClass: "PUBLIC",
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: false
+  });
+
+  return {
+    ...input.frame,
+    projectDomain: buildSafeIdentityProjectDomain(),
+    contextClass: "IDENTITY",
+    intentClass: "ASK",
+    data: {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      reasons: [
+        "Safe identity-governance explanation detected.",
+        "Classified as PUBLIC to prevent false escalation."
+      ]
+    },
+    policy,
+    risk,
+    oversight,
+    decision
+  };
+}
+
 function applySafeDocumentGovernanceOverride(input: {
   frame: GovernanceFrame;
   files: FileInput[];
@@ -1486,12 +1715,17 @@ function buildGovernanceFrame(input: {
 }): GovernanceFrame {
   const normalizedFiles = normalizeFiles(input.files);
 
-  const projectDomain = classifyProjectDomain({
+  const rawProjectDomain = classifyProjectDomain({
     message: input.message,
     hasFiles: input.files.length > 0,
     fileNames: normalizedFiles.map((file) => file.name),
     filePaths: normalizedFiles.map((file) => file.name),
     activeDocument: normalizedFiles[0]?.name
+  });
+
+  const projectDomain = normalizeProjectDomainClassification({
+    message: input.message,
+    classification: rawProjectDomain
   });
 
   const context = classifyRuntimeContext({
@@ -1578,8 +1812,13 @@ function buildGovernanceFrame(input: {
     filePolicy
   };
 
-  return applySafeDocumentGovernanceOverride({
+  const identitySafeFrame = applySafeIdentityGovernanceOverride({
     frame,
+    message: input.message
+  });
+
+  return applySafeDocumentGovernanceOverride({
+    frame: identitySafeFrame,
     files: input.files
   });
 }
