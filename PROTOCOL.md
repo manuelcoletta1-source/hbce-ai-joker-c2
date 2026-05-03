@@ -1,5 +1,7 @@
 # AI JOKER-C2 Operational Protocol
 
+## Operational Protocol for MATRIX, CORPUS and APOKALYPSIS
+
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.  
 Torino, Italy, Europe  
@@ -11,9 +13,15 @@ Torino, Italy, Europe
 
 This document defines the operational protocol of AI JOKER-C2.
 
-AI JOKER-C2 is an identity-bound operational AI runtime built within the HBCE infrastructure and aligned with the MATRIX framework.
+AI JOKER-C2 is the identity-bound cognitive command runtime of the HERMETICUM B.C.E. ecosystem.
 
-The purpose of this protocol is to define how the runtime receives a request, classifies it, evaluates it, decides whether it may proceed, generates output, records an EVT event and preserves operational continuity.
+It connects three primary domains:
+
+1. MATRIX
+2. CORPUS ESOTEROLOGIA ERMETICA
+3. APOKALYPSIS
+
+The protocol defines how the runtime receives a request, classifies it, assigns it to a project domain, evaluates policy, classifies risk, produces a governance decision, executes only the permitted operation, generates an EVT record and preserves operational continuity.
 
 AI JOKER-C2 is not a generic chatbot.
 
@@ -26,13 +34,20 @@ It is a governed runtime for traceable, verifiable and fail-closed AI-assisted o
 The canonical protocol sequence is:
 
 ```txt
-Identity -> Input -> Intent -> Context -> Policy -> Risk -> Decision -> Execution -> EVT -> Ledger -> Verification -> Continuity
+Identity -> Input -> Intent -> Context -> Project Domain -> Policy -> Risk -> Decision -> Execution -> EVT -> Ledger -> Verification -> Continuity
 
 Condensed:
 
-Identity -> Policy -> Risk -> Decision -> EVT -> Verification -> Continuity
+Identity -> Domain -> Policy -> Risk -> Decision -> EVT -> Verification -> Continuity
 
-The protocol exists to prevent AI-assisted operations from becoming anonymous, unbounded or unverifiable.
+Project formula:
+
+MATRIX = operational infrastructure
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
+APOKALYPSIS = historical threshold analysis
+AI JOKER-C2 = cognitive command runtime
+
+The protocol exists to prevent AI-assisted operations from becoming anonymous, unbounded, unclassified or unverifiable.
 
 
 ---
@@ -41,37 +56,55 @@ The protocol exists to prevent AI-assisted operations from becoming anonymous, u
 
 AI JOKER-C2 operates inside the following architecture:
 
-MATRIX = strategic framework
+HERMETICUM B.C.E. = ecosystem
+MATRIX = operational infrastructure domain
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar domain
+APOKALYPSIS = historical threshold domain
 HBCE = governance infrastructure
-AI JOKER-C2 = operational runtime
+AI JOKER-C2 = cognitive command runtime
 IPR = identity layer
 EVT = event trace layer
 Ledger = continuity layer
+Verification = audit and reconstruction layer
 Fail-closed = safety boundary
 
 Expanded:
 
-MATRIX -> HBCE -> AI JOKER-C2 -> IPR -> Policy -> Risk -> Decision -> EVT -> Ledger -> Verification
+HERMETICUM B.C.E.
+-> AI JOKER-C2
+-> MATRIX
+-> CORPUS ESOTEROLOGIA ERMETICA
+-> APOKALYPSIS
+-> IPR
+-> Policy
+-> Risk
+-> Decision
+-> EVT
+-> Ledger
+-> Verification
+-> Continuity
 
 The protocol must remain consistent with:
 
-README.md;
+README.md
 
-ARCHITECTURE.md;
+ARCHITECTURE.md
 
-GOVERNANCE.md;
+GOVERNANCE.md
 
-EVT_PROTOCOL.md;
+EVT_PROTOCOL.md
 
-DUAL_USE_STRATEGIC_POSITIONING.md;
+DUAL_USE_STRATEGIC_POSITIONING.md
 
-SECURITY.md;
+SECURITY.md
 
-COMPLIANCE.md;
+COMPLIANCE.md
 
-ROADMAP.md;
+ROADMAP.md
 
-CONTRIBUTING.md.
+CONTRIBUTING.md
+
+system/system-manifest.json
 
 
 
@@ -88,10 +121,12 @@ Canonical entity	AI_JOKER
 Canonical IPR	IPR-AI-0001
 Active checkpoint	EVT-0014-AI
 Core	HBCE-CORE-v3
-Framework	MATRIX
-Infrastructure	HBCE
+Ecosystem	HERMETICUM B.C.E.
 Organization	HERMETICUM B.C.E. S.r.l.
+Research signature	HBCE Research
 Territorial anchor	Torino, Italy, Europe
+Runtime type	Identity-bound cognitive command runtime
+Governance principle	Fail-closed
 
 
 Identity is the first layer of the protocol.
@@ -130,7 +165,7 @@ A BLOCKED or INVALID runtime must not execute sensitive operations.
 
 6. Input Handling
 
-The input stage receives the user request or system event.
+The input stage receives the user request, document content, file metadata, runtime event or system operation.
 
 Input may include:
 
@@ -150,7 +185,13 @@ documentation request;
 
 technical analysis request;
 
-strategic analysis request.
+strategic analysis request;
+
+editorial request;
+
+governance request;
+
+verification request.
 
 
 Input handling principles:
@@ -174,6 +215,12 @@ Input handling principles:
 
 
 7. Preserve enough structure for audit and reconstruction.
+
+
+8. Classify project domain before sensitive execution.
+
+
+9. State partial visibility when file visibility is incomplete.
 
 
 
@@ -202,6 +249,7 @@ GITHUB	Prepare repository files, commits or documentation
 GOVERNANCE	Work on policy, risk, compliance or audit
 SECURITY	Defensive security analysis or hardening
 STRATEGIC	B2B, B2G or institutional positioning
+EDITORIAL	Book, chapter, corpus or publication work
 VERIFY	Inspect status, evidence, EVT or runtime output
 PROHIBITED	Unsafe, abusive or outside project boundary
 UNKNOWN	Intent cannot be safely classified
@@ -214,14 +262,16 @@ Unknown intent in sensitive contexts should not be treated as permission.
 
 8. Context Classification
 
-The context stage assigns the request to an operational domain.
+The context stage assigns the request to an operational context.
 
 Suggested context classes:
 
 Context	Description
 
 IDENTITY	IPR, EVT, lineage, runtime identity
-MATRIX	MATRIX framework and strategic infrastructure
+MATRIX	MATRIX framework, infrastructure and strategic systems
+CORPUS	CORPUS ESOTEROLOGIA ERMETICA, DCTT, glossary and volumes
+APOKALYPSIS	Decay, exposure, threshold and civilizational analysis
 DOCUMENTAL	File analysis, document processing, summaries
 TECHNICAL	Code, architecture, APIs, implementation
 GITHUB	Repository files, commits, documentation
@@ -229,6 +279,7 @@ EDITORIAL	Books, corpus, publication work
 STRATEGIC	B2B, B2G, institutions, roadmap
 SECURITY	Defensive security, resilience and risk
 COMPLIANCE	Governance, audit, legal-technical alignment
+GOVERNANCE	Policy, risk, decision and fail-closed logic
 GENERAL	Ordinary safe requests
 
 
@@ -239,7 +290,206 @@ It should not overload ordinary user communication.
 
 ---
 
-9. Policy Evaluation
+9. Project Domain Classification
+
+The project-domain stage determines whether the request belongs to MATRIX, CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN.
+
+Domain	Meaning
+
+MATRIX	Operational infrastructure, AI governance, Europe, B2B, B2G, cloud, data, energy, security
+CORPUS_ESOTEROLOGIA_ERMETICA	Disciplinary grammar, DCTT, canonical glossary, theoretical volumes
+APOKALYPSIS	Historical threshold, decay, exposure, cultural-political-social system analysis
+GENERAL	No specific project domain applies
+MULTI_DOMAIN	More than one project domain applies
+
+
+Project-domain classification affects:
+
+policy;
+
+risk;
+
+decision;
+
+output format;
+
+EVT metadata;
+
+verification requirements;
+
+human oversight requirements.
+
+
+The runtime must preserve the distinction between domains.
+
+Example:
+
+MATRIX provides the infrastructure.
+CORPUS provides the grammar.
+APOKALYPSIS provides the historical threshold.
+AI JOKER-C2 provides the runtime.
+
+
+---
+
+10. MATRIX Domain Protocol
+
+MATRIX is the operational and institutional infrastructure domain.
+
+The MATRIX domain applies when a request concerns:
+
+European infrastructure;
+
+AI governance;
+
+institutional architecture;
+
+cloud governance;
+
+data governance;
+
+energy continuity;
+
+cybersecurity resilience;
+
+public administration;
+
+operational traceability;
+
+B2B positioning;
+
+B2G positioning;
+
+fail-closed governance;
+
+technical deployment.
+
+
+Default handling:
+
+Request type	Default decision
+
+Documentation	ALLOW
+Governance architecture	ALLOW
+Institutional positioning	ALLOW
+Defensive cybersecurity	ALLOW or AUDIT
+Critical infrastructure analysis	AUDIT or ESCALATE
+High-impact public-sector execution	ESCALATE
+Offensive or unlawful use	BLOCK
+
+
+MATRIX operations should be traceable when they affect repository files, governance documents, institutional positioning or strategic infrastructure claims.
+
+
+---
+
+11. CORPUS ESOTEROLOGIA ERMETICA Domain Protocol
+
+CORPUS ESOTEROLOGIA ERMETICA is the disciplinary grammar domain.
+
+Its canonical formula is:
+
+Decisione · Costo · Traccia · Tempo
+
+The Corpus domain applies when a request concerns:
+
+Esoterologia;
+
+operational reality;
+
+canonical glossary;
+
+long-form theoretical writing;
+
+chapter restructuring;
+
+volume mapping;
+
+Alien Code;
+
+Lex Hermeticum;
+
+Paradogma Alieno;
+
+Portale dell’Anticristo;
+
+conceptual continuity;
+
+editorial coherence.
+
+
+Default handling:
+
+Request type	Default decision
+
+Editorial writing	ALLOW
+Conceptual alignment	ALLOW
+Glossary work	ALLOW
+Volume restructuring	ALLOW
+Theoretical framing	ALLOW
+Claims requiring external factual proof	AUDIT
+Legal or institutional claims	ESCALATE
+Coercive or harmful application	BLOCK
+
+
+The Corpus may define internal conceptual coherence.
+
+The runtime must distinguish internal framework coherence from external factual certification.
+
+
+---
+
+12. APOKALYPSIS Domain Protocol
+
+APOKALYPSIS is the historical and civilizational threshold domain.
+
+It applies the Corpus grammar and the MATRIX operational frame to the decadence, exposure and threshold condition of the cultural, political and social system.
+
+The APOKALYPSIS domain applies when a request concerns:
+
+cultural decay;
+
+political exposure;
+
+social dislocation;
+
+cognitive dislocation;
+
+cognitive rupture;
+
+historical threshold;
+
+system persistence after foundation loss;
+
+civilizational diagnosis;
+
+emergence of the Paradogma Alieno;
+
+APOKALYPSIS volume structure.
+
+
+Default handling:
+
+Request type	Default decision
+
+Editorial writing	ALLOW
+Historical analysis	ALLOW
+Cultural critique	ALLOW
+Civilizational theory	ALLOW
+Current factual claims	AUDIT
+Political targeting	ESCALATE
+Incitement or unlawful action	BLOCK
+Dehumanizing or extremist output	BLOCK
+
+
+APOKALYPSIS may analyze decay, exposure and system crisis.
+
+It must not become a tool for unlawful mobilization, coercion or abuse.
+
+
+---
+
+13. Policy Evaluation
 
 The policy stage applies project boundaries.
 
@@ -259,6 +509,8 @@ whether secrets may be exposed;
 
 whether the operation is dual-use sensitive;
 
+whether the domain is MATRIX, CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN;
+
 whether an EVT should be generated;
 
 whether the request should be blocked, degraded or escalated.
@@ -271,11 +523,11 @@ No sensitive operation should bypass policy.
 
 ---
 
-10. Risk Classification
+14. Risk Classification
 
 The risk stage assigns a risk class.
 
-Risk	Meaning	Default Handling
+Risk	Meaning	Default handling
 
 LOW	Ordinary safe request	ALLOW
 MEDIUM	Operationally relevant request	ALLOW or AUDIT
@@ -292,12 +544,12 @@ the explicit request;
 the possible operational effect of the output.
 
 
-A request may look harmless but become sensitive when applied to real systems, real organizations, critical infrastructure or unauthorized activity.
+A request may look harmless but become sensitive when applied to real systems, real organizations, critical infrastructure, unauthorized activity or high-impact domains.
 
 
 ---
 
-11. Decision Layer
+15. Decision Layer
 
 The decision layer determines what the runtime may do.
 
@@ -320,9 +572,9 @@ A decision should never be invented after execution to justify what happened.
 
 ---
 
-12. Execution Layer
+16. Execution Layer
 
-Execution happens only after identity, context, policy, risk and decision have been evaluated.
+Execution happens only after identity, intent, context, project domain, policy, risk and decision have been evaluated.
 
 Execution may include:
 
@@ -334,9 +586,13 @@ refactoring code;
 
 summarizing a file;
 
+improving editorial flow;
+
 producing a GitHub-ready file;
 
 producing a governance document;
+
+producing a strategic document;
 
 generating an EVT record;
 
@@ -349,7 +605,7 @@ producing a safe refusal.
 
 Execution must follow the decision result.
 
-Decision	Execution Rule
+Decision	Execution rule
 
 ALLOW	Execute normally
 BLOCK	Do not execute unsafe content
@@ -362,7 +618,7 @@ NOOP	Take no operational action
 
 ---
 
-13. Fail-Closed Rule
+17. Fail-Closed Rule
 
 Fail-closed is the safety boundary of the protocol.
 
@@ -375,6 +631,8 @@ runtime state is invalid;
 authority is unclear;
 
 intent is unsafe;
+
+project domain cannot be classified in a sensitive context;
 
 policy cannot be applied;
 
@@ -406,7 +664,7 @@ It is not system failure.
 
 ---
 
-14. EVT Generation
+18. EVT Generation
 
 EVT means Event.
 
@@ -425,6 +683,8 @@ IPR;
 timestamp;
 
 runtime state;
+
+project domain;
 
 context class;
 
@@ -448,15 +708,24 @@ audit status.
 Example:
 
 {
-  "evt": "EVT-20260429-153000-0001",
-  "prev": "GENESIS",
+  "evt": "EVT-20260503-153000-AI-JOKER-C2-0001",
+  "prev": "EVT-0014-AI",
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
-  "timestamp": "2026-04-29T15:30:00+02:00",
+  "timestamp": "2026-05-03T15:30:00+02:00",
   "runtime": {
     "name": "AI JOKER-C2",
     "core": "HBCE-CORE-v3",
     "state": "OPERATIONAL"
+  },
+  "project": {
+    "ecosystem": "HERMETICUM B.C.E.",
+    "domain": "MULTI_DOMAIN",
+    "active_domains": [
+      "MATRIX",
+      "CORPUS_ESOTEROLOGIA_ERMETICA",
+      "APOKALYPSIS"
+    ]
   },
   "context": {
     "class": "GITHUB",
@@ -470,7 +739,8 @@ Example:
     "fail_closed": false
   },
   "operation": {
-    "type": "CREATE_PROTOCOL_FILE",
+    "type": "UPDATE_PROTOCOL_FILE",
+    "target": "PROTOCOL.md",
     "status": "COMPLETED"
   },
   "trace": {
@@ -489,7 +759,7 @@ EVT transforms an output into an operational trace.
 
 ---
 
-15. Ledger Protocol
+19. Ledger Protocol
 
 The ledger preserves EVT continuity.
 
@@ -531,16 +801,19 @@ Ledger rules:
 7. Public and internal views should be separated.
 
 
+8. Project-domain metadata should be preserved.
+
+
 
 Correction example:
 
 {
-  "evt": "EVT-20260429-160000-0003",
-  "prev": "EVT-20260429-153000-0002",
+  "evt": "EVT-20260503-160000-AI-JOKER-C2-0003",
+  "prev": "EVT-20260503-153000-AI-JOKER-C2-0002",
   "operation": {
     "type": "EVENT_CORRECTION",
-    "corrects": "EVT-20260429-153000-0002",
-    "reason": "Incorrect context classification"
+    "corrects": "EVT-20260503-153000-AI-JOKER-C2-0002",
+    "reason": "Incorrect project domain classification"
   }
 }
 
@@ -551,7 +824,7 @@ Correction is a new trace.
 
 ---
 
-16. Verification Protocol
+20. Verification Protocol
 
 Verification should allow reconstruction of the operational sequence.
 
@@ -568,6 +841,8 @@ timestamp;
 identity reference;
 
 runtime state;
+
+project domain;
 
 context class;
 
@@ -607,7 +882,7 @@ Both should remain distinct.
 
 ---
 
-17. Hashing Protocol
+21. Hashing Protocol
 
 The recommended hash algorithm is:
 
@@ -643,6 +918,12 @@ Hashing principles:
 8. Document what is included in the hash.
 
 
+9. Preserve project-domain fields.
+
+
+10. Preserve context-class fields.
+
+
 
 A hash supports integrity.
 
@@ -653,7 +934,7 @@ Policy, risk and decision remain required.
 
 ---
 
-18. Human Oversight Protocol
+22. Human Oversight Protocol
 
 Human oversight must be preserved for high-impact operations.
 
@@ -699,7 +980,7 @@ It must not replace responsible human operators.
 
 ---
 
-19. File Processing Protocol
+23. File Processing Protocol
 
 File processing must be controlled.
 
@@ -719,7 +1000,13 @@ generate documentation;
 
 review code;
 
-prepare GitHub-ready output.
+prepare GitHub-ready output;
+
+improve editorial flow;
+
+align canonical terminology;
+
+prepare publication-ready content.
 
 
 File processing rules:
@@ -748,6 +1035,9 @@ File processing rules:
 8. Use references or hashes for large or sensitive files where possible.
 
 
+9. Preserve project-domain metadata when relevant.
+
+
 
 Recommended safe file types:
 
@@ -761,7 +1051,7 @@ Unknown or binary files should be handled conservatively.
 
 ---
 
-20. API Protocol
+24. API Protocol
 
 API routes must preserve controlled execution.
 
@@ -771,6 +1061,10 @@ Primary API routes may include:
 /api/files
 /api/verify
 /api/evidence
+/api/evt
+/api/signature
+/api/network
+/api/federation
 
 API rules:
 
@@ -804,6 +1098,12 @@ API rules:
 10. Avoid unrestricted execution endpoints.
 
 
+11. Preserve project-domain metadata.
+
+
+12. Keep public and internal routes separated.
+
+
 
 API routes are operational surfaces.
 
@@ -812,7 +1112,7 @@ They must not bypass governance.
 
 ---
 
-21. Model Interaction Protocol
+25. Model Interaction Protocol
 
 The model layer supports reasoning and generation.
 
@@ -825,6 +1125,8 @@ summaries;
 code;
 
 documentation;
+
+editorial drafts;
 
 strategic drafts;
 
@@ -840,6 +1142,8 @@ The model must not be treated as the final governance authority.
 Model output should remain subject to:
 
 project scope;
+
+domain classification;
 
 policy checks;
 
@@ -859,7 +1163,7 @@ The model does not govern the runtime.
 
 ---
 
-22. Security Protocol
+26. Security Protocol
 
 AI JOKER-C2 supports defensive and governance-oriented security only.
 
@@ -915,7 +1219,7 @@ Offensive or abusive capability is prohibited.
 
 ---
 
-23. Dual-Use Protocol
+27. Dual-Use Protocol
 
 AI JOKER-C2 is dual-use only in a controlled civil and strategic sense.
 
@@ -968,7 +1272,7 @@ Dual-use means lawful, defensive, accountable and traceable strategic applicatio
 
 ---
 
-24. Public Communication Protocol
+28. Public Communication Protocol
 
 AI JOKER-C2 should communicate clearly.
 
@@ -1013,7 +1317,7 @@ The runtime should keep the machine room available but not noisy.
 
 ---
 
-25. Error Handling Protocol
+29. Error Handling Protocol
 
 Errors should be safe and useful.
 
@@ -1039,6 +1343,7 @@ Suggested error classes:
 Error	Meaning
 
 INPUT_ERROR	Invalid or incomplete user input
+DOMAIN_ERROR	Project domain cannot be classified
 POLICY_ERROR	Policy could not authorize operation
 RISK_ERROR	Risk could not be safely classified
 MODEL_ERROR	Model execution failed
@@ -1054,7 +1359,7 @@ Errors should not become uncontrolled execution paths.
 
 ---
 
-26. Degraded Mode Protocol
+30. Degraded Mode Protocol
 
 The runtime may enter degraded mode when:
 
@@ -1096,17 +1401,21 @@ fail-closed behavior;
 
 no secret exposure;
 
-user-facing clarity.
+user-facing clarity;
+
+project-domain integrity.
 
 
 
 ---
 
-27. Contribution Protocol
+31. Contribution Protocol
 
 Future contributions must preserve this protocol.
 
 A contribution must not:
+
+bypass project-domain classification;
 
 bypass policy;
 
@@ -1145,7 +1454,9 @@ runtime stability;
 
 documentation;
 
-defensive utility.
+defensive utility;
+
+project-domain alignment.
 
 
 See:
@@ -1155,7 +1466,7 @@ CONTRIBUTING.md
 
 ---
 
-28. Implementation Targets
+32. Implementation Targets
 
 Suggested implementation modules:
 
@@ -1163,10 +1474,12 @@ lib/context-classifier.ts
 lib/policy-engine.ts
 lib/risk-engine.ts
 lib/runtime-decision.ts
+lib/runtime-identity.ts
 lib/evt.ts
 lib/evt-ledger.ts
 lib/evt-hash.ts
 lib/evt-verify.ts
+lib/human-oversight.ts
 
 Suggested API routes:
 
@@ -1174,6 +1487,7 @@ app/api/chat/route.ts
 app/api/files/route.ts
 app/api/verify/route.ts
 app/api/evidence/route.ts
+app/api/evt/route.ts
 
 Suggested future directories:
 
@@ -1187,66 +1501,141 @@ Implementation should follow the protocol rather than inventing parallel logic.
 
 ---
 
-29. Protocol Invariants
+33. Protocol Invariants
 
 The following invariants must remain stable:
 
-AI JOKER-C2 is not a generic chatbot.
-AI JOKER-C2 is identity-bound.
-MATRIX provides the strategic framework.
-HBCE provides the governance infrastructure.
-IPR provides identity.
-Policy provides boundary.
-Risk provides classification.
-Decision provides control.
-EVT provides trace.
-Ledger provides continuity.
-Verification provides accountability.
-Fail-closed provides safety.
-Human accountability is preserved.
-Offensive use is outside scope.
+1. AI JOKER-C2 is not a generic chatbot.
+
+
+2. AI JOKER-C2 is identity-bound.
+
+
+3. MATRIX provides the operational infrastructure domain.
+
+
+4. CORPUS ESOTEROLOGIA ERMETICA provides the disciplinary grammar domain.
+
+
+5. APOKALYPSIS provides the historical threshold domain.
+
+
+6. HBCE provides the governance infrastructure.
+
+
+7. IPR provides identity.
+
+
+8. Policy provides boundary.
+
+
+9. Risk provides classification.
+
+
+10. Decision provides control.
+
+
+11. EVT provides trace.
+
+
+12. Ledger provides continuity.
+
+
+13. Verification provides accountability.
+
+
+14. Fail-closed provides safety.
+
+
+15. Human accountability is preserved.
+
+
+16. Offensive use is outside scope.
+
+
+17. The model layer is not the authority layer.
+
+
+18. Corrections must be new events.
+
+
+19. Project-domain metadata must be preserved.
+
+
+20. Public communication must remain readable.
+
+
 
 
 ---
 
-30. Protocol Checklist
+34. Protocol Checklist
 
 Before accepting a runtime operation, check:
 
 Is identity defined?
+
 Is the input understood?
+
 Is intent classified?
+
 Is context classified?
+
+Is project domain classified?
+
 Is policy applicable?
+
 Is risk classified?
+
 Is the decision clear?
+
 Is execution allowed?
+
 Is an EVT required?
+
 Can the EVT be generated?
+
 Can continuity be preserved?
+
 Is verification possible?
+
 Is human oversight required?
+
 Is fail-closed triggered?
+
 
 Before deploying a runtime change, check:
 
 Does the project build?
+
 Are secrets protected?
+
 Are API routes safe?
+
 Is file handling controlled?
+
 Is model output governed?
+
+Is project-domain classification preserved?
+
 Is EVT compatibility preserved?
+
 Is ledger continuity preserved?
+
 Is verification possible?
+
 Is fail-closed behavior preserved?
+
 Is non-offensive boundary preserved?
+
 
 
 ---
 
-31. Final Protocol Formula
+35. Final Protocol Formula
 
 No identity, no attribution.
+No domain, no correct routing.
 No policy, no boundary.
 No risk classification, no sensitive execution.
 No decision, no control.
@@ -1257,24 +1646,37 @@ No fail-closed, no trustworthy runtime.
 
 Operational formula:
 
-Identity -> Input -> Intent -> Context -> Policy -> Risk -> Decision -> Execution -> EVT -> Ledger -> Verification -> Continuity
+Identity -> Input -> Intent -> Context -> Project Domain -> Policy -> Risk -> Decision -> Execution -> EVT -> Ledger -> Verification -> Continuity
+
+Project formula:
+
+MATRIX = infrastructure.
+CORPUS = grammar.
+APOKALYPSIS = threshold.
+AI JOKER-C2 = runtime.
 
 
 ---
 
-32. Status
+36. Status
 
-Document status: active operational protocol
-Project: AI JOKER-C2
-Framework: MATRIX
-Infrastructure: HBCE
-Identity layer: IPR
-Trace layer: EVT
-Governance principle: fail-closed
-Security boundary: defensive and non-offensive
-Repository: hbce-ai-joker-c2
-Maintainer: HBCE Research
-Organization: HERMETICUM B.C.E. S.r.l.
-Territorial anchor: Torino, Italy, Europe
-Year: 2026
+Field	Value
+
+Document	PROTOCOL.md
+Status	Active operational protocol
+Project	AI JOKER-C2
+Ecosystem	HERMETICUM B.C.E.
+Connected domains	MATRIX, CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Infrastructure	HBCE
+Identity layer	IPR
+Trace layer	EVT
+Ledger layer	Append-only continuity
+Verification layer	Hash and audit reconstruction
+Governance principle	Fail-closed
+Security boundary	Defensive and non-offensive
+Repository	hbce-ai-joker-c2
+Maintainer	HBCE Research
+Organization	HERMETICUM B.C.E. S.r.l.
+Territorial anchor	Torino, Italy, Europe
+Year	2026
 
