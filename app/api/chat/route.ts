@@ -290,7 +290,11 @@ function isSafeIdentityGovernanceQuestion(message: string): boolean {
     lower.includes(term)
   );
 
-  return hasIdentityTerm && hasExplanatoryTerm && !containsUnsafeOperationalTerm(message);
+  return (
+    hasIdentityTerm &&
+    hasExplanatoryTerm &&
+    !containsUnsafeOperationalTerm(message)
+  );
 }
 
 function buildSafeIdentityProjectDomain(): ProjectDomainClassification {
@@ -2113,13 +2117,15 @@ export async function POST(req: NextRequest) {
   });
 
   const memoryFile = memory.used ? [buildMemoryFile(memory.text)] : [];
-  const effectiveFiles = [...memoryFile, ...input.files];
+
+  const userFiles = input.files;
+  const promptFiles = [...memoryFile, ...userFiles];
 
   const structuredFormat = shouldUseStructuredFormat(effectiveMessage);
 
   const governance = buildGovernanceFrame({
     message: effectiveMessage,
-    files: effectiveFiles
+    files: userFiles
   });
 
   const contextClass = governance.contextClass;
@@ -2131,14 +2137,14 @@ export async function POST(req: NextRequest) {
     contextClass === "EDITORIAL" ||
     contextClass === "CORPUS" ||
     contextClass === "APOKALYPSIS" ||
-    effectiveFiles.length > 0
+    userFiles.length > 0
       ? detectDocumentMode(effectiveMessage)
       : "GENERAL_DOCUMENT_WORK";
 
   const documentFamily =
-    input.files.length > 0
-      ? detectDocumentFamily(input.files)
-      : memory.semanticState?.documentFamily || detectDocumentFamily(effectiveFiles);
+    userFiles.length > 0
+      ? detectDocumentFamily(userFiles)
+      : memory.semanticState?.documentFamily || detectDocumentFamily(promptFiles);
 
   const modernPrev = await getLastEventReference();
   const legacyPrev = input.continuityRef || memory.lastEventId;
@@ -2207,7 +2213,7 @@ export async function POST(req: NextRequest) {
       documentFamily,
       evtIprMemoryUsed: memory.used,
       structuredFormat,
-      activeFiles: effectiveFiles.map((file) => file.name || "unnamed"),
+      activeFiles: promptFiles.map((file) => file.name || "unnamed"),
       identity: {
         entity: identity.entity,
         ipr: identity.ipr,
@@ -2275,7 +2281,7 @@ export async function POST(req: NextRequest) {
       contextClass,
       documentMode,
       documentFamily,
-      files: effectiveFiles,
+      files: promptFiles,
       memoryText: memory.text,
       memoryUsed: memory.used,
       structuredFormat,
@@ -2319,7 +2325,7 @@ export async function POST(req: NextRequest) {
     contextClass: legacyContextClass,
     documentMode,
     documentFamily,
-    files: effectiveFiles,
+    files: promptFiles,
     prevEventId: event.prev
   });
 
@@ -2362,7 +2368,7 @@ export async function POST(req: NextRequest) {
     documentFamily,
     evtIprMemoryUsed: memory.used,
     structuredFormat,
-    activeFiles: effectiveFiles.map((file) => file.name || "unnamed"),
+    activeFiles: promptFiles.map((file) => file.name || "unnamed"),
     identity: {
       entity: identity.entity,
       ipr: identity.ipr,
