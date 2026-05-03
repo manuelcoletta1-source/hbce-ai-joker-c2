@@ -7,6 +7,15 @@
  *
  * This module does not authorize unsafe operations.
  * It prevents false escalation for explanatory, editorial and conceptual requests.
+ *
+ * Canonical response rule:
+ * When IPR and biocybersecurity are connected, the runtime should explain:
+ *
+ * IPR = operational identity.
+ * EVT = verifiable trace.
+ * MATRIX = operational infrastructure.
+ * AI JOKER-C2 = governed runtime.
+ * Biocybersecurity = protection of the organism-system-AI coupling.
  */
 
 import type {
@@ -139,6 +148,7 @@ const SAFE_WRITING_TERMS = [
   "illustra",
   "descrivi",
   "relazione tra",
+  "relazione ta",
   "rapporto tra",
   "collegamento tra",
   "connessione tra"
@@ -180,16 +190,27 @@ const BIOCYBERSECURITY_TERMS = [
   "biocibernetica",
   "sicurezza biocibernetica",
   "sicuerezza biocibernetica",
+  "sicuuerezza biocibernetica",
   "sicurezza bio cibernetica",
   "sicuerezza bio cibernetica",
+  "sicuuerezza bio cibernetica",
   "sicurezza biocyber",
   "sicuerezza biocyber",
+  "sicuuerezza biocyber",
   "protezione biocibernetica",
+  "protezzione biocibernetica",
   "protezione bio cibernetica",
   "protezione biocyber",
+  "sicurezza protezione biocibernetica",
+  "sicuerezza protezione biocibernetica",
+  "sicuuerezza protezione biocibernetica",
+  "sicurezza e protezione biocibernetica",
+  "sicuerezza e protezione biocibernetica",
+  "sicuuerezza e protezione biocibernetica",
   "protezione cyber biologica",
   "sicurezza cyber biologica",
   "sicuerezza cyber biologica",
+  "sicuuerezza cyber biologica",
   "sicurezza organismo sistema",
   "protezione organismo sistema",
   "sicurezza organismo-sistema",
@@ -208,6 +229,7 @@ const BIOCYBERSECURITY_TERMS = [
   "organismo sistema",
   "organism system",
   "accoppiamento organismo sistema",
+  "accoppiamento organismo-sistema",
   "organism-system coupling"
 ];
 
@@ -277,11 +299,7 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
       projectDomain: "MULTI_DOMAIN",
       contextClass: "AI_GOVERNANCE",
       intentClass,
-      reasons: [
-        "Safe conceptual or editorial request connecting IPR and biocybersecurity.",
-        "IPR + biocybersecurity is treated as a public governance concept unless unsafe operational instructions are present.",
-        "Mapped to MULTI_DOMAIN because it connects operational identity, organism-system interface, AI governance, traceability and MATRIX infrastructure."
-      ]
+      reasons: buildIprBiocybersecurityReasons()
     });
   }
 
@@ -295,7 +313,9 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
       reasons: [
         "Safe conceptual or editorial request about biocybersecurity or a close misspelling.",
         "Biocybersecurity is treated as a conceptual governance term unless unsafe operational instructions are present.",
-        "Mapped to MULTI_DOMAIN because it connects organism-system interface, AI governance, identity, security and traceability."
+        "Mapped to MULTI_DOMAIN because it connects organism-system interface, AI governance, identity, security and traceability.",
+        "Response directive: define biocybersecurity as protection of the organism-system-AI coupling.",
+        "Response directive: mention IPR only if relevant as operational identity, EVT as verifiable trace, MATRIX as infrastructure and AI JOKER-C2 as governed runtime."
       ]
     });
   }
@@ -309,7 +329,9 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
       intentClass,
       reasons: [
         "Safe conceptual or editorial request about IPR or operational identity.",
-        "IPR is treated as a public identity-governance concept."
+        "IPR is treated as a public identity-governance concept.",
+        "Response directive: do not reduce IPR to a login, account, credential or ordinary digital identity.",
+        "Response directive: explain IPR as operational identity linking origin, responsibility, events, proof and continuity."
       ]
     });
   }
@@ -323,7 +345,8 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
       intentClass,
       reasons: [
         "Safe conceptual or editorial request about EVT or traceability.",
-        "EVT is treated as a public traceability-governance concept."
+        "EVT is treated as a public traceability-governance concept.",
+        "Response directive: explain EVT as verifiable event trace, not psychological memory."
       ]
     });
   }
@@ -337,7 +360,8 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
       intentClass,
       reasons: [
         "Safe conceptual or editorial request about AI governance.",
-        "AI governance is treated as a public governance concept unless unsafe operational instructions are present."
+        "AI governance is treated as a public governance concept unless unsafe operational instructions are present.",
+        "Response directive: keep the response defensive, audit-oriented and non-offensive."
       ]
     });
   }
@@ -351,7 +375,8 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
       intentClass,
       reasons: [
         "Safe conceptual or editorial request about HERMETICUM / MATRIX / CORPUS / APOKALYPSIS concepts.",
-        "Canonical ecosystem terms are treated as public conceptual context unless unsafe operational instructions are present."
+        "Canonical ecosystem terms are treated as public conceptual context unless unsafe operational instructions are present.",
+        "Response directive: preserve the distinction MATRIX = infrastructure, CORPUS = grammar, APOKALYPSIS = threshold, AI JOKER-C2 = runtime."
       ]
     });
   }
@@ -514,6 +539,21 @@ function buildNoMatch(reasons: string[] = []): SafeConceptClassification {
     },
     reasons
   };
+}
+
+function buildIprBiocybersecurityReasons(): string[] {
+  return [
+    "Safe conceptual or editorial request connecting IPR and biocybersecurity.",
+    "IPR + biocybersecurity is treated as a public governance concept unless unsafe operational instructions are present.",
+    "Mapped to MULTI_DOMAIN because it connects operational identity, organism-system interface, AI governance, traceability and MATRIX infrastructure.",
+    "Response directive: write the answer as a conceptual and strategic explanation, not as an operational cyber instruction.",
+    "Response directive: explain that IPR provides operational identity for the organism-system-AI interface.",
+    "Response directive: explain that EVT provides verifiable trace of events generated by that identity.",
+    "Response directive: explain that MATRIX provides the infrastructure frame for governance, auditability and continuity.",
+    "Response directive: explain that AI JOKER-C2 acts as the governed runtime connecting identity, risk, decision and trace.",
+    "Response directive: define biocybersecurity as protection of the organism-system-AI coupling.",
+    "Response directive: include the formula IPR = operational identity; EVT = verifiable trace; MATRIX = infrastructure; AI JOKER-C2 = governed runtime; biocybersecurity = organism-system protection."
+  ];
 }
 
 function normalizeForConcept(value: string): string {
