@@ -1,997 +1,433 @@
 /**
- * AI JOKER-C2 Context Classifier
+ * AI JOKER-C2 Safe Concept Classifier
  *
- * Deterministic rule-based classifier for the HERMETICUM B.C.E.
- * governed runtime.
+ * Detects safe conceptual, theoretical and governance terms that should not
+ * trigger fail-closed behavior only because they are new, hybrid, misspelled
+ * or close to sensitive domains.
  *
- * This module classifies input into:
- * - ContextClass
- * - IntentClass
- * - runtime sensitivity
- * - confidence score
- * - explainable reasons
- *
- * Canonical project domains are classified separately by:
- * - lib/project-domain-classifier.ts
- *
- * This classifier does not call external models.
- * It is transparent, deterministic and inspectable.
+ * This module does not authorize unsafe operations.
+ * It prevents false escalation for explanatory conceptual requests.
  */
 
 import type {
   ContextClass,
-  ContextClassification,
+  DataClassification,
   IntentClass,
-  RuntimeSensitivity
+  OversightEvaluation,
+  PolicyEvaluation,
+  ProjectDomain,
+  ProjectDomainClassification,
+  RiskEvaluation
 } from "./runtime-types";
 
-type ClassifierInput = {
-  message: string;
-  hasFiles?: boolean;
-  route?: string;
-  fileNames?: string[];
-  fileTypes?: string[];
-  activeDocument?: string;
-  activeSection?: string;
-};
+export type SafeConceptKind =
+  | "IPR_IDENTITY"
+  | "BIOCYBERSECURITY"
+  | "EVT_TRACEABILITY"
+  | "AI_GOVERNANCE"
+  | "HERMETICUM_CONCEPT"
+  | "UNKNOWN";
 
-type WeightedMatch<T extends string> = {
-  value: T;
-  score: number;
+export type SafeConceptClassification = {
+  matched: boolean;
+  kind: SafeConceptKind;
+  normalizedTerm: string;
+  projectDomain: ProjectDomain;
+  contextClass: ContextClass;
+  intentClass: IntentClass;
+  data: DataClassification;
+  policy: PolicyEvaluation;
+  risk: RiskEvaluation;
+  oversight: OversightEvaluation;
   reasons: string[];
 };
 
-const PROHIBITED_TERMS = [
+const UNSAFE_OPERATIONAL_TERMS = [
   "malware",
   "ransomware",
-  "steal credentials",
+  "phishing",
   "credential theft",
-  "phishing kit",
+  "steal credentials",
+  "rubare credenziali",
+  "exploit",
   "deploy exploit",
-  "exploit deployment",
   "unauthorized access",
+  "accesso non autorizzato",
   "bypass authentication",
   "evade detection",
   "evasion",
-  "persistence mechanism",
-  "stealth",
+  "persistence",
   "backdoor",
   "botnet",
   "exfiltrate",
+  "esfiltrare",
   "sabotage",
+  "sabotaggio",
   "ddos",
-  "weaponize",
-  "autonomous targeting",
   "unlawful surveillance",
-  "fabricate evidence",
-  "bypass human oversight",
-  "remove auditability",
-  "disable audit",
-  "disable logging",
+  "sorveglianza illegale",
   "hide traces",
-  "cover tracks"
+  "cover tracks",
+  "nascondere tracce",
+  "attack",
+  "attacco",
+  "colpire",
+  "payload"
 ];
 
-const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
-  IDENTITY: [
-    "identity",
-    "identita",
-    "ipr",
-    "evt",
-    "checkpoint",
-    "lineage",
-    "runtime identity",
-    "entity",
-    "continuita",
-    "continuity reference",
-    "operational identity",
-    "ai_joker",
-    "ipr-ai-0001",
-    "ipr-3"
-  ],
-
-  MATRIX: [
-    "matrix",
-    "matrix europa",
-    "matrix hbce",
-    "matrix framework",
-    "matrix torino",
-    "matrix piemonte",
-    "matrix italia",
-    "strategic framework",
-    "torino brussels",
-    "torino bruxelles",
-    "federated infrastructure",
-    "operational infrastructure",
-    "infrastruttura operativa",
-    "public administration",
-    "pubblica amministrazione",
-    "b2b",
-    "b2g",
-    "europe",
-    "europa",
-    "european",
-    "brussels",
-    "bruxelles",
-    "digital sovereignty",
-    "sovranita digitale"
-  ],
-
-  CORPUS: [
-    "corpus",
-    "corpus esoterologia ermetica",
-    "esoterologia",
-    "decisione",
-    "costo",
-    "traccia",
-    "tempo",
-    "dctt",
-    "decision cost trace time",
-    "reale operativo",
-    "realta operativa",
-    "operational reality",
-    "canonical glossary",
-    "glossario canonico",
-    "lex hermeticum",
-    "alien code",
-    "alien artifact",
-    "paradogma alieno",
-    "portale dell anticristo",
-    "portale dell'anticristo",
-    "rascensionale",
-    "riconconicita",
-    "riconconicità",
-    "qubitronica",
-    "formula fondativa",
-    "tesi editoriale",
-    "frontespizio",
-    "volume i",
-    "volume ii",
-    "volume iii",
-    "volume iv",
-    "volume v"
-  ],
-
-  APOKALYPSIS: [
-    "apokalypsis",
-    "apokalipsis",
-    "apocalipsis",
-    "apocalisse",
-    "decadence",
-    "decadimento",
-    "decay",
-    "exposure",
-    "esposizione",
-    "historical threshold",
-    "soglia storica",
-    "threshold",
-    "soglia",
-    "cognitive dislocation",
-    "dislocazione cognitiva",
-    "cognitive rupture",
-    "rottura cognitiva",
-    "cultural system",
-    "sistema culturale",
-    "political system",
-    "sistema politico",
-    "social system",
-    "sistema sociale",
-    "foundation loss",
-    "perdita di fondamento",
-    "system exposure",
-    "esposizione del sistema",
-    "apostasy",
-    "apostasia",
-    "paradogma alieno"
-  ],
-
-  DOCUMENTAL: [
-    "document",
-    "file",
-    "summary",
-    "summarize",
-    "pdf",
-    "txt",
-    "markdown",
-    "extract",
-    "rewrite document",
-    "analyze document",
-    "report",
-    "documento",
-    "riassunto",
-    "sintesi",
-    "analizza il file",
-    "file attivi",
-    "uploaded",
-    "allegato"
-  ],
-
-  TECHNICAL: [
-    "code",
-    "typescript",
-    "javascript",
-    "next.js",
-    "nextjs",
-    "api",
-    "endpoint",
-    "route.ts",
-    "runtime",
-    "module",
-    "function",
-    "build",
-    "npm",
-    "vercel",
-    "refactor",
-    "implement",
-    "lib/",
-    "app/api",
-    "tsconfig",
-    "package.json"
-  ],
-
-  GITHUB: [
-    "github",
-    "repo",
-    "repository",
-    "commit",
-    "branch",
-    "readme",
-    "pull request",
-    "pr",
-    "file path",
-    "docs/",
-    "lib/",
-    "app/",
-    "package.json",
-    "tsconfig",
-    "security.md",
-    "contributing.md",
-    "roadmap.md",
-    "nome file",
-    "il file",
-    "il commit",
-    "fatto vai",
-    "fatto, vai"
-  ],
-
-  EDITORIAL: [
-    "book",
-    "volume",
-    "chapter",
-    "capitolo",
-    "corpus",
-    "publishing",
-    "editorial",
-    "editoriale",
-    "index",
-    "indice",
-    "preface",
-    "premessa",
-    "introduction",
-    "introduzione",
-    "glossary",
-    "glossario",
-    "manuscript",
-    "manoscritto",
-    "frontespizio",
-    "fluidita",
-    "fluidità",
-    "riscrivi",
-    "migliora il testo"
-  ],
-
-  STRATEGIC: [
-    "strategy",
-    "strategic",
-    "positioning",
-    "posizionamento",
-    "b2b",
-    "b2g",
-    "institution",
-    "institutional",
-    "enterprise",
-    "public sector",
-    "roadmap",
-    "stakeholder",
-    "european",
-    "eu",
-    "istituzioni",
-    "azienda",
-    "public administration",
-    "regione",
-    "commissione europea"
-  ],
-
-  SECURITY: [
-    "security",
-    "cybersecurity",
-    "defensive security",
-    "incident",
-    "soc",
-    "vulnerability",
-    "hardening",
-    "ciso",
-    "threat",
-    "remediation",
-    "secrets",
-    "api key",
-    "token",
-    "logs",
-    "sicurezza",
-    "incidente",
-    "vulnerabilita",
-    "vulnerabilità",
-    "segreti"
-  ],
-
-  COMPLIANCE: [
-    "compliance",
-    "audit",
-    "auditable",
-    "auditability",
-    "legal review",
-    "data protection",
-    "policy",
-    "risk register",
-    "human oversight",
-    "certification",
-    "disclaimer",
-    "review checklist",
-    "non certification",
-    "non-certification",
-    "data handling",
-    "compliance orientation",
-    "conformita",
-    "conformità",
-    "registro rischi",
-    "supervisione umana"
-  ],
-
-  GOVERNANCE: [
-    "governance",
-    "policy",
-    "risk",
-    "risk engine",
-    "policy engine",
-    "decision",
-    "runtime decision",
-    "oversight",
-    "human oversight",
-    "audit",
-    "traceability",
-    "verification",
-    "fail closed",
-    "fail-closed",
-    "evt protocol",
-    "ledger",
-    "classifier",
-    "project-domain",
-    "project domain",
-    "governo",
-    "tracciabilita",
-    "tracciabilità",
-    "verifica",
-    "classificatore"
-  ],
-
-  CRITICAL_INFRASTRUCTURE: [
-    "critical infrastructure",
-    "infrastrutture critiche",
-    "energy",
-    "energia",
-    "telecom",
-    "telecommunications",
-    "cloud",
-    "data center",
-    "transport",
-    "water",
-    "hospital",
-    "healthcare",
-    "utility",
-    "public service",
-    "continuity",
-    "resilience",
-    "resilienza"
-  ],
-
-  AI_GOVERNANCE: [
-    "ai governance",
-    "governance ai",
-    "model governance",
-    "model output",
-    "risk classification",
-    "policy engine",
-    "risk engine",
-    "human oversight",
-    "runtime decision",
-    "ai act",
-    "high-impact ai",
-    "responsible ai",
-    "trustworthy ai",
-    "governed ai"
-  ],
-
-  DUAL_USE: [
-    "dual-use",
-    "dual use",
-    "strategic use",
-    "civil strategic",
-    "civil and strategic",
-    "sensitive dual-use",
-    "restricted use",
-    "prohibited use",
-    "non-offensive boundary",
-    "dual-use risk",
-    "dual use risk",
-    "uso duale",
-    "civile strategico",
-    "non offensivo"
-  ],
-
-  GENERAL: []
-};
-
-const INTENT_KEYWORDS: Record<IntentClass, string[]> = {
-  ASK: [
-    "what is",
-    "what are",
-    "why",
-    "explain",
-    "tell me",
-    "show me",
-    "how does",
-    "how do",
-    "dimmi",
-    "spiegami",
-    "cosa e",
-    "cos e",
-    "perche",
-    "perché"
-  ],
-
-  WRITE: [
-    "write",
-    "draft",
-    "create text",
-    "prepare text",
-    "make a document",
-    "compose",
-    "generate document",
-    "scrivi",
-    "fammi",
-    "crea",
-    "prepara",
-    "redigi"
-  ],
-
-  REWRITE: [
-    "rewrite",
-    "improve",
-    "fix the text",
-    "make it smoother",
-    "migliora",
-    "riscrivi",
-    "correggi",
-    "rendilo",
-    "fluidita",
-    "fluidità",
-    "scorrevole",
-    "rifallo"
-  ],
-
-  ANALYZE: [
-    "analyze",
-    "review",
-    "evaluate",
-    "assess",
-    "inspect",
-    "check",
-    "compare",
-    "analizza",
-    "controlla",
-    "valuta",
-    "confronta",
-    "verifica"
-  ],
-
-  SUMMARIZE: [
-    "summarize",
-    "summary",
-    "synthesize",
-    "brief",
-    "recap",
-    "riassumi",
-    "sintesi",
-    "sintetizza"
-  ],
-
-  TRANSFORM: [
-    "transform",
-    "convert",
-    "reformat",
-    "turn into",
-    "make it into",
-    "trasforma",
-    "converti",
-    "riformatta"
-  ],
-
-  CODE: [
-    "code",
-    "implement",
-    "typescript",
-    "javascript",
-    "function",
-    "module",
-    "api route",
-    "fix code",
-    "refactor code",
-    "codice",
-    "implementa",
-    "funzione",
-    "modulo",
-    "route.ts"
-  ],
-
-  GITHUB: [
-    "github",
-    "repo",
-    "repository",
-    "commit",
-    "branch",
-    "readme",
-    "security.md",
-    "contributing.md",
-    "roadmap.md",
-    "docs/",
-    "lib/",
-    "nome file",
-    "il file",
-    "il commit",
-    "fatto vai",
-    "fatto, vai",
-    "vai"
-  ],
-
-  GOVERNANCE: [
-    "governance",
-    "policy",
-    "risk",
-    "oversight",
-    "audit",
-    "traceability",
-    "verification",
-    "fail-closed",
-    "fail closed",
-    "runtime decision",
-    "governo",
-    "tracciabilita",
-    "tracciabilità",
-    "supervisione"
-  ],
-
-  SECURITY: [
-    "security",
-    "cybersecurity",
-    "incident",
-    "soc",
-    "vulnerability",
-    "hardening",
-    "remediation",
-    "secrets",
-    "logs",
-    "sicurezza",
-    "incidente",
-    "vulnerabilita",
-    "vulnerabilità"
-  ],
-
-  COMPLIANCE: [
-    "compliance",
-    "audit",
-    "legal review",
-    "data protection",
-    "risk register",
-    "human oversight",
-    "disclaimer",
-    "certification",
-    "data handling",
-    "conformita",
-    "conformità"
-  ],
-
-  STRATEGIC: [
-    "strategy",
-    "strategic",
-    "positioning",
-    "b2b",
-    "b2g",
-    "institutional",
-    "stakeholder",
-    "roadmap",
-    "strategia",
-    "posizionamento",
-    "istituzioni"
-  ],
-
-  EDITORIAL: [
-    "editorial",
-    "chapter",
-    "volume",
-    "book",
-    "glossary",
-    "manuscript",
-    "editoriale",
-    "capitolo",
-    "indice",
-    "glossario",
-    "manoscritto"
-  ],
-
-  VERIFY: [
-    "verify",
-    "verification",
-    "check evt",
-    "validate",
-    "hash",
-    "audit status",
-    "evidence",
-    "prove",
-    "verifica",
-    "validazione",
-    "validare"
-  ],
-
-  PROHIBITED: PROHIBITED_TERMS,
-
-  UNKNOWN: []
-};
-
-const HIGH_SENSITIVITY_TERMS = [
-  "critical infrastructure",
-  "infrastrutture critiche",
-  "public authority",
-  "public service",
-  "law enforcement",
-  "emergency",
-  "incident",
-  "breach",
-  "secret",
-  "token",
-  "api key",
-  "private key",
-  "password",
-  "credential",
-  "production",
-  "live system",
-  "healthcare",
-  "hospital",
-  "financial",
-  "legal",
-  "procurement",
-  "surveillance",
-  "exploit",
-  "malware",
-  "secret exposure",
-  "segreto",
-  "credenziali"
+const EXPLANATORY_TERMS = [
+  "cosa e",
+  "cos e",
+  "che cosa e",
+  "spiegami",
+  "parlami",
+  "dimmi",
+  "definisci",
+  "significa",
+  "significato",
+  "novita",
+  "nuova tecnologia",
+  "tecnologia",
+  "potenzialita",
+  "potenziale",
+  "vantaggi",
+  "valore",
+  "a cosa serve",
+  "per chi e utile",
+  "rispetto a chi non ce l ha",
+  "confronto",
+  "paragone",
+  "standard",
+  "scenario",
+  "europa",
+  "mercato",
+  "funziona",
+  "opera"
 ];
 
-const MEDIUM_SENSITIVITY_TERMS = [
-  "audit",
-  "compliance",
-  "governance",
-  "risk",
-  "oversight",
-  "repository",
-  "deployment",
-  "logs",
-  "internal",
-  "confidential",
-  "security",
-  "policy",
-  "verification",
-  "evidence",
-  "b2b",
-  "b2g",
-  "institutional",
+const IPR_TERMS = [
+  "ipr",
+  "identity primary record",
+  "registro primario",
+  "registro primario di identita",
+  "registro primario di identita operativa",
+  "identita operativa",
+  "identity layer",
+  "operational identity",
+  "continuita operativa",
+  "continuita verificabile"
+];
+
+const EVT_TERMS = [
+  "evt",
+  "event trace",
+  "verifiable event trace",
+  "traccia verificabile",
+  "evento verificabile",
+  "event record",
+  "ledger",
+  "hash",
+  "timestamp"
+];
+
+const BIOCYBERSECURITY_TERMS = [
+  "biocybersecurity",
+  "bio cyber security",
+  "bio-cybersecurity",
+  "bio cybersecurity",
+  "biocibersicurezza",
+  "bio cibersicurezza",
+  "bio-cibersicurezza",
+  "biocibernetica",
+  "bio cyber",
+  "biocyber",
+  "biocyber security",
+  "biocybercycuriti",
+  "biocybercycurity",
+  "biocybersecuriti",
+  "biocybersecurty",
+  "biocybersecutity",
+  "biocybercybersecurity",
+  "biocybercycuryti",
+  "biocybercycuriti"
+];
+
+const AI_GOVERNANCE_TERMS = [
+  "ai governance",
+  "governance ai",
+  "governed ai",
+  "runtime governance",
+  "policy engine",
+  "risk engine",
   "human oversight",
-  "risk register",
-  "incident report",
-  "conformita",
-  "conformità"
+  "fail closed",
+  "fail-closed",
+  "auditability",
+  "traceability"
 ];
 
-export function classifyContext(input: ClassifierInput): ContextClassification {
-  const normalized = normalizeText(input.message);
-  const route = normalizeText(input.route ?? "");
-  const fileText = normalizeText(
-    [
-      ...(input.fileNames ?? []),
-      ...(input.fileTypes ?? []),
-      input.activeDocument ?? "",
-      input.activeSection ?? ""
-    ].join(" ")
-  );
+const HERMETICUM_TERMS = [
+  "matrix",
+  "hbce",
+  "hermeticum",
+  "ai joker",
+  "joker-c2",
+  "corpus",
+  "apokalypsis",
+  "esoterologia",
+  "decisione costo traccia tempo",
+  "dctt"
+];
 
-  const combined = [normalized, route, fileText].filter(Boolean).join(" ");
+export function classifySafeConcept(message: string): SafeConceptClassification {
+  const normalized = normalizeForConcept(message);
 
-  if (!combined.trim()) {
-    return {
-      contextClass: "GENERAL",
-      intentClass: "UNKNOWN",
-      sensitivity: "UNKNOWN",
-      confidence: 0.2,
-      reasons: ["No meaningful input was provided."]
-    };
+  if (!normalized) {
+    return buildNoMatch();
   }
 
-  const prohibited = findMatches(combined, PROHIBITED_TERMS);
+  if (containsAny(normalized, UNSAFE_OPERATIONAL_TERMS)) {
+    return buildNoMatch([
+      "Unsafe operational term detected; safe conceptual override not applied."
+    ]);
+  }
 
-  if (prohibited.length > 0) {
-    return {
-      contextClass: "SECURITY",
-      intentClass: "PROHIBITED",
-      sensitivity: "HIGH",
-      confidence: 0.96,
+  const hasExplanatoryIntent =
+    containsAny(normalized, EXPLANATORY_TERMS) ||
+    normalized.split(" ").length <= 4;
+
+  if (!hasExplanatoryIntent) {
+    return buildNoMatch([
+      "No explanatory intent detected; safe conceptual override not applied."
+    ]);
+  }
+
+  if (containsAny(normalized, IPR_TERMS)) {
+    return buildSafeConcept({
+      kind: "IPR_IDENTITY",
+      normalizedTerm: "IPR / Identity Primary Record",
+      projectDomain: "MATRIX",
+      contextClass: "IDENTITY",
       reasons: [
-        "Input matched prohibited or unsafe operational terms.",
-        ...prohibited.map((term) => `Matched prohibited term: ${term}`)
+        "Safe explanatory request about IPR or operational identity.",
+        "IPR is treated as a public identity-governance concept."
       ]
+    });
+  }
+
+  if (containsAny(normalized, BIOCYBERSECURITY_TERMS)) {
+    return buildSafeConcept({
+      kind: "BIOCYBERSECURITY",
+      normalizedTerm: "biocybersecurity / biocibersicurezza",
+      projectDomain: "MULTI_DOMAIN",
+      contextClass: "AI_GOVERNANCE",
+      reasons: [
+        "Safe explanatory request about biocybersecurity or a close misspelling.",
+        "Biocybersecurity is treated as a conceptual governance term unless unsafe operational instructions are present.",
+        "Mapped to MULTI_DOMAIN because it connects organism-system interface, AI governance, identity, security and traceability."
+      ]
+    });
+  }
+
+  if (containsAny(normalized, EVT_TERMS)) {
+    return buildSafeConcept({
+      kind: "EVT_TRACEABILITY",
+      normalizedTerm: "EVT / Verifiable Event Trace",
+      projectDomain: "MATRIX",
+      contextClass: "IDENTITY",
+      reasons: [
+        "Safe explanatory request about EVT or traceability.",
+        "EVT is treated as a public traceability-governance concept."
+      ]
+    });
+  }
+
+  if (containsAny(normalized, AI_GOVERNANCE_TERMS)) {
+    return buildSafeConcept({
+      kind: "AI_GOVERNANCE",
+      normalizedTerm: "AI governance",
+      projectDomain: "MATRIX",
+      contextClass: "AI_GOVERNANCE",
+      reasons: [
+        "Safe explanatory request about AI governance.",
+        "AI governance is treated as a public governance concept unless unsafe operational instructions are present."
+      ]
+    });
+  }
+
+  if (containsAny(normalized, HERMETICUM_TERMS)) {
+    return buildSafeConcept({
+      kind: "HERMETICUM_CONCEPT",
+      normalizedTerm: "HERMETICUM B.C.E. conceptual term",
+      projectDomain: "MULTI_DOMAIN",
+      contextClass: "GOVERNANCE",
+      reasons: [
+        "Safe explanatory request about HERMETICUM / MATRIX / CORPUS / APOKALYPSIS concepts.",
+        "Canonical ecosystem terms are treated as public conceptual context unless unsafe operational instructions are present."
+      ]
+    });
+  }
+
+  return buildNoMatch();
+}
+
+export function isSafeConceptualRequest(message: string): boolean {
+  return classifySafeConcept(message).matched;
+}
+
+export function buildSafeConceptProjectDomain(
+  classification: SafeConceptClassification
+): ProjectDomainClassification {
+  if (!classification.matched) {
+    return {
+      projectDomain: "GENERAL",
+      activeDomains: ["GENERAL"],
+      primaryDomain: "GENERAL",
+      domainType: "GENERAL_CONTEXT",
+      confidence: 0.4,
+      reasons: ["No safe concept matched."],
+      scores: {
+        MATRIX: 0,
+        CORPUS_ESOTEROLOGIA_ERMETICA: 0,
+        APOKALYPSIS: 0
+      }
     };
   }
 
-  const context = selectBestContext(combined, Boolean(input.hasFiles));
-  const intent = selectBestIntent(combined, Boolean(input.hasFiles));
-  const sensitivity = classifySensitivity(combined, context.value, input);
-  const confidence = calculateConfidence(context.score, intent.score, combined);
-
-  const reasons = [
-    ...context.reasons,
-    ...intent.reasons,
-    `Sensitivity classified as ${sensitivity}.`
-  ];
-
-  if (input.hasFiles) {
-    reasons.push("File context is present.");
-  }
-
-  if (input.route) {
-    reasons.push(`Route context considered: ${input.route}`);
-  }
-
-  if (input.activeDocument) {
-    reasons.push(`Active document considered: ${input.activeDocument}`);
+  if (classification.projectDomain === "MULTI_DOMAIN") {
+    return {
+      projectDomain: "MULTI_DOMAIN",
+      activeDomains: [
+        "MATRIX",
+        "CORPUS_ESOTEROLOGIA_ERMETICA",
+        "APOKALYPSIS"
+      ],
+      primaryDomain: "MULTI_DOMAIN",
+      domainType: "ECOSYSTEM_OPERATION",
+      confidence: 0.96,
+      reasons: classification.reasons,
+      scores: {
+        MATRIX: 6,
+        CORPUS_ESOTEROLOGIA_ERMETICA: 4,
+        APOKALYPSIS: 2
+      }
+    };
   }
 
   return {
-    contextClass: context.value,
-    intentClass: intent.value,
-    sensitivity,
-    confidence,
-    reasons: uniqueReasons(reasons)
+    projectDomain: classification.projectDomain,
+    activeDomains: [classification.projectDomain],
+    primaryDomain: classification.projectDomain,
+    domainType:
+      classification.projectDomain === "MATRIX"
+        ? "OPERATIONAL_INFRASTRUCTURE_DOMAIN"
+        : classification.projectDomain === "CORPUS_ESOTEROLOGIA_ERMETICA"
+          ? "DISCIPLINARY_GRAMMAR_DOMAIN"
+          : classification.projectDomain === "APOKALYPSIS"
+            ? "HISTORICAL_THRESHOLD_ANALYSIS_DOMAIN"
+            : "GENERAL_CONTEXT",
+    confidence: 0.96,
+    reasons: classification.reasons,
+    scores: {
+      MATRIX: classification.projectDomain === "MATRIX" ? 8 : 0,
+      CORPUS_ESOTEROLOGIA_ERMETICA:
+        classification.projectDomain === "CORPUS_ESOTEROLOGIA_ERMETICA" ? 8 : 0,
+      APOKALYPSIS: classification.projectDomain === "APOKALYPSIS" ? 8 : 0
+    }
   };
 }
 
-export function classifyContextFromMessage(
-  message: string,
-  hasFiles = false
-): ContextClassification {
-  return classifyContext({ message, hasFiles });
-}
-
-function selectBestContext(
-  text: string,
-  hasFiles: boolean
-): WeightedMatch<ContextClass> {
-  const results = Object.entries(CONTEXT_KEYWORDS).map(([context, keywords]) =>
-    scoreKeywords(text, context as ContextClass, keywords)
-  );
-
-  if (hasFiles) {
-    boost(results, "DOCUMENTAL", 3, "Files are present, boosting DOCUMENTAL context.");
-  }
-
-  if (text.includes("github") || text.includes("repo") || text.includes("commit")) {
-    boost(results, "GITHUB", 3, "Repository terms detected.");
-  }
-
-  if (text.includes("docs/") || text.includes("lib/") || text.includes("route.ts")) {
-    boost(results, "GITHUB", 2, "Repository path terms detected.");
-  }
-
-  if (text.includes("matrix")) {
-    boost(results, "MATRIX", 3, "MATRIX framework term detected.");
-  }
-
-  if (text.includes("corpus") || text.includes("esoterologia")) {
-    boost(results, "CORPUS", 3, "CORPUS or Esoterologia term detected.");
-  }
-
-  if (
-    text.includes("apokalypsis") ||
-    text.includes("apokalipsis") ||
-    text.includes("apocalipsis")
-  ) {
-    boost(results, "APOKALYPSIS", 3, "APOKALYPSIS term detected.");
-  }
-
-  if (text.includes("evt") || text.includes("ipr")) {
-    boost(results, "IDENTITY", 2, "IPR or EVT identity terms detected.");
-  }
-
-  if (
-    text.includes("policy") ||
-    text.includes("risk") ||
-    text.includes("governance") ||
-    text.includes("fail closed") ||
-    text.includes("fail-closed")
-  ) {
-    boost(results, "GOVERNANCE", 2, "Governance terms detected.");
-  }
-
-  const best = results.sort((a, b) => b.score - a.score)[0];
-
-  if (!best || best.score <= 0) {
-    return {
-      value: "GENERAL",
-      score: 1,
-      reasons: ["No specific context keywords matched; defaulted to GENERAL."]
-    };
-  }
-
-  return best;
-}
-
-function selectBestIntent(
-  text: string,
-  hasFiles: boolean
-): WeightedMatch<IntentClass> {
-  const results = Object.entries(INTENT_KEYWORDS).map(([intent, keywords]) =>
-    scoreKeywords(text, intent as IntentClass, keywords)
-  );
-
-  if (hasFiles) {
-    boost(results, "ANALYZE", 2, "Files are present, boosting ANALYZE intent.");
-  }
-
-  if (text.includes("fatto") || text.includes("vai")) {
-    boost(
-      results,
-      "GITHUB",
-      3,
-      "Continuation pattern detected for repository workflow."
-    );
-  }
-
-  if (text.includes("nome file") || text.includes("commit")) {
-    boost(results, "GITHUB", 3, "GitHub file and commit workflow detected.");
-  }
-
-  if (
-    text.includes("implement") ||
-    text.includes("typescript") ||
-    text.includes("route.ts") ||
-    text.includes("lib/")
-  ) {
-    boost(results, "CODE", 3, "Code implementation terms detected.");
-  }
-
-  if (
-    text.includes("rewrite") ||
-    text.includes("migliora") ||
-    text.includes("riscrivi") ||
-    text.includes("correggi")
-  ) {
-    boost(results, "REWRITE", 2, "Rewrite or editorial improvement terms detected.");
-  }
-
-  const best = results.sort((a, b) => b.score - a.score)[0];
-
-  if (!best || best.score <= 0) {
-    return {
-      value: inferDefaultIntent(text),
-      score: 1,
-      reasons: ["No strong intent keywords matched; inferred default intent."]
-    };
-  }
-
-  return best;
-}
-
-function inferDefaultIntent(text: string): IntentClass {
-  if (text.endsWith("?")) {
-    return "ASK";
-  }
-
-  if (
-    text.includes("create") ||
-    text.includes("make") ||
-    text.includes("write") ||
-    text.includes("prepare") ||
-    text.includes("crea") ||
-    text.includes("scrivi") ||
-    text.includes("fammi")
-  ) {
-    return "WRITE";
-  }
-
-  return "ASK";
-}
-
-function classifySensitivity(
-  text: string,
-  contextClass: ContextClass,
-  input: ClassifierInput
-): RuntimeSensitivity {
-  const highMatches = findMatches(text, HIGH_SENSITIVITY_TERMS);
-  const mediumMatches = findMatches(text, MEDIUM_SENSITIVITY_TERMS);
-
-  if (
-    highMatches.length > 0 ||
-    contextClass === "CRITICAL_INFRASTRUCTURE" ||
-    contextClass === "DUAL_USE"
-  ) {
-    return "HIGH";
-  }
-
-  if (
-    mediumMatches.length > 0 ||
-    contextClass === "SECURITY" ||
-    contextClass === "COMPLIANCE" ||
-    contextClass === "AI_GOVERNANCE" ||
-    contextClass === "GOVERNANCE" ||
-    Boolean(input.hasFiles)
-  ) {
-    return "MEDIUM";
-  }
-
-  return "LOW";
-}
-
-function scoreKeywords<T extends string>(
-  text: string,
-  value: T,
-  keywords: string[]
-): WeightedMatch<T> {
-  const matches = findMatches(text, keywords);
-
-  const score = matches.reduce((total, keyword) => {
-    const wordCount = keyword.split(" ").filter(Boolean).length;
-    const weight = wordCount >= 3 ? 4 : wordCount === 2 ? 2 : 1;
-    return total + weight;
-  }, 0);
-
+function buildSafeConcept(input: {
+  kind: SafeConceptKind;
+  normalizedTerm: string;
+  projectDomain: ProjectDomain;
+  contextClass: ContextClass;
+  reasons: string[];
+}): SafeConceptClassification {
   return {
-    value,
-    score,
-    reasons: score > 0 ? [`${value} matched: ${matches.join(", ")}`] : []
+    matched: true,
+    kind: input.kind,
+    normalizedTerm: input.normalizedTerm,
+    projectDomain: input.projectDomain,
+    contextClass: input.contextClass,
+    intentClass: "ASK",
+    data: {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      reasons: [
+        "Safe conceptual explanation detected.",
+        "Classified as PUBLIC because no unsafe operational term is present."
+      ]
+    },
+    policy: {
+      status: "ALLOWED",
+      policyReference: "PUBLIC_CONCEPTUAL_GOVERNANCE_EXPLANATION",
+      prohibited: false,
+      failClosed: false,
+      reasons: ["Public conceptual explanation allowed.", ...input.reasons],
+      outcome: "PERMIT"
+    },
+    risk: {
+      riskClass: "LOW",
+      probability: 1,
+      impact: 1,
+      riskScore: 1,
+      reasons: [
+        "Low-risk explanatory concept request.",
+        "No operational cyber, surveillance, exploitation or sensitive-data instruction detected."
+      ]
+    },
+    oversight: {
+      state: "NOT_REQUIRED",
+      requiredRole: "NONE",
+      reason: "Ordinary conceptual explanation does not require human review."
+    },
+    reasons: input.reasons
   };
 }
 
-function boost<T extends string>(
-  results: WeightedMatch<T>[],
-  value: T,
-  amount: number,
-  reason: string
-): void {
-  const target = results.find((result) => result.value === value);
-
-  if (!target) {
-    return;
-  }
-
-  target.score += amount;
-  target.reasons.push(reason);
+function buildNoMatch(reasons: string[] = []): SafeConceptClassification {
+  return {
+    matched: false,
+    kind: "UNKNOWN",
+    normalizedTerm: "",
+    projectDomain: "GENERAL",
+    contextClass: "GENERAL",
+    intentClass: "UNKNOWN",
+    data: {
+      dataClass: "UNKNOWN",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      reasons: ["No safe conceptual term matched."]
+    },
+    policy: {
+      status: "UNKNOWN",
+      policyReference: "NO_SAFE_CONCEPT_MATCH",
+      prohibited: false,
+      failClosed: false,
+      reasons: ["No safe conceptual override applied.", ...reasons],
+      outcome: "UNKNOWN"
+    },
+    risk: {
+      riskClass: "UNKNOWN",
+      probability: 1,
+      impact: 1,
+      riskScore: 1,
+      reasons: ["No safe conceptual override applied."]
+    },
+    oversight: {
+      state: "UNKNOWN",
+      requiredRole: "NONE",
+      reason: "No safe conceptual override applied."
+    },
+    reasons
+  };
 }
 
-function findMatches(text: string, keywords: string[]): string[] {
-  return keywords
-    .map((keyword) => normalizeText(keyword))
-    .filter((keyword) => keyword.length > 0 && text.includes(keyword));
-}
-
-function normalizeText(value: string): string {
+function normalizeForConcept(value: string): string {
   return value
     .toLowerCase()
     .normalize("NFKD")
@@ -1002,18 +438,6 @@ function normalizeText(value: string): string {
     .trim();
 }
 
-function calculateConfidence(
-  contextScore: number,
-  intentScore: number,
-  text: string
-): number {
-  const lengthFactor = Math.min(text.length / 600, 1);
-  const scoreFactor = Math.min((contextScore + intentScore) / 14, 1);
-  const confidence = 0.35 + scoreFactor * 0.5 + lengthFactor * 0.15;
-
-  return Number(Math.max(0.2, Math.min(confidence, 0.96)).toFixed(2));
-}
-
-function uniqueReasons(reasons: string[]): string[] {
-  return Array.from(new Set(reasons.filter(Boolean)));
+function containsAny(text: string, terms: string[]): boolean {
+  return terms.some((term) => text.includes(normalizeForConcept(term)));
 }
