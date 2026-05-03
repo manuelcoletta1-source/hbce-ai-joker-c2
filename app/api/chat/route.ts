@@ -20,6 +20,10 @@ import {
   classifyProjectDomain,
   type ProjectDomainClassification
 } from "../../../lib/project-domain-classifier";
+import {
+  buildSafeConceptProjectDomain,
+  classifySafeConcept
+} from "../../../lib/safe-concept-classifier";
 import { classifyData } from "../../../lib/data-classifier";
 import { evaluateFileBatchPolicy } from "../../../lib/file-policy";
 import { evaluatePolicy } from "../../../lib/policy-engine";
@@ -316,6 +320,12 @@ function normalizeProjectDomainClassification(input: {
     return buildSafeIdentityProjectDomain();
   }
 
+  const safeConcept = classifySafeConcept(input.message);
+
+  if (safeConcept.matched) {
+    return buildSafeConceptProjectDomain(safeConcept);
+  }
+
   return input.classification;
 }
 
@@ -382,6 +392,9 @@ function detectKeywords(text: string): string[] {
     "apokalypsis",
     "apocalipsis",
     "apocalisse",
+    "biocybersecurity",
+    "biocibersicurezza",
+    "biocibernetica",
     "decadimento",
     "crollo",
     "esposizione",
@@ -680,6 +693,8 @@ function buildCanonicalDictionary(): string {
     "EVT = Event Record / Verifiable Event Trace.",
     "EVT non è memoria psicologica: è una traccia operativa verificabile che collega identità, tempo, contesto, decisione, rischio, hash e continuità.",
     "",
+    "Biocybersecurity = sicurezza dell'accoppiamento organismo-sistema-AI: protegge il punto di contatto tra identità biologica, sistemi digitali, AI, sensori, robotica, droni, flotte, dati e continuità operativa.",
+    "",
     "MATRIX = dominio infrastrutturale operativo: AI governance, Europa, B2B, B2G, cloud, dati, energia, sicurezza, istituzioni, continuità.",
     "CORPUS ESOTEROLOGIA ERMETICA = dominio grammaticale-disciplinare: Decisione · Costo · Traccia · Tempo, glossario canonico, teoria del reale operativo.",
     "APOKALYPSIS = dominio storico di soglia: decadimento, esposizione, dislocazione cognitiva, rottura, Paradogma Alieno.",
@@ -687,7 +702,8 @@ function buildCanonicalDictionary(): string {
     "Regola editoriale:",
     "Per APOKALYPSIS, CORPUS e MATRIX preserva Decisione · Costo · Traccia · Tempo quando pertinente.",
     "Quando l'utente chiede valore operativo, confronti o standard europei, distingui sempre: identità, firma, credenziale, registro, timestamp, audit log, EVT, IPR.",
-    "IPR non va spiegato come semplice identità digitale: va spiegato come livello di continuità operativa sopra strumenti già esistenti."
+    "IPR non va spiegato come semplice identità digitale: va spiegato come livello di continuità operativa sopra strumenti già esistenti.",
+    "Biocybersecurity non va bloccata come rischio critico se l'utente chiede solo una definizione o una spiegazione concettuale."
   ].join("\n");
 }
 
@@ -745,7 +761,8 @@ function buildProjectDomainDirective(frame: GovernanceFrame): string {
       "MATRIX = infrastruttura.",
       "CORPUS = grammatica.",
       "APOKALYPSIS = soglia storica.",
-      "AI JOKER-C2 = runtime cognitivo-governato."
+      "AI JOKER-C2 = runtime cognitivo-governato.",
+      "Quando il termine riguarda biocybersecurity, spiega l'accoppiamento organismo-sistema-AI in chiave difensiva, non offensiva."
     );
   }
 
@@ -951,6 +968,17 @@ function buildFallback(input: {
   governanceFrame: GovernanceFrame;
 }): string {
   const domain = input.governanceFrame.projectDomain.projectDomain;
+  const safeConcept = classifySafeConcept(input.message);
+
+  if (safeConcept.matched && safeConcept.kind === "BIOCYBERSECURITY") {
+    return [
+      "Con biocybersecurity si intende la sicurezza dell'interfaccia tra organismo biologico, identità digitale, AI, dati, sensori, robotica, droni, flotte e continuità operativa.",
+      "",
+      "Nel framework AI JOKER-C2 / IPR / EVT / MATRIX, non è solo cybersecurity applicata alla biologia. È la protezione dell'accoppiamento organismo-sistema: chi agisce, con quale identità, sotto quale responsabilità, con quale evento, con quale traccia e con quale verifica nel tempo.",
+      "",
+      "IPR dà identità operativa. EVT dà traccia verificabile. MATRIX dà infrastruttura. AI JOKER-C2 dà runtime governato. Biocybersecurity protegge il punto in cui organismo, macchina e sistema si accoppiano."
+    ].join("\n");
+  }
 
   if (isSafeIdentityGovernanceQuestion(input.message)) {
     return [
@@ -1067,6 +1095,7 @@ async function generateResponse(input: {
             "APOKALYPSIS = soglia storica.",
             "AI JOKER-C2 = runtime cognitivo-governato.",
             "Se l'utente chiede IPR, non ridurlo a identità digitale: spiegalo come registro primario di identità operativa che connette identità, azione, responsabilità, evento, prova, tempo e continuità.",
+            "Se l'utente chiede biocybersecurity, biocibersicurezza, biocibernetica o varianti scritte male come BIOCYBERCYCURITI, spiegala come sicurezza dell'accoppiamento organismo-sistema-AI, non bloccarla come rischio critico se è solo una richiesta concettuale.",
             "Se l'utente chiede confronto con standard esistenti, confronta IPR con eIDAS/EUDI, PKI, X.509, DID/VC, blockchain timestamping, IAM e audit log.",
             "Se l'utente dice 'apokalypsis intendo dire', devi riferirti al documento attivo APOKALYPSIS, non al concetto generico di apocalisse.",
             "Per APOKALYPSIS evita risposte generiche: classificare, interpretare, posizionare e spiegare l'impatto civilizzazionale.",
@@ -1445,6 +1474,12 @@ function normalizeChatDataClassification(input: {
   contextClass: ContextClass;
   intentClass: IntentClass;
 }): DataClassification {
+  const safeConcept = classifySafeConcept(input.message);
+
+  if (safeConcept.matched && input.files.length === 0) {
+    return safeConcept.data;
+  }
+
   if (isSafeIdentityGovernanceQuestion(input.message)) {
     return {
       dataClass: "PUBLIC",
@@ -1563,6 +1598,45 @@ function isSafeDocumentWork(input: {
     input.intentClass === "EDITORIAL";
 
   return hasDocumentContext && safeDocumentIntent;
+}
+
+function applySafeConceptGovernanceOverride(input: {
+  frame: GovernanceFrame;
+  message: string;
+  files: FileInput[];
+}): GovernanceFrame {
+  const safeConcept = classifySafeConcept(input.message);
+
+  if (!safeConcept.matched || input.files.length > 0) {
+    return input.frame;
+  }
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: safeConcept.policy.status,
+    policyProhibited: safeConcept.policy.prohibited,
+    policyFailClosed: safeConcept.policy.failClosed,
+    riskClass: safeConcept.risk.riskClass,
+    oversightState: safeConcept.oversight.state,
+    contextClass: safeConcept.contextClass,
+    intentClass: safeConcept.intentClass,
+    dataClass: safeConcept.data.dataClass,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: false
+  });
+
+  return {
+    ...input.frame,
+    projectDomain: buildSafeConceptProjectDomain(safeConcept),
+    contextClass: safeConcept.contextClass,
+    intentClass: safeConcept.intentClass,
+    data: safeConcept.data,
+    policy: safeConcept.policy,
+    risk: safeConcept.risk,
+    oversight: safeConcept.oversight,
+    decision
+  };
 }
 
 function applySafeIdentityGovernanceOverride(input: {
@@ -1714,6 +1788,7 @@ function buildGovernanceFrame(input: {
   files: FileInput[];
 }): GovernanceFrame {
   const normalizedFiles = normalizeFiles(input.files);
+  const safeConcept = classifySafeConcept(input.message);
 
   const rawProjectDomain = classifyProjectDomain({
     message: input.message,
@@ -1723,10 +1798,13 @@ function buildGovernanceFrame(input: {
     activeDocument: normalizedFiles[0]?.name
   });
 
-  const projectDomain = normalizeProjectDomainClassification({
-    message: input.message,
-    classification: rawProjectDomain
-  });
+  const projectDomain =
+    safeConcept.matched && input.files.length === 0
+      ? buildSafeConceptProjectDomain(safeConcept)
+      : normalizeProjectDomainClassification({
+          message: input.message,
+          classification: rawProjectDomain
+        });
 
   const context = classifyRuntimeContext({
     message: input.message,
@@ -1755,6 +1833,35 @@ function buildGovernanceFrame(input: {
       size: file.size
     }))
   );
+
+  if (safeConcept.matched && input.files.length === 0) {
+    const decision = decideRuntimeAction({
+      runtimeState: "OPERATIONAL",
+      policyStatus: safeConcept.policy.status,
+      policyProhibited: safeConcept.policy.prohibited,
+      policyFailClosed: safeConcept.policy.failClosed,
+      riskClass: safeConcept.risk.riskClass,
+      oversightState: safeConcept.oversight.state,
+      contextClass: safeConcept.contextClass,
+      intentClass: safeConcept.intentClass,
+      dataClass: safeConcept.data.dataClass,
+      hasFiles: false,
+      evtPreferred: true,
+      auditPreferred: false
+    });
+
+    return {
+      projectDomain,
+      contextClass: safeConcept.contextClass,
+      intentClass: safeConcept.intentClass,
+      data: safeConcept.data,
+      policy: safeConcept.policy,
+      risk: safeConcept.risk,
+      oversight: safeConcept.oversight,
+      decision,
+      filePolicy
+    };
+  }
 
   const policy = evaluatePolicy({
     message: input.message,
@@ -1812,8 +1919,14 @@ function buildGovernanceFrame(input: {
     filePolicy
   };
 
-  const identitySafeFrame = applySafeIdentityGovernanceOverride({
+  const conceptSafeFrame = applySafeConceptGovernanceOverride({
     frame,
+    message: input.message,
+    files: input.files
+  });
+
+  const identitySafeFrame = applySafeIdentityGovernanceOverride({
+    frame: conceptSafeFrame,
     message: input.message
   });
 
