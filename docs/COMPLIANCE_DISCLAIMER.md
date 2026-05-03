@@ -1,5 +1,7 @@
 # AI JOKER-C2 Compliance Disclaimer
 
+## Non-Certification, Human Accountability and Review Boundary
+
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.  
 Torino, Italy, Europe  
@@ -11,682 +13,859 @@ Torino, Italy, Europe
 
 This document defines the compliance disclaimer for AI JOKER-C2.
 
-AI JOKER-C2 is an identity-bound operational AI runtime built within the HBCE infrastructure and aligned with the MATRIX framework.
+AI JOKER-C2 is the identity-bound cognitive command runtime of the HERMETICUM B.C.E. ecosystem.
 
-This repository provides a governance-oriented architecture, operational prototype, documentation layer and research implementation path.
+It connects three primary domains:
 
-It does not provide legal certification.
+1. MATRIX
+2. CORPUS ESOTEROLOGIA ERMETICA
+3. APOKALYPSIS
 
-It does not provide regulatory certification.
+The purpose of this disclaimer is to clarify that AI JOKER-C2 is a research, governance and operational prototype.
 
-It does not provide cybersecurity certification.
+It is not a certified compliance product.
 
-It does not provide public-sector authorization.
+It is not legal advice.
 
-It does not provide critical infrastructure approval.
+It is not a regulatory approval.
 
-It does not replace human responsibility.
+It is not a cybersecurity certification.
 
----
+It is not an institutional authorization.
 
-## 2. General Disclaimer
-
-AI JOKER-C2 is provided as a governance-oriented technical and strategic project.
-
-The repository is intended to support:
-
-- AI governance design;
-- runtime architecture;
-- documentation;
-- traceability models;
-- EVT event structures;
-- audit preparation;
-- defensive security workflows;
-- compliance-oriented discussion;
-- B2B and B2G evaluation;
-- critical infrastructure documentation support;
-- institutional AI governance research.
-
-The repository does not guarantee compliance with any law, regulation, standard, procurement requirement, cybersecurity framework or institutional policy.
-
-Any real-world deployment requires independent review by qualified professionals.
+It is a compliance-oriented architecture designed to support structured documentation, risk classification, human oversight, event traceability, audit preparation and verification.
 
 ---
 
-## 3. No Legal Advice
+## 2. Core Disclaimer
 
-Nothing in this repository constitutes legal advice.
+AI JOKER-C2 provides a governance-oriented framework for identity-bound, policy-aware, risk-classified and traceable AI-assisted operations.
 
-The documentation may discuss governance, compliance orientation, auditability, public-sector responsibility, data handling, dual-use boundaries and human oversight.
+However:
 
-These materials are technical and organizational support materials.
+```txt
+AI JOKER-C2 does not certify legal compliance.
+AI JOKER-C2 does not replace legal review.
+AI JOKER-C2 does not replace cybersecurity review.
+AI JOKER-C2 does not replace data protection review.
+AI JOKER-C2 does not replace institutional authorization.
+AI JOKER-C2 does not replace human accountability.
 
-They do not replace legal analysis.
+Any use of AI JOKER-C2 in regulated, public-sector, institutional, enterprise, cybersecurity, critical infrastructure or high-impact environments requires independent human review and deployment-specific assessment.
 
-Organizations using or evaluating AI JOKER-C2 must obtain legal review when required, especially in contexts involving:
-
-- public administration;
-- regulated sectors;
-- critical infrastructure;
-- cybersecurity;
-- personal data;
-- procurement;
-- employment;
-- financial services;
-- health systems;
-- public communication;
-- high-impact AI systems;
-- dual-use contexts.
-
-Legal responsibility remains with the deploying organization, institution or authorized operator.
 
 ---
 
-## 4. No Compliance Certification
+3. Project Formula
 
-AI JOKER-C2 is not certified as compliant with any legal, regulatory, cybersecurity, AI governance, data protection, public-sector or critical infrastructure framework.
+MATRIX = operational infrastructure
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
+APOKALYPSIS = historical threshold analysis
+AI JOKER-C2 = cognitive command runtime
 
-This includes, without limitation:
+Compliance formula:
 
-- AI governance frameworks;
-- cybersecurity frameworks;
-- data protection frameworks;
-- digital identity frameworks;
-- public procurement frameworks;
-- critical infrastructure regulations;
-- sector-specific compliance requirements;
-- internal organizational policies;
-- audit standards;
-- external certification schemes.
+Identity -> Authority -> Project Domain -> Policy -> Risk -> Human Oversight -> Decision -> EVT -> Ledger -> Verification -> Audit
 
-The repository supports compliance-oriented preparation.
+Operational rule:
 
-It does not create compliance by itself.
+Compliance support is not compliance certification.
 
-Compliance requires context-specific assessment, implementation, controls, evidence, review and accountability.
 
 ---
 
-## 5. No Cybersecurity Certification
+4. Non-Certification Statement
 
-AI JOKER-C2 is not a certified cybersecurity product.
+AI JOKER-C2 is not certified under any legal, regulatory, cybersecurity, AI governance, public-sector, institutional or technical certification scheme unless a separate external certification process explicitly states otherwise.
 
-The repository contains defensive security documentation, risk models, incident report templates, audit checklists and non-offensive security boundaries.
+The repository does not claim:
 
-These materials do not replace:
+legal certification;
 
-- cybersecurity review;
-- penetration testing authorization;
-- secure development lifecycle;
-- incident response process;
-- vulnerability management;
-- threat modeling;
-- security operations;
-- external security audit;
-- production hardening;
-- access control implementation;
-- monitoring and logging controls.
+regulatory approval;
 
-Any use in cybersecurity contexts must remain defensive, lawful, authorized and reviewable.
+cybersecurity certification;
 
----
+institutional endorsement;
 
-## 6. No Critical Infrastructure Authorization
+public authority authorization;
 
-AI JOKER-C2 is not a critical infrastructure control system.
+production deployment approval;
 
-It is not designed to directly control physical assets, industrial systems, transport systems, energy systems, healthcare systems, telecommunications networks, water systems, cloud infrastructure or public-service infrastructure.
+critical infrastructure authorization;
 
-The project may support:
+compliance guarantee;
 
-- documentation;
-- incident report structures;
-- continuity planning templates;
-- risk registers;
-- escalation workflows;
-- audit preparation;
-- evidence organization;
-- governance mapping.
+official European Union recognition;
 
-It must not be used as:
+official public-sector adoption;
 
-- direct operational control;
-- autonomous infrastructure command;
-- safety-critical execution layer;
-- replacement for infrastructure operators;
-- replacement for certified control systems;
-- emergency command authority.
+automatic conformity with any law, regulation or technical standard.
 
-Any critical infrastructure use requires formal authorization, operational review, cybersecurity review, safety engineering review, legal review and human responsibility.
+
+Documentation inside this repository should be read as:
+
+research architecture
+governance model
+operational prototype
+compliance-oriented documentation
+audit-support framework
+
+It should not be read as:
+
+legal certification
+regulatory guarantee
+institutional approval
+official compliance determination
+
 
 ---
 
-## 7. No Public Authority Replacement
+5. No Legal Advice
 
-AI JOKER-C2 does not replace public authority.
+AI JOKER-C2 may help structure legal-technical or compliance-oriented documents.
 
-In public-sector contexts, AI JOKER-C2 may support:
+It may support:
 
-- internal documentation;
-- public communication drafts;
-- policy summaries;
-- procurement support documents;
-- risk mapping;
-- audit preparation;
-- administrative workflow analysis;
-- institutional AI governance models.
+compliance notes;
 
-It must not replace:
+audit checklists;
 
-- public officials;
-- legal authority;
-- administrative decision-making;
-- procurement decision authority;
-- law enforcement authority;
-- emergency command;
-- public communication approval;
-- data protection review;
-- institutional accountability.
+governance mapping;
 
-Any public-sector use requires appropriate legal basis, internal authorization, human review and institutional accountability.
+accountability matrices;
 
----
+risk registers;
 
-## 8. No Medical, Legal or Financial Authority
+human oversight models;
 
-AI JOKER-C2 does not provide final medical, legal or financial decisions.
+incident report structures;
 
-The runtime may help organize, summarize or draft support material, but it does not replace qualified professionals.
+data handling models;
 
-The system must not be relied on as the final authority for:
+policy documentation.
 
-- medical diagnosis;
-- medical treatment;
-- legal interpretation;
-- legal strategy;
-- judicial decisions;
-- financial advice;
-- investment decisions;
-- insurance determinations;
-- credit decisions;
-- employment determinations;
-- public benefits decisions;
-- rights-affecting determinations.
 
-High-impact decisions require qualified human review and lawful process.
+However, AI JOKER-C2 does not provide legal advice.
+
+Any legal interpretation, legal filing, contractual decision, regulatory claim, public-sector decision or institutional compliance assertion requires review by qualified legal professionals or authorized institutional reviewers.
+
 
 ---
 
-## 9. No Offensive Use Authorization
+6. No Cybersecurity Certification
 
-AI JOKER-C2 is not an offensive system.
+AI JOKER-C2 may support defensive cybersecurity documentation.
 
-This repository does not authorize:
+It may support:
 
-- offensive cyber operations;
-- unauthorized intrusion;
-- exploit deployment;
-- malware creation;
-- credential theft;
-- phishing operations;
-- persistence mechanisms;
-- evasion of security tools;
-- stealth operations;
-- sabotage;
-- unlawful surveillance;
-- autonomous targeting;
-- lethal decision support;
-- coercive manipulation;
-- disinformation operations;
-- repression of rights;
-- fabrication of evidence;
-- bypassing human oversight;
-- removal of auditability.
+secure architecture review;
 
-Any use or contribution that moves the project toward prohibited capability is outside the scope of the repository.
+defensive risk mapping;
+
+incident report structuring;
+
+hardening checklists;
+
+dependency hygiene notes;
+
+audit trail design;
+
+evidence-oriented documentation;
+
+resilience planning.
+
+
+However, AI JOKER-C2 does not certify that a system is secure.
+
+Security-sensitive deployments require independent cybersecurity review, testing, monitoring and authorization.
+
+AI JOKER-C2 must not be used for offensive cyber operations, exploit deployment, malware, unauthorized access, credential theft, evasion, persistence, sabotage or unlawful surveillance.
+
 
 ---
 
-## 10. Dual-Use Disclaimer
+7. No Data Protection Certification
 
-AI JOKER-C2 may be described as dual-use only in a controlled civil and strategic sense.
+AI JOKER-C2 may support data handling documentation.
 
-In this repository, dual-use means lawful applicability to:
+It may support:
 
-- civil operations;
-- business governance;
-- public-sector documentation;
-- defensive cybersecurity;
-- critical infrastructure resilience documentation;
-- audit-oriented workflows;
-- operational continuity planning;
-- institutional AI governance.
+data classification;
+
+minimization models;
+
+redaction models;
+
+file handling rules;
+
+public/internal separation;
+
+incident reporting;
+
+audit preparation.
+
+
+However, AI JOKER-C2 does not certify data protection compliance.
+
+Any processing of personal data, sensitive data, institutional data, enterprise data, public-sector data or protected operational data requires appropriate legal, technical and organizational review.
+
+Sensitive data must be minimized.
+
+Secrets must not be committed, logged, exposed or echoed.
+
+
+---
+
+8. No Institutional Authorization
+
+AI JOKER-C2 may support institutional documentation and public-sector governance analysis.
+
+It may support:
+
+B2G documentation;
+
+public-sector AI governance models;
+
+institutional traceability notes;
+
+policy drafting support;
+
+public administration workflow analysis;
+
+critical infrastructure resilience documentation;
+
+audit-ready records.
+
+
+However, AI JOKER-C2 does not create institutional authority.
+
+It does not authorize:
+
+public-sector decisions;
+
+public procurement decisions;
+
+law enforcement actions;
+
+military decisions;
+
+public service eligibility decisions;
+
+rights-affecting decisions;
+
+critical infrastructure intervention;
+
+coercive public authority;
+
+official institutional adoption.
+
+
+Institutional use requires authorized human review and formal decision-making procedures.
+
+
+---
+
+9. Human Accountability
+
+AI JOKER-C2 may assist human operators.
+
+It may generate, classify, analyze, summarize, structure and document.
+
+It must not replace accountable human judgment.
+
+Human accountability is required for:
+
+legal decisions;
+
+medical decisions;
+
+financial decisions;
+
+public-sector decisions;
+
+law enforcement actions;
+
+military contexts;
+
+cybersecurity-sensitive actions;
+
+critical infrastructure contexts;
+
+institutional submissions;
+
+high-impact AI governance;
+
+regulated deployments;
+
+irreversible operational actions.
+
+
+Human oversight must remain external to the model output.
+
+Model output is not authority.
+
+
+---
+
+10. Prototype Status
+
+AI JOKER-C2 should be treated as an operational prototype unless a later release explicitly defines a different status.
+
+Prototype status means:
+
+documentation may evolve;
+
+runtime modules may change;
+
+governance logic may be incomplete;
+
+verification may be partial;
+
+ledger implementation may be under development;
+
+audit packages may be templates;
+
+compliance mapping may be illustrative;
+
+deployment may require additional controls;
+
+external review is required before regulated use.
+
+
+Prototype status must not be hidden.
+
+It is part of the compliance boundary.
+
+
+---
+
+11. B2B Disclaimer
+
+For B2B environments, AI JOKER-C2 may support enterprise AI governance, document traceability, defensive cybersecurity documentation, repository governance, audit preparation and operational continuity.
+
+However:
+
+AI JOKER-C2 does not guarantee enterprise compliance.
+AI JOKER-C2 does not certify enterprise security.
+AI JOKER-C2 does not replace enterprise legal review.
+AI JOKER-C2 does not replace enterprise cybersecurity review.
+AI JOKER-C2 does not replace responsible management approval.
+
+Enterprise deployment requires:
+
+scope definition;
+
+risk assessment;
+
+data handling review;
+
+cybersecurity review;
+
+human oversight;
+
+legal review where applicable;
+
+production-readiness testing;
+
+monitoring;
+
+incident response planning.
+
+
+
+---
+
+12. B2G Disclaimer
+
+For B2G environments, AI JOKER-C2 may support public-sector traceability, AI governance, institutional documentation, public administration workflow analysis, defensive cybersecurity reporting and resilience documentation.
+
+However:
+
+AI JOKER-C2 is not a public authority.
+AI JOKER-C2 does not make public-sector decisions.
+AI JOKER-C2 does not authorize institutional action.
+AI JOKER-C2 does not certify regulatory compliance.
+AI JOKER-C2 does not imply official adoption by any institution.
+
+Public-sector use requires:
+
+legal review;
+
+institutional authorization;
+
+human oversight;
+
+cybersecurity review;
+
+data protection review;
+
+procurement review where applicable;
+
+public accountability;
+
+formal governance procedure.
+
+
+
+---
+
+13. MATRIX Disclaimer
+
+MATRIX is the operational infrastructure domain.
+
+It supports analysis and documentation around:
+
+AI governance;
+
+public administration;
+
+cloud governance;
+
+data governance;
+
+cybersecurity resilience;
+
+critical infrastructure continuity;
+
+B2B and B2G positioning;
+
+European operational systems.
+
+
+However, MATRIX does not itself authorize real-world deployment, institutional adoption, public-sector authority, critical infrastructure intervention or legal compliance.
+
+MATRIX is an infrastructure framework.
+
+Deployment requires review.
+
+
+---
+
+14. CORPUS Disclaimer
+
+CORPUS ESOTEROLOGIA ERMETICA is the disciplinary grammar domain.
+
+It defines internal conceptual structures such as:
+
+Decisione · Costo · Traccia · Tempo
+
+The Corpus may support theoretical writing, glossary alignment, editorial continuity and conceptual mapping.
+
+However, internal conceptual coherence must not be presented as:
+
+legal certification;
+
+scientific certification;
+
+institutional endorsement;
+
+regulatory compliance;
+
+public authority;
+
+external factual proof without verification.
+
+
+The Corpus is a disciplinary framework.
+
+External claims require external review.
+
+
+---
+
+15. APOKALYPSIS Disclaimer
+
+APOKALYPSIS is the historical threshold analysis domain.
+
+It may analyze:
+
+cultural decay;
+
+political exposure;
+
+social dislocation;
+
+cognitive dislocation;
+
+civilizational threshold;
+
+system foundation loss;
+
+historical crisis.
+
+
+However, APOKALYPSIS must remain analytical and non-coercive.
+
+It must not be used for:
+
+incitement;
+
+dehumanization;
+
+extremist framing;
+
+targeted harassment;
+
+destabilization planning;
+
+disinformation operations;
+
+coercive mobilization;
+
+unlawful action.
+
+
+Historical and civilizational analysis is not authorization for operational harm.
+
+
+---
+
+16. Dual-Use Disclaimer
+
+AI JOKER-C2 may be described as civil and strategic dual-use only within a controlled governance boundary.
 
 Dual-use does not mean unrestricted use.
 
-Dual-use does not mean offensive use.
+Dual-use does not authorize:
 
-Dual-use does not mean autonomous weapons.
+offensive cyber operations;
 
-Dual-use does not mean unlawful surveillance.
+malware;
 
-Dual-use does not mean bypassing human accountability.
+exploit deployment;
 
-Dual-use requires authorization, policy, risk classification, human oversight, EVT traceability, verification and fail-closed behavior.
+credential theft;
 
----
+unauthorized access;
 
-## 11. Data Protection Disclaimer
+unlawful surveillance;
 
-AI JOKER-C2 documentation includes a data handling model, data classification rules, file handling guidance and minimization principles.
+sabotage;
 
-These materials do not replace data protection review.
+autonomous targeting;
 
-Any processing of personal data, sensitive data, confidential data, public-sector data, security-sensitive data or critical operational data requires appropriate legal and organizational assessment.
+coercive manipulation;
 
-Before deployment, review:
+disinformation operations;
 
-- lawful basis;
-- processing purpose;
-- data minimization;
-- retention;
-- access control;
-- model provider data flow;
-- logging;
-- file handling;
-- public and internal EVT separation;
-- user rights;
-- incident response;
-- data protection impact assessment where required.
+repression of rights.
 
-The deploying organization remains responsible for data protection compliance.
 
----
+Authorized dual-use remains:
 
-## 12. Deployment Disclaimer
+lawful;
 
-The repository may include prototype code, documentation, governance models, templates, examples and roadmap items.
+defensive;
 
-Prototype status means that the system may not yet include all controls required for serious deployment.
+accountable;
 
-Before any production or institutional deployment, the following must be reviewed and implemented where required:
+reviewable;
 
-- authentication;
-- authorization;
-- role-based access control;
-- secure secret management;
-- API validation;
-- file upload validation;
-- rate limiting;
-- secure logging;
-- data minimization;
-- human oversight workflow;
-- EVT generation;
-- ledger integrity;
-- verification endpoint;
-- incident response process;
-- backup and retention policy;
-- cybersecurity review;
-- legal review;
-- data protection review;
-- operational risk assessment.
+traceable;
 
-Deployment without these controls should be treated as experimental or prototype-level.
+human-governed;
+
+fail-closed.
+
+
 
 ---
 
-## 13. Audit Disclaimer
+17. Fail-Closed Disclaimer
 
-AI JOKER-C2 supports audit readiness by defining:
+AI JOKER-C2 follows a fail-closed principle.
 
-- EVT records;
-- ledger continuity;
-- verification statuses;
-- audit checklists;
-- incident report templates;
-- risk registers;
-- human oversight states;
-- correction events;
-- evidence pack concepts.
+When identity, authority, policy, risk classification, human oversight, EVT, verification or lawful purpose cannot be established in a sensitive context, the system should block, degrade, audit or escalate.
 
-Audit readiness does not equal legal compliance.
+The core rule is:
 
-Audit readiness means that operations can be reconstructed, reviewed, questioned and improved.
+Uncertainty in sensitive operations does not authorize execution.
 
-An audit trail does not automatically prove that an operation was lawful, safe, authorized or compliant.
+Fail-closed behavior is not a defect.
 
-Audit evidence must be interpreted by qualified reviewers in context.
+It is a governance and safety boundary.
+
 
 ---
 
-## 14. Model Output Disclaimer
+18. EVT and Evidence Disclaimer
 
-AI JOKER-C2 may use external AI model providers to generate text, analysis, code, documentation or structured outputs.
-
-Model output may be incomplete, inaccurate, outdated, unsafe, overconfident or inappropriate for operational use.
-
-AI-generated outputs should be treated as support material unless reviewed and approved by a responsible human.
-
-Model output must not override:
-
-- policy;
-- risk classification;
-- human oversight;
-- security boundaries;
-- data handling requirements;
-- legal obligations;
-- institutional responsibility;
-- fail-closed behavior.
-
-The runtime governs the model.
-
-The model does not govern the runtime.
-
----
-
-## 15. Documentation Disclaimer
-
-Repository documentation is intended to define the project boundary and support implementation.
-
-Documentation may describe planned components, future modules, roadmap phases or intended architecture.
-
-Documentation alone does not mean the feature is implemented.
-
-A file describing a policy engine does not mean the policy engine is active.
-
-A file describing an EVT ledger does not mean the ledger is production-ready.
-
-A file describing compliance orientation does not mean compliance is achieved.
-
-Readers should distinguish:
-
-- documented intent;
-- prototype implementation;
-- working runtime feature;
-- production control;
-- externally reviewed deployment.
-
----
-
-## 16. Evidence Disclaimer
-
-EVT records, hashes, logs, ledger entries and evidence packs may support reconstruction.
+EVT records, hashes, ledgers, evidence packs and verification outputs support traceability and reconstruction.
 
 They do not automatically prove:
 
-- legality;
-- authorization;
-- compliance;
-- correctness;
-- completeness;
-- absence of risk;
-- absence of harm;
-- institutional approval.
+legal compliance;
 
-Evidence must be reviewed in context.
+lawful authority;
 
-Hashing proves integrity of a payload under defined conditions.
+institutional approval;
 
-Hashing does not prove that the payload was lawful, safe or properly authorized.
+regulatory conformity;
 
----
+cybersecurity certification;
 
-## 17. Human Responsibility Disclaimer
+truth of all claims;
 
-AI JOKER-C2 is designed to preserve human accountability.
+appropriateness of deployment.
 
-The system may assist with:
 
-- analysis;
-- drafting;
-- classification;
-- documentation;
-- risk mapping;
-- audit preparation;
-- defensive security support;
-- governance planning.
+Evidence supports review.
 
-The system does not replace:
+Evidence does not replace review.
 
-- operators;
-- maintainers;
-- reviewers;
-- auditors;
-- legal professionals;
-- cybersecurity professionals;
-- data protection professionals;
-- public authorities;
-- infrastructure operators;
-- incident commanders;
-- organizational leadership.
+Verification supports reconstruction.
 
-Final responsibility remains with the responsible human, organization or institution.
-
----
-
-## 18. No Warranty
-
-AI JOKER-C2 is provided without warranty.
-
-Unless a separate written agreement states otherwise, the project is provided on an as-is and as-available basis.
-
-No guarantee is made that the repository or runtime will be:
-
-- error-free;
-- secure;
-- uninterrupted;
-- compliant;
-- fit for a specific regulated purpose;
-- suitable for production deployment;
-- free from defects;
-- accepted by any public authority;
-- accepted by any auditor;
-- accepted by any certification body;
-- compatible with all deployment contexts.
-
-Use, evaluation and deployment are the responsibility of the user or organization.
-
----
-
-## 19. External Review Requirement
-
-External review may be required before serious use.
-
-Relevant review may include:
-
-- legal review;
-- cybersecurity review;
-- data protection review;
-- AI governance review;
-- operational risk review;
-- public-sector authorization;
-- procurement review;
-- critical infrastructure safety review;
-- external audit;
-- sector-specific compliance review.
-
-The need for review depends on context, jurisdiction, data, users, deployment environment and operational impact.
-
-The repository cannot determine all external requirements automatically.
-
----
-
-## 20. Prototype and Research Status
-
-AI JOKER-C2 should be understood as:
-
-```txt
-governance-oriented architecture + operational prototype + research and documentation framework
-
-It should not be understood as:
-
-certified product + complete compliance system + production-critical control platform
-
-Prototype and research status does not reduce the importance of security, data handling, human oversight or fail-closed behavior.
-
-It means that real-world deployment requires additional controls and review.
+Verification does not replace authorization.
 
 
 ---
 
-21. Responsible Use Statement
+19. Public Communication Disclaimer
 
-Users, contributors and evaluators should use AI JOKER-C2 responsibly.
+Public communication about AI JOKER-C2 must avoid misleading claims.
 
-Responsible use means:
+Do not present AI JOKER-C2 as:
 
-remain within lawful scope;
+certified;
 
-preserve non-offensive boundary;
+officially adopted;
 
-protect secrets;
+legally approved;
 
-minimize sensitive data;
+regulator-approved;
 
-use human review for sensitive outputs;
+production-ready for critical infrastructure;
 
-avoid high-impact automation without authority;
+autonomous public authority;
 
-preserve auditability;
+offensive command-and-control system;
 
-preserve EVT traceability;
+surveillance platform;
 
-disclose limitations;
+weapon system;
 
-avoid false certification claims;
-
-escalate uncertainty in sensitive contexts;
-
-apply fail-closed behavior where required.
+compliance guarantee.
 
 
-The project’s governance value depends on responsible implementation.
+AI JOKER-C2 may be presented as:
 
+a research prototype;
 
----
+a governed AI runtime;
 
-22. Misuse Statement
+an identity-bound operational AI system;
 
-Misuse includes, without limitation:
+an evidence-oriented AI governance framework;
 
-using the runtime for offensive cyber activity;
+a B2B/B2G demonstrator;
 
-using the runtime to bypass human authority;
+a defensive and non-offensive governance architecture;
 
-using the runtime for unlawful surveillance;
+a compliance-oriented support structure.
 
-using the runtime to fabricate evidence;
-
-using the runtime to remove auditability;
-
-using the runtime to manipulate people or institutions;
-
-presenting prototype documentation as certification;
-
-deploying the runtime in high-impact contexts without review;
-
-processing sensitive data without legal or organizational basis;
-
-claiming compliance without external assessment where required.
-
-
-Misuse is outside the scope of the repository.
 
 
 ---
 
-23. Recommended Disclaimer for External Presentations
+20. Required Review Before Deployment
 
-When presenting AI JOKER-C2 externally, include the following notice.
+Before any real-world enterprise, institutional, public-sector, regulated or high-impact deployment, the following reviews should be completed:
 
-AI JOKER-C2 is a governance-oriented operational AI runtime and prototype architecture. It supports identity-bound, policy-aware, risk-classified, event-traceable and fail-closed AI-assisted workflows. It is not a certified compliance product, cybersecurity product, public-sector control system or critical infrastructure control system. Any real-world deployment requires legal, cybersecurity, data protection, operational and human review according to the deployment context.
+legal review;
+
+cybersecurity review;
+
+data protection review;
+
+governance review;
+
+human oversight review;
+
+operational risk assessment;
+
+security testing;
+
+deployment architecture review;
+
+incident response planning;
+
+audit readiness review;
+
+stakeholder authorization;
+
+documentation review.
+
+
+Documentation alone is not deployment approval.
+
+A working prototype is not a production certification.
+
+
+---
+
+21. Required Disclaimer Text
+
+The following short disclaimer may be reused in public documents:
+
+AI JOKER-C2 is a research and governance prototype for identity-bound, policy-aware, risk-classified and event-traceable AI-assisted operations. It does not provide legal certification, regulatory approval, cybersecurity certification or institutional authorization. Any real-world deployment in enterprise, public-sector, regulated, security-sensitive or high-impact environments requires independent human, legal, cybersecurity, data protection and organizational review.
 
 Short version:
 
-AI JOKER-C2 supports governance, traceability and audit readiness. It does not replace legal, cybersecurity, data protection, operational or human authority review.
+AI JOKER-C2 supports compliance-oriented governance. It does not certify compliance.
 
 
 ---
 
-24. Repository Alignment
+22. Repository Disclaimer
 
-This disclaimer must remain aligned with:
+This repository contains documentation, code, prototypes, templates and governance models.
 
-README.md
-ARCHITECTURE.md
-GOVERNANCE.md
-PROTOCOL.md
-EVT_PROTOCOL.md
-SECURITY.md
-COMPLIANCE.md
-DUAL_USE_STRATEGIC_POSITIONING.md
-ROADMAP.md
-CONTRIBUTING.md
-docs/COMPLIANCE_MAPPING.md
-docs/HUMAN_OVERSIGHT_MODEL.md
-docs/RISK_REGISTER_TEMPLATE.md
-docs/AUDIT_CHECKLIST.md
-docs/INCIDENT_REPORT_TEMPLATE.md
-docs/DATA_HANDLING_MODEL.md
-docs/DUAL_USE_RISK_REGISTER.md
+Repository contents may include:
 
-Any document that contradicts this disclaimer should be reviewed and corrected.
+README;
+
+architecture;
+
+governance model;
+
+EVT protocol;
+
+security policy;
+
+compliance orientation;
+
+roadmap;
+
+B2B overview;
+
+B2G overview;
+
+risk templates;
+
+audit templates;
+
+incident templates;
+
+data handling models.
 
 
----
+These materials are provided for research, development, documentation, governance and review purposes.
 
-25. Compliance Disclaimer Checklist
-
-Before publishing, presenting or deploying AI JOKER-C2, check:
-
-Is prototype status clear?
-Is non-certification clear?
-Is legal review requirement clear?
-Is cybersecurity review requirement clear?
-Is data protection review requirement clear?
-Is human responsibility clear?
-Is public-sector authority preserved?
-Is critical infrastructure control excluded?
-Is offensive use prohibited?
-Is dual-use restricted to lawful, defensive and accountable contexts?
-Is model output treated as support material?
-Is audit readiness distinguished from compliance certification?
-Are implementation gaps disclosed?
-Is fail-closed behavior preserved?
+They do not create legal rights, public authority, regulatory certification or operational authorization.
 
 
 ---
 
-26. Final Disclaimer Formula
+23. Disclaimer Checklist
+
+Before publishing or sending AI JOKER-C2 materials externally, check:
+
+Is the prototype status clear?
+
+Is non-certification stated?
+
+Is human accountability preserved?
+
+Is legal review requirement stated?
+
+Is cybersecurity review requirement stated?
+
+Is data protection review requirement stated?
+
+Is institutional authorization requirement stated where relevant?
+
+Is the defensive boundary clear?
+
+Are prohibited uses excluded?
+
+Are B2B claims realistic?
+
+Are B2G claims not implying official adoption?
+
+Are compliance claims limited to support/orientation?
+
+Are MATRIX, CORPUS and APOKALYPSIS correctly distinguished?
+
+Is the output free from misleading authority claims?
+
+
+
+---
+
+24. Non-Overclaiming Rules
+
+Do not write:
+
+AI JOKER-C2 is certified compliant.
+AI JOKER-C2 guarantees regulatory compliance.
+AI JOKER-C2 is officially approved.
+AI JOKER-C2 is production-ready for critical infrastructure.
+AI JOKER-C2 replaces legal review.
+AI JOKER-C2 replaces public authority.
+AI JOKER-C2 autonomously governs institutions.
+
+Prefer:
+
+AI JOKER-C2 supports compliance-oriented documentation.
+AI JOKER-C2 provides an evidence-oriented governance prototype.
+AI JOKER-C2 is designed to support auditability and traceability.
+AI JOKER-C2 requires human review in sensitive contexts.
+AI JOKER-C2 is not a certified compliance product.
+AI JOKER-C2 is not a substitute for legal, cybersecurity or institutional review.
+
+
+---
+
+25. Final Compliance Disclaimer Formula
+
+Compliance is not claimed.
+Compliance is prepared for review.
+
+Expanded:
 
 Governance support is not certification.
-Traceability is not authorization.
-Auditability is not legality.
-Prototype architecture is not production approval.
-AI assistance is not human authority.
+Evidence is not authorization.
+Verification is not legal approval.
+AI output is not human accountability.
+Prototype status is not production readiness.
 
-Operational formula:
+Project formula:
 
-Responsible Use =
-Legal Review + Cybersecurity Review + Data Protection Review + Human Oversight + Governance Controls + Fail-Closed Behavior
+MATRIX = operational infrastructure under review.
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar under interpretation.
+APOKALYPSIS = historical-threshold analysis under non-coercive framing.
+AI JOKER-C2 = governed runtime under human accountability.
+
+Operational rule:
+
+No external compliance claim without external review.
 
 
 ---
 
-27. Status
+26. Status
 
-Document status: active compliance disclaimer
-Project: AI JOKER-C2
-Framework: MATRIX
-Infrastructure: HBCE
-Identity layer: IPR
-Trace layer: EVT
-Governance principle: fail-closed
-Security boundary: defensive and non-offensive
-Business orientation: B2B, B2G, institutional, AI governance, defensive security and critical infrastructure
-Compliance status: orientation only, not certification
-Repository: hbce-ai-joker-c2
-Maintainer: HBCE Research
-Organization: HERMETICUM B.C.E. S.r.l.
-Territorial anchor: Torino, Italy, Europe
-Year: 2026
+Field	Value
+
+Document	docs/COMPLIANCE_DISCLAIMER.md
+Status	Active compliance disclaimer
+Project	AI JOKER-C2
+Ecosystem	HERMETICUM B.C.E.
+Connected domains	MATRIX, CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Compliance status	Orientation only, not certification
+Legal advice	Not provided
+Cybersecurity certification	Not provided
+Data protection certification	Not provided
+Institutional authorization	Not provided
+Human accountability	Required
+Governance principle	Fail-closed
+Security boundary	Defensive and non-offensive
+Repository	hbce-ai-joker-c2
+Maintainer	HBCE Research
+Organization	HERMETICUM B.C.E. S.r.l.
+Territorial anchor	Torino, Italy, Europe
+Year	2026
+
+
+
