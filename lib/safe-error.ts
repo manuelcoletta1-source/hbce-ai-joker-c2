@@ -1,7 +1,7 @@
 /**
  * AI JOKER-C2 Safe Error Module
  *
- * Public-safe error normalization for the HBCE / MATRIX governed runtime.
+ * Public-safe error normalization for the HERMETICUM B.C.E. governed runtime.
  *
  * This module prevents API routes and runtime modules from exposing:
  * - secrets
@@ -21,7 +21,7 @@ export type SafeErrorInput = {
   message?: string;
   status?: number;
   cause?: unknown;
-  publicDetails?: Record<string, string | number | boolean | null>;
+  publicDetails?: Record<string, unknown>;
 };
 
 export type SafeErrorResponse = {
@@ -30,7 +30,7 @@ export type SafeErrorResponse = {
     code: SafeErrorCode;
     message: string;
     status: number;
-    details?: Record<string, string | number | boolean | null>;
+    details?: Record<string, unknown>;
   };
 };
 
@@ -47,6 +47,7 @@ const DEFAULT_SAFE_ERROR: SafeError = {
 
 const SAFE_ERROR_MESSAGES: Record<SafeErrorCode, string> = {
   INPUT_ERROR: "The request input is invalid or incomplete.",
+  DOMAIN_ERROR: "The request project domain could not be classified safely.",
   POLICY_ERROR: "The request could not pass runtime policy evaluation.",
   RISK_ERROR: "The request could not pass runtime risk evaluation.",
   MODEL_ERROR: "The model provider could not complete the request safely.",
@@ -59,6 +60,7 @@ const SAFE_ERROR_MESSAGES: Record<SafeErrorCode, string> = {
 
 const DEFAULT_STATUS_BY_CODE: Record<SafeErrorCode, number> = {
   INPUT_ERROR: 400,
+  DOMAIN_ERROR: 422,
   POLICY_ERROR: 403,
   RISK_ERROR: 409,
   MODEL_ERROR: 502,
@@ -81,7 +83,10 @@ const SECRET_PATTERNS = [
   /-----BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY-----[\s\S]*?-----END (RSA |EC |OPENSSH |)PRIVATE KEY-----/gi
 ];
 
-export function toSafeError(error: unknown, fallback?: SafeErrorInput): SafeError {
+export function toSafeError(
+  error: unknown,
+  fallback?: SafeErrorInput
+): SafeError {
   const fallbackCode = fallback?.code ?? "RUNTIME_ERROR";
   const fallbackStatus =
     fallback?.status ?? DEFAULT_STATUS_BY_CODE[fallbackCode] ?? 500;
@@ -124,67 +129,39 @@ export function createSafeError(input: SafeErrorInput): SafeError {
 }
 
 export function createInputError(message?: string): SafeError {
-  return createSafeError({
-    code: "INPUT_ERROR",
-    message,
-    status: 400
-  });
+  return createSafeError({ code: "INPUT_ERROR", message, status: 400 });
+}
+
+export function createDomainError(message?: string): SafeError {
+  return createSafeError({ code: "DOMAIN_ERROR", message, status: 422 });
 }
 
 export function createPolicyError(message?: string): SafeError {
-  return createSafeError({
-    code: "POLICY_ERROR",
-    message,
-    status: 403
-  });
+  return createSafeError({ code: "POLICY_ERROR", message, status: 403 });
 }
 
 export function createRiskError(message?: string): SafeError {
-  return createSafeError({
-    code: "RISK_ERROR",
-    message,
-    status: 409
-  });
+  return createSafeError({ code: "RISK_ERROR", message, status: 409 });
 }
 
 export function createModelError(message?: string): SafeError {
-  return createSafeError({
-    code: "MODEL_ERROR",
-    message,
-    status: 502
-  });
+  return createSafeError({ code: "MODEL_ERROR", message, status: 502 });
 }
 
 export function createFileError(message?: string): SafeError {
-  return createSafeError({
-    code: "FILE_ERROR",
-    message,
-    status: 400
-  });
+  return createSafeError({ code: "FILE_ERROR", message, status: 400 });
 }
 
 export function createEvtError(message?: string): SafeError {
-  return createSafeError({
-    code: "EVT_ERROR",
-    message,
-    status: 500
-  });
+  return createSafeError({ code: "EVT_ERROR", message, status: 500 });
 }
 
 export function createLedgerError(message?: string): SafeError {
-  return createSafeError({
-    code: "LEDGER_ERROR",
-    message,
-    status: 500
-  });
+  return createSafeError({ code: "LEDGER_ERROR", message, status: 500 });
 }
 
 export function createSecurityError(message?: string): SafeError {
-  return createSafeError({
-    code: "SECURITY_ERROR",
-    message,
-    status: 403
-  });
+  return createSafeError({ code: "SECURITY_ERROR", message, status: 403 });
 }
 
 export function buildSafeErrorResponse(
@@ -206,10 +183,7 @@ export function buildSafeErrorResponse(
 }
 
 export function buildSafeSuccessResponse<T>(data: T): SafeSuccessResponse<T> {
-  return {
-    ok: true,
-    data
-  };
+  return { ok: true, data };
 }
 
 export function sanitizePublicMessage(message: string): string {
@@ -233,8 +207,8 @@ export function sanitizePublicMessage(message: string): string {
 }
 
 export function sanitizePublicDetails(
-  details?: Record<string, string | number | boolean | null>
-): Record<string, string | number | boolean | null> | undefined {
+  details?: Record<string, unknown>
+): Record<string, unknown> | undefined {
   if (!details) {
     return undefined;
   }
@@ -284,7 +258,7 @@ export function isServerError(error: SafeError): boolean {
   return error.status >= 500;
 }
 
-export function buildSafeDiagnostic(error: SafeError): Record<string, string | number> {
+export function buildSafeDiagnostic(error: SafeError): Record<string, unknown> {
   return {
     code: error.code,
     status: error.status,
@@ -325,16 +299,13 @@ function normalizeSafeError(error: SafeError): SafeError {
   const status = normalizeStatus(error.status, code);
   const message = sanitizePublicMessage(error.message || SAFE_ERROR_MESSAGES[code]);
 
-  return {
-    code,
-    message,
-    status
-  };
+  return { code, message, status };
 }
 
 function normalizeErrorCode(code: string): SafeErrorCode {
   const allowed: SafeErrorCode[] = [
     "INPUT_ERROR",
+    "DOMAIN_ERROR",
     "POLICY_ERROR",
     "RISK_ERROR",
     "MODEL_ERROR",
@@ -368,6 +339,16 @@ function inferErrorCode(error: Error, fallbackCode: SafeErrorCode): SafeErrorCod
     text.includes("bad request")
   ) {
     return "INPUT_ERROR";
+  }
+
+  if (
+    text.includes("domain") ||
+    text.includes("project domain") ||
+    text.includes("project-domain") ||
+    text.includes("classification") ||
+    text.includes("classifier")
+  ) {
+    return "DOMAIN_ERROR";
   }
 
   if (
