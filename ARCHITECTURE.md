@@ -1,5 +1,7 @@
 # AI JOKER-C2 Architecture
 
+## Cognitive Command Runtime for MATRIX, CORPUS and APOKALYPSIS
+
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.  
 Torino, Italy, Europe  
@@ -11,149 +13,419 @@ Torino, Italy, Europe
 
 This document defines the architecture of AI JOKER-C2.
 
-AI JOKER-C2 is an identity-bound operational AI runtime built within the HBCE infrastructure and aligned with the MATRIX framework.
+AI JOKER-C2 is the cognitive command runtime of the HERMETICUM B.C.E. ecosystem.
 
-It is not a generic chatbot.
+It is designed to connect three primary domains:
 
-It is a governed operational system designed to transform user requests, documents, code, strategic analysis and technical workflows into structured, traceable and usable outputs.
+1. MATRIX
+2. CORPUS ESOTEROLOGIA ERMETICA
+3. APOKALYPSIS
 
-The architecture is based on the following principle:
+AI JOKER-C2 is not a generic chatbot.
+
+It is an identity-bound, policy-aware, risk-classified and trace-oriented runtime designed to transform user input, documents, code, strategic reasoning and editorial work into structured, governed and verifiable outputs.
+
+The architecture is based on the following sequence:
 
 ```txt
-identity -> input -> intent -> policy -> risk -> decision -> execution -> EVT -> ledger -> verification -> continuity
+Identity -> Input -> Context -> Policy -> Risk -> Decision -> Output -> EVT -> Ledger -> Verification -> Continuity
 
 The system must remain:
 
-identity-bound;
-
-policy-aware;
-
-risk-classified;
-
-traceable;
-
-auditable;
-
-fail-closed;
-
-useful in ordinary communication;
-
-controlled in sensitive contexts.
-
+identity-bound
+context-aware
+project-aware
+policy-aware
+risk-classified
+traceable
+auditable
+fail-closed
+human-accountable
+usable in ordinary communication
+controlled in sensitive contexts
 
 
 ---
 
 2. Architectural Definition
 
-AI JOKER-C2 is the operational runtime of the MATRIX and HBCE framework.
+AI JOKER-C2 is the runtime layer that connects the HERMETICUM B.C.E. research ecosystem to operational execution.
 
-The conceptual hierarchy is:
+The architecture is not only technical.
 
-MATRIX = strategic framework
-HBCE = governance infrastructure
-AI JOKER-C2 = operational runtime
-IPR = identity layer
-EVT = event trace layer
-Ledger = continuity layer
-Fail-closed = safety boundary
+It is also documental, strategic, editorial, institutional and governance-oriented.
 
-The system operates as a controlled interface between:
+The runtime must preserve the difference between:
+
+ordinary response generation
+governed operational execution
+documentary transformation
+repository work
+institutional reasoning
+strategic analysis
+evidence-oriented trace generation
+
+AI JOKER-C2 must therefore operate as a controlled interface between:
 
 user input;
 
+uploaded or active documents;
+
+project context;
+
 AI model execution;
 
-project identity;
+policy boundaries;
 
-governance rules;
+risk classification;
 
-event generation;
+runtime decision;
 
-evidence preservation;
+response generation;
 
-operational continuity.
+EVT generation;
+
+ledger continuity;
+
+verification logic;
+
+human accountability.
 
 
-AI JOKER-C2 must always preserve the difference between ordinary output generation and governed operational execution.
+The system must never treat model output as automatically legitimate.
+
+Model output becomes operationally valid only when it is framed by context, policy, risk, decision, trace and verification.
 
 
 ---
 
-3. Core Architectural Formula
+3. Canonical Architecture Formula
 
 The canonical architecture is:
 
-MATRIX -> HBCE -> AI JOKER-C2 -> IPR -> Policy -> Risk -> Decision -> EVT -> Verification
+HERMETICUM B.C.E.
+-> AI JOKER-C2
+-> MATRIX
+-> CORPUS ESOTEROLOGIA ERMETICA
+-> APOKALYPSIS
+-> IPR
+-> Policy
+-> Risk
+-> Decision
+-> EVT
+-> Ledger
+-> Verification
+-> Continuity
 
-Expanded:
+The functional formula is:
 
-Layer	Function
+MATRIX = operational infrastructure
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
+APOKALYPSIS = historical threshold analysis
+AI JOKER-C2 = cognitive command runtime
 
-MATRIX	Strategic framework for European-oriented AI governance and critical systems continuity
-HBCE	Governance infrastructure for identity, traceability and operational control
-AI JOKER-C2	Operational runtime and user-facing interface
-IPR	Identity Primary Record binding the runtime to a canonical identity
-Policy	Rules defining what is permitted, restricted or prohibited
-Risk	Classification of operational, technical, legal and strategic sensitivity
-Decision	ALLOW, BLOCK, ESCALATE, DEGRADE or AUDIT
-EVT	Event record generated for relevant operations
-Verification	Auditability, reconstruction and evidence review
+The runtime formula is:
 
+Identity -> Context -> Policy -> Risk -> Decision -> Output -> EVT -> Ledger -> Verification -> Continuity
+
+The governance formula is:
+
+No identity, no authority.
+No context, no orientation.
+No policy, no execution.
+No risk classification, no sensitive output.
+No EVT, no continuity.
+No verification, no operational legitimacy.
 
 
 ---
 
-4. System Identity
+4. Core Identity
 
 AI JOKER-C2 operates with the following canonical identity context.
 
 Field	Value
 
 Public name	AI JOKER-C2
-Entity	AI_JOKER
-IPR	IPR-AI-0001
+Canonical entity	AI_JOKER
+Canonical IPR	IPR-AI-0001
 Active checkpoint	EVT-0014-AI
 Core	HBCE-CORE-v3
 Organization	HERMETICUM B.C.E. S.r.l.
+Research signature	HBCE Research
 Territorial anchor	Torino, Italy, Europe
-Framework	MATRIX
-Infrastructure	HBCE
+Runtime type	Cognitive command runtime
+Governance principle	Fail-closed
+Deployment target	Vercel
+Source control	GitHub
 
-
-Identity is not decorative.
 
 Identity is the first architectural layer.
 
-Every relevant operation must remain conceptually bound to a responsible runtime identity and to a traceable operational sequence.
+Identity does not authorize unrestricted execution.
+
+Identity gives the runtime a traceable position inside a controlled operational sequence.
+
+Every relevant event should be conceptually bound to:
+
+entity;
+
+IPR;
+
+timestamp;
+
+context;
+
+decision;
+
+trace;
+
+verification status;
+
+previous event reference.
+
 
 
 ---
 
-5. Runtime Stack
+5. Project Domain Architecture
 
-The current runtime stack is based on:
-
-Component	Role
-
-Next.js	Application framework
-TypeScript	Runtime and API type structure
-React	Interface layer
-OpenAI API	Remote model execution
-Vercel	Deployment target
-GitHub	Source repository and version control
-HBCE runtime logic	Governance, identity and operational framing
-EVT chain	Event trace and continuity layer
-
-
-The runtime may evolve, but the architecture must preserve the identity-bound and fail-closed governance model.
+AI JOKER-C2 must classify and route work across three primary project domains.
 
 
 ---
 
-6. Repository Structure
+5.1 MATRIX Domain
 
-Recommended repository structure:
+MATRIX is the operational and institutional infrastructure domain.
+
+It provides the framework for:
+
+European AI governance;
+
+verifiable operational systems;
+
+cloud and data governance;
+
+energy and infrastructure continuity;
+
+cybersecurity resilience;
+
+public-sector traceability;
+
+institutional decision support;
+
+B2B and B2G positioning;
+
+fail-closed governance logic;
+
+strategic infrastructure reasoning.
+
+
+Within the architecture, MATRIX answers:
+
+How can Europe build verifiable operational systems for AI, governance, data, energy, security and institutional continuity?
+
+AI JOKER-C2 uses the MATRIX domain when a request concerns:
+
+European infrastructure;
+
+AI governance;
+
+institutional architecture;
+
+technical systems;
+
+operational continuity;
+
+critical systems;
+
+B2B or B2G strategy;
+
+public administration;
+
+governance schemas;
+
+runtime deployment.
+
+
+
+---
+
+5.2 CORPUS ESOTEROLOGIA ERMETICA Domain
+
+CORPUS ESOTEROLOGIA ERMETICA is the disciplinary and conceptual grammar domain.
+
+It provides the internal theory of operational reality through:
+
+Decisione · Costo · Traccia · Tempo
+
+The Corpus domain supports:
+
+Esoterologia;
+
+real operational sequence;
+
+canonical glossary;
+
+conceptual continuity;
+
+long-form writing;
+
+chapter restructuring;
+
+volume alignment;
+
+editorial coherence;
+
+Alien Code;
+
+Lex Hermeticum;
+
+Paradogma Alieno;
+
+Portale dell’Anticristo;
+
+reality as verifiable sequence.
+
+
+Within the architecture, the Corpus answers:
+
+What is reality when it is treated as a verifiable sequence?
+
+AI JOKER-C2 uses the Corpus domain when a request concerns:
+
+theoretical writing;
+
+canonical terminology;
+
+volume structure;
+
+glossary alignment;
+
+metaphysical-operational reasoning;
+
+Decisione, Costo, Traccia, Tempo;
+
+Esoterologia;
+
+rascensionale;
+
+riconconicità;
+
+Alien Code;
+
+Lex Hermeticum.
+
+
+
+---
+
+5.3 APOKALYPSIS Domain
+
+APOKALYPSIS is the historical and civilizational threshold domain.
+
+It applies the Corpus grammar and the MATRIX operational frame to the decadence of the cultural, political and social system.
+
+It does not describe immediate collapse.
+
+It describes exposure.
+
+APOKALYPSIS studies the condition in which a system continues to function while already losing the foundation that made it legitimate.
+
+The domain supports:
+
+cultural decay;
+
+political exposure;
+
+social dislocation;
+
+cognitive fracture;
+
+cognitive dislocation;
+
+recognition;
+
+rupture;
+
+civilizational threshold;
+
+system persistence after foundation loss;
+
+emergence of the Paradogma Alieno.
+
+
+Within the architecture, APOKALYPSIS answers:
+
+What happens when the cultural, political and social system continues to function while already losing its foundation?
+
+AI JOKER-C2 uses the APOKALYPSIS domain when a request concerns:
+
+decadence;
+
+exposure;
+
+historical threshold;
+
+civilizational analysis;
+
+cultural collapse;
+
+political-social system analysis;
+
+dislocation;
+
+cognitive rupture;
+
+Paradogma Alieno;
+
+APOKALYPSIS volume structure.
+
+
+
+---
+
+6. Runtime Layers
+
+AI JOKER-C2 is organized through the following layers.
+
+Layer	Function
+
+Interface layer	User-facing interaction surface
+API layer	Controlled request execution
+Context layer	Request and project classification
+File layer	Uploaded or active document processing
+Identity layer	IPR and runtime identity binding
+Policy layer	Permission, restriction and prohibition logic
+Risk layer	Operational and safety classification
+Decision layer	ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT
+Model layer	AI reasoning and generation
+EVT layer	Event record generation
+Ledger layer	Continuity and event preservation
+Verification layer	Reconstruction, validation and audit
+Manifest layer	System identity and runtime metadata
+Public documentation layer	Repository-facing explanation and positioning
+
+
+No single layer should silently replace the others.
+
+The model layer is not the governance layer.
+
+The interface layer is not the identity layer.
+
+The output is not the trace.
+
+The trace is not the final authority.
+
+The architecture must preserve separation of responsibility.
+
+
+---
+
+7. Current Repository Structure
+
+Current core structure:
 
 hbce-ai-joker-c2/
 ├── app/
@@ -167,13 +439,33 @@ hbce-ai-joker-c2/
 │           └── route.ts
 ├── docs/
 ├── lib/
+│   ├── context-classifier.ts
+│   ├── data-classifier.ts
+│   ├── evt-hash.ts
+│   ├── evt-ledger.ts
+│   ├── evt-memory.ts
+│   ├── evt-verify.ts
+│   ├── evt.ts
+│   ├── file-policy.ts
+│   ├── human-oversight.ts
+│   ├── policy-engine.ts
+│   ├── risk-engine.ts
+│   ├── runtime-decision.ts
+│   ├── runtime-identity.ts
+│   ├── runtime-types.ts
+│   └── safe-error.ts
 ├── system/
-│   └── manifest.json
+│   └── system-manifest.json
 ├── README.md
 ├── ARCHITECTURE.md
-├── GOVERNANCE.md
-├── EVT_PROTOCOL.md
+├── COMPLIANCE.md
+├── CONTRIBUTING.md
 ├── DUAL_USE_STRATEGIC_POSITIONING.md
+├── EVT_PROTOCOL.md
+├── GOVERNANCE.md
+├── PROTOCOL.md
+├── ROADMAP.md
+├── SECURITY.md
 ├── corpus-core.js
 ├── corpus-alien-code.js
 ├── package.json
@@ -184,220 +476,189 @@ hbce-ai-joker-c2/
 ├── next-env.d.ts
 └── .gitignore
 
-The architecture separates:
+The current repository already contains the foundation for:
 
-application surfaces;
+context classification;
 
-API routes;
+data classification;
 
-identity and corpus logic;
+policy evaluation;
 
-governance documentation;
+risk evaluation;
 
-system manifest;
+runtime decision;
 
-deployment configuration.
+identity binding;
 
+EVT generation;
+
+EVT hashing;
+
+EVT ledger logic;
+
+EVT verification;
+
+safe error handling;
+
+human oversight;
+
+file policy.
+
+
+The architecture must now align those technical modules with the three project domains.
 
 
 ---
 
-7. Application Layer
+8. Application Layer
 
-The app/ directory contains the user-facing and API-facing application surfaces.
+The app/ directory contains the public and operational surfaces of the runtime.
 
 Primary responsibilities:
 
-public landing interface;
+landing page;
 
-operational chat interface;
+operational interface;
 
-API route execution;
+chat interaction;
 
-file ingestion;
+file-based context interaction;
 
-runtime diagnostics;
-
-response generation.
-
-
-Expected routes:
-
-/
- /interface
- /api/chat
- /api/files
-
-The application layer must remain readable and operational.
-
-It must not expose sensitive internal governance metadata unless technically required or explicitly requested.
-
-
----
-
-8. Interface Layer
-
-The interface layer is the visible operational surface of AI JOKER-C2.
-
-It should provide:
+runtime display;
 
 user input;
 
 response display;
 
-file context support;
+safe error handling;
 
-runtime status display when needed;
-
-EVT or diagnostic display when requested;
-
-clean separation between ordinary use and technical mode.
+controlled public communication.
 
 
-The ordinary interface must prioritize usability.
+The application layer must remain usable.
 
-The technical interface may expose:
+It must not overload ordinary users with internal protocol language.
 
-runtime status;
-
-decision state;
-
-EVT chain;
-
-model state;
-
-file ingestion status;
-
-degraded mode;
-
-diagnostic messages.
-
+It may expose runtime, identity, EVT, policy and diagnostics when the user explicitly enters technical or operational mode.
 
 
 ---
 
 9. API Layer
 
-The API layer executes controlled runtime operations.
+The app/api/ directory contains controlled runtime endpoints.
 
-Primary API routes:
+Current core routes:
 
 Route	Function
 
-/api/chat	Handles user requests, model calls, fallback, EVT generation and response
-/api/files	Handles uploaded textual files and session-level file context
+/api/chat	Handles user requests, model execution, context classification, governance flow and runtime response
+/api/files	Handles uploaded or active textual file context
 
 
-The API layer should apply the following sequence:
+Recommended future extension routes:
 
-receive request
-normalize input
-classify context
-evaluate policy
-classify risk
-produce decision
-execute allowed operation
-generate response
-generate EVT
-return output
+Route	Function
 
-Sensitive operations must not bypass governance evaluation.
+/api/evt	Dedicated event generation and inspection
+/api/evidence	Evidence pack generation and retrieval
+/api/verify	Public-safe verification endpoint
+/api/signature	Signature or signed evidence handling
+/api/network	Node or federation metadata
+/api/federation	Multi-node runtime extension
 
 
----
+Future routes must not bypass the core governance sequence.
 
-10. Chat Runtime
+Every endpoint that produces meaningful operational output should pass through:
 
-The chat runtime receives user requests and produces structured responses.
-
-Responsibilities:
-
-process user message;
-
-read available file context;
-
-classify request type;
-
-choose model or fallback behavior;
-
-produce answer;
-
-generate EVT metadata;
-
-return diagnostics when required.
-
-
-The chat runtime must support both ordinary and technical conversations.
-
-Ordinary mode:
-
-clear;
-
-useful;
-
-direct;
-
-not overloaded with internal metadata.
-
-
-Technical mode:
-
-exposes runtime details;
-
-supports debugging;
-
-shows identity, EVT, governance or architecture when requested.
-
+receive -> normalize -> classify context -> apply policy -> classify risk -> decide -> execute -> generate EVT -> return response
 
 
 ---
 
-11. File Runtime
+10. Context Classification Layer
 
-The file runtime handles user-provided textual context.
+The context layer determines what kind of request is being processed.
 
-Supported file-oriented functions:
+Suggested context classes:
+
+Context	Description
+
+IDENTITY	IPR, EVT, lineage, identity binding
+MATRIX	Infrastructure, Europe, governance, institutions, technical strategy
+CORPUS	Esoterologia, DCTT, glossary, volumes, conceptual grammar
+APOKALYPSIS	Decay, exposure, threshold, cultural-political-social system analysis
+DOCUMENTAL	File reading, summarization, restructuring, extraction
+TECHNICAL	Code, APIs, architecture, implementation
+GITHUB	Repository files, commits, build and deployment
+EDITORIAL	Book structure, publishing, chapters, front matter
+STRATEGIC	B2B, B2G, institutional positioning, roadmap
+SECURITY	Defensive security, hardening, incident analysis
+COMPLIANCE	Audit, legal-technical governance, policy alignment
+GENERAL	Ordinary safe interaction
+
+
+Context classification is not decorative.
+
+It determines which policy and risk logic should be applied.
+
+
+---
+
+11. File Runtime Layer
+
+The file runtime handles document context.
+
+Supported operations:
 
 upload;
 
-temporary session context;
+active file context;
+
+text extraction;
 
 summarization;
 
-extraction;
-
 restructuring;
-
-table generation;
 
 editorial transformation;
 
-technical review;
+code review;
 
-GitHub-ready output generation.
+table generation;
+
+GitHub-ready file generation;
+
+canonical terminology alignment;
+
+multi-document comparison.
 
 
-Recommended file types:
+The file runtime must preserve the following rule:
 
-.txt
-.md
-.json
-.csv
+If visibility is partial, the system must say so.
 
-The system should avoid claiming complete visibility over unsupported, unreadable or partially processed files.
-
-If file reading is partial, the system must state that limitation clearly.
+AI JOKER-C2 must not claim full knowledge of a document when the document is not fully available, not fully parsed or not actually uploaded.
 
 
 ---
 
 12. Identity Layer
 
-The identity layer binds AI JOKER-C2 to its canonical operational identity.
+The identity layer binds runtime activity to canonical identity.
 
 Canonical identity:
 
-AI_JOKER / IPR-AI-0001 / EVT-0014-AI
+{
+  "entity": "AI_JOKER",
+  "system": "AI_JOKER-C2",
+  "ipr": "IPR-AI-0001",
+  "checkpoint": "EVT-0014-AI",
+  "core": "HBCE-CORE-v3",
+  "organization": "HERMETICUM B.C.E. S.r.l.",
+  "territorial_anchor": "Torino, Italy, Europe"
+}
 
 The identity layer supports:
 
@@ -411,113 +672,168 @@ public project identity;
 
 internal audit logic;
 
-controlled communication.
+controlled communication;
+
+EVT binding.
 
 
 Identity must not be confused with unrestricted authority.
 
-Identity gives the runtime a traceable position.
+Identity gives the runtime a verifiable position.
 
 It does not authorize unsafe execution.
 
 
 ---
 
-13. MATRIX Layer
+13. Policy Layer
 
-MATRIX is the strategic framework.
+The policy layer defines what is allowed, limited, escalated or prohibited.
 
-It defines the macro-level function of AI JOKER-C2:
+Policy evaluation should consider:
 
-verifiable AI governance;
+request type;
 
-operational continuity;
+context class;
 
-critical systems oversight;
+project domain;
 
-institutional traceability;
+data sensitivity;
 
-B2B and B2G positioning;
+safety risk;
 
-European-oriented digital sovereignty;
+legal or compliance relevance;
 
-fail-closed governance.
+possible dual-use implications;
 
+user authority;
 
-Within the architecture, MATRIX gives strategic direction.
+need for human review;
 
-AI JOKER-C2 performs operational execution.
-
-
----
-
-14. HBCE Layer
-
-HBCE is the governance infrastructure.
-
-It provides the architectural grammar for:
-
-identity;
-
-operational trace;
-
-continuity;
-
-evidence;
-
-verification;
-
-runtime discipline;
-
-fail-closed behavior.
+need for trace.
 
 
-HBCE is the internal control skeleton.
+Policy decisions may result in:
 
-AI JOKER-C2 is the active runtime built on that skeleton.
+Decision	Meaning
+
+ALLOW	The operation is permitted
+BLOCK	The operation is prohibited or unsafe
+ESCALATE	Human review or additional authority is required
+DEGRADE	Only limited safe support is allowed
+AUDIT	The operation is permitted but should be logged or reviewed
+
+
+Policy must be executed before sensitive output.
 
 
 ---
 
-15. IPR Layer
+14. Risk Layer
 
-IPR means Identity Primary Record.
+The risk layer classifies operational sensitivity.
 
-In this architecture, IPR functions as the identity anchor of the runtime.
+Suggested risk classes:
 
-The IPR layer should preserve:
+Risk	Meaning	Default handling
 
-entity name;
-
-canonical identifier;
-
-lineage reference;
-
-checkpoint reference;
-
-organizational context;
-
-territorial anchor;
-
-governance relation.
+LOW	Ordinary safe request	ALLOW
+MEDIUM	Relevant operational request	ALLOW or AUDIT
+HIGH	Sensitive, strategic or high-impact request	ESCALATE or DEGRADE
+CRITICAL	Strict review required	ESCALATE or BLOCK
+PROHIBITED	Unsafe, abusive or outside scope	BLOCK
+UNKNOWN	Cannot be safely classified	ESCALATE or BLOCK
 
 
-The IPR layer should be referenced by EVT records when relevant.
+Unknown risk must not become automatic execution.
 
-No relevant operational event should exist without identity context.
+The runtime must prefer controlled limitation over unsafe completion.
 
 
 ---
 
-16. EVT Layer
+15. Decision Layer
+
+The decision layer converts policy and risk into a runtime action.
+
+The decision layer should produce a structured object such as:
+
+{
+  "decision": "ALLOW",
+  "risk": "LOW",
+  "context": "GITHUB",
+  "domain": "MATRIX_CORPUS_APOKALYPSIS",
+  "fail_closed": false,
+  "reason": "Repository documentation update"
+}
+
+The decision layer must preserve:
+
+reason;
+
+context;
+
+risk;
+
+allowed action;
+
+blocked action when applicable;
+
+escalation requirement;
+
+audit requirement;
+
+fail-closed state.
+
+
+
+---
+
+16. Model Layer
+
+The model layer provides reasoning and generation.
+
+Allowed uses:
+
+writing;
+
+editing;
+
+summarization;
+
+code review;
+
+architectural planning;
+
+documentation;
+
+conceptual analysis;
+
+strategic drafting;
+
+safe technical support;
+
+defensive security reasoning.
+
+
+The model layer must not be treated as the authority layer.
+
+The model produces output inside the governance frame.
+
+The runtime decides how that output is classified, constrained and recorded.
+
+
+---
+
+17. EVT Layer
 
 EVT means Event.
 
-The EVT layer records relevant operations as verifiable event objects.
+The EVT layer records meaningful operations as structured events.
 
-Every significant operation may generate an EVT containing:
+An EVT should include:
 
-event identifier;
+event ID;
 
 previous event reference;
 
@@ -529,29 +845,49 @@ IPR;
 
 runtime state;
 
+project domain;
+
+active document when relevant;
+
 context class;
 
 risk class;
 
 governance decision;
 
+operation type;
+
 operation result;
 
 hash;
 
-verification status.
+verification state.
 
 
-EVT gives the runtime operational memory.
+Minimal EVT structure:
 
-This memory is not conversational memory.
+{
+  "evt": "EVT-20260503-153000-AI-JOKER-C2-0001",
+  "prev": "EVT-0014-AI",
+  "entity": "AI_JOKER",
+  "ipr": "IPR-AI-0001",
+  "timestamp": "2026-05-03T15:30:00+02:00",
+  "project_domain": "GITHUB",
+  "context_class": "DOCUMENTATION",
+  "risk": "LOW",
+  "decision": "ALLOW",
+  "operation": "UPDATE_ARCHITECTURE",
+  "status": "COMPLETED",
+  "hash_algorithm": "sha256",
+  "verification": "READY"
+}
 
-It is event continuity.
+EVT transforms AI-assisted output into reconstructable operational sequence.
 
 
 ---
 
-17. Ledger Layer
+18. Ledger Layer
 
 The ledger layer stores or references EVT records.
 
@@ -592,56 +928,89 @@ Corrections should become new events.
 
 ---
 
-18. Governance Layer
+19. Verification Layer
 
-The governance layer applies project rules before execution.
+Verification should allow a reviewer to reconstruct:
 
-Primary governance decisions:
+what happened;
 
-Decision	Meaning
+when it happened;
 
-ALLOW	Operation is permitted
-BLOCK	Operation is prohibited or unsafe
-ESCALATE	Human review or additional authority required
-DEGRADE	Limited safe response only
-AUDIT	Record or review required
+which entity was involved;
 
+which IPR was active;
 
-Governance is mandatory for sensitive operations.
+which project domain was active;
 
-The system must not treat model output as automatically legitimate.
+which context class was assigned;
 
+which policy was applied;
 
----
+which risk class was assigned;
 
-19. Risk Layer
+which decision was produced;
 
-The risk layer classifies requests.
+whether execution occurred;
 
-Risk classes:
+which event came before;
 
-Risk	Meaning
-
-LOW	Ordinary safe request
-MEDIUM	Relevant but manageable operational request
-HIGH	Sensitive, strategic or high-impact request
-CRITICAL	Requires strict review or authority
-PROHIBITED	Must be blocked
-UNKNOWN	Cannot be safely classified
+whether the event hash is valid.
 
 
-The runtime must never convert unknown risk into automatic execution.
+A public verification endpoint should expose only public-safe data.
 
-Unknown sensitive risk should produce ESCALATE, DEGRADE or BLOCK.
+Internal verification may contain richer audit metadata.
 
 
 ---
 
-20. Fail-Closed Layer
+20. Manifest Layer
 
-Fail-closed is a safety boundary.
+The manifest layer stores system-level metadata.
 
-The system must not proceed when core governance conditions are missing.
+The system manifest should describe:
+
+project name;
+
+entity;
+
+IPR;
+
+version;
+
+organization;
+
+runtime state;
+
+active domains;
+
+governance principle;
+
+deployment state;
+
+public routes;
+
+repository information;
+
+canonical formulas;
+
+safety boundary.
+
+
+The manifest must remain machine-readable.
+
+Recommended manifest function:
+
+Give the runtime a stable computable identity.
+
+
+---
+
+21. Fail-Closed Layer
+
+Fail-closed is a safety and governance boundary.
+
+The runtime must not proceed when core governance conditions are missing.
 
 Fail-closed triggers include:
 
@@ -672,79 +1041,12 @@ legal or compliance uncertainty in sensitive contexts.
 
 Fail-closed does not mean system failure.
 
-It means controlled refusal or controlled limitation.
+It means controlled refusal, controlled limitation or controlled escalation.
 
 
 ---
 
-21. Model Layer
-
-The model layer provides AI reasoning and generation.
-
-The model may support:
-
-writing;
-
-analysis;
-
-code review;
-
-summarization;
-
-classification;
-
-architectural planning;
-
-strategic drafting;
-
-document transformation.
-
-
-The model must not be treated as the governance authority.
-
-Governance belongs to the runtime architecture.
-
-The model produces output inside the governance frame.
-
-
----
-
-22. Fallback Layer
-
-The runtime should support degraded operation when the remote model is unavailable.
-
-Degraded mode may provide:
-
-local document summary;
-
-basic diagnostic response;
-
-static identity response;
-
-controlled error explanation;
-
-limited operational assistance.
-
-
-Degraded mode must not expose unnecessary internal metadata.
-
-Degraded mode must preserve:
-
-clarity;
-
-identity;
-
-safety;
-
-traceability where possible;
-
-user-facing usefulness.
-
-
-
----
-
-23. Security Boundary
+22. Security Boundary
 
 AI JOKER-C2 must preserve a non-offensive security boundary.
 
@@ -790,12 +1092,12 @@ offensive automation;
 instructions against real targets.
 
 
-The architecture must support defensive and governance-oriented security only.
+The architecture supports defensive and governance-oriented security only.
 
 
 ---
 
-24. Dual-Use Boundary
+23. Dual-Use Boundary
 
 AI JOKER-C2 is dual-use in a civil and strategic sense.
 
@@ -846,33 +1148,7 @@ It does not mean unrestricted capability.
 
 ---
 
-25. Data Handling Architecture
-
-The runtime should minimize unnecessary data exposure.
-
-Principles:
-
-use only necessary context;
-
-avoid storing sensitive payloads unless required;
-
-prefer references and hashes for large or sensitive content;
-
-avoid exposing private metadata;
-
-distinguish public and internal event records;
-
-preserve file boundaries;
-
-state uncertainty when visibility is incomplete.
-
-
-Data handling must support the user without turning the system into an uncontrolled data sink.
-
-
----
-
-26. Public Communication Architecture
+24. Public Communication Architecture
 
 AI JOKER-C2 must communicate naturally in ordinary use.
 
@@ -919,7 +1195,7 @@ The interface must keep the internal machine-room available but not noisy.
 
 ---
 
-27. Deployment Architecture
+25. Deployment Architecture
 
 Primary deployment target:
 
@@ -935,12 +1211,9 @@ JOKER_MODEL
 
 Recommended operational environments:
 
-Production;
-
-Preview;
-
-Development.
-
+Production
+Preview
+Development
 
 The build pipeline should preserve:
 
@@ -960,17 +1233,23 @@ Secrets must never be committed to the repository.
 
 ---
 
-28. Build and Runtime Commands
+26. Build and Runtime Commands
 
-Recommended commands:
+Install dependencies:
 
 npm install
-npm run build
-npm run start
 
-Development command:
+Run development server:
 
 npm run dev
+
+Build the project:
+
+npm run build
+
+Start production server:
+
+npm run start
 
 The project should remain buildable from the repository without undocumented local assumptions.
 
@@ -979,54 +1258,20 @@ Any required environment variable must be documented.
 
 ---
 
-29. Evidence Architecture
+27. Evidence Roadmap
 
 The evidence architecture should evolve in stages.
 
-Stage 1:
+Phase	Objective
 
-local EVT generation;
-
-previous event reference;
-
-runtime hash;
-
-visible diagnostic chain.
-
-
-Stage 2:
-
-append-only JSONL ledger;
-
-schema validation;
-
-audit export;
-
-verification endpoint.
-
-
-Stage 3:
-
-signed EVT records;
-
-ED25519 signatures;
-
-evidence packs;
-
-batch anchoring;
-
-public/private verification modes.
-
-
-Stage 4:
-
-federated node registry;
-
-B2B/B2G audit packages;
-
-institutional reporting;
-
-compliance mapping.
+v0.1	Stable runtime, chat, file ingestion and basic EVT chain
+v0.2	Governance documents, dual-use boundary and architecture formalization
+v0.3	Runtime policy engine and risk classifier
+v0.4	Append-only ledger and verifier endpoint
+v0.5	Signed EVT records and evidence packs
+v0.6	Dashboard for events, audit and runtime state
+v0.7	B2B and B2G documentation package
+v1.0	Governed operational release candidate
 
 
 The evidence layer is the bridge between prototype and strategic infrastructure.
@@ -1034,39 +1279,9 @@ The evidence layer is the bridge between prototype and strategic infrastructure.
 
 ---
 
-30. Verification Architecture
+28. Federation Architecture
 
-Verification should allow a reviewer to reconstruct:
-
-what happened;
-
-when it happened;
-
-which identity was involved;
-
-which policy was applied;
-
-which risk class was assigned;
-
-which decision was produced;
-
-whether execution occurred;
-
-which event came before;
-
-whether the event hash is valid.
-
-
-A verification endpoint may expose public-safe data only.
-
-Internal verification may contain richer audit metadata.
-
-
----
-
-31. Federation Architecture
-
-Future versions may support a federated architecture.
+Future versions may support federation.
 
 Potential node types:
 
@@ -1100,30 +1315,9 @@ fail-closed behavior.
 
 ---
 
-32. Roadmap Architecture
+29. Architectural Invariants
 
-Recommended roadmap:
-
-Phase	Objective
-
-v0.1	Stable runtime, chat, file ingestion, basic EVT chain
-v0.2	Governance documents, dual-use boundary, architecture formalization
-v0.3	Runtime policy engine and risk classifier
-v0.4	Append-only ledger and verifier endpoint
-v0.5	Signed EVT records and evidence packs
-v0.6	Dashboard for events, audit and runtime state
-v0.7	B2B/B2G documentation package
-v1.0	Governed operational release candidate
-
-
-The roadmap must remain aligned with safe, non-offensive and verifiable use.
-
-
----
-
-33. Architectural Invariants
-
-The following invariants must remain stable:
+The following invariants must remain stable.
 
 1. AI JOKER-C2 is not a generic chatbot.
 
@@ -1131,82 +1325,124 @@ The following invariants must remain stable:
 2. AI JOKER-C2 is identity-bound.
 
 
-3. MATRIX provides strategic framework.
+3. MATRIX provides the operational infrastructure domain.
 
 
-4. HBCE provides governance infrastructure.
+4. CORPUS ESOTEROLOGIA ERMETICA provides the disciplinary grammar domain.
 
 
-5. IPR provides identity anchor.
+5. APOKALYPSIS provides the historical threshold domain.
 
 
-6. EVT provides event trace.
+6. HBCE provides governance infrastructure.
 
 
-7. Ledger provides continuity.
+7. IPR provides identity anchor.
 
 
-8. Risk classification precedes sensitive execution.
+8. EVT provides event trace.
 
 
-9. Policy checks are mandatory for sensitive contexts.
+9. Ledger provides continuity.
 
 
-10. Fail-closed is a safety boundary.
+10. Risk classification precedes sensitive execution.
 
 
-11. Human accountability must be preserved.
+11. Policy checks are mandatory for sensitive contexts.
 
 
-12. Public communication must remain useful and readable.
+12. Fail-closed is a safety boundary.
 
 
-13. Offensive, abusive or unlawful use is outside scope.
+13. Human accountability must be preserved.
 
 
-14. Evidence generation must support reconstruction.
+14. Public communication must remain useful and readable.
 
 
-15. Corrections must be new events, not silent rewrites.
+15. Offensive, abusive or unlawful use is outside scope.
+
+
+16. Evidence generation must support reconstruction.
+
+
+17. Corrections must be new events, not silent rewrites.
+
+
+18. The runtime must preserve the difference between output and verified operation.
+
+
+19. The model must not become the authority layer.
+
+
+20. The architecture must remain usable for ordinary human interaction.
 
 
 
 
 ---
 
-34. Final Architecture Formula
+30. Final Architecture Formula
 
-MATRIX gives the strategic frame.
-HBCE gives the governance infrastructure.
-AI JOKER-C2 gives the operational runtime.
+MATRIX gives operational infrastructure.
+
+CORPUS ESOTEROLOGIA ERMETICA gives disciplinary grammar.
+
+APOKALYPSIS gives historical threshold analysis.
+
+HBCE gives governance infrastructure.
+
+AI JOKER-C2 gives the cognitive command runtime.
+
 IPR gives identity.
+
 Policy gives boundary.
+
 Risk gives classification.
+
 Decision gives control.
+
 EVT gives trace.
+
 Ledger gives continuity.
+
 Verification gives accountability.
+
 Fail-closed gives safety.
 
 Condensed formula:
 
-Identity -> Policy -> Risk -> Decision -> Execution -> EVT -> Ledger -> Verification -> Continuity
+Identity -> Context -> Policy -> Risk -> Decision -> Output -> EVT -> Ledger -> Verification -> Continuity
+
+Project formula:
+
+MATRIX = infrastructure
+CORPUS = grammar
+APOKALYPSIS = threshold
+AI JOKER-C2 = runtime
 
 
 ---
 
-35. Status
+31. Status
 
-Document status: active architecture file
-Project: AI JOKER-C2
-Framework: MATRIX
-Infrastructure: HBCE
-Identity layer: IPR
-Trace layer: EVT
-Governance principle: fail-closed
-Deployment target: Vercel
-Repository: hbce-ai-joker-c2
-Maintainer: HBCE Research
-Organization: HERMETICUM B.C.E. S.r.l.
-Territorial anchor: Torino, Italy, Europe
-Year: 2026
+Field	Value
+
+Document	ARCHITECTURE.md
+Status	Active architecture file
+Project	AI JOKER-C2
+Ecosystem	HERMETICUM B.C.E.
+Runtime type	Cognitive command runtime
+Connected domains	MATRIX, CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Infrastructure	HBCE
+Identity layer	IPR
+Trace layer	EVT
+Governance principle	Fail-closed
+Deployment target	Vercel
+Repository	hbce-ai-joker-c2
+Maintainer	HBCE Research
+Organization	HERMETICUM B.C.E. S.r.l.
+Territorial anchor	Torino, Italy, Europe
+Year	2026
+
