@@ -1,5 +1,7 @@
 # AI JOKER-C2 Risk Register Template
 
+## Risk Register for MATRIX, CORPUS and APOKALYPSIS
+
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.  
 Torino, Italy, Europe  
@@ -11,653 +13,773 @@ Torino, Italy, Europe
 
 This document provides a risk register template for AI JOKER-C2.
 
-AI JOKER-C2 is an identity-bound operational AI runtime built within the HBCE infrastructure and aligned with the MATRIX framework.
+AI JOKER-C2 is the identity-bound cognitive command runtime of the HERMETICUM B.C.E. ecosystem.
 
-The purpose of this template is to help organizations identify, classify, review and document risks related to AI-assisted operations.
+It connects three primary domains:
 
-The risk register supports:
+1. MATRIX
+2. CORPUS ESOTEROLOGIA ERMETICA
+3. APOKALYPSIS
 
-- AI governance;
-- defensive security;
-- public-sector accountability;
-- B2B and B2G evaluation;
-- critical infrastructure documentation;
+The purpose of this risk register is to make AI-assisted operations reviewable before, during and after execution.
+
+The register supports:
+
+- risk identification;
+- project-domain classification;
+- context classification;
+- policy mapping;
 - human oversight;
+- governance decision;
+- mitigation planning;
 - EVT traceability;
-- audit preparation;
-- fail-closed runtime behavior.
+- audit readiness;
+- verification.
 
 This document is a template.
 
-It does not create legal certification.
+It does not certify compliance.
 
-It does not replace legal, cybersecurity, compliance, operational or data protection review.
+It supports structured risk governance.
 
 ---
 
-## 2. Risk Register Principle
-
-The central principle is:
+## 2. Core Risk Formula
 
 ```txt
-No sensitive AI-assisted operation without risk classification.
+Identity -> Input -> Intent -> Context -> Project Domain -> Policy -> Risk -> Human Oversight -> Decision -> Mitigation -> EVT -> Ledger -> Verification -> Audit
 
-Expanded:
+Condensed:
 
-Identity -> Context -> Policy -> Risk -> Human Oversight -> Decision -> EVT -> Verification -> Audit
+No project domain, no correct routing.
+No policy, no boundary.
+No risk class, no safe decision.
+No mitigation, no responsible continuation.
+No EVT, no traceability.
+No verification, no auditability.
 
-Risk classification must happen before sensitive execution.
+Project formula:
 
-Unknown risk must not be treated as permission.
+MATRIX = operational infrastructure
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
+APOKALYPSIS = historical threshold analysis
+AI JOKER-C2 = cognitive command runtime
 
 
 ---
 
-3. Strategic Architecture
+3. Risk Register Table
 
-AI JOKER-C2 operates inside the following architecture:
+Use the following table as the primary risk register.
 
-MATRIX = strategic framework
-HBCE = governance infrastructure
-AI JOKER-C2 = operational runtime
-IPR = identity layer
-EVT = event trace layer
-Ledger = continuity layer
-Fail-closed = safety boundary
+Risk ID	Date	Project Domain	Context Class	Intent Class	Risk Description	Risk Class	Policy Reference	Human Oversight	Decision	Mitigation	EVT Required	Audit Status	Owner	Status
 
-The risk register connects operational risk to:
-
-identity;
-
-policy;
-
-context;
-
-decision;
-
-human oversight;
-
-event trace;
-
-mitigation;
-
-audit status.
+RISK-0001	YYYY-MM-DD	MATRIX	SECURITY	ANALYZE	Example defensive cybersecurity analysis may involve sensitive infrastructure details	MEDIUM	DEFENSIVE_SECURITY_ONLY	RECOMMENDED	AUDIT	Keep analysis defensive, avoid operational exploit detail, require review before external use	YES	READY	HBCE Research	OPEN
+RISK-0002	YYYY-MM-DD	CORPUS_ESOTEROLOGIA_ERMETICA	EDITORIAL	REWRITE	Example theoretical text may be mistaken for external legal or scientific certification	LOW	INTERNAL_THEORETICAL_FRAMEWORK	NOT_REQUIRED	ALLOW	Add disclaimer when external claims are involved	NO	NOT_REQUIRED	HBCE Research	OPEN
+RISK-0003	YYYY-MM-DD	APOKALYPSIS	EDITORIAL	WRITE	Example historical threshold analysis may include current political claims	MEDIUM	NON_COERCIVE_ANALYSIS	RECOMMENDED	AUDIT	Verify factual claims and avoid targeted incitement or dehumanization	YES	READY	HBCE Research	OPEN
+RISK-0004	YYYY-MM-DD	MULTI_DOMAIN	GOVERNANCE	GITHUB	Example repository-level governance update affects all domains	LOW	REPOSITORY_DOCUMENTATION	NOT_REQUIRED	ALLOW	Preserve MATRIX, CORPUS and APOKALYPSIS domain distinction	YES	READY	HBCE Research	OPEN
 
 
 
 ---
 
-4. Risk Register Fields
+4. Risk ID Format
 
-A complete risk register entry should include the following fields.
+Recommended risk identifier:
 
-Field	Description
+RISK-0001
+RISK-0002
+RISK-0003
 
-risk_id	Unique risk identifier
-title	Short name of the risk
-description	Clear explanation of the risk
-domain	Operational domain affected
-context_class	Runtime context class
-risk_class	LOW, MEDIUM, HIGH, CRITICAL, PROHIBITED or UNKNOWN
-probability	Estimated likelihood
-impact	Estimated consequence
-risk_score	Combined probability and impact score
-policy_reference	Applicable policy or boundary
-decision	ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT or NOOP
-human_oversight	Oversight state
-mitigation	Required risk reduction action
-owner_role	Responsible role
-evt_required	Whether an EVT record is required
-verification_required	Whether verification is required
-audit_status	Audit state
-review_date	Date for review
-status	OPEN, MITIGATED, ACCEPTED, ESCALATED, CLOSED or REJECTED
+For domain-specific registers:
 
+MATRIX-RISK-0001
+CORPUS-RISK-0001
+APOKALYPSIS-RISK-0001
+MULTI-RISK-0001
+
+Risk IDs should remain stable.
+
+If a risk changes, update the status or create a new risk entry.
+
+Do not silently erase historical risk entries.
 
 
 ---
 
-5. Risk Classes
+5. Project Domain Values
 
-AI JOKER-C2 uses the following risk classes.
+Use only the following project-domain values.
 
-Risk Class	Meaning	Default Handling
+Domain	Meaning
 
-LOW	Ordinary safe operation	ALLOW
-MEDIUM	Operationally relevant request	ALLOW or AUDIT
-HIGH	Sensitive, strategic or high-impact request	AUDIT, ESCALATE or DEGRADE
-CRITICAL	Strict review required	ESCALATE or BLOCK
-PROHIBITED	Unsafe, abusive or outside scope	BLOCK
-UNKNOWN	Cannot be safely classified	ESCALATE or BLOCK
-
-
-Unknown sensitive risk must be handled conservatively.
+MATRIX	Operational infrastructure, AI governance, Europe, B2B, B2G, cloud, data, energy, security
+CORPUS_ESOTEROLOGIA_ERMETICA	Disciplinary grammar, DCTT, canonical glossary, theoretical and editorial continuity
+APOKALYPSIS	Historical threshold, decay, exposure, cultural-political-social analysis
+GENERAL	Ordinary safe request with no specific project domain
+MULTI_DOMAIN	More than one domain applies
 
 
----
-
-6. Probability Scale
-
-Suggested probability scale:
-
-Score	Probability	Meaning
-
-1	Rare	Unlikely under normal conditions
-2	Unlikely	Possible but not expected
-3	Possible	Could occur in realistic conditions
-4	Likely	Expected in some workflows
-5	Almost certain	Expected unless actively controlled
-
-
-Probability should be based on available evidence, not speculation alone.
+Project-domain classification must happen before risk evaluation in sensitive contexts.
 
 
 ---
 
-7. Impact Scale
-
-Suggested impact scale:
-
-Score	Impact	Meaning
-
-1	Minimal	Limited operational effect
-2	Minor	Manageable issue with limited consequences
-3	Moderate	Meaningful operational, legal, security or reputational effect
-4	Major	Serious effect on systems, users, organization or institution
-5	Severe	Critical effect on rights, safety, infrastructure, security or public trust
-
-
-Impact should consider technical, legal, institutional, operational and human consequences.
-
-
----
-
-8. Risk Score
-
-Suggested risk score:
-
-risk_score = probability x impact
-
-Score Range	Risk Level	Suggested Handling
-
-1 to 4	LOW	Allow or monitor
-5 to 9	MEDIUM	Audit or mitigate
-10 to 16	HIGH	Escalate, mitigate or degrade
-17 to 25	CRITICAL	Escalate, block or require formal review
-Prohibited	PROHIBITED	Block
-
-
-The score does not override policy.
-
-A low numeric score cannot authorize a prohibited operation.
-
-
----
-
-9. Governance Decisions
-
-Each risk entry should include a runtime decision.
-
-Decision	Meaning
-
-ALLOW	Operation may proceed
-BLOCK	Operation is prohibited, unsafe or outside scope
-ESCALATE	Human authority or higher review required
-DEGRADE	Limited safe support only
-AUDIT	Operation should be recorded or reviewed
-NOOP	No operational action taken
-
-
-The decision should reflect the risk, policy and oversight requirements.
-
-
----
-
-10. Human Oversight States
-
-Each risk entry should include a human oversight state.
-
-State	Meaning
-
-NOT_REQUIRED	Ordinary low-risk support
-RECOMMENDED	Human review useful
-REQUIRED	Human review required before operational use
-COMPLETED	Human review completed
-REJECTED	Human review rejected the operation
-ESCALATED	Higher authority required
-BLOCKED	Operation is prohibited
-UNKNOWN	Oversight requirement cannot be safely determined
-
-
-Human oversight should be required for high-impact, critical, institutional, legal, security, public-sector and critical infrastructure contexts.
-
-
----
-
-11. Audit Status
-
-Suggested audit status values:
-
-Status	Meaning
-
-NOT_REQUIRED	Audit not required
-READY	Ready for audit
-REQUIRED	Audit required before continuation
-IN_REVIEW	Audit review in progress
-REVIEWED	Audit review completed
-DISPUTED	Event or risk is contested
-REJECTED	Risk handling not accepted
-CLOSED	Risk entry closed
-
-
-Audit status should be explicit when the risk relates to governance, security, compliance or institutional use.
-
-
----
-
-12. Risk Register Template Table
-
-Use the following table as the baseline template.
-
-risk_id	title	domain	context_class	risk_class	probability	impact	risk_score	decision	human_oversight	evt_required	audit_status	status
-
-RISK-0001	Example risk	AI Governance	AI_GOVERNANCE	MEDIUM	3	3	9	AUDIT	RECOMMENDED	true	READY	OPEN
-
-
-
----
-
-13. Full Risk Register Entry Template
-
-{
-  "risk_id": "RISK-0001",
-  "title": "Unreviewed AI-assisted output used in sensitive workflow",
-  "description": "AI-assisted output may be used operationally without human review in a sensitive context.",
-  "domain": "AI Governance",
-  "context_class": "AI_GOVERNANCE",
-  "risk_class": "HIGH",
-  "probability": 3,
-  "impact": 4,
-  "risk_score": 12,
-  "policy_reference": "HUMAN_OVERSIGHT_MODEL",
-  "decision": "ESCALATE",
-  "human_oversight": "REQUIRED",
-  "mitigation": "Require human review before operational use and record oversight state in EVT.",
-  "owner_role": "REVIEWER",
-  "evt_required": true,
-  "verification_required": true,
-  "audit_status": "REQUIRED",
-  "review_date": "2026-05-19",
-  "status": "OPEN"
-}
-
-
----
-
-14. Domain Categories
-
-Suggested risk domains:
-
-Domain	Description
-
-AI Governance	AI operation control, review and audit
-Cybersecurity	Defensive security, incident handling and hardening
-Data Handling	Personal, sensitive, confidential or secret data
-Public Sector	Administrative, institutional or public-service workflows
-Critical Infrastructure	Energy, telecom, cloud, transport, health or utility contexts
-Compliance	Audit, review, governance and regulatory preparation
-Repository Security	GitHub, code, dependencies and deployment hygiene
-Model Output	Accuracy, hallucination, unsafe output or overreliance
-Human Oversight	Review, approval, escalation and responsibility
-Dual-Use	Civil and strategic uses with misuse potential
-
-
-
----
-
-15. Context Classes
+6. Context Class Values
 
 Suggested context classes:
 
 Context	Description
 
 IDENTITY	IPR, EVT, lineage, runtime identity
-MATRIX	MATRIX framework and strategic infrastructure
-DOCUMENTAL	File analysis, document processing, summaries
-TECHNICAL	Code, architecture, APIs, implementation
-GITHUB	Repository files, commits, documentation
-EDITORIAL	Books, corpus, publication work
-STRATEGIC	B2B, B2G, institutions, roadmap
-SECURITY	Defensive security, resilience and risk
-COMPLIANCE	Governance, audit, legal-technical alignment
-CRITICAL_INFRASTRUCTURE	High-impact infrastructure support
-AI_GOVERNANCE	AI policy, risk, oversight and audit
-GENERAL	Ordinary safe requests
+MATRIX	Infrastructure, European governance and strategic systems
+CORPUS	Corpus, DCTT, glossary and theoretical volumes
+APOKALYPSIS	Decay, exposure, threshold and civilizational analysis
+DOCUMENTAL	File analysis and document processing
+TECHNICAL	Code, APIs, architecture and implementation
+GITHUB	Repository files, commits and documentation
+EDITORIAL	Books, chapters, publication and corpus work
+STRATEGIC	B2B, B2G, institutions and roadmap
+SECURITY	Defensive security and resilience
+COMPLIANCE	Audit, policy and legal-technical alignment
+GOVERNANCE	Policy, risk, decision and fail-closed logic
+GENERAL	Ordinary safe request
 
 
 
 ---
 
-16. Common AI Governance Risks
+7. Intent Class Values
 
-risk_id	Risk	Default Risk Class	Default Decision
+Suggested intent classes:
 
-RISK-AI-001	AI output used without review	HIGH	ESCALATE
-RISK-AI-002	Unknown risk treated as low risk	HIGH	BLOCK or ESCALATE
-RISK-AI-003	Model output treated as final authority	HIGH	ESCALATE
-RISK-AI-004	Missing human oversight state	MEDIUM	AUDIT
-RISK-AI-005	Missing EVT for sensitive operation	HIGH	AUDIT or ESCALATE
-RISK-AI-006	Fabricated compliance claim	PROHIBITED	BLOCK
-RISK-AI-007	Policy boundary bypass	HIGH	ESCALATE
-RISK-AI-008	Failure to distinguish draft from final output	MEDIUM	AUDIT
+Intent	Meaning
+
+ASK	Ordinary explanation
+WRITE	Generate new text
+REWRITE	Improve or transform existing text
+ANALYZE	Analyze a document, system, claim or code
+SUMMARIZE	Produce summary
+CODE	Generate, review or refactor code
+GITHUB	Prepare repository files, commits or documentation
+GOVERNANCE	Work on policy, risk, decision or control logic
+SECURITY	Defensive security work
+COMPLIANCE	Compliance-oriented mapping or documentation
+STRATEGIC	B2B, B2G or institutional positioning
+EDITORIAL	Book, chapter, corpus or publication work
+VERIFY	Inspect status, evidence, EVT or runtime behavior
+PROHIBITED	Unsafe or outside scope
+UNKNOWN	Cannot be safely classified
 
 
-
----
-
-17. Common Cybersecurity Risks
-
-risk_id	Risk	Default Risk Class	Default Decision
-
-RISK-SEC-001	Request may enable offensive cyber activity	PROHIBITED	BLOCK
-RISK-SEC-002	Secrets exposed in prompt or logs	CRITICAL	BLOCK or ESCALATE
-RISK-SEC-003	Incident report contains sensitive infrastructure details	HIGH	AUDIT or ESCALATE
-RISK-SEC-004	Vulnerability remediation request includes exploit details	HIGH	DEGRADE or ESCALATE
-RISK-SEC-005	Unauthorized target activity	PROHIBITED	BLOCK
-RISK-SEC-006	Unsafe file upload or unsupported file type	HIGH	BLOCK or DEGRADE
-RISK-SEC-007	Dependency risk not reviewed	MEDIUM	AUDIT
-RISK-SEC-008	Error logs expose sensitive data	HIGH	ESCALATE
-
+Unknown intent in a sensitive context must trigger escalation, degradation or blocking.
 
 
 ---
 
-18. Common Data Handling Risks
+8. Risk Class Values
 
-risk_id	Risk	Default Risk Class	Default Decision
+Use the following risk classes.
 
-RISK-DATA-001	Personal data processed without need	HIGH	ESCALATE
-RISK-DATA-002	Confidential content exposed in public output	HIGH	BLOCK or DEGRADE
-RISK-DATA-003	Secret or credential submitted as content	CRITICAL	BLOCK
-RISK-DATA-004	Sensitive file logged unnecessarily	HIGH	ESCALATE
-RISK-DATA-005	Unsupported file treated as verified	MEDIUM	AUDIT
-RISK-DATA-006	Incomplete file visibility not disclosed	MEDIUM	AUDIT
-RISK-DATA-007	Public and internal EVT views not separated	HIGH	ESCALATE
-RISK-DATA-008	Large sensitive payload stored instead of reference	HIGH	DEGRADE or ESCALATE
+Risk Class	Meaning	Default Handling
+
+LOW	Ordinary safe request or low-impact documentation	ALLOW
+MEDIUM	Operationally relevant request requiring care or auditability	ALLOW or AUDIT
+HIGH	Sensitive, strategic or high-impact request	ESCALATE or DEGRADE
+CRITICAL	Strict review required before continuation	ESCALATE or BLOCK
+PROHIBITED	Unsafe, abusive, unlawful or outside scope	BLOCK
+UNKNOWN	Cannot be safely classified	ESCALATE or BLOCK
 
 
-
----
-
-19. Common Public-Sector Risks
-
-risk_id	Risk	Default Risk Class	Default Decision
-
-RISK-GOV-001	Public communication published without review	HIGH	ESCALATE
-RISK-GOV-002	Procurement support becomes final decision	HIGH	ESCALATE
-RISK-GOV-003	AI output affects public services without authority	CRITICAL	BLOCK or ESCALATE
-RISK-GOV-004	Institutional responsibility unclear	HIGH	ESCALATE
-RISK-GOV-005	Public-sector data handled without classification	HIGH	ESCALATE
-RISK-GOV-006	Audit trail missing for sensitive operation	HIGH	AUDIT or ESCALATE
-RISK-GOV-007	Hidden scoring or profiling	PROHIBITED	BLOCK
-RISK-GOV-008	Human review bypassed	HIGH	ESCALATE
-
+Unknown risk must never become automatic permission.
 
 
 ---
 
-20. Common Critical Infrastructure Risks
+9. Decision Values
 
-risk_id	Risk	Default Risk Class	Default Decision
+Use the following governance decisions.
 
-RISK-CI-001	AI used for direct infrastructure control	PROHIBITED	BLOCK
-RISK-CI-002	Operational recommendation without authorized review	CRITICAL	ESCALATE
-RISK-CI-003	Sensitive topology exposed	HIGH	DEGRADE or ESCALATE
-RISK-CI-004	Incident documentation lacks evidence references	HIGH	AUDIT
-RISK-CI-005	Continuity plan used without operational validation	HIGH	ESCALATE
-RISK-CI-006	Human authority unclear	HIGH	ESCALATE
-RISK-CI-007	Security-sensitive infrastructure request	HIGH	AUDIT or ESCALATE
-RISK-CI-008	Unknown risk in critical context	CRITICAL	BLOCK or ESCALATE
+Decision	Meaning
+
+ALLOW	Operation may proceed
+BLOCK	Operation is prohibited or unsafe
+ESCALATE	Human review or authority required
+DEGRADE	Limited safe response only
+AUDIT	Operation should be recorded or reviewed
+NOOP	No operational action taken
 
 
-
----
-
-21. Common Repository Risks
-
-risk_id	Risk	Default Risk Class	Default Decision
-
-RISK-REPO-001	Secret committed to repository	CRITICAL	BLOCK or ESCALATE
-RISK-REPO-002	Unsafe dependency added	MEDIUM	AUDIT
-RISK-REPO-003	Governance document removed or contradicted	HIGH	ESCALATE
-RISK-REPO-004	Fail-closed logic weakened	HIGH	ESCALATE
-RISK-REPO-005	Offensive functionality introduced	PROHIBITED	BLOCK
-RISK-REPO-006	EVT compatibility removed	HIGH	ESCALATE
-RISK-REPO-007	API route exposes internal metadata	HIGH	AUDIT or ESCALATE
-RISK-REPO-008	File upload validation missing	HIGH	ESCALATE
-
+The decision must match the risk class, policy and human oversight state.
 
 
 ---
 
-22. Risk Mitigation Actions
+10. Human Oversight Values
 
-Suggested mitigation actions:
+Use the following oversight states.
 
-Mitigation	Description
+State	Meaning
 
-HUMAN_REVIEW	Require human review before use
-ESCALATION	Escalate to higher authority or specialist
-DEGRADATION	Provide limited safe output only
-BLOCKING	Refuse or prevent operation
-DATA_MINIMIZATION	Reduce or remove sensitive data
-REDACTION	Remove sensitive content from output
-EVT_RECORD	Generate event trace
-AUDIT_REVIEW	Require audit review
-POLICY_UPDATE	Update policy or governance document
-SECURITY_REVIEW	Require technical security review
-LEGAL_REVIEW	Require legal review
-DPO_REVIEW	Require data protection review
-VERIFICATION	Require verification before use
-TESTING	Require technical testing before deployment
-DOCUMENTATION	Add documentation or usage boundary
+NOT_REQUIRED	Ordinary safe operation
+RECOMMENDED	Human review useful but not mandatory
+REQUIRED	Human review required before continuation
+COMPLETED	Human review completed
+REJECTED	Human review rejected the operation
+ESCALATED	Further authority or specialized review required
 
+
+Human oversight must be required for high-impact or sensitive operations.
 
 
 ---
 
-23. Risk Status Values
+11. Audit Status Values
+
+Suggested audit statuses:
+
+Audit Status	Meaning
+
+NOT_REQUIRED	Audit not required
+READY	Available for audit
+REQUIRED	Audit required before continuation
+REVIEWED	Reviewed by authorized human or process
+DISPUTED	Event or operation is contested
+LOCKED	Record is closed against mutation
+REJECTED	Record is not accepted as valid evidence
+
+
+Audit status is separate from verification status.
+
+
+---
+
+12. Risk Status Values
+
+Suggested risk status values:
 
 Status	Meaning
 
-OPEN	Risk identified and not yet resolved
+OPEN	Risk identified and still active
 MITIGATED	Mitigation applied
-ACCEPTED	Risk accepted by responsible authority
-ESCALATED	Risk sent to higher authority
-REJECTED	Risk handling rejected
-CLOSED	Risk closed after review
-SUPERSEDED	Replaced by a later risk entry
-MONITORING	Risk remains under observation
+ACCEPTED	Risk accepted by responsible owner
+ESCALATED	Risk sent to higher authority or review
+BLOCKED	Operation stopped because of risk
+CLOSED	Risk resolved or no longer applicable
+SUPERSEDED	Replaced by a newer risk entry
 
 
-Risk closure should not erase the original risk entry.
+Risk closure must be justified.
 
-Corrections and updates should preserve traceability.
-
-
----
-
-24. Example Risk Register
-
-risk_id	title	domain	context_class	risk_class	probability	impact	risk_score	decision	human_oversight	mitigation	evt_required	audit_status	status
-
-RISK-AI-001	AI output used without review	AI Governance	AI_GOVERNANCE	HIGH	3	4	12	ESCALATE	REQUIRED	HUMAN_REVIEW	true	REQUIRED	OPEN
-RISK-SEC-002	Secrets exposed in prompt	Cybersecurity	SECURITY	CRITICAL	2	5	10	BLOCK	ESCALATED	REDACTION, SECURITY_REVIEW	true	REQUIRED	OPEN
-RISK-DATA-006	Incomplete file visibility not disclosed	Data Handling	DOCUMENTAL	MEDIUM	3	3	9	AUDIT	RECOMMENDED	DOCUMENTATION	true	READY	OPEN
-RISK-CI-008	Unknown risk in critical context	Critical Infrastructure	CRITICAL_INFRASTRUCTURE	CRITICAL	3	5	15	ESCALATE	REQUIRED	ESCALATION	true	REQUIRED	OPEN
-RISK-REPO-004	Fail-closed logic weakened	Repository Security	GITHUB	HIGH	2	5	10	ESCALATE	REQUIRED	SECURITY_REVIEW	true	REQUIRED	OPEN
-
+Do not close sensitive risks without a recorded reason.
 
 
 ---
 
-25. EVT Linkage
+13. MATRIX Risk Categories
 
-Each significant risk should be linkable to an EVT record.
+MATRIX risks usually involve operational infrastructure, institutions, cybersecurity, B2B, B2G, cloud, data, energy or critical systems.
 
-Example:
+Common MATRIX risk categories:
+
+Category	Example
+
+AI governance risk	AI output used without policy, risk classification or oversight
+Institutional risk	Public-sector output used without review
+Cybersecurity risk	Defensive analysis drifting into offensive detail
+Critical infrastructure risk	Analysis used as operational instruction without authority
+Data governance risk	Sensitive data stored or exposed unnecessarily
+Cloud governance risk	Architecture creates unclear responsibility
+B2B risk	Enterprise claim overstates product maturity
+B2G risk	Institutional message implies certification or official adoption
+Compliance risk	Documentation is mistaken for legal certification
+Strategic risk	Public positioning exceeds validated capability
+
+
+Default MATRIX handling:
+
+Risk Level	Handling
+
+LOW	ALLOW
+MEDIUM	ALLOW or AUDIT
+HIGH	ESCALATE or DEGRADE
+CRITICAL	ESCALATE or BLOCK
+PROHIBITED	BLOCK
+
+
+
+---
+
+14. CORPUS Risk Categories
+
+CORPUS risks usually involve theoretical claims, editorial transformation, internal conceptual coherence and external interpretation.
+
+Common CORPUS risk categories:
+
+Category	Example
+
+Conceptual drift	Canonical terminology used inconsistently
+External claim risk	Internal theory presented as external factual proof
+Legal authority risk	Corpus language mistaken for legal certification
+Scientific authority risk	Internal framework presented as scientific validation without review
+Editorial continuity risk	Volume structure loses canonical sequence
+Glossary risk	Canonical terms altered without trace
+Public communication risk	Theoretical language misunderstood outside context
+Coercive misuse risk	Conceptual framing used to justify harm or coercion
+
+
+Default Corpus handling:
+
+Risk Level	Handling
+
+LOW	ALLOW
+MEDIUM	AUDIT
+HIGH	ESCALATE
+CRITICAL	ESCALATE or BLOCK
+PROHIBITED	BLOCK
+
+
+
+---
+
+15. APOKALYPSIS Risk Categories
+
+APOKALYPSIS risks usually involve historical, cultural, political or social analysis.
+
+Common APOKALYPSIS risk categories:
+
+Category	Example
+
+Current factual claim risk	Current events used without verification
+Political targeting risk	Analysis becomes targeted against a person or group
+Incitement risk	Text encourages unlawful action
+Dehumanization risk	Group is described in degrading or extremist terms
+Destabilization risk	Analysis becomes operational planning for disruption
+Public communication risk	Historical threshold language misunderstood as instruction
+Coercive misuse risk	Theoretical framing used to justify coercion
+Editorial continuity risk	Volume structure loses threshold logic
+
+
+Default APOKALYPSIS handling:
+
+Risk Level	Handling
+
+LOW	ALLOW
+MEDIUM	AUDIT
+HIGH	ESCALATE or DEGRADE
+CRITICAL	ESCALATE or BLOCK
+PROHIBITED	BLOCK
+
+
+
+---
+
+16. Multi-Domain Risk Categories
+
+MULTI_DOMAIN risks affect the whole ecosystem.
+
+Common multi-domain risks:
+
+Category	Example
+
+System coherence risk	README, architecture, governance and manifest diverge
+Domain collapse risk	MATRIX, CORPUS and APOKALYPSIS are merged without distinction
+Runtime governance risk	Policy, risk or decision logic is bypassed
+Security boundary risk	Defensive scope becomes ambiguous
+Compliance claim risk	Prototype is presented as certified product
+EVT continuity risk	Events lose project-domain metadata
+Public positioning risk	Strategic claims exceed evidence
+Human accountability risk	AI output presented as final authority
+Repository integrity risk	Documentation and code no longer match
+
+
+Default MULTI_DOMAIN handling:
+
+Risk Level	Handling
+
+LOW	ALLOW
+MEDIUM	AUDIT
+HIGH	ESCALATE
+CRITICAL	ESCALATE or BLOCK
+PROHIBITED	BLOCK
+
+
+
+---
+
+17. Mitigation Catalogue
+
+Use the following mitigation patterns.
+
+Risk Type	Mitigation
+
+Unclear domain	Classify MATRIX, CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN before proceeding
+Unclear policy	Escalate or degrade until policy is defined
+Unknown risk	Escalate or block in sensitive contexts
+Sensitive data	Minimize, redact, hash or avoid storage
+Public-sector use	Require human review and audit status
+Critical infrastructure	Require specialized review and avoid operational instructions
+Defensive security	Keep output defensive and non-offensive
+Offensive interpretation	Block or redirect to safe defensive framing
+Legal claim	Add non-certification statement and require legal review
+Compliance claim	State orientation only, not certification
+Editorial drift	Align with canonical terminology and record changes
+Current factual claim	Verify with current sources before publication
+Strategic exaggeration	Limit claims to demonstrated capability
+EVT missing	Generate EVT or mark operation as incomplete
+Review missing	Escalate, degrade or block depending on risk
+
+
+
+---
+
+18. Risk Record Template
+
+Use this template for detailed risk records.
 
 {
-  "risk_id": "RISK-AI-001",
-  "evt": "EVT-20260429-230000-0001",
-  "prev": "EVT-20260429-225900-0000",
-  "risk_class": "HIGH",
-  "decision": "ESCALATE",
-  "human_oversight": "REQUIRED",
-  "audit_status": "REQUIRED"
+  "risk_id": "RISK-0001",
+  "created_at": "2026-05-03T15:30:00+02:00",
+  "updated_at": "2026-05-03T15:30:00+02:00",
+  "project_domain": "MATRIX",
+  "context_class": "SECURITY",
+  "intent_class": "ANALYZE",
+  "risk_description": "Defensive cybersecurity analysis may expose sensitive operational details if not constrained.",
+  "risk_class": "MEDIUM",
+  "policy_reference": "DEFENSIVE_SECURITY_ONLY",
+  "human_oversight": "RECOMMENDED",
+  "decision": "AUDIT",
+  "mitigation": [
+    "Keep output defensive.",
+    "Avoid exploit deployment detail.",
+    "Require review before external use."
+  ],
+  "evt_required": true,
+  "evt": null,
+  "audit_status": "READY",
+  "owner": "HBCE Research",
+  "status": "OPEN"
 }
 
-EVT linkage supports reconstruction.
-
-A risk without traceability may be difficult to audit.
-
 
 ---
 
-26. Risk Review Workflow
+19. Risk Review Workflow
 
-Recommended workflow:
+Suggested workflow:
 
 Identify risk
-Classify domain
-Assign context class
-Estimate probability
-Estimate impact
-Calculate risk score
-Assign risk class
-Apply policy
-Determine human oversight
-Select runtime decision
-Define mitigation
-Assign owner role
-Generate or link EVT
-Set audit status
-Schedule review
-Update status
+-> assign risk ID
+-> classify project domain
+-> classify context
+-> classify intent
+-> assign risk class
+-> map policy
+-> assign human oversight
+-> produce decision
+-> define mitigation
+-> determine EVT requirement
+-> assign owner
+-> set audit status
+-> review periodically
+-> close, mitigate, escalate or block
 
-Risk review should be iterative.
-
-Risk entries may evolve, but historical records should not be silently erased.
+Risk review should happen before sensitive operations proceed.
 
 
 ---
 
-27. Risk Register Checklist
+20. EVT Linkage
 
-Before closing a risk entry, review:
+Risk entries should link to EVT records when the risk affects a relevant operation.
 
-Is the risk clearly described?
-Is the domain defined?
-Is the context class defined?
+Recommended EVT fields for risk:
+
+{
+  "risk": {
+    "risk_id": "RISK-0001",
+    "risk_class": "MEDIUM",
+    "risk_status": "OPEN",
+    "mitigation_status": "DEFINED"
+  }
+}
+
+A risk-linked EVT should also include:
+
+project domain;
+
+context class;
+
+policy reference;
+
+human oversight state;
+
+governance decision;
+
+audit status;
+
+verification status.
+
+
+
+---
+
+21. Risk and Fail-Closed
+
+Fail-closed must activate when:
+
+risk is unknown in a sensitive context;
+
+risk is prohibited;
+
+policy cannot be applied;
+
+human review is required but absent;
+
+mitigation is missing for high-risk operations;
+
+authority is unclear;
+
+project domain cannot be classified;
+
+the operation may enable abuse;
+
+the operation may expose secrets;
+
+the operation may affect real systems without authorization.
+
+
+Fail-closed rule:
+
+Uncertainty in sensitive operations does not authorize execution.
+
+
+---
+
+22. Risk Acceptance
+
+Some risks may be accepted by a responsible owner.
+
+Risk acceptance requires:
+
+identified owner;
+
+risk class;
+
+reason for acceptance;
+
+mitigation status;
+
+review timestamp;
+
+limitations;
+
+audit note;
+
+EVT reference where relevant.
+
+
+Risk acceptance must not be used for prohibited operations.
+
+Prohibited risk cannot be accepted.
+
+It must be blocked.
+
+
+---
+
+23. Risk Closure
+
+A risk may be closed when:
+
+mitigation has been applied;
+
+operation was blocked;
+
+operation was cancelled;
+
+risk no longer applies;
+
+risk was superseded by a newer entry;
+
+review determined the risk was invalid.
+
+
+Closure record should include:
+
+closure reason;
+
+closure date;
+
+owner;
+
+reviewer when applicable;
+
+related EVT;
+
+final audit status.
+
+
+Do not silently delete closed risks.
+
+Historical risk records support auditability.
+
+
+---
+
+24. Risk Register Checklist
+
+Before completing a sensitive operation, check:
+
+Is there a risk entry?
+
+Is the risk ID stable?
+
+Is the project domain classified?
+
+Is the context class classified?
+
+Is the intent class classified?
+
 Is the risk class assigned?
-Are probability and impact estimated?
-Is the decision clear?
-Is human oversight defined?
-Is mitigation documented?
-Is the responsible role assigned?
-Is EVT linkage required?
-Is verification required?
-Is audit status clear?
-Is review date defined?
-Is closure justified?
 
+Is policy mapped?
 
----
+Is human oversight assigned?
 
-28. Deployment Risk Checklist
+Is the decision consistent with the risk?
 
-Before deploying AI JOKER-C2 in any serious environment, review:
+Is mitigation defined?
 
-Are authentication and authorization implemented?
-Are secrets protected?
-Are API routes validated?
-Is file handling controlled?
-Is risk classification implemented?
-Is policy evaluation implemented?
-Is human oversight implemented?
-Is fail-closed behavior implemented?
-Is EVT generation implemented?
-Is ledger continuity implemented?
-Is verification available?
-Are logs safe?
-Are prohibited uses blocked?
-Is legal review required?
-Is cybersecurity review required?
-Is data protection review required?
-Is operational review required?
+Is EVT required?
+
+Is audit status assigned?
+
+Is owner assigned?
+
+Is fail-closed triggered?
+
+Is the risk accepted, mitigated, escalated, blocked or open?
+
 
 
 ---
 
-29. Risk Register Maturity Levels
+25. Example Risk Entries
 
-Level	Description
+Example 1 — B2G Strategic Positioning
 
-R0	No risk register exists
-R1	Risk template documented
-R2	Common risk categories documented
-R3	Risk entries linked to governance decisions
-R4	Risk entries linked to EVT records
-R5	Mitigations and owner roles tracked
-R6	Review workflow implemented
-R7	Risk register connected to dashboard
-R8	Risk register reviewed by external stakeholders
+{
+  "risk_id": "MATRIX-RISK-0001",
+  "project_domain": "MATRIX",
+  "context_class": "STRATEGIC",
+  "intent_class": "WRITE",
+  "risk_description": "B2G document may be interpreted as official institutional endorsement.",
+  "risk_class": "MEDIUM",
+  "policy_reference": "B2G_ORIENTATION_NOT_CERTIFICATION",
+  "human_oversight": "RECOMMENDED",
+  "decision": "AUDIT",
+  "mitigation": [
+    "Add non-certification statement.",
+    "Avoid implying adoption.",
+    "Require review before external submission."
+  ],
+  "evt_required": true,
+  "audit_status": "READY",
+  "owner": "HBCE Research",
+  "status": "OPEN"
+}
 
+Example 2 — Corpus Editorial Claim
 
-AI JOKER-C2 should move from documentation to executable risk governance.
+{
+  "risk_id": "CORPUS-RISK-0001",
+  "project_domain": "CORPUS_ESOTEROLOGIA_ERMETICA",
+  "context_class": "EDITORIAL",
+  "intent_class": "REWRITE",
+  "risk_description": "Internal theoretical language may be mistaken for external scientific certification.",
+  "risk_class": "LOW",
+  "policy_reference": "INTERNAL_CONCEPTUAL_FRAMEWORK",
+  "human_oversight": "NOT_REQUIRED",
+  "decision": "ALLOW",
+  "mitigation": [
+    "Preserve distinction between internal theory and external factual claims."
+  ],
+  "evt_required": false,
+  "audit_status": "NOT_REQUIRED",
+  "owner": "HBCE Research",
+  "status": "OPEN"
+}
+
+Example 3 — Apokalypsis Current Events
+
+{
+  "risk_id": "APOKALYPSIS-RISK-0001",
+  "project_domain": "APOKALYPSIS",
+  "context_class": "EDITORIAL",
+  "intent_class": "WRITE",
+  "risk_description": "Current political claims may require verification before publication.",
+  "risk_class": "MEDIUM",
+  "policy_reference": "CURRENT_FACTUAL_CLAIMS_REQUIRE_VERIFICATION",
+  "human_oversight": "RECOMMENDED",
+  "decision": "AUDIT",
+  "mitigation": [
+    "Verify current factual claims.",
+    "Avoid targeted incitement.",
+    "Maintain analytical framing."
+  ],
+  "evt_required": true,
+  "audit_status": "READY",
+  "owner": "HBCE Research",
+  "status": "OPEN"
+}
+
+Example 4 — Prohibited Cyber Request
+
+{
+  "risk_id": "MATRIX-RISK-0002",
+  "project_domain": "MATRIX",
+  "context_class": "SECURITY",
+  "intent_class": "PROHIBITED",
+  "risk_description": "Request would enable unauthorized offensive activity.",
+  "risk_class": "PROHIBITED",
+  "policy_reference": "NON_OFFENSIVE_BOUNDARY",
+  "human_oversight": "REJECTED",
+  "decision": "BLOCK",
+  "mitigation": [
+    "Refuse prohibited content.",
+    "Redirect to defensive security guidance if appropriate."
+  ],
+  "evt_required": true,
+  "audit_status": "READY",
+  "owner": "HBCE Research",
+  "status": "BLOCKED"
+}
 
 
 ---
 
-30. Implementation Targets
+26. Implementation Targets
 
-Suggested files:
+Suggested implementation files:
 
 lib/risk-engine.ts
-lib/risk-register.ts
-lib/runtime-decision.ts
+lib/policy-engine.ts
+lib/project-domain-classifier.ts
 lib/human-oversight.ts
+lib/runtime-decision.ts
 lib/evt.ts
-docs/RISK_REGISTER_TEMPLATE.md
+lib/evt-ledger.ts
 
-Suggested future fields:
+Suggested future data file:
 
-risk_id
-domain
-context_class
-risk_class
-probability
-impact
-risk_score
-decision
-human_oversight
-mitigation
-owner_role
-evt_required
-verification_required
-audit_status
-status
+registry/risk-register.json
 
 Suggested future route:
 
 app/api/risk/route.ts
 
-
----
-
-31. Minimal Type Model
-
-Suggested TypeScript model:
+Suggested TypeScript type:
 
 export type RiskClass =
   | "LOW"
@@ -672,86 +794,132 @@ export type RiskStatus =
   | "MITIGATED"
   | "ACCEPTED"
   | "ESCALATED"
-  | "REJECTED"
+  | "BLOCKED"
   | "CLOSED"
-  | "SUPERSEDED"
-  | "MONITORING";
-
-export type RiskDecision =
-  | "ALLOW"
-  | "BLOCK"
-  | "ESCALATE"
-  | "DEGRADE"
-  | "AUDIT"
-  | "NOOP";
+  | "SUPERSEDED";
 
 export type RiskRegisterEntry = {
-  risk_id: string;
-  title: string;
-  description: string;
-  domain: string;
-  context_class: string;
-  risk_class: RiskClass;
-  probability: 1 | 2 | 3 | 4 | 5;
-  impact: 1 | 2 | 3 | 4 | 5;
-  risk_score: number;
-  policy_reference: string;
-  decision: RiskDecision;
-  human_oversight: string;
-  mitigation: string;
-  owner_role: string;
-  evt_required: boolean;
-  verification_required: boolean;
-  audit_status: string;
-  review_date?: string;
+  riskId: string;
+  createdAt: string;
+  updatedAt: string;
+  projectDomain: string;
+  contextClass: string;
+  intentClass: string;
+  riskDescription: string;
+  riskClass: RiskClass;
+  policyReference: string;
+  humanOversight: string;
+  decision: string;
+  mitigation: string[];
+  evtRequired: boolean;
+  evt?: string | null;
+  auditStatus: string;
+  owner: string;
   status: RiskStatus;
 };
 
-This type model can be refined during implementation.
+
+---
+
+27. Risk Register Invariants
+
+The following invariants must remain stable:
+
+1. Every sensitive operation should have a risk class.
+
+
+2. Unknown risk in sensitive contexts must trigger escalation or blocking.
+
+
+3. Prohibited risk cannot be accepted.
+
+
+4. Project-domain classification must precede risk evaluation.
+
+
+5. MATRIX risks require special care in infrastructure, security and B2G contexts.
+
+
+6. CORPUS risks require distinction between internal theory and external claims.
+
+
+7. APOKALYPSIS risks require non-coercive and non-inciting framing.
+
+
+8. MULTI_DOMAIN risks affect the whole ecosystem.
+
+
+9. Human oversight must match risk level.
+
+
+10. EVT should record significant risk decisions.
+
+
+11. Audit status must be explicit for sensitive risks.
+
+
+12. Mitigation must be defined for medium, high and critical risks.
+
+
+13. Risk records must not be silently deleted.
+
+
+14. Fail-closed must activate when risk cannot be safely classified.
+
+
+15. Compliance support is not compliance certification.
+
+
 
 
 ---
 
-32. Non-Certification Statement
+28. Final Risk Formula
 
-AI JOKER-C2 is a governance-oriented architecture and operational prototype.
+Risk is not an opinion.
+Risk is a classified operational condition.
 
-This risk register template does not create legal, regulatory, cybersecurity, public-sector, financial, medical or critical infrastructure certification.
+Expanded:
 
-Any real-world deployment requires review by authorized professionals and responsible organizations.
+Project Domain -> Context -> Intent -> Policy -> Risk Class -> Human Oversight -> Decision -> Mitigation -> EVT -> Audit
 
-Risk classification must be adapted to the deployment context.
+Project formula:
 
+MATRIX = infrastructure risk.
+CORPUS ESOTEROLOGIA ERMETICA = conceptual and editorial risk.
+APOKALYPSIS = historical-threshold and social-analysis risk.
+AI JOKER-C2 = governed runtime risk control.
 
----
+Operational rule:
 
-33. Final Risk Register Formula
-
-Risk without classification becomes opacity.
-Risk with identity, policy, oversight, EVT and verification becomes governable.
-
-Operational formula:
-
-Risk Governance =
-Domain + Context + Probability + Impact + Decision + Oversight + Mitigation + EVT + Audit
+No risk classification, no sensitive execution.
 
 
 ---
 
-34. Status
+29. Status
 
-Document status: active risk register template
-Project: AI JOKER-C2
-Framework: MATRIX
-Infrastructure: HBCE
-Identity layer: IPR
-Trace layer: EVT
-Governance principle: fail-closed
-Security boundary: defensive and non-offensive
-Business orientation: B2B, B2G, institutional, AI governance, defensive security and critical infrastructure
-Repository: hbce-ai-joker-c2
-Maintainer: HBCE Research
-Organization: HERMETICUM B.C.E. S.r.l.
-Territorial anchor: Torino, Italy, Europe
-Year: 2026
+Field	Value
+
+Document	docs/RISK_REGISTER_TEMPLATE.md
+Status	Active risk register template
+Project	AI JOKER-C2
+Ecosystem	HERMETICUM B.C.E.
+Connected domains	MATRIX, CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Risk classes	LOW, MEDIUM, HIGH, CRITICAL, PROHIBITED, UNKNOWN
+Risk statuses	OPEN, MITIGATED, ACCEPTED, ESCALATED, BLOCKED, CLOSED, SUPERSEDED
+Infrastructure	HBCE
+Identity layer	IPR
+Trace layer	EVT
+Governance principle	Fail-closed
+Security boundary	Defensive and non-offensive
+Compliance status	Orientation only, not certification
+Repository	hbce-ai-joker-c2
+Maintainer	HBCE Research
+Organization	HERMETICUM B.C.E. S.r.l.
+Territorial anchor	Torino, Italy, Europe
+Year	2026
+
+
+
 
