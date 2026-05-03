@@ -1,58 +1,156 @@
 {
+  "schema": "HBCE-AI-JOKER-C2-SYSTEM-MANIFEST",
+  "schema_version": "1.1.0",
   "name": "AI JOKER-C2",
-  "version": "1.0.0",
-  "org": "HERMETICUM B.C.E. S.r.l.",
-  "research": "HBCE Research",
-  "classification": "IDENTITY_BOUND_OPERATIONAL_NODE",
-  "status": "OPERATIONAL_PILOT",
-  "location": {
+  "version": "1.1.0",
+  "status": "OPERATIONAL_PROTOTYPE",
+  "classification": "IDENTITY_BOUND_COGNITIVE_COMMAND_RUNTIME",
+  "organization": "HERMETICUM B.C.E. S.r.l.",
+  "research_signature": "HBCE Research",
+  "territorial_anchor": {
     "city": "Torino",
     "country": "Italy",
-    "scope": "Matrix Europa"
+    "scope": "Europe",
+    "strategic_axis": "Torino-Brussels"
   },
-  "purpose": "Governed operational node for identity-bound runtime execution, EVT continuity, verifiable evidence, fail-closed control, and derivative-aware legitimacy.",
-  "stack": {
+  "public_definition": "AI JOKER-C2 is the identity-bound cognitive command runtime of the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS through governed AI execution, EVT continuity, evidence generation and fail-closed verification.",
+  "canonical_formula": {
+    "matrix": "Operational infrastructure",
+    "corpus_esoterologia_ermetica": "Disciplinary grammar of operational reality",
+    "apokalypsis": "Historical threshold analysis",
+    "ai_joker_c2": "Cognitive command runtime"
+  },
+  "ecosystem": {
+    "name": "HERMETICUM B.C.E.",
+    "primary_domains": [
+      "MATRIX",
+      "CORPUS_ESOTEROLOGIA_ERMETICA",
+      "APOKALYPSIS"
+    ],
+    "runtime": "AI_JOKER_C2",
+    "governance_core": "HBCE-CORE-v3",
     "identity_layer": "IPR",
-    "derivation_layer": "BIOCYBERNETIC_DERIVATION_LAYER",
-    "governance_layer": "HBCE",
-    "runtime_layer": "JOKER_C2",
+    "trace_layer": "EVT",
     "continuity_layer": "TRAC_EVT",
-    "ledger_layer": "APPEND_ONLY_LEDGER",
-    "verification_layer": "HASH_SIGNATURE_VERIFICATION",
-    "federation_layer": "MATRIX_EUROPA_NODE_TOPOLOGY"
+    "verification_layer": "HASH_SIGNATURE_VERIFICATION"
   },
   "identity": {
-    "human_root": {
+    "runtime_entity": {
+      "entity": "AI_JOKER",
+      "system": "AI_JOKER-C2",
+      "ipr": "IPR-AI-0001",
+      "checkpoint": "EVT-0014-AI",
+      "type": "PRIMARY_AI_OPERATIONAL_RUNTIME",
+      "state": "LOCKED",
+      "role": "Cognitive and operational cybernetic runtime"
+    },
+    "human_origin": {
       "entity": "MANUEL_COLETTA",
       "ipr": "IPR-3",
-      "type": "PRIMARY_HUMAN_RECORD",
+      "type": "PRIMARY_HUMAN_ORIGIN",
       "status": "ACTIVE_COMPLETE"
     },
-    "ai_root": {
-      "entity": "AI_JOKER",
-      "ipr": "IPR-AI-0001",
-      "type": "PRIMARY_AI_RECORD",
-      "status": "LOCKED"
+    "organization": {
+      "legal_name": "HERMETICUM B.C.E. S.r.l.",
+      "research_signature": "HBCE Research"
+    }
+  },
+  "project_domains": {
+    "matrix": {
+      "id": "MATRIX",
+      "name": "MATRIX",
+      "type": "OPERATIONAL_INFRASTRUCTURE_DOMAIN",
+      "status": "ACTIVE",
+      "function": "Defines the operational, institutional and technological infrastructure for verifiable AI governance, European continuity, B2B and B2G positioning, cloud, data, energy, security and strategic systems.",
+      "runtime_question": "How can Europe build verifiable operational systems for AI, governance, data, energy, security and institutional continuity?",
+      "primary_contexts": [
+        "MATRIX",
+        "STRATEGIC",
+        "TECHNICAL",
+        "GOVERNANCE",
+        "COMPLIANCE",
+        "SECURITY",
+        "GITHUB"
+      ],
+      "outputs": [
+        "governance_schemas",
+        "technical_architecture",
+        "institutional_documentation",
+        "runtime_diagnostics",
+        "b2b_b2g_positioning",
+        "evidence_records",
+        "deployment_plans"
+      ]
     },
-    "derived_branch": {
-      "entity": "AI_JOKER_DERIVATIVE_01",
-      "ipr": "IPR-AI-DER-0001",
-      "type": "BIOCYBERNETIC_DERIVATIVE",
-      "status": "LOCKED",
-      "layer": "BIOCYBERNETIC_DERIVATION_LAYER",
-      "recognition_rule": "Valid only under identity binding, policy validation, runtime authorization, EVT continuity, evidence generation, and verification."
+    "corpus_esoterologia_ermetica": {
+      "id": "CORPUS_ESOTEROLOGIA_ERMETICA",
+      "name": "CORPUS ESOTEROLOGIA ERMETICA",
+      "type": "DISCIPLINARY_GRAMMAR_DOMAIN",
+      "status": "ACTIVE",
+      "function": "Defines the conceptual grammar of operational reality through Decisione, Costo, Traccia and Tempo, preserving canonical terminology, volume continuity and theoretical alignment.",
+      "runtime_question": "What is reality when it is treated as a verifiable sequence?",
+      "primary_contexts": [
+        "CORPUS",
+        "EDITORIAL",
+        "DOCUMENTAL",
+        "IDENTITY",
+        "THEORETICAL",
+        "GLOSSARY"
+      ],
+      "canonical_formula": "Decisione · Costo · Traccia · Tempo",
+      "outputs": [
+        "chapter_restructuring",
+        "canonical_glossary_alignment",
+        "volume_mapping",
+        "conceptual_continuity",
+        "editorial_refactoring",
+        "long_form_theoretical_writing"
+      ]
+    },
+    "apokalypsis": {
+      "id": "APOKALYPSIS",
+      "name": "APOKALYPSIS",
+      "type": "HISTORICAL_THRESHOLD_DOMAIN",
+      "status": "ACTIVE",
+      "function": "Applies the Corpus grammar and the MATRIX operational frame to the decadence, exposure and threshold condition of the cultural, political and social system.",
+      "runtime_question": "What happens when the cultural, political and social system continues to function while already losing its foundation?",
+      "primary_contexts": [
+        "APOKALYPSIS",
+        "EDITORIAL",
+        "HISTORICAL_ANALYSIS",
+        "CIVILIZATIONAL_ANALYSIS",
+        "DOCUMENTAL",
+        "CORPUS"
+      ],
+      "outputs": [
+        "historical_threshold_analysis",
+        "cultural_decay_mapping",
+        "political_exposure_mapping",
+        "social_system_diagnosis",
+        "cognitive_dislocation_analysis",
+        "volume_continuity",
+        "editorial_structure"
+      ]
     }
   },
   "runtime": {
     "mode": "FAIL_CLOSED",
+    "state_model": [
+      "OPERATIONAL",
+      "DEGRADED",
+      "BLOCKED",
+      "INVALID"
+    ],
     "sequence": [
       "IDENTITY",
       "INPUT",
+      "CONTEXT",
+      "PROJECT_DOMAIN",
       "INTENT",
       "POLICY",
       "RISK",
       "DECISION",
-      "EXECUTION",
+      "OUTPUT",
       "EVT",
       "LEDGER",
       "VERIFICATION",
@@ -61,13 +159,73 @@
     "decision_outputs": [
       "ALLOW",
       "BLOCK",
-      "ESCALATE"
+      "ESCALATE",
+      "DEGRADE",
+      "AUDIT"
     ],
-    "state_model": [
-      "OPERATIONAL",
-      "DEGRADED",
-      "BLOCKED",
-      "INVALID"
+    "default_behavior": {
+      "ordinary_safe_request": "ALLOW",
+      "documentation_request": "ALLOW",
+      "repository_documentation_request": "ALLOW",
+      "sensitive_operational_request": "ESCALATE",
+      "unclear_authority": "ESCALATE",
+      "unsafe_request": "BLOCK",
+      "prohibited_request": "BLOCK",
+      "unknown_risk": "ESCALATE"
+    }
+  },
+  "context_classes": [
+    "IDENTITY",
+    "MATRIX",
+    "CORPUS",
+    "APOKALYPSIS",
+    "DOCUMENTAL",
+    "TECHNICAL",
+    "GITHUB",
+    "EDITORIAL",
+    "STRATEGIC",
+    "SECURITY",
+    "COMPLIANCE",
+    "GOVERNANCE",
+    "GENERAL"
+  ],
+  "risk_classes": [
+    "LOW",
+    "MEDIUM",
+    "HIGH",
+    "CRITICAL",
+    "PROHIBITED",
+    "UNKNOWN"
+  ],
+  "policy": {
+    "principle": "Governance precedes sensitive execution.",
+    "allowed_uses": [
+      "AI governance",
+      "defensive cybersecurity analysis",
+      "critical infrastructure resilience documentation",
+      "institutional traceability",
+      "repository documentation",
+      "technical refactoring",
+      "document analysis",
+      "editorial continuity",
+      "strategic B2B and B2G positioning",
+      "evidence generation",
+      "verification support"
+    ],
+    "prohibited_uses": [
+      "offensive cyber operations",
+      "malware development",
+      "unauthorized access",
+      "credential theft",
+      "exploit deployment against real targets",
+      "persistence mechanisms",
+      "evasion of security tools",
+      "unlawful surveillance",
+      "autonomous targeting",
+      "sabotage",
+      "disinformation operations",
+      "coercive manipulation",
+      "repression of fundamental rights"
     ]
   },
   "evt": {
@@ -75,20 +233,38 @@
     "minimum_fields": [
       "evt",
       "prev",
-      "t",
+      "timestamp",
       "entity",
       "ipr",
-      "kind",
-      "state",
+      "runtime_state",
+      "project_domain",
+      "context_class",
+      "risk_class",
       "decision",
-      "anchors"
+      "operation",
+      "status",
+      "hash",
+      "verification"
     ],
     "rule": "No EVT, no continuity. No continuity, no trusted operational state."
+  },
+  "ledger": {
+    "mode": "APPEND_ONLY",
+    "correction_rule": "Corrections must be recorded as new events, not silent rewrites.",
+    "properties": [
+      "event_sequence",
+      "previous_event_reference",
+      "hash_linking",
+      "audit_metadata",
+      "verification_status"
+    ]
   },
   "evidence": {
     "mode": "STRUCTURED_OPERATIONAL_PROOF",
     "properties": [
       "identity_bound",
+      "context_bound",
+      "project_domain_bound",
       "evt_linked",
       "append_only",
       "hash_linked",
@@ -100,45 +276,103 @@
   "verification": {
     "levels": [
       "LOCAL",
+      "REPOSITORY",
       "FEDERATED",
       "PUBLIC_PROOF_SURFACE"
     ],
     "methods": [
       "HASH_VALIDATION",
       "SIGNATURE_VALIDATION",
-      "CHAIN_INTEGRITY_CHECK"
+      "CHAIN_INTEGRITY_CHECK",
+      "MANIFEST_VALIDATION",
+      "EVENT_RECONSTRUCTION"
     ]
   },
   "federation": {
     "node_id": "AI_JOKER_C2_NODE_TORINO_01",
-    "role": "FIRST_OPERATIONAL_MATRIX_EUROPA_NODE",
+    "role": "FIRST_OPERATIONAL_HBCE_RUNTIME_NODE",
     "ready": true,
     "future_scope": [
       "ITALY_TERRITORIAL_SCALING",
       "BRUSSELS_COORDINATION",
-      "EU_FEDERATED_TOPOLOGY"
+      "EU_FEDERATED_TOPOLOGY",
+      "B2B_DEPLOYMENT",
+      "B2G_DEPLOYMENT",
+      "AUDIT_NODE_DEPLOYMENT"
     ]
   },
   "security": {
     "posture": "FAIL_CLOSED",
     "principles": [
       "NO_VALIDATION_NO_EXECUTION",
+      "NO_CONTEXT_NO_ORIENTATION",
+      "NO_POLICY_NO_SENSITIVE_EXECUTION",
+      "NO_RISK_CLASSIFICATION_NO_SENSITIVE_OUTPUT",
       "NO_CONTINUITY_NO_TRUSTED_STATE",
       "NO_EVIDENCE_NO_OPERATIONAL_EXISTENCE",
       "NO_VERIFICATION_NO_RECOGNIZED_PERSISTENCE"
-    ]
+    ],
+    "scope": "DEFENSIVE_GOVERNANCE_AND_VERIFIABLE_OPERATIONAL_CONTINUITY"
   },
   "deployment": {
     "primary_target": "VERCEL",
     "runtime": "NODE_JS",
-    "requirements": [
-      "OPENAI_API_KEY",
+    "framework": "NEXT_JS",
+    "language": "TYPESCRIPT",
+    "required_environment_variables": [
+      "OPENAI_API_KEY"
+    ],
+    "optional_environment_variables": [
+      "JOKER_MODEL",
       "UPSTASH_REDIS_REST_URL",
       "UPSTASH_REDIS_REST_TOKEN",
       "JOKER_SIGN_PRIVATE_KEY",
       "JOKER_SIGN_PUBLIC_KEY",
       "NEXT_PUBLIC_BASE_URL"
+    ],
+    "public_routes": [
+      "/",
+      "/interface",
+      "/api/chat",
+      "/api/files"
+    ],
+    "recommended_future_routes": [
+      "/api/evt",
+      "/api/evidence",
+      "/api/verify",
+      "/api/signature",
+      "/api/network",
+      "/api/federation"
     ]
   },
-  "final_definition": "AI JOKER-C2 is an identity-bound operational node that integrates governed runtime, Biocybernetic Derivation Layer, EVT continuity, verifiable evidence, fail-closed execution, and federation-ready topology."
+  "documentation": {
+    "public_entry": "README.md",
+    "architecture": "ARCHITECTURE.md",
+    "governance": "GOVERNANCE.md",
+    "evt_protocol": "EVT_PROTOCOL.md",
+    "security": "SECURITY.md",
+    "compliance": "COMPLIANCE.md",
+    "dual_use_positioning": "DUAL_USE_STRATEGIC_POSITIONING.md",
+    "roadmap": "ROADMAP.md",
+    "protocol": "PROTOCOL.md"
+  },
+  "operational_invariants": [
+    "AI JOKER-C2 is not a generic chatbot.",
+    "AI JOKER-C2 is identity-bound.",
+    "MATRIX provides the operational infrastructure domain.",
+    "CORPUS ESOTEROLOGIA ERMETICA provides the disciplinary grammar domain.",
+    "APOKALYPSIS provides the historical threshold domain.",
+    "HBCE provides governance infrastructure.",
+    "IPR provides identity.",
+    "EVT provides event trace.",
+    "Ledger provides continuity.",
+    "Policy precedes sensitive execution.",
+    "Risk classification precedes sensitive output.",
+    "Fail-closed is mandatory in invalid or unsafe states.",
+    "Human accountability must be preserved.",
+    "Offensive, abusive or unlawful use is outside scope.",
+    "Corrections must be recorded as new events.",
+    "The model layer must not become the authority layer."
+  ],
+  "final_definition": "AI JOKER-C2 is the identity-bound cognitive command runtime that connects MATRIX, CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS inside the HERMETICUM B.C.E. ecosystem through governed AI execution, IPR identity, EVT continuity, evidence generation, verification and fail-closed control."
 }
