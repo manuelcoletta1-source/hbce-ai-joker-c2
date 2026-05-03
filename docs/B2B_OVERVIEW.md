@@ -1,4 +1,4 @@
-# AI JOKER-C2 B2B Overview
+## Governed AI Runtime for Enterprise Traceability, Audit and Operational Continuity
 
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.  
@@ -7,504 +7,750 @@ Torino, Italy, Europe
 
 ---
 
-## 1. Purpose
+## 1. Executive Summary
 
-This document presents AI JOKER-C2 for business-to-business use cases.
+AI JOKER-C2 is the identity-bound cognitive command runtime of the HERMETICUM B.C.E. ecosystem.
 
-AI JOKER-C2 is an identity-bound operational AI runtime built within the HBCE infrastructure and aligned with the MATRIX framework.
-
-It is designed for organizations that need AI-assisted operations to remain:
-
-- governable;
-- traceable;
-- policy-aware;
-- risk-classified;
-- auditable;
-- verifiable;
-- human-accountable;
-- fail-closed by design.
+For B2B environments, AI JOKER-C2 is positioned as a governed AI runtime for enterprises that need AI-assisted operations to be attributable, policy-aware, risk-classified, auditable, verifiable and fail-closed by design.
 
 AI JOKER-C2 is not a generic chatbot.
 
-It is a governed runtime for companies that need controlled AI interaction, operational continuity, audit-ready workflows and defensive digital resilience.
+It is a governance-oriented runtime that connects AI interaction with identity, project context, policy, risk, decision, event trace and verification.
+
+The core enterprise problem is simple:
+
+```txt
+Most AI interactions produce output.
+They do not automatically produce accountability.
+
+AI JOKER-C2 addresses this gap by transforming AI-assisted workflows into structured operational sequences.
+
+Identity -> Input -> Intent -> Context -> Project Domain -> Policy -> Risk -> Decision -> Execution -> EVT -> Ledger -> Verification -> Continuity
+
 
 ---
 
-## 2. Business Definition
+2. B2B Value Proposition
 
-AI JOKER-C2 can be described as:
+AI JOKER-C2 helps enterprises move from unstructured AI usage to governed AI-assisted operations.
 
-```txt
-A governed AI runtime for companies that need traceable, policy-aware and verifiable AI-assisted operations.
+The B2B value proposition is:
 
-Expanded:
+Transform AI-assisted work into identity-bound, project-aware, policy-checked, risk-classified and evidence-generating operational sequences.
 
-AI JOKER-C2 transforms AI use inside organizations from isolated prompts and outputs into identity-bound, risk-classified, event-traceable and auditable operational sequences.
+In enterprise terms, AI JOKER-C2 supports:
 
-The business value is not only productivity.
+controlled AI workflows;
 
-The business value is controlled productivity.
+audit-ready operational records;
 
-AI becomes useful without becoming invisible, ungoverned or operationally untraceable.
+defensive cybersecurity documentation;
+
+traceable document processing;
+
+policy-aware runtime decisions;
+
+human accountability;
+
+risk-based governance;
+
+compliance-oriented documentation;
+
+evidence generation;
+
+operational continuity;
+
+repository and software governance;
+
+B2B strategic documentation.
+
+
+The objective is not to replace human decision-making.
+
+The objective is to make AI-assisted operations more accountable, reviewable and reconstructable.
 
 
 ---
 
 3. Strategic Positioning
 
-AI JOKER-C2 sits between ordinary AI tools and enterprise governance requirements.
+AI JOKER-C2 is designed for companies that need to govern AI usage inside real operational environments.
 
-Ordinary AI Tool	AI JOKER-C2
+It is especially relevant for organizations working in:
 
-Produces outputs	Produces governed operational sequences
-Often untraceable	Generates EVT event traces
-Limited accountability	Binds operations to identity and decision logic
-Weak audit structure	Supports ledger, verification and audit states
-Generic interface	Runtime aligned with governance and continuity
-Unclear risk handling	Uses policy, risk and decision layers
-Output-first	Governance-first
+technology;
 
+cybersecurity;
 
-The system is designed for organizations that cannot treat AI as an uncontrolled text generator.
+cloud services;
 
+data governance;
 
----
+industrial operations;
 
-4. Target Companies
+infrastructure;
 
-AI JOKER-C2 is relevant for organizations operating in high-responsibility digital environments.
+consulting;
 
-Target sectors include:
+compliance;
 
-Sector	Relevance
+enterprise AI;
 
-Cybersecurity firms	Defensive analysis, incident documentation, risk workflows
-Cloud providers	Governance of AI-assisted operational processes
-Software companies	Controlled AI development and documentation support
-Consulting firms	Audit-ready analysis and structured reporting
-Critical infrastructure suppliers	Continuity, traceability and operational resilience
-Telecommunications	Governance of technical workflows and incident support
-Energy and utilities	Controlled analysis, documentation and risk mapping
-Financial technology	Traceable AI-assisted process documentation
-Legal technology	Document structuring, audit trails and human review support
-Industrial technology	Operational documentation and controlled escalation
-Compliance and audit firms	Evidence-oriented AI workflow support
-Managed service providers	Governance layer for customer-facing AI operations
+research and development;
+
+digital transformation;
+
+regulated or semi-regulated environments.
 
 
-The system is especially suitable where AI output must be explainable, bounded and reconstructable.
+The system is useful when the organization needs to answer:
+
+Who or what produced this output?
+
+Under which identity?
+
+Under which project context?
+
+Under which policy?
+
+With which risk classification?
+
+Was the operation allowed, blocked, escalated, degraded or audited?
+
+Was an event record generated?
+
+Can the operation be reconstructed later?
+
+Can the output be reviewed by a responsible human operator?
 
 
----
-
-5. Core Business Problem
-
-Many companies are adopting AI through isolated tools.
-
-This creates a structural problem:
-
-AI output increases, but governance does not automatically increase with it.
-
-Common issues:
-
-no clear identity behind AI-assisted actions;
-
-no event trace for relevant operations;
-
-no risk classification before sensitive output;
-
-no clear decision layer;
-
-no audit-ready evidence;
-
-no structured human oversight;
-
-no fail-closed boundary;
-
-no continuity between operations;
-
-no reliable reconstruction of what happened.
-
-
-AI JOKER-C2 addresses this gap by placing governance inside the runtime.
+AI JOKER-C2 is designed to make these questions operational.
 
 
 ---
 
-6. Business Value Proposition
+4. Ecosystem Architecture
 
-AI JOKER-C2 provides value through controlled AI operations.
+AI JOKER-C2 connects three primary project domains.
 
-Main value areas:
+MATRIX = operational infrastructure
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
+APOKALYPSIS = historical threshold analysis
+AI JOKER-C2 = cognitive command runtime
 
-Value Area	Description
+For B2B purposes, the primary operational domain is usually MATRIX.
 
-Governance	AI operations pass through policy, risk and decision logic
-Traceability	Relevant operations can generate EVT records
-Auditability	Events, decisions and verification states can be reviewed
-Continuity	Operations can be linked through previous event references
-Risk control	Sensitive operations can be classified before execution
-Human accountability	The system supports review instead of replacing responsibility
-Defensive security	Supports safe cybersecurity and resilience workflows
-Compliance orientation	Supports audit preparation and governance mapping
-Operational clarity	Makes AI-assisted work structured and explainable
-Fail-closed behavior	Blocks, degrades or escalates uncertain sensitive operations
+MATRIX provides the enterprise-facing infrastructure logic for:
 
+AI governance;
 
-The commercial promise is precise:
+operational traceability;
 
-AI JOKER-C2 helps companies use AI without losing operational control.
+B2B process control;
 
+cybersecurity resilience;
 
----
+cloud and data governance;
 
-7. Canonical Runtime Formula
+critical infrastructure documentation;
 
-The B2B runtime sequence is:
+policy-aware AI workflows;
 
-Identity -> Policy -> Risk -> Decision -> Execution -> EVT -> Ledger -> Verification -> Continuity
-
-Expanded:
-
-Layer	Business Meaning
-
-Identity	Who or what is responsible for the operation
-Policy	Which boundary applies
-Risk	How sensitive or impactful the operation is
-Decision	Whether to allow, block, escalate, degrade or audit
-Execution	What the runtime actually does
-EVT	Event record of the operation
-Ledger	Continuity and preservation layer
-Verification	Ability to inspect and reconstruct
-Continuity	Link between operations over time
+fail-closed runtime behavior.
 
 
-This converts AI use into a business process rather than a loose interaction.
+CORPUS ESOTEROLOGIA ERMETICA provides the internal conceptual grammar of the ecosystem, especially around decision, cost, trace and time.
+
+APOKALYPSIS provides a historical and systemic analysis layer, useful for strategic interpretation of cultural, political and social system instability.
+
+AI JOKER-C2 is the runtime that connects these domains into one governed operational layer.
 
 
 ---
 
-8. Main B2B Use Cases
+5. Enterprise Problem
 
-8.1 AI Governance Runtime
+Companies increasingly use AI for writing, coding, analysis, customer support, internal knowledge work, compliance preparation, cybersecurity triage and strategic planning.
 
-Companies can use AI JOKER-C2 to structure AI-assisted operations with:
+However, ordinary AI usage often lacks:
 
-context classification;
+identity binding;
+
+project-domain classification;
+
+policy checks;
 
 risk classification;
 
-policy evaluation;
+human accountability;
 
-human oversight;
-
-event traces;
+event traceability;
 
 audit records;
 
-decision states.
+verification logic;
+
+fail-closed behavior;
+
+continuity across operations.
 
 
-Use case:
+This creates an operational gap.
 
-A company wants employees to use AI for operational work, but every sensitive activity must be classified, reviewed and traceable.
+AI may produce useful outputs, but the organization may not be able to reconstruct:
 
-AI JOKER-C2 provides the governance structure.
+why the output was generated;
 
+what context was used;
 
----
+whether the request was safe;
 
-8.2 Internal Documentation Engine
+whether policy was applied;
 
-AI JOKER-C2 can generate and refactor internal documentation:
+whether risk was classified;
 
-architecture documents;
+who is accountable;
 
-security policies;
+whether the output should be trusted;
 
-compliance notes;
-
-technical manuals;
-
-process descriptions;
-
-incident report drafts;
-
-repository files;
-
-operational procedures.
+whether the output belongs to a regulated or sensitive process.
 
 
-Use case:
-
-A software company needs consistent technical documentation connected to governance, security and runtime decisions.
-
-AI JOKER-C2 produces structured files while preserving project boundaries.
+AI JOKER-C2 is designed to reduce this gap.
 
 
 ---
 
-8.3 Defensive Cybersecurity Support
+6. Enterprise Solution
 
-AI JOKER-C2 supports defensive cybersecurity workflows:
+AI JOKER-C2 introduces a governance layer around AI-assisted operations.
+
+The runtime classifies each relevant operation through:
+
+Layer	Enterprise Function
+
+Identity	Binds activity to an entity, runtime or operator context
+Intent	Identifies what the user is trying to do
+Context	Classifies the operational environment
+Project Domain	Routes the request to MATRIX, CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN
+Policy	Applies allowed, restricted or prohibited boundaries
+Risk	Classifies operational sensitivity
+Decision	Produces ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT or NOOP
+EVT	Generates a structured event record
+Ledger	Preserves event continuity
+Verification	Supports reconstruction and audit
+Human Oversight	Preserves accountability for sensitive operations
+
+
+This makes AI usage more structured, controllable and reviewable.
+
+
+---
+
+7. Main B2B Use Cases
+
+7.1 AI Governance Runtime
+
+AI JOKER-C2 can support enterprise AI governance by classifying requests, applying policy, assigning risk and producing decision records.
+
+Useful for:
+
+enterprise AI governance teams;
+
+compliance teams;
+
+AI risk committees;
+
+internal audit;
+
+legal-technical review;
+
+responsible AI programs.
+
+
+Output examples:
+
+governance decision records;
+
+AI usage classification;
+
+policy-aware response logic;
+
+audit-ready event records;
+
+human oversight notes;
+
+risk classification summaries.
+
+
+
+---
+
+7.2 Document Traceability
+
+AI JOKER-C2 can support document workflows where transformations must be traceable.
+
+Useful for:
+
+contracts;
+
+technical documents;
+
+compliance reports;
+
+security reports;
+
+research documents;
+
+internal policies;
+
+executive memos;
+
+operational manuals;
+
+product documentation.
+
+
+Output examples:
+
+document summaries;
+
+structured transformations;
+
+version notes;
+
+traceable editorial changes;
+
+document classification;
+
+evidence references;
+
+repository-ready files.
+
+
+
+---
+
+7.3 Defensive Cybersecurity Support
+
+AI JOKER-C2 can support defensive cybersecurity work without crossing into offensive capability.
+
+Allowed uses:
 
 incident report structuring;
 
-risk mapping;
+defensive risk mapping;
 
 secure architecture review;
 
-configuration review;
+hardening guidance;
+
+repository security review;
 
 dependency hygiene;
 
-audit trail design;
+audit trail documentation;
 
 resilience planning.
 
 
-Use case:
+Prohibited uses:
 
-A cybersecurity team needs AI support for defensive reporting and operational analysis without creating offensive capability.
+malware;
 
-AI JOKER-C2 remains inside the defensive boundary.
+exploit deployment;
+
+unauthorized access;
+
+credential theft;
+
+evasion;
+
+persistence;
+
+stealth;
+
+sabotage;
+
+offensive automation.
+
+
+The runtime is designed to support defensive governance, not offensive operations.
 
 
 ---
 
-8.4 Compliance and Audit Preparation
+7.4 Compliance-Oriented Documentation
 
-AI JOKER-C2 can support compliance-oriented work by preparing:
+AI JOKER-C2 can help enterprises prepare compliance-oriented documentation without claiming certification.
+
+Useful for:
+
+audit preparation;
+
+policy documentation;
 
 risk registers;
 
-audit checklists;
+accountability matrices;
 
-human oversight records;
+human oversight models;
 
-incident templates;
-
-evidence summaries;
-
-governance mapping;
+incident documentation;
 
 data handling notes;
 
-decision logs.
+AI governance mapping.
 
 
-Use case:
+The system does not replace legal advice.
 
-A company needs to explain how AI-assisted operations are governed, reviewed and documented.
-
-AI JOKER-C2 provides an audit-oriented structure.
-
-
----
-
-8.5 Critical Systems Documentation
-
-AI JOKER-C2 can help organizations working near critical systems by supporting:
-
-controlled documentation;
-
-escalation models;
-
-operational continuity notes;
-
-risk classification;
-
-incident response templates;
-
-evidence records;
-
-resilience planning.
-
-
-Use case:
-
-A technology supplier needs to document operational risks and continuity controls for sensitive infrastructure clients.
-
-AI JOKER-C2 helps create structured, reviewable documentation.
+It provides structured documentation and operational traceability to support review.
 
 
 ---
 
-8.6 GitHub and Software Repository Governance
+7.5 Repository and Software Governance
 
-AI JOKER-C2 supports repository work:
+AI JOKER-C2 can support software repositories where documentation, architecture, governance and runtime behavior must remain aligned.
 
-README refactoring;
+Useful for:
+
+GitHub repositories;
+
+internal developer portals;
+
+AI application governance;
+
+security documentation;
+
+runtime architecture files;
+
+API route documentation;
+
+deployment notes;
+
+evidence pack generation.
+
+
+Output examples:
+
+README files;
 
 architecture files;
 
 security policies;
 
-contribution rules;
+governance models;
 
-compliance documentation;
+compliance notes;
 
-roadmap planning;
+roadmap files;
 
-protocol design;
+commit planning;
 
-commit message planning;
+release notes.
 
-safe refactoring guidance.
-
-
-Use case:
-
-A software team wants AI-assisted repository maintenance while keeping governance, security and traceability explicit.
-
-AI JOKER-C2 turns repository work into structured operational output.
 
 
 ---
 
-9. B2B Deployment Scenarios
+7.6 Operational Continuity
 
-AI JOKER-C2 may support different business deployment scenarios.
+AI JOKER-C2 can support continuity-oriented workflows by preserving event chains.
 
-Scenario	Description
+Useful for:
 
-Internal governance assistant	Used by internal teams for structured AI-assisted work
-Documentation runtime	Used to generate and maintain technical and governance documents
-Defensive security assistant	Used by security teams for safe reporting and risk mapping
-Audit preparation layer	Used to prepare evidence, logs and compliance-oriented files
-Enterprise AI control layer	Used as a governance wrapper around AI-assisted workflows
-Critical systems support runtime	Used in controlled environments for continuity and review
-Consulting delivery tool	Used by consultants to produce structured client materials
-Research and prototype environment	Used to test governed AI runtime concepts
+internal operations;
 
+audit trails;
 
-Each scenario must preserve the non-offensive and fail-closed boundary.
+incident workflows;
 
+AI-assisted decisions;
 
----
+critical documentation;
 
-10. Integration Model
+system updates;
 
-AI JOKER-C2 can be integrated gradually.
-
-Stage 1 - Documentation Layer
-
-The organization uses AI JOKER-C2 for:
-
-technical documentation;
-
-governance documents;
-
-security notes;
-
-compliance drafts;
-
-internal procedures.
+governance records.
 
 
-Low operational risk.
+The core continuity mechanism is EVT.
 
-High immediate value.
+EVT records the operation as an event inside time, identity, risk, decision and verification.
 
 
 ---
 
-Stage 2 - Controlled Runtime Layer
+8. EVT for Enterprise Auditability
 
-The organization uses AI JOKER-C2 for:
+EVT means Event.
 
-structured AI interaction;
+An EVT is a structured operational record.
 
-policy-aware responses;
+A B2B EVT may include:
 
-risk classification;
+event identifier;
 
-runtime decisions;
+previous event reference;
 
-safe file processing.
+timestamp;
+
+entity;
+
+IPR or identity reference;
+
+project domain;
+
+context class;
+
+intent class;
+
+policy reference;
+
+risk class;
+
+governance decision;
+
+operation type;
+
+operation status;
+
+hash;
+
+verification status;
+
+audit status.
 
 
-Medium operational value.
+Example:
 
-Governance logic becomes active.
+{
+  "evt": "EVT-20260503-153000-AI-JOKER-C2-0001",
+  "prev": "EVT-0014-AI",
+  "entity": "AI_JOKER",
+  "ipr": "IPR-AI-0001",
+  "timestamp": "2026-05-03T15:30:00+02:00",
+  "project": {
+    "ecosystem": "HERMETICUM B.C.E.",
+    "domain": "MATRIX",
+    "domain_type": "OPERATIONAL_INFRASTRUCTURE_DOMAIN"
+  },
+  "context": {
+    "class": "STRATEGIC",
+    "domain": "B2B",
+    "sensitivity": "MEDIUM"
+  },
+  "governance": {
+    "risk": "MEDIUM",
+    "decision": "AUDIT",
+    "policy": "B2B_GOVERNED_OPERATION",
+    "fail_closed": false
+  },
+  "operation": {
+    "type": "ENTERPRISE_AI_GOVERNANCE_ANALYSIS",
+    "status": "COMPLETED"
+  },
+  "trace": {
+    "hash_algorithm": "sha256",
+    "canonicalization": "deterministic-json",
+    "hash": "sha256:example"
+  },
+  "verification": {
+    "status": "VERIFIABLE",
+    "audit_status": "READY"
+  }
+}
+
+The purpose of EVT is not decorative logging.
+
+The purpose is operational reconstruction.
 
 
 ---
 
-Stage 3 - EVT and Ledger Layer
+9. Governance Decisions
 
-The organization adds:
+AI JOKER-C2 uses governance decisions to control runtime behavior.
 
-EVT generation;
+Decision	Meaning
 
-append-only ledger;
-
-event verification;
-
-audit status;
-
-previous event references.
-
-
-AI-assisted operations become reconstructable.
+ALLOW	Operation may proceed
+BLOCK	Operation is prohibited or unsafe
+ESCALATE	Human review or authority required
+DEGRADE	Limited safe response only
+AUDIT	Operation should be recorded or reviewed
+NOOP	No operational action taken
 
 
----
-
-Stage 4 - Enterprise Governance Layer
-
-The organization adds:
-
-role-based access;
-
-internal policies;
-
-audit exports;
-
-evidence packs;
-
-dashboards;
-
-human oversight workflow.
-
-
-AI JOKER-C2 becomes part of enterprise governance.
+This allows enterprises to differentiate ordinary safe requests from sensitive or prohibited operations.
 
 
 ---
 
-11. Technical Integration Points
+10. Risk Classes
 
-Potential integration points:
+Suggested risk classes:
 
-Integration	Function
+Risk	Meaning	Default Handling
 
-Web interface	Human interaction with governed runtime
-API endpoint	Controlled programmatic access
-File workflow	Document processing and structured output
-EVT ledger	Event trace preservation
-Verification endpoint	Inspect event integrity
-Dashboard	Review runtime state and event history
-Evidence export	Prepare audit-ready packages
-Identity layer	Bind operations to runtime or organization identity
-Policy engine	Apply internal rules
-Risk engine	Classify sensitive operations
+LOW	Ordinary safe request	ALLOW
+MEDIUM	Operationally relevant request	ALLOW or AUDIT
+HIGH	Sensitive or strategic request	ESCALATE or DEGRADE
+CRITICAL	Strict review required	ESCALATE or BLOCK
+PROHIBITED	Unsafe or outside scope	BLOCK
+UNKNOWN	Cannot be safely classified	ESCALATE or BLOCK
 
 
-Initial adoption can start from documentation and later move toward runtime governance.
+The system must not treat unknown risk as permission.
+
+In sensitive contexts, uncertainty should trigger controlled limitation, escalation or blocking.
 
 
 ---
 
-12. Security Boundary for Companies
+11. B2B Target Segments
 
-AI JOKER-C2 supports defensive and governance-oriented security only.
+AI JOKER-C2 may be relevant for the following B2B segments.
+
+Segment	Potential Need
+
+Technology companies	Governed AI workflows and repository traceability
+Cybersecurity companies	Defensive analysis, incident documentation and audit records
+Cloud providers	AI governance, data traceability and operational accountability
+Consulting firms	Structured AI governance and compliance-oriented documentation
+Industrial groups	Controlled AI-assisted operational documentation
+Infrastructure operators	Continuity documentation and resilience planning
+Data governance companies	Policy-aware data processing and accountability models
+Legal-tech teams	Reviewable document workflows and traceability
+Research organizations	Evidence-oriented AI governance prototypes
+Enterprise AI teams	Internal AI policy, risk and oversight workflows
+
+
+
+---
+
+12. Enterprise Integration Levels
+
+AI JOKER-C2 may be introduced at different levels.
+
+Level	Description
+
+Level 1 — Documentation	Repository and governance documents only
+Level 2 — Assisted Workflow	AI-assisted documents with manual review
+Level 3 — Runtime Prototype	Live runtime with context, policy and risk classification
+Level 4 — EVT Ledger	Event records, hash and append-only continuity
+Level 5 — Verification	Verifier endpoint and audit-ready records
+Level 6 — Evidence Packs	Exportable evidence bundles
+Level 7 — Enterprise Pilot	Controlled internal pilot with human oversight
+Level 8 — Regulated Deployment Review	External legal, security and compliance assessment
+
+
+The recommended B2B entry point is Level 1 or Level 2.
+
+Production or regulated deployment requires additional review and controls.
+
+
+---
+
+13. Enterprise Pilot Model
+
+A controlled B2B pilot may include:
+
+1. scope definition;
+
+
+2. use-case selection;
+
+
+3. risk classification;
+
+
+4. data handling review;
+
+
+5. policy boundary definition;
+
+
+6. human oversight model;
+
+
+7. test runtime deployment;
+
+
+8. EVT generation;
+
+
+9. audit review;
+
+
+10. evidence export;
+
+
+11. stakeholder evaluation;
+
+
+12. security review;
+
+
+13. roadmap for integration.
+
+
+
+Recommended pilot use cases:
+
+AI governance documentation;
+
+internal policy review assistant;
+
+incident report structuring;
+
+repository governance assistant;
+
+controlled document transformation;
+
+audit preparation support;
+
+defensive cybersecurity documentation.
+
+
+A pilot should not begin with high-risk operational execution.
+
+
+---
+
+14. Differentiation From Generic AI
+
+Generic AI Interface	AI JOKER-C2
+
+Produces responses	Produces governed operational responses
+No identity layer	Identity-bound runtime
+No project-domain routing	MATRIX, CORPUS, APOKALYPSIS, GENERAL and MULTI_DOMAIN classification
+No explicit policy layer	Policy-aware execution
+No risk class	Risk-classified operations
+No decision object	ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT and NOOP
+No event trace	EVT event record
+No ledger continuity	Append-only continuity model
+No verification	Verification and audit-ready reconstruction
+No fail-closed principle	Fail-closed sensitive execution
+Generic output	Operational trace plus output
+
+
+The enterprise value is not only answer generation.
+
+The enterprise value is governed traceability.
+
+
+---
+
+15. Security Boundary
+
+AI JOKER-C2 supports defensive and governance-oriented security work only.
 
 Allowed:
 
 defensive analysis;
-
-documentation;
 
 secure architecture review;
 
@@ -512,520 +758,384 @@ incident report structuring;
 
 hardening guidance;
 
-dependency review;
+repository review;
 
-audit preparation;
+audit trail design;
 
-resilience planning.
+resilience planning;
+
+safe debugging;
+
+dependency hygiene.
 
 
-Not allowed:
+Prohibited:
+
+offensive cyber operations;
 
 malware;
 
-unauthorized access;
-
 exploit deployment;
+
+unauthorized access;
 
 credential theft;
 
+stealth;
+
 evasion;
 
-stealth;
+persistence;
 
 sabotage;
 
-offensive automation;
+unlawful surveillance;
 
-real-target attack instructions.
+autonomous targeting;
 
+disinformation operations;
 
-This boundary protects both the project and business adopters.
-
-
----
-
-13. Fail-Closed Business Value
-
-Fail-closed behavior is a business advantage.
-
-It means the system does not continue blindly when conditions are unsafe or unclear.
-
-Fail-closed may activate when:
-
-user authority is unclear;
-
-requested operation is prohibited;
-
-risk cannot be classified;
-
-policy is missing;
-
-sensitive context is detected;
-
-file handling is unsafe;
-
-EVT cannot be generated;
-
-continuity cannot be preserved.
+coercive manipulation.
 
 
-For companies, this reduces operational ambiguity.
-
-The system is designed to stop, limit or escalate instead of silently producing unsafe output.
+This boundary must remain clear in any enterprise discussion.
 
 
 ---
 
-14. Governance Decisions
+16. Data and File Handling
 
-AI JOKER-C2 can use the following decision model.
+AI JOKER-C2 should treat enterprise data conservatively.
 
-Decision	Business Meaning
+Recommended handling principles:
 
-ALLOW	The operation may proceed
-BLOCK	The operation is prohibited or unsafe
-ESCALATE	Human review or authority is required
-DEGRADE	Only limited safe support is provided
-AUDIT	The operation should be recorded or reviewed
-NOOP	No operational action is taken
+process only necessary data;
 
+avoid unnecessary payload retention;
 
-This decision model makes AI-assisted work easier to manage inside organizations.
+avoid logging secrets;
 
+avoid exposing private content;
 
----
-
-15. Risk Classes
-
-Suggested risk classes:
-
-Risk	Meaning	Typical Business Handling
-
-LOW	Ordinary safe request	Execute
-MEDIUM	Operationally relevant request	Execute with trace or review
-HIGH	Sensitive or strategic request	Escalate or degrade
-CRITICAL	High-impact operation	Require strict review
-PROHIBITED	Unsafe or abusive request	Block
-UNKNOWN	Cannot be classified safely	Escalate or block
-
-
-Risk classification supports internal governance and audit preparation.
-
-
----
-
-16. Human Accountability
-
-AI JOKER-C2 does not replace responsible business operators.
-
-It may assist with:
-
-drafting;
-
-analysis;
-
-documentation;
-
-classification;
-
-verification;
-
-risk mapping;
-
-audit preparation;
-
-technical reasoning.
-
-
-It should not claim final authority over:
-
-legal decisions;
-
-financial decisions;
-
-medical decisions;
-
-law enforcement action;
-
-critical infrastructure intervention;
-
-irreversible operational execution;
-
-coercive public authority.
-
-
-For sensitive business use, AI JOKER-C2 should support human review.
-
-
----
-
-17. Data Handling Model
-
-Business use requires careful data handling.
-
-Recommended rules:
-
-do not send secrets into prompts;
-
-do not expose API keys;
-
-do not upload unnecessary sensitive files;
-
-minimize personal data;
-
-avoid storing raw sensitive payloads;
-
-prefer hashes or references where possible;
+prefer references and hashes for sensitive content;
 
 separate public and internal event views;
 
-state clearly when file visibility is incomplete;
+state partial visibility when files are incomplete;
 
-preserve user control over uploaded content.
+reject unsupported or unsafe files;
+
+preserve human review for sensitive documents.
 
 
 Suggested data classes:
 
 Class	Handling
 
-PUBLIC	May be processed normally
+PUBLIC	May be summarized or referenced
 INTERNAL	Process with care
-CONFIDENTIAL	Minimize and restrict
-SECRET	Do not expose or store in runtime
+SENSITIVE	Minimize, redact or reference
+SECRET	Do not store or expose
+UNSUPPORTED	Reject or process as inert metadata
 UNKNOWN	Treat conservatively
 
 
 
 ---
 
-18. Audit and Evidence Value
+17. Human Accountability
 
-AI JOKER-C2 is designed to support audit-ready workflows.
+AI JOKER-C2 does not remove human responsibility.
 
-It may produce or support:
+It may assist with:
 
-EVT records;
+analysis;
 
-decision logs;
+drafting;
 
-risk classifications;
+classification;
 
-verification states;
+verification;
 
-audit states;
+documentation;
 
-evidence packs;
+risk mapping;
 
-correction events;
+governance planning;
 
-repository documentation;
+audit preparation;
 
-compliance-oriented artifacts.
-
-
-The audit value is reconstruction.
-
-A reviewer should be able to ask:
-
-What happened?
-When did it happen?
-Which identity was involved?
-Which risk class was assigned?
-Which decision was made?
-Was execution allowed?
-Was the event recorded?
-Can the event be verified?
-Was human review required?
+defensive security reporting.
 
 
----
+It must not claim final authority over:
 
-19. Commercial Differentiation
+legal decisions;
 
-AI JOKER-C2 differs from ordinary AI tooling because it focuses on controlled operation.
+medical decisions;
 
-Feature	Ordinary AI	AI JOKER-C2
+financial decisions;
 
-Identity	Often absent	Canonical IPR-based identity model
-Governance	External or manual	Embedded protocol
-Risk	Usually implicit	Explicit classification
-Decision	Hidden or absent	ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT
-Trace	Weak or unavailable	EVT event model
-Continuity	Session-based	Ledger-oriented continuity
-Audit	Limited	Designed for reconstruction
-Security boundary	Generic	Defensive and non-offensive
-Fail-closed	Rare	Core safety boundary
-B2B readiness	Variable	Built around governance and documentation
+military decisions;
+
+law enforcement action;
+
+coercive public authority;
+
+critical infrastructure intervention;
+
+irreversible operational execution.
 
 
-The commercial angle is clear:
+In enterprise environments, AI JOKER-C2 should support responsible human operators.
 
-AI JOKER-C2 is not only an AI interface.
-It is an operational control layer for AI-assisted work.
+It should not replace them.
 
 
 ---
 
-20. B2B Service Packages
+18. Compliance Orientation
 
-Potential B2B service packages:
+AI JOKER-C2 can support compliance-oriented workflows.
 
-Package 1 - Documentation Baseline
+It may help structure:
 
-Includes:
+AI governance files;
 
-README;
+risk registers;
 
-architecture document;
+human oversight records;
 
-security policy;
+audit checklists;
 
-compliance orientation;
+policy documentation;
 
-contribution policy;
+incident report templates;
 
-roadmap;
+data handling notes;
 
-operational protocol.
+operational records;
 
-
-Purpose:
-
-Turn a technical AI project into a documented governance-ready repository.
+evidence packs.
 
 
----
+However:
 
-Package 2 - Governance Runtime Prototype
+AI JOKER-C2 does not provide legal certification.
+AI JOKER-C2 does not guarantee regulatory compliance.
+AI JOKER-C2 does not replace legal, cybersecurity or data protection review.
 
-Includes:
-
-context classifier;
-
-policy engine;
-
-risk engine;
-
-runtime decision object;
-
-safe refusal logic;
-
-diagnostics.
-
-
-Purpose:
-
-Move from documentation to actual governed runtime behavior.
+It provides a technical and governance foundation for compliance-oriented review.
 
 
 ---
 
-Package 3 - EVT and Ledger Layer
+19. B2B Deliverables
 
-Includes:
+A B2B package may include:
 
-EVT generator;
+README.md
+ARCHITECTURE.md
+GOVERNANCE.md
+EVT_PROTOCOL.md
+PROTOCOL.md
+DUAL_USE_STRATEGIC_POSITIONING.md
+SECURITY.md
+COMPLIANCE.md
+ROADMAP.md
+docs/B2B_OVERVIEW.md
+docs/AI_GOVERNANCE_MAPPING.md
+docs/PROJECT_DOMAIN_GOVERNANCE_MAP.md
+docs/HUMAN_OVERSIGHT_MODEL.md
+docs/RISK_REGISTER_TEMPLATE.md
+docs/AUDIT_CHECKLIST.md
+docs/INCIDENT_REPORT_TEMPLATE.md
 
-hash function;
+Optional future deliverables:
 
-append-only ledger;
+demo video;
 
-verifier endpoint;
+runtime screenshots;
 
-public-safe event view.
+event chain sample;
 
+evidence pack sample;
 
-Purpose:
+enterprise pilot plan;
 
-Turn AI-assisted operations into event-traceable sequences.
+security review note;
 
+deployment checklist;
 
----
+stakeholder presentation.
 
-Package 4 - Audit and Evidence Pack
-
-Includes:
-
-signed event records;
-
-evidence manifest;
-
-audit export;
-
-verification report;
-
-correction event model.
-
-
-Purpose:
-
-Prepare AI-assisted workflows for review, audit and institutional explanation.
-
-
----
-
-Package 5 - Enterprise Integration Review
-
-Includes:
-
-deployment review;
-
-security review;
-
-data handling model;
-
-human oversight model;
-
-risk register;
-
-compliance mapping;
-
-B2B/B2G documentation.
-
-
-Purpose:
-
-Prepare the runtime for serious organizational evaluation.
 
 
 ---
 
-21. B2B Stakeholder Map
+20. Enterprise Readiness Checklist
 
-Stakeholder	What They Care About
+Before presenting AI JOKER-C2 to an enterprise stakeholder, check:
 
-CEO	Strategic control, differentiation, risk reduction
-CTO	Architecture, integration, maintainability
-CISO	Security boundary, secrets, defensive use
-Compliance officer	Auditability, governance, documentation
-Legal team	Responsibility, limits, non-certification clarity
-Operations team	Continuity, incident handling, workflow clarity
-Engineering team	APIs, build stability, code quality
-Public-sector clients	Traceability, accountability, resilience
-Enterprise clients	Security, reliability, support, governance
+Is the repository documentation aligned?
 
+Is the security boundary clear?
 
-AI JOKER-C2 should speak to all of these without becoming vague.
+Is the project positioned as defensive and governance-oriented?
 
+Are MATRIX, CORPUS and APOKALYPSIS clearly distinguished?
 
----
+Is the B2B value proposition clear?
 
-22. Recommended B2B Pitch
+Is the compliance limitation clear?
 
-Short pitch:
+Are prohibited uses explicitly excluded?
 
-AI JOKER-C2 is a governed AI runtime that helps companies use AI in traceable, policy-aware and auditable operational workflows.
+Is the runtime status clear?
 
-Medium pitch:
+Is the evidence roadmap clear?
 
-AI JOKER-C2 transforms AI-assisted work from isolated prompt-output interaction into identity-bound, risk-classified, event-traceable and fail-closed operational sequences. It is designed for companies that need AI productivity without losing governance, auditability and human accountability.
+Are secrets absent from the repository?
 
-Institutional business pitch:
+Does the project build?
 
-AI JOKER-C2 provides a governance-oriented runtime for enterprise AI operations, connecting identity, policy, risk, decision, event trace, verification and continuity into a controlled operational sequence. The system is designed for lawful, defensive and accountable use in business and strategic digital environments.
+Is the demo stable?
+
+Is human accountability preserved?
+
 
 
 ---
 
-23. Adoption Path for Companies
+21. Suggested Enterprise Message
 
-Recommended adoption path:
+Short enterprise description:
 
-Step	Action
+AI JOKER-C2 is an identity-bound governed AI runtime designed to make enterprise AI-assisted operations project-aware, policy-checked, risk-classified, event-traceable, auditable and fail-closed by design.
 
-1	Review documentation and governance boundary
-2	Identify internal AI-assisted workflows
-3	Classify workflows by risk
-4	Define policy and human oversight requirements
-5	Start with documentation and analysis tasks
-6	Add runtime policy and risk logic
-7	Add EVT and ledger support
-8	Add verification and dashboard
-9	Prepare audit and evidence package
-10	Evaluate enterprise integration
+Extended enterprise description:
 
-
-Companies should start with low-risk workflows and expand gradually.
+AI JOKER-C2 helps organizations move from generic AI interaction to governed operational AI workflows. It connects identity, context, policy, risk, decision, EVT event records, ledger continuity and verification, allowing AI-assisted work to become more accountable, reviewable and auditable. The system is designed for defensive, civil and strategic B2B use cases such as AI governance, document traceability, compliance-oriented documentation, defensive cybersecurity reporting and operational continuity.
 
 
 ---
 
-24. Non-Certification Statement
+22. Suggested Enterprise Pilot Statement
 
-AI JOKER-C2 is a governance-oriented architecture and operational prototype.
-
-It is not a certified compliance product.
-
-It does not replace:
-
-legal review;
-
-cybersecurity review;
-
-data protection review;
-
-enterprise risk assessment;
-
-human authorization;
-
-regulated deployment controls.
-
-
-Any real-world business deployment must be reviewed according to the organization’s legal, security and operational requirements.
+A first enterprise pilot should focus on low-risk, high-value workflows such as AI governance documentation, defensive incident report structuring, repository governance, compliance-oriented documentation and traceable document transformation. The objective is not immediate automation of high-impact decisions, but the creation of a controlled evidence-ready runtime for AI-assisted work.
 
 
 ---
 
-25. B2B Roadmap
+23. Out-of-Scope for B2B Use
 
-Recommended B2B roadmap:
+The following are out of scope:
+
+offensive cybersecurity;
+
+exploit deployment;
+
+malware;
+
+unauthorized access;
+
+unlawful surveillance;
+
+autonomous targeting;
+
+sabotage;
+
+coercive manipulation;
+
+disinformation;
+
+replacement of legal review;
+
+replacement of human accountability;
+
+critical infrastructure control without authorization;
+
+production deployment without security and legal review.
+
+
+AI JOKER-C2 must remain a governed runtime, not an uncontrolled enterprise automation layer.
+
+
+---
+
+24. B2B Roadmap
+
+Recommended B2B development path:
 
 Phase	Objective
 
-B2B-0	Public documentation baseline
-B2B-1	Technical demo and repository review
-B2B-2	Governance and risk workflow mapping
-B2B-3	Runtime policy and risk prototype
-B2B-4	EVT and ledger prototype
-B2B-5	Verification and dashboard prototype
-B2B-6	Audit package and evidence export
-B2B-7	Enterprise integration assessment
-B2B-8	Pilot deployment in controlled environment
+B2B-1	Documentation package
+B2B-2	Demo workflow
+B2B-3	Project-domain classifier
+B2B-4	Policy and risk engine
+B2B-5	EVT event generation
+B2B-6	Append-only ledger
+B2B-7	Verification endpoint
+B2B-8	Evidence pack export
+B2B-9	Enterprise pilot
+B2B-10	External legal, security and compliance review
 
 
-This path keeps adoption controlled and reviewable.
+The first B2B milestone is not automation.
 
-
----
-
-26. Final B2B Formula
-
-AI without governance is output.
-AI with governance becomes operation.
-AI with identity, policy, risk, EVT and verification becomes accountable infrastructure.
-
-Operational formula:
-
-Business AI Control = Identity + Policy + Risk + Decision + EVT + Verification + Human Accountability
+The first milestone is trustable structure.
 
 
 ---
 
-27. Status
+25. Final B2B Formula
 
-Document status: active B2B overview
-Project: AI JOKER-C2
-Framework: MATRIX
-Infrastructure: HBCE
-Identity layer: IPR
-Trace layer: EVT
-Governance principle: fail-closed
-Security boundary: defensive and non-offensive
-Business orientation: B2B
-Repository: hbce-ai-joker-c2
-Maintainer: HBCE Research
-Organization: HERMETICUM B.C.E. S.r.l.
-Territorial anchor: Torino, Italy, Europe
-Year: 2026
+Enterprise AI must not be only generative.
+Enterprise AI must become governable.
+
+Expanded:
+
+No identity, no accountability.
+No project domain, no correct routing.
+No policy, no controlled execution.
+No risk classification, no sensitive output.
+No EVT, no traceability.
+No verification, no auditability.
+No human accountability, no enterprise trust.
+
+Project formula:
+
+MATRIX = enterprise operational infrastructure.
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar.
+APOKALYPSIS = strategic threshold analysis.
+AI JOKER-C2 = governed cognitive runtime.
+
+
+---
+
+26. Status
+
+Field	Value
+
+Document	docs/B2B_OVERVIEW.md
+Status	Active B2B overview
+Project	AI JOKER-C2
+Ecosystem	HERMETICUM B.C.E.
+Primary B2B domain	MATRIX
+Connected domains	MATRIX, CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Infrastructure	HBCE
+Identity layer	IPR
+Trace layer	EVT
+Governance principle	Fail-closed
+Security boundary	Defensive and non-offensive
+Compliance status	Orientation only, not certification
+Target	Enterprise, technology, cybersecurity, cloud, data governance, industrial and consulting environments
+Repository	hbce-ai-joker-c2
+Maintainer	HBCE Research
+Organization	HERMETICUM B.C.E. S.r.l.
+Territorial anchor	Torino, Italy, Europe
+Year	2026
+
+
+
 
