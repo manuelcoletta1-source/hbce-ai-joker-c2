@@ -93,6 +93,12 @@ const EXPLANATORY_TERMS = [
   "vantaggi",
   "valore",
   "a cosa serve",
+  "serve",
+  "serve per",
+  "puo servire",
+  "può servire",
+  "utilita",
+  "utilità",
   "per chi e utile",
   "rispetto a chi non ce l ha",
   "confronto",
@@ -102,7 +108,10 @@ const EXPLANATORY_TERMS = [
   "europa",
   "mercato",
   "funziona",
-  "opera"
+  "opera",
+  "ruolo",
+  "che ruolo",
+  "quale ruolo"
 ];
 
 const IPR_TERMS = [
@@ -139,6 +148,12 @@ const BIOCYBERSECURITY_TERMS = [
   "bio cibersicurezza",
   "bio-cibersicurezza",
   "biocibernetica",
+  "sicurezza biocibernetica",
+  "sicuerezza biocibernetica",
+  "sicurezza bio cibernetica",
+  "sicuerezza bio cibernetica",
+  "sicurezza biocyber",
+  "sicuerezza biocyber",
   "bio cyber",
   "biocyber",
   "biocyber security",
@@ -149,7 +164,11 @@ const BIOCYBERSECURITY_TERMS = [
   "biocybersecutity",
   "biocybercybersecurity",
   "biocybercycuryti",
-  "biocybercycuriti"
+  "biocybercycuriti",
+  "organismo sistema",
+  "organism system",
+  "accoppiamento organismo sistema",
+  "organism-system coupling"
 ];
 
 const AI_GOVERNANCE_TERMS = [
@@ -194,7 +213,8 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
 
   const hasExplanatoryIntent =
     containsAny(normalized, EXPLANATORY_TERMS) ||
-    normalized.split(" ").length <= 4;
+    normalized.endsWith("?") ||
+    normalized.split(" ").length <= 6;
 
   if (!hasExplanatoryIntent) {
     return buildNoMatch([
@@ -202,20 +222,24 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
     ]);
   }
 
-  if (containsAny(normalized, IPR_TERMS)) {
+  const hasIpr = containsAny(normalized, IPR_TERMS);
+  const hasBiocybersecurity = containsAny(normalized, BIOCYBERSECURITY_TERMS);
+
+  if (hasIpr && hasBiocybersecurity) {
     return buildSafeConcept({
-      kind: "IPR_IDENTITY",
-      normalizedTerm: "IPR / Identity Primary Record",
-      projectDomain: "MATRIX",
-      contextClass: "IDENTITY",
+      kind: "BIOCYBERSECURITY",
+      normalizedTerm: "IPR + biocybersecurity / sicurezza biocibernetica",
+      projectDomain: "MULTI_DOMAIN",
+      contextClass: "AI_GOVERNANCE",
       reasons: [
-        "Safe explanatory request about IPR or operational identity.",
-        "IPR is treated as a public identity-governance concept."
+        "Safe explanatory request connecting IPR and biocybersecurity.",
+        "IPR + biocybersecurity is treated as a public conceptual governance question unless unsafe operational instructions are present.",
+        "Mapped to MULTI_DOMAIN because it connects operational identity, organism-system interface, AI governance, traceability and MATRIX infrastructure."
       ]
     });
   }
 
-  if (containsAny(normalized, BIOCYBERSECURITY_TERMS)) {
+  if (hasBiocybersecurity) {
     return buildSafeConcept({
       kind: "BIOCYBERSECURITY",
       normalizedTerm: "biocybersecurity / biocibersicurezza",
@@ -225,6 +249,19 @@ export function classifySafeConcept(message: string): SafeConceptClassification 
         "Safe explanatory request about biocybersecurity or a close misspelling.",
         "Biocybersecurity is treated as a conceptual governance term unless unsafe operational instructions are present.",
         "Mapped to MULTI_DOMAIN because it connects organism-system interface, AI governance, identity, security and traceability."
+      ]
+    });
+  }
+
+  if (hasIpr) {
+    return buildSafeConcept({
+      kind: "IPR_IDENTITY",
+      normalizedTerm: "IPR / Identity Primary Record",
+      projectDomain: "MATRIX",
+      contextClass: "IDENTITY",
+      reasons: [
+        "Safe explanatory request about IPR or operational identity.",
+        "IPR is treated as a public identity-governance concept."
       ]
     });
   }
