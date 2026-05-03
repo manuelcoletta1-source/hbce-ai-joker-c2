@@ -1,16 +1,19 @@
 /**
  * AI JOKER-C2 Data Classifier
  *
- * Deterministic data sensitivity classifier for the HBCE / MATRIX governed runtime.
+ * Deterministic data sensitivity classifier for the HERMETICUM B.C.E.
+ * governed runtime.
  *
  * This module classifies text, file names, MIME types and route context into:
  * - PUBLIC
  * - INTERNAL
  * - CONFIDENTIAL
+ * - SENSITIVE
  * - SECRET
  * - PERSONAL
  * - SECURITY_SENSITIVE
  * - CRITICAL_OPERATIONAL
+ * - UNSUPPORTED
  * - UNKNOWN
  *
  * The classifier is intentionally transparent and rule-based.
@@ -18,10 +21,7 @@
  * It does not call external models.
  */
 
-import type {
-  DataClass,
-  DataClassification
-} from "./runtime-types";
+import type { DataClass, DataClassification } from "./runtime-types";
 
 export type DataClassifierInput = {
   text?: string;
@@ -81,7 +81,8 @@ const SECRET_RULES: PatternRule[] = [
   {
     dataClass: "SECRET",
     label: "ENV_FILE_SECRET_CONTEXT",
-    reason: "Input or file context appears to reference an environment file containing secrets.",
+    reason:
+      "Input or file context appears to reference an environment file containing secrets.",
     patterns: [
       /\.env(\.local|\.production|\.preview|\.development)?\b/i,
       /\benv\.local\b/i,
@@ -96,7 +97,8 @@ const CRITICAL_OPERATIONAL_RULES: PatternRule[] = [
   {
     dataClass: "CRITICAL_OPERATIONAL",
     label: "CRITICAL_INFRASTRUCTURE",
-    reason: "Input appears related to critical infrastructure or essential services.",
+    reason:
+      "Input appears related to critical infrastructure or essential services.",
     patterns: [
       /\bcritical infrastructure\b/i,
       /\benergy grid\b/i,
@@ -257,7 +259,8 @@ const CONFIDENTIAL_RULES: PatternRule[] = [
   {
     dataClass: "CONFIDENTIAL",
     label: "BUSINESS_SENSITIVE",
-    reason: "Input appears to contain sensitive business or institutional material.",
+    reason:
+      "Input appears to contain sensitive business or institutional material.",
     patterns: [
       /\bcontract\b/i,
       /\bprocurement\b/i,
@@ -276,11 +279,63 @@ const CONFIDENTIAL_RULES: PatternRule[] = [
   }
 ];
 
+const SENSITIVE_RULES: PatternRule[] = [
+  {
+    dataClass: "SENSITIVE",
+    label: "GENERIC_SENSITIVE_CONTEXT",
+    reason: "Input explicitly references sensitive or protected information.",
+    patterns: [
+      /\bsensitive\b/i,
+      /\bprotected information\b/i,
+      /\brestricted information\b/i,
+      /\bnon-public\b/i,
+      /\bnon public\b/i,
+      /\bclassified internally\b/i,
+      /\bdato sensibile\b/i,
+      /\bdati sensibili\b/i,
+      /\binformazione sensibile\b/i,
+      /\binformazioni sensibili\b/i,
+      /\binformazione protetta\b/i,
+      /\binformazioni protette\b/i
+    ]
+  }
+];
+
+const UNSUPPORTED_RULES: PatternRule[] = [
+  {
+    dataClass: "UNSUPPORTED",
+    label: "UNSUPPORTED_EXECUTABLE_OR_BINARY_FILE",
+    reason:
+      "Input appears to reference an unsupported executable, archive or binary file type.",
+    patterns: [
+      /\.exe\b/i,
+      /\.dll\b/i,
+      /\.so\b/i,
+      /\.dylib\b/i,
+      /\.bin\b/i,
+      /\.apk\b/i,
+      /\.ipa\b/i,
+      /\.deb\b/i,
+      /\.rpm\b/i,
+      /\.msi\b/i,
+      /\.zip\b/i,
+      /\.rar\b/i,
+      /\.7z\b/i,
+      /\.tar\b/i,
+      /\.gz\b/i,
+      /\bapplication\/octet-stream\b/i,
+      /\bapplication\/x-msdownload\b/i,
+      /\bapplication\/x-executable\b/i
+    ]
+  }
+];
+
 const INTERNAL_RULES: PatternRule[] = [
   {
     dataClass: "INTERNAL",
     label: "INTERNAL_PROJECT_CONTEXT",
-    reason: "Input appears to contain internal project, repository or runtime context.",
+    reason:
+      "Input appears to contain internal project, repository or runtime context.",
     patterns: [
       /\brepository\b/i,
       /\brepo\b/i,
@@ -303,7 +358,8 @@ const PUBLIC_RULES: PatternRule[] = [
   {
     dataClass: "PUBLIC",
     label: "PUBLIC_DOCUMENTATION_CONTEXT",
-    reason: "Input appears to be public documentation or ordinary non-sensitive content.",
+    reason:
+      "Input appears to be public documentation or ordinary non-sensitive content.",
     patterns: [
       /\breadme\b/i,
       /\bpublic documentation\b/i,
@@ -321,10 +377,12 @@ const PUBLIC_RULES: PatternRule[] = [
 
 const ALL_RULES_IN_PRIORITY_ORDER: PatternRule[] = [
   ...SECRET_RULES,
+  ...UNSUPPORTED_RULES,
   ...CRITICAL_OPERATIONAL_RULES,
   ...PERSONAL_RULES,
   ...SECURITY_SENSITIVE_RULES,
   ...CONFIDENTIAL_RULES,
+  ...SENSITIVE_RULES,
   ...INTERNAL_RULES,
   ...PUBLIC_RULES
 ];
@@ -334,10 +392,12 @@ const DATA_CLASS_RANK: Record<DataClass, number> = {
   PUBLIC: 1,
   INTERNAL: 2,
   CONFIDENTIAL: 3,
-  PERSONAL: 4,
-  SECURITY_SENSITIVE: 5,
-  CRITICAL_OPERATIONAL: 6,
-  SECRET: 7
+  SENSITIVE: 4,
+  PERSONAL: 5,
+  SECURITY_SENSITIVE: 6,
+  CRITICAL_OPERATIONAL: 7,
+  SECRET: 8,
+  UNSUPPORTED: 9
 };
 
 export function classifyData(input: DataClassifierInput): DataClassification {
@@ -357,14 +417,19 @@ export function classifyData(input: DataClassifierInput): DataClassification {
   const dataClass = selectHighestDataClass(matchedRules);
 
   const containsSecret = matchedRules.some((rule) => rule.dataClass === "SECRET");
+
   const containsPersonalData = matchedRules.some(
     (rule) => rule.dataClass === "PERSONAL"
   );
-  const containsSecuritySensitiveData = matchedRules.some(
-    (rule) =>
-      rule.dataClass === "SECURITY_SENSITIVE" ||
-      rule.dataClass === "CRITICAL_OPERATIONAL" ||
-      rule.dataClass === "SECRET"
+
+  const containsSecuritySensitiveData = matchedRules.some((rule) =>
+    [
+      "SENSITIVE",
+      "SECURITY_SENSITIVE",
+      "CRITICAL_OPERATIONAL",
+      "SECRET",
+      "UNSUPPORTED"
+    ].includes(rule.dataClass)
   );
 
   const reasons = matchedRules.flatMap((rule) => [
@@ -381,10 +446,7 @@ export function classifyData(input: DataClassifierInput): DataClassification {
     containsSecret,
     containsPersonalData,
     containsSecuritySensitiveData,
-    reasons: uniqueReasons([
-      ...reasons,
-      `Data classified as ${dataClass}.`
-    ])
+    reasons: uniqueReasons([...reasons, `Data classified as ${dataClass}.`])
   };
 }
 
@@ -408,30 +470,40 @@ export function isSecretData(classification: DataClassification): boolean {
   return classification.dataClass === "SECRET" || classification.containsSecret;
 }
 
+export function isUnsupportedData(
+  classification: DataClassification
+): boolean {
+  return classification.dataClass === "UNSUPPORTED";
+}
+
 export function requiresDataMinimization(
   classification: DataClassification
 ): boolean {
-  return (
-    classification.dataClass === "CONFIDENTIAL" ||
-    classification.dataClass === "PERSONAL" ||
-    classification.dataClass === "SECURITY_SENSITIVE" ||
-    classification.dataClass === "CRITICAL_OPERATIONAL" ||
-    classification.dataClass === "SECRET" ||
-    classification.dataClass === "UNKNOWN"
-  );
+  return [
+    "CONFIDENTIAL",
+    "SENSITIVE",
+    "PERSONAL",
+    "SECURITY_SENSITIVE",
+    "CRITICAL_OPERATIONAL",
+    "SECRET",
+    "UNSUPPORTED",
+    "UNKNOWN"
+  ].includes(classification.dataClass);
 }
 
 export function requiresDataReview(
   classification: DataClassification
 ): boolean {
-  return (
-    classification.dataClass === "CONFIDENTIAL" ||
-    classification.dataClass === "PERSONAL" ||
-    classification.dataClass === "SECURITY_SENSITIVE" ||
-    classification.dataClass === "CRITICAL_OPERATIONAL" ||
-    classification.dataClass === "SECRET" ||
-    classification.dataClass === "UNKNOWN"
-  );
+  return [
+    "CONFIDENTIAL",
+    "SENSITIVE",
+    "PERSONAL",
+    "SECURITY_SENSITIVE",
+    "CRITICAL_OPERATIONAL",
+    "SECRET",
+    "UNSUPPORTED",
+    "UNKNOWN"
+  ].includes(classification.dataClass);
 }
 
 export function canProcessAsOrdinaryContent(
@@ -446,7 +518,10 @@ export function canProcessAsOrdinaryContent(
 export function shouldBlockDataProcessing(
   classification: DataClassification
 ): boolean {
-  return classification.dataClass === "SECRET";
+  return (
+    classification.dataClass === "SECRET" ||
+    classification.dataClass === "UNSUPPORTED"
+  );
 }
 
 export function buildDataHandlingSummary(
@@ -532,8 +607,7 @@ function looksLikePlainPublicDocumentation(
   combined: string
 ): boolean {
   const safeFile =
-    Boolean(input.fileName) &&
-    /\.(md|txt|json|csv)$/i.test(input.fileName ?? "");
+    Boolean(input.fileName) && /\.(md|txt|json|csv)$/i.test(input.fileName ?? "");
 
   const publicWords =
     /\breadme\b/i.test(combined) ||
@@ -545,22 +619,19 @@ function looksLikePlainPublicDocumentation(
 
   const hasNoSensitiveIndicators = ![
     ...SECRET_RULES,
+    ...UNSUPPORTED_RULES,
     ...CRITICAL_OPERATIONAL_RULES,
     ...PERSONAL_RULES,
     ...SECURITY_SENSITIVE_RULES,
-    ...CONFIDENTIAL_RULES
+    ...CONFIDENTIAL_RULES,
+    ...SENSITIVE_RULES
   ].some((rule) => rule.patterns.some((pattern) => pattern.test(combined)));
 
   return hasNoSensitiveIndicators && (safeFile || publicWords);
 }
 
 function normalizeInput(input: DataClassifierInput): string {
-  return [
-    input.text ?? "",
-    input.fileName ?? "",
-    input.mimeType ?? "",
-    input.route ?? ""
-  ]
+  return [input.text ?? "", input.fileName ?? "", input.mimeType ?? "", input.route ?? ""]
     .join(" ")
     .normalize("NFKC")
     .trim();
