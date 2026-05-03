@@ -1,5 +1,7 @@
 # AI JOKER-C2 B2G Overview
 
+## Governed AI Runtime for Public-Sector Traceability, Institutional Accountability and Operational Continuity
+
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.  
 Torino, Italy, Europe  
@@ -7,694 +9,790 @@ Torino, Italy, Europe
 
 ---
 
-## 1. Purpose
+## 1. Executive Summary
 
-This document presents AI JOKER-C2 for business-to-government and public-sector use cases.
+AI JOKER-C2 is the identity-bound cognitive command runtime of the HERMETICUM B.C.E. ecosystem.
 
-AI JOKER-C2 is an identity-bound operational AI runtime built within the HBCE infrastructure and aligned with the MATRIX framework.
-
-It is designed for public administrations, institutional bodies, agencies and strategic operators that need AI-assisted operations to remain:
-
-- accountable;
-- traceable;
-- policy-aware;
-- risk-classified;
-- auditable;
-- verifiable;
-- human-supervised;
-- fail-closed by design.
+For B2G environments, AI JOKER-C2 is positioned as a governed AI runtime for public administrations, institutions, public-sector technology programs, critical infrastructure governance bodies and strategic European actors that need AI-assisted operations to remain attributable, risk-classified, auditable, human-accountable and fail-closed by design.
 
 AI JOKER-C2 is not a generic chatbot.
 
-It is a governed runtime for public-sector environments where AI must support responsibility, continuity, documentation, audit and lawful operational control.
+It is not an autonomous public authority system.
 
----
+It is not a certified legal compliance product.
 
-## 2. Public-Sector Definition
+It is a governance-oriented runtime prototype designed to support public-sector traceability, documentation, auditability, institutional continuity and responsible AI-assisted workflows.
 
-AI JOKER-C2 can be described as:
+The core B2G problem is:
 
 ```txt
-A governed AI runtime for public-sector and institutional environments requiring traceable, risk-aware and auditable AI-assisted operations.
+Public institutions cannot use AI as an untraceable output machine.
+They need identity, policy, risk, decision, evidence, review and continuity.
 
-Expanded:
+AI JOKER-C2 addresses this problem through the following operational sequence:
 
-AI JOKER-C2 transforms AI-assisted public-sector activity from isolated prompt-output interaction into identity-bound, policy-checked, risk-classified, event-traceable and reviewable operational sequences.
-
-The institutional value is not only automation.
-
-The institutional value is controlled automation under traceability, review and accountability.
+Identity -> Input -> Intent -> Context -> Project Domain -> Policy -> Risk -> Decision -> Execution -> EVT -> Ledger -> Verification -> Continuity
 
 
 ---
 
-3. Strategic B2G Positioning
+2. B2G Value Proposition
 
-AI JOKER-C2 is positioned as a civil and strategic governance infrastructure.
+The B2G value proposition is:
 
-It can support public-sector actors in:
+Support public institutions in making AI-assisted operations attributable, project-aware, policy-checked, risk-classified, event-traceable, auditable and human-accountable.
 
-AI governance;
+AI JOKER-C2 can support public-sector environments through:
 
-operational continuity;
+AI governance documentation;
 
-administrative traceability;
+public administration traceability;
+
+institutional decision-support records;
+
+human oversight models;
+
+audit-ready event chains;
 
 defensive cybersecurity documentation;
 
-public-sector audit preparation;
+critical infrastructure resilience planning;
 
-institutional risk mapping;
-
-critical infrastructure resilience;
+compliance-oriented documentation;
 
 controlled document analysis;
 
-evidence-oriented workflows;
+risk and policy classification;
 
-human oversight processes.
+evidence generation;
 
+operational continuity;
 
-The system is designed to support public responsibility.
-
-It must not be used for offensive, unlawful or coercive purposes.
-
-
----
-
-4. Institutional Problem
-
-Public institutions increasingly interact with AI systems, digital platforms, automated workflows and complex technical infrastructures.
-
-This creates a governance problem:
-
-AI-assisted activity can become operationally relevant without becoming sufficiently traceable.
-
-Common public-sector risks include:
-
-unclear responsibility for AI-assisted outputs;
-
-lack of event-level traceability;
-
-weak audit trails;
-
-absence of risk classification;
-
-unclear human oversight;
-
-uncontrolled document processing;
-
-insufficient operational continuity;
-
-poor reconstruction of decision-support activity;
-
-unclear boundary between advice, analysis and action;
-
-sensitive use without fail-closed behavior.
+B2G strategic reporting.
 
 
-AI JOKER-C2 addresses this problem by placing identity, policy, risk, decision, EVT, verification and continuity inside the runtime model.
+The objective is not to replace institutional authority.
+
+The objective is to make AI-assisted institutional work more controlled, reviewable and reconstructable.
 
 
 ---
 
-5. Core Public Value Proposition
+3. Public-Sector Problem
 
-AI JOKER-C2 helps public-sector actors use AI without losing institutional control.
+Public administrations and institutions increasingly face AI adoption across documentation, analysis, cybersecurity, service delivery, infrastructure monitoring, policy drafting and internal workflows.
 
-Main value areas:
+However, ordinary AI tools often lack:
 
-Value Area	Description
+clear operational identity;
 
-Accountability	Operations remain connected to identity, role and reviewability
-Traceability	Relevant operations can generate EVT records
-Auditability	Event records and decisions can be inspected
-Human oversight	The system supports review instead of replacing authority
-Risk management	Sensitive operations can be classified before output
-Policy control	Runtime behavior can reflect institutional boundaries
-Continuity	Operations can be linked into event chains
-Defensive resilience	Supports safe cybersecurity and continuity documentation
-Compliance orientation	Supports preparation for governance and audit discussion
-Fail-closed behavior	Blocks, limits or escalates uncertain sensitive operations
-
-
-The public-sector promise is:
-
-AI JOKER-C2 supports AI adoption without dissolving institutional responsibility.
-
-
----
-
-6. Canonical Runtime Formula
-
-The B2G runtime sequence is:
-
-Identity -> Policy -> Risk -> Decision -> Execution -> EVT -> Ledger -> Verification -> Continuity
-
-Institutional meaning:
-
-Layer	Public-Sector Meaning
-
-Identity	Which entity, office, role or runtime context is involved
-Policy	Which institutional boundary applies
-Risk	Which level of sensitivity or impact exists
-Decision	Whether to allow, block, escalate, degrade or audit
-Execution	What operation is performed
-EVT	Event record of the operation
-Ledger	Preservation of continuity
-Verification	Reconstruction and inspection
-Continuity	Link between previous and future operational states
-
-
-This turns AI-assisted support into a reviewable public-sector process.
-
-
----
-
-7. Target Public-Sector Actors
-
-AI JOKER-C2 may be relevant for:
-
-Actor	Relevance
-
-Municipal administrations	Document workflows, public-service traceability, internal AI governance
-Regional administrations	Strategic planning, infrastructure mapping, digital continuity
-National agencies	Policy support, risk mapping, audit-ready documentation
-Public IT departments	Runtime governance, secure AI-assisted workflows
-Cybersecurity agencies	Defensive reporting, incident documentation, resilience analysis
-Critical infrastructure regulators	Continuity, evidence, operational traceability
-Public procurement offices	AI-assisted document analysis with human review
-Digital transformation offices	Governed AI adoption models
-Public research bodies	Governance prototypes and institutional AI research
-Emergency and civil protection structures	Scenario documentation, continuity planning, escalation models
-European institutions and agencies	AI governance, auditability and cross-border strategic infrastructure logic
-
-
-The system is most relevant where AI-assisted work has institutional consequences.
-
-
----
-
-8. B2G Use Cases
-
-8.1 Public Administration AI Governance
-
-AI JOKER-C2 can support administrations that need to introduce AI while preserving accountability.
-
-Functions:
-
-classify AI-assisted operations;
-
-document policy boundaries;
-
-preserve human review;
-
-generate audit-ready records;
-
-maintain traceability of relevant outputs.
-
-
-Use case:
-
-A public administration uses AI to support internal document analysis, but every sensitive operation must remain classified, reviewed and reconstructable.
-
-
----
-
-8.2 Institutional Document Processing
-
-AI JOKER-C2 can assist with public-sector documents:
-
-summaries;
-
-restructuring;
-
-technical notes;
-
-policy drafts;
-
-operational reports;
-
-procedure documents;
-
-risk matrices;
-
-public communication drafts;
-
-internal governance documents.
-
-
-Use case:
-
-An office must process complex technical documentation while preserving a clear distinction between AI-assisted drafting and human institutional decision.
-
-
----
-
-8.3 Critical Infrastructure Resilience
-
-AI JOKER-C2 can support documentation and governance around critical infrastructure resilience.
-
-Functions:
-
-risk mapping;
-
-continuity planning;
-
-incident documentation;
-
-escalation workflows;
-
-evidence structuring;
-
-operational traceability;
-
-defensive analysis.
-
-
-Use case:
-
-A public or regulated operator needs AI-assisted support for resilience documentation without enabling offensive or unsafe technical activity.
-
-
----
-
-8.4 Defensive Cybersecurity Governance
-
-AI JOKER-C2 can support defensive cybersecurity workflows:
-
-incident report structuring;
+public-sector accountability;
 
 risk classification;
 
-audit trail preparation;
+policy evaluation;
 
-secure configuration documentation;
-
-vulnerability remediation notes;
-
-defensive analysis;
-
-coordination reports.
-
-
-Use case:
-
-A public-sector cybersecurity team needs structured AI support for incident documentation and resilience planning while preserving a defensive-only boundary.
-
-
----
-
-8.5 Public Procurement Review Support
-
-AI JOKER-C2 can assist public procurement teams with structured analysis.
-
-Possible functions:
-
-summarize technical offers;
-
-extract compliance-relevant statements;
-
-identify missing documentation;
-
-create comparison tables;
-
-produce review notes;
-
-flag areas requiring human review.
-
-
-Use case:
-
-A procurement office uses AI to support document organization, but final evaluation remains under human and legal responsibility.
-
-AI JOKER-C2 should support review.
-
-It should not become the final procurement authority.
-
-
----
-
-8.6 Policy and Regulatory Support
-
-AI JOKER-C2 can support policy teams with:
-
-structured policy drafts;
-
-comparison tables;
-
-risk registers;
-
-governance summaries;
-
-implementation notes;
-
-public-sector briefing documents.
-
-
-Use case:
-
-A policy team needs to transform technical material into institutional documentation while preserving traceability and reviewability.
-
-
----
-
-8.7 Emergency and Continuity Planning
-
-AI JOKER-C2 can support continuity-oriented documentation:
-
-scenario summaries;
-
-operational checklists;
-
-escalation paths;
-
-event timelines;
-
-communication drafts;
-
-post-incident review structures.
-
-
-Use case:
-
-An institutional team needs controlled AI support for continuity planning without delegating authority to the AI system.
-
-
----
-
-9. B2G Deployment Scenarios
-
-Possible public-sector deployment scenarios:
-
-Scenario	Description
-
-Internal AI governance assistant	Supports offices using AI under controlled rules
-Administrative documentation runtime	Generates and restructures internal documentation
-Defensive cybersecurity assistant	Supports incident reporting and risk documentation
-Audit preparation layer	Organizes records, evidence and decision summaries
-Critical infrastructure support layer	Supports resilience and continuity documentation
-Public procurement support tool	Assists document review under human responsibility
-Institutional research prototype	Demonstrates governed AI runtime architecture
-Regional or national digital node	Supports federated governance and operational continuity
-
-
-Each scenario must preserve legal authority, human oversight and non-offensive boundaries.
-
-
----
-
-10. Integration Path for Public-Sector Actors
-
-Recommended adoption path:
-
-Step	Action
-
-1	Review project documentation and non-offensive boundary
-2	Identify low-risk public-sector workflows
-3	Classify workflows by sensitivity
-4	Define policy, oversight and escalation rules
-5	Start with documentation and analysis tasks
-6	Introduce risk and decision logic
-7	Add EVT and ledger traceability
-8	Add verification and audit review
-9	Prepare human oversight and incident templates
-10	Evaluate controlled pilot deployment
-
-
-Public-sector adoption should start from low-risk workflows and expand only through review.
-
-
----
-
-11. Institutional Governance Model
-
-AI JOKER-C2 supports a governance model based on:
-
-Identity -> Authority -> Policy -> Risk -> Human Oversight -> Decision -> EVT -> Verification -> Audit
-
-Institutional governance requires:
-
-clear scope;
-
-legal basis;
-
-accountable human operator;
-
-risk classification;
-
-review process;
+human oversight;
 
 event traceability;
 
-auditability;
+audit records;
 
-escalation logic;
+verification layers;
 
-non-offensive boundary;
+controlled escalation;
 
-data handling rules.
+fail-closed behavior;
 
-
-The runtime may support institutional work.
-
-It must not replace institutional authority.
+separation between advisory support and official decision.
 
 
----
+This creates a governance gap.
 
-12. Human Oversight in Public-Sector Use
+An AI output may be useful, but a public institution must also know:
 
-AI JOKER-C2 preserves human accountability.
+who requested it;
 
-Suggested oversight states:
+under which authority;
 
-State	Meaning
+for which institutional purpose;
 
-NOT_REQUIRED	Ordinary low-risk support
-RECOMMENDED	Human review useful
-REQUIRED	Human review required
-COMPLETED	Review completed
-REJECTED	Review rejected the operation
-ESCALATED	Higher authority required
+with which data;
 
+under which risk class;
 
-Human oversight should be required when AI-assisted work may affect:
+whether human review was required;
 
-rights;
+whether the output affected third parties;
 
-access to public services;
+whether the operation can be audited;
 
-legal interpretation;
-
-public procurement;
-
-public safety;
-
-critical infrastructure;
-
-law enforcement;
-
-public-sector resource allocation;
-
-high-impact institutional decisions.
+whether the event can be reconstructed later.
 
 
-AI JOKER-C2 supports human review.
-
-It does not replace it.
+AI JOKER-C2 is designed to structure this gap.
 
 
 ---
 
-13. Risk Classes for B2G Use
+4. Ecosystem Architecture
 
-Suggested public-sector risk classes:
+AI JOKER-C2 connects three primary project domains.
 
-Risk	Meaning	Default Handling
+MATRIX = operational infrastructure
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
+APOKALYPSIS = historical threshold analysis
+AI JOKER-C2 = cognitive command runtime
 
-LOW	Ordinary internal support	ALLOW
-MEDIUM	Administrative or operational relevance	AUDIT
-HIGH	Sensitive institutional context	ESCALATE or DEGRADE
-CRITICAL	High-impact public authority or critical systems	ESCALATE or BLOCK
-PROHIBITED	Unsafe, unlawful or outside scope	BLOCK
-UNKNOWN	Cannot be classified safely	ESCALATE or BLOCK
+For B2G environments, the primary operational domain is usually MATRIX.
+
+MATRIX provides the public-sector infrastructure logic for:
+
+European AI governance;
+
+institutional traceability;
+
+public administration workflows;
+
+critical infrastructure resilience;
+
+cloud and data governance;
+
+cybersecurity defense;
+
+operational continuity;
+
+B2G positioning;
+
+fail-closed governance.
 
 
-Public-sector use should treat unknown sensitive risk conservatively.
+CORPUS ESOTEROLOGIA ERMETICA provides the conceptual grammar of the ecosystem, especially around decision, cost, trace and time.
+
+APOKALYPSIS provides a strategic historical-threshold analysis layer, useful for understanding system exposure, social instability, cultural decay and institutional fragility.
+
+AI JOKER-C2 is the runtime that connects these domains into one governed operational layer.
 
 
 ---
 
-14. Governance Decisions
+5. Public-Sector Use Cases
 
-The runtime may produce the following decisions:
+5.1 AI Governance for Public Administration
 
-Decision	Public-Sector Meaning
+AI JOKER-C2 can support public administrations that need to introduce AI into internal workflows while preserving traceability, reviewability and human accountability.
 
-ALLOW	Operation may proceed
-BLOCK	Operation is prohibited or unsafe
-ESCALATE	Human review or authority required
-DEGRADE	Limited safe support only
-AUDIT	Record or review required
-NOOP	No operational action taken
+Possible outputs:
+
+AI governance notes;
+
+policy-aware workflow maps;
+
+risk classification records;
+
+human oversight models;
+
+audit checklists;
+
+institutional use-case documentation;
+
+internal AI usage protocols.
 
 
-The decision layer makes AI-assisted institutional work easier to supervise.
+The system should be used as support infrastructure, not as final public authority.
 
 
 ---
 
-15. EVT and Public Accountability
+5.2 Institutional Document Traceability
+
+AI JOKER-C2 can support public-sector document workflows where transformations must remain reconstructable.
+
+Possible document types:
+
+policy drafts;
+
+technical reports;
+
+institutional memoranda;
+
+cybersecurity reports;
+
+public procurement documentation;
+
+infrastructure resilience notes;
+
+internal procedures;
+
+audit documentation;
+
+project submissions;
+
+regional or European strategic documents.
+
+
+Possible outputs:
+
+structured summaries;
+
+traceable transformations;
+
+version notes;
+
+audit-ready document records;
+
+institutional briefings;
+
+repository-ready files;
+
+evidence references.
+
+
+
+---
+
+5.3 Critical Infrastructure Resilience Documentation
+
+AI JOKER-C2 can support documentation and analysis for critical infrastructure resilience without acting as an autonomous control system.
+
+Relevant areas:
+
+cloud infrastructure;
+
+data infrastructure;
+
+energy continuity;
+
+cybersecurity resilience;
+
+public digital services;
+
+territorial coordination;
+
+logistics continuity;
+
+institutional operational continuity.
+
+
+Allowed use:
+
+documentation;
+
+risk mapping;
+
+resilience planning;
+
+governance models;
+
+escalation frameworks;
+
+audit structures;
+
+non-offensive defensive analysis.
+
+
+Out of scope:
+
+direct control of infrastructure;
+
+autonomous operational intervention;
+
+unauthorized access;
+
+sabotage;
+
+offensive cyber action;
+
+unsupervised high-impact decisions.
+
+
+
+---
+
+5.4 Defensive Cybersecurity Governance
+
+AI JOKER-C2 can support defensive cybersecurity governance for public-sector environments.
+
+Allowed support:
+
+incident report structuring;
+
+secure architecture review;
+
+defensive risk analysis;
+
+repository security documentation;
+
+dependency hygiene notes;
+
+evidence chain preparation;
+
+resilience planning;
+
+safe hardening guidance;
+
+policy and escalation documentation.
+
+
+Prohibited support:
+
+malware;
+
+exploit deployment;
+
+unauthorized intrusion;
+
+credential theft;
+
+stealth;
+
+evasion;
+
+persistence;
+
+sabotage;
+
+offensive automation.
+
+
+The runtime is defensive by design.
+
+
+---
+
+5.5 Public Procurement and Technology Governance
+
+AI JOKER-C2 can support structured analysis of AI and technology procurement.
+
+Possible outputs:
+
+evaluation criteria;
+
+risk classification templates;
+
+governance requirements;
+
+auditability requirements;
+
+human oversight requirements;
+
+traceability requirements;
+
+security boundary notes;
+
+vendor accountability matrices;
+
+evidence and verification requirements.
+
+
+This can help public-sector buyers distinguish between generic AI products and systems designed with governance, traceability and fail-closed behavior.
+
+
+---
+
+5.6 Regional and European Strategic Planning
+
+AI JOKER-C2 can support strategic documentation for regional, national and European technology governance.
+
+Relevant contexts:
+
+Torino;
+
+Piemonte;
+
+Italy;
+
+Brussels;
+
+European Union;
+
+public-sector innovation;
+
+digital sovereignty;
+
+AI governance;
+
+cybersecurity resilience;
+
+critical infrastructure continuity;
+
+B2G deployment scenarios.
+
+
+Possible outputs:
+
+strategic memos;
+
+institutional submissions;
+
+regional technology maps;
+
+European infrastructure notes;
+
+AI governance models;
+
+resilience documentation;
+
+roadmap documents.
+
+
+
+---
+
+6. Institutional Target Segments
+
+AI JOKER-C2 may be relevant to the following B2G or public-sector actors.
+
+Segment	Potential Need
+
+Public administrations	AI-assisted documentation, traceability and auditability
+Regional authorities	Territorial technology governance and resilience planning
+European institutions	Risk-based AI governance, auditability and accountability models
+Cybersecurity agencies	Defensive documentation and incident traceability
+Critical infrastructure governance bodies	Resilience documentation and operational continuity
+Public research centers	AI governance research and demonstrators
+Public-sector innovation programs	Responsible AI prototypes and governance models
+Civil protection entities	Scenario documentation and non-offensive coordination support
+Public procurement offices	AI governance requirements and vendor accountability
+Institutional technology teams	Policy-aware AI workflows and evidence records
+
+
+
+---
+
+7. B2G Governance Model
+
+AI JOKER-C2 supports B2G governance through the following runtime layers.
+
+Layer	Public-Sector Function
+
+Identity	Binds operations to a runtime entity and accountability context
+Intent	Classifies the purpose of the request
+Context	Identifies the operational environment
+Project Domain	Routes the request to MATRIX, CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN
+Policy	Applies allowed, restricted or prohibited boundaries
+Risk	Classifies sensitivity and institutional impact
+Decision	Produces ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT or NOOP
+EVT	Generates an event record
+Ledger	Preserves event continuity
+Verification	Supports audit and reconstruction
+Human Oversight	Preserves institutional accountability
+
+
+The public-sector value is not only AI output.
+
+The value is controlled, reviewable and reconstructable AI-assisted operation.
+
+
+---
+
+8. EVT for Public-Sector Auditability
 
 EVT means Event.
 
-In B2G contexts, EVT can support public accountability by recording:
+An EVT is a structured operational record.
+
+A B2G EVT may include:
 
 event identifier;
 
 previous event reference;
 
-entity;
-
-IPR;
-
 timestamp;
 
-runtime state;
+entity;
+
+IPR or identity reference;
+
+project domain;
 
 context class;
+
+institutional context;
+
+policy reference;
 
 risk class;
 
 governance decision;
 
+human oversight state;
+
+operation type;
+
 operation status;
+
+hash;
 
 verification status;
 
 audit status.
 
 
-An EVT does not automatically make an operation lawful.
+Example:
 
-It makes the operation reconstructable.
+{
+  "evt": "EVT-20260503-153000-AI-JOKER-C2-0001",
+  "prev": "EVT-0014-AI",
+  "entity": "AI_JOKER",
+  "ipr": "IPR-AI-0001",
+  "timestamp": "2026-05-03T15:30:00+02:00",
+  "project": {
+    "ecosystem": "HERMETICUM B.C.E.",
+    "domain": "MATRIX",
+    "domain_type": "OPERATIONAL_INFRASTRUCTURE_DOMAIN"
+  },
+  "context": {
+    "class": "STRATEGIC",
+    "domain": "B2G",
+    "sensitivity": "MEDIUM"
+  },
+  "governance": {
+    "risk": "MEDIUM",
+    "decision": "AUDIT",
+    "policy": "B2G_GOVERNED_OPERATION",
+    "fail_closed": false,
+    "human_oversight": "RECOMMENDED"
+  },
+  "operation": {
+    "type": "PUBLIC_SECTOR_AI_GOVERNANCE_ANALYSIS",
+    "status": "COMPLETED"
+  },
+  "trace": {
+    "hash_algorithm": "sha256",
+    "canonicalization": "deterministic-json",
+    "hash": "sha256:example"
+  },
+  "verification": {
+    "status": "VERIFIABLE",
+    "audit_status": "READY"
+  }
+}
 
-Compliance and legality still require human and institutional review.
+EVT is not decorative logging.
+
+It is the operational trace that allows later reconstruction.
 
 
 ---
 
-16. Ledger and Continuity
+9. Governance Decisions
 
-The ledger preserves operational continuity.
+AI JOKER-C2 uses governance decisions to control runtime behavior.
 
-Public-sector ledger principles:
+Decision	Meaning
 
-1. Relevant events should be append-only.
-
-
-2. Historical records should not be silently rewritten.
-
-
-3. Corrections should be represented as new events.
-
-
-4. Sensitive payloads should be minimized.
+ALLOW	Operation may proceed
+BLOCK	Operation is prohibited or unsafe
+ESCALATE	Human review or authority required
+DEGRADE	Limited safe response only
+AUDIT	Operation should be recorded or reviewed
+NOOP	No operational action taken
 
 
-5. Public and internal views should be separated.
-
-
-6. Verification status should be explicit.
-
-
-7. Audit status should be explicit.
-
-
-8. Human review should be recorded when required.
-
-
-
-The goal is not surveillance.
-
-The goal is institutional reconstruction of relevant AI-assisted operations.
+For B2G environments, AUDIT and ESCALATE are especially important because public-sector workflows often involve accountability, institutional review and impact on third parties.
 
 
 ---
 
-17. Data Handling in Public-Sector Contexts
+10. Risk Classes
 
-Public-sector data handling must be conservative.
+Suggested B2G risk classes:
 
-Recommended rules:
+Risk	Meaning	Default Handling
 
-process only necessary content;
+LOW	Ordinary safe documentation or explanation	ALLOW
+MEDIUM	Institutional or operational relevance	ALLOW or AUDIT
+HIGH	Sensitive public-sector, cybersecurity or infrastructure relevance	ESCALATE or DEGRADE
+CRITICAL	High-impact domain requiring strict review	ESCALATE or BLOCK
+PROHIBITED	Unsafe, unlawful or outside scope	BLOCK
+UNKNOWN	Cannot be safely classified	ESCALATE or BLOCK
 
-avoid unnecessary personal data;
 
-avoid exposing confidential documents;
+Unknown risk must not become permission.
 
-avoid logging sensitive content;
+In public-sector contexts, ambiguity should be handled conservatively.
 
-avoid sending secrets to model providers;
 
-use references or hashes where possible;
+---
 
-separate public and internal event views;
+11. Human Oversight
 
-clearly mark incomplete file visibility;
+AI JOKER-C2 must preserve human and institutional accountability.
 
-require human review for sensitive outputs;
+The runtime may assist with:
 
-apply data protection review before regulated deployment.
+analysis;
+
+drafting;
+
+classification;
+
+risk mapping;
+
+policy documentation;
+
+technical review;
+
+audit preparation;
+
+evidence structuring;
+
+public-sector reporting;
+
+governance design.
+
+
+It must not claim final authority over:
+
+legal decisions;
+
+administrative decisions affecting rights;
+
+law enforcement actions;
+
+military decisions;
+
+public procurement awards;
+
+access to public services;
+
+critical infrastructure intervention;
+
+coercive public authority;
+
+irreversible high-impact decisions.
+
+
+Suggested oversight states:
+
+State	Meaning
+
+NOT_REQUIRED	Ordinary safe operation
+RECOMMENDED	Human review useful
+REQUIRED	Human review required before continuation
+COMPLETED	Human review completed
+REJECTED	Human review rejected the operation
+ESCALATED	Further authority required
+
+
+
+---
+
+12. European Governance Orientation
+
+AI JOKER-C2 is designed with a European governance orientation.
+
+This means the architecture is aligned with principles such as:
+
+trustworthy AI;
+
+risk-based governance;
+
+human oversight;
+
+transparency;
+
+auditability;
+
+cybersecurity resilience;
+
+data protection by design;
+
+accountability;
+
+proportionality;
+
+public-sector responsibility;
+
+critical infrastructure continuity;
+
+dual-use risk awareness;
+
+verification and evidence.
+
+
+This document does not claim regulatory certification.
+
+It defines a technical and governance architecture that can support compliance-oriented discussion, review and implementation planning.
+
+
+---
+
+13. Public-Sector Data Handling
+
+Public-sector data must be handled conservatively.
+
+Recommended principles:
+
+process only necessary data;
+
+avoid unnecessary retention;
+
+avoid exposing personal data;
+
+avoid logging secrets;
+
+avoid storing sensitive payloads without purpose;
+
+prefer references and hashes when possible;
+
+separate public and internal records;
+
+preserve human review;
+
+classify data sensitivity;
+
+state partial visibility when document access is incomplete;
+
+reject unsupported or unsafe files.
 
 
 Suggested data classes:
 
 Class	Handling
 
-PUBLIC	May be processed normally
-INTERNAL	Process with institutional care
-CONFIDENTIAL	Restrict, minimize and review
-SECRET	Do not expose or process without controlled environment
-PERSONAL	Minimize and review legal basis
+PUBLIC	May be summarized or referenced
+INTERNAL	Process with care
+SENSITIVE	Minimize, redact or reference
+SECRET	Do not store or expose
+UNSUPPORTED	Reject or process as inert metadata
 UNKNOWN	Treat conservatively
 
 
 
 ---
 
-18. Defensive Security Boundary
+14. Security Boundary
 
-AI JOKER-C2 supports defensive public-sector security work only.
+AI JOKER-C2 supports defensive and governance-oriented security work only.
 
 Allowed:
 
-incident documentation;
+defensive cybersecurity analysis;
 
-defensive analysis;
-
-risk mapping;
-
-resilience planning;
-
-security policy drafting;
+incident report structuring;
 
 secure architecture review;
 
-audit preparation;
+resilience documentation;
 
-vulnerability remediation documentation.
+public-sector audit preparation;
+
+governance mapping;
+
+safe hardening guidance;
+
+policy and escalation documentation.
 
 
-Not allowed:
+Prohibited:
 
 offensive cyber operations;
 
-unauthorized intrusion;
-
 exploit deployment;
+
+unauthorized access;
 
 malware;
 
@@ -702,324 +800,50 @@ credential theft;
 
 stealth;
 
-persistence;
-
 evasion;
+
+persistence;
 
 sabotage;
 
 unlawful surveillance;
 
-targeting systems.
-
-
-Public-sector security use must remain lawful, defensive and accountable.
-
-
----
-
-19. Dual-Use Institutional Boundary
-
-AI JOKER-C2 may be considered dual-use only in a controlled civil and strategic sense.
-
-Allowed dual-use public-sector domains:
-
-AI governance;
-
-defensive cybersecurity;
-
-infrastructure resilience;
-
-public administration traceability;
-
-incident documentation;
-
-operational continuity;
-
-audit and evidence generation;
-
-institutional risk mapping;
-
-emergency planning.
-
-
-Prohibited domains:
-
-autonomous weapons;
-
-offensive cyber operations;
-
-unlawful surveillance;
-
-targeting systems;
+autonomous targeting;
 
 coercive manipulation;
 
-repression of fundamental rights;
-
-disinformation operations;
-
-sabotage.
+disinformation operations.
 
 
-Dual-use does not mean unrestricted state use.
-
-Dual-use means controlled, lawful, accountable and traceable strategic support.
+This boundary must remain explicit in any B2G presentation.
 
 
 ---
 
-20. Public Procurement Support Boundary
+15. Compliance Orientation
 
-AI JOKER-C2 may support public procurement documentation.
+AI JOKER-C2 can support compliance-oriented workflows, but it does not certify legal compliance.
 
-Allowed:
+It may assist with:
 
-document organization;
+AI governance mapping;
 
-summarization;
+human oversight records;
 
-requirement extraction;
+risk registers;
 
-comparison tables;
+audit checklists;
 
-missing-information flags;
+incident report templates;
 
-draft review notes;
+data handling documentation;
 
-risk and compliance checklists.
+accountability matrices;
 
+verification reports;
 
-Not allowed:
+public-sector technology governance notes.
 
-final award decision without human authority;
-
-hidden scoring without review;
-
-discriminatory profiling;
-
-manipulation of procurement outcomes;
-
-removal of auditability;
-
-unauthorized access to bidder systems;
-
-replacement of legal or administrative review.
-
-
-The runtime supports procurement accountability.
-
-It does not replace procurement authority.
-
-
----
-
-21. Public Communication Support
-
-AI JOKER-C2 can assist public communication drafting.
-
-Allowed:
-
-public notices;
-
-technical summaries;
-
-institutional explanations;
-
-emergency communication drafts;
-
-citizen-facing plain language summaries;
-
-internal briefing notes.
-
-
-Required boundaries:
-
-human review before publication;
-
-factual verification;
-
-no disinformation;
-
-no manipulation;
-
-no coercive targeting;
-
-no fabricated authority;
-
-no hidden persuasion systems.
-
-
-Public communication must remain accountable.
-
-
----
-
-22. Institutional Stakeholder Map
-
-Stakeholder	What They Need
-
-Public administrator	Controlled AI use and administrative clarity
-Digital transformation officer	Governed adoption model
-CISO	Defensive boundary, secrets, runtime security
-Data protection officer	Data minimization and legal basis review
-Legal office	Responsibility, scope and non-certification clarity
-Audit office	Event records, verification and reviewability
-Procurement office	Document support with human decision authority
-Critical infrastructure office	Resilience, continuity and escalation models
-Civil protection office	Scenario and continuity documentation
-Political leadership	Strategic control without unsafe automation
-
-
-AI JOKER-C2 should support these roles without collapsing their responsibilities into the AI system.
-
-
----
-
-23. B2G Service Packages
-
-Potential B2G service packages:
-
-Package 1 - Institutional Documentation Baseline
-
-Includes:
-
-README;
-
-governance model;
-
-architecture document;
-
-security policy;
-
-compliance orientation;
-
-B2G overview;
-
-operational protocol.
-
-
-Purpose:
-
-Provide a public-sector reader with a complete governance baseline.
-
-
----
-
-Package 2 - AI Governance Workflow Mapping
-
-Includes:
-
-context classes;
-
-risk classes;
-
-decision model;
-
-human oversight states;
-
-escalation model;
-
-audit checklist.
-
-
-Purpose:
-
-Map how institutional AI-assisted workflows should be governed.
-
-
----
-
-Package 3 - EVT and Public Accountability Prototype
-
-Includes:
-
-EVT generator;
-
-previous event reference;
-
-hash;
-
-verification status;
-
-audit status;
-
-correction event model.
-
-
-Purpose:
-
-Make relevant AI-assisted operations reconstructable.
-
-
----
-
-Package 4 - Defensive Cybersecurity Documentation Support
-
-Includes:
-
-incident report template;
-
-risk mapping;
-
-resilience notes;
-
-security review checklist;
-
-non-offensive boundary.
-
-
-Purpose:
-
-Support defensive public-sector cybersecurity documentation.
-
-
----
-
-Package 5 - Critical Infrastructure Continuity Support
-
-Includes:
-
-continuity model;
-
-escalation workflow;
-
-event trace template;
-
-risk register;
-
-evidence pack structure.
-
-
-Purpose:
-
-Support controlled documentation for critical infrastructure resilience.
-
-
----
-
-24. B2G Pitch
-
-Short pitch:
-
-AI JOKER-C2 is a governed AI runtime for public-sector environments requiring traceable, risk-aware and auditable AI-assisted operations.
-
-Medium pitch:
-
-AI JOKER-C2 transforms AI-assisted institutional work into identity-bound, policy-aware, risk-classified and event-traceable operational sequences. It is designed to support public administrations, agencies and strategic operators that need AI capabilities without losing human accountability, auditability and operational control.
-
-Strategic institutional pitch:
-
-AI JOKER-C2 provides a governance-oriented runtime for public-sector AI operations, connecting identity, policy, risk, decision, EVT, ledger, verification and continuity into a controlled operational sequence. The system is designed for lawful, defensive and accountable use in civil, institutional and strategic digital environments.
-
-
----
-
-25. Non-Certification Statement
-
-AI JOKER-C2 is a governance-oriented architecture and operational prototype.
-
-It is not a certified public-sector compliance product.
 
 It does not replace:
 
@@ -1029,70 +853,355 @@ data protection review;
 
 cybersecurity review;
 
-procurement review;
+institutional authorization;
 
-public authority;
+procurement procedure;
 
-human administrative responsibility;
+regulatory assessment;
 
-institutional accountability;
-
-deployment-specific risk assessment.
+responsible human decision-making.
 
 
-Any public-sector deployment requires proper authorization, legal basis, security review, data protection review, human oversight and operational controls.
+Compliance support is not compliance certification.
 
 
 ---
 
-26. Public-Sector Adoption Roadmap
+16. B2G Integration Levels
 
-Recommended public-sector adoption roadmap:
+AI JOKER-C2 may be introduced in stages.
+
+Level	Description
+
+Level 1 — Documentation Review	Public-sector review of architecture and governance files
+Level 2 — Demonstrator	Controlled demo with non-sensitive examples
+Level 3 — Assisted Documentation	AI-assisted drafting with human review
+Level 4 — Runtime Prototype	Live runtime with project-domain, policy and risk classification
+Level 5 — EVT Ledger	Event records, hash continuity and audit trail
+Level 6 — Verification Endpoint	Public-safe verification of event records
+Level 7 — Evidence Packs	Exportable audit bundles
+Level 8 — Institutional Pilot	Controlled pilot with governance, security and legal review
+Level 9 — Regulated Deployment Assessment	Formal review before any sensitive deployment
+
+
+The recommended B2G entry point is Level 1 or Level 2.
+
+High-impact deployment requires strict review.
+
+
+---
+
+17. Institutional Pilot Model
+
+A controlled B2G pilot may include:
+
+1. institutional scope definition;
+
+
+2. non-sensitive use-case selection;
+
+
+3. legal and governance review;
+
+
+4. data protection review;
+
+
+5. cybersecurity review;
+
+
+6. human oversight model;
+
+
+7. policy boundary definition;
+
+
+8. runtime test environment;
+
+
+9. EVT generation;
+
+
+10. verification workflow;
+
+
+11. audit evaluation;
+
+
+12. stakeholder report;
+
+
+13. external review before expansion.
+
+
+
+Recommended pilot use cases:
+
+AI governance documentation;
+
+institutional document summarization;
+
+public-sector policy drafting support;
+
+defensive incident report structuring;
+
+audit checklist generation;
+
+technology governance mapping;
+
+repository documentation;
+
+resilience planning documents.
+
+
+A B2G pilot should not begin with direct operational control or high-impact decision automation.
+
+
+---
+
+18. Difference From Generic AI Tools
+
+Generic AI Tool	AI JOKER-C2
+
+Produces unbound output	Produces governed operational output
+No public-sector identity model	Identity-bound runtime
+No project-domain routing	MATRIX, CORPUS, APOKALYPSIS, GENERAL and MULTI_DOMAIN classification
+No native policy layer	Policy-aware runtime
+No risk class	Risk-classified operation
+No decision object	ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT and NOOP
+No event trace	EVT event record
+No ledger continuity	Append-only continuity model
+No verification	Verification and audit reconstruction
+No fail-closed principle	Fail-closed sensitive execution
+Generic response	Operational trace plus response
+
+
+The institutional value is governance, not only generation.
+
+
+---
+
+19. B2G Deliverables
+
+A B2G package may include:
+
+README.md
+ARCHITECTURE.md
+GOVERNANCE.md
+EVT_PROTOCOL.md
+PROTOCOL.md
+DUAL_USE_STRATEGIC_POSITIONING.md
+SECURITY.md
+COMPLIANCE.md
+ROADMAP.md
+docs/B2G_OVERVIEW.md
+docs/PROJECT_DOMAIN_GOVERNANCE_MAP.md
+docs/AI_GOVERNANCE_MAPPING.md
+docs/HUMAN_OVERSIGHT_MODEL.md
+docs/RISK_REGISTER_TEMPLATE.md
+docs/AUDIT_CHECKLIST.md
+docs/INCIDENT_REPORT_TEMPLATE.md
+docs/DATA_HANDLING_MODEL.md
+
+Optional future deliverables:
+
+institutional one-page brief;
+
+demo screenshots;
+
+runtime diagnostic report;
+
+sample EVT chain;
+
+verification example;
+
+evidence pack sample;
+
+pilot proposal;
+
+security review note;
+
+deployment readiness checklist.
+
+
+
+---
+
+20. Institutional Readiness Checklist
+
+Before presenting AI JOKER-C2 to a public-sector stakeholder, check:
+
+Is the public-sector use case clear?
+
+Is the security boundary clear?
+
+Is the system presented as non-offensive?
+
+Is the system presented as a prototype, not a certified product?
+
+Are MATRIX, CORPUS and APOKALYPSIS clearly distinguished?
+
+Is human accountability preserved?
+
+Is the compliance limitation explicit?
+
+Are prohibited uses excluded?
+
+Is data handling conservative?
+
+Is the EVT model clear?
+
+Is the verification model clear?
+
+Is the roadmap realistic?
+
+Are secrets absent from the repository?
+
+Does the project build?
+
+Is any live demo stable enough for review?
+
+
+
+---
+
+21. Suggested Institutional Message
+
+Short institutional description:
+
+AI JOKER-C2 is an identity-bound governed AI runtime designed to support public-sector AI traceability, policy-aware workflows, risk classification, human oversight, event records, auditability and fail-closed operational continuity.
+
+Extended institutional description:
+
+AI JOKER-C2 helps public-sector and institutional environments move from generic AI usage to governed AI-assisted operations. It connects identity, context, project domain, policy, risk, decision, EVT event records, ledger continuity and verification, allowing AI-assisted work to become more accountable, reviewable and auditable. The system is designed for defensive, civil and strategic B2G use cases such as AI governance, institutional document traceability, public-sector accountability, critical infrastructure resilience documentation and compliance-oriented workflows.
+
+
+---
+
+22. Suggested B2G Pilot Statement
+
+A first B2G pilot should focus on low-risk, high-value institutional workflows such as AI governance documentation, policy drafting support, defensive incident report structuring, public-sector audit preparation and traceable document transformation. The objective is not high-impact automation, but the creation of a controlled evidence-ready runtime for AI-assisted institutional work.
+
+
+---
+
+23. Out-of-Scope for B2G Use
+
+The following are out of scope:
+
+offensive cybersecurity;
+
+exploit deployment;
+
+malware;
+
+unauthorized access;
+
+unlawful surveillance;
+
+autonomous targeting;
+
+sabotage;
+
+coercive manipulation;
+
+disinformation;
+
+replacement of legal review;
+
+replacement of institutional authority;
+
+replacement of human accountability;
+
+direct public-service decisions without lawful process;
+
+critical infrastructure control without authorization;
+
+production deployment without security, legal and data protection review.
+
+
+AI JOKER-C2 must remain a governed support runtime.
+
+It must not become an uncontrolled public authority system.
+
+
+---
+
+24. B2G Roadmap
+
+Recommended B2G development path:
 
 Phase	Objective
 
-B2G-0	Documentation review
-B2G-1	Low-risk internal documentation pilot
-B2G-2	Workflow and risk classification
-B2G-3	Policy and human oversight model
-B2G-4	EVT and ledger prototype
-B2G-5	Verification and audit review
-B2G-6	Defensive cybersecurity documentation pilot
-B2G-7	Critical infrastructure continuity documentation
-B2G-8	Controlled institutional pilot
-B2G-9	External legal, security and data protection review
+B2G-1	Documentation package
+B2G-2	Non-sensitive institutional demonstrator
+B2G-3	Project-domain classifier
+B2G-4	Policy and risk engine
+B2G-5	EVT event generation
+B2G-6	Append-only ledger
+B2G-7	Verification endpoint
+B2G-8	Human oversight workflow
+B2G-9	Evidence pack export
+B2G-10	Controlled institutional pilot
+B2G-11	External legal, cybersecurity and data protection review
 
 
-Public-sector deployment should advance through review gates, not through uncontrolled acceleration.
+The first B2G milestone is not automation.
 
-
----
-
-27. Final B2G Formula
-
-Public AI without traceability creates institutional opacity.
-Public AI with identity, policy, risk, EVT and verification creates accountable operational support.
-
-Operational formula:
-
-B2G AI Governance = Identity + Authority + Policy + Risk + Human Oversight + EVT + Verification + Audit
+The first milestone is accountable structure.
 
 
 ---
 
-28. Status
+25. Final B2G Formula
 
-Document status: active B2G overview
-Project: AI JOKER-C2
-Framework: MATRIX
-Infrastructure: HBCE
-Identity layer: IPR
-Trace layer: EVT
-Governance principle: fail-closed
-Security boundary: defensive and non-offensive
-Business orientation: B2G
-Repository: hbce-ai-joker-c2
-Maintainer: HBCE Research
-Organization: HERMETICUM B.C.E. S.r.l.
-Territorial anchor: Torino, Italy, Europe
-Year: 2026
+Public-sector AI must not be only generative.
+Public-sector AI must become accountable.
+
+Expanded:
+
+No identity, no public accountability.
+No authority, no legitimate execution.
+No project domain, no correct routing.
+No policy, no controlled operation.
+No risk classification, no sensitive output.
+No human oversight, no high-impact authority.
+No EVT, no traceability.
+No verification, no auditability.
+No fail-closed, no institutional trust.
+
+Project formula:
+
+MATRIX = institutional operational infrastructure.
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar.
+APOKALYPSIS = strategic threshold analysis.
+AI JOKER-C2 = governed cognitive runtime.
+
+
+---
+
+26. Status
+
+Field	Value
+
+Document	docs/B2G_OVERVIEW.md
+Status	Active B2G overview
+Project	AI JOKER-C2
+Ecosystem	HERMETICUM B.C.E.
+Primary B2G domain	MATRIX
+Connected domains	MATRIX, CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Infrastructure	HBCE
+Identity layer	IPR
+Trace layer	EVT
+Governance principle	Fail-closed
+Security boundary	Defensive and non-offensive
+Compliance status	Orientation only, not certification
+Target	Public administration, institutions, public-sector technology programs, critical infrastructure governance and European governance environments
+Repository	hbce-ai-joker-c2
+Maintainer	HBCE Research
+Organization	HERMETICUM B.C.E. S.r.l.
+Territorial anchor	Torino, Italy, Europe
+Year	2026
+
+
+
