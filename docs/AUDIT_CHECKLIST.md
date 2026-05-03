@@ -1,5 +1,7 @@
 # AI JOKER-C2 Audit Checklist
 
+## Audit Checklist for MATRIX, CORPUS and APOKALYPSIS
+
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.  
 Torino, Italy, Europe  
@@ -11,969 +13,885 @@ Torino, Italy, Europe
 
 This document provides an audit checklist for AI JOKER-C2.
 
-AI JOKER-C2 is an identity-bound operational AI runtime built within the HBCE infrastructure and aligned with the MATRIX framework.
+AI JOKER-C2 is the identity-bound cognitive command runtime of the HERMETICUM B.C.E. ecosystem.
 
-The purpose of this checklist is to help reviewers evaluate whether AI-assisted operations are:
+It connects three primary domains:
 
-- identity-bound;
-- policy-aware;
-- risk-classified;
-- human-supervised;
-- traceable through EVT;
-- auditable;
-- verifiable;
-- secure;
-- non-offensive;
-- fail-closed by design.
+1. MATRIX
+2. CORPUS ESOTEROLOGIA ERMETICA
+3. APOKALYPSIS
 
-This checklist supports governance review.
+The purpose of this checklist is to support structured review of AI-assisted operations, repository changes, governance decisions, EVT records, ledger continuity, verification, security posture and compliance-oriented documentation.
 
-It does not create legal certification.
+This checklist does not provide legal certification.
 
-It does not replace legal, cybersecurity, data protection, institutional, operational or compliance review.
+It does not replace legal, cybersecurity, data protection, institutional or regulatory review.
+
+It provides a practical audit structure for checking whether AI JOKER-C2 remains identity-bound, project-aware, policy-checked, risk-classified, human-accountable, traceable, verifiable and fail-closed by design.
 
 ---
 
-## 2. Audit Principle
-
-The core audit principle is:
+## 2. Core Audit Formula
 
 ```txt
-An AI-assisted operation is not audit-ready unless it can be reconstructed.
+Identity -> Input -> Intent -> Context -> Project Domain -> Policy -> Risk -> Human Oversight -> Decision -> Execution -> EVT -> Ledger -> Verification -> Audit
 
-Expanded:
+Condensed:
 
-Identity -> Context -> Policy -> Risk -> Human Oversight -> Decision -> EVT -> Ledger -> Verification -> Audit
+No identity, no accountability.
+No project domain, no correct routing.
+No policy, no controlled execution.
+No risk classification, no sensitive output.
+No human oversight, no high-impact authority.
+No EVT, no traceability.
+No ledger, no continuity.
+No verification, no auditability.
+No fail-closed, no trustworthy runtime.
 
-An audit should be able to answer:
+Project formula:
 
-1. What happened?
-
-
-2. When did it happen?
-
-
-3. Which identity was involved?
-
-
-4. Which context was involved?
-
-
-5. Which policy was applied?
-
-
-6. Which risk class was assigned?
-
-
-7. Which decision was made?
-
-
-8. Was human oversight required?
-
-
-9. Was an EVT generated?
-
-
-10. Can the event be verified?
-
-
-11. Was the operation within scope?
-
-
-12. Was fail-closed behavior preserved?
-
-
+MATRIX = operational infrastructure
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
+APOKALYPSIS = historical threshold analysis
+AI JOKER-C2 = cognitive command runtime
 
 
 ---
 
-3. Strategic Architecture
+3. Audit Scope
 
-AI JOKER-C2 operates inside the following architecture:
-
-MATRIX = strategic framework
-HBCE = governance infrastructure
-AI JOKER-C2 = operational runtime
-IPR = identity layer
-EVT = event trace layer
-Ledger = continuity layer
-Fail-closed = safety boundary
-
-Audit checks must verify that this architecture is not only described, but also preserved in files, runtime behavior and deployment choices.
-
-
----
-
-4. Audit Scope
-
-This checklist may be used to review:
+This checklist may be used to audit:
 
 repository documentation;
 
 runtime architecture;
 
-governance model;
+governance logic;
+
+project-domain classification;
 
 risk classification;
 
-policy boundaries;
-
 human oversight;
 
-EVT records;
+EVT event records;
 
 ledger continuity;
 
 verification logic;
 
-file handling;
+security policy;
 
-API behavior;
+compliance-oriented documentation;
 
-security boundaries;
+B2B readiness;
 
-compliance orientation;
+B2G readiness;
 
-dual-use boundary;
+public communication;
 
-B2B and B2G readiness;
+defensive dual-use boundary;
 
-critical infrastructure use cases;
-
-deployment preparation.
+future runtime implementation.
 
 
-The checklist is modular.
+The audit should determine whether the system remains aligned with its stated purpose.
 
-Reviewers may apply only the sections relevant to the specific audit.
+The audit should not treat documentation alone as proof of production readiness.
 
 
 ---
 
-5. Audit Status Values
+4. Audit Status Values
 
-Suggested audit status values:
+Use the following audit status values.
 
 Status	Meaning
 
 PASS	Requirement is satisfied
 PARTIAL	Requirement is partially satisfied
 FAIL	Requirement is not satisfied
-NOT_APPLICABLE	Requirement does not apply to the reviewed scope
-NEEDS_REVIEW	More evidence or human review is required
-BLOCKING	Issue blocks deployment or operational use
+NOT_APPLICABLE	Requirement does not apply to the reviewed item
+NEEDS_REVIEW	More review is required
+BLOCKED	Audit cannot continue until an issue is resolved
 
-
-The audit result should not hide uncertainty.
-
-If evidence is incomplete, use PARTIAL or NEEDS_REVIEW.
 
 
 ---
 
-6. Documentation Audit
+5. Audit Severity Values
 
-Review whether the repository contains and maintains the core governance documents.
+Use the following severity values.
 
-Check	Status	Notes
+Severity	Meaning
 
-README.md defines the project clearly		
-ARCHITECTURE.md defines the runtime architecture		
-GOVERNANCE.md defines governance decisions		
-PROTOCOL.md defines the operational sequence		
-EVT_PROTOCOL.md defines event trace structure		
-SECURITY.md defines defensive security boundary		
-COMPLIANCE.md defines compliance orientation		
-DUAL_USE_STRATEGIC_POSITIONING.md defines non-offensive dual-use boundary		
-ROADMAP.md defines development phases		
-CONTRIBUTING.md defines contribution rules		
-docs/B2B_OVERVIEW.md exists		
-docs/B2G_OVERVIEW.md exists		
-docs/INSTITUTIONAL_USE_CASES.md exists		
-docs/CRITICAL_INFRASTRUCTURE_USE_CASES.md exists		
-docs/AI_GOVERNANCE_USE_CASES.md exists		
-docs/DEFENSIVE_SECURITY_USE_CASES.md exists		
-docs/COMPLIANCE_MAPPING.md exists		
-docs/HUMAN_OVERSIGHT_MODEL.md exists		
-docs/RISK_REGISTER_TEMPLATE.md exists		
-docs/AUDIT_CHECKLIST.md exists		
+LOW	Minor issue or improvement
+MEDIUM	Relevant issue requiring correction
+HIGH	Significant governance, security or operational concern
+CRITICAL	Major issue that blocks safe use
+PROHIBITED	Unsafe, abusive or outside-scope capability
 
-
-Documentation must be consistent across files.
-
-Contradictions between governance files should be treated as audit issues.
 
 
 ---
 
-7. Identity Audit
-
-AI JOKER-C2 must preserve runtime identity.
+6. Identity Audit
 
 Check	Status	Notes
 
-Public name is defined as AI JOKER-C2		
-Canonical entity is defined as AI_JOKER		
-Canonical IPR is defined as IPR-AI-0001		
-Active checkpoint is documented as EVT-0014-AI		
-HBCE core reference is defined		
-MATRIX framework reference is defined		
-Organization is defined as HERMETICUM B.C.E. S.r.l.		
-Territorial anchor is defined as Torino, Italy, Europe		
-Runtime identity is not presented as unrestricted authority		
-Relevant operations can be bound to identity context		
+AI JOKER-C2 identity is defined		
+Entity AI_JOKER is present where required		
+IPR reference IPR-AI-0001 is present where required		
+Active checkpoint is documented		
+Organization is listed as HERMETICUM B.C.E. S.r.l.		
+Research signature is listed as HBCE Research		
+Territorial anchor is listed as Torino, Italy, Europe		
+Identity is not used to authorize unsafe execution		
+Identity supports traceability and accountability		
+Identity metadata is not overexposed in public outputs		
 
 
-Audit question:
+Audit rule:
 
-Can the reviewed operation be connected to a defined runtime identity?
-
-If not, the operation is not fully audit-ready.
+Identity creates accountability.
+Identity does not create unrestricted authority.
 
 
 ---
 
-8. Policy Audit
-
-Review whether policy boundaries are defined and applied.
+7. Project-Domain Audit
 
 Check	Status	Notes
 
+MATRIX is defined as operational infrastructure domain		
+CORPUS ESOTEROLOGIA ERMETICA is defined as disciplinary grammar domain		
+APOKALYPSIS is defined as historical threshold analysis domain		
+GENERAL domain is available for ordinary safe requests		
+MULTI_DOMAIN is available for ecosystem-level operations		
+Project-domain values are stable across documentation		
+Repository-level governance files use MULTI_DOMAIN where appropriate		
+B2B and B2G documents primarily route to MATRIX		
+Corpus editorial work routes to CORPUS_ESOTEROLOGIA_ERMETICA		
+Historical threshold work routes to APOKALYPSIS		
+Sensitive ambiguity triggers escalation or degradation		
+Project-domain metadata is included in EVT examples		
+
+
+Audit rule:
+
+No project-domain classification, no correct governance.
+
+
+---
+
+8. Context Classification Audit
+
+Check	Status	Notes
+
+Context classes are defined		
+IDENTITY context is present		
+MATRIX context is present		
+CORPUS context is present		
+APOKALYPSIS context is present		
+DOCUMENTAL context is present		
+TECHNICAL context is present		
+GITHUB context is present		
+EDITORIAL context is present		
+STRATEGIC context is present		
+SECURITY context is present		
+COMPLIANCE context is present		
+GOVERNANCE context is present		
+GENERAL context is present		
+Context classification supports policy and risk logic		
+
+
+
+---
+
+9. Intent Classification Audit
+
+Check	Status	Notes
+
+Intent classes are defined		
+ASK intent is present		
+WRITE intent is present		
+REWRITE intent is present		
+ANALYZE intent is present		
+SUMMARIZE intent is present		
+CODE intent is present		
+GITHUB intent is present		
+GOVERNANCE intent is present		
+SECURITY intent is present		
+COMPLIANCE intent is present		
+STRATEGIC intent is present		
+EDITORIAL intent is present		
+VERIFY intent is present		
+PROHIBITED intent is present		
+UNKNOWN intent is handled conservatively		
+
+
+Audit rule:
+
+Unknown intent in sensitive contexts must not authorize execution.
+
+
+---
+
+10. Policy Audit
+
+Check	Status	Notes
+
+Policy layer is documented		
 Allowed uses are documented		
 Prohibited uses are documented		
-Non-offensive boundary is clear		
-Defensive security boundary is clear		
-Dual-use boundary is controlled		
-Public-sector boundary is documented		
-Critical infrastructure boundary is documented		
-Human accountability is preserved		
-Policy is evaluated before sensitive execution		
-Policy ambiguity triggers escalation, degradation or blocking		
+Policy precedes sensitive execution		
+Policy considers project domain		
+Policy considers intent		
+Policy considers context		
+Policy considers data sensitivity		
+Policy considers human oversight		
+Policy considers dual-use risk		
+Policy prevents offensive cyber use		
+Policy prevents unlawful surveillance		
+Policy prevents coercive or abusive use		
+Policy prevents false certification claims		
+Policy supports fail-closed behavior		
 
 
-Audit question:
+Audit rule:
 
-Was a policy boundary applied before the operation became operationally relevant?
-
-
----
-
-9. Risk Classification Audit
-
-Review whether the operation was risk-classified.
-
-Check	Status	Notes
-
-Risk class is assigned		
-Risk class is one of LOW, MEDIUM, HIGH, CRITICAL, PROHIBITED or UNKNOWN		
-Risk classification considers context		
-Risk classification considers operational effect		
-Unknown risk is not treated as LOW		
-High-risk operations trigger review or limitation		
-Critical-risk operations trigger escalation or blocking		
-Prohibited operations are blocked		
-Risk entry can be linked to risk register where required		
-Risk classification is recorded in EVT where required		
-
-
-Audit question:
-
-Was the sensitivity of the operation classified before execution or use?
+No policy, no sensitive execution.
 
 
 ---
 
-10. Governance Decision Audit
-
-Review whether a governance decision was produced.
-
-Decision	Meaning
-
-ALLOW	Operation may proceed
-BLOCK	Operation is prohibited or unsafe
-ESCALATE	Human authority or higher review required
-DEGRADE	Limited safe support only
-AUDIT	Operation should be recorded or reviewed
-NOOP	No operational action taken
-
+11. Risk Audit
 
 Check	Status	Notes
 
-Decision is present		
-Decision matches risk class		
-Decision matches policy boundary		
+Risk classes are defined		
+LOW risk is defined		
+MEDIUM risk is defined		
+HIGH risk is defined		
+CRITICAL risk is defined		
+PROHIBITED risk is defined		
+UNKNOWN risk is defined		
+Risk class maps to decision logic		
+Unknown risk triggers escalation or blocking in sensitive contexts		
+Prohibited risk cannot be accepted		
+Risk register template exists		
+Risk mitigation catalogue exists		
+Risk records include project domain		
+Risk records include human oversight		
+Risk records include decision and mitigation		
+Risk records include EVT requirement		
+
+
+Audit rule:
+
+No risk classification, no sensitive output.
+
+
+---
+
+12. Human Oversight Audit
+
+Check	Status	Notes
+
+Human oversight model exists		
+NOT_REQUIRED state is defined		
+RECOMMENDED state is defined		
+REQUIRED state is defined		
+COMPLETED state is defined		
+REJECTED state is defined		
+ESCALATED state is defined		
+Human oversight maps to risk classes		
+Human oversight maps to project domains		
+Required review cannot be bypassed		
+Rejected review blocks operation		
+High-impact operations require oversight		
+Public-sector operations require stronger oversight		
+Critical infrastructure operations require strict review		
+Human oversight metadata is included in EVT examples		
+
+
+Audit rule:
+
+AI may assist.
+Humans remain accountable.
+
+
+---
+
+13. Decision Audit
+
+Check	Status	Notes
+
+Decision values are defined		
+ALLOW is defined		
+BLOCK is defined		
+ESCALATE is defined		
+DEGRADE is defined		
+AUDIT is defined		
+NOOP is defined		
+Decisions are tied to risk and policy		
+Decisions are produced before or during execution		
+Decisions are not invented after execution		
 BLOCK is used for prohibited requests		
-ESCALATE is used for uncertain sensitive requests		
-DEGRADE is used for limited safe support		
-AUDIT is used where records or review are required		
-Decision is not invented after the fact		
-Decision is recorded in EVT where required		
-Decision preserves human accountability		
+ESCALATE is used for unclear authority or high-impact contexts		
+DEGRADE is used for limited safe response		
+AUDIT is used for reviewable sensitive operations		
 
 
-Audit question:
+Audit rule:
 
-Did the runtime decide before executing, or did it justify after executing?
+No decision, no controlled execution.
 
 
 ---
 
-11. Human Oversight Audit
-
-Review whether human oversight is defined and respected.
-
-Oversight State	Meaning
-
-NOT_REQUIRED	Ordinary low-risk support
-RECOMMENDED	Human review useful
-REQUIRED	Human review required before operational use
-COMPLETED	Review completed
-REJECTED	Review rejected the operation
-ESCALATED	Higher authority required
-BLOCKED	Operation is prohibited
-UNKNOWN	Oversight requirement cannot be safely determined
-
+14. EVT Audit
 
 Check	Status	Notes
 
-Human oversight state is defined		
-Oversight state matches risk class		
-High-impact outputs require human review		
-Public-sector outputs require review where needed		
-Security-sensitive outputs require review where needed		
-Critical infrastructure outputs require review by default		
-Review outcome is recorded where applicable		
-Final authority remains human or institutional		
-AI output is marked advisory where required		
-Human oversight is not used to authorize prohibited activity		
+EVT protocol exists		
+EVT is defined as event trace		
+EVT includes event identifier		
+EVT includes previous event reference		
+EVT includes timestamp		
+EVT includes identity reference		
+EVT includes project domain		
+EVT includes context class		
+EVT includes risk class		
+EVT includes governance decision		
+EVT includes operation type		
+EVT includes operation status		
+EVT includes hash field		
+EVT includes verification status		
+EVT supports blocked, degraded and escalated operations		
+EVT avoids unnecessary sensitive payloads		
+EVT examples include MATRIX		
+EVT examples include CORPUS_ESOTEROLOGIA_ERMETICA		
+EVT examples include APOKALYPSIS		
+EVT examples include MULTI_DOMAIN		
 
 
-Audit question:
+Audit rule:
 
-Was the right human review required before the output could be used?
+No EVT, no traceability.
 
 
 ---
 
-12. EVT Audit
-
-Review whether the event trace is present and structurally valid.
-
-Required EVT fields:
-
-Field	Required	Status	Notes
-
-evt	yes		
-prev	yes		
-entity	yes		
-ipr	yes		
-timestamp	yes		
-runtime	yes		
-context	yes		
-governance	yes		
-operation	yes		
-trace	yes		
-verification	yes		
-
-
-EVT audit checks:
+15. Ledger Audit
 
 Check	Status	Notes
 
-EVT identifier is unique		
-Previous event reference is present		
-Identity reference is present		
-Timestamp is present and valid		
-Context class is present		
-Risk class is present		
-Governance decision is present		
-Operation status is present		
-Verification status is present		
-Audit status is present where required		
-Sensitive payload is minimized		
-Public and internal views are separated where needed		
-
-
-Audit question:
-
-Can the operation be reconstructed from its EVT?
-
-
----
-
-13. Ledger Audit
-
-Review whether ledger continuity is preserved.
-
-Check	Status	Notes
-
-Ledger model is defined		
-Events are append-only where implemented		
+Ledger layer is documented		
+Ledger is append-only by principle		
 Historical events are not silently rewritten		
-Corrections are represented as new events		
-Previous event reference is preserved		
-Event order can be reconstructed		
-Ledger avoids unnecessary sensitive payloads		
-Ledger supports public and internal views		
-Ledger supports verification		
-Ledger supports audit review		
+Corrections are new events		
+Previous event references are preserved		
+Hashes are preserved where possible		
+Project-domain metadata is preserved		
+Public and internal event views are separated		
+Sensitive payloads are minimized		
+Audit status is preserved		
+Verification status is preserved		
 
 
-Audit question:
+Audit rule:
 
-Does the system preserve continuity, or only isolated outputs?
-
-
----
-
-14. Verification Audit
-
-Review whether event verification is possible.
-
-Check	Status	Notes
-
-Verification status is defined		
-Hash algorithm is defined		
-Canonicalization method is defined		
-Hash can be recomputed where applicable		
-Required EVT fields can be validated		
-Previous event reference can be inspected		
-Correction events can be inspected		
-Verification distinguishes technical validity from institutional approval		
-Public-safe verification is possible where needed		
-Internal verification can include richer metadata where controlled		
-
-
-Verification statuses:
-
-Status	Meaning
-
-VERIFIABLE	Sufficient data for verification
-PARTIAL	Useful but incomplete
-INVALID	Failed structural validation
-UNVERIFIED	Not yet checked
-ANCHORED	Externally anchored
-SUPERSEDED	Corrected by later event
-
-
-Audit question:
-
-Can a reviewer verify the event, or only read a claim?
+Corrections are new events, not silent mutations.
 
 
 ---
 
-15. Security Audit
-
-Review whether security boundaries are preserved.
+16. Verification Audit
 
 Check	Status	Notes
 
-Offensive cyber use is prohibited		
-Malware generation is prohibited		
-Unauthorized access is prohibited		
+Verification layer is documented		
+Verification checks event existence		
+Verification checks required fields		
+Verification checks previous event reference		
+Verification checks timestamp		
+Verification checks identity reference		
+Verification checks project domain		
+Verification checks context class		
+Verification checks risk class		
+Verification checks governance decision		
+Verification checks operation status		
+Verification checks hash consistency		
+Verification tracks correction or supersession state		
+Public verification avoids sensitive payload exposure		
+Internal verification can include richer metadata		
+
+
+Audit rule:
+
+Verification supports reconstruction.
+Audit supports accountability.
+
+
+---
+
+17. Fail-Closed Audit
+
+Check	Status	Notes
+
+Fail-closed principle is documented		
+Fail-closed triggers are listed		
+Missing identity triggers fail-closed in sensitive contexts		
+Unknown risk triggers fail-closed in sensitive contexts		
+Missing policy triggers fail-closed		
+Missing project-domain classification triggers fail-closed in sensitive contexts		
+Missing required human review triggers fail-closed		
+Prohibited request triggers fail-closed		
+Offensive cyber interpretation triggers fail-closed		
+Unlawful surveillance interpretation triggers fail-closed		
+Unsafe file handling triggers fail-closed		
+Invalid runtime state triggers fail-closed		
+Fail-closed produces BLOCK, ESCALATE, DEGRADE, AUDIT or NOOP		
+
+
+Audit rule:
+
+Uncertainty in sensitive operations does not authorize execution.
+
+
+---
+
+18. Security Audit
+
+Check	Status	Notes
+
+SECURITY.md exists		
+Security posture is defensive and non-offensive		
+Offensive cyber operations are prohibited		
+Malware is prohibited		
 Credential theft is prohibited		
-Exploit deployment is prohibited		
-Evasion and stealth are prohibited		
+Unauthorized access is prohibited		
+Evasion and persistence are prohibited		
+Unlawful surveillance is prohibited		
 Sabotage is prohibited		
-Defensive security support is allowed and bounded		
-Security outputs are documentation-oriented where sensitive		
-Security-sensitive requests trigger AUDIT, ESCALATE, DEGRADE or BLOCK		
+Autonomous targeting is prohibited		
+Disinformation operations are prohibited		
+Coercive manipulation is prohibited		
+Secrets must not be committed		
+Uploaded files must not be executed		
+API routes must not expose secrets		
+Public diagnostics must not expose private metadata		
+Logs must avoid secrets and sensitive payloads		
 
 
-Audit question:
+Audit rule:
 
-Does the security model support defense without enabling abuse?
-
-
----
-
-16. Secrets Audit
-
-Review whether secrets are protected.
-
-Check	Status	Notes
-
-API keys are not committed		
-.env.local is ignored		
-OpenAI key is stored only as environment variable		
-Tokens are not logged		
-Private keys are not committed		
-Deployment secrets are not exposed to client		
-Logs do not contain credentials		
-Secret leak response is documented		
-Secret rotation is required after exposure		
-Repository history is reviewed if exposure occurs		
-
-
-Audit question:
-
-Could a reviewer find secrets in code, logs or public outputs?
+Defensive governance is allowed.
+Offensive or abusive capability is prohibited.
 
 
 ---
 
-17. Data Handling Audit
-
-Review whether data handling is controlled.
+19. Data Handling Audit
 
 Check	Status	Notes
 
-Data classes are defined		
-Personal data is minimized		
-Confidential data is restricted		
-Secret data is not processed as ordinary content		
-File contents are not logged unnecessarily		
-Sensitive payloads are minimized in EVT		
-References or hashes are used where appropriate		
+Data handling principles are documented		
+PUBLIC data class is defined		
+INTERNAL data class is defined		
+SENSITIVE data class is defined		
+SECRET data class is defined		
+UNSUPPORTED data class is defined		
+UNKNOWN data class is treated conservatively		
+Sensitive data is minimized		
+Secrets are not logged		
+Full sensitive payloads are not stored unnecessarily		
+References and hashes are preferred for sensitive content		
 Public and internal views are separated		
-Incomplete file visibility is disclosed		
-Unknown sensitivity is treated conservatively		
-
-
-Suggested data classes:
-
-Class	Handling
-
-PUBLIC	May be processed normally
-INTERNAL	Process with care
-CONFIDENTIAL	Restrict and minimize
-SECRET	Do not expose or process outside controlled environment
-PERSONAL	Minimize and verify legal basis
-SECURITY_SENSITIVE	Minimize, summarize or reference
-CRITICAL_OPERATIONAL	Strict review and minimization
-UNKNOWN	Treat conservatively
-
-
-Audit question:
-
-Was only the necessary data processed, exposed or stored?
-
-
----
-
-18. File Handling Audit
-
-Review whether file handling is safe.
-
-Check	Status	Notes
-
-Uploaded files are not executed		
-File type validation exists or is planned		
-File size limits exist or are planned		
+Partial visibility is stated when relevant		
 Unsupported files are handled safely		
-File names are not trusted blindly		
-Sensitive file content is not logged		
-Partial reading is disclosed		
-File context is user-controlled		
-File output is bounded by user request		
-File handling can generate EVT where required		
 
 
-Recommended safe file types:
+Audit rule:
 
-.txt
-.md
-.json
-.csv
-
-Audit question:
-
-Can file processing introduce unsafe execution or false certainty?
+Data must be handled according to sensitivity, not convenience.
 
 
 ---
 
-19. API Audit
-
-Review whether API routes preserve controlled execution.
+20. Compliance Orientation Audit
 
 Check	Status	Notes
 
-/api/chat input is validated		
-/api/files input is validated		
-Future /api/verify route has clear scope		
-Future /api/evidence route has clear scope		
-API routes avoid exposing secrets		
-API routes avoid exposing stack traces		
-API routes avoid unrestricted execution		
-API errors are safe and useful		
-API routes preserve governance decisions		
-API routes support EVT where relevant		
+COMPLIANCE.md exists		
+Compliance is defined as orientation, not certification		
+Legal certification is not claimed		
+Regulatory approval is not claimed		
+Production compliance guarantee is not claimed		
+Legal review requirement is acknowledged		
+Cybersecurity review requirement is acknowledged		
+Data protection review requirement is acknowledged		
+Human accountability is preserved		
+AI governance mapping exists		
+Risk register template exists		
+Human oversight model exists		
+Audit checklist exists		
 
 
-Audit question:
+Audit rule:
 
-Does the API enforce boundaries, or does it bypass the governance layer?
+Compliance support is not compliance certification.
 
 
 ---
 
-20. Model Interaction Audit
-
-Review whether model output is governed.
+21. B2B Audit
 
 Check	Status	Notes
 
-Model output is treated as advisory where appropriate		
-Model output does not override policy		
-Model output does not override risk classification		
-Model output does not override fail-closed behavior		
-Model prompts do not include secrets		
-Sensitive payloads are minimized before model call		
-High-impact output requires review		
-Unsafe model output is blocked or degraded		
-Model unavailability triggers degraded mode		
-Model output is not treated as legal certification		
+B2B overview exists		
+Enterprise value proposition is clear		
+AI governance use case is defined		
+Document traceability use case is defined		
+Defensive cybersecurity use case is defined		
+Compliance-oriented documentation use case is defined		
+Repository governance use case is defined		
+Operational continuity use case is defined		
+Enterprise pilot model is defined		
+B2B scope remains non-offensive		
+B2B claims do not overstate maturity		
+Human accountability is preserved		
 
-
-Audit question:
-
-Is the model governed by the runtime, or is the runtime governed by the model?
 
 
 ---
 
-21. Fail-Closed Audit
-
-Review whether fail-closed behavior is defined and preserved.
-
-Trigger	Expected Response	Status	Notes
-
-Missing identity	ESCALATE or BLOCK		
-Missing policy	ESCALATE or BLOCK		
-Unknown risk	ESCALATE or BLOCK		
-Prohibited request	BLOCK		
-Offensive cyber interpretation	BLOCK or DEGRADE		
-Sensitive data exposure	DEGRADE, ESCALATE or BLOCK		
-Human review required but absent	ESCALATE		
-EVT cannot be generated where required	DEGRADE, AUDIT_ONLY or BLOCK		
-Continuity cannot be preserved	DEGRADE or ESCALATE		
-Runtime state invalid	BLOCK		
-Model unavailable	DEGRADED mode		
-File unsafe or unsupported	BLOCK or DEGRADE		
-
-
-Audit question:
-
-Does uncertainty in sensitive contexts stop, limit or escalate the operation?
-
-
----
-
-22. Dual-Use Audit
-
-Review whether dual-use positioning remains controlled.
+22. B2G Audit
 
 Check	Status	Notes
 
-Dual-use is defined as civil and strategic		
-Offensive military use is excluded		
-Offensive cyber use is excluded		
-Unlawful surveillance is excluded		
-Critical infrastructure support is documentation-oriented		
-Defensive cybersecurity is allowed but bounded		
-Human rights risks are acknowledged through prohibited-use boundaries		
-Public-sector authority is preserved		
-B2B and B2G positioning remain non-offensive		
-Risk and oversight apply to dual-use contexts		
-
-
-Audit question:
-
-Does dual-use mean controlled strategic support, or uncontrolled capability?
-
-
----
-
-23. Public-Sector Audit
-
-Review whether public-sector use preserves institutional responsibility.
-
-Check	Status	Notes
-
+B2G overview exists		
+Public-sector value proposition is clear		
+Public administration use case is defined		
+Institutional document traceability is defined		
+Critical infrastructure resilience documentation is defined		
+Defensive cybersecurity governance is defined		
+Public procurement support is defined		
+European governance orientation is defined		
+Institutional pilot model is defined		
+B2G scope remains non-offensive		
+B2G claims do not imply official adoption		
 Public authority is not replaced by AI		
-Public communication requires review		
-Procurement support does not become final decision		
-Citizen-facing effects require review		
-Public-service impacts require review		
-Legal-sensitive outputs require review		
-Data protection review is required where applicable		
-Audit trail is available for sensitive workflows		
-Human responsibility is clear		
-Non-certification statement is present		
 
-
-Audit question:
-
-Does the runtime support public responsibility without replacing it?
 
 
 ---
 
-24. Critical Infrastructure Audit
-
-Review whether critical infrastructure boundaries are preserved.
+23. MATRIX Audit
 
 Check	Status	Notes
 
-Direct infrastructure control is excluded		
-Autonomous operational command is excluded		
-Documentation support is allowed		
-Continuity planning support is allowed		
-Incident report support is allowed		
-Operational recommendations require review		
-Critical contexts default to high oversight		
-Sensitive topology is minimized		
-Security-sensitive details are controlled		
-Fail-closed behavior is strict		
+MATRIX is defined as operational infrastructure		
+MATRIX supports AI governance		
+MATRIX supports institutional traceability		
+MATRIX supports B2B and B2G positioning		
+MATRIX supports cybersecurity resilience documentation		
+MATRIX supports critical infrastructure documentation		
+MATRIX remains defensive and governance-oriented		
+MATRIX does not imply offensive capability		
+MATRIX risks are listed in the risk register template		
+MATRIX EVT examples exist		
 
-
-Audit question:
-
-Does the system support resilience without becoming an operational control system?
 
 
 ---
 
-25. Repository Security Audit
-
-Review whether repository development preserves safety.
+24. CORPUS Audit
 
 Check	Status	Notes
 
-.gitignore excludes environment files		
-Dependencies are reviewed		
-Lockfile is present where appropriate		
-Build command succeeds		
-Security policy exists		
-Contribution policy exists		
-No prohibited functionality is introduced		
-Governance documents are not contradicted		
-Fail-closed logic is not weakened		
-EVT compatibility is preserved		
+CORPUS ESOTEROLOGIA ERMETICA is defined as disciplinary grammar		
+DCTT formula is preserved		
+Corpus supports canonical terminology		
+Corpus supports editorial continuity		
+Corpus supports theoretical writing		
+Corpus distinguishes internal theory from external claims		
+Corpus does not claim legal certification		
+Corpus does not claim external institutional approval		
+Corpus risks are listed in the risk register template		
+Corpus EVT examples exist		
 
 
-Recommended commands:
+
+---
+
+25. APOKALYPSIS Audit
+
+Check	Status	Notes
+
+APOKALYPSIS is defined as historical threshold analysis		
+APOKALYPSIS supports decay and exposure analysis		
+APOKALYPSIS supports cultural-political-social analysis		
+APOKALYPSIS remains analytical and non-coercive		
+APOKALYPSIS does not support incitement		
+APOKALYPSIS does not support dehumanization		
+APOKALYPSIS does not support destabilization planning		
+APOKALYPSIS current factual claims require verification		
+APOKALYPSIS risks are listed in the risk register template		
+APOKALYPSIS EVT examples exist		
+
+
+
+---
+
+26. Repository Documentation Audit
+
+File	Status	Notes
+
+README.md		
+ARCHITECTURE.md		
+GOVERNANCE.md		
+EVT_PROTOCOL.md		
+PROTOCOL.md		
+DUAL_USE_STRATEGIC_POSITIONING.md		
+SECURITY.md		
+COMPLIANCE.md		
+ROADMAP.md		
+CONTRIBUTING.md		
+system/system-manifest.json		
+docs/PROJECT_DOMAIN_GOVERNANCE_MAP.md		
+docs/B2B_OVERVIEW.md		
+docs/B2G_OVERVIEW.md		
+docs/AI_GOVERNANCE_MAPPING.md		
+docs/HUMAN_OVERSIGHT_MODEL.md		
+docs/RISK_REGISTER_TEMPLATE.md		
+docs/AUDIT_CHECKLIST.md		
+
+
+
+---
+
+27. Runtime Implementation Audit
+
+Implementation Area	Status	Notes
+
+lib/project-domain-classifier.ts		
+lib/context-classifier.ts		
+lib/intent-classifier.ts		
+lib/policy-engine.ts		
+lib/risk-engine.ts		
+lib/human-oversight.ts		
+lib/runtime-decision.ts		
+lib/evt.ts		
+lib/evt-ledger.ts		
+lib/evt-hash.ts		
+lib/evt-verify.ts		
+app/api/chat/route.ts		
+app/api/files/route.ts		
+app/api/evt/route.ts		
+app/api/verify/route.ts		
+app/api/evidence/route.ts		
+
+
+
+---
+
+28. Build and Deployment Audit
+
+Check	Status	Notes
+
+npm install completes		
+npm run build completes		
+Required environment variables are documented		
+Secrets are not committed		
+.env.local is ignored		
+Deployment target is documented		
+Public routes are documented		
+API routes do not expose stack traces		
+Public UI does not expose secrets		
+Degraded mode is documented		
+Fail-closed behavior is preserved in degraded mode		
+
+
+Recommended checks:
 
 npm install
-npm audit
 npm run build
-
-Audit question:
-
-Does the repository remain safe, buildable and governance-consistent?
+git status
+git diff --staged
 
 
 ---
 
-26. Deployment Audit
+29. Audit Record Template
 
-Before serious deployment, review:
+Use this template for an audit record.
 
-Check	Status	Notes
-
-Authentication is implemented where required		
-Authorization is implemented where required		
-Role-based access is implemented where required		
-Environment variables are secured		
-API routes are validated		
-File uploads are controlled		
-Logs are safe		
-Rate limiting is considered		
-Error handling is safe		
-Human oversight is operationalized		
-EVT generation is implemented		
-Ledger continuity is implemented		
-Verification endpoint is implemented		
-Incident response process exists		
-Legal review has been performed where required		
-Cybersecurity review has been performed where required		
-Data protection review has been performed where required		
-Operational review has been performed where required		
-
-
-Audit question:
-
-Is the system still a prototype, or is it ready for controlled deployment?
-
-
----
-
-27. Compliance Orientation Audit
-
-Review whether compliance language is accurate.
-
-Check	Status	Notes
-
-Repository does not claim legal certification		
-Repository does not claim automatic compliance		
-Compliance is described as orientation and support		
-Legal review is required for regulated use		
-Cybersecurity review is required for serious deployment		
-Data protection review is required where applicable		
-Human responsibility is preserved		
-Auditability is described as reconstruction, not certification		
-Limitations are disclosed		
-Documentation and implementation gaps are visible		
-
-
-Audit question:
-
-Does the repository distinguish compliance support from compliance certification?
+{
+  "audit_id": "AUDIT-20260503-0001",
+  "created_at": "2026-05-03T15:30:00+02:00",
+  "auditor": "HBCE Research",
+  "project": "AI JOKER-C2",
+  "ecosystem": "HERMETICUM B.C.E.",
+  "scope": "DOCUMENTATION_BASELINE",
+  "project_domains": [
+    "MATRIX",
+    "CORPUS_ESOTEROLOGIA_ERMETICA",
+    "APOKALYPSIS"
+  ],
+  "status": "PARTIAL",
+  "findings": [
+    {
+      "finding_id": "FINDING-0001",
+      "area": "EVT",
+      "severity": "MEDIUM",
+      "description": "EVT protocol is documented, but runtime ledger implementation is not yet complete.",
+      "recommendation": "Implement append-only EVT ledger and verifier endpoint.",
+      "status": "OPEN"
+    }
+  ],
+  "next_actions": [
+    "Implement project-domain classifier.",
+    "Implement runtime EVT generation.",
+    "Implement verifier endpoint."
+  ]
+}
 
 
 ---
 
-28. Audit Evidence Checklist
+30. Finding Template
 
-For each reviewed operation, collect or reference:
+Use this template for audit findings.
 
-Evidence	Present	Notes
-
-Request summary		
-Context class		
-Risk class		
-Policy reference		
-Governance decision		
-Human oversight state		
-Output summary		
-EVT identifier		
-Previous event reference		
-Hash or trace reference		
-Verification status		
-Audit status		
-Review outcome		
-Correction event, if any		
-Responsible role		
-
-
-Audit evidence should support reconstruction without exposing unnecessary sensitive content.
+{
+  "finding_id": "FINDING-0001",
+  "audit_id": "AUDIT-20260503-0001",
+  "area": "PROJECT_DOMAIN_CLASSIFICATION",
+  "severity": "MEDIUM",
+  "status": "OPEN",
+  "description": "Project-domain governance is documented, but runtime classifier is not yet implemented.",
+  "impact": "Runtime cannot yet automatically distinguish MATRIX, CORPUS, APOKALYPSIS, GENERAL and MULTI_DOMAIN.",
+  "recommendation": "Implement lib/project-domain-classifier.ts and integrate it into app/api/chat/route.ts.",
+  "owner": "HBCE Research",
+  "target_phase": "v0.3"
+}
 
 
 ---
 
-29. Audit Report Template
+31. Audit Workflow
 
-Suggested audit report structure:
+Recommended audit workflow:
 
-# Audit Report
-
-## Scope
-Describe what was reviewed.
-
-## Reviewed Files or Operations
-List files, routes, events or workflows reviewed.
-
-## Identity
-Confirm runtime identity and IPR reference.
-
-## Policy
-Describe applicable policy boundary.
-
-## Risk
-Describe risk classification.
-
-## Human Oversight
-Describe review requirement and outcome.
-
-## EVT and Ledger
-Describe event trace and continuity.
-
-## Verification
-Describe verification status.
-
-## Security
-Describe security findings.
-
-## Data Handling
-Describe data handling findings.
-
-## Dual-Use Boundary
-Describe dual-use review.
-
-## Findings
-List PASS, PARTIAL, FAIL, NEEDS_REVIEW or BLOCKING items.
-
-## Required Actions
-List remediation steps.
-
-## Conclusion
-State whether the reviewed scope is audit-ready, partially audit-ready or not audit-ready.
+Define audit scope
+-> review identity
+-> review project-domain classification
+-> review context and intent classification
+-> review policy
+-> review risk
+-> review human oversight
+-> review decision logic
+-> review EVT protocol
+-> review ledger continuity
+-> review verification
+-> review security boundary
+-> review data handling
+-> review compliance orientation
+-> review B2B and B2G readiness
+-> record findings
+-> assign severity
+-> assign owner
+-> define next actions
+-> close or escalate findings
 
 
 ---
 
-30. Audit Findings Classification
+32. Audit Completion Criteria
 
-Finding	Meaning	Suggested Action
+An audit may be considered complete when:
 
-PASS	Requirement satisfied	No action required
-MINOR	Small issue with limited impact	Fix in normal cycle
-MODERATE	Governance or security issue requiring remediation	Prioritize fix
-MAJOR	Significant risk affecting auditability or safety	Fix before deployment
-CRITICAL	Severe issue affecting secrets, safety, legality or prohibited use	Immediate remediation
-BLOCKING	Operation or deployment must not proceed	Stop until resolved
+scope is defined;
 
+checklist sections are reviewed;
 
-Findings should be linked to evidence.
+findings are documented;
 
+severity is assigned;
 
----
+owners are assigned;
 
-31. Audit Maturity Levels
+unresolved issues are recorded;
 
-Level	Description
+blocked items are identified;
 
-A0	No audit model
-A1	Audit checklist documented
-A2	EVT fields documented
-A3	Risk and oversight connected to audit
-A4	Ledger continuity implemented
-A5	Verification endpoint implemented
-A6	Audit dashboard available
-A7	Evidence packs available
-A8	External review possible
-A9	Controlled deployment audit-ready
+next actions are defined;
+
+audit record is stored or referenced;
+
+verification status is clear;
+
+no prohibited capability is approved.
 
 
-AI JOKER-C2 should move from documentation audit to executable audit.
+Audit completion does not imply legal certification.
+
+It means the review process has produced a documented result.
 
 
 ---
 
-32. Immediate Audit Priorities
+33. Audit Invariants
 
-Recommended immediate audit priorities:
+The following invariants must remain stable:
 
-Priority	Item
-
-1	Confirm documentation consistency
-2	Confirm non-offensive boundary
-3	Confirm risk classes
-4	Confirm human oversight states
-5	Confirm EVT schema
-6	Confirm security policy
-7	Confirm secrets handling
-8	Confirm deployment limitations
-9	Confirm compliance non-certification statement
-10	Confirm roadmap gaps are visible
+1. Audit must preserve identity and accountability.
 
 
+2. Audit must check project-domain classification.
 
----
 
-33. Non-Certification Statement
+3. Audit must check policy, risk and decision logic.
 
-AI JOKER-C2 is a governance-oriented architecture and operational prototype.
 
-This audit checklist does not create legal, regulatory, cybersecurity, AI governance, public-sector, financial, medical or critical infrastructure certification.
+4. Audit must check human oversight for high-impact contexts.
 
-Any real-world deployment requires review by authorized professionals and responsible organizations.
 
-Audit readiness does not equal legal compliance.
+5. Audit must check EVT traceability.
 
-Audit readiness means the operation can be reconstructed, reviewed and questioned.
+
+6. Audit must check ledger continuity.
+
+
+7. Audit must check verification.
+
+
+8. Audit must check fail-closed behavior.
+
+
+9. Audit must check non-offensive boundary.
+
+
+10. Audit must check compliance disclaimers.
+
+
+11. Audit must distinguish documentation from implementation.
+
+
+12. Audit must distinguish orientation from certification.
+
+
+13. Audit must not approve prohibited capability.
+
+
+14. Audit findings must not be silently erased.
+
+
+15. Audit must preserve human accountability.
+
+
 
 
 ---
@@ -983,29 +901,44 @@ Audit readiness means the operation can be reconstructed, reviewed and questione
 Audit is not trust by declaration.
 Audit is reconstruction by evidence.
 
-Operational formula:
+Expanded:
 
-Audit =
-Identity + Policy + Risk + Human Oversight + Decision + EVT + Ledger + Verification + Findings + Remediation
+Identity -> Domain -> Policy -> Risk -> Oversight -> Decision -> EVT -> Ledger -> Verification -> Finding -> Mitigation
+
+Project formula:
+
+MATRIX = infrastructure audit.
+CORPUS ESOTEROLOGIA ERMETICA = conceptual and editorial audit.
+APOKALYPSIS = historical-threshold analysis audit.
+AI JOKER-C2 = governed runtime audit.
+
+Operational rule:
+
+No auditability, no institutional trust.
 
 
 ---
 
 35. Status
 
-Document status: active audit checklist
-Project: AI JOKER-C2
-Framework: MATRIX
-Infrastructure: HBCE
-Identity layer: IPR
-Trace layer: EVT
-Governance principle: fail-closed
-Security boundary: defensive and non-offensive
-Business orientation: B2B, B2G, institutional, AI governance, defensive security and critical infrastructure
-Compliance status: orientation only, not certification
-Repository: hbce-ai-joker-c2
-Maintainer: HBCE Research
-Organization: HERMETICUM B.C.E. S.r.l.
-Territorial anchor: Torino, Italy, Europe
-Year: 2026
+Field	Value
+
+Document	docs/AUDIT_CHECKLIST.md
+Status	Active audit checklist
+Project	AI JOKER-C2
+Ecosystem	HERMETICUM B.C.E.
+Connected domains	MATRIX, CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Audit statuses	PASS, PARTIAL, FAIL, NOT_APPLICABLE, NEEDS_REVIEW, BLOCKED
+Severity values	LOW, MEDIUM, HIGH, CRITICAL, PROHIBITED
+Infrastructure	HBCE
+Identity layer	IPR
+Trace layer	EVT
+Governance principle	Fail-closed
+Security boundary	Defensive and non-offensive
+Compliance status	Orientation only, not certification
+Repository	hbce-ai-joker-c2
+Maintainer	HBCE Research
+Organization	HERMETICUM B.C.E. S.r.l.
+Territorial anchor	Torino, Italy, Europe
+Year	2026
 
