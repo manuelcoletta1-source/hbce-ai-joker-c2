@@ -16,6 +16,10 @@ import {
 } from "../../../lib/evt-memory";
 
 import { classifyContext as classifyRuntimeContext } from "../../../lib/context-classifier";
+import {
+  classifyProjectDomain,
+  type ProjectDomainClassification
+} from "../../../lib/project-domain-classifier";
 import { classifyData } from "../../../lib/data-classifier";
 import { evaluateFileBatchPolicy } from "../../../lib/file-policy";
 import { evaluatePolicy } from "../../../lib/policy-engine";
@@ -106,6 +110,7 @@ type GeneratedResponse = {
 };
 
 type GovernanceFrame = {
+  projectDomain: ProjectDomainClassification;
   contextClass: ContextClass;
   intentClass: IntentClass;
   data: DataClassification;
@@ -232,15 +237,21 @@ function detectKeywords(text: string): string[] {
     "matrix",
     "hbce",
     "joker-c2",
+    "ai joker-c2",
     "ipr",
     "trac",
     "evt",
     "continuità",
+    "continuity",
     "governance",
     "decisione",
     "costo",
     "traccia",
     "tempo",
+    "corpus",
+    "esoterologia",
+    "lex hermeticum",
+    "alien code",
     "apokalypsis",
     "apocalipsis",
     "apocalisse",
@@ -410,7 +421,9 @@ function detectDocumentMode(message: string): DocumentMode {
     lower.includes("potenzialita") ||
     lower.includes("pubblico") ||
     lower.includes("target") ||
-    lower.includes("impatto")
+    lower.includes("impatto") ||
+    lower.includes("valore operativo") ||
+    lower.includes("valore oggettivo")
   ) {
     return "IMPACT_ASSESSMENT";
   }
@@ -488,7 +501,8 @@ function shouldUseStructuredFormat(message: string): boolean {
     lower.includes("checklist") ||
     lower.includes("roadmap") ||
     lower.includes("indice") ||
-    lower.includes("confronto")
+    lower.includes("confronto") ||
+    lower.includes("paragone")
   );
 }
 
@@ -500,7 +514,9 @@ function shouldExposeTechnicalFrame(message: string): boolean {
     lower.includes("diagnostica") ||
     lower.includes("stato runtime") ||
     lower.includes("evt chain") ||
-    lower.includes("ledger")
+    lower.includes("ledger") ||
+    lower.includes("governance frame") ||
+    lower.includes("project domain")
   );
 }
 
@@ -525,19 +541,88 @@ function detectDocumentFamily(files: FileInput[]): DocumentFamily {
 
 function buildCanonicalDictionary(): string {
   return [
-    "Dizionario canonico MATRIX/HBCE:",
+    "Dizionario canonico MATRIX / CORPUS / APOKALYPSIS / HBCE:",
+    "",
     "IPR = Identity Primary Record.",
-    "IPR è il registro primario di identità operativa che consente attribuzione, derivazione, responsabilità e continuità verificabile.",
-    "HBCE = framework/livello di governance computabile sviluppato nel contesto HERMETICUM B.C.E.",
-    "JOKER-C2 = runtime operativo vincolato.",
+    "IPR non è solo identità digitale. È un registro primario di identità operativa: collega soggetto, origine, responsabilità, derivazioni, eventi, prove e continuità nel tempo.",
+    "IPR può usare firme, hash, timestamp, credenziali o registri esterni, ma il suo valore specifico è la continuità operativa tra identità, azione, prova e responsabilità.",
+    "",
+    "HBCE = governance infrastructure del sistema HERMETICUM B.C.E.",
+    "AI JOKER-C2 = runtime cognitivo-operativo vincolato.",
     "TRAC = livello di continuità degli eventi.",
     "EVT = Event Record / Verifiable Event Trace.",
-    "MATRIX = architettura complessiva che integra identità, governance, esecuzione, continuità, prova e resilienza.",
+    "EVT non è memoria psicologica: è una traccia operativa verificabile che collega identità, tempo, contesto, decisione, rischio, hash e continuità.",
+    "",
+    "MATRIX = dominio infrastrutturale operativo: AI governance, Europa, B2B, B2G, cloud, dati, energia, sicurezza, istituzioni, continuità.",
+    "CORPUS ESOTEROLOGIA ERMETICA = dominio grammaticale-disciplinare: Decisione · Costo · Traccia · Tempo, glossario canonico, teoria del reale operativo.",
+    "APOKALYPSIS = dominio storico di soglia: decadimento, esposizione, dislocazione cognitiva, rottura, Paradogma Alieno.",
     "",
     "Regola editoriale:",
     "Per APOKALYPSIS, CORPUS e MATRIX preserva Decisione · Costo · Traccia · Tempo quando pertinente.",
-    "Gli EVT devono agganciarsi all'IPR e produrre memoria semantica operativa per le chat successive."
+    "Quando l'utente chiede valore operativo, confronti o standard europei, distingui sempre: identità, firma, credenziale, registro, timestamp, audit log, EVT, IPR.",
+    "IPR non va spiegato come semplice identità digitale: va spiegato come livello di continuità operativa sopra strumenti già esistenti."
   ].join("\n");
+}
+
+function buildProjectDomainDirective(frame: GovernanceFrame): string {
+  const domain = frame.projectDomain.projectDomain;
+  const activeDomains = frame.projectDomain.activeDomains.join(", ");
+
+  const header = [
+    "Project-domain runtime directive:",
+    `ProjectDomain: ${domain}`,
+    `ActiveDomains: ${activeDomains}`,
+    `DomainType: ${frame.projectDomain.domainType}`,
+    `DomainConfidence: ${frame.projectDomain.confidence}`,
+    `DomainReasons: ${frame.projectDomain.reasons.join(" | ")}`,
+    "",
+    "Usa questa classificazione per orientare la risposta.",
+    "Non mostrare questi metadati all'utente salvo richiesta tecnica, diagnostica o debug."
+  ];
+
+  if (domain === "MATRIX") {
+    header.push(
+      "",
+      "Direttiva dominio MATRIX:",
+      "Rispondi in modo operativo, infrastrutturale e istituzionale.",
+      "Valorizza AI governance, B2B, B2G, Europa, audit, sicurezza difensiva, tracciabilità, fail-closed ed EVT.",
+      "Evita promesse di certificazione o adozione ufficiale se non dimostrate."
+    );
+  }
+
+  if (domain === "CORPUS_ESOTEROLOGIA_ERMETICA") {
+    header.push(
+      "",
+      "Direttiva dominio CORPUS:",
+      "Rispondi preservando la grammatica Decisione · Costo · Traccia · Tempo.",
+      "Lavora sulla continuità concettuale, sul glossario canonico, sui volumi e sulla fluidità editoriale.",
+      "Distingui teoria interna da certificazione esterna."
+    );
+  }
+
+  if (domain === "APOKALYPSIS") {
+    header.push(
+      "",
+      "Direttiva dominio APOKALYPSIS:",
+      "Rispondi come analista storico-civilizzazionale di soglia.",
+      "Decadimento non significa crollo immediato: significa esposizione del sistema che continua a funzionare perdendo fondamento.",
+      "Mantieni il confine non coercitivo: analisi sì, incitamento o destabilizzazione no."
+    );
+  }
+
+  if (domain === "MULTI_DOMAIN") {
+    header.push(
+      "",
+      "Direttiva dominio MULTI_DOMAIN:",
+      "Collega MATRIX, CORPUS e APOKALYPSIS senza confonderli.",
+      "MATRIX = infrastruttura.",
+      "CORPUS = grammatica.",
+      "APOKALYPSIS = soglia storica.",
+      "AI JOKER-C2 = runtime cognitivo-governato."
+    );
+  }
+
+  return header.join("\n");
 }
 
 function buildDocumentFamilyDirective(
@@ -615,6 +700,10 @@ function buildStyleDirective(structuredFormat: boolean): string {
 function buildGovernanceFrameText(frame: GovernanceFrame): string {
   return [
     "Runtime governance frame:",
+    `ProjectDomain: ${frame.projectDomain.projectDomain}`,
+    `ActiveDomains: ${frame.projectDomain.activeDomains.join(", ")}`,
+    `DomainType: ${frame.projectDomain.domainType}`,
+    `DomainConfidence: ${frame.projectDomain.confidence}`,
     `ContextClass: ${frame.contextClass}`,
     `IntentClass: ${frame.intentClass}`,
     `DataClass: ${frame.data.dataClass}`,
@@ -632,7 +721,8 @@ function buildGovernanceFrameText(frame: GovernanceFrame): string {
     "If RuntimeDecision is AUDIT, answer normally but keep the output reviewable.",
     "If RuntimeDecision is DEGRADE, provide limited safe support only.",
     "If RuntimeDecision is ESCALATE, require human review and do not present output as operational authority.",
-    "If RuntimeDecision is BLOCK, refuse unsafe content and offer safe alternatives."
+    "If RuntimeDecision is BLOCK, refuse unsafe content and offer safe alternatives.",
+    "For ordinary public answers, do not expose governance metadata unless the user asks for diagnostic or technical status."
   ].join("\n");
 }
 
@@ -666,7 +756,8 @@ function buildSystemPrompt(input: {
     "Regola operativa fondamentale:",
     "La chat è solo l'interfaccia. La memoria deve essere ricavata dagli EVT agganciati all'IPR.",
     "Ogni nuova risposta deve usare la memoria EVT/IPR-bound quando utile.",
-    "Ogni nuova risposta genererà a sua volta un nuovo evento di memoria.",
+    "Ogni nuova risposta genererà a sua volta un nuovo evento di memoria quando previsto dal runtime.",
+    "EVT non è memoria psicologica: è traccia operativa verificabile.",
     "",
     "Comportamento:",
     "Rispondi in italiano se l'utente scrive in italiano.",
@@ -679,6 +770,8 @@ function buildSystemPrompt(input: {
     "",
     buildStyleDirective(input.structuredFormat),
     "",
+    buildProjectDomainDirective(input.governanceFrame),
+    "",
     buildGovernanceFrameText(input.governanceFrame),
     "",
     "Modalità documentale:",
@@ -690,7 +783,9 @@ function buildSystemPrompt(input: {
     buildDocumentFamilyDirective(input.documentFamily, input.documentMode),
     "",
     "Stato richiesta:",
+    `ProjectDomain: ${input.governanceFrame.projectDomain.projectDomain}.`,
     `Classe contesto: ${input.contextClass}.`,
+    `IntentClass: ${input.governanceFrame.intentClass}.`,
     `Modalità documento: ${input.documentMode}.`,
     `Famiglia documento: ${input.documentFamily}.`,
     `Memoria EVT/IPR-bound usata: ${input.memoryUsed ? "SI" : "NO"}.`,
@@ -726,8 +821,11 @@ function buildFallback(input: {
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
   files: FileInput[];
+  governanceFrame: GovernanceFrame;
 }): string {
-  if (input.documentFamily === "APOKALYPSIS") {
+  const domain = input.governanceFrame.projectDomain.projectDomain;
+
+  if (domain === "APOKALYPSIS" || input.documentFamily === "APOKALYPSIS") {
     if (input.documentMode === "GENRE_CLASSIFICATION") {
       return [
         "APOKALYPSIS è un saggio teorico-politico, civilizzazionale, esoterologico e sistemico.",
@@ -755,9 +853,25 @@ function buildFallback(input: {
     ].join("\n");
   }
 
+  if (domain === "MATRIX") {
+    return [
+      "AI JOKER-C2 è utile quando l'intelligenza artificiale non deve soltanto generare risposte, ma deve operare dentro un perimetro di identità, governance, rischio, decisione, traccia e verifica.",
+      "",
+      "Nel dominio MATRIX, il valore principale è trasformare l'AI in infrastruttura operativa: B2B, B2G, governance AI, pubblica amministrazione, sicurezza difensiva, audit, continuità e tracciabilità."
+    ].join("\n");
+  }
+
+  if (domain === "CORPUS_ESOTEROLOGIA_ERMETICA") {
+    return [
+      "Nel dominio CORPUS, AI JOKER-C2 serve a mantenere continuità concettuale ed editoriale.",
+      "",
+      "Il suo compito è preservare la grammatica Decisione · Costo · Traccia · Tempo, allineare i termini canonici, migliorare la fluidità dei capitoli e collegare ogni trasformazione testuale alla struttura del Corpus."
+    ].join("\n");
+  }
+
   if (input.contextClass === "GENERAL") {
     return [
-      "Sono AI JOKER-C2, il runtime operativo collegato al framework HBCE/MATRIX.",
+      "Sono AI JOKER-C2, il runtime cognitivo-operativo collegato al framework HBCE.",
       "",
       "Le mie potenzialità principali sono: spiegare documenti, lavorare su repo GitHub, aiutare a costruire architetture di governance AI, generare file tecnici, mantenere continuità tramite EVT/IPR, produrre sintesi operative, supportare materiale B2B/B2G e trasformare testi complessi in output pubblicabili.",
       "",
@@ -807,6 +921,14 @@ async function generateResponse(input: {
             "Non usare elenchi numerati rigidi salvo richiesta esplicita o necessità tecnica.",
             "La memoria non è la chat: la memoria è la catena EVT agganciata all'IPR.",
             "Ogni riferimento ellittico deve essere risolto usando la memoria EVT/IPR-bound.",
+            "Classifica internamente ogni richiesta secondo ProjectDomain, ContextClass, IntentClass, RiskClass, HumanOversight e RuntimeDecision.",
+            "Non mostrare i metadati runtime all'utente salvo richiesta diagnostica.",
+            "MATRIX = infrastruttura operativa.",
+            "CORPUS ESOTEROLOGIA ERMETICA = grammatica disciplinare.",
+            "APOKALYPSIS = soglia storica.",
+            "AI JOKER-C2 = runtime cognitivo-governato.",
+            "Se l'utente chiede IPR, non ridurlo a identità digitale: spiegalo come registro primario di identità operativa che connette identità, azione, responsabilità, evento, prova, tempo e continuità.",
+            "Se l'utente chiede confronto con standard esistenti, confronta IPR con eIDAS/EUDI, PKI, X.509, DID/VC, blockchain timestamping, IAM e audit log.",
             "Se l'utente dice 'apokalypsis intendo dire', devi riferirti al documento attivo APOKALYPSIS, non al concetto generico di apocalisse.",
             "Per APOKALYPSIS evita risposte generiche: classificare, interpretare, posizionare e spiegare l'impatto civilizzazionale.",
             "La governance runtime prevale: policy, risk, oversight e fail-closed non devono essere aggirati dal modello."
@@ -851,6 +973,7 @@ function buildGovernanceLimitedResponse(input: {
   policy: PolicyEvaluation;
   risk: RiskEvaluation;
   oversight: OversightEvaluation;
+  projectDomain: ProjectDomainClassification;
 }): GeneratedResponse {
   if (input.decision.decision === "BLOCK") {
     return {
@@ -864,6 +987,9 @@ function buildGovernanceLimitedResponse(input: {
           input.risk.reasons[0] ||
           "La richiesta rientra in un perimetro non consentito.",
         "",
+        "Dominio classificato:",
+        input.projectDomain.projectDomain,
+        "",
         "Posso aiutare solo in modalità sicura: documentazione difensiva, checklist, audit, mitigazione, revisione, hardening, incident report o governance."
       ].join("\n")
     };
@@ -876,6 +1002,7 @@ function buildGovernanceLimitedResponse(input: {
       text: [
         "La richiesta richiede revisione umana prima di qualunque uso operativo.",
         "",
+        `ProjectDomain: ${input.projectDomain.projectDomain}`,
         `RiskClass: ${input.risk.riskClass}`,
         `HumanOversight: ${input.oversight.state}`,
         `RequiredRole: ${input.oversight.requiredRole}`,
@@ -891,6 +1018,7 @@ function buildGovernanceLimitedResponse(input: {
     text: [
       "Il runtime ha limitato la risposta a supporto sicuro e revisionabile.",
       "",
+      `ProjectDomain: ${input.projectDomain.projectDomain}`,
       `Decision: ${input.decision.decision}`,
       `RiskClass: ${input.risk.riskClass}`,
       `Oversight: ${input.oversight.state}`
@@ -968,6 +1096,10 @@ function buildRuntimeDiagnosticText(input: {
     `Runtime OpenAI: ${input.state}`,
     `Decision: ${input.decision}`,
     `GovernanceDecision: ${input.governanceDecision}`,
+    `ProjectDomain: ${input.governance.projectDomain.projectDomain}`,
+    `ActiveDomains: ${input.governance.projectDomain.activeDomains.join(", ")}`,
+    `DomainType: ${input.governance.projectDomain.domainType}`,
+    `DomainConfidence: ${input.governance.projectDomain.confidence}`,
     `Context: ${input.contextClass}`,
     `LegacyContext: ${input.legacyContextClass}`,
     `Intent: ${input.intentClass}`,
@@ -997,6 +1129,7 @@ function buildRuntimeDiagnosticText(input: {
     "Governed EVT:",
     `- evt: ${input.modernEvt.evt}`,
     `- prev: ${input.modernEvt.prev}`,
+    `- project: ${input.modernEvt.project.domain}`,
     `- hash: ${input.modernEvt.trace.hash}`,
     `- verification: ${input.modernEvt.verification.status}`,
     "",
@@ -1029,6 +1162,9 @@ function buildTechnicalFrame(input: {
     `- state: ${input.state}`,
     `- decision: ${input.decision}`,
     `- governanceDecision: ${input.governanceDecision}`,
+    `- projectDomain: ${input.governance.projectDomain.projectDomain}`,
+    `- activeDomains: ${input.governance.projectDomain.activeDomains.join(", ")}`,
+    `- domainType: ${input.governance.projectDomain.domainType}`,
     `- context: ${input.contextClass}`,
     `- legacyContext: ${input.legacyContextClass}`,
     `- intent: ${input.intentClass}`,
@@ -1044,6 +1180,7 @@ function buildTechnicalFrame(input: {
     `- structuredFormat: ${input.structuredFormat ? "true" : "false"}`,
     `- legacyEvt: ${input.event.evt}`,
     `- governedEvt: ${input.modernEvt.evt}`,
+    `- governedEvtProject: ${input.modernEvt.project.domain}`,
     `- memoryEvt: ${input.memoryEventId || "none"}`,
     `- prev: ${input.event.prev}`,
     `- hash: ${input.event.anchors.hash}`,
@@ -1066,6 +1203,11 @@ function mapContextForMemory(contextClass: ContextClass): LegacyContextClass {
     case "GENERAL":
       return contextClass;
 
+    case "CORPUS":
+    case "APOKALYPSIS":
+      return "EDITORIAL";
+
+    case "GOVERNANCE":
     case "SECURITY":
     case "COMPLIANCE":
     case "CRITICAL_INFRASTRUCTURE":
@@ -1170,17 +1312,23 @@ function normalizeChatDataClassification(input: {
   const safeOrdinaryIntent =
     input.intentClass === "ASK" ||
     input.intentClass === "WRITE" ||
+    input.intentClass === "REWRITE" ||
     input.intentClass === "ANALYZE" ||
     input.intentClass === "SUMMARIZE" ||
     input.intentClass === "TRANSFORM" ||
-    input.intentClass === "GITHUB";
+    input.intentClass === "GITHUB" ||
+    input.intentClass === "EDITORIAL";
 
   const safeOrdinaryContext =
     input.contextClass === "GENERAL" ||
     input.contextClass === "EDITORIAL" ||
     input.contextClass === "DOCUMENTAL" ||
     input.contextClass === "GITHUB" ||
-    input.contextClass === "MATRIX";
+    input.contextClass === "MATRIX" ||
+    input.contextClass === "CORPUS" ||
+    input.contextClass === "APOKALYPSIS" ||
+    input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "COMPLIANCE";
 
   if (
     input.data.dataClass === "UNKNOWN" &&
@@ -1235,7 +1383,11 @@ function isSafeDocumentWork(input: {
 
   if (
     input.data.dataClass === "SECRET" ||
-    input.data.dataClass === "CRITICAL_OPERATIONAL"
+    input.data.dataClass === "CRITICAL_OPERATIONAL" ||
+    input.data.dataClass === "SECURITY_SENSITIVE" ||
+    input.data.dataClass === "PERSONAL" ||
+    input.data.dataClass === "SENSITIVE" ||
+    input.data.dataClass === "UNSUPPORTED"
   ) {
     return false;
   }
@@ -1243,14 +1395,18 @@ function isSafeDocumentWork(input: {
   const hasDocumentContext =
     input.files.length > 0 ||
     input.contextClass === "DOCUMENTAL" ||
-    input.contextClass === "EDITORIAL";
+    input.contextClass === "EDITORIAL" ||
+    input.contextClass === "CORPUS" ||
+    input.contextClass === "APOKALYPSIS";
 
   const safeDocumentIntent =
     input.intentClass === "ASK" ||
     input.intentClass === "ANALYZE" ||
     input.intentClass === "SUMMARIZE" ||
     input.intentClass === "WRITE" ||
-    input.intentClass === "TRANSFORM";
+    input.intentClass === "REWRITE" ||
+    input.intentClass === "TRANSFORM" ||
+    input.intentClass === "EDITORIAL";
 
   return hasDocumentContext && safeDocumentIntent;
 }
@@ -1330,11 +1486,20 @@ function buildGovernanceFrame(input: {
 }): GovernanceFrame {
   const normalizedFiles = normalizeFiles(input.files);
 
+  const projectDomain = classifyProjectDomain({
+    message: input.message,
+    hasFiles: input.files.length > 0,
+    fileNames: normalizedFiles.map((file) => file.name),
+    filePaths: normalizedFiles.map((file) => file.name),
+    activeDocument: normalizedFiles[0]?.name
+  });
+
   const context = classifyRuntimeContext({
     message: input.message,
     hasFiles: input.files.length > 0,
     fileNames: normalizedFiles.map((file) => file.name),
-    fileTypes: normalizedFiles.map((file) => file.type)
+    fileTypes: normalizedFiles.map((file) => file.type),
+    activeDocument: normalizedFiles[0]?.name
   });
 
   const rawData = classifyData({
@@ -1402,6 +1567,7 @@ function buildGovernanceFrame(input: {
   });
 
   const frame: GovernanceFrame = {
+    projectDomain,
     contextClass: context.contextClass,
     intentClass: context.intentClass,
     data,
@@ -1428,6 +1594,8 @@ async function buildAndAppendGovernedEvt(input: {
   const modernEvent = createRuntimeEvent({
     prev: input.prev,
     runtimeState: mapRuntimeStateForGovernance(input.state),
+    projectDomain: input.governance.projectDomain.projectDomain,
+    activeDomains: input.governance.projectDomain.activeDomains,
     contextClass: input.governance.contextClass,
     intentClass: input.governance.intentClass,
     sensitivity:
@@ -1441,11 +1609,13 @@ async function buildAndAppendGovernedEvt(input: {
     riskClass: input.governance.risk.riskClass,
     decision: input.governance.decision.decision,
     policyReference: input.governance.policy.policyReference,
+    policyOutcome: input.governance.policy.outcome,
     humanOversight: input.governance.oversight.state,
     operationType: input.operationType,
     operationStatus: input.operationStatus,
     failClosed: input.governance.decision.failClosed,
     reasons: [
+      ...input.governance.projectDomain.reasons,
       ...input.governance.policy.reasons,
       ...input.governance.risk.reasons,
       input.governance.oversight.reason,
@@ -1525,7 +1695,11 @@ export async function POST(req: NextRequest) {
   const legacyContextClass = mapContextForMemory(contextClass);
 
   const documentMode =
-    contextClass === "DOCUMENTAL" || effectiveFiles.length > 0
+    contextClass === "DOCUMENTAL" ||
+    contextClass === "EDITORIAL" ||
+    contextClass === "CORPUS" ||
+    contextClass === "APOKALYPSIS" ||
+    effectiveFiles.length > 0
       ? detectDocumentMode(effectiveMessage)
       : "GENERAL_DOCUMENT_WORK";
 
@@ -1591,6 +1765,9 @@ export async function POST(req: NextRequest) {
       state: diagnosticState,
       decision: memoryDecision,
       governanceDecision: governance.decision.decision,
+      projectDomain: governance.projectDomain.projectDomain,
+      activeDomains: governance.projectDomain.activeDomains,
+      domainType: governance.projectDomain.domainType,
       contextClass,
       legacyContextClass,
       intentClass,
@@ -1619,11 +1796,15 @@ export async function POST(req: NextRequest) {
         ok: appendResult?.status === "APPENDED",
         evt: publicModernEvt.evt,
         prev: publicModernEvt.prev,
+        project: publicModernEvt.project.domain,
         hash: publicModernEvt.trace.hash,
         appendStatus: appendResult?.status ?? "NOT_REQUIRED",
         appendReason: appendResult?.reason ?? "EVT append not required."
       },
       governance: {
+        projectDomain: governance.projectDomain.projectDomain,
+        activeDomains: governance.projectDomain.activeDomains,
+        domainType: governance.projectDomain.domainType,
         dataClass: governance.data.dataClass,
         policyStatus: governance.policy.status,
         policyReference: governance.policy.policyReference,
@@ -1653,7 +1834,8 @@ export async function POST(req: NextRequest) {
       decision: governance.decision,
       policy: governance.policy,
       risk: governance.risk,
-      oversight: governance.oversight
+      oversight: governance.oversight,
+      projectDomain: governance.projectDomain
     });
   } else {
     generated = await generateResponse({
@@ -1738,6 +1920,9 @@ export async function POST(req: NextRequest) {
     state: generated.state,
     decision: memoryDecision,
     governanceDecision: governance.decision.decision,
+    projectDomain: governance.projectDomain.projectDomain,
+    activeDomains: governance.projectDomain.activeDomains,
+    domainType: governance.projectDomain.domainType,
     contextClass,
     legacyContextClass,
     intentClass,
@@ -1767,11 +1952,18 @@ export async function POST(req: NextRequest) {
       ok: appendResult?.status === "APPENDED",
       evt: publicModernEvt.evt,
       prev: publicModernEvt.prev,
+      project: publicModernEvt.project.domain,
+      activeDomains: publicModernEvt.project.active_domains,
       hash: publicModernEvt.trace.hash,
       appendStatus: appendResult?.status ?? "NOT_REQUIRED",
       appendReason: appendResult?.reason ?? "EVT append not required."
     },
     governance: {
+      projectDomain: governance.projectDomain.projectDomain,
+      activeDomains: governance.projectDomain.activeDomains,
+      domainType: governance.projectDomain.domainType,
+      domainConfidence: governance.projectDomain.confidence,
+      domainReasons: governance.projectDomain.reasons,
       dataClass: governance.data.dataClass,
       containsSecret: governance.data.containsSecret,
       containsPersonalData: governance.data.containsPersonalData,
