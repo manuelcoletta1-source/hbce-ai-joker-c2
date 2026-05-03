@@ -1,12 +1,14 @@
 /**
  * AI JOKER-C2 EVT Verification
  *
- * Deterministic verification utilities for HBCE / MATRIX runtime events.
+ * Deterministic verification utilities for AI JOKER-C2 runtime events.
  *
  * This module verifies:
  * - EVT structure
  * - required fields
+ * - project-domain binding
  * - deterministic SHA-256 trace hash
+ * - previous-event continuity
  * - public-safe verification results
  *
  * Verification supports auditability.
@@ -14,29 +16,39 @@
  */
 
 import type {
+  ProjectDomain,
   RuntimeEvent,
   VerificationResult,
   VerificationStatus
 } from "./runtime-types";
-
 import {
   getRuntimeEventMissingFields,
   isRuntimeEventStructurallyValid,
   parseEventLine,
   rebuildRuntimeEventHash
 } from "./evt";
-
 import {
   EVT_CANONICALIZATION,
   EVT_HASH_ALGORITHM,
   isSha256Hash,
   normalizeHash
 } from "./evt-hash";
+import {
+  getDomainTypeForProjectDomain,
+  isProjectDomain
+} from "./runtime-types";
 
 export type RuntimeEventVerificationInput = {
   event: unknown;
   requireHash?: boolean;
   requirePreviousReference?: boolean;
+  requireProjectBinding?: boolean;
+};
+
+export type RuntimeEventProjectVerification = {
+  valid: boolean;
+  domain?: ProjectDomain;
+  warnings: string[];
 };
 
 export type RuntimeEventVerificationReport = VerificationResult & {
@@ -45,6 +57,8 @@ export type RuntimeEventVerificationReport = VerificationResult & {
   hashAlgorithm: "sha256";
   canonicalization: "deterministic-json";
   structurallyValid: boolean;
+  projectValid: boolean;
+  projectDomain?: ProjectDomain;
 };
 
 export type RuntimeEventBatchVerificationReport = {
@@ -69,6 +83,7 @@ export function verifyRuntimeEvent(
       hashAlgorithm: EVT_HASH_ALGORITHM,
       canonicalization: EVT_CANONICALIZATION,
       structurallyValid: false,
+      projectValid: false,
       missingFields: ["event"],
       warnings: ["Input is not an event object."]
     };
@@ -77,9 +92,14 @@ export function verifyRuntimeEvent(
   const event = input.event as Partial<RuntimeEvent>;
   const missingFields = getRuntimeEventMissingFields(event);
   const structurallyValid = missingFields.length === 0;
+  const projectVerification = verifyRuntimeEventProjectBinding(event);
 
   if (input.requirePreviousReference !== false && !event.prev) {
     warnings.push("Previous event reference is missing.");
+  }
+
+  if (input.requireProjectBinding !== false && !projectVerification.valid) {
+    warnings.push(...projectVerification.warnings);
   }
 
   if (!structurallyValid) {
@@ -89,6 +109,8 @@ export function verifyRuntimeEvent(
       hashAlgorithm: EVT_HASH_ALGORITHM,
       canonicalization: EVT_CANONICALIZATION,
       structurallyValid: false,
+      projectValid: projectVerification.valid,
+      projectDomain: projectVerification.domain,
       missingFields,
       warnings: uniqueWarnings([
         ...warnings,
@@ -106,10 +128,29 @@ export function verifyRuntimeEvent(
       hashAlgorithm: EVT_HASH_ALGORITHM,
       canonicalization: EVT_CANONICALIZATION,
       structurallyValid: false,
+      projectValid: projectVerification.valid,
+      projectDomain: projectVerification.domain,
       missingFields,
       warnings: uniqueWarnings([
         ...warnings,
         "Event structure is incomplete or invalid."
+      ])
+    };
+  }
+
+  if (input.requireProjectBinding !== false && !projectVerification.valid) {
+    return {
+      status: "PARTIAL",
+      evt: runtimeEvent.evt,
+      hashAlgorithm: EVT_HASH_ALGORITHM,
+      canonicalization: EVT_CANONICALIZATION,
+      structurallyValid: true,
+      projectValid: false,
+      projectDomain: projectVerification.domain,
+      missingFields: [],
+      warnings: uniqueWarnings([
+        ...warnings,
+        "Event project-domain binding is incomplete or invalid."
       ])
     };
   }
@@ -128,6 +169,8 @@ export function verifyRuntimeEvent(
       hashAlgorithm: EVT_HASH_ALGORITHM,
       canonicalization: EVT_CANONICALIZATION,
       structurallyValid: true,
+      projectValid: projectVerification.valid,
+      projectDomain: projectVerification.domain,
       missingFields: [],
       warnings: uniqueWarnings([
         ...warnings,
@@ -146,11 +189,10 @@ export function verifyRuntimeEvent(
       hashAlgorithm: EVT_HASH_ALGORITHM,
       canonicalization: EVT_CANONICALIZATION,
       structurallyValid: true,
+      projectValid: projectVerification.valid,
+      projectDomain: projectVerification.domain,
       missingFields: [],
-      warnings: uniqueWarnings([
-        ...warnings,
-        "Event hash verification failed."
-      ])
+      warnings: uniqueWarnings([...warnings, "Event hash verification failed."])
     };
   }
 
@@ -163,8 +205,10 @@ export function verifyRuntimeEvent(
     hashAlgorithm: EVT_HASH_ALGORITHM,
     canonicalization: EVT_CANONICALIZATION,
     structurallyValid: true,
+    projectValid: projectVerification.valid,
+    projectDomain: projectVerification.domain,
     missingFields: [],
-    warnings: uniqueWarnings(warnings)
+    warnings: uniqueWarnings([...warnings, ...projectVerification.warnings])
   };
 }
 
@@ -185,6 +229,7 @@ export function verifyRuntimeEventLine(
       hashAlgorithm: EVT_HASH_ALGORITHM,
       canonicalization: EVT_CANONICALIZATION,
       structurallyValid: false,
+      projectValid: false,
       missingFields: ["event"],
       warnings: ["Line could not be parsed as a valid RuntimeEvent."]
     };
@@ -201,19 +246,14 @@ export function verifyRuntimeEventBatch(
   const verifiable = results.filter(
     (result) => result.status === "VERIFIABLE"
   ).length;
-
   const partial = results.filter((result) => result.status === "PARTIAL").length;
-
   const invalid = results.filter((result) => result.status === "INVALID").length;
-
   const unverified = results.filter(
     (result) => result.status === "UNVERIFIED"
   ).length;
 
-  const status = inferBatchStatus(results);
-
   return {
-    status,
+    status: inferBatchStatus(results),
     total: results.length,
     verifiable,
     partial,
@@ -224,7 +264,9 @@ export function verifyRuntimeEventBatch(
   };
 }
 
-export function verifyRuntimeEventChain(events: RuntimeEvent[]): RuntimeEventBatchVerificationReport {
+export function verifyRuntimeEventChain(
+  events: RuntimeEvent[]
+): RuntimeEventBatchVerificationReport {
   const reports = events.map((event, index) => {
     const report = verifyRuntimeEvent({ event });
 
@@ -233,6 +275,17 @@ export function verifyRuntimeEventChain(events: RuntimeEvent[]): RuntimeEventBat
     }
 
     const previous = events[index - 1];
+
+    if (!previous) {
+      return {
+        ...report,
+        status: "PARTIAL" as VerificationStatus,
+        warnings: uniqueWarnings([
+          ...report.warnings,
+          "Previous event is missing from the provided chain."
+        ])
+      };
+    }
 
     if (event.prev !== previous.evt) {
       return {
@@ -251,7 +304,6 @@ export function verifyRuntimeEventChain(events: RuntimeEvent[]): RuntimeEventBat
   const verifiable = reports.filter(
     (result) => result.status === "VERIFIABLE"
   ).length;
-
   const partial = reports.filter((result) => result.status === "PARTIAL").length;
   const invalid = reports.filter((result) => result.status === "INVALID").length;
   const unverified = reports.filter(
@@ -270,9 +322,79 @@ export function verifyRuntimeEventChain(events: RuntimeEvent[]): RuntimeEventBat
   };
 }
 
+export function verifyRuntimeEventProjectBinding(
+  event: Partial<RuntimeEvent>
+): RuntimeEventProjectVerification {
+  const warnings: string[] = [];
+
+  if (!event.project) {
+    return {
+      valid: false,
+      warnings: ["Event project binding is missing."]
+    };
+  }
+
+  if (event.project.ecosystem !== "HERMETICUM B.C.E.") {
+    warnings.push("Event project ecosystem must be HERMETICUM B.C.E.");
+  }
+
+  if (!event.project.domain || !isProjectDomain(event.project.domain)) {
+    warnings.push("Event project domain is missing or invalid.");
+  }
+
+  const domain = event.project.domain;
+
+  if (domain && isProjectDomain(domain)) {
+    const expectedDomainType = getDomainTypeForProjectDomain(domain);
+
+    if (event.project.domain_type !== expectedDomainType) {
+      warnings.push(
+        `Event project domain_type mismatch. Expected ${expectedDomainType}, received ${event.project.domain_type}.`
+      );
+    }
+
+    if (domain === "MULTI_DOMAIN") {
+      const activeDomains = event.project.active_domains ?? [];
+
+      if (activeDomains.length < 2) {
+        warnings.push(
+          "MULTI_DOMAIN event should include at least two active domains."
+        );
+      }
+
+      const invalidActiveDomains = activeDomains.filter(
+        (item) => !isProjectDomain(item)
+      );
+
+      if (invalidActiveDomains.length > 0) {
+        warnings.push(
+          `MULTI_DOMAIN event includes invalid active domain values: ${invalidActiveDomains.join(
+            ", "
+          )}.`
+        );
+      }
+    }
+
+    if (domain === "CORPUS_ESOTEROLOGIA_ERMETICA") {
+      const formula = event.project.canonical_formula;
+
+      if (formula && formula !== "Decisione · Costo · Traccia · Tempo") {
+        warnings.push(
+          "CORPUS event canonical_formula is present but does not match the canonical DCTT formula."
+        );
+      }
+    }
+  }
+
+  return {
+    valid: warnings.length === 0,
+    domain,
+    warnings
+  };
+}
+
 export function isRuntimeEventVerifiable(event: unknown): boolean {
   const result = verifyRuntimeEvent({ event });
-
   return result.status === "VERIFIABLE" && result.hashMatches === true;
 }
 
@@ -305,11 +427,11 @@ export function buildVerificationSummary(
     `Verification status: ${report.status}`,
     `EVT: ${report.evt ?? "unknown"}`,
     `Structure valid: ${report.structurallyValid ? "yes" : "no"}`,
+    `Project valid: ${report.projectValid ? "yes" : "no"}`,
+    `Project domain: ${report.projectDomain ?? "unknown"}`,
     `Hash matches: ${report.hashMatches === true ? "yes" : "no"}`,
     `Missing fields: ${
-      report.missingFields.length > 0
-        ? report.missingFields.join(", ")
-        : "none"
+      report.missingFields.length > 0 ? report.missingFields.join(", ") : "none"
     }`,
     `Warnings: ${
       report.warnings.length > 0 ? report.warnings.join("; ") : "none"
