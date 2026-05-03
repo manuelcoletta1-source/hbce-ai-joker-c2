@@ -1,5 +1,7 @@
 # AI JOKER-C2 Compliance Orientation
 
+## Compliance-Oriented Governance for MATRIX, CORPUS and APOKALYPSIS
+
 HBCE Research  
 HERMETICUM B.C.E. S.r.l.  
 Torino, Italy, Europe  
@@ -11,24 +13,35 @@ Torino, Italy, Europe
 
 This document defines the compliance-oriented structure of AI JOKER-C2.
 
-AI JOKER-C2 is an identity-bound operational AI runtime built within the HBCE infrastructure and aligned with the MATRIX framework.
+AI JOKER-C2 is the identity-bound cognitive command runtime of the HERMETICUM B.C.E. ecosystem.
+
+It connects three primary domains:
+
+1. MATRIX
+2. CORPUS ESOTEROLOGIA ERMETICA
+3. APOKALYPSIS
 
 This document does not claim legal certification.
 
 This document does not replace legal advice.
 
-This document defines how the repository is structured to support compliance-oriented, audit-ready and governance-aware AI operations.
+This document does not certify compliance with any law, regulation, standard or institutional requirement.
+
+It defines how the repository is structured to support compliance-oriented, audit-ready and governance-aware AI operations.
 
 The compliance objective is to make AI-assisted operations:
 
 - attributable;
-- traceable;
+- project-aware;
 - policy-aware;
 - risk-classified;
 - human-accountable;
+- traceable;
 - auditable;
 - verifiable;
 - fail-closed by design.
+
+Compliance is treated here as a reconstructable operational sequence, not as a label.
 
 ---
 
@@ -36,48 +49,80 @@ The compliance objective is to make AI-assisted operations:
 
 AI JOKER-C2 is not presented as a certified compliance product.
 
-It is presented as a technical and governance architecture that can support compliance-oriented workflows.
+It is presented as a technical, governance and research architecture that can support compliance-oriented workflows.
 
 The system is designed to help organizations structure:
 
 - AI governance;
 - cybersecurity governance;
+- public-sector traceability;
 - risk classification;
+- policy evaluation;
 - human oversight;
-- operational traceability;
+- operational accountability;
+- data minimization;
 - event logging;
 - audit preparation;
 - incident documentation;
 - evidence generation;
-- critical systems continuity.
+- critical systems continuity;
+- civil and strategic dual-use boundaries.
 
 The repository should be read as:
 
 ```txt
-research architecture + operational prototype + governance model
+research architecture + operational prototype + governance model + compliance-oriented documentation
 
 It should not be read as:
 
-legal certification + production compliance guarantee
+legal certification + production compliance guarantee + regulatory approval
+
+Any real-world deployment in a regulated environment requires independent legal, technical, cybersecurity, organizational and data protection review.
 
 
 ---
 
-3. Compliance-Oriented Design Principle
+3. Canonical Compliance Formula
+
+MATRIX = operational infrastructure
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
+APOKALYPSIS = historical threshold analysis
+AI JOKER-C2 = cognitive command runtime
+
+Compliance-oriented runtime formula:
+
+Identity -> Authority -> Context -> Project Domain -> Policy -> Risk -> Human Oversight -> Decision -> Execution -> EVT -> Ledger -> Verification -> Audit
+
+Condensed:
+
+No identity, no accountability.
+No authority, no legitimate execution.
+No project domain, no correct routing.
+No policy, no controlled execution.
+No risk classification, no sensitive output.
+No human oversight, no high-impact authority.
+No EVT, no traceability.
+No verification, no auditability.
+No fail-closed, no trustworthy governance.
+
+
+---
+
+4. Compliance-Oriented Design Principle
 
 The central compliance-oriented principle is:
 
-No sensitive AI operation without identity, policy, risk classification, trace and reviewability.
-
-Expanded:
-
-Identity -> Policy -> Risk -> Decision -> Execution -> EVT -> Ledger -> Verification -> Continuity
+No sensitive AI operation without identity, authority, project domain, policy, risk classification, trace and reviewability.
 
 This sequence supports compliance-oriented work because it makes operations reconstructable.
 
 A reviewer should be able to understand:
 
 who or what acted;
+
+under which identity;
+
+under which project domain;
 
 what request was processed;
 
@@ -86,6 +131,8 @@ which context was involved;
 which policy was applied;
 
 which risk class was assigned;
+
+whether human oversight was required;
 
 which decision was produced;
 
@@ -98,10 +145,14 @@ whether continuity was preserved;
 whether the operation can be audited.
 
 
+A compliance-oriented runtime must not operate as an unstructured conversation engine.
+
+It must preserve the conditions required for reconstruction.
+
 
 ---
 
-4. Regulatory Alignment Domains
+5. Regulatory Alignment Domains
 
 AI JOKER-C2 is designed to support alignment discussions in the following domains.
 
@@ -115,26 +166,186 @@ Auditability	EVT records, ledger continuity and verification logic
 Operational accountability	Decisions, risk classes, audit status and human review
 Critical infrastructure continuity	Fail-closed behavior, event chains and controlled escalation
 Dual-use governance	Civil and strategic use boundary with prohibited-use controls
+Public-sector traceability	Reviewable AI-assisted operations and institutional records
+Repository governance	Versioned documentation, commits, architecture and protocol files
+Editorial continuity	Corpus and Apokalypsis document continuity with traceable transformations
 
 
 The repository does not claim automatic legal compliance with any specific regulation.
 
-It provides an architecture that can support regulated discussions and implementation planning.
+It provides an architecture that can support regulated discussions, technical design, implementation planning and audit preparation.
 
 
 ---
 
-5. AI Governance Orientation
+6. MATRIX Compliance Domain
+
+MATRIX is the operational infrastructure compliance domain.
+
+It supports compliance-oriented work in:
+
+AI governance;
+
+public administration;
+
+institutional traceability;
+
+cloud governance;
+
+data governance;
+
+cybersecurity resilience;
+
+critical infrastructure continuity;
+
+energy and digital infrastructure documentation;
+
+B2B and B2G operational accountability;
+
+strategic system documentation;
+
+fail-closed governance.
+
+
+MATRIX-related compliance outputs may include:
+
+governance schemas;
+
+accountability matrices;
+
+operational diagrams;
+
+risk classification models;
+
+policy documentation;
+
+audit checklists;
+
+incident report structures;
+
+evidence records;
+
+deployment readiness checklists.
+
+
+MATRIX does not certify institutional compliance by itself.
+
+It provides the infrastructure logic for compliance-oriented design.
+
+
+---
+
+7. CORPUS ESOTEROLOGIA ERMETICA Compliance Domain
+
+CORPUS ESOTEROLOGIA ERMETICA is the disciplinary grammar domain.
+
+Its canonical formula is:
+
+Decisione · Costo · Traccia · Tempo
+
+Within compliance-oriented work, the Corpus supports:
+
+conceptual consistency;
+
+terminology control;
+
+decision-cost-trace-time reasoning;
+
+editorial accountability;
+
+volume continuity;
+
+canonical glossary alignment;
+
+distinction between internal theory and external factual claim;
+
+traceable transformation of theoretical documents.
+
+
+Corpus-related compliance outputs may include:
+
+canonical terminology maps;
+
+glossary alignment records;
+
+editorial transformation records;
+
+chapter restructuring notes;
+
+conceptual continuity reports;
+
+volume mapping files;
+
+theoretical framework documentation.
+
+
+The Corpus is not a legal certification layer.
+
+It provides the internal grammar used by HERMETICUM B.C.E. to reason about trace, decision, time and operational reality.
+
+
+---
+
+8. APOKALYPSIS Compliance Domain
+
+APOKALYPSIS is the historical threshold analysis domain.
+
+Within compliance-oriented work, APOKALYPSIS supports controlled analysis of:
+
+cultural decay;
+
+political exposure;
+
+social dislocation;
+
+cognitive dislocation;
+
+historical threshold conditions;
+
+system persistence after foundation loss;
+
+civilizational interpretation;
+
+emergence of the Paradogma Alieno.
+
+
+APOKALYPSIS-related outputs may include:
+
+historical analysis files;
+
+editorial continuity records;
+
+threshold mapping documents;
+
+cultural-political-social analysis;
+
+theoretical framing;
+
+volume structure;
+
+non-coercive civilizational diagnosis.
+
+
+APOKALYPSIS must remain analytical and editorial.
+
+It must not become a tool for incitement, coercion, destabilization, targeted abuse, extremist framing or unlawful mobilization.
+
+
+---
+
+9. AI Governance Orientation
 
 AI JOKER-C2 supports AI governance through:
 
 identity-bound operation;
 
+project-domain classification;
+
 context classification;
 
-risk classification;
-
 policy evaluation;
+
+risk classification;
 
 governance decisions;
 
@@ -181,7 +392,7 @@ The system must not treat unknown risk as permission.
 
 ---
 
-6. Human Oversight
+10. Human Oversight
 
 AI JOKER-C2 preserves human accountability.
 
@@ -203,7 +414,11 @@ governance structuring;
 
 audit preparation;
 
-evidence generation.
+evidence generation;
+
+editorial transformation;
+
+repository documentation.
 
 
 The system must not claim final authority over:
@@ -222,7 +437,9 @@ coercive public authority;
 
 critical infrastructure intervention;
 
-irreversible operational execution.
+irreversible operational execution;
+
+institutional authorization.
 
 
 For sensitive or high-impact domains, the runtime should support human review before operational action.
@@ -242,7 +459,7 @@ ESCALATED	Further authority required
 
 ---
 
-7. Cybersecurity Governance Orientation
+11. Cybersecurity Governance Orientation
 
 AI JOKER-C2 supports defensive cybersecurity governance.
 
@@ -266,7 +483,9 @@ resilience planning;
 
 audit trail design;
 
-security documentation.
+security documentation;
+
+fail-closed runtime review.
 
 
 Prohibited cybersecurity support includes:
@@ -297,7 +516,7 @@ Cybersecurity support must remain defensive, lawful and accountable.
 
 ---
 
-8. Data Governance Orientation
+12. Data Governance Orientation
 
 AI JOKER-C2 should handle user data and files according to minimization and controlled processing principles.
 
@@ -319,7 +538,9 @@ clearly state when file visibility is incomplete;
 
 preserve user control over uploaded content;
 
-avoid claiming verification beyond available evidence.
+avoid claiming verification beyond available evidence;
+
+separate public and internal event views.
 
 
 Suggested file handling classes:
@@ -337,7 +558,7 @@ UNKNOWN	Treat conservatively
 
 ---
 
-9. Digital Identity Orientation
+13. Digital Identity Orientation
 
 AI JOKER-C2 is identity-bound.
 
@@ -350,7 +571,8 @@ Entity	AI_JOKER
 IPR	IPR-AI-0001
 Active checkpoint	EVT-0014-AI
 Core	HBCE-CORE-v3
-Framework	MATRIX
+Ecosystem	HERMETICUM B.C.E.
+Connected domains	MATRIX, CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
 Infrastructure	HBCE
 Organization	HERMETICUM B.C.E. S.r.l.
 Territorial anchor	Torino, Italy, Europe
@@ -366,19 +588,21 @@ operational identity;
 
 event binding;
 
-audit reconstruction.
+audit reconstruction;
+
+accountable system state.
 
 
 Identity-bound operation does not grant unrestricted authority.
 
 Identity creates traceability.
 
-Authority still requires policy, risk classification and lawful context.
+Authority still requires policy, risk classification, human accountability and lawful context.
 
 
 ---
 
-10. EVT and Auditability
+14. EVT and Auditability
 
 EVT means Event.
 
@@ -397,6 +621,8 @@ IPR;
 timestamp;
 
 runtime state;
+
+project domain;
 
 context class;
 
@@ -418,11 +644,20 @@ audit status.
 A minimal EVT object may look like this:
 
 {
-  "evt": "EVT-20260429-153000-0001",
-  "prev": "GENESIS",
+  "evt": "EVT-20260503-153000-AI-JOKER-C2-0001",
+  "prev": "EVT-0014-AI",
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
-  "timestamp": "2026-04-29T15:30:00+02:00",
+  "timestamp": "2026-05-03T15:30:00+02:00",
+  "project": {
+    "ecosystem": "HERMETICUM B.C.E.",
+    "domain": "MULTI_DOMAIN",
+    "active_domains": [
+      "MATRIX",
+      "CORPUS_ESOTEROLOGIA_ERMETICA",
+      "APOKALYPSIS"
+    ]
+  },
   "context": {
     "class": "COMPLIANCE",
     "domain": "AI_GOVERNANCE",
@@ -456,7 +691,7 @@ The purpose is operational reconstruction.
 
 ---
 
-11. Ledger Continuity
+15. Ledger Continuity
 
 The ledger layer should preserve event continuity.
 
@@ -498,15 +733,24 @@ Ledger principles:
 7. Ledger export should support audit review.
 
 
+8. Project-domain metadata should be preserved.
+
+
+9. Context-class metadata should be preserved.
+
+
+10. Audit status should remain distinct from verification status.
+
+
 
 Suggested correction pattern:
 
 {
-  "evt": "EVT-20260429-160000-0003",
-  "prev": "EVT-20260429-153000-0002",
+  "evt": "EVT-20260503-160000-AI-JOKER-C2-0003",
+  "prev": "EVT-20260503-153000-AI-JOKER-C2-0002",
   "operation": {
     "type": "EVENT_CORRECTION",
-    "corrects": "EVT-20260429-153000-0002",
+    "corrects": "EVT-20260503-153000-AI-JOKER-C2-0002",
     "reason": "Incorrect risk classification"
   }
 }
@@ -514,7 +758,7 @@ Suggested correction pattern:
 
 ---
 
-12. Verification Orientation
+16. Verification Orientation
 
 Verification should allow a reviewer to reconstruct the event sequence.
 
@@ -527,6 +771,8 @@ does it include required fields?
 does the previous event reference exist?
 
 does the timestamp exist?
+
+does the project domain exist?
 
 does the hash match the canonical payload?
 
@@ -553,10 +799,16 @@ ANCHORED	Externally anchored
 SUPERSEDED	Corrected by later event
 
 
+Verification is technical reconstruction.
+
+Audit is organizational review.
+
+They must remain distinct.
+
 
 ---
 
-13. Fail-Closed Compliance Principle
+17. Fail-Closed Compliance Principle
 
 Fail-closed is a compliance-oriented safety boundary.
 
@@ -565,6 +817,8 @@ The system should block, degrade or escalate when:
 identity is missing;
 
 authority is unclear;
+
+project domain cannot be classified in a sensitive context;
 
 policy is missing;
 
@@ -580,7 +834,11 @@ continuity cannot be preserved;
 
 human review is required but absent;
 
-legal or compliance basis is uncertain in a sensitive context.
+legal or compliance basis is uncertain in a sensitive context;
+
+data handling class cannot be safely assigned;
+
+runtime state is invalid.
 
 
 The compliance rule is:
@@ -603,7 +861,7 @@ institutional trust.
 
 ---
 
-14. Decision Layer
+18. Decision Layer
 
 The decision layer should produce one of the following outcomes.
 
@@ -624,7 +882,7 @@ A decision should not be invented after the fact to justify an operation.
 
 ---
 
-15. Compliance Record
+19. Compliance Record
 
 A compliance-oriented operation should produce or support a record containing:
 
@@ -635,6 +893,8 @@ entity;
 identity reference;
 
 timestamp;
+
+project domain;
 
 context class;
 
@@ -662,10 +922,11 @@ correction reference, when applicable.
 Example:
 
 {
-  "operation_id": "OP-20260429-0001",
+  "operation_id": "OP-20260503-0001",
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
-  "timestamp": "2026-04-29T15:30:00+02:00",
+  "timestamp": "2026-05-03T15:30:00+02:00",
+  "project_domain": "MULTI_DOMAIN",
   "context_class": "COMPLIANCE",
   "risk_class": "MEDIUM",
   "policy_reference": "COMPLIANCE_ORIENTED_OPERATION",
@@ -681,48 +942,82 @@ Example:
 
 ---
 
-16. AI Governance Checklist
+20. AI Governance Checklist
 
 Before deploying AI JOKER-C2 in a sensitive environment, review:
 
 Is the runtime identity defined?
+
 Is the operational scope defined?
+
+Is the project domain defined?
+
 Is the user authority defined?
+
 Are prohibited uses documented?
+
 Are risk classes implemented?
+
 Are policy checks implemented?
+
 Are governance decisions implemented?
+
 Is human oversight defined?
+
 Is file handling controlled?
+
 Is sensitive data minimized?
+
 Are EVT records generated?
+
 Is ledger continuity preserved?
+
 Is verification possible?
+
 Is fail-closed behavior implemented?
+
 Are logs safe?
+
 Are secrets protected?
+
 Is the system non-offensive by design?
+
 
 
 ---
 
-17. Cybersecurity Checklist
+21. Cybersecurity Checklist
 
 Before production or institutional use, review:
 
 Are secrets outside the repository?
+
 Are environment variables protected?
+
 Are API routes validated?
+
 Are errors handled safely?
+
 Are stack traces hidden in production?
+
 Are file uploads controlled?
+
 Are dependencies reviewed?
+
 Has npm audit been run?
+
 Does the build succeed?
+
 Are logs free from secrets?
+
 Is offensive functionality absent?
+
 Are security reports handled responsibly?
+
 Is fail-closed behavior preserved?
+
+Is project-domain metadata preserved?
+
 
 Recommended commands:
 
@@ -733,78 +1028,117 @@ npm run build
 
 ---
 
-18. Data Handling Checklist
+22. Data Handling Checklist
 
 For file and data processing, review:
 
 Is the data necessary for the operation?
+
 Is sensitive data minimized?
+
 Can a reference or hash replace full storage?
+
 Are private contents excluded from logs?
+
 Is the output safe to expose?
+
 Is file visibility complete or partial?
+
 Is unsupported content rejected safely?
+
 Is user control preserved?
+
 Is data handling reflected in EVT or audit metadata?
+
+Is project-domain metadata reflected in EVT or audit metadata?
+
 
 
 ---
 
-19. Human Oversight Checklist
+23. Human Oversight Checklist
 
 For high-impact use cases, review:
 
 Is human review required?
+
 Who is the responsible human operator?
+
 Is the decision advisory or operational?
+
 Can the operation affect third parties?
+
 Can the operation affect rights, access or services?
+
 Can the operation affect critical systems?
+
 Is escalation required?
+
 Is the review result recorded?
+
 Is the final responsibility preserved outside the model?
+
+Is the project domain properly classified?
+
 
 
 ---
 
-20. Dual-Use Governance Checklist
+24. Dual-Use Governance Checklist
 
 For dual-use contexts, review:
 
 Is the use civil, defensive or strategic?
+
 Is the user authorized?
+
 Is the target system owned or authorized?
+
 Is the request defensive?
+
 Can the output enable abuse?
+
 Can the output support offensive cyber operations?
+
 Can the output support unlawful surveillance?
+
 Can the output support coercive manipulation?
+
 Is the operation traceable?
+
 Is the operation auditable?
+
 Should the system block, degrade or escalate?
+
+Is the active project domain MATRIX, CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN?
+
 
 
 ---
 
-21. Documentation Compliance
+25. Documentation Compliance
 
 Repository documentation should remain aligned with:
 
-README.md;
+README.md
 
-ARCHITECTURE.md;
+ARCHITECTURE.md
 
-GOVERNANCE.md;
+GOVERNANCE.md
 
-EVT_PROTOCOL.md;
+EVT_PROTOCOL.md
 
-DUAL_USE_STRATEGIC_POSITIONING.md;
+PROTOCOL.md
 
-SECURITY.md;
+DUAL_USE_STRATEGIC_POSITIONING.md
 
-ROADMAP.md;
+SECURITY.md
 
-COMPLIANCE.md.
+ROADMAP.md
+
+COMPLIANCE.md
+
+system/system-manifest.json
 
 
 Documentation must preserve the following:
@@ -833,33 +1167,39 @@ Documentation must preserve the following:
 8. no unrestricted dual-use framing;
 
 
-9. no unsafe operational instructions.
+9. no unsafe operational instructions;
+
+
+10. MATRIX, CORPUS and APOKALYPSIS domain alignment.
 
 
 
 
 ---
 
-22. Compliance Mapping Table
+26. Compliance Mapping Table
 
 Compliance Need	AI JOKER-C2 Architectural Support
 
 Accountability	IPR identity, human oversight, decision records
 Traceability	EVT records, previous event reference, ledger continuity
-Risk management	risk classes, policy engine, governance decisions
-Human oversight	oversight states, escalation, review requirement
-Security	fail-closed, defensive boundary, secret hygiene
-Auditability	verification status, audit status, event reconstruction
-Data minimization	file handling rules, references, hashes, payload reduction
-Incident review	event records, correction events, evidence packs
-Critical continuity	ledger, runtime state, continuity chain
-Dual-use control	authorized domains, prohibited uses, blocked operations
+Risk management	Risk classes, policy engine, governance decisions
+Human oversight	Oversight states, escalation, review requirement
+Security	Fail-closed, defensive boundary, secret hygiene
+Auditability	Verification status, audit status, event reconstruction
+Data minimization	File handling rules, references, hashes, payload reduction
+Incident review	Event records, correction events, evidence packs
+Critical continuity	Ledger, runtime state, continuity chain
+Dual-use control	Authorized domains, prohibited uses, blocked operations
+Project governance	MATRIX, CORPUS and APOKALYPSIS domain classification
+Editorial continuity	Corpus and Apokalypsis transformation records
+Institutional readiness	B2B/B2G documentation, audit checklists, governance files
 
 
 
 ---
 
-23. Compliance Artifacts
+27. Compliance Artifacts
 
 Future compliance-oriented artifacts may include:
 
@@ -872,6 +1212,9 @@ docs/INCIDENT_REPORT_TEMPLATE.md
 docs/DATA_HANDLING_MODEL.md
 docs/DUAL_USE_RISK_REGISTER.md
 docs/COMPLIANCE_DISCLAIMER.md
+docs/MATRIX_COMPLIANCE_MAPPING.md
+docs/CORPUS_EDITORIAL_GOVERNANCE.md
+docs/APOKALYPSIS_ANALYSIS_BOUNDARY.md
 
 These artifacts should support review and implementation.
 
@@ -880,7 +1223,7 @@ They should not claim certification.
 
 ---
 
-24. Non-Certification Statement
+28. Non-Certification Statement
 
 AI JOKER-C2 is a compliance-oriented architecture and operational prototype.
 
@@ -902,7 +1245,9 @@ documented risk assessment;
 
 deployment-specific controls;
 
-ongoing monitoring.
+ongoing monitoring;
+
+external review when appropriate.
 
 
 The repository provides a governance and technical foundation.
@@ -912,7 +1257,7 @@ It does not replace institutional responsibility.
 
 ---
 
-25. Compliance Roadmap
+29. Compliance Roadmap
 
 Suggested compliance roadmap:
 
@@ -938,7 +1283,7 @@ Documentation alone is not enough.
 
 ---
 
-26. Required Future Controls
+30. Required Future Controls
 
 Before any regulated deployment, AI JOKER-C2 should implement:
 
@@ -982,36 +1327,115 @@ They are deployment conditions.
 
 ---
 
-27. Compliance Invariants
+31. European Governance Orientation
 
-The following invariants must remain stable:
+AI JOKER-C2 is designed with a European governance orientation.
 
-AI JOKER-C2 does not claim automatic legal compliance.
-AI JOKER-C2 supports compliance-oriented workflows.
-AI JOKER-C2 is identity-bound.
-AI JOKER-C2 is non-offensive.
-AI JOKER-C2 uses policy and risk classification.
-AI JOKER-C2 preserves human accountability.
-AI JOKER-C2 uses EVT for traceability.
-AI JOKER-C2 supports verification.
-AI JOKER-C2 follows fail-closed behavior.
-AI JOKER-C2 treats sensitive uncertainty conservatively.
+This means the architecture should support discussion around:
+
+trustworthy AI;
+
+risk-based governance;
+
+human oversight;
+
+transparency;
+
+accountability;
+
+cybersecurity resilience;
+
+data protection by design;
+
+proportionality;
+
+auditability;
+
+critical infrastructure continuity;
+
+public-sector responsibility;
+
+dual-use risk management.
+
+
+This document does not claim conformity with any specific regulation.
+
+It defines an architecture that can support compliance-oriented review and implementation planning.
 
 
 ---
 
-28. Final Compliance Formula
+32. Compliance Invariants
+
+The following invariants must remain stable:
+
+1. AI JOKER-C2 does not claim automatic legal compliance.
+
+
+2. AI JOKER-C2 supports compliance-oriented workflows.
+
+
+3. AI JOKER-C2 is identity-bound.
+
+
+4. AI JOKER-C2 is non-offensive.
+
+
+5. AI JOKER-C2 uses policy and risk classification.
+
+
+6. AI JOKER-C2 preserves human accountability.
+
+
+7. AI JOKER-C2 uses EVT for traceability.
+
+
+8. AI JOKER-C2 supports verification.
+
+
+9. AI JOKER-C2 follows fail-closed behavior.
+
+
+10. AI JOKER-C2 treats sensitive uncertainty conservatively.
+
+
+11. MATRIX provides the operational infrastructure domain.
+
+
+12. CORPUS ESOTEROLOGIA ERMETICA provides the disciplinary grammar domain.
+
+
+13. APOKALYPSIS provides the historical threshold domain.
+
+
+14. Internal conceptual coherence must not be presented as external certification.
+
+
+15. Documentation must stay aligned with runtime behavior.
+
+
+16. Real-world deployment requires review beyond this repository.
+
+
+
+
+---
+
+33. Final Compliance Formula
 
 Compliance is not a label.
+
 Compliance is a reconstructable sequence.
 
 Expanded:
 
-Identity -> Authority -> Policy -> Risk -> Human Oversight -> Decision -> EVT -> Ledger -> Verification -> Audit
+Identity -> Authority -> Project Domain -> Policy -> Risk -> Human Oversight -> Decision -> EVT -> Ledger -> Verification -> Audit
 
 Operational formula:
 
 No identity, no accountability.
+No authority, no legitimate execution.
+No project domain, no correct routing.
 No policy, no controlled execution.
 No risk classification, no sensitive output.
 No human oversight, no high-impact authority.
@@ -1019,23 +1443,36 @@ No EVT, no traceability.
 No verification, no auditability.
 No fail-closed, no trustworthy governance.
 
+Project formula:
+
+MATRIX = infrastructure.
+CORPUS ESOTEROLOGIA ERMETICA = grammar.
+APOKALYPSIS = threshold.
+AI JOKER-C2 = runtime.
+
 
 ---
 
-29. Status
+34. Status
 
-Document status: active compliance orientation file
-Project: AI JOKER-C2
-Framework: MATRIX
-Infrastructure: HBCE
-Identity layer: IPR
-Trace layer: EVT
-Governance principle: fail-closed
-Security boundary: defensive and non-offensive
-Compliance status: orientation only, not certification
-Repository: hbce-ai-joker-c2
-Maintainer: HBCE Research
-Organization: HERMETICUM B.C.E. S.r.l.
-Territorial anchor: Torino, Italy, Europe
-Year: 2026
+Field	Value
+
+Document	COMPLIANCE.md
+Status	Active compliance orientation file
+Project	AI JOKER-C2
+Ecosystem	HERMETICUM B.C.E.
+Connected domains	MATRIX, CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Infrastructure	HBCE
+Identity layer	IPR
+Trace layer	EVT
+Governance principle	Fail-closed
+Security boundary	Defensive and non-offensive
+Compliance status	Orientation only, not certification
+Repository	hbce-ai-joker-c2
+Maintainer	HBCE Research
+Organization	HERMETICUM B.C.E. S.r.l.
+Territorial anchor	Torino, Italy, Europe
+Year	2026
+
+
 
