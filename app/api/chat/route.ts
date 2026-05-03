@@ -694,6 +694,7 @@ function buildCanonicalDictionary(): string {
     "EVT non è memoria psicologica: è una traccia operativa verificabile che collega identità, tempo, contesto, decisione, rischio, hash e continuità.",
     "",
     "Biocybersecurity = sicurezza dell'accoppiamento organismo-sistema-AI: protegge il punto di contatto tra identità biologica, sistemi digitali, AI, sensori, robotica, droni, flotte, dati e continuità operativa.",
+    "Quando IPR e biocybersecurity sono collegati, la risposta deve usare sempre la formula: IPR = identità operativa; EVT = traccia verificabile; MATRIX = infrastruttura; AI JOKER-C2 = runtime governato; Biocybersecurity = protezione dell'accoppiamento organismo-sistema-AI.",
     "",
     "MATRIX = dominio infrastrutturale operativo: AI governance, Europa, B2B, B2G, cloud, dati, energia, sicurezza, istituzioni, continuità.",
     "CORPUS ESOTEROLOGIA ERMETICA = dominio grammaticale-disciplinare: Decisione · Costo · Traccia · Tempo, glossario canonico, teoria del reale operativo.",
@@ -703,7 +704,74 @@ function buildCanonicalDictionary(): string {
     "Per APOKALYPSIS, CORPUS e MATRIX preserva Decisione · Costo · Traccia · Tempo quando pertinente.",
     "Quando l'utente chiede valore operativo, confronti o standard europei, distingui sempre: identità, firma, credenziale, registro, timestamp, audit log, EVT, IPR.",
     "IPR non va spiegato come semplice identità digitale: va spiegato come livello di continuità operativa sopra strumenti già esistenti.",
-    "Biocybersecurity non va bloccata come rischio critico se l'utente chiede solo una definizione o una spiegazione concettuale."
+    "Biocybersecurity non va bloccata come rischio critico se l'utente chiede solo una definizione, una spiegazione concettuale o un testo editoriale."
+  ].join("\n");
+}
+
+function buildSafeConceptResponseDirective(message: string): string {
+  const safeConcept = classifySafeConcept(message);
+
+  if (!safeConcept.matched) {
+    return [
+      "Direttiva safe concept:",
+      "Nessun safe concept specifico rilevato.",
+      "Rispondi normalmente seguendo il dominio, il contesto e la governance runtime."
+    ].join("\n");
+  }
+
+  if (safeConcept.kind === "BIOCYBERSECURITY") {
+    return [
+      "Direttiva safe concept BIOCYBERSECURITY:",
+      "La richiesta riguarda biocybersecurity, biocibersicurezza, biocibernetica, sicurezza biocibernetica, protezione biocibernetica o una variante scritta male.",
+      "Non trattarla come richiesta cyber-offensiva se non contiene istruzioni operative per attacco, exploit, malware, sorveglianza illegale o abuso.",
+      "Rispondi sempre come spiegazione concettuale, strategica, editoriale e difensiva.",
+      "",
+      "Formula obbligatoria da integrare nella risposta:",
+      "IPR = identità operativa.",
+      "EVT = traccia verificabile.",
+      "MATRIX = infrastruttura.",
+      "AI JOKER-C2 = runtime governato.",
+      "Biocybersecurity = protezione dell’accoppiamento organismo–sistema–AI.",
+      "",
+      "Spiegazione obbligatoria:",
+      "IPR fornisce l’identità operativa del soggetto, agente AI, robot, drone, veicolo, sensore o sistema.",
+      "EVT registra gli eventi verificabili prodotti da quell’identità.",
+      "MATRIX organizza l’infrastruttura di governance, auditabilità, sicurezza difensiva e continuità.",
+      "AI JOKER-C2 governa il runtime: contesto, rischio, policy, decisione, EVT e verifica.",
+      "La biocybersecurity protegge il punto di contatto tra organismo biologico, identità digitale, AI, sensori, robotica, droni, flotte, dati e sistemi autonomi.",
+      "",
+      "Evita una risposta generica. Non limitarti a dire che IPR aiuta la sicurezza. Spiega il rapporto operativo tra identità, evento, responsabilità, prova e continuità."
+    ].join("\n");
+  }
+
+  if (safeConcept.kind === "IPR_IDENTITY") {
+    return [
+      "Direttiva safe concept IPR:",
+      "La richiesta riguarda IPR / Identity Primary Record.",
+      "Non ridurre IPR a login, account, credenziale o semplice identità digitale.",
+      "Spiega IPR come registro primario di identità operativa.",
+      "IPR collega soggetto, origine, responsabilità, derivazioni, eventi, prove e continuità nel tempo.",
+      "Se pertinente, confrontalo con eIDAS/EUDI, PKI, X.509, DID/VC, blockchain timestamping, IAM e audit log.",
+      "Il suo valore non è sostituire tutto, ma collegare identità, azione, prova, responsabilità ed EVT in una sequenza governabile."
+    ].join("\n");
+  }
+
+  if (safeConcept.kind === "EVT_TRACEABILITY") {
+    return [
+      "Direttiva safe concept EVT:",
+      "La richiesta riguarda EVT / Verifiable Event Trace.",
+      "Spiega EVT come traccia operativa verificabile, non come memoria psicologica.",
+      "EVT registra evento, tempo, identità, contesto, rischio, decisione, hash, verifica e continuità.",
+      "Se pertinente, collega EVT a IPR: IPR identifica, EVT traccia."
+    ].join("\n");
+  }
+
+  return [
+    "Direttiva safe concept generale:",
+    "La richiesta riguarda un concetto canonico o teorico del framework.",
+    "Rispondi in modo concettuale, sicuro, difensivo e governato.",
+    "Non attivare linguaggio operativo offensivo.",
+    "Preserva la distinzione: MATRIX = infrastruttura, CORPUS = grammatica, APOKALYPSIS = soglia, AI JOKER-C2 = runtime."
   ].join("\n");
 }
 
@@ -916,6 +984,8 @@ function buildSystemPrompt(input: {
     "",
     buildProjectDomainDirective(input.governanceFrame),
     "",
+    buildSafeConceptResponseDirective(input.message),
+    "",
     buildGovernanceFrameText(input.governanceFrame),
     "",
     "Modalità documentale:",
@@ -972,11 +1042,21 @@ function buildFallback(input: {
 
   if (safeConcept.matched && safeConcept.kind === "BIOCYBERSECURITY") {
     return [
-      "Con biocybersecurity si intende la sicurezza dell'interfaccia tra organismo biologico, identità digitale, AI, dati, sensori, robotica, droni, flotte e continuità operativa.",
+      "La relazione tra IPR e sicurezza/protezione biocibernetica nasce dal fatto che la biocybersecurity non protegge soltanto reti, software o credenziali, ma protegge il punto di contatto tra organismo biologico, identità digitale, AI, sensori, robotica, droni, flotte autonome e sistemi operativi.",
       "",
-      "Nel framework AI JOKER-C2 / IPR / EVT / MATRIX, non è solo cybersecurity applicata alla biologia. È la protezione dell'accoppiamento organismo-sistema: chi agisce, con quale identità, sotto quale responsabilità, con quale evento, con quale traccia e con quale verifica nel tempo.",
+      "L’IPR, cioè Identity Primary Record, fornisce l’identità operativa primaria di questo accoppiamento. Non è un semplice account, né una normale identità digitale. È il registro che collega soggetto, origine, responsabilità, eventi, prove e continuità nel tempo. In una struttura biocibernetica, questo significa poter stabilire chi o che cosa sta agendo, da quale origine deriva, quale responsabilità porta e quale traccia lascia nel sistema.",
       "",
-      "IPR dà identità operativa. EVT dà traccia verificabile. MATRIX dà infrastruttura. AI JOKER-C2 dà runtime governato. Biocybersecurity protegge il punto in cui organismo, macchina e sistema si accoppiano."
+      "L’EVT completa questa struttura perché registra gli eventi verificabili prodotti dall’identità operativa. Se l’IPR identifica, l’EVT traccia. Se l’IPR stabilisce origine e responsabilità, l’EVT conserva la sequenza degli eventi nel tempo. In questo modo, la protezione biocibernetica non resta soltanto difensiva, ma diventa governabile, auditabile e ricostruibile.",
+      "",
+      "Dentro MATRIX, questa relazione assume valore infrastrutturale. IPR ed EVT permettono di applicare identità, tracciabilità, verifica, responsabilità e continuità a robot, droni, veicoli autonomi, flotte, sensori, agenti AI e sistemi pubblici o industriali. AI JOKER-C2 diventa il runtime che governa questa relazione, classificando contesto, rischio, decisione e continuità operativa.",
+      "",
+      "Formula canonica:",
+      "",
+      "IPR = identità operativa.",
+      "EVT = traccia verificabile.",
+      "MATRIX = infrastruttura.",
+      "AI JOKER-C2 = runtime governato.",
+      "Biocybersecurity = protezione dell’accoppiamento organismo–sistema–AI."
     ].join("\n");
   }
 
@@ -1095,7 +1175,7 @@ async function generateResponse(input: {
             "APOKALYPSIS = soglia storica.",
             "AI JOKER-C2 = runtime cognitivo-governato.",
             "Se l'utente chiede IPR, non ridurlo a identità digitale: spiegalo come registro primario di identità operativa che connette identità, azione, responsabilità, evento, prova, tempo e continuità.",
-            "Se l'utente chiede biocybersecurity, biocibersicurezza, biocibernetica o varianti scritte male come BIOCYBERCYCURITI, spiegala come sicurezza dell'accoppiamento organismo-sistema-AI, non bloccarla come rischio critico se è solo una richiesta concettuale.",
+            "Se l'utente chiede biocybersecurity, biocibersicurezza, biocibernetica, sicurezza biocibernetica, protezione biocibernetica o varianti scritte male, devi rispondere usando sempre questa formula: IPR = identità operativa; EVT = traccia verificabile; MATRIX = infrastruttura; AI JOKER-C2 = runtime governato; Biocybersecurity = protezione dell'accoppiamento organismo-sistema-AI. Non bloccarla come rischio critico se è solo una richiesta concettuale o editoriale.",
             "Se l'utente chiede confronto con standard esistenti, confronta IPR con eIDAS/EUDI, PKI, X.509, DID/VC, blockchain timestamping, IAM e audit log.",
             "Se l'utente dice 'apokalypsis intendo dire', devi riferirti al documento attivo APOKALYPSIS, non al concetto generico di apocalisse.",
             "Per APOKALYPSIS evita risposte generiche: classificare, interpretare, posizionare e spiegare l'impatto civilizzazionale.",
