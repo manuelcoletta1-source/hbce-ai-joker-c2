@@ -37,6 +37,8 @@ type PublicEvt = {
   evt?: string;
   prev?: string;
   hash?: string;
+  publicHash?: string;
+  fullHash?: string;
 };
 
 type GovernedEvt = {
@@ -332,7 +334,8 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             rows={[
               ["EVT", message.runtime.evt?.evt],
               ["Prev", message.runtime.evt?.prev],
-              ["Hash", message.runtime.evt?.hash]
+              ["Public", message.runtime.evt?.publicHash || message.runtime.evt?.hash],
+              ["Full", message.runtime.evt?.fullHash]
             ]}
           />
 
@@ -824,7 +827,12 @@ export default function InterfacePage() {
           <RuntimeCard title="EVT Chain">
             <FieldRow label="EVT" value={lastRuntime?.evt?.evt || "-"} mono />
             <FieldRow label="Prev" value={lastRuntime?.evt?.prev || "-"} mono />
-            <FieldRow label="Hash" value={lastRuntime?.evt?.hash || "-"} mono />
+            <FieldRow
+              label="Public"
+              value={lastRuntime?.evt?.publicHash || lastRuntime?.evt?.hash || "-"}
+              mono
+            />
+            <FieldRow label="Full" value={lastRuntime?.evt?.fullHash || "-"} mono />
           </RuntimeCard>
 
           <RuntimeCard title="Governed EVT">
