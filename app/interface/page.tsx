@@ -19,6 +19,38 @@ type RuntimeEvent = {
   continuityRef?: string | null;
 };
 
+type OpcProof = {
+  ok?: boolean;
+  proofId?: string;
+  chainHash?: string;
+  auditStatus?: string;
+  verificationStatus?: string;
+  appendStatus?: string;
+  appendReason?: string;
+  publicProof?: {
+    proofId?: string;
+    timestamp?: string;
+    entity?: string;
+    ipr?: string;
+    sessionId?: string;
+    eventId?: string;
+    eventHash?: string;
+    memoryEventId?: string;
+    state?: string;
+    decision?: string;
+    riskClass?: string;
+    policyReference?: string;
+    inputHash?: string;
+    outputHash?: string;
+    decisionHash?: string;
+    previousProofHash?: string | null;
+    chainHash?: string;
+    auditStatus?: string;
+    reviewRequired?: boolean;
+    verificationStatus?: string;
+  };
+};
+
 type ChatMessage = {
   id: string;
   role: Role;
@@ -30,6 +62,7 @@ type ChatMessage = {
     prev?: string | null;
     error?: string;
   };
+  opc?: OpcProof;
 };
 
 type SelectedAttachment = {
@@ -69,7 +102,18 @@ type ApiResponse = {
   error?: string;
   state?: string;
   decision?: string;
+  governanceDecision?: string;
+  projectDomain?: string;
+  activeDomains?: string[];
+  domainType?: string;
   contextClass?: string;
+  legacyContextClass?: string;
+  intentClass?: string;
+  documentMode?: string;
+  documentFamily?: string;
+  evtIprMemoryUsed?: boolean;
+  memorySource?: string;
+  structuredFormat?: boolean;
   sources?: Array<{
     title: string;
     url?: string;
@@ -81,7 +125,49 @@ type ApiResponse = {
     prev?: string | null;
     error?: string;
   };
+  governedEvt?: {
+    ok?: boolean;
+    evt?: string;
+    prev?: string;
+    project?: string;
+    activeDomains?: string[];
+    hash?: string;
+    appendStatus?: string;
+    appendReason?: string;
+  };
+  memory?: {
+    used?: boolean;
+    source?: string;
+    lastEventId?: string | null;
+    event?: string;
+    appendStatus?: string;
+    appendReason?: string;
+    governedEvt?: string | null;
+    governedHash?: string | null;
+  };
+  opc?: OpcProof;
   event?: RuntimeEvent;
+  governedEvent?: {
+    evt?: string;
+    prev?: string;
+    project?: {
+      domain?: string;
+    };
+    trace?: {
+      hash?: string;
+    };
+    verification?: {
+      status?: string;
+    };
+  };
+  identity?: {
+    entity?: string;
+    ipr?: string;
+    evt?: string;
+    state?: string;
+    cycle?: string;
+    core?: string;
+  };
   node_runtime?: {
     session_id?: string;
     session_state?: string;
@@ -93,9 +179,22 @@ type ApiResponse = {
     warning?: string;
   };
   joker_state?: JokerState;
+  diagnostics?: {
+    openaiConfigured?: boolean;
+    modelUsed?: string;
+    degradedReason?: string | null;
+    evtIprMemoryUsed?: boolean;
+    memorySource?: string;
+    memoryEvent?: string;
+    memoryAppendStatus?: string;
+    opcProofId?: string;
+    opcAppendStatus?: string;
+    opcVerificationStatus?: string;
+    structuredFormat?: boolean;
+  };
 };
 
-const STORAGE_KEY = "hbce-joker-c2-interface-v8";
+const STORAGE_KEY = "hbce-joker-c2-interface-v9";
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 
 function makeId() {
@@ -184,6 +283,14 @@ function shortenHash(value?: string | null, start = 12, end = 10) {
   return `${value.slice(0, start)}...${value.slice(-end)}`;
 }
 
+function shortenMiddle(value?: string | null, max = 42) {
+  if (!value) return "-";
+  if (value.length <= max) return value;
+
+  const edge = Math.max(8, Math.floor((max - 3) / 2));
+  return `${value.slice(0, edge)}...${value.slice(-edge)}`;
+}
+
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -269,6 +376,26 @@ function normalizeEvtFromResponse(data: ApiResponse) {
   return undefined;
 }
 
+function normalizeOpcFromResponse(data: ApiResponse): OpcProof | undefined {
+  if (data.opc?.proofId || data.opc?.chainHash || data.opc?.appendStatus) {
+    return data.opc;
+  }
+
+  if (
+    data.diagnostics?.opcProofId ||
+    data.diagnostics?.opcAppendStatus ||
+    data.diagnostics?.opcVerificationStatus
+  ) {
+    return {
+      proofId: data.diagnostics.opcProofId,
+      appendStatus: data.diagnostics.opcAppendStatus,
+      verificationStatus: data.diagnostics.opcVerificationStatus
+    };
+  }
+
+  return undefined;
+}
+
 async function ingestFilesToSession(
   sessionId: string,
   files: SelectedAttachment[]
@@ -345,6 +472,13 @@ export default function InterfacePage() {
   const [lastEvtPrev, setLastEvtPrev] = useState("-");
   const [lastEvtHash, setLastEvtHash] = useState("-");
 
+  const [lastOpcProofId, setLastOpcProofId] = useState("-");
+  const [lastOpcChainHash, setLastOpcChainHash] = useState("-");
+  const [lastOpcAuditStatus, setLastOpcAuditStatus] = useState("-");
+  const [lastOpcVerificationStatus, setLastOpcVerificationStatus] = useState("-");
+  const [lastOpcAppendStatus, setLastOpcAppendStatus] = useState("-");
+  const [lastOpcPreviousProof, setLastOpcPreviousProof] = useState("-");
+
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -401,6 +535,12 @@ export default function InterfacePage() {
     setLastEvt("-");
     setLastEvtPrev("-");
     setLastEvtHash("-");
+    setLastOpcProofId("-");
+    setLastOpcChainHash("-");
+    setLastOpcAuditStatus("-");
+    setLastOpcVerificationStatus("-");
+    setLastOpcAppendStatus("-");
+    setLastOpcPreviousProof("-");
     localStorage.removeItem(STORAGE_KEY);
     textareaRef.current?.focus();
   }
@@ -443,6 +583,51 @@ export default function InterfacePage() {
     }
 
     setAttachments((prev) => prev.filter((item) => item.id !== id));
+  }
+
+  function updateRuntimeState(data: ApiResponse, normalizedEvt?: ChatMessage["evt"]) {
+    const opc = normalizeOpcFromResponse(data);
+
+    setStatus("Ready");
+    setSessionState(data.node_runtime?.session_state || data.state || "-");
+    setContinuityReference(
+      data.node_runtime?.continuity_reference ||
+        data.event?.continuityRef ||
+        `${sessionId}-AUDIT`
+    );
+    setContinuityStatus(
+      data.node_runtime?.continuity_status ||
+        (data.event?.evt ? "ACTIVE" : "-")
+    );
+    setLedgerValid(
+      typeof data.node_runtime?.ledger_valid === "boolean"
+        ? data.node_runtime.ledger_valid
+          ? "TRUE"
+          : "FALSE"
+        : data.event?.evt
+          ? "LOCAL_EVT"
+          : "-"
+    );
+    setLastEventId(data.node_runtime?.last_event_id || data.event?.evt || "-");
+    setRuntimeStartState(data.node_runtime?.runtime_start_state || data.state || "-");
+    setLastEvt(normalizedEvt?.evt || data.governedEvt?.evt || "-");
+    setLastEvtPrev(normalizedEvt?.prev || data.governedEvt?.prev || "-");
+    setLastEvtHash(
+      shortenHash(normalizedEvt?.hash || data.governedEvt?.hash || "-")
+    );
+
+    if (opc) {
+      setLastOpcProofId(opc.proofId || "-");
+      setLastOpcChainHash(shortenHash(opc.chainHash, 18, 14));
+      setLastOpcAuditStatus(opc.auditStatus || "-");
+      setLastOpcVerificationStatus(opc.verificationStatus || "-");
+      setLastOpcAppendStatus(opc.appendStatus || "-");
+      setLastOpcPreviousProof(
+        shortenHash(opc.publicProof?.previousProofHash || "-", 18, 14)
+      );
+    }
+
+    setJokerState(data.joker_state || null);
   }
 
   async function sendMessage() {
@@ -520,43 +705,18 @@ export default function InterfacePage() {
       const cleaned = cleanAssistantResponse(data.response || "");
       const assistantText = `${cleaned}${formatSources(data.sources)}`;
       const normalizedEvt = normalizeEvtFromResponse(data);
+      const normalizedOpc = normalizeOpcFromResponse(data);
 
       const assistantMessage: ChatMessage = {
         id: makeId(),
         role: "assistant",
         content: assistantText,
-        evt: normalizedEvt
+        evt: normalizedEvt,
+        opc: normalizedOpc
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-      setStatus("Ready");
-      setSessionState(data.node_runtime?.session_state || data.state || "-");
-      setContinuityReference(
-        data.node_runtime?.continuity_reference ||
-          data.event?.continuityRef ||
-          `${sessionId}-AUDIT`
-      );
-      setContinuityStatus(
-        data.node_runtime?.continuity_status ||
-          (data.event?.evt ? "ACTIVE" : "-")
-      );
-      setLedgerValid(
-        typeof data.node_runtime?.ledger_valid === "boolean"
-          ? data.node_runtime.ledger_valid
-            ? "TRUE"
-            : "FALSE"
-          : data.event?.evt
-            ? "LOCAL_EVT"
-            : "-"
-      );
-      setLastEventId(data.node_runtime?.last_event_id || data.event?.evt || "-");
-      setRuntimeStartState(
-        data.node_runtime?.runtime_start_state || data.state || "-"
-      );
-      setLastEvt(normalizedEvt?.evt || "-");
-      setLastEvtPrev(normalizedEvt?.prev || "-");
-      setLastEvtHash(shortenHash(normalizedEvt?.hash));
-      setJokerState(data.joker_state || null);
+      updateRuntimeState(data, normalizedEvt);
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -648,6 +808,36 @@ export default function InterfacePage() {
               <div style={styles.metaItem}>
                 <div style={styles.metaLabel}>Last EVT Hash</div>
                 <div style={styles.metaValue}>{lastEvtHash}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>Last OPC Proof</div>
+                <div style={styles.metaValue}>{lastOpcProofId}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>OPC Chain Hash</div>
+                <div style={styles.metaValue}>{lastOpcChainHash}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>OPC Audit Status</div>
+                <div style={styles.metaValue}>{lastOpcAuditStatus}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>OPC Verification</div>
+                <div style={styles.metaValue}>{lastOpcVerificationStatus}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>OPC Append Status</div>
+                <div style={styles.metaValue}>{lastOpcAppendStatus}</div>
+              </div>
+
+              <div style={styles.metaItem}>
+                <div style={styles.metaLabel}>OPC Previous Proof</div>
+                <div style={styles.metaValue}>{lastOpcPreviousProof}</div>
               </div>
 
               <div style={styles.metaItem}>
@@ -760,8 +950,9 @@ export default function InterfacePage() {
           <section style={styles.sidebarCard}>
             <div style={styles.cardTitle}>Runtime Model</div>
             <div style={styles.infoText}>
-              input → file → stato Joker → ontologia → continuità EVT →
-              interpretazione → risposta → nuovo EVT
+              input → file → stato Joker → ontologia → policy/risk →
+              continuità EVT → interpretazione → risposta → nuovo EVT →
+              memoria EVT/IPR → OPC proof record → audit trail
             </div>
           </section>
         </aside>
@@ -820,6 +1011,47 @@ export default function InterfacePage() {
                         <span style={styles.evtLabel}>Hash</span>
                         <span style={styles.evtValue}>
                           {shortenHash(message.evt.hash, 16, 12)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {message.role === "assistant" && message.opc?.proofId && (
+                    <div style={styles.opcBox}>
+                      <div style={styles.opcTitle}>OPC Proof Record</div>
+
+                      <div style={styles.evtRow}>
+                        <span style={styles.evtLabel}>Proof</span>
+                        <span style={styles.evtValue}>
+                          {message.opc.proofId}
+                        </span>
+                      </div>
+
+                      <div style={styles.evtRow}>
+                        <span style={styles.evtLabel}>Chain</span>
+                        <span style={styles.evtValue}>
+                          {shortenHash(message.opc.chainHash, 16, 12)}
+                        </span>
+                      </div>
+
+                      <div style={styles.evtRow}>
+                        <span style={styles.evtLabel}>Audit</span>
+                        <span style={styles.evtValue}>
+                          {message.opc.auditStatus || "-"}
+                        </span>
+                      </div>
+
+                      <div style={styles.evtRow}>
+                        <span style={styles.evtLabel}>Verify</span>
+                        <span style={styles.evtValue}>
+                          {message.opc.verificationStatus || "-"}
+                        </span>
+                      </div>
+
+                      <div style={styles.evtRow}>
+                        <span style={styles.evtLabel}>Append</span>
+                        <span style={styles.evtValue}>
+                          {message.opc.appendStatus || "-"}
                         </span>
                       </div>
                     </div>
@@ -1140,6 +1372,19 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: "uppercase",
     letterSpacing: "0.16em",
     color: "#7dd3fc"
+  },
+  opcBox: {
+    marginTop: 14,
+    borderTop: "1px solid rgba(125,211,252,0.20)",
+    paddingTop: 12,
+    display: "grid",
+    gap: 8
+  },
+  opcTitle: {
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: "0.16em",
+    color: "#67e8f9"
   },
   evtRow: {
     display: "grid",
