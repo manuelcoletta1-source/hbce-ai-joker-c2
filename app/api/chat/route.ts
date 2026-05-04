@@ -394,6 +394,64 @@ function isEconomicGovernanceQuestion(message: string): boolean {
   return hasSystemTerm && hasEconomicTerm && !containsUnsafeOperationalTerm(message);
 }
 
+function isCivicDigitalParticipationQuestion(message: string): boolean {
+  const lower = normalizeForRuleMatch(message);
+
+  const civicTerms = [
+    "voto",
+    "voto digitale",
+    "e-voting",
+    "evoting",
+    "votazione digitale",
+    "votare online",
+    "voto online",
+    "elezioni digitali",
+    "elezione digitale",
+    "democrazia digitale",
+    "partecipazione digitale",
+    "partecipazione civica",
+    "consultazione pubblica",
+    "consultazioni pubbliche",
+    "referendum digitale",
+    "cittadinanza digitale",
+    "identita civica",
+    "identità civica"
+  ];
+
+  const institutionalTerms = [
+    "istituzioni",
+    "istituzione",
+    "pubblica amministrazione",
+    "pa",
+    "governo",
+    "governi",
+    "comune",
+    "regione",
+    "stato",
+    "unione europea",
+    "ue",
+    "europa",
+    "parlamento",
+    "amministrazione",
+    "servizi pubblici",
+    "interagire",
+    "interazione",
+    "virtuale",
+    "digitale"
+  ];
+
+  const hasCivicTerm = civicTerms.some((term) => lower.includes(term));
+  const hasInstitutionalTerm = institutionalTerms.some((term) =>
+    lower.includes(term)
+  );
+
+  return (
+    hasCivicTerm &&
+    hasInstitutionalTerm &&
+    !containsUnsafeOperationalTerm(message)
+  );
+}
+
 function buildEconomicGovernanceDirective(input: {
   message: string;
   frame: GovernanceFrame;
@@ -418,6 +476,26 @@ function buildEconomicGovernanceDirective(input: {
     "Distingui sempre tra potenzialità progettuale, implementazione tecnica, adozione di mercato, riconoscimento istituzionale e standardizzazione ufficiale.",
     "Non dire che HBCE è già inglobata nella governance nazionale o europea se non è dimostrato. Usa invece formule come: HBCE può proporsi come infrastruttura integrabile nella governance nazionale ed europea.",
     "La risposta deve valorizzare IPR come livello di continuità operativa e non come semplice identità digitale; EVT come audit trail verificabile; MATRIX come infrastruttura; AI JOKER-C2 come runtime governato."
+  ].join("\n");
+}
+
+function buildCivicDigitalParticipationDirective(message: string): string {
+  if (!isCivicDigitalParticipationQuestion(message)) {
+    return [
+      "Direttiva civica digitale:",
+      "Nessuna richiesta specifica su voto digitale, partecipazione civica digitale o interazione virtuale con istituzioni rilevata."
+    ].join("\n");
+  }
+
+  return [
+    "Direttiva civica digitale / voto digitale:",
+    "Quando l'utente chiede voto digitale, partecipazione civica digitale o interazione virtuale con le istituzioni, rispondi sempre distinguendo identità, diritto di accesso, scelta democratica, segretezza del voto e audit del processo.",
+    "Non dire mai che ogni voto deve essere collegato in modo verificabile all'identità dell'elettore. Formula corretta: IPR può verificare identità e diritto di partecipazione, ma il contenuto del voto deve essere separato dall'identità personale.",
+    "La grammatica corretta è: identità verificata prima, scelta separata dopo, voto anonimizzato, processo auditabile.",
+    "EVT può tracciare il processo: apertura sessione, verifica diritto, consegna scheda digitale, acquisizione, chiusura, integrità, audit tecnico e verifica del sistema. EVT non deve registrare il contenuto del voto associato alla persona.",
+    "Distingui sempre voto elettorale, consultazione pubblica, partecipazione civica, accesso a servizi pubblici e interazione documentale con le istituzioni.",
+    "La risposta deve includere i limiti democratici fondamentali: segretezza del voto, protezione dei dati, verificabilità indipendente, accessibilità, sicurezza, controllo pubblico, revisione istituzionale e compatibilità normativa.",
+    "HBCE/IPR/EVT può essere presentato come infrastruttura potenziale per identità civica operativa e audit del processo, non come garanzia automatica di voto digitale valido o già adottato."
   ].join("\n");
 }
 
@@ -835,6 +913,14 @@ function buildCanonicalDictionary(): string {
     "Distingui sempre tra potenzialità progettuale, implementazione tecnica, adozione di mercato, riconoscimento istituzionale e standardizzazione ufficiale.",
     "Non dichiarare che HBCE è già adottata o inglobata nella governance nazionale/europea se non dimostrato. Formula corretta: HBCE può proporsi come infrastruttura integrabile nella governance nazionale ed europea.",
     "",
+    "Regola civica digitale / voto digitale:",
+    "Quando l'utente chiede voto digitale, consultazioni pubbliche digitali, partecipazione civica digitale o interazione virtuale con le istituzioni, distingui sempre identità, diritto di accesso, scelta democratica, segretezza del voto e audit del processo.",
+    "IPR può verificare identità e diritto di partecipazione, ma non deve collegare il contenuto del voto all'identità personale.",
+    "Formula corretta: identità verificata prima, scelta separata dopo, voto anonimizzato, processo auditabile.",
+    "EVT può tracciare il processo elettorale o partecipativo: apertura sessione, verifica diritto, consegna scheda digitale, acquisizione, chiusura, integrità, audit tecnico e verifica del sistema. EVT non deve registrare il contenuto del voto associato alla persona.",
+    "Distingui voto elettorale da consultazione pubblica, partecipazione civica, accesso ai servizi pubblici e interazione documentale con le istituzioni.",
+    "Includi sempre i limiti democratici: segretezza del voto, protezione dati, verificabilità indipendente, accessibilità, sicurezza, controllo pubblico, revisione istituzionale e compatibilità normativa.",
+    "",
     "Regola editoriale:",
     "Per APOKALYPSIS, CORPUS e MATRIX preserva Decisione · Costo · Traccia · Tempo quando pertinente.",
     "Quando l'utente chiede valore operativo, confronti o standard europei, distingui sempre: identità, firma, credenziale, registro, timestamp, audit log, EVT, IPR.",
@@ -933,6 +1019,7 @@ function buildProjectDomainDirective(frame: GovernanceFrame): string {
       "Rispondi in modo operativo, infrastrutturale e istituzionale.",
       "Valorizza AI governance, B2B, B2G, Europa, audit, sicurezza difensiva, tracciabilità, fail-closed ed EVT.",
       "Quando la richiesta riguarda economia, impiego, lavoro, imprese, aziende, governi, cittadini, registrazione IPR, audit o governance europea, devi spiegare la nuova filiera economica possibile: registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale.",
+      "Quando la richiesta riguarda voto digitale, consultazione pubblica, partecipazione civica o istituzioni virtuali, devi distinguere identità verificata, diritto di accesso, scelta separata, voto anonimizzato e processo auditabile.",
       "Distingui sempre potenzialità, implementazione, mercato, riconoscimento istituzionale e standardizzazione ufficiale.",
       "Evita promesse di certificazione o adozione ufficiale se non dimostrate."
     );
@@ -985,7 +1072,8 @@ function buildDocumentFamilyDirective(
       "Non ridurre JOKER-C2 a semplice chatbot.",
       "Spiega sempre la distinzione tra sessionId, IPR, EVT, memoria semantica e ledger quando pertinente.",
       "Quando l'utente chiede programmazione o rifattorizzazione, produci file completi pronti per GitHub.",
-      "Quando l'utente chiede effetti economici o istituzionali del runtime, collega HBCE_RUNTIME a MATRIX: identità operativa, registrazione IPR, audit EVT, governance AI, continuità operativa e nuova filiera professionale."
+      "Quando l'utente chiede effetti economici o istituzionali del runtime, collega HBCE_RUNTIME a MATRIX: identità operativa, registrazione IPR, audit EVT, governance AI, continuità operativa e nuova filiera professionale.",
+      "Quando l'utente chiede voto digitale o interazione virtuale con istituzioni, spiega che IPR verifica identità e diritto di accesso, ma il voto deve restare separato e anonimizzato; EVT traccia il processo, non la scelta associata alla persona."
     ].join("\n");
   }
 
@@ -1023,7 +1111,8 @@ function buildDocumentFamilyDirective(
       "Tratta il documento come architettura di identità, governance, continuità, verifica e infrastruttura.",
       "Evidenzia IPR, HBCE, JOKER-C2, TRAC, EVT e valore B2B/B2G quando pertinenti.",
       "Evita tono generico. Presenta MATRIX come infrastruttura europea di continuità, controllo e responsabilità operativa.",
-      "Se la richiesta riguarda economia, imprese, governi, cittadini o lavoro, spiega la filiera professionale: registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale."
+      "Se la richiesta riguarda economia, imprese, governi, cittadini o lavoro, spiega la filiera professionale: registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale.",
+      "Se la richiesta riguarda voto digitale o istituzioni virtuali, applica la regola democratica: identità verificata, scelta separata, voto anonimizzato, processo auditabile."
     ].join("\n");
   }
 
@@ -1142,6 +1231,8 @@ function buildSystemPrompt(input: {
       frame: input.governanceFrame
     }),
     "",
+    buildCivicDigitalParticipationDirective(input.message),
+    "",
     buildSafeConceptResponseDirective(input.message),
     "",
     buildGovernanceFrameText(input.governanceFrame),
@@ -1198,6 +1289,20 @@ function buildFallback(input: {
 }): string {
   const domain = input.governanceFrame.projectDomain.projectDomain;
   const safeConcept = classifySafeConcept(input.message);
+
+  if (isCivicDigitalParticipationQuestion(input.message)) {
+    return [
+      "Sì, in prospettiva futura può esistere un'interazione virtuale più ampia tra cittadini e istituzioni, ma nel voto digitale bisogna distinguere con precisione identità, diritto di partecipazione, scelta democratica, segretezza del voto e audit del processo.",
+      "",
+      "IPR può servire a verificare che il cittadino sia realmente titolare del diritto di partecipazione, che l'accesso sia autorizzato, che la sessione sia valida e che non vi siano duplicazioni o abusi. Questo riguarda l'identità civica operativa, non il contenuto della scelta.",
+      "",
+      "La scelta democratica deve invece restare separata dall'identità personale. La formula corretta non è identità collegata al voto, ma identità verificata prima, scelta separata dopo, voto anonimizzato e processo auditabile. In un sistema democratico, IPR non deve creare una catena che renda riconducibile il contenuto del voto alla persona.",
+      "",
+      "EVT può essere utile per tracciare il processo: apertura della sessione, validazione del diritto, consegna della scheda digitale, conferma di acquisizione, chiusura, integrità del sistema, audit tecnico e verifica pubblica dei passaggi. Ma l'EVT non deve contenere il contenuto del voto associato all'identità personale.",
+      "",
+      "In questo scenario HBCE può contribuire a una governance digitale più ampia: consultazioni pubbliche, pratiche amministrative, identità civica operativa, accesso ai servizi, interazione documentale, audit delle procedure e partecipazione istituzionale verificabile. La prospettiva più forte è una piattaforma civica europea in cui cittadini, imprese e pubbliche amministrazioni interagiscono con prove, responsabilità e continuità, mantenendo però i limiti democratici fondamentali: segretezza del voto, protezione dei dati, verificabilità indipendente, accessibilità, sicurezza e controllo pubblico."
+    ].join("\n");
+  }
 
   if (isEconomicGovernanceQuestion(input.message)) {
     return [
@@ -1333,6 +1438,7 @@ async function generateResponse(input: {
             "Se l'utente chiede IPR, non ridurlo a identità digitale: spiegalo come registro primario di identità operativa che connette identità, azione, responsabilità, evento, prova, tempo e continuità.",
             "Se l'utente chiede biocybersecurity, biocibersicurezza, biocibernetica, sicurezza biocibernetica, protezione biocibernetica o varianti scritte male, devi rispondere usando sempre questa formula: IPR = identità operativa; EVT = traccia verificabile; MATRIX = infrastruttura; AI JOKER-C2 = runtime governato; Biocybersecurity = protezione dell'accoppiamento organismo-sistema-AI. Non bloccarla come rischio critico se è solo una richiesta concettuale o editoriale.",
             "Se l'utente chiede effetti economici, lavoro, impiego, filiera, imprese, aziende, governi, cittadini, audit o standard europei collegati a IPR/HBCE/EVT/MATRIX, devi rispondere in modo economico-strategico: nuova filiera professionale, registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale, continuità istituzionale, riduzione rischio e distinzione tra potenzialità e adozione ufficiale.",
+            "Se l'utente chiede voto digitale, e-voting, consultazioni pubbliche digitali o interazione virtuale con le istituzioni, devi rispondere distinguendo: identità verificata, diritto di accesso, scelta separata, voto anonimizzato, segretezza del voto e processo auditabile. Non collegare mai il contenuto del voto all'identità personale.",
             "Se l'utente chiede confronto con standard esistenti, confronta IPR con eIDAS/EUDI, PKI, X.509, DID/VC, blockchain timestamping, IAM e audit log.",
             "Se l'utente dice 'apokalypsis intendo dire', devi riferirti al documento attivo APOKALYPSIS, non al concetto generico di apocalisse.",
             "Per APOKALYPSIS evita risposte generiche: classificare, interpretare, posizionare e spiegare l'impatto civilizzazionale.",
