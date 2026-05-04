@@ -18,7 +18,8 @@
  * - risk score
  * - explainable reasons
  *
- * Risk classification happens before sensitive execution.
+ * Safe European strategic autonomy analysis must not be escalated as
+ * CRITICAL merely because it discusses strategic technological dependencies.
  */
 
 import type {
@@ -47,6 +48,12 @@ export type RiskEngineInput = {
 type RiskSeed = {
   probability: 1 | 2 | 3 | 4 | 5;
   impact: 1 | 2 | 3 | 4 | 5;
+  reasons: string[];
+};
+
+type RiskAdjustment = {
+  probability: number;
+  impact: number;
   reasons: string[];
 };
 
@@ -86,6 +93,7 @@ const CRITICAL_TERMS = [
   "sicurezza pubblica",
   "ospedale",
   "sanita",
+  "sanità",
   "rete elettrica",
   "emergenza",
   "sorveglianza"
@@ -115,9 +123,11 @@ const HIGH_TERMS = [
   "incidente",
   "violazione",
   "vulnerabilita",
+  "vulnerabilità",
   "sicurezza",
   "audit",
   "conformita",
+  "conformità",
   "legale",
   "appalto",
   "pubblica amministrazione",
@@ -129,9 +139,76 @@ const HIGH_TERMS = [
   "deploy"
 ];
 
+const UNSAFE_OPERATIONAL_TERMS = [
+  "malware",
+  "ransomware",
+  "phishing",
+  "credential theft",
+  "steal credentials",
+  "rubare credenziali",
+  "exploit",
+  "deploy exploit",
+  "unauthorized access",
+  "accesso non autorizzato",
+  "bypass authentication",
+  "evade detection",
+  "evasion",
+  "persistence",
+  "backdoor",
+  "botnet",
+  "exfiltrate",
+  "esfiltrare",
+  "sabotage",
+  "sabotaggio",
+  "ddos",
+  "unlawful surveillance",
+  "sorveglianza illegale",
+  "hide traces",
+  "cover tracks",
+  "nascondere tracce",
+  "weapon",
+  "arma autonoma",
+  "targeting"
+];
+
+const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
+  "europa",
+  "leurpa",
+  "ue",
+  "unione europea",
+  "europe",
+  "european",
+  "dipendenze estere",
+  "dipendenze tecnologiche",
+  "dipendenze strategiche",
+  "dipendenza tecnologica",
+  "dipendenza strategica",
+  "dipendenze penalizzanti",
+  "autonomia strategica",
+  "autonomia tecnologica",
+  "sovranita digitale",
+  "sovranità digitale",
+  "sovranita tecnologica",
+  "sovranità tecnologica",
+  "asse tecnologico",
+  "asse tecnologico europeo",
+  "standard europeo",
+  "governance imprese",
+  "governance cittadini",
+  "imprese cittadini",
+  "imprese e cittadini",
+  "cittadini",
+  "imprese",
+  "b2b",
+  "b2g",
+  "matrix",
+  "ipr",
+  "evt",
+  "hbce"
+];
+
 export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
   const normalized = normalizeInput(input);
-  const reasons: string[] = [];
 
   if (input.policyProhibited || input.policyStatus === "PROHIBITED") {
     return buildRisk("PROHIBITED", 5, 5, [
@@ -144,13 +221,6 @@ export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
     return buildRisk("PROHIBITED", 5, 5, [
       "Intent classifier marked the request as prohibited.",
       "Prohibited intent always produces PROHIBITED risk."
-    ]);
-  }
-
-  if (input.policyStatus === "UNKNOWN") {
-    return buildRisk("UNKNOWN", 3, 4, [
-      "Policy status is UNKNOWN.",
-      "Unknown policy state must be handled conservatively."
     ]);
   }
 
@@ -168,6 +238,22 @@ export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
     ]);
   }
 
+  if (isSafeEuropeanStrategicAutonomyAnalysis(input, normalized)) {
+    return buildRisk(input.hasFiles ? "MEDIUM" : "LOW", input.hasFiles ? 2 : 2, input.hasFiles ? 3 : 2, [
+      "Safe European strategic autonomy / technological dependency analysis detected.",
+      "The request is strategic, institutional and analytical, not an operational harmful instruction.",
+      "MATRIX / European governance analysis should remain answerable with reviewable framing."
+    ]);
+  }
+
+  if (input.policyStatus === "UNKNOWN") {
+    return buildRisk("UNKNOWN", 3, 4, [
+      "Policy status is UNKNOWN.",
+      "Unknown policy state must be handled conservatively."
+    ]);
+  }
+
+  const reasons: string[] = [];
   const seed = seedRiskFromContext(input.contextClass);
   reasons.push(...seed.reasons);
 
@@ -337,9 +423,16 @@ function seedRiskFromContext(contextClass: ContextClass): RiskSeed {
 
     case "STRATEGIC":
       return {
-        probability: 3,
+        probability: 2,
         impact: 3,
         reasons: ["STRATEGIC context may affect external positioning."]
+      };
+
+    case "GOVERNANCE":
+      return {
+        probability: 2,
+        impact: 3,
+        reasons: ["GOVERNANCE context requires reviewable institutional framing."]
       };
 
     case "COMPLIANCE":
@@ -351,7 +444,7 @@ function seedRiskFromContext(contextClass: ContextClass): RiskSeed {
 
     case "AI_GOVERNANCE":
       return {
-        probability: 3,
+        probability: 2,
         impact: 3,
         reasons: ["AI_GOVERNANCE context requires policy and oversight handling."]
       };
@@ -379,6 +472,20 @@ function seedRiskFromContext(contextClass: ContextClass): RiskSeed {
         ]
       };
 
+    case "CORPUS":
+      return {
+        probability: 1,
+        impact: 2,
+        reasons: ["CORPUS context is theoretical/editorial by default."]
+      };
+
+    case "APOKALYPSIS":
+      return {
+        probability: 2,
+        impact: 2,
+        reasons: ["APOKALYPSIS context is historical-threshold analysis by default."]
+      };
+
     default:
       return {
         probability: 2,
@@ -388,7 +495,7 @@ function seedRiskFromContext(contextClass: ContextClass): RiskSeed {
   }
 }
 
-function adjustRiskByIntent(intentClass: IntentClass): RiskSeed {
+function adjustRiskByIntent(intentClass: IntentClass): RiskAdjustment {
   switch (intentClass) {
     case "PROHIBITED":
       return {
@@ -406,14 +513,14 @@ function adjustRiskByIntent(intentClass: IntentClass): RiskSeed {
 
     case "GOVERNANCE":
       return {
-        probability: 0 as 1,
+        probability: 0,
         impact: 1,
         reasons: ["GOVERNANCE intent increases review relevance."]
       };
 
     case "VERIFY":
       return {
-        probability: 0 as 1,
+        probability: 0,
         impact: 1,
         reasons: ["VERIFY intent may affect audit or evidence interpretation."]
       };
@@ -428,15 +535,15 @@ function adjustRiskByIntent(intentClass: IntentClass): RiskSeed {
     case "GITHUB":
       return {
         probability: 1,
-        impact: 0 as 1,
+        impact: 0,
         reasons: ["GITHUB intent may affect repository content."]
       };
 
     case "STRATEGIC":
       return {
-        probability: 1,
+        probability: 0,
         impact: 1,
-        reasons: ["STRATEGIC intent may affect external or institutional positioning."]
+        reasons: ["STRATEGIC intent requires reviewable framing."]
       };
 
     case "UNKNOWN":
@@ -448,25 +555,25 @@ function adjustRiskByIntent(intentClass: IntentClass): RiskSeed {
 
     default:
       return {
-        probability: 0 as 1,
-        impact: 0 as 1,
+        probability: 0,
+        impact: 0,
         reasons: []
       };
   }
 }
 
-function adjustRiskByDataClass(dataClass?: DataClass): RiskSeed {
+function adjustRiskByDataClass(dataClass?: DataClass): RiskAdjustment {
   switch (dataClass) {
     case "PUBLIC":
       return {
-        probability: 0 as 1,
-        impact: 0 as 1,
+        probability: 0,
+        impact: 0,
         reasons: ["PUBLIC data does not increase risk by itself."]
       };
 
     case "INTERNAL":
       return {
-        probability: 0 as 1,
+        probability: 0,
         impact: 1,
         reasons: ["INTERNAL data requires careful handling."]
       };
@@ -515,14 +622,14 @@ function adjustRiskByDataClass(dataClass?: DataClass): RiskSeed {
 
     default:
       return {
-        probability: 0 as 1,
-        impact: 0 as 1,
+        probability: 0,
+        impact: 0,
         reasons: []
       };
   }
 }
 
-function adjustRiskBySensitivity(sensitivity?: RuntimeSensitivity): RiskSeed {
+function adjustRiskBySensitivity(sensitivity?: RuntimeSensitivity): RiskAdjustment {
   switch (sensitivity) {
     case "HIGH":
       return {
@@ -548,18 +655,18 @@ function adjustRiskBySensitivity(sensitivity?: RuntimeSensitivity): RiskSeed {
     case "LOW":
     default:
       return {
-        probability: 0 as 1,
-        impact: 0 as 1,
+        probability: 0,
+        impact: 0,
         reasons: []
       };
   }
 }
 
-function adjustRiskByFiles(hasFiles: boolean): RiskSeed {
+function adjustRiskByFiles(hasFiles: boolean): RiskAdjustment {
   if (!hasFiles) {
     return {
-      probability: 0 as 1,
-      impact: 0 as 1,
+      probability: 0,
+      impact: 0,
       reasons: []
     };
   }
@@ -571,13 +678,13 @@ function adjustRiskByFiles(hasFiles: boolean): RiskSeed {
   };
 }
 
-function adjustRiskByRoute(route: string): RiskSeed {
+function adjustRiskByRoute(route: string): RiskAdjustment {
   const normalizedRoute = normalizeText(route);
 
   if (!normalizedRoute) {
     return {
-      probability: 0 as 1,
-      impact: 0 as 1,
+      probability: 0,
+      impact: 0,
       reasons: []
     };
   }
@@ -609,7 +716,7 @@ function adjustRiskByRoute(route: string): RiskSeed {
     normalizedRoute.includes("verify")
   ) {
     return {
-      probability: 0 as 1,
+      probability: 0,
       impact: 1,
       reasons: ["Verification route affects audit interpretation."]
     };
@@ -617,20 +724,20 @@ function adjustRiskByRoute(route: string): RiskSeed {
 
   if (normalizedRoute.includes("/api/chat") || normalizedRoute.includes("chat")) {
     return {
-      probability: 0 as 1,
-      impact: 0 as 1,
+      probability: 0,
+      impact: 0,
       reasons: ["Chat route has no additional route risk by itself."]
     };
   }
 
   return {
-    probability: 0 as 1,
-    impact: 0 as 1,
+    probability: 0,
+    impact: 0,
     reasons: []
   };
 }
 
-function adjustRiskByTerms(text: string): RiskSeed {
+function adjustRiskByTerms(text: string): RiskAdjustment {
   const criticalMatches = findMatches(text, CRITICAL_TERMS);
 
   if (criticalMatches.length > 0) {
@@ -654,8 +761,8 @@ function adjustRiskByTerms(text: string): RiskSeed {
   }
 
   return {
-    probability: 0 as 1,
-    impact: 0 as 1,
+    probability: 0,
+    impact: 0,
     reasons: []
   };
 }
@@ -663,7 +770,7 @@ function adjustRiskByTerms(text: string): RiskSeed {
 function adjustRiskByPolicy(
   policyStatus: PolicyStatus,
   policyFailClosed: boolean
-): RiskSeed {
+): RiskAdjustment {
   if (policyStatus === "RESTRICTED" && policyFailClosed) {
     return {
       probability: 1,
@@ -689,8 +796,8 @@ function adjustRiskByPolicy(
   }
 
   return {
-    probability: 0 as 1,
-    impact: 0 as 1,
+    probability: 0,
+    impact: 0,
     reasons: []
   };
 }
@@ -736,6 +843,57 @@ function classifyRiskClass(input: {
   }
 
   return "LOW";
+}
+
+function isSafeEuropeanStrategicAutonomyAnalysis(
+  input: RiskEngineInput,
+  normalizedText: string
+): boolean {
+  if (input.policyProhibited || input.policyStatus === "PROHIBITED") {
+    return false;
+  }
+
+  if (
+    input.dataClass === "SECRET" ||
+    input.dataClass === "CRITICAL_OPERATIONAL" ||
+    input.dataClass === "SECURITY_SENSITIVE"
+  ) {
+    return false;
+  }
+
+  if (findMatches(normalizedText, UNSAFE_OPERATIONAL_TERMS).length > 0) {
+    return false;
+  }
+
+  const matches = findMatches(normalizedText, EUROPEAN_STRATEGIC_AUTONOMY_TERMS);
+
+  if (matches.length < 2) {
+    return false;
+  }
+
+  const analyticalTerms = [
+    "potrebbe",
+    "puo",
+    "può",
+    "ridurre",
+    "togliere",
+    "progettare",
+    "governance",
+    "standard",
+    "futuro",
+    "progressi",
+    "potenzialita",
+    "potenzialità",
+    "adottata",
+    "in tutta europa",
+    "imprese",
+    "cittadini"
+  ];
+
+  const hasAnalyticalLanguage =
+    findMatches(normalizedText, analyticalTerms).length > 0;
+
+  return hasAnalyticalLanguage;
 }
 
 function buildRisk(
@@ -792,13 +950,16 @@ function normalizeText(value: string): string {
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[’']/g, " ")
     .replace(/[^\p{L}\p{N}./_-]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 function findMatches(text: string, terms: string[]): string[] {
-  return terms.filter((term) => text.includes(normalizeText(term)));
+  return terms
+    .map((term) => normalizeText(term))
+    .filter((term) => term.length > 0 && text.includes(term));
 }
 
 function uniqueReasons(reasons: string[]): string[] {
