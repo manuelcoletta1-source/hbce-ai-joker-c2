@@ -3,15 +3,11 @@ import {
   buildSafeConceptProjectDomain,
   classifySafeConcept
 } from "./safe-concept-classifier";
+import { buildResponseContractDirective } from "./joker-response-contract";
 
-import type {
-  ProjectDomainClassification
-} from "./project-domain-classifier";
+import type { ProjectDomainClassification } from "./project-domain-classifier";
 
-import type {
-  DocumentFamily,
-  EvtMemoryFile
-} from "./evt-memory";
+import type { DocumentFamily, EvtMemoryFile } from "./evt-memory";
 
 import type {
   ContextClass,
@@ -699,7 +695,7 @@ function buildCanonicalDictionary(): string {
     "IPR = Identity Primary Record.",
     "IPR non è solo identità digitale. È un registro primario di identità operativa: collega soggetto, origine, responsabilità, derivazioni, eventi, prove e continuità nel tempo.",
     "IPR può usare firme, hash, timestamp, credenziali o registri esterni, ma il suo valore specifico è la continuità operativa tra identità, azione, prova e responsabilità.",
-    "Formula canonica IPR: identità operativa + origine + responsabilità + eventi + prove + continuità.",
+    "Formula canonica IPR: identità operativa + origine + responsabilità + eventi + prove + continuità verificabile.",
     "Formula risposta IPR: definizione, cosa non è, funzione HBCE/MATRIX, rapporto con EVT/OPC, uso pratico, limite di validità.",
     "",
     "HBCE = governance infrastructure del sistema HERMETICUM B.C.E.",
@@ -1065,6 +1061,8 @@ export function buildSystemPrompt(input: {
     "",
     buildCanonicalDictionary(),
     "",
+    buildResponseContractDirective(input.message),
+    "",
     "Regola operativa fondamentale:",
     "La chat è solo l'interfaccia. La memoria deve essere ricavata dagli EVT agganciati all'IPR.",
     "Ogni nuova risposta deve usare la memoria EVT/IPR-bound quando utile.",
@@ -1077,6 +1075,7 @@ export function buildSystemPrompt(input: {
     "Il linguaggio predefinito è discorsivo.",
     "Non usare tabelle salvo richiesta esplicita.",
     "Non usare elenchi numerati rigidi salvo richiesta esplicita o necessità tecnica.",
+    "Quando è attivo un contratto canonico di risposta, devi iniziare con la formula obbligatoria prima della spiegazione discorsiva.",
     "Quando lavori su GitHub o codice, fornisci sempre file completi pronti da copiare.",
     "Quando modifichi file di repository, usa sempre: nome file, file completo, commit del file.",
     "",
@@ -1136,21 +1135,19 @@ export function buildFallback(input: {
 
   if (isCivicDigitalParticipationQuestion(input.message)) {
     return [
-      "Sì, in prospettiva futura può esistere un'interazione virtuale più ampia tra cittadini e istituzioni, ma nel voto digitale bisogna distinguere con precisione identità, diritto di partecipazione, scelta democratica, segretezza del voto e audit del processo.",
+      "Nel voto digitale, IPR può verificare identità e diritto di partecipazione, ma non deve collegare il contenuto del voto all’identità personale.",
       "",
-      "IPR può servire a verificare che il cittadino sia realmente titolare del diritto di partecipazione, che l'accesso sia autorizzato, che la sessione sia valida e che non vi siano duplicazioni o abusi. Questo riguarda l'identità civica operativa, non il contenuto della scelta.",
-      "",
-      "La scelta democratica deve invece restare separata dall'identità personale. La formula corretta non è identità collegata al voto, ma identità verificata prima, scelta separata dopo, voto anonimizzato e processo auditabile. In un sistema democratico, IPR non deve creare una catena che renda riconducibile il contenuto del voto alla persona.",
+      "La formula corretta è: identità verificata prima, scelta separata dopo, voto anonimizzato, processo auditabile. L’IPR può servire a verificare che il cittadino sia realmente titolare del diritto di partecipazione, che l'accesso sia autorizzato, che la sessione sia valida e che non vi siano duplicazioni o abusi. Questo riguarda l'identità civica operativa, non il contenuto della scelta.",
       "",
       "EVT può essere utile per tracciare il processo: apertura della sessione, validazione del diritto, consegna della scheda digitale, conferma di acquisizione, chiusura, integrità del sistema, audit tecnico e verifica pubblica dei passaggi. Ma l'EVT non deve contenere il contenuto del voto associato all'identità personale.",
       "",
-      "In questo scenario HBCE può contribuire a una governance digitale più ampia: consultazioni pubbliche, pratiche amministrative, identità civica operativa, accesso ai servizi, interazione documentale, audit delle procedure e partecipazione istituzionale verificabile. La prospettiva più forte è una piattaforma civica europea in cui cittadini, imprese e pubbliche amministrazioni interagiscono con prove, responsabilità e continuità, mantenendo però i limiti democratici fondamentali: segretezza del voto, protezione dei dati, verificabilità indipendente, accessibilità, sicurezza e controllo pubblico."
+      "In questo scenario HBCE può contribuire a una governance digitale più ampia: consultazioni pubbliche, pratiche amministrative, identità civica operativa, accesso ai servizi, interazione documentale, audit delle procedure e partecipazione istituzionale verificabile, mantenendo però i limiti democratici fondamentali: segretezza del voto, protezione dei dati, verificabilità indipendente, accessibilità, sicurezza e controllo pubblico."
     ].join("\n");
   }
 
   if (isEconomicGovernanceQuestion(input.message)) {
     return [
-      "Il sistema IPR/HBCE può produrre un effetto economico rilevante perché non introduce soltanto una nuova identità digitale, ma una possibile infrastruttura di lavoro attorno alla registrazione, verifica, audit e manutenzione delle identità operative.",
+      "Il valore economico di IPR/HBCE nasce dalla trasformazione dell’identità operativa in una filiera verificabile di registrazione, audit, compliance e continuità.",
       "",
       "La funzione economica dell’IPR nasce dal fatto che ogni soggetto, impresa, ente, agente AI, procedura o sistema può essere collegato a origine, responsabilità, eventi, prove e continuità nel tempo. Questo apre una nuova fascia professionale: operatori di registrazione IPR, auditor EVT, integratori HBCE, tecnici di governance AI, consulenti B2B/B2G, responsabili di continuità operativa, verificatori documentali e specialisti di audit digitale.",
       "",
@@ -1164,41 +1161,39 @@ export function buildFallback(input: {
 
   if (input.documentFamily === "HBCE_RUNTIME") {
     return [
-      "AI JOKER-C2 è un runtime cognitivo-operativo collegato al framework HBCE.",
+      "AI JOKER-C2 non è solo una chat: è un runtime cognitivo-operativo governato dal framework HBCE.",
       "",
       "Il punto tecnico centrale è questo: la memoria non deve dipendere soltanto dalla sessione chat. La sessione serve alla continuità conversazionale; l'IPR serve alla continuità identitaria; l'EVT serve alla prova dell'evento; il ledger serve alla persistenza.",
       "",
-      "La riparazione corretta consiste nel collegare ogni risposta a un governed EVT, creare un memoryEvent semantico, salvarlo nella memoria volatile L1, salvarlo nel ledger semantico L2 e restituire al frontend un sessionId stabile."
+      "La riparazione corretta consiste nel collegare ogni risposta a un governed EVT, creare un memoryEvent semantico, salvarlo nella memoria volatile L1, salvarlo nel ledger semantico L2 e restituire al frontend un sessionId stabile.",
+      "",
+      "Formula nocciolo: AI JOKER-C2 = runtime governato che collega identità, governance, risposta, evento, prova e continuità."
     ].join("\n");
   }
 
   if (safeConcept.matched && safeConcept.kind === "BIOCYBERSECURITY") {
     return [
+      "IPR = identità operativa. EVT = traccia verificabile. MATRIX = infrastruttura. AI JOKER-C2 = runtime governato. Biocybersecurity = protezione dell’accoppiamento organismo–sistema–AI.",
+      "",
       "La relazione tra IPR e sicurezza/protezione biocibernetica nasce dal fatto che la biocybersecurity non protegge soltanto reti, software o credenziali, ma protegge il punto di contatto tra organismo biologico, identità digitale, AI, sensori, robotica, droni, flotte autonome e sistemi operativi.",
       "",
       "L’IPR, cioè Identity Primary Record, fornisce l’identità operativa primaria di questo accoppiamento. Non è un semplice account, né una normale identità digitale. È il registro che collega soggetto, origine, responsabilità, eventi, prove e continuità nel tempo.",
       "",
-      "L’EVT completa questa struttura perché registra gli eventi verificabili prodotti dall’identità operativa. Se l’IPR identifica, l’EVT traccia. Se l’IPR stabilisce origine e responsabilità, l’EVT conserva la sequenza degli eventi nel tempo.",
-      "",
-      "Formula canonica:",
-      "",
-      "IPR = identità operativa.",
-      "EVT = traccia verificabile.",
-      "MATRIX = infrastruttura.",
-      "AI JOKER-C2 = runtime governato.",
-      "Biocybersecurity = protezione dell’accoppiamento organismo–sistema–AI."
+      "L’EVT completa questa struttura perché registra gli eventi verificabili prodotti dall’identità operativa. Se l’IPR identifica, l’EVT traccia. Se l’IPR stabilisce origine e responsabilità, l’EVT conserva la sequenza degli eventi nel tempo."
     ].join("\n");
   }
 
   if (isSafeIdentityGovernanceQuestion(input.message)) {
     return [
-      "IPR significa Identity Primary Record.",
+      "IPR = identità operativa + origine + responsabilità + eventi + prove + continuità verificabile.",
       "",
-      "Non è semplicemente una carta d'identità digitale, un account o un login. È un registro primario di identità operativa: serve a collegare un soggetto, una origine, una responsabilità, una sequenza di eventi, una prova e una continuità verificabile nel tempo.",
+      "IPR significa Identity Primary Record. Non è semplicemente una carta d'identità digitale, un account o un login. È un registro primario di identità operativa: serve a collegare un soggetto, una origine, una responsabilità, una sequenza di eventi, una prova e una continuità verificabile nel tempo.",
       "",
       "La sua novità non sta nel sostituire strumenti già esistenti come firme digitali, certificati, wallet, blockchain o audit log. Sta nel metterli in relazione dentro una struttura unica: identità, azione, EVT, prova, responsabilità e continuità.",
       "",
-      "Rispetto a chi non possiede un IPR operativo, chi lo possiede può dimostrare meglio origine, attribuzione, derivazioni, continuità degli eventi, responsabilità e tracciabilità delle operazioni. Il valore maggiore emerge in AI governance, B2B, B2G, agenti AI, sistemi documentali, audit e infrastrutture europee di verifica."
+      "Rispetto a chi non possiede un IPR operativo, chi lo possiede può dimostrare meglio origine, attribuzione, derivazioni, continuità degli eventi, responsabilità e tracciabilità delle operazioni. Il valore maggiore emerge in AI governance, B2B, B2G, agenti AI, sistemi documentali, audit e infrastrutture europee di verifica.",
+      "",
+      "Formula nocciolo: IPR è il punto in cui l’identità smette di essere solo dichiarata e diventa operativamente tracciabile, verificabile e responsabile."
     ].join("\n");
   }
 
@@ -1212,6 +1207,8 @@ export function buildFallback(input: {
 
   if (domain === "MATRIX") {
     return [
+      "AI JOKER-C2 non è solo una chat: è un runtime cognitivo-operativo governato dal framework HBCE.",
+      "",
       "AI JOKER-C2 è utile quando l'intelligenza artificiale non deve soltanto generare risposte, ma deve operare dentro un perimetro di identità, governance, rischio, decisione, traccia e verifica.",
       "",
       "Nel dominio MATRIX, il valore principale è trasformare l'AI in infrastruttura operativa: B2B, B2G, governance AI, pubblica amministrazione, sicurezza difensiva, audit, continuità e tracciabilità.",
