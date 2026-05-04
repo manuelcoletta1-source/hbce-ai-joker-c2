@@ -8,7 +8,7 @@ export type JokerResponseContractKind =
   | "CIVIC_DIGITAL"
   | "GENERAL";
 
-type ResponseContract = {
+export type ResponseContract = {
   kind: JokerResponseContractKind;
   matched: boolean;
   title: string;
@@ -25,7 +25,7 @@ function normalizeForContract(value: string): string {
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[’']/g, " ")
-    .replace(/[^\p{L}\p{N}./_-]+/gu, " ")
+    .replace(/[^\p{L}\p{N}./_+=-]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -475,4 +475,95 @@ export function buildResponseContractDirective(message: string): string {
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function startsWithCanonicalOpening(response: string, opening: string[]): boolean {
+  const normalizedResponse = normalizeForContract(response);
+  const normalizedOpening = normalizeForContract(opening.join(" "));
+
+  return normalizedResponse.startsWith(normalizedOpening);
+}
+
+function containsCanonicalOpening(response: string, opening: string[]): boolean {
+  const normalizedResponse = normalizeForContract(response);
+  const normalizedOpening = normalizeForContract(opening.join(" "));
+
+  if (normalizedResponse.includes(normalizedOpening)) {
+    return true;
+  }
+
+  return opening.every((line) =>
+    normalizedResponse.includes(normalizeForContract(line))
+  );
+}
+
+function shouldApplyDeterministicOpening(
+  contract: ResponseContract,
+  response: string
+): boolean {
+  if (!contract.matched || contract.mandatoryOpening.length === 0) {
+    return false;
+  }
+
+  if (!response.trim()) {
+    return false;
+  }
+
+  if (startsWithCanonicalOpening(response, contract.mandatoryOpening)) {
+    return false;
+  }
+
+  if (contract.kind === "IPR_EVT_OPC") {
+    return !containsCanonicalOpening(response, contract.mandatoryOpening);
+  }
+
+  const primaryOpening = contract.mandatoryOpening[0];
+  const normalizedResponse = normalizeForContract(response);
+  const normalizedPrimaryOpening = normalizeForContract(primaryOpening);
+
+  return !normalizedResponse.startsWith(normalizedPrimaryOpening);
+}
+
+function buildDeterministicOpening(contract: ResponseContract): string {
+  return contract.mandatoryOpening.join("\n");
+}
+
+export function applyResponseContract(
+  message: string,
+  response: string
+): string {
+  const contract = detectJokerResponseContract(message);
+  const cleanResponse = response.trim();
+
+  if (!contract.matched || !cleanResponse) {
+    return cleanResponse;
+  }
+
+  let output = cleanResponse;
+
+  if (shouldApplyDeterministicOpening(contract, output)) {
+    output = [buildDeterministicOpening(contract), "", output].join("\n");
+  }
+
+  if (
+    contract.kind === "IPR_EVT_OPC" &&
+    contract.closingFormula &&
+    !normalizeForContract(output).includes(
+      normalizeForContract(contract.closingFormula)
+    )
+  ) {
+    output = [output, "", contract.closingFormula].join("\n");
+  }
+
+  if (
+    contract.kind === "IPR" &&
+    contract.closingFormula &&
+    !normalizeForContract(output).includes(
+      normalizeForContract("IPR è il punto in cui l’identità smette")
+    )
+  ) {
+    output = [output, "", contract.closingFormula].join("\n");
+  }
+
+  return output.trim();
 }
