@@ -3,16 +3,17 @@
  *
  * Deterministic project-domain classifier for the HERMETICUM B.C.E. runtime.
  *
- * This module classifies an operation into one of the canonical project domains:
- *
+ * Canonical project domains:
  * - MATRIX
  * - CORPUS_ESOTEROLOGIA_ERMETICA
  * - APOKALYPSIS
  * - GENERAL
  * - MULTI_DOMAIN
  *
- * It is intentionally transparent, inspectable and rule-based.
- * It does not call external models.
+ * MATRIX includes European AI governance, technological autonomy,
+ * strategic dependency reduction, B2B/B2G infrastructure, citizens,
+ * enterprises, public administration, digital sovereignty and operational
+ * continuity.
  */
 
 export type ProjectDomain =
@@ -92,9 +93,9 @@ const DOMAIN_METADATA: Record<ProjectDomain, ProjectDomainMetadata> = {
     domainType: "OPERATIONAL_INFRASTRUCTURE_DOMAIN",
     label: "MATRIX",
     shortDefinition:
-      "Operational infrastructure domain for AI governance, European systems, B2B, B2G, cloud, data, energy, security and institutional continuity.",
+      "Operational infrastructure domain for AI governance, European systems, strategic autonomy, B2B, B2G, citizens, enterprises, cloud, data, energy, security and institutional continuity.",
     runtimeQuestion:
-      "How can Europe build verifiable operational systems for AI, governance, data, energy, security and institutional continuity?"
+      "How can Europe build verifiable operational systems for AI, governance, data, energy, security, citizens, enterprises and institutional continuity?"
   },
   CORPUS_ESOTEROLOGIA_ERMETICA: {
     projectDomain: "CORPUS_ESOTEROLOGIA_ERMETICA",
@@ -146,6 +147,7 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "matrix torino bruxelles",
     "europe",
     "europa",
+    "leurpa",
     "european",
     "european union",
     "unione europea",
@@ -158,10 +160,21 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "italia",
     "ai governance",
     "governance ai",
+    "governance",
+    "governance europea",
+    "governance imprese",
+    "governance cittadini",
     "public administration",
     "pubblica amministrazione",
     "public sector",
     "settore pubblico",
+    "citizens",
+    "cittadini",
+    "enterprises",
+    "imprese",
+    "aziende",
+    "industria",
+    "industrial",
     "b2b",
     "b2g",
     "cloud",
@@ -178,7 +191,38 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "logistica",
     "digital sovereignty",
     "sovranita digitale",
-    "institutional",
+    "sovranità digitale",
+    "technological sovereignty",
+    "sovranita tecnologica",
+    "sovranità tecnologica",
+    "strategic autonomy",
+    "autonomia strategica",
+    "autonomia tecnologica",
+    "european strategic autonomy",
+    "autonomia strategica europea",
+    "dipendenza tecnologica",
+    "dipendenze tecnologiche",
+    "dipendenza estera",
+    "dipendenze estere",
+    "dipendenze estere tecnologiche",
+    "dipendenze strategiche",
+    "dipendenza strategica",
+    "ridurre dipendenze",
+    "ridurre le dipendenze",
+    "riduzione dipendenze",
+    "dipendenze penalizzanti",
+    "asse tecnologico",
+    "asse tecnologico europeo",
+    "proprio asse tecnologico",
+    "infrastruttura europea",
+    "standard europeo",
+    "standard europa",
+    "standard ue",
+    "tecnologia adottata in europa",
+    "adottata in tutta europa",
+    "governance imprese cittadini",
+    "imprese e cittadini",
+    "imprese cittadini",
     "istituzionale",
     "istituzioni",
     "operational infrastructure",
@@ -186,12 +230,23 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "fail closed",
     "fail-closed",
     "auditability",
+    "auditabilita",
+    "auditabilità",
     "traceability",
     "tracciabilita",
+    "tracciabilità",
     "evidence",
     "verification",
     "verifica",
-    "runtime governance"
+    "runtime governance",
+    "ipr",
+    "evt",
+    "identity primary record",
+    "identita operativa",
+    "identità operativa",
+    "biocybersecurity",
+    "biocibersicurezza",
+    "biocibernetica"
   ],
   CORPUS_ESOTEROLOGIA_ERMETICA: [
     "corpus",
@@ -206,6 +261,7 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "operational reality",
     "reale operativo",
     "realta operativa",
+    "realtà operativa",
     "canonical glossary",
     "glossario canonico",
     "lex hermeticum",
@@ -293,6 +349,38 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "sistema culturale politico sociale"
   ]
 };
+
+const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
+  "europa",
+  "leurpa",
+  "ue",
+  "unione europea",
+  "europe",
+  "european",
+  "dipendenze estere",
+  "dipendenze tecnologiche",
+  "dipendenze strategiche",
+  "dipendenza tecnologica",
+  "dipendenza strategica",
+  "dipendenze penalizzanti",
+  "autonomia strategica",
+  "autonomia tecnologica",
+  "sovranita digitale",
+  "sovranità digitale",
+  "sovranita tecnologica",
+  "sovranità tecnologica",
+  "asse tecnologico",
+  "asse tecnologico europeo",
+  "standard europeo",
+  "governance imprese",
+  "governance cittadini",
+  "imprese cittadini",
+  "imprese e cittadini",
+  "cittadini",
+  "imprese",
+  "b2b",
+  "b2g"
+];
 
 const REPOSITORY_MULTI_DOMAIN_FILES = [
   "readme.md",
@@ -393,6 +481,28 @@ export function classifyProjectDomain(
 
   if (fileBasedClassification) {
     return fileBasedClassification;
+  }
+
+  const strategicAutonomyMatches =
+    findEuropeanStrategicAutonomyMatches(normalizedInput);
+
+  if (strategicAutonomyMatches.length >= 2) {
+    const scores = createEmptyScores();
+    scores.MATRIX = 14 + strategicAutonomyMatches.length;
+
+    return createClassification(
+      "MATRIX",
+      ["MATRIX"],
+      0.95,
+      [
+        "European strategic autonomy / technological dependency reduction language detected.",
+        "Such requests belong to the MATRIX operational infrastructure and governance domain.",
+        ...strategicAutonomyMatches.map(
+          (term) => `Matched strategic-autonomy term: ${term}`
+        )
+      ],
+      scores
+    );
   }
 
   const explicitMultiDomain = findMatches(normalizedInput, MULTI_DOMAIN_TERMS);
@@ -674,6 +784,10 @@ function findMatches(text: string, keywords: string[]): string[] {
   return keywords
     .map((keyword) => normalizeText(keyword))
     .filter((keyword) => keyword.length > 0 && text.includes(keyword));
+}
+
+function findEuropeanStrategicAutonomyMatches(text: string): string[] {
+  return findMatches(text, EUROPEAN_STRATEGIC_AUTONOMY_TERMS);
 }
 
 function createClassification(
