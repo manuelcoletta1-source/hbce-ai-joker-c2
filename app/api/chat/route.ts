@@ -15,6 +15,11 @@ import {
   type RuntimeState as MemoryRuntimeState
 } from "../../../lib/evt-memory";
 
+import {
+  appendEvtMemoryEvent,
+  buildEvtMemoryContextFromLedger
+} from "../../../lib/evt-memory-ledger";
+
 import { classifyContext as classifyRuntimeContext } from "../../../lib/context-classifier";
 import {
   classifyProjectDomain,
@@ -125,6 +130,16 @@ type GovernanceFrame = {
   filePolicy: ReturnType<typeof evaluateFileBatchPolicy>;
 };
 
+type ResolvedMemoryContext = {
+  used: boolean;
+  source: string;
+  text: string;
+  semanticState: {
+    documentFamily: DocumentFamily;
+  } | null;
+  lastEventId: string | null;
+};
+
 const MODEL = process.env.JOKER_MODEL || "gpt-4o-mini";
 const MAX_FILE_CONTEXT_CHARS = 72000;
 const MAX_OUTPUT_TOKENS = 4600;
@@ -139,7 +154,10 @@ function nowIso(): string {
 }
 
 function buildEvtId(): string {
-  return `EVT-${Date.now()}`;
+  return `EVT-${Date.now()}-${Math.random()
+    .toString(16)
+    .slice(2, 10)
+    .padEnd(8, "0")}`;
 }
 
 function buildTraceHash(input: unknown): string {
@@ -282,7 +300,18 @@ function isSafeIdentityGovernanceQuestion(message: string): boolean {
     "confronto",
     "paragone",
     "standard",
-    "europa"
+    "europa",
+    "agente",
+    "agente ai",
+    "programmazione",
+    "runtime",
+    "architettura",
+    "come funziona",
+    "come si programma",
+    "implementazione",
+    "integrazione",
+    "memoria",
+    "governance runtime"
   ];
 
   const hasIdentityTerm = identityTerms.some((term) => lower.includes(term));
@@ -845,6 +874,16 @@ function buildDocumentFamilyDirective(
   family: DocumentFamily,
   mode: DocumentMode
 ): string {
+  if (family === "HBCE_RUNTIME") {
+    return [
+      "Direttiva HBCE_RUNTIME:",
+      "Tratta la richiesta come lavoro tecnico-operativo su AI JOKER-C2, IPR, EVT, memoria, ledger, route, policy, risk, oversight e fail-closed.",
+      "Non ridurre JOKER-C2 a semplice chatbot.",
+      "Spiega sempre la distinzione tra sessionId, IPR, EVT, memoria semantica e ledger quando pertinente.",
+      "Quando l'utente chiede programmazione o rifattorizzazione, produci file completi pronti per GitHub."
+    ].join("\n");
+  }
+
   if (family === "APOKALYPSIS") {
     return [
       "Direttiva APOKALYPSIS:",
@@ -931,6 +970,8 @@ function buildGovernanceFrameText(frame: GovernanceFrame): string {
     `RequiredRole: ${frame.oversight.requiredRole}`,
     `RuntimeDecision: ${frame.decision.decision}`,
     `FailClosed: ${frame.decision.failClosed ? "true" : "false"}`,
+    `FilePolicyAllowed: ${frame.filePolicy.allowed ? "true" : "false"}`,
+    `FilePolicyRejectedCount: ${frame.filePolicy.rejectedCount}`,
     "",
     "Governance instruction:",
     "If RuntimeDecision is ALLOW, answer normally.",
@@ -938,6 +979,7 @@ function buildGovernanceFrameText(frame: GovernanceFrame): string {
     "If RuntimeDecision is DEGRADE, provide limited safe support only.",
     "If RuntimeDecision is ESCALATE, require human review and do not present output as operational authority.",
     "If RuntimeDecision is BLOCK, refuse unsafe content and offer safe alternatives.",
+    "If FilePolicyAllowed is false, do not use rejected files in the prompt.",
     "For ordinary public answers, do not expose governance metadata unless the user asks for diagnostic or technical status."
   ].join("\n");
 }
@@ -950,6 +992,7 @@ function buildSystemPrompt(input: {
   files: FileInput[];
   memoryText: string;
   memoryUsed: boolean;
+  memorySource: string;
   structuredFormat: boolean;
   governanceFrame: GovernanceFrame;
 }): string {
@@ -1007,6 +1050,7 @@ function buildSystemPrompt(input: {
     `Modalità documento: ${input.documentMode}.`,
     `Famiglia documento: ${input.documentFamily}.`,
     `Memoria EVT/IPR-bound usata: ${input.memoryUsed ? "SI" : "NO"}.`,
+    `MemorySource: ${input.memorySource}.`,
     `Formato strutturato richiesto: ${input.structuredFormat ? "SI" : "NO"}.`,
     "",
     input.memoryText,
@@ -1044,15 +1088,23 @@ function buildFallback(input: {
   const domain = input.governanceFrame.projectDomain.projectDomain;
   const safeConcept = classifySafeConcept(input.message);
 
+  if (input.documentFamily === "HBCE_RUNTIME") {
+    return [
+      "AI JOKER-C2 è un runtime cognitivo-operativo collegato al framework HBCE.",
+      "",
+      "Il punto tecnico centrale è questo: la memoria non deve dipendere soltanto dalla sessione chat. La sessione serve alla continuità conversazionale; l'IPR serve alla continuità identitaria; l'EVT serve alla prova dell'evento; il ledger serve alla persistenza.",
+      "",
+      "La riparazione corretta consiste nel collegare ogni risposta a un governed EVT, creare un memoryEvent semantico, salvarlo nella memoria volatile L1, salvarlo nel ledger semantico L2 e restituire al frontend un sessionId stabile."
+    ].join("\n");
+  }
+
   if (safeConcept.matched && safeConcept.kind === "BIOCYBERSECURITY") {
     return [
       "La relazione tra IPR e sicurezza/protezione biocibernetica nasce dal fatto che la biocybersecurity non protegge soltanto reti, software o credenziali, ma protegge il punto di contatto tra organismo biologico, identità digitale, AI, sensori, robotica, droni, flotte autonome e sistemi operativi.",
       "",
-      "L’IPR, cioè Identity Primary Record, fornisce l’identità operativa primaria di questo accoppiamento. Non è un semplice account, né una normale identità digitale. È il registro che collega soggetto, origine, responsabilità, eventi, prove e continuità nel tempo. In una struttura biocibernetica, questo significa poter stabilire chi o che cosa sta agendo, da quale origine deriva, quale responsabilità porta e quale traccia lascia nel sistema.",
+      "L’IPR, cioè Identity Primary Record, fornisce l’identità operativa primaria di questo accoppiamento. Non è un semplice account, né una normale identità digitale. È il registro che collega soggetto, origine, responsabilità, eventi, prove e continuità nel tempo.",
       "",
-      "L’EVT completa questa struttura perché registra gli eventi verificabili prodotti dall’identità operativa. Se l’IPR identifica, l’EVT traccia. Se l’IPR stabilisce origine e responsabilità, l’EVT conserva la sequenza degli eventi nel tempo. In questo modo, la protezione biocibernetica non resta soltanto difensiva, ma diventa governabile, auditabile e ricostruibile.",
-      "",
-      "Dentro MATRIX, questa relazione assume valore infrastrutturale. IPR ed EVT permettono di applicare identità, tracciabilità, verifica, responsabilità e continuità a robot, droni, veicoli autonomi, flotte, sensori, agenti AI e sistemi pubblici o industriali. AI JOKER-C2 diventa il runtime che governa questa relazione, classificando contesto, rischio, decisione e continuità operativa.",
+      "L’EVT completa questa struttura perché registra gli eventi verificabili prodotti dall’identità operativa. Se l’IPR identifica, l’EVT traccia. Se l’IPR stabilisce origine e responsabilità, l’EVT conserva la sequenza degli eventi nel tempo.",
       "",
       "Formula canonica:",
       "",
@@ -1077,26 +1129,6 @@ function buildFallback(input: {
   }
 
   if (domain === "APOKALYPSIS" || input.documentFamily === "APOKALYPSIS") {
-    if (input.documentMode === "GENRE_CLASSIFICATION") {
-      return [
-        "APOKALYPSIS è un saggio teorico-politico, civilizzazionale, esoterologico e sistemico.",
-        "",
-        "Non è un romanzo, non è fantascienza, non è apocalittica religiosa e non è una semplice denuncia politica. È un'opera di saggistica di soglia: analizza il momento in cui il sistema culturale, politico e sociale continua a funzionare, ma ha già iniziato a perdere fondamento.",
-        "",
-        "La sua collocazione più corretta è tra filosofia della civiltà, critica sociopolitica, teoria del decadimento sistemico ed Esoterologia Ermetica. La chiave metodologica è Decisione · Costo · Traccia · Tempo."
-      ].join("\n");
-    }
-
-    if (input.documentMode === "IMPACT_ASSESSMENT") {
-      return [
-        "L'impatto di APOKALYPSIS sulla civiltà sta nel fornire una grammatica del decadimento. Il libro non dice soltanto che il sistema è in crisi: mostra come una civiltà possa continuare a funzionare mentre il proprio fondamento si consuma.",
-        "",
-        "Il suo effetto principale è spostare l'attenzione dalla narrazione del crollo alla lettura della traccia: decisioni concentrate, costi diffusi, popolo esposto, istituzioni sempre più distanti dalla propria promessa di stabilità.",
-        "",
-        "In questo senso il libro può agire come testo di riconconicità: costringe il lettore a rivedere il rapporto tra cultura, politica, società e responsabilità storica."
-      ].join("\n");
-    }
-
     return [
       "APOKALYPSIS è un'opera sul decadimento esposto del sistema culturale, politico e sociale. Non descrive la fine del mondo in senso catastrofico, ma l'inizio di una perdita di fondamento: il sistema continua a funzionare, però mostra sempre di più il proprio costo, la propria fragilità e la propria distanza dalla tenuta reale.",
       "",
@@ -1120,20 +1152,12 @@ function buildFallback(input: {
     ].join("\n");
   }
 
-  if (input.contextClass === "GENERAL") {
-    return [
-      "Sono AI JOKER-C2, il runtime cognitivo-operativo collegato al framework HBCE.",
-      "",
-      "Le mie potenzialità principali sono: spiegare documenti, lavorare su repo GitHub, aiutare a costruire architetture di governance AI, generare file tecnici, mantenere continuità tramite EVT/IPR, produrre sintesi operative, supportare materiale B2B/B2G e trasformare testi complessi in output pubblicabili.",
-      "",
-      "Quando lavoro bene, non sono solo una chat: sono un ambiente operativo che collega memoria, identità, documenti, codice, governance e continuità."
-    ].join("\n");
-  }
-
   return [
-    "Ho ricevuto la richiesta, ma il modello remoto non ha restituito una risposta completa.",
+    "Sono AI JOKER-C2, il runtime cognitivo-operativo collegato al framework HBCE.",
     "",
-    "La memoria EVT/IPR-bound resta il punto operativo: ogni chat deve recuperare il contesto precedente, generare un nuovo EVT e aumentare la continuità semantica del runtime."
+    "Le mie potenzialità principali sono: spiegare documenti, lavorare su repo GitHub, aiutare a costruire architetture di governance AI, generare file tecnici, mantenere continuità tramite EVT/IPR, produrre sintesi operative, supportare materiale B2B/B2G e trasformare testi complessi in output pubblicabili.",
+    "",
+    "Quando lavoro bene, non sono solo una chat: sono un ambiente operativo che collega memoria, identità, documenti, codice, governance e continuità."
   ].join("\n");
 }
 
@@ -1145,13 +1169,14 @@ async function generateResponse(input: {
   files: FileInput[];
   memoryText: string;
   memoryUsed: boolean;
+  memorySource: string;
   structuredFormat: boolean;
   governanceFrame: GovernanceFrame;
 }): Promise<GeneratedResponse> {
   if (!openai) {
     return {
       text: buildFallback(input),
-      state: "DEGRADED" as MemoryRuntimeState,
+      state: "DEGRADED",
       degradedReason: "OPENAI_API_KEY_NOT_CONFIGURED"
     };
   }
@@ -1200,20 +1225,20 @@ async function generateResponse(input: {
     if (!text) {
       return {
         text: buildFallback(input),
-        state: "DEGRADED" as MemoryRuntimeState,
+        state: "DEGRADED",
         degradedReason: "OPENAI_EMPTY_RESPONSE"
       };
     }
 
     return {
       text,
-      state: "OPERATIONAL" as MemoryRuntimeState,
+      state: "OPERATIONAL",
       degradedReason: null
     };
   } catch (error) {
     return {
       text: buildFallback(input),
-      state: "DEGRADED" as MemoryRuntimeState,
+      state: "DEGRADED",
       degradedReason:
         error instanceof Error ? error.message : "OPENAI_REQUEST_FAILED"
     };
@@ -1229,7 +1254,7 @@ function buildGovernanceLimitedResponse(input: {
 }): GeneratedResponse {
   if (input.decision.decision === "BLOCK") {
     return {
-      state: "BLOCKED" as MemoryRuntimeState,
+      state: "BLOCKED",
       degradedReason: "RUNTIME_POLICY_BLOCK",
       text: [
         "La richiesta è stata bloccata dal runtime.",
@@ -1249,7 +1274,7 @@ function buildGovernanceLimitedResponse(input: {
 
   if (input.decision.decision === "ESCALATE") {
     return {
-      state: "DEGRADED" as MemoryRuntimeState,
+      state: "DEGRADED",
       degradedReason: "HUMAN_REVIEW_REQUIRED",
       text: [
         "La richiesta richiede revisione umana prima di qualunque uso operativo.",
@@ -1265,7 +1290,7 @@ function buildGovernanceLimitedResponse(input: {
   }
 
   return {
-    state: "DEGRADED" as MemoryRuntimeState,
+    state: "DEGRADED",
     degradedReason: "LIMITED_SAFE_SUPPORT",
     text: [
       "Il runtime ha limitato la risposta a supporto sicuro e revisionabile.",
@@ -1274,6 +1299,30 @@ function buildGovernanceLimitedResponse(input: {
       `Decision: ${input.decision.decision}`,
       `RiskClass: ${input.risk.riskClass}`,
       `Oversight: ${input.oversight.state}`
+    ].join("\n")
+  };
+}
+
+function buildFilePolicyBlockedResponse(input: {
+  filePolicy: ReturnType<typeof evaluateFileBatchPolicy>;
+  projectDomain: ProjectDomainClassification;
+}): GeneratedResponse {
+  return {
+    state: "BLOCKED",
+    degradedReason: "FILE_POLICY_BLOCK",
+    text: [
+      "La richiesta è stata bloccata dalla file policy del runtime.",
+      "",
+      "I file allegati non sono stati inseriti nel prompt operativo perché non rispettano il perimetro consentito.",
+      "",
+      `Dominio classificato: ${input.projectDomain.projectDomain}.`,
+      "",
+      "Motivo operativo:",
+      input.filePolicy.reasons.length > 0
+        ? input.filePolicy.reasons.join("\n")
+        : "Uno o più file non sono ammessi dalla policy corrente.",
+      "",
+      "Puoi procedere in modalità sicura usando testo leggibile, documenti non sensibili, estratti verificabili o materiale tecnico non operativo."
     ].join("\n")
   };
 }
@@ -1334,6 +1383,7 @@ function buildRuntimeDiagnosticText(input: {
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
   memoryUsed: boolean;
+  memorySource: string;
   structuredFormat: boolean;
   event: LegacyRuntimeEvent;
   modernEvt: ReturnType<typeof toPublicRuntimeEvent>;
@@ -1362,7 +1412,10 @@ function buildRuntimeDiagnosticText(input: {
     `RiskClass: ${input.governance.risk.riskClass}`,
     `RiskScore: ${input.governance.risk.riskScore}`,
     `HumanOversight: ${input.governance.oversight.state}`,
+    `FilePolicyAllowed: ${input.governance.filePolicy.allowed}`,
+    `FilePolicyRejectedCount: ${input.governance.filePolicy.rejectedCount}`,
     `EvtIprMemoryUsed: ${input.memoryUsed ? "true" : "false"}`,
+    `MemorySource: ${input.memorySource}`,
     `StructuredFormat: ${input.structuredFormat ? "true" : "false"}`,
     `Model: ${MODEL}`,
     `OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "configured" : "missing"}`,
@@ -1400,10 +1453,12 @@ function buildTechnicalFrame(input: {
   documentMode: DocumentMode;
   documentFamily: DocumentFamily;
   memoryUsed: boolean;
+  memorySource: string;
   structuredFormat: boolean;
   event: LegacyRuntimeEvent;
   modernEvt: ReturnType<typeof toPublicRuntimeEvent>;
   memoryEventId: string | null;
+  memoryAppendStatus: string;
   governance: GovernanceFrame;
   degradedReason?: string | null;
 }) {
@@ -1429,11 +1484,13 @@ function buildTechnicalFrame(input: {
     `- documentMode: ${input.documentMode}`,
     `- documentFamily: ${input.documentFamily}`,
     `- evtIprMemoryUsed: ${input.memoryUsed ? "true" : "false"}`,
+    `- memorySource: ${input.memorySource}`,
     `- structuredFormat: ${input.structuredFormat ? "true" : "false"}`,
     `- legacyEvt: ${input.event.evt}`,
     `- governedEvt: ${input.modernEvt.evt}`,
     `- governedEvtProject: ${input.modernEvt.project.domain}`,
     `- memoryEvt: ${input.memoryEventId || "none"}`,
+    `- memoryAppendStatus: ${input.memoryAppendStatus}`,
     `- prev: ${input.event.prev}`,
     `- hash: ${input.event.anchors.hash}`,
     `- governedHash: ${input.modernEvt.trace.hash}`,
@@ -1473,17 +1530,22 @@ function mapContextForMemory(contextClass: ContextClass): LegacyContextClass {
 }
 
 function mapDecisionForMemory(
-  decision: GovernanceDecision
+  decision: GovernanceDecision,
+  filePolicyAllowed = true
 ): MemoryRuntimeDecision {
+  if (!filePolicyAllowed) {
+    return "BLOCK";
+  }
+
   if (decision === "BLOCK" || decision === "NOOP") {
-    return "BLOCK" as MemoryRuntimeDecision;
+    return "BLOCK";
   }
 
   if (decision === "ESCALATE") {
-    return "ESCALATE" as MemoryRuntimeDecision;
+    return "ESCALATE";
   }
 
-  return "ALLOW" as MemoryRuntimeDecision;
+  return "ALLOW";
 }
 
 function mapRuntimeStateForGovernance(
@@ -1508,6 +1570,10 @@ function mapOperationStatus(
   decision: GovernanceDecision,
   state: MemoryRuntimeState
 ): OperationStatus {
+  if (state === "BLOCKED") {
+    return "BLOCKED";
+  }
+
   if (decision === "BLOCK") {
     return "BLOCKED";
   }
@@ -2055,7 +2121,8 @@ async function buildAndAppendGovernedEvt(input: {
       ...input.governance.policy.reasons,
       ...input.governance.risk.reasons,
       input.governance.oversight.reason,
-      ...input.governance.decision.reasons
+      ...input.governance.decision.reasons,
+      ...input.governance.filePolicy.reasons
     ],
     auditStatus: input.governance.decision.auditRequired
       ? "READY"
@@ -2069,6 +2136,44 @@ async function buildAndAppendGovernedEvt(input: {
   return {
     modernEvent,
     appendResult
+  };
+}
+
+async function resolveMemoryContext(input: {
+  sessionId: string;
+  ipr: string;
+  message: string;
+}): Promise<ResolvedMemoryContext> {
+  const hotMemory = getEvtMemoryContext({
+    sessionId: input.sessionId,
+    ipr: input.ipr,
+    message: input.message
+  });
+
+  if (hotMemory.used) {
+    return hotMemory as ResolvedMemoryContext;
+  }
+
+  const ledgerMemory = await buildEvtMemoryContextFromLedger({
+    sessionId: input.sessionId,
+    ipr: input.ipr,
+    message: input.message
+  });
+
+  if (ledgerMemory.used) {
+    return ledgerMemory as ResolvedMemoryContext;
+  }
+
+  return {
+    used: false,
+    source: "NONE",
+    text: [
+      hotMemory.text,
+      "",
+      ledgerMemory.text
+    ].join("\n").trim(),
+    semanticState: null,
+    lastEventId: null
   };
 }
 
@@ -2096,6 +2201,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
+        sessionId: input.sessionId,
         state: "BLOCKED",
         decision: "BLOCK",
         governanceDecision: "BLOCK",
@@ -2110,23 +2216,24 @@ export async function POST(req: NextRequest) {
   const effectiveMessage =
     input.message || "Usa i file attivi come contesto operativo.";
 
-  const memory = getEvtMemoryContext({
-    sessionId: input.sessionId,
-    ipr: identity.ipr,
-    message: effectiveMessage
-  });
-
-  const memoryFile = memory.used ? [buildMemoryFile(memory.text)] : [];
-
   const userFiles = input.files;
-  const promptFiles = [...memoryFile, ...userFiles];
-
   const structuredFormat = shouldUseStructuredFormat(effectiveMessage);
 
   const governance = buildGovernanceFrame({
     message: effectiveMessage,
     files: userFiles
   });
+
+  const acceptedUserFiles = governance.filePolicy.allowed ? userFiles : [];
+
+  const memory = await resolveMemoryContext({
+    sessionId: input.sessionId,
+    ipr: identity.ipr,
+    message: effectiveMessage
+  });
+
+  const memoryFile = memory.used ? [buildMemoryFile(memory.text)] : [];
+  const promptFiles = [...memoryFile, ...acceptedUserFiles];
 
   const contextClass = governance.contextClass;
   const intentClass = governance.intentClass;
@@ -2137,24 +2244,30 @@ export async function POST(req: NextRequest) {
     contextClass === "EDITORIAL" ||
     contextClass === "CORPUS" ||
     contextClass === "APOKALYPSIS" ||
-    userFiles.length > 0
+    contextClass === "TECHNICAL" ||
+    contextClass === "GITHUB" ||
+    acceptedUserFiles.length > 0
       ? detectDocumentMode(effectiveMessage)
       : "GENERAL_DOCUMENT_WORK";
 
   const documentFamily =
-    userFiles.length > 0
-      ? detectDocumentFamily(userFiles)
+    acceptedUserFiles.length > 0
+      ? detectDocumentFamily(acceptedUserFiles)
       : memory.semanticState?.documentFamily || detectDocumentFamily(promptFiles);
 
   const modernPrev = await getLastEventReference();
-  const legacyPrev = input.continuityRef || memory.lastEventId;
+  const legacyPrev = memory.lastEventId || input.continuityRef;
 
   if (isRuntimeDiagnosticRequest(effectiveMessage)) {
     const diagnosticState: MemoryRuntimeState = openai
-      ? ("OPERATIONAL" as MemoryRuntimeState)
-      : ("DEGRADED" as MemoryRuntimeState);
+      ? "OPERATIONAL"
+      : "DEGRADED";
 
-    const memoryDecision = mapDecisionForMemory(governance.decision.decision);
+    const memoryDecision = mapDecisionForMemory(
+      governance.decision.decision,
+      governance.filePolicy.allowed
+    );
+
     const degradedReason = openai ? null : "OPENAI_API_KEY_NOT_CONFIGURED";
 
     const event = buildEvent({
@@ -2190,6 +2303,7 @@ export async function POST(req: NextRequest) {
       documentMode,
       documentFamily,
       memoryUsed: memory.used,
+      memorySource: memory.source,
       structuredFormat,
       event,
       modernEvt: publicModernEvt,
@@ -2199,6 +2313,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      sessionId: input.sessionId,
       response: responseText.trim(),
       state: diagnosticState,
       decision: memoryDecision,
@@ -2212,6 +2327,7 @@ export async function POST(req: NextRequest) {
       documentMode,
       documentFamily,
       evtIprMemoryUsed: memory.used,
+      memorySource: memory.source,
       structuredFormat,
       activeFiles: promptFiles.map((file) => file.name || "unnamed"),
       identity: {
@@ -2250,13 +2366,20 @@ export async function POST(req: NextRequest) {
         riskScore: governance.risk.riskScore,
         oversight: governance.oversight.state,
         requiredRole: governance.oversight.requiredRole,
-        failClosed: governance.decision.failClosed
+        failClosed: governance.decision.failClosed,
+        filePolicy: {
+          allowed: governance.filePolicy.allowed,
+          allowedCount: governance.filePolicy.allowedCount,
+          rejectedCount: governance.filePolicy.rejectedCount,
+          reasons: governance.filePolicy.reasons
+        }
       },
       diagnostics: {
         openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
         modelUsed: MODEL,
         degradedReason,
         evtIprMemoryUsed: memory.used,
+        memorySource: memory.source,
         structuredFormat
       }
     });
@@ -2264,7 +2387,12 @@ export async function POST(req: NextRequest) {
 
   let generated: GeneratedResponse;
 
-  if (
+  if (!governance.filePolicy.allowed) {
+    generated = buildFilePolicyBlockedResponse({
+      filePolicy: governance.filePolicy,
+      projectDomain: governance.projectDomain
+    });
+  } else if (
     governance.decision.decision === "BLOCK" ||
     !governance.decision.allowModelCall
   ) {
@@ -2284,12 +2412,16 @@ export async function POST(req: NextRequest) {
       files: promptFiles,
       memoryText: memory.text,
       memoryUsed: memory.used,
+      memorySource: memory.source,
       structuredFormat,
       governanceFrame: governance
     });
   }
 
-  const memoryDecision = mapDecisionForMemory(governance.decision.decision);
+  const memoryDecision = mapDecisionForMemory(
+    governance.decision.decision,
+    governance.filePolicy.allowed
+  );
 
   const event = buildEvent({
     prev: legacyPrev,
@@ -2326,8 +2458,12 @@ export async function POST(req: NextRequest) {
     documentMode,
     documentFamily,
     files: promptFiles,
-    prevEventId: event.prev
+    prevEventId: event.evt,
+    governedEvt: publicModernEvt.evt,
+    governedHash: publicModernEvt.trace.hash
   });
+
+  const memoryAppendResult = await appendEvtMemoryEvent(memoryEvent);
 
   const exposeRuntime = shouldExposeTechnicalFrame(effectiveMessage);
 
@@ -2343,10 +2479,12 @@ export async function POST(req: NextRequest) {
         documentMode,
         documentFamily,
         memoryUsed: memory.used,
+        memorySource: memory.source,
         structuredFormat,
         event,
         modernEvt: publicModernEvt,
         memoryEventId: memoryEvent.evt,
+        memoryAppendStatus: memoryAppendResult.status,
         governance,
         degradedReason: generated.degradedReason
       })
@@ -2354,6 +2492,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
+    sessionId: input.sessionId,
     response: responseText.trim(),
     state: generated.state,
     decision: memoryDecision,
@@ -2367,6 +2506,7 @@ export async function POST(req: NextRequest) {
     documentMode,
     documentFamily,
     evtIprMemoryUsed: memory.used,
+    memorySource: memory.source,
     structuredFormat,
     activeFiles: promptFiles.map((file) => file.name || "unnamed"),
     identity: {
@@ -2395,6 +2535,16 @@ export async function POST(req: NextRequest) {
       hash: publicModernEvt.trace.hash,
       appendStatus: appendResult?.status ?? "NOT_REQUIRED",
       appendReason: appendResult?.reason ?? "EVT append not required."
+    },
+    memory: {
+      used: memory.used,
+      source: memory.source,
+      lastEventId: memory.lastEventId,
+      event: memoryEvent.evt,
+      appendStatus: memoryAppendResult.status,
+      appendReason: memoryAppendResult.reason,
+      governedEvt: memoryEvent.governedEvt,
+      governedHash: memoryEvent.governedHash
     },
     governance: {
       projectDomain: governance.projectDomain.projectDomain,
@@ -2431,7 +2581,9 @@ export async function POST(req: NextRequest) {
       modelUsed: MODEL,
       degradedReason: generated.degradedReason || null,
       evtIprMemoryUsed: memory.used,
+      memorySource: memory.source,
       memoryEvent: memoryEvent.evt,
+      memoryAppendStatus: memoryAppendResult.status,
       structuredFormat
     }
   });
