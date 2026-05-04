@@ -24,7 +24,6 @@ import {
   sha256Short,
   type DocumentFamily,
   type EvtMemoryEvent,
-  type MemorySource,
   type RuntimeDecision,
   type RuntimeState,
   type SemanticState
@@ -118,7 +117,11 @@ export type EvtMemoryLedgerPublicEvent = {
 
 export type LedgerMemoryContext = {
   used: boolean;
-  source: "LEDGER_SESSION" | "LEDGER_IPR_CANONICAL" | "LEDGER_IPR_RECENT" | "NONE";
+  source:
+    | "LEDGER_SESSION"
+    | "LEDGER_IPR_CANONICAL"
+    | "LEDGER_IPR_RECENT"
+    | "NONE";
   text: string;
   semanticState: SemanticState | null;
   lastEventId: string | null;
@@ -147,14 +150,19 @@ export async function appendEvtMemoryEvent(
   event: EvtMemoryEvent,
   ledgerPath = DEFAULT_EVT_MEMORY_LEDGER_FILE
 ): Promise<EvtMemoryLedgerAppendResult> {
+  const eventRef = {
+    evt: event.evt,
+    prev: event.prev
+  };
+
   try {
     await ensureEvtMemoryLedger(ledgerPath);
 
     if (!isEvtMemoryEventStructurallyValid(event)) {
       return {
         status: "REJECTED",
-        evt: event.evt,
-        prev: event.prev,
+        evt: eventRef.evt,
+        prev: eventRef.prev,
         ledgerPath,
         reason:
           "EVT memory event is structurally invalid and was not appended."
@@ -164,8 +172,8 @@ export async function appendEvtMemoryEvent(
     if (!isEvtMemoryEventHashValid(event)) {
       return {
         status: "REJECTED",
-        evt: event.evt,
-        prev: event.prev,
+        evt: eventRef.evt,
+        prev: eventRef.prev,
         ledgerPath,
         reason: "EVT memory event hash is invalid and was not appended."
       };
@@ -175,16 +183,16 @@ export async function appendEvtMemoryEvent(
 
     return {
       status: "APPENDED",
-      evt: event.evt,
-      prev: event.prev,
+      evt: eventRef.evt,
+      prev: eventRef.prev,
       ledgerPath,
       reason: "EVT memory event appended to memory ledger."
     };
   } catch (error) {
     return {
       status: "FAILED",
-      evt: event.evt,
-      prev: event.prev,
+      evt: eventRef.evt,
+      prev: eventRef.prev,
       ledgerPath,
       reason:
         error instanceof Error
@@ -453,7 +461,8 @@ export async function buildEvtMemoryContextFromLedger(input: {
   }
 
   const canonicalEvents = readResult.events.filter(
-    (event) => event.ipr === input.ipr && event.sessionId === CANONICAL_SESSION_ID
+    (event) =>
+      event.ipr === input.ipr && event.sessionId === CANONICAL_SESSION_ID
   );
 
   if (canonicalEvents.length > 0) {
@@ -482,7 +491,8 @@ export async function buildEvtMemoryContextFromLedger(input: {
   });
 
   if (recentEvents.length > 0) {
-    const sessionId = recentEvents[recentEvents.length - 1]?.sessionId || input.sessionId;
+    const sessionId =
+      recentEvents[recentEvents.length - 1]?.sessionId || input.sessionId;
 
     const semanticState = buildSemanticStateFromEvents({
       ipr: input.ipr,
@@ -659,8 +669,9 @@ export function buildSemanticStateFromEvents(input: {
   );
 
   const documentFamily =
-    getLastNonGeneralDocumentFamily(ordered.map((event) => event.documentFamily)) ||
-    "GENERAL_DOCUMENT";
+    getLastNonGeneralDocumentFamily(
+      ordered.map((event) => event.documentFamily)
+    ) || "GENERAL_DOCUMENT";
 
   const centralThesis = extractCentralThesisFromEvents(ordered);
 
