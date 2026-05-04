@@ -326,6 +326,101 @@ function isSafeIdentityGovernanceQuestion(message: string): boolean {
   );
 }
 
+function isEconomicGovernanceQuestion(message: string): boolean {
+  const lower = normalizeForRuleMatch(message);
+
+  const systemTerms = [
+    "ipr",
+    "hbce",
+    "evt",
+    "matrix",
+    "joker-c2",
+    "identity primary record",
+    "identita operativa",
+    "identità operativa",
+    "traccia verificabile",
+    "audit",
+    "governance"
+  ];
+
+  const economicTerms = [
+    "economia",
+    "economico",
+    "economica",
+    "mercato",
+    "lavoro",
+    "impiego",
+    "impego",
+    "occupazione",
+    "filiera",
+    "servizi",
+    "professionisti",
+    "professionale",
+    "registrare",
+    "registrazione",
+    "registro",
+    "audit",
+    "auditor",
+    "aziende",
+    "azienda",
+    "imprese",
+    "impresa",
+    "governi",
+    "governo",
+    "pubblica amministrazione",
+    "pa",
+    "b2b",
+    "b2g",
+    "cittadini",
+    "standard",
+    "standard europeo",
+    "europa",
+    "ue",
+    "governance nazionale",
+    "governance internazionale",
+    "governance europea",
+    "compliance",
+    "certificazione",
+    "verifica",
+    "tracciabilita",
+    "tracciabilità",
+    "responsabilita",
+    "responsabilità"
+  ];
+
+  const hasSystemTerm = systemTerms.some((term) => lower.includes(term));
+  const hasEconomicTerm = economicTerms.some((term) => lower.includes(term));
+
+  return hasSystemTerm && hasEconomicTerm && !containsUnsafeOperationalTerm(message);
+}
+
+function buildEconomicGovernanceDirective(input: {
+  message: string;
+  frame: GovernanceFrame;
+}): string {
+  const isMatrixDomain =
+    input.frame.projectDomain.projectDomain === "MATRIX" ||
+    input.frame.projectDomain.activeDomains.includes("MATRIX");
+
+  if (!isMatrixDomain && !isEconomicGovernanceQuestion(input.message)) {
+    return [
+      "Direttiva economico-strategica MATRIX/HBCE:",
+      "Nessuna richiesta economica specifica su IPR, HBCE, EVT o MATRIX rilevata."
+    ].join("\n");
+  }
+
+  return [
+    "Direttiva economico-strategica MATRIX/HBCE:",
+    "Quando l'utente chiede effetti economici, occupazionali, industriali, istituzionali o strategici di IPR/HBCE/EVT/MATRIX, rispondi come analista di infrastruttura economico-tecnologica europea.",
+    "Non rispondere in modo generico. Devi spiegare la nuova filiera professionale e industriale che può nascere attorno a registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale.",
+    "Devi includere, quando pertinenti: operatori di registrazione IPR, auditor EVT, integratori HBCE, tecnici di governance AI, consulenti B2B/B2G, responsabili di continuità operativa, verificatori documentali, specialisti di audit digitale, imprese, cittadini, pubbliche amministrazioni e governi.",
+    "Spiega sempre che l'effetto economico è doppio: riduzione del rischio e creazione di una nuova fascia di lavoro e servizi.",
+    "Distingui sempre tra potenzialità progettuale, implementazione tecnica, adozione di mercato, riconoscimento istituzionale e standardizzazione ufficiale.",
+    "Non dire che HBCE è già inglobata nella governance nazionale o europea se non è dimostrato. Usa invece formule come: HBCE può proporsi come infrastruttura integrabile nella governance nazionale ed europea.",
+    "La risposta deve valorizzare IPR come livello di continuità operativa e non come semplice identità digitale; EVT come audit trail verificabile; MATRIX come infrastruttura; AI JOKER-C2 come runtime governato."
+  ].join("\n");
+}
+
 function buildSafeIdentityProjectDomain(): ProjectDomainClassification {
   return {
     projectDomain: "MATRIX",
@@ -733,6 +828,13 @@ function buildCanonicalDictionary(): string {
     "CORPUS ESOTEROLOGIA ERMETICA = dominio grammaticale-disciplinare: Decisione · Costo · Traccia · Tempo, glossario canonico, teoria del reale operativo.",
     "APOKALYPSIS = dominio storico di soglia: decadimento, esposizione, dislocazione cognitiva, rottura, Paradogma Alieno.",
     "",
+    "Regola economico-strategica IPR/HBCE:",
+    "Quando l'utente chiede effetti economici, lavoro, impiego, filiera, imprese, aziende, governi, cittadini, audit o standard europei collegati a IPR/HBCE/EVT/MATRIX, non rispondere in modo generico.",
+    "Devi spiegare che IPR/HBCE può aprire una nuova filiera professionale: registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale.",
+    "Devi includere quando pertinente: operatori di registrazione IPR, auditor EVT, integratori HBCE, tecnici di governance AI, consulenti B2B/B2G, responsabili di continuità operativa, verificatori documentali e specialisti di audit digitale.",
+    "Distingui sempre tra potenzialità progettuale, implementazione tecnica, adozione di mercato, riconoscimento istituzionale e standardizzazione ufficiale.",
+    "Non dichiarare che HBCE è già adottata o inglobata nella governance nazionale/europea se non dimostrato. Formula corretta: HBCE può proporsi come infrastruttura integrabile nella governance nazionale ed europea.",
+    "",
     "Regola editoriale:",
     "Per APOKALYPSIS, CORPUS e MATRIX preserva Decisione · Costo · Traccia · Tempo quando pertinente.",
     "Quando l'utente chiede valore operativo, confronti o standard europei, distingui sempre: identità, firma, credenziale, registro, timestamp, audit log, EVT, IPR.",
@@ -830,6 +932,8 @@ function buildProjectDomainDirective(frame: GovernanceFrame): string {
       "Direttiva dominio MATRIX:",
       "Rispondi in modo operativo, infrastrutturale e istituzionale.",
       "Valorizza AI governance, B2B, B2G, Europa, audit, sicurezza difensiva, tracciabilità, fail-closed ed EVT.",
+      "Quando la richiesta riguarda economia, impiego, lavoro, imprese, aziende, governi, cittadini, registrazione IPR, audit o governance europea, devi spiegare la nuova filiera economica possibile: registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale.",
+      "Distingui sempre potenzialità, implementazione, mercato, riconoscimento istituzionale e standardizzazione ufficiale.",
       "Evita promesse di certificazione o adozione ufficiale se non dimostrate."
     );
   }
@@ -880,7 +984,8 @@ function buildDocumentFamilyDirective(
       "Tratta la richiesta come lavoro tecnico-operativo su AI JOKER-C2, IPR, EVT, memoria, ledger, route, policy, risk, oversight e fail-closed.",
       "Non ridurre JOKER-C2 a semplice chatbot.",
       "Spiega sempre la distinzione tra sessionId, IPR, EVT, memoria semantica e ledger quando pertinente.",
-      "Quando l'utente chiede programmazione o rifattorizzazione, produci file completi pronti per GitHub."
+      "Quando l'utente chiede programmazione o rifattorizzazione, produci file completi pronti per GitHub.",
+      "Quando l'utente chiede effetti economici o istituzionali del runtime, collega HBCE_RUNTIME a MATRIX: identità operativa, registrazione IPR, audit EVT, governance AI, continuità operativa e nuova filiera professionale."
     ].join("\n");
   }
 
@@ -917,7 +1022,8 @@ function buildDocumentFamilyDirective(
       "Direttiva MATRIX:",
       "Tratta il documento come architettura di identità, governance, continuità, verifica e infrastruttura.",
       "Evidenzia IPR, HBCE, JOKER-C2, TRAC, EVT e valore B2B/B2G quando pertinenti.",
-      "Evita tono generico. Presenta MATRIX come infrastruttura europea di continuità, controllo e responsabilità operativa."
+      "Evita tono generico. Presenta MATRIX come infrastruttura europea di continuità, controllo e responsabilità operativa.",
+      "Se la richiesta riguarda economia, imprese, governi, cittadini o lavoro, spiega la filiera professionale: registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale."
     ].join("\n");
   }
 
@@ -1031,6 +1137,11 @@ function buildSystemPrompt(input: {
     "",
     buildProjectDomainDirective(input.governanceFrame),
     "",
+    buildEconomicGovernanceDirective({
+      message: input.message,
+      frame: input.governanceFrame
+    }),
+    "",
     buildSafeConceptResponseDirective(input.message),
     "",
     buildGovernanceFrameText(input.governanceFrame),
@@ -1088,6 +1199,20 @@ function buildFallback(input: {
   const domain = input.governanceFrame.projectDomain.projectDomain;
   const safeConcept = classifySafeConcept(input.message);
 
+  if (isEconomicGovernanceQuestion(input.message)) {
+    return [
+      "Il sistema IPR/HBCE può produrre un effetto economico rilevante perché non introduce soltanto una nuova identità digitale, ma una possibile infrastruttura di lavoro attorno alla registrazione, verifica, audit e manutenzione delle identità operative.",
+      "",
+      "La funzione economica dell’IPR nasce dal fatto che ogni soggetto, impresa, ente, agente AI, procedura o sistema può essere collegato a origine, responsabilità, eventi, prove e continuità nel tempo. Questo apre una nuova fascia professionale: operatori di registrazione IPR, auditor EVT, integratori HBCE, tecnici di governance AI, consulenti B2B/B2G, responsabili di continuità operativa, verificatori documentali e specialisti di audit digitale.",
+      "",
+      "L’EVT rende questa filiera verificabile perché registra gli eventi prodotti dall’identità operativa. Se l’IPR identifica e collega la responsabilità, l’EVT produce la traccia controllabile. HBCE può quindi proporsi come infrastruttura di governance capace di organizzare registri, procedure, audit trail, continuità documentale e controllo operativo per aziende, imprese, pubbliche amministrazioni e governi.",
+      "",
+      "L’effetto economico è doppio: da un lato riduce rischio, opacità, contestazioni, perdita di prova e frammentazione dei processi; dall’altro crea un mercato di servizi professionali legati alla registrazione IPR, alla verifica EVT, alla governance AI e alla compliance operativa.",
+      "",
+      "Va però distinta la potenzialità progettuale dall’adozione ufficiale. HBCE non va presentata come già inglobata nella governance nazionale o europea se non è dimostrato; la formulazione corretta è che HBCE può proporsi come infrastruttura integrabile nella governance nazionale ed europea, soprattutto nei contesti B2B, B2G, imprese, cittadini, pubblica amministrazione e standardizzazione futura."
+    ].join("\n");
+  }
+
   if (input.documentFamily === "HBCE_RUNTIME") {
     return [
       "AI JOKER-C2 è un runtime cognitivo-operativo collegato al framework HBCE.",
@@ -1140,7 +1265,9 @@ function buildFallback(input: {
     return [
       "AI JOKER-C2 è utile quando l'intelligenza artificiale non deve soltanto generare risposte, ma deve operare dentro un perimetro di identità, governance, rischio, decisione, traccia e verifica.",
       "",
-      "Nel dominio MATRIX, il valore principale è trasformare l'AI in infrastruttura operativa: B2B, B2G, governance AI, pubblica amministrazione, sicurezza difensiva, audit, continuità e tracciabilità."
+      "Nel dominio MATRIX, il valore principale è trasformare l'AI in infrastruttura operativa: B2B, B2G, governance AI, pubblica amministrazione, sicurezza difensiva, audit, continuità e tracciabilità.",
+      "",
+      "Quando MATRIX viene collegata a IPR, HBCE ed EVT, il suo valore economico non è solo tecnologico: può aprire una filiera di registrazione IPR, audit EVT, governance AI, verifica documentale, consulenza B2B/B2G e continuità istituzionale."
     ].join("\n");
   }
 
@@ -1205,6 +1332,7 @@ async function generateResponse(input: {
             "AI JOKER-C2 = runtime cognitivo-governato.",
             "Se l'utente chiede IPR, non ridurlo a identità digitale: spiegalo come registro primario di identità operativa che connette identità, azione, responsabilità, evento, prova, tempo e continuità.",
             "Se l'utente chiede biocybersecurity, biocibersicurezza, biocibernetica, sicurezza biocibernetica, protezione biocibernetica o varianti scritte male, devi rispondere usando sempre questa formula: IPR = identità operativa; EVT = traccia verificabile; MATRIX = infrastruttura; AI JOKER-C2 = runtime governato; Biocybersecurity = protezione dell'accoppiamento organismo-sistema-AI. Non bloccarla come rischio critico se è solo una richiesta concettuale o editoriale.",
+            "Se l'utente chiede effetti economici, lavoro, impiego, filiera, imprese, aziende, governi, cittadini, audit o standard europei collegati a IPR/HBCE/EVT/MATRIX, devi rispondere in modo economico-strategico: nuova filiera professionale, registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale, continuità istituzionale, riduzione rischio e distinzione tra potenzialità e adozione ufficiale.",
             "Se l'utente chiede confronto con standard esistenti, confronta IPR con eIDAS/EUDI, PKI, X.509, DID/VC, blockchain timestamping, IAM e audit log.",
             "Se l'utente dice 'apokalypsis intendo dire', devi riferirti al documento attivo APOKALYPSIS, non al concetto generico di apocalisse.",
             "Per APOKALYPSIS evita risposte generiche: classificare, interpretare, posizionare e spiegare l'impatto civilizzazionale.",
@@ -2167,11 +2295,7 @@ async function resolveMemoryContext(input: {
   return {
     used: false,
     source: "NONE",
-    text: [
-      hotMemory.text,
-      "",
-      ledgerMemory.text
-    ].join("\n").trim(),
+    text: [hotMemory.text, "", ledgerMemory.text].join("\n").trim(),
     semanticState: null,
     lastEventId: null
   };
