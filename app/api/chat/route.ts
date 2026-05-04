@@ -137,6 +137,10 @@ type LegacyRuntimeEvent = {
   documentFamily: DocumentFamily;
   anchors: {
     hash: string;
+    publicHash: string;
+    fullHash: string;
+    digest: string;
+    algorithm: "sha256";
   };
   continuityRef: string | null;
 };
@@ -448,6 +452,8 @@ function buildEvent(input: {
     documentFamily: input.documentFamily
   };
 
+  const hash = buildRuntimeHash(payload);
+
   return Object.freeze({
     evt: payload.evt,
     prev: payload.prev,
@@ -461,7 +467,11 @@ function buildEvent(input: {
     documentMode: payload.documentMode,
     documentFamily: payload.documentFamily,
     anchors: {
-      hash: buildTraceHash(payload)
+      hash: hash.publicHash,
+      publicHash: hash.publicHash,
+      fullHash: hash.fullHash,
+      digest: hash.digest,
+      algorithm: hash.algorithm
     },
     continuityRef: payload.continuityRef
   });
@@ -523,7 +533,8 @@ function buildRuntimeDiagnosticText(input: {
     "Legacy EVT Chain:",
     `- evt: ${input.event.evt}`,
     `- prev: ${input.event.prev}`,
-    `- hash: ${input.event.anchors.hash}`,
+    `- publicHash: ${input.event.anchors.publicHash}`,
+    `- fullHash: ${input.event.anchors.fullHash}`,
     "",
     "Governed EVT:",
     `- evt: ${input.modernEvt.evt}`,
@@ -586,7 +597,8 @@ function buildTechnicalFrame(input: {
     `- memoryEvt: ${input.memoryEventId || "none"}`,
     `- memoryAppendStatus: ${input.memoryAppendStatus}`,
     `- prev: ${input.event.prev}`,
-    `- hash: ${input.event.anchors.hash}`,
+    `- legacyPublicHash: ${input.event.anchors.publicHash}`,
+    `- legacyFullHash: ${input.event.anchors.fullHash}`,
     `- governedHash: ${input.modernEvt.trace.hash}`,
     input.degradedReason ? `- degradedReason: ${input.degradedReason}` : ""
   ]
@@ -1689,7 +1701,9 @@ export async function POST(req: NextRequest) {
         ok: true,
         evt: event.evt,
         prev: event.prev,
-        hash: event.anchors.hash
+        hash: event.anchors.publicHash,
+        publicHash: event.anchors.publicHash,
+        fullHash: event.anchors.fullHash
       },
       governedEvt: {
         ok: appendResult?.status === "APPENDED",
@@ -1909,7 +1923,9 @@ export async function POST(req: NextRequest) {
       ok: true,
       evt: event.evt,
       prev: event.prev,
-      hash: event.anchors.hash
+      hash: event.anchors.publicHash,
+      publicHash: event.anchors.publicHash,
+      fullHash: event.anchors.fullHash
     },
     governedEvt: {
       ok: appendResult?.status === "APPENDED",
