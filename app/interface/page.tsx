@@ -1,107 +1,122 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 
-type Role = "user" | "assistant";
+type RuntimeState = "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID" | string;
+type RuntimeDecision = "ALLOW" | "BLOCK" | "ESCALATE" | string;
 
-type RuntimeEvent = {
-  evt?: string;
-  prev?: string | null;
-  t?: string;
-  entity?: string;
-  ipr?: string;
-  kind?: string;
-  state?: string;
-  decision?: string;
-  anchors?: {
-    hash?: string;
-  };
-  continuityRef?: string | null;
+type FileInput = {
+  id?: string;
+  name?: string;
+  type?: string;
+  size?: number;
+  text?: string;
+  content?: string;
+  role?: string;
+  uploaded?: boolean;
 };
 
-type OpcProof = {
+type RuntimeIdentity = {
+  entity?: string;
+  ipr?: string;
+  evt?: string;
+  state?: string;
+  cycle?: string;
+  core?: string;
+};
+
+type PublicEvt = {
   ok?: boolean;
+  evt?: string;
+  prev?: string;
+  hash?: string;
+};
+
+type GovernedEvt = {
+  ok?: boolean;
+  evt?: string;
+  prev?: string;
+  project?: string;
+  activeDomains?: string[];
+  hash?: string;
+  appendStatus?: string;
+  appendReason?: string;
+};
+
+type OpcPublicProof = {
   proofId?: string;
   chainHash?: string;
   auditStatus?: string;
   verificationStatus?: string;
   appendStatus?: string;
   appendReason?: string;
-  publicProof?: {
-    proofId?: string;
-    timestamp?: string;
-    entity?: string;
-    ipr?: string;
-    sessionId?: string;
-    eventId?: string;
-    eventHash?: string;
-    memoryEventId?: string;
-    state?: string;
-    decision?: string;
-    riskClass?: string;
-    policyReference?: string;
-    inputHash?: string;
-    outputHash?: string;
-    decisionHash?: string;
-    previousProofHash?: string | null;
-    chainHash?: string;
-    auditStatus?: string;
-    reviewRequired?: boolean;
-    verificationStatus?: string;
+  publicProof?: unknown;
+};
+
+type MemoryInfo = {
+  used?: boolean;
+  source?: string;
+  lastEventId?: string | null;
+  event?: string;
+  appendStatus?: string;
+  appendReason?: string;
+  governedEvt?: string;
+  governedHash?: string;
+};
+
+type GovernanceInfo = {
+  projectDomain?: string;
+  activeDomains?: string[];
+  domainType?: string;
+  domainConfidence?: number;
+  dataClass?: string;
+  containsSecret?: boolean;
+  containsPersonalData?: boolean;
+  containsSecuritySensitiveData?: boolean;
+  policyStatus?: string;
+  policyReference?: string;
+  riskClass?: string;
+  riskScore?: number;
+  oversight?: string;
+  requiredRole?: string;
+  failClosed?: boolean;
+  evtRequired?: boolean;
+  auditRequired?: boolean;
+  filePolicy?: {
+    allowed?: boolean;
+    allowedCount?: number;
+    rejectedCount?: number;
+    reasons?: string[];
   };
 };
 
-type ChatMessage = {
-  id: string;
-  role: Role;
-  content: string;
-  evt?: {
-    ok?: boolean;
-    evt?: string;
-    hash?: string;
-    prev?: string | null;
-    error?: string;
-  };
-  opc?: OpcProof;
+type DiagnosticsInfo = {
+  openaiConfigured?: boolean;
+  modelUsed?: string;
+  degradedReason?: string | null;
+  evtIprMemoryUsed?: boolean;
+  memorySource?: string;
+  memoryEvent?: string;
+  memoryAppendStatus?: string;
+  opcProofId?: string;
+  opcAppendStatus?: string;
+  opcVerificationStatus?: string;
+  structuredFormat?: boolean;
 };
 
-type SelectedAttachment = {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  text?: string;
-  content?: string;
-  note?: string;
-  uploaded?: boolean;
-  role?: "context" | "corpus" | "single" | "reference" | "evidence" | "temporary";
-};
-
-type JokerState = {
-  sessionId?: string;
-  identity?: {
-    biologicalName?: string;
-    biologicalIPR?: string;
-    cyberneticName?: string;
-    cyberneticIPR?: string;
-  };
-  work?: {
-    activeProject?: string;
-    activeDocument?: string;
-    activeSection?: string;
-    activeIndex?: string[];
-    activeFocus?: string;
-  };
-  lastEVT?: string;
-  updatedAt?: string;
-};
-
-type ApiResponse = {
+type ChatApiResponse = {
   ok: boolean;
+  sessionId?: string;
   response?: string;
-  error?: string;
-  state?: string;
-  decision?: string;
+  state?: RuntimeState;
+  decision?: RuntimeDecision;
   governanceDecision?: string;
   projectDomain?: string;
   activeDomains?: string[];
@@ -114,1400 +129,801 @@ type ApiResponse = {
   evtIprMemoryUsed?: boolean;
   memorySource?: string;
   structuredFormat?: boolean;
-  sources?: Array<{
-    title: string;
-    url?: string;
-  }>;
-  evt?: {
-    ok?: boolean;
-    evt?: string;
-    hash?: string;
-    prev?: string | null;
-    error?: string;
-  };
-  governedEvt?: {
-    ok?: boolean;
-    evt?: string;
-    prev?: string;
-    project?: string;
-    activeDomains?: string[];
-    hash?: string;
-    appendStatus?: string;
-    appendReason?: string;
-  };
-  memory?: {
-    used?: boolean;
-    source?: string;
-    lastEventId?: string | null;
-    event?: string;
-    appendStatus?: string;
-    appendReason?: string;
-    governedEvt?: string | null;
-    governedHash?: string | null;
-  };
-  opc?: OpcProof;
-  event?: RuntimeEvent;
-  governedEvent?: {
-    evt?: string;
-    prev?: string;
-    project?: {
-      domain?: string;
-    };
-    trace?: {
-      hash?: string;
-    };
-    verification?: {
-      status?: string;
-    };
-  };
-  identity?: {
-    entity?: string;
-    ipr?: string;
-    evt?: string;
-    state?: string;
-    cycle?: string;
-    core?: string;
-  };
-  node_runtime?: {
-    session_id?: string;
-    session_state?: string;
-    continuity_reference?: string;
-    continuity_status?: string;
-    ledger_valid?: boolean;
-    last_event_id?: string | null;
-    runtime_start_state?: string;
-    warning?: string;
-  };
-  joker_state?: JokerState;
-  diagnostics?: {
-    openaiConfigured?: boolean;
-    modelUsed?: string;
-    degradedReason?: string | null;
-    evtIprMemoryUsed?: boolean;
-    memorySource?: string;
-    memoryEvent?: string;
-    memoryAppendStatus?: string;
-    opcProofId?: string;
-    opcAppendStatus?: string;
-    opcVerificationStatus?: string;
-    structuredFormat?: boolean;
-  };
+  activeFiles?: string[];
+  identity?: RuntimeIdentity;
+  evt?: PublicEvt;
+  governedEvt?: GovernedEvt;
+  opc?: OpcPublicProof;
+  memory?: MemoryInfo;
+  governance?: GovernanceInfo;
+  diagnostics?: DiagnosticsInfo;
+  error?: string;
 };
 
-const STORAGE_KEY = "hbce-joker-c2-interface-v9";
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  createdAt: string;
+  runtime?: ChatApiResponse;
+};
+
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
+const DEFAULT_SESSION_PREFIX = "JOKER-UI";
 
-function makeId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+function buildClientId(prefix: string): string {
+  const random =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().slice(0, 8).toUpperCase()
+      : Math.random().toString(36).slice(2, 10).toUpperCase();
+
+  return `${prefix}-${Date.now()}-${random}`;
 }
 
-function makeSessionId() {
-  return `JOKER-UI-${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2, 8)
-    .toUpperCase()}`;
+function classNames(...values: Array<string | false | null | undefined>) {
+  return values.filter(Boolean).join(" ");
 }
 
-type PersistedState = {
-  messages: ChatMessage[];
-  sessionId: string;
-};
-
-function loadState(): PersistedState | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw) as Partial<PersistedState>;
-
-    return {
-      messages: Array.isArray(parsed.messages)
-        ? parsed.messages.filter(
-            (item): item is ChatMessage =>
-              !!item &&
-              typeof item.id === "string" &&
-              (item.role === "user" || item.role === "assistant") &&
-              typeof item.content === "string"
-          )
-        : [],
-      sessionId:
-        typeof parsed.sessionId === "string" && parsed.sessionId.trim()
-          ? parsed.sessionId
-          : makeSessionId()
-    };
-  } catch {
-    return null;
-  }
+function formatBool(value: boolean | undefined): string {
+  if (value === true) return "true";
+  if (value === false) return "false";
+  return "-";
 }
 
-function saveState(state: PersistedState) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+function formatList(values?: string[]): string {
+  if (!values || values.length === 0) return "-";
+  return values.join(", ");
 }
 
-function cleanAssistantResponse(text: string) {
-  if (!text) return "Nessuna risposta ricevuta.";
-
-  const runtimeMarker = "[Node Runtime]";
-  if (text.includes(runtimeMarker)) {
-    return text.split(runtimeMarker)[0].trim();
-  }
-
-  return text.trim();
+function normalizeStatus(value?: string | null): string {
+  return value && value.trim() ? value.trim() : "-";
 }
 
-function formatSources(
-  sources?: Array<{
-    title: string;
-    url?: string;
-  }>
-) {
-  if (!sources || sources.length === 0) return "";
+function statusTone(value?: string | null): string {
+  const normalized = normalizeStatus(value).toUpperCase();
 
-  return [
-    "",
-    "Fonti:",
-    ...sources.map((source, index) =>
-      source.url
-        ? `${index + 1}. ${source.title} — ${source.url}`
-        : `${index + 1}. ${source.title}`
-    )
-  ].join("\n");
-}
-
-function shortenHash(value?: string | null, start = 12, end = 10) {
-  if (!value) return "-";
-  if (value.length <= start + end + 3) return value;
-  return `${value.slice(0, start)}...${value.slice(-end)}`;
-}
-
-function shortenMiddle(value?: string | null, max = 42) {
-  if (!value) return "-";
-  if (value.length <= max) return value;
-
-  const edge = Math.max(8, Math.floor((max - 3) / 2));
-  return `${value.slice(0, edge)}...${value.slice(-edge)}`;
-}
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function isTextReadableFile(file: File) {
-  const name = (file.name || "").toLowerCase();
-
-  return (
-    name.endsWith(".txt") ||
-    name.endsWith(".md") ||
-    name.endsWith(".json") ||
-    name.endsWith(".csv") ||
-    file.type.startsWith("text/")
-  );
-}
-
-async function mapSelectedFile(file: File): Promise<SelectedAttachment> {
-  const base = {
-    id: makeId(),
-    name: file.name,
-    type: file.type || "unknown",
-    size: file.size,
-    uploaded: false,
-    role: "context" as const
-  };
-
-  if (!isTextReadableFile(file)) {
-    return {
-      ...base,
-      text: "",
-      content: "",
-      note: "Metadata only. Text extraction not available in client runtime."
-    };
-  }
-
-  try {
-    const text = await file.text();
-
-    return {
-      ...base,
-      text,
-      content: text
-    };
-  } catch {
-    return {
-      ...base,
-      text: "",
-      content: "",
-      note: "Read failed in client runtime."
-    };
-  }
-}
-
-function buildChatFilesPayload(files: SelectedAttachment[]) {
-  return files.map((item) => ({
-    id: item.id,
-    name: item.name,
-    type: item.type,
-    size: item.size,
-    text: item.text || item.content || "",
-    content: item.content || item.text || "",
-    role: item.role || "context",
-    uploaded: item.uploaded === true
-  }));
-}
-
-function normalizeEvtFromResponse(data: ApiResponse) {
-  if (data.evt?.evt || data.evt?.error) {
-    return data.evt;
-  }
-
-  if (data.event?.evt) {
-    return {
-      ok: true,
-      evt: data.event.evt,
-      prev: data.event.prev || null,
-      hash: data.event.anchors?.hash
-    };
-  }
-
-  return undefined;
-}
-
-function normalizeOpcFromResponse(data: ApiResponse): OpcProof | undefined {
-  if (data.opc?.proofId || data.opc?.chainHash || data.opc?.appendStatus) {
-    return data.opc;
+  if (
+    normalized === "OPERATIONAL" ||
+    normalized === "ALLOW" ||
+    normalized === "ALLOWED" ||
+    normalized === "APPENDED" ||
+    normalized === "VERIFIABLE" ||
+    normalized === "READY" ||
+    normalized === "NOT_REQUIRED" ||
+    normalized === "COMPLETED" ||
+    normalized === "PERMIT"
+  ) {
+    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-200";
   }
 
   if (
-    data.diagnostics?.opcProofId ||
-    data.diagnostics?.opcAppendStatus ||
-    data.diagnostics?.opcVerificationStatus
+    normalized === "DEGRADED" ||
+    normalized === "AUDIT" ||
+    normalized === "ESCALATE" ||
+    normalized === "ESCALATED" ||
+    normalized === "RECOMMENDED" ||
+    normalized === "RESTRICTED"
   ) {
-    return {
-      proofId: data.diagnostics.opcProofId,
-      appendStatus: data.diagnostics.opcAppendStatus,
-      verificationStatus: data.diagnostics.opcVerificationStatus
-    };
+    return "border-amber-500/30 bg-amber-500/10 text-amber-200";
   }
 
-  return undefined;
+  if (
+    normalized === "BLOCKED" ||
+    normalized === "BLOCK" ||
+    normalized === "FAILED" ||
+    normalized === "REJECTED" ||
+    normalized === "INVALID" ||
+    normalized === "PROHIBITED"
+  ) {
+    return "border-red-500/30 bg-red-500/10 text-red-200";
+  }
+
+  return "border-slate-500/30 bg-slate-500/10 text-slate-200";
 }
 
-async function ingestFilesToSession(
-  sessionId: string,
-  files: SelectedAttachment[]
-): Promise<void> {
-  const filesToUpload = files.filter((item) => !item.uploaded);
+function StatusBadge({
+  value,
+  title
+}: {
+  value?: string | null;
+  title?: string;
+}) {
+  const safeValue = normalizeStatus(value);
 
-  if (filesToUpload.length === 0) {
-    return;
-  }
-
-  const response = await fetch("/api/files", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    },
-    body: JSON.stringify({
-      sessionId,
-      files: filesToUpload.map((item) => ({
-        id: item.id,
-        name: item.name,
-        mimeType: item.type,
-        text: item.text || "",
-        content: item.content || "",
-        role: item.role || "context"
-      }))
-    })
-  });
-
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok || !data?.ok) {
-    throw new Error(data?.error || "File ingestion failed");
-  }
+  return (
+    <span
+      title={title || safeValue}
+      className={classNames(
+        "inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide",
+        "whitespace-normal break-words leading-tight",
+        statusTone(safeValue)
+      )}
+    >
+      {safeValue}
+    </span>
+  );
 }
 
-async function clearSessionFiles(sessionId: string): Promise<void> {
-  try {
-    await fetch(`/api/files?sessionId=${encodeURIComponent(sessionId)}`, {
-      method: "DELETE",
-      headers: {
-        Accept: "application/json"
-      }
-    });
-  } catch (error) {
-    console.error("Session file cleanup failed:", error);
+function FieldRow({
+  label,
+  value,
+  mono = false,
+  badge = false,
+  title
+}: {
+  label: string;
+  value?: string | number | boolean | null;
+  mono?: boolean;
+  badge?: boolean;
+  title?: string;
+}) {
+  const rendered =
+    typeof value === "boolean" ? formatBool(value) : value === 0 ? "0" : value || "-";
+
+  return (
+    <div className="grid grid-cols-[92px_minmax(0,1fr)] gap-3 border-b border-slate-800/80 py-2 last:border-b-0">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+        {label}
+      </div>
+
+      <div
+        title={title || String(rendered)}
+        className={classNames(
+          "min-w-0 text-sm leading-relaxed text-slate-200",
+          mono && "font-mono text-xs",
+          !badge && "break-words whitespace-normal"
+        )}
+      >
+        {badge ? <StatusBadge value={String(rendered)} title={title} /> : rendered}
+      </div>
+    </div>
+  );
+}
+
+function RuntimeCard({
+  title,
+  children
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 shadow-xl shadow-black/20">
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+        {title}
+      </h2>
+      <div>{children}</div>
+    </section>
+  );
+}
+
+function MessageBubble({ message }: { message: ChatMessage }) {
+  const isUser = message.role === "user";
+
+  return (
+    <article
+      className={classNames(
+        "rounded-2xl border p-4 shadow-lg shadow-black/15",
+        isUser
+          ? "border-cyan-500/25 bg-cyan-500/10"
+          : "border-slate-800 bg-slate-950/75"
+      )}
+    >
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div
+          className={classNames(
+            "text-xs font-semibold uppercase tracking-[0.18em]",
+            isUser ? "text-cyan-200" : "text-slate-400"
+          )}
+        >
+          {isUser ? "You" : "AI JOKER-C2"}
+        </div>
+        <time className="text-xs text-slate-600">{message.createdAt}</time>
+      </div>
+
+      <div className="whitespace-pre-wrap break-words text-[15px] leading-7 text-slate-100">
+        {message.content}
+      </div>
+
+      {!isUser && message.runtime ? (
+        <div className="mt-4 grid gap-3 border-t border-slate-800 pt-4 md:grid-cols-3">
+          <MiniProofCard
+            title="EVT Chain"
+            rows={[
+              ["EVT", message.runtime.evt?.evt],
+              ["Prev", message.runtime.evt?.prev],
+              ["Hash", message.runtime.evt?.hash]
+            ]}
+          />
+
+          <MiniProofCard
+            title="Governed EVT"
+            rows={[
+              ["EVT", message.runtime.governedEvt?.evt],
+              ["Prev", message.runtime.governedEvt?.prev],
+              ["Project", message.runtime.governedEvt?.project],
+              ["Append", message.runtime.governedEvt?.appendStatus]
+            ]}
+            statusLabels={["Append"]}
+          />
+
+          <MiniProofCard
+            title="OPC Proof Record"
+            rows={[
+              ["Proof", message.runtime.opc?.proofId],
+              ["Chain", message.runtime.opc?.chainHash],
+              ["Audit", message.runtime.opc?.auditStatus],
+              ["Verify", message.runtime.opc?.verificationStatus],
+              ["Append", message.runtime.opc?.appendStatus]
+            ]}
+            statusLabels={["Audit", "Verify", "Append"]}
+          />
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function MiniProofCard({
+  title,
+  rows,
+  statusLabels = []
+}: {
+  title: string;
+  rows: Array<[string, string | undefined | null]>;
+  statusLabels?: string[];
+}) {
+  return (
+    <div className="min-w-0 rounded-xl border border-slate-800/90 bg-black/20 p-3">
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+        {title}
+      </div>
+
+      <div className="grid gap-1.5">
+        {rows.map(([label, value]) => {
+          const isStatus = statusLabels.includes(label);
+          const safeValue = normalizeStatus(value);
+
+          return (
+            <div
+              key={`${title}-${label}`}
+              className="grid min-w-0 grid-cols-[58px_minmax(0,1fr)] items-start gap-2"
+            >
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+                {label}
+              </div>
+
+              <div className="min-w-0 overflow-visible">
+                {isStatus ? (
+                  <StatusBadge value={safeValue} />
+                ) : (
+                  <div
+                    title={safeValue}
+                    className="min-w-0 break-words whitespace-normal font-mono text-[11px] leading-5 text-slate-300"
+                  >
+                    {safeValue}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FilesPanel({
+  files,
+  onRemoveFile,
+  onClearFiles
+}: {
+  files: FileInput[];
+  onRemoveFile: (id: string | undefined) => void;
+  onClearFiles: () => void;
+}) {
+  if (files.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-500">
+        Nessun file attivo. Puoi caricare file testuali per inserirli nel contesto runtime.
+      </div>
+    );
   }
+
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+          Active Files
+        </h2>
+        <button
+          type="button"
+          onClick={onClearFiles}
+          className="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-red-400 hover:text-red-200"
+        >
+          Clear
+        </button>
+      </div>
+
+      <div className="grid gap-2">
+        {files.map((file) => (
+          <div
+            key={file.id || file.name}
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-slate-800 bg-black/20 p-3"
+          >
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-slate-200">
+                {file.name || "unnamed"}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                {file.type || "unknown"} · {file.size || 0} bytes
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onRemoveFile(file.id)}
+              className="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-red-400 hover:text-red-200"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function InterfacePage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: makeId(),
-      role: "assistant",
-      content:
-        "JOKER-C2 online. Invia una richiesta operativa, una domanda o un testo da analizzare."
-    }
-  ]);
-
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [sessionId, setSessionId] = useState(makeSessionId());
-  const [attachments, setAttachments] = useState<SelectedAttachment[]>([]);
-  const [jokerState, setJokerState] = useState<JokerState | null>(null);
-
-  const [status, setStatus] = useState("Ready");
-  const [sessionState, setSessionState] = useState("-");
-  const [continuityReference, setContinuityReference] = useState("-");
-  const [continuityStatus, setContinuityStatus] = useState("-");
-  const [ledgerValid, setLedgerValid] = useState("-");
-  const [lastEventId, setLastEventId] = useState("-");
-  const [runtimeStartState, setRuntimeStartState] = useState("-");
-  const [lastEvt, setLastEvt] = useState("-");
-  const [lastEvtPrev, setLastEvtPrev] = useState("-");
-  const [lastEvtHash, setLastEvtHash] = useState("-");
-
-  const [lastOpcProofId, setLastOpcProofId] = useState("-");
-  const [lastOpcChainHash, setLastOpcChainHash] = useState("-");
-  const [lastOpcAuditStatus, setLastOpcAuditStatus] = useState("-");
-  const [lastOpcVerificationStatus, setLastOpcVerificationStatus] = useState("-");
-  const [lastOpcAppendStatus, setLastOpcAppendStatus] = useState("-");
-  const [lastOpcPreviousProof, setLastOpcPreviousProof] = useState("-");
+  const [sessionId, setSessionId] = useState("");
+  const [message, setMessage] = useState("");
+  const [files, setFiles] = useState<FileInput[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [lastRuntime, setLastRuntime] = useState<ChatApiResponse | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const [runtimeError, setRuntimeError] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    const stored = loadState();
-    if (!stored) return;
+    const stored =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("hbce-joker-session-id")
+        : null;
 
-    if (stored.messages.length > 0) {
-      setMessages(stored.messages);
+    const nextSessionId = stored || buildClientId(DEFAULT_SESSION_PREFIX);
+
+    setSessionId(nextSessionId);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("hbce-joker-session-id", nextSessionId);
     }
-
-    setSessionId(stored.sessionId);
   }, []);
 
   useEffect(() => {
-    saveState({
-      messages,
-      sessionId
-    });
-  }, [messages, sessionId]);
+    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages.length, isSending]);
 
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, sending]);
+  const runtimeSummary = useMemo(() => {
+    return {
+      state: lastRuntime?.state || "Ready",
+      decision: lastRuntime?.decision || "-",
+      projectDomain: lastRuntime?.projectDomain || "-",
+      contextClass: lastRuntime?.contextClass || "-",
+      intentClass: lastRuntime?.intentClass || "-",
+      documentFamily: lastRuntime?.documentFamily || "-",
+      memoryUsed: lastRuntime?.evtIprMemoryUsed,
+      memorySource: lastRuntime?.memorySource || "-",
+      opcAppendStatus: lastRuntime?.opc?.appendStatus || "-",
+      opcVerificationStatus: lastRuntime?.opc?.verificationStatus || "-",
+      opcAuditStatus: lastRuntime?.opc?.auditStatus || "-"
+    };
+  }, [lastRuntime]);
 
-  const turns = useMemo(() => messages.length, [messages]);
-
-  async function clearConversation() {
-    const oldSessionId = sessionId;
-    const newSession = makeSessionId();
-
-    await clearSessionFiles(oldSessionId);
-
-    setMessages([
-      {
-        id: makeId(),
-        role: "assistant",
-        content:
-          "JOKER-C2 online. Nuova sessione inizializzata. Invia una richiesta operativa."
-      }
-    ]);
-    setInput("");
-    setAttachments([]);
-    setJokerState(null);
-    setSessionId(newSession);
-    setStatus("Ready");
-    setSessionState("-");
-    setContinuityReference("-");
-    setContinuityStatus("-");
-    setLedgerValid("-");
-    setLastEventId("-");
-    setRuntimeStartState("-");
-    setLastEvt("-");
-    setLastEvtPrev("-");
-    setLastEvtHash("-");
-    setLastOpcProofId("-");
-    setLastOpcChainHash("-");
-    setLastOpcAuditStatus("-");
-    setLastOpcVerificationStatus("-");
-    setLastOpcAppendStatus("-");
-    setLastOpcPreviousProof("-");
-    localStorage.removeItem(STORAGE_KEY);
-    textareaRef.current?.focus();
-  }
-
-  function handleOpenFilePicker() {
-    fileInputRef.current?.click();
-  }
-
-  async function handleFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files || []);
-
-    if (files.length === 0) {
+  async function handleFileChange(inputFiles: FileList | null) {
+    if (!inputFiles || inputFiles.length === 0) {
       return;
     }
 
-    const mapped = await Promise.all(files.map(mapSelectedFile));
-    setAttachments((prev) => [...prev, ...mapped]);
-    event.target.value = "";
-  }
+    const nextFiles: FileInput[] = [];
 
-  async function removeAttachment(id: string) {
-    const target = attachments.find((item) => item.id === id);
+    for (const file of Array.from(inputFiles)) {
+      const text = await file.text();
 
-    if (target?.uploaded) {
-      try {
-        await fetch(
-          `/api/files?sessionId=${encodeURIComponent(
-            sessionId
-          )}&fileId=${encodeURIComponent(id)}`,
-          {
-            method: "DELETE",
-            headers: {
-              Accept: "application/json"
-            }
-          }
-        );
-      } catch (error) {
-        console.error("File removal failed:", error);
-      }
+      nextFiles.push({
+        id: buildClientId("FILE"),
+        name: file.name,
+        type: file.type || "text/plain",
+        size: file.size,
+        role: "context",
+        text,
+        uploaded: true
+      });
     }
 
-    setAttachments((prev) => prev.filter((item) => item.id !== id));
+    setFiles((current) => [...current, ...nextFiles]);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }
 
-  function updateRuntimeState(data: ApiResponse, normalizedEvt?: ChatMessage["evt"]) {
-    const opc = normalizeOpcFromResponse(data);
+  function removeFile(id: string | undefined) {
+    setFiles((current) => current.filter((file) => file.id !== id));
+  }
 
-    setStatus("Ready");
-    setSessionState(data.node_runtime?.session_state || data.state || "-");
-    setContinuityReference(
-      data.node_runtime?.continuity_reference ||
-        data.event?.continuityRef ||
-        `${sessionId}-AUDIT`
-    );
-    setContinuityStatus(
-      data.node_runtime?.continuity_status ||
-        (data.event?.evt ? "ACTIVE" : "-")
-    );
-    setLedgerValid(
-      typeof data.node_runtime?.ledger_valid === "boolean"
-        ? data.node_runtime.ledger_valid
-          ? "TRUE"
-          : "FALSE"
-        : data.event?.evt
-          ? "LOCAL_EVT"
-          : "-"
-    );
-    setLastEventId(data.node_runtime?.last_event_id || data.event?.evt || "-");
-    setRuntimeStartState(data.node_runtime?.runtime_start_state || data.state || "-");
-    setLastEvt(normalizedEvt?.evt || data.governedEvt?.evt || "-");
-    setLastEvtPrev(normalizedEvt?.prev || data.governedEvt?.prev || "-");
-    setLastEvtHash(
-      shortenHash(normalizedEvt?.hash || data.governedEvt?.hash || "-")
-    );
+  function clearFiles() {
+    setFiles([]);
+  }
 
-    if (opc) {
-      setLastOpcProofId(opc.proofId || "-");
-      setLastOpcChainHash(shortenHash(opc.chainHash, 18, 14));
-      setLastOpcAuditStatus(opc.auditStatus || "-");
-      setLastOpcVerificationStatus(opc.verificationStatus || "-");
-      setLastOpcAppendStatus(opc.appendStatus || "-");
-      setLastOpcPreviousProof(
-        shortenHash(opc.publicProof?.previousProofHash || "-", 18, 14)
-      );
+  function newSession() {
+    const nextSessionId = buildClientId(DEFAULT_SESSION_PREFIX);
+
+    setSessionId(nextSessionId);
+    setMessages([]);
+    setLastRuntime(null);
+    setRuntimeError(null);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("hbce-joker-session-id", nextSessionId);
+    }
+  }
+
+  async function sendMessage(forceMessage?: string) {
+    const outgoing = (forceMessage || message).trim();
+
+    if (!outgoing && files.length === 0) {
+      return;
     }
 
-    setJokerState(data.joker_state || null);
-  }
-
-  async function sendMessage() {
-    const message = input.trim();
-    if ((!message && attachments.length === 0) || sending) return;
-
-    const currentAttachments = [...attachments];
+    setRuntimeError(null);
+    setIsSending(true);
 
     const userMessage: ChatMessage = {
-      id: makeId(),
+      id: buildClientId("MSG-U"),
       role: "user",
-      content:
-        currentAttachments.length > 0
-          ? `${message || "[Allegati selezionati]"}\n\nFile attivi:\n${currentAttachments
-              .map((item) => `- ${item.name} (${formatBytes(item.size)})`)
-              .join("\n")}`
-          : message
+      content: outgoing || "Usa i file attivi come contesto operativo.",
+      createdAt: new Date().toLocaleString("it-IT")
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setSending(true);
-    setStatus("Processing");
+    setMessages((current) => [...current, userMessage]);
+    setMessage("");
 
     try {
-      await ingestFilesToSession(sessionId, currentAttachments);
-
-      const uploadedAttachments = currentAttachments.map((item) => ({
-        ...item,
-        uploaded: true
-      }));
-
-      setAttachments((prev) =>
-        prev.map((item) =>
-          currentAttachments.some((current) => current.id === item.id)
-            ? {
-                ...item,
-                uploaded: true
-              }
-            : item
-        )
-      );
-
-      const chatPayload = {
-        message:
-          message ||
-          "Usa i file attivi della sessione come contesto di lavoro.",
-        sessionId,
-        files: buildChatFilesPayload(uploadedAttachments),
-        continuityRef: lastEvt !== "-" ? lastEvt : null
-      };
-
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json"
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(chatPayload)
+        body: JSON.stringify({
+          message: outgoing,
+          sessionId,
+          files,
+          continuityRef: lastRuntime?.memory?.event || lastRuntime?.evt?.evt || null
+        })
       });
 
-      const contentType = response.headers.get("content-type") || "";
+      const payload = (await response.json()) as ChatApiResponse;
 
-      if (!contentType.includes("application/json")) {
-        const text = await response.text();
-        throw new Error(`Risposta non JSON: ${text.slice(0, 200)}`);
+      if (!response.ok || !payload.ok) {
+        const errorMessage =
+          payload.error ||
+          payload.response ||
+          `Runtime request failed with HTTP ${response.status}`;
+
+        throw new Error(errorMessage);
       }
 
-      const data = (await response.json()) as ApiResponse;
-
-      if (!response.ok || !data.ok) {
-        throw new Error(data.error || "Execution error");
-      }
-
-      const cleaned = cleanAssistantResponse(data.response || "");
-      const assistantText = `${cleaned}${formatSources(data.sources)}`;
-      const normalizedEvt = normalizeEvtFromResponse(data);
-      const normalizedOpc = normalizeOpcFromResponse(data);
+      setLastRuntime(payload);
 
       const assistantMessage: ChatMessage = {
-        id: makeId(),
+        id: buildClientId("MSG-A"),
         role: "assistant",
-        content: assistantText,
-        evt: normalizedEvt,
-        opc: normalizedOpc
+        content: payload.response || "",
+        createdAt: new Date().toLocaleString("it-IT"),
+        runtime: payload
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
-      updateRuntimeState(data, normalizedEvt);
+      setMessages((current) => [...current, assistantMessage]);
     } catch (error) {
-      setMessages((prev) => [
-        ...prev,
+      const errorText =
+        error instanceof Error ? error.message : "Unknown runtime error.";
+
+      setRuntimeError(errorText);
+
+      setMessages((current) => [
+        ...current,
         {
-          id: makeId(),
-          role: "assistant",
-          content:
-            error instanceof Error
-              ? `Errore: ${error.message}`
-              : "Errore imprevisto di esecuzione."
+          id: buildClientId("MSG-S"),
+          role: "system",
+          content: `Runtime error: ${errorText}`,
+          createdAt: new Date().toLocaleString("it-IT")
         }
       ]);
-      setStatus("Error");
     } finally {
-      setSending(false);
-      textareaRef.current?.focus();
+      setIsSending(false);
+    }
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void sendMessage();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      void sendMessage();
     }
   }
 
   return (
-    <main style={styles.page}>
-      <div style={styles.shell}>
-        <aside style={styles.sidebar}>
-          <div style={styles.sidebarHeader}>
-            <div>
-              <div style={styles.sidebarKicker}>HBCE Research</div>
-              <div style={styles.sidebarTitle}>JOKER-C2</div>
-            </div>
-
-            <button onClick={() => void clearConversation()} style={styles.newChatButton}>
-              Nuova sessione
-            </button>
-          </div>
-
-          <section style={styles.sidebarCard}>
-            <div style={styles.cardTitle}>Execution Context</div>
-
-            <div style={styles.metaGrid}>
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Default Node</div>
-                <div style={styles.metaValue}>{DEFAULT_NODE}</div>
+    <main className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="mx-auto grid min-h-screen w-full max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <section className="flex min-h-[calc(100vh-3rem)] min-w-0 flex-col rounded-3xl border border-slate-800 bg-slate-900/40 shadow-2xl shadow-black/30">
+          <header className="border-b border-slate-800 p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">
+                  AI JOKER-C2
+                </div>
+                <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+                  Governed Runtime Interface
+                </h1>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+                  Chat operativa con identità IPR, memoria EVT, prova OPC e governance
+                  HBCE/MATRIX. Gli stati tecnici vengono mostrati integralmente.
+                </p>
               </div>
 
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Session ID</div>
-                <div style={styles.metaValue}>{sessionId}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Session State</div>
-                <div style={styles.metaValue}>{sessionState}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Runtime Start State</div>
-                <div style={styles.metaValue}>{runtimeStartState}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Continuity Reference</div>
-                <div style={styles.metaValue}>{continuityReference}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Continuity Status</div>
-                <div style={styles.metaValue}>{continuityStatus}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Ledger Valid</div>
-                <div style={styles.metaValue}>{ledgerValid}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Last Runtime Event</div>
-                <div style={styles.metaValue}>{lastEventId}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Last EVT</div>
-                <div style={styles.metaValue}>{lastEvt}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Last EVT Prev</div>
-                <div style={styles.metaValue}>{lastEvtPrev}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Last EVT Hash</div>
-                <div style={styles.metaValue}>{lastEvtHash}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Last OPC Proof</div>
-                <div style={styles.metaValue}>{lastOpcProofId}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>OPC Chain Hash</div>
-                <div style={styles.metaValue}>{lastOpcChainHash}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>OPC Audit Status</div>
-                <div style={styles.metaValue}>{lastOpcAuditStatus}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>OPC Verification</div>
-                <div style={styles.metaValue}>{lastOpcVerificationStatus}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>OPC Append Status</div>
-                <div style={styles.metaValue}>{lastOpcAppendStatus}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>OPC Previous Proof</div>
-                <div style={styles.metaValue}>{lastOpcPreviousProof}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Active Files</div>
-                <div style={styles.metaValue}>{String(attachments.length)}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Status</div>
-                <div style={styles.metaValue}>
-                  {sending ? "Sending..." : status}
+              <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-950/80 p-3">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Session ID
+                </div>
+                <div className="mt-1 break-all font-mono text-xs text-slate-300">
+                  {sessionId || "initializing"}
                 </div>
               </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Conversation Turns</div>
-                <div style={styles.metaValue}>{String(turns)}</div>
-              </div>
-            </div>
-          </section>
-
-          <section style={styles.sidebarCard}>
-            <div style={styles.cardTitle}>Joker State</div>
-
-            <div style={styles.metaGrid}>
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Biological Name</div>
-                <div style={styles.metaValue}>
-                  {jokerState?.identity?.biologicalName || "-"}
-                </div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Biological IPR</div>
-                <div style={styles.metaValue}>
-                  {jokerState?.identity?.biologicalIPR || "-"}
-                </div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Cybernetic Name</div>
-                <div style={styles.metaValue}>
-                  {jokerState?.identity?.cyberneticName || "-"}
-                </div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Cybernetic IPR</div>
-                <div style={styles.metaValue}>
-                  {jokerState?.identity?.cyberneticIPR || "-"}
-                </div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Active Project</div>
-                <div style={styles.metaValue}>
-                  {jokerState?.work?.activeProject || "-"}
-                </div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Active Document</div>
-                <div style={styles.metaValue}>
-                  {jokerState?.work?.activeDocument || "-"}
-                </div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Active Section</div>
-                <div style={styles.metaValue}>
-                  {jokerState?.work?.activeSection || "-"}
-                </div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>Active Focus</div>
-                <div style={styles.metaValue}>
-                  {jokerState?.work?.activeFocus || "-"}
-                </div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>State EVT</div>
-                <div style={styles.metaValue}>{jokerState?.lastEVT || "-"}</div>
-              </div>
-
-              <div style={styles.metaItem}>
-                <div style={styles.metaLabel}>State Updated</div>
-                <div style={styles.metaValue}>
-                  {jokerState?.updatedAt || "-"}
-                </div>
-              </div>
-            </div>
-
-            {jokerState?.work?.activeIndex &&
-              jokerState.work.activeIndex.length > 0 && (
-                <div style={styles.indexBox}>
-                  <div style={styles.indexTitle}>Active Editorial Index</div>
-                  <div style={styles.indexList}>
-                    {jokerState.work.activeIndex.map((entry, index) => (
-                      <div key={`${index}-${entry}`} style={styles.indexEntry}>
-                        {entry}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-          </section>
-
-          <section style={styles.sidebarCard}>
-            <div style={styles.cardTitle}>Runtime Model</div>
-            <div style={styles.infoText}>
-              input → file → stato Joker → ontologia → policy/risk →
-              continuità EVT → interpretazione → risposta → nuovo EVT →
-              memoria EVT/IPR → OPC proof record → audit trail
-            </div>
-          </section>
-        </aside>
-
-        <section style={styles.chatArea}>
-          <header style={styles.chatHeader}>
-            <div>
-              <div style={styles.chatKicker}>Operational Interface</div>
-              <h1 style={styles.chatTitle}>AI JOKER-C2</h1>
-              <p style={styles.chatSubtitle}>
-                Interfaccia conversazionale operativa collegata al nodo Torino.
-              </p>
             </div>
           </header>
 
-          <div style={styles.messagesWrap}>
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                style={{
-                  ...styles.messageRow,
-                  justifyContent:
-                    message.role === "user" ? "flex-end" : "flex-start"
-                }}
-              >
-                <article
-                  style={{
-                    ...styles.messageBubble,
-                    ...(message.role === "user"
-                      ? styles.userBubble
-                      : styles.assistantBubble)
-                  }}
-                >
-                  <div style={styles.messageRole}>
-                    {message.role === "user" ? "You" : "AI JOKER-C2"}
+          <div className="flex-1 overflow-y-auto p-5">
+            {messages.length === 0 ? (
+              <div className="flex min-h-[380px] items-center justify-center rounded-3xl border border-dashed border-slate-800 bg-slate-950/30 p-8 text-center">
+                <div className="max-w-xl">
+                  <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    JOKER-C2 online
                   </div>
-                  <div style={styles.messageText}>{message.content}</div>
-
-                  {message.role === "assistant" && message.evt?.evt && (
-                    <div style={styles.evtBox}>
-                      <div style={styles.evtTitle}>EVT Chain</div>
-
-                      <div style={styles.evtRow}>
-                        <span style={styles.evtLabel}>EVT</span>
-                        <span style={styles.evtValue}>{message.evt.evt}</span>
-                      </div>
-
-                      <div style={styles.evtRow}>
-                        <span style={styles.evtLabel}>Prev</span>
-                        <span style={styles.evtValue}>
-                          {message.evt.prev || "-"}
-                        </span>
-                      </div>
-
-                      <div style={styles.evtRow}>
-                        <span style={styles.evtLabel}>Hash</span>
-                        <span style={styles.evtValue}>
-                          {shortenHash(message.evt.hash, 16, 12)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {message.role === "assistant" && message.opc?.proofId && (
-                    <div style={styles.opcBox}>
-                      <div style={styles.opcTitle}>OPC Proof Record</div>
-
-                      <div style={styles.evtRow}>
-                        <span style={styles.evtLabel}>Proof</span>
-                        <span style={styles.evtValue}>
-                          {message.opc.proofId}
-                        </span>
-                      </div>
-
-                      <div style={styles.evtRow}>
-                        <span style={styles.evtLabel}>Chain</span>
-                        <span style={styles.evtValue}>
-                          {shortenHash(message.opc.chainHash, 16, 12)}
-                        </span>
-                      </div>
-
-                      <div style={styles.evtRow}>
-                        <span style={styles.evtLabel}>Audit</span>
-                        <span style={styles.evtValue}>
-                          {message.opc.auditStatus || "-"}
-                        </span>
-                      </div>
-
-                      <div style={styles.evtRow}>
-                        <span style={styles.evtLabel}>Verify</span>
-                        <span style={styles.evtValue}>
-                          {message.opc.verificationStatus || "-"}
-                        </span>
-                      </div>
-
-                      <div style={styles.evtRow}>
-                        <span style={styles.evtLabel}>Append</span>
-                        <span style={styles.evtValue}>
-                          {message.opc.appendStatus || "-"}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {message.role === "assistant" &&
-                    message.evt &&
-                    !message.evt.ok &&
-                    message.evt.error && (
-                      <div style={styles.evtError}>
-                        EVT error: {message.evt.error}
-                      </div>
-                    )}
-                </article>
+                  <p className="mt-3 text-xl font-semibold text-slate-100">
+                    Nuova sessione inizializzata. Invia una richiesta operativa.
+                  </p>
+                  <div className="mt-5 flex flex-wrap justify-center gap-2">
+                    {[
+                      "joker cosa è IPR?",
+                      "che differenza c’è tra IPR, EVT e OPC?",
+                      "diagnostica runtime"
+                    ].map((sample) => (
+                      <button
+                        key={sample}
+                        type="button"
+                        onClick={() => void sendMessage(sample)}
+                        className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400 hover:text-cyan-200"
+                      >
+                        {sample}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            ))}
+            ) : (
+              <div className="grid gap-4">
+                {messages.map((item) => (
+                  <MessageBubble key={item.id} message={item} />
+                ))}
 
-            {sending && (
-              <div style={styles.messageRow}>
-                <article
-                  style={{
-                    ...styles.messageBubble,
-                    ...styles.assistantBubble
-                  }}
-                >
-                  <div style={styles.messageRole}>AI JOKER-C2</div>
-                  <div style={styles.messageText}>Elaborazione in corso...</div>
-                </article>
+                {isSending ? (
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
+                    AI JOKER-C2 sta generando risposta, EVT e OPC proof record.
+                  </div>
+                ) : null}
+
+                <div ref={scrollRef} />
               </div>
             )}
-
-            <div ref={scrollRef} />
           </div>
 
-          <div style={styles.composerShell}>
-            <div style={styles.composerInner}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*,.pdf,.txt,.md,.json,.csv"
-                onChange={handleFilesSelected}
-                style={{ display: "none" }}
-              />
+          <form onSubmit={handleSubmit} className="border-t border-slate-800 p-5">
+            {runtimeError ? (
+              <div className="mb-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                {runtimeError}
+              </div>
+            ) : null}
 
+            <div className="grid gap-3">
               <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Scrivi la tua richiesta a JOKER-C2..."
-                style={styles.textarea}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    void sendMessage();
-                  }
-                }}
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Invia una richiesta operativa..."
+                rows={4}
+                className="min-h-[112px] resize-y rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm leading-6 text-slate-100 outline-none ring-0 placeholder:text-slate-600 focus:border-cyan-500"
               />
 
-              {attachments.length > 0 && (
-                <div style={styles.attachmentsWrap}>
-                  {attachments.map((item) => (
-                    <div key={item.id} style={styles.attachmentChip}>
-                      <span style={styles.attachmentName}>
-                        {item.name}
-                        {item.uploaded ? " · active" : " · pending"}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => void removeAttachment(item.id)}
-                        style={styles.attachmentRemove}
-                        aria-label={`Rimuovi ${item.name}`}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(event) => void handleFileChange(event.target.files)}
+                  />
 
-              <div style={styles.composerBottom}>
-                <div style={styles.composerLeft}>
                   <button
                     type="button"
-                    style={styles.attachButton}
-                    title="Allega file o foto"
-                    aria-label="Allega file o foto"
-                    onClick={handleOpenFilePicker}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:border-cyan-400 hover:text-cyan-200"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M21.44 11.05l-8.49 8.49a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 115.66 5.66l-9.2 9.19a2 2 0 01-2.82-2.83l8.48-8.48" />
-                    </svg>
+                    Add files
                   </button>
 
-                  <div style={styles.composerHint}>
-                    Enter invia · Shift + Enter va a capo
-                  </div>
+                  <button
+                    type="button"
+                    onClick={newSession}
+                    className="rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:border-amber-400 hover:text-amber-200"
+                  >
+                    New session
+                  </button>
                 </div>
 
                 <button
-                  onClick={() => void sendMessage()}
-                  disabled={sending || (!input.trim() && attachments.length === 0)}
-                  style={{
-                    ...styles.sendButton,
-                    opacity:
-                      sending || (!input.trim() && attachments.length === 0)
-                        ? 0.6
-                        : 1
-                  }}
+                  type="submit"
+                  disabled={isSending || (!message.trim() && files.length === 0)}
+                  className="rounded-full border border-cyan-400/60 bg-cyan-400/10 px-5 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900 disabled:text-slate-600"
                 >
-                  {sending ? "Sending..." : "Send"}
+                  {isSending ? "Running..." : "Send"}
                 </button>
               </div>
             </div>
-          </div>
+          </form>
         </section>
+
+        <aside className="grid h-fit gap-4">
+          <RuntimeCard title="Execution Context">
+            <FieldRow label="Node" value={DEFAULT_NODE} mono />
+            <FieldRow label="Session" value={sessionId || "-"} mono />
+            <FieldRow label="State" value={runtimeSummary.state} badge />
+            <FieldRow label="Decision" value={runtimeSummary.decision} badge />
+            <FieldRow label="Domain" value={runtimeSummary.projectDomain} />
+            <FieldRow label="Context" value={runtimeSummary.contextClass} />
+            <FieldRow label="Intent" value={runtimeSummary.intentClass} />
+            <FieldRow label="Family" value={runtimeSummary.documentFamily} />
+          </RuntimeCard>
+
+          <RuntimeCard title="Identity">
+            <FieldRow label="Entity" value={lastRuntime?.identity?.entity || "-"} mono />
+            <FieldRow label="IPR" value={lastRuntime?.identity?.ipr || "-"} mono />
+            <FieldRow label="EVT" value={lastRuntime?.identity?.evt || "-"} mono />
+            <FieldRow label="Cycle" value={lastRuntime?.identity?.cycle || "-"} mono />
+            <FieldRow label="Core" value={lastRuntime?.identity?.core || "-"} mono />
+          </RuntimeCard>
+
+          <RuntimeCard title="OPC Proof Record">
+            <FieldRow label="Proof" value={lastRuntime?.opc?.proofId || "-"} mono />
+            <FieldRow label="Chain" value={lastRuntime?.opc?.chainHash || "-"} mono />
+            <FieldRow label="Audit" value={runtimeSummary.opcAuditStatus} badge />
+            <FieldRow label="Verify" value={runtimeSummary.opcVerificationStatus} badge />
+            <FieldRow label="Append" value={runtimeSummary.opcAppendStatus} badge />
+            <FieldRow
+              label="Reason"
+              value={lastRuntime?.opc?.appendReason || "-"}
+            />
+          </RuntimeCard>
+
+          <RuntimeCard title="EVT Chain">
+            <FieldRow label="EVT" value={lastRuntime?.evt?.evt || "-"} mono />
+            <FieldRow label="Prev" value={lastRuntime?.evt?.prev || "-"} mono />
+            <FieldRow label="Hash" value={lastRuntime?.evt?.hash || "-"} mono />
+          </RuntimeCard>
+
+          <RuntimeCard title="Governed EVT">
+            <FieldRow label="EVT" value={lastRuntime?.governedEvt?.evt || "-"} mono />
+            <FieldRow label="Prev" value={lastRuntime?.governedEvt?.prev || "-"} mono />
+            <FieldRow label="Project" value={lastRuntime?.governedEvt?.project || "-"} />
+            <FieldRow
+              label="Domains"
+              value={formatList(lastRuntime?.governedEvt?.activeDomains)}
+            />
+            <FieldRow label="Hash" value={lastRuntime?.governedEvt?.hash || "-"} mono />
+            <FieldRow
+              label="Append"
+              value={lastRuntime?.governedEvt?.appendStatus || "-"}
+              badge
+            />
+          </RuntimeCard>
+
+          <RuntimeCard title="Memory">
+            <FieldRow label="Used" value={runtimeSummary.memoryUsed} />
+            <FieldRow label="Source" value={runtimeSummary.memorySource} />
+            <FieldRow label="Event" value={lastRuntime?.memory?.event || "-"} mono />
+            <FieldRow
+              label="Append"
+              value={lastRuntime?.memory?.appendStatus || "-"}
+              badge
+            />
+            <FieldRow
+              label="Governed"
+              value={lastRuntime?.memory?.governedEvt || "-"}
+              mono
+            />
+          </RuntimeCard>
+
+          <RuntimeCard title="Governance">
+            <FieldRow
+              label="Data"
+              value={lastRuntime?.governance?.dataClass || "-"}
+              badge
+            />
+            <FieldRow
+              label="Policy"
+              value={lastRuntime?.governance?.policyStatus || "-"}
+              badge
+            />
+            <FieldRow
+              label="Risk"
+              value={lastRuntime?.governance?.riskClass || "-"}
+              badge
+            />
+            <FieldRow
+              label="Score"
+              value={lastRuntime?.governance?.riskScore ?? "-"}
+            />
+            <FieldRow
+              label="Oversight"
+              value={lastRuntime?.governance?.oversight || "-"}
+              badge
+            />
+            <FieldRow
+              label="FailClosed"
+              value={lastRuntime?.governance?.failClosed}
+            />
+            <FieldRow
+              label="AuditReq"
+              value={lastRuntime?.governance?.auditRequired}
+            />
+          </RuntimeCard>
+
+          <RuntimeCard title="Files">
+            <FilesPanel
+              files={files}
+              onRemoveFile={removeFile}
+              onClearFiles={clearFiles}
+            />
+          </RuntimeCard>
+
+          <RuntimeCard title="Diagnostics">
+            <FieldRow
+              label="OpenAI"
+              value={lastRuntime?.diagnostics?.openaiConfigured}
+            />
+            <FieldRow
+              label="Model"
+              value={lastRuntime?.diagnostics?.modelUsed || "-"}
+              mono
+            />
+            <FieldRow
+              label="Degraded"
+              value={lastRuntime?.diagnostics?.degradedReason || "none"}
+            />
+            <FieldRow
+              label="OPC"
+              value={lastRuntime?.diagnostics?.opcAppendStatus || "-"}
+              badge
+            />
+          </RuntimeCard>
+        </aside>
       </div>
     </main>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background:
-      "radial-gradient(circle at top left, rgba(0,194,255,0.12), transparent 30%), linear-gradient(180deg, #071018 0%, #0b1220 100%)",
-    color: "#e8eef7",
-    fontFamily:
-      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-  },
-  shell: {
-    minHeight: "100vh",
-    display: "grid",
-    gridTemplateColumns: "320px minmax(0, 1fr)"
-  },
-  sidebar: {
-    borderRight: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(255,255,255,0.04)",
-    padding: 18,
-    display: "flex",
-    flexDirection: "column",
-    gap: 16
-  },
-  sidebarHeader: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 12
-  },
-  sidebarKicker: {
-    fontSize: 11,
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-    color: "#7dd3fc",
-    marginBottom: 6
-  },
-  sidebarTitle: {
-    fontSize: 24,
-    fontWeight: 700,
-    lineHeight: 1.1
-  },
-  newChatButton: {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.05)",
-    color: "#eef6ff",
-    borderRadius: 14,
-    padding: "12px 14px",
-    cursor: "pointer",
-    fontWeight: 600
-  },
-  sidebarCard: {
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(0,0,0,0.20)",
-    borderRadius: 18,
-    padding: 14
-  },
-  cardTitle: {
-    fontSize: 14,
-    marginBottom: 12,
-    color: "#7dd3fc",
-    textTransform: "uppercase",
-    letterSpacing: "0.12em"
-  },
-  metaGrid: {
-    display: "grid",
-    gap: 10
-  },
-  metaItem: {
-    border: "1px solid rgba(255,255,255,0.06)",
-    background: "rgba(255,255,255,0.02)",
-    borderRadius: 14,
-    padding: 12
-  },
-  metaLabel: {
-    fontSize: 10,
-    letterSpacing: "0.16em",
-    textTransform: "uppercase",
-    color: "rgba(232,238,247,0.45)",
-    marginBottom: 6
-  },
-  metaValue: {
-    color: "#edf4ff",
-    lineHeight: 1.55,
-    wordBreak: "break-word",
-    fontSize: 13
-  },
-  infoText: {
-    color: "#edf4ff",
-    lineHeight: 1.7,
-    fontSize: 14
-  },
-  indexBox: {
-    marginTop: 14,
-    borderTop: "1px solid rgba(255,255,255,0.08)",
-    paddingTop: 12
-  },
-  indexTitle: {
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: "0.16em",
-    color: "#7dd3fc",
-    marginBottom: 8
-  },
-  indexList: {
-    display: "grid",
-    gap: 6
-  },
-  indexEntry: {
-    fontSize: 13,
-    lineHeight: 1.5,
-    color: "#edf4ff",
-    border: "1px solid rgba(255,255,255,0.06)",
-    background: "rgba(255,255,255,0.02)",
-    borderRadius: 10,
-    padding: "8px 10px"
-  },
-  chatArea: {
-    display: "grid",
-    gridTemplateRows: "auto 1fr auto",
-    minHeight: "100vh"
-  },
-  chatHeader: {
-    padding: "24px 28px 16px",
-    borderBottom: "1px solid rgba(255,255,255,0.06)"
-  },
-  chatKicker: {
-    fontSize: 11,
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-    color: "#7dd3fc",
-    marginBottom: 8
-  },
-  chatTitle: {
-    margin: 0,
-    fontSize: 30,
-    lineHeight: 1.1
-  },
-  chatSubtitle: {
-    marginTop: 10,
-    marginBottom: 0,
-    color: "rgba(232,238,247,0.70)",
-    fontSize: 14
-  },
-  messagesWrap: {
-    padding: "24px 28px 140px",
-    overflowY: "auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: 16
-  },
-  messageRow: {
-    display: "flex",
-    width: "100%"
-  },
-  messageBubble: {
-    maxWidth: 820,
-    borderRadius: 18,
-    padding: 16,
-    border: "1px solid rgba(255,255,255,0.08)"
-  },
-  userBubble: {
-    background: "rgba(34,211,238,0.12)"
-  },
-  assistantBubble: {
-    background: "rgba(255,255,255,0.05)"
-  },
-  messageRole: {
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: "0.16em",
-    color: "rgba(232,238,247,0.48)",
-    marginBottom: 8
-  },
-  messageText: {
-    whiteSpace: "pre-wrap",
-    lineHeight: 1.7,
-    fontSize: 15,
-    color: "#edf4ff"
-  },
-  evtBox: {
-    marginTop: 14,
-    borderTop: "1px solid rgba(255,255,255,0.08)",
-    paddingTop: 12,
-    display: "grid",
-    gap: 8
-  },
-  evtTitle: {
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: "0.16em",
-    color: "#7dd3fc"
-  },
-  opcBox: {
-    marginTop: 14,
-    borderTop: "1px solid rgba(125,211,252,0.20)",
-    paddingTop: 12,
-    display: "grid",
-    gap: 8
-  },
-  opcTitle: {
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: "0.16em",
-    color: "#67e8f9"
-  },
-  evtRow: {
-    display: "grid",
-    gridTemplateColumns: "64px minmax(0,1fr)",
-    gap: 8,
-    alignItems: "start"
-  },
-  evtLabel: {
-    fontSize: 12,
-    color: "rgba(232,238,247,0.55)",
-    textTransform: "uppercase",
-    letterSpacing: "0.08em"
-  },
-  evtValue: {
-    fontSize: 13,
-    color: "#edf4ff",
-    wordBreak: "break-word",
-    lineHeight: 1.5
-  },
-  evtError: {
-    marginTop: 12,
-    fontSize: 13,
-    color: "#fca5a5"
-  },
-  composerShell: {
-    position: "sticky",
-    bottom: 0,
-    padding: "16px 24px 24px",
-    background:
-      "linear-gradient(180deg, rgba(7,16,24,0) 0%, rgba(7,16,24,0.85) 30%, rgba(7,16,24,1) 100%)"
-  },
-  composerInner: {
-    maxWidth: 920,
-    margin: "0 auto",
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(0,0,0,0.30)",
-    borderRadius: 22,
-    padding: 14,
-    boxShadow: "0 20px 60px rgba(0,0,0,0.35)"
-  },
-  textarea: {
-    width: "100%",
-    minHeight: 90,
-    maxHeight: 220,
-    border: "none",
-    background: "transparent",
-    color: "#eef6ff",
-    padding: 8,
-    resize: "vertical",
-    outline: "none",
-    boxSizing: "border-box",
-    fontSize: 15,
-    lineHeight: 1.6
-  },
-  attachmentsWrap: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 8,
-    padding: "6px 8px 10px"
-  },
-  attachmentChip: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.05)",
-    color: "#e8eef7",
-    padding: "6px 10px",
-    fontSize: 12,
-    maxWidth: "100%"
-  },
-  attachmentName: {
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    maxWidth: 260
-  },
-  attachmentRemove: {
-    border: "none",
-    background: "transparent",
-    color: "#cbd5e1",
-    cursor: "pointer",
-    fontSize: 16,
-    lineHeight: 1,
-    padding: 0
-  },
-  composerBottom: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 12,
-    flexWrap: "wrap",
-    paddingTop: 8
-  },
-  composerLeft: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10
-  },
-  composerHint: {
-    fontSize: 13,
-    color: "rgba(232,238,247,0.60)"
-  },
-  attachButton: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: 38,
-    height: 38,
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
-    color: "#d7e8f8",
-    cursor: "pointer"
-  },
-  sendButton: {
-    border: "none",
-    background: "#22d3ee",
-    color: "#071018",
-    borderRadius: 14,
-    padding: "12px 18px",
-    cursor: "pointer",
-    fontWeight: 700
-  }
-};
