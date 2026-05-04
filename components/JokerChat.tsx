@@ -11,6 +11,47 @@ import {
   type JokerClientFile
 } from "../lib/joker-client-session";
 
+type OpcRuntimeView = {
+  ok?: boolean;
+  proofId?: string;
+  chainHash?: string;
+  auditStatus?: string;
+  verificationStatus?: string;
+  appendStatus?: string;
+  appendReason?: string;
+  publicProof?: {
+    proofId?: string;
+    timestamp?: string;
+    entity?: string;
+    ipr?: string;
+    sessionId?: string;
+    eventId?: string;
+    eventHash?: string;
+    memoryEventId?: string;
+    state?: string;
+    decision?: string;
+    riskClass?: string;
+    policyReference?: string;
+    inputHash?: string;
+    outputHash?: string;
+    decisionHash?: string;
+    previousProofHash?: string | null;
+    chainHash?: string;
+    auditStatus?: string;
+    reviewRequired?: boolean;
+    verificationStatus?: string;
+  };
+};
+
+type ExtendedJokerChatResponse = JokerChatResponse & {
+  opc?: OpcRuntimeView;
+  diagnostics?: JokerChatResponse["diagnostics"] & {
+    opcProofId?: string;
+    opcAppendStatus?: string;
+    opcVerificationStatus?: string;
+  };
+};
+
 type ChatMessage = {
   id: string;
   role: "user" | "assistant" | "system";
@@ -52,7 +93,21 @@ function buildInitialMessages(): ChatMessage[] {
   ];
 }
 
-function renderRuntimeDiagnostics(response: JokerChatResponse): string {
+function shortValue(value?: string | null, max = 34): string {
+  if (!value) {
+    return "none";
+  }
+
+  if (value.length <= max) {
+    return value;
+  }
+
+  return `${value.slice(0, max)}…`;
+}
+
+function renderRuntimeDiagnostics(response: ExtendedJokerChatResponse): string {
+  const opc = response.opc;
+
   const lines = [
     response.state ? `Runtime OpenAI: ${response.state}` : "",
     response.decision ? `Decision: ${response.decision}` : "",
@@ -68,12 +123,30 @@ function renderRuntimeDiagnostics(response: JokerChatResponse): string {
       ? `EvtIprMemoryUsed: ${response.evtIprMemoryUsed}`
       : "",
     response.memorySource ? `MemorySource: ${response.memorySource}` : "",
-    response.governedEvt?.evt ? `Governed EVT: ${response.governedEvt.evt}` : "",
+    response.governedEvt?.evt
+      ? `Governed EVT: ${response.governedEvt.evt}`
+      : "",
+    response.governedEvt?.hash
+      ? `Governed Hash: ${response.governedEvt.hash}`
+      : "",
     response.memory?.event ? `Memory EVT: ${response.memory.event}` : "",
     response.memory?.appendStatus
       ? `MemoryAppend: ${response.memory.appendStatus}`
       : "",
-    response.diagnostics?.modelUsed ? `Model: ${response.diagnostics.modelUsed}` : "",
+    opc?.proofId ? `OPC Proof ID: ${opc.proofId}` : "",
+    opc?.chainHash ? `OPC Chain Hash: ${opc.chainHash}` : "",
+    opc?.auditStatus ? `OPC Audit Status: ${opc.auditStatus}` : "",
+    opc?.verificationStatus
+      ? `OPC Verification: ${opc.verificationStatus}`
+      : "",
+    opc?.appendStatus ? `OPC Append: ${opc.appendStatus}` : "",
+    opc?.appendReason ? `OPC Append Reason: ${opc.appendReason}` : "",
+    opc?.publicProof?.previousProofHash
+      ? `OPC Prev Proof: ${opc.publicProof.previousProofHash}`
+      : "",
+    response.diagnostics?.modelUsed
+      ? `Model: ${response.diagnostics.modelUsed}`
+      : "",
     response.diagnostics?.degradedReason
       ? `DegradedReason: ${response.diagnostics.degradedReason}`
       : ""
@@ -89,6 +162,7 @@ export default function JokerChat() {
   const [isSending, setIsSending] = useState(false);
   const [showRuntime, setShowRuntime] = useState(true);
   const [clientStateVersion, setClientStateVersion] = useState(0);
+  const [lastOpc, setLastOpc] = useState<OpcRuntimeView | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -123,6 +197,7 @@ export default function JokerChat() {
     clearJokerClientSession();
     setMessages(buildInitialMessages());
     setFiles([]);
+    setLastOpc(null);
     setClientStateVersion((value) => value + 1);
   }
 
@@ -151,10 +226,14 @@ export default function JokerChat() {
     setMessage("");
 
     try {
-      const response = await sendJokerChatRequest({
+      const response = (await sendJokerChatRequest({
         message: userText,
         files
-      });
+      })) as ExtendedJokerChatResponse;
+
+      if (response.opc) {
+        setLastOpc(response.opc);
+      }
 
       const assistantContent =
         response.response ||
@@ -206,26 +285,57 @@ export default function JokerChat() {
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
                 Runtime cognitivo-operativo con sessionId stabile, memoria
-                EVT/IPR-bound, governed EVT e ledger semantico.
+                EVT/IPR-bound, governed EVT, ledger semantico e proof record OPC.
               </p>
             </div>
 
-            <div className="rounded-xl border border-zinc-800 bg-black/40 p-3 text-xs leading-5 text-zinc-400">
-              <div>
-                <span className="text-zinc-500">Sessione:</span>{" "}
-                {clientState.sessionId || "non inizializzata"}
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-zinc-800 bg-black/40 p-3 text-xs leading-5 text-zinc-400">
+                <div className="mb-1 text-[10px] uppercase tracking-[0.2em] text-zinc-600">
+                  Session Runtime
+                </div>
+                <div>
+                  <span className="text-zinc-500">Sessione:</span>{" "}
+                  {clientState.sessionId || "non inizializzata"}
+                </div>
+                <div>
+                  <span className="text-zinc-500">Continuity:</span>{" "}
+                  {clientState.continuityRef || "none"}
+                </div>
+                <div>
+                  <span className="text-zinc-500">Memory EVT:</span>{" "}
+                  {clientState.lastMemoryEvt || "none"}
+                </div>
+                <div>
+                  <span className="text-zinc-500">Governed EVT:</span>{" "}
+                  {clientState.lastGovernedEvt || "none"}
+                </div>
               </div>
-              <div>
-                <span className="text-zinc-500">Continuity:</span>{" "}
-                {clientState.continuityRef || "none"}
-              </div>
-              <div>
-                <span className="text-zinc-500">Memory EVT:</span>{" "}
-                {clientState.lastMemoryEvt || "none"}
-              </div>
-              <div>
-                <span className="text-zinc-500">Governed EVT:</span>{" "}
-                {clientState.lastGovernedEvt || "none"}
+
+              <div className="rounded-xl border border-zinc-800 bg-black/40 p-3 text-xs leading-5 text-zinc-400">
+                <div className="mb-1 text-[10px] uppercase tracking-[0.2em] text-zinc-600">
+                  OPC Proof
+                </div>
+                <div>
+                  <span className="text-zinc-500">Proof ID:</span>{" "}
+                  {shortValue(lastOpc?.proofId)}
+                </div>
+                <div>
+                  <span className="text-zinc-500">Audit:</span>{" "}
+                  {lastOpc?.auditStatus || "none"}
+                </div>
+                <div>
+                  <span className="text-zinc-500">Verification:</span>{" "}
+                  {lastOpc?.verificationStatus || "none"}
+                </div>
+                <div>
+                  <span className="text-zinc-500">Append:</span>{" "}
+                  {lastOpc?.appendStatus || "none"}
+                </div>
+                <div>
+                  <span className="text-zinc-500">Chain:</span>{" "}
+                  {shortValue(lastOpc?.chainHash)}
+                </div>
               </div>
             </div>
           </div>
