@@ -71,6 +71,8 @@ import {
   type JokerRuntimeIdentity
 } from "../../../lib/joker-prompt";
 
+import { applyResponseContract } from "../../../lib/joker-response-contract";
+
 import type {
   ContextClass,
   DataClassification,
@@ -278,7 +280,7 @@ async function generateResponse(input: {
 }): Promise<GeneratedResponse> {
   if (!openai) {
     return {
-      text: buildFallback(input),
+      text: applyResponseContract(input.message, buildFallback(input)),
       state: "DEGRADED",
       degradedReason: "OPENAI_API_KEY_NOT_CONFIGURED"
     };
@@ -305,6 +307,7 @@ async function generateResponse(input: {
             "CORPUS ESOTEROLOGIA ERMETICA = grammatica disciplinare.",
             "APOKALYPSIS = soglia storica.",
             "AI JOKER-C2 = runtime cognitivo-governato.",
+            "Quando è attivo un contratto canonico di risposta, devi iniziare con la formula obbligatoria prima della spiegazione discorsiva.",
             "Se l'utente chiede IPR, non ridurlo a identità digitale: spiegalo come registro primario di identità operativa che connette identità, azione, responsabilità, evento, prova, tempo e continuità.",
             "Se l'utente chiede confronto con standard esistenti, confronta IPR con eIDAS/EUDI, PKI, X.509, DID/VC, blockchain timestamping, IAM e audit log.",
             "La governance runtime prevale: policy, risk, oversight e fail-closed non devono essere aggirati dal modello."
@@ -323,20 +326,20 @@ async function generateResponse(input: {
 
     if (!text) {
       return {
-        text: buildFallback(input),
+        text: applyResponseContract(input.message, buildFallback(input)),
         state: "DEGRADED",
         degradedReason: "OPENAI_EMPTY_RESPONSE"
       };
     }
 
     return {
-      text,
+      text: applyResponseContract(input.message, text),
       state: "OPERATIONAL",
       degradedReason: null
     };
   } catch (error) {
     return {
-      text: buildFallback(input),
+      text: applyResponseContract(input.message, buildFallback(input)),
       state: "DEGRADED",
       degradedReason:
         error instanceof Error ? error.message : "OPENAI_REQUEST_FAILED"
