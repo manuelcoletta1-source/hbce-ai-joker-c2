@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createHash } from "crypto";
+import { appendFile, mkdir, readFile, stat, writeFile } from "fs/promises";
+import { tmpdir } from "os";
+import path from "path";
 
 import core from "../../../corpus-core.js";
 
@@ -38,6 +41,20 @@ import { decideRuntimeAction } from "../../../lib/runtime-decision";
 
 import { createRuntimeEvent, toPublicRuntimeEvent } from "../../../lib/evt";
 import { appendEvent, getLastEventReference } from "../../../lib/evt-ledger";
+
+import {
+  buildOpcProofRecordLine,
+  createOpcProofRecord,
+  parseOpcProofRecordLine,
+  toPublicOpcProofRecord,
+  verifyOpcProofRecord,
+  type OpcProofPublicView,
+  type OpcProofRecord,
+  type OpcRuntimeDecision,
+  type OpcRuntimeSnapshot,
+  type OpcRuntimeState,
+  type OpcRiskClass
+} from "../../../lib/opc-proof";
 
 import type {
   ContextClass,
@@ -140,10 +157,29 @@ type ResolvedMemoryContext = {
   lastEventId: string | null;
 };
 
+type OpcAppendResult = {
+  ok: boolean;
+  status: "APPENDED" | "REJECTED" | "FAILED";
+  proofId?: string;
+  ledgerPath: string;
+  reason: string;
+};
+
+type OpcRuntimeResult = {
+  record: OpcProofRecord;
+  publicProof: OpcProofPublicView;
+  append: OpcAppendResult;
+  verification: ReturnType<typeof verifyOpcProofRecord>;
+};
+
 const MODEL = process.env.JOKER_MODEL || "gpt-4o-mini";
 const MAX_FILE_CONTEXT_CHARS = 72000;
 const MAX_OUTPUT_TOKENS = 4600;
 const MAX_DATA_CLASSIFICATION_CHARS = 24000;
+
+const DEFAULT_OPC_LEDGER_FILE =
+  process.env.JOKER_OPC_LEDGER_FILE ||
+  path.join(tmpdir(), "hbce-ai-joker-c2-opc-proofs.jsonl");
 
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -2407,6 +2443,215 @@ async function resolveMemoryContext(input: {
   };
 }
 
+async function ensureOpcLedger(): Promise<void> {
+  const directory = path.dirname(DEFAULT_OPC_LEDGER_FILE);
+
+  await mkdir(directory, { recursive: true });
+
+  try {
+    await stat(DEFAULT_OPC_LEDGER_FILE);
+  } catch {
+    await writeFile(DEFAULT_OPC_LEDGER_FILE, "", "utf8");
+  }
+}
+
+async function readOpcProofRecords(): Promise<OpcProofRecord[]> {
+  await ensureOpcLedger();
+
+  const raw = await readFile(DEFAULT_OPC_LEDGER_FILE, "utf8");
+
+  if (!raw.trim()) {
+    return [];
+  }
+
+  return raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => parseOpcProofRecordLine(line))
+    .filter((record): record is OpcProofRecord => Boolean(record));
+}
+
+async function getLastOpcProofHash(): Promise<string | null> {
+  const records = await readOpcProofRecords();
+  const last = records[records.length - 1];
+
+  return last?.proof.chainHash ?? null;
+}
+
+async function appendOpcProofRecord(record: OpcProofRecord): Promise<OpcAppendResult> {
+  try {
+    await ensureOpcLedger();
+
+    const verification = verifyOpcProofRecord(record);
+
+    if (verification.status !== "VERIFIABLE") {
+      return {
+        ok: false,
+        status: "REJECTED",
+        proofId: record.proofId,
+        ledgerPath: DEFAULT_OPC_LEDGER_FILE,
+        reason: "OPC proof record is not verifiable and was not appended."
+      };
+    }
+
+    await appendFile(
+      DEFAULT_OPC_LEDGER_FILE,
+      `${buildOpcProofRecordLine(record)}\n`,
+      "utf8"
+    );
+
+    return {
+      ok: true,
+      status: "APPENDED",
+      proofId: record.proofId,
+      ledgerPath: DEFAULT_OPC_LEDGER_FILE,
+      reason: "OPC proof record appended to chat runtime ledger."
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: "FAILED",
+      proofId: record.proofId,
+      ledgerPath: DEFAULT_OPC_LEDGER_FILE,
+      reason:
+        error instanceof Error
+          ? error.message
+          : "Unknown OPC append failure."
+    };
+  }
+}
+
+function mapOpcRuntimeState(state: MemoryRuntimeState): OpcRuntimeState {
+  if (state === "OPERATIONAL") return "OPERATIONAL";
+  if (state === "BLOCKED") return "BLOCKED";
+  if (state === "INVALID") return "INVALID";
+  return "DEGRADED";
+}
+
+function mapOpcDecision(decision: GovernanceDecision): OpcRuntimeDecision {
+  switch (decision) {
+    case "ALLOW":
+    case "AUDIT":
+    case "DEGRADE":
+    case "ESCALATE":
+    case "BLOCK":
+    case "NOOP":
+      return decision;
+    default:
+      return "NOOP";
+  }
+}
+
+function mapOpcRiskClass(riskClass: string): OpcRiskClass {
+  switch (riskClass) {
+    case "LOW":
+    case "MEDIUM":
+    case "HIGH":
+    case "CRITICAL":
+    case "PROHIBITED":
+    case "UNKNOWN":
+      return riskClass;
+    default:
+      return "UNKNOWN";
+  }
+}
+
+async function createAndAppendOpcForChat(input: {
+  sessionId: string;
+  identity: ReturnType<typeof getPrimaryIdentity>;
+  message: string;
+  files: FileInput[];
+  responseText: string;
+  state: MemoryRuntimeState;
+  event: LegacyRuntimeEvent;
+  modernEvt: ReturnType<typeof toPublicRuntimeEvent>;
+  memoryEvent: ReturnType<typeof appendEvtMemory>;
+  governance: GovernanceFrame;
+}): Promise<OpcRuntimeResult> {
+  const previousProofHash = await getLastOpcProofHash();
+
+  const record = createOpcProofRecord({
+    identity: {
+      entity: input.identity.entity,
+      ipr: input.identity.ipr,
+      core: input.identity.core,
+      organization: input.identity.org
+    },
+    sessionId: input.sessionId,
+    event: {
+      evt: input.modernEvt.evt,
+      prev: input.modernEvt.prev,
+      hash: input.modernEvt.trace.hash,
+      kind: "GOVERNED_RUNTIME_EVT"
+    },
+    memory: {
+      evt: input.memoryEvent.evt,
+      source: "EVT_IPR_MEMORY",
+      hash: input.memoryEvent.anchors.traceHash
+    },
+    runtime: {
+      state: mapOpcRuntimeState(input.state),
+      decision: mapOpcDecision(input.governance.decision.decision),
+      contextClass: input.governance.contextClass,
+      intentClass: input.governance.intentClass,
+      riskClass: mapOpcRiskClass(input.governance.risk.riskClass),
+      policyReference: input.governance.policy.policyReference,
+      policyOutcome: input.governance.policy.outcome,
+      humanOversight: input.governance.oversight.state,
+      operationType: "CHAT_OPERATION",
+      operationStatus: mapOperationStatus(
+        input.governance.decision.decision,
+        input.state
+      )
+    },
+    inputPayload: {
+      message: input.message,
+      fileCount: input.files.length,
+      files: normalizeFiles(input.files).map((file) => ({
+        id: file.id,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        role: file.role,
+        textHash: buildTraceHash(file.text.slice(0, 24000))
+      })),
+      contextClass: input.governance.contextClass,
+      intentClass: input.governance.intentClass,
+      projectDomain: input.governance.projectDomain.projectDomain,
+      legacyEvent: input.event.evt,
+      governedEvent: input.modernEvt.evt
+    },
+    outputPayload: {
+      response: input.responseText,
+      responseHash: buildTraceHash(input.responseText),
+      state: input.state,
+      decision: input.governance.decision.decision
+    },
+    previousProofHash,
+    audit: {
+      reviewRequired: input.governance.decision.auditRequired,
+      status: input.governance.decision.auditRequired ? "READY" : "NOT_REQUIRED",
+      reviewerRole: input.governance.decision.auditRequired ? "AUDITOR" : undefined,
+      reasons: [
+        ...input.governance.policy.reasons,
+        ...input.governance.risk.reasons,
+        input.governance.oversight.reason
+      ]
+    }
+  });
+
+  const append = await appendOpcProofRecord(record);
+  const verification = verifyOpcProofRecord(record);
+
+  return {
+    record,
+    publicProof: toPublicOpcProofRecord(record),
+    append,
+    verification
+  };
+}
+
 export async function POST(req: NextRequest) {
   let body: ChatBody;
 
@@ -2695,6 +2940,19 @@ export async function POST(req: NextRequest) {
 
   const memoryAppendResult = await appendEvtMemoryEvent(memoryEvent);
 
+  const opc = await createAndAppendOpcForChat({
+    sessionId: input.sessionId,
+    identity,
+    message: effectiveMessage,
+    files: promptFiles,
+    responseText: generated.text,
+    state: generated.state,
+    event,
+    modernEvt: publicModernEvt,
+    memoryEvent,
+    governance
+  });
+
   const exposeRuntime = shouldExposeTechnicalFrame(effectiveMessage);
 
   const responseText = exposeRuntime
@@ -2766,6 +3024,16 @@ export async function POST(req: NextRequest) {
       appendStatus: appendResult?.status ?? "NOT_REQUIRED",
       appendReason: appendResult?.reason ?? "EVT append not required."
     },
+    opc: {
+      ok: opc.append.ok,
+      proofId: opc.publicProof.proofId,
+      chainHash: opc.publicProof.chainHash,
+      auditStatus: opc.publicProof.auditStatus,
+      verificationStatus: opc.publicProof.verificationStatus,
+      appendStatus: opc.append.status,
+      appendReason: opc.append.reason,
+      publicProof: opc.publicProof
+    },
     memory: {
       used: memory.used,
       source: memory.source,
@@ -2814,6 +3082,9 @@ export async function POST(req: NextRequest) {
       memorySource: memory.source,
       memoryEvent: memoryEvent.evt,
       memoryAppendStatus: memoryAppendResult.status,
+      opcProofId: opc.publicProof.proofId,
+      opcAppendStatus: opc.append.status,
+      opcVerificationStatus: opc.publicProof.verificationStatus,
       structuredFormat
     }
   });
