@@ -107,6 +107,7 @@ export type OpcProofHashes = {
   decisionHash: string;
   eventHash: string;
   memoryHash?: string;
+  previousProofHash?: string | null;
   chainHash: string;
 };
 
@@ -164,6 +165,7 @@ export type OpcProofPublicView = {
   inputHash: string;
   outputHash: string;
   decisionHash: string;
+  previousProofHash?: string | null;
   chainHash: string;
   auditStatus: OpcAuditStatus;
   reviewRequired: boolean;
@@ -218,6 +220,10 @@ export function createOpcProofRecord(
       })
     : undefined;
 
+  const previousProofHash = normalizePreviousProofHash(
+    input.previousProofHash
+  );
+
   const chainHash = buildOpcChainHash({
     proofId,
     timestamp,
@@ -231,7 +237,7 @@ export function createOpcProofRecord(
     decisionHash,
     eventHash,
     memoryHash,
-    previousProofHash: input.previousProofHash || null
+    previousProofHash
   });
 
   const audit = normalizeAuditFrame(input.audit, input.runtime);
@@ -256,6 +262,7 @@ export function createOpcProofRecord(
       decisionHash,
       eventHash,
       memoryHash,
+      previousProofHash,
       chainHash
     },
     audit,
@@ -289,6 +296,10 @@ export function verifyOpcProofRecord(
     };
   }
 
+  const previousProofHash = normalizePreviousProofHash(
+    record.proof.previousProofHash
+  );
+
   const expectedChainHash = buildOpcChainHash({
     proofId: record.proofId,
     timestamp: record.timestamp,
@@ -302,7 +313,7 @@ export function verifyOpcProofRecord(
     decisionHash: record.proof.decisionHash,
     eventHash: record.proof.eventHash,
     memoryHash: record.proof.memoryHash,
-    previousProofHash: null
+    previousProofHash
   });
 
   const hashMatches = expectedChainHash === record.proof.chainHash;
@@ -343,6 +354,7 @@ export function toPublicOpcProofRecord(
     inputHash: record.proof.inputHash,
     outputHash: record.proof.outputHash,
     decisionHash: record.proof.decisionHash,
+    previousProofHash: record.proof.previousProofHash || null,
     chainHash: record.proof.chainHash,
     auditStatus: record.audit.status,
     reviewRequired: record.audit.reviewRequired,
@@ -495,6 +507,10 @@ function buildOpcChainHash(input: {
   memoryHash?: string;
   previousProofHash?: string | null;
 }): string {
+  const previousProofHash = normalizePreviousProofHash(
+    input.previousProofHash
+  );
+
   return sha256Canonical({
     proofId: input.proofId,
     timestamp: input.timestamp,
@@ -509,11 +525,27 @@ function buildOpcChainHash(input: {
       decisionHash: input.decisionHash,
       eventHash: input.eventHash,
       memoryHash: input.memoryHash || null,
-      previousProofHash: input.previousProofHash || null
+      previousProofHash
     },
     algorithm: HASH_ALGORITHM,
     canonicalization: CANONICALIZATION
   });
+}
+
+function normalizePreviousProofHash(
+  value: string | null | undefined
+): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed || trimmed === "-" || trimmed.toUpperCase() === "GENESIS") {
+    return null;
+  }
+
+  return trimmed;
 }
 
 function normalizeAuditFrame(
