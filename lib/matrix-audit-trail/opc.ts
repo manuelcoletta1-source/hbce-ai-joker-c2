@@ -7,10 +7,8 @@
  * They create a technical operational proof linked to an EVT event.
  */
 
-import { randomUUID } from "crypto";
-
 import { sha256Canonical } from "./hash";
-import type { MatrixEvtRecord, MatrixHash, MatrixOpcRecord } from "./types";
+import type { MatrixEvtRecord, MatrixOpcRecord } from "./types";
 
 export type BuildMatrixOpcInput = {
   evt: MatrixEvtRecord;
@@ -68,7 +66,26 @@ function buildMatrixOpcId(timestamp: string): string {
     .slice(0, 14)
     .padEnd(14, "0");
 
-  const entropy = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+  return `OPC-${compactTimestamp}-${buildPortableEntropy()}`;
+}
 
-  return `OPC-${compactTimestamp}-${entropy}`;
+function buildPortableEntropy(): string {
+  const webCrypto =
+    typeof globalThis !== "undefined" ? globalThis.crypto : undefined;
+
+  if (webCrypto && typeof webCrypto.randomUUID === "function") {
+    return webCrypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+  }
+
+  if (webCrypto && typeof webCrypto.getRandomValues === "function") {
+    const bytes = new Uint8Array(4);
+    webCrypto.getRandomValues(bytes);
+
+    return Array.from(bytes)
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("")
+      .toUpperCase();
+  }
+
+  return Math.random().toString(16).slice(2, 10).padEnd(8, "0").toUpperCase();
 }
