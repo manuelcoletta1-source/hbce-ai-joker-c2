@@ -3,6 +3,7 @@
 import {
   type FormEvent,
   type KeyboardEvent,
+  type ReactNode,
   useEffect,
   useMemo,
   useRef,
@@ -193,9 +194,10 @@ function statusTone(value?: string | null): string {
     normalized === "READY" ||
     normalized === "NOT_REQUIRED" ||
     normalized === "COMPLETED" ||
-    normalized === "PERMIT"
+    normalized === "PERMIT" ||
+    normalized === "TRUE"
   ) {
-    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-200";
+    return "joker-badge--ok";
   }
 
   if (
@@ -204,9 +206,10 @@ function statusTone(value?: string | null): string {
     normalized === "ESCALATE" ||
     normalized === "ESCALATED" ||
     normalized === "RECOMMENDED" ||
-    normalized === "RESTRICTED"
+    normalized === "RESTRICTED" ||
+    normalized === "PENDING"
   ) {
-    return "border-amber-500/30 bg-amber-500/10 text-amber-200";
+    return "joker-badge--warn";
   }
 
   if (
@@ -215,12 +218,13 @@ function statusTone(value?: string | null): string {
     normalized === "FAILED" ||
     normalized === "REJECTED" ||
     normalized === "INVALID" ||
-    normalized === "PROHIBITED"
+    normalized === "PROHIBITED" ||
+    normalized === "FALSE"
   ) {
-    return "border-red-500/30 bg-red-500/10 text-red-200";
+    return "joker-badge--bad";
   }
 
-  return "border-slate-500/30 bg-slate-500/10 text-slate-200";
+  return "joker-badge--neutral";
 }
 
 function StatusBadge({
@@ -235,11 +239,7 @@ function StatusBadge({
   return (
     <span
       title={title || safeValue}
-      className={classNames(
-        "inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide",
-        "whitespace-normal break-words leading-tight",
-        statusTone(safeValue)
-      )}
+      className={classNames("joker-badge", statusTone(safeValue))}
     >
       {safeValue}
     </span>
@@ -263,18 +263,11 @@ function FieldRow({
     typeof value === "boolean" ? formatBool(value) : value === 0 ? "0" : value || "-";
 
   return (
-    <div className="grid grid-cols-[92px_minmax(0,1fr)] gap-3 border-b border-slate-800/80 py-2 last:border-b-0">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-        {label}
-      </div>
-
+    <div className="joker-field-row">
+      <div className="joker-field-label">{label}</div>
       <div
         title={title || String(rendered)}
-        className={classNames(
-          "min-w-0 text-sm leading-relaxed text-slate-200",
-          mono && "font-mono text-xs",
-          !badge && "break-words whitespace-normal"
-        )}
+        className={classNames("joker-field-value", mono && "joker-mono")}
       >
         {badge ? <StatusBadge value={String(rendered)} title={title} /> : rendered}
       </div>
@@ -287,48 +280,78 @@ function RuntimeCard({
   children
 }: {
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 shadow-xl shadow-black/20">
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-        {title}
-      </h2>
+    <section className="joker-card">
+      <h2 className="joker-card-title">{title}</h2>
       <div>{children}</div>
     </section>
   );
 }
 
+function MiniProofCard({
+  title,
+  rows,
+  statusLabels = []
+}: {
+  title: string;
+  rows: Array<[string, string | undefined | null]>;
+  statusLabels?: string[];
+}) {
+  return (
+    <div className="joker-proof-card">
+      <div className="joker-proof-title">{title}</div>
+
+      <div className="joker-proof-rows">
+        {rows.map(([label, value]) => {
+          const isStatus = statusLabels.includes(label);
+          const safeValue = normalizeStatus(value);
+
+          return (
+            <div key={`${title}-${label}`} className="joker-proof-row">
+              <div className="joker-proof-label">{label}</div>
+              <div className="joker-proof-value">
+                {isStatus ? (
+                  <StatusBadge value={safeValue} />
+                ) : (
+                  <span title={safeValue} className="joker-mono joker-proof-text">
+                    {safeValue}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
+  const isSystem = message.role === "system";
 
   return (
     <article
       className={classNames(
-        "rounded-2xl border p-4 shadow-lg shadow-black/15",
-        isUser
-          ? "border-cyan-500/25 bg-cyan-500/10"
-          : "border-slate-800 bg-slate-950/75"
+        "joker-message",
+        isUser && "joker-message--user",
+        !isUser && !isSystem && "joker-message--assistant",
+        isSystem && "joker-message--system"
       )}
     >
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <div
-          className={classNames(
-            "text-xs font-semibold uppercase tracking-[0.18em]",
-            isUser ? "text-cyan-200" : "text-slate-400"
-          )}
-        >
-          {isUser ? "You" : "AI JOKER-C2"}
+      <div className="joker-message-head">
+        <div className={classNames("joker-message-role", isUser && "joker-message-role--user")}>
+          {isUser ? "You" : isSystem ? "System" : "AI JOKER-C2"}
         </div>
-        <time className="text-xs text-slate-600">{message.createdAt}</time>
+        <time className="joker-message-time">{message.createdAt}</time>
       </div>
 
-      <div className="whitespace-pre-wrap break-words text-[15px] leading-7 text-slate-100">
-        {message.content}
-      </div>
+      <div className="joker-message-content">{message.content}</div>
 
-      {!isUser && message.runtime ? (
-        <div className="mt-4 grid gap-3 border-t border-slate-800 pt-4 md:grid-cols-3">
+      {!isUser && !isSystem && message.runtime ? (
+        <div className="joker-mini-grid">
           <MiniProofCard
             title="EVT Chain"
             rows={[
@@ -367,55 +390,6 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   );
 }
 
-function MiniProofCard({
-  title,
-  rows,
-  statusLabels = []
-}: {
-  title: string;
-  rows: Array<[string, string | undefined | null]>;
-  statusLabels?: string[];
-}) {
-  return (
-    <div className="min-w-0 rounded-xl border border-slate-800/90 bg-black/20 p-3">
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-        {title}
-      </div>
-
-      <div className="grid gap-1.5">
-        {rows.map(([label, value]) => {
-          const isStatus = statusLabels.includes(label);
-          const safeValue = normalizeStatus(value);
-
-          return (
-            <div
-              key={`${title}-${label}`}
-              className="grid min-w-0 grid-cols-[58px_minmax(0,1fr)] items-start gap-2"
-            >
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">
-                {label}
-              </div>
-
-              <div className="min-w-0 overflow-visible">
-                {isStatus ? (
-                  <StatusBadge value={safeValue} />
-                ) : (
-                  <div
-                    title={safeValue}
-                    className="min-w-0 break-words whitespace-normal font-mono text-[11px] leading-5 text-slate-300"
-                  >
-                    {safeValue}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function FilesPanel({
   files,
   onRemoveFile,
@@ -427,38 +401,27 @@ function FilesPanel({
 }) {
   if (files.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-500">
+      <div className="joker-empty-files">
         Nessun file attivo. Puoi caricare file testuali per inserirli nel contesto runtime.
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Active Files
-        </h2>
-        <button
-          type="button"
-          onClick={onClearFiles}
-          className="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-red-400 hover:text-red-200"
-        >
+    <div className="joker-files-box">
+      <div className="joker-files-head">
+        <h2>Active Files</h2>
+        <button type="button" onClick={onClearFiles} className="joker-small-btn joker-small-btn--danger">
           Clear
         </button>
       </div>
 
-      <div className="grid gap-2">
+      <div className="joker-files-list">
         {files.map((file) => (
-          <div
-            key={file.id || file.name}
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-slate-800 bg-black/20 p-3"
-          >
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-slate-200">
-                {file.name || "unnamed"}
-              </div>
-              <div className="mt-1 text-xs text-slate-500">
+          <div key={file.id || file.name} className="joker-file-row">
+            <div className="joker-file-main">
+              <div className="joker-file-name">{file.name || "unnamed"}</div>
+              <div className="joker-file-meta">
                 {file.type || "unknown"} · {file.size || 0} bytes
               </div>
             </div>
@@ -466,7 +429,7 @@ function FilesPanel({
             <button
               type="button"
               onClick={() => onRemoveFile(file.id)}
-              className="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-red-400 hover:text-red-200"
+              className="joker-small-btn joker-small-btn--danger"
             >
               Remove
             </button>
@@ -525,9 +488,7 @@ export default function InterfacePage() {
   }, [lastRuntime]);
 
   async function handleFileChange(inputFiles: FileList | null) {
-    if (!inputFiles || inputFiles.length === 0) {
-      return;
-    }
+    if (!inputFiles || inputFiles.length === 0) return;
 
     const nextFiles: FileInput[] = [];
 
@@ -576,9 +537,7 @@ export default function InterfacePage() {
   async function sendMessage(forceMessage?: string) {
     const outgoing = (forceMessage || message).trim();
 
-    if (!outgoing && files.length === 0) {
-      return;
-    }
+    if (!outgoing && files.length === 0) return;
 
     setRuntimeError(null);
     setIsSending(true);
@@ -630,8 +589,7 @@ export default function InterfacePage() {
 
       setMessages((current) => [...current, assistantMessage]);
     } catch (error) {
-      const errorText =
-        error instanceof Error ? error.message : "Unknown runtime error.";
+      const errorText = error instanceof Error ? error.message : "Unknown runtime error.";
 
       setRuntimeError(errorText);
 
@@ -662,46 +620,687 @@ export default function InterfacePage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto grid min-h-screen w-full max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <section className="flex min-h-[calc(100vh-3rem)] min-w-0 flex-col rounded-3xl border border-slate-800 bg-slate-900/40 shadow-2xl shadow-black/30">
-          <header className="border-b border-slate-800 p-5">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">
-                  AI JOKER-C2
-                </div>
-                <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
-                  Governed Runtime Interface
-                </h1>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-                  Chat operativa con identità IPR, memoria EVT, prova OPC e governance
-                  HBCE/MATRIX. Gli stati tecnici vengono mostrati integralmente.
+    <main className="joker-interface">
+      <style jsx global>{`
+        html,
+        body {
+          margin: 0;
+          min-height: 100%;
+          background: #020617;
+          color: #e5edf8;
+        }
+
+        * {
+          box-sizing: border-box;
+        }
+
+        .joker-interface {
+          min-height: 100vh;
+          width: 100%;
+          background:
+            radial-gradient(circle at 20% 0%, rgba(34, 211, 238, 0.10), transparent 32%),
+            radial-gradient(circle at 85% 10%, rgba(99, 102, 241, 0.11), transparent 30%),
+            linear-gradient(180deg, #020617 0%, #0f172a 100%);
+          color: #e5edf8;
+          font-family:
+            Inter,
+            ui-sans-serif,
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
+        }
+
+        .joker-shell {
+          width: min(1440px, 100%);
+          margin: 0 auto;
+          display: grid;
+          min-height: 100vh;
+          gap: 24px;
+          padding: 24px;
+          grid-template-columns: minmax(0, 1fr) 390px;
+        }
+
+        .joker-main-panel {
+          min-width: 0;
+          min-height: calc(100vh - 48px);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border: 1px solid rgba(51, 65, 85, 0.95);
+          border-radius: 28px;
+          background: rgba(15, 23, 42, 0.62);
+          box-shadow: 0 26px 80px rgba(0, 0, 0, 0.38);
+          backdrop-filter: blur(16px);
+        }
+
+        .joker-header {
+          padding: 22px;
+          border-bottom: 1px solid rgba(51, 65, 85, 0.9);
+        }
+
+        .joker-header-grid {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .joker-kicker {
+          color: #67e8f9;
+          font-size: 12px;
+          font-weight: 750;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+        }
+
+        .joker-title {
+          margin: 8px 0 0;
+          color: #ffffff;
+          font-size: clamp(24px, 4vw, 34px);
+          font-weight: 760;
+          letter-spacing: -0.035em;
+          line-height: 1.05;
+        }
+
+        .joker-lead {
+          max-width: 760px;
+          margin: 10px 0 0;
+          color: #94a3b8;
+          font-size: 14px;
+          line-height: 1.65;
+        }
+
+        .joker-session-box {
+          min-width: min(100%, 290px);
+          max-width: 420px;
+          padding: 12px;
+          border: 1px solid rgba(51, 65, 85, 0.95);
+          border-radius: 18px;
+          background: rgba(2, 6, 23, 0.80);
+        }
+
+        .joker-session-label {
+          color: #64748b;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+        }
+
+        .joker-session-id {
+          margin-top: 6px;
+          color: #cbd5e1;
+          font-family:
+            ui-monospace,
+            SFMono-Regular,
+            Menlo,
+            Monaco,
+            Consolas,
+            "Liberation Mono",
+            "Courier New",
+            monospace;
+          font-size: 12px;
+          line-height: 1.45;
+          overflow-wrap: anywhere;
+        }
+
+        .joker-chat-scroll {
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+          padding: 22px;
+        }
+
+        .joker-empty {
+          min-height: 380px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 32px;
+          text-align: center;
+          border: 1px dashed rgba(51, 65, 85, 0.95);
+          border-radius: 28px;
+          background: rgba(2, 6, 23, 0.35);
+        }
+
+        .joker-empty-inner {
+          max-width: 620px;
+        }
+
+        .joker-empty-kicker {
+          color: #64748b;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+        }
+
+        .joker-empty-title {
+          margin: 12px 0 0;
+          color: #f8fafc;
+          font-size: 22px;
+          font-weight: 700;
+          line-height: 1.25;
+        }
+
+        .joker-samples {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 8px;
+          margin-top: 20px;
+        }
+
+        .joker-sample-btn,
+        .joker-small-btn,
+        .joker-action-btn,
+        .joker-send-btn {
+          appearance: none;
+          border: 1px solid rgba(51, 65, 85, 0.98);
+          background: rgba(15, 23, 42, 0.9);
+          color: #cbd5e1;
+          border-radius: 999px;
+          cursor: pointer;
+          font-weight: 700;
+          transition:
+            border-color 160ms ease,
+            color 160ms ease,
+            background 160ms ease,
+            transform 160ms ease;
+        }
+
+        .joker-sample-btn:hover,
+        .joker-small-btn:hover,
+        .joker-action-btn:hover,
+        .joker-send-btn:hover {
+          border-color: rgba(34, 211, 238, 0.65);
+          color: #a5f3fc;
+          background: rgba(8, 47, 73, 0.45);
+        }
+
+        .joker-sample-btn {
+          padding: 9px 14px;
+          font-size: 14px;
+        }
+
+        .joker-message-list {
+          display: grid;
+          gap: 16px;
+        }
+
+        .joker-message {
+          min-width: 0;
+          padding: 16px;
+          border-radius: 20px;
+          border: 1px solid rgba(51, 65, 85, 0.95);
+          background: rgba(2, 6, 23, 0.62);
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+        }
+
+        .joker-message--user {
+          border-color: rgba(34, 211, 238, 0.26);
+          background: rgba(8, 145, 178, 0.12);
+        }
+
+        .joker-message--assistant {
+          border-color: rgba(51, 65, 85, 0.95);
+        }
+
+        .joker-message--system {
+          border-color: rgba(248, 113, 113, 0.35);
+          background: rgba(127, 29, 29, 0.24);
+        }
+
+        .joker-message-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-bottom: 10px;
+        }
+
+        .joker-message-role {
+          color: #94a3b8;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+        }
+
+        .joker-message-role--user {
+          color: #a5f3fc;
+        }
+
+        .joker-message-time {
+          color: #64748b;
+          font-size: 12px;
+        }
+
+        .joker-message-content {
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+          color: #f1f5f9;
+          font-size: 15px;
+          line-height: 1.72;
+        }
+
+        .joker-mini-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+          margin-top: 16px;
+          padding-top: 16px;
+          border-top: 1px solid rgba(51, 65, 85, 0.9);
+        }
+
+        .joker-proof-card {
+          min-width: 0;
+          padding: 12px;
+          border: 1px solid rgba(51, 65, 85, 0.90);
+          border-radius: 16px;
+          background: rgba(0, 0, 0, 0.24);
+        }
+
+        .joker-proof-title {
+          margin-bottom: 10px;
+          color: #64748b;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+        }
+
+        .joker-proof-rows {
+          display: grid;
+          gap: 8px;
+        }
+
+        .joker-proof-row {
+          min-width: 0;
+          display: grid;
+          grid-template-columns: 58px minmax(0, 1fr);
+          gap: 8px;
+          align-items: flex-start;
+        }
+
+        .joker-proof-label {
+          color: #475569;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+        }
+
+        .joker-proof-value {
+          min-width: 0;
+        }
+
+        .joker-proof-text {
+          display: block;
+          color: #cbd5e1;
+          font-size: 11px;
+          line-height: 1.45;
+          overflow-wrap: anywhere;
+          white-space: normal;
+        }
+
+        .joker-submit {
+          padding: 22px;
+          border-top: 1px solid rgba(51, 65, 85, 0.9);
+        }
+
+        .joker-error {
+          margin-bottom: 14px;
+          padding: 12px;
+          color: #fecaca;
+          border: 1px solid rgba(239, 68, 68, 0.35);
+          background: rgba(127, 29, 29, 0.22);
+          border-radius: 16px;
+          font-size: 14px;
+        }
+
+        .joker-form-grid {
+          display: grid;
+          gap: 12px;
+        }
+
+        .joker-input {
+          width: 100%;
+          min-height: 118px;
+          resize: vertical;
+          padding: 15px;
+          border: 1px solid rgba(51, 65, 85, 0.95);
+          border-radius: 18px;
+          outline: none;
+          background: rgba(2, 6, 23, 0.90);
+          color: #f8fafc;
+          font-size: 14px;
+          line-height: 1.65;
+          font-family: inherit;
+        }
+
+        .joker-input::placeholder {
+          color: #475569;
+        }
+
+        .joker-input:focus {
+          border-color: rgba(34, 211, 238, 0.75);
+          box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.08);
+        }
+
+        .joker-form-actions {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .joker-left-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .joker-action-btn,
+        .joker-send-btn {
+          padding: 9px 16px;
+          font-size: 14px;
+        }
+
+        .joker-action-btn--warn:hover {
+          border-color: rgba(251, 191, 36, 0.65);
+          color: #fde68a;
+          background: rgba(120, 53, 15, 0.35);
+        }
+
+        .joker-send-btn {
+          border-color: rgba(34, 211, 238, 0.65);
+          background: rgba(34, 211, 238, 0.10);
+          color: #cffafe;
+        }
+
+        .joker-send-btn:disabled {
+          cursor: not-allowed;
+          border-color: rgba(30, 41, 59, 0.95);
+          background: rgba(15, 23, 42, 0.75);
+          color: #475569;
+        }
+
+        .joker-sidebar {
+          display: grid;
+          align-content: start;
+          gap: 16px;
+          min-width: 0;
+        }
+
+        .joker-card {
+          min-width: 0;
+          padding: 16px;
+          border: 1px solid rgba(51, 65, 85, 0.95);
+          border-radius: 18px;
+          background: rgba(2, 6, 23, 0.64);
+          box-shadow: 0 14px 44px rgba(0, 0, 0, 0.20);
+        }
+
+        .joker-card-title {
+          margin: 0 0 12px;
+          color: #94a3b8;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+        }
+
+        .joker-field-row {
+          display: grid;
+          grid-template-columns: 92px minmax(0, 1fr);
+          gap: 12px;
+          padding: 9px 0;
+          border-bottom: 1px solid rgba(30, 41, 59, 0.85);
+        }
+
+        .joker-field-row:last-child {
+          border-bottom: 0;
+        }
+
+        .joker-field-label {
+          color: #64748b;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+        }
+
+        .joker-field-value {
+          min-width: 0;
+          color: #e2e8f0;
+          font-size: 13px;
+          line-height: 1.55;
+          overflow-wrap: anywhere;
+          white-space: normal;
+        }
+
+        .joker-mono {
+          font-family:
+            ui-monospace,
+            SFMono-Regular,
+            Menlo,
+            Monaco,
+            Consolas,
+            "Liberation Mono",
+            "Courier New",
+            monospace;
+          font-size: 12px;
+        }
+
+        .joker-badge {
+          display: inline-flex;
+          max-width: 100%;
+          align-items: center;
+          padding: 4px 10px;
+          border: 1px solid rgba(71, 85, 105, 0.7);
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          line-height: 1.35;
+          overflow-wrap: anywhere;
+          white-space: normal;
+        }
+
+        .joker-badge--ok {
+          color: #a7f3d0;
+          border-color: rgba(16, 185, 129, 0.34);
+          background: rgba(16, 185, 129, 0.11);
+        }
+
+        .joker-badge--warn {
+          color: #fde68a;
+          border-color: rgba(245, 158, 11, 0.34);
+          background: rgba(245, 158, 11, 0.11);
+        }
+
+        .joker-badge--bad {
+          color: #fecaca;
+          border-color: rgba(239, 68, 68, 0.34);
+          background: rgba(239, 68, 68, 0.11);
+        }
+
+        .joker-badge--neutral {
+          color: #cbd5e1;
+          border-color: rgba(71, 85, 105, 0.46);
+          background: rgba(71, 85, 105, 0.11);
+        }
+
+        .joker-empty-files {
+          padding: 16px;
+          border: 1px dashed rgba(51, 65, 85, 0.95);
+          border-radius: 18px;
+          background: rgba(2, 6, 23, 0.35);
+          color: #64748b;
+          font-size: 14px;
+          line-height: 1.6;
+        }
+
+        .joker-files-box {
+          padding: 14px;
+          border: 1px solid rgba(51, 65, 85, 0.95);
+          border-radius: 18px;
+          background: rgba(2, 6, 23, 0.64);
+        }
+
+        .joker-files-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
+
+        .joker-files-head h2 {
+          margin: 0;
+          color: #94a3b8;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+        }
+
+        .joker-files-list {
+          display: grid;
+          gap: 8px;
+        }
+
+        .joker-file-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          border: 1px solid rgba(51, 65, 85, 0.85);
+          border-radius: 14px;
+          background: rgba(0, 0, 0, 0.20);
+        }
+
+        .joker-file-main {
+          min-width: 0;
+        }
+
+        .joker-file-name {
+          color: #e2e8f0;
+          font-size: 14px;
+          font-weight: 700;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .joker-file-meta {
+          margin-top: 4px;
+          color: #64748b;
+          font-size: 12px;
+        }
+
+        .joker-small-btn {
+          padding: 6px 10px;
+          font-size: 12px;
+        }
+
+        .joker-small-btn--danger:hover {
+          color: #fecaca;
+          border-color: rgba(248, 113, 113, 0.66);
+          background: rgba(127, 29, 29, 0.26);
+        }
+
+        @media (max-width: 1120px) {
+          .joker-shell {
+            grid-template-columns: 1fr;
+          }
+
+          .joker-main-panel {
+            min-height: auto;
+          }
+
+          .joker-sidebar {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 760px) {
+          .joker-shell {
+            padding: 12px;
+            gap: 12px;
+          }
+
+          .joker-header,
+          .joker-chat-scroll,
+          .joker-submit {
+            padding: 16px;
+          }
+
+          .joker-main-panel {
+            border-radius: 20px;
+          }
+
+          .joker-mini-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .joker-sidebar {
+            grid-template-columns: 1fr;
+          }
+
+          .joker-form-actions {
+            align-items: stretch;
+            flex-direction: column;
+          }
+
+          .joker-left-actions,
+          .joker-send-btn {
+            width: 100%;
+          }
+
+          .joker-action-btn,
+          .joker-send-btn {
+            width: 100%;
+          }
+        }
+      `}</style>
+
+      <div className="joker-shell">
+        <section className="joker-main-panel">
+          <header className="joker-header">
+            <div className="joker-header-grid">
+              <div>
+                <div className="joker-kicker">AI JOKER-C2</div>
+                <h1 className="joker-title">Governed Runtime Interface</h1>
+                <p className="joker-lead">
+                  Chat operativa con identità IPR, memoria EVT, prova OPC e governance HBCE/MATRIX.
+                  Gli stati tecnici vengono mostrati integralmente.
                 </p>
               </div>
 
-              <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-950/80 p-3">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Session ID
-                </div>
-                <div className="mt-1 break-all font-mono text-xs text-slate-300">
-                  {sessionId || "initializing"}
-                </div>
+              <div className="joker-session-box">
+                <div className="joker-session-label">Session ID</div>
+                <div className="joker-session-id">{sessionId || "initializing"}</div>
               </div>
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto p-5">
+          <div className="joker-chat-scroll">
             {messages.length === 0 ? (
-              <div className="flex min-h-[380px] items-center justify-center rounded-3xl border border-dashed border-slate-800 bg-slate-950/30 p-8 text-center">
-                <div className="max-w-xl">
-                  <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    JOKER-C2 online
-                  </div>
-                  <p className="mt-3 text-xl font-semibold text-slate-100">
+              <div className="joker-empty">
+                <div className="joker-empty-inner">
+                  <div className="joker-empty-kicker">JOKER-C2 online</div>
+                  <p className="joker-empty-title">
                     Nuova sessione inizializzata. Invia una richiesta operativa.
                   </p>
-                  <div className="mt-5 flex flex-wrap justify-center gap-2">
+                  <div className="joker-samples">
                     {[
                       "joker cosa è IPR?",
                       "che differenza c’è tra IPR, EVT e OPC?",
@@ -711,7 +1310,7 @@ export default function InterfacePage() {
                         key={sample}
                         type="button"
                         onClick={() => void sendMessage(sample)}
-                        className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400 hover:text-cyan-200"
+                        className="joker-sample-btn"
                       >
                         {sample}
                       </button>
@@ -720,13 +1319,13 @@ export default function InterfacePage() {
                 </div>
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="joker-message-list">
                 {messages.map((item) => (
                   <MessageBubble key={item.id} message={item} />
                 ))}
 
                 {isSending ? (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
+                  <div className="joker-message joker-message--assistant">
                     AI JOKER-C2 sta generando risposta, EVT e OPC proof record.
                   </div>
                 ) : null}
@@ -736,37 +1335,34 @@ export default function InterfacePage() {
             )}
           </div>
 
-          <form onSubmit={handleSubmit} className="border-t border-slate-800 p-5">
-            {runtimeError ? (
-              <div className="mb-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
-                {runtimeError}
-              </div>
-            ) : null}
+          <form onSubmit={handleSubmit} className="joker-submit">
+            {runtimeError ? <div className="joker-error">{runtimeError}</div> : null}
 
-            <div className="grid gap-3">
+            <div className="joker-form-grid">
               <textarea
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Invia una richiesta operativa..."
                 rows={4}
-                className="min-h-[112px] resize-y rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm leading-6 text-slate-100 outline-none ring-0 placeholder:text-slate-600 focus:border-cyan-500"
+                className="joker-input"
               />
 
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
+              <div className="joker-form-actions">
+                <div className="joker-left-actions">
                   <input
                     ref={fileInputRef}
                     type="file"
                     multiple
                     className="hidden"
+                    style={{ display: "none" }}
                     onChange={(event) => void handleFileChange(event.target.files)}
                   />
 
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:border-cyan-400 hover:text-cyan-200"
+                    className="joker-action-btn"
                   >
                     Add files
                   </button>
@@ -774,7 +1370,7 @@ export default function InterfacePage() {
                   <button
                     type="button"
                     onClick={newSession}
-                    className="rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:border-amber-400 hover:text-amber-200"
+                    className="joker-action-btn joker-action-btn--warn"
                   >
                     New session
                   </button>
@@ -783,7 +1379,7 @@ export default function InterfacePage() {
                 <button
                   type="submit"
                   disabled={isSending || (!message.trim() && files.length === 0)}
-                  className="rounded-full border border-cyan-400/60 bg-cyan-400/10 px-5 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900 disabled:text-slate-600"
+                  className="joker-send-btn"
                 >
                   {isSending ? "Running..." : "Send"}
                 </button>
@@ -792,7 +1388,7 @@ export default function InterfacePage() {
           </form>
         </section>
 
-        <aside className="grid h-fit gap-4">
+        <aside className="joker-sidebar">
           <RuntimeCard title="Execution Context">
             <FieldRow label="Node" value={DEFAULT_NODE} mono />
             <FieldRow label="Session" value={sessionId || "-"} mono />
@@ -818,10 +1414,7 @@ export default function InterfacePage() {
             <FieldRow label="Audit" value={runtimeSummary.opcAuditStatus} badge />
             <FieldRow label="Verify" value={runtimeSummary.opcVerificationStatus} badge />
             <FieldRow label="Append" value={runtimeSummary.opcAppendStatus} badge />
-            <FieldRow
-              label="Reason"
-              value={lastRuntime?.opc?.appendReason || "-"}
-            />
+            <FieldRow label="Reason" value={lastRuntime?.opc?.appendReason || "-"} />
           </RuntimeCard>
 
           <RuntimeCard title="EVT Chain">
@@ -839,96 +1432,38 @@ export default function InterfacePage() {
             <FieldRow label="EVT" value={lastRuntime?.governedEvt?.evt || "-"} mono />
             <FieldRow label="Prev" value={lastRuntime?.governedEvt?.prev || "-"} mono />
             <FieldRow label="Project" value={lastRuntime?.governedEvt?.project || "-"} />
-            <FieldRow
-              label="Domains"
-              value={formatList(lastRuntime?.governedEvt?.activeDomains)}
-            />
+            <FieldRow label="Domains" value={formatList(lastRuntime?.governedEvt?.activeDomains)} />
             <FieldRow label="Hash" value={lastRuntime?.governedEvt?.hash || "-"} mono />
-            <FieldRow
-              label="Append"
-              value={lastRuntime?.governedEvt?.appendStatus || "-"}
-              badge
-            />
+            <FieldRow label="Append" value={lastRuntime?.governedEvt?.appendStatus || "-"} badge />
           </RuntimeCard>
 
           <RuntimeCard title="Memory">
             <FieldRow label="Used" value={runtimeSummary.memoryUsed} />
             <FieldRow label="Source" value={runtimeSummary.memorySource} />
             <FieldRow label="Event" value={lastRuntime?.memory?.event || "-"} mono />
-            <FieldRow
-              label="Append"
-              value={lastRuntime?.memory?.appendStatus || "-"}
-              badge
-            />
-            <FieldRow
-              label="Governed"
-              value={lastRuntime?.memory?.governedEvt || "-"}
-              mono
-            />
+            <FieldRow label="Append" value={lastRuntime?.memory?.appendStatus || "-"} badge />
+            <FieldRow label="Governed" value={lastRuntime?.memory?.governedEvt || "-"} mono />
           </RuntimeCard>
 
           <RuntimeCard title="Governance">
-            <FieldRow
-              label="Data"
-              value={lastRuntime?.governance?.dataClass || "-"}
-              badge
-            />
-            <FieldRow
-              label="Policy"
-              value={lastRuntime?.governance?.policyStatus || "-"}
-              badge
-            />
-            <FieldRow
-              label="Risk"
-              value={lastRuntime?.governance?.riskClass || "-"}
-              badge
-            />
-            <FieldRow
-              label="Score"
-              value={lastRuntime?.governance?.riskScore ?? "-"}
-            />
-            <FieldRow
-              label="Oversight"
-              value={lastRuntime?.governance?.oversight || "-"}
-              badge
-            />
-            <FieldRow
-              label="FailClosed"
-              value={lastRuntime?.governance?.failClosed}
-            />
-            <FieldRow
-              label="AuditReq"
-              value={lastRuntime?.governance?.auditRequired}
-            />
+            <FieldRow label="Data" value={lastRuntime?.governance?.dataClass || "-"} badge />
+            <FieldRow label="Policy" value={lastRuntime?.governance?.policyStatus || "-"} badge />
+            <FieldRow label="Risk" value={lastRuntime?.governance?.riskClass || "-"} badge />
+            <FieldRow label="Score" value={lastRuntime?.governance?.riskScore ?? "-"} />
+            <FieldRow label="Oversight" value={lastRuntime?.governance?.oversight || "-"} badge />
+            <FieldRow label="FailClosed" value={lastRuntime?.governance?.failClosed} />
+            <FieldRow label="AuditReq" value={lastRuntime?.governance?.auditRequired} />
           </RuntimeCard>
 
           <RuntimeCard title="Files">
-            <FilesPanel
-              files={files}
-              onRemoveFile={removeFile}
-              onClearFiles={clearFiles}
-            />
+            <FilesPanel files={files} onRemoveFile={removeFile} onClearFiles={clearFiles} />
           </RuntimeCard>
 
           <RuntimeCard title="Diagnostics">
-            <FieldRow
-              label="OpenAI"
-              value={lastRuntime?.diagnostics?.openaiConfigured}
-            />
-            <FieldRow
-              label="Model"
-              value={lastRuntime?.diagnostics?.modelUsed || "-"}
-              mono
-            />
-            <FieldRow
-              label="Degraded"
-              value={lastRuntime?.diagnostics?.degradedReason || "none"}
-            />
-            <FieldRow
-              label="OPC"
-              value={lastRuntime?.diagnostics?.opcAppendStatus || "-"}
-              badge
-            />
+            <FieldRow label="OpenAI" value={lastRuntime?.diagnostics?.openaiConfigured} />
+            <FieldRow label="Model" value={lastRuntime?.diagnostics?.modelUsed || "-"} mono />
+            <FieldRow label="Degraded" value={lastRuntime?.diagnostics?.degradedReason || "none"} />
+            <FieldRow label="OPC" value={lastRuntime?.diagnostics?.opcAppendStatus || "-"} badge />
           </RuntimeCard>
         </aside>
       </div>
