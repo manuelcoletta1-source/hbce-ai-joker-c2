@@ -24,6 +24,7 @@ type DocumentUploadProps = {
 };
 
 const SUPPORTED_EXTENSIONS = [".txt", ".md", ".json"];
+const MAX_FILE_SIZE_BYTES = 512 * 1024;
 
 export default function DocumentUpload({
   value,
@@ -35,8 +36,10 @@ export default function DocumentUpload({
   async function handleFile(file: File | undefined) {
     if (!file) return;
 
-    const lower = file.name.toLowerCase();
-    const supported = SUPPORTED_EXTENSIONS.some((ext) => lower.endsWith(ext));
+    const lowerName = file.name.toLowerCase();
+    const supported = SUPPORTED_EXTENSIONS.some((extension) =>
+      lowerName.endsWith(extension)
+    );
 
     if (!supported) {
       setStatus("Unsupported file for MVP. Use TXT, MD, or JSON.");
@@ -44,12 +47,24 @@ export default function DocumentUpload({
       return;
     }
 
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setStatus("File too large for MVP. Maximum size is 512 KB.");
+      onChange(null);
+      return;
+    }
+
     try {
       const text = await file.text();
 
+      if (!text.trim()) {
+        setStatus("The selected document is empty.");
+        onChange(null);
+        return;
+      }
+
       onChange({
         filename: file.name,
-        mimeType: file.type || "text/plain",
+        mimeType: file.type || inferMimeType(file.name),
         sizeBytes: file.size,
         text
       });
@@ -76,8 +91,9 @@ export default function DocumentUpload({
       <h2>Upload document</h2>
 
       <p className="matrix-muted">
-        Select a TXT, MD, or JSON document for the internal HERMETICUM B.C.E. self-audit pilot.
-        The file is read locally in the browser and then used as runtime context.
+        Select a TXT, MD, or JSON document for the internal HERMETICUM B.C.E.
+        self-audit pilot. The file is read locally in the browser and then used
+        as runtime context.
       </p>
 
       <div className="matrix-upload-box">
@@ -88,7 +104,11 @@ export default function DocumentUpload({
           onChange={(event) => void handleFile(event.target.files?.[0])}
         />
 
-        <button type="button" onClick={clear} className="matrix-button matrix-button-secondary">
+        <button
+          type="button"
+          onClick={clear}
+          className="matrix-button matrix-button-secondary"
+        >
           Clear
         </button>
       </div>
@@ -113,9 +133,17 @@ export default function DocumentUpload({
       ) : null}
 
       <div className="matrix-warning">
-        Do not upload secrets, credentials, identity documents, private keys, customer data,
-        private evidence, or sensitive operational payloads.
+        Do not upload secrets, credentials, identity documents, private keys,
+        customer data, private evidence, or sensitive operational payloads.
       </div>
     </section>
   );
+}
+
+function inferMimeType(filename: string): string {
+  const lower = filename.toLowerCase();
+
+  if (lower.endsWith(".md")) return "text/markdown";
+  if (lower.endsWith(".json")) return "application/json";
+  return "text/plain";
 }
