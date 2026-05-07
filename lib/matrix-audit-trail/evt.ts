@@ -84,22 +84,20 @@ function buildMatrixEvtId(timestamp: string): string {
     .slice(0, 14)
     .padEnd(14, "0");
 
-  const entropy = buildPortableEntropy();
-
-  return `EVT-${compactTimestamp}-${entropy}`;
+  return `EVT-${compactTimestamp}-${buildPortableEntropy()}`;
 }
 
 function buildPortableEntropy(): string {
-  const browserCrypto =
+  const webCrypto =
     typeof globalThis !== "undefined" ? globalThis.crypto : undefined;
 
-  if (browserCrypto && typeof browserCrypto.randomUUID === "function") {
-    return browserCrypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+  if (webCrypto && typeof webCrypto.randomUUID === "function") {
+    return webCrypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
   }
 
-  if (browserCrypto && typeof browserCrypto.getRandomValues === "function") {
+  if (webCrypto && typeof webCrypto.getRandomValues === "function") {
     const bytes = new Uint8Array(4);
-    browserCrypto.getRandomValues(bytes);
+    webCrypto.getRandomValues(bytes);
 
     return Array.from(bytes)
       .map((byte) => byte.toString(16).padStart(2, "0"))
