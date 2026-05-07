@@ -22,7 +22,8 @@ import {
 import type {
   MatrixAiActionType,
   MatrixAuditTrailSession,
-  MatrixHumanValidationStatus
+  MatrixHumanValidationStatus,
+  MatrixAuditTrailValidationInput
 } from "../lib/matrix-audit-trail/types";
 
 const DEFAULT_PROMPT =
@@ -43,9 +44,16 @@ export default function MatrixAuditTrailDashboard() {
   const [status, setStatus] = useState("Ready.");
 
   const canRunAnalysis = Boolean(documentValue?.text.trim() && prompt.trim());
-  const canValidate = Boolean(session.document && session.aiAction && session.aiOutput && session.governance);
 
-  const reportText = useMemo(() => {
+  const canValidate = Boolean(
+    session.document &&
+      session.aiAction &&
+      session.aiOutput &&
+      session.governance &&
+      !session.report
+  );
+
+  const reportId = useMemo(() => {
     if (!session.report) return "";
     return session.report.reportId;
   }, [session.report]);
@@ -115,19 +123,38 @@ export default function MatrixAuditTrailDashboard() {
       updatedAt: new Date().toISOString()
     }));
 
-    setStatus("AI analysis simulated and governance decision generated. Human validation is required.");
+    setStatus("AI analysis generated. Human validation is now required before EVT / OPC / report generation.");
   }
 
-  function validate(statusValue: Parameters<typeof applyMatrixHumanValidation>[1]) {
-    try {
-      const validated = applyMatrixHumanValidation(session, statusValue);
+  function validate(input: MatrixAuditTrailValidationInput) {
+    let nextStatus = `Human validation requested: ${input.validationStatus}.`;
 
-      setSession(validated);
-      setValidationStatus(statusValue.validationStatus);
-      setStatus(`Human validation completed: ${statusValue.validationStatus}.`);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Validation failed.");
-    }
+    setValidationStatus(input.validationStatus);
+
+    setSession((current) => {
+      try {
+        if (!current.document || !current.aiAction || !current.aiOutput || !current.governance) {
+          nextStatus =
+            "Validation blocked: run AI audit analysis before approving, correcting or rejecting.";
+          return current;
+        }
+
+        const validated = applyMatrixHumanValidation(current, input);
+
+        nextStatus =
+          validated.report && validated.evt && validated.opc
+            ? `Human validation completed: ${input.validationStatus}. EVT, OPC and audit report generated.`
+            : `Human validation completed: ${input.validationStatus}. Report not generated.`;
+
+        return validated;
+      } catch (error) {
+        nextStatus =
+          error instanceof Error ? error.message : "Human validation failed.";
+        return current;
+      }
+    });
+
+    setStatus(nextStatus);
   }
 
   return (
@@ -625,6 +652,21 @@ export default function MatrixAuditTrailDashboard() {
                 <div>
                   <span>OPC hash</span>
                   <strong>{session.opc?.proofHash || "-"}</strong>
+                </div>
+              </div>
+            </section>
+
+            <section className="matrix-card">
+              <div className="matrix-card-kicker">REPORT</div>
+              <h2>Report status</h2>
+              <div className="matrix-kv-grid">
+                <div>
+                  <span>Report</span>
+                  <strong>{reportId || "-"}</strong>
+                </div>
+                <div>
+                  <span>Final</span>
+                  <strong>{session.report?.finalState || "-"}</strong>
                 </div>
               </div>
             </section>
