@@ -26,7 +26,8 @@ export default function AuditReport({ report }: AuditReportProps) {
     );
   }
 
-  const textReport = renderMatrixAuditReportText(report);
+  const currentReport: MatrixAuditReport = report;
+  const textReport = renderMatrixAuditReportText(currentReport);
 
   async function copyReport() {
     try {
@@ -45,7 +46,7 @@ export default function AuditReport({ report }: AuditReportProps) {
     const anchor = document.createElement("a");
 
     anchor.href = url;
-    anchor.download = `${report.reportId}.txt`;
+    anchor.download = `${currentReport.reportId}.txt`;
 
     document.body.appendChild(anchor);
     anchor.click();
@@ -55,7 +56,7 @@ export default function AuditReport({ report }: AuditReportProps) {
   }
 
   function downloadJson() {
-    const blob = new Blob([JSON.stringify(report, null, 2)], {
+    const blob = new Blob([JSON.stringify(currentReport, null, 2)], {
       type: "application/json;charset=utf-8"
     });
 
@@ -63,7 +64,7 @@ export default function AuditReport({ report }: AuditReportProps) {
     const anchor = document.createElement("a");
 
     anchor.href = url;
-    anchor.download = `${report.reportId}.json`;
+    anchor.download = `${currentReport.reportId}.json`;
 
     document.body.appendChild(anchor);
     anchor.click();
@@ -85,19 +86,19 @@ export default function AuditReport({ report }: AuditReportProps) {
       <div className="matrix-report-grid">
         <div>
           <span>Final state</span>
-          <strong>{report.finalState}</strong>
+          <strong>{currentReport.finalState}</strong>
         </div>
         <div>
           <span>Document hash</span>
-          <strong>{report.document.documentHash}</strong>
+          <strong>{currentReport.document.documentHash}</strong>
         </div>
         <div>
           <span>EVT</span>
-          <strong>{report.evt.evt}</strong>
+          <strong>{currentReport.evt.evt}</strong>
         </div>
         <div>
           <span>OPC</span>
-          <strong>{report.opc.opc}</strong>
+          <strong>{currentReport.opc.opc}</strong>
         </div>
       </div>
 
@@ -112,7 +113,11 @@ export default function AuditReport({ report }: AuditReportProps) {
           Download TXT
         </button>
 
-        <button type="button" onClick={downloadJson} className="matrix-button matrix-button-secondary">
+        <button
+          type="button"
+          onClick={downloadJson}
+          className="matrix-button matrix-button-secondary"
+        >
           Download JSON
         </button>
       </div>
