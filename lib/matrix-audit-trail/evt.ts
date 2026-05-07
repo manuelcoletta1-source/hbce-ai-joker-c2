@@ -1,66 +1,84 @@
 /**
- * MATRIX AI Audit Trail — OPC
+ * MATRIX AI Audit Trail — EVT
  *
- * Minimal OPC proof builder for the MATRIX AI Audit Trail MVP.
+ * Minimal EVT builder for the MATRIX AI Audit Trail MVP.
  *
- * OPC records do not create legal certification by themselves.
- * They create a technical operational proof linked to an EVT event.
+ * EVT records do not create legal certification by themselves.
+ * They create a verifiable operational trace for AI-assisted document work.
  */
 
 import { sha256Canonical } from "./hash";
-import type { MatrixEvtRecord, MatrixOpcRecord } from "./types";
+import type {
+  MatrixAiActionType,
+  MatrixEvtRecord,
+  MatrixHash,
+  MatrixHumanValidationStatus,
+  MatrixRiskClass,
+  MatrixRuntimeDecision
+} from "./types";
 
-export type BuildMatrixOpcInput = {
-  evt: MatrixEvtRecord;
-  createdAt?: string;
+export type BuildMatrixEvtInput = {
+  prev?: string;
+  documentHash: MatrixHash;
+  userIpr: string;
+  action: MatrixAiActionType;
+  riskClass: MatrixRiskClass;
+  decision: MatrixRuntimeDecision;
+  humanValidation: MatrixHumanValidationStatus;
+  outputHash: MatrixHash;
+  timestamp?: string;
 };
 
-export function buildMatrixOpc(input: BuildMatrixOpcInput): MatrixOpcRecord {
-  const createdAt = input.createdAt || new Date().toISOString();
-  const opc = buildMatrixOpcId(createdAt);
+export function buildMatrixEvt(input: BuildMatrixEvtInput): MatrixEvtRecord {
+  const timestamp = input.timestamp || new Date().toISOString();
+  const evt = buildMatrixEvtId(timestamp);
+  const prev = input.prev?.trim() || "GENESIS";
 
-  const proofHash = sha256Canonical({
-    type: "MATRIX_AI_AUDIT_TRAIL_OPC",
-    opc,
-    linkedEvt: input.evt.evt,
-    evtTraceHash: input.evt.traceHash,
-    documentHash: input.evt.documentHash,
-    outputHash: input.evt.outputHash,
-    humanValidation: input.evt.humanValidation,
-    createdAt
+  const eventWithoutHash = {
+    evt,
+    prev,
+    timestamp,
+    documentHash: input.documentHash,
+    userIpr: input.userIpr,
+    action: input.action,
+    riskClass: input.riskClass,
+    decision: input.decision,
+    humanValidation: input.humanValidation,
+    outputHash: input.outputHash,
+    status: "VERIFIABLE" as const
+  };
+
+  const traceHash = sha256Canonical({
+    type: "MATRIX_AI_AUDIT_TRAIL_EVT",
+    ...eventWithoutHash
   });
 
   return {
-    opc,
-    linkedEvt: input.evt.evt,
-    proofType: "OPERATIONAL_PROOF",
-    proofHash,
-    verificationStatus: "VALID",
-    createdAt
+    ...eventWithoutHash,
+    traceHash
   };
 }
 
-export function verifyMatrixOpc(opc: MatrixOpcRecord, evt: MatrixEvtRecord): boolean {
+export function verifyMatrixEvt(evt: MatrixEvtRecord): boolean {
   const rebuilt = sha256Canonical({
-    type: "MATRIX_AI_AUDIT_TRAIL_OPC",
-    opc: opc.opc,
-    linkedEvt: evt.evt,
-    evtTraceHash: evt.traceHash,
+    type: "MATRIX_AI_AUDIT_TRAIL_EVT",
+    evt: evt.evt,
+    prev: evt.prev,
+    timestamp: evt.timestamp,
     documentHash: evt.documentHash,
-    outputHash: evt.outputHash,
+    userIpr: evt.userIpr,
+    action: evt.action,
+    riskClass: evt.riskClass,
+    decision: evt.decision,
     humanValidation: evt.humanValidation,
-    createdAt: opc.createdAt
+    outputHash: evt.outputHash,
+    status: evt.status
   });
 
-  return (
-    opc.linkedEvt === evt.evt &&
-    opc.proofType === "OPERATIONAL_PROOF" &&
-    opc.verificationStatus === "VALID" &&
-    rebuilt === opc.proofHash
-  );
+  return rebuilt === evt.traceHash;
 }
 
-function buildMatrixOpcId(timestamp: string): string {
+function buildMatrixEvtId(timestamp: string): string {
   const compactTimestamp = timestamp
     .replace(/\D/g, "")
     .slice(0, 14)
@@ -68,7 +86,7 @@ function buildMatrixOpcId(timestamp: string): string {
 
   const entropy = buildPortableEntropy();
 
-  return `OPC-${compactTimestamp}-${entropy}`;
+  return `EVT-${compactTimestamp}-${entropy}`;
 }
 
 function buildPortableEntropy(): string {
