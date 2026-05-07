@@ -15,9 +15,15 @@
  * prototype use. Serverless production deployments should use persistent
  * external storage such as Postgres, KV, object storage, or another managed
  * append-only store.
+ *
+ * Serverless note:
+ * On Vercel/serverless runtimes, local filesystem persistence may fail or
+ * reset between invocations. In that case, append failures should be reported
+ * as persistence failures while the generated memory event remains hash-verifiable.
  */
 
 import { appendFile, mkdir, readFile, stat, writeFile } from "fs/promises";
+import os from "os";
 import path from "path";
 
 import {
@@ -29,14 +35,17 @@ import {
   type SemanticState
 } from "./evt-memory";
 
-export const DEFAULT_EVT_MEMORY_LEDGER_DIR = path.join(
-  process.cwd(),
-  "ledger"
-);
+const DEFAULT_LEDGER_FILENAME = "hbce-ai-joker-c2-evt-memory.jsonl";
+
+export const DEFAULT_EVT_MEMORY_LEDGER_DIR =
+  process.env.JOKER_EVT_MEMORY_LEDGER_DIR ||
+  process.env.HBCE_EVT_MEMORY_LEDGER_DIR ||
+  path.join(os.tmpdir(), "hbce-ai-joker-c2");
 
 export const DEFAULT_EVT_MEMORY_LEDGER_FILE =
   process.env.JOKER_EVT_MEMORY_LEDGER_FILE ||
-  path.join(DEFAULT_EVT_MEMORY_LEDGER_DIR, "evt-memory.jsonl");
+  process.env.HBCE_EVT_MEMORY_LEDGER_FILE ||
+  path.join(DEFAULT_EVT_MEMORY_LEDGER_DIR, DEFAULT_LEDGER_FILENAME);
 
 export type EvtMemoryLedgerAppendStatus =
   | "APPENDED"
@@ -176,6 +185,30 @@ export async function appendEvtMemoryEvent(
         prev: eventRef.prev,
         ledgerPath,
         reason: "EVT memory event hash is invalid and was not appended."
+      };
+    }
+
+    const readResult = await readEvtMemoryLedger(ledgerPath);
+
+    if (readResult.status === "FAILED") {
+      return {
+        status: "FAILED",
+        evt: eventRef.evt,
+        prev: eventRef.prev,
+        ledgerPath,
+        reason: `EVT memory ledger read failed before append: ${readResult.reason}`
+      };
+    }
+
+    const continuity = validateMemoryAppendContinuity(readResult.events, event);
+
+    if (!continuity.ok) {
+      return {
+        status: "REJECTED",
+        evt: eventRef.evt,
+        prev: eventRef.prev,
+        ledgerPath,
+        reason: continuity.reason
       };
     }
 
@@ -351,6 +384,16 @@ export async function getLastEvtMemoryEvent(input?: {
   });
 
   return filtered[filtered.length - 1] ?? null;
+}
+
+export async function getLastEvtMemoryEventReference(input?: {
+  ipr?: string;
+  sessionId?: string;
+  ledgerPath?: string;
+}): Promise<string> {
+  const lastEvent = await getLastEvtMemoryEvent(input);
+
+  return lastEvent?.evt ?? "GENESIS";
 }
 
 export async function buildEvtMemoryLedgerSummary(
@@ -982,6 +1025,76 @@ function mergeUnique(values: string[], limit = 32): string[] {
   return Array.from(new Set(values.filter(Boolean))).slice(0, limit);
 }
 
+function validateMemoryAppendContinuity(
+  events: EvtMemoryEvent[],
+  nextEvent: EvtMemoryEvent
+): { ok: boolean; reason: string } {
+  if (events.length === 0) {
+    if (nextEvent.prev !== "GENESIS") {
+      return {
+        ok: false,
+        reason: `Memory append rejected: first ledger event must reference GENESIS, received prev=${nextEvent.prev}.`
+      };
+    }
+
+    return {
+      ok: true,
+      reason: "First memory event references GENESIS."
+    };
+  }
+
+  const sameSessionEvents = events.filter((event) => {
+    return event.ipr === nextEvent.ipr && event.sessionId === nextEvent.sessionId;
+  });
+
+  const sameCanonicalEvents = events.filter((event) => {
+    return event.ipr === nextEvent.ipr && event.sessionId === CANONICAL_SESSION_ID;
+  });
+
+  const relevantEvents =
+    sameSessionEvents.length > 0
+      ? sameSessionEvents
+      : sameCanonicalEvents.length > 0
+        ? sameCanonicalEvents
+        : [];
+
+  if (relevantEvents.length === 0) {
+    if (nextEvent.prev !== "GENESIS") {
+      return {
+        ok: false,
+        reason: `Memory append rejected: no relevant memory chain found for ipr=${nextEvent.ipr}, session=${nextEvent.sessionId}; expected prev=GENESIS, received prev=${nextEvent.prev}.`
+      };
+    }
+
+    return {
+      ok: true,
+      reason: "New memory chain starts from GENESIS."
+    };
+  }
+
+  const lastRelevant = relevantEvents[relevantEvents.length - 1];
+
+  if (!lastRelevant) {
+    return {
+      ok: false,
+      reason: "Memory append rejected: last relevant memory event is unavailable."
+    };
+  }
+
+  if (nextEvent.prev !== lastRelevant.evt) {
+    return {
+      ok: false,
+      reason:
+        `Memory append rejected: next prev=${nextEvent.prev} does not match last relevant memory evt=${lastRelevant.evt}.`
+    };
+  }
+
+  return {
+    ok: true,
+    reason: "Memory append continuity OK."
+  };
+}
+
 function inferChainContinuity(
   events: EvtMemoryEvent[]
 ): EvtMemoryLedgerIntegrityResult["chainContinuity"] {
@@ -989,30 +1102,49 @@ function inferChainContinuity(
     return "UNVERIFIED";
   }
 
-  if (events.length === 1) {
-    return "LINEAR";
-  }
+  const groups = groupEventsByIprAndSession(events);
+  let hasPartial = false;
 
-  let linearLinks = 0;
+  for (const groupedEvents of groups.values()) {
+    const ordered = [...groupedEvents].sort((a, b) => Date.parse(a.t) - Date.parse(b.t));
 
-  for (let index = 1; index < events.length; index += 1) {
-    const current = events[index];
-    const previous = events[index - 1];
-
-    if (!current || !previous) {
+    if (ordered.length === 0) {
       continue;
     }
 
-    if (current.prev === previous.evt) {
-      linearLinks += 1;
+    if (ordered[0]?.prev !== "GENESIS") {
+      hasPartial = true;
+      continue;
+    }
+
+    for (let index = 1; index < ordered.length; index += 1) {
+      const current = ordered[index];
+      const previous = ordered[index - 1];
+
+      if (!current || !previous || current.prev !== previous.evt) {
+        hasPartial = true;
+        break;
+      }
     }
   }
 
-  if (linearLinks === events.length - 1) {
-    return "LINEAR";
+  return hasPartial ? "PARTIAL" : "LINEAR";
+}
+
+function groupEventsByIprAndSession(
+  events: EvtMemoryEvent[]
+): Map<string, EvtMemoryEvent[]> {
+  const groups = new Map<string, EvtMemoryEvent[]>();
+
+  for (const event of events) {
+    const key = `${event.ipr}::${event.sessionId}`;
+    const current = groups.get(key) || [];
+
+    current.push(event);
+    groups.set(key, current);
   }
 
-  return "PARTIAL";
+  return groups;
 }
 
 function inferVerificationStatus(input: {
@@ -1060,7 +1192,7 @@ function buildWarnings(input: {
 
   if (input.chainContinuity === "PARTIAL") {
     warnings.push(
-      "EVT memory ledger is partially ordered. This can happen when multiple sessions or canonical IPR memory slots write to the same ledger."
+      "EVT memory ledger is partially ordered by IPR/session. This can happen when multiple sessions or canonical IPR memory slots write independent chains to the same ledger."
     );
   }
 
