@@ -1,7 +1,7 @@
 /**
  * AI JOKER-C2 EVT Ledger
  *
- * Append-only local JSONL ledger for HBCE / MATRIX runtime events.
+ * Append-only JSONL ledger for HBCE / MATRIX runtime events.
  *
  * This module supports:
  * - append-only EVT persistence
@@ -15,15 +15,19 @@
  * This file-based ledger is suitable for local and prototype use.
  * Controlled deployment may require database storage, access control,
  * signing, backup, retention rules and external review.
+ *
+ * Serverless note:
+ * On Vercel/serverless runtimes, local filesystem persistence may fail or
+ * reset between invocations. In that case, append failures should not make
+ * event generation unverifiable; they should be reported as persistence
+ * failures while the generated event hash remains independently verifiable.
  */
 
-import { mkdir, readFile, stat, writeFile, appendFile } from "fs/promises";
+import { appendFile, mkdir, readFile, stat, writeFile } from "fs/promises";
+import os from "os";
 import path from "path";
 
-import type {
-  RuntimeEvent,
-  VerificationStatus
-} from "./runtime-types";
+import type { RuntimeEvent, VerificationStatus } from "./runtime-types";
 
 import {
   buildEventLine,
@@ -39,19 +43,21 @@ import {
   type RuntimeEventBatchVerificationReport
 } from "./evt-verify";
 
-export const DEFAULT_LEDGER_DIR = path.join(process.cwd(), "ledger");
-export const DEFAULT_LEDGER_FILE = path.join(DEFAULT_LEDGER_DIR, "events.jsonl");
+const DEFAULT_LEDGER_FILENAME = "hbce-ai-joker-c2-events.jsonl";
 
-export type LedgerAppendStatus =
-  | "APPENDED"
-  | "REJECTED"
-  | "FAILED";
+export const DEFAULT_LEDGER_DIR =
+  process.env.JOKER_EVT_LEDGER_DIR ||
+  process.env.HBCE_EVT_LEDGER_DIR ||
+  path.join(os.tmpdir(), "hbce-ai-joker-c2");
 
-export type LedgerReadStatus =
-  | "READY"
-  | "EMPTY"
-  | "MISSING"
-  | "FAILED";
+export const DEFAULT_LEDGER_FILE =
+  process.env.JOKER_EVT_LEDGER_FILE ||
+  process.env.HBCE_EVT_LEDGER_FILE ||
+  path.join(DEFAULT_LEDGER_DIR, DEFAULT_LEDGER_FILENAME);
+
+export type LedgerAppendStatus = "APPENDED" | "REJECTED" | "FAILED";
+
+export type LedgerReadStatus = "READY" | "EMPTY" | "MISSING" | "FAILED";
 
 export type LedgerAppendResult = {
   status: LedgerAppendStatus;
@@ -96,9 +102,7 @@ export type LedgerIntegrityResult = {
   verification: RuntimeEventBatchVerificationReport;
 };
 
-export async function ensureLedger(
-  ledgerPath = DEFAULT_LEDGER_FILE
-): Promise<void> {
+export async function ensureLedger(ledgerPath = DEFAULT_LEDGER_FILE): Promise<void> {
   const directory = path.dirname(ledgerPath);
 
   await mkdir(directory, { recursive: true });
@@ -134,6 +138,30 @@ export async function appendEvent(
         prev: event.prev,
         ledgerPath,
         reason: "Runtime event hash is invalid and was not appended."
+      };
+    }
+
+    const existing = await readLedger(ledgerPath);
+
+    if (existing.status === "FAILED") {
+      return {
+        status: "FAILED",
+        evt: event.evt,
+        prev: event.prev,
+        ledgerPath,
+        reason: `Ledger read failed before append: ${existing.reason}`
+      };
+    }
+
+    const continuity = validateAppendContinuity(existing.events, event);
+
+    if (!continuity.ok) {
+      return {
+        status: "REJECTED",
+        evt: event.evt,
+        prev: event.prev,
+        ledgerPath,
+        reason: continuity.reason
       };
     }
 
@@ -404,9 +432,54 @@ export async function buildLedgerDiagnostics(
   };
 }
 
+function validateAppendContinuity(
+  events: RuntimeEvent[],
+  nextEvent: RuntimeEvent
+): { ok: boolean; reason: string } {
+  if (events.length === 0) {
+    if (nextEvent.prev !== "GENESIS") {
+      return {
+        ok: false,
+        reason: `Append continuity rejected: first ledger event must reference GENESIS, received prev=${nextEvent.prev}.`
+      };
+    }
+
+    return {
+      ok: true,
+      reason: "First event references GENESIS."
+    };
+  }
+
+  const lastEvent = events[events.length - 1];
+
+  if (!lastEvent) {
+    return {
+      ok: false,
+      reason: "Append continuity rejected: last ledger event is unavailable."
+    };
+  }
+
+  if (nextEvent.prev !== lastEvent.evt) {
+    return {
+      ok: false,
+      reason:
+        `Append continuity rejected: next prev=${nextEvent.prev} does not match last evt=${lastEvent.evt}.`
+    };
+  }
+
+  return {
+    ok: true,
+    reason: "Append continuity OK."
+  };
+}
+
 function verifyPreviousReferences(events: RuntimeEvent[]): boolean {
   if (events.length <= 1) {
     return true;
+  }
+
+  if (events[0]?.prev !== "GENESIS") {
+    return false;
   }
 
   for (let index = 1; index < events.length; index += 1) {
