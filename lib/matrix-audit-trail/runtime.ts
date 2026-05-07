@@ -22,6 +22,7 @@ import type {
   MatrixAiActionType,
   MatrixAiOutputRecord,
   MatrixAuditReport,
+  MatrixAuditStatus,
   MatrixAuditTrailRuntimeInput,
   MatrixAuditTrailRuntimeOutput,
   MatrixAuditTrailSession,
@@ -29,7 +30,8 @@ import type {
   MatrixDocumentKind,
   MatrixDocumentRecord,
   MatrixGovernanceDecision,
-  MatrixHumanValidation
+  MatrixHumanValidation,
+  MatrixHumanValidationStatus
 } from "./types";
 
 export function createMatrixAuditSession(sessionId: string): MatrixAuditTrailSession {
@@ -235,11 +237,12 @@ export function applyMatrixHumanValidation(
   }
 
   const now = new Date().toISOString();
+
   const validation: MatrixHumanValidation = {
     validationStatus: input.validationStatus,
     validatorIpr: session.identity.ipr,
     validatorLabel: session.identity.subjectLabel,
-    validatedAt: now,
+    validatedAt: input.validationStatus === "PENDING" ? null : now,
     notes: input.notes || "",
     correctionText: input.correctionText
   };
@@ -266,17 +269,16 @@ export function applyMatrixHumanValidation(
     humanValidation: validation,
     evt,
     opc,
-    status:
-      validation.validationStatus === "APPROVED" ||
-      validation.validationStatus === "CORRECTED"
-        ? "AUDIT_READY"
-        : validation.validationStatus,
+    status: mapValidationToAuditStatus(validation.validationStatus),
     updatedAt: now
   };
 
   return {
     ...nextSession,
-    report: buildMatrixAuditReport(nextSession)
+    report:
+      validation.validationStatus === "PENDING"
+        ? null
+        : buildMatrixAuditReport(nextSession)
   };
 }
 
@@ -378,6 +380,24 @@ export function renderMatrixAuditReportText(report: MatrixAuditReport): string {
     "",
     `Final state: ${report.finalState}`
   ].join("\n");
+}
+
+function mapValidationToAuditStatus(
+  validationStatus: MatrixHumanValidationStatus
+): MatrixAuditStatus {
+  if (validationStatus === "APPROVED" || validationStatus === "CORRECTED") {
+    return "AUDIT_READY";
+  }
+
+  if (validationStatus === "REJECTED") {
+    return "REJECTED";
+  }
+
+  if (validationStatus === "PENDING") {
+    return "IN_REVIEW";
+  }
+
+  return "FAILED";
 }
 
 function inferDocumentKind(filename: string, mimeType: string): MatrixDocumentKind {
