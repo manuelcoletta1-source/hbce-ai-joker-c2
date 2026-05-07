@@ -104,13 +104,8 @@ export default function MatrixAuditTrailDashboard() {
       model: "gpt-4o-mini"
     });
 
-    setAiOutputText(generatedOutput);
-    setValidationStatus("PENDING");
-    setValidationNotes("");
-    setCorrectionText("");
-
-    setSession((current) => ({
-      ...current,
+    const nextSession: MatrixAuditTrailSession = {
+      ...session,
       document,
       aiAction: runtime.aiAction,
       aiOutput: runtime.aiOutput,
@@ -121,40 +116,42 @@ export default function MatrixAuditTrailDashboard() {
       report: null,
       status: "IN_REVIEW",
       updatedAt: new Date().toISOString()
-    }));
+    };
+
+    setAiOutputText(generatedOutput);
+    setValidationStatus("PENDING");
+    setValidationNotes("");
+    setCorrectionText("");
+    setSession(nextSession);
 
     setStatus("AI analysis generated. Human validation is now required before EVT / OPC / report generation.");
   }
 
   function validate(input: MatrixAuditTrailValidationInput) {
-    let nextStatus = `Human validation requested: ${input.validationStatus}.`;
-
     setValidationStatus(input.validationStatus);
 
-    setSession((current) => {
-      try {
-        if (!current.document || !current.aiAction || !current.aiOutput || !current.governance) {
-          nextStatus =
-            "Validation blocked: run AI audit analysis before approving, correcting or rejecting.";
-          return current;
-        }
+    if (!session.document || !session.aiAction || !session.aiOutput || !session.governance) {
+      setStatus("Validation blocked: run AI audit analysis before approving, correcting or rejecting.");
+      return;
+    }
 
-        const validated = applyMatrixHumanValidation(current, input);
+    try {
+      const validated = applyMatrixHumanValidation(session, input);
 
-        nextStatus =
-          validated.report && validated.evt && validated.opc
-            ? `Human validation completed: ${input.validationStatus}. EVT, OPC and audit report generated.`
-            : `Human validation completed: ${input.validationStatus}. Report not generated.`;
+      setSession(validated);
 
-        return validated;
-      } catch (error) {
-        nextStatus =
-          error instanceof Error ? error.message : "Human validation failed.";
-        return current;
+      if (validated.report && validated.evt && validated.opc) {
+        setStatus(
+          `Human validation completed: ${input.validationStatus}. EVT, OPC and audit report generated.`
+        );
+      } else {
+        setStatus(
+          `Human validation completed: ${input.validationStatus}. Report not generated.`
+        );
       }
-    });
-
-    setStatus(nextStatus);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Human validation failed.");
+    }
   }
 
   return (
