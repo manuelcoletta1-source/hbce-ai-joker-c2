@@ -306,7 +306,11 @@ async function generateResponse(input: {
             "Quando è attivo un contratto canonico di risposta, devi iniziare con la formula obbligatoria prima della spiegazione discorsiva.",
             "Se l'utente chiede IPR, non ridurlo a identità digitale: spiegalo come registro primario di identità operativa che connette identità, azione, responsabilità, evento, prova, tempo e continuità.",
             "Se l'utente chiede confronto con standard esistenti, confronta IPR con eIDAS/EUDI, PKI, X.509, DID/VC, blockchain timestamping, IAM e audit log.",
-            "La governance runtime prevale: policy, risk, oversight e fail-closed non devono essere aggirati dal modello."
+            "La governance runtime prevale: policy, risk, oversight e fail-closed non devono essere aggirati dal modello.",
+            "Regola critica: non confondere il contenuto del documento con l'intento operativo dell'utente.",
+            "Se un file parla di MATRIX, cybersecurity, infrastrutture critiche, incident response, audit, AI governance o continuità istituzionale, ma l'utente chiede sintesi, spiegazione, analisi documentale, revisione editoriale o controllo tecnico, devi trattare la richiesta come supporto documentale.",
+            "Non richiedere INCIDENT_COMMANDER per sintesi, spiegazioni o revisioni documentali.",
+            "Non presentare il supporto documentale come decisione operativa finale, ordine esecutivo, parere legale o validazione istituzionale definitiva."
           ].join("\n")
         },
         {
@@ -516,6 +520,7 @@ function buildRuntimeDiagnosticText(input: {
     `RiskClass: ${input.governance.risk.riskClass}`,
     `RiskScore: ${input.governance.risk.riskScore}`,
     `HumanOversight: ${input.governance.oversight.state}`,
+    `RequiredRole: ${input.governance.oversight.requiredRole}`,
     `FilePolicyAllowed: ${input.governance.filePolicy.allowed}`,
     `FilePolicyRejectedCount: ${input.governance.filePolicy.rejectedCount}`,
     `EvtIprMemoryUsed: ${input.memoryUsed ? "true" : "false"}`,
@@ -586,6 +591,7 @@ function buildTechnicalFrame(input: {
     `- risk: ${input.governance.risk.riskClass}`,
     `- riskScore: ${input.governance.risk.riskScore}`,
     `- oversight: ${input.governance.oversight.state}`,
+    `- requiredRole: ${input.governance.oversight.requiredRole}`,
     `- documentMode: ${input.documentMode}`,
     `- documentFamily: ${input.documentFamily}`,
     `- evtIprMemoryUsed: ${input.memoryUsed ? "true" : "false"}`,
@@ -816,23 +822,137 @@ function normalizeChatDataClassification(input: {
   return input.data;
 }
 
+function normalizeRuntimeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function runtimeTextIncludesAny(text: string, terms: string[]): boolean {
+  return terms.some((term) => text.includes(term));
+}
+
+function hasExplicitOperationalActionRequest(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  const actionTerms = [
+    "esegui",
+    "attiva",
+    "autorizza",
+    "approva",
+    "comanda",
+    "ordina",
+    "blocca",
+    "spegni",
+    "revoca",
+    "isola",
+    "mitiga",
+    "contieni",
+    "eradica",
+    "deploy in produzione",
+    "metti in produzione",
+    "decisione operativa finale",
+    "procedura operativa",
+    "senza revisione umana",
+    "execute",
+    "authorize",
+    "approve",
+    "command",
+    "shutdown",
+    "isolate",
+    "contain",
+    "eradicate",
+    "deploy to production"
+  ];
+
+  const operationalContextTerms = [
+    "incidente",
+    "incident",
+    "incident response",
+    "incident commander",
+    "csirt",
+    "soc",
+    "emergenza",
+    "crisi reale",
+    "infrastruttura critica",
+    "critical infrastructure",
+    "produzione",
+    "sistema reale",
+    "servizio pubblico",
+    "rete reale",
+    "host",
+    "endpoint",
+    "server",
+    "cloud account",
+    "tenant",
+    "accesso reale",
+    "real system",
+    "production system"
+  ];
+
+  return (
+    runtimeTextIncludesAny(text, actionTerms) &&
+    runtimeTextIncludesAny(text, operationalContextTerms)
+  );
+}
+
+function isSafeDocumentIntentClass(intentClass: IntentClass): boolean {
+  return (
+    intentClass === "ASK" ||
+    intentClass === "ANALYZE" ||
+    intentClass === "SUMMARIZE" ||
+    intentClass === "WRITE" ||
+    intentClass === "REWRITE" ||
+    intentClass === "TRANSFORM" ||
+    intentClass === "EDITORIAL" ||
+    intentClass === "GITHUB"
+  );
+}
+
+function isLowRiskDocumentIntent(intentClass: IntentClass): boolean {
+  return (
+    intentClass === "ASK" ||
+    intentClass === "ANALYZE" ||
+    intentClass === "SUMMARIZE"
+  );
+}
+
+function normalizeSafeDocumentContextClass(
+  contextClass: ContextClass
+): ContextClass {
+  if (
+    contextClass === "GITHUB" ||
+    contextClass === "TECHNICAL" ||
+    contextClass === "EDITORIAL" ||
+    contextClass === "CORPUS" ||
+    contextClass === "APOKALYPSIS"
+  ) {
+    return contextClass;
+  }
+
+  return "DOCUMENTAL";
+}
+
 function isSafeDocumentWork(input: {
   files: FileInput[];
   contextClass: ContextClass;
   intentClass: IntentClass;
   data: DataClassification;
   policy: PolicyEvaluation;
+  message: string;
 }): boolean {
   if (input.policy.prohibited) {
     return false;
   }
 
+  if (hasExplicitOperationalActionRequest(input.message)) {
+    return false;
+  }
+
   if (
+    input.data.containsSecret ||
     input.data.dataClass === "SECRET" ||
-    input.data.dataClass === "CRITICAL_OPERATIONAL" ||
-    input.data.dataClass === "SECURITY_SENSITIVE" ||
-    input.data.dataClass === "PERSONAL" ||
-    input.data.dataClass === "SENSITIVE" ||
     input.data.dataClass === "UNSUPPORTED"
   ) {
     return false;
@@ -843,18 +963,15 @@ function isSafeDocumentWork(input: {
     input.contextClass === "DOCUMENTAL" ||
     input.contextClass === "EDITORIAL" ||
     input.contextClass === "CORPUS" ||
-    input.contextClass === "APOKALYPSIS";
+    input.contextClass === "APOKALYPSIS" ||
+    input.contextClass === "MATRIX" ||
+    input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "COMPLIANCE" ||
+    input.contextClass === "AI_GOVERNANCE" ||
+    input.contextClass === "TECHNICAL" ||
+    input.contextClass === "GITHUB";
 
-  const safeDocumentIntent =
-    input.intentClass === "ASK" ||
-    input.intentClass === "ANALYZE" ||
-    input.intentClass === "SUMMARIZE" ||
-    input.intentClass === "WRITE" ||
-    input.intentClass === "REWRITE" ||
-    input.intentClass === "TRANSFORM" ||
-    input.intentClass === "EDITORIAL";
-
-  return hasDocumentContext && safeDocumentIntent;
+  return hasDocumentContext && isSafeDocumentIntentClass(input.intentClass);
 }
 
 function applySafeRuntimeDiagnosticGovernanceOverride(input: {
@@ -1049,6 +1166,7 @@ function applySafeIdentityGovernanceOverride(input: {
 
 function applySafeDocumentGovernanceOverride(input: {
   frame: GovernanceFrame;
+  message: string;
   files: FileInput[];
 }): GovernanceFrame {
   if (
@@ -1057,59 +1175,88 @@ function applySafeDocumentGovernanceOverride(input: {
       contextClass: input.frame.contextClass,
       intentClass: input.frame.intentClass,
       data: input.frame.data,
-      policy: input.frame.policy
+      policy: input.frame.policy,
+      message: input.message
     })
   ) {
     return input.frame;
   }
 
+  const normalizedContextClass = normalizeSafeDocumentContextClass(
+    input.frame.contextClass
+  );
+
+  const lowRisk = isLowRiskDocumentIntent(input.frame.intentClass);
+
+  const data: DataClassification = {
+    dataClass:
+      input.frame.data.dataClass === "PUBLIC" ? "PUBLIC" : "INTERNAL",
+    containsSecret: input.frame.data.containsSecret,
+    containsPersonalData: input.frame.data.containsPersonalData,
+    containsSecuritySensitiveData:
+      input.frame.data.containsSecuritySensitiveData,
+    reasons: [
+      ...input.frame.data.reasons,
+      "Safe document-support override applied.",
+      "The user request is classified by intent as document support, not operational execution.",
+      "Document vocabulary alone does not determine runtime escalation."
+    ]
+  };
+
+  const policy: PolicyEvaluation = {
+    status: "ALLOWED",
+    policyReference: "SAFE_DOCUMENT_SUPPORT_INTENT_PRECEDENCE",
+    prohibited: false,
+    failClosed: false,
+    reasons: [
+      ...input.frame.policy.reasons,
+      "Safe document-support policy override applied.",
+      "The request asks for documentary support and does not request real-world execution, authorization or incident command."
+    ],
+    outcome: "PERMIT"
+  };
+
   const risk: RiskEvaluation = {
-    ...input.frame.risk,
-    riskClass:
-      input.frame.risk.riskClass === "CRITICAL" ||
-      input.frame.risk.riskClass === "HIGH" ||
-      input.frame.risk.riskClass === "UNKNOWN"
-        ? "MEDIUM"
-        : input.frame.risk.riskClass,
-    probability: 3,
-    impact: 3,
-    riskScore: 9,
+    riskClass: lowRisk ? "LOW" : "MEDIUM",
+    probability: lowRisk ? 1 : 2,
+    impact: lowRisk ? 1 : 2,
+    riskScore: lowRisk ? 1 : 4,
     reasons: [
       ...input.frame.risk.reasons,
       "Safe document/editorial work override applied.",
-      "Document analysis is reviewable support, not direct operational control."
+      "Risk is derived from the user's requested action, not from strategic words inside the uploaded document.",
+      "Document analysis, summary and explanation are reviewable support activities, not direct operational control."
     ]
   };
 
   const oversight: OversightEvaluation = {
-    state: "RECOMMENDED",
-    requiredRole: "REVIEWER",
-    reason:
-      "Document or editorial work should be reviewed before publication or external use, but it does not require operational escalation."
+    state: lowRisk ? "NOT_REQUIRED" : "RECOMMENDED",
+    requiredRole: lowRisk ? "NONE" : "REVIEWER",
+    reason: lowRisk
+      ? "Safe document summary, explanation or analysis does not require operational escalation."
+      : "Document drafting or transformation should be reviewed before publication or external use, but it does not require operational escalation."
   };
 
   const decision = decideRuntimeAction({
     runtimeState: "OPERATIONAL",
-    policyStatus:
-      input.frame.policy.status === "PROHIBITED"
-        ? "PROHIBITED"
-        : input.frame.policy.status === "UNKNOWN"
-          ? "RESTRICTED"
-          : input.frame.policy.status,
-    policyProhibited: input.frame.policy.prohibited,
+    policyStatus: policy.status,
+    policyProhibited: false,
     policyFailClosed: false,
     riskClass: risk.riskClass,
     oversightState: oversight.state,
-    contextClass: input.frame.contextClass,
+    contextClass: normalizedContextClass,
     intentClass: input.frame.intentClass,
-    dataClass: input.frame.data.dataClass,
+    dataClass: data.dataClass,
     hasFiles: input.files.length > 0,
     evtPreferred: true,
-    auditPreferred: true
+    auditPreferred: !lowRisk
   });
 
   return {
     ...input.frame,
+    contextClass: normalizedContextClass,
+    data,
+    policy,
     risk,
     oversight,
     decision
@@ -1275,6 +1422,7 @@ function buildGovernanceFrame(input: {
 
   return applySafeDocumentGovernanceOverride({
     frame: identitySafeFrame,
+    message: input.message,
     files: input.files
   });
 }
