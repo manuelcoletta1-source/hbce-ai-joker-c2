@@ -8,7 +8,7 @@
  *
  * Separation:
  * - evt-ledger.ts stores governed RuntimeEvent records.
- * - evt-memory-ledger.ts stores semantic continuity records.
+ * - evt-memory-ledger.ts stores semantic EVT/IPR-bound continuity records.
  *
  * Prototype note:
  * This local file adapter is suitable for local development and controlled
@@ -30,6 +30,7 @@ import {
   sha256Short,
   type DocumentFamily,
   type EvtMemoryEvent,
+  type ProjectDomain,
   type RuntimeDecision,
   type RuntimeState,
   type SemanticState
@@ -116,12 +117,18 @@ export type EvtMemoryLedgerPublicEvent = {
   state: RuntimeState;
   decision: RuntimeDecision;
   documentFamily: DocumentFamily;
+  projectDomain: ProjectDomain;
+  activeDomains: ProjectDomain[];
   activeDocument: string | null;
   semanticTags: string[];
   userIntent: string;
   governedEvt: string | null;
   governedHash: string | null;
+  opcProofId: string | null;
+  opcChainHash: string | null;
   traceHash: string;
+  memoryHash: string;
+  legalCertification: false;
 };
 
 export type LedgerMemoryContext = {
@@ -136,10 +143,15 @@ export type LedgerMemoryContext = {
   lastEventId: string | null;
 };
 
-const EVENT_KIND = "IPR_BOUND_CHAT_MEMORY" as const;
+const EVENT_KIND = "EVT_IPR_BOUND_MEMORY" as const;
+const RUNTIME_ROLE = "IPR_RUNTIME_DEMONSTRATOR" as const;
 const CANONICAL_SESSION_ID = "CANONICAL";
 const MAX_CONTEXT_EVENTS = 10;
 const MAX_CONTEXT_TEXT_CHARS = 12000;
+const USE_DEMOCRATIC_BOUNDARY =
+  "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
+const NON_CERTIFICATION_STATEMENT =
+  "EVT/IPR-bound memory preserves runtime continuity. It is not legal certification and does not replace audit, verification, legal review or user control.";
 
 export async function ensureEvtMemoryLedger(
   ledgerPath = DEFAULT_EVT_MEMORY_LEDGER_FILE
@@ -574,11 +586,14 @@ export function buildEvtMemoryTracePayload(event: EvtMemoryEvent) {
     ipr: event.ipr,
     sessionId: event.sessionId,
     kind: event.kind,
+    runtimeRole: event.runtimeRole,
     state: event.state,
     decision: event.decision,
     contextClass: event.contextClass,
     documentMode: event.documentMode,
     documentFamily: event.documentFamily,
+    projectDomain: event.projectDomain,
+    activeDomains: event.activeDomains,
     activeDocument: event.activeDocument,
     semanticTags: event.semanticTags,
     userIntent: event.userIntent,
@@ -586,6 +601,8 @@ export function buildEvtMemoryTracePayload(event: EvtMemoryEvent) {
     nextContext: event.nextContext,
     governedEvt: event.governedEvt,
     governedHash: event.governedHash,
+    opcProofId: event.opcProofId,
+    opcChainHash: event.opcChainHash,
     inputHash: event.anchors.inputHash,
     outputHash: event.anchors.outputHash
   };
@@ -610,18 +627,24 @@ export function isEvtMemoryEventStructurallyValid(
       event.ipr &&
       event.sessionId &&
       event.kind === EVENT_KIND &&
+      event.runtimeRole === RUNTIME_ROLE &&
       event.state &&
       event.decision &&
       event.contextClass &&
       event.documentMode &&
       event.documentFamily &&
+      event.projectDomain &&
+      Array.isArray(event.activeDomains) &&
       Array.isArray(event.semanticTags) &&
       typeof event.userIntent === "string" &&
       typeof event.memoryDelta === "string" &&
       typeof event.nextContext === "string" &&
       event.anchors?.inputHash &&
       event.anchors?.outputHash &&
-      event.anchors?.traceHash
+      event.anchors?.traceHash &&
+      event.anchors?.memoryHash &&
+      event.boundary &&
+      event.boundary.legalCertification === false
   );
 }
 
@@ -637,11 +660,14 @@ export function getEvtMemoryEventMissingFields(
   if (!event.ipr) missing.push("ipr");
   if (!event.sessionId) missing.push("sessionId");
   if (event.kind !== EVENT_KIND) missing.push("kind");
+  if (event.runtimeRole !== RUNTIME_ROLE) missing.push("runtimeRole");
   if (!event.state) missing.push("state");
   if (!event.decision) missing.push("decision");
   if (!event.contextClass) missing.push("contextClass");
   if (!event.documentMode) missing.push("documentMode");
   if (!event.documentFamily) missing.push("documentFamily");
+  if (!event.projectDomain) missing.push("projectDomain");
+  if (!Array.isArray(event.activeDomains)) missing.push("activeDomains");
   if (!Array.isArray(event.semanticTags)) missing.push("semanticTags");
   if (typeof event.userIntent !== "string") missing.push("userIntent");
   if (typeof event.memoryDelta !== "string") missing.push("memoryDelta");
@@ -649,6 +675,11 @@ export function getEvtMemoryEventMissingFields(
   if (!event.anchors?.inputHash) missing.push("anchors.inputHash");
   if (!event.anchors?.outputHash) missing.push("anchors.outputHash");
   if (!event.anchors?.traceHash) missing.push("anchors.traceHash");
+  if (!event.anchors?.memoryHash) missing.push("anchors.memoryHash");
+  if (!event.boundary) missing.push("boundary");
+  if (event.boundary?.legalCertification !== false) {
+    missing.push("boundary.legalCertification");
+  }
 
   return missing;
 }
@@ -688,12 +719,18 @@ export function toPublicEvtMemoryEvent(
     state: event.state,
     decision: event.decision,
     documentFamily: event.documentFamily,
+    projectDomain: event.projectDomain,
+    activeDomains: event.activeDomains,
     activeDocument: event.activeDocument,
     semanticTags: event.semanticTags,
     userIntent: event.userIntent,
     governedEvt: event.governedEvt,
     governedHash: event.governedHash,
-    traceHash: event.anchors.traceHash
+    opcProofId: event.opcProofId,
+    opcChainHash: event.opcChainHash,
+    traceHash: event.anchors.traceHash,
+    memoryHash: event.anchors.memoryHash,
+    legalCertification: false
   };
 }
 
@@ -716,6 +753,16 @@ export function buildSemanticStateFromEvents(input: {
       ordered.map((event) => event.documentFamily)
     ) || "GENERAL_DOCUMENT";
 
+  const projectDomain =
+    getLastNonGeneralProjectDomain(
+      ordered.map((event) => event.projectDomain)
+    ) || "GENERAL";
+
+  const activeDomains = mergeUnique(
+    ordered.flatMap((event) => event.activeDomains || []),
+    8
+  ) as ProjectDomain[];
+
   const centralThesis = extractCentralThesisFromEvents(ordered);
 
   const semanticTags = mergeUnique(
@@ -734,8 +781,11 @@ export function buildSemanticStateFromEvents(input: {
   return {
     ipr: input.ipr,
     sessionId: input.sessionId,
+    runtimeRole: RUNTIME_ROLE,
     activeDocument,
     documentFamily,
+    projectDomain,
+    activeDomains: activeDomains.length > 0 ? activeDomains : ["GENERAL"],
     centralThesis,
     semanticTags,
     referenceRules,
@@ -745,6 +795,8 @@ export function buildSemanticStateFromEvents(input: {
     lastGovernedHash: getLastNonEmpty(
       ordered.map((event) => event.governedHash)
     ),
+    lastOpcProofId: getLastNonEmpty(ordered.map((event) => event.opcProofId)),
+    lastOpcChainHash: getLastNonEmpty(ordered.map((event) => event.opcChainHash)),
     updatedAt: lastEvent?.t ?? new Date().toISOString()
   };
 }
@@ -759,14 +811,19 @@ function buildLedgerMemoryText(input: {
   return [
     "MEMORIA EVT/IPR-BOUND RICOSTRUITA DA LEDGER:",
     `MEMORY_SOURCE: ${input.source}`,
+    `RUNTIME_ROLE: ${input.semanticState.runtimeRole}`,
     `IPR: ${input.semanticState.ipr}`,
     `SESSION_ID: ${input.semanticState.sessionId}`,
+    `PROJECT_DOMAIN: ${input.semanticState.projectDomain}`,
+    `ACTIVE_DOMAINS: ${input.semanticState.activeDomains.join(", ")}`,
     `ACTIVE_DOCUMENT: ${input.semanticState.activeDocument || "none"}`,
     `DOCUMENT_FAMILY: ${input.semanticState.documentFamily}`,
     `CENTRAL_THESIS: ${input.semanticState.centralThesis || "none"}`,
     `LAST_MEMORY_EVT: ${input.semanticState.lastEventId || "none"}`,
     `LAST_GOVERNED_EVT: ${input.semanticState.lastGovernedEvt || "none"}`,
     `LAST_GOVERNED_HASH: ${input.semanticState.lastGovernedHash || "none"}`,
+    `LAST_OPC_PROOF: ${input.semanticState.lastOpcProofId || "none"}`,
+    `LAST_OPC_CHAIN_HASH: ${input.semanticState.lastOpcChainHash || "none"}`,
     `SEMANTIC_TAGS: ${
       input.semanticState.semanticTags.length > 0
         ? input.semanticState.semanticTags.join(", ")
@@ -786,19 +843,28 @@ function buildLedgerMemoryText(input: {
       [
         `- ${event.evt}`,
         `  prev: ${event.prev}`,
+        `  projectDomain: ${event.projectDomain}`,
         `  governedEvt: ${event.governedEvt || "none"}`,
         `  governedHash: ${event.governedHash || "none"}`,
+        `  opcProofId: ${event.opcProofId || "none"}`,
+        `  opcChainHash: ${event.opcChainHash || "none"}`,
         `  family: ${event.documentFamily}`,
         `  activeDocument: ${event.activeDocument || "none"}`,
         `  intent: ${event.userIntent}`,
         `  delta: ${event.memoryDelta}`,
         `  nextContext: ${event.nextContext}`,
-        `  traceHash: ${event.anchors.traceHash}`
+        `  traceHash: ${event.anchors.traceHash}`,
+        `  memoryHash: ${event.anchors.memoryHash}`,
+        `  legalCertification: ${event.boundary.legalCertification}`
       ].join("\n")
     ),
     "",
+    "BOUNDARY:",
+    NON_CERTIFICATION_STATEMENT,
+    `U.S.E. democratic boundary: ${USE_DEMOCRATIC_BOUNDARY}`,
+    "",
     "ISTRUZIONE DI RECUPERO:",
-    "Questa memoria è stata ricostruita dal ledger semantico. Usala come continuità IPR-bound quando la memoria volatile di sessione non è disponibile."
+    "Questa memoria è stata ricostruita dal ledger semantico. Usala come continuità IPR-bound quando la memoria volatile di sessione non è disponibile. Non usare questa memoria per collegare identità personale e contenuto di una scelta democratica."
   ]
     .join("\n")
     .slice(0, MAX_CONTEXT_TEXT_CHARS);
@@ -859,6 +925,25 @@ function scoreEventForMessage(event: EvtMemoryEvent, message: string): number {
     score += 8;
   }
 
+  if (event.documentFamily === "USE" || event.projectDomain === "U.S.E.") {
+    const useTerms = [
+      "u.s.e.",
+      "use",
+      "united states of europe",
+      "stati uniti d europa",
+      "voto digitale federato",
+      "referendum",
+      "consultazione pubblica",
+      "federazione europea",
+      "sovranita digitale",
+      "sovranità digitale"
+    ];
+
+    if (useTerms.some((term) => normalizedMessage.includes(normalizeForMatch(term)))) {
+      score += 22;
+    }
+  }
+
   if (event.documentFamily === "HBCE_RUNTIME") {
     const runtimeTerms = [
       "joker",
@@ -866,6 +951,8 @@ function scoreEventForMessage(event: EvtMemoryEvent, message: string): number {
       "ipr",
       "evt",
       "memoria",
+      "opc",
+      "proof receipt",
       "ledger",
       "runtime",
       "route",
@@ -911,6 +998,15 @@ function detectTags(text: string): string[] {
     "traccia",
     "tempo",
     "matrix",
+    "u.s.e.",
+    "united states of europe",
+    "stati uniti d’europa",
+    "stati uniti d'europa",
+    "voto digitale federato",
+    "federated digital vote",
+    "democratic infrastructure",
+    "public consultation",
+    "referendum",
     "hbce",
     "joker-c2",
     "ai joker-c2",
@@ -919,6 +1015,11 @@ function detectTags(text: string): string[] {
     "trac",
     "evt",
     "evt chain",
+    "evt/ipr memory",
+    "opc",
+    "proof receipt",
+    "proof record",
+    "chain hash",
     "ledger",
     "runtime",
     "fail-closed",
@@ -978,11 +1079,25 @@ function getLastNonGeneralDocumentFamily(
   return null;
 }
 
+function getLastNonGeneralProjectDomain(
+  values: ProjectDomain[]
+): ProjectDomain | null {
+  for (let index = values.length - 1; index >= 0; index -= 1) {
+    const value = values[index];
+
+    if (value && value !== "GENERAL") {
+      return value;
+    }
+  }
+
+  return null;
+}
+
 function extractCentralThesisFromEvents(events: EvtMemoryEvent[]): string | null {
   for (let index = events.length - 1; index >= 0; index -= 1) {
     const event = events[index];
     const match = event?.memoryDelta.match(
-      /Tesi centrale incorporata:\s*(.+?)(?:\s+Regola di continuità:|$)/
+      /Tesi centrale incorporata:\s*(.+?)(?:\s+Regola di continuità|\s+Regola di sicurezza|$)/
     );
 
     if (match?.[1]?.trim()) {
@@ -1003,9 +1118,16 @@ function buildReferenceRulesFromEvents(events: EvtMemoryEvent[]): string[] {
       );
     }
 
+    if (event.documentFamily === "USE" || event.projectDomain === "U.S.E.") {
+      rules.push(
+        `"U.S.E.", "voto digitale federato", "consultazione pubblica", "referendum" = contesto U.S.E. attivo`
+      );
+      rules.push(`regola democratica U.S.E. = ${USE_DEMOCRATIC_BOUNDARY}`);
+    }
+
     if (event.documentFamily === "HBCE_RUNTIME") {
       rules.push(
-        `"JOKER-C2", "IPR", "EVT", "memoria", "ledger", "runtime", "fail-closed" = contesto HBCE_RUNTIME attivo`
+        `"JOKER-C2", "IPR", "EVT", "memoria", "OPC", "proof receipt", "ledger", "runtime", "fail-closed" = contesto HBCE_RUNTIME attivo`
       );
     }
 
@@ -1016,9 +1138,13 @@ function buildReferenceRulesFromEvents(events: EvtMemoryEvent[]): string[] {
     if (event.governedEvt) {
       rules.push(`ultimo governed EVT = ${event.governedEvt}`);
     }
+
+    if (event.opcProofId) {
+      rules.push(`ultimo OPC proof receipt = ${event.opcProofId}`);
+    }
   }
 
-  return mergeUnique(rules, 20);
+  return mergeUnique(rules, 24);
 }
 
 function mergeUnique(values: string[], limit = 32): string[] {
