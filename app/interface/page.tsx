@@ -10,8 +10,23 @@ import {
   useState
 } from "react";
 
-type RuntimeState = "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID" | string;
-type RuntimeDecision = "ALLOW" | "BLOCK" | "ESCALATE" | string;
+type RuntimeState =
+  | "OPERATIONAL"
+  | "DEGRADED"
+  | "BLOCKED"
+  | "INVALID"
+  | "AUDIT_ONLY"
+  | "MAINTENANCE"
+  | string;
+
+type RuntimeDecision =
+  | "ALLOW"
+  | "BLOCK"
+  | "ESCALATE"
+  | "DEGRADE"
+  | "AUDIT"
+  | "NOOP"
+  | string;
 
 type FileInput = {
   id?: string;
@@ -31,6 +46,7 @@ type RuntimeIdentity = {
   state?: string;
   cycle?: string;
   core?: string;
+  runtimeRole?: string;
 };
 
 type PublicEvt = {
@@ -56,8 +72,10 @@ type GovernedEvt = {
 type OpcPublicProof = {
   proofId?: string;
   chainHash?: string;
+  memoryHash?: string;
   auditStatus?: string;
   verificationStatus?: string;
+  legalCertification?: false;
   appendStatus?: string;
   appendReason?: string;
   publicProof?: unknown;
@@ -68,6 +86,7 @@ type MemoryInfo = {
   source?: string;
   lastEventId?: string | null;
   event?: string;
+  memoryHash?: string;
   appendStatus?: string;
   appendReason?: string;
   governedEvt?: string;
@@ -83,15 +102,22 @@ type GovernanceInfo = {
   containsSecret?: boolean;
   containsPersonalData?: boolean;
   containsSecuritySensitiveData?: boolean;
+  containsCivicSensitiveData?: boolean;
+  containsDemocraticChoiceData?: boolean;
   policyStatus?: string;
+  policyOutcome?: string;
   policyReference?: string;
   riskClass?: string;
   riskScore?: number;
   oversight?: string;
   requiredRole?: string;
-  failClosed?: boolean;
+  iprBinding?: boolean;
   evtRequired?: boolean;
+  memoryRequired?: boolean;
+  opcRequired?: boolean;
   auditRequired?: boolean;
+  failClosed?: boolean;
+  civicBoundary?: string;
   filePolicy?: {
     allowed?: boolean;
     allowedCount?: number;
@@ -107,6 +133,7 @@ type DiagnosticsInfo = {
   evtIprMemoryUsed?: boolean;
   memorySource?: string;
   memoryEvent?: string;
+  memoryHash?: string;
   memoryAppendStatus?: string;
   opcProofId?: string;
   opcAppendStatus?: string;
@@ -153,6 +180,8 @@ type ChatMessage = {
 
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 const DEFAULT_SESSION_PREFIX = "JOKER-UI";
+const USE_DEMOCRATIC_BOUNDARY =
+  "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
 
 function buildClientId(prefix: string): string {
   const random =
@@ -207,7 +236,10 @@ function statusTone(value?: string | null): string {
     normalized === "ESCALATED" ||
     normalized === "RECOMMENDED" ||
     normalized === "RESTRICTED" ||
-    normalized === "PENDING"
+    normalized === "REQUIRE_AUDIT" ||
+    normalized === "REQUIRE_REVIEW" ||
+    normalized === "PENDING" ||
+    normalized === "PARTIAL"
   ) {
     return "joker-badge--warn";
   }
@@ -219,6 +251,7 @@ function statusTone(value?: string | null): string {
     normalized === "REJECTED" ||
     normalized === "INVALID" ||
     normalized === "PROHIBITED" ||
+    normalized === "CRITICAL" ||
     normalized === "FALSE"
   ) {
     return "joker-badge--bad";
@@ -374,15 +407,27 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           />
 
           <MiniProofCard
-            title="OPC Proof Record"
+            title="EVT/IPR Memory"
+            rows={[
+              ["Event", message.runtime.memory?.event],
+              ["Hash", message.runtime.memory?.memoryHash],
+              ["Source", message.runtime.memory?.source],
+              ["Append", message.runtime.memory?.appendStatus]
+            ]}
+            statusLabels={["Append"]}
+          />
+
+          <MiniProofCard
+            title="OPC Proof Receipt"
             rows={[
               ["Proof", message.runtime.opc?.proofId],
               ["Chain", message.runtime.opc?.chainHash],
+              ["Memory", message.runtime.opc?.memoryHash],
               ["Audit", message.runtime.opc?.auditStatus],
               ["Verify", message.runtime.opc?.verificationStatus],
-              ["Append", message.runtime.opc?.appendStatus]
+              ["Legal", String(message.runtime.opc?.legalCertification ?? false)]
             ]}
-            statusLabels={["Audit", "Verify", "Append"]}
+            statusLabels={["Audit", "Verify", "Legal"]}
           />
         </div>
       ) : null}
@@ -475,15 +520,18 @@ export default function InterfacePage() {
     return {
       state: lastRuntime?.state || "Ready",
       decision: lastRuntime?.decision || "-",
+      governanceDecision: lastRuntime?.governanceDecision || "-",
       projectDomain: lastRuntime?.projectDomain || "-",
       contextClass: lastRuntime?.contextClass || "-",
       intentClass: lastRuntime?.intentClass || "-",
       documentFamily: lastRuntime?.documentFamily || "-",
       memoryUsed: lastRuntime?.evtIprMemoryUsed,
       memorySource: lastRuntime?.memorySource || "-",
+      memoryHash: lastRuntime?.memory?.memoryHash || "-",
       opcAppendStatus: lastRuntime?.opc?.appendStatus || "-",
       opcVerificationStatus: lastRuntime?.opc?.verificationStatus || "-",
-      opcAuditStatus: lastRuntime?.opc?.auditStatus || "-"
+      opcAuditStatus: lastRuntime?.opc?.auditStatus || "-",
+      legalCertification: lastRuntime?.opc?.legalCertification ?? false
     };
   }, [lastRuntime]);
 
@@ -890,7 +938,7 @@ export default function InterfacePage() {
 
         .joker-mini-grid {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 12px;
           margin-top: 16px;
           padding-top: 16px;
@@ -1217,6 +1265,12 @@ export default function InterfacePage() {
           background: rgba(127, 29, 29, 0.26);
         }
 
+        @media (max-width: 1280px) {
+          .joker-mini-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
         @media (max-width: 1120px) {
           .joker-shell {
             grid-template-columns: 1fr;
@@ -1278,10 +1332,10 @@ export default function InterfacePage() {
             <div className="joker-header-grid">
               <div>
                 <div className="joker-kicker">AI JOKER-C2</div>
-                <h1 className="joker-title">Governed Runtime Interface</h1>
+                <h1 className="joker-title">IPR Runtime Demonstrator</h1>
                 <p className="joker-lead">
-                  Chat operativa con identità IPR, memoria EVT, prova OPC e governance HBCE/MATRIX.
-                  Gli stati tecnici vengono mostrati integralmente.
+                  Chat operativa con identità IPR, EVT, memoria EVT/IPR-bound, proof receipt OPC e governance HBCE/MATRIX.
+                  Il runtime espone continuità, audit, verifica, fail-closed e salvaguardie U.S.E. quando pertinenti.
                 </p>
               </div>
 
@@ -1304,7 +1358,8 @@ export default function InterfacePage() {
                     {[
                       "joker cosa è IPR?",
                       "che differenza c’è tra IPR, EVT e OPC?",
-                      "diagnostica runtime"
+                      "diagnostica runtime",
+                      "spiegami U.S.E. e voto digitale federato"
                     ].map((sample) => (
                       <button
                         key={sample}
@@ -1326,7 +1381,7 @@ export default function InterfacePage() {
 
                 {isSending ? (
                   <div className="joker-message joker-message--assistant">
-                    AI JOKER-C2 sta generando risposta, EVT e OPC proof record.
+                    AI JOKER-C2 sta generando risposta, EVT, memoria EVT/IPR e OPC proof receipt.
                   </div>
                 ) : null}
 
@@ -1394,26 +1449,31 @@ export default function InterfacePage() {
             <FieldRow label="Session" value={sessionId || "-"} mono />
             <FieldRow label="State" value={runtimeSummary.state} badge />
             <FieldRow label="Decision" value={runtimeSummary.decision} badge />
+            <FieldRow label="GovDec" value={runtimeSummary.governanceDecision} badge />
             <FieldRow label="Domain" value={runtimeSummary.projectDomain} />
+            <FieldRow label="Domains" value={formatList(lastRuntime?.activeDomains)} />
             <FieldRow label="Context" value={runtimeSummary.contextClass} />
             <FieldRow label="Intent" value={runtimeSummary.intentClass} />
             <FieldRow label="Family" value={runtimeSummary.documentFamily} />
           </RuntimeCard>
 
-          <RuntimeCard title="Identity">
+          <RuntimeCard title="IPR Runtime">
             <FieldRow label="Entity" value={lastRuntime?.identity?.entity || "-"} mono />
             <FieldRow label="IPR" value={lastRuntime?.identity?.ipr || "-"} mono />
+            <FieldRow label="Role" value={lastRuntime?.identity?.runtimeRole || "-"} />
             <FieldRow label="EVT" value={lastRuntime?.identity?.evt || "-"} mono />
             <FieldRow label="Cycle" value={lastRuntime?.identity?.cycle || "-"} mono />
             <FieldRow label="Core" value={lastRuntime?.identity?.core || "-"} mono />
           </RuntimeCard>
 
-          <RuntimeCard title="OPC Proof Record">
+          <RuntimeCard title="OPC Proof Receipt">
             <FieldRow label="Proof" value={lastRuntime?.opc?.proofId || "-"} mono />
             <FieldRow label="Chain" value={lastRuntime?.opc?.chainHash || "-"} mono />
+            <FieldRow label="Memory" value={lastRuntime?.opc?.memoryHash || "-"} mono />
             <FieldRow label="Audit" value={runtimeSummary.opcAuditStatus} badge />
             <FieldRow label="Verify" value={runtimeSummary.opcVerificationStatus} badge />
             <FieldRow label="Append" value={runtimeSummary.opcAppendStatus} badge />
+            <FieldRow label="Legal" value={runtimeSummary.legalCertification} badge />
             <FieldRow label="Reason" value={lastRuntime?.opc?.appendReason || "-"} />
           </RuntimeCard>
 
@@ -1437,23 +1497,41 @@ export default function InterfacePage() {
             <FieldRow label="Append" value={lastRuntime?.governedEvt?.appendStatus || "-"} badge />
           </RuntimeCard>
 
-          <RuntimeCard title="Memory">
+          <RuntimeCard title="EVT/IPR Memory">
             <FieldRow label="Used" value={runtimeSummary.memoryUsed} />
             <FieldRow label="Source" value={runtimeSummary.memorySource} />
             <FieldRow label="Event" value={lastRuntime?.memory?.event || "-"} mono />
+            <FieldRow label="Hash" value={runtimeSummary.memoryHash} mono />
             <FieldRow label="Append" value={lastRuntime?.memory?.appendStatus || "-"} badge />
             <FieldRow label="Governed" value={lastRuntime?.memory?.governedEvt || "-"} mono />
           </RuntimeCard>
 
           <RuntimeCard title="Governance">
             <FieldRow label="Data" value={lastRuntime?.governance?.dataClass || "-"} badge />
+            <FieldRow label="Civic" value={lastRuntime?.governance?.containsCivicSensitiveData} />
+            <FieldRow label="Choice" value={lastRuntime?.governance?.containsDemocraticChoiceData} />
             <FieldRow label="Policy" value={lastRuntime?.governance?.policyStatus || "-"} badge />
+            <FieldRow label="Outcome" value={lastRuntime?.governance?.policyOutcome || "-"} badge />
             <FieldRow label="Risk" value={lastRuntime?.governance?.riskClass || "-"} badge />
             <FieldRow label="Score" value={lastRuntime?.governance?.riskScore ?? "-"} />
             <FieldRow label="Oversight" value={lastRuntime?.governance?.oversight || "-"} badge />
+            <FieldRow label="Role" value={lastRuntime?.governance?.requiredRole || "-"} />
             <FieldRow label="FailClosed" value={lastRuntime?.governance?.failClosed} />
-            <FieldRow label="AuditReq" value={lastRuntime?.governance?.auditRequired} />
           </RuntimeCard>
+
+          <RuntimeCard title="Runtime Requirements">
+            <FieldRow label="IPR" value={lastRuntime?.governance?.iprBinding} />
+            <FieldRow label="EVT" value={lastRuntime?.governance?.evtRequired} />
+            <FieldRow label="Memory" value={lastRuntime?.governance?.memoryRequired} />
+            <FieldRow label="OPC" value={lastRuntime?.governance?.opcRequired} />
+            <FieldRow label="Audit" value={lastRuntime?.governance?.auditRequired} />
+          </RuntimeCard>
+
+          {lastRuntime?.governance?.civicBoundary ? (
+            <RuntimeCard title="U.S.E. Boundary">
+              <FieldRow label="Rule" value={lastRuntime.governance.civicBoundary} />
+            </RuntimeCard>
+          ) : null}
 
           <RuntimeCard title="Files">
             <FilesPanel files={files} onRemoveFile={removeFile} onClearFiles={clearFiles} />
@@ -1463,7 +1541,9 @@ export default function InterfacePage() {
             <FieldRow label="OpenAI" value={lastRuntime?.diagnostics?.openaiConfigured} />
             <FieldRow label="Model" value={lastRuntime?.diagnostics?.modelUsed || "-"} mono />
             <FieldRow label="Degraded" value={lastRuntime?.diagnostics?.degradedReason || "none"} />
+            <FieldRow label="Memory" value={lastRuntime?.diagnostics?.memoryAppendStatus || "-"} badge />
             <FieldRow label="OPC" value={lastRuntime?.diagnostics?.opcAppendStatus || "-"} badge />
+            <FieldRow label="Verify" value={lastRuntime?.diagnostics?.opcVerificationStatus || "-"} badge />
           </RuntimeCard>
         </aside>
       </div>
