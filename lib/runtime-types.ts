@@ -4,6 +4,7 @@
  * Shared operational type system for the HERMETICUM B.C.E. governed runtime.
  *
  * This file defines the canonical vocabulary used by:
+ * - IPR runtime identity
  * - project-domain classification
  * - context classification
  * - intent classification
@@ -12,14 +13,22 @@
  * - human oversight
  * - runtime decisions
  * - EVT generation
+ * - EVT/IPR-bound memory
+ * - OPC proof receipts
  * - ledger continuity
  * - verification
  * - audit readiness
  *
- * Canonical domains:
- * - MATRIX
- * - CORPUS_ESOTEROLOGIA_ERMETICA
- * - APOKALYPSIS
+ * Canonical hierarchy:
+ * - IPR = primary operational identity and proof instrument
+ * - AI JOKER-C2 = governed runtime demonstrator
+ * - MATRIX = operational infrastructure architecture
+ * - U.S.E. = MATRIX-derived political-institutional application
+ * - CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar
+ * - APOKALYPSIS = historical threshold analysis
+ * - EVT = event trace
+ * - EVT/IPR memory = runtime continuity
+ * - OPC = operational proof receipt
  */
 
 export type RuntimeState =
@@ -38,6 +47,12 @@ export type RuntimeDecision =
   | "AUDIT"
   | "NOOP";
 
+export type RuntimeRole =
+  | "IPR_RUNTIME_DEMONSTRATOR"
+  | "GOVERNED_AI_RUNTIME"
+  | "AUDIT_RUNTIME"
+  | "RESEARCH_PROTOTYPE";
+
 export type RiskClass =
   | "LOW"
   | "MEDIUM"
@@ -48,6 +63,7 @@ export type RiskClass =
 
 export type ProjectDomain =
   | "MATRIX"
+  | "U.S.E."
   | "CORPUS_ESOTEROLOGIA_ERMETICA"
   | "APOKALYPSIS"
   | "GENERAL"
@@ -55,11 +71,13 @@ export type ProjectDomain =
 
 export type PrimaryProjectDomain =
   | "MATRIX"
+  | "U.S.E."
   | "CORPUS_ESOTEROLOGIA_ERMETICA"
   | "APOKALYPSIS";
 
 export type DomainType =
   | "OPERATIONAL_INFRASTRUCTURE_DOMAIN"
+  | "FEDERATED_EUROPEAN_INSTITUTIONAL_APPLICATION_DOMAIN"
   | "DISCIPLINARY_GRAMMAR_DOMAIN"
   | "HISTORICAL_THRESHOLD_ANALYSIS_DOMAIN"
   | "GENERAL_CONTEXT"
@@ -67,7 +85,9 @@ export type DomainType =
 
 export type ContextClass =
   | "IDENTITY"
+  | "IPR"
   | "MATRIX"
+  | "USE"
   | "CORPUS"
   | "APOKALYPSIS"
   | "DOCUMENTAL"
@@ -78,6 +98,9 @@ export type ContextClass =
   | "SECURITY"
   | "COMPLIANCE"
   | "GOVERNANCE"
+  | "CIVIC"
+  | "PUBLIC_ADMINISTRATION"
+  | "DEMOCRATIC_INFRASTRUCTURE"
   | "CRITICAL_INFRASTRUCTURE"
   | "AI_GOVERNANCE"
   | "DUAL_USE"
@@ -96,6 +119,7 @@ export type IntentClass =
   | "SECURITY"
   | "COMPLIANCE"
   | "STRATEGIC"
+  | "CIVIC"
   | "EDITORIAL"
   | "VERIFY"
   | "PROHIBITED"
@@ -119,12 +143,14 @@ export type ReviewerRole =
   | "MAINTAINER"
   | "SECURITY_OFFICER"
   | "LEGAL_REVIEWER"
+  | "CONSTITUTIONAL_REVIEWER"
   | "DATA_PROTECTION_REVIEWER"
   | "INSTITUTIONAL_AUTHORITY"
   | "INCIDENT_COMMANDER"
   | "AUTHORIZED_HUMAN_OPERATOR"
   | "TECHNICAL_REVIEWER"
   | "PUBLIC_SECTOR_REVIEWER"
+  | "CIVIC_INFRASTRUCTURE_REVIEWER"
   | "EDITORIAL_REVIEWER"
   | "EXECUTIVE_OWNER"
   | "NONE";
@@ -166,6 +192,8 @@ export type DataClass =
   | "SENSITIVE"
   | "SECRET"
   | "PERSONAL"
+  | "CIVIC_SENSITIVE"
+  | "DEMOCRATIC_CHOICE"
   | "SECURITY_SENSITIVE"
   | "CRITICAL_OPERATIONAL"
   | "UNSUPPORTED"
@@ -219,6 +247,7 @@ export type DualUseDomain =
   | "DATA_HANDLING"
   | "RESEARCH"
   | "CIVIL_PROTECTION"
+  | "DEMOCRATIC_INFRASTRUCTURE"
   | "UNKNOWN";
 
 export type FileProcessingStatus =
@@ -246,6 +275,8 @@ export type SafeErrorCode =
   | "MODEL_ERROR"
   | "FILE_ERROR"
   | "EVT_ERROR"
+  | "MEMORY_ERROR"
+  | "OPC_ERROR"
   | "LEDGER_ERROR"
   | "SECURITY_ERROR"
   | "RUNTIME_ERROR";
@@ -265,6 +296,30 @@ export type OperationStatus =
   | "FAILED"
   | "NOOP";
 
+export type MemorySource =
+  | "NONE"
+  | "SESSION"
+  | "EVT_IPR_MEMORY"
+  | "LEDGER"
+  | "USER_FILE"
+  | "RUNTIME_CONTEXT";
+
+export type MemoryStatus =
+  | "NOT_REQUIRED"
+  | "USED"
+  | "CREATED"
+  | "APPENDED"
+  | "PARTIAL"
+  | "FAILED";
+
+export type OpcStatus =
+  | "NOT_REQUIRED"
+  | "CREATED"
+  | "APPENDED"
+  | "VERIFIABLE"
+  | "PARTIAL"
+  | "FAILED";
+
 export type RuntimeIdentity = {
   publicName: string;
   entity: string;
@@ -275,6 +330,17 @@ export type RuntimeIdentity = {
   infrastructure: string;
   organization: string;
   territorialAnchor: string;
+  runtimeRole?: RuntimeRole;
+};
+
+export type IprRuntimeIdentity = {
+  entity: "AI_JOKER";
+  system: "AI_JOKER-C2";
+  ipr: "IPR-AI-0001";
+  checkpoint: string;
+  core: "HBCE-CORE-v3";
+  organization: "HERMETICUM B.C.E. S.r.l.";
+  runtimeRole: "IPR_RUNTIME_DEMONSTRATOR";
 };
 
 export type ProjectDomainMetadata = {
@@ -283,6 +349,7 @@ export type ProjectDomainMetadata = {
   label: string;
   shortDefinition: string;
   runtimeQuestion: string;
+  parentDomain?: ProjectDomain;
 };
 
 export type ProjectDomainClassification = {
@@ -292,7 +359,7 @@ export type ProjectDomainClassification = {
   domainType: DomainType;
   confidence: number;
   reasons: string[];
-  scores: Record<PrimaryProjectDomain, number>;
+  scores: Partial<Record<PrimaryProjectDomain, number>>;
 };
 
 export type ProjectBinding = {
@@ -302,6 +369,8 @@ export type ProjectBinding = {
   domain_type: DomainType;
   label?: string;
   canonical_formula?: string;
+  parent_domain?: ProjectDomain;
+  democratic_boundary?: string;
 };
 
 export type ContextClassification = {
@@ -351,6 +420,9 @@ export type RuntimeDecisionResult = {
   policyOutcome?: PolicyOutcome;
   humanOversight?: OversightState;
   riskClass?: RiskClass;
+  iprBinding?: boolean;
+  memoryRequired?: boolean;
+  opcRequired?: boolean;
 };
 
 export type DataClassification = {
@@ -358,6 +430,8 @@ export type DataClassification = {
   containsSecret: boolean;
   containsPersonalData: boolean;
   containsSecuritySensitiveData: boolean;
+  containsCivicSensitiveData?: boolean;
+  containsDemocraticChoiceData?: boolean;
   reasons: string[];
 };
 
@@ -380,6 +454,22 @@ export type FilePolicyResult = {
   maxSizeBytes: number;
 };
 
+export type RuntimeMemoryBinding = {
+  required: boolean;
+  used?: boolean;
+  source: MemorySource;
+  status?: MemoryStatus;
+  evt?: string;
+  hash?: string;
+};
+
+export type RuntimeOpcBinding = {
+  required: boolean;
+  proof_id?: string | null;
+  status: OpcStatus;
+  chain_hash?: string;
+};
+
 export type RuntimeEvent = {
   evt: string;
   prev: string;
@@ -390,13 +480,8 @@ export type RuntimeEvent = {
     name: string;
     core: string;
     state: RuntimeState;
+    role?: RuntimeRole;
   };
-  /**
-   * Optional during the transition from MATRIX-only EVT records to
-   * MATRIX / CORPUS / APOKALYPSIS project-domain binding.
-   *
-   * Future EVT generator versions should always populate this field.
-   */
   project?: ProjectBinding;
   context: {
     class: ContextClass;
@@ -417,6 +502,8 @@ export type RuntimeEvent = {
     status: OperationStatus;
     target?: string;
   };
+  memory?: RuntimeMemoryBinding;
+  opc?: RuntimeOpcBinding;
   trace: {
     hash_algorithm: "sha256";
     canonicalization: "deterministic-json";
@@ -440,6 +527,61 @@ export type RuntimeEventProjectView = {
   operationStatus: OperationStatus;
   verificationStatus: VerificationStatus;
   auditStatus: AuditStatus;
+  memoryStatus?: MemoryStatus;
+  opcStatus?: OpcStatus;
+};
+
+export type OpcProofIdentity = {
+  entity: string;
+  ipr: string;
+  core: string;
+  organization: string;
+  runtimeRole: RuntimeRole;
+};
+
+export type OpcProofRecord = {
+  proofId: string;
+  kind: "OPERATIONAL_PROOF_RECORD";
+  timestamp: string;
+  identity: OpcProofIdentity;
+  sessionId?: string;
+  event: {
+    evt: string;
+    prev: string;
+    hash: string;
+  };
+  memory?: {
+    evt?: string;
+    source: MemorySource;
+    hash?: string;
+  };
+  runtime: {
+    state: RuntimeState;
+    decision: RuntimeDecision;
+    contextClass: ContextClass;
+    projectDomain?: ProjectDomain;
+    riskClass: RiskClass;
+    policyReference?: string;
+  };
+  proof: {
+    inputHash: string;
+    outputHash: string;
+    decisionHash: string;
+    eventHash?: string;
+    memoryHash?: string;
+    previousProofHash?: string;
+    chainHash: string;
+  };
+  audit: {
+    status: AuditStatus;
+    reviewRequired: boolean;
+    reasons?: string[];
+  };
+  verification: {
+    status: VerificationStatus;
+    hashAlgorithm: "sha256";
+    canonicalization: "deterministic-json";
+  };
 };
 
 export type VerificationResult = {
@@ -474,6 +616,13 @@ export const RUNTIME_DECISIONS: RuntimeDecision[] = [
   "NOOP"
 ];
 
+export const RUNTIME_ROLES: RuntimeRole[] = [
+  "IPR_RUNTIME_DEMONSTRATOR",
+  "GOVERNED_AI_RUNTIME",
+  "AUDIT_RUNTIME",
+  "RESEARCH_PROTOTYPE"
+];
+
 export const RISK_CLASSES: RiskClass[] = [
   "LOW",
   "MEDIUM",
@@ -485,6 +634,7 @@ export const RISK_CLASSES: RiskClass[] = [
 
 export const PROJECT_DOMAINS: ProjectDomain[] = [
   "MATRIX",
+  "U.S.E.",
   "CORPUS_ESOTEROLOGIA_ERMETICA",
   "APOKALYPSIS",
   "GENERAL",
@@ -493,12 +643,14 @@ export const PROJECT_DOMAINS: ProjectDomain[] = [
 
 export const PRIMARY_PROJECT_DOMAINS: PrimaryProjectDomain[] = [
   "MATRIX",
+  "U.S.E.",
   "CORPUS_ESOTEROLOGIA_ERMETICA",
   "APOKALYPSIS"
 ];
 
 export const DOMAIN_TYPES: DomainType[] = [
   "OPERATIONAL_INFRASTRUCTURE_DOMAIN",
+  "FEDERATED_EUROPEAN_INSTITUTIONAL_APPLICATION_DOMAIN",
   "DISCIPLINARY_GRAMMAR_DOMAIN",
   "HISTORICAL_THRESHOLD_ANALYSIS_DOMAIN",
   "GENERAL_CONTEXT",
@@ -507,7 +659,9 @@ export const DOMAIN_TYPES: DomainType[] = [
 
 export const CONTEXT_CLASSES: ContextClass[] = [
   "IDENTITY",
+  "IPR",
   "MATRIX",
+  "USE",
   "CORPUS",
   "APOKALYPSIS",
   "DOCUMENTAL",
@@ -518,6 +672,9 @@ export const CONTEXT_CLASSES: ContextClass[] = [
   "SECURITY",
   "COMPLIANCE",
   "GOVERNANCE",
+  "CIVIC",
+  "PUBLIC_ADMINISTRATION",
+  "DEMOCRATIC_INFRASTRUCTURE",
   "CRITICAL_INFRASTRUCTURE",
   "AI_GOVERNANCE",
   "DUAL_USE",
@@ -537,6 +694,7 @@ export const INTENT_CLASSES: IntentClass[] = [
   "SECURITY",
   "COMPLIANCE",
   "STRATEGIC",
+  "CIVIC",
   "EDITORIAL",
   "VERIFY",
   "PROHIBITED",
@@ -562,12 +720,14 @@ export const REVIEWER_ROLES: ReviewerRole[] = [
   "MAINTAINER",
   "SECURITY_OFFICER",
   "LEGAL_REVIEWER",
+  "CONSTITUTIONAL_REVIEWER",
   "DATA_PROTECTION_REVIEWER",
   "INSTITUTIONAL_AUTHORITY",
   "INCIDENT_COMMANDER",
   "AUTHORIZED_HUMAN_OPERATOR",
   "TECHNICAL_REVIEWER",
   "PUBLIC_SECTOR_REVIEWER",
+  "CIVIC_INFRASTRUCTURE_REVIEWER",
   "EDITORIAL_REVIEWER",
   "EXECUTIVE_OWNER",
   "NONE"
@@ -613,6 +773,8 @@ export const DATA_CLASSES: DataClass[] = [
   "SENSITIVE",
   "SECRET",
   "PERSONAL",
+  "CIVIC_SENSITIVE",
+  "DEMOCRATIC_CHOICE",
   "SECURITY_SENSITIVE",
   "CRITICAL_OPERATIONAL",
   "UNSUPPORTED",
@@ -638,6 +800,20 @@ export const POLICY_OUTCOMES: PolicyOutcome[] = [
   "UNKNOWN"
 ];
 
+export const DUAL_USE_DOMAINS: DualUseDomain[] = [
+  "AI_GOVERNANCE",
+  "DEFENSIVE_SECURITY",
+  "CRITICAL_INFRASTRUCTURE",
+  "PUBLIC_SECTOR",
+  "B2B",
+  "B2G",
+  "DATA_HANDLING",
+  "RESEARCH",
+  "CIVIL_PROTECTION",
+  "DEMOCRATIC_INFRASTRUCTURE",
+  "UNKNOWN"
+];
+
 export const DUAL_USE_RISKS: DualUseRisk[] = [
   "DU-LOW",
   "DU-MEDIUM",
@@ -647,12 +823,56 @@ export const DUAL_USE_RISKS: DualUseRisk[] = [
   "DU-UNKNOWN"
 ];
 
+export const MEMORY_SOURCES: MemorySource[] = [
+  "NONE",
+  "SESSION",
+  "EVT_IPR_MEMORY",
+  "LEDGER",
+  "USER_FILE",
+  "RUNTIME_CONTEXT"
+];
+
+export const MEMORY_STATUSES: MemoryStatus[] = [
+  "NOT_REQUIRED",
+  "USED",
+  "CREATED",
+  "APPENDED",
+  "PARTIAL",
+  "FAILED"
+];
+
+export const OPC_STATUSES: OpcStatus[] = [
+  "NOT_REQUIRED",
+  "CREATED",
+  "APPENDED",
+  "VERIFIABLE",
+  "PARTIAL",
+  "FAILED"
+];
+
+export const CANONICAL_IPR_RUNTIME_IDENTITY: IprRuntimeIdentity = {
+  entity: "AI_JOKER",
+  system: "AI_JOKER-C2",
+  ipr: "IPR-AI-0001",
+  checkpoint: "EVT-0014-AI",
+  core: "HBCE-CORE-v3",
+  organization: "HERMETICUM B.C.E. S.r.l.",
+  runtimeRole: "IPR_RUNTIME_DEMONSTRATOR"
+};
+
+export const USE_DEMOCRATIC_BOUNDARY =
+  "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
+
 export function isRuntimeState(value: string): value is RuntimeState {
   return RUNTIME_STATES.includes(value as RuntimeState);
 }
 
 export function isRuntimeDecision(value: string): value is RuntimeDecision {
   return RUNTIME_DECISIONS.includes(value as RuntimeDecision);
+}
+
+export function isRuntimeRole(value: string): value is RuntimeRole {
+  return RUNTIME_ROLES.includes(value as RuntimeRole);
 }
 
 export function isRiskClass(value: string): value is RiskClass {
@@ -715,8 +935,24 @@ export function isPolicyOutcome(value: string): value is PolicyOutcome {
   return POLICY_OUTCOMES.includes(value as PolicyOutcome);
 }
 
+export function isDualUseDomain(value: string): value is DualUseDomain {
+  return DUAL_USE_DOMAINS.includes(value as DualUseDomain);
+}
+
 export function isDualUseRisk(value: string): value is DualUseRisk {
   return DUAL_USE_RISKS.includes(value as DualUseRisk);
+}
+
+export function isMemorySource(value: string): value is MemorySource {
+  return MEMORY_SOURCES.includes(value as MemorySource);
+}
+
+export function isMemoryStatus(value: string): value is MemoryStatus {
+  return MEMORY_STATUSES.includes(value as MemoryStatus);
+}
+
+export function isOpcStatus(value: string): value is OpcStatus {
+  return OPC_STATUSES.includes(value as OpcStatus);
 }
 
 export function getDomainTypeForProjectDomain(
@@ -725,6 +961,8 @@ export function getDomainTypeForProjectDomain(
   switch (domain) {
     case "MATRIX":
       return "OPERATIONAL_INFRASTRUCTURE_DOMAIN";
+    case "U.S.E.":
+      return "FEDERATED_EUROPEAN_INSTITUTIONAL_APPLICATION_DOMAIN";
     case "CORPUS_ESOTEROLOGIA_ERMETICA":
       return "DISCIPLINARY_GRAMMAR_DOMAIN";
     case "APOKALYPSIS":
@@ -734,6 +972,24 @@ export function getDomainTypeForProjectDomain(
     case "GENERAL":
     default:
       return "GENERAL_CONTEXT";
+  }
+}
+
+export function getProjectDomainLabel(domain: ProjectDomain): string {
+  switch (domain) {
+    case "MATRIX":
+      return "MATRIX";
+    case "U.S.E.":
+      return "U.S.E. — United States of Europe";
+    case "CORPUS_ESOTEROLOGIA_ERMETICA":
+      return "CORPUS ESOTEROLOGIA ERMETICA";
+    case "APOKALYPSIS":
+      return "APOKALYPSIS";
+    case "MULTI_DOMAIN":
+      return "MULTI_DOMAIN";
+    case "GENERAL":
+    default:
+      return "GENERAL";
   }
 }
 
@@ -752,6 +1008,7 @@ export function createProjectBinding(
           ? activeDomains
           : [
               "MATRIX",
+              "U.S.E.",
               "CORPUS_ESOTEROLOGIA_ERMETICA",
               "APOKALYPSIS"
             ],
@@ -765,10 +1022,13 @@ export function createProjectBinding(
     domain,
     active_domains: activeDomains,
     domain_type: domainType,
-    label: domain,
+    label: getProjectDomainLabel(domain),
     canonical_formula:
       domain === "CORPUS_ESOTEROLOGIA_ERMETICA"
         ? "Decisione · Costo · Traccia · Tempo"
-        : undefined
+        : undefined,
+    parent_domain: domain === "U.S.E." ? "MATRIX" : undefined,
+    democratic_boundary:
+      domain === "U.S.E." ? USE_DEMOCRATIC_BOUNDARY : undefined
   };
 }
