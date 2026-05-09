@@ -3,37 +3,35 @@
  *
  * Deterministic project-domain classifier for the HERMETICUM B.C.E. runtime.
  *
+ * Canonical hierarchy:
+ * - IPR = primary operational identity and proof instrument
+ * - AI JOKER-C2 = governed runtime demonstrator
+ * - MATRIX = operational infrastructure architecture
+ * - U.S.E. = MATRIX-derived political-institutional application
+ * - CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar
+ * - APOKALYPSIS = historical threshold analysis
+ * - EVT = event trace
+ * - EVT/IPR memory = runtime continuity
+ * - OPC = operational proof receipt
+ *
  * Canonical project domains:
  * - MATRIX
+ * - U.S.E.
  * - CORPUS_ESOTEROLOGIA_ERMETICA
  * - APOKALYPSIS
  * - GENERAL
  * - MULTI_DOMAIN
- *
- * MATRIX includes European AI governance, technological autonomy,
- * strategic dependency reduction, B2B/B2G infrastructure, citizens,
- * enterprises, public administration, digital sovereignty and operational
- * continuity.
  */
 
-export type ProjectDomain =
-  | "MATRIX"
-  | "CORPUS_ESOTEROLOGIA_ERMETICA"
-  | "APOKALYPSIS"
-  | "GENERAL"
-  | "MULTI_DOMAIN";
-
-export type PrimaryProjectDomain =
-  | "MATRIX"
-  | "CORPUS_ESOTEROLOGIA_ERMETICA"
-  | "APOKALYPSIS";
-
-export type DomainType =
-  | "OPERATIONAL_INFRASTRUCTURE_DOMAIN"
-  | "DISCIPLINARY_GRAMMAR_DOMAIN"
-  | "HISTORICAL_THRESHOLD_ANALYSIS_DOMAIN"
-  | "GENERAL_CONTEXT"
-  | "ECOSYSTEM_OPERATION";
+import {
+  getDomainTypeForProjectDomain,
+  getProjectDomainLabel,
+  type DomainType,
+  type ProjectDomain,
+  type ProjectDomainClassification,
+  type ProjectDomainMetadata,
+  type PrimaryProjectDomain
+} from "./runtime-types";
 
 export type ProjectDomainInput = {
   message?: string;
@@ -55,32 +53,16 @@ export type DomainScore = {
   reasons: string[];
 };
 
-export type ProjectDomainClassification = {
-  projectDomain: ProjectDomain;
-  activeDomains: ProjectDomain[];
-  primaryDomain: ProjectDomain;
-  domainType: DomainType;
-  confidence: number;
-  reasons: string[];
-  scores: Record<PrimaryProjectDomain, number>;
-};
-
-export type ProjectDomainMetadata = {
-  projectDomain: ProjectDomain;
-  domainType: DomainType;
-  label: string;
-  shortDefinition: string;
-  runtimeQuestion: string;
-};
-
 const PRIMARY_DOMAINS: PrimaryProjectDomain[] = [
   "MATRIX",
+  "U.S.E.",
   "CORPUS_ESOTEROLOGIA_ERMETICA",
   "APOKALYPSIS"
 ];
 
 const PROJECT_DOMAINS: ProjectDomain[] = [
   "MATRIX",
+  "U.S.E.",
   "CORPUS_ESOTEROLOGIA_ERMETICA",
   "APOKALYPSIS",
   "GENERAL",
@@ -93,9 +75,19 @@ const DOMAIN_METADATA: Record<ProjectDomain, ProjectDomainMetadata> = {
     domainType: "OPERATIONAL_INFRASTRUCTURE_DOMAIN",
     label: "MATRIX",
     shortDefinition:
-      "Operational infrastructure domain for AI governance, European systems, strategic autonomy, B2B, B2G, citizens, enterprises, cloud, data, energy, security and institutional continuity.",
+      "Operational infrastructure architecture for AI governance, European systems, strategic autonomy, B2B, B2G, citizens, enterprises, cloud, data, energy, security and institutional continuity.",
     runtimeQuestion:
       "How can Europe build verifiable operational systems for AI, governance, data, energy, security, citizens, enterprises and institutional continuity?"
+  },
+  "U.S.E.": {
+    projectDomain: "U.S.E.",
+    domainType: "FEDERATED_EUROPEAN_INSTITUTIONAL_APPLICATION_DOMAIN",
+    label: "U.S.E. — United States of Europe",
+    shortDefinition:
+      "MATRIX-derived political-institutional application domain for a federated operational Europe, digital sovereignty, federated digital voting, public consultation, democratic infrastructure and civic audit safeguards.",
+    runtimeQuestion:
+      "How can MATRIX be applied to design the United States of Europe as a federated, operational, sovereign, digital and verifiable institutional system?",
+    parentDomain: "MATRIX"
   },
   CORPUS_ESOTEROLOGIA_ERMETICA: {
     projectDomain: "CORPUS_ESOTEROLOGIA_ERMETICA",
@@ -120,7 +112,7 @@ const DOMAIN_METADATA: Record<ProjectDomain, ProjectDomainMetadata> = {
     domainType: "GENERAL_CONTEXT",
     label: "GENERAL",
     shortDefinition:
-      "Ordinary safe context with no specific MATRIX, CORPUS or APOKALYPSIS domain binding.",
+      "Ordinary safe context with no specific MATRIX, U.S.E., CORPUS or APOKALYPSIS domain binding.",
     runtimeQuestion:
       "Does this request require a specific project-domain classification?"
   },
@@ -131,7 +123,7 @@ const DOMAIN_METADATA: Record<ProjectDomain, ProjectDomainMetadata> = {
     shortDefinition:
       "Ecosystem-level operation involving more than one primary domain or the whole AI JOKER-C2 governance runtime.",
     runtimeQuestion:
-      "How does the operation affect MATRIX, CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS together?"
+      "How does the operation affect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS together?"
   }
 };
 
@@ -239,14 +231,82 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "verification",
     "verifica",
     "runtime governance",
-    "ipr",
-    "evt",
-    "identity primary record",
-    "identita operativa",
-    "identità operativa",
     "biocybersecurity",
     "biocibersicurezza",
     "biocibernetica"
+  ],
+  "U.S.E.": [
+    "u.s.e.",
+    "use",
+    "u s e",
+    "united states of europe",
+    "stati uniti d europa",
+    "stati uniti d'europa",
+    "stati uniti europa",
+    "stati uniti europei",
+    "federated europe",
+    "federated operational europe",
+    "federazione europea",
+    "federazione operativa europea",
+    "european federation",
+    "federated european",
+    "federazione europea digitale",
+    "costituzione operativa europea",
+    "european operational constitution",
+    "digital sovereignty",
+    "sovranita digitale",
+    "sovranità digitale",
+    "federated digital vote",
+    "federated digital voting",
+    "voto digitale federato",
+    "democratic infrastructure",
+    "infrastruttura democratica",
+    "infrastruttura democratica digitale",
+    "public consultation",
+    "consultazione pubblica",
+    "referendum infrastructure",
+    "infrastruttura referendaria",
+    "referendum digitale",
+    "direct legislative participation",
+    "partecipazione legislativa diretta",
+    "democrazia verificabile",
+    "verifiable democracy",
+    "democrazia legislativa",
+    "democrazia diretta",
+    "democrazia ibrida",
+    "civic participation",
+    "partecipazione civica",
+    "public decision",
+    "decisione pubblica",
+    "public decision system",
+    "sistema decisionale pubblico",
+    "identita operativa europea",
+    "identità operativa europea",
+    "audit pubblico",
+    "process auditable",
+    "vote anonymized",
+    "choice separated",
+    "identity verified first",
+    "identity verified first choice separated after vote anonymized process auditable",
+    "civil protection",
+    "protezione civile",
+    "emergency coordination",
+    "coordinamento emergenze",
+    "regional national european",
+    "regionale nazionale europeo",
+    "multi level governance",
+    "governance multilivello",
+    "european public decision",
+    "decisione pubblica europea",
+    "citizen identity",
+    "identita cittadino",
+    "identità cittadino",
+    "participation rights",
+    "diritti di partecipazione",
+    "constitutional operational",
+    "costituzionale operativo",
+    "sovereign digital europe",
+    "europa digitale sovrana"
   ],
   CORPUS_ESOTEROLOGIA_ERMETICA: [
     "corpus",
@@ -350,6 +410,60 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
   ]
 };
 
+const IPR_OPERATIONAL_TERMS = [
+  "ipr",
+  "identity primary record",
+  "identita primaria operativa",
+  "identità primaria operativa",
+  "identita operativa",
+  "identità operativa",
+  "ipr runtime",
+  "ipr runtime demonstrator",
+  "ipr product",
+  "ipr prodotto",
+  "ipr proof",
+  "operational identity",
+  "operational proof",
+  "proof instrument",
+  "strumento operativo",
+  "strumento di prova",
+  "identity proof",
+  "identity binding",
+  "ipr binding",
+  "ipra",
+  "ipr-ai-0001"
+];
+
+const HBCE_PROOF_LAYER_TERMS = [
+  "evt",
+  "event trace",
+  "verifiable event trace",
+  "evt protocol",
+  "protocollo evt",
+  "evt continuity",
+  "continuita evt",
+  "continuità evt",
+  "evt ipr memory",
+  "evt/ipr memory",
+  "evt ipr bound memory",
+  "memory evt",
+  "opc",
+  "opc proof",
+  "opc proof receipt",
+  "proof receipt",
+  "operational proof",
+  "operational proof compliance",
+  "operational proof and compliance",
+  "proof record",
+  "audit receipt",
+  "audit trail",
+  "iospace",
+  "hbce operational stack",
+  "operational stack",
+  "proof chain",
+  "chain hash"
+];
+
 const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
   "europa",
   "leurpa",
@@ -396,7 +510,8 @@ const REPOSITORY_MULTI_DOMAIN_FILES = [
   "system-manifest.json",
   "system/system-manifest.json",
   "project_domain_governance_map.md",
-  "ai_joker_c2_runtime_model.md"
+  "ai_joker_c2_runtime_model.md",
+  "hbce_operational_stack.md"
 ];
 
 const MATRIX_FILES = [
@@ -404,6 +519,8 @@ const MATRIX_FILES = [
   "b2g_overview.md",
   "matrix_overview.md",
   "ai_governance_mapping.md",
+  "ipr_product_overview.md",
+  "ipr_runtime_demonstrator.md",
   "matrix_european_infrastructure_map.md",
   "matrix_b2b_use_cases.md",
   "matrix_b2g_use_cases.md",
@@ -411,6 +528,19 @@ const MATRIX_FILES = [
   "matrix_critical_infrastructure_model.md",
   "matrix_cybersecurity_resilience_model.md",
   "matrix_procurement_governance_model.md"
+];
+
+const USE_FILES = [
+  "use_overview.md",
+  "u.s.e._overview.md",
+  "united_states_of_europe.md",
+  "use_democratic_infrastructure_boundary.md",
+  "use_federated_digital_vote_safeguards.md",
+  "use_digital_sovereignty.md",
+  "use_constitutional_operational_model.md",
+  "use_public_consultation_model.md",
+  "use_referendum_infrastructure.md",
+  "use_civic_governance.md"
 ];
 
 const CORPUS_FILES = [
@@ -434,6 +564,8 @@ const APOKALYPSIS_FILES = [
 ];
 
 const MULTI_DOMAIN_TERMS = [
+  "matrix use corpus apokalypsis",
+  "matrix u.s.e. corpus apokalypsis",
   "matrix corpus apokalypsis",
   "matrix corpus and apokalypsis",
   "matrix corpus e apokalypsis",
@@ -448,6 +580,8 @@ const MULTI_DOMAIN_TERMS = [
   "ai joker c2 runtime",
   "whole ecosystem",
   "intero ecosistema",
+  "four domains",
+  "quattro domini",
   "three domains",
   "tre domini",
   "primary domains",
@@ -458,6 +592,7 @@ const MULTI_DOMAIN_TERMS = [
   "governance model",
   "system manifest",
   "manifesto sistema",
+  "hbce operational stack",
   "evt protocol",
   "protocollo evt"
 ];
@@ -483,33 +618,29 @@ export function classifyProjectDomain(
     return fileBasedClassification;
   }
 
+  const explicitMultiDomain = findMatches(normalizedInput, MULTI_DOMAIN_TERMS);
+
+  const iprMatches = findMatches(normalizedInput, IPR_OPERATIONAL_TERMS);
+  const proofLayerMatches = findMatches(normalizedInput, HBCE_PROOF_LAYER_TERMS);
+
   const strategicAutonomyMatches =
     findEuropeanStrategicAutonomyMatches(normalizedInput);
-
-  if (strategicAutonomyMatches.length >= 2) {
-    const scores = createEmptyScores();
-    scores.MATRIX = 14 + strategicAutonomyMatches.length;
-
-    return createClassification(
-      "MATRIX",
-      ["MATRIX"],
-      0.95,
-      [
-        "European strategic autonomy / technological dependency reduction language detected.",
-        "Such requests belong to the MATRIX operational infrastructure and governance domain.",
-        ...strategicAutonomyMatches.map(
-          (term) => `Matched strategic-autonomy term: ${term}`
-        )
-      ],
-      scores
-    );
-  }
-
-  const explicitMultiDomain = findMatches(normalizedInput, MULTI_DOMAIN_TERMS);
 
   const domainScores = PRIMARY_DOMAINS.map((domain) =>
     scoreDomain(normalizedInput, domain, DOMAIN_KEYWORDS[domain])
   );
+
+  if (iprMatches.length > 0) {
+    boostScore(domainScores, "MATRIX", 8 + iprMatches.length);
+  }
+
+  if (proofLayerMatches.length > 0) {
+    boostScore(domainScores, "MATRIX", 5 + proofLayerMatches.length);
+  }
+
+  if (strategicAutonomyMatches.length >= 2) {
+    boostScore(domainScores, "MATRIX", 14 + strategicAutonomyMatches.length);
+  }
 
   const matchedDomains = domainScores
     .filter((result) => result.score > 0)
@@ -520,12 +651,30 @@ export function classifyProjectDomain(
   if (explicitMultiDomain.length > 0) {
     return createClassification(
       "MULTI_DOMAIN",
-      ["MATRIX", "CORPUS_ESOTEROLOGIA_ERMETICA", "APOKALYPSIS"],
+      getDefaultActiveDomains(),
       calculateMultiDomainConfidence(matchedDomains, explicitMultiDomain.length),
       [
         "Input matched explicit ecosystem-level or multi-domain language.",
         ...explicitMultiDomain.map((term) => `Matched multi-domain term: ${term}`),
+        ...formatIprAndProofReasons(iprMatches, proofLayerMatches),
         ...collectReasons(matchedDomains)
+      ],
+      scoreMap
+    );
+  }
+
+  if (strategicAutonomyMatches.length >= 2 && !hasUseSignal(normalizedInput)) {
+    return createClassification(
+      "MATRIX",
+      ["MATRIX"],
+      0.95,
+      [
+        "European strategic autonomy or technological dependency reduction language detected.",
+        "Such requests belong to the MATRIX operational infrastructure and governance domain.",
+        ...strategicAutonomyMatches.map(
+          (term) => `Matched strategic-autonomy term: ${term}`
+        ),
+        ...formatIprAndProofReasons(iprMatches, proofLayerMatches)
       ],
       scoreMap
     );
@@ -542,6 +691,7 @@ export function classifyProjectDomain(
         calculateConfidence(top.score, normalizedInput),
         [
           "More than one primary project domain matched with sufficient strength.",
+          ...formatIprAndProofReasons(iprMatches, proofLayerMatches),
           ...collectReasons(matchedDomains)
         ],
         scoreMap
@@ -565,9 +715,12 @@ export function classifyProjectDomain(
     best.domain,
     [best.domain],
     calculateConfidence(best.score, normalizedInput),
-    best.reasons.length > 0
-      ? best.reasons
-      : [`Classified as ${best.domain} by highest project-domain score.`],
+    [
+      ...(best.reasons.length > 0
+        ? best.reasons
+        : [`Classified as ${best.domain} by highest project-domain score.`]),
+      ...formatIprAndProofReasons(iprMatches, proofLayerMatches)
+    ],
     scoreMap
   );
 }
@@ -614,11 +767,30 @@ function classifyByFilePath(
   if (matchedMultiFile) {
     return createClassification(
       "MULTI_DOMAIN",
-      ["MATRIX", "CORPUS_ESOTEROLOGIA_ERMETICA", "APOKALYPSIS"],
+      getDefaultActiveDomains(),
       0.94,
       [
         `Repository-level governance file detected: ${matchedMultiFile}`,
         "Repository-level governance files affect the full AI JOKER-C2 ecosystem."
+      ],
+      scoreMap
+    );
+  }
+
+  const matchedUseFile = USE_FILES.find((file) =>
+    normalizedInput.includes(file)
+  );
+
+  if (matchedUseFile) {
+    scoreMap["U.S.E."] = 10;
+
+    return createClassification(
+      "U.S.E.",
+      ["U.S.E."],
+      0.94,
+      [
+        `U.S.E. documentation file detected: ${matchedUseFile}`,
+        "File path maps to the MATRIX-derived political-institutional application domain."
       ],
       scoreMap
     );
@@ -636,8 +808,8 @@ function classifyByFilePath(
       ["MATRIX"],
       0.92,
       [
-        `MATRIX documentation file detected: ${matchedMatrixFile}`,
-        "File path maps to the operational infrastructure domain."
+        `MATRIX or IPR documentation file detected: ${matchedMatrixFile}`,
+        "File path maps to the operational infrastructure and IPR runtime domain."
       ],
       scoreMap
     );
@@ -710,12 +882,37 @@ function scoreDomain(
   };
 }
 
+function boostScore(
+  scores: DomainScore[],
+  domain: PrimaryProjectDomain,
+  amount: number
+): void {
+  const target = scores.find((score) => score.domain === domain);
+
+  if (!target) {
+    return;
+  }
+
+  target.score += amount;
+}
+
 function isExplicitDomainName(
   domain: PrimaryProjectDomain,
   keyword: string
 ): boolean {
   if (domain === "MATRIX") {
     return keyword === "matrix" || keyword.startsWith("matrix ");
+  }
+
+  if (domain === "U.S.E.") {
+    return (
+      keyword === "u.s.e." ||
+      keyword === "use" ||
+      keyword === "u s e" ||
+      keyword === "united states of europe" ||
+      keyword === "stati uniti d europa" ||
+      keyword === "stati uniti d'europa"
+    );
   }
 
   if (domain === "CORPUS_ESOTEROLOGIA_ERMETICA") {
@@ -746,6 +943,10 @@ function shouldClassifyAsMultiDomain(
   }
 
   return secondScore / topScore >= 0.45;
+}
+
+function hasUseSignal(text: string): boolean {
+  return findMatches(text, DOMAIN_KEYWORDS["U.S.E."]).length > 0;
 }
 
 function normalizeInput(input: ProjectDomainInput | string): string {
@@ -795,7 +996,7 @@ function createClassification(
   activeDomains: ProjectDomain[],
   confidence: number,
   reasons: string[],
-  scores: Record<PrimaryProjectDomain, number>
+  scores: Partial<Record<PrimaryProjectDomain, number>>
 ): ProjectDomainClassification {
   const metadata = DOMAIN_METADATA[projectDomain];
 
@@ -818,7 +1019,7 @@ function normalizeActiveDomains(
     const primaryActiveDomains = activeDomains.filter(isPrimaryProjectDomain);
 
     if (primaryActiveDomains.length === 0) {
-      return ["MATRIX", "CORPUS_ESOTEROLOGIA_ERMETICA", "APOKALYPSIS"];
+      return getDefaultActiveDomains();
     }
 
     return uniqueDomains(primaryActiveDomains);
@@ -829,6 +1030,15 @@ function normalizeActiveDomains(
   }
 
   return [projectDomain];
+}
+
+function getDefaultActiveDomains(): ProjectDomain[] {
+  return [
+    "MATRIX",
+    "U.S.E.",
+    "CORPUS_ESOTEROLOGIA_ERMETICA",
+    "APOKALYPSIS"
+  ];
 }
 
 function calculateConfidence(score: number, text: string): number {
@@ -843,7 +1053,7 @@ function calculateMultiDomainConfidence(
   matchedDomains: DomainScore[],
   explicitMultiDomainMatches: number
 ): number {
-  const matchedDomainFactor = Math.min(matchedDomains.length / 3, 1);
+  const matchedDomainFactor = Math.min(matchedDomains.length / 4, 1);
   const explicitFactor = Math.min(explicitMultiDomainMatches / 3, 1);
   const confidence = 0.7 + matchedDomainFactor * 0.15 + explicitFactor * 0.1;
 
@@ -858,9 +1068,35 @@ function collectReasons(results: DomainScore[]): string[] {
   return results.flatMap((result) => result.reasons);
 }
 
-function createEmptyScores(): Record<PrimaryProjectDomain, number> {
+function formatIprAndProofReasons(
+  iprMatches: string[],
+  proofLayerMatches: string[]
+): string[] {
+  const reasons: string[] = [];
+
+  if (iprMatches.length > 0) {
+    reasons.push(
+      "IPR operational identity or proof-instrument language detected; routed through the MATRIX/HBCE operational infrastructure layer."
+    );
+    reasons.push(...iprMatches.map((term) => `Matched IPR term: ${term}`));
+  }
+
+  if (proofLayerMatches.length > 0) {
+    reasons.push(
+      "EVT, memory, OPC or proof-layer language detected; routed through the MATRIX/HBCE operational infrastructure layer."
+    );
+    reasons.push(
+      ...proofLayerMatches.map((term) => `Matched proof-layer term: ${term}`)
+    );
+  }
+
+  return reasons;
+}
+
+function createEmptyScores(): Partial<Record<PrimaryProjectDomain, number>> {
   return {
     MATRIX: 0,
+    "U.S.E.": 0,
     CORPUS_ESOTEROLOGIA_ERMETICA: 0,
     APOKALYPSIS: 0
   };
@@ -868,8 +1104,8 @@ function createEmptyScores(): Record<PrimaryProjectDomain, number> {
 
 function toScoreMap(
   scores: DomainScore[]
-): Record<PrimaryProjectDomain, number> {
-  return scores.reduce<Record<PrimaryProjectDomain, number>>(
+): Partial<Record<PrimaryProjectDomain, number>> {
+  return scores.reduce<Partial<Record<PrimaryProjectDomain, number>>>(
     (accumulator, score) => {
       accumulator[score.domain] = score.score;
       return accumulator;
@@ -885,3 +1121,5 @@ function uniqueReasons(reasons: string[]): string[] {
 function uniqueDomains<T extends ProjectDomain>(domains: T[]): T[] {
   return Array.from(new Set(domains));
 }
+
+export { DOMAIN_METADATA, PROJECT_DOMAINS, PRIMARY_DOMAINS };
