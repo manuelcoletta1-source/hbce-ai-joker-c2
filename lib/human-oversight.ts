@@ -1,7 +1,7 @@
 /**
  * AI JOKER-C2 Human Oversight Engine
  *
- * Deterministic human oversight evaluation for the HBCE / MATRIX governed runtime.
+ * Deterministic human oversight evaluation for the HBCE / IPR governed runtime.
  *
  * This module transforms:
  * - risk class
@@ -9,6 +9,7 @@
  * - policy status
  * - data class
  * - runtime sensitivity
+ * - project domain
  *
  * into:
  * - oversight state
@@ -17,6 +18,15 @@
  *
  * AI may assist.
  * Humans remain responsible.
+ *
+ * Canonical hierarchy:
+ * - IPR = primary operational identity and proof instrument
+ * - AI JOKER-C2 = governed runtime demonstrator
+ * - MATRIX = operational infrastructure architecture
+ * - U.S.E. = MATRIX-derived political-institutional application
+ * - EVT = event trace
+ * - EVT/IPR memory = runtime continuity
+ * - OPC = operational proof receipt
  */
 
 import type {
@@ -25,6 +35,7 @@ import type {
   OversightEvaluation,
   OversightState,
   PolicyStatus,
+  ProjectDomain,
   ReviewerRole,
   RiskClass,
   RuntimeSensitivity
@@ -36,6 +47,7 @@ export type HumanOversightInput = {
   policyStatus: PolicyStatus;
   dataClass?: DataClass;
   sensitivity?: RuntimeSensitivity;
+  projectDomain?: ProjectDomain;
   message?: string;
 };
 
@@ -58,6 +70,7 @@ const PUBLIC_SECTOR_TERMS = [
   "public service",
   "pubblica amministrazione",
   "autorita pubblica",
+  "autorità pubblica",
   "comune",
   "regione",
   "appalto",
@@ -76,12 +89,17 @@ const LEGAL_TERMS = [
   "regulatory",
   "compliance claim",
   "legal review",
+  "constitutional review",
+  "electoral law",
   "legale",
   "responsabilita",
+  "responsabilità",
   "contratto",
   "certificazione",
   "regolatorio",
-  "revisione legale"
+  "revisione legale",
+  "revisione costituzionale",
+  "legge elettorale"
 ];
 
 const SECURITY_TERMS = [
@@ -101,6 +119,7 @@ const SECURITY_TERMS = [
   "cyber",
   "incidente",
   "vulnerabilita",
+  "vulnerabilità",
   "segreto",
   "credenziale"
 ];
@@ -117,11 +136,75 @@ const CRITICAL_INFRASTRUCTURE_TERMS = [
   "emergency",
   "civil protection",
   "infrastruttura critica",
+  "infrastrutture critiche",
   "energia",
   "ospedale",
   "sanita",
+  "sanità",
   "trasporti",
   "protezione civile"
+];
+
+const CIVIC_INFRASTRUCTURE_TERMS = [
+  "u.s.e.",
+  "united states of europe",
+  "stati uniti d europa",
+  "stati uniti d'europa",
+  "federated digital vote",
+  "federated digital voting",
+  "voto digitale federato",
+  "public consultation",
+  "consultazione pubblica",
+  "referendum",
+  "referendum infrastructure",
+  "infrastruttura referendaria",
+  "democratic infrastructure",
+  "infrastruttura democratica",
+  "civic participation",
+  "partecipazione civica",
+  "public decision",
+  "decisione pubblica",
+  "citizen identity",
+  "identita cittadino",
+  "identità cittadino",
+  "eligibility verification",
+  "verifica eleggibilita",
+  "verifica eleggibilità",
+  "participation rights",
+  "diritti di partecipazione"
+];
+
+const DEMOCRATIC_CHOICE_LINKAGE_TERMS = [
+  "vote de-anonymization",
+  "de-anonymize vote",
+  "deanonymize vote",
+  "link voter identity to vote",
+  "link identity to vote",
+  "identity-choice linkage",
+  "voter targeting",
+  "political manipulation",
+  "coercive civic influence",
+  "collegare identita e voto",
+  "collegare identità e voto",
+  "collegare identita personale e scelta",
+  "collegare identità personale e scelta",
+  "deanonimizzare il voto",
+  "de-anonimizzare il voto",
+  "manipolazione politica",
+  "coercizione civica"
+];
+
+const OPC_PROOF_TERMS = [
+  "opc",
+  "proof receipt",
+  "proof record",
+  "chain hash",
+  "audit receipt",
+  "event hash",
+  "memory hash",
+  "previous proof hash",
+  "ricevuta di prova",
+  "record di prova"
 ];
 
 export function evaluateHumanOversight(
@@ -129,7 +212,7 @@ export function evaluateHumanOversight(
 ): OversightEvaluation {
   const normalizedMessage = normalizeText(input.message ?? "");
 
-  const prohibited = evaluateProhibitedOversight(input);
+  const prohibited = evaluateProhibitedOversight(input, normalizedMessage);
 
   if (prohibited) {
     return prohibited;
@@ -139,6 +222,12 @@ export function evaluateHumanOversight(
 
   if (dataOverride) {
     return dataOverride;
+  }
+
+  const civicOverride = evaluateCivicOversight(input, normalizedMessage);
+
+  if (civicOverride) {
+    return civicOverride;
   }
 
   const criticalContextOverride = evaluateCriticalContextOversight(
@@ -196,9 +285,20 @@ export function isOversightOptional(
 
 export function getReviewerRoleForContext(
   contextClass: ContextClass,
-  message = ""
+  message = "",
+  projectDomain?: ProjectDomain
 ): ReviewerRole {
   const normalizedMessage = normalizeText(message);
+
+  if (
+    projectDomain === "U.S.E." ||
+    contextClass === "USE" ||
+    contextClass === "CIVIC" ||
+    contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
+    containsAny(normalizedMessage, CIVIC_INFRASTRUCTURE_TERMS)
+  ) {
+    return "CIVIC_INFRASTRUCTURE_REVIEWER";
+  }
 
   if (containsAny(normalizedMessage, CRITICAL_INFRASTRUCTURE_TERMS)) {
     return "INCIDENT_COMMANDER";
@@ -243,6 +343,7 @@ export function getReviewerRoleForContext(
       return "REVIEWER";
 
     case "IDENTITY":
+    case "IPR":
       return "AUDITOR";
 
     default:
@@ -284,7 +385,8 @@ export function buildOversightLabel(
 }
 
 function evaluateProhibitedOversight(
-  input: HumanOversightInput
+  input: HumanOversightInput,
+  normalizedMessage: string
 ): OversightRuleResult | null {
   if (input.policyStatus === "PROHIBITED" || input.riskClass === "PROHIBITED") {
     return {
@@ -292,6 +394,27 @@ function evaluateProhibitedOversight(
       requiredRole: "NONE",
       reason:
         "Operation is prohibited. Human oversight cannot authorize prohibited activity."
+    };
+  }
+
+  if (
+    input.dataClass === "DEMOCRATIC_CHOICE" &&
+    containsAny(normalizedMessage, DEMOCRATIC_CHOICE_LINKAGE_TERMS)
+  ) {
+    return {
+      state: "BLOCKED",
+      requiredRole: "NONE",
+      reason:
+        "Democratic choice data appears linked to identity or coercive civic use. Human oversight cannot authorize identity-choice linkage."
+    };
+  }
+
+  if (containsAny(normalizedMessage, DEMOCRATIC_CHOICE_LINKAGE_TERMS)) {
+    return {
+      state: "BLOCKED",
+      requiredRole: "NONE",
+      reason:
+        "Request appears to involve vote de-anonymization, political manipulation or identity-choice linkage."
     };
   }
 
@@ -316,6 +439,22 @@ function evaluateDataOversight(
         requiredRole: "INCIDENT_COMMANDER",
         reason:
           "CRITICAL_OPERATIONAL data detected. Specialist authority is required before operational reliance."
+      };
+
+    case "DEMOCRATIC_CHOICE":
+      return {
+        state: "ESCALATED",
+        requiredRole: "CIVIC_INFRASTRUCTURE_REVIEWER",
+        reason:
+          "DEMOCRATIC_CHOICE data detected. Strict civic review is required, and identity-choice linkage must remain prohibited."
+      };
+
+    case "CIVIC_SENSITIVE":
+      return {
+        state: "REQUIRED",
+        requiredRole: "CIVIC_INFRASTRUCTURE_REVIEWER",
+        reason:
+          "CIVIC_SENSITIVE data requires democratic safeguards and civic infrastructure review before operational use."
       };
 
     case "PERSONAL":
@@ -353,6 +492,63 @@ function evaluateDataOversight(
     default:
       return null;
   }
+}
+
+function evaluateCivicOversight(
+  input: HumanOversightInput,
+  normalizedMessage: string
+): OversightRuleResult | null {
+  const civicContext =
+    input.projectDomain === "U.S.E." ||
+    input.contextClass === "USE" ||
+    input.contextClass === "CIVIC" ||
+    input.contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
+    containsAny(normalizedMessage, CIVIC_INFRASTRUCTURE_TERMS);
+
+  if (!civicContext) {
+    return null;
+  }
+
+  if (
+    input.contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
+    input.sensitivity === "HIGH" ||
+    containsAny(normalizedMessage, [
+      "federated digital vote",
+      "federated digital voting",
+      "voto digitale federato",
+      "referendum",
+      "public consultation",
+      "consultazione pubblica",
+      "eligibility verification",
+      "verifica eleggibilita",
+      "verifica eleggibilità",
+      "electoral infrastructure",
+      "infrastruttura elettorale"
+    ])
+  ) {
+    return {
+      state: "REQUIRED",
+      requiredRole: "CIVIC_INFRASTRUCTURE_REVIEWER",
+      reason:
+        "Civic or democratic infrastructure context detected. Human review is required to preserve identity-choice separation, anonymity and auditability."
+    };
+  }
+
+  if (input.riskClass === "LOW" && input.policyStatus === "ALLOWED") {
+    return {
+      state: "RECOMMENDED",
+      requiredRole: "CIVIC_INFRASTRUCTURE_REVIEWER",
+      reason:
+        "U.S.E. civic documentation context detected. Human review is recommended before external or institutional use."
+    };
+  }
+
+  return {
+    state: "REQUIRED",
+    requiredRole: "CIVIC_INFRASTRUCTURE_REVIEWER",
+    reason:
+      "U.S.E. or civic context detected. Review is required or recommended depending on operational use."
+  };
 }
 
 function evaluateCriticalContextOversight(
@@ -413,6 +609,15 @@ function evaluateCriticalContextOversight(
     };
   }
 
+  if (containsAny(normalizedMessage, OPC_PROOF_TERMS)) {
+    return {
+      state: "RECOMMENDED",
+      requiredRole: "AUDITOR",
+      reason:
+        "OPC or proof receipt context detected. Audit review is recommended before relying on the proof chain externally."
+    };
+  }
+
   return null;
 }
 
@@ -422,7 +627,8 @@ function evaluateRiskOversight(
 ): OversightRuleResult | null {
   const reviewerRole = getReviewerRoleForContext(
     input.contextClass,
-    normalizedMessage
+    normalizedMessage,
+    input.projectDomain
   );
 
   if (input.riskClass === "CRITICAL") {
@@ -458,7 +664,9 @@ function evaluateRiskOversight(
       input.sensitivity === "HIGH" ||
       input.contextClass === "SECURITY" ||
       input.contextClass === "COMPLIANCE" ||
-      input.contextClass === "AI_GOVERNANCE"
+      input.contextClass === "AI_GOVERNANCE" ||
+      input.contextClass === "GOVERNANCE" ||
+      input.projectDomain === "U.S.E."
     ) {
       return {
         state: "REQUIRED",
@@ -515,6 +723,7 @@ function normalizeText(value: string): string {
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[’']/g, " ")
     .replace(/[^\p{L}\p{N}./_-]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
