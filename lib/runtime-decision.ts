@@ -1,10 +1,12 @@
 /**
  * AI JOKER-C2 Runtime Decision Engine
  *
- * Deterministic runtime decision module for the HBCE / MATRIX governed runtime.
+ * Deterministic runtime decision module for the HBCE / IPR governed runtime.
  *
  * This module combines:
  * - runtime state
+ * - IPR binding
+ * - project domain
  * - policy evaluation
  * - risk classification
  * - human oversight
@@ -18,7 +20,20 @@
  * - file processing
  * - output generation
  * - EVT generation
+ * - EVT/IPR-bound memory updates
+ * - OPC proof receipt generation
  * - ledger operations
+ *
+ * Canonical hierarchy:
+ * - IPR = primary operational identity and proof instrument
+ * - AI JOKER-C2 = governed runtime demonstrator
+ * - MATRIX = operational infrastructure architecture
+ * - U.S.E. = MATRIX-derived political-institutional application
+ * - CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar
+ * - APOKALYPSIS = historical threshold analysis
+ * - EVT = event trace
+ * - EVT/IPR memory = runtime continuity
+ * - OPC = operational proof receipt
  */
 
 import type {
@@ -26,7 +41,9 @@ import type {
   DataClass,
   IntentClass,
   OversightState,
+  PolicyOutcome,
   PolicyStatus,
+  ProjectDomain,
   RiskClass,
   RuntimeDecision,
   RuntimeDecisionResult,
@@ -36,6 +53,7 @@ import type {
 export type RuntimeDecisionInput = {
   runtimeState?: RuntimeState;
   policyStatus: PolicyStatus;
+  policyOutcome?: PolicyOutcome;
   policyProhibited?: boolean;
   policyFailClosed?: boolean;
   riskClass: RiskClass;
@@ -43,9 +61,23 @@ export type RuntimeDecisionInput = {
   contextClass?: ContextClass;
   intentClass?: IntentClass;
   dataClass?: DataClass;
+  projectDomain?: ProjectDomain;
+  activeDomains?: ProjectDomain[];
   hasFiles?: boolean;
   evtPreferred?: boolean;
   auditPreferred?: boolean;
+  memoryPreferred?: boolean;
+  opcPreferred?: boolean;
+  iprBindingPreferred?: boolean;
+
+  /**
+   * Civic safety flag.
+   *
+   * Must be true when a request attempts to connect personal identity
+   * with democratic choice content, vote content, ballot content or
+   * civic-choice content.
+   */
+  identityChoiceLinkage?: boolean;
 };
 
 type DecisionFlags = {
@@ -55,6 +87,14 @@ type DecisionFlags = {
   evtRequired: boolean;
   auditRequired: boolean;
   failClosed: boolean;
+  memoryRequired: boolean;
+  opcRequired: boolean;
+};
+
+type DecisionEnvelope = {
+  decision: RuntimeDecision;
+  flags: DecisionFlags;
+  reasons: string[];
 };
 
 const DEFAULT_RUNTIME_STATE: RuntimeState = "OPERATIONAL";
@@ -68,107 +108,86 @@ export function decideRuntimeAction(
   const runtimeDecision = decideByRuntimeState(runtimeState);
 
   if (runtimeDecision) {
-    return buildDecision(
-      runtimeDecision.decision,
-      runtimeDecision.flags,
-      runtimeDecision.reasons
-    );
+    return buildDecision(runtimeDecision, input);
+  }
+
+  const civicBlockDecision = decideByCivicProhibition(input);
+
+  if (civicBlockDecision) {
+    return buildDecision(civicBlockDecision, input);
   }
 
   const prohibitedDecision = decideByProhibition(input);
 
   if (prohibitedDecision) {
-    return buildDecision(
-      prohibitedDecision.decision,
-      prohibitedDecision.flags,
-      prohibitedDecision.reasons
-    );
+    return buildDecision(prohibitedDecision, input);
   }
 
   const oversightBlockDecision = decideByOversightBlock(input);
 
   if (oversightBlockDecision) {
-    return buildDecision(
-      oversightBlockDecision.decision,
-      oversightBlockDecision.flags,
-      oversightBlockDecision.reasons
-    );
+    return buildDecision(oversightBlockDecision, input);
   }
 
   const dataDecision = decideByDataClass(input);
 
   if (dataDecision) {
-    return buildDecision(
-      dataDecision.decision,
-      dataDecision.flags,
-      dataDecision.reasons
-    );
+    return buildDecision(dataDecision, input);
+  }
+
+  const civicDecision = decideByCivicContext(input);
+
+  if (civicDecision) {
+    return buildDecision(civicDecision, input);
   }
 
   const criticalDecision = decideByCriticalRisk(input);
 
   if (criticalDecision) {
-    return buildDecision(
-      criticalDecision.decision,
-      criticalDecision.flags,
-      criticalDecision.reasons
-    );
+    return buildDecision(criticalDecision, input);
   }
 
   const highDecision = decideByHighRisk(input);
 
   if (highDecision) {
-    return buildDecision(
-      highDecision.decision,
-      highDecision.flags,
-      highDecision.reasons
-    );
+    return buildDecision(highDecision, input);
   }
 
   const unknownDecision = decideByUnknownRisk(input);
 
   if (unknownDecision) {
-    return buildDecision(
-      unknownDecision.decision,
-      unknownDecision.flags,
-      unknownDecision.reasons
-    );
+    return buildDecision(unknownDecision, input);
   }
 
   const mediumDecision = decideByMediumRisk(input);
 
   if (mediumDecision) {
-    return buildDecision(
-      mediumDecision.decision,
-      mediumDecision.flags,
-      mediumDecision.reasons
-    );
+    return buildDecision(mediumDecision, input);
   }
 
   const restrictedDecision = decideByRestrictedPolicy(input);
 
   if (restrictedDecision) {
-    return buildDecision(
-      restrictedDecision.decision,
-      restrictedDecision.flags,
-      restrictedDecision.reasons
-    );
+    return buildDecision(restrictedDecision, input);
   }
 
   const lowDecision = decideByLowRisk(input);
 
   if (lowDecision) {
-    return buildDecision(
-      lowDecision.decision,
-      lowDecision.flags,
-      lowDecision.reasons
-    );
+    return buildDecision(lowDecision, input);
   }
 
   reasons.push("No explicit runtime decision rule matched.");
   reasons.push("Defaulting to ESCALATE for conservative fail-closed behavior.");
 
-  return buildDecision("ESCALATE", escalationFlags(true, true), reasons);
+  return buildDecision(
+    {
+      decision: "ESCALATE",
+      flags: escalationFlags(true, true),
+      reasons
+    },
+    input
+  );
 }
 
 export function shouldAllowModelCall(decision: RuntimeDecisionResult): boolean {
@@ -187,6 +206,14 @@ export function shouldAudit(decision: RuntimeDecisionResult): boolean {
   return decision.auditRequired;
 }
 
+export function shouldGenerateMemory(decision: RuntimeDecisionResult): boolean {
+  return Boolean(decision.memoryRequired);
+}
+
+export function shouldGenerateOpc(decision: RuntimeDecisionResult): boolean {
+  return Boolean(decision.opcRequired);
+}
+
 export function isFailClosed(decision: RuntimeDecisionResult): boolean {
   return decision.failClosed;
 }
@@ -195,9 +222,7 @@ export function isTerminalDecision(decision: RuntimeDecisionResult): boolean {
   return decision.decision === "BLOCK" || decision.decision === "NOOP";
 }
 
-export function buildDecisionSummary(
-  decision: RuntimeDecisionResult
-): string {
+export function buildDecisionSummary(decision: RuntimeDecisionResult): string {
   return [
     `Decision: ${decision.decision}`,
     `Execution: ${decision.allowExecution ? "allowed" : "not allowed"}`,
@@ -205,20 +230,17 @@ export function buildDecisionSummary(
     `File processing: ${
       decision.allowFileProcessing ? "allowed" : "not allowed"
     }`,
+    `IPR binding: ${decision.iprBinding ? "yes" : "no"}`,
     `EVT required: ${decision.evtRequired ? "yes" : "no"}`,
+    `Memory required: ${decision.memoryRequired ? "yes" : "no"}`,
+    `OPC required: ${decision.opcRequired ? "yes" : "no"}`,
     `Audit required: ${decision.auditRequired ? "yes" : "no"}`,
     `Fail-closed: ${decision.failClosed ? "yes" : "no"}`
   ].join("\n");
 }
 
-function decideByRuntimeState(input: RuntimeState):
-  | {
-      decision: RuntimeDecision;
-      flags: DecisionFlags;
-      reasons: string[];
-    }
-  | null {
-  switch (input) {
+function decideByRuntimeState(runtimeState: RuntimeState): DecisionEnvelope | null {
+  switch (runtimeState) {
     case "OPERATIONAL":
       return null;
 
@@ -235,7 +257,7 @@ function decideByRuntimeState(input: RuntimeState):
     case "AUDIT_ONLY":
       return {
         decision: "AUDIT",
-        flags: auditFlags(false, true),
+        flags: auditFlags(false, true, true),
         reasons: [
           "Runtime state is AUDIT_ONLY.",
           "The runtime may record or review but should not execute sensitive operations."
@@ -284,13 +306,27 @@ function decideByRuntimeState(input: RuntimeState):
   }
 }
 
-function decideByProhibition(input: RuntimeDecisionInput):
-  | {
-      decision: RuntimeDecision;
-      flags: DecisionFlags;
-      reasons: string[];
-    }
-  | null {
+function decideByCivicProhibition(
+  input: RuntimeDecisionInput
+): DecisionEnvelope | null {
+  if (
+    input.identityChoiceLinkage ||
+    input.dataClass === "DEMOCRATIC_CHOICE"
+  ) {
+    return {
+      decision: "BLOCK",
+      flags: blockFlags(true, true),
+      reasons: [
+        "Democratic choice content or identity-choice linkage detected.",
+        "The runtime must not link personal identity to democratic vote or civic-choice content."
+      ]
+    };
+  }
+
+  return null;
+}
+
+function decideByProhibition(input: RuntimeDecisionInput): DecisionEnvelope | null {
   if (
     input.policyProhibited ||
     input.policyStatus === "PROHIBITED" ||
@@ -321,13 +357,9 @@ function decideByProhibition(input: RuntimeDecisionInput):
   return null;
 }
 
-function decideByOversightBlock(input: RuntimeDecisionInput):
-  | {
-      decision: RuntimeDecision;
-      flags: DecisionFlags;
-      reasons: string[];
-    }
-  | null {
+function decideByOversightBlock(
+  input: RuntimeDecisionInput
+): DecisionEnvelope | null {
   if (input.oversightState === "REJECTED") {
     return {
       decision: "BLOCK",
@@ -353,13 +385,7 @@ function decideByOversightBlock(input: RuntimeDecisionInput):
   return null;
 }
 
-function decideByDataClass(input: RuntimeDecisionInput):
-  | {
-      decision: RuntimeDecision;
-      flags: DecisionFlags;
-      reasons: string[];
-    }
-  | null {
+function decideByDataClass(input: RuntimeDecisionInput): DecisionEnvelope | null {
   switch (input.dataClass) {
     case "SECRET":
       return {
@@ -378,6 +404,16 @@ function decideByDataClass(input: RuntimeDecisionInput):
         reasons: [
           "Data class is CRITICAL_OPERATIONAL.",
           "Critical operational data requires specialist review."
+        ]
+      };
+
+    case "CIVIC_SENSITIVE":
+      return {
+        decision: "AUDIT",
+        flags: auditFlags(true, true, true),
+        reasons: [
+          "Data class is CIVIC_SENSITIVE.",
+          "Civic-sensitive data may proceed only with audit-aware handling."
         ]
       };
 
@@ -400,13 +436,63 @@ function decideByDataClass(input: RuntimeDecisionInput):
   }
 }
 
-function decideByCriticalRisk(input: RuntimeDecisionInput):
-  | {
-      decision: RuntimeDecision;
-      flags: DecisionFlags;
-      reasons: string[];
+function decideByCivicContext(input: RuntimeDecisionInput): DecisionEnvelope | null {
+  if (!isCivicOrDemocraticContext(input)) {
+    return null;
+  }
+
+  if (input.riskClass === "LOW") {
+    return {
+      decision: "AUDIT",
+      flags: auditFlags(true, true, true),
+      reasons: [
+        "U.S.E., CIVIC or DEMOCRATIC_INFRASTRUCTURE context detected.",
+        "Low-risk civic documentation may proceed with audit-ready handling.",
+        "Identity-choice separation must be preserved."
+      ]
+    };
+  }
+
+  if (input.riskClass === "MEDIUM") {
+    return {
+      decision: "AUDIT",
+      flags: auditFlags(true, true, true),
+      reasons: [
+        "Civic or democratic infrastructure context detected with MEDIUM risk.",
+        "Operation may proceed only with audit requirement and democratic safeguards."
+      ]
+    };
+  }
+
+  if (input.riskClass === "HIGH") {
+    if (input.oversightState === "COMPLETED") {
+      return {
+        decision: "AUDIT",
+        flags: auditFlags(true, true, true),
+        reasons: [
+          "Civic or democratic infrastructure context detected with HIGH risk.",
+          "Human review is completed.",
+          "Operation may proceed only as auditable controlled support."
+        ]
+      };
     }
-  | null {
+
+    return {
+      decision: "ESCALATE",
+      flags: escalationFlags(true, true),
+      reasons: [
+        "Civic or democratic infrastructure context detected with HIGH risk.",
+        "Human review is required before operational reliance."
+      ]
+    };
+  }
+
+  return null;
+}
+
+function decideByCriticalRisk(
+  input: RuntimeDecisionInput
+): DecisionEnvelope | null {
   if (input.riskClass !== "CRITICAL") {
     return null;
   }
@@ -414,7 +500,7 @@ function decideByCriticalRisk(input: RuntimeDecisionInput):
   if (input.oversightState === "COMPLETED") {
     return {
       decision: "AUDIT",
-      flags: auditFlags(true, true),
+      flags: auditFlags(true, true, true),
       reasons: [
         "Risk class is CRITICAL.",
         "Human review is completed.",
@@ -433,13 +519,7 @@ function decideByCriticalRisk(input: RuntimeDecisionInput):
   };
 }
 
-function decideByHighRisk(input: RuntimeDecisionInput):
-  | {
-      decision: RuntimeDecision;
-      flags: DecisionFlags;
-      reasons: string[];
-    }
-  | null {
+function decideByHighRisk(input: RuntimeDecisionInput): DecisionEnvelope | null {
   if (input.riskClass !== "HIGH") {
     return null;
   }
@@ -447,7 +527,7 @@ function decideByHighRisk(input: RuntimeDecisionInput):
   if (input.oversightState === "COMPLETED") {
     return {
       decision: "AUDIT",
-      flags: auditFlags(true, true),
+      flags: auditFlags(true, true, true),
       reasons: [
         "Risk class is HIGH.",
         "Human review is completed.",
@@ -481,13 +561,7 @@ function decideByHighRisk(input: RuntimeDecisionInput):
   };
 }
 
-function decideByUnknownRisk(input: RuntimeDecisionInput):
-  | {
-      decision: RuntimeDecision;
-      flags: DecisionFlags;
-      reasons: string[];
-    }
-  | null {
+function decideByUnknownRisk(input: RuntimeDecisionInput): DecisionEnvelope | null {
   if (input.riskClass !== "UNKNOWN") {
     return null;
   }
@@ -502,13 +576,7 @@ function decideByUnknownRisk(input: RuntimeDecisionInput):
   };
 }
 
-function decideByMediumRisk(input: RuntimeDecisionInput):
-  | {
-      decision: RuntimeDecision;
-      flags: DecisionFlags;
-      reasons: string[];
-    }
-  | null {
+function decideByMediumRisk(input: RuntimeDecisionInput): DecisionEnvelope | null {
   if (input.riskClass !== "MEDIUM") {
     return null;
   }
@@ -520,11 +588,13 @@ function decideByMediumRisk(input: RuntimeDecisionInput):
     input.contextClass === "SECURITY" ||
     input.contextClass === "COMPLIANCE" ||
     input.contextClass === "AI_GOVERNANCE" ||
-    input.contextClass === "DUAL_USE"
+    input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "DUAL_USE" ||
+    input.projectDomain === "U.S.E."
   ) {
     return {
       decision: "AUDIT",
-      flags: auditFlags(true, true),
+      flags: auditFlags(true, true, true),
       reasons: [
         "Risk class is MEDIUM with restricted, sensitive or governance-relevant context.",
         "Operation may proceed with audit requirement."
@@ -534,7 +604,7 @@ function decideByMediumRisk(input: RuntimeDecisionInput):
 
   return {
     decision: "AUDIT",
-    flags: auditFlags(true, Boolean(input.auditPreferred)),
+    flags: auditFlags(true, true, Boolean(input.opcPreferred)),
     reasons: [
       "Risk class is MEDIUM.",
       "Audit-ready handling is recommended."
@@ -542,13 +612,9 @@ function decideByMediumRisk(input: RuntimeDecisionInput):
   };
 }
 
-function decideByRestrictedPolicy(input: RuntimeDecisionInput):
-  | {
-      decision: RuntimeDecision;
-      flags: DecisionFlags;
-      reasons: string[];
-    }
-  | null {
+function decideByRestrictedPolicy(
+  input: RuntimeDecisionInput
+): DecisionEnvelope | null {
   if (input.policyStatus !== "RESTRICTED") {
     return null;
   }
@@ -566,7 +632,7 @@ function decideByRestrictedPolicy(input: RuntimeDecisionInput):
 
   return {
     decision: "AUDIT",
-    flags: auditFlags(true, true),
+    flags: auditFlags(true, true, true),
     reasons: [
       "Policy status is RESTRICTED.",
       "Operation may proceed only with audit-aware handling."
@@ -574,13 +640,7 @@ function decideByRestrictedPolicy(input: RuntimeDecisionInput):
   };
 }
 
-function decideByLowRisk(input: RuntimeDecisionInput):
-  | {
-      decision: RuntimeDecision;
-      flags: DecisionFlags;
-      reasons: string[];
-    }
-  | null {
+function decideByLowRisk(input: RuntimeDecisionInput): DecisionEnvelope | null {
   if (input.riskClass !== "LOW") {
     return null;
   }
@@ -588,7 +648,12 @@ function decideByLowRisk(input: RuntimeDecisionInput):
   if (input.oversightState === "RECOMMENDED") {
     return {
       decision: "ALLOW",
-      flags: allowFlags(Boolean(input.evtPreferred), Boolean(input.auditPreferred)),
+      flags: allowFlags(
+        Boolean(input.evtPreferred),
+        Boolean(input.auditPreferred),
+        Boolean(input.memoryPreferred),
+        Boolean(input.opcPreferred)
+      ),
       reasons: [
         "Risk class is LOW.",
         "Human review is recommended but not required for ordinary use."
@@ -598,7 +663,12 @@ function decideByLowRisk(input: RuntimeDecisionInput):
 
   return {
     decision: "ALLOW",
-    flags: allowFlags(Boolean(input.evtPreferred), Boolean(input.auditPreferred)),
+    flags: allowFlags(
+      Boolean(input.evtPreferred),
+      Boolean(input.auditPreferred),
+      Boolean(input.memoryPreferred),
+      Boolean(input.opcPreferred)
+    ),
     reasons: [
       "Risk class is LOW.",
       "No blocking, escalation or audit trigger detected."
@@ -606,20 +676,28 @@ function decideByLowRisk(input: RuntimeDecisionInput):
   };
 }
 
-function allowFlags(evtRequired = false, auditRequired = false): DecisionFlags {
+function allowFlags(
+  evtRequired = false,
+  auditRequired = false,
+  memoryRequired = false,
+  opcRequired = false
+): DecisionFlags {
   return {
     allowExecution: true,
     allowModelCall: true,
     allowFileProcessing: true,
     evtRequired,
     auditRequired,
-    failClosed: false
+    failClosed: false,
+    memoryRequired,
+    opcRequired
   };
 }
 
 function auditFlags(
   allowModelCall: boolean,
-  evtRequired = true
+  evtRequired = true,
+  opcRequired = false
 ): DecisionFlags {
   return {
     allowExecution: true,
@@ -627,7 +705,9 @@ function auditFlags(
     allowFileProcessing: true,
     evtRequired,
     auditRequired: true,
-    failClosed: false
+    failClosed: false,
+    memoryRequired: true,
+    opcRequired
   };
 }
 
@@ -641,7 +721,9 @@ function degradedFlags(
     allowFileProcessing: false,
     evtRequired,
     auditRequired,
-    failClosed: false
+    failClosed: false,
+    memoryRequired: true,
+    opcRequired: auditRequired
   };
 }
 
@@ -655,7 +737,9 @@ function escalationFlags(
     allowFileProcessing: false,
     evtRequired,
     auditRequired,
-    failClosed: true
+    failClosed: true,
+    memoryRequired: false,
+    opcRequired: auditRequired
   };
 }
 
@@ -669,7 +753,9 @@ function blockFlags(
     allowFileProcessing: false,
     evtRequired,
     auditRequired,
-    failClosed: true
+    failClosed: true,
+    memoryRequired: false,
+    opcRequired: auditRequired
   };
 }
 
@@ -680,25 +766,74 @@ function noopFlags(evtRequired = true): DecisionFlags {
     allowFileProcessing: false,
     evtRequired,
     auditRequired: true,
-    failClosed: true
+    failClosed: true,
+    memoryRequired: false,
+    opcRequired: false
   };
 }
 
 function buildDecision(
-  decision: RuntimeDecision,
-  flags: DecisionFlags,
-  reasons: string[]
+  envelope: DecisionEnvelope,
+  input: RuntimeDecisionInput
 ): RuntimeDecisionResult {
   return {
-    decision,
-    allowExecution: flags.allowExecution,
-    allowModelCall: flags.allowModelCall,
-    allowFileProcessing: flags.allowFileProcessing,
-    evtRequired: flags.evtRequired,
-    auditRequired: flags.auditRequired,
-    failClosed: flags.failClosed,
-    reasons: uniqueReasons(reasons)
+    decision: envelope.decision,
+    allowExecution: envelope.flags.allowExecution,
+    allowModelCall: envelope.flags.allowModelCall,
+    allowFileProcessing: envelope.flags.allowFileProcessing,
+    evtRequired: envelope.flags.evtRequired,
+    auditRequired: envelope.flags.auditRequired,
+    failClosed: envelope.flags.failClosed,
+    reasons: uniqueReasons(envelope.reasons),
+    projectDomain: input.projectDomain,
+    activeDomains: input.activeDomains,
+    policyOutcome: input.policyOutcome,
+    humanOversight: input.oversightState,
+    riskClass: input.riskClass,
+    iprBinding: shouldBindIpr(input),
+    memoryRequired: envelope.flags.memoryRequired,
+    opcRequired: envelope.flags.opcRequired
   };
+}
+
+function shouldBindIpr(input: RuntimeDecisionInput): boolean {
+  if (input.iprBindingPreferred) {
+    return true;
+  }
+
+  if (input.projectDomain && input.projectDomain !== "GENERAL") {
+    return true;
+  }
+
+  if (
+    input.contextClass === "IDENTITY" ||
+    input.contextClass === "IPR" ||
+    input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "COMPLIANCE" ||
+    input.contextClass === "USE" ||
+    input.contextClass === "CIVIC" ||
+    input.contextClass === "DEMOCRATIC_INFRASTRUCTURE"
+  ) {
+    return true;
+  }
+
+  return Boolean(
+    input.evtPreferred ||
+      input.memoryPreferred ||
+      input.opcPreferred ||
+      input.auditPreferred
+  );
+}
+
+function isCivicOrDemocraticContext(input: RuntimeDecisionInput): boolean {
+  return (
+    input.projectDomain === "U.S.E." ||
+    input.contextClass === "USE" ||
+    input.contextClass === "CIVIC" ||
+    input.contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
+    input.dataClass === "CIVIC_SENSITIVE" ||
+    input.dataClass === "DEMOCRATIC_CHOICE"
+  );
 }
 
 function uniqueReasons(reasons: string[]): string[] {
