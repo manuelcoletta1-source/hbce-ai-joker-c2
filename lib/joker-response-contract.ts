@@ -597,6 +597,19 @@ function buildDeterministicOpening(contract: ResponseContract): string {
   return contract.mandatoryOpening.join("\n");
 }
 
+function stripDuplicateUseAcronymOpening(response: string): string {
+  return response
+    .replace(
+      /^U\.?S\.?E\.?\s+significa\s+United\s+States\s+of\s+Europe\s*,?\s*(ovvero|cioe|cioè|ossia)?\s*Stati\s+Uniti\s+d[’']?Europa\.?\s*/i,
+      ""
+    )
+    .replace(
+      /^L['’]?acronimo\s+U\.?S\.?E\.?\s+(si\s+riferisce\s+a|significa)\s+(United\s+States\s+of\s+Europe|un['’]?applicazione politico-istituzionale)[^.]*\.\s*/i,
+      ""
+    )
+    .trim();
+}
+
 export function applyResponseContract(
   message: string,
   response: string
@@ -608,7 +621,10 @@ export function applyResponseContract(
     return cleanResponse;
   }
 
-  let output = cleanResponse;
+  let output =
+    contract.kind === "USE_ACRONYM"
+      ? stripDuplicateUseAcronymOpening(cleanResponse)
+      : cleanResponse;
 
   if (shouldApplyDeterministicOpening(contract, output)) {
     output = [buildDeterministicOpening(contract), "", output].join("\n");
