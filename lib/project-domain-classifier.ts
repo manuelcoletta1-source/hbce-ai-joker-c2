@@ -33,6 +33,14 @@ import {
   type PrimaryProjectDomain
 } from "./runtime-types";
 
+export type {
+  DomainType,
+  ProjectDomain,
+  ProjectDomainClassification,
+  ProjectDomainMetadata,
+  PrimaryProjectDomain
+} from "./runtime-types";
+
 export type ProjectDomainInput = {
   message?: string;
   route?: string;
