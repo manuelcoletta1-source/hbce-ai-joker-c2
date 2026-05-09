@@ -1,10 +1,10 @@
 {
   "schema": "HBCE-AI-JOKER-C2-SYSTEM-MANIFEST",
-  "schema_version": "1.1.0",
+  "schema_version": "1.2.0",
   "name": "AI JOKER-C2",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "status": "OPERATIONAL_PROTOTYPE",
-  "classification": "IDENTITY_BOUND_COGNITIVE_COMMAND_RUNTIME",
+  "classification": "IPR_BOUND_GOVERNED_RUNTIME_DEMONSTRATOR",
   "organization": "HERMETICUM B.C.E. S.r.l.",
   "research_signature": "HBCE Research",
   "territorial_anchor": {
@@ -13,26 +13,36 @@
     "scope": "Europe",
     "strategic_axis": "Torino-Brussels"
   },
-  "public_definition": "AI JOKER-C2 is the identity-bound cognitive command runtime of the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS through governed AI execution, EVT continuity, evidence generation and fail-closed verification.",
+  "public_definition": "AI JOKER-C2 is the governed runtime demonstrator for IPR — Identity Primary Record — inside the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS through governed AI execution, IPR identity, EVT continuity, EVT/IPR-bound memory, OPC proof receipts, verification and fail-closed control.",
   "canonical_formula": {
-    "matrix": "Operational infrastructure",
+    "ipr": "Primary operational identity and proof instrument",
+    "ai_joker_c2": "Governed runtime demonstrator for IPR in execution",
+    "matrix": "Operational infrastructure architecture",
+    "use": "MATRIX-derived political-institutional application for a federated operational Europe",
     "corpus_esoterologia_ermetica": "Disciplinary grammar of operational reality",
     "apokalypsis": "Historical threshold analysis",
-    "ai_joker_c2": "Cognitive command runtime"
+    "evt": "Event trace layer",
+    "memory": "EVT/IPR-bound runtime continuity",
+    "opc": "Operational proof receipt layer",
+    "hbce": "Governance, policy, audit and continuity ecosystem"
   },
   "ecosystem": {
     "name": "HERMETICUM B.C.E.",
     "primary_domains": [
       "MATRIX",
+      "U.S.E.",
       "CORPUS_ESOTEROLOGIA_ERMETICA",
       "APOKALYPSIS"
     ],
     "runtime": "AI_JOKER_C2",
+    "runtime_role": "IPR_RUNTIME_DEMONSTRATOR",
     "governance_core": "HBCE-CORE-v3",
     "identity_layer": "IPR",
     "trace_layer": "EVT",
-    "continuity_layer": "TRAC_EVT",
-    "verification_layer": "HASH_SIGNATURE_VERIFICATION"
+    "memory_layer": "EVT_IPR_BOUND_MEMORY",
+    "proof_layer": "OPC",
+    "continuity_layer": "TRAC_EVT_OPC",
+    "verification_layer": "HASH_SIGNATURE_CHAIN_VERIFICATION"
   },
   "identity": {
     "runtime_entity": {
@@ -42,7 +52,7 @@
       "checkpoint": "EVT-0014-AI",
       "type": "PRIMARY_AI_OPERATIONAL_RUNTIME",
       "state": "LOCKED",
-      "role": "Cognitive and operational cybernetic runtime"
+      "role": "Governed IPR runtime demonstrator"
     },
     "human_origin": {
       "entity": "MANUEL_COLETTA",
@@ -61,7 +71,7 @@
       "name": "MATRIX",
       "type": "OPERATIONAL_INFRASTRUCTURE_DOMAIN",
       "status": "ACTIVE",
-      "function": "Defines the operational, institutional and technological infrastructure for verifiable AI governance, European continuity, B2B and B2G positioning, cloud, data, energy, security and strategic systems.",
+      "function": "Defines the operational, institutional and technological architecture for verifiable AI governance, European continuity, B2B and B2G positioning, cloud, data, energy, security and strategic systems.",
       "runtime_question": "How can Europe build verifiable operational systems for AI, governance, data, energy, security and institutional continuity?",
       "primary_contexts": [
         "MATRIX",
@@ -80,6 +90,42 @@
         "b2b_b2g_positioning",
         "evidence_records",
         "deployment_plans"
+      ]
+    },
+    "use": {
+      "id": "U.S.E.",
+      "name": "U.S.E. — United States of Europe",
+      "type": "FEDERATED_EUROPEAN_INSTITUTIONAL_APPLICATION_DOMAIN",
+      "parent_domain": "MATRIX",
+      "status": "ACTIVE",
+      "function": "Applies MATRIX to the design of a federated, sovereign, digital and verifiable European political-institutional system, including federated digital voting, democratic infrastructure, public consultation, civil protection coordination and institutional continuity.",
+      "runtime_question": "How can MATRIX be applied to design the United States of Europe as a federated, operational, sovereign, digital and verifiable institutional system?",
+      "primary_contexts": [
+        "USE",
+        "MATRIX",
+        "STRATEGIC",
+        "GOVERNANCE",
+        "COMPLIANCE",
+        "CIVIC",
+        "PUBLIC_ADMINISTRATION",
+        "DEMOCRATIC_INFRASTRUCTURE"
+      ],
+      "democratic_boundary": {
+        "principle": "Identity verified first. Choice separated after. Vote anonymized. Process auditable.",
+        "identity_role": "IPR may support identity verification and participation rights.",
+        "trace_role": "EVT may support process traceability.",
+        "proof_role": "OPC may support proof receipts for process operations.",
+        "prohibition": "The content of a democratic vote or civic choice must not be linked to the personal identity of the voter or participant."
+      },
+      "outputs": [
+        "federated_european_architecture",
+        "digital_sovereignty_models",
+        "federated_digital_vote_safeguards",
+        "public_consultation_models",
+        "referendum_process_models",
+        "civil_protection_coordination_models",
+        "constitutional_operational_design",
+        "democratic_audit_models"
       ]
     },
     "corpus_esoterologia_ermetica": {
@@ -139,19 +185,24 @@
       "OPERATIONAL",
       "DEGRADED",
       "BLOCKED",
-      "INVALID"
+      "INVALID",
+      "AUDIT_ONLY",
+      "MAINTENANCE"
     ],
     "sequence": [
-      "IDENTITY",
+      "IPR_IDENTITY",
       "INPUT",
+      "INTENT",
       "CONTEXT",
       "PROJECT_DOMAIN",
-      "INTENT",
       "POLICY",
       "RISK",
       "DECISION",
+      "EXECUTION",
       "OUTPUT",
       "EVT",
+      "MEMORY",
+      "OPC",
       "LEDGER",
       "VERIFICATION",
       "CONTINUITY"
@@ -161,13 +212,15 @@
       "BLOCK",
       "ESCALATE",
       "DEGRADE",
-      "AUDIT"
+      "AUDIT",
+      "NOOP"
     ],
     "default_behavior": {
       "ordinary_safe_request": "ALLOW",
       "documentation_request": "ALLOW",
       "repository_documentation_request": "ALLOW",
       "sensitive_operational_request": "ESCALATE",
+      "civic_or_democratic_infrastructure_request": "AUDIT_OR_ESCALATE",
       "unclear_authority": "ESCALATE",
       "unsafe_request": "BLOCK",
       "prohibited_request": "BLOCK",
@@ -176,7 +229,9 @@
   },
   "context_classes": [
     "IDENTITY",
+    "IPR",
     "MATRIX",
+    "USE",
     "CORPUS",
     "APOKALYPSIS",
     "DOCUMENTAL",
@@ -187,6 +242,7 @@
     "SECURITY",
     "COMPLIANCE",
     "GOVERNANCE",
+    "CIVIC",
     "GENERAL"
   ],
   "risk_classes": [
@@ -209,8 +265,10 @@
       "document analysis",
       "editorial continuity",
       "strategic B2B and B2G positioning",
+      "U.S.E. democratic safeguard modeling",
       "evidence generation",
-      "verification support"
+      "verification support",
+      "OPC proof receipt generation"
     ],
     "prohibited_uses": [
       "offensive cyber operations",
@@ -225,7 +283,11 @@
       "sabotage",
       "disinformation operations",
       "coercive manipulation",
-      "repression of fundamental rights"
+      "repression of fundamental rights",
+      "vote de-anonymization",
+      "linking personal identity to democratic choice content",
+      "coercive civic influence",
+      "unauthorized electoral infrastructure deployment"
     ]
   },
   "evt": {
@@ -246,7 +308,55 @@
       "hash",
       "verification"
     ],
+    "conditional_fields": [
+      "memory",
+      "opc"
+    ],
     "rule": "No EVT, no continuity. No continuity, no trusted operational state."
+  },
+  "memory": {
+    "model": "EVT_IPR_BOUND_RUNTIME_CONTINUITY",
+    "minimum_fields": [
+      "session_id",
+      "entity",
+      "ipr",
+      "message_reference",
+      "response_reference",
+      "document_family",
+      "runtime_state",
+      "decision",
+      "project_domain",
+      "context_class",
+      "memory_event",
+      "governed_evt",
+      "hash",
+      "timestamp"
+    ],
+    "rule": "Memory supports runtime continuity. Memory must not become uncontrolled storage."
+  },
+  "opc": {
+    "model": "OPERATIONAL_PROOF_AND_COMPLIANCE_RECEIPT",
+    "status": "PROTOTYPE_LAYER",
+    "minimum_fields": [
+      "proof_id",
+      "identity",
+      "session_id",
+      "governed_evt",
+      "memory_event",
+      "runtime_decision",
+      "policy_reference",
+      "risk_class",
+      "input_hash",
+      "output_hash",
+      "decision_hash",
+      "event_hash",
+      "memory_hash",
+      "previous_proof_hash",
+      "chain_hash",
+      "audit_status",
+      "verification_status"
+    ],
+    "rule": "OPC creates technical proof receipts for audit, verification and governance review. OPC does not create automatic legal certification by default."
   },
   "ledger": {
     "mode": "APPEND_ONLY",
@@ -256,16 +366,20 @@
       "previous_event_reference",
       "hash_linking",
       "audit_metadata",
-      "verification_status"
+      "verification_status",
+      "opc_proof_chain_metadata"
     ]
   },
   "evidence": {
     "mode": "STRUCTURED_OPERATIONAL_PROOF",
     "properties": [
       "identity_bound",
+      "ipr_bound",
       "context_bound",
       "project_domain_bound",
       "evt_linked",
+      "memory_linked",
+      "opc_linked",
       "append_only",
       "hash_linked",
       "verifiable",
@@ -285,7 +399,8 @@
       "SIGNATURE_VALIDATION",
       "CHAIN_INTEGRITY_CHECK",
       "MANIFEST_VALIDATION",
-      "EVENT_RECONSTRUCTION"
+      "EVENT_RECONSTRUCTION",
+      "OPC_PROOF_RECEIPT_VERIFICATION"
     ]
   },
   "federation": {
@@ -298,21 +413,45 @@
       "EU_FEDERATED_TOPOLOGY",
       "B2B_DEPLOYMENT",
       "B2G_DEPLOYMENT",
-      "AUDIT_NODE_DEPLOYMENT"
+      "AUDIT_NODE_DEPLOYMENT",
+      "CIVIC_NODE_DEPLOYMENT_WITH_DEMOCRATIC_SAFEGUARDS"
     ]
   },
   "security": {
     "posture": "FAIL_CLOSED",
     "principles": [
       "NO_VALIDATION_NO_EXECUTION",
+      "NO_IPR_BINDING_NO_OPERATIONAL_ATTRIBUTION",
       "NO_CONTEXT_NO_ORIENTATION",
       "NO_POLICY_NO_SENSITIVE_EXECUTION",
       "NO_RISK_CLASSIFICATION_NO_SENSITIVE_OUTPUT",
       "NO_CONTINUITY_NO_TRUSTED_STATE",
       "NO_EVIDENCE_NO_OPERATIONAL_EXISTENCE",
-      "NO_VERIFICATION_NO_RECOGNIZED_PERSISTENCE"
+      "NO_VERIFICATION_NO_RECOGNIZED_PERSISTENCE",
+      "NO_IDENTITY_CHOICE_LINKING_IN_DEMOCRATIC_CONTEXTS"
     ],
     "scope": "DEFENSIVE_GOVERNANCE_AND_VERIFIABLE_OPERATIONAL_CONTINUITY"
+  },
+  "civic_boundary": {
+    "scope": "U.S.E. democratic and civic infrastructure contexts",
+    "principle": "Identity verified first. Choice separated after. Vote anonymized. Process auditable.",
+    "allowed": [
+      "identity verification modeling",
+      "participation-rights modeling",
+      "process audit modeling",
+      "public consultation governance",
+      "referendum process documentation",
+      "democratic safeguard documentation"
+    ],
+    "prohibited": [
+      "vote de-anonymization",
+      "identity-choice linkage",
+      "voter targeting",
+      "political manipulation",
+      "coercive civic influence",
+      "unlawful citizen profiling",
+      "unauthorized electoral infrastructure deployment"
+    ]
   },
   "deployment": {
     "primary_target": "VERCEL",
@@ -328,13 +467,15 @@
       "UPSTASH_REDIS_REST_TOKEN",
       "JOKER_SIGN_PRIVATE_KEY",
       "JOKER_SIGN_PUBLIC_KEY",
-      "NEXT_PUBLIC_BASE_URL"
+      "NEXT_PUBLIC_BASE_URL",
+      "JOKER_OPC_LEDGER_FILE"
     ],
     "public_routes": [
       "/",
       "/interface",
       "/api/chat",
-      "/api/files"
+      "/api/files",
+      "/api/opc"
     ],
     "recommended_future_routes": [
       "/api/evt",
@@ -348,23 +489,27 @@
   "documentation": {
     "public_entry": "README.md",
     "architecture": "ARCHITECTURE.md",
+    "protocol": "PROTOCOL.md",
     "governance": "GOVERNANCE.md",
     "evt_protocol": "EVT_PROTOCOL.md",
-    "security": "SECURITY.md",
     "compliance": "COMPLIANCE.md",
     "dual_use_positioning": "DUAL_USE_STRATEGIC_POSITIONING.md",
     "roadmap": "ROADMAP.md",
-    "protocol": "PROTOCOL.md"
+    "security": "SECURITY.md",
+    "contributing": "CONTRIBUTING.md"
   },
   "operational_invariants": [
     "AI JOKER-C2 is not a generic chatbot.",
-    "AI JOKER-C2 is identity-bound.",
-    "MATRIX provides the operational infrastructure domain.",
+    "AI JOKER-C2 is the governed runtime demonstrator for IPR.",
+    "IPR is the primary operational identity and proof instrument.",
+    "MATRIX provides the operational infrastructure architecture.",
+    "U.S.E. provides the MATRIX-derived political-institutional application domain.",
     "CORPUS ESOTEROLOGIA ERMETICA provides the disciplinary grammar domain.",
     "APOKALYPSIS provides the historical threshold domain.",
     "HBCE provides governance infrastructure.",
-    "IPR provides identity.",
     "EVT provides event trace.",
+    "Memory provides EVT/IPR-bound runtime continuity.",
+    "OPC provides technical proof receipts.",
     "Ledger provides continuity.",
     "Policy precedes sensitive execution.",
     "Risk classification precedes sensitive output.",
@@ -372,7 +517,9 @@
     "Human accountability must be preserved.",
     "Offensive, abusive or unlawful use is outside scope.",
     "Corrections must be recorded as new events.",
-    "The model layer must not become the authority layer."
+    "The model layer must not become the authority layer.",
+    "Democratic choice content must not be linked to personal voter identity.",
+    "U.S.E. must preserve identity-choice separation, anonymity, auditability and institutional legality."
   ],
-  "final_definition": "AI JOKER-C2 is the identity-bound cognitive command runtime that connects MATRIX, CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS inside the HERMETICUM B.C.E. ecosystem through governed AI execution, IPR identity, EVT continuity, evidence generation, verification and fail-closed control."
+  "final_definition": "AI JOKER-C2 is the governed runtime demonstrator for IPR inside the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS through governed AI execution, IPR identity, EVT continuity, EVT/IPR-bound memory, OPC proof receipts, verification and fail-closed control."
 }
