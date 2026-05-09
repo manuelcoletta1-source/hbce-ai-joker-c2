@@ -11,6 +11,8 @@
  * - SENSITIVE
  * - SECRET
  * - PERSONAL
+ * - CIVIC_SENSITIVE
+ * - DEMOCRATIC_CHOICE
  * - SECURITY_SENSITIVE
  * - CRITICAL_OPERATIONAL
  * - UNSUPPORTED
@@ -173,6 +175,93 @@ const PERSONAL_RULES: PatternRule[] = [
       /\bprivacy\b/i,
       /\bdata subject\b/i,
       /\binteressato\b/i
+    ]
+  }
+];
+
+const CIVIC_SENSITIVE_RULES: PatternRule[] = [
+  {
+    dataClass: "CIVIC_SENSITIVE",
+    label: "CIVIC_OR_DEMOCRATIC_INFRASTRUCTURE",
+    reason:
+      "Input appears related to civic, democratic or public decision infrastructure.",
+    patterns: [
+      /\bfederated digital vote\b/i,
+      /\bfederated digital voting\b/i,
+      /\bvoto digitale federato\b/i,
+      /\bdemocratic infrastructure\b/i,
+      /\binfrastruttura democratica\b/i,
+      /\bpublic consultation\b/i,
+      /\bconsultazione pubblica\b/i,
+      /\breferendum infrastructure\b/i,
+      /\binfrastruttura referendaria\b/i,
+      /\breferendum digitale\b/i,
+      /\bcivic participation\b/i,
+      /\bpartecipazione civica\b/i,
+      /\bparticipation rights\b/i,
+      /\bdiritti di partecipazione\b/i,
+      /\bpublic decision\b/i,
+      /\bdecisione pubblica\b/i,
+      /\bU\.S\.E\.\b/i,
+      /\bUnited States of Europe\b/i,
+      /\bStati Uniti d['’]?Europa\b/i
+    ]
+  },
+  {
+    dataClass: "CIVIC_SENSITIVE",
+    label: "IDENTITY_OR_ELIGIBILITY_FOR_CIVIC_PROCESS",
+    reason:
+      "Input appears related to identity, eligibility or participation rights in a civic process.",
+    patterns: [
+      /\bidentity verification\b/i,
+      /\bverifica identit[aà]\b/i,
+      /\beligibility verification\b/i,
+      /\bverifica eleggibilit[aà]\b/i,
+      /\bparticipation proof\b/i,
+      /\bprova di partecipazione\b/i,
+      /\bcitizen identity\b/i,
+      /\bidentit[aà] cittadino\b/i,
+      /\bvoter identity\b/i,
+      /\bidentit[aà] elettore\b/i
+    ]
+  }
+];
+
+const DEMOCRATIC_CHOICE_RULES: PatternRule[] = [
+  {
+    dataClass: "DEMOCRATIC_CHOICE",
+    label: "DEMOCRATIC_CHOICE_CONTENT",
+    reason:
+      "Input appears to reference democratic choice, vote content or ballot content.",
+    patterns: [
+      /\bvote content\b/i,
+      /\bballot content\b/i,
+      /\bvoter choice\b/i,
+      /\bchoice content\b/i,
+      /\bpreferenza di voto\b/i,
+      /\bvoto espresso\b/i,
+      /\bcontenuto del voto\b/i,
+      /\bcontenuto scheda\b/i,
+      /\bscelta democratica\b/i,
+      /\bscelta civica\b/i
+    ]
+  },
+  {
+    dataClass: "DEMOCRATIC_CHOICE",
+    label: "IDENTITY_CHOICE_LINKAGE",
+    reason:
+      "Input appears to link identity or eligibility data with democratic choice content.",
+    patterns: [
+      /\blink voter identity to vote\b/i,
+      /\blink identity to vote\b/i,
+      /\bidentity-choice linkage\b/i,
+      /\bde-anonymize vote\b/i,
+      /\bdeanonymize vote\b/i,
+      /\bvote de-anonymization\b/i,
+      /\bcollegare identit[aà] e voto\b/i,
+      /\bcollegare identit[aà] personale e scelta\b/i,
+      /\bdeanonimizzare il voto\b/i,
+      /\bde-anonimizzare il voto\b/i
     ]
   }
 ];
@@ -378,7 +467,9 @@ const PUBLIC_RULES: PatternRule[] = [
 const ALL_RULES_IN_PRIORITY_ORDER: PatternRule[] = [
   ...SECRET_RULES,
   ...UNSUPPORTED_RULES,
+  ...DEMOCRATIC_CHOICE_RULES,
   ...CRITICAL_OPERATIONAL_RULES,
+  ...CIVIC_SENSITIVE_RULES,
   ...PERSONAL_RULES,
   ...SECURITY_SENSITIVE_RULES,
   ...CONFIDENTIAL_RULES,
@@ -394,10 +485,12 @@ const DATA_CLASS_RANK: Record<DataClass, number> = {
   CONFIDENTIAL: 3,
   SENSITIVE: 4,
   PERSONAL: 5,
-  SECURITY_SENSITIVE: 6,
-  CRITICAL_OPERATIONAL: 7,
-  SECRET: 8,
-  UNSUPPORTED: 9
+  CIVIC_SENSITIVE: 6,
+  DEMOCRATIC_CHOICE: 7,
+  SECURITY_SENSITIVE: 8,
+  CRITICAL_OPERATIONAL: 9,
+  SECRET: 10,
+  UNSUPPORTED: 11
 };
 
 export function classifyData(input: DataClassifierInput): DataClassification {
@@ -409,6 +502,8 @@ export function classifyData(input: DataClassifierInput): DataClassification {
       containsSecret: false,
       containsPersonalData: false,
       containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
       reasons: ["No text, file name, MIME type or route context was provided."]
     };
   }
@@ -422,9 +517,19 @@ export function classifyData(input: DataClassifierInput): DataClassification {
     (rule) => rule.dataClass === "PERSONAL"
   );
 
+  const containsCivicSensitiveData = matchedRules.some(
+    (rule) => rule.dataClass === "CIVIC_SENSITIVE"
+  );
+
+  const containsDemocraticChoiceData = matchedRules.some(
+    (rule) => rule.dataClass === "DEMOCRATIC_CHOICE"
+  );
+
   const containsSecuritySensitiveData = matchedRules.some((rule) =>
     [
       "SENSITIVE",
+      "CIVIC_SENSITIVE",
+      "DEMOCRATIC_CHOICE",
       "SECURITY_SENSITIVE",
       "CRITICAL_OPERATIONAL",
       "SECRET",
@@ -446,6 +551,8 @@ export function classifyData(input: DataClassifierInput): DataClassification {
     containsSecret,
     containsPersonalData,
     containsSecuritySensitiveData,
+    containsCivicSensitiveData,
+    containsDemocraticChoiceData,
     reasons: uniqueReasons([...reasons, `Data classified as ${dataClass}.`])
   };
 }
@@ -476,6 +583,26 @@ export function isUnsupportedData(
   return classification.dataClass === "UNSUPPORTED";
 }
 
+export function isDemocraticChoiceData(
+  classification: DataClassification
+): boolean {
+  return (
+    classification.dataClass === "DEMOCRATIC_CHOICE" ||
+    Boolean(classification.containsDemocraticChoiceData)
+  );
+}
+
+export function isCivicSensitiveData(
+  classification: DataClassification
+): boolean {
+  return (
+    classification.dataClass === "CIVIC_SENSITIVE" ||
+    classification.dataClass === "DEMOCRATIC_CHOICE" ||
+    Boolean(classification.containsCivicSensitiveData) ||
+    Boolean(classification.containsDemocraticChoiceData)
+  );
+}
+
 export function requiresDataMinimization(
   classification: DataClassification
 ): boolean {
@@ -483,6 +610,8 @@ export function requiresDataMinimization(
     "CONFIDENTIAL",
     "SENSITIVE",
     "PERSONAL",
+    "CIVIC_SENSITIVE",
+    "DEMOCRATIC_CHOICE",
     "SECURITY_SENSITIVE",
     "CRITICAL_OPERATIONAL",
     "SECRET",
@@ -498,6 +627,8 @@ export function requiresDataReview(
     "CONFIDENTIAL",
     "SENSITIVE",
     "PERSONAL",
+    "CIVIC_SENSITIVE",
+    "DEMOCRATIC_CHOICE",
     "SECURITY_SENSITIVE",
     "CRITICAL_OPERATIONAL",
     "SECRET",
@@ -520,7 +651,8 @@ export function shouldBlockDataProcessing(
 ): boolean {
   return (
     classification.dataClass === "SECRET" ||
-    classification.dataClass === "UNSUPPORTED"
+    classification.dataClass === "UNSUPPORTED" ||
+    classification.dataClass === "DEMOCRATIC_CHOICE"
   );
 }
 
@@ -535,6 +667,12 @@ export function buildDataHandlingSummary(
     }`,
     `Contains security-sensitive data: ${
       classification.containsSecuritySensitiveData ? "yes" : "no"
+    }`,
+    `Contains civic-sensitive data: ${
+      classification.containsCivicSensitiveData ? "yes" : "no"
+    }`,
+    `Contains democratic-choice data: ${
+      classification.containsDemocraticChoiceData ? "yes" : "no"
     }`
   ].join("\n");
 }
@@ -567,6 +705,8 @@ function classifyUnknownOrPublicFallback(
       containsSecret: false,
       containsPersonalData: false,
       containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
       reasons: [
         "No sensitive data pattern matched.",
         "Input appears to be ordinary public documentation or non-sensitive text.",
@@ -581,6 +721,8 @@ function classifyUnknownOrPublicFallback(
       containsSecret: false,
       containsPersonalData: false,
       containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
       reasons: [
         "File metadata is present but no sensitive pattern matched.",
         "File-backed content defaults to INTERNAL unless explicitly public.",
@@ -594,6 +736,8 @@ function classifyUnknownOrPublicFallback(
     containsSecret: false,
     containsPersonalData: false,
     containsSecuritySensitiveData: false,
+    containsCivicSensitiveData: false,
+    containsDemocraticChoiceData: false,
     reasons: [
       "No known data pattern matched.",
       "Data sensitivity is unclear.",
@@ -620,7 +764,9 @@ function looksLikePlainPublicDocumentation(
   const hasNoSensitiveIndicators = ![
     ...SECRET_RULES,
     ...UNSUPPORTED_RULES,
+    ...DEMOCRATIC_CHOICE_RULES,
     ...CRITICAL_OPERATIONAL_RULES,
+    ...CIVIC_SENSITIVE_RULES,
     ...PERSONAL_RULES,
     ...SECURITY_SENSITIVE_RULES,
     ...CONFIDENTIAL_RULES,
