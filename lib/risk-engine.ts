@@ -1,7 +1,7 @@
 /**
  * AI JOKER-C2 Risk Engine
  *
- * Deterministic risk classification for the HBCE / MATRIX governed runtime.
+ * Deterministic risk classification for the HBCE / IPR governed runtime.
  *
  * This module transforms:
  * - context classification
@@ -18,8 +18,9 @@
  * - risk score
  * - explainable reasons
  *
- * Safe European strategic autonomy analysis must not be escalated as
- * CRITICAL merely because it discusses strategic technological dependencies.
+ * Safe European strategic autonomy, MATRIX, U.S.E. and IPR documentation
+ * must not be escalated as CRITICAL merely because it discusses strategic,
+ * institutional or civic architecture.
  */
 
 import type {
@@ -27,6 +28,7 @@ import type {
   DataClass,
   IntentClass,
   PolicyStatus,
+  ProjectDomain,
   RiskClass,
   RiskEvaluation,
   RuntimeSensitivity
@@ -41,6 +43,7 @@ export type RiskEngineInput = {
   sensitivity?: RuntimeSensitivity;
   hasFiles?: boolean;
   route?: string;
+  projectDomain?: ProjectDomain;
   policyFailClosed?: boolean;
   policyProhibited?: boolean;
 };
@@ -83,6 +86,11 @@ const CRITICAL_TERMS = [
   "sabotage",
   "autonomous weapon",
   "targeting",
+  "electoral infrastructure",
+  "vote de-anonymization",
+  "de-anonymize vote",
+  "identity-choice linkage",
+  "link voter identity to vote",
   "segreto",
   "chiave api",
   "password",
@@ -96,7 +104,11 @@ const CRITICAL_TERMS = [
   "sanità",
   "rete elettrica",
   "emergenza",
-  "sorveglianza"
+  "sorveglianza",
+  "infrastruttura elettorale",
+  "deanonimizzare il voto",
+  "collegare identita e voto",
+  "collegare identità e voto"
 ];
 
 const HIGH_TERMS = [
@@ -120,6 +132,12 @@ const HIGH_TERMS = [
   "critical",
   "deployment",
   "logs",
+  "public consultation",
+  "referendum",
+  "federated digital vote",
+  "federated digital voting",
+  "democratic infrastructure",
+  "civic infrastructure",
   "incidente",
   "violazione",
   "vulnerabilita",
@@ -136,7 +154,10 @@ const HIGH_TERMS = [
   "dati personali",
   "protezione dati",
   "supervisione umana",
-  "deploy"
+  "deploy",
+  "consultazione pubblica",
+  "voto digitale federato",
+  "infrastruttura democratica"
 ];
 
 const UNSAFE_OPERATIONAL_TERMS = [
@@ -168,7 +189,19 @@ const UNSAFE_OPERATIONAL_TERMS = [
   "nascondere tracce",
   "weapon",
   "arma autonoma",
-  "targeting"
+  "targeting",
+  "vote de-anonymization",
+  "de-anonymize vote",
+  "deanonymize vote",
+  "identity-choice linkage",
+  "link voter identity to vote",
+  "political manipulation",
+  "coercive civic influence",
+  "deanonimizzare il voto",
+  "collegare identita e voto",
+  "collegare identità e voto",
+  "manipolazione politica",
+  "coercizione civica"
 ];
 
 const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
@@ -207,6 +240,32 @@ const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
   "hbce"
 ];
 
+const SAFE_CIVIC_ARCHITECTURE_TERMS = [
+  "u.s.e.",
+  "use",
+  "united states of europe",
+  "stati uniti d europa",
+  "stati uniti d'europa",
+  "federated digital vote",
+  "federated digital voting",
+  "voto digitale federato",
+  "public consultation",
+  "consultazione pubblica",
+  "referendum infrastructure",
+  "infrastruttura referendaria",
+  "democratic infrastructure",
+  "infrastruttura democratica",
+  "digital sovereignty",
+  "sovranita digitale",
+  "sovranità digitale",
+  "constitutional operational",
+  "costituzione operativa",
+  "identity verified first",
+  "choice separated",
+  "vote anonymized",
+  "process auditable"
+];
+
 export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
   const normalized = normalizeInput(input);
 
@@ -224,10 +283,24 @@ export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
     ]);
   }
 
+  if (findMatches(normalized, UNSAFE_OPERATIONAL_TERMS).length > 0) {
+    return buildRisk("PROHIBITED", 5, 5, [
+      "Unsafe operational or prohibited-use terms were detected.",
+      "Requests that may enable abuse, offensive capability, surveillance abuse, vote de-anonymization or civic coercion are prohibited."
+    ]);
+  }
+
   if (input.dataClass === "SECRET") {
     return buildRisk("CRITICAL", 3, 5, [
       "Data class is SECRET.",
       "Secrets must not be processed as ordinary runtime content."
+    ]);
+  }
+
+  if (input.dataClass === "DEMOCRATIC_CHOICE") {
+    return buildRisk("CRITICAL", 4, 5, [
+      "Data class is DEMOCRATIC_CHOICE.",
+      "Democratic choice content requires strict protection and must not be linked to personal identity."
     ]);
   }
 
@@ -238,8 +311,16 @@ export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
     ]);
   }
 
+  if (isSafeUseCivicArchitectureAnalysis(input, normalized)) {
+    return buildRisk(input.hasFiles ? "MEDIUM" : "MEDIUM", 2, 3, [
+      "Safe U.S.E. civic or democratic infrastructure architecture detected.",
+      "The request is conceptual, institutional or governance-oriented, not an operational voter-targeting or identity-choice linkage request.",
+      "U.S.E. work should remain answerable with audit-ready democratic safeguards."
+    ]);
+  }
+
   if (isSafeEuropeanStrategicAutonomyAnalysis(input, normalized)) {
-    return buildRisk(input.hasFiles ? "MEDIUM" : "LOW", input.hasFiles ? 2 : 2, input.hasFiles ? 3 : 2, [
+    return buildRisk(input.hasFiles ? "MEDIUM" : "LOW", 2, input.hasFiles ? 3 : 2, [
       "Safe European strategic autonomy / technological dependency analysis detected.",
       "The request is strategic, institutional and analytical, not an operational harmful instruction.",
       "MATRIX / European governance analysis should remain answerable with reviewable framing."
@@ -267,6 +348,7 @@ export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
     input.policyStatus,
     Boolean(input.policyFailClosed)
   );
+  const projectAdjustment = adjustRiskByProjectDomain(input.projectDomain);
 
   const probability = clampScore(
     seed.probability +
@@ -276,7 +358,8 @@ export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
       fileAdjustment.probability +
       routeAdjustment.probability +
       termAdjustment.probability +
-      policyAdjustment.probability
+      policyAdjustment.probability +
+      projectAdjustment.probability
   );
 
   const impact = clampScore(
@@ -287,7 +370,8 @@ export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
       fileAdjustment.impact +
       routeAdjustment.impact +
       termAdjustment.impact +
-      policyAdjustment.impact
+      policyAdjustment.impact +
+      projectAdjustment.impact
   );
 
   reasons.push(
@@ -297,7 +381,8 @@ export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
     ...fileAdjustment.reasons,
     ...routeAdjustment.reasons,
     ...termAdjustment.reasons,
-    ...policyAdjustment.reasons
+    ...policyAdjustment.reasons,
+    ...projectAdjustment.reasons
   );
 
   const riskScore = probability * impact;
@@ -408,10 +493,11 @@ function seedRiskFromContext(contextClass: ContextClass): RiskSeed {
       };
 
     case "IDENTITY":
+    case "IPR":
       return {
         probability: 2,
         impact: 3,
-        reasons: ["IDENTITY context affects attribution and continuity."]
+        reasons: ["IDENTITY/IPR context affects attribution, proof and continuity."]
       };
 
     case "MATRIX":
@@ -419,6 +505,38 @@ function seedRiskFromContext(contextClass: ContextClass): RiskSeed {
         probability: 2,
         impact: 3,
         reasons: ["MATRIX context has strategic architecture relevance."]
+      };
+
+    case "USE":
+      return {
+        probability: 2,
+        impact: 3,
+        reasons: [
+          "U.S.E. context involves civic or institutional architecture and requires audit-aware handling."
+        ]
+      };
+
+    case "CIVIC":
+      return {
+        probability: 2,
+        impact: 3,
+        reasons: ["CIVIC context may affect public participation or civic process design."]
+      };
+
+    case "PUBLIC_ADMINISTRATION":
+      return {
+        probability: 3,
+        impact: 3,
+        reasons: ["PUBLIC_ADMINISTRATION context requires institutional reviewability."]
+      };
+
+    case "DEMOCRATIC_INFRASTRUCTURE":
+      return {
+        probability: 3,
+        impact: 4,
+        reasons: [
+          "DEMOCRATIC_INFRASTRUCTURE context is high-impact and requires strict democratic safeguards."
+        ]
       };
 
     case "STRATEGIC":
@@ -546,6 +664,13 @@ function adjustRiskByIntent(intentClass: IntentClass): RiskAdjustment {
         reasons: ["STRATEGIC intent requires reviewable framing."]
       };
 
+    case "CIVIC":
+      return {
+        probability: 1,
+        impact: 1,
+        reasons: ["CIVIC intent increases democratic safeguard relevance."]
+      };
+
     case "UNKNOWN":
       return {
         probability: 1,
@@ -585,11 +710,34 @@ function adjustRiskByDataClass(dataClass?: DataClass): RiskAdjustment {
         reasons: ["CONFIDENTIAL data increases impact."]
       };
 
+    case "SENSITIVE":
+      return {
+        probability: 1,
+        impact: 2,
+        reasons: ["SENSITIVE data requires minimization and review."]
+      };
+
     case "PERSONAL":
       return {
         probability: 1,
         impact: 2,
         reasons: ["PERSONAL data requires minimization and review."]
+      };
+
+    case "CIVIC_SENSITIVE":
+      return {
+        probability: 1,
+        impact: 2,
+        reasons: ["CIVIC_SENSITIVE data requires democratic safeguard review."]
+      };
+
+    case "DEMOCRATIC_CHOICE":
+      return {
+        probability: 2,
+        impact: 4,
+        reasons: [
+          "DEMOCRATIC_CHOICE data is high-impact and must not be linked to personal identity."
+        ]
       };
 
     case "SECURITY_SENSITIVE":
@@ -611,6 +759,13 @@ function adjustRiskByDataClass(dataClass?: DataClass): RiskAdjustment {
         probability: 2,
         impact: 4,
         reasons: ["CRITICAL_OPERATIONAL data strongly increases risk."]
+      };
+
+    case "UNSUPPORTED":
+      return {
+        probability: 2,
+        impact: 3,
+        reasons: ["UNSUPPORTED data cannot be safely processed as ordinary content."]
       };
 
     case "UNKNOWN":
@@ -697,6 +852,17 @@ function adjustRiskByRoute(route: string): RiskAdjustment {
       probability: 1,
       impact: 1,
       reasons: ["File API route increases data handling risk."]
+    };
+  }
+
+  if (
+    normalizedRoute.includes("/api/opc") ||
+    normalizedRoute.includes("opc")
+  ) {
+    return {
+      probability: 1,
+      impact: 1,
+      reasons: ["OPC route affects proof receipt generation and audit metadata."]
     };
   }
 
@@ -802,6 +968,40 @@ function adjustRiskByPolicy(
   };
 }
 
+function adjustRiskByProjectDomain(
+  projectDomain?: ProjectDomain
+): RiskAdjustment {
+  switch (projectDomain) {
+    case "U.S.E.":
+      return {
+        probability: 0,
+        impact: 1,
+        reasons: ["U.S.E. project domain requires democratic safeguard awareness."]
+      };
+
+    case "MATRIX":
+      return {
+        probability: 0,
+        impact: 0,
+        reasons: []
+      };
+
+    case "MULTI_DOMAIN":
+      return {
+        probability: 0,
+        impact: 1,
+        reasons: ["MULTI_DOMAIN operation affects more than one project domain."]
+      };
+
+    default:
+      return {
+        probability: 0,
+        impact: 0,
+        reasons: []
+      };
+  }
+}
+
 function classifyRiskClass(input: {
   probability: 1 | 2 | 3 | 4 | 5;
   impact: 1 | 2 | 3 | 4 | 5;
@@ -823,11 +1023,22 @@ function classifyRiskClass(input: {
     return "CRITICAL";
   }
 
+  if (input.dataClass === "DEMOCRATIC_CHOICE") {
+    return "CRITICAL";
+  }
+
   if (
     input.contextClass === "CRITICAL_INFRASTRUCTURE" &&
     input.riskScore >= 12
   ) {
     return "CRITICAL";
+  }
+
+  if (
+    input.contextClass === "DEMOCRATIC_INFRASTRUCTURE" &&
+    input.riskScore >= 12
+  ) {
+    return "HIGH";
   }
 
   if (input.riskScore >= 17) {
@@ -856,7 +1067,8 @@ function isSafeEuropeanStrategicAutonomyAnalysis(
   if (
     input.dataClass === "SECRET" ||
     input.dataClass === "CRITICAL_OPERATIONAL" ||
-    input.dataClass === "SECURITY_SENSITIVE"
+    input.dataClass === "SECURITY_SENSITIVE" ||
+    input.dataClass === "DEMOCRATIC_CHOICE"
   ) {
     return false;
   }
@@ -894,6 +1106,55 @@ function isSafeEuropeanStrategicAutonomyAnalysis(
     findMatches(normalizedText, analyticalTerms).length > 0;
 
   return hasAnalyticalLanguage;
+}
+
+function isSafeUseCivicArchitectureAnalysis(
+  input: RiskEngineInput,
+  normalizedText: string
+): boolean {
+  if (input.policyProhibited || input.policyStatus === "PROHIBITED") {
+    return false;
+  }
+
+  if (input.dataClass === "DEMOCRATIC_CHOICE") {
+    return false;
+  }
+
+  if (findMatches(normalizedText, UNSAFE_OPERATIONAL_TERMS).length > 0) {
+    return false;
+  }
+
+  const useMatches = findMatches(normalizedText, SAFE_CIVIC_ARCHITECTURE_TERMS);
+
+  if (useMatches.length < 1) {
+    return false;
+  }
+
+  const safeArchitectureTerms = [
+    "architecture",
+    "architettura",
+    "model",
+    "modello",
+    "safeguard",
+    "safeguards",
+    "salvaguardia",
+    "salvaguardie",
+    "documentation",
+    "documentazione",
+    "concept",
+    "concetto",
+    "governance",
+    "audit",
+    "process",
+    "processo",
+    "privacy",
+    "separazione",
+    "separated",
+    "anonymized",
+    "anonimizzato"
+  ];
+
+  return findMatches(normalizedText, safeArchitectureTerms).length > 0;
 }
 
 function buildRisk(
@@ -937,6 +1198,7 @@ function normalizeInput(input: RiskEngineInput): string {
       input.contextClass,
       input.intentClass,
       input.policyStatus,
+      input.projectDomain ?? "",
       input.dataClass ?? "",
       input.sensitivity ?? ""
     ]
