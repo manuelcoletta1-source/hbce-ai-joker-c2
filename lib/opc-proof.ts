@@ -6,23 +6,35 @@
  * This module creates verifiable operational proof records for AI JOKER-C2.
  *
  * OPC does not create legal certification by itself.
- * OPC creates an audit-oriented technical receipt that links:
+ * OPC creates an audit-oriented technical proof receipt that links:
  *
- * - runtime identity;
  * - IPR identity binding;
+ * - runtime identity;
  * - EVT event continuity;
+ * - EVT/IPR-bound memory when available;
  * - runtime state;
  * - runtime decision;
+ * - project domain;
  * - policy reference;
  * - risk class;
  * - input hash;
  * - output hash;
  * - decision hash;
+ * - event hash;
+ * - memory hash;
+ * - previous proof hash;
  * - chain hash;
- * - audit status.
+ * - audit status;
+ * - verification status.
  *
- * The purpose is to make important AI JOKER-C2 interactions inspectable,
- * reproducible at hash level, and ready for future audit workflows.
+ * Canonical formula:
+ *
+ * IPR binds the identity.
+ * EVT traces the event.
+ * Memory preserves runtime continuity.
+ * OPC produces the proof receipt.
+ * Ledger preserves the chain.
+ * Verification reconstructs the operation.
  */
 
 import { createHash, randomUUID } from "crypto";
@@ -33,13 +45,21 @@ export type OpcVerificationStatus =
   | "VERIFIABLE"
   | "PARTIAL"
   | "INVALID"
-  | "UNVERIFIED";
+  | "UNVERIFIED"
+  | "ANCHORED"
+  | "SUPERSEDED"
+  | "DISPUTED";
 
 export type OpcAuditStatus =
   | "NOT_REQUIRED"
   | "READY"
   | "REQUIRED"
   | "OPEN"
+  | "IN_REVIEW"
+  | "REVIEWED"
+  | "DISPUTED"
+  | "LOCKED"
+  | "REJECTED"
   | "CLOSED"
   | "FAILED";
 
@@ -47,7 +67,9 @@ export type OpcRuntimeState =
   | "OPERATIONAL"
   | "DEGRADED"
   | "BLOCKED"
-  | "INVALID";
+  | "INVALID"
+  | "AUDIT_ONLY"
+  | "MAINTENANCE";
 
 export type OpcRuntimeDecision =
   | "ALLOW"
@@ -65,6 +87,28 @@ export type OpcRiskClass =
   | "PROHIBITED"
   | "UNKNOWN";
 
+export type OpcProjectDomain =
+  | "MATRIX"
+  | "U.S.E."
+  | "CORPUS_ESOTEROLOGIA_ERMETICA"
+  | "APOKALYPSIS"
+  | "GENERAL"
+  | "MULTI_DOMAIN";
+
+export type OpcRuntimeRole =
+  | "IPR_RUNTIME_DEMONSTRATOR"
+  | "GOVERNED_AI_RUNTIME"
+  | "AUDIT_RUNTIME"
+  | "RESEARCH_PROTOTYPE";
+
+export type OpcMemorySource =
+  | "NONE"
+  | "SESSION"
+  | "EVT_IPR_MEMORY"
+  | "LEDGER"
+  | "USER_FILE"
+  | "RUNTIME_CONTEXT";
+
 export type OpcHashAlgorithm = "sha256";
 export type OpcCanonicalization = "deterministic-json";
 
@@ -73,6 +117,7 @@ export type OpcIdentityBinding = {
   ipr: string;
   core?: string;
   organization?: string;
+  runtimeRole?: OpcRuntimeRole;
 };
 
 export type OpcEventReference = {
@@ -83,8 +128,8 @@ export type OpcEventReference = {
 };
 
 export type OpcMemoryReference = {
-  evt: string;
-  source?: string;
+  evt?: string;
+  source?: OpcMemorySource | string;
   hash?: string;
 };
 
@@ -93,12 +138,14 @@ export type OpcRuntimeSnapshot = {
   decision: OpcRuntimeDecision;
   contextClass: string;
   intentClass?: string;
+  projectDomain?: OpcProjectDomain;
   riskClass: OpcRiskClass;
   policyReference: string;
   policyOutcome?: string;
   humanOversight?: string;
   operationType?: string;
   operationStatus?: string;
+  failClosed?: boolean;
 };
 
 export type OpcProofHashes = {
@@ -134,6 +181,10 @@ export type OpcProofRecord = {
     hashAlgorithm: OpcHashAlgorithm;
     canonicalization: OpcCanonicalization;
   };
+  boundary: {
+    legalCertification: false;
+    statement: string;
+  };
 };
 
 export type OpcProofRecordInput = {
@@ -154,10 +205,13 @@ export type OpcProofPublicView = {
   timestamp: string;
   entity: string;
   ipr: string;
+  runtimeRole?: OpcRuntimeRole;
   sessionId?: string;
   eventId: string;
   eventHash: string;
   memoryEventId?: string;
+  memoryHash?: string;
+  projectDomain?: OpcProjectDomain;
   state: OpcRuntimeState;
   decision: OpcRuntimeDecision;
   riskClass: OpcRiskClass;
@@ -165,11 +219,13 @@ export type OpcProofPublicView = {
   inputHash: string;
   outputHash: string;
   decisionHash: string;
+  proofEventHash: string;
   previousProofHash?: string | null;
   chainHash: string;
   auditStatus: OpcAuditStatus;
   reviewRequired: boolean;
   verificationStatus: OpcVerificationStatus;
+  legalCertification: false;
 };
 
 export type OpcProofVerificationReport = {
@@ -187,11 +243,19 @@ const OPC_KIND: OpcProofKind = "OPERATIONAL_PROOF_RECORD";
 const HASH_ALGORITHM: OpcHashAlgorithm = "sha256";
 const CANONICALIZATION: OpcCanonicalization = "deterministic-json";
 
+const DEFAULT_CORE = "HBCE-CORE-v3";
+const DEFAULT_ORGANIZATION = "HERMETICUM B.C.E. S.r.l.";
+const DEFAULT_RUNTIME_ROLE: OpcRuntimeRole = "IPR_RUNTIME_DEMONSTRATOR";
+
+const NON_CERTIFICATION_STATEMENT =
+  "OPC is a technical proof receipt for audit, verification and governance review. It does not create automatic legal certification, regulatory approval, institutional recognition or legally binding evidence status by default.";
+
 export function createOpcProofRecord(
   input: OpcProofRecordInput
 ): OpcProofRecord {
   const timestamp = input.timestamp || new Date().toISOString();
   const proofId = buildOpcProofId(timestamp);
+  const identity = normalizeIdentity(input.identity);
 
   const inputHash = sha256Canonical({
     type: "input",
@@ -227,7 +291,7 @@ export function createOpcProofRecord(
   const chainHash = buildOpcChainHash({
     proofId,
     timestamp,
-    identity: input.identity,
+    identity,
     sessionId: input.sessionId,
     event: input.event,
     memory: input.memory,
@@ -246,12 +310,7 @@ export function createOpcProofRecord(
     proofId,
     kind: OPC_KIND,
     timestamp,
-    identity: {
-      entity: input.identity.entity,
-      ipr: input.identity.ipr,
-      core: input.identity.core,
-      organization: input.identity.organization
-    },
+    identity,
     sessionId: input.sessionId,
     event: input.event,
     memory: input.memory,
@@ -270,6 +329,10 @@ export function createOpcProofRecord(
       status: "VERIFIABLE",
       hashAlgorithm: HASH_ALGORITHM,
       canonicalization: CANONICALIZATION
+    },
+    boundary: {
+      legalCertification: false,
+      statement: NON_CERTIFICATION_STATEMENT
     }
   };
 }
@@ -303,7 +366,7 @@ export function verifyOpcProofRecord(
   const expectedChainHash = buildOpcChainHash({
     proofId: record.proofId,
     timestamp: record.timestamp,
-    identity: record.identity,
+    identity: normalizeIdentity(record.identity),
     sessionId: record.sessionId,
     event: record.event,
     memory: record.memory,
@@ -327,7 +390,10 @@ export function verifyOpcProofRecord(
     expectedChainHash,
     actualChainHash: record.proof.chainHash,
     reasons: hashMatches
-      ? ["OPC proof record hash is valid."]
+      ? [
+          "OPC proof record chain hash is valid.",
+          "The record is technically verifiable as an audit-oriented proof receipt."
+        ]
       : [
           "OPC proof record chain hash does not match.",
           "The record may have been modified after creation or generated with a different previousProofHash."
@@ -343,10 +409,13 @@ export function toPublicOpcProofRecord(
     timestamp: record.timestamp,
     entity: record.identity.entity,
     ipr: record.identity.ipr,
+    runtimeRole: record.identity.runtimeRole,
     sessionId: record.sessionId,
     eventId: record.event.evt,
     eventHash: record.event.hash,
     memoryEventId: record.memory?.evt,
+    memoryHash: record.proof.memoryHash,
+    projectDomain: record.runtime.projectDomain,
     state: record.runtime.state,
     decision: record.runtime.decision,
     riskClass: record.runtime.riskClass,
@@ -354,11 +423,13 @@ export function toPublicOpcProofRecord(
     inputHash: record.proof.inputHash,
     outputHash: record.proof.outputHash,
     decisionHash: record.proof.decisionHash,
+    proofEventHash: record.proof.eventHash,
     previousProofHash: record.proof.previousProofHash || null,
     chainHash: record.proof.chainHash,
     auditStatus: record.audit.status,
     reviewRequired: record.audit.reviewRequired,
-    verificationStatus: record.verification.status
+    verificationStatus: record.verification.status,
+    legalCertification: false
   };
 }
 
@@ -374,7 +445,7 @@ export function parseOpcProofRecordLine(line: string): OpcProofRecord | null {
       return null;
     }
 
-    return parsed;
+    return normalizeOpcProofRecord(parsed);
   } catch {
     return null;
   }
@@ -514,7 +585,7 @@ function buildOpcChainHash(input: {
   return sha256Canonical({
     proofId: input.proofId,
     timestamp: input.timestamp,
-    identity: input.identity,
+    identity: normalizeIdentity(input.identity),
     sessionId: input.sessionId || null,
     event: input.event,
     memory: input.memory || null,
@@ -527,9 +598,33 @@ function buildOpcChainHash(input: {
       memoryHash: input.memoryHash || null,
       previousProofHash
     },
+    boundary: {
+      legalCertification: false
+    },
     algorithm: HASH_ALGORITHM,
     canonicalization: CANONICALIZATION
   });
+}
+
+function normalizeIdentity(identity: OpcIdentityBinding): OpcIdentityBinding {
+  return {
+    entity: identity.entity,
+    ipr: identity.ipr,
+    core: identity.core || DEFAULT_CORE,
+    organization: identity.organization || DEFAULT_ORGANIZATION,
+    runtimeRole: identity.runtimeRole || DEFAULT_RUNTIME_ROLE
+  };
+}
+
+function normalizeOpcProofRecord(record: OpcProofRecord): OpcProofRecord {
+  return {
+    ...record,
+    identity: normalizeIdentity(record.identity),
+    boundary: record.boundary || {
+      legalCertification: false,
+      statement: NON_CERTIFICATION_STATEMENT
+    }
+  };
 }
 
 function normalizePreviousProofHash(
@@ -615,6 +710,15 @@ function inferReviewerRole(
     return "HUMAN_REVIEWER";
   }
 
+  if (
+    runtime.projectDomain === "U.S.E." ||
+    runtime.contextClass === "USE" ||
+    runtime.contextClass === "CIVIC" ||
+    runtime.contextClass === "DEMOCRATIC_INFRASTRUCTURE"
+  ) {
+    return "CIVIC_INFRASTRUCTURE_REVIEWER";
+  }
+
   if (runtime.decision === "AUDIT" || runtime.riskClass === "MEDIUM") {
     return "AUDITOR";
   }
@@ -633,11 +737,28 @@ function buildAuditReasons(
     `Policy reference: ${runtime.policyReference}.`
   ];
 
+  if (runtime.projectDomain) {
+    reasons.push(`Project domain: ${runtime.projectDomain}.`);
+  }
+
+  if (
+    runtime.projectDomain === "U.S.E." ||
+    runtime.contextClass === "USE" ||
+    runtime.contextClass === "CIVIC" ||
+    runtime.contextClass === "DEMOCRATIC_INFRASTRUCTURE"
+  ) {
+    reasons.push(
+      "Civic or democratic infrastructure context requires identity-choice separation and audit-oriented handling."
+    );
+  }
+
   if (reviewRequired) {
     reasons.push("Review is required or recommended by runtime governance.");
   } else {
     reasons.push("Review is not required for this proof record.");
   }
+
+  reasons.push(NON_CERTIFICATION_STATEMENT);
 
   return reasons;
 }
