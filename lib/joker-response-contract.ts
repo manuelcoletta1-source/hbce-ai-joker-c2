@@ -6,6 +6,7 @@ export type JokerResponseContractKind =
   | "JOKER_IDENTITY"
   | "ECONOMIC_GOVERNANCE"
   | "CIVIC_DIGITAL"
+  | "USE_ACRONYM"
   | "GENERAL";
 
 export type ResponseContract = {
@@ -31,7 +32,7 @@ function normalizeForContract(value: string): string {
 }
 
 function containsAny(text: string, terms: string[]): boolean {
-  return terms.some((term) => text.includes(term));
+  return terms.some((term) => text.includes(normalizeForContract(term)));
 }
 
 function isIprQuestion(text: string): boolean {
@@ -68,7 +69,9 @@ function isOpcQuestion(text: string): boolean {
     "prova di continuità",
     "continuita operativa",
     "continuità operativa",
-    "proof record"
+    "proof record",
+    "proof receipt",
+    "ricevuta di prova"
   ]);
 }
 
@@ -153,6 +156,37 @@ function isEconomicGovernanceQuestion(text: string): boolean {
   );
 }
 
+function isUseAcronymQuestion(text: string): boolean {
+  const hasUseTerm = containsAny(text, [
+    "u.s.e.",
+    "u.s.e",
+    "use",
+    "u s e",
+    "united states of europe",
+    "stati uniti d europa",
+    "stati uniti d'europa"
+  ]);
+
+  if (!hasUseTerm) {
+    return false;
+  }
+
+  return containsAny(text, [
+    "acronimo",
+    "sigla",
+    "cosa significa",
+    "cosa vuol dire",
+    "cosa vuole dire",
+    "che significa",
+    "significato",
+    "vuol dire",
+    "vuole dire",
+    "stands for",
+    "meaning",
+    "what does"
+  ]);
+}
+
 function isCivicDigitalQuestion(text: string): boolean {
   return (
     containsAny(text, [
@@ -166,7 +200,10 @@ function isCivicDigitalQuestion(text: string): boolean {
       "partecipazione civica",
       "consultazione pubblica",
       "consultazioni pubbliche",
-      "democrazia digitale"
+      "democrazia digitale",
+      "voto digitale federato",
+      "federated digital vote",
+      "federated digital voting"
     ]) ||
     (containsAny(text, ["voto", "votare"]) &&
       containsAny(text, ["identita", "identità", "ipr", "digitale"]))
@@ -175,6 +212,34 @@ function isCivicDigitalQuestion(text: string): boolean {
 
 function buildContract(kind: JokerResponseContractKind): ResponseContract {
   switch (kind) {
+    case "USE_ACRONYM":
+      return {
+        kind,
+        matched: true,
+        title: "Contratto risposta U.S.E.",
+        mandatoryOpening: [
+          "U.S.E. significa United States of Europe — Stati Uniti d’Europa."
+        ],
+        mandatoryConcepts: [
+          "U.S.E. è una collana e un dominio applicativo politico-istituzionale derivato da MATRIX.",
+          "U.S.E. usa MATRIX per progettare una federazione europea operativa, digitale, sovrana e verificabile.",
+          "Nel progetto HBCE, U.S.E. collega sovranità digitale, identità operativa europea, audit pubblico, continuità istituzionale e partecipazione civica.",
+          "Il voto digitale federato, dentro U.S.E., deve rispettare la regola: identità verificata prima, scelta separata dopo, voto anonimizzato, processo auditabile."
+        ],
+        forbiddenReductions: [
+          "Non presentare U.S.E. come semplice slogan politico.",
+          "Non ridurre U.S.E. a un partito, a un movimento elettorale o a una campagna di propaganda.",
+          "Non dire che U.S.E. è già un progetto istituzionalmente adottato se non è dimostrato."
+        ],
+        requiredDistinctions: [
+          "Distingui U.S.E. da MATRIX: MATRIX è l’architettura, U.S.E. è l’applicazione politico-istituzionale europea.",
+          "Distingui federazione operativa da semplice unione simbolica.",
+          "Distingui identità operativa da contenuto del voto."
+        ],
+        closingFormula:
+          "Formula nocciolo: U.S.E. = United States of Europe, applicazione MATRIX per una federazione europea operativa, digitale, sovrana e verificabile."
+      };
+
     case "IPR_EVT_OPC":
       return {
         kind,
@@ -408,6 +473,10 @@ export function detectJokerResponseContract(
     return buildContract("IPR_EVT_OPC");
   }
 
+  if (isUseAcronymQuestion(text)) {
+    return buildContract("USE_ACRONYM");
+  }
+
   if (isCivicDigitalQuestion(text)) {
     return buildContract("CIVIC_DIGITAL");
   }
@@ -560,6 +629,16 @@ export function applyResponseContract(
     contract.closingFormula &&
     !normalizeForContract(output).includes(
       normalizeForContract("IPR è il punto in cui l’identità smette")
+    )
+  ) {
+    output = [output, "", contract.closingFormula].join("\n");
+  }
+
+  if (
+    contract.kind === "USE_ACRONYM" &&
+    contract.closingFormula &&
+    !normalizeForContract(output).includes(
+      normalizeForContract("U.S.E. = United States of Europe")
     )
   ) {
     output = [output, "", contract.closingFormula].join("\n");
