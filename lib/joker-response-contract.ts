@@ -7,6 +7,7 @@ export type JokerResponseContractKind =
   | "ECONOMIC_GOVERNANCE"
   | "CIVIC_DIGITAL"
   | "USE_ACRONYM"
+  | "USE_POLITICAL_VALUE"
   | "GENERAL";
 
 export type ResponseContract = {
@@ -187,6 +188,58 @@ function isUseAcronymQuestion(text: string): boolean {
   ]);
 }
 
+function isUsePoliticalValueQuestion(text: string): boolean {
+  const hasPoliticalValueTerms = containsAny(text, [
+    "valore politico",
+    "valore politicamente",
+    "politicamente",
+    "politicamete",
+    "valore istituzionale",
+    "valore strategico",
+    "valore democratico",
+    "standardizzata",
+    "standardizata",
+    "standardizzato",
+    "standardizato",
+    "standardizzazione",
+    "standardization",
+    "in linea europea",
+    "linea europea",
+    "standard europeo",
+    "standard ue",
+    "governance europea",
+    "se adottata in europa",
+    "adottata in europa",
+    "applicazione in europa"
+  ]);
+
+  const hasProjectReference = containsAny(text, [
+    "u.s.e.",
+    "u.s.e",
+    "use",
+    "united states of europe",
+    "stati uniti d europa",
+    "stati uniti d'europa",
+    "matrix",
+    "hbce",
+    "ipr",
+    "voto digitale federato",
+    "questo progetto",
+    "progetto applicazione",
+    "questa applicazione",
+    "applicazione",
+    "federazione europea",
+    "sovranita digitale",
+    "sovranità digitale",
+    "europa",
+    "europea",
+    "europeo",
+    "ue"
+  ]);
+
+  return hasPoliticalValueTerms && hasProjectReference;
+}
+
 function isCivicDigitalQuestion(text: string): boolean {
   return (
     containsAny(text, [
@@ -238,6 +291,40 @@ function buildContract(kind: JokerResponseContractKind): ResponseContract {
         ],
         closingFormula:
           "Formula nocciolo: U.S.E. = United States of Europe, applicazione MATRIX per una federazione europea operativa, digitale, sovrana e verificabile."
+      };
+
+    case "USE_POLITICAL_VALUE":
+      return {
+        kind,
+        matched: true,
+        title: "Contratto risposta valore politico U.S.E./MATRIX",
+        mandatoryOpening: [
+          "Se U.S.E. venisse standardizzato in linea europea, il suo valore politico sarebbe trasformare MATRIX in una infrastruttura federata di governance democratica, identità operativa, partecipazione civica e sovranità digitale europea."
+        ],
+        mandatoryConcepts: [
+          "U.S.E. significa United States of Europe — Stati Uniti d’Europa.",
+          "MATRIX è l’architettura operativa; U.S.E. è l’applicazione politico-istituzionale europea.",
+          "IPR fornisce identità operativa e diritto di partecipazione senza collegare identità personale e contenuto della scelta.",
+          "Il voto digitale federato non va inteso solo come voto per partiti o rappresentanti, ma come infrastruttura di consultazione, referendum e partecipazione legislativa verificabile.",
+          "Il valore politico principale è la sovranità digitale europea.",
+          "Il secondo valore politico è la continuità istituzionale verificabile tra livelli regionale, nazionale ed europeo.",
+          "Il terzo valore politico è l’audit pubblico del processo democratico.",
+          "Il quarto valore politico è ridurre la dipendenza europea da infrastrutture digitali non governate dall’Europa."
+        ],
+        forbiddenReductions: [
+          "Non trasformare U.S.E. in propaganda partitica.",
+          "Non presentare U.S.E. come già adottato ufficialmente dall’Unione Europea se non è dimostrato.",
+          "Non ridurre il voto digitale federato a semplice elezione online.",
+          "Non collegare identità personale e contenuto del voto."
+        ],
+        requiredDistinctions: [
+          "Distingui valore politico da riconoscimento istituzionale già ottenuto.",
+          "Distingui standardizzazione possibile da standard ufficiale già adottato.",
+          "Distingui audit del processo da tracciamento della scelta individuale.",
+          "Distingui identità operativa europea da sorveglianza politica."
+        ],
+        closingFormula:
+          "Formula nocciolo: U.S.E. standardizzata in linea europea avrebbe valore politico perché trasformerebbe sovranità digitale, identità operativa, partecipazione civica e audit democratico in infrastruttura federata verificabile."
       };
 
     case "IPR_EVT_OPC":
@@ -477,6 +564,10 @@ export function detectJokerResponseContract(
     return buildContract("USE_ACRONYM");
   }
 
+  if (isUsePoliticalValueQuestion(text)) {
+    return buildContract("USE_POLITICAL_VALUE");
+  }
+
   if (isCivicDigitalQuestion(text)) {
     return buildContract("CIVIC_DIGITAL");
   }
@@ -655,6 +746,16 @@ export function applyResponseContract(
     contract.closingFormula &&
     !normalizeForContract(output).includes(
       normalizeForContract("U.S.E. = United States of Europe")
+    )
+  ) {
+    output = [output, "", contract.closingFormula].join("\n");
+  }
+
+  if (
+    contract.kind === "USE_POLITICAL_VALUE" &&
+    contract.closingFormula &&
+    !normalizeForContract(output).includes(
+      normalizeForContract("U.S.E. standardizzata in linea europea")
     )
   ) {
     output = [output, "", contract.closingFormula].join("\n");
