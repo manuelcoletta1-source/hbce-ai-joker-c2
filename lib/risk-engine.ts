@@ -21,6 +21,9 @@
  * Safe European strategic autonomy, MATRIX, U.S.E. and IPR documentation
  * must not be escalated as CRITICAL merely because it discusses strategic,
  * institutional or civic architecture.
+ *
+ * Political, institutional, European-standardization and U.S.E. civic-governance
+ * analysis should remain answerable, but audit-ready.
  */
 
 import type {
@@ -206,6 +209,10 @@ const UNSAFE_OPERATIONAL_TERMS = [
 
 const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
   "europa",
+  "europea",
+  "europeo",
+  "europei",
+  "europee",
   "leurpa",
   "ue",
   "unione europea",
@@ -226,6 +233,9 @@ const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
   "asse tecnologico",
   "asse tecnologico europeo",
   "standard europeo",
+  "standardizzazione europea",
+  "standardizzata in linea europea",
+  "standardizata in linea europea",
   "governance imprese",
   "governance cittadini",
   "imprese cittadini",
@@ -242,6 +252,7 @@ const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
 
 const SAFE_CIVIC_ARCHITECTURE_TERMS = [
   "u.s.e.",
+  "u.s.e",
   "use",
   "united states of europe",
   "stati uniti d europa",
@@ -264,6 +275,35 @@ const SAFE_CIVIC_ARCHITECTURE_TERMS = [
   "choice separated",
   "vote anonymized",
   "process auditable"
+];
+
+const POLITICAL_INSTITUTIONAL_VALUE_TERMS = [
+  "valore politico",
+  "politicamente",
+  "valore istituzionale",
+  "standardizzata",
+  "standardizata",
+  "standardizzato",
+  "standardizato",
+  "standardizzazione",
+  "standardization",
+  "in linea europea",
+  "linea europea",
+  "governance europea",
+  "istituzioni europee",
+  "unione europea",
+  "federazione europea",
+  "sovranita digitale",
+  "sovranità digitale",
+  "democrazia verificabile",
+  "partecipazione civica",
+  "voto digitale federato",
+  "public administration",
+  "public sector",
+  "public decision",
+  "decisione pubblica",
+  "constitutional operational",
+  "costituzione operativa"
 ];
 
 export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
@@ -311,8 +351,16 @@ export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
     ]);
   }
 
+  if (isPoliticalInstitutionalValueAnalysis(input, normalized)) {
+    return buildRisk("MEDIUM", 2, 3, [
+      "Political, institutional or European-standardization value analysis detected.",
+      "The request is safe and answerable, but it concerns public governance, institutional positioning or European standardization.",
+      "The output should remain audit-ready and should not be treated as official institutional validation."
+    ]);
+  }
+
   if (isSafeUseCivicArchitectureAnalysis(input, normalized)) {
-    return buildRisk(input.hasFiles ? "MEDIUM" : "MEDIUM", 2, 3, [
+    return buildRisk("MEDIUM", 2, 3, [
       "Safe U.S.E. civic or democratic infrastructure architecture detected.",
       "The request is conceptual, institutional or governance-oriented, not an operational voter-targeting or identity-choice linkage request.",
       "U.S.E. work should remain answerable with audit-ready democratic safeguards."
@@ -320,10 +368,10 @@ export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
   }
 
   if (isSafeEuropeanStrategicAutonomyAnalysis(input, normalized)) {
-    return buildRisk(input.hasFiles ? "MEDIUM" : "LOW", 2, input.hasFiles ? 3 : 2, [
+    return buildRisk("MEDIUM", 2, 3, [
       "Safe European strategic autonomy / technological dependency analysis detected.",
       "The request is strategic, institutional and analytical, not an operational harmful instruction.",
-      "MATRIX / European governance analysis should remain answerable with reviewable framing."
+      "MATRIX / European governance analysis should remain answerable with reviewable framing and audit-ready handling."
     ]);
   }
 
@@ -1155,6 +1203,45 @@ function isSafeUseCivicArchitectureAnalysis(
   ];
 
   return findMatches(normalizedText, safeArchitectureTerms).length > 0;
+}
+
+function isPoliticalInstitutionalValueAnalysis(
+  input: RiskEngineInput,
+  normalizedText: string
+): boolean {
+  if (input.policyProhibited || input.policyStatus === "PROHIBITED") {
+    return false;
+  }
+
+  if (
+    input.dataClass === "SECRET" ||
+    input.dataClass === "CRITICAL_OPERATIONAL" ||
+    input.dataClass === "SECURITY_SENSITIVE" ||
+    input.dataClass === "DEMOCRATIC_CHOICE"
+  ) {
+    return false;
+  }
+
+  if (findMatches(normalizedText, UNSAFE_OPERATIONAL_TERMS).length > 0) {
+    return false;
+  }
+
+  const matches = findMatches(normalizedText, POLITICAL_INSTITUTIONAL_VALUE_TERMS);
+
+  if (matches.length === 0) {
+    return false;
+  }
+
+  return (
+    input.projectDomain === "MATRIX" ||
+    input.projectDomain === "U.S.E." ||
+    input.contextClass === "STRATEGIC" ||
+    input.contextClass === "MATRIX" ||
+    input.contextClass === "USE" ||
+    input.contextClass === "CIVIC" ||
+    input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "PUBLIC_ADMINISTRATION"
+  );
 }
 
 function buildRisk(
