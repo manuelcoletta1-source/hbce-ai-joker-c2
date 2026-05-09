@@ -53,6 +53,10 @@ const SAFE_ERROR_MESSAGES: Record<SafeErrorCode, string> = {
   MODEL_ERROR: "The model provider could not complete the request safely.",
   FILE_ERROR: "The file could not be processed safely.",
   EVT_ERROR: "The runtime event could not be created or verified safely.",
+  MEMORY_ERROR:
+    "The EVT/IPR-bound memory record could not be created, read or verified safely.",
+  OPC_ERROR:
+    "The OPC proof receipt could not be created, appended or verified safely.",
   LEDGER_ERROR: "The event ledger could not be updated or read safely.",
   SECURITY_ERROR: "The request triggered a security boundary.",
   RUNTIME_ERROR: "The runtime could not complete the operation safely."
@@ -66,10 +70,27 @@ const DEFAULT_STATUS_BY_CODE: Record<SafeErrorCode, number> = {
   MODEL_ERROR: 502,
   FILE_ERROR: 400,
   EVT_ERROR: 500,
+  MEMORY_ERROR: 500,
+  OPC_ERROR: 500,
   LEDGER_ERROR: 500,
   SECURITY_ERROR: 403,
   RUNTIME_ERROR: 500
 };
+
+const SAFE_ERROR_CODES: SafeErrorCode[] = [
+  "INPUT_ERROR",
+  "DOMAIN_ERROR",
+  "POLICY_ERROR",
+  "RISK_ERROR",
+  "MODEL_ERROR",
+  "FILE_ERROR",
+  "EVT_ERROR",
+  "MEMORY_ERROR",
+  "OPC_ERROR",
+  "LEDGER_ERROR",
+  "SECURITY_ERROR",
+  "RUNTIME_ERROR"
+];
 
 const SECRET_PATTERNS = [
   /\bsk-[A-Za-z0-9_-]{12,}\b/g,
@@ -96,10 +117,12 @@ export function toSafeError(
   }
 
   if (isErrorLike(error)) {
+    const inferredCode = inferErrorCode(error, fallbackCode);
+
     return normalizeSafeError({
-      code: inferErrorCode(error, fallbackCode),
-      message: fallback?.message ?? SAFE_ERROR_MESSAGES[fallbackCode],
-      status: fallbackStatus
+      code: inferredCode,
+      message: fallback?.message ?? SAFE_ERROR_MESSAGES[inferredCode],
+      status: fallback?.status ?? DEFAULT_STATUS_BY_CODE[inferredCode] ?? fallbackStatus
     });
   }
 
@@ -154,6 +177,14 @@ export function createFileError(message?: string): SafeError {
 
 export function createEvtError(message?: string): SafeError {
   return createSafeError({ code: "EVT_ERROR", message, status: 500 });
+}
+
+export function createMemoryError(message?: string): SafeError {
+  return createSafeError({ code: "MEMORY_ERROR", message, status: 500 });
+}
+
+export function createOpcError(message?: string): SafeError {
+  return createSafeError({ code: "OPC_ERROR", message, status: 500 });
 }
 
 export function createLedgerError(message?: string): SafeError {
@@ -233,6 +264,7 @@ export function isSafeError(value: unknown): value is SafeError {
 
   return Boolean(
     candidate.code &&
+      SAFE_ERROR_CODES.includes(candidate.code as SafeErrorCode) &&
       candidate.message &&
       typeof candidate.status === "number"
   );
@@ -303,20 +335,7 @@ function normalizeSafeError(error: SafeError): SafeError {
 }
 
 function normalizeErrorCode(code: string): SafeErrorCode {
-  const allowed: SafeErrorCode[] = [
-    "INPUT_ERROR",
-    "DOMAIN_ERROR",
-    "POLICY_ERROR",
-    "RISK_ERROR",
-    "MODEL_ERROR",
-    "FILE_ERROR",
-    "EVT_ERROR",
-    "LEDGER_ERROR",
-    "SECURITY_ERROR",
-    "RUNTIME_ERROR"
-  ];
-
-  return allowed.includes(code as SafeErrorCode)
+  return SAFE_ERROR_CODES.includes(code as SafeErrorCode)
     ? (code as SafeErrorCode)
     : "RUNTIME_ERROR";
 }
@@ -378,6 +397,18 @@ function inferErrorCode(error: Error, fallbackCode: SafeErrorCode): SafeErrorCod
     text.includes("mime")
   ) {
     return "FILE_ERROR";
+  }
+
+  if (text.includes("memory") || text.includes("evt/ipr")) {
+    return "MEMORY_ERROR";
+  }
+
+  if (
+    text.includes("opc") ||
+    text.includes("proof receipt") ||
+    text.includes("proof record")
+  ) {
+    return "OPC_ERROR";
   }
 
   if (text.includes("evt") || text.includes("event")) {
