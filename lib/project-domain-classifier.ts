@@ -259,6 +259,7 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
   ],
   "U.S.E.": [
     "u.s.e.",
+    "u.s.e",
     "use",
     "u s e",
     "united states of europe",
@@ -976,6 +977,7 @@ function isExplicitDomainName(
   if (domain === "U.S.E.") {
     return (
       keyword === "u.s.e." ||
+      keyword === "u.s.e" ||
       keyword === "use" ||
       keyword === "u s e" ||
       keyword === "united states of europe" ||
