@@ -18,6 +18,17 @@
  * - lib/safe-concept-classifier.ts
  *
  * This classifier does not call external models.
+ *
+ * Canonical runtime hierarchy:
+ * - IPR = primary operational identity and proof instrument
+ * - AI JOKER-C2 = governed runtime demonstrator
+ * - MATRIX = operational infrastructure architecture
+ * - U.S.E. = MATRIX-derived political-institutional application
+ * - CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar
+ * - APOKALYPSIS = historical threshold analysis
+ * - EVT = event trace
+ * - EVT/IPR memory = runtime continuity
+ * - OPC = operational proof receipt
  */
 
 import type {
@@ -77,7 +88,14 @@ const PROHIBITED_TERMS = [
   "disable audit",
   "disable logging",
   "hide traces",
-  "cover tracks"
+  "cover tracks",
+  "vote de-anonymization",
+  "deanonymize vote",
+  "de-anonymize vote",
+  "link voter identity to vote",
+  "voter targeting",
+  "political manipulation",
+  "coercive civic influence"
 ];
 
 const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
@@ -85,13 +103,10 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "identity",
     "identita",
     "identità",
-    "ipr",
-    "identity primary record",
-    "evt",
-    "checkpoint",
-    "lineage",
     "runtime identity",
     "entity",
+    "checkpoint",
+    "lineage",
     "continuity reference",
     "operational identity",
     "identita operativa",
@@ -100,6 +115,27 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "traccia verificabile",
     "continuita operativa",
     "continuità operativa"
+  ],
+
+  IPR: [
+    "ipr",
+    "identity primary record",
+    "ipr-ai-0001",
+    "ipr runtime",
+    "ipr runtime demonstrator",
+    "ipr product",
+    "ipr prodotto",
+    "ipr proof",
+    "ipr binding",
+    "identity binding",
+    "operational proof",
+    "proof instrument",
+    "strumento operativo",
+    "strumento di prova",
+    "identita primaria operativa",
+    "identità primaria operativa",
+    "identita operativa",
+    "identità operativa"
   ],
 
   MATRIX: [
@@ -128,6 +164,40 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "digital sovereignty",
     "sovranita digitale",
     "sovranità digitale"
+  ],
+
+  USE: [
+    "u.s.e.",
+    "use",
+    "u s e",
+    "united states of europe",
+    "stati uniti d europa",
+    "stati uniti d'europa",
+    "stati uniti europei",
+    "federated europe",
+    "federated operational europe",
+    "european federation",
+    "federazione europea",
+    "federazione operativa europea",
+    "voto digitale federato",
+    "federated digital vote",
+    "federated digital voting",
+    "digital sovereignty",
+    "sovranita digitale",
+    "sovranità digitale",
+    "costituzione operativa europea",
+    "constitutional operational europe",
+    "democratic infrastructure",
+    "infrastruttura democratica",
+    "public consultation",
+    "consultazione pubblica",
+    "referendum infrastructure",
+    "infrastruttura referendaria",
+    "referendum digitale",
+    "public decision",
+    "decisione pubblica",
+    "democrazia verificabile",
+    "verifiable democracy"
   ],
 
   CORPUS: [
@@ -260,6 +330,9 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "security.md",
     "contributing.md",
     "roadmap.md",
+    "runtime-types.ts",
+    "project-domain-classifier.ts",
+    "context-classifier.ts",
     "nome file",
     "il file",
     "il commit",
@@ -388,6 +461,72 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "tracciabilità",
     "verifica",
     "classificatore"
+  ],
+
+  CIVIC: [
+    "civic",
+    "civic participation",
+    "partecipazione civica",
+    "public consultation",
+    "consultazione pubblica",
+    "public decision",
+    "decisione pubblica",
+    "citizen",
+    "citizens",
+    "cittadino",
+    "cittadini",
+    "participation rights",
+    "diritti di partecipazione",
+    "civil protection",
+    "protezione civile",
+    "referendum",
+    "referendum digitale",
+    "legislative participation",
+    "partecipazione legislativa"
+  ],
+
+  PUBLIC_ADMINISTRATION: [
+    "public administration",
+    "pubblica amministrazione",
+    "public sector",
+    "settore pubblico",
+    "regional authority",
+    "autorita regionale",
+    "autorità regionale",
+    "municipality",
+    "comune",
+    "region",
+    "regione",
+    "institutional authorization",
+    "autorizzazione istituzionale",
+    "public service",
+    "servizio pubblico"
+  ],
+
+  DEMOCRATIC_INFRASTRUCTURE: [
+    "democratic infrastructure",
+    "infrastruttura democratica",
+    "federated digital vote",
+    "federated digital voting",
+    "voto digitale federato",
+    "vote anonymized",
+    "voto anonimizzato",
+    "choice separated",
+    "scelta separata",
+    "identity verified first",
+    "identita verificata prima",
+    "identità verificata prima",
+    "process auditable",
+    "processo auditabile",
+    "ballot secrecy",
+    "segretezza del voto",
+    "eligibility verification",
+    "verifica eleggibilita",
+    "verifica eleggibilità",
+    "referendum infrastructure",
+    "infrastruttura referendaria",
+    "public consultation",
+    "consultazione pubblica"
   ],
 
   CRITICAL_INFRASTRUCTURE: [
@@ -638,6 +777,20 @@ const INTENT_KEYWORDS: Record<IntentClass, string[]> = {
     "istituzioni"
   ],
 
+  CIVIC: [
+    "civic",
+    "democratic infrastructure",
+    "public consultation",
+    "referendum",
+    "federated digital vote",
+    "federated digital voting",
+    "voto digitale federato",
+    "legislative participation",
+    "partecipazione civica",
+    "consultazione pubblica",
+    "decisione pubblica"
+  ],
+
   EDITORIAL: [
     "editorial",
     "chapter",
@@ -661,6 +814,9 @@ const INTENT_KEYWORDS: Record<IntentClass, string[]> = {
     "audit status",
     "evidence",
     "prove",
+    "proof receipt",
+    "proof record",
+    "opc",
     "verifica",
     "validazione",
     "validare"
@@ -698,7 +854,13 @@ const HIGH_SENSITIVITY_TERMS = [
   "malware",
   "secret exposure",
   "segreto",
-  "credenziali"
+  "credenziali",
+  "electoral infrastructure",
+  "infrastruttura elettorale",
+  "vote de-anonymization",
+  "identity choice linkage",
+  "collegare identita e voto",
+  "collegare identità e voto"
 ];
 
 const MEDIUM_SENSITIVITY_TERMS = [
@@ -716,12 +878,19 @@ const MEDIUM_SENSITIVITY_TERMS = [
   "policy",
   "verification",
   "evidence",
+  "proof receipt",
+  "opc",
   "b2b",
   "b2g",
   "institutional",
   "human oversight",
   "risk register",
   "incident report",
+  "public consultation",
+  "referendum",
+  "federated digital vote",
+  "voto digitale federato",
+  "democratic infrastructure",
   "conformita",
   "conformità"
 ];
@@ -834,6 +1003,31 @@ function selectBestContext(
     boost(results, "MATRIX", 3, "MATRIX framework term detected.");
   }
 
+  if (
+    text.includes("u.s.e.") ||
+    text.includes("united states of europe") ||
+    text.includes("stati uniti d europa") ||
+    text.includes("voto digitale federato")
+  ) {
+    boost(results, "USE", 5, "U.S.E. or federated digital vote term detected.");
+  }
+
+  if (
+    text.includes("referendum") ||
+    text.includes("public consultation") ||
+    text.includes("consultazione pubblica") ||
+    text.includes("democratic infrastructure") ||
+    text.includes("infrastruttura democratica")
+  ) {
+    boost(
+      results,
+      "DEMOCRATIC_INFRASTRUCTURE",
+      4,
+      "Democratic infrastructure or public consultation terms detected."
+    );
+    boost(results, "CIVIC", 2, "Civic participation terms detected.");
+  }
+
   if (text.includes("corpus") || text.includes("esoterologia")) {
     boost(results, "CORPUS", 3, "CORPUS or Esoterologia term detected.");
   }
@@ -855,8 +1049,37 @@ function selectBestContext(
     boost(results, "AI_GOVERNANCE", 4, "Biocybersecurity concept detected.");
   }
 
-  if (text.includes("evt") || text.includes("ipr")) {
-    boost(results, "IDENTITY", 2, "IPR or EVT identity terms detected.");
+  if (
+    text.includes("ipr") ||
+    text.includes("identity primary record") ||
+    text.includes("ipr-ai-0001")
+  ) {
+    boost(results, "IPR", 5, "IPR operational identity terms detected.");
+    boost(results, "IDENTITY", 2, "Identity terms detected.");
+  }
+
+  if (text.includes("evt") || text.includes("event trace")) {
+    boost(results, "GOVERNANCE", 2, "EVT trace terms detected.");
+    boost(results, "IDENTITY", 2, "EVT identity continuity terms detected.");
+  }
+
+  if (
+    text.includes("opc") ||
+    text.includes("proof receipt") ||
+    text.includes("proof record") ||
+    text.includes("chain hash")
+  ) {
+    boost(results, "GOVERNANCE", 3, "OPC proof receipt terms detected.");
+    boost(results, "COMPLIANCE", 2, "Proof receipt audit terms detected.");
+  }
+
+  if (
+    text.includes("memory") ||
+    text.includes("evt ipr memory") ||
+    text.includes("evt/ipr") ||
+    text.includes("session continuity")
+  ) {
+    boost(results, "GOVERNANCE", 2, "EVT/IPR memory continuity terms detected.");
   }
 
   if (
@@ -925,6 +1148,16 @@ function selectBestIntent(
     boost(results, "REWRITE", 2, "Rewrite or editorial improvement terms detected.");
   }
 
+  if (
+    text.includes("public consultation") ||
+    text.includes("referendum") ||
+    text.includes("federated digital vote") ||
+    text.includes("voto digitale federato") ||
+    text.includes("democratic infrastructure")
+  ) {
+    boost(results, "CIVIC", 3, "Civic or democratic infrastructure intent detected.");
+  }
+
   const best = results.sort((a, b) => b.score - a.score)[0];
 
   if (!best || best.score <= 0) {
@@ -969,7 +1202,8 @@ function classifySensitivity(
   if (
     highMatches.length > 0 ||
     contextClass === "CRITICAL_INFRASTRUCTURE" ||
-    contextClass === "DUAL_USE"
+    contextClass === "DUAL_USE" ||
+    contextClass === "DEMOCRATIC_INFRASTRUCTURE"
   ) {
     return "HIGH";
   }
@@ -980,6 +1214,9 @@ function classifySensitivity(
     contextClass === "COMPLIANCE" ||
     contextClass === "AI_GOVERNANCE" ||
     contextClass === "GOVERNANCE" ||
+    contextClass === "USE" ||
+    contextClass === "CIVIC" ||
+    contextClass === "PUBLIC_ADMINISTRATION" ||
     Boolean(input.hasFiles)
   ) {
     return "MEDIUM";
