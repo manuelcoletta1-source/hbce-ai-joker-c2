@@ -239,6 +239,20 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "verification",
     "verifica",
     "runtime governance",
+    "runtime diagnostic",
+    "runtime diagnostics",
+    "diagnostic runtime",
+    "diagnostica runtime",
+    "diagnostica joker",
+    "joker runtime",
+    "joker-c2 runtime",
+    "ai joker-c2 runtime",
+    "hbce runtime",
+    "runtime status",
+    "runtime state",
+    "governed runtime",
+    "governed ai runtime",
+    "ipr runtime demonstrator",
     "biocybersecurity",
     "biocibersicurezza",
     "biocibernetica"
@@ -417,6 +431,29 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "sistema culturale politico sociale"
   ]
 };
+
+const RUNTIME_DIAGNOSTIC_TERMS = [
+  "diagnostica runtime",
+  "runtime diagnostic",
+  "runtime diagnostics",
+  "diagnostic runtime",
+  "joker diagnostic",
+  "diagnostica joker",
+  "joker runtime",
+  "joker-c2 runtime",
+  "ai joker-c2 runtime",
+  "hbce runtime",
+  "runtime status",
+  "runtime state",
+  "governed runtime",
+  "runtime report",
+  "runtime check",
+  "check runtime",
+  "runtime openai",
+  "diagnostica openai",
+  "fammi una diagnostica",
+  "diagnostica"
+];
 
 const IPR_OPERATIONAL_TERMS = [
   "ipr",
@@ -624,6 +661,30 @@ export function classifyProjectDomain(
 
   if (fileBasedClassification) {
     return fileBasedClassification;
+  }
+
+  const runtimeDiagnosticMatches = findMatches(
+    normalizedInput,
+    RUNTIME_DIAGNOSTIC_TERMS
+  );
+
+  if (runtimeDiagnosticMatches.length > 0) {
+    const scores = createEmptyScores();
+    scores.MATRIX = 16 + runtimeDiagnosticMatches.length;
+
+    return createClassification(
+      "MATRIX",
+      ["MATRIX"],
+      0.96,
+      [
+        "Runtime diagnostic language detected.",
+        "AI JOKER-C2 runtime diagnostics belong to the MATRIX/HBCE operational infrastructure domain.",
+        ...runtimeDiagnosticMatches.map(
+          (term) => `Matched runtime diagnostic term: ${term}`
+        )
+      ],
+      scores
+    );
   }
 
   const explicitMultiDomain = findMatches(normalizedInput, MULTI_DOMAIN_TERMS);
