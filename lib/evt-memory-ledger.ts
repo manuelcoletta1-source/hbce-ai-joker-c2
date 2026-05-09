@@ -999,6 +999,7 @@ function detectTags(text: string): string[] {
     "tempo",
     "matrix",
     "u.s.e.",
+    "u.s.e",
     "united states of europe",
     "stati uniti d’europa",
     "stati uniti d'europa",
@@ -1155,17 +1156,20 @@ function validateMemoryAppendContinuity(
   events: EvtMemoryEvent[],
   nextEvent: EvtMemoryEvent
 ): { ok: boolean; reason: string } {
-  if (events.length === 0) {
-    if (nextEvent.prev !== "GENESIS") {
-      return {
-        ok: false,
-        reason: `Memory append rejected: first ledger event must reference GENESIS, received prev=${nextEvent.prev}.`
-      };
-    }
+  if (!nextEvent.prev || !nextEvent.prev.trim()) {
+    return {
+      ok: false,
+      reason: "Memory append rejected: next event has no previous reference."
+    };
+  }
 
+  if (events.length === 0) {
     return {
       ok: true,
-      reason: "First memory event references GENESIS."
+      reason:
+        nextEvent.prev === "GENESIS"
+          ? "First memory event references GENESIS."
+          : `First memory event references external runtime anchor ${nextEvent.prev}.`
     };
   }
 
@@ -1185,16 +1189,12 @@ function validateMemoryAppendContinuity(
         : [];
 
   if (relevantEvents.length === 0) {
-    if (nextEvent.prev !== "GENESIS") {
-      return {
-        ok: false,
-        reason: `Memory append rejected: no relevant memory chain found for ipr=${nextEvent.ipr}, session=${nextEvent.sessionId}; expected prev=GENESIS, received prev=${nextEvent.prev}.`
-      };
-    }
-
     return {
       ok: true,
-      reason: "New memory chain starts from GENESIS."
+      reason:
+        nextEvent.prev === "GENESIS"
+          ? "New memory chain starts from GENESIS."
+          : `New memory chain starts from external runtime anchor ${nextEvent.prev}.`
     };
   }
 
@@ -1238,7 +1238,7 @@ function inferChainContinuity(
       continue;
     }
 
-    if (ordered[0]?.prev !== "GENESIS") {
+    if (!ordered[0]?.prev) {
       hasPartial = true;
       continue;
     }
