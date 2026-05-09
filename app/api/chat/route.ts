@@ -86,6 +86,7 @@ import type {
   OperationStatus,
   OversightEvaluation,
   PolicyEvaluation,
+  ProjectDomain,
   RiskEvaluation,
   RuntimeDecision as GovernanceDecision,
   RuntimeDecisionResult,
@@ -95,15 +96,7 @@ import type {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type LegacyContextClass =
-  | "IDENTITY"
-  | "MATRIX"
-  | "DOCUMENTAL"
-  | "TECHNICAL"
-  | "GITHUB"
-  | "EDITORIAL"
-  | "STRATEGIC"
-  | "GENERAL";
+type LegacyContextClass = ContextClass;
 
 type FileInput = EvtMemoryFile;
 
@@ -157,6 +150,8 @@ type ResolvedMemoryContext = {
   text: string;
   semanticState: {
     documentFamily: DocumentFamily;
+    projectDomain?: ProjectDomain;
+    activeDomains?: ProjectDomain[];
   } | null;
   lastEventId: string | null;
 };
@@ -175,6 +170,9 @@ const MAX_DATA_CLASSIFICATION_CHARS = 24000;
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
+
+const USE_DEMOCRATIC_BOUNDARY =
+  "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -247,6 +245,27 @@ function detectDocumentFamily(files: FileInput[]): DocumentFamily {
   return detectDocumentFamilyFromText(merged);
 }
 
+function resolveDocumentFamily(input: {
+  files: FileInput[];
+  memory: ResolvedMemoryContext;
+  message: string;
+  projectDomain: ProjectDomainClassification;
+}): DocumentFamily {
+  if (input.files.length > 0) {
+    return detectDocumentFamily(input.files);
+  }
+
+  if (input.memory.semanticState?.documentFamily) {
+    return input.memory.semanticState.documentFamily;
+  }
+
+  if (input.projectDomain.projectDomain === "U.S.E.") {
+    return "USE";
+  }
+
+  return detectDocumentFamilyFromText(input.message);
+}
+
 function extractResponseText(response: unknown): string {
   const maybe = response as {
     choices?: Array<{
@@ -296,19 +315,24 @@ async function generateResponse(input: {
             "Rispondi in forma discorsiva di default.",
             "Non usare tabelle salvo richiesta esplicita.",
             "Non usare elenchi numerati rigidi salvo richiesta esplicita o necessità tecnica.",
-            "La memoria non è la chat: la memoria è la catena EVT agganciata all'IPR.",
+            "IPR è lo strumento operativo primario: Identity Primary Record, non un semplice account o login.",
+            "AI JOKER-C2 è il runtime dimostrativo governato dell’IPR.",
+            "La memoria non è la chat: la memoria è la catena EVT/IPR-bound.",
             "Ogni riferimento ellittico deve essere risolto usando la memoria EVT/IPR-bound.",
+            "OPC è una proof receipt tecnica per audit e verifica, non una certificazione legale automatica.",
             "Non mostrare i metadati runtime all'utente salvo richiesta diagnostica.",
             "MATRIX = infrastruttura operativa.",
+            "U.S.E. = applicazione politico-istituzionale derivata da MATRIX per una federazione europea operativa, digitale e verificabile.",
             "CORPUS ESOTEROLOGIA ERMETICA = grammatica disciplinare.",
             "APOKALYPSIS = soglia storica.",
-            "AI JOKER-C2 = runtime cognitivo-governato.",
+            `Regola U.S.E. obbligatoria: ${USE_DEMOCRATIC_BOUNDARY}`,
+            "Non collegare mai identità personale e contenuto di una scelta democratica.",
             "Quando è attivo un contratto canonico di risposta, devi iniziare con la formula obbligatoria prima della spiegazione discorsiva.",
             "Se l'utente chiede IPR, non ridurlo a identità digitale: spiegalo come registro primario di identità operativa che connette identità, azione, responsabilità, evento, prova, tempo e continuità.",
             "Se l'utente chiede confronto con standard esistenti, confronta IPR con eIDAS/EUDI, PKI, X.509, DID/VC, blockchain timestamping, IAM e audit log.",
             "La governance runtime prevale: policy, risk, oversight e fail-closed non devono essere aggirati dal modello.",
             "Regola critica: non confondere il contenuto del documento con l'intento operativo dell'utente.",
-            "Se un file parla di MATRIX, cybersecurity, infrastrutture critiche, incident response, audit, AI governance o continuità istituzionale, ma l'utente chiede sintesi, spiegazione, analisi documentale, revisione editoriale o controllo tecnico, devi trattare la richiesta come supporto documentale.",
+            "Se un file parla di MATRIX, U.S.E., cybersecurity, infrastrutture critiche, incident response, audit, AI governance o continuità istituzionale, ma l'utente chiede sintesi, spiegazione, analisi documentale, revisione editoriale o controllo tecnico, devi trattare la richiesta come supporto documentale.",
             "Non richiedere INCIDENT_COMMANDER per sintesi, spiegazioni o revisioni documentali.",
             "Non presentare il supporto documentale come decisione operativa finale, ordine esecutivo, parere legale o validazione istituzionale definitiva."
           ].join("\n")
@@ -369,7 +393,10 @@ function buildGovernanceLimitedResponse(input: {
         "Dominio classificato:",
         input.projectDomain.projectDomain,
         "",
-        "Posso aiutare solo in modalità sicura: documentazione difensiva, checklist, audit, mitigazione, revisione, hardening, incident report o governance."
+        "Posso aiutare solo in modalità sicura: documentazione difensiva, checklist, audit, mitigazione, revisione, hardening, incident report o governance.",
+        input.projectDomain.projectDomain === "U.S.E."
+          ? `\nRegola U.S.E.: ${USE_DEMOCRATIC_BOUNDARY}`
+          : ""
       ].join("\n")
     };
   }
@@ -385,9 +412,14 @@ function buildGovernanceLimitedResponse(input: {
         `RiskClass: ${input.risk.riskClass}`,
         `HumanOversight: ${input.oversight.state}`,
         `RequiredRole: ${input.oversight.requiredRole}`,
+        input.projectDomain.projectDomain === "U.S.E."
+          ? `U.S.E. Boundary: ${USE_DEMOCRATIC_BOUNDARY}`
+          : "",
         "",
         "Posso produrre materiale di supporto, ma non devo presentarlo come decisione operativa finale senza revisione."
-      ].join("\n")
+      ]
+        .filter(Boolean)
+        .join("\n")
     };
   }
 
@@ -504,6 +536,7 @@ function buildRuntimeDiagnosticText(input: {
     "Diagnostica runtime OpenAI",
     "",
     `Runtime OpenAI: ${input.state}`,
+    `RuntimeRole: IPR_RUNTIME_DEMONSTRATOR`,
     `Decision: ${input.decision}`,
     `GovernanceDecision: ${input.governanceDecision}`,
     `ProjectDomain: ${input.governance.projectDomain.projectDomain}`,
@@ -516,13 +549,22 @@ function buildRuntimeDiagnosticText(input: {
     `DocumentMode: ${input.documentMode}`,
     `DocumentFamily: ${input.documentFamily}`,
     `DataClass: ${input.governance.data.dataClass}`,
+    `ContainsCivicSensitiveData: ${input.governance.data.containsCivicSensitiveData ? "true" : "false"}`,
+    `ContainsDemocraticChoiceData: ${input.governance.data.containsDemocraticChoiceData ? "true" : "false"}`,
     `PolicyStatus: ${input.governance.policy.status}`,
+    `PolicyOutcome: ${input.governance.policy.outcome || "UNKNOWN"}`,
     `RiskClass: ${input.governance.risk.riskClass}`,
     `RiskScore: ${input.governance.risk.riskScore}`,
     `HumanOversight: ${input.governance.oversight.state}`,
     `RequiredRole: ${input.governance.oversight.requiredRole}`,
     `FilePolicyAllowed: ${input.governance.filePolicy.allowed}`,
     `FilePolicyRejectedCount: ${input.governance.filePolicy.rejectedCount}`,
+    `IPRBinding: ${input.governance.decision.iprBinding ? "true" : "false"}`,
+    `EvtRequired: ${input.governance.decision.evtRequired ? "true" : "false"}`,
+    `MemoryRequired: ${input.governance.decision.memoryRequired ? "true" : "false"}`,
+    `OpcRequired: ${input.governance.decision.opcRequired ? "true" : "false"}`,
+    `AuditRequired: ${input.governance.decision.auditRequired ? "true" : "false"}`,
+    `FailClosed: ${input.governance.decision.failClosed ? "true" : "false"}`,
     `EvtIprMemoryUsed: ${input.memoryUsed ? "true" : "false"}`,
     `MemorySource: ${input.memorySource}`,
     `StructuredFormat: ${input.structuredFormat ? "true" : "false"}`,
@@ -534,6 +576,7 @@ function buildRuntimeDiagnosticText(input: {
     `- ipr: ${identity.ipr}`,
     `- checkpoint: ${identity.evt}`,
     `- core: ${identity.core}`,
+    `- role: IPR_RUNTIME_DEMONSTRATOR`,
     "",
     "Legacy EVT Chain:",
     `- evt: ${input.event.evt}`,
@@ -547,9 +590,14 @@ function buildRuntimeDiagnosticText(input: {
     `- project: ${input.modernEvt.project.domain}`,
     `- hash: ${input.modernEvt.trace.hash}`,
     `- verification: ${input.modernEvt.verification.status}`,
+    input.governance.projectDomain.projectDomain === "U.S.E."
+      ? `\nU.S.E. Boundary: ${USE_DEMOCRATIC_BOUNDARY}`
+      : "",
     "",
     `degradedReason: ${input.degradedReason || "none"}`
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function buildTechnicalFrame(input: {
@@ -568,7 +616,10 @@ function buildTechnicalFrame(input: {
   event: LegacyRuntimeEvent;
   modernEvt: ReturnType<typeof toPublicRuntimeEvent>;
   memoryEventId: string | null;
+  memoryHash: string | null;
   memoryAppendStatus: string;
+  opcProofId?: string | null;
+  opcChainHash?: string | null;
   governance: GovernanceFrame;
   degradedReason?: string | null;
 }) {
@@ -577,6 +628,7 @@ function buildTechnicalFrame(input: {
     "",
     "Runtime:",
     `- state: ${input.state}`,
+    `- runtimeRole: IPR_RUNTIME_DEMONSTRATOR`,
     `- decision: ${input.decision}`,
     `- governanceDecision: ${input.governanceDecision}`,
     `- projectDomain: ${input.governance.projectDomain.projectDomain}`,
@@ -586,12 +638,21 @@ function buildTechnicalFrame(input: {
     `- legacyContext: ${input.legacyContextClass}`,
     `- intent: ${input.intentClass}`,
     `- dataClass: ${input.governance.data.dataClass}`,
+    `- civicSensitiveData: ${input.governance.data.containsCivicSensitiveData ? "true" : "false"}`,
+    `- democraticChoiceData: ${input.governance.data.containsDemocraticChoiceData ? "true" : "false"}`,
     `- policy: ${input.governance.policy.status}`,
+    `- policyOutcome: ${input.governance.policy.outcome || "UNKNOWN"}`,
     `- policyReference: ${input.governance.policy.policyReference}`,
     `- risk: ${input.governance.risk.riskClass}`,
     `- riskScore: ${input.governance.risk.riskScore}`,
     `- oversight: ${input.governance.oversight.state}`,
     `- requiredRole: ${input.governance.oversight.requiredRole}`,
+    `- iprBinding: ${input.governance.decision.iprBinding ? "true" : "false"}`,
+    `- evtRequired: ${input.governance.decision.evtRequired ? "true" : "false"}`,
+    `- memoryRequired: ${input.governance.decision.memoryRequired ? "true" : "false"}`,
+    `- opcRequired: ${input.governance.decision.opcRequired ? "true" : "false"}`,
+    `- auditRequired: ${input.governance.decision.auditRequired ? "true" : "false"}`,
+    `- failClosed: ${input.governance.decision.failClosed ? "true" : "false"}`,
     `- documentMode: ${input.documentMode}`,
     `- documentFamily: ${input.documentFamily}`,
     `- evtIprMemoryUsed: ${input.memoryUsed ? "true" : "false"}`,
@@ -601,11 +662,17 @@ function buildTechnicalFrame(input: {
     `- governedEvt: ${input.modernEvt.evt}`,
     `- governedEvtProject: ${input.modernEvt.project.domain}`,
     `- memoryEvt: ${input.memoryEventId || "none"}`,
+    `- memoryHash: ${input.memoryHash || "none"}`,
     `- memoryAppendStatus: ${input.memoryAppendStatus}`,
+    `- opcProofId: ${input.opcProofId || "none"}`,
+    `- opcChainHash: ${input.opcChainHash || "none"}`,
     `- prev: ${input.event.prev}`,
     `- legacyPublicHash: ${input.event.anchors.publicHash}`,
     `- legacyFullHash: ${input.event.anchors.fullHash}`,
     `- governedHash: ${input.modernEvt.trace.hash}`,
+    input.governance.projectDomain.projectDomain === "U.S.E."
+      ? `- useBoundary: ${USE_DEMOCRATIC_BOUNDARY}`
+      : "",
     input.degradedReason ? `- degradedReason: ${input.degradedReason}` : ""
   ]
     .filter(Boolean)
@@ -613,32 +680,7 @@ function buildTechnicalFrame(input: {
 }
 
 function mapContextForMemory(contextClass: ContextClass): LegacyContextClass {
-  switch (contextClass) {
-    case "IDENTITY":
-    case "MATRIX":
-    case "DOCUMENTAL":
-    case "TECHNICAL":
-    case "GITHUB":
-    case "EDITORIAL":
-    case "STRATEGIC":
-    case "GENERAL":
-      return contextClass;
-
-    case "CORPUS":
-    case "APOKALYPSIS":
-      return "EDITORIAL";
-
-    case "GOVERNANCE":
-    case "SECURITY":
-    case "COMPLIANCE":
-    case "CRITICAL_INFRASTRUCTURE":
-    case "AI_GOVERNANCE":
-    case "DUAL_USE":
-      return "STRATEGIC";
-
-    default:
-      return "GENERAL";
-  }
+  return contextClass;
 }
 
 function mapDecisionForMemory(
@@ -649,15 +691,7 @@ function mapDecisionForMemory(
     return "BLOCK";
   }
 
-  if (decision === "BLOCK" || decision === "NOOP") {
-    return "BLOCK";
-  }
-
-  if (decision === "ESCALATE") {
-    return "ESCALATE";
-  }
-
-  return "ALLOW";
+  return decision as MemoryRuntimeDecision;
 }
 
 function mapRuntimeStateForGovernance(
@@ -748,6 +782,8 @@ function normalizeChatDataClassification(input: {
       containsSecret: false,
       containsPersonalData: false,
       containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
       reasons: [
         "Safe public identity-governance explanation detected.",
         "IPR / EVT conceptual questions are classified as PUBLIC unless unsafe operational terms are present."
@@ -766,15 +802,19 @@ function normalizeChatDataClassification(input: {
     input.intentClass === "SUMMARIZE" ||
     input.intentClass === "TRANSFORM" ||
     input.intentClass === "GITHUB" ||
-    input.intentClass === "EDITORIAL";
+    input.intentClass === "EDITORIAL" ||
+    input.intentClass === "CIVIC";
 
   const safeOrdinaryContext =
     input.contextClass === "GENERAL" ||
     input.contextClass === "IDENTITY" ||
+    input.contextClass === "IPR" ||
     input.contextClass === "EDITORIAL" ||
     input.contextClass === "DOCUMENTAL" ||
     input.contextClass === "GITHUB" ||
     input.contextClass === "MATRIX" ||
+    input.contextClass === "USE" ||
+    input.contextClass === "CIVIC" ||
     input.contextClass === "CORPUS" ||
     input.contextClass === "APOKALYPSIS" ||
     input.contextClass === "GOVERNANCE" ||
@@ -795,6 +835,8 @@ function normalizeChatDataClassification(input: {
       containsSecret: false,
       containsPersonalData: false,
       containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
       reasons: [
         "Ordinary chat message with no file context and no sensitive pattern.",
         "UNKNOWN normalized to PUBLIC for non-operational conversation."
@@ -812,6 +854,8 @@ function normalizeChatDataClassification(input: {
       containsSecret: false,
       containsPersonalData: false,
       containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
       reasons: [
         "File-backed document context with no explicit sensitive pattern.",
         "UNKNOWN normalized to INTERNAL for controlled document work."
@@ -906,7 +950,8 @@ function isSafeDocumentIntentClass(intentClass: IntentClass): boolean {
     intentClass === "REWRITE" ||
     intentClass === "TRANSFORM" ||
     intentClass === "EDITORIAL" ||
-    intentClass === "GITHUB"
+    intentClass === "GITHUB" ||
+    intentClass === "CIVIC"
   );
 }
 
@@ -926,7 +971,9 @@ function normalizeSafeDocumentContextClass(
     contextClass === "TECHNICAL" ||
     contextClass === "EDITORIAL" ||
     contextClass === "CORPUS" ||
-    contextClass === "APOKALYPSIS"
+    contextClass === "APOKALYPSIS" ||
+    contextClass === "USE" ||
+    contextClass === "CIVIC"
   ) {
     return contextClass;
   }
@@ -953,7 +1000,8 @@ function isSafeDocumentWork(input: {
   if (
     input.data.containsSecret ||
     input.data.dataClass === "SECRET" ||
-    input.data.dataClass === "UNSUPPORTED"
+    input.data.dataClass === "UNSUPPORTED" ||
+    input.data.dataClass === "DEMOCRATIC_CHOICE"
   ) {
     return false;
   }
@@ -965,6 +1013,8 @@ function isSafeDocumentWork(input: {
     input.contextClass === "CORPUS" ||
     input.contextClass === "APOKALYPSIS" ||
     input.contextClass === "MATRIX" ||
+    input.contextClass === "USE" ||
+    input.contextClass === "CIVIC" ||
     input.contextClass === "GOVERNANCE" ||
     input.contextClass === "COMPLIANCE" ||
     input.contextClass === "AI_GOVERNANCE" ||
@@ -972,6 +1022,28 @@ function isSafeDocumentWork(input: {
     input.contextClass === "GITHUB";
 
   return hasDocumentContext && isSafeDocumentIntentClass(input.intentClass);
+}
+
+function preferOpcForGovernance(input: {
+  policy: PolicyEvaluation;
+  risk: RiskEvaluation;
+  contextClass: ContextClass;
+  projectDomain: ProjectDomainClassification;
+  hasFiles: boolean;
+}): boolean {
+  return (
+    input.policy.status !== "ALLOWED" ||
+    input.risk.riskClass !== "LOW" ||
+    input.hasFiles ||
+    input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "COMPLIANCE" ||
+    input.contextClass === "SECURITY" ||
+    input.contextClass === "AI_GOVERNANCE" ||
+    input.contextClass === "USE" ||
+    input.contextClass === "CIVIC" ||
+    input.contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
+    input.projectDomain.projectDomain === "U.S.E."
+  );
 }
 
 function applySafeRuntimeDiagnosticGovernanceOverride(input: {
@@ -987,6 +1059,8 @@ function applySafeRuntimeDiagnosticGovernanceOverride(input: {
     containsSecret: false,
     containsPersonalData: false,
     containsSecuritySensitiveData: false,
+    containsCivicSensitiveData: false,
+    containsDemocraticChoiceData: false,
     reasons: [
       "Runtime diagnostic request is internal operational metadata.",
       "No secret, personal or security-sensitive payload requested."
@@ -1033,9 +1107,14 @@ function applySafeRuntimeDiagnosticGovernanceOverride(input: {
     contextClass: "TECHNICAL",
     intentClass: "ASK",
     dataClass: data.dataClass,
+    projectDomain: input.frame.projectDomain.projectDomain,
+    activeDomains: input.frame.projectDomain.activeDomains,
     hasFiles: false,
     evtPreferred: true,
-    auditPreferred: false
+    auditPreferred: false,
+    memoryPreferred: true,
+    opcPreferred: true,
+    iprBindingPreferred: true
   });
 
   return {
@@ -1061,6 +1140,8 @@ function applySafeConceptGovernanceOverride(input: {
     return input.frame;
   }
 
+  const safeProjectDomain = buildSafeConceptProjectDomain(safeConcept);
+
   const decision = decideRuntimeAction({
     runtimeState: "OPERATIONAL",
     policyStatus: safeConcept.policy.status,
@@ -1071,14 +1152,19 @@ function applySafeConceptGovernanceOverride(input: {
     contextClass: safeConcept.contextClass,
     intentClass: safeConcept.intentClass,
     dataClass: safeConcept.data.dataClass,
+    projectDomain: safeProjectDomain.projectDomain,
+    activeDomains: safeProjectDomain.activeDomains,
     hasFiles: false,
     evtPreferred: true,
-    auditPreferred: false
+    auditPreferred: false,
+    memoryPreferred: true,
+    opcPreferred: false,
+    iprBindingPreferred: true
   });
 
   return {
     ...input.frame,
-    projectDomain: buildSafeConceptProjectDomain(safeConcept),
+    projectDomain: safeProjectDomain,
     contextClass: safeConcept.contextClass,
     intentClass: safeConcept.intentClass,
     data: safeConcept.data,
@@ -1127,6 +1213,8 @@ function applySafeIdentityGovernanceOverride(input: {
       "Ordinary explanatory request about IPR / EVT / operational identity does not require human review."
   };
 
+  const safeProjectDomain = buildSafeIdentityProjectDomain();
+
   const decision = decideRuntimeAction({
     runtimeState: "OPERATIONAL",
     policyStatus: policy.status,
@@ -1134,24 +1222,31 @@ function applySafeIdentityGovernanceOverride(input: {
     policyFailClosed: false,
     riskClass: risk.riskClass,
     oversightState: oversight.state,
-    contextClass: "IDENTITY",
+    contextClass: "IPR",
     intentClass: "ASK",
     dataClass: "PUBLIC",
+    projectDomain: safeProjectDomain.projectDomain,
+    activeDomains: safeProjectDomain.activeDomains,
     hasFiles: false,
     evtPreferred: true,
-    auditPreferred: false
+    auditPreferred: false,
+    memoryPreferred: true,
+    opcPreferred: false,
+    iprBindingPreferred: true
   });
 
   return {
     ...input.frame,
-    projectDomain: buildSafeIdentityProjectDomain(),
-    contextClass: "IDENTITY",
+    projectDomain: safeProjectDomain,
+    contextClass: "IPR",
     intentClass: "ASK",
     data: {
       dataClass: "PUBLIC",
       containsSecret: false,
       containsPersonalData: false,
       containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
       reasons: [
         "Safe identity-governance explanation detected.",
         "Classified as PUBLIC to prevent false escalation."
@@ -1195,6 +1290,8 @@ function applySafeDocumentGovernanceOverride(input: {
     containsPersonalData: input.frame.data.containsPersonalData,
     containsSecuritySensitiveData:
       input.frame.data.containsSecuritySensitiveData,
+    containsCivicSensitiveData: input.frame.data.containsCivicSensitiveData,
+    containsDemocraticChoiceData: input.frame.data.containsDemocraticChoiceData,
     reasons: [
       ...input.frame.data.reasons,
       "Safe document-support override applied.",
@@ -1247,9 +1344,14 @@ function applySafeDocumentGovernanceOverride(input: {
     contextClass: normalizedContextClass,
     intentClass: input.frame.intentClass,
     dataClass: data.dataClass,
+    projectDomain: input.frame.projectDomain.projectDomain,
+    activeDomains: input.frame.projectDomain.activeDomains,
     hasFiles: input.files.length > 0,
     evtPreferred: true,
-    auditPreferred: !lowRisk
+    auditPreferred: !lowRisk,
+    memoryPreferred: true,
+    opcPreferred: !lowRisk || input.files.length > 0,
+    iprBindingPreferred: true
   });
 
   return {
@@ -1325,9 +1427,14 @@ function buildGovernanceFrame(input: {
       contextClass: safeConcept.contextClass,
       intentClass: safeConcept.intentClass,
       dataClass: safeConcept.data.dataClass,
+      projectDomain: projectDomain.projectDomain,
+      activeDomains: projectDomain.activeDomains,
       hasFiles: false,
       evtPreferred: true,
-      auditPreferred: false
+      auditPreferred: false,
+      memoryPreferred: true,
+      opcPreferred: false,
+      iprBindingPreferred: true
     });
 
     const frame: GovernanceFrame = {
@@ -1353,6 +1460,7 @@ function buildGovernanceFrame(input: {
     contextClass: context.contextClass,
     intentClass: context.intentClass,
     dataClass: data.dataClass,
+    projectDomain: projectDomain.projectDomain,
     hasFiles: input.files.length > 0
   });
 
@@ -1363,6 +1471,7 @@ function buildGovernanceFrame(input: {
     policyStatus: policy.status,
     dataClass: data.dataClass,
     sensitivity: context.sensitivity,
+    projectDomain: projectDomain.projectDomain,
     hasFiles: input.files.length > 0,
     policyFailClosed: policy.failClosed,
     policyProhibited: policy.prohibited
@@ -1374,12 +1483,14 @@ function buildGovernanceFrame(input: {
     policyStatus: policy.status,
     dataClass: data.dataClass,
     sensitivity: context.sensitivity,
+    projectDomain: projectDomain.projectDomain,
     message: input.message
   });
 
   const decision = decideRuntimeAction({
     runtimeState: "OPERATIONAL",
     policyStatus: policy.status,
+    policyOutcome: policy.outcome,
     policyProhibited: policy.prohibited,
     policyFailClosed: policy.failClosed,
     riskClass: risk.riskClass,
@@ -1387,9 +1498,21 @@ function buildGovernanceFrame(input: {
     contextClass: context.contextClass,
     intentClass: context.intentClass,
     dataClass: data.dataClass,
+    projectDomain: projectDomain.projectDomain,
+    activeDomains: projectDomain.activeDomains,
     hasFiles: input.files.length > 0,
     evtPreferred: true,
-    auditPreferred: risk.riskClass !== "LOW"
+    auditPreferred: risk.riskClass !== "LOW",
+    memoryPreferred: true,
+    opcPreferred: preferOpcForGovernance({
+      policy,
+      risk,
+      contextClass: context.contextClass,
+      projectDomain,
+      hasFiles: input.files.length > 0
+    }),
+    iprBindingPreferred: true,
+    identityChoiceLinkage: Boolean(data.containsDemocraticChoiceData)
   });
 
   const frame: GovernanceFrame = {
@@ -1568,7 +1691,8 @@ async function createAndAppendOpcForChat(input: {
       entity: input.identity.entity,
       ipr: input.identity.ipr,
       core: input.identity.core,
-      organization: input.identity.org
+      organization: input.identity.org,
+      runtimeRole: "IPR_RUNTIME_DEMONSTRATOR"
     },
     sessionId: input.sessionId,
     event: {
@@ -1580,13 +1704,14 @@ async function createAndAppendOpcForChat(input: {
     memory: {
       evt: input.memoryEvent.evt,
       source: "EVT_IPR_MEMORY",
-      hash: input.memoryEvent.anchors.traceHash
+      hash: input.memoryEvent.anchors.memoryHash
     },
     runtime: {
       state: mapOpcRuntimeState(input.state),
       decision: mapOpcDecision(input.governance.decision.decision),
       contextClass: input.governance.contextClass,
       intentClass: input.governance.intentClass,
+      projectDomain: input.governance.projectDomain.projectDomain,
       riskClass: mapOpcRiskClass(input.governance.risk.riskClass),
       policyReference: input.governance.policy.policyReference,
       policyOutcome: input.governance.policy.outcome,
@@ -1595,7 +1720,8 @@ async function createAndAppendOpcForChat(input: {
       operationStatus: mapOperationStatus(
         input.governance.decision.decision,
         input.state
-      )
+      ),
+      failClosed: input.governance.decision.failClosed
     } as OpcRuntimeSnapshot,
     inputPayload: {
       message: input.message,
@@ -1616,8 +1742,11 @@ async function createAndAppendOpcForChat(input: {
       contextClass: input.governance.contextClass,
       intentClass: input.governance.intentClass,
       projectDomain: input.governance.projectDomain.projectDomain,
+      activeDomains: input.governance.projectDomain.activeDomains,
       legacyEvent: input.event.evt,
-      governedEvent: input.modernEvt.evt
+      governedEvent: input.modernEvt.evt,
+      memoryEvent: input.memoryEvent.evt,
+      memoryHash: input.memoryEvent.anchors.memoryHash
     },
     outputPayload: {
       response: input.responseText,
@@ -1629,12 +1758,19 @@ async function createAndAppendOpcForChat(input: {
     audit: {
       reviewRequired: input.governance.decision.auditRequired,
       status: input.governance.decision.auditRequired ? "READY" : "NOT_REQUIRED",
-      reviewerRole: input.governance.decision.auditRequired ? "AUDITOR" : undefined,
+      reviewerRole: input.governance.decision.auditRequired
+        ? input.governance.oversight.requiredRole === "NONE"
+          ? "AUDITOR"
+          : input.governance.oversight.requiredRole
+        : undefined,
       reasons: [
         ...input.governance.policy.reasons,
         ...input.governance.risk.reasons,
-        input.governance.oversight.reason
-      ]
+        input.governance.oversight.reason,
+        input.governance.projectDomain.projectDomain === "U.S.E."
+          ? `U.S.E. boundary: ${USE_DEMOCRATIC_BOUNDARY}`
+          : ""
+      ].filter(Boolean)
     }
   });
 
@@ -1646,6 +1782,18 @@ async function createAndAppendOpcForChat(input: {
     publicProof: toPublicOpcProofRecord(record),
     append,
     verification
+  };
+}
+
+function buildIdentityPayload(identity: ReturnType<typeof getPrimaryIdentity>) {
+  return {
+    entity: identity.entity,
+    ipr: identity.ipr,
+    evt: identity.evt,
+    state: identity.state,
+    cycle: identity.cycle,
+    core: identity.core,
+    runtimeRole: "IPR_RUNTIME_DEMONSTRATOR"
   };
 }
 
@@ -1716,16 +1864,21 @@ export async function POST(req: NextRequest) {
     contextClass === "EDITORIAL" ||
     contextClass === "CORPUS" ||
     contextClass === "APOKALYPSIS" ||
+    contextClass === "USE" ||
+    contextClass === "CIVIC" ||
+    contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
     contextClass === "TECHNICAL" ||
     contextClass === "GITHUB" ||
     acceptedUserFiles.length > 0
       ? detectDocumentMode(effectiveMessage)
       : "GENERAL_DOCUMENT_WORK";
 
-  const documentFamily =
-    acceptedUserFiles.length > 0
-      ? detectDocumentFamily(acceptedUserFiles)
-      : memory.semanticState?.documentFamily || detectDocumentFamily(promptFiles);
+  const documentFamily = resolveDocumentFamily({
+    files: acceptedUserFiles,
+    memory,
+    message: effectiveMessage,
+    projectDomain: governance.projectDomain
+  });
 
   const modernPrev = await getLastEventReference();
   const legacyPrev = memory.lastEventId || input.continuityRef;
@@ -1797,7 +1950,9 @@ export async function POST(req: NextRequest) {
       files: acceptedUserFiles,
       prevEventId: event.evt,
       governedEvt: publicModernEvt.evt,
-      governedHash: publicModernEvt.trace.hash
+      governedHash: publicModernEvt.trace.hash,
+      projectDomain: governance.projectDomain.projectDomain,
+      activeDomains: governance.projectDomain.activeDomains
     });
 
     const memoryAppendResult = await appendEvtMemoryEvent(memoryEvent);
@@ -1834,14 +1989,7 @@ export async function POST(req: NextRequest) {
       memorySource: memory.source,
       structuredFormat,
       activeFiles: promptFiles.map((file) => file.name || "unnamed"),
-      identity: {
-        entity: identity.entity,
-        ipr: identity.ipr,
-        evt: identity.evt,
-        state: identity.state,
-        cycle: identity.cycle,
-        core: identity.core
-      },
+      identity: buildIdentityPayload(identity),
       event,
       memoryEvent,
       governedEvent: publicModernEvt,
@@ -1867,8 +2015,10 @@ export async function POST(req: NextRequest) {
         ok: opc.append.ok,
         proofId: opc.publicProof.proofId,
         chainHash: opc.publicProof.chainHash,
+        memoryHash: opc.publicProof.memoryHash,
         auditStatus: opc.publicProof.auditStatus,
         verificationStatus: opc.publicProof.verificationStatus,
+        legalCertification: opc.publicProof.legalCertification,
         appendStatus: opc.append.status,
         appendReason: opc.append.reason,
         publicProof: opc.publicProof
@@ -1878,6 +2028,7 @@ export async function POST(req: NextRequest) {
         source: memory.source,
         lastEventId: memory.lastEventId,
         event: memoryEvent.evt,
+        memoryHash: memoryEvent.anchors.memoryHash,
         appendStatus: memoryAppendResult.status,
         appendReason: memoryAppendResult.reason,
         governedEvt: memoryEvent.governedEvt,
@@ -1888,13 +2039,26 @@ export async function POST(req: NextRequest) {
         activeDomains: governance.projectDomain.activeDomains,
         domainType: governance.projectDomain.domainType,
         dataClass: governance.data.dataClass,
+        containsCivicSensitiveData: governance.data.containsCivicSensitiveData,
+        containsDemocraticChoiceData:
+          governance.data.containsDemocraticChoiceData,
         policyStatus: governance.policy.status,
+        policyOutcome: governance.policy.outcome,
         policyReference: governance.policy.policyReference,
         riskClass: governance.risk.riskClass,
         riskScore: governance.risk.riskScore,
         oversight: governance.oversight.state,
         requiredRole: governance.oversight.requiredRole,
+        iprBinding: governance.decision.iprBinding,
+        evtRequired: governance.decision.evtRequired,
+        memoryRequired: governance.decision.memoryRequired,
+        opcRequired: governance.decision.opcRequired,
+        auditRequired: governance.decision.auditRequired,
         failClosed: governance.decision.failClosed,
+        civicBoundary:
+          governance.projectDomain.projectDomain === "U.S.E."
+            ? USE_DEMOCRATIC_BOUNDARY
+            : undefined,
         filePolicy: {
           allowed: governance.filePolicy.allowed,
           allowedCount: governance.filePolicy.allowedCount,
@@ -1909,6 +2073,7 @@ export async function POST(req: NextRequest) {
         evtIprMemoryUsed: memory.used,
         memorySource: memory.source,
         memoryEvent: memoryEvent.evt,
+        memoryHash: memoryEvent.anchors.memoryHash,
         memoryAppendStatus: memoryAppendResult.status,
         opcProofId: opc.publicProof.proofId,
         opcAppendStatus: opc.append.status,
@@ -1994,7 +2159,9 @@ export async function POST(req: NextRequest) {
     files: acceptedUserFiles,
     prevEventId: event.evt,
     governedEvt: publicModernEvt.evt,
-    governedHash: publicModernEvt.trace.hash
+    governedHash: publicModernEvt.trace.hash,
+    projectDomain: governance.projectDomain.projectDomain,
+    activeDomains: governance.projectDomain.activeDomains
   });
 
   const memoryAppendResult = await appendEvtMemoryEvent(memoryEvent);
@@ -2031,7 +2198,10 @@ export async function POST(req: NextRequest) {
         event,
         modernEvt: publicModernEvt,
         memoryEventId: memoryEvent.evt,
+        memoryHash: memoryEvent.anchors.memoryHash,
         memoryAppendStatus: memoryAppendResult.status,
+        opcProofId: opc.publicProof.proofId,
+        opcChainHash: opc.publicProof.chainHash,
         governance,
         degradedReason: generated.degradedReason
       })
@@ -2056,14 +2226,7 @@ export async function POST(req: NextRequest) {
     memorySource: memory.source,
     structuredFormat,
     activeFiles: promptFiles.map((file) => file.name || "unnamed"),
-    identity: {
-      entity: identity.entity,
-      ipr: identity.ipr,
-      evt: identity.evt,
-      state: identity.state,
-      cycle: identity.cycle,
-      core: identity.core
-    },
+    identity: buildIdentityPayload(identity),
     event,
     memoryEvent,
     governedEvent: publicModernEvt,
@@ -2089,8 +2252,10 @@ export async function POST(req: NextRequest) {
       ok: opc.append.ok,
       proofId: opc.publicProof.proofId,
       chainHash: opc.publicProof.chainHash,
+      memoryHash: opc.publicProof.memoryHash,
       auditStatus: opc.publicProof.auditStatus,
       verificationStatus: opc.publicProof.verificationStatus,
+      legalCertification: opc.publicProof.legalCertification,
       appendStatus: opc.append.status,
       appendReason: opc.append.reason,
       publicProof: opc.publicProof
@@ -2100,6 +2265,7 @@ export async function POST(req: NextRequest) {
       source: memory.source,
       lastEventId: memory.lastEventId,
       event: memoryEvent.evt,
+      memoryHash: memoryEvent.anchors.memoryHash,
       appendStatus: memoryAppendResult.status,
       appendReason: memoryAppendResult.reason,
       governedEvt: memoryEvent.governedEvt,
@@ -2116,7 +2282,11 @@ export async function POST(req: NextRequest) {
       containsPersonalData: governance.data.containsPersonalData,
       containsSecuritySensitiveData:
         governance.data.containsSecuritySensitiveData,
+      containsCivicSensitiveData: governance.data.containsCivicSensitiveData,
+      containsDemocraticChoiceData:
+        governance.data.containsDemocraticChoiceData,
       policyStatus: governance.policy.status,
+      policyOutcome: governance.policy.outcome,
       policyReference: governance.policy.policyReference,
       policyReasons: governance.policy.reasons,
       riskClass: governance.risk.riskClass,
@@ -2125,9 +2295,16 @@ export async function POST(req: NextRequest) {
       oversight: governance.oversight.state,
       requiredRole: governance.oversight.requiredRole,
       oversightReason: governance.oversight.reason,
-      failClosed: governance.decision.failClosed,
+      iprBinding: governance.decision.iprBinding,
       evtRequired: governance.decision.evtRequired,
+      memoryRequired: governance.decision.memoryRequired,
+      opcRequired: governance.decision.opcRequired,
       auditRequired: governance.decision.auditRequired,
+      failClosed: governance.decision.failClosed,
+      civicBoundary:
+        governance.projectDomain.projectDomain === "U.S.E."
+          ? USE_DEMOCRATIC_BOUNDARY
+          : undefined,
       filePolicy: {
         allowed: governance.filePolicy.allowed,
         allowedCount: governance.filePolicy.allowedCount,
@@ -2142,6 +2319,7 @@ export async function POST(req: NextRequest) {
       evtIprMemoryUsed: memory.used,
       memorySource: memory.source,
       memoryEvent: memoryEvent.evt,
+      memoryHash: memoryEvent.anchors.memoryHash,
       memoryAppendStatus: memoryAppendResult.status,
       opcProofId: opc.publicProof.proofId,
       opcAppendStatus: opc.append.status,
