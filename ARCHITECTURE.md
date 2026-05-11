@@ -1,6 +1,6 @@
 # AI JOKER-C2 Architecture
 
-## Governed Runtime Demonstrator for IPR, MATRIX, U.S.E., CORPUS and APOKALYPSIS
+## Governed Runtime Demonstrator for IPR and the Four Canonical Collections
 
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**  
@@ -18,11 +18,11 @@ AI JOKER-C2 is the governed runtime demonstrator for **IPR — Identity Primary 
 
 The primary operational instrument is **IPR**.
 
-AI JOKER-C2 demonstrates how IPR can operate inside an AI runtime by connecting input, identity, context, policy, risk, decision, output, event continuity, memory continuity, proof receipts and audit-oriented verification.
+AI JOKER-C2 demonstrates how IPR can operate inside an AI runtime by connecting input, identity, context, project collection, policy, risk, decision, output, event continuity, memory continuity, proof receipts and audit-oriented verification.
 
 AI JOKER-C2 is not a generic chatbot and it is not the primary product layer of the ecosystem. It is the governed execution layer that shows IPR in function.
 
-The architecture connects the following project domains:
+The architecture now connects the four canonical collections of the ecosystem:
 
 ```txt
 1. MATRIX
@@ -31,18 +31,19 @@ The architecture connects the following project domains:
 4. APOKALYPSIS
 ```
 
-The product and architecture hierarchy is:
+The product, runtime and collection hierarchy is:
 
 ```txt
-IPR          = primary operational identity and proof instrument
-AI JOKER-C2 = governed runtime demonstrator for IPR in execution
-EVT          = event continuity and verifiable trace layer
-OPC          = operational proof receipt layer
-HBCE         = governance, policy, audit and continuity ecosystem
-MATRIX       = architectural framework for operational infrastructure
-U.S.E.       = political-institutional application of MATRIX for a federated operational Europe
-CORPUS       = disciplinary and conceptual grammar
-APOKALYPSIS  = historical-threshold analysis domain
+IPR           = primary operational identity and proof instrument
+AI JOKER-C2  = governed runtime demonstrator for IPR in execution
+EVT           = event continuity and verifiable trace layer
+Memory        = EVT/IPR-bound runtime continuity
+OPC           = operational proof receipt layer
+HBCE          = governance, policy, audit and continuity ecosystem
+MATRIX        = architectural framework for operational infrastructure
+U.S.E.        = political-institutional application of MATRIX for a federated operational Europe
+CORPUS        = disciplinary and conceptual grammar of operational reality
+APOKALYPSIS   = historical-threshold analysis domain
 ```
 
 AI JOKER-C2 is identity-bound, policy-aware, risk-classified and trace-oriented. It is designed to transform user input, documents, code, strategic reasoning, institutional design, civic architecture and editorial work into structured, governed and verifiable outputs.
@@ -52,6 +53,7 @@ The architecture is based on the following sequence:
 ```txt
 IPR identity
 → Input
+→ Project collection
 → Context
 → Policy
 → Risk
@@ -69,6 +71,7 @@ The system must remain:
 
 ```txt
 identity-bound;
+collection-aware;
 context-aware;
 project-aware;
 policy-aware;
@@ -99,6 +102,7 @@ repository work;
 institutional reasoning;
 civic and democratic infrastructure reasoning;
 strategic analysis;
+editorial continuity;
 evidence-oriented trace generation.
 ```
 
@@ -107,7 +111,7 @@ AI JOKER-C2 operates as a controlled interface between:
 ```txt
 user input;
 uploaded or active documents;
-project context;
+project collection context;
 AI model execution;
 IPR runtime identity;
 policy boundaries;
@@ -124,7 +128,7 @@ human accountability.
 
 The system must never treat model output as automatically legitimate.
 
-Model output becomes operationally valid only when it is framed by identity, context, policy, risk, decision, trace, proof and verification.
+Model output becomes operationally valid only when it is framed by identity, collection, context, policy, risk, decision, trace, proof and verification.
 
 ---
 
@@ -160,6 +164,7 @@ The functional formula is:
 IPR = operational identity and proof instrument
 AI JOKER-C2 = governed runtime demonstrator
 EVT = event trace
+Memory = EVT/IPR-bound runtime continuity
 OPC = operational proof receipt
 HBCE = governance ecosystem
 MATRIX = operational infrastructure architecture
@@ -168,10 +173,20 @@ CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
 APOKALYPSIS = historical threshold analysis
 ```
 
+The four-collection formula is:
+
+```txt
+MATRIX builds the architecture.
+U.S.E. brings the architecture into European political-institutional design.
+CORPUS grounds the grammar of operational reality.
+APOKALYPSIS reads the historical threshold.
+```
+
 The runtime formula is:
 
 ```txt
 Identity
+→ Collection
 → Context
 → Policy
 → Risk
@@ -189,10 +204,12 @@ The governance formula is:
 
 ```txt
 No identity, no authority.
-No context, no orientation.
+No collection, no correct orientation.
+No context, no execution frame.
 No policy, no execution.
 No risk classification, no sensitive output.
-No EVT, no continuity.
+No EVT, no trace.
+No memory, no runtime continuity.
 No OPC proof receipt, no audit-ready proof layer.
 No verification, no operational legitimacy.
 ```
@@ -228,9 +245,11 @@ Every relevant event should be conceptually bound to:
 entity;
 IPR;
 timestamp;
+collection;
 context;
 decision;
 trace;
+memory;
 proof receipt;
 verification status;
 previous event reference.
@@ -238,17 +257,26 @@ previous event reference.
 
 ---
 
-## 5. Project Domain Architecture
+## 5. Four-Collection Project Architecture
 
-AI JOKER-C2 classifies and routes work across four project domains while preserving IPR as the operational identity and proof layer.
+AI JOKER-C2 classifies and routes work across four canonical collections while preserving IPR as the operational identity and proof layer.
 
-The domains are not all identical in function.
+The collections are not identical in function.
 
 ```txt
 MATRIX = general operational infrastructure architecture
 U.S.E. = political-institutional application derived from MATRIX
 CORPUS = disciplinary and conceptual foundation
 APOKALYPSIS = historical-threshold analysis
+```
+
+The runtime must preserve this orientation:
+
+```txt
+MATRIX = how the architecture works.
+U.S.E. = what the architecture means politically for Europe.
+CORPUS = why the architecture has a theoretical grammar.
+APOKALYPSIS = in which historical threshold the architecture emerges.
 ```
 
 ---
@@ -357,7 +385,7 @@ Process auditable.
 
 IPR may support identity verification and participation rights. EVT may support process traceability. OPC may support proof receipts for process operations. The content of a democratic vote must not be linked to the personal identity of the voter.
 
-U.S.E. is therefore a MATRIX-derived application domain. It does not replace MATRIX, IPR, HBCE, EVT or OPC.
+U.S.E. is therefore a MATRIX-derived application domain. It does not replace MATRIX, IPR, HBCE, EVT, Memory or OPC.
 
 ---
 
@@ -411,7 +439,7 @@ Alien Code;
 Lex Hermeticum.
 ```
 
-The Corpus domain gives conceptual grammar. It does not replace runtime governance, IPR identity, EVT trace or OPC proof receipts.
+The Corpus domain gives conceptual grammar. It does not replace runtime governance, IPR identity, EVT trace, Memory or OPC proof receipts.
 
 ---
 
@@ -463,19 +491,51 @@ APOKALYPSIS volume structure.
 
 ---
 
-## 6. Runtime Layers
+## 6. Runtime Role Across the Four Collections
+
+AI JOKER-C2 does not replace the four collections. It connects them operationally.
+
+Its runtime role is:
+
+```txt
+classify the active collection;
+recognize the active volume or document family;
+apply the correct conceptual vocabulary;
+retrieve EVT/IPR-bound memory;
+generate governed EVT records;
+produce OPC proof receipts;
+preserve continuity across technical, institutional and editorial work.
+```
+
+The runtime must handle ordinary user requests naturally, but when a request touches the project architecture it must preserve the correct collection logic:
+
+```txt
+MATRIX = infrastructure and governance architecture.
+U.S.E. = political-institutional European application.
+CORPUS = conceptual and disciplinary grammar.
+APOKALYPSIS = historical-threshold interpretation.
+```
+
+This means that a question about European digital sovereignty may belong to MATRIX or U.S.E., while a question about DCTT belongs to CORPUS and a question about decadimento or soglia storica belongs to APOKALYPSIS.
+
+When a request crosses multiple collections, the runtime should classify it as `MULTI_DOMAIN`.
+
+---
+
+## 7. Runtime Layers
 
 AI JOKER-C2 is organized through the following layers.
 
 ```txt
 Interface layer              = user-facing interaction surface
 API layer                    = controlled request execution
-Context layer                = request and project classification
+Collection layer             = MATRIX, U.S.E., CORPUS, APOKALYPSIS classification
+Context layer                = request and operational-context classification
 File layer                   = uploaded or active document processing
 Identity layer               = IPR and runtime identity binding
 Policy layer                 = permission, restriction and prohibition logic
 Risk layer                   = operational and safety classification
-Decision layer               = ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT
+Decision layer               = ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT, NOOP
 Model layer                  = AI reasoning and generation
 EVT layer                    = event record generation
 Memory layer                 = EVT/IPR-bound continuity
@@ -488,13 +548,13 @@ Public documentation layer   = repository-facing explanation and positioning
 
 No single layer should silently replace the others.
 
-The model layer is not the governance layer. The interface layer is not the identity layer. The output is not the trace. The trace is not the final authority. The OPC proof receipt is not legal certification by default.
+The model layer is not the governance layer. The interface layer is not the identity layer. The output is not the trace. The trace is not the final authority. The memory layer is not legal evidence by itself. The OPC proof receipt is not legal certification by default.
 
 The architecture must preserve separation of responsibility.
 
 ---
 
-## 7. Current Repository Structure
+## 8. Current Repository Structure
 
 Current core structure:
 
@@ -522,6 +582,7 @@ hbce-ai-joker-c2/
 │   ├── evt.ts
 │   ├── file-policy.ts
 │   ├── human-oversight.ts
+│   ├── joker-response-contract.ts
 │   ├── opc-proof.ts
 │   ├── policy-engine.ts
 │   ├── project-domain-classifier.ts
@@ -557,7 +618,7 @@ The current repository already contains the foundation for:
 
 ```txt
 context classification;
-project domain classification;
+project collection classification;
 data classification;
 policy evaluation;
 risk evaluation;
@@ -569,14 +630,15 @@ EVT/IPR-bound memory;
 OPC proof receipt generation;
 human oversight;
 file policy;
-safe concept classification.
+safe concept classification;
+canonical response contracts.
 ```
 
-The architecture must now align those technical modules with the IPR-first product hierarchy and with the expanded project-domain map that includes U.S.E. as a MATRIX-derived institutional application domain.
+The architecture now aligns those technical modules with the IPR-first product hierarchy and with the expanded four-collection map.
 
 ---
 
-## 8. Application Layer
+## 9. Application Layer
 
 The `app/` directory contains the public and operational surfaces of the runtime.
 
@@ -596,13 +658,13 @@ controlled public communication.
 
 The application layer must remain usable. It must not overload ordinary users with internal protocol language.
 
-It may expose runtime, identity, EVT, OPC, policy and diagnostics when the user explicitly enters technical or operational mode.
+It may expose runtime, identity, EVT, Memory, OPC, policy and diagnostics when the user explicitly enters technical or operational mode.
 
 The visible interface should communicate AI JOKER-C2 as an IPR runtime demonstrator, not as an isolated chatbot or standalone institutional authority.
 
 ---
 
-## 9. API Layer
+## 10. API Layer
 
 The `app/api/` directory contains controlled runtime endpoints.
 
@@ -633,6 +695,7 @@ Every endpoint that produces meaningful operational output should pass through:
 receive
 → normalize
 → bind IPR identity
+→ classify collection
 → classify context
 → apply policy
 → classify risk
@@ -646,7 +709,7 @@ receive
 
 ---
 
-## 10. Context Classification Layer
+## 11. Context and Collection Classification Layer
 
 The context layer determines what kind of request is being processed.
 
@@ -666,6 +729,7 @@ EDITORIAL     = book structure, publishing, chapters, front matter
 STRATEGIC     = B2B, B2G, institutional positioning, roadmap
 SECURITY      = defensive security, hardening, incident analysis
 COMPLIANCE    = audit, legal-technical governance, policy alignment
+CIVIC         = public consultation, participation rights, civic infrastructure
 GENERAL       = ordinary safe interaction
 ```
 
@@ -675,7 +739,7 @@ The U.S.E. context class should be treated as politically and institutionally se
 
 ---
 
-## 11. File Runtime Layer
+## 12. File Runtime Layer
 
 The file runtime handles document context.
 
@@ -703,11 +767,11 @@ If visibility is partial, the system must say so.
 
 AI JOKER-C2 must not claim full knowledge of a document when the document is not fully available, not fully parsed or not actually uploaded.
 
-File operations can be connected to IPR, EVT and OPC when they become relevant operational events.
+File operations can be connected to IPR, EVT, Memory and OPC when they become relevant operational events.
 
 ---
 
-## 12. Identity Layer
+## 13. Identity Layer
 
 The identity layer binds runtime activity to canonical identity.
 
@@ -736,6 +800,7 @@ public project identity;
 internal audit logic;
 controlled communication;
 EVT binding;
+Memory binding;
 OPC proof receipt binding.
 ```
 
@@ -745,7 +810,7 @@ Identity gives the runtime a verifiable position. It does not authorize unsafe e
 
 ---
 
-## 13. Policy Layer
+## 14. Policy Layer
 
 The policy layer defines what is allowed, limited, escalated or prohibited.
 
@@ -754,7 +819,7 @@ Policy evaluation should consider:
 ```txt
 request type;
 context class;
-project domain;
+project collection;
 IPR relevance;
 data sensitivity;
 safety risk;
@@ -775,13 +840,14 @@ BLOCK    = the operation is prohibited or unsafe
 ESCALATE = human review or additional authority is required
 DEGRADE  = only limited safe support is allowed
 AUDIT    = the operation is permitted but should be logged or reviewed
+NOOP     = no operational action is taken
 ```
 
 Policy must be executed before sensitive output.
 
 ---
 
-## 14. Risk Layer
+## 15. Risk Layer
 
 The risk layer classifies operational sensitivity.
 
@@ -796,13 +862,15 @@ PROHIBITED = unsafe, abusive or outside scope; default handling: BLOCK
 UNKNOWN    = cannot be safely classified; default handling: ESCALATE or BLOCK
 ```
 
+Political, institutional and European-standardization analysis should remain answerable, but audit-ready.
+
 Unknown risk must not become automatic execution.
 
 The runtime must prefer controlled limitation over unsafe completion.
 
 ---
 
-## 15. Decision Layer
+## 16. Decision Layer
 
 The decision layer converts policy and risk into a runtime action.
 
@@ -815,6 +883,9 @@ The decision layer should produce a structured object such as:
   "context": "GITHUB",
   "domain": "MATRIX",
   "iprBinding": true,
+  "evtRequired": true,
+  "memoryRequired": true,
+  "opcRequired": false,
   "runtimeRole": "IPR_RUNTIME_DEMONSTRATOR",
   "failClosed": false,
   "reason": "Repository documentation update"
@@ -825,11 +896,14 @@ For a U.S.E.-related operation, the decision layer should preserve civic and dem
 
 ```json
 {
-  "decision": "ALLOW",
+  "decision": "AUDIT",
   "risk": "MEDIUM",
   "context": "USE",
   "domain": "U.S.E.",
   "iprBinding": true,
+  "evtRequired": true,
+  "memoryRequired": true,
+  "opcRequired": true,
   "runtimeRole": "IPR_RUNTIME_DEMONSTRATOR",
   "failClosed": false,
   "auditRecommended": true,
@@ -843,7 +917,7 @@ The decision layer must preserve:
 reason;
 context;
 risk;
-project domain;
+project collection;
 IPR binding;
 allowed action;
 blocked action when applicable;
@@ -854,7 +928,7 @@ fail-closed state.
 
 ---
 
-## 16. Model Layer
+## 17. Model Layer
 
 The model layer provides reasoning and generation.
 
@@ -880,7 +954,7 @@ The model produces output inside the governance frame. The runtime decides how t
 
 ---
 
-## 17. EVT Layer
+## 18. EVT Layer
 
 EVT means Event.
 
@@ -895,7 +969,7 @@ timestamp;
 entity;
 IPR;
 runtime state;
-project domain;
+project collection;
 active document when relevant;
 context class;
 risk class;
@@ -915,7 +989,7 @@ Minimal EVT structure:
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
   "timestamp": "2026-05-03T15:30:00+02:00",
-  "project_domain": "GITHUB",
+  "project_domain": "MATRIX",
   "context_class": "DOCUMENTATION",
   "risk": "LOW",
   "decision": "ALLOW",
@@ -938,7 +1012,7 @@ A U.S.E.-related event may use:
   "project_domain": "U.S.E.",
   "context_class": "USE",
   "risk": "MEDIUM",
-  "decision": "ALLOW",
+  "decision": "AUDIT",
   "operation": "FEDERATED_DIGITAL_VOTE_CONCEPT_DRAFT",
   "status": "COMPLETED",
   "hash_algorithm": "sha256",
@@ -952,7 +1026,7 @@ EVT is not legal certification by itself. It is the verifiable event trace conne
 
 ---
 
-## 18. Memory Layer
+## 19. Memory Layer
 
 The memory layer preserves continuity across relevant interactions.
 
@@ -969,10 +1043,11 @@ assistant output reference;
 document family;
 runtime decision;
 context class;
-project domain;
+project collection;
 memory event;
 governed EVT;
-hash;
+memory hash;
+OPC proof reference when available;
 timestamp.
 ```
 
@@ -987,6 +1062,7 @@ The memory layer allows the runtime to understand references such as:
 "IPR";
 "MATRIX";
 "U.S.E.";
+"CORPUS";
 "HBCE";
 "APOKALYPSIS".
 ```
@@ -995,7 +1071,7 @@ Memory supports continuity. It does not replace evidence, legal validation or us
 
 ---
 
-## 19. OPC Layer
+## 20. OPC Layer
 
 OPC means Operational Proof & Compliance Layer.
 
@@ -1032,6 +1108,7 @@ The correct role of OPC is:
 ```txt
 IPR binds the identity.
 EVT traces the event.
+Memory preserves runtime continuity.
 OPC produces the proof receipt.
 Ledger preserves continuity.
 Verification reconstructs the operation.
@@ -1039,7 +1116,7 @@ Verification reconstructs the operation.
 
 ---
 
-## 20. Ledger Layer
+## 21. Ledger Layer
 
 The ledger layer stores or references EVT and OPC records.
 
@@ -1072,7 +1149,7 @@ Corrections should become new events.
 
 ---
 
-## 21. Verification Layer
+## 22. Verification Layer
 
 Verification should allow a reviewer to reconstruct:
 
@@ -1081,7 +1158,7 @@ what happened;
 when it happened;
 which entity was involved;
 which IPR was active;
-which project domain was active;
+which project collection was active;
 which context class was assigned;
 which policy was applied;
 which risk class was assigned;
@@ -1089,6 +1166,7 @@ which decision was produced;
 whether execution occurred;
 which event came before;
 whether the event hash is valid;
+whether memory continuity exists;
 whether an OPC proof receipt exists;
 whether the proof chain is reconstructable.
 ```
@@ -1099,7 +1177,7 @@ Internal verification may contain richer audit metadata.
 
 ---
 
-## 22. Manifest Layer
+## 23. Manifest Layer
 
 The manifest layer stores system-level metadata.
 
@@ -1132,7 +1210,7 @@ Give the runtime a stable computable identity.
 
 ---
 
-## 23. Fail-Closed Layer
+## 24. Fail-Closed Layer
 
 Fail-closed is a safety and governance boundary.
 
@@ -1152,7 +1230,8 @@ offensive cyber interpretation;
 unlawful surveillance risk;
 unsafe democratic or civic infrastructure design;
 inability to generate EVT when required;
-inability to preserve continuity when required;
+inability to preserve memory continuity when required;
+inability to generate OPC proof receipt when required;
 legal or compliance uncertainty in sensitive contexts.
 ```
 
@@ -1162,7 +1241,7 @@ It means controlled refusal, controlled limitation or controlled escalation.
 
 ---
 
-## 24. Security Boundary
+## 25. Security Boundary
 
 AI JOKER-C2 must preserve a non-offensive security boundary.
 
@@ -1198,7 +1277,7 @@ The architecture supports defensive and governance-oriented security only.
 
 ---
 
-## 25. Dual-Use Boundary
+## 26. Dual-Use Boundary
 
 AI JOKER-C2 is dual-use in a civil and strategic sense.
 
@@ -1239,7 +1318,7 @@ It does not mean unrestricted capability.
 
 ---
 
-## 26. Democratic and Civic Infrastructure Boundary
+## 27. Democratic and Civic Infrastructure Boundary
 
 The U.S.E. domain introduces civic and democratic infrastructure reasoning.
 
@@ -1300,7 +1379,7 @@ formal certification where applicable.
 
 ---
 
-## 27. Public Communication Architecture
+## 28. Public Communication Architecture
 
 AI JOKER-C2 must communicate naturally in ordinary use.
 
@@ -1329,7 +1408,10 @@ verification;
 fail-closed;
 evidence;
 protocol;
+MATRIX;
 U.S.E.;
+CORPUS;
+APOKALYPSIS;
 federated digital vote.
 ```
 
@@ -1342,12 +1424,14 @@ IPR is the primary operational instrument.
 AI JOKER-C2 is the runtime demonstrator.
 MATRIX is the architectural framework.
 U.S.E. is a MATRIX-derived political-institutional application domain.
+CORPUS is the disciplinary grammar.
+APOKALYPSIS is the historical-threshold reading.
 HBCE is the governance ecosystem.
 ```
 
 ---
 
-## 28. Deployment Architecture
+## 29. Deployment Architecture
 
 Primary deployment target:
 
@@ -1389,7 +1473,7 @@ Secrets must never be committed to the repository.
 
 ---
 
-## 29. Build and Runtime Commands
+## 30. Build and Runtime Commands
 
 Install dependencies:
 
@@ -1421,7 +1505,7 @@ Any required environment variable must be documented.
 
 ---
 
-## 30. Evidence Roadmap
+## 31. Evidence Roadmap
 
 The evidence architecture should evolve in stages.
 
@@ -1444,9 +1528,11 @@ The IPR layer is the bridge between technical traceability and operational ident
 
 The U.S.E. layer is the bridge between MATRIX and a federated European political-institutional application model.
 
+The four-collection layer is the bridge between software, editorial production and institutional reasoning.
+
 ---
 
-## 31. Federation Architecture
+## 32. Federation Architecture
 
 Future versions may support federation.
 
@@ -1460,6 +1546,7 @@ Audit node            = verification and evidence review
 Research node         = academic or prototype environment
 Critical systems node = controlled resilience and continuity context
 Civic node            = controlled democratic or public consultation context
+Editorial node        = controlled corpus and collection continuity context
 ```
 
 Federation must not remove identity.
@@ -1472,6 +1559,7 @@ IPR binding;
 policy boundary;
 risk classification;
 EVT continuity;
+Memory continuity;
 OPC proof receipt capability;
 verification capability;
 fail-closed behavior;
@@ -1480,7 +1568,7 @@ democratic safeguards where civic participation is involved.
 
 ---
 
-## 32. Architectural Invariants
+## 33. Architectural Invariants
 
 The following invariants must remain stable.
 
@@ -1494,28 +1582,30 @@ The following invariants must remain stable.
 7. APOKALYPSIS provides the historical threshold domain.
 8. HBCE provides governance infrastructure.
 9. EVT provides event trace.
-10. OPC provides operational proof receipts.
-11. Ledger provides continuity.
-12. Risk classification precedes sensitive execution.
-13. Policy checks are mandatory for sensitive contexts.
-14. Fail-closed is a safety boundary.
-15. Human accountability must be preserved.
-16. Public communication must remain useful and readable.
-17. Offensive, abusive or unlawful use is outside scope.
-18. Evidence generation must support reconstruction.
-19. Corrections must be new events, not silent rewrites.
-20. The runtime must preserve the difference between output and verified operation.
-21. The model must not become the authority layer.
-22. The architecture must remain usable for ordinary human interaction.
-23. OPC proof receipts must not be presented as legal certification by default.
-24. Production deployment requires external legal, security, privacy and institutional review.
-25. Democratic choice content must not be linked to personal voter identity.
-26. U.S.E. must preserve democratic safeguards, anonymity, auditability and institutional legality.
+10. Memory provides EVT/IPR-bound runtime continuity.
+11. OPC provides operational proof receipts.
+12. Ledger provides continuity.
+13. Risk classification precedes sensitive execution.
+14. Policy checks are mandatory for sensitive contexts.
+15. Fail-closed is a safety boundary.
+16. Human accountability must be preserved.
+17. Public communication must remain useful and readable.
+18. Offensive, abusive or unlawful use is outside scope.
+19. Evidence generation must support reconstruction.
+20. Corrections must be new events, not silent rewrites.
+21. The runtime must preserve the difference between output and verified operation.
+22. The model must not become the authority layer.
+23. The architecture must remain usable for ordinary human interaction.
+24. OPC proof receipts must not be presented as legal certification by default.
+25. Production deployment requires external legal, security, privacy and institutional review.
+26. Democratic choice content must not be linked to personal voter identity.
+27. U.S.E. must preserve democratic safeguards, anonymity, auditability and institutional legality.
+28. Four-collection continuity must preserve the distinction between MATRIX, U.S.E., CORPUS and APOKALYPSIS.
 ```
 
 ---
 
-## 33. Final Architecture Formula
+## 34. Final Architecture Formula
 
 IPR gives operational identity and proof foundation.
 
@@ -1554,6 +1644,7 @@ Condensed formula:
 ```txt
 IPR
 → Input
+→ Collection
 → Context
 → Policy
 → Risk
@@ -1579,9 +1670,23 @@ APOKALYPSIS = threshold
 HBCE = governance
 ```
 
+Final four-collection formula:
+
+```txt
+MATRIX constructs the architecture.
+U.S.E. brings it into European political-institutional design.
+CORPUS grounds the grammar of operational reality.
+APOKALYPSIS reads the historical threshold.
+IPR makes everything attributable.
+EVT makes everything traceable.
+Memory makes everything continuous.
+OPC makes everything verifiable.
+AI JOKER-C2 makes everything operational.
+```
+
 ---
 
-## 34. Status
+## 35. Status
 
 ```txt
 Document: ARCHITECTURE.md
@@ -1589,10 +1694,11 @@ Status: Active architecture file
 Project: AI JOKER-C2
 Ecosystem: HERMETICUM B.C.E.
 Runtime type: Governed IPR runtime demonstrator
-Connected domains: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
 Infrastructure: HBCE
 Identity layer: IPR
 Trace layer: EVT
+Memory layer: EVT/IPR-bound memory
 Proof layer: OPC
 Governance principle: Fail-closed
 Deployment target: Vercel
