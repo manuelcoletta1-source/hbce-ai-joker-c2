@@ -1,6 +1,6 @@
 # AI JOKER-C2 Architecture
 
-## Governed Runtime Demonstrator for IPR and the Four Canonical Collections
+## Governed Runtime Demonstrator for IPR, HBCE Modules and the Four Canonical Collections
 
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**  
@@ -31,14 +31,30 @@ The architecture now connects the four canonical collections of the ecosystem:
 4. APOKALYPSIS
 ```
 
-The product, runtime and collection hierarchy is:
+It also organizes the six HBCE technical-operational modules:
+
+```txt
+1. UNEBDO
+2. OPC
+3. MetaExchange
+4. IOspace
+5. CyberGlobal
+6. NeuroLoop
+```
+
+The product, runtime, module and collection hierarchy is:
 
 ```txt
 IPR           = primary operational identity and proof instrument
 AI JOKER-C2  = governed runtime demonstrator for IPR in execution
+UNEBDO        = anchoring, validation and evidentiary continuity support
 EVT           = event continuity and verifiable trace layer
 Memory        = EVT/IPR-bound runtime continuity
-OPC           = operational proof receipt layer
+OPC           = operational proof receipt and compliance layer
+MetaExchange  = structured exchange layer
+IOspace       = runtime visibility and operational interaction space
+CyberGlobal   = defensive cybersecurity and resilience layer
+NeuroLoop     = validation, feedback and review loop
 HBCE          = governance, policy, audit and continuity ecosystem
 MATRIX        = architectural framework for operational infrastructure
 U.S.E.        = political-institutional application of MATRIX for a federated operational Europe
@@ -80,6 +96,7 @@ traceable;
 auditable;
 fail-closed;
 human-accountable;
+module-aware;
 usable in ordinary communication;
 controlled in sensitive contexts.
 ```
@@ -103,7 +120,8 @@ institutional reasoning;
 civic and democratic infrastructure reasoning;
 strategic analysis;
 editorial continuity;
-evidence-oriented trace generation.
+evidence-oriented trace generation;
+module-level operational support.
 ```
 
 AI JOKER-C2 operates as a controlled interface between:
@@ -121,6 +139,7 @@ response generation;
 EVT generation;
 EVT/IPR-bound memory;
 OPC proof receipt;
+HBCE technical-operational modules;
 ledger continuity;
 verification logic;
 human accountability.
@@ -128,7 +147,7 @@ human accountability.
 
 The system must never treat model output as automatically legitimate.
 
-Model output becomes operationally valid only when it is framed by identity, collection, context, policy, risk, decision, trace, proof and verification.
+Model output becomes operationally valid only when it is framed by identity, collection, context, policy, risk, decision, trace, memory, proof and verification.
 
 ---
 
@@ -145,6 +164,7 @@ HERMETICUM B.C.E.
 → U.S.E.
 → CORPUS ESOTEROLOGIA ERMETICA
 → APOKALYPSIS
+→ HBCE Modules
 → Context
 → Policy
 → Risk
@@ -163,9 +183,14 @@ The functional formula is:
 ```txt
 IPR = operational identity and proof instrument
 AI JOKER-C2 = governed runtime demonstrator
+UNEBDO = anchoring, validation and evidentiary continuity support
 EVT = event trace
 Memory = EVT/IPR-bound runtime continuity
 OPC = operational proof receipt
+MetaExchange = structured exchange layer
+IOspace = runtime visibility and operational interaction space
+CyberGlobal = defensive cybersecurity and resilience layer
+NeuroLoop = validation, feedback and review loop
 HBCE = governance ecosystem
 MATRIX = operational infrastructure architecture
 U.S.E. = federated European political-institutional application of MATRIX
@@ -180,6 +205,22 @@ MATRIX builds the architecture.
 U.S.E. brings the architecture into European political-institutional design.
 CORPUS grounds the grammar of operational reality.
 APOKALYPSIS reads the historical threshold.
+```
+
+The module formula is:
+
+```txt
+IPR identifies.
+UNEBDO anchors.
+EVT traces.
+Memory continues.
+OPC proves.
+MetaExchange exchanges.
+IOspace exposes.
+CyberGlobal protects.
+NeuroLoop validates.
+AI JOKER-C2 executes.
+MATRIX organizes.
 ```
 
 The runtime formula is:
@@ -491,7 +532,250 @@ APOKALYPSIS volume structure.
 
 ---
 
-## 6. Runtime Role Across the Four Collections
+## 6. HBCE Technical-Operational Modules
+
+The six HBCE modules are technical-operational functions of the stack.
+
+They are not additional collections.
+
+They are not the primary product layer.
+
+They extend IPR inside governed runtime execution.
+
+```txt
+UNEBDO = anchoring, validation and evidentiary continuity
+OPC = operational proof receipt and compliance layer
+MetaExchange = structured exchange layer
+IOspace = runtime visibility and operational interaction space
+CyberGlobal = defensive cybersecurity and resilience layer
+NeuroLoop = validation, feedback and review loop
+```
+
+The module hierarchy is:
+
+```txt
+IPR = product / identity and proof basis
+UNEBDO = anchoring and validation support
+EVT = event trace
+Memory = runtime continuity
+OPC = proof receipt
+MetaExchange = structured exchange
+IOspace = visibility and interaction
+CyberGlobal = defensive protection
+NeuroLoop = validation and feedback
+AI JOKER-C2 = runtime execution
+MATRIX = architecture
+```
+
+The modules must be understood as functional layers of HBCE, not as independent political subjects, not as additional book collections and not as replacements for IPR.
+
+---
+
+## 6.1 UNEBDO — Anchoring, Validation and Evidentiary Continuity
+
+UNEBDO supports anchoring, validation and long-term evidentiary continuity.
+
+It may support:
+
+```txt
+timestamp awareness;
+external proof alignment;
+chain continuity;
+long-term trace preservation;
+evidence continuity;
+validation checkpoints.
+```
+
+UNEBDO must not be presented as legal certification by itself.
+
+Its correct role is:
+
+```txt
+IPR identifies.
+EVT records.
+OPC creates the proof receipt.
+UNEBDO strengthens anchoring and evidentiary continuity.
+```
+
+---
+
+## 6.2 OPC — Operational Proof & Compliance Layer
+
+OPC converts runtime operations into technical proof receipts.
+
+It may support:
+
+```txt
+input hash;
+output hash;
+decision hash;
+event hash;
+memory hash;
+previous proof hash;
+chain hash;
+audit status;
+verification status.
+```
+
+OPC must preserve the distinction between:
+
+```txt
+technical proof receipt;
+audit readiness;
+external audit;
+legal certification.
+```
+
+OPC is a technical proof layer, not automatic legal recognition.
+
+---
+
+## 6.3 MetaExchange — Structured Exchange Layer
+
+MetaExchange supports structured exchange between controlled operational objects.
+
+It may exchange:
+
+```txt
+identities;
+proofs;
+documents;
+events;
+audit records;
+operational contexts;
+project collections;
+runtime nodes.
+```
+
+MetaExchange depends on stable IPR, EVT, Memory and OPC.
+
+It must not become a permissionless or uncontrolled exchange layer.
+
+---
+
+## 6.4 IOspace — Runtime Visibility and Operational Interaction Space
+
+IOspace is the visual and operational interaction layer of the stack.
+
+It may expose:
+
+```txt
+runtime state;
+IPR identity;
+project collection;
+event chain;
+memory continuity;
+proof records;
+audit records;
+decision history;
+risk profile;
+governance status;
+verification status.
+```
+
+IOspace must separate:
+
+```txt
+public-safe metadata;
+internal audit metadata;
+sensitive operational metadata;
+proof-chain metadata.
+```
+
+IOspace must not expose secrets, private payloads, democratic choice content, private memory payloads or internal keys.
+
+---
+
+## 6.5 CyberGlobal — Defensive Cybersecurity and Resilience Layer
+
+CyberGlobal supports defensive cybersecurity and resilience.
+
+It may support:
+
+```txt
+cybersecurity governance;
+defensive audit;
+institutional resilience;
+critical infrastructure documentation;
+risk mapping;
+incident documentation;
+continuity planning;
+strategic security mapping.
+```
+
+CyberGlobal must remain:
+
+```txt
+defensive;
+audit-oriented;
+governance-oriented;
+human-accountable;
+non-offensive.
+```
+
+CyberGlobal must not support:
+
+```txt
+malware;
+exploit deployment;
+unauthorized access;
+credential theft;
+persistence;
+evasion;
+surveillance abuse;
+sabotage;
+targeting.
+```
+
+---
+
+## 6.6 NeuroLoop — Validation, Feedback and Review Loop
+
+NeuroLoop supports validation and feedback.
+
+It may support:
+
+```txt
+reasoning checkpoints;
+validation paths;
+human review triggers;
+repeated decision patterns;
+reviewable uncertainty;
+escalation history;
+feedback loops;
+decision refinement;
+controlled learning from audit outcomes.
+```
+
+NeuroLoop is not autonomous authority.
+
+It must not become uncontrolled learning or unsupervised decision execution.
+
+It depends on stable:
+
+```txt
+IPR identity;
+EVT traces;
+Memory continuity;
+OPC proof receipts;
+human oversight;
+audit review.
+```
+
+The correct role of NeuroLoop is:
+
+```txt
+AI JOKER-C2 executes.
+EVT records.
+Memory continues.
+OPC proves.
+Human oversight reviews.
+NeuroLoop validates and feeds back controlled lessons.
+```
+
+---
+
+## 7. Runtime Role Across the Four Collections
 
 AI JOKER-C2 does not replace the four collections. It connects them operationally.
 
@@ -522,7 +806,7 @@ When a request crosses multiple collections, the runtime should classify it as `
 
 ---
 
-## 7. Runtime Layers
+## 8. Runtime Layers
 
 AI JOKER-C2 is organized through the following layers.
 
@@ -530,6 +814,7 @@ AI JOKER-C2 is organized through the following layers.
 Interface layer              = user-facing interaction surface
 API layer                    = controlled request execution
 Collection layer             = MATRIX, U.S.E., CORPUS, APOKALYPSIS classification
+Module layer                 = UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop functional awareness
 Context layer                = request and operational-context classification
 File layer                   = uploaded or active document processing
 Identity layer               = IPR and runtime identity binding
@@ -554,7 +839,7 @@ The architecture must preserve separation of responsibility.
 
 ---
 
-## 8. Current Repository Structure
+## 9. Current Repository Structure
 
 Current core structure:
 
@@ -634,11 +919,11 @@ safe concept classification;
 canonical response contracts.
 ```
 
-The architecture now aligns those technical modules with the IPR-first product hierarchy and with the expanded four-collection map.
+The architecture now aligns those technical modules with the IPR-first product hierarchy, the six HBCE modules and the expanded four-collection map.
 
 ---
 
-## 9. Application Layer
+## 10. Application Layer
 
 The `app/` directory contains the public and operational surfaces of the runtime.
 
@@ -658,13 +943,13 @@ controlled public communication.
 
 The application layer must remain usable. It must not overload ordinary users with internal protocol language.
 
-It may expose runtime, identity, EVT, Memory, OPC, policy and diagnostics when the user explicitly enters technical or operational mode.
+It may expose runtime, identity, EVT, Memory, OPC, policy, module status and diagnostics when the user explicitly enters technical or operational mode.
 
 The visible interface should communicate AI JOKER-C2 as an IPR runtime demonstrator, not as an isolated chatbot or standalone institutional authority.
 
 ---
 
-## 10. API Layer
+## 11. API Layer
 
 The `app/api/` directory contains controlled runtime endpoints.
 
@@ -709,7 +994,7 @@ receive
 
 ---
 
-## 11. Context and Collection Classification Layer
+## 12. Context and Collection Classification Layer
 
 The context layer determines what kind of request is being processed.
 
@@ -739,7 +1024,7 @@ The U.S.E. context class should be treated as politically and institutionally se
 
 ---
 
-## 12. File Runtime Layer
+## 13. File Runtime Layer
 
 The file runtime handles document context.
 
@@ -771,7 +1056,7 @@ File operations can be connected to IPR, EVT, Memory and OPC when they become re
 
 ---
 
-## 13. Identity Layer
+## 14. Identity Layer
 
 The identity layer binds runtime activity to canonical identity.
 
@@ -810,7 +1095,7 @@ Identity gives the runtime a verifiable position. It does not authorize unsafe e
 
 ---
 
-## 14. Policy Layer
+## 15. Policy Layer
 
 The policy layer defines what is allowed, limited, escalated or prohibited.
 
@@ -820,6 +1105,7 @@ Policy evaluation should consider:
 request type;
 context class;
 project collection;
+HBCE module relevance;
 IPR relevance;
 data sensitivity;
 safety risk;
@@ -847,7 +1133,7 @@ Policy must be executed before sensitive output.
 
 ---
 
-## 15. Risk Layer
+## 16. Risk Layer
 
 The risk layer classifies operational sensitivity.
 
@@ -870,7 +1156,7 @@ The runtime must prefer controlled limitation over unsafe completion.
 
 ---
 
-## 16. Decision Layer
+## 17. Decision Layer
 
 The decision layer converts policy and risk into a runtime action.
 
@@ -918,6 +1204,7 @@ reason;
 context;
 risk;
 project collection;
+HBCE module relevance where applicable;
 IPR binding;
 allowed action;
 blocked action when applicable;
@@ -928,7 +1215,7 @@ fail-closed state.
 
 ---
 
-## 17. Model Layer
+## 18. Model Layer
 
 The model layer provides reasoning and generation.
 
@@ -954,7 +1241,7 @@ The model produces output inside the governance frame. The runtime decides how t
 
 ---
 
-## 18. EVT Layer
+## 19. EVT Layer
 
 EVT means Event.
 
@@ -1026,7 +1313,7 @@ EVT is not legal certification by itself. It is the verifiable event trace conne
 
 ---
 
-## 19. Memory Layer
+## 20. Memory Layer
 
 The memory layer preserves continuity across relevant interactions.
 
@@ -1064,14 +1351,19 @@ The memory layer allows the runtime to understand references such as:
 "U.S.E.";
 "CORPUS";
 "HBCE";
-"APOKALYPSIS".
+"APOKALYPSIS";
+"UNEBDO";
+"MetaExchange";
+"IOspace";
+"CyberGlobal";
+"NeuroLoop".
 ```
 
 Memory supports continuity. It does not replace evidence, legal validation or user review.
 
 ---
 
-## 20. OPC Layer
+## 21. OPC Layer
 
 OPC means Operational Proof & Compliance Layer.
 
@@ -1116,7 +1408,7 @@ Verification reconstructs the operation.
 
 ---
 
-## 21. Ledger Layer
+## 22. Ledger Layer
 
 The ledger layer stores or references EVT and OPC records.
 
@@ -1149,7 +1441,7 @@ Corrections should become new events.
 
 ---
 
-## 22. Verification Layer
+## 23. Verification Layer
 
 Verification should allow a reviewer to reconstruct:
 
@@ -1159,6 +1451,7 @@ when it happened;
 which entity was involved;
 which IPR was active;
 which project collection was active;
+which HBCE module was relevant where applicable;
 which context class was assigned;
 which policy was applied;
 which risk class was assigned;
@@ -1177,7 +1470,7 @@ Internal verification may contain richer audit metadata.
 
 ---
 
-## 23. Manifest Layer
+## 24. Manifest Layer
 
 The manifest layer stores system-level metadata.
 
@@ -1192,6 +1485,7 @@ organization;
 runtime role;
 runtime state;
 active domains;
+active HBCE modules;
 governance principle;
 deployment state;
 public routes;
@@ -1210,7 +1504,7 @@ Give the runtime a stable computable identity.
 
 ---
 
-## 24. Fail-Closed Layer
+## 25. Fail-Closed Layer
 
 Fail-closed is a safety and governance boundary.
 
@@ -1241,7 +1535,7 @@ It means controlled refusal, controlled limitation or controlled escalation.
 
 ---
 
-## 25. Security Boundary
+## 26. Security Boundary
 
 AI JOKER-C2 must preserve a non-offensive security boundary.
 
@@ -1277,7 +1571,7 @@ The architecture supports defensive and governance-oriented security only.
 
 ---
 
-## 26. Dual-Use Boundary
+## 27. Dual-Use Boundary
 
 AI JOKER-C2 is dual-use in a civil and strategic sense.
 
@@ -1318,7 +1612,7 @@ It does not mean unrestricted capability.
 
 ---
 
-## 27. Democratic and Civic Infrastructure Boundary
+## 28. Democratic and Civic Infrastructure Boundary
 
 The U.S.E. domain introduces civic and democratic infrastructure reasoning.
 
@@ -1379,7 +1673,7 @@ formal certification where applicable.
 
 ---
 
-## 28. Public Communication Architecture
+## 29. Public Communication Architecture
 
 AI JOKER-C2 must communicate naturally in ordinary use.
 
@@ -1412,6 +1706,11 @@ MATRIX;
 U.S.E.;
 CORPUS;
 APOKALYPSIS;
+UNEBDO;
+MetaExchange;
+IOspace;
+CyberGlobal;
+NeuroLoop;
 federated digital vote.
 ```
 
@@ -1427,11 +1726,12 @@ U.S.E. is a MATRIX-derived political-institutional application domain.
 CORPUS is the disciplinary grammar.
 APOKALYPSIS is the historical-threshold reading.
 HBCE is the governance ecosystem.
+HBCE modules are technical-operational functions of the stack.
 ```
 
 ---
 
-## 29. Deployment Architecture
+## 30. Deployment Architecture
 
 Primary deployment target:
 
@@ -1473,7 +1773,7 @@ Secrets must never be committed to the repository.
 
 ---
 
-## 30. Build and Runtime Commands
+## 31. Build and Runtime Commands
 
 Install dependencies:
 
@@ -1505,7 +1805,7 @@ Any required environment variable must be documented.
 
 ---
 
-## 31. Evidence Roadmap
+## 32. Evidence Roadmap
 
 The evidence architecture should evolve in stages.
 
@@ -1530,9 +1830,11 @@ The U.S.E. layer is the bridge between MATRIX and a federated European political
 
 The four-collection layer is the bridge between software, editorial production and institutional reasoning.
 
+The HBCE module layer is the bridge between IPR and operational stack functions.
+
 ---
 
-## 32. Federation Architecture
+## 33. Federation Architecture
 
 Future versions may support federation.
 
@@ -1547,6 +1849,7 @@ Research node         = academic or prototype environment
 Critical systems node = controlled resilience and continuity context
 Civic node            = controlled democratic or public consultation context
 Editorial node        = controlled corpus and collection continuity context
+Module node           = controlled HBCE module-specific operational node
 ```
 
 Federation must not remove identity.
@@ -1568,7 +1871,7 @@ democratic safeguards where civic participation is involved.
 
 ---
 
-## 33. Architectural Invariants
+## 34. Architectural Invariants
 
 The following invariants must remain stable.
 
@@ -1579,33 +1882,35 @@ The following invariants must remain stable.
 4. MATRIX provides the operational infrastructure architecture.
 5. U.S.E. provides the MATRIX-derived political-institutional application domain.
 6. CORPUS ESOTEROLOGIA ERMETICA provides the disciplinary grammar domain.
-7. APOKALYPSIS provides the historical threshold domain.
+7. APOKALYPSIS provides the historical-threshold domain.
 8. HBCE provides governance infrastructure.
-9. EVT provides event trace.
-10. Memory provides EVT/IPR-bound runtime continuity.
-11. OPC provides operational proof receipts.
-12. Ledger provides continuity.
-13. Risk classification precedes sensitive execution.
-14. Policy checks are mandatory for sensitive contexts.
-15. Fail-closed is a safety boundary.
-16. Human accountability must be preserved.
-17. Public communication must remain useful and readable.
-18. Offensive, abusive or unlawful use is outside scope.
-19. Evidence generation must support reconstruction.
-20. Corrections must be new events, not silent rewrites.
-21. The runtime must preserve the difference between output and verified operation.
-22. The model must not become the authority layer.
-23. The architecture must remain usable for ordinary human interaction.
-24. OPC proof receipts must not be presented as legal certification by default.
-25. Production deployment requires external legal, security, privacy and institutional review.
-26. Democratic choice content must not be linked to personal voter identity.
-27. U.S.E. must preserve democratic safeguards, anonymity, auditability and institutional legality.
-28. Four-collection continuity must preserve the distinction between MATRIX, U.S.E., CORPUS and APOKALYPSIS.
+9. HBCE modules are technical-operational functions, not additional collections.
+10. EVT provides event trace.
+11. Memory provides EVT/IPR-bound runtime continuity.
+12. OPC provides operational proof receipts.
+13. Ledger provides continuity.
+14. Risk classification precedes sensitive execution.
+15. Policy checks are mandatory for sensitive contexts.
+16. Fail-closed is a safety boundary.
+17. Human accountability must be preserved.
+18. Public communication must remain useful and readable.
+19. Offensive, abusive or unlawful use is outside scope.
+20. Evidence generation must support reconstruction.
+21. Corrections must be new events, not silent rewrites.
+22. The runtime must preserve the difference between output and verified operation.
+23. The model must not become the authority layer.
+24. The architecture must remain usable for ordinary human interaction.
+25. OPC proof receipts must not be presented as legal certification by default.
+26. Production deployment requires external legal, security, privacy and institutional review.
+27. Democratic choice content must not be linked to personal voter identity.
+28. U.S.E. must preserve democratic safeguards, anonymity, auditability and institutional legality.
+29. Four-collection continuity must preserve the distinction between MATRIX, U.S.E., CORPUS and APOKALYPSIS.
+30. Module awareness must not collapse HBCE modules into political domains or book collections.
 ```
 
 ---
 
-## 34. Final Architecture Formula
+## 35. Final Architecture Formula
 
 IPR gives operational identity and proof foundation.
 
@@ -1617,9 +1922,11 @@ U.S.E. gives the MATRIX-derived political-institutional application for a federa
 
 CORPUS ESOTEROLOGIA ERMETICA gives disciplinary grammar.
 
-APOKALYPSIS gives historical threshold analysis.
+APOKALYPSIS gives historical-threshold analysis.
 
 HBCE gives governance infrastructure.
+
+UNEBDO gives anchoring and validation support.
 
 Policy gives boundary.
 
@@ -1632,6 +1939,14 @@ EVT gives trace.
 Memory gives continuity across interactions.
 
 OPC gives proof receipt.
+
+MetaExchange gives structured exchange.
+
+IOspace gives visibility and operational interaction.
+
+CyberGlobal gives defensive cybersecurity and resilience.
+
+NeuroLoop gives validation and feedback.
 
 Ledger gives preservation.
 
@@ -1684,9 +1999,25 @@ OPC makes everything verifiable.
 AI JOKER-C2 makes everything operational.
 ```
 
+Final module formula:
+
+```txt
+IPR identifies.
+UNEBDO anchors.
+EVT traces.
+Memory continues.
+OPC proves.
+MetaExchange exchanges.
+IOspace exposes.
+CyberGlobal protects.
+NeuroLoop validates.
+AI JOKER-C2 executes.
+MATRIX organizes.
+```
+
 ---
 
-## 35. Status
+## 36. Status
 
 ```txt
 Document: ARCHITECTURE.md
@@ -1695,11 +2026,17 @@ Project: AI JOKER-C2
 Ecosystem: HERMETICUM B.C.E.
 Runtime type: Governed IPR runtime demonstrator
 Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+HBCE modules: UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop
 Infrastructure: HBCE
 Identity layer: IPR
 Trace layer: EVT
 Memory layer: EVT/IPR-bound memory
 Proof layer: OPC
+Anchoring layer: UNEBDO
+Exchange layer: MetaExchange
+Visibility layer: IOspace
+Defensive cybersecurity layer: CyberGlobal
+Validation layer: NeuroLoop
 Governance principle: Fail-closed
 Deployment target: Vercel
 Repository: hbce-ai-joker-c2
