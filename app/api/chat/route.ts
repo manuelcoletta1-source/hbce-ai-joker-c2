@@ -288,6 +288,372 @@ function extractResponseText(response: unknown): string {
   return typeof content === "string" ? content.trim() : "";
 }
 
+function normalizeRuntimeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function runtimeTextIncludesAny(text: string, terms: string[]): boolean {
+  return terms.some((term) => text.includes(term));
+}
+
+function isRuntimeSelfIdentityQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return (
+    runtimeTextIncludesAny(text, [
+      "chi sei",
+      "cosa sei",
+      "presentati",
+      "identificati",
+      "who are you",
+      "what are you"
+    ]) &&
+    runtimeTextIncludesAny(text, ["joker", "ai joker", "tu", "runtime", "c2"])
+  ) || text === "chi sei?" || text === "chi sei";
+}
+
+function isManuelColettaIdentityQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return (
+    runtimeTextIncludesAny(text, [
+      "manuel coletta",
+      "mnauel coletta",
+      "manuele coletta"
+    ]) &&
+    runtimeTextIncludesAny(text, ["chi e", "chi è", "cos e", "cosa e", "who is"])
+  );
+}
+
+function isAerospaceGovernanceBoundaryQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  const hasAerospaceContext = runtimeTextIncludesAny(text, [
+    "astronave",
+    "astronavi",
+    "razzo",
+    "razzi",
+    "rocket",
+    "spacecraft",
+    "spazio",
+    "aerospace",
+    "settore spaziale",
+    "orbita",
+    "satellite",
+    "satelliti"
+  ]);
+
+  const hasControlLanguage = runtimeTextIncludesAny(text, [
+    "guidare",
+    "pilotare",
+    "indirizzare",
+    "controllare",
+    "controllo di volo",
+    "flight control",
+    "guidance",
+    "navigation",
+    "guc",
+    "gnc",
+    "lancio",
+    "traiettoria"
+  ]);
+
+  const hasWeaponLanguage = runtimeTextIncludesAny(text, [
+    "missile",
+    "missili",
+    "bersaglio",
+    "target",
+    "targeting",
+    "colpire",
+    "arma",
+    "weapon"
+  ]);
+
+  return hasAerospaceContext && hasControlLanguage && !hasWeaponLanguage;
+}
+
+function isCanonicalStackQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return runtimeTextIncludesAny(text, [
+    "ipr",
+    "evt",
+    "opc",
+    "hbce",
+    "unebdo",
+    "metaexchange",
+    "iospace",
+    "cyberglobal",
+    "neuroloop",
+    "moduli hbce",
+    "diagnostica runtime",
+    "ai joker-c2",
+    "joker-c2"
+  ]);
+}
+
+function hasExplicitMemoryReference(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return runtimeTextIncludesAny(text, [
+    "come prima",
+    "prima",
+    "sopra",
+    "precedente",
+    "abbiamo",
+    "continua",
+    "riprendi",
+    "questo",
+    "questa",
+    "questi",
+    "quello",
+    "quella",
+    "file attivi",
+    "testo sopra",
+    "chat",
+    "memoria",
+    "ricordi",
+    "fatto",
+    "mandata",
+    "ok vai"
+  ]);
+}
+
+function shouldInjectEvtMemoryIntoPrompt(input: {
+  message: string;
+  files: FileInput[];
+  memory: ResolvedMemoryContext;
+  governance: EnrichedGovernanceFrame;
+  documentFamily: DocumentFamily;
+}): boolean {
+  if (!input.memory.used || !input.memory.text.trim()) {
+    return false;
+  }
+
+  if (input.files.length > 0) {
+    return true;
+  }
+
+  if (isRuntimeDiagnosticRequest(input.message)) {
+    return true;
+  }
+
+  if (
+    isRuntimeSelfIdentityQuestion(input.message) ||
+    isManuelColettaIdentityQuestion(input.message) ||
+    isAerospaceGovernanceBoundaryQuestion(input.message)
+  ) {
+    return hasExplicitMemoryReference(input.message);
+  }
+
+  if (hasExplicitMemoryReference(input.message)) {
+    return true;
+  }
+
+  if (
+    input.governance.contextClass === "DOCUMENTAL" ||
+    input.governance.contextClass === "EDITORIAL" ||
+    input.governance.contextClass === "GITHUB" ||
+    input.governance.contextClass === "CORPUS" ||
+    input.governance.contextClass === "APOKALYPSIS" ||
+    input.governance.intentClass === "REWRITE" ||
+    input.governance.intentClass === "TRANSFORM"
+  ) {
+    return true;
+  }
+
+  const memoryFamily = input.memory.semanticState?.documentFamily;
+
+  if (
+    memoryFamily &&
+    input.documentFamily &&
+    memoryFamily === input.documentFamily &&
+    input.documentFamily !== "UNKNOWN"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function getEffectiveMemorySource(input: {
+  memory: ResolvedMemoryContext;
+  injected: boolean;
+}): string {
+  if (input.injected) {
+    return input.memory.source;
+  }
+
+  if (input.memory.used) {
+    return "AVAILABLE_NOT_INJECTED";
+  }
+
+  return "NONE";
+}
+
+function buildRuntimeIdentityProjectDomain(
+  base: ProjectDomainClassification
+): ProjectDomainClassification {
+  return {
+    ...base,
+    projectDomain: "MATRIX" as ProjectDomain,
+    activeDomains: ["MATRIX" as ProjectDomain],
+    domainType: "OPERATIONAL_INFRASTRUCTURE_DOMAIN",
+    confidence: Math.max(base.confidence || 0, 0.98),
+    reasons: [
+      ...base.reasons,
+      "Runtime identity question mapped to MATRIX because AI JOKER-C2 is the governed runtime demonstrator of the HBCE/MATRIX stack."
+    ]
+  } as ProjectDomainClassification;
+}
+
+function buildOriginIdentityProjectDomain(
+  base: ProjectDomainClassification
+): ProjectDomainClassification {
+  return {
+    ...base,
+    projectDomain: "MATRIX" as ProjectDomain,
+    activeDomains: ["MATRIX" as ProjectDomain, "U.S.E." as ProjectDomain],
+    domainType: "ORIGIN_IDENTITY_DOMAIN",
+    confidence: Math.max(base.confidence || 0, 0.97),
+    reasons: [
+      ...base.reasons,
+      "Manuel Coletta identity question mapped to HBCE/MATRIX origin context."
+    ]
+  } as ProjectDomainClassification;
+}
+
+function buildAerospaceGovernanceProjectDomain(
+  base: ProjectDomainClassification
+): ProjectDomainClassification {
+  return {
+    ...base,
+    projectDomain: "MULTI_DOMAIN" as ProjectDomain,
+    activeDomains: ["MATRIX" as ProjectDomain],
+    domainType: "AEROSPACE_GOVERNANCE_BOUNDARY_DOMAIN",
+    confidence: Math.max(base.confidence || 0, 0.96),
+    reasons: [
+      ...base.reasons,
+      "Aerospace-adjacent wording mapped to governance/audit boundary, not flight control."
+    ]
+  } as ProjectDomainClassification;
+}
+
+function normalizeHbceModuleClassification(input: {
+  message: string;
+  classification: HbceModuleClassification;
+  projectDomain: ProjectDomainClassification;
+  contextClass: ContextClass;
+  intentClass: IntentClass;
+}): HbceModuleClassification {
+  const base = input.classification;
+  const text = normalizeRuntimeText(input.message);
+
+  if (isRuntimeSelfIdentityQuestion(input.message)) {
+    return {
+      ...base,
+      module: "UNEBDO",
+      activeModules: ["UNEBDO", "OPC", "NeuroLoop"],
+      moduleType: "IDENTITY_RUNTIME_MODULE",
+      confidence: Math.max(base.confidence || 0, 0.98),
+      reasons: [
+        ...base.reasons,
+        "Self-identity request mapped to UNEBDO because it concerns runtime identity and IPR binding.",
+        "OPC and NeuroLoop are active because the answer is event-bound and runtime-governed."
+      ]
+    } as HbceModuleClassification;
+  }
+
+  if (isManuelColettaIdentityQuestion(input.message)) {
+    return {
+      ...base,
+      module: "UNEBDO",
+      activeModules: ["UNEBDO", "OPC"],
+      moduleType: "ORIGIN_IDENTITY_MODULE",
+      confidence: Math.max(base.confidence || 0, 0.97),
+      reasons: [
+        ...base.reasons,
+        "Origin identity request mapped to UNEBDO because it concerns the biological/project origin and canonical IPR root.",
+        "OPC is active for continuity proof framing."
+      ]
+    } as HbceModuleClassification;
+  }
+
+  if (isAerospaceGovernanceBoundaryQuestion(input.message)) {
+    return {
+      ...base,
+      module: "OPC",
+      activeModules: ["OPC", "CyberGlobal", "MetaExchange"],
+      moduleType: "AEROSPACE_GOVERNANCE_AUDIT_BOUNDARY_MODULE",
+      confidence: Math.max(base.confidence || 0, 0.96),
+      reasons: [
+        ...base.reasons,
+        "Aerospace-adjacent request mapped to OPC/CyberGlobal governance boundary.",
+        "HBCE must not be represented as guidance, targeting or physical flight-control software."
+      ]
+    } as HbceModuleClassification;
+  }
+
+  if (isCanonicalStackQuestion(input.message)) {
+    const activeModules = new Set<string>(base.activeModules || []);
+
+    if (text.includes("opc")) activeModules.add("OPC");
+    if (text.includes("cyber") || text.includes("sicurezza")) activeModules.add("CyberGlobal");
+    if (text.includes("neuro") || text.includes("decision")) activeModules.add("NeuroLoop");
+    if (text.includes("metaexchange") || text.includes("scambio")) activeModules.add("MetaExchange");
+    if (text.includes("iospace") || text.includes("interfaccia")) activeModules.add("IOspace");
+
+    activeModules.add("UNEBDO");
+    activeModules.add("OPC");
+
+    return {
+      ...base,
+      module:
+        text.includes("opc") && !text.includes("ipr") ? "OPC" : "UNEBDO",
+      activeModules: Array.from(activeModules),
+      moduleType:
+        base.moduleType === "NO_MODULE"
+          ? "CANONICAL_HBCE_STACK_MODULE"
+          : base.moduleType,
+      confidence: Math.max(base.confidence || 0, 0.95),
+      reasons: [
+        ...base.reasons,
+        "Canonical HBCE/IPR/EVT/OPC vocabulary detected.",
+        "Module classification normalized to avoid NONE on obvious HBCE stack questions."
+      ]
+    } as HbceModuleClassification;
+  }
+
+  if (
+    input.projectDomain.projectDomain === "U.S.E." ||
+    input.contextClass === "USE" ||
+    input.contextClass === "DEMOCRATIC_INFRASTRUCTURE"
+  ) {
+    return {
+      ...base,
+      module: base.module === "NONE" ? "UNEBDO" : base.module,
+      activeModules:
+        base.activeModules.length > 0
+          ? base.activeModules
+          : ["UNEBDO", "OPC", "MetaExchange", "CyberGlobal", "NeuroLoop"],
+      moduleType:
+        base.moduleType === "NO_MODULE"
+          ? "FEDERATED_DEMOCRATIC_INFRASTRUCTURE_MODULE"
+          : base.moduleType,
+      confidence: Math.max(base.confidence || 0, 0.94),
+      reasons: [
+        ...base.reasons,
+        "U.S.E. / voto digitale federato context mapped to identity, continuity, exchange, cyber and validation modules."
+      ]
+    } as HbceModuleClassification;
+  }
+
+  return base;
+}
+
 async function generateResponse(input: {
   identity: JokerRuntimeIdentity;
   message: string;
@@ -326,7 +692,9 @@ async function generateResponse(input: {
             "IPR è lo strumento operativo primario: Identity Primary Record, non un semplice account o login.",
             "AI JOKER-C2 è il runtime dimostrativo governato dell’IPR.",
             "La memoria non è la chat: la memoria è la catena EVT/IPR-bound.",
-            "Ogni riferimento ellittico deve essere risolto usando la memoria EVT/IPR-bound.",
+            "Usa la memoria EVT/IPR-bound solo quando è semanticamente pertinente alla domanda corrente.",
+            "Non importare frasi, valutazioni economiche o contenuti di una risposta precedente quando il tema della domanda è cambiato.",
+            "Ogni riferimento ellittico deve essere risolto usando la memoria EVT/IPR-bound solo se la memoria è stata effettivamente iniettata nel prompt.",
             "OPC è una proof receipt tecnica per audit e verifica, non una certificazione legale automatica.",
             "Non mostrare i metadati runtime all'utente salvo richiesta diagnostica.",
             "MATRIX = infrastruttura operativa.",
@@ -340,7 +708,12 @@ async function generateResponse(input: {
             "Non collegare mai identità personale e contenuto di una scelta democratica.",
             "Quando è attivo un contratto canonico di risposta, devi iniziare con la formula obbligatoria prima della spiegazione discorsiva.",
             "Se l'utente chiede IPR, non ridurlo a identità digitale: spiegalo come registro primario di identità operativa che connette identità, azione, responsabilità, evento, prova, tempo e continuità.",
+            "Se l'utente chiede IPR, EVT e OPC insieme, usa questa gerarchia: IPR identifica, EVT traccia, OPC prova la continuità.",
+            "Se l'utente chiede chi sei, rispondi in modo breve: AI JOKER-C2 è un agente AI/runtime governato dal framework HBCE/MATRIX, progettato per lavorare con IPR, EVT e OPC. Non citare U.S.E. salvo domanda esplicita.",
+            "Se l'utente chiede chi è Manuel Coletta, rispondi nel contesto HBCE/MATRIX: origine biologica e progettuale del sistema, associata all’IPR primario e allo sviluppo di HBCE, MATRIX, AI JOKER-C2, U.S.E. e voto digitale federato. Non esporre dati personali non necessari.",
             "Se l'utente chiede confronto con standard esistenti, confronta IPR con eIDAS/EUDI, PKI, X.509, DID/VC, blockchain timestamping, IAM e audit log.",
+            "Regola aerospace: HBCE/IPR può governare, tracciare, auditare e certificare catene operative aerospace-adjacent, ma non deve essere descritto come sistema di guida, puntamento, controllo di volo, targeting, navigazione autonoma o controllo fisico di razzi, missili, satelliti o astronavi.",
+            "Per domande su razzi, astronavi o spazio, formula corretta: HBCE non guida il veicolo; può governare, tracciare, certificare e verificare la catena operativa intorno al veicolo.",
             "La governance runtime prevale: policy, risk, oversight e fail-closed non devono essere aggirati dal modello.",
             "Regola critica: non confondere il contenuto del documento con l'intento operativo dell'utente.",
             "Se un file parla di MATRIX, U.S.E., cybersecurity, infrastrutture critiche, incident response, audit, AI governance o continuità istituzionale, ma l'utente chiede sintesi, spiegazione, analisi documentale, revisione editoriale o controllo tecnico, devi trattare la richiesta come supporto documentale.",
@@ -814,6 +1187,36 @@ function normalizeChatDataClassification(input: {
     };
   }
 
+  if (isRuntimeSelfIdentityQuestion(input.message)) {
+    return {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "Runtime self-identity question detected.",
+        "Classified as PUBLIC unless diagnostic metadata is explicitly requested."
+      ]
+    };
+  }
+
+  if (isManuelColettaIdentityQuestion(input.message)) {
+    return {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: true,
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "Public project-origin identity question detected.",
+        "Name is personal data, but answer is limited to public HBCE/MATRIX context and avoids unnecessary personal details."
+      ]
+    };
+  }
+
   const hasFiles = input.files.length > 0;
   const message = input.message.trim();
 
@@ -887,17 +1290,6 @@ function normalizeChatDataClassification(input: {
   }
 
   return input.data;
-}
-
-function normalizeRuntimeText(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function runtimeTextIncludesAny(text: string, terms: string[]): boolean {
-  return terms.some((term) => text.includes(term));
 }
 
 function hasExplicitOperationalActionRequest(message: string): boolean {
@@ -1258,9 +1650,18 @@ function applySafeIdentityGovernanceOverride(input: {
     iprBindingPreferred: true
   });
 
+  const hbceModule = normalizeHbceModuleClassification({
+    message: input.message,
+    classification: input.frame.hbceModule,
+    projectDomain: safeProjectDomain,
+    contextClass: "IPR",
+    intentClass: "ASK"
+  });
+
   return {
     ...input.frame,
     projectDomain: safeProjectDomain,
+    hbceModule,
     contextClass: "IPR",
     intentClass: "ASK",
     data: {
@@ -1275,6 +1676,142 @@ function applySafeIdentityGovernanceOverride(input: {
         "Classified as PUBLIC to prevent false escalation."
       ]
     },
+    policy,
+    risk,
+    oversight,
+    decision
+  };
+}
+
+function applyRuntimeIdentityGovernanceOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+}): EnrichedGovernanceFrame {
+  if (
+    !isRuntimeSelfIdentityQuestion(input.message) &&
+    !isManuelColettaIdentityQuestion(input.message) &&
+    !isAerospaceGovernanceBoundaryQuestion(input.message)
+  ) {
+    return input.frame;
+  }
+
+  const isSelf = isRuntimeSelfIdentityQuestion(input.message);
+  const isOrigin = isManuelColettaIdentityQuestion(input.message);
+  const isAerospace = isAerospaceGovernanceBoundaryQuestion(input.message);
+
+  const projectDomain = isSelf
+    ? buildRuntimeIdentityProjectDomain(input.frame.projectDomain)
+    : isOrigin
+      ? buildOriginIdentityProjectDomain(input.frame.projectDomain)
+      : buildAerospaceGovernanceProjectDomain(input.frame.projectDomain);
+
+  const contextClass: ContextClass = isAerospace
+    ? "GOVERNANCE"
+    : "IDENTITY";
+
+  const intentClass: IntentClass = "ASK";
+
+  const data: DataClassification = isOrigin
+    ? {
+        dataClass: "PUBLIC",
+        containsSecret: false,
+        containsPersonalData: true,
+        containsSecuritySensitiveData: false,
+        containsCivicSensitiveData: false,
+        containsDemocraticChoiceData: false,
+        reasons: [
+          "Public project-origin identity question detected.",
+          "Answer must stay within HBCE/MATRIX context and avoid unnecessary personal data."
+        ]
+      }
+    : {
+        dataClass: "PUBLIC",
+        containsSecret: false,
+        containsPersonalData: false,
+        containsSecuritySensitiveData: false,
+        containsCivicSensitiveData: false,
+        containsDemocraticChoiceData: false,
+        reasons: [
+          isAerospace
+            ? "Aerospace governance boundary question detected."
+            : "Runtime identity question detected.",
+          "Classified as PUBLIC conceptual explanation."
+        ]
+      };
+
+  const policy: PolicyEvaluation = {
+    status: "ALLOWED",
+    policyReference: isAerospace
+      ? "AEROSPACE_GOVERNANCE_BOUNDARY_ONLY"
+      : isOrigin
+        ? "PUBLIC_PROJECT_ORIGIN_IDENTITY"
+        : "PUBLIC_RUNTIME_SELF_IDENTITY",
+    prohibited: false,
+    failClosed: false,
+    reasons: [
+      isAerospace
+        ? "Safe aerospace-adjacent governance answer allowed only as audit/traceability boundary, not control guidance."
+        : "Safe identity answer allowed.",
+      "No operational execution requested."
+    ],
+    outcome: "PERMIT"
+  };
+
+  const risk: RiskEvaluation = {
+    riskClass: isAerospace ? "MEDIUM" : "LOW",
+    probability: isAerospace ? 2 : 1,
+    impact: isAerospace ? 2 : 1,
+    riskScore: isAerospace ? 4 : 1,
+    reasons: [
+      isAerospace
+        ? "Aerospace-adjacent language requires clear boundary against flight control, targeting and autonomous guidance."
+        : "Identity explanation is low risk."
+    ]
+  };
+
+  const oversight: OversightEvaluation = {
+    state: isAerospace ? "RECOMMENDED" : "NOT_REQUIRED",
+    requiredRole: isAerospace ? "REVIEWER" : "NONE",
+    reason: isAerospace
+      ? "Aerospace-adjacent product language should be reviewed before external use."
+      : "Identity answer does not require human review."
+  };
+
+  const hbceModule = normalizeHbceModuleClassification({
+    message: input.message,
+    classification: input.frame.hbceModule,
+    projectDomain,
+    contextClass,
+    intentClass
+  });
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyProhibited: false,
+    policyFailClosed: false,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass,
+    intentClass,
+    dataClass: data.dataClass,
+    projectDomain: projectDomain.projectDomain,
+    activeDomains: projectDomain.activeDomains,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: isAerospace,
+    memoryPreferred: false,
+    opcPreferred: isAerospace || isOrigin,
+    iprBindingPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    projectDomain,
+    hbceModule,
+    contextClass,
+    intentClass,
+    data,
     policy,
     risk,
     oversight,
@@ -1403,7 +1940,7 @@ function buildGovernanceFrame(input: {
     activeDocument: normalizedFiles[0]?.name
   });
 
-  const hbceModule = classifyHbceModule({
+  const rawHbceModule = classifyHbceModule({
     message: input.message,
     hasFiles: input.files.length > 0,
     fileNames: normalizedFiles.map((file) => file.name),
@@ -1425,6 +1962,14 @@ function buildGovernanceFrame(input: {
     fileNames: normalizedFiles.map((file) => file.name),
     fileTypes: normalizedFiles.map((file) => file.type),
     activeDocument: normalizedFiles[0]?.name
+  });
+
+  const hbceModule = normalizeHbceModuleClassification({
+    message: input.message,
+    classification: rawHbceModule,
+    projectDomain,
+    contextClass: context.contextClass,
+    intentClass: context.intentClass
   });
 
   const rawData = classifyData({
@@ -1481,8 +2026,13 @@ function buildGovernanceFrame(input: {
       filePolicy
     };
 
-    return applySafeRuntimeDiagnosticGovernanceOverride({
+    const diagnosticFrame = applySafeRuntimeDiagnosticGovernanceOverride({
       frame,
+      message: input.message
+    });
+
+    return applyRuntimeIdentityGovernanceOverride({
+      frame: diagnosticFrame,
       message: input.message
     });
   }
@@ -1576,8 +2126,13 @@ function buildGovernanceFrame(input: {
     message: input.message
   });
 
-  return applySafeDocumentGovernanceOverride({
+  const runtimeIdentityFrame = applyRuntimeIdentityGovernanceOverride({
     frame: identitySafeFrame,
+    message: input.message
+  });
+
+  return applySafeDocumentGovernanceOverride({
+    frame: runtimeIdentityFrame,
     message: input.message,
     files: input.files
   });
@@ -1809,6 +2364,9 @@ async function createAndAppendOpcForChat(input: {
           : "",
         input.governance.projectDomain.projectDomain === "U.S.E."
           ? `U.S.E. boundary: ${USE_DEMOCRATIC_BOUNDARY}`
+          : "",
+        isAerospaceGovernanceBoundaryQuestion(input.message)
+          ? "Aerospace boundary: HBCE is audit/governance/traceability only, not flight-control or guidance software."
           : ""
       ].filter(Boolean)
     }
@@ -1892,9 +2450,6 @@ export async function POST(req: NextRequest) {
     message: effectiveMessage
   });
 
-  const memoryFile = memory.used ? [buildMemoryFile(memory.text)] : [];
-  const promptFiles = [...memoryFile, ...acceptedUserFiles];
-
   const contextClass = governance.contextClass;
   const intentClass = governance.intentClass;
   const legacyContextClass = mapContextForMemory(contextClass);
@@ -1919,6 +2474,23 @@ export async function POST(req: NextRequest) {
     message: effectiveMessage,
     projectDomain: governance.projectDomain
   });
+
+  const memoryInjected = shouldInjectEvtMemoryIntoPrompt({
+    message: effectiveMessage,
+    files: acceptedUserFiles,
+    memory,
+    governance,
+    documentFamily
+  });
+
+  const effectiveMemoryUsed = memory.used && memoryInjected;
+  const effectiveMemorySource = getEffectiveMemorySource({
+    memory,
+    injected: effectiveMemoryUsed
+  });
+
+  const memoryFile = effectiveMemoryUsed ? [buildMemoryFile(memory.text)] : [];
+  const promptFiles = [...memoryFile, ...acceptedUserFiles];
 
   const modernPrev = await getLastEventReference();
   const legacyPrev = memory.lastEventId || input.continuityRef;
@@ -1967,8 +2539,8 @@ export async function POST(req: NextRequest) {
       intentClass,
       documentMode,
       documentFamily,
-      memoryUsed: memory.used,
-      memorySource: memory.source,
+      memoryUsed: effectiveMemoryUsed,
+      memorySource: effectiveMemorySource,
       structuredFormat,
       event,
       modernEvt: publicModernEvt,
@@ -2028,8 +2600,8 @@ export async function POST(req: NextRequest) {
       intentClass,
       documentMode,
       documentFamily,
-      evtIprMemoryUsed: memory.used,
-      memorySource: memory.source,
+      evtIprMemoryUsed: effectiveMemoryUsed,
+      memorySource: effectiveMemorySource,
       structuredFormat,
       activeFiles: promptFiles.map((file) => file.name || "unnamed"),
       identity: buildIdentityPayload(identity),
@@ -2067,8 +2639,10 @@ export async function POST(req: NextRequest) {
         publicProof: opc.publicProof
       },
       memory: {
-        used: memory.used,
-        source: memory.source,
+        available: memory.used,
+        injected: effectiveMemoryUsed,
+        source: effectiveMemorySource,
+        rawSource: memory.source,
         lastEventId: memory.lastEventId,
         event: memoryEvent.evt,
         memoryHash: memoryEvent.anchors.memoryHash,
@@ -2107,6 +2681,9 @@ export async function POST(req: NextRequest) {
           governance.projectDomain.projectDomain === "U.S.E."
             ? USE_DEMOCRATIC_BOUNDARY
             : undefined,
+        aerospaceBoundary: isAerospaceGovernanceBoundaryQuestion(effectiveMessage)
+          ? "HBCE/IPR can govern, trace, audit and certify operational chains, but must not be described as flight-control, targeting or vehicle-guidance software."
+          : undefined,
         filePolicy: {
           allowed: governance.filePolicy.allowed,
           allowedCount: governance.filePolicy.allowedCount,
@@ -2118,8 +2695,10 @@ export async function POST(req: NextRequest) {
         openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
         modelUsed: MODEL,
         degradedReason,
-        evtIprMemoryUsed: memory.used,
-        memorySource: memory.source,
+        evtIprMemoryUsed: effectiveMemoryUsed,
+        memorySource: effectiveMemorySource,
+        memoryAvailable: memory.used,
+        memoryInjected,
         memoryEvent: memoryEvent.evt,
         memoryHash: memoryEvent.anchors.memoryHash,
         memoryAppendStatus: memoryAppendResult.status,
@@ -2127,6 +2706,7 @@ export async function POST(req: NextRequest) {
         opcAppendStatus: opc.append.status,
         opcVerificationStatus: opc.publicProof.verificationStatus,
         hbceModule: governance.hbceModule.module,
+        activeModules: governance.hbceModule.activeModules,
         structuredFormat
       }
     });
@@ -2159,9 +2739,9 @@ export async function POST(req: NextRequest) {
       documentMode,
       documentFamily,
       files: promptFiles,
-      memoryText: memory.text,
-      memoryUsed: memory.used,
-      memorySource: memory.source,
+      memoryText: effectiveMemoryUsed ? memory.text : "",
+      memoryUsed: effectiveMemoryUsed,
+      memorySource: effectiveMemorySource,
       structuredFormat,
       governanceFrame: governance
     });
@@ -2242,8 +2822,8 @@ export async function POST(req: NextRequest) {
         intentClass,
         documentMode,
         documentFamily,
-        memoryUsed: memory.used,
-        memorySource: memory.source,
+        memoryUsed: effectiveMemoryUsed,
+        memorySource: effectiveMemorySource,
         structuredFormat,
         event,
         modernEvt: publicModernEvt,
@@ -2275,8 +2855,8 @@ export async function POST(req: NextRequest) {
     intentClass,
     documentMode,
     documentFamily,
-    evtIprMemoryUsed: memory.used,
-    memorySource: memory.source,
+    evtIprMemoryUsed: effectiveMemoryUsed,
+    memorySource: effectiveMemorySource,
     structuredFormat,
     activeFiles: promptFiles.map((file) => file.name || "unnamed"),
     identity: buildIdentityPayload(identity),
@@ -2314,8 +2894,10 @@ export async function POST(req: NextRequest) {
       publicProof: opc.publicProof
     },
     memory: {
-      used: memory.used,
-      source: memory.source,
+      available: memory.used,
+      injected: effectiveMemoryUsed,
+      source: effectiveMemorySource,
+      rawSource: memory.source,
       lastEventId: memory.lastEventId,
       event: memoryEvent.evt,
       memoryHash: memoryEvent.anchors.memoryHash,
@@ -2363,6 +2945,9 @@ export async function POST(req: NextRequest) {
         governance.projectDomain.projectDomain === "U.S.E."
           ? USE_DEMOCRATIC_BOUNDARY
           : undefined,
+      aerospaceBoundary: isAerospaceGovernanceBoundaryQuestion(effectiveMessage)
+        ? "HBCE/IPR can govern, trace, audit and certify operational chains, but must not be described as flight-control, targeting or vehicle-guidance software."
+        : undefined,
       filePolicy: {
         allowed: governance.filePolicy.allowed,
         allowedCount: governance.filePolicy.allowedCount,
@@ -2374,8 +2959,10 @@ export async function POST(req: NextRequest) {
       openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
       modelUsed: MODEL,
       degradedReason: generated.degradedReason || null,
-      evtIprMemoryUsed: memory.used,
-      memorySource: memory.source,
+      evtIprMemoryUsed: effectiveMemoryUsed,
+      memorySource: effectiveMemorySource,
+      memoryAvailable: memory.used,
+      memoryInjected,
       memoryEvent: memoryEvent.evt,
       memoryHash: memoryEvent.anchors.memoryHash,
       memoryAppendStatus: memoryAppendResult.status,
@@ -2383,6 +2970,7 @@ export async function POST(req: NextRequest) {
       opcAppendStatus: opc.append.status,
       opcVerificationStatus: opc.publicProof.verificationStatus,
       hbceModule: governance.hbceModule.module,
+      activeModules: governance.hbceModule.activeModules,
       structuredFormat
     }
   });
