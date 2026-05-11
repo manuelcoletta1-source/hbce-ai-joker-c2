@@ -225,6 +225,7 @@ function isUsePoliticalValueQuestion(text: string): boolean {
     "hbce",
     "ipr",
     "voto digitale federato",
+    "voto federato",
     "questo progetto",
     "progetto applicazione",
     "questa applicazione",
@@ -256,16 +257,20 @@ function isCivicDigitalQuestion(text: string): boolean {
       "consultazioni pubbliche",
       "democrazia digitale",
       "voto digitale federato",
+      "voto federato",
+      "voto federale",
       "federated digital vote",
-      "federated digital voting"
+      "federated digital voting",
+      "federated vote",
+      "federated voting"
     ]) ||
     (containsAny(text, ["voto", "votare"]) &&
-      containsAny(text, ["identita", "identità", "ipr", "digitale"]))
+      containsAny(text, ["identita", "identità", "ipr", "digitale", "federato"]))
   );
 }
 
 function isHbceModulesQuestion(text: string): boolean {
-  const hasModuleTerm = containsAny(text, [
+  const hasExplicitModuleTerm = containsAny(text, [
     "moduli hbce",
     "moduli dell hbce",
     "moduli dell'hbce",
@@ -290,7 +295,21 @@ function isHbceModulesQuestion(text: string): boolean {
     "neuro loop"
   ]);
 
-  if (!hasModuleTerm) {
+  const hasGenericModuleQuestion =
+    containsAny(text, ["moduli", "modulo", "quali moduli", "che moduli"]) &&
+    containsAny(text, [
+      "hbce",
+      "joker-c2",
+      "joker c2",
+      "matrix",
+      "voto federato",
+      "voto digitale federato",
+      "federated vote",
+      "federated voting",
+      "governance"
+    ]);
+
+  if (!hasExplicitModuleTerm && !hasGenericModuleQuestion) {
     return false;
   }
 
@@ -307,13 +326,35 @@ function isHbceModulesQuestion(text: string): boolean {
     "moduli",
     "stack",
     "operativo",
+    "casi d uso",
+    "casi d'uso",
+    "casi duso",
+    "caso d uso",
+    "caso d'uso",
+    "uso reale",
+    "usi reali",
+    "reali",
+    "pragmatico",
+    "pragmatici",
+    "vantaggi",
+    "vantaggio",
+    "stato dell arte",
+    "stato dell'arte",
+    "ai classiche",
+    "anthropic",
+    "gpt",
+    "grok",
     "technical modules",
     "operational modules",
     "what are",
     "what is",
     "explain",
     "function",
-    "role"
+    "role",
+    "use case",
+    "use cases",
+    "real use",
+    "practical"
   ]);
 }
 
@@ -328,30 +369,35 @@ function buildContract(kind: JokerResponseContractKind): ResponseContract {
           "I moduli HBCE sono funzioni tecnico-operative dello stack MATRIX/HBCE: non sostituiscono IPR, ma lo estendono in ancoraggio, prova, scambio, visibilità, cybersecurity difensiva e validazione."
         ],
         mandatoryConcepts: [
-          "IPR resta il prodotto operativo base.",
+          "IPR resta il prodotto operativo base: identifica soggetti, processi, agenti AI, documenti o sistemi con responsabilità e continuità verificabile.",
           "AI JOKER-C2 è il runtime che mostra IPR e i moduli in funzione.",
-          "UNEBDO = ancoraggio, validazione e continuità probatoria.",
-          "OPC = Operational Proof & Compliance Layer, cioè proof receipt tecnica e audit-oriented.",
-          "MetaExchange = scambio strutturato tra identità, prove, eventi, documenti e contesti.",
-          "IOspace = spazio operativo di visibilità, dashboard e interazione runtime.",
-          "CyberGlobal = cybersecurity difensiva, resilienza, rischio e protezione sistemica.",
-          "NeuroLoop = validazione, feedback, revisione e ciclo decisionale controllato.",
-          "I moduli HBCE sono subordinati a MATRIX come architettura e a IPR come prodotto operativo base."
+          "UNEBDO = ancoraggio, validazione e continuità probatoria. Non registra l’IPR: rafforza la stabilità della prova nel tempo.",
+          "EVT = traccia evento. Registra richiesta, decisione, azione, documento, blocco, escalation o audit.",
+          "Memory = continuità EVT/IPR-bound. Mantiene continuità tra sessioni, documenti, moduli e decisioni senza ridursi a cronologia chat.",
+          "OPC = Operational Proof & Compliance Layer, cioè proof receipt tecnica collegata a input, output, decisione, EVT, memory hash, policy, rischio e audit.",
+          "MetaExchange = scambio strutturato tra identità, prove, eventi, documenti e contesti tra sistemi, imprese, PA o nodi federati.",
+          "IOspace = spazio operativo di visibilità, dashboard e interazione runtime: mostra IPR, EVT, Memory, OPC, audit, rischio, decisione e continuità.",
+          "CyberGlobal = cybersecurity difensiva, resilienza, rischio e protezione sistemica. Non è un modulo offensivo.",
+          "NeuroLoop = validazione, feedback, revisione e ciclo decisionale controllato. Non è apprendimento autonomo né autorità autonoma.",
+          "Le AI classiche producono output; AI JOKER-C2 produce output più identità operativa, evento, memoria, proof receipt e audit trail."
         ],
         forbiddenReductions: [
           "Non presentare i moduli HBCE come nuove collane.",
           "Non presentare i moduli HBCE come prodotti principali al posto di IPR.",
+          "Non attribuire a UNEBDO la funzione di registrazione dell’IPR.",
           "Non presentare CyberGlobal come capacità offensiva.",
           "Non presentare NeuroLoop come autorità autonoma o apprendimento incontrollato.",
           "Non presentare MetaExchange come scambio dati permissionless.",
-          "Non presentare UNEBDO, OPC, EVT o IPR come certificazione legale automatica."
+          "Non presentare OPC come certificazione legale automatica.",
+          "Non presentare UNEBDO, EVT o IPR come certificazione legale automatica."
         ],
         requiredDistinctions: [
           "Distingui prodotto da modulo: IPR è il prodotto operativo base, i moduli sono funzioni dello stack.",
           "Distingui collane da moduli: MATRIX, U.S.E., CORPUS e APOKALYPSIS sono domini/collane; UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal e NeuroLoop sono moduli tecnico-operativi.",
           "Distingui proof receipt tecnica da certificazione legale.",
           "Distingui cybersecurity difensiva da capacità offensiva.",
-          "Distingui validazione e feedback da autorità autonoma."
+          "Distingui validazione e feedback da autorità autonoma.",
+          "Distingui AI classica che produce output da AI JOKER-C2 che produce output governato, tracciato, memorizzato e provabile."
         ],
         closingFormula:
           "Formula moduli: IPR identifica; UNEBDO ancora; EVT traccia; Memory continua; OPC prova; MetaExchange scambia; IOspace espone; CyberGlobal protegge; NeuroLoop valida; AI JOKER-C2 esegue; MATRIX organizza."
