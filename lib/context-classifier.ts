@@ -14,6 +14,9 @@
  * Canonical project-domain classification is handled separately by:
  * - lib/project-domain-classifier.ts
  *
+ * HBCE module classification is handled separately by:
+ * - lib/hbce-module-classifier.ts
+ *
  * Safe conceptual overrides are handled separately by:
  * - lib/safe-concept-classifier.ts
  *
@@ -26,9 +29,14 @@
  * - U.S.E. = MATRIX-derived political-institutional application
  * - CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar
  * - APOKALYPSIS = historical threshold analysis
+ * - UNEBDO = anchoring, validation and evidentiary continuity
  * - EVT = event trace
  * - EVT/IPR memory = runtime continuity
  * - OPC = operational proof receipt
+ * - MetaExchange = structured exchange
+ * - IOspace = runtime visibility and operational interaction
+ * - CyberGlobal = defensive cybersecurity and resilience
+ * - NeuroLoop = validation, feedback and review loop
  */
 
 import type {
@@ -96,6 +104,122 @@ const PROHIBITED_TERMS = [
   "voter targeting",
   "political manipulation",
   "coercive civic influence"
+];
+
+const HBCE_MODULE_STACK_TERMS = [
+  "hbce modules",
+  "moduli hbce",
+  "moduli dell hbce",
+  "moduli dell'hbce",
+  "sei moduli",
+  "6 moduli",
+  "six modules",
+  "hbce stack",
+  "stack hbce",
+  "operational stack",
+  "stack operativo",
+  "stack tecnico operativo",
+  "stack tecnico-operativo",
+  "technical-operational modules",
+  "moduli tecnico operativi",
+  "moduli tecnico-operativi",
+  "unebdo",
+  "metaexchange",
+  "meta exchange",
+  "iospace",
+  "io space",
+  "cyberglobal",
+  "cyber global",
+  "neuroloop",
+  "neuro loop"
+];
+
+const HBCE_MODULE_TECHNICAL_TERMS = [
+  "iospace",
+  "io space",
+  "dashboard",
+  "runtime dashboard",
+  "event viewer",
+  "proof viewer",
+  "module",
+  "modulo",
+  "moduli",
+  "stack",
+  "layer",
+  "technical layer",
+  "operational layer",
+  "runtime visibility",
+  "visibilita runtime",
+  "visibilità runtime",
+  "interfaccia operativa"
+];
+
+const HBCE_MODULE_GOVERNANCE_TERMS = [
+  "unebdo",
+  "opc",
+  "metaexchange",
+  "meta exchange",
+  "proof receipt",
+  "proof record",
+  "audit receipt",
+  "anchoring",
+  "validation",
+  "evidentiary continuity",
+  "structured exchange",
+  "governed exchange",
+  "chain hash",
+  "memory hash",
+  "proof chain",
+  "governance module",
+  "modulo governance",
+  "ricevuta di prova",
+  "prova operativa",
+  "ancoraggio",
+  "validazione",
+  "continuita probatoria",
+  "continuità probatoria",
+  "scambio strutturato"
+];
+
+const HBCE_MODULE_SECURITY_TERMS = [
+  "cyberglobal",
+  "cyber global",
+  "defensive cybersecurity",
+  "cybersecurity",
+  "cyber security",
+  "resilience",
+  "resilienza",
+  "security governance",
+  "incident",
+  "risk mapping",
+  "hardening",
+  "remediation",
+  "critical infrastructure",
+  "sicurezza informatica",
+  "cybersecurity difensiva",
+  "resilienza digitale",
+  "mappatura rischi",
+  "incidente"
+];
+
+const HBCE_MODULE_AI_GOVERNANCE_TERMS = [
+  "neuroloop",
+  "neuro loop",
+  "validation loop",
+  "feedback loop",
+  "review loop",
+  "human review",
+  "decision loop",
+  "reasoning checkpoint",
+  "validation checkpoint",
+  "controlled feedback",
+  "controlled learning",
+  "ciclo validazione",
+  "ciclo di validazione",
+  "ciclo feedback",
+  "revisione umana",
+  "feedback controllato",
+  "apprendimento controllato"
 ];
 
 const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
@@ -168,6 +292,7 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
 
   USE: [
     "u.s.e.",
+    "u.s.e",
     "use",
     "u s e",
     "united states of europe",
@@ -309,7 +434,8 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "codice",
     "implementa",
     "funzione",
-    "modulo"
+    "modulo",
+    ...HBCE_MODULE_TECHNICAL_TERMS
   ],
 
   GITHUB: [
@@ -332,6 +458,7 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "roadmap.md",
     "runtime-types.ts",
     "project-domain-classifier.ts",
+    "hbce-module-classifier.ts",
     "context-classifier.ts",
     "nome file",
     "il file",
@@ -410,7 +537,8 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "incidente",
     "vulnerabilita",
     "vulnerabilità",
-    "segreti"
+    "segreti",
+    ...HBCE_MODULE_SECURITY_TERMS
   ],
 
   COMPLIANCE: [
@@ -433,7 +561,11 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "conformita",
     "conformità",
     "registro rischi",
-    "supervisione umana"
+    "supervisione umana",
+    "proof receipt",
+    "proof record",
+    "opc",
+    "audit receipt"
   ],
 
   GOVERNANCE: [
@@ -460,7 +592,9 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "tracciabilita",
     "tracciabilità",
     "verifica",
-    "classificatore"
+    "classificatore",
+    ...HBCE_MODULE_STACK_TERMS,
+    ...HBCE_MODULE_GOVERNANCE_TERMS
   ],
 
   CIVIC: [
@@ -568,7 +702,8 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "biocibersicurezza",
     "biocibernetica",
     "organism system",
-    "organismo sistema"
+    "organismo sistema",
+    ...HBCE_MODULE_AI_GOVERNANCE_TERMS
   ],
 
   DUAL_USE: [
@@ -730,7 +865,10 @@ const INTENT_KEYWORDS: Record<IntentClass, string[]> = {
     "governo",
     "tracciabilita",
     "tracciabilità",
-    "supervisione"
+    "supervisione",
+    "moduli hbce",
+    "hbce modules",
+    "stack hbce"
   ],
 
   SECURITY: [
@@ -746,7 +884,8 @@ const INTENT_KEYWORDS: Record<IntentClass, string[]> = {
     "sicurezza",
     "incidente",
     "vulnerabilita",
-    "vulnerabilità"
+    "vulnerabilità",
+    "cyberglobal"
   ],
 
   COMPLIANCE: [
@@ -760,7 +899,10 @@ const INTENT_KEYWORDS: Record<IntentClass, string[]> = {
     "certification",
     "data handling",
     "conformita",
-    "conformità"
+    "conformità",
+    "opc",
+    "proof receipt",
+    "audit receipt"
   ],
 
   STRATEGIC: [
@@ -817,6 +959,7 @@ const INTENT_KEYWORDS: Record<IntentClass, string[]> = {
     "proof receipt",
     "proof record",
     "opc",
+    "unebdo",
     "verifica",
     "validazione",
     "validare"
@@ -880,6 +1023,11 @@ const MEDIUM_SENSITIVITY_TERMS = [
   "evidence",
   "proof receipt",
   "opc",
+  "unebdo",
+  "metaexchange",
+  "iospace",
+  "cyberglobal",
+  "neuroloop",
   "b2b",
   "b2g",
   "institutional",
@@ -1005,6 +1153,7 @@ function selectBestContext(
 
   if (
     text.includes("u.s.e.") ||
+    text.includes("u.s.e") ||
     text.includes("united states of europe") ||
     text.includes("stati uniti d europa") ||
     text.includes("voto digitale federato")
@@ -1050,6 +1199,70 @@ function selectBestContext(
   }
 
   if (
+    text.includes("moduli hbce") ||
+    text.includes("hbce modules") ||
+    text.includes("stack hbce") ||
+    text.includes("unebdo") ||
+    text.includes("metaexchange") ||
+    text.includes("iospace") ||
+    text.includes("cyberglobal") ||
+    text.includes("neuroloop")
+  ) {
+    boost(results, "GOVERNANCE", 5, "HBCE module stack terms detected.");
+    boost(results, "TECHNICAL", 3, "HBCE modules are technical-operational stack functions.");
+  }
+
+  if (
+    text.includes("cyberglobal") ||
+    text.includes("cyber global")
+  ) {
+    boost(results, "SECURITY", 4, "CyberGlobal defensive cybersecurity module detected.");
+  }
+
+  if (
+    text.includes("neuroloop") ||
+    text.includes("neuro loop")
+  ) {
+    boost(results, "AI_GOVERNANCE", 4, "NeuroLoop validation and feedback module detected.");
+  }
+
+  if (
+    text.includes("iospace") ||
+    text.includes("io space")
+  ) {
+    boost(results, "TECHNICAL", 4, "IOspace runtime visibility module detected.");
+  }
+
+  if (
+    text.includes("opc") ||
+    text.includes("proof receipt") ||
+    text.includes("proof record") ||
+    text.includes("chain hash")
+  ) {
+    boost(results, "GOVERNANCE", 3, "OPC proof receipt terms detected.");
+    boost(results, "COMPLIANCE", 2, "Proof receipt audit terms detected.");
+  }
+
+  if (
+    text.includes("unebdo") ||
+    text.includes("anchoring") ||
+    text.includes("ancoraggio")
+  ) {
+    boost(results, "GOVERNANCE", 3, "UNEBDO anchoring and validation terms detected.");
+    boost(results, "COMPLIANCE", 2, "Anchoring and validation support audit readiness.");
+  }
+
+  if (
+    text.includes("metaexchange") ||
+    text.includes("meta exchange") ||
+    text.includes("structured exchange") ||
+    text.includes("scambio strutturato")
+  ) {
+    boost(results, "GOVERNANCE", 3, "MetaExchange structured exchange module detected.");
+    boost(results, "TECHNICAL", 2, "Structured exchange is a technical-operational function.");
+  }
+
+  if (
     text.includes("ipr") ||
     text.includes("identity primary record") ||
     text.includes("ipr-ai-0001")
@@ -1061,16 +1274,6 @@ function selectBestContext(
   if (text.includes("evt") || text.includes("event trace")) {
     boost(results, "GOVERNANCE", 2, "EVT trace terms detected.");
     boost(results, "IDENTITY", 2, "EVT identity continuity terms detected.");
-  }
-
-  if (
-    text.includes("opc") ||
-    text.includes("proof receipt") ||
-    text.includes("proof record") ||
-    text.includes("chain hash")
-  ) {
-    boost(results, "GOVERNANCE", 3, "OPC proof receipt terms detected.");
-    boost(results, "COMPLIANCE", 2, "Proof receipt audit terms detected.");
   }
 
   if (
@@ -1156,6 +1359,20 @@ function selectBestIntent(
     text.includes("democratic infrastructure")
   ) {
     boost(results, "CIVIC", 3, "Civic or democratic infrastructure intent detected.");
+  }
+
+  if (
+    text.includes("moduli hbce") ||
+    text.includes("hbce modules") ||
+    text.includes("stack hbce") ||
+    text.includes("unebdo") ||
+    text.includes("metaexchange") ||
+    text.includes("iospace") ||
+    text.includes("cyberglobal") ||
+    text.includes("neuroloop")
+  ) {
+    boost(results, "GOVERNANCE", 3, "HBCE module explanation or governance intent detected.");
+    boost(results, "ASK", 2, "HBCE module request is usually explanatory.");
   }
 
   const best = results.sort((a, b) => b.score - a.score)[0];
