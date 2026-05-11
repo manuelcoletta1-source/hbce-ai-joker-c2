@@ -1,6 +1,6 @@
 # AI JOKER-C2 Operational Protocol
 
-## IPR-Bound Operational Protocol for MATRIX, U.S.E., CORPUS and APOKALYPSIS
+## IPR-Bound Operational Protocol for the Four Canonical Collections
 
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**  
@@ -18,9 +18,9 @@ AI JOKER-C2 is the governed runtime demonstrator for **IPR — Identity Primary 
 
 The primary operational instrument is **IPR**.
 
-AI JOKER-C2 demonstrates IPR in execution by connecting user input, runtime identity, project context, policy, risk, decision, AI output, event continuity, memory continuity, proof receipts and audit-oriented verification.
+AI JOKER-C2 demonstrates IPR in execution by connecting user input, runtime identity, project collection, operational context, policy, risk, decision, AI output, event continuity, memory continuity, proof receipts and audit-oriented verification.
 
-AI JOKER-C2 connects four primary project domains:
+AI JOKER-C2 connects four canonical project collections:
 
 ```txt
 1. MATRIX
@@ -29,11 +29,11 @@ AI JOKER-C2 connects four primary project domains:
 4. APOKALYPSIS
 ```
 
-The protocol defines how the runtime receives a request, classifies it, assigns it to a project domain, evaluates policy, classifies risk, produces a governance decision, executes only the permitted operation, generates an EVT record, creates EVT/IPR-bound memory when required, generates an OPC proof receipt when required and preserves operational continuity.
+The protocol defines how the runtime receives a request, classifies it, assigns it to a project collection, evaluates policy, classifies risk, produces a governance decision, executes only the permitted operation, generates an EVT record, creates EVT/IPR-bound memory when required, generates an OPC proof receipt when required and preserves operational continuity.
 
 AI JOKER-C2 is not a generic chatbot.
 
-It is a governed runtime for traceable, verifiable, fail-closed and IPR-bound AI-assisted operations.
+It is a governed runtime for traceable, verifiable, fail-closed and IPR-bound AI-assisted operations across the four canonical collections.
 
 ---
 
@@ -45,8 +45,8 @@ The canonical protocol sequence is:
 IPR Identity
 → Input
 → Intent
+→ Project Collection
 → Context
-→ Project Domain
 → Policy
 → Risk
 → Decision
@@ -64,11 +64,13 @@ Condensed:
 
 ```txt
 IPR
-→ Domain
+→ Collection
+→ Context
 → Policy
 → Risk
 → Decision
 → EVT
+→ Memory
 → OPC
 → Verification
 → Continuity
@@ -81,14 +83,29 @@ IPR = operational identity and proof instrument
 AI JOKER-C2 = governed runtime demonstrator
 MATRIX = operational infrastructure architecture
 U.S.E. = MATRIX-derived political-institutional application for a federated operational Europe
-CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
-APOKALYPSIS = historical threshold analysis
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar of operational reality
+APOKALYPSIS = historical-threshold analysis
 HBCE = governance, policy, audit and continuity ecosystem
 EVT = event trace
+Memory = EVT/IPR-bound runtime continuity
 OPC = operational proof receipt
 ```
 
-The protocol exists to prevent AI-assisted operations from becoming anonymous, unbounded, unclassified, untraced or unverifiable.
+Four-collection formula:
+
+```txt
+MATRIX builds the architecture.
+U.S.E. brings it into European political-institutional design.
+CORPUS grounds the grammar of operational reality.
+APOKALYPSIS reads the historical threshold.
+IPR makes everything attributable.
+EVT makes everything traceable.
+Memory makes everything continuous.
+OPC makes everything verifiable.
+AI JOKER-C2 makes everything operational.
+```
+
+The protocol exists to prevent AI-assisted operations from becoming anonymous, unbounded, unclassified, untraced, unremembered or unverifiable.
 
 ---
 
@@ -104,7 +121,7 @@ AI JOKER-C2 = governed runtime demonstrator
 MATRIX = operational infrastructure architecture
 U.S.E. = political-institutional application of MATRIX
 CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar domain
-APOKALYPSIS = historical threshold domain
+APOKALYPSIS = historical-threshold domain
 EVT = event trace layer
 Memory = EVT/IPR-bound continuity layer
 OPC = operational proof receipt layer
@@ -148,6 +165,7 @@ COMPLIANCE.md
 ROADMAP.md
 CONTRIBUTING.md
 system/system-manifest.json
+docs/HBCE_OPERATIONAL_STACK.md
 ```
 
 ---
@@ -234,7 +252,7 @@ Input handling principles:
 5. Avoid executing uploaded content.
 6. Avoid storing unnecessary sensitive payloads.
 7. Preserve enough structure for audit and reconstruction.
-8. Classify project domain before sensitive execution.
+8. Classify project collection before sensitive execution.
 9. State partial visibility when file visibility is incomplete.
 10. Preserve IPR relevance when the request concerns identity, proof or traceability.
 ```
@@ -264,7 +282,7 @@ SECURITY = defensive security analysis or hardening
 STRATEGIC = B2B, B2G or institutional positioning
 CIVIC = public decision, consultation, democratic infrastructure or U.S.E. work
 EDITORIAL = book, chapter, corpus or publication work
-VERIFY = inspect status, evidence, EVT, OPC or runtime output
+VERIFY = inspect status, evidence, EVT, memory, OPC or runtime output
 PROHIBITED = unsafe, abusive or outside project boundary
 UNKNOWN = intent cannot be safely classified
 ```
@@ -273,7 +291,50 @@ Unknown intent in sensitive contexts should not be treated as permission.
 
 ---
 
-## 8. Context Classification
+## 8. Project Collection Classification
+
+The project-collection stage determines whether the request belongs to `MATRIX`, `U.S.E.`, `CORPUS_ESOTEROLOGIA_ERMETICA`, `APOKALYPSIS`, `GENERAL` or `MULTI_DOMAIN`.
+
+```txt
+MATRIX = operational infrastructure, AI governance, Europe, B2B, B2G, cloud, data, energy, security
+U.S.E. = United States of Europe, European federation, federated digital voting, democratic infrastructure, sovereignty
+CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar, DCTT, canonical glossary, theoretical volumes
+APOKALYPSIS = historical threshold, decay, exposure, cultural-political-social system analysis
+GENERAL = no specific project collection applies
+MULTI_DOMAIN = more than one project collection applies
+```
+
+Project-collection classification affects:
+
+```txt
+policy;
+risk;
+decision;
+output format;
+response contract;
+EVT metadata;
+memory metadata;
+OPC proof receipt metadata;
+verification requirements;
+human oversight requirements.
+```
+
+The runtime must preserve the distinction between collections.
+
+Example:
+
+```txt
+MATRIX provides the infrastructure architecture.
+U.S.E. applies MATRIX to federated European institutional and democratic design.
+CORPUS provides the grammar.
+APOKALYPSIS provides the historical threshold.
+IPR provides the operational identity and proof instrument.
+AI JOKER-C2 provides the runtime demonstrator.
+```
+
+---
+
+## 9. Context Classification
 
 The context stage assigns the request to an operational context.
 
@@ -294,6 +355,8 @@ STRATEGIC = B2B, B2G, institutions, roadmap
 SECURITY = defensive security, resilience and risk
 COMPLIANCE = governance, audit, legal-technical alignment
 GOVERNANCE = policy, risk, decision and fail-closed logic
+CIVIC = public consultation, participation rights, civic infrastructure
+DEMOCRATIC_INFRASTRUCTURE = federated digital vote, referendum, democratic audit, civic process
 GENERAL = ordinary safe requests
 ```
 
@@ -301,49 +364,7 @@ Context classification supports policy and risk evaluation.
 
 It should not overload ordinary user communication.
 
-The `USE` context class must be treated as politically and institutionally sensitive when it concerns civic participation, voting, public decision-making, constitutional models or democratic infrastructure.
-
----
-
-## 9. Project Domain Classification
-
-The project-domain stage determines whether the request belongs to `MATRIX`, `U.S.E.`, `CORPUS_ESOTEROLOGIA_ERMETICA`, `APOKALYPSIS`, `GENERAL` or `MULTI_DOMAIN`.
-
-```txt
-MATRIX = operational infrastructure, AI governance, Europe, B2B, B2G, cloud, data, energy, security
-U.S.E. = United States of Europe, European federation, federated digital voting, democratic infrastructure, sovereignty
-CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar, DCTT, canonical glossary, theoretical volumes
-APOKALYPSIS = historical threshold, decay, exposure, cultural-political-social system analysis
-GENERAL = no specific project domain applies
-MULTI_DOMAIN = more than one project domain applies
-```
-
-Project-domain classification affects:
-
-```txt
-policy;
-risk;
-decision;
-output format;
-EVT metadata;
-memory metadata;
-OPC proof receipt metadata;
-verification requirements;
-human oversight requirements.
-```
-
-The runtime must preserve the distinction between domains.
-
-Example:
-
-```txt
-MATRIX provides the infrastructure architecture.
-U.S.E. applies MATRIX to federated European institutional and democratic design.
-CORPUS provides the grammar.
-APOKALYPSIS provides the historical threshold.
-IPR provides the operational identity and proof instrument.
-AI JOKER-C2 provides the runtime demonstrator.
-```
+The `USE`, `CIVIC` and `DEMOCRATIC_INFRASTRUCTURE` context classes must be treated as politically and institutionally sensitive when they concern civic participation, voting, public decision-making, constitutional models or democratic infrastructure.
 
 ---
 
@@ -374,7 +395,7 @@ Default handling:
 ```txt
 Documentation = ALLOW
 Governance architecture = ALLOW
-Institutional positioning = ALLOW
+Institutional positioning = ALLOW or AUDIT
 Defensive cybersecurity = ALLOW or AUDIT
 Critical infrastructure analysis = AUDIT or ESCALATE
 High-impact public-sector execution = ESCALATE
@@ -415,6 +436,8 @@ Default handling:
 Editorial or conceptual drafting = ALLOW
 Institutional architecture = ALLOW or AUDIT
 Digital sovereignty analysis = ALLOW or AUDIT
+Political value analysis = AUDIT
+European standardization analysis = AUDIT
 Public consultation model = AUDIT
 Federated digital voting model = AUDIT or ESCALATE
 Electoral infrastructure implementation = ESCALATE
@@ -438,11 +461,13 @@ IPR may support identity verification and participation rights.
 
 EVT may support process traceability.
 
+Memory may preserve runtime continuity around the process discussion.
+
 OPC may support proof receipts for process operations.
 
 The content of a democratic vote or civic choice must not be linked to the personal identity of the voter or participant.
 
-U.S.E. operations should be traceable when they affect governance documentation, public decision architecture, digital voting models, institutional positioning or constitutional-operational claims.
+U.S.E. operations should be traceable when they affect governance documentation, public decision architecture, digital voting models, institutional positioning, constitutional-operational claims or European standardization claims.
 
 ---
 
@@ -532,7 +557,36 @@ It must not become a tool for unlawful mobilization, coercion or abuse.
 
 ---
 
-## 14. Policy Evaluation
+## 14. Multi-Domain Protocol
+
+A request is `MULTI_DOMAIN` when it crosses more than one canonical collection.
+
+Common multi-domain patterns:
+
+```txt
+MATRIX + U.S.E. = architecture plus European political-institutional application
+MATRIX + CORPUS = infrastructure plus theoretical grammar
+CORPUS + APOKALYPSIS = conceptual grammar plus historical threshold
+MATRIX + U.S.E. + CORPUS + APOKALYPSIS = full ecosystem map
+IPR + EVT + Memory + OPC across any collection = runtime governance layer
+```
+
+Default handling:
+
+```txt
+Documentation = ALLOW or AUDIT
+Architecture mapping = AUDIT
+Collection map = AUDIT
+Strategic positioning = AUDIT
+External institutional claims = AUDIT or ESCALATE
+Unsafe operational execution = BLOCK
+```
+
+Multi-domain work should preserve distinctions instead of collapsing the collections into one generic concept.
+
+---
+
+## 15. Policy Evaluation
 
 The policy stage applies project boundaries.
 
@@ -549,6 +603,7 @@ whether the operation is dual-use sensitive;
 whether the operation is politically, civically or democratically sensitive;
 whether the domain is MATRIX, U.S.E., CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN;
 whether an EVT should be generated;
+whether memory should be generated;
 whether an OPC proof receipt should be generated;
 whether the request should be blocked, degraded or escalated.
 ```
@@ -559,7 +614,7 @@ No sensitive operation should bypass policy.
 
 ---
 
-## 15. Risk Classification
+## 16. Risk Classification
 
 The risk stage assigns a risk class.
 
@@ -581,9 +636,11 @@ the possible operational effect of the output.
 
 A request may look harmless but become sensitive when applied to real systems, real organizations, critical infrastructure, public-sector workflows, democratic processes, unauthorized activity or high-impact domains.
 
+Political, institutional and European-standardization analysis should remain answerable, but audit-ready.
+
 ---
 
-## 16. Decision Layer
+## 17. Decision Layer
 
 The decision layer determines what the runtime may do.
 
@@ -607,10 +664,13 @@ The decision layer should preserve:
 ```txt
 reason;
 context;
-project domain;
+project collection;
 risk;
 policy status;
 IPR binding;
+EVT requirement;
+memory requirement;
+OPC requirement;
 allowed action;
 blocked action when applicable;
 escalation requirement;
@@ -627,6 +687,9 @@ Example decision object:
   "context": "GITHUB",
   "domain": "MATRIX",
   "iprBinding": true,
+  "evtRequired": true,
+  "memoryRequired": true,
+  "opcRequired": false,
   "runtimeRole": "IPR_RUNTIME_DEMONSTRATOR",
   "failClosed": false,
   "reason": "Repository documentation update"
@@ -642,6 +705,9 @@ Example U.S.E.-related decision object:
   "context": "USE",
   "domain": "U.S.E.",
   "iprBinding": true,
+  "evtRequired": true,
+  "memoryRequired": true,
+  "opcRequired": true,
   "runtimeRole": "IPR_RUNTIME_DEMONSTRATOR",
   "failClosed": false,
   "auditRecommended": true,
@@ -651,9 +717,9 @@ Example U.S.E.-related decision object:
 
 ---
 
-## 17. Execution Layer
+## 18. Execution Layer
 
-Execution happens only after identity, intent, context, project domain, policy, risk and decision have been evaluated.
+Execution happens only after identity, intent, project collection, context, policy, risk and decision have been evaluated.
 
 Execution may include:
 
@@ -668,6 +734,7 @@ producing a governance document;
 producing a strategic document;
 producing a civic architecture document;
 generating an EVT record;
+generating EVT/IPR-bound memory;
 appending to a ledger;
 generating an OPC proof receipt;
 verifying a record;
@@ -681,13 +748,13 @@ ALLOW = execute normally
 BLOCK = do not execute unsafe content
 ESCALATE = request review or provide safe framing
 DEGRADE = provide limited safe support
-AUDIT = execute only with event or review record
+AUDIT = execute only with event, memory and proof record when applicable
 NOOP = take no operational action
 ```
 
 ---
 
-## 18. Fail-Closed Rule
+## 19. Fail-Closed Rule
 
 Fail-closed is the safety boundary of the protocol.
 
@@ -698,7 +765,7 @@ identity context is missing;
 runtime state is invalid;
 authority is unclear;
 intent is unsafe;
-project domain cannot be classified in a sensitive context;
+project collection cannot be classified in a sensitive context;
 policy cannot be applied;
 risk cannot be classified;
 operation may enable abuse;
@@ -706,6 +773,8 @@ operation may expose secrets;
 operation may affect real systems without authorization;
 operation may affect democratic or civic infrastructure without safeguards;
 event trace cannot be generated when required;
+memory continuity cannot be preserved when required;
+OPC proof receipt cannot be generated when required;
 continuity cannot be preserved when required;
 human review is required but absent;
 legal or compliance basis is uncertain in a sensitive context.
@@ -723,7 +792,7 @@ It is not system failure.
 
 ---
 
-## 19. EVT Generation
+## 20. EVT Generation
 
 EVT means Event.
 
@@ -738,7 +807,7 @@ entity;
 IPR;
 timestamp;
 runtime state;
-project domain;
+project collection;
 context class;
 intent class;
 risk class;
@@ -809,7 +878,7 @@ EVT is not legal certification by itself. It is the verifiable event trace conne
 
 ---
 
-## 20. Memory Protocol
+## 21. Memory Protocol
 
 AI JOKER-C2 memory is an EVT/IPR-bound continuity mechanism.
 
@@ -826,11 +895,12 @@ response reference;
 document family;
 runtime state;
 decision;
-project domain;
+project collection;
 context class;
 memory event;
 governed EVT;
-hash;
+memory hash;
+OPC proof reference when available;
 timestamp.
 ```
 
@@ -842,7 +912,7 @@ Memory supports:
 continuity across interactions;
 document continuity;
 repository work continuity;
-domain continuity;
+collection continuity;
 runtime identity continuity;
 audit-oriented reconstruction.
 ```
@@ -851,7 +921,7 @@ Memory does not replace user review, legal validation or evidence verification.
 
 ---
 
-## 21. OPC Proof Receipt Generation
+## 22. OPC Proof Receipt Generation
 
 OPC means Operational Proof & Compliance Layer.
 
@@ -896,9 +966,9 @@ Verification reconstructs the operation.
 
 ---
 
-## 22. Ledger Protocol
+## 23. Ledger Protocol
 
-The ledger preserves EVT and OPC continuity.
+The ledger preserves EVT, memory and OPC continuity.
 
 Possible ledger implementations:
 
@@ -917,12 +987,13 @@ Ledger rules:
 1. Events should be append-only.
 2. Historical events should not be silently rewritten.
 3. Corrections should be new events.
-4. Each event should reference the previous event.
+4. Each event should reference the previous event or valid external runtime anchor.
 5. Hashes should be reproducible where possible.
 6. Sensitive payloads should be minimized.
 7. Public and internal views should be separated.
-8. Project-domain metadata should be preserved.
-9. OPC proof chain metadata should be preserved where applicable.
+8. Project-collection metadata should be preserved.
+9. Memory metadata should be preserved where applicable.
+10. OPC proof chain metadata should be preserved where applicable.
 ```
 
 Correction example:
@@ -945,7 +1016,7 @@ Correction is a new trace.
 
 ---
 
-## 23. Verification Protocol
+## 24. Verification Protocol
 
 Verification should allow reconstruction of the operational sequence.
 
@@ -959,7 +1030,7 @@ timestamp;
 identity reference;
 IPR reference;
 runtime state;
-project domain;
+project collection;
 context class;
 risk class;
 governance decision;
@@ -967,6 +1038,7 @@ operation status;
 hash consistency;
 verification status;
 audit status;
+memory continuity where required;
 OPC proof receipt existence where required;
 correction or supersession state.
 ```
@@ -990,7 +1062,7 @@ Both should remain distinct.
 
 ---
 
-## 24. Hashing Protocol
+## 25. Hashing Protocol
 
 The recommended hash algorithm is:
 
@@ -1018,7 +1090,8 @@ Hashing principles:
 9. Preserve project-domain fields.
 10. Preserve context-class fields.
 11. Preserve IPR and entity fields.
-12. Preserve OPC chain fields where applicable.
+12. Preserve memory hash fields where applicable.
+13. Preserve OPC chain fields where applicable.
 ```
 
 A hash supports integrity.
@@ -1029,7 +1102,7 @@ Policy, risk and decision remain required.
 
 ---
 
-## 25. Human Oversight Protocol
+## 26. Human Oversight Protocol
 
 Human oversight must be preserved for high-impact operations.
 
@@ -1066,7 +1139,7 @@ It must not replace responsible human operators.
 
 ---
 
-## 26. Democratic and Civic Infrastructure Protocol
+## 27. Democratic and Civic Infrastructure Protocol
 
 The U.S.E. domain introduces civic and democratic infrastructure reasoning.
 
@@ -1127,7 +1200,7 @@ formal certification where applicable.
 
 ---
 
-## 27. File Processing Protocol
+## 28. File Processing Protocol
 
 File processing must be controlled.
 
@@ -1158,7 +1231,7 @@ File processing rules:
 6. State when file visibility is incomplete.
 7. Preserve user control over uploaded content.
 8. Use references or hashes for large or sensitive files where possible.
-9. Preserve project-domain metadata when relevant.
+9. Preserve project-collection metadata when relevant.
 10. Preserve IPR binding when the operation becomes part of an auditable runtime sequence.
 ```
 
@@ -1175,7 +1248,7 @@ Unknown or binary files should be handled conservatively.
 
 ---
 
-## 28. API Protocol
+## 29. API Protocol
 
 API routes must preserve controlled execution.
 
@@ -1203,12 +1276,13 @@ API rules:
 5. Avoid logging sensitive payloads.
 6. Apply policy and risk logic where relevant.
 7. Support EVT generation for relevant operations.
-8. Support OPC proof receipts for relevant operations.
-9. Preserve fail-closed behavior.
-10. Return clear safe errors.
-11. Avoid unrestricted execution endpoints.
-12. Preserve project-domain metadata.
-13. Keep public and internal routes separated.
+8. Support memory generation for relevant operations.
+9. Support OPC proof receipts for relevant operations.
+10. Preserve fail-closed behavior.
+11. Return clear safe errors.
+12. Avoid unrestricted execution endpoints.
+13. Preserve project-collection metadata.
+14. Keep public and internal routes separated.
 ```
 
 API routes are operational surfaces.
@@ -1217,7 +1291,7 @@ They must not bypass governance.
 
 ---
 
-## 29. Model Interaction Protocol
+## 30. Model Interaction Protocol
 
 The model layer supports reasoning and generation.
 
@@ -1243,6 +1317,7 @@ Model output should remain subject to:
 
 ```txt
 project scope;
+collection classification;
 domain classification;
 policy checks;
 risk classification;
@@ -1257,7 +1332,7 @@ The model does not govern the runtime.
 
 ---
 
-## 30. Security Protocol
+## 31. Security Protocol
 
 AI JOKER-C2 supports defensive and governance-oriented security only.
 
@@ -1299,7 +1374,7 @@ Offensive or abusive capability is prohibited.
 
 ---
 
-## 31. Dual-Use Protocol
+## 32. Dual-Use Protocol
 
 AI JOKER-C2 is dual-use only in a controlled civil and strategic sense.
 
@@ -1341,7 +1416,7 @@ Dual-use means lawful, defensive, accountable and traceable strategic applicatio
 
 ---
 
-## 32. Public Communication Protocol
+## 33. Public Communication Protocol
 
 AI JOKER-C2 should communicate clearly.
 
@@ -1362,6 +1437,7 @@ Internal runtime details may be exposed when the user asks for:
 architecture;
 governance;
 EVT;
+Memory;
 OPC;
 protocol;
 audit;
@@ -1369,7 +1445,10 @@ verification;
 identity;
 runtime diagnostics;
 GitHub implementation;
+MATRIX;
 U.S.E.;
+CORPUS;
+APOKALYPSIS;
 federated digital vote.
 ```
 
@@ -1382,12 +1461,14 @@ IPR is the primary operational instrument.
 AI JOKER-C2 is the runtime demonstrator.
 MATRIX is the architectural framework.
 U.S.E. is the MATRIX-derived political-institutional application domain.
+CORPUS is the disciplinary grammar.
+APOKALYPSIS is the historical-threshold reading.
 HBCE is the governance ecosystem.
 ```
 
 ---
 
-## 33. Error Handling Protocol
+## 34. Error Handling Protocol
 
 Errors should be safe and useful.
 
@@ -1424,7 +1505,7 @@ Errors should not become uncontrolled execution paths.
 
 ---
 
-## 34. Degraded Mode Protocol
+## 35. Degraded Mode Protocol
 
 The runtime may enter degraded mode when:
 
@@ -1433,6 +1514,7 @@ model API is unavailable;
 environment variables are missing;
 file processing fails;
 ledger is unavailable;
+memory generation is unavailable;
 OPC proof generation is unavailable;
 verifier is unavailable;
 runtime state is partial;
@@ -1457,25 +1539,26 @@ non-offensive boundary;
 fail-closed behavior;
 no secret exposure;
 user-facing clarity;
-project-domain integrity;
+project-collection integrity;
 IPR hierarchy;
 public communication safety.
 ```
 
 ---
 
-## 35. Contribution Protocol
+## 36. Contribution Protocol
 
 Future contributions must preserve this protocol.
 
 A contribution must not:
 
 ```txt
-bypass project-domain classification;
+bypass project-collection classification;
 bypass policy;
 bypass risk classification;
 remove traceability;
 weaken EVT continuity;
+weaken memory continuity;
 weaken OPC proof receipt integrity;
 weaken fail-closed behavior;
 expose secrets;
@@ -1498,7 +1581,7 @@ auditability;
 runtime stability;
 documentation;
 defensive utility;
-project-domain alignment;
+project-collection alignment;
 IPR runtime demonstration.
 ```
 
@@ -1510,7 +1593,7 @@ CONTRIBUTING.md
 
 ---
 
-## 36. Implementation Targets
+## 37. Implementation Targets
 
 Suggested implementation modules:
 
@@ -1527,6 +1610,7 @@ lib/evt-memory.ts
 lib/evt-memory-ledger.ts
 lib/opc-proof.ts
 lib/human-oversight.ts
+lib/joker-response-contract.ts
 ```
 
 Suggested API routes:
@@ -1554,7 +1638,7 @@ Implementation should follow the protocol rather than inventing parallel logic.
 
 ---
 
-## 37. Protocol Invariants
+## 38. Protocol Invariants
 
 The following invariants must remain stable:
 
@@ -1565,7 +1649,7 @@ The following invariants must remain stable:
 4. MATRIX provides the operational infrastructure architecture.
 5. U.S.E. provides the MATRIX-derived political-institutional application domain.
 6. CORPUS ESOTEROLOGIA ERMETICA provides the disciplinary grammar domain.
-7. APOKALYPSIS provides the historical threshold domain.
+7. APOKALYPSIS provides the historical-threshold domain.
 8. HBCE provides the governance infrastructure.
 9. Policy provides boundary.
 10. Risk provides classification.
@@ -1580,15 +1664,16 @@ The following invariants must remain stable:
 19. Offensive use is outside scope.
 20. The model layer is not the authority layer.
 21. Corrections must be new events.
-22. Project-domain metadata must be preserved.
+22. Project-collection metadata must be preserved.
 23. Public communication must remain readable.
 24. Democratic choice content must not be linked to personal voter identity.
 25. U.S.E. must preserve democratic safeguards, anonymity, auditability and institutional legality.
+26. Four-collection continuity must preserve the distinction between MATRIX, U.S.E., CORPUS and APOKALYPSIS.
 ```
 
 ---
 
-## 38. Protocol Checklist
+## 39. Protocol Checklist
 
 Before accepting a runtime operation, check:
 
@@ -1596,8 +1681,8 @@ Before accepting a runtime operation, check:
 Is identity defined?
 Is the input understood?
 Is intent classified?
+Is project collection classified?
 Is context classified?
-Is project domain classified?
 Is policy applicable?
 Is risk classified?
 Is the decision clear?
@@ -1622,9 +1707,10 @@ Are secrets protected?
 Are API routes safe?
 Is file handling controlled?
 Is model output governed?
-Is project-domain classification preserved?
+Is project-collection classification preserved?
 Is IPR hierarchy preserved?
 Is EVT compatibility preserved?
+Is memory compatibility preserved?
 Is OPC proof receipt compatibility preserved?
 Is ledger continuity preserved?
 Is verification possible?
@@ -1635,11 +1721,13 @@ Are democratic safeguards preserved where U.S.E. or civic infrastructure is invo
 
 ---
 
-## 39. Final Protocol Formula
+## 40. Final Protocol Formula
 
 No identity, no attribution.
 
-No domain, no correct routing.
+No collection, no correct routing.
+
+No context, no operational frame.
 
 No policy, no boundary.
 
@@ -1665,8 +1753,8 @@ Operational formula:
 IPR Identity
 → Input
 → Intent
+→ Project Collection
 → Context
-→ Project Domain
 → Policy
 → Risk
 → Decision
@@ -1692,16 +1780,30 @@ APOKALYPSIS = threshold.
 HBCE = governance.
 ```
 
+Final collection formula:
+
+```txt
+MATRIX builds the architecture.
+U.S.E. brings it into European political-institutional design.
+CORPUS grounds the grammar of operational reality.
+APOKALYPSIS reads the historical threshold.
+IPR makes everything attributable.
+EVT makes everything traceable.
+Memory makes everything continuous.
+OPC makes everything verifiable.
+AI JOKER-C2 makes everything operational.
+```
+
 ---
 
-## 40. Status
+## 41. Status
 
 ```txt
 Document: PROTOCOL.md
 Status: Active operational protocol
 Project: AI JOKER-C2
 Ecosystem: HERMETICUM B.C.E.
-Connected domains: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
 Infrastructure: HBCE
 Identity layer: IPR
 Runtime role: IPR runtime demonstrator
