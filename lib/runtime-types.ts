@@ -6,6 +6,7 @@
  * This file defines the canonical vocabulary used by:
  * - IPR runtime identity
  * - project-domain classification
+ * - HBCE module awareness
  * - context classification
  * - intent classification
  * - policy evaluation
@@ -26,9 +27,14 @@
  * - U.S.E. = MATRIX-derived political-institutional application
  * - CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar
  * - APOKALYPSIS = historical threshold analysis
+ * - UNEBDO = anchoring, validation and evidentiary continuity
  * - EVT = event trace
  * - EVT/IPR memory = runtime continuity
  * - OPC = operational proof receipt
+ * - MetaExchange = structured exchange
+ * - IOspace = runtime visibility and operational interaction
+ * - CyberGlobal = defensive cybersecurity and resilience
+ * - NeuroLoop = validation, feedback and review loop
  */
 
 export type RuntimeState =
@@ -82,6 +88,39 @@ export type DomainType =
   | "HISTORICAL_THRESHOLD_ANALYSIS_DOMAIN"
   | "GENERAL_CONTEXT"
   | "ECOSYSTEM_OPERATION";
+
+export type HbceModule =
+  | "UNEBDO"
+  | "OPC"
+  | "MetaExchange"
+  | "IOspace"
+  | "CyberGlobal"
+  | "NeuroLoop"
+  | "NONE";
+
+export type PrimaryHbceModule =
+  | "UNEBDO"
+  | "OPC"
+  | "MetaExchange"
+  | "IOspace"
+  | "CyberGlobal"
+  | "NeuroLoop";
+
+export type HbceModuleType =
+  | "ANCHORING_VALIDATION_CONTINUITY_LAYER"
+  | "OPERATIONAL_PROOF_AND_COMPLIANCE_LAYER"
+  | "STRUCTURED_EXCHANGE_LAYER"
+  | "RUNTIME_VISIBILITY_INTERACTION_LAYER"
+  | "DEFENSIVE_CYBERSECURITY_RESILIENCE_LAYER"
+  | "VALIDATION_FEEDBACK_REVIEW_LOOP"
+  | "NO_MODULE";
+
+export type HbceModuleStatus =
+  | "ACTIVE_PROTOTYPE_LAYER"
+  | "PLANNED_FUNCTIONAL_LAYER"
+  | "PLANNED_INTERFACE_LAYER"
+  | "DOCUMENTATION_ONLY"
+  | "NO_MODULE";
 
 export type ContextClass =
   | "IDENTITY"
@@ -373,6 +412,37 @@ export type ProjectBinding = {
   democratic_boundary?: string;
 };
 
+export type HbceModuleMetadata = {
+  module: HbceModule;
+  moduleType: HbceModuleType;
+  status: HbceModuleStatus;
+  label: string;
+  shortDefinition: string;
+  runtimeQuestion: string;
+  dependsOn: string[];
+  boundary: string;
+};
+
+export type HbceModuleClassification = {
+  module: HbceModule;
+  activeModules: HbceModule[];
+  primaryModule: HbceModule;
+  moduleType: HbceModuleType;
+  confidence: number;
+  reasons: string[];
+  scores: Partial<Record<PrimaryHbceModule, number>>;
+};
+
+export type HbceModuleBinding = {
+  ecosystem: "HERMETICUM B.C.E.";
+  module: HbceModule;
+  active_modules?: HbceModule[];
+  module_type: HbceModuleType;
+  label?: string;
+  status?: HbceModuleStatus;
+  boundary?: string;
+};
+
 export type ContextClassification = {
   contextClass: ContextClass;
   intentClass: IntentClass;
@@ -417,6 +487,8 @@ export type RuntimeDecisionResult = {
   reasons: string[];
   projectDomain?: ProjectDomain;
   activeDomains?: ProjectDomain[];
+  hbceModule?: HbceModule;
+  activeModules?: HbceModule[];
   policyOutcome?: PolicyOutcome;
   humanOversight?: OversightState;
   riskClass?: RiskClass;
@@ -483,6 +555,7 @@ export type RuntimeEvent = {
     role?: RuntimeRole;
   };
   project?: ProjectBinding;
+  hbce_module?: HbceModuleBinding;
   context: {
     class: ContextClass;
     intent: IntentClass;
@@ -520,6 +593,7 @@ export type RuntimeEventProjectView = {
   prev: string;
   timestamp: string;
   project: ProjectBinding | null;
+  hbceModule?: HbceModuleBinding | null;
   contextClass: ContextClass;
   intentClass: IntentClass;
   riskClass: RiskClass;
@@ -560,6 +634,7 @@ export type OpcProofRecord = {
     decision: RuntimeDecision;
     contextClass: ContextClass;
     projectDomain?: ProjectDomain;
+    hbceModule?: HbceModule;
     riskClass: RiskClass;
     policyReference?: string;
   };
@@ -655,6 +730,43 @@ export const DOMAIN_TYPES: DomainType[] = [
   "HISTORICAL_THRESHOLD_ANALYSIS_DOMAIN",
   "GENERAL_CONTEXT",
   "ECOSYSTEM_OPERATION"
+];
+
+export const HBCE_MODULES: HbceModule[] = [
+  "UNEBDO",
+  "OPC",
+  "MetaExchange",
+  "IOspace",
+  "CyberGlobal",
+  "NeuroLoop",
+  "NONE"
+];
+
+export const PRIMARY_HBCE_MODULES: PrimaryHbceModule[] = [
+  "UNEBDO",
+  "OPC",
+  "MetaExchange",
+  "IOspace",
+  "CyberGlobal",
+  "NeuroLoop"
+];
+
+export const HBCE_MODULE_TYPES: HbceModuleType[] = [
+  "ANCHORING_VALIDATION_CONTINUITY_LAYER",
+  "OPERATIONAL_PROOF_AND_COMPLIANCE_LAYER",
+  "STRUCTURED_EXCHANGE_LAYER",
+  "RUNTIME_VISIBILITY_INTERACTION_LAYER",
+  "DEFENSIVE_CYBERSECURITY_RESILIENCE_LAYER",
+  "VALIDATION_FEEDBACK_REVIEW_LOOP",
+  "NO_MODULE"
+];
+
+export const HBCE_MODULE_STATUSES: HbceModuleStatus[] = [
+  "ACTIVE_PROTOTYPE_LAYER",
+  "PLANNED_FUNCTIONAL_LAYER",
+  "PLANNED_INTERFACE_LAYER",
+  "DOCUMENTATION_ONLY",
+  "NO_MODULE"
 ];
 
 export const CONTEXT_CLASSES: ContextClass[] = [
@@ -863,6 +975,32 @@ export const CANONICAL_IPR_RUNTIME_IDENTITY: IprRuntimeIdentity = {
 export const USE_DEMOCRATIC_BOUNDARY =
   "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
 
+export const HBCE_MODULE_BOUNDARIES: Record<HbceModule, string> = {
+  UNEBDO:
+    "UNEBDO supports anchoring, validation and evidentiary continuity. It does not create automatic legal certification by default.",
+  OPC:
+    "OPC creates technical proof receipts for audit, verification and governance review. OPC proof receipts are not automatic legal certification.",
+  MetaExchange:
+    "MetaExchange must remain governed, access-controlled and policy-aware. It must not become permissionless data exchange.",
+  IOspace:
+    "IOspace must expose only public-safe metadata unless controlled internal access is available.",
+  CyberGlobal:
+    "CyberGlobal must remain defensive, audit-oriented, governance-oriented and non-offensive.",
+  NeuroLoop:
+    "NeuroLoop is not autonomous authority and must not become uncontrolled learning or unsupervised decision execution.",
+  NONE: "No HBCE module is active."
+};
+
+export const HBCE_MODULE_DEPENDENCIES: Record<HbceModule, string[]> = {
+  UNEBDO: ["IPR", "EVT", "OPC"],
+  OPC: ["IPR", "EVT", "EVT_IPR_BOUND_MEMORY"],
+  MetaExchange: ["IPR", "EVT", "EVT_IPR_BOUND_MEMORY", "OPC"],
+  IOspace: ["IPR", "EVT", "EVT_IPR_BOUND_MEMORY", "OPC"],
+  CyberGlobal: ["IPR", "EVT", "OPC", "POLICY", "RISK", "HUMAN_OVERSIGHT"],
+  NeuroLoop: ["IPR", "EVT", "EVT_IPR_BOUND_MEMORY", "OPC", "HUMAN_OVERSIGHT", "AUDIT"],
+  NONE: []
+};
+
 export function isRuntimeState(value: string): value is RuntimeState {
   return RUNTIME_STATES.includes(value as RuntimeState);
 }
@@ -891,6 +1029,22 @@ export function isPrimaryProjectDomain(
 
 export function isDomainType(value: string): value is DomainType {
   return DOMAIN_TYPES.includes(value as DomainType);
+}
+
+export function isHbceModule(value: string): value is HbceModule {
+  return HBCE_MODULES.includes(value as HbceModule);
+}
+
+export function isPrimaryHbceModule(value: string): value is PrimaryHbceModule {
+  return PRIMARY_HBCE_MODULES.includes(value as PrimaryHbceModule);
+}
+
+export function isHbceModuleType(value: string): value is HbceModuleType {
+  return HBCE_MODULE_TYPES.includes(value as HbceModuleType);
+}
+
+export function isHbceModuleStatus(value: string): value is HbceModuleStatus {
+  return HBCE_MODULE_STATUSES.includes(value as HbceModuleStatus);
 }
 
 export function isContextClass(value: string): value is ContextClass {
@@ -993,6 +1147,116 @@ export function getProjectDomainLabel(domain: ProjectDomain): string {
   }
 }
 
+export function getHbceModuleType(module: HbceModule): HbceModuleType {
+  switch (module) {
+    case "UNEBDO":
+      return "ANCHORING_VALIDATION_CONTINUITY_LAYER";
+    case "OPC":
+      return "OPERATIONAL_PROOF_AND_COMPLIANCE_LAYER";
+    case "MetaExchange":
+      return "STRUCTURED_EXCHANGE_LAYER";
+    case "IOspace":
+      return "RUNTIME_VISIBILITY_INTERACTION_LAYER";
+    case "CyberGlobal":
+      return "DEFENSIVE_CYBERSECURITY_RESILIENCE_LAYER";
+    case "NeuroLoop":
+      return "VALIDATION_FEEDBACK_REVIEW_LOOP";
+    case "NONE":
+    default:
+      return "NO_MODULE";
+  }
+}
+
+export function getHbceModuleStatus(module: HbceModule): HbceModuleStatus {
+  switch (module) {
+    case "OPC":
+      return "ACTIVE_PROTOTYPE_LAYER";
+    case "IOspace":
+      return "PLANNED_INTERFACE_LAYER";
+    case "UNEBDO":
+    case "MetaExchange":
+    case "CyberGlobal":
+    case "NeuroLoop":
+      return "PLANNED_FUNCTIONAL_LAYER";
+    case "NONE":
+    default:
+      return "NO_MODULE";
+  }
+}
+
+export function getHbceModuleLabel(module: HbceModule): string {
+  switch (module) {
+    case "UNEBDO":
+      return "UNEBDO";
+    case "OPC":
+      return "OPC — Operational Proof & Compliance Layer";
+    case "MetaExchange":
+      return "MetaExchange";
+    case "IOspace":
+      return "IOspace";
+    case "CyberGlobal":
+      return "CyberGlobal";
+    case "NeuroLoop":
+      return "NeuroLoop";
+    case "NONE":
+    default:
+      return "NONE";
+  }
+}
+
+export function getHbceModuleShortDefinition(module: HbceModule): string {
+  switch (module) {
+    case "UNEBDO":
+      return "Anchoring, validation and evidentiary continuity support.";
+    case "OPC":
+      return "Operational proof receipt and compliance layer.";
+    case "MetaExchange":
+      return "Structured exchange layer for identities, proofs, events, documents and contexts.";
+    case "IOspace":
+      return "Runtime visibility and operational interaction space.";
+    case "CyberGlobal":
+      return "Defensive cybersecurity and resilience layer.";
+    case "NeuroLoop":
+      return "Validation, feedback and controlled review loop.";
+    case "NONE":
+    default:
+      return "No HBCE module is active.";
+  }
+}
+
+export function getHbceModuleRuntimeQuestion(module: HbceModule): string {
+  switch (module) {
+    case "UNEBDO":
+      return "How can the runtime strengthen anchoring, validation and evidentiary continuity?";
+    case "OPC":
+      return "How can the runtime generate a technical proof receipt for audit and verification?";
+    case "MetaExchange":
+      return "How can controlled operational objects be exchanged without losing governance?";
+    case "IOspace":
+      return "How can runtime state, events, memory and proof receipts be made visible safely?";
+    case "CyberGlobal":
+      return "How can defensive cybersecurity, resilience and risk mapping be supported without offensive capability?";
+    case "NeuroLoop":
+      return "How can validation, feedback and review loops improve decisions without becoming autonomous authority?";
+    case "NONE":
+    default:
+      return "Does this request require an HBCE module binding?";
+  }
+}
+
+export function getHbceModuleMetadata(module: HbceModule): HbceModuleMetadata {
+  return {
+    module,
+    moduleType: getHbceModuleType(module),
+    status: getHbceModuleStatus(module),
+    label: getHbceModuleLabel(module),
+    shortDefinition: getHbceModuleShortDefinition(module),
+    runtimeQuestion: getHbceModuleRuntimeQuestion(module),
+    dependsOn: HBCE_MODULE_DEPENDENCIES[module],
+    boundary: HBCE_MODULE_BOUNDARIES[module]
+  };
+}
+
 export function createProjectBinding(
   domain: ProjectDomain,
   activeDomains?: ProjectDomain[]
@@ -1030,5 +1294,34 @@ export function createProjectBinding(
     parent_domain: domain === "U.S.E." ? "MATRIX" : undefined,
     democratic_boundary:
       domain === "U.S.E." ? USE_DEMOCRATIC_BOUNDARY : undefined
+  };
+}
+
+export function createHbceModuleBinding(
+  module: HbceModule,
+  activeModules?: HbceModule[]
+): HbceModuleBinding {
+  const moduleType = getHbceModuleType(module);
+
+  if (module === "NONE") {
+    return {
+      ecosystem: "HERMETICUM B.C.E.",
+      module,
+      active_modules: activeModules,
+      module_type: moduleType,
+      label: "NONE",
+      status: "NO_MODULE",
+      boundary: HBCE_MODULE_BOUNDARIES.NONE
+    };
+  }
+
+  return {
+    ecosystem: "HERMETICUM B.C.E.",
+    module,
+    active_modules: activeModules,
+    module_type: moduleType,
+    label: getHbceModuleLabel(module),
+    status: getHbceModuleStatus(module),
+    boundary: HBCE_MODULE_BOUNDARIES[module]
   };
 }
