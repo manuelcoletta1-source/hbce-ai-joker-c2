@@ -174,7 +174,7 @@ export async function appendEvent(
       evt: event.evt,
       prev: event.prev,
       ledgerPath,
-      reason: "Runtime event appended to ledger."
+      reason: continuity.reason || "Runtime event appended to ledger."
     };
   } catch (error) {
     return {
@@ -436,17 +436,20 @@ function validateAppendContinuity(
   events: RuntimeEvent[],
   nextEvent: RuntimeEvent
 ): { ok: boolean; reason: string } {
-  if (events.length === 0) {
-    if (nextEvent.prev !== "GENESIS") {
-      return {
-        ok: false,
-        reason: `Append continuity rejected: first ledger event must reference GENESIS, received prev=${nextEvent.prev}.`
-      };
-    }
+  if (!nextEvent.prev || !nextEvent.prev.trim()) {
+    return {
+      ok: false,
+      reason: "Append continuity rejected: next event has no previous reference."
+    };
+  }
 
+  if (events.length === 0) {
     return {
       ok: true,
-      reason: "First event references GENESIS."
+      reason:
+        nextEvent.prev === "GENESIS"
+          ? "First event references GENESIS."
+          : `First event references external runtime anchor ${nextEvent.prev}.`
     };
   }
 
@@ -474,11 +477,11 @@ function validateAppendContinuity(
 }
 
 function verifyPreviousReferences(events: RuntimeEvent[]): boolean {
-  if (events.length <= 1) {
+  if (events.length === 0) {
     return true;
   }
 
-  if (events[0]?.prev !== "GENESIS") {
+  if (!events[0]?.prev) {
     return false;
   }
 
