@@ -8,6 +8,7 @@ export type JokerResponseContractKind =
   | "CIVIC_DIGITAL"
   | "USE_ACRONYM"
   | "USE_POLITICAL_VALUE"
+  | "HBCE_MODULES"
   | "GENERAL";
 
 export type ResponseContract = {
@@ -263,8 +264,99 @@ function isCivicDigitalQuestion(text: string): boolean {
   );
 }
 
+function isHbceModulesQuestion(text: string): boolean {
+  const hasModuleTerm = containsAny(text, [
+    "moduli hbce",
+    "moduli dell hbce",
+    "moduli dell'hbce",
+    "sei moduli",
+    "6 moduli",
+    "six modules",
+    "hbce modules",
+    "hbce module",
+    "stack hbce",
+    "hbce stack",
+    "moduli dello stack",
+    "stack tecnico operativo",
+    "stack tecnico-operativo",
+    "unebdo",
+    "metaexchange",
+    "meta exchange",
+    "iospace",
+    "io space",
+    "cyberglobal",
+    "cyber global",
+    "neuroloop",
+    "neuro loop"
+  ]);
+
+  if (!hasModuleTerm) {
+    return false;
+  }
+
+  return containsAny(text, [
+    "spiegami",
+    "cosa sono",
+    "a cosa servono",
+    "funzione",
+    "funzioni",
+    "ruolo",
+    "ruoli",
+    "novita",
+    "novità",
+    "moduli",
+    "stack",
+    "operativo",
+    "technical modules",
+    "operational modules",
+    "what are",
+    "what is",
+    "explain",
+    "function",
+    "role"
+  ]);
+}
+
 function buildContract(kind: JokerResponseContractKind): ResponseContract {
   switch (kind) {
+    case "HBCE_MODULES":
+      return {
+        kind,
+        matched: true,
+        title: "Contratto risposta moduli HBCE",
+        mandatoryOpening: [
+          "I moduli HBCE sono funzioni tecnico-operative dello stack MATRIX/HBCE: non sostituiscono IPR, ma lo estendono in ancoraggio, prova, scambio, visibilità, cybersecurity difensiva e validazione."
+        ],
+        mandatoryConcepts: [
+          "IPR resta il prodotto operativo base.",
+          "AI JOKER-C2 è il runtime che mostra IPR e i moduli in funzione.",
+          "UNEBDO = ancoraggio, validazione e continuità probatoria.",
+          "OPC = Operational Proof & Compliance Layer, cioè proof receipt tecnica e audit-oriented.",
+          "MetaExchange = scambio strutturato tra identità, prove, eventi, documenti e contesti.",
+          "IOspace = spazio operativo di visibilità, dashboard e interazione runtime.",
+          "CyberGlobal = cybersecurity difensiva, resilienza, rischio e protezione sistemica.",
+          "NeuroLoop = validazione, feedback, revisione e ciclo decisionale controllato.",
+          "I moduli HBCE sono subordinati a MATRIX come architettura e a IPR come prodotto operativo base."
+        ],
+        forbiddenReductions: [
+          "Non presentare i moduli HBCE come nuove collane.",
+          "Non presentare i moduli HBCE come prodotti principali al posto di IPR.",
+          "Non presentare CyberGlobal come capacità offensiva.",
+          "Non presentare NeuroLoop come autorità autonoma o apprendimento incontrollato.",
+          "Non presentare MetaExchange come scambio dati permissionless.",
+          "Non presentare UNEBDO, OPC, EVT o IPR come certificazione legale automatica."
+        ],
+        requiredDistinctions: [
+          "Distingui prodotto da modulo: IPR è il prodotto operativo base, i moduli sono funzioni dello stack.",
+          "Distingui collane da moduli: MATRIX, U.S.E., CORPUS e APOKALYPSIS sono domini/collane; UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal e NeuroLoop sono moduli tecnico-operativi.",
+          "Distingui proof receipt tecnica da certificazione legale.",
+          "Distingui cybersecurity difensiva da capacità offensiva.",
+          "Distingui validazione e feedback da autorità autonoma."
+        ],
+        closingFormula:
+          "Formula moduli: IPR identifica; UNEBDO ancora; EVT traccia; Memory continua; OPC prova; MetaExchange scambia; IOspace espone; CyberGlobal protegge; NeuroLoop valida; AI JOKER-C2 esegue; MATRIX organizza."
+      };
+
     case "USE_ACRONYM":
       return {
         kind,
@@ -560,6 +652,10 @@ export function detectJokerResponseContract(
     return buildContract("IPR_EVT_OPC");
   }
 
+  if (isHbceModulesQuestion(text)) {
+    return buildContract("HBCE_MODULES");
+  }
+
   if (isUseAcronymQuestion(text)) {
     return buildContract("USE_ACRONYM");
   }
@@ -756,6 +852,16 @@ export function applyResponseContract(
     contract.closingFormula &&
     !normalizeForContract(output).includes(
       normalizeForContract("U.S.E. standardizzata in linea europea")
+    )
+  ) {
+    output = [output, "", contract.closingFormula].join("\n");
+  }
+
+  if (
+    contract.kind === "HBCE_MODULES" &&
+    contract.closingFormula &&
+    !normalizeForContract(output).includes(
+      normalizeForContract("IPR identifica; UNEBDO ancora")
     )
   ) {
     output = [output, "", contract.closingFormula].join("\n");
