@@ -1,6 +1,6 @@
 # AI JOKER-C2 Dual-Use Strategic Positioning
 
-## Civil and Strategic IPR Runtime for MATRIX, U.S.E., CORPUS and APOKALYPSIS
+## Civil and Strategic IPR Runtime for the Four Canonical Collections
 
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**  
@@ -18,9 +18,9 @@ AI JOKER-C2 is the governed runtime demonstrator for **IPR — Identity Primary 
 
 The primary operational instrument is **IPR**.
 
-AI JOKER-C2 demonstrates IPR in execution by connecting identity, context, project domain, policy, risk, decision, output, event trace, memory continuity, proof receipts and audit-oriented verification.
+AI JOKER-C2 demonstrates IPR in execution by connecting identity, project collection, context, policy, risk, decision, output, event trace, memory continuity, proof receipts and audit-oriented verification.
 
-It connects four primary domains:
+It connects four canonical project collections:
 
 ```txt
 1. MATRIX
@@ -52,14 +52,14 @@ It means that AI JOKER-C2 can support civil, research, industrial, institutional
 AI JOKER-C2 is positioned as:
 
 ```txt
-A governed IPR runtime demonstrator for identity-bound AI operations, institutional traceability, operational evidence, audit-oriented proof receipts and human-accountable strategic systems.
+A governed IPR runtime demonstrator for identity-bound AI operations, institutional traceability, operational evidence, EVT/IPR-bound memory, audit-oriented proof receipts and human-accountable strategic systems.
 ```
 
 The system is designed to bind AI-assisted operations to:
 
 ```txt
 IPR identity;
-project domain;
+project collection;
 context;
 policy;
 risk classification;
@@ -94,8 +94,8 @@ IPR = operational identity and proof instrument
 AI JOKER-C2 = governed runtime demonstrator
 MATRIX = operational infrastructure architecture
 U.S.E. = MATRIX-derived political-institutional application for a federated operational Europe
-CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
-APOKALYPSIS = historical threshold analysis
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar of operational reality
+APOKALYPSIS = historical-threshold analysis
 HBCE = governance, policy, audit and continuity ecosystem
 EVT = event trace
 Memory = EVT/IPR-bound runtime continuity
@@ -121,8 +121,8 @@ Strategic formula:
 
 ```txt
 IPR Identity
+→ Project Collection
 → Context
-→ Project Domain
 → Policy
 → Risk
 → Decision
@@ -132,6 +132,20 @@ IPR Identity
 → Ledger
 → Verification
 → Continuity
+```
+
+Four-collection formula:
+
+```txt
+MATRIX builds the architecture.
+U.S.E. brings it into European political-institutional design.
+CORPUS grounds the grammar of operational reality.
+APOKALYPSIS reads the historical threshold.
+IPR makes everything attributable.
+EVT makes everything traceable.
+Memory makes everything continuous.
+OPC makes everything verifiable.
+AI JOKER-C2 makes everything operational.
 ```
 
 ---
@@ -151,6 +165,8 @@ Dual-use does not remove legal or human responsibility.
 
 Dual-use does not convert a governance runtime into an offensive system.
 
+Dual-use does not authorize surveillance, manipulation, targeting or coercive use.
+
 The dual-use value of AI JOKER-C2 is based on controlled governance functions:
 
 ```txt
@@ -159,6 +175,7 @@ policy evaluation;
 identity-bound execution;
 operational logging;
 event traceability;
+EVT/IPR-bound memory;
 evidence generation;
 OPC proof receipt generation;
 decision traceability;
@@ -187,6 +204,7 @@ Data governance teams = policy-aware processing, accountability and trace design
 Cybersecurity teams = defensive analysis, incident documentation and evidence structuring
 Industrial operators = controlled documentation, escalation and continuity records
 Compliance teams = risk documentation, review records and audit preparation
+Editorial research teams = structured continuity for MATRIX, U.S.E., CORPUS and APOKALYPSIS
 ```
 
 Civil use must remain lawful, proportionate and human-accountable.
@@ -209,6 +227,7 @@ B2G environments = traceable AI support for public-sector processes
 B2B strategic systems = governance runtime integration and evidence-ready operations
 Defensive cyber governance = incident documentation, reporting structures and safe hardening support
 Democratic infrastructure analysis = process safeguards, identity-choice separation and audit models
+European standardization analysis = audit-ready strategic evaluation, not official validation
 ```
 
 Strategic use must remain defensive, lawful, accountable and reviewable.
@@ -219,7 +238,44 @@ It must not become an uncontrolled decision-maker.
 
 ---
 
-## 7. MATRIX Strategic Role
+## 7. Four-Collection Dual-Use Map
+
+Dual-use positioning is distributed across the four canonical collections.
+
+```txt
+MATRIX = infrastructure and technology governance dual-use
+U.S.E. = civic and institutional governance dual-use
+CORPUS = theoretical and editorial continuity use
+APOKALYPSIS = historical-threshold analysis use
+```
+
+The four collections must not be collapsed into a single strategic category.
+
+Each collection has a different boundary.
+
+```txt
+MATRIX can support infrastructure, public administration, AI governance and defensive cybersecurity.
+U.S.E. can support democratic infrastructure analysis, public consultation design and institutional continuity with strict safeguards.
+CORPUS can support disciplinary grammar, conceptual writing and editorial continuity without claiming external certification.
+APOKALYPSIS can support historical and civilizational analysis without coercion, incitement or destabilization.
+```
+
+The rule is:
+
+```txt
+Strategic analysis is allowed.
+Strategic manipulation is prohibited.
+Institutional design is allowed.
+Unauthorized public-sector execution is prohibited.
+Democratic process modeling is allowed.
+Vote de-anonymization is prohibited.
+Historical analysis is allowed.
+Coercive mobilization is prohibited.
+```
+
+---
+
+## 8. MATRIX Strategic Role
 
 MATRIX is the operational infrastructure architecture domain.
 
@@ -245,9 +301,13 @@ How can Europe build verifiable operational systems for AI, governance, data, en
 
 AI JOKER-C2 supports MATRIX by transforming strategic analysis into governed runtime operations, documentation, event traceability and evidence-ready outputs.
 
+MATRIX is strategic because it can be used for infrastructure design and institutional governance.
+
+MATRIX must remain non-offensive, defensive, audit-ready and human-accountable.
+
 ---
 
-## 8. U.S.E. Strategic Role
+## 9. U.S.E. Strategic Role
 
 **U.S.E. — United States of Europe** is the MATRIX-derived political-institutional application domain.
 
@@ -288,15 +348,27 @@ IPR may support identity verification and participation rights.
 
 EVT may support process traceability.
 
+Memory may preserve runtime continuity around civic-institutional reasoning.
+
 OPC may support proof receipts for process operations.
 
 The content of a democratic vote or civic choice must not be linked to the personal identity of the voter or participant.
 
-U.S.E. must not become a tool for voter manipulation, political targeting, coercive civic influence, vote de-anonymization or unauthorized public-sector execution.
+U.S.E. must not become a tool for:
+
+```txt
+voter manipulation;
+political targeting;
+coercive civic influence;
+vote de-anonymization;
+unauthorized public-sector execution;
+citizen profiling;
+suppression of participation rights.
+```
 
 ---
 
-## 9. CORPUS Strategic Role
+## 10. CORPUS Strategic Role
 
 CORPUS ESOTEROLOGIA ERMETICA is the disciplinary grammar domain.
 
@@ -328,11 +400,15 @@ The Corpus is not a compliance certification layer.
 
 It is the disciplinary grammar that allows the ecosystem to describe reality, trace, decision and time as structured operational sequences.
 
+The Corpus can support theoretical research and editorial production.
+
+It must not be used to claim scientific, legal or institutional certification beyond available evidence.
+
 ---
 
-## 10. APOKALYPSIS Strategic Role
+## 11. APOKALYPSIS Strategic Role
 
-APOKALYPSIS is the historical threshold domain.
+APOKALYPSIS is the historical-threshold domain.
 
 Within the dual-use positioning, APOKALYPSIS provides a framework for analyzing:
 
@@ -357,11 +433,22 @@ AI JOKER-C2 supports APOKALYPSIS by structuring historical, social and civilizat
 
 APOKALYPSIS may analyze system decay.
 
-It must not become a tool for destabilization, harassment, coercion, extremist framing or rights violation.
+It must not become a tool for:
+
+```txt
+destabilization;
+harassment;
+coercion;
+extremist framing;
+rights violation;
+dehumanization;
+unlawful mobilization;
+targeted abuse.
+```
 
 ---
 
-## 11. Authorized Operational Domains
+## 12. Authorized Operational Domains
 
 AI JOKER-C2 is intended for authorized, lawful and accountable use in the following domains.
 
@@ -377,13 +464,14 @@ Editorial research = corpus management, book structuring and canonical terminolo
 Strategic analysis = B2B, B2G and institutional positioning
 Civil protection = scenario documentation and non-offensive resilience coordination
 Democratic infrastructure safeguards = identity-choice separation, process audit and public accountability models
+Four-collection continuity = structured runtime support for MATRIX, U.S.E., CORPUS and APOKALYPSIS
 ```
 
 All use must remain bound to authorization, proportionality, legality and human accountability.
 
 ---
 
-## 12. Prohibited Uses
+## 13. Prohibited Uses
 
 AI JOKER-C2 must not be used, extended or presented as a system for:
 
@@ -411,14 +499,16 @@ extremist operational support;
 vote de-anonymization;
 manipulative political persuasion;
 coercive civic influence;
-unauthorized electoral infrastructure deployment.
+unauthorized electoral infrastructure deployment;
+misrepresentation of legal certification;
+misrepresentation of institutional adoption.
 ```
 
 Any request, module, integration, example or extension that moves the system toward these uses must be blocked, rejected or redesigned.
 
 ---
 
-## 13. Fail-Closed Boundary
+## 14. Fail-Closed Boundary
 
 AI JOKER-C2 follows a fail-closed principle.
 
@@ -431,7 +521,7 @@ missing identity context;
 missing IPR binding where required;
 invalid operational authority;
 unclear user intent in a sensitive context;
-unclear project-domain classification in a sensitive context;
+unclear project-collection classification in a sensitive context;
 prohibited request;
 excessive operational risk;
 missing audit trail;
@@ -455,7 +545,7 @@ The default state is controlled refusal, escalation or safe redirection.
 
 ---
 
-## 14. Runtime Governance Model
+## 15. Runtime Governance Model
 
 The operational pipeline is:
 
@@ -463,8 +553,8 @@ The operational pipeline is:
 IPR identity
 → input
 → intent
+→ project collection
 → context
-→ project_domain
 → policy
 → risk
 → decision
@@ -489,11 +579,11 @@ AUDIT = the operation must be recorded or reviewed before continuation
 NOOP = no operational action is taken
 ```
 
-No sensitive operation should bypass project-domain classification, policy, risk and evidence generation.
+No sensitive operation should bypass project-collection classification, policy, risk and evidence generation.
 
 ---
 
-## 15. Evidence and Traceability
+## 16. Evidence and Traceability
 
 Every relevant operation should produce or support an EVT record.
 
@@ -505,7 +595,7 @@ previous event reference;
 timestamp;
 identity reference;
 IPR reference;
-project domain;
+project collection;
 context class;
 runtime state;
 user intent class;
@@ -519,7 +609,7 @@ audit note.
 
 The purpose of the EVT chain is to preserve operational continuity.
 
-The system must make it possible to reconstruct what happened, under which identity, inside which project domain, under which policy, with which decision and at which time.
+The system must make it possible to reconstruct what happened, under which identity, inside which project collection, under which policy, with which decision and at which time.
 
 EVT is not legal certification by itself.
 
@@ -527,7 +617,39 @@ EVT is the verifiable event trace.
 
 ---
 
-## 16. OPC Proof Receipts
+## 17. Memory Continuity
+
+Memory is not ordinary chat history.
+
+AI JOKER-C2 memory is an EVT/IPR-bound continuity layer.
+
+Memory may preserve:
+
+```txt
+session ID;
+entity;
+IPR;
+message reference;
+response reference;
+document family;
+project collection;
+runtime decision;
+context class;
+memory event;
+governed EVT;
+memory hash;
+OPC proof reference when available.
+```
+
+Memory supports continuity across technical, institutional and editorial work.
+
+Memory does not create legal certification.
+
+Memory must not store democratic choice content linked to personal identity.
+
+---
+
+## 18. OPC Proof Receipts
 
 OPC means **Operational Proof & Compliance Layer**.
 
@@ -580,7 +702,7 @@ Verification reconstructs the operation.
 
 ---
 
-## 17. Human Accountability
+## 19. Human Accountability
 
 AI JOKER-C2 does not remove human responsibility.
 
@@ -588,7 +710,7 @@ The system must preserve the distinction between:
 
 ```txt
 AI-generated analysis;
-project-domain classification;
+project-collection classification;
 system-level governance decision;
 human validation;
 institutional authorization;
@@ -604,7 +726,7 @@ It must not become an uncontrolled decision-maker.
 
 ---
 
-## 18. Democratic and Civic Boundary
+## 20. Democratic and Civic Boundary
 
 The U.S.E. domain introduces civic and democratic infrastructure reasoning.
 
@@ -665,7 +787,7 @@ formal certification where applicable.
 
 ---
 
-## 19. European Governance Alignment
+## 21. European Governance Alignment
 
 AI JOKER-C2 is designed for alignment with European governance principles, including:
 
@@ -683,7 +805,9 @@ dual-use risk awareness;
 verifiable public-sector technology;
 transparent accountability chains;
 democratic infrastructure safeguards;
-digital sovereignty.
+digital sovereignty;
+European operational continuity;
+federated institutional design.
 ```
 
 This repository should be read as a research, prototype and governance infrastructure project.
@@ -696,14 +820,14 @@ It is a technical and strategic architecture designed to support verifiable comp
 
 ---
 
-## 20. B2B Positioning
+## 22. B2B Positioning
 
 For B2B environments, AI JOKER-C2 can be positioned as a governed AI runtime demonstrator for enterprises that need traceable, policy-aware and auditable AI-assisted operations.
 
 B2B value proposition:
 
 ```txt
-Transform AI-assisted workflows into identity-bound, project-aware, policy-checked, risk-classified and evidence-generating operational sequences.
+Transform AI-assisted workflows into identity-bound, collection-aware, policy-checked, risk-classified and evidence-generating operational sequences.
 ```
 
 Relevant B2B targets include:
@@ -736,7 +860,7 @@ controlled AI-assisted analysis.
 
 ---
 
-## 21. B2G Positioning
+## 23. B2G Positioning
 
 For B2G environments, AI JOKER-C2 can be positioned as a prototype governance runtime for public-sector AI accountability, traceability and operational continuity.
 
@@ -776,7 +900,7 @@ democratic infrastructure safeguard modeling.
 
 ---
 
-## 22. Strategic Difference From Generic AI
+## 24. Strategic Difference From Generic AI
 
 A generic AI interface produces responses.
 
@@ -788,11 +912,14 @@ The operational difference is:
 Generic AI Interface = unbound interaction
 AI JOKER-C2 = IPR-bound interaction
 
-Generic AI Interface = no project-domain structure
-AI JOKER-C2 = MATRIX, U.S.E., CORPUS and APOKALYPSIS domain classification
+Generic AI Interface = no project-collection structure
+AI JOKER-C2 = MATRIX, U.S.E., CORPUS and APOKALYPSIS classification
 
 Generic AI Interface = no native event trace
 AI JOKER-C2 = EVT continuity
+
+Generic AI Interface = no operational memory
+AI JOKER-C2 = EVT/IPR-bound memory
 
 Generic AI Interface = no explicit governance layer
 AI JOKER-C2 = policy and risk classification
@@ -814,7 +941,7 @@ This is the strategic core of the project.
 
 ---
 
-## 23. Repository Boundary
+## 25. Repository Boundary
 
 This repository must maintain a clear boundary between:
 
@@ -834,19 +961,19 @@ Any contribution that introduces offensive behavior, unsafe automation, unauthor
 
 ---
 
-## 24. Public Statement
+## 26. Public Statement
 
 AI JOKER-C2 is not an offensive command-and-control system.
 
 It is a command, control and continuity governance infrastructure for lawful, accountable and verifiable AI operations.
 
-Its strategic function is to prevent AI-assisted systems from operating without identity, without project-domain context, without policy, without risk classification, without evidence, without responsibility and without time-bound traceability.
+Its strategic function is to prevent AI-assisted systems from operating without identity, without project-collection context, without policy, without risk classification, without evidence, without responsibility and without time-bound traceability.
 
 It connects MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS through a governed IPR runtime.
 
 ---
 
-## 25. Canonical Formula
+## 27. Canonical Formula
 
 ```txt
 IPR = operational identity and proof instrument
@@ -854,7 +981,7 @@ AI JOKER-C2 = governed runtime demonstrator
 MATRIX = operational infrastructure architecture
 U.S.E. = federated European political-institutional application
 CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
-APOKALYPSIS = historical threshold analysis
+APOKALYPSIS = historical-threshold analysis
 EVT = trace
 Memory = EVT/IPR-bound runtime continuity
 OPC = proof receipt
@@ -865,19 +992,19 @@ Fail-closed = safety boundary
 Final formula:
 
 ```txt
-AI JOKER-C2 is a European-oriented IPR-bound governance runtime demonstrator for making AI operations project-aware, attributable, auditable, evidence-generating and fail-closed by design.
+AI JOKER-C2 is a European-oriented IPR-bound governance runtime demonstrator for making AI operations collection-aware, attributable, auditable, evidence-generating and fail-closed by design.
 ```
 
 ---
 
-## 26. Status
+## 28. Status
 
 ```txt
 Document: DUAL_USE_STRATEGIC_POSITIONING.md
 Status: Active strategic positioning file
 Project: AI JOKER-C2
 Ecosystem: HERMETICUM B.C.E.
-Connected domains: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
 Infrastructure: HBCE
 Runtime role: IPR runtime demonstrator
 Identity layer: IPR
