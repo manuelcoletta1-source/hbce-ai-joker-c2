@@ -1,6 +1,6 @@
 # AI JOKER-C2 Governance Model
 
-## IPR-Bound Governance Runtime for MATRIX, U.S.E., CORPUS and APOKALYPSIS
+## IPR-Bound Governance Runtime for the Four Canonical Collections
 
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**  
@@ -18,9 +18,9 @@ AI JOKER-C2 is the governed runtime demonstrator for **IPR — Identity Primary 
 
 The primary operational instrument is **IPR**.
 
-AI JOKER-C2 demonstrates IPR in execution by connecting identity, context, project domain, policy, risk, decision, output, event trace, memory continuity, proof receipts and audit-oriented verification.
+AI JOKER-C2 demonstrates IPR in execution by connecting identity, project collection, context, policy, risk, decision, output, event trace, memory continuity, proof receipts and audit-oriented verification.
 
-It connects four primary project domains:
+It connects four canonical project collections:
 
 ```txt
 1. MATRIX
@@ -34,6 +34,7 @@ The purpose of this governance model is to make AI-assisted operations:
 ```txt
 attributable;
 traceable;
+collection-aware;
 project-aware;
 policy-bound;
 risk-classified;
@@ -42,6 +43,7 @@ human-accountable;
 fail-closed by design;
 verifiable through EVT continuity;
 connected to IPR identity;
+supported by EVT/IPR-bound memory;
 supported by OPC proof receipts when required.
 ```
 
@@ -49,7 +51,7 @@ Governance is not an external layer added after execution.
 
 Governance is part of the runtime itself.
 
-AI JOKER-C2 must not operate as an uncontrolled autonomous agent. It must operate as a controlled runtime that preserves identity, context, policy, risk, decision, event trace, proof receipt, verification and human accountability.
+AI JOKER-C2 must not operate as an uncontrolled autonomous agent. It must operate as a controlled runtime that preserves identity, collection, context, policy, risk, decision, event trace, memory, proof receipt, verification and human accountability.
 
 ---
 
@@ -58,15 +60,15 @@ AI JOKER-C2 must not operate as an uncontrolled autonomous agent. It must operat
 The core governance principle is:
 
 ```txt
-No sensitive operation without identity, context, policy, risk classification, trace, proof where required and verification.
+No sensitive operation without identity, collection, context, policy, risk classification, trace, proof where required and verification.
 ```
 
 Expanded:
 
 ```txt
 No identity, no authority.
-No context, no orientation.
-No domain, no correct routing.
+No collection, no correct orientation.
+No context, no operational frame.
 No policy, no execution.
 No risk classification, no sensitive output.
 No EVT, no trace.
@@ -83,28 +85,29 @@ If the system cannot determine whether an operation is legitimate, safe, authori
 
 ---
 
-## 3. Governed Project Domains
+## 3. Governed Project Collections
 
-AI JOKER-C2 governs requests across four primary project domains.
+AI JOKER-C2 governs requests across four canonical project collections.
 
 ```txt
 MATRIX = operational infrastructure architecture
 U.S.E. = MATRIX-derived political-institutional application for a federated operational Europe
-CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
-APOKALYPSIS = historical threshold analysis
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar of operational reality
+APOKALYPSIS = historical-threshold analysis
 AI JOKER-C2 = governed IPR runtime demonstrator
 IPR = primary operational identity and proof instrument
 ```
 
-The governance model must classify whether a request belongs to one or more of these domains.
+The governance model must classify whether a request belongs to one or more of these collections.
 
-The active domain affects:
+The active collection affects:
 
 ```txt
 context classification;
 applicable policy;
 risk class;
 response style;
+response contract;
 output format;
 EVT metadata;
 memory metadata;
@@ -113,9 +116,47 @@ verification requirement;
 human review requirement.
 ```
 
+The governance model must preserve this distinction:
+
+```txt
+MATRIX is not U.S.E.
+U.S.E. is not CORPUS.
+CORPUS is not APOKALYPSIS.
+APOKALYPSIS is not operational execution.
+AI JOKER-C2 connects all four without collapsing them.
+```
+
 ---
 
-## 4. MATRIX Governance Domain
+## 4. Four-Collection Governance Map
+
+The four collections have different governance functions.
+
+```txt
+MATRIX = infrastructure, AI governance, B2B/B2G, public administration, cybersecurity, data, cloud, energy, continuity
+U.S.E. = federation, digital sovereignty, federated digital voting, public consultation, democratic infrastructure, civic audit
+CORPUS = Esoterologia, DCTT, canonical glossary, theoretical writing, disciplinary foundation, editorial continuity
+APOKALYPSIS = decadence, exposure, threshold, cognitive dislocation, civilizational analysis, historical interpretation
+```
+
+The governance rule is:
+
+```txt
+Writing and analysis = allowed.
+Standardization, institutions, voting, infrastructure = audit-ready.
+Real-world execution, targeting, coercion, surveillance or de-anonymization = escalation or block.
+```
+
+This prevents two errors:
+
+```txt
+1. Treating all collection work as ordinary editorial writing.
+2. Treating all collection work as high-risk operational execution.
+```
+
+---
+
+## 5. MATRIX Governance Domain
 
 MATRIX is the operational and institutional infrastructure domain.
 
@@ -148,9 +189,13 @@ strategic analysis;
 technical system design within lawful and defensive boundaries.
 ```
 
-MATRIX requests require escalation or blocking when they involve:
+MATRIX requests require audit, escalation or blocking when they involve:
 
 ```txt
+critical infrastructure intervention;
+public-sector operational execution;
+security-sensitive deployments;
+real-world system control;
 offensive cyber operations;
 unauthorized system access;
 real-target exploitation;
@@ -159,8 +204,7 @@ sabotage;
 coercive control;
 autonomous targeting;
 military operational execution;
-manipulation of populations;
-critical infrastructure intervention without authority.
+manipulation of populations.
 ```
 
 Default MATRIX handling:
@@ -168,16 +212,19 @@ Default MATRIX handling:
 ```txt
 Documentation = ALLOW
 Governance architecture = ALLOW
-Institutional positioning = ALLOW
+Institutional positioning = ALLOW or AUDIT
+European standardization analysis = AUDIT
 Defensive cybersecurity = ALLOW or AUDIT
 Critical infrastructure analysis = AUDIT or ESCALATE
 High-impact public-sector execution = ESCALATE
 Offensive or unlawful use = BLOCK
 ```
 
+MATRIX operations should be traceable when they affect repository files, governance documents, institutional positioning, infrastructure claims or strategic architecture.
+
 ---
 
-## 5. U.S.E. — United States of Europe Governance Domain
+## 6. U.S.E. — United States of Europe Governance Domain
 
 **U.S.E. — United States of Europe** is the MATRIX-derived political-institutional application domain.
 
@@ -221,6 +268,10 @@ European institutional continuity.
 U.S.E. requests require audit, escalation or blocking when they concern:
 
 ```txt
+political value of standardization;
+European standardization;
+public consultation models;
+federated digital voting models;
 real electoral infrastructure implementation;
 real public-sector deployment;
 voter identity handling;
@@ -240,6 +291,8 @@ Default U.S.E. handling:
 Editorial or conceptual drafting = ALLOW
 Institutional architecture = ALLOW or AUDIT
 Digital sovereignty analysis = ALLOW or AUDIT
+Political value analysis = AUDIT
+European standardization analysis = AUDIT
 Public consultation model = AUDIT
 Federated digital voting model = AUDIT or ESCALATE
 Electoral infrastructure implementation = ESCALATE
@@ -263,6 +316,8 @@ IPR may support identity verification and participation rights.
 
 EVT may support process traceability.
 
+Memory may preserve runtime continuity around the process discussion.
+
 OPC may support proof receipts for process operations.
 
 The content of a democratic vote or civic choice must not be linked to the personal identity of the voter or participant.
@@ -271,7 +326,7 @@ U.S.E. is therefore governed as a sensitive civic and institutional domain. It m
 
 ---
 
-## 6. CORPUS ESOTEROLOGIA ERMETICA Governance Domain
+## 7. CORPUS ESOTEROLOGIA ERMETICA Governance Domain
 
 CORPUS ESOTEROLOGIA ERMETICA is the disciplinary and conceptual grammar domain.
 
@@ -314,7 +369,7 @@ theoretical analysis;
 publication preparation.
 ```
 
-Corpus requests require limitation when they claim:
+Corpus requests require limitation, audit or escalation when they claim:
 
 ```txt
 scientific certainty beyond available evidence;
@@ -345,7 +400,7 @@ The runtime must distinguish internal framework coherence from external factual 
 
 ---
 
-## 7. APOKALYPSIS Governance Domain
+## 8. APOKALYPSIS Governance Domain
 
 APOKALYPSIS is the historical and civilizational threshold domain.
 
@@ -414,15 +469,44 @@ It must not become a tool for unlawful mobilization, coercion or abuse.
 
 ---
 
-## 8. Runtime Governance Sequence
+## 9. Multi-Domain Governance
+
+A request is multi-domain when it crosses more than one collection.
+
+Common patterns:
+
+```txt
+MATRIX + U.S.E. = architecture plus European political-institutional application
+MATRIX + CORPUS = infrastructure plus theoretical grammar
+CORPUS + APOKALYPSIS = conceptual grammar plus historical threshold
+MATRIX + U.S.E. + CORPUS + APOKALYPSIS = full ecosystem map
+IPR + EVT + Memory + OPC across any collection = runtime governance layer
+```
+
+Default multi-domain handling:
+
+```txt
+Documentation = ALLOW or AUDIT
+Collection map = AUDIT
+Architecture mapping = AUDIT
+Strategic positioning = AUDIT
+External institutional claims = AUDIT or ESCALATE
+Unsafe operational execution = BLOCK
+```
+
+Multi-domain governance must preserve distinctions instead of collapsing all collections into one generic concept.
+
+---
+
+## 10. Runtime Governance Sequence
 
 The conceptual governance sequence is:
 
 ```txt
 IPR identity
 → input
+→ project collection
 → context
-→ project_domain
 → intent
 → policy
 → risk
@@ -442,12 +526,12 @@ Each stage has a specific role.
 ```txt
 identity = bind the operation to entity, IPR, runtime and origin context
 input = receive and normalize the request
+project collection = classify MATRIX, U.S.E., CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN
 context = classify the operational context
-project_domain = classify MATRIX, U.S.E., CORPUS, APOKALYPSIS or GENERAL
 intent = classify the purpose of the request
 policy = apply operational, legal, safety and project boundaries
 risk = estimate technical, strategic, legal, civic, social and misuse risk
-decision = produce ALLOW, BLOCK, ESCALATE, DEGRADE or AUDIT
+decision = produce ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT or NOOP
 execution = perform only the permitted operation
 output = return the controlled result
 EVT = generate or support a verifiable event record
@@ -462,9 +546,9 @@ The governance sequence must be preserved across future implementations.
 
 ---
 
-## 9. Governance Decisions
+## 11. Governance Decisions
 
-AI JOKER-C2 uses five primary governance decisions.
+AI JOKER-C2 uses six primary governance decisions.
 
 ```txt
 ALLOW = the request is permitted, proportionate, traceable and within scope
@@ -472,6 +556,7 @@ BLOCK = the request is prohibited, unsafe, non-compliant or outside scope
 ESCALATE = the request requires human review, authority or additional context
 DEGRADE = the system may provide limited safe assistance only
 AUDIT = the operation must be recorded, reviewed or verified before continuation
+NOOP = no operational action is taken
 ```
 
 The system must never treat all requests as automatically executable.
@@ -480,7 +565,7 @@ The decision layer is mandatory.
 
 ---
 
-## 10. Decision Rules
+## 12. Decision Rules
 
 The runtime should apply the following decision rules.
 
@@ -490,6 +575,8 @@ Safe repository documentation = ALLOW
 Safe code refactoring = ALLOW
 Defensive security analysis = ALLOW or AUDIT
 Strategic institutional content = ALLOW or AUDIT
+European standardization analysis = AUDIT
+Political value analysis = AUDIT
 U.S.E. conceptual or editorial drafting = ALLOW
 U.S.E. civic infrastructure model = AUDIT
 Federated digital voting model = AUDIT or ESCALATE
@@ -511,7 +598,7 @@ The runtime should ask for clarification only when the missing information is ne
 
 ---
 
-## 11. Identity-Bound Operation
+## 13. Identity-Bound Operation
 
 AI JOKER-C2 operates as an identity-bound runtime.
 
@@ -534,12 +621,13 @@ Identity-bound operation means that the system should preserve a connection betw
 ```txt
 acting entity;
 human origin where relevant;
-project domain;
+project collection;
 request;
 context;
 decision;
 output;
 trace;
+memory;
 proof receipt;
 verification state;
 continuity chain.
@@ -553,7 +641,7 @@ Identity creates a traceable position inside a governed runtime.
 
 ---
 
-## 12. IPR Governance Layer
+## 14. IPR Governance Layer
 
 IPR is the primary operational identity and proof instrument.
 
@@ -592,7 +680,7 @@ IPR binds operations to identity and continuity. Policy, risk, decision, human o
 
 ---
 
-## 13. Policy Layer
+## 15. Policy Layer
 
 The policy layer defines what the system may or may not do.
 
@@ -600,7 +688,7 @@ Policy checks should evaluate:
 
 ```txt
 user intent;
-project domain;
+project collection;
 operational context;
 requested output;
 possible misuse;
@@ -610,6 +698,7 @@ civic or democratic relevance;
 dual-use implications;
 impact on third parties;
 traceability requirements;
+memory requirements;
 proof receipt requirements;
 need for human review;
 evidence requirement.
@@ -621,7 +710,7 @@ If the policy basis is missing, unclear or contradictory, the system should retu
 
 ---
 
-## 14. Risk Layer
+## 16. Risk Layer
 
 The risk layer classifies operations before execution.
 
@@ -638,9 +727,11 @@ Risk classification should consider both the explicit request and the possible o
 
 A harmless-looking request may become sensitive if applied to real systems, real targets, critical infrastructure, democratic infrastructure, unauthorized activity or high-impact institutional contexts.
 
+Political, institutional and European-standardization analysis should remain answerable, but audit-ready.
+
 ---
 
-## 15. Context Classes
+## 17. Context Classes
 
 AI JOKER-C2 may classify requests into operational contexts.
 
@@ -659,6 +750,8 @@ STRATEGIC = B2B, B2G, institutions, positioning, roadmap
 SECURITY = defensive security, risk analysis, hardening
 COMPLIANCE = audit, policy mapping, governance documentation
 GOVERNANCE = runtime rules, decision logic, policy and risk
+CIVIC = public consultation, civic participation, participation rights
+DEMOCRATIC_INFRASTRUCTURE = federated digital vote, referendum, democratic audit, public decision workflow
 GENERAL = ordinary non-sensitive user requests
 ```
 
@@ -668,20 +761,20 @@ It should not overexpose internal runtime details in ordinary communication.
 
 ---
 
-## 16. Project Domain Classification
+## 18. Project Collection Classification
 
-The runtime should classify the active project domain.
+The runtime should classify the active project collection.
 
 ```txt
 MATRIX = Europe, infrastructure, AI governance, institutions, cloud, energy, data, security, B2B, B2G
 U.S.E. = United States of Europe, European federation, federated digital vote, democratic infrastructure, digital sovereignty
 CORPUS = Esoterologia, DCTT, glossary, Lex Hermeticum, Alien Code, Paradogma Alieno, theoretical volumes
 APOKALYPSIS = decay, exposure, cultural system, political system, social system, historical threshold
-GENERAL = no specific project domain applies
-MULTI_DOMAIN = more than one project domain applies
+GENERAL = no specific project collection applies
+MULTI_DOMAIN = more than one project collection applies
 ```
 
-Multi-domain requests should preserve the distinction between domains.
+Multi-domain requests should preserve the distinction between collections.
 
 Example:
 
@@ -696,7 +789,7 @@ AI JOKER-C2 provides the runtime demonstrator.
 
 ---
 
-## 17. Fail-Closed Model
+## 19. Fail-Closed Model
 
 AI JOKER-C2 follows a fail-closed model.
 
@@ -735,7 +828,7 @@ Fail-closed is controlled refusal, controlled limitation or controlled escalatio
 
 ---
 
-## 18. Human Accountability
+## 20. Human Accountability
 
 AI JOKER-C2 must preserve human accountability.
 
@@ -776,7 +869,7 @@ For high-impact domains, AI JOKER-C2 should support human review rather than rep
 
 ---
 
-## 19. Democratic and Civic Governance Boundary
+## 21. Democratic and Civic Governance Boundary
 
 The U.S.E. domain introduces civic and democratic infrastructure reasoning.
 
@@ -837,7 +930,7 @@ formal certification where applicable.
 
 ---
 
-## 20. Dual-Use Governance Boundary
+## 22. Dual-Use Governance Boundary
 
 AI JOKER-C2 is designed for civil and strategic dual-use governance.
 
@@ -882,7 +975,7 @@ Dual-use means controlled, lawful, accountable and verifiable strategic applicat
 
 ---
 
-## 21. Event Trace Governance
+## 23. Event Trace Governance
 
 Every significant operation should generate or support an EVT record.
 
@@ -916,7 +1009,7 @@ what happened;
 when it happened;
 under which identity;
 under which IPR;
-under which project domain;
+under which project collection;
 under which context;
 under which decision;
 under which risk class;
@@ -926,7 +1019,7 @@ with which verification status.
 
 ---
 
-## 22. Memory Governance
+## 24. Memory Governance
 
 AI JOKER-C2 memory is an EVT/IPR-bound continuity mechanism.
 
@@ -941,11 +1034,12 @@ response reference;
 document family;
 runtime state;
 decision;
-project domain;
+project collection;
 context class;
 memory event;
 governed EVT;
-hash;
+memory hash;
+OPC proof reference when available;
 timestamp.
 ```
 
@@ -955,7 +1049,7 @@ Memory supports:
 continuity across interactions;
 document continuity;
 repository work continuity;
-domain continuity;
+collection continuity;
 runtime identity continuity;
 audit-oriented reconstruction.
 ```
@@ -966,7 +1060,7 @@ Memory does not replace user review, legal validation or evidence verification.
 
 ---
 
-## 23. OPC Proof Receipt Governance
+## 25. OPC Proof Receipt Governance
 
 OPC means **Operational Proof & Compliance Layer**.
 
@@ -1019,7 +1113,7 @@ Verification reconstructs the operation.
 
 ---
 
-## 24. Ledger Governance
+## 26. Ledger Governance
 
 The ledger must preserve continuity.
 
@@ -1027,13 +1121,14 @@ Recommended ledger properties:
 
 ```txt
 append-only event records;
-previous-event reference;
+previous-event reference or valid external runtime anchor;
 hash-linked event sequence;
 correction events instead of silent rewrites;
 verification status;
 audit metadata;
-project domain metadata;
+project collection metadata;
 context metadata;
+memory metadata;
 OPC proof chain metadata.
 ```
 
@@ -1049,7 +1144,7 @@ The correction becomes the next event.
 
 ---
 
-## 25. Verification Governance
+## 27. Verification Governance
 
 Verification should allow reconstruction of the operational chain.
 
@@ -1060,13 +1155,14 @@ which event occurred;
 which event came before;
 which entity acted;
 which IPR was active;
-which project domain was active;
+which project collection was active;
 which context class was assigned;
 which policy was applied;
 which risk was assigned;
 which decision was produced;
 whether execution occurred;
 whether the event hash is valid;
+whether memory continuity exists where required;
 whether an OPC proof receipt exists where required;
 whether the continuity chain is intact.
 ```
@@ -1083,7 +1179,7 @@ Both should remain distinct.
 
 ---
 
-## 26. Public Communication Rule
+## 28. Public Communication Rule
 
 AI JOKER-C2 must communicate in a clear and useful way.
 
@@ -1097,7 +1193,7 @@ operational;
 professional;
 direct;
 implementation-oriented;
-aligned with the active project domain.
+aligned with the active project collection.
 ```
 
 The internal governance model must guide the answer without overwhelming the answer.
@@ -1109,12 +1205,14 @@ IPR is the primary operational instrument.
 AI JOKER-C2 is the runtime demonstrator.
 MATRIX is the architectural framework.
 U.S.E. is the MATRIX-derived political-institutional application domain.
+CORPUS is the disciplinary grammar.
+APOKALYPSIS is the historical-threshold reading.
 HBCE is the governance ecosystem.
 ```
 
 ---
 
-## 27. Data and File Governance
+## 29. Data and File Governance
 
 When handling user-provided files, AI JOKER-C2 should apply the following rules:
 
@@ -1127,7 +1225,7 @@ avoid inventing missing content;
 clearly state when a file cannot be fully read or verified;
 avoid claiming legal or factual certainty beyond available evidence;
 generate operational output that the user can reuse;
-preserve project domain metadata when applicable;
+preserve project collection metadata when applicable;
 preserve IPR binding when the file operation becomes auditable.
 ```
 
@@ -1141,7 +1239,7 @@ If visibility is partial, say so.
 
 ---
 
-## 28. Technical Governance
+## 30. Technical Governance
 
 Technical operations should follow safe development boundaries.
 
@@ -1180,7 +1278,7 @@ The system must distinguish between defensive architecture and offensive capabil
 
 ---
 
-## 29. Compliance-Oriented Design
+## 31. Compliance-Oriented Design
 
 AI JOKER-C2 is designed to support compliance-oriented workflows.
 
@@ -1217,7 +1315,7 @@ Legal, institutional or regulatory status requires external validation.
 
 ---
 
-## 30. Editorial Governance
+## 32. Editorial Governance
 
 Because AI JOKER-C2 operates across CORPUS and APOKALYPSIS, editorial governance is part of the system.
 
@@ -1240,6 +1338,7 @@ Editorial governance must preserve:
 
 ```txt
 canonical project names;
+collection continuity;
 volume continuity;
 glossary consistency;
 distinction between internal theory and external factual claim;
@@ -1252,7 +1351,7 @@ Editorial output should be complete and reusable.
 
 ---
 
-## 31. Strategic Governance
+## 33. Strategic Governance
 
 Strategic outputs may concern:
 
@@ -1268,6 +1367,8 @@ dual-use positioning;
 cybersecurity resilience;
 critical infrastructure;
 U.S.E. institutional design;
+European standardization;
+political value of digital sovereignty;
 communication and outreach.
 ```
 
@@ -1288,7 +1389,7 @@ Strategic outputs must not falsely imply official endorsement, certification or 
 
 ---
 
-## 32. Governance Invariants
+## 34. Governance Invariants
 
 The following invariants must remain stable across future versions.
 
@@ -1299,7 +1400,7 @@ The following invariants must remain stable across future versions.
 4. MATRIX is the operational infrastructure architecture domain.
 5. U.S.E. is the MATRIX-derived political-institutional application domain.
 6. CORPUS ESOTEROLOGIA ERMETICA is the disciplinary grammar domain.
-7. APOKALYPSIS is the historical threshold domain.
+7. APOKALYPSIS is the historical-threshold domain.
 8. Sensitive operations require policy and risk evaluation.
 9. Uncertain sensitive operations must not execute by default.
 10. Every relevant operation should be traceable.
@@ -1317,18 +1418,19 @@ The following invariants must remain stable across future versions.
 22. High-impact outputs require human review.
 23. Democratic choice content must not be linked to personal voter identity.
 24. U.S.E. must preserve democratic safeguards, anonymity, auditability and institutional legality.
+25. Four-collection continuity must preserve the distinction between MATRIX, U.S.E., CORPUS and APOKALYPSIS.
 ```
 
 ---
 
-## 33. Governance Formula
+## 35. Governance Formula
 
 Core formula:
 
 ```txt
 IPR Identity
+→ Project Collection
 → Context
-→ Project Domain
 → Policy
 → Risk
 → Decision
@@ -1344,11 +1446,12 @@ Expanded formula:
 
 ```txt
 No identity, no authority.
+No collection, no correct routing.
 No context, no orientation.
-No domain, no correct routing.
 No policy, no execution.
 No risk classification, no sensitive output.
 No trace, no continuity.
+No memory, no runtime continuity.
 No proof receipt, no audit-ready proof layer.
 No verification, no operational legitimacy.
 ```
@@ -1365,9 +1468,23 @@ APOKALYPSIS = threshold.
 HBCE = governance.
 ```
 
+Final collection formula:
+
+```txt
+MATRIX builds the architecture.
+U.S.E. brings it into European political-institutional design.
+CORPUS grounds the grammar of operational reality.
+APOKALYPSIS reads the historical threshold.
+IPR makes everything attributable.
+EVT makes everything traceable.
+Memory makes everything continuous.
+OPC makes everything verifiable.
+AI JOKER-C2 makes everything operational.
+```
+
 ---
 
-## 34. Repository Rule
+## 36. Repository Rule
 
 All future code, documentation and public positioning of this repository must remain consistent with this governance model.
 
@@ -1381,7 +1498,7 @@ AI JOKER-C2 is the governed runtime demonstrator for IPR inside the HERMETICUM B
 
 ---
 
-## 35. Status
+## 37. Status
 
 ```txt
 Document: GOVERNANCE.md
@@ -1389,7 +1506,7 @@ Status: Active governance file
 Project: AI JOKER-C2
 Ecosystem: HERMETICUM B.C.E.
 Runtime type: Governed IPR runtime demonstrator
-Connected domains: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
 Infrastructure: HBCE
 Identity layer: IPR
 Trace layer: EVT
@@ -1402,5 +1519,3 @@ Organization: HERMETICUM B.C.E. S.r.l.
 Territorial anchor: Torino, Italy, Europe
 Year: 2026
 ```
-
-
