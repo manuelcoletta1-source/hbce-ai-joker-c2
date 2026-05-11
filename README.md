@@ -5,7 +5,7 @@
 
 **AI JOKER-C2** is the governed runtime demonstrator for **IPR — Identity Primary Record** inside the **B.C.E.Hermeticum** and **HBCE** research software ecosystem.
 
-It extends standard AI interaction with operational identity, runtime governance, event continuity, EVT/IPR-bound memory, OPC proof receipts, project-domain classification and audit-oriented records.
+It extends standard AI interaction with operational identity, runtime governance, event continuity, EVT/IPR-bound memory, OPC proof receipts, project-domain classification, HBCE module awareness and audit-oriented records.
 
 AI JOKER-C2 now operates across four canonical project collections:
 
@@ -16,19 +16,35 @@ CORPUS ESOTEROLOGIA ERMETICA
 APOKALYPSIS
 ```
 
-The current product and architecture hierarchy is:
+AI JOKER-C2 also operates through six HBCE technical-operational modules:
 
 ```txt
-IPR        = primary operational identity and proof instrument
+UNEBDO
+OPC
+MetaExchange
+IOspace
+CyberGlobal
+NeuroLoop
+```
+
+The current product, runtime, module and collection hierarchy is:
+
+```txt
+IPR          = primary operational identity and proof instrument
 AI JOKER-C2 = governed runtime demonstrator for IPR in execution
-EVT        = event continuity and verifiable trace layer
-Memory     = EVT/IPR-bound runtime continuity
-OPC        = operational proof receipt layer
-HBCE       = governance, policy, audit and continuity ecosystem
-MATRIX     = architectural framework for operational infrastructure
-U.S.E.     = MATRIX-derived political-institutional application for a federated operational Europe
-CORPUS     = disciplinary grammar of operational reality
-APOKALYPSIS = historical-threshold analysis domain
+UNEBDO       = anchoring, validation and evidentiary continuity support
+EVT          = event continuity and verifiable trace layer
+Memory       = EVT/IPR-bound runtime continuity
+OPC          = operational proof receipt and compliance layer
+MetaExchange = structured exchange layer
+IOspace      = runtime visibility and operational interaction space
+CyberGlobal  = defensive cybersecurity and resilience layer
+NeuroLoop    = validation, feedback and review loop
+HBCE         = governance, policy, audit and continuity ecosystem
+MATRIX       = architectural framework for operational infrastructure
+U.S.E.       = MATRIX-derived political-institutional application for a federated operational Europe
+CORPUS       = disciplinary grammar of operational reality
+APOKALYPSIS  = historical-threshold analysis domain
 ```
 
 AI JOKER-C2 is developed as part of the HBCE research and software ecosystem by:
@@ -54,6 +70,7 @@ Architectural framework: MATRIX
 Political-institutional application domain: U.S.E. — United States of Europe
 Disciplinary grammar domain: CORPUS ESOTEROLOGIA ERMETICA
 Historical-threshold domain: APOKALYPSIS
+HBCE modules: UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop
 Operational stack: HBCE Operational Stack v0.1
 Status: active prototype / research runtime
 ```
@@ -262,11 +279,102 @@ It describes exposure: the condition in which a system continues to function whi
 
 ---
 
-## 4. Core architecture
+## 4. HBCE technical-operational modules
+
+The six HBCE modules are technical-operational functions of the stack.
+
+They are not additional collections.
+
+They are not the primary product layer.
+
+They extend IPR inside governed runtime execution.
+
+```txt
+UNEBDO = anchoring, validation and evidentiary continuity
+OPC = operational proof receipt and compliance layer
+MetaExchange = structured exchange layer
+IOspace = runtime visibility and operational interaction space
+CyberGlobal = defensive cybersecurity and resilience layer
+NeuroLoop = validation, feedback and review loop
+```
+
+The module formula is:
+
+```txt
+IPR identifies.
+UNEBDO anchors.
+EVT traces.
+Memory continues.
+OPC proves.
+MetaExchange exchanges.
+IOspace exposes.
+CyberGlobal protects.
+NeuroLoop validates.
+AI JOKER-C2 executes.
+MATRIX organizes.
+```
+
+### 4.1 UNEBDO
+
+UNEBDO supports anchoring, validation and evidentiary continuity.
+
+It strengthens long-term proof continuity and external anchoring logic, but it does not create automatic legal certification by itself.
+
+### 4.2 OPC
+
+OPC means **Operational Proof & Compliance Layer**.
+
+It creates technical proof receipts for audit, verification and governance review.
+
+OPC is not automatic legal certification.
+
+### 4.3 MetaExchange
+
+MetaExchange supports structured exchange between controlled operational objects:
+
+```txt
+identities;
+proofs;
+documents;
+events;
+audit records;
+operational contexts;
+runtime nodes.
+```
+
+It must remain governed, access-controlled and policy-aware.
+
+### 4.4 IOspace
+
+IOspace is the runtime visibility and operational interaction space.
+
+It can expose public-safe runtime metadata, event chains, memory continuity, proof records, audit status and verification status.
+
+IOspace must not expose secrets, private payloads or democratic choice content.
+
+### 4.5 CyberGlobal
+
+CyberGlobal supports defensive cybersecurity, resilience, risk mapping, incident documentation and critical infrastructure continuity.
+
+It must remain defensive, audit-oriented and governance-oriented.
+
+It must not become an offensive cyber layer.
+
+### 4.6 NeuroLoop
+
+NeuroLoop supports validation, feedback, human review triggers, repeated decision patterns and controlled learning from audit outcomes.
+
+It is not an autonomous authority layer.
+
+It must preserve human accountability and fail-closed behavior.
+
+---
+
+## 5. Core architecture
 
 AI JOKER-C2 currently uses the following runtime layers.
 
-### 4.1 IPR — Identity Primary Record
+### 5.1 IPR — Identity Primary Record
 
 IPR means **Identity Primary Record**.
 
@@ -300,7 +408,7 @@ runtimeRole: IPR_RUNTIME_DEMONSTRATOR
 
 AI JOKER-C2 uses this identity to demonstrate how IPR can operate inside a governed AI runtime.
 
-### 4.2 EVT — Event Record / Verifiable Event Trace
+### 5.2 EVT — Event Record / Verifiable Event Trace
 
 EVT is the event continuity layer.
 
@@ -326,7 +434,7 @@ EVT does not create legal certification by itself.
 
 It provides a verifiable operational trace connected to IPR identity and runtime continuity.
 
-### 4.3 EVT/IPR-bound memory
+### 5.3 EVT/IPR-bound memory
 
 AI JOKER-C2 uses memory as an operational trace, not as vague chat memory.
 
@@ -359,6 +467,11 @@ This allows the runtime to recover continuity across interactions and interpret 
 "U.S.E."
 "CORPUS"
 "APOKALYPSIS"
+"UNEBDO"
+"MetaExchange"
+"IOspace"
+"CyberGlobal"
+"NeuroLoop"
 "the runtime"
 "the audit trail"
 "the proof receipt"
@@ -366,7 +479,7 @@ This allows the runtime to recover continuity across interactions and interpret 
 
 The memory layer is therefore part of the IPR demonstrator function: it shows how an AI interaction can remain connected to operational identity, event history and auditable continuity.
 
-### 4.4 OPC — Operational Proof & Compliance Layer
+### 5.4 OPC — Operational Proof & Compliance Layer
 
 OPC means **Operational Proof & Compliance Layer**.
 
@@ -413,7 +526,7 @@ Append: APPENDED
 
 ---
 
-## 5. Runtime flow
+## 6. Runtime flow
 
 The current runtime model is:
 
@@ -461,9 +574,9 @@ The runtime flow is therefore not only a response pipeline. It is an IPR-bound e
 
 ---
 
-## 6. Current API routes
+## 7. Current API routes
 
-### 6.1 Chat runtime
+### 7.1 Chat runtime
 
 ```txt
 POST /api/chat
@@ -487,7 +600,7 @@ memory event generation;
 OPC proof receipt generation.
 ```
 
-### 6.2 OPC proof endpoint
+### 7.2 OPC proof endpoint
 
 ```txt
 GET /api/opc
@@ -516,7 +629,7 @@ append-only database
 controlled audit storage
 ```
 
-### 6.3 File context endpoint
+### 7.3 File context endpoint
 
 ```txt
 POST /api/files
@@ -527,7 +640,7 @@ Used by the interface to ingest and clear session files.
 
 ---
 
-## 7. User interface
+## 8. User interface
 
 The main operational interface is:
 
@@ -570,7 +683,7 @@ The UI should be interpreted as the visible demonstrator of the IPR runtime chai
 
 ---
 
-## 8. Current visible proof flow
+## 9. Current visible proof flow
 
 A successful response produces a visible structure like:
 
@@ -611,7 +724,7 @@ The visible proof flow demonstrates that the interaction is not only answered, b
 
 ---
 
-## 9. Environment variables
+## 10. Environment variables
 
 Required:
 
@@ -655,7 +768,7 @@ If not provided, the runtime uses a temporary local JSONL file suitable only for
 
 ---
 
-## 10. Local development
+## 11. Local development
 
 Install dependencies:
 
@@ -683,7 +796,7 @@ npm run start
 
 ---
 
-## 11. Repository structure
+## 12. Repository structure
 
 Main runtime files:
 
@@ -718,7 +831,7 @@ docs/HBCE_OPERATIONAL_STACK.md
 
 ---
 
-## 12. OPC proof receipt shape
+## 13. OPC proof receipt shape
 
 An OPC proof receipt follows this conceptual shape:
 
@@ -781,7 +894,7 @@ An OPC proof receipt follows this conceptual shape:
 
 ---
 
-## 13. Governance boundaries
+## 14. Governance boundaries
 
 AI JOKER-C2 is a technical and research runtime.
 
@@ -836,7 +949,7 @@ Legal, institutional or regulatory status requires external validation.
 
 ---
 
-## 14. Digital voting and civic interaction boundary
+## 15. Digital voting and civic interaction boundary
 
 AI JOKER-C2 can discuss digital voting and civic interaction only with strict democratic safeguards.
 
@@ -872,7 +985,7 @@ ballot secrecy.
 
 ---
 
-## 15. Economic and institutional value
+## 16. Economic and institutional value
 
 The HBCE / IPR / EVT / OPC stack can support a professional and institutional layer around:
 
@@ -911,7 +1024,7 @@ The first operational product focus is IPR. AI JOKER-C2 supports this position b
 
 ---
 
-## 16. Strategic positioning
+## 17. Strategic positioning
 
 Professional statement:
 
@@ -930,9 +1043,14 @@ Synthetic hierarchy:
 ```txt
 IPR records operational identity.
 AI JOKER-C2 executes and demonstrates it.
+UNEBDO anchors and validates continuity.
 EVT traces the event.
 Memory preserves continuity.
 OPC produces the proof receipt.
+MetaExchange structures exchange.
+IOspace exposes the runtime.
+CyberGlobal protects defensively.
+NeuroLoop validates and feeds back.
 HBCE governs the process.
 MATRIX frames the architecture.
 U.S.E. applies MATRIX to European political-institutional design.
@@ -942,7 +1060,7 @@ APOKALYPSIS reads the historical threshold.
 
 ---
 
-## 17. Current milestone
+## 18. Current milestone
 
 Current milestone achieved:
 
@@ -958,9 +1076,11 @@ AI response
 
 This means AI JOKER-C2 now works as an initial auditable runtime prototype and IPR runtime demonstrator across MATRIX, U.S.E., CORPUS and APOKALYPSIS.
 
+The repository now also documents the six HBCE technical-operational modules as stack functions.
+
 ---
 
-## 18. Next roadmap
+## 19. Next roadmap
 
 Recommended next steps:
 
@@ -976,9 +1096,10 @@ Recommended next steps:
 9. Add ProofReceiptCard component
 10. Add EventChainViewer component
 11. Add RuntimeStatusPanel component
-12. Add IOSpace dashboard
+12. Add IOspace dashboard
 13. Add IPR runtime module
 14. Add four-collection runtime map
+15. Add HBCE module runtime map
 ```
 
 Suggested future files:
@@ -997,11 +1118,12 @@ docs/IPR_RUNTIME_DEMONSTRATOR.md
 docs/OPC_PROOF_LAYER.md
 docs/JOKER_C2_AUDIT_RUNTIME.md
 docs/FOUR_COLLECTIONS_RUNTIME_MAP.md
+docs/HBCE_MODULES_RUNTIME_MAP.md
 ```
 
 ---
 
-## 19. License and use
+## 20. License and use
 
 This repository is part of the HERMETICUM B.C.E. research and development ecosystem.
 
@@ -1017,7 +1139,7 @@ IPR — Identity Primary Record
 
 ---
 
-## 20. Final note
+## 21. Final note
 
 AI JOKER-C2 is an evolving operational research runtime.
 
@@ -1038,7 +1160,7 @@ audited
 
 This is the foundation of the HBCE Operational Stack and the runtime demonstration layer for IPR.
 
-Final formula:
+Final collection formula:
 
 ```txt
 MATRIX builds the architecture.
@@ -1050,4 +1172,20 @@ EVT makes operations traceable.
 Memory preserves continuity.
 OPC makes proof receipts inspectable.
 AI JOKER-C2 makes the system executable.
+```
+
+Final module formula:
+
+```txt
+IPR identifies.
+UNEBDO anchors.
+EVT traces.
+Memory continues.
+OPC proves.
+MetaExchange exchanges.
+IOspace exposes.
+CyberGlobal protects.
+NeuroLoop validates.
+AI JOKER-C2 executes.
+MATRIX organizes.
 ```
