@@ -1,8 +1,8 @@
 {
   "schema": "HBCE-AI-JOKER-C2-SYSTEM-MANIFEST",
-  "schema_version": "1.2.0",
+  "schema_version": "1.3.0",
   "name": "AI JOKER-C2",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "status": "OPERATIONAL_PROTOTYPE",
   "classification": "IPR_BOUND_GOVERNED_RUNTIME_DEMONSTRATOR",
   "organization": "HERMETICUM B.C.E. S.r.l.",
@@ -13,7 +13,7 @@
     "scope": "Europe",
     "strategic_axis": "Torino-Brussels"
   },
-  "public_definition": "AI JOKER-C2 is the governed runtime demonstrator for IPR — Identity Primary Record — inside the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS through governed AI execution, IPR identity, EVT continuity, EVT/IPR-bound memory, OPC proof receipts, verification and fail-closed control.",
+  "public_definition": "AI JOKER-C2 is the governed runtime demonstrator for IPR — Identity Primary Record — inside the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS through governed AI execution, IPR identity, EVT continuity, EVT/IPR-bound memory, OPC proof receipts, HBCE technical-operational modules, verification and fail-closed control.",
   "canonical_formula": {
     "ipr": "Primary operational identity and proof instrument",
     "ai_joker_c2": "Governed runtime demonstrator for IPR in execution",
@@ -21,9 +21,14 @@
     "use": "MATRIX-derived political-institutional application for a federated operational Europe",
     "corpus_esoterologia_ermetica": "Disciplinary grammar of operational reality",
     "apokalypsis": "Historical threshold analysis",
+    "unebdo": "Anchoring, validation and evidentiary continuity support",
     "evt": "Event trace layer",
     "memory": "EVT/IPR-bound runtime continuity",
-    "opc": "Operational proof receipt layer",
+    "opc": "Operational proof receipt and compliance layer",
+    "metaexchange": "Structured exchange layer",
+    "iospace": "Runtime visibility and operational interaction space",
+    "cyberglobal": "Defensive cybersecurity and resilience layer",
+    "neuroloop": "Validation, feedback and review loop",
     "hbce": "Governance, policy, audit and continuity ecosystem"
   },
   "ecosystem": {
@@ -38,10 +43,15 @@
     "runtime_role": "IPR_RUNTIME_DEMONSTRATOR",
     "governance_core": "HBCE-CORE-v3",
     "identity_layer": "IPR",
+    "anchoring_layer": "UNEBDO",
     "trace_layer": "EVT",
     "memory_layer": "EVT_IPR_BOUND_MEMORY",
     "proof_layer": "OPC",
-    "continuity_layer": "TRAC_EVT_OPC",
+    "exchange_layer": "MetaExchange",
+    "visibility_layer": "IOspace",
+    "defensive_cybersecurity_layer": "CyberGlobal",
+    "validation_layer": "NeuroLoop",
+    "continuity_layer": "TRAC_EVT_MEMORY_OPC",
     "verification_layer": "HASH_SIGNATURE_CHAIN_VERIFICATION"
   },
   "identity": {
@@ -114,6 +124,7 @@
         "principle": "Identity verified first. Choice separated after. Vote anonymized. Process auditable.",
         "identity_role": "IPR may support identity verification and participation rights.",
         "trace_role": "EVT may support process traceability.",
+        "memory_role": "EVT/IPR-bound memory may preserve runtime continuity around civic-institutional reasoning.",
         "proof_role": "OPC may support proof receipts for process operations.",
         "prohibition": "The content of a democratic vote or civic choice must not be linked to the personal identity of the voter or participant."
       },
@@ -179,6 +190,94 @@
       ]
     }
   },
+  "hbce_modules": {
+    "unebdo": {
+      "id": "UNEBDO",
+      "name": "UNEBDO",
+      "type": "ANCHORING_VALIDATION_CONTINUITY_LAYER",
+      "status": "PLANNED_FUNCTIONAL_LAYER",
+      "function": "Supports anchoring, validation, timestamp awareness, evidentiary continuity and long-term trace preservation.",
+      "depends_on": [
+        "IPR",
+        "EVT",
+        "OPC"
+      ],
+      "boundary": "UNEBDO supports anchoring and validation. It does not create automatic legal certification by default."
+    },
+    "opc": {
+      "id": "OPC",
+      "name": "Operational Proof & Compliance Layer",
+      "type": "OPERATIONAL_PROOF_AND_COMPLIANCE_LAYER",
+      "status": "ACTIVE_PROTOTYPE_LAYER",
+      "function": "Creates technical proof receipts for audit, verification and governance review.",
+      "depends_on": [
+        "IPR",
+        "EVT",
+        "EVT_IPR_BOUND_MEMORY"
+      ],
+      "boundary": "OPC proof receipts are technical proof receipts, not automatic legal certification."
+    },
+    "metaexchange": {
+      "id": "MetaExchange",
+      "name": "MetaExchange",
+      "type": "STRUCTURED_EXCHANGE_LAYER",
+      "status": "PLANNED_FUNCTIONAL_LAYER",
+      "function": "Supports structured exchange between identities, proofs, documents, events, audit records, operational contexts and runtime nodes.",
+      "depends_on": [
+        "IPR",
+        "EVT",
+        "EVT_IPR_BOUND_MEMORY",
+        "OPC"
+      ],
+      "boundary": "MetaExchange must remain governed, access-controlled and policy-aware. It must not become permissionless data exchange."
+    },
+    "iospace": {
+      "id": "IOspace",
+      "name": "IOspace",
+      "type": "RUNTIME_VISIBILITY_INTERACTION_LAYER",
+      "status": "PLANNED_INTERFACE_LAYER",
+      "function": "Provides runtime visibility and operational interaction for IPR identity, EVT chain, memory continuity, proof records, audit status and verification status.",
+      "depends_on": [
+        "IPR",
+        "EVT",
+        "EVT_IPR_BOUND_MEMORY",
+        "OPC"
+      ],
+      "boundary": "IOspace must expose only public-safe metadata unless controlled internal access is available."
+    },
+    "cyberglobal": {
+      "id": "CyberGlobal",
+      "name": "CyberGlobal",
+      "type": "DEFENSIVE_CYBERSECURITY_RESILIENCE_LAYER",
+      "status": "PLANNED_FUNCTIONAL_LAYER",
+      "function": "Supports defensive cybersecurity, resilience, risk mapping, incident documentation and critical infrastructure continuity.",
+      "depends_on": [
+        "IPR",
+        "EVT",
+        "OPC",
+        "POLICY",
+        "RISK",
+        "HUMAN_OVERSIGHT"
+      ],
+      "boundary": "CyberGlobal must remain defensive, audit-oriented, governance-oriented and non-offensive."
+    },
+    "neuroloop": {
+      "id": "NeuroLoop",
+      "name": "NeuroLoop",
+      "type": "VALIDATION_FEEDBACK_REVIEW_LOOP",
+      "status": "PLANNED_FUNCTIONAL_LAYER",
+      "function": "Supports reasoning checkpoints, validation paths, human review triggers, repeated decision patterns, reviewable uncertainty, escalation history and controlled feedback.",
+      "depends_on": [
+        "IPR",
+        "EVT",
+        "EVT_IPR_BOUND_MEMORY",
+        "OPC",
+        "HUMAN_OVERSIGHT",
+        "AUDIT"
+      ],
+      "boundary": "NeuroLoop is not autonomous authority and must not become uncontrolled learning or unsupervised decision execution."
+    }
+  },
   "runtime": {
     "mode": "FAIL_CLOSED",
     "state_model": [
@@ -206,6 +305,17 @@
       "LEDGER",
       "VERIFICATION",
       "CONTINUITY"
+    ],
+    "module_sequence": [
+      "IPR",
+      "UNEBDO",
+      "EVT",
+      "MEMORY",
+      "OPC",
+      "MetaExchange",
+      "IOspace",
+      "CyberGlobal",
+      "NeuroLoop"
     ],
     "decision_outputs": [
       "ALLOW",
@@ -268,7 +378,8 @@
       "U.S.E. democratic safeguard modeling",
       "evidence generation",
       "verification support",
-      "OPC proof receipt generation"
+      "OPC proof receipt generation",
+      "HBCE module documentation"
     ],
     "prohibited_uses": [
       "offensive cyber operations",
@@ -287,7 +398,11 @@
       "vote de-anonymization",
       "linking personal identity to democratic choice content",
       "coercive civic influence",
-      "unauthorized electoral infrastructure deployment"
+      "unauthorized electoral infrastructure deployment",
+      "false legal certification claims",
+      "permissionless data exchange through MetaExchange",
+      "offensive use of CyberGlobal",
+      "autonomous authority through NeuroLoop"
     ]
   },
   "evt": {
@@ -367,6 +482,7 @@
       "hash_linking",
       "audit_metadata",
       "verification_status",
+      "memory_metadata",
       "opc_proof_chain_metadata"
     ]
   },
@@ -400,7 +516,8 @@
       "CHAIN_INTEGRITY_CHECK",
       "MANIFEST_VALIDATION",
       "EVENT_RECONSTRUCTION",
-      "OPC_PROOF_RECEIPT_VERIFICATION"
+      "OPC_PROOF_RECEIPT_VERIFICATION",
+      "MEMORY_CONTINUITY_RECONSTRUCTION"
     ]
   },
   "federation": {
@@ -414,7 +531,8 @@
       "B2B_DEPLOYMENT",
       "B2G_DEPLOYMENT",
       "AUDIT_NODE_DEPLOYMENT",
-      "CIVIC_NODE_DEPLOYMENT_WITH_DEMOCRATIC_SAFEGUARDS"
+      "CIVIC_NODE_DEPLOYMENT_WITH_DEMOCRATIC_SAFEGUARDS",
+      "HBCE_MODULE_NODE_DEPLOYMENT"
     ]
   },
   "security": {
@@ -428,7 +546,8 @@
       "NO_CONTINUITY_NO_TRUSTED_STATE",
       "NO_EVIDENCE_NO_OPERATIONAL_EXISTENCE",
       "NO_VERIFICATION_NO_RECOGNIZED_PERSISTENCE",
-      "NO_IDENTITY_CHOICE_LINKING_IN_DEMOCRATIC_CONTEXTS"
+      "NO_IDENTITY_CHOICE_LINKING_IN_DEMOCRATIC_CONTEXTS",
+      "NO_MODULE_LAYER_WITHOUT_GOVERNANCE"
     ],
     "scope": "DEFENSIVE_GOVERNANCE_AND_VERIFIABLE_OPERATIONAL_CONTINUITY"
   },
@@ -468,7 +587,8 @@
       "JOKER_SIGN_PRIVATE_KEY",
       "JOKER_SIGN_PUBLIC_KEY",
       "NEXT_PUBLIC_BASE_URL",
-      "JOKER_OPC_LEDGER_FILE"
+      "JOKER_OPC_LEDGER_FILE",
+      "JOKER_EVT_MEMORY_LEDGER_FILE"
     ],
     "public_routes": [
       "/",
@@ -496,7 +616,8 @@
     "dual_use_positioning": "DUAL_USE_STRATEGIC_POSITIONING.md",
     "roadmap": "ROADMAP.md",
     "security": "SECURITY.md",
-    "contributing": "CONTRIBUTING.md"
+    "contributing": "CONTRIBUTING.md",
+    "operational_stack": "docs/HBCE_OPERATIONAL_STACK.md"
   },
   "operational_invariants": [
     "AI JOKER-C2 is not a generic chatbot.",
@@ -507,9 +628,15 @@
     "CORPUS ESOTEROLOGIA ERMETICA provides the disciplinary grammar domain.",
     "APOKALYPSIS provides the historical threshold domain.",
     "HBCE provides governance infrastructure.",
+    "HBCE modules are technical-operational functions, not additional collections.",
+    "UNEBDO provides anchoring, validation and evidentiary continuity support.",
     "EVT provides event trace.",
     "Memory provides EVT/IPR-bound runtime continuity.",
     "OPC provides technical proof receipts.",
+    "MetaExchange provides structured exchange under governance.",
+    "IOspace provides runtime visibility and operational interaction.",
+    "CyberGlobal provides defensive cybersecurity and resilience.",
+    "NeuroLoop provides validation, feedback and controlled review.",
     "Ledger provides continuity.",
     "Policy precedes sensitive execution.",
     "Risk classification precedes sensitive output.",
@@ -519,7 +646,8 @@
     "Corrections must be recorded as new events.",
     "The model layer must not become the authority layer.",
     "Democratic choice content must not be linked to personal voter identity.",
-    "U.S.E. must preserve identity-choice separation, anonymity, auditability and institutional legality."
+    "U.S.E. must preserve identity-choice separation, anonymity, auditability and institutional legality.",
+    "Module awareness must not collapse HBCE modules into political domains or book collections."
   ],
-  "final_definition": "AI JOKER-C2 is the governed runtime demonstrator for IPR inside the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS through governed AI execution, IPR identity, EVT continuity, EVT/IPR-bound memory, OPC proof receipts, verification and fail-closed control."
+  "final_definition": "AI JOKER-C2 is the governed runtime demonstrator for IPR inside the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS through governed AI execution, IPR identity, EVT continuity, EVT/IPR-bound memory, OPC proof receipts, HBCE technical-operational modules, verification and fail-closed control."
 }
