@@ -25,6 +25,10 @@ import {
   type ProjectDomainClassification
 } from "../../../lib/project-domain-classifier";
 import {
+  classifyHbceModule,
+  type HbceModuleClassification
+} from "../../../lib/hbce-module-classifier";
+import {
   buildSafeConceptProjectDomain,
   classifySafeConcept
 } from "../../../lib/safe-concept-classifier";
@@ -163,6 +167,10 @@ type OpcRuntimeResult = {
   verification: ReturnType<typeof verifyOpcProofRecord>;
 };
 
+type EnrichedGovernanceFrame = GovernanceFrame & {
+  hbceModule: HbceModuleClassification;
+};
+
 const MODEL = process.env.JOKER_MODEL || "gpt-4o-mini";
 const MAX_OUTPUT_TOKENS = 4600;
 const MAX_DATA_CLASSIFICATION_CHARS = 24000;
@@ -291,7 +299,7 @@ async function generateResponse(input: {
   memoryUsed: boolean;
   memorySource: string;
   structuredFormat: boolean;
-  governanceFrame: GovernanceFrame;
+  governanceFrame: EnrichedGovernanceFrame;
 }): Promise<GeneratedResponse> {
   if (!openai) {
     return {
@@ -325,6 +333,9 @@ async function generateResponse(input: {
             "U.S.E. = applicazione politico-istituzionale derivata da MATRIX per una federazione europea operativa, digitale e verificabile.",
             "CORPUS ESOTEROLOGIA ERMETICA = grammatica disciplinare.",
             "APOKALYPSIS = soglia storica.",
+            "I moduli HBCE sono funzioni tecnico-operative dello stack: UNEBDO ancora, OPC prova, MetaExchange scambia, IOspace espone, CyberGlobal protegge, NeuroLoop valida.",
+            `Modulo HBCE classificato: ${input.governanceFrame.hbceModule.module}.`,
+            `Moduli HBCE attivi: ${input.governanceFrame.hbceModule.activeModules.join(", ")}.`,
             `Regola U.S.E. obbligatoria: ${USE_DEMOCRATIC_BOUNDARY}`,
             "Non collegare mai identità personale e contenuto di una scelta democratica.",
             "Quando è attivo un contratto canonico di risposta, devi iniziare con la formula obbligatoria prima della spiegazione discorsiva.",
@@ -377,6 +388,7 @@ function buildGovernanceLimitedResponse(input: {
   risk: RiskEvaluation;
   oversight: OversightEvaluation;
   projectDomain: ProjectDomainClassification;
+  hbceModule: HbceModuleClassification;
 }): GeneratedResponse {
   if (input.decision.decision === "BLOCK") {
     return {
@@ -392,6 +404,8 @@ function buildGovernanceLimitedResponse(input: {
         "",
         "Dominio classificato:",
         input.projectDomain.projectDomain,
+        "Modulo HBCE classificato:",
+        input.hbceModule.module,
         "",
         "Posso aiutare solo in modalità sicura: documentazione difensiva, checklist, audit, mitigazione, revisione, hardening, incident report o governance.",
         input.projectDomain.projectDomain === "U.S.E."
@@ -409,6 +423,7 @@ function buildGovernanceLimitedResponse(input: {
         "La richiesta richiede revisione umana prima di qualunque uso operativo.",
         "",
         `ProjectDomain: ${input.projectDomain.projectDomain}`,
+        `HbceModule: ${input.hbceModule.module}`,
         `RiskClass: ${input.risk.riskClass}`,
         `HumanOversight: ${input.oversight.state}`,
         `RequiredRole: ${input.oversight.requiredRole}`,
@@ -430,6 +445,7 @@ function buildGovernanceLimitedResponse(input: {
       "Il runtime ha limitato la risposta a supporto sicuro e revisionabile.",
       "",
       `ProjectDomain: ${input.projectDomain.projectDomain}`,
+      `HbceModule: ${input.hbceModule.module}`,
       `Decision: ${input.decision.decision}`,
       `RiskClass: ${input.risk.riskClass}`,
       `Oversight: ${input.oversight.state}`
@@ -527,7 +543,7 @@ function buildRuntimeDiagnosticText(input: {
   structuredFormat: boolean;
   event: LegacyRuntimeEvent;
   modernEvt: ReturnType<typeof toPublicRuntimeEvent>;
-  governance: GovernanceFrame;
+  governance: EnrichedGovernanceFrame;
   degradedReason?: string | null;
 }): string {
   const identity = getPrimaryIdentity();
@@ -543,6 +559,10 @@ function buildRuntimeDiagnosticText(input: {
     `ActiveDomains: ${input.governance.projectDomain.activeDomains.join(", ")}`,
     `DomainType: ${input.governance.projectDomain.domainType}`,
     `DomainConfidence: ${input.governance.projectDomain.confidence}`,
+    `HbceModule: ${input.governance.hbceModule.module}`,
+    `ActiveModules: ${input.governance.hbceModule.activeModules.join(", ")}`,
+    `ModuleType: ${input.governance.hbceModule.moduleType}`,
+    `ModuleConfidence: ${input.governance.hbceModule.confidence}`,
     `Context: ${input.contextClass}`,
     `LegacyContext: ${input.legacyContextClass}`,
     `Intent: ${input.intentClass}`,
@@ -620,7 +640,7 @@ function buildTechnicalFrame(input: {
   memoryAppendStatus: string;
   opcProofId?: string | null;
   opcChainHash?: string | null;
-  governance: GovernanceFrame;
+  governance: EnrichedGovernanceFrame;
   degradedReason?: string | null;
 }) {
   return [
@@ -634,6 +654,9 @@ function buildTechnicalFrame(input: {
     `- projectDomain: ${input.governance.projectDomain.projectDomain}`,
     `- activeDomains: ${input.governance.projectDomain.activeDomains.join(", ")}`,
     `- domainType: ${input.governance.projectDomain.domainType}`,
+    `- hbceModule: ${input.governance.hbceModule.module}`,
+    `- activeModules: ${input.governance.hbceModule.activeModules.join(", ")}`,
+    `- moduleType: ${input.governance.hbceModule.moduleType}`,
     `- context: ${input.contextClass}`,
     `- legacyContext: ${input.legacyContextClass}`,
     `- intent: ${input.intentClass}`,
@@ -1047,9 +1070,9 @@ function preferOpcForGovernance(input: {
 }
 
 function applySafeRuntimeDiagnosticGovernanceOverride(input: {
-  frame: GovernanceFrame;
+  frame: EnrichedGovernanceFrame;
   message: string;
-}): GovernanceFrame {
+}): EnrichedGovernanceFrame {
   if (!isRuntimeDiagnosticRequest(input.message)) {
     return input.frame;
   }
@@ -1130,10 +1153,10 @@ function applySafeRuntimeDiagnosticGovernanceOverride(input: {
 }
 
 function applySafeConceptGovernanceOverride(input: {
-  frame: GovernanceFrame;
+  frame: EnrichedGovernanceFrame;
   message: string;
   files: FileInput[];
-}): GovernanceFrame {
+}): EnrichedGovernanceFrame {
   const safeConcept = classifySafeConcept(input.message);
 
   if (!safeConcept.matched || input.files.length > 0) {
@@ -1176,9 +1199,9 @@ function applySafeConceptGovernanceOverride(input: {
 }
 
 function applySafeIdentityGovernanceOverride(input: {
-  frame: GovernanceFrame;
+  frame: EnrichedGovernanceFrame;
   message: string;
-}): GovernanceFrame {
+}): EnrichedGovernanceFrame {
   if (!isSafeIdentityGovernanceQuestion(input.message)) {
     return input.frame;
   }
@@ -1260,10 +1283,10 @@ function applySafeIdentityGovernanceOverride(input: {
 }
 
 function applySafeDocumentGovernanceOverride(input: {
-  frame: GovernanceFrame;
+  frame: EnrichedGovernanceFrame;
   message: string;
   files: FileInput[];
-}): GovernanceFrame {
+}): EnrichedGovernanceFrame {
   if (
     !isSafeDocumentWork({
       files: input.files,
@@ -1368,11 +1391,19 @@ function applySafeDocumentGovernanceOverride(input: {
 function buildGovernanceFrame(input: {
   message: string;
   files: FileInput[];
-}): GovernanceFrame {
+}): EnrichedGovernanceFrame {
   const normalizedFiles = normalizeFiles(input.files);
   const safeConcept = classifySafeConcept(input.message);
 
   const rawProjectDomain = classifyProjectDomain({
+    message: input.message,
+    hasFiles: input.files.length > 0,
+    fileNames: normalizedFiles.map((file) => file.name),
+    filePaths: normalizedFiles.map((file) => file.name),
+    activeDocument: normalizedFiles[0]?.name
+  });
+
+  const hbceModule = classifyHbceModule({
     message: input.message,
     hasFiles: input.files.length > 0,
     fileNames: normalizedFiles.map((file) => file.name),
@@ -1437,8 +1468,9 @@ function buildGovernanceFrame(input: {
       iprBindingPreferred: true
     });
 
-    const frame: GovernanceFrame = {
+    const frame: EnrichedGovernanceFrame = {
       projectDomain,
+      hbceModule,
       contextClass: safeConcept.contextClass,
       intentClass: safeConcept.intentClass,
       data: safeConcept.data,
@@ -1515,8 +1547,9 @@ function buildGovernanceFrame(input: {
     identityChoiceLinkage: Boolean(data.containsDemocraticChoiceData)
   });
 
-  const frame: GovernanceFrame = {
+  const frame: EnrichedGovernanceFrame = {
     projectDomain,
+    hbceModule,
     contextClass: context.contextClass,
     intentClass: context.intentClass,
     data,
@@ -1553,7 +1586,7 @@ function buildGovernanceFrame(input: {
 async function buildAndAppendGovernedEvt(input: {
   prev: string;
   state: MemoryRuntimeState;
-  governance: GovernanceFrame;
+  governance: EnrichedGovernanceFrame;
   operationType: string;
   operationStatus: OperationStatus;
 }) {
@@ -1582,6 +1615,7 @@ async function buildAndAppendGovernedEvt(input: {
     failClosed: input.governance.decision.failClosed,
     reasons: [
       ...input.governance.projectDomain.reasons,
+      ...input.governance.hbceModule.reasons,
       ...input.governance.policy.reasons,
       ...input.governance.risk.reasons,
       input.governance.oversight.reason,
@@ -1682,7 +1716,7 @@ async function createAndAppendOpcForChat(input: {
   event: LegacyRuntimeEvent;
   modernEvt: ReturnType<typeof toPublicRuntimeEvent>;
   memoryEvent: ReturnType<typeof appendEvtMemory>;
-  governance: GovernanceFrame;
+  governance: EnrichedGovernanceFrame;
 }): Promise<OpcRuntimeResult> {
   const previousProofHash = await getLastOpcProofHash();
 
@@ -1712,6 +1746,7 @@ async function createAndAppendOpcForChat(input: {
       contextClass: input.governance.contextClass,
       intentClass: input.governance.intentClass,
       projectDomain: input.governance.projectDomain.projectDomain,
+      hbceModule: input.governance.hbceModule.module,
       riskClass: mapOpcRiskClass(input.governance.risk.riskClass),
       policyReference: input.governance.policy.policyReference,
       policyOutcome: input.governance.policy.outcome,
@@ -1743,6 +1778,8 @@ async function createAndAppendOpcForChat(input: {
       intentClass: input.governance.intentClass,
       projectDomain: input.governance.projectDomain.projectDomain,
       activeDomains: input.governance.projectDomain.activeDomains,
+      hbceModule: input.governance.hbceModule.module,
+      activeModules: input.governance.hbceModule.activeModules,
       legacyEvent: input.event.evt,
       governedEvent: input.modernEvt.evt,
       memoryEvent: input.memoryEvent.evt,
@@ -1767,6 +1804,9 @@ async function createAndAppendOpcForChat(input: {
         ...input.governance.policy.reasons,
         ...input.governance.risk.reasons,
         input.governance.oversight.reason,
+        input.governance.hbceModule.module !== "NONE"
+          ? `HBCE module: ${input.governance.hbceModule.module}`
+          : "",
         input.governance.projectDomain.projectDomain === "U.S.E."
           ? `U.S.E. boundary: ${USE_DEMOCRATIC_BOUNDARY}`
           : ""
@@ -1980,6 +2020,9 @@ export async function POST(req: NextRequest) {
       projectDomain: governance.projectDomain.projectDomain,
       activeDomains: governance.projectDomain.activeDomains,
       domainType: governance.projectDomain.domainType,
+      hbceModule: governance.hbceModule.module,
+      activeModules: governance.hbceModule.activeModules,
+      moduleType: governance.hbceModule.moduleType,
       contextClass,
       legacyContextClass,
       intentClass,
@@ -2038,6 +2081,11 @@ export async function POST(req: NextRequest) {
         projectDomain: governance.projectDomain.projectDomain,
         activeDomains: governance.projectDomain.activeDomains,
         domainType: governance.projectDomain.domainType,
+        hbceModule: governance.hbceModule.module,
+        activeModules: governance.hbceModule.activeModules,
+        moduleType: governance.hbceModule.moduleType,
+        moduleConfidence: governance.hbceModule.confidence,
+        moduleReasons: governance.hbceModule.reasons,
         dataClass: governance.data.dataClass,
         containsCivicSensitiveData: governance.data.containsCivicSensitiveData,
         containsDemocraticChoiceData:
@@ -2078,6 +2126,7 @@ export async function POST(req: NextRequest) {
         opcProofId: opc.publicProof.proofId,
         opcAppendStatus: opc.append.status,
         opcVerificationStatus: opc.publicProof.verificationStatus,
+        hbceModule: governance.hbceModule.module,
         structuredFormat
       }
     });
@@ -2099,7 +2148,8 @@ export async function POST(req: NextRequest) {
       policy: governance.policy,
       risk: governance.risk,
       oversight: governance.oversight,
-      projectDomain: governance.projectDomain
+      projectDomain: governance.projectDomain,
+      hbceModule: governance.hbceModule
     });
   } else {
     generated = await generateResponse({
@@ -2217,6 +2267,9 @@ export async function POST(req: NextRequest) {
     projectDomain: governance.projectDomain.projectDomain,
     activeDomains: governance.projectDomain.activeDomains,
     domainType: governance.projectDomain.domainType,
+    hbceModule: governance.hbceModule.module,
+    activeModules: governance.hbceModule.activeModules,
+    moduleType: governance.hbceModule.moduleType,
     contextClass,
     legacyContextClass,
     intentClass,
@@ -2277,6 +2330,11 @@ export async function POST(req: NextRequest) {
       domainType: governance.projectDomain.domainType,
       domainConfidence: governance.projectDomain.confidence,
       domainReasons: governance.projectDomain.reasons,
+      hbceModule: governance.hbceModule.module,
+      activeModules: governance.hbceModule.activeModules,
+      moduleType: governance.hbceModule.moduleType,
+      moduleConfidence: governance.hbceModule.confidence,
+      moduleReasons: governance.hbceModule.reasons,
       dataClass: governance.data.dataClass,
       containsSecret: governance.data.containsSecret,
       containsPersonalData: governance.data.containsPersonalData,
@@ -2324,6 +2382,7 @@ export async function POST(req: NextRequest) {
       opcProofId: opc.publicProof.proofId,
       opcAppendStatus: opc.append.status,
       opcVerificationStatus: opc.publicProof.verificationStatus,
+      hbceModule: governance.hbceModule.module,
       structuredFormat
     }
   });
