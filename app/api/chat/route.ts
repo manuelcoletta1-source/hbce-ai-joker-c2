@@ -193,10 +193,6 @@ function buildEvtId(): string {
     .padEnd(8, "0")}`;
 }
 
-function buildTraceHash(input: unknown): string {
-  return buildPublicTraceHash(input);
-}
-
 function normalizeBody(body: ChatBody) {
   return {
     message: typeof body.message === "string" ? body.message.trim() : "",
@@ -303,7 +299,7 @@ function isRuntimeSelfIdentityQuestion(message: string): boolean {
   const text = normalizeRuntimeText(message);
 
   return (
-    runtimeTextIncludesAny(text, [
+    (runtimeTextIncludesAny(text, [
       "chi sei",
       "cosa sei",
       "presentati",
@@ -311,8 +307,10 @@ function isRuntimeSelfIdentityQuestion(message: string): boolean {
       "who are you",
       "what are you"
     ]) &&
-    runtimeTextIncludesAny(text, ["joker", "ai joker", "tu", "runtime", "c2"])
-  ) || text === "chi sei?" || text === "chi sei";
+      runtimeTextIncludesAny(text, ["joker", "ai joker", "tu", "runtime", "c2"])) ||
+    text === "chi sei?" ||
+    text === "chi sei"
+  );
 }
 
 function isManuelColettaIdentityQuestion(message: string): boolean {
@@ -355,7 +353,6 @@ function isAerospaceGovernanceBoundaryQuestion(message: string): boolean {
     "flight control",
     "guidance",
     "navigation",
-    "guc",
     "gnc",
     "lancio",
     "traiettoria"
@@ -467,12 +464,7 @@ function shouldInjectEvtMemoryIntoPrompt(input: {
 
   const memoryFamily = input.memory.semanticState?.documentFamily;
 
-  if (
-    memoryFamily &&
-    input.documentFamily &&
-    memoryFamily === input.documentFamily &&
-    input.documentFamily !== "UNKNOWN"
-  ) {
+  if (memoryFamily && memoryFamily === input.documentFamily) {
     return true;
   }
 
