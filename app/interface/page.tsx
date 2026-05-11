@@ -98,6 +98,12 @@ type GovernanceInfo = {
   activeDomains?: string[];
   domainType?: string;
   domainConfidence?: number;
+  domainReasons?: string[];
+  hbceModule?: string;
+  activeModules?: string[];
+  moduleType?: string;
+  moduleConfidence?: number;
+  moduleReasons?: string[];
   dataClass?: string;
   containsSecret?: boolean;
   containsPersonalData?: boolean;
@@ -138,6 +144,7 @@ type DiagnosticsInfo = {
   opcProofId?: string;
   opcAppendStatus?: string;
   opcVerificationStatus?: string;
+  hbceModule?: string;
   structuredFormat?: boolean;
 };
 
@@ -151,6 +158,9 @@ type ChatApiResponse = {
   projectDomain?: string;
   activeDomains?: string[];
   domainType?: string;
+  hbceModule?: string;
+  activeModules?: string[];
+  moduleType?: string;
   contextClass?: string;
   legacyContextClass?: string;
   intentClass?: string;
@@ -224,7 +234,8 @@ function statusTone(value?: string | null): string {
     normalized === "NOT_REQUIRED" ||
     normalized === "COMPLETED" ||
     normalized === "PERMIT" ||
-    normalized === "TRUE"
+    normalized === "TRUE" ||
+    normalized === "ACTIVE_PROTOTYPE_LAYER"
   ) {
     return "joker-badge--ok";
   }
@@ -239,7 +250,10 @@ function statusTone(value?: string | null): string {
     normalized === "REQUIRE_AUDIT" ||
     normalized === "REQUIRE_REVIEW" ||
     normalized === "PENDING" ||
-    normalized === "PARTIAL"
+    normalized === "PARTIAL" ||
+    normalized === "PLANNED_FUNCTIONAL_LAYER" ||
+    normalized === "PLANNED_INTERFACE_LAYER" ||
+    normalized === "DOCUMENTATION_ONLY"
   ) {
     return "joker-badge--warn";
   }
@@ -407,6 +421,15 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           />
 
           <MiniProofCard
+            title="HBCE Module"
+            rows={[
+              ["Module", message.runtime.hbceModule || message.runtime.governance?.hbceModule],
+              ["Type", message.runtime.moduleType || message.runtime.governance?.moduleType],
+              ["Active", formatList(message.runtime.activeModules || message.runtime.governance?.activeModules)]
+            ]}
+          />
+
+          <MiniProofCard
             title="EVT/IPR Memory"
             rows={[
               ["Event", message.runtime.memory?.event],
@@ -525,6 +548,10 @@ export default function InterfacePage() {
       contextClass: lastRuntime?.contextClass || "-",
       intentClass: lastRuntime?.intentClass || "-",
       documentFamily: lastRuntime?.documentFamily || "-",
+      hbceModule: lastRuntime?.hbceModule || lastRuntime?.governance?.hbceModule || "-",
+      activeModules: lastRuntime?.activeModules || lastRuntime?.governance?.activeModules || [],
+      moduleType: lastRuntime?.moduleType || lastRuntime?.governance?.moduleType || "-",
+      moduleConfidence: lastRuntime?.governance?.moduleConfidence,
       memoryUsed: lastRuntime?.evtIprMemoryUsed,
       memorySource: lastRuntime?.memorySource || "-",
       memoryHash: lastRuntime?.memory?.memoryHash || "-",
@@ -938,7 +965,7 @@ export default function InterfacePage() {
 
         .joker-mini-grid {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(5, minmax(0, 1fr));
           gap: 12px;
           margin-top: 16px;
           padding-top: 16px;
@@ -1265,6 +1292,12 @@ export default function InterfacePage() {
           background: rgba(127, 29, 29, 0.26);
         }
 
+        @media (max-width: 1440px) {
+          .joker-mini-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+
         @media (max-width: 1280px) {
           .joker-mini-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1335,7 +1368,7 @@ export default function InterfacePage() {
                 <h1 className="joker-title">IPR Runtime Demonstrator</h1>
                 <p className="joker-lead">
                   Chat operativa con identità IPR, EVT, memoria EVT/IPR-bound, proof receipt OPC e governance HBCE/MATRIX.
-                  Il runtime espone continuità, audit, verifica, fail-closed e salvaguardie U.S.E. quando pertinenti.
+                  Il runtime espone continuità, audit, verifica, fail-closed, moduli HBCE e salvaguardie U.S.E. quando pertinenti.
                 </p>
               </div>
 
@@ -1358,6 +1391,7 @@ export default function InterfacePage() {
                     {[
                       "joker cosa è IPR?",
                       "che differenza c’è tra IPR, EVT e OPC?",
+                      "spiegami i moduli HBCE",
                       "diagnostica runtime",
                       "spiegami U.S.E. e voto digitale federato"
                     ].map((sample) => (
@@ -1381,7 +1415,7 @@ export default function InterfacePage() {
 
                 {isSending ? (
                   <div className="joker-message joker-message--assistant">
-                    AI JOKER-C2 sta generando risposta, EVT, memoria EVT/IPR e OPC proof receipt.
+                    AI JOKER-C2 sta generando risposta, EVT, memoria EVT/IPR, classificazione modulo HBCE e OPC proof receipt.
                   </div>
                 ) : null}
 
@@ -1455,6 +1489,20 @@ export default function InterfacePage() {
             <FieldRow label="Context" value={runtimeSummary.contextClass} />
             <FieldRow label="Intent" value={runtimeSummary.intentClass} />
             <FieldRow label="Family" value={runtimeSummary.documentFamily} />
+          </RuntimeCard>
+
+          <RuntimeCard title="HBCE Module">
+            <FieldRow label="Module" value={runtimeSummary.hbceModule} badge />
+            <FieldRow label="Type" value={runtimeSummary.moduleType} />
+            <FieldRow label="Active" value={formatList(runtimeSummary.activeModules)} />
+            <FieldRow
+              label="Confidence"
+              value={
+                typeof runtimeSummary.moduleConfidence === "number"
+                  ? runtimeSummary.moduleConfidence
+                  : "-"
+              }
+            />
           </RuntimeCard>
 
           <RuntimeCard title="IPR Runtime">
@@ -1544,6 +1592,7 @@ export default function InterfacePage() {
             <FieldRow label="Memory" value={lastRuntime?.diagnostics?.memoryAppendStatus || "-"} badge />
             <FieldRow label="OPC" value={lastRuntime?.diagnostics?.opcAppendStatus || "-"} badge />
             <FieldRow label="Verify" value={lastRuntime?.diagnostics?.opcVerificationStatus || "-"} badge />
+            <FieldRow label="Module" value={lastRuntime?.diagnostics?.hbceModule || "-"} badge />
           </RuntimeCard>
         </aside>
       </div>
