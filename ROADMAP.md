@@ -1,6 +1,6 @@
 # AI JOKER-C2 Roadmap
 
-## IPR Runtime Development Roadmap for MATRIX, U.S.E., CORPUS and APOKALYPSIS
+## IPR Runtime and Four-Collection Development Roadmap
 
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**  
@@ -18,9 +18,9 @@ AI JOKER-C2 is the governed runtime demonstrator for **IPR — Identity Primary 
 
 The primary operational instrument is **IPR**.
 
-AI JOKER-C2 demonstrates IPR in execution by connecting identity, context, project domain, policy, risk, decision, output, event trace, memory continuity, proof receipts and audit-oriented verification.
+AI JOKER-C2 demonstrates IPR in execution by connecting identity, project collection, context, policy, risk, decision, output, event trace, memory continuity, proof receipts and audit-oriented verification.
 
-It connects four primary domains:
+It connects four canonical project collections:
 
 ```txt
 1. MATRIX
@@ -29,17 +29,19 @@ It connects four primary domains:
 4. APOKALYPSIS
 ```
 
-The roadmap is designed to evolve the project from a working prototype into a governed, traceable and verifiable IPR runtime demonstrator for civil, institutional, strategic, B2B and B2G use cases.
+The roadmap is designed to evolve the project from a working prototype into a governed, traceable and verifiable IPR runtime demonstrator for civil, institutional, strategic, editorial, B2B and B2G use cases.
 
 The project must remain:
 
 ```txt
 IPR-bound;
-project-domain aware;
+project-collection aware;
 non-offensive;
 policy-aware;
 risk-classified;
 event-driven;
+memory-continuity aware;
+proof-receipt oriented;
 auditable;
 fail-closed;
 human-accountable;
@@ -62,7 +64,7 @@ OPC = operational proof receipt layer
 MATRIX = operational infrastructure architecture
 U.S.E. = MATRIX-derived political-institutional application
 CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
-APOKALYPSIS = historical threshold analysis
+APOKALYPSIS = historical-threshold analysis
 HBCE = governance infrastructure
 Ledger = continuity layer
 Verification = audit and reconstruction layer
@@ -77,8 +79,8 @@ The core runtime sequence is:
 IPR Identity
 → Input
 → Intent
+→ Project Collection
 → Context
-→ Project Domain
 → Policy
 → Risk
 → Decision
@@ -94,23 +96,62 @@ IPR Identity
 
 The roadmap must not convert the system into an offensive platform.
 
-Development must strengthen governance, traceability, project-domain classification, safe operational control, proof receipts and human accountability.
+Development must strengthen governance, traceability, project-collection classification, safe operational control, proof receipts and human accountability.
 
 ---
 
-## 3. Roadmap Overview
+## 3. Two-Axis Roadmap Model
+
+The roadmap is organized on two axes.
+
+### 3.1 Technical Runtime Axis
+
+```txt
+IPR
+→ EVT
+→ Memory
+→ OPC
+→ Ledger
+→ Verification
+→ Dashboard
+→ Evidence Pack
+```
+
+This axis turns AI interaction into an operational sequence that can be classified, traced, remembered, proven and reviewed.
+
+### 3.2 Editorial-Operational Collection Axis
+
+```txt
+MATRIX
+→ U.S.E.
+→ CORPUS
+→ APOKALYPSIS
+→ Four Collections Runtime Map
+```
+
+This axis turns the four collections into active runtime domains that can be recognized, governed, traced and kept coherent across conversations, files, documents and repository work.
+
+The full roadmap must preserve both axes.
+
+A purely technical runtime without collection awareness is incomplete.
+
+A purely editorial map without runtime traceability is also incomplete.
+
+---
+
+## 4. Roadmap Overview
 
 ```txt
 v0.1 = working AI runtime with interface, chat and basic diagnostics
 v0.2 = governance documentation and strategic dual-use boundary
-v0.3 = IPR runtime module, project-domain classifier, policy engine and risk classifier
+v0.3 = IPR runtime module, project-collection classifier, policy engine and risk classifier
 v0.4 = append-only EVT ledger and verification endpoint
 v0.5 = EVT/IPR-bound memory and OPC proof receipt layer
 v0.6 = signed records, audit export and evidence packs
-v0.7 = runtime dashboard for IPR, EVT, OPC, audit and system state
-v0.8 = B2B, B2G and U.S.E. documentation package
-v0.9 = compliance-oriented operational package
-v1.0 = governed IPR runtime release candidate
+v0.7 = runtime dashboard for IPR, EVT, Memory, OPC, audit and system state
+v0.8 = B2B, B2G, U.S.E. and four-collection documentation package
+v0.9 = compliance-oriented and four-collection operational package
+v1.0 = governed IPR runtime and four-collection release candidate
 ```
 
 The roadmap priority is no longer generic expansion.
@@ -124,12 +165,13 @@ The priority is:
 4. connect memory to EVT/IPR continuity;
 5. generate OPC proof receipts;
 6. expose verification and audit outputs;
-7. package the system for B2B, B2G and institutional review.
+7. classify MATRIX, U.S.E., CORPUS and APOKALYPSIS as four active collections;
+8. package the system for B2B, B2G, institutional, research and editorial review.
 ```
 
 ---
 
-## 4. v0.1 — Runtime Prototype
+## 5. v0.1 — Runtime Prototype
 
 ### Objective
 
@@ -188,7 +230,7 @@ preserve a clear identity-bound project frame.
 
 ---
 
-## 5. v0.2 — Governance and Strategic Positioning
+## 6. v0.2 — Governance and Strategic Positioning
 
 ### Objective
 
@@ -198,10 +240,12 @@ Formalize AI JOKER-C2 as a governed, non-offensive, civil and strategic dual-use
 
 ```txt
 IPR-first positioning;
+four-collection positioning;
 strategic dual-use positioning;
 governance model;
 fail-closed principle;
 EVT protocol;
+Memory protocol orientation;
 OPC proof receipt orientation;
 security policy;
 compliance orientation;
@@ -210,7 +254,7 @@ architecture formalization;
 operational protocol;
 system manifest;
 clear distinction between defensive and prohibited use;
-canonical project-domain definition;
+canonical project-collection definition;
 democratic and civic safeguards for U.S.E.
 ```
 
@@ -220,10 +264,11 @@ democratic and civic safeguards for U.S.E.
 define ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT and NOOP;
 define risk classes;
 define context classes;
-define project-domain classes;
+define project-collection classes;
 define non-offensive boundary;
 define fail-closed triggers;
 define event trace requirements;
+define memory continuity requirements;
 define OPC proof receipt requirements;
 define compliance-oriented limitations;
 define human accountability requirements;
@@ -243,6 +288,7 @@ SECURITY.md
 COMPLIANCE.md
 ROADMAP.md
 system/system-manifest.json
+docs/HBCE_OPERATIONAL_STACK.md
 ```
 
 ### Completion Criteria
@@ -256,8 +302,9 @@ why IPR is the primary operational instrument;
 how AI JOKER-C2 demonstrates IPR in execution;
 how MATRIX, U.S.E., CORPUS and APOKALYPSIS are connected;
 how governance works;
-how project-domain classification works;
+how project-collection classification works;
 how EVT works;
+how memory works;
 how OPC proof receipts work;
 how fail-closed works;
 how the project is positioned for civil, institutional and strategic use;
@@ -267,22 +314,22 @@ why democratic choice content must never be linked to personal voter identity.
 
 ---
 
-## 6. v0.3 — IPR Runtime Module, Project-Domain Classifier, Policy Engine and Risk Classifier
+## 7. v0.3 — IPR Runtime Module, Project-Collection Classifier, Policy Engine and Risk Classifier
 
 ### Objective
 
-Implement the runtime modules that make AI JOKER-C2 function as an IPR runtime demonstrator.
+Implement the runtime modules that make AI JOKER-C2 function as an IPR runtime demonstrator and four-collection classifier.
 
 The first technical priority is not generic feature expansion.
 
-The first technical priority is to make IPR explicit in runtime metadata, decisions, diagnostics, EVT records and proof receipts.
+The first technical priority is to make IPR explicit in runtime metadata, decisions, diagnostics, EVT records, memory events and proof receipts.
 
 ### Core Features
 
 ```txt
 IPR runtime metadata;
 context classification;
-project-domain classification;
+project-collection classification;
 intent classification;
 risk classification;
 policy evaluation;
@@ -290,20 +337,20 @@ governance decision generation;
 prohibited request detection;
 safe degraded response;
 structured diagnostic object;
-project-domain metadata in runtime response;
+project-collection metadata in runtime response;
 IPR binding in runtime diagnostics;
 safe public diagnostics.
 ```
 
-### Project Domains
+### Project Collections
 
 ```txt
 MATRIX = operational infrastructure, AI governance, Europe, B2B, B2G, cloud, data, energy, security
 U.S.E. = United States of Europe, European federation, federated digital voting, democratic infrastructure, digital sovereignty
 CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar, DCTT, canonical glossary, theoretical volumes
 APOKALYPSIS = historical threshold, decay, exposure, cultural-political-social system analysis
-GENERAL = no specific project domain applies
-MULTI_DOMAIN = more than one project domain applies
+GENERAL = no specific project collection applies
+MULTI_DOMAIN = more than one project collection applies
 ```
 
 ### Suggested Runtime Decisions
@@ -339,6 +386,7 @@ lib/policy-engine.ts
 lib/risk-engine.ts
 lib/runtime-decision.ts
 lib/runtime-types.ts
+lib/joker-response-contract.ts
 ```
 
 ### Completion Criteria
@@ -348,20 +396,21 @@ v0.3 is complete when the runtime can:
 ```txt
 bind runtime identity to IPR;
 classify context;
-classify project domain;
+classify project collection;
 classify intent;
 assign risk;
 generate a governance decision;
 block prohibited requests;
 degrade uncertain sensitive outputs;
 expose safe diagnostics;
-preserve project-domain metadata in EVT-ready format;
-preserve IPR metadata in runtime output.
+preserve project-collection metadata in EVT-ready format;
+preserve IPR metadata in runtime output;
+apply canonical response contracts for IPR, U.S.E., civic digital work and four-collection questions.
 ```
 
 ---
 
-## 7. v0.4 — Append-Only EVT Ledger and Verifier
+## 8. v0.4 — Append-Only EVT Ledger and Verifier
 
 ### Objective
 
@@ -372,7 +421,7 @@ Create an append-only event ledger and verification endpoint.
 ```txt
 local EVT generation;
 IPR field in EVT;
-project-domain field in EVT;
+project-collection field in EVT;
 previous event reference;
 deterministic event object;
 SHA-256 hash;
@@ -410,7 +459,7 @@ v0.4 is complete when the runtime can:
 ```txt
 create an EVT;
 bind the EVT to IPR;
-assign project domain to the EVT;
+assign project collection to the EVT;
 link it to the previous event;
 hash the canonical event object;
 append it to a ledger;
@@ -421,7 +470,7 @@ record blocked, degraded and escalated operations when appropriate.
 
 ---
 
-## 8. v0.5 — EVT/IPR-Bound Memory and OPC Proof Receipt Layer
+## 9. v0.5 — EVT/IPR-Bound Memory and OPC Proof Receipt Layer
 
 ### Objective
 
@@ -434,6 +483,7 @@ EVT/IPR-bound memory events;
 memory continuity by session;
 memory event hash;
 memory source metadata;
+project-collection memory continuity;
 OPC proof record generation;
 OPC proof receipt output;
 input hash;
@@ -478,6 +528,7 @@ v0.5 is complete when the runtime can:
 ```txt
 create EVT/IPR-bound memory;
 recover continuity across relevant interactions;
+preserve continuity across MATRIX, U.S.E., CORPUS and APOKALYPSIS;
 generate OPC proof records;
 link OPC to IPR, EVT and memory;
 create proof receipts;
@@ -488,7 +539,7 @@ distinguish proof receipt from legal certification.
 
 ---
 
-## 9. v0.6 — Signed Records, Audit Export and Evidence Packs
+## 10. v0.6 — Signed Records, Audit Export and Evidence Packs
 
 ### Objective
 
@@ -506,7 +557,7 @@ manifest file;
 hash manifest;
 exportable audit bundle;
 repository commit reference;
-project-domain evidence metadata;
+project-collection evidence metadata;
 public-safe evidence mode;
 internal evidence mode.
 ```
@@ -531,12 +582,13 @@ An evidence pack may include:
 
 ```txt
 event records;
+memory records;
 OPC proof receipts;
 hashes;
 signatures;
 manifest;
 runtime metadata;
-project-domain metadata;
+project-collection metadata;
 verification result;
 audit note;
 timestamp;
@@ -559,20 +611,21 @@ distinguish public evidence from internal evidence.
 
 ---
 
-## 10. v0.7 — Runtime Dashboard
+## 11. v0.7 — Runtime Dashboard
 
 ### Objective
 
-Create a dashboard for runtime state, IPR identity, project domains, EVT chain, OPC proof receipts, governance decisions and audit status.
+Create a dashboard for runtime state, IPR identity, project collections, EVT chain, memory events, OPC proof receipts, governance decisions and audit status.
 
 ### Core Features
 
 ```txt
 runtime status view;
 IPR identity view;
-project-domain status view;
+project-collection status view;
 event list;
 event detail page;
+memory event view;
 OPC proof receipt list;
 decision summary;
 risk summary;
@@ -589,6 +642,8 @@ public and internal display modes.
 /dashboard
 /events
 /events/[id]
+/memory
+/memory/[id]
 /proofs
 /proofs/[id]
 /verify
@@ -601,11 +656,14 @@ public and internal display modes.
 app/dashboard/page.tsx
 app/events/page.tsx
 app/events/[id]/page.tsx
+app/memory/page.tsx
+app/memory/[id]/page.tsx
 app/proofs/page.tsx
 app/proofs/[id]/page.tsx
 app/domains/page.tsx
 components/EventCard.tsx
 components/ProofReceiptCard.tsx
+components/MemoryEventCard.tsx
 components/RuntimeStatus.tsx
 components/GovernancePanel.tsx
 components/ProjectDomainPanel.tsx
@@ -619,9 +677,10 @@ v0.7 is complete when a reviewer can inspect:
 ```txt
 runtime status;
 IPR identity;
-active project domain;
+active project collection;
 recent events;
 event chain;
+memory continuity;
 OPC proof receipts;
 risk classes;
 decisions;
@@ -632,11 +691,11 @@ audit status.
 
 ---
 
-## 11. v0.8 — B2B, B2G and U.S.E. Documentation Package
+## 12. v0.8 — B2B, B2G, U.S.E. and Four-Collection Documentation Package
 
 ### Objective
 
-Create a professional documentation package for enterprises, public administrations, institutional stakeholders and U.S.E. civic-infrastructure review.
+Create a professional documentation package for enterprises, public administrations, institutional stakeholders, research readers, editorial stakeholders and U.S.E. civic-infrastructure review.
 
 ### Core Documents
 
@@ -655,6 +714,7 @@ docs/USE_DEMOCRATIC_INFRASTRUCTURE_BOUNDARY.md
 docs/USE_FEDERATED_DIGITAL_VOTE_SAFEGUARDS.md
 docs/CORPUS_OVERVIEW.md
 docs/APOKALYPSIS_OVERVIEW.md
+docs/FOUR_COLLECTIONS_RUNTIME_MAP.md
 ```
 
 ### Target Audiences
@@ -671,7 +731,9 @@ European strategic infrastructure initiatives;
 editorial and research organizations;
 AI governance teams;
 civil protection bodies;
-democratic infrastructure reviewers.
+democratic infrastructure reviewers;
+incubators;
+strategic partners.
 ```
 
 ### Completion Criteria
@@ -688,16 +750,17 @@ clear B2B value proposition;
 clear B2G value proposition;
 clear IPR product positioning;
 clear U.S.E. civic boundary;
+clear four-collection map;
 clear distinction between MATRIX, U.S.E., CORPUS and APOKALYPSIS.
 ```
 
 ---
 
-## 12. v0.9 — Compliance-Oriented Operational Package
+## 13. v0.9 — Compliance-Oriented and Four-Collection Operational Package
 
 ### Objective
 
-Prepare the project for structured compliance-oriented use without claiming legal certification.
+Prepare the project for structured compliance-oriented use without claiming legal certification, while also packaging the four collections as runtime-readable operational domains.
 
 ### Core Features
 
@@ -711,9 +774,12 @@ audit checklist;
 incident report template;
 compliance disclaimer;
 dual-use risk register;
-project-domain governance map;
+project-collection governance map;
 U.S.E. democratic safeguard checklist;
-OPC proof receipt model.
+OPC proof receipt model;
+four-collection runtime map;
+collection-specific response contracts;
+editorial-operational continuity model.
 ```
 
 ### Suggested Files
@@ -731,6 +797,9 @@ docs/PROJECT_DOMAIN_GOVERNANCE_MAP.md
 docs/USE_DEMOCRATIC_INFRASTRUCTURE_BOUNDARY.md
 docs/USE_FEDERATED_DIGITAL_VOTE_SAFEGUARDS.md
 docs/OPC_PROOF_RECEIPT_MODEL.md
+docs/FOUR_COLLECTIONS_RUNTIME_MAP.md
+docs/FOUR_COLLECTIONS_COMPLIANCE_MAP.md
+docs/COLLECTION_RESPONSE_CONTRACTS.md
 ```
 
 ### Completion Criteria
@@ -744,18 +813,19 @@ risk documentation;
 human oversight documentation;
 institutional review;
 lawful deployment planning;
-project-domain review;
+project-collection review;
 U.S.E. civic infrastructure safeguards;
+four-collection operational reasoning;
 clear non-certification statement.
 ```
 
 ---
 
-## 13. v1.0 — Governed IPR Runtime Release Candidate
+## 14. v1.0 — Governed IPR Runtime and Four-Collection Release Candidate
 
 ### Objective
 
-Release AI JOKER-C2 as a stable governed IPR runtime candidate.
+Release AI JOKER-C2 as a stable governed IPR runtime and four-collection operational candidate.
 
 ### Required Capabilities
 
@@ -764,7 +834,7 @@ stable interface;
 working chat runtime;
 controlled file handling;
 IPR runtime identity;
-project-domain classifier;
+project-collection classifier;
 context classifier;
 policy engine;
 risk engine;
@@ -780,6 +850,7 @@ dual-use boundary;
 architecture documentation;
 governance documentation;
 B2B and B2G documentation package;
+four-collection documentation package;
 compliance-oriented operational package.
 ```
 
@@ -792,7 +863,7 @@ the project builds successfully;
 core routes work;
 runtime identity is stable;
 IPR metadata is stable;
-project-domain classification is implemented;
+project-collection classification is implemented;
 governance decisions are implemented;
 EVT chain is operational;
 EVT/IPR-bound memory is operational;
@@ -804,18 +875,19 @@ public documentation is coherent;
 secrets are not present in repository;
 deployment configuration is clean;
 human accountability is preserved;
-U.S.E. democratic safeguards are documented.
+U.S.E. democratic safeguards are documented;
+MATRIX, U.S.E., CORPUS and APOKALYPSIS are correctly represented as four canonical collections.
 ```
 
 ### v1.0 Statement
 
 ```txt
-AI JOKER-C2 v1.0 is a governed IPR runtime demonstrator for identity-bound, project-aware, policy-aware, risk-classified, event-traceable, proof-receipt-generating and fail-closed AI-assisted operations across MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS.
+AI JOKER-C2 v1.0 is a governed IPR runtime demonstrator for identity-bound, collection-aware, policy-aware, risk-classified, event-traceable, memory-continuous, proof-receipt-generating and fail-closed AI-assisted operations across MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS.
 ```
 
 ---
 
-## 14. Immediate Implementation Priority
+## 15. Immediate Implementation Priority
 
 Recommended immediate priority order:
 
@@ -823,29 +895,30 @@ Recommended immediate priority order:
 1. Complete repository documentation layer
 2. Refactor runtime identity and diagnostic structure around IPR
 3. Implement IPR runtime module
-4. Implement project-domain classifier
-5. Implement context classifier
-6. Implement intent classifier
-7. Implement policy engine
-8. Implement risk engine
-9. Implement decision object
-10. Implement EVT generator
+4. Strengthen project-collection classifier
+5. Strengthen context classifier
+6. Strengthen response contracts for four collections
+7. Implement policy engine improvements
+8. Implement risk engine improvements
+9. Implement decision object improvements
+10. Implement EVT generator improvements
 11. Implement append-only ledger
 12. Implement EVT/IPR-bound memory continuity
 13. Implement OPC proof receipt generation
 14. Implement verifier endpoint
 15. Build runtime dashboard
 16. Build B2B, B2G and U.S.E. documentation package
-17. Prepare compliance-oriented operational package
+17. Build four-collection runtime package
+18. Prepare compliance-oriented operational package
 ```
 
 This order avoids building advanced features before governance exists.
 
-The immediate next step after documentation is the IPR runtime module and project-domain classifier.
+The immediate next step after documentation is the IPR runtime module, project-collection classifier and four-collection response layer.
 
 ---
 
-## 15. Engineering Principles
+## 16. Engineering Principles
 
 Development should follow these principles:
 
@@ -853,9 +926,9 @@ Development should follow these principles:
 1. Build small stable modules.
 2. Preserve identity context.
 3. Preserve IPR runtime metadata.
-4. Preserve project-domain context.
+4. Preserve project-collection context.
 5. Avoid hidden execution.
-6. Classify domain before sensitive output.
+6. Classify collection before sensitive output.
 7. Classify risk before sensitive output.
 8. Preserve fail-closed behavior.
 9. Generate EVT records for relevant operations.
@@ -872,11 +945,12 @@ Development should follow these principles:
 20. Make future audit possible.
 21. Keep MATRIX, U.S.E., CORPUS and APOKALYPSIS distinct but integrated.
 22. Preserve democratic safeguards where civic infrastructure is involved.
+23. Preserve editorial-operational continuity across the four collections.
 ```
 
 ---
 
-## 16. Documentation Principles
+## 17. Documentation Principles
 
 Documentation must remain:
 
@@ -893,6 +967,7 @@ consistent with CORPUS ESOTEROLOGIA ERMETICA;
 consistent with APOKALYPSIS;
 consistent with HBCE;
 consistent with EVT;
+consistent with Memory;
 consistent with OPC;
 consistent with fail-closed governance.
 ```
@@ -910,12 +985,14 @@ future deployment scenario;
 internal conceptual framework;
 external compliance claim;
 technical proof receipt;
-legal certification.
+legal certification;
+editorial continuity;
+institutional adoption.
 ```
 
 ---
 
-## 17. Security Principles
+## 18. Security Principles
 
 Security development must preserve:
 
@@ -930,7 +1007,7 @@ non-exposure of private data;
 no offensive capability;
 no unauthorized target behavior;
 fail-closed sensitive execution;
-project-domain classification in sensitive contexts;
+project-collection classification in sensitive contexts;
 democratic safeguards for civic infrastructure contexts.
 ```
 
@@ -940,7 +1017,7 @@ It is not an external patch.
 
 ---
 
-## 18. Governance Invariants
+## 19. Governance Invariants
 
 The following invariants must remain stable across roadmap phases:
 
@@ -951,7 +1028,7 @@ The following invariants must remain stable across roadmap phases:
 4. MATRIX provides the operational infrastructure architecture.
 5. U.S.E. provides the MATRIX-derived political-institutional application domain.
 6. CORPUS ESOTEROLOGIA ERMETICA provides the disciplinary grammar domain.
-7. APOKALYPSIS provides the historical threshold domain.
+7. APOKALYPSIS provides the historical-threshold domain.
 8. HBCE provides the governance infrastructure.
 9. EVT provides trace.
 10. Memory provides EVT/IPR-bound runtime continuity.
@@ -964,17 +1041,18 @@ The following invariants must remain stable across roadmap phases:
 17. Fail-closed provides safety.
 18. Human accountability is preserved.
 19. Offensive use is outside scope.
-20. Project-domain metadata must be preserved.
+20. Project-collection metadata must be preserved.
 21. Internal conceptual coherence must not be presented as external certification.
 22. The model layer must not become the authority layer.
 23. Corrections must be recorded as new events.
 24. Democratic choice content must not be linked to personal voter identity.
 25. U.S.E. must preserve identity-choice separation, anonymity, auditability and institutional legality.
+26. Four-collection continuity must preserve the distinction between MATRIX, U.S.E., CORPUS and APOKALYPSIS.
 ```
 
 ---
 
-## 19. Out-of-Scope Development
+## 20. Out-of-Scope Development
 
 The following development directions are out of scope:
 
@@ -997,7 +1075,7 @@ political manipulation systems;
 coercive civic influence;
 unauthorized electoral infrastructure deployment;
 bypass of governance or safety boundaries;
-bypass of project-domain classification;
+bypass of project-collection classification;
 bypass of human accountability;
 use of CORPUS or APOKALYPSIS framing for coercion, abuse or destabilization.
 ```
@@ -1006,7 +1084,7 @@ Any contribution that moves the repository in these directions should be rejecte
 
 ---
 
-## 20. Success Metrics
+## 21. Success Metrics
 
 The project should be evaluated through operational and governance metrics.
 
@@ -1014,7 +1092,7 @@ The project should be evaluated through operational and governance metrics.
 Build success = the project builds without errors
 Runtime availability = interface and API routes operate correctly
 IPR readiness = runtime identity and IPR metadata are stable
-Domain coverage = MATRIX, U.S.E., CORPUS and APOKALYPSIS are classified correctly
+Collection coverage = MATRIX, U.S.E., CORPUS and APOKALYPSIS are classified correctly
 Governance coverage = sensitive paths pass through policy and risk logic
 EVT coverage = relevant operations generate traceable events
 Memory coverage = relevant continuity is preserved through EVT/IPR-bound memory
@@ -1026,13 +1104,14 @@ Non-offensive integrity = project remains defensive and governance-oriented
 B2B readiness = documentation supports enterprise review
 B2G readiness = documentation supports institutional review
 U.S.E. readiness = civic and democratic safeguards are documented
+Four-collection readiness = MATRIX, U.S.E., CORPUS and APOKALYPSIS are mapped as runtime collections
 Compliance orientation = repository supports audit discussion without certification claims
 Human accountability = the runtime does not replace responsible operators
 ```
 
 ---
 
-## 21. Suggested Milestone Labels
+## 22. Suggested Milestone Labels
 
 Recommended GitHub milestone labels:
 
@@ -1044,9 +1123,9 @@ v0.4-evt-ledger-verifier
 v0.5-memory-opc-proof-layer
 v0.6-signed-evidence-pack
 v0.7-runtime-dashboard
-v0.8-b2b-b2g-use-package
-v0.9-compliance-package
-v1.0-governed-ipr-runtime-candidate
+v0.8-b2b-b2g-use-four-collections-package
+v0.9-compliance-four-collections-package
+v1.0-governed-ipr-four-collections-runtime-candidate
 ```
 
 Recommended issue labels:
@@ -1069,6 +1148,7 @@ matrix
 use
 corpus
 apokalypsis
+four-collections
 hbce
 fail-closed
 risk-engine
@@ -1081,13 +1161,13 @@ democratic-safeguards
 
 ---
 
-## 22. Current Priority
+## 23. Current Priority
 
 Current priority:
 
 ```txt
 Complete the documentation and governance layer.
-Then implement the IPR runtime module, project-domain classifier, runtime policy, risk, EVT, memory, OPC and verifier layers.
+Then strengthen the runtime modules for IPR, project-collection classification, runtime policy, risk, EVT, memory, OPC and verifier layers.
 ```
 
 Immediate next documentation files:
@@ -1098,6 +1178,7 @@ SECURITY.md
 system/system-manifest.json
 docs/IPR_PRODUCT_OVERVIEW.md
 docs/PROJECT_DOMAIN_GOVERNANCE_MAP.md
+docs/FOUR_COLLECTIONS_RUNTIME_MAP.md
 docs/B2B_OVERVIEW.md
 docs/B2G_OVERVIEW.md
 docs/AI_GOVERNANCE_MAPPING.md
@@ -1111,6 +1192,7 @@ Immediate next code modules after documentation:
 lib/ipr-runtime.ts
 lib/project-domain-classifier.ts
 lib/context-classifier.ts
+lib/joker-response-contract.ts
 lib/intent-classifier.ts
 lib/policy-engine.ts
 lib/risk-engine.ts
@@ -1126,11 +1208,12 @@ Immediate next interface improvements:
 
 ```txt
 show IPR runtime identity;
-show active project domain;
+show active project collection;
 show active context class;
 show governance decision;
 show risk class;
 show EVT identifier;
+show memory event and memory hash;
 show OPC proof receipt;
 show verification status;
 show degraded/fail-closed state when relevant.
@@ -1138,29 +1221,30 @@ show degraded/fail-closed state when relevant.
 
 ---
 
-## 23. Code Implementation Sequence
+## 24. Code Implementation Sequence
 
 The recommended code implementation sequence is:
 
 ```txt
 1. runtime types
 2. IPR runtime module
-3. project-domain classifier
+3. project-collection classifier
 4. context classifier
-5. intent classifier
-6. policy engine
-7. risk engine
-8. runtime decision object
-9. EVT generator
-10. EVT hash
-11. append-only ledger
-12. EVT/IPR-bound memory
-13. OPC proof receipt layer
-14. EVT verifier
-15. API integration
-16. interface display
-17. dashboard
-18. evidence packs
+5. response contracts
+6. intent classifier
+7. policy engine
+8. risk engine
+9. runtime decision object
+10. EVT generator
+11. EVT hash
+12. append-only ledger
+13. EVT/IPR-bound memory
+14. OPC proof receipt layer
+15. EVT verifier
+16. API integration
+17. interface display
+18. dashboard
+19. evidence packs
 ```
 
 Suggested first implementation target:
@@ -1187,9 +1271,21 @@ Reason:
 AI JOKER-C2 must know whether it is operating inside MATRIX, U.S.E., CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN before governance decisions can be fully meaningful.
 ```
 
+Suggested third implementation target:
+
+```txt
+lib/joker-response-contract.ts
+```
+
+Reason:
+
+```txt
+AI JOKER-C2 must answer with the correct canonical opening and vocabulary when the user asks about IPR, U.S.E., civic digital systems, HBCE modules, economic governance or the four collections.
+```
+
 ---
 
-## 24. Documentation Completion Sequence
+## 25. Documentation Completion Sequence
 
 The recommended documentation completion sequence is:
 
@@ -1207,11 +1303,12 @@ The recommended documentation completion sequence is:
 11. system/system-manifest.json
 12. docs/IPR_PRODUCT_OVERVIEW.md
 13. docs/PROJECT_DOMAIN_GOVERNANCE_MAP.md
-14. docs/B2B_OVERVIEW.md
-15. docs/B2G_OVERVIEW.md
-16. docs/AI_GOVERNANCE_MAPPING.md
-17. docs/USE_DEMOCRATIC_INFRASTRUCTURE_BOUNDARY.md
-18. docs/OPC_PROOF_RECEIPT_MODEL.md
+14. docs/FOUR_COLLECTIONS_RUNTIME_MAP.md
+15. docs/B2B_OVERVIEW.md
+16. docs/B2G_OVERVIEW.md
+17. docs/AI_GOVERNANCE_MAPPING.md
+18. docs/USE_DEMOCRATIC_INFRASTRUCTURE_BOUNDARY.md
+19. docs/OPC_PROOF_RECEIPT_MODEL.md
 ```
 
 The documentation layer is not decorative.
@@ -1220,19 +1317,19 @@ It defines the operational frame that the code must implement.
 
 ---
 
-## 25. Final Roadmap Formula
+## 26. Final Roadmap Formula
 
 ```txt
 v0.1 = runtime exists
 v0.2 = governance is defined
-v0.3 = IPR, domain, policy and risk are computed
+v0.3 = IPR, collection, policy and risk are computed
 v0.4 = EVT is recorded
 v0.5 = memory and OPC proof receipts are operational
 v0.6 = evidence can be signed and exported
 v0.7 = runtime is visible
 v0.8 = stakeholders can understand it
-v0.9 = compliance can be discussed
-v1.0 = governed IPR runtime release candidate
+v0.9 = compliance and four-collection operation can be discussed
+v1.0 = governed IPR and four-collection runtime release candidate
 ```
 
 Condensed:
@@ -1241,7 +1338,7 @@ Condensed:
 Runtime
 → Governance
 → IPR
-→ Project Domain
+→ Project Collection
 → Policy
 → Risk
 → EVT
@@ -1251,6 +1348,7 @@ Runtime
 → Evidence
 → Dashboard
 → Stakeholder Package
+→ Four Collections
 → Compliance
 → Release
 ```
@@ -1267,16 +1365,30 @@ APOKALYPSIS = threshold.
 HBCE = governance.
 ```
 
+Final collection formula:
+
+```txt
+MATRIX builds the architecture.
+U.S.E. brings it into European political-institutional design.
+CORPUS grounds the grammar of operational reality.
+APOKALYPSIS reads the historical threshold.
+IPR makes everything attributable.
+EVT makes everything traceable.
+Memory makes everything continuous.
+OPC makes everything verifiable.
+AI JOKER-C2 makes everything operational.
+```
+
 ---
 
-## 26. Status
+## 27. Status
 
 ```txt
 Document: ROADMAP.md
 Status: Active roadmap
 Project: AI JOKER-C2
 Ecosystem: HERMETICUM B.C.E.
-Connected domains: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
 Infrastructure: HBCE
 Runtime role: IPR runtime demonstrator
 Identity layer: IPR
@@ -1295,4 +1407,3 @@ Organization: HERMETICUM B.C.E. S.r.l.
 Territorial anchor: Torino, Italy, Europe
 Year: 2026
 ```
-
