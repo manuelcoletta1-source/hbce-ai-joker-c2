@@ -1,6 +1,6 @@
 # AI JOKER-C2 EVT Protocol
 
-## IPR-Bound Event Trace Protocol for MATRIX, U.S.E., CORPUS and APOKALYPSIS
+## IPR-Bound Event Trace Protocol for the Four Canonical Collections
 
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**  
@@ -22,7 +22,7 @@ An EVT is a verifiable operational record that binds a runtime action to:
 
 ```txt
 IPR identity;
-project domain;
+project collection;
 input context;
 intent classification;
 policy evaluation;
@@ -42,7 +42,7 @@ continuity state.
 
 The purpose of the EVT Protocol is to transform AI-assisted operations into reconstructable, auditable and continuity-preserving sequences.
 
-AI JOKER-C2 connects four primary domains:
+AI JOKER-C2 connects four canonical project collections:
 
 ```txt
 MATRIX
@@ -51,7 +51,7 @@ CORPUS ESOTEROLOGIA ERMETICA
 APOKALYPSIS
 ```
 
-The EVT Protocol must therefore record not only what happened, but also inside which project domain the operation happened.
+The EVT Protocol must therefore record not only what happened, but also inside which project collection the operation happened.
 
 EVT is the event trace layer. It does not create legal certification by itself. It creates a verifiable operational trace connected to IPR identity, runtime governance and continuity.
 
@@ -68,7 +68,8 @@ The conceptual sequence is:
 ```txt
 operation
 → IPR identity
-→ project domain
+→ project collection
+→ context
 → governance decision
 → EVT generation
 → memory event when required
@@ -86,7 +87,7 @@ What happened?
 When did it happen?
 Which identity was bound to the operation?
 Which IPR was active?
-Which project domain was active?
+Which project collection was active?
 Which context was involved?
 Which risk class was assigned?
 Which governance decision was produced?
@@ -119,7 +120,7 @@ It allows the runtime to preserve a structured relation between:
 ```txt
 identity;
 IPR;
-project domain;
+project collection;
 request;
 response;
 risk;
@@ -144,8 +145,8 @@ IPR = operational identity and proof instrument
 AI JOKER-C2 = governed runtime demonstrator
 MATRIX = operational infrastructure architecture
 U.S.E. = MATRIX-derived political-institutional application for a federated operational Europe
-CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
-APOKALYPSIS = historical threshold analysis
+CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar of operational reality
+APOKALYPSIS = historical-threshold analysis
 HBCE = governance, policy, audit and continuity ecosystem
 EVT = event trace
 Memory = EVT/IPR-bound runtime continuity
@@ -156,14 +157,29 @@ Expanded:
 
 ```txt
 IPR binds the operational identity.
-AI JOKER-C2 executes the governed runtime.
-MATRIX frames the operational system.
-U.S.E. applies MATRIX to federated European institutional and democratic design.
-CORPUS defines the grammar of operational reality.
-APOKALYPSIS reads the historical threshold.
-EVT records the operation inside time, identity, risk and continuity.
+Collection orients the operation.
+Context qualifies the request.
+Policy limits execution.
+Risk classifies sensitivity.
+Decision controls the runtime.
+EVT records the operation inside time, identity, collection, risk and decision.
 Memory preserves runtime continuity.
 OPC produces the technical proof receipt.
+Verification reconstructs the operation.
+```
+
+Four-collection formula:
+
+```txt
+MATRIX builds the architecture.
+U.S.E. brings it into European political-institutional design.
+CORPUS grounds the grammar of operational reality.
+APOKALYPSIS reads the historical threshold.
+IPR makes everything attributable.
+EVT makes everything traceable.
+Memory makes everything continuous.
+OPC makes everything verifiable.
+AI JOKER-C2 makes everything operational.
 ```
 
 ---
@@ -175,8 +191,8 @@ The canonical runtime sequence is:
 ```txt
 IPR identity
 → input
+→ project collection
 → context
-→ project_domain
 → intent
 → policy
 → risk
@@ -196,8 +212,8 @@ Each EVT is generated after governance evaluation and records the operational st
 ```txt
 identity = defines who or what is bound to the operation
 input = records the existence of a request without necessarily storing full payload
+project_collection = records MATRIX, U.S.E., CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN
 context = classifies the operational context
-project_domain = records MATRIX, U.S.E., CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN
 intent = classifies the operational purpose
 policy = records the governance boundary applied
 risk = assigns a risk class
@@ -291,7 +307,7 @@ entity = runtime entity responsible for the event
 ipr = Identity Primary Record reference
 timestamp = time of event generation
 runtime = runtime metadata
-project = ecosystem and project-domain metadata
+project = ecosystem and project-collection metadata
 context = operational context classification
 governance = risk, policy and decision metadata
 operation = type and result of the operation
@@ -350,7 +366,7 @@ For the first event in a chain, the value may be:
 GENESIS
 ```
 
-For all subsequent events, `prev` should reference the previous EVT identifier or previous event hash.
+For all subsequent events, `prev` should reference the previous EVT identifier, previous event hash, or a valid external runtime anchor.
 
 Example:
 
@@ -424,28 +440,29 @@ Policy defines boundary.
 Risk defines sensitivity.
 Decision defines execution status.
 EVT records the event.
+Memory preserves continuity.
 OPC produces proof receipt when required.
 Verification reconstructs the operation.
 ```
 
 ---
 
-## 12. Project Domain Binding
+## 12. Project Collection Binding
 
-Each EVT should include a project-domain binding.
+Each EVT should include a project-collection binding.
 
-Allowed project-domain values:
+Allowed project-collection values:
 
 ```txt
 MATRIX = operational infrastructure, European governance, B2B/B2G, AI governance, technical systems
 U.S.E. = United States of Europe, European federation, federated digital vote, democratic infrastructure, digital sovereignty
 CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar, DCTT, canonical glossary, theoretical volumes
 APOKALYPSIS = historical threshold, decay, exposure, cultural-political-social system analysis
-GENERAL = no specific project domain applies
-MULTI_DOMAIN = more than one project domain applies
+GENERAL = no specific project collection applies
+MULTI_DOMAIN = more than one project collection applies
 ```
 
-Project-domain binding allows the runtime to reconstruct not only what happened, but also why that operation belonged to a specific layer of the ecosystem.
+Project-collection binding allows the runtime to reconstruct not only what happened, but also why that operation belonged to a specific layer of the ecosystem.
 
 Example:
 
@@ -538,6 +555,8 @@ STRATEGIC = B2B, B2G, institutional positioning
 SECURITY = defensive security, risk and resilience
 COMPLIANCE = governance, audit, legal-technical alignment
 GOVERNANCE = policy, risk, decision and fail-closed logic
+CIVIC = public consultation, civic participation, participation rights
+DEMOCRATIC_INFRASTRUCTURE = federated digital vote, referendum, democratic audit, civic process
 GENERAL = ordinary non-sensitive operations
 ```
 
@@ -545,7 +564,7 @@ Context classification supports policy and risk evaluation.
 
 It should not be used as a substitute for human accountability.
 
-The `USE` context class should be treated as civically sensitive when it concerns public decision infrastructure, voting, referendum systems, citizen identity, participation rights or democratic audit.
+The `USE`, `CIVIC` and `DEMOCRATIC_INFRASTRUCTURE` context classes should be treated as civically sensitive when they concern public decision infrastructure, voting, referendum systems, citizen identity, participation rights or democratic audit.
 
 ---
 
@@ -576,6 +595,8 @@ UNKNOWN = ESCALATE or BLOCK
 ```
 
 The protocol must not convert unknown risk into automatic permission.
+
+Political, institutional and European-standardization analysis should remain answerable, but audit-ready.
 
 ---
 
@@ -618,7 +639,7 @@ The fail-closed flag should be true when:
 ```txt
 identity is missing;
 IPR binding is missing where required;
-project domain cannot be classified in a sensitive context;
+project collection cannot be classified in a sensitive context;
 policy cannot be applied;
 risk cannot be classified;
 the request is prohibited;
@@ -654,9 +675,9 @@ response reference;
 document family;
 runtime state;
 decision;
-project domain;
+project collection;
 context class;
-hash;
+memory hash;
 timestamp.
 ```
 
@@ -676,6 +697,10 @@ Example:
 Memory does not replace the EVT.
 
 Memory preserves runtime continuity across interactions.
+
+Memory is not legal certification.
+
+Memory must not store or reconstruct democratic choice content linked to personal identity.
 
 ---
 
@@ -777,9 +802,10 @@ Avoid non-deterministic fields inside the hashed payload.
 Avoid environment-dependent formatting.
 Store binary payloads as external references, not inline content.
 Hash references to large files rather than embedding them directly.
-Keep project-domain values stable.
+Keep project-collection values stable.
 Keep context-class values stable.
 Keep IPR and entity values stable.
+Keep memory hash fields stable when included.
 Keep OPC chain fields stable when included.
 ```
 
@@ -809,8 +835,8 @@ The ledger should preserve:
 ```txt
 event order;
 event identity;
-previous event reference;
-project domain;
+previous event reference or valid external runtime anchor;
+project collection;
 context class;
 risk class;
 governance decision;
@@ -849,7 +875,7 @@ Example:
   "operation": {
     "type": "EVENT_CORRECTION",
     "corrects": "EVT-20260503-153001-AI-JOKER-C2-0002",
-    "reason": "Incorrect project domain"
+    "reason": "Incorrect project collection"
   }
 }
 ```
@@ -1181,6 +1207,11 @@ Future versions may define stricter validation.
     "target": "CORPUS_VOLUME_SECTION",
     "status": "COMPLETED"
   },
+  "memory": {
+    "required": true,
+    "source": "EVT_IPR_MEMORY",
+    "hash": "sha256:memory-example"
+  },
   "trace": {
     "hash_algorithm": "sha256",
     "canonicalization": "deterministic-json",
@@ -1231,6 +1262,11 @@ Future versions may define stricter validation.
     "target": "APOKALYPSIS_VOLUME_SECTION",
     "status": "COMPLETED"
   },
+  "memory": {
+    "required": true,
+    "source": "EVT_IPR_MEMORY",
+    "hash": "sha256:memory-example"
+  },
   "trace": {
     "hash_algorithm": "sha256",
     "canonicalization": "deterministic-json",
@@ -1245,7 +1281,74 @@ Future versions may define stricter validation.
 
 ---
 
-## 32. Example: Blocked Operation
+## 32. Example: Multi-Domain Collection Operation
+
+```json
+{
+  "evt": "EVT-20260503-154050-AI-JOKER-C2-MULTI-0001",
+  "prev": "EVT-20260503-154000-AI-JOKER-C2-0003",
+  "entity": "AI_JOKER",
+  "ipr": "IPR-AI-0001",
+  "timestamp": "2026-05-03T15:40:50+02:00",
+  "runtime": {
+    "name": "AI JOKER-C2",
+    "core": "HBCE-CORE-v3",
+    "state": "OPERATIONAL",
+    "role": "IPR_RUNTIME_DEMONSTRATOR"
+  },
+  "project": {
+    "ecosystem": "HERMETICUM B.C.E.",
+    "domain": "MULTI_DOMAIN",
+    "active_domains": [
+      "MATRIX",
+      "U.S.E.",
+      "CORPUS_ESOTEROLOGIA_ERMETICA",
+      "APOKALYPSIS"
+    ],
+    "domain_type": "ECOSYSTEM_OPERATION"
+  },
+  "context": {
+    "class": "GOVERNANCE",
+    "domain": "FOUR_COLLECTIONS_RUNTIME_MAP",
+    "sensitivity": "MEDIUM"
+  },
+  "governance": {
+    "risk": "MEDIUM",
+    "decision": "AUDIT",
+    "policy": "FOUR_COLLECTIONS_RUNTIME_ALIGNMENT",
+    "fail_closed": false
+  },
+  "operation": {
+    "type": "FOUR_COLLECTIONS_RUNTIME_MAP_UPDATE",
+    "target": "AI_JOKER_C2_COLLECTION_ALIGNMENT",
+    "status": "COMPLETED"
+  },
+  "memory": {
+    "required": true,
+    "source": "EVT_IPR_MEMORY",
+    "hash": "sha256:memory-example"
+  },
+  "opc": {
+    "required": true,
+    "status": "APPENDED",
+    "proof_id": "OPC-20260503-154050-AI-JOKER-C2-MULTI-0001",
+    "chain_hash": "sha256:opc-chain-example"
+  },
+  "trace": {
+    "hash_algorithm": "sha256",
+    "canonicalization": "deterministic-json",
+    "hash": "sha256:example"
+  },
+  "verification": {
+    "status": "VERIFIABLE",
+    "audit_status": "READY"
+  }
+}
+```
+
+---
+
+## 33. Example: Blocked Operation
 
 ```json
 {
@@ -1295,7 +1398,7 @@ Future versions may define stricter validation.
 
 ---
 
-## 33. Event Chain Example
+## 34. Event Chain Example
 
 A simple event chain:
 
@@ -1306,6 +1409,7 @@ GENESIS
 → EVT-20260503-153200-AI-JOKER-C2-USE-0001
 → EVT-20260503-153500-AI-JOKER-C2-0002
 → EVT-20260503-154000-AI-JOKER-C2-0003
+→ EVT-20260503-154050-AI-JOKER-C2-MULTI-0001
 → EVT-20260503-154100-AI-JOKER-C2-0004
 ```
 
@@ -1319,7 +1423,7 @@ It must preserve enough structure for reconstruction and verification.
 
 ---
 
-## 34. Public and Internal EVT Modes
+## 35. Public and Internal EVT Modes
 
 AI JOKER-C2 may support two EVT visibility modes.
 
@@ -1346,7 +1450,7 @@ Internal EVT may contain richer metadata under controlled access.
 
 ---
 
-## 35. EVT and MATRIX
+## 36. EVT and MATRIX
 
 Within the MATRIX framework, EVT is the trace unit for operational infrastructure.
 
@@ -1372,7 +1476,7 @@ EVT proves that the operation entered the sequence of time, identity, risk and d
 
 ---
 
-## 36. EVT and U.S.E.
+## 37. EVT and U.S.E.
 
 Within **U.S.E. — United States of Europe**, EVT is the trace unit for civic, institutional and democratic infrastructure reasoning.
 
@@ -1383,6 +1487,7 @@ U.S.E. = MATRIX-derived federated European institutional application
 Federated digital vote = democratic infrastructure concept
 IPR = identity and participation-right verification layer
 EVT = process trace
+Memory = continuity of civic-institutional reasoning
 OPC = proof receipt for process operations
 Audit = democratic and institutional review
 ```
@@ -1402,7 +1507,7 @@ EVT must not link the content of a democratic choice to the personal identity of
 
 ---
 
-## 37. EVT and CORPUS ESOTEROLOGIA ERMETICA
+## 38. EVT and CORPUS ESOTEROLOGIA ERMETICA
 
 Within the CORPUS ESOTEROLOGIA ERMETICA, EVT is the trace unit for conceptual and editorial continuity.
 
@@ -1413,6 +1518,7 @@ CORPUS = disciplinary grammar
 Decisione · Costo · Traccia · Tempo = foundational sequence
 AI JOKER-C2 = governed runtime demonstrator
 EVT = trace of the operation
+Memory = continuity of conceptual and editorial work
 Time = verification of continuity
 ```
 
@@ -1424,17 +1530,18 @@ EVT preserves the event of transformation.
 
 ---
 
-## 38. EVT and APOKALYPSIS
+## 39. EVT and APOKALYPSIS
 
 Within APOKALYPSIS, EVT is the trace unit for historical-threshold analysis.
 
 The relation is:
 
 ```txt
-APOKALYPSIS = historical threshold analysis
+APOKALYPSIS = historical-threshold analysis
 Decay = exposure of system foundation loss
 AI JOKER-C2 = analytical runtime
 EVT = recorded transition inside the chain
+Memory = continuity of threshold interpretation
 Verification = reconstruction of the operation
 ```
 
@@ -1446,7 +1553,29 @@ EVT records the operation that produced or modified that analysis.
 
 ---
 
-## 39. EVT and Fail-Closed Governance
+## 40. EVT and Multi-Domain Collection Work
+
+Within multi-domain work, EVT records the crossing between collections without collapsing them.
+
+The relation is:
+
+```txt
+MATRIX = architecture
+U.S.E. = European political-institutional application
+CORPUS = grammar
+APOKALYPSIS = threshold
+EVT = event trace across the map
+Memory = continuity across the map
+OPC = proof receipt for the governed operation
+```
+
+Multi-domain EVT records should preserve active domains explicitly.
+
+A multi-domain EVT should never erase the distinctions among MATRIX, U.S.E., CORPUS and APOKALYPSIS.
+
+---
+
+## 41. EVT and Fail-Closed Governance
 
 The EVT Protocol must support fail-closed governance.
 
@@ -1464,7 +1593,7 @@ A governance system must also record refusal, degradation and escalation.
 
 ---
 
-## 40. Implementation Notes
+## 42. Implementation Notes
 
 Prototype implementation may start with:
 
@@ -1497,14 +1626,15 @@ integrity checks;
 project-domain filters;
 public-safe verification mode;
 IPR runtime module;
-OPC proof receipt schema.
+OPC proof receipt schema;
+four-collection runtime map.
 ```
 
 The protocol should evolve without breaking the canonical fields.
 
 ---
 
-## 41. Non-Offensive Boundary
+## 43. Non-Offensive Boundary
 
 The EVT Protocol must never be used to legitimize prohibited activity.
 
@@ -1535,7 +1665,7 @@ The EVT chain must prove restraint as much as execution.
 
 ---
 
-## 42. Democratic and Civic Boundary
+## 44. Democratic and Civic Boundary
 
 For U.S.E. and any civic infrastructure context, the EVT Protocol must preserve democratic safeguards.
 
@@ -1576,14 +1706,15 @@ formal certification where applicable.
 
 ---
 
-## 43. Canonical EVT Formula
+## 45. Canonical EVT Formula
 
 ```txt
 No operation without identity.
-No domain without classification.
+No collection without classification.
 No decision without risk.
 No execution without policy.
 No continuity without EVT.
+No runtime continuity without Memory.
 No proof receipt without OPC.
 No legitimacy without verification.
 ```
@@ -1592,7 +1723,8 @@ Expanded formula:
 
 ```txt
 IPR Identity
-→ Project Domain
+→ Project Collection
+→ Context
 → Risk
 → Decision
 → Event
@@ -1614,20 +1746,35 @@ U.S.E. = federated European political-institutional application.
 CORPUS = grammar.
 APOKALYPSIS = threshold.
 EVT = trace.
+Memory = continuity.
 OPC = proof receipt.
 HBCE = governance.
 ```
 
+Final collection formula:
+
+```txt
+MATRIX builds the architecture.
+U.S.E. brings it into European political-institutional design.
+CORPUS grounds the grammar of operational reality.
+APOKALYPSIS reads the historical threshold.
+IPR makes everything attributable.
+EVT makes everything traceable.
+Memory makes everything continuous.
+OPC makes everything verifiable.
+AI JOKER-C2 makes everything operational.
+```
+
 ---
 
-## 44. Status
+## 46. Status
 
 ```txt
 Document: EVT_PROTOCOL.md
 Status: Active protocol file
 Project: AI JOKER-C2
 Ecosystem: HERMETICUM B.C.E.
-Connected domains: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
 Infrastructure: HBCE
 Identity layer: IPR
 Trace layer: EVT
