@@ -42,8 +42,16 @@ import {
   type HbceModuleBinding,
   type HbceModuleClassification,
   type HbceModuleMetadata,
-  type HbceModuleType,
   type PrimaryHbceModule
+} from "./runtime-types";
+
+export type {
+  HbceModule,
+  HbceModuleBinding,
+  HbceModuleClassification,
+  HbceModuleMetadata,
+  HbceModuleType,
+  PrimaryHbceModule
 } from "./runtime-types";
 
 export type HbceModuleClassifierInput = {
@@ -317,6 +325,7 @@ const MODULE_FILE_HINTS: Record<PrimaryHbceModule, string[]> = {
     "anchoring_model.md",
     "evidentiary_continuity.md"
   ],
+
   OPC: [
     "opc_proof_layer.md",
     "opc_proof_receipt_model.md",
@@ -327,6 +336,7 @@ const MODULE_FILE_HINTS: Record<PrimaryHbceModule, string[]> = {
     "proofreceiptcard.tsx",
     "proof_receipt.md"
   ],
+
   MetaExchange: [
     "metaexchange.md",
     "metaexchange_overview.md",
@@ -334,6 +344,7 @@ const MODULE_FILE_HINTS: Record<PrimaryHbceModule, string[]> = {
     "exchange_layer.md",
     "structured_exchange.md"
   ],
+
   IOspace: [
     "iospace.md",
     "iospace_dashboard.md",
@@ -343,6 +354,7 @@ const MODULE_FILE_HINTS: Record<PrimaryHbceModule, string[]> = {
     "runtimestatuspanel.tsx",
     "iprstatuspanel.tsx"
   ],
+
   CyberGlobal: [
     "cyberglobal.md",
     "cyberglobal_overview.md",
@@ -351,6 +363,7 @@ const MODULE_FILE_HINTS: Record<PrimaryHbceModule, string[]> = {
     "critical_infrastructure_use_cases.md",
     "incident_report_template.md"
   ],
+
   NeuroLoop: [
     "neuroloop.md",
     "neuroloop_overview.md",
@@ -364,6 +377,8 @@ const MODULE_FILE_HINTS: Record<PrimaryHbceModule, string[]> = {
 const STACK_LEVEL_TERMS = [
   "hbce modules",
   "moduli hbce",
+  "moduli dell hbce",
+  "moduli dell'hbce",
   "sei moduli",
   "6 moduli",
   "six modules",
@@ -476,7 +491,15 @@ export function classifyHbceModuleFromMessage(
 }
 
 export function getCanonicalHbceModules(): HbceModule[] {
-  return ["UNEBDO", "OPC", "MetaExchange", "IOspace", "CyberGlobal", "NeuroLoop", "NONE"];
+  return [
+    "UNEBDO",
+    "OPC",
+    "MetaExchange",
+    "IOspace",
+    "CyberGlobal",
+    "NeuroLoop",
+    "NONE"
+  ];
 }
 
 export function getPrimaryHbceModules(): PrimaryHbceModule[] {
