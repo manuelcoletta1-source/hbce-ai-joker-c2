@@ -1,6 +1,6 @@
 # Contributing to AI JOKER-C2
 
-## Contribution Policy for IPR, MATRIX, U.S.E., CORPUS and APOKALYPSIS
+## Contribution Policy for IPR, HBCE Modules and the Four Canonical Collections
 
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**  
@@ -18,9 +18,9 @@ AI JOKER-C2 is the governed runtime demonstrator for **IPR — Identity Primary 
 
 The primary operational instrument is **IPR**.
 
-AI JOKER-C2 demonstrates IPR in execution by connecting identity, context, project domain, policy, risk, decision, output, event trace, memory continuity, proof receipts and audit-oriented verification.
+AI JOKER-C2 demonstrates IPR in execution by connecting identity, context, project collection, policy, risk, decision, output, event trace, memory continuity, proof receipts and audit-oriented verification.
 
-It connects four primary domains:
+It connects four canonical project collections:
 
 ```txt
 1. MATRIX
@@ -29,13 +29,25 @@ It connects four primary domains:
 4. APOKALYPSIS
 ```
 
+It also operates through six HBCE technical-operational modules:
+
+```txt
+1. UNEBDO
+2. OPC
+3. MetaExchange
+4. IOspace
+5. CyberGlobal
+6. NeuroLoop
+```
+
 This repository is not a generic chatbot project.
 
 It is a governed runtime for:
 
 ```txt
 IPR-bound AI operations;
-project-domain classification;
+project-collection classification;
+HBCE module awareness;
 policy-aware execution;
 risk classification;
 governance decisions;
@@ -71,7 +83,8 @@ auditability;
 code clarity;
 documentation quality;
 IPR runtime identity;
-project-domain classification;
+project-collection classification;
+HBCE module clarity;
 EVT continuity;
 EVT/IPR-bound memory continuity;
 OPC proof receipt integrity;
@@ -105,11 +118,16 @@ AI JOKER-C2 = governed runtime demonstrator
 MATRIX = operational infrastructure architecture
 U.S.E. = MATRIX-derived political-institutional application
 CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar
-APOKALYPSIS = historical threshold analysis
+APOKALYPSIS = historical-threshold analysis
 HBCE = governance infrastructure
+UNEBDO = anchoring, validation and evidentiary continuity
 EVT = event trace layer
 Memory = EVT/IPR-bound runtime continuity
 OPC = operational proof receipt layer
+MetaExchange = structured exchange layer
+IOspace = runtime visibility and operational interaction space
+CyberGlobal = defensive cybersecurity and resilience layer
+NeuroLoop = validation, feedback and review loop
 Ledger = continuity layer
 Verification = audit and reconstruction layer
 Fail-closed = safety boundary
@@ -121,8 +139,8 @@ Operational sequence:
 IPR Identity
 → Input
 → Intent
+→ Project Collection
 → Context
-→ Project Domain
 → Policy
 → Risk
 → Decision
@@ -134,6 +152,22 @@ IPR Identity
 → Ledger
 → Verification
 → Continuity
+```
+
+HBCE module formula:
+
+```txt
+IPR identifies.
+UNEBDO anchors.
+EVT traces.
+Memory continues.
+OPC proves.
+MetaExchange exchanges.
+IOspace exposes.
+CyberGlobal protects.
+NeuroLoop validates.
+AI JOKER-C2 executes.
+MATRIX organizes.
 ```
 
 All contributions must remain consistent with this sequence.
@@ -156,6 +190,7 @@ ROADMAP.md
 SECURITY.md
 CONTRIBUTING.md
 system/system-manifest.json
+docs/HBCE_OPERATIONAL_STACK.md
 ```
 
 These files define the operating perimeter of the repository.
@@ -177,7 +212,7 @@ safe refactoring;
 runtime stability improvements;
 interface improvements;
 IPR runtime module implementation;
-project-domain classifier implementation;
+project-collection classifier implementation;
 context classifier implementation;
 intent classifier implementation;
 policy engine implementation;
@@ -199,6 +234,12 @@ U.S.E. democratic safeguard documentation;
 MATRIX documentation;
 CORPUS documentation;
 APOKALYPSIS documentation;
+HBCE module documentation;
+UNEBDO anchoring documentation;
+MetaExchange structured exchange documentation;
+IOspace visibility documentation;
+CyberGlobal defensive resilience documentation;
+NeuroLoop validation documentation;
 tests;
 build improvements;
 accessibility improvements;
@@ -246,28 +287,32 @@ code that exposes secrets;
 code that logs sensitive payloads unnecessarily;
 undocumented remote calls;
 unsafe execution of uploaded files;
+permissionless data exchange through MetaExchange;
+offensive use of CyberGlobal;
+autonomous authority through NeuroLoop;
+false legal certification through UNEBDO, OPC, EVT or IPR;
 code that presents internal conceptual coherence as external legal certification;
-code that removes MATRIX, U.S.E., CORPUS or APOKALYPSIS project-domain metadata.
+code that removes MATRIX, U.S.E., CORPUS or APOKALYPSIS project-collection metadata.
 ```
 
 If a contribution can reasonably be interpreted as offensive, abusive, coercive, manipulative or unlawful, it should be rejected or redesigned.
 
 ---
 
-## 7. Project-Domain Contribution Rule
+## 7. Project-Collection Contribution Rule
 
-Every relevant contribution should preserve or improve the distinction between the project domains.
+Every relevant contribution should preserve or improve the distinction between the project collections.
 
 ```txt
 MATRIX = operational infrastructure, AI governance, Europe, B2B, B2G, cloud, data, energy, security
 U.S.E. = United States of Europe, European federation, federated digital vote, democratic infrastructure, digital sovereignty
 CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar, DCTT, canonical glossary, theoretical and editorial continuity
 APOKALYPSIS = historical threshold, decay, exposure, cultural-political-social analysis
-GENERAL = no specific project domain applies
-MULTI_DOMAIN = more than one domain applies
+GENERAL = no specific project collection applies
+MULTI_DOMAIN = more than one collection applies
 ```
 
-Do not collapse these domains into one generic category.
+Do not collapse these collections into one generic category.
 
 AI JOKER-C2 must remain able to distinguish:
 
@@ -282,7 +327,51 @@ AI JOKER-C2 = runtime demonstrator
 
 ---
 
-## 8. U.S.E. Democratic Safeguard Rule
+## 8. HBCE Module Contribution Rule
+
+The six HBCE modules are technical-operational functions of the stack.
+
+They must not be treated as project collections, political domains or standalone product layers.
+
+```txt
+UNEBDO = anchoring, validation and evidentiary continuity
+OPC = operational proof receipt and compliance layer
+MetaExchange = structured exchange layer
+IOspace = runtime visibility and operational interaction space
+CyberGlobal = defensive cybersecurity and resilience layer
+NeuroLoop = validation, feedback and review loop
+```
+
+Contributions involving HBCE modules must preserve the following boundaries:
+
+```txt
+UNEBDO must not be presented as automatic legal certification.
+OPC must not be presented as automatic legal certification.
+MetaExchange must not become permissionless data exchange.
+IOspace must not expose secrets, private payloads or democratic choice content.
+CyberGlobal must not become offensive cyber capability.
+NeuroLoop must not become autonomous authority or unsupervised decision execution.
+```
+
+A valid module contribution should strengthen:
+
+```txt
+anchoring;
+traceability;
+proof receipt integrity;
+structured exchange;
+runtime visibility;
+defensive security;
+human review;
+validation;
+auditability.
+```
+
+A module contribution must not weaken IPR, EVT, Memory, OPC, policy, risk, oversight or fail-closed behavior.
+
+---
+
+## 9. U.S.E. Democratic Safeguard Rule
 
 Contributions involving **U.S.E. — United States of Europe**, federated digital voting, public consultation, referendum systems, civic participation or democratic infrastructure must preserve the following rule:
 
@@ -324,7 +413,7 @@ The content of a democratic vote or civic choice must not be linked to the perso
 
 ---
 
-## 9. Security Boundary
+## 10. Security Boundary
 
 AI JOKER-C2 supports defensive and governance-oriented work only.
 
@@ -367,7 +456,7 @@ The repository must remain on the defensive side of the boundary.
 
 ---
 
-## 10. Contribution Workflow
+## 11. Contribution Workflow
 
 Recommended workflow:
 
@@ -376,13 +465,14 @@ Recommended workflow:
 2. Create a dedicated branch.
 3. Make a focused change.
 4. Run local checks.
-5. Review the project-domain impact.
-6. Review the IPR impact.
-7. Review the governance impact.
-8. Review the security impact.
-9. Open a pull request.
-10. Explain the purpose of the change.
-11. Reference affected files and related roadmap phase.
+5. Review the project-collection impact.
+6. Review the HBCE module impact.
+7. Review the IPR impact.
+8. Review the governance impact.
+9. Review the security impact.
+10. Open a pull request.
+11. Explain the purpose of the change.
+12. Reference affected files and related roadmap phase.
 ```
 
 Suggested branch naming:
@@ -393,10 +483,12 @@ docs/add-b2g-overview
 docs/add-use-safeguards
 docs/add-corpus-overview
 docs/add-apokalypsis-overview
+docs/add-hbce-module-map
 governance/add-risk-engine
 governance/add-project-domain-classifier
 runtime/add-ipr-runtime
 runtime/add-opc-proof-receipt
+runtime/add-memory-continuity
 security/harden-file-upload
 runtime/add-evt-generator
 architecture/refactor-runtime-boundary
@@ -413,6 +505,7 @@ Examples:
 ```txt
 docs: add B2G overview for institutional readers
 docs: add USE democratic safeguards
+docs: define HBCE module map
 governance: implement runtime risk classifier
 governance: add project domain classifier
 runtime: add IPR runtime metadata
@@ -425,7 +518,7 @@ docs: add Apokalypsis analysis boundary
 
 ---
 
-## 11. Pull Request Requirements
+## 12. Pull Request Requirements
 
 A pull request should include:
 
@@ -434,7 +527,8 @@ clear title;
 short explanation;
 affected files;
 reason for the change;
-project-domain impact;
+project-collection impact;
+HBCE module impact;
 IPR impact;
 governance impact;
 security impact;
@@ -455,9 +549,13 @@ Describe the change.
 
 List files changed.
 
-## Project-Domain Impact
+## Project-Collection Impact
 
 Explain whether this affects MATRIX, U.S.E., CORPUS_ESOTEROLOGIA_ERMETICA, APOKALYPSIS, GENERAL or MULTI_DOMAIN behavior.
+
+## HBCE Module Impact
+
+Explain whether this affects UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop or no module.
 
 ## IPR Impact
 
@@ -482,7 +580,7 @@ Add limitations or future work.
 
 ---
 
-## 12. Code Style
+## 13. Code Style
 
 Code should be:
 
@@ -496,7 +594,8 @@ safe by default;
 aligned with the architecture;
 easy to review;
 IPR-aware where relevant;
-project-domain aware where relevant.
+project-collection aware where relevant;
+HBCE-module aware where relevant.
 ```
 
 Avoid:
@@ -512,8 +611,9 @@ unsafe shortcuts;
 mixing unrelated changes;
 bypassing governance;
 bypassing IPR binding;
-bypassing project-domain classification;
-weakening proof-chain integrity.
+bypassing project-collection classification;
+weakening proof-chain integrity;
+collapsing HBCE modules into project collections.
 ```
 
 Prefer small, focused changes.
@@ -522,7 +622,7 @@ A contribution should make the runtime easier to understand, not more obscure.
 
 ---
 
-## 13. Documentation Style
+## 14. Documentation Style
 
 Documentation should be:
 
@@ -538,8 +638,14 @@ aligned with U.S.E.;
 aligned with CORPUS ESOTEROLOGIA ERMETICA;
 aligned with APOKALYPSIS;
 aligned with HBCE;
+aligned with UNEBDO;
 aligned with EVT;
+aligned with Memory;
 aligned with OPC;
+aligned with MetaExchange;
+aligned with IOspace;
+aligned with CyberGlobal;
+aligned with NeuroLoop;
 aligned with fail-closed governance.
 ```
 
@@ -555,7 +661,9 @@ exaggerate capabilities;
 hide limitations;
 merge internal theoretical language with external factual certification;
 remove the non-offensive boundary;
-link democratic choice content to personal voter identity.
+link democratic choice content to personal voter identity;
+present HBCE modules as new book collections;
+present HBCE modules as independent political domains.
 ```
 
 Use direct language.
@@ -564,13 +672,14 @@ Avoid decorative complexity when operational clarity is needed.
 
 ---
 
-## 14. Governance Review Checklist
+## 15. Governance Review Checklist
 
 Before submitting a contribution, check:
 
 ```txt
 Does the change preserve IPR-bound operation?
-Does the change preserve project-domain classification?
+Does the change preserve project-collection classification?
+Does the change preserve HBCE module boundaries?
 Does the change preserve policy evaluation?
 Does the change preserve risk classification?
 Does the change preserve governance decisions?
@@ -592,7 +701,7 @@ If the answer to any of these is unclear, explain the uncertainty in the pull re
 
 ---
 
-## 15. Security Review Checklist
+## 16. Security Review Checklist
 
 Before submitting a contribution, check:
 
@@ -606,6 +715,7 @@ Does the change add dependencies?
 Does the change affect model calls?
 Does the change expose internal runtime data?
 Does the change expose private EVT metadata?
+Does the change expose private memory metadata?
 Does the change expose private OPC proof metadata?
 Does the change weaken error handling?
 Does the change weaken fail-closed behavior?
@@ -625,7 +735,7 @@ npm run build
 
 ---
 
-## 16. EVT Compatibility
+## 17. EVT Compatibility
 
 If a contribution affects runtime operations, it should preserve compatibility with EVT.
 
@@ -634,7 +744,7 @@ EVT-relevant changes include:
 ```txt
 chat runtime changes;
 file processing changes;
-project-domain classification;
+project-collection classification;
 policy logic;
 risk logic;
 decision logic;
@@ -653,7 +763,7 @@ previous event reference;
 timestamp;
 identity reference;
 IPR reference;
-project domain;
+project collection;
 context class;
 intent class;
 risk class;
@@ -668,7 +778,7 @@ Do not silently remove traceability.
 
 ---
 
-## 17. EVT/IPR-Bound Memory Compatibility
+## 18. EVT/IPR-Bound Memory Compatibility
 
 If a contribution affects memory, session continuity or contextual recovery, it should preserve EVT/IPR-bound memory behavior.
 
@@ -682,7 +792,8 @@ runtime state persistence;
 memory event generation;
 memory ledger logic;
 memory hash generation;
-context recovery.
+context recovery;
+project-collection continuity.
 ```
 
 A memory-compatible contribution should preserve or support:
@@ -696,7 +807,7 @@ response reference;
 document family;
 runtime state;
 decision;
-project domain;
+project collection;
 context class;
 memory event;
 governed EVT;
@@ -708,9 +819,11 @@ Memory must not become uncontrolled storage.
 
 Memory must not store secrets, raw credentials, unnecessary sensitive data or democratic choice content linked to identity.
 
+Memory must preserve collection distinction between MATRIX, U.S.E., CORPUS and APOKALYPSIS.
+
 ---
 
-## 18. OPC Proof Receipt Compatibility
+## 19. OPC Proof Receipt Compatibility
 
 If a contribution affects proof receipts, audit receipts or proof-chain continuity, it should preserve OPC integrity.
 
@@ -756,7 +869,31 @@ OPC is a technical proof receipt layer for audit, verification and governance re
 
 ---
 
-## 19. File Handling Contributions
+## 20. HBCE Module Compatibility
+
+If a contribution affects HBCE modules, it must preserve module boundaries.
+
+```txt
+UNEBDO changes must preserve anchoring, validation and evidentiary continuity.
+OPC changes must preserve proof receipt integrity and non-certification boundary.
+MetaExchange changes must preserve governed structured exchange.
+IOspace changes must preserve public-safe visibility and controlled internal metadata.
+CyberGlobal changes must preserve defensive cybersecurity and resilience.
+NeuroLoop changes must preserve validation, feedback, human review and no autonomous authority.
+```
+
+A module-compatible contribution should state clearly:
+
+```txt
+which module is affected;
+whether the module is active, planned or documentation-only;
+which runtime layer it depends on;
+which safety boundary it must preserve.
+```
+
+---
+
+## 21. File Handling Contributions
 
 File handling contributions must be conservative.
 
@@ -772,7 +909,7 @@ metadata handling;
 user-facing error clarity;
 controlled file context;
 better unsupported file handling;
-project-domain metadata extraction where safe.
+project-collection metadata extraction where safe.
 ```
 
 Not allowed:
@@ -791,7 +928,7 @@ If file visibility is incomplete, the system should state it clearly.
 
 ---
 
-## 20. API Contributions
+## 22. API Contributions
 
 API changes must be reviewed carefully.
 
@@ -803,11 +940,12 @@ handle errors safely;
 avoid exposing stack traces;
 avoid leaking secrets;
 avoid returning private internal metadata;
-preserve project-domain classification where relevant;
+preserve project-collection classification where relevant;
 preserve governance logic;
 preserve IPR binding where relevant;
 preserve fail-closed behavior;
 support EVT generation where relevant;
+support memory generation where relevant;
 support OPC proof receipts where relevant;
 avoid unrestricted execution.
 ```
@@ -830,7 +968,7 @@ New API routes must have a clear purpose and documented boundary.
 
 ---
 
-## 21. Dependency Contributions
+## 23. Dependency Contributions
 
 New dependencies should be avoided unless clearly justified.
 
@@ -845,8 +983,9 @@ Can the same result be achieved with existing code?
 Does it affect runtime safety?
 Does it affect build stability?
 Does it increase attack surface?
-Does it affect project-domain classification?
+Does it affect project-collection classification?
 Does it affect EVT behavior?
+Does it affect memory behavior?
 Does it affect OPC proof receipt behavior?
 ```
 
@@ -854,7 +993,7 @@ If a dependency is added, explain why in the pull request.
 
 ---
 
-## 22. Testing Expectations
+## 24. Testing Expectations
 
 At minimum, contributors should run:
 
@@ -883,7 +1022,7 @@ Do not claim a test passed if it was not run.
 
 ---
 
-## 23. Issue Guidelines
+## 25. Issue Guidelines
 
 Good issues include:
 
@@ -897,7 +1036,8 @@ screenshots, if relevant;
 security impact, if relevant;
 governance impact, if relevant;
 IPR impact, if relevant;
-project-domain impact, if relevant;
+project-collection impact, if relevant;
+HBCE module impact, if relevant;
 suggested fix, if available.
 ```
 
@@ -922,6 +1062,11 @@ use
 corpus
 apokalypsis
 hbce
+unebdo
+metaexchange
+iospace
+cyberglobal
+neuroloop
 fail-closed
 risk-engine
 policy-engine
@@ -935,7 +1080,7 @@ Avoid opening issues that request prohibited functionality.
 
 ---
 
-## 24. Responsible Security Reporting
+## 26. Responsible Security Reporting
 
 Do not disclose vulnerabilities publicly before remediation.
 
@@ -962,7 +1107,7 @@ for the full security policy.
 
 ---
 
-## 25. Commit Message Guide
+## 27. Commit Message Guide
 
 Use concise commit messages.
 
@@ -988,7 +1133,7 @@ ledger: add append-only event store
 verify: add EVT verification endpoint
 docs: add B2B overview
 docs: add USE democratic safeguards
-docs: add Corpus governance map
+docs: define HBCE module map
 ```
 
 Avoid vague commits like:
@@ -1005,7 +1150,7 @@ Commit messages should help future audit.
 
 ---
 
-## 26. Versioning and Roadmap Alignment
+## 28. Versioning and Roadmap Alignment
 
 Contributions should align with the roadmap.
 
@@ -1014,14 +1159,14 @@ Main phases:
 ```txt
 v0.1 = runtime prototype
 v0.2 = governance documentation
-v0.3 = IPR runtime module, project-domain classifier, policy and risk engine
+v0.3 = IPR runtime module, project-collection classifier, policy and risk engine
 v0.4 = EVT ledger and verifier
 v0.5 = EVT/IPR-bound memory and OPC proof receipt layer
 v0.6 = signed evidence packs
 v0.7 = runtime dashboard
-v0.8 = B2B, B2G and U.S.E. package
-v0.9 = compliance package
-v1.0 = governed IPR runtime release candidate
+v0.8 = B2B, B2G, U.S.E. and four-collection package
+v0.9 = compliance and four-collection package
+v1.0 = governed IPR and four-collection runtime release candidate
 ```
 
 Reference the relevant phase when possible.
@@ -1034,7 +1179,7 @@ ROADMAP.md
 
 ---
 
-## 27. Human Accountability Rule
+## 29. Human Accountability Rule
 
 Contributions must preserve human accountability.
 
@@ -1073,7 +1218,7 @@ For high-impact use cases, contributions should support review and escalation.
 
 ---
 
-## 28. Dual-Use Contribution Rule
+## 30. Dual-Use Contribution Rule
 
 Dual-use contributions are allowed only when they strengthen lawful, defensive and accountable use.
 
@@ -1086,6 +1231,7 @@ audit;
 compliance support;
 risk classification;
 event traceability;
+memory continuity;
 proof receipt generation;
 incident documentation;
 operational continuity;
@@ -1117,7 +1263,7 @@ It means controlled strategic use under governance.
 
 ---
 
-## 29. Editorial and Research Contribution Rule
+## 31. Editorial and Research Contribution Rule
 
 Because AI JOKER-C2 connects CORPUS and APOKALYPSIS, editorial and research contributions must follow clear boundaries.
 
@@ -1152,7 +1298,7 @@ Editorial freedom does not remove governance responsibility.
 
 ---
 
-## 30. Maintainer Review Criteria
+## 32. Maintainer Review Criteria
 
 A contribution may be rejected if it:
 
@@ -1162,6 +1308,7 @@ weakens security;
 weakens traceability;
 weakens IPR integrity;
 weakens EVT continuity;
+weakens memory continuity;
 weakens OPC proof receipt integrity;
 weakens fail-closed behavior;
 adds offensive capability;
@@ -1172,7 +1319,8 @@ contradicts project documentation;
 lacks enough explanation;
 makes the project harder to audit;
 creates legal or safety ambiguity;
-removes MATRIX, U.S.E., CORPUS or APOKALYPSIS domain distinction;
+removes MATRIX, U.S.E., CORPUS or APOKALYPSIS collection distinction;
+collapses HBCE modules into project collections;
 claims compliance, certification or authority without basis;
 links democratic choice content to personal voter identity.
 ```
@@ -1189,33 +1337,36 @@ improves runtime clarity;
 improves documentation;
 supports the roadmap;
 preserves non-offensive boundaries;
-preserves project-domain classification;
+preserves project-collection classification;
+preserves HBCE module boundaries;
 preserves IPR runtime demonstrator role.
 ```
 
 ---
 
-## 31. Contributor Statement
+## 33. Contributor Statement
 
 By contributing to this repository, you agree that your contribution should support the project’s core identity:
 
 ```txt
-AI JOKER-C2 is the governed runtime demonstrator for IPR inside the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS through governed AI execution, IPR identity, EVT continuity, EVT/IPR-bound memory, OPC proof receipts, verification and fail-closed control.
+AI JOKER-C2 is the governed runtime demonstrator for IPR inside the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS through governed AI execution, IPR identity, EVT continuity, EVT/IPR-bound memory, OPC proof receipts, HBCE technical-operational modules, verification and fail-closed control.
 ```
 
 You also agree that the contribution should not intentionally introduce offensive, abusive, unlawful, unsafe, coercive or manipulative capability.
 
 ---
 
-## 32. Final Contribution Formula
+## 34. Final Contribution Formula
 
 ```txt
 No contribution without governance.
 No sensitive feature without risk classification.
 No runtime change without IPR binding.
-No runtime change without project-domain classification.
+No runtime change without project-collection classification.
 No runtime change without traceability.
+No memory feature without continuity boundary.
 No proof feature without proof-chain integrity.
+No module change without module boundary.
 No security change without review.
 No dual-use feature without lawful defensive boundary.
 No civic feature without identity-choice separation.
@@ -1225,7 +1376,7 @@ No operation without fail-closed control.
 Condensed:
 
 ```txt
-Contribution = Clarity + Security + Governance + IPR + Project Domain + Traceability + Verification
+Contribution = Clarity + Security + Governance + IPR + Collection + Module Boundary + Traceability + Verification
 ```
 
 Project formula:
@@ -1240,16 +1391,33 @@ APOKALYPSIS = threshold.
 HBCE = governance.
 ```
 
+Module formula:
+
+```txt
+IPR identifies.
+UNEBDO anchors.
+EVT traces.
+Memory continues.
+OPC proves.
+MetaExchange exchanges.
+IOspace exposes.
+CyberGlobal protects.
+NeuroLoop validates.
+AI JOKER-C2 executes.
+MATRIX organizes.
+```
+
 ---
 
-## 33. Status
+## 35. Status
 
 ```txt
 Document: CONTRIBUTING.md
 Status: Active contribution policy
 Project: AI JOKER-C2
 Ecosystem: HERMETICUM B.C.E.
-Connected domains: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+HBCE modules: UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop
 Infrastructure: HBCE
 Runtime role: IPR runtime demonstrator
 Identity layer: IPR
