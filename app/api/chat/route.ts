@@ -77,11 +77,7 @@ import {
 
 import { applyResponseContract } from "../../../lib/joker-response-contract";
 
-import {
-  buildProofHash,
-  buildPublicTraceHash,
-  buildRuntimeHash
-} from "../../../lib/runtime-hash";
+import { buildProofHash, buildRuntimeHash } from "../../../lib/runtime-hash";
 
 import type {
   ContextClass,
@@ -493,13 +489,12 @@ function buildRuntimeIdentityProjectDomain(
     ...base,
     projectDomain: "MATRIX" as ProjectDomain,
     activeDomains: ["MATRIX" as ProjectDomain],
-    domainType: "OPERATIONAL_INFRASTRUCTURE_DOMAIN",
     confidence: Math.max(base.confidence || 0, 0.98),
     reasons: [
       ...base.reasons,
       "Runtime identity question mapped to MATRIX because AI JOKER-C2 is the governed runtime demonstrator of the HBCE/MATRIX stack."
     ]
-  } as ProjectDomainClassification;
+  };
 }
 
 function buildOriginIdentityProjectDomain(
@@ -509,13 +504,12 @@ function buildOriginIdentityProjectDomain(
     ...base,
     projectDomain: "MATRIX" as ProjectDomain,
     activeDomains: ["MATRIX" as ProjectDomain, "U.S.E." as ProjectDomain],
-    domainType: "ORIGIN_IDENTITY_DOMAIN",
     confidence: Math.max(base.confidence || 0, 0.97),
     reasons: [
       ...base.reasons,
       "Manuel Coletta identity question mapped to HBCE/MATRIX origin context."
     ]
-  } as ProjectDomainClassification;
+  };
 }
 
 function buildAerospaceGovernanceProjectDomain(
@@ -525,13 +519,12 @@ function buildAerospaceGovernanceProjectDomain(
     ...base,
     projectDomain: "MULTI_DOMAIN" as ProjectDomain,
     activeDomains: ["MATRIX" as ProjectDomain],
-    domainType: "AEROSPACE_GOVERNANCE_BOUNDARY_DOMAIN",
     confidence: Math.max(base.confidence || 0, 0.96),
     reasons: [
       ...base.reasons,
       "Aerospace-adjacent wording mapped to governance/audit boundary, not flight control."
     ]
-  } as ProjectDomainClassification;
+  };
 }
 
 function normalizeHbceModuleClassification(input: {
@@ -549,14 +542,14 @@ function normalizeHbceModuleClassification(input: {
       ...base,
       module: "UNEBDO",
       activeModules: ["UNEBDO", "OPC", "NeuroLoop"],
-      moduleType: "IDENTITY_RUNTIME_MODULE",
+      moduleType: base.moduleType,
       confidence: Math.max(base.confidence || 0, 0.98),
       reasons: [
         ...base.reasons,
         "Self-identity request mapped to UNEBDO because it concerns runtime identity and IPR binding.",
         "OPC and NeuroLoop are active because the answer is event-bound and runtime-governed."
       ]
-    } as HbceModuleClassification;
+    };
   }
 
   if (isManuelColettaIdentityQuestion(input.message)) {
@@ -564,14 +557,14 @@ function normalizeHbceModuleClassification(input: {
       ...base,
       module: "UNEBDO",
       activeModules: ["UNEBDO", "OPC"],
-      moduleType: "ORIGIN_IDENTITY_MODULE",
+      moduleType: base.moduleType,
       confidence: Math.max(base.confidence || 0, 0.97),
       reasons: [
         ...base.reasons,
         "Origin identity request mapped to UNEBDO because it concerns the biological/project origin and canonical IPR root.",
         "OPC is active for continuity proof framing."
       ]
-    } as HbceModuleClassification;
+    };
   }
 
   if (isAerospaceGovernanceBoundaryQuestion(input.message)) {
@@ -579,14 +572,14 @@ function normalizeHbceModuleClassification(input: {
       ...base,
       module: "OPC",
       activeModules: ["OPC", "CyberGlobal", "MetaExchange"],
-      moduleType: "AEROSPACE_GOVERNANCE_AUDIT_BOUNDARY_MODULE",
+      moduleType: base.moduleType,
       confidence: Math.max(base.confidence || 0, 0.96),
       reasons: [
         ...base.reasons,
         "Aerospace-adjacent request mapped to OPC/CyberGlobal governance boundary.",
         "HBCE must not be represented as guidance, targeting or physical flight-control software."
       ]
-    } as HbceModuleClassification;
+    };
   }
 
   if (isCanonicalStackQuestion(input.message)) {
@@ -606,17 +599,14 @@ function normalizeHbceModuleClassification(input: {
       module:
         text.includes("opc") && !text.includes("ipr") ? "OPC" : "UNEBDO",
       activeModules: Array.from(activeModules),
-      moduleType:
-        base.moduleType === "NO_MODULE"
-          ? "CANONICAL_HBCE_STACK_MODULE"
-          : base.moduleType,
+      moduleType: base.moduleType,
       confidence: Math.max(base.confidence || 0, 0.95),
       reasons: [
         ...base.reasons,
         "Canonical HBCE/IPR/EVT/OPC vocabulary detected.",
         "Module classification normalized to avoid NONE on obvious HBCE stack questions."
       ]
-    } as HbceModuleClassification;
+    };
   }
 
   if (
@@ -631,16 +621,13 @@ function normalizeHbceModuleClassification(input: {
         base.activeModules.length > 0
           ? base.activeModules
           : ["UNEBDO", "OPC", "MetaExchange", "CyberGlobal", "NeuroLoop"],
-      moduleType:
-        base.moduleType === "NO_MODULE"
-          ? "FEDERATED_DEMOCRATIC_INFRASTRUCTURE_MODULE"
-          : base.moduleType,
+      moduleType: base.moduleType,
       confidence: Math.max(base.confidence || 0, 0.94),
       reasons: [
         ...base.reasons,
         "U.S.E. / voto digitale federato context mapped to identity, continuity, exchange, cyber and validation modules."
       ]
-    } as HbceModuleClassification;
+    };
   }
 
   return base;
