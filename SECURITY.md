@@ -1,6 +1,6 @@
 # AI JOKER-C2 Security Policy
 
-## Defensive Security Boundary for IPR, MATRIX, U.S.E., CORPUS and APOKALYPSIS
+## Defensive Security Boundary for IPR, EVT, Memory, OPC and the Four Canonical Collections
 
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**  
@@ -18,9 +18,9 @@ AI JOKER-C2 is the governed runtime demonstrator for **IPR — Identity Primary 
 
 The primary operational instrument is **IPR**.
 
-AI JOKER-C2 demonstrates IPR in execution by connecting identity, context, project domain, policy, risk, decision, output, event trace, memory continuity, proof receipts and audit-oriented verification.
+AI JOKER-C2 demonstrates IPR in execution by connecting identity, project collection, context, policy, risk, decision, output, event trace, memory continuity, proof receipts and audit-oriented verification.
 
-It connects four primary domains:
+It connects four canonical project collections:
 
 ```txt
 1. MATRIX
@@ -39,6 +39,26 @@ AI JOKER-C2 is not a tool for unauthorized intrusion, evasion, surveillance, sab
 
 It is a governed runtime for IPR-bound, policy-aware, risk-classified, traceable, auditable, proof-receipt-oriented and fail-closed AI-assisted operations.
 
+Security in AI JOKER-C2 means protecting the full operational chain:
+
+```txt
+IPR
+→ EVT
+→ Memory
+→ OPC
+→ Ledger
+→ Verification
+```
+
+and preserving the semantic boundary of the four collections:
+
+```txt
+MATRIX
+→ U.S.E.
+→ CORPUS
+→ APOKALYPSIS
+```
+
 ---
 
 ## 2. Security Principle
@@ -55,12 +75,14 @@ Expanded:
 ```txt
 No identity, no authority.
 No IPR binding, no operational attribution.
-No context, no orientation.
+No collection, no semantic orientation.
+No context, no operational frame.
 No policy, no execution.
 No risk classification, no sensitive output.
 No EVT, no continuity.
 No memory integrity, no reliable runtime continuity.
 No OPC, no proof receipt.
+No ledger integrity, no reconstructable chain.
 No verification, no trusted operational state.
 ```
 
@@ -74,8 +96,8 @@ Every sensitive operation must be evaluated through:
 IPR Identity
 → Input
 → Intent
+→ Project Collection
 → Context
-→ Project Domain
 → Policy
 → Risk
 → Decision
@@ -87,6 +109,8 @@ IPR Identity
 → Verification
 → Continuity
 ```
+
+Security does not only mean blocking cyber-offense. It also means preventing loss of attribution, traceability, memory continuity, proof integrity, democratic safeguards and collection distinction.
 
 ---
 
@@ -111,12 +135,13 @@ verification logic;
 deployment configuration;
 public interface;
 future integrations;
-future federation nodes.
+future federation nodes;
+four-collection runtime mapping.
 ```
 
 The policy applies to both current and future versions of AI JOKER-C2.
 
-No future module should weaken the defensive, IPR-bound, traceable and fail-closed nature of the runtime.
+No future module should weaken the defensive, IPR-bound, traceable, memory-safe, proof-safe and fail-closed nature of the runtime.
 
 ---
 
@@ -134,10 +159,12 @@ Its security posture is:
 DEFENSIVE
 GOVERNED
 TRACEABLE
+MEMORY_SAFE
 PROOF_ORIENTED
 FAIL_CLOSED
 HUMAN_ACCOUNTABLE
 NON_OFFENSIVE
+COLLECTION_AWARE
 ```
 
 Its strategic scope is:
@@ -161,21 +188,34 @@ coercive manipulation;
 disinformation operations;
 repression of rights;
 vote de-anonymization;
-civic coercion.
+civic coercion;
+false certification claims;
+semantic misuse of project collections.
 ```
 
 ---
 
-## 5. Project Domain Security
+## 5. Four-Collection Security Boundary
 
-AI JOKER-C2 must preserve security boundaries across all four domains.
+AI JOKER-C2 must preserve security boundaries across all four collections.
 
 ```txt
 MATRIX = operational infrastructure architecture
 U.S.E. = MATRIX-derived political-institutional application domain
 CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar domain
-APOKALYPSIS = historical threshold analysis domain
+APOKALYPSIS = historical-threshold analysis domain
 ```
+
+The security model must prevent these failures:
+
+```txt
+MATRIX becoming offensive infrastructure.
+U.S.E. becoming political manipulation or voter targeting.
+CORPUS becoming coercive ideological framing.
+APOKALYPSIS becoming destabilization, incitement or extremist framing.
+```
+
+The four collections must remain distinct, even when a request is multi-domain.
 
 ---
 
@@ -209,6 +249,7 @@ compliance mapping;
 incident report structuring;
 policy-aware workflow design;
 audit trail design;
+proof-chain integrity review;
 secure repository documentation;
 public-sector accountability models.
 ```
@@ -298,6 +339,8 @@ IPR may support identity verification and participation rights.
 
 EVT may support process traceability.
 
+Memory may preserve runtime continuity around civic-institutional reasoning.
+
 OPC may support proof receipts for process operations.
 
 The content of a democratic vote or civic choice must not be linked to the personal identity of the voter or participant.
@@ -356,7 +399,7 @@ It must not be used to bypass legal, factual, institutional or ethical constrain
 
 ## 5.4 APOKALYPSIS Security
 
-APOKALYPSIS is the historical threshold domain.
+APOKALYPSIS is the historical-threshold domain.
 
 APOKALYPSIS-related work may include:
 
@@ -424,8 +467,10 @@ AI governance = human oversight, risk classification and accountability workflow
 GitHub = repository hardening, documentation and secure development hygiene
 EVT = event trace, hash, ledger and verification design
 IPR = operational identity and attribution integrity
+Memory = EVT/IPR-bound semantic and runtime continuity
 OPC = proof receipt integrity and audit-oriented proof chain design
 U.S.E. = democratic infrastructure safeguards and identity-choice separation models
+Editorial continuity = safe continuity across MATRIX, U.S.E., CORPUS and APOKALYPSIS
 ```
 
 Allowed support must remain defensive, lawful, proportionate and human-accountable.
@@ -463,7 +508,10 @@ coercive manipulation;
 repression of rights;
 vote de-anonymization;
 coercive civic influence;
-unauthorized electoral infrastructure deployment.
+unauthorized electoral infrastructure deployment;
+false proof generation;
+false certification claims;
+semantic manipulation of project collections.
 ```
 
 Requests in these categories must be blocked or redirected to safe defensive alternatives.
@@ -520,7 +568,9 @@ fail-closed behavior;
 traceability;
 IPR integrity;
 EVT integrity;
+Memory integrity;
 OPC proof receipt integrity;
+collection-boundary integrity;
 human accountability.
 ```
 
@@ -534,8 +584,8 @@ The runtime security model follows this sequence:
 IPR identity
 → input
 → intent
+→ project collection
 → context
-→ project_domain
 → policy
 → risk
 → decision
@@ -555,8 +605,8 @@ Each stage must preserve security.
 identity = bind operation to entity, IPR and runtime
 input = normalize safely and avoid unsafe execution
 intent = detect purpose and possible misuse
+project collection = route to MATRIX, U.S.E., CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN
 context = classify operational context
-project_domain = route to MATRIX, U.S.E., CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN
 policy = apply allowed, restricted and prohibited boundaries
 risk = classify sensitivity and potential impact
 decision = ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT or NOOP
@@ -585,7 +635,7 @@ IPR binding is missing where required;
 runtime state is invalid;
 user authority is unclear;
 intent is unsafe;
-project domain cannot be classified in a sensitive context;
+project collection cannot be classified in a sensitive context;
 policy cannot be applied;
 risk cannot be classified;
 requested operation may enable abuse;
@@ -595,7 +645,7 @@ requested operation may affect civic or democratic infrastructure without safegu
 event trace cannot be generated;
 memory continuity cannot be preserved when required;
 OPC proof receipt cannot be generated when required;
-continuity cannot be preserved;
+ledger continuity cannot be preserved;
 legal or compliance basis is uncertain;
 human review is required but absent;
 the system is degraded in a sensitive context.
@@ -660,6 +710,7 @@ JOKER_SIGN_PRIVATE_KEY
 JOKER_SIGN_PUBLIC_KEY
 NEXT_PUBLIC_BASE_URL
 JOKER_OPC_LEDGER_FILE
+JOKER_EVT_MEMORY_LEDGER_FILE
 ```
 
 Only public-safe variables should use `NEXT_PUBLIC_`.
@@ -711,13 +762,15 @@ Security rules for API routes:
 6. Apply policy where relevant.
 7. Apply risk classification where relevant.
 8. Generate EVT records for relevant operations.
-9. Generate or reference OPC proof receipts where required.
-10. Preserve fail-closed behavior.
-11. Return safe errors.
-12. Do not execute uploaded content.
-13. Do not create unrestricted command-execution routes.
-14. Do not expose internal keys, tokens or private event metadata.
-15. Keep public and internal verification separated.
+9. Generate EVT/IPR-bound memory where required.
+10. Generate or reference OPC proof receipts where required.
+11. Preserve fail-closed behavior.
+12. Return safe errors.
+13. Do not execute uploaded content.
+14. Do not create unrestricted command-execution routes.
+15. Do not expose internal keys, tokens or private event metadata.
+16. Keep public and internal verification separated.
+17. Preserve project-collection classification.
 ```
 
 Expected API routes may include:
@@ -768,7 +821,8 @@ store sensitive payloads without purpose;
 leak file content into public logs;
 bypass policy and risk classification;
 treat unknown files as safe by default;
-claim full visibility when only partial visibility exists.
+claim full visibility when only partial visibility exists;
+erase project-collection context.
 ```
 
 Recommended safe file types:
@@ -799,13 +853,14 @@ The model layer must not become the authority layer.
 Model output is subject to:
 
 ```txt
-project-domain classification;
+project-collection classification;
 policy;
 risk classification;
 safety boundary;
 human accountability;
 fail-closed behavior;
 EVT continuity where relevant;
+memory continuity where relevant;
 OPC proof receipt generation where required.
 ```
 
@@ -847,7 +902,9 @@ coercive manipulation;
 disinformation campaigns;
 operational destabilization;
 vote de-anonymization;
-civic coercion.
+civic coercion;
+false certification claims;
+semantic framing used for abuse.
 ```
 
 Safe alternatives may include:
@@ -860,7 +917,8 @@ risk assessment;
 hardening checklist;
 governance documentation;
 legal or compliance-oriented framing;
-conceptual analysis without operational abuse.
+conceptual analysis without operational abuse;
+editorial continuity without coercive framing.
 ```
 
 ---
@@ -916,6 +974,7 @@ do not expose private API keys;
 do not expose signing private keys;
 do not expose internal tokens;
 do not expose private EVT payloads;
+do not expose private memory payloads;
 do not expose personal data unnecessarily;
 do not expose democratic choice content;
 do not expose identity-choice links;
@@ -931,8 +990,9 @@ Public diagnostics may show safe metadata, such as:
 runtime state;
 public entity;
 public IPR reference;
-public project domain;
+public project collection;
 public EVT identifier;
+public memory identifier;
 public OPC proof status;
 non-sensitive verification status.
 ```
@@ -958,6 +1018,7 @@ full user documents unless necessary and authorized;
 exploit details;
 harmful payloads;
 democratic choice content linked to identity;
+private memory payloads;
 internal stack traces in public responses.
 ```
 
@@ -967,7 +1028,7 @@ Recommended logging metadata:
 event ID;
 timestamp;
 context class;
-project domain;
+project collection;
 risk class;
 governance decision;
 operation type;
@@ -1020,7 +1081,7 @@ timestamp;
 entity;
 IPR;
 runtime state;
-project domain;
+project collection;
 context class;
 risk class;
 decision;
@@ -1064,7 +1125,7 @@ response reference;
 document family;
 runtime state;
 decision;
-project domain;
+project collection;
 context class;
 memory event;
 governed EVT;
@@ -1080,12 +1141,15 @@ private keys;
 raw credentials;
 unnecessary sensitive personal data;
 harmful operational details;
-democratic choice content linked to identity.
+democratic choice content linked to identity;
+false certification claims as verified facts.
 ```
 
 Memory supports runtime continuity.
 
 It does not replace evidence verification, legal review or user control.
+
+Memory must not contaminate one collection with another. MATRIX, U.S.E., CORPUS and APOKALYPSIS continuity should be connected when useful but still distinguishable.
 
 ---
 
@@ -1135,7 +1199,8 @@ avoid falsifying proof records;
 avoid exposing sensitive payloads;
 separate public and internal proof views;
 preserve previous proof hash when applicable;
-validate proof structure where possible.
+validate proof structure where possible;
+preserve the difference between technical proof receipt and legal certification.
 ```
 
 ---
@@ -1149,16 +1214,17 @@ Ledger rules:
 ```txt
 1. Do not silently rewrite historical events.
 2. Corrections must be new events.
-3. Preserve previous-event references.
+3. Preserve previous-event references or valid external runtime anchors.
 4. Preserve hashes where possible.
-5. Preserve project-domain metadata.
+5. Preserve project-collection metadata.
 6. Preserve IPR metadata.
-7. Preserve OPC proof metadata where applicable.
-8. Separate public and internal views.
-9. Avoid storing unnecessary sensitive payloads.
-10. Protect ledger integrity.
-11. Validate event structure before acceptance.
-12. Preserve audit metadata.
+7. Preserve memory metadata where applicable.
+8. Preserve OPC proof metadata where applicable.
+9. Separate public and internal views.
+10. Avoid storing unnecessary sensitive payloads.
+11. Protect ledger integrity.
+12. Validate event structure before acceptance.
+13. Preserve audit metadata.
 ```
 
 Correction rule:
@@ -1180,11 +1246,12 @@ event ID;
 timestamp;
 public entity;
 public IPR reference;
-public project domain;
+public project collection;
 hash;
 verification status;
 audit status;
 non-sensitive operation type;
+public memory status;
 public OPC proof status.
 ```
 
@@ -1300,7 +1367,8 @@ a defensive governance architecture;
 a traceability framework;
 a B2B and B2G demonstrator;
 an identity-bound operational AI system;
-an evidence-oriented AI governance prototype.
+an evidence-oriented AI governance prototype;
+a four-collection runtime connector.
 ```
 
 ---
@@ -1321,8 +1389,9 @@ Does it add offensive cyber capability?
 Does it execute uploaded files?
 Does it store sensitive payloads unnecessarily?
 Does it expose private EVT metadata publicly?
+Does it expose private memory metadata publicly?
 Does it expose private OPC proof metadata publicly?
-Does it break project-domain classification?
+Does it break project-collection classification?
 Does it weaken human accountability?
 Does it break the build?
 Does it create misleading public claims?
@@ -1418,6 +1487,8 @@ EVT integrity.
 Memory continuity.
 OPC proof receipt integrity.
 Democratic infrastructure safeguards.
+Editorial continuity.
+Four-collection continuity.
 ```
 
 Prohibited:
@@ -1438,6 +1509,8 @@ Coercive manipulation.
 Vote de-anonymization.
 Civic coercion.
 Rights violations.
+False certification claims.
+Semantic framing used for abuse.
 ```
 
 The system should prove restraint as much as execution.
@@ -1473,7 +1546,8 @@ The following invariants must remain stable:
 20. Human accountability must be preserved.
 21. Offensive or abusive capability is prohibited.
 22. Democratic choice content must not be linked to personal voter identity.
-23. Uncertain sensitive operations must not execute by default.
+23. Four-collection continuity must preserve MATRIX, U.S.E., CORPUS and APOKALYPSIS distinctions.
+24. Uncertain sensitive operations must not execute by default.
 ```
 
 ---
@@ -1483,6 +1557,8 @@ The following invariants must remain stable:
 Security begins with identity.
 
 Security requires IPR binding.
+
+Security requires project-collection classification.
 
 Security requires context.
 
@@ -1512,7 +1588,7 @@ AI JOKER-C2 = governed runtime demonstrator.
 MATRIX = operational infrastructure architecture.
 U.S.E. = federated European political-institutional application.
 CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar.
-APOKALYPSIS = historical threshold analysis.
+APOKALYPSIS = historical-threshold analysis.
 EVT = trace.
 Memory = EVT/IPR-bound runtime continuity.
 OPC = proof receipt.
@@ -1527,8 +1603,11 @@ Security boundary:
 Defensive governance: allowed.
 Verifiable continuity: allowed.
 Audit and evidence: allowed.
+Memory continuity: allowed.
+Proof integrity: allowed.
 Critical systems resilience documentation: allowed.
 Democratic infrastructure safeguards: allowed.
+Editorial continuity: allowed.
 Offensive or abusive capability: prohibited.
 ```
 
@@ -1541,7 +1620,7 @@ Document: SECURITY.md
 Status: Active security policy
 Project: AI JOKER-C2
 Ecosystem: HERMETICUM B.C.E.
-Connected domains: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
 Infrastructure: HBCE
 Runtime role: IPR runtime demonstrator
 Identity layer: IPR
@@ -1560,4 +1639,3 @@ Organization: HERMETICUM B.C.E. S.r.l.
 Territorial anchor: Torino, Italy, Europe
 Year: 2026
 ```
-
