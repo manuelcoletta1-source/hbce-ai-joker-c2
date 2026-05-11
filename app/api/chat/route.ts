@@ -167,6 +167,8 @@ type EnrichedGovernanceFrame = GovernanceFrame & {
   hbceModule: HbceModuleClassification;
 };
 
+type HbceModuleValue = HbceModuleClassification["activeModules"][number];
+
 const MODEL = process.env.JOKER_MODEL || "gpt-4o-mini";
 const MAX_OUTPUT_TOKENS = 4600;
 const MAX_DATA_CLASSIFICATION_CHARS = 24000;
@@ -583,13 +585,21 @@ function normalizeHbceModuleClassification(input: {
   }
 
   if (isCanonicalStackQuestion(input.message)) {
-    const activeModules = new Set<string>(base.activeModules || []);
+    const activeModules = new Set<HbceModuleValue>(base.activeModules || []);
 
     if (text.includes("opc")) activeModules.add("OPC");
-    if (text.includes("cyber") || text.includes("sicurezza")) activeModules.add("CyberGlobal");
-    if (text.includes("neuro") || text.includes("decision")) activeModules.add("NeuroLoop");
-    if (text.includes("metaexchange") || text.includes("scambio")) activeModules.add("MetaExchange");
-    if (text.includes("iospace") || text.includes("interfaccia")) activeModules.add("IOspace");
+    if (text.includes("cyber") || text.includes("sicurezza")) {
+      activeModules.add("CyberGlobal");
+    }
+    if (text.includes("neuro") || text.includes("decision")) {
+      activeModules.add("NeuroLoop");
+    }
+    if (text.includes("metaexchange") || text.includes("scambio")) {
+      activeModules.add("MetaExchange");
+    }
+    if (text.includes("iospace") || text.includes("interfaccia")) {
+      activeModules.add("IOspace");
+    }
 
     activeModules.add("UNEBDO");
     activeModules.add("OPC");
