@@ -33,6 +33,11 @@
  * NeuroLoop validates.
  * AI JOKER-C2 executes.
  * MATRIX organizes.
+ *
+ * Classifier invariant:
+ * - NONE can appear only when no real HBCE module is active.
+ * - If at least one real HBCE module is active, NONE is removed.
+ * - If module is not NONE, moduleType must not remain the metadata of NONE.
  */
 
 import {
@@ -96,6 +101,34 @@ const HBCE_MODULES: HbceModule[] = [
 const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
   UNEBDO: [
     "unebdo",
+    "ipr",
+    "identity primary record",
+    "primary identity record",
+    "operational identity",
+    "identity record",
+    "identity binding",
+    "identity root",
+    "ipr root",
+    "ipr binding",
+    "ipr registry",
+    "origin identity",
+    "runtime identity",
+    "agent identity",
+    "ai agent identity",
+    "identita operativa",
+    "identità operativa",
+    "registro identita",
+    "registro identità",
+    "registro primario",
+    "registro primario di identita",
+    "registro primario di identità",
+    "radice identitaria",
+    "identita runtime",
+    "identità runtime",
+    "identita agente",
+    "identità agente",
+    "origine identitaria",
+    "vincolo identitario",
     "anchoring",
     "anchor",
     "external anchor",
@@ -132,6 +165,13 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
 
   OPC: [
     "opc",
+    "evt",
+    "event trace",
+    "event record",
+    "verifiable event",
+    "verifiable event trace",
+    "runtime event",
+    "governed event",
     "operational proof",
     "operational proof and compliance",
     "operational proof compliance",
@@ -151,14 +191,22 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "output hash",
     "proof chain",
     "receipt",
+    "continuity proof",
+    "continuity receipt",
     "compliance layer",
     "audit-ready proof",
     "technical proof receipt",
+    "traccia evt",
+    "evento verificabile",
+    "traccia evento",
+    "traccia verificabile",
     "ricevuta di prova",
     "record di prova",
     "prova operativa",
     "prova di continuita",
     "prova di continuità",
+    "prova di continuita operativa",
+    "prova di continuità operativa",
     "catena di prova",
     "hash catena",
     "hash decisione",
@@ -181,6 +229,10 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "audit exchange",
     "context exchange",
     "node exchange",
+    "route exchange",
+    "navigation exchange",
+    "operational routing",
+    "route between systems",
     "exchange between identities",
     "exchange between proofs",
     "exchange between events",
@@ -198,6 +250,11 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "scambio audit",
     "scambio controllato",
     "scambio governato",
+    "scambio tra sistemi",
+    "scambio tra identita",
+    "scambio tra identità",
+    "instradamento operativo",
+    "routing operativo",
     "interoperabilita",
     "interoperabilità"
   ],
@@ -224,6 +281,23 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "runtime status panel",
     "ipr status panel",
     "project domain panel",
+    "navigation layer",
+    "operational navigation",
+    "navigation system",
+    "navigation map",
+    "workflow navigation",
+    "process navigation",
+    "document navigation",
+    "interface navigation",
+    "navigazione",
+    "sistema di navigazione",
+    "navigazione operativa",
+    "navigazione documentale",
+    "navigazione processi",
+    "navigazione dei processi",
+    "navigazione workflow",
+    "mappa di navigazione",
+    "mappa operativa",
     "spazio operativo",
     "spazio di interazione",
     "visibilita runtime",
@@ -322,6 +396,10 @@ const MODULE_FILE_HINTS: Record<PrimaryHbceModule, string[]> = {
     "unebdo_overview.md",
     "unebdo_anchor_model.md",
     "unebdo_validation_model.md",
+    "ipr.md",
+    "ipr_model.md",
+    "ipr_registry.md",
+    "identity_primary_record.md",
     "anchoring_model.md",
     "evidentiary_continuity.md"
   ],
@@ -334,7 +412,10 @@ const MODULE_FILE_HINTS: Record<PrimaryHbceModule, string[]> = {
     "opc_types.ts",
     "opc-proof-record.schema.json",
     "proofreceiptcard.tsx",
-    "proof_receipt.md"
+    "proof_receipt.md",
+    "evt.ts",
+    "evt-ledger.ts",
+    "evt_memory.md"
   ],
 
   MetaExchange: [
@@ -352,7 +433,9 @@ const MODULE_FILE_HINTS: Record<PrimaryHbceModule, string[]> = {
     "runtime_dashboard.md",
     "eventchainviewer.tsx",
     "runtimestatuspanel.tsx",
-    "iprstatuspanel.tsx"
+    "iprstatuspanel.tsx",
+    "navigation_layer.md",
+    "operational_navigation.md"
   ],
 
   CyberGlobal: [
@@ -395,6 +478,44 @@ const STACK_LEVEL_TERMS = [
   "unebdo metaexchange opc iospace cyberglobal neuroloop"
 ];
 
+const IPR_NAVIGATION_TERMS = [
+  "navigazione tramite ipr",
+  "navigazione con ipr",
+  "sistemi di navigazione tramite ipr",
+  "sistemi di navigazione con ipr",
+  "sistema di navigazione tramite ipr",
+  "sistema di navigazione con ipr",
+  "ipr navigation",
+  "ipr navigation system",
+  "ipr-based navigation",
+  "ipr based navigation",
+  "operational navigation through ipr",
+  "navigation through ipr"
+];
+
+const PHYSICAL_NAVIGATION_TERMS = [
+  "razzo",
+  "razzi",
+  "missile",
+  "missili",
+  "astronave",
+  "astronavi",
+  "spacecraft",
+  "rocket",
+  "satellite",
+  "satelliti",
+  "drone",
+  "droni",
+  "veicolo",
+  "veicoli",
+  "mezzo fisico",
+  "flight control",
+  "controllo di volo",
+  "guidance",
+  "targeting",
+  "puntamento"
+];
+
 export function classifyHbceModule(
   input: HbceModuleClassifierInput | string
 ): HbceModuleClassification {
@@ -417,6 +538,12 @@ export function classifyHbceModule(
   }
 
   const stackLevelMatches = findMatches(normalizedInput, STACK_LEVEL_TERMS);
+  const iprNavigationMatches = findMatches(normalizedInput, IPR_NAVIGATION_TERMS);
+  const physicalNavigationMatches = findMatches(
+    normalizedInput,
+    PHYSICAL_NAVIGATION_TERMS
+  );
+
   const moduleScores = PRIMARY_MODULES.map((module) =>
     scoreModule(normalizedInput, module, MODULE_KEYWORDS[module])
   );
@@ -429,13 +556,35 @@ export function classifyHbceModule(
 
   if (stackLevelMatches.length > 0) {
     return createClassification(
-      "NONE",
+      choosePrimaryModule(matchedModules, "UNEBDO"),
       getDefaultActiveModules(),
       0.94,
       [
         "Input matched HBCE stack-level or six-module language.",
-        "The request concerns the HBCE module map rather than a single module.",
+        "The request concerns the HBCE module map rather than a single isolated module.",
         ...stackLevelMatches.map((term) => `Matched stack-level term: ${term}`),
+        ...collectReasons(matchedModules)
+      ],
+      scoreMap
+    );
+  }
+
+  if (iprNavigationMatches.length > 0) {
+    return createClassification(
+      "UNEBDO",
+      ["UNEBDO", "OPC", "MetaExchange", "IOspace"],
+      physicalNavigationMatches.length > 0 ? 0.9 : 0.95,
+      [
+        "Input matched IPR-based navigation language.",
+        "IPR-based navigation is classified as operational navigation: identity, events, proof, exchange and interface.",
+        "UNEBDO anchors the IPR identity layer.",
+        "OPC proves the continuity of the navigational chain.",
+        "MetaExchange supports structured routing between identities, proofs, events and contexts.",
+        "IOspace exposes the navigational interface and runtime view.",
+        physicalNavigationMatches.length > 0
+          ? "Physical-navigation vocabulary was detected; HBCE/IPR must be treated as governance, traceability and audit layer, not as vehicle-control software."
+          : "",
+        ...iprNavigationMatches.map((term) => `Matched IPR navigation term: ${term}`),
         ...collectReasons(matchedModules)
       ],
       scoreMap
@@ -448,7 +597,7 @@ export function classifyHbceModule(
 
     if (shouldClassifyAsMultiModule(top.score, second.score)) {
       return createClassification(
-        "NONE",
+        top.module,
         matchedModules.map((result) => result.module),
         calculateMultiModuleConfidence(matchedModules),
         [
@@ -491,15 +640,7 @@ export function classifyHbceModuleFromMessage(
 }
 
 export function getCanonicalHbceModules(): HbceModule[] {
-  return [
-    "UNEBDO",
-    "OPC",
-    "MetaExchange",
-    "IOspace",
-    "CyberGlobal",
-    "NeuroLoop",
-    "NONE"
-  ];
+  return [...HBCE_MODULES];
 }
 
 export function getPrimaryHbceModules(): PrimaryHbceModule[] {
@@ -510,7 +651,12 @@ export function getHbceModuleBinding(
   module: HbceModule,
   activeModules?: HbceModule[]
 ): HbceModuleBinding {
-  return createHbceModuleBinding(module, activeModules);
+  const normalizedActiveModules = normalizeActiveModules(module, activeModules ?? []);
+
+  return createHbceModuleBinding(
+    normalizeEffectiveModule(module, normalizedActiveModules),
+    normalizedActiveModules
+  );
 }
 
 export function getHbceModuleClassificationMetadata(
@@ -561,8 +707,21 @@ function scoreModule(
     const wordCount = keyword.split(" ").filter(Boolean).length;
     const baseWeight = wordCount >= 3 ? 4 : wordCount === 2 ? 3 : 1;
     const explicitModuleWeight = isExplicitModuleName(module, keyword) ? 6 : 0;
+    const canonicalIdentityWeight =
+      module === "UNEBDO" && isCanonicalIdentityKeyword(keyword) ? 5 : 0;
+    const canonicalEventProofWeight =
+      module === "OPC" && isCanonicalEventProofKeyword(keyword) ? 4 : 0;
+    const navigationWeight =
+      module === "IOspace" && isNavigationKeyword(keyword) ? 3 : 0;
 
-    return total + baseWeight + explicitModuleWeight;
+    return (
+      total +
+      baseWeight +
+      explicitModuleWeight +
+      canonicalIdentityWeight +
+      canonicalEventProofWeight +
+      navigationWeight
+    );
   }, 0);
 
   return {
@@ -602,6 +761,38 @@ function isExplicitModuleName(
     default:
       return false;
   }
+}
+
+function isCanonicalIdentityKeyword(keyword: string): boolean {
+  return (
+    keyword === "ipr" ||
+    keyword === "identity primary record" ||
+    keyword === "operational identity" ||
+    keyword === "identita operativa" ||
+    keyword === "identità operativa"
+  );
+}
+
+function isCanonicalEventProofKeyword(keyword: string): boolean {
+  return (
+    keyword === "evt" ||
+    keyword === "event trace" ||
+    keyword === "verifiable event trace" ||
+    keyword === "operational proof of continuity" ||
+    keyword === "proof receipt" ||
+    keyword === "prova di continuita" ||
+    keyword === "prova di continuità"
+  );
+}
+
+function isNavigationKeyword(keyword: string): boolean {
+  return (
+    keyword === "navigazione" ||
+    keyword === "sistema di navigazione" ||
+    keyword === "operational navigation" ||
+    keyword === "navigation system" ||
+    keyword === "navigation layer"
+  );
 }
 
 function shouldClassifyAsMultiModule(
@@ -664,15 +855,25 @@ function createClassification(
   reasons: string[],
   scores: Partial<Record<PrimaryHbceModule, number>>
 ): HbceModuleClassification {
-  const metadata = getHbceModuleMetadata(module);
+  const normalizedActiveModules = normalizeActiveModules(module, activeModules);
+  const effectiveModule = normalizeEffectiveModule(module, normalizedActiveModules);
+  const metadata = getHbceModuleMetadata(effectiveModule);
 
   return {
-    module,
-    activeModules: normalizeActiveModules(module, activeModules),
-    primaryModule: module,
+    module: effectiveModule,
+    activeModules: normalizedActiveModules,
+    primaryModule: effectiveModule,
     moduleType: metadata.moduleType,
     confidence: clampConfidence(confidence),
-    reasons: uniqueReasons(reasons),
+    reasons: uniqueReasons([
+      ...reasons,
+      effectiveModule !== module
+        ? `Primary module normalized from ${module} to ${effectiveModule} because real active HBCE modules were present.`
+        : "",
+      normalizedActiveModules.includes("NONE") && normalizedActiveModules.length > 1
+        ? "Invalid NONE plus real module state was prevented."
+        : ""
+    ]),
     scores
   };
 }
@@ -681,17 +882,31 @@ function normalizeActiveModules(
   module: HbceModule,
   activeModules: HbceModule[]
 ): HbceModule[] {
-  if (activeModules.length === 0) {
-    return module === "NONE" ? ["NONE"] : [module];
+  const candidates = activeModules.length > 0 ? activeModules : [module];
+  const primaryActiveModules = candidates.filter(isPrimaryHbceModuleLocal);
+
+  if (primaryActiveModules.length > 0) {
+    return uniqueModules(primaryActiveModules);
   }
 
-  const primaryActiveModules = activeModules.filter(isPrimaryHbceModuleLocal);
-
-  if (primaryActiveModules.length === 0) {
-    return module === "NONE" ? ["NONE"] : [module];
+  if (isPrimaryHbceModuleLocal(module)) {
+    return [module];
   }
 
-  return uniqueModules(primaryActiveModules);
+  return ["NONE"];
+}
+
+function normalizeEffectiveModule(
+  module: HbceModule,
+  activeModules: HbceModule[]
+): HbceModule {
+  if (isPrimaryHbceModuleLocal(module)) {
+    return module;
+  }
+
+  const firstPrimaryModule = activeModules.find(isPrimaryHbceModuleLocal);
+
+  return firstPrimaryModule || "NONE";
 }
 
 function isPrimaryHbceModuleLocal(value: HbceModule): value is PrimaryHbceModule {
@@ -707,6 +922,13 @@ function getDefaultActiveModules(): HbceModule[] {
     "CyberGlobal",
     "NeuroLoop"
   ];
+}
+
+function choosePrimaryModule(
+  matchedModules: HbceModuleScore[],
+  fallback: PrimaryHbceModule
+): PrimaryHbceModule {
+  return matchedModules[0]?.module || fallback;
 }
 
 function calculateConfidence(score: number, text: string): number {
