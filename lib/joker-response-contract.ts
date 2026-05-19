@@ -9,6 +9,7 @@ export type JokerResponseContractKind =
   | "USE_ACRONYM"
   | "USE_POLITICAL_VALUE"
   | "HBCE_MODULES"
+  | "HBCE_ECOSISTEMA_AI"
   | "GENERAL";
 
 export type ResponseContract = {
@@ -42,10 +43,8 @@ function isIprQuestion(text: string): boolean {
     "ipr",
     "identity primary record",
     "identita operativa",
-    "identità operativa",
     "registro primario",
-    "registro primario di identita",
-    "registro primario di identità"
+    "registro primario di identita"
   ]);
 }
 
@@ -65,12 +64,11 @@ function isOpcQuestion(text: string): boolean {
   return containsAny(text, [
     "opc",
     "operational proof",
+    "operational proof and compliance",
     "operational proof of continuity",
     "proof of continuity",
     "prova di continuita",
-    "prova di continuità",
     "continuita operativa",
-    "continuità operativa",
     "proof record",
     "proof receipt",
     "ricevuta di prova"
@@ -162,11 +160,9 @@ function isUseAcronymQuestion(text: string): boolean {
   const hasUseTerm = containsAny(text, [
     "u.s.e.",
     "u.s.e",
-    "use",
     "u s e",
     "united states of europe",
-    "stati uniti d europa",
-    "stati uniti d'europa"
+    "stati uniti d europa"
   ]);
 
   if (!hasUseTerm) {
@@ -217,10 +213,9 @@ function isUsePoliticalValueQuestion(text: string): boolean {
   const hasProjectReference = containsAny(text, [
     "u.s.e.",
     "u.s.e",
-    "use",
+    "u s e",
     "united states of europe",
     "stati uniti d europa",
-    "stati uniti d'europa",
     "matrix",
     "hbce",
     "ipr",
@@ -232,7 +227,6 @@ function isUsePoliticalValueQuestion(text: string): boolean {
     "applicazione",
     "federazione europea",
     "sovranita digitale",
-    "sovranità digitale",
     "europa",
     "europea",
     "europeo",
@@ -265,7 +259,7 @@ function isCivicDigitalQuestion(text: string): boolean {
       "federated voting"
     ]) ||
     (containsAny(text, ["voto", "votare"]) &&
-      containsAny(text, ["identita", "identità", "ipr", "digitale", "federato"]))
+      containsAny(text, ["identita", "ipr", "digitale", "federato"]))
   );
 }
 
@@ -273,10 +267,10 @@ function isHbceModulesQuestion(text: string): boolean {
   const hasExplicitModuleTerm = containsAny(text, [
     "moduli hbce",
     "moduli dell hbce",
-    "moduli dell'hbce",
-    "sei moduli",
-    "6 moduli",
-    "six modules",
+    "sette moduli",
+    "7 moduli",
+    "seven modules",
+    "seven hbce modules",
     "hbce modules",
     "hbce module",
     "stack hbce",
@@ -292,7 +286,11 @@ function isHbceModulesQuestion(text: string): boolean {
     "cyberglobal",
     "cyber global",
     "neuroloop",
-    "neuro loop"
+    "neuro loop",
+    "modulo matrix",
+    "matrix module",
+    "matrix organizza",
+    "matrix organizes"
   ]);
 
   const hasGenericModuleQuestion =
@@ -322,15 +320,12 @@ function isHbceModulesQuestion(text: string): boolean {
     "ruolo",
     "ruoli",
     "novita",
-    "novità",
     "moduli",
     "stack",
     "operativo",
     "casi d uso",
-    "casi d'uso",
     "casi duso",
     "caso d uso",
-    "caso d'uso",
     "uso reale",
     "usi reali",
     "reali",
@@ -339,7 +334,6 @@ function isHbceModulesQuestion(text: string): boolean {
     "vantaggi",
     "vantaggio",
     "stato dell arte",
-    "stato dell'arte",
     "ai classiche",
     "anthropic",
     "gpt",
@@ -358,6 +352,59 @@ function isHbceModulesQuestion(text: string): boolean {
   ]);
 }
 
+function isHbceEcosistemaAiQuestion(text: string): boolean {
+  const hasHbceAiTerm = containsAny(text, [
+    "hbce ecosistema ai",
+    "ecosistema ai",
+    "ecosistema dell ai",
+    "hbce ai",
+    "ai governance ecosystem",
+    "governance dell ai",
+    "governo dell ai",
+    "governare l ai",
+    "intelligenza artificiale governata",
+    "ai governata",
+    "governed ai",
+    "ai non governata",
+    "ai audit",
+    "audit ai",
+    "ipr ai audit trail",
+    "model governance",
+    "governance modelli",
+    "modelli ai esterni",
+    "openai",
+    "anthropic",
+    "claude",
+    "google ai",
+    "gemini",
+    "meta ai",
+    "llama",
+    "mistral",
+    "matrix ai governance",
+    "runtime ai governato",
+    "runtime governato ai"
+  ]);
+
+  const hasQuestionOrProjectTerm = containsAny(text, [
+    "collana",
+    "volume",
+    "volumi",
+    "spiegami",
+    "cosa e",
+    "cosa sono",
+    "funzione",
+    "ruolo",
+    "governance",
+    "audit",
+    "ai",
+    "modelli",
+    "runtime",
+    "hbce"
+  ]);
+
+  return hasHbceAiTerm && hasQuestionOrProjectTerm;
+}
+
 function buildContract(kind: JokerResponseContractKind): ResponseContract {
   switch (kind) {
     case "HBCE_MODULES":
@@ -366,7 +413,7 @@ function buildContract(kind: JokerResponseContractKind): ResponseContract {
         matched: true,
         title: "Contratto risposta moduli HBCE",
         mandatoryOpening: [
-          "I moduli HBCE sono funzioni tecnico-operative dello stack MATRIX/HBCE: non sostituiscono IPR, ma lo estendono in ancoraggio, prova, scambio, visibilità, cybersecurity difensiva e validazione."
+          "I moduli HBCE sono sette funzioni tecnico-operative dello stack MATRIX/HBCE: non sostituiscono IPR, ma lo estendono in ancoraggio, prova, scambio, visibilità, cybersecurity difensiva, validazione e coordinamento sistemico."
         ],
         mandatoryConcepts: [
           "IPR resta il prodotto operativo base: identifica soggetti, processi, agenti AI, documenti o sistemi con responsabilità e continuità verificabile.",
@@ -379,6 +426,7 @@ function buildContract(kind: JokerResponseContractKind): ResponseContract {
           "IOspace = spazio operativo di visibilità, dashboard e interazione runtime: mostra IPR, EVT, Memory, OPC, audit, rischio, decisione e continuità.",
           "CyberGlobal = cybersecurity difensiva, resilienza, rischio e protezione sistemica. Non è un modulo offensivo.",
           "NeuroLoop = validazione, feedback, revisione e ciclo decisionale controllato. Non è apprendimento autonomo né autorità autonoma.",
+          "MATRIX = settimo modulo HBCE: organizza e coordina identità, eventi, memoria, proof receipt, moduli, domini progettuali e runtime in una architettura coerente.",
           "Le AI classiche producono output; AI JOKER-C2 produce output più identità operativa, evento, memoria, proof receipt e audit trail."
         ],
         forbiddenReductions: [
@@ -388,19 +436,59 @@ function buildContract(kind: JokerResponseContractKind): ResponseContract {
           "Non presentare CyberGlobal come capacità offensiva.",
           "Non presentare NeuroLoop come autorità autonoma o apprendimento incontrollato.",
           "Non presentare MetaExchange come scambio dati permissionless.",
+          "Non presentare MATRIX come autorità autonoma: MATRIX organizza, non sostituisce policy, rischio, supervisione umana o responsabilità.",
           "Non presentare OPC come certificazione legale automatica.",
           "Non presentare UNEBDO, EVT o IPR come certificazione legale automatica."
         ],
         requiredDistinctions: [
           "Distingui prodotto da modulo: IPR è il prodotto operativo base, i moduli sono funzioni dello stack.",
-          "Distingui collane da moduli: MATRIX, U.S.E., CORPUS e APOKALYPSIS sono domini/collane; UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal e NeuroLoop sono moduli tecnico-operativi.",
+          "Distingui collane da moduli: MATRIX, U.S.E., CORPUS, APOKALYPSIS e HBCE ECOSISTEMA AI sono domini/collane; UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop e MATRIX sono moduli tecnico-operativi.",
+          "Distingui la doppia funzione di MATRIX: come collana è architettura strategica; come modulo è coordinamento tecnico-operativo.",
           "Distingui proof receipt tecnica da certificazione legale.",
           "Distingui cybersecurity difensiva da capacità offensiva.",
           "Distingui validazione e feedback da autorità autonoma.",
           "Distingui AI classica che produce output da AI JOKER-C2 che produce output governato, tracciato, memorizzato e provabile."
         ],
         closingFormula:
-          "Formula moduli: IPR identifica; UNEBDO ancora; EVT traccia; Memory continua; OPC prova; MetaExchange scambia; IOspace espone; CyberGlobal protegge; NeuroLoop valida; AI JOKER-C2 esegue; MATRIX organizza."
+          "Formula moduli: IPR identifica; UNEBDO ancora; EVT traccia; Memory continua; OPC prova; MetaExchange scambia; IOspace espone; CyberGlobal protegge; NeuroLoop valida; MATRIX organizza; AI JOKER-C2 esegue."
+      };
+
+    case "HBCE_ECOSISTEMA_AI":
+      return {
+        kind,
+        matched: true,
+        title: "Contratto risposta HBCE ECOSISTEMA AI",
+        mandatoryOpening: [
+          "HBCE ECOSISTEMA AI è la quinta collana progettuale: serve a spiegare come l’intelligenza artificiale viene governata dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili."
+        ],
+        mandatoryConcepts: [
+          "Il problema non è soltanto avere AI più potenti: il problema è governarle.",
+          "HBCE governa il processo AI tramite IPR, EVT, Memory, OPC, policy, rischio, supervisione umana e runtime fail-closed.",
+          "IPR identifica soggetti, operatori, agenti AI, processi e responsabilità operative.",
+          "EVT traccia gli eventi AI.",
+          "Memory preserva continuità runtime legata a EVT/IPR.",
+          "OPC produce proof receipt tecniche per audit e verifica.",
+          "MATRIX organizza l’architettura e coordina il sistema.",
+          "AI JOKER-C2 esegue come runtime dimostrativo governato.",
+          "La collana è composta da cinque volumi: HBCE ECOSISTEMA AI; IPR — Identità Operativa dell’AI; EVT / OPC — Traccia e Prova dell’AI; MATRIX AI GOVERNANCE; AI JOKER-C2.",
+          "I modelli esterni, come OpenAI, Anthropic, Google, Meta o Mistral, possono generare output; HBCE resta il livello di governo dell’uso del modello."
+        ],
+        forbiddenReductions: [
+          "Non ridurre HBCE ECOSISTEMA AI a semplice uso di chatbot.",
+          "Non presentare i modelli AI esterni come autorità di governance del sistema HBCE.",
+          "Non confondere la collana HBCE ECOSISTEMA AI con i moduli tecnico-operativi HBCE.",
+          "Non presentare HBCE come certificazione regolatoria già ottenuta.",
+          "Non eliminare il ruolo di IPR, EVT, OPC, MATRIX e AI JOKER-C2 nella spiegazione."
+        ],
+        requiredDistinctions: [
+          "Distingui modello AI da governance del modello.",
+          "Distingui output AI da processo AI verificabile.",
+          "Distingui HBCE ECOSISTEMA AI come collana progettuale dai sette moduli HBCE.",
+          "Distingui MATRIX come architettura/collana da MATRIX come modulo di coordinamento.",
+          "Distingui proof receipt tecnica da certificazione legale o regolatoria."
+        ],
+        closingFormula:
+          "Formula HBCE ECOSISTEMA AI: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue."
       };
 
     case "USE_ACRONYM":
@@ -475,16 +563,16 @@ function buildContract(kind: JokerResponseContractKind): ResponseContract {
           "EVT traccia.",
           "OPC prova la continuità.",
           "HBCE governa.",
-          "MATRIX infrastruttura.",
+          "MATRIX organizza.",
           "AI JOKER-C2 esegue come runtime governato."
         ],
         mandatoryConcepts: [
           "IPR = Identity Primary Record.",
           "EVT = Event Record / Verifiable Event Trace.",
-          "OPC = Operational Proof of Continuity.",
+          "OPC = Operational Proof & Compliance Layer.",
           "IPR collega identità, origine, responsabilità, eventi, prove e continuità.",
           "EVT registra evento, tempo, contesto, decisione, rischio, hash e verifica.",
-          "OPC collega evento, memoria, decisione e audit in una prova di continuità."
+          "OPC collega evento, memoria, decisione e audit in una prova tecnica di continuità."
         ],
         forbiddenReductions: [
           "Non ridurre IPR a login, account, wallet o semplice identità digitale.",
@@ -560,9 +648,9 @@ function buildContract(kind: JokerResponseContractKind): ResponseContract {
         kind,
         matched: true,
         title: "Contratto risposta OPC",
-        mandatoryOpening: ["OPC = prova operativa di continuità."],
+        mandatoryOpening: ["OPC = proof receipt tecnica di continuità operativa e compliance."],
         mandatoryConcepts: [
-          "OPC significa Operational Proof of Continuity.",
+          "OPC significa Operational Proof & Compliance Layer.",
           "OPC collega evento, memoria, decisione, hash, audit e verifica.",
           "OPC serve a dimostrare che una risposta o un’operazione appartiene a una catena verificabile.",
           "OPC non sostituisce l’audit esterno, ma prepara una prova tecnica controllabile."
@@ -592,7 +680,8 @@ function buildContract(kind: JokerResponseContractKind): ResponseContract {
         mandatoryConcepts: [
           "AI JOKER-C2 opera dentro identità IPR, governance HBCE, memoria EVT e prova OPC.",
           "Il suo compito è collegare richiesta, contesto, rischio, policy, decisione, risposta, evento e verifica.",
-          "La chat è l’interfaccia; il runtime è la struttura operativa sottostante."
+          "La chat è l’interfaccia; il runtime è la struttura operativa sottostante.",
+          "Il checkpoint canonico attivo del runtime è EVT-0015-AI, in continuità con EVT-0014-AI."
         ],
         forbiddenReductions: [
           "Non rispondere solo come assistente AI generico.",
@@ -700,6 +789,10 @@ export function detectJokerResponseContract(
 
   if (isHbceModulesQuestion(text)) {
     return buildContract("HBCE_MODULES");
+  }
+
+  if (isHbceEcosistemaAiQuestion(text)) {
+    return buildContract("HBCE_ECOSISTEMA_AI");
   }
 
   if (isUseAcronymQuestion(text)) {
@@ -908,6 +1001,16 @@ export function applyResponseContract(
     contract.closingFormula &&
     !normalizeForContract(output).includes(
       normalizeForContract("IPR identifica; UNEBDO ancora")
+    )
+  ) {
+    output = [output, "", contract.closingFormula].join("\n");
+  }
+
+  if (
+    contract.kind === "HBCE_ECOSISTEMA_AI" &&
+    contract.closingFormula &&
+    !normalizeForContract(output).includes(
+      normalizeForContract("AI genera; HBCE governa")
     )
   ) {
     output = [output, "", contract.closingFormula].join("\n");
