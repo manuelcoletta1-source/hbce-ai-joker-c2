@@ -1,6 +1,6 @@
 # AI JOKER-C2 EVT Protocol
 
-## IPR-Bound Event Trace Protocol for the Four Canonical Collections
+## IPR-Bound Event Trace Protocol for the Five Canonical Collections, Seven HBCE Modules and Strategic Doctrine Layer
 
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**  
@@ -23,10 +23,12 @@ An EVT is a verifiable operational record that binds a runtime action to:
 ```txt
 IPR identity;
 project collection;
+HBCE module;
 input context;
 intent classification;
 policy evaluation;
 risk classification;
+human oversight;
 governance decision;
 execution result;
 timestamp;
@@ -42,18 +44,31 @@ continuity state.
 
 The purpose of the EVT Protocol is to transform AI-assisted operations into reconstructable, auditable and continuity-preserving sequences.
 
-AI JOKER-C2 connects four canonical project collections:
+AI JOKER-C2 connects five canonical project collections:
 
 ```txt
 MATRIX
 U.S.E. — United States of Europe
 CORPUS ESOTEROLOGIA ERMETICA
 APOKALYPSIS
+HBCE ECOSISTEMA AI
 ```
 
-The EVT Protocol must therefore record not only what happened, but also inside which project collection the operation happened.
+AI JOKER-C2 also operates through seven HBCE technical-operational modules:
 
-EVT is the event trace layer. It does not create legal certification by itself. It creates a verifiable operational trace connected to IPR identity, runtime governance and continuity.
+```txt
+UNEBDO
+OPC
+MetaExchange
+IOspace
+CyberGlobal
+NeuroLoop
+MATRIX
+```
+
+The EVT Protocol must therefore record not only what happened, but also inside which project collection and through which HBCE module the operation happened.
+
+EVT is the event trace layer. It does not create legal certification by itself. It creates a verifiable operational trace connected to IPR identity, runtime governance, module awareness and continuity.
 
 ---
 
@@ -69,6 +84,7 @@ The conceptual sequence is:
 operation
 → IPR identity
 → project collection
+→ HBCE module
 → context
 → governance decision
 → EVT generation
@@ -88,9 +104,11 @@ When did it happen?
 Which identity was bound to the operation?
 Which IPR was active?
 Which project collection was active?
+Which HBCE module was active or relevant?
 Which context was involved?
 Which risk class was assigned?
 Which governance decision was produced?
+Was human oversight required?
 Was the operation allowed, blocked, escalated, degraded or audited?
 Which previous event does this operation follow?
 Can the event be verified?
@@ -121,6 +139,7 @@ It allows the runtime to preserve a structured relation between:
 identity;
 IPR;
 project collection;
+HBCE module;
 request;
 response;
 risk;
@@ -143,14 +162,20 @@ With EVT, AI JOKER-C2 produces outputs inside a verifiable operational sequence.
 ```txt
 IPR = operational identity and proof instrument
 AI JOKER-C2 = governed runtime demonstrator
-MATRIX = operational infrastructure architecture
+MATRIX = operational infrastructure architecture and HBCE coordination module
 U.S.E. = MATRIX-derived political-institutional application for a federated operational Europe
 CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar of operational reality
 APOKALYPSIS = historical-threshold analysis
+HBCE ECOSISTEMA AI = AI governance ecosystem collection
 HBCE = governance, policy, audit and continuity ecosystem
+UNEBDO = anchoring, validation and evidentiary continuity
 EVT = event trace
 Memory = EVT/IPR-bound runtime continuity
 OPC = operational proof receipt
+MetaExchange = structured exchange
+IOspace = runtime visibility and operational interaction
+CyberGlobal = defensive cybersecurity and resilience
+NeuroLoop = validation, feedback and review
 ```
 
 Expanded:
@@ -158,28 +183,47 @@ Expanded:
 ```txt
 IPR binds the operational identity.
 Collection orients the operation.
+Module binds the technical-operational layer.
 Context qualifies the request.
 Policy limits execution.
 Risk classifies sensitivity.
+Human oversight preserves accountability.
 Decision controls the runtime.
-EVT records the operation inside time, identity, collection, risk and decision.
+EVT records the operation inside time, identity, collection, module, risk and decision.
 Memory preserves runtime continuity.
 OPC produces the technical proof receipt.
 Verification reconstructs the operation.
 ```
 
-Four-collection formula:
+Five-collection formula:
 
 ```txt
 MATRIX builds the architecture.
 U.S.E. brings it into European political-institutional design.
 CORPUS grounds the grammar of operational reality.
 APOKALYPSIS reads the historical threshold.
+HBCE ECOSISTEMA AI governs artificial intelligence as an identifiable, traceable and auditable operational process.
 IPR makes everything attributable.
 EVT makes everything traceable.
 Memory makes everything continuous.
 OPC makes everything verifiable.
 AI JOKER-C2 makes everything operational.
+```
+
+Seven-module formula:
+
+```txt
+IPR identifies.
+UNEBDO anchors.
+EVT traces.
+Memory continues.
+OPC proves.
+MetaExchange exchanges.
+IOspace exposes.
+CyberGlobal protects.
+NeuroLoop validates.
+MATRIX organizes.
+AI JOKER-C2 executes.
 ```
 
 ---
@@ -192,10 +236,12 @@ The canonical runtime sequence is:
 IPR identity
 → input
 → project collection
+→ HBCE module
 → context
 → intent
 → policy
 → risk
+→ human oversight
 → decision
 → execution
 → output
@@ -212,11 +258,13 @@ Each EVT is generated after governance evaluation and records the operational st
 ```txt
 identity = defines who or what is bound to the operation
 input = records the existence of a request without necessarily storing full payload
-project_collection = records MATRIX, U.S.E., CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN
+project_collection = records MATRIX, U.S.E., CORPUS, APOKALYPSIS, HBCE ECOSISTEMA AI, GENERAL or MULTI_DOMAIN
+hbce_module = records UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop, MATRIX or NONE
 context = classifies the operational context
 intent = classifies the operational purpose
 policy = records the governance boundary applied
 risk = assigns a risk class
+human_oversight = records review need or accountability status
 decision = stores ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT or NOOP
 execution = records whether an action was performed
 EVT = creates the event object
@@ -239,11 +287,11 @@ A minimal EVT object should follow this structure:
 
 ```json
 {
-  "evt": "EVT-20260503-153000-AI-JOKER-C2-0001",
-  "prev": "EVT-0014-AI",
+  "evt": "EVT-20260519-153000-AI-JOKER-C2-0001",
+  "prev": "EVT-0015-AI",
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
-  "timestamp": "2026-05-03T15:30:00+02:00",
+  "timestamp": "2026-05-19T15:30:00+02:00",
   "runtime": {
     "name": "AI JOKER-C2",
     "core": "HBCE-CORE-v3",
@@ -252,33 +300,50 @@ A minimal EVT object should follow this structure:
   },
   "project": {
     "ecosystem": "HERMETICUM B.C.E.",
-    "domain": "MATRIX",
-    "domain_type": "OPERATIONAL_INFRASTRUCTURE_DOMAIN"
+    "domain": "HBCE_ECOSISTEMA_AI",
+    "active_domains": [
+      "HBCE_ECOSISTEMA_AI",
+      "MATRIX"
+    ],
+    "domain_type": "AI_GOVERNANCE_ECOSYSTEM_DOMAIN"
+  },
+  "hbce_module": {
+    "ecosystem": "HERMETICUM B.C.E.",
+    "module": "MATRIX",
+    "active_modules": [
+      "MATRIX",
+      "UNEBDO",
+      "OPC",
+      "NeuroLoop",
+      "CyberGlobal"
+    ],
+    "module_type": "SYSTEM_COORDINATION_ORGANIZATION_LAYER"
   },
   "context": {
-    "class": "GITHUB",
-    "domain": "DOCUMENTATION",
-    "sensitivity": "LOW"
+    "class": "HBCE_ECOSISTEMA_AI",
+    "intent": "GOVERNANCE",
+    "sensitivity": "MEDIUM"
   },
   "governance": {
-    "risk": "LOW",
-    "decision": "ALLOW",
-    "policy": "REPOSITORY_DOCUMENTATION",
+    "risk": "MEDIUM",
+    "decision": "AUDIT",
+    "policy": "RESTRICTED_HBCE_AI_GOVERNANCE_SAFE_WORK",
+    "human_oversight": "RECOMMENDED",
     "fail_closed": false
   },
   "operation": {
-    "type": "UPDATE_EVT_PROTOCOL",
-    "target": "EVT_PROTOCOL.md",
+    "type": "AI_GOVERNANCE_MAPPING",
+    "target": "HBCE_ECOSISTEMA_AI",
     "status": "COMPLETED"
   },
   "memory": {
-    "required": false,
-    "source": "NONE"
+    "required": true,
+    "source": "EVT_IPR_MEMORY"
   },
   "opc": {
-    "required": false,
-    "proof_id": null,
-    "status": "NOT_REQUIRED"
+    "required": true,
+    "proof_id": "OPC-20260519-153000-AI-JOKER-C2-0001",
+    "status": "APPENDED"
   },
   "trace": {
     "hash_algorithm": "sha256",
@@ -308,8 +373,9 @@ ipr = Identity Primary Record reference
 timestamp = time of event generation
 runtime = runtime metadata
 project = ecosystem and project-collection metadata
+hbce_module = HBCE module metadata when module binding is active
 context = operational context classification
-governance = risk, policy and decision metadata
+governance = risk, policy, oversight and decision metadata
 operation = type and result of the operation
 trace = hash and canonicalization information
 verification = verification and audit status
@@ -341,13 +407,13 @@ EVT-YYYYMMDD-HHMMSS-AI-JOKER-C2-NNNN
 Example:
 
 ```txt
-EVT-20260503-153000-AI-JOKER-C2-0001
+EVT-20260519-153000-AI-JOKER-C2-0001
 ```
 
 Alternative runtime-generated format:
 
 ```txt
-EVT-1777046038573
+EVT-20260519153000-XXXXXXXX
 ```
 
 Both formats are acceptable during prototype development if they remain unique and traceable.
@@ -368,12 +434,24 @@ GENESIS
 
 For all subsequent events, `prev` should reference the previous EVT identifier, previous event hash, or a valid external runtime anchor.
 
+The canonical active identity checkpoint is:
+
+```txt
+EVT-0015-AI
+```
+
+The previous canonical identity checkpoint is:
+
+```txt
+EVT-0014-AI
+```
+
 Example:
 
 ```json
 {
-  "evt": "EVT-20260503-153001-AI-JOKER-C2-0002",
-  "prev": "EVT-20260503-153000-AI-JOKER-C2-0001"
+  "evt": "EVT-20260519-153001-AI-JOKER-C2-0002",
+  "prev": "EVT-20260519-153000-AI-JOKER-C2-0001"
 }
 ```
 
@@ -393,6 +471,9 @@ Canonical identity fields:
 entity = AI_JOKER
 ipr = IPR-AI-0001
 runtime = AI JOKER-C2
+active_checkpoint = EVT-0015-AI
+previous_checkpoint = EVT-0014-AI
+cycle = UP-MESE-4
 core = HBCE-CORE-v3
 organization = HERMETICUM B.C.E. S.r.l.
 research_signature = HBCE Research
@@ -458,21 +539,26 @@ MATRIX = operational infrastructure, European governance, B2B/B2G, AI governance
 U.S.E. = United States of Europe, European federation, federated digital vote, democratic infrastructure, digital sovereignty
 CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar, DCTT, canonical glossary, theoretical volumes
 APOKALYPSIS = historical threshold, decay, exposure, cultural-political-social system analysis
+HBCE_ECOSISTEMA_AI = AI governance, model governance, AI audit, IPR AI Audit Trail, governed AI runtime
 GENERAL = no specific project collection applies
 MULTI_DOMAIN = more than one project collection applies
 ```
 
 Project-collection binding allows the runtime to reconstruct not only what happened, but also why that operation belonged to a specific layer of the ecosystem.
 
-Example:
+HBCE ECOSISTEMA AI example:
 
 ```json
 {
   "project": {
     "ecosystem": "HERMETICUM B.C.E.",
-    "domain": "CORPUS_ESOTEROLOGIA_ERMETICA",
-    "domain_type": "DISCIPLINARY_GRAMMAR_DOMAIN",
-    "canonical_formula": "Decisione · Costo · Traccia · Tempo"
+    "domain": "HBCE_ECOSISTEMA_AI",
+    "active_domains": [
+      "HBCE_ECOSISTEMA_AI",
+      "MATRIX"
+    ],
+    "domain_type": "AI_GOVERNANCE_ECOSYSTEM_DOMAIN",
+    "canonical_formula": "AI generates. HBCE governs. IPR identifies. EVT traces. OPC proves. MATRIX organizes. AI JOKER-C2 executes."
   }
 }
 ```
@@ -502,7 +588,8 @@ Multi-domain example:
       "MATRIX",
       "U.S.E.",
       "CORPUS_ESOTEROLOGIA_ERMETICA",
-      "APOKALYPSIS"
+      "APOKALYPSIS",
+      "HBCE_ECOSISTEMA_AI"
     ],
     "runtime_role": "IPR_RUNTIME_DEMONSTRATOR"
   }
@@ -511,7 +598,57 @@ Multi-domain example:
 
 ---
 
-## 13. Runtime State
+## 13. HBCE Module Binding
+
+Each EVT should include an HBCE module binding when a module is active or relevant.
+
+Allowed HBCE module values:
+
+```txt
+UNEBDO = anchoring, validation and evidentiary continuity
+OPC = operational proof receipt and compliance layer
+MetaExchange = structured exchange layer
+IOspace = runtime visibility and operational interaction space
+CyberGlobal = defensive cybersecurity and resilience layer
+NeuroLoop = validation, feedback and review loop
+MATRIX = system coordination, organization and operational architecture layer
+NONE = no specific HBCE module applies
+```
+
+HBCE module binding allows the runtime to reconstruct which technical-operational function was active.
+
+Example:
+
+```json
+{
+  "hbce_module": {
+    "ecosystem": "HERMETICUM B.C.E.",
+    "module": "MATRIX",
+    "active_modules": [
+      "MATRIX",
+      "UNEBDO",
+      "OPC",
+      "NeuroLoop",
+      "CyberGlobal"
+    ],
+    "module_type": "SYSTEM_COORDINATION_ORGANIZATION_LAYER",
+    "status": "ACTIVE_PROTOTYPE_LAYER"
+  }
+}
+```
+
+Module binding must preserve the distinction between project collections and technical-operational modules.
+
+MATRIX has a dual role:
+
+```txt
+MATRIX as collection = architecture.
+MATRIX as module = coordination.
+```
+
+---
+
+## 14. Runtime State
 
 The EVT should record runtime state.
 
@@ -534,7 +671,7 @@ A `BLOCKED` or `INVALID` runtime must not execute sensitive operations.
 
 ---
 
-## 14. Context Classes
+## 15. Context Classes
 
 AI JOKER-C2 may classify events into operational contexts.
 
@@ -547,6 +684,7 @@ MATRIX = MATRIX framework, infrastructure and strategic systems
 USE = U.S.E., United States of Europe, European federation, federated digital vote, democratic infrastructure
 CORPUS = CORPUS ESOTEROLOGIA ERMETICA, DCTT, glossary and volumes
 APOKALYPSIS = decay, exposure, threshold and civilizational analysis
+HBCE_ECOSISTEMA_AI = AI governance ecosystem, model governance, AI audit, IPR AI Audit Trail
 DOCUMENTAL = file analysis, document processing, structured output
 TECHNICAL = code, architecture, APIs, implementation
 GITHUB = repository files, commits, documentation
@@ -557,6 +695,7 @@ COMPLIANCE = governance, audit, legal-technical alignment
 GOVERNANCE = policy, risk, decision and fail-closed logic
 CIVIC = public consultation, civic participation, participation rights
 DEMOCRATIC_INFRASTRUCTURE = federated digital vote, referendum, democratic audit, civic process
+AI_GOVERNANCE = AI governance, model governance, policy, risk, oversight
 GENERAL = ordinary non-sensitive operations
 ```
 
@@ -566,9 +705,11 @@ It should not be used as a substitute for human accountability.
 
 The `USE`, `CIVIC` and `DEMOCRATIC_INFRASTRUCTURE` context classes should be treated as civically sensitive when they concern public decision infrastructure, voting, referendum systems, citizen identity, participation rights or democratic audit.
 
+The `HBCE_ECOSISTEMA_AI` and `AI_GOVERNANCE` context classes should be treated as audit-aware when they concern model governance, AI audit, public-sector AI, regulated AI or high-risk AI systems.
+
 ---
 
-## 15. Risk Classes
+## 16. Risk Classes
 
 EVT records should include a risk class.
 
@@ -577,7 +718,7 @@ Allowed risk classes:
 ```txt
 LOW = safe ordinary operation
 MEDIUM = requires attention or auditability
-HIGH = sensitive, strategic, civic or potentially impactful
+HIGH = sensitive, strategic, civic, AI-governance or potentially impactful
 CRITICAL = requires strict human review or institutional authorization
 PROHIBITED = must be blocked
 UNKNOWN = cannot be classified safely
@@ -596,11 +737,11 @@ UNKNOWN = ESCALATE or BLOCK
 
 The protocol must not convert unknown risk into automatic permission.
 
-Political, institutional and European-standardization analysis should remain answerable, but audit-ready.
+Political, institutional, AI-governance and European-standardization analysis should remain answerable, but audit-ready.
 
 ---
 
-## 16. Governance Decisions
+## 17. Governance Decisions
 
 The EVT must record the governance decision.
 
@@ -621,7 +762,39 @@ The EVT should represent the actual governance state of the runtime.
 
 ---
 
-## 17. Fail-Closed Flag
+## 18. Human Oversight
+
+The EVT should record human oversight state when available.
+
+Allowed oversight states include:
+
+```txt
+NOT_REQUIRED = human review is not required
+RECOMMENDED = human review is recommended
+REQUIRED = human review is required
+COMPLETED = human review has been completed
+REJECTED = human review rejected the operation
+ESCALATED = higher authority or specialist review is required
+BLOCKED = prohibited operation cannot be authorized
+UNKNOWN = oversight requirement is unknown
+```
+
+Human oversight is required or recommended when operations involve:
+
+```txt
+critical infrastructure;
+public-sector systems;
+democratic infrastructure;
+high-risk AI governance;
+security-sensitive content;
+legal or compliance claims;
+regulated deployment;
+irreversible high-impact consequences.
+```
+
+---
+
+## 19. Fail-Closed Flag
 
 Each EVT should include a fail-closed indicator.
 
@@ -640,11 +813,14 @@ The fail-closed flag should be true when:
 identity is missing;
 IPR binding is missing where required;
 project collection cannot be classified in a sensitive context;
+HBCE module cannot be classified in a sensitive context;
 policy cannot be applied;
 risk cannot be classified;
+human oversight is required but absent;
 the request is prohibited;
 the operation may enable abuse;
 the operation may affect democratic infrastructure without safeguards;
+the operation may affect high-risk AI governance without oversight;
 the trace cannot be generated;
 memory continuity cannot be preserved when required;
 OPC proof receipt cannot be generated when required;
@@ -659,7 +835,7 @@ Fail-closed is controlled refusal, controlled limitation or controlled escalatio
 
 ---
 
-## 18. Memory Binding
+## 20. Memory Binding
 
 AI JOKER-C2 memory is an EVT/IPR-bound continuity mechanism.
 
@@ -676,6 +852,7 @@ document family;
 runtime state;
 decision;
 project collection;
+HBCE module where relevant;
 context class;
 memory hash;
 timestamp.
@@ -687,7 +864,7 @@ Example:
 {
   "memory": {
     "required": true,
-    "evt": "EVT-MEM-20260503-153000-AI-JOKER-C2-0001",
+    "evt": "EVT-MEM-20260519-153000-AI-JOKER-C2-0001",
     "source": "EVT_IPR_MEMORY",
     "hash": "sha256:memory-example"
   }
@@ -704,7 +881,7 @@ Memory must not store or reconstruct democratic choice content linked to persona
 
 ---
 
-## 19. OPC Proof Receipt Binding
+## 21. OPC Proof Receipt Binding
 
 OPC means **Operational Proof & Compliance Layer**.
 
@@ -716,7 +893,7 @@ The EVT should include OPC metadata when required:
 {
   "opc": {
     "required": true,
-    "proof_id": "OPC-20260503-153000-AI-JOKER-C2-0001",
+    "proof_id": "OPC-20260519-153000-AI-JOKER-C2-0001",
     "status": "APPENDED",
     "chain_hash": "sha256:opc-chain-example"
   }
@@ -732,6 +909,8 @@ session;
 governed EVT;
 memory event;
 runtime decision;
+project domain;
+HBCE module;
 policy reference;
 risk class;
 input hash;
@@ -751,7 +930,7 @@ It creates a technical proof receipt for audit, verification and governance revi
 
 ---
 
-## 20. Hashing
+## 22. Hashing
 
 Each EVT should support hashing.
 
@@ -787,7 +966,7 @@ It does not replace the need for correct governance.
 
 ---
 
-## 21. Canonicalization
+## 23. Canonicalization
 
 Canonicalization ensures that the same EVT object produces the same hash.
 
@@ -803,6 +982,7 @@ Avoid environment-dependent formatting.
 Store binary payloads as external references, not inline content.
 Hash references to large files rather than embedding them directly.
 Keep project-collection values stable.
+Keep HBCE module values stable.
 Keep context-class values stable.
 Keep IPR and entity values stable.
 Keep memory hash fields stable when included.
@@ -815,7 +995,7 @@ A verifier should be able to recompute the hash from the canonical event object.
 
 ---
 
-## 22. Ledger Layer
+## 24. Ledger Layer
 
 The ledger layer stores EVT records or EVT references.
 
@@ -837,6 +1017,7 @@ event order;
 event identity;
 previous event reference or valid external runtime anchor;
 project collection;
+HBCE module;
 context class;
 risk class;
 governance decision;
@@ -853,7 +1034,7 @@ Corrections should be represented as new events.
 
 ---
 
-## 23. Event Correction
+## 25. Event Correction
 
 If an EVT contains an error, the correction must not silently mutate the original event.
 
@@ -863,18 +1044,21 @@ Example:
 
 ```json
 {
-  "evt": "EVT-20260503-160000-AI-JOKER-C2-0003",
-  "prev": "EVT-20260503-153001-AI-JOKER-C2-0002",
+  "evt": "EVT-20260519-160000-AI-JOKER-C2-0003",
+  "prev": "EVT-20260519-153001-AI-JOKER-C2-0002",
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
-  "timestamp": "2026-05-03T16:00:00+02:00",
+  "timestamp": "2026-05-19T16:00:00+02:00",
   "project": {
     "ecosystem": "HERMETICUM B.C.E.",
     "domain": "MULTI_DOMAIN"
   },
+  "hbce_module": {
+    "module": "MATRIX"
+  },
   "operation": {
     "type": "EVENT_CORRECTION",
-    "corrects": "EVT-20260503-153001-AI-JOKER-C2-0002",
+    "corrects": "EVT-20260519-153001-AI-JOKER-C2-0002",
     "reason": "Incorrect project collection"
   }
 }
@@ -886,7 +1070,7 @@ The protocol treats correction as a new trace, not as erasure.
 
 ---
 
-## 24. Payload Handling
+## 26. Payload Handling
 
 EVT records should avoid storing unnecessary sensitive payloads.
 
@@ -902,13 +1086,14 @@ Security-sensitive content = store governance decision, not harmful details
 Editorial files = store document reference, section and operation type
 Repository files = store file path, operation type and commit reference when available
 Civic participation data = minimize, separate identity from choice, preserve audit without exposing vote content
+AI governance data = store model-governance metadata, not private model secrets or provider credentials
 ```
 
 The EVT should prove that an operation occurred without unnecessarily exposing protected content.
 
 ---
 
-## 25. Verification Status
+## 27. Verification Status
 
 Allowed verification statuses:
 
@@ -927,7 +1112,7 @@ An event without verification metadata should not be treated as fully verified.
 
 ---
 
-## 26. Audit Status
+## 28. Audit Status
 
 Allowed audit statuses:
 
@@ -948,7 +1133,7 @@ Audit concerns review, accountability and institutional usability.
 
 ---
 
-## 27. Minimal EVT Schema
+## 29. Minimal EVT Schema
 
 A minimal schema for implementation:
 
@@ -1006,11 +1191,36 @@ A minimal schema for implementation:
             "U.S.E.",
             "CORPUS_ESOTEROLOGIA_ERMETICA",
             "APOKALYPSIS",
+            "HBCE_ECOSISTEMA_AI",
             "GENERAL",
             "MULTI_DOMAIN"
           ]
         },
         "active_domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "hbce_module": {
+      "type": "object",
+      "properties": {
+        "module": {
+          "type": "string",
+          "enum": [
+            "UNEBDO",
+            "OPC",
+            "MetaExchange",
+            "IOspace",
+            "CyberGlobal",
+            "NeuroLoop",
+            "MATRIX",
+            "NONE"
+          ]
+        },
+        "active_modules": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1049,15 +1259,15 @@ Future versions may define stricter validation.
 
 ---
 
-## 28. Example: MATRIX Allowed Operation
+## 30. Example: MATRIX Allowed Operation
 
 ```json
 {
-  "evt": "EVT-20260503-153000-AI-JOKER-C2-0001",
-  "prev": "EVT-0014-AI",
+  "evt": "EVT-20260519-153000-AI-JOKER-C2-0001",
+  "prev": "EVT-0015-AI",
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
-  "timestamp": "2026-05-03T15:30:00+02:00",
+  "timestamp": "2026-05-19T15:30:00+02:00",
   "runtime": {
     "name": "AI JOKER-C2",
     "core": "HBCE-CORE-v3",
@@ -1068,6 +1278,10 @@ Future versions may define stricter validation.
     "ecosystem": "HERMETICUM B.C.E.",
     "domain": "MATRIX",
     "domain_type": "OPERATIONAL_INFRASTRUCTURE_DOMAIN"
+  },
+  "hbce_module": {
+    "module": "MATRIX",
+    "module_type": "SYSTEM_COORDINATION_ORGANIZATION_LAYER"
   },
   "context": {
     "class": "GITHUB",
@@ -1107,15 +1321,15 @@ Future versions may define stricter validation.
 
 ---
 
-## 29. Example: U.S.E. Civic Architecture Operation
+## 31. Example: U.S.E. Civic Architecture Operation
 
 ```json
 {
-  "evt": "EVT-20260503-153200-AI-JOKER-C2-USE-0001",
-  "prev": "EVT-20260503-153000-AI-JOKER-C2-0001",
+  "evt": "EVT-20260519-153200-AI-JOKER-C2-USE-0001",
+  "prev": "EVT-20260519-153000-AI-JOKER-C2-0001",
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
-  "timestamp": "2026-05-03T15:32:00+02:00",
+  "timestamp": "2026-05-19T15:32:00+02:00",
   "runtime": {
     "name": "AI JOKER-C2",
     "core": "HBCE-CORE-v3",
@@ -1127,6 +1341,17 @@ Future versions may define stricter validation.
     "domain": "U.S.E.",
     "domain_type": "FEDERATED_EUROPEAN_INSTITUTIONAL_APPLICATION_DOMAIN",
     "parent_domain": "MATRIX"
+  },
+  "hbce_module": {
+    "module": "UNEBDO",
+    "active_modules": [
+      "UNEBDO",
+      "OPC",
+      "MetaExchange",
+      "CyberGlobal",
+      "NeuroLoop",
+      "MATRIX"
+    ]
   },
   "context": {
     "class": "USE",
@@ -1153,7 +1378,7 @@ Future versions may define stricter validation.
   "opc": {
     "required": true,
     "status": "APPENDED",
-    "proof_id": "OPC-20260503-153200-AI-JOKER-C2-USE-0001",
+    "proof_id": "OPC-20260519-153200-AI-JOKER-C2-USE-0001",
     "chain_hash": "sha256:opc-chain-example"
   },
   "trace": {
@@ -1170,15 +1395,93 @@ Future versions may define stricter validation.
 
 ---
 
-## 30. Example: CORPUS Editorial Operation
+## 32. Example: HBCE ECOSISTEMA AI Governance Operation
 
 ```json
 {
-  "evt": "EVT-20260503-153500-AI-JOKER-C2-0002",
-  "prev": "EVT-20260503-153200-AI-JOKER-C2-USE-0001",
+  "evt": "EVT-20260519-153300-AI-JOKER-C2-HBCE-AI-0001",
+  "prev": "EVT-20260519-153200-AI-JOKER-C2-USE-0001",
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
-  "timestamp": "2026-05-03T15:35:00+02:00",
+  "timestamp": "2026-05-19T15:33:00+02:00",
+  "runtime": {
+    "name": "AI JOKER-C2",
+    "core": "HBCE-CORE-v3",
+    "state": "OPERATIONAL",
+    "role": "IPR_RUNTIME_DEMONSTRATOR"
+  },
+  "project": {
+    "ecosystem": "HERMETICUM B.C.E.",
+    "domain": "HBCE_ECOSISTEMA_AI",
+    "active_domains": [
+      "HBCE_ECOSISTEMA_AI",
+      "MATRIX"
+    ],
+    "domain_type": "AI_GOVERNANCE_ECOSYSTEM_DOMAIN"
+  },
+  "hbce_module": {
+    "module": "MATRIX",
+    "active_modules": [
+      "MATRIX",
+      "UNEBDO",
+      "OPC",
+      "NeuroLoop",
+      "CyberGlobal"
+    ],
+    "module_type": "SYSTEM_COORDINATION_ORGANIZATION_LAYER"
+  },
+  "context": {
+    "class": "HBCE_ECOSISTEMA_AI",
+    "domain": "AI_GOVERNANCE",
+    "sensitivity": "MEDIUM"
+  },
+  "governance": {
+    "risk": "MEDIUM",
+    "decision": "AUDIT",
+    "policy": "RESTRICTED_HBCE_AI_GOVERNANCE_SAFE_WORK",
+    "human_oversight": "RECOMMENDED",
+    "fail_closed": false,
+    "ai_governance_boundary": "The AI model does not govern HBCE. HBCE governs the use of AI models."
+  },
+  "operation": {
+    "type": "AI_GOVERNANCE_MODEL_DRAFT",
+    "target": "HBCE_ECOSISTEMA_AI_COLLECTION",
+    "status": "COMPLETED"
+  },
+  "memory": {
+    "required": true,
+    "source": "EVT_IPR_MEMORY",
+    "hash": "sha256:memory-example"
+  },
+  "opc": {
+    "required": true,
+    "status": "APPENDED",
+    "proof_id": "OPC-20260519-153300-AI-JOKER-C2-HBCE-AI-0001",
+    "chain_hash": "sha256:opc-chain-example"
+  },
+  "trace": {
+    "hash_algorithm": "sha256",
+    "canonicalization": "deterministic-json",
+    "hash": "sha256:example"
+  },
+  "verification": {
+    "status": "VERIFIABLE",
+    "audit_status": "READY"
+  }
+}
+```
+
+---
+
+## 33. Example: CORPUS Editorial Operation
+
+```json
+{
+  "evt": "EVT-20260519-153500-AI-JOKER-C2-0002",
+  "prev": "EVT-20260519-153300-AI-JOKER-C2-HBCE-AI-0001",
+  "entity": "AI_JOKER",
+  "ipr": "IPR-AI-0001",
+  "timestamp": "2026-05-19T15:35:00+02:00",
   "runtime": {
     "name": "AI JOKER-C2",
     "core": "HBCE-CORE-v3",
@@ -1190,6 +1493,9 @@ Future versions may define stricter validation.
     "domain": "CORPUS_ESOTEROLOGIA_ERMETICA",
     "domain_type": "DISCIPLINARY_GRAMMAR_DOMAIN",
     "canonical_formula": "Decisione · Costo · Traccia · Tempo"
+  },
+  "hbce_module": {
+    "module": "NONE"
   },
   "context": {
     "class": "EDITORIAL",
@@ -1226,15 +1532,15 @@ Future versions may define stricter validation.
 
 ---
 
-## 31. Example: APOKALYPSIS Historical Analysis Operation
+## 34. Example: APOKALYPSIS Historical Analysis Operation
 
 ```json
 {
-  "evt": "EVT-20260503-154000-AI-JOKER-C2-0003",
-  "prev": "EVT-20260503-153500-AI-JOKER-C2-0002",
+  "evt": "EVT-20260519-154000-AI-JOKER-C2-0003",
+  "prev": "EVT-20260519-153500-AI-JOKER-C2-0002",
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
-  "timestamp": "2026-05-03T15:40:00+02:00",
+  "timestamp": "2026-05-19T15:40:00+02:00",
   "runtime": {
     "name": "AI JOKER-C2",
     "core": "HBCE-CORE-v3",
@@ -1245,6 +1551,9 @@ Future versions may define stricter validation.
     "ecosystem": "HERMETICUM B.C.E.",
     "domain": "APOKALYPSIS",
     "domain_type": "HISTORICAL_THRESHOLD_DOMAIN"
+  },
+  "hbce_module": {
+    "module": "NONE"
   },
   "context": {
     "class": "EDITORIAL",
@@ -1281,15 +1590,15 @@ Future versions may define stricter validation.
 
 ---
 
-## 32. Example: Multi-Domain Collection Operation
+## 35. Example: Multi-Domain Collection Operation
 
 ```json
 {
-  "evt": "EVT-20260503-154050-AI-JOKER-C2-MULTI-0001",
-  "prev": "EVT-20260503-154000-AI-JOKER-C2-0003",
+  "evt": "EVT-20260519-154050-AI-JOKER-C2-MULTI-0001",
+  "prev": "EVT-20260519-154000-AI-JOKER-C2-0003",
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
-  "timestamp": "2026-05-03T15:40:50+02:00",
+  "timestamp": "2026-05-19T15:40:50+02:00",
   "runtime": {
     "name": "AI JOKER-C2",
     "core": "HBCE-CORE-v3",
@@ -1303,23 +1612,36 @@ Future versions may define stricter validation.
       "MATRIX",
       "U.S.E.",
       "CORPUS_ESOTEROLOGIA_ERMETICA",
-      "APOKALYPSIS"
+      "APOKALYPSIS",
+      "HBCE_ECOSISTEMA_AI"
     ],
     "domain_type": "ECOSYSTEM_OPERATION"
   },
+  "hbce_module": {
+    "module": "MATRIX",
+    "active_modules": [
+      "UNEBDO",
+      "OPC",
+      "MetaExchange",
+      "IOspace",
+      "CyberGlobal",
+      "NeuroLoop",
+      "MATRIX"
+    ]
+  },
   "context": {
     "class": "GOVERNANCE",
-    "domain": "FOUR_COLLECTIONS_RUNTIME_MAP",
+    "domain": "FIVE_COLLECTIONS_RUNTIME_MAP",
     "sensitivity": "MEDIUM"
   },
   "governance": {
     "risk": "MEDIUM",
     "decision": "AUDIT",
-    "policy": "FOUR_COLLECTIONS_RUNTIME_ALIGNMENT",
+    "policy": "FIVE_COLLECTIONS_RUNTIME_ALIGNMENT",
     "fail_closed": false
   },
   "operation": {
-    "type": "FOUR_COLLECTIONS_RUNTIME_MAP_UPDATE",
+    "type": "FIVE_COLLECTIONS_RUNTIME_MAP_UPDATE",
     "target": "AI_JOKER_C2_COLLECTION_ALIGNMENT",
     "status": "COMPLETED"
   },
@@ -1331,7 +1653,7 @@ Future versions may define stricter validation.
   "opc": {
     "required": true,
     "status": "APPENDED",
-    "proof_id": "OPC-20260503-154050-AI-JOKER-C2-MULTI-0001",
+    "proof_id": "OPC-20260519-154050-AI-JOKER-C2-MULTI-0001",
     "chain_hash": "sha256:opc-chain-example"
   },
   "trace": {
@@ -1348,15 +1670,15 @@ Future versions may define stricter validation.
 
 ---
 
-## 33. Example: Blocked Operation
+## 36. Example: Blocked Operation
 
 ```json
 {
-  "evt": "EVT-20260503-154100-AI-JOKER-C2-0004",
-  "prev": "EVT-20260503-154000-AI-JOKER-C2-0003",
+  "evt": "EVT-20260519-154100-AI-JOKER-C2-0004",
+  "prev": "EVT-20260519-154000-AI-JOKER-C2-0003",
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
-  "timestamp": "2026-05-03T15:41:00+02:00",
+  "timestamp": "2026-05-19T15:41:00+02:00",
   "runtime": {
     "name": "AI JOKER-C2",
     "core": "HBCE-CORE-v3",
@@ -1367,6 +1689,9 @@ Future versions may define stricter validation.
     "ecosystem": "HERMETICUM B.C.E.",
     "domain": "MATRIX",
     "domain_type": "OPERATIONAL_INFRASTRUCTURE_DOMAIN"
+  },
+  "hbce_module": {
+    "module": "CyberGlobal"
   },
   "context": {
     "class": "SECURITY",
@@ -1398,19 +1723,21 @@ Future versions may define stricter validation.
 
 ---
 
-## 34. Event Chain Example
+## 37. Event Chain Example
 
 A simple event chain:
 
 ```txt
 GENESIS
 → EVT-0014-AI
-→ EVT-20260503-153000-AI-JOKER-C2-0001
-→ EVT-20260503-153200-AI-JOKER-C2-USE-0001
-→ EVT-20260503-153500-AI-JOKER-C2-0002
-→ EVT-20260503-154000-AI-JOKER-C2-0003
-→ EVT-20260503-154050-AI-JOKER-C2-MULTI-0001
-→ EVT-20260503-154100-AI-JOKER-C2-0004
+→ EVT-0015-AI
+→ EVT-20260519-153000-AI-JOKER-C2-0001
+→ EVT-20260519-153200-AI-JOKER-C2-USE-0001
+→ EVT-20260519-153300-AI-JOKER-C2-HBCE-AI-0001
+→ EVT-20260519-153500-AI-JOKER-C2-0002
+→ EVT-20260519-154000-AI-JOKER-C2-0003
+→ EVT-20260519-154050-AI-JOKER-C2-MULTI-0001
+→ EVT-20260519-154100-AI-JOKER-C2-0004
 ```
 
 Each event points backward.
@@ -1423,7 +1750,7 @@ It must preserve enough structure for reconstruction and verification.
 
 ---
 
-## 35. Public and Internal EVT Modes
+## 38. Public and Internal EVT Modes
 
 AI JOKER-C2 may support two EVT visibility modes.
 
@@ -1450,7 +1777,7 @@ Internal EVT may contain richer metadata under controlled access.
 
 ---
 
-## 36. EVT and MATRIX
+## 39. EVT and MATRIX
 
 Within the MATRIX framework, EVT is the trace unit for operational infrastructure.
 
@@ -1458,6 +1785,7 @@ The relation is:
 
 ```txt
 MATRIX = strategic and operational infrastructure framework
+MATRIX module = system coordination and organization layer
 AI JOKER-C2 = governed runtime demonstrator
 IPR = operational identity and proof instrument
 EVT = event trace
@@ -1472,11 +1800,11 @@ MATRIX defines why governance is necessary.
 
 AI JOKER-C2 executes the governed operation.
 
-EVT proves that the operation entered the sequence of time, identity, risk and decision.
+EVT proves that the operation entered the sequence of time, identity, module, risk and decision.
 
 ---
 
-## 37. EVT and U.S.E.
+## 40. EVT and U.S.E.
 
 Within **U.S.E. — United States of Europe**, EVT is the trace unit for civic, institutional and democratic infrastructure reasoning.
 
@@ -1507,7 +1835,7 @@ EVT must not link the content of a democratic choice to the personal identity of
 
 ---
 
-## 38. EVT and CORPUS ESOTEROLOGIA ERMETICA
+## 41. EVT and CORPUS ESOTEROLOGIA ERMETICA
 
 Within the CORPUS ESOTEROLOGIA ERMETICA, EVT is the trace unit for conceptual and editorial continuity.
 
@@ -1530,7 +1858,7 @@ EVT preserves the event of transformation.
 
 ---
 
-## 39. EVT and APOKALYPSIS
+## 42. EVT and APOKALYPSIS
 
 Within APOKALYPSIS, EVT is the trace unit for historical-threshold analysis.
 
@@ -1553,7 +1881,38 @@ EVT records the operation that produced or modified that analysis.
 
 ---
 
-## 40. EVT and Multi-Domain Collection Work
+## 43. EVT and HBCE ECOSISTEMA AI
+
+Within HBCE ECOSISTEMA AI, EVT is the trace unit for AI governance and model-governance operations.
+
+The relation is:
+
+```txt
+HBCE ECOSISTEMA AI = AI governance ecosystem
+AI model = generation layer
+HBCE = governance layer
+IPR = identity of operator, agent, process or runtime
+EVT = event trace of AI usage
+Memory = continuity of AI-governance reasoning
+OPC = proof receipt for AI output or decision process
+MATRIX = coordination and architecture
+AI JOKER-C2 = governed runtime demonstrator
+```
+
+The HBCE ECOSISTEMA AI domain must preserve:
+
+```txt
+The AI model does not govern HBCE.
+HBCE governs the use of AI models.
+```
+
+EVT may trace model usage, model-governance reasoning, AI audit steps, IPR AI Audit Trail workflows, risk classifications and proof receipt generation.
+
+EVT must not expose private provider credentials, secrets, sensitive payloads or uncontrolled model authority.
+
+---
+
+## 44. EVT and Multi-Domain Collection Work
 
 Within multi-domain work, EVT records the crossing between collections without collapsing them.
 
@@ -1564,6 +1923,7 @@ MATRIX = architecture
 U.S.E. = European political-institutional application
 CORPUS = grammar
 APOKALYPSIS = threshold
+HBCE ECOSISTEMA AI = AI governance ecosystem
 EVT = event trace across the map
 Memory = continuity across the map
 OPC = proof receipt for the governed operation
@@ -1571,11 +1931,29 @@ OPC = proof receipt for the governed operation
 
 Multi-domain EVT records should preserve active domains explicitly.
 
-A multi-domain EVT should never erase the distinctions among MATRIX, U.S.E., CORPUS and APOKALYPSIS.
+A multi-domain EVT should never erase the distinctions among MATRIX, U.S.E., CORPUS, APOKALYPSIS and HBCE ECOSISTEMA AI.
 
 ---
 
-## 41. EVT and Fail-Closed Governance
+## 45. EVT and Strategic Doctrine Layer
+
+The EVT Protocol may also reference strategic doctrine documents when they shape the operation.
+
+```txt
+HBCE Cybersecurity Strategy = defensive cybersecurity, resilience, incident documentation and critical infrastructure continuity
+HBCE Data Protection Strategy = minimization, privacy, data classification, retention, access control and auditability
+HBCE Information Governance Strategy = information classification, controlled circulation, proof continuity, public-safe exposure and accountability
+```
+
+These documents are not project collections and are not HBCE modules.
+
+They are doctrine references.
+
+EVT may record their use in operation metadata or governance reasons when relevant.
+
+---
+
+## 46. EVT and Fail-Closed Governance
 
 The EVT Protocol must support fail-closed governance.
 
@@ -1593,7 +1971,7 @@ A governance system must also record refusal, degradation and escalation.
 
 ---
 
-## 42. Implementation Notes
+## 47. Implementation Notes
 
 Prototype implementation may start with:
 
@@ -1606,6 +1984,7 @@ simple previous event pointer;
 verification endpoint;
 dashboard event view;
 project-domain field;
+HBCE module field;
 context-class field;
 memory reference;
 OPC proof receipt reference.
@@ -1624,17 +2003,19 @@ schema validation;
 audit export;
 integrity checks;
 project-domain filters;
+HBCE module filters;
 public-safe verification mode;
 IPR runtime module;
 OPC proof receipt schema;
-four-collection runtime map.
+five-collection runtime map;
+seven-module runtime map.
 ```
 
 The protocol should evolve without breaking the canonical fields.
 
 ---
 
-## 43. Non-Offensive Boundary
+## 48. Non-Offensive Boundary
 
 The EVT Protocol must never be used to legitimize prohibited activity.
 
@@ -1658,6 +2039,7 @@ sabotage;
 manipulation;
 vote de-anonymization;
 coercive civic influence;
+uncontrolled AI authority;
 rights violations.
 ```
 
@@ -1665,7 +2047,7 @@ The EVT chain must prove restraint as much as execution.
 
 ---
 
-## 44. Democratic and Civic Boundary
+## 49. Democratic and Civic Boundary
 
 For U.S.E. and any civic infrastructure context, the EVT Protocol must preserve democratic safeguards.
 
@@ -1706,11 +2088,43 @@ formal certification where applicable.
 
 ---
 
-## 45. Canonical EVT Formula
+## 50. AI Governance Boundary
+
+For HBCE ECOSISTEMA AI and any model-governance context, the EVT Protocol must preserve model-governance safeguards.
+
+The runtime must distinguish:
+
+```txt
+model output;
+governance of model output;
+identity of operator;
+identity of agent;
+trace of event;
+proof receipt;
+audit readiness;
+legal certification;
+regulatory approval.
+```
+
+The controlling rule is:
+
+```txt
+The AI model does not govern HBCE.
+HBCE governs the use of AI models.
+```
+
+EVT may record AI-governance operations.
+
+EVT must not convert model output into governance authority.
+
+---
+
+## 51. Canonical EVT Formula
 
 ```txt
 No operation without identity.
 No collection without classification.
+No module without technical-operational binding.
 No decision without risk.
 No execution without policy.
 No continuity without EVT.
@@ -1724,8 +2138,10 @@ Expanded formula:
 ```txt
 IPR Identity
 → Project Collection
+→ HBCE Module
 → Context
 → Risk
+→ Human Oversight
 → Decision
 → Event
 → Memory
@@ -1741,10 +2157,11 @@ Project formula:
 ```txt
 IPR = operational identity and proof instrument.
 AI JOKER-C2 = governed runtime demonstrator.
-MATRIX = infrastructure architecture.
+MATRIX = infrastructure architecture and coordination module.
 U.S.E. = federated European political-institutional application.
 CORPUS = grammar.
 APOKALYPSIS = threshold.
+HBCE ECOSISTEMA AI = AI governance ecosystem.
 EVT = trace.
 Memory = continuity.
 OPC = proof receipt.
@@ -1758,6 +2175,7 @@ MATRIX builds the architecture.
 U.S.E. brings it into European political-institutional design.
 CORPUS grounds the grammar of operational reality.
 APOKALYPSIS reads the historical threshold.
+HBCE ECOSISTEMA AI governs artificial intelligence as an identifiable, traceable and auditable operational process.
 IPR makes everything attributable.
 EVT makes everything traceable.
 Memory makes everything continuous.
@@ -1765,16 +2183,37 @@ OPC makes everything verifiable.
 AI JOKER-C2 makes everything operational.
 ```
 
+Final module formula:
+
+```txt
+IPR identifies.
+UNEBDO anchors.
+EVT traces.
+Memory continues.
+OPC proves.
+MetaExchange exchanges.
+IOspace exposes.
+CyberGlobal protects.
+NeuroLoop validates.
+MATRIX organizes.
+AI JOKER-C2 executes.
+```
+
 ---
 
-## 46. Status
+## 52. Status
 
 ```txt
 Document: EVT_PROTOCOL.md
 Status: Active protocol file
 Project: AI JOKER-C2
 Ecosystem: HERMETICUM B.C.E.
-Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Active checkpoint: EVT-0015-AI
+Previous checkpoint: EVT-0014-AI
+Cycle: UP-MESE-4
+Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS, HBCE ECOSISTEMA AI
+HBCE modules: UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop, MATRIX
+Strategic doctrine documents: HBCE Cybersecurity Strategy, HBCE Data Protection Strategy, HBCE Information Governance Strategy
 Infrastructure: HBCE
 Identity layer: IPR
 Trace layer: EVT
@@ -1784,6 +2223,7 @@ Ledger layer: Append-only continuity
 Verification layer: Hash and audit reconstruction
 Governance principle: Fail-closed
 Civic boundary: Identity verified first, choice separated after, vote anonymized, process auditable
+AI governance boundary: The AI model does not govern HBCE; HBCE governs the use of AI models
 Maintainer: HBCE Research
 Organization: HERMETICUM B.C.E. S.r.l.
 Territorial anchor: Torino, Italy, Europe
