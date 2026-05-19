@@ -20,6 +20,12 @@
  * - IOspace
  * - CyberGlobal
  * - NeuroLoop
+ * - MATRIX
+ *
+ * MATRIX boundary:
+ * MATRIX has a dual function.
+ * As a project domain, MATRIX is the operational infrastructure architecture.
+ * As an HBCE module, MATRIX is the system coordination and organization layer.
  *
  * Canonical relation:
  * IPR identifies.
@@ -31,8 +37,8 @@
  * IOspace exposes.
  * CyberGlobal protects.
  * NeuroLoop validates.
- * AI JOKER-C2 executes.
  * MATRIX organizes.
+ * AI JOKER-C2 executes.
  *
  * Classifier invariant:
  * - NONE can appear only when no real HBCE module is active.
@@ -85,7 +91,8 @@ const PRIMARY_MODULES: PrimaryHbceModule[] = [
   "MetaExchange",
   "IOspace",
   "CyberGlobal",
-  "NeuroLoop"
+  "NeuroLoop",
+  "MATRIX"
 ];
 
 const HBCE_MODULES: HbceModule[] = [
@@ -95,6 +102,7 @@ const HBCE_MODULES: HbceModule[] = [
   "IOspace",
   "CyberGlobal",
   "NeuroLoop",
+  "MATRIX",
   "NONE"
 ];
 
@@ -116,17 +124,13 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "agent identity",
     "ai agent identity",
     "identita operativa",
-    "identità operativa",
+    "identita primaria operativa",
     "registro identita",
-    "registro identità",
     "registro primario",
     "registro primario di identita",
-    "registro primario di identità",
     "radice identitaria",
     "identita runtime",
-    "identità runtime",
     "identita agente",
-    "identità agente",
     "origine identitaria",
     "vincolo identitario",
     "anchoring",
@@ -153,9 +157,7 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "ancoraggio temporale",
     "validazione",
     "continuita probatoria",
-    "continuità probatoria",
     "continuita evidenziale",
-    "continuità evidenziale",
     "prova nel tempo",
     "traccia nel tempo",
     "conservazione della prova",
@@ -204,9 +206,7 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "record di prova",
     "prova operativa",
     "prova di continuita",
-    "prova di continuità",
     "prova di continuita operativa",
-    "prova di continuità operativa",
     "catena di prova",
     "hash catena",
     "hash decisione",
@@ -245,18 +245,15 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "scambio prove",
     "scambio eventi",
     "scambio identita",
-    "scambio identità",
     "scambio documenti",
     "scambio audit",
     "scambio controllato",
     "scambio governato",
     "scambio tra sistemi",
     "scambio tra identita",
-    "scambio tra identità",
     "instradamento operativo",
     "routing operativo",
-    "interoperabilita",
-    "interoperabilità"
+    "interoperabilita"
   ],
 
   IOspace: [
@@ -301,7 +298,6 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "spazio operativo",
     "spazio di interazione",
     "visibilita runtime",
-    "visibilità runtime",
     "interfaccia operativa",
     "dashboard runtime",
     "pannello runtime",
@@ -387,6 +383,73 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "revisione umana",
     "feedback controllato",
     "apprendimento controllato"
+  ],
+
+  MATRIX: [
+    "matrix",
+    "matrix module",
+    "modulo matrix",
+    "matrix hbce",
+    "matrix organizes",
+    "matrix organizza",
+    "system coordination",
+    "coordination layer",
+    "organization layer",
+    "system organization",
+    "operational coordination",
+    "operational organization",
+    "system architecture layer",
+    "architecture coordination",
+    "runtime coordination",
+    "ecosystem coordination",
+    "hbce coordination",
+    "hbce organization",
+    "matrix coordination",
+    "matrix organization",
+    "module coordination",
+    "modules coordination",
+    "stack coordination",
+    "stack organization",
+    "coordination module",
+    "organization module",
+    "coordinamento sistema",
+    "coordinamento operativo",
+    "coordinamento moduli",
+    "coordinamento dei moduli",
+    "coordinamento stack",
+    "coordinamento hbce",
+    "organizzazione sistema",
+    "organizzazione operativa",
+    "organizzazione stack",
+    "organizzazione hbce",
+    "organizzazione ecosistema",
+    "modulo di coordinamento",
+    "modulo organizzativo",
+    "livello organizzativo",
+    "livello di coordinamento",
+    "architettura sistema",
+    "architettura operativa",
+    "architettura hbce",
+    "architettura runtime",
+    "mappa sistema",
+    "mappa operativa",
+    "mappa moduli",
+    "mappa dello stack",
+    "mappa hbce",
+    "runtime map",
+    "module map",
+    "stack map",
+    "hbce map",
+    "operational map",
+    "seven modules",
+    "sette moduli",
+    "7 moduli",
+    "seven hbce modules",
+    "sette moduli hbce",
+    "five collections seven modules",
+    "cinque collane sette moduli",
+    "five collections and seven modules",
+    "cinque collane e sette moduli"
   ]
 };
 
@@ -454,6 +517,22 @@ const MODULE_FILE_HINTS: Record<PrimaryHbceModule, string[]> = {
     "feedback_loop.md",
     "human_oversight_model.md",
     "decision_validation.md"
+  ],
+
+  MATRIX: [
+    "matrix.md",
+    "matrix_overview.md",
+    "matrix_module.md",
+    "matrix_module_runtime_map.md",
+    "matrix_coordination_layer.md",
+    "matrix_system_organization.md",
+    "matrix_operational_map.md",
+    "matrix_runtime_map.md",
+    "hbce_modules_runtime_map.md",
+    "hbce_operational_stack.md",
+    "five_collections_runtime_map.md",
+    "system-manifest.json",
+    "system/system-manifest.json"
   ]
 };
 
@@ -461,10 +540,12 @@ const STACK_LEVEL_TERMS = [
   "hbce modules",
   "moduli hbce",
   "moduli dell hbce",
-  "moduli dell'hbce",
-  "sei moduli",
-  "6 moduli",
-  "six modules",
+  "moduli dell hbce",
+  "sette moduli",
+  "7 moduli",
+  "seven modules",
+  "seven hbce modules",
+  "sette moduli hbce",
   "hbce operational modules",
   "hbce technical modules",
   "hbce technical-operational modules",
@@ -474,8 +555,13 @@ const STACK_LEVEL_TERMS = [
   "moduli dello stack",
   "stack tecnico-operativo",
   "technical-operational stack",
-  "unebdo opc metaexchange iospace cyberglobal neuroloop",
-  "unebdo metaexchange opc iospace cyberglobal neuroloop"
+  "unebdo opc metaexchange iospace cyberglobal neuroloop matrix",
+  "unebdo metaexchange opc iospace cyberglobal neuroloop matrix",
+  "ipr unebdo evt memory opc metaexchange iospace cyberglobal neuroloop matrix",
+  "cinque collane sette moduli",
+  "five collections seven modules",
+  "five canonical collections seven hbce modules",
+  "cinque collane canoniche sette moduli hbce"
 ];
 
 const IPR_NAVIGATION_TERMS = [
@@ -556,12 +642,13 @@ export function classifyHbceModule(
 
   if (stackLevelMatches.length > 0) {
     return createClassification(
-      choosePrimaryModule(matchedModules, "UNEBDO"),
+      choosePrimaryModule(matchedModules, "MATRIX"),
       getDefaultActiveModules(),
-      0.94,
+      0.95,
       [
-        "Input matched HBCE stack-level or six-module language.",
+        "Input matched HBCE stack-level or seven-module language.",
         "The request concerns the HBCE module map rather than a single isolated module.",
+        "MATRIX is active as the coordination and organization module of the HBCE stack.",
         ...stackLevelMatches.map((term) => `Matched stack-level term: ${term}`),
         ...collectReasons(matchedModules)
       ],
@@ -572,15 +659,16 @@ export function classifyHbceModule(
   if (iprNavigationMatches.length > 0) {
     return createClassification(
       "UNEBDO",
-      ["UNEBDO", "OPC", "MetaExchange", "IOspace"],
+      ["UNEBDO", "OPC", "MetaExchange", "IOspace", "MATRIX"],
       physicalNavigationMatches.length > 0 ? 0.9 : 0.95,
       [
         "Input matched IPR-based navigation language.",
-        "IPR-based navigation is classified as operational navigation: identity, events, proof, exchange and interface.",
+        "IPR-based navigation is classified as operational navigation: identity, events, proof, exchange, interface and system coordination.",
         "UNEBDO anchors the IPR identity layer.",
         "OPC proves the continuity of the navigational chain.",
         "MetaExchange supports structured routing between identities, proofs, events and contexts.",
         "IOspace exposes the navigational interface and runtime view.",
+        "MATRIX organizes the navigational architecture across the HBCE stack.",
         physicalNavigationMatches.length > 0
           ? "Physical-navigation vocabulary was detected; HBCE/IPR must be treated as governance, traceability and audit layer, not as vehicle-control software."
           : "",
@@ -713,6 +801,8 @@ function scoreModule(
       module === "OPC" && isCanonicalEventProofKeyword(keyword) ? 4 : 0;
     const navigationWeight =
       module === "IOspace" && isNavigationKeyword(keyword) ? 3 : 0;
+    const matrixCoordinationWeight =
+      module === "MATRIX" && isMatrixCoordinationKeyword(keyword) ? 5 : 0;
 
     return (
       total +
@@ -720,7 +810,8 @@ function scoreModule(
       explicitModuleWeight +
       canonicalIdentityWeight +
       canonicalEventProofWeight +
-      navigationWeight
+      navigationWeight +
+      matrixCoordinationWeight
     );
   }, 0);
 
@@ -758,6 +849,15 @@ function isExplicitModuleName(
     case "NeuroLoop":
       return keyword === "neuroloop" || keyword === "neuro loop";
 
+    case "MATRIX":
+      return (
+        keyword === "matrix" ||
+        keyword === "matrix module" ||
+        keyword === "modulo matrix" ||
+        keyword === "matrix organizes" ||
+        keyword === "matrix organizza"
+      );
+
     default:
       return false;
   }
@@ -768,8 +868,7 @@ function isCanonicalIdentityKeyword(keyword: string): boolean {
     keyword === "ipr" ||
     keyword === "identity primary record" ||
     keyword === "operational identity" ||
-    keyword === "identita operativa" ||
-    keyword === "identità operativa"
+    keyword === "identita operativa"
   );
 }
 
@@ -780,8 +879,7 @@ function isCanonicalEventProofKeyword(keyword: string): boolean {
     keyword === "verifiable event trace" ||
     keyword === "operational proof of continuity" ||
     keyword === "proof receipt" ||
-    keyword === "prova di continuita" ||
-    keyword === "prova di continuità"
+    keyword === "prova di continuita"
   );
 }
 
@@ -792,6 +890,24 @@ function isNavigationKeyword(keyword: string): boolean {
     keyword === "operational navigation" ||
     keyword === "navigation system" ||
     keyword === "navigation layer"
+  );
+}
+
+function isMatrixCoordinationKeyword(keyword: string): boolean {
+  return (
+    keyword === "matrix" ||
+    keyword === "matrix module" ||
+    keyword === "modulo matrix" ||
+    keyword === "system coordination" ||
+    keyword === "coordination layer" ||
+    keyword === "organization layer" ||
+    keyword === "operational coordination" ||
+    keyword === "coordinamento operativo" ||
+    keyword === "coordinamento moduli" ||
+    keyword === "organizzazione sistema" ||
+    keyword === "organizzazione ecosistema" ||
+    keyword === "sette moduli" ||
+    keyword === "seven modules"
   );
 }
 
@@ -843,9 +959,28 @@ function normalizeText(value: string): string {
 }
 
 function findMatches(text: string, keywords: string[]): string[] {
-  return keywords
-    .map((keyword) => normalizeText(keyword))
-    .filter((keyword) => keyword.length > 0 && text.includes(keyword));
+  const normalizedKeywords = keywords.map((keyword) => normalizeText(keyword));
+  const uniqueMatches = new Set<string>();
+
+  for (const keyword of normalizedKeywords) {
+    if (!keyword) {
+      continue;
+    }
+
+    if (matchesTerm(text, keyword)) {
+      uniqueMatches.add(keyword);
+    }
+  }
+
+  return Array.from(uniqueMatches);
+}
+
+function matchesTerm(text: string, keyword: string): boolean {
+  if (keyword.includes("/") || keyword.includes("_") || keyword.includes(".")) {
+    return text.includes(keyword);
+  }
+
+  return ` ${text} `.includes(` ${keyword} `);
 }
 
 function createClassification(
@@ -920,7 +1055,8 @@ function getDefaultActiveModules(): HbceModule[] {
     "MetaExchange",
     "IOspace",
     "CyberGlobal",
-    "NeuroLoop"
+    "NeuroLoop",
+    "MATRIX"
   ];
 }
 
@@ -928,6 +1064,12 @@ function choosePrimaryModule(
   matchedModules: HbceModuleScore[],
   fallback: PrimaryHbceModule
 ): PrimaryHbceModule {
+  const matrixMatch = matchedModules.find((module) => module.module === "MATRIX");
+
+  if (matrixMatch) {
+    return "MATRIX";
+  }
+
   return matchedModules[0]?.module || fallback;
 }
 
@@ -940,7 +1082,7 @@ function calculateConfidence(score: number, text: string): number {
 }
 
 function calculateMultiModuleConfidence(matchedModules: HbceModuleScore[]): number {
-  const matchedModuleFactor = Math.min(matchedModules.length / 6, 1);
+  const matchedModuleFactor = Math.min(matchedModules.length / 7, 1);
   const topScoreFactor = Math.min((matchedModules[0]?.score || 0) / 18, 1);
   const confidence = 0.68 + matchedModuleFactor * 0.18 + topScoreFactor * 0.1;
 
@@ -962,7 +1104,8 @@ function createEmptyScores(): Partial<Record<PrimaryHbceModule, number>> {
     MetaExchange: 0,
     IOspace: 0,
     CyberGlobal: 0,
-    NeuroLoop: 0
+    NeuroLoop: 0,
+    MATRIX: 0
   };
 }
 
