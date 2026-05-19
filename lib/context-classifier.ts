@@ -25,10 +25,11 @@
  * Canonical runtime hierarchy:
  * - IPR = primary operational identity and proof instrument
  * - AI JOKER-C2 = governed runtime demonstrator
- * - MATRIX = operational infrastructure architecture
+ * - MATRIX = project collection, architectural framework and HBCE coordination module
  * - U.S.E. = MATRIX-derived political-institutional application
  * - CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar
  * - APOKALYPSIS = historical threshold analysis
+ * - HBCE_ECOSISTEMA_AI = AI governance ecosystem collection
  * - UNEBDO = anchoring, validation and evidentiary continuity
  * - EVT = event trace
  * - EVT/IPR memory = runtime continuity
@@ -110,10 +111,12 @@ const HBCE_MODULE_STACK_TERMS = [
   "hbce modules",
   "moduli hbce",
   "moduli dell hbce",
-  "moduli dell'hbce",
-  "sei moduli",
-  "6 moduli",
-  "six modules",
+  "moduli dell hbce",
+  "sette moduli",
+  "7 moduli",
+  "seven modules",
+  "seven hbce modules",
+  "sette moduli hbce",
   "hbce stack",
   "stack hbce",
   "operational stack",
@@ -131,7 +134,16 @@ const HBCE_MODULE_STACK_TERMS = [
   "cyberglobal",
   "cyber global",
   "neuroloop",
-  "neuro loop"
+  "neuro loop",
+  "matrix module",
+  "modulo matrix",
+  "matrix organizes",
+  "matrix organizza",
+  "system coordination",
+  "coordinamento sistema",
+  "coordinamento operativo",
+  "organizzazione sistema",
+  "organizzazione ecosistema"
 ];
 
 const HBCE_MODULE_TECHNICAL_TERMS = [
@@ -150,8 +162,13 @@ const HBCE_MODULE_TECHNICAL_TERMS = [
   "operational layer",
   "runtime visibility",
   "visibilita runtime",
-  "visibilità runtime",
-  "interfaccia operativa"
+  "interfaccia operativa",
+  "matrix module",
+  "modulo matrix",
+  "coordination layer",
+  "organization layer",
+  "system coordination",
+  "coordinamento operativo"
 ];
 
 const HBCE_MODULE_GOVERNANCE_TERMS = [
@@ -159,6 +176,10 @@ const HBCE_MODULE_GOVERNANCE_TERMS = [
   "opc",
   "metaexchange",
   "meta exchange",
+  "matrix module",
+  "modulo matrix",
+  "matrix organizes",
+  "matrix organizza",
   "proof receipt",
   "proof record",
   "audit receipt",
@@ -177,8 +198,10 @@ const HBCE_MODULE_GOVERNANCE_TERMS = [
   "ancoraggio",
   "validazione",
   "continuita probatoria",
-  "continuità probatoria",
-  "scambio strutturato"
+  "scambio strutturato",
+  "system coordination",
+  "coordinamento sistema",
+  "organizzazione sistema"
 ];
 
 const HBCE_MODULE_SECURITY_TERMS = [
@@ -189,7 +212,8 @@ const HBCE_MODULE_SECURITY_TERMS = [
   "cyber security",
   "resilience",
   "resilienza",
-  "security governance",
+  "security posture",
+  "risk mapping",
   "incident",
   "risk mapping",
   "hardening",
@@ -222,11 +246,61 @@ const HBCE_MODULE_AI_GOVERNANCE_TERMS = [
   "apprendimento controllato"
 ];
 
+const HBCE_ECOSISTEMA_AI_TERMS = [
+  "hbce ecosistema ai",
+  "ecosistema ai",
+  "ecosistema dell ai",
+  "hbce ai",
+  "ai governance ecosystem",
+  "governance dell ai",
+  "governo dell ai",
+  "governare l ai",
+  "artificial intelligence governance",
+  "intelligenza artificiale governata",
+  "ai governata",
+  "governed ai",
+  "governed artificial intelligence",
+  "ai non governata",
+  "intelligenza artificiale non governata",
+  "ai audit",
+  "audit ai",
+  "audit dell ai",
+  "ipr ai audit trail",
+  "ai audit trail",
+  "ai safety",
+  "ai risk",
+  "rischio ai",
+  "human oversight ai",
+  "controllo umano ai",
+  "model governance",
+  "governance modelli",
+  "external ai models",
+  "modelli ai esterni",
+  "openai",
+  "anthropic",
+  "claude",
+  "google ai",
+  "gemini",
+  "meta ai",
+  "llama",
+  "mistral",
+  "ai genera hbce governa",
+  "ai generates hbce governs",
+  "ai genera",
+  "hbce governa",
+  "runtime ai governato",
+  "runtime governato ai",
+  "processo ai auditabile",
+  "processo ai tracciabile",
+  "processo ai identificabile",
+  "matrix ai governance",
+  "ai joker-c2 volume"
+];
+
 const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
   IDENTITY: [
     "identity",
     "identita",
-    "identità",
     "runtime identity",
     "entity",
     "checkpoint",
@@ -234,11 +308,9 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "continuity reference",
     "operational identity",
     "identita operativa",
-    "identità operativa",
     "registro primario",
     "traccia verificabile",
-    "continuita operativa",
-    "continuità operativa"
+    "continuita operativa"
   ],
 
   IPR: [
@@ -257,9 +329,7 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "strumento operativo",
     "strumento di prova",
     "identita primaria operativa",
-    "identità primaria operativa",
-    "identita operativa",
-    "identità operativa"
+    "identita operativa"
   ],
 
   MATRIX: [
@@ -270,12 +340,22 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "matrix torino",
     "matrix piemonte",
     "matrix italia",
+    "matrix module",
+    "modulo matrix",
+    "matrix organizes",
+    "matrix organizza",
     "strategic framework",
     "torino brussels",
     "torino bruxelles",
     "federated infrastructure",
     "operational infrastructure",
     "infrastruttura operativa",
+    "architettura operativa",
+    "architettura hbce",
+    "coordinamento sistema",
+    "coordinamento operativo",
+    "organizzazione sistema",
+    "organizzazione ecosistema",
     "public administration",
     "pubblica amministrazione",
     "b2b",
@@ -286,18 +366,14 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "brussels",
     "bruxelles",
     "digital sovereignty",
-    "sovranita digitale",
-    "sovranità digitale"
+    "sovranita digitale"
   ],
 
   USE: [
     "u.s.e.",
     "u.s.e",
-    "use",
-    "u s e",
     "united states of europe",
     "stati uniti d europa",
-    "stati uniti d'europa",
     "stati uniti europei",
     "federated europe",
     "federated operational europe",
@@ -309,7 +385,6 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "federated digital voting",
     "digital sovereignty",
     "sovranita digitale",
-    "sovranità digitale",
     "costituzione operativa europea",
     "constitutional operational europe",
     "democratic infrastructure",
@@ -337,7 +412,6 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "decision cost trace time",
     "reale operativo",
     "realta operativa",
-    "realtà operativa",
     "operational reality",
     "canonical glossary",
     "glossario canonico",
@@ -346,10 +420,8 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "alien artifact",
     "paradogma alieno",
     "portale dell anticristo",
-    "portale dell'anticristo",
     "rascensionale",
     "riconconicita",
-    "riconconicità",
     "qubitronica",
     "formula fondativa",
     "tesi editoriale",
@@ -388,6 +460,8 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "apostasia",
     "paradogma alieno"
   ],
+
+  HBCE_ECOSISTEMA_AI: HBCE_ECOSISTEMA_AI_TERMS,
 
   DOCUMENTAL: [
     "document",
@@ -488,7 +562,6 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "manoscritto",
     "frontespizio",
     "fluidita",
-    "fluidità",
     "riscrivi",
     "migliora il testo"
   ],
@@ -536,7 +609,6 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "cibersicurezza",
     "incidente",
     "vulnerabilita",
-    "vulnerabilità",
     "segreti",
     ...HBCE_MODULE_SECURITY_TERMS
   ],
@@ -559,7 +631,6 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "data handling",
     "compliance orientation",
     "conformita",
-    "conformità",
     "registro rischi",
     "supervisione umana",
     "proof receipt",
@@ -590,7 +661,6 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "project domain",
     "governo",
     "tracciabilita",
-    "tracciabilità",
     "verifica",
     "classificatore",
     ...HBCE_MODULE_STACK_TERMS,
@@ -626,7 +696,6 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "settore pubblico",
     "regional authority",
     "autorita regionale",
-    "autorità regionale",
     "municipality",
     "comune",
     "region",
@@ -649,14 +718,12 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "scelta separata",
     "identity verified first",
     "identita verificata prima",
-    "identità verificata prima",
     "process auditable",
     "processo auditabile",
     "ballot secrecy",
     "segretezza del voto",
     "eligibility verification",
     "verifica eleggibilita",
-    "verifica eleggibilità",
     "referendum infrastructure",
     "infrastruttura referendaria",
     "public consultation",
@@ -703,7 +770,8 @@ const CONTEXT_KEYWORDS: Record<ContextClass, string[]> = {
     "biocibernetica",
     "organism system",
     "organismo sistema",
-    ...HBCE_MODULE_AI_GOVERNANCE_TERMS
+    ...HBCE_MODULE_AI_GOVERNANCE_TERMS,
+    ...HBCE_ECOSISTEMA_AI_TERMS
   ],
 
   DUAL_USE: [
@@ -742,7 +810,6 @@ const INTENT_KEYWORDS: Record<IntentClass, string[]> = {
     "cosa e",
     "cos e",
     "perche",
-    "perché",
     "parlami",
     "significa"
   ],
@@ -772,7 +839,6 @@ const INTENT_KEYWORDS: Record<IntentClass, string[]> = {
     "correggi",
     "rendilo",
     "fluidita",
-    "fluidità",
     "scorrevole",
     "rifallo"
   ],
@@ -864,11 +930,12 @@ const INTENT_KEYWORDS: Record<IntentClass, string[]> = {
     "runtime decision",
     "governo",
     "tracciabilita",
-    "tracciabilità",
     "supervisione",
     "moduli hbce",
     "hbce modules",
-    "stack hbce"
+    "stack hbce",
+    "sette moduli",
+    "matrix organizza"
   ],
 
   SECURITY: [
@@ -884,7 +951,6 @@ const INTENT_KEYWORDS: Record<IntentClass, string[]> = {
     "sicurezza",
     "incidente",
     "vulnerabilita",
-    "vulnerabilità",
     "cyberglobal"
   ],
 
@@ -899,7 +965,6 @@ const INTENT_KEYWORDS: Record<IntentClass, string[]> = {
     "certification",
     "data handling",
     "conformita",
-    "conformità",
     "opc",
     "proof receipt",
     "audit receipt"
@@ -1002,8 +1067,7 @@ const HIGH_SENSITIVITY_TERMS = [
   "infrastruttura elettorale",
   "vote de-anonymization",
   "identity choice linkage",
-  "collegare identita e voto",
-  "collegare identità e voto"
+  "collegare identita e voto"
 ];
 
 const MEDIUM_SENSITIVITY_TERMS = [
@@ -1028,6 +1092,8 @@ const MEDIUM_SENSITIVITY_TERMS = [
   "iospace",
   "cyberglobal",
   "neuroloop",
+  "matrix module",
+  "modulo matrix",
   "b2b",
   "b2g",
   "institutional",
@@ -1040,7 +1106,10 @@ const MEDIUM_SENSITIVITY_TERMS = [
   "voto digitale federato",
   "democratic infrastructure",
   "conformita",
-  "conformità"
+  "hbce ecosistema ai",
+  "ai governance",
+  "ai audit",
+  "model governance"
 ];
 
 export function classifyContext(input: ClassifierInput): ContextClassification {
@@ -1148,7 +1217,20 @@ function selectBestContext(
   }
 
   if (text.includes("matrix")) {
-    boost(results, "MATRIX", 3, "MATRIX framework term detected.");
+    boost(results, "MATRIX", 3, "MATRIX framework or module term detected.");
+  }
+
+  if (
+    text.includes("matrix module") ||
+    text.includes("modulo matrix") ||
+    text.includes("matrix organizza") ||
+    text.includes("matrix organizes") ||
+    text.includes("sette moduli") ||
+    text.includes("seven modules")
+  ) {
+    boost(results, "GOVERNANCE", 5, "MATRIX module or seven-module HBCE structure detected.");
+    boost(results, "TECHNICAL", 3, "MATRIX module is a technical-operational stack function.");
+    boost(results, "MATRIX", 3, "MATRIX coordination layer detected.");
   }
 
   if (
@@ -1159,6 +1241,32 @@ function selectBestContext(
     text.includes("voto digitale federato")
   ) {
     boost(results, "USE", 5, "U.S.E. or federated digital vote term detected.");
+  }
+
+  if (
+    text.includes("hbce ecosistema ai") ||
+    text.includes("ecosistema ai") ||
+    text.includes("ai audit") ||
+    text.includes("ipr ai audit trail") ||
+    text.includes("model governance") ||
+    text.includes("governance modelli")
+  ) {
+    boost(results, "HBCE_ECOSISTEMA_AI", 6, "HBCE ECOSISTEMA AI or AI audit terms detected.");
+    boost(results, "AI_GOVERNANCE", 4, "AI governance terms detected.");
+  }
+
+  if (
+    text.includes("openai") ||
+    text.includes("anthropic") ||
+    text.includes("claude") ||
+    text.includes("google ai") ||
+    text.includes("gemini") ||
+    text.includes("mistral") ||
+    text.includes("meta ai") ||
+    text.includes("llama")
+  ) {
+    boost(results, "HBCE_ECOSISTEMA_AI", 4, "External AI model provider terms detected.");
+    boost(results, "AI_GOVERNANCE", 4, "Model governance terms detected.");
   }
 
   if (
@@ -1206,30 +1314,22 @@ function selectBestContext(
     text.includes("metaexchange") ||
     text.includes("iospace") ||
     text.includes("cyberglobal") ||
-    text.includes("neuroloop")
+    text.includes("neuroloop") ||
+    text.includes("modulo matrix")
   ) {
     boost(results, "GOVERNANCE", 5, "HBCE module stack terms detected.");
     boost(results, "TECHNICAL", 3, "HBCE modules are technical-operational stack functions.");
   }
 
-  if (
-    text.includes("cyberglobal") ||
-    text.includes("cyber global")
-  ) {
+  if (text.includes("cyberglobal") || text.includes("cyber global")) {
     boost(results, "SECURITY", 4, "CyberGlobal defensive cybersecurity module detected.");
   }
 
-  if (
-    text.includes("neuroloop") ||
-    text.includes("neuro loop")
-  ) {
+  if (text.includes("neuroloop") || text.includes("neuro loop")) {
     boost(results, "AI_GOVERNANCE", 4, "NeuroLoop validation and feedback module detected.");
   }
 
-  if (
-    text.includes("iospace") ||
-    text.includes("io space")
-  ) {
+  if (text.includes("iospace") || text.includes("io space")) {
     boost(results, "TECHNICAL", 4, "IOspace runtime visibility module detected.");
   }
 
@@ -1369,10 +1469,22 @@ function selectBestIntent(
     text.includes("metaexchange") ||
     text.includes("iospace") ||
     text.includes("cyberglobal") ||
-    text.includes("neuroloop")
+    text.includes("neuroloop") ||
+    text.includes("modulo matrix")
   ) {
     boost(results, "GOVERNANCE", 3, "HBCE module explanation or governance intent detected.");
     boost(results, "ASK", 2, "HBCE module request is usually explanatory.");
+  }
+
+  if (
+    text.includes("hbce ecosistema ai") ||
+    text.includes("ai governance") ||
+    text.includes("governance ai") ||
+    text.includes("ai audit") ||
+    text.includes("model governance")
+  ) {
+    boost(results, "GOVERNANCE", 3, "AI governance intent detected.");
+    boost(results, "ASK", 2, "AI governance request is usually explanatory or analytical.");
   }
 
   const best = results.sort((a, b) => b.score - a.score)[0];
@@ -1430,6 +1542,7 @@ function classifySensitivity(
     contextClass === "SECURITY" ||
     contextClass === "COMPLIANCE" ||
     contextClass === "AI_GOVERNANCE" ||
+    contextClass === "HBCE_ECOSISTEMA_AI" ||
     contextClass === "GOVERNANCE" ||
     contextClass === "USE" ||
     contextClass === "CIVIC" ||
@@ -1479,9 +1592,28 @@ function boost<T extends string>(
 }
 
 function findMatches(text: string, keywords: string[]): string[] {
-  return keywords
-    .map((keyword) => normalizeText(keyword))
-    .filter((keyword) => keyword.length > 0 && text.includes(keyword));
+  const normalizedKeywords = keywords.map((keyword) => normalizeText(keyword));
+  const uniqueMatches = new Set<string>();
+
+  for (const keyword of normalizedKeywords) {
+    if (!keyword) {
+      continue;
+    }
+
+    if (matchesTerm(text, keyword)) {
+      uniqueMatches.add(keyword);
+    }
+  }
+
+  return Array.from(uniqueMatches);
+}
+
+function matchesTerm(text: string, keyword: string): boolean {
+  if (keyword.includes("/") || keyword.includes("_") || keyword.includes(".")) {
+    return text.includes(keyword);
+  }
+
+  return ` ${text} `.includes(` ${keyword} `);
 }
 
 function normalizeText(value: string): string {
