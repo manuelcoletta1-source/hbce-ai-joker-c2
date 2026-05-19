@@ -78,12 +78,17 @@ type OpcPublicProof = {
   legalCertification?: false;
   appendStatus?: string;
   appendReason?: string;
+  hbceModule?: string;
+  projectDomain?: string;
   publicProof?: unknown;
 };
 
 type MemoryInfo = {
   used?: boolean;
+  available?: boolean;
+  injected?: boolean;
   source?: string;
+  rawSource?: string;
   lastEventId?: string | null;
   event?: string;
   memoryHash?: string;
@@ -113,10 +118,13 @@ type GovernanceInfo = {
   policyStatus?: string;
   policyOutcome?: string;
   policyReference?: string;
+  policyReasons?: string[];
   riskClass?: string;
   riskScore?: number;
+  riskReasons?: string[];
   oversight?: string;
   requiredRole?: string;
+  oversightReason?: string;
   iprBinding?: boolean;
   evtRequired?: boolean;
   memoryRequired?: boolean;
@@ -124,6 +132,8 @@ type GovernanceInfo = {
   auditRequired?: boolean;
   failClosed?: boolean;
   civicBoundary?: string;
+  aiGovernanceBoundary?: string;
+  aerospaceBoundary?: string;
   filePolicy?: {
     allowed?: boolean;
     allowedCount?: number;
@@ -138,6 +148,8 @@ type DiagnosticsInfo = {
   degradedReason?: string | null;
   evtIprMemoryUsed?: boolean;
   memorySource?: string;
+  memoryAvailable?: boolean;
+  memoryInjected?: boolean;
   memoryEvent?: string;
   memoryHash?: string;
   memoryAppendStatus?: string;
@@ -145,6 +157,7 @@ type DiagnosticsInfo = {
   opcAppendStatus?: string;
   opcVerificationStatus?: string;
   hbceModule?: string;
+  activeModules?: string[];
   structuredFormat?: boolean;
 };
 
@@ -161,6 +174,8 @@ type ChatApiResponse = {
   hbceModule?: string;
   activeModules?: string[];
   moduleType?: string;
+  collections?: readonly string[] | string[];
+  modules?: readonly string[] | string[];
   contextClass?: string;
   legacyContextClass?: string;
   intentClass?: string;
@@ -192,6 +207,26 @@ const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 const DEFAULT_SESSION_PREFIX = "JOKER-UI";
 const USE_DEMOCRATIC_BOUNDARY =
   "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
+const HBCE_AI_BOUNDARY =
+  "The AI model does not govern HBCE. HBCE governs the use of AI models.";
+
+const CANONICAL_COLLECTIONS = [
+  "MATRIX",
+  "U.S.E.",
+  "CORPUS_ESOTEROLOGIA_ERMETICA",
+  "APOKALYPSIS",
+  "HBCE_ECOSISTEMA_AI"
+];
+
+const CANONICAL_MODULES = [
+  "UNEBDO",
+  "OPC",
+  "MetaExchange",
+  "IOspace",
+  "CyberGlobal",
+  "NeuroLoop",
+  "MATRIX"
+];
 
 function buildClientId(prefix: string): string {
   const random =
@@ -212,7 +247,7 @@ function formatBool(value: boolean | undefined): string {
   return "-";
 }
 
-function formatList(values?: string[]): string {
+function formatList(values?: readonly string[] | string[]): string {
   if (!values || values.length === 0) return "-";
   return values.join(", ");
 }
@@ -251,6 +286,7 @@ function statusTone(value?: string | null): string {
     normalized === "REQUIRE_REVIEW" ||
     normalized === "PENDING" ||
     normalized === "PARTIAL" ||
+    normalized === "MEDIUM" ||
     normalized === "PLANNED_FUNCTIONAL_LAYER" ||
     normalized === "PLANNED_INTERFACE_LAYER" ||
     normalized === "DOCUMENTATION_ONLY"
@@ -266,6 +302,7 @@ function statusTone(value?: string | null): string {
     normalized === "INVALID" ||
     normalized === "PROHIBITED" ||
     normalized === "CRITICAL" ||
+    normalized === "HIGH" ||
     normalized === "FALSE"
   ) {
     return "joker-badge--bad";
@@ -445,7 +482,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             rows={[
               ["Proof", message.runtime.opc?.proofId],
               ["Chain", message.runtime.opc?.chainHash],
-              ["Memory", message.runtime.opc?.memoryHash],
+              ["Module", message.runtime.opc?.hbceModule || message.runtime.hbceModule],
               ["Audit", message.runtime.opc?.auditStatus],
               ["Verify", message.runtime.opc?.verificationStatus],
               ["Legal", String(message.runtime.opc?.legalCertification ?? false)]
@@ -545,6 +582,8 @@ export default function InterfacePage() {
       decision: lastRuntime?.decision || "-",
       governanceDecision: lastRuntime?.governanceDecision || "-",
       projectDomain: lastRuntime?.projectDomain || "-",
+      activeDomains: lastRuntime?.activeDomains || lastRuntime?.governance?.activeDomains || [],
+      domainType: lastRuntime?.domainType || lastRuntime?.governance?.domainType || "-",
       contextClass: lastRuntime?.contextClass || "-",
       intentClass: lastRuntime?.intentClass || "-",
       documentFamily: lastRuntime?.documentFamily || "-",
@@ -552,6 +591,8 @@ export default function InterfacePage() {
       activeModules: lastRuntime?.activeModules || lastRuntime?.governance?.activeModules || [],
       moduleType: lastRuntime?.moduleType || lastRuntime?.governance?.moduleType || "-",
       moduleConfidence: lastRuntime?.governance?.moduleConfidence,
+      collections: lastRuntime?.collections || CANONICAL_COLLECTIONS,
+      modules: lastRuntime?.modules || CANONICAL_MODULES,
       memoryUsed: lastRuntime?.evtIprMemoryUsed,
       memorySource: lastRuntime?.memorySource || "-",
       memoryHash: lastRuntime?.memory?.memoryHash || "-",
@@ -1364,11 +1405,11 @@ export default function InterfacePage() {
           <header className="joker-header">
             <div className="joker-header-grid">
               <div>
-                <div className="joker-kicker">AI JOKER-C2</div>
+                <div className="joker-kicker">AI JOKER-C2 · EVT-0015-AI</div>
                 <h1 className="joker-title">IPR Runtime Demonstrator</h1>
                 <p className="joker-lead">
                   Chat operativa con identità IPR, EVT, memoria EVT/IPR-bound, proof receipt OPC e governance HBCE/MATRIX.
-                  Il runtime espone continuità, audit, verifica, fail-closed, moduli HBCE e salvaguardie U.S.E. quando pertinenti.
+                  Il runtime espone cinque collane, sette moduli HBCE, continuità, audit, verifica, fail-closed, HBCE ECOSISTEMA AI e salvaguardie U.S.E. quando pertinenti.
                 </p>
               </div>
 
@@ -1383,7 +1424,7 @@ export default function InterfacePage() {
             {messages.length === 0 ? (
               <div className="joker-empty">
                 <div className="joker-empty-inner">
-                  <div className="joker-empty-kicker">JOKER-C2 online</div>
+                  <div className="joker-empty-kicker">JOKER-C2 online · UP-MESE-4</div>
                   <p className="joker-empty-title">
                     Nuova sessione inizializzata. Invia una richiesta operativa.
                   </p>
@@ -1391,7 +1432,8 @@ export default function InterfacePage() {
                     {[
                       "joker cosa è IPR?",
                       "che differenza c’è tra IPR, EVT e OPC?",
-                      "spiegami i moduli HBCE",
+                      "spiegami i sette moduli HBCE",
+                      "spiegami HBCE ECOSISTEMA AI",
                       "diagnostica runtime",
                       "spiegami U.S.E. e voto digitale federato"
                     ].map((sample) => (
@@ -1415,7 +1457,7 @@ export default function InterfacePage() {
 
                 {isSending ? (
                   <div className="joker-message joker-message--assistant">
-                    AI JOKER-C2 sta generando risposta, EVT, memoria EVT/IPR, classificazione modulo HBCE e OPC proof receipt.
+                    AI JOKER-C2 sta generando risposta, EVT, memoria EVT/IPR, classificazione dominio, classificazione modulo HBCE e OPC proof receipt.
                   </div>
                 ) : null}
 
@@ -1485,10 +1527,21 @@ export default function InterfacePage() {
             <FieldRow label="Decision" value={runtimeSummary.decision} badge />
             <FieldRow label="GovDec" value={runtimeSummary.governanceDecision} badge />
             <FieldRow label="Domain" value={runtimeSummary.projectDomain} />
-            <FieldRow label="Domains" value={formatList(lastRuntime?.activeDomains)} />
+            <FieldRow label="Domains" value={formatList(runtimeSummary.activeDomains)} />
+            <FieldRow label="DType" value={runtimeSummary.domainType} />
             <FieldRow label="Context" value={runtimeSummary.contextClass} />
             <FieldRow label="Intent" value={runtimeSummary.intentClass} />
             <FieldRow label="Family" value={runtimeSummary.documentFamily} />
+          </RuntimeCard>
+
+          <RuntimeCard title="Five Collections">
+            <FieldRow label="Count" value={runtimeSummary.collections.length} />
+            <FieldRow label="Active" value={formatList(runtimeSummary.collections)} />
+          </RuntimeCard>
+
+          <RuntimeCard title="Seven HBCE Modules">
+            <FieldRow label="Count" value={runtimeSummary.modules.length} />
+            <FieldRow label="Stack" value={formatList(runtimeSummary.modules)} />
           </RuntimeCard>
 
           <RuntimeCard title="HBCE Module">
@@ -1517,6 +1570,7 @@ export default function InterfacePage() {
           <RuntimeCard title="OPC Proof Receipt">
             <FieldRow label="Proof" value={lastRuntime?.opc?.proofId || "-"} mono />
             <FieldRow label="Chain" value={lastRuntime?.opc?.chainHash || "-"} mono />
+            <FieldRow label="Module" value={lastRuntime?.opc?.hbceModule || runtimeSummary.hbceModule} />
             <FieldRow label="Memory" value={lastRuntime?.opc?.memoryHash || "-"} mono />
             <FieldRow label="Audit" value={runtimeSummary.opcAuditStatus} badge />
             <FieldRow label="Verify" value={runtimeSummary.opcVerificationStatus} badge />
@@ -1556,6 +1610,9 @@ export default function InterfacePage() {
 
           <RuntimeCard title="Governance">
             <FieldRow label="Data" value={lastRuntime?.governance?.dataClass || "-"} badge />
+            <FieldRow label="Secret" value={lastRuntime?.governance?.containsSecret} />
+            <FieldRow label="Personal" value={lastRuntime?.governance?.containsPersonalData} />
+            <FieldRow label="Security" value={lastRuntime?.governance?.containsSecuritySensitiveData} />
             <FieldRow label="Civic" value={lastRuntime?.governance?.containsCivicSensitiveData} />
             <FieldRow label="Choice" value={lastRuntime?.governance?.containsDemocraticChoiceData} />
             <FieldRow label="Policy" value={lastRuntime?.governance?.policyStatus || "-"} badge />
@@ -1577,7 +1634,19 @@ export default function InterfacePage() {
 
           {lastRuntime?.governance?.civicBoundary ? (
             <RuntimeCard title="U.S.E. Boundary">
-              <FieldRow label="Rule" value={lastRuntime.governance.civicBoundary} />
+              <FieldRow label="Rule" value={lastRuntime.governance.civicBoundary || USE_DEMOCRATIC_BOUNDARY} />
+            </RuntimeCard>
+          ) : null}
+
+          {lastRuntime?.governance?.aiGovernanceBoundary ? (
+            <RuntimeCard title="HBCE AI Boundary">
+              <FieldRow label="Rule" value={lastRuntime.governance.aiGovernanceBoundary || HBCE_AI_BOUNDARY} />
+            </RuntimeCard>
+          ) : null}
+
+          {lastRuntime?.governance?.aerospaceBoundary ? (
+            <RuntimeCard title="Aerospace Boundary">
+              <FieldRow label="Rule" value={lastRuntime.governance.aerospaceBoundary} />
             </RuntimeCard>
           ) : null}
 
@@ -1589,10 +1658,13 @@ export default function InterfacePage() {
             <FieldRow label="OpenAI" value={lastRuntime?.diagnostics?.openaiConfigured} />
             <FieldRow label="Model" value={lastRuntime?.diagnostics?.modelUsed || "-"} mono />
             <FieldRow label="Degraded" value={lastRuntime?.diagnostics?.degradedReason || "none"} />
+            <FieldRow label="MemAvail" value={lastRuntime?.diagnostics?.memoryAvailable} />
+            <FieldRow label="MemInj" value={lastRuntime?.diagnostics?.memoryInjected} />
             <FieldRow label="Memory" value={lastRuntime?.diagnostics?.memoryAppendStatus || "-"} badge />
             <FieldRow label="OPC" value={lastRuntime?.diagnostics?.opcAppendStatus || "-"} badge />
             <FieldRow label="Verify" value={lastRuntime?.diagnostics?.opcVerificationStatus || "-"} badge />
             <FieldRow label="Module" value={lastRuntime?.diagnostics?.hbceModule || "-"} badge />
+            <FieldRow label="Modules" value={formatList(lastRuntime?.diagnostics?.activeModules)} />
           </RuntimeCard>
         </aside>
       </div>
