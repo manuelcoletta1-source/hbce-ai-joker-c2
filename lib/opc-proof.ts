@@ -15,6 +15,7 @@
  * - runtime state;
  * - runtime decision;
  * - project domain;
+ * - HBCE module;
  * - policy reference;
  * - risk class;
  * - input hash;
@@ -27,6 +28,11 @@
  * - audit status;
  * - verification status.
  *
+ * Canonical runtime checkpoint:
+ * - EVT-0015-AI
+ * - prev EVT-0014-AI
+ * - cycle UP-MESE-4
+ *
  * Canonical formula:
  *
  * IPR binds the identity.
@@ -34,6 +40,7 @@
  * Memory preserves runtime continuity.
  * OPC produces the proof receipt.
  * Ledger preserves the chain.
+ * MATRIX organizes the HBCE stack.
  * Verification reconstructs the operation.
  */
 
@@ -92,8 +99,19 @@ export type OpcProjectDomain =
   | "U.S.E."
   | "CORPUS_ESOTEROLOGIA_ERMETICA"
   | "APOKALYPSIS"
+  | "HBCE_ECOSISTEMA_AI"
   | "GENERAL"
   | "MULTI_DOMAIN";
+
+export type OpcHbceModule =
+  | "UNEBDO"
+  | "OPC"
+  | "MetaExchange"
+  | "IOspace"
+  | "CyberGlobal"
+  | "NeuroLoop"
+  | "MATRIX"
+  | "NONE";
 
 export type OpcRuntimeRole =
   | "IPR_RUNTIME_DEMONSTRATOR"
@@ -139,6 +157,7 @@ export type OpcRuntimeSnapshot = {
   contextClass: string;
   intentClass?: string;
   projectDomain?: OpcProjectDomain;
+  hbceModule?: OpcHbceModule;
   riskClass: OpcRiskClass;
   policyReference: string;
   policyOutcome?: string;
@@ -212,6 +231,7 @@ export type OpcProofPublicView = {
   memoryEventId?: string;
   memoryHash?: string;
   projectDomain?: OpcProjectDomain;
+  hbceModule?: OpcHbceModule;
   state: OpcRuntimeState;
   decision: OpcRuntimeDecision;
   riskClass: OpcRiskClass;
@@ -250,12 +270,19 @@ const DEFAULT_RUNTIME_ROLE: OpcRuntimeRole = "IPR_RUNTIME_DEMONSTRATOR";
 const NON_CERTIFICATION_STATEMENT =
   "OPC is a technical proof receipt for audit, verification and governance review. It does not create automatic legal certification, regulatory approval, institutional recognition or legally binding evidence status by default.";
 
+const AI_GOVERNANCE_BOUNDARY =
+  "The AI model does not govern HBCE. HBCE governs the use of AI models.";
+
+const MODULE_BOUNDARY =
+  "HBCE modules are technical-operational stack functions. They are not book collections and they are not automatic legal authority.";
+
 export function createOpcProofRecord(
   input: OpcProofRecordInput
 ): OpcProofRecord {
   const timestamp = input.timestamp || new Date().toISOString();
   const proofId = buildOpcProofId(timestamp);
   const identity = normalizeIdentity(input.identity);
+  const runtime = normalizeRuntimeSnapshot(input.runtime);
 
   const inputHash = sha256Canonical({
     type: "input",
@@ -269,7 +296,7 @@ export function createOpcProofRecord(
 
   const decisionHash = sha256Canonical({
     type: "decision",
-    runtime: input.runtime
+    runtime
   });
 
   const eventHash = sha256Canonical({
@@ -295,7 +322,7 @@ export function createOpcProofRecord(
     sessionId: input.sessionId,
     event: input.event,
     memory: input.memory,
-    runtime: input.runtime,
+    runtime,
     inputHash,
     outputHash,
     decisionHash,
@@ -304,7 +331,7 @@ export function createOpcProofRecord(
     previousProofHash
   });
 
-  const audit = normalizeAuditFrame(input.audit, input.runtime);
+  const audit = normalizeAuditFrame(input.audit, runtime);
 
   return {
     proofId,
@@ -314,7 +341,7 @@ export function createOpcProofRecord(
     sessionId: input.sessionId,
     event: input.event,
     memory: input.memory,
-    runtime: input.runtime,
+    runtime,
     proof: {
       inputHash,
       outputHash,
@@ -370,7 +397,7 @@ export function verifyOpcProofRecord(
     sessionId: record.sessionId,
     event: record.event,
     memory: record.memory,
-    runtime: record.runtime,
+    runtime: normalizeRuntimeSnapshot(record.runtime),
     inputHash: record.proof.inputHash,
     outputHash: record.proof.outputHash,
     decisionHash: record.proof.decisionHash,
@@ -416,6 +443,7 @@ export function toPublicOpcProofRecord(
     memoryEventId: record.memory?.evt,
     memoryHash: record.proof.memoryHash,
     projectDomain: record.runtime.projectDomain,
+    hbceModule: record.runtime.hbceModule,
     state: record.runtime.state,
     decision: record.runtime.decision,
     riskClass: record.runtime.riskClass,
@@ -589,7 +617,7 @@ function buildOpcChainHash(input: {
     sessionId: input.sessionId || null,
     event: input.event,
     memory: input.memory || null,
-    runtime: input.runtime,
+    runtime: normalizeRuntimeSnapshot(input.runtime),
     hashes: {
       inputHash: input.inputHash,
       outputHash: input.outputHash,
@@ -616,10 +644,66 @@ function normalizeIdentity(identity: OpcIdentityBinding): OpcIdentityBinding {
   };
 }
 
+function normalizeRuntimeSnapshot(
+  runtime: OpcRuntimeSnapshot
+): OpcRuntimeSnapshot {
+  return {
+    ...runtime,
+    projectDomain: runtime.projectDomain || "GENERAL",
+    hbceModule: runtime.hbceModule || inferHbceModuleForRuntime(runtime),
+    failClosed:
+      typeof runtime.failClosed === "boolean" ? runtime.failClosed : false
+  };
+}
+
+function inferHbceModuleForRuntime(runtime: OpcRuntimeSnapshot): OpcHbceModule {
+  if (runtime.projectDomain === "HBCE_ECOSISTEMA_AI") {
+    return "MATRIX";
+  }
+
+  if (runtime.projectDomain === "U.S.E.") {
+    return "UNEBDO";
+  }
+
+  if (
+    runtime.contextClass === "SECURITY" ||
+    runtime.contextClass === "CRITICAL_INFRASTRUCTURE" ||
+    runtime.contextClass === "DUAL_USE"
+  ) {
+    return "CyberGlobal";
+  }
+
+  if (
+    runtime.contextClass === "COMPLIANCE" ||
+    runtime.contextClass === "GOVERNANCE" ||
+    runtime.decision === "AUDIT"
+  ) {
+    return "OPC";
+  }
+
+  if (
+    runtime.contextClass === "AI_GOVERNANCE" ||
+    runtime.contextClass === "HBCE_ECOSISTEMA_AI"
+  ) {
+    return "MATRIX";
+  }
+
+  if (runtime.contextClass === "MATRIX") {
+    return "MATRIX";
+  }
+
+  if (runtime.contextClass === "IPR" || runtime.contextClass === "IDENTITY") {
+    return "UNEBDO";
+  }
+
+  return "NONE";
+}
+
 function normalizeOpcProofRecord(record: OpcProofRecord): OpcProofRecord {
   return {
     ...record,
     identity: normalizeIdentity(record.identity),
+    runtime: normalizeRuntimeSnapshot(record.runtime),
     boundary: record.boundary || {
       legalCertification: false,
       statement: NON_CERTIFICATION_STATEMENT
@@ -647,18 +731,21 @@ function normalizeAuditFrame(
   audit: Partial<OpcAuditFrame> | undefined,
   runtime: OpcRuntimeSnapshot
 ): OpcAuditFrame {
+  const normalizedRuntime = normalizeRuntimeSnapshot(runtime);
+
   const reviewRequired =
     typeof audit?.reviewRequired === "boolean"
       ? audit.reviewRequired
-      : inferReviewRequired(runtime);
+      : inferReviewRequired(normalizedRuntime);
 
   return {
-    status: audit?.status || inferAuditStatus(runtime, reviewRequired),
+    status: audit?.status || inferAuditStatus(normalizedRuntime, reviewRequired),
     reviewRequired,
-    reviewerRole: audit?.reviewerRole || inferReviewerRole(runtime, reviewRequired),
+    reviewerRole:
+      audit?.reviewerRole || inferReviewerRole(normalizedRuntime, reviewRequired),
     reasons: uniqueReasons([
       ...(audit?.reasons || []),
-      ...buildAuditReasons(runtime, reviewRequired)
+      ...buildAuditReasons(normalizedRuntime, reviewRequired)
     ])
   };
 }
@@ -719,6 +806,28 @@ function inferReviewerRole(
     return "CIVIC_INFRASTRUCTURE_REVIEWER";
   }
 
+  if (
+    runtime.projectDomain === "HBCE_ECOSISTEMA_AI" ||
+    runtime.contextClass === "HBCE_ECOSISTEMA_AI" ||
+    runtime.contextClass === "AI_GOVERNANCE"
+  ) {
+    return "AI_GOVERNANCE_REVIEWER";
+  }
+
+  if (
+    runtime.hbceModule === "CyberGlobal" ||
+    runtime.contextClass === "SECURITY"
+  ) {
+    return "SECURITY_REVIEWER";
+  }
+
+  if (
+    runtime.hbceModule === "MATRIX" ||
+    runtime.projectDomain === "MATRIX"
+  ) {
+    return "MATRIX_RUNTIME_REVIEWER";
+  }
+
   if (runtime.decision === "AUDIT" || runtime.riskClass === "MEDIUM") {
     return "AUDITOR";
   }
@@ -741,6 +850,10 @@ function buildAuditReasons(
     reasons.push(`Project domain: ${runtime.projectDomain}.`);
   }
 
+  if (runtime.hbceModule) {
+    reasons.push(`HBCE module: ${runtime.hbceModule}.`);
+  }
+
   if (
     runtime.projectDomain === "U.S.E." ||
     runtime.contextClass === "USE" ||
@@ -749,6 +862,24 @@ function buildAuditReasons(
   ) {
     reasons.push(
       "Civic or democratic infrastructure context requires identity-choice separation and audit-oriented handling."
+    );
+  }
+
+  if (
+    runtime.projectDomain === "HBCE_ECOSISTEMA_AI" ||
+    runtime.contextClass === "HBCE_ECOSISTEMA_AI" ||
+    runtime.contextClass === "AI_GOVERNANCE"
+  ) {
+    reasons.push(AI_GOVERNANCE_BOUNDARY);
+  }
+
+  if (runtime.hbceModule && runtime.hbceModule !== "NONE") {
+    reasons.push(MODULE_BOUNDARY);
+  }
+
+  if (runtime.hbceModule === "MATRIX") {
+    reasons.push(
+      "MATRIX is active as the HBCE system coordination and organization module."
     );
   }
 
