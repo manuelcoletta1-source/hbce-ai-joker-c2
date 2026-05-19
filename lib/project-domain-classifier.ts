@@ -20,6 +20,10 @@
  * As a project domain, MATRIX is the operational infrastructure architecture.
  * As an HBCE module, MATRIX is the system coordination and organization layer.
  * The module function is handled by lib/hbce-module-classifier.ts.
+ *
+ * Strategic doctrine:
+ * The three strategic doctrine documents are not project collections and are not HBCE modules.
+ * They are doctrine-layer documents that may activate MATRIX / HBCE_ECOSISTEMA_AI / MULTI_DOMAIN.
  */
 
 import type {
@@ -82,9 +86,9 @@ const DOMAIN_METADATA: Record<ProjectDomain, ProjectDomainMetadata> = {
     domainType: "OPERATIONAL_INFRASTRUCTURE_DOMAIN",
     label: "MATRIX",
     shortDefinition:
-      "Operational infrastructure architecture for AI governance, European systems, strategic autonomy, B2B, B2G, citizens, enterprises, cloud, data, energy, security and institutional continuity.",
+      "Operational infrastructure architecture for AI governance, European systems, strategic autonomy, B2B, B2G, citizens, enterprises, banks, legal offices, cloud, data, energy, security and institutional continuity.",
     runtimeQuestion:
-      "How can Europe build verifiable operational systems for AI, governance, data, energy, security, citizens, enterprises and institutional continuity?"
+      "How can Europe build verifiable operational systems for AI, governance, data, energy, security, citizens, enterprises, banks, legal offices and institutional continuity?"
   },
   "U.S.E.": {
     projectDomain: "U.S.E.",
@@ -138,7 +142,7 @@ const DOMAIN_METADATA: Record<ProjectDomain, ProjectDomainMetadata> = {
     domainType: "ECOSYSTEM_OPERATION",
     label: "MULTI_DOMAIN",
     shortDefinition:
-      "Ecosystem-level operation involving more than one primary domain or the whole AI JOKER-C2 governance runtime.",
+      "Ecosystem-level operation involving more than one primary domain, the doctrine layer, or the whole AI JOKER-C2 governance runtime.",
     runtimeQuestion:
       "How does the operation affect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS and HBCE ECOSISTEMA AI together?"
   }
@@ -163,11 +167,7 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "architettura infrastrutturale",
     "architettura hbce",
     "sistema operativo europeo",
-    "hbce stack",
-    "stack hbce",
-    "operational stack",
-    "technical-operational stack",
-    "stack tecnico-operativo",
+    "hbce modules",
     "moduli hbce",
     "sette moduli",
     "7 moduli",
@@ -230,6 +230,8 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "governance europea",
     "governance imprese",
     "governance cittadini",
+    "governance bancaria",
+    "governance legale",
     "public administration",
     "pubblica amministrazione",
     "public sector",
@@ -239,10 +241,30 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "enterprises",
     "imprese",
     "aziende",
+    "azienda",
     "industria",
     "industrial",
     "b2b",
     "b2g",
+    "bank",
+    "banks",
+    "banking",
+    "banca",
+    "banche",
+    "istituti bancari",
+    "settore bancario",
+    "financial sector",
+    "settore finanziario",
+    "legal office",
+    "legal offices",
+    "law firm",
+    "law firms",
+    "studio legale",
+    "studi legali",
+    "notai",
+    "notarile",
+    "due diligence",
+    "compliance legale",
     "cloud",
     "data governance",
     "governance dei dati",
@@ -279,6 +301,15 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "standard ue",
     "istituzionale",
     "istituzioni",
+    "valore pragmatico",
+    "valore operativo",
+    "valore istituzionale",
+    "a cosa serve",
+    "per le banche",
+    "per studi legali",
+    "per la governance",
+    "pragmatico",
+    "pragmaticamente",
     "fail closed",
     "fail-closed",
     "auditability",
@@ -685,6 +716,72 @@ const AI_GOVERNANCE_TERMS = [
   "llama"
 ];
 
+const BANKING_LEGAL_GOVERNANCE_TERMS = [
+  "banche",
+  "banca",
+  "istituti bancari",
+  "settore bancario",
+  "bank",
+  "banks",
+  "banking",
+  "financial sector",
+  "settore finanziario",
+  "finanza",
+  "pagamenti",
+  "studi legali",
+  "studio legale",
+  "law firm",
+  "law firms",
+  "legal office",
+  "legal offices",
+  "notai",
+  "notarile",
+  "contratti",
+  "contratto",
+  "contenzioso",
+  "due diligence",
+  "compliance",
+  "governance",
+  "audit",
+  "proof receipt",
+  "prova",
+  "prova tecnica",
+  "verifica documentale",
+  "responsabilita",
+  "responsabilità",
+  "tracciabilita",
+  "tracciabilità",
+  "documentale",
+  "valore pragmatico",
+  "valore operativo",
+  "a cosa serve",
+  "per banche",
+  "per le banche",
+  "per studi legali",
+  "per gli studi legali",
+  "per la governance",
+  "governace"
+];
+
+const STRATEGIC_DOCTRINE_TERMS = [
+  "documenti dottrinali strategici",
+  "documenti dottrinali",
+  "dottrina strategica",
+  "dottrinali strategici",
+  "strategic doctrine",
+  "strategic doctrines",
+  "documenti strategici",
+  "tre documenti",
+  "3 documenti",
+  "hbce cybersecurity strategy",
+  "cybersecurity strategy",
+  "cyber security strategy",
+  "hbce data protection strategy",
+  "data protection strategy",
+  "hbce information governance strategy",
+  "information governance strategy"
+];
+
 const REPOSITORY_MULTI_DOMAIN_FILES = [
   "readme.md",
   "architecture.md",
@@ -768,6 +865,12 @@ const HBCE_ECOSISTEMA_AI_FILES = [
   "matrix_ai_governance.md"
 ];
 
+const STRATEGIC_DOCTRINE_FILES = [
+  "hbce_cybersecurity_strategy.md",
+  "hbce_data_protection_strategy.md",
+  "hbce_information_governance_strategy.md"
+];
+
 const MULTI_DOMAIN_TERMS = [
   "matrix use corpus apokalypsis hbce ecosistema ai",
   "matrix u.s.e. corpus apokalypsis hbce ecosistema ai",
@@ -806,7 +909,10 @@ const MULTI_DOMAIN_TERMS = [
   "manifesto sistema",
   "hbce operational stack",
   "evt protocol",
-  "protocollo evt"
+  "protocollo evt",
+  "strategic doctrine layer",
+  "dottrina strategica",
+  "documenti dottrinali strategici"
 ];
 
 export function classifyProjectDomain(
@@ -860,6 +966,14 @@ export function classifyProjectDomain(
   const strategicAutonomyMatches =
     findEuropeanStrategicAutonomyMatches(normalizedInput);
   const aiGovernanceMatches = findMatches(normalizedInput, AI_GOVERNANCE_TERMS);
+  const bankingLegalMatches = findMatches(
+    normalizedInput,
+    BANKING_LEGAL_GOVERNANCE_TERMS
+  );
+  const strategicDoctrineMatches = findMatches(
+    normalizedInput,
+    STRATEGIC_DOCTRINE_TERMS
+  );
 
   const domainScores = PRIMARY_DOMAINS.map((domain) =>
     scoreDomain(normalizedInput, domain, DOMAIN_KEYWORDS[domain])
@@ -885,11 +999,66 @@ export function classifyProjectDomain(
     );
   }
 
+  if (bankingLegalMatches.length >= 2) {
+    boostScore(domainScores, "MATRIX", 14 + bankingLegalMatches.length);
+    boostScore(
+      domainScores,
+      "HBCE_ECOSISTEMA_AI",
+      6 + bankingLegalMatches.length
+    );
+  }
+
+  if (strategicDoctrineMatches.length > 0) {
+    boostScore(domainScores, "MATRIX", 10 + strategicDoctrineMatches.length);
+    boostScore(
+      domainScores,
+      "HBCE_ECOSISTEMA_AI",
+      8 + strategicDoctrineMatches.length
+    );
+  }
+
   const matchedDomains = domainScores
     .filter((result) => result.score > 0)
     .sort((a, b) => b.score - a.score);
 
   const scoreMap = toScoreMap(domainScores);
+
+  if (strategicDoctrineMatches.length > 0) {
+    return createClassification(
+      "MULTI_DOMAIN",
+      ["MATRIX", "HBCE_ECOSISTEMA_AI"],
+      0.97,
+      [
+        "Strategic doctrine language detected.",
+        "Strategic doctrine documents are not project collections or HBCE modules; they support MATRIX, HBCE ECOSISTEMA AI and the HBCE operational stack.",
+        ...strategicDoctrineMatches.map(
+          (term) => `Matched strategic doctrine term: ${term}`
+        ),
+        ...formatIprAndProofReasons(iprMatches, proofLayerMatches),
+        ...formatAiGovernanceReasons(aiGovernanceMatches),
+        ...formatBankingLegalReasons(bankingLegalMatches)
+      ],
+      scoreMap
+    );
+  }
+
+  if (bankingLegalMatches.length >= 2) {
+    return createClassification(
+      "MULTI_DOMAIN",
+      ["MATRIX", "HBCE_ECOSISTEMA_AI"],
+      0.95,
+      [
+        "Banking, legal, governance, audit or compliance value language detected.",
+        "Such requests belong to the MATRIX operational infrastructure domain and often activate HBCE ECOSISTEMA AI for AI governance and audit-ready process design.",
+        ...bankingLegalMatches.map(
+          (term) => `Matched banking/legal/governance term: ${term}`
+        ),
+        ...formatIprAndProofReasons(iprMatches, proofLayerMatches),
+        ...formatAiGovernanceReasons(aiGovernanceMatches)
+      ],
+      scoreMap
+    );
+  }
 
   if (explicitMultiDomain.length > 0) {
     return createClassification(
@@ -901,6 +1070,7 @@ export function classifyProjectDomain(
         ...explicitMultiDomain.map((term) => `Matched multi-domain term: ${term}`),
         ...formatIprAndProofReasons(iprMatches, proofLayerMatches),
         ...formatAiGovernanceReasons(aiGovernanceMatches),
+        ...formatBankingLegalReasons(bankingLegalMatches),
         ...collectReasons(matchedDomains)
       ],
       scoreMap
@@ -957,6 +1127,7 @@ export function classifyProjectDomain(
           "More than one primary project domain matched with sufficient strength.",
           ...formatIprAndProofReasons(iprMatches, proofLayerMatches),
           ...formatAiGovernanceReasons(aiGovernanceMatches),
+          ...formatBankingLegalReasons(bankingLegalMatches),
           ...collectReasons(matchedDomains)
         ],
         scoreMap
@@ -985,7 +1156,8 @@ export function classifyProjectDomain(
         ? best.reasons
         : [`Classified as ${best.domain} by highest project-domain score.`]),
       ...formatIprAndProofReasons(iprMatches, proofLayerMatches),
-      ...formatAiGovernanceReasons(aiGovernanceMatches)
+      ...formatAiGovernanceReasons(aiGovernanceMatches),
+      ...formatBankingLegalReasons(bankingLegalMatches)
     ],
     scoreMap
   );
@@ -1040,6 +1212,26 @@ function classifyByFilePath(
       [
         `U.S.E. documentation file detected: ${matchedUseFile}`,
         "File path maps to the MATRIX-derived political-institutional application domain."
+      ],
+      scoreMap
+    );
+  }
+
+  const matchedDoctrineFile = STRATEGIC_DOCTRINE_FILES.find((file) =>
+    normalizedInput.includes(file)
+  );
+
+  if (matchedDoctrineFile) {
+    scoreMap.MATRIX = 10;
+    scoreMap.HBCE_ECOSISTEMA_AI = 8;
+
+    return createClassification(
+      "MULTI_DOMAIN",
+      ["MATRIX", "HBCE_ECOSISTEMA_AI"],
+      0.96,
+      [
+        `Strategic doctrine file detected: ${matchedDoctrineFile}`,
+        "Strategic doctrine files support MATRIX, HBCE ECOSISTEMA AI and the HBCE operational stack."
       ],
       scoreMap
     );
@@ -1422,6 +1614,21 @@ function formatAiGovernanceReasons(aiGovernanceMatches: string[]): string[] {
     );
     reasons.push(
       ...aiGovernanceMatches.map((term) => `Matched AI governance term: ${term}`)
+    );
+  }
+
+  return reasons;
+}
+
+function formatBankingLegalReasons(bankingLegalMatches: string[]): string[] {
+  const reasons: string[] = [];
+
+  if (bankingLegalMatches.length > 0) {
+    reasons.push(
+      "Banking, legal, governance, compliance or pragmatic value language detected; routed through MATRIX/HBCE operational infrastructure and HBCE ECOSISTEMA AI when relevant."
+    );
+    reasons.push(
+      ...bankingLegalMatches.map((term) => `Matched banking/legal/governance term: ${term}`)
     );
   }
 
