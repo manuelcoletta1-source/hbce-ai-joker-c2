@@ -554,6 +554,66 @@ function getStrategicDoctrinePrimaryModule(
   }
 }
 
+function isPragmaticGovernanceValueQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  const targetTerms = [
+    "banche",
+    "banca",
+    "bank",
+    "banks",
+    "banking",
+    "settore bancario",
+    "istituti bancari",
+    "studi legali",
+    "studio legale",
+    "law firm",
+    "law firms",
+    "legal office",
+    "legal offices",
+    "governance",
+    "governace",
+    "compliance",
+    "audit",
+    "due diligence",
+    "pubblica amministrazione",
+    "pa",
+    "b2b",
+    "b2g",
+    "aziende",
+    "imprese",
+    "istituzioni",
+    "governi"
+  ];
+
+  const valueTerms = [
+    "valore",
+    "valore pragmatico",
+    "valore operativo",
+    "a cosa serve",
+    "cosa serve",
+    "serve",
+    "utilita",
+    "utilità",
+    "pragmatico",
+    "pragmaticamente",
+    "in modo pragmatico",
+    "che valore ha",
+    "per banche",
+    "per le banche",
+    "per studi legali",
+    "per gli studi legali",
+    "per governance",
+    "per la governance"
+  ];
+
+  return (
+    runtimeTextIncludesAny(text, targetTerms) &&
+    runtimeTextIncludesAny(text, valueTerms) &&
+    !hasExplicitOperationalActionRequest(message)
+  );
+}
+
 function isCanonicalStackQuestion(message: string): boolean {
   const text = normalizeRuntimeText(message);
 
@@ -653,6 +713,10 @@ function shouldInjectEvtMemoryIntoPrompt(input: {
   }
 
   if (isStrategicDoctrineQuestion(input.message)) {
+    return true;
+  }
+
+  if (isPragmaticGovernanceValueQuestion(input.message)) {
     return true;
   }
 
@@ -783,6 +847,24 @@ function buildStrategicDoctrineProjectDomain(
   };
 }
 
+function buildPragmaticGovernanceValueProjectDomain(
+  base: ProjectDomainClassification
+): ProjectDomainClassification {
+  return {
+    ...base,
+    projectDomain: "MULTI_DOMAIN" as ProjectDomain,
+    activeDomains: ["MATRIX" as ProjectDomain, "HBCE_ECOSISTEMA_AI" as ProjectDomain],
+    primaryDomain: "MULTI_DOMAIN" as ProjectDomain,
+    domainType: "ECOSYSTEM_OPERATION",
+    confidence: Math.max(base.confidence || 0, 0.97),
+    reasons: [
+      ...base.reasons,
+      "Pragmatic banking, legal, compliance or governance value request mapped to MULTI_DOMAIN.",
+      "The request concerns B2B/B2G operational value, auditability, proof receipts, data protection and information governance."
+    ]
+  };
+}
+
 function withHbceModuleOverride(
   base: HbceModuleClassification,
   module: HbceModuleValue,
@@ -823,6 +905,19 @@ function normalizeHbceModuleClassification(input: {
       [
         "Strategic doctrine request mapped to HBCE doctrine layer.",
         "Doctrine documents are not collections and are not modules, but they activate connected HBCE modules for runtime traceability."
+      ]
+    );
+  }
+
+  if (isPragmaticGovernanceValueQuestion(input.message)) {
+    return withHbceModuleOverride(
+      base,
+      "MATRIX",
+      ["MATRIX", "OPC", "MetaExchange", "IOspace", "CyberGlobal"],
+      0.97,
+      [
+        "Pragmatic value request for banking, legal offices or governance mapped to MATRIX.",
+        "OPC, MetaExchange, IOspace and CyberGlobal are active because the request concerns auditability, proof receipts, controlled exchange, visibility and defensive governance."
       ]
     );
   }
@@ -1034,6 +1129,8 @@ async function generateResponse(input: {
             "Se l'utente chiede 'numero 1', 'il primo', 'questo 1' o 'specifiche del numero 1' nel contesto dei documenti dottrinali strategici, interpreta sempre come HBCE Cybersecurity Strategy e rispondi senza chiedere chiarimenti.",
             "Se l'utente chiede 'numero 2', 'il secondo' o 'questo 2' nel contesto dei documenti dottrinali strategici, interpreta come HBCE Data Protection Strategy.",
             "Se l'utente chiede 'numero 3', 'il terzo' o 'questo 3' nel contesto dei documenti dottrinali strategici, interpreta come HBCE Information Governance Strategy.",
+            "Quando l'utente chiede valore pragmatico per banche, studi legali, governance, compliance, audit, B2B o B2G, rispondi come spiegazione strategico-operativa sicura: non trattarla come comando operativo reale.",
+            "Per banche, studi legali e governance, spiega IPR come identità operativa, EVT come tracciabilità, OPC come proof receipt tecnica, MATRIX come coordinamento, Data Protection come minimizzazione e Information Governance come circolazione controllata.",
             "Formula HBCE ECOSISTEMA AI: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue.",
             "Boundary AI governance: il modello AI non governa HBCE; HBCE governa l’uso dei modelli AI.",
             `Modulo HBCE classificato: ${input.governanceFrame.hbceModule.module}.`,
@@ -1563,6 +1660,21 @@ function normalizeChatDataClassification(input: {
     };
   }
 
+  if (isPragmaticGovernanceValueQuestion(input.message)) {
+    return {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "Pragmatic governance value question detected.",
+        "Classified as PUBLIC because the request asks for strategic, banking, legal or governance explanation, not operational execution."
+      ]
+    };
+  }
+
   if (isRuntimeSelfIdentityQuestion(input.message)) {
     return {
       dataClass: "PUBLIC",
@@ -1605,7 +1717,10 @@ function normalizeChatDataClassification(input: {
     input.intentClass === "TRANSFORM" ||
     input.intentClass === "GITHUB" ||
     input.intentClass === "EDITORIAL" ||
-    input.intentClass === "CIVIC";
+    input.intentClass === "CIVIC" ||
+    input.intentClass === "GOVERNANCE" ||
+    input.intentClass === "COMPLIANCE" ||
+    input.intentClass === "STRATEGIC";
 
   const safeOrdinaryContext =
     input.contextClass === "GENERAL" ||
@@ -1623,7 +1738,9 @@ function normalizeChatDataClassification(input: {
     input.contextClass === "GOVERNANCE" ||
     input.contextClass === "COMPLIANCE" ||
     input.contextClass === "AI_GOVERNANCE" ||
-    input.contextClass === "TECHNICAL";
+    input.contextClass === "TECHNICAL" ||
+    input.contextClass === "STRATEGIC" ||
+    input.contextClass === "PUBLIC_ADMINISTRATION";
 
   if (
     input.data.dataClass === "UNKNOWN" &&
@@ -1743,7 +1860,10 @@ function isSafeDocumentIntentClass(intentClass: IntentClass): boolean {
     intentClass === "TRANSFORM" ||
     intentClass === "EDITORIAL" ||
     intentClass === "GITHUB" ||
-    intentClass === "CIVIC"
+    intentClass === "CIVIC" ||
+    intentClass === "GOVERNANCE" ||
+    intentClass === "COMPLIANCE" ||
+    intentClass === "STRATEGIC"
   );
 }
 
@@ -1766,7 +1886,11 @@ function normalizeSafeDocumentContextClass(
     contextClass === "APOKALYPSIS" ||
     contextClass === "HBCE_ECOSISTEMA_AI" ||
     contextClass === "USE" ||
-    contextClass === "CIVIC"
+    contextClass === "CIVIC" ||
+    contextClass === "GOVERNANCE" ||
+    contextClass === "COMPLIANCE" ||
+    contextClass === "STRATEGIC" ||
+    contextClass === "PUBLIC_ADMINISTRATION"
   ) {
     return contextClass;
   }
@@ -1813,6 +1937,8 @@ function isSafeDocumentWork(input: {
     input.contextClass === "COMPLIANCE" ||
     input.contextClass === "AI_GOVERNANCE" ||
     input.contextClass === "TECHNICAL" ||
+    input.contextClass === "STRATEGIC" ||
+    input.contextClass === "PUBLIC_ADMINISTRATION" ||
     input.contextClass === "GITHUB";
 
   return hasDocumentContext && isSafeDocumentIntentClass(input.intentClass);
@@ -1837,6 +1963,7 @@ function preferOpcForGovernance(input: {
     input.contextClass === "USE" ||
     input.contextClass === "CIVIC" ||
     input.contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
+    input.contextClass === "STRATEGIC" ||
     input.projectDomain.projectDomain === "U.S.E." ||
     input.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI" ||
     input.projectDomain.projectDomain === "MULTI_DOMAIN"
@@ -2349,6 +2476,111 @@ function applyStrategicDoctrineGovernanceOverride(input: {
   };
 }
 
+function applyPragmaticGovernanceValueOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+}): EnrichedGovernanceFrame {
+  if (!isPragmaticGovernanceValueQuestion(input.message)) {
+    return input.frame;
+  }
+
+  const projectDomain = buildPragmaticGovernanceValueProjectDomain(
+    input.frame.projectDomain
+  );
+
+  const hbceModule = withHbceModuleOverride(
+    input.frame.hbceModule,
+    "MATRIX",
+    ["MATRIX", "OPC", "MetaExchange", "IOspace", "CyberGlobal"],
+    0.97,
+    [
+      "Pragmatic value request for banking, legal offices, compliance or governance handled as safe strategic explanation.",
+      "MATRIX organizes the institutional value layer.",
+      "OPC supports proof receipts and auditability.",
+      "MetaExchange supports controlled exchange.",
+      "IOspace supports visibility.",
+      "CyberGlobal supports defensive resilience."
+    ]
+  );
+
+  const data: DataClassification = {
+    dataClass: "PUBLIC",
+    containsSecret: false,
+    containsPersonalData: false,
+    containsSecuritySensitiveData: false,
+    containsCivicSensitiveData: false,
+    containsDemocraticChoiceData: false,
+    reasons: [
+      "Pragmatic governance value explanation detected.",
+      "Classified as PUBLIC because the request asks for general business, banking, legal or governance value, not an operational action."
+    ]
+  };
+
+  const policy: PolicyEvaluation = {
+    status: "ALLOWED",
+    policyReference: "SAFE_PRAGMATIC_GOVERNANCE_VALUE_EXPLANATION",
+    prohibited: false,
+    failClosed: false,
+    reasons: [
+      "Pragmatic governance value explanation is allowed.",
+      "No real-world execution, authorization, incident command, secret exposure or prohibited operation detected."
+    ],
+    outcome: "PERMIT"
+  };
+
+  const risk: RiskEvaluation = {
+    riskClass: "MEDIUM",
+    probability: 2,
+    impact: 3,
+    riskScore: 6,
+    reasons: [
+      "The request concerns institutional, banking, legal, compliance or governance value.",
+      "The content is answerable as strategic explanation but should remain audit-aware and non-certifying."
+    ]
+  };
+
+  const oversight: OversightEvaluation = {
+    state: "RECOMMENDED",
+    requiredRole: "AUDITOR",
+    reason:
+      "Human review is recommended before external, commercial, legal or institutional reliance, but not required for ordinary explanation."
+  };
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyOutcome: policy.outcome,
+    policyProhibited: false,
+    policyFailClosed: false,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass: "GOVERNANCE",
+    intentClass: "ASK",
+    dataClass: data.dataClass,
+    projectDomain: projectDomain.projectDomain,
+    activeDomains: projectDomain.activeDomains,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: true,
+    memoryPreferred: true,
+    opcPreferred: true,
+    iprBindingPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    projectDomain,
+    hbceModule,
+    contextClass: "GOVERNANCE",
+    intentClass: "ASK",
+    data,
+    policy,
+    risk,
+    oversight,
+    decision
+  };
+}
+
 function applySafeDocumentGovernanceOverride(input: {
   frame: EnrichedGovernanceFrame;
   message: string;
@@ -2566,8 +2798,13 @@ function buildGovernanceFrame(input: {
       message: input.message
     });
 
-    const hbceAiFrame = applyHbceAiGovernanceOverride({
+    const pragmaticFrame = applyPragmaticGovernanceValueOverride({
       frame: doctrineFrame,
+      message: input.message
+    });
+
+    const hbceAiFrame = applyHbceAiGovernanceOverride({
+      frame: pragmaticFrame,
       message: input.message
     });
 
@@ -2676,8 +2913,13 @@ function buildGovernanceFrame(input: {
     message: input.message
   });
 
-  const hbceAiFrame = applyHbceAiGovernanceOverride({
+  const pragmaticFrame = applyPragmaticGovernanceValueOverride({
     frame: doctrineFrame,
+    message: input.message
+  });
+
+  const hbceAiFrame = applyHbceAiGovernanceOverride({
+    frame: pragmaticFrame,
     message: input.message
   });
 
