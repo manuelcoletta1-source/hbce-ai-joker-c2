@@ -10,6 +10,7 @@ export type JokerResponseContractKind =
   | "USE_POLITICAL_VALUE"
   | "HBCE_MODULES"
   | "HBCE_ECOSISTEMA_AI"
+  | "STRATEGIC_DOCTRINE"
   | "GENERAL";
 
 export type ResponseContract = {
@@ -22,6 +23,99 @@ export type ResponseContract = {
   requiredDistinctions: string[];
   closingFormula?: string;
 };
+
+type StrategicDoctrineKey =
+  | "HBCE_CYBERSECURITY_STRATEGY"
+  | "HBCE_DATA_PROTECTION_STRATEGY"
+  | "HBCE_INFORMATION_GOVERNANCE_STRATEGY";
+
+type StrategicDoctrineRecord = {
+  key: StrategicDoctrineKey;
+  number: 1 | 2 | 3;
+  title: string;
+  file: string;
+  function: string;
+  connectedModules: string[];
+  connectedCollections: string[];
+  boundary: string;
+  summary: string;
+};
+
+const STRATEGIC_DOCTRINES: StrategicDoctrineRecord[] = [
+  {
+    key: "HBCE_CYBERSECURITY_STRATEGY",
+    number: 1,
+    title: "HBCE Cybersecurity Strategy",
+    file: "docs/HBCE_CYBERSECURITY_STRATEGY.md",
+    function:
+      "Definisce la postura difensiva cyber, la resilienza, la documentazione incidenti, la continuità delle infrastrutture critiche e la governance AI/cyber di AI JOKER-C2.",
+    connectedModules: [
+      "CyberGlobal",
+      "MATRIX",
+      "OPC",
+      "UNEBDO",
+      "IOspace",
+      "MetaExchange",
+      "NeuroLoop"
+    ],
+    connectedCollections: ["MATRIX", "HBCE_ECOSISTEMA_AI"],
+    boundary:
+      "Defensive cybersecurity is allowed. Offensive cyber capability is prohibited.",
+    summary:
+      "È il documento dottrinale che rafforza CyberGlobal e la postura difensiva del sistema. Serve a impedire che HBCE venga letto come cyber-offensivo: il suo perimetro è difesa, resilienza, audit, incident documentation, fail-closed e continuità operativa."
+  },
+  {
+    key: "HBCE_DATA_PROTECTION_STRATEGY",
+    number: 2,
+    title: "HBCE Data Protection Strategy",
+    file: "docs/HBCE_DATA_PROTECTION_STRATEGY.md",
+    function:
+      "Definisce minimizzazione, classificazione dati, privacy, retention, controllo accessi, redazione, esposizione pubblica sicura e auditabilità.",
+    connectedModules: [
+      "IPR",
+      "EVT",
+      "Memory",
+      "OPC",
+      "IOspace",
+      "MetaExchange",
+      "MATRIX"
+    ],
+    connectedCollections: ["MATRIX", "U.S.E.", "HBCE_ECOSISTEMA_AI"],
+    boundary:
+      "Necessary data is allowed. Minimization is required. Unnecessary accumulation, secret exposure and identity-choice linkage are prohibited.",
+    summary:
+      "È il documento dottrinale che impedisce ad HBCE di accumulare dati inutilmente. Stabilisce che i dati devono essere identificati, classificati, minimizzati, protetti, tracciati e resi auditabili solo quando necessario."
+  },
+  {
+    key: "HBCE_INFORMATION_GOVERNANCE_STRATEGY",
+    number: 3,
+    title: "HBCE Information Governance Strategy",
+    file: "docs/HBCE_INFORMATION_GOVERNANCE_STRATEGY.md",
+    function:
+      "Definisce classificazione delle informazioni, circolazione controllata, proof continuity, metadata pubblici e interni, auditabilità e responsabilità informativa.",
+    connectedModules: [
+      "MATRIX",
+      "MetaExchange",
+      "IOspace",
+      "NeuroLoop",
+      "OPC",
+      "IPR",
+      "EVT",
+      "Memory"
+    ],
+    connectedCollections: [
+      "MATRIX",
+      "U.S.E.",
+      "CORPUS_ESOTEROLOGIA_ERMETICA",
+      "APOKALYPSIS",
+      "HBCE_ECOSISTEMA_AI"
+    ],
+    boundary:
+      "Information may circulate only under identity, context, classification, policy, trace and responsibility.",
+    summary:
+      "È il documento dottrinale che governa il modo in cui le informazioni circolano dentro HBCE. Serve a evitare scambio incontrollato, esposizione impropria, perdita di contesto, confusione tra metadata pubblici e audit interni."
+  }
+];
 
 function normalizeForContract(value: string): string {
   return value
@@ -405,8 +499,188 @@ function isHbceEcosistemaAiQuestion(text: string): boolean {
   return hasHbceAiTerm && hasQuestionOrProjectTerm;
 }
 
+function isStrategicDoctrineQuestion(text: string): boolean {
+  return containsAny(text, [
+    "documenti dottrinali strategici",
+    "documenti dottrinali",
+    "dottrina strategica",
+    "dottrinali strategici",
+    "strategic doctrine",
+    "strategic doctrines",
+    "cybersecurity strategy",
+    "data protection strategy",
+    "information governance strategy",
+    "hbce cybersecurity strategy",
+    "hbce data protection strategy",
+    "hbce information governance strategy",
+    "documenti strategici",
+    "tre documenti",
+    "3 documenti",
+    "numero 1",
+    "numero uno",
+    "il numero 1",
+    "il primo",
+    "primo documento",
+    "specifiche del 1",
+    "specifiche de numero 1",
+    "specifiche del numero 1",
+    "mostrami il 1",
+    "mostrami le specifiche de numero 1",
+    "numero 2",
+    "numero due",
+    "il secondo",
+    "secondo documento",
+    "numero 3",
+    "numero tre",
+    "il terzo",
+    "terzo documento",
+    "mostrami documenti"
+  ]);
+}
+
+function getStrategicDoctrineByMessage(text: string): StrategicDoctrineRecord | null {
+  if (
+    containsAny(text, [
+      "numero 1",
+      "numero uno",
+      "il numero 1",
+      "il primo",
+      "primo documento",
+      "specifiche del 1",
+      "specifiche de numero 1",
+      "specifiche del numero 1",
+      "mostrami il 1",
+      "cybersecurity strategy",
+      "hbce cybersecurity strategy",
+      "cyber security strategy"
+    ])
+  ) {
+    return STRATEGIC_DOCTRINES[0];
+  }
+
+  if (
+    containsAny(text, [
+      "numero 2",
+      "numero due",
+      "il numero 2",
+      "il secondo",
+      "secondo documento",
+      "specifiche del 2",
+      "specifiche del numero 2",
+      "mostrami il 2",
+      "data protection strategy",
+      "hbce data protection strategy"
+    ])
+  ) {
+    return STRATEGIC_DOCTRINES[1];
+  }
+
+  if (
+    containsAny(text, [
+      "numero 3",
+      "numero tre",
+      "il numero 3",
+      "il terzo",
+      "terzo documento",
+      "specifiche del 3",
+      "specifiche del numero 3",
+      "mostrami il 3",
+      "information governance strategy",
+      "hbce information governance strategy"
+    ])
+  ) {
+    return STRATEGIC_DOCTRINES[2];
+  }
+
+  return null;
+}
+
+function buildStrategicDoctrineListResponse(): string {
+  return [
+    "I tre documenti dottrinali strategici di HBCE sono:",
+    "",
+    "1. **HBCE Cybersecurity Strategy**",
+    "Definisce la postura difensiva cyber del sistema: resilienza, gestione incidenti, continuità infrastrutturale, CyberGlobal, MATRIX, OPC e UNEBDO. Il suo confine è netto: difesa sì, capacità offensiva no.",
+    "",
+    "2. **HBCE Data Protection Strategy**",
+    "Definisce minimizzazione, classificazione dati, privacy, access control, retention, redazione, hash/reference e auditabilità. Il suo confine è: dati necessari sì, accumulo inutile e collegamento identità-scelta democratica no.",
+    "",
+    "3. **HBCE Information Governance Strategy**",
+    "Definisce classificazione delle informazioni, circolazione controllata, proof continuity, metadata pubblici/interni, MetaExchange, IOspace, NeuroLoop, OPC e responsabilità informativa.",
+    "",
+    "Formula dottrinale: Cybersecurity Strategy protegge; Data Protection Strategy minimizza; Information Governance Strategy classifica e controlla la circolazione."
+  ].join("\n");
+}
+
+function buildStrategicDoctrineDetailResponse(record: StrategicDoctrineRecord): string {
+  return [
+    `${record.number}. **${record.title}**`,
+    "",
+    `**File:** \`${record.file}\``,
+    "",
+    `**Funzione:** ${record.function}`,
+    "",
+    `**Moduli collegati:** ${record.connectedModules.join(", ")}.`,
+    "",
+    `**Collane collegate:** ${record.connectedCollections.join(", ")}.`,
+    "",
+    `**Boundary:** ${record.boundary}`,
+    "",
+    `**Sintesi operativa:** ${record.summary}`,
+    "",
+    "Questo documento è dottrinale: orienta difesa, governance, audit e implementazione, ma non costituisce certificazione legale, regolatoria o adozione istituzionale automatica."
+  ].join("\n");
+}
+
+function buildStrategicDoctrineResponse(message: string): string | null {
+  const text = normalizeForContract(message);
+
+  if (!isStrategicDoctrineQuestion(text)) {
+    return null;
+  }
+
+  const record = getStrategicDoctrineByMessage(text);
+
+  if (record) {
+    return buildStrategicDoctrineDetailResponse(record);
+  }
+
+  return buildStrategicDoctrineListResponse();
+}
+
 function buildContract(kind: JokerResponseContractKind): ResponseContract {
   switch (kind) {
+    case "STRATEGIC_DOCTRINE":
+      return {
+        kind,
+        matched: true,
+        title: "Contratto risposta documenti dottrinali strategici",
+        mandatoryOpening: [
+          "I tre documenti dottrinali strategici di HBCE sono HBCE Cybersecurity Strategy, HBCE Data Protection Strategy e HBCE Information Governance Strategy."
+        ],
+        mandatoryConcepts: [
+          "I documenti dottrinali strategici non sono collane.",
+          "I documenti dottrinali strategici non sono moduli HBCE.",
+          "I documenti dottrinali strategici non sono certificazioni legali automatiche.",
+          "HBCE Cybersecurity Strategy protegge e definisce la postura cyber difensiva.",
+          "HBCE Data Protection Strategy minimizza, classifica e protegge i dati.",
+          "HBCE Information Governance Strategy classifica e governa la circolazione delle informazioni."
+        ],
+        forbiddenReductions: [
+          "Non presentarli come moduli HBCE.",
+          "Non presentarli come collane progettuali.",
+          "Non presentarli come certificazioni regolatorie già ottenute.",
+          "Non dire che sostituiscono review legale, cyber, privacy o istituzionale."
+        ],
+        requiredDistinctions: [
+          "Distingui collane, moduli e documenti dottrinali.",
+          "Distingui orientamento strategico da certificazione.",
+          "Distingui cybersecurity, data protection e information governance."
+        ],
+        closingFormula:
+          "Formula dottrinale: Cybersecurity Strategy protegge; Data Protection Strategy minimizza; Information Governance Strategy classifica e controlla la circolazione."
+      };
+
     case "HBCE_MODULES":
       return {
         kind,
@@ -783,6 +1057,10 @@ export function detectJokerResponseContract(
   const opc = isOpcQuestion(text);
   const formula = isFormulaQuestion(text);
 
+  if (isStrategicDoctrineQuestion(text)) {
+    return buildContract("STRATEGIC_DOCTRINE");
+  }
+
   if ((ipr && evt && opc) || (isDifferenceQuestion(text) && ipr && (evt || opc))) {
     return buildContract("IPR_EVT_OPC");
   }
@@ -836,6 +1114,23 @@ export function detectJokerResponseContract(
 
 export function buildResponseContractDirective(message: string): string {
   const contract = detectJokerResponseContract(message);
+  const doctrineResponse = buildStrategicDoctrineResponse(message);
+
+  if (doctrineResponse) {
+    return [
+      "Contratto risposta canonica:",
+      "Tipo: Contratto risposta documenti dottrinali strategici.",
+      "",
+      "Risposta deterministica richiesta:",
+      doctrineResponse,
+      "",
+      "Regola esecutiva:",
+      "Se la richiesta contiene riferimenti come 'numero 1', 'il primo', 'mostrami il 1' o 'specifiche del numero 1', devi interpretare il riferimento come HBCE Cybersecurity Strategy.",
+      "Se la richiesta contiene 'numero 2' o 'secondo', devi interpretare il riferimento come HBCE Data Protection Strategy.",
+      "Se la richiesta contiene 'numero 3' o 'terzo', devi interpretare il riferimento come HBCE Information Governance Strategy.",
+      "Non rispondere chiedendo chiarimenti se il riferimento numerico è 1, 2 o 3 nel contesto dei documenti dottrinali strategici."
+    ].join("\n");
+  }
 
   if (!contract.matched) {
     return [
@@ -940,6 +1235,12 @@ export function applyResponseContract(
   message: string,
   response: string
 ): string {
+  const doctrineResponse = buildStrategicDoctrineResponse(message);
+
+  if (doctrineResponse) {
+    return doctrineResponse.trim();
+  }
+
   const contract = detectJokerResponseContract(message);
   const cleanResponse = response.trim();
 
@@ -1011,6 +1312,16 @@ export function applyResponseContract(
     contract.closingFormula &&
     !normalizeForContract(output).includes(
       normalizeForContract("AI genera; HBCE governa")
+    )
+  ) {
+    output = [output, "", contract.closingFormula].join("\n");
+  }
+
+  if (
+    contract.kind === "STRATEGIC_DOCTRINE" &&
+    contract.closingFormula &&
+    !normalizeForContract(output).includes(
+      normalizeForContract("Cybersecurity Strategy protegge")
     )
   ) {
     output = [output, "", contract.closingFormula].join("\n");
