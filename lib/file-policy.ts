@@ -9,11 +9,17 @@
  * File policy rules:
  * - do not execute uploaded files
  * - do not trust file names blindly
- * - allow only safe text-oriented formats by default
+ * - allow only safe text-oriented formats for direct prompt processing
  * - reject secrets and environment files by name
- * - reject executable, archive and binary formats by default
+ * - reject executable, archive and dangerous binary formats by default
+ * - treat PDF / Office documents as reference-only, non-blocking files
  * - enforce size limits
  * - preserve explicit processing status
+ *
+ * Important runtime boundary:
+ * Unsupported but non-dangerous document files, such as PDF, should not block
+ * a safe textual request. They should be excluded from prompt text extraction
+ * and treated as REFERENCE_ONLY / PARTIAL by the caller.
  */
 
 import type {
@@ -28,10 +34,46 @@ export type FilePolicyInput = {
 };
 
 export type FilePolicyBatchResult = {
+  /**
+   * True when the request may continue.
+   *
+   * This means:
+   * - directly processable text files may be used;
+   * - reference-only files may be ignored by the prompt layer;
+   * - hard-rejected files are absent.
+   */
   allowed: boolean;
+
   files: Array<FilePolicyResult & { name?: string; type?: string; size?: number }>;
+
+  /**
+   * Count of files that are not directly processable as text.
+   * Includes both reference-only and hard-rejected files.
+   */
   rejectedCount: number;
+
+  /**
+   * Count of files allowed for direct text extraction.
+   */
   allowedCount: number;
+
+  /**
+   * Count of unsupported but non-dangerous files that should not block
+   * the request and should be handled as metadata/reference only.
+   */
+  referenceOnlyCount: number;
+
+  /**
+   * Count of files that must block file-backed processing because they are
+   * dangerous, secret-bearing, invalid or explicitly rejected.
+   */
+  blockingRejectedCount: number;
+
+  /**
+   * True when at least one file can be safely processed as extracted text.
+   */
+  processableTextCount: number;
+
   reasons: string[];
 };
 
@@ -53,7 +95,33 @@ const ALLOWED_MIME_TYPES = new Set([
   "application/json"
 ]);
 
-const REJECTED_EXTENSIONS = new Set([
+/**
+ * Reference-only document formats.
+ *
+ * These formats are not processed directly as text by the safe runtime.
+ * They should not block an otherwise safe request, but they should be excluded
+ * from prompt injection unless a trusted extractor has already converted them
+ * into safe plain text outside this policy layer.
+ */
+const REFERENCE_ONLY_EXTENSIONS = new Set([
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx"
+]);
+
+const REFERENCE_ONLY_MIME_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument",
+  "application/vnd.ms-",
+  "application/vnd.oasis.opendocument"
+];
+
+const HARD_REJECTED_EXTENSIONS = new Set([
   ".exe",
   ".dll",
   ".so",
@@ -96,14 +164,7 @@ const REJECTED_EXTENSIONS = new Set([
   ".cer",
   ".der",
   ".sqlite",
-  ".db",
-  ".pdf",
-  ".doc",
-  ".docx",
-  ".xls",
-  ".xlsx",
-  ".ppt",
-  ".pptx"
+  ".db"
 ]);
 
 const SENSITIVE_FILE_NAME_PATTERNS = [
@@ -168,20 +229,33 @@ export function evaluateFilePolicy(
     });
   }
 
-  if (extension && REJECTED_EXTENSIONS.has(extension)) {
+  if (extension && HARD_REJECTED_EXTENSIONS.has(extension)) {
     return buildResult({
       allowed: false,
-      status: "UNSUPPORTED",
-      reason: `File extension ${extension} is not supported by the safe file policy.`,
+      status: "REJECTED",
+      reason: `File extension ${extension} is rejected by the safe file policy.`,
       maxSizeBytes
     });
   }
 
-  if (mimeType && isRejectedMimeType(mimeType)) {
+  if (mimeType && isHardRejectedMimeType(mimeType)) {
     return buildResult({
       allowed: false,
-      status: "UNSUPPORTED",
-      reason: `MIME type ${mimeType} is not supported by the safe file policy.`,
+      status: "REJECTED",
+      reason: `MIME type ${mimeType} is rejected by the safe file policy.`,
+      maxSizeBytes
+    });
+  }
+
+  if (
+    (extension && REFERENCE_ONLY_EXTENSIONS.has(extension)) ||
+    (mimeType && isReferenceOnlyMimeType(mimeType))
+  ) {
+    return buildResult({
+      allowed: false,
+      status: "PARTIAL",
+      reason:
+        "File is a reference-only document format. It is not processed as safe text by the current file policy and should not block a safe textual request.",
       maxSizeBytes
     });
   }
@@ -228,7 +302,7 @@ export function evaluateFilePolicy(
     allowed: false,
     status: "UNSUPPORTED",
     reason:
-      "File type could not be classified as a supported safe text-oriented format.",
+      "File type could not be classified as a supported safe text-oriented format. It should not block a safe textual request, but it should be ignored as prompt content unless converted to safe text.",
     maxSizeBytes
   });
 }
@@ -249,13 +323,18 @@ export function evaluateFileBatchPolicy(
   });
 
   const allowedCount = results.filter((result) => result.allowed).length;
+  const referenceOnlyCount = results.filter(isReferenceOnlyResult).length;
+  const blockingRejectedCount = results.filter(isBlockingRejectedResult).length;
   const rejectedCount = results.length - allowedCount;
 
   return {
-    allowed: rejectedCount === 0,
+    allowed: blockingRejectedCount === 0,
     files: results,
     allowedCount,
     rejectedCount,
+    referenceOnlyCount,
+    blockingRejectedCount,
+    processableTextCount: allowedCount,
     reasons: results.map((result) => {
       const name = result.name ? `${result.name}: ` : "";
       return `${name}${result.reason}`;
@@ -267,11 +346,12 @@ export function isFileAllowed(result: FilePolicyResult): boolean {
   return result.allowed && result.status === "TEXT_EXTRACTED";
 }
 
+export function isFileReferenceOnly(result: FilePolicyResult): boolean {
+  return isReferenceOnlyResult(result);
+}
+
 export function isFileRejected(result: FilePolicyResult): boolean {
-  return (
-    !result.allowed &&
-    (result.status === "REJECTED" || result.status === "UNSUPPORTED")
-  );
+  return isBlockingRejectedResult(result);
 }
 
 export function requiresFileReview(result: FilePolicyResult): boolean {
@@ -285,7 +365,7 @@ export function requiresFileReview(result: FilePolicyResult): boolean {
 
 export function buildFilePolicySummary(result: FilePolicyResult): string {
   return [
-    `Allowed: ${result.allowed ? "yes" : "no"}`,
+    `Allowed for direct text processing: ${result.allowed ? "yes" : "no"}`,
     `Status: ${result.status}`,
     `Reason: ${result.reason}`,
     `Max size bytes: ${result.maxSizeBytes}`
@@ -294,11 +374,14 @@ export function buildFilePolicySummary(result: FilePolicyResult): string {
 
 export function getSupportedFilePolicyDescription(): string {
   return [
-    "Supported file types by default:",
+    "Supported file types for direct safe text processing:",
     Array.from(ALLOWED_EXTENSIONS).join(", "),
     "",
-    "Supported MIME types by default:",
+    "Supported MIME types for direct safe text processing:",
     Array.from(ALLOWED_MIME_TYPES).join(", "),
+    "",
+    "Reference-only document formats:",
+    Array.from(REFERENCE_ONLY_EXTENSIONS).join(", "),
     "",
     "Executable, archive, binary, credential and environment files are rejected by default."
   ].join("\n");
@@ -323,7 +406,7 @@ export function getFileExtension(fileName: string): string {
 
 export function isSupportedTextFile(input: FilePolicyInput): boolean {
   const result = evaluateFilePolicy(input);
-  return result.allowed;
+  return result.allowed && result.status === "TEXT_EXTRACTED";
 }
 
 export function isSensitiveFileName(fileName: string): boolean {
@@ -334,12 +417,46 @@ export function isSensitiveFileName(fileName: string): boolean {
   );
 }
 
-function isRejectedMimeType(mimeType: string): boolean {
+function isReferenceOnlyResult(result: FilePolicyResult): boolean {
+  return (
+    !result.allowed &&
+    (result.status === "PARTIAL" || result.status === "UNSUPPORTED") &&
+    result.reason.toLowerCase().includes("should not block")
+  );
+}
+
+function isBlockingRejectedResult(result: FilePolicyResult): boolean {
+  if (result.allowed) {
+    return false;
+  }
+
+  if (result.status === "REJECTED" || result.status === "FAILED") {
+    return true;
+  }
+
+  if (result.status === "UNSUPPORTED") {
+    return !result.reason.toLowerCase().includes("should not block");
+  }
+
+  return false;
+}
+
+function isReferenceOnlyMimeType(mimeType: string): boolean {
+  return REFERENCE_ONLY_MIME_TYPES.some((prefix) =>
+    mimeType.startsWith(prefix)
+  );
+}
+
+function isHardRejectedMimeType(mimeType: string): boolean {
   if (!mimeType) {
     return false;
   }
 
   if (ALLOWED_MIME_TYPES.has(mimeType)) {
+    return false;
+  }
+
+  if (isReferenceOnlyMimeType(mimeType)) {
     return false;
   }
 
@@ -352,9 +469,6 @@ function isRejectedMimeType(mimeType: string): boolean {
     mimeType.startsWith("application/zip") ||
     mimeType.startsWith("application/x-7z") ||
     mimeType.startsWith("application/x-rar") ||
-    mimeType.startsWith("application/pdf") ||
-    mimeType.startsWith("application/msword") ||
-    mimeType.startsWith("application/vnd.") ||
     mimeType.startsWith("image/") ||
     mimeType.startsWith("audio/") ||
     mimeType.startsWith("video/")
