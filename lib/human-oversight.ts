@@ -402,10 +402,6 @@ export function getReviewerRoleForContext(
     case "CRITICAL_INFRASTRUCTURE":
       return "INCIDENT_COMMANDER";
 
-    case "HBCE_ECOSISTEMA_AI":
-    case "AI_GOVERNANCE":
-      return "TECHNICAL_REVIEWER";
-
     case "DUAL_USE":
       return "APPROVER";
 
