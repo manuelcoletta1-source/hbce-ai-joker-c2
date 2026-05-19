@@ -170,6 +170,12 @@ type EnrichedGovernanceFrame = GovernanceFrame & {
 
 type HbceModuleValue = HbceModuleClassification["activeModules"][number];
 
+type StrategicDoctrineKind =
+  | "ALL"
+  | "CYBERSECURITY"
+  | "DATA_PROTECTION"
+  | "INFORMATION_GOVERNANCE";
+
 const MODEL = process.env.JOKER_MODEL || "gpt-4o-mini";
 const MAX_OUTPUT_TOKENS = 4600;
 const MAX_DATA_CLASSIFICATION_CHARS = 24000;
@@ -398,6 +404,156 @@ function isAerospaceGovernanceBoundaryQuestion(message: string): boolean {
   return hasAerospaceContext && hasControlLanguage && !hasWeaponLanguage;
 }
 
+function isStrategicDoctrineQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return runtimeTextIncludesAny(text, [
+    "documenti dottrinali strategici",
+    "documenti dottrinali",
+    "dottrina strategica",
+    "dottrinali strategici",
+    "strategic doctrine",
+    "strategic doctrines",
+    "documenti strategici",
+    "tre documenti",
+    "3 documenti",
+    "hbce cybersecurity strategy",
+    "cybersecurity strategy",
+    "cyber security strategy",
+    "hbce data protection strategy",
+    "data protection strategy",
+    "hbce information governance strategy",
+    "information governance strategy",
+    "numero 1",
+    "numero uno",
+    "il numero 1",
+    "il primo",
+    "primo documento",
+    "questo 1",
+    "1. hbce cybersecurity strategy",
+    "specifiche del 1",
+    "specifiche de numero 1",
+    "specifiche del numero 1",
+    "mostrami il 1",
+    "numero 2",
+    "numero due",
+    "il numero 2",
+    "il secondo",
+    "secondo documento",
+    "questo 2",
+    "numero 3",
+    "numero tre",
+    "il numero 3",
+    "il terzo",
+    "terzo documento",
+    "questo 3",
+    "mostrami documenti"
+  ]);
+}
+
+function getStrategicDoctrineKind(message: string): StrategicDoctrineKind {
+  const text = normalizeRuntimeText(message);
+
+  if (
+    runtimeTextIncludesAny(text, [
+      "numero 1",
+      "numero uno",
+      "il numero 1",
+      "il primo",
+      "primo documento",
+      "questo 1",
+      "1. hbce cybersecurity strategy",
+      "specifiche del 1",
+      "specifiche de numero 1",
+      "specifiche del numero 1",
+      "mostrami il 1",
+      "cybersecurity strategy",
+      "cyber security strategy",
+      "hbce cybersecurity strategy"
+    ])
+  ) {
+    return "CYBERSECURITY";
+  }
+
+  if (
+    runtimeTextIncludesAny(text, [
+      "numero 2",
+      "numero due",
+      "il numero 2",
+      "il secondo",
+      "secondo documento",
+      "questo 2",
+      "data protection strategy",
+      "hbce data protection strategy"
+    ])
+  ) {
+    return "DATA_PROTECTION";
+  }
+
+  if (
+    runtimeTextIncludesAny(text, [
+      "numero 3",
+      "numero tre",
+      "il numero 3",
+      "il terzo",
+      "terzo documento",
+      "questo 3",
+      "information governance strategy",
+      "hbce information governance strategy"
+    ])
+  ) {
+    return "INFORMATION_GOVERNANCE";
+  }
+
+  return "ALL";
+}
+
+function getStrategicDoctrineActiveModules(
+  kind: StrategicDoctrineKind
+): HbceModuleValue[] {
+  switch (kind) {
+    case "CYBERSECURITY":
+      return ["CyberGlobal", "MATRIX", "OPC", "UNEBDO"];
+
+    case "DATA_PROTECTION":
+      return ["OPC", "MATRIX", "IOspace", "MetaExchange"];
+
+    case "INFORMATION_GOVERNANCE":
+      return ["MATRIX", "MetaExchange", "IOspace", "NeuroLoop", "OPC"];
+
+    case "ALL":
+    default:
+      return [
+        "MATRIX",
+        "CyberGlobal",
+        "OPC",
+        "UNEBDO",
+        "IOspace",
+        "MetaExchange",
+        "NeuroLoop"
+      ];
+  }
+}
+
+function getStrategicDoctrinePrimaryModule(
+  kind: StrategicDoctrineKind
+): HbceModuleValue {
+  switch (kind) {
+    case "CYBERSECURITY":
+      return "CyberGlobal";
+
+    case "DATA_PROTECTION":
+      return "OPC";
+
+    case "INFORMATION_GOVERNANCE":
+      return "MATRIX";
+
+    case "ALL":
+    default:
+      return "MATRIX";
+  }
+}
+
 function isCanonicalStackQuestion(message: string): boolean {
   const text = normalizeRuntimeText(message);
 
@@ -493,6 +649,10 @@ function shouldInjectEvtMemoryIntoPrompt(input: {
   }
 
   if (isRuntimeDiagnosticRequest(input.message)) {
+    return true;
+  }
+
+  if (isStrategicDoctrineQuestion(input.message)) {
     return true;
   }
 
@@ -606,6 +766,23 @@ function buildHbceAiProjectDomain(
   };
 }
 
+function buildStrategicDoctrineProjectDomain(
+  base: ProjectDomainClassification
+): ProjectDomainClassification {
+  return {
+    ...base,
+    projectDomain: "MULTI_DOMAIN" as ProjectDomain,
+    activeDomains: ["MATRIX" as ProjectDomain, "HBCE_ECOSISTEMA_AI" as ProjectDomain],
+    primaryDomain: "MULTI_DOMAIN" as ProjectDomain,
+    domainType: "ECOSYSTEM_OPERATION",
+    confidence: Math.max(base.confidence || 0, 0.98),
+    reasons: [
+      ...base.reasons,
+      "Strategic doctrine request mapped to MULTI_DOMAIN because doctrine documents support MATRIX, HBCE ECOSISTEMA AI and HBCE modules without being collections or modules."
+    ]
+  };
+}
+
 function withHbceModuleOverride(
   base: HbceModuleClassification,
   module: HbceModuleValue,
@@ -635,6 +812,20 @@ function normalizeHbceModuleClassification(input: {
 }): HbceModuleClassification {
   const base = input.classification;
   const text = normalizeRuntimeText(input.message);
+
+  if (isStrategicDoctrineQuestion(input.message)) {
+    const kind = getStrategicDoctrineKind(input.message);
+    return withHbceModuleOverride(
+      base,
+      getStrategicDoctrinePrimaryModule(kind),
+      getStrategicDoctrineActiveModules(kind),
+      0.98,
+      [
+        "Strategic doctrine request mapped to HBCE doctrine layer.",
+        "Doctrine documents are not collections and are not modules, but they activate connected HBCE modules for runtime traceability."
+      ]
+    );
+  }
 
   if (isRuntimeSelfIdentityQuestion(input.message)) {
     return withHbceModuleOverride(
@@ -840,6 +1031,9 @@ async function generateResponse(input: {
             "HBCE Data Protection Strategy = minimizzazione, classificazione dati, privacy, retention, access control, redazione e auditabilità.",
             "HBCE Information Governance Strategy = classificazione informazioni, circolazione controllata, proof continuity, metadata pubblici/interni e responsabilità informativa.",
             "I documenti dottrinali strategici non sono collane, non sono moduli HBCE e non sono certificazioni legali automatiche.",
+            "Se l'utente chiede 'numero 1', 'il primo', 'questo 1' o 'specifiche del numero 1' nel contesto dei documenti dottrinali strategici, interpreta sempre come HBCE Cybersecurity Strategy e rispondi senza chiedere chiarimenti.",
+            "Se l'utente chiede 'numero 2', 'il secondo' o 'questo 2' nel contesto dei documenti dottrinali strategici, interpreta come HBCE Data Protection Strategy.",
+            "Se l'utente chiede 'numero 3', 'il terzo' o 'questo 3' nel contesto dei documenti dottrinali strategici, interpreta come HBCE Information Governance Strategy.",
             "Formula HBCE ECOSISTEMA AI: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue.",
             "Boundary AI governance: il modello AI non governa HBCE; HBCE governa l’uso dei modelli AI.",
             `Modulo HBCE classificato: ${input.governanceFrame.hbceModule.module}.`,
@@ -1354,6 +1548,21 @@ function normalizeChatDataClassification(input: {
     };
   }
 
+  if (isStrategicDoctrineQuestion(input.message)) {
+    return {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "Strategic doctrine explanation detected.",
+        "Classified as PUBLIC because the request asks for doctrine description, not operational cyber execution."
+      ]
+    };
+  }
+
   if (isRuntimeSelfIdentityQuestion(input.message)) {
     return {
       dataClass: "PUBLIC",
@@ -1629,7 +1838,8 @@ function preferOpcForGovernance(input: {
     input.contextClass === "CIVIC" ||
     input.contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
     input.projectDomain.projectDomain === "U.S.E." ||
-    input.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
+    input.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI" ||
+    input.projectDomain.projectDomain === "MULTI_DOMAIN"
   );
 }
 
@@ -2039,6 +2249,106 @@ function applyHbceAiGovernanceOverride(input: {
   };
 }
 
+function applyStrategicDoctrineGovernanceOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+}): EnrichedGovernanceFrame {
+  if (!isStrategicDoctrineQuestion(input.message)) {
+    return input.frame;
+  }
+
+  const kind = getStrategicDoctrineKind(input.message);
+  const projectDomain = buildStrategicDoctrineProjectDomain(input.frame.projectDomain);
+
+  const hbceModule = withHbceModuleOverride(
+    input.frame.hbceModule,
+    getStrategicDoctrinePrimaryModule(kind),
+    getStrategicDoctrineActiveModules(kind),
+    0.98,
+    [
+      "Strategic doctrine request handled as safe doctrine explanation.",
+      "Human review is not required for ordinary explanation of doctrine documents.",
+      "Strategic doctrine documents guide governance but do not create legal certification."
+    ]
+  );
+
+  const data: DataClassification = {
+    dataClass: "PUBLIC",
+    containsSecret: false,
+    containsPersonalData: false,
+    containsSecuritySensitiveData: false,
+    containsCivicSensitiveData: false,
+    containsDemocraticChoiceData: false,
+    reasons: [
+      "Strategic doctrine explanation detected.",
+      "Classified as PUBLIC because the user asks for doctrine description, not operational cyber execution."
+    ]
+  };
+
+  const policy: PolicyEvaluation = {
+    status: "ALLOWED",
+    policyReference: "ALLOWED_STRATEGIC_DOCTRINE_EXPLANATION",
+    prohibited: false,
+    failClosed: false,
+    reasons: [
+      "Strategic doctrine explanation is allowed.",
+      "No offensive cyber, secret exposure, deployment command or high-impact operational action detected."
+    ],
+    outcome: "PERMIT"
+  };
+
+  const risk: RiskEvaluation = {
+    riskClass: "LOW",
+    probability: 1,
+    impact: 1,
+    riskScore: 1,
+    reasons: [
+      "Strategic doctrine explanation is low risk.",
+      "The request asks for explanatory material about documented doctrine, not execution."
+    ]
+  };
+
+  const oversight: OversightEvaluation = {
+    state: "NOT_REQUIRED",
+    requiredRole: "NONE",
+    reason:
+      "Ordinary explanation of strategic doctrine documents does not require human review."
+  };
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyProhibited: false,
+    policyFailClosed: false,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass: "GOVERNANCE",
+    intentClass: "ASK",
+    dataClass: data.dataClass,
+    projectDomain: projectDomain.projectDomain,
+    activeDomains: projectDomain.activeDomains,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: false,
+    memoryPreferred: true,
+    opcPreferred: true,
+    iprBindingPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    projectDomain,
+    hbceModule,
+    contextClass: "GOVERNANCE",
+    intentClass: "ASK",
+    data,
+    policy,
+    risk,
+    oversight,
+    decision
+  };
+}
+
 function applySafeDocumentGovernanceOverride(input: {
   frame: EnrichedGovernanceFrame;
   message: string;
@@ -2251,8 +2561,13 @@ function buildGovernanceFrame(input: {
       message: input.message
     });
 
-    const hbceAiFrame = applyHbceAiGovernanceOverride({
+    const doctrineFrame = applyStrategicDoctrineGovernanceOverride({
       frame: diagnosticFrame,
+      message: input.message
+    });
+
+    const hbceAiFrame = applyHbceAiGovernanceOverride({
+      frame: doctrineFrame,
       message: input.message
     });
 
@@ -2356,8 +2671,13 @@ function buildGovernanceFrame(input: {
     message: input.message
   });
 
-  const hbceAiFrame = applyHbceAiGovernanceOverride({
+  const doctrineFrame = applyStrategicDoctrineGovernanceOverride({
     frame: runtimeIdentityFrame,
+    message: input.message
+  });
+
+  const hbceAiFrame = applyHbceAiGovernanceOverride({
+    frame: doctrineFrame,
     message: input.message
   });
 
