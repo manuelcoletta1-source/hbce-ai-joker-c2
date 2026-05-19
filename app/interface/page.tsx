@@ -106,6 +106,7 @@ type GovernanceInfo = {
   domainReasons?: string[];
   hbceModule?: string;
   activeModules?: string[];
+  strategicDoctrines?: readonly string[] | string[];
   moduleType?: string;
   moduleConfidence?: number;
   moduleReasons?: string[];
@@ -158,6 +159,7 @@ type DiagnosticsInfo = {
   opcVerificationStatus?: string;
   hbceModule?: string;
   activeModules?: string[];
+  strategicDoctrines?: readonly string[] | string[];
   structuredFormat?: boolean;
 };
 
@@ -176,6 +178,7 @@ type ChatApiResponse = {
   moduleType?: string;
   collections?: readonly string[] | string[];
   modules?: readonly string[] | string[];
+  strategicDoctrines?: readonly string[] | string[];
   contextClass?: string;
   legacyContextClass?: string;
   intentClass?: string;
@@ -226,6 +229,12 @@ const CANONICAL_MODULES = [
   "CyberGlobal",
   "NeuroLoop",
   "MATRIX"
+];
+
+const CANONICAL_STRATEGIC_DOCTRINES = [
+  "HBCE_CYBERSECURITY_STRATEGY",
+  "HBCE_DATA_PROTECTION_STRATEGY",
+  "HBCE_INFORMATION_GOVERNANCE_STRATEGY"
 ];
 
 function buildClientId(prefix: string): string {
@@ -467,6 +476,16 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           />
 
           <MiniProofCard
+            title="Strategic Doctrine"
+            rows={[
+              ["Docs", formatList(message.runtime.strategicDoctrines || message.runtime.governance?.strategicDoctrines || message.runtime.diagnostics?.strategicDoctrines)],
+              ["Layer", "ACTIVE"],
+              ["Status", "DOCTRINE"]
+            ]}
+            statusLabels={["Layer", "Status"]}
+          />
+
+          <MiniProofCard
             title="EVT/IPR Memory"
             rows={[
               ["Event", message.runtime.memory?.event],
@@ -593,6 +612,11 @@ export default function InterfacePage() {
       moduleConfidence: lastRuntime?.governance?.moduleConfidence,
       collections: lastRuntime?.collections || CANONICAL_COLLECTIONS,
       modules: lastRuntime?.modules || CANONICAL_MODULES,
+      strategicDoctrines:
+        lastRuntime?.strategicDoctrines ||
+        lastRuntime?.governance?.strategicDoctrines ||
+        lastRuntime?.diagnostics?.strategicDoctrines ||
+        CANONICAL_STRATEGIC_DOCTRINES,
       memoryUsed: lastRuntime?.evtIprMemoryUsed,
       memorySource: lastRuntime?.memorySource || "-",
       memoryHash: lastRuntime?.memory?.memoryHash || "-",
@@ -1006,7 +1030,7 @@ export default function InterfacePage() {
 
         .joker-mini-grid {
           display: grid;
-          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-columns: repeat(6, minmax(0, 1fr));
           gap: 12px;
           margin-top: 16px;
           padding-top: 16px;
@@ -1409,7 +1433,7 @@ export default function InterfacePage() {
                 <h1 className="joker-title">IPR Runtime Demonstrator</h1>
                 <p className="joker-lead">
                   Chat operativa con identità IPR, EVT, memoria EVT/IPR-bound, proof receipt OPC e governance HBCE/MATRIX.
-                  Il runtime espone cinque collane, sette moduli HBCE, continuità, audit, verifica, fail-closed, HBCE ECOSISTEMA AI e salvaguardie U.S.E. quando pertinenti.
+                  Il runtime espone cinque collane, sette moduli HBCE, tre documenti dottrinali strategici, continuità, audit, verifica, fail-closed, HBCE ECOSISTEMA AI e salvaguardie U.S.E. quando pertinenti.
                 </p>
               </div>
 
@@ -1434,6 +1458,7 @@ export default function InterfacePage() {
                       "che differenza c’è tra IPR, EVT e OPC?",
                       "spiegami i sette moduli HBCE",
                       "spiegami HBCE ECOSISTEMA AI",
+                      "quali sono i tre documenti dottrinali strategici?",
                       "diagnostica runtime",
                       "spiegami U.S.E. e voto digitale federato"
                     ].map((sample) => (
@@ -1457,7 +1482,7 @@ export default function InterfacePage() {
 
                 {isSending ? (
                   <div className="joker-message joker-message--assistant">
-                    AI JOKER-C2 sta generando risposta, EVT, memoria EVT/IPR, classificazione dominio, classificazione modulo HBCE e OPC proof receipt.
+                    AI JOKER-C2 sta generando risposta, EVT, memoria EVT/IPR, classificazione dominio, classificazione modulo HBCE, dottrina strategica e OPC proof receipt.
                   </div>
                 ) : null}
 
@@ -1542,6 +1567,11 @@ export default function InterfacePage() {
           <RuntimeCard title="Seven HBCE Modules">
             <FieldRow label="Count" value={runtimeSummary.modules.length} />
             <FieldRow label="Stack" value={formatList(runtimeSummary.modules)} />
+          </RuntimeCard>
+
+          <RuntimeCard title="Strategic Doctrine Layer">
+            <FieldRow label="Count" value={runtimeSummary.strategicDoctrines.length} />
+            <FieldRow label="Docs" value={formatList(runtimeSummary.strategicDoctrines)} />
           </RuntimeCard>
 
           <RuntimeCard title="HBCE Module">
@@ -1665,6 +1695,7 @@ export default function InterfacePage() {
             <FieldRow label="Verify" value={lastRuntime?.diagnostics?.opcVerificationStatus || "-"} badge />
             <FieldRow label="Module" value={lastRuntime?.diagnostics?.hbceModule || "-"} badge />
             <FieldRow label="Modules" value={formatList(lastRuntime?.diagnostics?.activeModules)} />
+            <FieldRow label="Doctrine" value={formatList(lastRuntime?.diagnostics?.strategicDoctrines)} />
           </RuntimeCard>
         </aside>
       </div>
