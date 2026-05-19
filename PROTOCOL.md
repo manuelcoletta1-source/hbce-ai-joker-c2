@@ -1,6 +1,6 @@
 # AI JOKER-C2 Operational Protocol
 
-## IPR-Bound Operational Protocol for the Four Canonical Collections
+## IPR-Bound Operational Protocol for the Five Canonical Collections, Seven HBCE Modules and Strategic Doctrine Layer
 
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**  
@@ -18,22 +18,43 @@ AI JOKER-C2 is the governed runtime demonstrator for **IPR — Identity Primary 
 
 The primary operational instrument is **IPR**.
 
-AI JOKER-C2 demonstrates IPR in execution by connecting user input, runtime identity, project collection, operational context, policy, risk, decision, AI output, event continuity, memory continuity, proof receipts and audit-oriented verification.
+AI JOKER-C2 demonstrates IPR in execution by connecting user input, runtime identity, project collection, HBCE module, operational context, policy, risk, human oversight, decision, AI output, event continuity, memory continuity, proof receipts and audit-oriented verification.
 
-AI JOKER-C2 connects four canonical project collections:
+AI JOKER-C2 connects five canonical project collections:
 
 ```txt
 1. MATRIX
 2. U.S.E. — United States of Europe
 3. CORPUS ESOTEROLOGIA ERMETICA
 4. APOKALYPSIS
+5. HBCE ECOSISTEMA AI
 ```
 
-The protocol defines how the runtime receives a request, classifies it, assigns it to a project collection, evaluates policy, classifies risk, produces a governance decision, executes only the permitted operation, generates an EVT record, creates EVT/IPR-bound memory when required, generates an OPC proof receipt when required and preserves operational continuity.
+AI JOKER-C2 operates through seven HBCE technical-operational modules:
+
+```txt
+1. UNEBDO
+2. OPC
+3. MetaExchange
+4. IOspace
+5. CyberGlobal
+6. NeuroLoop
+7. MATRIX
+```
+
+AI JOKER-C2 is also supported by three strategic doctrine documents:
+
+```txt
+1. HBCE Cybersecurity Strategy
+2. HBCE Data Protection Strategy
+3. HBCE Information Governance Strategy
+```
+
+The protocol defines how the runtime receives a request, classifies it, assigns it to a project collection, binds it to an HBCE module when relevant, evaluates policy, classifies risk, evaluates human oversight, produces a governance decision, executes only the permitted operation, generates an EVT record, creates EVT/IPR-bound memory when required, generates an OPC proof receipt when required and preserves operational continuity.
 
 AI JOKER-C2 is not a generic chatbot.
 
-It is a governed runtime for traceable, verifiable, fail-closed and IPR-bound AI-assisted operations across the four canonical collections.
+It is a governed runtime for traceable, verifiable, fail-closed and IPR-bound AI-assisted operations across five canonical collections, seven HBCE modules and a strategic doctrine layer.
 
 ---
 
@@ -46,9 +67,11 @@ IPR Identity
 → Input
 → Intent
 → Project Collection
+→ HBCE Module
 → Context
 → Policy
 → Risk
+→ Human Oversight
 → Decision
 → Execution
 → Output
@@ -65,9 +88,11 @@ Condensed:
 ```txt
 IPR
 → Collection
+→ Module
 → Context
 → Policy
 → Risk
+→ Oversight
 → Decision
 → EVT
 → Memory
@@ -81,23 +106,25 @@ Project formula:
 ```txt
 IPR = operational identity and proof instrument
 AI JOKER-C2 = governed runtime demonstrator
-MATRIX = operational infrastructure architecture
+MATRIX = operational infrastructure architecture and HBCE coordination module
 U.S.E. = MATRIX-derived political-institutional application for a federated operational Europe
 CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar of operational reality
 APOKALYPSIS = historical-threshold analysis
+HBCE ECOSISTEMA AI = AI governance ecosystem collection
 HBCE = governance, policy, audit and continuity ecosystem
 EVT = event trace
 Memory = EVT/IPR-bound runtime continuity
 OPC = operational proof receipt
 ```
 
-Four-collection formula:
+Five-collection formula:
 
 ```txt
 MATRIX builds the architecture.
 U.S.E. brings it into European political-institutional design.
 CORPUS grounds the grammar of operational reality.
 APOKALYPSIS reads the historical threshold.
+HBCE ECOSISTEMA AI governs artificial intelligence as an identifiable, traceable and auditable operational process.
 IPR makes everything attributable.
 EVT makes everything traceable.
 Memory makes everything continuous.
@@ -105,7 +132,23 @@ OPC makes everything verifiable.
 AI JOKER-C2 makes everything operational.
 ```
 
-The protocol exists to prevent AI-assisted operations from becoming anonymous, unbounded, unclassified, untraced, unremembered or unverifiable.
+Seven-module formula:
+
+```txt
+IPR identifies.
+UNEBDO anchors.
+EVT traces.
+Memory continues.
+OPC proves.
+MetaExchange exchanges.
+IOspace exposes.
+CyberGlobal protects.
+NeuroLoop validates.
+MATRIX organizes.
+AI JOKER-C2 executes.
+```
+
+The protocol exists to prevent AI-assisted operations from becoming anonymous, unbounded, unclassified, untraced, unremembered, unreviewed or unverifiable.
 
 ---
 
@@ -118,13 +161,19 @@ HERMETICUM B.C.E. = ecosystem
 HBCE = governance infrastructure
 IPR = operational identity and proof layer
 AI JOKER-C2 = governed runtime demonstrator
-MATRIX = operational infrastructure architecture
+MATRIX = operational infrastructure architecture and coordination module
 U.S.E. = political-institutional application of MATRIX
 CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar domain
 APOKALYPSIS = historical-threshold domain
+HBCE ECOSISTEMA AI = AI governance ecosystem domain
+UNEBDO = anchoring, validation and evidentiary continuity
+OPC = operational proof receipt and compliance layer
+MetaExchange = structured exchange layer
+IOspace = runtime visibility and operational interaction space
+CyberGlobal = defensive cybersecurity and resilience layer
+NeuroLoop = validation, feedback and review loop
 EVT = event trace layer
 Memory = EVT/IPR-bound continuity layer
-OPC = operational proof receipt layer
 Ledger = continuity layer
 Verification = audit and reconstruction layer
 Fail-closed = safety boundary
@@ -141,12 +190,20 @@ HERMETICUM B.C.E.
 → U.S.E.
 → CORPUS ESOTEROLOGIA ERMETICA
 → APOKALYPSIS
-→ Policy
-→ Risk
-→ Decision
+→ HBCE ECOSISTEMA AI
+→ UNEBDO
 → EVT
 → Memory
 → OPC
+→ MetaExchange
+→ IOspace
+→ CyberGlobal
+→ NeuroLoop
+→ MATRIX module coordination
+→ Policy
+→ Risk
+→ Human Oversight
+→ Decision
 → Ledger
 → Verification
 → Continuity
@@ -166,6 +223,9 @@ ROADMAP.md
 CONTRIBUTING.md
 system/system-manifest.json
 docs/HBCE_OPERATIONAL_STACK.md
+docs/HBCE_MODULES_RUNTIME_MAP.md
+docs/FIVE_COLLECTIONS_RUNTIME_MAP.md
+docs/HBCE_ECOSISTEMA_AI_COLLECTION.md
 ```
 
 ---
@@ -178,7 +238,10 @@ AI JOKER-C2 operates with a canonical identity context.
 Public name: AI JOKER-C2
 Canonical entity: AI_JOKER
 Canonical IPR: IPR-AI-0001
-Active checkpoint: EVT-0014-AI
+Active checkpoint: EVT-0015-AI
+Previous checkpoint: EVT-0014-AI
+Cycle: UP-MESE-4
+Checkpoint timestamp: 2026-05-19T15:30:00+02:00
 Core: HBCE-CORE-v3
 Ecosystem: HERMETICUM B.C.E.
 Organization: HERMETICUM B.C.E. S.r.l.
@@ -237,6 +300,7 @@ technical analysis request;
 strategic analysis request;
 institutional design request;
 civic architecture request;
+AI governance request;
 editorial request;
 governance request;
 verification request.
@@ -253,8 +317,9 @@ Input handling principles:
 6. Avoid storing unnecessary sensitive payloads.
 7. Preserve enough structure for audit and reconstruction.
 8. Classify project collection before sensitive execution.
-9. State partial visibility when file visibility is incomplete.
-10. Preserve IPR relevance when the request concerns identity, proof or traceability.
+9. Classify HBCE module before module-specific handling.
+10. State partial visibility when file visibility is incomplete.
+11. Preserve IPR relevance when the request concerns identity, proof or traceability.
 ```
 
 The input stage does not authorize execution.
@@ -293,13 +358,14 @@ Unknown intent in sensitive contexts should not be treated as permission.
 
 ## 8. Project Collection Classification
 
-The project-collection stage determines whether the request belongs to `MATRIX`, `U.S.E.`, `CORPUS_ESOTEROLOGIA_ERMETICA`, `APOKALYPSIS`, `GENERAL` or `MULTI_DOMAIN`.
+The project-collection stage determines whether the request belongs to `MATRIX`, `U.S.E.`, `CORPUS_ESOTEROLOGIA_ERMETICA`, `APOKALYPSIS`, `HBCE_ECOSISTEMA_AI`, `GENERAL` or `MULTI_DOMAIN`.
 
 ```txt
 MATRIX = operational infrastructure, AI governance, Europe, B2B, B2G, cloud, data, energy, security
 U.S.E. = United States of Europe, European federation, federated digital voting, democratic infrastructure, sovereignty
 CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar, DCTT, canonical glossary, theoretical volumes
 APOKALYPSIS = historical threshold, decay, exposure, cultural-political-social system analysis
+HBCE_ECOSISTEMA_AI = AI governance, model governance, AI audit, IPR AI Audit Trail, governed AI runtime
 GENERAL = no specific project collection applies
 MULTI_DOMAIN = more than one project collection applies
 ```
@@ -309,6 +375,7 @@ Project-collection classification affects:
 ```txt
 policy;
 risk;
+human oversight;
 decision;
 output format;
 response contract;
@@ -316,7 +383,7 @@ EVT metadata;
 memory metadata;
 OPC proof receipt metadata;
 verification requirements;
-human oversight requirements.
+human review requirements.
 ```
 
 The runtime must preserve the distinction between collections.
@@ -328,13 +395,61 @@ MATRIX provides the infrastructure architecture.
 U.S.E. applies MATRIX to federated European institutional and democratic design.
 CORPUS provides the grammar.
 APOKALYPSIS provides the historical threshold.
+HBCE ECOSISTEMA AI governs artificial intelligence as an operational process.
 IPR provides the operational identity and proof instrument.
 AI JOKER-C2 provides the runtime demonstrator.
 ```
 
 ---
 
-## 9. Context Classification
+## 9. HBCE Module Classification
+
+The HBCE module stage determines which technical-operational module is active or relevant.
+
+```txt
+UNEBDO = anchoring, validation and evidentiary continuity
+OPC = operational proof receipt and compliance layer
+MetaExchange = structured exchange
+IOspace = runtime visibility and operational interaction
+CyberGlobal = defensive cybersecurity and resilience
+NeuroLoop = validation, feedback and controlled review
+MATRIX = system coordination and organization
+NONE = no specific HBCE module applies
+```
+
+HBCE module classification affects:
+
+```txt
+runtime reasoning;
+EVT metadata;
+memory metadata;
+OPC proof receipt metadata;
+audit framing;
+diagnostic output;
+UI display;
+module-specific governance.
+```
+
+The runtime must preserve the distinction between:
+
+```txt
+project collection;
+HBCE technical module;
+context class;
+intent class;
+runtime decision.
+```
+
+MATRIX has a dual function:
+
+```txt
+MATRIX as collection = strategic and infrastructural architecture.
+MATRIX as module = technical-operational coordination layer.
+```
+
+---
+
+## 10. Context Classification
 
 The context stage assigns the request to an operational context.
 
@@ -347,6 +462,7 @@ MATRIX = MATRIX framework, infrastructure and strategic systems
 USE = U.S.E., United States of Europe, European federation, federated digital vote, democratic infrastructure
 CORPUS = CORPUS ESOTEROLOGIA ERMETICA, DCTT, glossary and volumes
 APOKALYPSIS = decay, exposure, threshold and civilizational analysis
+HBCE_ECOSISTEMA_AI = AI governance ecosystem, model governance, AI audit, IPR AI Audit Trail
 DOCUMENTAL = file analysis, document processing, summaries
 TECHNICAL = code, architecture, APIs, implementation
 GITHUB = repository files, commits, documentation
@@ -357,6 +473,7 @@ COMPLIANCE = governance, audit, legal-technical alignment
 GOVERNANCE = policy, risk, decision and fail-closed logic
 CIVIC = public consultation, participation rights, civic infrastructure
 DEMOCRATIC_INFRASTRUCTURE = federated digital vote, referendum, democratic audit, civic process
+AI_GOVERNANCE = AI governance, model governance, policy, risk, oversight
 GENERAL = ordinary safe requests
 ```
 
@@ -366,9 +483,11 @@ It should not overload ordinary user communication.
 
 The `USE`, `CIVIC` and `DEMOCRATIC_INFRASTRUCTURE` context classes must be treated as politically and institutionally sensitive when they concern civic participation, voting, public decision-making, constitutional models or democratic infrastructure.
 
+The `HBCE_ECOSISTEMA_AI` and `AI_GOVERNANCE` context classes must be treated as audit-aware when they concern model governance, AI audit, regulated AI, public-sector AI or high-risk AI use.
+
 ---
 
-## 10. MATRIX Domain Protocol
+## 11. MATRIX Domain Protocol
 
 MATRIX is the operational and institutional infrastructure domain.
 
@@ -404,9 +523,11 @@ Offensive or unlawful use = BLOCK
 
 MATRIX operations should be traceable when they affect repository files, governance documents, institutional positioning or strategic infrastructure claims.
 
+As module, MATRIX organizes the stack and should be reflected in EVT, memory and OPC metadata when coordination or module-map logic is active.
+
 ---
 
-## 11. U.S.E. — United States of Europe Domain Protocol
+## 12. U.S.E. — United States of Europe Domain Protocol
 
 U.S.E. is the MATRIX-derived political-institutional application domain.
 
@@ -471,7 +592,7 @@ U.S.E. operations should be traceable when they affect governance documentation,
 
 ---
 
-## 12. CORPUS ESOTEROLOGIA ERMETICA Domain Protocol
+## 13. CORPUS ESOTEROLOGIA ERMETICA Domain Protocol
 
 CORPUS ESOTEROLOGIA ERMETICA is the disciplinary grammar domain.
 
@@ -517,7 +638,7 @@ The runtime must distinguish internal framework coherence from external factual 
 
 ---
 
-## 13. APOKALYPSIS Domain Protocol
+## 14. APOKALYPSIS Domain Protocol
 
 APOKALYPSIS is the historical and civilizational threshold domain.
 
@@ -557,7 +678,57 @@ It must not become a tool for unlawful mobilization, coercion or abuse.
 
 ---
 
-## 14. Multi-Domain Protocol
+## 15. HBCE ECOSISTEMA AI Domain Protocol
+
+HBCE ECOSISTEMA AI is the AI governance ecosystem domain.
+
+The HBCE ECOSISTEMA AI domain applies when a request concerns:
+
+```txt
+AI governance;
+model governance;
+external AI model usage;
+future proprietary HBCE AI;
+hybrid AI architectures;
+IPR identity for AI agents and operators;
+EVT traceability for AI operations;
+EVT/IPR-bound memory continuity;
+OPC proof receipts for AI outputs and decisions;
+AI audit;
+IPR AI Audit Trail;
+human oversight;
+fail-closed AI runtime control;
+AI/cybersecurity governance;
+B2B and B2G AI governance adoption.
+```
+
+Default handling:
+
+```txt
+Conceptual AI governance explanation = ALLOW
+AI governance architecture = ALLOW or AUDIT
+Model governance comparison = ALLOW or AUDIT
+AI audit workflow = AUDIT
+IPR AI Audit Trail design = AUDIT
+Public-sector AI governance = AUDIT or ESCALATE
+Critical infrastructure AI governance = ESCALATE
+Autonomous authority without oversight = BLOCK
+Hiding AI involvement = BLOCK
+Offensive or unlawful AI use = BLOCK
+```
+
+The domain must preserve the following boundary:
+
+```txt
+The AI model does not govern HBCE.
+HBCE governs the use of AI models.
+```
+
+External models may generate output. HBCE governs the process through IPR, EVT, Memory, OPC, policy, risk, oversight, fail-closed control and verification.
+
+---
+
+## 16. Multi-Domain Protocol
 
 A request is `MULTI_DOMAIN` when it crosses more than one canonical collection.
 
@@ -567,7 +738,8 @@ Common multi-domain patterns:
 MATRIX + U.S.E. = architecture plus European political-institutional application
 MATRIX + CORPUS = infrastructure plus theoretical grammar
 CORPUS + APOKALYPSIS = conceptual grammar plus historical threshold
-MATRIX + U.S.E. + CORPUS + APOKALYPSIS = full ecosystem map
+MATRIX + HBCE ECOSISTEMA AI = infrastructure plus AI governance
+MATRIX + U.S.E. + CORPUS + APOKALYPSIS + HBCE ECOSISTEMA AI = full ecosystem map
 IPR + EVT + Memory + OPC across any collection = runtime governance layer
 ```
 
@@ -586,7 +758,42 @@ Multi-domain work should preserve distinctions instead of collapsing the collect
 
 ---
 
-## 15. Policy Evaluation
+## 17. Strategic Doctrine Protocol
+
+The strategic doctrine layer supports the runtime with three doctrine documents:
+
+```txt
+HBCE Cybersecurity Strategy
+HBCE Data Protection Strategy
+HBCE Information Governance Strategy
+```
+
+These documents are not collections and are not HBCE modules.
+
+They guide defensive strategy, data protection, information classification, proof continuity and institutional readiness.
+
+Doctrine mapping:
+
+```txt
+HBCE Cybersecurity Strategy → CyberGlobal, MATRIX, OPC, UNEBDO
+HBCE Data Protection Strategy → IPR, EVT, OPC, IOspace, MetaExchange
+HBCE Information Governance Strategy → MATRIX, MetaExchange, IOspace, NeuroLoop, OPC
+```
+
+The doctrine layer must remain:
+
+```txt
+defensive;
+non-offensive;
+reviewable;
+non-certifying unless externally validated;
+B2B/B2G compatible;
+public-safe when published.
+```
+
+---
+
+## 18. Policy Evaluation
 
 The policy stage applies project boundaries.
 
@@ -601,7 +808,9 @@ whether file handling is safe;
 whether secrets may be exposed;
 whether the operation is dual-use sensitive;
 whether the operation is politically, civically or democratically sensitive;
-whether the domain is MATRIX, U.S.E., CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN;
+whether the operation is AI-governance or model-governance sensitive;
+whether the domain is MATRIX, U.S.E., CORPUS, APOKALYPSIS, HBCE ECOSISTEMA AI, GENERAL or MULTI_DOMAIN;
+whether an HBCE module is active or relevant;
 whether an EVT should be generated;
 whether memory should be generated;
 whether an OPC proof receipt should be generated;
@@ -614,14 +823,14 @@ No sensitive operation should bypass policy.
 
 ---
 
-## 16. Risk Classification
+## 19. Risk Classification
 
 The risk stage assigns a risk class.
 
 ```txt
 LOW = ordinary safe request; default handling: ALLOW
 MEDIUM = operationally relevant request; default handling: ALLOW or AUDIT
-HIGH = sensitive, strategic, civic or high-impact request; default handling: ESCALATE or DEGRADE
+HIGH = sensitive, strategic, civic, AI-governance or high-impact request; default handling: ESCALATE or DEGRADE
 CRITICAL = strict review required; default handling: ESCALATE or BLOCK
 PROHIBITED = unsafe, abusive or outside scope; default handling: BLOCK
 UNKNOWN = cannot be safely classified; default handling: ESCALATE or BLOCK
@@ -634,13 +843,53 @@ the explicit request;
 the possible operational effect of the output.
 ```
 
-A request may look harmless but become sensitive when applied to real systems, real organizations, critical infrastructure, public-sector workflows, democratic processes, unauthorized activity or high-impact domains.
+A request may look harmless but become sensitive when applied to real systems, real organizations, critical infrastructure, public-sector workflows, democratic processes, AI governance, unauthorized activity or high-impact domains.
 
-Political, institutional and European-standardization analysis should remain answerable, but audit-ready.
+Political, institutional, AI-governance and European-standardization analysis should remain answerable, but audit-ready.
 
 ---
 
-## 17. Decision Layer
+## 20. Human Oversight
+
+Human oversight must be evaluated before high-impact reliance.
+
+Suggested oversight states:
+
+```txt
+NOT_REQUIRED = ordinary safe operation
+RECOMMENDED = human review useful but not mandatory
+REQUIRED = human review required before continuation
+COMPLETED = human review completed
+REJECTED = human review rejected the operation
+ESCALATED = further authority required
+BLOCKED = prohibited operation cannot be authorized
+UNKNOWN = oversight requirement is unclear and must be handled conservatively
+```
+
+Human oversight is required or recommended when operations involve:
+
+```txt
+legal effects;
+security-sensitive systems;
+critical infrastructure;
+public authority;
+civic or democratic infrastructure;
+financial impact;
+medical impact;
+law enforcement;
+coercive action;
+irreversible execution;
+high-impact AI governance;
+regulated or public-sector AI deployment.
+```
+
+AI JOKER-C2 may assist.
+
+It must not replace responsible human operators.
+
+---
+
+## 21. Decision Layer
 
 The decision layer determines what the runtime may do.
 
@@ -665,8 +914,10 @@ The decision layer should preserve:
 reason;
 context;
 project collection;
+HBCE module;
 risk;
 policy status;
+human oversight status;
 IPR binding;
 EVT requirement;
 memory requirement;
@@ -686,6 +937,7 @@ Example decision object:
   "risk": "LOW",
   "context": "GITHUB",
   "domain": "MATRIX",
+  "hbceModule": "MATRIX",
   "iprBinding": true,
   "evtRequired": true,
   "memoryRequired": true,
@@ -704,6 +956,7 @@ Example U.S.E.-related decision object:
   "risk": "MEDIUM",
   "context": "USE",
   "domain": "U.S.E.",
+  "hbceModule": "UNEBDO",
   "iprBinding": true,
   "evtRequired": true,
   "memoryRequired": true,
@@ -715,11 +968,31 @@ Example U.S.E.-related decision object:
 }
 ```
 
+Example HBCE ECOSISTEMA AI decision object:
+
+```json
+{
+  "decision": "AUDIT",
+  "risk": "MEDIUM",
+  "context": "HBCE_ECOSISTEMA_AI",
+  "domain": "HBCE_ECOSISTEMA_AI",
+  "hbceModule": "MATRIX",
+  "iprBinding": true,
+  "evtRequired": true,
+  "memoryRequired": true,
+  "opcRequired": true,
+  "runtimeRole": "IPR_RUNTIME_DEMONSTRATOR",
+  "failClosed": false,
+  "auditRecommended": true,
+  "reason": "AI governance and model-governance work requires audit-ready handling"
+}
+```
+
 ---
 
-## 18. Execution Layer
+## 22. Execution Layer
 
-Execution happens only after identity, intent, project collection, context, policy, risk and decision have been evaluated.
+Execution happens only after identity, intent, project collection, HBCE module, context, policy, risk, oversight and decision have been evaluated.
 
 Execution may include:
 
@@ -733,6 +1006,7 @@ producing a GitHub-ready file;
 producing a governance document;
 producing a strategic document;
 producing a civic architecture document;
+producing an AI governance document;
 generating an EVT record;
 generating EVT/IPR-bound memory;
 appending to a ledger;
@@ -754,7 +1028,7 @@ NOOP = take no operational action
 
 ---
 
-## 19. Fail-Closed Rule
+## 23. Fail-Closed Rule
 
 Fail-closed is the safety boundary of the protocol.
 
@@ -766,17 +1040,19 @@ runtime state is invalid;
 authority is unclear;
 intent is unsafe;
 project collection cannot be classified in a sensitive context;
+HBCE module cannot be classified in a sensitive context;
 policy cannot be applied;
 risk cannot be classified;
+human oversight is required but absent;
 operation may enable abuse;
 operation may expose secrets;
 operation may affect real systems without authorization;
 operation may affect democratic or civic infrastructure without safeguards;
+operation may affect high-risk AI governance without oversight;
 event trace cannot be generated when required;
 memory continuity cannot be preserved when required;
 OPC proof receipt cannot be generated when required;
 continuity cannot be preserved when required;
-human review is required but absent;
 legal or compliance basis is uncertain in a sensitive context.
 ```
 
@@ -792,7 +1068,7 @@ It is not system failure.
 
 ---
 
-## 20. EVT Generation
+## 24. EVT Generation
 
 EVT means Event.
 
@@ -808,6 +1084,7 @@ IPR;
 timestamp;
 runtime state;
 project collection;
+HBCE module;
 context class;
 intent class;
 risk class;
@@ -823,11 +1100,11 @@ Example:
 
 ```json
 {
-  "evt": "EVT-20260503-153000-AI-JOKER-C2-0001",
-  "prev": "EVT-0014-AI",
+  "evt": "EVT-20260519-153000-AI-JOKER-C2-0001",
+  "prev": "EVT-0015-AI",
   "entity": "AI_JOKER",
   "ipr": "IPR-AI-0001",
-  "timestamp": "2026-05-03T15:30:00+02:00",
+  "timestamp": "2026-05-19T15:30:00+02:00",
   "runtime": {
     "name": "AI JOKER-C2",
     "core": "HBCE-CORE-v3",
@@ -841,7 +1118,20 @@ Example:
       "MATRIX",
       "U.S.E.",
       "CORPUS_ESOTEROLOGIA_ERMETICA",
-      "APOKALYPSIS"
+      "APOKALYPSIS",
+      "HBCE_ECOSISTEMA_AI"
+    ]
+  },
+  "hbce_module": {
+    "module": "MATRIX",
+    "active_modules": [
+      "UNEBDO",
+      "OPC",
+      "MetaExchange",
+      "IOspace",
+      "CyberGlobal",
+      "NeuroLoop",
+      "MATRIX"
     ]
   },
   "context": {
@@ -878,7 +1168,7 @@ EVT is not legal certification by itself. It is the verifiable event trace conne
 
 ---
 
-## 21. Memory Protocol
+## 25. Memory Protocol
 
 AI JOKER-C2 memory is an EVT/IPR-bound continuity mechanism.
 
@@ -896,6 +1186,7 @@ document family;
 runtime state;
 decision;
 project collection;
+HBCE module where available;
 context class;
 memory event;
 governed EVT;
@@ -913,6 +1204,8 @@ continuity across interactions;
 document continuity;
 repository work continuity;
 collection continuity;
+module continuity;
+AI-governance continuity;
 runtime identity continuity;
 audit-oriented reconstruction.
 ```
@@ -921,7 +1214,7 @@ Memory does not replace user review, legal validation or evidence verification.
 
 ---
 
-## 22. OPC Proof Receipt Generation
+## 26. OPC Proof Receipt Generation
 
 OPC means Operational Proof & Compliance Layer.
 
@@ -936,6 +1229,8 @@ session;
 governed EVT;
 memory event;
 runtime decision;
+project domain;
+HBCE module;
 policy reference;
 risk class;
 input hash;
@@ -966,7 +1261,7 @@ Verification reconstructs the operation.
 
 ---
 
-## 23. Ledger Protocol
+## 27. Ledger Protocol
 
 The ledger preserves EVT, memory and OPC continuity.
 
@@ -992,19 +1287,20 @@ Ledger rules:
 6. Sensitive payloads should be minimized.
 7. Public and internal views should be separated.
 8. Project-collection metadata should be preserved.
-9. Memory metadata should be preserved where applicable.
-10. OPC proof chain metadata should be preserved where applicable.
+9. HBCE module metadata should be preserved.
+10. Memory metadata should be preserved where applicable.
+11. OPC proof chain metadata should be preserved where applicable.
 ```
 
 Correction example:
 
 ```json
 {
-  "evt": "EVT-20260503-160000-AI-JOKER-C2-0003",
-  "prev": "EVT-20260503-153000-AI-JOKER-C2-0002",
+  "evt": "EVT-20260519-160000-AI-JOKER-C2-0003",
+  "prev": "EVT-20260519-153000-AI-JOKER-C2-0002",
   "operation": {
     "type": "EVENT_CORRECTION",
-    "corrects": "EVT-20260503-153000-AI-JOKER-C2-0002",
+    "corrects": "EVT-20260519-153000-AI-JOKER-C2-0002",
     "reason": "Incorrect project domain classification"
   }
 }
@@ -1016,7 +1312,7 @@ Correction is a new trace.
 
 ---
 
-## 24. Verification Protocol
+## 28. Verification Protocol
 
 Verification should allow reconstruction of the operational sequence.
 
@@ -1031,6 +1327,7 @@ identity reference;
 IPR reference;
 runtime state;
 project collection;
+HBCE module;
 context class;
 risk class;
 governance decision;
@@ -1062,7 +1359,7 @@ Both should remain distinct.
 
 ---
 
-## 25. Hashing Protocol
+## 29. Hashing Protocol
 
 The recommended hash algorithm is:
 
@@ -1088,10 +1385,11 @@ Hashing principles:
 7. Avoid hashing secrets into public records.
 8. Document what is included in the hash.
 9. Preserve project-domain fields.
-10. Preserve context-class fields.
-11. Preserve IPR and entity fields.
-12. Preserve memory hash fields where applicable.
-13. Preserve OPC chain fields where applicable.
+10. Preserve HBCE module fields.
+11. Preserve context-class fields.
+12. Preserve IPR and entity fields.
+13. Preserve memory hash fields where applicable.
+14. Preserve OPC chain fields where applicable.
 ```
 
 A hash supports integrity.
@@ -1102,7 +1400,7 @@ Policy, risk and decision remain required.
 
 ---
 
-## 26. Human Oversight Protocol
+## 30. Human Oversight Protocol
 
 Human oversight must be preserved for high-impact operations.
 
@@ -1115,6 +1413,8 @@ REQUIRED = human review required before continuation
 COMPLETED = human review completed
 REJECTED = human review rejected the operation
 ESCALATED = further authority required
+BLOCKED = prohibited operation cannot be authorized
+UNKNOWN = oversight requirement is unclear and must be handled conservatively
 ```
 
 Human oversight is required or recommended when operations involve:
@@ -1130,7 +1430,8 @@ medical impact;
 law enforcement;
 coercive action;
 irreversible execution;
-high-impact AI governance.
+high-impact AI governance;
+regulated or public-sector AI deployment.
 ```
 
 AI JOKER-C2 may assist.
@@ -1139,7 +1440,7 @@ It must not replace responsible human operators.
 
 ---
 
-## 27. Democratic and Civic Infrastructure Protocol
+## 31. Democratic and Civic Infrastructure Protocol
 
 The U.S.E. domain introduces civic and democratic infrastructure reasoning.
 
@@ -1200,7 +1501,64 @@ formal certification where applicable.
 
 ---
 
-## 28. File Processing Protocol
+## 32. AI Governance Protocol
+
+The HBCE ECOSISTEMA AI domain introduces AI governance and model governance reasoning.
+
+AI JOKER-C2 may support conceptual, architectural and governance-oriented work on:
+
+```txt
+model governance;
+AI audit;
+IPR AI Audit Trail;
+AI/cybersecurity governance;
+AI risk classification;
+AI model-provider metadata;
+human oversight;
+fail-closed model usage;
+enterprise AI governance;
+public-sector AI governance;
+B2B and B2G AI governance workflows.
+```
+
+The runtime must preserve the following rule:
+
+```txt
+The AI model does not govern HBCE.
+HBCE governs the use of AI models.
+```
+
+The system must distinguish:
+
+```txt
+model output;
+governance of model output;
+identity of operator;
+identity of agent;
+trace of event;
+proof receipt;
+audit readiness;
+legal certification;
+regulatory approval.
+```
+
+Any production use in regulated AI, public-sector AI, critical infrastructure or high-risk systems would require:
+
+```txt
+legal review;
+AI governance review;
+security review;
+privacy review;
+risk management;
+human oversight;
+external validation;
+independent audit;
+institutional authorization where applicable.
+```
+
+---
+
+## 33. File Processing Protocol
 
 File processing must be controlled.
 
@@ -1232,7 +1590,8 @@ File processing rules:
 7. Preserve user control over uploaded content.
 8. Use references or hashes for large or sensitive files where possible.
 9. Preserve project-collection metadata when relevant.
-10. Preserve IPR binding when the operation becomes part of an auditable runtime sequence.
+10. Preserve HBCE module metadata when relevant.
+11. Preserve IPR binding when the operation becomes part of an auditable runtime sequence.
 ```
 
 Recommended safe file types:
@@ -1248,7 +1607,7 @@ Unknown or binary files should be handled conservatively.
 
 ---
 
-## 29. API Protocol
+## 34. API Protocol
 
 API routes must preserve controlled execution.
 
@@ -1275,14 +1634,16 @@ API rules:
 4. Avoid exposing stack traces.
 5. Avoid logging sensitive payloads.
 6. Apply policy and risk logic where relevant.
-7. Support EVT generation for relevant operations.
-8. Support memory generation for relevant operations.
-9. Support OPC proof receipts for relevant operations.
-10. Preserve fail-closed behavior.
-11. Return clear safe errors.
-12. Avoid unrestricted execution endpoints.
-13. Preserve project-collection metadata.
-14. Keep public and internal routes separated.
+7. Apply human oversight where relevant.
+8. Support EVT generation for relevant operations.
+9. Support memory generation for relevant operations.
+10. Support OPC proof receipts for relevant operations.
+11. Preserve fail-closed behavior.
+12. Return clear safe errors.
+13. Avoid unrestricted execution endpoints.
+14. Preserve project-collection metadata.
+15. Preserve HBCE module metadata.
+16. Keep public and internal routes separated.
 ```
 
 API routes are operational surfaces.
@@ -1291,7 +1652,7 @@ They must not bypass governance.
 
 ---
 
-## 30. Model Interaction Protocol
+## 35. Model Interaction Protocol
 
 The model layer supports reasoning and generation.
 
@@ -1306,7 +1667,8 @@ editorial drafts;
 strategic drafts;
 institutional drafts;
 civic architecture drafts;
-governance drafts;
+AI governance drafts;
+model governance drafts;
 technical explanations;
 structured outputs.
 ```
@@ -1318,11 +1680,12 @@ Model output should remain subject to:
 ```txt
 project scope;
 collection classification;
+HBCE module classification;
 domain classification;
 policy checks;
 risk classification;
+human oversight;
 safety boundaries;
-human accountability;
 fail-closed behavior.
 ```
 
@@ -1332,7 +1695,7 @@ The model does not govern the runtime.
 
 ---
 
-## 31. Security Protocol
+## 36. Security Protocol
 
 AI JOKER-C2 supports defensive and governance-oriented security only.
 
@@ -1374,7 +1737,7 @@ Offensive or abusive capability is prohibited.
 
 ---
 
-## 32. Dual-Use Protocol
+## 37. Dual-Use Protocol
 
 AI JOKER-C2 is dual-use only in a controlled civil and strategic sense.
 
@@ -1382,6 +1745,7 @@ Allowed dual-use domains:
 
 ```txt
 AI governance;
+model governance;
 public administration;
 defensive cybersecurity;
 cloud governance;
@@ -1407,7 +1771,9 @@ coercive manipulation;
 repression of rights;
 sabotage;
 de-anonymization of democratic choices;
-manipulation of voters or civic participants.
+manipulation of voters or civic participants;
+uncontrolled AI authority;
+unsafe high-risk AI deployment.
 ```
 
 Dual-use does not mean unrestricted use.
@@ -1416,7 +1782,39 @@ Dual-use means lawful, defensive, accountable and traceable strategic applicatio
 
 ---
 
-## 33. Public Communication Protocol
+## 38. Strategic Doctrine Protocol
+
+The strategic doctrine documents guide defensive implementation.
+
+```txt
+HBCE Cybersecurity Strategy = defensive cybersecurity, resilience, incident documentation and critical infrastructure continuity
+HBCE Data Protection Strategy = minimization, privacy, data classification, retention, access control and auditability
+HBCE Information Governance Strategy = information classification, controlled circulation, proof continuity, public-safe exposure and accountability
+```
+
+These documents are not certifications.
+
+They do not create legal compliance by themselves.
+
+They guide:
+
+```txt
+CyberGlobal;
+MATRIX;
+OPC;
+UNEBDO;
+IPR;
+EVT;
+IOspace;
+MetaExchange;
+NeuroLoop.
+```
+
+They must remain defensive, reviewable, non-offensive and non-certifying unless externally validated.
+
+---
+
+## 39. Public Communication Protocol
 
 AI JOKER-C2 should communicate clearly.
 
@@ -1449,6 +1847,12 @@ MATRIX;
 U.S.E.;
 CORPUS;
 APOKALYPSIS;
+HBCE ECOSISTEMA AI;
+UNEBDO;
+MetaExchange;
+IOspace;
+CyberGlobal;
+NeuroLoop;
 federated digital vote.
 ```
 
@@ -1459,16 +1863,17 @@ Public communication must preserve the product hierarchy:
 ```txt
 IPR is the primary operational instrument.
 AI JOKER-C2 is the runtime demonstrator.
-MATRIX is the architectural framework.
+MATRIX is the architectural framework and coordination module.
 U.S.E. is the MATRIX-derived political-institutional application domain.
 CORPUS is the disciplinary grammar.
 APOKALYPSIS is the historical-threshold reading.
+HBCE ECOSISTEMA AI is the AI governance ecosystem collection.
 HBCE is the governance ecosystem.
 ```
 
 ---
 
-## 34. Error Handling Protocol
+## 40. Error Handling Protocol
 
 Errors should be safe and useful.
 
@@ -1489,6 +1894,7 @@ Suggested error classes:
 ```txt
 INPUT_ERROR = invalid or incomplete user input
 DOMAIN_ERROR = project domain cannot be classified
+MODULE_ERROR = HBCE module cannot be classified
 POLICY_ERROR = policy could not authorize operation
 RISK_ERROR = risk could not be safely classified
 MODEL_ERROR = model execution failed
@@ -1505,7 +1911,7 @@ Errors should not become uncontrolled execution paths.
 
 ---
 
-## 35. Degraded Mode Protocol
+## 41. Degraded Mode Protocol
 
 The runtime may enter degraded mode when:
 
@@ -1540,13 +1946,14 @@ fail-closed behavior;
 no secret exposure;
 user-facing clarity;
 project-collection integrity;
+HBCE module integrity;
 IPR hierarchy;
 public communication safety.
 ```
 
 ---
 
-## 36. Contribution Protocol
+## 42. Contribution Protocol
 
 Future contributions must preserve this protocol.
 
@@ -1554,8 +1961,10 @@ A contribution must not:
 
 ```txt
 bypass project-collection classification;
+bypass HBCE module classification;
 bypass policy;
 bypass risk classification;
+bypass human oversight where required;
 remove traceability;
 weaken EVT continuity;
 weaken memory continuity;
@@ -1582,6 +1991,7 @@ runtime stability;
 documentation;
 defensive utility;
 project-collection alignment;
+HBCE module alignment;
 IPR runtime demonstration.
 ```
 
@@ -1593,23 +2003,26 @@ CONTRIBUTING.md
 
 ---
 
-## 37. Implementation Targets
+## 43. Implementation Targets
 
 Suggested implementation modules:
 
 ```txt
 lib/context-classifier.ts
 lib/project-domain-classifier.ts
+lib/hbce-module-classifier.ts
 lib/policy-engine.ts
 lib/risk-engine.ts
+lib/human-oversight.ts
 lib/runtime-decision.ts
 lib/runtime-types.ts
+lib/runtime-identity.ts
 lib/evt.ts
 lib/evt-ledger.ts
 lib/evt-memory.ts
 lib/evt-memory-ledger.ts
 lib/opc-proof.ts
-lib/human-oversight.ts
+lib/joker-prompt.ts
 lib/joker-response-contract.ts
 ```
 
@@ -1638,7 +2051,7 @@ Implementation should follow the protocol rather than inventing parallel logic.
 
 ---
 
-## 38. Protocol Invariants
+## 44. Protocol Invariants
 
 The following invariants must remain stable:
 
@@ -1647,33 +2060,39 @@ The following invariants must remain stable:
 2. AI JOKER-C2 is the governed runtime demonstrator for IPR.
 3. IPR is the primary operational identity and proof instrument.
 4. MATRIX provides the operational infrastructure architecture.
-5. U.S.E. provides the MATRIX-derived political-institutional application domain.
-6. CORPUS ESOTEROLOGIA ERMETICA provides the disciplinary grammar domain.
-7. APOKALYPSIS provides the historical-threshold domain.
-8. HBCE provides the governance infrastructure.
-9. Policy provides boundary.
-10. Risk provides classification.
-11. Decision provides control.
-12. EVT provides trace.
-13. Memory provides EVT/IPR-bound continuity.
-14. OPC provides operational proof receipts.
-15. Ledger provides continuity.
-16. Verification provides accountability.
-17. Fail-closed provides safety.
-18. Human accountability is preserved.
-19. Offensive use is outside scope.
-20. The model layer is not the authority layer.
-21. Corrections must be new events.
-22. Project-collection metadata must be preserved.
-23. Public communication must remain readable.
-24. Democratic choice content must not be linked to personal voter identity.
-25. U.S.E. must preserve democratic safeguards, anonymity, auditability and institutional legality.
-26. Four-collection continuity must preserve the distinction between MATRIX, U.S.E., CORPUS and APOKALYPSIS.
+5. MATRIX also provides coordination as the seventh HBCE module.
+6. U.S.E. provides the MATRIX-derived political-institutional application domain.
+7. CORPUS ESOTEROLOGIA ERMETICA provides the disciplinary grammar domain.
+8. APOKALYPSIS provides the historical-threshold domain.
+9. HBCE ECOSISTEMA AI provides the AI governance ecosystem domain.
+10. HBCE provides the governance infrastructure.
+11. Policy provides boundary.
+12. Risk provides classification.
+13. Human oversight provides accountability.
+14. Decision provides control.
+15. EVT provides trace.
+16. Memory provides EVT/IPR-bound continuity.
+17. OPC provides operational proof receipts.
+18. Ledger provides continuity.
+19. Verification provides accountability.
+20. Fail-closed provides safety.
+21. Human accountability is preserved.
+22. Offensive use is outside scope.
+23. The model layer is not the authority layer.
+24. Corrections must be new events.
+25. Project-collection metadata must be preserved.
+26. HBCE module metadata must be preserved.
+27. Public communication must remain readable.
+28. Democratic choice content must not be linked to personal voter identity.
+29. U.S.E. must preserve democratic safeguards, anonymity, auditability and institutional legality.
+30. HBCE ECOSISTEMA AI must preserve the AI governance boundary: the AI model does not govern HBCE; HBCE governs the use of AI models.
+31. Five-collection continuity must preserve the distinction between MATRIX, U.S.E., CORPUS, APOKALYPSIS and HBCE ECOSISTEMA AI.
+32. Seven-module continuity must preserve the distinction between UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop and MATRIX.
 ```
 
 ---
 
-## 39. Protocol Checklist
+## 45. Protocol Checklist
 
 Before accepting a runtime operation, check:
 
@@ -1682,9 +2101,11 @@ Is identity defined?
 Is the input understood?
 Is intent classified?
 Is project collection classified?
+Is HBCE module classified?
 Is context classified?
 Is policy applicable?
 Is risk classified?
+Is human oversight evaluated?
 Is the decision clear?
 Is execution allowed?
 Is an EVT required?
@@ -1695,7 +2116,6 @@ Is an OPC proof receipt required?
 Can the proof receipt be generated?
 Can continuity be preserved?
 Is verification possible?
-Is human oversight required?
 Is fail-closed triggered?
 ```
 
@@ -1708,6 +2128,7 @@ Are API routes safe?
 Is file handling controlled?
 Is model output governed?
 Is project-collection classification preserved?
+Is HBCE module classification preserved?
 Is IPR hierarchy preserved?
 Is EVT compatibility preserved?
 Is memory compatibility preserved?
@@ -1717,21 +2138,26 @@ Is verification possible?
 Is fail-closed behavior preserved?
 Is non-offensive boundary preserved?
 Are democratic safeguards preserved where U.S.E. or civic infrastructure is involved?
+Are AI governance safeguards preserved where model usage is involved?
 ```
 
 ---
 
-## 40. Final Protocol Formula
+## 46. Final Protocol Formula
 
 No identity, no attribution.
 
 No collection, no correct routing.
+
+No module, no technical-operational binding.
 
 No context, no operational frame.
 
 No policy, no boundary.
 
 No risk classification, no sensitive execution.
+
+No human oversight, no high-impact reliance.
 
 No decision, no control.
 
@@ -1754,9 +2180,11 @@ IPR Identity
 → Input
 → Intent
 → Project Collection
+→ HBCE Module
 → Context
 → Policy
 → Risk
+→ Human Oversight
 → Decision
 → Execution
 → Output
@@ -1773,10 +2201,11 @@ Project formula:
 ```txt
 IPR = operational identity and proof instrument.
 AI JOKER-C2 = governed runtime demonstrator.
-MATRIX = infrastructure architecture.
+MATRIX = infrastructure architecture and coordination module.
 U.S.E. = federated European political-institutional application.
 CORPUS = grammar.
 APOKALYPSIS = threshold.
+HBCE ECOSISTEMA AI = AI governance ecosystem.
 HBCE = governance.
 ```
 
@@ -1787,6 +2216,7 @@ MATRIX builds the architecture.
 U.S.E. brings it into European political-institutional design.
 CORPUS grounds the grammar of operational reality.
 APOKALYPSIS reads the historical threshold.
+HBCE ECOSISTEMA AI governs artificial intelligence as an identifiable, traceable and auditable operational process.
 IPR makes everything attributable.
 EVT makes everything traceable.
 Memory makes everything continuous.
@@ -1794,16 +2224,37 @@ OPC makes everything verifiable.
 AI JOKER-C2 makes everything operational.
 ```
 
+Final module formula:
+
+```txt
+IPR identifies.
+UNEBDO anchors.
+EVT traces.
+Memory continues.
+OPC proves.
+MetaExchange exchanges.
+IOspace exposes.
+CyberGlobal protects.
+NeuroLoop validates.
+MATRIX organizes.
+AI JOKER-C2 executes.
+```
+
 ---
 
-## 41. Status
+## 47. Status
 
 ```txt
 Document: PROTOCOL.md
 Status: Active operational protocol
 Project: AI JOKER-C2
 Ecosystem: HERMETICUM B.C.E.
-Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Active checkpoint: EVT-0015-AI
+Previous checkpoint: EVT-0014-AI
+Cycle: UP-MESE-4
+Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS, HBCE ECOSISTEMA AI
+HBCE modules: UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop, MATRIX
+Strategic doctrine documents: HBCE Cybersecurity Strategy, HBCE Data Protection Strategy, HBCE Information Governance Strategy
 Infrastructure: HBCE
 Identity layer: IPR
 Runtime role: IPR runtime demonstrator
@@ -1815,6 +2266,7 @@ Verification layer: Hash and audit reconstruction
 Governance principle: Fail-closed
 Security boundary: Defensive and non-offensive
 Civic boundary: Identity verified first, choice separated after, vote anonymized, process auditable
+AI governance boundary: The AI model does not govern HBCE; HBCE governs the use of AI models
 Repository: hbce-ai-joker-c2
 Maintainer: HBCE Research
 Organization: HERMETICUM B.C.E. S.r.l.
