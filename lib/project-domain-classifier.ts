@@ -3,43 +3,39 @@
  *
  * Deterministic project-domain classifier for the HERMETICUM B.C.E. runtime.
  *
- * Canonical hierarchy:
- * - IPR = primary operational identity and proof instrument
- * - AI JOKER-C2 = governed runtime demonstrator
- * - MATRIX = operational infrastructure architecture
- * - U.S.E. = MATRIX-derived political-institutional application
- * - CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar
- * - APOKALYPSIS = historical threshold analysis
- * - HBCE modules = technical-operational functions of the MATRIX/HBCE stack
- * - EVT = event trace
- * - EVT/IPR memory = runtime continuity
- * - OPC = operational proof receipt
+ * This classifier handles project domains and editorial/strategic collections.
+ * It does not replace the HBCE module classifier.
  *
  * Canonical project domains:
  * - MATRIX
  * - U.S.E.
  * - CORPUS_ESOTEROLOGIA_ERMETICA
  * - APOKALYPSIS
+ * - HBCE_ECOSISTEMA_AI
  * - GENERAL
  * - MULTI_DOMAIN
+ *
+ * Boundary:
+ * MATRIX has a dual function.
+ * As a project domain, MATRIX is the operational infrastructure architecture.
+ * As an HBCE module, MATRIX is the system coordination and organization layer.
+ * The module function is handled by lib/hbce-module-classifier.ts.
  */
 
-import {
-  getDomainTypeForProjectDomain,
-  getProjectDomainLabel,
-  type DomainType,
-  type ProjectDomain,
-  type ProjectDomainClassification,
-  type ProjectDomainMetadata,
-  type PrimaryProjectDomain
+import type {
+  DomainType,
+  PrimaryProjectDomain,
+  ProjectDomain,
+  ProjectDomainClassification,
+  ProjectDomainMetadata
 } from "./runtime-types";
 
 export type {
   DomainType,
+  PrimaryProjectDomain,
   ProjectDomain,
   ProjectDomainClassification,
-  ProjectDomainMetadata,
-  PrimaryProjectDomain
+  ProjectDomainMetadata
 } from "./runtime-types";
 
 export type ProjectDomainInput = {
@@ -66,7 +62,8 @@ const PRIMARY_DOMAINS: PrimaryProjectDomain[] = [
   "MATRIX",
   "U.S.E.",
   "CORPUS_ESOTEROLOGIA_ERMETICA",
-  "APOKALYPSIS"
+  "APOKALYPSIS",
+  "HBCE_ECOSISTEMA_AI"
 ];
 
 const PROJECT_DOMAINS: ProjectDomain[] = [
@@ -74,6 +71,7 @@ const PROJECT_DOMAINS: ProjectDomain[] = [
   "U.S.E.",
   "CORPUS_ESOTEROLOGIA_ERMETICA",
   "APOKALYPSIS",
+  "HBCE_ECOSISTEMA_AI",
   "GENERAL",
   "MULTI_DOMAIN"
 ];
@@ -116,12 +114,22 @@ const DOMAIN_METADATA: Record<ProjectDomain, ProjectDomainMetadata> = {
     runtimeQuestion:
       "What happens when the cultural, political and social system continues to function while already losing its foundation?"
   },
+  HBCE_ECOSISTEMA_AI: {
+    projectDomain: "HBCE_ECOSISTEMA_AI",
+    domainType: "AI_GOVERNANCE_ECOSYSTEM_DOMAIN",
+    label: "HBCE ECOSISTEMA AI",
+    shortDefinition:
+      "AI governance ecosystem collection explaining how artificial intelligence is governed through HBCE, IPR, EVT, OPC, MATRIX and AI JOKER-C2.",
+    runtimeQuestion:
+      "How can artificial intelligence be governed as an identifiable, traceable, auditable and responsible operational process?",
+    parentDomain: "MATRIX"
+  },
   GENERAL: {
     projectDomain: "GENERAL",
     domainType: "GENERAL_CONTEXT",
     label: "GENERAL",
     shortDefinition:
-      "Ordinary safe context with no specific MATRIX, U.S.E., CORPUS or APOKALYPSIS domain binding.",
+      "Ordinary safe context with no specific MATRIX, U.S.E., CORPUS, APOKALYPSIS or HBCE ECOSISTEMA AI domain binding.",
     runtimeQuestion:
       "Does this request require a specific project-domain classification?"
   },
@@ -132,7 +140,7 @@ const DOMAIN_METADATA: Record<ProjectDomain, ProjectDomainMetadata> = {
     shortDefinition:
       "Ecosystem-level operation involving more than one primary domain or the whole AI JOKER-C2 governance runtime.",
     runtimeQuestion:
-      "How does the operation affect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA and APOKALYPSIS together?"
+      "How does the operation affect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS and HBCE ECOSISTEMA AI together?"
   }
 };
 
@@ -146,18 +154,32 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "matrix piemonte",
     "matrix italia europa",
     "matrix torino bruxelles",
-    "hbce modules",
-    "moduli hbce",
-    "moduli dell hbce",
-    "moduli dell'hbce",
-    "sei moduli",
-    "6 moduli",
-    "six modules",
+    "matrix ai governance",
+    "matrix governance",
+    "operational infrastructure",
+    "infrastruttura operativa",
+    "infrastruttura europea",
+    "architettura operativa",
+    "architettura infrastrutturale",
+    "architettura hbce",
+    "sistema operativo europeo",
     "hbce stack",
     "stack hbce",
     "operational stack",
     "technical-operational stack",
     "stack tecnico-operativo",
+    "moduli hbce",
+    "sette moduli",
+    "7 moduli",
+    "seven modules",
+    "seven hbce modules",
+    "modulo matrix",
+    "matrix module",
+    "system coordination",
+    "coordinamento sistema",
+    "coordinamento operativo",
+    "organizzazione sistema",
+    "organizzazione ecosistema",
     "unebdo",
     "metaexchange",
     "meta exchange",
@@ -184,10 +206,6 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "sistemi autonomi",
     "automation",
     "automazione",
-    "automazione robot",
-    "automazione veicoli",
-    "robot automation",
-    "vehicle automation",
     "decision loop",
     "feedback loop",
     "validation loop",
@@ -196,7 +214,6 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "feedback controllato",
     "europe",
     "europa",
-    "leurpa",
     "european",
     "european union",
     "unione europea",
@@ -240,10 +257,8 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "logistica",
     "digital sovereignty",
     "sovranita digitale",
-    "sovranità digitale",
-    "technological sovereignty",
     "sovranita tecnologica",
-    "sovranità tecnologica",
+    "technological sovereignty",
     "strategic autonomy",
     "autonomia strategica",
     "autonomia tecnologica",
@@ -253,37 +268,23 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "dipendenze tecnologiche",
     "dipendenza estera",
     "dipendenze estere",
-    "dipendenze estere tecnologiche",
     "dipendenze strategiche",
     "dipendenza strategica",
     "ridurre dipendenze",
-    "ridurre le dipendenze",
     "riduzione dipendenze",
-    "dipendenze penalizzanti",
     "asse tecnologico",
     "asse tecnologico europeo",
-    "proprio asse tecnologico",
-    "infrastruttura europea",
     "standard europeo",
     "standard europa",
     "standard ue",
-    "tecnologia adottata in europa",
-    "adottata in tutta europa",
-    "governance imprese cittadini",
-    "imprese e cittadini",
-    "imprese cittadini",
     "istituzionale",
     "istituzioni",
-    "operational infrastructure",
-    "infrastruttura operativa",
     "fail closed",
     "fail-closed",
     "auditability",
     "auditabilita",
-    "auditabilità",
     "traceability",
     "tracciabilita",
-    "tracciabilità",
     "evidence",
     "verification",
     "verifica",
@@ -309,11 +310,8 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
   "U.S.E.": [
     "u.s.e.",
     "u.s.e",
-    "use",
-    "u s e",
     "united states of europe",
     "stati uniti d europa",
-    "stati uniti d'europa",
     "stati uniti europa",
     "stati uniti europei",
     "federated europe",
@@ -325,9 +323,6 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "federazione europea digitale",
     "costituzione operativa europea",
     "european operational constitution",
-    "digital sovereignty",
-    "sovranita digitale",
-    "sovranità digitale",
     "federated digital vote",
     "federated digital voting",
     "federated vote",
@@ -359,7 +354,6 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "public decision system",
     "sistema decisionale pubblico",
     "identita operativa europea",
-    "identità operativa europea",
     "audit pubblico",
     "process auditable",
     "vote anonymized",
@@ -378,7 +372,6 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "decisione pubblica europea",
     "citizen identity",
     "identita cittadino",
-    "identità cittadino",
     "participation rights",
     "diritti di partecipazione",
     "constitutional operational",
@@ -399,7 +392,6 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "operational reality",
     "reale operativo",
     "realta operativa",
-    "realtà operativa",
     "canonical glossary",
     "glossario canonico",
     "lex hermeticum",
@@ -407,10 +399,8 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "alien artifact",
     "paradogma alieno",
     "portale dell anticristo",
-    "portale dell'anticristo",
     "rascensionale",
     "riconconicita",
-    "riconconicità",
     "qubitronica",
     "volume i",
     "volume ii",
@@ -485,6 +475,89 @@ const DOMAIN_KEYWORDS: Record<PrimaryProjectDomain, string[]> = {
     "political exposure",
     "social dislocation",
     "sistema culturale politico sociale"
+  ],
+  HBCE_ECOSISTEMA_AI: [
+    "hbce ecosistema ai",
+    "ecosistema ai",
+    "ecosistema dell ai",
+    "ecosistema artificiale",
+    "hbce ai",
+    "hbce artificial intelligence",
+    "ai ecosystem",
+    "ai governance ecosystem",
+    "governo dell ai",
+    "governare l ai",
+    "governance dell ai",
+    "ai governance",
+    "governance ai",
+    "artificial intelligence governance",
+    "intelligenza artificiale governata",
+    "ai governata",
+    "governed ai",
+    "governed artificial intelligence",
+    "ai non governata",
+    "intelligenza artificiale non governata",
+    "ai safety",
+    "ai risk",
+    "rischio ai",
+    "sicurezza ai",
+    "human oversight ai",
+    "controllo umano ai",
+    "fail closed ai",
+    "fail-closed ai",
+    "ai audit",
+    "audit ai",
+    "audit dell ai",
+    "ipr ai audit trail",
+    "ai audit trail",
+    "ai assisted audit",
+    "ai proof",
+    "prova dell ai",
+    "traccia dell ai",
+    "responsabilita dell ai",
+    "ai accountability",
+    "ai responsibility",
+    "model governance",
+    "governance modelli",
+    "provider governance",
+    "external ai models",
+    "modelli ai esterni",
+    "modelli esterni",
+    "openai",
+    "anthropic",
+    "claude",
+    "google ai",
+    "gemini",
+    "meta ai",
+    "llama",
+    "mistral",
+    "proprietary hbce ai",
+    "ai proprietaria hbce",
+    "hybrid ai architecture",
+    "architettura ai ibrida",
+    "ai genera hbce governa",
+    "ai generates hbce governs",
+    "ai genera",
+    "hbce governa",
+    "ipr identifica",
+    "evt traccia",
+    "opc prova",
+    "matrix organizza",
+    "ai joker-c2 esegue",
+    "joker-c2 esegue",
+    "hbce ecosistema ai volume",
+    "volume hbce ecosistema ai",
+    "ipr identita operativa dell ai",
+    "evt opc traccia e prova dell ai",
+    "matrix ai governance",
+    "ai joker-c2 volume",
+    "governare intelligenza artificiale",
+    "processo ai auditabile",
+    "processo ai tracciabile",
+    "processo ai identificabile",
+    "processo ai responsabile",
+    "runtime ai governato",
+    "runtime governato ai"
   ]
 };
 
@@ -515,9 +588,7 @@ const IPR_OPERATIONAL_TERMS = [
   "ipr",
   "identity primary record",
   "identita primaria operativa",
-  "identità primaria operativa",
   "identita operativa",
-  "identità operativa",
   "ipr runtime",
   "ipr runtime demonstrator",
   "ipr product",
@@ -543,7 +614,6 @@ const HBCE_PROOF_LAYER_TERMS = [
   "protocollo evt",
   "evt continuity",
   "continuita evt",
-  "continuità evt",
   "evt ipr memory",
   "evt/ipr memory",
   "evt ipr bound memory",
@@ -567,7 +637,6 @@ const HBCE_PROOF_LAYER_TERMS = [
 
 const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
   "europa",
-  "leurpa",
   "ue",
   "unione europea",
   "europe",
@@ -577,13 +646,10 @@ const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
   "dipendenze strategiche",
   "dipendenza tecnologica",
   "dipendenza strategica",
-  "dipendenze penalizzanti",
   "autonomia strategica",
   "autonomia tecnologica",
   "sovranita digitale",
-  "sovranità digitale",
   "sovranita tecnologica",
-  "sovranità tecnologica",
   "asse tecnologico",
   "asse tecnologico europeo",
   "standard europeo",
@@ -595,6 +661,28 @@ const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
   "imprese",
   "b2b",
   "b2g"
+];
+
+const AI_GOVERNANCE_TERMS = [
+  "ai governance",
+  "governance ai",
+  "governo dell ai",
+  "governare l ai",
+  "ai audit",
+  "audit ai",
+  "ai safety",
+  "ai risk",
+  "rischio ai",
+  "human oversight ai",
+  "modelli ai",
+  "openai",
+  "anthropic",
+  "claude",
+  "google ai",
+  "gemini",
+  "mistral",
+  "meta ai",
+  "llama"
 ];
 
 const REPOSITORY_MULTI_DOMAIN_FILES = [
@@ -612,7 +700,9 @@ const REPOSITORY_MULTI_DOMAIN_FILES = [
   "system/system-manifest.json",
   "project_domain_governance_map.md",
   "ai_joker_c2_runtime_model.md",
-  "hbce_operational_stack.md"
+  "hbce_operational_stack.md",
+  "five_collections_runtime_map.md",
+  "hbce_modules_runtime_map.md"
 ];
 
 const MATRIX_FILES = [
@@ -628,7 +718,8 @@ const MATRIX_FILES = [
   "matrix_public_administration_model.md",
   "matrix_critical_infrastructure_model.md",
   "matrix_cybersecurity_resilience_model.md",
-  "matrix_procurement_governance_model.md"
+  "matrix_procurement_governance_model.md",
+  "matrix_module_runtime_map.md"
 ];
 
 const USE_FILES = [
@@ -664,15 +755,35 @@ const APOKALYPSIS_FILES = [
   "apokalypsis_non_coercion_policy.md"
 ];
 
+const HBCE_ECOSISTEMA_AI_FILES = [
+  "hbce_ecosistema_ai.md",
+  "hbce_ecosistema_ai_collection.md",
+  "hbce_ai_governance.md",
+  "hbce_ai_volume_map.md",
+  "hbce_ai_runtime_governance.md",
+  "hbce_ai_audit_trail.md",
+  "ipr_ai_audit_trail.md",
+  "ai_governance_ecosystem.md",
+  "ai_joker_c2_governed_runtime.md",
+  "matrix_ai_governance.md"
+];
+
 const MULTI_DOMAIN_TERMS = [
+  "matrix use corpus apokalypsis hbce ecosistema ai",
+  "matrix u.s.e. corpus apokalypsis hbce ecosistema ai",
+  "matrix corpus apokalypsis hbce ecosistema ai",
+  "five collections",
+  "cinque collane",
+  "cinque domini",
+  "five canonical collections",
+  "cinque collane canoniche",
+  "five project collections",
+  "cinque collane progettuali",
   "matrix use corpus apokalypsis",
   "matrix u.s.e. corpus apokalypsis",
   "matrix corpus apokalypsis",
   "matrix corpus and apokalypsis",
   "matrix corpus e apokalypsis",
-  "matrix · corpus · apokalypsis",
-  "matrix, corpus and apokalypsis",
-  "matrix, corpus e apokalypsis",
   "matrix corpus apocalipsis",
   "matrix corpus apokalipsis",
   "hermeticum ecosystem",
@@ -683,8 +794,8 @@ const MULTI_DOMAIN_TERMS = [
   "intero ecosistema",
   "four domains",
   "quattro domini",
-  "three domains",
-  "tre domini",
+  "four collections",
+  "quattro collane",
   "primary domains",
   "domini primari",
   "project domain",
@@ -744,12 +855,11 @@ export function classifyProjectDomain(
   }
 
   const explicitMultiDomain = findMatches(normalizedInput, MULTI_DOMAIN_TERMS);
-
   const iprMatches = findMatches(normalizedInput, IPR_OPERATIONAL_TERMS);
   const proofLayerMatches = findMatches(normalizedInput, HBCE_PROOF_LAYER_TERMS);
-
   const strategicAutonomyMatches =
     findEuropeanStrategicAutonomyMatches(normalizedInput);
+  const aiGovernanceMatches = findMatches(normalizedInput, AI_GOVERNANCE_TERMS);
 
   const domainScores = PRIMARY_DOMAINS.map((domain) =>
     scoreDomain(normalizedInput, domain, DOMAIN_KEYWORDS[domain])
@@ -767,6 +877,14 @@ export function classifyProjectDomain(
     boostScore(domainScores, "MATRIX", 14 + strategicAutonomyMatches.length);
   }
 
+  if (aiGovernanceMatches.length >= 2) {
+    boostScore(
+      domainScores,
+      "HBCE_ECOSISTEMA_AI",
+      12 + aiGovernanceMatches.length
+    );
+  }
+
   const matchedDomains = domainScores
     .filter((result) => result.score > 0)
     .sort((a, b) => b.score - a.score);
@@ -782,7 +900,28 @@ export function classifyProjectDomain(
         "Input matched explicit ecosystem-level or multi-domain language.",
         ...explicitMultiDomain.map((term) => `Matched multi-domain term: ${term}`),
         ...formatIprAndProofReasons(iprMatches, proofLayerMatches),
+        ...formatAiGovernanceReasons(aiGovernanceMatches),
         ...collectReasons(matchedDomains)
+      ],
+      scoreMap
+    );
+  }
+
+  if (
+    aiGovernanceMatches.length >= 2 &&
+    !hasUseSignal(normalizedInput) &&
+    !hasCorpusSignal(normalizedInput) &&
+    !hasApokalypsisSignal(normalizedInput)
+  ) {
+    return createClassification(
+      "HBCE_ECOSISTEMA_AI",
+      ["HBCE_ECOSISTEMA_AI"],
+      0.95,
+      [
+        "AI governance, model governance or AI audit language detected.",
+        "Such requests belong to the HBCE ECOSISTEMA AI project collection.",
+        ...formatAiGovernanceReasons(aiGovernanceMatches),
+        ...formatIprAndProofReasons(iprMatches, proofLayerMatches)
       ],
       scoreMap
     );
@@ -817,6 +956,7 @@ export function classifyProjectDomain(
         [
           "More than one primary project domain matched with sufficient strength.",
           ...formatIprAndProofReasons(iprMatches, proofLayerMatches),
+          ...formatAiGovernanceReasons(aiGovernanceMatches),
           ...collectReasons(matchedDomains)
         ],
         scoreMap
@@ -844,7 +984,8 @@ export function classifyProjectDomain(
       ...(best.reasons.length > 0
         ? best.reasons
         : [`Classified as ${best.domain} by highest project-domain score.`]),
-      ...formatIprAndProofReasons(iprMatches, proofLayerMatches)
+      ...formatIprAndProofReasons(iprMatches, proofLayerMatches),
+      ...formatAiGovernanceReasons(aiGovernanceMatches)
     ],
     scoreMap
   );
@@ -885,23 +1026,6 @@ function classifyByFilePath(
 ): ProjectDomainClassification | null {
   const scoreMap = createEmptyScores();
 
-  const matchedMultiFile = REPOSITORY_MULTI_DOMAIN_FILES.find((file) =>
-    normalizedInput.includes(file)
-  );
-
-  if (matchedMultiFile) {
-    return createClassification(
-      "MULTI_DOMAIN",
-      getDefaultActiveDomains(),
-      0.94,
-      [
-        `Repository-level governance file detected: ${matchedMultiFile}`,
-        "Repository-level governance files affect the full AI JOKER-C2 ecosystem."
-      ],
-      scoreMap
-    );
-  }
-
   const matchedUseFile = USE_FILES.find((file) =>
     normalizedInput.includes(file)
   );
@@ -916,6 +1040,25 @@ function classifyByFilePath(
       [
         `U.S.E. documentation file detected: ${matchedUseFile}`,
         "File path maps to the MATRIX-derived political-institutional application domain."
+      ],
+      scoreMap
+    );
+  }
+
+  const matchedHbceAiFile = HBCE_ECOSISTEMA_AI_FILES.find((file) =>
+    normalizedInput.includes(file)
+  );
+
+  if (matchedHbceAiFile) {
+    scoreMap.HBCE_ECOSISTEMA_AI = 12;
+
+    return createClassification(
+      "HBCE_ECOSISTEMA_AI",
+      ["HBCE_ECOSISTEMA_AI"],
+      0.95,
+      [
+        `HBCE ECOSISTEMA AI documentation file detected: ${matchedHbceAiFile}`,
+        "File path maps to the AI governance ecosystem project collection."
       ],
       scoreMap
     );
@@ -978,6 +1121,23 @@ function classifyByFilePath(
     );
   }
 
+  const matchedMultiFile = REPOSITORY_MULTI_DOMAIN_FILES.find((file) =>
+    normalizedInput.includes(file)
+  );
+
+  if (matchedMultiFile) {
+    return createClassification(
+      "MULTI_DOMAIN",
+      getDefaultActiveDomains(),
+      0.94,
+      [
+        `Repository-level governance file detected: ${matchedMultiFile}`,
+        "Repository-level governance files affect the full AI JOKER-C2 ecosystem."
+      ],
+      scoreMap
+    );
+  }
+
   return null;
 }
 
@@ -1033,11 +1193,8 @@ function isExplicitDomainName(
     return (
       keyword === "u.s.e." ||
       keyword === "u.s.e" ||
-      keyword === "use" ||
-      keyword === "u s e" ||
       keyword === "united states of europe" ||
-      keyword === "stati uniti d europa" ||
-      keyword === "stati uniti d'europa"
+      keyword === "stati uniti d europa"
     );
   }
 
@@ -1053,6 +1210,15 @@ function isExplicitDomainName(
     );
   }
 
+  if (domain === "HBCE_ECOSISTEMA_AI") {
+    return (
+      keyword === "hbce ecosistema ai" ||
+      keyword === "ecosistema ai" ||
+      keyword === "hbce ai" ||
+      keyword === "ai governance ecosystem"
+    );
+  }
+
   return false;
 }
 
@@ -1064,7 +1230,7 @@ function shouldClassifyAsMultiDomain(
     return false;
   }
 
-  if (secondScore >= 4) {
+  if (secondScore >= 5) {
     return true;
   }
 
@@ -1073,6 +1239,14 @@ function shouldClassifyAsMultiDomain(
 
 function hasUseSignal(text: string): boolean {
   return findMatches(text, DOMAIN_KEYWORDS["U.S.E."]).length > 0;
+}
+
+function hasCorpusSignal(text: string): boolean {
+  return findMatches(text, DOMAIN_KEYWORDS.CORPUS_ESOTEROLOGIA_ERMETICA).length > 0;
+}
+
+function hasApokalypsisSignal(text: string): boolean {
+  return findMatches(text, DOMAIN_KEYWORDS.APOKALYPSIS).length > 0;
 }
 
 function normalizeInput(input: ProjectDomainInput | string): string {
@@ -1108,9 +1282,28 @@ function normalizeText(value: string): string {
 }
 
 function findMatches(text: string, keywords: string[]): string[] {
-  return keywords
-    .map((keyword) => normalizeText(keyword))
-    .filter((keyword) => keyword.length > 0 && text.includes(keyword));
+  const normalizedKeywords = keywords.map((keyword) => normalizeText(keyword));
+  const uniqueMatches = new Set<string>();
+
+  for (const keyword of normalizedKeywords) {
+    if (!keyword) {
+      continue;
+    }
+
+    if (matchesTerm(text, keyword)) {
+      uniqueMatches.add(keyword);
+    }
+  }
+
+  return Array.from(uniqueMatches);
+}
+
+function matchesTerm(text: string, keyword: string): boolean {
+  if (keyword.includes("/") || keyword.includes("_") || keyword.includes(".")) {
+    return text.includes(keyword);
+  }
+
+  return ` ${text} `.includes(` ${keyword} `);
 }
 
 function findEuropeanStrategicAutonomyMatches(text: string): string[] {
@@ -1163,12 +1356,13 @@ function getDefaultActiveDomains(): ProjectDomain[] {
     "MATRIX",
     "U.S.E.",
     "CORPUS_ESOTEROLOGIA_ERMETICA",
-    "APOKALYPSIS"
+    "APOKALYPSIS",
+    "HBCE_ECOSISTEMA_AI"
   ];
 }
 
 function calculateConfidence(score: number, text: string): number {
-  const scoreFactor = Math.min(score / 18, 1);
+  const scoreFactor = Math.min(score / 20, 1);
   const lengthFactor = Math.min(text.length / 900, 1);
   const confidence = 0.42 + scoreFactor * 0.45 + lengthFactor * 0.13;
 
@@ -1179,7 +1373,7 @@ function calculateMultiDomainConfidence(
   matchedDomains: DomainScore[],
   explicitMultiDomainMatches: number
 ): number {
-  const matchedDomainFactor = Math.min(matchedDomains.length / 4, 1);
+  const matchedDomainFactor = Math.min(matchedDomains.length / 5, 1);
   const explicitFactor = Math.min(explicitMultiDomainMatches / 3, 1);
   const confidence = 0.7 + matchedDomainFactor * 0.15 + explicitFactor * 0.1;
 
@@ -1219,12 +1413,28 @@ function formatIprAndProofReasons(
   return reasons;
 }
 
+function formatAiGovernanceReasons(aiGovernanceMatches: string[]): string[] {
+  const reasons: string[] = [];
+
+  if (aiGovernanceMatches.length > 0) {
+    reasons.push(
+      "AI governance or model governance language detected; routed through HBCE ECOSISTEMA AI when no stronger collection boundary prevails."
+    );
+    reasons.push(
+      ...aiGovernanceMatches.map((term) => `Matched AI governance term: ${term}`)
+    );
+  }
+
+  return reasons;
+}
+
 function createEmptyScores(): Partial<Record<PrimaryProjectDomain, number>> {
   return {
     MATRIX: 0,
     "U.S.E.": 0,
     CORPUS_ESOTEROLOGIA_ERMETICA: 0,
-    APOKALYPSIS: 0
+    APOKALYPSIS: 0,
+    HBCE_ECOSISTEMA_AI: 0
   };
 }
 
