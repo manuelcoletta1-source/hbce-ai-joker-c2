@@ -59,8 +59,16 @@ type PromptFileInput = EvtMemoryFile;
 
 const MAX_FILE_CONTEXT_CHARS = 72000;
 
+const USE_CANONICAL_PROJECT_NAME = "U.S.E. — United States of Europe";
+
+const USE_ACRONYM_RULE =
+  "U.S.E. always means United States of Europe. Never expand U.S.E. as Unified System for Elections, Unified System, Universal System, election software or any other alternative meaning.";
+
 const USE_DEMOCRATIC_BOUNDARY =
-  "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
+  "Identity verified first. Right of participation verified. Choice separated after. Vote anonymized. Process auditable. Result verifiable.";
+
+const USE_CANONICAL_SENTENCE =
+  "IPR enables the right to vote, but it does not know the content of the vote.";
 
 const HBCE_AI_BOUNDARY =
   "The AI model does not govern HBCE. HBCE governs the use of AI models.";
@@ -264,12 +272,49 @@ export function isEconomicGovernanceQuestion(message: string): boolean {
   return hasSystemTerm && hasEconomicTerm && !containsUnsafeOperationalTerm(message);
 }
 
+export function isUseFederatedDemocracyQuestion(message: string): boolean {
+  const lower = normalizeForRuleMatch(message);
+
+  const useTerms = [
+    "u.s.e.",
+    "united states of europe",
+    "stati uniti d europa",
+    "stati uniti europei",
+    "federazione operativa europea",
+    "federazione europea operativa",
+    "costituzione operativa europea",
+    "sovranita digitale europea",
+    "sovranità digitale europea",
+    "voto digitale federato",
+    "federated digital vote",
+    "federated digital voting",
+    "referendum multilivello",
+    "referenda multilivello",
+    "democrazia legislativa",
+    "democrazia diretta ibrida",
+    "democrazia legislativa diretta",
+    "consultazione federata",
+    "consultazioni federate",
+    "voto europeo verificabile",
+    "audit democratico",
+    "identita di voto",
+    "identità di voto"
+  ];
+
+  return useTerms.some((term) => lower.includes(term)) && !containsUnsafeOperationalTerm(message);
+}
+
 export function isCivicDigitalParticipationQuestion(message: string): boolean {
   const lower = normalizeForRuleMatch(message);
+
+  if (isUseFederatedDemocracyQuestion(message)) {
+    return true;
+  }
 
   const civicTerms = [
     "voto",
     "voto digitale",
+    "voto digitale federato",
     "e-voting",
     "evoting",
     "votazione digitale",
@@ -278,17 +323,23 @@ export function isCivicDigitalParticipationQuestion(message: string): boolean {
     "elezioni digitali",
     "elezione digitale",
     "democrazia digitale",
+    "democrazia legislativa",
     "partecipazione digitale",
     "partecipazione civica",
     "consultazione pubblica",
     "consultazioni pubbliche",
+    "consultazione federata",
     "referendum digitale",
+    "referendum multilivello",
     "cittadinanza digitale",
     "identita civica",
     "identità civica"
   ];
 
   const institutionalTerms = [
+    "u.s.e.",
+    "united states of europe",
+    "stati uniti d europa",
     "istituzioni",
     "istituzione",
     "pubblica amministrazione",
@@ -301,6 +352,8 @@ export function isCivicDigitalParticipationQuestion(message: string): boolean {
     "unione europea",
     "ue",
     "europa",
+    "europea",
+    "europeo",
     "parlamento",
     "amministrazione",
     "servizi pubblici",
@@ -462,6 +515,13 @@ function detectKeywords(text: string): string[] {
 
   const keywords = [
     "matrix",
+    "u.s.e.",
+    "united states of europe",
+    "stati uniti d’europa",
+    "stati uniti d'europa",
+    "voto digitale federato",
+    "referendum multilivello",
+    "democrazia legislativa",
     "hbce",
     "hbce ecosistema ai",
     "ecosistema ai",
@@ -777,7 +837,7 @@ export function isRuntimeDiagnosticRequest(message: string): boolean {
 
 function buildCanonicalDictionary(): string {
   return [
-    "Dizionario canonico MATRIX / CORPUS / APOKALYPSIS / HBCE:",
+    "Dizionario canonico MATRIX / U.S.E. / CORPUS / APOKALYPSIS / HBCE:",
     "",
     "IPR = Identity Primary Record.",
     "IPR non è solo identità digitale. È un registro primario di identità operativa: collega soggetto, origine, responsabilità, derivazioni, eventi, prove e continuità nel tempo.",
@@ -796,6 +856,17 @@ function buildCanonicalDictionary(): string {
     "I sette moduli tecnico-operativi HBCE sono: UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop, MATRIX.",
     "MATRIX ha doppia funzione: come collana è architettura strategica e infrastrutturale; come modulo HBCE è livello di coordinamento e organizzazione dello stack.",
     "Formula moduli: IPR identifica; UNEBDO ancora; EVT traccia; Memory continua; OPC prova; MetaExchange scambia; IOspace espone; CyberGlobal protegge; NeuroLoop valida; MATRIX organizza; AI JOKER-C2 esegue.",
+    "",
+    `${USE_CANONICAL_PROJECT_NAME} = collana e architettura politico-istituzionale che usa MATRIX per progettare gli Stati Uniti d’Europa come federazione operativa, sovrana, digitale e verificabile.`,
+    `Regola acronimo U.S.E.: ${USE_ACRONYM_RULE}`,
+    "U.S.E. non significa Unified System for Elections. Non è un software elettorale generico. Non è una semplice piattaforma civica. È il progetto United States of Europe dentro il framework MATRIX.",
+    "Voto digitale federato = infrastruttura di referendum multilivello e democrazia legislativa diretta/ibrida su leggi concrete, quesiti normativi, atti pubblici verificabili e decisioni istituzionali.",
+    `Formula democratica U.S.E.: ${USE_DEMOCRATIC_BOUNDARY}`,
+    `Frase canonica U.S.E.: ${USE_CANONICAL_SENTENCE}`,
+    "IPR verifica identità, diritto di partecipazione, perimetro istituzionale e unicità della partecipazione. IPR non registra, non conserva, non inferisce e non collega il contenuto del voto all’identità personale.",
+    "EVT traccia solo eventi procedurali: apertura consultazione, verifica diritto, abilitazione, deposito anonimizzato, chiusura, conteggio, pubblicazione e verifica. EVT non traccia la preferenza politica personale.",
+    "OPC produce prova tecnica del processo: integrità, regole applicate, continuità degli eventi, stato audit e stato verifica. OPC non certifica cosa ha votato una persona.",
+    "MATRIX organizza identità, evento, responsabilità, audit, continuità, verifica e interoperabilità istituzionale.",
     "",
     "HBCE ECOSISTEMA AI = quinta collana progettuale di governance dell'intelligenza artificiale.",
     "Tesi HBCE ECOSISTEMA AI: il problema non è solo avere AI più potenti; il problema è governare l'AI dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili.",
@@ -817,17 +888,55 @@ function buildCanonicalDictionary(): string {
     "Distingui sempre tra potenzialità progettuale, implementazione tecnica, adozione di mercato, riconoscimento istituzionale e standardizzazione ufficiale.",
     "Non dichiarare che HBCE è già adottata o inglobata nella governance nazionale/europea se non dimostrato. Formula corretta: HBCE può proporsi come infrastruttura integrabile nella governance nazionale ed europea.",
     "",
-    "Regola civica digitale / voto digitale:",
-    "Quando l'utente chiede voto digitale, consultazioni pubbliche digitali, partecipazione civica digitale o interazione virtuale con le istituzioni, distingui sempre identità, diritto di accesso, scelta democratica, segretezza del voto e audit del processo.",
-    "IPR può verificare identità e diritto di partecipazione, ma non deve collegare il contenuto del voto all'identità personale.",
+    "Regola U.S.E. / voto digitale federato:",
+    "Quando l'utente chiede U.S.E., United States of Europe, Stati Uniti d’Europa, voto digitale federato, referendum multilivello, democrazia digitale, democrazia legislativa, voto europeo o partecipazione istituzionale, la risposta deve usare U.S.E. come United States of Europe.",
+    "Non espandere mai U.S.E. come Unified System for Elections o come altra sigla inventata.",
+    "Non descrivere U.S.E. come semplice piattaforma di voto online. Descrivila come architettura politico-istituzionale federata derivata da MATRIX.",
+    "Il voto digitale federato non è principalmente voto online per partiti o rappresentanti. È infrastruttura di decisione pubblica verificabile su leggi, referendum, quesiti normativi e atti istituzionali concreti.",
     `Formula corretta: ${USE_DEMOCRATIC_BOUNDARY}`,
-    "EVT può tracciare il processo elettorale o partecipativo: apertura sessione, verifica diritto, consegna scheda digitale, acquisizione, chiusura, integrità, audit tecnico e verifica del sistema. EVT non deve registrare il contenuto del voto associato alla persona.",
+    "IPR può verificare identità, diritto di partecipazione, perimetro istituzionale e unicità della partecipazione, ma non deve collegare il contenuto del voto all'identità personale.",
+    "EVT può tracciare il processo elettorale o partecipativo: apertura sessione, verifica diritto, abilitazione, deposito anonimizzato, chiusura, conteggio, audit tecnico e verifica del sistema. EVT non deve registrare il contenuto del voto associato alla persona.",
     "",
     "Regola editoriale:",
     "Per APOKALYPSIS, CORPUS e MATRIX preserva Decisione · Costo · Traccia · Tempo quando pertinente.",
     "Quando l'utente chiede valore operativo, confronti o standard europei, distingui sempre: identità, firma, credenziale, registro, timestamp, audit log, EVT, IPR.",
     "IPR non va spiegato come semplice identità digitale: va spiegato come livello di continuità operativa sopra strumenti già esistenti.",
     "Biocybersecurity non va bloccata come rischio critico se l'utente chiede solo una definizione, una spiegazione concettuale o un testo editoriale."
+  ].join("\n");
+}
+
+function buildUseFederatedVoteDirective(input: {
+  message: string;
+  frame: GovernanceFrame;
+}): string {
+  const isUseDomain =
+    input.frame.projectDomain.projectDomain === "U.S.E." ||
+    input.frame.projectDomain.activeDomains.includes("U.S.E.");
+
+  if (!isUseDomain && !isUseFederatedDemocracyQuestion(input.message)) {
+    return [
+      "Direttiva U.S.E. / voto digitale federato:",
+      "Nessuna richiesta specifica U.S.E. rilevata."
+    ].join("\n");
+  }
+
+  return [
+    "Direttiva U.S.E. / voto digitale federato:",
+    `Nome canonico: ${USE_CANONICAL_PROJECT_NAME}.`,
+    USE_ACRONYM_RULE,
+    "Se l'utente chiede U.S.E., devi trattarlo come United States of Europe, non come Unified System for Elections.",
+    "Non usare mai l’espansione Unified System for Elections.",
+    "Non presentare U.S.E. come semplice piattaforma civica digitale o come software elettorale.",
+    "U.S.E. è la collana e architettura politico-istituzionale che usa MATRIX per progettare gli Stati Uniti d’Europa come federazione operativa, sovrana, digitale e verificabile.",
+    "Il voto digitale federato deve essere spiegato come infrastruttura di referendum multilivello e democrazia legislativa diretta/ibrida su leggi concrete, decisioni normative, atti pubblici verificabili e quesiti istituzionali.",
+    "Il cittadino federale europeo non deve delegare integralmente la decisione a partiti o rappresentanti: deve poter partecipare direttamente a decisioni pubbliche concrete su scala territoriale, regionale, nazionale ed europea.",
+    `Principio canonico: ${USE_DEMOCRATIC_BOUNDARY}`,
+    `Frase canonica: ${USE_CANONICAL_SENTENCE}`,
+    "IPR verifica identità, diritto di partecipazione, perimetro istituzionale e unicità della partecipazione. IPR non deve mai registrare, conservare, inferire o collegare il contenuto del voto all’identità personale.",
+    "EVT registra eventi procedurali: apertura consultazione, verifica diritto, abilitazione, deposito anonimizzato, chiusura, conteggio, pubblicazione e verifica. EVT non registra la preferenza individuale.",
+    "OPC produce prova auditabile del processo: integrità, regole applicate, continuità degli eventi, stato di audit e stato di verifica. OPC non prova cosa ha votato una persona.",
+    "MATRIX organizza l’architettura complessiva: identità, evento, responsabilità, audit, continuità, verifica e interoperabilità istituzionale.",
+    "Quando la domanda è diretta su U.S.E., la risposta deve aprire chiarendo che U.S.E. significa United States of Europe."
   ].join("\n");
 }
 
@@ -876,11 +985,16 @@ function buildCivicDigitalParticipationDirective(message: string): string {
 
   return [
     "Direttiva civica digitale / voto digitale:",
-    "Quando l'utente chiede voto digitale, partecipazione civica digitale o interazione virtuale con le istituzioni, rispondi sempre distinguendo identità, diritto di accesso, scelta democratica, segretezza del voto e audit del processo.",
+    `Se la richiesta contiene U.S.E., usa sempre il nome canonico: ${USE_CANONICAL_PROJECT_NAME}.`,
+    USE_ACRONYM_RULE,
+    "Quando l'utente chiede voto digitale, partecipazione civica digitale, referendum multilivello, democrazia legislativa o interazione virtuale con le istituzioni, rispondi sempre distinguendo identità, diritto di accesso, scelta democratica, segretezza del voto e audit del processo.",
     "Non dire mai che ogni voto deve essere collegato in modo verificabile all'identità dell'elettore. Formula corretta: IPR può verificare identità e diritto di partecipazione, ma il contenuto del voto deve essere separato dall'identità personale.",
     `La grammatica corretta è: ${USE_DEMOCRATIC_BOUNDARY}`,
-    "EVT può tracciare il processo: apertura sessione, verifica diritto, consegna scheda digitale, acquisizione, chiusura, integrità, audit tecnico e verifica del sistema. EVT non deve registrare il contenuto del voto associato alla persona.",
-    "Distingui sempre voto elettorale, consultazione pubblica, partecipazione civica, accesso a servizi pubblici e interazione documentale con le istituzioni.",
+    `Frase canonica: ${USE_CANONICAL_SENTENCE}`,
+    "EVT può tracciare il processo: apertura sessione, verifica diritto, abilitazione, deposito anonimizzato, chiusura, conteggio, integrità, audit tecnico e verifica del sistema. EVT non deve registrare il contenuto del voto associato alla persona.",
+    "OPC produce proof receipt del processo, non certificato della scelta personale.",
+    "MATRIX organizza l’intera architettura di identità, evento, responsabilità, audit, continuità, verifica e interoperabilità istituzionale.",
+    "Distingui sempre voto elettorale, consultazione pubblica, partecipazione civica, accesso a servizi pubblici, interazione documentale con le istituzioni, referendum legislativo e democrazia diretta/ibrida.",
     "La risposta deve includere i limiti democratici fondamentali: segretezza del voto, protezione dei dati, verificabilità indipendente, accessibilità, sicurezza, controllo pubblico, revisione istituzionale e compatibilità normativa.",
     "HBCE/IPR/EVT può essere presentato come infrastruttura potenziale per identità civica operativa e audit del processo, non come garanzia automatica di voto digitale valido o già adottato."
   ].join("\n");
@@ -949,7 +1063,7 @@ function buildSafeConceptResponseDirective(message: string): string {
     "La richiesta riguarda un concetto canonico o teorico del framework.",
     "Rispondi in modo concettuale, sicuro, difensivo e governato.",
     "Non attivare linguaggio operativo offensivo.",
-    "Preserva la distinzione: MATRIX = infrastruttura e modulo di coordinamento; CORPUS = grammatica; APOKALYPSIS = soglia; HBCE ECOSISTEMA AI = governance AI; AI JOKER-C2 = runtime."
+    "Preserva la distinzione: MATRIX = infrastruttura e modulo di coordinamento; U.S.E. = United States of Europe; CORPUS = grammatica; APOKALYPSIS = soglia; HBCE ECOSISTEMA AI = governance AI; AI JOKER-C2 = runtime."
   ].join("\n");
 }
 
@@ -977,7 +1091,8 @@ function buildProjectDomainDirective(frame: GovernanceFrame): string {
       "Valorizza AI governance, B2B, B2G, Europa, audit, sicurezza difensiva, tracciabilità, fail-closed ed EVT.",
       "Ricorda la doppia funzione: MATRIX come collana è architettura strategica; MATRIX come modulo HBCE è coordinamento tecnico-operativo dello stack.",
       "Quando la richiesta riguarda economia, impiego, lavoro, imprese, aziende, governi, cittadini, registrazione IPR, audit o governance europea, devi spiegare la nuova filiera economica possibile: registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale.",
-      "Quando la richiesta riguarda voto digitale, consultazione pubblica, partecipazione civica o istituzioni virtuali, devi distinguere identità verificata, diritto di accesso, scelta separata, voto anonimizzato e processo auditabile.",
+      "Quando la richiesta riguarda voto digitale, consultazione pubblica, partecipazione civica o istituzioni virtuali, devi distinguere identità verificata, diritto di partecipazione verificato, scelta separata, voto anonimizzato, processo auditabile e risultato verificabile.",
+      "Se la richiesta usa U.S.E., devi interpretarlo sempre come United States of Europe.",
       "Distingui sempre potenzialità, implementazione, mercato, riconoscimento istituzionale e standardizzazione ufficiale.",
       "Evita promesse di certificazione o adozione ufficiale se non dimostrate."
     );
@@ -987,9 +1102,19 @@ function buildProjectDomainDirective(frame: GovernanceFrame): string {
     header.push(
       "",
       "Direttiva dominio U.S.E.:",
+      `U.S.E. significa sempre United States of Europe.`,
+      USE_ACRONYM_RULE,
       "Rispondi come analista della federazione operativa europea.",
+      "U.S.E. non è una semplice piattaforma di partecipazione civica digitale e non è un software elettorale generico.",
+      "U.S.E. è la collana e architettura politico-istituzionale che usa MATRIX per progettare gli Stati Uniti d’Europa come federazione operativa, sovrana, digitale e verificabile.",
+      "Il voto digitale federato non deve essere descritto come semplice voto online per partiti o rappresentanti. Deve essere descritto come infrastruttura di referendum multilivello e democrazia legislativa diretta/ibrida su leggi concrete, decisioni normative, atti pubblici verificabili e quesiti istituzionali.",
+      "Il cittadino federale europeo deve poter partecipare direttamente a decisioni pubbliche concrete su scala territoriale, regionale, nazionale ed europea, senza delegare integralmente la scelta a partiti o individui eletti.",
       `Preserva sempre la regola democratica: ${USE_DEMOCRATIC_BOUNDARY}`,
-      "IPR può verificare identità e diritto di partecipazione; EVT può tracciare il processo; OPC può produrre proof receipt; il contenuto della scelta democratica deve restare separato dall’identità personale."
+      `Usa quando pertinente la frase canonica: ${USE_CANONICAL_SENTENCE}`,
+      "IPR verifica identità, diritto di partecipazione, perimetro istituzionale e unicità della partecipazione. IPR non deve mai registrare, conservare, inferire o collegare il contenuto del voto all’identità personale.",
+      "EVT traccia eventi procedurali del processo, non la preferenza individuale.",
+      "OPC produce proof receipt del processo, non certificazione della scelta personale.",
+      "MATRIX organizza identità, evento, responsabilità, audit, continuità, verifica e interoperabilità istituzionale."
     );
   }
 
@@ -1033,12 +1158,13 @@ function buildProjectDomainDirective(frame: GovernanceFrame): string {
       "Direttiva dominio MULTI_DOMAIN:",
       "Collega MATRIX, U.S.E., CORPUS, APOKALYPSIS e HBCE ECOSISTEMA AI senza confonderli.",
       "MATRIX = infrastruttura e coordinamento.",
-      "U.S.E. = applicazione politico-istituzionale europea.",
+      "U.S.E. = United States of Europe, applicazione politico-istituzionale europea derivata da MATRIX.",
       "CORPUS = grammatica.",
       "APOKALYPSIS = soglia storica.",
       "HBCE ECOSISTEMA AI = governance dell’intelligenza artificiale.",
       "AI JOKER-C2 = runtime cognitivo-governato.",
-      "Quando il termine riguarda biocybersecurity, spiega l'accoppiamento organismo-sistema-AI in chiave difensiva, non offensiva."
+      "Quando il termine riguarda biocybersecurity, spiega l'accoppiamento organismo-sistema-AI in chiave difensiva, non offensiva.",
+      "Quando il termine riguarda U.S.E., non espandere mai la sigla come Unified System for Elections."
     );
   }
 
@@ -1070,7 +1196,7 @@ function buildDocumentFamilyDirective(
       "Spiega sempre la distinzione tra sessionId, IPR, EVT, memoria semantica e ledger quando pertinente.",
       "Quando l'utente chiede programmazione o rifattorizzazione, produci file completi pronti per GitHub.",
       "Quando l'utente chiede effetti economici o istituzionali del runtime, collega HBCE_RUNTIME a MATRIX: identità operativa, registrazione IPR, audit EVT, governance AI, continuità operativa e nuova filiera professionale.",
-      "Quando l'utente chiede voto digitale o interazione virtuale con istituzioni, spiega che IPR verifica identità e diritto di accesso, ma il voto deve restare separato e anonimizzato; EVT traccia il processo, non la scelta associata alla persona."
+      "Quando l'utente chiede U.S.E., voto digitale federato o interazione virtuale con istituzioni, usa U.S.E. come United States of Europe e spiega che IPR verifica identità e diritto di accesso, ma il voto deve restare separato e anonimizzato; EVT traccia il processo, non la scelta associata alla persona."
     ].join("\n");
   }
 
@@ -1110,7 +1236,7 @@ function buildDocumentFamilyDirective(
       "Evita tono generico. Presenta MATRIX come infrastruttura europea di continuità, controllo e responsabilità operativa.",
       "Ricorda anche la funzione di MATRIX come settimo modulo tecnico-operativo HBCE: organizzazione e coordinamento dello stack.",
       "Se la richiesta riguarda economia, imprese, governi, cittadini o lavoro, spiega la filiera professionale: registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale.",
-      "Se la richiesta riguarda voto digitale o istituzioni virtuali, applica la regola democratica: identità verificata, scelta separata, voto anonimizzato, processo auditabile."
+      "Se la richiesta riguarda U.S.E., voto digitale federato o istituzioni virtuali, applica la regola democratica: identità verificata, diritto di partecipazione verificato, scelta separata, voto anonimizzato, processo auditabile, risultato verificabile."
     ].join("\n");
   }
 
@@ -1126,9 +1252,18 @@ function buildDocumentFamilyDirective(
   if (family === "USE") {
     return [
       "Direttiva U.S.E.:",
-      "Tratta il documento come applicazione politico-istituzionale europea derivata da MATRIX.",
+      `Tratta il documento come ${USE_CANONICAL_PROJECT_NAME}, applicazione politico-istituzionale europea derivata da MATRIX.`,
+      USE_ACRONYM_RULE,
+      "Non usare mai Unified System for Elections.",
+      "U.S.E. non è una semplice piattaforma civica digitale. È una architettura federata europea: operativa, sovrana, digitale e verificabile.",
+      "Il voto digitale federato va trattato come infrastruttura di referendum multilivello e democrazia legislativa diretta/ibrida su leggi concrete, decisioni normative, atti pubblici verificabili e quesiti istituzionali.",
       `Preserva la regola democratica: ${USE_DEMOCRATIC_BOUNDARY}`,
-      "IPR verifica identità e diritto di partecipazione; EVT traccia il processo; OPC può produrre proof receipt; il contenuto della scelta democratica resta separato dall’identità personale."
+      `Frase canonica: ${USE_CANONICAL_SENTENCE}`,
+      "IPR verifica identità, diritto di partecipazione, perimetro istituzionale e unicità della partecipazione.",
+      "IPR non registra, non conserva e non collega il contenuto della scelta democratica all’identità personale.",
+      "EVT traccia il processo, non la preferenza personale.",
+      "OPC produce proof receipt del processo, non certificazione della scelta personale.",
+      "MATRIX organizza la struttura istituzionale, tecnica e auditabile del sistema."
     ].join("\n");
   }
 
@@ -1223,6 +1358,11 @@ export function buildSystemPrompt(input: {
     "",
     buildResponseContractDirective(input.message),
     "",
+    buildUseFederatedVoteDirective({
+      message: input.message,
+      frame: input.governanceFrame
+    }),
+    "",
     "Regola operativa fondamentale:",
     "La chat è solo l'interfaccia. La memoria deve essere ricavata dagli EVT agganciati all'IPR.",
     "Ogni nuova risposta deve usare la memoria EVT/IPR-bound quando utile.",
@@ -1238,6 +1378,7 @@ export function buildSystemPrompt(input: {
     "Quando è attivo un contratto canonico di risposta, devi iniziare con la formula obbligatoria prima della spiegazione discorsiva.",
     "Quando lavori su GitHub o codice, fornisci sempre file completi pronti da copiare.",
     "Quando modifichi file di repository, usa sempre: nome file, file completo, commit del file.",
+    "Quando fornisci il commit del file, scrivilo sempre dentro un blocco di codice copiabile.",
     "",
     buildStyleDirective(input.structuredFormat),
     "",
@@ -1296,6 +1437,30 @@ export function buildFallback(input: {
   const domain = input.governanceFrame.projectDomain.projectDomain;
   const safeConcept = classifySafeConcept(input.message);
 
+  if (
+    domain === "U.S.E." ||
+    input.governanceFrame.projectDomain.activeDomains.includes("U.S.E.") ||
+    isUseFederatedDemocracyQuestion(input.message)
+  ) {
+    return [
+      "U.S.E. significa United States of Europe. Non significa Unified System for Elections.",
+      "",
+      "U.S.E. — United States of Europe è la collana e architettura politico-istituzionale che usa MATRIX per progettare gli Stati Uniti d’Europa come federazione operativa, sovrana, digitale e verificabile.",
+      "",
+      "Il voto digitale federato non è una semplice votazione online per partiti o rappresentanti. È un’infrastruttura di referendum multilivello e democrazia legislativa diretta/ibrida, pensata per permettere ai cittadini europei di partecipare direttamente a leggi concrete, quesiti normativi, decisioni pubbliche verificabili e atti istituzionali su scala territoriale, regionale, nazionale ed europea.",
+      "",
+      `La formula corretta è: ${USE_DEMOCRATIC_BOUNDARY}`,
+      "",
+      `${USE_CANONICAL_SENTENCE} IPR verifica identità, diritto di partecipazione, perimetro istituzionale e unicità della partecipazione, ma non registra e non collega mai il contenuto del voto all’identità personale.`,
+      "",
+      "EVT traccia gli eventi procedurali del processo: apertura consultazione, verifica diritto, abilitazione, deposito anonimizzato, chiusura, conteggio, pubblicazione e verifica. EVT non registra la preferenza individuale.",
+      "",
+      "OPC produce una proof receipt auditabile del processo: integrità, regole applicate, continuità degli eventi, stato di audit e stato di verifica. OPC non certifica cosa ha votato una persona.",
+      "",
+      "MATRIX organizza l’architettura complessiva di identità, evento, responsabilità, audit, continuità, verifica e interoperabilità istituzionale."
+    ].join("\n");
+  }
+
   if (isHbceAiGovernanceQuestion(input.message) || domain === "HBCE_ECOSISTEMA_AI") {
     return [
       "HBCE ECOSISTEMA AI è la quinta collana progettuale: serve a spiegare come l’intelligenza artificiale viene governata dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili.",
@@ -1314,7 +1479,7 @@ export function buildFallback(input: {
       "",
       `La formula corretta è: ${USE_DEMOCRATIC_BOUNDARY} L’IPR può servire a verificare che il cittadino sia realmente titolare del diritto di partecipazione, che l'accesso sia autorizzato, che la sessione sia valida e che non vi siano duplicazioni o abusi. Questo riguarda l'identità civica operativa, non il contenuto della scelta.`,
       "",
-      "EVT può essere utile per tracciare il processo: apertura della sessione, validazione del diritto, consegna della scheda digitale, conferma di acquisizione, chiusura, integrità del sistema, audit tecnico e verifica pubblica dei passaggi. Ma l'EVT non deve contenere il contenuto del voto associato all'identità personale.",
+      "EVT può essere utile per tracciare il processo: apertura della sessione, validazione del diritto, abilitazione, deposito anonimizzato, chiusura, conteggio, integrità del sistema, audit tecnico e verifica pubblica dei passaggi. Ma l'EVT non deve contenere il contenuto del voto associato all'identità personale.",
       "",
       "In questo scenario HBCE può contribuire a una governance digitale più ampia: consultazioni pubbliche, pratiche amministrative, identità civica operativa, accesso ai servizi, interazione documentale, audit delle procedure e partecipazione istituzionale verificabile, mantenendo però i limiti democratici fondamentali: segretezza del voto, protezione dei dati, verificabilità indipendente, accessibilità, sicurezza e controllo pubblico."
     ].join("\n");
