@@ -202,6 +202,12 @@ const SEVEN_HBCE_MODULES = [
   "MATRIX"
 ] as const;
 
+const STRATEGIC_DOCTRINES = [
+  "HBCE_CYBERSECURITY_STRATEGY",
+  "HBCE_DATA_PROTECTION_STRATEGY",
+  "HBCE_INFORMATION_GOVERNANCE_STRATEGY"
+] as const;
+
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -829,6 +835,11 @@ async function generateResponse(input: {
             "APOKALYPSIS = soglia storica.",
             "HBCE ECOSISTEMA AI = quinta collana progettuale per governare l’intelligenza artificiale come processo identificabile, tracciabile, auditabile e responsabile.",
             "I sette moduli HBCE sono funzioni tecnico-operative dello stack: UNEBDO ancora, OPC prova, MetaExchange scambia, IOspace espone, CyberGlobal protegge, NeuroLoop valida, MATRIX organizza.",
+            "I tre documenti dottrinali strategici sono: HBCE Cybersecurity Strategy, HBCE Data Protection Strategy, HBCE Information Governance Strategy.",
+            "HBCE Cybersecurity Strategy = postura difensiva cyber, CyberGlobal, resilienza, incidenti e continuità infrastrutturale.",
+            "HBCE Data Protection Strategy = minimizzazione, classificazione dati, privacy, retention, access control, redazione e auditabilità.",
+            "HBCE Information Governance Strategy = classificazione informazioni, circolazione controllata, proof continuity, metadata pubblici/interni e responsabilità informativa.",
+            "I documenti dottrinali strategici non sono collane, non sono moduli HBCE e non sono certificazioni legali automatiche.",
             "Formula HBCE ECOSISTEMA AI: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue.",
             "Boundary AI governance: il modello AI non governa HBCE; HBCE governa l’uso dei modelli AI.",
             `Modulo HBCE classificato: ${input.governanceFrame.hbceModule.module}.`,
@@ -1105,6 +1116,9 @@ function buildRuntimeDiagnosticText(input: {
     "Seven HBCE Modules:",
     `- ${SEVEN_HBCE_MODULES.join(", ")}`,
     "",
+    "Strategic Doctrine Layer:",
+    `- ${STRATEGIC_DOCTRINES.join(", ")}`,
+    "",
     "Identità runtime:",
     `- entity: ${identity.entity}`,
     `- ipr: ${identity.ipr}`,
@@ -1178,6 +1192,7 @@ function buildTechnicalFrame(input: {
     `- domainType: ${input.governance.projectDomain.domainType}`,
     `- hbceModule: ${input.governance.hbceModule.module}`,
     `- activeModules: ${input.governance.hbceModule.activeModules.join(", ")}`,
+    `- strategicDoctrines: ${STRATEGIC_DOCTRINES.join(", ")}`,
     `- moduleType: ${input.governance.hbceModule.moduleType}`,
     `- context: ${input.contextClass}`,
     `- legacyContext: ${input.legacyContextClass}`,
@@ -2552,6 +2567,7 @@ async function createAndAppendOpcForChat(input: {
       activeDomains: input.governance.projectDomain.activeDomains,
       hbceModule: input.governance.hbceModule.module,
       activeModules: input.governance.hbceModule.activeModules,
+      strategicDoctrines: STRATEGIC_DOCTRINES,
       legacyEvent: input.event.evt,
       governedEvent: input.modernEvt.evt,
       memoryEvent: input.memoryEvent.evt,
@@ -2585,6 +2601,7 @@ async function createAndAppendOpcForChat(input: {
         input.governance.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
           ? `AI governance boundary: ${HBCE_AI_BOUNDARY}`
           : "",
+        `Strategic doctrine layer: ${STRATEGIC_DOCTRINES.join(", ")}`,
         isAerospaceGovernanceBoundaryQuestion(input.message)
           ? "Aerospace boundary: HBCE is audit/governance/traceability only, not flight-control or guidance software."
           : ""
@@ -2828,6 +2845,7 @@ export async function POST(req: NextRequest) {
       identity: buildIdentityPayload(identity),
       collections: FIVE_COLLECTIONS,
       modules: SEVEN_HBCE_MODULES,
+      strategicDoctrines: STRATEGIC_DOCTRINES,
       event,
       memoryEvent,
       governedEvent: publicModernEvt,
@@ -2880,6 +2898,7 @@ export async function POST(req: NextRequest) {
         domainType: governance.projectDomain.domainType,
         hbceModule: governance.hbceModule.module,
         activeModules: governance.hbceModule.activeModules,
+        strategicDoctrines: STRATEGIC_DOCTRINES,
         moduleType: governance.hbceModule.moduleType,
         moduleConfidence: governance.hbceModule.confidence,
         moduleReasons: governance.hbceModule.reasons,
@@ -2934,6 +2953,7 @@ export async function POST(req: NextRequest) {
         opcVerificationStatus: opc.publicProof.verificationStatus,
         hbceModule: governance.hbceModule.module,
         activeModules: governance.hbceModule.activeModules,
+        strategicDoctrines: STRATEGIC_DOCTRINES,
         structuredFormat
       }
     });
@@ -3089,6 +3109,7 @@ export async function POST(req: NextRequest) {
     identity: buildIdentityPayload(identity),
     collections: FIVE_COLLECTIONS,
     modules: SEVEN_HBCE_MODULES,
+    strategicDoctrines: STRATEGIC_DOCTRINES,
     event,
     memoryEvent,
     governedEvent: publicModernEvt,
@@ -3143,6 +3164,7 @@ export async function POST(req: NextRequest) {
       domainReasons: governance.projectDomain.reasons,
       hbceModule: governance.hbceModule.module,
       activeModules: governance.hbceModule.activeModules,
+      strategicDoctrines: STRATEGIC_DOCTRINES,
       moduleType: governance.hbceModule.moduleType,
       moduleConfidence: governance.hbceModule.confidence,
       moduleReasons: governance.hbceModule.reasons,
@@ -3204,6 +3226,7 @@ export async function POST(req: NextRequest) {
       opcVerificationStatus: opc.publicProof.verificationStatus,
       hbceModule: governance.hbceModule.module,
       activeModules: governance.hbceModule.activeModules,
+      strategicDoctrines: STRATEGIC_DOCTRINES,
       structuredFormat
     }
   });
