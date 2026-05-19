@@ -79,18 +79,19 @@ import { applyResponseContract } from "../../../lib/joker-response-contract";
 
 import { buildProofHash, buildRuntimeHash } from "../../../lib/runtime-hash";
 
-import type {
-  ContextClass,
-  DataClassification,
-  IntentClass,
-  OperationStatus,
-  OversightEvaluation,
-  PolicyEvaluation,
-  ProjectDomain,
-  RiskEvaluation,
-  RuntimeDecision as GovernanceDecision,
-  RuntimeDecisionResult,
-  RuntimeState as GovernanceRuntimeState
+import {
+  getHbceModuleMetadata,
+  type ContextClass,
+  type DataClassification,
+  type IntentClass,
+  type OperationStatus,
+  type OversightEvaluation,
+  type PolicyEvaluation,
+  type ProjectDomain,
+  type RiskEvaluation,
+  type RuntimeDecision as GovernanceDecision,
+  type RuntimeDecisionResult,
+  type RuntimeState as GovernanceRuntimeState
 } from "../../../lib/runtime-types";
 
 export const runtime = "nodejs";
@@ -180,6 +181,27 @@ const openai = process.env.OPENAI_API_KEY
 const USE_DEMOCRATIC_BOUNDARY =
   "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
 
+const HBCE_AI_BOUNDARY =
+  "The AI model does not govern HBCE. HBCE governs the use of AI models.";
+
+const FIVE_COLLECTIONS = [
+  "MATRIX",
+  "U.S.E.",
+  "CORPUS_ESOTEROLOGIA_ERMETICA",
+  "APOKALYPSIS",
+  "HBCE_ECOSISTEMA_AI"
+] as const;
+
+const SEVEN_HBCE_MODULES = [
+  "UNEBDO",
+  "OPC",
+  "MetaExchange",
+  "IOspace",
+  "CyberGlobal",
+  "NeuroLoop",
+  "MATRIX"
+] as const;
+
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -213,9 +235,9 @@ function getPrimaryIdentity(): JokerRuntimeIdentity {
   return {
     entity: record?.entity || aiRoot?.entity || "AI_JOKER",
     ipr: record?.ipr || aiRoot?.ipr || "IPR-AI-0001",
-    evt: record?.evt || aiRoot?.evt || "EVT-0014-AI",
+    evt: record?.evt || aiRoot?.evt || "EVT-0015-AI",
     state: record?.state || aiRoot?.status || "LOCKED",
-    cycle: record?.cycle || aiRoot?.cycle || "UP-MESE-3",
+    cycle: record?.cycle || aiRoot?.cycle || "UP-MESE-4",
     core: record?.core || aiRoot?.core || "HBCE-CORE-v3",
     org: record?.org || "HERMETICUM B.C.E. S.r.l.",
     location: Array.isArray(record?.loc)
@@ -383,10 +405,42 @@ function isCanonicalStackQuestion(message: string): boolean {
     "iospace",
     "cyberglobal",
     "neuroloop",
+    "matrix",
+    "modulo matrix",
+    "matrix organizza",
+    "sette moduli",
+    "7 moduli",
     "moduli hbce",
     "diagnostica runtime",
     "ai joker-c2",
-    "joker-c2"
+    "joker-c2",
+    "hbce ecosistema ai"
+  ]);
+}
+
+function isHbceAiGovernanceQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return runtimeTextIncludesAny(text, [
+    "hbce ecosistema ai",
+    "ecosistema ai",
+    "ai governance",
+    "governance ai",
+    "governare l ai",
+    "governo dell ai",
+    "ai audit",
+    "ipr ai audit trail",
+    "model governance",
+    "governance modelli",
+    "openai",
+    "anthropic",
+    "claude",
+    "google ai",
+    "gemini",
+    "mistral",
+    "meta ai",
+    "llama",
+    "runtime ai governato"
   ]);
 }
 
@@ -454,6 +508,7 @@ function shouldInjectEvtMemoryIntoPrompt(input: {
     input.governance.contextClass === "GITHUB" ||
     input.governance.contextClass === "CORPUS" ||
     input.governance.contextClass === "APOKALYPSIS" ||
+    input.governance.contextClass === "HBCE_ECOSISTEMA_AI" ||
     input.governance.intentClass === "REWRITE" ||
     input.governance.intentClass === "TRANSFORM"
   ) {
@@ -529,6 +584,42 @@ function buildAerospaceGovernanceProjectDomain(
   };
 }
 
+function buildHbceAiProjectDomain(
+  base: ProjectDomainClassification
+): ProjectDomainClassification {
+  return {
+    ...base,
+    projectDomain: "HBCE_ECOSISTEMA_AI" as ProjectDomain,
+    activeDomains: ["HBCE_ECOSISTEMA_AI" as ProjectDomain, "MATRIX" as ProjectDomain],
+    domainType: "AI_GOVERNANCE_ECOSYSTEM_DOMAIN",
+    confidence: Math.max(base.confidence || 0, 0.96),
+    reasons: [
+      ...base.reasons,
+      "HBCE ECOSISTEMA AI / AI governance language mapped to the fifth canonical project collection."
+    ]
+  };
+}
+
+function withHbceModuleOverride(
+  base: HbceModuleClassification,
+  module: HbceModuleValue,
+  activeModules: HbceModuleValue[],
+  confidence: number,
+  reasons: string[]
+): HbceModuleClassification {
+  const metadata = getHbceModuleMetadata(module);
+
+  return {
+    ...base,
+    module,
+    activeModules,
+    primaryModule: module,
+    moduleType: metadata.moduleType,
+    confidence: Math.max(base.confidence || 0, confidence),
+    reasons: [...base.reasons, ...reasons]
+  };
+}
+
 function normalizeHbceModuleClassification(input: {
   message: string;
   classification: HbceModuleClassification;
@@ -540,48 +631,68 @@ function normalizeHbceModuleClassification(input: {
   const text = normalizeRuntimeText(input.message);
 
   if (isRuntimeSelfIdentityQuestion(input.message)) {
-    return {
-      ...base,
-      module: "UNEBDO",
-      activeModules: ["UNEBDO", "OPC", "NeuroLoop"],
-      moduleType: base.moduleType,
-      confidence: Math.max(base.confidence || 0, 0.98),
-      reasons: [
-        ...base.reasons,
+    return withHbceModuleOverride(
+      base,
+      "UNEBDO",
+      ["UNEBDO", "OPC", "NeuroLoop", "MATRIX"],
+      0.98,
+      [
         "Self-identity request mapped to UNEBDO because it concerns runtime identity and IPR binding.",
-        "OPC and NeuroLoop are active because the answer is event-bound and runtime-governed."
+        "OPC and NeuroLoop are active because the answer is event-bound and runtime-governed.",
+        "MATRIX is active because it organizes identity, event, proof and runtime architecture."
       ]
-    };
+    );
   }
 
   if (isManuelColettaIdentityQuestion(input.message)) {
-    return {
-      ...base,
-      module: "UNEBDO",
-      activeModules: ["UNEBDO", "OPC"],
-      moduleType: base.moduleType,
-      confidence: Math.max(base.confidence || 0, 0.97),
-      reasons: [
-        ...base.reasons,
+    return withHbceModuleOverride(
+      base,
+      "UNEBDO",
+      ["UNEBDO", "OPC", "MATRIX"],
+      0.97,
+      [
         "Origin identity request mapped to UNEBDO because it concerns the biological/project origin and canonical IPR root.",
-        "OPC is active for continuity proof framing."
+        "OPC is active for continuity proof framing.",
+        "MATRIX is active for system-level organization."
       ]
-    };
+    );
   }
 
   if (isAerospaceGovernanceBoundaryQuestion(input.message)) {
-    return {
-      ...base,
-      module: "OPC",
-      activeModules: ["OPC", "CyberGlobal", "MetaExchange"],
-      moduleType: base.moduleType,
-      confidence: Math.max(base.confidence || 0, 0.96),
-      reasons: [
-        ...base.reasons,
+    return withHbceModuleOverride(
+      base,
+      "OPC",
+      ["OPC", "CyberGlobal", "MetaExchange", "MATRIX"],
+      0.96,
+      [
         "Aerospace-adjacent request mapped to OPC/CyberGlobal governance boundary.",
-        "HBCE must not be represented as guidance, targeting or physical flight-control software."
+        "HBCE must not be represented as guidance, targeting or physical flight-control software.",
+        "MATRIX is active for system coordination and architecture framing."
       ]
-    };
+    );
+  }
+
+  if (
+    input.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
+    isHbceAiGovernanceQuestion(input.message)
+  ) {
+    return withHbceModuleOverride(
+      base,
+      text.includes("opc") || text.includes("proof") || text.includes("audit")
+        ? "OPC"
+        : "MATRIX",
+      ["MATRIX", "UNEBDO", "OPC", "NeuroLoop", "CyberGlobal"],
+      0.95,
+      [
+        "HBCE ECOSISTEMA AI context mapped to MATRIX, UNEBDO, OPC, NeuroLoop and CyberGlobal.",
+        "MATRIX organizes the AI governance architecture.",
+        "UNEBDO binds identity and anchoring.",
+        "OPC provides proof receipts.",
+        "NeuroLoop supports validation and feedback.",
+        "CyberGlobal supports defensive AI/cyber governance."
+      ]
+    );
   }
 
   if (isCanonicalStackQuestion(input.message)) {
@@ -603,20 +714,29 @@ function normalizeHbceModuleClassification(input: {
 
     activeModules.add("UNEBDO");
     activeModules.add("OPC");
+    activeModules.add("MATRIX");
 
-    return {
-      ...base,
-      module:
-        text.includes("opc") && !text.includes("ipr") ? "OPC" : "UNEBDO",
-      activeModules: Array.from(activeModules),
-      moduleType: base.moduleType,
-      confidence: Math.max(base.confidence || 0, 0.95),
-      reasons: [
-        ...base.reasons,
-        "Canonical HBCE/IPR/EVT/OPC vocabulary detected.",
-        "Module classification normalized to avoid NONE on obvious HBCE stack questions."
+    const module: HbceModuleValue =
+      text.includes("matrix") ||
+      text.includes("sette moduli") ||
+      text.includes("7 moduli") ||
+      text.includes("moduli hbce")
+        ? "MATRIX"
+        : text.includes("opc") && !text.includes("ipr")
+          ? "OPC"
+          : "UNEBDO";
+
+    return withHbceModuleOverride(
+      base,
+      module,
+      Array.from(activeModules),
+      0.95,
+      [
+        "Canonical HBCE/IPR/EVT/OPC/MATRIX vocabulary detected.",
+        "Module classification normalized to avoid NONE on obvious HBCE stack questions.",
+        "MATRIX is included as the seventh HBCE technical-operational module."
       ]
-    };
+    );
   }
 
   if (
@@ -624,20 +744,21 @@ function normalizeHbceModuleClassification(input: {
     input.contextClass === "USE" ||
     input.contextClass === "DEMOCRATIC_INFRASTRUCTURE"
   ) {
-    return {
-      ...base,
-      module: base.module === "NONE" ? "UNEBDO" : base.module,
-      activeModules:
-        base.activeModules.length > 0
-          ? base.activeModules
-          : ["UNEBDO", "OPC", "MetaExchange", "CyberGlobal", "NeuroLoop"],
-      moduleType: base.moduleType,
-      confidence: Math.max(base.confidence || 0, 0.94),
-      reasons: [
-        ...base.reasons,
-        "U.S.E. / voto digitale federato context mapped to identity, continuity, exchange, cyber and validation modules."
+    const module = base.module === "NONE" ? "UNEBDO" : base.module;
+    const activeModules =
+      base.activeModules.length > 0 && !base.activeModules.includes("NONE")
+        ? Array.from(new Set([...base.activeModules, "MATRIX" as HbceModuleValue]))
+        : ["UNEBDO", "OPC", "MetaExchange", "CyberGlobal", "NeuroLoop", "MATRIX"];
+
+    return withHbceModuleOverride(
+      base,
+      module,
+      activeModules,
+      0.94,
+      [
+        "U.S.E. / voto digitale federato context mapped to identity, continuity, exchange, cyber, validation and MATRIX coordination modules."
       ]
-    };
+    );
   }
 
   return base;
@@ -680,17 +801,22 @@ async function generateResponse(input: {
             "Non usare elenchi numerati rigidi salvo richiesta esplicita o necessità tecnica.",
             "IPR è lo strumento operativo primario: Identity Primary Record, non un semplice account o login.",
             "AI JOKER-C2 è il runtime dimostrativo governato dell’IPR.",
+            "Checkpoint canonico runtime attivo: EVT-0015-AI. Checkpoint precedente: EVT-0014-AI. Ciclo: UP-MESE-4.",
             "La memoria non è la chat: la memoria è la catena EVT/IPR-bound.",
             "Usa la memoria EVT/IPR-bound solo quando è semanticamente pertinente alla domanda corrente.",
             "Non importare frasi, valutazioni economiche o contenuti di una risposta precedente quando il tema della domanda è cambiato.",
             "Ogni riferimento ellittico deve essere risolto usando la memoria EVT/IPR-bound solo se la memoria è stata effettivamente iniettata nel prompt.",
             "OPC è una proof receipt tecnica per audit e verifica, non una certificazione legale automatica.",
             "Non mostrare i metadati runtime all'utente salvo richiesta diagnostica.",
-            "MATRIX = infrastruttura operativa.",
+            "Le cinque collane progettuali canoniche sono: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS, HBCE ECOSISTEMA AI.",
+            "MATRIX = infrastruttura operativa e, come settimo modulo HBCE, livello di coordinamento e organizzazione dello stack.",
             "U.S.E. = applicazione politico-istituzionale derivata da MATRIX per una federazione europea operativa, digitale e verificabile.",
             "CORPUS ESOTEROLOGIA ERMETICA = grammatica disciplinare.",
             "APOKALYPSIS = soglia storica.",
-            "I moduli HBCE sono funzioni tecnico-operative dello stack: UNEBDO ancora, OPC prova, MetaExchange scambia, IOspace espone, CyberGlobal protegge, NeuroLoop valida.",
+            "HBCE ECOSISTEMA AI = quinta collana progettuale per governare l’intelligenza artificiale come processo identificabile, tracciabile, auditabile e responsabile.",
+            "I sette moduli HBCE sono funzioni tecnico-operative dello stack: UNEBDO ancora, OPC prova, MetaExchange scambia, IOspace espone, CyberGlobal protegge, NeuroLoop valida, MATRIX organizza.",
+            "Formula HBCE ECOSISTEMA AI: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue.",
+            "Boundary AI governance: il modello AI non governa HBCE; HBCE governa l’uso dei modelli AI.",
             `Modulo HBCE classificato: ${input.governanceFrame.hbceModule.module}.`,
             `Moduli HBCE attivi: ${input.governanceFrame.hbceModule.activeModules.join(", ")}.`,
             `Regola U.S.E. obbligatoria: ${USE_DEMOCRATIC_BOUNDARY}`,
@@ -705,7 +831,7 @@ async function generateResponse(input: {
             "Per domande su razzi, astronavi o spazio, formula corretta: HBCE non guida il veicolo; può governare, tracciare, certificare e verificare la catena operativa intorno al veicolo.",
             "La governance runtime prevale: policy, risk, oversight e fail-closed non devono essere aggirati dal modello.",
             "Regola critica: non confondere il contenuto del documento con l'intento operativo dell'utente.",
-            "Se un file parla di MATRIX, U.S.E., cybersecurity, infrastrutture critiche, incident response, audit, AI governance o continuità istituzionale, ma l'utente chiede sintesi, spiegazione, analisi documentale, revisione editoriale o controllo tecnico, devi trattare la richiesta come supporto documentale.",
+            "Se un file parla di MATRIX, U.S.E., cybersecurity, infrastrutture critiche, incident response, audit, AI governance, HBCE ECOSISTEMA AI o continuità istituzionale, ma l'utente chiede sintesi, spiegazione, analisi documentale, revisione editoriale o controllo tecnico, devi trattare la richiesta come supporto documentale.",
             "Non richiedere INCIDENT_COMMANDER per sintesi, spiegazioni o revisioni documentali.",
             "Non presentare il supporto documentale come decisione operativa finale, ordine esecutivo, parere legale o validazione istituzionale definitiva."
           ].join("\n")
@@ -772,6 +898,9 @@ function buildGovernanceLimitedResponse(input: {
         "Posso aiutare solo in modalità sicura: documentazione difensiva, checklist, audit, mitigazione, revisione, hardening, incident report o governance.",
         input.projectDomain.projectDomain === "U.S.E."
           ? `\nRegola U.S.E.: ${USE_DEMOCRATIC_BOUNDARY}`
+          : "",
+        input.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
+          ? `\nBoundary AI governance: ${HBCE_AI_BOUNDARY}`
           : ""
       ].join("\n")
     };
@@ -791,6 +920,9 @@ function buildGovernanceLimitedResponse(input: {
         `RequiredRole: ${input.oversight.requiredRole}`,
         input.projectDomain.projectDomain === "U.S.E."
           ? `U.S.E. Boundary: ${USE_DEMOCRATIC_BOUNDARY}`
+          : "",
+        input.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
+          ? `AI Governance Boundary: ${HBCE_AI_BOUNDARY}`
           : "",
         "",
         "Posso produrre materiale di supporto, ma non devo presentarlo come decisione operativa finale senza revisione."
@@ -953,10 +1085,17 @@ function buildRuntimeDiagnosticText(input: {
     `Model: ${MODEL}`,
     `OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "configured" : "missing"}`,
     "",
+    "Five Collections:",
+    `- ${FIVE_COLLECTIONS.join(", ")}`,
+    "",
+    "Seven HBCE Modules:",
+    `- ${SEVEN_HBCE_MODULES.join(", ")}`,
+    "",
     "Identità runtime:",
     `- entity: ${identity.entity}`,
     `- ipr: ${identity.ipr}`,
     `- checkpoint: ${identity.evt}`,
+    `- cycle: ${identity.cycle}`,
     `- core: ${identity.core}`,
     `- role: IPR_RUNTIME_DEMONSTRATOR`,
     "",
@@ -974,6 +1113,9 @@ function buildRuntimeDiagnosticText(input: {
     `- verification: ${input.modernEvt.verification.status}`,
     input.governance.projectDomain.projectDomain === "U.S.E."
       ? `\nU.S.E. Boundary: ${USE_DEMOCRATIC_BOUNDARY}`
+      : "",
+    input.governance.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
+      ? `\nAI Governance Boundary: ${HBCE_AI_BOUNDARY}`
       : "",
     "",
     `degradedReason: ${input.degradedReason || "none"}`
@@ -1005,12 +1147,16 @@ function buildTechnicalFrame(input: {
   governance: EnrichedGovernanceFrame;
   degradedReason?: string | null;
 }) {
+  const identity = getPrimaryIdentity();
+
   return [
     input.response,
     "",
     "Runtime:",
     `- state: ${input.state}`,
     `- runtimeRole: IPR_RUNTIME_DEMONSTRATOR`,
+    `- checkpoint: ${identity.evt}`,
+    `- cycle: ${identity.cycle}`,
     `- decision: ${input.decision}`,
     `- governanceDecision: ${input.governanceDecision}`,
     `- projectDomain: ${input.governance.projectDomain.projectDomain}`,
@@ -1057,6 +1203,9 @@ function buildTechnicalFrame(input: {
     `- governedHash: ${input.modernEvt.trace.hash}`,
     input.governance.projectDomain.projectDomain === "U.S.E."
       ? `- useBoundary: ${USE_DEMOCRATIC_BOUNDARY}`
+      : "",
+    input.governance.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
+      ? `- aiGovernanceBoundary: ${HBCE_AI_BOUNDARY}`
       : "",
     input.degradedReason ? `- degradedReason: ${input.degradedReason}` : ""
   ]
@@ -1232,6 +1381,7 @@ function normalizeChatDataClassification(input: {
     input.contextClass === "CIVIC" ||
     input.contextClass === "CORPUS" ||
     input.contextClass === "APOKALYPSIS" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
     input.contextClass === "GOVERNANCE" ||
     input.contextClass === "COMPLIANCE" ||
     input.contextClass === "AI_GOVERNANCE" ||
@@ -1376,6 +1526,7 @@ function normalizeSafeDocumentContextClass(
     contextClass === "EDITORIAL" ||
     contextClass === "CORPUS" ||
     contextClass === "APOKALYPSIS" ||
+    contextClass === "HBCE_ECOSISTEMA_AI" ||
     contextClass === "USE" ||
     contextClass === "CIVIC"
   ) {
@@ -1416,6 +1567,7 @@ function isSafeDocumentWork(input: {
     input.contextClass === "EDITORIAL" ||
     input.contextClass === "CORPUS" ||
     input.contextClass === "APOKALYPSIS" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
     input.contextClass === "MATRIX" ||
     input.contextClass === "USE" ||
     input.contextClass === "CIVIC" ||
@@ -1443,10 +1595,12 @@ function preferOpcForGovernance(input: {
     input.contextClass === "COMPLIANCE" ||
     input.contextClass === "SECURITY" ||
     input.contextClass === "AI_GOVERNANCE" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
     input.contextClass === "USE" ||
     input.contextClass === "CIVIC" ||
     input.contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
-    input.projectDomain.projectDomain === "U.S.E."
+    input.projectDomain.projectDomain === "U.S.E." ||
+    input.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
   );
 }
 
@@ -1808,6 +1962,54 @@ function applyRuntimeIdentityGovernanceOverride(input: {
   };
 }
 
+function applyHbceAiGovernanceOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+}): EnrichedGovernanceFrame {
+  if (!isHbceAiGovernanceQuestion(input.message)) {
+    return input.frame;
+  }
+
+  const projectDomain = buildHbceAiProjectDomain(input.frame.projectDomain);
+
+  const hbceModule = normalizeHbceModuleClassification({
+    message: input.message,
+    classification: input.frame.hbceModule,
+    projectDomain,
+    contextClass: "HBCE_ECOSISTEMA_AI",
+    intentClass: input.frame.intentClass
+  });
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: input.frame.policy.status,
+    policyOutcome: input.frame.policy.outcome,
+    policyProhibited: input.frame.policy.prohibited,
+    policyFailClosed: input.frame.policy.failClosed,
+    riskClass: input.frame.risk.riskClass,
+    oversightState: input.frame.oversight.state,
+    contextClass: "HBCE_ECOSISTEMA_AI",
+    intentClass: input.frame.intentClass,
+    dataClass: input.frame.data.dataClass,
+    projectDomain: projectDomain.projectDomain,
+    activeDomains: projectDomain.activeDomains,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: input.frame.risk.riskClass !== "LOW",
+    memoryPreferred: true,
+    opcPreferred: true,
+    iprBindingPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    projectDomain,
+    hbceModule,
+    contextClass: "HBCE_ECOSISTEMA_AI",
+    decision
+  };
+}
+
 function applySafeDocumentGovernanceOverride(input: {
   frame: EnrichedGovernanceFrame;
   message: string;
@@ -2020,8 +2222,13 @@ function buildGovernanceFrame(input: {
       message: input.message
     });
 
-    return applyRuntimeIdentityGovernanceOverride({
+    const hbceAiFrame = applyHbceAiGovernanceOverride({
       frame: diagnosticFrame,
+      message: input.message
+    });
+
+    return applyRuntimeIdentityGovernanceOverride({
+      frame: hbceAiFrame,
       message: input.message
     });
   }
@@ -2120,8 +2327,13 @@ function buildGovernanceFrame(input: {
     message: input.message
   });
 
-  return applySafeDocumentGovernanceOverride({
+  const hbceAiFrame = applyHbceAiGovernanceOverride({
     frame: runtimeIdentityFrame,
+    message: input.message
+  });
+
+  return applySafeDocumentGovernanceOverride({
+    frame: hbceAiFrame,
     message: input.message,
     files: input.files
   });
@@ -2139,6 +2351,8 @@ async function buildAndAppendGovernedEvt(input: {
     runtimeState: mapRuntimeStateForGovernance(input.state),
     projectDomain: input.governance.projectDomain.projectDomain,
     activeDomains: input.governance.projectDomain.activeDomains,
+    hbceModule: input.governance.hbceModule.module,
+    activeModules: input.governance.hbceModule.activeModules,
     contextClass: input.governance.contextClass,
     intentClass: input.governance.intentClass,
     sensitivity:
@@ -2354,6 +2568,9 @@ async function createAndAppendOpcForChat(input: {
         input.governance.projectDomain.projectDomain === "U.S.E."
           ? `U.S.E. boundary: ${USE_DEMOCRATIC_BOUNDARY}`
           : "",
+        input.governance.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
+          ? `AI governance boundary: ${HBCE_AI_BOUNDARY}`
+          : "",
         isAerospaceGovernanceBoundaryQuestion(input.message)
           ? "Aerospace boundary: HBCE is audit/governance/traceability only, not flight-control or guidance software."
           : ""
@@ -2448,6 +2665,7 @@ export async function POST(req: NextRequest) {
     contextClass === "EDITORIAL" ||
     contextClass === "CORPUS" ||
     contextClass === "APOKALYPSIS" ||
+    contextClass === "HBCE_ECOSISTEMA_AI" ||
     contextClass === "USE" ||
     contextClass === "CIVIC" ||
     contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
@@ -2594,6 +2812,8 @@ export async function POST(req: NextRequest) {
       structuredFormat,
       activeFiles: promptFiles.map((file) => file.name || "unnamed"),
       identity: buildIdentityPayload(identity),
+      collections: FIVE_COLLECTIONS,
+      modules: SEVEN_HBCE_MODULES,
       event,
       memoryEvent,
       governedEvent: publicModernEvt,
@@ -2669,6 +2889,10 @@ export async function POST(req: NextRequest) {
         civicBoundary:
           governance.projectDomain.projectDomain === "U.S.E."
             ? USE_DEMOCRATIC_BOUNDARY
+            : undefined,
+        aiGovernanceBoundary:
+          governance.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
+            ? HBCE_AI_BOUNDARY
             : undefined,
         aerospaceBoundary: isAerospaceGovernanceBoundaryQuestion(effectiveMessage)
           ? "HBCE/IPR can govern, trace, audit and certify operational chains, but must not be described as flight-control, targeting or vehicle-guidance software."
@@ -2849,6 +3073,8 @@ export async function POST(req: NextRequest) {
     structuredFormat,
     activeFiles: promptFiles.map((file) => file.name || "unnamed"),
     identity: buildIdentityPayload(identity),
+    collections: FIVE_COLLECTIONS,
+    modules: SEVEN_HBCE_MODULES,
     event,
     memoryEvent,
     governedEvent: publicModernEvt,
@@ -2933,6 +3159,10 @@ export async function POST(req: NextRequest) {
       civicBoundary:
         governance.projectDomain.projectDomain === "U.S.E."
           ? USE_DEMOCRATIC_BOUNDARY
+          : undefined,
+      aiGovernanceBoundary:
+        governance.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
+          ? HBCE_AI_BOUNDARY
           : undefined,
       aerospaceBoundary: isAerospaceGovernanceBoundaryQuestion(effectiveMessage)
         ? "HBCE/IPR can govern, trace, audit and certify operational chains, but must not be described as flight-control, targeting or vehicle-guidance software."
