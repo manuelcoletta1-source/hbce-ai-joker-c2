@@ -10,6 +10,20 @@
  * - evt-ledger.ts stores governed RuntimeEvent records.
  * - evt-memory-ledger.ts stores semantic EVT/IPR-bound continuity records.
  *
+ * Current canonical runtime:
+ * - EVT-0015-AI
+ * - previous EVT-0014-AI
+ * - cycle UP-MESE-4
+ *
+ * Supported project domains:
+ * - MATRIX
+ * - U.S.E.
+ * - CORPUS_ESOTEROLOGIA_ERMETICA
+ * - APOKALYPSIS
+ * - HBCE_ECOSISTEMA_AI
+ * - GENERAL
+ * - MULTI_DOMAIN
+ *
  * Prototype note:
  * This local file adapter is suitable for local development and controlled
  * prototype use. Serverless production deployments should use persistent
@@ -148,10 +162,23 @@ const RUNTIME_ROLE = "IPR_RUNTIME_DEMONSTRATOR" as const;
 const CANONICAL_SESSION_ID = "CANONICAL";
 const MAX_CONTEXT_EVENTS = 10;
 const MAX_CONTEXT_TEXT_CHARS = 12000;
+
 const USE_DEMOCRATIC_BOUNDARY =
   "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
+
+const HBCE_AI_BOUNDARY =
+  "The AI model does not govern HBCE. HBCE governs the use of AI models.";
+
 const NON_CERTIFICATION_STATEMENT =
   "EVT/IPR-bound memory preserves runtime continuity. It is not legal certification and does not replace audit, verification, legal review or user control.";
+
+const ALL_PRIMARY_PROJECT_DOMAINS: ProjectDomain[] = [
+  "MATRIX",
+  "U.S.E.",
+  "CORPUS_ESOTEROLOGIA_ERMETICA",
+  "APOKALYPSIS",
+  "HBCE_ECOSISTEMA_AI"
+];
 
 export async function ensureEvtMemoryLedger(
   ledgerPath = DEFAULT_EVT_MEMORY_LEDGER_FILE
@@ -844,6 +871,7 @@ function buildLedgerMemoryText(input: {
         `- ${event.evt}`,
         `  prev: ${event.prev}`,
         `  projectDomain: ${event.projectDomain}`,
+        `  activeDomains: ${event.activeDomains.join(", ")}`,
         `  governedEvt: ${event.governedEvt || "none"}`,
         `  governedHash: ${event.governedHash || "none"}`,
         `  opcProofId: ${event.opcProofId || "none"}`,
@@ -862,9 +890,10 @@ function buildLedgerMemoryText(input: {
     "BOUNDARY:",
     NON_CERTIFICATION_STATEMENT,
     `U.S.E. democratic boundary: ${USE_DEMOCRATIC_BOUNDARY}`,
+    `HBCE ECOSISTEMA AI boundary: ${HBCE_AI_BOUNDARY}`,
     "",
     "ISTRUZIONE DI RECUPERO:",
-    "Questa memoria è stata ricostruita dal ledger semantico. Usala come continuità IPR-bound quando la memoria volatile di sessione non è disponibile. Non usare questa memoria per collegare identità personale e contenuto di una scelta democratica."
+    "Questa memoria è stata ricostruita dal ledger semantico. Usala come continuità IPR-bound quando la memoria volatile di sessione non è disponibile. Non usare questa memoria per collegare identità personale e contenuto di una scelta democratica. Se emergono riferimenti a HBCE ECOSISTEMA AI, AI governance, modelli esterni, OpenAI, Anthropic, audit AI o IPR AI Audit Trail, recupera il dominio HBCE_ECOSISTEMA_AI e la sua boundary: il modello AI non governa HBCE; HBCE governa l’uso dei modelli AI."
   ]
     .join("\n")
     .slice(0, MAX_CONTEXT_TEXT_CHARS);
@@ -923,6 +952,39 @@ function scoreEventForMessage(event: EvtMemoryEvent, message: string): number {
     normalizedMessage.includes(normalizeForMatch(event.documentFamily))
   ) {
     score += 8;
+  }
+
+  if (
+    event.documentFamily === "HBCE_ECOSISTEMA_AI" ||
+    event.projectDomain === "HBCE_ECOSISTEMA_AI"
+  ) {
+    const hbceAiTerms = [
+      "hbce ecosistema ai",
+      "ecosistema ai",
+      "ai governance",
+      "governance ai",
+      "governo dell ai",
+      "governare l ai",
+      "ai audit",
+      "ipr ai audit trail",
+      "model governance",
+      "governance modelli",
+      "modelli ai",
+      "openai",
+      "anthropic",
+      "claude",
+      "gemini",
+      "mistral",
+      "runtime governato"
+    ];
+
+    if (
+      hbceAiTerms.some((term) =>
+        normalizedMessage.includes(normalizeForMatch(term))
+      )
+    ) {
+      score += 24;
+    }
   }
 
   if (event.documentFamily === "USE" || event.projectDomain === "U.S.E.") {
@@ -1008,6 +1070,19 @@ function detectTags(text: string): string[] {
     "democratic infrastructure",
     "public consultation",
     "referendum",
+    "hbce ecosistema ai",
+    "ecosistema ai",
+    "ai governance",
+    "governance ai",
+    "ai audit",
+    "ipr ai audit trail",
+    "model governance",
+    "governance modelli",
+    "openai",
+    "anthropic",
+    "claude",
+    "gemini",
+    "mistral",
     "hbce",
     "joker-c2",
     "ai joker-c2",
@@ -1117,6 +1192,16 @@ function buildReferenceRulesFromEvents(events: EvtMemoryEvent[]): string[] {
       rules.push(
         `"questa opera", "questo testo", "Apokalypsis", "i punti forti" = ${event.activeDocument}`
       );
+    }
+
+    if (
+      event.documentFamily === "HBCE_ECOSISTEMA_AI" ||
+      event.projectDomain === "HBCE_ECOSISTEMA_AI"
+    ) {
+      rules.push(
+        `"HBCE ECOSISTEMA AI", "ecosistema AI", "AI governance", "governance AI", "audit AI", "modelli AI" = contesto HBCE_ECOSISTEMA_AI attivo`
+      );
+      rules.push(`boundary AI governance = ${HBCE_AI_BOUNDARY}`);
     }
 
     if (event.documentFamily === "USE" || event.projectDomain === "U.S.E.") {
