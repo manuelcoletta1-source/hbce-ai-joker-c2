@@ -214,7 +214,18 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "hash memoria",
     "audit tecnico",
     "ricevuta tecnica",
-    "proof receipt layer"
+    "proof receipt layer",
+    "audit",
+    "audit trail",
+    "compliance",
+    "conformita",
+    "conformità",
+    "due diligence",
+    "contenzioso",
+    "prova tecnica",
+    "verifica documentale",
+    "responsabilita",
+    "responsabilità"
   ],
 
   MetaExchange: [
@@ -253,7 +264,19 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "scambio tra identita",
     "instradamento operativo",
     "routing operativo",
-    "interoperabilita"
+    "interoperabilita",
+    "banche",
+    "studi legali",
+    "studio legale",
+    "law firm",
+    "law firms",
+    "documenti",
+    "pratiche",
+    "contratti",
+    "due diligence",
+    "scambio documentale",
+    "scambio informativo",
+    "information governance"
   ],
 
   IOspace: [
@@ -305,7 +328,14 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "pannello audit",
     "vista eventi",
     "vista prove",
-    "visualizzazione runtime"
+    "visualizzazione runtime",
+    "portale",
+    "sportello",
+    "interfaccia banca",
+    "interfaccia legale",
+    "consultazione documentale",
+    "audit view",
+    "public safe metadata"
   ],
 
   CyberGlobal: [
@@ -347,7 +377,17 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "infrastrutture critiche",
     "protezione infrastrutture",
     "difensivo",
-    "non offensivo"
+    "non offensivo",
+    "banche",
+    "banca",
+    "banking",
+    "settore bancario",
+    "frodi",
+    "frode",
+    "rischio frodi",
+    "continuita infrastrutturale",
+    "incidenti cyber",
+    "cyber risk"
   ],
 
   NeuroLoop: [
@@ -382,7 +422,14 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "storico escalation",
     "revisione umana",
     "feedback controllato",
-    "apprendimento controllato"
+    "apprendimento controllato",
+    "human oversight",
+    "supervisione umana",
+    "review",
+    "revisione",
+    "validazione",
+    "legal review",
+    "technical review"
   ],
 
   MATRIX: [
@@ -449,7 +496,32 @@ const MODULE_KEYWORDS: Record<PrimaryHbceModule, string[]> = {
     "five collections seven modules",
     "cinque collane sette moduli",
     "five collections and seven modules",
-    "cinque collane e sette moduli"
+    "cinque collane e sette moduli",
+    "banche",
+    "banca",
+    "bank",
+    "banks",
+    "banking",
+    "settore bancario",
+    "studi legali",
+    "studio legale",
+    "law firm",
+    "law firms",
+    "governance",
+    "compliance",
+    "audit",
+    "valore pragmatico",
+    "valore operativo",
+    "a cosa serve",
+    "pragmatico",
+    "governace",
+    "b2b",
+    "b2g",
+    "pubblica amministrazione",
+    "pa",
+    "istituzioni",
+    "governi",
+    "istituzionale"
   ]
 };
 
@@ -507,7 +579,8 @@ const MODULE_FILE_HINTS: Record<PrimaryHbceModule, string[]> = {
     "cybersecurity_governance_mapping.md",
     "defensive_security_use_cases.md",
     "critical_infrastructure_use_cases.md",
-    "incident_report_template.md"
+    "incident_report_template.md",
+    "hbce_cybersecurity_strategy.md"
   ],
 
   NeuroLoop: [
@@ -532,7 +605,9 @@ const MODULE_FILE_HINTS: Record<PrimaryHbceModule, string[]> = {
     "hbce_operational_stack.md",
     "five_collections_runtime_map.md",
     "system-manifest.json",
-    "system/system-manifest.json"
+    "system/system-manifest.json",
+    "hbce_data_protection_strategy.md",
+    "hbce_information_governance_strategy.md"
   ]
 };
 
@@ -577,6 +652,68 @@ const IPR_NAVIGATION_TERMS = [
   "ipr based navigation",
   "operational navigation through ipr",
   "navigation through ipr"
+];
+
+const BANKING_LEGAL_GOVERNANCE_TERMS = [
+  "banche",
+  "banca",
+  "bank",
+  "banks",
+  "banking",
+  "settore bancario",
+  "istituti bancari",
+  "studi legali",
+  "studio legale",
+  "law firm",
+  "law firms",
+  "legal office",
+  "legal offices",
+  "governance",
+  "governace",
+  "compliance",
+  "audit",
+  "due diligence",
+  "contratti",
+  "contratto",
+  "contenzioso",
+  "prova",
+  "proof",
+  "proof receipt",
+  "documenti",
+  "pratiche",
+  "valore pragmatico",
+  "valore operativo",
+  "a cosa serve",
+  "pragmatico",
+  "responsabilita",
+  "responsabilità",
+  "tracciabilita",
+  "tracciabilità"
+];
+
+const STRATEGIC_DOCTRINE_TERMS = [
+  "documenti dottrinali strategici",
+  "documenti dottrinali",
+  "dottrina strategica",
+  "dottrinali strategici",
+  "strategic doctrine",
+  "strategic doctrines",
+  "hbce cybersecurity strategy",
+  "cybersecurity strategy",
+  "cyber security strategy",
+  "hbce data protection strategy",
+  "data protection strategy",
+  "hbce information governance strategy",
+  "information governance strategy",
+  "numero 1",
+  "il primo",
+  "questo 1",
+  "numero 2",
+  "il secondo",
+  "questo 2",
+  "numero 3",
+  "il terzo",
+  "questo 3"
 ];
 
 const PHYSICAL_NAVIGATION_TERMS = [
@@ -625,6 +762,14 @@ export function classifyHbceModule(
 
   const stackLevelMatches = findMatches(normalizedInput, STACK_LEVEL_TERMS);
   const iprNavigationMatches = findMatches(normalizedInput, IPR_NAVIGATION_TERMS);
+  const bankingLegalMatches = findMatches(
+    normalizedInput,
+    BANKING_LEGAL_GOVERNANCE_TERMS
+  );
+  const strategicDoctrineMatches = findMatches(
+    normalizedInput,
+    STRATEGIC_DOCTRINE_TERMS
+  );
   const physicalNavigationMatches = findMatches(
     normalizedInput,
     PHYSICAL_NAVIGATION_TERMS
@@ -634,11 +779,58 @@ export function classifyHbceModule(
     scoreModule(normalizedInput, module, MODULE_KEYWORDS[module])
   );
 
+  if (bankingLegalMatches.length > 0) {
+    boostScore(moduleScores, "MATRIX", 12 + bankingLegalMatches.length);
+    boostScore(moduleScores, "OPC", 8 + bankingLegalMatches.length);
+    boostScore(moduleScores, "MetaExchange", 4 + bankingLegalMatches.length);
+    boostScore(moduleScores, "IOspace", 3 + bankingLegalMatches.length);
+  }
+
+  if (strategicDoctrineMatches.length > 0) {
+    boostScore(moduleScores, "MATRIX", 10 + strategicDoctrineMatches.length);
+    boostScore(moduleScores, "OPC", 5 + strategicDoctrineMatches.length);
+    boostScore(moduleScores, "CyberGlobal", 5 + strategicDoctrineMatches.length);
+  }
+
   const matchedModules = moduleScores
     .filter((result) => result.score > 0)
     .sort((a, b) => b.score - a.score);
 
   const scoreMap = toScoreMap(moduleScores);
+
+  if (strategicDoctrineMatches.length > 0) {
+    return createClassification(
+      choosePrimaryDoctrineModule(normalizedInput, matchedModules),
+      chooseActiveDoctrineModules(normalizedInput),
+      0.97,
+      [
+        "Strategic doctrine language detected.",
+        "Strategic doctrine documents are not HBCE modules, but activate their connected module layer for traceability.",
+        ...strategicDoctrineMatches.map(
+          (term) => `Matched strategic doctrine term: ${term}`
+        ),
+        ...collectReasons(matchedModules)
+      ],
+      scoreMap
+    );
+  }
+
+  if (bankingLegalMatches.length > 0) {
+    return createClassification(
+      "MATRIX",
+      ["MATRIX", "OPC", "MetaExchange", "IOspace"],
+      0.95,
+      [
+        "Banking, legal, governance, compliance, audit or pragmatic value language detected.",
+        "The request concerns operational governance value and is mapped to MATRIX, OPC, MetaExchange and IOspace.",
+        ...bankingLegalMatches.map(
+          (term) => `Matched banking/legal/governance term: ${term}`
+        ),
+        ...collectReasons(matchedModules)
+      ],
+      scoreMap
+    );
+  }
 
   if (stackLevelMatches.length > 0) {
     return createClassification(
@@ -826,6 +1018,20 @@ function scoreModule(
   };
 }
 
+function boostScore(
+  scores: HbceModuleScore[],
+  module: PrimaryHbceModule,
+  amount: number
+): void {
+  const target = scores.find((score) => score.module === module);
+
+  if (!target) {
+    return;
+  }
+
+  target.score += amount;
+}
+
 function isExplicitModuleName(
   module: PrimaryHbceModule,
   keyword: string
@@ -907,7 +1113,11 @@ function isMatrixCoordinationKeyword(keyword: string): boolean {
     keyword === "organizzazione sistema" ||
     keyword === "organizzazione ecosistema" ||
     keyword === "sette moduli" ||
-    keyword === "seven modules"
+    keyword === "seven modules" ||
+    keyword === "banche" ||
+    keyword === "studi legali" ||
+    keyword === "governance" ||
+    keyword === "valore pragmatico"
   );
 }
 
@@ -1071,6 +1281,49 @@ function choosePrimaryModule(
   }
 
   return matchedModules[0]?.module || fallback;
+}
+
+function choosePrimaryDoctrineModule(
+  text: string,
+  matchedModules: HbceModuleScore[]
+): PrimaryHbceModule {
+  if (text.includes("cybersecurity") || text.includes("cyber security")) {
+    return "CyberGlobal";
+  }
+
+  if (text.includes("data protection")) {
+    return "OPC";
+  }
+
+  if (text.includes("information governance")) {
+    return "MATRIX";
+  }
+
+  return choosePrimaryModule(matchedModules, "MATRIX");
+}
+
+function chooseActiveDoctrineModules(text: string): HbceModule[] {
+  if (text.includes("cybersecurity") || text.includes("cyber security")) {
+    return ["CyberGlobal", "MATRIX", "OPC", "UNEBDO"];
+  }
+
+  if (text.includes("data protection")) {
+    return ["OPC", "MATRIX", "IOspace", "MetaExchange"];
+  }
+
+  if (text.includes("information governance")) {
+    return ["MATRIX", "MetaExchange", "IOspace", "NeuroLoop", "OPC"];
+  }
+
+  return [
+    "MATRIX",
+    "CyberGlobal",
+    "OPC",
+    "UNEBDO",
+    "IOspace",
+    "MetaExchange",
+    "NeuroLoop"
+  ];
 }
 
 function calculateConfidence(score: number, text: string): number {
