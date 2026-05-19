@@ -27,10 +27,11 @@
  * Canonical hierarchy:
  * - IPR = primary operational identity and proof instrument
  * - AI JOKER-C2 = governed runtime demonstrator
- * - MATRIX = operational infrastructure architecture
+ * - MATRIX = project collection, architectural framework and HBCE coordination module
  * - U.S.E. = MATRIX-derived political-institutional application
  * - CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar
  * - APOKALYPSIS = historical threshold analysis
+ * - HBCE_ECOSISTEMA_AI = AI governance ecosystem collection
  * - EVT = event trace
  * - EVT/IPR memory = runtime continuity
  * - OPC = operational proof receipt
@@ -139,6 +140,12 @@ export function decideRuntimeAction(
 
   if (civicDecision) {
     return buildDecision(civicDecision, input);
+  }
+
+  const aiGovernanceDecision = decideByAiGovernanceContext(input);
+
+  if (aiGovernanceDecision) {
+    return buildDecision(aiGovernanceDecision, input);
   }
 
   const criticalDecision = decideByCriticalRisk(input);
@@ -490,6 +497,68 @@ function decideByCivicContext(input: RuntimeDecisionInput): DecisionEnvelope | n
   return null;
 }
 
+function decideByAiGovernanceContext(
+  input: RuntimeDecisionInput
+): DecisionEnvelope | null {
+  if (!isAiGovernanceContext(input)) {
+    return null;
+  }
+
+  if (input.riskClass === "LOW") {
+    return {
+      decision: "ALLOW",
+      flags: allowFlags(
+        true,
+        Boolean(input.auditPreferred),
+        true,
+        Boolean(input.opcPreferred)
+      ),
+      reasons: [
+        "HBCE ECOSISTEMA AI or AI_GOVERNANCE context detected.",
+        "Low-risk AI governance requests may proceed.",
+        "IPR binding, EVT continuity and memory continuity remain active."
+      ]
+    };
+  }
+
+  if (input.riskClass === "MEDIUM") {
+    return {
+      decision: "AUDIT",
+      flags: auditFlags(true, true, true),
+      reasons: [
+        "HBCE ECOSISTEMA AI or AI_GOVERNANCE context detected with MEDIUM risk.",
+        "AI governance requests may proceed with audit-ready handling.",
+        "The model layer must not become the authority layer."
+      ]
+    };
+  }
+
+  if (input.riskClass === "HIGH") {
+    if (input.oversightState === "COMPLETED") {
+      return {
+        decision: "AUDIT",
+        flags: auditFlags(true, true, true),
+        reasons: [
+          "HBCE ECOSISTEMA AI or AI_GOVERNANCE context detected with HIGH risk.",
+          "Human review is completed.",
+          "Operation may proceed only as auditable controlled support."
+        ]
+      };
+    }
+
+    return {
+      decision: "ESCALATE",
+      flags: escalationFlags(true, true),
+      reasons: [
+        "HBCE ECOSISTEMA AI or AI_GOVERNANCE context detected with HIGH risk.",
+        "Human review is required before operational reliance."
+      ]
+    };
+  }
+
+  return null;
+}
+
 function decideByCriticalRisk(
   input: RuntimeDecisionInput
 ): DecisionEnvelope | null {
@@ -588,9 +657,11 @@ function decideByMediumRisk(input: RuntimeDecisionInput): DecisionEnvelope | nul
     input.contextClass === "SECURITY" ||
     input.contextClass === "COMPLIANCE" ||
     input.contextClass === "AI_GOVERNANCE" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
     input.contextClass === "GOVERNANCE" ||
     input.contextClass === "DUAL_USE" ||
-    input.projectDomain === "U.S.E."
+    input.projectDomain === "U.S.E." ||
+    input.projectDomain === "HBCE_ECOSISTEMA_AI"
   ) {
     return {
       decision: "AUDIT",
@@ -810,6 +881,8 @@ function shouldBindIpr(input: RuntimeDecisionInput): boolean {
     input.contextClass === "IPR" ||
     input.contextClass === "GOVERNANCE" ||
     input.contextClass === "COMPLIANCE" ||
+    input.contextClass === "AI_GOVERNANCE" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
     input.contextClass === "USE" ||
     input.contextClass === "CIVIC" ||
     input.contextClass === "DEMOCRATIC_INFRASTRUCTURE"
@@ -833,6 +906,14 @@ function isCivicOrDemocraticContext(input: RuntimeDecisionInput): boolean {
     input.contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
     input.dataClass === "CIVIC_SENSITIVE" ||
     input.dataClass === "DEMOCRATIC_CHOICE"
+  );
+}
+
+function isAiGovernanceContext(input: RuntimeDecisionInput): boolean {
+  return (
+    input.projectDomain === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "AI_GOVERNANCE"
   );
 }
 
