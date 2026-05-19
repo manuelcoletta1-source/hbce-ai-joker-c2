@@ -6,6 +6,7 @@
  * EVT records provide:
  * - runtime attribution
  * - project-domain binding
+ * - HBCE module binding
  * - operational continuity
  * - context classification
  * - governance decision trace
@@ -15,10 +16,22 @@
  *
  * Canonical project domains:
  * - MATRIX
+ * - U.S.E.
  * - CORPUS_ESOTEROLOGIA_ERMETICA
  * - APOKALYPSIS
+ * - HBCE_ECOSISTEMA_AI
  * - GENERAL
  * - MULTI_DOMAIN
+ *
+ * Canonical HBCE modules:
+ * - UNEBDO
+ * - OPC
+ * - MetaExchange
+ * - IOspace
+ * - CyberGlobal
+ * - NeuroLoop
+ * - MATRIX
+ * - NONE
  *
  * EVT creates traceability.
  * EVT does not create legal authorization, certification or compliance.
@@ -27,6 +40,8 @@
 import type {
   AuditStatus,
   ContextClass,
+  HbceModule,
+  HbceModuleBinding,
   IntentClass,
   OperationStatus,
   OversightState,
@@ -40,7 +55,10 @@ import type {
   RuntimeState,
   VerificationStatus
 } from "./runtime-types";
-import { createProjectBinding } from "./runtime-types";
+import {
+  createHbceModuleBinding,
+  createProjectBinding
+} from "./runtime-types";
 import {
   DEFAULT_RUNTIME_STATE,
   getRuntimeIdentityForEvt
@@ -57,6 +75,9 @@ export type RuntimeEventInput = {
 
   projectDomain?: ProjectDomain;
   activeDomains?: ProjectDomain[];
+
+  hbceModule?: HbceModule;
+  activeModules?: HbceModule[];
 
   contextClass: ContextClass;
   intentClass: IntentClass;
@@ -92,6 +113,7 @@ export type RuntimeEventPublicView = {
     state: RuntimeState;
   };
   project: ProjectBinding;
+  hbce_module: HbceModuleBinding;
   context: {
     class: ContextClass;
     intent: IntentClass;
@@ -127,6 +149,8 @@ export type RuntimeEventSummary = {
   timestamp: string;
   projectDomain: ProjectDomain;
   activeDomains: ProjectDomain[];
+  hbceModule: HbceModule;
+  activeModules: HbceModule[];
   contextClass: ContextClass;
   intentClass: IntentClass;
   riskClass: RiskClass;
@@ -158,6 +182,15 @@ export function createRuntimeEvent(input: RuntimeEventInput): RuntimeEvent {
 
   const project = createProjectBinding(projectDomain, input.activeDomains);
 
+  const hbceModule =
+    input.hbceModule ??
+    inferHbceModuleFromContext(input.contextClass, projectDomain);
+
+  const hbceModuleBinding = createHbceModuleBinding(
+    hbceModule,
+    input.activeModules
+  );
+
   const eventWithoutHash: RuntimeEvent = {
     evt,
     prev,
@@ -166,6 +199,7 @@ export function createRuntimeEvent(input: RuntimeEventInput): RuntimeEvent {
     timestamp,
     runtime: identity.runtime,
     project,
+    hbce_module: hbceModuleBinding,
     context: {
       class: input.contextClass,
       intent: input.intentClass,
@@ -262,6 +296,12 @@ export function toPublicRuntimeEvent(
     event.project ??
     createProjectBinding(inferProjectDomainFromContext(event.context.class));
 
+  const hbceModule =
+    event.hbce_module ??
+    createHbceModuleBinding(
+      inferHbceModuleFromContext(event.context.class, project.domain)
+    );
+
   return {
     evt: event.evt,
     prev: event.prev,
@@ -274,6 +314,7 @@ export function toPublicRuntimeEvent(
       state: event.runtime.state
     },
     project,
+    hbce_module: hbceModule,
     context: {
       class: event.context.class,
       intent: event.context.intent,
@@ -311,12 +352,20 @@ export function summarizeRuntimeEvent(
     event.project ??
     createProjectBinding(inferProjectDomainFromContext(event.context.class));
 
+  const hbceModule =
+    event.hbce_module ??
+    createHbceModuleBinding(
+      inferHbceModuleFromContext(event.context.class, project.domain)
+    );
+
   return {
     evt: event.evt,
     prev: event.prev,
     timestamp: event.timestamp,
     projectDomain: project.domain,
     activeDomains: project.active_domains ?? [project.domain],
+    hbceModule: hbceModule.module,
+    activeModules: hbceModule.active_modules ?? [hbceModule.module],
     contextClass: event.context.class,
     intentClass: event.context.intent,
     riskClass: event.governance.risk,
@@ -335,6 +384,12 @@ export function buildTracePayload(
     event.project ??
     createProjectBinding(inferProjectDomainFromContext(event.context.class));
 
+  const hbceModule =
+    event.hbce_module ??
+    createHbceModuleBinding(
+      inferHbceModuleFromContext(event.context.class, project.domain)
+    );
+
   return {
     evt: event.evt,
     prev: event.prev,
@@ -343,9 +398,12 @@ export function buildTracePayload(
     timestamp: event.timestamp,
     runtime: event.runtime,
     project,
+    hbce_module: hbceModule,
     context: event.context,
     governance: event.governance,
     operation: event.operation,
+    memory: event.memory,
+    opc: event.opc,
     trace: {
       hash_algorithm: event.trace.hash_algorithm,
       canonicalization: event.trace.canonicalization
@@ -469,15 +527,24 @@ export function inferProjectDomainFromContext(
 ): ProjectDomain {
   switch (contextClass) {
     case "MATRIX":
-    case "AI_GOVERNANCE":
     case "CRITICAL_INFRASTRUCTURE":
       return "MATRIX";
+
+    case "USE":
+    case "CIVIC":
+    case "PUBLIC_ADMINISTRATION":
+    case "DEMOCRATIC_INFRASTRUCTURE":
+      return "U.S.E.";
 
     case "CORPUS":
       return "CORPUS_ESOTEROLOGIA_ERMETICA";
 
     case "APOKALYPSIS":
       return "APOKALYPSIS";
+
+    case "HBCE_ECOSISTEMA_AI":
+    case "AI_GOVERNANCE":
+      return "HBCE_ECOSISTEMA_AI";
 
     case "GITHUB":
     case "GOVERNANCE":
@@ -486,6 +553,7 @@ export function inferProjectDomainFromContext(
       return "MULTI_DOMAIN";
 
     case "IDENTITY":
+    case "IPR":
     case "DOCUMENTAL":
     case "TECHNICAL":
     case "EDITORIAL":
@@ -494,6 +562,60 @@ export function inferProjectDomainFromContext(
     case "GENERAL":
     default:
       return "GENERAL";
+  }
+}
+
+export function inferHbceModuleFromContext(
+  contextClass: ContextClass,
+  projectDomain?: ProjectDomain
+): HbceModule {
+  if (projectDomain === "HBCE_ECOSISTEMA_AI") {
+    return "MATRIX";
+  }
+
+  if (projectDomain === "U.S.E.") {
+    return "UNEBDO";
+  }
+
+  switch (contextClass) {
+    case "IDENTITY":
+    case "IPR":
+      return "UNEBDO";
+
+    case "COMPLIANCE":
+      return "OPC";
+
+    case "SECURITY":
+    case "CRITICAL_INFRASTRUCTURE":
+    case "DUAL_USE":
+      return "CyberGlobal";
+
+    case "TECHNICAL":
+    case "GITHUB":
+    case "DOCUMENTAL":
+    case "EDITORIAL":
+      return "IOspace";
+
+    case "AI_GOVERNANCE":
+    case "HBCE_ECOSISTEMA_AI":
+      return "MATRIX";
+
+    case "GOVERNANCE":
+    case "MATRIX":
+      return "MATRIX";
+
+    case "USE":
+    case "CIVIC":
+    case "PUBLIC_ADMINISTRATION":
+    case "DEMOCRATIC_INFRASTRUCTURE":
+      return "UNEBDO";
+
+    case "CORPUS":
+    case "APOKALYPSIS":
+    case "STRATEGIC":
+    case "GENERAL":
+    default:
+      return "NONE";
   }
 }
 
