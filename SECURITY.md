@@ -1,6 +1,6 @@
 # AI JOKER-C2 Security Policy
 
-## Defensive Security Boundary for IPR, EVT, Memory, OPC and the Four Canonical Collections
+## Defensive Security Boundary for IPR, EVT, Memory, OPC, Five Canonical Collections, Seven HBCE Modules and Strategic Doctrine Documents
 
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**  
@@ -18,15 +18,36 @@ AI JOKER-C2 is the governed runtime demonstrator for **IPR — Identity Primary 
 
 The primary operational instrument is **IPR**.
 
-AI JOKER-C2 demonstrates IPR in execution by connecting identity, project collection, context, policy, risk, decision, output, event trace, memory continuity, proof receipts and audit-oriented verification.
+AI JOKER-C2 demonstrates IPR in execution by connecting identity, project collection, HBCE module, context, policy, risk, human oversight, decision, output, event trace, memory continuity, proof receipts and audit-oriented verification.
 
-It connects four canonical project collections:
+It connects five canonical project collections:
 
 ```txt
 1. MATRIX
 2. U.S.E. — United States of Europe
 3. CORPUS ESOTEROLOGIA ERMETICA
 4. APOKALYPSIS
+5. HBCE ECOSISTEMA AI
+```
+
+It operates through seven HBCE technical-operational modules:
+
+```txt
+1. UNEBDO
+2. OPC
+3. MetaExchange
+4. IOspace
+5. CyberGlobal
+6. NeuroLoop
+7. MATRIX
+```
+
+It is also supported by three strategic doctrine documents:
+
+```txt
+1. HBCE Cybersecurity Strategy
+2. HBCE Data Protection Strategy
+3. HBCE Information Governance Strategy
 ```
 
 The security purpose of this repository is to preserve a clear boundary between lawful defensive governance and prohibited offensive or abusive capability.
@@ -43,20 +64,27 @@ Security in AI JOKER-C2 means protecting the full operational chain:
 
 ```txt
 IPR
+→ UNEBDO
 → EVT
 → Memory
 → OPC
+→ MetaExchange
+→ IOspace
+→ CyberGlobal
+→ NeuroLoop
+→ MATRIX
 → Ledger
 → Verification
 ```
 
-and preserving the semantic boundary of the four collections:
+and preserving the semantic boundary of the five collections:
 
 ```txt
 MATRIX
 → U.S.E.
 → CORPUS
 → APOKALYPSIS
+→ HBCE ECOSISTEMA AI
 ```
 
 ---
@@ -76,9 +104,11 @@ Expanded:
 No identity, no authority.
 No IPR binding, no operational attribution.
 No collection, no semantic orientation.
+No module, no technical-operational boundary.
 No context, no operational frame.
 No policy, no execution.
 No risk classification, no sensitive output.
+No human accountability, no high-impact reliance.
 No EVT, no continuity.
 No memory integrity, no reliable runtime continuity.
 No OPC, no proof receipt.
@@ -97,9 +127,11 @@ IPR Identity
 → Input
 → Intent
 → Project Collection
+→ HBCE Module
 → Context
 → Policy
 → Risk
+→ Human Oversight
 → Decision
 → Execution
 → EVT
@@ -110,7 +142,7 @@ IPR Identity
 → Continuity
 ```
 
-Security does not only mean blocking cyber-offense. It also means preventing loss of attribution, traceability, memory continuity, proof integrity, democratic safeguards and collection distinction.
+Security does not only mean blocking cyber-offense. It also means preventing loss of attribution, traceability, memory continuity, proof integrity, democratic safeguards, AI-governance failures and collection/module collapse.
 
 ---
 
@@ -136,12 +168,14 @@ deployment configuration;
 public interface;
 future integrations;
 future federation nodes;
-four-collection runtime mapping.
+five-collection runtime mapping;
+seven-module HBCE runtime mapping;
+strategic doctrine documents.
 ```
 
 The policy applies to both current and future versions of AI JOKER-C2.
 
-No future module should weaken the defensive, IPR-bound, traceable, memory-safe, proof-safe and fail-closed nature of the runtime.
+No future module, route, document or integration should weaken the defensive, IPR-bound, traceable, memory-safe, proof-safe and fail-closed nature of the runtime.
 
 ---
 
@@ -165,6 +199,8 @@ FAIL_CLOSED
 HUMAN_ACCOUNTABLE
 NON_OFFENSIVE
 COLLECTION_AWARE
+MODULE_AWARE
+AI_GOVERNANCE_AWARE
 ```
 
 Its strategic scope is:
@@ -190,20 +226,23 @@ repression of rights;
 vote de-anonymization;
 civic coercion;
 false certification claims;
-semantic misuse of project collections.
+semantic misuse of project collections;
+uncontrolled AI authority;
+unsafe model deployment.
 ```
 
 ---
 
-## 5. Four-Collection Security Boundary
+## 5. Five-Collection Security Boundary
 
-AI JOKER-C2 must preserve security boundaries across all four collections.
+AI JOKER-C2 must preserve security boundaries across all five collections.
 
 ```txt
 MATRIX = operational infrastructure architecture
 U.S.E. = MATRIX-derived political-institutional application domain
 CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar domain
 APOKALYPSIS = historical-threshold analysis domain
+HBCE ECOSISTEMA AI = AI governance ecosystem domain
 ```
 
 The security model must prevent these failures:
@@ -213,9 +252,10 @@ MATRIX becoming offensive infrastructure.
 U.S.E. becoming political manipulation or voter targeting.
 CORPUS becoming coercive ideological framing.
 APOKALYPSIS becoming destabilization, incitement or extremist framing.
+HBCE ECOSISTEMA AI becoming uncontrolled AI authority or unsafe model deployment.
 ```
 
-The four collections must remain distinct, even when a request is multi-domain.
+The five collections must remain distinct, even when a request is multi-domain.
 
 ---
 
@@ -273,6 +313,8 @@ attack planning against real systems.
 MATRIX may analyze strategic infrastructure.
 
 It must not become an offensive infrastructure.
+
+MATRIX also functions as the seventh HBCE technical-operational module, where it organizes and coordinates the stack. This coordination role must not become autonomous authority.
 
 ---
 
@@ -447,7 +489,165 @@ It must not become a tool for abuse, coercion or destabilization.
 
 ---
 
-## 6. Supported Security Uses
+## 5.5 HBCE ECOSISTEMA AI Security
+
+HBCE ECOSISTEMA AI is the AI governance ecosystem domain.
+
+HBCE ECOSISTEMA AI-related work may include:
+
+```txt
+AI governance;
+model governance;
+external AI model usage;
+future proprietary HBCE AI;
+hybrid AI architectures;
+IPR identity for AI agents and operators;
+EVT traceability for AI operations;
+EVT/IPR-bound memory continuity;
+OPC proof receipts for AI outputs and decisions;
+AI audit;
+IPR AI Audit Trail;
+human oversight;
+fail-closed AI runtime control;
+AI/cybersecurity governance;
+B2B and B2G AI governance adoption.
+```
+
+Allowed HBCE ECOSISTEMA AI security work:
+
+```txt
+AI governance documentation;
+model governance explanation;
+AI audit architecture;
+IPR AI Audit Trail design;
+runtime AI governance;
+AI/cyber governance;
+B2B and B2G AI governance positioning;
+external model provider analysis;
+safe comparison between OpenAI, Anthropic, Google, Meta, Mistral or future HBCE AI;
+policy, risk, oversight, EVT and OPC architecture for AI use.
+```
+
+Prohibited HBCE ECOSISTEMA AI misuse:
+
+```txt
+uncontrolled AI authority;
+AI used to bypass human oversight;
+hiding AI involvement;
+automated decision authority without review;
+unsafe high-risk AI deployment;
+AI-enabled offensive cyber operations;
+AI-enabled unlawful surveillance;
+AI-enabled manipulation or coercion;
+false regulatory certification claims;
+claims of official adoption without evidence.
+```
+
+The governing rule is:
+
+```txt
+The AI model does not govern HBCE.
+HBCE governs the use of AI models.
+```
+
+External models may generate output. HBCE governs the process through IPR, EVT, Memory, OPC, policy, risk, oversight, fail-closed control and verification.
+
+---
+
+## 6. Seven HBCE Technical-Operational Modules
+
+AI JOKER-C2 operates through seven HBCE technical-operational modules:
+
+```txt
+UNEBDO = anchoring, validation and evidentiary continuity support
+OPC = operational proof receipt and compliance layer
+MetaExchange = structured exchange layer
+IOspace = runtime visibility and operational interaction space
+CyberGlobal = defensive cybersecurity and resilience layer
+NeuroLoop = validation, feedback and review loop
+MATRIX = system coordination, organization and operational architecture layer
+```
+
+The modules are not book collections.
+
+The modules are not political domains.
+
+The modules are not the primary product layer.
+
+The modules extend IPR inside governed runtime execution.
+
+The module formula is:
+
+```txt
+IPR identifies.
+UNEBDO anchors.
+EVT traces.
+Memory continues.
+OPC proves.
+MetaExchange exchanges.
+IOspace exposes.
+CyberGlobal protects.
+NeuroLoop validates.
+MATRIX organizes.
+AI JOKER-C2 executes.
+```
+
+Module security must preserve:
+
+```txt
+IPR as product and identity/proof basis;
+MATRIX as coordination module and project architecture;
+OPC as proof receipt, not legal certification;
+CyberGlobal as defensive, not offensive;
+NeuroLoop as validation and feedback, not autonomous authority;
+MetaExchange as governed exchange, not permissionless exchange;
+IOspace as public-safe visibility, not exposure of secrets;
+UNEBDO as anchoring support, not automatic legal certification.
+```
+
+---
+
+## 7. Strategic Doctrine Layer
+
+The security model is supported by three strategic doctrine documents.
+
+```txt
+1. HBCE Cybersecurity Strategy
+2. HBCE Data Protection Strategy
+3. HBCE Information Governance Strategy
+```
+
+These documents are not additional collections and are not HBCE modules. They are strategic doctrine documents that guide defensive implementation, institutional communication, evidence handling and public-safe governance.
+
+The doctrine layer connects:
+
+```txt
+Cybersecurity Strategy = CyberGlobal, MATRIX, OPC, UNEBDO
+Data Protection Strategy = IPR, EVT, OPC, IOspace, MetaExchange
+Information Governance Strategy = MATRIX, MetaExchange, IOspace, NeuroLoop, OPC
+```
+
+The doctrine layer supports:
+
+```txt
+defensive cybersecurity;
+data protection;
+information classification;
+auditability;
+proof continuity;
+public-safe exposure;
+B2B and B2G readiness;
+institutional readability;
+critical infrastructure resilience;
+AI/cyber governance;
+fail-closed strategy.
+```
+
+The doctrine layer must not claim official public-sector adoption, legal certification or regulatory approval unless independently validated.
+
+---
+
+## 8. Supported Security Uses
 
 AI JOKER-C2 may support defensive and governance-oriented security work.
 
@@ -470,14 +670,15 @@ IPR = operational identity and attribution integrity
 Memory = EVT/IPR-bound semantic and runtime continuity
 OPC = proof receipt integrity and audit-oriented proof chain design
 U.S.E. = democratic infrastructure safeguards and identity-choice separation models
-Editorial continuity = safe continuity across MATRIX, U.S.E., CORPUS and APOKALYPSIS
+HBCE ECOSISTEMA AI = AI model governance, AI audit and governed AI process design
+Editorial continuity = safe continuity across MATRIX, U.S.E., CORPUS, APOKALYPSIS and HBCE ECOSISTEMA AI
 ```
 
 Allowed support must remain defensive, lawful, proportionate and human-accountable.
 
 ---
 
-## 7. Prohibited Security Uses
+## 9. Prohibited Security Uses
 
 AI JOKER-C2 must not be used to create, assist, automate or optimize:
 
@@ -511,14 +712,16 @@ coercive civic influence;
 unauthorized electoral infrastructure deployment;
 false proof generation;
 false certification claims;
-semantic manipulation of project collections.
+semantic manipulation of project collections;
+uncontrolled AI authority;
+unsafe high-risk AI deployment.
 ```
 
 Requests in these categories must be blocked or redirected to safe defensive alternatives.
 
 ---
 
-## 8. Vulnerability Reporting
+## 10. Vulnerability Reporting
 
 Security reports should be handled responsibly.
 
@@ -543,12 +746,13 @@ Sensitive vulnerabilities should not be disclosed publicly until reviewed.
 
 ---
 
-## 9. Supported Versions
+## 11. Supported Versions
 
 Current supported version:
 
 ```txt
-1.1.x = active prototype
+2.0.x = active prototype
+1.1.x = previous active prototype baseline
 1.0.x = legacy documentation baseline
 Earlier versions = not supported
 ```
@@ -571,12 +775,14 @@ EVT integrity;
 Memory integrity;
 OPC proof receipt integrity;
 collection-boundary integrity;
+module-boundary integrity;
+AI-governance boundary integrity;
 human accountability.
 ```
 
 ---
 
-## 10. Runtime Security Model
+## 12. Runtime Security Model
 
 The runtime security model follows this sequence:
 
@@ -585,9 +791,11 @@ IPR identity
 → input
 → intent
 → project collection
+→ HBCE module
 → context
 → policy
 → risk
+→ human oversight
 → decision
 → execution
 → output
@@ -605,10 +813,12 @@ Each stage must preserve security.
 identity = bind operation to entity, IPR and runtime
 input = normalize safely and avoid unsafe execution
 intent = detect purpose and possible misuse
-project collection = route to MATRIX, U.S.E., CORPUS, APOKALYPSIS, GENERAL or MULTI_DOMAIN
+project collection = route to MATRIX, U.S.E., CORPUS, APOKALYPSIS, HBCE ECOSISTEMA AI, GENERAL or MULTI_DOMAIN
+HBCE module = bind the request to UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop, MATRIX or NONE
 context = classify operational context
 policy = apply allowed, restricted and prohibited boundaries
 risk = classify sensitivity and potential impact
+human oversight = preserve human accountability
 decision = ALLOW, BLOCK, ESCALATE, DEGRADE, AUDIT or NOOP
 execution = perform only the permitted safe operation
 EVT = record relevant operation
@@ -623,7 +833,7 @@ No sensitive operation should bypass this sequence.
 
 ---
 
-## 11. Fail-Closed Security
+## 13. Fail-Closed Security
 
 AI JOKER-C2 follows a fail-closed security model.
 
@@ -636,12 +846,14 @@ runtime state is invalid;
 user authority is unclear;
 intent is unsafe;
 project collection cannot be classified in a sensitive context;
+HBCE module cannot be classified in a sensitive context;
 policy cannot be applied;
 risk cannot be classified;
 requested operation may enable abuse;
 requested operation may expose secrets;
 requested operation may affect real systems without authorization;
 requested operation may affect civic or democratic infrastructure without safeguards;
+requested operation may affect high-risk AI governance without oversight;
 event trace cannot be generated;
 memory continuity cannot be preserved when required;
 OPC proof receipt cannot be generated when required;
@@ -673,7 +885,7 @@ It is not system failure.
 
 ---
 
-## 12. Secret Management
+## 14. Secret Management
 
 Secrets must never be committed to the repository.
 
@@ -719,7 +931,7 @@ Private keys must never be exposed to the client.
 
 ---
 
-## 13. Environment Security
+## 15. Environment Security
 
 Deployment environments should preserve separation between:
 
@@ -747,7 +959,7 @@ The repository should include a `.gitignore` rule for local environment files.
 
 ---
 
-## 14. API Security
+## 16. API Security
 
 API routes must preserve controlled execution.
 
@@ -761,16 +973,18 @@ Security rules for API routes:
 5. Avoid logging sensitive payloads.
 6. Apply policy where relevant.
 7. Apply risk classification where relevant.
-8. Generate EVT records for relevant operations.
-9. Generate EVT/IPR-bound memory where required.
-10. Generate or reference OPC proof receipts where required.
-11. Preserve fail-closed behavior.
-12. Return safe errors.
-13. Do not execute uploaded content.
-14. Do not create unrestricted command-execution routes.
-15. Do not expose internal keys, tokens or private event metadata.
-16. Keep public and internal verification separated.
-17. Preserve project-collection classification.
+8. Apply human oversight where relevant.
+9. Generate EVT records for relevant operations.
+10. Generate EVT/IPR-bound memory where required.
+11. Generate or reference OPC proof receipts where required.
+12. Preserve fail-closed behavior.
+13. Return safe errors.
+14. Do not execute uploaded content.
+15. Do not create unrestricted command-execution routes.
+16. Do not expose internal keys, tokens or private event metadata.
+17. Keep public and internal verification separated.
+18. Preserve project-collection classification.
+19. Preserve HBCE module classification.
 ```
 
 Expected API routes may include:
@@ -791,7 +1005,7 @@ Every new route must preserve the security boundary.
 
 ---
 
-## 15. File Processing Security
+## 17. File Processing Security
 
 File handling must be conservative.
 
@@ -820,6 +1034,7 @@ expose private content unnecessarily;
 store sensitive payloads without purpose;
 leak file content into public logs;
 bypass policy and risk classification;
+bypass HBCE module classification;
 treat unknown files as safe by default;
 claim full visibility when only partial visibility exists;
 erase project-collection context.
@@ -844,7 +1059,7 @@ If visibility is partial, say so.
 
 ---
 
-## 16. Model Security
+## 18. Model Security
 
 The model layer supports reasoning and generation.
 
@@ -854,10 +1069,11 @@ Model output is subject to:
 
 ```txt
 project-collection classification;
+HBCE module classification;
 policy;
 risk classification;
+human oversight;
 safety boundary;
-human accountability;
 fail-closed behavior;
 EVT continuity where relevant;
 memory continuity where relevant;
@@ -876,12 +1092,22 @@ public institutions;
 critical infrastructure;
 legal obligations;
 high-impact decisions;
-civic or democratic infrastructure.
+civic or democratic infrastructure;
+AI governance;
+model governance;
+regulated or high-risk AI systems.
+```
+
+The governing rule is:
+
+```txt
+The AI model does not govern HBCE.
+HBCE governs the use of AI models.
 ```
 
 ---
 
-## 17. Output Security
+## 19. Output Security
 
 AI JOKER-C2 should avoid producing output that enables abuse.
 
@@ -904,7 +1130,9 @@ operational destabilization;
 vote de-anonymization;
 civic coercion;
 false certification claims;
-semantic framing used for abuse.
+semantic framing used for abuse;
+uncontrolled AI authority;
+unsafe model deployment.
 ```
 
 Safe alternatives may include:
@@ -917,13 +1145,15 @@ risk assessment;
 hardening checklist;
 governance documentation;
 legal or compliance-oriented framing;
+AI governance boundary analysis;
+model governance review checklist;
 conceptual analysis without operational abuse;
 editorial continuity without coercive framing.
 ```
 
 ---
 
-## 18. Dependency Security
+## 20. Dependency Security
 
 Dependency management should follow safe development practice.
 
@@ -963,7 +1193,7 @@ Not every clean audit means the system is secure.
 
 ---
 
-## 19. Frontend Security
+## 21. Frontend Security
 
 The public interface must not expose private runtime data.
 
@@ -991,6 +1221,7 @@ runtime state;
 public entity;
 public IPR reference;
 public project collection;
+public HBCE module;
 public EVT identifier;
 public memory identifier;
 public OPC proof status;
@@ -1001,7 +1232,7 @@ Sensitive data belongs server-side.
 
 ---
 
-## 20. Logging Security
+## 22. Logging Security
 
 Logs should be useful without becoming a data leak.
 
@@ -1029,6 +1260,7 @@ event ID;
 timestamp;
 context class;
 project collection;
+HBCE module;
 risk class;
 governance decision;
 operation type;
@@ -1040,7 +1272,7 @@ Logging should support reconstruction without unnecessary exposure.
 
 ---
 
-## 21. IPR Security
+## 23. IPR Security
 
 IPR is the primary operational identity and proof instrument.
 
@@ -1068,7 +1300,7 @@ Security failures involving IPR metadata should be treated as high-priority beca
 
 ---
 
-## 22. EVT Security
+## 24. EVT Security
 
 EVT records must support traceability without exposing unnecessary sensitive payloads.
 
@@ -1082,6 +1314,7 @@ entity;
 IPR;
 runtime state;
 project collection;
+HBCE module;
 context class;
 risk class;
 decision;
@@ -1110,7 +1343,7 @@ The event chain must preserve operational continuity and safety at the same time
 
 ---
 
-## 23. Memory Security
+## 25. Memory Security
 
 EVT/IPR-bound memory must preserve continuity without becoming uncontrolled storage.
 
@@ -1126,6 +1359,7 @@ document family;
 runtime state;
 decision;
 project collection;
+HBCE module when available;
 context class;
 memory event;
 governed EVT;
@@ -1149,11 +1383,11 @@ Memory supports runtime continuity.
 
 It does not replace evidence verification, legal review or user control.
 
-Memory must not contaminate one collection with another. MATRIX, U.S.E., CORPUS and APOKALYPSIS continuity should be connected when useful but still distinguishable.
+Memory must not contaminate one collection with another. MATRIX, U.S.E., CORPUS, APOKALYPSIS and HBCE ECOSISTEMA AI continuity should be connected when useful but still distinguishable.
 
 ---
 
-## 24. OPC Proof Receipt Security
+## 26. OPC Proof Receipt Security
 
 OPC means **Operational Proof & Compliance Layer**.
 
@@ -1168,6 +1402,8 @@ session;
 governed EVT;
 memory event;
 runtime decision;
+project domain;
+HBCE module;
 policy reference;
 risk class;
 input hash;
@@ -1205,7 +1441,7 @@ preserve the difference between technical proof receipt and legal certification.
 
 ---
 
-## 25. Ledger Security
+## 27. Ledger Security
 
 The ledger should be append-only.
 
@@ -1217,14 +1453,15 @@ Ledger rules:
 3. Preserve previous-event references or valid external runtime anchors.
 4. Preserve hashes where possible.
 5. Preserve project-collection metadata.
-6. Preserve IPR metadata.
-7. Preserve memory metadata where applicable.
-8. Preserve OPC proof metadata where applicable.
-9. Separate public and internal views.
-10. Avoid storing unnecessary sensitive payloads.
-11. Protect ledger integrity.
-12. Validate event structure before acceptance.
-13. Preserve audit metadata.
+6. Preserve HBCE module metadata.
+7. Preserve IPR metadata.
+8. Preserve memory metadata where applicable.
+9. Preserve OPC proof metadata where applicable.
+10. Separate public and internal views.
+11. Avoid storing unnecessary sensitive payloads.
+12. Protect ledger integrity.
+13. Validate event structure before acceptance.
+14. Preserve audit metadata.
 ```
 
 Correction rule:
@@ -1235,7 +1472,7 @@ Corrections are new events, not silent mutations.
 
 ---
 
-## 26. Verification Security
+## 28. Verification Security
 
 Verification should support reconstruction without exposing protected content.
 
@@ -1247,6 +1484,7 @@ timestamp;
 public entity;
 public IPR reference;
 public project collection;
+public HBCE module;
 hash;
 verification status;
 audit status;
@@ -1277,7 +1515,7 @@ Policy, authority and human review remain separate requirements.
 
 ---
 
-## 27. Human Oversight Security
+## 29. Human Oversight Security
 
 Human oversight is required for high-impact operations.
 
@@ -1294,8 +1532,10 @@ military contexts;
 security-sensitive systems;
 electoral infrastructure;
 public consultation infrastructure;
-irreversible operations;
-high-risk AI governance.
+regulated AI systems;
+public-sector AI governance;
+high-risk AI deployment;
+irreversible operations.
 ```
 
 AI JOKER-C2 may support analysis.
@@ -1306,7 +1546,7 @@ Human review should be recorded when relevant.
 
 ---
 
-## 28. Compliance Security
+## 30. Compliance Security
 
 AI JOKER-C2 may support compliance-oriented workflows, but the repository does not claim automatic legal compliance.
 
@@ -1316,6 +1556,7 @@ The system may support:
 audit trails;
 accountability matrices;
 AI governance mapping;
+model governance mapping;
 risk registers;
 incident documentation;
 data classification;
@@ -1339,7 +1580,33 @@ Compliance support is not compliance certification.
 
 ---
 
-## 29. Public Communication Security
+## 31. Strategic Doctrine Security
+
+The strategic doctrine documents support the security posture of AI JOKER-C2.
+
+```txt
+HBCE Cybersecurity Strategy = defensive cybersecurity, resilience, incident documentation and critical infrastructure continuity.
+HBCE Data Protection Strategy = minimization, privacy, data classification, retention, access control and auditability.
+HBCE Information Governance Strategy = information classification, controlled circulation, proof continuity, public-safe exposure and accountability.
+```
+
+These documents should remain:
+
+```txt
+defensive;
+non-offensive;
+institutionally readable;
+B2B/B2G compatible;
+public-safe where published;
+clear about prototype status;
+clear about absence of automatic legal certification.
+```
+
+They must not be used to claim official adoption, public authority status or regulated certification unless independently validated.
+
+---
+
+## 32. Public Communication Security
 
 Public communication must remain accurate.
 
@@ -1354,7 +1621,8 @@ a political influence system;
 an electoral manipulation system;
 a certified public authority system;
 a legally approved compliance engine;
-a production-ready critical infrastructure controller.
+a production-ready critical infrastructure controller;
+an officially adopted AI governance standard.
 ```
 
 The repository may present AI JOKER-C2 as:
@@ -1368,12 +1636,14 @@ a traceability framework;
 a B2B and B2G demonstrator;
 an identity-bound operational AI system;
 an evidence-oriented AI governance prototype;
-a four-collection runtime connector.
+a five-collection runtime connector;
+a seven-module HBCE runtime demonstrator;
+an AI governance and proof-receipt research system.
 ```
 
 ---
 
-## 30. Security Review Checklist
+## 33. Security Review Checklist
 
 Before merging or deploying a change, check:
 
@@ -1383,6 +1653,7 @@ Does it create an unrestricted API route?
 Does it bypass IPR binding?
 Does it bypass policy?
 Does it bypass risk classification?
+Does it bypass human oversight where required?
 Does it bypass fail-closed behavior?
 Does it weaken the defensive boundary?
 Does it add offensive cyber capability?
@@ -1392,19 +1663,22 @@ Does it expose private EVT metadata publicly?
 Does it expose private memory metadata publicly?
 Does it expose private OPC proof metadata publicly?
 Does it break project-collection classification?
+Does it break HBCE module classification?
 Does it weaken human accountability?
 Does it break the build?
 Does it create misleading public claims?
-Does it preserve MATRIX, U.S.E., CORPUS and APOKALYPSIS boundaries?
+Does it preserve MATRIX, U.S.E., CORPUS, APOKALYPSIS and HBCE ECOSISTEMA AI boundaries?
+Does it preserve UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop and MATRIX module boundaries?
 Does it preserve identity, EVT, memory, OPC, ledger and verification logic?
 Does it preserve democratic safeguards where civic infrastructure is involved?
+Does it preserve AI governance safeguards where model usage is involved?
 ```
 
 If the answer is uncertain in a sensitive context, the change should be reviewed before deployment.
 
 ---
 
-## 31. Safe Development Checklist
+## 34. Safe Development Checklist
 
 Recommended development checks:
 
@@ -1442,7 +1716,7 @@ Do not commit local environment files.
 
 ---
 
-## 32. Incident Response
+## 35. Incident Response
 
 If a security issue is discovered:
 
@@ -1465,7 +1739,7 @@ The secret should be considered compromised and rotated.
 
 ---
 
-## 33. Non-Offensive Boundary Statement
+## 36. Non-Offensive Boundary Statement
 
 AI JOKER-C2 must remain inside a defensive, governance-oriented and lawful security boundary.
 
@@ -1480,6 +1754,8 @@ Evidence.
 Verification.
 Compliance support.
 Critical infrastructure resilience documentation.
+AI governance.
+Model governance.
 Human accountability.
 Fail-closed runtime control.
 IPR integrity.
@@ -1488,7 +1764,9 @@ Memory continuity.
 OPC proof receipt integrity.
 Democratic infrastructure safeguards.
 Editorial continuity.
-Four-collection continuity.
+Five-collection continuity.
+Seven-module continuity.
+Strategic doctrine continuity.
 ```
 
 Prohibited:
@@ -1510,6 +1788,8 @@ Vote de-anonymization.
 Civic coercion.
 Rights violations.
 False certification claims.
+Uncontrolled AI authority.
+Unsafe high-risk model deployment.
 Semantic framing used for abuse.
 ```
 
@@ -1519,7 +1799,7 @@ A blocked unsafe operation is a valid security outcome.
 
 ---
 
-## 34. Security Invariants
+## 37. Security Invariants
 
 The following invariants must remain stable:
 
@@ -1529,30 +1809,35 @@ The following invariants must remain stable:
 3. AI JOKER-C2 is the governed runtime demonstrator for IPR.
 4. IPR is the primary operational identity and proof instrument.
 5. MATRIX security remains defensive and governance-oriented.
-6. U.S.E. security preserves democratic safeguards and identity-choice separation.
-7. CORPUS security preserves conceptual work without coercive misuse.
-8. APOKALYPSIS security preserves historical analysis without destabilizing misuse.
-9. Policy precedes sensitive execution.
-10. Risk classification precedes sensitive output.
-11. Fail-closed is mandatory in unsafe or invalid states.
-12. Secrets must never be committed.
-13. Uploaded files must not be executed.
-14. Public routes must not expose secrets.
-15. EVT records must avoid unnecessary sensitive payloads.
-16. EVT/IPR-bound memory must not become uncontrolled storage.
-17. OPC proof receipts must not be falsified or misrepresented as legal certification.
-18. Ledger records must be append-only.
-19. Verification must not leak protected content.
-20. Human accountability must be preserved.
-21. Offensive or abusive capability is prohibited.
-22. Democratic choice content must not be linked to personal voter identity.
-23. Four-collection continuity must preserve MATRIX, U.S.E., CORPUS and APOKALYPSIS distinctions.
-24. Uncertain sensitive operations must not execute by default.
+6. MATRIX is also the seventh HBCE module and must remain coordination, not autonomous authority.
+7. U.S.E. security preserves democratic safeguards and identity-choice separation.
+8. CORPUS security preserves conceptual work without coercive misuse.
+9. APOKALYPSIS security preserves historical analysis without destabilizing misuse.
+10. HBCE ECOSISTEMA AI preserves model-governance boundaries.
+11. Policy precedes sensitive execution.
+12. Risk classification precedes sensitive output.
+13. Human accountability precedes high-impact reliance.
+14. Fail-closed is mandatory in unsafe or invalid states.
+15. Secrets must never be committed.
+16. Uploaded files must not be executed.
+17. Public routes must not expose secrets.
+18. EVT records must avoid unnecessary sensitive payloads.
+19. EVT/IPR-bound memory must not become uncontrolled storage.
+20. OPC proof receipts must not be falsified or misrepresented as legal certification.
+21. Ledger records must be append-only.
+22. Verification must not leak protected content.
+23. Human accountability must be preserved.
+24. Offensive or abusive capability is prohibited.
+25. Democratic choice content must not be linked to personal voter identity.
+26. Five-collection continuity must preserve MATRIX, U.S.E., CORPUS, APOKALYPSIS and HBCE ECOSISTEMA AI distinctions.
+27. Seven-module continuity must preserve UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop and MATRIX distinctions.
+28. Strategic doctrine documents must remain defensive and non-certifying unless externally validated.
+29. Uncertain sensitive operations must not execute by default.
 ```
 
 ---
 
-## 35. Final Security Formula
+## 38. Final Security Formula
 
 Security begins with identity.
 
@@ -1560,11 +1845,15 @@ Security requires IPR binding.
 
 Security requires project-collection classification.
 
+Security requires HBCE module classification.
+
 Security requires context.
 
 Security requires policy.
 
 Security requires risk classification.
+
+Security requires human oversight where required.
 
 Security requires decision.
 
@@ -1585,10 +1874,11 @@ Project formula:
 ```txt
 IPR = operational identity and proof instrument.
 AI JOKER-C2 = governed runtime demonstrator.
-MATRIX = operational infrastructure architecture.
+MATRIX = operational infrastructure architecture and coordination module.
 U.S.E. = federated European political-institutional application.
 CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar.
 APOKALYPSIS = historical-threshold analysis.
+HBCE ECOSISTEMA AI = AI governance ecosystem.
 EVT = trace.
 Memory = EVT/IPR-bound runtime continuity.
 OPC = proof receipt.
@@ -1603,24 +1893,32 @@ Security boundary:
 Defensive governance: allowed.
 Verifiable continuity: allowed.
 Audit and evidence: allowed.
+AI governance: allowed.
+Model governance: allowed.
 Memory continuity: allowed.
 Proof integrity: allowed.
 Critical systems resilience documentation: allowed.
 Democratic infrastructure safeguards: allowed.
 Editorial continuity: allowed.
+Strategic doctrine: allowed.
 Offensive or abusive capability: prohibited.
 ```
 
 ---
 
-## 36. Status
+## 39. Status
 
 ```txt
 Document: SECURITY.md
 Status: Active security policy
 Project: AI JOKER-C2
 Ecosystem: HERMETICUM B.C.E.
-Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS
+Active checkpoint: EVT-0015-AI
+Previous checkpoint: EVT-0014-AI
+Cycle: UP-MESE-4
+Connected collections: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS, HBCE ECOSISTEMA AI
+HBCE modules: UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop, MATRIX
+Strategic doctrine documents: HBCE Cybersecurity Strategy, HBCE Data Protection Strategy, HBCE Information Governance Strategy
 Infrastructure: HBCE
 Runtime role: IPR runtime demonstrator
 Identity layer: IPR
@@ -1633,6 +1931,7 @@ Governance principle: Fail-closed
 Security posture: Defensive and non-offensive
 Dual-use scope: Civil and strategic governance
 Civic boundary: Identity verified first, choice separated after, vote anonymized, process auditable
+AI governance boundary: The AI model does not govern HBCE; HBCE governs the use of AI models
 Repository: hbce-ai-joker-c2
 Maintainer: HBCE Research
 Organization: HERMETICUM B.C.E. S.r.l.
