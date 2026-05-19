@@ -1,8 +1,8 @@
 {
   "schema": "HBCE-AI-JOKER-C2-SYSTEM-MANIFEST",
-  "schema_version": "1.4.0",
+  "schema_version": "1.5.0",
   "name": "AI JOKER-C2",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "status": "OPERATIONAL_PROTOTYPE",
   "classification": "IPR_BOUND_GOVERNED_RUNTIME_DEMONSTRATOR",
   "organization": "HERMETICUM B.C.E. S.r.l.",
@@ -51,7 +51,7 @@
       "note": "Canonical month-4 checkpoint recorded on 2026-05-19 within the prescribed checkpoint window"
     }
   },
-  "public_definition": "AI JOKER-C2 is the governed runtime demonstrator for IPR — Identity Primary Record — inside the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS and HBCE ECOSISTEMA AI through governed AI execution, IPR identity, EVT continuity, EVT/IPR-bound memory, OPC proof receipts, seven HBCE technical-operational modules, verification and fail-closed control.",
+  "public_definition": "AI JOKER-C2 is the governed runtime demonstrator for IPR — Identity Primary Record — inside the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS and HBCE ECOSISTEMA AI through governed AI execution, IPR identity, EVT continuity, EVT/IPR-bound memory, OPC proof receipts, seven HBCE technical-operational modules, strategic doctrine documents, verification and fail-closed control.",
   "canonical_formula": {
     "ipr": "Primary operational identity and proof instrument",
     "ai_joker_c2": "Governed runtime demonstrator for IPR in execution",
@@ -94,7 +94,12 @@
     "validation_layer": "NeuroLoop",
     "coordination_layer": "MATRIX",
     "continuity_layer": "TRAC_EVT_MEMORY_OPC",
-    "verification_layer": "HASH_SIGNATURE_CHAIN_VERIFICATION"
+    "verification_layer": "HASH_SIGNATURE_CHAIN_VERIFICATION",
+    "strategic_doctrine_layer": [
+      "HBCE_CYBERSECURITY_STRATEGY",
+      "HBCE_DATA_PROTECTION_STRATEGY",
+      "HBCE_INFORMATION_GOVERNANCE_STRATEGY"
+    ]
   },
   "identity": {
     "runtime_entity": {
@@ -130,6 +135,90 @@
     ],
     "boundary": "Project collections are editorial, strategic and architectural domains. They are not the same as HBCE technical-operational modules.",
     "formula": "MATRIX builds the architecture. U.S.E. brings it into European political-institutional design. CORPUS grounds the grammar of operational reality. APOKALYPSIS reads the historical threshold. HBCE ECOSISTEMA AI governs artificial intelligence as an identifiable, traceable and auditable operational process."
+  },
+  "strategic_doctrine_layer": {
+    "count": 3,
+    "boundary": "Strategic doctrine documents support defensive implementation, data protection, information governance, AI/cyber governance and institutional readability. They are not project collections, they are not HBCE modules and they do not create legal certification or official adoption by themselves.",
+    "documents": {
+      "cybersecurity_strategy": {
+        "id": "HBCE_CYBERSECURITY_STRATEGY",
+        "name": "HBCE Cybersecurity Strategy",
+        "path": "docs/HBCE_CYBERSECURITY_STRATEGY.md",
+        "status": "ACTIVE_DOCTRINE",
+        "function": "Defines the defensive cybersecurity, AI-cyber governance and operational resilience posture of AI JOKER-C2 and the HBCE operational stack.",
+        "primary_modules": [
+          "CyberGlobal",
+          "MATRIX",
+          "OPC",
+          "UNEBDO"
+        ],
+        "secondary_modules": [
+          "IOspace",
+          "MetaExchange",
+          "NeuroLoop"
+        ],
+        "primary_collections": [
+          "MATRIX",
+          "HBCE_ECOSISTEMA_AI"
+        ],
+        "boundary": "Defensive cybersecurity is allowed. Offensive cyber capability is prohibited."
+      },
+      "data_protection_strategy": {
+        "id": "HBCE_DATA_PROTECTION_STRATEGY",
+        "name": "HBCE Data Protection Strategy",
+        "path": "docs/HBCE_DATA_PROTECTION_STRATEGY.md",
+        "status": "ACTIVE_DOCTRINE",
+        "function": "Defines data minimization, classification, privacy, controlled processing, retention, access control, public-safe exposure and auditability strategy for AI JOKER-C2.",
+        "primary_modules": [
+          "IPR",
+          "EVT",
+          "OPC",
+          "IOspace",
+          "MetaExchange",
+          "MATRIX"
+        ],
+        "secondary_modules": [
+          "UNEBDO",
+          "CyberGlobal",
+          "NeuroLoop"
+        ],
+        "primary_collections": [
+          "MATRIX",
+          "U.S.E.",
+          "HBCE_ECOSISTEMA_AI"
+        ],
+        "boundary": "Necessary data is allowed. Minimization is required. Unnecessary accumulation, secret exposure and identity-choice linkage are prohibited."
+      },
+      "information_governance_strategy": {
+        "id": "HBCE_INFORMATION_GOVERNANCE_STRATEGY",
+        "name": "HBCE Information Governance Strategy",
+        "path": "docs/HBCE_INFORMATION_GOVERNANCE_STRATEGY.md",
+        "status": "ACTIVE_DOCTRINE",
+        "function": "Defines information classification, controlled circulation, public-safe exposure, proof continuity, audit metadata and accountability strategy for AI JOKER-C2.",
+        "primary_modules": [
+          "MATRIX",
+          "MetaExchange",
+          "IOspace",
+          "NeuroLoop",
+          "OPC"
+        ],
+        "secondary_modules": [
+          "IPR",
+          "EVT",
+          "Memory",
+          "CyberGlobal",
+          "UNEBDO"
+        ],
+        "primary_collections": [
+          "MATRIX",
+          "U.S.E.",
+          "CORPUS_ESOTEROLOGIA_ERMETICA",
+          "APOKALYPSIS",
+          "HBCE_ECOSISTEMA_AI"
+        ],
+        "boundary": "Information may circulate only under identity, context, classification, policy, trace and responsibility."
+      }
+    }
   },
   "project_domains": {
     "matrix": {
@@ -547,7 +636,10 @@
       "OPC proof receipt generation",
       "HBCE module documentation",
       "MATRIX module coordination documentation",
-      "HBCE ECOSISTEMA AI documentation"
+      "HBCE ECOSISTEMA AI documentation",
+      "cybersecurity doctrine documentation",
+      "data protection doctrine documentation",
+      "information governance doctrine documentation"
     ],
     "prohibited_uses": [
       "offensive cyber operations",
@@ -571,7 +663,8 @@
       "permissionless data exchange through MetaExchange",
       "offensive use of CyberGlobal",
       "autonomous authority through NeuroLoop",
-      "uncontrolled authority through MATRIX module coordination"
+      "uncontrolled authority through MATRIX module coordination",
+      "uncontrolled AI authority"
     ]
   },
   "evt": {
@@ -659,7 +752,8 @@
       "verification_status",
       "memory_metadata",
       "opc_proof_chain_metadata",
-      "hbce_module_metadata"
+      "hbce_module_metadata",
+      "strategic_doctrine_metadata"
     ]
   },
   "evidence": {
@@ -670,6 +764,7 @@
       "context_bound",
       "project_domain_bound",
       "hbce_module_bound",
+      "strategic_doctrine_bound",
       "evt_linked",
       "memory_linked",
       "opc_linked",
@@ -695,7 +790,8 @@
       "EVENT_RECONSTRUCTION",
       "OPC_PROOF_RECEIPT_VERIFICATION",
       "MEMORY_CONTINUITY_RECONSTRUCTION",
-      "HBCE_MODULE_BINDING_VALIDATION"
+      "HBCE_MODULE_BINDING_VALIDATION",
+      "STRATEGIC_DOCTRINE_BINDING_VALIDATION"
     ]
   },
   "federation": {
@@ -711,7 +807,8 @@
       "AUDIT_NODE_DEPLOYMENT",
       "CIVIC_NODE_DEPLOYMENT_WITH_DEMOCRATIC_SAFEGUARDS",
       "HBCE_MODULE_NODE_DEPLOYMENT",
-      "AI_GOVERNANCE_NODE_DEPLOYMENT"
+      "AI_GOVERNANCE_NODE_DEPLOYMENT",
+      "STRATEGIC_DOCTRINE_NODE_DEPLOYMENT"
     ]
   },
   "security": {
@@ -728,7 +825,8 @@
       "NO_EVIDENCE_NO_OPERATIONAL_EXISTENCE",
       "NO_VERIFICATION_NO_RECOGNIZED_PERSISTENCE",
       "NO_IDENTITY_CHOICE_LINKING_IN_DEMOCRATIC_CONTEXTS",
-      "NO_MODULE_LAYER_WITHOUT_GOVERNANCE"
+      "NO_MODULE_LAYER_WITHOUT_GOVERNANCE",
+      "NO_STRATEGIC_DOCTRINE_AS_CERTIFICATION"
     ],
     "scope": "DEFENSIVE_GOVERNANCE_AND_VERIFIABLE_OPERATIONAL_CONTINUITY"
   },
@@ -827,7 +925,10 @@
     "operational_stack": "docs/HBCE_OPERATIONAL_STACK.md",
     "module_map": "docs/HBCE_MODULES_RUNTIME_MAP.md",
     "collection_map": "docs/FIVE_COLLECTIONS_RUNTIME_MAP.md",
-    "hbce_ecosistema_ai": "docs/HBCE_ECOSISTEMA_AI_COLLECTION.md"
+    "hbce_ecosistema_ai": "docs/HBCE_ECOSISTEMA_AI_COLLECTION.md",
+    "cybersecurity_strategy": "docs/HBCE_CYBERSECURITY_STRATEGY.md",
+    "data_protection_strategy": "docs/HBCE_DATA_PROTECTION_STRATEGY.md",
+    "information_governance_strategy": "docs/HBCE_INFORMATION_GOVERNANCE_STRATEGY.md"
   },
   "operational_invariants": [
     "AI JOKER-C2 is not a generic chatbot.",
@@ -839,8 +940,12 @@
     "CORPUS ESOTEROLOGIA ERMETICA provides the disciplinary grammar domain.",
     "APOKALYPSIS provides the historical threshold domain.",
     "HBCE ECOSISTEMA AI provides the AI governance ecosystem domain.",
+    "HBCE Cybersecurity Strategy provides defensive cybersecurity doctrine.",
+    "HBCE Data Protection Strategy provides data minimization and privacy doctrine.",
+    "HBCE Information Governance Strategy provides classification, circulation and proof-continuity doctrine.",
     "HBCE provides governance infrastructure.",
     "HBCE modules are technical-operational functions, not additional collections.",
+    "Strategic doctrine documents are not collections and are not HBCE modules.",
     "UNEBDO provides anchoring, validation and evidentiary continuity support.",
     "EVT provides event trace.",
     "Memory provides EVT/IPR-bound runtime continuity.",
@@ -861,7 +966,8 @@
     "Democratic choice content must not be linked to personal voter identity.",
     "U.S.E. must preserve identity-choice separation, anonymity, auditability and institutional legality.",
     "Module awareness must not collapse HBCE modules into political domains or book collections.",
-    "Project-domain awareness must not collapse project collections into HBCE technical modules."
+    "Project-domain awareness must not collapse project collections into HBCE technical modules.",
+    "Strategic doctrine must not be presented as legal certification, regulatory approval or official adoption unless externally validated."
   ],
-  "final_definition": "AI JOKER-C2 is the governed runtime demonstrator for IPR inside the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS and HBCE ECOSISTEMA AI through governed AI execution, IPR identity, EVT continuity, EVT/IPR-bound memory, OPC proof receipts, seven HBCE technical-operational modules, verification and fail-closed control."
+  "final_definition": "AI JOKER-C2 is the governed runtime demonstrator for IPR inside the HERMETICUM B.C.E. ecosystem, designed to connect MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS and HBCE ECOSISTEMA AI through governed AI execution, IPR identity, EVT continuity, EVT/IPR-bound memory, OPC proof receipts, seven HBCE technical-operational modules, strategic doctrine documents, verification and fail-closed control."
 }
