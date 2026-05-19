@@ -7,7 +7,7 @@ AI JOKER-C2 è il runtime dimostrativo governato dell’IPR — Identity Primary
 
 Il sistema estende l’interazione AI ordinaria con identità operativa, governance runtime, continuità evento, memoria legata a EVT/IPR, proof receipt OPC, classificazione dei domini progettuali, classificazione dei moduli HBCE e registri orientati all’audit.
 
-AI JOKER-C2 opera su cinque collane progettuali canoniche e attraverso sette moduli tecnico-operativi HBCE.
+AI JOKER-C2 opera su cinque collane progettuali canoniche, attraverso sette moduli tecnico-operativi HBCE e sotto tre documenti dottrinali strategici.
 
 ## 1. Stato del progetto
 
@@ -29,7 +29,7 @@ Firma di ricerca: HBCE Research
 Localizzazione: Torino, Italy, Europe
 ```
 
-AI JOKER-C2 non è pensato come chatbot generico. È un dimostratore runtime governato che mostra come una interazione AI possa essere collegata a identità operativa, classificazione, policy, rischio, decisione, evento, memoria, prova e audit.
+AI JOKER-C2 non è pensato come chatbot generico. È un dimostratore runtime governato che mostra come una interazione AI possa essere collegata a identità operativa, classificazione, policy, rischio, supervisione umana, decisione, evento, memoria, prova e audit.
 
 La funzione centrale è dimostrare IPR in esecuzione.
 
@@ -59,6 +59,14 @@ APOKALYPSIS          = dominio di analisi della soglia storica
 HBCE ECOSISTEMA AI   = collana di governance dell’intelligenza artificiale
 ```
 
+La gerarchia operativa del repository è:
+
+```text
+5 collane progettuali canoniche
++ 7 moduli tecnico-operativi HBCE
++ 3 documenti dottrinali strategici
+```
+
 ## 3. Cinque collane progettuali canoniche
 
 AI JOKER-C2 opera come connettore runtime per cinque collane progettuali canoniche:
@@ -84,6 +92,8 @@ MATRIX risponde alla domanda:
 ```text
 Come può l’Europa costruire sistemi operativi verificabili per AI, governance, dati, energia, sicurezza e continuità istituzionale?
 ```
+
+MATRIX ha anche una seconda funzione: come settimo modulo HBCE, organizza e coordina lo stack tecnico-operativo.
 
 ### 3.2 U.S.E. — United States of Europe
 
@@ -175,6 +185,13 @@ Volume II spiega IPR come identità operativa di AI, agenti, operatori e process
 Volume III spiega EVT e OPC come livelli di traccia e prova dell’uso AI.
 Volume IV inserisce AI governance dentro MATRIX, cybersecurity, dati, infrastrutture e sovranità digitale europea.
 Volume V presenta AI JOKER-C2 come runtime governato e dimostratore operativo dell’ecosistema HBCE.
+```
+
+Boundary centrale:
+
+```text
+Il modello AI non governa HBCE.
+HBCE governa l’uso dei modelli AI.
 ```
 
 ## 4. Sette moduli tecnico-operativi HBCE
@@ -288,7 +305,106 @@ MATRIX come collana = architettura strategica e progettuale.
 MATRIX come modulo = coordinatore tecnico-operativo del sistema HBCE.
 ```
 
-## 5. Architettura runtime
+## 5. Tre documenti dottrinali strategici
+
+AI JOKER-C2 è supportato da tre documenti dottrinali strategici:
+
+```text
+1. HBCE Cybersecurity Strategy
+2. HBCE Data Protection Strategy
+3. HBCE Information Governance Strategy
+```
+
+Questi documenti non sono collane e non sono moduli HBCE.
+
+Sono documenti dottrinali trasversali che rafforzano il posizionamento difensivo, la protezione dati, la governance informativa, l’auditabilità e la leggibilità istituzionale del sistema.
+
+### 5.1 HBCE Cybersecurity Strategy
+
+File:
+
+```text
+docs/HBCE_CYBERSECURITY_STRATEGY.md
+```
+
+Funzione:
+
+```text
+definisce la postura difensiva cyber, la resilienza, la documentazione incidenti, la continuità delle infrastrutture critiche e la governance AI/cyber.
+```
+
+Moduli collegati:
+
+```text
+CyberGlobal;
+MATRIX;
+OPC;
+UNEBDO;
+IOspace;
+MetaExchange;
+NeuroLoop.
+```
+
+### 5.2 HBCE Data Protection Strategy
+
+File:
+
+```text
+docs/HBCE_DATA_PROTECTION_STRATEGY.md
+```
+
+Funzione:
+
+```text
+definisce minimizzazione, classificazione dati, privacy, retention, controllo accessi, redazione, esposizione pubblica sicura e auditabilità.
+```
+
+Moduli e layer collegati:
+
+```text
+IPR;
+EVT;
+Memory;
+OPC;
+IOspace;
+MetaExchange;
+MATRIX.
+```
+
+### 5.3 HBCE Information Governance Strategy
+
+File:
+
+```text
+docs/HBCE_INFORMATION_GOVERNANCE_STRATEGY.md
+```
+
+Funzione:
+
+```text
+definisce classificazione informazioni, circolazione controllata, proof continuity, metadata pubblici e interni, auditabilità e responsabilità informativa.
+```
+
+Moduli collegati:
+
+```text
+MATRIX;
+MetaExchange;
+IOspace;
+NeuroLoop;
+OPC;
+IPR;
+EVT;
+Memory.
+```
+
+Regola dottrinale centrale:
+
+```text
+L’informazione non deve circolare senza identità, contesto, classificazione, policy, traccia e responsabilità.
+```
+
+## 6. Architettura runtime
 
 AI JOKER-C2 usa una sequenza runtime governata.
 
@@ -298,6 +414,8 @@ input
 → context classification
 → project-domain classification
 → HBCE module classification
+→ data classification
+→ file policy
 → policy evaluation
 → risk evaluation
 → human oversight evaluation
@@ -311,7 +429,7 @@ input
 
 Il runtime non produce soltanto una risposta. Produce una traccia operativa collegata a identità, evento, memoria, prova e audit.
 
-## 6. IPR — Identity Primary Record
+## 7. IPR — Identity Primary Record
 
 IPR è lo strumento operativo primario.
 
@@ -345,7 +463,7 @@ organization: HERMETICUM B.C.E. S.r.l.
 runtimeRole: IPR_RUNTIME_DEMONSTRATOR
 ```
 
-## 7. EVT — Event Record / Verifiable Event Trace
+## 8. EVT — Event Record / Verifiable Event Trace
 
 EVT è il livello di evento, traccia e continuità verificabile.
 
@@ -372,7 +490,7 @@ EVT non crea certificazione legale automatica.
 
 EVT fornisce una traccia tecnica verificabile connessa a identità IPR e continuità runtime.
 
-## 8. Memoria legata a EVT/IPR
+## 9. Memoria legata a EVT/IPR
 
 AI JOKER-C2 usa la memoria come traccia operativa, non come memoria vaga di chat.
 
@@ -397,7 +515,7 @@ OPC proof reference.
 
 Questo permette al runtime di mantenere continuità tra interazioni, documenti, domini progettuali, moduli HBCE e proof receipt.
 
-## 9. OPC — Operational Proof & Compliance
+## 10. OPC — Operational Proof & Compliance
 
 OPC genera proof receipt per le risposte runtime.
 
@@ -429,7 +547,7 @@ OPC produce una prova tecnica orientata all’audit.
 
 Non produce automaticamente certificazione legale, validazione istituzionale o riconoscimento regolatorio.
 
-## 10. Flusso operativo HBCE v0.2
+## 11. Flusso operativo HBCE v0.2
 
 ```text
 1. Ricezione input utente e file
@@ -453,9 +571,9 @@ Non produce automaticamente certificazione legale, validazione istituzionale o r
 19. Restituzione risposta + EVT + memoria + proof receipt
 ```
 
-## 11. Route API principali
+## 12. Route API principali
 
-### 11.1 Chat runtime
+### 12.1 Chat runtime
 
 ```text
 POST /api/chat
@@ -474,13 +592,14 @@ classificazione dominio progettuale;
 classificazione modulo HBCE;
 recupero memoria;
 policy/risk evaluation;
+human oversight evaluation;
 generazione risposta AI;
 generazione EVT;
 generazione memoria;
 generazione proof receipt OPC.
 ```
 
-### 11.2 OPC proof endpoint
+### 12.2 OPC proof endpoint
 
 ```text
 GET /api/opc
@@ -507,7 +626,7 @@ append-only database;
 controlled audit storage.
 ```
 
-### 11.3 File context endpoint
+### 12.3 File context endpoint
 
 ```text
 POST /api/files
@@ -516,7 +635,7 @@ DELETE /api/files
 
 Usato dall’interfaccia per caricare e cancellare file di sessione.
 
-## 12. Interfaccia utente
+## 13. Interfaccia utente
 
 Interfaccia principale:
 
@@ -532,7 +651,9 @@ runtime state;
 runtime decision;
 IPR identity;
 project domain;
+active domains;
 HBCE module;
+active modules;
 context class;
 last EVT;
 last EVT hash;
@@ -552,6 +673,7 @@ Ogni risposta può mostrare:
 ```text
 EVT Chain;
 Governed EVT;
+HBCE Module;
 EVT/IPR Memory;
 OPC Proof Receipt.
 ```
@@ -567,7 +689,7 @@ audit;
 continuità.
 ```
 
-## 13. Esempio di proof flow visibile
+## 14. Esempio di proof flow visibile
 
 ```text
 EVT Chain
@@ -604,7 +726,7 @@ proof receipt OPC;
 record auditabile.
 ```
 
-## 14. Variabili ambiente
+## 15. Variabili ambiente
 
 Richiesta:
 
@@ -642,7 +764,7 @@ Storage memoria EVT opzionale:
 JOKER_EVT_MEMORY_LEDGER_FILE
 ```
 
-## 15. Sviluppo locale
+## 16. Sviluppo locale
 
 Installazione dipendenze:
 
@@ -668,7 +790,7 @@ Avvio produzione:
 npm run start
 ```
 
-## 16. File principali del runtime
+## 17. File principali del runtime
 
 ```text
 app/api/chat/route.ts
@@ -691,22 +813,35 @@ lib/risk-engine.ts
 lib/human-oversight.ts
 lib/runtime-decision.ts
 lib/runtime-types.ts
+lib/runtime-identity.ts
+lib/joker-prompt.ts
 lib/joker-response-contract.ts
 ```
 
-## 17. Documentazione consigliata
+## 18. Documentazione principale
 
 ```text
+README.md
+ARCHITECTURE.md
+GOVERNANCE.md
+PROTOCOL.md
+EVT_PROTOCOL.md
+COMPLIANCE.md
+SECURITY.md
+DUAL_USE_STRATEGIC_POSITIONING.md
+ROADMAP.md
+CONTRIBUTING.md
+system/system-manifest.json
 docs/HBCE_OPERATIONAL_STACK.md
 docs/HBCE_MODULES_RUNTIME_MAP.md
 docs/FIVE_COLLECTIONS_RUNTIME_MAP.md
 docs/HBCE_ECOSISTEMA_AI_COLLECTION.md
-docs/IPR_RUNTIME_DEMONSTRATOR.md
-docs/OPC_PROOF_LAYER.md
-docs/JOKER_C2_AUDIT_RUNTIME.md
+docs/HBCE_CYBERSECURITY_STRATEGY.md
+docs/HBCE_DATA_PROTECTION_STRATEGY.md
+docs/HBCE_INFORMATION_GOVERNANCE_STRATEGY.md
 ```
 
-## 18. Forma concettuale di un proof receipt OPC
+## 19. Forma concettuale di un proof receipt OPC
 
 ```json
 {
@@ -766,7 +901,7 @@ docs/JOKER_C2_AUDIT_RUNTIME.md
 }
 ```
 
-## 19. Limiti di governance
+## 20. Limiti di governance
 
 AI JOKER-C2 è un runtime tecnico e di ricerca.
 
@@ -808,7 +943,7 @@ logging policy;
 retention policy.
 ```
 
-## 20. Boundary AI governance
+## 21. Boundary AI governance
 
 AI JOKER-C2 può usare modelli AI esterni come motori di generazione, ma HBCE deve rimanere il livello di governance intorno al modello.
 
@@ -841,7 +976,7 @@ modelli futuri proprietari HBCE;
 architetture ibride.
 ```
 
-## 21. Boundary voto digitale e interazione civica
+## 22. Boundary voto digitale e interazione civica
 
 AI JOKER-C2 può trattare voto digitale, consultazione pubblica e interazione civica solo con salvaguardie democratiche forti.
 
@@ -875,7 +1010,7 @@ OPC può produrre proof receipt per le operazioni.
 
 Il contenuto della scelta non deve essere collegato all’identità personale.
 
-## 22. Valore economico e istituzionale
+## 23. Valore economico e istituzionale
 
 Lo stack HBCE / IPR / EVT / OPC può sostenere un livello professionale e istituzionale per:
 
@@ -917,12 +1052,12 @@ Il primo prodotto operativo resta IPR.
 
 AI JOKER-C2 supporta questa posizione mostrando come IPR può funzionare dentro un runtime AI governato.
 
-## 23. Posizionamento strategico
+## 24. Posizionamento strategico
 
 Dichiarazione professionale:
 
 ```text
-AI JOKER-C2 è il runtime dimostrativo governato dell’IPR all’interno dell’ecosistema HBCE. Estende l’interazione AI standard con governance runtime verificabile: ogni interazione rilevante può essere collegata a un’identità operativa, registrata come evento, inserita in una catena di continuità, collegata a memoria EVT/IPR, trasformata in proof receipt OPC, classificata rispetto alle cinque collane canoniche, collegata ai sette moduli tecnico-operativi HBCE ed esposta tramite un’interfaccia orientata all’audit.
+AI JOKER-C2 è il runtime dimostrativo governato dell’IPR all’interno dell’ecosistema HBCE. Estende l’interazione AI standard con governance runtime verificabile: ogni interazione rilevante può essere collegata a un’identità operativa, registrata come evento, inserita in una catena di continuità, collegata a memoria EVT/IPR, trasformata in proof receipt OPC, classificata rispetto alle cinque collane canoniche, collegata ai sette moduli tecnico-operativi HBCE, supportata da tre documenti dottrinali strategici ed esposta tramite un’interfaccia orientata all’audit.
 ```
 
 Gerarchia sintetica:
@@ -946,7 +1081,7 @@ APOKALYPSIS legge la soglia storica.
 HBCE ECOSISTEMA AI governa l’intelligenza artificiale come processo operativo.
 ```
 
-## 24. Milestone corrente
+## 25. Milestone corrente
 
 Milestone corrente raggiunta:
 
@@ -983,7 +1118,15 @@ NeuroLoop
 MATRIX
 ```
 
-## 25. Roadmap successiva
+Il sistema include inoltre tre documenti dottrinali strategici:
+
+```text
+HBCE Cybersecurity Strategy
+HBCE Data Protection Strategy
+HBCE Information Governance Strategy
+```
+
+## 26. Roadmap successiva
 
 Passi consigliati:
 
@@ -1001,13 +1144,14 @@ Passi consigliati:
 11. Aggiungere componente RuntimeStatusPanel
 12. Aggiungere dashboard IOspace
 13. Aggiungere modulo runtime IPR
-14. Aggiungere mappa cinque collane
-15. Aggiungere mappa sette moduli HBCE
-16. Aggiungere mappa HBCE ECOSISTEMA AI
-17. Aggiungere diagnostica AI governance
+14. Rafforzare mappa cinque collane
+15. Rafforzare mappa sette moduli HBCE
+16. Rafforzare mappa HBCE ECOSISTEMA AI
+17. Rafforzare diagnostica AI governance
 18. Aggiungere metadata provider-modello AI
 19. Aggiungere profilo audit AI/cyber
 20. Aggiungere workflow B2B/B2G IPR AI Audit Trail
+21. Integrare pacchetti strategici Cybersecurity, Data Protection e Information Governance
 ```
 
 File futuri consigliati:
@@ -1029,9 +1173,12 @@ docs/JOKER_C2_AUDIT_RUNTIME.md
 docs/FIVE_COLLECTIONS_RUNTIME_MAP.md
 docs/HBCE_MODULES_RUNTIME_MAP.md
 docs/HBCE_ECOSISTEMA_AI_COLLECTION.md
+docs/HBCE_CYBERSECURITY_STRATEGY.md
+docs/HBCE_DATA_PROTECTION_STRATEGY.md
+docs/HBCE_INFORMATION_GOVERNANCE_STRATEGY.md
 ```
 
-## 26. Licenza e uso
+## 27. Licenza e uso
 
 Questo repository fa parte dell’ecosistema di ricerca e sviluppo HERMETICUM B.C.E.
 
@@ -1045,7 +1192,7 @@ AI JOKER-C2
 IPR — Identity Primary Record
 ```
 
-## 27. Nota finale
+## 28. Nota finale
 
 AI JOKER-C2 è un runtime di ricerca operativo in evoluzione.
 
@@ -1093,6 +1240,19 @@ CyberGlobal protegge.
 NeuroLoop valida.
 MATRIX organizza.
 AI JOKER-C2 esegue.
+```
+
+Formula finale della dottrina strategica:
+
+```text
+Cybersecurity Strategy protegge.
+Data Protection Strategy minimizza.
+Information Governance Strategy classifica e controlla la circolazione.
+HBCE governa.
+IPR identifica.
+EVT traccia.
+OPC prova.
+MATRIX organizza.
 ```
 
 Checkpoint canonico runtime:
