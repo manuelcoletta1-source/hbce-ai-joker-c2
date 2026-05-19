@@ -696,7 +696,7 @@ function normalizeHbceModuleClassification(input: {
   }
 
   if (isCanonicalStackQuestion(input.message)) {
-    const activeModules = new Set<HbceModuleValue>(base.activeModules || []);
+    const activeModules = new Set<HbceModuleValue>(base.activeModules);
 
     if (text.includes("opc")) activeModules.add("OPC");
     if (text.includes("cyber") || text.includes("sicurezza")) {
@@ -744,11 +744,25 @@ function normalizeHbceModuleClassification(input: {
     input.contextClass === "USE" ||
     input.contextClass === "DEMOCRATIC_INFRASTRUCTURE"
   ) {
-    const module = base.module === "NONE" ? "UNEBDO" : base.module;
-    const activeModules =
+    const module: HbceModuleValue =
+      base.module === "NONE" ? "UNEBDO" : base.module;
+
+    const activeModules: HbceModuleValue[] =
       base.activeModules.length > 0 && !base.activeModules.includes("NONE")
-        ? Array.from(new Set([...base.activeModules, "MATRIX" as HbceModuleValue]))
-        : ["UNEBDO", "OPC", "MetaExchange", "CyberGlobal", "NeuroLoop", "MATRIX"];
+        ? Array.from(
+            new Set<HbceModuleValue>([
+              ...base.activeModules,
+              "MATRIX"
+            ])
+          )
+        : [
+            "UNEBDO",
+            "OPC",
+            "MetaExchange",
+            "CyberGlobal",
+            "NeuroLoop",
+            "MATRIX"
+          ];
 
     return withHbceModuleOverride(
       base,
