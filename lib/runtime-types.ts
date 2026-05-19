@@ -23,10 +23,11 @@
  * Canonical hierarchy:
  * - IPR = primary operational identity and proof instrument
  * - AI JOKER-C2 = governed runtime demonstrator
- * - MATRIX = operational infrastructure architecture
+ * - MATRIX = project collection, architectural framework and HBCE coordination module
  * - U.S.E. = MATRIX-derived political-institutional application
  * - CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar
  * - APOKALYPSIS = historical threshold analysis
+ * - HBCE_ECOSISTEMA_AI = AI governance ecosystem collection
  * - UNEBDO = anchoring, validation and evidentiary continuity
  * - EVT = event trace
  * - EVT/IPR memory = runtime continuity
@@ -72,6 +73,7 @@ export type ProjectDomain =
   | "U.S.E."
   | "CORPUS_ESOTEROLOGIA_ERMETICA"
   | "APOKALYPSIS"
+  | "HBCE_ECOSISTEMA_AI"
   | "GENERAL"
   | "MULTI_DOMAIN";
 
@@ -79,13 +81,15 @@ export type PrimaryProjectDomain =
   | "MATRIX"
   | "U.S.E."
   | "CORPUS_ESOTEROLOGIA_ERMETICA"
-  | "APOKALYPSIS";
+  | "APOKALYPSIS"
+  | "HBCE_ECOSISTEMA_AI";
 
 export type DomainType =
   | "OPERATIONAL_INFRASTRUCTURE_DOMAIN"
   | "FEDERATED_EUROPEAN_INSTITUTIONAL_APPLICATION_DOMAIN"
   | "DISCIPLINARY_GRAMMAR_DOMAIN"
   | "HISTORICAL_THRESHOLD_ANALYSIS_DOMAIN"
+  | "AI_GOVERNANCE_ECOSYSTEM_DOMAIN"
   | "GENERAL_CONTEXT"
   | "ECOSYSTEM_OPERATION";
 
@@ -96,6 +100,7 @@ export type HbceModule =
   | "IOspace"
   | "CyberGlobal"
   | "NeuroLoop"
+  | "MATRIX"
   | "NONE";
 
 export type PrimaryHbceModule =
@@ -104,7 +109,8 @@ export type PrimaryHbceModule =
   | "MetaExchange"
   | "IOspace"
   | "CyberGlobal"
-  | "NeuroLoop";
+  | "NeuroLoop"
+  | "MATRIX";
 
 export type HbceModuleType =
   | "ANCHORING_VALIDATION_CONTINUITY_LAYER"
@@ -113,6 +119,7 @@ export type HbceModuleType =
   | "RUNTIME_VISIBILITY_INTERACTION_LAYER"
   | "DEFENSIVE_CYBERSECURITY_RESILIENCE_LAYER"
   | "VALIDATION_FEEDBACK_REVIEW_LOOP"
+  | "SYSTEM_COORDINATION_ORGANIZATION_LAYER"
   | "NO_MODULE";
 
 export type HbceModuleStatus =
@@ -129,6 +136,7 @@ export type ContextClass =
   | "USE"
   | "CORPUS"
   | "APOKALYPSIS"
+  | "HBCE_ECOSISTEMA_AI"
   | "DOCUMENTAL"
   | "TECHNICAL"
   | "GITHUB"
@@ -712,6 +720,7 @@ export const PROJECT_DOMAINS: ProjectDomain[] = [
   "U.S.E.",
   "CORPUS_ESOTEROLOGIA_ERMETICA",
   "APOKALYPSIS",
+  "HBCE_ECOSISTEMA_AI",
   "GENERAL",
   "MULTI_DOMAIN"
 ];
@@ -720,7 +729,8 @@ export const PRIMARY_PROJECT_DOMAINS: PrimaryProjectDomain[] = [
   "MATRIX",
   "U.S.E.",
   "CORPUS_ESOTEROLOGIA_ERMETICA",
-  "APOKALYPSIS"
+  "APOKALYPSIS",
+  "HBCE_ECOSISTEMA_AI"
 ];
 
 export const DOMAIN_TYPES: DomainType[] = [
@@ -728,6 +738,7 @@ export const DOMAIN_TYPES: DomainType[] = [
   "FEDERATED_EUROPEAN_INSTITUTIONAL_APPLICATION_DOMAIN",
   "DISCIPLINARY_GRAMMAR_DOMAIN",
   "HISTORICAL_THRESHOLD_ANALYSIS_DOMAIN",
+  "AI_GOVERNANCE_ECOSYSTEM_DOMAIN",
   "GENERAL_CONTEXT",
   "ECOSYSTEM_OPERATION"
 ];
@@ -739,6 +750,7 @@ export const HBCE_MODULES: HbceModule[] = [
   "IOspace",
   "CyberGlobal",
   "NeuroLoop",
+  "MATRIX",
   "NONE"
 ];
 
@@ -748,7 +760,8 @@ export const PRIMARY_HBCE_MODULES: PrimaryHbceModule[] = [
   "MetaExchange",
   "IOspace",
   "CyberGlobal",
-  "NeuroLoop"
+  "NeuroLoop",
+  "MATRIX"
 ];
 
 export const HBCE_MODULE_TYPES: HbceModuleType[] = [
@@ -758,6 +771,7 @@ export const HBCE_MODULE_TYPES: HbceModuleType[] = [
   "RUNTIME_VISIBILITY_INTERACTION_LAYER",
   "DEFENSIVE_CYBERSECURITY_RESILIENCE_LAYER",
   "VALIDATION_FEEDBACK_REVIEW_LOOP",
+  "SYSTEM_COORDINATION_ORGANIZATION_LAYER",
   "NO_MODULE"
 ];
 
@@ -776,6 +790,7 @@ export const CONTEXT_CLASSES: ContextClass[] = [
   "USE",
   "CORPUS",
   "APOKALYPSIS",
+  "HBCE_ECOSISTEMA_AI",
   "DOCUMENTAL",
   "TECHNICAL",
   "GITHUB",
@@ -966,7 +981,7 @@ export const CANONICAL_IPR_RUNTIME_IDENTITY: IprRuntimeIdentity = {
   entity: "AI_JOKER",
   system: "AI_JOKER-C2",
   ipr: "IPR-AI-0001",
-  checkpoint: "EVT-0014-AI",
+  checkpoint: "EVT-0015-AI",
   core: "HBCE-CORE-v3",
   organization: "HERMETICUM B.C.E. S.r.l.",
   runtimeRole: "IPR_RUNTIME_DEMONSTRATOR"
@@ -974,6 +989,9 @@ export const CANONICAL_IPR_RUNTIME_IDENTITY: IprRuntimeIdentity = {
 
 export const USE_DEMOCRATIC_BOUNDARY =
   "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
+
+export const HBCE_AI_CANONICAL_FORMULA =
+  "AI generates. HBCE governs. IPR identifies. EVT traces. OPC proves. MATRIX organizes. AI JOKER-C2 executes.";
 
 export const HBCE_MODULE_BOUNDARIES: Record<HbceModule, string> = {
   UNEBDO:
@@ -988,6 +1006,8 @@ export const HBCE_MODULE_BOUNDARIES: Record<HbceModule, string> = {
     "CyberGlobal must remain defensive, audit-oriented, governance-oriented and non-offensive.",
   NeuroLoop:
     "NeuroLoop is not autonomous authority and must not become uncontrolled learning or unsupervised decision execution.",
+  MATRIX:
+    "MATRIX organizes the HBCE operational stack. As a module, it coordinates identity, events, proofs, memory, runtime, governance and system architecture. As a collection, it remains the broader strategic and infrastructural framework.",
   NONE: "No HBCE module is active."
 };
 
@@ -998,6 +1018,19 @@ export const HBCE_MODULE_DEPENDENCIES: Record<HbceModule, string[]> = {
   IOspace: ["IPR", "EVT", "EVT_IPR_BOUND_MEMORY", "OPC"],
   CyberGlobal: ["IPR", "EVT", "OPC", "POLICY", "RISK", "HUMAN_OVERSIGHT"],
   NeuroLoop: ["IPR", "EVT", "EVT_IPR_BOUND_MEMORY", "OPC", "HUMAN_OVERSIGHT", "AUDIT"],
+  MATRIX: [
+    "IPR",
+    "UNEBDO",
+    "EVT",
+    "EVT_IPR_BOUND_MEMORY",
+    "OPC",
+    "MetaExchange",
+    "IOspace",
+    "CyberGlobal",
+    "NeuroLoop",
+    "AI_JOKER_C2",
+    "HBCE"
+  ],
   NONE: []
 };
 
@@ -1121,6 +1154,8 @@ export function getDomainTypeForProjectDomain(
       return "DISCIPLINARY_GRAMMAR_DOMAIN";
     case "APOKALYPSIS":
       return "HISTORICAL_THRESHOLD_ANALYSIS_DOMAIN";
+    case "HBCE_ECOSISTEMA_AI":
+      return "AI_GOVERNANCE_ECOSYSTEM_DOMAIN";
     case "MULTI_DOMAIN":
       return "ECOSYSTEM_OPERATION";
     case "GENERAL":
@@ -1139,6 +1174,8 @@ export function getProjectDomainLabel(domain: ProjectDomain): string {
       return "CORPUS ESOTEROLOGIA ERMETICA";
     case "APOKALYPSIS":
       return "APOKALYPSIS";
+    case "HBCE_ECOSISTEMA_AI":
+      return "HBCE ECOSISTEMA AI";
     case "MULTI_DOMAIN":
       return "MULTI_DOMAIN";
     case "GENERAL":
@@ -1161,6 +1198,8 @@ export function getHbceModuleType(module: HbceModule): HbceModuleType {
       return "DEFENSIVE_CYBERSECURITY_RESILIENCE_LAYER";
     case "NeuroLoop":
       return "VALIDATION_FEEDBACK_REVIEW_LOOP";
+    case "MATRIX":
+      return "SYSTEM_COORDINATION_ORGANIZATION_LAYER";
     case "NONE":
     default:
       return "NO_MODULE";
@@ -1170,6 +1209,7 @@ export function getHbceModuleType(module: HbceModule): HbceModuleType {
 export function getHbceModuleStatus(module: HbceModule): HbceModuleStatus {
   switch (module) {
     case "OPC":
+    case "MATRIX":
       return "ACTIVE_PROTOTYPE_LAYER";
     case "IOspace":
       return "PLANNED_INTERFACE_LAYER";
@@ -1198,6 +1238,8 @@ export function getHbceModuleLabel(module: HbceModule): string {
       return "CyberGlobal";
     case "NeuroLoop":
       return "NeuroLoop";
+    case "MATRIX":
+      return "MATRIX — System Coordination & Organization Layer";
     case "NONE":
     default:
       return "NONE";
@@ -1218,6 +1260,8 @@ export function getHbceModuleShortDefinition(module: HbceModule): string {
       return "Defensive cybersecurity and resilience layer.";
     case "NeuroLoop":
       return "Validation, feedback and controlled review loop.";
+    case "MATRIX":
+      return "Operational coordination, organization and system architecture layer for the HBCE stack.";
     case "NONE":
     default:
       return "No HBCE module is active.";
@@ -1238,6 +1282,8 @@ export function getHbceModuleRuntimeQuestion(module: HbceModule): string {
       return "How can defensive cybersecurity, resilience and risk mapping be supported without offensive capability?";
     case "NeuroLoop":
       return "How can validation, feedback and review loops improve decisions without becoming autonomous authority?";
+    case "MATRIX":
+      return "How can the runtime organize identity, events, memory, proofs, modules and project domains into one coherent operational architecture?";
     case "NONE":
     default:
       return "Does this request require an HBCE module binding?";
@@ -1274,7 +1320,8 @@ export function createProjectBinding(
               "MATRIX",
               "U.S.E.",
               "CORPUS_ESOTEROLOGIA_ERMETICA",
-              "APOKALYPSIS"
+              "APOKALYPSIS",
+              "HBCE_ECOSISTEMA_AI"
             ],
       domain_type: domainType,
       label: "MULTI_DOMAIN"
@@ -1290,8 +1337,13 @@ export function createProjectBinding(
     canonical_formula:
       domain === "CORPUS_ESOTEROLOGIA_ERMETICA"
         ? "Decisione · Costo · Traccia · Tempo"
+        : domain === "HBCE_ECOSISTEMA_AI"
+          ? HBCE_AI_CANONICAL_FORMULA
+          : undefined,
+    parent_domain:
+      domain === "U.S.E." || domain === "HBCE_ECOSISTEMA_AI"
+        ? "MATRIX"
         : undefined,
-    parent_domain: domain === "U.S.E." ? "MATRIX" : undefined,
     democratic_boundary:
       domain === "U.S.E." ? USE_DEMOCRATIC_BOUNDARY : undefined
   };
