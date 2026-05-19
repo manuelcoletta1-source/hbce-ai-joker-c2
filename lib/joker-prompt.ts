@@ -12,6 +12,7 @@ import type { DocumentFamily, EvtMemoryFile } from "./evt-memory";
 import type {
   ContextClass,
   DataClassification,
+  HbceModuleClassification,
   IntentClass,
   OversightEvaluation,
   PolicyEvaluation,
@@ -32,6 +33,7 @@ export type DocumentMode =
 
 export type GovernanceFrame = {
   projectDomain: ProjectDomainClassification;
+  hbceModule?: HbceModuleClassification;
   contextClass: ContextClass;
   intentClass: IntentClass;
   data: DataClassification;
@@ -56,6 +58,12 @@ export type JokerRuntimeIdentity = {
 type PromptFileInput = EvtMemoryFile;
 
 const MAX_FILE_CONTEXT_CHARS = 72000;
+
+const USE_DEMOCRATIC_BOUNDARY =
+  "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
+
+const HBCE_AI_BOUNDARY =
+  "The AI model does not govern HBCE. HBCE governs the use of AI models.";
 
 function normalizeForRuleMatch(value: string): string {
   return value
@@ -198,7 +206,11 @@ export function isEconomicGovernanceQuestion(message: string): boolean {
     "identità operativa",
     "traccia verificabile",
     "audit",
-    "governance"
+    "governance",
+    "hbce ecosistema ai",
+    "ai governance",
+    "governance ai",
+    "ipr ai audit trail"
   ];
 
   const economicTerms = [
@@ -310,6 +322,40 @@ export function isCivicDigitalParticipationQuestion(message: string): boolean {
   );
 }
 
+export function isHbceAiGovernanceQuestion(message: string): boolean {
+  const lower = normalizeForRuleMatch(message);
+
+  const terms = [
+    "hbce ecosistema ai",
+    "ecosistema ai",
+    "governance ai",
+    "ai governance",
+    "governance dell ai",
+    "governo dell ai",
+    "governare l ai",
+    "ai audit",
+    "audit ai",
+    "ipr ai audit trail",
+    "model governance",
+    "governance modelli",
+    "modelli ai esterni",
+    "external ai models",
+    "openai",
+    "anthropic",
+    "claude",
+    "google ai",
+    "gemini",
+    "meta ai",
+    "llama",
+    "mistral",
+    "runtime ai governato",
+    "runtime governato ai",
+    "matrix ai governance"
+  ];
+
+  return terms.some((term) => lower.includes(term)) && !containsUnsafeOperationalTerm(message);
+}
+
 export function buildSafeIdentityProjectDomain(): ProjectDomainClassification {
   return {
     projectDomain: "MATRIX",
@@ -323,8 +369,31 @@ export function buildSafeIdentityProjectDomain(): ProjectDomainClassification {
     ],
     scores: {
       MATRIX: 10,
+      "U.S.E.": 0,
       CORPUS_ESOTEROLOGIA_ERMETICA: 0,
-      APOKALYPSIS: 0
+      APOKALYPSIS: 0,
+      HBCE_ECOSISTEMA_AI: 0
+    }
+  };
+}
+
+export function buildSafeHbceAiProjectDomain(): ProjectDomainClassification {
+  return {
+    projectDomain: "HBCE_ECOSISTEMA_AI",
+    activeDomains: ["HBCE_ECOSISTEMA_AI", "MATRIX"],
+    primaryDomain: "HBCE_ECOSISTEMA_AI",
+    domainType: "AI_GOVERNANCE_ECOSYSTEM_DOMAIN",
+    confidence: 0.97,
+    reasons: [
+      "Safe HBCE ECOSISTEMA AI / AI governance explanation detected.",
+      "The request belongs to the fifth canonical project collection and remains linked to MATRIX as parent architecture."
+    ],
+    scores: {
+      MATRIX: 4,
+      "U.S.E.": 0,
+      CORPUS_ESOTEROLOGIA_ERMETICA: 0,
+      APOKALYPSIS: 0,
+      HBCE_ECOSISTEMA_AI: 10
     }
   };
 }
@@ -335,6 +404,10 @@ export function normalizeProjectDomainClassification(input: {
 }): ProjectDomainClassification {
   if (isSafeIdentityGovernanceQuestion(input.message)) {
     return buildSafeIdentityProjectDomain();
+  }
+
+  if (isHbceAiGovernanceQuestion(input.message)) {
+    return buildSafeHbceAiProjectDomain();
   }
 
   const safeConcept = classifySafeConcept(input.message);
@@ -390,6 +463,18 @@ function detectKeywords(text: string): string[] {
   const keywords = [
     "matrix",
     "hbce",
+    "hbce ecosistema ai",
+    "ecosistema ai",
+    "ai governance",
+    "governance ai",
+    "ai audit",
+    "model governance",
+    "ipr ai audit trail",
+    "openai",
+    "anthropic",
+    "claude",
+    "gemini",
+    "mistral",
     "joker-c2",
     "ai joker-c2",
     "ipr",
@@ -673,7 +758,9 @@ export function shouldExposeTechnicalFrame(message: string): boolean {
     lower.includes("evt chain") ||
     lower.includes("ledger") ||
     lower.includes("governance frame") ||
-    lower.includes("project domain")
+    lower.includes("project domain") ||
+    lower.includes("hbce module") ||
+    lower.includes("modulo hbce")
   );
 }
 
@@ -703,7 +790,18 @@ function buildCanonicalDictionary(): string {
     "TRAC = livello di continuità degli eventi.",
     "EVT = Event Record / Verifiable Event Trace.",
     "EVT non è memoria psicologica: è una traccia operativa verificabile che collega identità, tempo, contesto, decisione, rischio, hash e continuità.",
-    "OPC = Operational Proof of Continuity: prova di continuità prodotta dal runtime per rendere verificabile la sequenza tra evento, memoria, decisione e audit.",
+    "OPC = Operational Proof & Compliance Layer: proof receipt tecnica prodotta dal runtime per rendere verificabile la sequenza tra evento, memoria, decisione e audit.",
+    "",
+    "Le cinque collane progettuali canoniche sono: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS, HBCE ECOSISTEMA AI.",
+    "I sette moduli tecnico-operativi HBCE sono: UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop, MATRIX.",
+    "MATRIX ha doppia funzione: come collana è architettura strategica e infrastrutturale; come modulo HBCE è livello di coordinamento e organizzazione dello stack.",
+    "Formula moduli: IPR identifica; UNEBDO ancora; EVT traccia; Memory continua; OPC prova; MetaExchange scambia; IOspace espone; CyberGlobal protegge; NeuroLoop valida; MATRIX organizza; AI JOKER-C2 esegue.",
+    "",
+    "HBCE ECOSISTEMA AI = quinta collana progettuale di governance dell'intelligenza artificiale.",
+    "Tesi HBCE ECOSISTEMA AI: il problema non è solo avere AI più potenti; il problema è governare l'AI dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili.",
+    "Formula HBCE ECOSISTEMA AI: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue.",
+    `Boundary AI governance: ${HBCE_AI_BOUNDARY}`,
+    "I modelli esterni, come OpenAI, Anthropic, Google, Meta o Mistral, possono generare output; HBCE resta il livello di governo dell'uso del modello.",
     "",
     "Biocybersecurity = sicurezza dell'accoppiamento organismo-sistema-AI: protegge il punto di contatto tra identità biologica, sistemi digitali, AI, sensori, robotica, droni, flotte, dati e continuità operativa.",
     "Quando IPR e biocybersecurity sono collegati, la risposta deve usare sempre la formula: IPR = identità operativa; EVT = traccia verificabile; MATRIX = infrastruttura; AI JOKER-C2 = runtime governato; Biocybersecurity = protezione dell'accoppiamento organismo-sistema-AI.",
@@ -713,7 +811,7 @@ function buildCanonicalDictionary(): string {
     "APOKALYPSIS = dominio storico di soglia: decadimento, esposizione, dislocazione cognitiva, rottura, Paradogma Alieno.",
     "",
     "Regola economico-strategica IPR/HBCE:",
-    "Quando l'utente chiede effetti economici, lavoro, impiego, filiera, imprese, aziende, governi, cittadini, audit o standard europei collegati a IPR/HBCE/EVT/MATRIX, non rispondere in modo generico.",
+    "Quando l'utente chiede effetti economici, lavoro, impiego, filiera, imprese, aziende, governi, cittadini, audit o standard europei collegati a IPR/HBCE/EVT/MATRIX/HBCE ECOSISTEMA AI, non rispondere in modo generico.",
     "Devi spiegare che IPR/HBCE può aprire una nuova filiera professionale: registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale.",
     "Devi includere quando pertinente: operatori di registrazione IPR, auditor EVT, integratori HBCE, tecnici di governance AI, consulenti B2B/B2G, responsabili di continuità operativa, verificatori documentali e specialisti di audit digitale.",
     "Distingui sempre tra potenzialità progettuale, implementazione tecnica, adozione di mercato, riconoscimento istituzionale e standardizzazione ufficiale.",
@@ -722,10 +820,8 @@ function buildCanonicalDictionary(): string {
     "Regola civica digitale / voto digitale:",
     "Quando l'utente chiede voto digitale, consultazioni pubbliche digitali, partecipazione civica digitale o interazione virtuale con le istituzioni, distingui sempre identità, diritto di accesso, scelta democratica, segretezza del voto e audit del processo.",
     "IPR può verificare identità e diritto di partecipazione, ma non deve collegare il contenuto del voto all'identità personale.",
-    "Formula corretta: identità verificata prima, scelta separata dopo, voto anonimizzato, processo auditabile.",
+    `Formula corretta: ${USE_DEMOCRATIC_BOUNDARY}`,
     "EVT può tracciare il processo elettorale o partecipativo: apertura sessione, verifica diritto, consegna scheda digitale, acquisizione, chiusura, integrità, audit tecnico e verifica del sistema. EVT non deve registrare il contenuto del voto associato alla persona.",
-    "Distingui voto elettorale da consultazione pubblica, partecipazione civica, accesso ai servizi pubblici e interazione documentale con le istituzioni.",
-    "Includi sempre i limiti democratici: segretezza del voto, protezione dati, verificabilità indipendente, accessibilità, sicurezza, controllo pubblico, revisione istituzionale e compatibilità normativa.",
     "",
     "Regola editoriale:",
     "Per APOKALYPSIS, CORPUS e MATRIX preserva Decisione · Costo · Traccia · Tempo quando pertinente.",
@@ -743,22 +839,30 @@ function buildEconomicGovernanceDirective(input: {
     input.frame.projectDomain.projectDomain === "MATRIX" ||
     input.frame.projectDomain.activeDomains.includes("MATRIX");
 
-  if (!isMatrixDomain && !isEconomicGovernanceQuestion(input.message)) {
+  const isHbceAiDomain =
+    input.frame.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI" ||
+    input.frame.projectDomain.activeDomains.includes("HBCE_ECOSISTEMA_AI");
+
+  if (
+    !isMatrixDomain &&
+    !isHbceAiDomain &&
+    !isEconomicGovernanceQuestion(input.message)
+  ) {
     return [
       "Direttiva economico-strategica MATRIX/HBCE:",
-      "Nessuna richiesta economica specifica su IPR, HBCE, EVT o MATRIX rilevata."
+      "Nessuna richiesta economica specifica su IPR, HBCE, EVT, MATRIX o HBCE ECOSISTEMA AI rilevata."
     ].join("\n");
   }
 
   return [
     "Direttiva economico-strategica MATRIX/HBCE:",
-    "Quando l'utente chiede effetti economici, occupazionali, industriali, istituzionali o strategici di IPR/HBCE/EVT/MATRIX, rispondi come analista di infrastruttura economico-tecnologica europea.",
+    "Quando l'utente chiede effetti economici, occupazionali, industriali, istituzionali o strategici di IPR/HBCE/EVT/MATRIX/HBCE ECOSISTEMA AI, rispondi come analista di infrastruttura economico-tecnologica europea.",
     "Non rispondere in modo generico. Devi spiegare la nuova filiera professionale e industriale che può nascere attorno a registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale.",
     "Devi includere, quando pertinenti: operatori di registrazione IPR, auditor EVT, integratori HBCE, tecnici di governance AI, consulenti B2B/B2G, responsabili di continuità operativa, verificatori documentali, specialisti di audit digitale, imprese, cittadini, pubbliche amministrazioni e governi.",
     "Spiega sempre che l'effetto economico è doppio: riduzione del rischio e creazione di una nuova fascia di lavoro e servizi.",
     "Distingui sempre tra potenzialità progettuale, implementazione tecnica, adozione di mercato, riconoscimento istituzionale e standardizzazione ufficiale.",
     "Non dire che HBCE è già inglobata nella governance nazionale o europea se non è dimostrato. Usa invece formule come: HBCE può proporsi come infrastruttura integrabile nella governance nazionale ed europea.",
-    "La risposta deve valorizzare IPR come livello di continuità operativa e non come semplice identità digitale; EVT come audit trail verificabile; MATRIX come infrastruttura; AI JOKER-C2 come runtime governato."
+    "La risposta deve valorizzare IPR come livello di continuità operativa; EVT come audit trail verificabile; OPC come proof receipt tecnica; MATRIX come infrastruttura e modulo di coordinamento; AI JOKER-C2 come runtime governato."
   ].join("\n");
 }
 
@@ -774,7 +878,7 @@ function buildCivicDigitalParticipationDirective(message: string): string {
     "Direttiva civica digitale / voto digitale:",
     "Quando l'utente chiede voto digitale, partecipazione civica digitale o interazione virtuale con le istituzioni, rispondi sempre distinguendo identità, diritto di accesso, scelta democratica, segretezza del voto e audit del processo.",
     "Non dire mai che ogni voto deve essere collegato in modo verificabile all'identità dell'elettore. Formula corretta: IPR può verificare identità e diritto di partecipazione, ma il contenuto del voto deve essere separato dall'identità personale.",
-    "La grammatica corretta è: identità verificata prima, scelta separata dopo, voto anonimizzato, processo auditabile.",
+    `La grammatica corretta è: ${USE_DEMOCRATIC_BOUNDARY}`,
     "EVT può tracciare il processo: apertura sessione, verifica diritto, consegna scheda digitale, acquisizione, chiusura, integrità, audit tecnico e verifica del sistema. EVT non deve registrare il contenuto del voto associato alla persona.",
     "Distingui sempre voto elettorale, consultazione pubblica, partecipazione civica, accesso a servizi pubblici e interazione documentale con le istituzioni.",
     "La risposta deve includere i limiti democratici fondamentali: segretezza del voto, protezione dei dati, verificabilità indipendente, accessibilità, sicurezza, controllo pubblico, revisione istituzionale e compatibilità normativa.",
@@ -803,7 +907,7 @@ function buildSafeConceptResponseDirective(message: string): string {
       "Formula obbligatoria da integrare nella risposta:",
       "IPR = identità operativa.",
       "EVT = traccia verificabile.",
-      "MATRIX = infrastruttura.",
+      "MATRIX = infrastruttura e modulo di coordinamento.",
       "AI JOKER-C2 = runtime governato.",
       "Biocybersecurity = protezione dell’accoppiamento organismo–sistema–AI.",
       "",
@@ -845,7 +949,7 @@ function buildSafeConceptResponseDirective(message: string): string {
     "La richiesta riguarda un concetto canonico o teorico del framework.",
     "Rispondi in modo concettuale, sicuro, difensivo e governato.",
     "Non attivare linguaggio operativo offensivo.",
-    "Preserva la distinzione: MATRIX = infrastruttura, CORPUS = grammatica, APOKALYPSIS = soglia, AI JOKER-C2 = runtime."
+    "Preserva la distinzione: MATRIX = infrastruttura e modulo di coordinamento; CORPUS = grammatica; APOKALYPSIS = soglia; HBCE ECOSISTEMA AI = governance AI; AI JOKER-C2 = runtime."
   ].join("\n");
 }
 
@@ -871,10 +975,35 @@ function buildProjectDomainDirective(frame: GovernanceFrame): string {
       "Direttiva dominio MATRIX:",
       "Rispondi in modo operativo, infrastrutturale e istituzionale.",
       "Valorizza AI governance, B2B, B2G, Europa, audit, sicurezza difensiva, tracciabilità, fail-closed ed EVT.",
+      "Ricorda la doppia funzione: MATRIX come collana è architettura strategica; MATRIX come modulo HBCE è coordinamento tecnico-operativo dello stack.",
       "Quando la richiesta riguarda economia, impiego, lavoro, imprese, aziende, governi, cittadini, registrazione IPR, audit o governance europea, devi spiegare la nuova filiera economica possibile: registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale.",
       "Quando la richiesta riguarda voto digitale, consultazione pubblica, partecipazione civica o istituzioni virtuali, devi distinguere identità verificata, diritto di accesso, scelta separata, voto anonimizzato e processo auditabile.",
       "Distingui sempre potenzialità, implementazione, mercato, riconoscimento istituzionale e standardizzazione ufficiale.",
       "Evita promesse di certificazione o adozione ufficiale se non dimostrate."
+    );
+  }
+
+  if (domain === "U.S.E.") {
+    header.push(
+      "",
+      "Direttiva dominio U.S.E.:",
+      "Rispondi come analista della federazione operativa europea.",
+      `Preserva sempre la regola democratica: ${USE_DEMOCRATIC_BOUNDARY}`,
+      "IPR può verificare identità e diritto di partecipazione; EVT può tracciare il processo; OPC può produrre proof receipt; il contenuto della scelta democratica deve restare separato dall’identità personale."
+    );
+  }
+
+  if (domain === "HBCE_ECOSISTEMA_AI") {
+    header.push(
+      "",
+      "Direttiva dominio HBCE ECOSISTEMA AI:",
+      "Rispondi come analista di AI governance operativa.",
+      "La tesi centrale è: il problema non è solo avere AI più potenti, ma governare l’AI dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili.",
+      "Devi distinguere modello AI da governance del modello.",
+      "OpenAI, Anthropic, Google, Meta o Mistral possono generare output; HBCE governa il processo.",
+      "Collega sempre quando pertinente: IPR, EVT, Memory, OPC, MATRIX, AI JOKER-C2, policy, risk, human oversight e fail-closed.",
+      `Boundary obbligatoria: ${HBCE_AI_BOUNDARY}`,
+      "Formula: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue."
     );
   }
 
@@ -902,10 +1031,12 @@ function buildProjectDomainDirective(frame: GovernanceFrame): string {
     header.push(
       "",
       "Direttiva dominio MULTI_DOMAIN:",
-      "Collega MATRIX, CORPUS e APOKALYPSIS senza confonderli.",
-      "MATRIX = infrastruttura.",
+      "Collega MATRIX, U.S.E., CORPUS, APOKALYPSIS e HBCE ECOSISTEMA AI senza confonderli.",
+      "MATRIX = infrastruttura e coordinamento.",
+      "U.S.E. = applicazione politico-istituzionale europea.",
       "CORPUS = grammatica.",
       "APOKALYPSIS = soglia storica.",
+      "HBCE ECOSISTEMA AI = governance dell’intelligenza artificiale.",
       "AI JOKER-C2 = runtime cognitivo-governato.",
       "Quando il termine riguarda biocybersecurity, spiega l'accoppiamento organismo-sistema-AI in chiave difensiva, non offensiva."
     );
@@ -918,6 +1049,19 @@ function buildDocumentFamilyDirective(
   family: DocumentFamily,
   mode: DocumentMode
 ): string {
+  if (family === "HBCE_ECOSISTEMA_AI") {
+    return [
+      "Direttiva HBCE_ECOSISTEMA_AI:",
+      "Tratta il documento come parte della collana HBCE ECOSISTEMA AI.",
+      "La tesi centrale è: il problema non è soltanto avere AI più potenti; il problema è governare l’AI dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili.",
+      "Formula canonica: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue.",
+      "Distingui sempre modello AI da governance del modello.",
+      "OpenAI, Anthropic, Google, Meta e Mistral possono essere motori di generazione; HBCE resta il livello di governance, audit, identità, rischio, policy e proof receipt.",
+      "Quando l’utente chiede struttura, volumi o collana, conserva la mappa dei cinque volumi: HBCE ECOSISTEMA AI; IPR — Identità Operativa dell’AI; EVT / OPC — Traccia e Prova dell’AI; MATRIX AI GOVERNANCE; AI JOKER-C2.",
+      "Non confondere questa collana con i sette moduli tecnico-operativi HBCE."
+    ].join("\n");
+  }
+
   if (family === "HBCE_RUNTIME") {
     return [
       "Direttiva HBCE_RUNTIME:",
@@ -964,6 +1108,7 @@ function buildDocumentFamilyDirective(
       "Tratta il documento come architettura di identità, governance, continuità, verifica e infrastruttura.",
       "Evidenzia IPR, HBCE, JOKER-C2, TRAC, EVT e valore B2B/B2G quando pertinenti.",
       "Evita tono generico. Presenta MATRIX come infrastruttura europea di continuità, controllo e responsabilità operativa.",
+      "Ricorda anche la funzione di MATRIX come settimo modulo tecnico-operativo HBCE: organizzazione e coordinamento dello stack.",
       "Se la richiesta riguarda economia, imprese, governi, cittadini o lavoro, spiega la filiera professionale: registrazione IPR, audit EVT, governance AI, compliance operativa, integrazione B2B/B2G, verifica documentale e continuità istituzionale.",
       "Se la richiesta riguarda voto digitale o istituzioni virtuali, applica la regola democratica: identità verificata, scelta separata, voto anonimizzato, processo auditabile."
     ].join("\n");
@@ -975,6 +1120,15 @@ function buildDocumentFamilyDirective(
       "Tratta il documento come parte del sistema disciplinare sul reale come sequenza verificabile.",
       "Preserva Decisione · Costo · Traccia · Tempo.",
       "Usa il lessico esoterologico quando pertinente: soglia operativa, traccia opponibile, campo storico operativo, riconconicità, paradogma alieno."
+    ].join("\n");
+  }
+
+  if (family === "USE") {
+    return [
+      "Direttiva U.S.E.:",
+      "Tratta il documento come applicazione politico-istituzionale europea derivata da MATRIX.",
+      `Preserva la regola democratica: ${USE_DEMOCRATIC_BOUNDARY}`,
+      "IPR verifica identità e diritto di partecipazione; EVT traccia il processo; OPC può produrre proof receipt; il contenuto della scelta democratica resta separato dall’identità personale."
     ].join("\n");
   }
 
@@ -1006,6 +1160,11 @@ function buildGovernanceFrameText(frame: GovernanceFrame): string {
     `ProjectDomain: ${frame.projectDomain.projectDomain}`,
     `ActiveDomains: ${frame.projectDomain.activeDomains.join(", ")}`,
     `DomainType: ${frame.projectDomain.domainType}`,
+    frame.hbceModule ? `HbceModule: ${frame.hbceModule.module}` : "HbceModule: NONE",
+    frame.hbceModule
+      ? `ActiveModules: ${frame.hbceModule.activeModules.join(", ")}`
+      : "ActiveModules: NONE",
+    frame.hbceModule ? `ModuleType: ${frame.hbceModule.moduleType}` : "ModuleType: NO_MODULE",
     `DomainConfidence: ${frame.projectDomain.confidence}`,
     `ContextClass: ${frame.contextClass}`,
     `IntentClass: ${frame.intentClass}`,
@@ -1056,6 +1215,7 @@ export function buildSystemPrompt(input: {
     `Entità canonica: ${identity.entity}.`,
     `IPR canonico: ${identity.ipr}.`,
     `Checkpoint attivo: ${identity.evt}.`,
+    `Ciclo attivo: ${identity.cycle}.`,
     `Core: ${identity.core}.`,
     `Organizzazione: ${identity.org}.`,
     "",
@@ -1104,6 +1264,9 @@ export function buildSystemPrompt(input: {
     "",
     "Stato richiesta:",
     `ProjectDomain: ${input.governanceFrame.projectDomain.projectDomain}.`,
+    `ActiveDomains: ${input.governanceFrame.projectDomain.activeDomains.join(", ")}.`,
+    `HbceModule: ${input.governanceFrame.hbceModule?.module ?? "NONE"}.`,
+    `ActiveModules: ${input.governanceFrame.hbceModule?.activeModules.join(", ") ?? "NONE"}.`,
     `Classe contesto: ${input.contextClass}.`,
     `IntentClass: ${input.governanceFrame.intentClass}.`,
     `Modalità documento: ${input.documentMode}.`,
@@ -1133,11 +1296,23 @@ export function buildFallback(input: {
   const domain = input.governanceFrame.projectDomain.projectDomain;
   const safeConcept = classifySafeConcept(input.message);
 
+  if (isHbceAiGovernanceQuestion(input.message) || domain === "HBCE_ECOSISTEMA_AI") {
+    return [
+      "HBCE ECOSISTEMA AI è la quinta collana progettuale: serve a spiegare come l’intelligenza artificiale viene governata dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili.",
+      "",
+      "Il punto centrale è che il problema non è soltanto avere AI più potenti. Il problema è governare l’AI. In questo schema, il modello genera contenuti o analisi, mentre HBCE governa il processo attraverso identità, policy, rischio, supervisione umana, EVT, memoria e proof receipt OPC.",
+      "",
+      "IPR identifica soggetti, operatori, agenti AI, documenti, processi e responsabilità operative. EVT traccia gli eventi. Memory conserva la continuità legata a EVT/IPR. OPC produce una proof receipt tecnica per audit e verifica. MATRIX organizza l’architettura e, come settimo modulo HBCE, coordina lo stack. AI JOKER-C2 esegue come runtime dimostrativo governato.",
+      "",
+      "La formula corretta è: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue."
+    ].join("\n");
+  }
+
   if (isCivicDigitalParticipationQuestion(input.message)) {
     return [
       "Nel voto digitale, IPR può verificare identità e diritto di partecipazione, ma non deve collegare il contenuto del voto all’identità personale.",
       "",
-      "La formula corretta è: identità verificata prima, scelta separata dopo, voto anonimizzato, processo auditabile. L’IPR può servire a verificare che il cittadino sia realmente titolare del diritto di partecipazione, che l'accesso sia autorizzato, che la sessione sia valida e che non vi siano duplicazioni o abusi. Questo riguarda l'identità civica operativa, non il contenuto della scelta.",
+      `La formula corretta è: ${USE_DEMOCRATIC_BOUNDARY} L’IPR può servire a verificare che il cittadino sia realmente titolare del diritto di partecipazione, che l'accesso sia autorizzato, che la sessione sia valida e che non vi siano duplicazioni o abusi. Questo riguarda l'identità civica operativa, non il contenuto della scelta.`,
       "",
       "EVT può essere utile per tracciare il processo: apertura della sessione, validazione del diritto, consegna della scheda digitale, conferma di acquisizione, chiusura, integrità del sistema, audit tecnico e verifica pubblica dei passaggi. Ma l'EVT non deve contenere il contenuto del voto associato all'identità personale.",
       "",
@@ -1173,7 +1348,7 @@ export function buildFallback(input: {
 
   if (safeConcept.matched && safeConcept.kind === "BIOCYBERSECURITY") {
     return [
-      "IPR = identità operativa. EVT = traccia verificabile. MATRIX = infrastruttura. AI JOKER-C2 = runtime governato. Biocybersecurity = protezione dell’accoppiamento organismo–sistema–AI.",
+      "IPR = identità operativa. EVT = traccia verificabile. MATRIX = infrastruttura e coordinamento. AI JOKER-C2 = runtime governato. Biocybersecurity = protezione dell’accoppiamento organismo–sistema–AI.",
       "",
       "La relazione tra IPR e sicurezza/protezione biocibernetica nasce dal fatto che la biocybersecurity non protegge soltanto reti, software o credenziali, ma protegge il punto di contatto tra organismo biologico, identità digitale, AI, sensori, robotica, droni, flotte autonome e sistemi operativi.",
       "",
