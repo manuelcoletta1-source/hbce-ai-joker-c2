@@ -3,17 +3,29 @@
  * HBCE / AI JOKER-C2
  *
  * Canonical operational core of the repository.
+ *
  * This module centralizes:
  * - identity lineage
  * - canonical AI JOKER IPR record
  * - runtime sequence
+ * - five canonical project collections
+ * - seven HBCE technical-operational modules
  * - fail-closed rules
  * - derivative layer
  * - node profile
  * - evidence model
+ *
+ * Current canonical checkpoint:
+ * - EVT-0015-AI
+ * - prev EVT-0014-AI
+ * - cycle UP-MESE-4
+ * - timestamp 2026-05-19T15:30:00+02:00
  */
 
 export const CANONICAL_FORMULA = "Decision · Cost · Trace · Time";
+
+export const HBCE_AI_CANONICAL_FORMULA =
+  "AI generates. HBCE governs. IPR identifies. EVT traces. OPC proves. MATRIX organizes. AI JOKER-C2 executes.";
 
 export const HBCE_STACK = Object.freeze({
   identity: "IPR",
@@ -21,60 +33,222 @@ export const HBCE_STACK = Object.freeze({
   governance: "HBCE",
   runtime: "JOKER_C2",
   continuity: "TRAC_EVT",
+  memory: "EVT_IPR_BOUND_MEMORY",
   ledger: "APPEND_ONLY_LEDGER",
   verification: "HASH_SIGNATURE_VERIFICATION",
-  federation: "MATRIX_EUROPA_NODE_TOPOLOGY"
+  federation: "MATRIX_EUROPA_NODE_TOPOLOGY",
+  coordination: "MATRIX"
+});
+
+export const PROJECT_COLLECTIONS = Object.freeze([
+  "MATRIX",
+  "U.S.E.",
+  "CORPUS_ESOTEROLOGIA_ERMETICA",
+  "APOKALYPSIS",
+  "HBCE_ECOSISTEMA_AI"
+]);
+
+export const HBCE_MODULES = Object.freeze([
+  "UNEBDO",
+  "OPC",
+  "MetaExchange",
+  "IOspace",
+  "CyberGlobal",
+  "NeuroLoop",
+  "MATRIX"
+]);
+
+export const PROJECT_COLLECTION_DEFINITIONS = Object.freeze({
+  MATRIX: Object.freeze({
+    type: "OPERATIONAL_INFRASTRUCTURE_DOMAIN",
+    function:
+      "Operational infrastructure architecture for AI governance, European systems, strategic autonomy, B2B, B2G, citizens, enterprises, cloud, data, energy, security and institutional continuity.",
+    dual_function:
+      "MATRIX is also the seventh HBCE technical-operational module when used as the system coordination and organization layer."
+  }),
+  "U.S.E.": Object.freeze({
+    type: "FEDERATED_EUROPEAN_INSTITUTIONAL_APPLICATION_DOMAIN",
+    parent_domain: "MATRIX",
+    function:
+      "MATRIX-derived political-institutional application for a federated, sovereign, digital and verifiable Europe.",
+    democratic_boundary:
+      "Identity verified first. Choice separated after. Vote anonymized. Process auditable."
+  }),
+  CORPUS_ESOTEROLOGIA_ERMETICA: Object.freeze({
+    type: "DISCIPLINARY_GRAMMAR_DOMAIN",
+    function:
+      "Disciplinary grammar of operational reality through Decisione · Costo · Traccia · Tempo.",
+    canonical_formula: "Decisione · Costo · Traccia · Tempo"
+  }),
+  APOKALYPSIS: Object.freeze({
+    type: "HISTORICAL_THRESHOLD_ANALYSIS_DOMAIN",
+    function:
+      "Historical-threshold analysis of decay, exposure, cognitive dislocation and the cultural-political-social system."
+  }),
+  HBCE_ECOSISTEMA_AI: Object.freeze({
+    type: "AI_GOVERNANCE_ECOSYSTEM_DOMAIN",
+    parent_domain: "MATRIX",
+    function:
+      "AI governance ecosystem collection for identifiable, traceable, auditable and responsible artificial intelligence processes.",
+    canonical_formula: HBCE_AI_CANONICAL_FORMULA,
+    volumes: Object.freeze([
+      "HBCE ECOSISTEMA AI",
+      "IPR — Identità Operativa dell’AI",
+      "EVT / OPC — Traccia e Prova dell’AI",
+      "MATRIX AI GOVERNANCE",
+      "AI JOKER-C2"
+    ])
+  })
+});
+
+export const HBCE_MODULE_DEFINITIONS = Object.freeze({
+  UNEBDO: Object.freeze({
+    type: "ANCHORING_VALIDATION_CONTINUITY_LAYER",
+    function: "Anchoring, validation and evidentiary continuity support.",
+    depends_on: Object.freeze(["IPR", "EVT", "OPC"])
+  }),
+  OPC: Object.freeze({
+    type: "OPERATIONAL_PROOF_AND_COMPLIANCE_LAYER",
+    function: "Operational proof receipt and compliance layer.",
+    depends_on: Object.freeze(["IPR", "EVT", "EVT_IPR_BOUND_MEMORY"])
+  }),
+  MetaExchange: Object.freeze({
+    type: "STRUCTURED_EXCHANGE_LAYER",
+    function: "Structured exchange layer.",
+    depends_on: Object.freeze(["IPR", "EVT", "EVT_IPR_BOUND_MEMORY", "OPC"])
+  }),
+  IOspace: Object.freeze({
+    type: "RUNTIME_VISIBILITY_INTERACTION_LAYER",
+    function: "Runtime visibility and operational interaction space.",
+    depends_on: Object.freeze(["IPR", "EVT", "EVT_IPR_BOUND_MEMORY", "OPC"])
+  }),
+  CyberGlobal: Object.freeze({
+    type: "DEFENSIVE_CYBERSECURITY_RESILIENCE_LAYER",
+    function: "Defensive cybersecurity and resilience layer.",
+    depends_on: Object.freeze([
+      "IPR",
+      "EVT",
+      "OPC",
+      "POLICY",
+      "RISK",
+      "HUMAN_OVERSIGHT"
+    ])
+  }),
+  NeuroLoop: Object.freeze({
+    type: "VALIDATION_FEEDBACK_REVIEW_LOOP",
+    function: "Validation, feedback and controlled review loop.",
+    depends_on: Object.freeze([
+      "IPR",
+      "EVT",
+      "EVT_IPR_BOUND_MEMORY",
+      "OPC",
+      "HUMAN_OVERSIGHT",
+      "AUDIT"
+    ])
+  }),
+  MATRIX: Object.freeze({
+    type: "SYSTEM_COORDINATION_ORGANIZATION_LAYER",
+    function:
+      "System coordination, organization and operational architecture layer for the HBCE stack.",
+    depends_on: Object.freeze([
+      "IPR",
+      "UNEBDO",
+      "EVT",
+      "EVT_IPR_BOUND_MEMORY",
+      "OPC",
+      "MetaExchange",
+      "IOspace",
+      "CyberGlobal",
+      "NeuroLoop",
+      "AI_JOKER_C2",
+      "HBCE"
+    ]),
+    boundary:
+      "MATRIX as a module organizes the HBCE stack. MATRIX as a project collection remains the broader strategic and infrastructural framework."
+  })
 });
 
 export const RUNTIME_SEQUENCE = Object.freeze([
   "IDENTITY",
   "INPUT",
   "INTENT",
+  "CONTEXT",
+  "PROJECT_DOMAIN",
+  "HBCE_MODULE",
   "POLICY",
   "RISK",
+  "HUMAN_OVERSIGHT",
   "DECISION",
   "EXECUTION",
+  "OUTPUT",
   "EVT",
+  "MEMORY",
+  "OPC",
   "LEDGER",
   "VERIFICATION",
   "CONTINUITY"
 ]);
 
+export const MODULE_SEQUENCE = Object.freeze([
+  "IPR",
+  "UNEBDO",
+  "EVT",
+  "MEMORY",
+  "OPC",
+  "MetaExchange",
+  "IOspace",
+  "CyberGlobal",
+  "NeuroLoop",
+  "MATRIX",
+  "AI_JOKER_C2"
+]);
+
 export const DECISION_OUTPUTS = Object.freeze([
   "ALLOW",
   "BLOCK",
-  "ESCALATE"
+  "ESCALATE",
+  "DEGRADE",
+  "AUDIT",
+  "NOOP"
 ]);
 
 export const SYSTEM_STATES = Object.freeze([
   "OPERATIONAL",
   "DEGRADED",
   "BLOCKED",
-  "INVALID"
+  "INVALID",
+  "AUDIT_ONLY",
+  "MAINTENANCE"
 ]);
 
 export const FAIL_CLOSED_RULES = Object.freeze([
   "NO_VALIDATION_NO_EXECUTION",
+  "NO_IPR_BINDING_NO_OPERATIONAL_ATTRIBUTION",
+  "NO_CONTEXT_NO_ORIENTATION",
+  "NO_PROJECT_DOMAIN_NO_COLLECTION_BINDING",
+  "NO_HBCE_MODULE_NO_MODULE_BINDING",
+  "NO_POLICY_NO_SENSITIVE_EXECUTION",
+  "NO_RISK_CLASSIFICATION_NO_SENSITIVE_OUTPUT",
   "NO_CONTINUITY_NO_TRUSTED_STATE",
   "NO_EVIDENCE_NO_OPERATIONAL_EXISTENCE",
   "NO_VERIFICATION_NO_RECOGNIZED_PERSISTENCE"
 ]);
 
 export const AI_JOKER_IPR_RECORD = Object.freeze({
-  evt: "EVT-0014-AI",
-  prev: "EVT-0013-AI",
-  t: "2026-04-19T15:30:00+02:00",
+  evt: "EVT-0015-AI",
+  prev: "EVT-0014-AI",
+  t: "2026-05-19T15:30:00+02:00",
   entity: "AI_JOKER",
   ipr: "IPR-AI-0001",
   state: "LOCKED",
   baseline: false,
   kind: "OPERATIONAL_UPDATE",
-  cycle: "UP-MESE-3",
+  cycle: "UP-MESE-4",
   loc: Object.freeze(["Torino", "Italy"]),
   org: "HERMETICUM B.C.E. S.r.l.",
   core: "HBCE-CORE-v3",
   anchors: Object.freeze({
-    monthly_hash: "<SHA512_EVT_0014_AI>",
+    monthly_hash: "<SHA512_EVT_0015_AI>",
     ipfs_cid: "bafkreidhv73vqrxoweog33ls3rnwrgyicio234pcuks6mnep76yh56pj5q",
     btc_txid:
       "9eeb29b67f4a649d563b95560fda5ddaa84777b13515f936837fc93d28554b45",
@@ -91,11 +265,11 @@ export const AI_JOKER_IPR_RECORD = Object.freeze({
   }),
   continuity: Object.freeze({
     checkpoint_type: "CANONICAL",
-    elapsed_months: 3,
+    elapsed_months: 4,
     origin_ipr: "IPR-AI-0001",
     rule: "monthly checkpoint fixed on day 19 at 15:30 Europe/Rome",
     note:
-      "Canonical month-3 checkpoint recorded on 2026-04-19 within the prescribed checkpoint window"
+      "Canonical month-4 checkpoint recorded on 2026-05-19 within the prescribed checkpoint window"
   })
 });
 
@@ -114,6 +288,7 @@ export const IDENTITY_LINEAGE = Object.freeze({
     status: AI_JOKER_IPR_RECORD.state,
     role: "PRIMARY_CYBERNETIC_ROOT",
     evt: AI_JOKER_IPR_RECORD.evt,
+    prev: AI_JOKER_IPR_RECORD.prev,
     cycle: AI_JOKER_IPR_RECORD.cycle,
     core: AI_JOKER_IPR_RECORD.core,
     checkpoint_time: AI_JOKER_IPR_RECORD.t,
@@ -160,8 +335,11 @@ export const NODE_PROFILE = Object.freeze({
   posture: "FAIL_CLOSED",
   active_ipr: AI_JOKER_IPR_RECORD.ipr,
   active_evt: AI_JOKER_IPR_RECORD.evt,
+  previous_evt: AI_JOKER_IPR_RECORD.prev,
   active_cycle: AI_JOKER_IPR_RECORD.cycle,
-  active_core: AI_JOKER_IPR_RECORD.core
+  active_core: AI_JOKER_IPR_RECORD.core,
+  project_collections: PROJECT_COLLECTIONS,
+  hbce_modules: HBCE_MODULES
 });
 
 export const EVIDENCE_MODEL = Object.freeze({
@@ -169,8 +347,41 @@ export const EVIDENCE_MODEL = Object.freeze({
   hashing: "SHA-256",
   signature: "ED25519",
   serialization: "DETERMINISTIC_JSON",
+  properties: Object.freeze([
+    "identity_bound",
+    "ipr_bound",
+    "context_bound",
+    "project_domain_bound",
+    "hbce_module_bound",
+    "evt_linked",
+    "memory_linked",
+    "opc_linked",
+    "append_only",
+    "hash_linked",
+    "verifiable",
+    "persistent"
+  ]),
   rule:
     "No evidence, no operational existence. No verification, no recognized persistence."
+});
+
+export const AI_GOVERNANCE_BOUNDARY = Object.freeze({
+  scope: "HBCE ECOSISTEMA AI and AI model usage contexts",
+  principle:
+    "The AI model does not govern HBCE. HBCE governs the use of AI models.",
+  model_role:
+    "External or proprietary AI models may generate content, analysis or code.",
+  hbce_role:
+    "HBCE provides identity, governance, traceability, proof receipts, auditability, policy, risk and oversight around the AI process.",
+  supported_model_categories: Object.freeze([
+    "OpenAI models",
+    "Anthropic models",
+    "Google models",
+    "Meta models",
+    "Mistral models",
+    "future proprietary HBCE AI systems",
+    "hybrid AI architectures"
+  ])
 });
 
 export function getIdentityLineage() {
@@ -189,8 +400,32 @@ export function getPrimaryAIIdentity() {
   return IDENTITY_LINEAGE.ai_root;
 }
 
+export function getProjectCollections() {
+  return PROJECT_COLLECTIONS;
+}
+
+export function getHbceModules() {
+  return HBCE_MODULES;
+}
+
+export function getProjectCollectionDefinition(collection) {
+  return PROJECT_COLLECTION_DEFINITIONS[collection] ?? null;
+}
+
+export function getHbceModuleDefinition(module) {
+  return HBCE_MODULE_DEFINITIONS[module] ?? null;
+}
+
 export function isKnownIdentityIpr(ipr) {
   return getIdentityLineage().some((item) => item.ipr === ipr);
+}
+
+export function isKnownProjectCollection(collection) {
+  return PROJECT_COLLECTIONS.includes(collection);
+}
+
+export function isKnownHbceModule(module) {
+  return HBCE_MODULES.includes(module);
 }
 
 export function isValidRuntimeDecision(value) {
@@ -237,8 +472,14 @@ export function buildMinimumEvt({
 
 export default Object.freeze({
   CANONICAL_FORMULA,
+  HBCE_AI_CANONICAL_FORMULA,
   HBCE_STACK,
+  PROJECT_COLLECTIONS,
+  HBCE_MODULES,
+  PROJECT_COLLECTION_DEFINITIONS,
+  HBCE_MODULE_DEFINITIONS,
   RUNTIME_SEQUENCE,
+  MODULE_SEQUENCE,
   DECISION_OUTPUTS,
   SYSTEM_STATES,
   FAIL_CLOSED_RULES,
@@ -247,10 +488,17 @@ export default Object.freeze({
   BIOCYBERNETIC_DERIVATION_LAYER,
   NODE_PROFILE,
   EVIDENCE_MODEL,
+  AI_GOVERNANCE_BOUNDARY,
   getIdentityLineage,
   getAIJokerIPRRecord,
   getPrimaryAIIdentity,
+  getProjectCollections,
+  getHbceModules,
+  getProjectCollectionDefinition,
+  getHbceModuleDefinition,
   isKnownIdentityIpr,
+  isKnownProjectCollection,
+  isKnownHbceModule,
   isValidRuntimeDecision,
   isValidSystemState,
   buildMinimumEvt
