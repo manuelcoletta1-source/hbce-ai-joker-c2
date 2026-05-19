@@ -1,34 +1,19 @@
 import { createHash, randomUUID } from "crypto";
 
-export type RuntimeState =
-  | "OPERATIONAL"
-  | "DEGRADED"
-  | "BLOCKED"
-  | "INVALID"
-  | "AUDIT_ONLY"
-  | "MAINTENANCE";
+import type {
+  ProjectDomain,
+  RuntimeDecision,
+  RuntimeState
+} from "./runtime-types";
 
-export type RuntimeDecision =
-  | "ALLOW"
-  | "BLOCK"
-  | "ESCALATE"
-  | "DEGRADE"
-  | "AUDIT"
-  | "NOOP";
-
-export type ProjectDomain =
-  | "MATRIX"
-  | "U.S.E."
-  | "CORPUS_ESOTEROLOGIA_ERMETICA"
-  | "APOKALYPSIS"
-  | "GENERAL"
-  | "MULTI_DOMAIN";
+export type { ProjectDomain, RuntimeDecision, RuntimeState } from "./runtime-types";
 
 export type DocumentFamily =
   | "APOKALYPSIS"
   | "CORPUS_ESOTEROLOGIA"
   | "MATRIX"
   | "USE"
+  | "HBCE_ECOSISTEMA_AI"
   | "HBCE_RUNTIME"
   | "GENERAL_DOCUMENT";
 
@@ -145,10 +130,15 @@ type MemorySlot = {
 const EVENT_KIND = "EVT_IPR_BOUND_MEMORY" as const;
 const RUNTIME_ROLE = "IPR_RUNTIME_DEMONSTRATOR" as const;
 const CANONICAL_SESSION_ID = "CANONICAL";
+
 const NON_CERTIFICATION_STATEMENT =
   "EVT/IPR-bound memory preserves runtime continuity. It is not legal certification and does not replace audit, verification, legal review or user control.";
+
 const USE_DEMOCRATIC_BOUNDARY =
   "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
+
+const HBCE_AI_BOUNDARY =
+  "The AI model does not govern HBCE. HBCE governs the use of AI models.";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -405,6 +395,18 @@ function detectTags(text: string): string[] {
     "democratic infrastructure",
     "public consultation",
     "referendum",
+    "hbce ecosistema ai",
+    "ecosistema ai",
+    "ai governance",
+    "governance ai",
+    "ai audit",
+    "ipr ai audit trail",
+    "model governance",
+    "openai",
+    "anthropic",
+    "claude",
+    "gemini",
+    "mistral",
     "hbce",
     "joker-c2",
     "ai joker-c2",
@@ -442,6 +444,33 @@ function detectTags(text: string): string[] {
 
 export function detectDocumentFamilyFromText(text: string): DocumentFamily {
   const lower = text.toLowerCase();
+
+  if (
+    lower.includes("hbce ecosistema ai") ||
+    lower.includes("ecosistema ai") ||
+    lower.includes("governance dell ai") ||
+    lower.includes("governance dell'ai") ||
+    lower.includes("governare l ai") ||
+    lower.includes("governare l'ai") ||
+    lower.includes("ai governance") ||
+    lower.includes("governance ai") ||
+    lower.includes("ai audit") ||
+    lower.includes("ipr ai audit trail") ||
+    lower.includes("model governance") ||
+    lower.includes("governance modelli") ||
+    lower.includes("modelli ai esterni") ||
+    lower.includes("openai") ||
+    lower.includes("anthropic") ||
+    lower.includes("claude") ||
+    lower.includes("google ai") ||
+    lower.includes("gemini") ||
+    lower.includes("mistral") ||
+    lower.includes("meta ai") ||
+    lower.includes("llama") ||
+    lower.includes("matrix ai governance")
+  ) {
+    return "HBCE_ECOSISTEMA_AI";
+  }
 
   if (
     lower.includes("u.s.e.") ||
@@ -531,6 +560,8 @@ function inferProjectDomain(input: EvtMemoryInput): ProjectDomain {
       return "CORPUS_ESOTEROLOGIA_ERMETICA";
     case "APOKALYPSIS":
       return "APOKALYPSIS";
+    case "HBCE_ECOSISTEMA_AI":
+      return "HBCE_ECOSISTEMA_AI";
     case "HBCE_RUNTIME":
       return "MATRIX";
     case "GENERAL_DOCUMENT":
@@ -551,8 +582,13 @@ function inferActiveDomains(input: EvtMemoryInput): ProjectDomain[] {
       "MATRIX",
       "U.S.E.",
       "CORPUS_ESOTEROLOGIA_ERMETICA",
-      "APOKALYPSIS"
+      "APOKALYPSIS",
+      "HBCE_ECOSISTEMA_AI"
     ];
+  }
+
+  if (projectDomain === "HBCE_ECOSISTEMA_AI") {
+    return ["HBCE_ECOSISTEMA_AI", "MATRIX"];
   }
 
   return [projectDomain];
@@ -570,6 +606,18 @@ function inferCentralThesis(input: EvtMemoryInput): string | null {
   ].join("\n\n");
 
   const lower = merged.toLowerCase();
+
+  if (
+    input.documentFamily === "HBCE_ECOSISTEMA_AI" ||
+    lower.includes("hbce ecosistema ai") ||
+    lower.includes("ai governance") ||
+    lower.includes("governance ai") ||
+    lower.includes("ai audit") ||
+    lower.includes("ipr ai audit trail") ||
+    lower.includes("model governance")
+  ) {
+    return "HBCE ECOSISTEMA AI tratta il governo dell’intelligenza artificiale dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue.";
+  }
 
   if (
     input.documentFamily === "USE" ||
@@ -632,6 +680,17 @@ function inferUserIntent(message: string): string {
     lower.includes("github")
   ) {
     return "technical_runtime_work";
+  }
+
+  if (
+    lower.includes("hbce ecosistema ai") ||
+    lower.includes("ai governance") ||
+    lower.includes("governance ai") ||
+    lower.includes("ai audit") ||
+    lower.includes("model governance") ||
+    lower.includes("modelli ai")
+  ) {
+    return "ai_governance_design";
   }
 
   if (
@@ -711,6 +770,7 @@ function buildMemoryDelta(input: EvtMemoryInput): string {
     activeDocument ? `Documento attivo: ${activeDocument}.` : "",
     `Famiglia documento: ${input.documentFamily}.`,
     `Dominio progetto: ${projectDomain}.`,
+    `Domini attivi: ${inferActiveDomains(input).join(", ")}.`,
     `IPR runtime-bound: ${input.ipr}.`,
     input.governedEvt ? `EVT governato collegato: ${input.governedEvt}.` : "",
     input.governedHash ? `Hash governato collegato: ${input.governedHash}.` : "",
@@ -719,6 +779,9 @@ function buildMemoryDelta(input: EvtMemoryInput): string {
     centralThesis ? `Tesi centrale incorporata: ${centralThesis}` : "",
     identityChoiceLinkageBlocked
       ? "Regola di sicurezza: rilevato rischio di collegamento identità-scelta democratica; la memoria deve preservare solo il vincolo di blocco/salvaguardia, non il contenuto della scelta."
+      : "",
+    input.documentFamily === "HBCE_ECOSISTEMA_AI"
+      ? `Regola di continuità HBCE ECOSISTEMA AI: preservare ${HBCE_AI_BOUNDARY}`
       : "",
     input.documentFamily === "USE"
       ? `Regola di continuità U.S.E.: preservare ${USE_DEMOCRATIC_BOUNDARY}`
@@ -743,6 +806,18 @@ function buildMemoryDelta(input: EvtMemoryInput): string {
 function buildNextContext(input: EvtMemoryInput): string {
   const activeDocument = getActiveDocument(input.files);
   const intent = inferUserIntent(input.message);
+
+  if (input.documentFamily === "HBCE_ECOSISTEMA_AI") {
+    return [
+      activeDocument
+        ? `Documento attivo da mantenere: ${activeDocument}.`
+        : "Documento attivo da mantenere: HBCE ECOSISTEMA AI.",
+      "Contesto HBCE ECOSISTEMA AI da mantenere: governance dell’intelligenza artificiale, modelli esterni, IPR AI Audit Trail, EVT, OPC, human oversight, fail-closed, AI/cyber governance e runtime AI governato.",
+      `Boundary AI governance da preservare: ${HBCE_AI_BOUNDARY}`,
+      `Ultimo intento utente: ${intent}.`,
+      "Se l'utente usa riferimenti ellittici come 'ecosistema AI', 'governance AI', 'modelli AI', 'OpenAI', 'Anthropic', 'audit AI', 'runtime governato', recuperare questa memoria HBCE_ECOSISTEMA_AI."
+    ].join(" ");
+  }
 
   if (input.documentFamily === "USE") {
     return [
@@ -834,6 +909,13 @@ function updateSemanticState(
     newReferenceRules.push(
       `"questa opera", "questo testo", "Apokalypsis", "i punti forti" = ${activeDocument}`
     );
+  }
+
+  if (documentFamily === "HBCE_ECOSISTEMA_AI") {
+    newReferenceRules.push(
+      `"HBCE ECOSISTEMA AI", "ecosistema AI", "AI governance", "governance AI", "audit AI", "modelli AI" = contesto HBCE_ECOSISTEMA_AI attivo`
+    );
+    newReferenceRules.push(`boundary AI governance = ${HBCE_AI_BOUNDARY}`);
   }
 
   if (documentFamily === "USE") {
@@ -1114,6 +1196,33 @@ function scoreSlotForMessage(slot: MemorySlot, message: string): number {
     score += 8;
   }
 
+  if (slot.semanticState.documentFamily === "HBCE_ECOSISTEMA_AI") {
+    const hbceAiTerms = [
+      "hbce ecosistema ai",
+      "ecosistema ai",
+      "ai governance",
+      "governance ai",
+      "ai audit",
+      "ipr ai audit trail",
+      "model governance",
+      "modelli ai",
+      "openai",
+      "anthropic",
+      "claude",
+      "gemini",
+      "mistral",
+      "runtime governato"
+    ];
+
+    if (
+      hbceAiTerms.some((term) =>
+        normalizedMessage.includes(normalizeForMatch(term))
+      )
+    ) {
+      score += 24;
+    }
+  }
+
   if (slot.semanticState.documentFamily === "USE") {
     const useTerms = [
       "u.s.e.",
@@ -1242,6 +1351,7 @@ function buildMemoryText(input: {
         `- ${event.evt}`,
         `  prev: ${event.prev}`,
         `  projectDomain: ${event.projectDomain}`,
+        `  activeDomains: ${event.activeDomains.join(", ")}`,
         `  governedEvt: ${event.governedEvt || "none"}`,
         `  governedHash: ${event.governedHash || "none"}`,
         `  opcProofId: ${event.opcProofId || "none"}`,
@@ -1259,9 +1369,10 @@ function buildMemoryText(input: {
     "BOUNDARY:",
     NON_CERTIFICATION_STATEMENT,
     `U.S.E. democratic boundary: ${USE_DEMOCRATIC_BOUNDARY}`,
+    `HBCE ECOSISTEMA AI boundary: ${HBCE_AI_BOUNDARY}`,
     "",
     "ISTRUZIONE DI RECUPERO:",
-    "Usa questa memoria per interpretare riferimenti ellittici dell'utente come 'questa opera', 'questo testo', 'il documento', 'Apokalypsis', 'U.S.E.', 'voto digitale', 'i punti forti', 'a chi serve', 'il danno', 'riparalo', 'la route', 'la memoria', 'JOKER-C2', 'IPR', 'EVT', 'OPC', 'proof receipt', 'ledger', salvo che l'utente indichi chiaramente un nuovo documento o un nuovo contesto. Non usare questa memoria per collegare identità personale e contenuto di una scelta democratica."
+    "Usa questa memoria per interpretare riferimenti ellittici dell'utente come 'questa opera', 'questo testo', 'il documento', 'Apokalypsis', 'U.S.E.', 'voto digitale', 'ecosistema AI', 'governance AI', 'modelli AI', 'OpenAI', 'Anthropic', 'audit AI', 'i punti forti', 'a chi serve', 'il danno', 'riparalo', 'la route', 'la memoria', 'JOKER-C2', 'IPR', 'EVT', 'OPC', 'proof receipt', 'ledger', salvo che l'utente indichi chiaramente un nuovo documento o un nuovo contesto. Non usare questa memoria per collegare identità personale e contenuto di una scelta democratica."
   ]
     .join("\n")
     .slice(0, MAX_MEMORY_TEXT_CHARS);
