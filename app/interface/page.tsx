@@ -298,7 +298,8 @@ function statusTone(value?: string | null): string {
     normalized === "MEDIUM" ||
     normalized === "PLANNED_FUNCTIONAL_LAYER" ||
     normalized === "PLANNED_INTERFACE_LAYER" ||
-    normalized === "DOCUMENTATION_ONLY"
+    normalized === "DOCUMENTATION_ONLY" ||
+    normalized === "DOCTRINE"
   ) {
     return "joker-badge--warn";
   }
