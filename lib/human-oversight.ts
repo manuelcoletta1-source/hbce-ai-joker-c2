@@ -22,8 +22,9 @@
  * Canonical hierarchy:
  * - IPR = primary operational identity and proof instrument
  * - AI JOKER-C2 = governed runtime demonstrator
- * - MATRIX = operational infrastructure architecture
+ * - MATRIX = project collection, architectural framework and HBCE coordination module
  * - U.S.E. = MATRIX-derived political-institutional application
+ * - HBCE_ECOSISTEMA_AI = AI governance ecosystem collection
  * - EVT = event trace
  * - EVT/IPR memory = runtime continuity
  * - OPC = operational proof receipt
@@ -207,6 +208,59 @@ const OPC_PROOF_TERMS = [
   "record di prova"
 ];
 
+const HBCE_AI_GOVERNANCE_TERMS = [
+  "hbce ecosistema ai",
+  "ecosistema ai",
+  "ai governance",
+  "governance ai",
+  "governo dell ai",
+  "governo dell'ai",
+  "governare l ai",
+  "governare l'ai",
+  "governance dell ai",
+  "governance dell'ai",
+  "ai audit",
+  "audit ai",
+  "audit dell ai",
+  "audit dell'ai",
+  "ipr ai audit trail",
+  "model governance",
+  "governance modelli",
+  "external ai models",
+  "modelli ai esterni",
+  "openai",
+  "anthropic",
+  "claude",
+  "google ai",
+  "gemini",
+  "meta ai",
+  "llama",
+  "mistral",
+  "responsible ai",
+  "trustworthy ai",
+  "runtime ai governato",
+  "runtime governato ai",
+  "matrix ai governance",
+  "human oversight ai",
+  "fail-closed ai"
+];
+
+const MATRIX_MODULE_TERMS = [
+  "modulo matrix",
+  "matrix module",
+  "matrix organizza",
+  "matrix organizes",
+  "sette moduli",
+  "7 moduli",
+  "seven modules",
+  "coordinamento sistema",
+  "coordinamento operativo",
+  "organizzazione sistema",
+  "organizzazione ecosistema",
+  "system coordination",
+  "operational coordination"
+];
+
 export function evaluateHumanOversight(
   input: HumanOversightInput
 ): OversightEvaluation {
@@ -228,6 +282,15 @@ export function evaluateHumanOversight(
 
   if (civicOverride) {
     return civicOverride;
+  }
+
+  const aiGovernanceOverride = evaluateAiGovernanceOversight(
+    input,
+    normalizedMessage
+  );
+
+  if (aiGovernanceOverride) {
+    return aiGovernanceOverride;
   }
 
   const criticalContextOverride = evaluateCriticalContextOversight(
@@ -300,6 +363,19 @@ export function getReviewerRoleForContext(
     return "CIVIC_INFRASTRUCTURE_REVIEWER";
   }
 
+  if (
+    projectDomain === "HBCE_ECOSISTEMA_AI" ||
+    contextClass === "HBCE_ECOSISTEMA_AI" ||
+    contextClass === "AI_GOVERNANCE" ||
+    containsAny(normalizedMessage, HBCE_AI_GOVERNANCE_TERMS)
+  ) {
+    return "TECHNICAL_REVIEWER";
+  }
+
+  if (containsAny(normalizedMessage, MATRIX_MODULE_TERMS)) {
+    return "TECHNICAL_REVIEWER";
+  }
+
   if (containsAny(normalizedMessage, CRITICAL_INFRASTRUCTURE_TERMS)) {
     return "INCIDENT_COMMANDER";
   }
@@ -326,8 +402,9 @@ export function getReviewerRoleForContext(
     case "CRITICAL_INFRASTRUCTURE":
       return "INCIDENT_COMMANDER";
 
+    case "HBCE_ECOSISTEMA_AI":
     case "AI_GOVERNANCE":
-      return "REVIEWER";
+      return "TECHNICAL_REVIEWER";
 
     case "DUAL_USE":
       return "APPROVER";
@@ -551,6 +628,86 @@ function evaluateCivicOversight(
   };
 }
 
+function evaluateAiGovernanceOversight(
+  input: HumanOversightInput,
+  normalizedMessage: string
+): OversightRuleResult | null {
+  const aiGovernanceContext =
+    input.projectDomain === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "AI_GOVERNANCE" ||
+    containsAny(normalizedMessage, HBCE_AI_GOVERNANCE_TERMS);
+
+  if (!aiGovernanceContext) {
+    return null;
+  }
+
+  if (
+    input.riskClass === "HIGH" ||
+    input.riskClass === "CRITICAL" ||
+    input.sensitivity === "HIGH"
+  ) {
+    return {
+      state: "REQUIRED",
+      requiredRole: "TECHNICAL_REVIEWER",
+      reason:
+        "HBCE ECOSISTEMA AI or AI governance context detected with high impact. Human technical review is required before operational reliance."
+    };
+  }
+
+  if (
+    containsAny(normalizedMessage, [
+      "production",
+      "deploy",
+      "deployment",
+      "public sector",
+      "public administration",
+      "critical infrastructure",
+      "infrastrutture critiche",
+      "pubblica amministrazione",
+      "produzione",
+      "deployare",
+      "modelli ai esterni",
+      "external ai models"
+    ])
+  ) {
+    return {
+      state: "REQUIRED",
+      requiredRole: "TECHNICAL_REVIEWER",
+      reason:
+        "AI governance context includes deployment, public-sector, critical-infrastructure or external-model implications. Human technical review is required."
+    };
+  }
+
+  if (
+    input.riskClass === "MEDIUM" ||
+    input.policyStatus === "RESTRICTED" ||
+    containsAny(normalizedMessage, [
+      "ai audit",
+      "audit ai",
+      "model governance",
+      "governance modelli",
+      "human oversight",
+      "supervisione umana",
+      "fail-closed"
+    ])
+  ) {
+    return {
+      state: "RECOMMENDED",
+      requiredRole: "TECHNICAL_REVIEWER",
+      reason:
+        "HBCE ECOSISTEMA AI or AI governance context detected. Human technical review is recommended before external use or operational reliance."
+    };
+  }
+
+  return {
+    state: "NOT_REQUIRED",
+    requiredRole: "NONE",
+    reason:
+      "Low-risk HBCE ECOSISTEMA AI explanation detected. Human review is not required for ordinary conceptual use."
+  };
+}
+
 function evaluateCriticalContextOversight(
   input: HumanOversightInput,
   normalizedMessage: string
@@ -606,6 +763,15 @@ function evaluateCriticalContextOversight(
       requiredRole: "SECURITY_OFFICER",
       reason:
         "Security-sensitive terms detected. Defensive security review is required."
+    };
+  }
+
+  if (containsAny(normalizedMessage, MATRIX_MODULE_TERMS)) {
+    return {
+      state: "RECOMMENDED",
+      requiredRole: "TECHNICAL_REVIEWER",
+      reason:
+        "MATRIX module or seven-module HBCE coordination context detected. Technical review is recommended before external or production use."
     };
   }
 
@@ -665,8 +831,10 @@ function evaluateRiskOversight(
       input.contextClass === "SECURITY" ||
       input.contextClass === "COMPLIANCE" ||
       input.contextClass === "AI_GOVERNANCE" ||
+      input.contextClass === "HBCE_ECOSISTEMA_AI" ||
       input.contextClass === "GOVERNANCE" ||
-      input.projectDomain === "U.S.E."
+      input.projectDomain === "U.S.E." ||
+      input.projectDomain === "HBCE_ECOSISTEMA_AI"
     ) {
       return {
         state: "REQUIRED",
