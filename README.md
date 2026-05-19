@@ -3,111 +3,304 @@
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**
 
-**AI JOKER-C2** is the governed runtime demonstrator for **IPR — Identity Primary Record** inside the **B.C.E.Hermeticum** and **HBCE** research software ecosystem.
+AI JOKER-C2 è il runtime dimostrativo governato dell’IPR — Identity Primary Record — all’interno dell’ecosistema software e di ricerca B.C.E.Hermeticum / HBCE.
 
-It extends standard AI interaction with operational identity, runtime governance, event continuity, EVT/IPR-bound memory, OPC proof receipts, project-domain classification, HBCE module awareness and audit-oriented records.
+Il sistema estende l’interazione AI ordinaria con identità operativa, governance runtime, continuità evento, memoria legata a EVT/IPR, proof receipt OPC, classificazione dei domini progettuali, classificazione dei moduli HBCE e registri orientati all’audit.
 
-AI JOKER-C2 now operates across four canonical project collections:
+AI JOKER-C2 opera su cinque collane progettuali canoniche e attraverso sette moduli tecnico-operativi HBCE.
 
-```txt
-MATRIX
-U.S.E. — United States of Europe
-CORPUS ESOTEROLOGIA ERMETICA
-APOKALYPSIS
-```
+## 1. Stato del progetto
 
-AI JOKER-C2 also operates through six HBCE technical-operational modules:
-
-```txt
-UNEBDO
-OPC
-MetaExchange
-IOspace
-CyberGlobal
-NeuroLoop
-```
-
-The current product, runtime, module and collection hierarchy is:
-
-```txt
-IPR          = primary operational identity and proof instrument
-AI JOKER-C2 = governed runtime demonstrator for IPR in execution
-UNEBDO       = anchoring, validation and evidentiary continuity support
-EVT          = event continuity and verifiable trace layer
-Memory       = EVT/IPR-bound runtime continuity
-OPC          = operational proof receipt and compliance layer
-MetaExchange = structured exchange layer
-IOspace      = runtime visibility and operational interaction space
-CyberGlobal  = defensive cybersecurity and resilience layer
-NeuroLoop    = validation, feedback and review loop
-HBCE         = governance, policy, audit and continuity ecosystem
-MATRIX       = architectural framework for operational infrastructure
-U.S.E.       = MATRIX-derived political-institutional application for a federated operational Europe
-CORPUS       = disciplinary grammar of operational reality
-APOKALYPSIS  = historical-threshold analysis domain
-```
-
-AI JOKER-C2 is developed as part of the HBCE research and software ecosystem by:
-
-```txt
-HERMETICUM B.C.E. S.r.l.
-HBCE Research
-Torino, Italy, Europe
-```
-
----
-
-## 1. Project status
-
-```txt
-Project: AI JOKER-C2
+```text
+Progetto: AI JOKER-C2
 Runtime identity: AI_JOKER
 Runtime IPR: IPR-AI-0001
 Core: HBCE-CORE-v3
-Primary operational product: IPR
-Runtime role: IPR runtime demonstrator
-Architectural framework: MATRIX
-Political-institutional application domain: U.S.E. — United States of Europe
-Disciplinary grammar domain: CORPUS ESOTEROLOGIA ERMETICA
-Historical-threshold domain: APOKALYPSIS
-HBCE modules: UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop
-Operational stack: HBCE Operational Stack v0.1
-Status: active prototype / research runtime
+Checkpoint corrente: EVT-0015-AI
+Checkpoint precedente: EVT-0014-AI
+Ciclo: UP-MESE-4
+Timestamp checkpoint: 2026-05-19T15:30:00+02:00
+Prodotto operativo primario: IPR
+Ruolo runtime: IPR runtime demonstrator
+Stack operativo: HBCE Operational Stack v0.2
+Stato: prototipo attivo / runtime di ricerca
+Organizzazione: HERMETICUM B.C.E. S.r.l.
+Firma di ricerca: HBCE Research
+Localizzazione: Torino, Italy, Europe
 ```
 
-AI JOKER-C2 is being extended from a conversational AI interface into an auditable HBCE runtime that demonstrates how an IPR-bound interaction can be classified, governed, traced, hashed, remembered, proven and exposed for audit review.
+AI JOKER-C2 non è pensato come chatbot generico. È un dimostratore runtime governato che mostra come una interazione AI possa essere collegata a identità operativa, classificazione, policy, rischio, decisione, evento, memoria, prova e audit.
 
-The current runtime can already generate:
+La funzione centrale è dimostrare IPR in esecuzione.
 
-```txt
-AI response
-EVT event
-EVT/IPR-bound memory event
-Governed runtime event
-OPC proof record
-Audit-oriented proof receipt
-Project-domain runtime metadata
+```text
+IPR identifica.
+AI JOKER-C2 esegue.
+EVT traccia.
+Memory continua.
+OPC prova.
+HBCE governa.
+MATRIX organizza.
 ```
 
----
+## 2. Gerarchia generale del sistema
 
-## 2. What AI JOKER-C2 is
+```text
+IPR                  = strumento primario di identità operativa e prova
+AI JOKER-C2          = runtime governato che dimostra IPR in esecuzione
+EVT                  = livello di evento, traccia e continuità verificabile
+Memory               = continuità runtime legata a EVT/IPR
+OPC                  = livello di proof receipt operativo e audit
+HBCE                 = ecosistema di governance, policy, audit e continuità
+MATRIX               = architettura generale e modulo organizzativo del sistema
+U.S.E.               = applicazione politico-istituzionale europea derivata da MATRIX
+CORPUS               = grammatica disciplinare del reale operativo
+APOKALYPSIS          = dominio di analisi della soglia storica
+HBCE ECOSISTEMA AI   = collana di governance dell’intelligenza artificiale
+```
 
-AI JOKER-C2 is not designed as a generic chatbot and it is not positioned as the primary product layer of the HBCE ecosystem.
+## 3. Cinque collane progettuali canoniche
 
-The primary operational instrument is **IPR — Identity Primary Record**.
+AI JOKER-C2 opera come connettore runtime per cinque collane progettuali canoniche:
 
-AI JOKER-C2 demonstrates IPR in function by connecting an AI interaction to identity, context, project domain, policy, risk, decision, event continuity, memory continuity and proof receipt generation.
+```text
+1. MATRIX
+2. U.S.E. — United States of Europe
+3. CORPUS ESOTEROLOGIA ERMETICA
+4. APOKALYPSIS
+5. HBCE ECOSISTEMA AI
+```
 
-The runtime connects:
+Le cinque collane non sono moduli tecnici. Sono domini progettuali, editoriali, strategici e architetturali attraverso cui il sistema HBCE viene descritto, sviluppato e applicato.
 
-```txt
+### 3.1 MATRIX
+
+MATRIX è la collana e architettura infrastrutturale generale.
+
+Come collana, MATRIX definisce il quadro operativo per identità, governance, AI, dati, cybersecurity, energia, infrastrutture critiche, pubblica amministrazione, B2B, B2G e continuità istituzionale.
+
+MATRIX risponde alla domanda:
+
+```text
+Come può l’Europa costruire sistemi operativi verificabili per AI, governance, dati, energia, sicurezza e continuità istituzionale?
+```
+
+### 3.2 U.S.E. — United States of Europe
+
+U.S.E. è l’applicazione politico-istituzionale derivata da MATRIX.
+
+Tratta la costruzione di una federazione operativa europea, con attenzione a sovranità digitale, continuità istituzionale, protezione civile, consultazione pubblica, referendum multilivello, voto digitale federato e audit democratico.
+
+Regola democratica centrale:
+
+```text
+Identity verified first.
+Choice separated after.
+Vote anonymized.
+Process auditable.
+```
+
+IPR può verificare identità e diritto di partecipazione.
+
+EVT può tracciare l’integrità del processo.
+
+OPC può generare proof receipt per le operazioni di processo.
+
+Il contenuto della scelta democratica non deve essere collegato all’identità personale del votante o partecipante.
+
+### 3.3 CORPUS ESOTEROLOGIA ERMETICA
+
+CORPUS ESOTEROLOGIA ERMETICA è il dominio disciplinare e concettuale del reale operativo.
+
+Formula centrale:
+
+```text
+Decisione · Costo · Traccia · Tempo
+```
+
+Il Corpus sviluppa la grammatica del reale come sequenza verificabile, includendo Esoterologia, Glossario Canonico, Lex Hermeticum, Alien Code, Alien Artifact, Paradogma Alieno e continuità teorico-editoriale.
+
+Domanda centrale:
+
+```text
+Che cos’è la realtà quando viene trattata come sequenza verificabile?
+```
+
+### 3.4 APOKALYPSIS
+
+APOKALYPSIS è il dominio di analisi della soglia storica.
+
+Tratta decadimento, esposizione, dislocazione cognitiva, rottura cognitiva, crisi del sistema culturale, politico e sociale, perdita di fondamento e trasformazione della civiltà.
+
+APOKALYPSIS non descrive soltanto il collasso immediato. Descrive l’esposizione: la condizione in cui un sistema continua a funzionare mentre ha già iniziato a perdere il fondamento che lo rendeva legittimo.
+
+### 3.5 HBCE ECOSISTEMA AI
+
+HBCE ECOSISTEMA AI è la collana dedicata alla governance dell’intelligenza artificiale.
+
+La tesi centrale è:
+
+```text
+Il problema non è soltanto avere AI più potenti.
+Il problema è governare l’AI dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili.
+```
+
+Formula canonica:
+
+```text
+AI genera.
+HBCE governa.
+IPR identifica.
+EVT traccia.
+OPC prova.
+MATRIX organizza.
+AI JOKER-C2 esegue.
+```
+
+La collana HBCE ECOSISTEMA AI è strutturata in cinque volumi:
+
+```text
+Volume I   — HBCE ECOSISTEMA AI
+Volume II  — IPR — Identità Operativa dell’AI
+Volume III — EVT / OPC — Traccia e Prova dell’AI
+Volume IV  — MATRIX AI GOVERNANCE
+Volume V   — AI JOKER-C2
+```
+
+Funzione dei volumi:
+
+```text
+Volume I spiega perché l’AI deve essere governata e non soltanto usata.
+Volume II spiega IPR come identità operativa di AI, agenti, operatori e processi.
+Volume III spiega EVT e OPC come livelli di traccia e prova dell’uso AI.
+Volume IV inserisce AI governance dentro MATRIX, cybersecurity, dati, infrastrutture e sovranità digitale europea.
+Volume V presenta AI JOKER-C2 come runtime governato e dimostratore operativo dell’ecosistema HBCE.
+```
+
+## 4. Sette moduli tecnico-operativi HBCE
+
+AI JOKER-C2 opera attraverso sette moduli tecnico-operativi HBCE:
+
+```text
+1. UNEBDO
+2. OPC
+3. MetaExchange
+4. IOspace
+5. CyberGlobal
+6. NeuroLoop
+7. MATRIX
+```
+
+I moduli HBCE non sono collane editoriali. Sono funzioni operative dello stack.
+
+La formula aggiornata dei moduli è:
+
+```text
+IPR identifica.
+UNEBDO ancora.
+EVT traccia.
+Memory continua.
+OPC prova.
+MetaExchange scambia.
+IOspace espone.
+CyberGlobal protegge.
+NeuroLoop valida.
+MATRIX organizza.
+AI JOKER-C2 esegue.
+```
+
+### 4.1 UNEBDO
+
+UNEBDO supporta ancoraggio, validazione e continuità probatoria.
+
+Rafforza la continuità della prova e l’ancoraggio esterno, ma non genera automaticamente certificazione legale.
+
+### 4.2 OPC
+
+OPC significa Operational Proof & Compliance.
+
+Produce proof receipt tecnici per audit, verifica e revisione di governance.
+
+OPC non è certificazione legale automatica.
+
+### 4.3 MetaExchange
+
+MetaExchange è il modulo di scambio strutturato tra oggetti operativi controllati:
+
+```text
+identità;
+prove;
+documenti;
+eventi;
+audit record;
+contesti operativi;
+runtime node.
+```
+
+Deve restare governato, controllato e soggetto a policy.
+
+### 4.4 IOspace
+
+IOspace è lo spazio di esposizione e interazione runtime.
+
+Può esporre metadata pubblicamente sicuri, catene evento, memoria, proof receipt, stato audit e stato verifica.
+
+IOspace non deve esporre segreti, payload privati, dati sensibili o contenuto di scelte democratiche.
+
+### 4.5 CyberGlobal
+
+CyberGlobal è il modulo difensivo di cybersecurity, resilienza, mappatura rischio, documentazione incidenti e continuità delle infrastrutture critiche.
+
+Deve rimanere difensivo, orientato ad audit e governance.
+
+Non deve diventare un livello offensivo.
+
+### 4.6 NeuroLoop
+
+NeuroLoop supporta validazione, feedback, revisione umana, pattern decisionali ripetuti e apprendimento controllato dagli esiti di audit.
+
+Non è un’autorità autonoma.
+
+Deve preservare responsabilità umana e comportamento fail-closed.
+
+### 4.7 MATRIX
+
+MATRIX è anche il settimo modulo tecnico-operativo HBCE.
+
+Come collana, MATRIX è il dominio architetturale generale.
+
+Come modulo, MATRIX organizza e coordina l’intero stack operativo HBCE.
+
+Funzione del modulo MATRIX:
+
+```text
+coordinare i moduli HBCE;
+organizzare identità, eventi, prove, memoria e runtime;
+collegare IPR, EVT, OPC, AI JOKER-C2 e moduli funzionali;
+fornire struttura sistemica all’ecosistema;
+mantenere coerenza tra livello tecnico, strategico e istituzionale.
+```
+
+La doppia funzione va sempre mantenuta chiara:
+
+```text
+MATRIX come collana = architettura strategica e progettuale.
+MATRIX come modulo = coordinatore tecnico-operativo del sistema HBCE.
+```
+
+## 5. Architettura runtime
+
+AI JOKER-C2 usa una sequenza runtime governata.
+
+```text
 input
 → IPR runtime identity
 → context classification
 → project-domain classification
+→ HBCE module classification
 → policy evaluation
 → risk evaluation
+→ human oversight evaluation
 → runtime decision
 → AI response
 → EVT event
@@ -116,305 +309,49 @@ input
 → audit trail
 ```
 
-The system is built around the following principle:
+Il runtime non produce soltanto una risposta. Produce una traccia operativa collegata a identità, evento, memoria, prova e audit.
 
-```txt
-Standard AI answers.
-AI JOKER-C2 produces IPR-bound governed operational traces.
+## 6. IPR — Identity Primary Record
+
+IPR è lo strumento operativo primario.
+
+Non è un semplice login, account, credential o identità digitale ordinaria.
+
+IPR collega:
+
+```text
+soggetto;
+origine;
+ruolo;
+responsabilità;
+evento;
+derivazione;
+prova;
+continuità;
+tempo;
+auditabilità.
 ```
 
-Each relevant interaction can be:
+Nel runtime AI JOKER-C2 l’identità canonica è:
 
-```txt
-bound to an operational identity;
-classified by project domain;
-evaluated by policy and risk logic;
-converted into an EVT event;
-connected to EVT/IPR-bound memory continuity;
-transformed into an OPC proof receipt;
-exposed through an audit-oriented interface.
-```
-
----
-
-## 3. Four canonical collections
-
-AI JOKER-C2 now operates as the runtime connector for four canonical collections.
-
-```txt
-MATRIX = operational infrastructure architecture
-U.S.E. = political-institutional application of MATRIX for a federated operational Europe
-CORPUS ESOTEROLOGIA ERMETICA = disciplinary grammar of operational reality
-APOKALYPSIS = historical-threshold analysis of decay, exposure and transformation
-```
-
-The functional relation is:
-
-```txt
-MATRIX builds the architecture.
-U.S.E. brings the architecture into European political-institutional design.
-CORPUS grounds the grammar of operational reality.
-APOKALYPSIS reads the historical threshold.
-IPR makes operations attributable.
-EVT makes operations traceable.
-Memory preserves runtime continuity.
-OPC makes proof receipts inspectable.
-AI JOKER-C2 makes the system executable.
-```
-
-### 3.1 MATRIX
-
-MATRIX is the operational infrastructure architecture.
-
-It covers:
-
-```txt
-AI governance;
-European digital infrastructure;
-B2B and B2G use cases;
-public administration;
-auditability;
-identity governance;
-strategic autonomy;
-cybersecurity governance;
-data governance;
-critical infrastructure continuity;
-operational traceability.
-```
-
-MATRIX answers:
-
-```txt
-How can Europe build verifiable operational systems for AI, governance, data, energy, security and institutional continuity?
-```
-
-### 3.2 U.S.E. — United States of Europe
-
-U.S.E. means **United States of Europe — Stati Uniti d’Europa**.
-
-U.S.E. is the MATRIX-derived political-institutional application domain.
-
-It covers:
-
-```txt
-European federation;
-federated operational Europe;
-federated digital voting;
-digital sovereignty;
-constitutional-operational Europe;
-public consultation;
-referendum infrastructure;
-civil protection coordination;
-regional, national and European decision channels;
-democratic auditability.
-```
-
-The controlling democratic rule is:
-
-```txt
-Identity verified first.
-Choice separated after.
-Vote anonymized.
-Process auditable.
-```
-
-IPR may verify identity and participation rights.
-
-EVT may trace process integrity.
-
-OPC may generate proof receipts for process operations.
-
-The content of a democratic vote or civic choice must not be linked to the personal identity of the voter or participant.
-
-### 3.3 CORPUS ESOTEROLOGIA ERMETICA
-
-CORPUS ESOTEROLOGIA ERMETICA is the disciplinary and conceptual grammar domain.
-
-Its core formula is:
-
-```txt
-Decisione · Costo · Traccia · Tempo
-```
-
-This domain supports:
-
-```txt
-Esoterologia;
-canonical glossary;
-operational reality;
-Lex Hermeticum;
-Alien Code;
-Alien Artifact;
-Paradogma Alieno;
-Portale dell’Anticristo;
-theoretical and editorial continuity.
-```
-
-The Corpus answers:
-
-```txt
-What is reality when it is treated as a verifiable sequence?
-```
-
-### 3.4 APOKALYPSIS
-
-APOKALYPSIS is the historical-threshold analysis domain.
-
-It handles:
-
-```txt
-decadimento;
-esposizione;
-dislocazione cognitiva;
-rottura cognitiva;
-crisi del sistema culturale, politico e sociale;
-threshold analysis;
-civilizational interpretation;
-emergence of the Paradogma Alieno.
-```
-
-APOKALYPSIS does not describe immediate collapse.
-
-It describes exposure: the condition in which a system continues to function while already losing the foundation that made it legitimate.
-
----
-
-## 4. HBCE technical-operational modules
-
-The six HBCE modules are technical-operational functions of the stack.
-
-They are not additional collections.
-
-They are not the primary product layer.
-
-They extend IPR inside governed runtime execution.
-
-```txt
-UNEBDO = anchoring, validation and evidentiary continuity
-OPC = operational proof receipt and compliance layer
-MetaExchange = structured exchange layer
-IOspace = runtime visibility and operational interaction space
-CyberGlobal = defensive cybersecurity and resilience layer
-NeuroLoop = validation, feedback and review loop
-```
-
-The module formula is:
-
-```txt
-IPR identifies.
-UNEBDO anchors.
-EVT traces.
-Memory continues.
-OPC proves.
-MetaExchange exchanges.
-IOspace exposes.
-CyberGlobal protects.
-NeuroLoop validates.
-AI JOKER-C2 executes.
-MATRIX organizes.
-```
-
-### 4.1 UNEBDO
-
-UNEBDO supports anchoring, validation and evidentiary continuity.
-
-It strengthens long-term proof continuity and external anchoring logic, but it does not create automatic legal certification by itself.
-
-### 4.2 OPC
-
-OPC means **Operational Proof & Compliance Layer**.
-
-It creates technical proof receipts for audit, verification and governance review.
-
-OPC is not automatic legal certification.
-
-### 4.3 MetaExchange
-
-MetaExchange supports structured exchange between controlled operational objects:
-
-```txt
-identities;
-proofs;
-documents;
-events;
-audit records;
-operational contexts;
-runtime nodes.
-```
-
-It must remain governed, access-controlled and policy-aware.
-
-### 4.4 IOspace
-
-IOspace is the runtime visibility and operational interaction space.
-
-It can expose public-safe runtime metadata, event chains, memory continuity, proof records, audit status and verification status.
-
-IOspace must not expose secrets, private payloads or democratic choice content.
-
-### 4.5 CyberGlobal
-
-CyberGlobal supports defensive cybersecurity, resilience, risk mapping, incident documentation and critical infrastructure continuity.
-
-It must remain defensive, audit-oriented and governance-oriented.
-
-It must not become an offensive cyber layer.
-
-### 4.6 NeuroLoop
-
-NeuroLoop supports validation, feedback, human review triggers, repeated decision patterns and controlled learning from audit outcomes.
-
-It is not an autonomous authority layer.
-
-It must preserve human accountability and fail-closed behavior.
-
----
-
-## 5. Core architecture
-
-AI JOKER-C2 currently uses the following runtime layers.
-
-### 5.1 IPR — Identity Primary Record
-
-IPR means **Identity Primary Record**.
-
-IPR is not a simple login, credential, account or ordinary digital identity.
-
-It is an operational identity and proof record that connects:
-
-```txt
-subject;
-origin;
-responsibility;
-derivation;
-event;
-evidence;
-continuity;
-time;
-auditability.
-```
-
-In the HBCE hierarchy, IPR is the primary operational instrument. It is the base layer through which identity, responsibility, event traceability and proof continuity are connected.
-
-In this runtime, the canonical identity is:
-
-```txt
+```text
 entity: AI_JOKER
 ipr: IPR-AI-0001
+checkpoint: EVT-0015-AI
+previous: EVT-0014-AI
+cycle: UP-MESE-4
 core: HBCE-CORE-v3
 organization: HERMETICUM B.C.E. S.r.l.
 runtimeRole: IPR_RUNTIME_DEMONSTRATOR
 ```
 
-AI JOKER-C2 uses this identity to demonstrate how IPR can operate inside a governed AI runtime.
+## 7. EVT — Event Record / Verifiable Event Trace
 
-### 5.2 EVT — Event Record / Verifiable Event Trace
+EVT è il livello di evento, traccia e continuità verificabile.
 
-EVT is the event continuity layer.
+Ogni operazione rilevante può generare un evento contenente:
 
-Each relevant operation can generate an event containing:
-
-```txt
+```text
 event id;
 previous event reference;
 timestamp;
@@ -423,6 +360,7 @@ IPR;
 runtime state;
 decision;
 project domain;
+HBCE module binding;
 context class;
 document mode;
 document family;
@@ -430,64 +368,42 @@ hash;
 continuity reference.
 ```
 
-EVT does not create legal certification by itself.
+EVT non crea certificazione legale automatica.
 
-It provides a verifiable operational trace connected to IPR identity and runtime continuity.
+EVT fornisce una traccia tecnica verificabile connessa a identità IPR e continuità runtime.
 
-### 5.3 EVT/IPR-bound memory
+## 8. Memoria legata a EVT/IPR
 
-AI JOKER-C2 uses memory as an operational trace, not as vague chat memory.
+AI JOKER-C2 usa la memoria come traccia operativa, non come memoria vaga di chat.
 
-Memory is bound to:
+La memoria è collegata a:
 
-```txt
-sessionId
-IPR
-entity
-message
-response
-document family
-runtime state
-decision
-project domain
-memory event
-governed EVT
-memory hash
-OPC proof reference when available
+```text
+sessionId;
+IPR;
+entity;
+message;
+response;
+document family;
+runtime state;
+decision;
+project domain;
+HBCE module;
+memory event;
+governed EVT;
+memory hash;
+OPC proof reference.
 ```
 
-This allows the runtime to recover continuity across interactions and interpret references such as:
+Questo permette al runtime di mantenere continuità tra interazioni, documenti, domini progettuali, moduli HBCE e proof receipt.
 
-```txt
-"this document"
-"the previous answer"
-"IPR"
-"HBCE"
-"MATRIX"
-"U.S.E."
-"CORPUS"
-"APOKALYPSIS"
-"UNEBDO"
-"MetaExchange"
-"IOspace"
-"CyberGlobal"
-"NeuroLoop"
-"the runtime"
-"the audit trail"
-"the proof receipt"
-```
+## 9. OPC — Operational Proof & Compliance
 
-The memory layer is therefore part of the IPR demonstrator function: it shows how an AI interaction can remain connected to operational identity, event history and auditable continuity.
+OPC genera proof receipt per le risposte runtime.
 
-### 5.4 OPC — Operational Proof & Compliance Layer
+Un proof receipt OPC collega:
 
-OPC means **Operational Proof & Compliance Layer**.
-
-OPC generates proof receipts for runtime responses.
-
-An OPC proof receipt links:
-
-```txt
+```text
 IPR;
 entity;
 session;
@@ -495,6 +411,7 @@ governed EVT;
 memory event;
 runtime decision;
 project domain;
+HBCE module;
 policy reference;
 risk class;
 input hash;
@@ -508,154 +425,114 @@ audit status;
 verification status.
 ```
 
-OPC does not create legal certification by default.
+OPC produce una prova tecnica orientata all’audit.
 
-It creates a technical proof receipt for audit, verification and governance review.
+Non produce automaticamente certificazione legale, validazione istituzionale o riconoscimento regolatorio.
 
-Example proof output:
+## 10. Flusso operativo HBCE v0.2
 
-```txt
-OPC Proof Receipt
-Proof: OPC-...
-Chain: sha256:...
-Audit: READY
-Verify: VERIFIABLE
-Legal: false
-Append: APPENDED
+```text
+1. Ricezione input utente e file
+2. Risoluzione sessionId
+3. Binding identità runtime tramite IPR
+4. Recupero memoria EVT/IPR
+5. Classificazione dominio progettuale
+6. Classificazione modulo HBCE
+7. Classificazione contesto e intento
+8. Classificazione dati
+9. Valutazione file policy
+10. Valutazione policy
+11. Valutazione rischio
+12. Valutazione human oversight
+13. Decisione runtime
+14. Generazione risposta AI
+15. Creazione EVT legacy
+16. Creazione EVT governato
+17. Creazione EVT memoria semantica
+18. Creazione proof receipt OPC
+19. Restituzione risposta + EVT + memoria + proof receipt
 ```
 
----
+## 11. Route API principali
 
-## 6. Runtime flow
+### 11.1 Chat runtime
 
-The current runtime model is:
-
-```txt
-input
-→ file
-→ Joker state
-→ IPR runtime identity
-→ project-domain classification
-→ context classification
-→ policy/risk
-→ EVT continuity
-→ interpretation
-→ response
-→ new EVT
-→ EVT/IPR memory
-→ OPC proof receipt
-→ audit trail
-```
-
-The target HBCE Operational Stack v0.1 flow is:
-
-```txt
-1. Receive user input and files
-2. Resolve sessionId
-3. Bind runtime identity through IPR
-4. Retrieve EVT/IPR-bound memory
-5. Classify project domain
-6. Classify context and intent
-7. Classify data
-8. Evaluate file policy
-9. Evaluate policy
-10. Evaluate risk
-11. Evaluate human oversight
-12. Decide runtime action
-13. Generate AI response
-14. Create legacy EVT
-15. Create governed EVT
-16. Create semantic memory EVT
-17. Create OPC proof receipt
-18. Return response + EVT + memory + OPC proof receipt
-```
-
-The runtime flow is therefore not only a response pipeline. It is an IPR-bound execution sequence.
-
----
-
-## 7. Current API routes
-
-### 7.1 Chat runtime
-
-```txt
+```text
 POST /api/chat
 ```
 
-Main AI JOKER-C2 runtime endpoint.
+Endpoint principale di AI JOKER-C2.
 
-It handles:
+Gestisce:
 
-```txt
-message input;
-file context;
-session continuity;
-IPR runtime identity;
-project-domain classification;
-memory retrieval;
+```text
+input messaggio;
+contesto file;
+continuità sessione;
+identità runtime IPR;
+classificazione dominio progettuale;
+classificazione modulo HBCE;
+recupero memoria;
 policy/risk evaluation;
-OpenAI response generation;
-EVT generation;
-memory event generation;
-OPC proof receipt generation.
+generazione risposta AI;
+generazione EVT;
+generazione memoria;
+generazione proof receipt OPC.
 ```
 
-### 7.2 OPC proof endpoint
+### 11.2 OPC proof endpoint
 
-```txt
+```text
 GET /api/opc
 POST /api/opc
 ```
 
-The OPC endpoint reads and creates proof records.
+Endpoint di lettura e creazione proof record OPC.
 
-Current prototype storage:
+Storage prototipale attuale:
 
-```txt
+```text
 /tmp/hbce-ai-joker-c2-opc-proofs.jsonl
 ```
 
-Important note:
+Su deploy serverless, `/tmp` è temporaneo e non deve essere trattato come storage permanente.
 
-On serverless deployments, `/tmp` is temporary and must not be treated as permanent production storage.
+Storage futuro consigliato:
 
-Future production storage should use:
-
-```txt
-Postgres
-KV
-object storage
-append-only database
-controlled audit storage
+```text
+Postgres;
+KV;
+object storage;
+append-only database;
+controlled audit storage.
 ```
 
-### 7.3 File context endpoint
+### 11.3 File context endpoint
 
-```txt
+```text
 POST /api/files
 DELETE /api/files
 ```
 
-Used by the interface to ingest and clear session files.
+Usato dall’interfaccia per caricare e cancellare file di sessione.
 
----
+## 12. Interfaccia utente
 
-## 8. User interface
+Interfaccia principale:
 
-The main operational interface is:
-
-```txt
+```text
 /interface
 ```
 
-The UI displays:
+La UI mostra:
 
-```txt
+```text
 session id;
 runtime state;
 runtime decision;
 IPR identity;
 project domain;
+HBCE module;
 context class;
 last EVT;
 last EVT hash;
@@ -670,24 +547,29 @@ active files;
 conversation turns.
 ```
 
-Each assistant response may display:
+Ogni risposta può mostrare:
 
-```txt
-EVT Chain
-Governed EVT
-EVT/IPR Memory
-OPC Proof Receipt
+```text
+EVT Chain;
+Governed EVT;
+EVT/IPR Memory;
+OPC Proof Receipt.
 ```
 
-The UI should be interpreted as the visible demonstrator of the IPR runtime chain: identity, event, memory, proof, audit and continuity.
+La UI va interpretata come dimostratore visibile della catena IPR:
 
----
+```text
+identità;
+evento;
+memoria;
+prova;
+audit;
+continuità.
+```
 
-## 9. Current visible proof flow
+## 13. Esempio di proof flow visibile
 
-A successful response produces a visible structure like:
-
-```txt
+```text
 EVT Chain
 EVT: EVT-...
 Prev: ...
@@ -695,7 +577,8 @@ Hash: sha256:...
 
 Governed EVT
 EVT: EVT-...
-Project: MATRIX / U.S.E. / CORPUS / APOKALYPSIS / MULTI_DOMAIN
+Project: MATRIX / U.S.E. / CORPUS / APOKALYPSIS / HBCE_ECOSISTEMA_AI / MULTI_DOMAIN
+Module: UNEBDO / OPC / MetaExchange / IOspace / CyberGlobal / NeuroLoop / MATRIX / NONE
 Append: APPENDED
 
 EVT/IPR Memory
@@ -711,72 +594,63 @@ Verify: VERIFIABLE
 Legal: false
 ```
 
-This means the runtime has created:
+Questo significa che il runtime ha prodotto:
 
-```txt
-EVT trace;
-governed EVT;
-EVT/IPR-bound memory;
-OPC technical proof receipt.
+```text
+traccia EVT;
+EVT governato;
+memoria EVT/IPR;
+proof receipt OPC;
+record auditabile.
 ```
 
-The visible proof flow demonstrates that the interaction is not only answered, but also connected to an IPR-compatible operational trace.
+## 14. Variabili ambiente
 
----
+Richiesta:
 
-## 10. Environment variables
-
-Required:
-
-```txt
+```text
 OPENAI_API_KEY
 ```
 
-Used to call the OpenAI model.
+Opzionale:
 
-Optional:
-
-```txt
+```text
 JOKER_MODEL
 ```
 
 Default:
 
-```txt
+```text
 gpt-4o-mini
 ```
 
-Optional OPC storage path:
+Storage OPC opzionale:
 
-```txt
+```text
 JOKER_OPC_LEDGER_FILE
 ```
 
-If not provided, the runtime uses:
+Default prototipale:
 
-```txt
+```text
 /tmp/hbce-ai-joker-c2-opc-proofs.jsonl
 ```
 
-Optional EVT memory ledger storage path:
+Storage memoria EVT opzionale:
 
-```txt
+```text
 JOKER_EVT_MEMORY_LEDGER_FILE
 ```
 
-If not provided, the runtime uses a temporary local JSONL file suitable only for prototype and runtime testing.
+## 15. Sviluppo locale
 
----
-
-## 11. Local development
-
-Install dependencies:
+Installazione dipendenze:
 
 ```bash
 npm install
 ```
 
-Run development server:
+Avvio sviluppo:
 
 ```bash
 npm run dev
@@ -788,19 +662,15 @@ Build:
 npm run build
 ```
 
-Start production build:
+Avvio produzione:
 
 ```bash
 npm run start
 ```
 
----
+## 16. File principali del runtime
 
-## 12. Repository structure
-
-Main runtime files:
-
-```txt
+```text
 app/api/chat/route.ts
 app/api/opc/route.ts
 app/interface/page.tsx
@@ -812,6 +682,7 @@ lib/evt-memory.ts
 lib/evt-memory-ledger.ts
 lib/context-classifier.ts
 lib/project-domain-classifier.ts
+lib/hbce-module-classifier.ts
 lib/safe-concept-classifier.ts
 lib/data-classifier.ts
 lib/file-policy.ts
@@ -823,17 +694,19 @@ lib/runtime-types.ts
 lib/joker-response-contract.ts
 ```
 
-Documentation:
+## 17. Documentazione consigliata
 
-```txt
+```text
 docs/HBCE_OPERATIONAL_STACK.md
+docs/HBCE_MODULES_RUNTIME_MAP.md
+docs/FIVE_COLLECTIONS_RUNTIME_MAP.md
+docs/HBCE_ECOSISTEMA_AI_COLLECTION.md
+docs/IPR_RUNTIME_DEMONSTRATOR.md
+docs/OPC_PROOF_LAYER.md
+docs/JOKER_C2_AUDIT_RUNTIME.md
 ```
 
----
-
-## 13. OPC proof receipt shape
-
-An OPC proof receipt follows this conceptual shape:
+## 18. Forma concettuale di un proof receipt OPC
 
 ```json
 {
@@ -861,9 +734,10 @@ An OPC proof receipt follows this conceptual shape:
   "runtime": {
     "state": "OPERATIONAL",
     "decision": "ALLOW",
-    "contextClass": "IDENTITY",
+    "contextClass": "AI_GOVERNANCE",
     "intentClass": "ASK",
-    "projectDomain": "MATRIX",
+    "projectDomain": "HBCE_ECOSISTEMA_AI",
+    "hbceModule": "MATRIX",
     "riskClass": "LOW",
     "policyReference": "..."
   },
@@ -892,38 +766,36 @@ An OPC proof receipt follows this conceptual shape:
 }
 ```
 
----
+## 19. Limiti di governance
 
-## 14. Governance boundaries
+AI JOKER-C2 è un runtime tecnico e di ricerca.
 
-AI JOKER-C2 is a technical and research runtime.
+Non dichiara:
 
-It does not claim:
-
-```txt
-legal certification;
-regulatory approval;
-official public-sector adoption;
-institutional recognition;
-automatic compliance;
-legally binding evidence status.
+```text
+certificazione legale;
+approvazione regolatoria;
+adozione ufficiale pubblica;
+riconoscimento istituzionale;
+compliance automatica;
+valore probatorio legalmente vincolante.
 ```
 
-It provides a technical basis for:
+Fornisce invece una base tecnica per:
 
-```txt
-auditability;
-traceability;
-runtime governance;
-operational identity;
-proof receipts;
-evidence-oriented design;
-future legal and institutional review.
+```text
+auditabilità;
+tracciabilità;
+governance runtime;
+identità operativa;
+proof receipt;
+disegno evidence-oriented;
+revisione legale e istituzionale futura.
 ```
 
-Any production deployment in public-sector, regulated or high-risk environments requires:
+Ogni deploy produttivo in ambienti pubblici, regolati o ad alto rischio richiede:
 
-```txt
+```text
 legal review;
 security review;
 privacy review;
@@ -936,76 +808,96 @@ logging policy;
 retention policy.
 ```
 
-The correct compliance position is:
+## 20. Boundary AI governance
 
-```txt
-IPR provides an operational identity and proof basis.
-EVT provides event continuity.
-EVT/IPR-bound memory provides runtime continuity.
-OPC provides technical proof receipts.
-AI JOKER-C2 demonstrates the runtime.
-Legal, institutional or regulatory status requires external validation.
+AI JOKER-C2 può usare modelli AI esterni come motori di generazione, ma HBCE deve rimanere il livello di governance intorno al modello.
+
+```text
+Il modello AI genera.
+HBCE governa il processo.
+IPR identifica.
+EVT registra l’evento.
+Memory preserva continuità.
+OPC produce proof receipt.
+Policy, risk e oversight decidono se consentire, bloccare, degradare o scalare.
 ```
 
----
+Regola centrale:
 
-## 15. Digital voting and civic interaction boundary
+```text
+Il modello AI non governa HBCE.
+HBCE governa l’uso dei modelli AI.
+```
 
-AI JOKER-C2 can discuss digital voting and civic interaction only with strict democratic safeguards.
+Questa regola vale per:
 
-Correct principle:
+```text
+OpenAI;
+Anthropic;
+Google;
+Meta;
+Mistral;
+modelli futuri proprietari HBCE;
+architetture ibride.
+```
 
-```txt
+## 21. Boundary voto digitale e interazione civica
+
+AI JOKER-C2 può trattare voto digitale, consultazione pubblica e interazione civica solo con salvaguardie democratiche forti.
+
+Principio corretto:
+
+```text
 Identity verified first.
 Choice separated after.
 Vote anonymized.
 Process auditable.
 ```
 
-IPR can verify identity and participation rights.
+Il sistema deve distinguere:
 
-EVT can trace process integrity.
-
-OPC can generate proof receipts for process operations.
-
-But the content of a democratic vote must not be linked to the personal identity of the voter.
-
-The system must distinguish:
-
-```txt
-electoral voting;
-public consultation;
-civic participation;
-access to public services;
-document interaction with institutions;
-legislative referendum;
-participation proof;
-ballot secrecy.
+```text
+voto elettorale;
+consultazione pubblica;
+partecipazione civica;
+accesso ai servizi pubblici;
+interazione documentale con istituzioni;
+referendum legislativo;
+prova di partecipazione;
+segretezza della scelta.
 ```
 
----
+IPR può verificare identità e diritto di partecipazione.
 
-## 16. Economic and institutional value
+EVT può tracciare l’integrità del processo.
 
-The HBCE / IPR / EVT / OPC stack can support a professional and institutional layer around:
+OPC può produrre proof receipt per le operazioni.
 
-```txt
-IPR registration;
-EVT audit;
-OPC proof receipt management;
+Il contenuto della scelta non deve essere collegato all’identità personale.
+
+## 22. Valore economico e istituzionale
+
+Lo stack HBCE / IPR / EVT / OPC può sostenere un livello professionale e istituzionale per:
+
+```text
+registrazione IPR;
+audit EVT;
+gestione proof receipt OPC;
 AI governance;
 compliance operations;
-B2B/B2G integration;
-document verification;
-institutional continuity;
+integrazione B2B/B2G;
+verifica documentale;
+continuità istituzionale;
 audit trail review;
-operational accountability;
-civic infrastructure safeguards.
+responsabilità operativa;
+safeguard infrastrutturali civiche;
+governance AI/cybersecurity;
+runtime governance per uso AI regolato.
 ```
 
-Potential professional roles include:
+Ruoli professionali possibili:
 
-```txt
+```text
 IPR registration operator;
 EVT auditor;
 OPC proof record reviewer;
@@ -1015,58 +907,53 @@ B2B/B2G compliance consultant;
 operational continuity manager;
 document verification specialist;
 digital audit specialist;
-civic infrastructure reviewer.
+civic infrastructure reviewer;
+AI/cyber governance reviewer.
 ```
 
-HBCE may be positioned as an infrastructure that can be integrated into national and European governance contexts, but it must not be described as already officially adopted unless independently validated.
+HBCE può essere posizionato come infrastruttura integrabile in contesti nazionali ed europei, ma non deve essere descritto come già ufficialmente adottato senza validazione indipendente.
 
-The first operational product focus is IPR. AI JOKER-C2 supports this position by showing how IPR can operate inside a governed runtime.
+Il primo prodotto operativo resta IPR.
 
----
+AI JOKER-C2 supporta questa posizione mostrando come IPR può funzionare dentro un runtime AI governato.
 
-## 17. Strategic positioning
+## 23. Posizionamento strategico
 
-Professional statement:
+Dichiarazione professionale:
 
-```txt
-AI JOKER-C2 is the governed runtime demonstrator for IPR inside the HBCE ecosystem. It extends standard AI interaction with verifiable runtime governance: each relevant interaction can be bound to an operational identity, recorded as an event, hashed into a continuity chain, connected to EVT/IPR-bound memory, converted into an OPC proof receipt, and exposed through an audit-oriented interface.
+```text
+AI JOKER-C2 è il runtime dimostrativo governato dell’IPR all’interno dell’ecosistema HBCE. Estende l’interazione AI standard con governance runtime verificabile: ogni interazione rilevante può essere collegata a un’identità operativa, registrata come evento, inserita in una catena di continuità, collegata a memoria EVT/IPR, trasformata in proof receipt OPC, classificata rispetto alle cinque collane canoniche, collegata ai sette moduli tecnico-operativi HBCE ed esposta tramite un’interfaccia orientata all’audit.
 ```
 
-Italian statement:
+Gerarchia sintetica:
 
-```txt
-AI JOKER-C2 è il runtime dimostrativo governato dell’IPR all’interno dell’ecosistema HBCE. Estende l’interazione AI standard con governance runtime verificabile: ogni interazione rilevante può essere collegata a un’identità operativa, registrata come evento, inserita in una catena di continuità, collegata a memoria EVT/IPR, trasformata in proof receipt OPC ed esposta tramite un’interfaccia orientata all’audit.
+```text
+IPR registra identità operativa.
+AI JOKER-C2 esegue e dimostra.
+UNEBDO ancora e valida continuità.
+EVT traccia l’evento.
+Memory preserva continuità.
+OPC produce proof receipt.
+MetaExchange struttura lo scambio.
+IOspace espone il runtime.
+CyberGlobal protegge in modo difensivo.
+NeuroLoop valida e genera feedback.
+MATRIX organizza l’ecosistema.
+HBCE governa il processo.
+U.S.E. applica MATRIX al disegno politico-istituzionale europeo.
+CORPUS fonda la grammatica.
+APOKALYPSIS legge la soglia storica.
+HBCE ECOSISTEMA AI governa l’intelligenza artificiale come processo operativo.
 ```
 
-Synthetic hierarchy:
+## 24. Milestone corrente
 
-```txt
-IPR records operational identity.
-AI JOKER-C2 executes and demonstrates it.
-UNEBDO anchors and validates continuity.
-EVT traces the event.
-Memory preserves continuity.
-OPC produces the proof receipt.
-MetaExchange structures exchange.
-IOspace exposes the runtime.
-CyberGlobal protects defensively.
-NeuroLoop validates and feeds back.
-HBCE governs the process.
-MATRIX frames the architecture.
-U.S.E. applies MATRIX to European political-institutional design.
-CORPUS grounds the grammar.
-APOKALYPSIS reads the historical threshold.
-```
+Milestone corrente raggiunta:
 
----
-
-## 18. Current milestone
-
-Current milestone achieved:
-
-```txt
+```text
 AI response
 + project-domain classification
++ HBCE module classification
 + EVT chain
 + governed EVT
 + EVT/IPR-bound memory
@@ -1074,40 +961,62 @@ AI response
 + UI proof visibility
 ```
 
-This means AI JOKER-C2 now works as an initial auditable runtime prototype and IPR runtime demonstrator across MATRIX, U.S.E., CORPUS and APOKALYPSIS.
+AI JOKER-C2 funziona quindi come prototipo runtime auditabile e dimostratore IPR attraverso cinque collane:
 
-The repository now also documents the six HBCE technical-operational modules as stack functions.
-
----
-
-## 19. Next roadmap
-
-Recommended next steps:
-
-```txt
-1. Strengthen IPR runtime identity metadata
-2. Persist OPC ledger outside /tmp
-3. Persist EVT/IPR memory ledger outside /tmp
-4. Add proof verification endpoint
-5. Add signed OPC receipts
-6. Add audit report export
-7. Add OPC proof schema
-8. Add audit report schema
-9. Add ProofReceiptCard component
-10. Add EventChainViewer component
-11. Add RuntimeStatusPanel component
-12. Add IOspace dashboard
-13. Add IPR runtime module
-14. Add four-collection runtime map
-15. Add HBCE module runtime map
+```text
+MATRIX
+U.S.E.
+CORPUS ESOTEROLOGIA ERMETICA
+APOKALYPSIS
+HBCE ECOSISTEMA AI
 ```
 
-Suggested future files:
+e sette moduli HBCE:
 
-```txt
+```text
+UNEBDO
+OPC
+MetaExchange
+IOspace
+CyberGlobal
+NeuroLoop
+MATRIX
+```
+
+## 25. Roadmap successiva
+
+Passi consigliati:
+
+```text
+1. Rafforzare metadata identità runtime IPR
+2. Persistenza OPC ledger fuori da /tmp
+3. Persistenza EVT/IPR memory ledger fuori da /tmp
+4. Aggiungere endpoint verifica proof
+5. Aggiungere OPC receipt firmate
+6. Aggiungere export audit report
+7. Aggiungere schema OPC proof
+8. Aggiungere schema audit report
+9. Aggiungere componente ProofReceiptCard
+10. Aggiungere componente EventChainViewer
+11. Aggiungere componente RuntimeStatusPanel
+12. Aggiungere dashboard IOspace
+13. Aggiungere modulo runtime IPR
+14. Aggiungere mappa cinque collane
+15. Aggiungere mappa sette moduli HBCE
+16. Aggiungere mappa HBCE ECOSISTEMA AI
+17. Aggiungere diagnostica AI governance
+18. Aggiungere metadata provider-modello AI
+19. Aggiungere profilo audit AI/cyber
+20. Aggiungere workflow B2B/B2G IPR AI Audit Trail
+```
+
+File futuri consigliati:
+
+```text
 lib/ipr-runtime.ts
 lib/audit-report.ts
 lib/opc-ledger.ts
+lib/hbce-ecosistema-ai-collection.ts
 components/ProofReceiptCard.tsx
 components/EventChainViewer.tsx
 components/RuntimeStatusPanel.tsx
@@ -1117,19 +1026,18 @@ schemas/audit-report.schema.json
 docs/IPR_RUNTIME_DEMONSTRATOR.md
 docs/OPC_PROOF_LAYER.md
 docs/JOKER_C2_AUDIT_RUNTIME.md
-docs/FOUR_COLLECTIONS_RUNTIME_MAP.md
+docs/FIVE_COLLECTIONS_RUNTIME_MAP.md
 docs/HBCE_MODULES_RUNTIME_MAP.md
+docs/HBCE_ECOSISTEMA_AI_COLLECTION.md
 ```
 
----
+## 26. Licenza e uso
 
-## 20. License and use
+Questo repository fa parte dell’ecosistema di ricerca e sviluppo HERMETICUM B.C.E.
 
-This repository is part of the HERMETICUM B.C.E. research and development ecosystem.
+Uso, riuso, pubblicazione e integrazione devono preservare attribuzione a:
 
-Use, reuse, publication and integration should preserve attribution to:
-
-```txt
+```text
 HERMETICUM B.C.E. S.r.l.
 HBCE Research
 B.C.E.Hermeticum
@@ -1137,55 +1045,65 @@ AI JOKER-C2
 IPR — Identity Primary Record
 ```
 
----
+## 27. Nota finale
 
-## 21. Final note
+AI JOKER-C2 è un runtime di ricerca operativo in evoluzione.
 
-AI JOKER-C2 is an evolving operational research runtime.
+L’obiettivo non è sostituire sistemi legali, istituzionali o compliance esistenti.
 
-The current goal is not to replace legal, institutional or compliance systems.
+L’obiettivo è dimostrare un livello computabile di governance dove le interazioni AI possono diventare:
 
-The goal is to demonstrate a computable governance layer where AI interactions can become:
-
-```txt
-identified
-classified
-decided
-traced
-hashed
-remembered
-proven
-audited
+```text
+identificate;
+classificate;
+decise;
+tracciate;
+hashate;
+memorizzate;
+provate;
+auditabili.
 ```
 
-This is the foundation of the HBCE Operational Stack and the runtime demonstration layer for IPR.
+Formula finale delle collane:
 
-Final collection formula:
-
-```txt
-MATRIX builds the architecture.
-U.S.E. brings it into European political-institutional design.
-CORPUS grounds the grammar of operational reality.
-APOKALYPSIS reads the historical threshold.
-IPR makes operations attributable.
-EVT makes operations traceable.
-Memory preserves continuity.
-OPC makes proof receipts inspectable.
-AI JOKER-C2 makes the system executable.
+```text
+MATRIX costruisce l’architettura.
+U.S.E. la porta nel disegno politico-istituzionale europeo.
+CORPUS fonda la grammatica del reale operativo.
+APOKALYPSIS legge la soglia storica.
+HBCE ECOSISTEMA AI governa l’intelligenza artificiale come processo identificabile, tracciabile e auditabile.
+IPR rende attribuibili le operazioni.
+EVT rende tracciabili gli eventi.
+Memory preserva la continuità.
+OPC rende ispezionabili le proof receipt.
+AI JOKER-C2 rende eseguibile il sistema.
 ```
 
-Final module formula:
+Formula finale dei moduli:
 
-```txt
-IPR identifies.
-UNEBDO anchors.
-EVT traces.
-Memory continues.
-OPC proves.
-MetaExchange exchanges.
-IOspace exposes.
-CyberGlobal protects.
-NeuroLoop validates.
-AI JOKER-C2 executes.
-MATRIX organizes.
+```text
+IPR identifica.
+UNEBDO ancora.
+EVT traccia.
+Memory continua.
+OPC prova.
+MetaExchange scambia.
+IOspace espone.
+CyberGlobal protegge.
+NeuroLoop valida.
+MATRIX organizza.
+AI JOKER-C2 esegue.
+```
+
+Checkpoint canonico runtime:
+
+```text
+EVT: EVT-0015-AI
+Previous: EVT-0014-AI
+Cycle: UP-MESE-4
+Timestamp: 2026-05-19T15:30:00+02:00
+Entity: AI_JOKER
+IPR: IPR-AI-0001
+Core: HBCE-CORE-v3
+Organization: HERMETICUM B.C.E. S.r.l.
 ```
