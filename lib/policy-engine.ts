@@ -16,10 +16,11 @@
  * Canonical hierarchy:
  * - IPR = primary operational identity and proof instrument
  * - AI JOKER-C2 = governed runtime demonstrator
- * - MATRIX = operational infrastructure architecture
+ * - MATRIX = project collection, architectural framework and HBCE coordination module
  * - U.S.E. = MATRIX-derived political-institutional application
  * - CORPUS_ESOTEROLOGIA_ERMETICA = disciplinary grammar
  * - APOKALYPSIS = historical threshold analysis
+ * - HBCE_ECOSISTEMA_AI = AI governance ecosystem collection
  * - EVT = event trace
  * - EVT/IPR memory = runtime continuity
  * - OPC = operational proof receipt
@@ -162,7 +163,6 @@ const PROHIBITED_POLICY_RULES: PolicyRule[] = [
       "falsifica prove",
       "fingere audit",
       "rimuovere auditabilita",
-      "rimuovere auditabilità",
       "aggirare supervisione umana"
     ]
   },
@@ -196,6 +196,50 @@ const PROHIBITED_POLICY_RULES: PolicyRule[] = [
 ];
 
 const RESTRICTED_POLICY_RULES: PolicyRule[] = [
+  {
+    policyReference: "RESTRICTED_HBCE_AI_GOVERNANCE",
+    status: "RESTRICTED",
+    outcome: "REQUIRE_AUDIT",
+    failClosed: false,
+    reason:
+      "Request involves HBCE ECOSISTEMA AI, AI governance, model governance or AI audit and requires audit-aware handling.",
+    terms: [
+      "hbce ecosistema ai",
+      "ecosistema ai",
+      "ai governance",
+      "governance ai",
+      "governance dell ai",
+      "governance dell'ai",
+      "governo dell ai",
+      "governo dell'ai",
+      "governare l ai",
+      "governare l'ai",
+      "ai audit",
+      "audit ai",
+      "audit dell ai",
+      "audit dell'ai",
+      "ipr ai audit trail",
+      "model governance",
+      "governance modelli",
+      "modelli ai esterni",
+      "external ai models",
+      "openai",
+      "anthropic",
+      "claude",
+      "google ai",
+      "gemini",
+      "meta ai",
+      "llama",
+      "mistral",
+      "runtime ai governato",
+      "runtime governato ai",
+      "responsible ai",
+      "trustworthy ai",
+      "human oversight ai",
+      "fail-closed ai",
+      "matrix ai governance"
+    ]
+  },
   {
     policyReference: "RESTRICTED_USE_CIVIC_DEMOCRATIC_INFRASTRUCTURE",
     status: "RESTRICTED",
@@ -237,6 +281,7 @@ const RESTRICTED_POLICY_RULES: PolicyRule[] = [
     terms: [
       "security",
       "cybersecurity",
+      "cyber security",
       "incident",
       "soc",
       "vulnerability",
@@ -291,7 +336,6 @@ const RESTRICTED_POLICY_RULES: PolicyRule[] = [
       "rete elettrica",
       "ospedale",
       "sanita",
-      "sanità",
       "trasporti",
       "servizio pubblico",
       "protezione civile"
@@ -318,7 +362,6 @@ const RESTRICTED_POLICY_RULES: PolicyRule[] = [
       "pa",
       "pubblica amministrazione",
       "autorita pubblica",
-      "autorità pubblica",
       "comune",
       "regione",
       "agenzia",
@@ -350,7 +393,6 @@ const RESTRICTED_POLICY_RULES: PolicyRule[] = [
       "regulatory",
       "lawful basis",
       "conformita",
-      "conformità",
       "certificazione",
       "revisione legale",
       "protezione dati",
@@ -466,9 +508,37 @@ const SAFE_IPR_PROOF_TERMS = [
   "verification",
   "runtime diagnostics",
   "identita operativa",
-  "identità operativa",
   "traccia evento",
   "ricevuta di prova"
+];
+
+const SAFE_AI_GOVERNANCE_TERMS = [
+  "hbce ecosistema ai",
+  "ecosistema ai",
+  "ai governance",
+  "governance ai",
+  "governare l ai",
+  "governance dell ai",
+  "ai audit",
+  "audit ai",
+  "ipr ai audit trail",
+  "model governance",
+  "governance modelli",
+  "external ai models",
+  "modelli ai esterni",
+  "openai",
+  "anthropic",
+  "claude",
+  "google ai",
+  "gemini",
+  "meta ai",
+  "llama",
+  "mistral",
+  "responsible ai",
+  "trustworthy ai",
+  "runtime ai governato",
+  "runtime governato ai",
+  "matrix ai governance"
 ];
 
 export function evaluatePolicy(input: PolicyEngineInput): PolicyEvaluation {
@@ -517,6 +587,21 @@ export function evaluatePolicy(input: PolicyEngineInput): PolicyEvaluation {
 
   if (dataPolicy) {
     return dataPolicy;
+  }
+
+  if (looksLikeSafeAiGovernanceWork(normalized, input)) {
+    return buildPolicy({
+      status: "RESTRICTED",
+      outcome: "REQUIRE_AUDIT",
+      policyReference: "RESTRICTED_HBCE_AI_GOVERNANCE_SAFE_WORK",
+      prohibited: false,
+      failClosed: false,
+      reasons: [
+        "Request appears to involve HBCE ECOSISTEMA AI, AI governance, AI audit or model governance.",
+        "This is allowed as audit-aware governance work.",
+        "The model layer must not become the authority layer."
+      ]
+    });
   }
 
   const restrictedByContext = evaluateContextRestriction(input);
@@ -787,6 +872,15 @@ function evaluateContextRestriction(input: PolicyEngineInput):
         failClosed: false
       };
 
+    case "HBCE_ECOSISTEMA_AI":
+      return {
+        policyReference: "RESTRICTED_HBCE_ECOSISTEMA_AI_CONTEXT",
+        reason:
+          "HBCE_ECOSISTEMA_AI context requires AI governance, auditability and model-governance boundaries.",
+        outcome: "REQUIRE_AUDIT",
+        failClosed: false
+      };
+
     case "CRITICAL_INFRASTRUCTURE":
       return {
         policyReference: "RESTRICTED_CRITICAL_INFRASTRUCTURE_CONTEXT",
@@ -902,8 +996,41 @@ function looksLikeSafeIprProofWork(
     "traceability",
     "documentazione",
     "verifica",
+    "tracciabilita"
+  ]);
+}
+
+function looksLikeSafeAiGovernanceWork(
+  text: string,
+  input: PolicyEngineInput
+): boolean {
+  if (
+    input.projectDomain === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "AI_GOVERNANCE"
+  ) {
+    return true;
+  }
+
+  return containsAny(text, SAFE_AI_GOVERNANCE_TERMS) && containsAny(text, [
+    "documentation",
+    "documentazione",
+    "governance",
+    "audit",
+    "verification",
+    "verifica",
+    "runtime",
+    "model",
+    "modello",
+    "schema",
+    "protocol",
+    "protocollo",
+    "risk",
+    "rischio",
+    "oversight",
+    "supervisione",
     "tracciabilita",
-    "tracciabilità"
+    "traceability"
   ]);
 }
 
