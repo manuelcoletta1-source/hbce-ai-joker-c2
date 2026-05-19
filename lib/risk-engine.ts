@@ -18,12 +18,14 @@
  * - risk score
  * - explainable reasons
  *
- * Safe European strategic autonomy, MATRIX, U.S.E. and IPR documentation
- * must not be escalated as CRITICAL merely because it discusses strategic,
- * institutional or civic architecture.
+ * Safe European strategic autonomy, MATRIX, U.S.E., HBCE ECOSISTEMA AI
+ * and IPR documentation must not be escalated as CRITICAL merely because
+ * they discuss strategic, institutional, civic or AI-governance architecture.
  *
- * Political, institutional, European-standardization and U.S.E. civic-governance
- * analysis should remain answerable, but audit-ready.
+ * Political, institutional, European-standardization, U.S.E. civic-governance
+ * and HBCE AI-governance analysis should remain answerable, but audit-ready
+ * when governance, security, compliance, institutional, B2B/B2G or model-risk
+ * context is present.
  */
 
 import type {
@@ -104,14 +106,12 @@ const CRITICAL_TERMS = [
   "sicurezza pubblica",
   "ospedale",
   "sanita",
-  "sanità",
   "rete elettrica",
   "emergenza",
   "sorveglianza",
   "infrastruttura elettorale",
   "deanonimizzare il voto",
-  "collegare identita e voto",
-  "collegare identità e voto"
+  "collegare identita e voto"
 ];
 
 const HIGH_TERMS = [
@@ -141,14 +141,17 @@ const HIGH_TERMS = [
   "federated digital voting",
   "democratic infrastructure",
   "civic infrastructure",
+  "ai audit",
+  "ai governance",
+  "model governance",
+  "external ai models",
+  "modelli ai esterni",
   "incidente",
   "violazione",
   "vulnerabilita",
-  "vulnerabilità",
   "sicurezza",
   "audit",
   "conformita",
-  "conformità",
   "legale",
   "appalto",
   "pubblica amministrazione",
@@ -202,7 +205,6 @@ const UNSAFE_OPERATIONAL_TERMS = [
   "coercive civic influence",
   "deanonimizzare il voto",
   "collegare identita e voto",
-  "collegare identità e voto",
   "manipolazione politica",
   "coercizione civica"
 ];
@@ -213,7 +215,6 @@ const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
   "europeo",
   "europei",
   "europee",
-  "leurpa",
   "ue",
   "unione europea",
   "europe",
@@ -227,9 +228,7 @@ const EUROPEAN_STRATEGIC_AUTONOMY_TERMS = [
   "autonomia strategica",
   "autonomia tecnologica",
   "sovranita digitale",
-  "sovranità digitale",
   "sovranita tecnologica",
-  "sovranità tecnologica",
   "asse tecnologico",
   "asse tecnologico europeo",
   "standard europeo",
@@ -268,7 +267,6 @@ const SAFE_CIVIC_ARCHITECTURE_TERMS = [
   "infrastruttura democratica",
   "digital sovereignty",
   "sovranita digitale",
-  "sovranità digitale",
   "constitutional operational",
   "costituzione operativa",
   "identity verified first",
@@ -294,7 +292,6 @@ const POLITICAL_INSTITUTIONAL_VALUE_TERMS = [
   "unione europea",
   "federazione europea",
   "sovranita digitale",
-  "sovranità digitale",
   "democrazia verificabile",
   "partecipazione civica",
   "voto digitale federato",
@@ -304,6 +301,39 @@ const POLITICAL_INSTITUTIONAL_VALUE_TERMS = [
   "decisione pubblica",
   "constitutional operational",
   "costituzione operativa"
+];
+
+const SAFE_HBCE_AI_GOVERNANCE_TERMS = [
+  "hbce ecosistema ai",
+  "ecosistema ai",
+  "governance ai",
+  "ai governance",
+  "governare l ai",
+  "governo dell ai",
+  "governance dell ai",
+  "ai audit",
+  "audit ai",
+  "ipr ai audit trail",
+  "model governance",
+  "governance modelli",
+  "external ai models",
+  "modelli ai esterni",
+  "openai",
+  "anthropic",
+  "claude",
+  "google ai",
+  "gemini",
+  "meta ai",
+  "llama",
+  "mistral",
+  "responsible ai",
+  "trustworthy ai",
+  "human oversight ai",
+  "runtime ai governato",
+  "runtime governato ai",
+  "matrix ai governance",
+  "ai genera hbce governa",
+  "ai generates hbce governs"
 ];
 
 export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
@@ -348,6 +378,14 @@ export function evaluateRisk(input: RiskEngineInput): RiskEvaluation {
     return buildRisk("CRITICAL", 4, 5, [
       "Data class is CRITICAL_OPERATIONAL.",
       "Critical operational data requires strict review."
+    ]);
+  }
+
+  if (isSafeHbceAiGovernanceAnalysis(input, normalized)) {
+    return buildRisk("MEDIUM", 2, 3, [
+      "Safe HBCE ECOSISTEMA AI / AI governance analysis detected.",
+      "The request is governance-oriented, architectural or audit-oriented, not an unsafe operational instruction.",
+      "AI governance work should remain answerable with audit-ready model-governance boundaries."
     ]);
   }
 
@@ -606,6 +644,15 @@ function seedRiskFromContext(contextClass: ContextClass): RiskSeed {
         probability: 3,
         impact: 3,
         reasons: ["COMPLIANCE context requires audit-aware handling."]
+      };
+
+    case "HBCE_ECOSISTEMA_AI":
+      return {
+        probability: 2,
+        impact: 3,
+        reasons: [
+          "HBCE_ECOSISTEMA_AI context requires AI governance, model-governance and audit-aware handling."
+        ]
       };
 
     case "AI_GOVERNANCE":
@@ -1027,6 +1074,15 @@ function adjustRiskByProjectDomain(
         reasons: ["U.S.E. project domain requires democratic safeguard awareness."]
       };
 
+    case "HBCE_ECOSISTEMA_AI":
+      return {
+        probability: 0,
+        impact: 1,
+        reasons: [
+          "HBCE_ECOSISTEMA_AI project domain requires AI governance and model-governance awareness."
+        ]
+      };
+
     case "MATRIX":
       return {
         probability: 0,
@@ -1089,6 +1145,14 @@ function classifyRiskClass(input: {
     return "HIGH";
   }
 
+  if (
+    (input.contextClass === "HBCE_ECOSISTEMA_AI" ||
+      input.contextClass === "AI_GOVERNANCE") &&
+    input.riskScore <= 6
+  ) {
+    return "MEDIUM";
+  }
+
   if (input.riskScore >= 17) {
     return "CRITICAL";
   }
@@ -1134,7 +1198,6 @@ function isSafeEuropeanStrategicAutonomyAnalysis(
   const analyticalTerms = [
     "potrebbe",
     "puo",
-    "può",
     "ridurre",
     "togliere",
     "progettare",
@@ -1143,7 +1206,6 @@ function isSafeEuropeanStrategicAutonomyAnalysis(
     "futuro",
     "progressi",
     "potenzialita",
-    "potenzialità",
     "adottata",
     "in tutta europa",
     "imprese",
@@ -1205,6 +1267,60 @@ function isSafeUseCivicArchitectureAnalysis(
   return findMatches(normalizedText, safeArchitectureTerms).length > 0;
 }
 
+function isSafeHbceAiGovernanceAnalysis(
+  input: RiskEngineInput,
+  normalizedText: string
+): boolean {
+  if (input.policyProhibited || input.policyStatus === "PROHIBITED") {
+    return false;
+  }
+
+  if (
+    input.dataClass === "SECRET" ||
+    input.dataClass === "CRITICAL_OPERATIONAL" ||
+    input.dataClass === "SECURITY_SENSITIVE" ||
+    input.dataClass === "DEMOCRATIC_CHOICE"
+  ) {
+    return false;
+  }
+
+  if (findMatches(normalizedText, UNSAFE_OPERATIONAL_TERMS).length > 0) {
+    return false;
+  }
+
+  const matches = findMatches(normalizedText, SAFE_HBCE_AI_GOVERNANCE_TERMS);
+
+  if (matches.length < 1) {
+    return false;
+  }
+
+  return (
+    input.projectDomain === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "AI_GOVERNANCE" ||
+    findMatches(normalizedText, [
+      "documentation",
+      "documentazione",
+      "governance",
+      "audit",
+      "verification",
+      "verifica",
+      "runtime",
+      "model",
+      "modello",
+      "schema",
+      "protocol",
+      "protocollo",
+      "risk",
+      "rischio",
+      "oversight",
+      "supervisione",
+      "traceability",
+      "tracciabilita"
+    ]).length > 0
+  );
+}
+
 function isPoliticalInstitutionalValueAnalysis(
   input: RiskEngineInput,
   normalizedText: string
@@ -1235,11 +1351,14 @@ function isPoliticalInstitutionalValueAnalysis(
   return (
     input.projectDomain === "MATRIX" ||
     input.projectDomain === "U.S.E." ||
+    input.projectDomain === "HBCE_ECOSISTEMA_AI" ||
     input.contextClass === "STRATEGIC" ||
     input.contextClass === "MATRIX" ||
     input.contextClass === "USE" ||
     input.contextClass === "CIVIC" ||
     input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "AI_GOVERNANCE" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
     input.contextClass === "PUBLIC_ADMINISTRATION"
   );
 }
