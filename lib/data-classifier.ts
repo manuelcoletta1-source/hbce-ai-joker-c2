@@ -21,6 +21,13 @@
  * The classifier is intentionally transparent and rule-based.
  * It does not execute files.
  * It does not call external models.
+ *
+ * HBCE ECOSISTEMA AI note:
+ * References to AI governance, model governance, OpenAI, Anthropic, Google AI,
+ * Mistral, Meta AI, AI audit or IPR AI Audit Trail are not sensitive by default.
+ * They become sensitive only when combined with secrets, credentials, personal
+ * data, operational systems, critical infrastructure, security findings,
+ * democratic-choice content or unsupported data.
  */
 
 import type { DataClass, DataClassification } from "./runtime-types";
@@ -440,6 +447,39 @@ const INTERNAL_RULES: PatternRule[] = [
       /\bprogetto interno\b/i,
       /\bdiagnostica\b/i
     ]
+  },
+  {
+    dataClass: "INTERNAL",
+    label: "HBCE_AI_GOVERNANCE_CONTEXT",
+    reason:
+      "Input appears to contain HBCE ECOSISTEMA AI, AI governance, model governance or AI audit context without secrets or personal data.",
+    patterns: [
+      /\bHBCE ECOSISTEMA AI\b/i,
+      /\becosistema AI\b/i,
+      /\bAI governance\b/i,
+      /\bgovernance AI\b/i,
+      /\bgovernance dell['’]?AI\b/i,
+      /\bgoverno dell['’]?AI\b/i,
+      /\bgovernare l['’]?AI\b/i,
+      /\bAI audit\b/i,
+      /\baudit AI\b/i,
+      /\bIPR AI Audit Trail\b/i,
+      /\bmodel governance\b/i,
+      /\bgovernance modelli\b/i,
+      /\bmodelli AI esterni\b/i,
+      /\bexternal AI models\b/i,
+      /\bOpenAI\b/i,
+      /\bAnthropic\b/i,
+      /\bClaude\b/i,
+      /\bGoogle AI\b/i,
+      /\bGemini\b/i,
+      /\bMeta AI\b/i,
+      /\bLlama\b/i,
+      /\bMistral\b/i,
+      /\bMATRIX AI GOVERNANCE\b/i,
+      /\bruntime AI governato\b/i,
+      /\bruntime governato AI\b/i
+    ]
   }
 ];
 
@@ -715,6 +755,22 @@ function classifyUnknownOrPublicFallback(
     };
   }
 
+  if (looksLikeSafeHbceAiGovernanceText(combined)) {
+    return {
+      dataClass: "INTERNAL",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "No sensitive data pattern matched.",
+        "Input appears to be HBCE ECOSISTEMA AI, AI governance, model governance or AI audit context.",
+        "Data classified as INTERNAL because it is project/runtime context, not secret or personal data."
+      ]
+    };
+  }
+
   if (input.fileName || input.mimeType) {
     return {
       dataClass: "INTERNAL",
@@ -755,11 +811,13 @@ function looksLikePlainPublicDocumentation(
 
   const publicWords =
     /\breadme\b/i.test(combined) ||
+    /\bpublic documentation\b/i.test(combined) ||
     /\bdocumentation\b/i.test(combined) ||
     /\bdocs\//i.test(combined) ||
     /\boverview\b/i.test(combined) ||
     /\btemplate\b/i.test(combined) ||
-    /\bchecklist\b/i.test(combined);
+    /\bchecklist\b/i.test(combined) ||
+    /\broadmap\b/i.test(combined);
 
   const hasNoSensitiveIndicators = ![
     ...SECRET_RULES,
@@ -774,6 +832,40 @@ function looksLikePlainPublicDocumentation(
   ].some((rule) => rule.patterns.some((pattern) => pattern.test(combined)));
 
   return hasNoSensitiveIndicators && (safeFile || publicWords);
+}
+
+function looksLikeSafeHbceAiGovernanceText(combined: string): boolean {
+  const hasHbceAiGovernance =
+    /\bHBCE ECOSISTEMA AI\b/i.test(combined) ||
+    /\becosistema AI\b/i.test(combined) ||
+    /\bAI governance\b/i.test(combined) ||
+    /\bgovernance AI\b/i.test(combined) ||
+    /\bAI audit\b/i.test(combined) ||
+    /\bIPR AI Audit Trail\b/i.test(combined) ||
+    /\bmodel governance\b/i.test(combined) ||
+    /\bOpenAI\b/i.test(combined) ||
+    /\bAnthropic\b/i.test(combined) ||
+    /\bClaude\b/i.test(combined) ||
+    /\bGoogle AI\b/i.test(combined) ||
+    /\bGemini\b/i.test(combined) ||
+    /\bMeta AI\b/i.test(combined) ||
+    /\bLlama\b/i.test(combined) ||
+    /\bMistral\b/i.test(combined) ||
+    /\bMATRIX AI GOVERNANCE\b/i.test(combined);
+
+  const hasSensitiveIndicators = [
+    ...SECRET_RULES,
+    ...UNSUPPORTED_RULES,
+    ...DEMOCRATIC_CHOICE_RULES,
+    ...CRITICAL_OPERATIONAL_RULES,
+    ...CIVIC_SENSITIVE_RULES,
+    ...PERSONAL_RULES,
+    ...SECURITY_SENSITIVE_RULES,
+    ...CONFIDENTIAL_RULES,
+    ...SENSITIVE_RULES
+  ].some((rule) => rule.patterns.some((pattern) => pattern.test(combined)));
+
+  return hasHbceAiGovernance && !hasSensitiveIndicators;
 }
 
 function normalizeInput(input: DataClassifierInput): string {
