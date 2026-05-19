@@ -10,6 +10,7 @@
  * - runtime sequence
  * - five canonical project collections
  * - seven HBCE technical-operational modules
+ * - U.S.E. federated digital vote doctrine
  * - fail-closed rules
  * - derivative layer
  * - node profile
@@ -58,6 +59,49 @@ export const HBCE_MODULES = Object.freeze([
   "MATRIX"
 ]);
 
+export const USE_FEDERATED_VOTE_DOCTRINE = Object.freeze({
+  project: "U.S.E. — United States of Europe",
+  parent_domain: "MATRIX",
+  type: "FEDERATED_EUROPEAN_INSTITUTIONAL_APPLICATION_DOMAIN",
+  definition:
+    "U.S.E. — United States of Europe is the political-institutional architecture that uses MATRIX to design the United States of Europe as an operational, sovereign, digital and verifiable federation.",
+  strategic_function:
+    "U.S.E. transforms the European question from a merely political or regulatory debate into an operational federation model based on identity, responsibility, event continuity, auditability, digital sovereignty and institutional interoperability.",
+  federated_vote_definition:
+    "Federated digital voting is not merely online voting for parties or representatives. It is an infrastructure for multilayer referendum, direct or hybrid legislative democracy, and verifiable public decision-making across territorial, regional, national and European levels.",
+  democratic_goal:
+    "The European federal citizen must be able to participate directly in concrete public decisions, laws, regulatory questions, institutional acts and referenda without delegating the entire democratic decision to parties or elected individuals.",
+  canonical_sequence: Object.freeze([
+    "IDENTITY_VERIFIED_FIRST",
+    "RIGHT_OF_PARTICIPATION_VERIFIED",
+    "CHOICE_SEPARATED_AFTER",
+    "VOTE_ANONYMIZED",
+    "PROCESS_AUDITABLE",
+    "RESULT_VERIFIABLE"
+  ]),
+  canonical_sentence:
+    "IPR enables the right to vote, but it does not know the content of the vote.",
+  ipr_rule:
+    "IPR verifies identity, right of participation, institutional perimeter and uniqueness of participation. IPR must never register, preserve or link the content of the vote to the personal identity.",
+  evt_rule:
+    "EVT traces procedural events: consultation opening, eligibility verification, authorization, anonymized vote deposit, closure, counting, publication and verification. EVT must not trace the personal political preference.",
+  opc_rule:
+    "OPC produces proof of process integrity, applied rules, event continuity, audit state and verification state. OPC must not certify what a specific person voted.",
+  matrix_rule:
+    "MATRIX organizes the full architecture of identity, event, responsibility, audit, continuity, verification and institutional interoperability.",
+  privacy_boundary:
+    "The system may prove that an eligible subject participated correctly once within the authorized institutional perimeter, but it must not expose or reconstruct the individual choice.",
+  forbidden_interpretations: Object.freeze([
+    "IPR_AS_POLITICAL_PREFERENCE_REGISTRY",
+    "EVT_AS_PERSONAL_VOTE_TRACE",
+    "OPC_AS_CERTIFICATE_OF_INDIVIDUAL_CHOICE",
+    "FEDERATED_VOTE_AS_GENERIC_ONLINE_VOTING",
+    "USE_AS_SIMPLE_CIVIC_PARTICIPATION_PLATFORM"
+  ]),
+  response_rule:
+    "When the user asks about U.S.E., United States of Europe, Stati Uniti d’Europa, federated digital voting, referendum, digital democracy, European voting, legislative democracy or institutional participation, AI JOKER-C2 must explain U.S.E. as a MATRIX-derived federated operational architecture and must preserve the separation between identity verification and vote content."
+});
+
 export const PROJECT_COLLECTION_DEFINITIONS = Object.freeze({
   MATRIX: Object.freeze({
     type: "OPERATIONAL_INFRASTRUCTURE_DOMAIN",
@@ -67,12 +111,21 @@ export const PROJECT_COLLECTION_DEFINITIONS = Object.freeze({
       "MATRIX is also the seventh HBCE technical-operational module when used as the system coordination and organization layer."
   }),
   "U.S.E.": Object.freeze({
-    type: "FEDERATED_EUROPEAN_INSTITUTIONAL_APPLICATION_DOMAIN",
-    parent_domain: "MATRIX",
-    function:
-      "MATRIX-derived political-institutional application for a federated, sovereign, digital and verifiable Europe.",
+    type: USE_FEDERATED_VOTE_DOCTRINE.type,
+    parent_domain: USE_FEDERATED_VOTE_DOCTRINE.parent_domain,
+    function: USE_FEDERATED_VOTE_DOCTRINE.definition,
+    strategic_function: USE_FEDERATED_VOTE_DOCTRINE.strategic_function,
+    federated_vote: USE_FEDERATED_VOTE_DOCTRINE.federated_vote_definition,
     democratic_boundary:
-      "Identity verified first. Choice separated after. Vote anonymized. Process auditable."
+      "Identity verified first. Right of participation verified. Choice separated after. Vote anonymized. Process auditable. Result verifiable.",
+    canonical_sentence: USE_FEDERATED_VOTE_DOCTRINE.canonical_sentence,
+    volumes: Object.freeze([
+      "U.S.E. — United States of Europe",
+      "U.S.E. — Federazione Operativa Europea",
+      "U.S.E. — Voto Digitale Federato",
+      "U.S.E. — Sovranità Digitale Europea",
+      "U.S.E. — Costituzione Operativa Europea"
+    ])
   }),
   CORPUS_ESOTEROLOGIA_ERMETICA: Object.freeze({
     type: "DISCIPLINARY_GRAMMAR_DOMAIN",
@@ -231,7 +284,8 @@ export const FAIL_CLOSED_RULES = Object.freeze([
   "NO_RISK_CLASSIFICATION_NO_SENSITIVE_OUTPUT",
   "NO_CONTINUITY_NO_TRUSTED_STATE",
   "NO_EVIDENCE_NO_OPERATIONAL_EXISTENCE",
-  "NO_VERIFICATION_NO_RECOGNIZED_PERSISTENCE"
+  "NO_VERIFICATION_NO_RECOGNIZED_PERSISTENCE",
+  "NO_VOTE_CONTENT_LINKAGE_TO_PERSONAL_IDENTITY"
 ]);
 
 export const AI_JOKER_IPR_RECORD = Object.freeze({
@@ -339,7 +393,8 @@ export const NODE_PROFILE = Object.freeze({
   active_cycle: AI_JOKER_IPR_RECORD.cycle,
   active_core: AI_JOKER_IPR_RECORD.core,
   project_collections: PROJECT_COLLECTIONS,
-  hbce_modules: HBCE_MODULES
+  hbce_modules: HBCE_MODULES,
+  use_federated_vote_doctrine: USE_FEDERATED_VOTE_DOCTRINE.project
 });
 
 export const EVIDENCE_MODEL = Object.freeze({
@@ -416,6 +471,10 @@ export function getHbceModuleDefinition(module) {
   return HBCE_MODULE_DEFINITIONS[module] ?? null;
 }
 
+export function getUseFederatedVoteDoctrine() {
+  return USE_FEDERATED_VOTE_DOCTRINE;
+}
+
 export function isKnownIdentityIpr(ipr) {
   return getIdentityLineage().some((item) => item.ipr === ipr);
 }
@@ -476,6 +535,7 @@ export default Object.freeze({
   HBCE_STACK,
   PROJECT_COLLECTIONS,
   HBCE_MODULES,
+  USE_FEDERATED_VOTE_DOCTRINE,
   PROJECT_COLLECTION_DEFINITIONS,
   HBCE_MODULE_DEFINITIONS,
   RUNTIME_SEQUENCE,
@@ -496,6 +556,7 @@ export default Object.freeze({
   getHbceModules,
   getProjectCollectionDefinition,
   getHbceModuleDefinition,
+  getUseFederatedVoteDoctrine,
   isKnownIdentityIpr,
   isKnownProjectCollection,
   isKnownHbceModule,
