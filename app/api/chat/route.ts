@@ -176,6 +176,12 @@ type StrategicDoctrineKind =
   | "DATA_PROTECTION"
   | "INFORMATION_GOVERNANCE";
 
+type PromptFileContext = {
+  acceptedTextFiles: FileInput[];
+  referenceOnlyFiles: FileInput[];
+  referenceOnlyContextFile: FileInput | null;
+};
+
 const MODEL = process.env.JOKER_MODEL || "gpt-4o-mini";
 const MAX_OUTPUT_TOKENS = 4600;
 const MAX_DATA_CLASSIFICATION_CHARS = 24000;
@@ -213,6 +219,9 @@ const STRATEGIC_DOCTRINES = [
   "HBCE_DATA_PROTECTION_STRATEGY",
   "HBCE_INFORMATION_GOVERNANCE_STRATEGY"
 ] as const;
+
+const REFERENCE_ONLY_CONTEXT_FILE_ID = "hbce-reference-only-files";
+const REFERENCE_ONLY_CONTEXT_FILE_NAME = "HBCE_REFERENCE_ONLY_FILES.md";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -271,6 +280,123 @@ function normalizeFiles(files: FileInput[]): NormalizedFile[] {
       text
     };
   });
+}
+
+function resolvePromptFileContext(
+  userFiles: FileInput[],
+  filePolicy: ReturnType<typeof evaluateFileBatchPolicy>
+): PromptFileContext {
+  const acceptedTextFiles: FileInput[] = [];
+  const referenceOnlyFiles: FileInput[] = [];
+
+  for (let index = 0; index < userFiles.length; index += 1) {
+    const file = userFiles[index];
+    const policyResult = filePolicy.files[index];
+
+    if (!policyResult) {
+      continue;
+    }
+
+    if (policyResult.allowed) {
+      acceptedTextFiles.push(file);
+      continue;
+    }
+
+    if (isReferenceOnlyPolicyResult(policyResult)) {
+      referenceOnlyFiles.push(file);
+    }
+  }
+
+  return {
+    acceptedTextFiles,
+    referenceOnlyFiles,
+    referenceOnlyContextFile: buildReferenceOnlyContextFile(referenceOnlyFiles)
+  };
+}
+
+function isReferenceOnlyPolicyResult(
+  result: ReturnType<typeof evaluateFileBatchPolicy>["files"][number]
+): boolean {
+  const reason = result.reason.toLowerCase();
+
+  return (
+    !result.allowed &&
+    (result.status === "PARTIAL" || result.status === "UNSUPPORTED") &&
+    reason.includes("should not block")
+  );
+}
+
+function buildReferenceOnlyContextFile(files: FileInput[]): FileInput | null {
+  if (files.length === 0) {
+    return null;
+  }
+
+  const normalized = normalizeFiles(files);
+
+  const lines = [
+    "HBCE REFERENCE-ONLY FILE NOTICE",
+    "",
+    "The following active files are present in the runtime, but they were not inserted as extracted safe text into the model prompt.",
+    "They must be treated as reference-only files unless their content has been separately converted into safe plain text.",
+    "",
+    "Operational rule:",
+    "- Do not claim that these files were fully read.",
+    "- Do not invent contents from these files.",
+    "- Continue with the user's safe textual request, runtime memory, and available HBCE context.",
+    "- If the user explicitly asks to use these files, disclose that they are reference-only in the current runtime.",
+    "",
+    "Reference-only files:",
+    ...normalized.map((file, index) => {
+      return `${index + 1}. ${file.name} | ${file.type} | ${file.size} bytes`;
+    })
+  ];
+
+  const text = lines.join("\n");
+
+  return {
+    id: REFERENCE_ONLY_CONTEXT_FILE_ID,
+    name: REFERENCE_ONLY_CONTEXT_FILE_NAME,
+    type: "text/markdown",
+    size: text.length,
+    role: "runtime_reference_only_notice",
+    text
+  };
+}
+
+function buildReferenceOnlyDisclosure(files: FileInput[]): string {
+  const names = normalizeFiles(files).map((file) => file.name).join(", ");
+
+  return [
+    "Nota runtime sui file:",
+    `Il runtime ha rilevato file attivi non processati come testo leggibile diretto: ${names}.`,
+    "Procedo in modalità sicura usando la richiesta testuale, la memoria EVT/IPR-bound e il contesto HBCE disponibile. Non considero quei PDF o documenti come letti integralmente parola per parola finché non vengono forniti anche come testo estratto."
+  ].join("\n");
+}
+
+function applyReferenceOnlyDisclosure(
+  generated: GeneratedResponse,
+  referenceOnlyFiles: FileInput[]
+): GeneratedResponse {
+  if (referenceOnlyFiles.length === 0) {
+    return generated;
+  }
+
+  if (!generated.text.trim()) {
+    return generated;
+  }
+
+  if (generated.text.includes("Nota runtime sui file:")) {
+    return generated;
+  }
+
+  if (generated.state === "BLOCKED" || generated.degradedReason === "FILE_POLICY_BLOCK") {
+    return generated;
+  }
+
+  return {
+    ...generated,
+    text: [buildReferenceOnlyDisclosure(referenceOnlyFiles), "", generated.text].join("\n")
+  };
 }
 
 function detectDocumentFamily(files: FileInput[]): DocumentFamily {
@@ -1670,7 +1796,7 @@ function normalizeChatDataClassification(input: {
       containsDemocraticChoiceData: false,
       reasons: [
         "Pragmatic governance value question detected.",
-        "Classified as PUBLIC because the request asks for strategic, banking, legal or governance explanation, not operational execution."
+        "Classified as PUBLIC because the request asks for general business, banking, legal or governance value, not an operational action."
       ]
     };
   }
@@ -3241,7 +3367,13 @@ export async function POST(req: NextRequest) {
     files: userFiles
   });
 
-  const acceptedUserFiles = governance.filePolicy.allowed ? userFiles : [];
+  const promptFileContext = resolvePromptFileContext(
+    userFiles,
+    governance.filePolicy
+  );
+
+  const acceptedUserFiles = promptFileContext.acceptedTextFiles;
+  const referenceOnlyFiles = promptFileContext.referenceOnlyFiles;
 
   const memory = await resolveMemoryContext({
     sessionId: input.sessionId,
@@ -3264,7 +3396,8 @@ export async function POST(req: NextRequest) {
     contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
     contextClass === "TECHNICAL" ||
     contextClass === "GITHUB" ||
-    acceptedUserFiles.length > 0
+    acceptedUserFiles.length > 0 ||
+    referenceOnlyFiles.length > 0
       ? detectDocumentMode(effectiveMessage)
       : "GENERAL_DOCUMENT_WORK";
 
@@ -3290,7 +3423,15 @@ export async function POST(req: NextRequest) {
   });
 
   const memoryFile = effectiveMemoryUsed ? [buildMemoryFile(memory.text)] : [];
-  const promptFiles = [...memoryFile, ...acceptedUserFiles];
+  const referenceOnlyContextFile = promptFileContext.referenceOnlyContextFile
+    ? [promptFileContext.referenceOnlyContextFile]
+    : [];
+
+  const promptFiles = [
+    ...memoryFile,
+    ...acceptedUserFiles,
+    ...referenceOnlyContextFile
+  ];
 
   const modernPrev = await getLastEventReference();
   const legacyPrev = memory.lastEventId || input.continuityRef;
@@ -3404,6 +3545,7 @@ export async function POST(req: NextRequest) {
       memorySource: effectiveMemorySource,
       structuredFormat,
       activeFiles: promptFiles.map((file) => file.name || "unnamed"),
+      referenceOnlyFiles: referenceOnlyFiles.map((file) => file.name || "unnamed"),
       identity: buildIdentityPayload(identity),
       collections: FIVE_COLLECTIONS,
       modules: SEVEN_HBCE_MODULES,
@@ -3496,6 +3638,8 @@ export async function POST(req: NextRequest) {
           allowed: governance.filePolicy.allowed,
           allowedCount: governance.filePolicy.allowedCount,
           rejectedCount: governance.filePolicy.rejectedCount,
+          referenceOnlyCount: governance.filePolicy.referenceOnlyCount,
+          blockingRejectedCount: governance.filePolicy.blockingRejectedCount,
           reasons: governance.filePolicy.reasons
         }
       },
@@ -3516,6 +3660,7 @@ export async function POST(req: NextRequest) {
         hbceModule: governance.hbceModule.module,
         activeModules: governance.hbceModule.activeModules,
         strategicDoctrines: STRATEGIC_DOCTRINES,
+        referenceOnlyFiles: referenceOnlyFiles.map((file) => file.name || "unnamed"),
         structuredFormat
       }
     });
@@ -3554,6 +3699,8 @@ export async function POST(req: NextRequest) {
       structuredFormat,
       governanceFrame: governance
     });
+
+    generated = applyReferenceOnlyDisclosure(generated, referenceOnlyFiles);
   }
 
   const memoryDecision = mapDecisionForMemory(
@@ -3668,6 +3815,7 @@ export async function POST(req: NextRequest) {
     memorySource: effectiveMemorySource,
     structuredFormat,
     activeFiles: promptFiles.map((file) => file.name || "unnamed"),
+    referenceOnlyFiles: referenceOnlyFiles.map((file) => file.name || "unnamed"),
     identity: buildIdentityPayload(identity),
     collections: FIVE_COLLECTIONS,
     modules: SEVEN_HBCE_MODULES,
@@ -3769,6 +3917,8 @@ export async function POST(req: NextRequest) {
         allowed: governance.filePolicy.allowed,
         allowedCount: governance.filePolicy.allowedCount,
         rejectedCount: governance.filePolicy.rejectedCount,
+        referenceOnlyCount: governance.filePolicy.referenceOnlyCount,
+        blockingRejectedCount: governance.filePolicy.blockingRejectedCount,
         reasons: governance.filePolicy.reasons
       }
     },
@@ -3789,6 +3939,7 @@ export async function POST(req: NextRequest) {
       hbceModule: governance.hbceModule.module,
       activeModules: governance.hbceModule.activeModules,
       strategicDoctrines: STRATEGIC_DOCTRINES,
+      referenceOnlyFiles: referenceOnlyFiles.map((file) => file.name || "unnamed"),
       structuredFormat
     }
   });
