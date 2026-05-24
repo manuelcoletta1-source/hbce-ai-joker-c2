@@ -14,6 +14,16 @@
  * - deterministic trace hash
  * - verification and audit status
  *
+ * OPC records bind the generated EVT to:
+ * - input hash
+ * - output hash
+ * - decision hash
+ * - memory hash
+ * - cognitive engine metadata
+ * - engine hash
+ * - previous proof hash
+ * - proof chain hash
+ *
  * Canonical project domains:
  * - MATRIX
  * - U.S.E.
@@ -34,6 +44,8 @@
  * - NONE
  *
  * EVT creates traceability.
+ * OPC creates the audit-oriented proof receipt.
+ *
  * EVT does not create legal authorization, certification or compliance.
  */
 
@@ -136,6 +148,9 @@ export type RuntimeEventPublicView = {
     hash_algorithm: "sha256";
     canonicalization: "deterministic-json";
     hash: string;
+    reference: string;
+    hash_valid: boolean;
+    structurally_valid: boolean;
   };
   verification: {
     status: VerificationStatus;
@@ -159,6 +174,21 @@ export type RuntimeEventSummary = {
   operationStatus: OperationStatus;
   verificationStatus: VerificationStatus;
   auditStatus: AuditStatus;
+  traceHash: string;
+  chainReference: string;
+  hashValid: boolean;
+  structurallyValid: boolean;
+};
+
+export type RuntimeEventVerificationReport = {
+  evt: string;
+  status: VerificationStatus;
+  hashMatches: boolean;
+  structurallyValid: boolean;
+  missingFields: string[];
+  expectedHash: string;
+  actualHash: string;
+  reasons: string[];
 };
 
 export type RuntimeEventTracePayload = Omit<RuntimeEvent, "trace"> & {
@@ -169,6 +199,8 @@ export type RuntimeEventTracePayload = Omit<RuntimeEvent, "trace"> & {
 };
 
 const DEFAULT_PREV = "GENESIS";
+const NON_CERTIFICATION_REASON =
+  "EVT is a technical runtime event trace. It does not create legal authorization, certification, regulatory approval or compliance by itself.";
 
 export function createRuntimeEvent(input: RuntimeEventInput): RuntimeEvent {
   const timestamp = input.timestamp ?? new Date().toISOString();
@@ -212,7 +244,10 @@ export function createRuntimeEvent(input: RuntimeEventInput): RuntimeEvent {
       policy_outcome: input.policyOutcome,
       human_oversight: input.humanOversight,
       fail_closed: input.failClosed,
-      reasons: uniqueReasons(input.reasons ?? [])
+      reasons: uniqueReasons([
+        ...(input.reasons ?? []),
+        NON_CERTIFICATION_REASON
+      ])
     },
     operation: {
       type: sanitizeOperationType(input.operationType),
@@ -292,15 +327,8 @@ export function createNoopRuntimeEvent(
 export function toPublicRuntimeEvent(
   event: RuntimeEvent
 ): RuntimeEventPublicView {
-  const project =
-    event.project ??
-    createProjectBinding(inferProjectDomainFromContext(event.context.class));
-
-  const hbceModule =
-    event.hbce_module ??
-    createHbceModuleBinding(
-      inferHbceModuleFromContext(event.context.class, project.domain)
-    );
+  const project = normalizeProjectBinding(event);
+  const hbceModule = normalizeHbceModuleBinding(event, project.domain);
 
   return {
     evt: event.evt,
@@ -336,7 +364,10 @@ export function toPublicRuntimeEvent(
     trace: {
       hash_algorithm: event.trace.hash_algorithm,
       canonicalization: event.trace.canonicalization,
-      hash: event.trace.hash
+      hash: event.trace.hash,
+      reference: buildEventChainReference(event),
+      hash_valid: isRuntimeEventHashValid(event),
+      structurally_valid: isRuntimeEventStructurallyValid(event)
     },
     verification: {
       status: event.verification.status,
@@ -348,15 +379,8 @@ export function toPublicRuntimeEvent(
 export function summarizeRuntimeEvent(
   event: RuntimeEvent
 ): RuntimeEventSummary {
-  const project =
-    event.project ??
-    createProjectBinding(inferProjectDomainFromContext(event.context.class));
-
-  const hbceModule =
-    event.hbce_module ??
-    createHbceModuleBinding(
-      inferHbceModuleFromContext(event.context.class, project.domain)
-    );
+  const project = normalizeProjectBinding(event);
+  const hbceModule = normalizeHbceModuleBinding(event, project.domain);
 
   return {
     evt: event.evt,
@@ -373,22 +397,19 @@ export function summarizeRuntimeEvent(
     operationType: event.operation.type,
     operationStatus: event.operation.status,
     verificationStatus: event.verification.status,
-    auditStatus: event.verification.audit_status
+    auditStatus: event.verification.audit_status,
+    traceHash: event.trace.hash,
+    chainReference: buildEventChainReference(event),
+    hashValid: isRuntimeEventHashValid(event),
+    structurallyValid: isRuntimeEventStructurallyValid(event)
   };
 }
 
 export function buildTracePayload(
   event: RuntimeEvent
 ): RuntimeEventTracePayload {
-  const project =
-    event.project ??
-    createProjectBinding(inferProjectDomainFromContext(event.context.class));
-
-  const hbceModule =
-    event.hbce_module ??
-    createHbceModuleBinding(
-      inferHbceModuleFromContext(event.context.class, project.domain)
-    );
+  const project = normalizeProjectBinding(event);
+  const hbceModule = normalizeHbceModuleBinding(event, project.domain);
 
   return {
     evt: event.evt,
@@ -400,7 +421,10 @@ export function buildTracePayload(
     project,
     hbce_module: hbceModule,
     context: event.context,
-    governance: event.governance,
+    governance: {
+      ...event.governance,
+      reasons: uniqueReasons(event.governance.reasons ?? [])
+    },
     operation: event.operation,
     memory: event.memory,
     opc: event.opc,
@@ -421,35 +445,57 @@ export function isRuntimeEventHashValid(event: RuntimeEvent): boolean {
   return rebuildRuntimeEventHash(event) === event.trace.hash;
 }
 
+export function verifyRuntimeEvent(
+  event: Partial<RuntimeEvent>
+): RuntimeEventVerificationReport {
+  const missingFields = getRuntimeEventMissingFields(event);
+  const structurallyValid = missingFields.length === 0;
+
+  if (!structurallyValid) {
+    return {
+      evt: event.evt || "UNKNOWN_EVT",
+      status: "INVALID",
+      hashMatches: false,
+      structurallyValid: false,
+      missingFields,
+      expectedHash: "",
+      actualHash: event.trace?.hash || "",
+      reasons: [
+        "Runtime EVT record is structurally invalid.",
+        ...missingFields.map((field) => `Missing field: ${field}.`)
+      ]
+    };
+  }
+
+  const runtimeEvent = event as RuntimeEvent;
+  const expectedHash = rebuildRuntimeEventHash(runtimeEvent);
+  const actualHash = runtimeEvent.trace.hash;
+  const hashMatches = expectedHash === actualHash;
+
+  return {
+    evt: runtimeEvent.evt,
+    status: hashMatches ? "VERIFIABLE" : "INVALID",
+    hashMatches,
+    structurallyValid,
+    missingFields: [],
+    expectedHash,
+    actualHash,
+    reasons: hashMatches
+      ? [
+          "Runtime EVT record is structurally valid.",
+          "Runtime EVT trace hash is valid.",
+          NON_CERTIFICATION_REASON
+        ]
+      : [
+          "Runtime EVT trace hash does not match.",
+          "The event may have been modified after creation or rebuilt with different canonical payload fields.",
+          NON_CERTIFICATION_REASON
+        ]
+  };
+}
+
 export function isRuntimeEventStructurallyValid(event: RuntimeEvent): boolean {
-  return Boolean(
-    event.evt &&
-      event.prev &&
-      event.entity &&
-      event.ipr &&
-      event.timestamp &&
-      event.runtime?.name &&
-      event.runtime?.core &&
-      event.runtime?.state &&
-      event.project?.ecosystem &&
-      event.project?.domain &&
-      event.project?.domain_type &&
-      event.context?.class &&
-      event.context?.intent &&
-      event.context?.sensitivity &&
-      event.governance?.risk &&
-      event.governance?.decision &&
-      event.governance?.policy &&
-      event.governance?.human_oversight &&
-      typeof event.governance?.fail_closed === "boolean" &&
-      event.operation?.type &&
-      event.operation?.status &&
-      event.trace?.hash_algorithm === "sha256" &&
-      event.trace?.canonicalization === "deterministic-json" &&
-      event.trace?.hash &&
-      event.verification?.status &&
-      event.verification?.audit_status
-  );
+  return getRuntimeEventMissingFields(event).length === 0;
 }
 
 export function getRuntimeEventMissingFields(
@@ -470,6 +516,11 @@ export function getRuntimeEventMissingFields(
   if (!event.project?.ecosystem) missing.push("project.ecosystem");
   if (!event.project?.domain) missing.push("project.domain");
   if (!event.project?.domain_type) missing.push("project.domain_type");
+
+  if (!event.hbce_module?.module) missing.push("hbce_module.module");
+  if (!event.hbce_module?.module_type) {
+    missing.push("hbce_module.module_type");
+  }
 
   if (!event.context?.class) missing.push("context.class");
   if (!event.context?.intent) missing.push("context.intent");
@@ -577,6 +628,10 @@ export function inferHbceModuleFromContext(
     return "UNEBDO";
   }
 
+  if (projectDomain === "MATRIX" && contextClass !== "SECURITY") {
+    return "MATRIX";
+  }
+
   switch (contextClass) {
     case "IDENTITY":
     case "IPR":
@@ -662,6 +717,25 @@ export function parseEventLine(line: string): RuntimeEvent | null {
   } catch {
     return null;
   }
+}
+
+function normalizeProjectBinding(event: RuntimeEvent): ProjectBinding {
+  return (
+    event.project ??
+    createProjectBinding(inferProjectDomainFromContext(event.context.class))
+  );
+}
+
+function normalizeHbceModuleBinding(
+  event: RuntimeEvent,
+  projectDomain?: ProjectDomain
+): HbceModuleBinding {
+  return (
+    event.hbce_module ??
+    createHbceModuleBinding(
+      inferHbceModuleFromContext(event.context.class, projectDomain)
+    )
+  );
 }
 
 function sanitizeOperationType(value: string): string {
