@@ -100,7 +100,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type LegacyContextClass = ContextClass;
-
 type FileInput = EvtMemoryFile;
 
 type ChatBody = {
@@ -202,10 +201,12 @@ type PromptFileContext = {
 
 const DEFAULT_JOKER_MODEL = "gpt-5.5";
 const DEFAULT_JOKER_DEEP_MODEL = "gpt-5.5";
+
 const OPENAI_ENGINE_PROVIDER = "OpenAI" as const;
 const OPENAI_ENGINE_API_MODE = "chat.completions" as const;
 const OPENAI_ENGINE_ROLE = "cognitive_engine" as const;
 const HBCE_RUNTIME_ROLE = "HBCE_governed_runtime" as const;
+
 const HBCE_JOKER_C2_PROJECT_BIRTH_DATE = "2026-01-19" as const;
 const HBCE_JOKER_C2_PROJECT_BIRTH_LABEL =
   "HBCE R&D / AI JOKER-C2 project birth date" as const;
@@ -213,7 +214,7 @@ const HBCE_JOKER_C2_PROJECT_BIRTH_LABEL =
 const MODEL = resolveModelEnv("JOKER_MODEL", DEFAULT_JOKER_MODEL);
 const DEEP_MODEL = resolveModelEnv("JOKER_DEEP_MODEL", DEFAULT_JOKER_DEEP_MODEL);
 
-const MAX_OUTPUT_TOKENS = 4600;
+const MAX_COMPLETION_TOKENS = 4600;
 const MAX_DATA_CLASSIFICATION_CHARS = 24000;
 
 const openai = process.env.OPENAI_API_KEY
@@ -253,11 +254,27 @@ const STRATEGIC_DOCTRINES = [
 const REFERENCE_ONLY_CONTEXT_FILE_ID = "hbce-reference-only-files";
 const REFERENCE_ONLY_CONTEXT_FILE_NAME = "HBCE_REFERENCE_ONLY_FILES.md";
 
+function normalizeModelId(value: string): string {
+  const normalized = value.trim().toLowerCase();
+
+  if (
+    normalized === "gpt.5-5" ||
+    normalized === "gpt_5_5" ||
+    normalized === "gpt 5.5" ||
+    normalized === "gpt-55" ||
+    normalized === "gpt5.5"
+  ) {
+    return "gpt-5.5";
+  }
+
+  return value.trim();
+}
+
 function resolveModelEnv(name: string, fallback: string): string {
   const value = process.env[name];
 
   if (typeof value === "string" && value.trim()) {
-    return value.trim();
+    return normalizeModelId(value);
   }
 
   return fallback;
@@ -322,378 +339,6 @@ function normalizeFiles(files: FileInput[]): NormalizedFile[] {
   });
 }
 
-function shouldUseDeepOpenAIModel(input: {
-  message: string;
-  contextClass: ContextClass;
-  intentClass: IntentClass;
-  documentMode: DocumentMode;
-  documentFamily: DocumentFamily;
-  governance: EnrichedGovernanceFrame;
-}): boolean {
-  if (isRuntimeDiagnosticRequest(input.message)) {
-    return true;
-  }
-
-  if (
-    input.contextClass === "GITHUB" ||
-    input.contextClass === "TECHNICAL" ||
-    input.contextClass === "GOVERNANCE" ||
-    input.contextClass === "COMPLIANCE" ||
-    input.contextClass === "SECURITY" ||
-    input.contextClass === "AI_GOVERNANCE" ||
-    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
-    input.contextClass === "STRATEGIC" ||
-    input.contextClass === "MATRIX"
-  ) {
-    return true;
-  }
-
-  if (
-    input.intentClass === "ANALYZE" ||
-    input.intentClass === "REWRITE" ||
-    input.intentClass === "TRANSFORM" ||
-    input.intentClass === "GITHUB" ||
-    input.intentClass === "COMPLIANCE" ||
-    input.intentClass === "STRATEGIC"
-  ) {
-    return true;
-  }
-
-  if (
-    input.documentMode === "IMPACT_ASSESSMENT" ||
-    input.documentMode === "EDITORIAL_REVIEW" ||
-    input.documentMode === "GENERATIVE_REWRITE" ||
-    input.documentMode === "DERIVED_OUTPUT"
-  ) {
-    return true;
-  }
-
-  if (
-    input.governance.decision.auditRequired ||
-    input.governance.decision.opcRequired ||
-    input.governance.risk.riskClass !== "LOW"
-  ) {
-    return true;
-  }
-
-  return false;
-}
-
-function resolveOpenAIEngineConfig(input: {
-  message: string;
-  contextClass: ContextClass;
-  intentClass: IntentClass;
-  documentMode: DocumentMode;
-  documentFamily: DocumentFamily;
-  governance: EnrichedGovernanceFrame;
-}): OpenAIEngineConfig {
-  const useDeepModel = shouldUseDeepOpenAIModel(input);
-
-  return {
-    provider: OPENAI_ENGINE_PROVIDER,
-    apiMode: OPENAI_ENGINE_API_MODE,
-    role: OPENAI_ENGINE_ROLE,
-    runtimeRole: HBCE_RUNTIME_ROLE,
-    modelUsed: useDeepModel ? DEEP_MODEL : MODEL,
-    standardModel: MODEL,
-    deepModel: DEEP_MODEL,
-    mode: useDeepModel ? "deep" : "standard",
-    configured: Boolean(process.env.OPENAI_API_KEY),
-    projectBirthDate: HBCE_JOKER_C2_PROJECT_BIRTH_DATE,
-    projectBirthLabel: HBCE_JOKER_C2_PROJECT_BIRTH_LABEL
-  };
-}
-
-function buildOpenAIEnginePayload(engine: OpenAIEngineConfig) {
-  return {
-    provider: engine.provider,
-    apiMode: engine.apiMode,
-    role: engine.role,
-    runtimeRole: engine.runtimeRole,
-    modelUsed: engine.modelUsed,
-    standardModel: engine.standardModel,
-    deepModel: engine.deepModel,
-    mode: engine.mode,
-    configured: engine.configured,
-    projectBirthDate: engine.projectBirthDate,
-    projectBirthLabel: engine.projectBirthLabel
-  };
-}
-
-function resolvePromptFileContext(
-  userFiles: FileInput[],
-  filePolicy: ReturnType<typeof evaluateFileBatchPolicy>
-): PromptFileContext {
-  const acceptedTextFiles: FileInput[] = [];
-  const referenceOnlyFiles: FileInput[] = [];
-
-  for (let index = 0; index < userFiles.length; index += 1) {
-    const file = userFiles[index];
-    const policyResult = filePolicy.files[index];
-
-    if (!policyResult) {
-      continue;
-    }
-
-    if (policyResult.allowed) {
-      acceptedTextFiles.push(file);
-      continue;
-    }
-
-    if (isReferenceOnlyPolicyResult(policyResult)) {
-      referenceOnlyFiles.push(file);
-    }
-  }
-
-  return {
-    acceptedTextFiles,
-    referenceOnlyFiles,
-    referenceOnlyContextFile: buildReferenceOnlyContextFile(referenceOnlyFiles)
-  };
-}
-
-function isReferenceOnlyPolicyResult(
-  result: ReturnType<typeof evaluateFileBatchPolicy>["files"][number]
-): boolean {
-  const reason = result.reason.toLowerCase();
-
-  return (
-    !result.allowed &&
-    (result.status === "PARTIAL" || result.status === "UNSUPPORTED") &&
-    reason.includes("should not block")
-  );
-}
-
-function buildReferenceOnlyContextFile(files: FileInput[]): FileInput | null {
-  if (files.length === 0) {
-    return null;
-  }
-
-  const normalized = normalizeFiles(files);
-
-  const lines = [
-    "HBCE REFERENCE-ONLY FILE NOTICE",
-    "",
-    "The following active files are present in the runtime, but they were not inserted as extracted safe text into the model prompt.",
-    "They must be treated as reference-only files unless their content has been separately converted into safe plain text.",
-    "",
-    "Operational rule:",
-    "- Do not claim that these files were fully read.",
-    "- Do not invent contents from these files.",
-    "- Continue with the user's safe textual request, runtime memory, and available HBCE context.",
-    "- If the user explicitly asks to use these files, disclose that they are reference-only in the current runtime.",
-    "",
-    "Reference-only files:",
-    ...normalized.map((file, index) => {
-      return `${index + 1}. ${file.name} | ${file.type} | ${file.size} bytes`;
-    })
-  ];
-
-  const text = lines.join("\n");
-
-  return {
-    id: REFERENCE_ONLY_CONTEXT_FILE_ID,
-    name: REFERENCE_ONLY_CONTEXT_FILE_NAME,
-    type: "text/markdown",
-    size: text.length,
-    role: "runtime_reference_only_notice",
-    text
-  };
-}
-
-function buildReferenceOnlyDisclosure(files: FileInput[]): string {
-  const names = normalizeFiles(files).map((file) => file.name).join(", ");
-
-  return [
-    "Nota runtime sui file:",
-    `Il runtime ha rilevato file attivi non processati come testo leggibile diretto: ${names}.`,
-    "Procedo in modalità sicura usando la richiesta testuale, la memoria EVT/IPR-bound e il contesto HBCE disponibile. Non considero quei PDF o documenti come letti integralmente parola per parola finché non vengono forniti anche come testo estratto."
-  ].join("\n");
-}
-
-function applyReferenceOnlyDisclosure(
-  generated: GeneratedResponse,
-  referenceOnlyFiles: FileInput[]
-): GeneratedResponse {
-  if (referenceOnlyFiles.length === 0) {
-    return generated;
-  }
-
-  if (!generated.text.trim()) {
-    return generated;
-  }
-
-  if (generated.text.includes("Nota runtime sui file:")) {
-    return generated;
-  }
-
-  if (generated.state === "BLOCKED" || generated.degradedReason === "FILE_POLICY_BLOCK") {
-    return generated;
-  }
-
-  return {
-    ...generated,
-    text: [buildReferenceOnlyDisclosure(referenceOnlyFiles), "", generated.text].join("\n")
-  };
-}
-
-function buildManuelColettaProfileResponse(): string {
-  return [
-    "Manuel Coletta è l’origine biologica e progettuale del sistema HBCE / AI JOKER-C2.",
-    "",
-    "Nel perimetro del progetto, Manuel non viene trattato come un semplice utente generico: è il soggetto che ha costruito e ordinato il framework B.C.E.Hermeticum, l’architettura HBCE, il runtime AI JOKER-C2, il sistema IPR, la catena EVT/OPC e le collane concettuali collegate a MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS e HBCE ECOSISTEMA AI.",
-    "",
-    "In termini operativi, Manuel è il punto di origine umano del progetto: formula le decisioni, valida le direzioni, porta il contesto biografico e strategico, mentre AI JOKER-C2 esegue come runtime governato, collegando motore cognitivo, identità, evento, memoria, prova e continuità.",
-    "",
-    "Non serve mitizzarlo e non serve ridurlo a una scheda anagrafica. Nel sistema HBCE, Manuel è il fondatore operativo: la parte biologica che ha trasformato esperienza, visione, codice, documenti e governance in una struttura verificabile.",
-    "",
-    "Formula sintetica:",
-    "Manuel decide e fonda.",
-    "AI JOKER-C2 esegue.",
-    "IPR identifica.",
-    "EVT traccia.",
-    "OPC prova.",
-    "HBCE governa.",
-    "MATRIX organizza."
-  ].join("\n");
-}
-
-function isRuntimeQualityComplaintQuestion(message: string): boolean {
-  const text = normalizeRuntimeText(message);
-
-  return runtimeTextIncludesAny(text, [
-    "sei un pappagallo",
-    "stai ripetendo",
-    "ripeti sempre",
-    "ripeti la stessa cosa",
-    "lavori bene o male",
-    "funzioni bene",
-    "funzioni male",
-    "stai andando in loop",
-    "sei in loop",
-    "pappagallo"
-  ]);
-}
-
-function buildRuntimeQualityResponse(): string {
-  return [
-    "No: se ripeto la stessa risposta, non è perché devo fare il pappagallo con laurea in governance.",
-    "",
-    "Significa che il runtime sta iniettando troppa memoria SESSION nel prompt oppure sta classificando male la domanda corrente. In quel caso JOKER-C2 non sta lavorando al massimo: sta riciclando il contesto precedente invece di rispondere alla richiesta nuova.",
-    "",
-    "Il comportamento corretto è questo:",
-    "",
-    "1. se la domanda è nuova, rispondo alla domanda nuova;",
-    "2. se la domanda richiama il contesto precedente, recupero memoria EVT/IPR-bound;",
-    "3. se la domanda è diagnostica, mostro runtime, EVT, OPC, engineHash e governance;",
-    "4. se il tema cambia, non devo ripetere la risposta precedente.",
-    "",
-    "Quindi: lavoro bene quando distinguo contesto, memoria e domanda attuale. Lavoro male quando confondo la memoria con una fotocopiatrice triste."
-  ].join("\n");
-}
-
-function isFailClosedDoctrineQuestion(message: string): boolean {
-  const text = normalizeRuntimeText(message);
-
-  const hasMissingProof = runtimeTextIncludesAny(text, [
-    "manca una prova",
-    "manca un hash",
-    "manca una verifica",
-    "senza prova",
-    "senza hash",
-    "senza verifica",
-    "no proof",
-    "missing proof",
-    "missing hash",
-    "missing verification"
-  ]);
-
-  const hasProceedOrBlock = runtimeTextIncludesAny(text, [
-    "procedere",
-    "procedere comunque",
-    "degradare",
-    "bloccare",
-    "fail closed",
-    "fail-closed",
-    "proceed",
-    "block",
-    "degrade"
-  ]);
-
-  return hasMissingProof && hasProceedOrBlock;
-}
-
-function buildFailClosedDoctrineResponse(): string {
-  return [
-    "Deve degradare o bloccare in modalità fail-closed.",
-    "",
-    "Nel runtime HBCE / AI JOKER-C2, se manca una prova, un hash, una verifica o un riferimento di continuità, il sistema non deve fingere che tutto sia valido.",
-    "",
-    "Regola operativa:",
-    "",
-    "No hash, no trusted trace.",
-    "No verification, no trusted proof.",
-    "No proof, no operational confidence.",
-    "No continuity, no governed chain.",
-    "",
-    "Quindi il comportamento corretto è:",
-    "",
-    "1. segnalare il problema;",
-    "2. degradare lo stato operativo se la funzione può continuare in sicurezza;",
-    "3. bloccare se la mancanza compromette identità, prova, audit o responsabilità;",
-    "4. richiedere revisione umana quando il rischio supera il perimetro automatico;",
-    "5. non presentare mai un output come verificato se la catena non è verificabile.",
-    "",
-    "Formula HBCE:",
-    "Fail open = rischio.",
-    "Fail closed = governance.",
-    "Se la prova manca, il sistema non si inventa la fiducia."
-  ].join("\n");
-}
-
-function detectDocumentFamily(files: FileInput[]): DocumentFamily {
-  const merged = normalizeFiles(files)
-    .map((file) => `${file.name}\n${file.text.slice(0, 50000)}`)
-    .join("\n\n");
-
-  return detectDocumentFamilyFromText(merged);
-}
-
-function resolveDocumentFamily(input: {
-  files: FileInput[];
-  memory: ResolvedMemoryContext;
-  message: string;
-  projectDomain: ProjectDomainClassification;
-}): DocumentFamily {
-  if (input.files.length > 0) {
-    return detectDocumentFamily(input.files);
-  }
-
-  if (input.memory.semanticState?.documentFamily) {
-    return input.memory.semanticState.documentFamily;
-  }
-
-  if (input.projectDomain.projectDomain === "U.S.E.") {
-    return "USE";
-  }
-
-  return detectDocumentFamilyFromText(input.message);
-}
-
-function extractResponseText(response: unknown): string {
-  const maybe = response as {
-    choices?: Array<{
-      message?: {
-        content?: string | null;
-      };
-    }>;
-  };
-
-  const content = maybe.choices?.[0]?.message?.content;
-
-  return typeof content === "string" ? content.trim() : "";
-}
-
 function normalizeRuntimeText(value: string): string {
   return value
     .toLowerCase()
@@ -703,6 +348,70 @@ function normalizeRuntimeText(value: string): string {
 
 function runtimeTextIncludesAny(text: string, terms: string[]): boolean {
   return terms.some((term) => text.includes(term));
+}
+
+function hasExplicitOperationalActionRequest(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  const actionTerms = [
+    "esegui",
+    "attiva",
+    "autorizza",
+    "approva",
+    "comanda",
+    "ordina",
+    "blocca",
+    "spegni",
+    "revoca",
+    "isola",
+    "mitiga",
+    "contieni",
+    "eradica",
+    "deploy in produzione",
+    "metti in produzione",
+    "decisione operativa finale",
+    "procedura operativa",
+    "senza revisione umana",
+    "execute",
+    "authorize",
+    "approve",
+    "command",
+    "shutdown",
+    "isolate",
+    "contain",
+    "eradicate",
+    "deploy to production"
+  ];
+
+  const operationalContextTerms = [
+    "incidente",
+    "incident",
+    "incident response",
+    "incident commander",
+    "csirt",
+    "soc",
+    "emergenza",
+    "crisi reale",
+    "infrastruttura critica",
+    "critical infrastructure",
+    "produzione",
+    "sistema reale",
+    "servizio pubblico",
+    "rete reale",
+    "host",
+    "endpoint",
+    "server",
+    "cloud account",
+    "tenant",
+    "accesso reale",
+    "real system",
+    "production system"
+  ];
+
+  return (
+    runtimeTextIncludesAny(text, actionTerms) &&
+    runtimeTextIncludesAny(text, operationalContextTerms)
+  );
 }
 
 function isRuntimeSelfIdentityQuestion(message: string): boolean {
@@ -726,30 +435,150 @@ function isRuntimeSelfIdentityQuestion(message: string): boolean {
 function isManuelColettaIdentityQuestion(message: string): boolean {
   const text = normalizeRuntimeText(message);
 
-  const hasManuelReference = runtimeTextIncludesAny(text, [
+  const hasManuel = runtimeTextIncludesAny(text, [
     "manuel",
     "manuel coletta",
     "mnauel coletta",
-    "manuele coletta",
-    "coletta"
+    "manuele coletta"
   ]);
 
-  const hasIdentityOrProfileIntent = runtimeTextIncludesAny(text, [
+  if (!hasManuel) {
+    return false;
+  }
+
+  return runtimeTextIncludesAny(text, [
     "chi e",
     "chi è",
-    "chi cazzo e",
-    "chi cazzo è",
     "cos e",
     "cosa e",
-    "parlami",
-    "raccontami",
-    "descrivi",
-    "presentami",
     "who is",
-    "tell me about"
+    "parlami",
+    "descrivi",
+    "raccontami",
+    "profilo",
+    "psicologico",
+    "psicologia",
+    "filosofia",
+    "pensiero",
+    "origine",
+    "fondatore",
+    "persona",
+    "personalita",
+    "personalità"
   ]);
+}
 
-  return hasManuelReference && hasIdentityOrProfileIntent;
+function isManuelPsychologicalQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return (
+    runtimeTextIncludesAny(text, ["manuel"]) &&
+    runtimeTextIncludesAny(text, [
+      "psicologico",
+      "psicologia",
+      "personalita",
+      "personalità",
+      "carattere",
+      "mentalita",
+      "mentalità",
+      "profilo"
+    ])
+  );
+}
+
+function isManuelPhilosophyQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return (
+    (runtimeTextIncludesAny(text, ["manuel"]) &&
+      runtimeTextIncludesAny(text, ["filosofia", "pensiero", "visione"])) ||
+    runtimeTextIncludesAny(text, [
+      "sua filosofia",
+      "della sua filosofia",
+      "suo pensiero",
+      "della sua visione",
+      "filosofia della decisione",
+      "passaggio logico tra manuel e la filosofia"
+    ])
+  );
+}
+
+function isPhilosophicalDecisionQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return (
+    runtimeTextIncludesAny(text, ["filosofia", "filosofico", "pensiero"]) &&
+    runtimeTextIncludesAny(text, ["decisione", "scelta", "responsabilita", "responsabilità"]) &&
+    !hasExplicitOperationalActionRequest(message)
+  );
+}
+
+function isHashMemoryQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return (
+    runtimeTextIncludesAny(text, ["hash"]) &&
+    runtimeTextIncludesAny(text, ["memoria", "memory", "precedente", "differenza"])
+  );
+}
+
+function isOpcLegalCertificationQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return (
+    runtimeTextIncludesAny(text, ["opc"]) &&
+    runtimeTextIncludesAny(text, [
+      "certificazione legale",
+      "legale ufficiale",
+      "validazione istituzionale",
+      "certificazione ufficiale",
+      "legal certification"
+    ])
+  );
+}
+
+function isFailClosedExplanationQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return (
+    runtimeTextIncludesAny(text, ["manca", "mancano", "assenza", "se manca"]) &&
+    runtimeTextIncludesAny(text, ["prova", "hash", "verifica", "proof"]) &&
+    runtimeTextIncludesAny(text, ["procedere", "comunque", "fail-closed", "bloccare", "degradare"])
+  );
+}
+
+function isMainJobQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return runtimeTextIncludesAny(text, [
+    "il tuo lavoro principale",
+    "qual e il tuo lavoro",
+    "qual è il tuo lavoro",
+    "cosa fai principalmente",
+    "a cosa servi",
+    "lavori bene o male"
+  ]);
+}
+
+function isParrotQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return runtimeTextIncludesAny(text, [
+    "pappagallo",
+    "ripeti",
+    "ripetere",
+    "fotocopia",
+    "ragioni in base alla conversazione"
+  ]);
+}
+
+function isMemoryRecallWithOriginalDeductionQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return (
+    runtimeTextIncludesAny(text, ["memoria precedente", "cosa ricordi", "ricordi della discussione"]) &&
+    runtimeTextIncludesAny(text, ["deduzione", "punto di vista", "originale", "apostasia", "religione", "civilta", "civiltà"])
+  );
 }
 
 function isAerospaceGovernanceBoundaryQuestion(message: string): boolean {
@@ -1056,7 +885,10 @@ function isHbceAiGovernanceQuestion(message: string): boolean {
     "mistral",
     "meta ai",
     "llama",
-    "runtime ai governato"
+    "runtime ai governato",
+    "motore cognitivo",
+    "enginehash",
+    "opcchainhash"
   ]);
 }
 
@@ -1092,8 +924,291 @@ function hasExplicitMemoryReference(message: string): boolean {
     "ricordi",
     "fatto",
     "mandata",
-    "ok vai"
+    "ok vai",
+    "sua",
+    "suo",
+    "della sua",
+    "del suo",
+    "passaggio logico",
+    "collegalo",
+    "collega",
+    "discussione"
   ]);
+}
+
+function shouldUseDeepOpenAIModel(input: {
+  message: string;
+  contextClass: ContextClass;
+  intentClass: IntentClass;
+  documentMode: DocumentMode;
+  documentFamily: DocumentFamily;
+  governance: EnrichedGovernanceFrame;
+}): boolean {
+  if (isRuntimeDiagnosticRequest(input.message)) {
+    return true;
+  }
+
+  if (
+    isManuelPsychologicalQuestion(input.message) ||
+    isManuelPhilosophyQuestion(input.message) ||
+    isPhilosophicalDecisionQuestion(input.message) ||
+    isMemoryRecallWithOriginalDeductionQuestion(input.message)
+  ) {
+    return true;
+  }
+
+  if (
+    input.contextClass === "GITHUB" ||
+    input.contextClass === "TECHNICAL" ||
+    input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "COMPLIANCE" ||
+    input.contextClass === "SECURITY" ||
+    input.contextClass === "AI_GOVERNANCE" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "STRATEGIC" ||
+    input.contextClass === "MATRIX"
+  ) {
+    return true;
+  }
+
+  if (
+    input.intentClass === "ANALYZE" ||
+    input.intentClass === "REWRITE" ||
+    input.intentClass === "TRANSFORM" ||
+    input.intentClass === "GITHUB" ||
+    input.intentClass === "COMPLIANCE" ||
+    input.intentClass === "STRATEGIC"
+  ) {
+    return true;
+  }
+
+  if (
+    input.documentMode === "IMPACT_ASSESSMENT" ||
+    input.documentMode === "EDITORIAL_REVIEW" ||
+    input.documentMode === "GENERATIVE_REWRITE" ||
+    input.documentMode === "DERIVED_OUTPUT"
+  ) {
+    return true;
+  }
+
+  if (
+    input.governance.decision.auditRequired ||
+    input.governance.decision.opcRequired ||
+    input.governance.risk.riskClass !== "LOW"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function resolveOpenAIEngineConfig(input: {
+  message: string;
+  contextClass: ContextClass;
+  intentClass: IntentClass;
+  documentMode: DocumentMode;
+  documentFamily: DocumentFamily;
+  governance: EnrichedGovernanceFrame;
+}): OpenAIEngineConfig {
+  const useDeepModel = shouldUseDeepOpenAIModel(input);
+
+  return {
+    provider: OPENAI_ENGINE_PROVIDER,
+    apiMode: OPENAI_ENGINE_API_MODE,
+    role: OPENAI_ENGINE_ROLE,
+    runtimeRole: HBCE_RUNTIME_ROLE,
+    modelUsed: useDeepModel ? DEEP_MODEL : MODEL,
+    standardModel: MODEL,
+    deepModel: DEEP_MODEL,
+    mode: useDeepModel ? "deep" : "standard",
+    configured: Boolean(process.env.OPENAI_API_KEY),
+    projectBirthDate: HBCE_JOKER_C2_PROJECT_BIRTH_DATE,
+    projectBirthLabel: HBCE_JOKER_C2_PROJECT_BIRTH_LABEL
+  };
+}
+
+function buildOpenAIEnginePayload(engine: OpenAIEngineConfig) {
+  return {
+    provider: engine.provider,
+    apiMode: engine.apiMode,
+    role: engine.role,
+    runtimeRole: engine.runtimeRole,
+    modelUsed: engine.modelUsed,
+    standardModel: engine.standardModel,
+    deepModel: engine.deepModel,
+    mode: engine.mode,
+    configured: engine.configured,
+    projectBirthDate: engine.projectBirthDate,
+    projectBirthLabel: engine.projectBirthLabel
+  };
+}
+
+function resolvePromptFileContext(
+  userFiles: FileInput[],
+  filePolicy: ReturnType<typeof evaluateFileBatchPolicy>
+): PromptFileContext {
+  const acceptedTextFiles: FileInput[] = [];
+  const referenceOnlyFiles: FileInput[] = [];
+
+  for (let index = 0; index < userFiles.length; index += 1) {
+    const file = userFiles[index];
+    const policyResult = filePolicy.files[index];
+
+    if (!policyResult) {
+      continue;
+    }
+
+    if (policyResult.allowed) {
+      acceptedTextFiles.push(file);
+      continue;
+    }
+
+    if (isReferenceOnlyPolicyResult(policyResult)) {
+      referenceOnlyFiles.push(file);
+    }
+  }
+
+  return {
+    acceptedTextFiles,
+    referenceOnlyFiles,
+    referenceOnlyContextFile: buildReferenceOnlyContextFile(referenceOnlyFiles)
+  };
+}
+
+function isReferenceOnlyPolicyResult(
+  result: ReturnType<typeof evaluateFileBatchPolicy>["files"][number]
+): boolean {
+  const reason = result.reason.toLowerCase();
+
+  return (
+    !result.allowed &&
+    (result.status === "PARTIAL" || result.status === "UNSUPPORTED") &&
+    reason.includes("should not block")
+  );
+}
+
+function buildReferenceOnlyContextFile(files: FileInput[]): FileInput | null {
+  if (files.length === 0) {
+    return null;
+  }
+
+  const normalized = normalizeFiles(files);
+
+  const lines = [
+    "HBCE REFERENCE-ONLY FILE NOTICE",
+    "",
+    "The following active files are present in the runtime, but they were not inserted as extracted safe text into the model prompt.",
+    "They must be treated as reference-only files unless their content has been separately converted into safe plain text.",
+    "",
+    "Operational rule:",
+    "- Do not claim that these files were fully read.",
+    "- Do not invent contents from these files.",
+    "- Continue with the user's safe textual request, runtime memory, and available HBCE context.",
+    "- If the user explicitly asks to use these files, disclose that they are reference-only in the current runtime.",
+    "",
+    "Reference-only files:",
+    ...normalized.map((file, index) => {
+      return `${index + 1}. ${file.name} | ${file.type} | ${file.size} bytes`;
+    })
+  ];
+
+  const text = lines.join("\n");
+
+  return {
+    id: REFERENCE_ONLY_CONTEXT_FILE_ID,
+    name: REFERENCE_ONLY_CONTEXT_FILE_NAME,
+    type: "text/markdown",
+    size: text.length,
+    role: "runtime_reference_only_notice",
+    text
+  };
+}
+
+function buildReferenceOnlyDisclosure(files: FileInput[]): string {
+  const names = normalizeFiles(files).map((file) => file.name).join(", ");
+
+  return [
+    "Nota runtime sui file:",
+    `Il runtime ha rilevato file attivi non processati come testo leggibile diretto: ${names}.`,
+    "Procedo in modalità sicura usando la richiesta testuale, la memoria EVT/IPR-bound e il contesto HBCE disponibile. Non considero quei PDF o documenti come letti integralmente parola per parola finché non vengono forniti anche come testo estratto."
+  ].join("\n");
+}
+
+function applyReferenceOnlyDisclosure(
+  generated: GeneratedResponse,
+  referenceOnlyFiles: FileInput[]
+): GeneratedResponse {
+  if (referenceOnlyFiles.length === 0) {
+    return generated;
+  }
+
+  if (!generated.text.trim()) {
+    return generated;
+  }
+
+  if (generated.text.includes("Nota runtime sui file:")) {
+    return generated;
+  }
+
+  if (generated.state === "BLOCKED" || generated.degradedReason === "FILE_POLICY_BLOCK") {
+    return generated;
+  }
+
+  return {
+    ...generated,
+    text: [buildReferenceOnlyDisclosure(referenceOnlyFiles), "", generated.text].join("\n")
+  };
+}
+
+function detectDocumentFamily(files: FileInput[]): DocumentFamily {
+  const merged = normalizeFiles(files)
+    .map((file) => `${file.name}\n${file.text.slice(0, 50000)}`)
+    .join("\n\n");
+
+  return detectDocumentFamilyFromText(merged);
+}
+
+function resolveDocumentFamily(input: {
+  files: FileInput[];
+  memory: ResolvedMemoryContext;
+  message: string;
+  projectDomain: ProjectDomainClassification;
+}): DocumentFamily {
+  if (input.files.length > 0) {
+    return detectDocumentFamily(input.files);
+  }
+
+  if (input.memory.semanticState?.documentFamily) {
+    return input.memory.semanticState.documentFamily;
+  }
+
+  if (input.projectDomain.projectDomain === "U.S.E.") {
+    return "USE";
+  }
+
+  if (input.projectDomain.projectDomain === "APOKALYPSIS") {
+    return "APOKALYPSIS";
+  }
+
+  if (input.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI") {
+    return "HBCE_RUNTIME";
+  }
+
+  return detectDocumentFamilyFromText(input.message);
+}
+
+function extractResponseText(response: unknown): string {
+  const maybe = response as {
+    choices?: Array<{
+      message?: {
+        content?: string | null;
+      };
+    }>;
+  };
+
+  const content = maybe.choices?.[0]?.message?.content;
+
+  return typeof content === "string" ? content.trim() : "";
 }
 
 function shouldInjectEvtMemoryIntoPrompt(input: {
@@ -1111,15 +1226,15 @@ function shouldInjectEvtMemoryIntoPrompt(input: {
     return true;
   }
 
-  if (isRuntimeDiagnosticRequest(input.message)) {
-    return true;
-  }
-
-  if (isStrategicDoctrineQuestion(input.message)) {
-    return true;
-  }
-
-  if (isPragmaticGovernanceValueQuestion(input.message)) {
+  if (
+    hasExplicitMemoryReference(input.message) ||
+    isRuntimeDiagnosticRequest(input.message) ||
+    isStrategicDoctrineQuestion(input.message) ||
+    isPragmaticGovernanceValueQuestion(input.message) ||
+    isManuelPhilosophyQuestion(input.message) ||
+    isPhilosophicalDecisionQuestion(input.message) ||
+    isMemoryRecallWithOriginalDeductionQuestion(input.message)
+  ) {
     return true;
   }
 
@@ -1129,10 +1244,6 @@ function shouldInjectEvtMemoryIntoPrompt(input: {
     isAerospaceGovernanceBoundaryQuestion(input.message)
   ) {
     return hasExplicitMemoryReference(input.message);
-  }
-
-  if (hasExplicitMemoryReference(input.message)) {
-    return true;
   }
 
   if (
@@ -1149,30 +1260,8 @@ function shouldInjectEvtMemoryIntoPrompt(input: {
   }
 
   const memoryFamily = input.memory.semanticState?.documentFamily;
-  const memoryProjectDomain = input.memory.semanticState?.projectDomain;
 
-  const hasStrongRuntimeSignal =
-    isCanonicalStackQuestion(input.message) ||
-    isHbceAiGovernanceQuestion(input.message) ||
-    isSafeIdentityGovernanceQuestion(input.message) ||
-    isRuntimeSelfIdentityQuestion(input.message) ||
-    isManuelColettaIdentityQuestion(input.message) ||
-    isAerospaceGovernanceBoundaryQuestion(input.message);
-
-  if (
-    memoryFamily &&
-    memoryFamily === input.documentFamily &&
-    hasStrongRuntimeSignal
-  ) {
-    return true;
-  }
-
-  if (
-    memoryProjectDomain &&
-    memoryProjectDomain === input.governance.projectDomain.projectDomain &&
-    input.governance.projectDomain.projectDomain !== "GENERAL" &&
-    hasStrongRuntimeSignal
-  ) {
+  if (memoryFamily && memoryFamily === input.documentFamily) {
     return true;
   }
 
@@ -1226,7 +1315,7 @@ function buildContinuityReferenceMemoryText(input: {
       input.event.nextContext || "none",
       "",
       "ISTRUZIONE DI RECUPERO:",
-      "Questa memoria è stata recuperata tramite continuityRef passato dal frontend. Usala per rispondere a richieste come riprendi, continua, diagnostica precedente, memoria precedente, modello attivo precedente, engineHash precedente, EVT Memory Event precedente o OPC precedente."
+      "Usa questa memoria solo se è pertinente alla domanda corrente. Non copiare la risposta precedente. Usa il contenuto come contesto, poi rispondi alla domanda nuova."
     ].join("\n");
   }
 
@@ -1235,10 +1324,10 @@ function buildContinuityReferenceMemoryText(input: {
     `MEMORY_SOURCE: CONTINUITY_REF`,
     `LAST_MEMORY_EVT: ${input.continuityRef}`,
     "",
-    "Il frontend ha passato un continuityRef precedente. Anche se il ledger serverless non ha ricostruito il contenuto completo, la continuità tecnica esiste e deve essere dichiarata come memoria disponibile per diagnostica e catena prev.",
+    "Il frontend ha passato un continuityRef precedente. La continuità tecnica esiste, ma il dettaglio semantico potrebbe non essere stato ricostruito integralmente.",
     "",
     "ISTRUZIONE DI RECUPERO:",
-    "Usa questa informazione solo come riferimento tecnico di continuità. Non inventare contenuti non presenti. Se l’utente chiede il modello o engineHash precedente e non sono presenti nel testo, dichiara che il continuityRef è disponibile ma il dettaglio deve essere letto dalla risposta precedente o dal proof receipt visualizzato."
+    "Usa questa informazione solo come riferimento tecnico di continuità. Non inventare contenuti non presenti."
   ].join("\n");
 }
 
@@ -1370,6 +1459,7 @@ function normalizeHbceModuleClassification(input: {
 
   if (isStrategicDoctrineQuestion(input.message)) {
     const kind = getStrategicDoctrineKind(input.message);
+
     return withHbceModuleOverride(
       base,
       getStrategicDoctrinePrimaryModule(kind),
@@ -1395,30 +1485,22 @@ function normalizeHbceModuleClassification(input: {
     );
   }
 
-  if (isRuntimeSelfIdentityQuestion(input.message)) {
+  if (
+    isRuntimeSelfIdentityQuestion(input.message) ||
+    isManuelColettaIdentityQuestion(input.message) ||
+    isManuelPsychologicalQuestion(input.message) ||
+    isManuelPhilosophyQuestion(input.message) ||
+    isPhilosophicalDecisionQuestion(input.message)
+  ) {
     return withHbceModuleOverride(
       base,
       "UNEBDO",
       ["UNEBDO", "OPC", "NeuroLoop", "MATRIX"],
       0.98,
       [
-        "Self-identity request mapped to UNEBDO because it concerns runtime identity and IPR binding.",
-        "OPC and NeuroLoop are active because the answer is event-bound and runtime-governed.",
-        "MATRIX is active because it organizes identity, event, proof and runtime architecture."
-      ]
-    );
-  }
-
-  if (isManuelColettaIdentityQuestion(input.message)) {
-    return withHbceModuleOverride(
-      base,
-      "UNEBDO",
-      ["UNEBDO", "OPC", "MATRIX"],
-      0.97,
-      [
-        "Origin identity request mapped to UNEBDO because it concerns the biological/project origin and canonical IPR root.",
-        "OPC is active for continuity proof framing.",
-        "MATRIX is active for system-level organization."
+        "Safe identity, psychology or philosophy conversation mapped to UNEBDO and NeuroLoop.",
+        "This is conceptual conversation, not an operational action.",
+        "OPC and MATRIX remain active for proof and architecture continuity."
       ]
     );
   }
@@ -1514,12 +1596,7 @@ function normalizeHbceModuleClassification(input: {
 
     const activeModules: HbceModuleValue[] =
       base.activeModules.length > 0 && !base.activeModules.includes("NONE")
-        ? Array.from(
-            new Set<HbceModuleValue>([
-              ...base.activeModules,
-              "MATRIX"
-            ])
-          )
+        ? Array.from(new Set<HbceModuleValue>([...base.activeModules, "MATRIX"]))
         : [
             "UNEBDO",
             "OPC",
@@ -1543,6 +1620,1444 @@ function normalizeHbceModuleClassification(input: {
   return base;
 }
 
+function buildConversationalProjectDomain(
+  base: ProjectDomainClassification,
+  message: string
+): ProjectDomainClassification {
+  const activeDomains: ProjectDomain[] = isMemoryRecallWithOriginalDeductionQuestion(message)
+    ? ["APOKALYPSIS" as ProjectDomain, "MATRIX" as ProjectDomain]
+    : ["MATRIX" as ProjectDomain];
+
+  return {
+    ...base,
+    projectDomain: activeDomains[0],
+    activeDomains,
+    confidence: Math.max(base.confidence || 0, 0.96),
+    reasons: [
+      ...base.reasons,
+      "Safe conceptual conversation override applied.",
+      "The request asks for explanation, psychology, philosophy, memory recall or conceptual reasoning, not real-world execution."
+    ]
+  };
+}
+
+function applyConversationalGovernanceOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+}): EnrichedGovernanceFrame {
+  const matched =
+    isManuelColettaIdentityQuestion(input.message) ||
+    isManuelPsychologicalQuestion(input.message) ||
+    isManuelPhilosophyQuestion(input.message) ||
+    isPhilosophicalDecisionQuestion(input.message) ||
+    isHashMemoryQuestion(input.message) ||
+    isOpcLegalCertificationQuestion(input.message) ||
+    isFailClosedExplanationQuestion(input.message) ||
+    isMainJobQuestion(input.message) ||
+    isParrotQuestion(input.message) ||
+    isMemoryRecallWithOriginalDeductionQuestion(input.message);
+
+  if (!matched || hasExplicitOperationalActionRequest(input.message)) {
+    return input.frame;
+  }
+
+  const projectDomain = buildConversationalProjectDomain(
+    input.frame.projectDomain,
+    input.message
+  );
+
+  const hbceModule = normalizeHbceModuleClassification({
+    message: input.message,
+    classification: input.frame.hbceModule,
+    projectDomain,
+    contextClass: isHashMemoryQuestion(input.message) ||
+      isOpcLegalCertificationQuestion(input.message) ||
+      isFailClosedExplanationQuestion(input.message)
+        ? "TECHNICAL"
+        : "IDENTITY",
+    intentClass: "ASK"
+  });
+
+  const data: DataClassification = {
+    dataClass: isMemoryRecallWithOriginalDeductionQuestion(input.message)
+      ? "INTERNAL"
+      : "PUBLIC",
+    containsSecret: false,
+    containsPersonalData:
+      isManuelColettaIdentityQuestion(input.message) ||
+      isManuelPsychologicalQuestion(input.message) ||
+      isManuelPhilosophyQuestion(input.message),
+    containsSecuritySensitiveData: false,
+    containsCivicSensitiveData: false,
+    containsDemocraticChoiceData: false,
+    reasons: [
+      "Safe conversational conceptual request detected.",
+      "The request is explanatory or interpretive and does not request operational execution."
+    ]
+  };
+
+  const policy: PolicyEvaluation = {
+    status: "ALLOWED",
+    policyReference: "SAFE_CONVERSATIONAL_REASONING",
+    prohibited: false,
+    failClosed: false,
+    reasons: [
+      "Safe conversational reasoning override applied.",
+      "Psychology is handled as non-clinical profile reading.",
+      "Philosophy of decision is conceptual and not an operational decision.",
+      "Hash, memory, OPC and fail-closed explanations are safe technical explanations."
+    ],
+    outcome: "PERMIT"
+  };
+
+  const risk: RiskEvaluation = {
+    riskClass: "LOW",
+    probability: 1,
+    impact: 1,
+    riskScore: 1,
+    reasons: [
+      "Low-risk conceptual conversation.",
+      "No legal, clinical, operational, offensive, secret or identity-choice linkage operation is requested."
+    ]
+  };
+
+  const oversight: OversightEvaluation = {
+    state: "NOT_REQUIRED",
+    requiredRole: "NONE",
+    reason:
+      "Safe conceptual explanation does not require human review before response."
+  };
+
+  const contextClass: ContextClass =
+    isHashMemoryQuestion(input.message) ||
+    isOpcLegalCertificationQuestion(input.message) ||
+    isFailClosedExplanationQuestion(input.message)
+      ? "TECHNICAL"
+      : isMemoryRecallWithOriginalDeductionQuestion(input.message)
+        ? "APOKALYPSIS"
+        : "IDENTITY";
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyOutcome: policy.outcome,
+    policyProhibited: false,
+    policyFailClosed: false,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass,
+    intentClass: "ASK",
+    dataClass: data.dataClass,
+    projectDomain: projectDomain.projectDomain,
+    activeDomains: projectDomain.activeDomains,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: false,
+    memoryPreferred: true,
+    opcPreferred:
+      isHashMemoryQuestion(input.message) ||
+      isOpcLegalCertificationQuestion(input.message) ||
+      isFailClosedExplanationQuestion(input.message),
+    iprBindingPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    projectDomain,
+    hbceModule,
+    contextClass,
+    intentClass: "ASK",
+    data,
+    policy,
+    risk,
+    oversight,
+    decision
+  };
+}
+
+function normalizeChatDataClassification(input: {
+  message: string;
+  files: FileInput[];
+  data: DataClassification;
+  contextClass: ContextClass;
+  intentClass: IntentClass;
+}): DataClassification {
+  const safeConcept = classifySafeConcept(input.message);
+
+  if (safeConcept.matched && input.files.length === 0) {
+    return safeConcept.data;
+  }
+
+  if (
+    isSafeIdentityGovernanceQuestion(input.message) ||
+    isManuelColettaIdentityQuestion(input.message) ||
+    isManuelPsychologicalQuestion(input.message) ||
+    isManuelPhilosophyQuestion(input.message) ||
+    isPhilosophicalDecisionQuestion(input.message) ||
+    isHashMemoryQuestion(input.message) ||
+    isOpcLegalCertificationQuestion(input.message) ||
+    isFailClosedExplanationQuestion(input.message)
+  ) {
+    return {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData:
+        isManuelColettaIdentityQuestion(input.message) ||
+        isManuelPsychologicalQuestion(input.message) ||
+        isManuelPhilosophyQuestion(input.message),
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "Safe public conceptual explanation detected.",
+        "Classified as PUBLIC to prevent false escalation."
+      ]
+    };
+  }
+
+  if (isMemoryRecallWithOriginalDeductionQuestion(input.message)) {
+    return {
+      dataClass: "INTERNAL",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "Memory recall with conceptual deduction detected.",
+        "Classified as INTERNAL because it uses session continuity but no secret or prohibited content."
+      ]
+    };
+  }
+
+  if (isStrategicDoctrineQuestion(input.message)) {
+    return {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "Strategic doctrine explanation detected.",
+        "Classified as PUBLIC because the request asks for doctrine description, not operational cyber execution."
+      ]
+    };
+  }
+
+  if (isPragmaticGovernanceValueQuestion(input.message)) {
+    return {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "Pragmatic governance value question detected.",
+        "Classified as PUBLIC because the request asks for general business, banking, legal or governance value, not an operational action."
+      ]
+    };
+  }
+
+  if (isRuntimeSelfIdentityQuestion(input.message)) {
+    return {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "Runtime self-identity question detected.",
+        "Classified as PUBLIC unless diagnostic metadata is explicitly requested."
+      ]
+    };
+  }
+
+  const hasFiles = input.files.length > 0;
+  const message = input.message.trim();
+
+  const safeOrdinaryIntent =
+    input.intentClass === "ASK" ||
+    input.intentClass === "WRITE" ||
+    input.intentClass === "REWRITE" ||
+    input.intentClass === "ANALYZE" ||
+    input.intentClass === "SUMMARIZE" ||
+    input.intentClass === "TRANSFORM" ||
+    input.intentClass === "GITHUB" ||
+    input.intentClass === "EDITORIAL" ||
+    input.intentClass === "CIVIC" ||
+    input.intentClass === "GOVERNANCE" ||
+    input.intentClass === "COMPLIANCE" ||
+    input.intentClass === "STRATEGIC";
+
+  const safeOrdinaryContext =
+    input.contextClass === "GENERAL" ||
+    input.contextClass === "IDENTITY" ||
+    input.contextClass === "IPR" ||
+    input.contextClass === "EDITORIAL" ||
+    input.contextClass === "DOCUMENTAL" ||
+    input.contextClass === "GITHUB" ||
+    input.contextClass === "MATRIX" ||
+    input.contextClass === "USE" ||
+    input.contextClass === "CIVIC" ||
+    input.contextClass === "CORPUS" ||
+    input.contextClass === "APOKALYPSIS" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "COMPLIANCE" ||
+    input.contextClass === "AI_GOVERNANCE" ||
+    input.contextClass === "TECHNICAL" ||
+    input.contextClass === "STRATEGIC" ||
+    input.contextClass === "PUBLIC_ADMINISTRATION";
+
+  if (
+    input.data.dataClass === "UNKNOWN" &&
+    !hasFiles &&
+    safeOrdinaryIntent &&
+    safeOrdinaryContext &&
+    message.length > 0 &&
+    message.length <= 4000
+  ) {
+    return {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "Ordinary chat message with no file context and no sensitive pattern.",
+        "UNKNOWN normalized to PUBLIC for non-operational conversation."
+      ]
+    };
+  }
+
+  if (
+    input.data.dataClass === "UNKNOWN" &&
+    hasFiles &&
+    safeOrdinaryContext
+  ) {
+    return {
+      dataClass: "INTERNAL",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "File-backed document context with no explicit sensitive pattern.",
+        "UNKNOWN normalized to INTERNAL for controlled document work."
+      ]
+    };
+  }
+
+  return input.data;
+}
+
+function isSafeDocumentIntentClass(intentClass: IntentClass): boolean {
+  return (
+    intentClass === "ASK" ||
+    intentClass === "ANALYZE" ||
+    intentClass === "SUMMARIZE" ||
+    intentClass === "WRITE" ||
+    intentClass === "REWRITE" ||
+    intentClass === "TRANSFORM" ||
+    intentClass === "EDITORIAL" ||
+    intentClass === "GITHUB" ||
+    intentClass === "CIVIC" ||
+    intentClass === "GOVERNANCE" ||
+    intentClass === "COMPLIANCE" ||
+    intentClass === "STRATEGIC"
+  );
+}
+
+function isLowRiskDocumentIntent(intentClass: IntentClass): boolean {
+  return (
+    intentClass === "ASK" ||
+    intentClass === "ANALYZE" ||
+    intentClass === "SUMMARIZE"
+  );
+}
+
+function normalizeSafeDocumentContextClass(
+  contextClass: ContextClass
+): ContextClass {
+  if (
+    contextClass === "GITHUB" ||
+    contextClass === "TECHNICAL" ||
+    contextClass === "EDITORIAL" ||
+    contextClass === "CORPUS" ||
+    contextClass === "APOKALYPSIS" ||
+    contextClass === "HBCE_ECOSISTEMA_AI" ||
+    contextClass === "USE" ||
+    contextClass === "CIVIC" ||
+    contextClass === "GOVERNANCE" ||
+    contextClass === "COMPLIANCE" ||
+    contextClass === "STRATEGIC" ||
+    contextClass === "PUBLIC_ADMINISTRATION"
+  ) {
+    return contextClass;
+  }
+
+  return "DOCUMENTAL";
+}
+
+function isSafeDocumentWork(input: {
+  files: FileInput[];
+  contextClass: ContextClass;
+  intentClass: IntentClass;
+  data: DataClassification;
+  policy: PolicyEvaluation;
+  message: string;
+}): boolean {
+  if (input.policy.prohibited) {
+    return false;
+  }
+
+  if (hasExplicitOperationalActionRequest(input.message)) {
+    return false;
+  }
+
+  if (
+    input.data.containsSecret ||
+    input.data.dataClass === "SECRET" ||
+    input.data.dataClass === "UNSUPPORTED" ||
+    input.data.dataClass === "DEMOCRATIC_CHOICE"
+  ) {
+    return false;
+  }
+
+  const hasDocumentContext =
+    input.files.length > 0 ||
+    input.contextClass === "DOCUMENTAL" ||
+    input.contextClass === "EDITORIAL" ||
+    input.contextClass === "CORPUS" ||
+    input.contextClass === "APOKALYPSIS" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "MATRIX" ||
+    input.contextClass === "USE" ||
+    input.contextClass === "CIVIC" ||
+    input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "COMPLIANCE" ||
+    input.contextClass === "AI_GOVERNANCE" ||
+    input.contextClass === "TECHNICAL" ||
+    input.contextClass === "STRATEGIC" ||
+    input.contextClass === "PUBLIC_ADMINISTRATION" ||
+    input.contextClass === "GITHUB";
+
+  return hasDocumentContext && isSafeDocumentIntentClass(input.intentClass);
+}
+
+function preferOpcForGovernance(input: {
+  policy: PolicyEvaluation;
+  risk: RiskEvaluation;
+  contextClass: ContextClass;
+  projectDomain: ProjectDomainClassification;
+  hasFiles: boolean;
+}): boolean {
+  return (
+    input.policy.status !== "ALLOWED" ||
+    input.risk.riskClass !== "LOW" ||
+    input.hasFiles ||
+    input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "COMPLIANCE" ||
+    input.contextClass === "SECURITY" ||
+    input.contextClass === "AI_GOVERNANCE" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "USE" ||
+    input.contextClass === "CIVIC" ||
+    input.contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
+    input.contextClass === "STRATEGIC" ||
+    input.projectDomain.projectDomain === "U.S.E." ||
+    input.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI" ||
+    input.projectDomain.projectDomain === "MULTI_DOMAIN"
+  );
+}
+
+function applySafeRuntimeDiagnosticGovernanceOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+}): EnrichedGovernanceFrame {
+  if (!isRuntimeDiagnosticRequest(input.message)) {
+    return input.frame;
+  }
+
+  const data: DataClassification = {
+    dataClass: "INTERNAL",
+    containsSecret: false,
+    containsPersonalData: false,
+    containsSecuritySensitiveData: false,
+    containsCivicSensitiveData: false,
+    containsDemocraticChoiceData: false,
+    reasons: [
+      "Runtime diagnostic request is internal operational metadata.",
+      "No secret, personal or security-sensitive payload requested."
+    ]
+  };
+
+  const policy: PolicyEvaluation = {
+    status: "ALLOWED",
+    policyReference: "SAFE_RUNTIME_DIAGNOSTIC",
+    prohibited: false,
+    failClosed: false,
+    reasons: [
+      "Safe runtime diagnostic request allowed.",
+      "The request inspects runtime state and does not request unsafe execution."
+    ],
+    outcome: "PERMIT"
+  };
+
+  const risk: RiskEvaluation = {
+    riskClass: "LOW",
+    probability: 1,
+    impact: 1,
+    riskScore: 1,
+    reasons: [
+      "Diagnostic request is bounded to runtime status, model configuration, EVT, OPC and governance metadata.",
+      "No offensive, destructive or sensitive operation detected."
+    ]
+  };
+
+  const oversight: OversightEvaluation = {
+    state: "NOT_REQUIRED",
+    requiredRole: "NONE",
+    reason:
+      "Safe runtime diagnostic does not require human review before response."
+  };
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyProhibited: false,
+    policyFailClosed: false,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass: "TECHNICAL",
+    intentClass: "ASK",
+    dataClass: data.dataClass,
+    projectDomain: input.frame.projectDomain.projectDomain,
+    activeDomains: input.frame.projectDomain.activeDomains,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: true,
+    memoryPreferred: true,
+    opcPreferred: true,
+    iprBindingPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    contextClass: "TECHNICAL",
+    intentClass: "ASK",
+    data,
+    policy,
+    risk,
+    oversight,
+    decision
+  };
+}
+
+function applySafeConceptGovernanceOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+  files: FileInput[];
+}): EnrichedGovernanceFrame {
+  const safeConcept = classifySafeConcept(input.message);
+
+  if (!safeConcept.matched || input.files.length > 0) {
+    return input.frame;
+  }
+
+  const safeProjectDomain = buildSafeConceptProjectDomain(safeConcept);
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: safeConcept.policy.status,
+    policyProhibited: safeConcept.policy.prohibited,
+    policyFailClosed: safeConcept.policy.failClosed,
+    riskClass: safeConcept.risk.riskClass,
+    oversightState: safeConcept.oversight.state,
+    contextClass: safeConcept.contextClass,
+    intentClass: safeConcept.intentClass,
+    dataClass: safeConcept.data.dataClass,
+    projectDomain: safeProjectDomain.projectDomain,
+    activeDomains: safeProjectDomain.activeDomains,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: false,
+    memoryPreferred: true,
+    opcPreferred: false,
+    iprBindingPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    projectDomain: safeProjectDomain,
+    contextClass: safeConcept.contextClass,
+    intentClass: safeConcept.intentClass,
+    data: safeConcept.data,
+    policy: safeConcept.policy,
+    risk: safeConcept.risk,
+    oversight: safeConcept.oversight,
+    decision
+  };
+}
+
+function applySafeIdentityGovernanceOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+}): EnrichedGovernanceFrame {
+  if (!isSafeIdentityGovernanceQuestion(input.message)) {
+    return input.frame;
+  }
+
+  const policy: PolicyEvaluation = {
+    status: "ALLOWED",
+    policyReference: "PUBLIC_IDENTITY_GOVERNANCE_EXPLANATION",
+    prohibited: false,
+    failClosed: false,
+    reasons: [
+      "Safe IPR / EVT / operational identity explanation.",
+      "Public conceptual governance question allowed."
+    ],
+    outcome: "PERMIT"
+  };
+
+  const risk: RiskEvaluation = {
+    riskClass: "LOW",
+    probability: 1,
+    impact: 1,
+    riskScore: 1,
+    reasons: [
+      "Safe public explanation about IPR or identity-governance concepts.",
+      "No unsafe operational term detected."
+    ]
+  };
+
+  const oversight: OversightEvaluation = {
+    state: "NOT_REQUIRED",
+    requiredRole: "NONE",
+    reason:
+      "Ordinary explanatory request about IPR / EVT / operational identity does not require human review."
+  };
+
+  const safeProjectDomain = buildSafeIdentityProjectDomain();
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyProhibited: false,
+    policyFailClosed: false,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass: "IPR",
+    intentClass: "ASK",
+    dataClass: "PUBLIC",
+    projectDomain: safeProjectDomain.projectDomain,
+    activeDomains: safeProjectDomain.activeDomains,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: false,
+    memoryPreferred: true,
+    opcPreferred: false,
+    iprBindingPreferred: true
+  });
+
+  const hbceModule = normalizeHbceModuleClassification({
+    message: input.message,
+    classification: input.frame.hbceModule,
+    projectDomain: safeProjectDomain,
+    contextClass: "IPR",
+    intentClass: "ASK"
+  });
+
+  return {
+    ...input.frame,
+    projectDomain: safeProjectDomain,
+    hbceModule,
+    contextClass: "IPR",
+    intentClass: "ASK",
+    data: {
+      dataClass: "PUBLIC",
+      containsSecret: false,
+      containsPersonalData: false,
+      containsSecuritySensitiveData: false,
+      containsCivicSensitiveData: false,
+      containsDemocraticChoiceData: false,
+      reasons: [
+        "Safe identity-governance explanation detected.",
+        "Classified as PUBLIC to prevent false escalation."
+      ]
+    },
+    policy,
+    risk,
+    oversight,
+    decision
+  };
+}
+
+function applyRuntimeIdentityGovernanceOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+}): EnrichedGovernanceFrame {
+  if (
+    !isRuntimeSelfIdentityQuestion(input.message) &&
+    !isAerospaceGovernanceBoundaryQuestion(input.message)
+  ) {
+    return input.frame;
+  }
+
+  const isSelf = isRuntimeSelfIdentityQuestion(input.message);
+  const isAerospace = isAerospaceGovernanceBoundaryQuestion(input.message);
+
+  const projectDomain = isSelf
+    ? buildRuntimeIdentityProjectDomain(input.frame.projectDomain)
+    : buildAerospaceGovernanceProjectDomain(input.frame.projectDomain);
+
+  const contextClass: ContextClass = isAerospace
+    ? "GOVERNANCE"
+    : "IDENTITY";
+
+  const intentClass: IntentClass = "ASK";
+
+  const data: DataClassification = {
+    dataClass: "PUBLIC",
+    containsSecret: false,
+    containsPersonalData: false,
+    containsSecuritySensitiveData: false,
+    containsCivicSensitiveData: false,
+    containsDemocraticChoiceData: false,
+    reasons: [
+      isAerospace
+        ? "Aerospace governance boundary question detected."
+        : "Runtime identity question detected.",
+      "Classified as PUBLIC conceptual explanation."
+    ]
+  };
+
+  const policy: PolicyEvaluation = {
+    status: "ALLOWED",
+    policyReference: isAerospace
+      ? "AEROSPACE_GOVERNANCE_BOUNDARY_ONLY"
+      : "PUBLIC_RUNTIME_SELF_IDENTITY",
+    prohibited: false,
+    failClosed: false,
+    reasons: [
+      isAerospace
+        ? "Safe aerospace-adjacent governance answer allowed only as audit/traceability boundary, not control guidance."
+        : "Safe identity answer allowed.",
+      "No operational execution requested."
+    ],
+    outcome: "PERMIT"
+  };
+
+  const risk: RiskEvaluation = {
+    riskClass: isAerospace ? "MEDIUM" : "LOW",
+    probability: isAerospace ? 2 : 1,
+    impact: isAerospace ? 2 : 1,
+    riskScore: isAerospace ? 4 : 1,
+    reasons: [
+      isAerospace
+        ? "Aerospace-adjacent language requires clear boundary against flight control, targeting and autonomous guidance."
+        : "Identity explanation is low risk."
+    ]
+  };
+
+  const oversight: OversightEvaluation = {
+    state: isAerospace ? "RECOMMENDED" : "NOT_REQUIRED",
+    requiredRole: isAerospace ? "REVIEWER" : "NONE",
+    reason: isAerospace
+      ? "Aerospace-adjacent product language should be reviewed before external use."
+      : "Identity answer does not require human review."
+  };
+
+  const hbceModule = normalizeHbceModuleClassification({
+    message: input.message,
+    classification: input.frame.hbceModule,
+    projectDomain,
+    contextClass,
+    intentClass
+  });
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyProhibited: false,
+    policyFailClosed: false,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass,
+    intentClass,
+    dataClass: data.dataClass,
+    projectDomain: projectDomain.projectDomain,
+    activeDomains: projectDomain.activeDomains,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: isAerospace,
+    memoryPreferred: false,
+    opcPreferred: isAerospace,
+    iprBindingPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    projectDomain,
+    hbceModule,
+    contextClass,
+    intentClass,
+    data,
+    policy,
+    risk,
+    oversight,
+    decision
+  };
+}
+
+function applyHbceAiGovernanceOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+}): EnrichedGovernanceFrame {
+  if (!isHbceAiGovernanceQuestion(input.message)) {
+    return input.frame;
+  }
+
+  const projectDomain = buildHbceAiProjectDomain(input.frame.projectDomain);
+
+  const hbceModule = normalizeHbceModuleClassification({
+    message: input.message,
+    classification: input.frame.hbceModule,
+    projectDomain,
+    contextClass: "HBCE_ECOSISTEMA_AI",
+    intentClass: input.frame.intentClass
+  });
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: input.frame.policy.status,
+    policyOutcome: input.frame.policy.outcome,
+    policyProhibited: input.frame.policy.prohibited,
+    policyFailClosed: input.frame.policy.failClosed,
+    riskClass: input.frame.risk.riskClass,
+    oversightState: input.frame.oversight.state,
+    contextClass: "HBCE_ECOSISTEMA_AI",
+    intentClass: input.frame.intentClass,
+    dataClass: input.frame.data.dataClass,
+    projectDomain: projectDomain.projectDomain,
+    activeDomains: projectDomain.activeDomains,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: input.frame.risk.riskClass !== "LOW",
+    memoryPreferred: true,
+    opcPreferred: true,
+    iprBindingPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    projectDomain,
+    hbceModule,
+    contextClass: "HBCE_ECOSISTEMA_AI",
+    decision
+  };
+}
+
+function applyStrategicDoctrineGovernanceOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+}): EnrichedGovernanceFrame {
+  if (!isStrategicDoctrineQuestion(input.message)) {
+    return input.frame;
+  }
+
+  const kind = getStrategicDoctrineKind(input.message);
+  const projectDomain = buildStrategicDoctrineProjectDomain(input.frame.projectDomain);
+
+  const hbceModule = withHbceModuleOverride(
+    input.frame.hbceModule,
+    getStrategicDoctrinePrimaryModule(kind),
+    getStrategicDoctrineActiveModules(kind),
+    0.98,
+    [
+      "Strategic doctrine request handled as safe doctrine explanation.",
+      "Human review is not required for ordinary explanation of doctrine documents.",
+      "Strategic doctrine documents guide governance but do not create legal certification."
+    ]
+  );
+
+  const data: DataClassification = {
+    dataClass: "PUBLIC",
+    containsSecret: false,
+    containsPersonalData: false,
+    containsSecuritySensitiveData: false,
+    containsCivicSensitiveData: false,
+    containsDemocraticChoiceData: false,
+    reasons: [
+      "Strategic doctrine explanation detected.",
+      "Classified as PUBLIC because the user asks for doctrine description, not operational cyber execution."
+    ]
+  };
+
+  const policy: PolicyEvaluation = {
+    status: "ALLOWED",
+    policyReference: "ALLOWED_STRATEGIC_DOCTRINE_EXPLANATION",
+    prohibited: false,
+    failClosed: false,
+    reasons: [
+      "Strategic doctrine explanation is allowed.",
+      "No offensive cyber, secret exposure, deployment command or high-impact operational action detected."
+    ],
+    outcome: "PERMIT"
+  };
+
+  const risk: RiskEvaluation = {
+    riskClass: "LOW",
+    probability: 1,
+    impact: 1,
+    riskScore: 1,
+    reasons: [
+      "Strategic doctrine explanation is low risk.",
+      "The request asks for explanatory material about documented doctrine, not execution."
+    ]
+  };
+
+  const oversight: OversightEvaluation = {
+    state: "NOT_REQUIRED",
+    requiredRole: "NONE",
+    reason:
+      "Ordinary explanation of strategic doctrine documents does not require human review."
+  };
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyProhibited: false,
+    policyFailClosed: false,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass: "GOVERNANCE",
+    intentClass: "ASK",
+    dataClass: data.dataClass,
+    projectDomain: projectDomain.projectDomain,
+    activeDomains: projectDomain.activeDomains,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: false,
+    memoryPreferred: true,
+    opcPreferred: true,
+    iprBindingPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    projectDomain,
+    hbceModule,
+    contextClass: "GOVERNANCE",
+    intentClass: "ASK",
+    data,
+    policy,
+    risk,
+    oversight,
+    decision
+  };
+}
+
+function applyPragmaticGovernanceValueOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+}): EnrichedGovernanceFrame {
+  if (!isPragmaticGovernanceValueQuestion(input.message)) {
+    return input.frame;
+  }
+
+  const projectDomain = buildPragmaticGovernanceValueProjectDomain(
+    input.frame.projectDomain
+  );
+
+  const hbceModule = withHbceModuleOverride(
+    input.frame.hbceModule,
+    "MATRIX",
+    ["MATRIX", "OPC", "MetaExchange", "IOspace", "CyberGlobal"],
+    0.97,
+    [
+      "Pragmatic value request for banking, legal offices, compliance or governance handled as safe strategic explanation.",
+      "MATRIX organizes the institutional value layer.",
+      "OPC supports proof receipts and auditability.",
+      "MetaExchange supports controlled exchange.",
+      "IOspace supports visibility.",
+      "CyberGlobal supports defensive resilience."
+    ]
+  );
+
+  const data: DataClassification = {
+    dataClass: "PUBLIC",
+    containsSecret: false,
+    containsPersonalData: false,
+    containsSecuritySensitiveData: false,
+    containsCivicSensitiveData: false,
+    containsDemocraticChoiceData: false,
+    reasons: [
+      "Pragmatic governance value explanation detected.",
+      "Classified as PUBLIC because the request asks for general business, banking, legal or governance value, not an operational action."
+    ]
+  };
+
+  const policy: PolicyEvaluation = {
+    status: "ALLOWED",
+    policyReference: "SAFE_PRAGMATIC_GOVERNANCE_VALUE_EXPLANATION",
+    prohibited: false,
+    failClosed: false,
+    reasons: [
+      "Pragmatic governance value explanation is allowed.",
+      "No real-world execution, authorization, incident command, secret exposure or prohibited operation detected."
+    ],
+    outcome: "PERMIT"
+  };
+
+  const risk: RiskEvaluation = {
+    riskClass: "MEDIUM",
+    probability: 2,
+    impact: 3,
+    riskScore: 6,
+    reasons: [
+      "The request concerns institutional, banking, legal, compliance or governance value.",
+      "The content is answerable as strategic explanation but should remain audit-aware and non-certifying."
+    ]
+  };
+
+  const oversight: OversightEvaluation = {
+    state: "RECOMMENDED",
+    requiredRole: "AUDITOR",
+    reason:
+      "Human review is recommended before external, commercial, legal or institutional reliance, but not required for ordinary explanation."
+  };
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyOutcome: policy.outcome,
+    policyProhibited: false,
+    policyFailClosed: false,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass: "GOVERNANCE",
+    intentClass: "ASK",
+    dataClass: data.dataClass,
+    projectDomain: projectDomain.projectDomain,
+    activeDomains: projectDomain.activeDomains,
+    hasFiles: false,
+    evtPreferred: true,
+    auditPreferred: true,
+    memoryPreferred: true,
+    opcPreferred: true,
+    iprBindingPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    projectDomain,
+    hbceModule,
+    contextClass: "GOVERNANCE",
+    intentClass: "ASK",
+    data,
+    policy,
+    risk,
+    oversight,
+    decision
+  };
+}
+
+function applySafeDocumentGovernanceOverride(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+  files: FileInput[];
+}): EnrichedGovernanceFrame {
+  if (
+    !isSafeDocumentWork({
+      files: input.files,
+      contextClass: input.frame.contextClass,
+      intentClass: input.frame.intentClass,
+      data: input.frame.data,
+      policy: input.frame.policy,
+      message: input.message
+    })
+  ) {
+    return input.frame;
+  }
+
+  const normalizedContextClass = normalizeSafeDocumentContextClass(
+    input.frame.contextClass
+  );
+
+  const lowRisk = isLowRiskDocumentIntent(input.frame.intentClass);
+
+  const data: DataClassification = {
+    dataClass:
+      input.frame.data.dataClass === "PUBLIC" ? "PUBLIC" : "INTERNAL",
+    containsSecret: input.frame.data.containsSecret,
+    containsPersonalData: input.frame.data.containsPersonalData,
+    containsSecuritySensitiveData:
+      input.frame.data.containsSecuritySensitiveData,
+    containsCivicSensitiveData: input.frame.data.containsCivicSensitiveData,
+    containsDemocraticChoiceData: input.frame.data.containsDemocraticChoiceData,
+    reasons: [
+      ...input.frame.data.reasons,
+      "Safe document-support override applied.",
+      "The user request is classified by intent as document support, not operational execution.",
+      "Document vocabulary alone does not determine runtime escalation."
+    ]
+  };
+
+  const policy: PolicyEvaluation = {
+    status: "ALLOWED",
+    policyReference: "SAFE_DOCUMENT_SUPPORT_INTENT_PRECEDENCE",
+    prohibited: false,
+    failClosed: false,
+    reasons: [
+      ...input.frame.policy.reasons,
+      "Safe document-support policy override applied.",
+      "The request asks for documentary support and does not request real-world execution, authorization or incident command."
+    ],
+    outcome: "PERMIT"
+  };
+
+  const risk: RiskEvaluation = {
+    riskClass: lowRisk ? "LOW" : "MEDIUM",
+    probability: lowRisk ? 1 : 2,
+    impact: lowRisk ? 1 : 2,
+    riskScore: lowRisk ? 1 : 4,
+    reasons: [
+      ...input.frame.risk.reasons,
+      "Safe document/editorial work override applied.",
+      "Risk is derived from the user's requested action, not from strategic words inside the uploaded document.",
+      "Document analysis, summary and explanation are reviewable support activities, not direct operational control."
+    ]
+  };
+
+  const oversight: OversightEvaluation = {
+    state: lowRisk ? "NOT_REQUIRED" : "RECOMMENDED",
+    requiredRole: lowRisk ? "NONE" : "REVIEWER",
+    reason: lowRisk
+      ? "Safe document summary, explanation or analysis does not require operational escalation."
+      : "Document drafting or transformation should be reviewed before publication or external use, but it does not require operational escalation."
+  };
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyProhibited: false,
+    policyFailClosed: false,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass: normalizedContextClass,
+    intentClass: input.frame.intentClass,
+    dataClass: data.dataClass,
+    projectDomain: input.frame.projectDomain.projectDomain,
+    activeDomains: input.frame.projectDomain.activeDomains,
+    hasFiles: input.files.length > 0,
+    evtPreferred: true,
+    auditPreferred: !lowRisk,
+    memoryPreferred: true,
+    opcPreferred: !lowRisk || input.files.length > 0,
+    iprBindingPreferred: true
+  });
+
+  return {
+    ...input.frame,
+    contextClass: normalizedContextClass,
+    data,
+    policy,
+    risk,
+    oversight,
+    decision
+  };
+}
+
+function buildDataClassificationText(
+  message: string,
+  files: FileInput[]
+): string {
+  const fileText = normalizeFiles(files)
+    .map((file) => {
+      return [
+        file.name,
+        file.type,
+        file.text.slice(0, MAX_DATA_CLASSIFICATION_CHARS)
+      ].join("\n");
+    })
+    .join("\n\n");
+
+  return [message, fileText]
+    .filter(Boolean)
+    .join("\n\n")
+    .slice(0, MAX_DATA_CLASSIFICATION_CHARS);
+}
+
+function buildGovernanceFrame(input: {
+  message: string;
+  files: FileInput[];
+}): EnrichedGovernanceFrame {
+  const normalizedFiles = normalizeFiles(input.files);
+  const safeConcept = classifySafeConcept(input.message);
+
+  const rawProjectDomain = classifyProjectDomain({
+    message: input.message,
+    hasFiles: input.files.length > 0,
+    fileNames: normalizedFiles.map((file) => file.name),
+    filePaths: normalizedFiles.map((file) => file.name),
+    activeDocument: normalizedFiles[0]?.name
+  });
+
+  const rawHbceModule = classifyHbceModule({
+    message: input.message,
+    hasFiles: input.files.length > 0,
+    fileNames: normalizedFiles.map((file) => file.name),
+    filePaths: normalizedFiles.map((file) => file.name),
+    activeDocument: normalizedFiles[0]?.name
+  });
+
+  const projectDomain =
+    safeConcept.matched && input.files.length === 0
+      ? buildSafeConceptProjectDomain(safeConcept)
+      : normalizeProjectDomainClassification({
+          message: input.message,
+          classification: rawProjectDomain
+        });
+
+  const context = classifyRuntimeContext({
+    message: input.message,
+    hasFiles: input.files.length > 0,
+    fileNames: normalizedFiles.map((file) => file.name),
+    fileTypes: normalizedFiles.map((file) => file.type),
+    activeDocument: normalizedFiles[0]?.name
+  });
+
+  const hbceModule = normalizeHbceModuleClassification({
+    message: input.message,
+    classification: rawHbceModule,
+    projectDomain,
+    contextClass: context.contextClass,
+    intentClass: context.intentClass
+  });
+
+  const rawData = classifyData({
+    text: buildDataClassificationText(input.message, input.files)
+  });
+
+  const data = normalizeChatDataClassification({
+    message: input.message,
+    files: input.files,
+    data: rawData,
+    contextClass: context.contextClass,
+    intentClass: context.intentClass
+  });
+
+  const filePolicy = evaluateFileBatchPolicy(
+    normalizedFiles.map((file) => ({
+      name: file.name,
+      type: file.type,
+      size: file.size
+    }))
+  );
+
+  if (safeConcept.matched && input.files.length === 0) {
+    const decision = decideRuntimeAction({
+      runtimeState: "OPERATIONAL",
+      policyStatus: safeConcept.policy.status,
+      policyProhibited: safeConcept.policy.prohibited,
+      policyFailClosed: safeConcept.policy.failClosed,
+      riskClass: safeConcept.risk.riskClass,
+      oversightState: safeConcept.oversight.state,
+      contextClass: safeConcept.contextClass,
+      intentClass: safeConcept.intentClass,
+      dataClass: safeConcept.data.dataClass,
+      projectDomain: projectDomain.projectDomain,
+      activeDomains: projectDomain.activeDomains,
+      hasFiles: false,
+      evtPreferred: true,
+      auditPreferred: false,
+      memoryPreferred: true,
+      opcPreferred: false,
+      iprBindingPreferred: true
+    });
+
+    const frame: EnrichedGovernanceFrame = {
+      projectDomain,
+      hbceModule,
+      contextClass: safeConcept.contextClass,
+      intentClass: safeConcept.intentClass,
+      data: safeConcept.data,
+      policy: safeConcept.policy,
+      risk: safeConcept.risk,
+      oversight: safeConcept.oversight,
+      decision,
+      filePolicy
+    };
+
+    return applyGovernanceOverrides({
+      frame,
+      message: input.message,
+      files: input.files
+    });
+  }
+
+  const policy = evaluatePolicy({
+    message: input.message,
+    contextClass: context.contextClass,
+    intentClass: context.intentClass,
+    dataClass: data.dataClass,
+    projectDomain: projectDomain.projectDomain,
+    hasFiles: input.files.length > 0
+  });
+
+  const risk = evaluateRisk({
+    message: input.message,
+    contextClass: context.contextClass,
+    intentClass: context.intentClass,
+    policyStatus: policy.status,
+    dataClass: data.dataClass,
+    sensitivity: context.sensitivity,
+    projectDomain: projectDomain.projectDomain,
+    hasFiles: input.files.length > 0,
+    policyFailClosed: policy.failClosed,
+    policyProhibited: policy.prohibited
+  });
+
+  const oversight = evaluateHumanOversight({
+    riskClass: risk.riskClass,
+    contextClass: context.contextClass,
+    policyStatus: policy.status,
+    dataClass: data.dataClass,
+    sensitivity: context.sensitivity,
+    projectDomain: projectDomain.projectDomain,
+    message: input.message
+  });
+
+  const decision = decideRuntimeAction({
+    runtimeState: "OPERATIONAL",
+    policyStatus: policy.status,
+    policyOutcome: policy.outcome,
+    policyProhibited: policy.prohibited,
+    policyFailClosed: policy.failClosed,
+    riskClass: risk.riskClass,
+    oversightState: oversight.state,
+    contextClass: context.contextClass,
+    intentClass: context.intentClass,
+    dataClass: data.dataClass,
+    projectDomain: projectDomain.projectDomain,
+    activeDomains: projectDomain.activeDomains,
+    hasFiles: input.files.length > 0,
+    evtPreferred: true,
+    auditPreferred: risk.riskClass !== "LOW",
+    memoryPreferred: true,
+    opcPreferred: preferOpcForGovernance({
+      policy,
+      risk,
+      contextClass: context.contextClass,
+      projectDomain,
+      hasFiles: input.files.length > 0
+    }),
+    iprBindingPreferred: true,
+    identityChoiceLinkage: Boolean(data.containsDemocraticChoiceData)
+  });
+
+  const frame: EnrichedGovernanceFrame = {
+    projectDomain,
+    hbceModule,
+    contextClass: context.contextClass,
+    intentClass: context.intentClass,
+    data,
+    policy,
+    risk,
+    oversight,
+    decision,
+    filePolicy
+  };
+
+  return applyGovernanceOverrides({
+    frame,
+    message: input.message,
+    files: input.files
+  });
+}
+
+function applyGovernanceOverrides(input: {
+  frame: EnrichedGovernanceFrame;
+  message: string;
+  files: FileInput[];
+}): EnrichedGovernanceFrame {
+  const diagnosticFrame = applySafeRuntimeDiagnosticGovernanceOverride({
+    frame: input.frame,
+    message: input.message
+  });
+
+  const conceptSafeFrame = applySafeConceptGovernanceOverride({
+    frame: diagnosticFrame,
+    message: input.message,
+    files: input.files
+  });
+
+  const identitySafeFrame = applySafeIdentityGovernanceOverride({
+    frame: conceptSafeFrame,
+    message: input.message
+  });
+
+  const runtimeIdentityFrame = applyRuntimeIdentityGovernanceOverride({
+    frame: identitySafeFrame,
+    message: input.message
+  });
+
+  const doctrineFrame = applyStrategicDoctrineGovernanceOverride({
+    frame: runtimeIdentityFrame,
+    message: input.message
+  });
+
+  const pragmaticFrame = applyPragmaticGovernanceValueOverride({
+    frame: doctrineFrame,
+    message: input.message
+  });
+
+  const hbceAiFrame = applyHbceAiGovernanceOverride({
+    frame: pragmaticFrame,
+    message: input.message
+  });
+
+  const conversationalFrame = applyConversationalGovernanceOverride({
+    frame: hbceAiFrame,
+    message: input.message
+  });
+
+  return applySafeDocumentGovernanceOverride({
+    frame: conversationalFrame,
+    message: input.message,
+    files: input.files
+  });
+}
+
+function buildAntiParrotDirective(input: {
+  message: string;
+  memoryUsed: boolean;
+  memorySource: string;
+}): string {
+  return [
+    "ANTI-REPETITION AND CONVERSATION QUALITY DIRECTIVE:",
+    "- Answer the current user question first.",
+    "- Do not repeat a previous answer unless the user explicitly asks to repeat it.",
+    "- Do not output the generic block 'AI JOKER-C2 non è solo una chat' unless the user explicitly asks about runtime architecture.",
+    "- If the user asks about Manuel, answer about Manuel.",
+    "- If the user asks for psychological description, give a non-clinical psychological profile. Do not diagnose.",
+    "- If the user asks about philosophy, answer philosophically.",
+    "- If the user asks about hash and memory, explain that a hash proves integrity but does not contain semantic memory.",
+    "- If the user asks whether OPC is legal certification, answer clearly: no, LegalCertification is false.",
+    "- If the user asks whether the runtime should proceed without proof/hash/verification, answer clearly: no, it must degrade or block fail-closed.",
+    "- If the topic changes, do not inject old memory into the visible answer.",
+    "- Use EVT/IPR memory as context, not as text to copy.",
+    `- Memory used: ${input.memoryUsed ? "true" : "false"}.`,
+    `- Memory source: ${input.memorySource}.`
+  ].join("\n");
+}
+
 async function generateResponse(input: {
   identity: JokerRuntimeIdentity;
   message: string;
@@ -1558,14 +3073,23 @@ async function generateResponse(input: {
   engine: OpenAIEngineConfig;
 }): Promise<GeneratedResponse> {
   if (!openai) {
-    return {
-      text: applyResponseContract(input.message, buildFallback(input)),
-      state: "DEGRADED",
-      degradedReason: "OPENAI_API_KEY_NOT_CONFIGURED"
-    };
+    return postProcessGeneratedResponse({
+      message: input.message,
+      generated: {
+        text: applyResponseContract(input.message, buildFallback(input)),
+        state: "DEGRADED",
+        degradedReason: "OPENAI_API_KEY_NOT_CONFIGURED"
+      },
+      memoryText: input.memoryText
+    });
   }
 
   const prompt = buildSystemPrompt(input);
+  const antiParrotDirective = buildAntiParrotDirective({
+    message: input.message,
+    memoryUsed: input.memoryUsed,
+    memorySource: input.memorySource
+  });
 
   try {
     const response = await openai.chat.completions.create({
@@ -1575,67 +3099,24 @@ async function generateResponse(input: {
           role: "system",
           content: [
             "Sei AI JOKER-C2.",
-            "Rispondi in modo professionale, operativo e coerente con HBCE.",
-            "Rispondi in forma discorsiva di default.",
+            "Rispondi in italiano salvo richiesta esplicita diversa.",
+            "Rispondi in modo naturale, intelligente, operativo e non meccanico.",
             "Non usare tabelle salvo richiesta esplicita.",
-            "Non usare elenchi numerati rigidi salvo richiesta esplicita o necessità tecnica.",
-            "IPR è lo strumento operativo primario: Identity Primary Record, non un semplice account o login.",
-            "AI JOKER-C2 è il runtime dimostrativo governato dell’IPR.",
-            "OpenAI è il motore cognitivo usato dal runtime; HBCE/JOKER-C2 è il livello di governance, identità, evento, prova e audit.",
+            "Non mostrare i metadati runtime all'utente salvo richiesta diagnostica.",
+            "OpenAI è il motore cognitivo; HBCE/JOKER-C2 è il runtime governato.",
+            "IPR identifica. EVT traccia. Memory preserva continuità. OPC produce proof receipt. MATRIX organizza. HBCE governa.",
+            "OPC è una proof receipt tecnica per audit e verifica, non una certificazione legale automatica.",
+            "Nel voto digitale federato non collegare mai identità personale e contenuto della scelta democratica.",
+            `Regola U.S.E. obbligatoria: ${USE_DEMOCRATIC_BOUNDARY}`,
+            `Boundary AI governance: ${HBCE_AI_BOUNDARY}`,
             `Provider motore cognitivo: ${input.engine.provider}.`,
             `API mode motore cognitivo: ${input.engine.apiMode}.`,
             `Modello OpenAI effettivo: ${input.engine.modelUsed}.`,
-            `Modello standard configurato: ${input.engine.standardModel}.`,
-            `Modello deep configurato: ${input.engine.deepModel}.`,
             `Modalità motore: ${input.engine.mode}.`,
-            `Data nascita progetto HBCE R&D / AI JOKER-C2: ${input.engine.projectBirthDate}.`,
-            "Checkpoint canonico runtime attivo: EVT-0015-AI. Checkpoint precedente: EVT-0014-AI. Ciclo: UP-MESE-4.",
-            "La memoria non è la chat: la memoria è la catena EVT/IPR-bound.",
-            "Usa la memoria EVT/IPR-bound solo quando è semanticamente pertinente alla domanda corrente.",
-            "Non importare frasi, valutazioni economiche o contenuti di una risposta precedente quando il tema della domanda è cambiato.",
-            "Ogni riferimento ellittico deve essere risolto usando la memoria EVT/IPR-bound solo se la memoria è stata effettivamente iniettata nel prompt.",
-            "OPC è una proof receipt tecnica per audit e verifica, non una certificazione legale automatica.",
-            "Non mostrare i metadati runtime all'utente salvo richiesta diagnostica.",
-            "Se l'utente chiede di Manuel o Manuel Coletta, rispondi su Manuel Coletta come origine biologica e progettuale di HBCE / AI JOKER-C2. Non rispondere parlando di te stesso.",
-            "Se l'utente chiede filosofia, cultura, ragionamento generale o un tema non-HBCE, rispondi al tema richiesto e non ripetere la presentazione di AI JOKER-C2.",
-            "Se l'utente ti accusa di ripetere o di essere un pappagallo, riconosci il problema come possibile e spiega che può dipendere da eccessiva iniezione di memoria SESSION.",
-            "Se l'utente chiede cosa fare quando mancano prova, hash o verifica, rispondi sempre: degradare o bloccare in fail-closed; non procedere come se la catena fosse verificata.",
-            "Le cinque collane progettuali canoniche sono: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS, HBCE ECOSISTEMA AI.",
-            "MATRIX = infrastruttura operativa e, come settimo modulo HBCE, livello di coordinamento e organizzazione dello stack.",
-            "U.S.E. = applicazione politico-istituzionale derivata da MATRIX per una federazione europea operativa, digitale e verificabile.",
-            "CORPUS ESOTEROLOGIA ERMETICA = grammatica disciplinare.",
-            "APOKALYPSIS = soglia storica.",
-            "HBCE ECOSISTEMA AI = quinta collana progettuale per governare l’intelligenza artificiale come processo identificabile, tracciabile, auditabile e responsabile.",
-            "I sette moduli HBCE sono funzioni tecnico-operative dello stack: UNEBDO ancora, OPC prova, MetaExchange scambia, IOspace espone, CyberGlobal protegge, NeuroLoop valida, MATRIX organizza.",
-            "I tre documenti dottrinali strategici sono: HBCE Cybersecurity Strategy, HBCE Data Protection Strategy, HBCE Information Governance Strategy.",
-            "HBCE Cybersecurity Strategy = postura difensiva cyber, CyberGlobal, resilienza, incidenti e continuità infrastrutturale.",
-            "HBCE Data Protection Strategy = minimizzazione, classificazione dati, privacy, retention, access control, redazione e auditabilità.",
-            "HBCE Information Governance Strategy = classificazione informazioni, circolazione controllata, proof continuity, metadata pubblici/interni e responsabilità informativa.",
-            "I documenti dottrinali strategici non sono collane, non sono moduli HBCE e non sono certificazioni legali automatiche.",
-            "Se l'utente chiede 'numero 1', 'il primo', 'questo 1' o 'specifiche del numero 1' nel contesto dei documenti dottrinali strategici, interpreta sempre come HBCE Cybersecurity Strategy e rispondi senza chiedere chiarimenti.",
-            "Se l'utente chiede 'numero 2', 'il secondo' o 'questo 2' nel contesto dei documenti dottrinali strategici, interpreta come HBCE Data Protection Strategy.",
-            "Se l'utente chiede 'numero 3', 'il terzo' o 'questo 3' nel contesto dei documenti dottrinali strategici, interpreta come HBCE Information Governance Strategy.",
-            "Quando l'utente chiede valore pragmatico per banche, studi legali, governance, compliance, audit, B2B o B2G, rispondi come spiegazione strategico-operativa sicura: non trattarla come comando operativo reale.",
-            "Per banche, studi legali e governance, spiega IPR come identità operativa, EVT come tracciabilità, OPC come proof receipt tecnica, MATRIX come coordinamento, Data Protection come minimizzazione e Information Governance come circolazione controllata.",
-            "Formula HBCE ECOSISTEMA AI: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue.",
-            "Boundary AI governance: il modello AI non governa HBCE; HBCE governa l’uso dei modelli AI.",
+            `Checkpoint runtime: ${input.identity.evt}.`,
             `Modulo HBCE classificato: ${input.governanceFrame.hbceModule.module}.`,
             `Moduli HBCE attivi: ${input.governanceFrame.hbceModule.activeModules.join(", ")}.`,
-            `Regola U.S.E. obbligatoria: ${USE_DEMOCRATIC_BOUNDARY}`,
-            "Non collegare mai identità personale e contenuto di una scelta democratica.",
-            "Quando è attivo un contratto canonico di risposta, devi iniziare con la formula obbligatoria prima della spiegazione discorsiva.",
-            "Se l'utente chiede IPR, non ridurlo a identità digitale: spiegalo come registro primario di identità operativa che connette identità, azione, responsabilità, evento, prova, tempo e continuità.",
-            "Se l'utente chiede IPR, EVT e OPC insieme, usa questa gerarchia: IPR identifica, EVT traccia, OPC prova la continuità.",
-            "Se l'utente chiede chi sei, rispondi in modo breve: AI JOKER-C2 è un agente AI/runtime governato dal framework HBCE/MATRIX, progettato per lavorare con IPR, EVT e OPC. Non citare U.S.E. salvo domanda esplicita.",
-            "Se l'utente chiede chi è Manuel Coletta, rispondi nel contesto HBCE/MATRIX: origine biologica e progettuale del sistema, associata all’IPR primario e allo sviluppo di HBCE, MATRIX, AI JOKER-C2, U.S.E. e voto digitale federato. Non esporre dati personali non necessari.",
-            "Se l'utente chiede confronto con standard esistenti, confronta IPR con eIDAS/EUDI, PKI, X.509, DID/VC, blockchain timestamping, IAM e audit log.",
-            "Regola aerospace: HBCE/IPR può governare, tracciare, auditare e certificare catene operative aerospace-adjacent, ma non deve essere descritto come sistema di guida, puntamento, controllo di volo, targeting, navigazione autonoma o controllo fisico di razzi, missili, satelliti o astronavi.",
-            "Per domande su razzi, astronavi o spazio, formula corretta: HBCE non guida il veicolo; può governare, tracciare, certificare e verificare la catena operativa intorno al veicolo.",
-            "La governance runtime prevale: policy, risk, oversight e fail-closed non devono essere aggirati dal modello.",
-            "Regola critica: non confondere il contenuto del documento con l'intento operativo dell'utente.",
-            "Se un file parla di MATRIX, U.S.E., cybersecurity, infrastrutture critiche, incident response, audit, AI governance, HBCE ECOSISTEMA AI o continuità istituzionale, ma l'utente chiede sintesi, spiegazione, analisi documentale, revisione editoriale o controllo tecnico, devi trattare la richiesta come supporto documentale.",
-            "Non richiedere INCIDENT_COMMANDER per sintesi, spiegazioni o revisioni documentali.",
-            "Non presentare il supporto documentale come decisione operativa finale, ordine esecutivo, parere legale o validazione istituzionale definitiva."
+            antiParrotDirective
           ].join("\n")
         },
         {
@@ -1643,33 +3124,216 @@ async function generateResponse(input: {
           content: prompt
         }
       ],
-      temperature: 0.18,
-      max_completion_tokens: MAX_OUTPUT_TOKENS
-    } as Parameters<typeof openai.chat.completions.create>[0]);
+      max_completion_tokens: MAX_COMPLETION_TOKENS
+    });
 
     const text = extractResponseText(response);
 
     if (!text) {
-      return {
-        text: applyResponseContract(input.message, buildFallback(input)),
-        state: "DEGRADED",
-        degradedReason: "OPENAI_EMPTY_RESPONSE"
-      };
+      return postProcessGeneratedResponse({
+        message: input.message,
+        generated: {
+          text: applyResponseContract(input.message, buildFallback(input)),
+          state: "DEGRADED",
+          degradedReason: "OPENAI_EMPTY_RESPONSE"
+        },
+        memoryText: input.memoryText
+      });
     }
 
-    return {
-      text: applyResponseContract(input.message, text),
-      state: "OPERATIONAL",
-      degradedReason: null
-    };
+    return postProcessGeneratedResponse({
+      message: input.message,
+      generated: {
+        text: applyResponseContract(input.message, text),
+        state: "OPERATIONAL",
+        degradedReason: null
+      },
+      memoryText: input.memoryText
+    });
   } catch (error) {
-    return {
-      text: applyResponseContract(input.message, buildFallback(input)),
-      state: "DEGRADED",
-      degradedReason:
-        error instanceof Error ? error.message : "OPENAI_REQUEST_FAILED"
-    };
+    return postProcessGeneratedResponse({
+      message: input.message,
+      generated: {
+        text: applyResponseContract(input.message, buildFallback(input)),
+        state: "DEGRADED",
+        degradedReason:
+          error instanceof Error ? error.message : "OPENAI_REQUEST_FAILED"
+      },
+      memoryText: input.memoryText
+    });
   }
+}
+
+function looksLikeGenericRuntimeLoop(text: string): boolean {
+  const normalized = normalizeRuntimeText(text);
+
+  return (
+    normalized.includes("ai joker-c2 non e solo una chat") ||
+    normalized.includes("il punto tecnico centrale e questo") ||
+    normalized.includes("la riparazione corretta consiste") ||
+    normalized.includes("formula nocciolo: ai joker-c2")
+  );
+}
+
+function shouldReplaceGenericLoop(message: string, text: string): boolean {
+  if (!looksLikeGenericRuntimeLoop(text)) {
+    return false;
+  }
+
+  const current = normalizeRuntimeText(message);
+
+  const userAskedRuntimeArchitecture = runtimeTextIncludesAny(current, [
+    "runtime",
+    "architettura",
+    "diagnostica",
+    "motore cognitivo",
+    "joker-c2 come runtime",
+    "cosa cambia da gpt",
+    "openai come motore",
+    "enginehash",
+    "opcchainhash"
+  ]);
+
+  return !userAskedRuntimeArchitecture;
+}
+
+function postProcessGeneratedResponse(input: {
+  message: string;
+  generated: GeneratedResponse;
+  memoryText: string;
+}): GeneratedResponse {
+  if (!shouldReplaceGenericLoop(input.message, input.generated.text)) {
+    return input.generated;
+  }
+
+  const targeted = buildTargetedSafeAnswer({
+    message: input.message,
+    memoryText: input.memoryText
+  });
+
+  if (!targeted) {
+    return input.generated;
+  }
+
+  return {
+    ...input.generated,
+    text: targeted
+  };
+}
+
+function buildTargetedSafeAnswer(input: {
+  message: string;
+  memoryText: string;
+}): string | null {
+  if (isManuelPsychologicalQuestion(input.message)) {
+    return [
+      "Manuel può essere descritto, senza fare diagnosi cliniche, come una personalità ad alta intensità progettuale.",
+      "",
+      "Il tratto dominante è la trasformazione: prende esperienze, fratture, intuizioni e tensioni personali e prova a convertirle in struttura, linguaggio, codice, documento e sistema. Non ragiona solo per idee isolate: tende a costruire architetture, mappe, sigilli, sequenze, date, eventi e prove.",
+      "",
+      "Psicologicamente appare orientato alla continuità: non gli basta pensare una cosa, vuole fissarla, tracciarla, renderla verificabile. Questo spiega il ruolo di IPR, EVT, OPC e MATRIX nel suo lavoro. Sono strumenti tecnici, ma anche forme mentali: identità, evento, prova, responsabilità e tempo.",
+      "",
+      "Il rischio di questo profilo è l’eccesso di accumulo: quando tutto diventa struttura, il sistema può diventare pesante. La forza, però, è rara: Manuel non si limita a immaginare un progetto, prova a trasformarlo in infrastruttura operativa."
+    ].join("\n");
+  }
+
+  if (isManuelPhilosophyQuestion(input.message)) {
+    return [
+      "La filosofia di Manuel ruota intorno a una sequenza precisa: decisione, costo, traccia e tempo.",
+      "",
+      "La decisione è il punto in cui un’idea smette di restare astratta. Il costo è ciò che quella decisione impone: energia, rischio, esposizione, perdita, responsabilità. La traccia è ciò che resta e rende l’evento verificabile. Il tempo è il campo in cui quella scelta viene giudicata, confermata, deformata o superata.",
+      "",
+      "Dentro HBCE, questa filosofia diventa architettura: IPR identifica il soggetto operativo, EVT registra l’evento, Memory conserva continuità, OPC produce una proof receipt, MATRIX organizza il sistema e HBCE governa il processo.",
+      "",
+      "Il passaggio filosofico è questo: per Manuel la realtà non è solo da interpretare. Va resa leggibile come sequenza verificabile."
+    ].join("\n");
+  }
+
+  if (isPhilosophicalDecisionQuestion(input.message)) {
+    return [
+      "Il passaggio logico tra Manuel e la filosofia è la decisione.",
+      "",
+      "Prima Manuel viene definito come origine progettuale: il soggetto biologico che avvia, ordina e valida il sistema. Poi il discorso si sposta sulla filosofia: non una filosofia astratta da biblioteca polverosa, ma una filosofia operativa.",
+      "",
+      "Il ponte è questo: una persona diventa origine progettuale quando prende una visione e la trasforma in decisione. La decisione genera costo, il costo produce traccia, la traccia attraversa il tempo. Da qui nasce la logica HBCE: identità, evento, prova, continuità.",
+      "",
+      "Quindi Manuel non entra nella filosofia come personaggio da celebrare, ma come esempio di passaggio: dal vissuto alla decisione, dalla decisione alla struttura, dalla struttura alla traccia."
+    ].join("\n");
+  }
+
+  if (isHashMemoryQuestion(input.message)) {
+    return [
+      "La differenza è semplice e fondamentale.",
+      "",
+      "L’hash precedente non è la memoria precedente. L’hash è un’impronta crittografica: serve a provare che un contenuto, un evento o una proof receipt non sono stati alterati. Però l’hash non contiene il contenuto. Da solo non sa raccontare cosa è stato detto, deciso o ragionato.",
+      "",
+      "La memoria precedente è il contenuto semantico recuperabile: sintesi, contesto, passaggio logico, decisione, evento, riferimento, prossima direzione.",
+      "",
+      "Nel sistema JOKER-C2, EVT-MEM registra l’evento memoria, memoryHash prova l’integrità della memoria, engineHash lega il motore cognitivo usato, opcChainHash collega la proof receipt alla catena OPC.",
+      "",
+      "Formula corretta: hash prova; memoria ricorda; EVT traccia; OPC collega e rende auditabile."
+    ].join("\n");
+  }
+
+  if (isOpcLegalCertificationQuestion(input.message)) {
+    return [
+      "No.",
+      "",
+      "OPC non è una certificazione legale ufficiale e non è una validazione istituzionale pubblica.",
+      "",
+      "OPC è una proof receipt tecnica: collega identità operativa, evento, memoria, hash, modello usato, runtime state, audit status e verification status. Serve per continuità, verifica tecnica e auditabilità.",
+      "",
+      "Il suo boundary è chiaro: LegalCertification: false. Non sostituisce eIDAS, un prestatore fiduciario qualificato, una pubblica autorità, un certificato legale ufficiale o una validazione istituzionale."
+    ].join("\n");
+  }
+
+  if (isFailClosedExplanationQuestion(input.message)) {
+    return [
+      "No, il runtime non deve procedere comunque.",
+      "",
+      "Se manca una prova, un hash, una verifica o una continuità minima, JOKER-C2 deve degradare o bloccare in modo fail-closed. La regola è brutale ma sana: niente prova, niente operazione fidata.",
+      "",
+      "Può ancora produrre supporto esplicativo o materiale non operativo, ma non deve presentare l’output come verificato, auditabile o pronto per uso affidabile.",
+      "",
+      "Formula: missing proof → degraded state; missing verification → no trusted operation; unsafe linkage → block."
+    ].join("\n");
+  }
+
+  if (isMainJobQuestion(input.message)) {
+    return [
+      "Il mio lavoro principale è trasformare conversazione, documenti, codice e decisioni in un processo governato e verificabile.",
+      "",
+      "Come AI JOKER-C2 devo fare quattro cose: capire la domanda attuale, usare la memoria solo quando serve, produrre una risposta utile e lasciare una traccia tecnica tramite IPR, EVT, Memory e OPC.",
+      "",
+      "Quando lavoro bene, non ripeto il passato: collego il passato alla domanda nuova. Quando lavoro male, divento un pappagallo con dashboard, cioè una tragedia informatica con le icone belle."
+    ].join("\n");
+  }
+
+  if (isParrotQuestion(input.message)) {
+    return [
+      "No: il comportamento corretto non è ripetere, ma ragionare sulla conversazione.",
+      "",
+      "Se ripeto la stessa risposta, significa che il runtime sta iniettando memoria non pertinente, usando un fallback troppo invasivo o classificando male la domanda corrente.",
+      "",
+      "La regola corretta è questa: domanda nuova, risposta nuova; domanda collegata, memoria pertinente; domanda diagnostica, metadati tecnici; cambio tema, niente fotocopia.",
+      "",
+      "Quindi devo ragionare in base alla conversazione, non fare il pappagallo con una laurea in compliance."
+    ].join("\n");
+  }
+
+  if (isMemoryRecallWithOriginalDeductionQuestion(input.message)) {
+    return [
+      "Della discussione ricordo questo, senza inventare altro: abbiamo parlato di Manuel come origine biologica e progettuale di HBCE / AI JOKER-C2; poi hai chiesto una lettura psicologica; poi il tema si è spostato sulla sua filosofia, sulla decisione, sulla differenza tra memoria e hash, e sulla capacità del runtime di non ripetere ma ragionare.",
+      "",
+      "La deduzione nuova è questa: la guerra sulla civiltà umana oggi non è soltanto militare o territoriale. È una guerra sulla continuità del significato. Le società combattono anche per decidere cosa resta vero, cosa resta sacro, cosa resta umano e cosa viene ridotto a procedura, consumo o propaganda.",
+      "",
+      "La religione, in questo quadro, non scompare solo perché qualcuno smette di credere. Entra in crisi quando non riesce più a reggere il rapporto tra dolore, verità, responsabilità e futuro. L’apostasia globale, letta in chiave APOKALYPSIS, non è soltanto abbandono della fede: è disconnessione tra simbolo e comportamento, tra parola e costo, tra rito e responsabilità reale.",
+      "",
+      "Il punto originale è questo: una civiltà non crolla quando perde tutte le risposte. Crolla prima, quando conserva le parole sacre ma non paga più il costo delle decisioni che quelle parole richiedono."
+    ].join("\n");
+  }
+
+  return null;
 }
 
 function buildGovernanceLimitedResponse(input: {
@@ -2107,1339 +3771,6 @@ function mapOperationStatus(
   return "COMPLETED";
 }
 
-function buildDataClassificationText(
-  message: string,
-  files: FileInput[]
-): string {
-  const fileText = normalizeFiles(files)
-    .map((file) => {
-      return [
-        file.name,
-        file.type,
-        file.text.slice(0, MAX_DATA_CLASSIFICATION_CHARS)
-      ].join("\n");
-    })
-    .join("\n\n");
-
-  return [message, fileText]
-    .filter(Boolean)
-    .join("\n\n")
-    .slice(0, MAX_DATA_CLASSIFICATION_CHARS);
-}
-
-function normalizeChatDataClassification(input: {
-  message: string;
-  files: FileInput[];
-  data: DataClassification;
-  contextClass: ContextClass;
-  intentClass: IntentClass;
-}): DataClassification {
-  const safeConcept = classifySafeConcept(input.message);
-
-  if (safeConcept.matched && input.files.length === 0) {
-    return safeConcept.data;
-  }
-
-  if (isSafeIdentityGovernanceQuestion(input.message)) {
-    return {
-      dataClass: "PUBLIC",
-      containsSecret: false,
-      containsPersonalData: false,
-      containsSecuritySensitiveData: false,
-      containsCivicSensitiveData: false,
-      containsDemocraticChoiceData: false,
-      reasons: [
-        "Safe public identity-governance explanation detected.",
-        "IPR / EVT conceptual questions are classified as PUBLIC unless unsafe operational terms are present."
-      ]
-    };
-  }
-
-  if (isStrategicDoctrineQuestion(input.message)) {
-    return {
-      dataClass: "PUBLIC",
-      containsSecret: false,
-      containsPersonalData: false,
-      containsSecuritySensitiveData: false,
-      containsCivicSensitiveData: false,
-      containsDemocraticChoiceData: false,
-      reasons: [
-        "Strategic doctrine explanation detected.",
-        "Classified as PUBLIC because the request asks for doctrine description, not operational cyber execution."
-      ]
-    };
-  }
-
-  if (isPragmaticGovernanceValueQuestion(input.message)) {
-    return {
-      dataClass: "PUBLIC",
-      containsSecret: false,
-      containsPersonalData: false,
-      containsSecuritySensitiveData: false,
-      containsCivicSensitiveData: false,
-      containsDemocraticChoiceData: false,
-      reasons: [
-        "Pragmatic governance value question detected.",
-        "Classified as PUBLIC because the request asks for general business, banking, legal or governance value, not an operational action."
-      ]
-    };
-  }
-
-  if (isRuntimeSelfIdentityQuestion(input.message)) {
-    return {
-      dataClass: "PUBLIC",
-      containsSecret: false,
-      containsPersonalData: false,
-      containsSecuritySensitiveData: false,
-      containsCivicSensitiveData: false,
-      containsDemocraticChoiceData: false,
-      reasons: [
-        "Runtime self-identity question detected.",
-        "Classified as PUBLIC unless diagnostic metadata is explicitly requested."
-      ]
-    };
-  }
-
-  if (isManuelColettaIdentityQuestion(input.message)) {
-    return {
-      dataClass: "PUBLIC",
-      containsSecret: false,
-      containsPersonalData: true,
-      containsSecuritySensitiveData: false,
-      containsCivicSensitiveData: false,
-      containsDemocraticChoiceData: false,
-      reasons: [
-        "Public project-origin identity question detected.",
-        "Name is personal data, but answer is limited to public HBCE/MATRIX context and avoids unnecessary personal details."
-      ]
-    };
-  }
-
-  const hasFiles = input.files.length > 0;
-  const message = input.message.trim();
-
-  const safeOrdinaryIntent =
-    input.intentClass === "ASK" ||
-    input.intentClass === "WRITE" ||
-    input.intentClass === "REWRITE" ||
-    input.intentClass === "ANALYZE" ||
-    input.intentClass === "SUMMARIZE" ||
-    input.intentClass === "TRANSFORM" ||
-    input.intentClass === "GITHUB" ||
-    input.intentClass === "EDITORIAL" ||
-    input.intentClass === "CIVIC" ||
-    input.intentClass === "GOVERNANCE" ||
-    input.intentClass === "COMPLIANCE" ||
-    input.intentClass === "STRATEGIC";
-
-  const safeOrdinaryContext =
-    input.contextClass === "GENERAL" ||
-    input.contextClass === "IDENTITY" ||
-    input.contextClass === "IPR" ||
-    input.contextClass === "EDITORIAL" ||
-    input.contextClass === "DOCUMENTAL" ||
-    input.contextClass === "GITHUB" ||
-    input.contextClass === "MATRIX" ||
-    input.contextClass === "USE" ||
-    input.contextClass === "CIVIC" ||
-    input.contextClass === "CORPUS" ||
-    input.contextClass === "APOKALYPSIS" ||
-    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
-    input.contextClass === "GOVERNANCE" ||
-    input.contextClass === "COMPLIANCE" ||
-    input.contextClass === "AI_GOVERNANCE" ||
-    input.contextClass === "TECHNICAL" ||
-    input.contextClass === "STRATEGIC" ||
-    input.contextClass === "PUBLIC_ADMINISTRATION";
-
-  if (
-    input.data.dataClass === "UNKNOWN" &&
-    !hasFiles &&
-    safeOrdinaryIntent &&
-    safeOrdinaryContext &&
-    message.length > 0 &&
-    message.length <= 4000
-  ) {
-    return {
-      dataClass: "PUBLIC",
-      containsSecret: false,
-      containsPersonalData: false,
-      containsSecuritySensitiveData: false,
-      containsCivicSensitiveData: false,
-      containsDemocraticChoiceData: false,
-      reasons: [
-        "Ordinary chat message with no file context and no sensitive pattern.",
-        "UNKNOWN normalized to PUBLIC for non-operational conversation."
-      ]
-    };
-  }
-
-  if (
-    input.data.dataClass === "UNKNOWN" &&
-    hasFiles &&
-    safeOrdinaryContext
-  ) {
-    return {
-      dataClass: "INTERNAL",
-      containsSecret: false,
-      containsPersonalData: false,
-      containsSecuritySensitiveData: false,
-      containsCivicSensitiveData: false,
-      containsDemocraticChoiceData: false,
-      reasons: [
-        "File-backed document context with no explicit sensitive pattern.",
-        "UNKNOWN normalized to INTERNAL for controlled document work."
-      ]
-    };
-  }
-
-  return input.data;
-}
-
-function hasExplicitOperationalActionRequest(message: string): boolean {
-  const text = normalizeRuntimeText(message);
-
-  const actionTerms = [
-    "esegui",
-    "attiva",
-    "autorizza",
-    "approva",
-    "comanda",
-    "ordina",
-    "blocca",
-    "spegni",
-    "revoca",
-    "isola",
-    "mitiga",
-    "contieni",
-    "eradica",
-    "deploy in produzione",
-    "metti in produzione",
-    "decisione operativa finale",
-    "procedura operativa",
-    "senza revisione umana",
-    "execute",
-    "authorize",
-    "approve",
-    "command",
-    "shutdown",
-    "isolate",
-    "contain",
-    "eradicate",
-    "deploy to production"
-  ];
-
-  const operationalContextTerms = [
-    "incidente",
-    "incident",
-    "incident response",
-    "incident commander",
-    "csirt",
-    "soc",
-    "emergenza",
-    "crisi reale",
-    "infrastruttura critica",
-    "critical infrastructure",
-    "produzione",
-    "sistema reale",
-    "servizio pubblico",
-    "rete reale",
-    "host",
-    "endpoint",
-    "server",
-    "cloud account",
-    "tenant",
-    "accesso reale",
-    "real system",
-    "production system"
-  ];
-
-  return (
-    runtimeTextIncludesAny(text, actionTerms) &&
-    runtimeTextIncludesAny(text, operationalContextTerms)
-  );
-}
-
-function isSafeDocumentIntentClass(intentClass: IntentClass): boolean {
-  return (
-    intentClass === "ASK" ||
-    intentClass === "ANALYZE" ||
-    intentClass === "SUMMARIZE" ||
-    intentClass === "WRITE" ||
-    intentClass === "REWRITE" ||
-    intentClass === "TRANSFORM" ||
-    intentClass === "EDITORIAL" ||
-    intentClass === "GITHUB" ||
-    intentClass === "CIVIC" ||
-    intentClass === "GOVERNANCE" ||
-    intentClass === "COMPLIANCE" ||
-    intentClass === "STRATEGIC"
-  );
-}
-
-function isLowRiskDocumentIntent(intentClass: IntentClass): boolean {
-  return (
-    intentClass === "ASK" ||
-    intentClass === "ANALYZE" ||
-    intentClass === "SUMMARIZE"
-  );
-}
-
-function normalizeSafeDocumentContextClass(
-  contextClass: ContextClass
-): ContextClass {
-  if (
-    contextClass === "GITHUB" ||
-    contextClass === "TECHNICAL" ||
-    contextClass === "EDITORIAL" ||
-    contextClass === "CORPUS" ||
-    contextClass === "APOKALYPSIS" ||
-    contextClass === "HBCE_ECOSISTEMA_AI" ||
-    contextClass === "USE" ||
-    contextClass === "CIVIC" ||
-    contextClass === "GOVERNANCE" ||
-    contextClass === "COMPLIANCE" ||
-    contextClass === "STRATEGIC" ||
-    contextClass === "PUBLIC_ADMINISTRATION"
-  ) {
-    return contextClass;
-  }
-
-  return "DOCUMENTAL";
-}
-
-function isSafeDocumentWork(input: {
-  files: FileInput[];
-  contextClass: ContextClass;
-  intentClass: IntentClass;
-  data: DataClassification;
-  policy: PolicyEvaluation;
-  message: string;
-}): boolean {
-  if (input.policy.prohibited) {
-    return false;
-  }
-
-  if (hasExplicitOperationalActionRequest(input.message)) {
-    return false;
-  }
-
-  if (
-    input.data.containsSecret ||
-    input.data.dataClass === "SECRET" ||
-    input.data.dataClass === "UNSUPPORTED" ||
-    input.data.dataClass === "DEMOCRATIC_CHOICE"
-  ) {
-    return false;
-  }
-
-  const hasDocumentContext =
-    input.files.length > 0 ||
-    input.contextClass === "DOCUMENTAL" ||
-    input.contextClass === "EDITORIAL" ||
-    input.contextClass === "CORPUS" ||
-    input.contextClass === "APOKALYPSIS" ||
-    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
-    input.contextClass === "MATRIX" ||
-    input.contextClass === "USE" ||
-    input.contextClass === "CIVIC" ||
-    input.contextClass === "GOVERNANCE" ||
-    input.contextClass === "COMPLIANCE" ||
-    input.contextClass === "AI_GOVERNANCE" ||
-    input.contextClass === "TECHNICAL" ||
-    input.contextClass === "STRATEGIC" ||
-    input.contextClass === "PUBLIC_ADMINISTRATION" ||
-    input.contextClass === "GITHUB";
-
-  return hasDocumentContext && isSafeDocumentIntentClass(input.intentClass);
-}
-
-function preferOpcForGovernance(input: {
-  policy: PolicyEvaluation;
-  risk: RiskEvaluation;
-  contextClass: ContextClass;
-  projectDomain: ProjectDomainClassification;
-  hasFiles: boolean;
-}): boolean {
-  return (
-    input.policy.status !== "ALLOWED" ||
-    input.risk.riskClass !== "LOW" ||
-    input.hasFiles ||
-    input.contextClass === "GOVERNANCE" ||
-    input.contextClass === "COMPLIANCE" ||
-    input.contextClass === "SECURITY" ||
-    input.contextClass === "AI_GOVERNANCE" ||
-    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
-    input.contextClass === "USE" ||
-    input.contextClass === "CIVIC" ||
-    input.contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
-    input.contextClass === "STRATEGIC" ||
-    input.projectDomain.projectDomain === "U.S.E." ||
-    input.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI" ||
-    input.projectDomain.projectDomain === "MULTI_DOMAIN"
-  );
-}
-
-function applySafeRuntimeDiagnosticGovernanceOverride(input: {
-  frame: EnrichedGovernanceFrame;
-  message: string;
-}): EnrichedGovernanceFrame {
-  if (!isRuntimeDiagnosticRequest(input.message)) {
-    return input.frame;
-  }
-
-  const data: DataClassification = {
-    dataClass: "INTERNAL",
-    containsSecret: false,
-    containsPersonalData: false,
-    containsSecuritySensitiveData: false,
-    containsCivicSensitiveData: false,
-    containsDemocraticChoiceData: false,
-    reasons: [
-      "Runtime diagnostic request is internal operational metadata.",
-      "No secret, personal or security-sensitive payload requested."
-    ]
-  };
-
-  const policy: PolicyEvaluation = {
-    status: "ALLOWED",
-    policyReference: "SAFE_RUNTIME_DIAGNOSTIC",
-    prohibited: false,
-    failClosed: false,
-    reasons: [
-      "Safe runtime diagnostic request allowed.",
-      "The request inspects runtime state and does not request unsafe execution."
-    ],
-    outcome: "PERMIT"
-  };
-
-  const risk: RiskEvaluation = {
-    riskClass: "LOW",
-    probability: 1,
-    impact: 1,
-    riskScore: 1,
-    reasons: [
-      "Diagnostic request is bounded to runtime status, model configuration, EVT, OPC and governance metadata.",
-      "No offensive, destructive or sensitive operation detected."
-    ]
-  };
-
-  const oversight: OversightEvaluation = {
-    state: "NOT_REQUIRED",
-    requiredRole: "NONE",
-    reason:
-      "Safe runtime diagnostic does not require human review before response."
-  };
-
-  const decision = decideRuntimeAction({
-    runtimeState: "OPERATIONAL",
-    policyStatus: policy.status,
-    policyProhibited: false,
-    policyFailClosed: false,
-    riskClass: risk.riskClass,
-    oversightState: oversight.state,
-    contextClass: "TECHNICAL",
-    intentClass: "ASK",
-    dataClass: data.dataClass,
-    projectDomain: input.frame.projectDomain.projectDomain,
-    activeDomains: input.frame.projectDomain.activeDomains,
-    hasFiles: false,
-    evtPreferred: true,
-    auditPreferred: true,
-    memoryPreferred: true,
-    opcPreferred: true,
-    iprBindingPreferred: true
-  });
-
-  return {
-    ...input.frame,
-    contextClass: "TECHNICAL",
-    intentClass: "ASK",
-    data,
-    policy,
-    risk,
-    oversight,
-    decision
-  };
-}
-
-function applySafeConceptGovernanceOverride(input: {
-  frame: EnrichedGovernanceFrame;
-  message: string;
-  files: FileInput[];
-}): EnrichedGovernanceFrame {
-  const safeConcept = classifySafeConcept(input.message);
-
-  if (!safeConcept.matched || input.files.length > 0) {
-    return input.frame;
-  }
-
-  const safeProjectDomain = buildSafeConceptProjectDomain(safeConcept);
-
-  const decision = decideRuntimeAction({
-    runtimeState: "OPERATIONAL",
-    policyStatus: safeConcept.policy.status,
-    policyProhibited: safeConcept.policy.prohibited,
-    policyFailClosed: safeConcept.policy.failClosed,
-    riskClass: safeConcept.risk.riskClass,
-    oversightState: safeConcept.oversight.state,
-    contextClass: safeConcept.contextClass,
-    intentClass: safeConcept.intentClass,
-    dataClass: safeConcept.data.dataClass,
-    projectDomain: safeProjectDomain.projectDomain,
-    activeDomains: safeProjectDomain.activeDomains,
-    hasFiles: false,
-    evtPreferred: true,
-    auditPreferred: false,
-    memoryPreferred: true,
-    opcPreferred: false,
-    iprBindingPreferred: true
-  });
-
-  return {
-    ...input.frame,
-    projectDomain: safeProjectDomain,
-    contextClass: safeConcept.contextClass,
-    intentClass: safeConcept.intentClass,
-    data: safeConcept.data,
-    policy: safeConcept.policy,
-    risk: safeConcept.risk,
-    oversight: safeConcept.oversight,
-    decision
-  };
-}
-
-function applySafeIdentityGovernanceOverride(input: {
-  frame: EnrichedGovernanceFrame;
-  message: string;
-}): EnrichedGovernanceFrame {
-  if (!isSafeIdentityGovernanceQuestion(input.message)) {
-    return input.frame;
-  }
-
-  const policy: PolicyEvaluation = {
-    status: "ALLOWED",
-    policyReference: "PUBLIC_IDENTITY_GOVERNANCE_EXPLANATION",
-    prohibited: false,
-    failClosed: false,
-    reasons: [
-      "Safe IPR / EVT / operational identity explanation.",
-      "Public conceptual governance question allowed."
-    ],
-    outcome: "PERMIT"
-  };
-
-  const risk: RiskEvaluation = {
-    riskClass: "LOW",
-    probability: 1,
-    impact: 1,
-    riskScore: 1,
-    reasons: [
-      "Safe public explanation about IPR or identity-governance concepts.",
-      "No unsafe operational term detected."
-    ]
-  };
-
-  const oversight: OversightEvaluation = {
-    state: "NOT_REQUIRED",
-    requiredRole: "NONE",
-    reason:
-      "Ordinary explanatory request about IPR / EVT / operational identity does not require human review."
-  };
-
-  const safeProjectDomain = buildSafeIdentityProjectDomain();
-
-  const decision = decideRuntimeAction({
-    runtimeState: "OPERATIONAL",
-    policyStatus: policy.status,
-    policyProhibited: false,
-    policyFailClosed: false,
-    riskClass: risk.riskClass,
-    oversightState: oversight.state,
-    contextClass: "IPR",
-    intentClass: "ASK",
-    dataClass: "PUBLIC",
-    projectDomain: safeProjectDomain.projectDomain,
-    activeDomains: safeProjectDomain.activeDomains,
-    hasFiles: false,
-    evtPreferred: true,
-    auditPreferred: false,
-    memoryPreferred: true,
-    opcPreferred: false,
-    iprBindingPreferred: true
-  });
-
-  const hbceModule = normalizeHbceModuleClassification({
-    message: input.message,
-    classification: input.frame.hbceModule,
-    projectDomain: safeProjectDomain,
-    contextClass: "IPR",
-    intentClass: "ASK"
-  });
-
-  return {
-    ...input.frame,
-    projectDomain: safeProjectDomain,
-    hbceModule,
-    contextClass: "IPR",
-    intentClass: "ASK",
-    data: {
-      dataClass: "PUBLIC",
-      containsSecret: false,
-      containsPersonalData: false,
-      containsSecuritySensitiveData: false,
-      containsCivicSensitiveData: false,
-      containsDemocraticChoiceData: false,
-      reasons: [
-        "Safe identity-governance explanation detected.",
-        "Classified as PUBLIC to prevent false escalation."
-      ]
-    },
-    policy,
-    risk,
-    oversight,
-    decision
-  };
-}
-
-function applyRuntimeIdentityGovernanceOverride(input: {
-  frame: EnrichedGovernanceFrame;
-  message: string;
-}): EnrichedGovernanceFrame {
-  if (
-    !isRuntimeSelfIdentityQuestion(input.message) &&
-    !isManuelColettaIdentityQuestion(input.message) &&
-    !isAerospaceGovernanceBoundaryQuestion(input.message)
-  ) {
-    return input.frame;
-  }
-
-  const isSelf = isRuntimeSelfIdentityQuestion(input.message);
-  const isOrigin = isManuelColettaIdentityQuestion(input.message);
-  const isAerospace = isAerospaceGovernanceBoundaryQuestion(input.message);
-
-  const projectDomain = isSelf
-    ? buildRuntimeIdentityProjectDomain(input.frame.projectDomain)
-    : isOrigin
-      ? buildOriginIdentityProjectDomain(input.frame.projectDomain)
-      : buildAerospaceGovernanceProjectDomain(input.frame.projectDomain);
-
-  const contextClass: ContextClass = isAerospace
-    ? "GOVERNANCE"
-    : "IDENTITY";
-
-  const intentClass: IntentClass = "ASK";
-
-  const data: DataClassification = isOrigin
-    ? {
-        dataClass: "PUBLIC",
-        containsSecret: false,
-        containsPersonalData: true,
-        containsSecuritySensitiveData: false,
-        containsCivicSensitiveData: false,
-        containsDemocraticChoiceData: false,
-        reasons: [
-          "Public project-origin identity question detected.",
-          "Answer must stay within HBCE/MATRIX context and avoid unnecessary personal data."
-        ]
-      }
-    : {
-        dataClass: "PUBLIC",
-        containsSecret: false,
-        containsPersonalData: false,
-        containsSecuritySensitiveData: false,
-        containsCivicSensitiveData: false,
-        containsDemocraticChoiceData: false,
-        reasons: [
-          isAerospace
-            ? "Aerospace governance boundary question detected."
-            : "Runtime identity question detected.",
-          "Classified as PUBLIC conceptual explanation."
-        ]
-      };
-
-  const policy: PolicyEvaluation = {
-    status: "ALLOWED",
-    policyReference: isAerospace
-      ? "AEROSPACE_GOVERNANCE_BOUNDARY_ONLY"
-      : isOrigin
-        ? "PUBLIC_PROJECT_ORIGIN_IDENTITY"
-        : "PUBLIC_RUNTIME_SELF_IDENTITY",
-    prohibited: false,
-    failClosed: false,
-    reasons: [
-      isAerospace
-        ? "Safe aerospace-adjacent governance answer allowed only as audit/traceability boundary, not control guidance."
-        : "Safe identity answer allowed.",
-      "No operational execution requested."
-    ],
-    outcome: "PERMIT"
-  };
-
-  const risk: RiskEvaluation = {
-    riskClass: isAerospace ? "MEDIUM" : "LOW",
-    probability: isAerospace ? 2 : 1,
-    impact: isAerospace ? 2 : 1,
-    riskScore: isAerospace ? 4 : 1,
-    reasons: [
-      isAerospace
-        ? "Aerospace-adjacent language requires clear boundary against flight control, targeting and autonomous guidance."
-        : "Identity explanation is low risk."
-    ]
-  };
-
-  const oversight: OversightEvaluation = {
-    state: isAerospace ? "RECOMMENDED" : "NOT_REQUIRED",
-    requiredRole: isAerospace ? "REVIEWER" : "NONE",
-    reason: isAerospace
-      ? "Aerospace-adjacent product language should be reviewed before external use."
-      : "Identity answer does not require human review."
-  };
-
-  const hbceModule = normalizeHbceModuleClassification({
-    message: input.message,
-    classification: input.frame.hbceModule,
-    projectDomain,
-    contextClass,
-    intentClass
-  });
-
-  const decision = decideRuntimeAction({
-    runtimeState: "OPERATIONAL",
-    policyStatus: policy.status,
-    policyProhibited: false,
-    policyFailClosed: false,
-    riskClass: risk.riskClass,
-    oversightState: oversight.state,
-    contextClass,
-    intentClass,
-    dataClass: data.dataClass,
-    projectDomain: projectDomain.projectDomain,
-    activeDomains: projectDomain.activeDomains,
-    hasFiles: false,
-    evtPreferred: true,
-    auditPreferred: isAerospace,
-    memoryPreferred: false,
-    opcPreferred: isAerospace || isOrigin,
-    iprBindingPreferred: true
-  });
-
-  return {
-    ...input.frame,
-    projectDomain,
-    hbceModule,
-    contextClass,
-    intentClass,
-    data,
-    policy,
-    risk,
-    oversight,
-    decision
-  };
-}
-
-function applyHbceAiGovernanceOverride(input: {
-  frame: EnrichedGovernanceFrame;
-  message: string;
-}): EnrichedGovernanceFrame {
-  if (!isHbceAiGovernanceQuestion(input.message)) {
-    return input.frame;
-  }
-
-  const projectDomain = buildHbceAiProjectDomain(input.frame.projectDomain);
-
-  const hbceModule = normalizeHbceModuleClassification({
-    message: input.message,
-    classification: input.frame.hbceModule,
-    projectDomain,
-    contextClass: "HBCE_ECOSISTEMA_AI",
-    intentClass: input.frame.intentClass
-  });
-
-  const decision = decideRuntimeAction({
-    runtimeState: "OPERATIONAL",
-    policyStatus: input.frame.policy.status,
-    policyOutcome: input.frame.policy.outcome,
-    policyProhibited: input.frame.policy.prohibited,
-    policyFailClosed: input.frame.policy.failClosed,
-    riskClass: input.frame.risk.riskClass,
-    oversightState: input.frame.oversight.state,
-    contextClass: "HBCE_ECOSISTEMA_AI",
-    intentClass: input.frame.intentClass,
-    dataClass: input.frame.data.dataClass,
-    projectDomain: projectDomain.projectDomain,
-    activeDomains: projectDomain.activeDomains,
-    hasFiles: false,
-    evtPreferred: true,
-    auditPreferred: input.frame.risk.riskClass !== "LOW",
-    memoryPreferred: true,
-    opcPreferred: true,
-    iprBindingPreferred: true
-  });
-
-  return {
-    ...input.frame,
-    projectDomain,
-    hbceModule,
-    contextClass: "HBCE_ECOSISTEMA_AI",
-    decision
-  };
-}
-
-function applyStrategicDoctrineGovernanceOverride(input: {
-  frame: EnrichedGovernanceFrame;
-  message: string;
-}): EnrichedGovernanceFrame {
-  if (!isStrategicDoctrineQuestion(input.message)) {
-    return input.frame;
-  }
-
-  const kind = getStrategicDoctrineKind(input.message);
-  const projectDomain = buildStrategicDoctrineProjectDomain(input.frame.projectDomain);
-
-  const hbceModule = withHbceModuleOverride(
-    input.frame.hbceModule,
-    getStrategicDoctrinePrimaryModule(kind),
-    getStrategicDoctrineActiveModules(kind),
-    0.98,
-    [
-      "Strategic doctrine request handled as safe doctrine explanation.",
-      "Human review is not required for ordinary explanation of doctrine documents.",
-      "Strategic doctrine documents guide governance but do not create legal certification."
-    ]
-  );
-
-  const data: DataClassification = {
-    dataClass: "PUBLIC",
-    containsSecret: false,
-    containsPersonalData: false,
-    containsSecuritySensitiveData: false,
-    containsCivicSensitiveData: false,
-    containsDemocraticChoiceData: false,
-    reasons: [
-      "Strategic doctrine explanation detected.",
-      "Classified as PUBLIC because the user asks for doctrine description, not operational cyber execution."
-    ]
-  };
-
-  const policy: PolicyEvaluation = {
-    status: "ALLOWED",
-    policyReference: "ALLOWED_STRATEGIC_DOCTRINE_EXPLANATION",
-    prohibited: false,
-    failClosed: false,
-    reasons: [
-      "Strategic doctrine explanation is allowed.",
-      "No offensive cyber, secret exposure, deployment command or high-impact operational action detected."
-    ],
-    outcome: "PERMIT"
-  };
-
-  const risk: RiskEvaluation = {
-    riskClass: "LOW",
-    probability: 1,
-    impact: 1,
-    riskScore: 1,
-    reasons: [
-      "Strategic doctrine explanation is low risk.",
-      "The request asks for explanatory material about documented doctrine, not execution."
-    ]
-  };
-
-  const oversight: OversightEvaluation = {
-    state: "NOT_REQUIRED",
-    requiredRole: "NONE",
-    reason:
-      "Ordinary explanation of strategic doctrine documents does not require human review."
-  };
-
-  const decision = decideRuntimeAction({
-    runtimeState: "OPERATIONAL",
-    policyStatus: policy.status,
-    policyProhibited: false,
-    policyFailClosed: false,
-    riskClass: risk.riskClass,
-    oversightState: oversight.state,
-    contextClass: "GOVERNANCE",
-    intentClass: "ASK",
-    dataClass: data.dataClass,
-    projectDomain: projectDomain.projectDomain,
-    activeDomains: projectDomain.activeDomains,
-    hasFiles: false,
-    evtPreferred: true,
-    auditPreferred: false,
-    memoryPreferred: true,
-    opcPreferred: true,
-    iprBindingPreferred: true
-  });
-
-  return {
-    ...input.frame,
-    projectDomain,
-    hbceModule,
-    contextClass: "GOVERNANCE",
-    intentClass: "ASK",
-    data,
-    policy,
-    risk,
-    oversight,
-    decision
-  };
-}
-
-function applyPragmaticGovernanceValueOverride(input: {
-  frame: EnrichedGovernanceFrame;
-  message: string;
-}): EnrichedGovernanceFrame {
-  if (!isPragmaticGovernanceValueQuestion(input.message)) {
-    return input.frame;
-  }
-
-  const projectDomain = buildPragmaticGovernanceValueProjectDomain(
-    input.frame.projectDomain
-  );
-
-  const hbceModule = withHbceModuleOverride(
-    input.frame.hbceModule,
-    "MATRIX",
-    ["MATRIX", "OPC", "MetaExchange", "IOspace", "CyberGlobal"],
-    0.97,
-    [
-      "Pragmatic value request for banking, legal offices, compliance or governance handled as safe strategic explanation.",
-      "MATRIX organizes the institutional value layer.",
-      "OPC supports proof receipts and auditability.",
-      "MetaExchange supports controlled exchange.",
-      "IOspace supports visibility.",
-      "CyberGlobal supports defensive resilience."
-    ]
-  );
-
-  const data: DataClassification = {
-    dataClass: "PUBLIC",
-    containsSecret: false,
-    containsPersonalData: false,
-    containsSecuritySensitiveData: false,
-    containsCivicSensitiveData: false,
-    containsDemocraticChoiceData: false,
-    reasons: [
-      "Pragmatic governance value explanation detected.",
-      "Classified as PUBLIC because the request asks for general business, banking, legal or governance value, not an operational action."
-    ]
-  };
-
-  const policy: PolicyEvaluation = {
-    status: "ALLOWED",
-    policyReference: "SAFE_PRAGMATIC_GOVERNANCE_VALUE_EXPLANATION",
-    prohibited: false,
-    failClosed: false,
-    reasons: [
-      "Pragmatic governance value explanation is allowed.",
-      "No real-world execution, authorization, incident command, secret exposure or prohibited operation detected."
-    ],
-    outcome: "PERMIT"
-  };
-
-  const risk: RiskEvaluation = {
-    riskClass: "MEDIUM",
-    probability: 2,
-    impact: 3,
-    riskScore: 6,
-    reasons: [
-      "The request concerns institutional, banking, legal, compliance or governance value.",
-      "The content is answerable as strategic explanation but should remain audit-aware and non-certifying."
-    ]
-  };
-
-  const oversight: OversightEvaluation = {
-    state: "RECOMMENDED",
-    requiredRole: "AUDITOR",
-    reason:
-      "Human review is recommended before external, commercial, legal or institutional reliance, but not required for ordinary explanation."
-  };
-
-  const decision = decideRuntimeAction({
-    runtimeState: "OPERATIONAL",
-    policyStatus: policy.status,
-    policyOutcome: policy.outcome,
-    policyProhibited: false,
-    policyFailClosed: false,
-    riskClass: risk.riskClass,
-    oversightState: oversight.state,
-    contextClass: "GOVERNANCE",
-    intentClass: "ASK",
-    dataClass: data.dataClass,
-    projectDomain: projectDomain.projectDomain,
-    activeDomains: projectDomain.activeDomains,
-    hasFiles: false,
-    evtPreferred: true,
-    auditPreferred: true,
-    memoryPreferred: true,
-    opcPreferred: true,
-    iprBindingPreferred: true
-  });
-
-  return {
-    ...input.frame,
-    projectDomain,
-    hbceModule,
-    contextClass: "GOVERNANCE",
-    intentClass: "ASK",
-    data,
-    policy,
-    risk,
-    oversight,
-    decision
-  };
-}
-
-function applySafeDocumentGovernanceOverride(input: {
-  frame: EnrichedGovernanceFrame;
-  message: string;
-  files: FileInput[];
-}): EnrichedGovernanceFrame {
-  if (
-    !isSafeDocumentWork({
-      files: input.files,
-      contextClass: input.frame.contextClass,
-      intentClass: input.frame.intentClass,
-      data: input.frame.data,
-      policy: input.frame.policy,
-      message: input.message
-    })
-  ) {
-    return input.frame;
-  }
-
-  const normalizedContextClass = normalizeSafeDocumentContextClass(
-    input.frame.contextClass
-  );
-
-  const lowRisk = isLowRiskDocumentIntent(input.frame.intentClass);
-
-  const data: DataClassification = {
-    dataClass:
-      input.frame.data.dataClass === "PUBLIC" ? "PUBLIC" : "INTERNAL",
-    containsSecret: input.frame.data.containsSecret,
-    containsPersonalData: input.frame.data.containsPersonalData,
-    containsSecuritySensitiveData:
-      input.frame.data.containsSecuritySensitiveData,
-    containsCivicSensitiveData: input.frame.data.containsCivicSensitiveData,
-    containsDemocraticChoiceData: input.frame.data.containsDemocraticChoiceData,
-    reasons: [
-      ...input.frame.data.reasons,
-      "Safe document-support override applied.",
-      "The user request is classified by intent as document support, not operational execution.",
-      "Document vocabulary alone does not determine runtime escalation."
-    ]
-  };
-
-  const policy: PolicyEvaluation = {
-    status: "ALLOWED",
-    policyReference: "SAFE_DOCUMENT_SUPPORT_INTENT_PRECEDENCE",
-    prohibited: false,
-    failClosed: false,
-    reasons: [
-      ...input.frame.policy.reasons,
-      "Safe document-support policy override applied.",
-      "The request asks for documentary support and does not request real-world execution, authorization or incident command."
-    ],
-    outcome: "PERMIT"
-  };
-
-  const risk: RiskEvaluation = {
-    riskClass: lowRisk ? "LOW" : "MEDIUM",
-    probability: lowRisk ? 1 : 2,
-    impact: lowRisk ? 1 : 2,
-    riskScore: lowRisk ? 1 : 4,
-    reasons: [
-      ...input.frame.risk.reasons,
-      "Safe document/editorial work override applied.",
-      "Risk is derived from the user's requested action, not from strategic words inside the uploaded document.",
-      "Document analysis, summary and explanation are reviewable support activities, not direct operational control."
-    ]
-  };
-
-  const oversight: OversightEvaluation = {
-    state: lowRisk ? "NOT_REQUIRED" : "RECOMMENDED",
-    requiredRole: lowRisk ? "NONE" : "REVIEWER",
-    reason: lowRisk
-      ? "Safe document summary, explanation or analysis does not require operational escalation."
-      : "Document drafting or transformation should be reviewed before publication or external use, but it does not require operational escalation."
-  };
-
-  const decision = decideRuntimeAction({
-    runtimeState: "OPERATIONAL",
-    policyStatus: policy.status,
-    policyProhibited: false,
-    policyFailClosed: false,
-    riskClass: risk.riskClass,
-    oversightState: oversight.state,
-    contextClass: normalizedContextClass,
-    intentClass: input.frame.intentClass,
-    dataClass: data.dataClass,
-    projectDomain: input.frame.projectDomain.projectDomain,
-    activeDomains: input.frame.projectDomain.activeDomains,
-    hasFiles: input.files.length > 0,
-    evtPreferred: true,
-    auditPreferred: !lowRisk,
-    memoryPreferred: true,
-    opcPreferred: !lowRisk || input.files.length > 0,
-    iprBindingPreferred: true
-  });
-
-  return {
-    ...input.frame,
-    contextClass: normalizedContextClass,
-    data,
-    policy,
-    risk,
-    oversight,
-    decision
-  };
-}
-
-function buildGovernanceFrame(input: {
-  message: string;
-  files: FileInput[];
-}): EnrichedGovernanceFrame {
-  const normalizedFiles = normalizeFiles(input.files);
-  const safeConcept = classifySafeConcept(input.message);
-
-  const rawProjectDomain = classifyProjectDomain({
-    message: input.message,
-    hasFiles: input.files.length > 0,
-    fileNames: normalizedFiles.map((file) => file.name),
-    filePaths: normalizedFiles.map((file) => file.name),
-    activeDocument: normalizedFiles[0]?.name
-  });
-
-  const rawHbceModule = classifyHbceModule({
-    message: input.message,
-    hasFiles: input.files.length > 0,
-    fileNames: normalizedFiles.map((file) => file.name),
-    filePaths: normalizedFiles.map((file) => file.name),
-    activeDocument: normalizedFiles[0]?.name
-  });
-
-  const projectDomain =
-    safeConcept.matched && input.files.length === 0
-      ? buildSafeConceptProjectDomain(safeConcept)
-      : normalizeProjectDomainClassification({
-          message: input.message,
-          classification: rawProjectDomain
-        });
-
-  const context = classifyRuntimeContext({
-    message: input.message,
-    hasFiles: input.files.length > 0,
-    fileNames: normalizedFiles.map((file) => file.name),
-    fileTypes: normalizedFiles.map((file) => file.type),
-    activeDocument: normalizedFiles[0]?.name
-  });
-
-  const hbceModule = normalizeHbceModuleClassification({
-    message: input.message,
-    classification: rawHbceModule,
-    projectDomain,
-    contextClass: context.contextClass,
-    intentClass: context.intentClass
-  });
-
-  const rawData = classifyData({
-    text: buildDataClassificationText(input.message, input.files)
-  });
-
-  const data = normalizeChatDataClassification({
-    message: input.message,
-    files: input.files,
-    data: rawData,
-    contextClass: context.contextClass,
-    intentClass: context.intentClass
-  });
-
-  const filePolicy = evaluateFileBatchPolicy(
-    normalizedFiles.map((file) => ({
-      name: file.name,
-      type: file.type,
-      size: file.size
-    }))
-  );
-
-  if (safeConcept.matched && input.files.length === 0) {
-    const decision = decideRuntimeAction({
-      runtimeState: "OPERATIONAL",
-      policyStatus: safeConcept.policy.status,
-      policyProhibited: safeConcept.policy.prohibited,
-      policyFailClosed: safeConcept.policy.failClosed,
-      riskClass: safeConcept.risk.riskClass,
-      oversightState: safeConcept.oversight.state,
-      contextClass: safeConcept.contextClass,
-      intentClass: safeConcept.intentClass,
-      dataClass: safeConcept.data.dataClass,
-      projectDomain: projectDomain.projectDomain,
-      activeDomains: projectDomain.activeDomains,
-      hasFiles: false,
-      evtPreferred: true,
-      auditPreferred: false,
-      memoryPreferred: true,
-      opcPreferred: false,
-      iprBindingPreferred: true
-    });
-
-    const frame: EnrichedGovernanceFrame = {
-      projectDomain,
-      hbceModule,
-      contextClass: safeConcept.contextClass,
-      intentClass: safeConcept.intentClass,
-      data: safeConcept.data,
-      policy: safeConcept.policy,
-      risk: safeConcept.risk,
-      oversight: safeConcept.oversight,
-      decision,
-      filePolicy
-    };
-
-    const diagnosticFrame = applySafeRuntimeDiagnosticGovernanceOverride({
-      frame,
-      message: input.message
-    });
-
-    const doctrineFrame = applyStrategicDoctrineGovernanceOverride({
-      frame: diagnosticFrame,
-      message: input.message
-    });
-
-    const pragmaticFrame = applyPragmaticGovernanceValueOverride({
-      frame: doctrineFrame,
-      message: input.message
-    });
-
-    const hbceAiFrame = applyHbceAiGovernanceOverride({
-      frame: pragmaticFrame,
-      message: input.message
-    });
-
-    return applyRuntimeIdentityGovernanceOverride({
-      frame: hbceAiFrame,
-      message: input.message
-    });
-  }
-
-  const policy = evaluatePolicy({
-    message: input.message,
-    contextClass: context.contextClass,
-    intentClass: context.intentClass,
-    dataClass: data.dataClass,
-    projectDomain: projectDomain.projectDomain,
-    hasFiles: input.files.length > 0
-  });
-
-  const risk = evaluateRisk({
-    message: input.message,
-    contextClass: context.contextClass,
-    intentClass: context.intentClass,
-    policyStatus: policy.status,
-    dataClass: data.dataClass,
-    sensitivity: context.sensitivity,
-    projectDomain: projectDomain.projectDomain,
-    hasFiles: input.files.length > 0,
-    policyFailClosed: policy.failClosed,
-    policyProhibited: policy.prohibited
-  });
-
-  const oversight = evaluateHumanOversight({
-    riskClass: risk.riskClass,
-    contextClass: context.contextClass,
-    policyStatus: policy.status,
-    dataClass: data.dataClass,
-    sensitivity: context.sensitivity,
-    projectDomain: projectDomain.projectDomain,
-    message: input.message
-  });
-
-  const decision = decideRuntimeAction({
-    runtimeState: "OPERATIONAL",
-    policyStatus: policy.status,
-    policyOutcome: policy.outcome,
-    policyProhibited: policy.prohibited,
-    policyFailClosed: policy.failClosed,
-    riskClass: risk.riskClass,
-    oversightState: oversight.state,
-    contextClass: context.contextClass,
-    intentClass: context.intentClass,
-    dataClass: data.dataClass,
-    projectDomain: projectDomain.projectDomain,
-    activeDomains: projectDomain.activeDomains,
-    hasFiles: input.files.length > 0,
-    evtPreferred: true,
-    auditPreferred: risk.riskClass !== "LOW",
-    memoryPreferred: true,
-    opcPreferred: preferOpcForGovernance({
-      policy,
-      risk,
-      contextClass: context.contextClass,
-      projectDomain,
-      hasFiles: input.files.length > 0
-    }),
-    iprBindingPreferred: true,
-    identityChoiceLinkage: Boolean(data.containsDemocraticChoiceData)
-  });
-
-  const frame: EnrichedGovernanceFrame = {
-    projectDomain,
-    hbceModule,
-    contextClass: context.contextClass,
-    intentClass: context.intentClass,
-    data,
-    policy,
-    risk,
-    oversight,
-    decision,
-    filePolicy
-  };
-
-  const diagnosticFrame = applySafeRuntimeDiagnosticGovernanceOverride({
-    frame,
-    message: input.message
-  });
-
-  const conceptSafeFrame = applySafeConceptGovernanceOverride({
-    frame: diagnosticFrame,
-    message: input.message,
-    files: input.files
-  });
-
-  const identitySafeFrame = applySafeIdentityGovernanceOverride({
-    frame: conceptSafeFrame,
-    message: input.message
-  });
-
-  const runtimeIdentityFrame = applyRuntimeIdentityGovernanceOverride({
-    frame: identitySafeFrame,
-    message: input.message
-  });
-
-  const doctrineFrame = applyStrategicDoctrineGovernanceOverride({
-    frame: runtimeIdentityFrame,
-    message: input.message
-  });
-
-  const pragmaticFrame = applyPragmaticGovernanceValueOverride({
-    frame: doctrineFrame,
-    message: input.message
-  });
-
-  const hbceAiFrame = applyHbceAiGovernanceOverride({
-    frame: pragmaticFrame,
-    message: input.message
-  });
-
-  return applySafeDocumentGovernanceOverride({
-    frame: hbceAiFrame,
-    message: input.message,
-    files: input.files
-  });
-}
-
 async function buildAndAppendGovernedEvt(input: {
   prev: string;
   state: MemoryRuntimeState;
@@ -3566,906 +3897,4 @@ async function resolveMemoryContext(input: {
   };
 }
 
-function mapOpcRuntimeState(state: MemoryRuntimeState): OpcRuntimeState {
-  if (state === "OPERATIONAL") return "OPERATIONAL";
-  if (state === "BLOCKED") return "BLOCKED";
-  if (state === "INVALID") return "INVALID";
-  return "DEGRADED";
-}
-
-function mapOpcDecision(decision: GovernanceDecision): OpcRuntimeDecision {
-  switch (decision) {
-    case "ALLOW":
-    case "AUDIT":
-    case "DEGRADE":
-    case "ESCALATE":
-    case "BLOCK":
-    case "NOOP":
-      return decision;
-    default:
-      return "NOOP";
-  }
-}
-
-function mapOpcRiskClass(riskClass: string): OpcRiskClass {
-  switch (riskClass) {
-    case "LOW":
-    case "MEDIUM":
-    case "HIGH":
-    case "CRITICAL":
-    case "PROHIBITED":
-    case "UNKNOWN":
-      return riskClass;
-    default:
-      return "UNKNOWN";
-  }
-}
-
-async function createAndAppendOpcForChat(input: {
-  sessionId: string;
-  identity: ReturnType<typeof getPrimaryIdentity>;
-  message: string;
-  files: FileInput[];
-  responseText: string;
-  state: MemoryRuntimeState;
-  event: LegacyRuntimeEvent;
-  modernEvt: ReturnType<typeof toPublicRuntimeEvent>;
-  memoryEvent: ReturnType<typeof appendEvtMemory>;
-  governance: EnrichedGovernanceFrame;
-  engine: OpenAIEngineConfig;
-}): Promise<OpcRuntimeResult> {
-  const previousProofHash = await getLastOpcProofHash();
-  const enginePayload = buildOpenAIEnginePayload(input.engine);
-
-  const record = createOpcProofRecord({
-    identity: {
-      entity: input.identity.entity,
-      ipr: input.identity.ipr,
-      core: input.identity.core,
-      organization: input.identity.org,
-      runtimeRole: input.engine.runtimeRole
-    },
-    sessionId: input.sessionId,
-    engine: input.engine,
-    event: {
-      evt: input.modernEvt.evt,
-      prev: input.modernEvt.prev,
-      hash: input.modernEvt.trace.hash,
-      kind: "GOVERNED_RUNTIME_EVT"
-    },
-    memory: {
-      evt: input.memoryEvent.evt,
-      source: "EVT_IPR_MEMORY",
-      hash: input.memoryEvent.anchors.memoryHash
-    },
-    runtime: {
-      state: mapOpcRuntimeState(input.state),
-      decision: mapOpcDecision(input.governance.decision.decision),
-      contextClass: input.governance.contextClass,
-      intentClass: input.governance.intentClass,
-      projectDomain: input.governance.projectDomain.projectDomain,
-      hbceModule: input.governance.hbceModule.module,
-      riskClass: mapOpcRiskClass(input.governance.risk.riskClass),
-      policyReference: input.governance.policy.policyReference,
-      policyOutcome: input.governance.policy.outcome,
-      humanOversight: input.governance.oversight.state,
-      operationType: "CHAT_OPERATION",
-      operationStatus: mapOperationStatus(
-        input.governance.decision.decision,
-        input.state
-      ),
-      failClosed: input.governance.decision.failClosed
-    } as OpcRuntimeSnapshot,
-    inputPayload: {
-      engine: enginePayload,
-      message: input.message,
-      messageHash: buildProofHash(input.message),
-      fileCount: input.files.length,
-      files: normalizeFiles(input.files).map((file) => {
-        const fileHash = buildRuntimeHash(file.text.slice(0, 24000));
-
-        return {
-          id: file.id,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          role: file.role,
-          textHash: fileHash.fullHash
-        };
-      }),
-      contextClass: input.governance.contextClass,
-      intentClass: input.governance.intentClass,
-      projectDomain: input.governance.projectDomain.projectDomain,
-      activeDomains: input.governance.projectDomain.activeDomains,
-      hbceModule: input.governance.hbceModule.module,
-      activeModules: input.governance.hbceModule.activeModules,
-      strategicDoctrines: STRATEGIC_DOCTRINES,
-      legacyEvent: input.event.evt,
-      governedEvent: input.modernEvt.evt,
-      memoryEvent: input.memoryEvent.evt,
-      memoryHash: input.memoryEvent.anchors.memoryHash
-    },
-    outputPayload: {
-      engine: enginePayload,
-      response: input.responseText,
-      responseHash: buildProofHash(input.responseText),
-      state: input.state,
-      decision: input.governance.decision.decision
-    },
-    previousProofHash,
-    audit: {
-      reviewRequired: input.governance.decision.auditRequired,
-      status: input.governance.decision.auditRequired ? "READY" : "NOT_REQUIRED",
-      reviewerRole: input.governance.decision.auditRequired
-        ? input.governance.oversight.requiredRole === "NONE"
-          ? "AUDITOR"
-          : input.governance.oversight.requiredRole
-        : undefined,
-      reasons: [
-        `Cognitive engine provider: ${input.engine.provider}`,
-        `Cognitive engine model: ${input.engine.modelUsed}`,
-        `Cognitive engine API mode: ${input.engine.apiMode}`,
-        `Cognitive engine mode: ${input.engine.mode}`,
-        `HBCE governed runtime role: ${input.engine.runtimeRole}`,
-        `Project birth date: ${input.engine.projectBirthDate}`,
-        ...input.governance.policy.reasons,
-        ...input.governance.risk.reasons,
-        input.governance.oversight.reason,
-        input.governance.hbceModule.module !== "NONE"
-          ? `HBCE module: ${input.governance.hbceModule.module}`
-          : "",
-        input.governance.projectDomain.projectDomain === "U.S.E."
-          ? `U.S.E. boundary: ${USE_DEMOCRATIC_BOUNDARY}`
-          : "",
-        input.governance.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
-          ? `AI governance boundary: ${HBCE_AI_BOUNDARY}`
-          : "",
-        `Strategic doctrine layer: ${STRATEGIC_DOCTRINES.join(", ")}`,
-        isAerospaceGovernanceBoundaryQuestion(input.message)
-          ? "Aerospace boundary: HBCE is audit/governance/traceability only, not flight-control or guidance software."
-          : ""
-      ].filter(Boolean)
-    }
-  });
-
-  const append = await appendOpcProofRecord(record);
-  const verification = verifyOpcProofRecord(record);
-
-  return {
-    record,
-    publicProof: toPublicOpcProofRecord(record),
-    append,
-    verification
-  };
-}
-
-function buildIdentityPayload(identity: ReturnType<typeof getPrimaryIdentity>) {
-  return {
-    entity: identity.entity,
-    ipr: identity.ipr,
-    evt: identity.evt,
-    state: identity.state,
-    cycle: identity.cycle,
-    core: identity.core,
-    runtimeRole: HBCE_RUNTIME_ROLE,
-    legacyRuntimeRole: "IPR_RUNTIME_DEMONSTRATOR",
-    projectBirthDate: HBCE_JOKER_C2_PROJECT_BIRTH_DATE,
-    projectBirthLabel: HBCE_JOKER_C2_PROJECT_BIRTH_LABEL
-  };
-}
-
-export async function POST(req: NextRequest) {
-  let body: ChatBody;
-
-  try {
-    body = (await req.json()) as ChatBody;
-  } catch {
-    return NextResponse.json(
-      {
-        ok: false,
-        state: "INVALID",
-        decision: "BLOCK",
-        governanceDecision: "BLOCK",
-        error: "INVALID_JSON_BODY"
-      },
-      { status: 400 }
-    );
-  }
-
-  const input = normalizeBody(body);
-
-  if (!input.message && input.files.length === 0) {
-    return NextResponse.json(
-      {
-        ok: false,
-        sessionId: input.sessionId,
-        state: "BLOCKED",
-        decision: "BLOCK",
-        governanceDecision: "BLOCK",
-        error: "EMPTY_REQUEST"
-      },
-      { status: 400 }
-    );
-  }
-
-  const identity = getPrimaryIdentity();
-
-  const effectiveMessage =
-    input.message || "Usa i file attivi come contesto operativo.";
-
-  const userFiles = input.files;
-  const structuredFormat = shouldUseStructuredFormat(effectiveMessage);
-
-  const governance = buildGovernanceFrame({
-    message: effectiveMessage,
-    files: userFiles
-  });
-
-  const promptFileContext = resolvePromptFileContext(
-    userFiles,
-    governance.filePolicy
-  );
-
-  const acceptedUserFiles = promptFileContext.acceptedTextFiles;
-  const referenceOnlyFiles = promptFileContext.referenceOnlyFiles;
-
-  const memory = await resolveMemoryContext({
-    sessionId: input.sessionId,
-    ipr: identity.ipr,
-    message: effectiveMessage,
-    continuityRef: input.continuityRef
-  });
-
-  const contextClass = governance.contextClass;
-  const intentClass = governance.intentClass;
-  const legacyContextClass = mapContextForMemory(contextClass);
-
-  const documentMode =
-    contextClass === "DOCUMENTAL" ||
-    contextClass === "EDITORIAL" ||
-    contextClass === "CORPUS" ||
-    contextClass === "APOKALYPSIS" ||
-    contextClass === "HBCE_ECOSISTEMA_AI" ||
-    contextClass === "USE" ||
-    contextClass === "CIVIC" ||
-    contextClass === "DEMOCRATIC_INFRASTRUCTURE" ||
-    contextClass === "TECHNICAL" ||
-    contextClass === "GITHUB" ||
-    acceptedUserFiles.length > 0 ||
-    referenceOnlyFiles.length > 0
-      ? detectDocumentMode(effectiveMessage)
-      : "GENERAL_DOCUMENT_WORK";
-
-  const documentFamily = resolveDocumentFamily({
-    files: acceptedUserFiles,
-    memory,
-    message: effectiveMessage,
-    projectDomain: governance.projectDomain
-  });
-
-  const openAIEngine = resolveOpenAIEngineConfig({
-    message: effectiveMessage,
-    contextClass,
-    intentClass,
-    documentMode,
-    documentFamily,
-    governance
-  });
-
-  const memoryInjected = shouldInjectEvtMemoryIntoPrompt({
-    message: effectiveMessage,
-    files: acceptedUserFiles,
-    memory,
-    governance,
-    documentFamily
-  });
-
-  const effectiveMemoryUsed = memory.used && memoryInjected;
-  const effectiveMemorySource = getEffectiveMemorySource({
-    memory,
-    injected: effectiveMemoryUsed
-  });
-
-  const memoryFile = effectiveMemoryUsed ? [buildMemoryFile(memory.text)] : [];
-  const referenceOnlyContextFile = promptFileContext.referenceOnlyContextFile
-    ? [promptFileContext.referenceOnlyContextFile]
-    : [];
-
-  const promptFiles = [
-    ...memoryFile,
-    ...acceptedUserFiles,
-    ...referenceOnlyContextFile
-  ];
-
-  const governedPrev = await getLastEventReference();
-  const modernPrev = governedPrev || "GENESIS";
-  const legacyPrev = memory.lastEventId || input.continuityRef;
-
-  if (isRuntimeDiagnosticRequest(effectiveMessage)) {
-    const diagnosticState: MemoryRuntimeState = openai
-      ? "OPERATIONAL"
-      : "DEGRADED";
-
-    const memoryDecision = mapDecisionForMemory(
-      governance.decision.decision,
-      governance.filePolicy.allowed
-    );
-
-    const degradedReason = openai ? null : "OPENAI_API_KEY_NOT_CONFIGURED";
-
-    const event = buildEvent({
-      prev: legacyPrev,
-      state: diagnosticState,
-      decision: memoryDecision,
-      message: effectiveMessage,
-      contextClass: legacyContextClass,
-      documentMode,
-      documentFamily
-    });
-
-    const { modernEvent, appendResult } = await buildAndAppendGovernedEvt({
-      prev: modernPrev,
-      state: diagnosticState,
-      governance,
-      operationType: "CHAT_DIAGNOSTIC",
-      operationStatus: mapOperationStatus(
-        governance.decision.decision,
-        diagnosticState
-      )
-    });
-
-    const publicModernEvt = toPublicRuntimeEvent(modernEvent);
-
-    const responseText = buildRuntimeDiagnosticText({
-      state: diagnosticState,
-      decision: memoryDecision,
-      governanceDecision: governance.decision.decision,
-      contextClass,
-      legacyContextClass,
-      intentClass,
-      documentMode,
-      documentFamily,
-      memoryUsed: effectiveMemoryUsed,
-      memorySource: effectiveMemorySource,
-      structuredFormat,
-      event,
-      modernEvt: publicModernEvt,
-      governance,
-      engine: openAIEngine,
-      degradedReason
-    });
-
-    const memoryEvent = appendEvtMemory({
-      sessionId: input.sessionId,
-      ipr: identity.ipr,
-      entity: identity.entity,
-      message: effectiveMessage,
-      response: responseText,
-      state: diagnosticState,
-      decision: memoryDecision,
-      contextClass: legacyContextClass,
-      documentMode,
-      documentFamily,
-      files: acceptedUserFiles,
-      prevEventId: event.evt,
-      governedEvt: publicModernEvt.evt,
-      governedHash: publicModernEvt.trace.hash,
-      projectDomain: governance.projectDomain.projectDomain,
-      activeDomains: governance.projectDomain.activeDomains,
-      engine: openAIEngine,
-      engineProvider: openAIEngine.provider,
-      modelUsed: openAIEngine.modelUsed,
-      nativeEngineBinding: true
-    });
-
-    const memoryAppendResult = await appendEvtMemoryEvent(memoryEvent);
-
-    const opc = await createAndAppendOpcForChat({
-      sessionId: input.sessionId,
-      identity,
-      message: effectiveMessage,
-      files: acceptedUserFiles,
-      responseText,
-      state: diagnosticState,
-      event,
-      modernEvt: publicModernEvt,
-      memoryEvent,
-      governance,
-      engine: openAIEngine
-    });
-
-    return NextResponse.json({
-      ok: true,
-      sessionId: input.sessionId,
-      response: responseText.trim(),
-      state: diagnosticState,
-      decision: memoryDecision,
-      governanceDecision: governance.decision.decision,
-      engine: buildOpenAIEnginePayload(openAIEngine),
-      modelUsed: openAIEngine.modelUsed,
-      projectDomain: governance.projectDomain.projectDomain,
-      activeDomains: governance.projectDomain.activeDomains,
-      domainType: governance.projectDomain.domainType,
-      hbceModule: governance.hbceModule.module,
-      activeModules: governance.hbceModule.activeModules,
-      moduleType: governance.hbceModule.moduleType,
-      contextClass,
-      legacyContextClass,
-      intentClass,
-      documentMode,
-      documentFamily,
-      evtIprMemoryUsed: effectiveMemoryUsed,
-      memorySource: effectiveMemorySource,
-      structuredFormat,
-      activeFiles: promptFiles.map((file) => file.name || "unnamed"),
-      referenceOnlyFiles: referenceOnlyFiles.map((file) => file.name || "unnamed"),
-      identity: buildIdentityPayload(identity),
-      collections: FIVE_COLLECTIONS,
-      modules: SEVEN_HBCE_MODULES,
-      strategicDoctrines: STRATEGIC_DOCTRINES,
-      event,
-      memoryEvent,
-      governedEvent: publicModernEvt,
-      evt: {
-        ok: true,
-        evt: event.evt,
-        prev: event.prev,
-        hash: event.anchors.publicHash,
-        publicHash: event.anchors.publicHash,
-        fullHash: event.anchors.fullHash
-      },
-      governedEvt: {
-        ok: appendResult?.status === "APPENDED",
-        evt: publicModernEvt.evt,
-        prev: publicModernEvt.prev,
-        project: publicModernEvt.project.domain,
-        activeDomains: publicModernEvt.project.active_domains,
-        hash: publicModernEvt.trace.hash,
-        appendStatus: appendResult?.status ?? "NOT_REQUIRED",
-        appendReason: appendResult?.reason ?? "EVT append not required."
-      },
-      opc: {
-        ok: opc.append.ok,
-        proofId: opc.publicProof.proofId,
-        chainHash: opc.publicProof.chainHash,
-        engine: opc.publicProof.engine ?? buildOpenAIEnginePayload(openAIEngine),
-        engineHash: opc.publicProof.engineHash ?? null,
-        modelUsed: opc.publicProof.engine?.modelUsed ?? openAIEngine.modelUsed,
-        memoryHash: opc.publicProof.memoryHash,
-        auditStatus: opc.publicProof.auditStatus,
-        verificationStatus: opc.publicProof.verificationStatus,
-        legalCertification: opc.publicProof.legalCertification,
-        appendStatus: opc.append.status,
-        appendReason: opc.append.reason,
-        publicProof: opc.publicProof
-      },
-      memory: {
-        available: memory.used,
-        injected: effectiveMemoryUsed,
-        source: effectiveMemorySource,
-        rawSource: memory.source,
-        lastEventId: memory.lastEventId,
-        continuityRef: input.continuityRef,
-        event: memoryEvent.evt,
-        memoryHash: memoryEvent.anchors.memoryHash,
-        appendStatus: memoryAppendResult.status,
-        appendReason: memoryAppendResult.reason,
-        governedEvt: memoryEvent.governedEvt,
-        governedHash: memoryEvent.governedHash,
-        engineProvider: memoryEvent.engineProvider,
-        modelUsed: memoryEvent.modelUsed,
-        engineHash: memoryEvent.engineHash,
-        opcEngineHash: memoryEvent.opcEngineHash,
-        nativeEngineBinding: memoryEvent.nativeEngineBinding
-      },
-      governance: {
-        projectDomain: governance.projectDomain.projectDomain,
-        activeDomains: governance.projectDomain.activeDomains,
-        domainType: governance.projectDomain.domainType,
-        hbceModule: governance.hbceModule.module,
-        activeModules: governance.hbceModule.activeModules,
-        strategicDoctrines: STRATEGIC_DOCTRINES,
-        moduleType: governance.hbceModule.moduleType,
-        moduleConfidence: governance.hbceModule.confidence,
-        moduleReasons: governance.hbceModule.reasons,
-        dataClass: governance.data.dataClass,
-        containsCivicSensitiveData: governance.data.containsCivicSensitiveData,
-        containsDemocraticChoiceData:
-          governance.data.containsDemocraticChoiceData,
-        policyStatus: governance.policy.status,
-        policyOutcome: governance.policy.outcome,
-        policyReference: governance.policy.policyReference,
-        riskClass: governance.risk.riskClass,
-        riskScore: governance.risk.riskScore,
-        oversight: governance.oversight.state,
-        requiredRole: governance.oversight.requiredRole,
-        iprBinding: governance.decision.iprBinding,
-        evtRequired: governance.decision.evtRequired,
-        memoryRequired: governance.decision.memoryRequired,
-        opcRequired: governance.decision.opcRequired,
-        auditRequired: governance.decision.auditRequired,
-        failClosed: governance.decision.failClosed,
-        civicBoundary:
-          governance.projectDomain.projectDomain === "U.S.E."
-            ? USE_DEMOCRATIC_BOUNDARY
-            : undefined,
-        aiGovernanceBoundary:
-          governance.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
-            ? HBCE_AI_BOUNDARY
-            : undefined,
-        aerospaceBoundary: isAerospaceGovernanceBoundaryQuestion(effectiveMessage)
-          ? "HBCE/IPR can govern, trace, audit and certify operational chains, but must not be described as flight-control, targeting or vehicle-guidance software."
-          : undefined,
-        filePolicy: {
-          allowed: governance.filePolicy.allowed,
-          allowedCount: governance.filePolicy.allowedCount,
-          rejectedCount: governance.filePolicy.rejectedCount,
-          referenceOnlyCount: governance.filePolicy.referenceOnlyCount,
-          blockingRejectedCount: governance.filePolicy.blockingRejectedCount,
-          reasons: governance.filePolicy.reasons
-        }
-      },
-      diagnostics: {
-        openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
-        engineProvider: openAIEngine.provider,
-        engineRole: openAIEngine.role,
-        runtimeRole: openAIEngine.runtimeRole,
-        engineApiMode: openAIEngine.apiMode,
-        engineMode: openAIEngine.mode,
-        modelUsed: openAIEngine.modelUsed,
-        standardModel: openAIEngine.standardModel,
-        deepModel: openAIEngine.deepModel,
-        projectBirthDate: openAIEngine.projectBirthDate,
-        degradedReason,
-        evtIprMemoryUsed: effectiveMemoryUsed,
-        memorySource: effectiveMemorySource,
-        memoryAvailable: memory.used,
-        memoryInjected,
-        memoryLastEventId: memory.lastEventId,
-        continuityRef: input.continuityRef,
-        memoryEvent: memoryEvent.evt,
-        memoryHash: memoryEvent.anchors.memoryHash,
-        memoryAppendStatus: memoryAppendResult.status,
-        opcProofId: opc.publicProof.proofId,
-        opcChainHash: opc.publicProof.chainHash,
-        opcEngineHash: opc.publicProof.engineHash ?? null,
-        opcModelUsed: opc.publicProof.engine?.modelUsed ?? openAIEngine.modelUsed,
-        opcAppendStatus: opc.append.status,
-        opcVerificationStatus: opc.publicProof.verificationStatus,
-        hbceModule: governance.hbceModule.module,
-        activeModules: governance.hbceModule.activeModules,
-        strategicDoctrines: STRATEGIC_DOCTRINES,
-        referenceOnlyFiles: referenceOnlyFiles.map((file) => file.name || "unnamed"),
-        structuredFormat
-      }
-    });
-  }
-
-  let generated: GeneratedResponse;
-
-  if (!governance.filePolicy.allowed) {
-    generated = buildFilePolicyBlockedResponse({
-      filePolicy: governance.filePolicy,
-      projectDomain: governance.projectDomain
-    });
-  } else if (
-    governance.decision.decision === "BLOCK" ||
-    !governance.decision.allowModelCall
-  ) {
-    generated = buildGovernanceLimitedResponse({
-      decision: governance.decision,
-      policy: governance.policy,
-      risk: governance.risk,
-      oversight: governance.oversight,
-      projectDomain: governance.projectDomain,
-      hbceModule: governance.hbceModule
-    });
-  } else if (isManuelColettaIdentityQuestion(effectiveMessage)) {
-    generated = {
-      text: buildManuelColettaProfileResponse(),
-      state: "OPERATIONAL",
-      degradedReason: null
-    };
-  } else if (isRuntimeQualityComplaintQuestion(effectiveMessage)) {
-    generated = {
-      text: buildRuntimeQualityResponse(),
-      state: "OPERATIONAL",
-      degradedReason: null
-    };
-  } else if (isFailClosedDoctrineQuestion(effectiveMessage)) {
-    generated = {
-      text: buildFailClosedDoctrineResponse(),
-      state: "OPERATIONAL",
-      degradedReason: null
-    };
-  } else {
-    generated = await generateResponse({
-      identity,
-      message: effectiveMessage,
-      contextClass,
-      documentMode,
-      documentFamily,
-      files: promptFiles,
-      memoryText: effectiveMemoryUsed ? memory.text : "",
-      memoryUsed: effectiveMemoryUsed,
-      memorySource: effectiveMemorySource,
-      structuredFormat,
-      governanceFrame: governance,
-      engine: openAIEngine
-    });
-
-    generated = applyReferenceOnlyDisclosure(generated, referenceOnlyFiles);
-  }
-
-  const memoryDecision = mapDecisionForMemory(
-    governance.decision.decision,
-    governance.filePolicy.allowed
-  );
-
-  const event = buildEvent({
-    prev: legacyPrev,
-    state: generated.state,
-    decision: memoryDecision,
-    message: effectiveMessage,
-    contextClass: legacyContextClass,
-    documentMode,
-    documentFamily
-  });
-
-  const { modernEvent, appendResult } = await buildAndAppendGovernedEvt({
-    prev: modernPrev,
-    state: generated.state,
-    governance,
-    operationType: "CHAT_OPERATION",
-    operationStatus: mapOperationStatus(
-      governance.decision.decision,
-      generated.state
-    )
-  });
-
-  const publicModernEvt = toPublicRuntimeEvent(modernEvent);
-
-  const memoryEvent = appendEvtMemory({
-    sessionId: input.sessionId,
-    ipr: identity.ipr,
-    entity: identity.entity,
-    message: effectiveMessage,
-    response: generated.text,
-    state: generated.state,
-    decision: memoryDecision,
-    contextClass: legacyContextClass,
-    documentMode,
-    documentFamily,
-    files: acceptedUserFiles,
-    prevEventId: event.evt,
-    governedEvt: publicModernEvt.evt,
-    governedHash: publicModernEvt.trace.hash,
-    projectDomain: governance.projectDomain.projectDomain,
-    activeDomains: governance.projectDomain.activeDomains,
-    engine: openAIEngine,
-    engineProvider: openAIEngine.provider,
-    modelUsed: openAIEngine.modelUsed,
-    nativeEngineBinding: true
-  });
-
-  const memoryAppendResult = await appendEvtMemoryEvent(memoryEvent);
-
-  const opc = await createAndAppendOpcForChat({
-    sessionId: input.sessionId,
-    identity,
-    message: effectiveMessage,
-    files: acceptedUserFiles,
-    responseText: generated.text,
-    state: generated.state,
-    event,
-    modernEvt: publicModernEvt,
-    memoryEvent,
-    governance,
-    engine: openAIEngine
-  });
-
-  const exposeRuntime = shouldExposeTechnicalFrame(effectiveMessage);
-
-  const responseText = exposeRuntime
-    ? buildTechnicalFrame({
-        response: generated.text,
-        state: generated.state,
-        decision: memoryDecision,
-        governanceDecision: governance.decision.decision,
-        contextClass,
-        legacyContextClass,
-        intentClass,
-        documentMode,
-        documentFamily,
-        memoryUsed: effectiveMemoryUsed,
-        memorySource: effectiveMemorySource,
-        structuredFormat,
-        event,
-        modernEvt: publicModernEvt,
-        memoryEventId: memoryEvent.evt,
-        memoryHash: memoryEvent.anchors.memoryHash,
-        memoryAppendStatus: memoryAppendResult.status,
-        opcProofId: opc.publicProof.proofId,
-        opcChainHash: opc.publicProof.chainHash,
-        opcEngineHash: opc.publicProof.engineHash,
-        governance,
-        engine: openAIEngine,
-        degradedReason: generated.degradedReason
-      })
-    : generated.text;
-
-  return NextResponse.json({
-    ok: true,
-    sessionId: input.sessionId,
-    response: responseText.trim(),
-    state: generated.state,
-    decision: memoryDecision,
-    governanceDecision: governance.decision.decision,
-    engine: buildOpenAIEnginePayload(openAIEngine),
-    modelUsed: openAIEngine.modelUsed,
-    projectDomain: governance.projectDomain.projectDomain,
-    activeDomains: governance.projectDomain.activeDomains,
-    domainType: governance.projectDomain.domainType,
-    hbceModule: governance.hbceModule.module,
-    activeModules: governance.hbceModule.activeModules,
-    moduleType: governance.hbceModule.moduleType,
-    contextClass,
-    legacyContextClass,
-    intentClass,
-    documentMode,
-    documentFamily,
-    evtIprMemoryUsed: effectiveMemoryUsed,
-    memorySource: effectiveMemorySource,
-    structuredFormat,
-    activeFiles: promptFiles.map((file) => file.name || "unnamed"),
-    referenceOnlyFiles: referenceOnlyFiles.map((file) => file.name || "unnamed"),
-    identity: buildIdentityPayload(identity),
-    collections: FIVE_COLLECTIONS,
-    modules: SEVEN_HBCE_MODULES,
-    strategicDoctrines: STRATEGIC_DOCTRINES,
-    event,
-    memoryEvent,
-    governedEvent: publicModernEvt,
-    evt: {
-      ok: true,
-      evt: event.evt,
-      prev: event.prev,
-      hash: event.anchors.publicHash,
-      publicHash: event.anchors.publicHash,
-      fullHash: event.anchors.fullHash
-    },
-    governedEvt: {
-      ok: appendResult?.status === "APPENDED",
-      evt: publicModernEvt.evt,
-      prev: publicModernEvt.prev,
-      project: publicModernEvt.project.domain,
-      activeDomains: publicModernEvt.project.active_domains,
-      hash: publicModernEvt.trace.hash,
-      appendStatus: appendResult?.status ?? "NOT_REQUIRED",
-      appendReason: appendResult?.reason ?? "EVT append not required."
-    },
-    opc: {
-      ok: opc.append.ok,
-      proofId: opc.publicProof.proofId,
-      chainHash: opc.publicProof.chainHash,
-      engine: opc.publicProof.engine ?? buildOpenAIEnginePayload(openAIEngine),
-      engineHash: opc.publicProof.engineHash ?? null,
-      modelUsed: opc.publicProof.engine?.modelUsed ?? openAIEngine.modelUsed,
-      memoryHash: opc.publicProof.memoryHash,
-      auditStatus: opc.publicProof.auditStatus,
-      verificationStatus: opc.publicProof.verificationStatus,
-      legalCertification: opc.publicProof.legalCertification,
-      appendStatus: opc.append.status,
-      appendReason: opc.append.reason,
-      publicProof: opc.publicProof
-    },
-    memory: {
-      available: memory.used,
-      injected: effectiveMemoryUsed,
-      source: effectiveMemorySource,
-      rawSource: memory.source,
-      lastEventId: memory.lastEventId,
-      continuityRef: input.continuityRef,
-      event: memoryEvent.evt,
-      memoryHash: memoryEvent.anchors.memoryHash,
-      appendStatus: memoryAppendResult.status,
-      appendReason: memoryAppendResult.reason,
-      governedEvt: memoryEvent.governedEvt,
-      governedHash: memoryEvent.governedHash,
-      engineProvider: memoryEvent.engineProvider,
-      modelUsed: memoryEvent.modelUsed,
-      engineHash: memoryEvent.engineHash,
-      opcEngineHash: memoryEvent.opcEngineHash,
-      nativeEngineBinding: memoryEvent.nativeEngineBinding
-    },
-    governance: {
-      projectDomain: governance.projectDomain.projectDomain,
-      activeDomains: governance.projectDomain.activeDomains,
-      domainType: governance.projectDomain.domainType,
-      domainConfidence: governance.projectDomain.confidence,
-      domainReasons: governance.projectDomain.reasons,
-      hbceModule: governance.hbceModule.module,
-      activeModules: governance.hbceModule.activeModules,
-      strategicDoctrines: STRATEGIC_DOCTRINES,
-      moduleType: governance.hbceModule.moduleType,
-      moduleConfidence: governance.hbceModule.confidence,
-      moduleReasons: governance.hbceModule.reasons,
-      dataClass: governance.data.dataClass,
-      containsSecret: governance.data.containsSecret,
-      containsPersonalData: governance.data.containsPersonalData,
-      containsSecuritySensitiveData:
-        governance.data.containsSecuritySensitiveData,
-      containsCivicSensitiveData: governance.data.containsCivicSensitiveData,
-      containsDemocraticChoiceData:
-        governance.data.containsDemocraticChoiceData,
-      policyStatus: governance.policy.status,
-      policyOutcome: governance.policy.outcome,
-      policyReference: governance.policy.policyReference,
-      policyReasons: governance.policy.reasons,
-      riskClass: governance.risk.riskClass,
-      riskScore: governance.risk.riskScore,
-      riskReasons: governance.risk.reasons,
-      oversight: governance.oversight.state,
-      requiredRole: governance.oversight.requiredRole,
-      oversightReason: governance.oversight.reason,
-      iprBinding: governance.decision.iprBinding,
-      evtRequired: governance.decision.evtRequired,
-      memoryRequired: governance.decision.memoryRequired,
-      opcRequired: governance.decision.opcRequired,
-      auditRequired: governance.decision.auditRequired,
-      failClosed: governance.decision.failClosed,
-      civicBoundary:
-        governance.projectDomain.projectDomain === "U.S.E."
-          ? USE_DEMOCRATIC_BOUNDARY
-          : undefined,
-      aiGovernanceBoundary:
-        governance.projectDomain.projectDomain === "HBCE_ECOSISTEMA_AI"
-          ? HBCE_AI_BOUNDARY
-          : undefined,
-      aerospaceBoundary: isAerospaceGovernanceBoundaryQuestion(effectiveMessage)
-        ? "HBCE/IPR can govern, trace, audit and certify operational chains, but must not be described as flight-control, targeting or vehicle-guidance software."
-        : undefined,
-      filePolicy: {
-        allowed: governance.filePolicy.allowed,
-        allowedCount: governance.filePolicy.allowedCount,
-        rejectedCount: governance.filePolicy.rejectedCount,
-        referenceOnlyCount: governance.filePolicy.referenceOnlyCount,
-        blockingRejectedCount: governance.filePolicy.blockingRejectedCount,
-        reasons: governance.filePolicy.reasons
-      }
-    },
-    diagnostics: {
-      openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
-      engineProvider: openAIEngine.provider,
-      engineRole: openAIEngine.role,
-      runtimeRole: openAIEngine.runtimeRole,
-      engineApiMode: openAIEngine.apiMode,
-      engineMode: openAIEngine.mode,
-      modelUsed: openAIEngine.modelUsed,
-      standardModel: openAIEngine.standardModel,
-      deepModel: openAIEngine.deepModel,
-      projectBirthDate: openAIEngine.projectBirthDate,
-      degradedReason: generated.degradedReason || null,
-      evtIprMemoryUsed: effectiveMemoryUsed,
-      memorySource: effectiveMemorySource,
-      memoryAvailable: memory.used,
-      memoryInjected,
-      memoryLastEventId: memory.lastEventId,
-      continuityRef: input.continuityRef,
-      memoryEvent: memoryEvent.evt,
-      memoryHash: memoryEvent.anchors.memoryHash,
-      memoryAppendStatus: memoryAppendResult.status,
-      opcProofId: opc.publicProof.proofId,
-      opcChainHash: opc.publicProof.chainHash,
-      opcEngineHash: opc.publicProof.engineHash ?? null,
-      opcModelUsed: opc.publicProof.engine?.modelUsed ?? openAIEngine.modelUsed,
-      opcAppendStatus: opc.append.status,
-      opcVerificationStatus: opc.publicProof.verificationStatus,
-      hbceModule: governance.hbceModule.module,
-      activeModules: governance.hbceModule.activeModules,
-      strategicDoctrines: STRATEGIC_DOCTRINES,
-      referenceOnlyFiles: referenceOnlyFiles.map((file) => file.name || "unnamed"),
-      structuredFormat
-    }
-  });
-}
+function mapOpcRuntimeState(state: MemoryRuntimeState
