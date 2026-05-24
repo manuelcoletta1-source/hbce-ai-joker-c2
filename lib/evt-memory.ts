@@ -1,12 +1,20 @@
 import { createHash, randomUUID } from "crypto";
 
 import type {
+  CognitiveEngineProvider,
+  CognitiveEngineSnapshot,
   ProjectDomain,
   RuntimeDecision,
   RuntimeState
 } from "./runtime-types";
 
-export type { ProjectDomain, RuntimeDecision, RuntimeState } from "./runtime-types";
+export type {
+  CognitiveEngineProvider,
+  CognitiveEngineSnapshot,
+  ProjectDomain,
+  RuntimeDecision,
+  RuntimeState
+} from "./runtime-types";
 
 export type DocumentFamily =
   | "APOKALYPSIS"
@@ -53,6 +61,13 @@ export type EvtMemoryInput = {
   activeDomains?: ProjectDomain[];
   opcProofId?: string | null;
   opcChainHash?: string | null;
+  opcEngineHash?: string | null;
+  opcModelUsed?: string | null;
+  engine?: CognitiveEngineSnapshot | null;
+  engineHash?: string | null;
+  engineProvider?: CognitiveEngineProvider | null;
+  modelUsed?: string | null;
+  nativeEngineBinding?: boolean;
 };
 
 export type EvtMemoryEvent = {
@@ -80,11 +95,19 @@ export type EvtMemoryEvent = {
   governedHash: string | null;
   opcProofId: string | null;
   opcChainHash: string | null;
+  opcEngineHash: string | null;
+  engine: CognitiveEngineSnapshot | null;
+  engineHash: string | null;
+  engineProvider: CognitiveEngineProvider | null;
+  modelUsed: string | null;
+  nativeEngineBinding: boolean;
   anchors: {
     inputHash: string;
     outputHash: string;
     traceHash: string;
     memoryHash: string;
+    engineHash: string | null;
+    opcChainHash: string | null;
   };
   boundary: {
     legalCertification: false;
@@ -111,6 +134,11 @@ export type SemanticState = {
   lastGovernedHash: string | null;
   lastOpcProofId: string | null;
   lastOpcChainHash: string | null;
+  lastOpcEngineHash: string | null;
+  lastEngineHash: string | null;
+  lastEngineProvider: CognitiveEngineProvider | null;
+  lastModelUsed: string | null;
+  nativeEngineBinding: boolean;
   updatedAt: string;
 };
 
@@ -312,7 +340,10 @@ function redactSensitiveMemoryText(value: string): string {
     .replace(/(token\s*[:=]\s*)[^\s]+/gi, "$1[REDACTED]")
     .replace(/(password\s*[:=]\s*)[^\s]+/gi, "$1[REDACTED]")
     .replace(/(private[_-]?key\s*[:=]\s*)[\s\S]{0,120}/gi, "$1[REDACTED]")
-    .replace(/-----BEGIN [A-Z ]+PRIVATE KEY-----[\s\S]*?-----END [A-Z ]+PRIVATE KEY-----/g, "[REDACTED_PRIVATE_KEY]");
+    .replace(
+      /-----BEGIN [A-Z ]+PRIVATE KEY-----[\s\S]*?-----END [A-Z ]+PRIVATE KEY-----/g,
+      "[REDACTED_PRIVATE_KEY]"
+    );
 }
 
 function detectIdentityChoiceLinkage(text: string): boolean {
@@ -403,10 +434,17 @@ function detectTags(text: string): string[] {
     "ipr ai audit trail",
     "model governance",
     "openai",
+    "gpt",
+    "gpt-5.5",
+    "cognitive engine",
+    "engine hash",
+    "enginehash",
+    "native engine binding",
     "anthropic",
     "claude",
     "gemini",
     "mistral",
+    "deepseek",
     "hbce",
     "joker-c2",
     "ai joker-c2",
@@ -467,6 +505,9 @@ export function detectDocumentFamilyFromText(text: string): DocumentFamily {
     lower.includes("mistral") ||
     lower.includes("meta ai") ||
     lower.includes("llama") ||
+    lower.includes("deepseek") ||
+    lower.includes("cognitive engine") ||
+    lower.includes("engine hash") ||
     lower.includes("matrix ai governance")
   ) {
     return "HBCE_ECOSISTEMA_AI";
@@ -502,6 +543,9 @@ export function detectDocumentFamilyFromText(text: string): DocumentFamily {
     lower.includes("opc proof") ||
     lower.includes("proof receipt") ||
     lower.includes("evt/ipr") ||
+    lower.includes("enginehash") ||
+    lower.includes("engine hash") ||
+    lower.includes("native engine binding") ||
     (lower.includes("ipr") &&
       (lower.includes("evt") ||
         lower.includes("runtime") ||
@@ -594,6 +638,31 @@ function inferActiveDomains(input: EvtMemoryInput): ProjectDomain[] {
   return [projectDomain];
 }
 
+function resolveEngineProvider(
+  input: EvtMemoryInput
+): CognitiveEngineProvider | null {
+  return (
+    input.engine?.provider ||
+    input.engineProvider ||
+    (input.modelUsed || input.opcModelUsed ? "OpenAI" : null)
+  );
+}
+
+function resolveModelUsed(input: EvtMemoryInput): string | null {
+  return input.engine?.modelUsed || input.modelUsed || input.opcModelUsed || null;
+}
+
+function resolveEngineHash(input: EvtMemoryInput): string | null {
+  return input.engineHash || input.opcEngineHash || null;
+}
+
+function resolveNativeEngineBinding(input: EvtMemoryInput): boolean {
+  return Boolean(
+    input.nativeEngineBinding ||
+      (resolveEngineProvider(input) && resolveModelUsed(input) && resolveEngineHash(input))
+  );
+}
+
 function inferCentralThesis(input: EvtMemoryInput): string | null {
   const userFiles = getReadableUserFiles(input.files);
 
@@ -614,7 +683,9 @@ function inferCentralThesis(input: EvtMemoryInput): string | null {
     lower.includes("governance ai") ||
     lower.includes("ai audit") ||
     lower.includes("ipr ai audit trail") ||
-    lower.includes("model governance")
+    lower.includes("model governance") ||
+    lower.includes("cognitive engine") ||
+    lower.includes("engine hash")
   ) {
     return "HBCE ECOSISTEMA AI tratta il governo dell’intelligenza artificiale dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue.";
   }
@@ -636,9 +707,12 @@ function inferCentralThesis(input: EvtMemoryInput): string | null {
     lower.includes("identity primary record") ||
     lower.includes("opc proof") ||
     lower.includes("proof receipt") ||
+    lower.includes("enginehash") ||
+    lower.includes("engine hash") ||
+    lower.includes("native engine binding") ||
     (lower.includes("ipr") && lower.includes("evt"))
   ) {
-    return "AI JOKER-C2 tratta identità operativa, IPR, EVT, memoria EVT/IPR-bound, OPC proof receipt, governance runtime, decisione, rischio, policy, ledger, verifica e continuità operativa.";
+    return "AI JOKER-C2 tratta identità operativa, IPR, EVT, memoria EVT/IPR-bound, OPC proof receipt, cognitive engine binding, engine hash, governance runtime, decisione, rischio, policy, ledger, verifica e continuità operativa.";
   }
 
   if (
@@ -688,7 +762,9 @@ function inferUserIntent(message: string): string {
     lower.includes("governance ai") ||
     lower.includes("ai audit") ||
     lower.includes("model governance") ||
-    lower.includes("modelli ai")
+    lower.includes("modelli ai") ||
+    lower.includes("engine hash") ||
+    lower.includes("cognitive engine")
   ) {
     return "ai_governance_design";
   }
@@ -764,6 +840,10 @@ function buildMemoryDelta(input: EvtMemoryInput): string {
   const identityChoiceLinkageBlocked = detectIdentityChoiceLinkage(
     `${input.message}\n${input.response}`
   );
+  const engineProvider = resolveEngineProvider(input);
+  const modelUsed = resolveModelUsed(input);
+  const engineHash = resolveEngineHash(input);
+  const nativeEngineBinding = resolveNativeEngineBinding(input);
 
   const parts = [
     `Intento utente rilevato: ${intent}.`,
@@ -776,6 +856,12 @@ function buildMemoryDelta(input: EvtMemoryInput): string {
     input.governedHash ? `Hash governato collegato: ${input.governedHash}.` : "",
     input.opcProofId ? `OPC proof receipt collegato: ${input.opcProofId}.` : "",
     input.opcChainHash ? `OPC chain hash collegato: ${input.opcChainHash}.` : "",
+    engineProvider ? `Cognitive engine provider collegato: ${engineProvider}.` : "",
+    modelUsed ? `Cognitive engine model collegato: ${modelUsed}.` : "",
+    engineHash ? `OPC engine hash collegato: ${engineHash}.` : "",
+    nativeEngineBinding
+      ? "Native engine binding presente nella memoria operativa."
+      : "Native engine binding non disponibile o legacy-compatible.",
     centralThesis ? `Tesi centrale incorporata: ${centralThesis}` : "",
     identityChoiceLinkageBlocked
       ? "Regola di sicurezza: rilevato rischio di collegamento identità-scelta democratica; la memoria deve preservare solo il vincolo di blocco/salvaguardia, non il contenuto della scelta."
@@ -787,7 +873,7 @@ function buildMemoryDelta(input: EvtMemoryInput): string {
       ? `Regola di continuità U.S.E.: preservare ${USE_DEMOCRATIC_BOUNDARY}`
       : "",
     input.documentFamily === "HBCE_RUNTIME"
-      ? "Regola di continuità: nelle chat successive, riferimenti a JOKER-C2, IPR, EVT, memoria, OPC, proof receipt, ledger, runtime o fail-closed devono essere ricondotti alla continuità operativa HBCE_RUNTIME se non viene indicato un nuovo contesto."
+      ? "Regola di continuità: nelle chat successive, riferimenti a JOKER-C2, IPR, EVT, memoria, OPC, proof receipt, ledger, runtime, cognitive engine, engine hash o fail-closed devono essere ricondotti alla continuità operativa HBCE_RUNTIME se non viene indicato un nuovo contesto."
       : "",
     input.documentFamily === "APOKALYPSIS"
       ? "Regola di continuità: nelle chat successive, riferimenti come 'questa opera', 'questo testo', 'Apokalypsis', 'i punti forti', 'a chi serve' devono riferirsi al documento APOKALYPSIS attivo se non viene indicato un nuovo documento."
@@ -806,17 +892,25 @@ function buildMemoryDelta(input: EvtMemoryInput): string {
 function buildNextContext(input: EvtMemoryInput): string {
   const activeDocument = getActiveDocument(input.files);
   const intent = inferUserIntent(input.message);
+  const engineProvider = resolveEngineProvider(input);
+  const modelUsed = resolveModelUsed(input);
+  const engineHash = resolveEngineHash(input);
 
   if (input.documentFamily === "HBCE_ECOSISTEMA_AI") {
     return [
       activeDocument
         ? `Documento attivo da mantenere: ${activeDocument}.`
         : "Documento attivo da mantenere: HBCE ECOSISTEMA AI.",
-      "Contesto HBCE ECOSISTEMA AI da mantenere: governance dell’intelligenza artificiale, modelli esterni, IPR AI Audit Trail, EVT, OPC, human oversight, fail-closed, AI/cyber governance e runtime AI governato.",
+      "Contesto HBCE ECOSISTEMA AI da mantenere: governance dell’intelligenza artificiale, modelli esterni, IPR AI Audit Trail, EVT, OPC, human oversight, fail-closed, AI/cyber governance, engine hash e runtime AI governato.",
+      engineProvider ? `Cognitive engine provider attivo: ${engineProvider}.` : "",
+      modelUsed ? `Modello cognitivo attivo: ${modelUsed}.` : "",
+      engineHash ? `Engine hash OPC attivo: ${engineHash}.` : "",
       `Boundary AI governance da preservare: ${HBCE_AI_BOUNDARY}`,
       `Ultimo intento utente: ${intent}.`,
       "Se l'utente usa riferimenti ellittici come 'ecosistema AI', 'governance AI', 'modelli AI', 'OpenAI', 'Anthropic', 'audit AI', 'runtime governato', recuperare questa memoria HBCE_ECOSISTEMA_AI."
-    ].join(" ");
+    ]
+      .filter(Boolean)
+      .join(" ");
   }
 
   if (input.documentFamily === "USE") {
@@ -833,11 +927,16 @@ function buildNextContext(input: EvtMemoryInput): string {
 
   if (input.documentFamily === "HBCE_RUNTIME") {
     return [
-      "Contesto runtime da mantenere: AI JOKER-C2 / IPR / EVT / EVT-IPR memory / OPC / ledger / fail-closed.",
-      "Rilancio semantico: sessionId stabile, memoria IPR-bound, memoria canonica, governed EVT, OPC proof receipt, ledger persistente, route chat, policy, risk, oversight.",
+      "Contesto runtime da mantenere: AI JOKER-C2 / IPR / EVT / EVT-IPR memory / OPC / cognitive engine / engine hash / ledger / fail-closed.",
+      "Rilancio semantico: sessionId stabile, memoria IPR-bound, memoria canonica, governed EVT, OPC proof receipt, native engine binding, ledger persistente, route chat, policy, risk, oversight.",
+      engineProvider ? `Cognitive engine provider attivo: ${engineProvider}.` : "",
+      modelUsed ? `Modello cognitivo attivo: ${modelUsed}.` : "",
+      engineHash ? `Engine hash OPC attivo: ${engineHash}.` : "",
       `Ultimo intento utente: ${intent}.`,
-      "Se l'utente usa riferimenti ellittici come 'il danno', 'riparalo', 'la memoria', 'la route', 'i nuovi file', recuperare questa memoria HBCE_RUNTIME."
-    ].join(" ");
+      "Se l'utente usa riferimenti ellittici come 'il danno', 'riparalo', 'la memoria', 'la route', 'i nuovi file', 'engine hash', 'modello attivo', recuperare questa memoria HBCE_RUNTIME."
+    ]
+      .filter(Boolean)
+      .join(" ");
   }
 
   if (input.documentFamily === "APOKALYPSIS") {
@@ -853,6 +952,9 @@ function buildNextContext(input: EvtMemoryInput): string {
 
   return [
     activeDocument ? `Documento attivo da mantenere: ${activeDocument}.` : "",
+    engineProvider ? `Cognitive engine provider attivo: ${engineProvider}.` : "",
+    modelUsed ? `Modello cognitivo attivo: ${modelUsed}.` : "",
+    engineHash ? `Engine hash OPC attivo: ${engineHash}.` : "",
     `Ultimo intento utente: ${intent}.`,
     "Usare questa memoria come contesto di continuità nelle chat successive se la richiesta è riferita al documento o al progetto attivo."
   ]
@@ -881,6 +983,11 @@ function createInitialSemanticState(
     lastGovernedHash: null,
     lastOpcProofId: null,
     lastOpcChainHash: null,
+    lastOpcEngineHash: null,
+    lastEngineHash: null,
+    lastEngineProvider: null,
+    lastModelUsed: null,
+    nativeEngineBinding: false,
     updatedAt: nowIso()
   };
 }
@@ -919,13 +1026,15 @@ function updateSemanticState(
   }
 
   if (documentFamily === "USE") {
-    newReferenceRules.push(`"U.S.E.", "voto digitale federato", "consultazione pubblica", "referendum" = contesto U.S.E. attivo`);
+    newReferenceRules.push(
+      `"U.S.E.", "voto digitale federato", "consultazione pubblica", "referendum" = contesto U.S.E. attivo`
+    );
     newReferenceRules.push(`regola democratica U.S.E. = ${USE_DEMOCRATIC_BOUNDARY}`);
   }
 
   if (documentFamily === "HBCE_RUNTIME") {
     newReferenceRules.push(
-      `"JOKER-C2", "IPR", "EVT", "memoria", "OPC", "proof receipt", "ledger", "runtime", "fail-closed" = contesto HBCE_RUNTIME attivo`
+      `"JOKER-C2", "IPR", "EVT", "memoria", "OPC", "proof receipt", "ledger", "runtime", "cognitive engine", "engine hash", "model used", "fail-closed" = contesto HBCE_RUNTIME attivo`
     );
   }
 
@@ -939,6 +1048,18 @@ function updateSemanticState(
 
   if (event.opcProofId) {
     newReferenceRules.push(`ultimo OPC proof receipt = ${event.opcProofId}`);
+  }
+
+  if (event.opcChainHash) {
+    newReferenceRules.push(`ultimo OPC chain hash = ${event.opcChainHash}`);
+  }
+
+  if (event.engineHash) {
+    newReferenceRules.push(`ultimo OPC engine hash = ${event.engineHash}`);
+  }
+
+  if (event.modelUsed) {
+    newReferenceRules.push(`ultimo modello cognitivo = ${event.modelUsed}`);
   }
 
   const accumulatedMeaning = [previous.accumulatedMeaning, event.memoryDelta]
@@ -959,13 +1080,18 @@ function updateSemanticState(
       [...previous.semanticTags, ...event.semanticTags],
       48
     ),
-    referenceRules: mergeUnique(newReferenceRules, 24),
+    referenceRules: mergeUnique(newReferenceRules, 28),
     accumulatedMeaning,
     lastEventId: event.evt,
     lastGovernedEvt: event.governedEvt || previous.lastGovernedEvt,
     lastGovernedHash: event.governedHash || previous.lastGovernedHash,
     lastOpcProofId: event.opcProofId || previous.lastOpcProofId,
     lastOpcChainHash: event.opcChainHash || previous.lastOpcChainHash,
+    lastOpcEngineHash: event.opcEngineHash || previous.lastOpcEngineHash,
+    lastEngineHash: event.engineHash || previous.lastEngineHash,
+    lastEngineProvider: event.engineProvider || previous.lastEngineProvider,
+    lastModelUsed: event.modelUsed || previous.lastModelUsed,
+    nativeEngineBinding: event.nativeEngineBinding || previous.nativeEngineBinding,
     updatedAt: event.t
   };
 }
@@ -1038,6 +1164,13 @@ export function appendEvtMemory(input: EvtMemoryInput): EvtMemoryEvent {
   const safeMessage = redactSensitiveMemoryText(input.message);
   const safeResponse = redactSensitiveMemoryText(input.response);
 
+  const engineProvider = resolveEngineProvider(input);
+  const modelUsed = resolveModelUsed(input);
+  const engineHash = resolveEngineHash(input);
+  const nativeEngineBinding = resolveNativeEngineBinding(input);
+  const opcEngineHash = input.opcEngineHash || engineHash;
+  const engine = input.engine || null;
+
   const mergedText = [
     safeMessage,
     safeResponse,
@@ -1094,6 +1227,11 @@ export function appendEvtMemory(input: EvtMemoryInput): EvtMemoryEvent {
     governedHash: input.governedHash || null,
     opcProofId: input.opcProofId || null,
     opcChainHash: input.opcChainHash || null,
+    opcEngineHash,
+    engineHash,
+    engineProvider,
+    modelUsed,
+    nativeEngineBinding,
     inputHash,
     outputHash
   };
@@ -1107,6 +1245,15 @@ export function appendEvtMemory(input: EvtMemoryInput): EvtMemoryEvent {
     activeDomains,
     memoryDelta,
     nextContext,
+    governedEvt: input.governedEvt || null,
+    governedHash: input.governedHash || null,
+    opcProofId: input.opcProofId || null,
+    opcChainHash: input.opcChainHash || null,
+    opcEngineHash,
+    engineHash,
+    engineProvider,
+    modelUsed,
+    nativeEngineBinding,
     traceHash
   });
 
@@ -1135,11 +1282,19 @@ export function appendEvtMemory(input: EvtMemoryInput): EvtMemoryEvent {
     governedHash: input.governedHash || null,
     opcProofId: input.opcProofId || null,
     opcChainHash: input.opcChainHash || null,
+    opcEngineHash,
+    engine,
+    engineHash,
+    engineProvider,
+    modelUsed,
+    nativeEngineBinding,
     anchors: {
       inputHash,
       outputHash,
       traceHash,
-      memoryHash
+      memoryHash,
+      engineHash,
+      opcChainHash: input.opcChainHash || null
     },
     boundary: {
       legalCertification: false,
@@ -1196,6 +1351,18 @@ function scoreSlotForMessage(slot: MemorySlot, message: string): number {
     score += 8;
   }
 
+  if (slot.semanticState.lastModelUsed && normalizedMessage.includes("model")) {
+    score += 6;
+  }
+
+  if (
+    slot.semanticState.lastEngineHash &&
+    (normalizedMessage.includes("engine hash") ||
+      normalizedMessage.includes("enginehash"))
+  ) {
+    score += 12;
+  }
+
   if (slot.semanticState.documentFamily === "HBCE_ECOSISTEMA_AI") {
     const hbceAiTerms = [
       "hbce ecosistema ai",
@@ -1211,7 +1378,9 @@ function scoreSlotForMessage(slot: MemorySlot, message: string): number {
       "claude",
       "gemini",
       "mistral",
-      "runtime governato"
+      "runtime governato",
+      "cognitive engine",
+      "engine hash"
     ];
 
     if (
@@ -1256,7 +1425,11 @@ function scoreSlotForMessage(slot: MemorySlot, message: string): number {
       "route",
       "fail closed",
       "fail-closed",
-      "programmazione"
+      "programmazione",
+      "engine hash",
+      "cognitive engine",
+      "model used",
+      "openai"
     ];
 
     if (runtimeTerms.some((term) => normalizedMessage.includes(term))) {
@@ -1331,6 +1504,11 @@ function buildMemoryText(input: {
     `LAST_GOVERNED_HASH: ${input.slot.semanticState.lastGovernedHash || "none"}`,
     `LAST_OPC_PROOF: ${input.slot.semanticState.lastOpcProofId || "none"}`,
     `LAST_OPC_CHAIN_HASH: ${input.slot.semanticState.lastOpcChainHash || "none"}`,
+    `LAST_OPC_ENGINE_HASH: ${input.slot.semanticState.lastOpcEngineHash || "none"}`,
+    `LAST_ENGINE_HASH: ${input.slot.semanticState.lastEngineHash || "none"}`,
+    `LAST_ENGINE_PROVIDER: ${input.slot.semanticState.lastEngineProvider || "none"}`,
+    `LAST_MODEL_USED: ${input.slot.semanticState.lastModelUsed || "none"}`,
+    `NATIVE_ENGINE_BINDING: ${input.slot.semanticState.nativeEngineBinding}`,
     `SEMANTIC_TAGS: ${
       input.slot.semanticState.semanticTags.length > 0
         ? input.slot.semanticState.semanticTags.join(", ")
@@ -1355,6 +1533,12 @@ function buildMemoryText(input: {
         `  governedEvt: ${event.governedEvt || "none"}`,
         `  governedHash: ${event.governedHash || "none"}`,
         `  opcProofId: ${event.opcProofId || "none"}`,
+        `  opcChainHash: ${event.opcChainHash || "none"}`,
+        `  opcEngineHash: ${event.opcEngineHash || "none"}`,
+        `  engineProvider: ${event.engineProvider || "none"}`,
+        `  modelUsed: ${event.modelUsed || "none"}`,
+        `  engineHash: ${event.engineHash || "none"}`,
+        `  nativeEngineBinding: ${event.nativeEngineBinding}`,
         `  family: ${event.documentFamily}`,
         `  activeDocument: ${event.activeDocument || "none"}`,
         `  intent: ${event.userIntent}`,
@@ -1372,7 +1556,7 @@ function buildMemoryText(input: {
     `HBCE ECOSISTEMA AI boundary: ${HBCE_AI_BOUNDARY}`,
     "",
     "ISTRUZIONE DI RECUPERO:",
-    "Usa questa memoria per interpretare riferimenti ellittici dell'utente come 'questa opera', 'questo testo', 'il documento', 'Apokalypsis', 'U.S.E.', 'voto digitale', 'ecosistema AI', 'governance AI', 'modelli AI', 'OpenAI', 'Anthropic', 'audit AI', 'i punti forti', 'a chi serve', 'il danno', 'riparalo', 'la route', 'la memoria', 'JOKER-C2', 'IPR', 'EVT', 'OPC', 'proof receipt', 'ledger', salvo che l'utente indichi chiaramente un nuovo documento o un nuovo contesto. Non usare questa memoria per collegare identità personale e contenuto di una scelta democratica."
+    "Usa questa memoria per interpretare riferimenti ellittici dell'utente come 'questa opera', 'questo testo', 'il documento', 'Apokalypsis', 'U.S.E.', 'voto digitale', 'ecosistema AI', 'governance AI', 'modelli AI', 'OpenAI', 'Anthropic', 'audit AI', 'i punti forti', 'a chi serve', 'il danno', 'riparalo', 'la route', 'la memoria', 'JOKER-C2', 'IPR', 'EVT', 'OPC', 'proof receipt', 'ledger', 'engine hash', 'modello attivo', salvo che l'utente indichi chiaramente un nuovo documento o un nuovo contesto. Non usare questa memoria per collegare identità personale e contenuto di una scelta democratica."
   ]
     .join("\n")
     .slice(0, MAX_MEMORY_TEXT_CHARS);
