@@ -88,6 +88,9 @@ type GovernedEvt = {
 type OpcPublicProof = {
   proofId?: string;
   chainHash?: string;
+  engine?: OpenAIEngineInfo;
+  engineHash?: string | null;
+  modelUsed?: string;
   memoryHash?: string;
   auditStatus?: string;
   verificationStatus?: string;
@@ -181,6 +184,9 @@ type DiagnosticsInfo = {
   memoryHash?: string;
   memoryAppendStatus?: string;
   opcProofId?: string;
+  opcChainHash?: string;
+  opcEngineHash?: string | null;
+  opcModelUsed?: string;
   opcAppendStatus?: string;
   opcVerificationStatus?: string;
   hbceModule?: string;
@@ -513,10 +519,44 @@ function resolveEngine(runtime?: ChatApiResponse): OpenAIEngineInfo {
   };
 }
 
+function resolveOpcEngine(runtime?: ChatApiResponse): OpenAIEngineInfo {
+  const fallback = resolveEngine(runtime);
+
+  return {
+    provider: runtime?.opc?.engine?.provider || fallback.provider,
+    apiMode: runtime?.opc?.engine?.apiMode || fallback.apiMode,
+    role: runtime?.opc?.engine?.role || fallback.role,
+    runtimeRole: runtime?.opc?.engine?.runtimeRole || fallback.runtimeRole,
+    modelUsed:
+      runtime?.opc?.engine?.modelUsed ||
+      runtime?.opc?.modelUsed ||
+      runtime?.diagnostics?.opcModelUsed ||
+      fallback.modelUsed,
+    standardModel: runtime?.opc?.engine?.standardModel || fallback.standardModel,
+    deepModel: runtime?.opc?.engine?.deepModel || fallback.deepModel,
+    mode: runtime?.opc?.engine?.mode || fallback.mode,
+    configured: runtime?.opc?.engine?.configured ?? fallback.configured,
+    projectBirthDate:
+      runtime?.opc?.engine?.projectBirthDate || fallback.projectBirthDate,
+    projectBirthLabel:
+      runtime?.opc?.engine?.projectBirthLabel || fallback.projectBirthLabel
+  };
+}
+
+function resolveOpcEngineHash(runtime?: ChatApiResponse): string {
+  return (
+    runtime?.opc?.engineHash ||
+    runtime?.diagnostics?.opcEngineHash ||
+    "-"
+  );
+}
+
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
   const isSystem = message.role === "system";
   const engine = resolveEngine(message.runtime);
+  const opcEngine = resolveOpcEngine(message.runtime);
+  const opcEngineHash = resolveOpcEngineHash(message.runtime);
 
   return (
     <article
@@ -548,6 +588,18 @@ function MessageBubble({ message }: { message: ChatMessage }) {
               ["Configured", formatBool(engine.configured)]
             ]}
             statusLabels={["Mode", "Configured"]}
+          />
+
+          <MiniProofCard
+            title="OPC Engine"
+            rows={[
+              ["Provider", opcEngine.provider],
+              ["Model", opcEngine.modelUsed],
+              ["Mode", opcEngine.mode],
+              ["EHash", opcEngineHash],
+              ["API", opcEngine.apiMode]
+            ]}
+            statusLabels={["Mode"]}
           />
 
           <MiniProofCard
@@ -613,7 +665,8 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             rows={[
               ["Proof", message.runtime.opc?.proofId],
               ["Chain", message.runtime.opc?.chainHash],
-              ["Module", message.runtime.opc?.hbceModule || message.runtime.hbceModule],
+              ["Model", message.runtime.opc?.modelUsed || opcEngine.modelUsed],
+              ["EHash", opcEngineHash],
               ["Audit", message.runtime.opc?.auditStatus],
               ["Verify", message.runtime.opc?.verificationStatus],
               ["Legal", String(message.runtime.opc?.legalCertification ?? false)]
@@ -709,12 +762,24 @@ export default function InterfacePage() {
 
   const runtimeSummary = useMemo(() => {
     const engine = resolveEngine(lastRuntime || undefined);
+    const opcEngine = resolveOpcEngine(lastRuntime || undefined);
 
     return {
       state: lastRuntime?.state || "Ready",
       decision: lastRuntime?.decision || "-",
       governanceDecision: lastRuntime?.governanceDecision || "-",
       engine,
+      opcEngine,
+      opcEngineHash: resolveOpcEngineHash(lastRuntime || undefined),
+      opcModelUsed:
+        lastRuntime?.opc?.modelUsed ||
+        lastRuntime?.diagnostics?.opcModelUsed ||
+        opcEngine.modelUsed ||
+        "-",
+      opcChainHash:
+        lastRuntime?.opc?.chainHash ||
+        lastRuntime?.diagnostics?.opcChainHash ||
+        "-",
       projectDomain: lastRuntime?.projectDomain || "-",
       activeDomains: lastRuntime?.activeDomains || lastRuntime?.governance?.activeDomains || [],
       domainType: lastRuntime?.domainType || lastRuntime?.governance?.domainType || "-",
@@ -1549,7 +1614,7 @@ export default function InterfacePage() {
                 <p className="joker-lead">
                   Chat operativa con OpenAI come motore cognitivo e HBCE/JOKER-C2 come runtime governato.
                   Ogni risposta può esporre modello attivo, identità IPR, EVT, memoria EVT/IPR-bound, proof receipt OPC,
-                  governance HBCE/MATRIX, audit, verifica, fail-closed, HBCE ECOSISTEMA AI e salvaguardie U.S.E. quando pertinenti.
+                  engine hash, governance HBCE/MATRIX, audit, verifica, fail-closed, HBCE ECOSISTEMA AI e salvaguardie U.S.E. quando pertinenti.
                 </p>
               </div>
 
@@ -1599,7 +1664,7 @@ export default function InterfacePage() {
                 {isSending ? (
                   <div className="joker-message joker-message--assistant">
                     AI JOKER-C2 sta generando risposta con motore OpenAI, EVT, memoria EVT/IPR, classificazione dominio,
-                    classificazione modulo HBCE, dottrina strategica e OPC proof receipt.
+                    classificazione modulo HBCE, dottrina strategica e OPC proof receipt con engine metadata nativo.
                   </div>
                 ) : null}
 
@@ -1675,6 +1740,17 @@ export default function InterfacePage() {
             <FieldRow label="Birth" value={runtimeSummary.engine.projectBirthDate} mono />
           </RuntimeCard>
 
+          <RuntimeCard title="OPC Engine Binding">
+            <FieldRow label="Provider" value={runtimeSummary.opcEngine.provider} badge />
+            <FieldRow label="Model" value={runtimeSummary.opcModelUsed} mono />
+            <FieldRow label="Mode" value={runtimeSummary.opcEngine.mode} badge />
+            <FieldRow label="API" value={runtimeSummary.opcEngine.apiMode} mono />
+            <FieldRow label="EngineHash" value={runtimeSummary.opcEngineHash} mono />
+            <FieldRow label="Chain" value={runtimeSummary.opcChainHash} mono />
+            <FieldRow label="Role" value={runtimeSummary.opcEngine.role} />
+            <FieldRow label="Runtime" value={runtimeSummary.opcEngine.runtimeRole} />
+          </RuntimeCard>
+
           <RuntimeCard title="Execution Context">
             <FieldRow label="Node" value={DEFAULT_NODE} mono />
             <FieldRow label="Session" value={sessionId || "-"} mono />
@@ -1735,6 +1811,8 @@ export default function InterfacePage() {
           <RuntimeCard title="OPC Proof Receipt">
             <FieldRow label="Proof" value={lastRuntime?.opc?.proofId || "-"} mono />
             <FieldRow label="Chain" value={lastRuntime?.opc?.chainHash || "-"} mono />
+            <FieldRow label="Model" value={runtimeSummary.opcModelUsed} mono />
+            <FieldRow label="EHash" value={runtimeSummary.opcEngineHash} mono />
             <FieldRow label="Module" value={lastRuntime?.opc?.hbceModule || runtimeSummary.hbceModule} />
             <FieldRow label="Memory" value={lastRuntime?.opc?.memoryHash || "-"} mono />
             <FieldRow label="Audit" value={runtimeSummary.opcAuditStatus} badge />
@@ -1835,6 +1913,9 @@ export default function InterfacePage() {
             <FieldRow label="MemInj" value={lastRuntime?.diagnostics?.memoryInjected} />
             <FieldRow label="Memory" value={lastRuntime?.diagnostics?.memoryAppendStatus || "-"} badge />
             <FieldRow label="OPC" value={lastRuntime?.diagnostics?.opcAppendStatus || "-"} badge />
+            <FieldRow label="OPCChain" value={lastRuntime?.diagnostics?.opcChainHash || "-"} mono />
+            <FieldRow label="OPCEHash" value={lastRuntime?.diagnostics?.opcEngineHash || "-"} mono />
+            <FieldRow label="OPCModel" value={lastRuntime?.diagnostics?.opcModelUsed || "-"} mono />
             <FieldRow label="Verify" value={lastRuntime?.diagnostics?.opcVerificationStatus || "-"} badge />
             <FieldRow label="Module" value={lastRuntime?.diagnostics?.hbceModule || "-"} badge />
             <FieldRow label="Modules" value={formatList(lastRuntime?.diagnostics?.activeModules)} />
