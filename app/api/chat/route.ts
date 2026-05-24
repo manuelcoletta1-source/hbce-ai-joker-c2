@@ -16,7 +16,8 @@ import {
 
 import {
   appendEvtMemoryEvent,
-  buildEvtMemoryContextFromLedger
+  buildEvtMemoryContextFromLedger,
+  getEvtMemoryEventById
 } from "../../../lib/evt-memory-ledger";
 
 import { classifyContext as classifyRuntimeContext } from "../../../lib/context-classifier";
@@ -84,6 +85,7 @@ import {
   getHbceModuleMetadata,
   type ContextClass,
   type DataClassification,
+  type HbceModuleClassification as RuntimeHbceModuleClassification,
   type IntentClass,
   type OperationStatus,
   type OversightEvaluation,
@@ -937,9 +939,18 @@ function hasExplicitMemoryReference(message: string): boolean {
     "prima",
     "sopra",
     "precedente",
+    "precedenti",
     "abbiamo",
     "continua",
+    "continuazione",
+    "continuita",
+    "continuità",
     "riprendi",
+    "recupera",
+    "recuperata",
+    "memoria recuperata",
+    "questa diagnostica",
+    "diagnostica precedente",
     "questo",
     "questa",
     "questi",
@@ -1030,6 +1041,54 @@ function getEffectiveMemorySource(input: {
   }
 
   return "NONE";
+}
+
+function buildContinuityReferenceMemoryText(input: {
+  continuityRef: string;
+  event?: Awaited<ReturnType<typeof getEvtMemoryEventById>>;
+}): string {
+  if (input.event) {
+    return [
+      "MEMORIA EVT/IPR-BOUND RECUPERATA DA CONTINUITY_REF:",
+      `MEMORY_SOURCE: LEDGER_CONTINUITY_REF`,
+      `LAST_MEMORY_EVT: ${input.event.evt}`,
+      `PREV: ${input.event.prev}`,
+      `PROJECT_DOMAIN: ${input.event.projectDomain}`,
+      `ACTIVE_DOMAINS: ${input.event.activeDomains.join(", ")}`,
+      `DOCUMENT_FAMILY: ${input.event.documentFamily}`,
+      `GOVERNED_EVT: ${input.event.governedEvt || "none"}`,
+      `GOVERNED_HASH: ${input.event.governedHash || "none"}`,
+      `OPC_PROOF_ID: ${input.event.opcProofId || "none"}`,
+      `OPC_CHAIN_HASH: ${input.event.opcChainHash || "none"}`,
+      `OPC_ENGINE_HASH: ${input.event.opcEngineHash || "none"}`,
+      `ENGINE_HASH: ${input.event.engineHash || "none"}`,
+      `ENGINE_PROVIDER: ${input.event.engineProvider || "none"}`,
+      `MODEL_USED: ${input.event.modelUsed || "none"}`,
+      `NATIVE_ENGINE_BINDING: ${input.event.nativeEngineBinding ? "true" : "false"}`,
+      `TRACE_HASH: ${input.event.anchors.traceHash}`,
+      `MEMORY_HASH: ${input.event.anchors.memoryHash}`,
+      "",
+      "MEMORY_DELTA:",
+      input.event.memoryDelta || "none",
+      "",
+      "NEXT_CONTEXT:",
+      input.event.nextContext || "none",
+      "",
+      "ISTRUZIONE DI RECUPERO:",
+      "Questa memoria è stata recuperata tramite continuityRef passato dal frontend. Usala per rispondere a richieste come riprendi, continua, diagnostica precedente, memoria precedente, modello attivo precedente, engineHash precedente, EVT Memory Event precedente o OPC precedente."
+    ].join("\n");
+  }
+
+  return [
+    "MEMORIA EVT/IPR-BOUND DISPONIBILE COME CONTINUITY_REF:",
+    `MEMORY_SOURCE: CONTINUITY_REF`,
+    `LAST_MEMORY_EVT: ${input.continuityRef}`,
+    "",
+    "Il frontend ha passato un continuityRef precedente. Anche se il ledger serverless non ha ricostruito il contenuto completo, la continuità tecnica esiste e deve essere dichiarata come memoria disponibile per diagnostica e catena prev.",
+    "",
+    "ISTRUZIONE DI RECUPERO:",
+    "Usa questa informazione solo come riferimento tecnico di continuità. Non inventare contenuti non presenti. Se l’utente chiede il modello o engineHash precedente e non sono presenti nel testo, dichiara che il continuityRef è disponibile ma il dettaglio deve essere letto dalla risposta precedente o dal proof receipt visualizzato."
+  ].join("\n");
 }
 
 function buildRuntimeIdentityProjectDomain(
@@ -1635,7 +1694,8 @@ function buildRuntimeDiagnosticText(input: {
     "Diagnostica runtime OpenAI",
     "",
     `Runtime OpenAI: ${input.state}`,
-    `RuntimeRole: IPR_RUNTIME_DEMONSTRATOR`,
+    `RuntimeRole: ${input.engine.runtimeRole}`,
+    `LegacyRuntimeRole: IPR_RUNTIME_DEMONSTRATOR`,
     `CognitiveEngineProvider: ${input.engine.provider}`,
     `CognitiveEngineRole: ${input.engine.role}`,
     `EngineApiMode: ${input.engine.apiMode}`,
@@ -1697,7 +1757,7 @@ function buildRuntimeDiagnosticText(input: {
     `- checkpoint: ${identity.evt}`,
     `- cycle: ${identity.cycle}`,
     `- core: ${identity.core}`,
-    `- role: IPR_RUNTIME_DEMONSTRATOR`,
+    `- role: ${input.engine.runtimeRole}`,
     "",
     "Legacy EVT Chain:",
     `- evt: ${input.event.evt}`,
@@ -1756,7 +1816,8 @@ function buildTechnicalFrame(input: {
     "",
     "Runtime:",
     `- state: ${input.state}`,
-    `- runtimeRole: IPR_RUNTIME_DEMONSTRATOR`,
+    `- runtimeRole: ${input.engine.runtimeRole}`,
+    `- legacyRuntimeRole: IPR_RUNTIME_DEMONSTRATOR`,
     `- cognitiveEngineProvider: ${input.engine.provider}`,
     `- cognitiveEngineRole: ${input.engine.role}`,
     `- engineApiMode: ${input.engine.apiMode}`,
@@ -2329,7 +2390,7 @@ function applySafeRuntimeDiagnosticGovernanceOverride(input: {
     activeDomains: input.frame.projectDomain.activeDomains,
     hasFiles: false,
     evtPreferred: true,
-    auditPreferred: false,
+    auditPreferred: true,
     memoryPreferred: true,
     opcPreferred: true,
     iprBindingPreferred: true
@@ -3284,6 +3345,7 @@ async function resolveMemoryContext(input: {
   sessionId: string;
   ipr: string;
   message: string;
+  continuityRef?: string | null;
 }): Promise<ResolvedMemoryContext> {
   const hotMemory = getEvtMemoryContext({
     sessionId: input.sessionId,
@@ -3303,6 +3365,41 @@ async function resolveMemoryContext(input: {
 
   if (ledgerMemory.used) {
     return ledgerMemory as ResolvedMemoryContext;
+  }
+
+  if (input.continuityRef) {
+    const continuityEvent = await getEvtMemoryEventById(input.continuityRef);
+
+    if (continuityEvent) {
+      return {
+        used: true,
+        source: "LEDGER_CONTINUITY_REF",
+        text: buildContinuityReferenceMemoryText({
+          continuityRef: input.continuityRef,
+          event: continuityEvent
+        }),
+        semanticState: {
+          documentFamily: continuityEvent.documentFamily,
+          projectDomain: continuityEvent.projectDomain,
+          activeDomains: continuityEvent.activeDomains
+        },
+        lastEventId: continuityEvent.evt
+      };
+    }
+
+    return {
+      used: true,
+      source: "CONTINUITY_REF",
+      text: buildContinuityReferenceMemoryText({
+        continuityRef: input.continuityRef
+      }),
+      semanticState: {
+        documentFamily: "HBCE_RUNTIME",
+        projectDomain: "MATRIX",
+        activeDomains: ["MATRIX"]
+      },
+      lastEventId: input.continuityRef
+    };
   }
 
   return {
@@ -3371,7 +3468,7 @@ async function createAndAppendOpcForChat(input: {
       ipr: input.identity.ipr,
       core: input.identity.core,
       organization: input.identity.org,
-      runtimeRole: "IPR_RUNTIME_DEMONSTRATOR"
+      runtimeRole: input.engine.runtimeRole
     },
     sessionId: input.sessionId,
     engine: input.engine,
@@ -3495,7 +3592,8 @@ function buildIdentityPayload(identity: ReturnType<typeof getPrimaryIdentity>) {
     state: identity.state,
     cycle: identity.cycle,
     core: identity.core,
-    runtimeRole: "IPR_RUNTIME_DEMONSTRATOR",
+    runtimeRole: HBCE_RUNTIME_ROLE,
+    legacyRuntimeRole: "IPR_RUNTIME_DEMONSTRATOR",
     projectBirthDate: HBCE_JOKER_C2_PROJECT_BIRTH_DATE,
     projectBirthLabel: HBCE_JOKER_C2_PROJECT_BIRTH_LABEL
   };
@@ -3559,7 +3657,8 @@ export async function POST(req: NextRequest) {
   const memory = await resolveMemoryContext({
     sessionId: input.sessionId,
     ipr: identity.ipr,
-    message: effectiveMessage
+    message: effectiveMessage,
+    continuityRef: input.continuityRef
   });
 
   const contextClass = governance.contextClass;
@@ -3623,7 +3722,11 @@ export async function POST(req: NextRequest) {
     ...referenceOnlyContextFile
   ];
 
-  const modernPrev = await getLastEventReference();
+  const modernPrev =
+    memory.lastEventId ||
+    input.continuityRef ||
+    (await getLastEventReference());
+
   const legacyPrev = memory.lastEventId || input.continuityRef;
 
   if (isRuntimeDiagnosticRequest(effectiveMessage)) {
@@ -3696,7 +3799,11 @@ export async function POST(req: NextRequest) {
       governedEvt: publicModernEvt.evt,
       governedHash: publicModernEvt.trace.hash,
       projectDomain: governance.projectDomain.projectDomain,
-      activeDomains: governance.projectDomain.activeDomains
+      activeDomains: governance.projectDomain.activeDomains,
+      engine: openAIEngine,
+      engineProvider: openAIEngine.provider,
+      modelUsed: openAIEngine.modelUsed,
+      nativeEngineBinding: true
     });
 
     const memoryAppendResult = await appendEvtMemoryEvent(memoryEvent);
@@ -3786,12 +3893,18 @@ export async function POST(req: NextRequest) {
         source: effectiveMemorySource,
         rawSource: memory.source,
         lastEventId: memory.lastEventId,
+        continuityRef: input.continuityRef,
         event: memoryEvent.evt,
         memoryHash: memoryEvent.anchors.memoryHash,
         appendStatus: memoryAppendResult.status,
         appendReason: memoryAppendResult.reason,
         governedEvt: memoryEvent.governedEvt,
-        governedHash: memoryEvent.governedHash
+        governedHash: memoryEvent.governedHash,
+        engineProvider: memoryEvent.engineProvider,
+        modelUsed: memoryEvent.modelUsed,
+        engineHash: memoryEvent.engineHash,
+        opcEngineHash: memoryEvent.opcEngineHash,
+        nativeEngineBinding: memoryEvent.nativeEngineBinding
       },
       governance: {
         projectDomain: governance.projectDomain.projectDomain,
@@ -3856,6 +3969,8 @@ export async function POST(req: NextRequest) {
         memorySource: effectiveMemorySource,
         memoryAvailable: memory.used,
         memoryInjected,
+        memoryLastEventId: memory.lastEventId,
+        continuityRef: input.continuityRef,
         memoryEvent: memoryEvent.evt,
         memoryHash: memoryEvent.anchors.memoryHash,
         memoryAppendStatus: memoryAppendResult.status,
@@ -3956,7 +4071,11 @@ export async function POST(req: NextRequest) {
     governedEvt: publicModernEvt.evt,
     governedHash: publicModernEvt.trace.hash,
     projectDomain: governance.projectDomain.projectDomain,
-    activeDomains: governance.projectDomain.activeDomains
+    activeDomains: governance.projectDomain.activeDomains,
+    engine: openAIEngine,
+    engineProvider: openAIEngine.provider,
+    modelUsed: openAIEngine.modelUsed,
+    nativeEngineBinding: true
   });
 
   const memoryAppendResult = await appendEvtMemoryEvent(memoryEvent);
@@ -4076,12 +4195,18 @@ export async function POST(req: NextRequest) {
       source: effectiveMemorySource,
       rawSource: memory.source,
       lastEventId: memory.lastEventId,
+      continuityRef: input.continuityRef,
       event: memoryEvent.evt,
       memoryHash: memoryEvent.anchors.memoryHash,
       appendStatus: memoryAppendResult.status,
       appendReason: memoryAppendResult.reason,
       governedEvt: memoryEvent.governedEvt,
-      governedHash: memoryEvent.governedHash
+      governedHash: memoryEvent.governedHash,
+      engineProvider: memoryEvent.engineProvider,
+      modelUsed: memoryEvent.modelUsed,
+      engineHash: memoryEvent.engineHash,
+      opcEngineHash: memoryEvent.opcEngineHash,
+      nativeEngineBinding: memoryEvent.nativeEngineBinding
     },
     governance: {
       projectDomain: governance.projectDomain.projectDomain,
@@ -4155,6 +4280,8 @@ export async function POST(req: NextRequest) {
       memorySource: effectiveMemorySource,
       memoryAvailable: memory.used,
       memoryInjected,
+      memoryLastEventId: memory.lastEventId,
+      continuityRef: input.continuityRef,
       memoryEvent: memoryEvent.evt,
       memoryHash: memoryEvent.anchors.memoryHash,
       memoryAppendStatus: memoryAppendResult.status,
