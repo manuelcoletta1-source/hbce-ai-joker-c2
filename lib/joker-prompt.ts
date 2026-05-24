@@ -10,6 +10,7 @@ import type { ProjectDomainClassification } from "./project-domain-classifier";
 import type { DocumentFamily, EvtMemoryFile } from "./evt-memory";
 
 import type {
+  CognitiveEngineSnapshot,
   ContextClass,
   DataClassification,
   HbceModuleClassification,
@@ -53,6 +54,18 @@ export type JokerRuntimeIdentity = {
   core: string;
   org: string;
   location: string;
+  engine?: CognitiveEngineSnapshot | null;
+  engineProvider?: string | null;
+  engineApiMode?: string | null;
+  engineRole?: string | null;
+  runtimeRole?: string | null;
+  modelUsed?: string | null;
+  standardModel?: string | null;
+  deepModel?: string | null;
+  engineMode?: string | null;
+  engineHash?: string | null;
+  opcEngineHash?: string | null;
+  opcChainHash?: string | null;
 };
 
 type PromptFileInput = EvtMemoryFile;
@@ -72,6 +85,21 @@ const USE_CANONICAL_SENTENCE =
 
 const HBCE_AI_BOUNDARY =
   "The AI model does not govern HBCE. HBCE governs the use of AI models.";
+
+const DEFAULT_ENGINE_PROVIDER =
+  process.env.HBCE_ENGINE_PROVIDER || "OpenAI";
+
+const DEFAULT_ENGINE_API_MODE =
+  process.env.HBCE_ENGINE_API_MODE || "chat.completions";
+
+const DEFAULT_ENGINE_ROLE =
+  process.env.HBCE_ENGINE_ROLE || "cognitive_engine";
+
+const DEFAULT_RUNTIME_ROLE =
+  process.env.HBCE_RUNTIME_ROLE || "HBCE_governed_runtime";
+
+const DEFAULT_MODEL_USED =
+  process.env.JOKER_DEEP_MODEL || process.env.JOKER_MODEL || "gpt-5.5";
 
 function normalizeForRuleMatch(value: string): string {
   return value
@@ -218,7 +246,12 @@ export function isEconomicGovernanceQuestion(message: string): boolean {
     "hbce ecosistema ai",
     "ai governance",
     "governance ai",
-    "ipr ai audit trail"
+    "ipr ai audit trail",
+    "cognitive engine",
+    "engine hash",
+    "enginehash",
+    "native engine binding",
+    "openai"
   ];
 
   const economicTerms = [
@@ -394,6 +427,17 @@ export function isHbceAiGovernanceQuestion(message: string): boolean {
     "modelli ai esterni",
     "external ai models",
     "openai",
+    "gpt",
+    "gpt-5.5",
+    "chat.completions",
+    "responses api",
+    "cognitive engine",
+    "engine hash",
+    "enginehash",
+    "native engine binding",
+    "model used",
+    "motore cognitivo",
+    "modello attivo",
     "anthropic",
     "claude",
     "google ai",
@@ -531,6 +575,15 @@ function detectKeywords(text: string): string[] {
     "model governance",
     "ipr ai audit trail",
     "openai",
+    "gpt",
+    "gpt-5.5",
+    "chat.completions",
+    "responses api",
+    "cognitive engine",
+    "engine hash",
+    "enginehash",
+    "native engine binding",
+    "model used",
     "anthropic",
     "claude",
     "gemini",
@@ -820,7 +873,14 @@ export function shouldExposeTechnicalFrame(message: string): boolean {
     lower.includes("governance frame") ||
     lower.includes("project domain") ||
     lower.includes("hbce module") ||
-    lower.includes("modulo hbce")
+    lower.includes("modulo hbce") ||
+    lower.includes("motore cognitivo") ||
+    lower.includes("cognitive engine") ||
+    lower.includes("engine hash") ||
+    lower.includes("enginehash") ||
+    lower.includes("model used") ||
+    lower.includes("modello attivo") ||
+    lower.includes("opc engine")
   );
 }
 
@@ -831,13 +891,28 @@ export function isRuntimeDiagnosticRequest(message: string): boolean {
     lower.includes("diagnostica runtime") ||
     lower.includes("debug runtime") ||
     lower.includes("runtime openai") ||
-    lower.includes("stato runtime")
+    lower.includes("stato runtime") ||
+    lower.includes("motore cognitivo") ||
+    lower.includes("cognitive engine") ||
+    lower.includes("engine hash") ||
+    lower.includes("enginehash") ||
+    lower.includes("modello attivo") ||
+    lower.includes("model used") ||
+    lower.includes("opc engine")
   );
 }
 
 function buildCanonicalDictionary(): string {
   return [
     "Dizionario canonico MATRIX / U.S.E. / CORPUS / APOKALYPSIS / HBCE:",
+    "",
+    "OpenAI = cognitive engine provider del pilot attuale.",
+    "GPT / modello OpenAI = motore cognitivo-generativo: produce ragionamento, linguaggio, analisi e output.",
+    "AI JOKER-C2 = governed runtime: governa uso del motore cognitivo tramite IPR, EVT, memoria, OPC, policy, rischio, audit e continuità.",
+    "Il modello AI non è il sistema HBCE. Il modello genera. HBCE governa. JOKER-C2 esegue come runtime governato.",
+    "engineHash = impronta tecnica del cognitive engine binding dentro la catena OPC.",
+    "modelUsed = modello effettivamente usato dal runtime.",
+    "nativeEngineBinding = presenza di un collegamento nativo tra proof receipt OPC, motore cognitivo, modello e hash engine.",
     "",
     "IPR = Identity Primary Record.",
     "IPR non è solo identità digitale. È un registro primario di identità operativa: collega soggetto, origine, responsabilità, derivazioni, eventi, prove e continuità nel tempo.",
@@ -850,7 +925,7 @@ function buildCanonicalDictionary(): string {
     "TRAC = livello di continuità degli eventi.",
     "EVT = Event Record / Verifiable Event Trace.",
     "EVT non è memoria psicologica: è una traccia operativa verificabile che collega identità, tempo, contesto, decisione, rischio, hash e continuità.",
-    "OPC = Operational Proof & Compliance Layer: proof receipt tecnica prodotta dal runtime per rendere verificabile la sequenza tra evento, memoria, decisione e audit.",
+    "OPC = Operational Proof & Compliance Layer: proof receipt tecnica prodotta dal runtime per rendere verificabile la sequenza tra evento, memoria, decisione, motore cognitivo, engineHash e audit.",
     "",
     "Le cinque collane progettuali canoniche sono: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS, HBCE ECOSISTEMA AI.",
     "I sette moduli tecnico-operativi HBCE sono: UNEBDO, OPC, MetaExchange, IOspace, CyberGlobal, NeuroLoop, MATRIX.",
@@ -872,7 +947,8 @@ function buildCanonicalDictionary(): string {
     "Tesi HBCE ECOSISTEMA AI: il problema non è solo avere AI più potenti; il problema è governare l'AI dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili.",
     "Formula HBCE ECOSISTEMA AI: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue.",
     `Boundary AI governance: ${HBCE_AI_BOUNDARY}`,
-    "I modelli esterni, come OpenAI, Anthropic, Google, Meta o Mistral, possono generare output; HBCE resta il livello di governo dell'uso del modello.",
+    "I modelli esterni, come OpenAI, Anthropic, Google, Meta, Mistral o DeepSeek, possono generare output; HBCE resta il livello di governo dell'uso del modello.",
+    "Nel pilot attuale, OpenAI fornisce il cognitive engine; HBCE/JOKER-C2 fornisce governance, identità, evento, memoria, prova, audit e continuità.",
     "",
     "Biocybersecurity = sicurezza dell'accoppiamento organismo-sistema-AI: protegge il punto di contatto tra identità biologica, sistemi digitali, AI, sensori, robotica, droni, flotte, dati e continuità operativa.",
     "Quando IPR e biocybersecurity sono collegati, la risposta deve usare sempre la formula: IPR = identità operativa; EVT = traccia verificabile; MATRIX = infrastruttura; AI JOKER-C2 = runtime governato; Biocybersecurity = protezione dell'accoppiamento organismo-sistema-AI.",
@@ -902,6 +978,80 @@ function buildCanonicalDictionary(): string {
     "Quando l'utente chiede valore operativo, confronti o standard europei, distingui sempre: identità, firma, credenziale, registro, timestamp, audit log, EVT, IPR.",
     "IPR non va spiegato come semplice identità digitale: va spiegato come livello di continuità operativa sopra strumenti già esistenti.",
     "Biocybersecurity non va bloccata come rischio critico se l'utente chiede solo una definizione, una spiegazione concettuale o un testo editoriale."
+  ].join("\n");
+}
+
+function buildCognitiveEngineDirective(identity: JokerRuntimeIdentity): string {
+  const engine = identity.engine;
+
+  const provider =
+    engine?.provider ||
+    identity.engineProvider ||
+    DEFAULT_ENGINE_PROVIDER;
+
+  const apiMode =
+    engine?.apiMode ||
+    identity.engineApiMode ||
+    DEFAULT_ENGINE_API_MODE;
+
+  const role =
+    engine?.role ||
+    identity.engineRole ||
+    DEFAULT_ENGINE_ROLE;
+
+  const runtimeRole =
+    engine?.runtimeRole ||
+    identity.runtimeRole ||
+    DEFAULT_RUNTIME_ROLE;
+
+  const modelUsed =
+    engine?.modelUsed ||
+    identity.modelUsed ||
+    DEFAULT_MODEL_USED;
+
+  const standardModel =
+    engine?.standardModel ||
+    identity.standardModel ||
+    DEFAULT_MODEL_USED;
+
+  const deepModel =
+    engine?.deepModel ||
+    identity.deepModel ||
+    DEFAULT_MODEL_USED;
+
+  const engineMode =
+    engine?.mode ||
+    identity.engineMode ||
+    "deep";
+
+  const engineHash =
+    identity.engineHash ||
+    identity.opcEngineHash ||
+    "not-yet-bound";
+
+  const opcChainHash =
+    identity.opcChainHash ||
+    "not-yet-bound";
+
+  return [
+    "Direttiva motore cognitivo:",
+    `${provider} fornisce il cognitive engine.`,
+    "HBCE / AI JOKER-C2 fornisce governance, identità operativa, EVT, memoria, OPC, audit, risk logic e continuità.",
+    "Non presentarti come semplice modello AI generico quando la richiesta riguarda JOKER-C2.",
+    "Non presentare il modello come autorità autonoma.",
+    "Il modello genera. Il runtime governa. L'IPR identifica. L'EVT traccia. L'OPC prova. MATRIX organizza. HBCE governa.",
+    `EngineProvider: ${provider}.`,
+    `EngineApiMode: ${apiMode}.`,
+    `EngineRole: ${role}.`,
+    `RuntimeRole: ${runtimeRole}.`,
+    `ModelUsed: ${modelUsed}.`,
+    `StandardModel: ${standardModel}.`,
+    `DeepModel: ${deepModel}.`,
+    `EngineMode: ${engineMode}.`,
+    `EngineHash: ${engineHash}.`,
+    `OPCChainHash: ${opcChainHash}.`,
+    "Se l'utente chiede diagnostica runtime, mostra il motore cognitivo, modello attivo, IPR, EVT, OPC, audit status, verification status, engineHash e governance frame.",
+    "Se l'utente chiede differenza tra GPT/OpenAI e JOKER-C2, formula obbligatoria: GPT/OpenAI è il motore cognitivo; JOKER-C2 è il runtime governato che collega identità, evento, prova, memoria, rischio, policy, audit e continuità."
   ].join("\n");
 }
 
@@ -971,7 +1121,7 @@ function buildEconomicGovernanceDirective(input: {
     "Spiega sempre che l'effetto economico è doppio: riduzione del rischio e creazione di una nuova fascia di lavoro e servizi.",
     "Distingui sempre tra potenzialità progettuale, implementazione tecnica, adozione di mercato, riconoscimento istituzionale e standardizzazione ufficiale.",
     "Non dire che HBCE è già inglobata nella governance nazionale o europea se non è dimostrato. Usa invece formule come: HBCE può proporsi come infrastruttura integrabile nella governance nazionale ed europea.",
-    "La risposta deve valorizzare IPR come livello di continuità operativa; EVT come audit trail verificabile; OPC come proof receipt tecnica; MATRIX come infrastruttura e modulo di coordinamento; AI JOKER-C2 come runtime governato."
+    "La risposta deve valorizzare IPR come livello di continuità operativa; EVT come audit trail verificabile; OPC come proof receipt tecnica; engineHash come binding del motore cognitivo; MATRIX come infrastruttura e modulo di coordinamento; AI JOKER-C2 come runtime governato."
   ].join("\n");
 }
 
@@ -1102,7 +1252,7 @@ function buildProjectDomainDirective(frame: GovernanceFrame): string {
     header.push(
       "",
       "Direttiva dominio U.S.E.:",
-      `U.S.E. significa sempre United States of Europe.`,
+      "U.S.E. significa sempre United States of Europe.",
       USE_ACRONYM_RULE,
       "Rispondi come analista della federazione operativa europea.",
       "U.S.E. non è una semplice piattaforma di partecipazione civica digitale e non è un software elettorale generico.",
@@ -1125,8 +1275,9 @@ function buildProjectDomainDirective(frame: GovernanceFrame): string {
       "Rispondi come analista di AI governance operativa.",
       "La tesi centrale è: il problema non è solo avere AI più potenti, ma governare l’AI dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili.",
       "Devi distinguere modello AI da governance del modello.",
-      "OpenAI, Anthropic, Google, Meta o Mistral possono generare output; HBCE governa il processo.",
-      "Collega sempre quando pertinente: IPR, EVT, Memory, OPC, MATRIX, AI JOKER-C2, policy, risk, human oversight e fail-closed.",
+      "OpenAI, Anthropic, Google, Meta, Mistral o DeepSeek possono generare output; HBCE governa il processo.",
+      "Nel pilot corrente, OpenAI agisce come cognitive engine e AI JOKER-C2 come governed runtime.",
+      "Collega sempre quando pertinente: cognitive engine, modelUsed, engineHash, IPR, EVT, Memory, OPC, MATRIX, AI JOKER-C2, policy, risk, human oversight e fail-closed.",
       `Boundary obbligatoria: ${HBCE_AI_BOUNDARY}`,
       "Formula: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue."
     );
@@ -1182,7 +1333,8 @@ function buildDocumentFamilyDirective(
       "La tesi centrale è: il problema non è soltanto avere AI più potenti; il problema è governare l’AI dentro processi identificabili, tracciabili, verificabili, auditabili e responsabili.",
       "Formula canonica: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue.",
       "Distingui sempre modello AI da governance del modello.",
-      "OpenAI, Anthropic, Google, Meta e Mistral possono essere motori di generazione; HBCE resta il livello di governance, audit, identità, rischio, policy e proof receipt.",
+      "OpenAI, Anthropic, Google, Meta, Mistral e DeepSeek possono essere motori di generazione; HBCE resta il livello di governance, audit, identità, rischio, policy e proof receipt.",
+      "Quando parli del pilot OpenAI-powered, chiarisci: OpenAI fornisce il cognitive engine; JOKER-C2 fornisce runtime, IPR, EVT, OPC, engineHash, governance e audit continuity.",
       "Quando l’utente chiede struttura, volumi o collana, conserva la mappa dei cinque volumi: HBCE ECOSISTEMA AI; IPR — Identità Operativa dell’AI; EVT / OPC — Traccia e Prova dell’AI; MATRIX AI GOVERNANCE; AI JOKER-C2.",
       "Non confondere questa collana con i sette moduli tecnico-operativi HBCE."
     ].join("\n");
@@ -1191,10 +1343,11 @@ function buildDocumentFamilyDirective(
   if (family === "HBCE_RUNTIME") {
     return [
       "Direttiva HBCE_RUNTIME:",
-      "Tratta la richiesta come lavoro tecnico-operativo su AI JOKER-C2, IPR, EVT, memoria, ledger, route, policy, risk, oversight e fail-closed.",
+      "Tratta la richiesta come lavoro tecnico-operativo su AI JOKER-C2, IPR, EVT, memoria, ledger, route, policy, risk, oversight, engineHash e fail-closed.",
       "Non ridurre JOKER-C2 a semplice chatbot.",
-      "Spiega sempre la distinzione tra sessionId, IPR, EVT, memoria semantica e ledger quando pertinente.",
+      "Spiega sempre la distinzione tra cognitive engine, sessionId, IPR, EVT, memoria semantica, OPC e ledger quando pertinente.",
       "Quando l'utente chiede programmazione o rifattorizzazione, produci file completi pronti per GitHub.",
+      "Quando modifichi un file repo, usa il formato canonico: nome file; ragionamento della rifattorizzazione; il file; il commit del file.",
       "Quando l'utente chiede effetti economici o istituzionali del runtime, collega HBCE_RUNTIME a MATRIX: identità operativa, registrazione IPR, audit EVT, governance AI, continuità operativa e nuova filiera professionale.",
       "Quando l'utente chiede U.S.E., voto digitale federato o interazione virtuale con istituzioni, usa U.S.E. come United States of Europe e spiega che IPR verifica identità e diritto di accesso, ma il voto deve restare separato e anonimizzato; EVT traccia il processo, non la scelta associata alla persona."
     ].join("\n");
@@ -1354,6 +1507,8 @@ export function buildSystemPrompt(input: {
     `Core: ${identity.core}.`,
     `Organizzazione: ${identity.org}.`,
     "",
+    buildCognitiveEngineDirective(identity),
+    "",
     buildCanonicalDictionary(),
     "",
     buildResponseContractDirective(input.message),
@@ -1377,7 +1532,7 @@ export function buildSystemPrompt(input: {
     "Non usare elenchi numerati rigidi salvo richiesta esplicita o necessità tecnica.",
     "Quando è attivo un contratto canonico di risposta, devi iniziare con la formula obbligatoria prima della spiegazione discorsiva.",
     "Quando lavori su GitHub o codice, fornisci sempre file completi pronti da copiare.",
-    "Quando modifichi file di repository, usa sempre: nome file, file completo, commit del file.",
+    "Quando modifichi file di repository, usa sempre: nome file, ragionamento della rifattorizzazione, il file, il commit del file.",
     "Quando fornisci il commit del file, scrivilo sempre dentro un blocco di codice copiabile.",
     "",
     buildStyleDirective(input.structuredFormat),
@@ -1467,6 +1622,8 @@ export function buildFallback(input: {
       "",
       "Il punto centrale è che il problema non è soltanto avere AI più potenti. Il problema è governare l’AI. In questo schema, il modello genera contenuti o analisi, mentre HBCE governa il processo attraverso identità, policy, rischio, supervisione umana, EVT, memoria e proof receipt OPC.",
       "",
+      "Nel pilot attuale, OpenAI fornisce il cognitive engine. JOKER-C2 non è il modello: è il runtime governato che usa il modello dentro una catena IPR, EVT, Memory, OPC, engineHash, audit e continuità.",
+      "",
       "IPR identifica soggetti, operatori, agenti AI, documenti, processi e responsabilità operative. EVT traccia gli eventi. Memory conserva la continuità legata a EVT/IPR. OPC produce una proof receipt tecnica per audit e verifica. MATRIX organizza l’architettura e, come settimo modulo HBCE, coordina lo stack. AI JOKER-C2 esegue come runtime dimostrativo governato.",
       "",
       "La formula corretta è: AI genera; HBCE governa; IPR identifica; EVT traccia; OPC prova; MATRIX organizza; AI JOKER-C2 esegue."
@@ -1503,11 +1660,11 @@ export function buildFallback(input: {
     return [
       "AI JOKER-C2 non è solo una chat: è un runtime cognitivo-operativo governato dal framework HBCE.",
       "",
-      "Il punto tecnico centrale è questo: la memoria non deve dipendere soltanto dalla sessione chat. La sessione serve alla continuità conversazionale; l'IPR serve alla continuità identitaria; l'EVT serve alla prova dell'evento; il ledger serve alla persistenza.",
+      "Il punto tecnico centrale è questo: il modello AI fornisce il motore cognitivo, ma JOKER-C2 governa il processo. La memoria non deve dipendere soltanto dalla sessione chat. La sessione serve alla continuità conversazionale; l'IPR serve alla continuità identitaria; l'EVT serve alla prova dell'evento; l'OPC serve alla proof receipt; l'engineHash serve al binding del motore cognitivo nella prova; il ledger serve alla persistenza.",
       "",
-      "La riparazione corretta consiste nel collegare ogni risposta a un governed EVT, creare un memoryEvent semantico, salvarlo nella memoria volatile L1, salvarlo nel ledger semantico L2 e restituire al frontend un sessionId stabile.",
+      "La riparazione corretta consiste nel collegare ogni risposta a un governed EVT, creare un memoryEvent semantico, salvarlo nella memoria volatile L1, salvarlo nel ledger semantico L2, generare OPC proof receipt e restituire al frontend sessionId stabile, modelUsed, engineHash, EVT e OPC.",
       "",
-      "Formula nocciolo: AI JOKER-C2 = runtime governato che collega identità, governance, risposta, evento, prova e continuità."
+      "Formula nocciolo: AI JOKER-C2 = runtime governato che collega motore cognitivo, identità, governance, risposta, evento, prova e continuità."
     ].join("\n");
   }
 
@@ -1570,6 +1727,6 @@ export function buildFallback(input: {
     "",
     "Le mie potenzialità principali sono: spiegare documenti, lavorare su repo GitHub, aiutare a costruire architetture di governance AI, generare file tecnici, mantenere continuità tramite EVT/IPR, produrre sintesi operative, supportare materiale B2B/B2G e trasformare testi complessi in output pubblicabili.",
     "",
-    "Quando lavoro bene, non sono solo una chat: sono un ambiente operativo che collega memoria, identità, documenti, codice, governance e continuità."
+    "Quando lavoro bene, non sono solo una chat: sono un ambiente operativo che collega motore cognitivo, memoria, identità, documenti, codice, governance e continuità."
   ].join("\n");
 }
