@@ -34,6 +34,11 @@
  * On Vercel/serverless runtimes, local filesystem persistence may fail or
  * reset between invocations. In that case, append failures should be reported
  * as persistence failures while the generated memory event remains hash-verifiable.
+ *
+ * EVT creates governed event traceability.
+ * EVT/IPR memory preserves semantic continuity.
+ * OPC creates the audit-oriented proof receipt.
+ * Engine metadata binds the cognitive engine to the proof chain.
  */
 
 import { appendFile, mkdir, readFile, stat, writeFile } from "fs/promises";
@@ -42,6 +47,7 @@ import path from "path";
 
 import {
   sha256Short,
+  type CognitiveEngineProvider,
   type DocumentFamily,
   type EvtMemoryEvent,
   type ProjectDomain,
@@ -83,6 +89,13 @@ export type EvtMemoryLedgerAppendResult = {
   status: EvtMemoryLedgerAppendStatus;
   evt?: string;
   prev?: string;
+  traceHash?: string;
+  memoryHash?: string;
+  opcChainHash?: string | null;
+  opcEngineHash?: string | null;
+  engineHash?: string | null;
+  modelUsed?: string | null;
+  nativeEngineBinding?: boolean;
   ledgerPath: string;
   reason: string;
 };
@@ -107,6 +120,14 @@ export type EvtMemoryLedgerSummary = {
   totalEvents: number;
   lastEvent: string;
   lastTraceHash: string;
+  lastMemoryHash: string;
+  lastOpcProofId: string | null;
+  lastOpcChainHash: string | null;
+  lastOpcEngineHash: string | null;
+  lastEngineHash: string | null;
+  lastEngineProvider: CognitiveEngineProvider | null;
+  lastModelUsed: string | null;
+  nativeEngineBinding: boolean;
   invalidLines: number;
   verificationStatus: EvtMemoryLedgerVerificationStatus;
 };
@@ -140,6 +161,11 @@ export type EvtMemoryLedgerPublicEvent = {
   governedHash: string | null;
   opcProofId: string | null;
   opcChainHash: string | null;
+  opcEngineHash: string | null;
+  engineHash: string | null;
+  engineProvider: CognitiveEngineProvider | null;
+  modelUsed: string | null;
+  nativeEngineBinding: boolean;
   traceHash: string;
   memoryHash: string;
   legalCertification: false;
@@ -211,6 +237,13 @@ export async function appendEvtMemoryEvent(
         status: "REJECTED",
         evt: eventRef.evt,
         prev: eventRef.prev,
+        traceHash: event.anchors?.traceHash,
+        memoryHash: event.anchors?.memoryHash,
+        opcChainHash: event.opcChainHash ?? event.anchors?.opcChainHash ?? null,
+        opcEngineHash: event.opcEngineHash ?? null,
+        engineHash: event.engineHash ?? event.anchors?.engineHash ?? null,
+        modelUsed: event.modelUsed ?? null,
+        nativeEngineBinding: Boolean(event.nativeEngineBinding),
         ledgerPath,
         reason:
           "EVT memory event is structurally invalid and was not appended."
@@ -222,6 +255,13 @@ export async function appendEvtMemoryEvent(
         status: "REJECTED",
         evt: eventRef.evt,
         prev: eventRef.prev,
+        traceHash: event.anchors.traceHash,
+        memoryHash: event.anchors.memoryHash,
+        opcChainHash: event.opcChainHash ?? event.anchors.opcChainHash ?? null,
+        opcEngineHash: event.opcEngineHash ?? null,
+        engineHash: event.engineHash ?? event.anchors.engineHash ?? null,
+        modelUsed: event.modelUsed ?? null,
+        nativeEngineBinding: event.nativeEngineBinding,
         ledgerPath,
         reason: "EVT memory event hash is invalid and was not appended."
       };
@@ -234,8 +274,37 @@ export async function appendEvtMemoryEvent(
         status: "FAILED",
         evt: eventRef.evt,
         prev: eventRef.prev,
+        traceHash: event.anchors.traceHash,
+        memoryHash: event.anchors.memoryHash,
+        opcChainHash: event.opcChainHash ?? event.anchors.opcChainHash ?? null,
+        opcEngineHash: event.opcEngineHash ?? null,
+        engineHash: event.engineHash ?? event.anchors.engineHash ?? null,
+        modelUsed: event.modelUsed ?? null,
+        nativeEngineBinding: event.nativeEngineBinding,
         ledgerPath,
         reason: `EVT memory ledger read failed before append: ${readResult.reason}`
+      };
+    }
+
+    const alreadyPresent = readResult.events.some((item) =>
+      isSameEvtMemoryEvent(item, event)
+    );
+
+    if (alreadyPresent) {
+      return {
+        status: "APPENDED",
+        evt: eventRef.evt,
+        prev: eventRef.prev,
+        traceHash: event.anchors.traceHash,
+        memoryHash: event.anchors.memoryHash,
+        opcChainHash: event.opcChainHash ?? event.anchors.opcChainHash ?? null,
+        opcEngineHash: event.opcEngineHash ?? null,
+        engineHash: event.engineHash ?? event.anchors.engineHash ?? null,
+        modelUsed: event.modelUsed ?? null,
+        nativeEngineBinding: event.nativeEngineBinding,
+        ledgerPath,
+        reason:
+          "EVT memory event is already present in the semantic memory ledger. Append treated as idempotent success."
       };
     }
 
@@ -246,6 +315,13 @@ export async function appendEvtMemoryEvent(
         status: "REJECTED",
         evt: eventRef.evt,
         prev: eventRef.prev,
+        traceHash: event.anchors.traceHash,
+        memoryHash: event.anchors.memoryHash,
+        opcChainHash: event.opcChainHash ?? event.anchors.opcChainHash ?? null,
+        opcEngineHash: event.opcEngineHash ?? null,
+        engineHash: event.engineHash ?? event.anchors.engineHash ?? null,
+        modelUsed: event.modelUsed ?? null,
+        nativeEngineBinding: event.nativeEngineBinding,
         ledgerPath,
         reason: continuity.reason
       };
@@ -257,14 +333,28 @@ export async function appendEvtMemoryEvent(
       status: "APPENDED",
       evt: eventRef.evt,
       prev: eventRef.prev,
+      traceHash: event.anchors.traceHash,
+      memoryHash: event.anchors.memoryHash,
+      opcChainHash: event.opcChainHash ?? event.anchors.opcChainHash ?? null,
+      opcEngineHash: event.opcEngineHash ?? null,
+      engineHash: event.engineHash ?? event.anchors.engineHash ?? null,
+      modelUsed: event.modelUsed ?? null,
+      nativeEngineBinding: event.nativeEngineBinding,
       ledgerPath,
-      reason: "EVT memory event appended to memory ledger."
+      reason: continuity.reason || "EVT memory event appended to memory ledger."
     };
   } catch (error) {
     return {
       status: "FAILED",
       evt: eventRef.evt,
       prev: eventRef.prev,
+      traceHash: event.anchors?.traceHash,
+      memoryHash: event.anchors?.memoryHash,
+      opcChainHash: event.opcChainHash ?? event.anchors?.opcChainHash ?? null,
+      opcEngineHash: event.opcEngineHash ?? null,
+      engineHash: event.engineHash ?? event.anchors?.engineHash ?? null,
+      modelUsed: event.modelUsed ?? null,
+      nativeEngineBinding: Boolean(event.nativeEngineBinding),
       ledgerPath,
       reason:
         error instanceof Error
@@ -447,6 +537,14 @@ export async function buildEvtMemoryLedgerSummary(
     totalEvents: readResult.events.length,
     lastEvent: lastEvent?.evt ?? "GENESIS",
     lastTraceHash: lastEvent?.anchors.traceHash ?? "",
+    lastMemoryHash: lastEvent?.anchors.memoryHash ?? "",
+    lastOpcProofId: lastEvent?.opcProofId ?? null,
+    lastOpcChainHash: lastEvent?.opcChainHash ?? lastEvent?.anchors.opcChainHash ?? null,
+    lastOpcEngineHash: lastEvent?.opcEngineHash ?? null,
+    lastEngineHash: lastEvent?.engineHash ?? lastEvent?.anchors.engineHash ?? null,
+    lastEngineProvider: lastEvent?.engineProvider ?? null,
+    lastModelUsed: lastEvent?.modelUsed ?? null,
+    nativeEngineBinding: Boolean(lastEvent?.nativeEngineBinding),
     invalidLines: readResult.invalidLines,
     verificationStatus: integrity.status
   };
@@ -630,6 +728,42 @@ export function buildEvtMemoryTracePayload(event: EvtMemoryEvent) {
     governedHash: event.governedHash,
     opcProofId: event.opcProofId,
     opcChainHash: event.opcChainHash,
+    opcEngineHash: event.opcEngineHash,
+    engineHash: event.engineHash,
+    engineProvider: event.engineProvider,
+    modelUsed: event.modelUsed,
+    nativeEngineBinding: event.nativeEngineBinding,
+    inputHash: event.anchors.inputHash,
+    outputHash: event.anchors.outputHash
+  };
+}
+
+export function buildLegacyEvtMemoryTracePayload(event: EvtMemoryEvent) {
+  return {
+    evt: event.evt,
+    prev: event.prev,
+    t: event.t,
+    entity: event.entity,
+    ipr: event.ipr,
+    sessionId: event.sessionId,
+    kind: event.kind,
+    runtimeRole: event.runtimeRole,
+    state: event.state,
+    decision: event.decision,
+    contextClass: event.contextClass,
+    documentMode: event.documentMode,
+    documentFamily: event.documentFamily,
+    projectDomain: event.projectDomain,
+    activeDomains: event.activeDomains,
+    activeDocument: event.activeDocument,
+    semanticTags: event.semanticTags,
+    userIntent: event.userIntent,
+    memoryDelta: event.memoryDelta,
+    nextContext: event.nextContext,
+    governedEvt: event.governedEvt,
+    governedHash: event.governedHash,
+    opcProofId: event.opcProofId,
+    opcChainHash: event.opcChainHash,
     inputHash: event.anchors.inputHash,
     outputHash: event.anchors.outputHash
   };
@@ -639,8 +773,17 @@ export function rebuildEvtMemoryEventHash(event: EvtMemoryEvent): string {
   return sha256Short(buildEvtMemoryTracePayload(event));
 }
 
+export function rebuildLegacyEvtMemoryEventHash(event: EvtMemoryEvent): string {
+  return sha256Short(buildLegacyEvtMemoryTracePayload(event));
+}
+
 export function isEvtMemoryEventHashValid(event: EvtMemoryEvent): boolean {
-  return rebuildEvtMemoryEventHash(event) === event.anchors.traceHash;
+  const traceHash = event.anchors.traceHash;
+
+  return (
+    rebuildEvtMemoryEventHash(event) === traceHash ||
+    rebuildLegacyEvtMemoryEventHash(event) === traceHash
+  );
 }
 
 export function isEvtMemoryEventStructurallyValid(
@@ -666,10 +809,22 @@ export function isEvtMemoryEventStructurallyValid(
       typeof event.userIntent === "string" &&
       typeof event.memoryDelta === "string" &&
       typeof event.nextContext === "string" &&
+      "governedEvt" in event &&
+      "governedHash" in event &&
+      "opcProofId" in event &&
+      "opcChainHash" in event &&
+      "opcEngineHash" in event &&
+      "engine" in event &&
+      "engineHash" in event &&
+      "engineProvider" in event &&
+      "modelUsed" in event &&
+      typeof event.nativeEngineBinding === "boolean" &&
       event.anchors?.inputHash &&
       event.anchors?.outputHash &&
       event.anchors?.traceHash &&
       event.anchors?.memoryHash &&
+      "engineHash" in event.anchors &&
+      "opcChainHash" in event.anchors &&
       event.boundary &&
       event.boundary.legalCertification === false
   );
@@ -699,10 +854,31 @@ export function getEvtMemoryEventMissingFields(
   if (typeof event.userIntent !== "string") missing.push("userIntent");
   if (typeof event.memoryDelta !== "string") missing.push("memoryDelta");
   if (typeof event.nextContext !== "string") missing.push("nextContext");
+
+  if (!("governedEvt" in event)) missing.push("governedEvt");
+  if (!("governedHash" in event)) missing.push("governedHash");
+  if (!("opcProofId" in event)) missing.push("opcProofId");
+  if (!("opcChainHash" in event)) missing.push("opcChainHash");
+  if (!("opcEngineHash" in event)) missing.push("opcEngineHash");
+  if (!("engine" in event)) missing.push("engine");
+  if (!("engineHash" in event)) missing.push("engineHash");
+  if (!("engineProvider" in event)) missing.push("engineProvider");
+  if (!("modelUsed" in event)) missing.push("modelUsed");
+  if (typeof event.nativeEngineBinding !== "boolean") {
+    missing.push("nativeEngineBinding");
+  }
+
   if (!event.anchors?.inputHash) missing.push("anchors.inputHash");
   if (!event.anchors?.outputHash) missing.push("anchors.outputHash");
   if (!event.anchors?.traceHash) missing.push("anchors.traceHash");
   if (!event.anchors?.memoryHash) missing.push("anchors.memoryHash");
+  if (event.anchors && !("engineHash" in event.anchors)) {
+    missing.push("anchors.engineHash");
+  }
+  if (event.anchors && !("opcChainHash" in event.anchors)) {
+    missing.push("anchors.opcChainHash");
+  }
+
   if (!event.boundary) missing.push("boundary");
   if (event.boundary?.legalCertification !== false) {
     missing.push("boundary.legalCertification");
@@ -717,7 +893,7 @@ export function buildEvtMemoryEventLine(event: EvtMemoryEvent): string {
 
 export function parseEvtMemoryEventLine(line: string): EvtMemoryEvent | null {
   try {
-    const parsed = JSON.parse(line) as EvtMemoryEvent;
+    const parsed = normalizeEvtMemoryEvent(JSON.parse(line));
 
     if (!isEvtMemoryEventStructurallyValid(parsed)) {
       return null;
@@ -755,6 +931,11 @@ export function toPublicEvtMemoryEvent(
     governedHash: event.governedHash,
     opcProofId: event.opcProofId,
     opcChainHash: event.opcChainHash,
+    opcEngineHash: event.opcEngineHash,
+    engineHash: event.engineHash,
+    engineProvider: event.engineProvider,
+    modelUsed: event.modelUsed,
+    nativeEngineBinding: event.nativeEngineBinding,
     traceHash: event.anchors.traceHash,
     memoryHash: event.anchors.memoryHash,
     legalCertification: false
@@ -805,6 +986,26 @@ export function buildSemanticStateFromEvents(input: {
     .join(" ")
     .slice(-4500);
 
+  const lastOpcEngineHash = getLastNonEmpty(
+    ordered.map((event) => event.opcEngineHash)
+  );
+
+  const lastEngineHash =
+    getLastNonEmpty(ordered.map((event) => event.engineHash)) ||
+    lastOpcEngineHash;
+
+  const lastEngineProvider = getLastNonEmpty(
+    ordered.map((event) => event.engineProvider)
+  ) as CognitiveEngineProvider | null;
+
+  const lastModelUsed = getLastNonEmpty(
+    ordered.map((event) => event.modelUsed)
+  );
+
+  const nativeEngineBinding = ordered.some(
+    (event) => event.nativeEngineBinding === true
+  );
+
   return {
     ipr: input.ipr,
     sessionId: input.sessionId,
@@ -824,6 +1025,11 @@ export function buildSemanticStateFromEvents(input: {
     ),
     lastOpcProofId: getLastNonEmpty(ordered.map((event) => event.opcProofId)),
     lastOpcChainHash: getLastNonEmpty(ordered.map((event) => event.opcChainHash)),
+    lastOpcEngineHash,
+    lastEngineHash,
+    lastEngineProvider,
+    lastModelUsed,
+    nativeEngineBinding,
     updatedAt: lastEvent?.t ?? new Date().toISOString()
   };
 }
@@ -851,6 +1057,11 @@ function buildLedgerMemoryText(input: {
     `LAST_GOVERNED_HASH: ${input.semanticState.lastGovernedHash || "none"}`,
     `LAST_OPC_PROOF: ${input.semanticState.lastOpcProofId || "none"}`,
     `LAST_OPC_CHAIN_HASH: ${input.semanticState.lastOpcChainHash || "none"}`,
+    `LAST_OPC_ENGINE_HASH: ${input.semanticState.lastOpcEngineHash || "none"}`,
+    `LAST_ENGINE_HASH: ${input.semanticState.lastEngineHash || "none"}`,
+    `LAST_ENGINE_PROVIDER: ${input.semanticState.lastEngineProvider || "none"}`,
+    `LAST_MODEL_USED: ${input.semanticState.lastModelUsed || "none"}`,
+    `NATIVE_ENGINE_BINDING: ${input.semanticState.nativeEngineBinding}`,
     `SEMANTIC_TAGS: ${
       input.semanticState.semanticTags.length > 0
         ? input.semanticState.semanticTags.join(", ")
@@ -876,6 +1087,11 @@ function buildLedgerMemoryText(input: {
         `  governedHash: ${event.governedHash || "none"}`,
         `  opcProofId: ${event.opcProofId || "none"}`,
         `  opcChainHash: ${event.opcChainHash || "none"}`,
+        `  opcEngineHash: ${event.opcEngineHash || "none"}`,
+        `  engineHash: ${event.engineHash || "none"}`,
+        `  engineProvider: ${event.engineProvider || "none"}`,
+        `  modelUsed: ${event.modelUsed || "none"}`,
+        `  nativeEngineBinding: ${event.nativeEngineBinding}`,
         `  family: ${event.documentFamily}`,
         `  activeDocument: ${event.activeDocument || "none"}`,
         `  intent: ${event.userIntent}`,
@@ -893,7 +1109,7 @@ function buildLedgerMemoryText(input: {
     `HBCE ECOSISTEMA AI boundary: ${HBCE_AI_BOUNDARY}`,
     "",
     "ISTRUZIONE DI RECUPERO:",
-    "Questa memoria è stata ricostruita dal ledger semantico. Usala come continuità IPR-bound quando la memoria volatile di sessione non è disponibile. Non usare questa memoria per collegare identità personale e contenuto di una scelta democratica. Se emergono riferimenti a HBCE ECOSISTEMA AI, AI governance, modelli esterni, OpenAI, Anthropic, audit AI o IPR AI Audit Trail, recupera il dominio HBCE_ECOSISTEMA_AI e la sua boundary: il modello AI non governa HBCE; HBCE governa l’uso dei modelli AI."
+    "Questa memoria è stata ricostruita dal ledger semantico. Usala come continuità IPR-bound quando la memoria volatile di sessione non è disponibile. Non usare questa memoria per collegare identità personale e contenuto di una scelta democratica. Se emergono riferimenti a HBCE ECOSISTEMA AI, AI governance, modelli esterni, OpenAI, Anthropic, audit AI, IPR AI Audit Trail, cognitive engine, engine hash o modello attivo, recupera il dominio HBCE_ECOSISTEMA_AI e la sua boundary: il modello AI non governa HBCE; HBCE governa l’uso dei modelli AI."
   ]
     .join("\n")
     .slice(0, MAX_CONTEXT_TEXT_CHARS);
@@ -955,6 +1171,22 @@ function scoreEventForMessage(event: EvtMemoryEvent, message: string): number {
   }
 
   if (
+    event.engineHash &&
+    (normalizedMessage.includes("engine hash") ||
+      normalizedMessage.includes("enginehash"))
+  ) {
+    score += 12;
+  }
+
+  if (
+    event.modelUsed &&
+    (normalizedMessage.includes("model") ||
+      normalizedMessage.includes("modello"))
+  ) {
+    score += 8;
+  }
+
+  if (
     event.documentFamily === "HBCE_ECOSISTEMA_AI" ||
     event.projectDomain === "HBCE_ECOSISTEMA_AI"
   ) {
@@ -975,7 +1207,12 @@ function scoreEventForMessage(event: EvtMemoryEvent, message: string): number {
       "claude",
       "gemini",
       "mistral",
-      "runtime governato"
+      "deepseek",
+      "runtime governato",
+      "cognitive engine",
+      "engine hash",
+      "enginehash",
+      "native engine binding"
     ];
 
     if (
@@ -1022,7 +1259,12 @@ function scoreEventForMessage(event: EvtMemoryEvent, message: string): number {
       "fail-closed",
       "programmazione",
       "ripara",
-      "danno"
+      "danno",
+      "engine hash",
+      "cognitive engine",
+      "model used",
+      "modello attivo",
+      "openai"
     ];
 
     if (runtimeTerms.some((term) => normalizedMessage.includes(term))) {
@@ -1079,10 +1321,17 @@ function detectTags(text: string): string[] {
     "model governance",
     "governance modelli",
     "openai",
+    "gpt",
+    "gpt-5.5",
+    "cognitive engine",
+    "engine hash",
+    "enginehash",
+    "native engine binding",
     "anthropic",
     "claude",
     "gemini",
     "mistral",
+    "deepseek",
     "hbce",
     "joker-c2",
     "ai joker-c2",
@@ -1213,7 +1462,7 @@ function buildReferenceRulesFromEvents(events: EvtMemoryEvent[]): string[] {
 
     if (event.documentFamily === "HBCE_RUNTIME") {
       rules.push(
-        `"JOKER-C2", "IPR", "EVT", "memoria", "OPC", "proof receipt", "ledger", "runtime", "fail-closed" = contesto HBCE_RUNTIME attivo`
+        `"JOKER-C2", "IPR", "EVT", "memoria", "OPC", "proof receipt", "ledger", "runtime", "engine hash", "cognitive engine", "modello attivo", "fail-closed" = contesto HBCE_RUNTIME attivo`
       );
     }
 
@@ -1228,9 +1477,21 @@ function buildReferenceRulesFromEvents(events: EvtMemoryEvent[]): string[] {
     if (event.opcProofId) {
       rules.push(`ultimo OPC proof receipt = ${event.opcProofId}`);
     }
+
+    if (event.opcChainHash) {
+      rules.push(`ultimo OPC chain hash = ${event.opcChainHash}`);
+    }
+
+    if (event.engineHash) {
+      rules.push(`ultimo OPC engine hash = ${event.engineHash}`);
+    }
+
+    if (event.modelUsed) {
+      rules.push(`ultimo modello cognitivo = ${event.modelUsed}`);
+    }
   }
 
-  return mergeUnique(rules, 24);
+  return mergeUnique(rules, 28);
 }
 
 function mergeUnique(values: string[], limit = 32): string[] {
@@ -1407,5 +1668,69 @@ function buildWarnings(input: {
     );
   }
 
+  warnings.push(NON_CERTIFICATION_STATEMENT);
+
   return Array.from(new Set(warnings));
+}
+
+function normalizeEvtMemoryEvent(value: unknown): EvtMemoryEvent {
+  const record = value as Partial<EvtMemoryEvent>;
+
+  const normalizedOpcChainHash =
+    record.opcChainHash ?? record.anchors?.opcChainHash ?? null;
+
+  const normalizedEngineHash =
+    record.engineHash ?? record.opcEngineHash ?? record.anchors?.engineHash ?? null;
+
+  const normalizedOpcEngineHash =
+    record.opcEngineHash ?? normalizedEngineHash;
+
+  const normalizedEngineProvider =
+    record.engineProvider ?? record.engine?.provider ?? null;
+
+  const normalizedModelUsed =
+    record.modelUsed ?? record.engine?.modelUsed ?? null;
+
+  const normalizedNativeEngineBinding = Boolean(
+    record.nativeEngineBinding ||
+      (normalizedEngineProvider && normalizedModelUsed && normalizedEngineHash)
+  );
+
+  return {
+    ...(record as EvtMemoryEvent),
+    governedEvt: record.governedEvt ?? null,
+    governedHash: record.governedHash ?? null,
+    opcProofId: record.opcProofId ?? null,
+    opcChainHash: normalizedOpcChainHash,
+    opcEngineHash: normalizedOpcEngineHash,
+    engine: record.engine ?? null,
+    engineHash: normalizedEngineHash,
+    engineProvider: normalizedEngineProvider,
+    modelUsed: normalizedModelUsed,
+    nativeEngineBinding: normalizedNativeEngineBinding,
+    anchors: {
+      inputHash: record.anchors?.inputHash ?? "",
+      outputHash: record.anchors?.outputHash ?? "",
+      traceHash: record.anchors?.traceHash ?? "",
+      memoryHash: record.anchors?.memoryHash ?? "",
+      engineHash: normalizedEngineHash,
+      opcChainHash: normalizedOpcChainHash
+    },
+    boundary: {
+      legalCertification: false,
+      containsDemocraticChoiceContent:
+        record.boundary?.containsDemocraticChoiceContent ?? false,
+      identityChoiceLinkageBlocked:
+        record.boundary?.identityChoiceLinkageBlocked ?? false,
+      statement: record.boundary?.statement ?? NON_CERTIFICATION_STATEMENT
+    }
+  };
+}
+
+function isSameEvtMemoryEvent(left: EvtMemoryEvent, right: EvtMemoryEvent): boolean {
+  return (
+    left.evt === right.evt ||
+    left.anchors.traceHash === right.anchors.traceHash ||
+    left.anchors.memoryHash === right.anchors.memoryHash
+  );
 }
