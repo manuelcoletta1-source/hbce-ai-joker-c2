@@ -28,10 +28,13 @@ type RuntimeDecision =
   | "NOOP"
   | string;
 
+type JsonRecord = Record<string, unknown>;
+
 type FileInput = {
   id?: string;
   name?: string;
   type?: string;
+  mimeType?: string;
   size?: number;
   text?: string;
   content?: string;
@@ -46,6 +49,8 @@ type RuntimeIdentity = {
   state?: string;
   cycle?: string;
   core?: string;
+  org?: string;
+  location?: string;
   runtimeRole?: string;
   projectBirthDate?: string;
   projectBirthLabel?: string;
@@ -78,7 +83,7 @@ type GovernedEvt = {
   ok?: boolean;
   evt?: string;
   prev?: string;
-  project?: string;
+  project?: unknown;
   activeDomains?: string[];
   hash?: string;
   appendStatus?: string;
@@ -94,7 +99,7 @@ type OpcPublicProof = {
   memoryHash?: string;
   auditStatus?: string;
   verificationStatus?: string;
-  legalCertification?: false;
+  legalCertification?: boolean;
   appendStatus?: string;
   appendReason?: string;
   hbceModule?: string;
@@ -143,6 +148,7 @@ type GovernanceInfo = {
   riskScore?: number;
   riskReasons?: string[];
   oversight?: string;
+  humanOversight?: string;
   requiredRole?: string;
   oversightReason?: string;
   iprBinding?: boolean;
@@ -154,6 +160,7 @@ type GovernanceInfo = {
   civicBoundary?: string;
   aiGovernanceBoundary?: string;
   aerospaceBoundary?: string;
+  reasons?: string[];
   filePolicy?: {
     allowed?: boolean;
     allowedCount?: number;
@@ -199,9 +206,12 @@ type ChatApiResponse = {
   ok: boolean;
   sessionId?: string;
   response?: string;
+  text?: string;
   state?: RuntimeState;
   decision?: RuntimeDecision;
   governanceDecision?: string;
+  degradedReason?: string | null;
+  continuityRef?: string | null;
   engine?: OpenAIEngineInfo;
   modelUsed?: string;
   projectDomain?: string;
@@ -223,12 +233,18 @@ type ChatApiResponse = {
   structuredFormat?: boolean;
   activeFiles?: string[];
   identity?: RuntimeIdentity;
+  event?: unknown;
   evt?: PublicEvt;
+  modernEvt?: unknown;
   governedEvt?: GovernedEvt;
-  opc?: OpcPublicProof;
+  opc?: unknown;
+  opcProof?: unknown;
+  proof?: unknown;
   memory?: MemoryInfo;
+  runtime?: unknown;
   governance?: GovernanceInfo;
   diagnostics?: DiagnosticsInfo;
+  boundary?: unknown;
   error?: string;
 };
 
@@ -251,6 +267,7 @@ const DEFAULT_PROJECT_BIRTH_LABEL = "HBCE R&D / AI JOKER-C2 project birth date";
 
 const USE_DEMOCRATIC_BOUNDARY =
   "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
+
 const HBCE_AI_BOUNDARY =
   "The AI model does not govern HBCE. HBCE governs the use of AI models.";
 
@@ -291,22 +308,155 @@ function classNames(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
 }
 
-function formatBool(value: boolean | undefined): string {
-  if (value === true) return "true";
-  if (value === false) return "false";
+function isRecord(value: unknown): value is JsonRecord {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function asRecord(value: unknown): JsonRecord {
+  return isRecord(value) ? value : {};
+}
+
+function readPath(value: unknown, path: string[]): unknown {
+  let current: unknown = value;
+
+  for (const key of path) {
+    if (!isRecord(current)) {
+      return undefined;
+    }
+
+    current = current[key];
+  }
+
+  return current;
+}
+
+function firstValue(value: unknown, paths: string[][]): unknown {
+  for (const path of paths) {
+    const item = readPath(value, path);
+
+    if (item !== undefined && item !== null && item !== "") {
+      return item;
+    }
+  }
+
+  return undefined;
+}
+
+function valueToString(value: unknown, fallback = "-"): string {
+  if (typeof value === "string") {
+    return value.trim() ? value.trim() : fallback;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    const rendered = value
+      .map((item) => valueToString(item, ""))
+      .filter(Boolean)
+      .join(", ");
+
+    return rendered || fallback;
+  }
+
+  if (isRecord(value)) {
+    const preferred =
+      value.domain ||
+      value.module ||
+      value.evt ||
+      value.id ||
+      value.hash ||
+      value.status ||
+      value.state ||
+      value.name;
+
+    if (preferred !== undefined && preferred !== null) {
+      return valueToString(preferred, fallback);
+    }
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
+}
+
+function valueToBoolean(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+
+  return undefined;
+}
+
+function valueToNumber(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const numeric = Number(value);
+
+    if (Number.isFinite(numeric)) {
+      return numeric;
+    }
+  }
+
+  return undefined;
+}
+
+function valueToStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => valueToString(item, ""))
+      .filter((item) => item.length > 0);
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+function formatBool(value: unknown): string {
+  const booleanValue = valueToBoolean(value);
+
+  if (booleanValue === true) return "true";
+  if (booleanValue === false) return "false";
+
   return "-";
 }
 
-function formatList(values?: readonly string[] | string[]): string {
-  if (!values || values.length === 0) return "-";
-  return values.join(", ");
+function formatList(values?: unknown): string {
+  const items = valueToStringArray(values);
+
+  if (items.length === 0) {
+    return "-";
+  }
+
+  return items.join(", ");
 }
 
-function normalizeStatus(value?: string | null): string {
-  return value && value.trim() ? value.trim() : "-";
+function normalizeStatus(value?: unknown): string {
+  return valueToString(value, "-");
 }
 
-function statusTone(value?: string | null): string {
+function statusTone(value?: unknown): string {
   const normalized = normalizeStatus(value).toUpperCase();
 
   if (
@@ -323,6 +473,7 @@ function statusTone(value?: string | null): string {
     normalized === "CONFIGURED" ||
     normalized === "DEEP" ||
     normalized === "STANDARD" ||
+    normalized === "ACTIVE" ||
     normalized === "ACTIVE_PROTOTYPE_LAYER"
   ) {
     return "joker-badge--ok";
@@ -370,7 +521,7 @@ function StatusBadge({
   value,
   title
 }: {
-  value?: string | null;
+  value?: unknown;
   title?: string;
 }) {
   const safeValue = normalizeStatus(value);
@@ -393,22 +544,21 @@ function FieldRow({
   title
 }: {
   label: string;
-  value?: string | number | boolean | null;
+  value?: unknown;
   mono?: boolean;
   badge?: boolean;
   title?: string;
 }) {
-  const rendered =
-    typeof value === "boolean" ? formatBool(value) : value === 0 ? "0" : value || "-";
+  const rendered = valueToString(value, "-");
 
   return (
     <div className="joker-field-row">
       <div className="joker-field-label">{label}</div>
       <div
-        title={title || String(rendered)}
+        title={title || rendered}
         className={classNames("joker-field-value", mono && "joker-mono")}
       >
-        {badge ? <StatusBadge value={String(rendered)} title={title} /> : rendered}
+        {badge ? <StatusBadge value={rendered} title={title} /> : rendered}
       </div>
     </div>
   );
@@ -435,7 +585,7 @@ function MiniProofCard({
   statusLabels = []
 }: {
   title: string;
-  rows: Array<[string, string | undefined | null]>;
+  rows: Array<[string, unknown]>;
   statusLabels?: string[];
 }) {
   return (
@@ -469,53 +619,96 @@ function MiniProofCard({
 
 function resolveEngine(runtime?: ChatApiResponse): OpenAIEngineInfo {
   return {
-    provider:
-      runtime?.engine?.provider ||
-      runtime?.diagnostics?.engineProvider ||
-      DEFAULT_ENGINE_PROVIDER,
-    apiMode:
-      runtime?.engine?.apiMode ||
-      runtime?.diagnostics?.engineApiMode ||
-      DEFAULT_ENGINE_API_MODE,
-    role:
-      runtime?.engine?.role ||
-      runtime?.diagnostics?.engineRole ||
-      DEFAULT_ENGINE_ROLE,
-    runtimeRole:
-      runtime?.engine?.runtimeRole ||
-      runtime?.diagnostics?.runtimeRole ||
-      runtime?.identity?.runtimeRole ||
-      "HBCE_governed_runtime",
-    modelUsed:
-      runtime?.engine?.modelUsed ||
-      runtime?.modelUsed ||
-      runtime?.diagnostics?.modelUsed ||
-      DEFAULT_ENGINE_MODEL,
-    standardModel:
-      runtime?.engine?.standardModel ||
-      runtime?.diagnostics?.standardModel ||
-      DEFAULT_ENGINE_MODEL,
-    deepModel:
-      runtime?.engine?.deepModel ||
-      runtime?.diagnostics?.deepModel ||
-      DEFAULT_ENGINE_MODEL,
-    mode:
-      runtime?.engine?.mode ||
-      runtime?.diagnostics?.engineMode ||
-      "deep",
-    configured:
-      runtime?.engine?.configured ??
-      runtime?.diagnostics?.openaiConfigured ??
-      undefined,
-    projectBirthDate:
-      runtime?.engine?.projectBirthDate ||
-      runtime?.diagnostics?.projectBirthDate ||
-      runtime?.identity?.projectBirthDate ||
-      DEFAULT_PROJECT_BIRTH_DATE,
-    projectBirthLabel:
-      runtime?.engine?.projectBirthLabel ||
-      runtime?.identity?.projectBirthLabel ||
+    provider: valueToString(
+      firstValue(runtime, [
+        ["engine", "provider"],
+        ["diagnostics", "engineProvider"],
+        ["runtime", "cognitiveEngineProvider"]
+      ]),
+      DEFAULT_ENGINE_PROVIDER
+    ),
+    apiMode: valueToString(
+      firstValue(runtime, [
+        ["engine", "apiMode"],
+        ["diagnostics", "engineApiMode"],
+        ["runtime", "engineApiMode"]
+      ]),
+      DEFAULT_ENGINE_API_MODE
+    ),
+    role: valueToString(
+      firstValue(runtime, [
+        ["engine", "role"],
+        ["diagnostics", "engineRole"],
+        ["runtime", "cognitiveEngineRole"]
+      ]),
+      DEFAULT_ENGINE_ROLE
+    ),
+    runtimeRole: valueToString(
+      firstValue(runtime, [
+        ["engine", "runtimeRole"],
+        ["diagnostics", "runtimeRole"],
+        ["identity", "runtimeRole"],
+        ["runtime", "runtimeRole"]
+      ]),
+      "HBCE_governed_runtime"
+    ),
+    modelUsed: valueToString(
+      firstValue(runtime, [
+        ["engine", "modelUsed"],
+        ["modelUsed"],
+        ["diagnostics", "modelUsed"],
+        ["runtime", "model"]
+      ]),
+      DEFAULT_ENGINE_MODEL
+    ),
+    standardModel: valueToString(
+      firstValue(runtime, [
+        ["engine", "standardModel"],
+        ["diagnostics", "standardModel"],
+        ["runtime", "standardModel"]
+      ]),
+      DEFAULT_ENGINE_MODEL
+    ),
+    deepModel: valueToString(
+      firstValue(runtime, [
+        ["engine", "deepModel"],
+        ["diagnostics", "deepModel"],
+        ["runtime", "deepModel"]
+      ]),
+      DEFAULT_ENGINE_MODEL
+    ),
+    mode: valueToString(
+      firstValue(runtime, [
+        ["engine", "mode"],
+        ["diagnostics", "engineMode"],
+        ["runtime", "engineMode"]
+      ]),
+      "deep"
+    ),
+    configured: valueToBoolean(
+      firstValue(runtime, [
+        ["engine", "configured"],
+        ["diagnostics", "openaiConfigured"],
+        ["runtime", "openAIConfigured"]
+      ])
+    ),
+    projectBirthDate: valueToString(
+      firstValue(runtime, [
+        ["engine", "projectBirthDate"],
+        ["diagnostics", "projectBirthDate"],
+        ["identity", "projectBirthDate"],
+        ["runtime", "projectBirthDate"]
+      ]),
+      DEFAULT_PROJECT_BIRTH_DATE
+    ),
+    projectBirthLabel: valueToString(
+      firstValue(runtime, [
+        ["engine", "projectBirthLabel"],
+        ["identity", "projectBirthLabel"],
+        ["runtime", "projectBirthLabel"]
+      ]),
       DEFAULT_PROJECT_BIRTH_LABEL
+    )
   };
 }
 
@@ -523,32 +716,558 @@ function resolveOpcEngine(runtime?: ChatApiResponse): OpenAIEngineInfo {
   const fallback = resolveEngine(runtime);
 
   return {
-    provider: runtime?.opc?.engine?.provider || fallback.provider,
-    apiMode: runtime?.opc?.engine?.apiMode || fallback.apiMode,
-    role: runtime?.opc?.engine?.role || fallback.role,
-    runtimeRole: runtime?.opc?.engine?.runtimeRole || fallback.runtimeRole,
-    modelUsed:
-      runtime?.opc?.engine?.modelUsed ||
-      runtime?.opc?.modelUsed ||
-      runtime?.diagnostics?.opcModelUsed ||
-      fallback.modelUsed,
-    standardModel: runtime?.opc?.engine?.standardModel || fallback.standardModel,
-    deepModel: runtime?.opc?.engine?.deepModel || fallback.deepModel,
-    mode: runtime?.opc?.engine?.mode || fallback.mode,
-    configured: runtime?.opc?.engine?.configured ?? fallback.configured,
-    projectBirthDate:
-      runtime?.opc?.engine?.projectBirthDate || fallback.projectBirthDate,
-    projectBirthLabel:
-      runtime?.opc?.engine?.projectBirthLabel || fallback.projectBirthLabel
+    provider: valueToString(
+      firstValue(runtime, [
+        ["opc", "record", "engine", "provider"],
+        ["opc", "publicProof", "engine", "provider"],
+        ["opc", "engine", "provider"],
+        ["opcProof", "engine", "provider"],
+        ["proof", "engine", "provider"]
+      ]),
+      fallback.provider || DEFAULT_ENGINE_PROVIDER
+    ),
+    apiMode: valueToString(
+      firstValue(runtime, [
+        ["opc", "record", "engine", "apiMode"],
+        ["opc", "publicProof", "engine", "apiMode"],
+        ["opc", "engine", "apiMode"],
+        ["opcProof", "engine", "apiMode"],
+        ["proof", "engine", "apiMode"]
+      ]),
+      fallback.apiMode || DEFAULT_ENGINE_API_MODE
+    ),
+    role: valueToString(
+      firstValue(runtime, [
+        ["opc", "record", "engine", "role"],
+        ["opc", "publicProof", "engine", "role"],
+        ["opc", "engine", "role"],
+        ["opcProof", "engine", "role"],
+        ["proof", "engine", "role"]
+      ]),
+      fallback.role || DEFAULT_ENGINE_ROLE
+    ),
+    runtimeRole: valueToString(
+      firstValue(runtime, [
+        ["opc", "record", "engine", "runtimeRole"],
+        ["opc", "publicProof", "engine", "runtimeRole"],
+        ["opc", "engine", "runtimeRole"],
+        ["opcProof", "engine", "runtimeRole"],
+        ["proof", "engine", "runtimeRole"]
+      ]),
+      fallback.runtimeRole || "HBCE_governed_runtime"
+    ),
+    modelUsed: valueToString(
+      firstValue(runtime, [
+        ["opc", "record", "engine", "modelUsed"],
+        ["opc", "publicProof", "engine", "modelUsed"],
+        ["opc", "engine", "modelUsed"],
+        ["opcProof", "engine", "modelUsed"],
+        ["proof", "engine", "modelUsed"],
+        ["opc", "publicProof", "modelUsed"],
+        ["opc", "modelUsed"],
+        ["diagnostics", "opcModelUsed"]
+      ]),
+      fallback.modelUsed || DEFAULT_ENGINE_MODEL
+    ),
+    standardModel: valueToString(
+      firstValue(runtime, [
+        ["opc", "record", "engine", "standardModel"],
+        ["opc", "publicProof", "engine", "standardModel"],
+        ["opc", "engine", "standardModel"]
+      ]),
+      fallback.standardModel || DEFAULT_ENGINE_MODEL
+    ),
+    deepModel: valueToString(
+      firstValue(runtime, [
+        ["opc", "record", "engine", "deepModel"],
+        ["opc", "publicProof", "engine", "deepModel"],
+        ["opc", "engine", "deepModel"]
+      ]),
+      fallback.deepModel || DEFAULT_ENGINE_MODEL
+    ),
+    mode: valueToString(
+      firstValue(runtime, [
+        ["opc", "record", "engine", "mode"],
+        ["opc", "publicProof", "engine", "mode"],
+        ["opc", "engine", "mode"]
+      ]),
+      fallback.mode || "deep"
+    ),
+    configured: valueToBoolean(
+      firstValue(runtime, [
+        ["opc", "record", "engine", "configured"],
+        ["opc", "publicProof", "engine", "configured"],
+        ["opc", "engine", "configured"]
+      ])
+    ) ?? fallback.configured,
+    projectBirthDate: valueToString(
+      firstValue(runtime, [
+        ["opc", "record", "engine", "projectBirthDate"],
+        ["opc", "publicProof", "engine", "projectBirthDate"],
+        ["opc", "engine", "projectBirthDate"]
+      ]),
+      fallback.projectBirthDate || DEFAULT_PROJECT_BIRTH_DATE
+    ),
+    projectBirthLabel: valueToString(
+      firstValue(runtime, [
+        ["opc", "record", "engine", "projectBirthLabel"],
+        ["opc", "publicProof", "engine", "projectBirthLabel"],
+        ["opc", "engine", "projectBirthLabel"]
+      ]),
+      fallback.projectBirthLabel || DEFAULT_PROJECT_BIRTH_LABEL
+    )
   };
 }
 
 function resolveOpcEngineHash(runtime?: ChatApiResponse): string {
-  return (
-    runtime?.opc?.engineHash ||
-    runtime?.diagnostics?.opcEngineHash ||
+  return valueToString(
+    firstValue(runtime, [
+      ["opc", "publicProof", "engineHash"],
+      ["opc", "record", "proof", "engineHash"],
+      ["opc", "engineHash"],
+      ["opcProof", "engineHash"],
+      ["proof", "engineHash"],
+      ["diagnostics", "opcEngineHash"],
+      ["runtime", "opcEngineHash"]
+    ]),
     "-"
   );
+}
+
+function resolveEvt(runtime?: ChatApiResponse): PublicEvt {
+  return {
+    evt: valueToString(
+      firstValue(runtime, [
+        ["evt", "evt"],
+        ["event", "evt"]
+      ]),
+      "-"
+    ),
+    prev: valueToString(
+      firstValue(runtime, [
+        ["evt", "prev"],
+        ["event", "prev"]
+      ]),
+      "-"
+    ),
+    hash: valueToString(
+      firstValue(runtime, [
+        ["evt", "hash"],
+        ["event", "anchors", "hash"]
+      ]),
+      "-"
+    ),
+    publicHash: valueToString(
+      firstValue(runtime, [
+        ["evt", "publicHash"],
+        ["evt", "hash"],
+        ["event", "anchors", "publicHash"],
+        ["event", "anchors", "hash"]
+      ]),
+      "-"
+    ),
+    fullHash: valueToString(
+      firstValue(runtime, [
+        ["evt", "fullHash"],
+        ["event", "anchors", "fullHash"]
+      ]),
+      "-"
+    )
+  };
+}
+
+function resolveGovernedEvt(runtime?: ChatApiResponse): GovernedEvt {
+  const eventSource =
+    firstValue(runtime, [["governedEvt"], ["modernEvt"]]) ||
+    undefined;
+
+  return {
+    evt: valueToString(
+      firstValue(runtime, [
+        ["governedEvt", "evt"],
+        ["modernEvt", "evt"],
+        ["runtime", "governedEvt"]
+      ]),
+      "-"
+    ),
+    prev: valueToString(
+      firstValue(runtime, [
+        ["governedEvt", "prev"],
+        ["modernEvt", "prev"]
+      ]),
+      "-"
+    ),
+    project: valueToString(
+      firstValue(runtime, [
+        ["governedEvt", "project"],
+        ["governedEvt", "project", "domain"],
+        ["modernEvt", "project"],
+        ["modernEvt", "project", "domain"],
+        ["runtime", "governedEvtProject"]
+      ]) || readPath(eventSource, ["project", "domain"]),
+      "-"
+    ),
+    activeDomains: valueToStringArray(
+      firstValue(runtime, [
+        ["governedEvt", "activeDomains"],
+        ["governedEvt", "project", "active_domains"],
+        ["modernEvt", "activeDomains"],
+        ["modernEvt", "project", "active_domains"]
+      ])
+    ),
+    hash: valueToString(
+      firstValue(runtime, [
+        ["governedEvt", "hash"],
+        ["governedEvt", "trace", "hash"],
+        ["modernEvt", "hash"],
+        ["modernEvt", "trace", "hash"],
+        ["runtime", "governedHash"]
+      ]),
+      "-"
+    ),
+    appendStatus: valueToString(
+      firstValue(runtime, [
+        ["governedEvt", "appendStatus"],
+        ["modernEvt", "appendStatus"],
+        ["governedEvt", "verification", "status"],
+        ["modernEvt", "verification", "status"]
+      ]),
+      "-"
+    ),
+    appendReason: valueToString(
+      firstValue(runtime, [
+        ["governedEvt", "appendReason"],
+        ["modernEvt", "appendReason"]
+      ]),
+      "-"
+    )
+  };
+}
+
+function resolveOpc(runtime?: ChatApiResponse): OpcPublicProof {
+  return {
+    proofId: valueToString(
+      firstValue(runtime, [
+        ["opc", "publicProof", "proofId"],
+        ["opc", "record", "proofId"],
+        ["opc", "proofId"],
+        ["opcProof", "proofId"],
+        ["proof", "proofId"],
+        ["runtime", "opcProofId"],
+        ["diagnostics", "opcProofId"]
+      ]),
+      "-"
+    ),
+    chainHash: valueToString(
+      firstValue(runtime, [
+        ["opc", "publicProof", "chainHash"],
+        ["opc", "record", "proof", "chainHash"],
+        ["opc", "chainHash"],
+        ["opcProof", "chainHash"],
+        ["proof", "chainHash"],
+        ["runtime", "opcChainHash"],
+        ["diagnostics", "opcChainHash"]
+      ]),
+      "-"
+    ),
+    engineHash: valueToString(
+      firstValue(runtime, [
+        ["opc", "publicProof", "engineHash"],
+        ["opc", "record", "proof", "engineHash"],
+        ["opc", "engineHash"],
+        ["opcProof", "engineHash"],
+        ["proof", "engineHash"],
+        ["runtime", "opcEngineHash"],
+        ["diagnostics", "opcEngineHash"]
+      ]),
+      "-"
+    ),
+    modelUsed: valueToString(
+      firstValue(runtime, [
+        ["opc", "publicProof", "engine", "modelUsed"],
+        ["opc", "record", "engine", "modelUsed"],
+        ["opc", "modelUsed"],
+        ["opcProof", "modelUsed"],
+        ["diagnostics", "opcModelUsed"]
+      ]),
+      DEFAULT_ENGINE_MODEL
+    ),
+    memoryHash: valueToString(
+      firstValue(runtime, [
+        ["opc", "publicProof", "memoryHash"],
+        ["opc", "memoryHash"],
+        ["memory", "memoryHash"],
+        ["diagnostics", "memoryHash"]
+      ]),
+      "-"
+    ),
+    auditStatus: valueToString(
+      firstValue(runtime, [
+        ["opc", "publicProof", "auditStatus"],
+        ["opc", "record", "audit", "status"],
+        ["opc", "auditStatus"],
+        ["opcProof", "auditStatus"],
+        ["proof", "auditStatus"],
+        ["diagnostics", "opcAppendStatus"]
+      ]),
+      "-"
+    ),
+    verificationStatus: valueToString(
+      firstValue(runtime, [
+        ["opc", "publicProof", "verificationStatus"],
+        ["opc", "record", "verification", "status"],
+        ["opc", "verificationStatus"],
+        ["opc", "verification", "status"],
+        ["opcProof", "verificationStatus"],
+        ["proof", "verificationStatus"],
+        ["diagnostics", "opcVerificationStatus"]
+      ]),
+      "-"
+    ),
+    legalCertification:
+      valueToBoolean(
+        firstValue(runtime, [
+          ["opc", "publicProof", "legalCertification"],
+          ["opc", "record", "boundary", "legalCertification"],
+          ["opc", "legalCertification"],
+          ["opcProof", "legalCertification"],
+          ["proof", "legalCertification"],
+          ["boundary", "legalCertification"]
+        ])
+      ) ?? false,
+    appendStatus: valueToString(
+      firstValue(runtime, [
+        ["opc", "appendStatus"],
+        ["opcProof", "appendStatus"],
+        ["diagnostics", "opcAppendStatus"]
+      ]),
+      "-"
+    ),
+    appendReason: valueToString(
+      firstValue(runtime, [
+        ["opc", "appendReason"],
+        ["opcProof", "appendReason"]
+      ]),
+      "-"
+    ),
+    hbceModule: valueToString(
+      firstValue(runtime, [
+        ["opc", "publicProof", "hbceModule"],
+        ["opc", "record", "runtime", "hbceModule"],
+        ["opc", "hbceModule"],
+        ["opcProof", "hbceModule"],
+        ["governance", "hbceModule"],
+        ["runtime", "hbceModule"]
+      ]),
+      "-"
+    ),
+    projectDomain: valueToString(
+      firstValue(runtime, [
+        ["opc", "publicProof", "projectDomain"],
+        ["opc", "record", "runtime", "projectDomain"],
+        ["opc", "projectDomain"],
+        ["opcProof", "projectDomain"],
+        ["governance", "projectDomain"],
+        ["runtime", "projectDomain"]
+      ]),
+      "-"
+    )
+  };
+}
+
+function resolveIdentity(runtime?: ChatApiResponse): RuntimeIdentity {
+  return {
+    entity: valueToString(firstValue(runtime, [["identity", "entity"], ["runtime", "entity"]]), "-"),
+    ipr: valueToString(firstValue(runtime, [["identity", "ipr"], ["runtime", "ipr"]]), "-"),
+    evt: valueToString(
+      firstValue(runtime, [["identity", "evt"], ["runtime", "checkpoint"]]),
+      "-"
+    ),
+    state: valueToString(firstValue(runtime, [["identity", "state"]]), "-"),
+    cycle: valueToString(firstValue(runtime, [["identity", "cycle"], ["runtime", "cycle"]]), "-"),
+    core: valueToString(firstValue(runtime, [["identity", "core"], ["runtime", "core"]]), "-"),
+    org: valueToString(firstValue(runtime, [["identity", "org"]]), "-"),
+    location: valueToString(firstValue(runtime, [["identity", "location"]]), "-"),
+    runtimeRole: valueToString(
+      firstValue(runtime, [["identity", "runtimeRole"], ["engine", "runtimeRole"], ["runtime", "runtimeRole"]]),
+      "HBCE_governed_runtime"
+    ),
+    projectBirthDate: valueToString(
+      firstValue(runtime, [["identity", "projectBirthDate"], ["engine", "projectBirthDate"], ["runtime", "projectBirthDate"]]),
+      DEFAULT_PROJECT_BIRTH_DATE
+    ),
+    projectBirthLabel: valueToString(
+      firstValue(runtime, [["identity", "projectBirthLabel"], ["engine", "projectBirthLabel"]]),
+      DEFAULT_PROJECT_BIRTH_LABEL
+    )
+  };
+}
+
+function resolveGovernance(runtime?: ChatApiResponse): GovernanceInfo {
+  return {
+    projectDomain: valueToString(
+      firstValue(runtime, [
+        ["governance", "projectDomain"],
+        ["projectDomain"],
+        ["runtime", "projectDomain"]
+      ]),
+      "-"
+    ),
+    activeDomains: valueToStringArray(
+      firstValue(runtime, [
+        ["governance", "activeDomains"],
+        ["activeDomains"],
+        ["runtime", "activeDomains"]
+      ])
+    ),
+    domainType: valueToString(
+      firstValue(runtime, [
+        ["governance", "domainType"],
+        ["domainType"],
+        ["runtime", "domainType"]
+      ]),
+      "-"
+    ),
+    hbceModule: valueToString(
+      firstValue(runtime, [
+        ["governance", "hbceModule"],
+        ["hbceModule"],
+        ["runtime", "hbceModule"]
+      ]),
+      "-"
+    ),
+    activeModules: valueToStringArray(
+      firstValue(runtime, [
+        ["governance", "activeModules"],
+        ["activeModules"],
+        ["runtime", "activeModules"],
+        ["diagnostics", "activeModules"]
+      ])
+    ),
+    moduleType: valueToString(
+      firstValue(runtime, [
+        ["governance", "moduleType"],
+        ["moduleType"],
+        ["runtime", "moduleType"]
+      ]),
+      "-"
+    ),
+    moduleConfidence: valueToNumber(
+      firstValue(runtime, [
+        ["governance", "moduleConfidence"],
+        ["runtime", "moduleConfidence"]
+      ])
+    ),
+    strategicDoctrines: valueToStringArray(
+      firstValue(runtime, [
+        ["strategicDoctrines"],
+        ["governance", "strategicDoctrines"],
+        ["diagnostics", "strategicDoctrines"]
+      ])
+    ),
+    dataClass: valueToString(
+      firstValue(runtime, [
+        ["governance", "dataClass"],
+        ["runtime", "dataClass"]
+      ]),
+      "-"
+    ),
+    containsSecret: valueToBoolean(firstValue(runtime, [["governance", "containsSecret"]])),
+    containsPersonalData: valueToBoolean(firstValue(runtime, [["governance", "containsPersonalData"]])),
+    containsSecuritySensitiveData: valueToBoolean(
+      firstValue(runtime, [["governance", "containsSecuritySensitiveData"]])
+    ),
+    containsCivicSensitiveData: valueToBoolean(
+      firstValue(runtime, [["governance", "containsCivicSensitiveData"], ["runtime", "containsCivicSensitiveData"]])
+    ),
+    containsDemocraticChoiceData: valueToBoolean(
+      firstValue(runtime, [["governance", "containsDemocraticChoiceData"], ["runtime", "containsDemocraticChoiceData"]])
+    ),
+    policyStatus: valueToString(
+      firstValue(runtime, [
+        ["governance", "policyStatus"],
+        ["runtime", "policyStatus"]
+      ]),
+      "-"
+    ),
+    policyOutcome: valueToString(
+      firstValue(runtime, [
+        ["governance", "policyOutcome"],
+        ["runtime", "policyOutcome"]
+      ]),
+      "-"
+    ),
+    policyReference: valueToString(
+      firstValue(runtime, [
+        ["governance", "policyReference"],
+        ["runtime", "policyReference"]
+      ]),
+      "-"
+    ),
+    riskClass: valueToString(
+      firstValue(runtime, [
+        ["governance", "riskClass"],
+        ["runtime", "riskClass"]
+      ]),
+      "-"
+    ),
+    riskScore: valueToNumber(
+      firstValue(runtime, [
+        ["governance", "riskScore"],
+        ["runtime", "riskScore"]
+      ])
+    ),
+    oversight: valueToString(
+      firstValue(runtime, [
+        ["governance", "oversight"],
+        ["governance", "humanOversight"],
+        ["runtime", "humanOversight"]
+      ]),
+      "-"
+    ),
+    requiredRole: valueToString(
+      firstValue(runtime, [
+        ["governance", "requiredRole"],
+        ["runtime", "requiredRole"]
+      ]),
+      "-"
+    ),
+    iprBinding: valueToBoolean(firstValue(runtime, [["governance", "iprBinding"], ["runtime", "iprBinding"]])),
+    evtRequired: valueToBoolean(firstValue(runtime, [["governance", "evtRequired"], ["runtime", "evtRequired"]])),
+    memoryRequired: valueToBoolean(firstValue(runtime, [["governance", "memoryRequired"], ["runtime", "memoryRequired"]])),
+    opcRequired: valueToBoolean(firstValue(runtime, [["governance", "opcRequired"], ["runtime", "opcRequired"]])),
+    auditRequired: valueToBoolean(firstValue(runtime, [["governance", "auditRequired"], ["runtime", "auditRequired"]])),
+    failClosed: valueToBoolean(firstValue(runtime, [["governance", "failClosed"], ["runtime", "failClosed"]])),
+    civicBoundary: valueToString(
+      firstValue(runtime, [["governance", "civicBoundary"], ["boundary", "useDemocraticBoundary"]]),
+      ""
+    ),
+    aiGovernanceBoundary: valueToString(
+      firstValue(runtime, [["governance", "aiGovernanceBoundary"], ["boundary", "aiGovernanceBoundary"]]),
+      ""
+    ),
+    aerospaceBoundary: valueToString(firstValue(runtime, [["governance", "aerospaceBoundary"]]), "")
+  };
+}
+
+function resolveNextContinuityRef(runtime?: ChatApiResponse | null): string | null {
+  const value = firstValue(runtime || undefined, [
+    ["continuityRef"],
+    ["memory", "event"],
+    ["memory", "lastEventId"],
+    ["governedEvt", "evt"],
+    ["modernEvt", "evt"],
+    ["evt", "evt"],
+    ["event", "evt"]
+  ]);
+
+  const rendered = valueToString(value, "");
+
+  return rendered || null;
+}
+
+function resolveResponseText(payload: ChatApiResponse): string {
+  return valueToString(payload.response || payload.text, "");
 }
 
 function MessageBubble({ message }: { message: ChatMessage }) {
@@ -557,6 +1276,11 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   const engine = resolveEngine(message.runtime);
   const opcEngine = resolveOpcEngine(message.runtime);
   const opcEngineHash = resolveOpcEngineHash(message.runtime);
+  const evt = resolveEvt(message.runtime);
+  const governedEvt = resolveGovernedEvt(message.runtime);
+  const opc = resolveOpc(message.runtime);
+  const governance = resolveGovernance(message.runtime);
+  const memory = message.runtime?.memory || {};
 
   return (
     <article
@@ -605,20 +1329,20 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           <MiniProofCard
             title="EVT Chain"
             rows={[
-              ["EVT", message.runtime.evt?.evt],
-              ["Prev", message.runtime.evt?.prev],
-              ["Public", message.runtime.evt?.publicHash || message.runtime.evt?.hash],
-              ["Full", message.runtime.evt?.fullHash]
+              ["EVT", evt.evt],
+              ["Prev", evt.prev],
+              ["Public", evt.publicHash || evt.hash],
+              ["Full", evt.fullHash]
             ]}
           />
 
           <MiniProofCard
             title="Governed EVT"
             rows={[
-              ["EVT", message.runtime.governedEvt?.evt],
-              ["Prev", message.runtime.governedEvt?.prev],
-              ["Project", message.runtime.governedEvt?.project],
-              ["Append", message.runtime.governedEvt?.appendStatus]
+              ["EVT", governedEvt.evt],
+              ["Prev", governedEvt.prev],
+              ["Project", governedEvt.project],
+              ["Append", governedEvt.appendStatus]
             ]}
             statusLabels={["Append"]}
           />
@@ -626,23 +1350,16 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           <MiniProofCard
             title="HBCE Module"
             rows={[
-              ["Module", message.runtime.hbceModule || message.runtime.governance?.hbceModule],
-              ["Type", message.runtime.moduleType || message.runtime.governance?.moduleType],
-              ["Active", formatList(message.runtime.activeModules || message.runtime.governance?.activeModules)]
+              ["Module", governance.hbceModule],
+              ["Type", governance.moduleType],
+              ["Active", formatList(governance.activeModules)]
             ]}
           />
 
           <MiniProofCard
             title="Strategic Doctrine"
             rows={[
-              [
-                "Docs",
-                formatList(
-                  message.runtime.strategicDoctrines ||
-                    message.runtime.governance?.strategicDoctrines ||
-                    message.runtime.diagnostics?.strategicDoctrines
-                )
-              ],
+              ["Docs", formatList(governance.strategicDoctrines)],
               ["Layer", "ACTIVE"],
               ["Status", "DOCTRINE"]
             ]}
@@ -652,10 +1369,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           <MiniProofCard
             title="EVT/IPR Memory"
             rows={[
-              ["Event", message.runtime.memory?.event],
-              ["Hash", message.runtime.memory?.memoryHash],
-              ["Source", message.runtime.memory?.source],
-              ["Append", message.runtime.memory?.appendStatus]
+              ["Event", memory.event],
+              ["Hash", memory.memoryHash],
+              ["Source", memory.source],
+              ["Append", memory.appendStatus]
             ]}
             statusLabels={["Append"]}
           />
@@ -663,13 +1380,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           <MiniProofCard
             title="OPC Proof Receipt"
             rows={[
-              ["Proof", message.runtime.opc?.proofId],
-              ["Chain", message.runtime.opc?.chainHash],
-              ["Model", message.runtime.opc?.modelUsed || opcEngine.modelUsed],
+              ["Proof", opc.proofId],
+              ["Chain", opc.chainHash],
+              ["Model", opc.modelUsed || opcEngine.modelUsed],
               ["EHash", opcEngineHash],
-              ["Audit", message.runtime.opc?.auditStatus],
-              ["Verify", message.runtime.opc?.verificationStatus],
-              ["Legal", String(message.runtime.opc?.legalCertification ?? false)]
+              ["Audit", opc.auditStatus],
+              ["Verify", opc.verificationStatus],
+              ["Legal", String(opc.legalCertification ?? false)]
             ]}
             statusLabels={["Audit", "Verify", "Legal"]}
           />
@@ -711,7 +1428,7 @@ function FilesPanel({
             <div className="joker-file-main">
               <div className="joker-file-name">{file.name || "unnamed"}</div>
               <div className="joker-file-meta">
-                {file.type || "unknown"} · {file.size || 0} bytes
+                {file.type || file.mimeType || "unknown"} · {file.size || 0} bytes
               </div>
             </div>
 
@@ -763,6 +1480,11 @@ export default function InterfacePage() {
   const runtimeSummary = useMemo(() => {
     const engine = resolveEngine(lastRuntime || undefined);
     const opcEngine = resolveOpcEngine(lastRuntime || undefined);
+    const opc = resolveOpc(lastRuntime || undefined);
+    const evt = resolveEvt(lastRuntime || undefined);
+    const governedEvt = resolveGovernedEvt(lastRuntime || undefined);
+    const identity = resolveIdentity(lastRuntime || undefined);
+    const governance = resolveGovernance(lastRuntime || undefined);
 
     return {
       state: lastRuntime?.state || "Ready",
@@ -771,39 +1493,58 @@ export default function InterfacePage() {
       engine,
       opcEngine,
       opcEngineHash: resolveOpcEngineHash(lastRuntime || undefined),
-      opcModelUsed:
-        lastRuntime?.opc?.modelUsed ||
-        lastRuntime?.diagnostics?.opcModelUsed ||
-        opcEngine.modelUsed ||
-        "-",
-      opcChainHash:
-        lastRuntime?.opc?.chainHash ||
-        lastRuntime?.diagnostics?.opcChainHash ||
-        "-",
-      projectDomain: lastRuntime?.projectDomain || "-",
-      activeDomains: lastRuntime?.activeDomains || lastRuntime?.governance?.activeDomains || [],
-      domainType: lastRuntime?.domainType || lastRuntime?.governance?.domainType || "-",
-      contextClass: lastRuntime?.contextClass || "-",
-      intentClass: lastRuntime?.intentClass || "-",
+      opcModelUsed: opc.modelUsed || opcEngine.modelUsed || "-",
+      opcChainHash: opc.chainHash || "-",
+      opcAppendStatus: opc.appendStatus || "-",
+      opcVerificationStatus: opc.verificationStatus || "-",
+      opcAuditStatus: opc.auditStatus || "-",
+      legalCertification: opc.legalCertification ?? false,
+      projectDomain: governance.projectDomain || "-",
+      activeDomains: governance.activeDomains || [],
+      domainType: governance.domainType || "-",
+      contextClass:
+        valueToString(
+          firstValue(lastRuntime || undefined, [["contextClass"], ["runtime", "contextClass"]]),
+          "-"
+        ),
+      intentClass:
+        valueToString(
+          firstValue(lastRuntime || undefined, [["intentClass"], ["runtime", "intentClass"]]),
+          "-"
+        ),
       documentFamily: lastRuntime?.documentFamily || "-",
-      hbceModule: lastRuntime?.hbceModule || lastRuntime?.governance?.hbceModule || "-",
-      activeModules: lastRuntime?.activeModules || lastRuntime?.governance?.activeModules || [],
-      moduleType: lastRuntime?.moduleType || lastRuntime?.governance?.moduleType || "-",
-      moduleConfidence: lastRuntime?.governance?.moduleConfidence,
-      collections: lastRuntime?.collections || CANONICAL_COLLECTIONS,
-      modules: lastRuntime?.modules || CANONICAL_MODULES,
+      hbceModule: governance.hbceModule || "-",
+      activeModules: governance.activeModules || [],
+      moduleType: governance.moduleType || "-",
+      moduleConfidence: governance.moduleConfidence,
+      collections: valueToStringArray(lastRuntime?.collections).length > 0
+        ? valueToStringArray(lastRuntime?.collections)
+        : CANONICAL_COLLECTIONS,
+      modules: valueToStringArray(lastRuntime?.modules).length > 0
+        ? valueToStringArray(lastRuntime?.modules)
+        : CANONICAL_MODULES,
       strategicDoctrines:
-        lastRuntime?.strategicDoctrines ||
-        lastRuntime?.governance?.strategicDoctrines ||
-        lastRuntime?.diagnostics?.strategicDoctrines ||
-        CANONICAL_STRATEGIC_DOCTRINES,
-      memoryUsed: lastRuntime?.evtIprMemoryUsed,
-      memorySource: lastRuntime?.memorySource || "-",
-      memoryHash: lastRuntime?.memory?.memoryHash || "-",
-      opcAppendStatus: lastRuntime?.opc?.appendStatus || "-",
-      opcVerificationStatus: lastRuntime?.opc?.verificationStatus || "-",
-      opcAuditStatus: lastRuntime?.opc?.auditStatus || "-",
-      legalCertification: lastRuntime?.opc?.legalCertification ?? false
+        valueToStringArray(governance.strategicDoctrines).length > 0
+          ? valueToStringArray(governance.strategicDoctrines)
+          : CANONICAL_STRATEGIC_DOCTRINES,
+      memoryUsed:
+        lastRuntime?.evtIprMemoryUsed ??
+        lastRuntime?.memory?.used ??
+        lastRuntime?.diagnostics?.evtIprMemoryUsed,
+      memorySource:
+        lastRuntime?.memorySource ||
+        lastRuntime?.memory?.source ||
+        lastRuntime?.diagnostics?.memorySource ||
+        "-",
+      memoryHash:
+        lastRuntime?.memory?.memoryHash ||
+        lastRuntime?.diagnostics?.memoryHash ||
+        "-",
+      evt,
+      governedEvt,
+      opc,
+      identity,
+      governance
     };
   }, [lastRuntime]);
 
@@ -819,9 +1560,11 @@ export default function InterfacePage() {
         id: buildClientId("FILE"),
         name: file.name,
         type: file.type || "text/plain",
+        mimeType: file.type || "text/plain",
         size: file.size,
         role: "context",
         text,
+        content: text,
         uploaded: true
       });
     }
@@ -882,7 +1625,7 @@ export default function InterfacePage() {
           message: outgoing,
           sessionId,
           files,
-          continuityRef: lastRuntime?.memory?.event || lastRuntime?.evt?.evt || null
+          continuityRef: resolveNextContinuityRef(lastRuntime)
         })
       });
 
@@ -892,6 +1635,7 @@ export default function InterfacePage() {
         const errorMessage =
           payload.error ||
           payload.response ||
+          payload.text ||
           `Runtime request failed with HTTP ${response.status}`;
 
         throw new Error(errorMessage);
@@ -902,7 +1646,7 @@ export default function InterfacePage() {
       const assistantMessage: ChatMessage = {
         id: buildClientId("MSG-A"),
         role: "assistant",
-        content: payload.response || "",
+        content: resolveResponseText(payload) || "[EMPTY_RESPONSE]",
         createdAt: new Date().toLocaleString("it-IT"),
         runtime: payload
       };
@@ -1795,51 +2539,47 @@ export default function InterfacePage() {
           </RuntimeCard>
 
           <RuntimeCard title="IPR Runtime">
-            <FieldRow label="Entity" value={lastRuntime?.identity?.entity || "-"} mono />
-            <FieldRow label="IPR" value={lastRuntime?.identity?.ipr || "-"} mono />
-            <FieldRow label="Role" value={lastRuntime?.identity?.runtimeRole || "-"} />
-            <FieldRow label="EVT" value={lastRuntime?.identity?.evt || "-"} mono />
-            <FieldRow label="Cycle" value={lastRuntime?.identity?.cycle || "-"} mono />
-            <FieldRow label="Core" value={lastRuntime?.identity?.core || "-"} mono />
-            <FieldRow
-              label="Birth"
-              value={lastRuntime?.identity?.projectBirthDate || runtimeSummary.engine.projectBirthDate}
-              mono
-            />
+            <FieldRow label="Entity" value={runtimeSummary.identity.entity} mono />
+            <FieldRow label="IPR" value={runtimeSummary.identity.ipr} mono />
+            <FieldRow label="Role" value={runtimeSummary.identity.runtimeRole} />
+            <FieldRow label="EVT" value={runtimeSummary.identity.evt} mono />
+            <FieldRow label="Cycle" value={runtimeSummary.identity.cycle} mono />
+            <FieldRow label="Core" value={runtimeSummary.identity.core} mono />
+            <FieldRow label="Birth" value={runtimeSummary.identity.projectBirthDate} mono />
           </RuntimeCard>
 
           <RuntimeCard title="OPC Proof Receipt">
-            <FieldRow label="Proof" value={lastRuntime?.opc?.proofId || "-"} mono />
-            <FieldRow label="Chain" value={lastRuntime?.opc?.chainHash || "-"} mono />
+            <FieldRow label="Proof" value={runtimeSummary.opc.proofId} mono />
+            <FieldRow label="Chain" value={runtimeSummary.opc.chainHash} mono />
             <FieldRow label="Model" value={runtimeSummary.opcModelUsed} mono />
             <FieldRow label="EHash" value={runtimeSummary.opcEngineHash} mono />
-            <FieldRow label="Module" value={lastRuntime?.opc?.hbceModule || runtimeSummary.hbceModule} />
-            <FieldRow label="Memory" value={lastRuntime?.opc?.memoryHash || "-"} mono />
+            <FieldRow label="Module" value={runtimeSummary.opc.hbceModule || runtimeSummary.hbceModule} />
+            <FieldRow label="Memory" value={runtimeSummary.opc.memoryHash} mono />
             <FieldRow label="Audit" value={runtimeSummary.opcAuditStatus} badge />
             <FieldRow label="Verify" value={runtimeSummary.opcVerificationStatus} badge />
             <FieldRow label="Append" value={runtimeSummary.opcAppendStatus} badge />
             <FieldRow label="Legal" value={runtimeSummary.legalCertification} badge />
-            <FieldRow label="Reason" value={lastRuntime?.opc?.appendReason || "-"} />
+            <FieldRow label="Reason" value={runtimeSummary.opc.appendReason} />
           </RuntimeCard>
 
           <RuntimeCard title="EVT Chain">
-            <FieldRow label="EVT" value={lastRuntime?.evt?.evt || "-"} mono />
-            <FieldRow label="Prev" value={lastRuntime?.evt?.prev || "-"} mono />
+            <FieldRow label="EVT" value={runtimeSummary.evt.evt} mono />
+            <FieldRow label="Prev" value={runtimeSummary.evt.prev} mono />
             <FieldRow
               label="Public"
-              value={lastRuntime?.evt?.publicHash || lastRuntime?.evt?.hash || "-"}
+              value={runtimeSummary.evt.publicHash || runtimeSummary.evt.hash || "-"}
               mono
             />
-            <FieldRow label="Full" value={lastRuntime?.evt?.fullHash || "-"} mono />
+            <FieldRow label="Full" value={runtimeSummary.evt.fullHash} mono />
           </RuntimeCard>
 
           <RuntimeCard title="Governed EVT">
-            <FieldRow label="EVT" value={lastRuntime?.governedEvt?.evt || "-"} mono />
-            <FieldRow label="Prev" value={lastRuntime?.governedEvt?.prev || "-"} mono />
-            <FieldRow label="Project" value={lastRuntime?.governedEvt?.project || "-"} />
-            <FieldRow label="Domains" value={formatList(lastRuntime?.governedEvt?.activeDomains)} />
-            <FieldRow label="Hash" value={lastRuntime?.governedEvt?.hash || "-"} mono />
-            <FieldRow label="Append" value={lastRuntime?.governedEvt?.appendStatus || "-"} badge />
+            <FieldRow label="EVT" value={runtimeSummary.governedEvt.evt} mono />
+            <FieldRow label="Prev" value={runtimeSummary.governedEvt.prev} mono />
+            <FieldRow label="Project" value={runtimeSummary.governedEvt.project} />
+            <FieldRow label="Domains" value={formatList(runtimeSummary.governedEvt.activeDomains)} />
+            <FieldRow label="Hash" value={runtimeSummary.governedEvt.hash} mono />
+            <FieldRow label="Append" value={runtimeSummary.governedEvt.appendStatus} badge />
           </RuntimeCard>
 
           <RuntimeCard title="EVT/IPR Memory">
@@ -1852,44 +2592,44 @@ export default function InterfacePage() {
           </RuntimeCard>
 
           <RuntimeCard title="Governance">
-            <FieldRow label="Data" value={lastRuntime?.governance?.dataClass || "-"} badge />
-            <FieldRow label="Secret" value={lastRuntime?.governance?.containsSecret} />
-            <FieldRow label="Personal" value={lastRuntime?.governance?.containsPersonalData} />
-            <FieldRow label="Security" value={lastRuntime?.governance?.containsSecuritySensitiveData} />
-            <FieldRow label="Civic" value={lastRuntime?.governance?.containsCivicSensitiveData} />
-            <FieldRow label="Choice" value={lastRuntime?.governance?.containsDemocraticChoiceData} />
-            <FieldRow label="Policy" value={lastRuntime?.governance?.policyStatus || "-"} badge />
-            <FieldRow label="Outcome" value={lastRuntime?.governance?.policyOutcome || "-"} badge />
-            <FieldRow label="Risk" value={lastRuntime?.governance?.riskClass || "-"} badge />
-            <FieldRow label="Score" value={lastRuntime?.governance?.riskScore ?? "-"} />
-            <FieldRow label="Oversight" value={lastRuntime?.governance?.oversight || "-"} badge />
-            <FieldRow label="Role" value={lastRuntime?.governance?.requiredRole || "-"} />
-            <FieldRow label="FailClosed" value={lastRuntime?.governance?.failClosed} />
+            <FieldRow label="Data" value={runtimeSummary.governance.dataClass} badge />
+            <FieldRow label="Secret" value={runtimeSummary.governance.containsSecret} />
+            <FieldRow label="Personal" value={runtimeSummary.governance.containsPersonalData} />
+            <FieldRow label="Security" value={runtimeSummary.governance.containsSecuritySensitiveData} />
+            <FieldRow label="Civic" value={runtimeSummary.governance.containsCivicSensitiveData} />
+            <FieldRow label="Choice" value={runtimeSummary.governance.containsDemocraticChoiceData} />
+            <FieldRow label="Policy" value={runtimeSummary.governance.policyStatus} badge />
+            <FieldRow label="Outcome" value={runtimeSummary.governance.policyOutcome} badge />
+            <FieldRow label="Risk" value={runtimeSummary.governance.riskClass} badge />
+            <FieldRow label="Score" value={runtimeSummary.governance.riskScore ?? "-"} />
+            <FieldRow label="Oversight" value={runtimeSummary.governance.oversight} badge />
+            <FieldRow label="Role" value={runtimeSummary.governance.requiredRole} />
+            <FieldRow label="FailClosed" value={runtimeSummary.governance.failClosed} />
           </RuntimeCard>
 
           <RuntimeCard title="Runtime Requirements">
-            <FieldRow label="IPR" value={lastRuntime?.governance?.iprBinding} />
-            <FieldRow label="EVT" value={lastRuntime?.governance?.evtRequired} />
-            <FieldRow label="Memory" value={lastRuntime?.governance?.memoryRequired} />
-            <FieldRow label="OPC" value={lastRuntime?.governance?.opcRequired} />
-            <FieldRow label="Audit" value={lastRuntime?.governance?.auditRequired} />
+            <FieldRow label="IPR" value={runtimeSummary.governance.iprBinding} />
+            <FieldRow label="EVT" value={runtimeSummary.governance.evtRequired} />
+            <FieldRow label="Memory" value={runtimeSummary.governance.memoryRequired} />
+            <FieldRow label="OPC" value={runtimeSummary.governance.opcRequired} />
+            <FieldRow label="Audit" value={runtimeSummary.governance.auditRequired} />
           </RuntimeCard>
 
-          {lastRuntime?.governance?.civicBoundary ? (
+          {runtimeSummary.governance.civicBoundary ? (
             <RuntimeCard title="U.S.E. Boundary">
-              <FieldRow label="Rule" value={lastRuntime.governance.civicBoundary || USE_DEMOCRATIC_BOUNDARY} />
+              <FieldRow label="Rule" value={runtimeSummary.governance.civicBoundary || USE_DEMOCRATIC_BOUNDARY} />
             </RuntimeCard>
           ) : null}
 
-          {lastRuntime?.governance?.aiGovernanceBoundary ? (
+          {runtimeSummary.governance.aiGovernanceBoundary ? (
             <RuntimeCard title="HBCE AI Boundary">
-              <FieldRow label="Rule" value={lastRuntime.governance.aiGovernanceBoundary || HBCE_AI_BOUNDARY} />
+              <FieldRow label="Rule" value={runtimeSummary.governance.aiGovernanceBoundary || HBCE_AI_BOUNDARY} />
             </RuntimeCard>
           ) : null}
 
-          {lastRuntime?.governance?.aerospaceBoundary ? (
+          {runtimeSummary.governance.aerospaceBoundary ? (
             <RuntimeCard title="Aerospace Boundary">
-              <FieldRow label="Rule" value={lastRuntime.governance.aerospaceBoundary} />
+              <FieldRow label="Rule" value={runtimeSummary.governance.aerospaceBoundary} />
             </RuntimeCard>
           ) : null}
 
@@ -1898,7 +2638,7 @@ export default function InterfacePage() {
           </RuntimeCard>
 
           <RuntimeCard title="Diagnostics">
-            <FieldRow label="OpenAI" value={lastRuntime?.diagnostics?.openaiConfigured} />
+            <FieldRow label="OpenAI" value={lastRuntime?.diagnostics?.openaiConfigured ?? runtimeSummary.engine.configured} />
             <FieldRow label="Provider" value={runtimeSummary.engine.provider || "-"} badge />
             <FieldRow label="Engine" value={runtimeSummary.engine.role || "-"} />
             <FieldRow label="Runtime" value={runtimeSummary.engine.runtimeRole || "-"} />
@@ -1908,18 +2648,21 @@ export default function InterfacePage() {
             <FieldRow label="Standard" value={runtimeSummary.engine.standardModel || "-"} mono />
             <FieldRow label="Deep" value={runtimeSummary.engine.deepModel || "-"} mono />
             <FieldRow label="Birth" value={runtimeSummary.engine.projectBirthDate || "-"} mono />
-            <FieldRow label="Degraded" value={lastRuntime?.diagnostics?.degradedReason || "none"} />
+            <FieldRow
+              label="Degraded"
+              value={lastRuntime?.diagnostics?.degradedReason || lastRuntime?.degradedReason || "none"}
+            />
             <FieldRow label="MemAvail" value={lastRuntime?.diagnostics?.memoryAvailable} />
             <FieldRow label="MemInj" value={lastRuntime?.diagnostics?.memoryInjected} />
             <FieldRow label="Memory" value={lastRuntime?.diagnostics?.memoryAppendStatus || "-"} badge />
-            <FieldRow label="OPC" value={lastRuntime?.diagnostics?.opcAppendStatus || "-"} badge />
-            <FieldRow label="OPCChain" value={lastRuntime?.diagnostics?.opcChainHash || "-"} mono />
-            <FieldRow label="OPCEHash" value={lastRuntime?.diagnostics?.opcEngineHash || "-"} mono />
-            <FieldRow label="OPCModel" value={lastRuntime?.diagnostics?.opcModelUsed || "-"} mono />
-            <FieldRow label="Verify" value={lastRuntime?.diagnostics?.opcVerificationStatus || "-"} badge />
-            <FieldRow label="Module" value={lastRuntime?.diagnostics?.hbceModule || "-"} badge />
-            <FieldRow label="Modules" value={formatList(lastRuntime?.diagnostics?.activeModules)} />
-            <FieldRow label="Doctrine" value={formatList(lastRuntime?.diagnostics?.strategicDoctrines)} />
+            <FieldRow label="OPC" value={lastRuntime?.diagnostics?.opcAppendStatus || runtimeSummary.opcAppendStatus} badge />
+            <FieldRow label="OPCChain" value={lastRuntime?.diagnostics?.opcChainHash || runtimeSummary.opcChainHash} mono />
+            <FieldRow label="OPCEHash" value={lastRuntime?.diagnostics?.opcEngineHash || runtimeSummary.opcEngineHash} mono />
+            <FieldRow label="OPCModel" value={lastRuntime?.diagnostics?.opcModelUsed || runtimeSummary.opcModelUsed} mono />
+            <FieldRow label="Verify" value={lastRuntime?.diagnostics?.opcVerificationStatus || runtimeSummary.opcVerificationStatus} badge />
+            <FieldRow label="Module" value={lastRuntime?.diagnostics?.hbceModule || runtimeSummary.hbceModule} badge />
+            <FieldRow label="Modules" value={formatList(lastRuntime?.diagnostics?.activeModules || runtimeSummary.activeModules)} />
+            <FieldRow label="Doctrine" value={formatList(lastRuntime?.diagnostics?.strategicDoctrines || runtimeSummary.strategicDoctrines)} />
           </RuntimeCard>
         </aside>
       </div>
