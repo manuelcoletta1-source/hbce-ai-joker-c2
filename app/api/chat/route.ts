@@ -46,6 +46,7 @@ import {
   createOpcProofRecord,
   toPublicOpcProofRecord,
   verifyOpcProofRecord,
+  type OpcEngineSnapshot,
   type OpcProofPublicView,
   type OpcProofRecord,
   type OpcRuntimeDecision,
@@ -141,7 +142,7 @@ type LegacyRuntimeEvent = {
 
 type OpenAIEngineMode = "standard" | "deep";
 
-type OpenAIEngineConfig = {
+type OpenAIEngineConfig = OpcEngineSnapshot & {
   provider: "OpenAI";
   apiMode: "chat.completions";
   role: "cognitive_engine";
@@ -1743,6 +1744,7 @@ function buildTechnicalFrame(input: {
   memoryAppendStatus: string;
   opcProofId?: string | null;
   opcChainHash?: string | null;
+  opcEngineHash?: string | null;
   governance: EnrichedGovernanceFrame;
   engine: OpenAIEngineConfig;
   degradedReason?: string | null;
@@ -1808,6 +1810,7 @@ function buildTechnicalFrame(input: {
     `- memoryAppendStatus: ${input.memoryAppendStatus}`,
     `- opcProofId: ${input.opcProofId || "none"}`,
     `- opcChainHash: ${input.opcChainHash || "none"}`,
+    `- opcEngineHash: ${input.opcEngineHash || "none"}`,
     `- prev: ${input.event.prev}`,
     `- legacyPublicHash: ${input.event.anchors.publicHash}`,
     `- legacyFullHash: ${input.event.anchors.fullHash}`,
@@ -3357,8 +3360,10 @@ async function createAndAppendOpcForChat(input: {
   modernEvt: ReturnType<typeof toPublicRuntimeEvent>;
   memoryEvent: ReturnType<typeof appendEvtMemory>;
   governance: EnrichedGovernanceFrame;
+  engine: OpenAIEngineConfig;
 }): Promise<OpcRuntimeResult> {
   const previousProofHash = await getLastOpcProofHash();
+  const enginePayload = buildOpenAIEnginePayload(input.engine);
 
   const record = createOpcProofRecord({
     identity: {
@@ -3369,6 +3374,7 @@ async function createAndAppendOpcForChat(input: {
       runtimeRole: "IPR_RUNTIME_DEMONSTRATOR"
     },
     sessionId: input.sessionId,
+    engine: input.engine,
     event: {
       evt: input.modernEvt.evt,
       prev: input.modernEvt.prev,
@@ -3399,6 +3405,7 @@ async function createAndAppendOpcForChat(input: {
       failClosed: input.governance.decision.failClosed
     } as OpcRuntimeSnapshot,
     inputPayload: {
+      engine: enginePayload,
       message: input.message,
       messageHash: buildProofHash(input.message),
       fileCount: input.files.length,
@@ -3427,6 +3434,7 @@ async function createAndAppendOpcForChat(input: {
       memoryHash: input.memoryEvent.anchors.memoryHash
     },
     outputPayload: {
+      engine: enginePayload,
       response: input.responseText,
       responseHash: buildProofHash(input.responseText),
       state: input.state,
@@ -3442,6 +3450,12 @@ async function createAndAppendOpcForChat(input: {
           : input.governance.oversight.requiredRole
         : undefined,
       reasons: [
+        `Cognitive engine provider: ${input.engine.provider}`,
+        `Cognitive engine model: ${input.engine.modelUsed}`,
+        `Cognitive engine API mode: ${input.engine.apiMode}`,
+        `Cognitive engine mode: ${input.engine.mode}`,
+        `HBCE governed runtime role: ${input.engine.runtimeRole}`,
+        `Project birth date: ${input.engine.projectBirthDate}`,
         ...input.governance.policy.reasons,
         ...input.governance.risk.reasons,
         input.governance.oversight.reason,
@@ -3697,7 +3711,8 @@ export async function POST(req: NextRequest) {
       event,
       modernEvt: publicModernEvt,
       memoryEvent,
-      governance
+      governance,
+      engine: openAIEngine
     });
 
     return NextResponse.json({
@@ -3754,6 +3769,9 @@ export async function POST(req: NextRequest) {
         ok: opc.append.ok,
         proofId: opc.publicProof.proofId,
         chainHash: opc.publicProof.chainHash,
+        engine: opc.publicProof.engine ?? buildOpenAIEnginePayload(openAIEngine),
+        engineHash: opc.publicProof.engineHash ?? null,
+        modelUsed: opc.publicProof.engine?.modelUsed ?? openAIEngine.modelUsed,
         memoryHash: opc.publicProof.memoryHash,
         auditStatus: opc.publicProof.auditStatus,
         verificationStatus: opc.publicProof.verificationStatus,
@@ -3842,6 +3860,9 @@ export async function POST(req: NextRequest) {
         memoryHash: memoryEvent.anchors.memoryHash,
         memoryAppendStatus: memoryAppendResult.status,
         opcProofId: opc.publicProof.proofId,
+        opcChainHash: opc.publicProof.chainHash,
+        opcEngineHash: opc.publicProof.engineHash ?? null,
+        opcModelUsed: opc.publicProof.engine?.modelUsed ?? openAIEngine.modelUsed,
         opcAppendStatus: opc.append.status,
         opcVerificationStatus: opc.publicProof.verificationStatus,
         hbceModule: governance.hbceModule.module,
@@ -3950,7 +3971,8 @@ export async function POST(req: NextRequest) {
     event,
     modernEvt: publicModernEvt,
     memoryEvent,
-    governance
+    governance,
+    engine: openAIEngine
   });
 
   const exposeRuntime = shouldExposeTechnicalFrame(effectiveMessage);
@@ -3976,6 +3998,7 @@ export async function POST(req: NextRequest) {
         memoryAppendStatus: memoryAppendResult.status,
         opcProofId: opc.publicProof.proofId,
         opcChainHash: opc.publicProof.chainHash,
+        opcEngineHash: opc.publicProof.engineHash,
         governance,
         engine: openAIEngine,
         degradedReason: generated.degradedReason
@@ -4036,6 +4059,9 @@ export async function POST(req: NextRequest) {
       ok: opc.append.ok,
       proofId: opc.publicProof.proofId,
       chainHash: opc.publicProof.chainHash,
+      engine: opc.publicProof.engine ?? buildOpenAIEnginePayload(openAIEngine),
+      engineHash: opc.publicProof.engineHash ?? null,
+      modelUsed: opc.publicProof.engine?.modelUsed ?? openAIEngine.modelUsed,
       memoryHash: opc.publicProof.memoryHash,
       auditStatus: opc.publicProof.auditStatus,
       verificationStatus: opc.publicProof.verificationStatus,
@@ -4133,6 +4159,9 @@ export async function POST(req: NextRequest) {
       memoryHash: memoryEvent.anchors.memoryHash,
       memoryAppendStatus: memoryAppendResult.status,
       opcProofId: opc.publicProof.proofId,
+      opcChainHash: opc.publicProof.chainHash,
+      opcEngineHash: opc.publicProof.engineHash ?? null,
+      opcModelUsed: opc.publicProof.engine?.modelUsed ?? openAIEngine.modelUsed,
       opcAppendStatus: opc.append.status,
       opcVerificationStatus: opc.publicProof.verificationStatus,
       hbceModule: governance.hbceModule.module,
