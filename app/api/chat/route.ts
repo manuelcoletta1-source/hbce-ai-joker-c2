@@ -139,6 +139,22 @@ type LegacyRuntimeEvent = {
   continuityRef: string | null;
 };
 
+type OpenAIEngineMode = "standard" | "deep";
+
+type OpenAIEngineConfig = {
+  provider: "OpenAI";
+  apiMode: "chat.completions";
+  role: "cognitive_engine";
+  runtimeRole: "HBCE_governed_runtime";
+  modelUsed: string;
+  standardModel: string;
+  deepModel: string;
+  mode: OpenAIEngineMode;
+  configured: boolean;
+  projectBirthDate: "2026-01-19";
+  projectBirthLabel: "HBCE R&D / AI JOKER-C2 project birth date";
+};
+
 type GeneratedResponse = {
   text: string;
   state: MemoryRuntimeState;
@@ -182,7 +198,19 @@ type PromptFileContext = {
   referenceOnlyContextFile: FileInput | null;
 };
 
-const MODEL = process.env.JOKER_MODEL || "gpt-4o-mini";
+const DEFAULT_JOKER_MODEL = "gpt-5.5";
+const DEFAULT_JOKER_DEEP_MODEL = "gpt-5.5";
+const OPENAI_ENGINE_PROVIDER = "OpenAI" as const;
+const OPENAI_ENGINE_API_MODE = "chat.completions" as const;
+const OPENAI_ENGINE_ROLE = "cognitive_engine" as const;
+const HBCE_RUNTIME_ROLE = "HBCE_governed_runtime" as const;
+const HBCE_JOKER_C2_PROJECT_BIRTH_DATE = "2026-01-19" as const;
+const HBCE_JOKER_C2_PROJECT_BIRTH_LABEL =
+  "HBCE R&D / AI JOKER-C2 project birth date" as const;
+
+const MODEL = resolveModelEnv("JOKER_MODEL", DEFAULT_JOKER_MODEL);
+const DEEP_MODEL = resolveModelEnv("JOKER_DEEP_MODEL", DEFAULT_JOKER_DEEP_MODEL);
+
 const MAX_OUTPUT_TOKENS = 4600;
 const MAX_DATA_CLASSIFICATION_CHARS = 24000;
 
@@ -222,6 +250,16 @@ const STRATEGIC_DOCTRINES = [
 
 const REFERENCE_ONLY_CONTEXT_FILE_ID = "hbce-reference-only-files";
 const REFERENCE_ONLY_CONTEXT_FILE_NAME = "HBCE_REFERENCE_ONLY_FILES.md";
+
+function resolveModelEnv(name: string, fallback: string): string {
+  const value = process.env[name];
+
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  return fallback;
+}
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -280,6 +318,104 @@ function normalizeFiles(files: FileInput[]): NormalizedFile[] {
       text
     };
   });
+}
+
+function shouldUseDeepOpenAIModel(input: {
+  message: string;
+  contextClass: ContextClass;
+  intentClass: IntentClass;
+  documentMode: DocumentMode;
+  documentFamily: DocumentFamily;
+  governance: EnrichedGovernanceFrame;
+}): boolean {
+  if (isRuntimeDiagnosticRequest(input.message)) {
+    return true;
+  }
+
+  if (
+    input.contextClass === "GITHUB" ||
+    input.contextClass === "TECHNICAL" ||
+    input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "COMPLIANCE" ||
+    input.contextClass === "SECURITY" ||
+    input.contextClass === "AI_GOVERNANCE" ||
+    input.contextClass === "HBCE_ECOSISTEMA_AI" ||
+    input.contextClass === "STRATEGIC" ||
+    input.contextClass === "MATRIX"
+  ) {
+    return true;
+  }
+
+  if (
+    input.intentClass === "ANALYZE" ||
+    input.intentClass === "REWRITE" ||
+    input.intentClass === "TRANSFORM" ||
+    input.intentClass === "GITHUB" ||
+    input.intentClass === "COMPLIANCE" ||
+    input.intentClass === "STRATEGIC"
+  ) {
+    return true;
+  }
+
+  if (
+    input.documentMode === "IMPACT_ASSESSMENT" ||
+    input.documentMode === "EDITORIAL_REVIEW" ||
+    input.documentMode === "GENERATIVE_REWRITE" ||
+    input.documentMode === "DERIVED_OUTPUT"
+  ) {
+    return true;
+  }
+
+  if (
+    input.governance.decision.auditRequired ||
+    input.governance.decision.opcRequired ||
+    input.governance.risk.riskClass !== "LOW"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function resolveOpenAIEngineConfig(input: {
+  message: string;
+  contextClass: ContextClass;
+  intentClass: IntentClass;
+  documentMode: DocumentMode;
+  documentFamily: DocumentFamily;
+  governance: EnrichedGovernanceFrame;
+}): OpenAIEngineConfig {
+  const useDeepModel = shouldUseDeepOpenAIModel(input);
+
+  return {
+    provider: OPENAI_ENGINE_PROVIDER,
+    apiMode: OPENAI_ENGINE_API_MODE,
+    role: OPENAI_ENGINE_ROLE,
+    runtimeRole: HBCE_RUNTIME_ROLE,
+    modelUsed: useDeepModel ? DEEP_MODEL : MODEL,
+    standardModel: MODEL,
+    deepModel: DEEP_MODEL,
+    mode: useDeepModel ? "deep" : "standard",
+    configured: Boolean(process.env.OPENAI_API_KEY),
+    projectBirthDate: HBCE_JOKER_C2_PROJECT_BIRTH_DATE,
+    projectBirthLabel: HBCE_JOKER_C2_PROJECT_BIRTH_LABEL
+  };
+}
+
+function buildOpenAIEnginePayload(engine: OpenAIEngineConfig) {
+  return {
+    provider: engine.provider,
+    apiMode: engine.apiMode,
+    role: engine.role,
+    runtimeRole: engine.runtimeRole,
+    modelUsed: engine.modelUsed,
+    standardModel: engine.standardModel,
+    deepModel: engine.deepModel,
+    mode: engine.mode,
+    configured: engine.configured,
+    projectBirthDate: engine.projectBirthDate,
+    projectBirthLabel: engine.projectBirthLabel
+  };
 }
 
 function resolvePromptFileContext(
@@ -1208,6 +1344,7 @@ async function generateResponse(input: {
   memorySource: string;
   structuredFormat: boolean;
   governanceFrame: EnrichedGovernanceFrame;
+  engine: OpenAIEngineConfig;
 }): Promise<GeneratedResponse> {
   if (!openai) {
     return {
@@ -1221,7 +1358,7 @@ async function generateResponse(input: {
 
   try {
     const response = await openai.chat.completions.create({
-      model: MODEL,
+      model: input.engine.modelUsed,
       messages: [
         {
           role: "system",
@@ -1233,6 +1370,14 @@ async function generateResponse(input: {
             "Non usare elenchi numerati rigidi salvo richiesta esplicita o necessità tecnica.",
             "IPR è lo strumento operativo primario: Identity Primary Record, non un semplice account o login.",
             "AI JOKER-C2 è il runtime dimostrativo governato dell’IPR.",
+            "OpenAI è il motore cognitivo usato dal runtime; HBCE/JOKER-C2 è il livello di governance, identità, evento, prova e audit.",
+            `Provider motore cognitivo: ${input.engine.provider}.`,
+            `API mode motore cognitivo: ${input.engine.apiMode}.`,
+            `Modello OpenAI effettivo: ${input.engine.modelUsed}.`,
+            `Modello standard configurato: ${input.engine.standardModel}.`,
+            `Modello deep configurato: ${input.engine.deepModel}.`,
+            `Modalità motore: ${input.engine.mode}.`,
+            `Data nascita progetto HBCE R&D / AI JOKER-C2: ${input.engine.projectBirthDate}.`,
             "Checkpoint canonico runtime attivo: EVT-0015-AI. Checkpoint precedente: EVT-0014-AI. Ciclo: UP-MESE-4.",
             "La memoria non è la chat: la memoria è la catena EVT/IPR-bound.",
             "Usa la memoria EVT/IPR-bound solo quando è semanticamente pertinente alla domanda corrente.",
@@ -1480,6 +1625,7 @@ function buildRuntimeDiagnosticText(input: {
   event: LegacyRuntimeEvent;
   modernEvt: ReturnType<typeof toPublicRuntimeEvent>;
   governance: EnrichedGovernanceFrame;
+  engine: OpenAIEngineConfig;
   degradedReason?: string | null;
 }): string {
   const identity = getPrimaryIdentity();
@@ -1489,6 +1635,16 @@ function buildRuntimeDiagnosticText(input: {
     "",
     `Runtime OpenAI: ${input.state}`,
     `RuntimeRole: IPR_RUNTIME_DEMONSTRATOR`,
+    `CognitiveEngineProvider: ${input.engine.provider}`,
+    `CognitiveEngineRole: ${input.engine.role}`,
+    `EngineApiMode: ${input.engine.apiMode}`,
+    `EngineMode: ${input.engine.mode}`,
+    `Model: ${input.engine.modelUsed}`,
+    `StandardModel: ${input.engine.standardModel}`,
+    `DeepModel: ${input.engine.deepModel}`,
+    `OpenAIConfigured: ${input.engine.configured ? "true" : "false"}`,
+    `ProjectBirthDate: ${input.engine.projectBirthDate}`,
+    `ProjectBirthLabel: ${input.engine.projectBirthLabel}`,
     `Decision: ${input.decision}`,
     `GovernanceDecision: ${input.governanceDecision}`,
     `ProjectDomain: ${input.governance.projectDomain.projectDomain}`,
@@ -1524,8 +1680,6 @@ function buildRuntimeDiagnosticText(input: {
     `EvtIprMemoryUsed: ${input.memoryUsed ? "true" : "false"}`,
     `MemorySource: ${input.memorySource}`,
     `StructuredFormat: ${input.structuredFormat ? "true" : "false"}`,
-    `Model: ${MODEL}`,
-    `OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "configured" : "missing"}`,
     "",
     "Five Collections:",
     `- ${FIVE_COLLECTIONS.join(", ")}`,
@@ -1590,6 +1744,7 @@ function buildTechnicalFrame(input: {
   opcProofId?: string | null;
   opcChainHash?: string | null;
   governance: EnrichedGovernanceFrame;
+  engine: OpenAIEngineConfig;
   degradedReason?: string | null;
 }) {
   const identity = getPrimaryIdentity();
@@ -1600,6 +1755,16 @@ function buildTechnicalFrame(input: {
     "Runtime:",
     `- state: ${input.state}`,
     `- runtimeRole: IPR_RUNTIME_DEMONSTRATOR`,
+    `- cognitiveEngineProvider: ${input.engine.provider}`,
+    `- cognitiveEngineRole: ${input.engine.role}`,
+    `- engineApiMode: ${input.engine.apiMode}`,
+    `- engineMode: ${input.engine.mode}`,
+    `- modelUsed: ${input.engine.modelUsed}`,
+    `- standardModel: ${input.engine.standardModel}`,
+    `- deepModel: ${input.engine.deepModel}`,
+    `- openaiConfigured: ${input.engine.configured ? "true" : "false"}`,
+    `- projectBirthDate: ${input.engine.projectBirthDate}`,
+    `- projectBirthLabel: ${input.engine.projectBirthLabel}`,
     `- checkpoint: ${identity.evt}`,
     `- cycle: ${identity.cycle}`,
     `- decision: ${input.decision}`,
@@ -3316,7 +3481,9 @@ function buildIdentityPayload(identity: ReturnType<typeof getPrimaryIdentity>) {
     state: identity.state,
     cycle: identity.cycle,
     core: identity.core,
-    runtimeRole: "IPR_RUNTIME_DEMONSTRATOR"
+    runtimeRole: "IPR_RUNTIME_DEMONSTRATOR",
+    projectBirthDate: HBCE_JOKER_C2_PROJECT_BIRTH_DATE,
+    projectBirthLabel: HBCE_JOKER_C2_PROJECT_BIRTH_LABEL
   };
 }
 
@@ -3408,6 +3575,15 @@ export async function POST(req: NextRequest) {
     projectDomain: governance.projectDomain
   });
 
+  const openAIEngine = resolveOpenAIEngineConfig({
+    message: effectiveMessage,
+    contextClass,
+    intentClass,
+    documentMode,
+    documentFamily,
+    governance
+  });
+
   const memoryInjected = shouldInjectEvtMemoryIntoPrompt({
     message: effectiveMessage,
     files: acceptedUserFiles,
@@ -3486,6 +3662,7 @@ export async function POST(req: NextRequest) {
       event,
       modernEvt: publicModernEvt,
       governance,
+      engine: openAIEngine,
       degradedReason
     });
 
@@ -3530,6 +3707,8 @@ export async function POST(req: NextRequest) {
       state: diagnosticState,
       decision: memoryDecision,
       governanceDecision: governance.decision.decision,
+      engine: buildOpenAIEnginePayload(openAIEngine),
+      modelUsed: openAIEngine.modelUsed,
       projectDomain: governance.projectDomain.projectDomain,
       activeDomains: governance.projectDomain.activeDomains,
       domainType: governance.projectDomain.domainType,
@@ -3645,7 +3824,15 @@ export async function POST(req: NextRequest) {
       },
       diagnostics: {
         openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
-        modelUsed: MODEL,
+        engineProvider: openAIEngine.provider,
+        engineRole: openAIEngine.role,
+        runtimeRole: openAIEngine.runtimeRole,
+        engineApiMode: openAIEngine.apiMode,
+        engineMode: openAIEngine.mode,
+        modelUsed: openAIEngine.modelUsed,
+        standardModel: openAIEngine.standardModel,
+        deepModel: openAIEngine.deepModel,
+        projectBirthDate: openAIEngine.projectBirthDate,
         degradedReason,
         evtIprMemoryUsed: effectiveMemoryUsed,
         memorySource: effectiveMemorySource,
@@ -3697,7 +3884,8 @@ export async function POST(req: NextRequest) {
       memoryUsed: effectiveMemoryUsed,
       memorySource: effectiveMemorySource,
       structuredFormat,
-      governanceFrame: governance
+      governanceFrame: governance,
+      engine: openAIEngine
     });
 
     generated = applyReferenceOnlyDisclosure(generated, referenceOnlyFiles);
@@ -3789,6 +3977,7 @@ export async function POST(req: NextRequest) {
         opcProofId: opc.publicProof.proofId,
         opcChainHash: opc.publicProof.chainHash,
         governance,
+        engine: openAIEngine,
         degradedReason: generated.degradedReason
       })
     : generated.text;
@@ -3800,6 +3989,8 @@ export async function POST(req: NextRequest) {
     state: generated.state,
     decision: memoryDecision,
     governanceDecision: governance.decision.decision,
+    engine: buildOpenAIEnginePayload(openAIEngine),
+    modelUsed: openAIEngine.modelUsed,
     projectDomain: governance.projectDomain.projectDomain,
     activeDomains: governance.projectDomain.activeDomains,
     domainType: governance.projectDomain.domainType,
@@ -3924,7 +4115,15 @@ export async function POST(req: NextRequest) {
     },
     diagnostics: {
       openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
-      modelUsed: MODEL,
+      engineProvider: openAIEngine.provider,
+      engineRole: openAIEngine.role,
+      runtimeRole: openAIEngine.runtimeRole,
+      engineApiMode: openAIEngine.apiMode,
+      engineMode: openAIEngine.mode,
+      modelUsed: openAIEngine.modelUsed,
+      standardModel: openAIEngine.standardModel,
+      deepModel: openAIEngine.deepModel,
+      projectBirthDate: openAIEngine.projectBirthDate,
       degradedReason: generated.degradedReason || null,
       evtIprMemoryUsed: effectiveMemoryUsed,
       memorySource: effectiveMemorySource,
