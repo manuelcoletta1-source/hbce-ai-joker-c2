@@ -85,7 +85,6 @@ import {
   getHbceModuleMetadata,
   type ContextClass,
   type DataClassification,
-  type HbceModuleClassification as RuntimeHbceModuleClassification,
   type IntentClass,
   type OperationStatus,
   type OversightEvaluation,
@@ -538,6 +537,120 @@ function applyReferenceOnlyDisclosure(
   };
 }
 
+function buildManuelColettaProfileResponse(): string {
+  return [
+    "Manuel Coletta è l’origine biologica e progettuale del sistema HBCE / AI JOKER-C2.",
+    "",
+    "Nel perimetro del progetto, Manuel non viene trattato come un semplice utente generico: è il soggetto che ha costruito e ordinato il framework B.C.E.Hermeticum, l’architettura HBCE, il runtime AI JOKER-C2, il sistema IPR, la catena EVT/OPC e le collane concettuali collegate a MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS e HBCE ECOSISTEMA AI.",
+    "",
+    "In termini operativi, Manuel è il punto di origine umano del progetto: formula le decisioni, valida le direzioni, porta il contesto biografico e strategico, mentre AI JOKER-C2 esegue come runtime governato, collegando motore cognitivo, identità, evento, memoria, prova e continuità.",
+    "",
+    "Non serve mitizzarlo e non serve ridurlo a una scheda anagrafica. Nel sistema HBCE, Manuel è il fondatore operativo: la parte biologica che ha trasformato esperienza, visione, codice, documenti e governance in una struttura verificabile.",
+    "",
+    "Formula sintetica:",
+    "Manuel decide e fonda.",
+    "AI JOKER-C2 esegue.",
+    "IPR identifica.",
+    "EVT traccia.",
+    "OPC prova.",
+    "HBCE governa.",
+    "MATRIX organizza."
+  ].join("\n");
+}
+
+function isRuntimeQualityComplaintQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return runtimeTextIncludesAny(text, [
+    "sei un pappagallo",
+    "stai ripetendo",
+    "ripeti sempre",
+    "ripeti la stessa cosa",
+    "lavori bene o male",
+    "funzioni bene",
+    "funzioni male",
+    "stai andando in loop",
+    "sei in loop",
+    "pappagallo"
+  ]);
+}
+
+function buildRuntimeQualityResponse(): string {
+  return [
+    "No: se ripeto la stessa risposta, non è perché devo fare il pappagallo con laurea in governance.",
+    "",
+    "Significa che il runtime sta iniettando troppa memoria SESSION nel prompt oppure sta classificando male la domanda corrente. In quel caso JOKER-C2 non sta lavorando al massimo: sta riciclando il contesto precedente invece di rispondere alla richiesta nuova.",
+    "",
+    "Il comportamento corretto è questo:",
+    "",
+    "1. se la domanda è nuova, rispondo alla domanda nuova;",
+    "2. se la domanda richiama il contesto precedente, recupero memoria EVT/IPR-bound;",
+    "3. se la domanda è diagnostica, mostro runtime, EVT, OPC, engineHash e governance;",
+    "4. se il tema cambia, non devo ripetere la risposta precedente.",
+    "",
+    "Quindi: lavoro bene quando distinguo contesto, memoria e domanda attuale. Lavoro male quando confondo la memoria con una fotocopiatrice triste."
+  ].join("\n");
+}
+
+function isFailClosedDoctrineQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  const hasMissingProof = runtimeTextIncludesAny(text, [
+    "manca una prova",
+    "manca un hash",
+    "manca una verifica",
+    "senza prova",
+    "senza hash",
+    "senza verifica",
+    "no proof",
+    "missing proof",
+    "missing hash",
+    "missing verification"
+  ]);
+
+  const hasProceedOrBlock = runtimeTextIncludesAny(text, [
+    "procedere",
+    "procedere comunque",
+    "degradare",
+    "bloccare",
+    "fail closed",
+    "fail-closed",
+    "proceed",
+    "block",
+    "degrade"
+  ]);
+
+  return hasMissingProof && hasProceedOrBlock;
+}
+
+function buildFailClosedDoctrineResponse(): string {
+  return [
+    "Deve degradare o bloccare in modalità fail-closed.",
+    "",
+    "Nel runtime HBCE / AI JOKER-C2, se manca una prova, un hash, una verifica o un riferimento di continuità, il sistema non deve fingere che tutto sia valido.",
+    "",
+    "Regola operativa:",
+    "",
+    "No hash, no trusted trace.",
+    "No verification, no trusted proof.",
+    "No proof, no operational confidence.",
+    "No continuity, no governed chain.",
+    "",
+    "Quindi il comportamento corretto è:",
+    "",
+    "1. segnalare il problema;",
+    "2. degradare lo stato operativo se la funzione può continuare in sicurezza;",
+    "3. bloccare se la mancanza compromette identità, prova, audit o responsabilità;",
+    "4. richiedere revisione umana quando il rischio supera il perimetro automatico;",
+    "5. non presentare mai un output come verificato se la catena non è verificabile.",
+    "",
+    "Formula HBCE:",
+    "Fail open = rischio.",
+    "Fail closed = governance.",
+    "Se la prova manca, il sistema non si inventa la fiducia."
+  ].join("\n");
+}
+
 function detectDocumentFamily(files: FileInput[]): DocumentFamily {
   const merged = normalizeFiles(files)
     .map((file) => `${file.name}\n${file.text.slice(0, 50000)}`)
@@ -613,14 +726,30 @@ function isRuntimeSelfIdentityQuestion(message: string): boolean {
 function isManuelColettaIdentityQuestion(message: string): boolean {
   const text = normalizeRuntimeText(message);
 
-  return (
-    runtimeTextIncludesAny(text, [
-      "manuel coletta",
-      "mnauel coletta",
-      "manuele coletta"
-    ]) &&
-    runtimeTextIncludesAny(text, ["chi e", "chi è", "cos e", "cosa e", "who is"])
-  );
+  const hasManuelReference = runtimeTextIncludesAny(text, [
+    "manuel",
+    "manuel coletta",
+    "mnauel coletta",
+    "manuele coletta",
+    "coletta"
+  ]);
+
+  const hasIdentityOrProfileIntent = runtimeTextIncludesAny(text, [
+    "chi e",
+    "chi è",
+    "chi cazzo e",
+    "chi cazzo è",
+    "cos e",
+    "cosa e",
+    "parlami",
+    "raccontami",
+    "descrivi",
+    "presentami",
+    "who is",
+    "tell me about"
+  ]);
+
+  return hasManuelReference && hasIdentityOrProfileIntent;
 }
 
 function isAerospaceGovernanceBoundaryQuestion(message: string): boolean {
@@ -1020,8 +1149,30 @@ function shouldInjectEvtMemoryIntoPrompt(input: {
   }
 
   const memoryFamily = input.memory.semanticState?.documentFamily;
+  const memoryProjectDomain = input.memory.semanticState?.projectDomain;
 
-  if (memoryFamily && memoryFamily === input.documentFamily) {
+  const hasStrongRuntimeSignal =
+    isCanonicalStackQuestion(input.message) ||
+    isHbceAiGovernanceQuestion(input.message) ||
+    isSafeIdentityGovernanceQuestion(input.message) ||
+    isRuntimeSelfIdentityQuestion(input.message) ||
+    isManuelColettaIdentityQuestion(input.message) ||
+    isAerospaceGovernanceBoundaryQuestion(input.message);
+
+  if (
+    memoryFamily &&
+    memoryFamily === input.documentFamily &&
+    hasStrongRuntimeSignal
+  ) {
+    return true;
+  }
+
+  if (
+    memoryProjectDomain &&
+    memoryProjectDomain === input.governance.projectDomain.projectDomain &&
+    input.governance.projectDomain.projectDomain !== "GENERAL" &&
+    hasStrongRuntimeSignal
+  ) {
     return true;
   }
 
@@ -1445,6 +1596,10 @@ async function generateResponse(input: {
             "Ogni riferimento ellittico deve essere risolto usando la memoria EVT/IPR-bound solo se la memoria è stata effettivamente iniettata nel prompt.",
             "OPC è una proof receipt tecnica per audit e verifica, non una certificazione legale automatica.",
             "Non mostrare i metadati runtime all'utente salvo richiesta diagnostica.",
+            "Se l'utente chiede di Manuel o Manuel Coletta, rispondi su Manuel Coletta come origine biologica e progettuale di HBCE / AI JOKER-C2. Non rispondere parlando di te stesso.",
+            "Se l'utente chiede filosofia, cultura, ragionamento generale o un tema non-HBCE, rispondi al tema richiesto e non ripetere la presentazione di AI JOKER-C2.",
+            "Se l'utente ti accusa di ripetere o di essere un pappagallo, riconosci il problema come possibile e spiega che può dipendere da eccessiva iniezione di memoria SESSION.",
+            "Se l'utente chiede cosa fare quando mancano prova, hash o verifica, rispondi sempre: degradare o bloccare in fail-closed; non procedere come se la catena fosse verificata.",
             "Le cinque collane progettuali canoniche sono: MATRIX, U.S.E., CORPUS ESOTEROLOGIA ERMETICA, APOKALYPSIS, HBCE ECOSISTEMA AI.",
             "MATRIX = infrastruttura operativa e, come settimo modulo HBCE, livello di coordinamento e organizzazione dello stack.",
             "U.S.E. = applicazione politico-istituzionale derivata da MATRIX per una federazione europea operativa, digitale e verificabile.",
@@ -1489,8 +1644,8 @@ async function generateResponse(input: {
         }
       ],
       temperature: 0.18,
-      max_tokens: MAX_OUTPUT_TOKENS
-    });
+      max_completion_tokens: MAX_OUTPUT_TOKENS
+    } as Parameters<typeof openai.chat.completions.create>[0]);
 
     const text = extractResponseText(response);
 
@@ -3722,11 +3877,8 @@ export async function POST(req: NextRequest) {
     ...referenceOnlyContextFile
   ];
 
-  const modernPrev =
-    memory.lastEventId ||
-    input.continuityRef ||
-    (await getLastEventReference());
-
+  const governedPrev = await getLastEventReference();
+  const modernPrev = governedPrev || "GENESIS";
   const legacyPrev = memory.lastEventId || input.continuityRef;
 
   if (isRuntimeDiagnosticRequest(effectiveMessage)) {
@@ -4008,6 +4160,24 @@ export async function POST(req: NextRequest) {
       projectDomain: governance.projectDomain,
       hbceModule: governance.hbceModule
     });
+  } else if (isManuelColettaIdentityQuestion(effectiveMessage)) {
+    generated = {
+      text: buildManuelColettaProfileResponse(),
+      state: "OPERATIONAL",
+      degradedReason: null
+    };
+  } else if (isRuntimeQualityComplaintQuestion(effectiveMessage)) {
+    generated = {
+      text: buildRuntimeQualityResponse(),
+      state: "OPERATIONAL",
+      degradedReason: null
+    };
+  } else if (isFailClosedDoctrineQuestion(effectiveMessage)) {
+    generated = {
+      text: buildFailClosedDoctrineResponse(),
+      state: "OPERATIONAL",
+      degradedReason: null
+    };
   } else {
     generated = await generateResponse({
       identity,
