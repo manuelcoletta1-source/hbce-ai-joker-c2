@@ -5,6 +5,8 @@
  *
  * This file defines the canonical vocabulary used by:
  * - IPR runtime identity
+ * - OpenAI cognitive engine binding
+ * - governed runtime execution
  * - project-domain classification
  * - HBCE module awareness
  * - context classification
@@ -16,11 +18,14 @@
  * - EVT generation
  * - EVT/IPR-bound memory
  * - OPC proof receipts
+ * - engine hash binding
  * - ledger continuity
  * - verification
  * - audit readiness
  *
  * Canonical hierarchy:
+ * - OpenAI = cognitive engine provider for the current pilot
+ * - HBCE / AI JOKER-C2 = governed runtime layer
  * - IPR = primary operational identity and proof instrument
  * - AI JOKER-C2 = governed runtime demonstrator
  * - MATRIX = project collection, architectural framework and HBCE coordination module
@@ -36,6 +41,13 @@
  * - IOspace = runtime visibility and operational interaction
  * - CyberGlobal = defensive cybersecurity and resilience
  * - NeuroLoop = validation, feedback and review loop
+ *
+ * Boundary:
+ * - EVT creates traceability.
+ * - OPC creates technical proof receipts.
+ * - OpenAI provides the cognitive engine.
+ * - HBCE governs the use of the cognitive engine.
+ * - None of these records create automatic legal certification by themselves.
  */
 
 export type RuntimeState =
@@ -59,6 +71,59 @@ export type RuntimeRole =
   | "GOVERNED_AI_RUNTIME"
   | "AUDIT_RUNTIME"
   | "RESEARCH_PROTOTYPE";
+
+export type GovernedRuntimeRole =
+  | "HBCE_governed_runtime"
+  | "IPR_RUNTIME_DEMONSTRATOR"
+  | "GOVERNED_AI_RUNTIME"
+  | "AUDIT_RUNTIME"
+  | "RESEARCH_PROTOTYPE";
+
+export type CognitiveEngineProvider =
+  | "OpenAI"
+  | "Anthropic"
+  | "Google"
+  | "Mistral"
+  | "Meta"
+  | "DeepSeek"
+  | "Other"
+  | string;
+
+export type CognitiveEngineApiMode =
+  | "chat.completions"
+  | "responses"
+  | "messages"
+  | "generateContent"
+  | "custom"
+  | string;
+
+export type CognitiveEngineRole =
+  | "cognitive_engine"
+  | "reasoning_engine"
+  | "language_model"
+  | "tool_orchestrator"
+  | string;
+
+export type CognitiveEngineMode =
+  | "standard"
+  | "deep"
+  | "audit"
+  | "diagnostic"
+  | string;
+
+export type CognitiveEngineSnapshot = {
+  provider: CognitiveEngineProvider;
+  apiMode: CognitiveEngineApiMode;
+  role: CognitiveEngineRole;
+  runtimeRole: GovernedRuntimeRole;
+  modelUsed: string;
+  standardModel?: string;
+  deepModel?: string;
+  mode?: CognitiveEngineMode;
+  configured?: boolean;
+  projectBirthDate?: string;
+  projectBirthLabel?: string;
+};
 
 export type RiskClass =
   | "LOW"
@@ -365,6 +430,7 @@ export type OpcStatus =
   | "APPENDED"
   | "VERIFIABLE"
   | "PARTIAL"
+  | "REJECTED"
   | "FAILED";
 
 export type RuntimeIdentity = {
@@ -548,6 +614,10 @@ export type RuntimeOpcBinding = {
   proof_id?: string | null;
   status: OpcStatus;
   chain_hash?: string;
+  engine_hash?: string | null;
+  engine_provider?: CognitiveEngineProvider | null;
+  model_used?: string | null;
+  native_engine_binding?: boolean;
 };
 
 export type RuntimeEvent = {
@@ -611,6 +681,8 @@ export type RuntimeEventProjectView = {
   auditStatus: AuditStatus;
   memoryStatus?: MemoryStatus;
   opcStatus?: OpcStatus;
+  engineHash?: string | null;
+  modelUsed?: string | null;
 };
 
 export type OpcProofIdentity = {
@@ -618,7 +690,54 @@ export type OpcProofIdentity = {
   ipr: string;
   core: string;
   organization: string;
-  runtimeRole: RuntimeRole;
+  runtimeRole: RuntimeRole | GovernedRuntimeRole;
+};
+
+export type OpcProofEventReference = {
+  evt: string;
+  prev: string;
+  hash: string;
+  kind?: string;
+};
+
+export type OpcProofMemoryReference = {
+  evt?: string;
+  source: MemorySource;
+  hash?: string;
+};
+
+export type OpcProofRuntimeSnapshot = {
+  state: RuntimeState;
+  decision: RuntimeDecision;
+  contextClass: ContextClass;
+  intentClass?: IntentClass;
+  projectDomain?: ProjectDomain;
+  hbceModule?: HbceModule;
+  riskClass: RiskClass;
+  policyReference?: string;
+  policyOutcome?: PolicyOutcome;
+  humanOversight?: OversightState;
+  operationType?: string;
+  operationStatus?: OperationStatus;
+  failClosed?: boolean;
+};
+
+export type OpcProofHashes = {
+  inputHash: string;
+  outputHash: string;
+  decisionHash: string;
+  eventHash?: string;
+  memoryHash?: string;
+  engineHash?: string;
+  previousProofHash?: string | null;
+  chainHash: string;
+};
+
+export type OpcProofAuditFrame = {
+  status: AuditStatus;
+  reviewRequired: boolean;
+  reviewerRole?: ReviewerRole;
+  reasons?: string[];
 };
 
 export type OpcProofRecord = {
@@ -627,44 +746,35 @@ export type OpcProofRecord = {
   timestamp: string;
   identity: OpcProofIdentity;
   sessionId?: string;
-  event: {
-    evt: string;
-    prev: string;
-    hash: string;
-  };
-  memory?: {
-    evt?: string;
-    source: MemorySource;
-    hash?: string;
-  };
-  runtime: {
-    state: RuntimeState;
-    decision: RuntimeDecision;
-    contextClass: ContextClass;
-    projectDomain?: ProjectDomain;
-    hbceModule?: HbceModule;
-    riskClass: RiskClass;
-    policyReference?: string;
-  };
-  proof: {
-    inputHash: string;
-    outputHash: string;
-    decisionHash: string;
-    eventHash?: string;
-    memoryHash?: string;
-    previousProofHash?: string;
-    chainHash: string;
-  };
-  audit: {
-    status: AuditStatus;
-    reviewRequired: boolean;
-    reasons?: string[];
-  };
+  engine?: CognitiveEngineSnapshot;
+  event: OpcProofEventReference;
+  memory?: OpcProofMemoryReference;
+  runtime: OpcProofRuntimeSnapshot;
+  proof: OpcProofHashes;
+  audit: OpcProofAuditFrame;
   verification: {
     status: VerificationStatus;
     hashAlgorithm: "sha256";
     canonicalization: "deterministic-json";
   };
+};
+
+export type OpcProofPublicView = {
+  proofId: string;
+  timestamp: string;
+  entity: string;
+  ipr: string;
+  evt: string;
+  chainHash: string;
+  engine?: CognitiveEngineSnapshot;
+  engineHash?: string | null;
+  modelUsed?: string | null;
+  engineProvider?: CognitiveEngineProvider | null;
+  memoryHash?: string;
+  auditStatus: AuditStatus;
+  verificationStatus: VerificationStatus;
+  legalCertification: false;
+  nativeEngineBinding?: boolean;
 };
 
 export type VerificationResult = {
@@ -704,6 +814,46 @@ export const RUNTIME_ROLES: RuntimeRole[] = [
   "GOVERNED_AI_RUNTIME",
   "AUDIT_RUNTIME",
   "RESEARCH_PROTOTYPE"
+];
+
+export const GOVERNED_RUNTIME_ROLES: GovernedRuntimeRole[] = [
+  "HBCE_governed_runtime",
+  "IPR_RUNTIME_DEMONSTRATOR",
+  "GOVERNED_AI_RUNTIME",
+  "AUDIT_RUNTIME",
+  "RESEARCH_PROTOTYPE"
+];
+
+export const COGNITIVE_ENGINE_PROVIDERS: CognitiveEngineProvider[] = [
+  "OpenAI",
+  "Anthropic",
+  "Google",
+  "Mistral",
+  "Meta",
+  "DeepSeek",
+  "Other"
+];
+
+export const COGNITIVE_ENGINE_API_MODES: CognitiveEngineApiMode[] = [
+  "chat.completions",
+  "responses",
+  "messages",
+  "generateContent",
+  "custom"
+];
+
+export const COGNITIVE_ENGINE_ROLES: CognitiveEngineRole[] = [
+  "cognitive_engine",
+  "reasoning_engine",
+  "language_model",
+  "tool_orchestrator"
+];
+
+export const COGNITIVE_ENGINE_MODES: CognitiveEngineMode[] = [
+  "standard",
+  "deep",
+  "audit",
+  "diagnostic"
 ];
 
 export const RISK_CLASSES: RiskClass[] = [
@@ -918,12 +1068,27 @@ export const PAYLOAD_MODES: PayloadMode[] = [
   "REJECTED"
 ];
 
+export const POLICY_STATUSES: PolicyStatus[] = [
+  "ALLOWED",
+  "RESTRICTED",
+  "PROHIBITED",
+  "UNKNOWN"
+];
+
 export const POLICY_OUTCOMES: PolicyOutcome[] = [
   "PERMIT",
   "RESTRICT",
   "REQUIRE_AUDIT",
   "REQUIRE_REVIEW",
   "PROHIBIT",
+  "UNKNOWN"
+];
+
+export const DUAL_USE_CLASSES: DualUseClass[] = [
+  "ALLOWED",
+  "SENSITIVE",
+  "RESTRICTED",
+  "PROHIBITED",
   "UNKNOWN"
 ];
 
@@ -974,8 +1139,33 @@ export const OPC_STATUSES: OpcStatus[] = [
   "APPENDED",
   "VERIFIABLE",
   "PARTIAL",
+  "REJECTED",
   "FAILED"
 ];
+
+export const CANONICAL_COLLECTIONS: PrimaryProjectDomain[] = [
+  "MATRIX",
+  "U.S.E.",
+  "CORPUS_ESOTEROLOGIA_ERMETICA",
+  "APOKALYPSIS",
+  "HBCE_ECOSISTEMA_AI"
+];
+
+export const CANONICAL_HBCE_MODULES: PrimaryHbceModule[] = [
+  "UNEBDO",
+  "OPC",
+  "MetaExchange",
+  "IOspace",
+  "CyberGlobal",
+  "NeuroLoop",
+  "MATRIX"
+];
+
+export const CANONICAL_STRATEGIC_DOCTRINES = [
+  "HBCE_CYBERSECURITY_STRATEGY",
+  "HBCE_DATA_PROTECTION_STRATEGY",
+  "HBCE_INFORMATION_GOVERNANCE_STRATEGY"
+] as const;
 
 export const CANONICAL_IPR_RUNTIME_IDENTITY: IprRuntimeIdentity = {
   entity: "AI_JOKER",
@@ -987,11 +1177,28 @@ export const CANONICAL_IPR_RUNTIME_IDENTITY: IprRuntimeIdentity = {
   runtimeRole: "IPR_RUNTIME_DEMONSTRATOR"
 };
 
+export const DEFAULT_COGNITIVE_ENGINE: CognitiveEngineSnapshot = {
+  provider: "OpenAI",
+  apiMode: "chat.completions",
+  role: "cognitive_engine",
+  runtimeRole: "HBCE_governed_runtime",
+  modelUsed: "gpt-5.5",
+  standardModel: "gpt-5.5",
+  deepModel: "gpt-5.5",
+  mode: "deep",
+  configured: false,
+  projectBirthDate: "2026-01-19",
+  projectBirthLabel: "HBCE R&D / AI JOKER-C2 project birth date"
+};
+
 export const USE_DEMOCRATIC_BOUNDARY =
   "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
 
 export const HBCE_AI_CANONICAL_FORMULA =
   "AI generates. HBCE governs. IPR identifies. EVT traces. OPC proves. MATRIX organizes. AI JOKER-C2 executes.";
+
+export const HBCE_AI_BOUNDARY =
+  "The AI model does not govern HBCE. HBCE governs the use of AI models.";
 
 export const HBCE_MODULE_BOUNDARIES: Record<HbceModule, string> = {
   UNEBDO:
@@ -1044,6 +1251,36 @@ export function isRuntimeDecision(value: string): value is RuntimeDecision {
 
 export function isRuntimeRole(value: string): value is RuntimeRole {
   return RUNTIME_ROLES.includes(value as RuntimeRole);
+}
+
+export function isGovernedRuntimeRole(
+  value: string
+): value is GovernedRuntimeRole {
+  return GOVERNED_RUNTIME_ROLES.includes(value as GovernedRuntimeRole);
+}
+
+export function isCognitiveEngineProvider(
+  value: string
+): value is CognitiveEngineProvider {
+  return COGNITIVE_ENGINE_PROVIDERS.includes(value as CognitiveEngineProvider);
+}
+
+export function isCognitiveEngineApiMode(
+  value: string
+): value is CognitiveEngineApiMode {
+  return COGNITIVE_ENGINE_API_MODES.includes(value as CognitiveEngineApiMode);
+}
+
+export function isCognitiveEngineRole(
+  value: string
+): value is CognitiveEngineRole {
+  return COGNITIVE_ENGINE_ROLES.includes(value as CognitiveEngineRole);
+}
+
+export function isCognitiveEngineMode(
+  value: string
+): value is CognitiveEngineMode {
+  return COGNITIVE_ENGINE_MODES.includes(value as CognitiveEngineMode);
 }
 
 export function isRiskClass(value: string): value is RiskClass {
@@ -1118,8 +1355,16 @@ export function isPayloadMode(value: string): value is PayloadMode {
   return PAYLOAD_MODES.includes(value as PayloadMode);
 }
 
+export function isPolicyStatus(value: string): value is PolicyStatus {
+  return POLICY_STATUSES.includes(value as PolicyStatus);
+}
+
 export function isPolicyOutcome(value: string): value is PolicyOutcome {
   return POLICY_OUTCOMES.includes(value as PolicyOutcome);
+}
+
+export function isDualUseClass(value: string): value is DualUseClass {
+  return DUAL_USE_CLASSES.includes(value as DualUseClass);
 }
 
 export function isDualUseDomain(value: string): value is DualUseDomain {
