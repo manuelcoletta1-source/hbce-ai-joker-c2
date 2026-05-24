@@ -47,6 +47,22 @@ type RuntimeIdentity = {
   cycle?: string;
   core?: string;
   runtimeRole?: string;
+  projectBirthDate?: string;
+  projectBirthLabel?: string;
+};
+
+type OpenAIEngineInfo = {
+  provider?: string;
+  apiMode?: string;
+  role?: string;
+  runtimeRole?: string;
+  modelUsed?: string;
+  standardModel?: string;
+  deepModel?: string;
+  mode?: string;
+  configured?: boolean;
+  projectBirthDate?: string;
+  projectBirthLabel?: string;
 };
 
 type PublicEvt = {
@@ -139,13 +155,23 @@ type GovernanceInfo = {
     allowed?: boolean;
     allowedCount?: number;
     rejectedCount?: number;
+    referenceOnlyCount?: number;
+    blockingRejectedCount?: number;
     reasons?: string[];
   };
 };
 
 type DiagnosticsInfo = {
   openaiConfigured?: boolean;
+  engineProvider?: string;
+  engineRole?: string;
+  runtimeRole?: string;
+  engineApiMode?: string;
+  engineMode?: string;
   modelUsed?: string;
+  standardModel?: string;
+  deepModel?: string;
+  projectBirthDate?: string;
   degradedReason?: string | null;
   evtIprMemoryUsed?: boolean;
   memorySource?: string;
@@ -170,6 +196,8 @@ type ChatApiResponse = {
   state?: RuntimeState;
   decision?: RuntimeDecision;
   governanceDecision?: string;
+  engine?: OpenAIEngineInfo;
+  modelUsed?: string;
   projectDomain?: string;
   activeDomains?: string[];
   domainType?: string;
@@ -208,6 +236,13 @@ type ChatMessage = {
 
 const DEFAULT_NODE = "HBCE-MATRIX-NODE-0001-TORINO";
 const DEFAULT_SESSION_PREFIX = "JOKER-UI";
+const DEFAULT_ENGINE_PROVIDER = "OpenAI";
+const DEFAULT_ENGINE_ROLE = "cognitive_engine";
+const DEFAULT_ENGINE_API_MODE = "chat.completions";
+const DEFAULT_ENGINE_MODEL = "gpt-5.5";
+const DEFAULT_PROJECT_BIRTH_DATE = "2026-01-19";
+const DEFAULT_PROJECT_BIRTH_LABEL = "HBCE R&D / AI JOKER-C2 project birth date";
+
 const USE_DEMOCRATIC_BOUNDARY =
   "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
 const HBCE_AI_BOUNDARY =
@@ -279,6 +314,9 @@ function statusTone(value?: string | null): string {
     normalized === "COMPLETED" ||
     normalized === "PERMIT" ||
     normalized === "TRUE" ||
+    normalized === "CONFIGURED" ||
+    normalized === "DEEP" ||
+    normalized === "STANDARD" ||
     normalized === "ACTIVE_PROTOTYPE_LAYER"
   ) {
     return "joker-badge--ok";
@@ -313,7 +351,8 @@ function statusTone(value?: string | null): string {
     normalized === "PROHIBITED" ||
     normalized === "CRITICAL" ||
     normalized === "HIGH" ||
-    normalized === "FALSE"
+    normalized === "FALSE" ||
+    normalized === "MISSING"
   ) {
     return "joker-badge--bad";
   }
@@ -422,9 +461,62 @@ function MiniProofCard({
   );
 }
 
+function resolveEngine(runtime?: ChatApiResponse): OpenAIEngineInfo {
+  return {
+    provider:
+      runtime?.engine?.provider ||
+      runtime?.diagnostics?.engineProvider ||
+      DEFAULT_ENGINE_PROVIDER,
+    apiMode:
+      runtime?.engine?.apiMode ||
+      runtime?.diagnostics?.engineApiMode ||
+      DEFAULT_ENGINE_API_MODE,
+    role:
+      runtime?.engine?.role ||
+      runtime?.diagnostics?.engineRole ||
+      DEFAULT_ENGINE_ROLE,
+    runtimeRole:
+      runtime?.engine?.runtimeRole ||
+      runtime?.diagnostics?.runtimeRole ||
+      runtime?.identity?.runtimeRole ||
+      "HBCE_governed_runtime",
+    modelUsed:
+      runtime?.engine?.modelUsed ||
+      runtime?.modelUsed ||
+      runtime?.diagnostics?.modelUsed ||
+      DEFAULT_ENGINE_MODEL,
+    standardModel:
+      runtime?.engine?.standardModel ||
+      runtime?.diagnostics?.standardModel ||
+      DEFAULT_ENGINE_MODEL,
+    deepModel:
+      runtime?.engine?.deepModel ||
+      runtime?.diagnostics?.deepModel ||
+      DEFAULT_ENGINE_MODEL,
+    mode:
+      runtime?.engine?.mode ||
+      runtime?.diagnostics?.engineMode ||
+      "deep",
+    configured:
+      runtime?.engine?.configured ??
+      runtime?.diagnostics?.openaiConfigured ??
+      undefined,
+    projectBirthDate:
+      runtime?.engine?.projectBirthDate ||
+      runtime?.diagnostics?.projectBirthDate ||
+      runtime?.identity?.projectBirthDate ||
+      DEFAULT_PROJECT_BIRTH_DATE,
+    projectBirthLabel:
+      runtime?.engine?.projectBirthLabel ||
+      runtime?.identity?.projectBirthLabel ||
+      DEFAULT_PROJECT_BIRTH_LABEL
+  };
+}
+
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
   const isSystem = message.role === "system";
+  const engine = resolveEngine(message.runtime);
 
   return (
     <article
@@ -446,6 +538,18 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
       {!isUser && !isSystem && message.runtime ? (
         <div className="joker-mini-grid">
+          <MiniProofCard
+            title="OpenAI Engine"
+            rows={[
+              ["Provider", engine.provider],
+              ["Model", engine.modelUsed],
+              ["Mode", engine.mode],
+              ["API", engine.apiMode],
+              ["Configured", formatBool(engine.configured)]
+            ]}
+            statusLabels={["Mode", "Configured"]}
+          />
+
           <MiniProofCard
             title="EVT Chain"
             rows={[
@@ -479,7 +583,14 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           <MiniProofCard
             title="Strategic Doctrine"
             rows={[
-              ["Docs", formatList(message.runtime.strategicDoctrines || message.runtime.governance?.strategicDoctrines || message.runtime.diagnostics?.strategicDoctrines)],
+              [
+                "Docs",
+                formatList(
+                  message.runtime.strategicDoctrines ||
+                    message.runtime.governance?.strategicDoctrines ||
+                    message.runtime.diagnostics?.strategicDoctrines
+                )
+              ],
               ["Layer", "ACTIVE"],
               ["Status", "DOCTRINE"]
             ]}
@@ -597,10 +708,13 @@ export default function InterfacePage() {
   }, [messages.length, isSending]);
 
   const runtimeSummary = useMemo(() => {
+    const engine = resolveEngine(lastRuntime || undefined);
+
     return {
       state: lastRuntime?.state || "Ready",
       decision: lastRuntime?.decision || "-",
       governanceDecision: lastRuntime?.governanceDecision || "-",
+      engine,
       projectDomain: lastRuntime?.projectDomain || "-",
       activeDomains: lastRuntime?.activeDomains || lastRuntime?.governance?.activeDomains || [],
       domainType: lastRuntime?.domainType || lastRuntime?.governance?.domainType || "-",
@@ -1431,10 +1545,11 @@ export default function InterfacePage() {
             <div className="joker-header-grid">
               <div>
                 <div className="joker-kicker">AI JOKER-C2 · EVT-0015-AI</div>
-                <h1 className="joker-title">IPR Runtime Demonstrator</h1>
+                <h1 className="joker-title">OpenAI-powered IPR Runtime Demonstrator</h1>
                 <p className="joker-lead">
-                  Chat operativa con identità IPR, EVT, memoria EVT/IPR-bound, proof receipt OPC e governance HBCE/MATRIX.
-                  Il runtime espone cinque collane, sette moduli HBCE, tre documenti dottrinali strategici, continuità, audit, verifica, fail-closed, HBCE ECOSISTEMA AI e salvaguardie U.S.E. quando pertinenti.
+                  Chat operativa con OpenAI come motore cognitivo e HBCE/JOKER-C2 come runtime governato.
+                  Ogni risposta può esporre modello attivo, identità IPR, EVT, memoria EVT/IPR-bound, proof receipt OPC,
+                  governance HBCE/MATRIX, audit, verifica, fail-closed, HBCE ECOSISTEMA AI e salvaguardie U.S.E. quando pertinenti.
                 </p>
               </div>
 
@@ -1455,12 +1570,12 @@ export default function InterfacePage() {
                   </p>
                   <div className="joker-samples">
                     {[
+                      "diagnostica runtime OpenAI completa",
                       "joker cosa è IPR?",
                       "che differenza c’è tra IPR, EVT e OPC?",
                       "spiegami i sette moduli HBCE",
                       "spiegami HBCE ECOSISTEMA AI",
                       "quali sono i tre documenti dottrinali strategici?",
-                      "diagnostica runtime",
                       "spiegami U.S.E. e voto digitale federato"
                     ].map((sample) => (
                       <button
@@ -1483,7 +1598,8 @@ export default function InterfacePage() {
 
                 {isSending ? (
                   <div className="joker-message joker-message--assistant">
-                    AI JOKER-C2 sta generando risposta, EVT, memoria EVT/IPR, classificazione dominio, classificazione modulo HBCE, dottrina strategica e OPC proof receipt.
+                    AI JOKER-C2 sta generando risposta con motore OpenAI, EVT, memoria EVT/IPR, classificazione dominio,
+                    classificazione modulo HBCE, dottrina strategica e OPC proof receipt.
                   </div>
                 ) : null}
 
@@ -1546,6 +1662,19 @@ export default function InterfacePage() {
         </section>
 
         <aside className="joker-sidebar">
+          <RuntimeCard title="OpenAI Cognitive Engine">
+            <FieldRow label="Provider" value={runtimeSummary.engine.provider} badge />
+            <FieldRow label="Model" value={runtimeSummary.engine.modelUsed} mono />
+            <FieldRow label="Standard" value={runtimeSummary.engine.standardModel} mono />
+            <FieldRow label="Deep" value={runtimeSummary.engine.deepModel} mono />
+            <FieldRow label="Mode" value={runtimeSummary.engine.mode} badge />
+            <FieldRow label="API" value={runtimeSummary.engine.apiMode} mono />
+            <FieldRow label="Configured" value={runtimeSummary.engine.configured} badge />
+            <FieldRow label="Role" value={runtimeSummary.engine.role} />
+            <FieldRow label="Runtime" value={runtimeSummary.engine.runtimeRole} />
+            <FieldRow label="Birth" value={runtimeSummary.engine.projectBirthDate} mono />
+          </RuntimeCard>
+
           <RuntimeCard title="Execution Context">
             <FieldRow label="Node" value={DEFAULT_NODE} mono />
             <FieldRow label="Session" value={sessionId || "-"} mono />
@@ -1596,6 +1725,11 @@ export default function InterfacePage() {
             <FieldRow label="EVT" value={lastRuntime?.identity?.evt || "-"} mono />
             <FieldRow label="Cycle" value={lastRuntime?.identity?.cycle || "-"} mono />
             <FieldRow label="Core" value={lastRuntime?.identity?.core || "-"} mono />
+            <FieldRow
+              label="Birth"
+              value={lastRuntime?.identity?.projectBirthDate || runtimeSummary.engine.projectBirthDate}
+              mono
+            />
           </RuntimeCard>
 
           <RuntimeCard title="OPC Proof Receipt">
@@ -1687,7 +1821,15 @@ export default function InterfacePage() {
 
           <RuntimeCard title="Diagnostics">
             <FieldRow label="OpenAI" value={lastRuntime?.diagnostics?.openaiConfigured} />
-            <FieldRow label="Model" value={lastRuntime?.diagnostics?.modelUsed || "-"} mono />
+            <FieldRow label="Provider" value={runtimeSummary.engine.provider || "-"} badge />
+            <FieldRow label="Engine" value={runtimeSummary.engine.role || "-"} />
+            <FieldRow label="Runtime" value={runtimeSummary.engine.runtimeRole || "-"} />
+            <FieldRow label="API" value={runtimeSummary.engine.apiMode || "-"} mono />
+            <FieldRow label="Mode" value={runtimeSummary.engine.mode || "-"} badge />
+            <FieldRow label="Model" value={runtimeSummary.engine.modelUsed || "-"} mono />
+            <FieldRow label="Standard" value={runtimeSummary.engine.standardModel || "-"} mono />
+            <FieldRow label="Deep" value={runtimeSummary.engine.deepModel || "-"} mono />
+            <FieldRow label="Birth" value={runtimeSummary.engine.projectBirthDate || "-"} mono />
             <FieldRow label="Degraded" value={lastRuntime?.diagnostics?.degradedReason || "none"} />
             <FieldRow label="MemAvail" value={lastRuntime?.diagnostics?.memoryAvailable} />
             <FieldRow label="MemInj" value={lastRuntime?.diagnostics?.memoryInjected} />
