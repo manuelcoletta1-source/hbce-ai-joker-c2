@@ -10,6 +10,7 @@
  *
  * - IPR identity binding;
  * - runtime identity;
+ * - cognitive engine metadata when available;
  * - EVT event continuity;
  * - EVT/IPR-bound memory when available;
  * - runtime state;
@@ -22,6 +23,7 @@
  * - output hash;
  * - decision hash;
  * - event hash;
+ * - engine hash when available;
  * - memory hash;
  * - previous proof hash;
  * - chain hash;
@@ -33,8 +35,12 @@
  * - prev EVT-0014-AI
  * - cycle UP-MESE-4
  *
+ * Canonical project birth date:
+ * - 2026-01-19
+ *
  * Canonical formula:
  *
+ * OpenAI provides the cognitive engine.
  * IPR binds the identity.
  * EVT traces the event.
  * Memory preserves runtime continuity.
@@ -127,6 +133,26 @@ export type OpcMemorySource =
   | "USER_FILE"
   | "RUNTIME_CONTEXT";
 
+export type OpcEngineProvider = "OpenAI" | string;
+export type OpcEngineApiMode = "chat.completions" | "responses" | string;
+export type OpcEngineRole = "cognitive_engine" | string;
+export type OpcGovernedRuntimeRole = "HBCE_governed_runtime" | string;
+export type OpcEngineMode = "standard" | "deep" | string;
+
+export type OpcEngineSnapshot = {
+  provider: OpcEngineProvider;
+  apiMode: OpcEngineApiMode;
+  role: OpcEngineRole;
+  runtimeRole: OpcGovernedRuntimeRole;
+  modelUsed: string;
+  standardModel?: string;
+  deepModel?: string;
+  mode?: OpcEngineMode;
+  configured?: boolean;
+  projectBirthDate?: string;
+  projectBirthLabel?: string;
+};
+
 export type OpcHashAlgorithm = "sha256";
 export type OpcCanonicalization = "deterministic-json";
 
@@ -172,6 +198,7 @@ export type OpcProofHashes = {
   outputHash: string;
   decisionHash: string;
   eventHash: string;
+  engineHash?: string;
   memoryHash?: string;
   previousProofHash?: string | null;
   chainHash: string;
@@ -190,6 +217,7 @@ export type OpcProofRecord = {
   timestamp: string;
   identity: OpcIdentityBinding;
   sessionId?: string;
+  engine?: OpcEngineSnapshot;
   event: OpcEventReference;
   memory?: OpcMemoryReference;
   runtime: OpcRuntimeSnapshot;
@@ -203,12 +231,15 @@ export type OpcProofRecord = {
   boundary: {
     legalCertification: false;
     statement: string;
+    aiGovernanceBoundary?: string;
+    moduleBoundary?: string;
   };
 };
 
 export type OpcProofRecordInput = {
   identity: OpcIdentityBinding;
   sessionId?: string;
+  engine?: Partial<OpcEngineSnapshot>;
   event: OpcEventReference;
   memory?: OpcMemoryReference;
   runtime: OpcRuntimeSnapshot;
@@ -226,6 +257,8 @@ export type OpcProofPublicView = {
   ipr: string;
   runtimeRole?: OpcRuntimeRole;
   sessionId?: string;
+  engine?: OpcEngineSnapshot;
+  engineHash?: string;
   eventId: string;
   eventHash: string;
   memoryEventId?: string;
@@ -267,6 +300,15 @@ const DEFAULT_CORE = "HBCE-CORE-v3";
 const DEFAULT_ORGANIZATION = "HERMETICUM B.C.E. S.r.l.";
 const DEFAULT_RUNTIME_ROLE: OpcRuntimeRole = "IPR_RUNTIME_DEMONSTRATOR";
 
+const DEFAULT_ENGINE_PROVIDER = "OpenAI";
+const DEFAULT_ENGINE_API_MODE = "chat.completions";
+const DEFAULT_ENGINE_ROLE = "cognitive_engine";
+const DEFAULT_ENGINE_RUNTIME_ROLE = "HBCE_governed_runtime";
+const DEFAULT_ENGINE_MODEL = "gpt-5.5";
+const DEFAULT_PROJECT_BIRTH_DATE = "2026-01-19";
+const DEFAULT_PROJECT_BIRTH_LABEL =
+  "HBCE R&D / AI JOKER-C2 project birth date";
+
 const NON_CERTIFICATION_STATEMENT =
   "OPC is a technical proof receipt for audit, verification and governance review. It does not create automatic legal certification, regulatory approval, institutional recognition or legally binding evidence status by default.";
 
@@ -283,6 +325,7 @@ export function createOpcProofRecord(
   const proofId = buildOpcProofId(timestamp);
   const identity = normalizeIdentity(input.identity);
   const runtime = normalizeRuntimeSnapshot(input.runtime);
+  const engine = normalizeEngineSnapshot(input.engine);
 
   const inputHash = sha256Canonical({
     type: "input",
@@ -304,6 +347,11 @@ export function createOpcProofRecord(
     event: input.event
   });
 
+  const engineHash = sha256Canonical({
+    type: "engine",
+    engine
+  });
+
   const memoryHash = input.memory
     ? sha256Canonical({
         type: "memory",
@@ -320,6 +368,7 @@ export function createOpcProofRecord(
     timestamp,
     identity,
     sessionId: input.sessionId,
+    engine,
     event: input.event,
     memory: input.memory,
     runtime,
@@ -327,11 +376,12 @@ export function createOpcProofRecord(
     outputHash,
     decisionHash,
     eventHash,
+    engineHash,
     memoryHash,
     previousProofHash
   });
 
-  const audit = normalizeAuditFrame(input.audit, runtime);
+  const audit = normalizeAuditFrame(input.audit, runtime, engine);
 
   return {
     proofId,
@@ -339,6 +389,7 @@ export function createOpcProofRecord(
     timestamp,
     identity,
     sessionId: input.sessionId,
+    engine,
     event: input.event,
     memory: input.memory,
     runtime,
@@ -347,6 +398,7 @@ export function createOpcProofRecord(
       outputHash,
       decisionHash,
       eventHash,
+      engineHash,
       memoryHash,
       previousProofHash,
       chainHash
@@ -359,7 +411,9 @@ export function createOpcProofRecord(
     },
     boundary: {
       legalCertification: false,
-      statement: NON_CERTIFICATION_STATEMENT
+      statement: NON_CERTIFICATION_STATEMENT,
+      aiGovernanceBoundary: AI_GOVERNANCE_BOUNDARY,
+      moduleBoundary: MODULE_BOUNDARY
     }
   };
 }
@@ -390,11 +444,30 @@ export function verifyOpcProofRecord(
     record.proof.previousProofHash
   );
 
+  const normalizedEngine = record.engine
+    ? normalizeEngineSnapshot(record.engine)
+    : undefined;
+
+  const expectedEngineHash = normalizedEngine
+    ? sha256Canonical({
+        type: "engine",
+        engine: normalizedEngine
+      })
+    : undefined;
+
+  const storedEngineHash = record.proof.engineHash;
+
+  const engineHashMatches =
+    !normalizedEngine ||
+    !storedEngineHash ||
+    storedEngineHash === expectedEngineHash;
+
   const expectedChainHash = buildOpcChainHash({
     proofId: record.proofId,
     timestamp: record.timestamp,
     identity: normalizeIdentity(record.identity),
     sessionId: record.sessionId,
+    engine: normalizedEngine,
     event: record.event,
     memory: record.memory,
     runtime: normalizeRuntimeSnapshot(record.runtime),
@@ -402,11 +475,13 @@ export function verifyOpcProofRecord(
     outputHash: record.proof.outputHash,
     decisionHash: record.proof.decisionHash,
     eventHash: record.proof.eventHash,
+    engineHash: storedEngineHash,
     memoryHash: record.proof.memoryHash,
     previousProofHash
   });
 
-  const hashMatches = expectedChainHash === record.proof.chainHash;
+  const chainHashMatches = expectedChainHash === record.proof.chainHash;
+  const hashMatches = chainHashMatches && engineHashMatches;
 
   return {
     status: hashMatches ? "VERIFIABLE" : "INVALID",
@@ -419,11 +494,14 @@ export function verifyOpcProofRecord(
     reasons: hashMatches
       ? [
           "OPC proof record chain hash is valid.",
+          record.engine
+            ? "Cognitive engine metadata is present in the proof record."
+            : "Cognitive engine metadata is not present; record is treated as legacy-compatible.",
           "The record is technically verifiable as an audit-oriented proof receipt."
         ]
       : [
-          "OPC proof record chain hash does not match.",
-          "The record may have been modified after creation or generated with a different previousProofHash."
+          "OPC proof record chain hash or engine hash does not match.",
+          "The record may have been modified after creation or generated with a different previousProofHash or engineHash."
         ]
   };
 }
@@ -438,6 +516,8 @@ export function toPublicOpcProofRecord(
     ipr: record.identity.ipr,
     runtimeRole: record.identity.runtimeRole,
     sessionId: record.sessionId,
+    engine: record.engine,
+    engineHash: record.proof.engineHash,
     eventId: record.event.evt,
     eventHash: record.event.hash,
     memoryEventId: record.memory?.evt,
@@ -496,6 +576,14 @@ export function getOpcProofRecordMissingFields(
 
   if (!record.identity?.entity) missing.push("identity.entity");
   if (!record.identity?.ipr) missing.push("identity.ipr");
+
+  if (record.engine) {
+    if (!record.engine.provider) missing.push("engine.provider");
+    if (!record.engine.apiMode) missing.push("engine.apiMode");
+    if (!record.engine.role) missing.push("engine.role");
+    if (!record.engine.runtimeRole) missing.push("engine.runtimeRole");
+    if (!record.engine.modelUsed) missing.push("engine.modelUsed");
+  }
 
   if (!record.event?.evt) missing.push("event.evt");
   if (!record.event?.prev) missing.push("event.prev");
@@ -596,6 +684,7 @@ function buildOpcChainHash(input: {
   timestamp: string;
   identity: OpcIdentityBinding;
   sessionId?: string;
+  engine?: OpcEngineSnapshot;
   event: OpcEventReference;
   memory?: OpcMemoryReference;
   runtime: OpcRuntimeSnapshot;
@@ -603,6 +692,7 @@ function buildOpcChainHash(input: {
   outputHash: string;
   decisionHash: string;
   eventHash: string;
+  engineHash?: string;
   memoryHash?: string;
   previousProofHash?: string | null;
 }): string {
@@ -610,7 +700,20 @@ function buildOpcChainHash(input: {
     input.previousProofHash
   );
 
-  return sha256Canonical({
+  const hashes: Record<string, string | null> = {
+    inputHash: input.inputHash,
+    outputHash: input.outputHash,
+    decisionHash: input.decisionHash,
+    eventHash: input.eventHash,
+    memoryHash: input.memoryHash || null,
+    previousProofHash
+  };
+
+  if (input.engineHash) {
+    hashes.engineHash = input.engineHash;
+  }
+
+  const chainPayload: Record<string, unknown> = {
     proofId: input.proofId,
     timestamp: input.timestamp,
     identity: normalizeIdentity(input.identity),
@@ -618,20 +721,19 @@ function buildOpcChainHash(input: {
     event: input.event,
     memory: input.memory || null,
     runtime: normalizeRuntimeSnapshot(input.runtime),
-    hashes: {
-      inputHash: input.inputHash,
-      outputHash: input.outputHash,
-      decisionHash: input.decisionHash,
-      eventHash: input.eventHash,
-      memoryHash: input.memoryHash || null,
-      previousProofHash
-    },
+    hashes,
     boundary: {
       legalCertification: false
     },
     algorithm: HASH_ALGORITHM,
     canonicalization: CANONICALIZATION
-  });
+  };
+
+  if (input.engine) {
+    chainPayload.engine = normalizeEngineSnapshot(input.engine);
+  }
+
+  return sha256Canonical(chainPayload);
 }
 
 function normalizeIdentity(identity: OpcIdentityBinding): OpcIdentityBinding {
@@ -641,6 +743,53 @@ function normalizeIdentity(identity: OpcIdentityBinding): OpcIdentityBinding {
     core: identity.core || DEFAULT_CORE,
     organization: identity.organization || DEFAULT_ORGANIZATION,
     runtimeRole: identity.runtimeRole || DEFAULT_RUNTIME_ROLE
+  };
+}
+
+function normalizeEngineSnapshot(
+  engine?: Partial<OpcEngineSnapshot>
+): OpcEngineSnapshot {
+  const standardModel =
+    stringOrDefault(engine?.standardModel, process.env.JOKER_MODEL) ||
+    DEFAULT_ENGINE_MODEL;
+
+  const deepModel =
+    stringOrDefault(engine?.deepModel, process.env.JOKER_DEEP_MODEL) ||
+    DEFAULT_ENGINE_MODEL;
+
+  const mode = stringOrDefault(engine?.mode, "deep") || "deep";
+
+  const modelUsed =
+    stringOrDefault(engine?.modelUsed, undefined) ||
+    (mode === "standard" ? standardModel : deepModel);
+
+  return {
+    provider:
+      stringOrDefault(engine?.provider, DEFAULT_ENGINE_PROVIDER) ||
+      DEFAULT_ENGINE_PROVIDER,
+    apiMode:
+      stringOrDefault(engine?.apiMode, DEFAULT_ENGINE_API_MODE) ||
+      DEFAULT_ENGINE_API_MODE,
+    role:
+      stringOrDefault(engine?.role, DEFAULT_ENGINE_ROLE) ||
+      DEFAULT_ENGINE_ROLE,
+    runtimeRole:
+      stringOrDefault(engine?.runtimeRole, DEFAULT_ENGINE_RUNTIME_ROLE) ||
+      DEFAULT_ENGINE_RUNTIME_ROLE,
+    modelUsed,
+    standardModel,
+    deepModel,
+    mode,
+    configured:
+      typeof engine?.configured === "boolean"
+        ? engine.configured
+        : Boolean(process.env.OPENAI_API_KEY),
+    projectBirthDate:
+      stringOrDefault(engine?.projectBirthDate, DEFAULT_PROJECT_BIRTH_DATE) ||
+      DEFAULT_PROJECT_BIRTH_DATE,
+    projectBirthLabel:
+      stringOrDefault(engine?.projectBirthLabel, DEFAULT_PROJECT_BIRTH_LABEL) ||
+      DEFAULT_PROJECT_BIRTH_LABEL
   };
 }
 
@@ -703,10 +852,13 @@ function normalizeOpcProofRecord(record: OpcProofRecord): OpcProofRecord {
   return {
     ...record,
     identity: normalizeIdentity(record.identity),
+    engine: record.engine ? normalizeEngineSnapshot(record.engine) : undefined,
     runtime: normalizeRuntimeSnapshot(record.runtime),
     boundary: record.boundary || {
       legalCertification: false,
-      statement: NON_CERTIFICATION_STATEMENT
+      statement: NON_CERTIFICATION_STATEMENT,
+      aiGovernanceBoundary: AI_GOVERNANCE_BOUNDARY,
+      moduleBoundary: MODULE_BOUNDARY
     }
   };
 }
@@ -729,7 +881,8 @@ function normalizePreviousProofHash(
 
 function normalizeAuditFrame(
   audit: Partial<OpcAuditFrame> | undefined,
-  runtime: OpcRuntimeSnapshot
+  runtime: OpcRuntimeSnapshot,
+  engine?: OpcEngineSnapshot
 ): OpcAuditFrame {
   const normalizedRuntime = normalizeRuntimeSnapshot(runtime);
 
@@ -745,7 +898,7 @@ function normalizeAuditFrame(
       audit?.reviewerRole || inferReviewerRole(normalizedRuntime, reviewRequired),
     reasons: uniqueReasons([
       ...(audit?.reasons || []),
-      ...buildAuditReasons(normalizedRuntime, reviewRequired)
+      ...buildAuditReasons(normalizedRuntime, reviewRequired, engine)
     ])
   };
 }
@@ -837,7 +990,8 @@ function inferReviewerRole(
 
 function buildAuditReasons(
   runtime: OpcRuntimeSnapshot,
-  reviewRequired: boolean
+  reviewRequired: boolean,
+  engine?: OpcEngineSnapshot
 ): string[] {
   const reasons = [
     `Runtime state: ${runtime.state}.`,
@@ -845,6 +999,14 @@ function buildAuditReasons(
     `Risk class: ${runtime.riskClass}.`,
     `Policy reference: ${runtime.policyReference}.`
   ];
+
+  if (engine) {
+    reasons.push(`Cognitive engine provider: ${engine.provider}.`);
+    reasons.push(`Cognitive engine model: ${engine.modelUsed}.`);
+    reasons.push(`Cognitive engine API mode: ${engine.apiMode}.`);
+    reasons.push(`Governed runtime role: ${engine.runtimeRole}.`);
+    reasons.push(`Project birth date: ${engine.projectBirthDate}.`);
+  }
 
   if (runtime.projectDomain) {
     reasons.push(`Project domain: ${runtime.projectDomain}.`);
@@ -896,4 +1058,19 @@ function buildAuditReasons(
 
 function uniqueReasons(reasons: string[]): string[] {
   return Array.from(new Set(reasons.filter(Boolean)));
+}
+
+function stringOrDefault(
+  value: string | undefined,
+  fallback: string | undefined
+): string | undefined {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  if (typeof fallback === "string" && fallback.trim()) {
+    return fallback.trim();
+  }
+
+  return undefined;
 }
