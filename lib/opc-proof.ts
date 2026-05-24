@@ -121,6 +121,7 @@ export type OpcHbceModule =
 
 export type OpcRuntimeRole =
   | "IPR_RUNTIME_DEMONSTRATOR"
+  | "HBCE_governed_runtime"
   | "GOVERNED_AI_RUNTIME"
   | "AUDIT_RUNTIME"
   | "RESEARCH_PROTOTYPE";
