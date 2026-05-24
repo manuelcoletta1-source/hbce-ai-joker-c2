@@ -85,6 +85,8 @@ type ChatMessage = {
   raw?: ChatApiResponse;
 };
 
+const JOKER_SIGIL = "🜏";
+
 const DEFAULT_PROMPT =
   "JOKER-C2, fai diagnostica runtime completa. Dimmi quale modello OpenAI usi, qual è il tuo IPR, qual è il checkpoint EVT, qual è il ruolo di OPC e cosa cambia tra OpenAI come modello e JOKER-C2 come runtime governato.";
 
@@ -391,7 +393,7 @@ function MessageBubble({
         .join(" ")}
     >
       <div className="joker-message-avatar">
-        {isUser ? "M" : isSystem ? "!" : "J"}
+        {isUser ? "M" : isSystem ? "!" : JOKER_SIGIL}
       </div>
 
       <div className="joker-message-body">
@@ -688,7 +690,7 @@ export default function InterfacePage() {
     <main className="joker-page">
       <header className="joker-topbar">
         <div className="joker-brand">
-          <div className="joker-logo">J</div>
+          <div className="joker-logo">{JOKER_SIGIL}</div>
           <div>
             <strong>JOKER-C2</strong>
             <span>HBCE governed AI runtime</span>
@@ -715,7 +717,7 @@ export default function InterfacePage() {
       <section className="joker-chat">
         {messages.length === 0 ? (
           <div className="joker-empty">
-            <div className="joker-empty-logo">J</div>
+            <div className="joker-empty-logo">{JOKER_SIGIL}</div>
             <h1>AI JOKER-C2</h1>
             <p>
               Interfaccia chat classica. Scrivi sotto, ricevi la risposta qui.
@@ -744,7 +746,7 @@ export default function InterfacePage() {
 
             {isSending ? (
               <article className="joker-message joker-message-assistant">
-                <div className="joker-message-avatar">J</div>
+                <div className="joker-message-avatar">{JOKER_SIGIL}</div>
                 <div className="joker-message-body">
                   <div className="joker-message-head">
                     <strong>JOKER-C2</strong>
@@ -883,6 +885,24 @@ export default function InterfacePage() {
           box-shadow: 0 10px 28px rgba(34, 211, 238, 0.22);
         }
 
+        .joker-logo,
+        .joker-empty-logo {
+          font-size: 23px;
+          line-height: 1;
+        }
+
+        .joker-message-avatar {
+          font-size: 20px;
+          line-height: 1;
+        }
+
+        .joker-empty-logo {
+          width: 68px;
+          height: 68px;
+          border-radius: 24px;
+          font-size: 34px;
+        }
+
         .joker-brand strong {
           display: block;
           color: #ffffff;
@@ -982,13 +1002,6 @@ export default function InterfacePage() {
           text-align: center;
         }
 
-        .joker-empty-logo {
-          width: 68px;
-          height: 68px;
-          border-radius: 24px;
-          font-size: 30px;
-        }
-
         .joker-empty h1 {
           margin: 20px 0 0;
           color: #ffffff;
@@ -1040,11 +1053,13 @@ export default function InterfacePage() {
         .joker-message-user .joker-message-avatar {
           background: linear-gradient(135deg, #334155, #0f172a);
           box-shadow: none;
+          font-size: 16px;
         }
 
         .joker-message-system .joker-message-avatar {
           background: linear-gradient(135deg, #ef4444, #7f1d1d);
           box-shadow: none;
+          font-size: 16px;
         }
 
         .joker-message-body {
