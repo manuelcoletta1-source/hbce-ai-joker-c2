@@ -15,15 +15,6 @@
  * - previous EVT-0014-AI
  * - cycle UP-MESE-4
  *
- * Supported project domains:
- * - MATRIX
- * - U.S.E.
- * - CORPUS_ESOTEROLOGIA_ERMETICA
- * - APOKALYPSIS
- * - HBCE_ECOSISTEMA_AI
- * - GENERAL
- * - MULTI_DOMAIN
- *
  * Prototype note:
  * This local file adapter is suitable for local development and controlled
  * prototype use. Serverless production deployments should use persistent
@@ -34,11 +25,6 @@
  * On Vercel/serverless runtimes, local filesystem persistence may fail or
  * reset between invocations. In that case, append failures should be reported
  * as persistence failures while the generated memory event remains hash-verifiable.
- *
- * EVT creates governed event traceability.
- * EVT/IPR memory preserves semantic continuity.
- * OPC creates the audit-oriented proof receipt.
- * Engine metadata binds the cognitive engine to the proof chain.
  */
 
 import { appendFile, mkdir, readFile, stat, writeFile } from "fs/promises";
@@ -198,14 +184,6 @@ const HBCE_AI_BOUNDARY =
 const NON_CERTIFICATION_STATEMENT =
   "EVT/IPR-bound memory preserves runtime continuity. It is not legal certification and does not replace audit, verification, legal review or user control.";
 
-const ALL_PRIMARY_PROJECT_DOMAINS: ProjectDomain[] = [
-  "MATRIX",
-  "U.S.E.",
-  "CORPUS_ESOTEROLOGIA_ERMETICA",
-  "APOKALYPSIS",
-  "HBCE_ECOSISTEMA_AI"
-];
-
 export async function ensureEvtMemoryLedger(
   ledgerPath = DEFAULT_EVT_MEMORY_LEDGER_FILE
 ): Promise<void> {
@@ -221,7 +199,7 @@ export async function ensureEvtMemoryLedger(
 }
 
 export async function appendEvtMemoryEvent(
-  event: EvtMemoryEvent,
+  event: Partial<EvtMemoryEvent>,
   ledgerPath = DEFAULT_EVT_MEMORY_LEDGER_FILE
 ): Promise<EvtMemoryLedgerAppendResult> {
   const eventRef = {
