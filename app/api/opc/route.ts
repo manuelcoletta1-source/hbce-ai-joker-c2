@@ -31,6 +31,7 @@ import {
   toPublicOpcProofRecord,
   verifyOpcProofRecord,
   type OpcAuditFrame,
+  type OpcEngineSnapshot,
   type OpcEventReference,
   type OpcIdentityBinding,
   type OpcMemoryReference,
@@ -44,7 +45,7 @@ export const dynamic = "force-dynamic";
 
 type OpenAIEngineMode = "standard" | "deep";
 
-type OpenAIEngineSnapshot = {
+type OpenAIEngineSnapshot = OpcEngineSnapshot & {
   provider: "OpenAI";
   apiMode: "chat.completions";
   role: "cognitive_engine";
@@ -91,7 +92,9 @@ type OpcApiSummary = {
   lastChainHash: string;
   lastEventId: string;
   lastAuditStatus: string;
-  engine: OpenAIEngineSnapshot;
+  currentEngine: OpenAIEngineSnapshot;
+  lastProofEngine?: OpcEngineSnapshot;
+  lastProofEngineHash?: string;
 };
 
 const DEFAULT_OPC_LEDGER_FILE =
@@ -190,16 +193,16 @@ function resolveOpenAIEngineSnapshot(
   };
 }
 
-function buildOpcApiMetadata(engine: OpenAIEngineSnapshot) {
+function buildOpcApiMetadata(currentEngine: OpenAIEngineSnapshot) {
   return {
     service: "AI JOKER-C2 OPC API",
     layer: "OPC_OPERATIONAL_PROOF_AND_COMPLIANCE",
     runtime: "AI_JOKER_C2",
     runtimeRole: "IPR_RUNTIME_DEMONSTRATOR",
-    governedRuntimeRole: engine.runtimeRole,
+    governedRuntimeRole: currentEngine.runtimeRole,
     primaryProduct: "IPR",
     organization: "HERMETICUM B.C.E. S.r.l.",
-    engine,
+    currentEngine,
     boundary: {
       legalCertification: false,
       automaticCompliance: false,
@@ -209,42 +212,6 @@ function buildOpcApiMetadata(engine: OpenAIEngineSnapshot) {
       dataRule:
         "Use synthetic, public or authorized data only. Do not store secrets, identity documents, private credentials or sensitive payloads in the prototype ledger."
     }
-  };
-}
-
-function enrichInputPayloadWithEngine(input: {
-  payload: unknown;
-  engine: OpenAIEngineSnapshot;
-  sessionId?: string;
-}) {
-  return {
-    engine: input.engine,
-    opcApi: {
-      service: "AI JOKER-C2 OPC API",
-      layer: "OPC_OPERATIONAL_PROOF_AND_COMPLIANCE",
-      sessionId: input.sessionId || null,
-      createdBy: "DIRECT_OPC_API_POST",
-      projectBirthDate: input.engine.projectBirthDate,
-      legalCertification: false
-    },
-    payload: input.payload ?? null
-  };
-}
-
-function enrichOutputPayloadWithEngine(input: {
-  payload: unknown;
-  engine: OpenAIEngineSnapshot;
-}) {
-  return {
-    engine: input.engine,
-    opcApi: {
-      service: "AI JOKER-C2 OPC API",
-      layer: "OPC_OPERATIONAL_PROOF_AND_COMPLIANCE",
-      modelUsed: input.engine.modelUsed,
-      apiMode: input.engine.apiMode,
-      legalCertification: false
-    },
-    payload: input.payload ?? null
   };
 }
 
@@ -445,18 +412,12 @@ async function buildProofInput(body: OpcApiPostBody): Promise<{
     proofInput: {
       identity: normalizeIdentity(body.identity),
       sessionId: body.sessionId?.trim(),
+      engine,
       event: normalizeEvent(body.event),
       memory: normalizeMemory(body.memory),
       runtime: normalizeRuntime(body.runtime),
-      inputPayload: enrichInputPayloadWithEngine({
-        payload: body.inputPayload,
-        engine,
-        sessionId: body.sessionId
-      }),
-      outputPayload: enrichOutputPayloadWithEngine({
-        payload: body.outputPayload,
-        engine
-      }),
+      inputPayload: body.inputPayload ?? null,
+      outputPayload: body.outputPayload ?? null,
       previousProofHash,
       audit: normalizeAuditFrame(body.audit, engine),
       timestamp: body.timestamp
@@ -467,7 +428,7 @@ async function buildProofInput(body: OpcApiPostBody): Promise<{
 function buildSummary(
   events: OpcProofRecord[],
   invalidLines: number,
-  engine: OpenAIEngineSnapshot
+  currentEngine: OpenAIEngineSnapshot
 ): OpcApiSummary {
   const last = events[events.length - 1];
 
@@ -478,21 +439,32 @@ function buildSummary(
     lastChainHash: last?.proof.chainHash ?? "",
     lastEventId: last?.event.evt ?? "",
     lastAuditStatus: last?.audit.status ?? "UNVERIFIED",
-    engine
+    currentEngine,
+    lastProofEngine: last?.engine,
+    lastProofEngineHash: last?.proof.engineHash
   };
 }
 
-function buildProofResponse(record: OpcProofRecord, engine: OpenAIEngineSnapshot) {
+function buildProofResponse(record: OpcProofRecord) {
   return {
     proof: record,
     publicProof: toPublicOpcProofRecord(record),
     verification: verifyOpcProofRecord(record),
-    engine
+    recordEngine: record.engine ?? null,
+    recordEngineHash: record.proof.engineHash ?? null
+  };
+}
+
+function buildRecentProofView(record: OpcProofRecord) {
+  return {
+    ...toPublicOpcProofRecord(record),
+    recordEngine: record.engine ?? null,
+    recordEngineHash: record.proof.engineHash ?? null
   };
 }
 
 export async function GET(req: NextRequest) {
-  const engine = resolveOpenAIEngineSnapshot();
+  const currentEngine = resolveOpenAIEngineSnapshot();
 
   try {
     const { searchParams } = new URL(req.url);
@@ -504,8 +476,8 @@ export async function GET(req: NextRequest) {
         : 20;
 
     const ledger = await readOpcLedger();
-    const summary = buildSummary(ledger.events, ledger.invalidLines, engine);
-    const metadata = buildOpcApiMetadata(engine);
+    const summary = buildSummary(ledger.events, ledger.invalidLines, currentEngine);
+    const metadata = buildOpcApiMetadata(currentEngine);
 
     if (proofId) {
       const record = ledger.events.find((item) => item.proofId === proofId);
@@ -529,7 +501,7 @@ export async function GET(req: NextRequest) {
         ...metadata,
         ledgerPath: ledger.ledgerPath,
         summary,
-        ...buildProofResponse(record, engine)
+        ...buildProofResponse(record)
       });
     }
 
@@ -541,16 +513,13 @@ export async function GET(req: NextRequest) {
       timestamp: new Date().toISOString(),
       ledgerPath: ledger.ledgerPath,
       summary,
-      recentProofs: recent.map((record) => ({
-        ...toPublicOpcProofRecord(record),
-        engine
-      }))
+      recentProofs: recent.map((record) => buildRecentProofView(record))
     });
   } catch (error) {
     return NextResponse.json(
       {
         ok: false,
-        ...buildOpcApiMetadata(engine),
+        ...buildOpcApiMetadata(currentEngine),
         error:
           error instanceof Error
             ? error.message
@@ -567,12 +536,12 @@ export async function POST(req: NextRequest) {
   try {
     body = (await req.json()) as OpcApiPostBody;
   } catch {
-    const engine = resolveOpenAIEngineSnapshot();
+    const currentEngine = resolveOpenAIEngineSnapshot();
 
     return NextResponse.json(
       {
         ok: false,
-        ...buildOpcApiMetadata(engine),
+        ...buildOpcApiMetadata(currentEngine),
         error: "INVALID_JSON_BODY"
       },
       { status: 400 }
@@ -592,7 +561,7 @@ export async function POST(req: NextRequest) {
       {
         ok: appendResult.ok,
         ...buildOpcApiMetadata(engine),
-        ...buildProofResponse(record, engine),
+        ...buildProofResponse(record),
         append: appendResult
       },
       { status: statusCode }
