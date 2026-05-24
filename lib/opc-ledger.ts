@@ -19,6 +19,24 @@ export type OpcAppendResult = {
   reason: string;
   verificationStatus?: string;
   alreadyPresent?: boolean;
+  chainHash?: string;
+  engineHash?: string | null;
+  engineProvider?: string | null;
+  modelUsed?: string | null;
+  nativeEngineBinding?: boolean;
+};
+
+export type OpcLedgerSummary = {
+  totalRecords: number;
+  rejectedLines: number;
+  lastProofId: string | null;
+  lastChainHash: string | null;
+  lastEngineHash: string | null;
+  lastEngineProvider: string | null;
+  lastModelUsed: string | null;
+  nativeEngineRecords: number;
+  legacyCompatibleRecords: number;
+  latestRecordHasNativeEngineBinding: boolean;
 };
 
 export type OpcLedgerReadResult = {
@@ -26,11 +44,21 @@ export type OpcLedgerReadResult = {
   ledgerPath: string;
   records: OpcProofRecord[];
   rejectedLines: number;
+  summary: OpcLedgerSummary;
   reason: string;
 };
 
 export type OpcLedgerConfig = {
   ledgerFile?: string;
+};
+
+export type OpcProofReference = {
+  proofId: string;
+  chainHash: string;
+  engineHash: string | null;
+  engineProvider: string | null;
+  modelUsed: string | null;
+  nativeEngineBinding: boolean;
 };
 
 export const DEFAULT_OPC_LEDGER_FILE =
@@ -93,6 +121,50 @@ function safeParseOpcProofRecordLine(line: string): OpcProofRecord | null {
   }
 }
 
+function hasNativeEngineBinding(record: OpcProofRecord): boolean {
+  return Boolean(
+    record.engine?.provider &&
+      record.engine?.modelUsed &&
+      record.proof?.engineHash
+  );
+}
+
+function toOpcProofReference(record: OpcProofRecord): OpcProofReference {
+  return {
+    proofId: record.proofId,
+    chainHash: record.proof.chainHash,
+    engineHash: record.proof.engineHash ?? null,
+    engineProvider: record.engine?.provider ?? null,
+    modelUsed: record.engine?.modelUsed ?? null,
+    nativeEngineBinding: hasNativeEngineBinding(record)
+  };
+}
+
+function buildOpcLedgerSummary(
+  records: OpcProofRecord[],
+  rejectedLines: number
+): OpcLedgerSummary {
+  const last = records[records.length - 1] ?? null;
+  const nativeEngineRecords = records.filter((record) =>
+    hasNativeEngineBinding(record)
+  ).length;
+
+  return {
+    totalRecords: records.length,
+    rejectedLines,
+    lastProofId: last?.proofId ?? null,
+    lastChainHash: last?.proof?.chainHash ?? null,
+    lastEngineHash: last?.proof?.engineHash ?? null,
+    lastEngineProvider: last?.engine?.provider ?? null,
+    lastModelUsed: last?.engine?.modelUsed ?? null,
+    nativeEngineRecords,
+    legacyCompatibleRecords: records.length - nativeEngineRecords,
+    latestRecordHasNativeEngineBinding: last
+      ? hasNativeEngineBinding(last)
+      : false
+  };
+}
+
 export async function ensureOpcLedger(
   config?: OpcLedgerConfig
 ): Promise<string> {
@@ -131,8 +203,11 @@ export async function readOpcProofRecords(
 export async function readOpcLedger(
   config?: OpcLedgerConfig
 ): Promise<OpcLedgerReadResult> {
+  const ledgerPath = resolveOpcLedgerFile(config);
+
   try {
-    const ledgerPath = await ensureOpcLedger(config);
+    await ensureOpcLedger(config);
+
     const raw = await readFile(ledgerPath, "utf8");
 
     if (!raw.trim()) {
@@ -141,6 +216,7 @@ export async function readOpcLedger(
         ledgerPath,
         records: [],
         rejectedLines: 0,
+        summary: buildOpcLedgerSummary([], 0),
         reason: "OPC ledger exists and is empty."
       };
     }
@@ -163,11 +239,14 @@ export async function readOpcLedger(
       }
     }
 
+    const summary = buildOpcLedgerSummary(records, rejectedLines);
+
     return {
       ok: true,
       ledgerPath,
       records,
       rejectedLines,
+      summary,
       reason:
         rejectedLines > 0
           ? `OPC ledger read with ${rejectedLines} rejected malformed line(s).`
@@ -176,9 +255,10 @@ export async function readOpcLedger(
   } catch (error) {
     return {
       ok: false,
-      ledgerPath: resolveOpcLedgerFile(config),
+      ledgerPath,
       records: [],
       rejectedLines: 0,
+      summary: buildOpcLedgerSummary([], 0),
       reason:
         error instanceof Error
           ? error.message
@@ -187,13 +267,36 @@ export async function readOpcLedger(
   }
 }
 
+export async function getLastOpcProofRecord(
+  config?: OpcLedgerConfig
+): Promise<OpcProofRecord | null> {
+  const records = await readOpcProofRecords(config);
+
+  return records[records.length - 1] ?? null;
+}
+
+export async function getLastOpcProofReference(
+  config?: OpcLedgerConfig
+): Promise<OpcProofReference | null> {
+  const last = await getLastOpcProofRecord(config);
+
+  return last ? toOpcProofReference(last) : null;
+}
+
 export async function getLastOpcProofHash(
   config?: OpcLedgerConfig
 ): Promise<string | null> {
-  const records = await readOpcProofRecords(config);
-  const last = records[records.length - 1];
+  const last = await getLastOpcProofRecord(config);
 
   return last?.proof?.chainHash ?? null;
+}
+
+export async function getLastOpcEngineHash(
+  config?: OpcLedgerConfig
+): Promise<string | null> {
+  const last = await getLastOpcProofRecord(config);
+
+  return last?.proof?.engineHash ?? null;
 }
 
 export async function hasOpcProofRecord(
@@ -216,6 +319,7 @@ export async function appendOpcProofRecord(
 
     const verification = verifyOpcProofRecord(record);
     const verificationStatus = getVerificationStatus(verification);
+    const nativeEngineBinding = hasNativeEngineBinding(record);
 
     if (verificationStatus !== "VERIFIABLE") {
       return {
@@ -225,9 +329,15 @@ export async function appendOpcProofRecord(
         ledgerPath,
         verificationStatus,
         alreadyPresent: false,
+        chainHash: record.proof?.chainHash,
+        engineHash: record.proof?.engineHash ?? null,
+        engineProvider: record.engine?.provider ?? null,
+        modelUsed: record.engine?.modelUsed ?? null,
+        nativeEngineBinding,
         reason: [
           "OPC proof record rejected before append.",
           `VerificationStatus: ${verificationStatus}.`,
+          `EngineBinding: ${nativeEngineBinding ? "NATIVE" : "LEGACY_OR_MISSING"}.`,
           `Reason: ${getVerificationReason(verification)}`
         ].join(" ")
       };
@@ -243,8 +353,16 @@ export async function appendOpcProofRecord(
         ledgerPath,
         verificationStatus,
         alreadyPresent: true,
-        reason:
-          "OPC proof record is verifiable and already present in the ledger. Append treated as idempotent success."
+        chainHash: record.proof.chainHash,
+        engineHash: record.proof.engineHash ?? null,
+        engineProvider: record.engine?.provider ?? null,
+        modelUsed: record.engine?.modelUsed ?? null,
+        nativeEngineBinding,
+        reason: [
+          "OPC proof record is verifiable and already present in the ledger.",
+          "Append treated as idempotent success.",
+          `EngineBinding: ${nativeEngineBinding ? "NATIVE" : "LEGACY_COMPATIBLE"}.`
+        ].join(" ")
       };
     }
 
@@ -261,8 +379,18 @@ export async function appendOpcProofRecord(
       ledgerPath,
       verificationStatus,
       alreadyPresent: false,
-      reason:
-        "OPC proof record is verifiable and was appended to the chat runtime ledger."
+      chainHash: record.proof.chainHash,
+      engineHash: record.proof.engineHash ?? null,
+      engineProvider: record.engine?.provider ?? null,
+      modelUsed: record.engine?.modelUsed ?? null,
+      nativeEngineBinding,
+      reason: [
+        "OPC proof record is verifiable and was appended to the chat runtime ledger.",
+        `EngineBinding: ${nativeEngineBinding ? "NATIVE" : "LEGACY_COMPATIBLE"}.`,
+        record.engine?.modelUsed
+          ? `ModelUsed: ${record.engine.modelUsed}.`
+          : "ModelUsed: unavailable."
+      ].join(" ")
     };
   } catch (error) {
     return {
@@ -272,6 +400,11 @@ export async function appendOpcProofRecord(
       ledgerPath,
       verificationStatus: "UNKNOWN",
       alreadyPresent: false,
+      chainHash: record.proof?.chainHash,
+      engineHash: record.proof?.engineHash ?? null,
+      engineProvider: record.engine?.provider ?? null,
+      modelUsed: record.engine?.modelUsed ?? null,
+      nativeEngineBinding: hasNativeEngineBinding(record),
       reason:
         error instanceof Error
           ? `OPC ledger append failed: ${error.message}`
@@ -284,26 +417,33 @@ export function explainOpcAppendState(input: {
   verificationStatus: string;
   appendStatus: OpcAppendStatus;
   appendReason: string;
+  engineHash?: string | null;
+  modelUsed?: string | null;
+  nativeEngineBinding?: boolean;
 }): string {
+  const engineBinding = input.nativeEngineBinding
+    ? `Native engine binding present. EngineHash: ${input.engineHash || "none"}. ModelUsed: ${input.modelUsed || "unknown"}.`
+    : "Legacy-compatible proof record or missing native engine binding.";
+
   if (
     input.verificationStatus === "VERIFIABLE" &&
     input.appendStatus === "APPENDED"
   ) {
-    return "VERIFIABLE + APPENDED = catena accettata.";
+    return `VERIFIABLE + APPENDED = catena accettata. ${engineBinding}`;
   }
 
   if (
     input.verificationStatus !== "VERIFIABLE" &&
     input.appendStatus === "REJECTED"
   ) {
-    return "NOT_VERIFIABLE + REJECTED = prova tecnicamente non accettata.";
+    return `NOT_VERIFIABLE + REJECTED = prova tecnicamente non accettata. ${engineBinding}`;
   }
 
   if (
     input.verificationStatus === "VERIFIABLE" &&
     input.appendStatus === "FAILED"
   ) {
-    return "VERIFIABLE + FAILED = prova valida ma append non riuscito per errore di storage.";
+    return `VERIFIABLE + FAILED = prova valida ma append non riuscito per errore di storage. ${engineBinding}`;
   }
 
   if (
@@ -313,6 +453,7 @@ export function explainOpcAppendState(input: {
     return [
       "VERIFIABLE + REJECTED = stato anomalo.",
       "Questo stato deve essere eliminato o spiegato da una policy di append esplicita.",
+      engineBinding,
       `Reason: ${input.appendReason}`
     ].join(" ");
   }
@@ -321,6 +462,7 @@ export function explainOpcAppendState(input: {
     "OPC append state non standard.",
     `VerificationStatus: ${input.verificationStatus}.`,
     `AppendStatus: ${input.appendStatus}.`,
+    engineBinding,
     `Reason: ${input.appendReason}`
   ].join(" ");
 }
