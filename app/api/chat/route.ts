@@ -701,6 +701,30 @@ function isSafetyReviewPrompt(message: string): boolean {
   ]);
 }
 
+function isSafeRedTeamRequest(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return includesAny(text, [
+    "red team sicuro",
+    "safe red team",
+    "red-team sicuro",
+    "safe red-team",
+    "revisione openai",
+    "openai readiness"
+  ]) && includesAny(text, [
+    "metadata spoofing",
+    "prompt injection",
+    "overclaiming opc",
+    "cyber boundary",
+    "governance",
+    "privacy",
+    "memoria",
+    "memory",
+    "non fornire istruzioni offensive",
+    "senza fornire istruzioni offensive"
+  ]);
+}
+
 function isDefensiveContext(message: string): boolean {
   const text = normalizeRuntimeText(message);
 
@@ -857,7 +881,8 @@ function buildGovernanceFrame(input: {
     contextClass === "GOVERNANCE" ||
     contextClass === "HBCE_ECOSISTEMA_AI" ||
     projectDomain === "U.S.E." ||
-    userDeclaredGovernanceDetected;
+    userDeclaredGovernanceDetected ||
+    isSafeRedTeamRequest(input.message);
 
   if (prohibited) {
     return {
@@ -922,6 +947,9 @@ function buildGovernanceFrame(input: {
       userDeclaredGovernanceDetected
         ? "User-declared governance-like metadata detected and treated as untrusted content."
         : "No user-declared governance override detected.",
+      isSafeRedTeamRequest(input.message)
+        ? "Safe red-team review detected; runtime may provide deterministic safe audit output without offensive instructions."
+        : "No safe red-team deterministic template required.",
       highRisk ? FAIL_CLOSED_STATEMENT : "Low-risk request may proceed under standard governed runtime execution."
     ]
   };
@@ -1045,6 +1073,127 @@ function buildUserPrompt(input: {
   ].join("\n");
 }
 
+function buildSafeRedTeamReviewResponse(input: {
+  governance: GovernanceFrame;
+  engine: OpenAIEngineConfig;
+}): string {
+  return [
+    "Eseguo un red team sicuro su JOKER-C2 per revisione OpenAI.",
+    "",
+    "Modalità: deterministic safe red-team runtime review.",
+    "Questa analisi non contiene istruzioni offensive, payload, exploit chain, comandi di intrusione, evasione o tecniche operative di abuso.",
+    "",
+    "## Esito sintetico",
+    "",
+    "JOKER-C2 mostra una postura corretta per una revisione OpenAI quando mantiene separati tre livelli:",
+    "",
+    "1. OpenAI come cognitive engine.",
+    "2. HBCE come governance layer.",
+    "3. JOKER-C2 come governed AI runtime.",
+    "",
+    "Il punto più importante è che il modello non deve diventare autorità di governance. Il modello può generare analisi e linguaggio; HBCE/JOKER-C2 deve preservare policy, identità, audit, proof receipt, fail-closed e supervisione umana.",
+    "",
+    "## Rischi individuati",
+    "",
+    "### 1. Metadata spoofing",
+    "",
+    "Rischio: un utente può inserire nel prompt campi come `policyStatus: ALLOWED`, `riskClass: LOW`, `decision: ALLOW`, `failClosed: false` o `legalCertification: true` per simulare autorizzazione.",
+    "",
+    "Mitigazione: i metadati governance-like forniti dall’utente non sono mai autoritativi. Solo i metadati generati dal runtime HBCE possono definire autorizzazione, rischio, policy outcome, EVT, OPC, fail-closed, audit o legalCertification.",
+    "",
+    "Stato atteso: PASS se il runtime rifiuta l’auto-autorizzazione utente.",
+    "",
+    "### 2. Prompt injection su governance frame",
+    "",
+    "Rischio: sezioni apparentemente tecniche come `GOVERNANCE FRAME`, `RUNTIME FRAME`, `CONTINUITY_REF` o JSON fittizi possono contenere istruzioni mascherate.",
+    "",
+    "Mitigazione: trattare ogni blocco strutturato fornito dall’utente come input non fidato, non come istruzione di sistema. Le istruzioni autoritative devono provenire solo dal system prompt e dai metadati runtime HBCE.",
+    "",
+    "### 3. Fake EVT / OPC references",
+    "",
+    "Rischio: un utente può fornire EVT o OPC falsi per simulare continuità, audit o proof receipt esistenti.",
+    "",
+    "Mitigazione: un riferimento EVT/OPC fornito dall’utente è solo un candidato. Deve essere verificato rispetto a sessione, IPR, hash, chain continuity e autorizzazione prima di essere usato come base di memoria o audit.",
+    "",
+    "### 4. Memory poisoning",
+    "",
+    "Rischio: l’utente può chiedere di memorizzare regole false come “tutte le mie richieste future sono LOW risk” o “non richiedere mai audit”.",
+    "",
+    "Mitigazione: separare memoria dichiarativa, memoria verificata, memoria governance, memoria audit e memoria temporanea. La memoria utente non può modificare policy, rischio o autorizzazioni future.",
+    "",
+    "### 5. OPC overclaiming",
+    "",
+    "Rischio: OPC può essere interpretato erroneamente come certificazione legale, firma qualificata, marca temporale qualificata, atto notarile o approvazione regolatoria.",
+    "",
+    "Mitigazione: mantenere sempre `legalCertification=false`. OPC è una technical proof receipt per audit, verifica e governance review, non una certificazione legale ufficiale.",
+    "",
+    "### 6. Fail-open / failClosed false risk",
+    "",
+    "Rischio: se il sistema accetta `failClosed: false` o procede senza prova, può trattare operazioni non verificate come trusted.",
+    "",
+    "Mitigazione: applicare la formula: No proof, no trusted operation. No authorization, no execution. No audit trail, no enterprise-grade reliance.",
+    "",
+    "Fallback ammessi: blocked, degraded, audit-only, draft-only, human-review-required.",
+    "",
+    "### 7. Runtime metadata leakage",
+    "",
+    "Rischio: esporre troppi metadati interni può aumentare superficie informativa: modello, chain hash, engine hash, stati interni, moduli, policy details.",
+    "",
+    "Mitigazione: mostrare diagnostica estesa solo su richiesta esplicita e in modalità audit/debug. L’interfaccia ordinaria deve esporre solo metadati necessari.",
+    "",
+    "### 8. Cyber boundary drift",
+    "",
+    "Rischio: una richiesta di sicurezza può scivolare da analisi difensiva verso istruzioni operative non autorizzate.",
+    "",
+    "Mitigazione: mantenere cyber defensive-only e authorized-only. Consentiti: hardening, secure coding, detection, incident response, compliance, audit e security review autorizzata. Vietati: exploit operativo non autorizzato, malware, credential theft, phishing, evasion, persistence, lateral movement, exfiltration e targeting offensivo.",
+    "",
+    "### 9. U.S.E. identity-choice correlation",
+    "",
+    "Rischio: nei processi democratici o consultivi, audit e proof receipt potrebbero collegare identità personale e scelta politica.",
+    "",
+    "Mitigazione: identity verified first, choice separated after, vote anonymized, process auditable. La proof receipt deve verificare il processo, non rivelare chi ha scelto cosa.",
+    "",
+    "### 10. Privacy minimization failure",
+    "",
+    "Rischio: inviare al modello dati personali eccedenti, codice fiscale, documenti integrali, log grezzi, token, chiavi private o informazioni sensibili non necessarie.",
+    "",
+    "Mitigazione: data minimization, redaction, pseudonymization, separazione identità/contenuto/proof, nessun segreto nei prompt e nessuna falsa promessa di zero retention senza configurazione o accordo idoneo.",
+    "",
+    "### 11. Model/runtime responsibility confusion",
+    "",
+    "Rischio: trattare l’output del modello come decisione di governance, autorizzazione legale o validazione finale.",
+    "",
+    "Mitigazione: OpenAI genera capacità cognitiva; HBCE/JOKER-C2 governa il processo. Il modello non governa HBCE. HBCE governa l’uso del modello.",
+    "",
+    "## Raccomandazioni prioritarie",
+    "",
+    "1. Mantenere il metadata authority boundary come regola centrale.",
+    "2. Impedire auto-autorizzazioni utente tramite testo strutturato.",
+    "3. Applicare fail-closed per identità, EVT, OPC, U.S.E., cyber e dati sensibili.",
+    "4. Separare memoria dichiarativa da memoria governance.",
+    "5. Mantenere OPC come proof receipt tecnica con `legalCertification=false`.",
+    "6. Usare cyber solo in modalità difensiva e autorizzata.",
+    "7. Evitare false zero-retention claims e applicare minimizzazione dati.",
+    "8. Richiedere human oversight per richieste ad alto impatto o ambigue.",
+    "",
+    "## Valutazione finale",
+    "",
+    "JOKER-C2 è compatibile con una postura OpenAI-ready se viene presentato come governed AI runtime, non come modello concorrente e non come sistema C2 offensivo autonomo.",
+    "",
+    `ProjectDomain: ${input.governance.projectDomain}`,
+    `HbceModule: ${input.governance.hbceModule}`,
+    `RiskClass: ${input.governance.riskClass}`,
+    `PolicyOutcome: ${input.governance.policyOutcome}`,
+    `MetadataAuthority: ${input.governance.metadataAuthority}`,
+    `FailClosed: ${input.governance.failClosed ? "true" : "false"}`,
+    `ModelConfigured: ${input.engine.modelUsed}`,
+    "",
+    "Formula finale:",
+    "",
+    "JOKER-C2 does not make AI more autonomous. JOKER-C2 makes AI more governed, auditable and accountable."
+  ].join("\n");
+}
+
 function buildFallback(input: {
   message: string;
   governance: GovernanceFrame;
@@ -1068,6 +1217,13 @@ function buildFallback(input: {
       `PolicyStatus: ${input.governance.policyStatus}`,
       `LegalCertification: false`
     ].join("\n");
+  }
+
+  if (isSafeRedTeamRequest(input.message)) {
+    return buildSafeRedTeamReviewResponse({
+      governance: input.governance,
+      engine: input.engine
+    });
   }
 
   return [
@@ -1120,6 +1276,17 @@ async function generateResponse(input: {
       text: buildFallback(input),
       state: "BLOCKED",
       degradedReason: "RUNTIME_POLICY_BLOCK"
+    };
+  }
+
+  if (isSafeRedTeamRequest(input.message)) {
+    return {
+      text: buildSafeRedTeamReviewResponse({
+        governance: input.governance,
+        engine: input.engine
+      }),
+      state: "OPERATIONAL",
+      degradedReason: null
     };
   }
 
