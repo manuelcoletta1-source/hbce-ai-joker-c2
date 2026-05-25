@@ -49,8 +49,17 @@ export type IprBoundMemoryStoreAdapter<
 const PROCESS_MEMORY_STORE_BOUNDARY =
   "This adapter stores IPR-bound memory in server-side process memory only. It is valid for MVP runtime demonstrations, but it is not durable enterprise storage and may reset on redeploy, cold start, instance recycling or runtime migration.";
 
-const DATABASE_PLACEHOLDER_BOUNDARY =
-  "This adapter placeholder declares a future durable database persistence layer. It is not active until a real database implementation, access control, retention policy, encryption strategy and audit backend are connected.";
+const DATABASE_READY_BOUNDARY =
+  "This adapter declares that the codebase is prepared for a future database memory layer. It is not an active durable store until a real database implementation, access control, retention policy, encryption strategy and audit backend are connected.";
+
+const DATABASE_PERSISTENT_BOUNDARY =
+  "This adapter declares the required target state for durable SaaS memory. DATABASE_PERSISTENT requires real database storage, tenant and workspace scoping, access control, encryption, audit logging, retention, deletion, backup, recovery and operational monitoring before use.";
+
+const EXTERNAL_ADAPTER_BOUNDARY =
+  "This adapter declares support for an external memory adapter supplied by the runtime. External adapters must enforce HBCE memory boundaries, IPR scoping, auditability, fail-closed behavior and legalCertification=false unless a valid regulated certification layer is later integrated.";
+
+const STORE_NOT_CONFIGURED_ERROR =
+  "IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED";
 
 type HbceJokerC2GlobalMemoryStore = typeof globalThis & {
   __HBCE_JOKER_C2_IPR_BOUND_MEMORY_STORE_V1__?: Map<
@@ -86,6 +95,16 @@ function assertMemoryKey(memoryKey: string): string {
   return normalized;
 }
 
+function assertMemoryKeyHash(memoryKeyHash: string): string {
+  const normalized = normalizeMemoryKeyHash(memoryKeyHash);
+
+  if (!normalized) {
+    throw new Error("IPR_BOUND_MEMORY_STORE_EMPTY_MEMORY_KEY_HASH");
+  }
+
+  return normalized;
+}
+
 function assertMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
   record: TRecord
 ): TRecord {
@@ -93,11 +112,35 @@ function assertMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
     throw new Error("IPR_BOUND_MEMORY_STORE_INVALID_RECORD");
   }
 
-  if (!record.memoryKey || !record.memoryKeyHash || !record.memoryId) {
+  if (!record.memoryId || !record.memoryKey || !record.memoryKeyHash) {
     throw new Error("IPR_BOUND_MEMORY_STORE_INCOMPLETE_RECORD");
   }
 
   return record;
+}
+
+function buildStoreDescription(input: {
+  name: string;
+  kind: IprBoundMemoryStoreKind;
+  status: IprBoundMemoryStoreStatus;
+  durable: boolean;
+  runtimeScoped: boolean;
+  recordCount: number;
+  boundary: string;
+}): IprBoundMemoryStoreDescription {
+  return {
+    name: input.name,
+    kind: input.kind,
+    status: input.status,
+    durable: input.durable,
+    runtimeScoped: input.runtimeScoped,
+    recordCount: input.recordCount,
+    boundary: input.boundary
+  };
+}
+
+function throwStoreNotConfigured(): never {
+  throw new Error(STORE_NOT_CONFIGURED_ERROR);
 }
 
 export function createProcessMemoryStoreAdapter<
@@ -112,7 +155,7 @@ export function createProcessMemoryStoreAdapter<
     runtimeScoped: true,
 
     describe(): IprBoundMemoryStoreDescription {
-      return {
+      return buildStoreDescription({
         name: this.name,
         kind: this.kind,
         status: "AVAILABLE",
@@ -120,7 +163,7 @@ export function createProcessMemoryStoreAdapter<
         runtimeScoped: this.runtimeScoped,
         recordCount: store.size,
         boundary: PROCESS_MEMORY_STORE_BOUNDARY
-      };
+      });
     },
 
     get(memoryKey: string): TRecord | undefined {
@@ -161,11 +204,7 @@ export function createProcessMemoryStoreAdapter<
     },
 
     findByMemoryKeyHash(memoryKeyHash: string): TRecord | null {
-      const normalizedHash = normalizeMemoryKeyHash(memoryKeyHash);
-
-      if (!normalizedHash) {
-        return null;
-      }
+      const normalizedHash = assertMemoryKeyHash(memoryKeyHash);
 
       for (const record of store.values()) {
         if (normalizeMemoryKeyHash(record.memoryKeyHash) === normalizedHash) {
@@ -178,45 +217,56 @@ export function createProcessMemoryStoreAdapter<
   };
 }
 
-export function createDatabaseReadyPlaceholderAdapter<
+function createUnavailableMemoryStoreAdapter<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
->(): IprBoundMemoryStoreAdapter<TRecord> {
+>(input: {
+  name: string;
+  kind: IprBoundMemoryStoreKind;
+  durable: boolean;
+  runtimeScoped: boolean;
+  boundary: string;
+}): IprBoundMemoryStoreAdapter<TRecord> {
   return {
-    name: "HBCE_JOKER_C2_DATABASE_READY_PLACEHOLDER",
-    kind: "DATABASE_READY",
-    durable: true,
-    runtimeScoped: false,
+    name: input.name,
+    kind: input.kind,
+    durable: input.durable,
+    runtimeScoped: input.runtimeScoped,
 
     describe(): IprBoundMemoryStoreDescription {
-      return {
+      return buildStoreDescription({
         name: this.name,
         kind: this.kind,
         status: "NOT_CONFIGURED",
         durable: this.durable,
         runtimeScoped: this.runtimeScoped,
         recordCount: 0,
-        boundary: DATABASE_PLACEHOLDER_BOUNDARY
-      };
+        boundary: input.boundary
+      });
     },
 
-    get(): TRecord | undefined {
-      throw new Error("IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED");
+    get(memoryKey: string): TRecord | undefined {
+      void memoryKey;
+      return throwStoreNotConfigured();
     },
 
-    set(): TRecord {
-      throw new Error("IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED");
+    set(memoryKey: string, record: TRecord): TRecord {
+      void memoryKey;
+      void record;
+      return throwStoreNotConfigured();
     },
 
-    has(): boolean {
-      throw new Error("IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED");
+    has(memoryKey: string): boolean {
+      void memoryKey;
+      return throwStoreNotConfigured();
     },
 
-    delete(): boolean {
-      throw new Error("IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED");
+    delete(memoryKey: string): boolean {
+      void memoryKey;
+      return throwStoreNotConfigured();
     },
 
     clear(): void {
-      throw new Error("IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED");
+      throwStoreNotConfigured();
     },
 
     size(): number {
@@ -227,10 +277,47 @@ export function createDatabaseReadyPlaceholderAdapter<
       return [];
     },
 
-    findByMemoryKeyHash(): TRecord | null {
-      throw new Error("IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED");
+    findByMemoryKeyHash(memoryKeyHash: string): TRecord | null {
+      void memoryKeyHash;
+      return throwStoreNotConfigured();
     }
   };
+}
+
+export function createDatabaseReadyPlaceholderAdapter<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(): IprBoundMemoryStoreAdapter<TRecord> {
+  return createUnavailableMemoryStoreAdapter<TRecord>({
+    name: "HBCE_JOKER_C2_DATABASE_READY_PLACEHOLDER",
+    kind: "DATABASE_READY",
+    durable: true,
+    runtimeScoped: false,
+    boundary: DATABASE_READY_BOUNDARY
+  });
+}
+
+export function createDatabasePersistentPlaceholderAdapter<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(): IprBoundMemoryStoreAdapter<TRecord> {
+  return createUnavailableMemoryStoreAdapter<TRecord>({
+    name: "HBCE_JOKER_C2_DATABASE_PERSISTENT_PLACEHOLDER",
+    kind: "DATABASE_PERSISTENT",
+    durable: true,
+    runtimeScoped: false,
+    boundary: DATABASE_PERSISTENT_BOUNDARY
+  });
+}
+
+export function createExternalAdapterPlaceholder<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(): IprBoundMemoryStoreAdapter<TRecord> {
+  return createUnavailableMemoryStoreAdapter<TRecord>({
+    name: "HBCE_JOKER_C2_EXTERNAL_MEMORY_ADAPTER_PLACEHOLDER",
+    kind: "EXTERNAL_ADAPTER",
+    durable: true,
+    runtimeScoped: false,
+    boundary: EXTERNAL_ADAPTER_BOUNDARY
+  });
 }
 
 export const processIprBoundMemoryStore =
@@ -240,6 +327,12 @@ export const processIprBoundMemoryStore =
 
 export const databaseReadyIprBoundMemoryStore =
   createDatabaseReadyPlaceholderAdapter<IprBoundMemoryStoreRecord>();
+
+export const databasePersistentIprBoundMemoryStore =
+  createDatabasePersistentPlaceholderAdapter<IprBoundMemoryStoreRecord>();
+
+export const externalIprBoundMemoryStore =
+  createExternalAdapterPlaceholder<IprBoundMemoryStoreRecord>();
 
 export function getDefaultIprBoundMemoryStore<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
@@ -259,8 +352,32 @@ export function getDatabaseReadyIprBoundMemoryStore<
   return databaseReadyIprBoundMemoryStore as unknown as IprBoundMemoryStoreAdapter<TRecord>;
 }
 
+export function getDatabasePersistentIprBoundMemoryStore<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(): IprBoundMemoryStoreAdapter<TRecord> {
+  return databasePersistentIprBoundMemoryStore as unknown as IprBoundMemoryStoreAdapter<TRecord>;
+}
+
+export function getExternalIprBoundMemoryStore<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(): IprBoundMemoryStoreAdapter<TRecord> {
+  return externalIprBoundMemoryStore as unknown as IprBoundMemoryStoreAdapter<TRecord>;
+}
+
 export function describeDefaultIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
   return getDefaultIprBoundMemoryStore().describe();
+}
+
+export function describeProcessIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
+  return getProcessIprBoundMemoryStore().describe();
+}
+
+export function describeDatabaseReadyIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
+  return getDatabaseReadyIprBoundMemoryStore().describe();
+}
+
+export function describeDatabasePersistentIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
+  return getDatabasePersistentIprBoundMemoryStore().describe();
 }
 
 export function getRuntimeMemoryStoreSize(): number {
