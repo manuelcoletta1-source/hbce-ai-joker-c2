@@ -1,7 +1,7 @@
 # IPR-Bound Memory Runtime Architecture
 
 **Project:** AI JOKER-C2  
-**Ecosystem:** HERMETICUM B.C.E.  
+**Ecosystem:** HBCE  
 **Organization:** HERMETICUM B.C.E. S.r.l.  
 **Reference mark:** HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA  
 **Status:** MVP runtime architecture  
@@ -17,7 +17,7 @@ This document defines the IPR-bound memory architecture implemented inside AI JO
 
 The purpose of IPR-bound memory is to preserve operational continuity inside a governed AI runtime only when a biological or operational subject has been validated through a server-side HBCE IPR handoff.
 
-The memory layer is not a generic browser chat memory.
+The memory layer is not generic browser chat memory.
 
 It is a runtime memory structure linked to:
 
@@ -46,6 +46,19 @@ When a valid HBCE IPR handoff is received and validated by `/api/chat`, AI JOKER
 ## 2. Runtime Formula
 
 The memory architecture follows the canonical AI JOKER-C2 / HBCE runtime formula:
+
+```txt
+OpenAI generates.
+AI JOKER-C2 executes.
+IPR identifies.
+EVT traces.
+Memory preserves continuity.
+OPC proves.
+HBCE governs.
+MATRIX organizes.
+```
+
+Short operational formula:
 
 ```txt
 IPR identifies.
@@ -79,6 +92,8 @@ MATRIX state resolution
         ↓
 Memory scope resolution
         ↓
+Memory prompt frame generation
+        ↓
 OpenAI cognitive engine call
         ↓
 EVT generation
@@ -98,6 +113,10 @@ The authoritative runtime chain remains:
 identity validation → governance frame → model call → EVT → OPC → memory update
 ```
 
+Memory can support continuity.
+
+Memory cannot grant authority.
+
 ---
 
 ## 4. Current Implementation Files
@@ -107,7 +126,9 @@ The current MVP implementation uses the following files:
 ```txt
 app/api/chat/route.ts
 lib/ipr-bound-memory.ts
+lib/ipr-bound-memory-store.ts
 app/interface/page.tsx
+docs/IPR_BOUND_MEMORY.md
 ```
 
 ### `app/api/chat/route.ts`
@@ -120,9 +141,10 @@ Responsibilities:
 - receives file context;
 - receives IPR handoff payload;
 - validates the handoff server-side;
-- resolves `MATRIX_ACTIVE` or `MATRIX_LIMITED`;
+- resolves `MATRIX_ACTIVE` or limited runtime mode;
 - resolves `IPR_BOUND` or `RUNTIME_ONLY` memory;
 - builds the system prompt and user prompt;
+- injects the server-generated memory prompt frame;
 - calls the OpenAI cognitive engine;
 - generates EVT records;
 - generates OPC proof records;
@@ -131,7 +153,7 @@ Responsibilities:
 
 ### `lib/ipr-bound-memory.ts`
 
-Dedicated memory module.
+Dedicated memory logic module.
 
 Responsibilities:
 
@@ -142,7 +164,48 @@ Responsibilities:
 - builds memory prompt frames;
 - updates memory after each governed operation;
 - exposes public memory snapshots;
-- keeps MVP memory inside server-side process memory.
+- preserves MVP memory semantics;
+- delegates storage operations to the memory store adapter.
+
+This module exports the memory runtime API consumed by `/api/chat`.
+
+Required runtime exports:
+
+```txt
+IPR_BOUND_MEMORY_BOUNDARY
+buildMemoryPromptFrame
+buildMemoryRecordHash
+getOrCreateRuntimeMemory
+updateMemoryAfterCompletion
+toPublicMemoryRecord
+```
+
+### `lib/ipr-bound-memory-store.ts`
+
+Dedicated memory storage adapter layer.
+
+Responsibilities:
+
+- provides the default `PROCESS_MEMORY_MVP` store;
+- isolates storage logic from memory logic;
+- exposes store adapter functions;
+- prepares future database persistence;
+- avoids direct database coupling inside `/api/chat`;
+- prevents the route from knowing the storage backend.
+
+Current default adapter:
+
+```txt
+PROCESS_MEMORY_MVP
+```
+
+Future adapters may support:
+
+```txt
+DATABASE_READY
+DATABASE_PERSISTENT
+EXTERNAL_ADAPTER
+```
 
 ### `app/interface/page.tsx`
 
@@ -164,6 +227,11 @@ Responsibilities:
 ## 5. Memory Scopes
 
 AI JOKER-C2 supports two memory scopes.
+
+```txt
+RUNTIME_ONLY
+IPR_BOUND
+```
 
 ### 5.1 `RUNTIME_ONLY`
 
@@ -271,11 +339,18 @@ The public interface may expose only a hash representation:
 memoryKeyHash
 ```
 
+This prevents direct leakage of raw continuity keys.
+
 ---
 
 ## 7. Memory Authority
 
 The runtime uses two authority modes.
+
+```txt
+SESSION_RUNTIME_ONLY
+SERVER_RUNTIME_VALIDATED
+```
 
 ### 7.1 `SESSION_RUNTIME_ONLY`
 
@@ -316,7 +391,7 @@ The current MVP uses:
 PROCESS_MEMORY_MVP
 ```
 
-This means memory is held inside server-side process memory.
+This means memory is held inside server-side process memory through `lib/ipr-bound-memory-store.ts`.
 
 The current implementation is useful for:
 
@@ -326,7 +401,8 @@ The current implementation is useful for:
 - UI validation;
 - IPR handoff testing;
 - EVT/OPC continuity testing;
-- OpenAI reviewer demonstrations.
+- OpenAI reviewer demonstrations;
+- internal HBCE R&D validation.
 
 The current implementation is not yet sufficient for:
 
@@ -356,7 +432,57 @@ not durable enterprise storage.
 
 ---
 
-## 9. Future Persistence Modes
+## 9. Storage Adapter Layer
+
+The storage adapter layer was introduced to separate memory logic from memory persistence.
+
+Current file:
+
+```txt
+lib/ipr-bound-memory-store.ts
+```
+
+Current role:
+
+```txt
+process memory adapter for MVP runtime storage
+```
+
+The memory module calls the store adapter instead of owning a hardcoded global map directly.
+
+Current flow:
+
+```txt
+/api/chat
+   ↓
+lib/ipr-bound-memory.ts
+   ↓
+lib/ipr-bound-memory-store.ts
+   ↓
+server-side process memory
+```
+
+This allows future replacement of process memory with durable storage without rewriting the chat route.
+
+The current store adapter exposes:
+
+```txt
+getDefaultIprBoundMemoryStore
+getProcessIprBoundMemoryStore
+getDatabaseReadyIprBoundMemoryStore
+describeDefaultIprBoundMemoryStore
+getRuntimeMemoryStoreSize
+getRuntimeMemoryByKeyHash
+clearProcessRuntimeMemory
+```
+
+The database-ready adapter is currently a placeholder.
+
+It must not be treated as active durable storage until a real database backend is implemented.
+
+---
+
+## 10. Future Persistence Modes
 
 The next production-ready phase should introduce durable storage.
 
@@ -402,11 +528,11 @@ DATABASE_PERSISTENT
 
 ---
 
-## 10. Memory Record Structure
+## 11. Memory Record Structure
 
 The current memory record includes the following categories.
 
-### 10.1 Identity fields
+### 11.1 Identity fields
 
 ```txt
 memoryId
@@ -422,7 +548,7 @@ matrixState
 sessionId
 ```
 
-### 10.2 Continuity fields
+### 11.2 Continuity fields
 
 ```txt
 createdAt
@@ -434,7 +560,7 @@ eventLinks
 recentTurns
 ```
 
-### 10.3 Semantic fields
+### 11.3 Semantic fields
 
 ```txt
 facts
@@ -442,7 +568,7 @@ summary
 memoryHash
 ```
 
-### 10.4 Boundary fields
+### 11.4 Boundary fields
 
 The memory boundary is always enforced by the runtime.
 
@@ -456,7 +582,7 @@ human oversight, fail-closed logic, or legal certification boundaries.
 
 ---
 
-## 11. Memory Prompt Frame
+## 12. Memory Prompt Frame
 
 The memory module generates a runtime-only prompt frame.
 
@@ -489,9 +615,13 @@ The memory frame is generated by the server runtime.
 
 It must not be confused with user-provided text.
 
+It must not be treated as user authority.
+
+It must remain subordinate to governance, policy, risk and safety evaluation.
+
 ---
 
-## 12. User-Provided Metadata Boundary
+## 13. User-Provided Metadata Boundary
 
 User-provided governance-like metadata is never authoritative.
 
@@ -526,7 +656,7 @@ MATRIX state
 
 ---
 
-## 13. Identity Recognition Boundary
+## 14. Identity Recognition Boundary
 
 AI JOKER-C2 must never recognize a biological subject because a name is written in the message.
 
@@ -552,7 +682,7 @@ Recognition derives from the HBCE IPR handoff received and validated by the runt
 
 ---
 
-## 14. EVT Relationship
+## 15. EVT Relationship
 
 EVT is the event continuity layer.
 
@@ -579,9 +709,21 @@ previous memory EVT → current operation → new EVT → memory update
 
 It does not predict the EVT before the operation exists.
 
+Runtime sequence:
+
+```txt
+read memory
+build memory prompt frame
+generate response
+create EVT
+create OPC
+update memory
+return runtime diagnostics
+```
+
 ---
 
-## 15. OPC Relationship
+## 16. OPC Relationship
 
 OPC is the operational proof receipt layer.
 
@@ -625,7 +767,7 @@ unless future integrations with legally recognized providers or qualified trust 
 
 ---
 
-## 16. MATRIX Relationship
+## 17. MATRIX Relationship
 
 MATRIX organizes the runtime state.
 
@@ -647,9 +789,24 @@ MATRIX does not mean uncontrolled execution.
 
 MATRIX means the runtime is operating inside the governed HBCE coordination layer.
 
+MATRIX coordinates:
+
+```txt
+identity
+runtime state
+memory
+EVT
+OPC
+policy
+risk
+oversight
+project domain
+HBCE module classification
+```
+
 ---
 
-## 17. UI Diagnostic Fields
+## 18. UI Diagnostic Fields
 
 The interface should expose the following memory fields when available:
 
@@ -691,7 +848,7 @@ MATRIX: MATRIX_LIMITED
 
 ---
 
-## 18. Current Test Sequence
+## 19. Current Test Sequence
 
 A basic runtime test should use the following sequence.
 
@@ -731,7 +888,24 @@ The runtime reports the latest memory EVT.
 The runtime reports the latest OPC proof reference.
 ```
 
-### Step 3: post-response UI verification
+### Step 3: memory scope verification
+
+User message:
+
+```txt
+spiegami che memoria hai attiva in questa sessione: RUNTIME_ONLY o IPR_BOUND?
+```
+
+Expected result:
+
+```txt
+The runtime reports IPR_BOUND when the handoff is valid.
+The runtime reports SERVER_RUNTIME_VALIDATED authority.
+The runtime reports PROCESS_MEMORY_MVP persistence.
+The runtime explains that memory cannot override governance.
+```
+
+### Step 4: post-response UI verification
 
 The UI should show:
 
@@ -747,7 +921,35 @@ OPC: OPC-...
 
 ---
 
-## 19. Expected Runtime Behavior
+## 20. Validated MVP Runtime State
+
+The current validated runtime state is:
+
+```txt
+IPR handoff: valid
+Identity binding: IPR_VERIFIED_BIOLOGICAL_SUBJECT
+Access: ACCESS_GRANTED
+MATRIX: MATRIX_ACTIVE
+Semantic memory: IPR_BOUND
+Memory authority: SERVER_RUNTIME_VALIDATED
+Memory persistence: PROCESS_MEMORY_MVP
+Runtime IPR: IPR-AI-0001
+```
+
+The runtime has demonstrated that it can:
+
+- recognize the verified subject through handoff validation;
+- avoid recognition based only on user-written names;
+- preserve IPR-bound project continuity;
+- report last memory EVT;
+- report OPC proof continuity;
+- distinguish memory scope and memory authority;
+- preserve governance boundary language;
+- keep OPC in the technical proof receipt domain.
+
+---
+
+## 21. Expected Runtime Behavior
 
 When memory is active, JOKER-C2 may recall:
 
@@ -781,9 +983,9 @@ connect democratic identity and vote choice
 
 ---
 
-## 20. Security and Governance Boundaries
+## 22. Security and Governance Boundaries
 
-### 20.1 Defensive-only cyber boundary
+### 22.1 Defensive-only cyber boundary
 
 Cyber support must remain defensive-only and authorized-only.
 
@@ -817,7 +1019,7 @@ unauthorized exploitation
 offensive targeting
 ```
 
-### 20.2 Privacy boundary
+### 22.2 Privacy boundary
 
 The runtime should follow data minimization.
 
@@ -829,7 +1031,7 @@ Mask identifiers when possible.
 Avoid credentials, secrets, private keys, full documents and excessive personal data.
 ```
 
-### 20.3 OpenAI boundary
+### 22.3 OpenAI boundary
 
 OpenAI is the cognitive engine provider.
 
@@ -847,7 +1049,7 @@ The system must not claim that no data is ever processed, retained or monitored 
 
 ---
 
-## 21. Non-Claims
+## 23. Non-Claims
 
 The current IPR-bound memory implementation does not claim to be:
 
@@ -878,7 +1080,7 @@ an IPR/EVT/OPC continuity prototype
 
 ---
 
-## 22. Production Readiness Gap
+## 24. Production Readiness Gap
 
 Before production use in B2B or B2G contexts, the following work is required:
 
@@ -927,18 +1129,19 @@ not as a final regulated identity or certification system.
 
 ---
 
-## 23. Recommended Next Engineering Step
+## 25. Recommended Next Engineering Step
 
 The next engineering step is to replace process memory with durable storage.
 
 Recommended path:
 
 ```txt
-1. Keep lib/ipr-bound-memory.ts as the memory interface.
-2. Add a storage adapter layer.
-3. Implement process-memory adapter as default MVP adapter.
-4. Add database adapter for persistent deployment.
-5. Keep route.ts independent from storage backend details.
+1. Keep lib/ipr-bound-memory.ts as the memory logic interface.
+2. Keep lib/ipr-bound-memory-store.ts as the storage adapter layer.
+3. Keep process-memory adapter as default MVP adapter.
+4. Add a database adapter for persistent deployment.
+5. Add environment-based adapter selection.
+6. Keep route.ts independent from storage backend details.
 ```
 
 Suggested future file structure:
@@ -956,7 +1159,7 @@ The long-term target is:
 
 ```txt
 route.ts orchestrates.
-memory module governs memory.
+memory module governs memory logic.
 storage adapter persists.
 database stores.
 audit layer verifies.
@@ -965,7 +1168,7 @@ UI displays only safe public diagnostics.
 
 ---
 
-## 24. Canonical Summary
+## 26. Canonical Summary
 
 IPR-bound memory is the JOKER-C2 runtime continuity layer that links a verified operational subject, the AI runtime, the active session, EVT continuity and OPC proof continuity.
 
