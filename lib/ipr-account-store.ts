@@ -19,6 +19,31 @@ export type IprAccountStoreStatus =
   | "NOT_CONFIGURED"
   | "DEGRADED";
 
+export type IprAccountPersistenceStage =
+  | "RUNTIME_VOLATILE"
+  | "DATABASE_CONTRACT_READY"
+  | "DATABASE_PERSISTENT_ACTIVE"
+  | "DATABASE_PERSISTENT_NOT_CONFIGURED"
+  | "EXTERNAL_ADAPTER_TARGET";
+
+export type IprAccountStoreCapability =
+  | "IPR_ACCOUNT_PROFILE_STORAGE"
+  | "IPR_HANDOFF_RECONSTRUCTION"
+  | "IPR_SUBJECT_UPSERT"
+  | "PROCESS_SCOPED_RUNTIME"
+  | "DATABASE_CONTRACT"
+  | "DATABASE_DURABILITY"
+  | "TENANT_SCOPE"
+  | "WORKSPACE_SCOPE"
+  | "SERVER_SIDE_PROFILE_LOOKUP"
+  | "LOGIN_TOUCH"
+  | "AUDIT_READY_BOUNDARY"
+  | "RETENTION_REQUIRED"
+  | "DELETION_REQUIRED"
+  | "RECOVERY_REQUIRED"
+  | "MONITORING_REQUIRED"
+  | "EXTERNAL_ADAPTER_CONTRACT";
+
 export type IprAccountSubjectKind =
   | "BIOLOGICAL_SUBJECT"
   | "AI_RUNTIME"
@@ -57,6 +82,8 @@ export type IprAccountIdentityBinding =
 
 export type IprAccountProfile = {
   humanIpr: string;
+  tenantId: string | null;
+  workspaceId: string | null;
   accountId: string;
   entity: string;
   subjectKind: IprAccountSubjectKind;
@@ -83,6 +110,8 @@ export type IprAccountProfile = {
 
 export type PublicIprAccountProfile = {
   humanIpr: string;
+  tenantId: string | null;
+  workspaceId: string | null;
   accountId: string;
   entity: string;
   subjectKind: IprAccountSubjectKind;
@@ -108,6 +137,8 @@ export type PublicIprAccountProfile = {
 
 export type IprAccountProfileUpsertInput = {
   humanIpr: string;
+  tenantId?: string | null;
+  workspaceId?: string | null;
   accountId?: string;
   entity?: string;
   subjectKind?: IprAccountSubjectKind;
@@ -128,17 +159,26 @@ export type IprAccountProfileUpsertInput = {
 };
 
 export type IprAccountStoreDescription = {
+  name: string;
   kind: IprAccountStoreKind;
   status: IprAccountStoreStatus;
   configured: boolean;
   available: boolean;
   persistenceMode: IprAccountStoreKind;
+  persistenceStage: IprAccountPersistenceStage;
   databaseConfigured: boolean;
   databaseDescription?: ReturnType<typeof describeDefaultHbceDatabase>;
   accountBoundary: string;
   profileBoundary: string;
   databaseRequirement: string;
   legalCertification: false;
+  durable: boolean;
+  runtimeScoped: boolean;
+  saasReady: boolean;
+  requiresDatabase: boolean;
+  syncFallbackToProcess: boolean;
+  capabilities: IprAccountStoreCapability[];
+  requirements: string[];
 };
 
 export type IprAccountStoreAdapter = {
@@ -157,6 +197,8 @@ export type IprAccountStoreAdapter = {
 
 type IprAccountProfileRow = {
   human_ipr: string;
+  tenant_id?: string | null;
+  workspace_id?: string | null;
   account_id: string;
   entity: string;
   subject_kind: string;
@@ -184,6 +226,12 @@ type IprAccountProfileRow = {
 const DEFAULT_CERTIFICATE_KIND = "CERTIFICATE_09_OPERATIONAL";
 const DEFAULT_ACCESS_SCOPE = "JOKER_C2_ACCESS";
 
+const DATABASE_STORE_NOT_CONFIGURED_ERROR =
+  "IPR_ACCOUNT_DATABASE_STORE_NOT_CONFIGURED";
+
+const EXTERNAL_STORE_NOT_CONFIGURED_ERROR =
+  "IPR_ACCOUNT_EXTERNAL_ADAPTER_NOT_CONFIGURED";
+
 export const IPR_ACCOUNT_STORE_BOUNDARY =
   "The IPR account profile store preserves operational account metadata for JOKER-C2 access. It does not issue official identity, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale or eIDAS qualified trust services, and does not create legal certification.";
 
@@ -193,8 +241,103 @@ export const IPR_ACCOUNT_PROFILE_BOUNDARY =
 export const IPR_ACCOUNT_DATABASE_REQUIREMENT =
   "Persistent IPR account profiles require DATABASE_PERSISTENT storage before durable multi-device login, chat history restore, audit continuity, retention, deletion, recovery, revocation and production-grade reliance.";
 
+export const IPR_ACCOUNT_DATABASE_READY_BOUNDARY =
+  "DATABASE_READY means that the account profile contract is prepared for durable storage, but active profile persistence still requires a configured HBCE database, tenant/workspace scoping and production controls.";
+
 export const IPR_ACCOUNT_DATABASE_PERSISTENT_BOUNDARY =
   "DATABASE_PERSISTENT IPR account profiles preserve the operational identity metadata needed to reconstruct the JOKER-C2 IPR handoff server-side. They do not create public authority validation, legal certification or official identity issuance.";
+
+export const IPR_ACCOUNT_EXTERNAL_ADAPTER_BOUNDARY =
+  "EXTERNAL_ADAPTER declares a future account profile adapter supplied by the runtime. External account adapters must preserve HBCE IPR boundaries, tenant/workspace scoping, auditability, fail-closed behavior and legalCertification=false.";
+
+const PROCESS_ACCOUNT_CAPABILITIES: IprAccountStoreCapability[] = [
+  "IPR_ACCOUNT_PROFILE_STORAGE",
+  "IPR_HANDOFF_RECONSTRUCTION",
+  "PROCESS_SCOPED_RUNTIME",
+  "SERVER_SIDE_PROFILE_LOOKUP",
+  "LOGIN_TOUCH"
+];
+
+const DATABASE_READY_CAPABILITIES: IprAccountStoreCapability[] = [
+  "IPR_ACCOUNT_PROFILE_STORAGE",
+  "IPR_HANDOFF_RECONSTRUCTION",
+  "IPR_SUBJECT_UPSERT",
+  "DATABASE_CONTRACT",
+  "SERVER_SIDE_PROFILE_LOOKUP",
+  "LOGIN_TOUCH",
+  "TENANT_SCOPE",
+  "WORKSPACE_SCOPE",
+  "AUDIT_READY_BOUNDARY",
+  "RETENTION_REQUIRED",
+  "DELETION_REQUIRED"
+];
+
+const DATABASE_PERSISTENT_CAPABILITIES: IprAccountStoreCapability[] = [
+  "IPR_ACCOUNT_PROFILE_STORAGE",
+  "IPR_HANDOFF_RECONSTRUCTION",
+  "IPR_SUBJECT_UPSERT",
+  "DATABASE_CONTRACT",
+  "DATABASE_DURABILITY",
+  "SERVER_SIDE_PROFILE_LOOKUP",
+  "LOGIN_TOUCH",
+  "TENANT_SCOPE",
+  "WORKSPACE_SCOPE",
+  "AUDIT_READY_BOUNDARY",
+  "RETENTION_REQUIRED",
+  "DELETION_REQUIRED",
+  "RECOVERY_REQUIRED",
+  "MONITORING_REQUIRED"
+];
+
+const EXTERNAL_ADAPTER_CAPABILITIES: IprAccountStoreCapability[] = [
+  "IPR_ACCOUNT_PROFILE_STORAGE",
+  "IPR_HANDOFF_RECONSTRUCTION",
+  "EXTERNAL_ADAPTER_CONTRACT",
+  "SERVER_SIDE_PROFILE_LOOKUP",
+  "LOGIN_TOUCH",
+  "TENANT_SCOPE",
+  "WORKSPACE_SCOPE",
+  "AUDIT_READY_BOUNDARY",
+  "RETENTION_REQUIRED",
+  "DELETION_REQUIRED"
+];
+
+const PROCESS_ACCOUNT_REQUIREMENTS = [
+  "Use only for R&D and MVP runtime demonstration.",
+  "Do not treat process account storage as durable SaaS account persistence.",
+  "Expect account profile loss on redeploy, cold start, instance recycling or runtime migration.",
+  "Do not rely on this store for multi-device account continuity, enterprise audit retention, recovery or production use."
+];
+
+const DATABASE_READY_REQUIREMENTS = [
+  "Configure HBCE database storage.",
+  "Run the required account profile schema.",
+  "Validate tenant_id and workspace_id compatibility.",
+  "Define tenant and workspace access control before production use.",
+  "Define retention and deletion workflows.",
+  "Define audit logging before production use.",
+  "Keep legalCertification=false."
+];
+
+const DATABASE_PERSISTENT_REQUIREMENTS = [
+  "Persist IPR subjects and account profiles in HBCE database storage.",
+  "Preserve tenant and workspace references when available.",
+  "Reconstruct IPR handoff only from server-side authenticated account profiles.",
+  "Preserve certificate metadata without claiming official identity issuance.",
+  "Persist lastLoginAt for authenticated sessions.",
+  "Define audit logging for profile creation, update, lookup and login touch.",
+  "Define retention, deletion, recovery and monitoring workflows.",
+  "Do not claim public authority validation or legal certification.",
+  "Keep legalCertification=false."
+];
+
+const EXTERNAL_ADAPTER_REQUIREMENTS = [
+  "External adapter must implement the full IprAccountStoreAdapter contract.",
+  "External adapter must preserve server-side IPR account profile lookup.",
+  "External adapter must preserve tenant and workspace scoping when used in SaaS mode.",
+  "External adapter must preserve fail-closed behavior and legalCertification=false.",
+  "External adapter must not transform IPR profile data into official identity issuance claims."
+];
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -281,9 +424,37 @@ function jsonParam(value: unknown): string {
   return JSON.stringify(value ?? {});
 }
 
+function canonicalize(value: unknown): string {
+  return JSON.stringify(sortCanonical(value));
+}
+
+function sortCanonical(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => sortCanonical(item));
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+
+    return Object.keys(record)
+      .sort()
+      .reduce<Record<string, unknown>>((accumulator, key) => {
+        const item = record[key];
+
+        if (typeof item !== "undefined") {
+          accumulator[key] = sortCanonical(item);
+        }
+
+        return accumulator;
+      }, {});
+  }
+
+  return value;
+}
+
 function hashJson(value: unknown): string {
   return `sha256:${createHash("sha256")
-    .update(JSON.stringify(value))
+    .update(canonicalize(value), "utf8")
     .digest("hex")}`;
 }
 
@@ -301,10 +472,28 @@ function buildEntityLabel(humanIpr: string): string {
   return `HBCE IPR Subject ${normalizeHumanIpr(humanIpr)}`;
 }
 
+function normalizeOptionalId(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+
+  return normalized ? normalized : null;
+}
+
 function normalizeCertificateScope(value: string[] | undefined): string[] {
-  const scope = Array.isArray(value) ? value.filter(Boolean) : [];
+  const scope = Array.isArray(value)
+    ? value.map((item) => item.trim()).filter(Boolean)
+    : [];
 
   return scope.length > 0 ? scope : [DEFAULT_ACCESS_SCOPE];
+}
+
+function assertDatabaseConfigured(): void {
+  if (!isHbceDatabaseConfigured()) {
+    throw new Error(DATABASE_STORE_NOT_CONFIGURED_ERROR);
+  }
 }
 
 function buildProfile(input: IprAccountProfileUpsertInput): IprAccountProfile {
@@ -314,11 +503,18 @@ function buildProfile(input: IprAccountProfileUpsertInput): IprAccountProfile {
 
   const profilePayload = {
     ...(input.profilePayload || {}),
+    saas: {
+      tenantId: normalizeOptionalId(input.tenantId),
+      workspaceId: normalizeOptionalId(input.workspaceId),
+      ...(toJsonRecord(input.profilePayload?.saas) || {})
+    },
     legalCertification: false
   };
 
   const profileBase = {
     humanIpr,
+    tenantId: normalizeOptionalId(input.tenantId),
+    workspaceId: normalizeOptionalId(input.workspaceId),
     accountId: input.accountId || buildAccountId(humanIpr),
     entity: input.entity || buildEntityLabel(humanIpr),
     subjectKind: input.subjectKind || "BIOLOGICAL_SUBJECT",
@@ -354,6 +550,8 @@ function buildProfile(input: IprAccountProfileUpsertInput): IprAccountProfile {
 function profileFromRow(row: IprAccountProfileRow): IprAccountProfile {
   const fallbackHash = hashJson({
     humanIpr: row.human_ipr,
+    tenantId: row.tenant_id || null,
+    workspaceId: row.workspace_id || null,
     accountId: row.account_id,
     certificateId: row.certificate_id,
     source: row.source
@@ -361,6 +559,8 @@ function profileFromRow(row: IprAccountProfileRow): IprAccountProfile {
 
   return {
     humanIpr: row.human_ipr,
+    tenantId: row.tenant_id || null,
+    workspaceId: row.workspace_id || null,
     accountId: row.account_id,
     entity: row.entity,
     subjectKind: row.subject_kind,
@@ -386,31 +586,47 @@ function profileFromRow(row: IprAccountProfileRow): IprAccountProfile {
   };
 }
 
-function buildDescription(
-  kind: IprAccountStoreKind,
-  status: IprAccountStoreStatus,
-  configured: boolean,
-  available: boolean
-): IprAccountStoreDescription {
+function buildDescription(input: {
+  name: string;
+  kind: IprAccountStoreKind;
+  status: IprAccountStoreStatus;
+  configured: boolean;
+  available: boolean;
+  persistenceStage: IprAccountPersistenceStage;
+  accountBoundary: string;
+  durable: boolean;
+  runtimeScoped: boolean;
+  saasReady: boolean;
+  requiresDatabase: boolean;
+  syncFallbackToProcess: boolean;
+  capabilities: IprAccountStoreCapability[];
+  requirements: string[];
+}): IprAccountStoreDescription {
   const databaseConfigured = isHbceDatabaseConfigured();
 
   return {
-    kind,
-    status,
-    configured,
-    available,
-    persistenceMode: kind,
+    name: input.name,
+    kind: input.kind,
+    status: input.status,
+    configured: input.configured,
+    available: input.available,
+    persistenceMode: input.kind,
+    persistenceStage: input.persistenceStage,
     databaseConfigured,
     databaseDescription: databaseConfigured
       ? describeDefaultHbceDatabase()
       : undefined,
-    accountBoundary:
-      kind === "DATABASE_PERSISTENT"
-        ? IPR_ACCOUNT_DATABASE_PERSISTENT_BOUNDARY
-        : IPR_ACCOUNT_STORE_BOUNDARY,
+    accountBoundary: input.accountBoundary,
     profileBoundary: IPR_ACCOUNT_PROFILE_BOUNDARY,
     databaseRequirement: IPR_ACCOUNT_DATABASE_REQUIREMENT,
-    legalCertification: false
+    legalCertification: false,
+    durable: input.durable,
+    runtimeScoped: input.runtimeScoped,
+    saasReady: input.saasReady,
+    requiresDatabase: input.requiresDatabase,
+    syncFallbackToProcess: input.syncFallbackToProcess,
+    capabilities: input.capabilities,
+    requirements: input.requirements
   };
 }
 
@@ -418,12 +634,22 @@ class ProcessIprAccountStore implements IprAccountStoreAdapter {
   private readonly profiles = new Map<string, IprAccountProfile>();
 
   describe(): IprAccountStoreDescription {
-    return buildDescription(
-      "PROCESS_ACCOUNT_STORE_MVP",
-      "AVAILABLE",
-      true,
-      true
-    );
+    return buildDescription({
+      name: "HBCE_JOKER_C2_PROCESS_ACCOUNT_STORE",
+      kind: "PROCESS_ACCOUNT_STORE_MVP",
+      status: "AVAILABLE",
+      configured: true,
+      available: true,
+      persistenceStage: "RUNTIME_VOLATILE",
+      accountBoundary: IPR_ACCOUNT_STORE_BOUNDARY,
+      durable: false,
+      runtimeScoped: true,
+      saasReady: false,
+      requiresDatabase: false,
+      syncFallbackToProcess: false,
+      capabilities: PROCESS_ACCOUNT_CAPABILITIES,
+      requirements: PROCESS_ACCOUNT_REQUIREMENTS
+    });
   }
 
   getProfile(humanIpr: string): IprAccountProfile | null {
@@ -452,10 +678,12 @@ class ProcessIprAccountStore implements IprAccountStoreAdapter {
       return null;
     }
 
+    const timestamp = nowIso();
+
     const updated: IprAccountProfile = {
       ...existing,
-      updatedAt: nowIso(),
-      lastLoginAt: nowIso()
+      updatedAt: timestamp,
+      lastLoginAt: timestamp
     };
 
     this.profiles.set(updated.humanIpr, updated);
@@ -482,6 +710,59 @@ class ProcessIprAccountStore implements IprAccountStoreAdapter {
   }
 }
 
+class DatabaseReadyIprAccountStore implements IprAccountStoreAdapter {
+  private readonly processFallback: ProcessIprAccountStore;
+
+  constructor(processFallback: ProcessIprAccountStore) {
+    this.processFallback = processFallback;
+  }
+
+  describe(): IprAccountStoreDescription {
+    return buildDescription({
+      name: "HBCE_JOKER_C2_DATABASE_READY_ACCOUNT_STORE",
+      kind: "DATABASE_READY",
+      status: "DEGRADED",
+      configured: true,
+      available: true,
+      persistenceStage: "DATABASE_CONTRACT_READY",
+      accountBoundary: IPR_ACCOUNT_DATABASE_READY_BOUNDARY,
+      durable: false,
+      runtimeScoped: true,
+      saasReady: false,
+      requiresDatabase: true,
+      syncFallbackToProcess: true,
+      capabilities: DATABASE_READY_CAPABILITIES,
+      requirements: DATABASE_READY_REQUIREMENTS
+    });
+  }
+
+  getProfile(humanIpr: string): IprAccountProfile | null {
+    return this.processFallback.getProfile(humanIpr);
+  }
+
+  upsertProfile(input: IprAccountProfileUpsertInput): IprAccountProfile {
+    return this.processFallback.upsertProfile(input);
+  }
+
+  touchLogin(humanIpr: string): IprAccountProfile | null {
+    return this.processFallback.touchLogin(humanIpr);
+  }
+
+  async getProfileAsync(humanIpr: string): Promise<IprAccountProfile | null> {
+    return this.processFallback.getProfileAsync(humanIpr);
+  }
+
+  async upsertProfileAsync(
+    input: IprAccountProfileUpsertInput
+  ): Promise<IprAccountProfile> {
+    return this.processFallback.upsertProfileAsync(input);
+  }
+
+  async touchLoginAsync(humanIpr: string): Promise<IprAccountProfile | null> {
+    return this.processFallback.touchLoginAsync(humanIpr);
+  }
+}
+
 class DatabasePersistentIprAccountStore implements IprAccountStoreAdapter {
   private readonly processFallback: ProcessIprAccountStore;
 
@@ -491,20 +772,40 @@ class DatabasePersistentIprAccountStore implements IprAccountStoreAdapter {
 
   describe(): IprAccountStoreDescription {
     if (!isHbceDatabaseConfigured()) {
-      return buildDescription(
-        "DATABASE_PERSISTENT",
-        "NOT_CONFIGURED",
-        false,
-        false
-      );
+      return buildDescription({
+        name: "HBCE_JOKER_C2_DATABASE_PERSISTENT_ACCOUNT_STORE",
+        kind: "DATABASE_PERSISTENT",
+        status: "NOT_CONFIGURED",
+        configured: false,
+        available: false,
+        persistenceStage: "DATABASE_PERSISTENT_NOT_CONFIGURED",
+        accountBoundary: IPR_ACCOUNT_DATABASE_PERSISTENT_BOUNDARY,
+        durable: true,
+        runtimeScoped: false,
+        saasReady: false,
+        requiresDatabase: true,
+        syncFallbackToProcess: true,
+        capabilities: DATABASE_PERSISTENT_CAPABILITIES,
+        requirements: DATABASE_PERSISTENT_REQUIREMENTS
+      });
     }
 
-    return buildDescription(
-      "DATABASE_PERSISTENT",
-      "AVAILABLE",
-      true,
-      true
-    );
+    return buildDescription({
+      name: "HBCE_JOKER_C2_DATABASE_PERSISTENT_ACCOUNT_STORE",
+      kind: "DATABASE_PERSISTENT",
+      status: "AVAILABLE",
+      configured: true,
+      available: true,
+      persistenceStage: "DATABASE_PERSISTENT_ACTIVE",
+      accountBoundary: IPR_ACCOUNT_DATABASE_PERSISTENT_BOUNDARY,
+      durable: true,
+      runtimeScoped: false,
+      saasReady: true,
+      requiresDatabase: true,
+      syncFallbackToProcess: true,
+      capabilities: DATABASE_PERSISTENT_CAPABILITIES,
+      requirements: DATABASE_PERSISTENT_REQUIREMENTS
+    });
   }
 
   getProfile(humanIpr: string): IprAccountProfile | null {
@@ -520,6 +821,8 @@ class DatabasePersistentIprAccountStore implements IprAccountStoreAdapter {
   }
 
   private async upsertSubject(profile: IprAccountProfile): Promise<void> {
+    assertDatabaseConfigured();
+
     await queryHbceDatabase(
       `
 INSERT INTO ipr_subjects (
@@ -564,6 +867,8 @@ ON CONFLICT (human_ipr) DO UPDATE SET
         JSON.stringify({
           source: "IPR_ACCOUNT_STORE",
           persistenceMode: "DATABASE_PERSISTENT",
+          tenantId: profile.tenantId,
+          workspaceId: profile.workspaceId,
           legalCertification: false
         })
       ]
@@ -571,12 +876,16 @@ ON CONFLICT (human_ipr) DO UPDATE SET
   }
 
   async getProfileAsync(humanIpr: string): Promise<IprAccountProfile | null> {
+    assertDatabaseConfigured();
+
     const normalizedHumanIpr = normalizeHumanIpr(humanIpr);
 
     const result = await queryHbceDatabase<IprAccountProfileRow>(
       `
 SELECT
   human_ipr,
+  tenant_id,
+  workspace_id,
   account_id,
   entity,
   subject_kind,
@@ -611,8 +920,11 @@ LIMIT 1
     }
 
     const profile = profileFromRow(result.rows[0]);
+
     this.processFallback.upsertProfile({
       humanIpr: profile.humanIpr,
+      tenantId: profile.tenantId,
+      workspaceId: profile.workspaceId,
       accountId: profile.accountId,
       entity: profile.entity,
       subjectKind: profile.subjectKind,
@@ -638,6 +950,8 @@ LIMIT 1
   async upsertProfileAsync(
     input: IprAccountProfileUpsertInput
   ): Promise<IprAccountProfile> {
+    assertDatabaseConfigured();
+
     const profile = buildProfile(input);
 
     await this.upsertSubject(profile);
@@ -646,6 +960,8 @@ LIMIT 1
       `
 INSERT INTO ipr_account_profiles (
   human_ipr,
+  tenant_id,
+  workspace_id,
   account_id,
   entity,
   subject_kind,
@@ -677,9 +993,9 @@ VALUES (
   $5,
   $6,
   $7,
-  $8::jsonb,
+  $8,
   $9,
-  $10,
+  $10::jsonb,
   $11,
   $12,
   $13,
@@ -688,13 +1004,17 @@ VALUES (
   $16,
   $17,
   $18,
+  $19,
+  $20,
   now(),
   now(),
   NULL,
-  $19::jsonb,
+  $21::jsonb,
   false
 )
 ON CONFLICT (human_ipr) DO UPDATE SET
+  tenant_id = EXCLUDED.tenant_id,
+  workspace_id = EXCLUDED.workspace_id,
   account_id = EXCLUDED.account_id,
   entity = EXCLUDED.entity,
   subject_kind = EXCLUDED.subject_kind,
@@ -717,6 +1037,8 @@ ON CONFLICT (human_ipr) DO UPDATE SET
   legal_certification = false
 RETURNING
   human_ipr,
+  tenant_id,
+  workspace_id,
   account_id,
   entity,
   subject_kind,
@@ -742,6 +1064,8 @@ RETURNING
       `.trim(),
       [
         profile.humanIpr,
+        profile.tenantId,
+        profile.workspaceId,
         profile.accountId,
         profile.entity,
         profile.subjectKind,
@@ -771,6 +1095,8 @@ RETURNING
 
     this.processFallback.upsertProfile({
       humanIpr: storedProfile.humanIpr,
+      tenantId: storedProfile.tenantId,
+      workspaceId: storedProfile.workspaceId,
       accountId: storedProfile.accountId,
       entity: storedProfile.entity,
       subjectKind: storedProfile.subjectKind,
@@ -794,6 +1120,8 @@ RETURNING
   }
 
   async touchLoginAsync(humanIpr: string): Promise<IprAccountProfile | null> {
+    assertDatabaseConfigured();
+
     const normalizedHumanIpr = normalizeHumanIpr(humanIpr);
 
     const result = await queryHbceDatabase<IprAccountProfileRow>(
@@ -806,6 +1134,8 @@ SET
 WHERE human_ipr = $1
 RETURNING
   human_ipr,
+  tenant_id,
+  workspace_id,
   account_id,
   entity,
   subject_kind,
@@ -840,6 +1170,8 @@ RETURNING
 
     this.processFallback.upsertProfile({
       humanIpr: profile.humanIpr,
+      tenantId: profile.tenantId,
+      workspaceId: profile.workspaceId,
       accountId: profile.accountId,
       entity: profile.entity,
       subjectKind: profile.subjectKind,
@@ -863,46 +1195,53 @@ RETURNING
   }
 }
 
-class DatabaseReadyIprAccountStore implements IprAccountStoreAdapter {
-  private readonly processFallback: ProcessIprAccountStore;
-
-  constructor(processFallback: ProcessIprAccountStore) {
-    this.processFallback = processFallback;
-  }
-
+class ExternalAdapterPlaceholderIprAccountStore implements IprAccountStoreAdapter {
   describe(): IprAccountStoreDescription {
-    return buildDescription(
-      "DATABASE_READY",
-      "DEGRADED",
-      true,
-      true
-    );
+    return buildDescription({
+      name: "HBCE_JOKER_C2_EXTERNAL_ACCOUNT_ADAPTER_PLACEHOLDER",
+      kind: "EXTERNAL_ADAPTER",
+      status: "NOT_CONFIGURED",
+      configured: false,
+      available: false,
+      persistenceStage: "EXTERNAL_ADAPTER_TARGET",
+      accountBoundary: IPR_ACCOUNT_EXTERNAL_ADAPTER_BOUNDARY,
+      durable: true,
+      runtimeScoped: false,
+      saasReady: false,
+      requiresDatabase: false,
+      syncFallbackToProcess: false,
+      capabilities: EXTERNAL_ADAPTER_CAPABILITIES,
+      requirements: EXTERNAL_ADAPTER_REQUIREMENTS
+    });
   }
 
   getProfile(humanIpr: string): IprAccountProfile | null {
-    return this.processFallback.getProfile(humanIpr);
+    void humanIpr;
+    throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
   }
 
   upsertProfile(input: IprAccountProfileUpsertInput): IprAccountProfile {
-    return this.processFallback.upsertProfile(input);
+    void input;
+    throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
   }
 
   touchLogin(humanIpr: string): IprAccountProfile | null {
-    return this.processFallback.touchLogin(humanIpr);
+    void humanIpr;
+    throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
   }
 
   async getProfileAsync(humanIpr: string): Promise<IprAccountProfile | null> {
-    return this.processFallback.getProfileAsync(humanIpr);
+    return this.getProfile(humanIpr);
   }
 
   async upsertProfileAsync(
     input: IprAccountProfileUpsertInput
   ): Promise<IprAccountProfile> {
-    return this.processFallback.upsertProfileAsync(input);
+    return this.upsertProfile(input);
   }
 
   async touchLoginAsync(humanIpr: string): Promise<IprAccountProfile | null> {
-    return this.processFallback.touchLoginAsync(humanIpr);
+    return this.touchLogin(humanIpr);
   }
 }
 
@@ -910,6 +1249,7 @@ const globalForIprAccountStore = globalThis as typeof globalThis & {
   __hbceProcessIprAccountStore?: ProcessIprAccountStore;
   __hbceDatabaseReadyIprAccountStore?: DatabaseReadyIprAccountStore;
   __hbceDatabasePersistentIprAccountStore?: DatabasePersistentIprAccountStore;
+  __hbceExternalAdapterPlaceholderIprAccountStore?: ExternalAdapterPlaceholderIprAccountStore;
 };
 
 export function getProcessIprAccountStore(): ProcessIprAccountStore {
@@ -939,6 +1279,39 @@ export function getDatabasePersistentIprAccountStore(): DatabasePersistentIprAcc
   return globalForIprAccountStore.__hbceDatabasePersistentIprAccountStore;
 }
 
+export function getExternalAdapterPlaceholderIprAccountStore(): ExternalAdapterPlaceholderIprAccountStore {
+  if (!globalForIprAccountStore.__hbceExternalAdapterPlaceholderIprAccountStore) {
+    globalForIprAccountStore.__hbceExternalAdapterPlaceholderIprAccountStore =
+      new ExternalAdapterPlaceholderIprAccountStore();
+  }
+
+  return globalForIprAccountStore.__hbceExternalAdapterPlaceholderIprAccountStore;
+}
+
+export function createExternalIprAccountStoreAdapter(
+  adapter: IprAccountStoreAdapter
+): IprAccountStoreAdapter {
+  const description = adapter.describe();
+
+  if (description.kind !== "EXTERNAL_ADAPTER") {
+    throw new Error("IPR_ACCOUNT_EXTERNAL_ADAPTER_KIND_REQUIRED");
+  }
+
+  if (description.legalCertification !== false) {
+    throw new Error("IPR_ACCOUNT_EXTERNAL_ADAPTER_LEGAL_CERTIFICATION_FORBIDDEN");
+  }
+
+  if (!description.durable) {
+    throw new Error("IPR_ACCOUNT_EXTERNAL_ADAPTER_MUST_BE_DURABLE");
+  }
+
+  if (description.runtimeScoped) {
+    throw new Error("IPR_ACCOUNT_EXTERNAL_ADAPTER_MUST_NOT_BE_RUNTIME_SCOPED");
+  }
+
+  return adapter;
+}
+
 function getRequestedStoreKindFromEnv(): IprAccountStoreKind | null {
   const raw = process.env.IPR_ACCOUNT_STORE_KIND;
 
@@ -960,19 +1333,29 @@ function getRequestedStoreKindFromEnv(): IprAccountStoreKind | null {
   return null;
 }
 
-export function getDefaultIprAccountStore(): IprAccountStoreAdapter {
-  const requested = getRequestedStoreKindFromEnv();
-
-  if (requested === "PROCESS_ACCOUNT_STORE_MVP") {
+export function selectIprAccountStore(
+  kind: IprAccountStoreKind
+): IprAccountStoreAdapter {
+  if (kind === "PROCESS_ACCOUNT_STORE_MVP") {
     return getProcessIprAccountStore();
   }
 
-  if (requested === "DATABASE_READY") {
+  if (kind === "DATABASE_READY") {
     return getDatabaseReadyIprAccountStore();
   }
 
-  if (requested === "DATABASE_PERSISTENT") {
+  if (kind === "DATABASE_PERSISTENT") {
     return getDatabasePersistentIprAccountStore();
+  }
+
+  return getExternalAdapterPlaceholderIprAccountStore();
+}
+
+export function getDefaultIprAccountStore(): IprAccountStoreAdapter {
+  const requested = getRequestedStoreKindFromEnv();
+
+  if (requested) {
+    return selectIprAccountStore(requested);
   }
 
   if (isHbceDatabaseConfigured()) {
@@ -982,8 +1365,41 @@ export function getDefaultIprAccountStore(): IprAccountStoreAdapter {
   return getProcessIprAccountStore();
 }
 
+export function getSaasTargetIprAccountStore(): IprAccountStoreAdapter {
+  return getDatabasePersistentIprAccountStore();
+}
+
 export function describeDefaultIprAccountStore(): IprAccountStoreDescription {
   return getDefaultIprAccountStore().describe();
+}
+
+export function describeProcessIprAccountStore(): IprAccountStoreDescription {
+  return getProcessIprAccountStore().describe();
+}
+
+export function describeDatabaseReadyIprAccountStore(): IprAccountStoreDescription {
+  return getDatabaseReadyIprAccountStore().describe();
+}
+
+export function describeDatabasePersistentIprAccountStore(): IprAccountStoreDescription {
+  return getDatabasePersistentIprAccountStore().describe();
+}
+
+export function describeExternalAdapterPlaceholderIprAccountStore(): IprAccountStoreDescription {
+  return getExternalAdapterPlaceholderIprAccountStore().describe();
+}
+
+export function describeSaasTargetIprAccountStore(): IprAccountStoreDescription {
+  return getSaasTargetIprAccountStore().describe();
+}
+
+export function listIprAccountStoreDescriptions(): IprAccountStoreDescription[] {
+  return [
+    describeProcessIprAccountStore(),
+    describeDatabaseReadyIprAccountStore(),
+    describeDatabasePersistentIprAccountStore(),
+    describeExternalAdapterPlaceholderIprAccountStore()
+  ];
 }
 
 export function toPublicIprAccountProfile(
@@ -991,6 +1407,8 @@ export function toPublicIprAccountProfile(
 ): PublicIprAccountProfile {
   return {
     humanIpr: profile.humanIpr,
+    tenantId: profile.tenantId,
+    workspaceId: profile.workspaceId,
     accountId: profile.accountId,
     entity: profile.entity,
     subjectKind: profile.subjectKind,
@@ -1020,6 +1438,7 @@ export function toIprHandoffPayloadFromAccountProfile(
 ) {
   return {
     handoff_type: "HBCE_IPR_HANDOFF",
+    handoff_version: "1.0",
     source: "IPR_ACCOUNT_STORE",
     subject: {
       entity: profile.entity,
@@ -1043,13 +1462,23 @@ export function toIprHandoffPayloadFromAccountProfile(
       state: profile.matrixState
     },
     memory: {
-      semantic_memory_scope: profile.semanticMemoryScope
+      semantic_memory_scope: profile.semanticMemoryScope,
+      expected_authority: "SERVER_RUNTIME_VALIDATED",
+      persistence_mode: "DATABASE_PERSISTENT"
     },
     account: {
       account_id: profile.accountId,
+      tenant_id: profile.tenantId,
+      workspace_id: profile.workspaceId,
       profile_hash: profile.profileHash,
       source: profile.source,
       handoff_hash: profile.handoffHash
+    },
+    saas: {
+      targetPersistence: "DATABASE_PERSISTENT",
+      tenantId: profile.tenantId,
+      workspaceId: profile.workspaceId,
+      legalCertification: false
     },
     boundary: {
       accountBoundary: IPR_ACCOUNT_STORE_BOUNDARY,
