@@ -24,6 +24,34 @@ export type IprAuthStoreStatus =
   | "NOT_CONFIGURED"
   | "DEGRADED";
 
+export type IprAuthPersistenceStage =
+  | "RUNTIME_VOLATILE"
+  | "DATABASE_CONTRACT_READY"
+  | "DATABASE_PERSISTENT_ACTIVE"
+  | "DATABASE_PERSISTENT_NOT_CONFIGURED"
+  | "EXTERNAL_ADAPTER_TARGET";
+
+export type IprAuthStoreCapability =
+  | "IPR_CREDENTIAL_STORAGE"
+  | "PASSWORD_HASH_STORAGE"
+  | "SESSION_TOKEN_HASH_STORAGE"
+  | "SESSION_CREATE"
+  | "SESSION_VERIFY"
+  | "SESSION_REVOKE"
+  | "SESSION_EXPIRY"
+  | "SESSION_TOUCH"
+  | "PROCESS_SCOPED_RUNTIME"
+  | "DATABASE_CONTRACT"
+  | "DATABASE_DURABILITY"
+  | "SUBJECT_UPSERT"
+  | "DEVICE_METADATA"
+  | "AUDIT_READY_BOUNDARY"
+  | "RETENTION_REQUIRED"
+  | "DELETION_REQUIRED"
+  | "RECOVERY_REQUIRED"
+  | "MONITORING_REQUIRED"
+  | "EXTERNAL_ADAPTER_CONTRACT";
+
 export type IprStoredSessionStatus =
   | "ACTIVE"
   | "REVOKED"
@@ -115,16 +143,25 @@ export type IprSessionLookupResult =
     };
 
 export type IprAuthStoreDescription = {
+  name: string;
   kind: IprAuthStoreKind;
   status: IprAuthStoreStatus;
   configured: boolean;
   available: boolean;
   persistenceMode: IprAuthStoreKind;
+  persistenceStage: IprAuthPersistenceStage;
   databaseConfigured: boolean;
   databaseDescription?: ReturnType<typeof describeDefaultHbceDatabase>;
   sessionBoundary: string;
   databaseRequirement: string;
   legalCertification: false;
+  durable: boolean;
+  runtimeScoped: boolean;
+  saasReady: boolean;
+  requiresDatabase: boolean;
+  syncFallbackToProcess: boolean;
+  capabilities: IprAuthStoreCapability[];
+  requirements: string[];
 };
 
 export type IprAuthStoreAdapter = {
@@ -181,11 +218,122 @@ type IprSessionRow = {
 
 const DEFAULT_RUNTIME_IPR = "IPR-AI-0001";
 
+const DATABASE_STORE_NOT_CONFIGURED_ERROR =
+  "IPR_AUTH_DATABASE_STORE_NOT_CONFIGURED";
+
+const EXTERNAL_STORE_NOT_CONFIGURED_ERROR =
+  "IPR_AUTH_EXTERNAL_ADAPTER_NOT_CONFIGURED";
+
 export const IPR_AUTH_STORE_BOUNDARY =
   "The current IPR auth store may run as PROCESS_AUTH_STORE_MVP for R&D only. Production-grade JOKER-C2 access requires DATABASE_PERSISTENT storage, session revocation, audit logging, retention policy, device management and recovery workflow.";
 
+export const IPR_AUTH_DATABASE_READY_BOUNDARY =
+  "DATABASE_READY means that the authentication contract is prepared for durable storage, but active credential and session persistence still requires a configured HBCE database and production controls.";
+
 export const IPR_AUTH_DATABASE_PERSISTENT_BOUNDARY =
   "DATABASE_PERSISTENT IPR auth stores password hashes, session token hashes and operational session metadata in HBCE Postgres storage. It does not store plaintext passwords or plaintext session tokens, does not issue official identity and does not create legal certification.";
+
+export const IPR_AUTH_EXTERNAL_ADAPTER_BOUNDARY =
+  "EXTERNAL_ADAPTER declares a future authentication adapter supplied by the runtime. External auth adapters must preserve HBCE IPR boundaries, token hashing, session revocation, auditability, fail-closed behavior and legalCertification=false.";
+
+const PROCESS_AUTH_CAPABILITIES: IprAuthStoreCapability[] = [
+  "IPR_CREDENTIAL_STORAGE",
+  "PASSWORD_HASH_STORAGE",
+  "SESSION_TOKEN_HASH_STORAGE",
+  "SESSION_CREATE",
+  "SESSION_VERIFY",
+  "SESSION_REVOKE",
+  "SESSION_EXPIRY",
+  "SESSION_TOUCH",
+  "PROCESS_SCOPED_RUNTIME"
+];
+
+const DATABASE_READY_CAPABILITIES: IprAuthStoreCapability[] = [
+  "IPR_CREDENTIAL_STORAGE",
+  "PASSWORD_HASH_STORAGE",
+  "SESSION_TOKEN_HASH_STORAGE",
+  "SESSION_CREATE",
+  "SESSION_VERIFY",
+  "SESSION_REVOKE",
+  "SESSION_EXPIRY",
+  "SESSION_TOUCH",
+  "DATABASE_CONTRACT",
+  "AUDIT_READY_BOUNDARY",
+  "RETENTION_REQUIRED",
+  "DELETION_REQUIRED"
+];
+
+const DATABASE_PERSISTENT_CAPABILITIES: IprAuthStoreCapability[] = [
+  "IPR_CREDENTIAL_STORAGE",
+  "PASSWORD_HASH_STORAGE",
+  "SESSION_TOKEN_HASH_STORAGE",
+  "SESSION_CREATE",
+  "SESSION_VERIFY",
+  "SESSION_REVOKE",
+  "SESSION_EXPIRY",
+  "SESSION_TOUCH",
+  "DATABASE_CONTRACT",
+  "DATABASE_DURABILITY",
+  "SUBJECT_UPSERT",
+  "DEVICE_METADATA",
+  "AUDIT_READY_BOUNDARY",
+  "RETENTION_REQUIRED",
+  "DELETION_REQUIRED",
+  "RECOVERY_REQUIRED",
+  "MONITORING_REQUIRED"
+];
+
+const EXTERNAL_ADAPTER_CAPABILITIES: IprAuthStoreCapability[] = [
+  "IPR_CREDENTIAL_STORAGE",
+  "PASSWORD_HASH_STORAGE",
+  "SESSION_TOKEN_HASH_STORAGE",
+  "SESSION_CREATE",
+  "SESSION_VERIFY",
+  "SESSION_REVOKE",
+  "SESSION_EXPIRY",
+  "SESSION_TOUCH",
+  "EXTERNAL_ADAPTER_CONTRACT",
+  "AUDIT_READY_BOUNDARY",
+  "RETENTION_REQUIRED",
+  "DELETION_REQUIRED"
+];
+
+const PROCESS_AUTH_REQUIREMENTS = [
+  "Use only for R&D and MVP runtime demonstration.",
+  "Do not treat process auth storage as durable SaaS authentication.",
+  "Expect session and credential loss on redeploy, cold start, instance recycling or runtime migration.",
+  "Do not rely on this store for enterprise account continuity, audit retention, device management or recovery."
+];
+
+const DATABASE_READY_REQUIREMENTS = [
+  "Configure HBCE database storage.",
+  "Run the required credential and session schema.",
+  "Validate password hash storage and session token hash storage.",
+  "Define session revocation workflow.",
+  "Define retention and deletion workflow.",
+  "Define audit logging before production use.",
+  "Keep legalCertification=false."
+];
+
+const DATABASE_PERSISTENT_REQUIREMENTS = [
+  "Store only password hashes, salts and session token hashes, never plaintext passwords or plaintext tokens.",
+  "Persist IPR subjects, credentials and sessions in HBCE database storage.",
+  "Enforce session revocation and expiry.",
+  "Persist lastSeenAt for authenticated sessions.",
+  "Preserve device metadata only as minimized labels or hashes.",
+  "Define audit logging for credential creation/update, session creation, verification and revocation.",
+  "Define retention, deletion, recovery and monitoring workflows.",
+  "Do not claim official identity issuance or legal certification.",
+  "Keep legalCertification=false."
+];
+
+const EXTERNAL_ADAPTER_REQUIREMENTS = [
+  "External adapter must implement the full IprAuthStoreAdapter contract.",
+  "External adapter must never store plaintext passwords or plaintext session tokens.",
+  "External adapter must preserve token hashing, revocation and expiry.",
+  "External adapter must enforce HBCE IPR boundaries and fail-closed behavior.",
+  "External adapter must preserve legalCertification=false unless a regulated certification layer is explicitly integrated later."
+];
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -267,6 +415,32 @@ function normalizeSessionStatus(
   return "ACTIVE";
 }
 
+function assertToken(token: string): string {
+  const normalized = typeof token === "string" ? token.trim() : "";
+
+  if (!normalized) {
+    throw new Error("IPR_AUTH_EMPTY_SESSION_TOKEN");
+  }
+
+  return normalized;
+}
+
+function assertSessionId(sessionId: string): string {
+  const normalized = typeof sessionId === "string" ? sessionId.trim() : "";
+
+  if (!normalized) {
+    throw new Error("IPR_AUTH_EMPTY_SESSION_ID");
+  }
+
+  return normalized;
+}
+
+function assertDatabaseConfigured(): void {
+  if (!isHbceDatabaseConfigured()) {
+    throw new Error(DATABASE_STORE_NOT_CONFIGURED_ERROR);
+  }
+}
+
 function buildStoredCredential(
   input: IprAuthCredentialCreateInput,
   timestamps?: {
@@ -339,7 +513,7 @@ function sessionFromRow(row: IprSessionRow): IprAuthStoredSession {
     humanIpr: row.human_ipr,
     runtimeIpr: row.runtime_ipr,
     tokenHash: row.token_hash,
-    status: row.status,
+    status: normalizeSessionStatus(row.status),
     createdAt: toIso(row.created_at),
     expiresAt: toIso(row.expires_at),
     revokedAt: toIsoOrNull(row.revoked_at),
@@ -352,30 +526,46 @@ function sessionFromRow(row: IprSessionRow): IprAuthStoredSession {
   };
 }
 
-function buildDescription(
-  kind: IprAuthStoreKind,
-  status: IprAuthStoreStatus,
-  configured: boolean,
-  available: boolean
-): IprAuthStoreDescription {
+function buildDescription(input: {
+  name: string;
+  kind: IprAuthStoreKind;
+  status: IprAuthStoreStatus;
+  configured: boolean;
+  available: boolean;
+  persistenceStage: IprAuthPersistenceStage;
+  sessionBoundary: string;
+  durable: boolean;
+  runtimeScoped: boolean;
+  saasReady: boolean;
+  requiresDatabase: boolean;
+  syncFallbackToProcess: boolean;
+  capabilities: IprAuthStoreCapability[];
+  requirements: string[];
+}): IprAuthStoreDescription {
   const databaseConfigured = isHbceDatabaseConfigured();
 
   return {
-    kind,
-    status,
-    configured,
-    available,
-    persistenceMode: kind,
+    name: input.name,
+    kind: input.kind,
+    status: input.status,
+    configured: input.configured,
+    available: input.available,
+    persistenceMode: input.kind,
+    persistenceStage: input.persistenceStage,
     databaseConfigured,
     databaseDescription: databaseConfigured
       ? describeDefaultHbceDatabase()
       : undefined,
-    sessionBoundary:
-      kind === "DATABASE_PERSISTENT"
-        ? IPR_AUTH_DATABASE_PERSISTENT_BOUNDARY
-        : IPR_AUTH_STORE_BOUNDARY,
+    sessionBoundary: input.sessionBoundary,
     databaseRequirement: IPR_AUTH_DATABASE_REQUIREMENT,
-    legalCertification: false
+    legalCertification: false,
+    durable: input.durable,
+    runtimeScoped: input.runtimeScoped,
+    saasReady: input.saasReady,
+    requiresDatabase: input.requiresDatabase,
+    syncFallbackToProcess: input.syncFallbackToProcess,
+    capabilities: input.capabilities,
+    requirements: input.requirements
   };
 }
 
@@ -384,12 +574,22 @@ class ProcessIprAuthStore implements IprAuthStoreAdapter {
   private readonly sessions = new Map<string, IprAuthStoredSession>();
 
   describe(): IprAuthStoreDescription {
-    return buildDescription(
-      "PROCESS_AUTH_STORE_MVP",
-      "AVAILABLE",
-      true,
-      true
-    );
+    return buildDescription({
+      name: "HBCE_JOKER_C2_PROCESS_AUTH_STORE",
+      kind: "PROCESS_AUTH_STORE_MVP",
+      status: "AVAILABLE",
+      configured: true,
+      available: true,
+      persistenceStage: "RUNTIME_VOLATILE",
+      sessionBoundary: IPR_AUTH_STORE_BOUNDARY,
+      durable: false,
+      runtimeScoped: true,
+      saasReady: false,
+      requiresDatabase: false,
+      syncFallbackToProcess: false,
+      capabilities: PROCESS_AUTH_CAPABILITIES,
+      requirements: PROCESS_AUTH_REQUIREMENTS
+    });
   }
 
   getCredential(humanIpr: string): IprAuthStoredCredential | null {
@@ -411,7 +611,7 @@ class ProcessIprAuthStore implements IprAuthStoreAdapter {
   }
 
   verifySessionToken(token: string): IprSessionLookupResult {
-    const tokenHash = hashIprSessionToken(token);
+    const tokenHash = hashIprSessionToken(assertToken(token));
     const session = [...this.sessions.values()].find(
       (candidate) => candidate.tokenHash === tokenHash
     );
@@ -466,7 +666,8 @@ class ProcessIprAuthStore implements IprAuthStoreAdapter {
   }
 
   revokeSession(sessionId: string): IprAuthStoredSession | null {
-    const session = this.sessions.get(sessionId);
+    const safeSessionId = assertSessionId(sessionId);
+    const session = this.sessions.get(safeSessionId);
 
     if (!session) {
       return null;
@@ -478,7 +679,7 @@ class ProcessIprAuthStore implements IprAuthStoreAdapter {
       revokedAt: nowIso()
     };
 
-    this.sessions.set(sessionId, revokedSession);
+    this.sessions.set(safeSessionId, revokedSession);
 
     return revokedSession;
   }
@@ -519,6 +720,83 @@ class ProcessIprAuthStore implements IprAuthStoreAdapter {
   }
 }
 
+class DatabaseReadyIprAuthStore implements IprAuthStoreAdapter {
+  private readonly processFallback: ProcessIprAuthStore;
+
+  constructor(processFallback: ProcessIprAuthStore) {
+    this.processFallback = processFallback;
+  }
+
+  describe(): IprAuthStoreDescription {
+    return buildDescription({
+      name: "HBCE_JOKER_C2_DATABASE_READY_AUTH_STORE",
+      kind: "DATABASE_READY",
+      status: "DEGRADED",
+      configured: true,
+      available: true,
+      persistenceStage: "DATABASE_CONTRACT_READY",
+      sessionBoundary: IPR_AUTH_DATABASE_READY_BOUNDARY,
+      durable: false,
+      runtimeScoped: true,
+      saasReady: false,
+      requiresDatabase: true,
+      syncFallbackToProcess: true,
+      capabilities: DATABASE_READY_CAPABILITIES,
+      requirements: DATABASE_READY_REQUIREMENTS
+    });
+  }
+
+  getCredential(humanIpr: string): IprAuthStoredCredential | null {
+    return this.processFallback.getCredential(humanIpr);
+  }
+
+  setCredential(input: IprAuthCredentialCreateInput): IprAuthStoredCredential {
+    return this.processFallback.setCredential(input);
+  }
+
+  createSession(input: IprSessionCreateInput): IprAuthStoredSession {
+    return this.processFallback.createSession(input);
+  }
+
+  verifySessionToken(token: string): IprSessionLookupResult {
+    return this.processFallback.verifySessionToken(token);
+  }
+
+  revokeSession(sessionId: string): IprAuthStoredSession | null {
+    return this.processFallback.revokeSession(sessionId);
+  }
+
+  async getCredentialAsync(
+    humanIpr: string
+  ): Promise<IprAuthStoredCredential | null> {
+    return this.processFallback.getCredentialAsync(humanIpr);
+  }
+
+  async setCredentialAsync(
+    input: IprAuthCredentialCreateInput
+  ): Promise<IprAuthStoredCredential> {
+    return this.processFallback.setCredentialAsync(input);
+  }
+
+  async createSessionAsync(
+    input: IprSessionCreateInput
+  ): Promise<IprAuthStoredSession> {
+    return this.processFallback.createSessionAsync(input);
+  }
+
+  async verifySessionTokenAsync(
+    token: string
+  ): Promise<IprSessionLookupResult> {
+    return this.processFallback.verifySessionTokenAsync(token);
+  }
+
+  async revokeSessionAsync(
+    sessionId: string
+  ): Promise<IprAuthStoredSession | null> {
+    return this.processFallback.revokeSessionAsync(sessionId);
+  }
+}
+
 class DatabasePersistentIprAuthStore implements IprAuthStoreAdapter {
   private readonly processFallback: ProcessIprAuthStore;
 
@@ -528,20 +806,40 @@ class DatabasePersistentIprAuthStore implements IprAuthStoreAdapter {
 
   describe(): IprAuthStoreDescription {
     if (!isHbceDatabaseConfigured()) {
-      return buildDescription(
-        "DATABASE_PERSISTENT",
-        "NOT_CONFIGURED",
-        false,
-        false
-      );
+      return buildDescription({
+        name: "HBCE_JOKER_C2_DATABASE_PERSISTENT_AUTH_STORE",
+        kind: "DATABASE_PERSISTENT",
+        status: "NOT_CONFIGURED",
+        configured: false,
+        available: false,
+        persistenceStage: "DATABASE_PERSISTENT_NOT_CONFIGURED",
+        sessionBoundary: IPR_AUTH_DATABASE_PERSISTENT_BOUNDARY,
+        durable: true,
+        runtimeScoped: false,
+        saasReady: false,
+        requiresDatabase: true,
+        syncFallbackToProcess: true,
+        capabilities: DATABASE_PERSISTENT_CAPABILITIES,
+        requirements: DATABASE_PERSISTENT_REQUIREMENTS
+      });
     }
 
-    return buildDescription(
-      "DATABASE_PERSISTENT",
-      "AVAILABLE",
-      true,
-      true
-    );
+    return buildDescription({
+      name: "HBCE_JOKER_C2_DATABASE_PERSISTENT_AUTH_STORE",
+      kind: "DATABASE_PERSISTENT",
+      status: "AVAILABLE",
+      configured: true,
+      available: true,
+      persistenceStage: "DATABASE_PERSISTENT_ACTIVE",
+      sessionBoundary: IPR_AUTH_DATABASE_PERSISTENT_BOUNDARY,
+      durable: true,
+      runtimeScoped: false,
+      saasReady: true,
+      requiresDatabase: true,
+      syncFallbackToProcess: true,
+      capabilities: DATABASE_PERSISTENT_CAPABILITIES,
+      requirements: DATABASE_PERSISTENT_REQUIREMENTS
+    });
   }
 
   getCredential(humanIpr: string): IprAuthStoredCredential | null {
@@ -565,6 +863,8 @@ class DatabasePersistentIprAuthStore implements IprAuthStoreAdapter {
   }
 
   private async upsertSubject(humanIpr: string): Promise<void> {
+    assertDatabaseConfigured();
+
     const normalizedHumanIpr = normalizeHumanIpr(humanIpr);
 
     await queryHbceDatabase(
@@ -612,6 +912,8 @@ ON CONFLICT (human_ipr) DO UPDATE SET
   async getCredentialAsync(
     humanIpr: string
   ): Promise<IprAuthStoredCredential | null> {
+    assertDatabaseConfigured();
+
     const normalizedHumanIpr = normalizeHumanIpr(humanIpr);
 
     const result = await queryHbceDatabase<IprAuthCredentialRow>(
@@ -646,6 +948,8 @@ LIMIT 1
   async setCredentialAsync(
     input: IprAuthCredentialCreateInput
   ): Promise<IprAuthStoredCredential> {
+    assertDatabaseConfigured();
+
     const credential = buildStoredCredential(input);
 
     await this.upsertSubject(credential.humanIpr);
@@ -721,6 +1025,7 @@ RETURNING
     }
 
     const storedCredential = credentialFromRow(result.rows[0]);
+
     this.processFallback.setCredential({
       humanIpr: storedCredential.humanIpr,
       passwordAlgorithm: storedCredential.passwordAlgorithm,
@@ -736,6 +1041,8 @@ RETURNING
   async createSessionAsync(
     input: IprSessionCreateInput
   ): Promise<IprAuthStoredSession> {
+    assertDatabaseConfigured();
+
     const session = buildStoredSession(input);
 
     await this.upsertSubject(session.humanIpr);
@@ -823,6 +1130,7 @@ RETURNING
     }
 
     const storedSession = sessionFromRow(result.rows[0]);
+
     this.processFallback.createSession(storedSession);
 
     return storedSession;
@@ -831,7 +1139,9 @@ RETURNING
   async verifySessionTokenAsync(
     token: string
   ): Promise<IprSessionLookupResult> {
-    const tokenHash = hashIprSessionToken(token);
+    assertDatabaseConfigured();
+
+    const tokenHash = hashIprSessionToken(assertToken(token));
 
     const result = await queryHbceDatabase<IprSessionRow>(
       `
@@ -889,18 +1199,23 @@ LIMIT 1
     }
 
     const refreshedSession = await this.touchSession(session.sessionId);
+    const activeSession = refreshedSession || session;
+
+    this.processFallback.createSession(activeSession);
 
     return {
       ok: true,
       authenticated: true,
       reason: "SESSION_ACTIVE",
-      session: refreshedSession || session
+      session: activeSession
     };
   }
 
   private async touchSession(
     sessionId: string
   ): Promise<IprAuthStoredSession | null> {
+    assertDatabaseConfigured();
+
     const result = await queryHbceDatabase<IprSessionRow>(
       `
 UPDATE ipr_sessions
@@ -924,7 +1239,7 @@ RETURNING
   session_payload,
   legal_certification
       `.trim(),
-      [sessionId]
+      [assertSessionId(sessionId)]
     );
 
     if (!result.ok || !result.rows[0]) {
@@ -937,6 +1252,8 @@ RETURNING
   private async markSessionExpired(
     session: IprAuthStoredSession
   ): Promise<IprAuthStoredSession> {
+    assertDatabaseConfigured();
+
     const result = await queryHbceDatabase<IprSessionRow>(
       `
 UPDATE ipr_sessions
@@ -970,12 +1287,18 @@ RETURNING
       };
     }
 
-    return sessionFromRow(result.rows[0]);
+    const expiredSession = sessionFromRow(result.rows[0]);
+
+    this.processFallback.createSession(expiredSession);
+
+    return expiredSession;
   }
 
   async revokeSessionAsync(
     sessionId: string
   ): Promise<IprAuthStoredSession | null> {
+    assertDatabaseConfigured();
+
     const result = await queryHbceDatabase<IprSessionRow>(
       `
 UPDATE ipr_sessions
@@ -1000,81 +1323,94 @@ RETURNING
   session_payload,
   legal_certification
       `.trim(),
-      [sessionId]
+      [assertSessionId(sessionId)]
     );
 
     if (!result.ok || !result.rows[0]) {
       return null;
     }
 
-    return sessionFromRow(result.rows[0]);
+    const revokedSession = sessionFromRow(result.rows[0]);
+
+    this.processFallback.createSession(revokedSession);
+
+    return revokedSession;
   }
 }
 
-class DatabaseReadyIprAuthStore implements IprAuthStoreAdapter {
-  private readonly processFallback: ProcessIprAuthStore;
-
-  constructor(processFallback: ProcessIprAuthStore) {
-    this.processFallback = processFallback;
-  }
-
+class ExternalAdapterPlaceholderIprAuthStore implements IprAuthStoreAdapter {
   describe(): IprAuthStoreDescription {
-    return buildDescription(
-      "DATABASE_READY",
-      "DEGRADED",
-      true,
-      true
-    );
+    return buildDescription({
+      name: "HBCE_JOKER_C2_EXTERNAL_AUTH_ADAPTER_PLACEHOLDER",
+      kind: "EXTERNAL_ADAPTER",
+      status: "NOT_CONFIGURED",
+      configured: false,
+      available: false,
+      persistenceStage: "EXTERNAL_ADAPTER_TARGET",
+      sessionBoundary: IPR_AUTH_EXTERNAL_ADAPTER_BOUNDARY,
+      durable: true,
+      runtimeScoped: false,
+      saasReady: false,
+      requiresDatabase: false,
+      syncFallbackToProcess: false,
+      capabilities: EXTERNAL_ADAPTER_CAPABILITIES,
+      requirements: EXTERNAL_ADAPTER_REQUIREMENTS
+    });
   }
 
   getCredential(humanIpr: string): IprAuthStoredCredential | null {
-    return this.processFallback.getCredential(humanIpr);
+    void humanIpr;
+    throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
   }
 
   setCredential(input: IprAuthCredentialCreateInput): IprAuthStoredCredential {
-    return this.processFallback.setCredential(input);
+    void input;
+    throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
   }
 
   createSession(input: IprSessionCreateInput): IprAuthStoredSession {
-    return this.processFallback.createSession(input);
+    void input;
+    throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
   }
 
   verifySessionToken(token: string): IprSessionLookupResult {
-    return this.processFallback.verifySessionToken(token);
+    void token;
+    throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
   }
 
   revokeSession(sessionId: string): IprAuthStoredSession | null {
-    return this.processFallback.revokeSession(sessionId);
+    void sessionId;
+    throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
   }
 
   async getCredentialAsync(
     humanIpr: string
   ): Promise<IprAuthStoredCredential | null> {
-    return this.processFallback.getCredentialAsync(humanIpr);
+    return this.getCredential(humanIpr);
   }
 
   async setCredentialAsync(
     input: IprAuthCredentialCreateInput
   ): Promise<IprAuthStoredCredential> {
-    return this.processFallback.setCredentialAsync(input);
+    return this.setCredential(input);
   }
 
   async createSessionAsync(
     input: IprSessionCreateInput
   ): Promise<IprAuthStoredSession> {
-    return this.processFallback.createSessionAsync(input);
+    return this.createSession(input);
   }
 
   async verifySessionTokenAsync(
     token: string
   ): Promise<IprSessionLookupResult> {
-    return this.processFallback.verifySessionTokenAsync(token);
+    return this.verifySessionToken(token);
   }
 
   async revokeSessionAsync(
     sessionId: string
   ): Promise<IprAuthStoredSession | null> {
-    return this.processFallback.revokeSessionAsync(sessionId);
+    return this.revokeSession(sessionId);
   }
 }
 
@@ -1082,6 +1418,7 @@ const globalForIprAuthStore = globalThis as typeof globalThis & {
   __hbceProcessIprAuthStore?: ProcessIprAuthStore;
   __hbceDatabaseReadyIprAuthStore?: DatabaseReadyIprAuthStore;
   __hbceDatabasePersistentIprAuthStore?: DatabasePersistentIprAuthStore;
+  __hbceExternalAdapterPlaceholderIprAuthStore?: ExternalAdapterPlaceholderIprAuthStore;
 };
 
 export function getProcessIprAuthStore(): ProcessIprAuthStore {
@@ -1111,6 +1448,39 @@ export function getDatabasePersistentIprAuthStore(): DatabasePersistentIprAuthSt
   return globalForIprAuthStore.__hbceDatabasePersistentIprAuthStore;
 }
 
+export function getExternalAdapterPlaceholderIprAuthStore(): ExternalAdapterPlaceholderIprAuthStore {
+  if (!globalForIprAuthStore.__hbceExternalAdapterPlaceholderIprAuthStore) {
+    globalForIprAuthStore.__hbceExternalAdapterPlaceholderIprAuthStore =
+      new ExternalAdapterPlaceholderIprAuthStore();
+  }
+
+  return globalForIprAuthStore.__hbceExternalAdapterPlaceholderIprAuthStore;
+}
+
+export function createExternalIprAuthStoreAdapter(
+  adapter: IprAuthStoreAdapter
+): IprAuthStoreAdapter {
+  const description = adapter.describe();
+
+  if (description.kind !== "EXTERNAL_ADAPTER") {
+    throw new Error("IPR_AUTH_EXTERNAL_ADAPTER_KIND_REQUIRED");
+  }
+
+  if (description.legalCertification !== false) {
+    throw new Error("IPR_AUTH_EXTERNAL_ADAPTER_LEGAL_CERTIFICATION_FORBIDDEN");
+  }
+
+  if (!description.durable) {
+    throw new Error("IPR_AUTH_EXTERNAL_ADAPTER_MUST_BE_DURABLE");
+  }
+
+  if (description.runtimeScoped) {
+    throw new Error("IPR_AUTH_EXTERNAL_ADAPTER_MUST_NOT_BE_RUNTIME_SCOPED");
+  }
+
+  return adapter;
+}
+
 function getRequestedStoreKindFromEnv(): IprAuthStoreKind | null {
   const raw = process.env.IPR_AUTH_STORE_KIND;
 
@@ -1132,19 +1502,27 @@ function getRequestedStoreKindFromEnv(): IprAuthStoreKind | null {
   return null;
 }
 
-export function getDefaultIprAuthStore(): IprAuthStoreAdapter {
-  const requested = getRequestedStoreKindFromEnv();
-
-  if (requested === "PROCESS_AUTH_STORE_MVP") {
+export function selectIprAuthStore(kind: IprAuthStoreKind): IprAuthStoreAdapter {
+  if (kind === "PROCESS_AUTH_STORE_MVP") {
     return getProcessIprAuthStore();
   }
 
-  if (requested === "DATABASE_READY") {
+  if (kind === "DATABASE_READY") {
     return getDatabaseReadyIprAuthStore();
   }
 
-  if (requested === "DATABASE_PERSISTENT") {
+  if (kind === "DATABASE_PERSISTENT") {
     return getDatabasePersistentIprAuthStore();
+  }
+
+  return getExternalAdapterPlaceholderIprAuthStore();
+}
+
+export function getDefaultIprAuthStore(): IprAuthStoreAdapter {
+  const requested = getRequestedStoreKindFromEnv();
+
+  if (requested) {
+    return selectIprAuthStore(requested);
   }
 
   if (isHbceDatabaseConfigured()) {
@@ -1154,8 +1532,41 @@ export function getDefaultIprAuthStore(): IprAuthStoreAdapter {
   return getProcessIprAuthStore();
 }
 
+export function getSaasTargetIprAuthStore(): IprAuthStoreAdapter {
+  return getDatabasePersistentIprAuthStore();
+}
+
 export function describeDefaultIprAuthStore(): IprAuthStoreDescription {
   return getDefaultIprAuthStore().describe();
+}
+
+export function describeProcessIprAuthStore(): IprAuthStoreDescription {
+  return getProcessIprAuthStore().describe();
+}
+
+export function describeDatabaseReadyIprAuthStore(): IprAuthStoreDescription {
+  return getDatabaseReadyIprAuthStore().describe();
+}
+
+export function describeDatabasePersistentIprAuthStore(): IprAuthStoreDescription {
+  return getDatabasePersistentIprAuthStore().describe();
+}
+
+export function describeExternalAdapterPlaceholderIprAuthStore(): IprAuthStoreDescription {
+  return getExternalAdapterPlaceholderIprAuthStore().describe();
+}
+
+export function describeSaasTargetIprAuthStore(): IprAuthStoreDescription {
+  return getSaasTargetIprAuthStore().describe();
+}
+
+export function listIprAuthStoreDescriptions(): IprAuthStoreDescription[] {
+  return [
+    describeProcessIprAuthStore(),
+    describeDatabaseReadyIprAuthStore(),
+    describeDatabasePersistentIprAuthStore(),
+    describeExternalAdapterPlaceholderIprAuthStore()
+  ];
 }
 
 export function getPublicSessionFromStoredSession(
