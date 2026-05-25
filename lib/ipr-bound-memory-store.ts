@@ -169,7 +169,7 @@ export function truncateRuntimeText(value: string, max = MAX_MEMORY_TEXT_CHARS):
     return normalized;
   }
 
-  return `${normalized.slice(0, max - 3)}...`;
+  return `${normalized.slice(0, Math.max(0, max - 3)).trim()}...`;
 }
 
 function stableStringify(value: unknown): string {
@@ -263,16 +263,16 @@ function buildMemorySummary(input: {
     return [
       `JOKER-C2 is operating with IPR-bound memory for ${input.handoff.subject.entity}.`,
       `Human IPR ${input.handoff.subject.ipr} is bound to runtime IPR ${input.runtime.ipr}.`,
-      `Memory key is scoped to human_ipr + runtime_ipr + session_id.`,
+      "Memory key is scoped to human_ipr + runtime_ipr + session_id.",
       `Session ${input.sessionId} remains governed by HBCE policy, EVT continuity, OPC proof receipts and MATRIX coordination.`
     ].join(" ");
   }
 
   return [
-    `JOKER-C2 is operating with runtime-only memory.`,
-    `No verified biological IPR is available for this session.`,
+    "JOKER-C2 is operating with runtime-only memory.",
+    "No verified biological IPR is available for this session.",
     `Memory remains scoped to runtime IPR ${input.runtime.ipr} and session ${input.sessionId}.`,
-    `No biological identity continuity may be inferred without server-side IPR validation.`
+    "No biological identity continuity may be inferred without server-side IPR validation."
   ].join(" ");
 }
 
@@ -303,8 +303,8 @@ function buildDerivedCanonicalMemoryFacts(input: GetOrCreateRuntimeMemoryInput):
     facts.push(
       `The verified biological subject is ${input.handoff.subject.entity}.`,
       `The verified biological IPR is ${input.handoff.subject.ipr}.`,
-      `The current memory scope is IPR_BOUND.`,
-      `The current memory authority is SERVER_RUNTIME_VALIDATED.`,
+      "The current memory scope is IPR_BOUND.",
+      "The current memory authority is SERVER_RUNTIME_VALIDATED.",
       `The current MATRIX state is ${input.handoff.matrixState}.`
     );
   } else {
