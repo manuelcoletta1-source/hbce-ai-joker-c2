@@ -562,9 +562,11 @@ function deriveTurnRuntimeMetadata(input: UpdateMemoryAfterCompletionInput): {
 
   const policyBlocked =
     input.policyBlocked ??
-    runtimeState === "BLOCKED" ||
-    runtimeDecision === "BLOCK" ||
-    generationClass === "POLICY_BLOCK";
+    (
+      runtimeState === "BLOCKED" ||
+      runtimeDecision === "BLOCK" ||
+      generationClass === "POLICY_BLOCK"
+    );
 
   const degraded =
     runtimeState === "DEGRADED" || runtimeDecision === "DEGRADE";
