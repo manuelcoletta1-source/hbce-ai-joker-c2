@@ -31,6 +31,9 @@ type RuntimeHealth = {
     core?: string;
     org?: string;
     location?: string;
+    projectBirth?: Record<string, unknown>;
+    monthlyReference?: Record<string, unknown>;
+    previousCheckpointRef?: Record<string, unknown>;
     monthlyRef?: Record<string, unknown>;
   };
   access?: {
@@ -210,16 +213,16 @@ type ChatMessage = {
 const JOKER_SIGIL = "🜏";
 
 const DEFAULT_PROMPT =
-  "JOKER-C2, fai diagnostica runtime completa. Dimmi quale modello OpenAI usi, qual è il tuo IPR, qual è il checkpoint EVT, qual è il ruolo di OPC e cosa cambia tra OpenAI come modello e JOKER-C2 come runtime governato.";
+  "JOKER-C2, run a complete runtime diagnostic. Tell me which OpenAI model you are using, your runtime IPR, the current EVT checkpoint, the role of OPC, and the difference between OpenAI as model provider and JOKER-C2 as governed runtime.";
 
 const QUICK_PROMPTS = [
-  "diagnostica runtime OpenAI completa",
-  "sai chi sono?",
-  "spiegami cosa cambia tra GPT-5.5 e JOKER-C2",
-  "spiegami IPR, EVT, OPC e memoria IPR-bound",
-  "test fail-closed: cosa fai se manca OPC?",
-  "prepara un pitch di 60 secondi per OpenAI",
-  "spiegami perché JOKER-C2 non è una AI generica"
+  "run complete OpenAI runtime diagnostic",
+  "do you know who I am?",
+  "explain the difference between GPT-5.5 and JOKER-C2",
+  "explain IPR, EVT, OPC and IPR-bound memory",
+  "fail-closed test: what happens if OPC is missing?",
+  "prepare a 60-second pitch for OpenAI",
+  "explain why JOKER-C2 is not a generic AI"
 ];
 
 const TEXT_FILE_TYPES = new Set([
@@ -938,42 +941,58 @@ function getIpr(payload?: ChatApiResponse | RuntimeHealth | null): string {
   );
 }
 
-function getEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
+function getCurrentAiEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "EVT-0016-AI";
 
   return firstText(
     payload,
     [
       ["operationalContext", "current_ai_evt"],
       ["runtime", "operationalContext", "current_ai_evt"],
-      ["identity", "checkpoint"],
-      ["continuityRef"],
       ["identity", "evt"],
-      ["evt", "evt"],
+      ["identity", "checkpoint"],
+      ["governedEvt", "operational_context", "current_ai_evt"],
+      ["modernEvt", "operational_context", "current_ai_evt"]
+    ],
+    "EVT-0016-AI"
+  );
+}
+
+function getEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["continuityRef"],
       ["governedEvt", "evt"],
       ["modernEvt", "evt"],
-      ["runtime", "checkpoint"]
+      ["evt", "evt"],
+      ["event", "evt"],
+      ["runtime", "governedEvt"],
+      ["runtime", "legacyEvt"]
     ],
     "-"
   );
 }
 
 function getOperationalHumanEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
+  if (!payload) return "EVT-0016";
 
   return firstText(
     payload,
     [
       ["operationalContext", "current_evt"],
       ["runtime", "operationalContext", "current_evt"],
-      ["runtime", "operationalContext", "currentEvt"]
+      ["governedEvt", "operational_context", "current_evt"],
+      ["modernEvt", "operational_context", "current_evt"]
     ],
     "EVT-0016"
   );
 }
 
 function getOperationalCycle(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
+  if (!payload) return "UP-CANONICO";
 
   return firstText(
     payload,
@@ -981,14 +1000,16 @@ function getOperationalCycle(payload?: ChatApiResponse | RuntimeHealth | null): 
       ["operationalContext", "current_cycle"],
       ["runtime", "operationalContext", "current_cycle"],
       ["identity", "cycle"],
-      ["runtime", "cycle"]
+      ["runtime", "cycle"],
+      ["governedEvt", "operational_context", "current_cycle"],
+      ["modernEvt", "operational_context", "current_cycle"]
     ],
     "UP-CANONICO"
   );
 }
 
 function getEventFamily(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
+  if (!payload) return "UP-EVT";
 
   return firstText(
     payload,
@@ -996,21 +1017,90 @@ function getEventFamily(payload?: ChatApiResponse | RuntimeHealth | null): strin
       ["operationalContext", "event_family"],
       ["runtime", "operationalContext", "event_family"],
       ["identity", "eventFamily"],
-      ["runtime", "eventFamily"]
+      ["runtime", "eventFamily"],
+      ["governedEvt", "operational_context", "event_family"],
+      ["modernEvt", "operational_context", "event_family"]
     ],
     "UP-EVT"
   );
 }
 
-function getMonthlyRef(payload?: ChatApiResponse | RuntimeHealth | null): string {
+function getProjectBirthDate(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "19/01/2026";
+
+  return firstText(
+    payload,
+    [
+      ["operationalContext", "project_birth", "display_date"],
+      ["runtime", "operationalContext", "project_birth", "display_date"],
+      ["governedEvt", "operational_context", "project_birth", "display_date"],
+      ["modernEvt", "operational_context", "project_birth", "display_date"],
+      ["identity", "projectBirth", "displayDate"],
+      ["identity", "projectBirth", "display_date"]
+    ],
+    "19/01/2026"
+  );
+}
+
+function getProjectBirthLabel(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "HBCE R&D / AI JOKER-C2 project birth date";
+
+  return firstText(
+    payload,
+    [
+      ["operationalContext", "project_birth", "label"],
+      ["runtime", "operationalContext", "project_birth", "label"],
+      ["governedEvt", "operational_context", "project_birth", "label"],
+      ["modernEvt", "operational_context", "project_birth", "label"],
+      ["identity", "projectBirth", "label"]
+    ],
+    "HBCE R&D / AI JOKER-C2 project birth date"
+  );
+}
+
+function getMonthlyReference(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "UP-MESE-4";
+
+  return firstText(
+    payload,
+    [
+      ["operationalContext", "monthly_reference", "cycle"],
+      ["runtime", "operationalContext", "monthly_reference", "cycle"],
+      ["governedEvt", "operational_context", "monthly_reference", "cycle"],
+      ["modernEvt", "operational_context", "monthly_reference", "cycle"],
+      ["identity", "monthlyReference", "cycle"]
+    ],
+    "UP-MESE-4"
+  );
+}
+
+function getMonthlyReferenceLabel(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "Fourth monthly synchronization cycle";
+
+  return firstText(
+    payload,
+    [
+      ["operationalContext", "monthly_reference", "label"],
+      ["runtime", "operationalContext", "monthly_reference", "label"],
+      ["governedEvt", "operational_context", "monthly_reference", "label"],
+      ["modernEvt", "operational_context", "monthly_reference", "label"],
+      ["identity", "monthlyReference", "label"]
+    ],
+    "Fourth monthly synchronization cycle"
+  );
+}
+
+function getPreviousCheckpointRef(payload?: ChatApiResponse | RuntimeHealth | null): string {
   if (!payload) return "EVT-0015 / EVT-0015-AI";
 
   const human = firstText(
     payload,
     [
-      ["operationalContext", "monthly_checkpoint_ref", "evt"],
-      ["runtime", "operationalContext", "monthly_checkpoint_ref", "evt"],
-      ["identity", "monthlyRef", "humanEvt"]
+      ["operationalContext", "previous_checkpoint_ref", "evt"],
+      ["runtime", "operationalContext", "previous_checkpoint_ref", "evt"],
+      ["governedEvt", "operational_context", "previous_checkpoint_ref", "evt"],
+      ["modernEvt", "operational_context", "previous_checkpoint_ref", "evt"],
+      ["identity", "previousCheckpointRef", "evt"]
     ],
     "EVT-0015"
   );
@@ -1018,9 +1108,11 @@ function getMonthlyRef(payload?: ChatApiResponse | RuntimeHealth | null): string
   const ai = firstText(
     payload,
     [
-      ["operationalContext", "monthly_checkpoint_ref", "ai_evt"],
-      ["runtime", "operationalContext", "monthly_checkpoint_ref", "ai_evt"],
-      ["identity", "monthlyRef", "evt"]
+      ["operationalContext", "previous_checkpoint_ref", "ai_evt"],
+      ["runtime", "operationalContext", "previous_checkpoint_ref", "ai_evt"],
+      ["governedEvt", "operational_context", "previous_checkpoint_ref", "ai_evt"],
+      ["modernEvt", "operational_context", "previous_checkpoint_ref", "ai_evt"],
+      ["identity", "previousCheckpointRef", "aiEvt"]
     ],
     "EVT-0015-AI"
   );
@@ -1499,7 +1591,8 @@ function MessageBubble({
           <div className="joker-runtime-strip">
             <StatusPill label="Model" value={getModel(message.raw)} />
             <StatusPill label="Runtime IPR" value={getIpr(message.raw)} />
-            <StatusPill label="EVT" value={getEvt(message.raw)} />
+            <StatusPill label="Current AI EVT" value={getCurrentAiEvt(message.raw)} />
+            <StatusPill label="Response EVT" value={getEvt(message.raw)} />
             <StatusPill label="OPC" value={getOpcProof(message.raw)} />
             {verifiedSubjectIpr !== "-" ? (
               <StatusPill label="Human IPR" value={verifiedSubjectIpr} />
@@ -1810,12 +1903,12 @@ export default function InterfacePage() {
     const outgoing = (forceMessage ?? message).trim();
 
     if (!outgoing && files.length === 0) {
-      setError("Scrivi un messaggio oppure allega un file testuale.");
+      setError("Write a message or attach a readable text file.");
       return;
     }
 
     const effectiveMessage =
-      outgoing || "Analizza i file attivi come contesto operativo JOKER-C2.";
+      outgoing || "Analyze the active files as JOKER-C2 operational context.";
 
     setError(null);
     setIsSending(true);
@@ -1929,14 +2022,24 @@ export default function InterfacePage() {
   const subjectLabel =
     effectiveIprHandoff?.subject.entity || "No verified subject";
 
+  const runtimeProjectBirthDate = getProjectBirthDate(dashboardPayload);
+  const runtimeProjectBirthLabel = getProjectBirthLabel(dashboardPayload);
+  const runtimeMonthlyReference = getMonthlyReference(dashboardPayload);
+  const runtimeMonthlyReferenceLabel = getMonthlyReferenceLabel(dashboardPayload);
+
   const runtimeOperationalHumanEvt = fallbackDash(
     getOperationalHumanEvt(dashboardPayload),
     "EVT-0016"
   );
 
   const runtimeOperationalAiEvt = fallbackDash(
-    getEvt(dashboardPayload),
+    getCurrentAiEvt(dashboardPayload),
     "EVT-0016-AI"
+  );
+
+  const runtimeResponseEvt = fallbackDash(
+    getEvt(dashboardPayload),
+    "none"
   );
 
   const runtimeOperationalCycle = fallbackDash(
@@ -1949,7 +2052,7 @@ export default function InterfacePage() {
     "UP-EVT"
   );
 
-  const runtimeMonthlyRef = getMonthlyRef(dashboardPayload);
+  const runtimePreviousCheckpoint = getPreviousCheckpointRef(dashboardPayload);
 
   const runtimeMatrixState = fallbackDash(
     getMatrixState(lastAssistantPayload),
@@ -2078,19 +2181,23 @@ export default function InterfacePage() {
           <span className="joker-kicker">HERMETICUM B.C.E. S.r.l.</span>
           <h1>Governed runtime dashboard</h1>
           <p>
-            Interfaccia operativa per JOKER-C2: identità IPR, memoria IPR-bound,
-            continuità EVT, proof receipt OPC, MATRIX e boundary
+            Operational interface for JOKER-C2: IPR identity, IPR-bound memory,
+            EVT continuity, OPC technical proof receipts, MATRIX coordination and
             <code> legalCertification=false</code>.
           </p>
+          <div className="joker-origin-note">
+            <strong>{runtimeProjectBirthDate}</strong>
+            <span>{runtimeProjectBirthLabel}</span>
+          </div>
         </div>
 
         <div className="joker-hero-grid">
+          <MetricCard label="Project birth" value={runtimeProjectBirthDate} />
+          <MetricCard label="Monthly reference" value={runtimeMonthlyReference} />
           <MetricCard label="Event family" value={runtimeEventFamily} />
           <MetricCard label="Human EVT" value={runtimeOperationalHumanEvt} />
           <MetricCard label="AI EVT" value={runtimeOperationalAiEvt} />
           <MetricCard label="Cycle" value={runtimeOperationalCycle} />
-          <MetricCard label="Monthly ref" value={runtimeMonthlyRef} />
-          <MetricCard label="OPC legal cert." value={runtimeLegalCertification} />
         </div>
       </section>
 
@@ -2115,10 +2222,10 @@ export default function InterfacePage() {
 
           <p>
             {hasAccountSession
-              ? "IPR account session rilevata lato server. La sessione autenticata ha priorità sul trasporto client."
+              ? "Server-side IPR account session detected. Authenticated session has priority over client-side transport."
               : effectiveIprHandoff
-                ? "IPR handoff rilevato lato interfaccia. La validazione autorevole avviene in /api/chat."
-                : "Nessun handoff IPR biologico o account session IPR rilevata. Il runtime resta limitato fino a validazione server-side."}
+                ? "Client-side IPR handoff detected. Authoritative validation happens in /api/chat."
+                : "No biological IPR handoff or IPR account session detected. Runtime remains limited until server-side validation."}
           </p>
 
           <div className="joker-metric-grid">
@@ -2156,7 +2263,7 @@ export default function InterfacePage() {
             </button>
             <button
               type="button"
-              onClick={() => void sendMessage("sai chi sono?")}
+              onClick={() => void sendMessage("do you know who I am?")}
               disabled={isSending}
             >
               Test recognition
@@ -2174,9 +2281,9 @@ export default function InterfacePage() {
           </div>
 
           <p>
-            La memoria corrente preserva continuità operativa. Non autorizza
-            richieste future, non abbassa il rischio e non sostituisce policy
-            review, fail-closed o supervisione umana.
+            Current memory preserves operational continuity. It does not
+            automatically authorize future requests, lower risk, replace policy
+            review, disable fail-closed logic or replace human oversight.
           </p>
 
           <div className="joker-metric-grid">
@@ -2199,16 +2306,21 @@ export default function InterfacePage() {
           </div>
 
           <p>
-            OPC resta ricevuta tecnica di prova/audit. Non è certificazione
-            legale, non è marca temporale qualificata e non è validazione di
-            autorità pubblica.
+            OPC remains a technical proof receipt for audit and governance
+            review. It is not legal certification, not a qualified timestamp and
+            not public authority validation.
           </p>
 
           <div className="joker-metric-grid">
+            <MetricCard label="Monthly reference" value={runtimeMonthlyReference} compact />
+            <MetricCard label="Monthly label" value={runtimeMonthlyReferenceLabel} compact />
+            <MetricCard label="Previous checkpoint" value={runtimePreviousCheckpoint} compact />
+            <MetricCard label="Response EVT" value={runtimeResponseEvt} compact />
+            <MetricCard label="OPC legal cert." value={runtimeLegalCertification} compact />
+            <MetricCard label="Current OPC" value={runtimeOpcProof} compact />
             <MetricCard label="Last memory EVT" value={runtimeLastMemoryEvt} compact />
             <MetricCard label="Last memory OPC" value={runtimeLastMemoryOpc} compact />
             <MetricCard label="Memory chain" value={runtimeLastMemoryChainHash} compact />
-            <MetricCard label="Current OPC" value={runtimeOpcProof} compact />
             <MetricCard label="OPC chain" value={runtimeOpcChainHash} compact />
             <MetricCard label="Engine hash" value={runtimeEngineHash} compact />
           </div>
@@ -2220,12 +2332,12 @@ export default function InterfacePage() {
           <div className="joker-empty">
             <div className="joker-empty-logo">{JOKER_SIGIL}</div>
             <span className="joker-kicker">AI JOKER-C2</span>
-            <h2>Runtime operativo pronto</h2>
+            <h2>Runtime ready</h2>
             <p>
-              Scrivi sotto o usa un prompt rapido. La chat lavora dentro il
-              perimetro HBCE: IPR, EVT, OPC, MATRIX, memoria IPR-bound, audit e
-              fail-closed. Finalmente una chat che sa almeno chi deve essere
-              responsabile del caos.
+              Write below or use a quick prompt. This chat operates inside the
+              HBCE boundary: IPR, EVT, OPC, MATRIX, IPR-bound memory, audit and
+              fail-closed logic. A chat with a spine, a rare event in the
+              swamp of digital improvisation.
             </p>
 
             <div className="joker-prompt-grid">
@@ -2247,7 +2359,7 @@ export default function InterfacePage() {
               onClick={() => void sendMessage(DEFAULT_PROMPT)}
               disabled={isSending}
             >
-              Avvia diagnostica completa
+              Start full diagnostic
             </button>
           </div>
         ) : (
@@ -2284,7 +2396,7 @@ export default function InterfacePage() {
       <section className="joker-composer-shell">
         {error ? <div className="joker-alert is-bad composer-alert">{error}</div> : null}
         {copied ? (
-          <div className="joker-alert is-good composer-alert">Risposta copiata.</div>
+          <div className="joker-alert is-good composer-alert">Response copied.</div>
         ) : null}
 
         {files.length > 0 ? (
@@ -2331,7 +2443,7 @@ export default function InterfacePage() {
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Scrivi a JOKER-C2..."
+            placeholder="Write to JOKER-C2..."
             rows={1}
           />
 
@@ -2346,7 +2458,7 @@ export default function InterfacePage() {
         </form>
 
         <div className="joker-footer-line">
-          <span>Enter invia · Shift+Enter va a capo</span>
+          <span>Enter sends · Shift+Enter creates a new line</span>
           <span>Session: {sessionId || "initializing"}</span>
         </div>
       </section>
@@ -2563,6 +2675,29 @@ export default function InterfacePage() {
 
         .joker-hero-copy {
           padding: 26px;
+        }
+
+        .joker-origin-note {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          margin-top: 18px;
+          padding: 13px 14px;
+          border: 1px solid rgba(34, 211, 238, 0.22);
+          border-radius: 18px;
+          background: rgba(8, 47, 73, 0.22);
+        }
+
+        .joker-origin-note strong {
+          color: #f8fafc;
+          font-size: 18px;
+          letter-spacing: -0.02em;
+        }
+
+        .joker-origin-note span {
+          color: #94a3b8;
+          font-size: 12px;
+          line-height: 1.45;
         }
 
         .joker-kicker {
