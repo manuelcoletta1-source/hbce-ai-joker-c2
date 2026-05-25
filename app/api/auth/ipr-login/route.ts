@@ -167,9 +167,8 @@ function stringArray(value: unknown): string[] {
 }
 
 function normalizeMode(value: unknown): IprLoginMode {
-  const candidate = typeof value === "string"
-    ? value.trim().toUpperCase()
-    : "";
+  const candidate =
+    typeof value === "string" ? value.trim().toUpperCase() : "";
 
   return candidate === "SET_PASSWORD" ? "SET_PASSWORD" : "LOGIN";
 }
@@ -259,31 +258,19 @@ function extractPasswordHashResult(value: unknown) {
 
   const passwordAlgorithm = firstString(
     record,
-    [
-      ["passwordAlgorithm"],
-      ["algorithm"],
-      ["algo"]
-    ],
+    [["passwordAlgorithm"], ["algorithm"], ["algo"]],
     "scrypt-sha256-v1"
   );
 
   const passwordHash = firstString(
     record,
-    [
-      ["passwordHash"],
-      ["hash"],
-      ["digest"],
-      ["derivedKey"]
-    ],
+    [["passwordHash"], ["hash"], ["digest"], ["derivedKey"]],
     ""
   );
 
   const passwordSalt = firstString(
     record,
-    [
-      ["passwordSalt"],
-      ["salt"]
-    ],
+    [["passwordSalt"], ["salt"]],
     ""
   );
 
@@ -314,17 +301,19 @@ function extractPasswordHashResult(value: unknown) {
 function normalizePolicyResult(value: unknown) {
   const record = isRecord(value) ? value : {};
 
-  const ok =
-    firstBoolean(record, [["ok"], ["valid"], ["isValid"], ["passed"]], false);
+  const ok = firstBoolean(
+    record,
+    [["ok"], ["valid"], ["isValid"], ["passed"]],
+    false
+  );
 
-  const violations =
-    Array.isArray(record.violations)
-      ? record.violations
-      : Array.isArray(record.errors)
-        ? record.errors
-        : Array.isArray(record.reasons)
-          ? record.reasons
-          : [];
+  const violations = Array.isArray(record.violations)
+    ? record.violations
+    : Array.isArray(record.errors)
+      ? record.errors
+      : Array.isArray(record.reasons)
+        ? record.reasons
+        : [];
 
   return {
     ok,
@@ -346,6 +335,44 @@ function normalizeVerificationResult(value: unknown): boolean {
   }
 
   return false;
+}
+
+async function hashNewIprPassword(password: string): Promise<unknown> {
+  const hasher = hashIprPassword as unknown as (
+    ...args: unknown[]
+  ) => Promise<unknown> | unknown;
+
+  const attempts: unknown[][] = [
+    [
+      {
+        password
+      }
+    ],
+    [
+      {
+        plainPassword: password
+      }
+    ],
+    [
+      {
+        value: password
+      }
+    ]
+  ];
+
+  let lastError: unknown = null;
+
+  for (const args of attempts) {
+    try {
+      return await hasher(...args);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("IPR_PASSWORD_HASH_FAILED");
 }
 
 async function verifyStoredPassword(
@@ -412,12 +439,7 @@ function extractRawSessionToken(value: unknown): string {
   if (isRecord(value)) {
     const token = firstString(
       value,
-      [
-        ["token"],
-        ["sessionToken"],
-        ["rawToken"],
-        ["value"]
-      ],
+      [["token"], ["sessionToken"], ["rawToken"], ["value"]],
       ""
     );
 
@@ -433,11 +455,7 @@ function extractSessionExpiresAt(value: unknown): string {
   if (isRecord(value)) {
     const expiresAt = firstString(
       value,
-      [
-        ["expiresAt"],
-        ["expires_at"],
-        ["expiration"]
-      ],
+      [["expiresAt"], ["expires_at"], ["expiration"]],
       ""
     );
 
@@ -575,21 +593,16 @@ function evaluateMinimalIprHandoff(
 
   const accessScope = firstString(
     handoff,
-    [
-      ["access", "scope"],
-      ["accessScope"],
-      ["scope"]
-    ],
+    [["access", "scope"], ["accessScope"], ["scope"]],
     DEFAULT_ACCESS_SCOPE
   );
 
-  const certificateScope =
-    stringArray(
-      isRecord(handoff.certificate)
-        ? handoff.certificate.certificate_scope ??
-            handoff.certificate.certificateScope
-        : undefined
-    );
+  const certificateScope = stringArray(
+    isRecord(handoff.certificate)
+      ? handoff.certificate.certificate_scope ??
+          handoff.certificate.certificateScope
+      : undefined
+  );
 
   const hasJokerScope =
     accessScope === DEFAULT_ACCESS_SCOPE ||
@@ -605,11 +618,7 @@ function evaluateMinimalIprHandoff(
 
   const accessDecision = firstString(
     handoff,
-    [
-      ["access", "decision"],
-      ["accessDecision"],
-      ["decision"]
-    ],
+    [["access", "decision"], ["accessDecision"], ["decision"]],
     "ACCESS_GRANTED"
   ).toUpperCase();
 
@@ -643,11 +652,7 @@ function evaluateMinimalIprHandoff(
 
   const entity = firstString(
     handoff,
-    [
-      ["subject", "entity"],
-      ["entity"],
-      ["name"]
-    ],
+    [["subject", "entity"], ["entity"], ["name"]],
     "HBCE IPR Subject"
   );
 
@@ -686,11 +691,7 @@ function evaluateMinimalIprHandoff(
 
   const matrixState = firstString(
     handoff,
-    [
-      ["matrix", "state"],
-      ["matrixState"],
-      ["matrix"]
-    ],
+    [["matrix", "state"], ["matrixState"], ["matrix"]],
     "MATRIX_ACTIVE"
   ).toUpperCase();
 
@@ -706,23 +707,10 @@ function evaluateMinimalIprHandoff(
   ).toUpperCase();
 
   const handoffHash =
-    firstString(
-      handoff,
-      [
-        ["handoff_hash"],
-        ["handoffHash"],
-        ["hash"]
-      ],
-      ""
-    ) || sha256(JSON.stringify(handoff));
+    firstString(handoff, [["handoff_hash"], ["handoffHash"], ["hash"]], "") ||
+    sha256(JSON.stringify(handoff));
 
-  const source = firstString(
-    handoff,
-    [
-      ["source"]
-    ],
-    "HBCE_IPR_HANDOFF"
-  );
+  const source = firstString(handoff, [["source"]], "HBCE_IPR_HANDOFF");
 
   return {
     ok: true,
@@ -733,22 +721,16 @@ function evaluateMinimalIprHandoff(
     certificateKind,
     certificateStatus,
     certificateScope:
-      certificateScope.length > 0
-        ? certificateScope
-        : [DEFAULT_ACCESS_SCOPE],
+      certificateScope.length > 0 ? certificateScope : [DEFAULT_ACCESS_SCOPE],
     cardSerial: cardSerial || null,
     certificateHash: certificateHash || null,
     accessDecision,
     accessScope,
     identityBinding,
     matrixState:
-      matrixState === "MATRIX_ACTIVE"
-        ? "MATRIX_ACTIVE"
-        : "MATRIX_LIMITED",
+      matrixState === "MATRIX_ACTIVE" ? "MATRIX_ACTIVE" : "MATRIX_LIMITED",
     semanticMemoryScope:
-      semanticMemoryScope === "IPR_BOUND"
-        ? "IPR_BOUND"
-        : "RUNTIME_ONLY",
+      semanticMemoryScope === "IPR_BOUND" ? "IPR_BOUND" : "RUNTIME_ONLY",
     handoffHash,
     source
   };
@@ -799,11 +781,7 @@ async function handleSetPassword(
   );
 
   if (!handoff.ok) {
-    return buildErrorResponse(
-      403,
-      handoff.reason,
-      handoff.detail
-    );
+    return buildErrorResponse(403, handoff.reason, handoff.detail);
   }
 
   const passwordPolicy = normalizePolicyResult(
@@ -825,7 +803,7 @@ async function handleSetPassword(
   const accountStore = getDefaultIprAccountStore();
 
   const passwordHash = extractPasswordHashResult(
-    await hashIprPassword(password)
+    await hashNewIprPassword(password)
   );
 
   await authStore.setCredentialAsync({
@@ -922,11 +900,7 @@ async function handleSetPassword(
     { status: 200 }
   );
 
-  setSessionCookie(
-    response,
-    session.rawSessionToken,
-    session.sessionTokenPayload
-  );
+  setSessionCookie(response, session.rawSessionToken, session.sessionTokenPayload);
 
   return response;
 }
@@ -1025,11 +999,7 @@ async function handleLogin(
     { status: 200 }
   );
 
-  setSessionCookie(
-    response,
-    session.rawSessionToken,
-    session.sessionTokenPayload
-  );
+  setSessionCookie(response, session.rawSessionToken, session.sessionTokenPayload);
 
   return response;
 }
@@ -1062,22 +1032,12 @@ export async function POST(req: NextRequest) {
   const mode = normalizeMode(body.mode);
   const humanIprRaw = firstString(
     body,
-    [
-      ["humanIpr"],
-      ["human_ipr"],
-      ["ipr"],
-      ["subjectIpr"],
-      ["subject_ipr"]
-    ],
+    [["humanIpr"], ["human_ipr"], ["ipr"], ["subjectIpr"], ["subject_ipr"]],
     ""
   );
   const password = firstString(
     body,
-    [
-      ["password"],
-      ["iprPassword"],
-      ["ipr_password"]
-    ],
+    [["password"], ["iprPassword"], ["ipr_password"]],
     ""
   );
 
