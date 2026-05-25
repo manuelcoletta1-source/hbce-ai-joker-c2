@@ -26,6 +26,19 @@ const HUMAN_IPR_CANONICAL = "IPR-88505FE91013DCFE97C56ED1";
 const PAGE_BOUNDARY =
   "This page creates or verifies an HBCE IPR account session for AI JOKER-C2. It does not issue official identity, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale or eIDAS qualified trust services, and does not create legal certification.";
 
+const WEAK_PROJECT_FRAGMENTS = [
+  "joker",
+  "hbce",
+  "matrix",
+  "ipr",
+  "manuel",
+  "coletta",
+  "hermeticum",
+  "bce",
+  "ai",
+  "openai"
+];
+
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -191,18 +204,24 @@ function getStatusLabel(state: ApiState): string {
 }
 
 function buildLoginSummary(payload: unknown): string[] {
-  const authenticated = isRecord(payload)
-    ? payload.authenticated
-    : undefined;
+  const authenticated = isRecord(payload) ? payload.authenticated : undefined;
   const reason = isRecord(payload) ? payload.reason : undefined;
   const mode = isRecord(payload) ? payload.mode : undefined;
   const humanIpr = isRecord(payload) ? payload.humanIpr : undefined;
-  const access = isRecord(payload) && isRecord(payload.access)
-    ? payload.access
-    : {};
-  const memory = isRecord(payload) && isRecord(payload.memory)
-    ? payload.memory
-    : {};
+  const access =
+    isRecord(payload) && isRecord(payload.access) ? payload.access : {};
+  const memory =
+    isRecord(payload) && isRecord(payload.memory) ? payload.memory : {};
+  const passwordPolicy =
+    isRecord(payload) && isRecord(payload.passwordPolicy)
+      ? payload.passwordPolicy
+      : null;
+  const violations =
+    passwordPolicy && Array.isArray(passwordPolicy.violations)
+      ? passwordPolicy.violations
+          .map((item) => (typeof item === "string" ? item : ""))
+          .filter(Boolean)
+      : [];
 
   return [
     `Authenticated: ${
@@ -218,24 +237,22 @@ function buildLoginSummary(payload: unknown): string[] {
       typeof memory.persistenceMode === "string"
         ? memory.persistenceMode
         : "unknown"
+    }`,
+    `Password violations: ${
+      violations.length > 0 ? violations.join(" | ") : "none"
     }`
   ];
 }
 
 function buildSessionSummary(payload: unknown): string[] {
-  const authenticated = isRecord(payload)
-    ? payload.authenticated
-    : undefined;
+  const authenticated = isRecord(payload) ? payload.authenticated : undefined;
   const reason = isRecord(payload) ? payload.reason : undefined;
-  const access = isRecord(payload) && isRecord(payload.access)
-    ? payload.access
-    : {};
-  const matrix = isRecord(payload) && isRecord(payload.matrix)
-    ? payload.matrix
-    : {};
-  const memory = isRecord(payload) && isRecord(payload.memory)
-    ? payload.memory
-    : {};
+  const access =
+    isRecord(payload) && isRecord(payload.access) ? payload.access : {};
+  const matrix =
+    isRecord(payload) && isRecord(payload.matrix) ? payload.matrix : {};
+  const memory =
+    isRecord(payload) && isRecord(payload.memory) ? payload.memory : {};
 
   return [
     `Authenticated: ${
@@ -263,16 +280,78 @@ function buildSessionSummary(payload: unknown): string[] {
   ];
 }
 
+function hasSymbol(password: string): boolean {
+  return /[^A-Za-z0-9]/.test(password);
+}
+
+function hasProjectObviousFragment(password: string): boolean {
+  const normalized = password.toLowerCase();
+
+  return WEAK_PROJECT_FRAGMENTS.some((fragment) =>
+    normalized.includes(fragment)
+  );
+}
+
+function buildClientPasswordHints(
+  mode: LoginMode,
+  password: string,
+  confirmPassword: string
+): string[] {
+  const hints: string[] = [];
+
+  if (!password) {
+    hints.push("Password is required.");
+  }
+
+  if (mode === "SET_PASSWORD" && password !== confirmPassword) {
+    hints.push("Password confirmation does not match.");
+  }
+
+  if (password && !hasSymbol(password)) {
+    hints.push("Password should include at least one symbol.");
+  }
+
+  if (password && hasProjectObviousFragment(password)) {
+    hints.push(
+      "Password should not include obvious project or personal fragments."
+    );
+  }
+
+  return hints;
+}
+
 export default function HbceIprLoginPage() {
   const [mode, setMode] = useState<LoginMode>("SET_PASSWORD");
   const [humanIpr, setHumanIpr] = useState(HUMAN_IPR_CANONICAL);
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [deviceLabel, setDeviceLabel] = useState("JOKER-C2 access device");
   const [handoffText, setHandoffText] = useState("");
   const [handoffLoaded, setHandoffLoaded] = useState(false);
   const [loginState, setLoginState] = useState<ApiState>(INITIAL_API_STATE);
   const [sessionState, setSessionState] =
     useState<ApiState>(INITIAL_API_STATE);
+
+  const clientPasswordHints = useMemo(
+    () => buildClientPasswordHints(mode, password, confirmPassword),
+    [confirmPassword, mode, password]
+  );
+
+  const passwordsMatch = useMemo(
+    () =>
+      mode === "LOGIN" ||
+      (password.length > 0 &&
+        confirmPassword.length > 0 &&
+        password === confirmPassword),
+    [confirmPassword, mode, password]
+  );
+
+  const passwordHasSymbol = useMemo(() => hasSymbol(password), [password]);
+
+  const passwordHasWeakFragment = useMemo(
+    () => hasProjectObviousFragment(password),
+    [password]
+  );
 
   const loginSummary = useMemo(
     () => buildLoginSummary(loginState.payload),
@@ -357,15 +436,78 @@ export default function HbceIprLoginPage() {
       ? parseJsonText(handoffText.trim())
       : null;
 
-    if (mode === "SET_PASSWORD" && handoffText.trim() && !parsedHandoff) {
-      setLoginState({
-        status: "ERROR",
-        httpStatus: null,
-        payload: null,
-        error: "IPR handoff JSON is invalid.",
-        receivedAt: nowIso()
-      });
-      return;
+    if (mode === "SET_PASSWORD") {
+      if (password !== confirmPassword) {
+        setLoginState({
+          status: "ERROR",
+          httpStatus: null,
+          payload: {
+            ok: false,
+            authenticated: false,
+            reason: "IPR_PASSWORD_CONFIRMATION_MISMATCH",
+            detail:
+              "The IPR password and confirmation password do not match.",
+            legalCertification: false
+          },
+          error: "The IPR password and confirmation password do not match.",
+          receivedAt: nowIso()
+        });
+        return;
+      }
+
+      if (!passwordHasSymbol) {
+        setLoginState({
+          status: "ERROR",
+          httpStatus: null,
+          payload: {
+            ok: false,
+            authenticated: false,
+            reason: "IPR_PASSWORD_CLIENT_POLICY_FAILED",
+            detail: "Password should include at least one symbol.",
+            legalCertification: false
+          },
+          error: "Password should include at least one symbol.",
+          receivedAt: nowIso()
+        });
+        return;
+      }
+
+      if (passwordHasWeakFragment) {
+        setLoginState({
+          status: "ERROR",
+          httpStatus: null,
+          payload: {
+            ok: false,
+            authenticated: false,
+            reason: "IPR_PASSWORD_CLIENT_POLICY_FAILED",
+            detail:
+              "Password should not include obvious project or personal fragments.",
+            weakFragments: WEAK_PROJECT_FRAGMENTS,
+            legalCertification: false
+          },
+          error:
+            "Password should not include obvious project or personal fragments.",
+          receivedAt: nowIso()
+        });
+        return;
+      }
+
+      if (handoffText.trim() && !parsedHandoff) {
+        setLoginState({
+          status: "ERROR",
+          httpStatus: null,
+          payload: {
+            ok: false,
+            authenticated: false,
+            reason: "IPR_HANDOFF_JSON_INVALID",
+            detail: "IPR handoff JSON is invalid.",
+            legalCertification: false
+          },
+          error: "IPR handoff JSON is invalid.",
+          receivedAt: nowIso()
+        });
+        return;
+      }
     }
 
     setLoginState({
@@ -422,7 +564,17 @@ export default function HbceIprLoginPage() {
         receivedAt: nowIso()
       });
     }
-  }, [deviceLabel, handoffText, humanIpr, mode, password, runSessionCheck]);
+  }, [
+    confirmPassword,
+    deviceLabel,
+    handoffText,
+    humanIpr,
+    mode,
+    password,
+    passwordHasSymbol,
+    passwordHasWeakFragment,
+    runSessionCheck
+  ]);
 
   return (
     <main
@@ -585,7 +737,8 @@ export default function HbceIprLoginPage() {
                     background: "#020617",
                     color: "#f8fafc",
                     fontSize: "15px",
-                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
+                    fontFamily:
+                      "ui-monospace, SFMono-Regular, Menlo, monospace"
                   }}
                 />
               </label>
@@ -619,6 +772,110 @@ export default function HbceIprLoginPage() {
                   }}
                 />
               </label>
+
+              {mode === "SET_PASSWORD" ? (
+                <label
+                  style={{
+                    display: "grid",
+                    gap: "7px",
+                    color: "#cbd5e1",
+                    fontSize: "14px",
+                    fontWeight: 700
+                  }}
+                >
+                  Confirm IPR password
+                  <input
+                    value={confirmPassword}
+                    onChange={(event) =>
+                      setConfirmPassword(event.target.value)
+                    }
+                    type="password"
+                    autoComplete="new-password"
+                    style={{
+                      border: "1px solid rgba(148,163,184,0.35)",
+                      borderRadius: "12px",
+                      padding: "11px 12px",
+                      background: "#020617",
+                      color: "#f8fafc",
+                      fontSize: "15px"
+                    }}
+                  />
+                </label>
+              ) : null}
+
+              <section
+                style={{
+                  border: "1px solid rgba(148,163,184,0.22)",
+                  borderRadius: "14px",
+                  padding: "12px",
+                  background: "rgba(2,6,23,0.62)"
+                }}
+              >
+                <p
+                  style={{
+                    margin: "0 0 8px",
+                    color: "#e2e8f0",
+                    fontWeight: 800,
+                    fontSize: "14px"
+                  }}
+                >
+                  Password checks
+                </p>
+
+                <ul
+                  style={{
+                    margin: 0,
+                    paddingLeft: "18px",
+                    color: "#cbd5e1",
+                    fontSize: "13px",
+                    lineHeight: 1.6
+                  }}
+                >
+                  <li>
+                    Password inserted: {password ? "yes" : "no"}
+                  </li>
+                  <li>
+                    Confirmation match:{" "}
+                    {mode === "LOGIN"
+                      ? "not required for LOGIN"
+                      : passwordsMatch
+                        ? "yes"
+                        : "no"}
+                  </li>
+                  <li>
+                    Includes symbol: {passwordHasSymbol ? "yes" : "no"}
+                  </li>
+                  <li>
+                    Obvious project fragment:{" "}
+                    {passwordHasWeakFragment ? "detected" : "not detected"}
+                  </li>
+                </ul>
+
+                {clientPasswordHints.length > 0 ? (
+                  <p
+                    style={{
+                      margin: "10px 0 0",
+                      color: "#fbbf24",
+                      fontSize: "13px",
+                      lineHeight: 1.5
+                    }}
+                  >
+                    {clientPasswordHints.join(" ")}
+                  </p>
+                ) : (
+                  <p
+                    style={{
+                      margin: "10px 0 0",
+                      color: "#86efac",
+                      fontSize: "13px",
+                      lineHeight: 1.5
+                    }}
+                  >
+                    Client-side password checks passed. Server-side policy still
+                    performs the authoritative verification.
+                  </p>
+                )}
+              </section>
 
               <label
                 style={{
@@ -667,7 +924,8 @@ export default function HbceIprLoginPage() {
                     background: "#020617",
                     color: "#f8fafc",
                     fontSize: "13px",
-                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                    fontFamily:
+                      "ui-monospace, SFMono-Regular, Menlo, monospace",
                     lineHeight: 1.45,
                     resize: "vertical"
                   }}
