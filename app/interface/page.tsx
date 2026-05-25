@@ -4,6 +4,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
   useEffect,
+  useMemo,
   useRef,
   useState
 } from "react";
@@ -28,10 +29,28 @@ type RuntimeHealth = {
     org?: string;
     location?: string;
   };
+  access?: {
+    decision?: string;
+    matrixState?: string;
+    semanticMemoryScope?: string;
+    identityBinding?: string;
+  };
+  memory?: {
+    scope?: string;
+    authority?: string;
+    persistenceMode?: string;
+    reason?: string;
+  };
+  matrix?: {
+    state?: string;
+    active?: boolean;
+    reason?: string;
+  };
   boundary?: {
     legalCertification?: boolean;
     aiGovernanceBoundary?: string;
     useDemocraticBoundary?: string;
+    memoryBoundary?: string;
   };
   error?: string;
 };
@@ -115,6 +134,7 @@ type ChatApiResponse = {
   opcProof?: unknown;
   proof?: unknown;
   memory?: unknown;
+  semanticMemory?: unknown;
   diagnostics?: unknown;
   boundary?: unknown;
   identity?: unknown;
@@ -143,8 +163,9 @@ const DEFAULT_PROMPT =
 
 const QUICK_PROMPTS = [
   "diagnostica runtime OpenAI completa",
+  "sai chi sono?",
   "spiegami cosa cambia tra GPT-5.5 e JOKER-C2",
-  "spiegami IPR, EVT e OPC in modo operativo",
+  "spiegami IPR, EVT, OPC e memoria IPR-bound",
   "test fail-closed: cosa fai se manca OPC?",
   "prepara un pitch di 60 secondi per OpenAI",
   "spiegami perché JOKER-C2 non è una AI generica"
@@ -246,6 +267,10 @@ function firstText(value: unknown, paths: string[][], fallback = "-"): string {
   }
 
   return fallback;
+}
+
+function fallbackDash(value: string, fallback: string): string {
+  return value && value !== "-" ? value : fallback;
 }
 
 function normalizeScope(value: unknown): string[] {
@@ -746,8 +771,9 @@ function getContinuityRef(payload: ChatApiResponse): string | null {
   const resolved = firstText(
     payload,
     [
-      ["memory", "event"],
-      ["memory", "lastEventId"],
+      ["memory", "lastEvt"],
+      ["memory", "currentContinuityRef"],
+      ["semanticMemory", "lastMemoryEvt"],
       ["governedEvt", "evt"],
       ["modernEvt", "evt"],
       ["evt", "evt"],
@@ -781,6 +807,7 @@ function getIpr(payload?: ChatApiResponse | RuntimeHealth | null): string {
   return firstText(
     payload,
     [
+      ["identity", "runtimeIpr"],
       ["identity", "ipr"],
       ["runtime", "ipr"],
       ["runtime", "runtime_ipr"],
@@ -796,6 +823,7 @@ function getEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
   return firstText(
     payload,
     [
+      ["continuityRef"],
       ["identity", "evt"],
       ["evt", "evt"],
       ["governedEvt", "evt"],
@@ -841,7 +869,7 @@ function getVerifiedSubjectIpr(payload?: ChatApiResponse | null): string {
   );
 }
 
-function getMatrixState(payload?: ChatApiResponse | null): string {
+function getMatrixState(payload?: ChatApiResponse | RuntimeHealth | null): string {
   if (!payload) return "-";
 
   return firstText(
@@ -849,10 +877,156 @@ function getMatrixState(payload?: ChatApiResponse | null): string {
     [
       ["matrix", "state"],
       ["matrix", "activation"],
+      ["access", "matrixState"],
+      ["identity", "matrixState"],
+      ["memory", "matrixState"],
       ["runtime", "matrixState"],
       ["runtime", "matrix_state"],
       ["governance", "matrixState"],
       ["diagnostics", "matrixState"]
+    ],
+    "-"
+  );
+}
+
+function getSemanticMemoryScope(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["semanticMemory", "scope"],
+      ["memory", "scope"],
+      ["access", "semanticMemoryScope"],
+      ["identity", "semanticMemoryScope"],
+      ["runtime", "memoryScope"],
+      ["runtime", "semanticMemoryScope"],
+      ["runtime", "semantic_memory_scope"],
+      ["diagnostics", "memoryScope"],
+      ["diagnostics", "semanticMemoryScope"]
+    ],
+    "-"
+  );
+}
+
+function getMemoryAuthority(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["semanticMemory", "authority"],
+      ["memory", "authority"],
+      ["runtime", "memoryAuthority"],
+      ["diagnostics", "memoryAuthority"]
+    ],
+    "-"
+  );
+}
+
+function getMemoryPersistenceMode(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["semanticMemory", "persistenceMode"],
+      ["memory", "persistenceMode"],
+      ["runtime", "memoryPersistenceMode"],
+      ["diagnostics", "memoryPersistenceMode"]
+    ],
+    "-"
+  );
+}
+
+function getMemoryId(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["semanticMemory", "memoryId"],
+      ["memory", "memoryId"],
+      ["runtime", "memoryId"],
+      ["diagnostics", "memoryId"]
+    ],
+    "-"
+  );
+}
+
+function getMemoryKeyHash(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["semanticMemory", "memoryKeyHash"],
+      ["memory", "memoryKeyHash"],
+      ["runtime", "memoryKeyHash"],
+      ["diagnostics", "memoryKeyHash"]
+    ],
+    "-"
+  );
+}
+
+function getMemoryHash(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["semanticMemory", "memoryHash"],
+      ["memory", "memoryHash"],
+      ["runtime", "memoryHash"],
+      ["diagnostics", "memoryHash"],
+      ["opc", "publicProof", "memoryHash"],
+      ["proof", "memoryHash"]
+    ],
+    "-"
+  );
+}
+
+function getLastMemoryEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["semanticMemory", "lastMemoryEvt"],
+      ["memory", "lastEvt"],
+      ["memory", "currentContinuityRef"],
+      ["runtime", "memoryLastEvt"],
+      ["diagnostics", "memoryLastEvt"]
+    ],
+    "-"
+  );
+}
+
+function getLastMemoryOpc(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["semanticMemory", "lastMemoryOpcProofId"],
+      ["memory", "lastOpcProofId"],
+      ["runtime", "memoryLastOpcProofId"],
+      ["diagnostics", "memoryLastOpcProofId"]
+    ],
+    "-"
+  );
+}
+
+function getLastMemoryChainHash(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["semanticMemory", "lastMemoryOpcChainHash"],
+      ["memory", "lastOpcChainHash"],
+      ["runtime", "memoryLastOpcChainHash"],
+      ["diagnostics", "memoryLastOpcChainHash"]
     ],
     "-"
   );
@@ -990,6 +1164,11 @@ function MessageBubble({
   const verifiedSubjectName = isAssistant ? getVerifiedSubjectName(message.raw) : "-";
   const verifiedSubjectIpr = isAssistant ? getVerifiedSubjectIpr(message.raw) : "-";
   const matrixState = isAssistant ? getMatrixState(message.raw) : "-";
+  const memoryScope = isAssistant ? getSemanticMemoryScope(message.raw) : "-";
+  const memoryAuthority = isAssistant ? getMemoryAuthority(message.raw) : "-";
+  const memoryMode = isAssistant ? getMemoryPersistenceMode(message.raw) : "-";
+  const lastMemoryEvt = isAssistant ? getLastMemoryEvt(message.raw) : "-";
+  const lastMemoryOpc = isAssistant ? getLastMemoryOpc(message.raw) : "-";
 
   return (
     <article
@@ -1027,6 +1206,18 @@ function MessageBubble({
               <span>Subject: {verifiedSubjectName}</span>
             ) : null}
             {matrixState !== "-" ? <span>MATRIX: {matrixState}</span> : null}
+            {memoryScope !== "-" ? (
+              <span>Semantic memory: {memoryScope}</span>
+            ) : null}
+            {memoryAuthority !== "-" ? (
+              <span>Memory authority: {memoryAuthority}</span>
+            ) : null}
+            {memoryMode !== "-" ? (
+              <span>Memory mode: {memoryMode}</span>
+            ) : null}
+            {lastMemoryEvt !== "-" ? (
+              <span>Last memory EVT: {lastMemoryEvt}</span>
+            ) : null}
           </div>
         ) : null}
 
@@ -1070,6 +1261,42 @@ function MessageBubble({
                     <strong>{matrixState}</strong>
                   </div>
                   <div>
+                    <span>SemanticMemory</span>
+                    <strong>{memoryScope}</strong>
+                  </div>
+                  <div>
+                    <span>MemoryAuthority</span>
+                    <strong>{memoryAuthority}</strong>
+                  </div>
+                  <div>
+                    <span>MemoryMode</span>
+                    <strong>{memoryMode}</strong>
+                  </div>
+                  <div>
+                    <span>MemoryId</span>
+                    <strong>{getMemoryId(message.raw)}</strong>
+                  </div>
+                  <div>
+                    <span>MemoryKeyHash</span>
+                    <strong>{getMemoryKeyHash(message.raw)}</strong>
+                  </div>
+                  <div>
+                    <span>MemoryHash</span>
+                    <strong>{getMemoryHash(message.raw)}</strong>
+                  </div>
+                  <div>
+                    <span>LastMemoryEVT</span>
+                    <strong>{lastMemoryEvt}</strong>
+                  </div>
+                  <div>
+                    <span>LastMemoryOPC</span>
+                    <strong>{lastMemoryOpc}</strong>
+                  </div>
+                  <div>
+                    <span>MemoryChainHash</span>
+                    <strong>{getLastMemoryChainHash(message.raw)}</strong>
+                  </div>
+                  <div>
                     <span>EngineHash</span>
                     <strong>{getEngineHash(message.raw)}</strong>
                   </div>
@@ -1108,6 +1335,18 @@ export default function InterfacePage() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const lastAssistantPayload = useMemo(() => {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const item = messages[index];
+
+      if (item.role === "assistant" && item.raw) {
+        return item.raw;
+      }
+    }
+
+    return null;
+  }, [messages]);
 
   useEffect(() => {
     const stored =
@@ -1341,7 +1580,56 @@ export default function InterfacePage() {
 
   const humanIprLabel = iprHandoff?.subject.ipr || "Human IPR: NOT_VERIFIED";
   const subjectLabel = iprHandoff?.subject.entity || "No verified subject";
-  const matrixPreview = iprHandoff ? "PENDING_SERVER_VALIDATION" : "LIMITED";
+
+  const runtimeMatrixState = fallbackDash(
+    getMatrixState(lastAssistantPayload),
+    iprHandoff ? "PENDING_SERVER_VALIDATION" : "LIMITED"
+  );
+
+  const runtimeMemoryScope = fallbackDash(
+    getSemanticMemoryScope(lastAssistantPayload),
+    iprHandoff ? "PENDING_SERVER_VALIDATION" : "RUNTIME_ONLY"
+  );
+
+  const runtimeMemoryAuthority = fallbackDash(
+    getMemoryAuthority(lastAssistantPayload),
+    iprHandoff ? "SERVER_VALIDATION_REQUIRED" : "SESSION_RUNTIME_ONLY"
+  );
+
+  const runtimeMemoryMode = fallbackDash(
+    getMemoryPersistenceMode(lastAssistantPayload),
+    safeText(health?.memory?.persistenceMode, "PROCESS_MEMORY_MVP")
+  );
+
+  const runtimeLastMemoryEvt = fallbackDash(
+    getLastMemoryEvt(lastAssistantPayload),
+    "none"
+  );
+
+  const runtimeLastMemoryOpc = fallbackDash(
+    getLastMemoryOpc(lastAssistantPayload),
+    "none"
+  );
+
+  const runtimeLastMemoryChainHash = fallbackDash(
+    getLastMemoryChainHash(lastAssistantPayload),
+    "none"
+  );
+
+  const runtimeMemoryHash = fallbackDash(
+    getMemoryHash(lastAssistantPayload),
+    "none"
+  );
+
+  const runtimeMemoryId = fallbackDash(
+    getMemoryId(lastAssistantPayload),
+    "not initialized"
+  );
+
+  const runtimeMemoryKeyHash = fallbackDash(
+    getMemoryKeyHash(lastAssistantPayload),
+    "not initialized"
+  );
 
   return (
     <main className="joker-page">
@@ -1360,6 +1648,7 @@ export default function InterfacePage() {
           <span>{safeText(health?.model, getModel(health))}</span>
           <span>{safeText(health?.identity?.ipr, "IPR-AI-0001")}</span>
           <span>{humanIprLabel}</span>
+          <span>Memory: {runtimeMemoryScope}</span>
         </div>
 
         <div className="joker-top-actions">
@@ -1377,7 +1666,8 @@ export default function InterfacePage() {
           className={[
             "joker-identity-card",
             iprHandoff ? "joker-identity-card-active" : "",
-            iprHandoffError ? "joker-identity-card-error" : ""
+            iprHandoffError ? "joker-identity-card-error" : "",
+            runtimeMemoryScope === "IPR_BOUND" ? "joker-identity-card-memory" : ""
           ]
             .filter(Boolean)
             .join(" ")}
@@ -1389,7 +1679,7 @@ export default function InterfacePage() {
             <strong>{subjectLabel}</strong>
             <p>
               {iprHandoff
-                ? "IPR handoff rilevato lato interfaccia. La validazione autorevole deve avvenire in /api/chat prima del riconoscimento operativo."
+                ? "IPR handoff rilevato lato interfaccia. La validazione autorevole avviene in /api/chat; quando accettata, JOKER-C2 attiva MATRIX_ACTIVE e memoria IPR_BOUND."
                 : "Nessun handoff IPR biologico rilevato. JOKER-C2 resta in modalità runtime generica fino a validazione server-side."}
             </p>
           </div>
@@ -1424,19 +1714,47 @@ export default function InterfacePage() {
             </div>
             <div>
               <span>MATRIX</span>
-              <strong>{matrixPreview}</strong>
+              <strong>{runtimeMatrixState}</strong>
+            </div>
+            <div>
+              <span>Semantic memory</span>
+              <strong>{runtimeMemoryScope}</strong>
+            </div>
+            <div>
+              <span>Memory authority</span>
+              <strong>{runtimeMemoryAuthority}</strong>
+            </div>
+            <div>
+              <span>Memory mode</span>
+              <strong>{runtimeMemoryMode}</strong>
+            </div>
+            <div>
+              <span>Memory ID</span>
+              <strong>{runtimeMemoryId}</strong>
+            </div>
+            <div>
+              <span>Memory key hash</span>
+              <strong>{runtimeMemoryKeyHash}</strong>
+            </div>
+            <div>
+              <span>Memory hash</span>
+              <strong>{runtimeMemoryHash}</strong>
+            </div>
+            <div>
+              <span>Last memory EVT</span>
+              <strong>{runtimeLastMemoryEvt}</strong>
+            </div>
+            <div>
+              <span>Last memory OPC</span>
+              <strong>{runtimeLastMemoryOpc}</strong>
+            </div>
+            <div>
+              <span>Last memory chain</span>
+              <strong>{runtimeLastMemoryChainHash}</strong>
             </div>
             <div>
               <span>Source</span>
               <strong>{iprHandoffSource}</strong>
-            </div>
-            <div>
-              <span>Authority</span>
-              <strong>
-                {iprHandoff
-                  ? "CLIENT_TRANSPORT_ONLY"
-                  : "SERVER_VALIDATION_REQUIRED"}
-              </strong>
             </div>
           </div>
 
@@ -1451,6 +1769,13 @@ export default function InterfacePage() {
             <button type="button" onClick={clearIprHandoff}>
               Clear IPR handoff
             </button>
+            <button
+              type="button"
+              onClick={() => void sendMessage("sai chi sono?")}
+              disabled={isSending}
+            >
+              Test IPR memory
+            </button>
           </div>
         </div>
       </section>
@@ -1463,8 +1788,8 @@ export default function InterfacePage() {
             <p>
               Interfaccia chat classica. Scrivi sotto, ricevi la risposta qui.
               Il runtime resta governato da HBCE: IPR, EVT, OPC, MATRIX,
-              audit e fail-closed. Il riconoscimento biologico richiede un
-              handoff IPR validato dalla API runtime.
+              audit, fail-closed e memoria IPR-bound. Il riconoscimento
+              biologico richiede un handoff IPR validato dalla API runtime.
             </p>
 
             <div className="joker-prompt-grid">
@@ -1479,6 +1804,15 @@ export default function InterfacePage() {
                 </button>
               ))}
             </div>
+
+            <button
+              type="button"
+              className="joker-default-prompt"
+              onClick={() => void sendMessage(DEFAULT_PROMPT)}
+              disabled={isSending}
+            >
+              Avvia diagnostica completa
+            </button>
           </div>
         ) : (
           <div className="joker-message-list">
@@ -1732,10 +2066,10 @@ export default function InterfacePage() {
         }
 
         .joker-identity-card {
-          width: min(980px, 100%);
+          width: min(1120px, 100%);
           margin: 0 auto;
           display: grid;
-          grid-template-columns: minmax(0, 1.2fr) minmax(320px, 1.8fr);
+          grid-template-columns: minmax(0, 1.05fr) minmax(360px, 1.95fr);
           gap: 16px;
           padding: 16px;
           border: 1px solid rgba(51, 65, 85, 0.82);
@@ -1749,6 +2083,13 @@ export default function InterfacePage() {
           background:
             radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.12), transparent 32%),
             rgba(2, 6, 23, 0.5);
+        }
+
+        .joker-identity-card-memory {
+          border-color: rgba(34, 197, 94, 0.42);
+          box-shadow:
+            0 18px 58px rgba(0, 0, 0, 0.18),
+            0 0 32px rgba(34, 197, 94, 0.08);
         }
 
         .joker-identity-card-error {
@@ -1848,7 +2189,7 @@ export default function InterfacePage() {
 
         .joker-empty {
           width: min(820px, 100%);
-          min-height: calc(100vh - 360px);
+          min-height: calc(100vh - 390px);
           margin: 0 auto;
           display: flex;
           flex-direction: column;
@@ -1888,6 +2229,13 @@ export default function InterfacePage() {
           text-align: left;
           color: #cbd5e1;
           background: rgba(2, 6, 23, 0.48);
+        }
+
+        .joker-default-prompt {
+          margin-top: 12px;
+          padding: 11px 16px;
+          border-color: rgba(34, 211, 238, 0.42);
+          background: rgba(8, 47, 73, 0.42);
         }
 
         .joker-message-list {
@@ -2249,11 +2597,17 @@ export default function InterfacePage() {
           line-height: 1.4;
         }
 
-        @media (max-width: 1040px) {
+        @media (max-width: 1140px) {
           .joker-identity-card {
             grid-template-columns: 1fr;
           }
 
+          .joker-identity-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 1040px) {
           .joker-identity-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
@@ -2330,7 +2684,7 @@ export default function InterfacePage() {
           }
 
           .joker-empty {
-            min-height: calc(100vh - 410px);
+            min-height: calc(100vh - 430px);
           }
         }
       `}</style>
