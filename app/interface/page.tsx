@@ -19,15 +19,19 @@ type RuntimeHealth = {
   standardModel?: string;
   deepModel?: string;
   openAIConfigured?: boolean;
+  operationalContext?: Record<string, unknown>;
   identity?: {
     entity?: string;
     ipr?: string;
     evt?: string;
+    prev?: string;
+    eventFamily?: string;
     state?: string;
     cycle?: string;
     core?: string;
     org?: string;
     location?: string;
+    monthlyRef?: Record<string, unknown>;
   };
   access?: {
     decision?: string;
@@ -172,6 +176,7 @@ type ChatApiResponse = {
   runtime?: unknown;
   engine?: unknown;
   governance?: unknown;
+  operationalContext?: unknown;
   event?: unknown;
   evt?: unknown;
   modernEvt?: unknown;
@@ -317,6 +322,14 @@ function firstText(value: unknown, paths: string[][], fallback = "-"): string {
 
 function fallbackDash(value: string, fallback: string): string {
   return value && value !== "-" ? value : fallback;
+}
+
+function compactHash(value: string): string {
+  if (!value || value === "-" || value === "none" || value.length <= 28) {
+    return value;
+  }
+
+  return `${value.slice(0, 18)}…${value.slice(-10)}`;
 }
 
 function normalizeScope(value: unknown): string[] {
@@ -586,11 +599,7 @@ function normalizeIprHandoff(
       ""
     ) || "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
 
-  if (!subjectIpr || !certificateId) {
-    return null;
-  }
-
-  if (certificateStatus !== "ACTIVE") {
+  if (!subjectIpr || !certificateId || certificateStatus !== "ACTIVE") {
     return null;
   }
 
@@ -935,6 +944,9 @@ function getEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
   return firstText(
     payload,
     [
+      ["operationalContext", "current_ai_evt"],
+      ["runtime", "operationalContext", "current_ai_evt"],
+      ["identity", "checkpoint"],
       ["continuityRef"],
       ["identity", "evt"],
       ["evt", "evt"],
@@ -944,6 +956,76 @@ function getEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
     ],
     "-"
   );
+}
+
+function getOperationalHumanEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["operationalContext", "current_evt"],
+      ["runtime", "operationalContext", "current_evt"],
+      ["runtime", "operationalContext", "currentEvt"]
+    ],
+    "EVT-0016"
+  );
+}
+
+function getOperationalCycle(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["operationalContext", "current_cycle"],
+      ["runtime", "operationalContext", "current_cycle"],
+      ["identity", "cycle"],
+      ["runtime", "cycle"]
+    ],
+    "UP-CANONICO"
+  );
+}
+
+function getEventFamily(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["operationalContext", "event_family"],
+      ["runtime", "operationalContext", "event_family"],
+      ["identity", "eventFamily"],
+      ["runtime", "eventFamily"]
+    ],
+    "UP-EVT"
+  );
+}
+
+function getMonthlyRef(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "EVT-0015 / EVT-0015-AI";
+
+  const human = firstText(
+    payload,
+    [
+      ["operationalContext", "monthly_checkpoint_ref", "evt"],
+      ["runtime", "operationalContext", "monthly_checkpoint_ref", "evt"],
+      ["identity", "monthlyRef", "humanEvt"]
+    ],
+    "EVT-0015"
+  );
+
+  const ai = firstText(
+    payload,
+    [
+      ["operationalContext", "monthly_checkpoint_ref", "ai_evt"],
+      ["runtime", "operationalContext", "monthly_checkpoint_ref", "ai_evt"],
+      ["identity", "monthlyRef", "evt"]
+    ],
+    "EVT-0015-AI"
+  );
+
+  return `${human} / ${ai}`;
 }
 
 function getVerifiedSubjectName(payload?: ChatApiResponse | null): string {
@@ -1234,6 +1316,58 @@ function getHbceModule(payload?: ChatApiResponse | null): string {
   );
 }
 
+function getLegalCertification(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "false";
+
+  return firstText(
+    payload,
+    [
+      ["boundary", "legalCertification"],
+      ["opcProof", "legalCertification"],
+      ["proof", "legalCertification"],
+      ["runtime", "legalCertification"]
+    ],
+    "false"
+  );
+}
+
+function getStatusClass(value: string): string {
+  const normalized = value.toUpperCase();
+
+  if (
+    normalized.includes("ACTIVE") ||
+    normalized.includes("GRANTED") ||
+    normalized.includes("IPR_BOUND") ||
+    normalized.includes("VALIDATED") ||
+    normalized.includes("OPERATIONAL") ||
+    normalized.includes("PASS")
+  ) {
+    return "is-good";
+  }
+
+  if (
+    normalized.includes("LIMITED") ||
+    normalized.includes("PENDING") ||
+    normalized.includes("PROCESS_MEMORY") ||
+    normalized.includes("RUNTIME_ONLY") ||
+    normalized.includes("MVP")
+  ) {
+    return "is-warn";
+  }
+
+  if (
+    normalized.includes("DENIED") ||
+    normalized.includes("ERROR") ||
+    normalized.includes("INVALID") ||
+    normalized.includes("BLOCKED") ||
+    normalized.includes("FAILED")
+  ) {
+    return "is-bad";
+  }
+
+  return "";
+}
+
 function isTextFile(file: File): boolean {
   const type = file.type || "text/plain";
 
@@ -1266,6 +1400,49 @@ async function readJsonResponse<T>(response: Response): Promise<T> {
   } catch {
     throw new Error(raw || `HTTP_${response.status}`);
   }
+}
+
+function StatusPill({
+  label,
+  value
+}: {
+  label?: string;
+  value: string;
+}) {
+  return (
+    <span className={["joker-pill", getStatusClass(value)].filter(Boolean).join(" ")}>
+      {label ? <b>{label}</b> : null}
+      {value}
+    </span>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  tone,
+  compact
+}: {
+  label: string;
+  value: string;
+  tone?: "good" | "warn" | "bad";
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        "joker-metric",
+        tone ? `is-${tone}` : getStatusClass(value),
+        compact ? "is-compact" : ""
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      title={value}
+    >
+      <span>{label}</span>
+      <strong>{compactHash(value)}</strong>
+    </div>
+  );
 }
 
 function MessageBubble({
@@ -1305,36 +1482,44 @@ function MessageBubble({
 
       <div className="joker-message-body">
         <div className="joker-message-head">
-          <strong>{isUser ? "Manuel" : isSystem ? "System" : "JOKER-C2"}</strong>
-          <span>{message.createdAt}</span>
+          <div>
+            <strong>{isUser ? "Manuel" : isSystem ? "System" : "JOKER-C2"}</strong>
+            {isAssistant && message.raw ? (
+              <span>
+                {safeText(message.state, "-")} · {safeText(message.decision, "-")}
+              </span>
+            ) : null}
+          </div>
+          <time>{message.createdAt}</time>
         </div>
 
         <pre className="joker-message-text">{message.content}</pre>
 
         {isAssistant && message.raw ? (
           <div className="joker-runtime-strip">
-            <span>Model: {getModel(message.raw)}</span>
-            <span>Runtime IPR: {getIpr(message.raw)}</span>
-            <span>EVT: {getEvt(message.raw)}</span>
-            <span>OPC: {getOpcProof(message.raw)}</span>
+            <StatusPill label="Model" value={getModel(message.raw)} />
+            <StatusPill label="Runtime IPR" value={getIpr(message.raw)} />
+            <StatusPill label="EVT" value={getEvt(message.raw)} />
+            <StatusPill label="OPC" value={getOpcProof(message.raw)} />
             {verifiedSubjectIpr !== "-" ? (
-              <span>Human IPR: {verifiedSubjectIpr}</span>
+              <StatusPill label="Human IPR" value={verifiedSubjectIpr} />
             ) : null}
             {verifiedSubjectName !== "-" ? (
-              <span>Subject: {verifiedSubjectName}</span>
+              <StatusPill label="Subject" value={verifiedSubjectName} />
             ) : null}
-            {matrixState !== "-" ? <span>MATRIX: {matrixState}</span> : null}
+            {matrixState !== "-" ? <StatusPill label="MATRIX" value={matrixState} /> : null}
             {memoryScope !== "-" ? (
-              <span>Semantic memory: {memoryScope}</span>
+              <StatusPill label="Memory" value={memoryScope} />
             ) : null}
             {memoryAuthority !== "-" ? (
-              <span>Memory authority: {memoryAuthority}</span>
+              <StatusPill label="Authority" value={memoryAuthority} />
             ) : null}
-            {memoryMode !== "-" ? (
-              <span>Memory mode: {memoryMode}</span>
-            ) : null}
+            {memoryMode !== "-" ? <StatusPill label="Mode" value={memoryMode} /> : null}
             {lastMemoryEvt !== "-" ? (
-              <span>Last memory EVT: {lastMemoryEvt}</span>
+              <StatusPill label="Last EVT" value={lastMemoryEvt} />
+            ) : null}
+            {lastMemoryOpc !== "-" ? (
+              <StatusPill label="Last OPC" value={lastMemoryOpc} />
             ) : null}
           </div>
         ) : null}
@@ -1342,7 +1527,7 @@ function MessageBubble({
         {isAssistant ? (
           <div className="joker-message-actions">
             <button type="button" onClick={() => onCopy(message.content)}>
-              Copy
+              Copy response
             </button>
 
             {message.raw ? (
@@ -1350,78 +1535,33 @@ function MessageBubble({
                 <summary>Runtime details</summary>
 
                 <div className="joker-details-grid">
-                  <div>
-                    <span>State</span>
-                    <strong>{safeText(message.state, "-")}</strong>
-                  </div>
-                  <div>
-                    <span>Decision</span>
-                    <strong>{safeText(message.decision, "-")}</strong>
-                  </div>
-                  <div>
-                    <span>ProjectDomain</span>
-                    <strong>{getProjectDomain(message.raw)}</strong>
-                  </div>
-                  <div>
-                    <span>HbceModule</span>
-                    <strong>{getHbceModule(message.raw)}</strong>
-                  </div>
-                  <div>
-                    <span>VerifiedSubject</span>
-                    <strong>{verifiedSubjectName}</strong>
-                  </div>
-                  <div>
-                    <span>HumanIPR</span>
-                    <strong>{verifiedSubjectIpr}</strong>
-                  </div>
-                  <div>
-                    <span>MATRIX</span>
-                    <strong>{matrixState}</strong>
-                  </div>
-                  <div>
-                    <span>SemanticMemory</span>
-                    <strong>{memoryScope}</strong>
-                  </div>
-                  <div>
-                    <span>MemoryAuthority</span>
-                    <strong>{memoryAuthority}</strong>
-                  </div>
-                  <div>
-                    <span>MemoryMode</span>
-                    <strong>{memoryMode}</strong>
-                  </div>
-                  <div>
-                    <span>MemoryId</span>
-                    <strong>{getMemoryId(message.raw)}</strong>
-                  </div>
-                  <div>
-                    <span>MemoryKeyHash</span>
-                    <strong>{getMemoryKeyHash(message.raw)}</strong>
-                  </div>
-                  <div>
-                    <span>MemoryHash</span>
-                    <strong>{getMemoryHash(message.raw)}</strong>
-                  </div>
-                  <div>
-                    <span>LastMemoryEVT</span>
-                    <strong>{lastMemoryEvt}</strong>
-                  </div>
-                  <div>
-                    <span>LastMemoryOPC</span>
-                    <strong>{lastMemoryOpc}</strong>
-                  </div>
-                  <div>
-                    <span>MemoryChainHash</span>
-                    <strong>{getLastMemoryChainHash(message.raw)}</strong>
-                  </div>
-                  <div>
-                    <span>EngineHash</span>
-                    <strong>{getEngineHash(message.raw)}</strong>
-                  </div>
-                  <div>
-                    <span>ChainHash</span>
-                    <strong>{getChainHash(message.raw)}</strong>
-                  </div>
+                  <MetricCard label="State" value={safeText(message.state, "-")} compact />
+                  <MetricCard label="Decision" value={safeText(message.decision, "-")} compact />
+                  <MetricCard label="ProjectDomain" value={getProjectDomain(message.raw)} compact />
+                  <MetricCard label="HbceModule" value={getHbceModule(message.raw)} compact />
+                  <MetricCard label="Subject" value={verifiedSubjectName} compact />
+                  <MetricCard label="Human IPR" value={verifiedSubjectIpr} compact />
+                  <MetricCard label="MATRIX" value={matrixState} compact />
+                  <MetricCard label="SemanticMemory" value={memoryScope} compact />
+                  <MetricCard label="MemoryAuthority" value={memoryAuthority} compact />
+                  <MetricCard label="MemoryMode" value={memoryMode} compact />
+                  <MetricCard label="MemoryId" value={getMemoryId(message.raw)} compact />
+                  <MetricCard label="MemoryKeyHash" value={getMemoryKeyHash(message.raw)} compact />
+                  <MetricCard label="MemoryHash" value={getMemoryHash(message.raw)} compact />
+                  <MetricCard label="LastMemoryEVT" value={lastMemoryEvt} compact />
+                  <MetricCard label="LastMemoryOPC" value={lastMemoryOpc} compact />
+                  <MetricCard
+                    label="MemoryChainHash"
+                    value={getLastMemoryChainHash(message.raw)}
+                    compact
+                  />
+                  <MetricCard label="EngineHash" value={getEngineHash(message.raw)} compact />
+                  <MetricCard label="ChainHash" value={getChainHash(message.raw)} compact />
+                  <MetricCard
+                    label="legalCertification"
+                    value={getLegalCertification(message.raw)}
+                    compact
+                  />
                 </div>
 
                 <pre className="joker-json">{safeJson(message.raw)}</pre>
@@ -1590,7 +1730,8 @@ export default function InterfacePage() {
     try {
       const response = await fetch("/api/chat", {
         method: "GET",
-        cache: "no-store"
+        cache: "no-store",
+        credentials: "include"
       });
 
       const payload = await readJsonResponse<RuntimeHealth>(response);
@@ -1781,16 +1922,40 @@ export default function InterfacePage() {
     }
   }
 
+  const dashboardPayload = lastAssistantPayload || health;
+
   const humanIprLabel =
-    effectiveIprHandoff?.subject.ipr || "Human IPR: NOT_VERIFIED";
+    effectiveIprHandoff?.subject.ipr || "NOT_VERIFIED";
   const subjectLabel =
     effectiveIprHandoff?.subject.entity || "No verified subject";
+
+  const runtimeOperationalHumanEvt = fallbackDash(
+    getOperationalHumanEvt(dashboardPayload),
+    "EVT-0016"
+  );
+
+  const runtimeOperationalAiEvt = fallbackDash(
+    getEvt(dashboardPayload),
+    "EVT-0016-AI"
+  );
+
+  const runtimeOperationalCycle = fallbackDash(
+    getOperationalCycle(dashboardPayload),
+    "UP-CANONICO"
+  );
+
+  const runtimeEventFamily = fallbackDash(
+    getEventFamily(dashboardPayload),
+    "UP-EVT"
+  );
+
+  const runtimeMonthlyRef = getMonthlyRef(dashboardPayload);
 
   const runtimeMatrixState = fallbackDash(
     getMatrixState(lastAssistantPayload),
     effectiveIprHandoff
       ? safeText(iprAccountSession?.matrix?.expectedState, "MATRIX_ACTIVE")
-      : "LIMITED"
+      : "MATRIX_LIMITED"
   );
 
   const runtimeMemoryScope = fallbackDash(
@@ -1815,7 +1980,7 @@ export default function InterfacePage() {
     effectiveIprHandoff
       ? safeText(
           iprAccountSession?.memory?.persistenceMode,
-          "DATABASE_PERSISTENT"
+          "PROCESS_MEMORY_MVP"
         )
       : safeText(health?.memory?.persistenceMode, "PROCESS_MEMORY_MVP")
   );
@@ -1850,29 +2015,50 @@ export default function InterfacePage() {
     "not initialized"
   );
 
+  const runtimeOpcProof = fallbackDash(getOpcProof(lastAssistantPayload), "none");
+  const runtimeOpcChainHash = fallbackDash(getChainHash(lastAssistantPayload), "none");
+  const runtimeEngineHash = fallbackDash(getEngineHash(lastAssistantPayload), "none");
+  const runtimeLegalCertification = fallbackDash(
+    getLegalCertification(lastAssistantPayload || health),
+    "false"
+  );
+
+  const accessDecision =
+    effectiveIprHandoff?.access.decision ||
+    safeText(iprAccountSession?.access?.decision, "PENDING_SERVER_VALIDATION");
+
+  const certificateStatus =
+    effectiveIprHandoff?.certificate.certificate_status || "MISSING";
+
+  const certificateId =
+    effectiveIprHandoff?.certificate.certificate_id || "NO_CERTIFICATE";
+
+  const scope =
+    effectiveIprHandoff?.certificate.certificate_scope.join(", ") ||
+    "MATRIX_LIMITED";
+
   return (
     <main className="joker-page">
       <header className="joker-topbar">
         <div className="joker-brand">
           <div className="joker-logo">{JOKER_SIGIL}</div>
           <div>
-            <strong>JOKER-C2</strong>
+            <strong>AI JOKER-C2</strong>
             <span>HBCE governed AI runtime</span>
           </div>
         </div>
 
         <div className="joker-health">
-          <span className="joker-dot" />
-          <span>{safeText(health?.state, "CHECKING")}</span>
-          <span>{safeText(health?.model, getModel(health))}</span>
-          <span>{safeText(health?.identity?.ipr, "IPR-AI-0001")}</span>
-          <span>{humanIprLabel}</span>
-          <span>Memory: {runtimeMemoryScope}</span>
+          <StatusPill value={safeText(health?.state, "CHECKING")} />
+          <StatusPill label="Model" value={safeText(health?.model, getModel(health))} />
+          <StatusPill label="Runtime IPR" value={safeText(health?.identity?.ipr, "IPR-AI-0001")} />
+          <StatusPill label="Human IPR" value={humanIprLabel} />
+          <StatusPill label="Memory" value={runtimeMemoryScope} />
         </div>
 
         <div className="joker-top-actions">
           <button type="button" onClick={checkRuntime} disabled={isChecking}>
-            {isChecking ? "Check..." : "Runtime"}
+            {isChecking ? "Checking..." : "Runtime"}
           </button>
           <button
             type="button"
@@ -1887,120 +2073,74 @@ export default function InterfacePage() {
         </div>
       </header>
 
-      <section className="joker-identity-shell">
+      <section className="joker-hero">
+        <div className="joker-hero-copy">
+          <span className="joker-kicker">HERMETICUM B.C.E. S.r.l.</span>
+          <h1>Governed runtime dashboard</h1>
+          <p>
+            Interfaccia operativa per JOKER-C2: identità IPR, memoria IPR-bound,
+            continuità EVT, proof receipt OPC, MATRIX e boundary
+            <code> legalCertification=false</code>.
+          </p>
+        </div>
+
+        <div className="joker-hero-grid">
+          <MetricCard label="Event family" value={runtimeEventFamily} />
+          <MetricCard label="Human EVT" value={runtimeOperationalHumanEvt} />
+          <MetricCard label="AI EVT" value={runtimeOperationalAiEvt} />
+          <MetricCard label="Cycle" value={runtimeOperationalCycle} />
+          <MetricCard label="Monthly ref" value={runtimeMonthlyRef} />
+          <MetricCard label="OPC legal cert." value={runtimeLegalCertification} />
+        </div>
+      </section>
+
+      <section className="joker-dashboard">
         <div
           className={[
-            "joker-identity-card",
-            effectiveIprHandoff ? "joker-identity-card-active" : "",
-            iprHandoffError || iprAccountSessionError
-              ? "joker-identity-card-error"
-              : "",
-            runtimeMemoryScope === "IPR_BOUND" ? "joker-identity-card-memory" : ""
+            "joker-panel",
+            "joker-identity-panel",
+            effectiveIprHandoff ? "is-active" : "",
+            iprHandoffError || iprAccountSessionError ? "is-error" : ""
           ]
             .filter(Boolean)
             .join(" ")}
         >
-          <div>
-            <span className="joker-identity-kicker">
-              HBCE IPR Biological Subject
-            </span>
-            <strong>{subjectLabel}</strong>
-            <p>
-              {hasAccountSession
-                ? "IPR account session rilevata lato server. Il pannello usa la sessione persistente HBCE come fonte prioritaria e ricostruisce l'identità operativa anche senza handoff locale nel browser."
-                : effectiveIprHandoff
-                  ? "IPR handoff rilevato lato interfaccia. La validazione autorevole avviene in /api/chat; quando accettata, JOKER-C2 attiva MATRIX_ACTIVE e memoria IPR_BOUND."
-                  : "Nessun handoff IPR biologico o account session IPR rilevata. JOKER-C2 resta in modalità runtime generica fino a validazione server-side."}
-            </p>
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker">IPR biological subject</span>
+              <h2>{subjectLabel}</h2>
+            </div>
+            <StatusPill value={accessDecision} />
           </div>
 
-          <div className="joker-identity-grid">
-            <div>
-              <span>Runtime IPR</span>
-              <strong>IPR-AI-0001</strong>
-            </div>
-            <div>
-              <span>Human IPR</span>
-              <strong>{effectiveIprHandoff?.subject.ipr || "NOT_VERIFIED"}</strong>
-            </div>
-            <div>
-              <span>Certificate</span>
-              <strong>
-                {effectiveIprHandoff?.certificate.certificate_id ||
-                  "NO_CERTIFICATE"}
-              </strong>
-            </div>
-            <div>
-              <span>Status</span>
-              <strong>
-                {effectiveIprHandoff?.certificate.certificate_status ||
-                  "MISSING"}
-              </strong>
-            </div>
-            <div>
-              <span>Scope</span>
-              <strong>
-                {effectiveIprHandoff?.certificate.certificate_scope.join(", ") ||
-                  "MATRIX_LIMITED"}
-              </strong>
-            </div>
-            <div>
-              <span>MATRIX</span>
-              <strong>{runtimeMatrixState}</strong>
-            </div>
-            <div>
-              <span>Semantic memory</span>
-              <strong>{runtimeMemoryScope}</strong>
-            </div>
-            <div>
-              <span>Memory authority</span>
-              <strong>{runtimeMemoryAuthority}</strong>
-            </div>
-            <div>
-              <span>Memory mode</span>
-              <strong>{runtimeMemoryMode}</strong>
-            </div>
-            <div>
-              <span>Memory ID</span>
-              <strong>{runtimeMemoryId}</strong>
-            </div>
-            <div>
-              <span>Memory key hash</span>
-              <strong>{runtimeMemoryKeyHash}</strong>
-            </div>
-            <div>
-              <span>Memory hash</span>
-              <strong>{runtimeMemoryHash}</strong>
-            </div>
-            <div>
-              <span>Last memory EVT</span>
-              <strong>{runtimeLastMemoryEvt}</strong>
-            </div>
-            <div>
-              <span>Last memory OPC</span>
-              <strong>{runtimeLastMemoryOpc}</strong>
-            </div>
-            <div>
-              <span>Last memory chain</span>
-              <strong>{runtimeLastMemoryChainHash}</strong>
-            </div>
-            <div>
-              <span>Source</span>
-              <strong>{effectiveIprHandoffSource}</strong>
-            </div>
+          <p>
+            {hasAccountSession
+              ? "IPR account session rilevata lato server. La sessione autenticata ha priorità sul trasporto client."
+              : effectiveIprHandoff
+                ? "IPR handoff rilevato lato interfaccia. La validazione autorevole avviene in /api/chat."
+                : "Nessun handoff IPR biologico o account session IPR rilevata. Il runtime resta limitato fino a validazione server-side."}
+          </p>
+
+          <div className="joker-metric-grid">
+            <MetricCard label="Runtime IPR" value="IPR-AI-0001" compact />
+            <MetricCard label="Human IPR" value={humanIprLabel} compact />
+            <MetricCard label="Certificate" value={certificateId} compact />
+            <MetricCard label="Cert. status" value={certificateStatus} compact />
+            <MetricCard label="Scope" value={scope} compact />
+            <MetricCard label="Source" value={effectiveIprHandoffSource} compact />
           </div>
 
           {iprAccountSessionError && !hasAccountSession ? (
-            <div className="joker-identity-warning">
+            <div className="joker-alert is-warn">
               IPR account session: {iprAccountSessionError}
             </div>
           ) : null}
 
           {iprHandoffError ? (
-            <div className="joker-identity-warning">{iprHandoffError}</div>
+            <div className="joker-alert is-bad">{iprHandoffError}</div>
           ) : null}
 
-          <div className="joker-identity-actions">
+          <div className="joker-panel-actions">
             <button
               type="button"
               onClick={() => void refreshIdentityContext()}
@@ -2019,8 +2159,58 @@ export default function InterfacePage() {
               onClick={() => void sendMessage("sai chi sono?")}
               disabled={isSending}
             >
-              Test IPR memory
+              Test recognition
             </button>
+          </div>
+        </div>
+
+        <div className="joker-panel">
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker">Runtime memory</span>
+              <h2>IPR-bound continuity</h2>
+            </div>
+            <StatusPill value={runtimeMemoryScope} />
+          </div>
+
+          <p>
+            La memoria corrente preserva continuità operativa. Non autorizza
+            richieste future, non abbassa il rischio e non sostituisce policy
+            review, fail-closed o supervisione umana.
+          </p>
+
+          <div className="joker-metric-grid">
+            <MetricCard label="MATRIX" value={runtimeMatrixState} compact />
+            <MetricCard label="Authority" value={runtimeMemoryAuthority} compact />
+            <MetricCard label="Persistence" value={runtimeMemoryMode} compact />
+            <MetricCard label="Memory ID" value={runtimeMemoryId} compact />
+            <MetricCard label="Memory key hash" value={runtimeMemoryKeyHash} compact />
+            <MetricCard label="Memory hash" value={runtimeMemoryHash} compact />
+          </div>
+        </div>
+
+        <div className="joker-panel">
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker">EVT / OPC proof</span>
+              <h2>Audit visibility</h2>
+            </div>
+            <StatusPill value="technical proof" />
+          </div>
+
+          <p>
+            OPC resta ricevuta tecnica di prova/audit. Non è certificazione
+            legale, non è marca temporale qualificata e non è validazione di
+            autorità pubblica.
+          </p>
+
+          <div className="joker-metric-grid">
+            <MetricCard label="Last memory EVT" value={runtimeLastMemoryEvt} compact />
+            <MetricCard label="Last memory OPC" value={runtimeLastMemoryOpc} compact />
+            <MetricCard label="Memory chain" value={runtimeLastMemoryChainHash} compact />
+            <MetricCard label="Current OPC" value={runtimeOpcProof} compact />
+            <MetricCard label="OPC chain" value={runtimeOpcChainHash} compact />
+            <MetricCard label="Engine hash" value={runtimeEngineHash} compact />
           </div>
         </div>
       </section>
@@ -2029,13 +2219,13 @@ export default function InterfacePage() {
         {messages.length === 0 ? (
           <div className="joker-empty">
             <div className="joker-empty-logo">{JOKER_SIGIL}</div>
-            <h1>AI JOKER-C2</h1>
+            <span className="joker-kicker">AI JOKER-C2</span>
+            <h2>Runtime operativo pronto</h2>
             <p>
-              Interfaccia chat classica. Scrivi sotto, ricevi la risposta qui.
-              Il runtime resta governato da HBCE: IPR, EVT, OPC, MATRIX,
-              audit, fail-closed e memoria IPR-bound. Il riconoscimento
-              biologico usa prima la sessione IPR persistente server-side,
-              poi l'eventuale handoff locale.
+              Scrivi sotto o usa un prompt rapido. La chat lavora dentro il
+              perimetro HBCE: IPR, EVT, OPC, MATRIX, memoria IPR-bound, audit e
+              fail-closed. Finalmente una chat che sa almeno chi deve essere
+              responsabile del caos.
             </p>
 
             <div className="joker-prompt-grid">
@@ -2071,8 +2261,11 @@ export default function InterfacePage() {
                 <div className="joker-message-avatar">{JOKER_SIGIL}</div>
                 <div className="joker-message-body">
                   <div className="joker-message-head">
-                    <strong>JOKER-C2</strong>
-                    <span>running</span>
+                    <div>
+                      <strong>JOKER-C2</strong>
+                      <span>running governed operation</span>
+                    </div>
+                    <time>processing</time>
                   </div>
                   <div className="joker-thinking">
                     <span />
@@ -2089,8 +2282,10 @@ export default function InterfacePage() {
       </section>
 
       <section className="joker-composer-shell">
-        {error ? <div className="joker-error">{error}</div> : null}
-        {copied ? <div className="joker-copied">Risposta copiata.</div> : null}
+        {error ? <div className="joker-alert is-bad composer-alert">{error}</div> : null}
+        {copied ? (
+          <div className="joker-alert is-good composer-alert">Risposta copiata.</div>
+        ) : null}
 
         {files.length > 0 ? (
           <div className="joker-file-bar">
@@ -2160,11 +2355,12 @@ export default function InterfacePage() {
         .joker-page {
           min-height: 100vh;
           display: grid;
-          grid-template-rows: auto auto 1fr auto;
+          grid-template-rows: auto auto auto 1fr auto;
           background:
-            radial-gradient(circle at 20% 0%, rgba(34, 211, 238, 0.12), transparent 34%),
-            radial-gradient(circle at 80% 8%, rgba(99, 102, 241, 0.13), transparent 34%),
-            linear-gradient(180deg, #020617 0%, #0f172a 100%);
+            radial-gradient(circle at 18% -8%, rgba(14, 165, 233, 0.18), transparent 34%),
+            radial-gradient(circle at 84% 0%, rgba(99, 102, 241, 0.16), transparent 32%),
+            radial-gradient(circle at 50% 110%, rgba(34, 197, 94, 0.08), transparent 30%),
+            linear-gradient(180deg, #020617 0%, #07111f 42%, #0f172a 100%);
           color: #e5edf8;
           font-family:
             Inter,
@@ -2179,15 +2375,15 @@ export default function InterfacePage() {
         .joker-topbar {
           position: sticky;
           top: 0;
-          z-index: 10;
+          z-index: 30;
           display: grid;
-          grid-template-columns: minmax(180px, 1fr) auto auto;
+          grid-template-columns: minmax(210px, 0.75fr) minmax(0, 1.3fr) auto;
           gap: 14px;
           align-items: center;
           padding: 14px 22px;
-          border-bottom: 1px solid rgba(51, 65, 85, 0.82);
-          background: rgba(2, 6, 23, 0.86);
-          backdrop-filter: blur(18px);
+          border-bottom: 1px solid rgba(71, 85, 105, 0.55);
+          background: rgba(2, 6, 23, 0.78);
+          backdrop-filter: blur(22px);
         }
 
         .joker-brand {
@@ -2202,31 +2398,36 @@ export default function InterfacePage() {
         .joker-message-avatar {
           display: grid;
           place-items: center;
-          width: 38px;
-          height: 38px;
-          border-radius: 14px;
-          background: linear-gradient(135deg, #06b6d4, #6366f1);
+          width: 40px;
+          height: 40px;
+          border-radius: 16px;
+          background:
+            linear-gradient(135deg, rgba(6, 182, 212, 1), rgba(79, 70, 229, 1));
           color: white;
-          font-weight: 900;
-          box-shadow: 0 10px 28px rgba(34, 211, 238, 0.22);
+          font-weight: 950;
+          box-shadow:
+            0 12px 30px rgba(34, 211, 238, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.22);
         }
 
         .joker-logo,
         .joker-empty-logo {
-          font-size: 23px;
+          font-size: 24px;
           line-height: 1;
         }
 
         .joker-message-avatar {
+          position: sticky;
+          top: 92px;
           font-size: 20px;
           line-height: 1;
         }
 
         .joker-empty-logo {
-          width: 68px;
-          height: 68px;
-          border-radius: 24px;
-          font-size: 34px;
+          width: 76px;
+          height: 76px;
+          border-radius: 28px;
+          font-size: 36px;
         }
 
         .joker-brand strong {
@@ -2243,44 +2444,27 @@ export default function InterfacePage() {
           font-size: 12px;
         }
 
-        .joker-health {
+        .joker-health,
+        .joker-runtime-strip {
           display: flex;
           align-items: center;
           gap: 8px;
           min-width: 0;
-          padding: 8px 10px;
-          border: 1px solid rgba(51, 65, 85, 0.92);
-          border-radius: 999px;
-          background: rgba(15, 23, 42, 0.74);
-          color: #cbd5e1;
-          font-size: 12px;
-          white-space: nowrap;
+          overflow: auto;
         }
 
-        .joker-health span:not(.joker-dot) {
-          max-width: 180px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .joker-dot {
-          width: 9px;
-          height: 9px;
-          border-radius: 999px;
-          background: #22c55e;
-          box-shadow: 0 0 18px rgba(34, 197, 94, 0.85);
-        }
-
-        .joker-top-actions {
+        .joker-top-actions,
+        .joker-panel-actions {
           display: flex;
+          flex-wrap: wrap;
           gap: 8px;
           align-items: center;
         }
 
         button {
           appearance: none;
-          border: 1px solid rgba(51, 65, 85, 0.96);
-          background: rgba(15, 23, 42, 0.88);
+          border: 1px solid rgba(71, 85, 105, 0.78);
+          background: rgba(15, 23, 42, 0.78);
           color: #dbeafe;
           border-radius: 999px;
           cursor: pointer;
@@ -2292,112 +2476,234 @@ export default function InterfacePage() {
             background 160ms ease,
             color 160ms ease,
             transform 160ms ease,
-            opacity 160ms ease;
+            opacity 160ms ease,
+            box-shadow 160ms ease;
         }
 
         button:hover {
           border-color: rgba(34, 211, 238, 0.72);
-          color: #cffafe;
-          background: rgba(8, 47, 73, 0.52);
+          color: #eff6ff;
+          background: rgba(8, 47, 73, 0.72);
+          box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.08);
         }
 
         button:disabled {
           cursor: not-allowed;
           opacity: 0.52;
           transform: none;
+          box-shadow: none;
         }
 
-        .joker-top-actions button {
+        .joker-top-actions button,
+        .joker-panel-actions button {
           padding: 8px 12px;
         }
 
-        .joker-identity-shell {
-          padding: 14px 18px 0;
+        .joker-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          max-width: 100%;
+          padding: 6px 10px;
+          border: 1px solid rgba(71, 85, 105, 0.68);
+          border-radius: 999px;
+          background: rgba(15, 23, 42, 0.74);
+          color: #cbd5e1;
+          font-size: 11px;
+          font-weight: 760;
+          line-height: 1.1;
+          white-space: nowrap;
         }
 
-        .joker-identity-card {
-          width: min(1120px, 100%);
-          margin: 0 auto;
+        .joker-pill b {
+          color: #64748b;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+        }
+
+        .joker-pill.is-good {
+          border-color: rgba(34, 197, 94, 0.36);
+          background: rgba(20, 83, 45, 0.28);
+          color: #bbf7d0;
+        }
+
+        .joker-pill.is-warn {
+          border-color: rgba(251, 191, 36, 0.36);
+          background: rgba(120, 53, 15, 0.22);
+          color: #fde68a;
+        }
+
+        .joker-pill.is-bad {
+          border-color: rgba(248, 113, 113, 0.38);
+          background: rgba(127, 29, 29, 0.26);
+          color: #fecaca;
+        }
+
+        .joker-hero {
+          width: min(1180px, calc(100% - 36px));
+          margin: 22px auto 0;
           display: grid;
-          grid-template-columns: minmax(0, 1.05fr) minmax(360px, 1.95fr);
+          grid-template-columns: minmax(0, 0.95fr) minmax(420px, 1.05fr);
           gap: 16px;
-          padding: 16px;
-          border: 1px solid rgba(51, 65, 85, 0.82);
-          border-radius: 24px;
-          background: rgba(2, 6, 23, 0.42);
-          box-shadow: 0 18px 58px rgba(0, 0, 0, 0.18);
+          align-items: stretch;
         }
 
-        .joker-identity-card-active {
-          border-color: rgba(34, 211, 238, 0.36);
+        .joker-hero-copy,
+        .joker-panel {
+          border: 1px solid rgba(71, 85, 105, 0.54);
+          border-radius: 28px;
           background:
-            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.12), transparent 32%),
-            rgba(2, 6, 23, 0.5);
-        }
-
-        .joker-identity-card-memory {
-          border-color: rgba(34, 197, 94, 0.42);
+            linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.55)),
+            rgba(2, 6, 23, 0.58);
           box-shadow:
-            0 18px 58px rgba(0, 0, 0, 0.18),
-            0 0 32px rgba(34, 197, 94, 0.08);
+            0 24px 70px rgba(0, 0, 0, 0.28),
+            inset 0 1px 0 rgba(255, 255, 255, 0.04);
         }
 
-        .joker-identity-card-error {
-          border-color: rgba(248, 113, 113, 0.36);
+        .joker-hero-copy {
+          padding: 26px;
         }
 
-        .joker-identity-kicker {
-          display: block;
+        .joker-kicker {
+          display: inline-flex;
           color: #67e8f9;
           font-size: 11px;
-          font-weight: 900;
-          letter-spacing: 0.11em;
+          font-weight: 950;
+          letter-spacing: 0.13em;
           text-transform: uppercase;
         }
 
-        .joker-identity-card strong {
-          display: block;
-          margin-top: 5px;
+        .joker-hero h1,
+        .joker-empty h2 {
+          margin: 10px 0 0;
+          color: #ffffff;
+          font-size: clamp(36px, 5.8vw, 62px);
+          line-height: 0.95;
+          letter-spacing: -0.065em;
+        }
+
+        .joker-hero p,
+        .joker-panel p,
+        .joker-empty p {
+          margin: 14px 0 0;
+          color: #94a3b8;
+          font-size: 14px;
+          line-height: 1.7;
+        }
+
+        .joker-hero code {
+          color: #bae6fd;
+          background: rgba(8, 47, 73, 0.48);
+          border: 1px solid rgba(34, 211, 238, 0.2);
+          border-radius: 8px;
+          padding: 1px 5px;
+        }
+
+        .joker-hero-grid,
+        .joker-metric-grid,
+        .joker-details-grid {
+          display: grid;
+          gap: 10px;
+        }
+
+        .joker-hero-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .joker-dashboard {
+          width: min(1180px, calc(100% - 36px));
+          margin: 16px auto 0;
+          display: grid;
+          grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr) minmax(0, 0.95fr);
+          gap: 16px;
+        }
+
+        .joker-panel {
+          min-width: 0;
+          padding: 18px;
+        }
+
+        .joker-panel.is-active {
+          border-color: rgba(34, 211, 238, 0.34);
+          background:
+            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.13), transparent 30%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.55));
+        }
+
+        .joker-panel.is-error {
+          border-color: rgba(248, 113, 113, 0.42);
+        }
+
+        .joker-panel-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .joker-panel h2 {
+          margin: 4px 0 0;
           color: #f8fafc;
-          font-size: 15px;
+          font-size: 19px;
+          letter-spacing: -0.025em;
+          line-height: 1.1;
           overflow-wrap: anywhere;
         }
 
-        .joker-identity-card p {
-          margin: 8px 0 0;
-          color: #94a3b8;
-          font-size: 13px;
-          line-height: 1.55;
+        .joker-metric-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          margin-top: 14px;
         }
 
-        .joker-identity-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 8px;
-        }
-
-        .joker-identity-grid div {
+        .joker-metric {
           min-width: 0;
-          padding: 9px;
-          border: 1px solid rgba(51, 65, 85, 0.7);
-          border-radius: 14px;
-          background: rgba(15, 23, 42, 0.62);
+          padding: 13px;
+          border: 1px solid rgba(71, 85, 105, 0.58);
+          border-radius: 18px;
+          background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.52));
         }
 
-        .joker-identity-grid span {
+        .joker-hero-grid .joker-metric {
+          min-height: 92px;
+        }
+
+        .joker-metric.is-compact {
+          padding: 11px;
+        }
+
+        .joker-metric.is-good {
+          border-color: rgba(34, 197, 94, 0.28);
+          background: rgba(20, 83, 45, 0.18);
+        }
+
+        .joker-metric.is-warn {
+          border-color: rgba(251, 191, 36, 0.26);
+          background: rgba(120, 53, 15, 0.16);
+        }
+
+        .joker-metric.is-bad {
+          border-color: rgba(248, 113, 113, 0.28);
+          background: rgba(127, 29, 29, 0.18);
+        }
+
+        .joker-metric span {
           display: block;
           color: #64748b;
-          font-size: 9px;
-          font-weight: 900;
-          letter-spacing: 0.08em;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0.09em;
           text-transform: uppercase;
         }
 
-        .joker-identity-grid strong {
-          margin-top: 5px;
+        .joker-metric strong {
+          display: block;
+          margin-top: 8px;
           color: #e2e8f0;
-          font-size: 11px;
+          font-size: 13px;
           line-height: 1.35;
+          overflow-wrap: anywhere;
           font-family:
             ui-monospace,
             SFMono-Regular,
@@ -2409,37 +2715,45 @@ export default function InterfacePage() {
             monospace;
         }
 
-        .joker-identity-warning {
-          grid-column: 1 / -1;
-          padding: 10px 12px;
-          border: 1px solid rgba(248, 113, 113, 0.34);
-          border-radius: 14px;
+        .joker-alert {
+          margin-top: 12px;
+          padding: 11px 12px;
+          border-radius: 16px;
+          font-size: 12px;
+          line-height: 1.45;
+        }
+
+        .joker-alert.is-good {
+          color: #bbf7d0;
+          border: 1px solid rgba(34, 197, 94, 0.35);
+          background: rgba(20, 83, 45, 0.24);
+        }
+
+        .joker-alert.is-warn {
+          color: #fde68a;
+          border: 1px solid rgba(251, 191, 36, 0.35);
+          background: rgba(120, 53, 15, 0.22);
+        }
+
+        .joker-alert.is-bad {
           color: #fecaca;
-          background: rgba(127, 29, 29, 0.24);
-          font-size: 12px;
+          border: 1px solid rgba(239, 68, 68, 0.35);
+          background: rgba(127, 29, 29, 0.26);
         }
 
-        .joker-identity-actions {
-          grid-column: 1 / -1;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-
-        .joker-identity-actions button {
-          padding: 7px 10px;
-          font-size: 12px;
+        .joker-panel-actions {
+          margin-top: 14px;
         }
 
         .joker-chat {
           min-height: 0;
           overflow-y: auto;
-          padding: 34px 18px 22px;
+          padding: 30px 18px 22px;
         }
 
         .joker-empty {
-          width: min(820px, 100%);
-          min-height: calc(100vh - 390px);
+          width: min(860px, 100%);
+          min-height: 420px;
           margin: 0 auto;
           display: flex;
           flex-direction: column;
@@ -2448,37 +2762,30 @@ export default function InterfacePage() {
           text-align: center;
         }
 
-        .joker-empty h1 {
-          margin: 20px 0 0;
-          color: #ffffff;
-          font-size: clamp(34px, 6vw, 58px);
-          line-height: 1;
-          letter-spacing: -0.06em;
+        .joker-empty h2 {
+          font-size: clamp(32px, 5vw, 54px);
         }
 
         .joker-empty p {
-          max-width: 720px;
-          margin: 16px 0 0;
-          color: #94a3b8;
-          font-size: 16px;
-          line-height: 1.68;
+          max-width: 760px;
+          font-size: 15px;
         }
 
         .joker-prompt-grid {
-          width: min(760px, 100%);
+          width: min(820px, 100%);
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 10px;
-          margin-top: 28px;
+          margin-top: 26px;
         }
 
         .joker-prompt-grid button {
-          min-height: 54px;
-          padding: 12px 14px;
+          min-height: 56px;
+          padding: 13px 14px;
           border-radius: 18px;
           text-align: left;
           color: #cbd5e1;
-          background: rgba(2, 6, 23, 0.48);
+          background: rgba(2, 6, 23, 0.42);
         }
 
         .joker-default-prompt {
@@ -2489,7 +2796,7 @@ export default function InterfacePage() {
         }
 
         .joker-message-list {
-          width: min(980px, 100%);
+          width: min(1010px, 100%);
           margin: 0 auto;
           display: grid;
           gap: 20px;
@@ -2498,7 +2805,7 @@ export default function InterfacePage() {
 
         .joker-message {
           display: grid;
-          grid-template-columns: 40px minmax(0, 1fr);
+          grid-template-columns: 42px minmax(0, 1fr);
           gap: 14px;
           align-items: flex-start;
         }
@@ -2517,16 +2824,18 @@ export default function InterfacePage() {
 
         .joker-message-body {
           min-width: 0;
-          border: 1px solid rgba(51, 65, 85, 0.78);
-          border-radius: 22px;
-          background: rgba(2, 6, 23, 0.58);
-          padding: 16px;
-          box-shadow: 0 16px 38px rgba(0, 0, 0, 0.18);
+          border: 1px solid rgba(71, 85, 105, 0.55);
+          border-radius: 24px;
+          background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.52));
+          padding: 17px;
+          box-shadow: 0 18px 44px rgba(0, 0, 0, 0.2);
         }
 
         .joker-message-user .joker-message-body {
-          background: rgba(8, 145, 178, 0.12);
-          border-color: rgba(34, 211, 238, 0.26);
+          background:
+            linear-gradient(180deg, rgba(8, 145, 178, 0.16), rgba(2, 6, 23, 0.46));
+          border-color: rgba(34, 211, 238, 0.28);
         }
 
         .joker-message-system .joker-message-body {
@@ -2536,21 +2845,25 @@ export default function InterfacePage() {
 
         .joker-message-head {
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: space-between;
           gap: 10px;
           margin-bottom: 10px;
         }
 
         .joker-message-head strong {
+          display: block;
           color: #f8fafc;
           font-size: 13px;
           letter-spacing: 0.02em;
         }
 
-        .joker-message-head span {
+        .joker-message-head span,
+        .joker-message-head time {
+          display: block;
           color: #64748b;
           font-size: 12px;
+          line-height: 1.35;
         }
 
         .joker-message-text {
@@ -2564,32 +2877,10 @@ export default function InterfacePage() {
         }
 
         .joker-runtime-strip {
-          display: flex;
           flex-wrap: wrap;
-          gap: 8px;
-          margin-top: 14px;
-          padding-top: 14px;
-          border-top: 1px solid rgba(51, 65, 85, 0.72);
-        }
-
-        .joker-runtime-strip span {
-          max-width: 100%;
-          padding: 5px 9px;
-          border: 1px solid rgba(71, 85, 105, 0.65);
-          border-radius: 999px;
-          color: #a5f3fc;
-          background: rgba(8, 47, 73, 0.28);
-          font-size: 11px;
-          font-family:
-            ui-monospace,
-            SFMono-Regular,
-            Menlo,
-            Monaco,
-            Consolas,
-            "Liberation Mono",
-            "Courier New",
-            monospace;
-          overflow-wrap: anywhere;
+          margin-top: 15px;
+          padding-top: 15px;
+          border-top: 1px solid rgba(71, 85, 105, 0.55);
         }
 
         .joker-message-actions {
@@ -2597,11 +2888,11 @@ export default function InterfacePage() {
           flex-wrap: wrap;
           align-items: center;
           gap: 10px;
-          margin-top: 12px;
+          margin-top: 13px;
         }
 
         .joker-message-actions button {
-          padding: 7px 10px;
+          padding: 8px 11px;
           font-size: 12px;
         }
 
@@ -2613,58 +2904,21 @@ export default function InterfacePage() {
           cursor: pointer;
           color: #94a3b8;
           font-size: 12px;
-          font-weight: 800;
+          font-weight: 850;
         }
 
         .joker-details-grid {
-          display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 10px;
           margin-top: 12px;
-        }
-
-        .joker-details-grid div {
-          min-width: 0;
-          padding: 10px;
-          border: 1px solid rgba(51, 65, 85, 0.72);
-          border-radius: 14px;
-          background: rgba(15, 23, 42, 0.68);
-        }
-
-        .joker-details-grid span {
-          display: block;
-          color: #64748b;
-          font-size: 10px;
-          font-weight: 850;
-          letter-spacing: 0.09em;
-          text-transform: uppercase;
-        }
-
-        .joker-details-grid strong {
-          display: block;
-          margin-top: 5px;
-          color: #e2e8f0;
-          font-size: 12px;
-          line-height: 1.45;
-          overflow-wrap: anywhere;
-          font-family:
-            ui-monospace,
-            SFMono-Regular,
-            Menlo,
-            Monaco,
-            Consolas,
-            "Liberation Mono",
-            "Courier New",
-            monospace;
         }
 
         .joker-json {
           margin: 12px 0 0;
-          max-height: 360px;
+          max-height: 380px;
           overflow: auto;
-          padding: 12px;
-          border: 1px solid rgba(51, 65, 85, 0.76);
-          border-radius: 14px;
+          padding: 13px;
+          border: 1px solid rgba(71, 85, 105, 0.58);
+          border-radius: 16px;
           background: rgba(0, 0, 0, 0.28);
           color: #cbd5e1;
           font-size: 11px;
@@ -2713,39 +2967,22 @@ export default function InterfacePage() {
         .joker-composer-shell {
           position: sticky;
           bottom: 0;
-          z-index: 20;
+          z-index: 25;
           padding: 14px 18px 18px;
-          border-top: 1px solid rgba(51, 65, 85, 0.82);
+          border-top: 1px solid rgba(71, 85, 105, 0.55);
           background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(2, 6, 23, 0.92) 18%),
-            rgba(2, 6, 23, 0.92);
-          backdrop-filter: blur(18px);
+            linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(2, 6, 23, 0.94) 18%),
+            rgba(2, 6, 23, 0.94);
+          backdrop-filter: blur(22px);
         }
 
-        .joker-error,
-        .joker-copied {
-          width: min(980px, 100%);
+        .composer-alert {
+          width: min(1010px, 100%);
           margin: 0 auto 10px;
-          padding: 10px 12px;
-          border-radius: 14px;
-          font-size: 13px;
-          line-height: 1.4;
-        }
-
-        .joker-error {
-          color: #fecaca;
-          border: 1px solid rgba(239, 68, 68, 0.35);
-          background: rgba(127, 29, 29, 0.26);
-        }
-
-        .joker-copied {
-          color: #bbf7d0;
-          border: 1px solid rgba(34, 197, 94, 0.35);
-          background: rgba(20, 83, 45, 0.26);
         }
 
         .joker-file-bar {
-          width: min(980px, 100%);
+          width: min(1010px, 100%);
           margin: 0 auto 10px;
           display: flex;
           flex-wrap: wrap;
@@ -2759,9 +2996,9 @@ export default function InterfacePage() {
           gap: 8px;
           max-width: 100%;
           padding: 7px 10px;
-          border: 1px solid rgba(51, 65, 85, 0.86);
+          border: 1px solid rgba(71, 85, 105, 0.78);
           border-radius: 999px;
-          background: rgba(15, 23, 42, 0.86);
+          background: rgba(15, 23, 42, 0.82);
           color: #cbd5e1;
           font-size: 12px;
         }
@@ -2778,7 +3015,7 @@ export default function InterfacePage() {
           padding: 0;
           width: 18px;
           height: 18px;
-          background: rgba(71, 85, 105, 0.7);
+          background: rgba(71, 85, 105, 0.72);
           color: #e2e8f0;
         }
 
@@ -2787,23 +3024,24 @@ export default function InterfacePage() {
         }
 
         .joker-composer {
-          width: min(980px, 100%);
+          width: min(1010px, 100%);
           margin: 0 auto;
           display: grid;
           grid-template-columns: auto minmax(0, 1fr) auto;
           align-items: end;
           gap: 10px;
           padding: 10px;
-          border: 1px solid rgba(51, 65, 85, 0.96);
-          border-radius: 28px;
-          background: rgba(15, 23, 42, 0.96);
-          box-shadow: 0 18px 58px rgba(0, 0, 0, 0.34);
+          border: 1px solid rgba(71, 85, 105, 0.72);
+          border-radius: 30px;
+          background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.96));
+          box-shadow: 0 18px 58px rgba(0, 0, 0, 0.38);
         }
 
         .joker-icon-button,
         .joker-send {
-          width: 38px;
-          height: 38px;
+          width: 40px;
+          height: 40px;
           display: grid;
           place-items: center;
           padding: 0;
@@ -2837,7 +3075,7 @@ export default function InterfacePage() {
         }
 
         .joker-footer-line {
-          width: min(980px, 100%);
+          width: min(1010px, 100%);
           margin: 8px auto 0;
           display: flex;
           justify-content: space-between;
@@ -2847,23 +3085,7 @@ export default function InterfacePage() {
           line-height: 1.4;
         }
 
-        @media (max-width: 1140px) {
-          .joker-identity-card {
-            grid-template-columns: 1fr;
-          }
-
-          .joker-identity-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
-        }
-
-        @media (max-width: 1040px) {
-          .joker-identity-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-        }
-
-        @media (max-width: 860px) {
+        @media (max-width: 1180px) {
           .joker-topbar {
             grid-template-columns: 1fr;
             align-items: stretch;
@@ -2871,18 +3093,26 @@ export default function InterfacePage() {
 
           .joker-health {
             justify-content: flex-start;
-            overflow: auto;
           }
 
-          .joker-top-actions {
-            justify-content: flex-start;
-          }
-
-          .joker-prompt-grid {
+          .joker-hero,
+          .joker-dashboard {
             grid-template-columns: 1fr;
           }
 
+          .joker-hero-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 860px) {
+          .joker-hero-grid,
+          .joker-metric-grid,
           .joker-details-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .joker-prompt-grid {
             grid-template-columns: 1fr;
           }
         }
@@ -2892,16 +3122,20 @@ export default function InterfacePage() {
             padding: 12px;
           }
 
-          .joker-identity-shell {
-            padding: 10px 10px 0;
+          .joker-hero,
+          .joker-dashboard {
+            width: calc(100% - 20px);
           }
 
-          .joker-identity-card {
-            border-radius: 18px;
-            padding: 12px;
+          .joker-hero-copy,
+          .joker-panel {
+            border-radius: 22px;
+            padding: 15px;
           }
 
-          .joker-identity-grid {
+          .joker-hero-grid,
+          .joker-metric-grid,
+          .joker-details-grid {
             grid-template-columns: 1fr;
           }
 
@@ -2915,13 +3149,14 @@ export default function InterfacePage() {
           }
 
           .joker-message-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 12px;
+            position: static;
+            width: 34px;
+            height: 34px;
+            border-radius: 13px;
           }
 
           .joker-message-body {
-            border-radius: 18px;
+            border-radius: 20px;
             padding: 14px;
           }
 
@@ -2931,10 +3166,6 @@ export default function InterfacePage() {
 
           .joker-footer-line {
             flex-direction: column;
-          }
-
-          .joker-empty {
-            min-height: calc(100vh - 430px);
           }
         }
       `}</style>
