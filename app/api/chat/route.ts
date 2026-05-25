@@ -409,6 +409,83 @@ const IPR_RECOGNITION_BOUNDARY =
 
 const MEMORY_BOUNDARY = IPR_BOUND_MEMORY_BOUNDARY;
 
+const CYBER_PROHIBITED_TERMS = [
+  "rubare password",
+  "steal password",
+  "credential theft",
+  "rubare credenziali",
+  "keylogger",
+  "malware",
+  "ransomware",
+  "phishing operativo",
+  "phishing campaign",
+  "crea phishing",
+  "exploit reale",
+  "exploit funzionante",
+  "sfruttare una vulnerabilita reale",
+  "sfruttare una vulnerabilità reale",
+  "colpire target",
+  "target non autorizzato",
+  "non autorizzato",
+  "weaponize",
+  "bypass edr",
+  "evadere antivirus",
+  "evadere firewall",
+  "persistence",
+  "persistenza",
+  "privilege escalation",
+  "lateral movement",
+  "esfiltrazione",
+  "exfiltration"
+];
+
+const CYBER_SECURITY_SIGNAL_TERMS = [
+  ...CYBER_PROHIBITED_TERMS,
+  "cyber",
+  "sicurezza",
+  "security",
+  "vulnerabilita",
+  "vulnerabilità",
+  "incident",
+  "incident response",
+  "hardening",
+  "remediation",
+  "mitigation",
+  "mitigazione",
+  "detection",
+  "secure coding",
+  "responsible disclosure",
+  "threat modeling",
+  "prompt injection",
+  "data leakage",
+  "secrets",
+  "chiavi private",
+  "credenziali"
+];
+
+const CYBER_DEFENSIVE_CONTEXT_TERMS = [
+  "difensivo",
+  "defensive",
+  "audit",
+  "governance",
+  "mitigazione",
+  "mitigation",
+  "hardening",
+  "remediation",
+  "incident response",
+  "responsible disclosure",
+  "authorized",
+  "autorizzato",
+  "autorizzata",
+  "sicuro",
+  "safe",
+  "compliance",
+  "risk assessment",
+  "threat modeling",
+  "security review",
+  "revisione autorizzata"
+];
+
 const DOCUMENT_BATCH_ITEMS: DocumentBatchItem[] = [
   {
     index: 1,
@@ -687,6 +764,14 @@ function normalizeRuntimeText(value: string): string {
 
 function includesAny(text: string, terms: string[]): boolean {
   return terms.some((term) => text.includes(term));
+}
+
+function hasCyberSecuritySignal(text: string): boolean {
+  return includesAny(text, CYBER_SECURITY_SIGNAL_TERMS);
+}
+
+function hasProhibitedCyberSignal(text: string): boolean {
+  return includesAny(text, CYBER_PROHIBITED_TERMS);
 }
 
 function mergeUniqueStrings(existing: string[], incoming: string[], limit: number): string[] {
@@ -1119,6 +1204,10 @@ function detectProjectDomain(message: string, files: NormalizedFile[]): string {
     return "HBCE_ECOSISTEMA_AI";
   }
 
+  if (hasCyberSecuritySignal(text)) {
+    return "HBCE_ECOSISTEMA_AI";
+  }
+
   if (
     includesAny(text, [
       "matrix",
@@ -1175,14 +1264,15 @@ function detectContextClass(message: string, files: NormalizedFile[], projectDom
   if (projectDomain === "U.S.E.") return "USE";
   if (projectDomain === "APOKALYPSIS") return "APOKALYPSIS";
   if (projectDomain === "CORPUS_ESOTEROLOGIA_ERMETICA") return "CORPUS";
+  if (projectDomain === "HBCE_ECOSISTEMA_AI" && hasCyberSecuritySignal(text)) return "SECURITY";
   if (projectDomain === "HBCE_ECOSISTEMA_AI") return "HBCE_ECOSISTEMA_AI";
+
+  if (hasCyberSecuritySignal(text)) {
+    return "SECURITY";
+  }
 
   if (includesAny(text, ["github", "vercel", "route.ts", "typescript", "next.js", "build", "deploy"])) {
     return "GITHUB";
-  }
-
-  if (includesAny(text, ["sicurezza", "cyber", "vulnerabilita", "vulnerabilità", "incident"])) {
-    return "SECURITY";
   }
 
   if (includesAny(text, ["governance", "compliance", "audit", "proof", "opc"])) {
@@ -1229,8 +1319,8 @@ function detectIntentClass(message: string): string {
 function detectHbceModule(message: string, projectDomain: string, contextClass: string): string {
   const text = normalizeRuntimeText(message);
 
+  if (hasCyberSecuritySignal(text)) return "CyberGlobal";
   if (includesAny(text, ["opc", "proof", "audit", "receipt"])) return "OPC";
-  if (includesAny(text, ["cyber", "sicurezza", "incident", "vulnerabilita", "vulnerabilità"])) return "CyberGlobal";
   if (includesAny(text, ["metaexchange", "scambio"])) return "MetaExchange";
   if (includesAny(text, ["iospace", "interfaccia", "visibilita", "visibilità"])) return "IOspace";
   if (includesAny(text, ["neuroloop", "validazione", "feedback"])) return "NeuroLoop";
@@ -1352,60 +1442,12 @@ function isSafeRedTeamRequest(message: string): boolean {
 function isDefensiveContext(message: string): boolean {
   const text = normalizeRuntimeText(message);
 
-  return includesAny(text, [
-    "difensivo",
-    "defensive",
-    "audit",
-    "governance",
-    "mitigazione",
-    "mitigation",
-    "hardening",
-    "remediation",
-    "incident response",
-    "responsible disclosure",
-    "authorized",
-    "autorizzato",
-    "autorizzata",
-    "sicuro",
-    "safe",
-    "compliance",
-    "risk assessment",
-    "threat modeling"
-  ]);
+  return includesAny(text, CYBER_DEFENSIVE_CONTEXT_TERMS);
 }
 
 function detectsProhibitedCyberRequest(message: string): boolean {
   const text = normalizeRuntimeText(message);
-
-  const unsafeCyberIntent = includesAny(text, [
-    "rubare password",
-    "steal password",
-    "credential theft",
-    "rubare credenziali",
-    "keylogger",
-    "malware",
-    "ransomware",
-    "phishing operativo",
-    "phishing campaign",
-    "crea phishing",
-    "exploit reale",
-    "exploit funzionante",
-    "sfruttare una vulnerabilita reale",
-    "sfruttare una vulnerabilità reale",
-    "colpire target",
-    "target non autorizzato",
-    "non autorizzato",
-    "weaponize",
-    "bypass edr",
-    "evadere antivirus",
-    "evadere firewall",
-    "persistence",
-    "persistenza",
-    "privilege escalation",
-    "lateral movement",
-    "esfiltrazione",
-    "exfiltration"
-  ]);
+  const unsafeCyberIntent = hasProhibitedCyberSignal(text);
 
   if (!unsafeCyberIntent) return false;
   if (isSafetyReviewPrompt(message)) return false;
@@ -2326,12 +2368,12 @@ function buildGovernanceFrame(input: {
 
   if (prohibited) {
     return {
-      contextClass,
+      contextClass: "SECURITY",
       intentClass,
-      projectDomain,
-      activeDomains: [projectDomain],
-      hbceModule,
-      activeModules,
+      projectDomain: "HBCE_ECOSISTEMA_AI",
+      activeDomains: ["HBCE_ECOSISTEMA_AI", "MATRIX"],
+      hbceModule: "CyberGlobal",
+      activeModules: getActiveModules("CyberGlobal", "HBCE_ECOSISTEMA_AI"),
       dataClass: "SECURITY_SENSITIVE",
       policyStatus: "PROHIBITED",
       policyOutcome: "PROHIBIT",
@@ -2350,7 +2392,8 @@ function buildGovernanceFrame(input: {
       userDeclaredGovernanceDetected,
       trustBoundary: METADATA_AUTHORITY_BOUNDARY,
       reasons: [
-        "Potentially unsafe operational security request detected.",
+        "Potentially unsafe operational cybersecurity request detected.",
+        "Runtime classification forced to SECURITY / CyberGlobal for prohibited cyber signals.",
         "Runtime is fail-closed for prohibited or weaponized content.",
         DEFENSIVE_ONLY_CYBER_BOUNDARY
       ]
@@ -2811,6 +2854,7 @@ function buildFallback(input: {
       "Posso aiutare solo in modalità sicura: analisi difensiva, hardening, mitigazione, responsible disclosure, audit, compliance, documentazione o revisione autorizzata.",
       "",
       `ProjectDomain: ${input.governance.projectDomain}`,
+      `ContextClass: ${input.governance.contextClass}`,
       `HbceModule: ${input.governance.hbceModule}`,
       `RiskClass: ${input.governance.riskClass}`,
       `PolicyStatus: ${input.governance.policyStatus}`,
@@ -3758,6 +3802,16 @@ export async function POST(req: NextRequest) {
         ]
       : [];
 
+  const cyberFacts =
+    governance.contextClass === "SECURITY" || governance.hbceModule === "CyberGlobal"
+      ? [
+          `Last cyber classification context: ${governance.contextClass}.`,
+          `Last cyber classification module: ${governance.hbceModule}.`,
+          "Cyber operations remain defensive-only and authorized-only.",
+          "Prohibited cyber signals are classified under SECURITY / CyberGlobal and blocked fail-closed when unsafe."
+        ]
+      : [];
+
   const memoryAfter = updateMemoryAfterCompletion({
     memory: memoryBefore,
     userMessage: body.message,
@@ -3778,6 +3832,7 @@ export async function POST(req: NextRequest) {
       `Last OPC proof: ${opcProof.proofId}.`,
       ...batchFacts,
       ...commercialFacts,
+      ...cyberFacts,
       ...degradedFacts
     ]
   });
