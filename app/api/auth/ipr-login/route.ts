@@ -22,6 +22,20 @@ import {
   getPublicSessionFromStoredSession
 } from "@/lib/ipr-session-store";
 
+import {
+  IPR_ACCOUNT_DATABASE_REQUIREMENT,
+  IPR_ACCOUNT_PROFILE_BOUNDARY,
+  IPR_ACCOUNT_STORE_BOUNDARY,
+  describeDefaultIprAccountStore,
+  getDefaultIprAccountStore,
+  toPublicIprAccountProfile
+} from "@/lib/ipr-account-store";
+
+import type {
+  IprAccountProfile,
+  PublicIprAccountProfile
+} from "@/lib/ipr-account-store";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -41,10 +55,13 @@ type MinimalVerifiedSubject = {
   entity: string;
   ipr: string;
   certificateId: string;
+  certificateKind: string;
   certificateStatus: "ACTIVE";
   certificateScope: string[];
   cardSerial: string | null;
+  certificateHash: string | null;
   accessDecision: "ACCESS_GRANTED";
+  accessScope: string;
   identityBinding: "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
 };
 
@@ -65,7 +82,10 @@ const AUTH_RESPONSE_BOUNDARY = {
   authBoundary: IPR_AUTH_BOUNDARY,
   passwordBoundary: IPR_AUTH_PASSWORD_BOUNDARY,
   sessionBoundary: IPR_AUTH_SESSION_BOUNDARY,
-  databaseRequirement: IPR_AUTH_DATABASE_REQUIREMENT
+  databaseRequirement: IPR_AUTH_DATABASE_REQUIREMENT,
+  accountStoreBoundary: IPR_ACCOUNT_STORE_BOUNDARY,
+  accountProfileBoundary: IPR_ACCOUNT_PROFILE_BOUNDARY,
+  accountDatabaseRequirement: IPR_ACCOUNT_DATABASE_REQUIREMENT
 };
 
 function sha256Short(value: unknown): string {
@@ -244,6 +264,19 @@ function evaluateMinimalIprHandoff(
     ""
   );
 
+  const certificateKind =
+    firstString(
+      value,
+      [
+        ["certificate", "certificate_kind"],
+        ["certificate", "kind"],
+        ["operationalCertificate", "certificate_kind"],
+        ["operational_certificate", "certificate_kind"],
+        ["certificate_kind"]
+      ],
+      ""
+    ) || "CERTIFICATE_09_OPERATIONAL";
+
   const certificateStatus =
     firstString(
       value,
@@ -282,6 +315,19 @@ function evaluateMinimalIprHandoff(
     ""
   );
 
+  const certificateHash = firstString(
+    value,
+    [
+      ["certificate", "certificate_hash"],
+      ["certificate", "hash"],
+      ["operationalCertificate", "certificate_hash"],
+      ["operational_certificate", "certificate_hash"],
+      ["certificate_hash"],
+      ["hash"]
+    ],
+    ""
+  );
+
   const accessDecision =
     firstString(
       value,
@@ -292,6 +338,17 @@ function evaluateMinimalIprHandoff(
       ],
       ""
     ).toUpperCase() || "PENDING_SERVER_VALIDATION";
+
+  const accessScope =
+    firstString(
+      value,
+      [
+        ["access", "scope"],
+        ["verified_subject_certificate_scope"],
+        ["certificate_scope"]
+      ],
+      ""
+    ) || (hasJokerAccessScope(certificateScope) ? JOKER_C2_ACCESS_SCOPE : "UNKNOWN");
 
   const identityBinding =
     firstString(
@@ -359,10 +416,13 @@ function evaluateMinimalIprHandoff(
       entity: subjectEntity,
       ipr: subjectIpr,
       certificateId,
+      certificateKind,
       certificateStatus: "ACTIVE",
       certificateScope,
       cardSerial: cardSerial || null,
+      certificateHash: certificateHash || null,
       accessDecision: "ACCESS_GRANTED",
+      accessScope,
       identityBinding: "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
     }
   };
@@ -405,12 +465,44 @@ function jsonError(
   );
 }
 
+function upsertAccountProfileFromHandoff(input: {
+  humanIpr: string;
+  handoff: MinimalHandoffEvaluation;
+}): IprAccountProfile {
+  if (!input.handoff.valid || !input.handoff.verifiedSubject) {
+    throw new Error("VALID_HANDOFF_REQUIRED_FOR_ACCOUNT_PROFILE");
+  }
+
+  const subject = input.handoff.verifiedSubject;
+  const accountStore = getDefaultIprAccountStore();
+
+  return accountStore.upsertProfile({
+    humanIpr: input.humanIpr,
+    entity: subject.entity,
+    subjectKind: "BIOLOGICAL_SUBJECT",
+    certificateId: subject.certificateId,
+    certificateKind: subject.certificateKind,
+    certificateStatus: subject.certificateStatus,
+    certificateScope: subject.certificateScope,
+    cardSerial: subject.cardSerial,
+    certificateHash: subject.certificateHash,
+    accessDecision: subject.accessDecision,
+    accessScope: subject.accessScope,
+    identityBinding: subject.identityBinding,
+    matrixState: "MATRIX_ACTIVE",
+    semanticMemoryScope: "IPR_BOUND",
+    source: input.handoff.source || "HBCE_IPR_HANDOFF",
+    handoffHash: input.handoff.rawHash
+  });
+}
+
 function buildLoginSuccessResponse(input: {
   mode: IprLoginMode;
   humanIpr: string;
   runtimeIpr: string;
   sessionToken: ReturnType<typeof createIprSessionToken>;
   handoff: MinimalHandoffEvaluation | null;
+  accountProfile: PublicIprAccountProfile;
 }) {
   return {
     ok: true,
@@ -419,6 +511,7 @@ function buildLoginSuccessResponse(input: {
     humanIpr: input.humanIpr,
     runtimeIpr: input.runtimeIpr,
     session: toPublicIprSession(input.sessionToken),
+    accountProfile: input.accountProfile,
     iprHandoff: input.handoff
       ? {
           valid: input.handoff.valid,
@@ -432,14 +525,21 @@ function buildLoginSuccessResponse(input: {
     access: {
       decision: "ACCESS_GRANTED",
       scope: "JOKER_C2_ACCESS",
-      identityBinding:
-        input.handoff?.verifiedSubject?.identityBinding || "IPR_ACCOUNT_AUTHENTICATED",
+      identityBinding: input.accountProfile.identityBinding,
       sessionCookie: IPR_AUTH_COOKIE_NAME
     },
     memory: {
-      expectedScope: "IPR_BOUND",
+      expectedScope: input.accountProfile.semanticMemoryScope,
       expectedAuthority: "SERVER_RUNTIME_VALIDATED",
       persistenceMode: "PROCESS_AUTH_STORE_MVP_UNTIL_DATABASE_PERSISTENT"
+    },
+    matrix: {
+      expectedState: input.accountProfile.matrixState,
+      active: input.accountProfile.matrixState === "MATRIX_ACTIVE"
+    },
+    stores: {
+      auth: describeDefaultIprAuthStore(),
+      account: describeDefaultIprAccountStore()
     },
     boundary: AUTH_RESPONSE_BOUNDARY
   };
@@ -472,7 +572,8 @@ export async function POST(req: NextRequest) {
     return jsonError(400, "MISSING_RUNTIME_IPR");
   }
 
-  const store = getDefaultIprAuthStore();
+  const authStore = getDefaultIprAuthStore();
+  const accountStore = getDefaultIprAccountStore();
 
   if (mode === "SET_PASSWORD") {
     const passwordPolicy = evaluateIprPasswordPolicy(password);
@@ -502,7 +603,14 @@ export async function POST(req: NextRequest) {
       password
     });
 
-    store.setCredential(credential);
+    authStore.setCredential(credential);
+
+    const accountProfile = upsertAccountProfileFromHandoff({
+      humanIpr,
+      handoff
+    });
+
+    const touchedProfile = accountStore.touchLogin(humanIpr) || accountProfile;
 
     const sessionToken = createIprSessionToken({
       humanIpr,
@@ -510,21 +618,23 @@ export async function POST(req: NextRequest) {
       ttlSeconds: body.ttlSeconds
     });
 
-    store.createSession({
+    const storedSession = authStore.createSession({
       token: sessionToken,
       deviceLabel: body.deviceLabel || "JOKER-C2 access device",
       userAgentHash: buildUserAgentHash(req)
     });
 
-    const response = NextResponse.json(
-      buildLoginSuccessResponse({
+    const response = NextResponse.json({
+      ...buildLoginSuccessResponse({
         mode,
         humanIpr,
         runtimeIpr,
         sessionToken,
-        handoff
-      })
-    );
+        handoff,
+        accountProfile: toPublicIprAccountProfile(touchedProfile)
+      }),
+      storedSession: getPublicSessionFromStoredSession(storedSession)
+    });
 
     const cookie = buildIprSessionCookie({
       token: sessionToken
@@ -535,13 +645,29 @@ export async function POST(req: NextRequest) {
     return response;
   }
 
-  const credential = store.getCredential(humanIpr);
+  const credential = authStore.getCredential(humanIpr);
 
   if (!credential) {
     return jsonError(404, "IPR_CREDENTIAL_NOT_FOUND", {
       instruction:
         "Create a password first through SET_PASSWORD after a valid HBCE IPR handoff.",
-      store: store.describe()
+      stores: {
+        auth: authStore.describe(),
+        account: accountStore.describe()
+      }
+    });
+  }
+
+  const accountProfile = accountStore.touchLogin(humanIpr);
+
+  if (!accountProfile) {
+    return jsonError(404, "IPR_ACCOUNT_PROFILE_NOT_FOUND", {
+      instruction:
+        "Re-run SET_PASSWORD with a valid HBCE IPR handoff so the runtime can create the account profile linked to this IPR.",
+      stores: {
+        auth: authStore.describe(),
+        account: accountStore.describe()
+      }
     });
   }
 
@@ -563,7 +689,7 @@ export async function POST(req: NextRequest) {
     ttlSeconds: body.ttlSeconds
   });
 
-  const storedSession = store.createSession({
+  const storedSession = authStore.createSession({
     token: sessionToken,
     deviceLabel: body.deviceLabel || "JOKER-C2 access device",
     userAgentHash: buildUserAgentHash(req)
@@ -575,7 +701,8 @@ export async function POST(req: NextRequest) {
       humanIpr,
       runtimeIpr,
       sessionToken,
-      handoff: null
+      handoff: null,
+      accountProfile: toPublicIprAccountProfile(accountProfile)
     }),
     storedSession: getPublicSessionFromStoredSession(storedSession)
   });
@@ -590,16 +717,20 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  const store = getDefaultIprAuthStore();
+  const authStore = getDefaultIprAuthStore();
+  const accountStore = getDefaultIprAccountStore();
 
   return NextResponse.json({
     ok: true,
     route: "/api/auth/ipr-login",
     modes: ["SET_PASSWORD", "LOGIN"],
     cookieName: IPR_AUTH_COOKIE_NAME,
-    store: describeDefaultIprAuthStore(),
+    stores: {
+      auth: authStore.describe(),
+      account: accountStore.describe()
+    },
     boundary: AUTH_RESPONSE_BOUNDARY,
     warning:
-      "Current auth storage is still MVP unless DATABASE_PERSISTENT is connected. Process memory may reset on deploy, cold start or runtime recycle. Because apparently persistence needs a place to persist, who could have predicted it."
+      "Current auth and account storage are still MVP unless DATABASE_PERSISTENT is connected. Process memory may reset on deploy, cold start or runtime recycle."
   });
 }
