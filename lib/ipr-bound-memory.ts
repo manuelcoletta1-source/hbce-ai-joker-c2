@@ -201,6 +201,14 @@ const MAX_MEMORY_FACTS = 32;
 const MAX_MEMORY_EVENTS = 24;
 const MAX_MEMORY_TURNS = 8;
 const MAX_MEMORY_TEXT_CHARS = 900;
+const MAX_MEMORY_SUMMARY_CHARS = 2400;
+
+const CURRENT_OPERATIONAL_EVT = "EVT-0016";
+const CURRENT_OPERATIONAL_AI_EVT = "EVT-0016-AI";
+const CURRENT_OPERATIONAL_CYCLE = "UP-CANONICO";
+const CURRENT_MONTHLY_CHECKPOINT = "EVT-0015";
+const CURRENT_MONTHLY_AI_CHECKPOINT = "EVT-0015-AI";
+const CURRENT_MONTHLY_CYCLE = "UP-MESE-4";
 
 export const IPR_BOUND_MEMORY_BOUNDARY =
   "IPR-bound memory preserves operational continuity only. It cannot override HBCE governance, policy evaluation, cyber safety boundaries, human oversight, fail-closed logic, or legal certification boundaries.";
@@ -380,7 +388,8 @@ function buildMemorySummary(input: {
       `JOKER-C2 is operating with IPR-bound memory for ${input.handoff.subject.entity}.`,
       `Human IPR ${input.handoff.subject.ipr} is bound to runtime IPR ${input.runtime.ipr}.`,
       "Memory key is scoped to human_ipr + runtime_ipr + session_id.",
-      `Session ${input.sessionId} remains governed by HBCE policy, EVT continuity, OPC proof receipts and MATRIX coordination.`
+      `Session ${input.sessionId} remains governed by HBCE policy, EVT continuity, OPC proof receipts and MATRIX coordination.`,
+      `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} marks the active UP-EVT synchronism for memory, runtime and SaaS Core v0.1.`
     ].join(" ");
   }
 
@@ -388,7 +397,8 @@ function buildMemorySummary(input: {
     "JOKER-C2 is operating with runtime-only memory.",
     "No verified biological IPR is available for this session.",
     `Memory remains scoped to runtime IPR ${input.runtime.ipr} and session ${input.sessionId}.`,
-    "No biological identity continuity may be inferred without server-side IPR validation."
+    "No biological identity continuity may be inferred without server-side IPR validation.",
+    `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} remains traceable as operational context only, not as biological IPR validation.`
   ].join(" ");
 }
 
@@ -410,7 +420,10 @@ function buildDerivedCanonicalMemoryFacts(
     "If the biological IPR is verified server-side, semantic memory may become IPR_BOUND.",
     "Every governed operation should preserve continuity through EVT and OPC linkage.",
     "Repository work must be delivered as complete integral files, not partial patches.",
-    "For GitHub work, the expected delivery format is: nome file, ragionamento della rifattorizzazione, il file integrale, il commit del file."
+    "For GitHub work, the expected delivery format is: nome file, ragionamento della rifattorizzazione, il file integrale, il commit del file.",
+    `${CURRENT_OPERATIONAL_EVT} is the active biological UP-EVT operational synchronism derived from ${CURRENT_MONTHLY_CHECKPOINT}, cycle ${CURRENT_OPERATIONAL_CYCLE}.`,
+    `${CURRENT_OPERATIONAL_AI_EVT} is the active AI runtime UP-EVT operational synchronism derived from ${CURRENT_MONTHLY_AI_CHECKPOINT}, cycle ${CURRENT_OPERATIONAL_CYCLE}.`,
+    `${CURRENT_MONTHLY_CHECKPOINT}/${CURRENT_MONTHLY_AI_CHECKPOINT} remain the locked monthly checkpoints for ${CURRENT_MONTHLY_CYCLE}.`
   ];
 
   if (input.previousContinuityRef) {
@@ -582,10 +595,12 @@ function deriveTurnRuntimeMetadata(input: UpdateMemoryAfterCompletionInput): {
 
   const trustedOutput =
     input.trustedOutput ??
-    (runtimeState === "OPERATIONAL" &&
+    (
+      runtimeState === "OPERATIONAL" &&
       !policyBlocked &&
       !degraded &&
-      acceptedAsMemoryFact);
+      acceptedAsMemoryFact
+    );
 
   const trustStatus: MemoryTurnTrustStatus = policyBlocked
     ? "TRACE_ONLY_BLOCKED"
@@ -800,6 +815,11 @@ export function updateMemoryAfterCompletion(
       : ""
   ].filter(Boolean);
 
+  const updatedSummary = truncateRuntimeText(
+    [input.memory.summary, ...summaryAdditions].join(" "),
+    MAX_MEMORY_SUMMARY_CHARS
+  );
+
   const updatedWithoutHash: IprBoundMemoryRecordWithoutHash = {
     memoryId: input.memory.memoryId,
     memoryKey: input.memory.memoryKey,
@@ -820,7 +840,7 @@ export function updateMemoryAfterCompletion(
     eventLinks: [...input.memory.eventLinks, eventLink].slice(-MAX_MEMORY_EVENTS),
     facts: nextFacts,
     recentTurns: [...input.memory.recentTurns, turn].slice(-MAX_MEMORY_TURNS),
-    summary: [input.memory.summary, ...summaryAdditions].join(" ")
+    summary: updatedSummary
   };
 
   const updated: IprBoundMemoryRecord = {
@@ -887,6 +907,10 @@ export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
     `Runtime IPR: ${memory.runtime.ipr}`,
     subjectLine,
     certificateLine,
+    `Operational EVT: ${CURRENT_OPERATIONAL_EVT}`,
+    `Operational AI EVT: ${CURRENT_OPERATIONAL_AI_EVT}`,
+    `Operational cycle: ${CURRENT_OPERATIONAL_CYCLE}`,
+    `Monthly checkpoint ref: ${CURRENT_MONTHLY_CHECKPOINT}/${CURRENT_MONTHLY_AI_CHECKPOINT} (${CURRENT_MONTHLY_CYCLE})`,
     `Last memory EVT: ${memory.lastEvt || "none"}`,
     `Last memory OPC proof: ${memory.lastOpcProofId || "none"}`,
     `Last memory OPC chain hash: ${memory.lastOpcChainHash || "none"}`,
