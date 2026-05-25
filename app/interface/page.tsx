@@ -48,6 +48,52 @@ type RuntimeFile = {
   uploaded: boolean;
 };
 
+type IprHandoffSource = "url" | "sessionStorage" | "localStorage" | "none";
+
+type IprHandoffSubject = {
+  entity: string;
+  ipr: string;
+  kind: "BIOLOGICAL_SUBJECT" | string;
+};
+
+type IprHandoffCertificate = {
+  certificate_id: string;
+  certificate_kind: string;
+  certificate_status: string;
+  certificate_scope: string[];
+  card_serial?: string;
+  certificate_hash?: string;
+};
+
+type IprHandoffAccess = {
+  decision: string;
+  scope: string;
+  identity_binding: string;
+};
+
+type IprHandoff = {
+  handoff_type: "HBCE_IPR_HANDOFF" | string;
+  handoff_version: string;
+  source: string;
+  issued_at?: string;
+  subject: IprHandoffSubject;
+  certificate: IprHandoffCertificate;
+  access: IprHandoffAccess;
+  client_context: {
+    transport_source: IprHandoffSource;
+    client_validation: "HANDOFF_PRESENT_FOR_SERVER_VALIDATION";
+    authority: "CLIENT_TRANSPORT_ONLY";
+    note: string;
+  };
+  rawPayload?: Record<string, unknown>;
+};
+
+type IprHandoffLoadResult = {
+  handoff: IprHandoff | null;
+  source: IprHandoffSource;
+  error: string | null;
+};
+
 type ChatApiResponse = {
   ok?: boolean;
   sessionId?: string;
@@ -71,6 +117,11 @@ type ChatApiResponse = {
   memory?: unknown;
   diagnostics?: unknown;
   boundary?: unknown;
+  identity?: unknown;
+  verifiedSubject?: unknown;
+  matrix?: unknown;
+  access?: unknown;
+  iprHandoff?: unknown;
   error?: string;
 };
 
@@ -119,6 +170,23 @@ const TEXT_FILE_TYPES = new Set([
   "text/css",
   "text/javascript"
 ]);
+
+const HANDOFF_STORAGE_KEY = "hbce_ipr_handoff";
+
+const LEGACY_HANDOFF_STORAGE_KEYS = [
+  "hbce-ipr-handoff",
+  "hbce.ipr.handoff",
+  "iprHandoff",
+  "ipr_handoff"
+];
+
+const HANDOFF_QUERY_KEYS = [
+  "hbce_ipr_handoff",
+  "hbce_ipr_handoff_b64",
+  "iprHandoff",
+  "ipr_handoff",
+  "handoff"
+];
 
 function buildId(prefix: string): string {
   const random =
@@ -180,6 +248,490 @@ function firstText(value: unknown, paths: string[][], fallback = "-"): string {
   return fallback;
 }
 
+function normalizeScope(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => safeText(item, ""))
+      .filter(Boolean)
+      .map((item) => item.trim());
+  }
+
+  const text = safeText(value, "");
+
+  if (!text) {
+    return [];
+  }
+
+  return text
+    .split(/[,\s|]+/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function hasJokerAccessScope(scope: string[]): boolean {
+  return scope.some((item) => item.toUpperCase() === "JOKER_C2_ACCESS");
+}
+
+function decodeBase64Text(value: string): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(
+      Math.ceil(normalized.length / 4) * 4,
+      "="
+    );
+    const binary = window.atob(padded);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+
+    return new TextDecoder().decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
+function parseHandoffCandidate(raw: string): Record<string, unknown> | null {
+  const trimmed = raw.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const candidates = [
+    trimmed,
+    (() => {
+      try {
+        return decodeURIComponent(trimmed);
+      } catch {
+        return null;
+      }
+    })(),
+    decodeBase64Text(trimmed)
+  ].filter((item): item is string => Boolean(item));
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+
+      if (isRecord(parsed)) {
+        return parsed;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+function normalizeIprHandoff(
+  payload: Record<string, unknown>,
+  source: IprHandoffSource
+): IprHandoff | null {
+  const subjectEntity = firstText(
+    payload,
+    [
+      ["subject", "entity"],
+      ["subject", "name"],
+      ["subject", "full_name"],
+      ["verifiedSubject", "entity"],
+      ["verifiedSubject", "name"],
+      ["verified_subject", "entity"],
+      ["verified_subject", "name"],
+      ["verified_subject_entity"],
+      ["verified_subject_name"],
+      ["holder", "name"],
+      ["holder", "full_name"],
+      ["identity", "name"],
+      ["identity", "full_name"]
+    ],
+    ""
+  );
+
+  const subjectIpr = firstText(
+    payload,
+    [
+      ["subject", "ipr"],
+      ["subject", "ipr_id"],
+      ["verifiedSubject", "ipr"],
+      ["verified_subject", "ipr"],
+      ["verified_subject_ipr"],
+      ["subject_ipr"],
+      ["ipr"],
+      ["ipr_id"],
+      ["identity", "ipr"]
+    ],
+    ""
+  );
+
+  const subjectKind =
+    firstText(
+      payload,
+      [
+        ["subject", "kind"],
+        ["verifiedSubject", "kind"],
+        ["verified_subject", "kind"],
+        ["subject_kind"]
+      ],
+      ""
+    ) || "BIOLOGICAL_SUBJECT";
+
+  const certificateId = firstText(
+    payload,
+    [
+      ["certificate", "certificate_id"],
+      ["certificate", "id"],
+      ["operationalCertificate", "certificate_id"],
+      ["operational_certificate", "certificate_id"],
+      ["verified_subject_certificate_id"],
+      ["certificate_id"]
+    ],
+    ""
+  );
+
+  const certificateKind =
+    firstText(
+      payload,
+      [
+        ["certificate", "certificate_kind"],
+        ["certificate", "kind"],
+        ["operationalCertificate", "certificate_kind"],
+        ["operational_certificate", "certificate_kind"],
+        ["certificate_kind"]
+      ],
+      ""
+    ) || "CERTIFICATE_09_OPERATIONAL";
+
+  const certificateStatus =
+    firstText(
+      payload,
+      [
+        ["certificate", "certificate_status"],
+        ["certificate", "status"],
+        ["operationalCertificate", "certificate_status"],
+        ["operational_certificate", "certificate_status"],
+        ["verified_subject_certificate_status"],
+        ["certificate_status"]
+      ],
+      ""
+    ).toUpperCase() || "UNKNOWN";
+
+  const certificateScope = normalizeScope(
+    readPath(payload, ["certificate", "certificate_scope"]) ??
+      readPath(payload, ["certificate", "scope"]) ??
+      readPath(payload, ["operationalCertificate", "certificate_scope"]) ??
+      readPath(payload, ["operational_certificate", "certificate_scope"]) ??
+      readPath(payload, ["verified_subject_certificate_scope"]) ??
+      readPath(payload, ["certificate_scope"]) ??
+      readPath(payload, ["scope"])
+  );
+
+  const cardSerial = firstText(
+    payload,
+    [
+      ["certificate", "card_serial"],
+      ["certificate", "cardSerial"],
+      ["operationalCertificate", "card_serial"],
+      ["operational_certificate", "card_serial"],
+      ["verified_subject_card_serial"],
+      ["card_serial"],
+      ["cardSerial"]
+    ],
+    ""
+  );
+
+  const certificateHash = firstText(
+    payload,
+    [
+      ["certificate", "certificate_hash"],
+      ["certificate", "hash"],
+      ["operationalCertificate", "certificate_hash"],
+      ["operational_certificate", "certificate_hash"],
+      ["certificate_hash"],
+      ["hash"]
+    ],
+    ""
+  );
+
+  const accessDecision =
+    firstText(
+      payload,
+      [
+        ["access", "decision"],
+        ["access_decision"],
+        ["verified_subject_access_decision"]
+      ],
+      ""
+    ).toUpperCase() || "PENDING_SERVER_VALIDATION";
+
+  const accessScope =
+    firstText(
+      payload,
+      [
+        ["access", "scope"],
+        ["verified_subject_certificate_scope"],
+        ["certificate_scope"]
+      ],
+      ""
+    ) || (hasJokerAccessScope(certificateScope) ? "JOKER_C2_ACCESS" : "UNKNOWN");
+
+  const identityBinding =
+    firstText(
+      payload,
+      [
+        ["access", "identity_binding"],
+        ["access", "identityBinding"],
+        ["identity_binding"]
+      ],
+      ""
+    ) || "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
+
+  if (!subjectIpr || !certificateId) {
+    return null;
+  }
+
+  if (certificateStatus !== "ACTIVE") {
+    return null;
+  }
+
+  if (!hasJokerAccessScope(certificateScope)) {
+    return null;
+  }
+
+  return {
+    handoff_type:
+      firstText(payload, [["handoff_type"], ["type"]], "") || "HBCE_IPR_HANDOFF",
+    handoff_version:
+      firstText(payload, [["handoff_version"], ["version"]], "") || "1.0",
+    source:
+      firstText(payload, [["source"], ["issuer"], ["app"]], "") ||
+      "HBCE_IPR_ONBOARDING_APP",
+    issued_at: firstText(payload, [["issued_at"], ["issuedAt"]], ""),
+    subject: {
+      entity: subjectEntity || "VERIFIED_BIOLOGICAL_SUBJECT",
+      ipr: subjectIpr,
+      kind: subjectKind
+    },
+    certificate: {
+      certificate_id: certificateId,
+      certificate_kind: certificateKind,
+      certificate_status: certificateStatus,
+      certificate_scope: certificateScope,
+      card_serial: cardSerial || undefined,
+      certificate_hash: certificateHash || undefined
+    },
+    access: {
+      decision: accessDecision,
+      scope: accessScope,
+      identity_binding: identityBinding
+    },
+    client_context: {
+      transport_source: source,
+      client_validation: "HANDOFF_PRESENT_FOR_SERVER_VALIDATION",
+      authority: "CLIENT_TRANSPORT_ONLY",
+      note:
+        "The browser can transport the IPR handoff, but only the JOKER-C2 API can validate and authorize it."
+    },
+    rawPayload: payload
+  };
+}
+
+function readStoredHandoff(key: string): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return (
+      window.sessionStorage.getItem(key) || window.localStorage.getItem(key)
+    );
+  } catch {
+    return null;
+  }
+}
+
+function persistHandoff(handoff: IprHandoff) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const serialized = JSON.stringify(handoff.rawPayload || handoff);
+
+    window.sessionStorage.setItem(HANDOFF_STORAGE_KEY, serialized);
+    window.localStorage.setItem(HANDOFF_STORAGE_KEY, serialized);
+  } catch {
+    return;
+  }
+}
+
+function clearStoredHandoff() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.removeItem(HANDOFF_STORAGE_KEY);
+    window.localStorage.removeItem(HANDOFF_STORAGE_KEY);
+
+    for (const key of LEGACY_HANDOFF_STORAGE_KEYS) {
+      window.sessionStorage.removeItem(key);
+      window.localStorage.removeItem(key);
+    }
+  } catch {
+    return;
+  }
+}
+
+function stripHandoffQueryParams() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const url = new URL(window.location.href);
+    let changed = false;
+
+    for (const key of HANDOFF_QUERY_KEYS) {
+      if (url.searchParams.has(key)) {
+        url.searchParams.delete(key);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      window.history.replaceState({}, "", url.toString());
+    }
+  } catch {
+    return;
+  }
+}
+
+function loadIprHandoffFromBrowser(): IprHandoffLoadResult {
+  if (typeof window === "undefined") {
+    return {
+      handoff: null,
+      source: "none",
+      error: null
+    };
+  }
+
+  try {
+    const url = new URL(window.location.href);
+
+    for (const key of HANDOFF_QUERY_KEYS) {
+      const raw = url.searchParams.get(key);
+
+      if (!raw) {
+        continue;
+      }
+
+      const parsed = parseHandoffCandidate(raw);
+      const handoff = parsed ? normalizeIprHandoff(parsed, "url") : null;
+
+      if (handoff) {
+        persistHandoff(handoff);
+        stripHandoffQueryParams();
+
+        return {
+          handoff,
+          source: "url",
+          error: null
+        };
+      }
+
+      return {
+        handoff: null,
+        source: "url",
+        error: `Invalid IPR handoff in URL parameter: ${key}`
+      };
+    }
+
+    const sessionRaw = window.sessionStorage.getItem(HANDOFF_STORAGE_KEY);
+
+    if (sessionRaw) {
+      const parsed = parseHandoffCandidate(sessionRaw);
+      const handoff = parsed
+        ? normalizeIprHandoff(parsed, "sessionStorage")
+        : null;
+
+      if (handoff) {
+        return {
+          handoff,
+          source: "sessionStorage",
+          error: null
+        };
+      }
+
+      return {
+        handoff: null,
+        source: "sessionStorage",
+        error: "Invalid IPR handoff in sessionStorage"
+      };
+    }
+
+    const localRaw = window.localStorage.getItem(HANDOFF_STORAGE_KEY);
+
+    if (localRaw) {
+      const parsed = parseHandoffCandidate(localRaw);
+      const handoff = parsed
+        ? normalizeIprHandoff(parsed, "localStorage")
+        : null;
+
+      if (handoff) {
+        return {
+          handoff,
+          source: "localStorage",
+          error: null
+        };
+      }
+
+      return {
+        handoff: null,
+        source: "localStorage",
+        error: "Invalid IPR handoff in localStorage"
+      };
+    }
+
+    for (const key of LEGACY_HANDOFF_STORAGE_KEYS) {
+      const raw = readStoredHandoff(key);
+
+      if (!raw) {
+        continue;
+      }
+
+      const parsed = parseHandoffCandidate(raw);
+      const handoff = parsed
+        ? normalizeIprHandoff(parsed, "localStorage")
+        : null;
+
+      if (handoff) {
+        persistHandoff(handoff);
+
+        return {
+          handoff,
+          source: "localStorage",
+          error: null
+        };
+      }
+    }
+
+    return {
+      handoff: null,
+      source: "none",
+      error: null
+    };
+  } catch (err) {
+    return {
+      handoff: null,
+      source: "none",
+      error: err instanceof Error ? err.message : "IPR_HANDOFF_LOAD_FAILED"
+    };
+  }
+}
+
 function getAssistantText(payload: ChatApiResponse): string {
   return safeText(payload.response || payload.text, "[EMPTY_RESPONSE]");
 }
@@ -230,7 +782,9 @@ function getIpr(payload?: ChatApiResponse | RuntimeHealth | null): string {
     payload,
     [
       ["identity", "ipr"],
-      ["runtime", "ipr"]
+      ["runtime", "ipr"],
+      ["runtime", "runtime_ipr"],
+      ["runtimeFrame", "runtime_ipr"]
     ],
     "-"
   );
@@ -247,6 +801,58 @@ function getEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
       ["governedEvt", "evt"],
       ["modernEvt", "evt"],
       ["runtime", "checkpoint"]
+    ],
+    "-"
+  );
+}
+
+function getVerifiedSubjectName(payload?: ChatApiResponse | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["verifiedSubject", "entity"],
+      ["verifiedSubject", "name"],
+      ["runtime", "verifiedSubject", "entity"],
+      ["runtime", "verified_subject_entity"],
+      ["identity", "verifiedSubject", "entity"],
+      ["identity", "verified_subject_entity"],
+      ["diagnostics", "verifiedSubject", "entity"]
+    ],
+    "-"
+  );
+}
+
+function getVerifiedSubjectIpr(payload?: ChatApiResponse | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["verifiedSubject", "ipr"],
+      ["runtime", "verifiedSubject", "ipr"],
+      ["runtime", "verified_subject_ipr"],
+      ["identity", "verifiedSubject", "ipr"],
+      ["identity", "verified_subject_ipr"],
+      ["diagnostics", "verifiedSubject", "ipr"]
+    ],
+    "-"
+  );
+}
+
+function getMatrixState(payload?: ChatApiResponse | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["matrix", "state"],
+      ["matrix", "activation"],
+      ["runtime", "matrixState"],
+      ["runtime", "matrix_state"],
+      ["governance", "matrixState"],
+      ["diagnostics", "matrixState"]
     ],
     "-"
   );
@@ -381,6 +987,10 @@ function MessageBubble({
   const isSystem = message.role === "system";
   const isAssistant = message.role === "assistant";
 
+  const verifiedSubjectName = isAssistant ? getVerifiedSubjectName(message.raw) : "-";
+  const verifiedSubjectIpr = isAssistant ? getVerifiedSubjectIpr(message.raw) : "-";
+  const matrixState = isAssistant ? getMatrixState(message.raw) : "-";
+
   return (
     <article
       className={[
@@ -407,9 +1017,16 @@ function MessageBubble({
         {isAssistant && message.raw ? (
           <div className="joker-runtime-strip">
             <span>Model: {getModel(message.raw)}</span>
-            <span>IPR: {getIpr(message.raw)}</span>
+            <span>Runtime IPR: {getIpr(message.raw)}</span>
             <span>EVT: {getEvt(message.raw)}</span>
             <span>OPC: {getOpcProof(message.raw)}</span>
+            {verifiedSubjectIpr !== "-" ? (
+              <span>Human IPR: {verifiedSubjectIpr}</span>
+            ) : null}
+            {verifiedSubjectName !== "-" ? (
+              <span>Subject: {verifiedSubjectName}</span>
+            ) : null}
+            {matrixState !== "-" ? <span>MATRIX: {matrixState}</span> : null}
           </div>
         ) : null}
 
@@ -441,6 +1058,18 @@ function MessageBubble({
                     <strong>{getHbceModule(message.raw)}</strong>
                   </div>
                   <div>
+                    <span>VerifiedSubject</span>
+                    <strong>{verifiedSubjectName}</strong>
+                  </div>
+                  <div>
+                    <span>HumanIPR</span>
+                    <strong>{verifiedSubjectIpr}</strong>
+                  </div>
+                  <div>
+                    <span>MATRIX</span>
+                    <strong>{matrixState}</strong>
+                  </div>
+                  <div>
                     <span>EngineHash</span>
                     <strong>{getEngineHash(message.raw)}</strong>
                   </div>
@@ -467,6 +1096,10 @@ export default function InterfacePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [files, setFiles] = useState<RuntimeFile[]>([]);
   const [continuityRef, setContinuityRef] = useState<string | null>(null);
+  const [iprHandoff, setIprHandoff] = useState<IprHandoff | null>(null);
+  const [iprHandoffSource, setIprHandoffSource] =
+    useState<IprHandoffSource>("none");
+  const [iprHandoffError, setIprHandoffError] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -490,6 +1123,7 @@ export default function InterfacePage() {
       window.localStorage.setItem("hbce-joker-c2-session-id", nextSessionId);
     }
 
+    refreshIprHandoff();
     void checkRuntime();
   }, []);
 
@@ -505,6 +1139,22 @@ export default function InterfacePage() {
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 220)}px`;
   }, [message]);
+
+  function refreshIprHandoff() {
+    const result = loadIprHandoffFromBrowser();
+
+    setIprHandoff(result.handoff);
+    setIprHandoffSource(result.source);
+    setIprHandoffError(result.error);
+  }
+
+  function clearIprHandoff() {
+    clearStoredHandoff();
+    stripHandoffQueryParams();
+    setIprHandoff(null);
+    setIprHandoffSource("none");
+    setIprHandoffError(null);
+  }
 
   async function checkRuntime() {
     setIsChecking(true);
@@ -571,6 +1221,8 @@ export default function InterfacePage() {
     if (typeof window !== "undefined") {
       window.localStorage.setItem("hbce-joker-c2-session-id", nextSessionId);
     }
+
+    refreshIprHandoff();
   }
 
   async function copyText(content: string) {
@@ -620,7 +1272,8 @@ export default function InterfacePage() {
           message: effectiveMessage,
           sessionId,
           continuityRef,
-          files
+          files,
+          iprHandoff
         })
       });
 
@@ -686,6 +1339,10 @@ export default function InterfacePage() {
     }
   }
 
+  const humanIprLabel = iprHandoff?.subject.ipr || "Human IPR: NOT_VERIFIED";
+  const subjectLabel = iprHandoff?.subject.entity || "No verified subject";
+  const matrixPreview = iprHandoff ? "PENDING_SERVER_VALIDATION" : "LIMITED";
+
   return (
     <main className="joker-page">
       <header className="joker-topbar">
@@ -702,6 +1359,7 @@ export default function InterfacePage() {
           <span>{safeText(health?.state, "CHECKING")}</span>
           <span>{safeText(health?.model, getModel(health))}</span>
           <span>{safeText(health?.identity?.ipr, "IPR-AI-0001")}</span>
+          <span>{humanIprLabel}</span>
         </div>
 
         <div className="joker-top-actions">
@@ -714,6 +1372,89 @@ export default function InterfacePage() {
         </div>
       </header>
 
+      <section className="joker-identity-shell">
+        <div
+          className={[
+            "joker-identity-card",
+            iprHandoff ? "joker-identity-card-active" : "",
+            iprHandoffError ? "joker-identity-card-error" : ""
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
+          <div>
+            <span className="joker-identity-kicker">
+              HBCE IPR Biological Subject
+            </span>
+            <strong>{subjectLabel}</strong>
+            <p>
+              {iprHandoff
+                ? "IPR handoff rilevato lato interfaccia. La validazione autorevole deve avvenire in /api/chat prima del riconoscimento operativo."
+                : "Nessun handoff IPR biologico rilevato. JOKER-C2 resta in modalità runtime generica fino a validazione server-side."}
+            </p>
+          </div>
+
+          <div className="joker-identity-grid">
+            <div>
+              <span>Runtime IPR</span>
+              <strong>IPR-AI-0001</strong>
+            </div>
+            <div>
+              <span>Human IPR</span>
+              <strong>{iprHandoff?.subject.ipr || "NOT_VERIFIED"}</strong>
+            </div>
+            <div>
+              <span>Certificate</span>
+              <strong>
+                {iprHandoff?.certificate.certificate_id || "NO_CERTIFICATE"}
+              </strong>
+            </div>
+            <div>
+              <span>Status</span>
+              <strong>
+                {iprHandoff?.certificate.certificate_status || "MISSING"}
+              </strong>
+            </div>
+            <div>
+              <span>Scope</span>
+              <strong>
+                {iprHandoff?.certificate.certificate_scope.join(", ") ||
+                  "MATRIX_LIMITED"}
+              </strong>
+            </div>
+            <div>
+              <span>MATRIX</span>
+              <strong>{matrixPreview}</strong>
+            </div>
+            <div>
+              <span>Source</span>
+              <strong>{iprHandoffSource}</strong>
+            </div>
+            <div>
+              <span>Authority</span>
+              <strong>
+                {iprHandoff
+                  ? "CLIENT_TRANSPORT_ONLY"
+                  : "SERVER_VALIDATION_REQUIRED"}
+              </strong>
+            </div>
+          </div>
+
+          {iprHandoffError ? (
+            <div className="joker-identity-warning">{iprHandoffError}</div>
+          ) : null}
+
+          <div className="joker-identity-actions">
+            <button type="button" onClick={refreshIprHandoff}>
+              Refresh IPR handoff
+            </button>
+            <button type="button" onClick={clearIprHandoff}>
+              Clear IPR handoff
+            </button>
+          </div>
+        </div>
+      </section>
+
       <section className="joker-chat">
         {messages.length === 0 ? (
           <div className="joker-empty">
@@ -722,7 +1463,8 @@ export default function InterfacePage() {
             <p>
               Interfaccia chat classica. Scrivi sotto, ricevi la risposta qui.
               Il runtime resta governato da HBCE: IPR, EVT, OPC, MATRIX,
-              audit e fail-closed.
+              audit e fail-closed. Il riconoscimento biologico richiede un
+              handoff IPR validato dalla API runtime.
             </p>
 
             <div className="joker-prompt-grid">
@@ -834,7 +1576,7 @@ export default function InterfacePage() {
         .joker-page {
           min-height: 100vh;
           display: grid;
-          grid-template-rows: auto 1fr auto;
+          grid-template-rows: auto auto 1fr auto;
           background:
             radial-gradient(circle at 20% 0%, rgba(34, 211, 238, 0.12), transparent 34%),
             radial-gradient(circle at 80% 8%, rgba(99, 102, 241, 0.13), transparent 34%),
@@ -985,6 +1727,119 @@ export default function InterfacePage() {
           padding: 8px 12px;
         }
 
+        .joker-identity-shell {
+          padding: 14px 18px 0;
+        }
+
+        .joker-identity-card {
+          width: min(980px, 100%);
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: minmax(0, 1.2fr) minmax(320px, 1.8fr);
+          gap: 16px;
+          padding: 16px;
+          border: 1px solid rgba(51, 65, 85, 0.82);
+          border-radius: 24px;
+          background: rgba(2, 6, 23, 0.42);
+          box-shadow: 0 18px 58px rgba(0, 0, 0, 0.18);
+        }
+
+        .joker-identity-card-active {
+          border-color: rgba(34, 211, 238, 0.36);
+          background:
+            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.12), transparent 32%),
+            rgba(2, 6, 23, 0.5);
+        }
+
+        .joker-identity-card-error {
+          border-color: rgba(248, 113, 113, 0.36);
+        }
+
+        .joker-identity-kicker {
+          display: block;
+          color: #67e8f9;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.11em;
+          text-transform: uppercase;
+        }
+
+        .joker-identity-card strong {
+          display: block;
+          margin-top: 5px;
+          color: #f8fafc;
+          font-size: 15px;
+          overflow-wrap: anywhere;
+        }
+
+        .joker-identity-card p {
+          margin: 8px 0 0;
+          color: #94a3b8;
+          font-size: 13px;
+          line-height: 1.55;
+        }
+
+        .joker-identity-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 8px;
+        }
+
+        .joker-identity-grid div {
+          min-width: 0;
+          padding: 9px;
+          border: 1px solid rgba(51, 65, 85, 0.7);
+          border-radius: 14px;
+          background: rgba(15, 23, 42, 0.62);
+        }
+
+        .joker-identity-grid span {
+          display: block;
+          color: #64748b;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .joker-identity-grid strong {
+          margin-top: 5px;
+          color: #e2e8f0;
+          font-size: 11px;
+          line-height: 1.35;
+          font-family:
+            ui-monospace,
+            SFMono-Regular,
+            Menlo,
+            Monaco,
+            Consolas,
+            "Liberation Mono",
+            "Courier New",
+            monospace;
+        }
+
+        .joker-identity-warning {
+          grid-column: 1 / -1;
+          padding: 10px 12px;
+          border: 1px solid rgba(248, 113, 113, 0.34);
+          border-radius: 14px;
+          color: #fecaca;
+          background: rgba(127, 29, 29, 0.24);
+          font-size: 12px;
+        }
+
+        .joker-identity-actions {
+          grid-column: 1 / -1;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .joker-identity-actions button {
+          padding: 7px 10px;
+          font-size: 12px;
+        }
+
         .joker-chat {
           min-height: 0;
           overflow-y: auto;
@@ -993,7 +1848,7 @@ export default function InterfacePage() {
 
         .joker-empty {
           width: min(820px, 100%);
-          min-height: calc(100vh - 250px);
+          min-height: calc(100vh - 360px);
           margin: 0 auto;
           display: flex;
           flex-direction: column;
@@ -1394,6 +2249,16 @@ export default function InterfacePage() {
           line-height: 1.4;
         }
 
+        @media (max-width: 1040px) {
+          .joker-identity-card {
+            grid-template-columns: 1fr;
+          }
+
+          .joker-identity-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
         @media (max-width: 860px) {
           .joker-topbar {
             grid-template-columns: 1fr;
@@ -1421,6 +2286,19 @@ export default function InterfacePage() {
         @media (max-width: 640px) {
           .joker-topbar {
             padding: 12px;
+          }
+
+          .joker-identity-shell {
+            padding: 10px 10px 0;
+          }
+
+          .joker-identity-card {
+            border-radius: 18px;
+            padding: 12px;
+          }
+
+          .joker-identity-grid {
+            grid-template-columns: 1fr;
           }
 
           .joker-chat {
@@ -1452,7 +2330,7 @@ export default function InterfacePage() {
           }
 
           .joker-empty {
-            min-height: calc(100vh - 310px);
+            min-height: calc(100vh - 410px);
           }
         }
       `}</style>
