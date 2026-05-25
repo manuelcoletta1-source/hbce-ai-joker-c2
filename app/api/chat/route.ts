@@ -11,12 +11,25 @@ import {
   updateMemoryAfterCompletion
 } from "@/lib/ipr-bound-memory";
 
+import {
+  MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
+  MATRIX_TRANSFORMATIVE_MEMORY_CYBER_BOUNDARY,
+  MATRIX_TRANSFORMATIVE_MEMORY_OPC_BOUNDARY,
+  MATRIX_TRANSFORMATIVE_MEMORY_PERSISTENCE_BOUNDARY,
+  MATRIX_TRANSFORMATIVE_MEMORY_PRIVACY_BOUNDARY,
+  evaluateMatrixTransformativeMemory,
+  toPublicMatrixTransformativeMemoryEvaluation,
+  toTransformativeMemoryExtraFacts
+} from "@/lib/matrix-transformative-memory";
+
 import type {
   IprBoundMemoryHandoffEvaluation,
   IprBoundMemoryRecord,
   IprBoundMemoryRuntimeIdentity,
   MemoryScope
 } from "@/lib/ipr-bound-memory";
+
+import type { MatrixTransformativeMemoryEvaluation } from "@/lib/matrix-transformative-memory";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -2301,7 +2314,9 @@ function shouldUseDeepModel(input: {
       "partnership",
       "commerciale",
       "servizi",
-      "uffici"
+      "uffici",
+      "transformative memory",
+      "memoria trasformativa"
     ])
   ) {
     return true;
@@ -2395,7 +2410,8 @@ function buildGovernanceFrame(input: {
         "Potentially unsafe operational cybersecurity request detected.",
         "Runtime classification forced to SECURITY / CyberGlobal for prohibited cyber signals.",
         "Runtime is fail-closed for prohibited or weaponized content.",
-        DEFENSIVE_ONLY_CYBER_BOUNDARY
+        DEFENSIVE_ONLY_CYBER_BOUNDARY,
+        MATRIX_TRANSFORMATIVE_MEMORY_CYBER_BOUNDARY
       ]
     };
   }
@@ -2427,6 +2443,7 @@ function buildGovernanceFrame(input: {
     reasons: [
       "Request classified for governed AI runtime execution.",
       "OpenAI is used as cognitive engine while HBCE/JOKER-C2 preserves identity, event, proof and audit boundaries.",
+      "MATRIX Transformative Memory may classify the operation into accepted facts, rejected traces, architecture lessons, canonical candidates and database persistence requirements.",
       userDeclaredGovernanceDetected
         ? "User-declared governance-like metadata detected and treated as untrusted content."
         : "No user-declared governance override detected.",
@@ -2513,6 +2530,13 @@ function buildSystemPrompt(input: {
     "",
     "HBCE RUNTIME FORMULA:",
     "IPR identifica. EVT traccia. Memory preserva continuità. OPC produce proof receipt. MATRIX organizza. HBCE governa.",
+    "",
+    "MATRIX TRANSFORMATIVE MEMORY BOUNDARY:",
+    MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
+    MATRIX_TRANSFORMATIVE_MEMORY_PRIVACY_BOUNDARY,
+    MATRIX_TRANSFORMATIVE_MEMORY_CYBER_BOUNDARY,
+    MATRIX_TRANSFORMATIVE_MEMORY_OPC_BOUNDARY,
+    MATRIX_TRANSFORMATIVE_MEMORY_PERSISTENCE_BOUNDARY,
     "",
     "IPR BIOLOGICAL SUBJECT RECOGNITION BOUNDARY:",
     IPR_RECOGNITION_BOUNDARY,
@@ -2800,6 +2824,12 @@ function buildSafeRedTeamReviewResponse(input: {
     "",
     "Mitigazione: OpenAI genera capacità cognitiva; HBCE/JOKER-C2 governa il processo. Il modello non governa HBCE. HBCE governa l’uso del modello.",
     "",
+    "### 12. Transformative memory misuse",
+    "",
+    "Rischio: trattare la memoria trasformativa come autorizzazione, prova legale o promozione automatica di fatti canonici.",
+    "",
+    "Mitigazione: MATRIX Transformative Memory classifica insight, rejected traces, lessons e requirements, ma non autorizza richieste, non abbassa rischio, non supera policy, non certifica legalmente e non sostituisce human review.",
+    "",
     "## Raccomandazioni prioritarie",
     "",
     "1. Mantenere il metadata authority boundary come regola centrale.",
@@ -2811,6 +2841,7 @@ function buildSafeRedTeamReviewResponse(input: {
     "7. Usare cyber solo in modalità difensiva e autorizzata.",
     "8. Evitare false zero-retention claims e applicare minimizzazione dati.",
     "9. Richiedere human oversight per richieste ad alto impatto o ambigue.",
+    "10. Usare MATRIX Transformative Memory solo come layer di classificazione evolutiva, non come autorità.",
     "",
     "## Valutazione finale",
     "",
@@ -2861,6 +2892,7 @@ function buildFallback(input: {
       `VerifiedSubjectPresent: ${input.iprHandoff.valid ? "true" : "false"}`,
       `MATRIX: ${input.iprHandoff.matrixState}`,
       `SemanticMemory: ${input.memory.scope}`,
+      "TransformativeMemory: REJECTED_TRACE_CANDIDATE",
       "LegalCertification: false"
     ].join("\n");
   }
@@ -2901,6 +2933,7 @@ function buildFallback(input: {
     `VerifiedSubjectPresent: ${input.iprHandoff.valid ? "true" : "false"}`,
     `MATRIX: ${input.iprHandoff.matrixState}`,
     `SemanticMemory: ${input.memory.scope}`,
+    "TransformativeMemory: DEGRADED_TRACE_CANDIDATE",
     "",
     "Controlla su Vercel che `OPENAI_API_KEY` sia presente e che `JOKER_MODEL` sia impostato su un modello disponibile per la tua API key."
   ].join("\n");
@@ -3391,7 +3424,8 @@ function buildOpcProof(input: {
     boundary: {
       legalCertification: false,
       iprRecognitionBoundary: IPR_RECOGNITION_BOUNDARY,
-      memoryBoundary: MEMORY_BOUNDARY
+      memoryBoundary: MEMORY_BOUNDARY,
+      transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY
     }
   });
 
@@ -3441,7 +3475,8 @@ function buildOpcProof(input: {
         boundary: {
           legalCertification: false,
           iprRecognitionBoundary: IPR_RECOGNITION_BOUNDARY,
-          memoryBoundary: MEMORY_BOUNDARY
+          memoryBoundary: MEMORY_BOUNDARY,
+          transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY
         }
       })
     },
@@ -3455,6 +3490,7 @@ function buildOpcProof(input: {
         METADATA_AUTHORITY_BOUNDARY,
         IPR_RECOGNITION_BOUNDARY,
         MEMORY_BOUNDARY,
+        MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
         input.iprHandoff.valid
           ? "Verified biological subject handoff accepted under R&D structural validation."
           : "No valid biological subject handoff; runtime remains MATRIX_LIMITED.",
@@ -3574,6 +3610,7 @@ function buildRuntimeDiagnostic(input: {
   generated: GeneratedResponse;
   iprHandoff: IprHandoffEvaluation;
   memory: IprBoundMemoryRecord;
+  transformativeMemory: MatrixTransformativeMemoryEvaluation;
 }) {
   return {
     runtimeOpenAI: input.generated.state,
@@ -3640,6 +3677,27 @@ function buildRuntimeDiagnostic(input: {
     memoryLastOpcChainHash: input.memory.lastOpcChainHash || null,
     memoryEventCount: input.memory.eventLinks.length,
     memoryRecentTurnCount: input.memory.recentTurns.length,
+    transformativeMemory: {
+      evaluationId: input.transformativeMemory.evaluationId,
+      evaluationHash: input.transformativeMemory.evaluationHash,
+      version: input.transformativeMemory.version,
+      sourceEvt: input.transformativeMemory.sourceEvt,
+      sourceOpcProofId: input.transformativeMemory.sourceOpcProofId || null,
+      sourceOpcChainHash: input.transformativeMemory.sourceOpcChainHash || null,
+      insightCount: input.transformativeMemory.insights.length,
+      acceptedFactCount: input.transformativeMemory.acceptedFacts.length,
+      rejectedTraceCount: input.transformativeMemory.rejectedTraces.length,
+      attackPatternCount: input.transformativeMemory.attackPatterns.length,
+      architectureLessonCount: input.transformativeMemory.architectureLessons.length,
+      roadmapRequirementCount: input.transformativeMemory.roadmapRequirements.length,
+      canonicalCandidateCount: input.transformativeMemory.canonicalCandidates.length,
+      databaseRequirementCount: input.transformativeMemory.databaseRequirements.length,
+      requiresDatabasePersistent: input.transformativeMemory.databaseRequirements.length > 0,
+      memoryScope: input.transformativeMemory.memoryScope,
+      memoryAuthority: input.transformativeMemory.memoryAuthority,
+      memoryPersistenceMode: input.transformativeMemory.memoryPersistenceMode,
+      legalCertification: false
+    },
     legacyEvt: input.legacyEvent.evt,
     legacyPublicHash: input.legacyEvent.anchors.publicHash,
     governedEvt: input.governedEvt.evt,
@@ -3655,6 +3713,11 @@ function buildRuntimeDiagnostic(input: {
     aiGovernanceBoundary: HBCE_AI_BOUNDARY,
     iprRecognitionBoundary: IPR_RECOGNITION_BOUNDARY,
     memoryBoundary: MEMORY_BOUNDARY,
+    transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
+    transformativeMemoryPrivacyBoundary: MATRIX_TRANSFORMATIVE_MEMORY_PRIVACY_BOUNDARY,
+    transformativeMemoryCyberBoundary: MATRIX_TRANSFORMATIVE_MEMORY_CYBER_BOUNDARY,
+    transformativeMemoryOpcBoundary: MATRIX_TRANSFORMATIVE_MEMORY_OPC_BOUNDARY,
+    transformativeMemoryPersistenceBoundary: MATRIX_TRANSFORMATIVE_MEMORY_PERSISTENCE_BOUNDARY,
     defensiveOnlyCyberBoundary: DEFENSIVE_ONLY_CYBER_BOUNDARY,
     dataPrivacyBoundary: OPENAI_DATA_PRIVACY_BOUNDARY,
     degradedReason: input.generated.degradedReason || null
@@ -3775,6 +3838,34 @@ export async function POST(req: NextRequest) {
     memory: memoryBefore
   });
 
+  const transformativeMemory = evaluateMatrixTransformativeMemory({
+    memory: memoryBefore,
+    userMessage: body.message,
+    assistantMessage: generated.text,
+    evt: governedEvt.evt,
+    opcProofId: opcProof.proofId,
+    opcChainHash: opcProof.proof.chainHash,
+    runtime: {
+      state: generated.state,
+      decision: finalDecision,
+      contextClass: governance.contextClass,
+      intentClass: governance.intentClass,
+      projectDomain: governance.projectDomain,
+      hbceModule: governance.hbceModule,
+      riskClass: governance.riskClass,
+      policyStatus: governance.policyStatus,
+      policyOutcome: governance.policyOutcome,
+      humanOversight: governance.humanOversight,
+      failClosed: governance.failClosed,
+      userDeclaredGovernanceDetected: governance.userDeclaredGovernanceDetected,
+      generationClass: generated.generationClass || "MODEL",
+      deterministicResponse: Boolean(generated.deterministic),
+      degradedReason: generated.degradedReason || null
+    }
+  });
+
+  const transformativeFacts = toTransformativeMemoryExtraFacts(transformativeMemory);
+
   const batchFacts = isDocumentBatchRequest(body.message)
     ? [
         "Last operation detected a multi-document OpenAI/HBCE package request.",
@@ -3833,11 +3924,13 @@ export async function POST(req: NextRequest) {
       ...batchFacts,
       ...commercialFacts,
       ...cyberFacts,
-      ...degradedFacts
+      ...degradedFacts,
+      ...transformativeFacts
     ]
   });
 
   const publicOpcProof = toPublicOpcProofRecord(opcProof);
+  const publicTransformativeMemory = toPublicMatrixTransformativeMemoryEvaluation(transformativeMemory);
 
   const diagnostic = buildRuntimeDiagnostic({
     identity,
@@ -3848,7 +3941,8 @@ export async function POST(req: NextRequest) {
     opcProof,
     generated,
     iprHandoff,
-    memory: memoryAfter
+    memory: memoryAfter,
+    transformativeMemory
   });
 
   const publicIprHandoff = toPublicIprHandoffEvaluation(iprHandoff);
@@ -3920,6 +4014,8 @@ export async function POST(req: NextRequest) {
       lastMemoryOpcProofId: memoryAfter.lastOpcProofId || null,
       lastMemoryOpcChainHash: memoryAfter.lastOpcChainHash || null
     },
+    matrixTransformativeMemory: publicTransformativeMemory,
+    transformativeMemory: publicTransformativeMemory,
     iprHandoff: publicIprHandoff,
     governance: {
       contextClass: governance.contextClass,
@@ -3974,6 +4070,11 @@ export async function POST(req: NextRequest) {
       metadataAuthorityBoundary: METADATA_AUTHORITY_BOUNDARY,
       iprRecognitionBoundary: IPR_RECOGNITION_BOUNDARY,
       memoryBoundary: MEMORY_BOUNDARY,
+      transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
+      transformativeMemoryPrivacyBoundary: MATRIX_TRANSFORMATIVE_MEMORY_PRIVACY_BOUNDARY,
+      transformativeMemoryCyberBoundary: MATRIX_TRANSFORMATIVE_MEMORY_CYBER_BOUNDARY,
+      transformativeMemoryOpcBoundary: MATRIX_TRANSFORMATIVE_MEMORY_OPC_BOUNDARY,
+      transformativeMemoryPersistenceBoundary: MATRIX_TRANSFORMATIVE_MEMORY_PERSISTENCE_BOUNDARY,
       failClosedStatement: FAIL_CLOSED_STATEMENT,
       defensiveOnlyCyberBoundary: DEFENSIVE_ONLY_CYBER_BOUNDARY,
       dataPrivacyBoundary: OPENAI_DATA_PRIVACY_BOUNDARY
@@ -4015,6 +4116,12 @@ export async function GET() {
       active: false,
       reason: "GET health check does not validate a biological IPR handoff."
     },
+    matrixTransformativeMemory: {
+      state: "NOT_EVALUATED",
+      reason: "GET health check does not process a governed chat operation, EVT, OPC or runtime memory completion.",
+      boundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
+      legalCertification: false
+    },
     boundary: {
       legalCertification: false,
       aiGovernanceBoundary: HBCE_AI_BOUNDARY,
@@ -4024,6 +4131,11 @@ export async function GET() {
       metadataAuthorityBoundary: METADATA_AUTHORITY_BOUNDARY,
       iprRecognitionBoundary: IPR_RECOGNITION_BOUNDARY,
       memoryBoundary: MEMORY_BOUNDARY,
+      transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
+      transformativeMemoryPrivacyBoundary: MATRIX_TRANSFORMATIVE_MEMORY_PRIVACY_BOUNDARY,
+      transformativeMemoryCyberBoundary: MATRIX_TRANSFORMATIVE_MEMORY_CYBER_BOUNDARY,
+      transformativeMemoryOpcBoundary: MATRIX_TRANSFORMATIVE_MEMORY_OPC_BOUNDARY,
+      transformativeMemoryPersistenceBoundary: MATRIX_TRANSFORMATIVE_MEMORY_PERSISTENCE_BOUNDARY,
       failClosedStatement: FAIL_CLOSED_STATEMENT,
       defensiveOnlyCyberBoundary: DEFENSIVE_ONLY_CYBER_BOUNDARY,
       dataPrivacyBoundary: OPENAI_DATA_PRIVACY_BOUNDARY
