@@ -84,7 +84,7 @@ export type MemoryTurn = {
   evt?: string;
 };
 
-export type IprBoundMemoryRecord = IprBoundMemoryStoreRecord & {
+export type IprBoundMemoryRecordWithoutHash = {
   memoryId: string;
   memoryKey: string;
   memoryKeyHash: string;
@@ -105,6 +105,9 @@ export type IprBoundMemoryRecord = IprBoundMemoryStoreRecord & {
   facts: string[];
   recentTurns: MemoryTurn[];
   summary: string;
+};
+
+export type IprBoundMemoryRecord = IprBoundMemoryRecordWithoutHash & {
   memoryHash: string;
 };
 
@@ -114,7 +117,7 @@ export type GetOrCreateRuntimeMemoryInput = {
   runtime: IprBoundMemoryRuntimeIdentity;
   previousContinuityRef?: string | null;
   seedFacts?: string[];
-  store?: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>;
+  store?: IprBoundMemoryStoreAdapter<IprBoundMemoryStoreRecord>;
 };
 
 export type UpdateMemoryAfterCompletionInput = {
@@ -125,7 +128,7 @@ export type UpdateMemoryAfterCompletionInput = {
   opcProofId?: string;
   opcChainHash?: string;
   extraFacts?: string[];
-  store?: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>;
+  store?: IprBoundMemoryStoreAdapter<IprBoundMemoryStoreRecord>;
 };
 
 export type PublicIprBoundMemoryRecord = {
@@ -219,13 +222,13 @@ function mergeUniqueStrings(current: string[], next: string[], max: number): str
 }
 
 function resolveMemoryStore(
-  store?: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>
-): IprBoundMemoryStoreAdapter<IprBoundMemoryRecord> {
-  return store ?? getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>();
+  store?: IprBoundMemoryStoreAdapter<IprBoundMemoryStoreRecord>
+): IprBoundMemoryStoreAdapter<IprBoundMemoryStoreRecord> {
+  return store ?? getDefaultIprBoundMemoryStore();
 }
 
 function resolvePersistenceMode(
-  store: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>
+  store: IprBoundMemoryStoreAdapter<IprBoundMemoryStoreRecord>
 ): MemoryPersistenceMode {
   if (store.kind === "PROCESS_MEMORY_MVP") {
     return "PROCESS_MEMORY_MVP";
@@ -240,6 +243,16 @@ function resolvePersistenceMode(
   }
 
   return "EXTERNAL_ADAPTER";
+}
+
+function toStoreRecord(record: IprBoundMemoryRecord): IprBoundMemoryStoreRecord {
+  return record as unknown as IprBoundMemoryStoreRecord;
+}
+
+function fromStoreRecord(
+  record: IprBoundMemoryStoreRecord | undefined
+): IprBoundMemoryRecord | undefined {
+  return record as unknown as IprBoundMemoryRecord | undefined;
 }
 
 function buildMemoryKey(input: GetOrCreateRuntimeMemoryInput): string {
@@ -336,7 +349,7 @@ function buildDerivedCanonicalMemoryFacts(input: GetOrCreateRuntimeMemoryInput):
 }
 
 export function buildMemoryRecordHash(
-  record: Omit<IprBoundMemoryRecord, "memoryHash"> | IprBoundMemoryRecord
+  record: IprBoundMemoryRecordWithoutHash | IprBoundMemoryRecord
 ): string {
   const canonical = {
     memoryId: record.memoryId,
@@ -368,7 +381,7 @@ export function getOrCreateRuntimeMemory(
 ): IprBoundMemoryRecord {
   const store = resolveMemoryStore(input.store);
   const memoryKey = buildMemoryKey(input);
-  const existing = store.get(memoryKey);
+  const existing = fromStoreRecord(store.get(memoryKey));
   const now = new Date().toISOString();
   const persistenceMode = resolvePersistenceMode(store);
 
@@ -381,8 +394,10 @@ export function getOrCreateRuntimeMemory(
   if (existing) {
     const nextFacts = buildDerivedCanonicalMemoryFacts(input);
 
-    const updatedWithoutHash: Omit<IprBoundMemoryRecord, "memoryHash"> = {
-      ...existing,
+    const updatedWithoutHash: IprBoundMemoryRecordWithoutHash = {
+      memoryId: existing.memoryId,
+      memoryKey: existing.memoryKey,
+      memoryKeyHash: existing.memoryKeyHash,
       scope,
       authority,
       persistenceMode,
@@ -390,8 +405,15 @@ export function getOrCreateRuntimeMemory(
       certificate: input.handoff.certificate ?? existing.certificate,
       runtime: input.runtime,
       matrixState: input.handoff.matrixState,
+      sessionId: input.sessionId,
+      createdAt: existing.createdAt,
       updatedAt: now,
+      lastEvt: existing.lastEvt,
+      lastOpcProofId: existing.lastOpcProofId,
+      lastOpcChainHash: existing.lastOpcChainHash,
+      eventLinks: existing.eventLinks,
       facts: mergeUniqueStrings(existing.facts, nextFacts, MAX_MEMORY_FACTS),
+      recentTurns: existing.recentTurns,
       summary: buildMemorySummary({
         handoff: input.handoff,
         runtime: input.runtime,
@@ -404,12 +426,12 @@ export function getOrCreateRuntimeMemory(
       memoryHash: buildMemoryRecordHash(updatedWithoutHash)
     };
 
-    store.set(memoryKey, updated);
+    store.set(memoryKey, toStoreRecord(updated));
 
     return updated;
   }
 
-  const createdWithoutHash: Omit<IprBoundMemoryRecord, "memoryHash"> = {
+  const createdWithoutHash: IprBoundMemoryRecordWithoutHash = {
     memoryId: `MEM-${sha256Hex(`${memoryKey}::${now}::${randomUUID()}`).slice(0, 16)}`,
     memoryKey,
     memoryKeyHash: sha256Hex(memoryKey),
@@ -441,7 +463,7 @@ export function getOrCreateRuntimeMemory(
     memoryHash: buildMemoryRecordHash(createdWithoutHash)
   };
 
-  store.set(memoryKey, created);
+  store.set(memoryKey, toStoreRecord(created));
 
   return created;
 }
@@ -474,9 +496,19 @@ export function updateMemoryAfterCompletion(
     MAX_MEMORY_FACTS
   );
 
-  const updatedWithoutHash: Omit<IprBoundMemoryRecord, "memoryHash"> = {
-    ...input.memory,
+  const updatedWithoutHash: IprBoundMemoryRecordWithoutHash = {
+    memoryId: input.memory.memoryId,
+    memoryKey: input.memory.memoryKey,
+    memoryKeyHash: input.memory.memoryKeyHash,
+    scope: input.memory.scope,
+    authority: input.memory.authority,
     persistenceMode: resolvePersistenceMode(store),
+    subject: input.memory.subject,
+    certificate: input.memory.certificate,
+    runtime: input.memory.runtime,
+    matrixState: input.memory.matrixState,
+    sessionId: input.memory.sessionId,
+    createdAt: input.memory.createdAt,
     updatedAt: now,
     lastEvt: input.evt,
     lastOpcProofId: input.opcProofId ?? input.memory.lastOpcProofId,
@@ -499,7 +531,7 @@ export function updateMemoryAfterCompletion(
     memoryHash: buildMemoryRecordHash(updatedWithoutHash)
   };
 
-  store.set(updated.memoryKey, updated);
+  store.set(updated.memoryKey, toStoreRecord(updated));
 
   return updated;
 }
@@ -590,16 +622,15 @@ export function describeRuntimeMemoryStore(): IprBoundMemoryStoreDescription {
 }
 
 export function getRuntimeMemoryStoreSize(): number {
-  return getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>().size();
+  return getDefaultIprBoundMemoryStore().size();
 }
 
 export function getRuntimeMemoryByKeyHash(
   memoryKeyHash: string
 ): PublicIprBoundMemoryRecord | null {
-  const memory =
-    getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>().findByMemoryKeyHash(
-      memoryKeyHash
-    );
+  const memory = fromStoreRecord(
+    getDefaultIprBoundMemoryStore().findByMemoryKeyHash(memoryKeyHash) ?? undefined
+  );
 
   if (!memory) {
     return null;
@@ -609,13 +640,13 @@ export function getRuntimeMemoryByKeyHash(
 }
 
 export function clearProcessRuntimeMemory(): void {
-  getProcessIprBoundMemoryStore<IprBoundMemoryRecord>().clear();
+  getProcessIprBoundMemoryStore().clear();
 }
 
 export function getProcessMemoryStoreDescription(): IprBoundMemoryStoreDescription {
-  return getProcessIprBoundMemoryStore<IprBoundMemoryRecord>().describe();
+  return getProcessIprBoundMemoryStore().describe();
 }
 
 export function getDatabaseReadyMemoryStoreDescription(): IprBoundMemoryStoreDescription {
-  return getDatabaseReadyIprBoundMemoryStore<IprBoundMemoryRecord>().describe();
+  return getDatabaseReadyIprBoundMemoryStore().describe();
 }
