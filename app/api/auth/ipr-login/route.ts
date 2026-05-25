@@ -1,4 +1,9 @@
-import { createHash } from "node:crypto";
+import {
+  createHash,
+  randomBytes,
+  scryptSync,
+  timingSafeEqual
+} from "node:crypto";
 
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,11 +13,8 @@ import {
   IPR_AUTH_DATABASE_REQUIREMENT,
   IPR_AUTH_PASSWORD_BOUNDARY,
   IPR_AUTH_SESSION_BOUNDARY,
-  createIprSessionToken,
   evaluateIprPasswordPolicy,
-  hashIprPassword,
-  normalizeHumanIpr,
-  verifyIprPassword
+  normalizeHumanIpr
 } from "@/lib/ipr-auth";
 
 import {
@@ -73,6 +75,9 @@ type MinimalIprHandoffEvaluation =
 const DEFAULT_RUNTIME_IPR = "IPR-AI-0001";
 const DEFAULT_ACCESS_SCOPE = "JOKER_C2_ACCESS";
 const DEFAULT_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
+
+const PASSWORD_ALGORITHM = "scrypt-sha256-v1";
+const PASSWORD_KEY_LENGTH = 64;
 
 const ROUTE_BOUNDARY =
   "This route creates and verifies HBCE IPR account access for JOKER-C2. It stores password hashes and session token hashes only. It does not store plaintext passwords, does not issue official identity, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale or eIDAS qualified trust services, and does not create legal certification.";
@@ -253,51 +258,6 @@ function buildErrorResponse(
   );
 }
 
-function extractPasswordHashResult(value: unknown) {
-  const record = isRecord(value) ? value : {};
-
-  const passwordAlgorithm = firstString(
-    record,
-    [["passwordAlgorithm"], ["algorithm"], ["algo"]],
-    "scrypt-sha256-v1"
-  );
-
-  const passwordHash = firstString(
-    record,
-    [["passwordHash"], ["hash"], ["digest"], ["derivedKey"]],
-    ""
-  );
-
-  const passwordSalt = firstString(
-    record,
-    [["passwordSalt"], ["salt"]],
-    ""
-  );
-
-  const passwordKeyLengthRaw =
-    isRecord(record) && typeof record.passwordKeyLength === "number"
-      ? record.passwordKeyLength
-      : isRecord(record) && typeof record.keyLength === "number"
-        ? record.keyLength
-        : 64;
-
-  const passwordKeyLength =
-    Number.isFinite(passwordKeyLengthRaw) && passwordKeyLengthRaw > 0
-      ? passwordKeyLengthRaw
-      : 64;
-
-  if (!passwordHash || !passwordSalt) {
-    throw new Error("IPR_PASSWORD_HASH_RESULT_INVALID");
-  }
-
-  return {
-    passwordAlgorithm,
-    passwordHash,
-    passwordSalt,
-    passwordKeyLength
-  };
-}
-
 function normalizePolicyResult(value: unknown) {
   const record = isRecord(value) ? value : {};
 
@@ -321,61 +281,23 @@ function normalizePolicyResult(value: unknown) {
   };
 }
 
-function normalizeVerificationResult(value: unknown): boolean {
-  if (typeof value === "boolean") {
-    return value;
-  }
+function hashPasswordLocally(password: string) {
+  const passwordSalt = randomBytes(24).toString("hex");
+  const passwordHash = scryptSync(
+    password,
+    passwordSalt,
+    PASSWORD_KEY_LENGTH
+  ).toString("hex");
 
-  if (isRecord(value)) {
-    return firstBoolean(
-      value,
-      [["ok"], ["valid"], ["verified"], ["match"], ["authenticated"]],
-      false
-    );
-  }
-
-  return false;
+  return {
+    passwordAlgorithm: PASSWORD_ALGORITHM,
+    passwordHash,
+    passwordSalt,
+    passwordKeyLength: PASSWORD_KEY_LENGTH
+  };
 }
 
-async function hashNewIprPassword(password: string): Promise<unknown> {
-  const hasher = hashIprPassword as unknown as (
-    ...args: unknown[]
-  ) => Promise<unknown> | unknown;
-
-  const attempts: unknown[][] = [
-    [
-      {
-        password
-      }
-    ],
-    [
-      {
-        plainPassword: password
-      }
-    ],
-    [
-      {
-        value: password
-      }
-    ]
-  ];
-
-  let lastError: unknown = null;
-
-  for (const args of attempts) {
-    try {
-      return await hasher(...args);
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("IPR_PASSWORD_HASH_FAILED");
-}
-
-async function verifyStoredPassword(
+function verifyPasswordLocally(
   password: string,
   credential: {
     passwordAlgorithm: string;
@@ -383,135 +305,63 @@ async function verifyStoredPassword(
     passwordSalt: string;
     passwordKeyLength: number;
   }
-): Promise<boolean> {
-  const verifier = verifyIprPassword as unknown as (
-    ...args: unknown[]
-  ) => Promise<unknown> | unknown;
-
-  const attempts: unknown[][] = [
-    [
-      password,
-      {
-        passwordAlgorithm: credential.passwordAlgorithm,
-        passwordHash: credential.passwordHash,
-        passwordSalt: credential.passwordSalt,
-        passwordKeyLength: credential.passwordKeyLength
-      }
-    ],
-    [
-      {
-        password,
-        passwordAlgorithm: credential.passwordAlgorithm,
-        passwordHash: credential.passwordHash,
-        passwordSalt: credential.passwordSalt,
-        passwordKeyLength: credential.passwordKeyLength
-      }
-    ],
-    [
-      password,
-      credential.passwordHash,
-      credential.passwordSalt,
-      credential.passwordKeyLength,
-      credential.passwordAlgorithm
-    ]
-  ];
-
-  for (const args of attempts) {
-    try {
-      const result = await verifier(...args);
-
-      if (normalizeVerificationResult(result)) {
-        return true;
-      }
-    } catch {
-      // Try the next supported call shape. Compatibility beats ritual purity.
-    }
+): boolean {
+  if (credential.passwordAlgorithm !== PASSWORD_ALGORITHM) {
+    return false;
   }
 
-  return false;
+  if (!credential.passwordHash || !credential.passwordSalt) {
+    return false;
+  }
+
+  const keyLength =
+    Number.isFinite(credential.passwordKeyLength) &&
+    credential.passwordKeyLength > 0
+      ? credential.passwordKeyLength
+      : PASSWORD_KEY_LENGTH;
+
+  const expected = Buffer.from(credential.passwordHash, "hex");
+  const actual = scryptSync(
+    password,
+    credential.passwordSalt,
+    keyLength
+  );
+
+  if (expected.length !== actual.length) {
+    return false;
+  }
+
+  return timingSafeEqual(expected, actual);
 }
 
-function extractRawSessionToken(value: unknown): string {
-  if (typeof value === "string" && value.trim()) {
-    return value.trim();
-  }
-
-  if (isRecord(value)) {
-    const token = firstString(
-      value,
-      [["token"], ["sessionToken"], ["rawToken"], ["value"]],
-      ""
-    );
-
-    if (token) {
-      return token;
-    }
-  }
-
-  throw new Error("IPR_SESSION_TOKEN_VALUE_MISSING");
+function createRawSessionToken(): string {
+  return `IPRSESS_${randomBytes(32).toString("hex").toUpperCase()}`;
 }
 
-function extractSessionExpiresAt(value: unknown): string {
-  if (isRecord(value)) {
-    const expiresAt = firstString(
-      value,
-      [["expiresAt"], ["expires_at"], ["expiration"]],
-      ""
-    );
+function createSessionTokenPayload() {
+  const expiresAt = addSeconds(
+    new Date(),
+    DEFAULT_SESSION_TTL_SECONDS
+  ).toISOString();
 
-    if (expiresAt) {
-      return expiresAt;
-    }
-  }
-
-  return addSeconds(new Date(), DEFAULT_SESSION_TTL_SECONDS).toISOString();
-}
-
-function extractSessionMaxAge(value: unknown): number {
-  if (isRecord(value)) {
-    const candidates = [
-      value.maxAgeSeconds,
-      value.ttlSeconds,
-      value.expiresInSeconds,
-      value.maxAge
-    ];
-
-    for (const candidate of candidates) {
-      if (typeof candidate === "number" && Number.isFinite(candidate)) {
-        return candidate;
-      }
-    }
-  }
-
-  return DEFAULT_SESSION_TTL_SECONDS;
-}
-
-function createRuntimeSessionToken(input: {
-  humanIpr: string;
-  runtimeIpr: string;
-}) {
-  const creator = createIprSessionToken as unknown as (
-    ...args: unknown[]
-  ) => unknown;
-
-  try {
-    return creator(input);
-  } catch {
-    return creator();
-  }
+  return {
+    token: createRawSessionToken(),
+    expiresAt,
+    maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,
+    legalCertification: false
+  };
 }
 
 function setSessionCookie(
   response: NextResponse,
-  rawSessionToken: string,
-  sessionTokenPayload: unknown
+  rawSessionToken: string
 ): void {
   response.cookies.set(IPR_AUTH_COOKIE_NAME, rawSessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: extractSessionMaxAge(sessionTokenPayload)
+    maxAge: DEFAULT_SESSION_TTL_SECONDS
   });
 }
 
@@ -744,18 +594,13 @@ async function createAuthenticatedSession(input: {
   sessionPayload: JsonRecord;
 }) {
   const authStore = getDefaultIprAuthStore();
-  const sessionTokenPayload = createRuntimeSessionToken({
-    humanIpr: input.humanIpr,
-    runtimeIpr: input.runtimeIpr
-  });
-  const rawSessionToken = extractRawSessionToken(sessionTokenPayload);
-  const expiresAt = extractSessionExpiresAt(sessionTokenPayload);
+  const sessionTokenPayload = createSessionTokenPayload();
 
   const storedSession = await authStore.createSessionAsync({
-    token: rawSessionToken,
+    token: sessionTokenPayload.token,
     humanIpr: input.humanIpr,
     runtimeIpr: input.runtimeIpr,
-    expiresAt,
+    expiresAt: sessionTokenPayload.expiresAt,
     deviceLabel: input.deviceLabel,
     userAgentHash: buildUserAgentHash(input.req),
     ipAddressHash: buildIpAddressHash(input.req),
@@ -763,7 +608,7 @@ async function createAuthenticatedSession(input: {
   });
 
   return {
-    rawSessionToken,
+    rawSessionToken: sessionTokenPayload.token,
     sessionTokenPayload,
     storedSession
   };
@@ -801,10 +646,7 @@ async function handleSetPassword(
 
   const authStore = getDefaultIprAuthStore();
   const accountStore = getDefaultIprAccountStore();
-
-  const passwordHash = extractPasswordHashResult(
-    await hashNewIprPassword(password)
-  );
+  const passwordHash = hashPasswordLocally(password);
 
   await authStore.setCredentialAsync({
     humanIpr,
@@ -816,6 +658,7 @@ async function handleSetPassword(
       source: "IPR_LOGIN_SET_PASSWORD",
       origin: getRequestOrigin(req),
       createdAt: nowIso(),
+      algorithm: PASSWORD_ALGORITHM,
       legalCertification: false
     }
   });
@@ -900,7 +743,7 @@ async function handleSetPassword(
     { status: 200 }
   );
 
-  setSessionCookie(response, session.rawSessionToken, session.sessionTokenPayload);
+  setSessionCookie(response, session.rawSessionToken);
 
   return response;
 }
@@ -924,7 +767,12 @@ async function handleLogin(
     );
   }
 
-  const verified = await verifyStoredPassword(password, credential);
+  const verified = verifyPasswordLocally(password, {
+    passwordAlgorithm: credential.passwordAlgorithm,
+    passwordHash: credential.passwordHash,
+    passwordSalt: credential.passwordSalt,
+    passwordKeyLength: credential.passwordKeyLength
+  });
 
   if (!verified) {
     return buildErrorResponse(
@@ -999,7 +847,7 @@ async function handleLogin(
     { status: 200 }
   );
 
-  setSessionCookie(response, session.rawSessionToken, session.sessionTokenPayload);
+  setSessionCookie(response, session.rawSessionToken);
 
   return response;
 }
@@ -1014,6 +862,11 @@ export async function GET() {
       cookieName: IPR_AUTH_COOKIE_NAME,
       authStore: describeDefaultIprAuthStore(),
       accountStore: describeDefaultIprAccountStore(),
+      password: {
+        algorithm: PASSWORD_ALGORITHM,
+        keyLength: PASSWORD_KEY_LENGTH,
+        plaintextStored: false
+      },
       flow: {
         setPassword:
           "Human IPR + password + valid HBCE IPR handoff creates credential, persistent account profile and server-side IPR session.",
