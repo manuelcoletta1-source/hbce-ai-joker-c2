@@ -67,7 +67,12 @@ type RuntimeFile = {
   uploaded: boolean;
 };
 
-type IprHandoffSource = "url" | "sessionStorage" | "localStorage" | "none";
+type IprHandoffSource =
+  | "url"
+  | "sessionStorage"
+  | "localStorage"
+  | "accountSession"
+  | "none";
 
 type IprHandoffSubject = {
   entity: string;
@@ -101,7 +106,7 @@ type IprHandoff = {
   client_context: {
     transport_source: IprHandoffSource;
     client_validation: "HANDOFF_PRESENT_FOR_SERVER_VALIDATION";
-    authority: "CLIENT_TRANSPORT_ONLY";
+    authority: "CLIENT_TRANSPORT_ONLY" | "SERVER_RUNTIME_VALIDATED";
     note: string;
   };
   rawPayload?: Record<string, unknown>;
@@ -111,6 +116,47 @@ type IprHandoffLoadResult = {
   handoff: IprHandoff | null;
   source: IprHandoffSource;
   error: string | null;
+};
+
+type IprAccountSessionResponse = {
+  ok?: boolean;
+  authenticated?: boolean;
+  reason?: string;
+  cookieName?: string;
+  session?: {
+    sessionId?: string;
+    humanIpr?: string;
+    runtimeIpr?: string;
+    status?: string;
+    createdAt?: string;
+    expiresAt?: string;
+    revokedAt?: string | null;
+    lastSeenAt?: string | null;
+    deviceLabel?: string;
+    legalCertification?: boolean;
+  };
+  accountProfile?: Record<string, unknown>;
+  reconstructedIprHandoff?: unknown;
+  access?: {
+    decision?: string;
+    scope?: string;
+    identityBinding?: string;
+    source?: string;
+    legalCertification?: boolean;
+  };
+  memory?: {
+    expectedScope?: string;
+    expectedAuthority?: string;
+    persistenceMode?: string;
+  };
+  matrix?: {
+    expectedState?: string;
+    active?: boolean;
+  };
+  boundary?: unknown;
+  legalCertification?: boolean;
+  detail?: string;
+  error?: string;
 };
 
 type ChatApiResponse = {
@@ -370,7 +416,10 @@ function normalizeIprHandoff(
       ["holder", "name"],
       ["holder", "full_name"],
       ["identity", "name"],
-      ["identity", "full_name"]
+      ["identity", "full_name"],
+      ["entity"],
+      ["name"],
+      ["fullName"]
     ],
     ""
   );
@@ -386,7 +435,9 @@ function normalizeIprHandoff(
       ["subject_ipr"],
       ["ipr"],
       ["ipr_id"],
-      ["identity", "ipr"]
+      ["identity", "ipr"],
+      ["humanIpr"],
+      ["human_ipr"]
     ],
     ""
   );
@@ -398,7 +449,8 @@ function normalizeIprHandoff(
         ["subject", "kind"],
         ["verifiedSubject", "kind"],
         ["verified_subject", "kind"],
-        ["subject_kind"]
+        ["subject_kind"],
+        ["subjectKind"]
       ],
       ""
     ) || "BIOLOGICAL_SUBJECT";
@@ -407,11 +459,14 @@ function normalizeIprHandoff(
     payload,
     [
       ["certificate", "certificate_id"],
+      ["certificate", "certificateId"],
       ["certificate", "id"],
       ["operationalCertificate", "certificate_id"],
+      ["operationalCertificate", "certificateId"],
       ["operational_certificate", "certificate_id"],
       ["verified_subject_certificate_id"],
-      ["certificate_id"]
+      ["certificate_id"],
+      ["certificateId"]
     ],
     ""
   );
@@ -421,10 +476,13 @@ function normalizeIprHandoff(
       payload,
       [
         ["certificate", "certificate_kind"],
+        ["certificate", "certificateKind"],
         ["certificate", "kind"],
         ["operationalCertificate", "certificate_kind"],
+        ["operationalCertificate", "certificateKind"],
         ["operational_certificate", "certificate_kind"],
-        ["certificate_kind"]
+        ["certificate_kind"],
+        ["certificateKind"]
       ],
       ""
     ) || "CERTIFICATE_09_OPERATIONAL";
@@ -434,23 +492,30 @@ function normalizeIprHandoff(
       payload,
       [
         ["certificate", "certificate_status"],
+        ["certificate", "certificateStatus"],
         ["certificate", "status"],
         ["operationalCertificate", "certificate_status"],
+        ["operationalCertificate", "certificateStatus"],
         ["operational_certificate", "certificate_status"],
         ["verified_subject_certificate_status"],
-        ["certificate_status"]
+        ["certificate_status"],
+        ["certificateStatus"]
       ],
       ""
     ).toUpperCase() || "UNKNOWN";
 
   const certificateScope = normalizeScope(
     readPath(payload, ["certificate", "certificate_scope"]) ??
+      readPath(payload, ["certificate", "certificateScope"]) ??
       readPath(payload, ["certificate", "scope"]) ??
       readPath(payload, ["operationalCertificate", "certificate_scope"]) ??
+      readPath(payload, ["operationalCertificate", "certificateScope"]) ??
       readPath(payload, ["operational_certificate", "certificate_scope"]) ??
       readPath(payload, ["verified_subject_certificate_scope"]) ??
       readPath(payload, ["certificate_scope"]) ??
-      readPath(payload, ["scope"])
+      readPath(payload, ["certificateScope"]) ??
+      readPath(payload, ["scope"]) ??
+      readPath(payload, ["accessScope"])
   );
 
   const cardSerial = firstText(
@@ -459,6 +524,7 @@ function normalizeIprHandoff(
       ["certificate", "card_serial"],
       ["certificate", "cardSerial"],
       ["operationalCertificate", "card_serial"],
+      ["operationalCertificate", "cardSerial"],
       ["operational_certificate", "card_serial"],
       ["verified_subject_card_serial"],
       ["card_serial"],
@@ -471,10 +537,13 @@ function normalizeIprHandoff(
     payload,
     [
       ["certificate", "certificate_hash"],
+      ["certificate", "certificateHash"],
       ["certificate", "hash"],
       ["operationalCertificate", "certificate_hash"],
+      ["operationalCertificate", "certificateHash"],
       ["operational_certificate", "certificate_hash"],
       ["certificate_hash"],
+      ["certificateHash"],
       ["hash"]
     ],
     ""
@@ -486,6 +555,7 @@ function normalizeIprHandoff(
       [
         ["access", "decision"],
         ["access_decision"],
+        ["accessDecision"],
         ["verified_subject_access_decision"]
       ],
       ""
@@ -497,7 +567,9 @@ function normalizeIprHandoff(
       [
         ["access", "scope"],
         ["verified_subject_certificate_scope"],
-        ["certificate_scope"]
+        ["certificate_scope"],
+        ["certificateScope"],
+        ["accessScope"]
       ],
       ""
     ) || (hasJokerAccessScope(certificateScope) ? "JOKER_C2_ACCESS" : "UNKNOWN");
@@ -508,7 +580,8 @@ function normalizeIprHandoff(
       [
         ["access", "identity_binding"],
         ["access", "identityBinding"],
-        ["identity_binding"]
+        ["identity_binding"],
+        ["identityBinding"]
       ],
       ""
     ) || "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
@@ -521,7 +594,14 @@ function normalizeIprHandoff(
     return null;
   }
 
-  if (!hasJokerAccessScope(certificateScope)) {
+  const effectiveScope =
+    certificateScope.length > 0
+      ? certificateScope
+      : accessScope === "JOKER_C2_ACCESS"
+        ? ["JOKER_C2_ACCESS"]
+        : [];
+
+  if (!hasJokerAccessScope(effectiveScope)) {
     return null;
   }
 
@@ -531,8 +611,10 @@ function normalizeIprHandoff(
     handoff_version:
       firstText(payload, [["handoff_version"], ["version"]], "") || "1.0",
     source:
-      firstText(payload, [["source"], ["issuer"], ["app"]], "") ||
-      "HBCE_IPR_ONBOARDING_APP",
+      source === "accountSession"
+        ? "IPR_ACCOUNT_SESSION"
+        : firstText(payload, [["source"], ["issuer"], ["app"]], "") ||
+          "HBCE_IPR_ONBOARDING_APP",
     issued_at: firstText(payload, [["issued_at"], ["issuedAt"]], ""),
     subject: {
       entity: subjectEntity || "VERIFIED_BIOLOGICAL_SUBJECT",
@@ -543,7 +625,7 @@ function normalizeIprHandoff(
       certificate_id: certificateId,
       certificate_kind: certificateKind,
       certificate_status: certificateStatus,
-      certificate_scope: certificateScope,
+      certificate_scope: effectiveScope,
       card_serial: cardSerial || undefined,
       certificate_hash: certificateHash || undefined
     },
@@ -555,12 +637,42 @@ function normalizeIprHandoff(
     client_context: {
       transport_source: source,
       client_validation: "HANDOFF_PRESENT_FOR_SERVER_VALIDATION",
-      authority: "CLIENT_TRANSPORT_ONLY",
+      authority:
+        source === "accountSession"
+          ? "SERVER_RUNTIME_VALIDATED"
+          : "CLIENT_TRANSPORT_ONLY",
       note:
-        "The browser can transport the IPR handoff, but only the JOKER-C2 API can validate and authorize it."
+        source === "accountSession"
+          ? "The IPR handoff was reconstructed from the authenticated server-side IPR account session."
+          : "The browser can transport the IPR handoff, but only the JOKER-C2 API can validate and authorize it."
     },
     rawPayload: payload
   };
+}
+
+function buildIprHandoffFromAccountSession(
+  payload: IprAccountSessionResponse | null
+): IprHandoff | null {
+  if (!payload || payload.authenticated !== true) {
+    return null;
+  }
+
+  if (isRecord(payload.reconstructedIprHandoff)) {
+    const normalized = normalizeIprHandoff(
+      payload.reconstructedIprHandoff,
+      "accountSession"
+    );
+
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  if (isRecord(payload.accountProfile)) {
+    return normalizeIprHandoff(payload.accountProfile, "accountSession");
+  }
+
+  return null;
 }
 
 function readStoredHandoff(key: string): string | null {
@@ -889,7 +1001,9 @@ function getMatrixState(payload?: ChatApiResponse | RuntimeHealth | null): strin
   );
 }
 
-function getSemanticMemoryScope(payload?: ChatApiResponse | RuntimeHealth | null): string {
+function getSemanticMemoryScope(
+  payload?: ChatApiResponse | RuntimeHealth | null
+): string {
   if (!payload) return "-";
 
   return firstText(
@@ -924,7 +1038,9 @@ function getMemoryAuthority(payload?: ChatApiResponse | RuntimeHealth | null): s
   );
 }
 
-function getMemoryPersistenceMode(payload?: ChatApiResponse | RuntimeHealth | null): string {
+function getMemoryPersistenceMode(
+  payload?: ChatApiResponse | RuntimeHealth | null
+): string {
   if (!payload) return "-";
 
   return firstText(
@@ -1017,7 +1133,9 @@ function getLastMemoryOpc(payload?: ChatApiResponse | RuntimeHealth | null): str
   );
 }
 
-function getLastMemoryChainHash(payload?: ChatApiResponse | RuntimeHealth | null): string {
+function getLastMemoryChainHash(
+  payload?: ChatApiResponse | RuntimeHealth | null
+): string {
   if (!payload) return "-";
 
   return firstText(
@@ -1323,11 +1441,21 @@ export default function InterfacePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [files, setFiles] = useState<RuntimeFile[]>([]);
   const [continuityRef, setContinuityRef] = useState<string | null>(null);
+
   const [iprHandoff, setIprHandoff] = useState<IprHandoff | null>(null);
+  const [iprAccountHandoff, setIprAccountHandoff] =
+    useState<IprHandoff | null>(null);
+  const [iprAccountSession, setIprAccountSession] =
+    useState<IprAccountSessionResponse | null>(null);
+
   const [iprHandoffSource, setIprHandoffSource] =
     useState<IprHandoffSource>("none");
   const [iprHandoffError, setIprHandoffError] = useState<string | null>(null);
+  const [iprAccountSessionError, setIprAccountSessionError] =
+    useState<string | null>(null);
+
   const [isChecking, setIsChecking] = useState(false);
+  const [isCheckingIprSession, setIsCheckingIprSession] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -1348,6 +1476,12 @@ export default function InterfacePage() {
     return null;
   }, [messages]);
 
+  const effectiveIprHandoff = iprAccountHandoff || iprHandoff;
+  const effectiveIprHandoffSource: IprHandoffSource = iprAccountHandoff
+    ? "accountSession"
+    : iprHandoffSource;
+  const hasAccountSession = iprAccountSession?.authenticated === true;
+
   useEffect(() => {
     const stored =
       typeof window !== "undefined"
@@ -1363,6 +1497,7 @@ export default function InterfacePage() {
     }
 
     refreshIprHandoff();
+    void checkIprAccountSession();
     void checkRuntime();
   }, []);
 
@@ -1387,12 +1522,65 @@ export default function InterfacePage() {
     setIprHandoffError(result.error);
   }
 
+  async function refreshIdentityContext() {
+    refreshIprHandoff();
+    await checkIprAccountSession();
+  }
+
   function clearIprHandoff() {
     clearStoredHandoff();
     stripHandoffQueryParams();
     setIprHandoff(null);
     setIprHandoffSource("none");
     setIprHandoffError(null);
+  }
+
+  async function checkIprAccountSession() {
+    setIsCheckingIprSession(true);
+    setIprAccountSessionError(null);
+
+    try {
+      const response = await fetch("/api/auth/session", {
+        method: "GET",
+        cache: "no-store",
+        credentials: "include",
+        headers: {
+          Accept: "application/json"
+        }
+      });
+
+      const payload = await readJsonResponse<IprAccountSessionResponse>(
+        response
+      );
+
+      setIprAccountSession(payload);
+
+      if (!response.ok || payload.authenticated !== true) {
+        setIprAccountHandoff(null);
+        setIprAccountSessionError(
+          payload.reason || payload.detail || `HTTP_${response.status}`
+        );
+        return;
+      }
+
+      const handoff = buildIprHandoffFromAccountSession(payload);
+
+      setIprAccountHandoff(handoff);
+
+      if (!handoff) {
+        setIprAccountSessionError(
+          "IPR_ACCOUNT_SESSION_ACTIVE_BUT_HANDOFF_NOT_RECONSTRUCTED"
+        );
+      }
+    } catch (err) {
+      setIprAccountSession(null);
+      setIprAccountHandoff(null);
+      setIprAccountSessionError(
+        err instanceof Error ? err.message : "IPR_ACCOUNT_SESSION_CHECK_FAILED"
+      );
+    } finally {
+      setIsCheckingIprSession(false);
+    }
   }
 
   async function checkRuntime() {
@@ -1462,6 +1650,7 @@ export default function InterfacePage() {
     }
 
     refreshIprHandoff();
+    void checkIprAccountSession();
   }
 
   async function copyText(content: string) {
@@ -1507,12 +1696,25 @@ export default function InterfacePage() {
           "Content-Type": "application/json"
         },
         cache: "no-store",
+        credentials: "include",
         body: JSON.stringify({
           message: effectiveMessage,
           sessionId,
           continuityRef,
           files,
-          iprHandoff
+          iprHandoff: effectiveIprHandoff,
+          iprAccountSession:
+            iprAccountSession?.authenticated === true
+              ? {
+                  source: "IPR_ACCOUNT_SESSION",
+                  session: iprAccountSession.session,
+                  accountProfile: iprAccountSession.accountProfile,
+                  access: iprAccountSession.access,
+                  memory: iprAccountSession.memory,
+                  matrix: iprAccountSession.matrix,
+                  legalCertification: false
+                }
+              : null
         })
       });
 
@@ -1546,6 +1748,7 @@ export default function InterfacePage() {
       };
 
       setMessages((current) => [...current, assistantMessage]);
+      void checkIprAccountSession();
     } catch (err) {
       const errorText =
         err instanceof Error ? err.message : "CHAT_REQUEST_FAILED";
@@ -1578,27 +1781,43 @@ export default function InterfacePage() {
     }
   }
 
-  const humanIprLabel = iprHandoff?.subject.ipr || "Human IPR: NOT_VERIFIED";
-  const subjectLabel = iprHandoff?.subject.entity || "No verified subject";
+  const humanIprLabel =
+    effectiveIprHandoff?.subject.ipr || "Human IPR: NOT_VERIFIED";
+  const subjectLabel =
+    effectiveIprHandoff?.subject.entity || "No verified subject";
 
   const runtimeMatrixState = fallbackDash(
     getMatrixState(lastAssistantPayload),
-    iprHandoff ? "PENDING_SERVER_VALIDATION" : "LIMITED"
+    effectiveIprHandoff
+      ? safeText(iprAccountSession?.matrix?.expectedState, "MATRIX_ACTIVE")
+      : "LIMITED"
   );
 
   const runtimeMemoryScope = fallbackDash(
     getSemanticMemoryScope(lastAssistantPayload),
-    iprHandoff ? "PENDING_SERVER_VALIDATION" : "RUNTIME_ONLY"
+    effectiveIprHandoff
+      ? safeText(iprAccountSession?.memory?.expectedScope, "IPR_BOUND")
+      : "RUNTIME_ONLY"
   );
 
   const runtimeMemoryAuthority = fallbackDash(
     getMemoryAuthority(lastAssistantPayload),
-    iprHandoff ? "SERVER_VALIDATION_REQUIRED" : "SESSION_RUNTIME_ONLY"
+    effectiveIprHandoff
+      ? safeText(
+          iprAccountSession?.memory?.expectedAuthority,
+          "SERVER_RUNTIME_VALIDATED"
+        )
+      : "SESSION_RUNTIME_ONLY"
   );
 
   const runtimeMemoryMode = fallbackDash(
     getMemoryPersistenceMode(lastAssistantPayload),
-    safeText(health?.memory?.persistenceMode, "PROCESS_MEMORY_MVP")
+    effectiveIprHandoff
+      ? safeText(
+          iprAccountSession?.memory?.persistenceMode,
+          "DATABASE_PERSISTENT"
+        )
+      : safeText(health?.memory?.persistenceMode, "PROCESS_MEMORY_MVP")
   );
 
   const runtimeLastMemoryEvt = fallbackDash(
@@ -1655,6 +1874,13 @@ export default function InterfacePage() {
           <button type="button" onClick={checkRuntime} disabled={isChecking}>
             {isChecking ? "Check..." : "Runtime"}
           </button>
+          <button
+            type="button"
+            onClick={() => void refreshIdentityContext()}
+            disabled={isCheckingIprSession}
+          >
+            {isCheckingIprSession ? "IPR..." : "IPR session"}
+          </button>
           <button type="button" onClick={newChat}>
             New chat
           </button>
@@ -1665,8 +1891,10 @@ export default function InterfacePage() {
         <div
           className={[
             "joker-identity-card",
-            iprHandoff ? "joker-identity-card-active" : "",
-            iprHandoffError ? "joker-identity-card-error" : "",
+            effectiveIprHandoff ? "joker-identity-card-active" : "",
+            iprHandoffError || iprAccountSessionError
+              ? "joker-identity-card-error"
+              : "",
             runtimeMemoryScope === "IPR_BOUND" ? "joker-identity-card-memory" : ""
           ]
             .filter(Boolean)
@@ -1678,9 +1906,11 @@ export default function InterfacePage() {
             </span>
             <strong>{subjectLabel}</strong>
             <p>
-              {iprHandoff
-                ? "IPR handoff rilevato lato interfaccia. La validazione autorevole avviene in /api/chat; quando accettata, JOKER-C2 attiva MATRIX_ACTIVE e memoria IPR_BOUND."
-                : "Nessun handoff IPR biologico rilevato. JOKER-C2 resta in modalità runtime generica fino a validazione server-side."}
+              {hasAccountSession
+                ? "IPR account session rilevata lato server. Il pannello usa la sessione persistente HBCE come fonte prioritaria e ricostruisce l'identità operativa anche senza handoff locale nel browser."
+                : effectiveIprHandoff
+                  ? "IPR handoff rilevato lato interfaccia. La validazione autorevole avviene in /api/chat; quando accettata, JOKER-C2 attiva MATRIX_ACTIVE e memoria IPR_BOUND."
+                  : "Nessun handoff IPR biologico o account session IPR rilevata. JOKER-C2 resta in modalità runtime generica fino a validazione server-side."}
             </p>
           </div>
 
@@ -1691,24 +1921,26 @@ export default function InterfacePage() {
             </div>
             <div>
               <span>Human IPR</span>
-              <strong>{iprHandoff?.subject.ipr || "NOT_VERIFIED"}</strong>
+              <strong>{effectiveIprHandoff?.subject.ipr || "NOT_VERIFIED"}</strong>
             </div>
             <div>
               <span>Certificate</span>
               <strong>
-                {iprHandoff?.certificate.certificate_id || "NO_CERTIFICATE"}
+                {effectiveIprHandoff?.certificate.certificate_id ||
+                  "NO_CERTIFICATE"}
               </strong>
             </div>
             <div>
               <span>Status</span>
               <strong>
-                {iprHandoff?.certificate.certificate_status || "MISSING"}
+                {effectiveIprHandoff?.certificate.certificate_status ||
+                  "MISSING"}
               </strong>
             </div>
             <div>
               <span>Scope</span>
               <strong>
-                {iprHandoff?.certificate.certificate_scope.join(", ") ||
+                {effectiveIprHandoff?.certificate.certificate_scope.join(", ") ||
                   "MATRIX_LIMITED"}
               </strong>
             </div>
@@ -1754,20 +1986,33 @@ export default function InterfacePage() {
             </div>
             <div>
               <span>Source</span>
-              <strong>{iprHandoffSource}</strong>
+              <strong>{effectiveIprHandoffSource}</strong>
             </div>
           </div>
+
+          {iprAccountSessionError && !hasAccountSession ? (
+            <div className="joker-identity-warning">
+              IPR account session: {iprAccountSessionError}
+            </div>
+          ) : null}
 
           {iprHandoffError ? (
             <div className="joker-identity-warning">{iprHandoffError}</div>
           ) : null}
 
           <div className="joker-identity-actions">
+            <button
+              type="button"
+              onClick={() => void refreshIdentityContext()}
+              disabled={isCheckingIprSession}
+            >
+              Refresh IPR session
+            </button>
             <button type="button" onClick={refreshIprHandoff}>
-              Refresh IPR handoff
+              Refresh local handoff
             </button>
             <button type="button" onClick={clearIprHandoff}>
-              Clear IPR handoff
+              Clear local handoff
             </button>
             <button
               type="button"
@@ -1789,7 +2034,8 @@ export default function InterfacePage() {
               Interfaccia chat classica. Scrivi sotto, ricevi la risposta qui.
               Il runtime resta governato da HBCE: IPR, EVT, OPC, MATRIX,
               audit, fail-closed e memoria IPR-bound. Il riconoscimento
-              biologico richiede un handoff IPR validato dalla API runtime.
+              biologico usa prima la sessione IPR persistente server-side,
+              poi l'eventuale handoff locale.
             </p>
 
             <div className="joker-prompt-grid">
@@ -1857,7 +2103,11 @@ export default function InterfacePage() {
               </div>
             ))}
 
-            <button type="button" className="joker-clear-files" onClick={clearFiles}>
+            <button
+              type="button"
+              className="joker-clear-files"
+              onClick={clearFiles}
+            >
               Clear files
             </button>
           </div>
