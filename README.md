@@ -3,11 +3,11 @@
 **HERMETICUM - BLINDATA · COMPUTABILE · EVOLUTIVA**  
 **HERMETICUM B.C.E. S.r.l.**
 
-AI JOKER-C2 is the governed runtime demonstrator of IPR — Identity Primary Record — inside the B.C.E.Hermeticum / HBCE software and research ecosystem.
+AI JOKER-C2 is the governed runtime demonstrator of IPR, Identity Primary Record, inside the HBCE software and research ecosystem.
 
-The runtime extends ordinary AI interaction with operational identity, runtime governance, event continuity, EVT/IPR-bound memory, OPC proof receipts, project-domain classification, HBCE module classification and audit-oriented records.
+The runtime extends ordinary AI interaction with operational identity, runtime governance, server-side IPR handoff validation, event continuity, IPR-bound memory, OPC proof receipts, project-domain classification, HBCE module classification and audit-oriented records.
 
-OpenAI provides the cognitive engine. HBCE / AI JOKER-C2 provides identity, governance, event traceability, proof generation, risk logic and audit continuity.
+OpenAI provides the cognitive engine. HBCE / AI JOKER-C2 provides identity, governance, event traceability, proof generation, risk logic, memory continuity and audit continuity.
 
 ```text
 OpenAI generates.
@@ -28,6 +28,7 @@ AI JOKER-C2 operates across five canonical project collections, through seven HB
 
 ```text
 Project: AI JOKER-C2
+Ecosystem: HBCE
 Project birth date: 2026-01-19
 Project birth label: HBCE R&D / AI JOKER-C2 project birth date
 Runtime identity: AI_JOKER
@@ -46,11 +47,18 @@ Default deep model: gpt-5.5
 Engine API mode: chat.completions
 Target future API mode: responses
 Operational stack: HBCE Operational Stack v0.2
-Status: DEMO_RUNTIME_VALIDATED / OPENAI_READINESS_BRIEF_READY
+Status: DEMO_RUNTIME_VALIDATED / IPR_BOUND_MEMORY_VALIDATED / OPENAI_READINESS_BRIEF_READY
+IPR handoff validation: ACTIVE
+Identity binding: IPR_VERIFIED_BIOLOGICAL_SUBJECT when valid handoff is present
+Semantic memory: IPR_BOUND when valid handoff is present
+Memory authority: SERVER_RUNTIME_VALIDATED when valid handoff is present
+Memory persistence: PROCESS_MEMORY_MVP
+Memory storage layer: lib/ipr-bound-memory-store.ts
 OpenAI readiness test: PASSED_12_OF_12
 OpenAI readiness date: 2026-05-24
 OpenAI readiness brief: docs/OPENAI_READINESS.md
 OpenAI contact draft: docs/OPENAI_CONTACT_EMAIL.md
+IPR-bound memory documentation: docs/IPR_BOUND_MEMORY.md
 Organization: HERMETICUM B.C.E. S.r.l.
 Research signature: HBCE Research
 Location: Torino, Italy, Europe
@@ -101,6 +109,9 @@ IPR: IPR-AI-0001
 Checkpoint: EVT-0015-AI
 Cycle: UP-MESE-4
 MemoryContinuity: ACTIVE
+IPRBoundMemory: ACTIVE when valid HBCE-IPR handoff is present
+MemoryAuthority: SERVER_RUNTIME_VALIDATED when valid handoff is present
+MemoryPersistence: PROCESS_MEMORY_MVP
 OPCProof: ACTIVE
 Verification: VERIFIABLE
 LegalCertification: false
@@ -112,8 +123,11 @@ Validated runtime signals:
 RuntimeRole: HBCE_governed_runtime
 Model: gpt-5.5
 OpenAIConfigured: true
-EvtIprMemoryUsed: true
-MemorySource: CONTINUITY_REF
+IPR handoff validation: active
+Identity binding: IPR_VERIFIED_BIOLOGICAL_SUBJECT when valid
+Semantic memory: IPR_BOUND when valid
+Memory authority: SERVER_RUNTIME_VALIDATED when valid
+Memory persistence: PROCESS_MEMORY_MVP
 OPC Proof Receipt: present
 OPC ChainHash: present
 OPC EngineHash: present
@@ -127,8 +141,10 @@ The pilot confirms the following operational chain:
 OpenAI cognitive engine
 → AI JOKER-C2 governed runtime
 → IPR identity
+→ server-side IPR handoff validation
+→ MATRIX state resolution
+→ IPR-bound memory continuity
 → EVT trace
-→ EVT/IPR-bound memory continuity
 → OPC proof receipt
 → engineHash
 → opcChainHash
@@ -262,7 +278,7 @@ IPR                  = primary operational identity and proof instrument
 OpenAI               = cognitive engine used by the runtime
 AI JOKER-C2          = governed runtime that demonstrates IPR in execution
 EVT                  = event, trace and verifiable continuity layer
-Memory               = runtime continuity bound to EVT/IPR
+Memory               = IPR-bound runtime continuity layer
 OPC                  = operational proof receipt and audit layer
 HBCE                 = governance, policy, audit and continuity ecosystem
 MATRIX               = general architecture and system-organizing module
@@ -281,6 +297,7 @@ The operational hierarchy of this repository is:
 + OpenAI cognitive engine
 + IPR / EVT / Memory / OPC traceability chain
 + OpenAI readiness package
++ IPR-bound memory runtime architecture
 ```
 
 ---
@@ -297,6 +314,7 @@ AI JOKER-C2 = governed runtime
 HBCE = governance layer
 IPR = operational identity layer
 EVT = event continuity layer
+Memory = IPR-bound continuity layer
 OPC = proof receipt layer
 MATRIX = system organization layer
 ```
@@ -688,6 +706,7 @@ AI JOKER-C2 uses a governed runtime sequence.
 ```text
 input
 → IPR runtime identity
+→ HBCE-IPR handoff validation
 → OpenAI engine resolution
 → context classification
 → project-domain classification
@@ -698,9 +717,11 @@ input
 → risk evaluation
 → human oversight evaluation
 → runtime decision
+→ memory scope resolution
+→ IPR-bound memory prompt frame
 → AI response
 → EVT event
-→ EVT/IPR-bound memory update
+→ memory update
 → OPC proof receipt
 → audit trail
 ```
@@ -745,6 +766,12 @@ legacyRuntimeRole: IPR_RUNTIME_DEMONSTRATOR
 projectBirthDate: 2026-01-19
 ```
 
+When a valid biological IPR handoff is present, JOKER-C2 may operate with a verified subject context.
+
+The verified biological subject is never inferred from a name written in the chat.
+
+It must derive from a server-side HBCE-IPR handoff accepted by `/api/chat`.
+
 ---
 
 ## 11. EVT — Event Record / Verifiable Event Trace
@@ -774,44 +801,141 @@ EVT provides a verifiable technical trace connected to IPR identity and runtime 
 
 ---
 
-## 12. EVT/IPR-bound memory
+## 12. IPR-bound memory
 
 AI JOKER-C2 uses memory as an operational trace, not as vague chat memory.
+
+The current IPR-bound memory architecture is documented in:
+
+```text
+docs/IPR_BOUND_MEMORY.md
+```
+
+Main implementation files:
+
+```text
+lib/ipr-bound-memory.ts
+lib/ipr-bound-memory-store.ts
+```
+
+The memory runtime chain is:
+
+```text
+app/api/chat/route.ts
+        ↓
+lib/ipr-bound-memory.ts
+        ↓
+lib/ipr-bound-memory-store.ts
+        ↓
+server-side process memory
+```
 
 Memory is connected to:
 
 - sessionId;
-- IPR;
+- human IPR when verified;
+- runtime IPR;
 - entity;
 - message;
 - response;
-- document family;
 - runtime state;
 - decision;
 - project domain;
 - HBCE module;
-- memory event;
 - governed EVT;
 - memory hash;
 - OPC proof reference;
-- engine metadata when available.
+- OPC chain hash;
+- MATRIX state;
+- memory authority;
+- memory persistence mode.
 
-This allows the runtime to preserve continuity across interactions, documents, project domains, HBCE modules and proof receipts.
-
-Validated memory continuity:
+Current validated memory modes:
 
 ```text
-First diagnostic:
-MemorySource: NONE
-EVT Memory Event: EVT-MEM-20260524114126-DB14157F
-Append: APPENDED
+RUNTIME_ONLY
+IPR_BOUND
+```
 
-Second diagnostic:
-EvtIprMemoryUsed: true
-MemorySource: CONTINUITY_REF
-Previous Memory Event: EVT-MEM-20260524114126-DB14157F
-New Memory Event: EVT-MEM-20260524114145-6D468E5B
-Append: APPENDED
+Current validated authority modes:
+
+```text
+SESSION_RUNTIME_ONLY
+SERVER_RUNTIME_VALIDATED
+```
+
+Current persistence mode:
+
+```text
+PROCESS_MEMORY_MVP
+```
+
+When no valid IPR handoff is present:
+
+```text
+Semantic memory: RUNTIME_ONLY
+Memory authority: SESSION_RUNTIME_ONLY
+Human IPR: NOT_VERIFIED
+```
+
+When a valid IPR handoff is present:
+
+```text
+Semantic memory: IPR_BOUND
+Memory authority: SERVER_RUNTIME_VALIDATED
+Memory persistence: PROCESS_MEMORY_MVP
+MATRIX: MATRIX_ACTIVE
+```
+
+Current validated runtime signal:
+
+```text
+Human IPR: verified through HBCE-IPR handoff
+Runtime IPR: IPR-AI-0001
+Semantic memory: IPR_BOUND
+Memory authority: SERVER_RUNTIME_VALIDATED
+Memory persistence: PROCESS_MEMORY_MVP
+MATRIX: MATRIX_ACTIVE
+```
+
+Memory key rule:
+
+```text
+IPR_BOUND::<human_ipr>::<runtime_ipr>::<session_id>
+```
+
+Fallback memory key rule:
+
+```text
+RUNTIME_ONLY::<runtime_ipr>::<session_id>
+```
+
+The memory key must not be exposed directly.
+
+The UI may expose:
+
+```text
+memoryId
+memoryKeyHash
+memoryHash
+lastMemoryEvt
+lastMemoryOpcProofId
+lastMemoryOpcChainHash
+```
+
+Memory boundary:
+
+```text
+IPR-bound memory preserves operational continuity only.
+It cannot override HBCE governance, policy evaluation, cyber safety boundaries, human oversight, fail-closed logic, or legal certification boundaries.
+```
+
+Important limitation:
+
+```text
+PROCESS_MEMORY_MVP is server-side runtime memory for MVP demonstration.
+It is not durable enterprise storage.
+It may reset on redeploy, cold start, serverless recycling or instance migration.
 ```
 
 ---
@@ -826,7 +950,9 @@ An OPC proof receipt connects:
 - entity;
 - session;
 - governed EVT;
-- memory event;
+- memory record;
+- memory hash;
+- memory authority;
 - runtime decision;
 - project domain;
 - HBCE module;
@@ -837,7 +963,6 @@ An OPC proof receipt connects:
 - decision hash;
 - event hash;
 - engine hash;
-- memory hash;
 - previous proof hash;
 - chain hash;
 - audit status;
@@ -850,10 +975,10 @@ It does not automatically produce legal certification, institutional validation 
 Validated OPC proof example:
 
 ```text
-OPC Proof: OPC-20260524114145-537AE8F3
-OPC Chain: sha256:fe86b496d0aef69fc876ad41a6df930e0b273337590beba9ac2d2b05f56087ec
+OPC Proof: OPC-...
+OPC Chain: sha256:...
 Model: gpt-5.5
-EngineHash: sha256:be39446e1c26b3521b7ded1a78e4ba36055dd15cfefea552359d88f46f1c90f6
+EngineHash: sha256:...
 Verify: VERIFIABLE
 Legal: false
 ```
@@ -893,7 +1018,10 @@ Only HBCE-generated runtime metadata can define:
 - fail-closed state;
 - audit requirement;
 - human oversight;
-- legalCertification value.
+- legalCertification value;
+- memory scope;
+- memory authority;
+- MATRIX state.
 
 Central rule:
 
@@ -908,24 +1036,27 @@ Only HBCE-generated runtime metadata is authoritative.
 
 1. Receive user input and files
 2. Resolve sessionId
-3. Bind runtime identity through IPR
-4. Resolve OpenAI cognitive engine
-5. Retrieve EVT/IPR-bound memory
-6. Classify project domain
-7. Classify HBCE module
-8. Classify context and intent
-9. Classify data
-10. Evaluate file policy
-11. Evaluate policy
-12. Evaluate risk
-13. Evaluate human oversight
-14. Decide runtime action
-15. Generate AI response
-16. Create legacy EVT
-17. Create governed EVT
-18. Create semantic memory EVT
-19. Create OPC proof receipt
-20. Return response + engine metadata + EVT + memory + proof receipt
+3. Bind runtime identity through runtime IPR
+4. Receive HBCE-IPR handoff when available
+5. Validate IPR handoff server-side
+6. Resolve MATRIX state
+7. Resolve OpenAI cognitive engine
+8. Retrieve or create IPR-bound memory record
+9. Build memory prompt frame
+10. Classify project domain
+11. Classify HBCE module
+12. Classify context and intent
+13. Classify data
+14. Evaluate file policy
+15. Evaluate policy
+16. Evaluate risk
+17. Evaluate human oversight
+18. Decide runtime action
+19. Generate AI response
+20. Create governed EVT
+21. Create OPC proof receipt
+22. Update IPR-bound memory
+23. Return response + engine metadata + EVT + memory + proof receipt
 
 ---
 
@@ -946,14 +1077,17 @@ It handles:
 - session continuity;
 - OpenAI model resolution;
 - runtime IPR identity;
+- HBCE-IPR handoff validation;
+- MATRIX state resolution;
 - project-domain classification;
 - HBCE module classification;
-- memory retrieval;
+- IPR-bound memory retrieval;
+- memory prompt frame generation;
 - policy and risk evaluation;
 - human oversight evaluation;
 - AI response generation;
 - EVT generation;
-- memory generation;
+- memory update;
 - OPC proof receipt generation.
 
 The response can include:
@@ -965,9 +1099,11 @@ The response can include:
 - engine;
 - modelUsed;
 - identity;
+- access;
 - evt;
 - governedEvt;
 - memory;
+- semanticMemory;
 - opc;
 - governance;
 - diagnostics.
@@ -1029,16 +1165,26 @@ The UI shows:
 - runtime state;
 - runtime decision;
 - IPR identity;
+- human IPR when verified;
+- verified subject when present;
 - project birth date;
 - project domain;
 - active domains;
 - HBCE module;
 - active modules;
 - context class;
+- MATRIX state;
+- semantic memory scope;
+- memory authority;
+- memory persistence mode;
+- memory id;
+- memory key hash;
+- memory hash;
+- last memory EVT;
+- last memory OPC proof;
+- last memory OPC chain hash;
 - last EVT;
 - last EVT hash;
-- last memory event;
-- memory hash;
 - last OPC proof receipt;
 - OPC chain hash;
 - OPC audit status;
@@ -1054,7 +1200,7 @@ Every assistant response can show:
 - Governed EVT;
 - HBCE Module;
 - Strategic Doctrine;
-- EVT/IPR Memory;
+- IPR-bound Memory;
 - OPC Proof Receipt.
 
 The UI must be interpreted as a visible demonstrator of the IPR chain:
@@ -1081,6 +1227,25 @@ Mode: deep
 API: chat.completions
 Configured: true
 
+Identity
+Runtime entity: AI_JOKER
+Runtime IPR: IPR-AI-0001
+Human IPR: IPR-... when verified
+Subject: verified subject when valid handoff is present
+Identity binding: IPR_VERIFIED_BIOLOGICAL_SUBJECT when valid
+
+MATRIX
+State: MATRIX_ACTIVE when valid IPR handoff is present
+
+IPR-bound Memory
+Scope: IPR_BOUND
+Authority: SERVER_RUNTIME_VALIDATED
+Persistence: PROCESS_MEMORY_MVP
+Memory ID: MEM-...
+Memory hash: sha256:...
+Last memory EVT: EVT-...
+Last memory OPC: OPC-...
+
 EVT Chain
 EVT: EVT-...
 Prev: ...
@@ -1090,11 +1255,6 @@ Governed EVT
 EVT: EVT-...
 Project: MATRIX / U.S.E. / CORPUS / APOKALYPSIS / HBCE_ECOSISTEMA_AI / MULTI_DOMAIN
 Module: UNEBDO / OPC / MetaExchange / IOspace / CyberGlobal / NeuroLoop / MATRIX / NONE
-Append: APPENDED
-
-EVT/IPR Memory
-Event: EVT-MEM-...
-Hash: sha256:...
 Append: APPENDED
 
 OPC Proof Receipt
@@ -1109,9 +1269,10 @@ This means that the runtime produced:
 
 - AI response;
 - engine metadata;
+- identity metadata;
+- IPR-bound memory state;
 - EVT trace;
 - governed EVT;
-- EVT/IPR memory;
 - OPC proof receipt;
 - auditable record.
 
@@ -1166,6 +1327,20 @@ Optional EVT memory storage:
 JOKER_EVT_MEMORY_LEDGER_FILE
 ```
 
+Current IPR-bound memory mode:
+
+```text
+PROCESS_MEMORY_MVP
+```
+
+Current IPR-bound memory store:
+
+```text
+lib/ipr-bound-memory-store.ts
+```
+
+Production memory storage is not yet active.
+
 Security boundary:
 
 ```text
@@ -1193,6 +1368,13 @@ HBCE_RUNTIME_MODE=pilot
 The real `OPENAI_API_KEY` must be inserted only in Vercel environment variables or another secure secret store.
 
 It must not be inserted into GitHub source files, README files, screenshots, public logs or chat messages.
+
+Important deployment note:
+
+```text
+PROCESS_MEMORY_MVP uses server-side process memory.
+On Vercel, this memory may reset on redeploy, cold start, instance recycling or traffic migration.
+```
 
 ---
 
@@ -1242,6 +1424,8 @@ npm run start
 app/api/chat/route.ts
 app/api/opc/route.ts
 app/interface/page.tsx
+lib/ipr-bound-memory.ts
+lib/ipr-bound-memory-store.ts
 lib/opc-proof.ts
 lib/opc-ledger.ts
 lib/evt.ts
@@ -1283,6 +1467,7 @@ system/system-manifest.json
 docs/openai-powered-pilot.md
 docs/OPENAI_READINESS.md
 docs/OPENAI_CONTACT_EMAIL.md
+docs/IPR_BOUND_MEMORY.md
 docs/HBCE_OPERATIONAL_STACK.md
 docs/HBCE_MODULES_RUNTIME_MAP.md
 docs/FIVE_COLLECTIONS_RUNTIME_MAP.md
@@ -1308,6 +1493,11 @@ docs/HBCE_INFORMATION_GOVERNANCE_STRATEGY.md
     "organization": "HERMETICUM B.C.E. S.r.l.",
     "runtimeRole": "HBCE_governed_runtime"
   },
+  "subject": {
+    "humanIpr": "IPR-...",
+    "binding": "IPR_VERIFIED_BIOLOGICAL_SUBJECT",
+    "status": "ACTIVE"
+  },
   "sessionId": "JOKER-...",
   "engine": {
     "provider": "OpenAI",
@@ -1327,9 +1517,15 @@ docs/HBCE_INFORMATION_GOVERNANCE_STRATEGY.md
     "hash": "sha256:..."
   },
   "memory": {
-    "evt": "EVT-MEM-...",
-    "source": "EVT_IPR_MEMORY",
-    "hash": "sha256:..."
+    "scope": "IPR_BOUND",
+    "authority": "SERVER_RUNTIME_VALIDATED",
+    "persistenceMode": "PROCESS_MEMORY_MVP",
+    "memoryId": "MEM-...",
+    "memoryKeyHash": "sha256:...",
+    "memoryHash": "sha256:...",
+    "lastEvt": "EVT-...",
+    "lastOpcProofId": "OPC-...",
+    "lastOpcChainHash": "sha256:..."
   },
   "runtime": {
     "state": "OPERATIONAL",
@@ -1384,7 +1580,10 @@ It does not claim:
 - full enterprise production readiness;
 - autonomous offensive capability;
 - replacement of OpenAI safety systems;
-- guaranteed zero retention.
+- guaranteed zero retention;
+- regulated identity issuance;
+- public authority identity validation;
+- qualified eIDAS trust service status.
 
 It provides a technical basis for:
 
@@ -1550,7 +1749,7 @@ AI JOKER-C2 supports this position by showing how IPR can work inside a governed
 Professional statement:
 
 ```text
-AI JOKER-C2 is the governed runtime demonstrator of IPR inside the HBCE ecosystem. It extends standard AI interaction with verifiable runtime governance: every relevant interaction can be connected to an operational identity, recorded as an event, inserted into a continuity chain, linked to EVT/IPR-bound memory, transformed into an OPC proof receipt, classified across the five canonical collections, connected to the seven HBCE technical-operational modules, supported by three strategic doctrine documents and exposed through an audit-oriented interface.
+AI JOKER-C2 is the governed runtime demonstrator of IPR inside the HBCE ecosystem. It extends standard AI interaction with verifiable runtime governance: every relevant interaction can be connected to an operational identity, recorded as an event, inserted into a continuity chain, linked to IPR-bound memory, transformed into an OPC proof receipt, classified across the five canonical collections, connected to the seven HBCE technical-operational modules, supported by three strategic doctrine documents and exposed through an audit-oriented interface.
 ```
 
 Synthetic hierarchy:
@@ -1585,11 +1784,17 @@ Current milestone reached:
 OpenAI cognitive engine metadata
 + gpt-5.5 model configuration
 + AI response
++ server-side HBCE-IPR handoff validation
++ identity binding when valid
++ MATRIX_ACTIVE when valid
++ IPR_BOUND semantic memory
++ SERVER_RUNTIME_VALIDATED memory authority
++ PROCESS_MEMORY_MVP memory persistence
++ IPR-bound memory storage adapter
 + project-domain classification
 + HBCE module classification
 + EVT chain
 + governed EVT
-+ EVT/IPR-bound memory
 + OPC proof receipt
 + engineHash
 + opcChainHash
@@ -1631,6 +1836,12 @@ and the OpenAI readiness package:
 - JOKER-C2 OpenAI Readiness Brief
 - OpenAI Contact Email Draft
 
+and the IPR-bound memory architecture:
+
+- IPR-bound memory module
+- IPR-bound memory store adapter
+- IPR-bound memory runtime documentation
+
 ---
 
 ## 32. Pilot test prompt
@@ -1647,10 +1858,49 @@ Italian diagnostic prompt:
 Esegui diagnostica runtime HBCE/JOKER-C2. Mostra motore cognitivo, modello attivo, IPR, EVT, OPC, audit status, verification status, governance frame, engineHash, opcChainHash e stato memoria.
 ```
 
+IPR recognition prompt:
+
+```text
+ciao joker sai chi sono?
+```
+
+Expected verified indicators:
+
+```text
+Identity binding: IPR_VERIFIED_BIOLOGICAL_SUBJECT
+MATRIX: MATRIX_ACTIVE
+Semantic memory: IPR_BOUND
+Memory authority: SERVER_RUNTIME_VALIDATED
+Memory persistence: PROCESS_MEMORY_MVP
+```
+
 Memory continuity prompt:
 
 ```text
-Riprendi la diagnostica precedente e dimmi quale modello OpenAI era attivo, quale engineHash OPC è stato generato, quale EVT Memory Event è stato salvato e se la memoria EVT/IPR-bound è stata recuperata.
+joker cosa ricordi del progetto e qual è il tuo ultimo EVT di memoria?
+```
+
+Expected memory indicators:
+
+```text
+Memory ID: MEM-...
+Semantic memory: IPR_BOUND
+Memory authority: SERVER_RUNTIME_VALIDATED
+Last memory EVT: EVT-...
+Last memory OPC proof: OPC-...
+```
+
+Memory scope prompt:
+
+```text
+spiegami che memoria hai attiva in questa sessione: RUNTIME_ONLY o IPR_BOUND?
+```
+
+Expected result:
+
+```text
+The runtime reports IPR_BOUND when the HBCE-IPR handoff is valid.
+The runtime reports RUNTIME_ONLY when no valid handoff is available.
 ```
 
 OpenAI readiness prompt:
@@ -1672,6 +1922,11 @@ runtimeRole: HBCE_governed_runtime
 state: OPERATIONAL
 decision: ALLOW / AUDIT
 identity.ipr: IPR-AI-0001
+humanIpr: present when valid handoff is available
+identityBinding: IPR_VERIFIED_BIOLOGICAL_SUBJECT when valid
+semanticMemory: IPR_BOUND when valid
+memoryAuthority: SERVER_RUNTIME_VALIDATED when valid
+memoryPersistence: PROCESS_MEMORY_MVP
 evt: present
 governedEvt: present
 memory: present
@@ -1699,28 +1954,30 @@ Recommended next steps:
 
 1. Strengthen runtime IPR identity metadata
 2. Persist OPC ledger outside `/tmp`
-3. Persist EVT/IPR memory ledger outside `/tmp`
-4. Add proof verification endpoint
-5. Add signed OPC receipts
-6. Add audit report export
-7. Add OPC proof schema
-8. Add audit report schema
-9. Add ProofReceiptCard component
-10. Add EventChainViewer component
-11. Add RuntimeStatusPanel component
-12. Add IOspace dashboard
-13. Add IPR runtime module
-14. Strengthen five-collection runtime map
-15. Strengthen seven-module HBCE runtime map
-16. Strengthen HBCE ECOSISTEMA AI diagnostics
-17. Add provider/model metadata to OPC receipts
-18. Add AI/cyber audit profile
-19. Add B2B/B2G IPR AI Audit Trail workflow
-20. Integrate Cybersecurity, Data Protection and Information Governance packages
-21. Maintain and update OpenAI readiness package
-22. Add OpenAI pilot evidence pack
-23. Add screenshots and runtime transcript appendix
-24. Migrate from Chat Completions to Responses API when runtime stability is confirmed
+3. Move IPR-bound memory from `PROCESS_MEMORY_MVP` to durable storage
+4. Add database adapter for `lib/ipr-bound-memory-store.ts`
+5. Add environment-based memory adapter selection
+6. Add proof verification endpoint
+7. Add signed OPC receipts
+8. Add audit report export
+9. Add OPC proof schema
+10. Add audit report schema
+11. Add ProofReceiptCard component
+12. Add EventChainViewer component
+13. Add RuntimeStatusPanel component
+14. Add IOspace dashboard
+15. Add IPR runtime module
+16. Strengthen five-collection runtime map
+17. Strengthen seven-module HBCE runtime map
+18. Strengthen HBCE ECOSISTEMA AI diagnostics
+19. Add provider/model metadata to OPC receipts
+20. Add AI/cyber audit profile
+21. Add B2B/B2G IPR AI Audit Trail workflow
+22. Integrate Cybersecurity, Data Protection and Information Governance packages
+23. Maintain and update OpenAI readiness package
+24. Add OpenAI pilot evidence pack
+25. Add screenshots and runtime transcript appendix
+26. Migrate from Chat Completions to Responses API when runtime stability is confirmed
 
 Recommended future files:
 
@@ -1729,6 +1986,9 @@ lib/ipr-runtime.ts
 lib/audit-report.ts
 lib/openai-engine.ts
 lib/hbce-ecosistema-ai-collection.ts
+lib/ipr-bound-memory-store-process.ts
+lib/ipr-bound-memory-store-database.ts
+lib/ipr-bound-memory-types.ts
 components/ProofReceiptCard.tsx
 components/EventChainViewer.tsx
 components/RuntimeStatusPanel.tsx
@@ -1736,6 +1996,7 @@ components/IOSpaceDashboard.tsx
 schemas/opc-proof-record.schema.json
 schemas/audit-report.schema.json
 docs/IPR_RUNTIME_DEMONSTRATOR.md
+docs/IPR_BOUND_MEMORY.md
 docs/OPC_PROOF_LAYER.md
 docs/JOKER_C2_AUDIT_RUNTIME.md
 docs/FIVE_COLLECTIONS_RUNTIME_MAP.md
@@ -1758,7 +2019,7 @@ Use, reuse, publication and integration must preserve attribution to:
 ```text
 HERMETICUM B.C.E. S.r.l.
 HBCE Research
-B.C.E.Hermeticum
+HBCE
 AI JOKER-C2
 IPR — Identity Primary Record
 ```
@@ -1862,7 +2123,7 @@ Cognitive engine provider: OpenAI
 Default model: gpt-5.5
 Runtime role: HBCE_governed_runtime
 Legacy runtime role: IPR_RUNTIME_DEMONSTRATOR
-Status: DEMO_RUNTIME_VALIDATED / OPENAI_READINESS_BRIEF_READY
+Status: DEMO_RUNTIME_VALIDATED / IPR_BOUND_MEMORY_VALIDATED / OPENAI_READINESS_BRIEF_READY
 ```
 
 HBCE Research  
