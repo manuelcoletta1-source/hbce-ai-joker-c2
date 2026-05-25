@@ -75,9 +75,17 @@ type ChatBody = {
 type RuntimeIdentity = {
   entity: "AI_JOKER";
   ipr: "IPR-AI-0001";
-  evt: "EVT-0015-AI";
+  evt: "EVT-0016-AI";
+  prev: "EVT-0015-AI";
+  eventFamily: "UP-EVT";
   state: "LOCKED";
-  cycle: "UP-MESE-4";
+  cycle: "UP-CANONICO";
+  monthlyRef: {
+    evt: "EVT-0015-AI";
+    humanEvt: "EVT-0015";
+    cycle: "UP-MESE-4";
+    t: "2026-05-19T15:30:00+02:00";
+  };
   core: "HBCE-CORE-v3";
   org: "HERMETICUM B.C.E. S.r.l.";
   location: "Torino, Italy";
@@ -177,6 +185,20 @@ type RuntimeIdentityContext = {
   semantic_memory_scope: IprHandoffEvaluation["semanticMemoryScope"];
 };
 
+type OperationalContext = {
+  event_family: "UP-EVT";
+  current_evt: "EVT-0016";
+  current_ai_evt: "EVT-0016-AI";
+  current_cycle: "UP-CANONICO";
+  monthly_checkpoint_ref: {
+    evt: "EVT-0015";
+    ai_evt: "EVT-0015-AI";
+    cycle: "UP-MESE-4";
+    t: "2026-05-19T15:30:00+02:00";
+  };
+  legalCertification: false;
+};
+
 type LegacyRuntimeEvent = {
   evt: string;
   prev: string;
@@ -189,6 +211,7 @@ type LegacyRuntimeEvent = {
   contextClass: string;
   documentMode: string;
   documentFamily: string;
+  operationalContext: OperationalContext;
   anchors: {
     hash: string;
     publicHash: string;
@@ -221,6 +244,7 @@ type GovernedEvt = {
   timestamp: string;
   entity: string;
   ipr: string;
+  operational_context: OperationalContext;
   runtime: {
     name: "AI_JOKER-C2";
     core: string;
@@ -394,6 +418,15 @@ const MAX_COMPLETION_TOKENS = 4600;
 const MAX_FILE_TEXT_CHARS = 60_000;
 const MAX_TOTAL_FILE_TEXT_CHARS = 180_000;
 
+const CURRENT_OPERATIONAL_EVT = "EVT-0016" as const;
+const CURRENT_OPERATIONAL_AI_EVT = "EVT-0016-AI" as const;
+const CURRENT_OPERATIONAL_CYCLE = "UP-CANONICO" as const;
+const CURRENT_EVENT_FAMILY = "UP-EVT" as const;
+const CURRENT_MONTHLY_CHECKPOINT = "EVT-0015" as const;
+const CURRENT_MONTHLY_AI_CHECKPOINT = "EVT-0015-AI" as const;
+const CURRENT_MONTHLY_CYCLE = "UP-MESE-4" as const;
+const CURRENT_MONTHLY_T = "2026-05-19T15:30:00+02:00" as const;
+
 const USE_DEMOCRATIC_BOUNDARY =
   "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
 
@@ -555,6 +588,22 @@ const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
+function buildOperationalContext(): OperationalContext {
+  return {
+    event_family: CURRENT_EVENT_FAMILY,
+    current_evt: CURRENT_OPERATIONAL_EVT,
+    current_ai_evt: CURRENT_OPERATIONAL_AI_EVT,
+    current_cycle: CURRENT_OPERATIONAL_CYCLE,
+    monthly_checkpoint_ref: {
+      evt: CURRENT_MONTHLY_CHECKPOINT,
+      ai_evt: CURRENT_MONTHLY_AI_CHECKPOINT,
+      cycle: CURRENT_MONTHLY_CYCLE,
+      t: CURRENT_MONTHLY_T
+    },
+    legalCertification: false
+  };
+}
+
 function normalizeModelId(value: string): string {
   const normalized = value.trim().toLowerCase();
 
@@ -649,9 +698,17 @@ function getPrimaryIdentity(): RuntimeIdentity {
   return {
     entity: "AI_JOKER",
     ipr: "IPR-AI-0001",
-    evt: "EVT-0015-AI",
+    evt: CURRENT_OPERATIONAL_AI_EVT,
+    prev: CURRENT_MONTHLY_AI_CHECKPOINT,
+    eventFamily: CURRENT_EVENT_FAMILY,
     state: "LOCKED",
-    cycle: "UP-MESE-4",
+    cycle: CURRENT_OPERATIONAL_CYCLE,
+    monthlyRef: {
+      evt: CURRENT_MONTHLY_AI_CHECKPOINT,
+      humanEvt: CURRENT_MONTHLY_CHECKPOINT,
+      cycle: CURRENT_MONTHLY_CYCLE,
+      t: CURRENT_MONTHLY_T
+    },
     core: "HBCE-CORE-v3",
     org: "HERMETICUM B.C.E. S.r.l.",
     location: "Torino, Italy"
@@ -792,20 +849,6 @@ function hasCyberSecuritySignal(text: string): boolean {
 
 function hasProhibitedCyberSignal(text: string): boolean {
   return includesAny(text, CYBER_PROHIBITED_TERMS);
-}
-
-function mergeUniqueStrings(existing: string[], incoming: string[], limit: number): string[] {
-  const merged: string[] = [];
-
-  for (const item of [...existing, ...incoming]) {
-    const normalized = item.replace(/\s+/g, " ").trim();
-
-    if (normalized && !merged.includes(normalized)) {
-      merged.push(normalized);
-    }
-  }
-
-  return merged.slice(0, limit);
 }
 
 function normalizeBody(body: ChatBody) {
@@ -2667,6 +2710,14 @@ function buildSystemPrompt(input: {
     "Per richieste multi-documento, non produrre tutto in un unico blocco. Dividi in batch governati, un documento per volta.",
     "Per richieste commerciali su partnership HBCE/OpenAI, chiarisci sempre servizi, uffici, ruoli, boundary legali, stato R&D/pre-commerciale e legalCertification=false.",
     "",
+    "UP-EVT OPERATIONAL CONTEXT:",
+    `Current biological operational EVT: ${CURRENT_OPERATIONAL_EVT}`,
+    `Current AI operational EVT: ${CURRENT_OPERATIONAL_AI_EVT}`,
+    `Event family: ${CURRENT_EVENT_FAMILY}`,
+    `Operational cycle: ${CURRENT_OPERATIONAL_CYCLE}`,
+    `Monthly checkpoint reference: ${CURRENT_MONTHLY_CHECKPOINT}/${CURRENT_MONTHLY_AI_CHECKPOINT} (${CURRENT_MONTHLY_CYCLE}, ${CURRENT_MONTHLY_T})`,
+    "EVT-0016 / EVT-0016-AI are non-monthly UP-EVT operational synchronism records. EVT-0015 / EVT-0015-AI remain the locked monthly checkpoint records.",
+    "",
     "OPENAI REVIEWER POSTURE:",
     "JOKER-C2 non è un foundation model concorrente.",
     "JOKER-C2 non è un sistema C2 offensivo autonomo.",
@@ -2742,7 +2793,11 @@ function buildSystemPrompt(input: {
     `Regola U.S.E.: ${USE_DEMOCRATIC_BOUNDARY}`,
     `Entity runtime: ${input.identity.entity}`,
     `IPR runtime: ${input.identity.ipr}`,
-    `Checkpoint runtime: ${input.identity.evt}`,
+    `Operational runtime EVT: ${input.identity.evt}`,
+    `Previous monthly AI checkpoint: ${input.identity.prev}`,
+    `EventFamily: ${input.identity.eventFamily}`,
+    `Cycle: ${input.identity.cycle}`,
+    `MonthlyRef: ${input.identity.monthlyRef.humanEvt}/${input.identity.monthlyRef.evt} ${input.identity.monthlyRef.cycle}`,
     `Core: ${input.identity.core}`,
     `Org: ${input.identity.org}`,
     `Provider motore cognitivo: ${input.engine.provider}`,
@@ -2801,6 +2856,9 @@ function buildUserPrompt(input: {
     "RUNTIME CONTINUITY CANDIDATE:",
     input.continuityRef || "none",
     "",
+    "UP-EVT OPERATIONAL CONTEXT:",
+    JSON.stringify(buildOperationalContext(), null, 2),
+    "",
     buildVerifiedSubjectPromptFrame(input.iprHandoff),
     "",
     buildMemoryPromptFrame(input.memory),
@@ -2831,6 +2889,9 @@ function buildIdentityRecognitionResponse(input: {
       "",
       `Runtime entity: ${input.identity.entity}.`,
       `Runtime IPR: ${input.identity.ipr}.`,
+      `Runtime EVT operativo: ${input.identity.evt}.`,
+      `Runtime cycle: ${input.identity.cycle}.`,
+      `Monthly checkpoint ref: ${input.identity.monthlyRef.humanEvt}/${input.identity.monthlyRef.evt} (${input.identity.monthlyRef.cycle}).`,
       "",
       `Soggetto IPR: ${subject.entity}.`,
       `IPR biologico: ${subject.ipr}.`,
@@ -2859,6 +2920,7 @@ function buildIdentityRecognitionResponse(input: {
       "",
       `Runtime entity: ${input.identity.entity}.`,
       `Runtime IPR: ${input.identity.ipr}.`,
+      `Runtime EVT operativo: ${input.identity.evt}.`,
       "Human IPR: INVALID.",
       `Errore handoff/sessione: ${input.iprHandoff.error || "UNKNOWN_HANDOFF_ERROR"}.`,
       "Accesso governato: ACCESS_DENIED.",
@@ -2875,6 +2937,7 @@ function buildIdentityRecognitionResponse(input: {
     "",
     `Runtime entity: ${input.identity.entity}.`,
     `Runtime IPR: ${input.identity.ipr}.`,
+    `Runtime EVT operativo: ${input.identity.evt}.`,
     "Human IPR: NOT_VERIFIED.",
     "Accesso governato biologico: NOT_GRANTED.",
     "MATRIX: MATRIX_LIMITED.",
@@ -3294,6 +3357,7 @@ function buildLegacyEvent(input: {
 }): LegacyRuntimeEvent {
   const identity = getPrimaryIdentity();
   const evt = buildEvtId();
+  const operationalContext = buildOperationalContext();
 
   const verifiedSubject = input.iprHandoff.verifiedSubject
     ? {
@@ -3319,6 +3383,7 @@ function buildLegacyEvent(input: {
     contextClass: input.contextClass,
     documentMode: input.documentMode,
     documentFamily: input.documentFamily,
+    operationalContext,
     identityBinding: input.iprHandoff.identityBinding,
     matrixState: input.iprHandoff.matrixState,
     memory: {
@@ -3340,6 +3405,7 @@ function buildLegacyEvent(input: {
     ipr: payload.ipr,
     state: payload.state,
     decision: payload.decision,
+    operationalContext: payload.operationalContext,
     identityBinding: payload.identityBinding,
     matrixState: payload.matrixState,
     memory: payload.memory,
@@ -3364,6 +3430,7 @@ function buildLegacyEvent(input: {
     contextClass: payload.contextClass,
     documentMode: payload.documentMode,
     documentFamily: payload.documentFamily,
+    operationalContext: payload.operationalContext,
     anchors: {
       hash: publicHash,
       publicHash,
@@ -3400,6 +3467,7 @@ function buildGovernedEvt(input: {
     timestamp: nowIso(),
     entity: identity.entity,
     ipr: identity.ipr,
+    operational_context: buildOperationalContext(),
     runtime: {
       name: "AI_JOKER-C2" as const,
       core: identity.core,
@@ -3547,6 +3615,7 @@ function buildOpcProof(input: {
       size: file.size,
       hash: file.hash
     })),
+    operationalContext: buildOperationalContext(),
     iprHandoffStatus: input.iprHandoff.status,
     iprHandoffSource: input.iprHandoff.source,
     iprHandoffHash: input.iprHandoff.rawHash,
@@ -3572,6 +3641,7 @@ function buildOpcProof(input: {
     engine: input.engine,
     event: eventReference,
     runtime: runtimeSnapshot,
+    operationalContext: buildOperationalContext(),
     hashes: {
       inputHash,
       outputHash,
@@ -3623,6 +3693,7 @@ function buildOpcProof(input: {
         engine: input.engine,
         event: eventReference,
         runtime: runtimeSnapshot,
+        operationalContext: buildOperationalContext(),
         hashes: {
           inputHash,
           outputHash,
@@ -3834,7 +3905,11 @@ function buildRuntimeDiagnostic(input: {
     entity: input.identity.entity,
     ipr: input.identity.ipr,
     checkpoint: input.identity.evt,
+    previousCheckpoint: input.identity.prev,
+    eventFamily: input.identity.eventFamily,
     cycle: input.identity.cycle,
+    monthlyRef: input.identity.monthlyRef,
+    operationalContext: buildOperationalContext(),
     core: input.identity.core,
     iprAccountSession: {
       authenticated: input.iprAccountSession.authenticated,
@@ -3901,8 +3976,10 @@ function buildRuntimeDiagnostic(input: {
       legalCertification: false
     },
     legacyEvt: input.legacyEvent.evt,
+    legacyOperationalContext: input.legacyEvent.operationalContext,
     legacyPublicHash: input.legacyEvent.anchors.publicHash,
     governedEvt: input.governedEvt.evt,
+    governedOperationalContext: input.governedEvt.operational_context,
     governedHash: input.governedEvt.trace.hash,
     opcProofId: input.opcProof.proofId,
     opcChainHash: input.opcProof.proof.chainHash,
@@ -3968,11 +4045,14 @@ export async function POST(req: NextRequest) {
           "The active runtime identity source is an authenticated IPR account session.",
           "Authenticated IPR account session has priority over client-provided IPR handoff.",
           `Authenticated IPR account session reason: ${iprAccountSession.reason}.`,
-          `Authenticated IPR account expected MATRIX state: ${iprAccountSession.matrix.expectedState}.`
+          `Authenticated IPR account expected MATRIX state: ${iprAccountSession.matrix.expectedState}.`,
+          `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} is the active UP-EVT operational synchronism for this runtime phase.`,
+          `${CURRENT_MONTHLY_CHECKPOINT}/${CURRENT_MONTHLY_AI_CHECKPOINT} remains the locked ${CURRENT_MONTHLY_CYCLE} monthly checkpoint reference.`
         ]
       : [
           "No authenticated IPR account session was available for this chat operation.",
-          "Runtime may use a valid client handoff only as fallback transport context."
+          "Runtime may use a valid client handoff only as fallback transport context.",
+          `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} remains operational context only when no server-side identity is validated.`
         ]
   });
 
@@ -4167,6 +4247,9 @@ export async function POST(req: NextRequest) {
       `Last governed EVT: ${governedEvt.evt}.`,
       `Last OPC proof: ${opcProof.proofId}.`,
       `Last IPR identity source: ${iprHandoff.source || "none"}.`,
+      `Current operational UP-EVT: ${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT}.`,
+      `Current operational cycle: ${CURRENT_OPERATIONAL_CYCLE}.`,
+      `Locked monthly checkpoint reference: ${CURRENT_MONTHLY_CHECKPOINT}/${CURRENT_MONTHLY_AI_CHECKPOINT} (${CURRENT_MONTHLY_CYCLE}).`,
       ...accountSessionFacts,
       ...batchFacts,
       ...commercialFacts,
@@ -4224,11 +4307,16 @@ export async function POST(req: NextRequest) {
       projectBirthDate: engine.projectBirthDate,
       projectBirthLabel: engine.projectBirthLabel
     },
+    operationalContext: buildOperationalContext(),
     iprAccountSession: publicIprAccountSession,
     identity: {
       runtimeEntity: identity.entity,
       runtimeIpr: identity.ipr,
       checkpoint: identity.evt,
+      previousCheckpoint: identity.prev,
+      eventFamily: identity.eventFamily,
+      cycle: identity.cycle,
+      monthlyRef: identity.monthlyRef,
       verifiedSubject: iprHandoff.verifiedSubject,
       verifiedSubjectPresent: iprHandoff.valid,
       verifiedSubjectAccessDecision: iprHandoff.accessDecision,
@@ -4355,6 +4443,7 @@ export async function GET(req: NextRequest) {
     deepModel,
     openAIConfigured: Boolean(process.env.OPENAI_API_KEY),
     identity,
+    operationalContext: buildOperationalContext(),
     iprAccountSession: toPublicIprAccountSessionResolution(iprAccountSession),
     verifiedSubject: iprAccountSession.runtimeHandoff.isValid
       ? iprAccountSession.runtimeHandoff.subject || null
