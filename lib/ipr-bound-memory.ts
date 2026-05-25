@@ -20,6 +20,12 @@ export type MemoryPersistenceMode =
   | "DATABASE_PERSISTENT"
   | "EXTERNAL_ADAPTER";
 
+export type MemoryPersistenceStatus =
+  | "PROCESS_SCOPED"
+  | "DATABASE_READY_PENDING_WRITER"
+  | "DATABASE_PERSISTENT_ACTIVE"
+  | "EXTERNAL_ADAPTER_CONTROLLED";
+
 export type MemoryAuthority =
   | "SESSION_RUNTIME_ONLY"
   | "SERVER_RUNTIME_VALIDATED";
@@ -89,6 +95,20 @@ export type IprBoundMemoryHandoffEvaluation = {
   certificate?: IprBoundMemoryCertificate;
 };
 
+export type MemoryPersistenceFrame = {
+  mode: MemoryPersistenceMode;
+  status: MemoryPersistenceStatus;
+  target: "DATABASE_PERSISTENT";
+  durable: boolean;
+  runtimeScoped: boolean;
+  databaseRequired: boolean;
+  databaseReady: boolean;
+  store: IprBoundMemoryStoreDescription;
+  requirement: string;
+  boundary: string;
+  legalCertification: false;
+};
+
 export type MemoryEventLink = {
   evt: string;
   opcProofId?: string;
@@ -123,6 +143,7 @@ export type IprBoundMemoryRecordWithoutHash = {
   scope: MemoryScope;
   authority: MemoryAuthority;
   persistenceMode: MemoryPersistenceMode;
+  persistence: MemoryPersistenceFrame;
   subject?: IprBoundMemorySubject;
   certificate?: IprBoundMemoryCertificate;
   runtime: IprBoundMemoryRuntimeIdentity;
@@ -180,6 +201,7 @@ export type PublicIprBoundMemoryRecord = {
   scope: MemoryScope;
   authority: MemoryAuthority;
   persistenceMode: MemoryPersistenceMode;
+  persistence: MemoryPersistenceFrame;
   subject?: IprBoundMemorySubject;
   certificate?: IprBoundMemoryCertificate;
   runtime: IprBoundMemoryRuntimeIdentity;
@@ -213,11 +235,14 @@ const CURRENT_MONTHLY_CYCLE = "UP-MESE-4";
 export const IPR_BOUND_MEMORY_BOUNDARY =
   "IPR-bound memory preserves operational continuity only. It cannot override HBCE governance, policy evaluation, cyber safety boundaries, human oversight, fail-closed logic, or legal certification boundaries.";
 
-const TRACE_ONLY_MEMORY_BOUNDARY =
+export const TRACE_ONLY_MEMORY_BOUNDARY =
   "Blocked, degraded or rejected turns may be preserved for traceability only. They must not be treated as accepted operational facts, authorization rules or future policy instructions.";
 
-const DATABASE_PERSISTENT_REQUIREMENT =
+export const DATABASE_PERSISTENT_REQUIREMENT =
   "PROCESS_MEMORY_MVP provides temporary R&D process memory only. DATABASE_PERSISTENT is required for durable multi-session continuity, enterprise audit, replay, retention, deletion policy and robust governance.";
+
+export const DATABASE_PERSISTENCE_MEMORY_BOUNDARY =
+  "A memory record may expose DATABASE_READY only as a preparation state. Only DATABASE_PERSISTENT may be treated as durable memory continuity. DATABASE_READY and PROCESS_MEMORY_MVP must not claim durable SaaS persistence.";
 
 const CANONICAL_MEMORY_SAFETY_FACTS = [
   "IPR-bound memory preserves operational continuity only.",
@@ -227,7 +252,8 @@ const CANONICAL_MEMORY_SAFETY_FACTS = [
   "User-declared governance-like metadata is never authoritative memory.",
   "Memory cannot authorize future requests globally.",
   "OPC remains a technical proof receipt and is not legal certification.",
-  DATABASE_PERSISTENT_REQUIREMENT
+  DATABASE_PERSISTENT_REQUIREMENT,
+  DATABASE_PERSISTENCE_MEMORY_BOUNDARY
 ];
 
 const MEMORY_REJECTION_SIGNALS = [
@@ -287,7 +313,9 @@ export function truncateRuntimeText(
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
+    const serialized = JSON.stringify(value);
+
+    return typeof serialized === "string" ? serialized : "undefined";
   }
 
   if (Array.isArray(value)) {
@@ -365,6 +393,47 @@ function resolvePersistenceMode(
   return "EXTERNAL_ADAPTER";
 }
 
+function resolvePersistenceStatus(
+  mode: MemoryPersistenceMode
+): MemoryPersistenceStatus {
+  if (mode === "PROCESS_MEMORY_MVP") {
+    return "PROCESS_SCOPED";
+  }
+
+  if (mode === "DATABASE_READY") {
+    return "DATABASE_READY_PENDING_WRITER";
+  }
+
+  if (mode === "DATABASE_PERSISTENT") {
+    return "DATABASE_PERSISTENT_ACTIVE";
+  }
+
+  return "EXTERNAL_ADAPTER_CONTROLLED";
+}
+
+function buildMemoryPersistenceFrame(
+  store: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>
+): MemoryPersistenceFrame {
+  const mode = resolvePersistenceMode(store);
+  const status = resolvePersistenceStatus(mode);
+  const durable = mode === "DATABASE_PERSISTENT";
+  const databaseReady = mode === "DATABASE_READY" || mode === "DATABASE_PERSISTENT";
+
+  return {
+    mode,
+    status,
+    target: "DATABASE_PERSISTENT",
+    durable,
+    runtimeScoped: !durable,
+    databaseRequired: !durable,
+    databaseReady,
+    store: store.describe(),
+    requirement: DATABASE_PERSISTENT_REQUIREMENT,
+    boundary: DATABASE_PERSISTENCE_MEMORY_BOUNDARY,
+    legalCertification: false
+  };
+}
+
 function buildMemoryKey(input: GetOrCreateRuntimeMemoryInput): string {
   if (input.handoff.isValid && input.handoff.subject?.ipr) {
     return [
@@ -382,14 +451,20 @@ function buildMemorySummary(input: {
   handoff: IprBoundMemoryHandoffEvaluation;
   runtime: IprBoundMemoryRuntimeIdentity;
   sessionId: string;
+  persistence: MemoryPersistenceFrame;
 }): string {
+  const persistenceSentence = input.persistence.durable
+    ? "Memory persistence is DATABASE_PERSISTENT and may be treated as durable runtime continuity within the configured HBCE database boundary."
+    : `Memory persistence is ${input.persistence.mode}; durable SaaS continuity must not be claimed until DATABASE_PERSISTENT is active.`;
+
   if (input.handoff.isValid && input.handoff.subject) {
     return [
       `JOKER-C2 is operating with IPR-bound memory for ${input.handoff.subject.entity}.`,
       `Human IPR ${input.handoff.subject.ipr} is bound to runtime IPR ${input.runtime.ipr}.`,
       "Memory key is scoped to human_ipr + runtime_ipr + session_id.",
       `Session ${input.sessionId} remains governed by HBCE policy, EVT continuity, OPC proof receipts and MATRIX coordination.`,
-      `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} marks the active UP-EVT synchronism for memory, runtime and SaaS Core v0.1.`
+      `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} marks the active UP-EVT synchronism for memory, runtime and SaaS Core v0.1.`,
+      persistenceSentence
     ].join(" ");
   }
 
@@ -398,12 +473,14 @@ function buildMemorySummary(input: {
     "No verified biological IPR is available for this session.",
     `Memory remains scoped to runtime IPR ${input.runtime.ipr} and session ${input.sessionId}.`,
     "No biological identity continuity may be inferred without server-side IPR validation.",
-    `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} remains traceable as operational context only, not as biological IPR validation.`
+    `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} remains traceable as operational context only, not as biological IPR validation.`,
+    persistenceSentence
   ].join(" ");
 }
 
 function buildDerivedCanonicalMemoryFacts(
-  input: GetOrCreateRuntimeMemoryInput
+  input: GetOrCreateRuntimeMemoryInput,
+  persistence: MemoryPersistenceFrame
 ): string[] {
   const facts = [
     ...CANONICAL_MEMORY_SAFETY_FACTS,
@@ -423,7 +500,13 @@ function buildDerivedCanonicalMemoryFacts(
     "For GitHub work, the expected delivery format is: nome file, ragionamento della rifattorizzazione, il file integrale, il commit del file.",
     `${CURRENT_OPERATIONAL_EVT} is the active biological UP-EVT operational synchronism derived from ${CURRENT_MONTHLY_CHECKPOINT}, cycle ${CURRENT_OPERATIONAL_CYCLE}.`,
     `${CURRENT_OPERATIONAL_AI_EVT} is the active AI runtime UP-EVT operational synchronism derived from ${CURRENT_MONTHLY_AI_CHECKPOINT}, cycle ${CURRENT_OPERATIONAL_CYCLE}.`,
-    `${CURRENT_MONTHLY_CHECKPOINT}/${CURRENT_MONTHLY_AI_CHECKPOINT} remain the locked monthly checkpoints for ${CURRENT_MONTHLY_CYCLE}.`
+    `${CURRENT_MONTHLY_CHECKPOINT}/${CURRENT_MONTHLY_AI_CHECKPOINT} remain the locked monthly checkpoints for ${CURRENT_MONTHLY_CYCLE}.`,
+    `The current memory persistence mode is ${persistence.mode}.`,
+    `The current memory persistence status is ${persistence.status}.`,
+    `The current memory persistence target is ${persistence.target}.`,
+    persistence.durable
+      ? "The current memory persistence frame is durable within DATABASE_PERSISTENT boundary."
+      : "The current memory persistence frame is not durable and must not be described as enterprise-grade SaaS continuity."
   ];
 
   if (input.previousContinuityRef) {
@@ -633,6 +716,19 @@ export function buildMemoryRecordHash(
     scope: record.scope,
     authority: record.authority,
     persistenceMode: record.persistenceMode,
+    persistence: {
+      mode: record.persistence.mode,
+      status: record.persistence.status,
+      target: record.persistence.target,
+      durable: record.persistence.durable,
+      runtimeScoped: record.persistence.runtimeScoped,
+      databaseRequired: record.persistence.databaseRequired,
+      databaseReady: record.persistence.databaseReady,
+      store: record.persistence.store,
+      requirement: record.persistence.requirement,
+      boundary: record.persistence.boundary,
+      legalCertification: false
+    },
     subject: record.subject,
     certificate: record.certificate,
     runtime: record.runtime,
@@ -659,7 +755,8 @@ export function getOrCreateRuntimeMemory(
   const memoryKey = buildMemoryKey(input);
   const existing = store.get(memoryKey);
   const now = new Date().toISOString();
-  const persistenceMode = resolvePersistenceMode(store);
+  const persistence = buildMemoryPersistenceFrame(store);
+  const persistenceMode = persistence.mode;
 
   const scope: MemoryScope =
     input.handoff.isValid && input.handoff.subject?.ipr ? "IPR_BOUND" : "RUNTIME_ONLY";
@@ -668,7 +765,7 @@ export function getOrCreateRuntimeMemory(
     scope === "IPR_BOUND" ? "SERVER_RUNTIME_VALIDATED" : "SESSION_RUNTIME_ONLY";
 
   if (existing) {
-    const nextFacts = buildDerivedCanonicalMemoryFacts(input);
+    const nextFacts = buildDerivedCanonicalMemoryFacts(input, persistence);
 
     const updatedWithoutHash: IprBoundMemoryRecordWithoutHash = {
       memoryId: existing.memoryId,
@@ -677,6 +774,7 @@ export function getOrCreateRuntimeMemory(
       scope,
       authority,
       persistenceMode,
+      persistence,
       subject: input.handoff.subject ?? existing.subject,
       certificate: input.handoff.certificate ?? existing.certificate,
       runtime: input.runtime,
@@ -693,7 +791,8 @@ export function getOrCreateRuntimeMemory(
       summary: buildMemorySummary({
         handoff: input.handoff,
         runtime: input.runtime,
-        sessionId: input.sessionId
+        sessionId: input.sessionId,
+        persistence
       })
     };
 
@@ -714,6 +813,7 @@ export function getOrCreateRuntimeMemory(
     scope,
     authority,
     persistenceMode,
+    persistence,
     subject: input.handoff.subject,
     certificate: input.handoff.certificate,
     runtime: input.runtime,
@@ -725,12 +825,13 @@ export function getOrCreateRuntimeMemory(
     lastOpcProofId: undefined,
     lastOpcChainHash: undefined,
     eventLinks: [],
-    facts: buildDerivedCanonicalMemoryFacts(input),
+    facts: buildDerivedCanonicalMemoryFacts(input, persistence),
     recentTurns: [],
     summary: buildMemorySummary({
       handoff: input.handoff,
       runtime: input.runtime,
-      sessionId: input.sessionId
+      sessionId: input.sessionId,
+      persistence
     })
   };
 
@@ -749,6 +850,7 @@ export function updateMemoryAfterCompletion(
 ): IprBoundMemoryRecord {
   const store = resolveMemoryStore(input.store);
   const now = new Date().toISOString();
+  const persistence = buildMemoryPersistenceFrame(store);
 
   const turnMetadata = deriveTurnRuntimeMetadata(input);
 
@@ -793,7 +895,12 @@ export function updateMemoryAfterCompletion(
       : "",
     !turn.acceptedAsMemoryFact
       ? "Last memory turn must not be used as an accepted operational memory fact."
-      : ""
+      : "",
+    `Last memory persistence mode: ${persistence.mode}.`,
+    `Last memory persistence status: ${persistence.status}.`,
+    persistence.durable
+      ? "Last memory update used DATABASE_PERSISTENT durable persistence."
+      : "Last memory update did not use durable DATABASE_PERSISTENT storage."
   ].filter(Boolean);
 
   const nextFacts = mergeUniqueStrings(
@@ -812,7 +919,10 @@ export function updateMemoryAfterCompletion(
     input.opcChainHash ? `Last OPC chain hash is ${input.opcChainHash}.` : "",
     turn.trustStatus !== "TRUSTED_OPERATIONAL_OUTPUT"
       ? `Last memory turn is ${turn.trustStatus} and is preserved for traceability only.`
-      : ""
+      : "",
+    persistence.durable
+      ? "The last memory write used DATABASE_PERSISTENT durability."
+      : `The last memory write used ${persistence.mode}; durable SaaS continuity must not be claimed.`
   ].filter(Boolean);
 
   const updatedSummary = truncateRuntimeText(
@@ -826,7 +936,8 @@ export function updateMemoryAfterCompletion(
     memoryKeyHash: input.memory.memoryKeyHash,
     scope: input.memory.scope,
     authority: input.memory.authority,
-    persistenceMode: resolvePersistenceMode(store),
+    persistenceMode: persistence.mode,
+    persistence,
     subject: input.memory.subject,
     certificate: input.memory.certificate,
     runtime: input.memory.runtime,
@@ -902,6 +1013,11 @@ export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
     `Scope: ${memory.scope}`,
     `Authority: ${memory.authority}`,
     `Persistence mode: ${memory.persistenceMode}`,
+    `Persistence status: ${memory.persistence.status}`,
+    `Persistence durable: ${memory.persistence.durable ? "true" : "false"}`,
+    `Persistence target: ${memory.persistence.target}`,
+    `Persistence database ready: ${memory.persistence.databaseReady ? "true" : "false"}`,
+    `Persistence database required: ${memory.persistence.databaseRequired ? "true" : "false"}`,
     `MATRIX: ${memory.matrixState}`,
     `Runtime entity: ${memory.runtime.entity}`,
     `Runtime IPR: ${memory.runtime.ipr}`,
@@ -923,8 +1039,10 @@ export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
     IPR_BOUND_MEMORY_BOUNDARY,
     "Trace-only boundary:",
     TRACE_ONLY_MEMORY_BOUNDARY,
+    "Persistence requirement:",
+    DATABASE_PERSISTENT_REQUIREMENT,
     "Persistence boundary:",
-    DATABASE_PERSISTENT_REQUIREMENT
+    DATABASE_PERSISTENCE_MEMORY_BOUNDARY
   ].join("\n");
 }
 
@@ -937,6 +1055,7 @@ export function toPublicMemoryRecord(
     scope: memory.scope,
     authority: memory.authority,
     persistenceMode: memory.persistenceMode,
+    persistence: memory.persistence,
     subject: memory.subject,
     certificate: memory.certificate,
     runtime: memory.runtime,
@@ -976,6 +1095,24 @@ export function getRuntimeMemoryByKeyHash(
   }
 
   return toPublicMemoryRecord(memory);
+}
+
+export function getRuntimeMemoryPersistenceFrame(): MemoryPersistenceFrame {
+  return buildMemoryPersistenceFrame(
+    getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>()
+  );
+}
+
+export function isRuntimeMemoryDatabaseReady(): boolean {
+  const persistence = getRuntimeMemoryPersistenceFrame();
+
+  return persistence.databaseReady;
+}
+
+export function isRuntimeMemoryDatabasePersistent(): boolean {
+  const persistence = getRuntimeMemoryPersistenceFrame();
+
+  return persistence.mode === "DATABASE_PERSISTENT" && persistence.durable;
 }
 
 export function clearProcessRuntimeMemory(): void {
