@@ -30,13 +30,20 @@
  * - audit status;
  * - verification status.
  *
- * Canonical runtime checkpoint:
- * - EVT-0015-AI
- * - prev EVT-0014-AI
- * - cycle UP-MESE-4
- *
  * Canonical project birth date:
  * - 2026-01-19
+ *
+ * Canonical monthly reference:
+ * - UP-MESE-4
+ *
+ * Current operational synchronism:
+ * - event family: UP-EVT
+ * - human event: EVT-0016
+ * - AI event: EVT-0016-AI
+ * - cycle: UP-CANONICO
+ *
+ * SaaS target:
+ * - DATABASE_PERSISTENT
  *
  * Canonical formula:
  *
@@ -50,7 +57,7 @@
  * Verification reconstructs the operation.
  */
 
-import { createHash, randomUUID } from "crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 export type OpcProofKind = "OPERATIONAL_PROOF_RECORD";
 
@@ -130,9 +137,25 @@ export type OpcMemorySource =
   | "NONE"
   | "SESSION"
   | "EVT_IPR_MEMORY"
+  | "IPR_BOUND_MEMORY"
   | "LEDGER"
   | "USER_FILE"
   | "RUNTIME_CONTEXT";
+
+export type OpcProofPersistenceMode =
+  | "RUNTIME_ONLY"
+  | "PROCESS_PROOF_MVP"
+  | "DATABASE_READY"
+  | "DATABASE_PERSISTENT"
+  | "EXTERNAL_ADAPTER";
+
+export type OpcProofPersistenceStatus =
+  | "NOT_PERSISTED"
+  | "PROCESS_SCOPED"
+  | "DATABASE_CONTRACT_READY"
+  | "DATABASE_PERSISTENT_REQUIRED"
+  | "DATABASE_PERSISTENT_ACTIVE"
+  | "EXTERNAL_ADAPTER_REQUIRED";
 
 export type OpcEngineProvider = "OpenAI" | string;
 export type OpcEngineApiMode = "chat.completions" | "responses" | string;
@@ -176,6 +199,11 @@ export type OpcMemoryReference = {
   evt?: string;
   source?: OpcMemorySource | string;
   hash?: string;
+  memoryId?: string;
+  memoryKeyHash?: string;
+  scope?: string;
+  authority?: string;
+  persistenceMode?: string;
 };
 
 export type OpcRuntimeSnapshot = {
@@ -212,6 +240,27 @@ export type OpcAuditFrame = {
   reasons: string[];
 };
 
+export type OpcOperationalContext = {
+  projectBirthDate: string;
+  projectBirthLabel: string;
+  monthlyReference: "UP-MESE-4" | string;
+  eventFamily: "UP-EVT" | string;
+  currentHumanEvt: "EVT-0016" | string;
+  currentAiEvt: "EVT-0016-AI" | string;
+  cycle: "UP-CANONICO" | string;
+  saasTarget: "DATABASE_PERSISTENT" | string;
+};
+
+export type OpcPersistenceFrame = {
+  mode: OpcProofPersistenceMode;
+  status: OpcProofPersistenceStatus;
+  durable: boolean;
+  runtimeScoped: boolean;
+  databaseRequired: boolean;
+  target: "DATABASE_PERSISTENT";
+  statement: string;
+};
+
 export type OpcProofRecord = {
   proofId: string;
   kind: OpcProofKind;
@@ -222,6 +271,8 @@ export type OpcProofRecord = {
   event: OpcEventReference;
   memory?: OpcMemoryReference;
   runtime: OpcRuntimeSnapshot;
+  operationalContext?: OpcOperationalContext;
+  persistence?: OpcPersistenceFrame;
   proof: OpcProofHashes;
   audit: OpcAuditFrame;
   verification: {
@@ -234,6 +285,7 @@ export type OpcProofRecord = {
     statement: string;
     aiGovernanceBoundary?: string;
     moduleBoundary?: string;
+    persistenceBoundary?: string;
   };
 };
 
@@ -249,6 +301,8 @@ export type OpcProofRecordInput = {
   previousProofHash?: string | null;
   audit?: Partial<OpcAuditFrame>;
   timestamp?: string;
+  operationalContext?: Partial<OpcOperationalContext>;
+  persistenceMode?: OpcProofPersistenceMode;
 };
 
 export type OpcProofPublicView = {
@@ -279,6 +333,8 @@ export type OpcProofPublicView = {
   auditStatus: OpcAuditStatus;
   reviewRequired: boolean;
   verificationStatus: OpcVerificationStatus;
+  operationalContext?: OpcOperationalContext;
+  persistence?: OpcPersistenceFrame;
   legalCertification: false;
 };
 
@@ -293,22 +349,41 @@ export type OpcProofVerificationReport = {
   reasons: string[];
 };
 
+export type OpcProofSaasReadinessReport = {
+  proofId: string;
+  saasReady: boolean;
+  persistenceMode: OpcProofPersistenceMode;
+  persistenceStatus: OpcProofPersistenceStatus;
+  databasePersistentRequired: boolean;
+  legalCertification: false;
+  reasons: string[];
+  requirements: string[];
+};
+
 const OPC_KIND: OpcProofKind = "OPERATIONAL_PROOF_RECORD";
 const HASH_ALGORITHM: OpcHashAlgorithm = "sha256";
 const CANONICALIZATION: OpcCanonicalization = "deterministic-json";
 
 const DEFAULT_CORE = "HBCE-CORE-v3";
 const DEFAULT_ORGANIZATION = "HERMETICUM B.C.E. S.r.l.";
-const DEFAULT_RUNTIME_ROLE: OpcRuntimeRole = "IPR_RUNTIME_DEMONSTRATOR";
+const DEFAULT_RUNTIME_ROLE: OpcRuntimeRole = "HBCE_governed_runtime";
 
 const DEFAULT_ENGINE_PROVIDER = "OpenAI";
 const DEFAULT_ENGINE_API_MODE = "chat.completions";
 const DEFAULT_ENGINE_ROLE = "cognitive_engine";
 const DEFAULT_ENGINE_RUNTIME_ROLE = "HBCE_governed_runtime";
 const DEFAULT_ENGINE_MODEL = "gpt-5.5";
+
 const DEFAULT_PROJECT_BIRTH_DATE = "2026-01-19";
 const DEFAULT_PROJECT_BIRTH_LABEL =
   "HBCE R&D / AI JOKER-C2 project birth date";
+
+const DEFAULT_MONTHLY_REFERENCE = "UP-MESE-4";
+const DEFAULT_EVENT_FAMILY = "UP-EVT";
+const DEFAULT_CURRENT_HUMAN_EVT = "EVT-0016";
+const DEFAULT_CURRENT_AI_EVT = "EVT-0016-AI";
+const DEFAULT_CURRENT_CYCLE = "UP-CANONICO";
+const DEFAULT_SAAS_TARGET = "DATABASE_PERSISTENT";
 
 const NON_CERTIFICATION_STATEMENT =
   "OPC is a technical proof receipt for audit, verification and governance review. It does not create automatic legal certification, regulatory approval, institutional recognition or legally binding evidence status by default.";
@@ -319,6 +394,20 @@ const AI_GOVERNANCE_BOUNDARY =
 const MODULE_BOUNDARY =
   "HBCE modules are technical-operational stack functions. They are not book collections and they are not automatic legal authority.";
 
+const OPC_PERSISTENCE_BOUNDARY =
+  "OPC proof records are technical proof receipts. For SaaS use, OPC records require DATABASE_PERSISTENT storage, tenant/workspace scoping, access control, audit logging, retention, deletion, backup and recovery. Process-scoped proof handling is MVP-only.";
+
+const OPC_SAAS_REQUIREMENTS = [
+  "Persist OPC proof records in DATABASE_PERSISTENT storage.",
+  "Link each proof to identity, session, EVT, memory and runtime decision.",
+  "Preserve previousProofHash and chainHash continuity.",
+  "Expose public proof view without leaking sensitive payloads.",
+  "Keep input/output payloads hashed, not publicly exposed by default.",
+  "Maintain legalCertification=false.",
+  "Add tenant and workspace scoping before enterprise SaaS use.",
+  "Add access control, audit logging, retention, deletion, backup and recovery before production use."
+];
+
 export function createOpcProofRecord(
   input: OpcProofRecordInput
 ): OpcProofRecord {
@@ -327,6 +416,8 @@ export function createOpcProofRecord(
   const identity = normalizeIdentity(input.identity);
   const runtime = normalizeRuntimeSnapshot(input.runtime);
   const engine = normalizeEngineSnapshot(input.engine);
+  const operationalContext = normalizeOperationalContext(input.operationalContext);
+  const persistence = normalizePersistenceFrame(input.persistenceMode);
 
   const inputHash = sha256Canonical({
     type: "input",
@@ -373,6 +464,8 @@ export function createOpcProofRecord(
     event: input.event,
     memory: input.memory,
     runtime,
+    operationalContext,
+    persistence,
     inputHash,
     outputHash,
     decisionHash,
@@ -382,7 +475,7 @@ export function createOpcProofRecord(
     previousProofHash
   });
 
-  const audit = normalizeAuditFrame(input.audit, runtime, engine);
+  const audit = normalizeAuditFrame(input.audit, runtime, engine, persistence);
 
   return {
     proofId,
@@ -394,6 +487,8 @@ export function createOpcProofRecord(
     event: input.event,
     memory: input.memory,
     runtime,
+    operationalContext,
+    persistence,
     proof: {
       inputHash,
       outputHash,
@@ -414,7 +509,8 @@ export function createOpcProofRecord(
       legalCertification: false,
       statement: NON_CERTIFICATION_STATEMENT,
       aiGovernanceBoundary: AI_GOVERNANCE_BOUNDARY,
-      moduleBoundary: MODULE_BOUNDARY
+      moduleBoundary: MODULE_BOUNDARY,
+      persistenceBoundary: OPC_PERSISTENCE_BOUNDARY
     }
   };
 }
@@ -463,6 +559,14 @@ export function verifyOpcProofRecord(
     !storedEngineHash ||
     storedEngineHash === expectedEngineHash;
 
+  const normalizedOperationalContext = record.operationalContext
+    ? normalizeOperationalContext(record.operationalContext)
+    : undefined;
+
+  const normalizedPersistence = record.persistence
+    ? normalizePersistenceFrame(record.persistence.mode)
+    : undefined;
+
   const expectedChainHash = buildOpcChainHash({
     proofId: record.proofId,
     timestamp: record.timestamp,
@@ -472,6 +576,8 @@ export function verifyOpcProofRecord(
     event: record.event,
     memory: record.memory,
     runtime: normalizeRuntimeSnapshot(record.runtime),
+    operationalContext: normalizedOperationalContext,
+    persistence: normalizedPersistence,
     inputHash: record.proof.inputHash,
     outputHash: record.proof.outputHash,
     decisionHash: record.proof.decisionHash,
@@ -498,11 +604,18 @@ export function verifyOpcProofRecord(
           record.engine
             ? "Cognitive engine metadata is present in the proof record."
             : "Cognitive engine metadata is not present; record is treated as legacy-compatible.",
-          "The record is technically verifiable as an audit-oriented proof receipt."
+          record.operationalContext
+            ? "Operational synchronism context is present in the proof record."
+            : "Operational synchronism context is not present; record is treated as legacy-compatible.",
+          record.persistence
+            ? `Persistence frame is present: ${record.persistence.mode}.`
+            : "Persistence frame is not present; record is treated as legacy-compatible.",
+          "The record is technically verifiable as an audit-oriented proof receipt.",
+          NON_CERTIFICATION_STATEMENT
         ]
       : [
           "OPC proof record chain hash or engine hash does not match.",
-          "The record may have been modified after creation or generated with a different previousProofHash or engineHash."
+          "The record may have been modified after creation or generated with a different previousProofHash, engineHash, operationalContext or persistence frame."
         ]
   };
 }
@@ -538,6 +651,8 @@ export function toPublicOpcProofRecord(
     auditStatus: record.audit.status,
     reviewRequired: record.audit.reviewRequired,
     verificationStatus: record.verification.status,
+    operationalContext: record.operationalContext,
+    persistence: record.persistence,
     legalCertification: false
   };
 }
@@ -624,7 +739,53 @@ export function getOpcProofRecordMissingFields(
     missing.push("verification.canonicalization");
   }
 
+  if (record.boundary?.legalCertification !== false) {
+    missing.push("boundary.legalCertification");
+  }
+
   return missing;
+}
+
+export function buildOpcSaasReadinessReport(
+  record: OpcProofRecord
+): OpcProofSaasReadinessReport {
+  const persistence =
+    record.persistence || normalizePersistenceFrame("RUNTIME_ONLY");
+
+  const databasePersistentRequired =
+    persistence.mode !== "DATABASE_PERSISTENT" ||
+    persistence.status !== "DATABASE_PERSISTENT_ACTIVE";
+
+  const verification = verifyOpcProofRecord(record);
+
+  const saasReady =
+    verification.status === "VERIFIABLE" &&
+    persistence.mode === "DATABASE_PERSISTENT" &&
+    persistence.status === "DATABASE_PERSISTENT_ACTIVE" &&
+    persistence.durable === true &&
+    persistence.runtimeScoped === false &&
+    record.boundary.legalCertification === false;
+
+  return {
+    proofId: record.proofId,
+    saasReady,
+    persistenceMode: persistence.mode,
+    persistenceStatus: persistence.status,
+    databasePersistentRequired,
+    legalCertification: false,
+    reasons: [
+      saasReady
+        ? "OPC proof record is SaaS-ready under DATABASE_PERSISTENT mode."
+        : "OPC proof record is not yet SaaS-ready.",
+      `Verification status: ${verification.status}.`,
+      `Persistence mode: ${persistence.mode}.`,
+      `Persistence status: ${persistence.status}.`,
+      `Durable: ${persistence.durable ? "true" : "false"}.`,
+      `Runtime scoped: ${persistence.runtimeScoped ? "true" : "false"}.`,
+      NON_CERTIFICATION_STATEMENT
+    ],
+    requirements: saasReady ? [] : OPC_SAAS_REQUIREMENTS
+  };
 }
 
 export function sha256Canonical(value: unknown): string {
@@ -689,6 +850,8 @@ function buildOpcChainHash(input: {
   event: OpcEventReference;
   memory?: OpcMemoryReference;
   runtime: OpcRuntimeSnapshot;
+  operationalContext?: OpcOperationalContext;
+  persistence?: OpcPersistenceFrame;
   inputHash: string;
   outputHash: string;
   decisionHash: string;
@@ -734,6 +897,16 @@ function buildOpcChainHash(input: {
     chainPayload.engine = normalizeEngineSnapshot(input.engine);
   }
 
+  if (input.operationalContext) {
+    chainPayload.operationalContext = normalizeOperationalContext(
+      input.operationalContext
+    );
+  }
+
+  if (input.persistence) {
+    chainPayload.persistence = normalizePersistenceFrame(input.persistence.mode);
+  }
+
   return sha256Canonical(chainPayload);
 }
 
@@ -744,6 +917,106 @@ function normalizeIdentity(identity: OpcIdentityBinding): OpcIdentityBinding {
     core: identity.core || DEFAULT_CORE,
     organization: identity.organization || DEFAULT_ORGANIZATION,
     runtimeRole: identity.runtimeRole || DEFAULT_RUNTIME_ROLE
+  };
+}
+
+function normalizeOperationalContext(
+  context?: Partial<OpcOperationalContext>
+): OpcOperationalContext {
+  return {
+    projectBirthDate:
+      stringOrDefault(context?.projectBirthDate, DEFAULT_PROJECT_BIRTH_DATE) ||
+      DEFAULT_PROJECT_BIRTH_DATE,
+    projectBirthLabel:
+      stringOrDefault(context?.projectBirthLabel, DEFAULT_PROJECT_BIRTH_LABEL) ||
+      DEFAULT_PROJECT_BIRTH_LABEL,
+    monthlyReference:
+      stringOrDefault(context?.monthlyReference, DEFAULT_MONTHLY_REFERENCE) ||
+      DEFAULT_MONTHLY_REFERENCE,
+    eventFamily:
+      stringOrDefault(context?.eventFamily, DEFAULT_EVENT_FAMILY) ||
+      DEFAULT_EVENT_FAMILY,
+    currentHumanEvt:
+      stringOrDefault(context?.currentHumanEvt, DEFAULT_CURRENT_HUMAN_EVT) ||
+      DEFAULT_CURRENT_HUMAN_EVT,
+    currentAiEvt:
+      stringOrDefault(context?.currentAiEvt, DEFAULT_CURRENT_AI_EVT) ||
+      DEFAULT_CURRENT_AI_EVT,
+    cycle:
+      stringOrDefault(context?.cycle, DEFAULT_CURRENT_CYCLE) ||
+      DEFAULT_CURRENT_CYCLE,
+    saasTarget:
+      stringOrDefault(context?.saasTarget, DEFAULT_SAAS_TARGET) ||
+      DEFAULT_SAAS_TARGET
+  };
+}
+
+function normalizePersistenceFrame(
+  mode?: OpcProofPersistenceMode
+): OpcPersistenceFrame {
+  const persistenceMode = mode || "PROCESS_PROOF_MVP";
+
+  if (persistenceMode === "DATABASE_PERSISTENT") {
+    return {
+      mode: "DATABASE_PERSISTENT",
+      status: "DATABASE_PERSISTENT_ACTIVE",
+      durable: true,
+      runtimeScoped: false,
+      databaseRequired: true,
+      target: "DATABASE_PERSISTENT",
+      statement:
+        "OPC proof receipt is declared under DATABASE_PERSISTENT mode. This requires real durable storage, audit logging, access control, retention, deletion, backup and recovery."
+    };
+  }
+
+  if (persistenceMode === "DATABASE_READY") {
+    return {
+      mode: "DATABASE_READY",
+      status: "DATABASE_CONTRACT_READY",
+      durable: false,
+      runtimeScoped: false,
+      databaseRequired: true,
+      target: "DATABASE_PERSISTENT",
+      statement:
+        "OPC proof contract is prepared for database persistence, but durable DATABASE_PERSISTENT storage is not active yet."
+    };
+  }
+
+  if (persistenceMode === "EXTERNAL_ADAPTER") {
+    return {
+      mode: "EXTERNAL_ADAPTER",
+      status: "EXTERNAL_ADAPTER_REQUIRED",
+      durable: false,
+      runtimeScoped: false,
+      databaseRequired: false,
+      target: "DATABASE_PERSISTENT",
+      statement:
+        "OPC proof contract expects an external adapter. The adapter must preserve HBCE proof boundaries and legalCertification=false."
+    };
+  }
+
+  if (persistenceMode === "RUNTIME_ONLY") {
+    return {
+      mode: "RUNTIME_ONLY",
+      status: "NOT_PERSISTED",
+      durable: false,
+      runtimeScoped: true,
+      databaseRequired: true,
+      target: "DATABASE_PERSISTENT",
+      statement:
+        "OPC proof receipt exists only in runtime response scope. It is not durable SaaS proof storage."
+    };
+  }
+
+  return {
+    mode: "PROCESS_PROOF_MVP",
+    status: "PROCESS_SCOPED",
+    durable: false,
+    runtimeScoped: true,
+    databaseRequired: true,
+    target: "DATABASE_PERSISTENT",
+    statement:
+      "OPC proof receipt is process-scoped MVP proof handling. It may reset on redeploy, cold start, instance recycling or runtime migration."
   };
 }
 
@@ -855,11 +1128,18 @@ function normalizeOpcProofRecord(record: OpcProofRecord): OpcProofRecord {
     identity: normalizeIdentity(record.identity),
     engine: record.engine ? normalizeEngineSnapshot(record.engine) : undefined,
     runtime: normalizeRuntimeSnapshot(record.runtime),
+    operationalContext: record.operationalContext
+      ? normalizeOperationalContext(record.operationalContext)
+      : undefined,
+    persistence: record.persistence
+      ? normalizePersistenceFrame(record.persistence.mode)
+      : undefined,
     boundary: record.boundary || {
       legalCertification: false,
       statement: NON_CERTIFICATION_STATEMENT,
       aiGovernanceBoundary: AI_GOVERNANCE_BOUNDARY,
-      moduleBoundary: MODULE_BOUNDARY
+      moduleBoundary: MODULE_BOUNDARY,
+      persistenceBoundary: OPC_PERSISTENCE_BOUNDARY
     }
   };
 }
@@ -883,14 +1163,15 @@ function normalizePreviousProofHash(
 function normalizeAuditFrame(
   audit: Partial<OpcAuditFrame> | undefined,
   runtime: OpcRuntimeSnapshot,
-  engine?: OpcEngineSnapshot
+  engine?: OpcEngineSnapshot,
+  persistence?: OpcPersistenceFrame
 ): OpcAuditFrame {
   const normalizedRuntime = normalizeRuntimeSnapshot(runtime);
 
   const reviewRequired =
     typeof audit?.reviewRequired === "boolean"
       ? audit.reviewRequired
-      : inferReviewRequired(normalizedRuntime);
+      : inferReviewRequired(normalizedRuntime, persistence);
 
   return {
     status: audit?.status || inferAuditStatus(normalizedRuntime, reviewRequired),
@@ -899,7 +1180,7 @@ function normalizeAuditFrame(
       audit?.reviewerRole || inferReviewerRole(normalizedRuntime, reviewRequired),
     reasons: uniqueReasons([
       ...(audit?.reasons || []),
-      ...buildAuditReasons(normalizedRuntime, reviewRequired, engine)
+      ...buildAuditReasons(normalizedRuntime, reviewRequired, engine, persistence)
     ])
   };
 }
@@ -927,7 +1208,10 @@ function inferAuditStatus(
   return "NOT_REQUIRED";
 }
 
-function inferReviewRequired(runtime: OpcRuntimeSnapshot): boolean {
+function inferReviewRequired(
+  runtime: OpcRuntimeSnapshot,
+  persistence?: OpcPersistenceFrame
+): boolean {
   return (
     runtime.decision === "AUDIT" ||
     runtime.decision === "ESCALATE" ||
@@ -935,7 +1219,8 @@ function inferReviewRequired(runtime: OpcRuntimeSnapshot): boolean {
     runtime.riskClass === "MEDIUM" ||
     runtime.riskClass === "HIGH" ||
     runtime.riskClass === "CRITICAL" ||
-    runtime.riskClass === "UNKNOWN"
+    runtime.riskClass === "UNKNOWN" ||
+    Boolean(persistence?.databaseRequired)
   );
 }
 
@@ -992,7 +1277,8 @@ function inferReviewerRole(
 function buildAuditReasons(
   runtime: OpcRuntimeSnapshot,
   reviewRequired: boolean,
-  engine?: OpcEngineSnapshot
+  engine?: OpcEngineSnapshot,
+  persistence?: OpcPersistenceFrame
 ): string[] {
   const reasons = [
     `Runtime state: ${runtime.state}.`,
@@ -1015,6 +1301,12 @@ function buildAuditReasons(
 
   if (runtime.hbceModule) {
     reasons.push(`HBCE module: ${runtime.hbceModule}.`);
+  }
+
+  if (persistence) {
+    reasons.push(`OPC persistence mode: ${persistence.mode}.`);
+    reasons.push(`OPC persistence status: ${persistence.status}.`);
+    reasons.push(persistence.statement);
   }
 
   if (
@@ -1052,6 +1344,7 @@ function buildAuditReasons(
     reasons.push("Review is not required for this proof record.");
   }
 
+  reasons.push(OPC_PERSISTENCE_BOUNDARY);
   reasons.push(NON_CERTIFICATION_STATEMENT);
 
   return reasons;
