@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type LoginMode = "SET_PASSWORD" | "LOGIN";
 type RequestStatus = "IDLE" | "LOADING" | "SUCCESS" | "ERROR";
 
 type ApiState = {
@@ -24,20 +23,7 @@ const INITIAL_API_STATE: ApiState = {
 const HUMAN_IPR_CANONICAL = "IPR-88505FE91013DCFE97C56ED1";
 
 const PAGE_BOUNDARY =
-  "This page creates or verifies an HBCE IPR account session for AI JOKER-C2. It does not issue official identity, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale or eIDAS qualified trust services, and does not create legal certification.";
-
-const WEAK_PROJECT_FRAGMENTS = [
-  "joker",
-  "hbce",
-  "matrix",
-  "ipr",
-  "manuel",
-  "coletta",
-  "hermeticum",
-  "bce",
-  "ai",
-  "openai"
-];
+  "This page verifies an existing HBCE IPR account session for AI JOKER-C2. It does not create a new IPR password, does not issue official identity, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale or eIDAS qualified trust services, and does not create legal certification.";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -47,144 +33,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function normalizeHumanIpr(value: string): string {
+  return value.trim().toUpperCase();
+}
+
 function stringifyPayload(value: unknown): string {
   try {
     return JSON.stringify(value, null, 2);
   } catch {
     return String(value);
   }
-}
-
-function normalizeHumanIpr(value: string): string {
-  return value.trim().toUpperCase();
-}
-
-function extractString(value: unknown, path: string[]): string | null {
-  let current: unknown = value;
-
-  for (const key of path) {
-    if (!isRecord(current)) {
-      return null;
-    }
-
-    current = current[key];
-  }
-
-  return typeof current === "string" && current.trim()
-    ? current.trim()
-    : null;
-}
-
-function extractHumanIprFromHandoff(value: unknown): string | null {
-  return (
-    extractString(value, ["subject", "ipr"]) ||
-    extractString(value, ["humanIpr"]) ||
-    extractString(value, ["human_ipr"]) ||
-    extractString(value, ["subjectIpr"]) ||
-    extractString(value, ["ipr"])
-  );
-}
-
-function decodeBase64Json(value: string): unknown | null {
-  try {
-    const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-    const decoded = window.atob(normalized);
-    return JSON.parse(decoded);
-  } catch {
-    return null;
-  }
-}
-
-function parseJsonText(value: string): unknown | null {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-}
-
-function findHandoffFromUrl(): unknown | null {
-  const params = new URLSearchParams(window.location.search);
-
-  const b64 =
-    params.get("hbce_ipr_handoff_b64") ||
-    params.get("ipr_handoff_b64") ||
-    params.get("handoff_b64");
-
-  if (b64) {
-    const decoded = decodeBase64Json(b64);
-
-    if (decoded) {
-      return decoded;
-    }
-  }
-
-  const json =
-    params.get("hbce_ipr_handoff") ||
-    params.get("iprHandoff") ||
-    params.get("ipr_handoff") ||
-    params.get("handoff");
-
-  if (json) {
-    const decodedText = decodeURIComponent(json);
-    const parsed = parseJsonText(decodedText);
-
-    if (parsed) {
-      return parsed;
-    }
-  }
-
-  return null;
-}
-
-function findHandoffFromStorage(): unknown | null {
-  const keys = [
-    "hbce_ipr_handoff",
-    "hbce_ipr_handoff_b64",
-    "hbce_joker_c2_ipr_handoff",
-    "hbce_joker_c2_ipr_handoff_b64",
-    "joker_c2_ipr_handoff",
-    "joker_c2_ipr_handoff_b64"
-  ];
-
-  for (const key of keys) {
-    const localValue = window.localStorage.getItem(key);
-    const sessionValue = window.sessionStorage.getItem(key);
-    const value = localValue || sessionValue;
-
-    if (!value) {
-      continue;
-    }
-
-    if (key.endsWith("_b64")) {
-      const decoded = decodeBase64Json(value);
-
-      if (decoded) {
-        return decoded;
-      }
-    }
-
-    const parsed = parseJsonText(value);
-
-    if (parsed) {
-      return parsed;
-    }
-  }
-
-  return null;
-}
-
-function findHumanIprFromUrl(): string | null {
-  const params = new URLSearchParams(window.location.search);
-
-  const value =
-    params.get("humanIpr") ||
-    params.get("human_ipr") ||
-    params.get("subjectIpr") ||
-    params.get("subject_ipr") ||
-    params.get("ipr");
-
-  return value ? normalizeHumanIpr(value) : null;
 }
 
 function getStatusLabel(state: ApiState): string {
@@ -203,155 +61,103 @@ function getStatusLabel(state: ApiState): string {
   return "Error";
 }
 
-function buildLoginSummary(payload: unknown): string[] {
-  const authenticated = isRecord(payload) ? payload.authenticated : undefined;
-  const reason = isRecord(payload) ? payload.reason : undefined;
-  const mode = isRecord(payload) ? payload.mode : undefined;
-  const humanIpr = isRecord(payload) ? payload.humanIpr : undefined;
-  const access =
-    isRecord(payload) && isRecord(payload.access) ? payload.access : {};
-  const memory =
-    isRecord(payload) && isRecord(payload.memory) ? payload.memory : {};
-  const passwordPolicy =
-    isRecord(payload) && isRecord(payload.passwordPolicy)
-      ? payload.passwordPolicy
-      : null;
-  const violations =
-    passwordPolicy && Array.isArray(passwordPolicy.violations)
-      ? passwordPolicy.violations
-          .map((item) => (typeof item === "string" ? item : ""))
-          .filter(Boolean)
-      : [];
+function extractString(value: unknown, path: string[]): string | null {
+  let current: unknown = value;
 
-  return [
-    `Authenticated: ${
-      typeof authenticated === "boolean" ? String(authenticated) : "unknown"
-    }`,
-    `Reason: ${typeof reason === "string" ? reason : "unknown"}`,
-    `Mode: ${typeof mode === "string" ? mode : "unknown"}`,
-    `Human IPR: ${typeof humanIpr === "string" ? humanIpr : "unknown"}`,
-    `Access source: ${
-      typeof access.source === "string" ? access.source : "unknown"
-    }`,
-    `Memory persistence: ${
-      typeof memory.persistenceMode === "string"
-        ? memory.persistenceMode
-        : "unknown"
-    }`,
-    `Password violations: ${
-      violations.length > 0 ? violations.join(" | ") : "none"
-    }`
-  ];
+  for (const key of path) {
+    if (!isRecord(current)) {
+      return null;
+    }
+
+    current = current[key];
+  }
+
+  return typeof current === "string" && current.trim()
+    ? current.trim()
+    : null;
+}
+
+function extractBoolean(value: unknown, path: string[]): boolean | null {
+  let current: unknown = value;
+
+  for (const key of path) {
+    if (!isRecord(current)) {
+      return null;
+    }
+
+    current = current[key];
+  }
+
+  return typeof current === "boolean" ? current : null;
 }
 
 function buildSessionSummary(payload: unknown): string[] {
-  const authenticated = isRecord(payload) ? payload.authenticated : undefined;
-  const reason = isRecord(payload) ? payload.reason : undefined;
-  const access =
-    isRecord(payload) && isRecord(payload.access) ? payload.access : {};
-  const matrix =
-    isRecord(payload) && isRecord(payload.matrix) ? payload.matrix : {};
-  const memory =
-    isRecord(payload) && isRecord(payload.memory) ? payload.memory : {};
+  const authenticated = extractBoolean(payload, ["authenticated"]);
+  const reason = extractString(payload, ["reason"]);
+  const humanIpr =
+    extractString(payload, ["session", "humanIpr"]) ||
+    extractString(payload, ["accountProfile", "humanIpr"]);
+  const accessSource = extractString(payload, ["access", "source"]);
+  const matrixState = extractString(payload, ["matrix", "expectedState"]);
+  const memoryScope = extractString(payload, ["memory", "expectedScope"]);
+  const memoryPersistence = extractString(payload, [
+    "memory",
+    "persistenceMode"
+  ]);
 
   return [
     `Authenticated: ${
-      typeof authenticated === "boolean" ? String(authenticated) : "unknown"
+      authenticated === null ? "unknown" : String(authenticated)
     }`,
-    `Reason: ${typeof reason === "string" ? reason : "unknown"}`,
-    `Access source: ${
-      typeof access.source === "string" ? access.source : "unknown"
-    }`,
-    `Matrix state: ${
-      typeof matrix.expectedState === "string"
-        ? matrix.expectedState
-        : "unknown"
-    }`,
-    `Memory scope: ${
-      typeof memory.expectedScope === "string"
-        ? memory.expectedScope
-        : "unknown"
-    }`,
-    `Memory persistence: ${
-      typeof memory.persistenceMode === "string"
-        ? memory.persistenceMode
-        : "unknown"
-    }`
+    `Reason: ${reason || "unknown"}`,
+    `Human IPR: ${humanIpr || "unknown"}`,
+    `Access source: ${accessSource || "unknown"}`,
+    `Matrix state: ${matrixState || "unknown"}`,
+    `Memory scope: ${memoryScope || "unknown"}`,
+    `Memory persistence: ${memoryPersistence || "unknown"}`
   ];
 }
 
-function hasSymbol(password: string): boolean {
-  return /[^A-Za-z0-9]/.test(password);
+function buildLoginSummary(payload: unknown): string[] {
+  const authenticated = extractBoolean(payload, ["authenticated"]);
+  const mode = extractString(payload, ["mode"]);
+  const humanIpr = extractString(payload, ["humanIpr"]);
+  const accessSource = extractString(payload, ["access", "source"]);
+  const matrixState = extractString(payload, ["matrix", "expectedState"]);
+  const memoryScope = extractString(payload, ["memory", "expectedScope"]);
+  const memoryPersistence = extractString(payload, [
+    "memory",
+    "persistenceMode"
+  ]);
+  const reason = extractString(payload, ["reason"]);
+  const detail = extractString(payload, ["detail"]);
+
+  return [
+    `Authenticated: ${
+      authenticated === null ? "unknown" : String(authenticated)
+    }`,
+    `Mode: ${mode || "unknown"}`,
+    `Reason: ${reason || "unknown"}`,
+    `Human IPR: ${humanIpr || "unknown"}`,
+    `Access source: ${accessSource || "unknown"}`,
+    `Matrix state: ${matrixState || "unknown"}`,
+    `Memory scope: ${memoryScope || "unknown"}`,
+    `Memory persistence: ${memoryPersistence || "unknown"}`,
+    `Detail: ${detail || "none"}`
+  ];
 }
 
-function hasProjectObviousFragment(password: string): boolean {
-  const normalized = password.toLowerCase();
-
-  return WEAK_PROJECT_FRAGMENTS.some((fragment) =>
-    normalized.includes(fragment)
-  );
+function isAuthenticated(payload: unknown): boolean {
+  return extractBoolean(payload, ["authenticated"]) === true;
 }
 
-function buildClientPasswordHints(
-  mode: LoginMode,
-  password: string,
-  confirmPassword: string
-): string[] {
-  const hints: string[] = [];
-
-  if (!password) {
-    hints.push("Password is required.");
-  }
-
-  if (mode === "SET_PASSWORD" && password !== confirmPassword) {
-    hints.push("Password confirmation does not match.");
-  }
-
-  if (password && !hasSymbol(password)) {
-    hints.push("Password should include at least one symbol.");
-  }
-
-  if (password && hasProjectObviousFragment(password)) {
-    hints.push(
-      "Password should not include obvious project or personal fragments."
-    );
-  }
-
-  return hints;
-}
-
-export default function HbceIprLoginPage() {
-  const [mode, setMode] = useState<LoginMode>("SET_PASSWORD");
+export default function HbceJokerLoginPage() {
   const [humanIpr, setHumanIpr] = useState(HUMAN_IPR_CANONICAL);
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [deviceLabel, setDeviceLabel] = useState("JOKER-C2 access device");
-  const [handoffText, setHandoffText] = useState("");
-  const [handoffLoaded, setHandoffLoaded] = useState(false);
+  const [deviceLabel, setDeviceLabel] = useState("JOKER-C2 login device");
   const [loginState, setLoginState] = useState<ApiState>(INITIAL_API_STATE);
   const [sessionState, setSessionState] =
     useState<ApiState>(INITIAL_API_STATE);
-
-  const clientPasswordHints = useMemo(
-    () => buildClientPasswordHints(mode, password, confirmPassword),
-    [confirmPassword, mode, password]
-  );
-
-  const passwordsMatch = useMemo(
-    () =>
-      mode === "LOGIN" ||
-      (password.length > 0 &&
-        confirmPassword.length > 0 &&
-        password === confirmPassword),
-    [confirmPassword, mode, password]
-  );
-
-  const passwordHasSymbol = useMemo(() => hasSymbol(password), [password]);
-
-  const passwordHasWeakFragment = useMemo(
-    () => hasProjectObviousFragment(password),
-    [password]
-  );
 
   const loginSummary = useMemo(
     () => buildLoginSummary(loginState.payload),
@@ -361,6 +167,16 @@ export default function HbceIprLoginPage() {
   const sessionSummary = useMemo(
     () => buildSessionSummary(sessionState.payload),
     [sessionState.payload]
+  );
+
+  const activeSession = useMemo(
+    () => isAuthenticated(sessionState.payload),
+    [sessionState.payload]
+  );
+
+  const loginSucceeded = useMemo(
+    () => isAuthenticated(loginState.payload),
+    [loginState.payload]
   );
 
   const runSessionCheck = useCallback(async () => {
@@ -408,106 +224,44 @@ export default function HbceIprLoginPage() {
   }, []);
 
   useEffect(() => {
-    const handoff = findHandoffFromUrl() || findHandoffFromStorage();
-
-    if (handoff) {
-      setHandoffText(JSON.stringify(handoff, null, 2));
-      setHandoffLoaded(true);
-
-      const ipr = extractHumanIprFromHandoff(handoff);
-
-      if (ipr) {
-        setHumanIpr(normalizeHumanIpr(ipr));
-      }
-    } else {
-      const ipr = findHumanIprFromUrl();
-
-      if (ipr) {
-        setHumanIpr(ipr);
-      }
-    }
-
     void runSessionCheck();
   }, [runSessionCheck]);
 
   const submitLogin = useCallback(async () => {
     const normalizedHumanIpr = normalizeHumanIpr(humanIpr);
-    const parsedHandoff = handoffText.trim()
-      ? parseJsonText(handoffText.trim())
-      : null;
 
-    if (mode === "SET_PASSWORD") {
-      if (password !== confirmPassword) {
-        setLoginState({
-          status: "ERROR",
-          httpStatus: null,
-          payload: {
-            ok: false,
-            authenticated: false,
-            reason: "IPR_PASSWORD_CONFIRMATION_MISMATCH",
-            detail:
-              "The IPR password and confirmation password do not match.",
-            legalCertification: false
-          },
-          error: "The IPR password and confirmation password do not match.",
-          receivedAt: nowIso()
-        });
-        return;
-      }
+    if (!normalizedHumanIpr) {
+      setLoginState({
+        status: "ERROR",
+        httpStatus: null,
+        payload: {
+          ok: false,
+          authenticated: false,
+          reason: "HUMAN_IPR_MISSING",
+          detail: "Human IPR is required.",
+          legalCertification: false
+        },
+        error: "Human IPR is required.",
+        receivedAt: nowIso()
+      });
+      return;
+    }
 
-      if (!passwordHasSymbol) {
-        setLoginState({
-          status: "ERROR",
-          httpStatus: null,
-          payload: {
-            ok: false,
-            authenticated: false,
-            reason: "IPR_PASSWORD_CLIENT_POLICY_FAILED",
-            detail: "Password should include at least one symbol.",
-            legalCertification: false
-          },
-          error: "Password should include at least one symbol.",
-          receivedAt: nowIso()
-        });
-        return;
-      }
-
-      if (passwordHasWeakFragment) {
-        setLoginState({
-          status: "ERROR",
-          httpStatus: null,
-          payload: {
-            ok: false,
-            authenticated: false,
-            reason: "IPR_PASSWORD_CLIENT_POLICY_FAILED",
-            detail:
-              "Password should not include obvious project or personal fragments.",
-            weakFragments: WEAK_PROJECT_FRAGMENTS,
-            legalCertification: false
-          },
-          error:
-            "Password should not include obvious project or personal fragments.",
-          receivedAt: nowIso()
-        });
-        return;
-      }
-
-      if (handoffText.trim() && !parsedHandoff) {
-        setLoginState({
-          status: "ERROR",
-          httpStatus: null,
-          payload: {
-            ok: false,
-            authenticated: false,
-            reason: "IPR_HANDOFF_JSON_INVALID",
-            detail: "IPR handoff JSON is invalid.",
-            legalCertification: false
-          },
-          error: "IPR handoff JSON is invalid.",
-          receivedAt: nowIso()
-        });
-        return;
-      }
+    if (!password) {
+      setLoginState({
+        status: "ERROR",
+        httpStatus: null,
+        payload: {
+          ok: false,
+          authenticated: false,
+          reason: "IPR_PASSWORD_MISSING",
+          detail: "IPR password is required.",
+          legalCertification: false
+        },
+        error: "IPR password is required.",
+        receivedAt: nowIso()
+      });
+      return;
     }
 
     setLoginState({
@@ -528,11 +282,10 @@ export default function HbceIprLoginPage() {
         credentials: "include",
         cache: "no-store",
         body: JSON.stringify({
-          mode,
+          mode: "LOGIN",
           humanIpr: normalizedHumanIpr,
           password,
           deviceLabel,
-          iprHandoff: mode === "SET_PASSWORD" ? parsedHandoff : undefined,
           legalCertification: false
         })
       });
@@ -564,17 +317,7 @@ export default function HbceIprLoginPage() {
         receivedAt: nowIso()
       });
     }
-  }, [
-    confirmPassword,
-    deviceLabel,
-    handoffText,
-    humanIpr,
-    mode,
-    password,
-    passwordHasSymbol,
-    passwordHasWeakFragment,
-    runSessionCheck
-  ]);
+  }, [deviceLabel, humanIpr, password, runSessionCheck]);
 
   return (
     <main
@@ -582,7 +325,7 @@ export default function HbceIprLoginPage() {
         minHeight: "100vh",
         padding: "32px",
         background:
-          "radial-gradient(circle at top, rgba(56,189,248,0.12), transparent 34%), #05070a",
+          "radial-gradient(circle at top, rgba(56,189,248,0.13), transparent 34%), #05070a",
         color: "#f8fafc",
         fontFamily:
           "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
@@ -591,7 +334,7 @@ export default function HbceIprLoginPage() {
       <section
         style={{
           width: "100%",
-          maxWidth: "1120px",
+          maxWidth: "1080px",
           margin: "0 auto"
         }}
       >
@@ -621,21 +364,21 @@ export default function HbceIprLoginPage() {
               lineHeight: 1
             }}
           >
-            JOKER-C2 IPR Login
+            JOKER-C2 Login
           </h1>
 
           <p
             style={{
               margin: 0,
-              maxWidth: "840px",
+              maxWidth: "820px",
               color: "#cbd5e1",
               fontSize: "17px",
               lineHeight: 1.6
             }}
           >
-            Persistent HBCE IPR account access for AI JOKER-C2. Use SET_PASSWORD
-            on the verified onboarding device, then use LOGIN from another
-            device with the same Human IPR and password.
+            Access AI JOKER-C2 through an existing HBCE IPR account session.
+            Enter your Human IPR and password to activate governed runtime
+            access.
           </p>
 
           <p
@@ -652,7 +395,7 @@ export default function HbceIprLoginPage() {
         <section
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(310px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
             gap: "18px",
             marginBottom: "18px"
           }}
@@ -673,8 +416,21 @@ export default function HbceIprLoginPage() {
                 fontSize: "22px"
               }}
             >
-              IPR account access
+              Enter JOKER-C2
             </h2>
+
+            <p
+              style={{
+                marginTop: 0,
+                marginBottom: "18px",
+                color: "#cbd5e1",
+                lineHeight: 1.55,
+                fontSize: "14px"
+              }}
+            >
+              Use the password already created during the verified IPR setup.
+              This page does not create a new password.
+            </p>
 
             <div
               style={{
@@ -691,49 +447,17 @@ export default function HbceIprLoginPage() {
                   fontWeight: 700
                 }}
               >
-                Mode
-                <select
-                  value={mode}
-                  onChange={(event) =>
-                    setMode(event.target.value as LoginMode)
-                  }
-                  style={{
-                    border: "1px solid rgba(148,163,184,0.35)",
-                    borderRadius: "12px",
-                    padding: "11px 12px",
-                    background: "#020617",
-                    color: "#f8fafc",
-                    fontSize: "15px"
-                  }}
-                >
-                  <option value="SET_PASSWORD">
-                    SET_PASSWORD - first verified setup
-                  </option>
-                  <option value="LOGIN">
-                    LOGIN - existing IPR account
-                  </option>
-                </select>
-              </label>
-
-              <label
-                style={{
-                  display: "grid",
-                  gap: "7px",
-                  color: "#cbd5e1",
-                  fontSize: "14px",
-                  fontWeight: 700
-                }}
-              >
                 Human IPR
                 <input
                   value={humanIpr}
                   onChange={(event) => setHumanIpr(event.target.value)}
                   spellCheck={false}
                   autoCapitalize="characters"
+                  autoComplete="username"
                   style={{
                     border: "1px solid rgba(148,163,184,0.35)",
                     borderRadius: "12px",
-                    padding: "11px 12px",
+                    padding: "12px 13px",
                     background: "#020617",
                     color: "#f8fafc",
                     fontSize: "15px",
@@ -757,125 +481,22 @@ export default function HbceIprLoginPage() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   type="password"
-                  autoComplete={
-                    mode === "SET_PASSWORD"
-                      ? "new-password"
-                      : "current-password"
-                  }
+                  autoComplete="current-password"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      void submitLogin();
+                    }
+                  }}
                   style={{
                     border: "1px solid rgba(148,163,184,0.35)",
                     borderRadius: "12px",
-                    padding: "11px 12px",
+                    padding: "12px 13px",
                     background: "#020617",
                     color: "#f8fafc",
                     fontSize: "15px"
                   }}
                 />
               </label>
-
-              {mode === "SET_PASSWORD" ? (
-                <label
-                  style={{
-                    display: "grid",
-                    gap: "7px",
-                    color: "#cbd5e1",
-                    fontSize: "14px",
-                    fontWeight: 700
-                  }}
-                >
-                  Confirm IPR password
-                  <input
-                    value={confirmPassword}
-                    onChange={(event) =>
-                      setConfirmPassword(event.target.value)
-                    }
-                    type="password"
-                    autoComplete="new-password"
-                    style={{
-                      border: "1px solid rgba(148,163,184,0.35)",
-                      borderRadius: "12px",
-                      padding: "11px 12px",
-                      background: "#020617",
-                      color: "#f8fafc",
-                      fontSize: "15px"
-                    }}
-                  />
-                </label>
-              ) : null}
-
-              <section
-                style={{
-                  border: "1px solid rgba(148,163,184,0.22)",
-                  borderRadius: "14px",
-                  padding: "12px",
-                  background: "rgba(2,6,23,0.62)"
-                }}
-              >
-                <p
-                  style={{
-                    margin: "0 0 8px",
-                    color: "#e2e8f0",
-                    fontWeight: 800,
-                    fontSize: "14px"
-                  }}
-                >
-                  Password checks
-                </p>
-
-                <ul
-                  style={{
-                    margin: 0,
-                    paddingLeft: "18px",
-                    color: "#cbd5e1",
-                    fontSize: "13px",
-                    lineHeight: 1.6
-                  }}
-                >
-                  <li>
-                    Password inserted: {password ? "yes" : "no"}
-                  </li>
-                  <li>
-                    Confirmation match:{" "}
-                    {mode === "LOGIN"
-                      ? "not required for LOGIN"
-                      : passwordsMatch
-                        ? "yes"
-                        : "no"}
-                  </li>
-                  <li>
-                    Includes symbol: {passwordHasSymbol ? "yes" : "no"}
-                  </li>
-                  <li>
-                    Obvious project fragment:{" "}
-                    {passwordHasWeakFragment ? "detected" : "not detected"}
-                  </li>
-                </ul>
-
-                {clientPasswordHints.length > 0 ? (
-                  <p
-                    style={{
-                      margin: "10px 0 0",
-                      color: "#fbbf24",
-                      fontSize: "13px",
-                      lineHeight: 1.5
-                    }}
-                  >
-                    {clientPasswordHints.join(" ")}
-                  </p>
-                ) : (
-                  <p
-                    style={{
-                      margin: "10px 0 0",
-                      color: "#86efac",
-                      fontSize: "13px",
-                      lineHeight: 1.5
-                    }}
-                  >
-                    Client-side password checks passed. Server-side policy still
-                    performs the authoritative verification.
-                  </p>
-                )}
-              </section>
 
               <label
                 style={{
@@ -890,60 +511,17 @@ export default function HbceIprLoginPage() {
                 <input
                   value={deviceLabel}
                   onChange={(event) => setDeviceLabel(event.target.value)}
+                  autoComplete="off"
                   style={{
                     border: "1px solid rgba(148,163,184,0.35)",
                     borderRadius: "12px",
-                    padding: "11px 12px",
+                    padding: "12px 13px",
                     background: "#020617",
                     color: "#f8fafc",
                     fontSize: "15px"
                   }}
                 />
               </label>
-
-              <label
-                style={{
-                  display: "grid",
-                  gap: "7px",
-                  color: "#cbd5e1",
-                  fontSize: "14px",
-                  fontWeight: 700
-                }}
-              >
-                HBCE IPR handoff JSON
-                <textarea
-                  value={handoffText}
-                  onChange={(event) => setHandoffText(event.target.value)}
-                  placeholder="Required for SET_PASSWORD. Not required for LOGIN after the account exists."
-                  spellCheck={false}
-                  rows={9}
-                  style={{
-                    border: "1px solid rgba(148,163,184,0.35)",
-                    borderRadius: "12px",
-                    padding: "11px 12px",
-                    background: "#020617",
-                    color: "#f8fafc",
-                    fontSize: "13px",
-                    fontFamily:
-                      "ui-monospace, SFMono-Regular, Menlo, monospace",
-                    lineHeight: 1.45,
-                    resize: "vertical"
-                  }}
-                />
-              </label>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: handoffLoaded ? "#86efac" : "#fbbf24",
-                  fontSize: "13px",
-                  lineHeight: 1.5
-                }}
-              >
-                {handoffLoaded
-                  ? "IPR handoff loaded from URL or browser storage."
-                  : "No IPR handoff auto-loaded. SET_PASSWORD requires a valid handoff from the onboarding flow."}
-              </p>
 
               <button
                 type="button"
@@ -956,7 +534,7 @@ export default function HbceIprLoginPage() {
                       : "pointer",
                   border: "1px solid rgba(255,255,255,0.22)",
                   borderRadius: "999px",
-                  padding: "12px 18px",
+                  padding: "13px 18px",
                   background: "#38bdf8",
                   color: "#020617",
                   fontWeight: 900,
@@ -964,10 +542,8 @@ export default function HbceIprLoginPage() {
                 }}
               >
                 {loginState.status === "LOADING"
-                  ? "Processing..."
-                  : mode === "SET_PASSWORD"
-                    ? "Create IPR password session"
-                    : "Login with IPR password"}
+                  ? "Logging in..."
+                  : "Login to JOKER-C2"}
               </button>
 
               <button
@@ -981,7 +557,7 @@ export default function HbceIprLoginPage() {
                       : "pointer",
                   border: "1px solid rgba(255,255,255,0.22)",
                   borderRadius: "999px",
-                  padding: "12px 18px",
+                  padding: "13px 18px",
                   background: "#f8fafc",
                   color: "#020617",
                   fontWeight: 800,
@@ -1001,10 +577,14 @@ export default function HbceIprLoginPage() {
                   textDecoration: "none",
                   border: "1px solid rgba(148,163,184,0.35)",
                   borderRadius: "999px",
-                  padding: "12px 18px",
-                  background: "rgba(15,23,42,0.9)",
-                  color: "#f8fafc",
-                  fontWeight: 800,
+                  padding: "13px 18px",
+                  background:
+                    activeSession || loginSucceeded
+                      ? "#22c55e"
+                      : "rgba(15,23,42,0.9)",
+                  color:
+                    activeSession || loginSucceeded ? "#020617" : "#f8fafc",
+                  fontWeight: 900,
                   fontSize: "15px"
                 }}
               >
@@ -1029,8 +609,35 @@ export default function HbceIprLoginPage() {
                 fontSize: "22px"
               }}
             >
-              Session status
+              Access status
             </h2>
+
+            <div
+              style={{
+                border: "1px solid rgba(148,163,184,0.22)",
+                borderRadius: "14px",
+                padding: "14px",
+                background:
+                  activeSession || loginSucceeded
+                    ? "rgba(34,197,94,0.12)"
+                    : "rgba(2,6,23,0.62)",
+                marginBottom: "16px"
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  color:
+                    activeSession || loginSucceeded ? "#86efac" : "#fbbf24",
+                  fontWeight: 900,
+                  fontSize: "15px"
+                }}
+              >
+                {activeSession || loginSucceeded
+                  ? "IPR account session active."
+                  : "IPR account session not active yet."}
+              </p>
+            </div>
 
             <div
               style={{
@@ -1163,7 +770,6 @@ export default function HbceIprLoginPage() {
               padding: "18px",
               background: "rgba(2,6,23,0.78)"
             }}
-            open
           >
             <summary
               style={{
