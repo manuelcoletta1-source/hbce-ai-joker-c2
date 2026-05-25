@@ -17,6 +17,12 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type UnauthenticatedSessionReason =
+  | "SESSION_COOKIE_MISSING"
+  | "SESSION_NOT_FOUND"
+  | "SESSION_REVOKED"
+  | "SESSION_EXPIRED";
+
 const AUTH_SESSION_BOUNDARY = {
   legalCertification: false,
   authBoundary: IPR_AUTH_BOUNDARY,
@@ -26,11 +32,7 @@ const AUTH_SESSION_BOUNDARY = {
 };
 
 function buildUnauthenticatedResponse(input: {
-  reason:
-    | "SESSION_COOKIE_MISSING"
-    | "SESSION_NOT_FOUND"
-    | "SESSION_REVOKED"
-    | "SESSION_EXPIRED";
+  reason: UnauthenticatedSessionReason;
   status?: number;
 }) {
   return NextResponse.json(
@@ -56,6 +58,16 @@ function buildUnauthenticatedResponse(input: {
   );
 }
 
+function toUnauthenticatedReason(
+  reason: "SESSION_ACTIVE" | "SESSION_NOT_FOUND" | "SESSION_REVOKED" | "SESSION_EXPIRED"
+): UnauthenticatedSessionReason {
+  if (reason === "SESSION_ACTIVE") {
+    return "SESSION_NOT_FOUND";
+  }
+
+  return reason;
+}
+
 export async function GET(req: NextRequest) {
   const token = req.cookies.get(IPR_AUTH_COOKIE_NAME)?.value || "";
 
@@ -70,7 +82,7 @@ export async function GET(req: NextRequest) {
 
   if (!verification.ok || !verification.session) {
     return buildUnauthenticatedResponse({
-      reason: verification.reason
+      reason: toUnauthenticatedReason(verification.reason)
     });
   }
 
