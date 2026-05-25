@@ -5,6 +5,13 @@ import OpenAI from "openai";
 import { resolveIprAccountSessionFromRequest } from "@/lib/ipr-auth-session-resolver";
 
 import {
+  describeDefaultHbceDatabase,
+  getHbceDatabaseBoundary,
+  isHbceDatabaseAvailable,
+  isHbceDatabaseConfigured
+} from "@/lib/ipr-database";
+
+import {
   IPR_BOUND_MEMORY_BOUNDARY,
   buildMemoryPromptFrame,
   buildMemoryRecordHash,
@@ -38,9 +45,27 @@ import type { MatrixTransformativeMemoryEvaluation } from "@/lib/matrix-transfor
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type RuntimeState = "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID";
-type RuntimeDecision = "ALLOW" | "BLOCK" | "ESCALATE" | "DEGRADE" | "AUDIT" | "NOOP";
-type RiskClass = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | "PROHIBITED" | "UNKNOWN";
+type RuntimeState =
+  | "OPERATIONAL"
+  | "DEGRADED"
+  | "BLOCKED"
+  | "INVALID";
+
+type RuntimeDecision =
+  | "ALLOW"
+  | "BLOCK"
+  | "ESCALATE"
+  | "DEGRADE"
+  | "AUDIT"
+  | "NOOP";
+
+type RiskClass =
+  | "LOW"
+  | "MEDIUM"
+  | "HIGH"
+  | "CRITICAL"
+  | "PROHIBITED"
+  | "UNKNOWN";
 
 type FileInput = {
   id?: string;
@@ -72,6 +97,44 @@ type ChatBody = {
   iprHandoff?: unknown;
 };
 
+type SaasRuntimeContext = {
+  saasCore: "v0.1";
+  targetPersistence: "DATABASE_PERSISTENT";
+  tenantId: string | null;
+  workspaceId: string | null;
+  projectBirth: {
+    date: "2026-01-19";
+    displayDate: "19/01/2026";
+    label: "HBCE R&D / AI JOKER-C2 project birth date";
+  };
+  monthlyReference: {
+    cycle: "UP-MESE-4";
+    label: "Fourth monthly synchronization cycle";
+  };
+  currentOperationalEvent: {
+    humanEvt: "EVT-0016";
+    aiEvt: "EVT-0016-AI";
+    cycle: "UP-CANONICO";
+    eventFamily: "UP-EVT";
+  };
+  previousCheckpoint: {
+    humanEvt: "EVT-0015";
+    aiEvt: "EVT-0015-AI";
+    cycle: "UP-MESE-4";
+    t: "2026-05-19T15:30:00+02:00";
+  };
+  legalCertification: false;
+};
+
+type DatabaseRuntimeFrame = {
+  configured: boolean;
+  available: boolean;
+  targetPersistence: "DATABASE_PERSISTENT";
+  description: ReturnType<typeof describeDefaultHbceDatabase>;
+  boundary: ReturnType<typeof getHbceDatabaseBoundary>;
+  legalCertification: false;
+};
+
 type RuntimeIdentity = {
   entity: "AI_JOKER";
   ipr: "IPR-AI-0001";
@@ -80,11 +143,27 @@ type RuntimeIdentity = {
   eventFamily: "UP-EVT";
   state: "LOCKED";
   cycle: "UP-CANONICO";
+  projectBirth: {
+    date: "2026-01-19";
+    displayDate: "19/01/2026";
+    label: "HBCE R&D / AI JOKER-C2 project birth date";
+  };
+  monthlyReference: {
+    cycle: "UP-MESE-4";
+    label: "Fourth monthly synchronization cycle";
+  };
+  previousCheckpoint: {
+    evt: "EVT-0015-AI";
+    humanEvt: "EVT-0015";
+    cycle: "UP-MESE-4";
+    t: "2026-05-19T15:30:00+02:00";
+  };
   monthlyRef: {
     evt: "EVT-0015-AI";
     humanEvt: "EVT-0015";
     cycle: "UP-MESE-4";
     t: "2026-05-19T15:30:00+02:00";
+    compatibility: "LEGACY_ALIAS_FOR_PREVIOUS_CHECKPOINT";
   };
   core: "HBCE-CORE-v3";
   org: "HERMETICUM B.C.E. S.r.l.";
@@ -136,6 +215,7 @@ type GovernanceFrame = {
 
 type MatrixActivationState = "MATRIX_ACTIVE" | "MATRIX_LIMITED";
 type IprHandoffStatus = "NOT_PRESENT" | "VALID" | "INVALID";
+
 type VerifiedSubjectAccessDecision =
   | "ACCESS_GRANTED"
   | "ACCESS_DENIED"
@@ -166,7 +246,9 @@ type IprHandoffEvaluation = {
   accessDecision: VerifiedSubjectAccessDecision;
   matrixState: MatrixActivationState;
   semanticMemoryScope: MemoryScope;
-  identityBinding: "NO_VERIFIED_BIOLOGICAL_SUBJECT" | "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
+  identityBinding:
+    | "NO_VERIFIED_BIOLOGICAL_SUBJECT"
+    | "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
   verifiedSubject: VerifiedBiologicalSubject | null;
 };
 
@@ -186,15 +268,35 @@ type RuntimeIdentityContext = {
 };
 
 type OperationalContext = {
+  project_birth: {
+    date: "2026-01-19";
+    display_date: "19/01/2026";
+    label: "HBCE R&D / AI JOKER-C2 project birth date";
+  };
+  monthly_reference: {
+    cycle: "UP-MESE-4";
+    label: "Fourth monthly synchronization cycle";
+  };
   event_family: "UP-EVT";
   current_evt: "EVT-0016";
   current_ai_evt: "EVT-0016-AI";
   current_cycle: "UP-CANONICO";
-  monthly_checkpoint_ref: {
+  previous_checkpoint_ref: {
     evt: "EVT-0015";
     ai_evt: "EVT-0015-AI";
     cycle: "UP-MESE-4";
     t: "2026-05-19T15:30:00+02:00";
+  };
+  saas: {
+    core: "v0.1";
+    target_persistence: "DATABASE_PERSISTENT";
+    tenant_id: string | null;
+    workspace_id: string | null;
+  };
+  database: {
+    configured: boolean;
+    available: boolean;
+    target_persistence: "DATABASE_PERSISTENT";
   };
   legalCertification: false;
 };
@@ -212,6 +314,8 @@ type LegacyRuntimeEvent = {
   documentMode: string;
   documentFamily: string;
   operationalContext: OperationalContext;
+  saas: SaasRuntimeContext;
+  database: DatabaseRuntimeFrame;
   anchors: {
     hash: string;
     publicHash: string;
@@ -245,6 +349,8 @@ type GovernedEvt = {
   entity: string;
   ipr: string;
   operational_context: OperationalContext;
+  saas: SaasRuntimeContext;
+  database: DatabaseRuntimeFrame;
   runtime: {
     name: "AI_JOKER-C2";
     core: string;
@@ -356,6 +462,20 @@ type OpcProofRecord = {
     matrixState: MatrixActivationState;
     semanticMemoryScope: IprHandoffEvaluation["semanticMemoryScope"];
   };
+  operationalContext: OperationalContext;
+  saas: SaasRuntimeContext;
+  database: DatabaseRuntimeFrame;
+  persistence: {
+    mode: "DATABASE_PERSISTENT" | "PROCESS_PROOF_MVP";
+    status:
+      | "DATABASE_PERSISTENT_ACTIVE"
+      | "DATABASE_PERSISTENT_REQUIRED"
+      | "PROCESS_SCOPED";
+    durable: boolean;
+    runtimeScoped: boolean;
+    target: "DATABASE_PERSISTENT";
+    legalCertification: false;
+  };
   proof: {
     inputHash: string;
     outputHash: string;
@@ -386,6 +506,7 @@ type OpcProofRecord = {
     openAIReviewerPosture: string;
     iprRecognitionBoundary: string;
     memoryBoundary: string;
+    databasePersistenceBoundary: string;
   };
 };
 
@@ -418,14 +539,25 @@ const MAX_COMPLETION_TOKENS = 4600;
 const MAX_FILE_TEXT_CHARS = 60_000;
 const MAX_TOTAL_FILE_TEXT_CHARS = 180_000;
 
+const PROJECT_BIRTH_DATE = "2026-01-19" as const;
+const PROJECT_BIRTH_DISPLAY_DATE = "19/01/2026" as const;
+const PROJECT_BIRTH_LABEL =
+  "HBCE R&D / AI JOKER-C2 project birth date" as const;
+
 const CURRENT_OPERATIONAL_EVT = "EVT-0016" as const;
 const CURRENT_OPERATIONAL_AI_EVT = "EVT-0016-AI" as const;
 const CURRENT_OPERATIONAL_CYCLE = "UP-CANONICO" as const;
 const CURRENT_EVENT_FAMILY = "UP-EVT" as const;
-const CURRENT_MONTHLY_CHECKPOINT = "EVT-0015" as const;
-const CURRENT_MONTHLY_AI_CHECKPOINT = "EVT-0015-AI" as const;
-const CURRENT_MONTHLY_CYCLE = "UP-MESE-4" as const;
-const CURRENT_MONTHLY_T = "2026-05-19T15:30:00+02:00" as const;
+
+const PREVIOUS_CHAIN_CHECKPOINT = "EVT-0015" as const;
+const PREVIOUS_AI_CHAIN_CHECKPOINT = "EVT-0015-AI" as const;
+const MONTHLY_REFERENCE = "UP-MESE-4" as const;
+const MONTHLY_REFERENCE_LABEL =
+  "Fourth monthly synchronization cycle" as const;
+const PREVIOUS_CHAIN_CHECKPOINT_T = "2026-05-19T15:30:00+02:00" as const;
+
+const SAAS_CORE_VERSION = "v0.1" as const;
+const SAAS_TARGET_PERSISTENCE = "DATABASE_PERSISTENT" as const;
 
 const USE_DEMOCRATIC_BOUNDARY =
   "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
@@ -459,6 +591,9 @@ const IPR_RECOGNITION_BOUNDARY =
 
 const IPR_ACCOUNT_SESSION_BOUNDARY =
   "Authenticated IPR account session resolved from HttpOnly cookie, server-side session store and account profile store has priority over client-provided IPR handoff. Client handoff remains fallback transport only.";
+
+const DATABASE_PERSISTENCE_BOUNDARY =
+  "JOKER-C2 SaaS Core v0.1 requires DATABASE_PERSISTENT storage for durable account, session, memory, EVT, OPC, tenant, workspace and audit continuity. If the database is not configured or available, runtime must not claim durable SaaS continuity.";
 
 const MEMORY_BOUNDARY = IPR_BOUND_MEMORY_BOUNDARY;
 
@@ -588,17 +723,189 @@ const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
-function buildOperationalContext(): OperationalContext {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function readPath(value: unknown, path: string[]): unknown {
+  let current: unknown = value;
+
+  for (const key of path) {
+    if (!isRecord(current)) {
+      return undefined;
+    }
+
+    current = current[key];
+  }
+
+  return current;
+}
+
+function safeRuntimeString(value: unknown, fallback = ""): string {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  return fallback;
+}
+
+function firstRuntimeString(value: unknown, paths: string[][], fallback = ""): string {
+  for (const path of paths) {
+    const item = readPath(value, path);
+    const text = safeRuntimeString(item, "");
+
+    if (text) {
+      return text;
+    }
+  }
+
+  return fallback;
+}
+
+function resolveSaasScope(input: {
+  accountSession?: IprAccountSessionResolution | null;
+}): {
+  tenantId: string | null;
+  workspaceId: string | null;
+} {
+  const accountSession = input.accountSession;
+
+  if (!accountSession) {
+    return {
+      tenantId: null,
+      workspaceId: null
+    };
+  }
+
+  const tenantId = firstRuntimeString(
+    accountSession,
+    [
+      ["accountProfile", "tenantId"],
+      ["accountProfile", "tenant_id"],
+      ["accountProfile", "saas", "tenantId"],
+      ["accountProfile", "saas", "tenant_id"],
+      ["access", "tenantId"],
+      ["access", "tenant_id"],
+      ["runtimeHandoff", "account", "tenant_id"],
+      ["runtimeHandoff", "account", "tenantId"],
+      ["reconstructedIprHandoff", "account", "tenant_id"],
+      ["reconstructedIprHandoff", "account", "tenantId"],
+      ["reconstructedIprHandoff", "saas", "tenantId"],
+      ["reconstructedIprHandoff", "saas", "tenant_id"]
+    ],
+    ""
+  );
+
+  const workspaceId = firstRuntimeString(
+    accountSession,
+    [
+      ["accountProfile", "workspaceId"],
+      ["accountProfile", "workspace_id"],
+      ["accountProfile", "saas", "workspaceId"],
+      ["accountProfile", "saas", "workspace_id"],
+      ["access", "workspaceId"],
+      ["access", "workspace_id"],
+      ["runtimeHandoff", "account", "workspace_id"],
+      ["runtimeHandoff", "account", "workspaceId"],
+      ["reconstructedIprHandoff", "account", "workspace_id"],
+      ["reconstructedIprHandoff", "account", "workspaceId"],
+      ["reconstructedIprHandoff", "saas", "workspaceId"],
+      ["reconstructedIprHandoff", "saas", "workspace_id"]
+    ],
+    ""
+  );
+
   return {
+    tenantId: tenantId || null,
+    workspaceId: workspaceId || null
+  };
+}
+
+function buildDatabaseRuntimeFrame(): DatabaseRuntimeFrame {
+  return {
+    configured: isHbceDatabaseConfigured(),
+    available: isHbceDatabaseAvailable(),
+    targetPersistence: SAAS_TARGET_PERSISTENCE,
+    description: describeDefaultHbceDatabase(),
+    boundary: getHbceDatabaseBoundary(),
+    legalCertification: false
+  };
+}
+
+function buildSaasRuntimeContext(input?: {
+  tenantId?: string | null;
+  workspaceId?: string | null;
+}): SaasRuntimeContext {
+  return {
+    saasCore: SAAS_CORE_VERSION,
+    targetPersistence: SAAS_TARGET_PERSISTENCE,
+    tenantId: input?.tenantId || null,
+    workspaceId: input?.workspaceId || null,
+    projectBirth: {
+      date: PROJECT_BIRTH_DATE,
+      displayDate: PROJECT_BIRTH_DISPLAY_DATE,
+      label: PROJECT_BIRTH_LABEL
+    },
+    monthlyReference: {
+      cycle: MONTHLY_REFERENCE,
+      label: MONTHLY_REFERENCE_LABEL
+    },
+    currentOperationalEvent: {
+      humanEvt: CURRENT_OPERATIONAL_EVT,
+      aiEvt: CURRENT_OPERATIONAL_AI_EVT,
+      cycle: CURRENT_OPERATIONAL_CYCLE,
+      eventFamily: CURRENT_EVENT_FAMILY
+    },
+    previousCheckpoint: {
+      humanEvt: PREVIOUS_CHAIN_CHECKPOINT,
+      aiEvt: PREVIOUS_AI_CHAIN_CHECKPOINT,
+      cycle: MONTHLY_REFERENCE,
+      t: PREVIOUS_CHAIN_CHECKPOINT_T
+    },
+    legalCertification: false
+  };
+}
+
+function buildOperationalContext(input?: {
+  tenantId?: string | null;
+  workspaceId?: string | null;
+}): OperationalContext {
+  const database = buildDatabaseRuntimeFrame();
+
+  return {
+    project_birth: {
+      date: PROJECT_BIRTH_DATE,
+      display_date: PROJECT_BIRTH_DISPLAY_DATE,
+      label: PROJECT_BIRTH_LABEL
+    },
+    monthly_reference: {
+      cycle: MONTHLY_REFERENCE,
+      label: MONTHLY_REFERENCE_LABEL
+    },
     event_family: CURRENT_EVENT_FAMILY,
     current_evt: CURRENT_OPERATIONAL_EVT,
     current_ai_evt: CURRENT_OPERATIONAL_AI_EVT,
     current_cycle: CURRENT_OPERATIONAL_CYCLE,
-    monthly_checkpoint_ref: {
-      evt: CURRENT_MONTHLY_CHECKPOINT,
-      ai_evt: CURRENT_MONTHLY_AI_CHECKPOINT,
-      cycle: CURRENT_MONTHLY_CYCLE,
-      t: CURRENT_MONTHLY_T
+    previous_checkpoint_ref: {
+      evt: PREVIOUS_CHAIN_CHECKPOINT,
+      ai_evt: PREVIOUS_AI_CHAIN_CHECKPOINT,
+      cycle: MONTHLY_REFERENCE,
+      t: PREVIOUS_CHAIN_CHECKPOINT_T
+    },
+    saas: {
+      core: SAAS_CORE_VERSION,
+      target_persistence: SAAS_TARGET_PERSISTENCE,
+      tenant_id: input?.tenantId || null,
+      workspace_id: input?.workspaceId || null
+    },
+    database: {
+      configured: database.configured,
+      available: database.available,
+      target_persistence: SAAS_TARGET_PERSISTENCE
     },
     legalCertification: false
   };
@@ -699,15 +1006,31 @@ function getPrimaryIdentity(): RuntimeIdentity {
     entity: "AI_JOKER",
     ipr: "IPR-AI-0001",
     evt: CURRENT_OPERATIONAL_AI_EVT,
-    prev: CURRENT_MONTHLY_AI_CHECKPOINT,
+    prev: PREVIOUS_AI_CHAIN_CHECKPOINT,
     eventFamily: CURRENT_EVENT_FAMILY,
     state: "LOCKED",
     cycle: CURRENT_OPERATIONAL_CYCLE,
+    projectBirth: {
+      date: PROJECT_BIRTH_DATE,
+      displayDate: PROJECT_BIRTH_DISPLAY_DATE,
+      label: PROJECT_BIRTH_LABEL
+    },
+    monthlyReference: {
+      cycle: MONTHLY_REFERENCE,
+      label: MONTHLY_REFERENCE_LABEL
+    },
+    previousCheckpoint: {
+      evt: PREVIOUS_AI_CHAIN_CHECKPOINT,
+      humanEvt: PREVIOUS_CHAIN_CHECKPOINT,
+      cycle: MONTHLY_REFERENCE,
+      t: PREVIOUS_CHAIN_CHECKPOINT_T
+    },
     monthlyRef: {
-      evt: CURRENT_MONTHLY_AI_CHECKPOINT,
-      humanEvt: CURRENT_MONTHLY_CHECKPOINT,
-      cycle: CURRENT_MONTHLY_CYCLE,
-      t: CURRENT_MONTHLY_T
+      evt: PREVIOUS_AI_CHAIN_CHECKPOINT,
+      humanEvt: PREVIOUS_CHAIN_CHECKPOINT,
+      cycle: MONTHLY_REFERENCE,
+      t: PREVIOUS_CHAIN_CHECKPOINT_T,
+      compatibility: "LEGACY_ALIAS_FOR_PREVIOUS_CHECKPOINT"
     },
     core: "HBCE-CORE-v3",
     org: "HERMETICUM B.C.E. S.r.l.",
@@ -763,49 +1086,6 @@ function toMemoryHandoffEvaluation(
         }
       : undefined
   };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function readPath(value: unknown, path: string[]): unknown {
-  let current: unknown = value;
-
-  for (const key of path) {
-    if (!isRecord(current)) {
-      return undefined;
-    }
-
-    current = current[key];
-  }
-
-  return current;
-}
-
-function safeRuntimeString(value: unknown, fallback = ""): string {
-  if (typeof value === "string" && value.trim()) {
-    return value.trim();
-  }
-
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-
-  return fallback;
-}
-
-function firstRuntimeString(value: unknown, paths: string[][], fallback = ""): string {
-  for (const path of paths) {
-    const item = readPath(value, path);
-    const text = safeRuntimeString(item, "");
-
-    if (text) {
-      return text;
-    }
-  }
-
-  return fallback;
 }
 
 function normalizeScope(value: unknown): string[] {
@@ -2504,7 +2784,11 @@ function shouldUseDeepModel(input: {
       "servizi",
       "uffici",
       "transformative memory",
-      "memoria trasformativa"
+      "memoria trasformativa",
+      "saas",
+      "database",
+      "tenant",
+      "workspace"
     ])
   ) {
     return true;
@@ -2539,8 +2823,8 @@ function resolveEngine(input: {
     deepModel: DEEP_MODEL,
     mode: deep ? "deep" : "standard",
     configured: Boolean(process.env.OPENAI_API_KEY),
-    projectBirthDate: "2026-01-19",
-    projectBirthLabel: "HBCE R&D / AI JOKER-C2 project birth date"
+    projectBirthDate: PROJECT_BIRTH_DATE,
+    projectBirthLabel: PROJECT_BIRTH_LABEL
   };
 }
 
@@ -2700,6 +2984,8 @@ function buildSystemPrompt(input: {
   engine: OpenAIEngineConfig;
   iprHandoff: IprHandoffEvaluation;
   memory: IprBoundMemoryRecord;
+  saas: SaasRuntimeContext;
+  database: DatabaseRuntimeFrame;
 }): string {
   return [
     "Sei AI JOKER-C2, runtime AI governato di HERMETICUM B.C.E.",
@@ -2710,13 +2996,26 @@ function buildSystemPrompt(input: {
     "Per richieste multi-documento, non produrre tutto in un unico blocco. Dividi in batch governati, un documento per volta.",
     "Per richieste commerciali su partnership HBCE/OpenAI, chiarisci sempre servizi, uffici, ruoli, boundary legali, stato R&D/pre-commerciale e legalCertification=false.",
     "",
-    "UP-EVT OPERATIONAL CONTEXT:",
+    "SYNCHRONIC OPERATIONAL CONTEXT:",
+    `Project birth: ${PROJECT_BIRTH_DISPLAY_DATE} (${PROJECT_BIRTH_DATE})`,
+    `Project birth label: ${PROJECT_BIRTH_LABEL}`,
+    `Monthly reference: ${MONTHLY_REFERENCE} (${MONTHLY_REFERENCE_LABEL})`,
     `Current biological operational EVT: ${CURRENT_OPERATIONAL_EVT}`,
     `Current AI operational EVT: ${CURRENT_OPERATIONAL_AI_EVT}`,
     `Event family: ${CURRENT_EVENT_FAMILY}`,
     `Operational cycle: ${CURRENT_OPERATIONAL_CYCLE}`,
-    `Monthly checkpoint reference: ${CURRENT_MONTHLY_CHECKPOINT}/${CURRENT_MONTHLY_AI_CHECKPOINT} (${CURRENT_MONTHLY_CYCLE}, ${CURRENT_MONTHLY_T})`,
-    "EVT-0016 / EVT-0016-AI are non-monthly UP-EVT operational synchronism records. EVT-0015 / EVT-0015-AI remain the locked monthly checkpoint records.",
+    `Previous technical checkpoint: ${PREVIOUS_CHAIN_CHECKPOINT}/${PREVIOUS_AI_CHAIN_CHECKPOINT} (${MONTHLY_REFERENCE}, ${PREVIOUS_CHAIN_CHECKPOINT_T})`,
+    "EVT-0016 / EVT-0016-AI are non-monthly UP-EVT operational synchronism records.",
+    "EVT-0015 / EVT-0015-AI are previous technical checkpoint references, not the current monthly reference label.",
+    "",
+    "SAAS CORE CONTEXT:",
+    `SaaS core: ${input.saas.saasCore}`,
+    `Target persistence: ${input.saas.targetPersistence}`,
+    `Tenant ID: ${input.saas.tenantId || "none"}`,
+    `Workspace ID: ${input.saas.workspaceId || "none"}`,
+    `Database configured: ${input.database.configured ? "true" : "false"}`,
+    `Database available: ${input.database.available ? "true" : "false"}`,
+    DATABASE_PERSISTENCE_BOUNDARY,
     "",
     "OPENAI REVIEWER POSTURE:",
     "JOKER-C2 non è un foundation model concorrente.",
@@ -2794,10 +3093,10 @@ function buildSystemPrompt(input: {
     `Entity runtime: ${input.identity.entity}`,
     `IPR runtime: ${input.identity.ipr}`,
     `Operational runtime EVT: ${input.identity.evt}`,
-    `Previous monthly AI checkpoint: ${input.identity.prev}`,
+    `Previous technical checkpoint: ${input.identity.previousCheckpoint.humanEvt}/${input.identity.previousCheckpoint.evt}`,
     `EventFamily: ${input.identity.eventFamily}`,
     `Cycle: ${input.identity.cycle}`,
-    `MonthlyRef: ${input.identity.monthlyRef.humanEvt}/${input.identity.monthlyRef.evt} ${input.identity.monthlyRef.cycle}`,
+    `MonthlyReference: ${input.identity.monthlyReference.cycle}`,
     `Core: ${input.identity.core}`,
     `Org: ${input.identity.org}`,
     `Provider motore cognitivo: ${input.engine.provider}`,
@@ -2831,6 +3130,8 @@ function buildUserPrompt(input: {
   continuityRef: string | null;
   iprHandoff: IprHandoffEvaluation;
   memory: IprBoundMemoryRecord;
+  saas: SaasRuntimeContext;
+  database: DatabaseRuntimeFrame;
 }): string {
   const fileContext =
     input.files.length > 0
@@ -2856,8 +3157,17 @@ function buildUserPrompt(input: {
     "RUNTIME CONTINUITY CANDIDATE:",
     input.continuityRef || "none",
     "",
-    "UP-EVT OPERATIONAL CONTEXT:",
-    JSON.stringify(buildOperationalContext(), null, 2),
+    "SYNCHRONIC OPERATIONAL CONTEXT:",
+    JSON.stringify(buildOperationalContext({
+      tenantId: input.saas.tenantId,
+      workspaceId: input.saas.workspaceId
+    }), null, 2),
+    "",
+    "SAAS RUNTIME CONTEXT:",
+    JSON.stringify(input.saas, null, 2),
+    "",
+    "DATABASE RUNTIME FRAME:",
+    JSON.stringify(input.database, null, 2),
     "",
     buildVerifiedSubjectPromptFrame(input.iprHandoff),
     "",
@@ -2876,6 +3186,8 @@ function buildIdentityRecognitionResponse(input: {
   identity: RuntimeIdentity;
   iprHandoff: IprHandoffEvaluation;
   memory: IprBoundMemoryRecord;
+  saas: SaasRuntimeContext;
+  database: DatabaseRuntimeFrame;
 }): string {
   if (input.iprHandoff.valid && input.iprHandoff.verifiedSubject) {
     const subject = input.iprHandoff.verifiedSubject;
@@ -2891,7 +3203,9 @@ function buildIdentityRecognitionResponse(input: {
       `Runtime IPR: ${input.identity.ipr}.`,
       `Runtime EVT operativo: ${input.identity.evt}.`,
       `Runtime cycle: ${input.identity.cycle}.`,
-      `Monthly checkpoint ref: ${input.identity.monthlyRef.humanEvt}/${input.identity.monthlyRef.evt} (${input.identity.monthlyRef.cycle}).`,
+      `Project birth: ${input.identity.projectBirth.displayDate}.`,
+      `Monthly reference: ${input.identity.monthlyReference.cycle}.`,
+      `Previous checkpoint: ${input.identity.previousCheckpoint.humanEvt}/${input.identity.previousCheckpoint.evt}.`,
       "",
       `Soggetto IPR: ${subject.entity}.`,
       `IPR biologico: ${subject.ipr}.`,
@@ -2908,6 +3222,13 @@ function buildIdentityRecognitionResponse(input: {
       `Last memory EVT: ${input.memory.lastEvt || "none"}.`,
       `Identity source: ${source}.`,
       "",
+      `SaaS Core: ${input.saas.saasCore}.`,
+      `Target persistence: ${input.saas.targetPersistence}.`,
+      `Tenant ID: ${input.saas.tenantId || "none"}.`,
+      `Workspace ID: ${input.saas.workspaceId || "none"}.`,
+      `Database configured: ${input.database.configured ? "true" : "false"}.`,
+      `Database available: ${input.database.available ? "true" : "false"}.`,
+      "",
       `Ti riconosco come ${subject.entity} tramite ${source}.`,
       "",
       "Nota boundary: il riconoscimento non deriva dal nome scritto nel messaggio utente. Deriva da validazione runtime: handoff IPR oppure sessione account IPR autenticata."
@@ -2921,6 +3242,8 @@ function buildIdentityRecognitionResponse(input: {
       `Runtime entity: ${input.identity.entity}.`,
       `Runtime IPR: ${input.identity.ipr}.`,
       `Runtime EVT operativo: ${input.identity.evt}.`,
+      `Project birth: ${input.identity.projectBirth.displayDate}.`,
+      `Monthly reference: ${input.identity.monthlyReference.cycle}.`,
       "Human IPR: INVALID.",
       `Errore handoff/sessione: ${input.iprHandoff.error || "UNKNOWN_HANDOFF_ERROR"}.`,
       "Accesso governato: ACCESS_DENIED.",
@@ -2938,6 +3261,8 @@ function buildIdentityRecognitionResponse(input: {
     `Runtime entity: ${input.identity.entity}.`,
     `Runtime IPR: ${input.identity.ipr}.`,
     `Runtime EVT operativo: ${input.identity.evt}.`,
+    `Project birth: ${input.identity.projectBirth.displayDate}.`,
+    `Monthly reference: ${input.identity.monthlyReference.cycle}.`,
     "Human IPR: NOT_VERIFIED.",
     "Accesso governato biologico: NOT_GRANTED.",
     "MATRIX: MATRIX_LIMITED.",
@@ -3186,6 +3511,8 @@ async function generateResponse(input: {
   engine: OpenAIEngineConfig;
   iprHandoff: IprHandoffEvaluation;
   memory: IprBoundMemoryRecord;
+  saas: SaasRuntimeContext;
+  database: DatabaseRuntimeFrame;
 }): Promise<GeneratedResponse> {
   if (!input.message && input.files.length === 0) {
     return {
@@ -3212,7 +3539,9 @@ async function generateResponse(input: {
       text: buildIdentityRecognitionResponse({
         identity: input.identity,
         iprHandoff: input.iprHandoff,
-        memory: input.memory
+        memory: input.memory,
+        saas: input.saas,
+        database: input.database
       }),
       state: input.iprHandoff.status === "INVALID" ? "DEGRADED" : "OPERATIONAL",
       degradedReason:
@@ -3286,7 +3615,9 @@ async function generateResponse(input: {
             governance: input.governance,
             engine: input.engine,
             iprHandoff: input.iprHandoff,
-            memory: input.memory
+            memory: input.memory,
+            saas: input.saas,
+            database: input.database
           })
         },
         {
@@ -3297,7 +3628,9 @@ async function generateResponse(input: {
             governance: input.governance,
             continuityRef: input.continuityRef,
             iprHandoff: input.iprHandoff,
-            memory: input.memory
+            memory: input.memory,
+            saas: input.saas,
+            database: input.database
           })
         }
       ],
@@ -3354,10 +3687,15 @@ function buildLegacyEvent(input: {
   documentFamily: string;
   iprHandoff: IprHandoffEvaluation;
   memory: IprBoundMemoryRecord;
+  saas: SaasRuntimeContext;
+  database: DatabaseRuntimeFrame;
 }): LegacyRuntimeEvent {
   const identity = getPrimaryIdentity();
   const evt = buildEvtId();
-  const operationalContext = buildOperationalContext();
+  const operationalContext = buildOperationalContext({
+    tenantId: input.saas.tenantId,
+    workspaceId: input.saas.workspaceId
+  });
 
   const verifiedSubject = input.iprHandoff.verifiedSubject
     ? {
@@ -3384,6 +3722,13 @@ function buildLegacyEvent(input: {
     documentMode: input.documentMode,
     documentFamily: input.documentFamily,
     operationalContext,
+    saas: input.saas,
+    database: {
+      configured: input.database.configured,
+      available: input.database.available,
+      targetPersistence: input.database.targetPersistence,
+      legalCertification: false
+    },
     identityBinding: input.iprHandoff.identityBinding,
     matrixState: input.iprHandoff.matrixState,
     memory: {
@@ -3406,6 +3751,8 @@ function buildLegacyEvent(input: {
     state: payload.state,
     decision: payload.decision,
     operationalContext: payload.operationalContext,
+    saas: payload.saas,
+    database: payload.database,
     identityBinding: payload.identityBinding,
     matrixState: payload.matrixState,
     memory: payload.memory,
@@ -3431,6 +3778,8 @@ function buildLegacyEvent(input: {
     documentMode: payload.documentMode,
     documentFamily: payload.documentFamily,
     operationalContext: payload.operationalContext,
+    saas: input.saas,
+    database: input.database,
     anchors: {
       hash: publicHash,
       publicHash,
@@ -3453,6 +3802,8 @@ function buildGovernedEvt(input: {
   decision: RuntimeDecision;
   iprHandoff: IprHandoffEvaluation;
   memory: IprBoundMemoryRecord;
+  saas: SaasRuntimeContext;
+  database: DatabaseRuntimeFrame;
 }): GovernedEvt {
   const identity = getPrimaryIdentity();
   const operationStatus = mapOperationStatus(input.decision, input.state);
@@ -3467,7 +3818,12 @@ function buildGovernedEvt(input: {
     timestamp: nowIso(),
     entity: identity.entity,
     ipr: identity.ipr,
-    operational_context: buildOperationalContext(),
+    operational_context: buildOperationalContext({
+      tenantId: input.saas.tenantId,
+      workspaceId: input.saas.workspaceId
+    }),
+    saas: input.saas,
+    database: input.database,
     runtime: {
       name: "AI_JOKER-C2" as const,
       core: identity.core,
@@ -3536,6 +3892,28 @@ function buildGovernedEvt(input: {
   };
 }
 
+function buildOpcPersistenceFrame(database: DatabaseRuntimeFrame): OpcProofRecord["persistence"] {
+  if (database.configured && database.available) {
+    return {
+      mode: "DATABASE_PERSISTENT",
+      status: "DATABASE_PERSISTENT_ACTIVE",
+      durable: true,
+      runtimeScoped: false,
+      target: SAAS_TARGET_PERSISTENCE,
+      legalCertification: false
+    };
+  }
+
+  return {
+    mode: "PROCESS_PROOF_MVP",
+    status: database.configured ? "DATABASE_PERSISTENT_REQUIRED" : "PROCESS_SCOPED",
+    durable: false,
+    runtimeScoped: true,
+    target: SAAS_TARGET_PERSISTENCE,
+    legalCertification: false
+  };
+}
+
 function buildOpcProof(input: {
   sessionId: string;
   engine: OpenAIEngineConfig;
@@ -3549,9 +3927,15 @@ function buildOpcProof(input: {
   files: NormalizedFile[];
   iprHandoff: IprHandoffEvaluation;
   memory: IprBoundMemoryRecord;
+  saas: SaasRuntimeContext;
+  database: DatabaseRuntimeFrame;
 }): OpcProofRecord {
   const identity = getPrimaryIdentity();
   const timestamp = nowIso();
+  const operationalContext = buildOperationalContext({
+    tenantId: input.saas.tenantId,
+    workspaceId: input.saas.workspaceId
+  });
 
   const runtimeSnapshot = {
     state: input.state,
@@ -3615,7 +3999,13 @@ function buildOpcProof(input: {
       size: file.size,
       hash: file.hash
     })),
-    operationalContext: buildOperationalContext(),
+    operationalContext,
+    saas: input.saas,
+    database: {
+      configured: input.database.configured,
+      available: input.database.available,
+      targetPersistence: input.database.targetPersistence
+    },
     iprHandoffStatus: input.iprHandoff.status,
     iprHandoffSource: input.iprHandoff.source,
     iprHandoffHash: input.iprHandoff.rawHash,
@@ -3631,6 +4021,7 @@ function buildOpcProof(input: {
   const handoffHash = input.iprHandoff.rawHash;
 
   const previousProofHash = input.memory.lastOpcChainHash || null;
+  const persistence = buildOpcPersistenceFrame(input.database);
 
   const chainHash = sha256({
     proofId: "PENDING",
@@ -3641,7 +4032,14 @@ function buildOpcProof(input: {
     engine: input.engine,
     event: eventReference,
     runtime: runtimeSnapshot,
-    operationalContext: buildOperationalContext(),
+    operationalContext,
+    saas: input.saas,
+    database: {
+      configured: input.database.configured,
+      available: input.database.available,
+      targetPersistence: input.database.targetPersistence
+    },
+    persistence,
     hashes: {
       inputHash,
       outputHash,
@@ -3658,6 +4056,7 @@ function buildOpcProof(input: {
       iprRecognitionBoundary: IPR_RECOGNITION_BOUNDARY,
       iprAccountSessionBoundary: IPR_ACCOUNT_SESSION_BOUNDARY,
       memoryBoundary: MEMORY_BOUNDARY,
+      databasePersistenceBoundary: DATABASE_PERSISTENCE_BOUNDARY,
       transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY
     }
   });
@@ -3674,6 +4073,10 @@ function buildOpcProof(input: {
     engine: input.engine,
     event: eventReference,
     runtime: runtimeSnapshot,
+    operationalContext,
+    saas: input.saas,
+    database: input.database,
+    persistence,
     proof: {
       inputHash,
       outputHash,
@@ -3693,7 +4096,14 @@ function buildOpcProof(input: {
         engine: input.engine,
         event: eventReference,
         runtime: runtimeSnapshot,
-        operationalContext: buildOperationalContext(),
+        operationalContext,
+        saas: input.saas,
+        database: {
+          configured: input.database.configured,
+          available: input.database.available,
+          targetPersistence: input.database.targetPersistence
+        },
+        persistence,
         hashes: {
           inputHash,
           outputHash,
@@ -3711,6 +4121,7 @@ function buildOpcProof(input: {
           iprRecognitionBoundary: IPR_RECOGNITION_BOUNDARY,
           iprAccountSessionBoundary: IPR_ACCOUNT_SESSION_BOUNDARY,
           memoryBoundary: MEMORY_BOUNDARY,
+          databasePersistenceBoundary: DATABASE_PERSISTENCE_BOUNDARY,
           transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY
         }
       })
@@ -3726,10 +4137,14 @@ function buildOpcProof(input: {
         IPR_RECOGNITION_BOUNDARY,
         IPR_ACCOUNT_SESSION_BOUNDARY,
         MEMORY_BOUNDARY,
+        DATABASE_PERSISTENCE_BOUNDARY,
         MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
         input.iprHandoff.valid
           ? "Verified biological subject accepted through runtime handoff or authenticated IPR account session."
           : "No valid biological subject handoff; runtime remains MATRIX_LIMITED.",
+        input.database.configured && input.database.available
+          ? "DATABASE_PERSISTENT target is available for SaaS persistence integration."
+          : "DATABASE_PERSISTENT target is not fully available; runtime must not claim durable SaaS continuity.",
         input.governance.failClosed ? FAIL_CLOSED_STATEMENT : "Standard governed execution completed.",
         DEFENSIVE_ONLY_CYBER_BOUNDARY,
         OPENAI_DATA_PRIVACY_BOUNDARY
@@ -3747,7 +4162,8 @@ function buildOpcProof(input: {
       aiGovernanceBoundary: HBCE_AI_BOUNDARY,
       openAIReviewerPosture: OPENAI_REVIEWER_POSTURE,
       iprRecognitionBoundary: IPR_RECOGNITION_BOUNDARY,
-      memoryBoundary: MEMORY_BOUNDARY
+      memoryBoundary: MEMORY_BOUNDARY,
+      databasePersistenceBoundary: DATABASE_PERSISTENCE_BOUNDARY
     }
   };
 }
@@ -3801,6 +4217,15 @@ function toPublicOpcProofRecord(record: OpcProofRecord) {
     metadataAuthority: record.runtime.metadataAuthority,
     userDeclaredGovernanceDetected: record.runtime.userDeclaredGovernanceDetected,
     failClosed: record.runtime.failClosed,
+    operationalContext: record.operationalContext,
+    saas: record.saas,
+    database: {
+      configured: record.database.configured,
+      available: record.database.available,
+      targetPersistence: record.database.targetPersistence,
+      legalCertification: false
+    },
+    persistence: record.persistence,
     legalCertification: false
   };
 }
@@ -3864,6 +4289,8 @@ function buildRuntimeDiagnostic(input: {
   iprAccountSession: IprAccountSessionResolution;
   memory: IprBoundMemoryRecord;
   transformativeMemory: MatrixTransformativeMemoryEvaluation;
+  saas: SaasRuntimeContext;
+  database: DatabaseRuntimeFrame;
 }) {
   return {
     runtimeOpenAI: input.generated.state,
@@ -3878,6 +4305,24 @@ function buildRuntimeDiagnostic(input: {
     openAIConfigured: input.engine.configured,
     projectBirthDate: input.engine.projectBirthDate,
     projectBirthLabel: input.engine.projectBirthLabel,
+    projectBirth: input.identity.projectBirth,
+    monthlyReference: input.identity.monthlyReference,
+    currentOperationalEvent: {
+      humanEvt: CURRENT_OPERATIONAL_EVT,
+      aiEvt: CURRENT_OPERATIONAL_AI_EVT,
+      cycle: CURRENT_OPERATIONAL_CYCLE,
+      eventFamily: CURRENT_EVENT_FAMILY
+    },
+    previousCheckpoint: input.identity.previousCheckpoint,
+    saas: input.saas,
+    database: {
+      configured: input.database.configured,
+      available: input.database.available,
+      targetPersistence: input.database.targetPersistence,
+      description: input.database.description,
+      boundary: input.database.boundary,
+      legalCertification: false
+    },
     decision: input.governance.decision,
     generationClass: input.generated.generationClass || "MODEL",
     deterministicResponse: Boolean(input.generated.deterministic),
@@ -3905,11 +4350,14 @@ function buildRuntimeDiagnostic(input: {
     entity: input.identity.entity,
     ipr: input.identity.ipr,
     checkpoint: input.identity.evt,
-    previousCheckpoint: input.identity.prev,
+    previousCheckpointAlias: input.identity.prev,
     eventFamily: input.identity.eventFamily,
     cycle: input.identity.cycle,
     monthlyRef: input.identity.monthlyRef,
-    operationalContext: buildOperationalContext(),
+    operationalContext: buildOperationalContext({
+      tenantId: input.saas.tenantId,
+      workspaceId: input.saas.workspaceId
+    }),
     core: input.identity.core,
     iprAccountSession: {
       authenticated: input.iprAccountSession.authenticated,
@@ -3921,6 +4369,8 @@ function buildRuntimeDiagnostic(input: {
       humanIpr: input.iprAccountSession.access.humanIpr || null,
       runtimeIpr: input.iprAccountSession.access.runtimeIpr || null,
       accountId: input.iprAccountSession.access.accountId || null,
+      tenantId: input.saas.tenantId,
+      workspaceId: input.saas.workspaceId,
       sessionId: input.iprAccountSession.session?.sessionId || null,
       accountProfilePresent: Boolean(input.iprAccountSession.accountProfile),
       reconstructedHandoffPresent: Boolean(input.iprAccountSession.reconstructedIprHandoff),
@@ -3977,9 +4427,23 @@ function buildRuntimeDiagnostic(input: {
     },
     legacyEvt: input.legacyEvent.evt,
     legacyOperationalContext: input.legacyEvent.operationalContext,
+    legacySaas: input.legacyEvent.saas,
+    legacyDatabase: {
+      configured: input.legacyEvent.database.configured,
+      available: input.legacyEvent.database.available,
+      targetPersistence: input.legacyEvent.database.targetPersistence,
+      legalCertification: false
+    },
     legacyPublicHash: input.legacyEvent.anchors.publicHash,
     governedEvt: input.governedEvt.evt,
     governedOperationalContext: input.governedEvt.operational_context,
+    governedSaas: input.governedEvt.saas,
+    governedDatabase: {
+      configured: input.governedEvt.database.configured,
+      available: input.governedEvt.database.available,
+      targetPersistence: input.governedEvt.database.targetPersistence,
+      legalCertification: false
+    },
     governedHash: input.governedEvt.trace.hash,
     opcProofId: input.opcProof.proofId,
     opcChainHash: input.opcProof.proof.chainHash,
@@ -3987,11 +4451,13 @@ function buildRuntimeDiagnostic(input: {
     opcIdentityHash: input.opcProof.proof.identityHash,
     opcHandoffHash: input.opcProof.proof.handoffHash,
     opcMemoryHash: input.opcProof.proof.memoryHash,
+    opcPersistence: input.opcProof.persistence,
     legalCertification: false,
     openAIReviewerPosture: OPENAI_REVIEWER_POSTURE,
     aiGovernanceBoundary: HBCE_AI_BOUNDARY,
     iprRecognitionBoundary: IPR_RECOGNITION_BOUNDARY,
     iprAccountSessionBoundary: IPR_ACCOUNT_SESSION_BOUNDARY,
+    databasePersistenceBoundary: DATABASE_PERSISTENCE_BOUNDARY,
     memoryBoundary: MEMORY_BOUNDARY,
     transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
     transformativeMemoryPrivacyBoundary: MATRIX_TRANSFORMATIVE_MEMORY_PRIVACY_BOUNDARY,
@@ -4024,6 +4490,12 @@ export async function POST(req: NextRequest) {
   const files = normalizeFiles(body.files);
 
   const iprAccountSession = resolveIprAccountSessionFromRequest(req);
+  const saasScope = resolveSaasScope({
+    accountSession: iprAccountSession
+  });
+  const saas = buildSaasRuntimeContext(saasScope);
+  const database = buildDatabaseRuntimeFrame();
+
   const clientIprHandoff = evaluateIprHandoff(body.iprHandoff);
   const iprHandoff = resolveEffectiveIprHandoff({
     accountSession: iprAccountSession,
@@ -4046,12 +4518,22 @@ export async function POST(req: NextRequest) {
           "Authenticated IPR account session has priority over client-provided IPR handoff.",
           `Authenticated IPR account session reason: ${iprAccountSession.reason}.`,
           `Authenticated IPR account expected MATRIX state: ${iprAccountSession.matrix.expectedState}.`,
+          `SaaS Core: ${SAAS_CORE_VERSION}.`,
+          `Target persistence: ${SAAS_TARGET_PERSISTENCE}.`,
+          `Tenant ID: ${saas.tenantId || "none"}.`,
+          `Workspace ID: ${saas.workspaceId || "none"}.`,
+          `Database configured: ${database.configured ? "true" : "false"}.`,
+          `Database available: ${database.available ? "true" : "false"}.`,
           `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} is the active UP-EVT operational synchronism for this runtime phase.`,
-          `${CURRENT_MONTHLY_CHECKPOINT}/${CURRENT_MONTHLY_AI_CHECKPOINT} remains the locked ${CURRENT_MONTHLY_CYCLE} monthly checkpoint reference.`
+          `${PREVIOUS_CHAIN_CHECKPOINT}/${PREVIOUS_AI_CHAIN_CHECKPOINT} is the previous technical checkpoint reference for ${MONTHLY_REFERENCE}.`
         ]
       : [
           "No authenticated IPR account session was available for this chat operation.",
           "Runtime may use a valid client handoff only as fallback transport context.",
+          `SaaS Core: ${SAAS_CORE_VERSION}.`,
+          `Target persistence: ${SAAS_TARGET_PERSISTENCE}.`,
+          `Database configured: ${database.configured ? "true" : "false"}.`,
+          `Database available: ${database.available ? "true" : "false"}.`,
           `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} remains operational context only when no server-side identity is validated.`
         ]
   });
@@ -4097,7 +4579,9 @@ export async function POST(req: NextRequest) {
     governance,
     engine,
     iprHandoff,
-    memory: memoryBefore
+    memory: memoryBefore,
+    saas,
+    database
   });
 
   const finalDecision: RuntimeDecision =
@@ -4116,7 +4600,9 @@ export async function POST(req: NextRequest) {
     documentMode,
     documentFamily,
     iprHandoff,
-    memory: memoryBefore
+    memory: memoryBefore,
+    saas,
+    database
   });
 
   const governedEvt = buildGovernedEvt({
@@ -4125,7 +4611,9 @@ export async function POST(req: NextRequest) {
     state: generated.state,
     decision: finalDecision,
     iprHandoff,
-    memory: memoryBefore
+    memory: memoryBefore,
+    saas,
+    database
   });
 
   const opcProof = buildOpcProof({
@@ -4140,7 +4628,9 @@ export async function POST(req: NextRequest) {
     response: generated.text,
     files,
     iprHandoff,
-    memory: memoryBefore
+    memory: memoryBefore,
+    saas,
+    database
   });
 
   const transformativeMemory = evaluateMatrixTransformativeMemory({
@@ -4177,11 +4667,22 @@ export async function POST(req: NextRequest) {
         `Last IPR account session reason: ${iprAccountSession.reason}.`,
         `Last IPR account session id: ${iprAccountSession.session?.sessionId || "none"}.`,
         `Last IPR account id: ${iprAccountSession.access.accountId || "none"}.`,
+        `Last SaaS tenant id: ${saas.tenantId || "none"}.`,
+        `Last SaaS workspace id: ${saas.workspaceId || "none"}.`,
         "Client-provided IPR handoff was treated as lower-priority fallback transport context."
       ]
     : [
         `Last operation did not use authenticated IPR account session. Reason: ${iprAccountSession.reason}.`
       ];
+
+  const databaseFacts = [
+    `Last database configured: ${database.configured ? "true" : "false"}.`,
+    `Last database available: ${database.available ? "true" : "false"}.`,
+    `Last database target persistence: ${database.targetPersistence}.`,
+    database.configured && database.available
+      ? "DATABASE_PERSISTENT is available for SaaS continuity integration."
+      : "DATABASE_PERSISTENT is not fully available; runtime must not claim durable SaaS continuity."
+  ];
 
   const batchFacts = isDocumentBatchRequest(body.message)
     ? [
@@ -4247,10 +4748,15 @@ export async function POST(req: NextRequest) {
       `Last governed EVT: ${governedEvt.evt}.`,
       `Last OPC proof: ${opcProof.proofId}.`,
       `Last IPR identity source: ${iprHandoff.source || "none"}.`,
+      `Project birth date: ${PROJECT_BIRTH_DATE}.`,
+      `Monthly synchronization reference: ${MONTHLY_REFERENCE}.`,
       `Current operational UP-EVT: ${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT}.`,
       `Current operational cycle: ${CURRENT_OPERATIONAL_CYCLE}.`,
-      `Locked monthly checkpoint reference: ${CURRENT_MONTHLY_CHECKPOINT}/${CURRENT_MONTHLY_AI_CHECKPOINT} (${CURRENT_MONTHLY_CYCLE}).`,
+      `Previous technical checkpoint: ${PREVIOUS_CHAIN_CHECKPOINT}/${PREVIOUS_AI_CHAIN_CHECKPOINT}.`,
+      `SaaS Core: ${SAAS_CORE_VERSION}.`,
+      `Target persistence: ${SAAS_TARGET_PERSISTENCE}.`,
       ...accountSessionFacts,
+      ...databaseFacts,
       ...batchFacts,
       ...commercialFacts,
       ...cyberFacts,
@@ -4273,13 +4779,19 @@ export async function POST(req: NextRequest) {
     iprHandoff,
     iprAccountSession,
     memory: memoryAfter,
-    transformativeMemory
+    transformativeMemory,
+    saas,
+    database
   });
 
   const publicIprHandoff = toPublicIprHandoffEvaluation(iprHandoff);
   const publicMemory = toPublicMemoryRecord(memoryAfter);
   const publicMemoryHash = buildMemoryRecordHash(memoryAfter);
   const publicIprAccountSession = toPublicIprAccountSessionResolution(iprAccountSession);
+  const operationalContext = buildOperationalContext({
+    tenantId: saas.tenantId,
+    workspaceId: saas.workspaceId
+  });
 
   return NextResponse.json({
     ok: true,
@@ -4307,13 +4819,27 @@ export async function POST(req: NextRequest) {
       projectBirthDate: engine.projectBirthDate,
       projectBirthLabel: engine.projectBirthLabel
     },
-    operationalContext: buildOperationalContext(),
+    saas,
+    database: {
+      configured: database.configured,
+      available: database.available,
+      targetPersistence: database.targetPersistence,
+      description: database.description,
+      boundary: database.boundary,
+      legalCertification: false
+    },
+    operationalContext,
     iprAccountSession: publicIprAccountSession,
     identity: {
       runtimeEntity: identity.entity,
       runtimeIpr: identity.ipr,
       checkpoint: identity.evt,
+      currentAiEvt: identity.evt,
+      currentHumanEvt: CURRENT_OPERATIONAL_EVT,
       previousCheckpoint: identity.prev,
+      previousTechnicalCheckpoint: identity.previousCheckpoint,
+      projectBirth: identity.projectBirth,
+      monthlyReference: identity.monthlyReference,
       eventFamily: identity.eventFamily,
       cycle: identity.cycle,
       monthlyRef: identity.monthlyRef,
@@ -4323,7 +4849,9 @@ export async function POST(req: NextRequest) {
       identityBinding: iprHandoff.identityBinding,
       matrixState: iprHandoff.matrixState,
       semanticMemoryScope: iprHandoff.semanticMemoryScope,
-      source: iprHandoff.source
+      source: iprHandoff.source,
+      tenantId: saas.tenantId,
+      workspaceId: saas.workspaceId
     },
     verifiedSubject: iprHandoff.verifiedSubject,
     access: {
@@ -4331,7 +4859,9 @@ export async function POST(req: NextRequest) {
       matrixState: iprHandoff.matrixState,
       semanticMemoryScope: iprHandoff.semanticMemoryScope,
       identityBinding: iprHandoff.identityBinding,
-      source: iprHandoff.source
+      source: iprHandoff.source,
+      tenantId: saas.tenantId,
+      workspaceId: saas.workspaceId
     },
     matrix: {
       state: iprHandoff.matrixState,
@@ -4413,6 +4943,7 @@ export async function POST(req: NextRequest) {
       metadataAuthorityBoundary: METADATA_AUTHORITY_BOUNDARY,
       iprRecognitionBoundary: IPR_RECOGNITION_BOUNDARY,
       iprAccountSessionBoundary: IPR_ACCOUNT_SESSION_BOUNDARY,
+      databasePersistenceBoundary: DATABASE_PERSISTENCE_BOUNDARY,
       memoryBoundary: MEMORY_BOUNDARY,
       transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
       transformativeMemoryPrivacyBoundary: MATRIX_TRANSFORMATIVE_MEMORY_PRIVACY_BOUNDARY,
@@ -4431,6 +4962,11 @@ export async function GET(req: NextRequest) {
   const standardModel = MODEL;
   const deepModel = DEEP_MODEL;
   const iprAccountSession = resolveIprAccountSessionFromRequest(req);
+  const saasScope = resolveSaasScope({
+    accountSession: iprAccountSession
+  });
+  const saas = buildSaasRuntimeContext(saasScope);
+  const database = buildDatabaseRuntimeFrame();
 
   return NextResponse.json({
     ok: true,
@@ -4443,7 +4979,19 @@ export async function GET(req: NextRequest) {
     deepModel,
     openAIConfigured: Boolean(process.env.OPENAI_API_KEY),
     identity,
-    operationalContext: buildOperationalContext(),
+    saas,
+    database: {
+      configured: database.configured,
+      available: database.available,
+      targetPersistence: database.targetPersistence,
+      description: database.description,
+      boundary: database.boundary,
+      legalCertification: false
+    },
+    operationalContext: buildOperationalContext({
+      tenantId: saas.tenantId,
+      workspaceId: saas.workspaceId
+    }),
     iprAccountSession: toPublicIprAccountSessionResolution(iprAccountSession),
     verifiedSubject: iprAccountSession.runtimeHandoff.isValid
       ? iprAccountSession.runtimeHandoff.subject || null
@@ -4454,30 +5002,41 @@ export async function GET(req: NextRequest) {
           matrixState: iprAccountSession.matrix.expectedState,
           semanticMemoryScope: iprAccountSession.memory.expectedScope,
           identityBinding: iprAccountSession.access.identityBinding,
-          source: "IPR_ACCOUNT_SESSION"
+          source: "IPR_ACCOUNT_SESSION",
+          tenantId: saas.tenantId,
+          workspaceId: saas.workspaceId
         }
       : {
           decision: "PENDING_SERVER_VALIDATION",
           matrixState: "MATRIX_LIMITED",
           semanticMemoryScope: "RUNTIME_ONLY",
           identityBinding: "NO_VERIFIED_BIOLOGICAL_SUBJECT",
-          source: "none"
+          source: "none",
+          tenantId: null,
+          workspaceId: null
         },
     memory: iprAccountSession.authenticated
       ? {
           scope: iprAccountSession.memory.expectedScope,
           authority: iprAccountSession.memory.expectedAuthority,
-          persistenceMode:
-            "PROCESS_AUTH_STORE_MVP and PROCESS_ACCOUNT_STORE_MVP until DATABASE_PERSISTENT is connected",
+          persistenceMode: database.configured && database.available
+            ? "DATABASE_PERSISTENT"
+            : "PROCESS_MEMORY_MVP_PENDING_DATABASE_PERSISTENT",
           reason:
-            "GET health check found an authenticated IPR account session. POST /api/chat can reconstruct IPR-bound runtime identity from this session."
+            "GET health check found an authenticated IPR account session. POST /api/chat can reconstruct IPR-bound runtime identity from this session.",
+          targetPersistence: SAAS_TARGET_PERSISTENCE,
+          databaseConfigured: database.configured,
+          databaseAvailable: database.available
         }
       : {
           scope: "RUNTIME_ONLY",
           authority: "SESSION_RUNTIME_ONLY",
           persistenceMode: "PROCESS_MEMORY_MVP",
           reason:
-            "GET health check did not find an authenticated IPR account session and does not validate a client biological IPR handoff."
+            "GET health check did not find an authenticated IPR account session and does not validate a client biological IPR handoff.",
+          targetPersistence: SAAS_TARGET_PERSISTENCE,
+          databaseConfigured: database.configured,
+          databaseAvailable: database.available
         },
     matrix: {
       state: iprAccountSession.matrix.expectedState,
@@ -4499,6 +5058,7 @@ export async function GET(req: NextRequest) {
       metadataAuthorityBoundary: METADATA_AUTHORITY_BOUNDARY,
       iprRecognitionBoundary: IPR_RECOGNITION_BOUNDARY,
       iprAccountSessionBoundary: IPR_ACCOUNT_SESSION_BOUNDARY,
+      databasePersistenceBoundary: DATABASE_PERSISTENCE_BOUNDARY,
       memoryBoundary: MEMORY_BOUNDARY,
       transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
       transformativeMemoryPrivacyBoundary: MATRIX_TRANSFORMATIVE_MEMORY_PRIVACY_BOUNDARY,
