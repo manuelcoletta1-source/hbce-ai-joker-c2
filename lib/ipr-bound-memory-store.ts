@@ -9,6 +9,31 @@ export type IprBoundMemoryStoreStatus =
   | "NOT_CONFIGURED"
   | "DEGRADED";
 
+export type IprBoundMemoryPersistenceStage =
+  | "RUNTIME_VOLATILE"
+  | "DATABASE_CONTRACT_READY"
+  | "DATABASE_PERSISTENT_TARGET"
+  | "EXTERNAL_ADAPTER_TARGET";
+
+export type IprBoundMemoryStoreCapability =
+  | "IPR_BOUND_MEMORY"
+  | "MEMORY_KEY_LOOKUP"
+  | "MEMORY_HASH_LOOKUP"
+  | "PROCESS_SCOPED_RUNTIME"
+  | "DATABASE_CONTRACT"
+  | "DATABASE_DURABILITY_TARGET"
+  | "TENANT_SCOPE_REQUIRED"
+  | "WORKSPACE_SCOPE_REQUIRED"
+  | "ACCESS_CONTROL_REQUIRED"
+  | "ENCRYPTION_REQUIRED"
+  | "AUDIT_LOG_REQUIRED"
+  | "RETENTION_REQUIRED"
+  | "DELETION_REQUIRED"
+  | "BACKUP_REQUIRED"
+  | "RECOVERY_REQUIRED"
+  | "MONITORING_REQUIRED"
+  | "EXTERNAL_ADAPTER_CONTRACT";
+
 export type IprBoundMemoryStoreRecord = {
   memoryId: string;
   memoryKey: string;
@@ -24,6 +49,13 @@ export type IprBoundMemoryStoreDescription = {
   runtimeScoped: boolean;
   recordCount: number;
   boundary: string;
+
+  persistenceStage: IprBoundMemoryPersistenceStage;
+  saasReady: boolean;
+  requiresDatabase: boolean;
+  legalCertification: false;
+  capabilities: IprBoundMemoryStoreCapability[];
+  requirements: string[];
 };
 
 export type IprBoundMemoryStoreAdapter<
@@ -60,6 +92,96 @@ const EXTERNAL_ADAPTER_BOUNDARY =
 
 const STORE_NOT_CONFIGURED_ERROR =
   "IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED";
+
+const PROCESS_MEMORY_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
+  "IPR_BOUND_MEMORY",
+  "MEMORY_KEY_LOOKUP",
+  "MEMORY_HASH_LOOKUP",
+  "PROCESS_SCOPED_RUNTIME"
+];
+
+const DATABASE_READY_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
+  "IPR_BOUND_MEMORY",
+  "MEMORY_KEY_LOOKUP",
+  "MEMORY_HASH_LOOKUP",
+  "DATABASE_CONTRACT",
+  "TENANT_SCOPE_REQUIRED",
+  "WORKSPACE_SCOPE_REQUIRED",
+  "ACCESS_CONTROL_REQUIRED",
+  "ENCRYPTION_REQUIRED",
+  "AUDIT_LOG_REQUIRED",
+  "RETENTION_REQUIRED",
+  "DELETION_REQUIRED"
+];
+
+const DATABASE_PERSISTENT_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
+  "IPR_BOUND_MEMORY",
+  "MEMORY_KEY_LOOKUP",
+  "MEMORY_HASH_LOOKUP",
+  "DATABASE_CONTRACT",
+  "DATABASE_DURABILITY_TARGET",
+  "TENANT_SCOPE_REQUIRED",
+  "WORKSPACE_SCOPE_REQUIRED",
+  "ACCESS_CONTROL_REQUIRED",
+  "ENCRYPTION_REQUIRED",
+  "AUDIT_LOG_REQUIRED",
+  "RETENTION_REQUIRED",
+  "DELETION_REQUIRED",
+  "BACKUP_REQUIRED",
+  "RECOVERY_REQUIRED",
+  "MONITORING_REQUIRED"
+];
+
+const EXTERNAL_ADAPTER_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
+  "IPR_BOUND_MEMORY",
+  "MEMORY_KEY_LOOKUP",
+  "MEMORY_HASH_LOOKUP",
+  "EXTERNAL_ADAPTER_CONTRACT",
+  "TENANT_SCOPE_REQUIRED",
+  "WORKSPACE_SCOPE_REQUIRED",
+  "ACCESS_CONTROL_REQUIRED",
+  "AUDIT_LOG_REQUIRED",
+  "RETENTION_REQUIRED",
+  "DELETION_REQUIRED"
+];
+
+const PROCESS_MEMORY_REQUIREMENTS = [
+  "Use only for MVP runtime demonstrations.",
+  "Do not treat process memory as durable SaaS storage.",
+  "Do not rely on this adapter for enterprise audit, replay, retention or deletion guarantees.",
+  "Expect reset on redeploy, cold start, instance recycling or runtime migration."
+];
+
+const DATABASE_READY_REQUIREMENTS = [
+  "Connect a real database implementation.",
+  "Define tenant and workspace scoping.",
+  "Define access control.",
+  "Define retention and deletion policy.",
+  "Define encryption strategy.",
+  "Define audit backend.",
+  "Define backup and recovery before production use."
+];
+
+const DATABASE_PERSISTENT_REQUIREMENTS = [
+  "Real database storage must be active.",
+  "Tenant isolation must be enforced.",
+  "Workspace isolation must be enforced.",
+  "Subject IPR and runtime IPR binding must be persisted.",
+  "Access control must be enforced before read, write, delete and audit operations.",
+  "Encryption at rest and transport security must be defined.",
+  "Audit logging must cover memory creation, update, lookup, deletion and export.",
+  "Retention, deletion and recovery workflows must be testable.",
+  "Backups and operational monitoring must be active.",
+  "OPC remains technical proof only; legalCertification=false."
+];
+
+const EXTERNAL_ADAPTER_REQUIREMENTS = [
+  "External adapter must implement the full IprBoundMemoryStoreAdapter contract.",
+  "External adapter must preserve IPR-bound memory boundaries.",
+  "External adapter must enforce tenant and workspace scoping when used in SaaS mode.",
+  "External adapter must expose auditability and fail-closed behavior.",
+  "External adapter must preserve legalCertification=false unless a regulated certification layer is later integrated."
+];
 
 type HbceJokerC2GlobalMemoryStore = typeof globalThis & {
   __HBCE_JOKER_C2_IPR_BOUND_MEMORY_STORE_V1__?: Map<
@@ -119,6 +241,18 @@ function assertMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
   return record;
 }
 
+function normalizeMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
+  record: TRecord
+): TRecord {
+  const safeRecord = assertMemoryRecord(record);
+
+  return {
+    ...safeRecord,
+    memoryKey: assertMemoryKey(safeRecord.memoryKey),
+    memoryKeyHash: assertMemoryKeyHash(safeRecord.memoryKeyHash)
+  };
+}
+
 function buildStoreDescription(input: {
   name: string;
   kind: IprBoundMemoryStoreKind;
@@ -127,6 +261,11 @@ function buildStoreDescription(input: {
   runtimeScoped: boolean;
   recordCount: number;
   boundary: string;
+  persistenceStage: IprBoundMemoryPersistenceStage;
+  saasReady: boolean;
+  requiresDatabase: boolean;
+  capabilities: IprBoundMemoryStoreCapability[];
+  requirements: string[];
 }): IprBoundMemoryStoreDescription {
   return {
     name: input.name,
@@ -135,7 +274,13 @@ function buildStoreDescription(input: {
     durable: input.durable,
     runtimeScoped: input.runtimeScoped,
     recordCount: input.recordCount,
-    boundary: input.boundary
+    boundary: input.boundary,
+    persistenceStage: input.persistenceStage,
+    saasReady: input.saasReady,
+    requiresDatabase: input.requiresDatabase,
+    legalCertification: false,
+    capabilities: input.capabilities,
+    requirements: input.requirements
   };
 }
 
@@ -162,7 +307,12 @@ export function createProcessMemoryStoreAdapter<
         durable: this.durable,
         runtimeScoped: this.runtimeScoped,
         recordCount: store.size,
-        boundary: PROCESS_MEMORY_STORE_BOUNDARY
+        boundary: PROCESS_MEMORY_STORE_BOUNDARY,
+        persistenceStage: "RUNTIME_VOLATILE",
+        saasReady: false,
+        requiresDatabase: false,
+        capabilities: PROCESS_MEMORY_CAPABILITIES,
+        requirements: PROCESS_MEMORY_REQUIREMENTS
       });
     },
 
@@ -172,15 +322,15 @@ export function createProcessMemoryStoreAdapter<
 
     set(memoryKey: string, record: TRecord): TRecord {
       const normalizedKey = assertMemoryKey(memoryKey);
-      const safeRecord = assertMemoryRecord(record);
+      const normalizedRecord = normalizeMemoryRecord(record);
 
-      if (safeRecord.memoryKey !== normalizedKey) {
+      if (normalizedRecord.memoryKey !== normalizedKey) {
         throw new Error("IPR_BOUND_MEMORY_STORE_KEY_RECORD_MISMATCH");
       }
 
-      store.set(normalizedKey, safeRecord);
+      store.set(normalizedKey, normalizedRecord);
 
-      return safeRecord;
+      return normalizedRecord;
     },
 
     has(memoryKey: string): boolean {
@@ -225,6 +375,11 @@ function createUnavailableMemoryStoreAdapter<
   durable: boolean;
   runtimeScoped: boolean;
   boundary: string;
+  persistenceStage: IprBoundMemoryPersistenceStage;
+  saasReady: boolean;
+  requiresDatabase: boolean;
+  capabilities: IprBoundMemoryStoreCapability[];
+  requirements: string[];
 }): IprBoundMemoryStoreAdapter<TRecord> {
   return {
     name: input.name,
@@ -240,7 +395,12 @@ function createUnavailableMemoryStoreAdapter<
         durable: this.durable,
         runtimeScoped: this.runtimeScoped,
         recordCount: 0,
-        boundary: input.boundary
+        boundary: input.boundary,
+        persistenceStage: input.persistenceStage,
+        saasReady: input.saasReady,
+        requiresDatabase: input.requiresDatabase,
+        capabilities: input.capabilities,
+        requirements: input.requirements
       });
     },
 
@@ -292,7 +452,12 @@ export function createDatabaseReadyPlaceholderAdapter<
     kind: "DATABASE_READY",
     durable: true,
     runtimeScoped: false,
-    boundary: DATABASE_READY_BOUNDARY
+    boundary: DATABASE_READY_BOUNDARY,
+    persistenceStage: "DATABASE_CONTRACT_READY",
+    saasReady: false,
+    requiresDatabase: true,
+    capabilities: DATABASE_READY_CAPABILITIES,
+    requirements: DATABASE_READY_REQUIREMENTS
   });
 }
 
@@ -304,7 +469,12 @@ export function createDatabasePersistentPlaceholderAdapter<
     kind: "DATABASE_PERSISTENT",
     durable: true,
     runtimeScoped: false,
-    boundary: DATABASE_PERSISTENT_BOUNDARY
+    boundary: DATABASE_PERSISTENT_BOUNDARY,
+    persistenceStage: "DATABASE_PERSISTENT_TARGET",
+    saasReady: false,
+    requiresDatabase: true,
+    capabilities: DATABASE_PERSISTENT_CAPABILITIES,
+    requirements: DATABASE_PERSISTENT_REQUIREMENTS
   });
 }
 
@@ -316,8 +486,39 @@ export function createExternalAdapterPlaceholder<
     kind: "EXTERNAL_ADAPTER",
     durable: true,
     runtimeScoped: false,
-    boundary: EXTERNAL_ADAPTER_BOUNDARY
+    boundary: EXTERNAL_ADAPTER_BOUNDARY,
+    persistenceStage: "EXTERNAL_ADAPTER_TARGET",
+    saasReady: false,
+    requiresDatabase: false,
+    capabilities: EXTERNAL_ADAPTER_CAPABILITIES,
+    requirements: EXTERNAL_ADAPTER_REQUIREMENTS
   });
+}
+
+export function createExternalIprBoundMemoryStoreAdapter<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(
+  adapter: IprBoundMemoryStoreAdapter<TRecord>
+): IprBoundMemoryStoreAdapter<TRecord> {
+  const description = adapter.describe();
+
+  if (adapter.kind !== "EXTERNAL_ADAPTER") {
+    throw new Error("IPR_BOUND_MEMORY_EXTERNAL_ADAPTER_KIND_REQUIRED");
+  }
+
+  if (description.legalCertification !== false) {
+    throw new Error("IPR_BOUND_MEMORY_EXTERNAL_ADAPTER_LEGAL_CERTIFICATION_FORBIDDEN");
+  }
+
+  if (!adapter.durable) {
+    throw new Error("IPR_BOUND_MEMORY_EXTERNAL_ADAPTER_MUST_BE_DURABLE");
+  }
+
+  if (adapter.runtimeScoped) {
+    throw new Error("IPR_BOUND_MEMORY_EXTERNAL_ADAPTER_MUST_NOT_BE_RUNTIME_SCOPED");
+  }
+
+  return adapter;
 }
 
 export const processIprBoundMemoryStore =
@@ -364,6 +565,32 @@ export function getExternalIprBoundMemoryStore<
   return externalIprBoundMemoryStore as unknown as IprBoundMemoryStoreAdapter<TRecord>;
 }
 
+export function getSaasTargetIprBoundMemoryStore<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(): IprBoundMemoryStoreAdapter<TRecord> {
+  return getDatabasePersistentIprBoundMemoryStore<TRecord>();
+}
+
+export function selectIprBoundMemoryStore<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(
+  kind: IprBoundMemoryStoreKind
+): IprBoundMemoryStoreAdapter<TRecord> {
+  if (kind === "PROCESS_MEMORY_MVP") {
+    return getProcessIprBoundMemoryStore<TRecord>();
+  }
+
+  if (kind === "DATABASE_READY") {
+    return getDatabaseReadyIprBoundMemoryStore<TRecord>();
+  }
+
+  if (kind === "DATABASE_PERSISTENT") {
+    return getDatabasePersistentIprBoundMemoryStore<TRecord>();
+  }
+
+  return getExternalIprBoundMemoryStore<TRecord>();
+}
+
 export function describeDefaultIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
   return getDefaultIprBoundMemoryStore().describe();
 }
@@ -378,6 +605,23 @@ export function describeDatabaseReadyIprBoundMemoryStore(): IprBoundMemoryStoreD
 
 export function describeDatabasePersistentIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
   return getDatabasePersistentIprBoundMemoryStore().describe();
+}
+
+export function describeExternalIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
+  return getExternalIprBoundMemoryStore().describe();
+}
+
+export function describeSaasTargetIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
+  return getSaasTargetIprBoundMemoryStore().describe();
+}
+
+export function listIprBoundMemoryStoreDescriptions(): IprBoundMemoryStoreDescription[] {
+  return [
+    describeProcessIprBoundMemoryStore(),
+    describeDatabaseReadyIprBoundMemoryStore(),
+    describeDatabasePersistentIprBoundMemoryStore(),
+    describeExternalIprBoundMemoryStore()
+  ];
 }
 
 export function getRuntimeMemoryStoreSize(): number {
