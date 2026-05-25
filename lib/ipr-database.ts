@@ -201,8 +201,7 @@ class DisabledHbceDatabaseAdapter implements HbceDatabaseAdapter {
       status: "NOT_CONFIGURED",
       rows: [],
       rowCount: 0,
-      error:
-        "DATABASE_URL is not configured. Query was not executed.",
+      error: "DATABASE_URL is not configured. Query was not executed.",
       sql,
       startedAt
     });
@@ -291,10 +290,7 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
 
     try {
       const sql = this.getSql();
-      const result = await sql.query(
-        normalizedSql,
-        params as unknown[]
-      );
+      const result = await sql.query(normalizedSql, params as unknown[]);
       const rows = normalizeRows<Row>(result);
 
       return buildResult<Row>({
@@ -351,6 +347,10 @@ export function describeDefaultHbceDatabase(): HbceDatabaseDescription {
 
 export function isHbceDatabaseConfigured(): boolean {
   return isDatabaseUrlConfigured();
+}
+
+export function isHbceDatabaseAvailable(): boolean {
+  return describeDefaultHbceDatabase().available;
 }
 
 export async function initializeHbceDatabaseSchema(): Promise<HbceDatabaseQueryResult> {
