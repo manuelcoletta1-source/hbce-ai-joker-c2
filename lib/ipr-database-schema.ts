@@ -1,16 +1,34 @@
-export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1";
+export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.1";
 
 export const HBCE_DATABASE_SCHEMA_BOUNDARY =
-  "HBCE database persistence stores operational identity, sessions, chat continuity, memory, EVT records, OPC technical proof receipts and MATRIX Transformative Memory for runtime audit. It does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
+  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, sessions, chat continuity, IPR-bound memory, EVT records, OPC technical proof receipts and MATRIX Transformative Memory for runtime audit. It does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
 
 export const HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY =
   "All HBCE database records remain technical-operational records. legal_certification must remain false unless a future legally recognized qualified trust service, public authority process or regulated certification workflow is explicitly integrated.";
 
 export const HBCE_DATABASE_PERSISTENCE_MODE = "DATABASE_PERSISTENT";
 
+export const HBCE_PROJECT_BIRTH_DATE = "2026-01-19";
+
+export const HBCE_PROJECT_BIRTH_LABEL =
+  "HBCE R&D / AI JOKER-C2 project birth date";
+
+export const HBCE_MONTHLY_REFERENCE = "UP-MESE-4";
+
+export const HBCE_CURRENT_OPERATIONAL_EVT = "EVT-0016";
+
+export const HBCE_CURRENT_OPERATIONAL_AI_EVT = "EVT-0016-AI";
+
+export const HBCE_CURRENT_OPERATIONAL_CYCLE = "UP-CANONICO";
+
+export const HBCE_CURRENT_EVENT_FAMILY = "UP-EVT";
+
 export const HBCE_DATABASE_SCHEMA_TABLES = [
   "hbce_schema_migrations",
+  "saas_tenants",
   "ipr_subjects",
+  "saas_workspaces",
+  "saas_workspace_memberships",
   "ipr_auth_credentials",
   "ipr_sessions",
   "ipr_account_profiles",
@@ -30,6 +48,12 @@ export type HbceDatabaseSchemaDefinition = {
   persistenceMode: typeof HBCE_DATABASE_PERSISTENCE_MODE;
   boundary: string;
   legalCertificationBoundary: string;
+  projectBirthDate: typeof HBCE_PROJECT_BIRTH_DATE;
+  monthlyReference: typeof HBCE_MONTHLY_REFERENCE;
+  currentOperationalEvt: typeof HBCE_CURRENT_OPERATIONAL_EVT;
+  currentOperationalAiEvt: typeof HBCE_CURRENT_OPERATIONAL_AI_EVT;
+  currentOperationalCycle: typeof HBCE_CURRENT_OPERATIONAL_CYCLE;
+  currentEventFamily: typeof HBCE_CURRENT_EVENT_FAMILY;
   tables: readonly HbceDatabaseSchemaTable[];
   sql: readonly string[];
 };
@@ -43,6 +67,26 @@ CREATE TABLE IF NOT EXISTS hbce_schema_migrations (
   schema_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
   CONSTRAINT hbce_schema_migrations_legal_certification_false
+    CHECK (legal_certification = false)
+);
+`.trim(),
+
+  `
+CREATE TABLE IF NOT EXISTS saas_tenants (
+  tenant_id TEXT PRIMARY KEY,
+  tenant_slug TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'ACTIVE',
+  plan TEXT NOT NULL DEFAULT 'INTERNAL_R_AND_D',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  legal_certification BOOLEAN NOT NULL DEFAULT false,
+  CONSTRAINT saas_tenants_status_check
+    CHECK (status IN ('ACTIVE', 'SUSPENDED', 'REVOKED', 'ARCHIVED')),
+  CONSTRAINT saas_tenants_plan_check
+    CHECK (plan IN ('INTERNAL_R_AND_D', 'PILOT', 'PROFESSIONAL', 'ENTERPRISE', 'PUBLIC_SECTOR')),
+  CONSTRAINT saas_tenants_legal_certification_false
     CHECK (legal_certification = false)
 );
 `.trim(),
@@ -64,6 +108,55 @@ CREATE TABLE IF NOT EXISTS ipr_subjects (
   CONSTRAINT ipr_subjects_status_check
     CHECK (status IN ('ACTIVE', 'SUSPENDED', 'REVOKED', 'EXPIRED', 'UNKNOWN')),
   CONSTRAINT ipr_subjects_legal_certification_false
+    CHECK (legal_certification = false)
+);
+`.trim(),
+
+  `
+CREATE TABLE IF NOT EXISTS saas_workspaces (
+  workspace_id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE CASCADE,
+  workspace_slug TEXT NOT NULL,
+  name TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'ACTIVE',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  legal_certification BOOLEAN NOT NULL DEFAULT false,
+  UNIQUE (tenant_id, workspace_slug),
+  CONSTRAINT saas_workspaces_status_check
+    CHECK (status IN ('ACTIVE', 'SUSPENDED', 'ARCHIVED')),
+  CONSTRAINT saas_workspaces_legal_certification_false
+    CHECK (legal_certification = false)
+);
+`.trim(),
+
+  `
+CREATE TABLE IF NOT EXISTS saas_workspace_memberships (
+  membership_id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE CASCADE,
+  workspace_id TEXT NOT NULL
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE CASCADE,
+  human_ipr TEXT NOT NULL
+    REFERENCES ipr_subjects(human_ipr)
+    ON DELETE CASCADE,
+  role TEXT NOT NULL DEFAULT 'OPERATOR',
+  status TEXT NOT NULL DEFAULT 'ACTIVE',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  legal_certification BOOLEAN NOT NULL DEFAULT false,
+  UNIQUE (workspace_id, human_ipr),
+  CONSTRAINT saas_workspace_memberships_role_check
+    CHECK (role IN ('OWNER', 'ADMIN', 'OPERATOR', 'AUDITOR', 'VIEWER')),
+  CONSTRAINT saas_workspace_memberships_status_check
+    CHECK (status IN ('ACTIVE', 'SUSPENDED', 'REVOKED')),
+  CONSTRAINT saas_workspace_memberships_legal_certification_false
     CHECK (legal_certification = false)
 );
 `.trim(),
@@ -127,6 +220,12 @@ CREATE TABLE IF NOT EXISTS ipr_account_profiles (
   human_ipr TEXT PRIMARY KEY
     REFERENCES ipr_subjects(human_ipr)
     ON DELETE CASCADE,
+  tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL,
+  workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL,
   account_id TEXT NOT NULL UNIQUE,
   entity TEXT NOT NULL,
   subject_kind TEXT NOT NULL DEFAULT 'BIOLOGICAL_SUBJECT',
@@ -165,6 +264,12 @@ CREATE TABLE IF NOT EXISTS ipr_account_profiles (
   `
 CREATE TABLE IF NOT EXISTS chat_threads (
   thread_id TEXT PRIMARY KEY,
+  tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL,
+  workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL,
   human_ipr TEXT
     REFERENCES ipr_subjects(human_ipr)
     ON DELETE SET NULL,
@@ -196,6 +301,12 @@ CREATE TABLE IF NOT EXISTS chat_threads (
   `
 CREATE TABLE IF NOT EXISTS chat_messages (
   message_id TEXT PRIMARY KEY,
+  tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL,
+  workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL,
   thread_id TEXT NOT NULL
     REFERENCES chat_threads(thread_id)
     ON DELETE CASCADE,
@@ -221,7 +332,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   CONSTRAINT chat_messages_runtime_state_check
     CHECK (
       runtime_state IS NULL OR
-      runtime_state IN ('OPERATIONAL', 'DEGRADED', 'BLOCKED', 'INVALID', 'UNKNOWN')
+      runtime_state IN ('OPERATIONAL', 'DEGRADED', 'BLOCKED', 'INVALID', 'AUDIT_ONLY', 'MAINTENANCE', 'UNKNOWN')
     ),
   CONSTRAINT chat_messages_runtime_decision_check
     CHECK (
@@ -236,6 +347,12 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   `
 CREATE TABLE IF NOT EXISTS memory_records (
   memory_id TEXT PRIMARY KEY,
+  tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL,
+  workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL,
   memory_key_hash TEXT NOT NULL,
   human_ipr TEXT
     REFERENCES ipr_subjects(human_ipr)
@@ -262,7 +379,7 @@ CREATE TABLE IF NOT EXISTS memory_records (
   CONSTRAINT memory_records_authority_check
     CHECK (authority IN ('SERVER_RUNTIME_VALIDATED', 'SESSION_RUNTIME_ONLY')),
   CONSTRAINT memory_records_persistence_mode_check
-    CHECK (persistence_mode IN ('PROCESS_MEMORY_MVP', 'DATABASE_PERSISTENT', 'EXTERNAL_ADAPTER')),
+    CHECK (persistence_mode IN ('PROCESS_MEMORY_MVP', 'DATABASE_READY', 'DATABASE_PERSISTENT', 'EXTERNAL_ADAPTER')),
   CONSTRAINT memory_records_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -272,6 +389,12 @@ CREATE TABLE IF NOT EXISTS memory_records (
 CREATE TABLE IF NOT EXISTS evt_records (
   evt_id TEXT PRIMARY KEY,
   prev_evt_id TEXT,
+  tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL,
+  workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL,
   human_ipr TEXT
     REFERENCES ipr_subjects(human_ipr)
     ON DELETE SET NULL,
@@ -284,6 +407,8 @@ CREATE TABLE IF NOT EXISTS evt_records (
     REFERENCES memory_records(memory_id)
     ON DELETE SET NULL,
   event_kind TEXT NOT NULL DEFAULT 'CHAT_OPERATION',
+  event_family TEXT NOT NULL DEFAULT 'UP-EVT',
+  cycle TEXT NOT NULL DEFAULT 'UP-CANONICO',
   runtime_state TEXT NOT NULL,
   runtime_decision TEXT NOT NULL,
   context_class TEXT,
@@ -292,13 +417,16 @@ CREATE TABLE IF NOT EXISTS evt_records (
   hbce_module TEXT,
   event_hash TEXT NOT NULL,
   public_hash TEXT,
+  operational_context JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
   CONSTRAINT evt_records_runtime_state_check
-    CHECK (runtime_state IN ('OPERATIONAL', 'DEGRADED', 'BLOCKED', 'INVALID', 'UNKNOWN')),
+    CHECK (runtime_state IN ('OPERATIONAL', 'DEGRADED', 'BLOCKED', 'INVALID', 'AUDIT_ONLY', 'MAINTENANCE', 'UNKNOWN')),
   CONSTRAINT evt_records_runtime_decision_check
     CHECK (runtime_decision IN ('ALLOW', 'BLOCK', 'ESCALATE', 'DEGRADE', 'AUDIT', 'NOOP', 'UNKNOWN')),
+  CONSTRAINT evt_records_event_family_check
+    CHECK (event_family IN ('UP-EVT', 'EVT', 'UP-MESE', 'RUNTIME')),
   CONSTRAINT evt_records_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -309,6 +437,12 @@ CREATE TABLE IF NOT EXISTS opc_proofs (
   proof_id TEXT PRIMARY KEY,
   evt_id TEXT
     REFERENCES evt_records(evt_id)
+    ON DELETE SET NULL,
+  tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL,
+  workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
     ON DELETE SET NULL,
   human_ipr TEXT
     REFERENCES ipr_subjects(human_ipr)
@@ -321,6 +455,8 @@ CREATE TABLE IF NOT EXISTS opc_proofs (
   memory_id TEXT
     REFERENCES memory_records(memory_id)
     ON DELETE SET NULL,
+  persistence_mode TEXT NOT NULL DEFAULT 'DATABASE_PERSISTENT',
+  persistence_status TEXT NOT NULL DEFAULT 'DATABASE_PERSISTENT_ACTIVE',
   input_hash TEXT NOT NULL,
   output_hash TEXT NOT NULL,
   decision_hash TEXT NOT NULL,
@@ -333,13 +469,18 @@ CREATE TABLE IF NOT EXISTS opc_proofs (
   chain_hash TEXT NOT NULL,
   audit_status TEXT NOT NULL DEFAULT 'NOT_REQUIRED',
   verification_status TEXT NOT NULL DEFAULT 'VERIFIABLE',
+  operational_context JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
+  CONSTRAINT opc_proofs_persistence_mode_check
+    CHECK (persistence_mode IN ('RUNTIME_ONLY', 'PROCESS_PROOF_MVP', 'DATABASE_READY', 'DATABASE_PERSISTENT', 'EXTERNAL_ADAPTER')),
+  CONSTRAINT opc_proofs_persistence_status_check
+    CHECK (persistence_status IN ('NOT_PERSISTED', 'PROCESS_SCOPED', 'DATABASE_CONTRACT_READY', 'DATABASE_PERSISTENT_REQUIRED', 'DATABASE_PERSISTENT_ACTIVE', 'EXTERNAL_ADAPTER_REQUIRED')),
   CONSTRAINT opc_proofs_audit_status_check
-    CHECK (audit_status IN ('NOT_REQUIRED', 'READY', 'REQUIRED')),
+    CHECK (audit_status IN ('NOT_REQUIRED', 'READY', 'REQUIRED', 'OPEN', 'IN_REVIEW', 'REVIEWED', 'DISPUTED', 'LOCKED', 'REJECTED', 'CLOSED', 'FAILED')),
   CONSTRAINT opc_proofs_verification_status_check
-    CHECK (verification_status IN ('VERIFIABLE', 'PARTIAL', 'UNVERIFIED')),
+    CHECK (verification_status IN ('VERIFIABLE', 'PARTIAL', 'INVALID', 'UNVERIFIED', 'ANCHORED', 'SUPERSEDED', 'DISPUTED')),
   CONSTRAINT opc_proofs_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -348,6 +489,12 @@ CREATE TABLE IF NOT EXISTS opc_proofs (
   `
 CREATE TABLE IF NOT EXISTS matrix_transformative_memory (
   evaluation_id TEXT PRIMARY KEY,
+  tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL,
+  workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL,
   source_evt_id TEXT
     REFERENCES evt_records(evt_id)
     ON DELETE SET NULL,
@@ -385,6 +532,8 @@ CREATE TABLE IF NOT EXISTS matrix_transformative_memory (
     CHECK (memory_scope IN ('IPR_BOUND', 'RUNTIME_ONLY')),
   CONSTRAINT matrix_transformative_memory_authority_check
     CHECK (memory_authority IN ('SERVER_RUNTIME_VALIDATED', 'SESSION_RUNTIME_ONLY')),
+  CONSTRAINT matrix_transformative_memory_persistence_mode_check
+    CHECK (memory_persistence_mode IN ('PROCESS_MEMORY_MVP', 'DATABASE_READY', 'DATABASE_PERSISTENT', 'EXTERNAL_ADAPTER')),
   CONSTRAINT matrix_transformative_memory_counts_non_negative
     CHECK (
       insight_count >= 0 AND
@@ -399,6 +548,154 @@ CREATE TABLE IF NOT EXISTS matrix_transformative_memory (
   CONSTRAINT matrix_transformative_memory_legal_certification_false
     CHECK (legal_certification = false)
 );
+`.trim(),
+
+  `
+ALTER TABLE ipr_account_profiles
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE ipr_account_profiles
+  ADD COLUMN IF NOT EXISTS workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE chat_threads
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE chat_threads
+  ADD COLUMN IF NOT EXISTS workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS event_family TEXT NOT NULL DEFAULT 'UP-EVT';
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS cycle TEXT NOT NULL DEFAULT 'UP-CANONICO';
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS operational_context JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS persistence_mode TEXT NOT NULL DEFAULT 'DATABASE_PERSISTENT';
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS persistence_status TEXT NOT NULL DEFAULT 'DATABASE_PERSISTENT_ACTIVE';
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS operational_context JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE matrix_transformative_memory
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+ALTER TABLE matrix_transformative_memory
+  ADD COLUMN IF NOT EXISTS workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_saas_tenants_slug
+  ON saas_tenants(tenant_slug);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_saas_workspaces_tenant_slug
+  ON saas_workspaces(tenant_id, workspace_slug);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_saas_workspace_memberships_human_ipr
+  ON saas_workspace_memberships(human_ipr);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_saas_workspace_memberships_workspace_role
+  ON saas_workspace_memberships(workspace_id, role);
 `.trim(),
 
   `
@@ -422,13 +719,28 @@ CREATE INDEX IF NOT EXISTS idx_ipr_account_profiles_account_id
 `.trim(),
 
   `
+CREATE INDEX IF NOT EXISTS idx_ipr_account_profiles_tenant_workspace
+  ON ipr_account_profiles(tenant_id, workspace_id);
+`.trim(),
+
+  `
 CREATE INDEX IF NOT EXISTS idx_chat_threads_human_ipr_updated_at
   ON chat_threads(human_ipr, updated_at DESC);
 `.trim(),
 
   `
+CREATE INDEX IF NOT EXISTS idx_chat_threads_workspace_updated_at
+  ON chat_threads(workspace_id, updated_at DESC);
+`.trim(),
+
+  `
 CREATE INDEX IF NOT EXISTS idx_chat_messages_thread_created_at
   ON chat_messages(thread_id, created_at ASC);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_chat_messages_workspace_created_at
+  ON chat_messages(workspace_id, created_at DESC);
 `.trim(),
 
   `
@@ -442,6 +754,11 @@ CREATE INDEX IF NOT EXISTS idx_memory_records_human_ipr_updated_at
 `.trim(),
 
   `
+CREATE INDEX IF NOT EXISTS idx_memory_records_workspace_updated_at
+  ON memory_records(workspace_id, updated_at DESC);
+`.trim(),
+
+  `
 CREATE INDEX IF NOT EXISTS idx_evt_records_human_ipr_created_at
   ON evt_records(human_ipr, created_at DESC);
 `.trim(),
@@ -452,8 +769,23 @@ CREATE INDEX IF NOT EXISTS idx_evt_records_session_id_created_at
 `.trim(),
 
   `
+CREATE INDEX IF NOT EXISTS idx_evt_records_workspace_created_at
+  ON evt_records(workspace_id, created_at DESC);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_evt_records_event_family_cycle
+  ON evt_records(event_family, cycle);
+`.trim(),
+
+  `
 CREATE INDEX IF NOT EXISTS idx_opc_proofs_human_ipr_created_at
   ON opc_proofs(human_ipr, created_at DESC);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_opc_proofs_workspace_created_at
+  ON opc_proofs(workspace_id, created_at DESC);
 `.trim(),
 
   `
@@ -462,8 +794,18 @@ CREATE INDEX IF NOT EXISTS idx_opc_proofs_chain_hash
 `.trim(),
 
   `
+CREATE INDEX IF NOT EXISTS idx_opc_proofs_persistence_mode
+  ON opc_proofs(persistence_mode, persistence_status);
+`.trim(),
+
+  `
 CREATE INDEX IF NOT EXISTS idx_matrix_transformative_memory_human_ipr_created_at
   ON matrix_transformative_memory(human_ipr, created_at DESC);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_matrix_transformative_memory_workspace_created_at
+  ON matrix_transformative_memory(workspace_id, created_at DESC);
 `.trim(),
 
   `
@@ -474,12 +816,23 @@ INSERT INTO hbce_schema_migrations (
   legal_certification
 )
 VALUES (
-  'HBCE-IPR-DB-v1',
-  'Initial HBCE persistent database schema for IPR auth, account profiles, sessions, chat, memory, EVT, OPC and MATRIX Transformative Memory.',
+  'HBCE-IPR-DB-v1.1',
+  'HBCE SaaS Core v0.1 persistent database schema for tenants, workspaces, memberships, IPR auth, account profiles, sessions, chat, memory, EVT, OPC and MATRIX Transformative Memory.',
   jsonb_build_object(
+    'projectBirthDate', '2026-01-19',
+    'projectBirthLabel', 'HBCE R&D / AI JOKER-C2 project birth date',
+    'monthlyReference', 'UP-MESE-4',
+    'currentOperationalEvt', 'EVT-0016',
+    'currentOperationalAiEvt', 'EVT-0016-AI',
+    'currentOperationalCycle', 'UP-CANONICO',
+    'currentEventFamily', 'UP-EVT',
     'persistenceMode', 'DATABASE_PERSISTENT',
     'legalCertification', false,
+    'saasCore', 'v0.1',
     'tables', jsonb_build_array(
+      'saas_tenants',
+      'saas_workspaces',
+      'saas_workspace_memberships',
       'ipr_subjects',
       'ipr_auth_credentials',
       'ipr_sessions',
@@ -503,6 +856,12 @@ export const HBCE_DATABASE_SCHEMA: HbceDatabaseSchemaDefinition = {
   persistenceMode: HBCE_DATABASE_PERSISTENCE_MODE,
   boundary: HBCE_DATABASE_SCHEMA_BOUNDARY,
   legalCertificationBoundary: HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY,
+  projectBirthDate: HBCE_PROJECT_BIRTH_DATE,
+  monthlyReference: HBCE_MONTHLY_REFERENCE,
+  currentOperationalEvt: HBCE_CURRENT_OPERATIONAL_EVT,
+  currentOperationalAiEvt: HBCE_CURRENT_OPERATIONAL_AI_EVT,
+  currentOperationalCycle: HBCE_CURRENT_OPERATIONAL_CYCLE,
+  currentEventFamily: HBCE_CURRENT_EVENT_FAMILY,
   tables: HBCE_DATABASE_SCHEMA_TABLES,
   sql: HBCE_DATABASE_SCHEMA_SQL
 };
@@ -523,4 +882,22 @@ export function isHbceDatabaseSchemaTable(
   value: string
 ): value is HbceDatabaseSchemaTable {
   return HBCE_DATABASE_SCHEMA_TABLES.includes(value as HbceDatabaseSchemaTable);
+}
+
+export function getHbceDatabaseSaasCoreContext() {
+  return {
+    schemaVersion: HBCE_DATABASE_SCHEMA_VERSION,
+    persistenceMode: HBCE_DATABASE_PERSISTENCE_MODE,
+    projectBirthDate: HBCE_PROJECT_BIRTH_DATE,
+    projectBirthLabel: HBCE_PROJECT_BIRTH_LABEL,
+    monthlyReference: HBCE_MONTHLY_REFERENCE,
+    currentOperationalEvt: HBCE_CURRENT_OPERATIONAL_EVT,
+    currentOperationalAiEvt: HBCE_CURRENT_OPERATIONAL_AI_EVT,
+    currentOperationalCycle: HBCE_CURRENT_OPERATIONAL_CYCLE,
+    currentEventFamily: HBCE_CURRENT_EVENT_FAMILY,
+    saasCore: "v0.1",
+    legalCertification: false,
+    statement:
+      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, memory, EVT, OPC, tenant, workspace and audit continuity."
+  };
 }
