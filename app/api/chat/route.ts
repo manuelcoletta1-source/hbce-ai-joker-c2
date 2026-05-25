@@ -129,6 +129,21 @@ type IprHandoffEvaluation = {
   verifiedSubject: VerifiedBiologicalSubject | null;
 };
 
+type RuntimeIdentityContext = {
+  runtime_entity: string;
+  runtime_ipr: string;
+  verified_subject_entity: string | null;
+  verified_subject_ipr: string | null;
+  verified_subject_certificate_id: string | null;
+  verified_subject_card_serial: string | null;
+  verified_subject_certificate_status: "ACTIVE" | "NOT_VERIFIED";
+  verified_subject_certificate_scope: string[];
+  verified_subject_access_decision: VerifiedSubjectAccessDecision;
+  identity_binding: IprHandoffEvaluation["identityBinding"];
+  matrix_state: MatrixActivationState;
+  semantic_memory_scope: IprHandoffEvaluation["semanticMemoryScope"];
+};
+
 type LegacyRuntimeEvent = {
   evt: string;
   prev: string;
@@ -172,20 +187,7 @@ type GovernedEvt = {
     state: RuntimeState;
     role: "HBCE_governed_runtime";
   };
-  identity_context: {
-    runtime_entity: string;
-    runtime_ipr: string;
-    verified_subject_entity: string | null;
-    verified_subject_ipr: string | null;
-    verified_subject_certificate_id: string | null;
-    verified_subject_card_serial: string | null;
-    verified_subject_certificate_status: "ACTIVE" | "NOT_VERIFIED";
-    verified_subject_certificate_scope: string[];
-    verified_subject_access_decision: VerifiedSubjectAccessDecision;
-    identity_binding: IprHandoffEvaluation["identityBinding"];
-    matrix_state: MatrixActivationState;
-    semantic_memory_scope: IprHandoffEvaluation["semanticMemoryScope"];
-  };
+  identity_context: RuntimeIdentityContext;
   project: {
     ecosystem: "HERMETICUM B.C.E.";
     domain: string;
@@ -864,7 +866,7 @@ function evaluateIprHandoff(value: unknown): IprHandoffEvaluation {
 function buildIdentityContext(input: {
   identity: RuntimeIdentity;
   handoff: IprHandoffEvaluation;
-}) {
+}): RuntimeIdentityContext {
   return {
     runtime_entity: input.identity.entity,
     runtime_ipr: input.identity.ipr,
