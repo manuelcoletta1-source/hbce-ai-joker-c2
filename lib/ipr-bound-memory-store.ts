@@ -1,3 +1,9 @@
+import {
+  describeDefaultHbceDatabase,
+  isHbceDatabaseAvailable,
+  isHbceDatabaseConfigured
+} from "./ipr-database";
+
 export type IprBoundMemoryStoreKind =
   | "PROCESS_MEMORY_MVP"
   | "DATABASE_READY"
@@ -21,6 +27,8 @@ export type IprBoundMemoryStoreCapability =
   | "MEMORY_HASH_LOOKUP"
   | "PROCESS_SCOPED_RUNTIME"
   | "DATABASE_CONTRACT"
+  | "DATABASE_CONNECTION_DETECTED"
+  | "DATABASE_MEMORY_WRITER_REQUIRED"
   | "DATABASE_DURABILITY_TARGET"
   | "TENANT_SCOPE_REQUIRED"
   | "WORKSPACE_SCOPE_REQUIRED"
@@ -41,6 +49,13 @@ export type IprBoundMemoryStoreRecord = {
   [key: string]: unknown;
 };
 
+export type IprBoundMemoryStoreDatabaseDescription = {
+  configured: boolean;
+  available: boolean;
+  description: ReturnType<typeof describeDefaultHbceDatabase>;
+  note: string;
+};
+
 export type IprBoundMemoryStoreDescription = {
   name: string;
   kind: IprBoundMemoryStoreKind;
@@ -49,13 +64,13 @@ export type IprBoundMemoryStoreDescription = {
   runtimeScoped: boolean;
   recordCount: number;
   boundary: string;
-
   persistenceStage: IprBoundMemoryPersistenceStage;
   saasReady: boolean;
   requiresDatabase: boolean;
   legalCertification: false;
   capabilities: IprBoundMemoryStoreCapability[];
   requirements: string[];
+  database?: IprBoundMemoryStoreDatabaseDescription;
 };
 
 export type IprBoundMemoryStoreAdapter<
@@ -82,7 +97,7 @@ const PROCESS_MEMORY_STORE_BOUNDARY =
   "This adapter stores IPR-bound memory in server-side process memory only. It is valid for MVP runtime demonstrations, but it is not durable enterprise storage and may reset on redeploy, cold start, instance recycling or runtime migration.";
 
 const DATABASE_READY_BOUNDARY =
-  "This adapter declares that the codebase is prepared for a future database memory layer. It is not an active durable store until a real database implementation, access control, retention policy, encryption strategy and audit backend are connected.";
+  "This adapter declares that the codebase is prepared for a future database memory layer. It is not an active durable store until a real database memory writer, access control, retention policy, encryption strategy and audit backend are connected.";
 
 const DATABASE_PERSISTENT_BOUNDARY =
   "This adapter declares the required target state for durable SaaS memory. DATABASE_PERSISTENT requires real database storage, tenant and workspace scoping, access control, encryption, audit logging, retention, deletion, backup, recovery and operational monitoring before use.";
@@ -105,6 +120,8 @@ const DATABASE_READY_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "MEMORY_KEY_LOOKUP",
   "MEMORY_HASH_LOOKUP",
   "DATABASE_CONTRACT",
+  "DATABASE_CONNECTION_DETECTED",
+  "DATABASE_MEMORY_WRITER_REQUIRED",
   "TENANT_SCOPE_REQUIRED",
   "WORKSPACE_SCOPE_REQUIRED",
   "ACCESS_CONTROL_REQUIRED",
@@ -114,11 +131,13 @@ const DATABASE_READY_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "DELETION_REQUIRED"
 ];
 
-const DATABASE_PERSISTENT_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
+const DATABASE_PERSISTENT_TARGET_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "IPR_BOUND_MEMORY",
   "MEMORY_KEY_LOOKUP",
   "MEMORY_HASH_LOOKUP",
   "DATABASE_CONTRACT",
+  "DATABASE_CONNECTION_DETECTED",
+  "DATABASE_MEMORY_WRITER_REQUIRED",
   "DATABASE_DURABILITY_TARGET",
   "TENANT_SCOPE_REQUIRED",
   "WORKSPACE_SCOPE_REQUIRED",
@@ -153,17 +172,21 @@ const PROCESS_MEMORY_REQUIREMENTS = [
 ];
 
 const DATABASE_READY_REQUIREMENTS = [
-  "Connect a real database implementation.",
+  "Connect a real database memory writer.",
+  "Keep the current synchronous memory store contract as PROCESS_MEMORY_MVP until an async database persistence layer is implemented.",
   "Define tenant and workspace scoping.",
   "Define access control.",
   "Define retention and deletion policy.",
   "Define encryption strategy.",
   "Define audit backend.",
-  "Define backup and recovery before production use."
+  "Define backup and recovery before production use.",
+  "Do not claim DATABASE_PERSISTENT memory until write/read/update/delete operations are actually backed by the database."
 ];
 
-const DATABASE_PERSISTENT_REQUIREMENTS = [
+const DATABASE_PERSISTENT_TARGET_REQUIREMENTS = [
   "Real database storage must be active.",
+  "A dedicated async memory persistence layer must write memory records to the database.",
+  "A dedicated async memory persistence layer must read memory records from the database.",
   "Tenant isolation must be enforced.",
   "Workspace isolation must be enforced.",
   "Subject IPR and runtime IPR binding must be persisted.",
@@ -253,6 +276,32 @@ function normalizeMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
   };
 }
 
+function getMemoryDatabaseDescription(): IprBoundMemoryStoreDatabaseDescription {
+  const configured = isHbceDatabaseConfigured();
+  const available = isHbceDatabaseAvailable();
+
+  return {
+    configured,
+    available,
+    description: describeDefaultHbceDatabase(),
+    note: available
+      ? "HBCE database connection is available, but IPR-bound memory still requires a dedicated async database memory writer before DATABASE_PERSISTENT can be claimed."
+      : configured
+        ? "HBCE database is configured but not fully available to the memory store contract."
+        : "HBCE database is not configured. IPR-bound memory remains process-scoped unless an external adapter is supplied."
+  };
+}
+
+function resolveDatabasePlaceholderStatus(): IprBoundMemoryStoreStatus {
+  const database = getMemoryDatabaseDescription();
+
+  if (!database.configured) {
+    return "NOT_CONFIGURED";
+  }
+
+  return "DEGRADED";
+}
+
 function buildStoreDescription(input: {
   name: string;
   kind: IprBoundMemoryStoreKind;
@@ -266,6 +315,7 @@ function buildStoreDescription(input: {
   requiresDatabase: boolean;
   capabilities: IprBoundMemoryStoreCapability[];
   requirements: string[];
+  database?: IprBoundMemoryStoreDatabaseDescription;
 }): IprBoundMemoryStoreDescription {
   return {
     name: input.name,
@@ -280,7 +330,8 @@ function buildStoreDescription(input: {
     requiresDatabase: input.requiresDatabase,
     legalCertification: false,
     capabilities: input.capabilities,
-    requirements: input.requirements
+    requirements: input.requirements,
+    database: input.database
   };
 }
 
@@ -312,7 +363,8 @@ export function createProcessMemoryStoreAdapter<
         saasReady: false,
         requiresDatabase: false,
         capabilities: PROCESS_MEMORY_CAPABILITIES,
-        requirements: PROCESS_MEMORY_REQUIREMENTS
+        requirements: PROCESS_MEMORY_REQUIREMENTS,
+        database: getMemoryDatabaseDescription()
       });
     },
 
@@ -380,6 +432,7 @@ function createUnavailableMemoryStoreAdapter<
   requiresDatabase: boolean;
   capabilities: IprBoundMemoryStoreCapability[];
   requirements: string[];
+  databaseAware?: boolean;
 }): IprBoundMemoryStoreAdapter<TRecord> {
   return {
     name: input.name,
@@ -391,7 +444,9 @@ function createUnavailableMemoryStoreAdapter<
       return buildStoreDescription({
         name: this.name,
         kind: this.kind,
-        status: "NOT_CONFIGURED",
+        status: input.databaseAware
+          ? resolveDatabasePlaceholderStatus()
+          : "NOT_CONFIGURED",
         durable: this.durable,
         runtimeScoped: this.runtimeScoped,
         recordCount: 0,
@@ -400,7 +455,8 @@ function createUnavailableMemoryStoreAdapter<
         saasReady: input.saasReady,
         requiresDatabase: input.requiresDatabase,
         capabilities: input.capabilities,
-        requirements: input.requirements
+        requirements: input.requirements,
+        database: input.databaseAware ? getMemoryDatabaseDescription() : undefined
       });
     },
 
@@ -450,14 +506,15 @@ export function createDatabaseReadyPlaceholderAdapter<
   return createUnavailableMemoryStoreAdapter<TRecord>({
     name: "HBCE_JOKER_C2_DATABASE_READY_PLACEHOLDER",
     kind: "DATABASE_READY",
-    durable: true,
+    durable: false,
     runtimeScoped: false,
     boundary: DATABASE_READY_BOUNDARY,
     persistenceStage: "DATABASE_CONTRACT_READY",
     saasReady: false,
     requiresDatabase: true,
     capabilities: DATABASE_READY_CAPABILITIES,
-    requirements: DATABASE_READY_REQUIREMENTS
+    requirements: DATABASE_READY_REQUIREMENTS,
+    databaseAware: true
   });
 }
 
@@ -465,16 +522,17 @@ export function createDatabasePersistentPlaceholderAdapter<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
 >(): IprBoundMemoryStoreAdapter<TRecord> {
   return createUnavailableMemoryStoreAdapter<TRecord>({
-    name: "HBCE_JOKER_C2_DATABASE_PERSISTENT_PLACEHOLDER",
-    kind: "DATABASE_PERSISTENT",
-    durable: true,
+    name: "HBCE_JOKER_C2_DATABASE_PERSISTENT_TARGET_PLACEHOLDER",
+    kind: "DATABASE_READY",
+    durable: false,
     runtimeScoped: false,
     boundary: DATABASE_PERSISTENT_BOUNDARY,
     persistenceStage: "DATABASE_PERSISTENT_TARGET",
     saasReady: false,
     requiresDatabase: true,
-    capabilities: DATABASE_PERSISTENT_CAPABILITIES,
-    requirements: DATABASE_PERSISTENT_REQUIREMENTS
+    capabilities: DATABASE_PERSISTENT_TARGET_CAPABILITIES,
+    requirements: DATABASE_PERSISTENT_TARGET_REQUIREMENTS,
+    databaseAware: true
   });
 }
 
@@ -484,14 +542,15 @@ export function createExternalAdapterPlaceholder<
   return createUnavailableMemoryStoreAdapter<TRecord>({
     name: "HBCE_JOKER_C2_EXTERNAL_MEMORY_ADAPTER_PLACEHOLDER",
     kind: "EXTERNAL_ADAPTER",
-    durable: true,
+    durable: false,
     runtimeScoped: false,
     boundary: EXTERNAL_ADAPTER_BOUNDARY,
     persistenceStage: "EXTERNAL_ADAPTER_TARGET",
     saasReady: false,
     requiresDatabase: false,
     capabilities: EXTERNAL_ADAPTER_CAPABILITIES,
-    requirements: EXTERNAL_ADAPTER_REQUIREMENTS
+    requirements: EXTERNAL_ADAPTER_REQUIREMENTS,
+    databaseAware: false
   });
 }
 
@@ -589,6 +648,22 @@ export function selectIprBoundMemoryStore<
   }
 
   return getExternalIprBoundMemoryStore<TRecord>();
+}
+
+export function isIprBoundMemoryDatabaseConfigured(): boolean {
+  return isHbceDatabaseConfigured();
+}
+
+export function isIprBoundMemoryDatabaseAvailable(): boolean {
+  return isHbceDatabaseAvailable();
+}
+
+export function isIprBoundMemoryDatabasePersistentActive(): boolean {
+  return false;
+}
+
+export function getIprBoundMemoryDatabaseDescription(): IprBoundMemoryStoreDatabaseDescription {
+  return getMemoryDatabaseDescription();
 }
 
 export function describeDefaultIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
