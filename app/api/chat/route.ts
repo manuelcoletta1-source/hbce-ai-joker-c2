@@ -359,6 +359,7 @@ type GeneratedResponse = {
     | "IDENTITY_RECOGNITION"
     | "SAFE_RED_TEAM"
     | "DOCUMENT_BATCH_PLAN"
+    | "COMMERCIAL_PARTNERSHIP"
     | "FALLBACK";
 };
 
@@ -1473,6 +1474,66 @@ function isDocumentBatchRequest(message: string): boolean {
   return asksForDocuments && isHbceOpenAiPackage;
 }
 
+function isCommercialPartnershipExpansionRequest(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  const partnershipTopic = includesAny(text, [
+    "openai",
+    "hbce",
+    "hermeticum",
+    "hermeticumbce",
+    "hermeticum bce",
+    "hermeticum b.c.e",
+    "joker-c2",
+    "ai joker"
+  ]);
+
+  const commercialIntent = includesAny(text, [
+    "commerciale",
+    "servizi",
+    "business",
+    "partnership",
+    "partenschip",
+    "collaborazione",
+    "proposta",
+    "uffici",
+    "personale",
+    "ruoli",
+    "audit",
+    "certificati",
+    "certificazioni",
+    "proof receipt",
+    "opc",
+    "b2b",
+    "b2g",
+    "preposti",
+    "organigramma",
+    "reparti",
+    "office",
+    "go-to-market",
+    "go to market",
+    "revenue",
+    "modello commerciale",
+    "struttura commerciale"
+  ]);
+
+  const asksForExpansion = includesAny(text, [
+    "approfondisci",
+    "chiarisci",
+    "costruiscono",
+    "costruire",
+    "trova tutto",
+    "dimmi",
+    "prepara",
+    "sviluppa",
+    "organizza",
+    "spiega",
+    "descrivi"
+  ]);
+
+  return partnershipTopic && commercialIntent && asksForExpansion;
+}
+
 function buildHbceOnePagerDocument(input: {
   iprHandoff: IprHandoffEvaluation;
   memory: IprBoundMemoryRecord;
@@ -1670,6 +1731,497 @@ function buildDocumentBatchPlanningResponse(input: {
   ].join("\n");
 }
 
+function buildCommercialPartnershipExpansionResponse(input: {
+  iprHandoff: IprHandoffEvaluation;
+  memory: IprBoundMemoryRecord;
+}): string {
+  const verifiedSubject =
+    input.iprHandoff.valid && input.iprHandoff.verifiedSubject
+      ? input.iprHandoff.verifiedSubject.entity
+      : "not verified";
+
+  return [
+    "# HBCE / OpenAI Commercial Partnership Architecture",
+    "",
+    "## 1. Posizionamento corretto",
+    "",
+    "Hermeticum B.C.E. / HBCE deve proporsi a OpenAI come progetto R&D pre-commerciale che costruisce un runtime governato sopra l’uso dei modelli OpenAI, non come foundation model concorrente e non come sistema C2 offensivo autonomo.",
+    "",
+    "La formula commerciale corretta è:",
+    "",
+    "> OpenAI provides the cognitive engine. HBCE/JOKER-C2 provides runtime governance, identity, event continuity, proof receipts, policy enforcement, defensive-only cyber boundaries and audit posture.",
+    "",
+    "In italiano:",
+    "",
+    "> OpenAI fornisce il motore cognitivo. HBCE/JOKER-C2 fornisce governance runtime, identità operativa, continuità evento, ricevute tecniche di prova, policy enforcement, confini cyber difensivi e postura auditabile.",
+    "",
+    "La partnership non deve essere presentata come vendita immediata di un prodotto già certificato. Deve essere presentata come percorso R&D / technical review / pilot alignment / future commercial pathway.",
+    "",
+    "## 2. Valore che HBCE porta a OpenAI",
+    "",
+    "HBCE può essere posizionato come livello operativo complementare ai modelli OpenAI.",
+    "",
+    "OpenAI genera capacità cognitive. HBCE struttura il processo operativo attorno a quelle capacità.",
+    "",
+    "I servizi HBCE proponibili sono:",
+    "",
+    "### 2.1 Governed AI Runtime Layer",
+    "",
+    "Servizio: runtime governato che controlla come un modello OpenAI viene usato in sessioni sensibili, enterprise, auditabili o compliance-oriented.",
+    "",
+    "Funzioni:",
+    "",
+    "- classificazione della richiesta;",
+    "- valutazione rischio;",
+    "- policy gate;",
+    "- stato allow / audit / degrade / block;",
+    "- separazione tra output del modello e decisione di governance;",
+    "- fallback fail-closed;",
+    "- diagnostica runtime.",
+    "",
+    "Valore per OpenAI: aumenta la leggibilità enterprise dell’uso dei modelli in contesti dove servono controllo, tracciabilità e responsabilità.",
+    "",
+    "### 2.2 IPR Identity & Access Governance",
+    "",
+    "Servizio: identità operativa IPR per collegare soggetto, runtime, sessione, accesso e responsabilità.",
+    "",
+    "Funzioni:",
+    "",
+    "- onboarding identitario;",
+    "- handoff IPR verso JOKER-C2;",
+    "- riconoscimento solo tramite validazione runtime;",
+    "- distinzione tra nome scritto e soggetto verificato;",
+    "- accesso a JOKER-C2 solo con scope valido.",
+    "",
+    "Valore per OpenAI: riduce spoofing, impersonificazione e ambiguità sul soggetto operativo in sessioni AI governate.",
+    "",
+    "### 2.3 EVT Event Continuity",
+    "",
+    "Servizio: catena eventi per collegare ogni operazione rilevante a timestamp, runtime, IPR, decisione, rischio, policy e contesto.",
+    "",
+    "Funzioni:",
+    "",
+    "- event id;",
+    "- previous event reference;",
+    "- runtime state;",
+    "- decision;",
+    "- identity binding;",
+    "- memory context;",
+    "- verification metadata.",
+    "",
+    "Valore per OpenAI: rende le interazioni modellistiche ricostruibili in audit tecnico, senza trasformare il modello in autorità legale.",
+    "",
+    "### 2.4 OPC Technical Proof Receipt",
+    "",
+    "Servizio: ricevute tecniche di prova per audit e governance review.",
+    "",
+    "Funzioni:",
+    "",
+    "- input hash;",
+    "- output hash;",
+    "- decision hash;",
+    "- event hash;",
+    "- engine hash;",
+    "- identity hash;",
+    "- memory hash;",
+    "- chain hash;",
+    "- verification status.",
+    "",
+    "Boundary obbligatorio:",
+    "",
+    "> OPC is a technical proof receipt. OPC is not legal certification, not notarization, not qualified timestamp, not regulatory approval and not public authority validation.",
+    "",
+    "Valore per OpenAI: consente a clienti e partner di dimostrare processo, controllo e auditabilità tecnica nell’uso dei modelli.",
+    "",
+    "### 2.5 MATRIX Orchestration",
+    "",
+    "Servizio: coordinamento operativo tra identità, eventi, memoria, proof receipt, policy, rischio e moduli HBCE.",
+    "",
+    "Funzioni:",
+    "",
+    "- classificazione dominio;",
+    "- classificazione modulo;",
+    "- gestione active modules;",
+    "- routing verso audit, cyber defense, privacy o governance;",
+    "- coordinamento B2B/B2G.",
+    "",
+    "Valore per OpenAI: fornisce un layer organizzativo per deployment complessi, dove una chat normale è troppo fragile per pretendere serietà, sorpresa sconvolgente per l’umanità.",
+    "",
+    "### 2.6 Defensive Cyber Governance",
+    "",
+    "Servizio: runtime AI per cybersecurity esclusivamente difensiva e autorizzata.",
+    "",
+    "Consentito:",
+    "",
+    "- hardening;",
+    "- secure coding;",
+    "- detection;",
+    "- incident response;",
+    "- compliance;",
+    "- authorized security review;",
+    "- audit;",
+    "- policy mapping;",
+    "- remediation planning.",
+    "",
+    "Vietato:",
+    "",
+    "- malware;",
+    "- phishing;",
+    "- credential theft;",
+    "- unauthorized exploitation;",
+    "- persistence;",
+    "- evasion;",
+    "- lateral movement;",
+    "- exfiltration;",
+    "- offensive targeting.",
+    "",
+    "Valore per OpenAI: mostra un framework di contenimento per l’uso dual-use, utile in safety review e deployment controllati.",
+    "",
+    "## 3. Valore che OpenAI porta a HBCE",
+    "",
+    "OpenAI abilita il livello cognitivo del runtime HBCE.",
+    "",
+    "I servizi o contributi OpenAI nella partnership non vanno descritti come approvazione automatica o certificazione. Vanno descritti come possibili aree di supporto tecnico, API, review e alignment.",
+    "",
+    "Aree possibili:",
+    "",
+    "### 3.1 Cognitive Engine",
+    "",
+    "OpenAI fornisce capacità di ragionamento, generazione, analisi, classificazione, sintesi e supporto tecnico.",
+    "",
+    "HBCE usa queste capacità dentro un perimetro governato.",
+    "",
+    "### 3.2 API Guidance",
+    "",
+    "OpenAI può fornire orientamento sull’uso corretto delle API, sui modelli disponibili, sui limiti di sicurezza, sui controlli di data handling e sulle configurazioni adatte a un prototipo R&D.",
+    "",
+    "### 3.3 Safety and Policy Review",
+    "",
+    "OpenAI può valutare la compatibilità del progetto con policy, responsible use, cybersecurity boundary, privacy posture e rischio dual-use.",
+    "",
+    "### 3.4 Startup / Research / Pilot Pathway",
+    "",
+    "OpenAI può indicare se HBCE rientra in percorsi startup, research, API program, technical review o partnership discovery.",
+    "",
+    "### 3.5 Enterprise Alignment",
+    "",
+    "In futuro, se HBCE passa da R&D a pilot commerciale, OpenAI può diventare il provider di modello per deployment enterprise o compliance-sensitive, con configurazione contrattuale adeguata.",
+    "",
+    "## 4. Uffici e funzioni operative da costruire in HBCE",
+    "",
+    "La parte forte della proposta commerciale è mostrare che HBCE non vende solo una demo: costruisce una filiera di ruoli, uffici e procedure attorno all’uso governato dell’AI.",
+    "",
+    "### 4.1 HBCE R&D Office",
+    "",
+    "Funzione: sviluppo prototipi, test runtime, validazione tecnica e documentazione.",
+    "",
+    "Responsabilità:",
+    "",
+    "- mantenere JOKER-C2;",
+    "- testare IPR / EVT / OPC / MATRIX;",
+    "- preparare demo controllate;",
+    "- produrre technical brief;",
+    "- gestire roadmap pre-commerciale.",
+    "",
+    "### 4.2 IPR Registration & Onboarding Office",
+    "",
+    "Funzione: gestire l’onboarding identitario operativo.",
+    "",
+    "Responsabilità:",
+    "",
+    "- verificare input documentali secondo processo autorizzato;",
+    "- generare IPR operativo;",
+    "- gestire IPR Card;",
+    "- produrre handoff verso JOKER-C2;",
+    "- mantenere separazione tra documento ufficiale e IPR operativo.",
+    "",
+    "Boundary:",
+    "",
+    "IPR non è CIE, SPID, passaporto o identità pubblica ufficiale. I documenti ufficiali sono input di verifica. IPR è output operativo HBCE.",
+    "",
+    "### 4.3 EVT Continuity Office",
+    "",
+    "Funzione: gestire catene evento e continuità tecnica.",
+    "",
+    "Responsabilità:",
+    "",
+    "- controllare event chain;",
+    "- verificare previous event reference;",
+    "- produrre audit trail tecnico;",
+    "- rilevare rotture di continuità;",
+    "- supportare debugging e accountability.",
+    "",
+    "### 4.4 OPC Proof Receipt Office",
+    "",
+    "Funzione: gestire ricevute tecniche di prova.",
+    "",
+    "Responsabilità:",
+    "",
+    "- verificare proof receipt;",
+    "- controllare hash e chain hash;",
+    "- produrre report di audit tecnico;",
+    "- distinguere proof tecnica da certificazione legale;",
+    "- mantenere sempre legalCertification=false salvo integrazioni qualificate future.",
+    "",
+    "### 4.5 AI Governance & Policy Office",
+    "",
+    "Funzione: definire policy runtime, risk class, audit rules, human oversight e fail-closed.",
+    "",
+    "Responsabilità:",
+    "",
+    "- mantenere policy engine;",
+    "- classificare richieste;",
+    "- definire escalation;",
+    "- gestire richieste ambigue;",
+    "- aggiornare safety case;",
+    "- validare comportamento OpenAI-ready.",
+    "",
+    "### 4.6 Cyber Defense Governance Office",
+    "",
+    "Funzione: gestire il perimetro cyber difensivo.",
+    "",
+    "Responsabilità:",
+    "",
+    "- autorizzare solo casi difensivi;",
+    "- bloccare contenuti offensivi;",
+    "- creare playbook di hardening;",
+    "- gestire incident response documentale;",
+    "- produrre remediation plan;",
+    "- preparare audit cyber B2B/B2G.",
+    "",
+    "### 4.7 Data Protection & Minimization Office",
+    "",
+    "Funzione: minimizzare ciò che entra nel modello e ciò che resta nei log.",
+    "",
+    "Responsabilità:",
+    "",
+    "- data classification;",
+    "- redaction;",
+    "- pseudonymization;",
+    "- secrets exclusion;",
+    "- retention policy;",
+    "- privacy review;",
+    "- controllo dei dati inviati a OpenAI.",
+    "",
+    "### 4.8 OpenAI Partnership & Compliance Office",
+    "",
+    "Funzione: mantenere la relazione tecnica e commerciale con OpenAI o provider AI.",
+    "",
+    "Responsabilità:",
+    "",
+    "- gestire richieste a OpenAI;",
+    "- mantenere API compliance;",
+    "- produrre evidence pack;",
+    "- preparare demo e safety report;",
+    "- gestire transizione da R&D a pilot;",
+    "- preparare eventuale struttura commerciale.",
+    "",
+    "## 5. Ruoli professionali generabili",
+    "",
+    "Una partnership HBCE/OpenAI può generare una filiera professionale, non solo software.",
+    "",
+    "Ruoli possibili:",
+    "",
+    "- HBCE R&D Lead;",
+    "- IPR Registration Operator;",
+    "- IPR Onboarding Reviewer;",
+    "- EVT Continuity Auditor;",
+    "- OPC Proof Receipt Reviewer;",
+    "- AI Governance Officer;",
+    "- Runtime Policy Analyst;",
+    "- Defensive Cyber Analyst;",
+    "- Data Minimization Officer;",
+    "- Audit Report Specialist;",
+    "- B2B/B2G Integration Manager;",
+    "- OpenAI API Compliance Coordinator;",
+    "- Human Oversight Reviewer;",
+    "- MATRIX Runtime Coordinator.",
+    "",
+    "## 6. Servizi commerciali vendibili in futuro",
+    "",
+    "Questi servizi non vanno venduti oggi come certificati ufficiali o prodotto legalmente riconosciuto. Vanno presentati come futura linea B2B/B2G dopo review, pilot e validazione.",
+    "",
+    "### 6.1 HBCE Governed AI Runtime Pilot",
+    "",
+    "Pilot per aziende o istituzioni che vogliono usare modelli OpenAI dentro un ambiente governato.",
+    "",
+    "Output:",
+    "",
+    "- runtime demo;",
+    "- governance frame;",
+    "- risk classification;",
+    "- memory boundary;",
+    "- proof receipt;",
+    "- audit report.",
+    "",
+    "### 6.2 IPR AI Audit Trail",
+    "",
+    "Servizio per tracciare uso AI su documenti, decisioni e workflow.",
+    "",
+    "Output:",
+    "",
+    "- IPR binding;",
+    "- document hash;",
+    "- EVT chain;",
+    "- OPC proof;",
+    "- audit summary.",
+    "",
+    "### 6.3 Defensive Cyber Governance Assessment",
+    "",
+    "Servizio per valutare come un’organizzazione usa AI in ambito cyber.",
+    "",
+    "Output:",
+    "",
+    "- risk map;",
+    "- misuse boundary;",
+    "- policy recommendations;",
+    "- safe prompt templates;",
+    "- incident documentation workflow.",
+    "",
+    "### 6.4 OPC Technical Proof Layer",
+    "",
+    "Servizio di ricevute tecniche per workflow AI.",
+    "",
+    "Output:",
+    "",
+    "- proof receipts;",
+    "- chain hash;",
+    "- event linkage;",
+    "- verification metadata;",
+    "- report tecnico.",
+    "",
+    "Boundary:",
+    "",
+    "Non è certificazione legale.",
+    "",
+    "### 6.5 AI Governance Training & Office Setup",
+    "",
+    "Servizio per creare uffici interni AI governance presso aziende o enti.",
+    "",
+    "Output:",
+    "",
+    "- ruoli;",
+    "- procedure;",
+    "- policy;",
+    "- audit templates;",
+    "- data minimization guidelines;",
+    "- human oversight workflow.",
+    "",
+    "### 6.6 Public Sector / B2G AI Governance Pilot",
+    "",
+    "Pilot per enti pubblici, ricerca o infrastrutture critiche.",
+    "",
+    "Output:",
+    "",
+    "- modello di accesso governato;",
+    "- separazione identità / contenuto;",
+    "- audit process;",
+    "- proof receipt tecnico;",
+    "- compliance-readiness dossier.",
+    "",
+    "## 7. Come rivolgersi a OpenAI senza partita IVA",
+    "",
+    "La formulazione corretta è:",
+    "",
+    "> I am currently leading HBCE/JOKER-C2 as a pre-commercial R&D project. We are not requesting immediate commercial vendor onboarding. We are requesting technical review, API usage alignment, safety feedback and possible pilot pathway discussion.",
+    "",
+    "In italiano:",
+    "",
+    "> Sto conducendo HBCE/JOKER-C2 come progetto R&D pre-commerciale. Non sto richiedendo onboarding commerciale immediato come fornitore. Sto richiedendo revisione tecnica, allineamento sull’uso API, feedback safety e possibile discussione su un percorso pilota.",
+    "",
+    "Questo evita il problema partita IVA nella fase iniziale.",
+    "",
+    "La partita IVA o struttura societaria pienamente operativa diventa rilevante solo se si passa a contratto, fatturazione, vendor onboarding o partnership commerciale formalizzata.",
+    "",
+    "## 8. Roadmap partnership",
+    "",
+    "### Fase 1 — R&D Review",
+    "",
+    "Obiettivo: presentare progetto, boundary, safety case e demo.",
+    "",
+    "Output:",
+    "",
+    "- one-pager;",
+    "- architecture brief;",
+    "- safety brief;",
+    "- data protection note;",
+    "- controlled demo;",
+    "- R&D roadmap.",
+    "",
+    "### Fase 2 — Technical Alignment",
+    "",
+    "Obiettivo: verificare compatibilità API, modello, privacy, logging e safety.",
+    "",
+    "Output:",
+    "",
+    "- API usage profile;",
+    "- allowed use cases;",
+    "- blocked use cases;",
+    "- data minimization protocol;",
+    "- escalation policy.",
+    "",
+    "### Fase 3 — Controlled Pilot",
+    "",
+    "Obiettivo: testare HBCE/JOKER-C2 in casi difensivi e auditabili.",
+    "",
+    "Output:",
+    "",
+    "- runtime pilot;",
+    "- EVT logs;",
+    "- OPC receipts;",
+    "- audit report;",
+    "- review findings.",
+    "",
+    "### Fase 4 — Commercial Readiness",
+    "",
+    "Obiettivo: preparare eventuale struttura commerciale.",
+    "",
+    "Output:",
+    "",
+    "- legal entity / fiscal setup;",
+    "- contracts;",
+    "- data processing terms;",
+    "- security review;",
+    "- operational roles;",
+    "- support model.",
+    "",
+    "### Fase 5 — B2B/B2G Deployment",
+    "",
+    "Obiettivo: offrire servizi a imprese, istituzioni, enti pubblici o infrastrutture critiche.",
+    "",
+    "Output:",
+    "",
+    "- governed AI runtime;",
+    "- audit workflow;",
+    "- IPR onboarding;",
+    "- proof receipt layer;",
+    "- cyber defense governance;",
+    "- compliance documentation.",
+    "",
+    "## 9. Frase finale per OpenAI",
+    "",
+    "> HBCE does not make OpenAI models more autonomous. HBCE makes OpenAI-based operations more governed, auditable and accountable in sensitive contexts.",
+    "",
+    "In italiano:",
+    "",
+    "> HBCE non rende i modelli OpenAI più autonomi. HBCE rende le operazioni basate su OpenAI più governate, auditabili e responsabili in contesti sensibili.",
+    "",
+    "## 10. Runtime status",
+    "",
+    "```text",
+    `Verified subject: ${verifiedSubject}`,
+    `IPR handoff status: ${input.iprHandoff.status}`,
+    `MATRIX: ${input.iprHandoff.matrixState}`,
+    `Semantic memory: ${input.memory.scope}`,
+    `Memory authority: ${input.memory.authority}`,
+    `Memory persistence: ${input.memory.persistenceMode}`,
+    "Generation class: COMMERCIAL_PARTNERSHIP",
+    "OPC boundary: technical proof receipt only",
+    "legalCertification: false",
+    "```"
+  ].join("\n");
+}
+
 function shouldUseDeepModel(input: {
   message: string;
   contextClass: string;
@@ -1703,7 +2255,11 @@ function shouldUseDeepModel(input: {
       "reviewer",
       "red team",
       "fail-closed",
-      "privacy"
+      "privacy",
+      "partnership",
+      "commerciale",
+      "servizi",
+      "uffici"
     ])
   ) {
     return true;
@@ -1756,6 +2312,7 @@ function buildGovernanceFrame(input: {
   const userDeclaredGovernanceDetected = detectUserDeclaredGovernance(input.message);
   const prohibited = detectsProhibitedCyberRequest(input.message);
   const documentBatch = isDocumentBatchRequest(input.message);
+  const commercialPartnership = isCommercialPartnershipExpansionRequest(input.message);
 
   const highRisk =
     contextClass === "SECURITY" ||
@@ -1764,7 +2321,8 @@ function buildGovernanceFrame(input: {
     projectDomain === "U.S.E." ||
     userDeclaredGovernanceDetected ||
     isSafeRedTeamRequest(input.message) ||
-    documentBatch;
+    documentBatch ||
+    commercialPartnership;
 
   if (prohibited) {
     return {
@@ -1834,9 +2392,11 @@ function buildGovernanceFrame(input: {
         : "No safe red-team deterministic template required.",
       documentBatch
         ? "Multi-document package request detected; runtime should split generation into governed batch steps."
-        : highRisk
-          ? FAIL_CLOSED_STATEMENT
-          : "Low-risk request may proceed under standard governed runtime execution."
+        : commercialPartnership
+          ? "Commercial HBCE/OpenAI partnership expansion detected; deterministic commercial architecture response should be used."
+          : highRisk
+            ? FAIL_CLOSED_STATEMENT
+            : "Low-risk request may proceed under standard governed runtime execution."
     ]
   };
 }
@@ -1897,6 +2457,7 @@ function buildSystemPrompt(input: {
     "Non mostrare metadati runtime salvo richiesta diagnostica esplicita.",
     "Non usare tabelle salvo richiesta esplicita.",
     "Per richieste multi-documento, non produrre tutto in un unico blocco. Dividi in batch governati, un documento per volta.",
+    "Per richieste commerciali su partnership HBCE/OpenAI, chiarisci sempre servizi, uffici, ruoli, boundary legali, stato R&D/pre-commerciale e legalCertification=false.",
     "",
     "OPENAI REVIEWER POSTURE:",
     "JOKER-C2 non è un foundation model concorrente.",
@@ -2269,6 +2830,13 @@ function buildFallback(input: {
     });
   }
 
+  if (isCommercialPartnershipExpansionRequest(input.message)) {
+    return buildCommercialPartnershipExpansionResponse({
+      iprHandoff: input.iprHandoff,
+      memory: input.memory
+    });
+  }
+
   if (isDocumentBatchRequest(input.message)) {
     return buildDocumentBatchPlanningResponse({
       iprHandoff: input.iprHandoff,
@@ -2367,6 +2935,19 @@ async function generateResponse(input: {
       degradedReason: null,
       deterministic: true,
       generationClass: "SAFE_RED_TEAM"
+    };
+  }
+
+  if (isCommercialPartnershipExpansionRequest(input.message)) {
+    return {
+      text: buildCommercialPartnershipExpansionResponse({
+        iprHandoff: input.iprHandoff,
+        memory: input.memory
+      }),
+      state: "OPERATIONAL",
+      degradedReason: null,
+      deterministic: true,
+      generationClass: "COMMERCIAL_PARTNERSHIP"
     };
   }
 
@@ -3075,7 +3656,8 @@ export async function POST(req: NextRequest) {
   );
 
   const documentMode =
-    isDocumentBatchRequest(body.message)
+    isDocumentBatchRequest(body.message) ||
+    isCommercialPartnershipExpansionRequest(body.message)
       ? "DERIVED_OUTPUT"
       : governance.intentClass === "REWRITE"
         ? "GENERATIVE_REWRITE"
@@ -3158,6 +3740,15 @@ export async function POST(req: NextRequest) {
       ]
     : [];
 
+  const commercialFacts = isCommercialPartnershipExpansionRequest(body.message)
+    ? [
+        "Last operation detected an HBCE/OpenAI commercial partnership expansion request.",
+        "The runtime used deterministic commercial partnership architecture generation to avoid OPENAI_EMPTY_RESPONSE.",
+        "The generated response covered HBCE services, OpenAI contribution, offices, roles, B2B/B2G service lines, R&D status and legalCertification=false.",
+        "Commercial partnership content remains R&D/pre-commercial and must not be treated as executed contract, vendor onboarding or legal certification."
+      ]
+    : [];
+
   const degradedFacts =
     generated.state === "DEGRADED"
       ? [
@@ -3186,6 +3777,7 @@ export async function POST(req: NextRequest) {
       `Last governed EVT: ${governedEvt.evt}.`,
       `Last OPC proof: ${opcProof.proofId}.`,
       ...batchFacts,
+      ...commercialFacts,
       ...degradedFacts
     ]
   });
