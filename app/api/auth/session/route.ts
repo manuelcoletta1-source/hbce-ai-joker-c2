@@ -4,7 +4,6 @@ import {
   IPR_AUTH_BOUNDARY,
   IPR_AUTH_COOKIE_NAME,
   IPR_AUTH_DATABASE_REQUIREMENT,
-  IPR_AUTH_PASSWORD_BOUNDARY,
   IPR_AUTH_SESSION_BOUNDARY
 } from "@/lib/ipr-auth";
 
@@ -24,6 +23,8 @@ import {
   toPublicIprAccountProfile
 } from "@/lib/ipr-account-store";
 
+import type { IprAuthStoredSession } from "@/lib/ipr-session-store";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -33,103 +34,103 @@ type UnauthenticatedSessionReason =
   | "SESSION_REVOKED"
   | "SESSION_EXPIRED";
 
-type SessionVerificationReason =
+type SessionRouteReason =
   | "SESSION_ACTIVE"
-  | "SESSION_NOT_FOUND"
-  | "SESSION_REVOKED"
-  | "SESSION_EXPIRED";
+  | "IPR_ACCOUNT_PROFILE_NOT_FOUND"
+  | UnauthenticatedSessionReason;
 
-const AUTH_SESSION_BOUNDARY = {
-  legalCertification: false,
-  authBoundary: IPR_AUTH_BOUNDARY,
-  passwordBoundary: IPR_AUTH_PASSWORD_BOUNDARY,
-  sessionBoundary: IPR_AUTH_SESSION_BOUNDARY,
-  databaseRequirement: IPR_AUTH_DATABASE_REQUIREMENT,
-  accountStoreBoundary: IPR_ACCOUNT_STORE_BOUNDARY,
-  accountProfileBoundary: IPR_ACCOUNT_PROFILE_BOUNDARY,
-  accountDatabaseRequirement: IPR_ACCOUNT_DATABASE_REQUIREMENT
-};
+const AUTH_SESSION_ROUTE_BOUNDARY =
+  "This route verifies the HBCE IPR account session through the server-side session store and resolves the IPR account profile from the server-side account profile store. It does not trust client-side identity text, does not issue official identity, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale or eIDAS qualified trust services, and does not create legal certification.";
 
-function buildUnauthenticatedResponse(input: {
-  reason: UnauthenticatedSessionReason;
-  status?: number;
-}) {
+function buildBoundary() {
+  return {
+    routeBoundary: AUTH_SESSION_ROUTE_BOUNDARY,
+    authBoundary: IPR_AUTH_BOUNDARY,
+    sessionBoundary: IPR_AUTH_SESSION_BOUNDARY,
+    authDatabaseRequirement: IPR_AUTH_DATABASE_REQUIREMENT,
+    accountStoreBoundary: IPR_ACCOUNT_STORE_BOUNDARY,
+    accountProfileBoundary: IPR_ACCOUNT_PROFILE_BOUNDARY,
+    accountDatabaseRequirement: IPR_ACCOUNT_DATABASE_REQUIREMENT,
+    legalCertification: false
+  };
+}
+
+function buildStores() {
+  return {
+    auth: describeDefaultIprAuthStore(),
+    account: describeDefaultIprAccountStore()
+  };
+}
+
+function buildUnauthenticatedResponse(
+  reason: UnauthenticatedSessionReason,
+  status = 401,
+  detail?: string
+) {
   return NextResponse.json(
     {
-      ok: true,
+      ok: false,
       authenticated: false,
-      reason: input.reason,
+      reason,
+      detail:
+        detail ||
+        "No active HBCE IPR account session is available for this request.",
       cookieName: IPR_AUTH_COOKIE_NAME,
       access: {
         decision: "AUTHENTICATION_REQUIRED",
-        scope: "JOKER_C2_ACCESS",
-        identityBinding: "NO_AUTHENTICATED_IPR_SESSION"
+        source: "IPR_ACCOUNT_SESSION",
+        legalCertification: false
       },
       memory: {
         expectedScope: "RUNTIME_ONLY",
         expectedAuthority: "SESSION_RUNTIME_ONLY",
-        reason:
-          "No active server-side IPR session is available. JOKER-C2 must not infer persistent biological identity from client-side text, URL transport data or missing cookies."
+        persistenceMode: "DATABASE_PERSISTENT"
       },
       matrix: {
-        expectedState: "MATRIX_LIMITED",
-        reason:
-          "Without a valid server-side IPR session, MATRIX remains limited for account-level continuity."
+        expectedState: "MATRIX_LIMITED"
       },
-      stores: {
-        auth: describeDefaultIprAuthStore(),
-        account: describeDefaultIprAccountStore()
-      },
-      boundary: AUTH_SESSION_BOUNDARY
+      stores: buildStores(),
+      boundary: buildBoundary(),
+      legalCertification: false
     },
-    { status: input.status ?? 200 }
+    { status }
   );
 }
 
-function buildProfileMissingResponse(input: {
-  humanIpr: string;
-  runtimeIpr: string;
-  session: ReturnType<typeof getPublicSessionFromStoredSession>;
-}) {
+function buildProfileMissingResponse(session: IprAuthStoredSession) {
   return NextResponse.json(
     {
-      ok: true,
+      ok: false,
       authenticated: false,
-      reason: "IPR_ACCOUNT_PROFILE_NOT_FOUND",
+      reason: "IPR_ACCOUNT_PROFILE_NOT_FOUND" satisfies SessionRouteReason,
+      detail:
+        "The HBCE IPR session is valid, but the persistent IPR account profile was not found. Run SET_PASSWORD again with a valid HBCE IPR handoff to rebuild the account profile.",
       cookieName: IPR_AUTH_COOKIE_NAME,
-      session: input.session,
+      session: getPublicSessionFromStoredSession(session),
       access: {
         decision: "ACCOUNT_PROFILE_REQUIRED",
-        scope: "JOKER_C2_ACCESS",
+        source: "IPR_ACCOUNT_SESSION",
         identityBinding: "SESSION_WITHOUT_IPR_ACCOUNT_PROFILE",
-        humanIpr: input.humanIpr,
-        runtimeIpr: input.runtimeIpr
+        legalCertification: false
       },
       memory: {
         expectedScope: "RUNTIME_ONLY",
         expectedAuthority: "SESSION_RUNTIME_ONLY",
-        reason:
-          "A server-side session exists, but no IPR account profile is available. JOKER-C2 must not reconstruct IPR-bound memory without the account profile."
+        persistenceMode: "DATABASE_PERSISTENT"
       },
       matrix: {
-        expectedState: "MATRIX_LIMITED",
-        reason:
-          "MATRIX_ACTIVE requires both authenticated IPR session and account profile reconstruction."
+        expectedState: "MATRIX_LIMITED"
       },
-      stores: {
-        auth: describeDefaultIprAuthStore(),
-        account: describeDefaultIprAccountStore()
-      },
-      boundary: AUTH_SESSION_BOUNDARY,
-      instruction:
-        "Run SET_PASSWORD again through /api/auth/ipr-login with a valid HBCE IPR handoff so the account profile can be created."
+      stores: buildStores(),
+      boundary: buildBoundary(),
+      legalCertification: false
     },
     { status: 409 }
   );
 }
 
 function toUnauthenticatedReason(
-  reason: SessionVerificationReason
+  reason: "SESSION_ACTIVE" | "SESSION_NOT_FOUND" | "SESSION_REVOKED" | "SESSION_EXPIRED"
 ): UnauthenticatedSessionReason {
   if (reason === "SESSION_ACTIVE") {
     return "SESSION_NOT_FOUND";
@@ -139,75 +140,75 @@ function toUnauthenticatedReason(
 }
 
 export async function GET(req: NextRequest) {
-  const token = req.cookies.get(IPR_AUTH_COOKIE_NAME)?.value || "";
+  const token = req.cookies.get(IPR_AUTH_COOKIE_NAME)?.value;
 
   if (!token) {
-    return buildUnauthenticatedResponse({
-      reason: "SESSION_COOKIE_MISSING"
-    });
+    return buildUnauthenticatedResponse(
+      "SESSION_COOKIE_MISSING",
+      401,
+      "The hbce_ipr_session cookie is missing. Login with Human IPR and password before requesting a persistent JOKER-C2 session."
+    );
   }
 
   const authStore = getDefaultIprAuthStore();
   const accountStore = getDefaultIprAccountStore();
-  const verification = authStore.verifySessionToken(token);
 
-  if (!verification.ok || !verification.session) {
-    return buildUnauthenticatedResponse({
-      reason: toUnauthenticatedReason(verification.reason)
-    });
+  const verification = await authStore.verifySessionTokenAsync(token);
+
+  if (!verification.ok || !verification.authenticated) {
+    return buildUnauthenticatedResponse(
+      toUnauthenticatedReason(verification.reason),
+      401,
+      "The hbce_ipr_session cookie is present, but the server-side HBCE IPR session is not active."
+    );
   }
 
-  const publicSession = getPublicSessionFromStoredSession(verification.session);
-  const accountProfile = accountStore.getProfile(verification.session.humanIpr);
+  const session = verification.session;
+  const accountProfile = await accountStore.getProfileAsync(session.humanIpr);
 
   if (!accountProfile) {
-    return buildProfileMissingResponse({
-      humanIpr: verification.session.humanIpr,
-      runtimeIpr: verification.session.runtimeIpr,
-      session: publicSession
-    });
+    return buildProfileMissingResponse(session);
   }
 
-  const publicAccountProfile = toPublicIprAccountProfile(accountProfile);
-  const reconstructedIprHandoff =
-    toIprHandoffPayloadFromAccountProfile(accountProfile);
+  const touchedProfile =
+    (await accountStore.touchLoginAsync(session.humanIpr)) || accountProfile;
 
-  return NextResponse.json({
-    ok: true,
-    authenticated: true,
-    reason: "SESSION_ACTIVE",
-    cookieName: IPR_AUTH_COOKIE_NAME,
-    session: publicSession,
-    accountProfile: publicAccountProfile,
-    reconstructedIprHandoff,
-    access: {
-      decision: "ACCESS_GRANTED",
-      scope: accountProfile.accessScope,
-      identityBinding: accountProfile.identityBinding,
-      humanIpr: verification.session.humanIpr,
-      runtimeIpr: verification.session.runtimeIpr,
-      accountId: accountProfile.accountId
+  const publicSession = getPublicSessionFromStoredSession(session);
+  const publicAccountProfile = toPublicIprAccountProfile(touchedProfile);
+  const reconstructedIprHandoff =
+    toIprHandoffPayloadFromAccountProfile(touchedProfile);
+
+  return NextResponse.json(
+    {
+      ok: true,
+      authenticated: true,
+      reason: "SESSION_ACTIVE" satisfies SessionRouteReason,
+      cookieName: IPR_AUTH_COOKIE_NAME,
+      session: publicSession,
+      accountProfile: publicAccountProfile,
+      reconstructedIprHandoff,
+      access: {
+        decision: "ACCESS_GRANTED",
+        scope: touchedProfile.accessScope,
+        identityBinding: touchedProfile.identityBinding,
+        source: "IPR_ACCOUNT_SESSION",
+        legalCertification: false
+      },
+      memory: {
+        expectedScope: touchedProfile.semanticMemoryScope,
+        expectedAuthority: "SERVER_RUNTIME_VALIDATED",
+        persistenceMode: "DATABASE_PERSISTENT"
+      },
+      matrix: {
+        expectedState: touchedProfile.matrixState,
+        active: touchedProfile.matrixState === "MATRIX_ACTIVE"
+      },
+      stores: buildStores(),
+      boundary: buildBoundary(),
+      legalCertification: false
     },
-    memory: {
-      expectedScope: accountProfile.semanticMemoryScope,
-      expectedAuthority: "SERVER_RUNTIME_VALIDATED",
-      expectedPersistence:
-        "PROCESS_AUTH_STORE_MVP and PROCESS_ACCOUNT_STORE_MVP until DATABASE_PERSISTENT is connected",
-      reason:
-        "A valid server-side IPR session and account profile are active. Runtime may use this session to restore IPR-bound continuity once /api/chat is connected to account-session resolution."
-    },
-    matrix: {
-      expectedState: accountProfile.matrixState,
-      active: accountProfile.matrixState === "MATRIX_ACTIVE",
-      reason:
-        "Authenticated IPR account session plus account profile can become the durable identity source for JOKER-C2 runtime access."
-    },
-    stores: {
-      auth: authStore.describe(),
-      account: accountStore.describe()
-    },
-    boundary: AUTH_SESSION_BOUNDARY
-  });
+    { status: 200 }
+  );
 }
 
 export async function POST(req: NextRequest) {
