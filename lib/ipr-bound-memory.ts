@@ -9,8 +9,7 @@ import {
 
 import type {
   IprBoundMemoryStoreAdapter,
-  IprBoundMemoryStoreDescription,
-  IprBoundMemoryStoreRecord
+  IprBoundMemoryStoreDescription
 } from "./ipr-bound-memory-store";
 
 export type MemoryScope = "RUNTIME_ONLY" | "IPR_BOUND";
@@ -105,6 +104,7 @@ export type IprBoundMemoryRecordWithoutHash = {
   facts: string[];
   recentTurns: MemoryTurn[];
   summary: string;
+  [key: string]: unknown;
 };
 
 export type IprBoundMemoryRecord = IprBoundMemoryRecordWithoutHash & {
@@ -117,7 +117,7 @@ export type GetOrCreateRuntimeMemoryInput = {
   runtime: IprBoundMemoryRuntimeIdentity;
   previousContinuityRef?: string | null;
   seedFacts?: string[];
-  store?: IprBoundMemoryStoreAdapter<IprBoundMemoryStoreRecord>;
+  store?: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>;
 };
 
 export type UpdateMemoryAfterCompletionInput = {
@@ -128,7 +128,7 @@ export type UpdateMemoryAfterCompletionInput = {
   opcProofId?: string;
   opcChainHash?: string;
   extraFacts?: string[];
-  store?: IprBoundMemoryStoreAdapter<IprBoundMemoryStoreRecord>;
+  store?: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>;
 };
 
 export type PublicIprBoundMemoryRecord = {
@@ -166,7 +166,10 @@ export function sha256Hex(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex").toUpperCase();
 }
 
-export function truncateRuntimeText(value: string, max = MAX_MEMORY_TEXT_CHARS): string {
+export function truncateRuntimeText(
+  value: string,
+  max = MAX_MEMORY_TEXT_CHARS
+): string {
   const normalized = value.replace(/\s+/g, " ").trim();
 
   if (normalized.length <= max) {
@@ -197,7 +200,11 @@ function normalizeFact(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
-function mergeUniqueStrings(current: string[], next: string[], max: number): string[] {
+function mergeUniqueStrings(
+  current: string[],
+  next: string[],
+  max: number
+): string[] {
   const merged: string[] = [];
   const seen = new Set<string>();
 
@@ -222,13 +229,13 @@ function mergeUniqueStrings(current: string[], next: string[], max: number): str
 }
 
 function resolveMemoryStore(
-  store?: IprBoundMemoryStoreAdapter<IprBoundMemoryStoreRecord>
-): IprBoundMemoryStoreAdapter<IprBoundMemoryStoreRecord> {
-  return store ?? getDefaultIprBoundMemoryStore();
+  store?: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>
+): IprBoundMemoryStoreAdapter<IprBoundMemoryRecord> {
+  return store ?? getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>();
 }
 
 function resolvePersistenceMode(
-  store: IprBoundMemoryStoreAdapter<IprBoundMemoryStoreRecord>
+  store: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>
 ): MemoryPersistenceMode {
   if (store.kind === "PROCESS_MEMORY_MVP") {
     return "PROCESS_MEMORY_MVP";
@@ -243,16 +250,6 @@ function resolvePersistenceMode(
   }
 
   return "EXTERNAL_ADAPTER";
-}
-
-function toStoreRecord(record: IprBoundMemoryRecord): IprBoundMemoryStoreRecord {
-  return record as unknown as IprBoundMemoryStoreRecord;
-}
-
-function fromStoreRecord(
-  record: IprBoundMemoryStoreRecord | undefined
-): IprBoundMemoryRecord | undefined {
-  return record as unknown as IprBoundMemoryRecord | undefined;
 }
 
 function buildMemoryKey(input: GetOrCreateRuntimeMemoryInput): string {
@@ -290,7 +287,9 @@ function buildMemorySummary(input: {
   ].join(" ");
 }
 
-function buildDerivedCanonicalMemoryFacts(input: GetOrCreateRuntimeMemoryInput): string[] {
+function buildDerivedCanonicalMemoryFacts(
+  input: GetOrCreateRuntimeMemoryInput
+): string[] {
   const facts = [
     "The active operational repository is hbce-ai-joker-c2.",
     "JOKER-C2 is the governed AI runtime demonstrator of HERMETICUM B.C.E., not a foundation model and not an autonomous offensive C2 system.",
@@ -381,7 +380,7 @@ export function getOrCreateRuntimeMemory(
 ): IprBoundMemoryRecord {
   const store = resolveMemoryStore(input.store);
   const memoryKey = buildMemoryKey(input);
-  const existing = fromStoreRecord(store.get(memoryKey));
+  const existing = store.get(memoryKey);
   const now = new Date().toISOString();
   const persistenceMode = resolvePersistenceMode(store);
 
@@ -426,7 +425,7 @@ export function getOrCreateRuntimeMemory(
       memoryHash: buildMemoryRecordHash(updatedWithoutHash)
     };
 
-    store.set(memoryKey, toStoreRecord(updated));
+    store.set(memoryKey, updated);
 
     return updated;
   }
@@ -463,7 +462,7 @@ export function getOrCreateRuntimeMemory(
     memoryHash: buildMemoryRecordHash(createdWithoutHash)
   };
 
-  store.set(memoryKey, toStoreRecord(created));
+  store.set(memoryKey, created);
 
   return created;
 }
@@ -531,7 +530,7 @@ export function updateMemoryAfterCompletion(
     memoryHash: buildMemoryRecordHash(updatedWithoutHash)
   };
 
-  store.set(updated.memoryKey, toStoreRecord(updated));
+  store.set(updated.memoryKey, updated);
 
   return updated;
 }
@@ -622,15 +621,16 @@ export function describeRuntimeMemoryStore(): IprBoundMemoryStoreDescription {
 }
 
 export function getRuntimeMemoryStoreSize(): number {
-  return getDefaultIprBoundMemoryStore().size();
+  return getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>().size();
 }
 
 export function getRuntimeMemoryByKeyHash(
   memoryKeyHash: string
 ): PublicIprBoundMemoryRecord | null {
-  const memory = fromStoreRecord(
-    getDefaultIprBoundMemoryStore().findByMemoryKeyHash(memoryKeyHash) ?? undefined
-  );
+  const memory =
+    getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>().findByMemoryKeyHash(
+      memoryKeyHash
+    );
 
   if (!memory) {
     return null;
@@ -640,13 +640,13 @@ export function getRuntimeMemoryByKeyHash(
 }
 
 export function clearProcessRuntimeMemory(): void {
-  getProcessIprBoundMemoryStore().clear();
+  getProcessIprBoundMemoryStore<IprBoundMemoryRecord>().clear();
 }
 
 export function getProcessMemoryStoreDescription(): IprBoundMemoryStoreDescription {
-  return getProcessIprBoundMemoryStore().describe();
+  return getProcessIprBoundMemoryStore<IprBoundMemoryRecord>().describe();
 }
 
 export function getDatabaseReadyMemoryStoreDescription(): IprBoundMemoryStoreDescription {
-  return getDatabaseReadyIprBoundMemoryStore().describe();
+  return getDatabaseReadyIprBoundMemoryStore<IprBoundMemoryRecord>().describe();
 }
