@@ -1,569 +1,260 @@
-import { createHash, randomUUID } from "node:crypto";
+import type { IprBoundMemoryRecord } from "./ipr-bound-memory";
 
-export type MemoryScope = "RUNTIME_ONLY" | "IPR_BOUND";
-
-export type MemoryPersistenceMode =
+export type IprBoundMemoryStoreKind =
   | "PROCESS_MEMORY_MVP"
-  | "DATABASE_READY";
+  | "DATABASE_READY"
+  | "DATABASE_PERSISTENT"
+  | "EXTERNAL_ADAPTER";
 
-export type MemoryAuthority =
-  | "SESSION_RUNTIME_ONLY"
-  | "SERVER_RUNTIME_VALIDATED";
+export type IprBoundMemoryStoreStatus =
+  | "AVAILABLE"
+  | "NOT_CONFIGURED"
+  | "DEGRADED";
 
-export type MemorySubjectKind =
-  | "BIOLOGICAL_SUBJECT"
-  | "AI_RUNTIME"
-  | "UNKNOWN";
-
-export type IprBoundMemorySubject = {
-  entity: string;
-  ipr: string;
-  kind: MemorySubjectKind | string;
+export type IprBoundMemoryStoreDescription = {
+  name: string;
+  kind: IprBoundMemoryStoreKind;
+  status: IprBoundMemoryStoreStatus;
+  durable: boolean;
+  runtimeScoped: boolean;
+  recordCount: number;
+  boundary: string;
 };
 
-export type IprBoundMemoryCertificate = {
-  certificateId: string;
-  certificateStatus: string;
-  certificateScope: string[];
-  certificateKind?: string;
-  cardSerial?: string;
-  certificateHash?: string;
+export type IprBoundMemoryStoreAdapter = {
+  name: string;
+  kind: IprBoundMemoryStoreKind;
+  durable: boolean;
+  runtimeScoped: boolean;
+
+  describe(): IprBoundMemoryStoreDescription;
+
+  get(memoryKey: string): IprBoundMemoryRecord | undefined;
+  set(memoryKey: string, record: IprBoundMemoryRecord): IprBoundMemoryRecord;
+  has(memoryKey: string): boolean;
+  delete(memoryKey: string): boolean;
+  clear(): void;
+  size(): number;
+  values(): IprBoundMemoryRecord[];
+  findByMemoryKeyHash(memoryKeyHash: string): IprBoundMemoryRecord | null;
 };
 
-export type IprBoundMemoryRuntimeIdentity = {
-  entity: string;
-  ipr: string;
-  checkpoint?: string;
-  cycle?: string;
-  core?: string;
-  org?: string;
-  location?: string;
+const PROCESS_MEMORY_STORE_BOUNDARY =
+  "This adapter stores IPR-bound memory in server-side process memory only. It is valid for MVP runtime demonstrations, but it is not durable enterprise storage and may reset on redeploy, cold start, instance recycling or runtime migration.";
+
+const DATABASE_PLACEHOLDER_BOUNDARY =
+  "This adapter placeholder declares a future durable database persistence layer. It is not active until a real database implementation, access control, retention policy, encryption strategy and audit backend are connected.";
+
+type HbceJokerC2GlobalMemoryStore = typeof globalThis & {
+  __HBCE_JOKER_C2_IPR_BOUND_MEMORY_STORE_V1__?: Map<
+    string,
+    IprBoundMemoryRecord
+  >;
 };
 
-export type IprBoundMemoryHandoffEvaluation = {
-  isValid: boolean;
-  source: string;
-  authority: string;
-  matrixState: string;
-  semanticMemoryScope: MemoryScope;
-  reason: string;
-  accessDecision?: string;
-  identityBinding?: string;
-  subject?: IprBoundMemorySubject;
-  certificate?: IprBoundMemoryCertificate;
-};
+const globalMemoryStore = globalThis as HbceJokerC2GlobalMemoryStore;
 
-export type MemoryEventLink = {
-  evt: string;
-  opcProofId?: string;
-  opcChainHash?: string;
-  createdAt: string;
-  userMessageHash: string;
-  assistantMessageHash: string;
-};
-
-export type MemoryTurn = {
-  user: string;
-  assistant: string;
-  createdAt: string;
-  evt?: string;
-};
-
-export type IprBoundMemoryRecord = {
-  memoryId: string;
-  memoryKey: string;
-  memoryKeyHash: string;
-  scope: MemoryScope;
-  authority: MemoryAuthority;
-  persistenceMode: MemoryPersistenceMode;
-  subject?: IprBoundMemorySubject;
-  certificate?: IprBoundMemoryCertificate;
-  runtime: IprBoundMemoryRuntimeIdentity;
-  matrixState: string;
-  sessionId: string;
-  createdAt: string;
-  updatedAt: string;
-  lastEvt?: string;
-  lastOpcProofId?: string;
-  lastOpcChainHash?: string;
-  eventLinks: MemoryEventLink[];
-  facts: string[];
-  recentTurns: MemoryTurn[];
-  summary: string;
-  memoryHash: string;
-};
-
-export type GetOrCreateRuntimeMemoryInput = {
-  sessionId: string;
-  handoff: IprBoundMemoryHandoffEvaluation;
-  runtime: IprBoundMemoryRuntimeIdentity;
-  previousContinuityRef?: string | null;
-  seedFacts?: string[];
-};
-
-export type UpdateMemoryAfterCompletionInput = {
-  memory: IprBoundMemoryRecord;
-  userMessage: string;
-  assistantMessage: string;
-  evt: string;
-  opcProofId?: string;
-  opcChainHash?: string;
-  extraFacts?: string[];
-};
-
-export type PublicIprBoundMemoryRecord = {
-  memoryId: string;
-  memoryKeyHash: string;
-  scope: MemoryScope;
-  authority: MemoryAuthority;
-  persistenceMode: MemoryPersistenceMode;
-  subject?: IprBoundMemorySubject;
-  certificate?: IprBoundMemoryCertificate;
-  runtime: IprBoundMemoryRuntimeIdentity;
-  matrixState: string;
-  sessionId: string;
-  createdAt: string;
-  updatedAt: string;
-  lastEvt?: string;
-  lastOpcProofId?: string;
-  lastOpcChainHash?: string;
-  eventLinks: MemoryEventLink[];
-  facts: string[];
-  recentTurns: MemoryTurn[];
-  summary: string;
-  memoryHash: string;
-};
-
-const MAX_MEMORY_FACTS = 32;
-const MAX_MEMORY_EVENTS = 24;
-const MAX_MEMORY_TURNS = 8;
-const MAX_MEMORY_TEXT_CHARS = 900;
-
-export const IPR_BOUND_MEMORY_BOUNDARY =
-  "IPR-bound memory preserves operational continuity only. It cannot override HBCE governance, policy evaluation, cyber safety boundaries, human oversight, fail-closed logic, or legal certification boundaries.";
-
-const globalMemoryStore = globalThis as typeof globalThis & {
-  __HBCE_JOKER_C2_IPR_BOUND_MEMORY__?: Map<string, IprBoundMemoryRecord>;
-};
-
-const iprBoundMemoryStore =
-  globalMemoryStore.__HBCE_JOKER_C2_IPR_BOUND_MEMORY__ ??
+const processMemoryMap =
+  globalMemoryStore.__HBCE_JOKER_C2_IPR_BOUND_MEMORY_STORE_V1__ ??
   new Map<string, IprBoundMemoryRecord>();
 
-globalMemoryStore.__HBCE_JOKER_C2_IPR_BOUND_MEMORY__ = iprBoundMemoryStore;
+globalMemoryStore.__HBCE_JOKER_C2_IPR_BOUND_MEMORY_STORE_V1__ =
+  processMemoryMap;
 
-export function sha256Hex(value: string): string {
-  return createHash("sha256").update(value, "utf8").digest("hex").toUpperCase();
-}
-
-export function truncateRuntimeText(value: string, max = MAX_MEMORY_TEXT_CHARS): string {
-  const normalized = value.replace(/\s+/g, " ").trim();
-
-  if (normalized.length <= max) {
-    return normalized;
-  }
-
-  return `${normalized.slice(0, max - 3)}...`;
-}
-
-function stableStringify(value: unknown): string {
-  if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
-  }
-
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
-  }
-
-  const record = value as Record<string, unknown>;
-  const keys = Object.keys(record).sort();
-
-  return `{${keys
-    .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
-    .join(",")}}`;
-}
-
-function normalizeFact(value: string): string {
+function normalizeMemoryKey(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
-function mergeUniqueStrings(current: string[], next: string[], max: number): string[] {
-  const merged: string[] = [];
-  const seen = new Set<string>();
-
-  for (const item of [...current, ...next]) {
-    const normalized = normalizeFact(item);
-
-    if (!normalized) {
-      continue;
-    }
-
-    const key = normalized.toLowerCase();
-
-    if (seen.has(key)) {
-      continue;
-    }
-
-    seen.add(key);
-    merged.push(normalized);
-  }
-
-  return merged.slice(-max);
+function normalizeMemoryKeyHash(value: string): string {
+  return value.replace(/\s+/g, "").trim().toUpperCase();
 }
 
-function buildMemoryKey(input: GetOrCreateRuntimeMemoryInput): string {
-  if (input.handoff.isValid && input.handoff.subject?.ipr) {
-    return [
-      "IPR_BOUND",
-      input.handoff.subject.ipr,
-      input.runtime.ipr,
-      input.sessionId
-    ].join("::");
+function assertMemoryKey(memoryKey: string): string {
+  const normalized = normalizeMemoryKey(memoryKey);
+
+  if (!normalized) {
+    throw new Error("IPR_BOUND_MEMORY_STORE_EMPTY_MEMORY_KEY");
   }
 
-  return ["RUNTIME_ONLY", input.runtime.ipr, input.sessionId].join("::");
+  return normalized;
 }
 
-function buildMemorySummary(input: {
-  handoff: IprBoundMemoryHandoffEvaluation;
-  runtime: IprBoundMemoryRuntimeIdentity;
-  sessionId: string;
-}): string {
-  if (input.handoff.isValid && input.handoff.subject) {
-    return [
-      `JOKER-C2 is operating with IPR-bound memory for ${input.handoff.subject.entity}.`,
-      `Human IPR ${input.handoff.subject.ipr} is bound to runtime IPR ${input.runtime.ipr}.`,
-      `Memory key is scoped to human_ipr + runtime_ipr + session_id.`,
-      `Session ${input.sessionId} remains governed by HBCE policy, EVT continuity, OPC proof receipts and MATRIX coordination.`
-    ].join(" ");
+function assertMemoryRecord(record: IprBoundMemoryRecord): IprBoundMemoryRecord {
+  if (!record || typeof record !== "object") {
+    throw new Error("IPR_BOUND_MEMORY_STORE_INVALID_RECORD");
   }
 
-  return [
-    `JOKER-C2 is operating with runtime-only memory.`,
-    `No verified biological IPR is available for this session.`,
-    `Memory remains scoped to runtime IPR ${input.runtime.ipr} and session ${input.sessionId}.`,
-    `No biological identity continuity may be inferred without server-side IPR validation.`
-  ].join(" ");
-}
-
-function buildDerivedCanonicalMemoryFacts(input: GetOrCreateRuntimeMemoryInput): string[] {
-  const facts = [
-    "The active operational repository is hbce-ai-joker-c2.",
-    "JOKER-C2 is the governed AI runtime demonstrator of HERMETICUM B.C.E., not a foundation model and not an autonomous offensive C2 system.",
-    "OpenAI provides the cognitive engine; HBCE/JOKER-C2 provides runtime governance, identity, event continuity, risk logic, proof receipts and audit posture.",
-    "HBCE IPR Onboarding is the gateway that prepares the IPR handoff; JOKER-C2 operates after a valid handoff reaches the runtime.",
-    "The central runtime file for chat orchestration is app/api/chat/route.ts.",
-    "The dedicated server-side memory module is lib/ipr-bound-memory.ts.",
-    "IPR identifies; EVT traces; Memory preserves continuity; OPC proves; MATRIX organizes; HBCE governs.",
-    "The memory key must be scoped to human_ipr + runtime_ipr + session_id when biological IPR is verified.",
-    "If the biological IPR is not verified, semantic memory remains RUNTIME_ONLY.",
-    "If the biological IPR is verified server-side, semantic memory may become IPR_BOUND.",
-    "Every governed operation should preserve continuity through EVT and OPC linkage.",
-    "Memory cannot override policy, risk evaluation, human oversight, cyber safety, fail-closed behavior or legal certification boundaries.",
-    "Repository work must be delivered as complete integral files, not partial patches.",
-    "For GitHub work, the expected delivery format is: nome file, ragionamento della rifattorizzazione, il file integrale, il commit del file."
-  ];
-
-  if (input.previousContinuityRef) {
-    facts.push(`The previous runtime continuity reference is ${input.previousContinuityRef}.`);
+  if (!record.memoryKey || !record.memoryKeyHash || !record.memoryId) {
+    throw new Error("IPR_BOUND_MEMORY_STORE_INCOMPLETE_RECORD");
   }
 
-  if (input.handoff.isValid && input.handoff.subject) {
-    facts.push(
-      `The verified biological subject is ${input.handoff.subject.entity}.`,
-      `The verified biological IPR is ${input.handoff.subject.ipr}.`,
-      `The current memory scope is IPR_BOUND.`,
-      `The current memory authority is SERVER_RUNTIME_VALIDATED.`,
-      `The current MATRIX state is ${input.handoff.matrixState}.`
-    );
-  } else {
-    facts.push(
-      "No verified biological subject is available.",
-      "The current memory scope is RUNTIME_ONLY.",
-      "The current memory authority is SESSION_RUNTIME_ONLY."
-    );
-  }
-
-  if (input.handoff.certificate) {
-    facts.push(
-      `The active operational certificate is ${input.handoff.certificate.certificateId}.`,
-      `The operational certificate status is ${input.handoff.certificate.certificateStatus}.`,
-      `The operational certificate scope is ${input.handoff.certificate.certificateScope.join(", ")}.`
-    );
-
-    if (input.handoff.certificate.cardSerial) {
-      facts.push(`The active IPR Card serial is ${input.handoff.certificate.cardSerial}.`);
-    }
-  }
-
-  if (input.seedFacts?.length) {
-    facts.push(...input.seedFacts);
-  }
-
-  return mergeUniqueStrings([], facts, MAX_MEMORY_FACTS);
+  return record;
 }
 
-export function buildMemoryRecordHash(
-  record: Omit<IprBoundMemoryRecord, "memoryHash"> | IprBoundMemoryRecord
-): string {
-  const canonical = {
-    memoryId: record.memoryId,
-    memoryKeyHash: record.memoryKeyHash,
-    scope: record.scope,
-    authority: record.authority,
-    persistenceMode: record.persistenceMode,
-    subject: record.subject,
-    certificate: record.certificate,
-    runtime: record.runtime,
-    matrixState: record.matrixState,
-    sessionId: record.sessionId,
-    createdAt: record.createdAt,
-    updatedAt: record.updatedAt,
-    lastEvt: record.lastEvt,
-    lastOpcProofId: record.lastOpcProofId,
-    lastOpcChainHash: record.lastOpcChainHash,
-    eventLinks: record.eventLinks,
-    facts: record.facts,
-    recentTurns: record.recentTurns,
-    summary: record.summary
-  };
-
-  return sha256Hex(stableStringify(canonical));
-}
-
-export function getOrCreateRuntimeMemory(
-  input: GetOrCreateRuntimeMemoryInput
-): IprBoundMemoryRecord {
-  const memoryKey = buildMemoryKey(input);
-  const existing = iprBoundMemoryStore.get(memoryKey);
-  const now = new Date().toISOString();
-
-  const scope: MemoryScope =
-    input.handoff.isValid && input.handoff.subject?.ipr ? "IPR_BOUND" : "RUNTIME_ONLY";
-
-  const authority: MemoryAuthority =
-    scope === "IPR_BOUND" ? "SERVER_RUNTIME_VALIDATED" : "SESSION_RUNTIME_ONLY";
-
-  if (existing) {
-    const nextFacts = buildDerivedCanonicalMemoryFacts(input);
-
-    const updatedWithoutHash: Omit<IprBoundMemoryRecord, "memoryHash"> = {
-      ...existing,
-      scope,
-      authority,
-      subject: input.handoff.subject ?? existing.subject,
-      certificate: input.handoff.certificate ?? existing.certificate,
-      runtime: input.runtime,
-      matrixState: input.handoff.matrixState,
-      updatedAt: now,
-      facts: mergeUniqueStrings(existing.facts, nextFacts, MAX_MEMORY_FACTS),
-      summary: buildMemorySummary({
-        handoff: input.handoff,
-        runtime: input.runtime,
-        sessionId: input.sessionId
-      })
-    };
-
-    const updated: IprBoundMemoryRecord = {
-      ...updatedWithoutHash,
-      memoryHash: buildMemoryRecordHash(updatedWithoutHash)
-    };
-
-    iprBoundMemoryStore.set(memoryKey, updated);
-
-    return updated;
-  }
-
-  const createdWithoutHash: Omit<IprBoundMemoryRecord, "memoryHash"> = {
-    memoryId: `MEM-${sha256Hex(`${memoryKey}::${now}::${randomUUID()}`).slice(0, 16)}`,
-    memoryKey,
-    memoryKeyHash: sha256Hex(memoryKey),
-    scope,
-    authority,
-    persistenceMode: "PROCESS_MEMORY_MVP",
-    subject: input.handoff.subject,
-    certificate: input.handoff.certificate,
-    runtime: input.runtime,
-    matrixState: input.handoff.matrixState,
-    sessionId: input.sessionId,
-    createdAt: now,
-    updatedAt: now,
-    lastEvt: input.previousContinuityRef || undefined,
-    lastOpcProofId: undefined,
-    lastOpcChainHash: undefined,
-    eventLinks: [],
-    facts: buildDerivedCanonicalMemoryFacts(input),
-    recentTurns: [],
-    summary: buildMemorySummary({
-      handoff: input.handoff,
-      runtime: input.runtime,
-      sessionId: input.sessionId
-    })
-  };
-
-  const created: IprBoundMemoryRecord = {
-    ...createdWithoutHash,
-    memoryHash: buildMemoryRecordHash(createdWithoutHash)
-  };
-
-  iprBoundMemoryStore.set(memoryKey, created);
-
-  return created;
-}
-
-export function updateMemoryAfterCompletion(
-  input: UpdateMemoryAfterCompletionInput
-): IprBoundMemoryRecord {
-  const now = new Date().toISOString();
-
-  const eventLink: MemoryEventLink = {
-    evt: input.evt,
-    opcProofId: input.opcProofId,
-    opcChainHash: input.opcChainHash,
-    createdAt: now,
-    userMessageHash: sha256Hex(input.userMessage),
-    assistantMessageHash: sha256Hex(input.assistantMessage)
-  };
-
-  const turn: MemoryTurn = {
-    user: truncateRuntimeText(input.userMessage),
-    assistant: truncateRuntimeText(input.assistantMessage),
-    createdAt: now,
-    evt: input.evt
-  };
-
-  const nextFacts = mergeUniqueStrings(
-    input.memory.facts,
-    input.extraFacts ?? [],
-    MAX_MEMORY_FACTS
-  );
-
-  const updatedWithoutHash: Omit<IprBoundMemoryRecord, "memoryHash"> = {
-    ...input.memory,
-    updatedAt: now,
-    lastEvt: input.evt,
-    lastOpcProofId: input.opcProofId ?? input.memory.lastOpcProofId,
-    lastOpcChainHash: input.opcChainHash ?? input.memory.lastOpcChainHash,
-    eventLinks: [...input.memory.eventLinks, eventLink].slice(-MAX_MEMORY_EVENTS),
-    facts: nextFacts,
-    recentTurns: [...input.memory.recentTurns, turn].slice(-MAX_MEMORY_TURNS),
-    summary: [
-      input.memory.summary,
-      `Last governed interaction was linked to ${input.evt}.`,
-      input.opcProofId ? `Last OPC proof receipt is ${input.opcProofId}.` : "",
-      input.opcChainHash ? `Last OPC chain hash is ${input.opcChainHash}.` : ""
-    ]
-      .filter(Boolean)
-      .join(" ")
-  };
-
-  const updated: IprBoundMemoryRecord = {
-    ...updatedWithoutHash,
-    memoryHash: buildMemoryRecordHash(updatedWithoutHash)
-  };
-
-  iprBoundMemoryStore.set(updated.memoryKey, updated);
-
-  return updated;
-}
-
-export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
-  const subjectLine = memory.subject
-    ? `Verified biological subject: ${memory.subject.entity} (${memory.subject.ipr}).`
-    : "Verified biological subject: NOT_VERIFIED.";
-
-  const certificateLine = memory.certificate
-    ? [
-        `Certificate: ${memory.certificate.certificateId}.`,
-        `Status: ${memory.certificate.certificateStatus}.`,
-        `Scope: ${memory.certificate.certificateScope.join(", ")}.`
-      ].join(" ")
-    : "Certificate: NO_CERTIFICATE.";
-
-  const recentTurns = memory.recentTurns.length
-    ? memory.recentTurns
-        .map((turn, index) =>
-          [
-            `Turn ${index + 1}:`,
-            `User: ${turn.user}`,
-            `Assistant: ${turn.assistant}`,
-            turn.evt ? `EVT: ${turn.evt}` : ""
-          ]
-            .filter(Boolean)
-            .join(" ")
-        )
-        .join("\n")
-    : "No previous memory turns recorded in this runtime process.";
-
-  return [
-    "HBCE-GENERATED IPR-BOUND MEMORY CONTEXT",
-    `Memory ID: ${memory.memoryId}`,
-    `Memory key hash: ${memory.memoryKeyHash}`,
-    `Memory hash: ${memory.memoryHash}`,
-    `Scope: ${memory.scope}`,
-    `Authority: ${memory.authority}`,
-    `Persistence mode: ${memory.persistenceMode}`,
-    `MATRIX: ${memory.matrixState}`,
-    `Runtime entity: ${memory.runtime.entity}`,
-    `Runtime IPR: ${memory.runtime.ipr}`,
-    subjectLine,
-    certificateLine,
-    `Last memory EVT: ${memory.lastEvt || "none"}`,
-    `Last memory OPC proof: ${memory.lastOpcProofId || "none"}`,
-    `Last memory OPC chain hash: ${memory.lastOpcChainHash || "none"}`,
-    `Summary: ${memory.summary}`,
-    "Canonical memory facts:",
-    ...memory.facts.map((fact) => `- ${fact}`),
-    "Recent memory turns:",
-    recentTurns,
-    "Memory boundary:",
-    IPR_BOUND_MEMORY_BOUNDARY
-  ].join("\n");
-}
-
-export function toPublicMemoryRecord(
-  memory: IprBoundMemoryRecord
-): PublicIprBoundMemoryRecord {
+export function createProcessMemoryStoreAdapter(
+  store: Map<string, IprBoundMemoryRecord> = processMemoryMap
+): IprBoundMemoryStoreAdapter {
   return {
-    memoryId: memory.memoryId,
-    memoryKeyHash: memory.memoryKeyHash,
-    scope: memory.scope,
-    authority: memory.authority,
-    persistenceMode: memory.persistenceMode,
-    subject: memory.subject,
-    certificate: memory.certificate,
-    runtime: memory.runtime,
-    matrixState: memory.matrixState,
-    sessionId: memory.sessionId,
-    createdAt: memory.createdAt,
-    updatedAt: memory.updatedAt,
-    lastEvt: memory.lastEvt,
-    lastOpcProofId: memory.lastOpcProofId,
-    lastOpcChainHash: memory.lastOpcChainHash,
-    eventLinks: memory.eventLinks,
-    facts: memory.facts,
-    recentTurns: memory.recentTurns,
-    summary: memory.summary,
-    memoryHash: memory.memoryHash
+    name: "HBCE_JOKER_C2_PROCESS_MEMORY_STORE",
+    kind: "PROCESS_MEMORY_MVP",
+    durable: false,
+    runtimeScoped: true,
+
+    describe(): IprBoundMemoryStoreDescription {
+      return {
+        name: this.name,
+        kind: this.kind,
+        status: "AVAILABLE",
+        durable: this.durable,
+        runtimeScoped: this.runtimeScoped,
+        recordCount: store.size,
+        boundary: PROCESS_MEMORY_STORE_BOUNDARY
+      };
+    },
+
+    get(memoryKey: string): IprBoundMemoryRecord | undefined {
+      return store.get(assertMemoryKey(memoryKey));
+    },
+
+    set(
+      memoryKey: string,
+      record: IprBoundMemoryRecord
+    ): IprBoundMemoryRecord {
+      const normalizedKey = assertMemoryKey(memoryKey);
+      const safeRecord = assertMemoryRecord(record);
+
+      if (safeRecord.memoryKey !== normalizedKey) {
+        throw new Error("IPR_BOUND_MEMORY_STORE_KEY_RECORD_MISMATCH");
+      }
+
+      store.set(normalizedKey, safeRecord);
+
+      return safeRecord;
+    },
+
+    has(memoryKey: string): boolean {
+      return store.has(assertMemoryKey(memoryKey));
+    },
+
+    delete(memoryKey: string): boolean {
+      return store.delete(assertMemoryKey(memoryKey));
+    },
+
+    clear(): void {
+      store.clear();
+    },
+
+    size(): number {
+      return store.size;
+    },
+
+    values(): IprBoundMemoryRecord[] {
+      return Array.from(store.values());
+    },
+
+    findByMemoryKeyHash(memoryKeyHash: string): IprBoundMemoryRecord | null {
+      const normalizedHash = normalizeMemoryKeyHash(memoryKeyHash);
+
+      if (!normalizedHash) {
+        return null;
+      }
+
+      for (const record of store.values()) {
+        if (normalizeMemoryKeyHash(record.memoryKeyHash) === normalizedHash) {
+          return record;
+        }
+      }
+
+      return null;
+    }
   };
+}
+
+export function createDatabaseReadyPlaceholderAdapter(): IprBoundMemoryStoreAdapter {
+  return {
+    name: "HBCE_JOKER_C2_DATABASE_READY_PLACEHOLDER",
+    kind: "DATABASE_READY",
+    durable: true,
+    runtimeScoped: false,
+
+    describe(): IprBoundMemoryStoreDescription {
+      return {
+        name: this.name,
+        kind: this.kind,
+        status: "NOT_CONFIGURED",
+        durable: this.durable,
+        runtimeScoped: this.runtimeScoped,
+        recordCount: 0,
+        boundary: DATABASE_PLACEHOLDER_BOUNDARY
+      };
+    },
+
+    get(): IprBoundMemoryRecord | undefined {
+      throw new Error("IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED");
+    },
+
+    set(): IprBoundMemoryRecord {
+      throw new Error("IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED");
+    },
+
+    has(): boolean {
+      throw new Error("IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED");
+    },
+
+    delete(): boolean {
+      throw new Error("IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED");
+    },
+
+    clear(): void {
+      throw new Error("IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED");
+    },
+
+    size(): number {
+      return 0;
+    },
+
+    values(): IprBoundMemoryRecord[] {
+      return [];
+    },
+
+    findByMemoryKeyHash(): IprBoundMemoryRecord | null {
+      throw new Error("IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED");
+    }
+  };
+}
+
+export const processIprBoundMemoryStore =
+  createProcessMemoryStoreAdapter(processMemoryMap);
+
+export const databaseReadyIprBoundMemoryStore =
+  createDatabaseReadyPlaceholderAdapter();
+
+export function getDefaultIprBoundMemoryStore(): IprBoundMemoryStoreAdapter {
+  return processIprBoundMemoryStore;
+}
+
+export function getProcessIprBoundMemoryStore(): IprBoundMemoryStoreAdapter {
+  return processIprBoundMemoryStore;
+}
+
+export function getDatabaseReadyIprBoundMemoryStore(): IprBoundMemoryStoreAdapter {
+  return databaseReadyIprBoundMemoryStore;
+}
+
+export function describeDefaultIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
+  return getDefaultIprBoundMemoryStore().describe();
 }
 
 export function getRuntimeMemoryStoreSize(): number {
-  return iprBoundMemoryStore.size;
+  return getDefaultIprBoundMemoryStore().size();
 }
 
 export function getRuntimeMemoryByKeyHash(
   memoryKeyHash: string
-): PublicIprBoundMemoryRecord | null {
-  for (const memory of iprBoundMemoryStore.values()) {
-    if (memory.memoryKeyHash === memoryKeyHash) {
-      return toPublicMemoryRecord(memory);
-    }
-  }
-
-  return null;
+): IprBoundMemoryRecord | null {
+  return getDefaultIprBoundMemoryStore().findByMemoryKeyHash(memoryKeyHash);
 }
 
 export function clearProcessRuntimeMemory(): void {
-  iprBoundMemoryStore.clear();
+  processIprBoundMemoryStore.clear();
 }
