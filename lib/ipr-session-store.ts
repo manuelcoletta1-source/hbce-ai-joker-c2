@@ -41,6 +41,8 @@ export type IprAuthStoreCapability =
   | "SESSION_EXPIRY"
   | "SESSION_TOUCH"
   | "PROCESS_SCOPED_RUNTIME"
+  | "SYNC_PROCESS_FALLBACK"
+  | "ASYNC_DATABASE_RESTORE"
   | "DATABASE_CONTRACT"
   | "DATABASE_DURABILITY"
   | "SUBJECT_UPSERT"
@@ -153,6 +155,7 @@ export type IprAuthStoreDescription = {
   databaseConfigured: boolean;
   databaseDescription?: ReturnType<typeof describeDefaultHbceDatabase>;
   sessionBoundary: string;
+  asyncDatabaseRestoreBoundary: string;
   databaseRequirement: string;
   legalCertification: false;
   durable: boolean;
@@ -233,6 +236,9 @@ export const IPR_AUTH_DATABASE_READY_BOUNDARY =
 export const IPR_AUTH_DATABASE_PERSISTENT_BOUNDARY =
   "DATABASE_PERSISTENT IPR auth stores password hashes, session token hashes and operational session metadata in HBCE Postgres storage. It does not store plaintext passwords or plaintext session tokens, does not issue official identity and does not create legal certification.";
 
+export const IPR_AUTH_ASYNC_DATABASE_RESTORE_BOUNDARY =
+  "Cold-start and redeploy recovery from DATABASE_PERSISTENT auth storage requires asynchronous session verification. Synchronous verification may use only the process fallback and must not invent authenticated sessions from client cookies.";
+
 export const IPR_AUTH_EXTERNAL_ADAPTER_BOUNDARY =
   "EXTERNAL_ADAPTER declares a future authentication adapter supplied by the runtime. External auth adapters must preserve HBCE IPR boundaries, token hashing, session revocation, auditability, fail-closed behavior and legalCertification=false.";
 
@@ -245,7 +251,8 @@ const PROCESS_AUTH_CAPABILITIES: IprAuthStoreCapability[] = [
   "SESSION_REVOKE",
   "SESSION_EXPIRY",
   "SESSION_TOUCH",
-  "PROCESS_SCOPED_RUNTIME"
+  "PROCESS_SCOPED_RUNTIME",
+  "SYNC_PROCESS_FALLBACK"
 ];
 
 const DATABASE_READY_CAPABILITIES: IprAuthStoreCapability[] = [
@@ -258,6 +265,8 @@ const DATABASE_READY_CAPABILITIES: IprAuthStoreCapability[] = [
   "SESSION_EXPIRY",
   "SESSION_TOUCH",
   "DATABASE_CONTRACT",
+  "SYNC_PROCESS_FALLBACK",
+  "ASYNC_DATABASE_RESTORE",
   "AUDIT_READY_BOUNDARY",
   "RETENTION_REQUIRED",
   "DELETION_REQUIRED"
@@ -276,6 +285,8 @@ const DATABASE_PERSISTENT_CAPABILITIES: IprAuthStoreCapability[] = [
   "DATABASE_DURABILITY",
   "SUBJECT_UPSERT",
   "DEVICE_METADATA",
+  "SYNC_PROCESS_FALLBACK",
+  "ASYNC_DATABASE_RESTORE",
   "AUDIT_READY_BOUNDARY",
   "RETENTION_REQUIRED",
   "DELETION_REQUIRED",
@@ -312,6 +323,7 @@ const DATABASE_READY_REQUIREMENTS = [
   "Define session revocation workflow.",
   "Define retention and deletion workflow.",
   "Define audit logging before production use.",
+  "Use asynchronous session verification for cold-start recovery.",
   "Keep legalCertification=false."
 ];
 
@@ -321,6 +333,7 @@ const DATABASE_PERSISTENT_REQUIREMENTS = [
   "Enforce session revocation and expiry.",
   "Persist lastSeenAt for authenticated sessions.",
   "Preserve device metadata only as minimized labels or hashes.",
+  "Use asynchronous session verification to restore authenticated sessions after deploy, cold start or runtime migration.",
   "Define audit logging for credential creation/update, session creation, verification and revocation.",
   "Define retention, deletion, recovery and monitoring workflows.",
   "Do not claim official identity issuance or legal certification.",
@@ -490,6 +503,26 @@ function buildStoredSession(input: IprSessionCreateInput): IprAuthStoredSession 
   };
 }
 
+function toSessionCreateInputFromStoredSession(
+  session: IprAuthStoredSession
+): IprSessionCreateInput {
+  return {
+    sessionId: session.sessionId,
+    humanIpr: session.humanIpr,
+    runtimeIpr: session.runtimeIpr,
+    tokenHash: session.tokenHash,
+    status: session.status,
+    createdAt: session.createdAt,
+    expiresAt: session.expiresAt,
+    revokedAt: session.revokedAt,
+    lastSeenAt: session.lastSeenAt,
+    deviceLabel: session.deviceLabel,
+    userAgentHash: session.userAgentHash,
+    ipAddressHash: session.ipAddressHash,
+    sessionPayload: session.sessionPayload
+  };
+}
+
 function credentialFromRow(row: IprAuthCredentialRow): IprAuthStoredCredential {
   return {
     humanIpr: row.human_ipr,
@@ -557,6 +590,7 @@ function buildDescription(input: {
       ? describeDefaultHbceDatabase()
       : undefined,
     sessionBoundary: input.sessionBoundary,
+    asyncDatabaseRestoreBoundary: IPR_AUTH_ASYNC_DATABASE_RESTORE_BOUNDARY,
     databaseRequirement: IPR_AUTH_DATABASE_REQUIREMENT,
     legalCertification: false,
     durable: input.durable,
@@ -814,8 +848,8 @@ class DatabasePersistentIprAuthStore implements IprAuthStoreAdapter {
         available: false,
         persistenceStage: "DATABASE_PERSISTENT_NOT_CONFIGURED",
         sessionBoundary: IPR_AUTH_DATABASE_PERSISTENT_BOUNDARY,
-        durable: true,
-        runtimeScoped: false,
+        durable: false,
+        runtimeScoped: true,
         saasReady: false,
         requiresDatabase: true,
         syncFallbackToProcess: true,
@@ -842,24 +876,85 @@ class DatabasePersistentIprAuthStore implements IprAuthStoreAdapter {
     });
   }
 
+  private persistCredentialFireAndForget(
+    input: IprAuthCredentialCreateInput
+  ): void {
+    if (!isHbceDatabaseConfigured()) {
+      return;
+    }
+
+    void this.setCredentialAsync(input).catch(() => undefined);
+  }
+
+  private persistSessionFireAndForget(session: IprAuthStoredSession): void {
+    if (!isHbceDatabaseConfigured()) {
+      return;
+    }
+
+    void this.createSessionAsync(toSessionCreateInputFromStoredSession(session)).catch(
+      () => undefined
+    );
+  }
+
+  private touchSessionFireAndForget(sessionId: string): void {
+    if (!isHbceDatabaseConfigured()) {
+      return;
+    }
+
+    void this.touchSession(sessionId).catch(() => undefined);
+  }
+
+  private revokeSessionFireAndForget(sessionId: string): void {
+    if (!isHbceDatabaseConfigured()) {
+      return;
+    }
+
+    void this.revokeSessionAsync(sessionId).catch(() => undefined);
+  }
+
   getCredential(humanIpr: string): IprAuthStoredCredential | null {
     return this.processFallback.getCredential(humanIpr);
   }
 
   setCredential(input: IprAuthCredentialCreateInput): IprAuthStoredCredential {
-    return this.processFallback.setCredential(input);
+    const credential = this.processFallback.setCredential(input);
+
+    this.persistCredentialFireAndForget({
+      humanIpr: credential.humanIpr,
+      passwordAlgorithm: credential.passwordAlgorithm,
+      passwordHash: credential.passwordHash,
+      passwordSalt: credential.passwordSalt,
+      passwordKeyLength: credential.passwordKeyLength,
+      credentialPayload: credential.credentialPayload
+    });
+
+    return credential;
   }
 
   createSession(input: IprSessionCreateInput): IprAuthStoredSession {
-    return this.processFallback.createSession(input);
+    const session = this.processFallback.createSession(input);
+
+    this.persistSessionFireAndForget(session);
+
+    return session;
   }
 
   verifySessionToken(token: string): IprSessionLookupResult {
-    return this.processFallback.verifySessionToken(token);
+    const result = this.processFallback.verifySessionToken(token);
+
+    if (result.ok && result.session) {
+      this.touchSessionFireAndForget(result.session.sessionId);
+    }
+
+    return result;
   }
 
   revokeSession(sessionId: string): IprAuthStoredSession | null {
-    return this.processFallback.revokeSession(sessionId);
+    const revoked = this.processFallback.revokeSession(sessionId);
+
+    this.revokeSessionFireAndForget(sessionId);
+
+    return revoked;
   }
 
   private async upsertSubject(humanIpr: string): Promise<void> {
@@ -1082,6 +1177,8 @@ VALUES (
   false
 )
 ON CONFLICT (session_id) DO UPDATE SET
+  human_ipr = EXCLUDED.human_ipr,
+  runtime_ipr = EXCLUDED.runtime_ipr,
   token_hash = EXCLUDED.token_hash,
   status = EXCLUDED.status,
   expires_at = EXCLUDED.expires_at,
@@ -1131,7 +1228,7 @@ RETURNING
 
     const storedSession = sessionFromRow(result.rows[0]);
 
-    this.processFallback.createSession(storedSession);
+    this.processFallback.createSession(toSessionCreateInputFromStoredSession(storedSession));
 
     return storedSession;
   }
@@ -1168,17 +1265,14 @@ LIMIT 1
     );
 
     if (!result.ok || !result.rows[0]) {
-      return {
-        ok: false,
-        authenticated: false,
-        reason: "SESSION_NOT_FOUND",
-        session: null
-      };
+      return this.processFallback.verifySessionToken(token);
     }
 
     const session = sessionFromRow(result.rows[0]);
 
     if (session.status === "REVOKED" || session.revokedAt) {
+      this.processFallback.createSession(toSessionCreateInputFromStoredSession(session));
+
       return {
         ok: false,
         authenticated: false,
@@ -1201,7 +1295,7 @@ LIMIT 1
     const refreshedSession = await this.touchSession(session.sessionId);
     const activeSession = refreshedSession || session;
 
-    this.processFallback.createSession(activeSession);
+    this.processFallback.createSession(toSessionCreateInputFromStoredSession(activeSession));
 
     return {
       ok: true,
@@ -1289,7 +1383,7 @@ RETURNING
 
     const expiredSession = sessionFromRow(result.rows[0]);
 
-    this.processFallback.createSession(expiredSession);
+    this.processFallback.createSession(toSessionCreateInputFromStoredSession(expiredSession));
 
     return expiredSession;
   }
@@ -1332,7 +1426,7 @@ RETURNING
 
     const revokedSession = sessionFromRow(result.rows[0]);
 
-    this.processFallback.createSession(revokedSession);
+    this.processFallback.createSession(toSessionCreateInputFromStoredSession(revokedSession));
 
     return revokedSession;
   }
