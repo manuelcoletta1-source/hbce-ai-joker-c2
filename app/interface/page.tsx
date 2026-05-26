@@ -1562,18 +1562,15 @@ function StatusPill({
 
   return (
     <span
-      className={[
-        "joker-pill",
-        "notranslate",
-        getStatusClass(normalizedValue)
-      ]
+      className={["joker-pill", getStatusClass(normalizedValue)]
         .filter(Boolean)
         .join(" ")}
-      translate="no"
       title={normalizedValue}
     >
-      {label ? <b translate="no">{label}</b> : null}
-      <span translate="no">{compactHash(normalizedValue)}</span>
+      {label ? <b>{label}</b> : null}
+      <span className="notranslate" translate="no">
+        {compactHash(normalizedValue)}
+      </span>
     </span>
   );
 }
@@ -1595,24 +1592,24 @@ function MetricCard({
     <div
       className={[
         "joker-metric",
-        "notranslate",
         tone ? `is-${tone}` : getStatusClass(normalizedValue),
         compact ? "is-compact" : ""
       ]
         .filter(Boolean)
         .join(" ")}
       title={normalizedValue}
-      translate="no"
     >
-      <span translate="no">{label}</span>
-      <strong translate="no">{compactHash(normalizedValue)}</strong>
+      <span>{label}</span>
+      <strong className="notranslate" translate="no">
+        {compactHash(normalizedValue)}
+      </strong>
     </div>
   );
 }
 
 function InfoList({ items }: { items: InfoItem[] }) {
   return (
-    <dl className="joker-info-list notranslate" translate="no">
+    <dl className="joker-info-list">
       {items.map((item) => {
         const normalizedValue = normalizeVisibleRuntimeText(item.value);
         const statusClass = item.tone ? `is-${item.tone}` : getStatusClass(normalizedValue);
@@ -1622,8 +1619,8 @@ function InfoList({ items }: { items: InfoItem[] }) {
             key={`${item.label}-${normalizedValue}`}
             className={["joker-info-row", statusClass].filter(Boolean).join(" ")}
           >
-            <dt translate="no">{item.label}</dt>
-            <dd translate="no" title={normalizedValue}>
+            <dt>{item.label}</dt>
+            <dd className="notranslate" translate="no" title={normalizedValue}>
               {compactHash(normalizedValue)}
             </dd>
           </div>
@@ -1664,7 +1661,6 @@ function MessageBubble({
       ]
         .filter(Boolean)
         .join(" ")}
-      translate="no"
     >
       <div className="joker-message-avatar notranslate" translate="no">
         {isUser ? "M" : isSystem ? "!" : JOKER_SIGIL}
@@ -1673,19 +1669,19 @@ function MessageBubble({
       <div className="joker-message-body">
         <div className="joker-message-head">
           <div>
-            <strong translate="no">
+            <strong className="notranslate" translate="no">
               {isUser ? "Manuel" : isSystem ? "System" : "JOKER-C2"}
             </strong>
             {isAssistant && message.raw ? (
-              <span translate="no">
+              <span className="notranslate" translate="no">
                 {safeText(message.state, "-")} · {safeText(message.decision, "-")}
               </span>
             ) : null}
           </div>
-          <time translate="no">{message.createdAt}</time>
+          <time>{message.createdAt}</time>
         </div>
 
-        <pre className="joker-message-text notranslate" translate="no">
+        <pre className="joker-message-text">
           {visibleContent}
         </pre>
 
@@ -1727,9 +1723,9 @@ function MessageBubble({
 
             {message.raw ? (
               <details>
-                <summary translate="no">Runtime details</summary>
+                <summary>Runtime details</summary>
 
-                <div className="joker-details-grid notranslate" translate="no">
+                <div className="joker-details-grid">
                   <MetricCard label="State" value={safeText(message.state, "-")} compact />
                   <MetricCard label="Decision" value={safeText(message.decision, "-")} compact />
                   <MetricCard label="ProjectDomain" value={getProjectDomain(message.raw)} compact />
@@ -2278,19 +2274,22 @@ export default function InterfacePage() {
   ];
 
   return (
-    <main className="joker-page notranslate" lang="en" translate="no">
+    <main className="joker-page" lang="en">
       <header className="joker-topbar">
         <div className="joker-brand">
           <div className="joker-logo notranslate" translate="no">
             {JOKER_SIGIL}
           </div>
           <div>
-            <strong translate="no">AI JOKER-C2</strong>
-            <span translate="no">HBCE governed AI runtime</span>
+            <strong className="notranslate" translate="no">AI JOKER-C2</strong>
+            <span>
+              <span className="notranslate" translate="no">HBCE</span>{" "}
+              governed AI runtime
+            </span>
           </div>
         </div>
 
-        <div className="joker-health notranslate" translate="no">
+        <div className="joker-health">
           <StatusPill value={safeText(health?.state, "CHECKING")} />
           <StatusPill label="Model" value={safeText(health?.model, getModel(health))} />
           <StatusPill label="Runtime IPR" value={safeText(health?.identity?.ipr, "IPR-AI-0001")} />
@@ -2317,23 +2316,29 @@ export default function InterfacePage() {
 
       <section className="joker-hero">
         <div className="joker-hero-copy">
-          <span className="joker-kicker" translate="no">HERMETICUM B.C.E. S.r.l.</span>
-          <h1 translate="no">JOKER-C2 dashboard</h1>
+          <span className="joker-kicker notranslate" translate="no">
+            HERMETICUM B.C.E. S.r.l.
+          </span>
+          <h1>
+            <span className="notranslate" translate="no">JOKER-C2</span>{" "}
+            dashboard
+          </h1>
           <p>
-            Professional runtime console for <span translate="no">IPR</span>{" "}
-            identity, <span translate="no">IPR-bound memory</span>,{" "}
-            <span translate="no">EVT</span> continuity,{" "}
-            <span translate="no">OPC</span> technical proof receipts and{" "}
-            <span translate="no">MATRIX</span> coordination. No legal
-            certification is implied: <code translate="no">legalCertification=false</code>.
+            Professional runtime console for <span className="notranslate" translate="no">IPR</span>{" "}
+            identity, <span className="notranslate" translate="no">IPR-bound memory</span>,{" "}
+            <span className="notranslate" translate="no">EVT</span> continuity,{" "}
+            <span className="notranslate" translate="no">OPC</span> technical proof receipts and{" "}
+            <span className="notranslate" translate="no">MATRIX</span> coordination.
+            No legal certification is implied:{" "}
+            <code className="notranslate" translate="no">legalCertification=false</code>.
           </p>
-          <div className="joker-origin-note notranslate" translate="no">
-            <strong>{runtimeProjectBirthDate}</strong>
+          <div className="joker-origin-note">
+            <strong className="notranslate" translate="no">{runtimeProjectBirthDate}</strong>
             <span>{runtimeProjectBirthLabel}</span>
           </div>
         </div>
 
-        <div className="joker-hero-grid notranslate" translate="no">
+        <div className="joker-hero-grid">
           <MetricCard label="Project birth" value={runtimeProjectBirthDate} />
           <MetricCard label="Monthly reference" value={runtimeMonthlyReference} />
           <MetricCard label="Event family" value={runtimeEventFamily} />
@@ -2356,8 +2361,9 @@ export default function InterfacePage() {
         >
           <div className="joker-panel-head">
             <div>
-              <span className="joker-kicker" translate="no">
-                HBCE IPR biological subject
+              <span className="joker-kicker">
+                <span className="notranslate" translate="no">HBCE IPR</span>{" "}
+                biological subject
               </span>
               <h2 className="notranslate" translate="no">{subjectLabel}</h2>
             </div>
@@ -2375,14 +2381,19 @@ export default function InterfacePage() {
           <InfoList items={identityRows} />
 
           {iprAccountSessionError && !hasAccountSession ? (
-            <div className="joker-alert is-warn notranslate" translate="no">
-              IPR account session: {iprAccountSessionError}
+            <div className="joker-alert is-warn">
+              IPR account session:{" "}
+              <span className="notranslate" translate="no">
+                {iprAccountSessionError}
+              </span>
             </div>
           ) : null}
 
           {iprHandoffError ? (
-            <div className="joker-alert is-bad notranslate" translate="no">
-              {iprHandoffError}
+            <div className="joker-alert is-bad">
+              <span className="notranslate" translate="no">
+                {iprHandoffError}
+              </span>
             </div>
           ) : null}
 
@@ -2413,8 +2424,11 @@ export default function InterfacePage() {
         <div className="joker-panel">
           <div className="joker-panel-head">
             <div>
-              <span className="joker-kicker" translate="no">Runtime memory</span>
-              <h2 translate="no">IPR-bound continuity</h2>
+              <span className="joker-kicker">Runtime memory</span>
+              <h2>
+                <span className="notranslate" translate="no">IPR-bound</span>{" "}
+                continuity
+              </h2>
             </div>
             <StatusPill value={runtimeMemoryScope} />
           </div>
@@ -2431,16 +2445,20 @@ export default function InterfacePage() {
         <div className="joker-panel">
           <div className="joker-panel-head">
             <div>
-              <span className="joker-kicker" translate="no">EVT / OPC proof</span>
-              <h2 translate="no">Audit visibility</h2>
+              <span className="joker-kicker">
+                <span className="notranslate" translate="no">EVT / OPC</span>{" "}
+                proof
+              </span>
+              <h2>Audit visibility</h2>
             </div>
             <StatusPill value="technical proof" />
           </div>
 
           <p>
-            <span translate="no">OPC</span> remains a technical proof receipt for
-            audit and governance review. It is not legal certification, not a
-            qualified timestamp and not public authority validation.
+            <span className="notranslate" translate="no">OPC</span> remains a
+            technical proof receipt for audit and governance review. It is not
+            legal certification, not a qualified timestamp and not public
+            authority validation.
           </p>
 
           <InfoList items={proofRows} />
@@ -2453,18 +2471,19 @@ export default function InterfacePage() {
             <div className="joker-empty-logo notranslate" translate="no">
               {JOKER_SIGIL}
             </div>
-            <span className="joker-kicker" translate="no">AI JOKER-C2</span>
-            <h2 translate="no">Runtime ready</h2>
+            <span className="joker-kicker notranslate" translate="no">AI JOKER-C2</span>
+            <h2>Runtime ready</h2>
             <p>
               Write below or use a quick prompt. This chat operates inside the
-              HBCE boundary: <span translate="no">IPR</span>,{" "}
-              <span translate="no">EVT</span>, <span translate="no">OPC</span>,{" "}
-              <span translate="no">MATRIX</span>,{" "}
-              <span translate="no">IPR-bound memory</span>, audit and
-              fail-closed logic.
+              HBCE boundary: <span className="notranslate" translate="no">IPR</span>,{" "}
+              <span className="notranslate" translate="no">EVT</span>,{" "}
+              <span className="notranslate" translate="no">OPC</span>,{" "}
+              <span className="notranslate" translate="no">MATRIX</span>,{" "}
+              <span className="notranslate" translate="no">IPR-bound memory</span>,
+              audit and fail-closed logic.
             </p>
 
-            <div className="joker-prompt-grid notranslate" translate="no">
+            <div className="joker-prompt-grid">
               {QUICK_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
@@ -2493,17 +2512,17 @@ export default function InterfacePage() {
             ))}
 
             {isSending ? (
-              <article className="joker-message joker-message-assistant" translate="no">
+              <article className="joker-message joker-message-assistant">
                 <div className="joker-message-avatar notranslate" translate="no">
                   {JOKER_SIGIL}
                 </div>
                 <div className="joker-message-body">
                   <div className="joker-message-head">
                     <div>
-                      <strong translate="no">JOKER-C2</strong>
-                      <span translate="no">running governed operation</span>
+                      <strong className="notranslate" translate="no">JOKER-C2</strong>
+                      <span>running governed operation</span>
                     </div>
-                    <time translate="no">processing</time>
+                    <time>processing</time>
                   </div>
                   <div className="joker-thinking">
                     <span />
@@ -2521,8 +2540,10 @@ export default function InterfacePage() {
 
       <section className="joker-composer-shell">
         {error ? (
-          <div className="joker-alert is-bad composer-alert notranslate" translate="no">
-            {error}
+          <div className="joker-alert is-bad composer-alert">
+            <span className="notranslate" translate="no">
+              {error}
+            </span>
           </div>
         ) : null}
         {copied ? (
@@ -2535,7 +2556,7 @@ export default function InterfacePage() {
           <div className="joker-file-bar">
             {files.map((file) => (
               <div key={file.id} className="joker-file-chip">
-                <span>{file.name}</span>
+                <span className="notranslate" translate="no">{file.name}</span>
                 <button type="button" onClick={() => removeFile(file.id)}>
                   ×
                 </button>
@@ -2577,7 +2598,6 @@ export default function InterfacePage() {
             onKeyDown={handleKeyDown}
             placeholder="Write to JOKER-C2..."
             rows={1}
-            translate="no"
           />
 
           <button
@@ -2590,9 +2610,14 @@ export default function InterfacePage() {
           </button>
         </form>
 
-        <div className="joker-footer-line notranslate" translate="no">
+        <div className="joker-footer-line">
           <span>Enter sends · Shift+Enter creates a new line</span>
-          <span>Session: {sessionId || "initializing"}</span>
+          <span>
+            Session:{" "}
+            <span className="notranslate" translate="no">
+              {sessionId || "initializing"}
+            </span>
+          </span>
         </div>
       </section>
 
