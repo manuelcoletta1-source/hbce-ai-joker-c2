@@ -67,6 +67,23 @@ export type PublicIprAccountSession = ReturnType<
   typeof getPublicSessionFromStoredSession
 >;
 
+export type IprAccountProfileLookupAttempt = {
+  strategy: string;
+  method: string;
+  keyHash: string;
+  found: boolean;
+};
+
+export type IprAccountProfileLookupDiagnostic = {
+  attempted: boolean;
+  found: boolean;
+  matchedStrategy: string | null;
+  matchedMethod: string | null;
+  matchedKeyHash: string | null;
+  attempts: IprAccountProfileLookupAttempt[];
+  boundary: string;
+};
+
 export type IprAccountSessionResolution = {
   ok: true;
   authenticated: boolean;
@@ -95,12 +112,16 @@ export type IprAccountSessionResolution = {
   accountProfile: PublicIprAccountProfile | null;
   reconstructedIprHandoff: Record<string, unknown> | null;
   runtimeHandoff: IprBoundMemoryHandoffEvaluation;
+  profileLookup: IprAccountProfileLookupDiagnostic;
   stores: IprAccountSessionResolutionStores;
   boundary: IprAccountSessionResolutionBoundary;
 };
 
 export const IPR_AUTH_SESSION_RESOLVER_BOUNDARY =
   "The IPR auth session resolver reconstructs JOKER-C2 runtime identity from a server-side authenticated IPR session and account profile. It must not treat client-side text, URL parameters or user-declared metadata as authoritative identity.";
+
+export const IPR_ACCOUNT_PROFILE_LOOKUP_BOUNDARY =
+  "An authenticated IPR session is not sufficient to reconstruct biological identity unless the corresponding IPR account profile is found server-side. Missing account profile must degrade to runtime-only memory and MATRIX_LIMITED, not to stale identity recovery.";
 
 const AUTH_SESSION_RESOLUTION_BOUNDARY: IprAccountSessionResolutionBoundary = {
   legalCertification: false,
@@ -113,6 +134,47 @@ const AUTH_SESSION_RESOLUTION_BOUNDARY: IprAccountSessionResolutionBoundary = {
   accountDatabaseRequirement: IPR_ACCOUNT_DATABASE_REQUIREMENT
 };
 
+type RuntimeSessionLookupSource = {
+  humanIpr: string;
+  runtimeIpr: string;
+  accountId?: string;
+  account_id?: string;
+  profileId?: string;
+  profile_id?: string;
+  certificateId?: string;
+  certificate_id?: string;
+  cardSerial?: string;
+  card_serial?: string;
+  [key: string]: unknown;
+};
+
+type ProfileLookupCandidate = {
+  strategy: string;
+  value: string;
+};
+
+type ProfileLookupMethod =
+  | "getProfile"
+  | "getProfileByHumanIpr"
+  | "findProfileByHumanIpr"
+  | "getProfileByAccountId"
+  | "findProfileByAccountId"
+  | "getProfileByCertificateId"
+  | "findProfileByCertificateId"
+  | "getProfileByCardSerial"
+  | "findProfileByCardSerial";
+
+type AccountStoreWithOptionalLookupMethods = {
+  [key in ProfileLookupMethod]?: (
+    value: string
+  ) => IprAccountProfile | null | undefined;
+};
+
+type ProfileLookupResult = {
+  profile: IprAccountProfile | null;
+  diagnostic: IprAccountProfileLookupDiagnostic;
+};
+
 function describeStores(): IprAccountSessionResolutionStores {
   return {
     auth: describeDefaultIprAuthStore(),
@@ -122,6 +184,220 @@ function describeStores(): IprAccountSessionResolutionStores {
 
 function normalizeMemoryScope(value: string): MemoryScope {
   return value === "IPR_BOUND" ? "IPR_BOUND" : "RUNTIME_ONLY";
+}
+
+function sha256Safe(value: string): string {
+  const crypto = require("node:crypto") as typeof import("node:crypto");
+
+  return crypto
+    .createHash("sha256")
+    .update(value, "utf8")
+    .digest("hex")
+    .toUpperCase();
+}
+
+function keyHash(value: string): string {
+  return `sha256:${sha256Safe(value).slice(0, 24)}`;
+}
+
+function safeRuntimeString(value: unknown): string {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  return "";
+}
+
+function uniqueCandidates(candidates: ProfileLookupCandidate[]): ProfileLookupCandidate[] {
+  const result: ProfileLookupCandidate[] = [];
+  const seen = new Set<string>();
+
+  for (const candidate of candidates) {
+    const value = candidate.value.trim();
+
+    if (!value) {
+      continue;
+    }
+
+    const key = `${candidate.strategy}::${value}`;
+
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    result.push({
+      strategy: candidate.strategy,
+      value
+    });
+  }
+
+  return result;
+}
+
+function buildProfileLookupCandidates(
+  session: RuntimeSessionLookupSource
+): ProfileLookupCandidate[] {
+  return uniqueCandidates([
+    {
+      strategy: "humanIpr",
+      value: safeRuntimeString(session.humanIpr)
+    },
+    {
+      strategy: "accountId",
+      value:
+        safeRuntimeString(session.accountId) ||
+        safeRuntimeString(session.account_id)
+    },
+    {
+      strategy: "profileId",
+      value:
+        safeRuntimeString(session.profileId) ||
+        safeRuntimeString(session.profile_id)
+    },
+    {
+      strategy: "certificateId",
+      value:
+        safeRuntimeString(session.certificateId) ||
+        safeRuntimeString(session.certificate_id)
+    },
+    {
+      strategy: "cardSerial",
+      value:
+        safeRuntimeString(session.cardSerial) ||
+        safeRuntimeString(session.card_serial)
+    }
+  ]);
+}
+
+function methodsForCandidate(strategy: string): ProfileLookupMethod[] {
+  if (strategy === "humanIpr") {
+    return ["getProfile", "getProfileByHumanIpr", "findProfileByHumanIpr"];
+  }
+
+  if (strategy === "accountId" || strategy === "profileId") {
+    return ["getProfileByAccountId", "findProfileByAccountId", "getProfile"];
+  }
+
+  if (strategy === "certificateId") {
+    return ["getProfileByCertificateId", "findProfileByCertificateId"];
+  }
+
+  if (strategy === "cardSerial") {
+    return ["getProfileByCardSerial", "findProfileByCardSerial"];
+  }
+
+  return ["getProfile"];
+}
+
+function isIprAccountProfile(value: unknown): value is IprAccountProfile {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  return (
+    typeof record.entity === "string" &&
+    typeof record.humanIpr === "string" &&
+    typeof record.runtimeIpr === "string" &&
+    typeof record.certificateId === "string" &&
+    typeof record.certificateStatus === "string" &&
+    Array.isArray(record.certificateScope)
+  );
+}
+
+function callProfileLookupMethod(input: {
+  store: AccountStoreWithOptionalLookupMethods;
+  method: ProfileLookupMethod;
+  value: string;
+}): IprAccountProfile | null {
+  const fn = input.store[input.method];
+
+  if (typeof fn !== "function") {
+    return null;
+  }
+
+  try {
+    const result = fn.call(input.store, input.value);
+
+    return isIprAccountProfile(result) ? result : null;
+  } catch {
+    return null;
+  }
+}
+
+function buildEmptyProfileLookupDiagnostic(): IprAccountProfileLookupDiagnostic {
+  return {
+    attempted: false,
+    found: false,
+    matchedStrategy: null,
+    matchedMethod: null,
+    matchedKeyHash: null,
+    attempts: [],
+    boundary: IPR_ACCOUNT_PROFILE_LOOKUP_BOUNDARY
+  };
+}
+
+function resolveAccountProfileFromSession(input: {
+  accountStore: AccountStoreWithOptionalLookupMethods;
+  session: RuntimeSessionLookupSource;
+}): ProfileLookupResult {
+  const candidates = buildProfileLookupCandidates(input.session);
+  const attempts: IprAccountProfileLookupAttempt[] = [];
+
+  for (const candidate of candidates) {
+    const methods = methodsForCandidate(candidate.strategy);
+
+    for (const method of methods) {
+      const profile = callProfileLookupMethod({
+        store: input.accountStore,
+        method,
+        value: candidate.value
+      });
+
+      const attempt: IprAccountProfileLookupAttempt = {
+        strategy: candidate.strategy,
+        method,
+        keyHash: keyHash(candidate.value),
+        found: Boolean(profile)
+      };
+
+      attempts.push(attempt);
+
+      if (profile) {
+        return {
+          profile,
+          diagnostic: {
+            attempted: true,
+            found: true,
+            matchedStrategy: candidate.strategy,
+            matchedMethod: method,
+            matchedKeyHash: attempt.keyHash,
+            attempts,
+            boundary: IPR_ACCOUNT_PROFILE_LOOKUP_BOUNDARY
+          }
+        };
+      }
+    }
+  }
+
+  return {
+    profile: null,
+    diagnostic: {
+      attempted: attempts.length > 0,
+      found: false,
+      matchedStrategy: null,
+      matchedMethod: null,
+      matchedKeyHash: null,
+      attempts,
+      boundary: IPR_ACCOUNT_PROFILE_LOOKUP_BOUNDARY
+    }
+  };
 }
 
 function buildRuntimeOnlyHandoff(reason: string): IprBoundMemoryHandoffEvaluation {
@@ -174,6 +450,7 @@ function buildUnauthenticatedResolution(input: {
   session?: PublicIprAccountSession | null;
   humanIpr?: string;
   runtimeIpr?: string;
+  profileLookup?: IprAccountProfileLookupDiagnostic;
 }): IprAccountSessionResolution {
   const hasSessionWithoutProfile = input.reason === "IPR_ACCOUNT_PROFILE_NOT_FOUND";
 
@@ -199,20 +476,26 @@ function buildUnauthenticatedResolution(input: {
       expectedPersistence:
         "PROCESS_AUTH_STORE_MVP and PROCESS_ACCOUNT_STORE_MVP until DATABASE_PERSISTENT is connected",
       reason: hasSessionWithoutProfile
-        ? "A server-side session exists, but no IPR account profile is available. JOKER-C2 must not reconstruct IPR-bound memory without the account profile."
+        ? [
+            "A server-side session exists, but no IPR account profile is available.",
+            "JOKER-C2 must not reconstruct IPR-bound memory without the account profile.",
+            "The resolver attempted profile lookup diagnostics before falling back to runtime-only memory.",
+            IPR_ACCOUNT_PROFILE_LOOKUP_BOUNDARY
+          ].join(" ")
         : "No active server-side IPR session is available. JOKER-C2 must not infer persistent biological identity from client-side text, URL transport data or missing cookies."
     },
     matrix: {
       expectedState: "MATRIX_LIMITED",
       active: false,
       reason: hasSessionWithoutProfile
-        ? "MATRIX_ACTIVE requires both authenticated IPR session and account profile reconstruction."
+        ? "MATRIX_ACTIVE requires both authenticated IPR session and account profile reconstruction. Existing session token alone is not enough."
         : "Without a valid server-side IPR session, MATRIX remains limited for account-level continuity."
     },
     session: input.session || null,
     accountProfile: null,
     reconstructedIprHandoff: null,
     runtimeHandoff: buildRuntimeOnlyHandoff(input.reason),
+    profileLookup: input.profileLookup || buildEmptyProfileLookupDiagnostic(),
     stores: describeStores(),
     boundary: AUTH_SESSION_RESOLUTION_BOUNDARY
   };
@@ -250,17 +533,22 @@ export function resolveIprAccountSessionFromRequest(
   }
 
   const publicSession = getPublicSessionFromStoredSession(verification.session);
-  const accountProfile = accountStore.getProfile(verification.session.humanIpr);
+  const profileLookup = resolveAccountProfileFromSession({
+    accountStore: accountStore as AccountStoreWithOptionalLookupMethods,
+    session: verification.session as RuntimeSessionLookupSource
+  });
 
-  if (!accountProfile) {
+  if (!profileLookup.profile) {
     return buildUnauthenticatedResolution({
       reason: "IPR_ACCOUNT_PROFILE_NOT_FOUND",
       session: publicSession,
       humanIpr: verification.session.humanIpr,
-      runtimeIpr: verification.session.runtimeIpr
+      runtimeIpr: verification.session.runtimeIpr,
+      profileLookup: profileLookup.diagnostic
     });
   }
 
+  const accountProfile = profileLookup.profile;
   const publicAccountProfile = toPublicIprAccountProfile(accountProfile);
   const runtimeHandoff = buildRuntimeHandoffFromAccountProfile(accountProfile);
   const reconstructedIprHandoff =
@@ -302,6 +590,7 @@ export function resolveIprAccountSessionFromRequest(
     accountProfile: publicAccountProfile,
     reconstructedIprHandoff,
     runtimeHandoff,
+    profileLookup: profileLookup.diagnostic,
     stores: describeStores(),
     boundary: AUTH_SESSION_RESOLUTION_BOUNDARY
   };
