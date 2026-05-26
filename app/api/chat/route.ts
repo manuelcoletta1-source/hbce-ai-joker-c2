@@ -560,6 +560,8 @@ type GeneratedResponse = {
     | "IDENTITY_RECOGNITION"
     | "RUNTIME_DIAGNOSTIC"
     | "SAFE_RED_TEAM"
+    | "OPENAI_PITCH"
+    | "EU_CYBER_PITCH"
     | "DOCUMENT_BATCH_PLAN"
     | "COMMERCIAL_PARTNERSHIP"
     | "FALLBACK";
@@ -671,6 +673,11 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bHermeticum\s+B\.C\.E\b/gi, "HERMETICUM B.C.E."],
   [/\bHERMETICUM\s+BCE\b/g, "HERMETICUM B.C.E."],
   [/\bHERMETICUM\s+B\.C\.E\b/g, "HERMETICUM B.C.E."],
+  [/\bHERMETICUM\s+BCE\.\.\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
+  [/\bHERMETICUM\s+BCE\.\./gi, "HERMETICUM B.C.E."],
+  [/\bHERMETICUM\s+B\.C\.E\.\.+\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
+  [/\bHERMETICUM\s+B\.C\.E\.\.+/g, "HERMETICUM B.C.E."],
+  [/\bHermeticum\s+BCE\.\./gi, "HERMETICUM B.C.E."],
   [/\bHERMETICUM\s+BCE\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
   [/\bHERMETICUM\s+BCE\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
   [/\bHERMETICUM\s+B\.C\.E\.?\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
@@ -682,6 +689,17 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bHermeticum\s*B\.C\.E\.?\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
   [/\bHBCE\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
   [/\bHERMETICUM\s+B\.C\.E\.\s+B\.C\.E\./g, "HERMETICUM B.C.E."],
+
+  [/\bContralto\b/g, "Alto"],
+  [/\bcontralto\b/g, "alto"],
+  [/\bAI Atto\b/g, "AI Act"],
+  [/\bAI atto\b/g, "AI Act"],
+  [/\bAtto AI\b/g, "AI Act"],
+  [/\bCyber\s+Resilience\s+Atto\b/gi, "Cyber Resilience Act"],
+
+  [/\bSOC arredamento\b/gi, "SOC operativo"],
+  [/\bSOC mobiliario\b/gi, "SOC operativo"],
+  [/\bSOCI\b/g, "SOC"],
 
   [/\bDiritti di proprietà intellettuale umani\b/gi, "IPR biologico"],
   [/\bDiritti di proprietà intellettuale umano\b/gi, "IPR biologico"],
@@ -712,6 +730,13 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bOPCRimane\b/g, "OPC rimane"],
   [/\bProof ricevute\b/g, "proof receipt"],
   [/\bproof ricevute\b/g, "proof receipt"],
+  [/\bproof ricevute il tecnico\b/gi, "proof receipt tecnico"],
+  [/\bproof ricevuta il tecnico\b/gi, "proof receipt tecnico"],
+  [/\bproof ricevute tecnico\b/gi, "proof receipt tecnico"],
+  [/\bproof ricevuta tecnico\b/gi, "proof receipt tecnico"],
+  [/\bproof ricevute tecniche\b/gi, "proof receipt tecniche"],
+  [/\bricevuta di prova tecnico\b/gi, "ricevuta tecnica di prova"],
+  [/\bricevute di prova tecnico\b/gi, "ricevute tecniche di prova"],
   [/\bprove ricevute tecnici\b/gi, "ricevute tecniche di prova"],
   [/\bprove di ricevuta tecnici\b/gi, "ricevute tecniche di prova"],
   [/\bprove di ricevuta tecniche\b/gi, "ricevute tecniche di prova"],
@@ -721,6 +746,29 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bOPC sono prove ricevute tecnici\b/gi, "gli OPC sono ricevute tecniche di prova"],
   [/\bprova documentale\b/gi, "evidenza tecnica"],
   [/\bprove collega\b/gi, "prove che collegano"],
+
+  [/\bnessuna pista di controllo, nessuna impresa di inaffidabilità\b/gi, "nessun audit trail, nessuna affidabilità enterprise-grade"],
+  [/\bnessuna pista di controllo\b/gi, "nessun audit trail"],
+  [/\bimpresa di inaffidabilità\b/gi, "affidabilità enterprise-grade"],
+  [/\bpista di controllo\b/gi, "audit trail"],
+
+  [/\btempestivi non controllati\b/gi, "prompt non controllati"],
+  [/\bbut non autorizzato\b/gi, "accesso non autorizzato"],
+  [/\bfurto di prove\b/gi, "furto di credenziali"],
+  [/\bprendendo di mira gli illeciti\b/gi, "targeting illecito"],
+  [/\btargeting degli illeciti\b/gi, "targeting illecito"],
+
+  [/\bdimostrare la tecnica\b/gi, "prova tecnica"],
+  [/\bdimostrare tecnico\b/gi, "prova tecnica"],
+  [/\bdimostrare la prova tecnica\b/gi, "produrre prova tecnica"],
+  [/\bdisposizione autorizzata\b/gi, "operazione autorizzata"],
+  [/\bnessuna impresa di inaffidabilità\b/gi, "nessuna affidabilità enterprise-grade"],
+
+  [/\bmodelli di cybersicurezza intervengono dopo l'anomalia\b/gi, "modelli di cybersicurezza intervengono spesso dopo l'anomalia"],
+  [/\bflusso di lavoro di audit\b/gi, "workflow di audit"],
+  [/\bflusso di lavoro\b/gi, "workflow"],
+  [/\bprova di ricevimento\b/gi, "proof receipt"],
+  [/\bprova ricevuta\b/gi, "proof receipt"],
 
   [/\bMagnete al piombo\b/gi, "Lead magnet"],
   [/\bmagnete al piombo\b/gi, "lead magnet"],
@@ -1071,8 +1119,13 @@ function normalizeHbceCanonicalTerminology(value: string): string {
 
   return text
     .replace(/\bHERMETICUM B\.C\.E\.\s*S\.r\.l\.\s*S\.r\.l\./g, "HERMETICUM B.C.E. S.r.l.")
+    .replace(/\bHERMETICUM B\.C\.E\.\s*S\.r\.l\.\.+/g, "HERMETICUM B.C.E. S.r.l.")
     .replace(/\bHERMETICUM B\.C\.E\.\s*B\.C\.E\./g, "HERMETICUM B.C.E.")
+    .replace(/\bHERMETICUM B\.C\.E\.\.+/g, "HERMETICUM B.C.E.")
     .replace(/\blegalCertification=false=false\b/g, "legalCertification=false")
+    .replace(/\blegalCertification=false\./g, "legalCertification=false.")
+    .replace(/\bproof receipt receipt\b/gi, "proof receipt")
+    .replace(/\bproof receipt tecnico tecnico\b/gi, "proof receipt tecnico")
     .replace(/\bIPR IPR\b/g, "IPR")
     .replace(/\bOPC OPC\b/g, "OPC")
     .replace(/\bEVT EVT\b/g, "EVT")
@@ -2255,6 +2308,20 @@ function isSafeRedTeamRequest(message: string): boolean {
   ]);
 }
 
+function isOpenAiPitchRequest(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return includesAny(text, ["openai"]) &&
+    includesAny(text, ["pitch", "presentazione", "60 secondi", "sessanta secondi"]);
+}
+
+function isEuCyberPitchRequest(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return includesAny(text, ["cybersicurezza ue", "cybersecurity ue", "sicurezza ue", "cybersicurezza europea", "cybersecurity europea"]) &&
+    includesAny(text, ["pitch", "rischi", "problemi", "risoluzioni", "potenzialita", "potenzialità", "difesa", "prepara"]);
+}
+
 function isDocumentBatchRequest(message: string): boolean {
   const text = normalizeRuntimeText(message);
 
@@ -2611,6 +2678,8 @@ function buildGovernanceFrame(input: {
   const prohibited = detectsProhibitedCyberRequest(input.message);
   const documentBatch = isDocumentBatchRequest(input.message);
   const commercialPartnership = isCommercialPartnershipExpansionRequest(input.message);
+  const openAiPitch = isOpenAiPitchRequest(input.message);
+  const euCyberPitch = isEuCyberPitchRequest(input.message);
   const hasModelReadableFiles = input.files.some((file) => file.modelReadable);
 
   if (runtimeDiagnostic) {
@@ -2691,6 +2760,8 @@ function buildGovernanceFrame(input: {
     isSafeRedTeamRequest(input.message) ||
     documentBatch ||
     commercialPartnership ||
+    openAiPitch ||
+    euCyberPitch ||
     input.files.length > 0;
 
   return {
@@ -2801,6 +2872,9 @@ function buildSystemPrompt(input: {
     "Non tradurre audit con revisione contabile quando il contesto è HBCE/JOKER-C2: usa audit tecnico, audit operativo o audit di governance.",
     "Non tradurre fail-closed come chiusura fallita. Mantieni fail-closed.",
     "Non tradurre crosswalk come attraversamento pedonale. Usa mappatura normativo-operativa.",
+    "Non tradurre SOC come arredamento, mobiliario o oggetto fisico. SOC indica Security Operations Center.",
+    "Non tradurre AI Act come AI Atto o Atto AI. Mantieni AI Act.",
+    "Non tradurre high impact con contralto. Usa impatto alto o rischio alto.",
     "Non mostrare metadati runtime salvo richiesta diagnostica esplicita.",
     "Per richieste diagnostiche runtime, rispondi usando solo i frame HBCE-generated e distingui sempre target persistence da persistence mode effettivo.",
     "Se l'utente allega file e chiede di leggerli, analizzarli, descriverli, riassumerli o interpretarli, devi rispondere sul contenuto dei file e non limitarti alla diagnostica runtime.",
@@ -2965,7 +3039,7 @@ function buildUserPrompt(input: {
     ITALIAN_DOCUMENT_QUALITY_BOUNDARY,
     LONG_DOCUMENT_OUTPUT_BOUNDARY,
     "Before final answer, preserve canonical forms: HERMETICUM B.C.E. S.r.l., IPR, EVT, OPC, MATRIX, HBCE, proof receipt, fail-closed, legalCertification=false.",
-    "Forbidden mistranslations: proprietà intellettuale for IPR, DPI for IPR, certificazionelegale=false, HERMETICUM BCESrl, HERMETICUM BESrl, attraversamento pedonale normativo-operativo, chiusura fallita, Tabù temporale.",
+    "Forbidden mistranslations: proprietà intellettuale for IPR, DPI for IPR, certificazionelegale=false, HERMETICUM BCESrl, HERMETICUM BESrl, attraversamento pedonale normativo-operativo, chiusura fallita, Tabù temporale, SOC arredamento, AI Atto, Contralto.",
     "",
     buildFileContext(input.files)
   ].join("\n");
@@ -3529,6 +3603,86 @@ function buildSafeRedTeamReviewResponse(input: {
   ].join("\n");
 }
 
+function buildOpenAiPitchResponse(): string {
+  return normalizeGeneratedOutputText([
+    "Presentazione di 60 secondi per OpenAI",
+    "",
+    "HERMETICUM B.C.E. S.r.l. sta sviluppando AI JOKER-C2, un runtime AI governato progettato per rendere l’uso dei modelli OpenAI più controllabile, verificabile e adatto a contesti B2B/B2G ad alta responsabilità.",
+    "",
+    "OpenAI fornisce il motore cognitivo. JOKER-C2 aggiunge lo strato operativo: identità IPR, continuità EVT, proof receipt OPC, coordinamento MATRIX, memoria IPR-bound, policy runtime, audit tecnico e logica fail-closed.",
+    "",
+    "Il punto non è sostituire i modelli OpenAI, ma governarne l’utilizzo quando l’interazione AI diventa processo: chi agisce, con quale identità, su quale contesto, con quale rischio, con quale memoria, con quale evento e con quale prova tecnica.",
+    "",
+    "Siamo in fase R&D e SaaS Core v0.1. L’obiettivo è costruire un livello complementare di governance runtime per imprese, enti, infrastrutture critiche e organizzazioni regolamentate, mantenendo un confine chiaro: OPC è una proof receipt tecnica per audit e governance review, non una certificazione legale. legalCertification=false.",
+    "",
+    "La proposta per OpenAI è semplice: usare JOKER-C2 come dimostratore europeo di AI governance operativa, dove OpenAI genera capacità cognitiva e HBCE rende l’esecuzione più tracciabile, responsabile e auditabile."
+  ].join("\n"));
+}
+
+function buildEuCyberPitchResponse(): string {
+  return normalizeGeneratedOutputText([
+    "# Pitch — HERMETICUM B.C.E. S.r.l. per la cybersicurezza UE",
+    "",
+    "L’Unione Europea sta entrando in una fase in cui la cybersicurezza non può più essere trattata solo come difesa tecnica dei sistemi. Deve diventare una capacità di governance continua: identità operativa, tracciabilità degli eventi, audit tecnico, controllo dell’uso dell’AI, risposta agli incidenti e prova verificabile delle decisioni critiche.",
+    "",
+    "HERMETICUM B.C.E. S.r.l. propone HBCE come strato di cyber governance operativa per imprese, enti pubblici, infrastrutture critiche, operatori regolati, SOC, MSSP e filiere essenziali. L’obiettivo non è sostituire strumenti esistenti come IAM, SIEM, EDR, XDR, ticketing, cloud o dashboard di compliance, ma collegarli dentro una sequenza verificabile.",
+    "",
+    "## Rischi",
+    "",
+    "I rischi principali che stanno maturando nel contesto europeo sono cinque.",
+    "",
+    "Primo: frammentazione normativa e operativa. NIS2, DORA, Cyber Resilience Act, GDPR, AI Act ed eIDAS 2.0 alzano il livello di responsabilità, ma molte organizzazioni non riescono ancora a tradurre gli obblighi in eventi tecnici verificabili.",
+    "",
+    "Secondo: identità operativa debole. Gli account dimostrano l’accesso, ma spesso non dimostrano contesto, ruolo, autorizzazione, rischio, decisione e responsabilità collegata all’evento.",
+    "",
+    "Terzo: audit costruito dopo il danno. I log sono numerosi, dispersi e difficili da correlare. Durante un incidente, sapere cosa è successo richiede troppo tempo.",
+    "",
+    "Quarto: AI non governata. L’AI accelera analisi, decisioni e automazioni, ma può introdurre prompt non controllati, output non tracciati, esposizione di dati sensibili e confusione tra suggerimento e azione autorizzata.",
+    "",
+    "Quinto: difesa reattiva. Molti sistemi reagiscono dopo l’anomalia, mentre il dominio cyber-AI richiede capacità preventiva, policy runtime e fail-closed.",
+    "",
+    "## Problema",
+    "",
+    "Il problema centrale non è la mancanza di norme o strumenti. Il problema è la mancanza di una catena unica tra identità, azione, evento, rischio, decisione, prova e responsabilità.",
+    "",
+    "In una crisi cyber, un’organizzazione deve poter rispondere rapidamente a domande concrete: chi ha agito, con quale ruolo, su quale sistema, quale dato era coinvolto, quale policy era attiva, quale rischio è stato rilevato, quale revisione umana è stata richiesta, quale evento è stato registrato e quale proof receipt tecnica è stata prodotta.",
+    "",
+    "## Risoluzione HBCE",
+    "",
+    "HBCE propone una struttura operativa composta da IPR, EVT, OPC, MATRIX e AI JOKER-C2.",
+    "",
+    "IPR identifica soggetti, ruoli, runtime, sistemi, agenti AI e responsabilità operative.",
+    "",
+    "EVT registra la continuità degli eventi: input, output, decisione, rischio, contesto, timestamp e riferimento di catena.",
+    "",
+    "OPC produce una proof receipt tecnica per audit, verifica e governance review. Non è certificazione legale, non è timestamp qualificato e non sostituisce autorità pubbliche o trust service regolamentati. legalCertification=false.",
+    "",
+    "MATRIX coordina domini diversi: cyber, AI, dati, supply chain, protezione civile, finanza, infrastrutture critiche e governance multilivello.",
+    "",
+    "AI JOKER-C2 usa OpenAI come motore cognitivo, ma applica sopra il modello uno strato HBCE di identità, policy, audit, memoria IPR-bound e fail-closed.",
+    "",
+    "## Potenzialità",
+    "",
+    "Per il CISO, HBCE migliora tracciabilità, controllo delle azioni critiche e capacità di audit tecnico.",
+    "",
+    "Per il DPO, aiuta a separare contenuto e prova, minimizzare i dati e controllare l’uso dell’AI su processi sensibili.",
+    "",
+    "Per il SOC, aggiunge contesto operativo agli eventi: non solo alert, ma identità, autorizzazione, rischio, decisione e prova.",
+    "",
+    "Per la compliance, crea una mappatura normativo-operativa tra requisiti UE, controlli tecnici, eventi e proof receipt.",
+    "",
+    "Per il management, trasforma la cybersicurezza da centro di costo a capacità dimostrabile di continuità, fiducia e responsabilità.",
+    "",
+    "## Difesa",
+    "",
+    "HBCE opera solo nel perimetro difensivo e autorizzato: hardening, secure coding, detection, incident response, audit, compliance, mitigazione, governance AI e revisione autorizzata. Richieste offensive, exploit non autorizzati, malware, phishing, evasione, lateral movement, persistenza offensiva ed esfiltrazione devono essere bloccati in modalità fail-closed.",
+    "",
+    "La promessa operativa è chiara: meno azioni opache, meno AI non governata, più audit tecnico, più responsabilità e più fiducia verificabile per la cybersicurezza europea.",
+    "",
+    "Formula finale: IPR identifica. EVT traccia. OPC prova. MATRIX coordina. HBCE governa."
+  ].join("\n"));
+}
+
 function buildFallback(input: {
   message: string;
   governance: GovernanceFrame;
@@ -3675,6 +3829,26 @@ async function generateResponse(input: {
       degradedReason: null,
       deterministic: true,
       generationClass: "SAFE_RED_TEAM"
+    };
+  }
+
+  if (isOpenAiPitchRequest(input.message)) {
+    return {
+      text: buildOpenAiPitchResponse(),
+      state: "OPERATIONAL",
+      degradedReason: null,
+      deterministic: true,
+      generationClass: "OPENAI_PITCH"
+    };
+  }
+
+  if (isEuCyberPitchRequest(input.message)) {
+    return {
+      text: buildEuCyberPitchResponse(),
+      state: "OPERATIONAL",
+      degradedReason: null,
+      deterministic: true,
+      generationClass: "EU_CYBER_PITCH"
     };
   }
 
@@ -4906,6 +5080,14 @@ export async function POST(req: NextRequest) {
         ]
       : [];
 
+  const deterministicFacts =
+    generated.deterministic
+      ? [
+          `Last operation used deterministic generation class: ${generated.generationClass || "UNKNOWN"}.`,
+          "Deterministic response path bypassed model generation for controlled runtime output quality."
+        ]
+      : [];
+
   const memoryAfter = updateMemoryAfterCompletion({
     memory: memoryBefore,
     userMessage: body.message,
@@ -4956,6 +5138,7 @@ export async function POST(req: NextRequest) {
       ...fileFacts,
       ...cyberFacts,
       ...diagnosticFacts,
+      ...deterministicFacts,
       ...degradedFacts,
       ...transformativeFacts
     ]
