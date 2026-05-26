@@ -212,6 +212,9 @@ type ChatMessage = {
 
 const JOKER_SIGIL = "🜏";
 
+const CANONICAL_MANUEL_HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1";
+const CANONICAL_MANUEL_DISPLAY_NAME = "Manuel Coletta";
+
 const DEFAULT_PROMPT =
   "JOKER-C2, run a complete runtime diagnostic. Tell me which OpenAI model you are using, your runtime IPR, the current EVT checkpoint, the role of OPC, and the difference between OpenAI as model provider and JOKER-C2 as governed runtime.";
 
@@ -333,6 +336,44 @@ function compactHash(value: string): string {
   }
 
   return `${value.slice(0, 18)}…${value.slice(-10)}`;
+}
+
+function normalizeRuntimeDisplayText(value: string): string {
+  return value.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function canonicalizeSubjectName(value: string, ipr?: string | null): string {
+  const raw = value.trim();
+
+  if (ipr === CANONICAL_MANUEL_HUMAN_IPR) {
+    return CANONICAL_MANUEL_DISPLAY_NAME;
+  }
+
+  const normalized = normalizeRuntimeDisplayText(raw);
+
+  if (
+    normalized === "manuel coletta" ||
+    normalized === "manuele coletta" ||
+    normalized === "manuale coletta"
+  ) {
+    return CANONICAL_MANUEL_DISPLAY_NAME;
+  }
+
+  return raw || "-";
+}
+
+function normalizeVisibleRuntimeText(value: string): string {
+  return value
+    .replace(/\bManuele Coletta\b/g, CANONICAL_MANUEL_DISPLAY_NAME)
+    .replace(/\bmanuale coletta\b/gi, CANONICAL_MANUEL_DISPLAY_NAME)
+    .replace(/\bmanuel coletta\b/gi, CANONICAL_MANUEL_DISPLAY_NAME)
+    .replace(/\bcertificazionelegale=false\b/gi, "legalCertification=false")
+    .replace(/\bcertificazione legale=false\b/gi, "legalCertification=false")
+    .replace(/\bCertificato legale OPC falso\b/gi, "OPC legalCertification=false")
+    .replace(/\bDiritti di proprietà intellettuale umani\b/gi, "Human IPR")
+    .replace(/\bDiritti di proprietà intellettuale sui soggetti biologici\b/gi, "HBCE IPR Biological Subject")
+    .replace(/\bcontinuità legata alla proprietà intellettuale\b/gi, "IPR-bound continuity")
+    .replace(/\bbind(\s+\*\*IPR_VERIFIED_BIOLOGICAL_SUBJECT\*\*)/gi, "binding$1");
 }
 
 function normalizeScope(value: unknown): string[] {
@@ -629,7 +670,10 @@ function normalizeIprHandoff(
           "HBCE_IPR_ONBOARDING_APP",
     issued_at: firstText(payload, [["issued_at"], ["issuedAt"]], ""),
     subject: {
-      entity: subjectEntity || "VERIFIED_BIOLOGICAL_SUBJECT",
+      entity: canonicalizeSubjectName(
+        subjectEntity || "VERIFIED_BIOLOGICAL_SUBJECT",
+        subjectIpr
+      ),
       ipr: subjectIpr,
       kind: subjectKind
     },
@@ -882,7 +926,9 @@ function loadIprHandoffFromBrowser(): IprHandoffLoadResult {
 }
 
 function getAssistantText(payload: ChatApiResponse): string {
-  return safeText(payload.response || payload.text, "[EMPTY_RESPONSE]");
+  return normalizeVisibleRuntimeText(
+    safeText(payload.response || payload.text, "[EMPTY_RESPONSE]")
+  );
 }
 
 function getContinuityRef(payload: ChatApiResponse): string | null {
@@ -1083,7 +1129,7 @@ function getMonthlyReferenceLabel(payload?: ChatApiResponse | RuntimeHealth | nu
       ["operationalContext", "monthly_reference", "label"],
       ["runtime", "operationalContext", "monthly_reference", "label"],
       ["governedEvt", "operational_context", "monthly_reference", "label"],
-      ["modernEvt", "operational_context", "monthly_reference", "label"],
+      ["modernEvt", "operationalContext", "monthly_reference", "label"],
       ["identity", "monthlyReference", "label"]
     ],
     "Fourth monthly synchronization cycle"
@@ -1120,24 +1166,6 @@ function getPreviousCheckpointRef(payload?: ChatApiResponse | RuntimeHealth | nu
   return `${human} / ${ai}`;
 }
 
-function getVerifiedSubjectName(payload?: ChatApiResponse | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["verifiedSubject", "entity"],
-      ["verifiedSubject", "name"],
-      ["runtime", "verifiedSubject", "entity"],
-      ["runtime", "verified_subject_entity"],
-      ["identity", "verifiedSubject", "entity"],
-      ["identity", "verified_subject_entity"],
-      ["diagnostics", "verifiedSubject", "entity"]
-    ],
-    "-"
-  );
-}
-
 function getVerifiedSubjectIpr(payload?: ChatApiResponse | null): string {
   if (!payload) return "-";
 
@@ -1153,6 +1181,27 @@ function getVerifiedSubjectIpr(payload?: ChatApiResponse | null): string {
     ],
     "-"
   );
+}
+
+function getVerifiedSubjectName(payload?: ChatApiResponse | null): string {
+  if (!payload) return "-";
+
+  const ipr = getVerifiedSubjectIpr(payload);
+  const subject = firstText(
+    payload,
+    [
+      ["verifiedSubject", "entity"],
+      ["verifiedSubject", "name"],
+      ["runtime", "verifiedSubject", "entity"],
+      ["runtime", "verified_subject_entity"],
+      ["identity", "verifiedSubject", "entity"],
+      ["identity", "verified_subject_entity"],
+      ["diagnostics", "verifiedSubject", "entity"]
+    ],
+    "-"
+  );
+
+  return subject === "-" ? "-" : canonicalizeSubjectName(subject, ipr);
 }
 
 function getMatrixState(payload?: ChatApiResponse | RuntimeHealth | null): string {
@@ -1432,7 +1481,8 @@ function getStatusClass(value: string): string {
     normalized.includes("IPR_BOUND") ||
     normalized.includes("VALIDATED") ||
     normalized.includes("OPERATIONAL") ||
-    normalized.includes("PASS")
+    normalized.includes("PASS") ||
+    normalized.includes("DATABASE_PERSISTENT")
   ) {
     return "is-good";
   }
@@ -1442,7 +1492,8 @@ function getStatusClass(value: string): string {
     normalized.includes("PENDING") ||
     normalized.includes("PROCESS_MEMORY") ||
     normalized.includes("RUNTIME_ONLY") ||
-    normalized.includes("MVP")
+    normalized.includes("MVP") ||
+    normalized.includes("DATABASE_READY")
   ) {
     return "is-warn";
   }
@@ -1501,10 +1552,22 @@ function StatusPill({
   label?: string;
   value: string;
 }) {
+  const normalizedValue = normalizeVisibleRuntimeText(value);
+
   return (
-    <span className={["joker-pill", getStatusClass(value)].filter(Boolean).join(" ")}>
-      {label ? <b>{label}</b> : null}
-      {value}
+    <span
+      className={[
+        "joker-pill",
+        "notranslate",
+        getStatusClass(normalizedValue)
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      translate="no"
+      title={normalizedValue}
+    >
+      {label ? <b translate="no">{label}</b> : null}
+      <span translate="no">{normalizedValue}</span>
     </span>
   );
 }
@@ -1520,19 +1583,23 @@ function MetricCard({
   tone?: "good" | "warn" | "bad";
   compact?: boolean;
 }) {
+  const normalizedValue = normalizeVisibleRuntimeText(value);
+
   return (
     <div
       className={[
         "joker-metric",
-        tone ? `is-${tone}` : getStatusClass(value),
+        "notranslate",
+        tone ? `is-${tone}` : getStatusClass(normalizedValue),
         compact ? "is-compact" : ""
       ]
         .filter(Boolean)
         .join(" ")}
-      title={value}
+      title={normalizedValue}
+      translate="no"
     >
-      <span>{label}</span>
-      <strong>{compactHash(value)}</strong>
+      <span translate="no">{label}</span>
+      <strong translate="no">{compactHash(normalizedValue)}</strong>
     </div>
   );
 }
@@ -1556,6 +1623,7 @@ function MessageBubble({
   const memoryMode = isAssistant ? getMemoryPersistenceMode(message.raw) : "-";
   const lastMemoryEvt = isAssistant ? getLastMemoryEvt(message.raw) : "-";
   const lastMemoryOpc = isAssistant ? getLastMemoryOpc(message.raw) : "-";
+  const visibleContent = normalizeVisibleRuntimeText(message.content);
 
   return (
     <article
@@ -1567,28 +1635,33 @@ function MessageBubble({
       ]
         .filter(Boolean)
         .join(" ")}
+      translate="no"
     >
-      <div className="joker-message-avatar">
+      <div className="joker-message-avatar notranslate" translate="no">
         {isUser ? "M" : isSystem ? "!" : JOKER_SIGIL}
       </div>
 
       <div className="joker-message-body">
         <div className="joker-message-head">
           <div>
-            <strong>{isUser ? "Manuel" : isSystem ? "System" : "JOKER-C2"}</strong>
+            <strong translate="no">
+              {isUser ? "Manuel" : isSystem ? "System" : "JOKER-C2"}
+            </strong>
             {isAssistant && message.raw ? (
-              <span>
+              <span translate="no">
                 {safeText(message.state, "-")} · {safeText(message.decision, "-")}
               </span>
             ) : null}
           </div>
-          <time>{message.createdAt}</time>
+          <time translate="no">{message.createdAt}</time>
         </div>
 
-        <pre className="joker-message-text">{message.content}</pre>
+        <pre className="joker-message-text notranslate" translate="no">
+          {visibleContent}
+        </pre>
 
         {isAssistant && message.raw ? (
-          <div className="joker-runtime-strip">
+          <div className="joker-runtime-strip notranslate" translate="no">
             <StatusPill label="Model" value={getModel(message.raw)} />
             <StatusPill label="Runtime IPR" value={getIpr(message.raw)} />
             <StatusPill label="Current AI EVT" value={getCurrentAiEvt(message.raw)} />
@@ -1619,15 +1692,15 @@ function MessageBubble({
 
         {isAssistant ? (
           <div className="joker-message-actions">
-            <button type="button" onClick={() => onCopy(message.content)}>
+            <button type="button" onClick={() => onCopy(visibleContent)}>
               Copy response
             </button>
 
             {message.raw ? (
               <details>
-                <summary>Runtime details</summary>
+                <summary translate="no">Runtime details</summary>
 
-                <div className="joker-details-grid">
+                <div className="joker-details-grid notranslate" translate="no">
                   <MetricCard label="State" value={safeText(message.state, "-")} compact />
                   <MetricCard label="Decision" value={safeText(message.decision, "-")} compact />
                   <MetricCard label="ProjectDomain" value={getProjectDomain(message.raw)} compact />
@@ -1657,7 +1730,9 @@ function MessageBubble({
                   />
                 </div>
 
-                <pre className="joker-json">{safeJson(message.raw)}</pre>
+                <pre className="joker-json notranslate" translate="no">
+                  {safeJson(message.raw)}
+                </pre>
               </details>
             ) : null}
           </div>
@@ -2017,10 +2092,11 @@ export default function InterfacePage() {
 
   const dashboardPayload = lastAssistantPayload || health;
 
-  const humanIprLabel =
-    effectiveIprHandoff?.subject.ipr || "NOT_VERIFIED";
-  const subjectLabel =
-    effectiveIprHandoff?.subject.entity || "No verified subject";
+  const humanIprLabel = effectiveIprHandoff?.subject.ipr || "NOT_VERIFIED";
+  const subjectLabel = canonicalizeSubjectName(
+    effectiveIprHandoff?.subject.entity || "No verified subject",
+    humanIprLabel
+  );
 
   const runtimeProjectBirthDate = getProjectBirthDate(dashboardPayload);
   const runtimeProjectBirthLabel = getProjectBirthLabel(dashboardPayload);
@@ -2141,17 +2217,19 @@ export default function InterfacePage() {
     "MATRIX_LIMITED";
 
   return (
-    <main className="joker-page">
+    <main className="joker-page notranslate" lang="en" translate="no">
       <header className="joker-topbar">
         <div className="joker-brand">
-          <div className="joker-logo">{JOKER_SIGIL}</div>
+          <div className="joker-logo notranslate" translate="no">
+            {JOKER_SIGIL}
+          </div>
           <div>
-            <strong>AI JOKER-C2</strong>
-            <span>HBCE governed AI runtime</span>
+            <strong translate="no">AI JOKER-C2</strong>
+            <span translate="no">HBCE governed AI runtime</span>
           </div>
         </div>
 
-        <div className="joker-health">
+        <div className="joker-health notranslate" translate="no">
           <StatusPill value={safeText(health?.state, "CHECKING")} />
           <StatusPill label="Model" value={safeText(health?.model, getModel(health))} />
           <StatusPill label="Runtime IPR" value={safeText(health?.identity?.ipr, "IPR-AI-0001")} />
@@ -2178,20 +2256,24 @@ export default function InterfacePage() {
 
       <section className="joker-hero">
         <div className="joker-hero-copy">
-          <span className="joker-kicker">HERMETICUM B.C.E. S.r.l.</span>
-          <h1>Governed runtime dashboard</h1>
+          <span className="joker-kicker" translate="no">HERMETICUM B.C.E. S.r.l.</span>
+          <h1 translate="no">Governed runtime dashboard</h1>
           <p>
-            Operational interface for JOKER-C2: IPR identity, IPR-bound memory,
-            EVT continuity, OPC technical proof receipts, MATRIX coordination and
-            <code> legalCertification=false</code>.
+            Operational interface for <span translate="no">JOKER-C2</span>:{" "}
+            <span translate="no">IPR</span> identity,{" "}
+            <span translate="no">IPR-bound memory</span>,{" "}
+            <span translate="no">EVT</span> continuity,{" "}
+            <span translate="no">OPC</span> technical proof receipts,{" "}
+            <span translate="no">MATRIX</span> coordination and
+            <code translate="no"> legalCertification=false</code>.
           </p>
-          <div className="joker-origin-note">
+          <div className="joker-origin-note notranslate" translate="no">
             <strong>{runtimeProjectBirthDate}</strong>
             <span>{runtimeProjectBirthLabel}</span>
           </div>
         </div>
 
-        <div className="joker-hero-grid">
+        <div className="joker-hero-grid notranslate" translate="no">
           <MetricCard label="Project birth" value={runtimeProjectBirthDate} />
           <MetricCard label="Monthly reference" value={runtimeMonthlyReference} />
           <MetricCard label="Event family" value={runtimeEventFamily} />
@@ -2214,8 +2296,10 @@ export default function InterfacePage() {
         >
           <div className="joker-panel-head">
             <div>
-              <span className="joker-kicker">IPR biological subject</span>
-              <h2>{subjectLabel}</h2>
+              <span className="joker-kicker" translate="no">
+                HBCE IPR biological subject
+              </span>
+              <h2 className="notranslate" translate="no">{subjectLabel}</h2>
             </div>
             <StatusPill value={accessDecision} />
           </div>
@@ -2228,7 +2312,7 @@ export default function InterfacePage() {
                 : "No biological IPR handoff or IPR account session detected. Runtime remains limited until server-side validation."}
           </p>
 
-          <div className="joker-metric-grid">
+          <div className="joker-metric-grid notranslate" translate="no">
             <MetricCard label="Runtime IPR" value="IPR-AI-0001" compact />
             <MetricCard label="Human IPR" value={humanIprLabel} compact />
             <MetricCard label="Certificate" value={certificateId} compact />
@@ -2238,13 +2322,15 @@ export default function InterfacePage() {
           </div>
 
           {iprAccountSessionError && !hasAccountSession ? (
-            <div className="joker-alert is-warn">
+            <div className="joker-alert is-warn notranslate" translate="no">
               IPR account session: {iprAccountSessionError}
             </div>
           ) : null}
 
           {iprHandoffError ? (
-            <div className="joker-alert is-bad">{iprHandoffError}</div>
+            <div className="joker-alert is-bad notranslate" translate="no">
+              {iprHandoffError}
+            </div>
           ) : null}
 
           <div className="joker-panel-actions">
@@ -2274,8 +2360,8 @@ export default function InterfacePage() {
         <div className="joker-panel">
           <div className="joker-panel-head">
             <div>
-              <span className="joker-kicker">Runtime memory</span>
-              <h2>IPR-bound continuity</h2>
+              <span className="joker-kicker" translate="no">Runtime memory</span>
+              <h2 translate="no">IPR-bound continuity</h2>
             </div>
             <StatusPill value={runtimeMemoryScope} />
           </div>
@@ -2286,7 +2372,7 @@ export default function InterfacePage() {
             review, disable fail-closed logic or replace human oversight.
           </p>
 
-          <div className="joker-metric-grid">
+          <div className="joker-metric-grid notranslate" translate="no">
             <MetricCard label="MATRIX" value={runtimeMatrixState} compact />
             <MetricCard label="Authority" value={runtimeMemoryAuthority} compact />
             <MetricCard label="Persistence" value={runtimeMemoryMode} compact />
@@ -2299,24 +2385,24 @@ export default function InterfacePage() {
         <div className="joker-panel">
           <div className="joker-panel-head">
             <div>
-              <span className="joker-kicker">EVT / OPC proof</span>
-              <h2>Audit visibility</h2>
+              <span className="joker-kicker" translate="no">EVT / OPC proof</span>
+              <h2 translate="no">Audit visibility</h2>
             </div>
             <StatusPill value="technical proof" />
           </div>
 
           <p>
-            OPC remains a technical proof receipt for audit and governance
-            review. It is not legal certification, not a qualified timestamp and
-            not public authority validation.
+            <span translate="no">OPC</span> remains a technical proof receipt for
+            audit and governance review. It is not legal certification, not a
+            qualified timestamp and not public authority validation.
           </p>
 
-          <div className="joker-metric-grid">
+          <div className="joker-metric-grid notranslate" translate="no">
             <MetricCard label="Monthly reference" value={runtimeMonthlyReference} compact />
             <MetricCard label="Monthly label" value={runtimeMonthlyReferenceLabel} compact />
             <MetricCard label="Previous checkpoint" value={runtimePreviousCheckpoint} compact />
             <MetricCard label="Response EVT" value={runtimeResponseEvt} compact />
-            <MetricCard label="OPC legal cert." value={runtimeLegalCertification} compact />
+            <MetricCard label="OPC legalCertification" value={runtimeLegalCertification} compact />
             <MetricCard label="Current OPC" value={runtimeOpcProof} compact />
             <MetricCard label="Last memory EVT" value={runtimeLastMemoryEvt} compact />
             <MetricCard label="Last memory OPC" value={runtimeLastMemoryOpc} compact />
@@ -2330,17 +2416,22 @@ export default function InterfacePage() {
       <section className="joker-chat">
         {messages.length === 0 ? (
           <div className="joker-empty">
-            <div className="joker-empty-logo">{JOKER_SIGIL}</div>
-            <span className="joker-kicker">AI JOKER-C2</span>
-            <h2>Runtime ready</h2>
+            <div className="joker-empty-logo notranslate" translate="no">
+              {JOKER_SIGIL}
+            </div>
+            <span className="joker-kicker" translate="no">AI JOKER-C2</span>
+            <h2 translate="no">Runtime ready</h2>
             <p>
               Write below or use a quick prompt. This chat operates inside the
-              HBCE boundary: IPR, EVT, OPC, MATRIX, IPR-bound memory, audit and
+              HBCE boundary: <span translate="no">IPR</span>,{" "}
+              <span translate="no">EVT</span>, <span translate="no">OPC</span>,{" "}
+              <span translate="no">MATRIX</span>,{" "}
+              <span translate="no">IPR-bound memory</span>, audit and
               fail-closed logic. A chat with a spine, a rare event in the
               swamp of digital improvisation.
             </p>
 
-            <div className="joker-prompt-grid">
+            <div className="joker-prompt-grid notranslate" translate="no">
               {QUICK_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
@@ -2369,15 +2460,17 @@ export default function InterfacePage() {
             ))}
 
             {isSending ? (
-              <article className="joker-message joker-message-assistant">
-                <div className="joker-message-avatar">{JOKER_SIGIL}</div>
+              <article className="joker-message joker-message-assistant" translate="no">
+                <div className="joker-message-avatar notranslate" translate="no">
+                  {JOKER_SIGIL}
+                </div>
                 <div className="joker-message-body">
                   <div className="joker-message-head">
                     <div>
-                      <strong>JOKER-C2</strong>
-                      <span>running governed operation</span>
+                      <strong translate="no">JOKER-C2</strong>
+                      <span translate="no">running governed operation</span>
                     </div>
-                    <time>processing</time>
+                    <time translate="no">processing</time>
                   </div>
                   <div className="joker-thinking">
                     <span />
@@ -2394,9 +2487,15 @@ export default function InterfacePage() {
       </section>
 
       <section className="joker-composer-shell">
-        {error ? <div className="joker-alert is-bad composer-alert">{error}</div> : null}
+        {error ? (
+          <div className="joker-alert is-bad composer-alert notranslate" translate="no">
+            {error}
+          </div>
+        ) : null}
         {copied ? (
-          <div className="joker-alert is-good composer-alert">Response copied.</div>
+          <div className="joker-alert is-good composer-alert">
+            Response copied.
+          </div>
         ) : null}
 
         {files.length > 0 ? (
@@ -2445,6 +2544,7 @@ export default function InterfacePage() {
             onKeyDown={handleKeyDown}
             placeholder="Write to JOKER-C2..."
             rows={1}
+            translate="no"
           />
 
           <button
@@ -2457,7 +2557,7 @@ export default function InterfacePage() {
           </button>
         </form>
 
-        <div className="joker-footer-line">
+        <div className="joker-footer-line notranslate" translate="no">
           <span>Enter sends · Shift+Enter creates a new line</span>
           <span>Session: {sessionId || "initializing"}</span>
         </div>
@@ -2482,6 +2582,10 @@ export default function InterfacePage() {
             BlinkMacSystemFont,
             "Segoe UI",
             sans-serif;
+        }
+
+        .notranslate {
+          translate: no;
         }
 
         .joker-topbar {
