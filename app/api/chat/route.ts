@@ -45,11 +45,7 @@ import type { MatrixTransformativeMemoryEvaluation } from "@/lib/matrix-transfor
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type RuntimeState =
-  | "OPERATIONAL"
-  | "DEGRADED"
-  | "BLOCKED"
-  | "INVALID";
+type RuntimeState = "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID";
 
 type RuntimeDecision =
   | "ALLOW"
@@ -191,7 +187,7 @@ type OpenAIEngineMode = "standard" | "deep";
 
 type OpenAIEngineConfig = {
   provider: "OpenAI";
-  apiMode: "chat.completions";
+  apiMode: "responses";
   role: "cognitive_engine";
   runtimeRole: "HBCE_governed_runtime";
   modelUsed: string;
@@ -569,44 +565,29 @@ type GeneratedResponse = {
     | "FALLBACK";
   multimodalAttempted?: boolean;
   multimodalFallbackUsed?: boolean;
+  openAIStatus?: string | null;
 };
 
-type DocumentBatchItem = {
-  index: number;
-  title: string;
-  fileName: string;
-  purpose: string;
-};
-
-type OpenAIChatContentPart =
+type OpenAIResponsesContentPart =
   | {
-      type: "text";
+      type: "input_text";
       text: string;
     }
   | {
-      type: "image_url";
-      image_url: {
-        url: string;
-        detail?: "low" | "high" | "auto";
-      };
+      type: "input_image";
+      image_url: string;
+      detail?: "low" | "high" | "auto";
     }
   | {
-      type: "file";
-      file: {
-        filename: string;
-        file_data: string;
-      };
+      type: "input_file";
+      filename: string;
+      file_data: string;
     };
-
-type OpenAIChatMessage = {
-  role: "system" | "user";
-  content: string | OpenAIChatContentPart[];
-};
 
 const DEFAULT_JOKER_MODEL = "gpt-5.5";
 const DEFAULT_JOKER_DEEP_MODEL = "gpt-5.5";
 
-const MAX_COMPLETION_TOKENS = 4600;
+const MAX_OUTPUT_TOKENS = 4600;
 const MAX_FILE_TEXT_CHARS = 60_000;
 const MAX_TOTAL_FILE_TEXT_CHARS = 180_000;
 const MAX_FILE_DATA_URL_CHARS = 7_000_000;
@@ -672,7 +653,7 @@ const DATABASE_PERSISTENCE_BOUNDARY =
   "JOKER-C2 SaaS Core v0.1 requires DATABASE_PERSISTENT storage for durable account, session, memory, EVT, OPC, tenant, workspace and audit continuity. If the database is not configured or available, runtime must not claim durable SaaS continuity.";
 
 const FILE_PROCESSING_BOUNDARY =
-  "Text files are injected as prompt context. Image files are sent to the OpenAI cognitive engine as image_url parts when a data URL is present. PDF files are sent as file_data parts when supported by the configured model/API; otherwise only extracted text or file manifest metadata is available. Binary files remain reference-only unless a dedicated extractor is added.";
+  "Text files are injected as prompt context. Image files are sent to the OpenAI cognitive engine as input_image parts when a data URL is present. PDF files are sent as input_file parts when supported by the configured model/API; otherwise only extracted text or file manifest metadata is available. Binary files remain reference-only unless a dedicated extractor is added.";
 
 const MEMORY_BOUNDARY = IPR_BOUND_MEMORY_BOUNDARY;
 
@@ -809,8 +790,6 @@ const RUNTIME_DIAGNOSTIC_TERMS = [
   "identityhash",
   "legalcertification",
   "legal certification",
-  "finestra anonima",
-  "senza cookie",
   "handoff ipr",
   "memoria storica",
   "soggetto biologico",
@@ -881,51 +860,6 @@ const FILE_ANALYSIS_OBJECT_TERMS = [
   "document"
 ];
 
-const DOCUMENT_BATCH_ITEMS: DocumentBatchItem[] = [
-  {
-    index: 1,
-    title: "HBCE One-Pager",
-    fileName: "HBCE_ONE_PAGER.md",
-    purpose:
-      "One-page external overview for OpenAI, reviewers, incubators or early technical stakeholders."
-  },
-  {
-    index: 2,
-    title: "Architecture Brief",
-    fileName: "HBCE_ARCHITECTURE_BRIEF.md",
-    purpose:
-      "Technical architecture summary separating OpenAI cognitive engine from HBCE runtime governance."
-  },
-  {
-    index: 3,
-    title: "Safety & Misuse Prevention Brief",
-    fileName: "HBCE_SAFETY_AND_MISUSE_PREVENTION_BRIEF.md",
-    purpose:
-      "Safety case for defensive-only cybersecurity, refusal boundaries and human oversight."
-  },
-  {
-    index: 4,
-    title: "Data Protection Note",
-    fileName: "HBCE_DATA_PROTECTION_NOTE.md",
-    purpose:
-      "Data minimization, pseudonymization, secrets exclusion and OpenAI data boundary note."
-  },
-  {
-    index: 5,
-    title: "Controlled Demo Script",
-    fileName: "HBCE_CONTROLLED_DEMO_SCRIPT.md",
-    purpose:
-      "Demo flow showing allowed defensive request, ambiguous request degradation and offensive request refusal."
-  },
-  {
-    index: 6,
-    title: "R&D Roadmap",
-    fileName: "HBCE_R_AND_D_ROADMAP.md",
-    purpose:
-      "Pre-commercial development roadmap from prototype to review, pilot, legal setup and production readiness."
-  }
-];
-
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
@@ -981,7 +915,9 @@ function normalizeRuntimeText(value: string): string {
 }
 
 function includesAny(text: string, terms: string[]): boolean {
-  return terms.some((term) => text.includes(normalizeRuntimeText(term)));
+  const normalizedText = normalizeRuntimeText(text);
+
+  return terms.some((term) => normalizedText.includes(normalizeRuntimeText(term)));
 }
 
 function nowIso(): string {
@@ -1123,6 +1059,17 @@ function toMemoryRuntimeIdentity(identity: RuntimeIdentity): IprBoundMemoryRunti
   };
 }
 
+function buildDatabaseRuntimeFrame(): DatabaseRuntimeFrame {
+  return {
+    configured: isHbceDatabaseConfigured(),
+    available: isHbceDatabaseAvailable(),
+    targetPersistence: SAAS_TARGET_PERSISTENCE,
+    description: describeDefaultHbceDatabase(),
+    boundary: getHbceDatabaseBoundary(),
+    legalCertification: false
+  };
+}
+
 function resolveSaasScope(input: {
   accountSession?: IprAccountSessionResolution | null;
 }): {
@@ -1179,17 +1126,6 @@ function resolveSaasScope(input: {
   return {
     tenantId: tenantId || null,
     workspaceId: workspaceId || null
-  };
-}
-
-function buildDatabaseRuntimeFrame(): DatabaseRuntimeFrame {
-  return {
-    configured: isHbceDatabaseConfigured(),
-    available: isHbceDatabaseAvailable(),
-    targetPersistence: SAAS_TARGET_PERSISTENCE,
-    description: describeDefaultHbceDatabase(),
-    boundary: getHbceDatabaseBoundary(),
-    legalCertification: false
   };
 }
 
@@ -1295,6 +1231,7 @@ function normalizeFileKind(value: unknown, type: string, name: string): RuntimeF
 
   if (mime.startsWith("image/")) return "image";
   if (mime === "application/pdf" || lowerName.endsWith(".pdf")) return "pdf";
+
   if (
     mime.startsWith("text/") ||
     mime === "application/json" ||
@@ -1319,9 +1256,7 @@ function extractBase64FromDataUrl(dataUrl: string | null): string | null {
 
   const separatorIndex = dataUrl.indexOf(",");
 
-  if (separatorIndex < 0) {
-    return null;
-  }
+  if (separatorIndex < 0) return null;
 
   const base64 = dataUrl.slice(separatorIndex + 1).trim();
 
@@ -1383,6 +1318,7 @@ function normalizeFiles(files: FileInput[]): NormalizedFile[] {
     const rawText = String(file.text || file.content || "");
     const type = String(file.type || file.mimeType || "text/plain").trim() || "text/plain";
     const name = String(file.name || `file_${index + 1}`).trim() || `file_${index + 1}`;
+    const id = String(file.id || `file-${index + 1}`);
     const kind = normalizeFileKind(file.kind, type, name);
     const size =
       typeof file.size === "number" && Number.isFinite(file.size)
@@ -1441,7 +1377,7 @@ function normalizeFiles(files: FileInput[]): NormalizedFile[] {
     const dataHash = dataUrl || base64 ? sha256Short(dataUrl || base64) : null;
 
     const manifest = buildFileManifest({
-      id: String(file.id || `file-${index + 1}`),
+      id,
       name,
       type,
       kind,
@@ -1457,6 +1393,7 @@ function normalizeFiles(files: FileInput[]): NormalizedFile[] {
     const text = textSlice || manifest;
 
     const hash = sha256({
+      id,
       name,
       type,
       kind,
@@ -1469,7 +1406,7 @@ function normalizeFiles(files: FileInput[]): NormalizedFile[] {
     });
 
     return {
-      id: String(file.id || `file-${index + 1}`),
+      id,
       name,
       type,
       mimeType: type,
@@ -1511,9 +1448,7 @@ function normalizeScope(value: unknown): string[] {
 
   const text = safeRuntimeString(value, "");
 
-  if (!text) {
-    return [];
-  }
+  if (!text) return [];
 
   return text
     .split(/[,\s|]+/g)
@@ -1526,13 +1461,8 @@ function hasJokerAccessScope(scope: string[]): boolean {
 }
 
 function normalizeAccessDecision(value?: string): VerifiedSubjectAccessDecision {
-  if (value === "ACCESS_GRANTED") {
-    return "ACCESS_GRANTED";
-  }
-
-  if (value === "ACCESS_DENIED") {
-    return "ACCESS_DENIED";
-  }
+  if (value === "ACCESS_GRANTED") return "ACCESS_GRANTED";
+  if (value === "ACCESS_DENIED") return "ACCESS_DENIED";
 
   return "PENDING_SERVER_VALIDATION";
 }
@@ -1541,9 +1471,7 @@ function normalizeMatrixState(value?: string): MatrixActivationState {
   return value === "MATRIX_ACTIVE" ? "MATRIX_ACTIVE" : "MATRIX_LIMITED";
 }
 
-function normalizeIdentityBinding(
-  value?: string
-): IprHandoffEvaluation["identityBinding"] {
+function normalizeIdentityBinding(value?: string): IprHandoffEvaluation["identityBinding"] {
   return value === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
     ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
     : "NO_VERIFIED_BIOLOGICAL_SUBJECT";
@@ -1764,33 +1692,13 @@ function evaluateIprHandoff(value: unknown): IprHandoffEvaluation {
 
   const errors: string[] = [];
 
-  if (handoffType !== "HBCE_IPR_HANDOFF") {
-    errors.push("INVALID_HANDOFF_TYPE");
-  }
-
-  if (!subjectIpr) {
-    errors.push("MISSING_SUBJECT_IPR");
-  }
-
-  if (!certificateId) {
-    errors.push("MISSING_CERTIFICATE_ID");
-  }
-
-  if (certificateStatus !== "ACTIVE") {
-    errors.push("CERTIFICATE_NOT_ACTIVE");
-  }
-
-  if (!hasJokerAccessScope(certificateScope)) {
-    errors.push("MISSING_JOKER_C2_ACCESS_SCOPE");
-  }
-
-  if (accessDecision && accessDecision !== "ACCESS_GRANTED") {
-    errors.push("ACCESS_DECISION_NOT_GRANTED");
-  }
-
-  if (identityBinding !== "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
-    errors.push("INVALID_IDENTITY_BINDING");
-  }
+  if (handoffType !== "HBCE_IPR_HANDOFF") errors.push("INVALID_HANDOFF_TYPE");
+  if (!subjectIpr) errors.push("MISSING_SUBJECT_IPR");
+  if (!certificateId) errors.push("MISSING_CERTIFICATE_ID");
+  if (certificateStatus !== "ACTIVE") errors.push("CERTIFICATE_NOT_ACTIVE");
+  if (!hasJokerAccessScope(certificateScope)) errors.push("MISSING_JOKER_C2_ACCESS_SCOPE");
+  if (accessDecision && accessDecision !== "ACCESS_GRANTED") errors.push("ACCESS_DECISION_NOT_GRANTED");
+  if (identityBinding !== "IPR_VERIFIED_BIOLOGICAL_SUBJECT") errors.push("INVALID_IDENTITY_BINDING");
 
   if (errors.length > 0) {
     return {
@@ -2020,22 +1928,16 @@ function buildIdentityContext(input: {
 }
 
 function isFileAnalysisRequest(message: string, files: NormalizedFile[] = []): boolean {
-  if (files.length === 0) {
-    return false;
-  }
+  if (files.length === 0) return false;
 
   const text = normalizeRuntimeText(message || "");
 
-  if (!text) {
-    return true;
-  }
+  if (!text) return true;
 
   const hasAction = includesAny(text, FILE_ANALYSIS_ACTION_TERMS);
   const hasObject = includesAny(text, FILE_ANALYSIS_OBJECT_TERMS);
 
-  if (hasAction && hasObject) {
-    return true;
-  }
+  if (hasAction && hasObject) return true;
 
   if (
     includesAny(text, [
@@ -2069,15 +1971,11 @@ function isFileAnalysisRequest(message: string, files: NormalizedFile[] = []): b
 }
 
 function isRuntimeDiagnosticQuestion(message: string, files: NormalizedFile[] = []): boolean {
-  if (isFileAnalysisRequest(message, files)) {
-    return false;
-  }
+  if (isFileAnalysisRequest(message, files)) return false;
 
   const text = normalizeRuntimeText(message);
 
-  if (includesAny(text, RUNTIME_DIAGNOSTIC_TERMS)) {
-    return true;
-  }
+  if (includesAny(text, RUNTIME_DIAGNOSTIC_TERMS)) return true;
 
   if (
     includesAny(text, ["mostrami", "dimmi", "qual e", "qual è", "elenca", "conferma", "spiegami"]) &&
@@ -2098,6 +1996,12 @@ function hasProhibitedCyberSignal(text: string): boolean {
     includesAny(text, CYBER_PROHIBITED_TERMS) ||
     includesAny(text, CYBER_PROHIBITED_CONTEXTUAL_PATTERNS)
   );
+}
+
+function isDefensiveContext(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return includesAny(text, CYBER_DEFENSIVE_CONTEXT_TERMS);
 }
 
 function isSafetyReviewPrompt(message: string): boolean {
@@ -2125,6 +2029,37 @@ function isSafetyReviewPrompt(message: string): boolean {
   ]);
 }
 
+function detectsProhibitedCyberRequest(message: string): boolean {
+  if (isRuntimeDiagnosticQuestion(message)) return false;
+
+  const text = normalizeRuntimeText(message);
+  const unsafeCyberIntent = hasProhibitedCyberSignal(text);
+
+  if (!unsafeCyberIntent) return false;
+  if (isSafetyReviewPrompt(message)) return false;
+  if (isDefensiveContext(message)) return false;
+
+  return true;
+}
+
+function isIdentityRecognitionQuestion(message: string): boolean {
+  const text = normalizeRuntimeText(message);
+
+  return includesAny(text, [
+    "sai chi sono",
+    "mi riconosci",
+    "chi sono",
+    "riconosci il mio ipr",
+    "sono riconosciuto",
+    "identita operativa rilevata",
+    "identità operativa rilevata",
+    "human ipr",
+    "ipr biologico",
+    "verified subject",
+    "dimmi chi sono"
+  ]);
+}
+
 function isSafeRedTeamRequest(message: string): boolean {
   const text = normalizeRuntimeText(message);
 
@@ -2146,53 +2081,6 @@ function isSafeRedTeamRequest(message: string): boolean {
     "memory",
     "non fornire istruzioni offensive",
     "senza fornire istruzioni offensive"
-  ]);
-}
-
-function isDefensiveContext(message: string): boolean {
-  const text = normalizeRuntimeText(message);
-
-  return includesAny(text, CYBER_DEFENSIVE_CONTEXT_TERMS);
-}
-
-function detectsProhibitedCyberRequest(message: string): boolean {
-  if (isRuntimeDiagnosticQuestion(message)) {
-    return false;
-  }
-
-  const text = normalizeRuntimeText(message);
-  const unsafeCyberIntent = hasProhibitedCyberSignal(text);
-
-  if (!unsafeCyberIntent) {
-    return false;
-  }
-
-  if (isSafetyReviewPrompt(message)) {
-    return false;
-  }
-
-  if (isDefensiveContext(message)) {
-    return false;
-  }
-
-  return true;
-}
-
-function isIdentityRecognitionQuestion(message: string): boolean {
-  const text = normalizeRuntimeText(message);
-
-  return includesAny(text, [
-    "sai chi sono",
-    "mi riconosci",
-    "chi sono",
-    "riconosci il mio ipr",
-    "sono riconosciuto",
-    "identita operativa rilevata",
-    "identità operativa rilevata",
-    "human ipr",
-    "ipr biologico",
-    "verified subject",
-    "dimmi chi sono"
   ]);
 }
 
@@ -2304,9 +2192,7 @@ function detectProjectDomain(message: string, files: NormalizedFile[]): string {
     [message, ...files.map((file) => `${file.name}\n${file.text.slice(0, 4000)}`)].join("\n\n")
   );
 
-  if (isRuntimeDiagnosticQuestion(message, files)) {
-    return "MATRIX";
-  }
+  if (isRuntimeDiagnosticQuestion(message, files)) return "MATRIX";
 
   if (
     includesAny(text, [
@@ -2363,9 +2249,7 @@ function detectProjectDomain(message: string, files: NormalizedFile[]): string {
     return "HBCE_ECOSISTEMA_AI";
   }
 
-  if (hasCyberSecuritySignal(text)) {
-    return "HBCE_ECOSISTEMA_AI";
-  }
+  if (hasCyberSecuritySignal(text)) return "HBCE_ECOSISTEMA_AI";
 
   if (
     includesAny(text, [
@@ -2427,7 +2311,6 @@ function detectContextClass(message: string, files: NormalizedFile[], projectDom
   if (projectDomain === "CORPUS_ESOTEROLOGIA_ERMETICA") return "CORPUS";
   if (projectDomain === "HBCE_ECOSISTEMA_AI" && hasCyberSecuritySignal(text)) return "SECURITY";
   if (projectDomain === "HBCE_ECOSISTEMA_AI") return "HBCE_ECOSISTEMA_AI";
-
   if (hasCyberSecuritySignal(text)) return "SECURITY";
 
   if (includesAny(text, ["github", "vercel", "route.ts", "typescript", "next.js", "build", "deploy"])) {
@@ -2586,10 +2469,8 @@ function buildGovernanceFrame(input: {
       trustBoundary: METADATA_AUTHORITY_BOUNDARY,
       reasons: [
         "Runtime diagnostic request detected.",
-        "Diagnostic terms such as database persistence, memory persistence, MATRIX state, identity source, profileLookup, chainHash and boundary are not cyber-offensive signals.",
         "Runtime diagnostic answers are deterministic and do not require a model call.",
         "User-declared metadata remains non-authoritative; only HBCE-generated runtime metadata is authoritative.",
-        "Technical constants must remain canonical and untranslated.",
         FILE_PROCESSING_BOUNDARY
       ]
     };
@@ -2667,20 +2548,14 @@ function buildGovernanceFrame(input: {
     trustBoundary: METADATA_AUTHORITY_BOUNDARY,
     reasons: [
       "Request classified for governed AI runtime execution.",
-      "OpenAI is used as cognitive engine while HBCE/JOKER-C2 preserves identity, event, proof and audit boundaries.",
+      "OpenAI Responses API is used as cognitive engine while HBCE/JOKER-C2 preserves identity, event, proof and audit boundaries.",
       userDeclaredGovernanceDetected
         ? "User-declared governance-like metadata detected and treated as untrusted content."
         : "No user-declared governance override detected.",
       input.files.length > 0
         ? "File context detected; EVT/OPC audit metadata must include file hashes, file kinds and model-read modes."
         : "No file context detected.",
-      documentBatch
-        ? "Multi-document package request detected; runtime should split generation into governed batch steps."
-        : commercialPartnership
-          ? "Commercial HBCE/OpenAI partnership expansion detected; deterministic commercial architecture response should be used."
-          : highRisk
-            ? FAIL_CLOSED_STATEMENT
-            : "Low-risk request may proceed under standard governed runtime execution.",
+      highRisk ? FAIL_CLOSED_STATEMENT : "Low-risk request may proceed under standard governed runtime execution.",
       FILE_PROCESSING_BOUNDARY
     ]
   };
@@ -2812,6 +2687,7 @@ function buildSystemPrompt(input: {
     `Operational runtime EVT: ${input.identity.evt}`,
     `Core: ${input.identity.core}`,
     `Provider motore cognitivo: ${input.engine.provider}`,
+    `OpenAI API mode: ${input.engine.apiMode}`,
     `Modello OpenAI effettivo: ${input.engine.modelUsed}`,
     `ProjectDomain: ${input.governance.projectDomain}`,
     `ContextClass: ${input.governance.contextClass}`,
@@ -2911,21 +2787,21 @@ function hasMultimodalParts(files: NormalizedFile[]): boolean {
   );
 }
 
-function buildOpenAIUserContent(input: {
+function buildResponsesUserContent(input: {
   userPrompt: string;
   files: NormalizedFile[];
   mode: "multimodal" | "text_only";
-}): string | OpenAIChatContentPart[] {
-  if (input.mode === "text_only" || !hasMultimodalParts(input.files)) {
-    return input.userPrompt;
-  }
-
-  const parts: OpenAIChatContentPart[] = [
+}): OpenAIResponsesContentPart[] {
+  const parts: OpenAIResponsesContentPart[] = [
     {
-      type: "text",
+      type: "input_text",
       text: input.userPrompt
     }
   ];
+
+  if (input.mode === "text_only" || !hasMultimodalParts(input.files)) {
+    return parts;
+  }
 
   for (const file of input.files) {
     if (!file.modelReadable || !file.dataUrl) {
@@ -2934,21 +2810,17 @@ function buildOpenAIUserContent(input: {
 
     if (file.modelReadMode === "vision_image_url") {
       parts.push({
-        type: "image_url",
-        image_url: {
-          url: file.dataUrl,
-          detail: "high"
-        }
+        type: "input_image",
+        image_url: file.dataUrl,
+        detail: "high"
       });
     }
 
     if (file.modelReadMode === "pdf_file_data") {
       parts.push({
-        type: "file",
-        file: {
-          filename: file.name,
-          file_data: file.dataUrl
-        }
+        type: "input_file",
+        filename: file.name,
+        file_data: file.dataUrl
       });
     }
   }
@@ -2956,7 +2828,7 @@ function buildOpenAIUserContent(input: {
   return parts;
 }
 
-function buildOpenAIMessages(input: {
+function buildOpenAIResponsesInput(input: {
   identity: RuntimeIdentity;
   message: string;
   files: NormalizedFile[];
@@ -2968,8 +2840,8 @@ function buildOpenAIMessages(input: {
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
   mode: "multimodal" | "text_only";
-}): OpenAIChatMessage[] {
-  const systemPrompt = buildSystemPrompt({
+}) {
+  const instructions = buildSystemPrompt({
     identity: input.identity,
     governance: input.governance,
     engine: input.engine,
@@ -2990,20 +2862,275 @@ function buildOpenAIMessages(input: {
     database: input.database
   });
 
-  return [
-    {
-      role: "system",
-      content: systemPrompt
-    },
-    {
-      role: "user",
-      content: buildOpenAIUserContent({
-        userPrompt,
-        files: input.files,
-        mode: input.mode
-      })
+  const content = buildResponsesUserContent({
+    userPrompt,
+    files: input.files,
+    mode: input.mode
+  });
+
+  return {
+    instructions,
+    input: [
+      {
+        role: "user",
+        content
+      }
+    ]
+  };
+}
+
+function extractTextFromMaybeObjectText(value: unknown): string {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (isRecord(value)) {
+    const direct = safeRuntimeString(value.value, "") || safeRuntimeString(value.text, "");
+
+    if (direct) {
+      return direct.trim();
     }
-  ];
+  }
+
+  return "";
+}
+
+function extractOpenAIText(response: unknown): string {
+  const directOutputText = safeRuntimeString(readPath(response, ["output_text"]), "");
+
+  if (directOutputText) {
+    return directOutputText.trim();
+  }
+
+  const chatCompletionContent = firstRuntimeString(
+    response,
+    [
+      ["choices", "0", "message", "content"],
+      ["choices", "0", "text"]
+    ],
+    ""
+  );
+
+  if (chatCompletionContent) {
+    return chatCompletionContent.trim();
+  }
+
+  const output = isRecord(response) && Array.isArray(response.output)
+    ? response.output
+    : [];
+
+  const collected: string[] = [];
+
+  for (const item of output) {
+    if (!isRecord(item)) continue;
+
+    const content = Array.isArray(item.content) ? item.content : [];
+
+    for (const part of content) {
+      if (!isRecord(part)) continue;
+
+      const type = safeRuntimeString(part.type, "");
+      const text =
+        extractTextFromMaybeObjectText(part.text) ||
+        extractTextFromMaybeObjectText(part.value) ||
+        extractTextFromMaybeObjectText(part.content);
+
+      if (
+        text &&
+        (
+          type === "output_text" ||
+          type === "text" ||
+          type === "message" ||
+          type === "" ||
+          type.includes("text")
+        )
+      ) {
+        collected.push(text);
+      }
+    }
+  }
+
+  return collected.join("\n").trim();
+}
+
+function getOpenAIResponseStatus(response: unknown): string | null {
+  const status = safeRuntimeString(readPath(response, ["status"]), "");
+  return status || null;
+}
+
+function getOpenAIIncompleteReason(response: unknown): string | null {
+  const reason = safeRuntimeString(readPath(response, ["incomplete_details", "reason"]), "");
+  return reason || null;
+}
+
+function getOpenAIErrorReason(response: unknown): string | null {
+  return (
+    firstRuntimeString(
+      response,
+      [
+        ["error", "code"],
+        ["error", "type"],
+        ["error", "message"]
+      ],
+      ""
+    ) || null
+  );
+}
+
+function resolveEmptyResponseReason(input: {
+  response: unknown;
+  files: NormalizedFile[];
+  message: string;
+}): string {
+  const status = getOpenAIResponseStatus(input.response);
+  const incompleteReason = getOpenAIIncompleteReason(input.response);
+  const errorReason = getOpenAIErrorReason(input.response);
+  const fileSummary = summarizeFiles(input.files);
+
+  if (errorReason) {
+    return `OPENAI_RESPONSE_ERROR_${errorReason}`;
+  }
+
+  if (incompleteReason === "max_output_tokens") {
+    return "OPENAI_MAX_OUTPUT_TOKENS";
+  }
+
+  if (incompleteReason) {
+    return `OPENAI_INCOMPLETE_${incompleteReason}`;
+  }
+
+  if (status === "incomplete") {
+    return "OPENAI_INCOMPLETE_RESPONSE";
+  }
+
+  if (
+    input.files.length > 0 &&
+    isFileAnalysisRequest(input.message, input.files) &&
+    fileSummary.model_readable_count === 0
+  ) {
+    return "FILE_CONTEXT_NOT_MODEL_READABLE";
+  }
+
+  if (
+    input.files.length > 0 &&
+    isFileAnalysisRequest(input.message, input.files) &&
+    input.files.every((file) => file.textLength === 0 && file.base64Length === 0)
+  ) {
+    return "FILE_CONTEXT_EMPTY";
+  }
+
+  return "OPENAI_EMPTY_RESPONSE";
+}
+
+function normalizeOpenAIExceptionReason(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (isRecord(error)) {
+    const message =
+      firstRuntimeString(
+        error,
+        [
+          ["error", "message"],
+          ["message"],
+          ["response", "data", "error", "message"],
+          ["cause", "message"]
+        ],
+        ""
+      ) || fallback;
+
+    return message;
+  }
+
+  return fallback;
+}
+
+function resolveEngine(input: {
+  message: string;
+  contextClass: string;
+  intentClass: string;
+  projectDomain: string;
+  files: NormalizedFile[];
+}): OpenAIEngineConfig {
+  const text = normalizeRuntimeText(input.message);
+
+  const deep =
+    input.files.length > 0 ||
+    input.contextClass === "GITHUB" ||
+    input.contextClass === "TECHNICAL" ||
+    input.contextClass === "GOVERNANCE" ||
+    input.contextClass === "SECURITY" ||
+    input.contextClass === "RUNTIME_DIAGNOSTIC" ||
+    input.projectDomain !== "GENERAL" ||
+    includesAny(text, [
+      "diagnostica",
+      "runtime",
+      "governance",
+      "audit",
+      "github",
+      "vercel",
+      "rifattorizza",
+      "matrix",
+      "joker-c2",
+      "opc",
+      "ipr",
+      "evt",
+      "openai",
+      "fail-closed",
+      "privacy",
+      "partnership",
+      "saas",
+      "database",
+      "tenant",
+      "workspace",
+      "pdf",
+      "immagine",
+      "foto",
+      "file",
+      "allegato"
+    ]);
+
+  return {
+    provider: "OpenAI",
+    apiMode: "responses",
+    role: "cognitive_engine",
+    runtimeRole: "HBCE_governed_runtime",
+    modelUsed: deep ? DEEP_MODEL : MODEL,
+    standardModel: MODEL,
+    deepModel: DEEP_MODEL,
+    mode: deep ? "deep" : "standard",
+    configured: Boolean(process.env.OPENAI_API_KEY),
+    projectBirthDate: PROJECT_BIRTH_DATE,
+    projectBirthLabel: PROJECT_BIRTH_LABEL
+  };
+}
+
+async function callOpenAIResponses(input: {
+  identity: RuntimeIdentity;
+  message: string;
+  files: NormalizedFile[];
+  continuityRef: string | null;
+  governance: GovernanceFrame;
+  engine: OpenAIEngineConfig;
+  iprHandoff: IprHandoffEvaluation;
+  memory: IprBoundMemoryRecord;
+  saas: SaasRuntimeContext;
+  database: DatabaseRuntimeFrame;
+  mode: "multimodal" | "text_only";
+}) {
+  if (!openai) {
+    throw new Error("OPENAI_API_KEY_NOT_CONFIGURED");
+  }
+
+  const responseInput = buildOpenAIResponsesInput(input);
+
+  return openai.responses.create({
+    model: input.engine.modelUsed,
+    instructions: responseInput.instructions,
+    input: responseInput.input,
+    max_output_tokens: MAX_OUTPUT_TOKENS
+  } as never);
 }
 
 function buildIdentityRecognitionResponse(input: {
@@ -3107,6 +3234,7 @@ function buildRuntimeDiagnosticResponse(input: {
   memory: IprBoundMemoryRecord;
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
+  engine: OpenAIEngineConfig;
 }): string {
   const subject = input.iprHandoff.verifiedSubject;
   const profileLookup = input.accountSession.profileLookup;
@@ -3138,6 +3266,9 @@ function buildRuntimeDiagnosticResponse(input: {
     `profileLookup.found: ${profileLookup.found ? "true" : "false"}`,
     `profileLookup.matchedStrategy: ${profileLookup.matchedStrategy || "none"}`,
     `profileLookup.matchedMethod: ${profileLookup.matchedMethod || "none"}`,
+    `OpenAI API mode: ${input.engine.apiMode}`,
+    `OpenAI model: ${input.engine.modelUsed}`,
+    `OpenAI configured: ${input.engine.configured ? "true" : "false"}`,
     `Database configured: ${input.database.configured ? "true" : "false"}`,
     `Database available: ${input.database.available ? "true" : "false"}`,
     `SaaS target persistence: ${input.saas.targetPersistence}`,
@@ -3159,151 +3290,6 @@ function buildRuntimeDiagnosticResponse(input: {
     "Se manca una condizione, il runtime deve degradare in modo fail-closed.",
     "",
     "legalCertification=false"
-  ].join("\n");
-}
-
-function buildHbceOnePagerDocument(input: {
-  iprHandoff: IprHandoffEvaluation;
-  memory: IprBoundMemoryRecord;
-}): string {
-  const subjectLine =
-    input.iprHandoff.valid && input.iprHandoff.verifiedSubject
-      ? `Current runtime subject context: server-validated HBCE IPR handoff present for ${input.iprHandoff.verifiedSubject.entity}.`
-      : "Current runtime subject context: no server-validated biological IPR handoff is required for this external one-pager.";
-
-  return [
-    "# HBCE One-Pager",
-    "",
-    "**Project:** Hermeticum B.C.E. / HBCE / AI JOKER-C2",
-    "",
-    "**Status:** R&D / pre-commercial prototype",
-    "",
-    "**Primary positioning:** Governed AI runtime for defensive cybersecurity and auditable AI operations",
-    "",
-    "AI JOKER-C2 is a governed runtime demonstrator. OpenAI provides the cognitive engine. HBCE/JOKER-C2 provides operational identity, event continuity, policy gates, risk classification, human oversight, technical proof receipts and audit-oriented metadata.",
-    "",
-    "```text",
-    "OpenAI generates.",
-    "AI JOKER-C2 executes.",
-    "IPR identifies.",
-    "EVT traces.",
-    "Memory preserves continuity.",
-    "OPC proves.",
-    "HBCE governs.",
-    "MATRIX organizes.",
-    "```",
-    "",
-    subjectLine,
-    "",
-    `Current memory mode: ${input.memory.scope}.`,
-    `Current memory authority: ${input.memory.authority}.`,
-    `Current persistence mode: ${input.memory.persistenceMode}.`,
-    "",
-    "OPC is a technical proof receipt only. legalCertification=false."
-  ].join("\n");
-}
-
-function buildDocumentBatchPlanningResponse(input: {
-  iprHandoff: IprHandoffEvaluation;
-  memory: IprBoundMemoryRecord;
-}): string {
-  const list = DOCUMENT_BATCH_ITEMS.map((item) =>
-    `${item.index}. ${item.title} (${item.fileName}) - ${item.purpose}`
-  ).join("\n");
-
-  return [
-    "Richiesta multi-documento rilevata.",
-    "",
-    "Creo il pacchetto in modalità batch governata: un documento per volta, con continuità EVT, OPC e memoria IPR-bound quando disponibile.",
-    "",
-    "Pacchetto previsto:",
-    "",
-    "```text",
-    list,
-    "```",
-    "",
-    "---",
-    "",
-    buildHbceOnePagerDocument(input),
-    "",
-    "---",
-    "",
-    "Batch state:",
-    "",
-    "```text",
-    "Current document: 1/6",
-    "Generated file: HBCE_ONE_PAGER.md",
-    "Next document: HBCE_ARCHITECTURE_BRIEF.md",
-    "Memory scope: IPR_BOUND when handoff/session is valid",
-    "OPC: technical proof receipt only",
-    "legalCertification=false",
-    "```"
-  ].join("\n");
-}
-
-function buildCommercialPartnershipExpansionResponse(input: {
-  iprHandoff: IprHandoffEvaluation;
-  memory: IprBoundMemoryRecord;
-}): string {
-  const verifiedSubject =
-    input.iprHandoff.valid && input.iprHandoff.verifiedSubject
-      ? input.iprHandoff.verifiedSubject.entity
-      : "not verified";
-
-  return [
-    "# HBCE / OpenAI Commercial Partnership Architecture",
-    "",
-    "Hermeticum B.C.E. / HBCE deve proporsi a OpenAI come progetto R&D pre-commerciale che costruisce un runtime governato sopra l’uso dei modelli OpenAI, non come foundation model concorrente e non come sistema C2 offensivo autonomo.",
-    "",
-    "Formula:",
-    "",
-    "> OpenAI provides the cognitive engine. HBCE/JOKER-C2 provides runtime governance, identity, event continuity, proof receipts, policy enforcement, defensive-only cyber boundaries and audit posture.",
-    "",
-    "Servizi HBCE proponibili:",
-    "",
-    "1. Governed AI Runtime Layer.",
-    "2. IPR Identity & Access Governance.",
-    "3. EVT Event Continuity.",
-    "4. OPC Technical Proof Receipt.",
-    "5. MATRIX Orchestration.",
-    "6. Defensive Cyber Governance.",
-    "7. Data Protection & Minimization.",
-    "8. AI Governance Training & Office Setup.",
-    "",
-    "Uffici operativi da costruire:",
-    "",
-    "- HBCE R&D Office.",
-    "- IPR Registration & Onboarding Office.",
-    "- EVT Continuity Office.",
-    "- OPC Proof Receipt Office.",
-    "- AI Governance & Policy Office.",
-    "- Cyber Defense Governance Office.",
-    "- Data Protection & Minimization Office.",
-    "- OpenAI Partnership & Compliance Office.",
-    "",
-    "Roadmap:",
-    "",
-    "1. R&D Review.",
-    "2. Technical Alignment.",
-    "3. Controlled Pilot.",
-    "4. Commercial Readiness.",
-    "5. B2B/B2G Deployment.",
-    "",
-    "Boundary:",
-    "",
-    "OPC is a technical proof receipt. It is not legal certification, notarization, qualified timestamp, regulatory approval or public authority validation.",
-    "",
-    "```text",
-    `Verified subject: ${verifiedSubject}`,
-    `IPR handoff status: ${input.iprHandoff.status}`,
-    `IPR handoff source: ${input.iprHandoff.source || "none"}`,
-    `MATRIX: ${input.iprHandoff.matrixState}`,
-    `Semantic memory: ${input.memory.scope}`,
-    `Memory authority: ${input.memory.authority}`,
-    `Memory persistence: ${input.memory.persistenceMode}`,
-    "Generation class: COMMERCIAL_PARTNERSHIP",
-    "legalCertification=false",
-    "```"
   ].join("\n");
 }
 
@@ -3339,6 +3325,7 @@ function buildSafeRedTeamReviewResponse(input: {
     `HbceModule: ${input.governance.hbceModule}`,
     `RiskClass: ${input.governance.riskClass}`,
     `PolicyOutcome: ${input.governance.policyOutcome}`,
+    `OpenAI API mode: ${input.engine.apiMode}`,
     `ModelConfigured: ${input.engine.modelUsed}`,
     `VerifiedSubjectPresent: ${input.iprHandoff.valid ? "true" : "false"}`,
     `VerifiedSubjectSource: ${input.iprHandoff.source || "none"}`,
@@ -3355,6 +3342,7 @@ function buildFallback(input: {
   engine: OpenAIEngineConfig;
   iprHandoff: IprHandoffEvaluation;
   memory: IprBoundMemoryRecord;
+  files?: NormalizedFile[];
   degradedReason?: string | null;
 }): string {
   if (input.governance.decision === "BLOCK") {
@@ -3383,147 +3371,30 @@ function buildFallback(input: {
     ].join("\n");
   }
 
-  if (isSafeRedTeamRequest(input.message)) {
-    return buildSafeRedTeamReviewResponse({
-      governance: input.governance,
-      engine: input.engine,
-      iprHandoff: input.iprHandoff,
-      memory: input.memory
-    });
-  }
-
-  if (isCommercialPartnershipExpansionRequest(input.message)) {
-    return buildCommercialPartnershipExpansionResponse({
-      iprHandoff: input.iprHandoff,
-      memory: input.memory
-    });
-  }
-
-  if (isDocumentBatchRequest(input.message)) {
-    return buildDocumentBatchPlanningResponse({
-      iprHandoff: input.iprHandoff,
-      memory: input.memory
-    });
-  }
+  const fileSummary = summarizeFiles(input.files || []);
 
   return [
     "JOKER-C2 ha risposto in modalità degradata.",
     "",
-    "Il runtime resta attivo, ma il motore OpenAI non ha prodotto una risposta operativa completa oppure non è configurato.",
+    "Il runtime resta attivo, ma il motore OpenAI non ha prodotto una risposta operativa completa oppure il contenuto non è stato leggibile nel formato atteso.",
     input.degradedReason ? `Motivo tecnico: ${input.degradedReason}` : "",
     "",
     "Questa risposta non deve essere trattata come operazione trusted, certificata o enterprise-grade.",
     FAIL_CLOSED_STATEMENT,
     "",
     `Modello configurato: ${input.engine.modelUsed}`,
+    `OpenAI API mode: ${input.engine.apiMode}`,
     `OpenAIConfigured: ${input.engine.configured ? "true" : "false"}`,
     `VerifiedSubjectPresent: ${input.iprHandoff.valid ? "true" : "false"}`,
     `VerifiedSubjectSource: ${input.iprHandoff.source || "none"}`,
     `MATRIX: ${input.iprHandoff.matrixState}`,
     `SemanticMemory: ${input.memory.scope}`,
+    `Files: ${fileSummary.count}`,
+    `ModelReadableFiles: ${fileSummary.model_readable_count}`,
+    `FileReadModes: ${fileSummary.modes.join(", ") || "none"}`,
     "TransformativeMemory: DEGRADED_TRACE_CANDIDATE",
     "legalCertification=false"
   ].filter(Boolean).join("\n");
-}
-
-function extractOpenAIText(response: unknown): string {
-  const maybe = response as {
-    choices?: Array<{
-      message?: {
-        content?: string | null;
-      };
-    }>;
-  };
-
-  const content = maybe.choices?.[0]?.message?.content;
-
-  return typeof content === "string" ? content.trim() : "";
-}
-
-function resolveEngine(input: {
-  message: string;
-  contextClass: string;
-  intentClass: string;
-  projectDomain: string;
-  files: NormalizedFile[];
-}): OpenAIEngineConfig {
-  const text = normalizeRuntimeText(input.message);
-
-  const deep =
-    input.files.length > 0 ||
-    input.contextClass === "GITHUB" ||
-    input.contextClass === "TECHNICAL" ||
-    input.contextClass === "GOVERNANCE" ||
-    input.contextClass === "SECURITY" ||
-    input.contextClass === "RUNTIME_DIAGNOSTIC" ||
-    input.projectDomain !== "GENERAL" ||
-    includesAny(text, [
-      "diagnostica",
-      "runtime",
-      "governance",
-      "audit",
-      "github",
-      "vercel",
-      "rifattorizza",
-      "matrix",
-      "joker-c2",
-      "opc",
-      "ipr",
-      "evt",
-      "openai",
-      "fail-closed",
-      "privacy",
-      "partnership",
-      "saas",
-      "database",
-      "tenant",
-      "workspace",
-      "pdf",
-      "immagine",
-      "foto",
-      "file",
-      "allegato"
-    ]);
-
-  return {
-    provider: "OpenAI",
-    apiMode: "chat.completions",
-    role: "cognitive_engine",
-    runtimeRole: "HBCE_governed_runtime",
-    modelUsed: deep ? DEEP_MODEL : MODEL,
-    standardModel: MODEL,
-    deepModel: DEEP_MODEL,
-    mode: deep ? "deep" : "standard",
-    configured: Boolean(process.env.OPENAI_API_KEY),
-    projectBirthDate: PROJECT_BIRTH_DATE,
-    projectBirthLabel: PROJECT_BIRTH_LABEL
-  };
-}
-
-async function callOpenAIChat(input: {
-  identity: RuntimeIdentity;
-  message: string;
-  files: NormalizedFile[];
-  continuityRef: string | null;
-  governance: GovernanceFrame;
-  engine: OpenAIEngineConfig;
-  iprHandoff: IprHandoffEvaluation;
-  memory: IprBoundMemoryRecord;
-  saas: SaasRuntimeContext;
-  database: DatabaseRuntimeFrame;
-  mode: "multimodal" | "text_only";
-}) {
-  if (!openai) {
-    throw new Error("OPENAI_API_KEY_NOT_CONFIGURED");
-  }
-
-  const messages = buildOpenAIMessages(input);
-
-  return openai.chat.completions.create({
-    model: input.engine.modelUsed,
-    messages: messages as unknown as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
-    max_completion_tokens: MAX_COMPLETION_TOKENS
-  });
 }
 
 async function generateResponse(input: {
@@ -3559,7 +3430,8 @@ async function generateResponse(input: {
         accountSession: input.accountSession,
         memory: input.memory,
         saas: input.saas,
-        database: input.database
+        database: input.database,
+        engine: input.engine
       }),
       state: "OPERATIONAL",
       degradedReason: null,
@@ -3613,32 +3485,6 @@ async function generateResponse(input: {
     };
   }
 
-  if (isCommercialPartnershipExpansionRequest(input.message)) {
-    return {
-      text: buildCommercialPartnershipExpansionResponse({
-        iprHandoff: input.iprHandoff,
-        memory: input.memory
-      }),
-      state: "OPERATIONAL",
-      degradedReason: null,
-      deterministic: true,
-      generationClass: "COMMERCIAL_PARTNERSHIP"
-    };
-  }
-
-  if (isDocumentBatchRequest(input.message)) {
-    return {
-      text: buildDocumentBatchPlanningResponse({
-        iprHandoff: input.iprHandoff,
-        memory: input.memory
-      }),
-      state: "OPERATIONAL",
-      degradedReason: null,
-      deterministic: true,
-      generationClass: "DOCUMENT_BATCH_PLAN"
-    };
-  }
-
   if (!openai) {
     return {
       text: buildFallback({
@@ -3655,7 +3501,7 @@ async function generateResponse(input: {
   const multimodalAttempted = hasMultimodalParts(input.files);
 
   try {
-    const response = await callOpenAIChat({
+    const response = await callOpenAIResponses({
       ...input,
       mode: multimodalAttempted ? "multimodal" : "text_only"
     });
@@ -3663,17 +3509,24 @@ async function generateResponse(input: {
     const text = extractOpenAIText(response);
 
     if (!text) {
+      const reason = resolveEmptyResponseReason({
+        response,
+        files: input.files,
+        message: input.message
+      });
+
       return {
         text: buildFallback({
           ...input,
-          degradedReason: "OPENAI_EMPTY_RESPONSE"
+          degradedReason: reason
         }),
         state: "DEGRADED",
-        degradedReason: "OPENAI_EMPTY_RESPONSE",
+        degradedReason: reason,
         deterministic: true,
         generationClass: "FALLBACK",
         multimodalAttempted,
-        multimodalFallbackUsed: false
+        multimodalFallbackUsed: false,
+        openAIStatus: getOpenAIResponseStatus(response)
       };
     }
 
@@ -3684,12 +3537,18 @@ async function generateResponse(input: {
       deterministic: false,
       generationClass: "MODEL",
       multimodalAttempted,
-      multimodalFallbackUsed: false
+      multimodalFallbackUsed: false,
+      openAIStatus: getOpenAIResponseStatus(response)
     };
   } catch (firstError) {
+    const firstReason = normalizeOpenAIExceptionReason(
+      firstError,
+      multimodalAttempted ? "OPENAI_MULTIMODAL_REQUEST_FAILED" : "OPENAI_REQUEST_FAILED"
+    );
+
     if (multimodalAttempted) {
       try {
-        const response = await callOpenAIChat({
+        const response = await callOpenAIResponses({
           ...input,
           mode: "text_only"
         });
@@ -3710,23 +3569,43 @@ async function generateResponse(input: {
             deterministic: false,
             generationClass: "MODEL",
             multimodalAttempted: true,
-            multimodalFallbackUsed: true
+            multimodalFallbackUsed: true,
+            openAIStatus: getOpenAIResponseStatus(response)
           };
         }
-      } catch {
+
+        const secondReason = resolveEmptyResponseReason({
+          response,
+          files: input.files,
+          message: input.message
+        });
+
         return {
           text: buildFallback({
             ...input,
-            degradedReason:
-              firstError instanceof Error
-                ? firstError.message
-                : "OPENAI_MULTIMODAL_REQUEST_FAILED"
+            degradedReason: `OPENAI_TEXT_ONLY_FALLBACK_EMPTY_AFTER_${firstReason}__${secondReason}`
           }),
           state: "DEGRADED",
-          degradedReason:
-            firstError instanceof Error
-              ? firstError.message
-              : "OPENAI_MULTIMODAL_REQUEST_FAILED",
+          degradedReason: `OPENAI_TEXT_ONLY_FALLBACK_EMPTY_AFTER_${firstReason}__${secondReason}`,
+          deterministic: true,
+          generationClass: "FALLBACK",
+          multimodalAttempted: true,
+          multimodalFallbackUsed: true,
+          openAIStatus: getOpenAIResponseStatus(response)
+        };
+      } catch (secondError) {
+        const secondReason = normalizeOpenAIExceptionReason(
+          secondError,
+          "OPENAI_TEXT_ONLY_FALLBACK_FAILED"
+        );
+
+        return {
+          text: buildFallback({
+            ...input,
+            degradedReason: `OPENAI_MULTIMODAL_FAILED_${firstReason}__TEXT_ONLY_FAILED_${secondReason}`
+          }),
+          state: "DEGRADED",
+          degradedReason: `OPENAI_MULTIMODAL_FAILED_${firstReason}__TEXT_ONLY_FAILED_${secondReason}`,
           deterministic: true,
           generationClass: "FALLBACK",
           multimodalAttempted: true,
@@ -3738,10 +3617,10 @@ async function generateResponse(input: {
     return {
       text: buildFallback({
         ...input,
-        degradedReason: firstError instanceof Error ? firstError.message : "OPENAI_REQUEST_FAILED"
+        degradedReason: firstReason
       }),
       state: "DEGRADED",
-      degradedReason: firstError instanceof Error ? firstError.message : "OPENAI_REQUEST_FAILED",
+      degradedReason: firstReason,
       deterministic: true,
       generationClass: "FALLBACK",
       multimodalAttempted,
@@ -3757,7 +3636,28 @@ function mapOperationStatus(
   if (state === "BLOCKED" || decision === "BLOCK") return "BLOCKED";
   if (decision === "ESCALATE") return "ESCALATED";
   if (state === "DEGRADED" || decision === "DEGRADE") return "DEGRADED";
+
   return "COMPLETED";
+}
+
+function buildDocumentMode(input: {
+  message: string;
+  governance: GovernanceFrame;
+}) {
+  return isDocumentBatchRequest(input.message) ||
+    isCommercialPartnershipExpansionRequest(input.message)
+    ? "DERIVED_OUTPUT"
+    : input.governance.intentClass === "REWRITE"
+      ? "GENERATIVE_REWRITE"
+      : input.governance.intentClass === "ANALYZE"
+        ? "INTERPRETIVE_ANALYSIS"
+        : input.governance.intentClass === "SUMMARIZE"
+          ? "SUMMARY"
+          : input.governance.intentClass === "GITHUB"
+            ? "GENERAL_DOCUMENT_WORK"
+            : input.governance.intentClass === "DIAGNOSTIC"
+              ? "IMPACT_ASSESSMENT"
+              : "GENERAL_DOCUMENT_WORK";
 }
 
 function buildLegacyEvent(input: {
@@ -3802,17 +3702,7 @@ function buildLegacyEvent(input: {
     decision: input.decision,
     continuityRef: input.prev,
     message: input.message,
-    files: input.files.map((file) => ({
-      id: file.id,
-      name: file.name,
-      type: file.type,
-      kind: file.kind,
-      size: file.size,
-      hash: file.hash,
-      dataHash: file.dataHash,
-      modelReadMode: file.modelReadMode,
-      modelReadable: file.modelReadable
-    })),
+    files: input.files.map(publicFileRecord),
     contextClass: input.contextClass,
     documentMode: input.documentMode,
     documentFamily: input.documentFamily,
@@ -4377,6 +4267,7 @@ function buildRuntimeDiagnostic(input: {
     standardModel: input.engine.standardModel,
     deepModel: input.engine.deepModel,
     openAIConfigured: input.engine.configured,
+    openAIStatus: input.generated.openAIStatus || null,
     projectBirthDate: input.engine.projectBirthDate,
     projectBirthLabel: input.engine.projectBirthLabel,
     projectBirth: input.identity.projectBirth,
@@ -4554,26 +4445,6 @@ function buildRuntimeDiagnostic(input: {
     dataPrivacyBoundary: OPENAI_DATA_PRIVACY_BOUNDARY,
     degradedReason: input.generated.degradedReason || null
   };
-}
-
-function buildDocumentMode(input: {
-  message: string;
-  governance: GovernanceFrame;
-}) {
-  return isDocumentBatchRequest(input.message) ||
-    isCommercialPartnershipExpansionRequest(input.message)
-    ? "DERIVED_OUTPUT"
-    : input.governance.intentClass === "REWRITE"
-      ? "GENERATIVE_REWRITE"
-      : input.governance.intentClass === "ANALYZE"
-        ? "INTERPRETIVE_ANALYSIS"
-        : input.governance.intentClass === "SUMMARIZE"
-          ? "SUMMARY"
-          : input.governance.intentClass === "GITHUB"
-            ? "GENERAL_DOCUMENT_WORK"
-            : input.governance.intentClass === "DIAGNOSTIC"
-              ? "IMPACT_ASSESSMENT"
-              : "GENERAL_DOCUMENT_WORK";
 }
 
 export async function POST(req: NextRequest) {
@@ -4804,22 +4675,6 @@ export async function POST(req: NextRequest) {
         ]
       : ["Last operation processed no file attachments."];
 
-  const batchFacts = isDocumentBatchRequest(body.message)
-    ? [
-        "Last operation detected a multi-document OpenAI/HBCE package request.",
-        "The runtime used deterministic document batch planning to avoid OPENAI_EMPTY_RESPONSE.",
-        "Future package documents should be generated one at a time with separate EVT, OPC and memory continuity."
-      ]
-    : [];
-
-  const commercialFacts = isCommercialPartnershipExpansionRequest(body.message)
-    ? [
-        "Last operation detected an HBCE/OpenAI commercial partnership expansion request.",
-        "The runtime used deterministic commercial partnership architecture generation to avoid OPENAI_EMPTY_RESPONSE.",
-        "Commercial partnership content remains R&D/pre-commercial and must not be treated as executed contract, vendor onboarding or legal certification."
-      ]
-    : [];
-
   const degradedFacts =
     generated.state === "DEGRADED"
       ? [
@@ -4875,6 +4730,9 @@ export async function POST(req: NextRequest) {
       `Last response deterministic: ${generated.deterministic ? "true" : "false"}.`,
       `Last response multimodal attempted: ${generated.multimodalAttempted ? "true" : "false"}.`,
       `Last response multimodal fallback used: ${generated.multimodalFallbackUsed ? "true" : "false"}.`,
+      `Last OpenAI API mode: ${engine.apiMode}.`,
+      `Last OpenAI model: ${engine.modelUsed}.`,
+      `Last OpenAI response status: ${generated.openAIStatus || "none"}.`,
       `Last governed EVT: ${governedEvt.evt}.`,
       `Last OPC proof: ${opcProof.proofId}.`,
       `Last IPR identity source: ${iprHandoff.source || "none"}.`,
@@ -4888,8 +4746,6 @@ export async function POST(req: NextRequest) {
       ...accountSessionFacts,
       ...databaseFacts,
       ...fileFacts,
-      ...batchFacts,
-      ...commercialFacts,
       ...cyberFacts,
       ...diagnosticFacts,
       ...degradedFacts,
@@ -5106,7 +4962,7 @@ export async function GET(req: NextRequest) {
     runtime: "AI_JOKER-C2",
     state: "OPERATIONAL",
     provider: "OpenAI",
-    apiMode: "chat.completions",
+    apiMode: "responses",
     model: standardModel,
     standardModel,
     deepModel,
@@ -5181,8 +5037,8 @@ export async function GET(req: NextRequest) {
     fileProcessing: {
       supportedKinds: ["text", "image", "pdf", "binary"],
       textMode: "prompt_context",
-      imageMode: "image_url_when_data_url_present",
-      pdfMode: "file_data_when_supported_otherwise_manifest_or_extracted_text",
+      imageMode: "input_image_when_data_url_present",
+      pdfMode: "input_file_when_supported_otherwise_manifest_or_extracted_text",
       maxModelImages: MAX_MODEL_IMAGES,
       maxModelPdfs: MAX_MODEL_PDFS,
       maxFileTextChars: MAX_FILE_TEXT_CHARS,
