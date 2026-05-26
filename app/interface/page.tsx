@@ -62,14 +62,19 @@ type RuntimeHealth = {
   error?: string;
 };
 
+type RuntimeFileKind = "text" | "image" | "pdf" | "binary";
+
 type RuntimeFile = {
   id: string;
   name: string;
   type: string;
   mimeType: string;
   size: number;
+  kind: RuntimeFileKind;
   text: string;
   content: string;
+  dataUrl?: string;
+  base64?: string;
   role: "context" | "reference_only";
   uploaded: boolean;
 };
@@ -254,6 +259,16 @@ const TEXT_FILE_TYPES = new Set([
   "text/css",
   "text/javascript"
 ]);
+
+const IMAGE_FILE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+  "image/gif"
+]);
+
+const PDF_FILE_TYPES = new Set(["application/pdf"]);
 
 const HANDOFF_STORAGE_KEY = "hbce_ipr_handoff";
 
@@ -1517,16 +1532,163 @@ function getStatusClass(value: string): string {
   return "";
 }
 
+function inferMimeTypeFromFileName(fileName: string): string {
+  const lower = fileName.toLowerCase();
+
+  if (lower.endsWith(".json")) return "application/json";
+  if (lower.endsWith(".md") || lower.endsWith(".markdown")) return "text/markdown";
+  if (lower.endsWith(".csv")) return "text/csv";
+  if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html";
+  if (lower.endsWith(".css")) return "text/css";
+  if (lower.endsWith(".js") || lower.endsWith(".mjs")) return "text/javascript";
+  if (lower.endsWith(".ts") || lower.endsWith(".tsx")) return "application/typescript";
+  if (lower.endsWith(".txt")) return "text/plain";
+  if (lower.endsWith(".xml")) return "application/xml";
+  if (lower.endsWith(".yaml") || lower.endsWith(".yml")) return "application/yaml";
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".gif")) return "image/gif";
+
+  return "application/octet-stream";
+}
+
+function resolveFileMimeType(file: File): string {
+  return file.type || inferMimeTypeFromFileName(file.name);
+}
+
 function isTextFile(file: File): boolean {
-  const type = file.type || "text/plain";
+  const type = resolveFileMimeType(file);
 
   return type.startsWith("text/") || TEXT_FILE_TYPES.has(type);
 }
 
+function isImageFile(file: File): boolean {
+  const type = resolveFileMimeType(file);
+
+  return type.startsWith("image/") || IMAGE_FILE_TYPES.has(type);
+}
+
+function isPdfFile(file: File): boolean {
+  const type = resolveFileMimeType(file);
+
+  return PDF_FILE_TYPES.has(type) || file.name.toLowerCase().endsWith(".pdf");
+}
+
+function resolveRuntimeFileKind(file: File): RuntimeFileKind {
+  if (isTextFile(file)) return "text";
+  if (isImageFile(file)) return "image";
+  if (isPdfFile(file)) return "pdf";
+
+  return "binary";
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => {
+      reject(new Error("FILE_DATA_URL_READ_FAILED"));
+    };
+
+    reader.onload = () => {
+      const result = reader.result;
+
+      if (typeof result !== "string") {
+        reject(new Error("FILE_DATA_URL_EMPTY_RESULT"));
+        return;
+      }
+
+      resolve(result);
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+function extractBase64FromDataUrl(dataUrl: string): string {
+  const [, base64 = ""] = dataUrl.split(",", 2);
+
+  return base64;
+}
+
+function buildFileContentManifest(input: {
+  file: File;
+  kind: RuntimeFileKind;
+  type: string;
+  textLength?: number;
+  base64Length?: number;
+}): string {
+  return [
+    `FILE_NAME=${input.file.name}`,
+    `FILE_KIND=${input.kind}`,
+    `MIME_TYPE=${input.type}`,
+    `SIZE_BYTES=${input.file.size}`,
+    `TEXT_LENGTH=${input.textLength ?? 0}`,
+    `BASE64_LENGTH=${input.base64Length ?? 0}`,
+    input.kind === "image"
+      ? "MULTIMODAL_STATUS=IMAGE_READY_FOR_SERVER_SIDE_OPENAI_VISION"
+      : input.kind === "pdf"
+        ? "MULTIMODAL_STATUS=PDF_READY_FOR_SERVER_SIDE_EXTRACTION_OR_MODEL_FILE_HANDLING"
+        : input.kind === "text"
+          ? "MULTIMODAL_STATUS=TEXT_EXTRACTED_IN_BROWSER"
+          : "MULTIMODAL_STATUS=REFERENCE_ONLY_UNSUPPORTED_BINARY"
+  ].join("\n");
+}
+
 async function readRuntimeFile(file: File): Promise<RuntimeFile> {
-  const type = file.type || "application/octet-stream";
-  const readable = isTextFile(file);
-  const text = readable ? await file.text() : "";
+  const type = resolveFileMimeType(file);
+  const kind = resolveRuntimeFileKind(file);
+
+  if (kind === "text") {
+    const text = await file.text();
+
+    return {
+      id: buildId("FILE"),
+      name: file.name,
+      type,
+      mimeType: type,
+      size: file.size,
+      kind,
+      text,
+      content: text,
+      role: "context",
+      uploaded: true
+    };
+  }
+
+  if (kind === "image" || kind === "pdf") {
+    const dataUrl = await readFileAsDataUrl(file);
+    const base64 = extractBase64FromDataUrl(dataUrl);
+    const manifest = buildFileContentManifest({
+      file,
+      kind,
+      type,
+      base64Length: base64.length
+    });
+
+    return {
+      id: buildId("FILE"),
+      name: file.name,
+      type,
+      mimeType: type,
+      size: file.size,
+      kind,
+      text: manifest,
+      content: manifest,
+      dataUrl,
+      base64,
+      role: "context",
+      uploaded: true
+    };
+  }
+
+  const manifest = buildFileContentManifest({
+    file,
+    kind,
+    type
+  });
 
   return {
     id: buildId("FILE"),
@@ -1534,11 +1696,28 @@ async function readRuntimeFile(file: File): Promise<RuntimeFile> {
     type,
     mimeType: type,
     size: file.size,
-    text,
-    content: text,
-    role: readable ? "context" : "reference_only",
+    kind,
+    text: manifest,
+    content: manifest,
+    role: "reference_only",
     uploaded: true
   };
+}
+
+function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return "0 B";
+  }
+
+  const units = ["B", "KB", "MB", "GB"];
+  const index = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1
+  );
+
+  const value = bytes / 1024 ** index;
+
+  return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
 }
 
 async function readJsonResponse<T>(response: Response): Promise<T> {
@@ -2003,7 +2182,7 @@ export default function InterfacePage() {
     const outgoing = (forceMessage ?? message).trim();
 
     if (!outgoing && files.length === 0) {
-      setError("Write a message or attach a readable text file.");
+      setError("Write a message or attach a supported file.");
       return;
     }
 
@@ -2555,8 +2734,27 @@ export default function InterfacePage() {
         {files.length > 0 ? (
           <div className="joker-file-bar">
             {files.map((file) => (
-              <div key={file.id} className="joker-file-chip">
+              <div
+                key={file.id}
+                className={[
+                  "joker-file-chip",
+                  `is-${file.kind}`
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                title={`${file.name} · ${file.kind} · ${file.mimeType} · ${formatFileSize(file.size)}`}
+              >
+                {file.kind === "image" && file.dataUrl ? (
+                  <img
+                    src={file.dataUrl}
+                    alt=""
+                    className="joker-file-preview"
+                  />
+                ) : null}
                 <span className="notranslate" translate="no">{file.name}</span>
+                <em className="notranslate" translate="no">
+                  {file.kind} · {formatFileSize(file.size)}
+                </em>
                 <button type="button" onClick={() => removeFile(file.id)}>
                   ×
                 </button>
@@ -2578,6 +2776,7 @@ export default function InterfacePage() {
             ref={fileInputRef}
             type="file"
             multiple
+            accept=".txt,.md,.markdown,.json,.csv,.html,.css,.js,.ts,.tsx,.xml,.yaml,.yml,.pdf,image/png,image/jpeg,image/webp,image/gif,text/*,application/json,application/pdf"
             style={{ display: "none" }}
             onChange={(event) => void handleFiles(event.target.files)}
           />
@@ -3429,11 +3628,44 @@ export default function InterfacePage() {
           font-size: 12px;
         }
 
+        .joker-file-chip.is-text {
+          border-color: rgba(34, 197, 94, 0.28);
+        }
+
+        .joker-file-chip.is-image {
+          border-color: rgba(34, 211, 238, 0.34);
+        }
+
+        .joker-file-chip.is-pdf {
+          border-color: rgba(251, 191, 36, 0.34);
+        }
+
+        .joker-file-chip.is-binary {
+          border-color: rgba(248, 113, 113, 0.32);
+        }
+
         .joker-file-chip span {
           max-width: 220px;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+
+        .joker-file-chip em {
+          color: #64748b;
+          font-size: 10px;
+          font-style: normal;
+          font-weight: 850;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+
+        .joker-file-preview {
+          width: 24px;
+          height: 24px;
+          border-radius: 999px;
+          object-fit: cover;
+          border: 1px solid rgba(148, 163, 184, 0.35);
         }
 
         .joker-file-chip button {
