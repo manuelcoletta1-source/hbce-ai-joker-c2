@@ -658,26 +658,70 @@ const OPENAI_REVIEW_ANSWER_STYLE =
   "When answering an OpenAI reviewer: be technical, non-promotional, avoid overclaims, distinguish model/runtime/governance/human responsibility, state legalCertification=false for OPC, state defensive-only for cyber, and state that JOKER-C2 makes AI use more governed, auditable and accountable.";
 
 const ITALIAN_DOCUMENT_QUALITY_BOUNDARY =
-  "Italian output must be written directly in professional Italian, not as literal machine translation. Preserve canonical technical terms exactly: IPR, EVT, OPC, MATRIX, HBCE, JOKER-C2, OpenAI, runtime, audit, proof receipt, fail-closed, tenant, workspace, dashboard, SaaS, database, ACCESS_GRANTED, MATRIX_ACTIVE, IPR_BOUND and legalCertification=false. Do not translate IPR as intellectual property rights in user-facing Italian. Do not translate proof receipt as legal certification. Do not produce malformed phrases, sexual/body mistranslations, random nouns, broken headings, mid-sentence endings or filler lists. For documents and strategies, prefer clear prose, complete sections, grounded limits and executive-ready language.";
+  "Italian output must be written directly in professional Italian, not as literal machine translation. Preserve canonical technical terms exactly: IPR, EVT, OPC, MATRIX, HBCE, HERMETICUM B.C.E., HERMETICUM B.C.E. S.r.l., AI JOKER-C2, JOKER-C2, OpenAI, runtime, audit, proof receipt, fail-closed, tenant, workspace, dashboard, SaaS, database, ACCESS_GRANTED, MATRIX_ACTIVE, IPR_BOUND and legalCertification=false. Do not translate IPR as intellectual property rights, proprietà intellettuale, diritti di proprietà intellettuale or DPI in user-facing Italian. Do not translate proof receipt as legal certification. Do not translate crosswalk as attraversamento pedonale. Do not translate fail-closed as chiusura fallita. Do not produce malformed phrases, sexual/body mistranslations, random nouns, broken headings, mid-sentence endings or filler lists. For documents and strategies, prefer clear prose, complete sections, grounded limits and executive-ready language.";
 
 const LONG_DOCUMENT_OUTPUT_BOUNDARY =
   "When the user asks for a long strategy or document, produce a complete usable version within the token budget. Reduce density before truncating. Do not end mid-sentence. If the full exhaustive treatment would exceed the limit, provide a complete executive version with structured sections and state that deeper appendices can be generated as separate documents only if requested later.";
 
 const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
-  [/\bHERMETICUM a\.C\./gi, "HERMETICUM B.C.E."],
-  [/\bHermeticum a\.C\./g, "Hermeticum B.C.E."],
-  [/\bHermeticum BCE\b/g, "HERMETICUM B.C.E."],
-  [/\bHermeticum B\.C\.E\b/g, "HERMETICUM B.C.E."],
-  [/\bHERMETICUM BCE\b/g, "HERMETICUM B.C.E."],
+  [/\bHERMETICUM\s*a\.C\./gi, "HERMETICUM B.C.E."],
+  [/\bHermeticum\s*a\.C\./g, "HERMETICUM B.C.E."],
+  [/\bHermeticumBCE\b/g, "HERMETICUM B.C.E."],
+  [/\bHermeticum\s+BCE\b/gi, "HERMETICUM B.C.E."],
+  [/\bHermeticum\s+B\.C\.E\b/gi, "HERMETICUM B.C.E."],
+  [/\bHERMETICUM\s+BCE\b/g, "HERMETICUM B.C.E."],
+  [/\bHERMETICUM\s+B\.C\.E\b/g, "HERMETICUM B.C.E."],
+  [/\bHERMETICUM\s+BCE\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
+  [/\bHERMETICUM\s+BCE\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
+  [/\bHERMETICUM\s+B\.C\.E\.?\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
+  [/\bHERMETICUM\s+B\.C\.E\.?\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
+  [/\bHERMETICUM\s*BCESrl\b/g, "HERMETICUM B.C.E. S.r.l."],
+  [/\bHERMETICUM\s*BESrl\b/g, "HERMETICUM B.C.E. S.r.l."],
+  [/\bHERMETICUM\s*BCE\s*S\.r\.l\.\b/g, "HERMETICUM B.C.E. S.r.l."],
+  [/\bHermeticum\s*BCE\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
+  [/\bHermeticum\s*B\.C\.E\.?\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
+  [/\bHBCE\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
+  [/\bHERMETICUM\s+B\.C\.E\.\s+B\.C\.E\./g, "HERMETICUM B.C.E."],
+
   [/\bDiritti di proprietà intellettuale umani\b/gi, "IPR biologico"],
   [/\bDiritti di proprietà intellettuale umano\b/gi, "IPR biologico"],
   [/\bdiritti di proprietà intellettuale umani\b/gi, "IPR biologico"],
   [/\bdiritti di proprietà intellettuale umano\b/gi, "IPR biologico"],
   [/\bDiritti di proprietà intellettuale\b/gi, "IPR"],
   [/\bdiritti di proprietà intellettuale\b/gi, "IPR"],
+  [/\baccesso verificato vincolato alla proprietà intellettuale\b/gi, "accesso verificato tramite identità operativa IPR"],
+  [/\baccesso verificato legato alla proprietà intellettuale\b/gi, "accesso verificato tramite identità operativa IPR"],
+  [/\bvincolato alla proprietà intellettuale\b/gi, "vincolato all'identità operativa IPR"],
+  [/\bproprietà intellettuale\b/gi, "IPR"],
+  [/\bDPI legato agli eventi\b/g, "IPR legato agli eventi"],
+  [/\bDPI legata agli eventi\b/g, "IPR legato agli eventi"],
+  [/\bDPI operativo\b/g, "IPR operativo"],
+  [/\bDPI biologico\b/g, "IPR biologico"],
+  [/\bIdentificativo DPI EVT traccia\b/g, "IPR identifica. EVT traccia"],
+  [/\bIdentificativo DPI\b/g, "IPR"],
+
   [/\blegalCertificazione\b/g, "legalCertification"],
   [/\blegalcertificazione\b/g, "legalCertification"],
+  [/\bcertificazionelegale=false\b/gi, "legalCertification=false"],
+  [/\bcertificazione legale=false\b/gi, "legalCertification=false"],
+  [/\bcertificazione legale = false\b/gi, "legalCertification=false"],
+  [/\blegal certification=false\b/gi, "legalCertification=false"],
+  [/\blegal certification = false\b/gi, "legalCertification=false"],
+  [/\bcertificazioneLegale=false\b/g, "legalCertification=false"],
+
   [/\bOPCRimane\b/g, "OPC rimane"],
+  [/\bProof ricevute\b/g, "proof receipt"],
+  [/\bproof ricevute\b/g, "proof receipt"],
+  [/\bprove ricevute tecnici\b/gi, "ricevute tecniche di prova"],
+  [/\bprove di ricevuta tecnici\b/gi, "ricevute tecniche di prova"],
+  [/\bprove di ricevuta tecniche\b/gi, "ricevute tecniche di prova"],
+  [/\ba prova di ricevuta\b/gi, "di proof receipt"],
+  [/\btecnici a prova di ricevuta\b/gi, "tecniche di proof receipt"],
+  [/\bOPC sono tecnici a prova di ricevuta\b/gi, "gli OPC sono proof receipt tecniche"],
+  [/\bOPC sono prove ricevute tecnici\b/gi, "gli OPC sono ricevute tecniche di prova"],
+  [/\bprova documentale\b/gi, "evidenza tecnica"],
+  [/\bprove collega\b/gi, "prove che collegano"],
+
   [/\bMagnete al piombo\b/gi, "Lead magnet"],
   [/\bmagnete al piombo\b/gi, "lead magnet"],
   [/\bprivacy del viso\b/gi, "consulenti privacy"],
@@ -693,10 +737,66 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bSingolo:\b/g, "Output:"],
   [/\bUnico:\b/g, "Output:"],
   [/\bBersaglio:\b/g, "Target:"],
-  [/\bFornitore\b/g, "Prodotto"],
-  [/\bpotenza;\b/gi, "energia;"],
+
+  [/\bRiduzione dell'HBCE\b/gi, "Risoluzione HBCE"],
+  [/\bRiduzione dell’HBCE\b/gi, "Risoluzione HBCE"],
+  [/\bRiduzione HBCE\b/gi, "Risoluzione HBCE"],
+  [/\bconto ha agito\b/gi, "account ha agito"],
+  [/\bquale conto ha agito\b/gi, "quale account ha agito"],
+  [/\bpanoramica della politica\b/gi, "policy snapshot"],
+  [/\bpanoramica dei rischi\b/gi, "risk snapshot"],
+  [/\bpanoramica del rischio\b/gi, "risk snapshot"],
+  [/\bconsentire\/bloccare\/escalare\b/gi, "allow/block/escalate"],
+  [/\bchiusura fallita\b/gi, "fail-closed"],
+  [/\bchiusura automatica in caso di errore\b/gi, "fail-closed"],
+  [/\bchiusura in caso di errore\b/gi, "fail-closed"],
+  [/\btest fallito-chiuso\b/gi, "test fail-closed"],
+  [/\bfallito-chiuso\b/gi, "fail-closed"],
+  [/\bTabù temporale\b/gi, "timestamp"],
+  [/\btabù temporale\b/gi, "timestamp"],
+
+  [/\b-Figura;/g, "- Regione;"],
+  [/\bFigura;/g, "Regione;"],
+  [/\bComune;\s*-Figura;\s*-\s*Stato\b/g, "Comune; Regione; Stato"],
   [/\brivoluzionario;\b/gi, "infrastrutture critiche;"],
-  [/\bterapia occupazionale corrotta\b/gi, "dipendenza operativa critica"]
+  [/\bfinanziatore;\b/gi, "settore finanziario;"],
+  [/\bpotenza;\b/gi, "energia;"],
+  [/\bFornitore di intelligenza artificiale\b/gi, "provider AI"],
+  [/\bfornitore di intelligenza artificiale\b/gi, "provider AI"],
+  [/\bProdotto di intelligenza artificiale\b/gi, "provider AI"],
+  [/\bProdotto AI\b/g, "provider AI"],
+  [/\bprodotto AI\b/g, "provider AI"],
+  [/\bObbligazione;\b/gi, "validità;"],
+  [/\bfornire OPC\b/gi, "OPC del fornitore"],
+  [/\bTecnica Sandbox\b/gi, "Sandbox tecnica"],
+  [/\btecnica Sandbox\b/gi, "sandbox tecnica"],
+  [/\battraversamento pedonale normativo-operativo\b/gi, "mappatura normativo-operativa"],
+  [/\battraversamento normativo-operativo\b/gi, "mappatura normativo-operativa"],
+  [/\bnon pubblici e privati\b/gi, "nodi pubblici e privati"],
+  [/\bRevisione umana attuale\b/gi, "Revisione umana effettiva"],
+  [/\brevisione umana attuale\b/gi, "revisione umana effettiva"],
+  [/\bsolo hash del registro di definizione\b/gi, "definizione del registro hash-only"],
+  [/\bsolo hash del registro\b/gi, "registro hash-only"],
+  [/\bhash del registro\b/gi, "registro hash-only"],
+  [/\bTabella di marcia HBCE\b/gi, "roadmap HBCE"],
+  [/\btabella di marcia HBCE\b/gi, "roadmap HBCE"],
+  [/\bOrario di revoca\b/gi, "Tempo di revoca"],
+  [/\bProva di eventi della catena di approvvigionamento\b/gi, "prova degli eventi di supply chain"],
+  [/\bevento di fornitura da parte di terzi\b/gi, "evento relativo a fornitori terzi"],
+  [/\bCorrispondenza tra DORA\/TIBER\/NIS2\/AI Act\/CRA\b/gi, "Mappatura tra DORA/TIBER/NIS2/AI Act/CRA"],
+  [/\bUso difensivo dell'IA del profilo\b/gi, "profilo di uso difensivo dell'AI"],
+  [/\bUso difensivo dell’IA del profilo\b/gi, "profilo di uso difensivo dell'AI"],
+  [/\bPilota 100% indipendente\b/gi, "100% nel pilota"],
+  [/\bterapia occupazionale corrotta\b/gi, "dipendenza operativa critica"],
+
+  [/\bFonti utilizzati\b/gi, "Fonti utilizzate"],
+  [/\bOggetto proponente\b/gi, "Soggetto proponente"],
+  [/\bHemreticum\b/gi, "HERMETICUM"],
+  [/\bHermeticum BCE\b/gi, "HERMETICUM B.C.E."],
+
+  [/\bIPR\s*->\s*EVT\s*->\s*OPC\s*->\s*MATRIX\s*->\s*HBCE\b/g, "IPR → EVT → OPC → MATRIX → HBCE"],
+  [/\bIPR identifica\. EVT traccia\. OPC prova\. Coordinato MATRIX\. HBCE governa\./g, "IPR identifica. EVT traccia. OPC prova. MATRIX coordina. HBCE governa."],
+  [/\bIPR identifica\. EVT traccia\. OPC prova\. Coordinato MATRIX\. HBCE governa\b/g, "IPR identifica. EVT traccia. OPC prova. MATRIX coordina. HBCE governa."]
 ];
 
 const CYBER_PROHIBITED_TERMS = [
@@ -962,16 +1062,32 @@ function includesAny(text: string, terms: string[]): boolean {
   return terms.some((term) => normalizedText.includes(normalizeRuntimeText(term)));
 }
 
-function normalizeGeneratedOutputText(value: string): string {
-  let text = value.trim();
+function normalizeHbceCanonicalTerminology(value: string): string {
+  let text = value;
 
   for (const [pattern, replacement] of CANONICAL_OUTPUT_REPLACEMENTS) {
     text = text.replace(pattern, replacement);
   }
 
   return text
+    .replace(/\bHERMETICUM B\.C\.E\.\s*S\.r\.l\.\s*S\.r\.l\./g, "HERMETICUM B.C.E. S.r.l.")
+    .replace(/\bHERMETICUM B\.C\.E\.\s*B\.C\.E\./g, "HERMETICUM B.C.E.")
+    .replace(/\blegalCertification=false=false\b/g, "legalCertification=false")
+    .replace(/\bIPR IPR\b/g, "IPR")
+    .replace(/\bOPC OPC\b/g, "OPC")
+    .replace(/\bEVT EVT\b/g, "EVT")
+    .replace(/\bMATRIX MATRIX\b/g, "MATRIX")
+    .replace(/\bHBCE HBCE\b/g, "HBCE")
+    .replace(/\bAI JOKER-C2-C2\b/g, "AI JOKER-C2");
+}
+
+function normalizeGeneratedOutputText(value: string): string {
+  const text = normalizeHbceCanonicalTerminology(value.trim());
+
+  return text
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{4,}/g, "\n\n\n")
+    .replace(/##(\d)/g, "## $1")
     .trim();
 }
 
@@ -2678,9 +2794,13 @@ function buildSystemPrompt(input: {
     "Rispondi in modo operativo, chiaro, professionale e non meccanico.",
     "Scrivi direttamente in italiano naturale: non tradurre letteralmente dall'inglese e non usare parole casuali, grottesche o fuori dominio.",
     "Non produrre frasi tronche, sezioni lasciate a metà o liste degradate. Se il documento richiesto è lungo, riduci la profondità ma consegna una versione completa e leggibile.",
+    "Usa sempre la denominazione canonica HERMETICUM B.C.E. S.r.l. quando ti riferisci al soggetto aziendale e HERMETICUM B.C.E. quando ti riferisci al sigillo/progetto.",
+    "Non scrivere mai HERMETICUM BCESrl, HERMETICUM BESrl, HERMETICUM BCE Srl o certificazionelegale=false.",
     "Non tradurre mai le costanti tecniche canonicali: ACCESS_GRANTED, ACCESS_DENIED, PENDING_SERVER_VALIDATION, MATRIX_ACTIVE, MATRIX_LIMITED, IPR_BOUND, RUNTIME_ONLY, SERVER_RUNTIME_VALIDATED, SESSION_RUNTIME_ONLY, IPR_ACCOUNT_SESSION, IPR_VERIFIED_BIOLOGICAL_SUBJECT, NO_VERIFIED_BIOLOGICAL_SUBJECT, DATABASE_PERSISTENT, PROCESS_MEMORY_MVP, PROCESS_PROOF_MVP, legalCertification=false.",
-    "Non tradurre IPR come diritti di proprietà intellettuale. In italiano usa IPR, IPR biologico, IPR runtime o identità operativa, secondo il contesto.",
+    "Non tradurre IPR come diritti di proprietà intellettuale, proprietà intellettuale o DPI. In italiano usa IPR, IPR biologico, IPR runtime o identità operativa, secondo il contesto.",
     "Non tradurre audit con revisione contabile quando il contesto è HBCE/JOKER-C2: usa audit tecnico, audit operativo o audit di governance.",
+    "Non tradurre fail-closed come chiusura fallita. Mantieni fail-closed.",
+    "Non tradurre crosswalk come attraversamento pedonale. Usa mappatura normativo-operativa.",
     "Non mostrare metadati runtime salvo richiesta diagnostica esplicita.",
     "Per richieste diagnostiche runtime, rispondi usando solo i frame HBCE-generated e distingui sempre target persistence da persistence mode effettivo.",
     "Se l'utente allega file e chiede di leggerli, analizzarli, descriverli, riassumerli o interpretarli, devi rispondere sul contenuto dei file e non limitarti alla diagnostica runtime.",
@@ -2844,6 +2964,8 @@ function buildUserPrompt(input: {
     "OUTPUT QUALITY REQUIREMENTS:",
     ITALIAN_DOCUMENT_QUALITY_BOUNDARY,
     LONG_DOCUMENT_OUTPUT_BOUNDARY,
+    "Before final answer, preserve canonical forms: HERMETICUM B.C.E. S.r.l., IPR, EVT, OPC, MATRIX, HBCE, proof receipt, fail-closed, legalCertification=false.",
+    "Forbidden mistranslations: proprietà intellettuale for IPR, DPI for IPR, certificazionelegale=false, HERMETICUM BCESrl, HERMETICUM BESrl, attraversamento pedonale normativo-operativo, chiusura fallita, Tabù temporale.",
     "",
     buildFileContext(input.files)
   ].join("\n");
@@ -3630,13 +3752,13 @@ async function generateResponse(input: {
 
         if (text) {
           return {
-            text: [
+            text: normalizeGeneratedOutputText([
               text,
               "",
               "Runtime note:",
               "Il primo tentativo multimodale diretto non è stato accettato dal modello/API configurato. Questa risposta usa il contesto testuale, il manifest file, gli hash e il testo eventualmente estratto. Immagini/PDF non devono essere considerati letti integralmente se il contenuto non è presente nella risposta.",
               "legalCertification=false"
-            ].join("\n"),
+            ].join("\n")),
             state: "OPERATIONAL",
             degradedReason: null,
             deterministic: false,
@@ -4825,6 +4947,10 @@ export async function POST(req: NextRequest) {
       `Target persistence: ${SAAS_TARGET_PERSISTENCE}.`,
       "Italian document quality boundary active for generated responses.",
       "Canonical HBCE technical terms must remain untranslated in user-facing output.",
+      "Post-generation HBCE terminology normalization is active for generated responses.",
+      "Canonical organization spelling is HERMETICUM B.C.E. S.r.l.",
+      "Canonical OPC legal boundary is legalCertification=false.",
+      "IPR must not be rendered as proprietà intellettuale, diritti di proprietà intellettuale or DPI.",
       ...accountSessionFacts,
       ...databaseFacts,
       ...fileFacts,
