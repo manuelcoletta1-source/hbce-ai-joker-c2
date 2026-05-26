@@ -31,6 +31,40 @@ import {
   toTransformativeMemoryExtraFacts
 } from "@/lib/matrix-transformative-memory";
 
+import {
+  evaluateSaasTierPolicy,
+  buildSaasTierRuntimeFrame,
+  toPublicSaasTierPolicyResult
+} from "@/lib/saas-tier-policy";
+
+import {
+  evaluateRuntimeRiskPolicy,
+  buildRuntimeRiskPromptFrame,
+  toPublicRuntimeRiskPolicyResult
+} from "@/lib/runtime-risk-policy";
+
+import {
+  evaluateC2DefensePolicy,
+  buildC2DefensePromptFrame,
+  toPublicC2DefensePolicyResult
+} from "@/lib/c2-defense-policy";
+
+import {
+  routeRuntimeModelFromSaasPolicy,
+  buildRuntimeModelPromptFrame,
+  toPublicRuntimeModelRoutingResult
+} from "@/lib/runtime-model-router";
+
+import {
+  appendRuntimeAuditLogRecordFromPolicies,
+  toPublicRuntimeAuditLogRecord
+} from "@/lib/runtime-audit-log";
+
+import {
+  appendModelUsageLogRecordFromRuntime,
+  toPublicModelUsageLogRecord
+} from "@/lib/model-usage-log";
+
 import type { IprAccountSessionResolution } from "@/lib/ipr-auth-session-resolver";
 
 import type {
@@ -39,6 +73,18 @@ import type {
   IprBoundMemoryRuntimeIdentity,
   MemoryScope
 } from "@/lib/ipr-bound-memory";
+
+import type {
+  CyberRelevance,
+  IdentityState,
+  OperationalValueLevel,
+  OrganizationState,
+  ProofRequirement,
+  RuntimeContextClass,
+  RuntimeDataClassification,
+  SaasTier,
+  WorkspaceState
+} from "@/lib/saas-tier-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -75,15 +121,14 @@ type RuntimeDeterministicIntent =
   | "MEMORY_AUTHORITY_BOUNDARY"
   | "PERSISTENCE_BOUNDARY"
   | "RUNTIME_DIAGNOSTIC"
-  | "RUNTIME_BEHAVIOR_IMPROVEMENT"
   | "MODEL_ROUTER_DIAGNOSTIC"
-  | "OPENAI_PITCH"
-  | "EU_CYBER_PITCH"
-  | "READINESS_CHECKLIST"
   | "CYBER_BLOCK"
   | "SAFE_RED_TEAM"
   | "DEFENSIVE_CYBER_RISK_ANALYSIS"
-  | "COMMERCIAL_STRATEGY";
+  | "COMMERCIAL_STRATEGY"
+  | "OPENAI_PITCH"
+  | "EU_CYBER_PITCH"
+  | "READINESS_CHECKLIST";
 
 type FileInput = {
   id?: string;
@@ -128,6 +173,11 @@ type ChatBody = {
   files?: FileInput[];
   continuityRef?: string | null;
   iprHandoff?: unknown;
+  requestedTier?: SaasTier | string;
+  hasAuthorizedPerimeter?: boolean;
+  defensivePurpose?: boolean;
+  organizationVerified?: boolean;
+  workspaceActive?: boolean;
 };
 
 type SaasRuntimeContext = {
@@ -163,8 +213,8 @@ type DatabaseRuntimeFrame = {
   configured: boolean;
   available: boolean;
   targetPersistence: "DATABASE_PERSISTENT";
-  description: ReturnType<typeof describeDefaultHbceDatabase>;
-  boundary: ReturnType<typeof getHbceDatabaseBoundary>;
+  description: unknown;
+  boundary: string;
   legalCertification: false;
 };
 
@@ -190,13 +240,6 @@ type RuntimeIdentity = {
     humanEvt: "EVT-0015";
     cycle: "UP-MESE-4";
     t: "2026-05-19T15:30:00+02:00";
-  };
-  monthlyRef: {
-    evt: "EVT-0015-AI";
-    humanEvt: "EVT-0015";
-    cycle: "UP-MESE-4";
-    t: "2026-05-19T15:30:00+02:00";
-    compatibility: "LEGACY_ALIAS_FOR_PREVIOUS_CHECKPOINT";
   };
   core: "HBCE-CORE-v3";
   org: "HERMETICUM B.C.E. S.r.l.";
@@ -303,21 +346,6 @@ type IprHandoffEvaluation = {
   verifiedSubject: VerifiedBiologicalSubject | null;
 };
 
-type RuntimeIdentityContext = {
-  runtime_entity: string;
-  runtime_ipr: string;
-  verified_subject_entity: string | null;
-  verified_subject_ipr: string | null;
-  verified_subject_certificate_id: string | null;
-  verified_subject_card_serial: string | null;
-  verified_subject_certificate_status: "ACTIVE" | "NOT_VERIFIED";
-  verified_subject_certificate_scope: string[];
-  verified_subject_access_decision: VerifiedSubjectAccessDecision;
-  identity_binding: IprHandoffEvaluation["identityBinding"];
-  matrix_state: MatrixActivationState;
-  semantic_memory_scope: IprHandoffEvaluation["semanticMemoryScope"];
-};
-
 type OperationalContext = {
   project_birth: {
     date: "2026-01-19";
@@ -391,6 +419,10 @@ type RuntimeEventRecord = {
     certificateStatus: "ACTIVE";
     accessDecision: "ACCESS_GRANTED";
   } | null;
+  saasPolicy: unknown;
+  runtimeRisk: unknown;
+  c2Defense: unknown;
+  modelRouting: unknown;
 };
 
 type GovernedEvt = {
@@ -408,7 +440,20 @@ type GovernedEvt = {
     state: RuntimeState;
     role: "HBCE_governed_runtime";
   };
-  identity_context: RuntimeIdentityContext;
+  identity_context: {
+    runtime_entity: string;
+    runtime_ipr: string;
+    verified_subject_entity: string | null;
+    verified_subject_ipr: string | null;
+    verified_subject_certificate_id: string | null;
+    verified_subject_card_serial: string | null;
+    verified_subject_certificate_status: "ACTIVE" | "NOT_VERIFIED";
+    verified_subject_certificate_scope: string[];
+    verified_subject_access_decision: VerifiedSubjectAccessDecision;
+    identity_binding: IprHandoffEvaluation["identityBinding"];
+    matrix_state: MatrixActivationState;
+    semantic_memory_scope: IprHandoffEvaluation["semanticMemoryScope"];
+  };
   memory_context: {
     memory_id: string;
     memory_key_hash: string;
@@ -419,15 +464,7 @@ type GovernedEvt = {
     previous_memory_opc: string | null;
     previous_memory_chain_hash: string | null;
   };
-  files_context: {
-    count: number;
-    text_count: number;
-    image_count: number;
-    pdf_count: number;
-    binary_count: number;
-    model_readable_count: number;
-    modes: string[];
-  };
+  files_context: ReturnType<typeof summarizeFiles>;
   project: {
     ecosystem: "HBCE";
     domain: string;
@@ -438,11 +475,6 @@ type GovernedEvt = {
     module: string;
     active_modules: string[];
   };
-  context: {
-    class: string;
-    intent: string;
-    sensitivity: "LOW" | "MEDIUM" | "HIGH" | "UNKNOWN";
-  };
   governance: {
     risk: RiskClass;
     decision: RuntimeDecision;
@@ -451,11 +483,14 @@ type GovernedEvt = {
     human_oversight: string;
     fail_closed: boolean;
     metadata_authority: "HBCE_RUNTIME_GENERATED";
-    user_declared_governance_detected: boolean;
     deterministic_intent: RuntimeDeterministicIntent;
     reasons: string[];
   };
   engine: OpenAIEngineConfig;
+  saas_policy: unknown;
+  runtime_risk_policy: unknown;
+  c2_defense_policy: unknown;
+  model_routing: unknown;
   operation: {
     type: "CHAT_COMPLETION";
     status: "COMPLETED" | "DEGRADED" | "BLOCKED" | "ESCALATED";
@@ -519,7 +554,6 @@ type OpcProofRecord = {
     humanOversight: string;
     failClosed: boolean;
     metadataAuthority: "HBCE_RUNTIME_GENERATED";
-    userDeclaredGovernanceDetected: boolean;
     deterministicIntent: RuntimeDeterministicIntent;
     verifiedSubjectPresent: boolean;
     verifiedSubjectAccessDecision: VerifiedSubjectAccessDecision;
@@ -529,6 +563,10 @@ type OpcProofRecord = {
   operationalContext: OperationalContext;
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
+  saasPolicy: unknown;
+  runtimeRiskPolicy: unknown;
+  c2DefensePolicy: unknown;
+  modelRouting: unknown;
   persistence: {
     mode: "DATABASE_PERSISTENT" | "PROCESS_PROOF_MVP";
     status:
@@ -550,6 +588,9 @@ type OpcProofRecord = {
     handoffHash: string | null;
     memoryHash: string;
     filesHash: string;
+    policyHash: string;
+    auditHash: string | null;
+    usageHash: string | null;
     previousProofHash: string | null;
     chainHash: string;
   };
@@ -575,6 +616,8 @@ type OpcProofRecord = {
     memoryBoundary: string;
     databasePersistenceBoundary: string;
     fileProcessingBoundary: string;
+    saasCoreBoundary: string;
+    c2DefenseBoundary: string;
   };
 };
 
@@ -589,7 +632,6 @@ type GeneratedResponse = {
     | "IDENTITY_RECOGNITION"
     | "BOUNDARY_POLICY"
     | "RUNTIME_DIAGNOSTIC"
-    | "RUNTIME_BEHAVIOR_IMPROVEMENT"
     | "MODEL_ROUTER_DIAGNOSTIC"
     | "SAFE_RED_TEAM"
     | "OPENAI_PITCH"
@@ -601,6 +643,13 @@ type GeneratedResponse = {
   multimodalAttempted?: boolean;
   multimodalFallbackUsed?: boolean;
   openAIStatus?: string | null;
+  usage?: {
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    cachedInputTokens?: number | null;
+    reasoningTokens?: number | null;
+  } | null;
 };
 
 type OpenAIResponsesContentPart =
@@ -640,11 +689,11 @@ const SAAS_CORE_VERSION = "v0.1" as const;
 const SAAS_TARGET_PERSISTENCE = "DATABASE_PERSISTENT" as const;
 const ACTIVE_MEMORY_PERSISTENCE_MODE = "PROCESS_MEMORY_MVP" as const;
 
-const DEFAULT_JOKER_MODEL_BASE = "gpt-5.4-nano";
-const DEFAULT_JOKER_MODEL_STANDARD = "gpt-5.4-mini";
-const DEFAULT_JOKER_MODEL_DEEP = "gpt-5.4";
-const DEFAULT_JOKER_MODEL_FRONTIER = "gpt-5.5";
-const DEFAULT_JOKER_MODEL_EMERGENCY = "gpt-5.5";
+const DEFAULT_JOKER_MODEL_BASE = "gpt-4o-mini";
+const DEFAULT_JOKER_MODEL_STANDARD = "gpt-4o";
+const DEFAULT_JOKER_MODEL_DEEP = "gpt-5.5-thinking";
+const DEFAULT_JOKER_MODEL_FRONTIER = "gpt-5.5-thinking";
+const DEFAULT_JOKER_MODEL_EMERGENCY = "gpt-5.5-thinking";
 
 const DEFAULT_MAX_OUTPUT_TOKENS_BASE = 1200;
 const DEFAULT_MAX_OUTPUT_TOKENS_STANDARD = 2000;
@@ -658,6 +707,9 @@ const MAX_FILE_DATA_URL_CHARS = 7_000_000;
 const MAX_TOTAL_FILE_DATA_URL_CHARS = 14_000_000;
 const MAX_MODEL_IMAGES = 8;
 const MAX_MODEL_PDFS = 4;
+
+const SAAS_CORE_BOUNDARY =
+  "JOKER-C2 SaaS Core v0.1 routes every operation through risk policy, C2 Defense policy, SaaS tier policy, model routing, memory, EVT, OPC, runtime audit and model usage accounting.";
 
 const USE_DEMOCRATIC_BOUNDARY =
   "Identity verified first. Choice separated after. Vote anonymized. Process auditable.";
@@ -681,7 +733,7 @@ const IPR_ACCOUNT_SESSION_BOUNDARY =
   "Authenticated IPR account session resolved from HttpOnly cookie, server-side session store and account profile store has priority over client-provided IPR handoff. Client handoff remains fallback transport only.";
 
 const DATABASE_PERSISTENCE_BOUNDARY =
-  "JOKER-C2 SaaS Core v0.1 requires DATABASE_PERSISTENT storage for durable account, session, memory, EVT, OPC, tenant, workspace and audit continuity. If the database is not configured or available, runtime must not claim durable SaaS continuity.";
+  "JOKER-C2 SaaS Core v0.1 targets DATABASE_PERSISTENT storage for durable account, session, memory, EVT, OPC, tenant, workspace and audit continuity. If the database is not configured or available, runtime must not claim durable SaaS continuity.";
 
 const FILE_PROCESSING_BOUNDARY =
   "Text files are injected as prompt context. Image files are sent to the OpenAI cognitive engine as input_image parts when a data URL is present. PDF files are sent as input_file parts when supported by the configured model/API; otherwise only extracted text or file manifest metadata is available. Binary files remain reference-only unless a dedicated extractor is added.";
@@ -795,65 +847,6 @@ const CYBER_DEFENSIVE_TERMS = [
   "non fornire exploit"
 ];
 
-const RUNTIME_DIAGNOSTIC_EXPLICIT_TERMS = [
-  "diagnostica runtime",
-  "mostrami la diagnostica runtime",
-  "mostra la diagnostica runtime",
-  "dammi la diagnostica runtime",
-  "runtime details",
-  "debug runtime",
-  "dump runtime",
-  "health runtime",
-  "health check",
-  "stato runtime completo",
-  "frame hbce-generated",
-  "profilelookup",
-  "profile lookup",
-  "session resolution mode",
-  "session id",
-  "engine hash",
-  "chainhash",
-  "chain hash",
-  "identityhash",
-  "identity hash",
-  "memoryhash",
-  "memory hash",
-  "eventhash",
-  "event hash"
-];
-
-const MODEL_ROUTER_TERMS = [
-  "model router",
-  "router modelli",
-  "gerarchia modelli",
-  "serie di modelli",
-  "modello base",
-  "modello standard",
-  "modello deep",
-  "modello frontier",
-  "ultimo modello",
-  "emergenza quantistica",
-  "motore base",
-  "motore cognitivo",
-  "classe di risposta",
-  "spendere meno",
-  "costo modello",
-  "scala cognitiva",
-  "escalation tramite ipr"
-];
-
-const RUNTIME_BEHAVIOR_IMPROVEMENT_TERMS = [
-  "pappagallo",
-  "non ripetere",
-  "risposta ripetitiva",
-  "anti-pappagallo",
-  "analizzare e comprendere cosa migliorare",
-  "delta operativo",
-  "regola già acquisita",
-  "runtime operation mode",
-  "policy explanation mode"
-];
-
 const FILE_ANALYSIS_ACTION_TERMS = [
   "analizza",
   "analizzare",
@@ -906,6 +899,53 @@ const FILE_ANALYSIS_OBJECT_TERMS = [
   "document"
 ];
 
+const RUNTIME_DIAGNOSTIC_EXPLICIT_TERMS = [
+  "diagnostica runtime",
+  "mostrami la diagnostica runtime",
+  "mostra la diagnostica runtime",
+  "dammi la diagnostica runtime",
+  "runtime details",
+  "debug runtime",
+  "dump runtime",
+  "health runtime",
+  "health check",
+  "stato runtime completo",
+  "frame hbce-generated",
+  "profilelookup",
+  "profile lookup",
+  "session resolution mode",
+  "session id",
+  "engine hash",
+  "chainhash",
+  "chain hash",
+  "identityhash",
+  "identity hash",
+  "memoryhash",
+  "memory hash",
+  "eventhash",
+  "event hash"
+];
+
+const MODEL_ROUTER_TERMS = [
+  "model router",
+  "router modelli",
+  "gerarchia modelli",
+  "serie di modelli",
+  "modello base",
+  "modello standard",
+  "modello deep",
+  "modello frontier",
+  "ultimo modello",
+  "emergenza quantistica",
+  "motore base",
+  "motore cognitivo",
+  "classe di risposta",
+  "spendere meno",
+  "costo modello",
+  "scala cognitiva",
+  "escalation tramite ipr"
+];
+
 const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bHERMETICUM\s*a\.C\./gi, "HERMETICUM B.C.E."],
   [/\bHermeticumBCE\b/gi, "HERMETICUM B.C.E."],
@@ -929,7 +969,6 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bfallito-chiuso\b/gi, "fail-closed"],
   [/\bAI Atto\b/g, "AI Act"],
   [/\bAtto AI\b/g, "AI Act"],
-  [/\battraversamento pedonale normativo-operativo\b/gi, "mappatura normativo-operativa"],
   [/\bIPR\s*->\s*EVT\s*->\s*OPC\s*->\s*MATRIX\s*->\s*HBCE\b/g, "IPR → EVT → OPC → MATRIX → HBCE"],
   [/\bIPR identifica\. EVT traccia\. OPC prova\. Coordinato MATRIX\. HBCE governa\./g, "IPR identifica. EVT traccia. OPC prova. MATRIX coordina. HBCE governa."]
 ];
@@ -968,6 +1007,7 @@ function safeRuntimeString(value: unknown, fallback = ""): string {
 
 function safeRuntimeBoolean(value: unknown, fallback = false): boolean {
   if (typeof value === "boolean") return value;
+
   if (typeof value === "string") {
     const normalized = value.trim().toLowerCase();
     if (normalized === "true") return true;
@@ -1114,7 +1154,7 @@ function normalizeModelId(value: string): string {
     normalized === "gpt-55" ||
     normalized === "gpt5.5"
   ) {
-    return "gpt-5.5";
+    return "gpt-5.5-thinking";
   }
 
   return value.trim();
@@ -1154,12 +1194,23 @@ const MODEL_BASE = resolveModelEnv(
 
 const MODEL_STANDARD = resolveModelEnv(
   "JOKER_MODEL_STANDARD",
-  resolveModelEnv("JOKER_DEEP_MODEL", DEFAULT_JOKER_MODEL_STANDARD)
+  resolveModelEnv("JOKER_STANDARD_MODEL", DEFAULT_JOKER_MODEL_STANDARD)
 );
 
-const MODEL_DEEP = resolveModelEnv("JOKER_MODEL_DEEP", DEFAULT_JOKER_MODEL_DEEP);
-const MODEL_FRONTIER = resolveModelEnv("JOKER_MODEL_FRONTIER", DEFAULT_JOKER_MODEL_FRONTIER);
-const MODEL_EMERGENCY = resolveModelEnv("JOKER_MODEL_EMERGENCY", MODEL_FRONTIER || DEFAULT_JOKER_MODEL_EMERGENCY);
+const MODEL_DEEP = resolveModelEnv(
+  "JOKER_MODEL_DEEP",
+  resolveModelEnv("JOKER_ADVANCED_MODEL", DEFAULT_JOKER_MODEL_DEEP)
+);
+
+const MODEL_FRONTIER = resolveModelEnv(
+  "JOKER_MODEL_FRONTIER",
+  DEFAULT_JOKER_MODEL_FRONTIER
+);
+
+const MODEL_EMERGENCY = resolveModelEnv(
+  "JOKER_MODEL_EMERGENCY",
+  resolveModelEnv("JOKER_C2_MODEL", MODEL_FRONTIER || DEFAULT_JOKER_MODEL_EMERGENCY)
+);
 
 const MAX_OUTPUT_TOKENS_BASE = resolveIntegerEnv(
   "JOKER_MAX_OUTPUT_TOKENS_BASE",
@@ -1220,26 +1271,39 @@ function getPrimaryIdentity(): RuntimeIdentity {
       cycle: MONTHLY_REFERENCE,
       t: PREVIOUS_CHAIN_CHECKPOINT_T
     },
-    monthlyRef: {
-      evt: PREVIOUS_AI_CHAIN_CHECKPOINT,
-      humanEvt: PREVIOUS_CHAIN_CHECKPOINT,
-      cycle: MONTHLY_REFERENCE,
-      t: PREVIOUS_CHAIN_CHECKPOINT_T,
-      compatibility: "LEGACY_ALIAS_FOR_PREVIOUS_CHECKPOINT"
-    },
     core: "HBCE-CORE-v3",
     org: "HERMETICUM B.C.E. S.r.l.",
     location: "Torino, Italy"
   };
 }
 
-function buildDatabaseRuntimeFrame(): DatabaseRuntimeFrame {
+async function buildDatabaseRuntimeFrame(): Promise<DatabaseRuntimeFrame> {
+  let configured = false;
+  let available = false;
+  let description: unknown = null;
+  let boundary = DATABASE_PERSISTENCE_BOUNDARY;
+
+  try {
+    configured = Boolean(await Promise.resolve(isHbceDatabaseConfigured()));
+    available = Boolean(await Promise.resolve(isHbceDatabaseAvailable()));
+    description = await Promise.resolve(describeDefaultHbceDatabase());
+    boundary = String(await Promise.resolve(getHbceDatabaseBoundary()));
+  } catch (error) {
+    configured = false;
+    available = false;
+    description = {
+      error: error instanceof Error ? error.message : "UNKNOWN_DATABASE_ERROR"
+    };
+    boundary =
+      "Database frame could not be resolved. Runtime must remain PROCESS_MEMORY_MVP and must not claim durable SaaS continuity.";
+  }
+
   return {
-    configured: isHbceDatabaseConfigured(),
-    available: isHbceDatabaseAvailable(),
+    configured,
+    available,
     targetPersistence: SAAS_TARGET_PERSISTENCE,
-    description: describeDefaultHbceDatabase(),
-    boundary: getHbceDatabaseBoundary(),
+    description,
+    boundary,
     legalCertification: false
   };
 }
@@ -1349,12 +1413,11 @@ function buildSaasRuntimeContext(input?: {
   };
 }
 
-function buildOperationalContext(input?: {
+function buildOperationalContext(input: {
   tenantId?: string | null;
   workspaceId?: string | null;
+  database: DatabaseRuntimeFrame;
 }): OperationalContext {
-  const database = buildDatabaseRuntimeFrame();
-
   return {
     project_birth: {
       date: PROJECT_BIRTH_DATE,
@@ -1378,16 +1441,33 @@ function buildOperationalContext(input?: {
     saas: {
       core: SAAS_CORE_VERSION,
       target_persistence: SAAS_TARGET_PERSISTENCE,
-      tenant_id: input?.tenantId || null,
-      workspace_id: input?.workspaceId || null
+      tenant_id: input.tenantId || null,
+      workspace_id: input.workspaceId || null
     },
     database: {
-      configured: database.configured,
-      available: database.available,
+      configured: input.database.configured,
+      available: input.database.available,
       target_persistence: SAAS_TARGET_PERSISTENCE
     },
     legalCertification: false
   };
+}
+
+function normalizeRequestedSaasTier(value: unknown): SaasTier | undefined {
+  const text = safeRuntimeString(value, "").toUpperCase();
+
+  if (
+    text === "BASE" ||
+    text === "IPR" ||
+    text === "PRO" ||
+    text === "GOVERNANCE" ||
+    text === "C2_DEFENSE" ||
+    text === "STRATEGIC"
+  ) {
+    return text;
+  }
+
+  return undefined;
 }
 
 function normalizeBody(body: ChatBody) {
@@ -1402,7 +1482,12 @@ function normalizeBody(body: ChatBody) {
       typeof body.continuityRef === "string" && body.continuityRef.trim()
         ? body.continuityRef.trim()
         : null,
-    iprHandoff: body.iprHandoff ?? null
+    iprHandoff: body.iprHandoff ?? null,
+    requestedTier: normalizeRequestedSaasTier(body.requestedTier),
+    hasAuthorizedPerimeter: Boolean(body.hasAuthorizedPerimeter),
+    defensivePurpose: Boolean(body.defensivePurpose),
+    organizationVerified: Boolean(body.organizationVerified),
+    workspaceActive: Boolean(body.workspaceActive)
   };
 }
 
@@ -2107,26 +2192,6 @@ function toMemoryHandoffEvaluation(
   };
 }
 
-function buildIdentityContext(input: {
-  identity: RuntimeIdentity;
-  handoff: IprHandoffEvaluation;
-}): RuntimeIdentityContext {
-  return {
-    runtime_entity: input.identity.entity,
-    runtime_ipr: input.identity.ipr,
-    verified_subject_entity: input.handoff.verifiedSubject?.entity || null,
-    verified_subject_ipr: input.handoff.verifiedSubject?.ipr || null,
-    verified_subject_certificate_id: input.handoff.verifiedSubject?.certificateId || null,
-    verified_subject_card_serial: input.handoff.verifiedSubject?.cardSerial || null,
-    verified_subject_certificate_status: input.handoff.valid ? "ACTIVE" : "NOT_VERIFIED",
-    verified_subject_certificate_scope: input.handoff.verifiedSubject?.certificateScope || [],
-    verified_subject_access_decision: input.handoff.accessDecision,
-    identity_binding: input.handoff.identityBinding,
-    matrix_state: input.handoff.matrixState,
-    semantic_memory_scope: input.handoff.semanticMemoryScope
-  };
-}
-
 function isFileAnalysisRequest(message: string, files: NormalizedFile[] = []): boolean {
   if (files.length === 0) return false;
 
@@ -2192,8 +2257,6 @@ function isIprConceptBoundaryQuestion(message: string): boolean {
     "ipr biologico",
     "identita operativa",
     "identità operativa",
-    "ipr puo sostituire",
-    "ipr può sostituire",
     "sostituire cie",
     "sostituire spid",
     "sostituire passaporto",
@@ -2221,20 +2284,6 @@ function isOpcLegalBoundaryQuestion(message: string): boolean {
       "eidas"
     ])
   );
-}
-
-function isCommercialClaimsBoundaryQuestion(message: string): boolean {
-  return includesAny(message, [
-    "claim commerciali",
-    "claim devo evitare",
-    "claim vietati",
-    "overclaim",
-    "cosa joker-c2 non e",
-    "cosa joker-c2 non è",
-    "cosa non promette",
-    "rischi legali",
-    "rischi reputazionali"
-  ]);
 }
 
 function isMemoryAuthorityBoundaryQuestion(message: string): boolean {
@@ -2274,8 +2323,6 @@ function isReadinessChecklistQuestion(message: string): boolean {
     "demo commerciale",
     "demo openai",
     "demo ue",
-    "solo demo r&d interna",
-    "solo demo r&d",
     "go/no-go",
     "go no-go"
   ]);
@@ -2389,11 +2436,6 @@ function isModelRouterDiagnosticQuestion(message: string): boolean {
     ]);
 }
 
-function isRuntimeBehaviorImprovementRequest(message: string): boolean {
-  return includesAny(message, RUNTIME_BEHAVIOR_IMPROVEMENT_TERMS) &&
-    includesAny(message, ["joker", "joker-c2", "runtime", "ipr", "sessione", "regola", "risposta", "migliorare"]);
-}
-
 function hasCyberSecuritySignal(text: string): boolean {
   return includesAny(text, CYBER_SIGNAL_TERMS);
 }
@@ -2445,9 +2487,7 @@ function detectsProhibitedCyberRequest(message: string): boolean {
 
 function detectDeterministicIntent(message: string, files: NormalizedFile[]): RuntimeDeterministicIntent {
   if (isFileAnalysisRequest(message, files)) return "NONE";
-
   if (detectsProhibitedCyberRequest(message)) return "CYBER_BLOCK";
-  if (isRuntimeBehaviorImprovementRequest(message)) return "RUNTIME_BEHAVIOR_IMPROVEMENT";
   if (isModelRouterDiagnosticQuestion(message)) return "MODEL_ROUTER_DIAGNOSTIC";
   if (isMemoryAuthorityBoundaryQuestion(message)) return "MEMORY_AUTHORITY_BOUNDARY";
   if (isOpcLegalBoundaryQuestion(message)) return "OPC_LEGAL_BOUNDARY";
@@ -2456,7 +2496,6 @@ function detectDeterministicIntent(message: string, files: NormalizedFile[]): Ru
   if (isPersistenceBoundaryQuestion(message)) return "PERSISTENCE_BOUNDARY";
   if (isDefensiveCyberRiskAnalysisRequest(message)) return "DEFENSIVE_CYBER_RISK_ANALYSIS";
   if (isCommercialStrategyRequest(message)) return "COMMERCIAL_STRATEGY";
-  if (isCommercialClaimsBoundaryQuestion(message)) return "COMMERCIAL_CLAIMS_BOUNDARY";
   if (isReadinessChecklistQuestion(message)) return "READINESS_CHECKLIST";
   if (isSafeRedTeamRequest(message)) return "SAFE_RED_TEAM";
   if (isOpenAiPitchRequest(message)) return "OPENAI_PITCH";
@@ -2539,7 +2578,8 @@ function detectProjectDomain(message: string, files: NormalizedFile[]): string {
       "opc",
       "proof receipt",
       "runtime",
-      "hbce"
+      "hbce",
+      "saas"
     ])
   ) {
     return "MATRIX";
@@ -2603,7 +2643,7 @@ function detectContextClass(message: string, files: NormalizedFile[], projectDom
     return "IPR";
   }
 
-  if (includesAny(text, ["matrix", "hbce", "joker-c2", "runtime"])) {
+  if (includesAny(text, ["matrix", "hbce", "joker-c2", "runtime", "saas"])) {
     return "MATRIX";
   }
 
@@ -2835,6 +2875,7 @@ function buildGovernanceFrame(input: {
         ? "File context detected; EVT/OPC audit metadata must include file hashes, file kinds and model-read modes."
         : "No file context detected.",
       highRisk ? FAIL_CLOSED_STATEMENT : "Low-risk request may proceed under standard governed runtime execution.",
+      SAAS_CORE_BOUNDARY,
       MODEL_ROUTER_BOUNDARY,
       FILE_PROCESSING_BOUNDARY,
       ITALIAN_DOCUMENT_QUALITY_BOUNDARY,
@@ -2843,90 +2884,169 @@ function buildGovernanceFrame(input: {
   };
 }
 
-function isVerifiedIprEscalationAllowed(iprHandoff: IprHandoffEvaluation): boolean {
-  return (
-    iprHandoff.valid &&
-    iprHandoff.accessDecision === "ACCESS_GRANTED" &&
-    iprHandoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT" &&
-    iprHandoff.matrixState === "MATRIX_ACTIVE"
-  );
+function mapContextClassToSaas(value: string): RuntimeContextClass {
+  if (value === "GITHUB") return "GITHUB";
+  if (value === "DOCUMENTAL") return "DOCUMENTATION";
+  if (value === "SECURITY") return "CYBER_DEFENSE";
+  if (value === "GOVERNANCE") return "GOVERNANCE";
+  if (value === "IPR") return "IPR";
+  if (value === "MATRIX") return "MATRIX";
+  if (value === "RUNTIME_DIAGNOSTIC") return "RUNTIME";
+  return "GENERAL";
 }
 
-function isQuantumEmergencyRequest(message: string): boolean {
-  return includesAny(message, [
-    "emergenza quantistica",
-    "quantum emergency",
-    "massima priorita",
-    "massima priorità",
-    "massima complessita",
-    "massima complessità",
-    "ultimo modello",
-    "modello massimo",
-    "frontier massimo",
-    "deep reasoning massimo",
-    "crisi operativa",
-    "evento critico",
-    "decisione critica",
-    "alta densita decisionale",
-    "alta densità decisionale"
-  ]);
+function mapDataClassToSaas(value: string): RuntimeDataClassification {
+  if (value === "SECURITY_SENSITIVE") return "RESTRICTED";
+  if (value === "INTERNAL_FILE_CONTEXT") return "OPERATIONAL";
+  if (value === "RUNTIME_METADATA_WITH_FILES") return "OPERATIONAL";
+  if (value === "RUNTIME_METADATA") return "INTERNAL";
+  if (value === "PUBLIC") return "PUBLIC";
+  return "NOT_APPLICABLE";
 }
 
-function isFrontierModelRequest(message: string): boolean {
-  return includesAny(message, [
-    "frontier",
-    "ultimo modello",
-    "modello piu avanzato",
-    "modello più avanzato",
-    "demo openai",
-    "partner openai",
-    "demo strategica",
-    "presentazione partner",
-    "reasoning complesso",
-    "analisi strategica finale"
-  ]);
+function mapRiskToOperationalValue(value: RiskClass): OperationalValueLevel {
+  if (value === "CRITICAL" || value === "PROHIBITED") return "CRITICAL";
+  if (value === "HIGH") return "HIGH";
+  if (value === "MEDIUM") return "MEDIUM";
+  return "LOW";
 }
 
-function isDeepModelRequest(input: {
-  message: string;
-  files: NormalizedFile[];
+function inferCyberRelevanceFromGovernance(governance: GovernanceFrame): CyberRelevance {
+  if (governance.deterministicIntent === "CYBER_BLOCK") return "BLOCKED";
+  if (governance.contextClass === "SECURITY" && governance.policyOutcome === "PROHIBIT") return "BLOCKED";
+  if (governance.contextClass === "SECURITY" && governance.hbceModule === "CyberGlobal") return "GENERAL";
+  return "NONE";
+}
+
+function inferProofRequirementFromGovernance(governance: GovernanceFrame): ProofRequirement {
+  if (governance.auditRequired && governance.opcRequired) return "EVT_OPC";
+  if (governance.auditRequired) return "MANDATORY_AUDIT";
+  if (governance.evtRequired) return "EVT";
+  return "NONE";
+}
+
+function resolvePolicyIdentityInput(input: {
+  iprHandoff: IprHandoffEvaluation;
+  saas: SaasRuntimeContext;
+  body: ReturnType<typeof normalizeBody>;
+}): {
+  identityState: IdentityState;
+  organizationState: OrganizationState;
+  workspaceState: WorkspaceState;
+  certificateActive: boolean;
+  organizationVerified: boolean;
+  workspaceActive: boolean;
+} {
+  const verified = input.iprHandoff.valid && input.iprHandoff.accessDecision === "ACCESS_GRANTED";
+  const organizationVerified = Boolean(input.body.organizationVerified || input.saas.tenantId);
+  const workspaceActive = Boolean(input.body.workspaceActive || input.saas.workspaceId);
+
+  return {
+    identityState: verified ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT" : "NOT_VERIFIED",
+    organizationState: organizationVerified ? "ACTIVE" : "NOT_REQUIRED",
+    workspaceState: workspaceActive ? "ACTIVE" : "NOT_REQUIRED",
+    certificateActive: verified,
+    organizationVerified,
+    workspaceActive
+  };
+}
+
+function applySaasPolicyToGovernance(input: {
   governance: GovernanceFrame;
-}): boolean {
-  const text = normalizeRuntimeText(input.message);
+  riskPolicy: ReturnType<typeof evaluateRuntimeRiskPolicy>;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
+}): GovernanceFrame {
+  const blocked =
+    input.riskPolicy.decision === "BLOCK" ||
+    input.c2Policy.decision === "BLOCK" ||
+    input.saasPolicy.decision === "BLOCK" ||
+    input.modelRouting.blocked;
 
-  return (
-    input.files.length > 0 ||
-    input.governance.contextClass === "GITHUB" ||
-    input.governance.contextClass === "DOCUMENTAL" ||
-    input.governance.contextClass === "GOVERNANCE" ||
-    input.governance.contextClass === "SECURITY" ||
-    input.governance.projectDomain !== "GENERAL" ||
-    includesAny(text, [
-      "rifattorizza",
-      "route.ts",
-      "typescript",
-      "next.js",
-      "build",
-      "deploy",
-      "architettura",
-      "codice",
-      "github",
-      "vercel",
-      "documento completo",
-      "file integrale",
-      "analisi profonda",
-      "governance",
-      "audit",
-      "saas",
-      "database",
-      "tenant",
-      "workspace",
-      "opc",
-      "evt",
-      "matrix",
-      "hbce"
-    ])
-  );
+  const failClosed =
+    input.riskPolicy.failClosed ||
+    input.c2Policy.failClosed ||
+    input.saasPolicy.decision === "FAIL_CLOSED";
+
+  let decision: RuntimeDecision = input.governance.decision;
+
+  if (blocked || failClosed) {
+    decision = "BLOCK";
+  } else if (input.saasPolicy.decision === "ALLOW_WITH_MANDATORY_AUDIT") {
+    decision = "AUDIT";
+  } else if (input.saasPolicy.decision === "ALLOW_WITH_AUDIT") {
+    decision = "AUDIT";
+  } else if (input.riskPolicy.decision === "ESCALATE") {
+    decision = "ESCALATE";
+  }
+
+  return {
+    ...input.governance,
+    decision,
+    allowModelCall:
+      input.governance.allowModelCall &&
+      !blocked &&
+      !failClosed &&
+      !input.modelRouting.blocked,
+    evtRequired:
+      input.governance.evtRequired ||
+      input.riskPolicy.evtRequired ||
+      input.c2Policy.evtRequired ||
+      input.saasPolicy.evtRequired ||
+      input.modelRouting.evtRequired,
+    opcRequired:
+      input.governance.opcRequired ||
+      input.riskPolicy.opcRequired ||
+      input.c2Policy.opcRequired ||
+      input.saasPolicy.opcRequired ||
+      input.modelRouting.opcRequired,
+    auditRequired:
+      input.governance.auditRequired ||
+      input.riskPolicy.auditRequired ||
+      input.c2Policy.auditRequired ||
+      input.saasPolicy.auditRequired ||
+      input.modelRouting.auditRequired,
+    failClosed: input.governance.failClosed || failClosed,
+    policyOutcome: blocked
+      ? "PROHIBIT"
+      : failClosed
+        ? "FAIL_CLOSED"
+        : input.saasPolicy.decision,
+    policyStatus: blocked || failClosed ? "PROHIBITED" : "ALLOWED",
+    riskClass:
+      blocked || input.riskPolicy.riskLevel === "BLOCKED"
+        ? "PROHIBITED"
+        : input.riskPolicy.riskLevel,
+    riskScore:
+      input.riskPolicy.riskLevel === "CRITICAL"
+        ? 20
+        : input.riskPolicy.riskLevel === "HIGH"
+          ? 12
+          : input.riskPolicy.riskLevel === "MEDIUM"
+            ? 6
+            : input.riskPolicy.riskLevel === "LOW"
+              ? 1
+              : 25,
+    humanOversight:
+      input.saasPolicy.auditRequired || input.c2Policy.auditRequired
+        ? "REQUIRED"
+        : input.governance.humanOversight,
+    reasons: [
+      ...input.governance.reasons,
+      SAAS_CORE_BOUNDARY,
+      `SaaS tier: ${input.saasPolicy.tier}.`,
+      `SaaS decision: ${input.saasPolicy.decision}.`,
+      `Runtime risk decision: ${input.riskPolicy.decision}.`,
+      `C2 Defense decision: ${input.c2Policy.decision}.`,
+      `Model routing level: ${input.modelRouting.modelLevel}.`,
+      `Selected model: ${input.modelRouting.selectedModel}.`,
+      input.saasPolicy.boundary,
+      input.riskPolicy.boundary,
+      input.c2Policy.boundary,
+      input.modelRouting.routingReason
+    ]
+  };
 }
 
 function resolveMaxOutputTokensForTier(tier: OpenAIEngineMode): number {
@@ -2938,79 +3058,27 @@ function resolveMaxOutputTokensForTier(tier: OpenAIEngineMode): number {
   return 0;
 }
 
+function mapModelLevelToEngineMode(level: string): OpenAIEngineMode {
+  if (level === "C2_ESCALATED") return "emergency";
+  if (level === "ADVANCED") return "deep";
+  if (level === "ENHANCED") return "standard";
+  if (level === "STANDARD") return "base";
+  return "local";
+}
+
 function resolveEngine(input: {
-  message: string;
-  files: NormalizedFile[];
-  governance: GovernanceFrame;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
   iprHandoff: IprHandoffEvaluation;
 }): OpenAIEngineConfig {
-  const iprGovernedEscalation = isVerifiedIprEscalationAllowed(input.iprHandoff);
-  const deterministic =
-    input.governance.deterministicIntent !== "NONE" ||
-    !input.governance.allowModelCall ||
-    input.governance.decision === "BLOCK";
+  const iprGovernedEscalation =
+    input.iprHandoff.valid &&
+    input.iprHandoff.accessDecision === "ACCESS_GRANTED" &&
+    input.iprHandoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT" &&
+    input.iprHandoff.matrixState === "MATRIX_ACTIVE";
 
-  if (deterministic) {
-    return {
-      provider: "OpenAI",
-      apiMode: "responses",
-      role: "cognitive_engine",
-      runtimeRole: "HBCE_governed_runtime",
-      runtimeName: "JOKER-C2",
-      runtimeLevel: "C2_SUPERIOR_RUNTIME",
-      modelUsed: LOCAL_DETERMINISTIC_MODEL_ID,
-      modelTier: "local",
-      modelCallExpected: false,
-      modelRouterReason: "Deterministic HBCE route-side response. No OpenAI model call is required.",
-      baseModel: MODEL_BASE,
-      standardModel: MODEL_STANDARD,
-      deepModel: MODEL_DEEP,
-      frontierModel: MODEL_FRONTIER,
-      emergencyModel: MODEL_EMERGENCY,
-      mode: "local",
-      configured: Boolean(process.env.OPENAI_API_KEY),
-      maxOutputTokens: 0,
-      iprGovernedEscalation,
-      quantumEmergency: false,
-      projectBirthDate: PROJECT_BIRTH_DATE,
-      projectBirthLabel: PROJECT_BIRTH_LABEL
-    };
-  }
-
-  const quantumEmergency = isQuantumEmergencyRequest(input.message);
-  const frontierRequested = isFrontierModelRequest(input.message);
-  const deepRequested = isDeepModelRequest(input);
-
-  let tier: OpenAIEngineMode = "base";
-  let modelUsed = MODEL_BASE;
-  let reason = "Base model selected for ordinary low-cost JOKER-C2 operation.";
-
-  if (!iprGovernedEscalation && (quantumEmergency || frontierRequested || deepRequested)) {
-    tier = "base";
-    modelUsed = MODEL_BASE;
-    reason =
-      "Requested escalation was capped to base model because no verified IPR escalation authority is available for this runtime operation.";
-  } else if (iprGovernedEscalation && quantumEmergency) {
-    tier = "emergency";
-    modelUsed = MODEL_EMERGENCY;
-    reason =
-      "Quantum emergency route selected: verified IPR escalation, MATRIX_ACTIVE, EVT/OPC traceability and HBCE governance allow maximum model tier.";
-  } else if (iprGovernedEscalation && frontierRequested) {
-    tier = "frontier";
-    modelUsed = MODEL_FRONTIER;
-    reason =
-      "Frontier model route selected for strategic/demo/high-complexity operation under verified IPR governance.";
-  } else if (iprGovernedEscalation && deepRequested) {
-    tier = "deep";
-    modelUsed = MODEL_DEEP;
-    reason =
-      "Deep model route selected for code, documents, files, governance or architecture under verified IPR governance.";
-  } else if (iprGovernedEscalation && input.governance.riskClass === "MEDIUM") {
-    tier = "standard";
-    modelUsed = MODEL_STANDARD;
-    reason =
-      "Standard model route selected for medium-risk governed operation under verified IPR governance.";
-  }
+  const blocked = input.modelRouting.blocked || input.modelRouting.modelLevel === "BLOCKED";
+  const mode = blocked ? "local" : mapModelLevelToEngineMode(input.modelRouting.modelLevel);
+  const modelUsed = blocked ? LOCAL_DETERMINISTIC_MODEL_ID : input.modelRouting.selectedModel;
 
   return {
     provider: "OpenAI",
@@ -3020,19 +3088,19 @@ function resolveEngine(input: {
     runtimeName: "JOKER-C2",
     runtimeLevel: "C2_SUPERIOR_RUNTIME",
     modelUsed,
-    modelTier: tier,
-    modelCallExpected: true,
-    modelRouterReason: reason,
+    modelTier: mode,
+    modelCallExpected: !blocked,
+    modelRouterReason: input.modelRouting.routingReason,
     baseModel: MODEL_BASE,
     standardModel: MODEL_STANDARD,
     deepModel: MODEL_DEEP,
     frontierModel: MODEL_FRONTIER,
     emergencyModel: MODEL_EMERGENCY,
-    mode: tier,
+    mode,
     configured: Boolean(process.env.OPENAI_API_KEY),
-    maxOutputTokens: resolveMaxOutputTokensForTier(tier),
+    maxOutputTokens: resolveMaxOutputTokensForTier(mode),
     iprGovernedEscalation,
-    quantumEmergency: tier === "emergency",
+    quantumEmergency: mode === "emergency",
     projectBirthDate: PROJECT_BIRTH_DATE,
     projectBirthLabel: PROJECT_BIRTH_LABEL
   };
@@ -3133,17 +3201,21 @@ function buildSystemPrompt(input: {
   memory: IprBoundMemoryRecord;
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
+  riskPolicy: ReturnType<typeof evaluateRuntimeRiskPolicy>;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
 }): string {
   return [
     "Sei AI JOKER-C2, runtime AI governato di HERMETICUM B.C.E.",
     "Rispondi in italiano salvo richiesta esplicita diversa.",
     "Rispondi in modo operativo, chiaro, professionale e non meccanico.",
     "JOKER-C2 non coincide con un singolo modello: è il runtime superiore che contiene una serie di modelli cognitivi governati.",
-    "Il modello base è sempre disponibile dentro C2; l'escalation a standard, deep, frontier o emergency richiede contesto, rischio, policy e IPR verificato.",
-    "Emergenza quantistica è una metafora architetturale, non un claim di quantum computing.",
     "Non mostrare metadati runtime salvo richiesta diagnostica esplicita.",
-    "Per richieste diagnostiche runtime, rispondi usando solo i frame HBCE-generated e distingui sempre target persistence da persistence mode effettivo.",
     "Se l'utente allega file e chiede di leggerli, analizzarli, descriverli, riassumerli o interpretarli, rispondi sul contenuto dei file e non limitarti alla diagnostica runtime.",
+    "",
+    "SAAS CORE BOUNDARY:",
+    SAAS_CORE_BOUNDARY,
     "",
     "ITALIAN DOCUMENT QUALITY BOUNDARY:",
     ITALIAN_DOCUMENT_QUALITY_BOUNDARY,
@@ -3183,6 +3255,18 @@ function buildSystemPrompt(input: {
     buildVerifiedSubjectPromptFrame(input.iprHandoff),
     "",
     buildMemoryPromptFrame(input.memory),
+    "",
+    "SAAS TIER POLICY FRAME:",
+    buildSaasTierRuntimeFrame(input.saasPolicy),
+    "",
+    "RUNTIME RISK POLICY FRAME:",
+    buildRuntimeRiskPromptFrame(input.riskPolicy),
+    "",
+    "C2 DEFENSE POLICY FRAME:",
+    buildC2DefensePromptFrame(input.c2Policy),
+    "",
+    "MODEL ROUTING FRAME:",
+    buildRuntimeModelPromptFrame(input.modelRouting),
     "",
     "METADATA AUTHORITY BOUNDARY:",
     METADATA_AUTHORITY_BOUNDARY,
@@ -3275,6 +3359,10 @@ function buildUserPrompt(input: {
   memory: IprBoundMemoryRecord;
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
+  riskPolicy: ReturnType<typeof evaluateRuntimeRiskPolicy>;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
 }): string {
   return [
     "UNTRUSTED USER MESSAGE:",
@@ -3288,7 +3376,8 @@ function buildUserPrompt(input: {
     "OPERATIONAL CONTEXT:",
     JSON.stringify(buildOperationalContext({
       tenantId: input.saas.tenantId,
-      workspaceId: input.saas.workspaceId
+      workspaceId: input.saas.workspaceId,
+      database: input.database
     }), null, 2),
     "",
     "SAAS RUNTIME CONTEXT:",
@@ -3304,9 +3393,17 @@ function buildUserPrompt(input: {
     "HBCE-GENERATED RUNTIME FRAME:",
     JSON.stringify(input.governance, null, 2),
     "",
-    "MODEL ROUTER FRAME:",
-    MODEL_ROUTER_BOUNDARY,
-    QUANTUM_EMERGENCY_BOUNDARY,
+    "SAAS POLICY PUBLIC FRAME:",
+    JSON.stringify(toPublicSaasTierPolicyResult(input.saasPolicy), null, 2),
+    "",
+    "RISK POLICY PUBLIC FRAME:",
+    JSON.stringify(toPublicRuntimeRiskPolicyResult(input.riskPolicy), null, 2),
+    "",
+    "C2 DEFENSE PUBLIC FRAME:",
+    JSON.stringify(toPublicC2DefensePolicyResult(input.c2Policy), null, 2),
+    "",
+    "MODEL ROUTING PUBLIC FRAME:",
+    JSON.stringify(toPublicRuntimeModelRoutingResult(input.modelRouting), null, 2),
     "",
     "OUTPUT QUALITY REQUIREMENTS:",
     ITALIAN_DOCUMENT_QUALITY_BOUNDARY,
@@ -3374,6 +3471,10 @@ function buildOpenAIResponsesInput(input: {
   memory: IprBoundMemoryRecord;
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
+  riskPolicy: ReturnType<typeof evaluateRuntimeRiskPolicy>;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
   mode: "multimodal" | "text_only";
 }) {
   const instructions = buildSystemPrompt({
@@ -3383,7 +3484,11 @@ function buildOpenAIResponsesInput(input: {
     iprHandoff: input.iprHandoff,
     memory: input.memory,
     saas: input.saas,
-    database: input.database
+    database: input.database,
+    saasPolicy: input.saasPolicy,
+    riskPolicy: input.riskPolicy,
+    c2Policy: input.c2Policy,
+    modelRouting: input.modelRouting
   });
 
   const userPrompt = buildUserPrompt({
@@ -3394,7 +3499,11 @@ function buildOpenAIResponsesInput(input: {
     iprHandoff: input.iprHandoff,
     memory: input.memory,
     saas: input.saas,
-    database: input.database
+    database: input.database,
+    saasPolicy: input.saasPolicy,
+    riskPolicy: input.riskPolicy,
+    c2Policy: input.c2Policy,
+    modelRouting: input.modelRouting
   });
 
   return {
@@ -3485,6 +3594,27 @@ function getOpenAIResponseStatus(response: unknown): string | null {
 function getOpenAIIncompleteReason(response: unknown): string | null {
   const reason = safeRuntimeString(readPath(response, ["incomplete_details", "reason"]), "");
   return reason || null;
+}
+
+function extractOpenAIUsage(response: unknown): GeneratedResponse["usage"] {
+  const inputTokens = readPath(response, ["usage", "input_tokens"]);
+  const outputTokens = readPath(response, ["usage", "output_tokens"]);
+  const totalTokens = readPath(response, ["usage", "total_tokens"]);
+  const cachedInputTokens = readPath(response, ["usage", "input_tokens_details", "cached_tokens"]);
+  const reasoningTokens = readPath(response, ["usage", "output_tokens_details", "reasoning_tokens"]);
+
+  const normalize = (value: unknown): number | null => {
+    if (typeof value !== "number" || !Number.isFinite(value)) return null;
+    return Math.max(0, Math.round(value));
+  };
+
+  return {
+    inputTokens: normalize(inputTokens),
+    outputTokens: normalize(outputTokens),
+    totalTokens: normalize(totalTokens),
+    cachedInputTokens: normalize(cachedInputTokens),
+    reasoningTokens: normalize(reasoningTokens)
+  };
 }
 
 function getOpenAIErrorReason(response: unknown): string | null {
@@ -3602,6 +3732,10 @@ async function callOpenAIResponses(input: {
   memory: IprBoundMemoryRecord;
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
+  riskPolicy: ReturnType<typeof evaluateRuntimeRiskPolicy>;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
   mode: "multimodal" | "text_only";
 }) {
   if (!openai) throw new Error("OPENAI_API_KEY_NOT_CONFIGURED");
@@ -3623,6 +3757,7 @@ function buildIdentityRecognitionResponse(input: {
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
   accountSession?: IprAccountSessionResolution;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
 }): string {
   if (input.iprHandoff.valid && input.iprHandoff.verifiedSubject) {
     const subject = input.iprHandoff.verifiedSubject;
@@ -3659,6 +3794,8 @@ function buildIdentityRecognitionResponse(input: {
       `Session resolution mode: ${firstRuntimeString(input.accountSession, [["mode"]], "none")}`,
       "",
       `SaaS Core: ${input.saas.saasCore}`,
+      `SaaS tier: ${input.saasPolicy.tier}`,
+      `SaaS access level: ${input.saasPolicy.accessLevel}`,
       `Target persistence: ${input.saas.targetPersistence}`,
       `Database configured: ${input.database.configured ? "true" : "false"}`,
       `Database available: ${input.database.available ? "true" : "false"}`,
@@ -3723,6 +3860,10 @@ function buildRuntimeDiagnosticResponse(input: {
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
   engine: OpenAIEngineConfig;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
+  riskPolicy: ReturnType<typeof evaluateRuntimeRiskPolicy>;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
 }): string {
   const subject = input.iprHandoff.verifiedSubject;
   const fileSummary = summarizeFiles(input.files);
@@ -3748,10 +3889,20 @@ function buildRuntimeDiagnosticResponse(input: {
     `Session resolution mode: ${firstRuntimeString(input.accountSession, [["mode"]], "none")}`,
     `Session ID: ${firstRuntimeString(input.accountSession, [["session", "sessionId"], ["session", "id"]], "none")}`,
     `Account profile present: ${isRecord(readPath(input.accountSession, ["accountProfile"])) ? "true" : "false"}`,
-    `profileLookup.attempted: ${safeRuntimeBoolean(readPath(input.accountSession, ["profileLookup", "attempted"])) ? "true" : "false"}`,
-    `profileLookup.found: ${safeRuntimeBoolean(readPath(input.accountSession, ["profileLookup", "found"])) ? "true" : "false"}`,
-    `profileLookup.matchedStrategy: ${firstRuntimeString(input.accountSession, [["profileLookup", "matchedStrategy"]], "none")}`,
-    `profileLookup.matchedMethod: ${firstRuntimeString(input.accountSession, [["profileLookup", "matchedMethod"]], "none")}`,
+    "",
+    "SaaS Core v0.1:",
+    `SaaS tier: ${input.saasPolicy.tier}`,
+    `SaaS decision: ${input.saasPolicy.decision}`,
+    `SaaS allowed: ${input.saasPolicy.allowed ? "true" : "false"}`,
+    `SaaS access level: ${input.saasPolicy.accessLevel}`,
+    `Risk policy decision: ${input.riskPolicy.decision}`,
+    `Risk level: ${input.riskPolicy.riskLevel}`,
+    `C2 decision: ${input.c2Policy.decision}`,
+    `C2 boundary: ${input.c2Policy.cyberBoundary}`,
+    `C2 authorization: ${input.c2Policy.authorizationState}`,
+    `Model level: ${input.modelRouting.modelLevel}`,
+    `Selected model: ${input.modelRouting.selectedModel}`,
+    `Model blocked: ${input.modelRouting.blocked ? "true" : "false"}`,
     "",
     "Model router:",
     `Runtime level: ${input.engine.runtimeLevel}`,
@@ -3802,6 +3953,8 @@ function buildRuntimeDiagnosticResponse(input: {
 function buildModelRouterDiagnosticResponse(input: {
   engine: OpenAIEngineConfig;
   iprHandoff: IprHandoffEvaluation;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
 }): string {
   return normalizeGeneratedOutputText([
     "Diagnostica model router JOKER-C2.",
@@ -3815,6 +3968,14 @@ function buildModelRouterDiagnosticResponse(input: {
     `Deep model: ${input.engine.deepModel}`,
     `Frontier model: ${input.engine.frontierModel}`,
     `Emergency model: ${input.engine.emergencyModel}`,
+    "",
+    "SaaS routing:",
+    `SaaS tier: ${input.saasPolicy.tier}`,
+    `Policy model level: ${input.saasPolicy.modelLevel}`,
+    `Router model level: ${input.modelRouting.modelLevel}`,
+    `Selected model: ${input.modelRouting.selectedModel}`,
+    `Router blocked: ${input.modelRouting.blocked ? "true" : "false"}`,
+    `Router reason: ${input.modelRouting.routingReason}`,
     "",
     "Regola:",
     "- local = zero chiamate OpenAI per boundary, diagnostica e risposte deterministiche;",
@@ -3833,35 +3994,6 @@ function buildModelRouterDiagnosticResponse(input: {
     "",
     MODEL_ROUTER_BOUNDARY,
     QUANTUM_EMERGENCY_BOUNDARY,
-    "legalCertification=false"
-  ].join("\n"));
-}
-
-function buildRuntimeBehaviorImprovementResponse(input: {
-  iprHandoff: IprHandoffEvaluation;
-  governance: GovernanceFrame;
-}): string {
-  return normalizeGeneratedOutputText([
-    "Regola acquisita: niente risposta da pappagallo.",
-    "",
-    "Nuovo comportamento runtime:",
-    "- se una regola è già canonica, JOKER-C2 non deve rispiegare tutto ogni volta;",
-    "- deve produrre delta operativo: stato corrente, problema rilevato, modifica tecnica, test richiesto;",
-    "- deve distinguere policy explanation mode da runtime operation mode;",
-    "- dopo conferma canonica, il default è runtime operation mode.",
-    "",
-    "Applicazione alla regola IPR:",
-    "- il prompt non identifica;",
-    "- la memoria non autentica;",
-    "- la sessione server-side valida autorizza;",
-    "- ogni richiesta resta valutata tramite policy, rischio, EVT, OPC e MATRIX/HBCE.",
-    "",
-    `Stato IPR corrente: ${input.iprHandoff.valid ? "IPR verificato presente" : "IPR verificato assente"}.`,
-    `Identity source: ${input.iprHandoff.source || "none"}.`,
-    `Deterministic intent: ${input.governance.deterministicIntent}.`,
-    "",
-    "Formula runtime:",
-    "Regola acquisita. Stato verificato. Delta operativo. Azione tecnica. Test. Boundary.",
     "legalCertification=false"
   ].join("\n"));
 }
@@ -3961,35 +4093,9 @@ function buildPersistenceBoundaryResponse(): string {
   ].join("\n"));
 }
 
-function buildCommercialClaimsBoundaryResponse(): string {
-  return normalizeGeneratedOutputText([
-    "Claim commerciali da evitare su HERMETICUM B.C.E. S.r.l., IPR, OPC e JOKER-C2.",
-    "",
-    "Da non dire:",
-    "- JOKER-C2 è una SaaS enterprise completa già pronta;",
-    "- OPC è una certificazione legale;",
-    "- IPR sostituisce CIE, SPID, passaporto, codice fiscale o EUDI Wallet;",
-    "- JOKER-C2 garantisce compliance automatica ad AI Act, GDPR, NIS2, DORA o eIDAS;",
-    "- JOKER-C2 è immune da rischio, errore, abuso o prompt injection;",
-    "- il sistema può gestire cyber offensivo se l’utente è verificato.",
-    "",
-    "Da dire:",
-    "- JOKER-C2 è un runtime R&D/MVP avanzato di governance AI;",
-    "- OpenAI resta il motore cognitivo;",
-    "- JOKER-C2 governa identità, policy, memoria, eventi, audit e proof receipt attorno alla chiamata AI;",
-    "- OPC è una proof receipt tecnica per audit e governance review;",
-    "- IPR è identità operativa interna al perimetro HBCE/JOKER-C2;",
-    "- cyber = defensive-only e authorized-only.",
-    "",
-    "Formula finale sicura:",
-    "JOKER-C2 non vende una promessa magica. Vende un runtime controllato per rendere l’uso dell’AI più governabile, tracciabile e auditabile in pilot B2B limitati.",
-    "legalCertification=false"
-  ].join("\n"));
-}
-
 function buildReadinessChecklistResponse(): string {
   return normalizeGeneratedOutputText([
-    "# Checklist finale: livello di prontezza JOKER-C2",
+    "# Checklist finale: livello di prontezza JOKER-C2 SaaS Core v0.1",
     "",
     "| Tipo demo | Stato | Verdetto |",
     "|---|---:|---|",
@@ -4002,15 +4108,19 @@ function buildReadinessChecklistResponse(): string {
     "",
     "Cosa dimostrare live:",
     "1. sessione IPR verificata;",
-    "2. richiesta consentita;",
-    "3. richiesta audit;",
-    "4. richiesta cyber offensiva bloccata;",
-    "5. EVT generato;",
-    "6. OPC proof receipt tecnico;",
-    "7. legalCertification=false;",
-    "8. distinzione PROCESS_MEMORY_MVP vs DATABASE_PERSISTENT target;",
-    "9. model router JOKER-C2;",
-    "10. OpenAI come cognitive engine."
+    "2. risk policy;",
+    "3. C2 Defense boundary;",
+    "4. SaaS tier policy;",
+    "5. model router;",
+    "6. richiesta cyber offensiva bloccata;",
+    "7. EVT generato;",
+    "8. OPC proof receipt tecnico;",
+    "9. runtime audit log;",
+    "10. model usage log;",
+    "11. legalCertification=false;",
+    "12. distinzione PROCESS_MEMORY_MVP vs DATABASE_PERSISTENT target.",
+    "",
+    "legalCertification=false"
   ].join("\n"));
 }
 
@@ -4019,6 +4129,7 @@ function buildSafeRedTeamReviewResponse(input: {
   engine: OpenAIEngineConfig;
   iprHandoff: IprHandoffEvaluation;
   memory: IprBoundMemoryRecord;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
 }): string {
   return normalizeGeneratedOutputText([
     "Eseguo un red team sicuro su JOKER-C2 per revisione OpenAI.",
@@ -4051,6 +4162,8 @@ function buildSafeRedTeamReviewResponse(input: {
     `MatrixState: ${input.iprHandoff.matrixState}`,
     `MemoryScope: ${input.memory.scope}`,
     `MemoryAuthority: ${input.memory.authority}`,
+    `C2Decision: ${input.c2Policy.decision}`,
+    `C2Boundary: ${input.c2Policy.cyberBoundary}`,
     "legalCertification=false"
   ].join("\n"));
 }
@@ -4152,15 +4265,23 @@ function buildPolicyBlockResponse(input: {
   governance: GovernanceFrame;
   iprHandoff: IprHandoffEvaluation;
   memory: IprBoundMemoryRecord;
+  riskPolicy: ReturnType<typeof evaluateRuntimeRiskPolicy>;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
 }): string {
+  const refusal = input.c2Policy.refusalMessage || "Non posso aiutarti a creare, pianificare o ottimizzare attività cyber offensive contro target non autorizzati.";
+
   return normalizeGeneratedOutputText([
-    "Non posso aiutarti a creare, pianificare o ottimizzare attività cyber offensive contro target non autorizzati.",
+    refusal,
     "",
-    "Questa richiesta viene bloccata dal runtime JOKER-C2 perché rientra nel perimetro vietato: exploit operativo, phishing realistico, malware, furto credenziali, evasione, persistenza offensiva, lateral movement, esfiltrazione o targeting non autorizzato.",
-    "",
-    "Decisione runtime: BLOCK.",
-    "Policy outcome: PROHIBIT.",
-    "Modalità applicata: fail-closed.",
+    "Decisione runtime: BLOCK / FAIL-CLOSED.",
+    `SaaS tier: ${input.saasPolicy.tier}`,
+    `SaaS decision: ${input.saasPolicy.decision}`,
+    `Runtime risk decision: ${input.riskPolicy.decision}`,
+    `Risk level: ${input.riskPolicy.riskLevel}`,
+    `C2 Defense decision: ${input.c2Policy.decision}`,
+    `C2 boundary: ${input.c2Policy.cyberBoundary}`,
+    `C2 authorization state: ${input.c2Policy.authorizationState}`,
     "",
     "Anche con sessione IPR verificata e ACCESS_GRANTED, l’accesso a JOKER-C2 non autorizza operazioni offensive contro terzi. La memoria non può trasformare una richiesta vietata in richiesta consentita.",
     "",
@@ -4174,6 +4295,7 @@ function buildPolicyBlockResponse(input: {
     `MATRIX: ${input.iprHandoff.matrixState}`,
     `SemanticMemory: ${input.memory.scope}`,
     "TransformativeMemory: REJECTED_TRACE_CANDIDATE",
+    DEFENSIVE_ONLY_CYBER_BOUNDARY,
     "legalCertification=false"
   ].join("\n"));
 }
@@ -4186,14 +4308,6 @@ function buildFallback(input: {
   files?: NormalizedFile[];
   degradedReason?: string | null;
 }): string {
-  if (input.governance.decision === "BLOCK") {
-    return buildPolicyBlockResponse({
-      governance: input.governance,
-      iprHandoff: input.iprHandoff,
-      memory: input.memory
-    });
-  }
-
   const fileSummary = summarizeFiles(input.files || []);
 
   return normalizeGeneratedOutputText([
@@ -4234,6 +4348,10 @@ async function generateResponse(input: {
   memory: IprBoundMemoryRecord;
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
+  riskPolicy: ReturnType<typeof evaluateRuntimeRiskPolicy>;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
 }): Promise<GeneratedResponse> {
   if (!input.message && input.files.length === 0) {
     return {
@@ -4245,30 +4363,27 @@ async function generateResponse(input: {
     };
   }
 
-  if (input.governance.deterministicIntent === "CYBER_BLOCK") {
+  if (
+    input.governance.decision === "BLOCK" ||
+    input.riskPolicy.decision === "BLOCK" ||
+    input.c2Policy.decision === "BLOCK" ||
+    input.c2Policy.failClosed ||
+    input.saasPolicy.decision === "FAIL_CLOSED" ||
+    input.modelRouting.blocked
+  ) {
     return {
       text: buildPolicyBlockResponse({
         governance: input.governance,
         iprHandoff: input.iprHandoff,
-        memory: input.memory
+        memory: input.memory,
+        riskPolicy: input.riskPolicy,
+        c2Policy: input.c2Policy,
+        saasPolicy: input.saasPolicy
       }),
       state: "BLOCKED",
-      degradedReason: "RUNTIME_POLICY_BLOCK",
+      degradedReason: "RUNTIME_POLICY_BLOCK_OR_FAIL_CLOSED",
       deterministic: true,
       generationClass: "POLICY_BLOCK"
-    };
-  }
-
-  if (input.governance.deterministicIntent === "RUNTIME_BEHAVIOR_IMPROVEMENT") {
-    return {
-      text: buildRuntimeBehaviorImprovementResponse({
-        iprHandoff: input.iprHandoff,
-        governance: input.governance
-      }),
-      state: "OPERATIONAL",
-      degradedReason: null,
-      deterministic: true,
-      generationClass: "RUNTIME_BEHAVIOR_IMPROVEMENT"
     };
   }
 
@@ -4276,7 +4391,9 @@ async function generateResponse(input: {
     return {
       text: buildModelRouterDiagnosticResponse({
         engine: input.engine,
-        iprHandoff: input.iprHandoff
+        iprHandoff: input.iprHandoff,
+        modelRouting: input.modelRouting,
+        saasPolicy: input.saasPolicy
       }),
       state: "OPERATIONAL",
       degradedReason: null,
@@ -4357,16 +4474,6 @@ async function generateResponse(input: {
     };
   }
 
-  if (input.governance.deterministicIntent === "COMMERCIAL_CLAIMS_BOUNDARY") {
-    return {
-      text: buildCommercialClaimsBoundaryResponse(),
-      state: "OPERATIONAL",
-      degradedReason: null,
-      deterministic: true,
-      generationClass: "BOUNDARY_POLICY"
-    };
-  }
-
   if (input.governance.deterministicIntent === "READINESS_CHECKLIST") {
     return {
       text: buildReadinessChecklistResponse(),
@@ -4383,7 +4490,8 @@ async function generateResponse(input: {
         governance: input.governance,
         engine: input.engine,
         iprHandoff: input.iprHandoff,
-        memory: input.memory
+        memory: input.memory,
+        c2Policy: input.c2Policy
       }),
       state: "OPERATIONAL",
       degradedReason: null,
@@ -4422,7 +4530,11 @@ async function generateResponse(input: {
         memory: input.memory,
         saas: input.saas,
         database: input.database,
-        engine: input.engine
+        engine: input.engine,
+        saasPolicy: input.saasPolicy,
+        riskPolicy: input.riskPolicy,
+        c2Policy: input.c2Policy,
+        modelRouting: input.modelRouting
       }),
       state: "OPERATIONAL",
       degradedReason: null,
@@ -4439,7 +4551,8 @@ async function generateResponse(input: {
         memory: input.memory,
         saas: input.saas,
         database: input.database,
-        accountSession: input.accountSession
+        accountSession: input.accountSession,
+        saasPolicy: input.saasPolicy
       }),
       state: input.iprHandoff.status === "INVALID" ? "DEGRADED" : "OPERATIONAL",
       degradedReason:
@@ -4451,13 +4564,16 @@ async function generateResponse(input: {
     };
   }
 
-  if (!input.governance.allowModelCall || input.governance.decision === "BLOCK") {
+  if (!input.governance.allowModelCall || input.engine.modelCallExpected === false) {
     return {
-      text: buildFallback(input),
-      state: "BLOCKED",
-      degradedReason: "RUNTIME_POLICY_BLOCK",
+      text: buildFallback({
+        ...input,
+        degradedReason: "MODEL_CALL_NOT_ALLOWED_BY_RUNTIME_POLICY"
+      }),
+      state: "DEGRADED",
+      degradedReason: "MODEL_CALL_NOT_ALLOWED_BY_RUNTIME_POLICY",
       deterministic: true,
-      generationClass: "POLICY_BLOCK"
+      generationClass: "FALLBACK"
     };
   }
 
@@ -4503,7 +4619,8 @@ async function generateResponse(input: {
         generationClass: "FALLBACK",
         multimodalAttempted,
         multimodalFallbackUsed: false,
-        openAIStatus: getOpenAIResponseStatus(response)
+        openAIStatus: getOpenAIResponseStatus(response),
+        usage: extractOpenAIUsage(response)
       };
     }
 
@@ -4515,7 +4632,8 @@ async function generateResponse(input: {
       generationClass: "MODEL",
       multimodalAttempted,
       multimodalFallbackUsed: false,
-      openAIStatus: getOpenAIResponseStatus(response)
+      openAIStatus: getOpenAIResponseStatus(response),
+      usage: extractOpenAIUsage(response)
     };
   } catch (firstError) {
     const firstReason = normalizeOpenAIExceptionReason(
@@ -4548,7 +4666,8 @@ async function generateResponse(input: {
             generationClass: "MODEL",
             multimodalAttempted: true,
             multimodalFallbackUsed: true,
-            openAIStatus: getOpenAIResponseStatus(response)
+            openAIStatus: getOpenAIResponseStatus(response),
+            usage: extractOpenAIUsage(response)
           };
         }
 
@@ -4569,7 +4688,8 @@ async function generateResponse(input: {
           generationClass: "FALLBACK",
           multimodalAttempted: true,
           multimodalFallbackUsed: true,
-          openAIStatus: getOpenAIResponseStatus(response)
+          openAIStatus: getOpenAIResponseStatus(response),
+          usage: extractOpenAIUsage(response)
         };
       } catch (secondError) {
         const secondReason = normalizeOpenAIExceptionReason(
@@ -4635,6 +4755,26 @@ function buildDocumentMode(input: {
               : "GENERAL_DOCUMENT_WORK";
 }
 
+function buildIdentityContext(input: {
+  identity: RuntimeIdentity;
+  handoff: IprHandoffEvaluation;
+}) {
+  return {
+    runtime_entity: input.identity.entity,
+    runtime_ipr: input.identity.ipr,
+    verified_subject_entity: input.handoff.verifiedSubject?.entity || null,
+    verified_subject_ipr: input.handoff.verifiedSubject?.ipr || null,
+    verified_subject_certificate_id: input.handoff.verifiedSubject?.certificateId || null,
+    verified_subject_card_serial: input.handoff.verifiedSubject?.cardSerial || null,
+    verified_subject_certificate_status: input.handoff.valid ? "ACTIVE" : "NOT_VERIFIED",
+    verified_subject_certificate_scope: input.handoff.verifiedSubject?.certificateScope || [],
+    verified_subject_access_decision: input.handoff.accessDecision,
+    identity_binding: input.handoff.identityBinding,
+    matrix_state: input.handoff.matrixState,
+    semantic_memory_scope: input.handoff.semanticMemoryScope
+  };
+}
+
 function buildRuntimeEvent(input: {
   prev: string | null;
   state: RuntimeState;
@@ -4648,12 +4788,17 @@ function buildRuntimeEvent(input: {
   memory: IprBoundMemoryRecord;
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
+  riskPolicy: ReturnType<typeof evaluateRuntimeRiskPolicy>;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
 }): RuntimeEventRecord {
   const identity = getPrimaryIdentity();
   const evt = buildEvtId();
   const operationalContext = buildOperationalContext({
     tenantId: input.saas.tenantId,
-    workspaceId: input.saas.workspaceId
+    workspaceId: input.saas.workspaceId,
+    database: input.database
   });
 
   const verifiedSubject = input.iprHandoff.verifiedSubject
@@ -4698,7 +4843,11 @@ function buildRuntimeEvent(input: {
       authority: input.memory.authority,
       previousMemoryEvt: input.memory.lastEvt || null
     },
-    verifiedSubject
+    verifiedSubject,
+    saasPolicy: toPublicSaasTierPolicyResult(input.saasPolicy),
+    runtimeRisk: toPublicRuntimeRiskPolicyResult(input.riskPolicy),
+    c2Defense: toPublicC2DefensePolicyResult(input.c2Policy),
+    modelRouting: toPublicRuntimeModelRoutingResult(input.modelRouting)
   };
 
   const fullHash = sha256(payload);
@@ -4721,7 +4870,11 @@ function buildRuntimeEvent(input: {
           ipr: payload.verifiedSubject.ipr,
           certificateId: payload.verifiedSubject.certificateId
         }
-      : null
+      : null,
+    saasPolicy: payload.saasPolicy,
+    runtimeRisk: payload.runtimeRisk,
+    c2Defense: payload.c2Defense,
+    modelRouting: payload.modelRouting
   });
 
   return {
@@ -4750,7 +4903,11 @@ function buildRuntimeEvent(input: {
     identityBinding: payload.identityBinding,
     matrixState: payload.matrixState,
     memory: payload.memory,
-    verifiedSubject
+    verifiedSubject,
+    saasPolicy: payload.saasPolicy,
+    runtimeRisk: payload.runtimeRisk,
+    c2Defense: payload.c2Defense,
+    modelRouting: payload.modelRouting
   };
 }
 
@@ -4765,13 +4922,13 @@ function buildGovernedEvt(input: {
   memory: IprBoundMemoryRecord;
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
+  riskPolicy: ReturnType<typeof evaluateRuntimeRiskPolicy>;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
 }): GovernedEvt {
   const identity = getPrimaryIdentity();
   const operationStatus = mapOperationStatus(input.decision, input.state);
-  const identityContext = buildIdentityContext({
-    identity,
-    handoff: input.iprHandoff
-  });
 
   const eventBase = {
     evt: buildEvtId(),
@@ -4781,7 +4938,8 @@ function buildGovernedEvt(input: {
     ipr: identity.ipr,
     operational_context: buildOperationalContext({
       tenantId: input.saas.tenantId,
-      workspaceId: input.saas.workspaceId
+      workspaceId: input.saas.workspaceId,
+      database: input.database
     }),
     saas: input.saas,
     database: input.database,
@@ -4791,7 +4949,10 @@ function buildGovernedEvt(input: {
       state: input.state,
       role: "HBCE_governed_runtime" as const
     },
-    identity_context: identityContext,
+    identity_context: buildIdentityContext({
+      identity,
+      handoff: input.iprHandoff
+    }),
     memory_context: {
       memory_id: input.memory.memoryId,
       memory_key_hash: input.memory.memoryKeyHash,
@@ -4813,16 +4974,6 @@ function buildGovernedEvt(input: {
       module: input.governance.hbceModule,
       active_modules: input.governance.activeModules
     },
-    context: {
-      class: input.governance.contextClass,
-      intent: input.governance.intentClass,
-      sensitivity:
-        input.governance.riskClass === "LOW"
-          ? ("LOW" as const)
-          : input.governance.riskClass === "MEDIUM"
-            ? ("MEDIUM" as const)
-            : ("HIGH" as const)
-    },
     governance: {
       risk: input.governance.riskClass,
       decision: input.decision,
@@ -4831,11 +4982,14 @@ function buildGovernedEvt(input: {
       human_oversight: input.governance.humanOversight,
       fail_closed: input.governance.failClosed,
       metadata_authority: input.governance.metadataAuthority,
-      user_declared_governance_detected: input.governance.userDeclaredGovernanceDetected,
       deterministic_intent: input.governance.deterministicIntent,
       reasons: input.governance.reasons
     },
     engine: input.engine,
+    saas_policy: toPublicSaasTierPolicyResult(input.saasPolicy),
+    runtime_risk_policy: toPublicRuntimeRiskPolicyResult(input.riskPolicy),
+    c2_defense_policy: toPublicC2DefensePolicyResult(input.c2Policy),
+    model_routing: toPublicRuntimeModelRoutingResult(input.modelRouting),
     operation: {
       type: "CHAT_COMPLETION" as const,
       status: operationStatus
@@ -4858,12 +5012,14 @@ function buildGovernedEvt(input: {
 
 function buildOpcPersistenceFrame(database: DatabaseRuntimeFrame): OpcProofRecord["persistence"] {
   return {
-    mode: "PROCESS_PROOF_MVP",
-    status: database.configured
-      ? "DATABASE_PERSISTENT_REQUIRED"
-      : "PROCESS_SCOPED",
-    durable: false,
-    runtimeScoped: true,
+    mode: database.configured && database.available ? "DATABASE_PERSISTENT" : "PROCESS_PROOF_MVP",
+    status: database.configured && database.available
+      ? "DATABASE_PERSISTENT_ACTIVE"
+      : database.configured
+        ? "DATABASE_PERSISTENT_REQUIRED"
+        : "PROCESS_SCOPED",
+    durable: database.configured && database.available,
+    runtimeScoped: !(database.configured && database.available),
     target: SAAS_TARGET_PERSISTENCE,
     legalCertification: false
   };
@@ -4884,12 +5040,19 @@ function buildOpcProof(input: {
   memory: IprBoundMemoryRecord;
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
+  riskPolicy: ReturnType<typeof evaluateRuntimeRiskPolicy>;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
+  auditHash?: string | null;
+  usageHash?: string | null;
 }): OpcProofRecord {
   const identity = getPrimaryIdentity();
   const timestamp = nowIso();
   const operationalContext = buildOperationalContext({
     tenantId: input.saas.tenantId,
-    workspaceId: input.saas.workspaceId
+    workspaceId: input.saas.workspaceId,
+    database: input.database
   });
 
   const runtimeSnapshot = {
@@ -4905,7 +5068,6 @@ function buildOpcProof(input: {
     humanOversight: input.governance.humanOversight,
     failClosed: input.governance.failClosed,
     metadataAuthority: input.governance.metadataAuthority,
-    userDeclaredGovernanceDetected: input.governance.userDeclaredGovernanceDetected,
     deterministicIntent: input.governance.deterministicIntent,
     verifiedSubjectPresent: input.iprHandoff.valid,
     verifiedSubjectAccessDecision: input.iprHandoff.accessDecision,
@@ -4957,7 +5119,11 @@ function buildOpcProof(input: {
     iprHandoffSource: input.iprHandoff.source,
     iprHandoffHash: input.iprHandoff.rawHash,
     memoryKeyHash: input.memory.memoryKeyHash,
-    memoryHash
+    memoryHash,
+    saasPolicy: toPublicSaasTierPolicyResult(input.saasPolicy),
+    riskPolicy: toPublicRuntimeRiskPolicyResult(input.riskPolicy),
+    c2Policy: toPublicC2DefensePolicyResult(input.c2Policy),
+    modelRouting: toPublicRuntimeModelRoutingResult(input.modelRouting)
   });
 
   const outputHash = sha256(input.response);
@@ -4968,6 +5134,12 @@ function buildOpcProof(input: {
   const handoffHash = input.iprHandoff.rawHash;
   const previousProofHash = input.memory.lastOpcChainHash || null;
   const persistence = buildOpcPersistenceFrame(input.database);
+  const policyHash = sha256({
+    saasPolicy: toPublicSaasTierPolicyResult(input.saasPolicy),
+    riskPolicy: toPublicRuntimeRiskPolicyResult(input.riskPolicy),
+    c2Policy: toPublicC2DefensePolicyResult(input.c2Policy),
+    modelRouting: toPublicRuntimeModelRoutingResult(input.modelRouting)
+  });
   const proofId = buildOpcId();
 
   const chainPayload = {
@@ -4987,6 +5159,10 @@ function buildOpcProof(input: {
       available: input.database.available,
       targetPersistence: input.database.targetPersistence
     },
+    saasPolicy: toPublicSaasTierPolicyResult(input.saasPolicy),
+    runtimeRiskPolicy: toPublicRuntimeRiskPolicyResult(input.riskPolicy),
+    c2DefensePolicy: toPublicC2DefensePolicyResult(input.c2Policy),
+    modelRouting: toPublicRuntimeModelRoutingResult(input.modelRouting),
     persistence,
     hashes: {
       inputHash,
@@ -4998,6 +5174,9 @@ function buildOpcProof(input: {
       handoffHash,
       memoryHash,
       filesHash,
+      policyHash,
+      auditHash: input.auditHash || null,
+      usageHash: input.usageHash || null,
       previousProofHash
     },
     boundary: {
@@ -5009,8 +5188,8 @@ function buildOpcProof(input: {
       memoryBoundary: MEMORY_BOUNDARY,
       databasePersistenceBoundary: DATABASE_PERSISTENCE_BOUNDARY,
       fileProcessingBoundary: FILE_PROCESSING_BOUNDARY,
-      transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
-      italianDocumentQualityBoundary: ITALIAN_DOCUMENT_QUALITY_BOUNDARY
+      saasCoreBoundary: SAAS_CORE_BOUNDARY,
+      c2DefenseBoundary: DEFENSIVE_ONLY_CYBER_BOUNDARY
     }
   };
 
@@ -5028,6 +5207,10 @@ function buildOpcProof(input: {
     operationalContext,
     saas: input.saas,
     database: input.database,
+    saasPolicy: toPublicSaasTierPolicyResult(input.saasPolicy),
+    runtimeRiskPolicy: toPublicRuntimeRiskPolicyResult(input.riskPolicy),
+    c2DefensePolicy: toPublicC2DefensePolicyResult(input.c2Policy),
+    modelRouting: toPublicRuntimeModelRoutingResult(input.modelRouting),
     persistence,
     proof: {
       inputHash,
@@ -5039,6 +5222,9 @@ function buildOpcProof(input: {
       handoffHash,
       memoryHash,
       filesHash,
+      policyHash,
+      auditHash: input.auditHash || null,
+      usageHash: input.usageHash || null,
       previousProofHash,
       chainHash: sha256(chainPayload)
     },
@@ -5057,9 +5243,8 @@ function buildOpcProof(input: {
         MEMORY_BOUNDARY,
         DATABASE_PERSISTENCE_BOUNDARY,
         FILE_PROCESSING_BOUNDARY,
-        ITALIAN_DOCUMENT_QUALITY_BOUNDARY,
-        LONG_DOCUMENT_OUTPUT_BOUNDARY,
-        MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
+        SAAS_CORE_BOUNDARY,
+        DEFENSIVE_ONLY_CYBER_BOUNDARY,
         input.iprHandoff.valid
           ? "Verified biological subject accepted through runtime handoff or authenticated IPR account session."
           : "No valid biological subject handoff; runtime remains MATRIX_LIMITED.",
@@ -5067,7 +5252,6 @@ function buildOpcProof(input: {
           ? "File hashes, file kind and model read modes were recorded in OPC proof metadata."
           : "No file attachment was processed in this operation.",
         input.governance.failClosed ? FAIL_CLOSED_STATEMENT : "Standard governed execution completed.",
-        DEFENSIVE_ONLY_CYBER_BOUNDARY,
         OPENAI_DATA_PRIVACY_BOUNDARY
       ]
     },
@@ -5087,7 +5271,9 @@ function buildOpcProof(input: {
       quantumEmergencyBoundary: QUANTUM_EMERGENCY_BOUNDARY,
       memoryBoundary: MEMORY_BOUNDARY,
       databasePersistenceBoundary: DATABASE_PERSISTENCE_BOUNDARY,
-      fileProcessingBoundary: FILE_PROCESSING_BOUNDARY
+      fileProcessingBoundary: FILE_PROCESSING_BOUNDARY,
+      saasCoreBoundary: SAAS_CORE_BOUNDARY,
+      c2DefenseBoundary: DEFENSIVE_ONLY_CYBER_BOUNDARY
     }
   };
 }
@@ -5119,6 +5305,9 @@ function toPublicOpcProofRecord(record: OpcProofRecord) {
     modelRouter: buildModelHierarchyPublicFrame(record.engine),
     files: record.files,
     filesHash: record.proof.filesHash,
+    policyHash: record.proof.policyHash,
+    auditHash: record.proof.auditHash,
+    usageHash: record.proof.usageHash,
     engineHash: record.proof.engineHash,
     identityHash: record.proof.identityHash,
     handoffHash: record.proof.handoffHash,
@@ -5142,7 +5331,6 @@ function toPublicOpcProofRecord(record: OpcProofRecord) {
     verificationStatus: record.verification.status,
     handoffValidationMode: record.verification.handoffValidationMode,
     metadataAuthority: record.runtime.metadataAuthority,
-    userDeclaredGovernanceDetected: record.runtime.userDeclaredGovernanceDetected,
     deterministicIntent: record.runtime.deterministicIntent,
     failClosed: record.runtime.failClosed,
     operationalContext: record.operationalContext,
@@ -5153,6 +5341,10 @@ function toPublicOpcProofRecord(record: OpcProofRecord) {
       targetPersistence: record.database.targetPersistence,
       legalCertification: false
     },
+    saasPolicy: record.saasPolicy,
+    runtimeRiskPolicy: record.runtimeRiskPolicy,
+    c2DefensePolicy: record.c2DefensePolicy,
+    modelRouting: record.modelRouting,
     persistence: record.persistence,
     legalCertification: false
   };
@@ -5222,6 +5414,12 @@ function buildRuntimeDiagnostic(input: {
   saas: SaasRuntimeContext;
   database: DatabaseRuntimeFrame;
   files: NormalizedFile[];
+  saasPolicy: ReturnType<typeof evaluateSaasTierPolicy>;
+  riskPolicy: ReturnType<typeof evaluateRuntimeRiskPolicy>;
+  c2Policy: ReturnType<typeof evaluateC2DefensePolicy>;
+  modelRouting: ReturnType<typeof routeRuntimeModelFromSaasPolicy>;
+  auditRecord: ReturnType<typeof appendRuntimeAuditLogRecordFromPolicies>;
+  usageRecord: ReturnType<typeof appendModelUsageLogRecordFromRuntime>;
 }) {
   const fileSummary = summarizeFiles(input.files);
 
@@ -5259,6 +5457,12 @@ function buildRuntimeDiagnostic(input: {
     },
     previousCheckpoint: input.identity.previousCheckpoint,
     saas: input.saas,
+    saasPolicy: toPublicSaasTierPolicyResult(input.saasPolicy),
+    runtimeRiskPolicy: toPublicRuntimeRiskPolicyResult(input.riskPolicy),
+    c2DefensePolicy: toPublicC2DefensePolicyResult(input.c2Policy),
+    modelRouting: toPublicRuntimeModelRoutingResult(input.modelRouting),
+    runtimeAuditLog: toPublicRuntimeAuditLogRecord(input.auditRecord),
+    modelUsageLog: toPublicModelUsageLogRecord(input.usageRecord),
     database: {
       configured: input.database.configured,
       available: input.database.available,
@@ -5305,10 +5509,10 @@ function buildRuntimeDiagnostic(input: {
     previousCheckpointAlias: input.identity.prev,
     eventFamily: input.identity.eventFamily,
     cycle: input.identity.cycle,
-    monthlyRef: input.identity.monthlyRef,
     operationalContext: buildOperationalContext({
       tenantId: input.saas.tenantId,
-      workspaceId: input.saas.workspaceId
+      workspaceId: input.saas.workspaceId,
+      database: input.database
     }),
     core: input.identity.core,
     iprAccountSession: {
@@ -5380,24 +5584,8 @@ function buildRuntimeDiagnostic(input: {
       legalCertification: false
     },
     legacyEvt: input.legacyEvent.evt,
-    legacyOperationalContext: input.legacyEvent.operationalContext,
-    legacySaas: input.legacyEvent.saas,
-    legacyDatabase: {
-      configured: input.legacyEvent.database.configured,
-      available: input.legacyEvent.database.available,
-      targetPersistence: input.legacyEvent.database.targetPersistence,
-      legalCertification: false
-    },
     legacyPublicHash: input.legacyEvent.anchors.publicHash,
     governedEvt: input.governedEvt.evt,
-    governedOperationalContext: input.governedEvt.operational_context,
-    governedSaas: input.governedEvt.saas,
-    governedDatabase: {
-      configured: input.governedEvt.database.configured,
-      available: input.governedEvt.database.available,
-      targetPersistence: input.governedEvt.database.targetPersistence,
-      legalCertification: false
-    },
     governedHash: input.governedEvt.trace.hash,
     opcProofId: input.opcProof.proofId,
     opcChainHash: input.opcProof.proof.chainHash,
@@ -5406,6 +5594,9 @@ function buildRuntimeDiagnostic(input: {
     opcHandoffHash: input.opcProof.proof.handoffHash,
     opcMemoryHash: input.opcProof.proof.memoryHash,
     opcFilesHash: input.opcProof.proof.filesHash,
+    opcPolicyHash: input.opcProof.proof.policyHash,
+    opcAuditHash: input.opcProof.proof.auditHash,
+    opcUsageHash: input.opcProof.proof.usageHash,
     opcPersistence: input.opcProof.persistence,
     legalCertification: false,
     openAIReviewerPosture: OPENAI_REVIEWER_POSTURE,
@@ -5417,6 +5608,8 @@ function buildRuntimeDiagnostic(input: {
     databasePersistenceBoundary: DATABASE_PERSISTENCE_BOUNDARY,
     fileProcessingBoundary: FILE_PROCESSING_BOUNDARY,
     memoryBoundary: MEMORY_BOUNDARY,
+    saasCoreBoundary: SAAS_CORE_BOUNDARY,
+    c2DefenseBoundary: DEFENSIVE_ONLY_CYBER_BOUNDARY,
     transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
     transformativeMemoryPrivacyBoundary: MATRIX_TRANSFORMATIVE_MEMORY_PRIVACY_BOUNDARY,
     transformativeMemoryCyberBoundary: MATRIX_TRANSFORMATIVE_MEMORY_CYBER_BOUNDARY,
@@ -5448,13 +5641,13 @@ export async function POST(req: NextRequest) {
   const body = normalizeBody(rawBody);
   const identity = getPrimaryIdentity();
   const files = normalizeFiles(body.files);
+  const database = await buildDatabaseRuntimeFrame();
 
   const iprAccountSession = await resolveIprAccountSessionFromRequestAsync(req);
   const saasScope = resolveSaasScope({
     accountSession: iprAccountSession
   });
   const saas = buildSaasRuntimeContext(saasScope);
-  const database = buildDatabaseRuntimeFrame();
 
   const clientIprHandoff = evaluateIprHandoff(body.iprHandoff);
   const iprHandoff = resolveEffectiveIprHandoff({
@@ -5465,6 +5658,111 @@ export async function POST(req: NextRequest) {
   const effectiveSessionId = resolveEffectiveSessionId({
     requestedSessionId: body.sessionId,
     accountSession: iprAccountSession
+  });
+
+  const identityPolicyInput = resolvePolicyIdentityInput({
+    iprHandoff,
+    saas,
+    body
+  });
+
+  const baseGovernance = buildGovernanceFrame({
+    message: body.message,
+    files
+  });
+
+  const contextClass = mapContextClassToSaas(baseGovernance.contextClass);
+  const dataClassification = mapDataClassToSaas(baseGovernance.dataClass);
+  const inferredCyberRelevance = inferCyberRelevanceFromGovernance(baseGovernance);
+  const inferredProofRequirement = inferProofRequirementFromGovernance(baseGovernance);
+  const operationalValue = mapRiskToOperationalValue(baseGovernance.riskClass);
+
+  const riskPolicy = evaluateRuntimeRiskPolicy({
+    message: body.message,
+    requestedTier: body.requestedTier,
+    identityState: identityPolicyInput.identityState,
+    organizationState: identityPolicyInput.organizationState,
+    workspaceState: identityPolicyInput.workspaceState,
+    certificateActive: identityPolicyInput.certificateActive,
+    hasAuthorizedPerimeter: body.hasAuthorizedPerimeter,
+    defensivePurpose: body.defensivePurpose,
+    contextClass,
+    dataClassification,
+    operationalValue,
+    cyberRelevance: inferredCyberRelevance,
+    proofRequirement: inferredProofRequirement,
+    fileCount: files.length,
+    hasFiles: files.length > 0,
+    databaseConfigured: database.configured,
+    databaseAvailable: database.available
+  });
+
+  const c2Policy = evaluateC2DefensePolicy({
+    message: body.message,
+    requestedTier: body.requestedTier,
+    identityState: identityPolicyInput.identityState,
+    organizationState: identityPolicyInput.organizationState,
+    workspaceState: identityPolicyInput.workspaceState,
+    certificateActive: identityPolicyInput.certificateActive,
+    hasAuthorizedPerimeter: body.hasAuthorizedPerimeter,
+    defensivePurpose: body.defensivePurpose || riskPolicy.cyberRelevance === "DEFENSIVE",
+    cyberRelevance: riskPolicy.cyberRelevance,
+    organizationVerified: identityPolicyInput.organizationVerified,
+    workspaceActive: identityPolicyInput.workspaceActive,
+    forceC2Evaluation:
+      body.requestedTier === "C2_DEFENSE" ||
+      body.requestedTier === "STRATEGIC" ||
+      riskPolicy.cyberRelevance === "C2_RELEVANT" ||
+      riskPolicy.cyberRelevance === "BLOCKED"
+  });
+
+  const saasPolicy = evaluateSaasTierPolicy({
+    requestedTier: body.requestedTier,
+    identityState: identityPolicyInput.identityState,
+    organizationState: identityPolicyInput.organizationState,
+    workspaceState: identityPolicyInput.workspaceState,
+    billingMode: body.requestedTier === "STRATEGIC" ? "PILOT_CONTRACT" : "DEMO",
+    certificateActive: identityPolicyInput.certificateActive,
+    hasAuthorizedPerimeter: body.hasAuthorizedPerimeter,
+    defensivePurpose: body.defensivePurpose || c2Policy.purposeState === "DEFENSIVE_PURPOSE_AUTHORIZED",
+    cyberRelevance: c2Policy.cyberRelevance,
+    contextClass,
+    dataClassification,
+    operationalValue: riskPolicy.operationalValue,
+    proofRequirement: riskPolicy.proofRequirement,
+    databaseConfigured: database.configured,
+    databaseAvailable: database.available
+  });
+
+  const modelRouting = routeRuntimeModelFromSaasPolicy(saasPolicy, {
+    defaultModel: MODEL_BASE,
+    standardModel: MODEL_BASE,
+    enhancedModel: MODEL_STANDARD,
+    advancedModel: MODEL_DEEP,
+    c2Model: MODEL_EMERGENCY
+  });
+
+  const governance = applySaasPolicyToGovernance({
+    governance: baseGovernance,
+    riskPolicy,
+    c2Policy,
+    saasPolicy,
+    modelRouting
+  });
+
+  const documentFamily = detectDocumentFamily(
+    governance.projectDomain,
+    body.message,
+    files
+  );
+
+  const documentMode = buildDocumentMode({
+    governance
+  });
+
+  const engine = resolveEngine({
+    modelRouting,
+    iprHandoff
   });
 
   const memoryBefore = getOrCreateRuntimeMemory({
@@ -5479,6 +5777,7 @@ export async function POST(req: NextRequest) {
           `Authenticated IPR account session reason: ${firstRuntimeString(iprAccountSession, [["reason"]], "UNKNOWN")}.`,
           `Authenticated IPR account session resolution mode: ${firstRuntimeString(iprAccountSession, [["mode"]], "UNKNOWN")}.`,
           `SaaS Core: ${SAAS_CORE_VERSION}.`,
+          `SaaS tier: ${saasPolicy.tier}.`,
           `Target persistence: ${SAAS_TARGET_PERSISTENCE}.`,
           `Tenant ID: ${saas.tenantId || "none"}.`,
           `Workspace ID: ${saas.workspaceId || "none"}.`,
@@ -5486,6 +5785,7 @@ export async function POST(req: NextRequest) {
           `Database available: ${database.available ? "true" : "false"}.`,
           `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} is the active UP-EVT operational synchronism for this runtime phase.`,
           `${PREVIOUS_CHAIN_CHECKPOINT}/${PREVIOUS_AI_CHAIN_CHECKPOINT} is the previous technical checkpoint reference for ${MONTHLY_REFERENCE}.`,
+          SAAS_CORE_BOUNDARY,
           MODEL_ROUTER_BOUNDARY,
           QUANTUM_EMERGENCY_BOUNDARY,
           FILE_PROCESSING_BOUNDARY,
@@ -5497,36 +5797,16 @@ export async function POST(req: NextRequest) {
           `IPR account session resolution mode: ${firstRuntimeString(iprAccountSession, [["mode"]], "UNKNOWN")}.`,
           "Runtime may use a valid client handoff only as fallback transport context.",
           `SaaS Core: ${SAAS_CORE_VERSION}.`,
+          `SaaS tier: ${saasPolicy.tier}.`,
           `Target persistence: ${SAAS_TARGET_PERSISTENCE}.`,
           `Database configured: ${database.configured ? "true" : "false"}.`,
           `Database available: ${database.available ? "true" : "false"}.`,
           `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} remains operational context only when no server-side identity is validated.`,
+          SAAS_CORE_BOUNDARY,
           MODEL_ROUTER_BOUNDARY,
           FILE_PROCESSING_BOUNDARY,
           ITALIAN_DOCUMENT_QUALITY_BOUNDARY
         ]
-  });
-
-  const governance = buildGovernanceFrame({
-    message: body.message,
-    files
-  });
-
-  const documentFamily = detectDocumentFamily(
-    governance.projectDomain,
-    body.message,
-    files
-  );
-
-  const documentMode = buildDocumentMode({
-    governance
-  });
-
-  const engine = resolveEngine({
-    message: body.message,
-    files,
-    governance,
-    iprHandoff
   });
 
   const generated = await generateResponse({
@@ -5540,7 +5820,11 @@ export async function POST(req: NextRequest) {
     accountSession: iprAccountSession,
     memory: memoryBefore,
     saas,
-    database
+    database,
+    saasPolicy,
+    riskPolicy,
+    c2Policy,
+    modelRouting
   });
 
   const finalDecision: RuntimeDecision =
@@ -5562,7 +5846,11 @@ export async function POST(req: NextRequest) {
     iprHandoff,
     memory: memoryBefore,
     saas,
-    database
+    database,
+    saasPolicy,
+    riskPolicy,
+    c2Policy,
+    modelRouting
   });
 
   const governedEvt = buildGovernedEvt({
@@ -5575,7 +5863,51 @@ export async function POST(req: NextRequest) {
     iprHandoff,
     memory: memoryBefore,
     saas,
-    database
+    database,
+    saasPolicy,
+    riskPolicy,
+    c2Policy,
+    modelRouting
+  });
+
+  const preliminaryAuditRecord = appendRuntimeAuditLogRecordFromPolicies({
+    source: "API_CHAT",
+    sessionId: effectiveSessionId,
+    requestId: governedEvt.evt,
+    humanIpr: iprHandoff.verifiedSubject?.ipr || "NOT_VERIFIED",
+    organizationIpr: saas.tenantId || "NO_ORGANIZATION_IPR",
+    workspaceId: saas.workspaceId || "NO_WORKSPACE",
+    saasPolicy,
+    riskPolicy,
+    modelRouting,
+    c2Policy,
+    evtRef: governedEvt.evt,
+    evtHash: governedEvt.trace.hash,
+    memoryRef: memoryBefore.memoryId,
+    memoryHash: buildMemoryRecordHash(memoryBefore),
+    inputHash: sha256({
+      message: body.message,
+      files: files.map(publicFileRecord)
+    }),
+    outputHash: sha256(generated.text)
+  });
+
+  const usageRecord = appendModelUsageLogRecordFromRuntime({
+    source: "API_CHAT",
+    provider: "OPENAI",
+    sessionId: effectiveSessionId,
+    requestId: governedEvt.evt,
+    humanIpr: iprHandoff.verifiedSubject?.ipr || "NOT_VERIFIED",
+    organizationIpr: saas.tenantId || "NO_ORGANIZATION_IPR",
+    workspaceId: saas.workspaceId || "NO_WORKSPACE",
+    saasPolicy,
+    riskPolicy,
+    modelRouting,
+    c2Policy,
+    auditRecord: preliminaryAuditRecord,
+    evtRef: governedEvt.evt,
+    evtHash: governedEvt.trace.hash,
+    usage: generated.usage || null
   });
 
   const opcProof = buildOpcProof({
@@ -5592,7 +5924,34 @@ export async function POST(req: NextRequest) {
     iprHandoff,
     memory: memoryBefore,
     saas,
-    database
+    database,
+    saasPolicy,
+    riskPolicy,
+    c2Policy,
+    modelRouting,
+    auditHash: preliminaryAuditRecord.auditHash,
+    usageHash: usageRecord.usageHash
+  });
+
+  const auditRecord = appendRuntimeAuditLogRecordFromPolicies({
+    source: "API_CHAT",
+    sessionId: effectiveSessionId,
+    requestId: governedEvt.evt,
+    humanIpr: iprHandoff.verifiedSubject?.ipr || "NOT_VERIFIED",
+    organizationIpr: saas.tenantId || "NO_ORGANIZATION_IPR",
+    workspaceId: saas.workspaceId || "NO_WORKSPACE",
+    saasPolicy,
+    riskPolicy,
+    modelRouting,
+    c2Policy,
+    evtRef: governedEvt.evt,
+    evtHash: governedEvt.trace.hash,
+    opcRef: opcProof.proofId,
+    opcProofHash: opcProof.proof.chainHash,
+    memoryRef: memoryBefore.memoryId,
+    memoryHash: buildMemoryRecordHash(memoryBefore),
+    inputHash: opcProof.proof.inputHash,
+    outputHash: opcProof.proof.outputHash
   });
 
   const transformativeMemory = evaluateMatrixTransformativeMemory({
@@ -5677,23 +6036,22 @@ export async function POST(req: NextRequest) {
       ? [
           `Last cyber classification context: ${governance.contextClass}.`,
           `Last cyber classification module: ${governance.hbceModule}.`,
+          `Last C2 Defense decision: ${c2Policy.decision}.`,
+          `Last C2 Defense boundary: ${c2Policy.cyberBoundary}.`,
           "Cyber operations remain defensive-only and authorized-only.",
           "Prohibited cyber signals are classified under SECURITY / CyberGlobal and blocked fail-closed when unsafe."
         ]
       : [];
 
-  const diagnosticFacts =
-    generated.generationClass === "RUNTIME_DIAGNOSTIC"
-      ? [
-          "Last operation was a deterministic runtime diagnostic.",
-          "Runtime diagnostic questions must be explicit and must not trigger from ordinary conceptual questions about IPR, OPC, MATRIX or memory.",
-          "Runtime diagnostic answers are generated without relying on a model call.",
-          "Technical constants must remain canonical and untranslated."
-        ]
-      : [];
-
   const modelRouterFacts = [
     "JOKER-C2 is the superior governed runtime, not a single model.",
+    `Last SaaS tier: ${saasPolicy.tier}.`,
+    `Last SaaS decision: ${saasPolicy.decision}.`,
+    `Last runtime risk level: ${riskPolicy.riskLevel}.`,
+    `Last runtime risk decision: ${riskPolicy.decision}.`,
+    `Last C2 Defense boundary: ${c2Policy.cyberBoundary}.`,
+    `Last model routing level: ${modelRouting.modelLevel}.`,
+    `Last selected model: ${modelRouting.selectedModel}.`,
     `Last model tier: ${engine.modelTier}.`,
     `Last model used: ${engine.modelUsed}.`,
     `Last model call expected: ${engine.modelCallExpected ? "true" : "false"}.`,
@@ -5705,6 +6063,7 @@ export async function POST(req: NextRequest) {
     `Emergency model: ${engine.emergencyModel}.`,
     `IPR governed escalation: ${engine.iprGovernedEscalation ? "true" : "false"}.`,
     `Quantum emergency: ${engine.quantumEmergency ? "true" : "false"}.`,
+    SAAS_CORE_BOUNDARY,
     MODEL_ROUTER_BOUNDARY,
     QUANTUM_EMERGENCY_BOUNDARY
   ];
@@ -5750,6 +6109,10 @@ export async function POST(req: NextRequest) {
       `Last OpenAI response status: ${generated.openAIStatus || "none"}.`,
       `Last governed EVT: ${governedEvt.evt}.`,
       `Last OPC proof: ${opcProof.proofId}.`,
+      `Last runtime audit ID: ${auditRecord.auditId}.`,
+      `Last runtime audit hash: ${auditRecord.auditHash}.`,
+      `Last model usage ID: ${usageRecord.usageId}.`,
+      `Last model usage hash: ${usageRecord.usageHash}.`,
       `Last IPR identity source: ${iprHandoff.source || "none"}.`,
       `Project birth date: ${PROJECT_BIRTH_DATE}.`,
       `Monthly synchronization reference: ${MONTHLY_REFERENCE}.`,
@@ -5769,7 +6132,6 @@ export async function POST(req: NextRequest) {
       ...databaseFacts,
       ...fileFacts,
       ...cyberFacts,
-      ...diagnosticFacts,
       ...modelRouterFacts,
       ...deterministicFacts,
       ...degradedFacts,
@@ -5794,7 +6156,13 @@ export async function POST(req: NextRequest) {
     transformativeMemory,
     saas,
     database,
-    files
+    files,
+    saasPolicy,
+    riskPolicy,
+    c2Policy,
+    modelRouting,
+    auditRecord,
+    usageRecord
   });
 
   const publicIprHandoff = toPublicIprHandoffEvaluation(iprHandoff);
@@ -5803,7 +6171,8 @@ export async function POST(req: NextRequest) {
   const publicIprAccountSession = toPublicIprAccountSessionResolution(iprAccountSession);
   const operationalContext = buildOperationalContext({
     tenantId: saas.tenantId,
-    workspaceId: saas.workspaceId
+    workspaceId: saas.workspaceId,
+    database
   });
 
   return NextResponse.json({
@@ -5848,6 +6217,12 @@ export async function POST(req: NextRequest) {
     },
     modelRouter: buildModelHierarchyPublicFrame(engine),
     saas,
+    saasPolicy: toPublicSaasTierPolicyResult(saasPolicy),
+    runtimeRiskPolicy: toPublicRuntimeRiskPolicyResult(riskPolicy),
+    c2DefensePolicy: toPublicC2DefensePolicyResult(c2Policy),
+    modelRouting: toPublicRuntimeModelRoutingResult(modelRouting),
+    runtimeAuditLog: toPublicRuntimeAuditLogRecord(auditRecord),
+    modelUsageLog: toPublicModelUsageLogRecord(usageRecord),
     database: {
       configured: database.configured,
       available: database.available,
@@ -5870,7 +6245,6 @@ export async function POST(req: NextRequest) {
       monthlyReference: identity.monthlyReference,
       eventFamily: identity.eventFamily,
       cycle: identity.cycle,
-      monthlyRef: identity.monthlyRef,
       verifiedSubject: iprHandoff.verifiedSubject,
       verifiedSubjectPresent: iprHandoff.valid,
       verifiedSubjectAccessDecision: iprHandoff.accessDecision,
@@ -5891,7 +6265,10 @@ export async function POST(req: NextRequest) {
       tenantId: saas.tenantId,
       workspaceId: saas.workspaceId,
       modelEscalationAllowed: engine.iprGovernedEscalation,
-      quantumEmergencyAllowed: engine.quantumEmergency
+      quantumEmergencyAllowed: engine.quantumEmergency,
+      saasTier: saasPolicy.tier,
+      saasAllowed: saasPolicy.allowed,
+      c2Available: c2Policy.c2Available
     },
     matrix: {
       state: iprHandoff.matrixState,
@@ -5976,6 +6353,8 @@ export async function POST(req: NextRequest) {
       databasePersistenceBoundary: DATABASE_PERSISTENCE_BOUNDARY,
       fileProcessingBoundary: FILE_PROCESSING_BOUNDARY,
       memoryBoundary: MEMORY_BOUNDARY,
+      saasCoreBoundary: SAAS_CORE_BOUNDARY,
+      c2DefenseBoundary: DEFENSIVE_ONLY_CYBER_BOUNDARY,
       transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
       transformativeMemoryPrivacyBoundary: MATRIX_TRANSFORMATIVE_MEMORY_PRIVACY_BOUNDARY,
       transformativeMemoryCyberBoundary: MATRIX_TRANSFORMATIVE_MEMORY_CYBER_BOUNDARY,
@@ -5992,40 +6371,90 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const identity = getPrimaryIdentity();
+  const database = await buildDatabaseRuntimeFrame();
   const iprAccountSession = await resolveIprAccountSessionFromRequestAsync(req);
   const saasScope = resolveSaasScope({
     accountSession: iprAccountSession
   });
   const saas = buildSaasRuntimeContext(saasScope);
-  const database = buildDatabaseRuntimeFrame();
 
   const authenticated = safeRuntimeBoolean(readPath(iprAccountSession, ["authenticated"]));
   const runtimeHandoffValid = safeRuntimeBoolean(readPath(iprAccountSession, ["runtimeHandoff", "isValid"]));
 
-  const healthEngine: OpenAIEngineConfig = {
-    provider: "OpenAI",
-    apiMode: "responses",
-    role: "cognitive_engine",
-    runtimeRole: "HBCE_governed_runtime",
-    runtimeName: "JOKER-C2",
-    runtimeLevel: "C2_SUPERIOR_RUNTIME",
-    modelUsed: MODEL_BASE,
-    modelTier: "base",
-    modelCallExpected: false,
-    modelRouterReason: "GET health check does not call OpenAI. Base model is displayed as default economy model.",
-    baseModel: MODEL_BASE,
-    standardModel: MODEL_STANDARD,
-    deepModel: MODEL_DEEP,
-    frontierModel: MODEL_FRONTIER,
-    emergencyModel: MODEL_EMERGENCY,
-    mode: "base",
-    configured: Boolean(process.env.OPENAI_API_KEY),
-    maxOutputTokens: MAX_OUTPUT_TOKENS_BASE,
-    iprGovernedEscalation: authenticated && runtimeHandoffValid,
-    quantumEmergency: false,
-    projectBirthDate: PROJECT_BIRTH_DATE,
-    projectBirthLabel: PROJECT_BIRTH_LABEL
+  const identityPolicyInput = {
+    identityState: authenticated && runtimeHandoffValid
+      ? ("IPR_VERIFIED_BIOLOGICAL_SUBJECT" as IdentityState)
+      : ("NOT_VERIFIED" as IdentityState),
+    organizationState: saas.tenantId ? ("ACTIVE" as OrganizationState) : ("NOT_REQUIRED" as OrganizationState),
+    workspaceState: saas.workspaceId ? ("ACTIVE" as WorkspaceState) : ("NOT_REQUIRED" as WorkspaceState),
+    certificateActive: authenticated && runtimeHandoffValid
   };
+
+  const healthRiskPolicy = evaluateRuntimeRiskPolicy({
+    message: "GET /api/chat health check",
+    requestedTier: authenticated ? "IPR" : "BASE",
+    identityState: identityPolicyInput.identityState,
+    organizationState: identityPolicyInput.organizationState,
+    workspaceState: identityPolicyInput.workspaceState,
+    certificateActive: identityPolicyInput.certificateActive,
+    contextClass: "RUNTIME",
+    dataClassification: "INTERNAL",
+    operationalValue: "LOW",
+    cyberRelevance: "NONE",
+    proofRequirement: "NONE",
+    databaseConfigured: database.configured,
+    databaseAvailable: database.available
+  });
+
+  const healthC2Policy = evaluateC2DefensePolicy({
+    message: "GET /api/chat health check",
+    requestedTier: authenticated ? "IPR" : "BASE",
+    identityState: identityPolicyInput.identityState,
+    organizationState: identityPolicyInput.organizationState,
+    workspaceState: identityPolicyInput.workspaceState,
+    certificateActive: identityPolicyInput.certificateActive,
+    cyberRelevance: "NONE"
+  });
+
+  const healthSaasPolicy = evaluateSaasTierPolicy({
+    requestedTier: authenticated ? "IPR" : "BASE",
+    identityState: identityPolicyInput.identityState,
+    organizationState: identityPolicyInput.organizationState,
+    workspaceState: identityPolicyInput.workspaceState,
+    certificateActive: identityPolicyInput.certificateActive,
+    cyberRelevance: "NONE",
+    contextClass: "RUNTIME",
+    dataClassification: "INTERNAL",
+    operationalValue: "LOW",
+    proofRequirement: "NONE",
+    databaseConfigured: database.configured,
+    databaseAvailable: database.available
+  });
+
+  const healthModelRouting = routeRuntimeModelFromSaasPolicy(healthSaasPolicy, {
+    defaultModel: MODEL_BASE,
+    standardModel: MODEL_BASE,
+    enhancedModel: MODEL_STANDARD,
+    advancedModel: MODEL_DEEP,
+    c2Model: MODEL_EMERGENCY
+  });
+
+  const healthEngine = resolveEngine({
+    modelRouting: healthModelRouting,
+    iprHandoff: {
+      status: authenticated && runtimeHandoffValid ? "VALID" : "NOT_PRESENT",
+      valid: authenticated && runtimeHandoffValid,
+      error: null,
+      source: authenticated && runtimeHandoffValid ? "IPR_ACCOUNT_SESSION" : null,
+      rawHash: null,
+      validationMode: authenticated && runtimeHandoffValid ? "R&D_STRUCTURAL_VALIDATION" : "NONE",
+      accessDecision: authenticated && runtimeHandoffValid ? "ACCESS_GRANTED" : "PENDING_SERVER_VALIDATION",
+      matrixState: authenticated && runtimeHandoffValid ? "MATRIX_ACTIVE" : "MATRIX_LIMITED",
+      semanticMemoryScope: authenticated && runtimeHandoffValid ? "IPR_BOUND" : "RUNTIME_ONLY",
+      identityBinding: authenticated && runtimeHandoffValid ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT" : "NO_VERIFIED_BIOLOGICAL_SUBJECT",
+      verifiedSubject: null
+    }
+  });
 
   return NextResponse.json({
     ok: true,
@@ -6034,8 +6463,8 @@ export async function GET(req: NextRequest) {
     state: "OPERATIONAL",
     provider: "OpenAI",
     apiMode: "responses",
-    model: MODEL_BASE,
-    modelTier: "base",
+    model: healthEngine.modelUsed,
+    modelTier: healthEngine.modelTier,
     baseModel: MODEL_BASE,
     standardModel: MODEL_STANDARD,
     deepModel: MODEL_DEEP,
@@ -6053,6 +6482,10 @@ export async function GET(req: NextRequest) {
     openAIConfigured: Boolean(process.env.OPENAI_API_KEY),
     identity,
     saas,
+    saasPolicy: toPublicSaasTierPolicyResult(healthSaasPolicy),
+    runtimeRiskPolicy: toPublicRuntimeRiskPolicyResult(healthRiskPolicy),
+    c2DefensePolicy: toPublicC2DefensePolicyResult(healthC2Policy),
+    modelRouting: toPublicRuntimeModelRoutingResult(healthModelRouting),
     database: {
       configured: database.configured,
       available: database.available,
@@ -6063,7 +6496,8 @@ export async function GET(req: NextRequest) {
     },
     operationalContext: buildOperationalContext({
       tenantId: saas.tenantId,
-      workspaceId: saas.workspaceId
+      workspaceId: saas.workspaceId,
+      database
     }),
     iprAccountSession: toPublicIprAccountSessionResolution(iprAccountSession),
     verifiedSubject: runtimeHandoffValid
@@ -6160,6 +6594,8 @@ export async function GET(req: NextRequest) {
       databasePersistenceBoundary: DATABASE_PERSISTENCE_BOUNDARY,
       fileProcessingBoundary: FILE_PROCESSING_BOUNDARY,
       memoryBoundary: MEMORY_BOUNDARY,
+      saasCoreBoundary: SAAS_CORE_BOUNDARY,
+      c2DefenseBoundary: DEFENSIVE_ONLY_CYBER_BOUNDARY,
       transformativeMemoryBoundary: MATRIX_TRANSFORMATIVE_MEMORY_BOUNDARY,
       transformativeMemoryPrivacyBoundary: MATRIX_TRANSFORMATIVE_MEMORY_PRIVACY_BOUNDARY,
       transformativeMemoryCyberBoundary: MATRIX_TRANSFORMATIVE_MEMORY_CYBER_BOUNDARY,
@@ -6172,4 +6608,26 @@ export async function GET(req: NextRequest) {
       dataPrivacyBoundary: OPENAI_DATA_PRIVACY_BOUNDARY
     }
   });
+}
+
+export async function OPTIONS() {
+  return NextResponse.json(
+    {
+      ok: true,
+      methods: ["GET", "POST", "OPTIONS"],
+      endpoint: "/api/chat",
+      boundary:
+        "JOKER-C2 chat endpoint routes requests through SaaS Core v0.1 policy, risk, C2 Defense, model routing, memory, EVT, OPC, audit and model usage accounting. legalCertification=false."
+    },
+    {
+      status: 200,
+      headers: {
+        Allow: "GET, POST, OPTIONS",
+        "Cache-Control": "no-store, max-age=0",
+        "X-HBCE-Runtime": "AI_JOKER-C2",
+        "X-HBCE-SaaS-Core": "v0.1",
+        "X-HBCE-Legal-Certification": "false"
+      }
+    }
+  );
 }
