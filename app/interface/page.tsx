@@ -20,45 +20,11 @@ type RuntimeHealth = {
   deepModel?: string;
   openAIConfigured?: boolean;
   operationalContext?: Record<string, unknown>;
-  identity?: {
-    entity?: string;
-    ipr?: string;
-    evt?: string;
-    prev?: string;
-    eventFamily?: string;
-    state?: string;
-    cycle?: string;
-    core?: string;
-    org?: string;
-    location?: string;
-    projectBirth?: Record<string, unknown>;
-    monthlyReference?: Record<string, unknown>;
-    previousCheckpointRef?: Record<string, unknown>;
-    monthlyRef?: Record<string, unknown>;
-  };
-  access?: {
-    decision?: string;
-    matrixState?: string;
-    semanticMemoryScope?: string;
-    identityBinding?: string;
-  };
-  memory?: {
-    scope?: string;
-    authority?: string;
-    persistenceMode?: string;
-    reason?: string;
-  };
-  matrix?: {
-    state?: string;
-    active?: boolean;
-    reason?: string;
-  };
-  boundary?: {
-    legalCertification?: boolean;
-    aiGovernanceBoundary?: string;
-    useDemocraticBoundary?: string;
-    memoryBoundary?: string;
-  };
+  identity?: Record<string, unknown>;
+  access?: Record<string, unknown>;
+  memory?: Record<string, unknown>;
+  matrix?: Record<string, unknown>;
+  boundary?: Record<string, unknown>;
   error?: string;
 };
 
@@ -86,35 +52,29 @@ type IprHandoffSource =
   | "accountSession"
   | "none";
 
-type IprHandoffSubject = {
-  entity: string;
-  ipr: string;
-  kind: "BIOLOGICAL_SUBJECT" | string;
-};
-
-type IprHandoffCertificate = {
-  certificate_id: string;
-  certificate_kind: string;
-  certificate_status: string;
-  certificate_scope: string[];
-  card_serial?: string;
-  certificate_hash?: string;
-};
-
-type IprHandoffAccess = {
-  decision: string;
-  scope: string;
-  identity_binding: string;
-};
-
 type IprHandoff = {
   handoff_type: "HBCE_IPR_HANDOFF" | string;
   handoff_version: string;
   source: string;
   issued_at?: string;
-  subject: IprHandoffSubject;
-  certificate: IprHandoffCertificate;
-  access: IprHandoffAccess;
+  subject: {
+    entity: string;
+    ipr: string;
+    kind: "BIOLOGICAL_SUBJECT" | string;
+  };
+  certificate: {
+    certificate_id: string;
+    certificate_kind: string;
+    certificate_status: string;
+    certificate_scope: string[];
+    card_serial?: string;
+    certificate_hash?: string;
+  };
+  access: {
+    decision: string;
+    scope: string;
+    identity_binding: string;
+  };
   client_context: {
     transport_source: IprHandoffSource;
     client_validation: "HANDOFF_PRESENT_FOR_SERVER_VALIDATION";
@@ -174,11 +134,11 @@ type IprAccountSessionResponse = {
 type ChatApiResponse = {
   ok?: boolean;
   sessionId?: string;
+  requestedSessionId?: string;
   response?: string;
   text?: string;
   state?: string;
   decision?: string;
-  governanceDecision?: string;
   degradedReason?: string | null;
   continuityRef?: string | null;
   runtime?: unknown;
@@ -194,13 +154,16 @@ type ChatApiResponse = {
   proof?: unknown;
   memory?: unknown;
   semanticMemory?: unknown;
-  diagnostics?: unknown;
+  matrixTransformativeMemory?: unknown;
+  transformativeMemory?: unknown;
   boundary?: unknown;
   identity?: unknown;
   verifiedSubject?: unknown;
   matrix?: unknown;
   access?: unknown;
   iprHandoff?: unknown;
+  files?: unknown;
+  fileSummary?: unknown;
   error?: string;
 };
 
@@ -227,16 +190,16 @@ const CANONICAL_MANUEL_HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1";
 const CANONICAL_MANUEL_DISPLAY_NAME = "Manuel Coletta";
 
 const DEFAULT_PROMPT =
-  "JOKER-C2, run a complete runtime diagnostic. Tell me which OpenAI model you are using, your runtime IPR, the current EVT checkpoint, the role of OPC, and the difference between OpenAI as model provider and JOKER-C2 as governed runtime.";
+  "JOKER-C2, esegui una diagnostica runtime completa. Dimmi modello OpenAI, Runtime IPR, Human IPR, MATRIX, memoria, EVT, OPC e legalCertification=false.";
 
 const QUICK_PROMPTS = [
-  "run complete OpenAI runtime diagnostic",
-  "do you know who I am?",
-  "explain the difference between GPT-5.5 and JOKER-C2",
-  "explain IPR, EVT, OPC and IPR-bound memory",
-  "fail-closed test: what happens if OPC is missing?",
-  "prepare a 60-second pitch for OpenAI",
-  "explain why JOKER-C2 is not a generic AI"
+  "mostrami la diagnostica runtime: IPR, MATRIX, memoria, database, EVT e OPC",
+  "ciao JOKER-C2, sai chi sono?",
+  "prepara una presentazione di 60 secondi per OpenAI",
+  "prepara un pitch, con rischi, problemi, risoluzioni, potenzialità, difesa. per la cybersicurezza UE",
+  "spiega IPR, EVT, OPC e memoria IPR-bound",
+  "fail-closed test: cosa succede se manca OPC?",
+  "spiega perché JOKER-C2 non è una AI generica"
 ];
 
 const TEXT_FILE_TYPES = new Set([
@@ -296,26 +259,6 @@ function buildId(prefix: string): string {
   return `${prefix}-${Date.now()}-${random}`;
 }
 
-function safeText(value: unknown, fallback = "-"): string {
-  if (typeof value === "string" && value.trim()) {
-    return value.trim();
-  }
-
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-
-  return fallback;
-}
-
-function safeJson(value: unknown): string {
-  try {
-    return JSON.stringify(value ?? null, null, 2);
-  } catch {
-    return String(value);
-  }
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -334,6 +277,18 @@ function readPath(value: unknown, path: string[]): unknown {
   return current;
 }
 
+function safeText(value: unknown, fallback = "-"): string {
+  if (typeof value === "string" && value.trim()) {
+    return normalizeVisibleRuntimeText(value.trim());
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  return fallback;
+}
+
 function firstText(value: unknown, paths: string[][], fallback = "-"): string {
   for (const path of paths) {
     const item = readPath(value, path);
@@ -345,6 +300,14 @@ function firstText(value: unknown, paths: string[][], fallback = "-"): string {
   }
 
   return fallback;
+}
+
+function safeJson(value: unknown): string {
+  try {
+    return JSON.stringify(value ?? null, null, 2);
+  } catch {
+    return String(value);
+  }
 }
 
 function fallbackDash(value: string, fallback: string): string {
@@ -359,18 +322,137 @@ function compactHash(value: string): string {
   return `${value.slice(0, 20)}…${value.slice(-10)}`;
 }
 
-function normalizeRuntimeDisplayText(value: string): string {
-  return value.replace(/\s+/g, " ").trim().toLowerCase();
+function normalizeRuntimeSearchText(value: string): string {
+  return value
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function normalizeVisibleRuntimeText(value: string): string {
+  let text = value;
+
+  const replacements: Array<[RegExp, string]> = [
+    [/\bManuele Coletta\b/g, CANONICAL_MANUEL_DISPLAY_NAME],
+    [/\bmanuale coletta\b/gi, CANONICAL_MANUEL_DISPLAY_NAME],
+    [/\bmanuel coletta\b/gi, CANONICAL_MANUEL_DISPLAY_NAME],
+
+    [/\bHERMETICUM\s*BCE\.\.\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
+    [/\bHERMETICUM\s*BCE\.\.\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
+    [/\bHERMETICUM\s*BCE\.\./gi, "HERMETICUM B.C.E."],
+    [/\bHERMETICUM\s*BCESrl\b/g, "HERMETICUM B.C.E. S.r.l."],
+    [/\bHERMETICUM\s*BESrl\b/g, "HERMETICUM B.C.E. S.r.l."],
+    [/\bHERMETICUM\s+BCE\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
+    [/\bHERMETICUM\s+BCE\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
+    [/\bHermeticumBCE\b/g, "HERMETICUM B.C.E."],
+    [/\bHermeticum\s+BCE\b/gi, "HERMETICUM B.C.E."],
+    [/\bHERMETICUM\s+BCE\b/g, "HERMETICUM B.C.E."],
+    [/\bHERMETICUM\s+B\.C\.E\.?\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
+    [/\bHERMETICUM\s+B\.C\.E\.?\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
+
+    [/\bDiritti di proprietà intellettuale umani\b/gi, "Human IPR"],
+    [/\bDiritti di proprietà intellettuale umano\b/gi, "Human IPR"],
+    [/\bdiritti di proprietà intellettuale umani\b/gi, "Human IPR"],
+    [/\bdiritti di proprietà intellettuale umano\b/gi, "Human IPR"],
+    [/\bDiritti di proprietà intellettuale sui soggetti biologici\b/gi, "HBCE IPR Biological Subject"],
+    [/\bdiritti di proprietà intellettuale sui soggetti biologici\b/gi, "HBCE IPR Biological Subject"],
+    [/\bDiritti di proprietà intellettuale\b/gi, "IPR"],
+    [/\bdiritti di proprietà intellettuale\b/gi, "IPR"],
+    [/\bproprietà intellettuale\b/gi, "IPR"],
+    [/\bIPR in fase di esecuzione\b/gi, "Runtime IPR"],
+    [/\bSessione di aggiornamento sulla proprietà intellettuale\b/gi, "Refresh IPR session"],
+    [/\bAggiornare il passaggio di consegne locale\b/gi, "Refresh local handoff"],
+    [/\bPassaggio di consegne locale chiaro\b/gi, "Clear local handoff"],
+    [/\bpassaggio di consegne\b/gi, "handoff"],
+    [/\bcontinuità legata alla proprietà intellettuale\b/gi, "IPR-bound continuity"],
+    [/\bDPI legato agli eventi\b/g, "IPR legato agli eventi"],
+    [/\bDPI operativo\b/g, "IPR operativo"],
+    [/\bDPI biologico\b/g, "IPR biologico"],
+
+    [/\bCertificazione legale OPC\b/gi, "OPC legalCertification"],
+    [/\bCertificato legale OPC falso\b/gi, "OPC legalCertification=false"],
+    [/\bcertificazionelegale=false\b/gi, "legalCertification=false"],
+    [/\bcertificazione legale=false\b/gi, "legalCertification=false"],
+    [/\blegalCertificazione\b/g, "legalCertification"],
+    [/\blegalcertificazione\b/g, "legalCertification"],
+    [/\blegalCertificazione=falso\b/gi, "legalCertification=false"],
+    [/\blegalCertification=falso\b/gi, "legalCertification=false"],
+    [/\blegalCertification=false=false\b/g, "legalCertification=false"],
+
+    [/\bOPCRimane\b/g, "OPC rimane"],
+    [/\bOPC\s*Rimane\b/g, "OPC rimane"],
+    [/\bproof ricevute il tecnico\b/gi, "proof receipt tecniche"],
+    [/\bproof ricevute tecnico\b/gi, "proof receipt tecnica"],
+    [/\bproof ricevute tecniche\b/gi, "proof receipt tecniche"],
+    [/\bproof ricevute\b/gi, "proof receipt"],
+    [/\bricezione di prove OPC\b/gi, "ricevute tecniche OPC"],
+    [/\bprova ricevuta tecnico\b/gi, "proof receipt tecnica"],
+    [/\bprova ricevuta tecnica\b/gi, "proof receipt tecnica"],
+    [/\bprova di ricevuta tecnico\b/gi, "proof receipt tecnica"],
+    [/\bprova di ricevuta tecnica\b/gi, "proof receipt tecnica"],
+
+    [/\bchiusura automatica in caso di errore\b/gi, "fail-closed"],
+    [/\bchiusura in caso di errore\b/gi, "fail-closed"],
+    [/\bchiusura fallita\b/gi, "fail-closed"],
+    [/\bfallito-chiuso\b/gi, "fail-closed"],
+    [/\bla policy non è stata chiusa correttamente\b/gi, "policy runtime, blocco, escalation e fail-closed"],
+    [/\bnessuna pista di controllo, nessuna impresa di inaffidabilità\b/gi, "nessun audit trail, nessun affidamento enterprise-grade"],
+
+    [/\bContralto\b/g, "Alto"],
+    [/\bcontralto\b/g, "alto"],
+    [/\bSOC arredamento\b/gi, "SOC enablement"],
+    [/\bSOCI\b/g, "SOC"],
+    [/\bAI Atto\b/g, "AI Act"],
+    [/\bAI atto\b/gi, "AI Act"],
+    [/\bbut non autorizzato\b/gi, "uso non autorizzato"],
+    [/\bprendendo di mira gli illeciti\b/gi, "targeting illecito"],
+    [/\bdimostrare la tecnica\b/gi, "evidenza tecnica"],
+    [/\bapplicazione della politica\b/gi, "policy enforcement"],
+    [/\bdisposizione autorizzata\b/gi, "azione autorizzata"],
+    [/\btecnico di revisione\b/gi, "audit tecnico"],
+    [/\binquilino\b/gi, "tenant"],
+    [/\bspazio di lavoro\b/gi, "workspace"],
+    [/\baccesso di integrazione\b/gi, "assessment di integrazione"],
+    [/\bpilota di piano\b/gi, "piano pilota"],
+
+    [/\bMagnete al piombo\b/gi, "Lead magnet"],
+    [/\bprivacy del viso\b/gi, "consulenti privacy"],
+    [/\brespirazione anale\b/gi, "revisione umana"],
+    [/\borganismi sessuali\b/gi, "organismi istituzionali"],
+    [/\brevisione contabile\b/gi, "audit"],
+    [/\bTabù temporale\b/gi, "timestamp"],
+    [/\battraversamento pedonale normativo-operativo\b/gi, "mappatura normativo-operativa"],
+    [/\battraversamento normativo-operativo\b/gi, "mappatura normativo-operativa"],
+    [/\bRiepilogo della richiesta:/gi, "Formula sintetica:"]
+  ];
+
+  for (const [pattern, replacement] of replacements) {
+    text = text.replace(pattern, replacement);
+  }
+
+  return text
+    .replace(/\bHERMETICUM B\.C\.E\.\s*S\.r\.l\.\s*S\.r\.l\./g, "HERMETICUM B.C.E. S.r.l.")
+    .replace(/\bHERMETICUM B\.C\.E\.\s*B\.C\.E\./g, "HERMETICUM B.C.E.")
+    .replace(/\bIPR IPR\b/g, "IPR")
+    .replace(/\bOPC OPC\b/g, "OPC")
+    .replace(/\bEVT EVT\b/g, "EVT")
+    .replace(/\bMATRIX MATRIX\b/g, "MATRIX")
+    .replace(/\bHBCE HBCE\b/g, "HBCE")
+    .replace(/\s+\n/g, "\n")
+    .replace(/\n{4,}/g, "\n\n\n")
+    .trim();
 }
 
 function canonicalizeSubjectName(value: string, ipr?: string | null): string {
-  const raw = value.trim();
+  const raw = normalizeVisibleRuntimeText(value.trim());
 
   if (ipr === CANONICAL_MANUEL_HUMAN_IPR) {
     return CANONICAL_MANUEL_DISPLAY_NAME;
   }
 
-  const normalized = normalizeRuntimeDisplayText(raw);
+  const normalized = normalizeRuntimeSearchText(raw);
 
   if (
     normalized === "manuel coletta" ||
@@ -383,20 +465,6 @@ function canonicalizeSubjectName(value: string, ipr?: string | null): string {
   return raw || "-";
 }
 
-function normalizeVisibleRuntimeText(value: string): string {
-  return value
-    .replace(/\bManuele Coletta\b/g, CANONICAL_MANUEL_DISPLAY_NAME)
-    .replace(/\bmanuale coletta\b/gi, CANONICAL_MANUEL_DISPLAY_NAME)
-    .replace(/\bmanuel coletta\b/gi, CANONICAL_MANUEL_DISPLAY_NAME)
-    .replace(/\bcertificazionelegale=false\b/gi, "legalCertification=false")
-    .replace(/\bcertificazione legale=false\b/gi, "legalCertification=false")
-    .replace(/\bCertificato legale OPC falso\b/gi, "OPC legalCertification=false")
-    .replace(/\bDiritti di proprietà intellettuale umani\b/gi, "Human IPR")
-    .replace(/\bDiritti di proprietà intellettuale sui soggetti biologici\b/gi, "HBCE IPR Biological Subject")
-    .replace(/\bcontinuità legata alla proprietà intellettuale\b/gi, "IPR-bound continuity")
-    .replace(/\bbind(\s+\*\*IPR_VERIFIED_BIOLOGICAL_SUBJECT\*\*)/gi, "binding$1");
-}
-
 function normalizeScope(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value
@@ -407,9 +475,7 @@ function normalizeScope(value: unknown): string[] {
 
   const text = safeText(value, "");
 
-  if (!text) {
-    return [];
-  }
+  if (!text) return [];
 
   return text
     .split(/[,\s|]+/g)
@@ -422,16 +488,11 @@ function hasJokerAccessScope(scope: string[]): boolean {
 }
 
 function decodeBase64Text(value: string): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
+  if (typeof window === "undefined") return null;
 
   try {
     const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = normalized.padEnd(
-      Math.ceil(normalized.length / 4) * 4,
-      "="
-    );
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
     const binary = window.atob(padded);
     const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
 
@@ -444,9 +505,7 @@ function decodeBase64Text(value: string): string | null {
 function parseHandoffCandidate(raw: string): Record<string, unknown> | null {
   const trimmed = raw.trim();
 
-  if (!trimmed) {
-    return null;
-  }
+  if (!trimmed) return null;
 
   const candidates = [
     trimmed,
@@ -464,9 +523,7 @@ function parseHandoffCandidate(raw: string): Record<string, unknown> | null {
     try {
       const parsed = JSON.parse(candidate);
 
-      if (isRecord(parsed)) {
-        return parsed;
-      }
+      if (isRecord(parsed)) return parsed;
     } catch {
       continue;
     }
@@ -730,9 +787,7 @@ function normalizeIprHandoff(
 function buildIprHandoffFromAccountSession(
   payload: IprAccountSessionResponse | null
 ): IprHandoff | null {
-  if (!payload || payload.authenticated !== true) {
-    return null;
-  }
+  if (!payload || payload.authenticated !== true) return null;
 
   if (isRecord(payload.reconstructedIprHandoff)) {
     const normalized = normalizeIprHandoff(
@@ -740,9 +795,7 @@ function buildIprHandoffFromAccountSession(
       "accountSession"
     );
 
-    if (normalized) {
-      return normalized;
-    }
+    if (normalized) return normalized;
   }
 
   if (isRecord(payload.accountProfile)) {
@@ -753,23 +806,17 @@ function buildIprHandoffFromAccountSession(
 }
 
 function readStoredHandoff(key: string): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
+  if (typeof window === "undefined") return null;
 
   try {
-    return (
-      window.sessionStorage.getItem(key) || window.localStorage.getItem(key)
-    );
+    return window.sessionStorage.getItem(key) || window.localStorage.getItem(key);
   } catch {
     return null;
   }
 }
 
 function persistHandoff(handoff: IprHandoff) {
-  if (typeof window === "undefined") {
-    return;
-  }
+  if (typeof window === "undefined") return;
 
   try {
     const serialized = JSON.stringify(handoff.rawPayload || handoff);
@@ -782,9 +829,7 @@ function persistHandoff(handoff: IprHandoff) {
 }
 
 function clearStoredHandoff() {
-  if (typeof window === "undefined") {
-    return;
-  }
+  if (typeof window === "undefined") return;
 
   try {
     window.sessionStorage.removeItem(HANDOFF_STORAGE_KEY);
@@ -800,9 +845,7 @@ function clearStoredHandoff() {
 }
 
 function stripHandoffQueryParams() {
-  if (typeof window === "undefined") {
-    return;
-  }
+  if (typeof window === "undefined") return;
 
   try {
     const url = new URL(window.location.href);
@@ -838,9 +881,7 @@ function loadIprHandoffFromBrowser(): IprHandoffLoadResult {
     for (const key of HANDOFF_QUERY_KEYS) {
       const raw = url.searchParams.get(key);
 
-      if (!raw) {
-        continue;
-      }
+      if (!raw) continue;
 
       const parsed = parseHandoffCandidate(raw);
       const handoff = parsed ? normalizeIprHandoff(parsed, "url") : null;
@@ -890,9 +931,7 @@ function loadIprHandoffFromBrowser(): IprHandoffLoadResult {
 
     if (localRaw) {
       const parsed = parseHandoffCandidate(localRaw);
-      const handoff = parsed
-        ? normalizeIprHandoff(parsed, "localStorage")
-        : null;
+      const handoff = parsed ? normalizeIprHandoff(parsed, "localStorage") : null;
 
       if (handoff) {
         return {
@@ -912,14 +951,10 @@ function loadIprHandoffFromBrowser(): IprHandoffLoadResult {
     for (const key of LEGACY_HANDOFF_STORAGE_KEYS) {
       const raw = readStoredHandoff(key);
 
-      if (!raw) {
-        continue;
-      }
+      if (!raw) continue;
 
       const parsed = parseHandoffCandidate(raw);
-      const handoff = parsed
-        ? normalizeIprHandoff(parsed, "localStorage")
-        : null;
+      const handoff = parsed ? normalizeIprHandoff(parsed, "localStorage") : null;
 
       if (handoff) {
         persistHandoff(handoff);
@@ -955,9 +990,7 @@ function getAssistantText(payload: ChatApiResponse): string {
 function getContinuityRef(payload: ChatApiResponse): string | null {
   const direct = safeText(payload.continuityRef, "");
 
-  if (direct) {
-    return direct;
-  }
+  if (direct) return direct;
 
   const resolved = firstText(
     payload,
@@ -985,8 +1018,8 @@ function getModel(payload?: ChatApiResponse | RuntimeHealth | null): string {
       ["engine", "modelUsed"],
       ["modelUsed"],
       ["model"],
-      ["diagnostics", "modelUsed"],
-      ["runtime", "model"]
+      ["runtime", "model"],
+      ["runtime", "modelUsed"]
     ],
     "-"
   );
@@ -1001,8 +1034,7 @@ function getIpr(payload?: ChatApiResponse | RuntimeHealth | null): string {
       ["identity", "runtimeIpr"],
       ["identity", "ipr"],
       ["runtime", "ipr"],
-      ["runtime", "runtime_ipr"],
-      ["runtimeFrame", "runtime_ipr"]
+      ["runtime", "runtime_ipr"]
     ],
     "-"
   );
@@ -1197,8 +1229,7 @@ function getVerifiedSubjectIpr(payload?: ChatApiResponse | null): string {
       ["runtime", "verifiedSubject", "ipr"],
       ["runtime", "verified_subject_ipr"],
       ["identity", "verifiedSubject", "ipr"],
-      ["identity", "verified_subject_ipr"],
-      ["diagnostics", "verifiedSubject", "ipr"]
+      ["identity", "verified_subject_ipr"]
     ],
     "-"
   );
@@ -1216,8 +1247,7 @@ function getVerifiedSubjectName(payload?: ChatApiResponse | null): string {
       ["runtime", "verifiedSubject", "entity"],
       ["runtime", "verified_subject_entity"],
       ["identity", "verifiedSubject", "entity"],
-      ["identity", "verified_subject_entity"],
-      ["diagnostics", "verifiedSubject", "entity"]
+      ["identity", "verified_subject_entity"]
     ],
     "-"
   );
@@ -1238,16 +1268,13 @@ function getMatrixState(payload?: ChatApiResponse | RuntimeHealth | null): strin
       ["memory", "matrixState"],
       ["runtime", "matrixState"],
       ["runtime", "matrix_state"],
-      ["governance", "matrixState"],
-      ["diagnostics", "matrixState"]
+      ["governance", "matrixState"]
     ],
     "-"
   );
 }
 
-function getSemanticMemoryScope(
-  payload?: ChatApiResponse | RuntimeHealth | null
-): string {
+function getSemanticMemoryScope(payload?: ChatApiResponse | RuntimeHealth | null): string {
   if (!payload) return "-";
 
   return firstText(
@@ -1259,9 +1286,7 @@ function getSemanticMemoryScope(
       ["identity", "semanticMemoryScope"],
       ["runtime", "memoryScope"],
       ["runtime", "semanticMemoryScope"],
-      ["runtime", "semantic_memory_scope"],
-      ["diagnostics", "memoryScope"],
-      ["diagnostics", "semanticMemoryScope"]
+      ["runtime", "semantic_memory_scope"]
     ],
     "-"
   );
@@ -1275,16 +1300,13 @@ function getMemoryAuthority(payload?: ChatApiResponse | RuntimeHealth | null): s
     [
       ["semanticMemory", "authority"],
       ["memory", "authority"],
-      ["runtime", "memoryAuthority"],
-      ["diagnostics", "memoryAuthority"]
+      ["runtime", "memoryAuthority"]
     ],
     "-"
   );
 }
 
-function getMemoryPersistenceMode(
-  payload?: ChatApiResponse | RuntimeHealth | null
-): string {
+function getMemoryPersistenceMode(payload?: ChatApiResponse | RuntimeHealth | null): string {
   if (!payload) return "-";
 
   return firstText(
@@ -1292,8 +1314,7 @@ function getMemoryPersistenceMode(
     [
       ["semanticMemory", "persistenceMode"],
       ["memory", "persistenceMode"],
-      ["runtime", "memoryPersistenceMode"],
-      ["diagnostics", "memoryPersistenceMode"]
+      ["runtime", "memoryPersistenceMode"]
     ],
     "-"
   );
@@ -1307,8 +1328,7 @@ function getMemoryId(payload?: ChatApiResponse | RuntimeHealth | null): string {
     [
       ["semanticMemory", "memoryId"],
       ["memory", "memoryId"],
-      ["runtime", "memoryId"],
-      ["diagnostics", "memoryId"]
+      ["runtime", "memoryId"]
     ],
     "-"
   );
@@ -1322,8 +1342,7 @@ function getMemoryKeyHash(payload?: ChatApiResponse | RuntimeHealth | null): str
     [
       ["semanticMemory", "memoryKeyHash"],
       ["memory", "memoryKeyHash"],
-      ["runtime", "memoryKeyHash"],
-      ["diagnostics", "memoryKeyHash"]
+      ["runtime", "memoryKeyHash"]
     ],
     "-"
   );
@@ -1338,7 +1357,6 @@ function getMemoryHash(payload?: ChatApiResponse | RuntimeHealth | null): string
       ["semanticMemory", "memoryHash"],
       ["memory", "memoryHash"],
       ["runtime", "memoryHash"],
-      ["diagnostics", "memoryHash"],
       ["opc", "publicProof", "memoryHash"],
       ["proof", "memoryHash"]
     ],
@@ -1355,8 +1373,7 @@ function getLastMemoryEvt(payload?: ChatApiResponse | RuntimeHealth | null): str
       ["semanticMemory", "lastMemoryEvt"],
       ["memory", "lastEvt"],
       ["memory", "currentContinuityRef"],
-      ["runtime", "memoryLastEvt"],
-      ["diagnostics", "memoryLastEvt"]
+      ["runtime", "memoryLastEvt"]
     ],
     "-"
   );
@@ -1370,16 +1387,13 @@ function getLastMemoryOpc(payload?: ChatApiResponse | RuntimeHealth | null): str
     [
       ["semanticMemory", "lastMemoryOpcProofId"],
       ["memory", "lastOpcProofId"],
-      ["runtime", "memoryLastOpcProofId"],
-      ["diagnostics", "memoryLastOpcProofId"]
+      ["runtime", "memoryLastOpcProofId"]
     ],
     "-"
   );
 }
 
-function getLastMemoryChainHash(
-  payload?: ChatApiResponse | RuntimeHealth | null
-): string {
+function getLastMemoryChainHash(payload?: ChatApiResponse | RuntimeHealth | null): string {
   if (!payload) return "-";
 
   return firstText(
@@ -1387,8 +1401,7 @@ function getLastMemoryChainHash(
     [
       ["semanticMemory", "lastMemoryOpcChainHash"],
       ["memory", "lastOpcChainHash"],
-      ["runtime", "memoryLastOpcChainHash"],
-      ["diagnostics", "memoryLastOpcChainHash"]
+      ["runtime", "memoryLastOpcChainHash"]
     ],
     "-"
   );
@@ -1405,8 +1418,7 @@ function getOpcProof(payload?: ChatApiResponse | null): string {
       ["opc", "proofId"],
       ["opcProof", "proofId"],
       ["proof", "proofId"],
-      ["runtime", "opcProofId"],
-      ["diagnostics", "opcProofId"]
+      ["runtime", "opcProofId"]
     ],
     "-"
   );
@@ -1423,8 +1435,7 @@ function getChainHash(payload?: ChatApiResponse | null): string {
       ["opc", "chainHash"],
       ["opcProof", "chainHash"],
       ["proof", "chainHash"],
-      ["runtime", "opcChainHash"],
-      ["diagnostics", "opcChainHash"]
+      ["runtime", "opcChainHash"]
     ],
     "-"
   );
@@ -1441,8 +1452,7 @@ function getEngineHash(payload?: ChatApiResponse | null): string {
       ["opc", "engineHash"],
       ["opcProof", "engineHash"],
       ["proof", "engineHash"],
-      ["runtime", "opcEngineHash"],
-      ["diagnostics", "opcEngineHash"]
+      ["runtime", "opcEngineHash"]
     ],
     "-"
   );
@@ -1588,9 +1598,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onerror = () => {
-      reject(new Error("FILE_DATA_URL_READ_FAILED"));
-    };
+    reader.onerror = () => reject(new Error("FILE_DATA_URL_READ_FAILED"));
 
     reader.onload = () => {
       const result = reader.result;
@@ -1737,18 +1745,23 @@ function StatusPill({
   label?: string;
   value: string;
 }) {
-  const normalizedValue = normalizeVisibleRuntimeText(value);
+  const visibleValue = normalizeVisibleRuntimeText(value);
 
   return (
     <span
-      className={["joker-pill", getStatusClass(normalizedValue)]
+      className={["joker-pill", getStatusClass(visibleValue)]
         .filter(Boolean)
         .join(" ")}
-      title={normalizedValue}
+      title={visibleValue}
+      translate="no"
     >
-      {label ? <b>{label}</b> : null}
+      {label ? (
+        <b className="notranslate" translate="no">
+          {label}
+        </b>
+      ) : null}
       <span className="notranslate" translate="no">
-        {compactHash(normalizedValue)}
+        {compactHash(visibleValue)}
       </span>
     </span>
   );
@@ -1765,22 +1778,25 @@ function MetricCard({
   tone?: "good" | "warn" | "bad";
   compact?: boolean;
 }) {
-  const normalizedValue = normalizeVisibleRuntimeText(value);
+  const visibleValue = normalizeVisibleRuntimeText(value);
 
   return (
     <div
       className={[
         "joker-metric",
-        tone ? `is-${tone}` : getStatusClass(normalizedValue),
+        tone ? `is-${tone}` : getStatusClass(visibleValue),
         compact ? "is-compact" : ""
       ]
         .filter(Boolean)
         .join(" ")}
-      title={normalizedValue}
+      title={visibleValue}
+      translate="no"
     >
-      <span>{label}</span>
+      <span className="notranslate" translate="no">
+        {label}
+      </span>
       <strong className="notranslate" translate="no">
-        {compactHash(normalizedValue)}
+        {compactHash(visibleValue)}
       </strong>
     </div>
   );
@@ -1790,17 +1806,20 @@ function InfoList({ items }: { items: InfoItem[] }) {
   return (
     <dl className="joker-info-list">
       {items.map((item) => {
-        const normalizedValue = normalizeVisibleRuntimeText(item.value);
-        const statusClass = item.tone ? `is-${item.tone}` : getStatusClass(normalizedValue);
+        const visibleValue = normalizeVisibleRuntimeText(item.value);
+        const statusClass = item.tone ? `is-${item.tone}` : getStatusClass(visibleValue);
 
         return (
           <div
-            key={`${item.label}-${normalizedValue}`}
+            key={`${item.label}-${visibleValue}`}
             className={["joker-info-row", statusClass].filter(Boolean).join(" ")}
+            translate="no"
           >
-            <dt>{item.label}</dt>
-            <dd className="notranslate" translate="no" title={normalizedValue}>
-              {compactHash(normalizedValue)}
+            <dt className="notranslate" translate="no">
+              {item.label}
+            </dt>
+            <dd className="notranslate" translate="no" title={visibleValue}>
+              {compactHash(visibleValue)}
             </dd>
           </div>
         );
@@ -1840,6 +1859,7 @@ function MessageBubble({
       ]
         .filter(Boolean)
         .join(" ")}
+      translate="no"
     >
       <div className="joker-message-avatar notranslate" translate="no">
         {isUser ? "M" : isSystem ? "!" : JOKER_SIGIL}
@@ -1857,10 +1877,12 @@ function MessageBubble({
               </span>
             ) : null}
           </div>
-          <time>{message.createdAt}</time>
+          <time className="notranslate" translate="no">
+            {message.createdAt}
+          </time>
         </div>
 
-        <pre className="joker-message-text">
+        <pre className="joker-message-text notranslate" translate="no">
           {visibleContent}
         </pre>
 
@@ -1878,19 +1900,11 @@ function MessageBubble({
               <StatusPill label="Subject" value={verifiedSubjectName} />
             ) : null}
             {matrixState !== "-" ? <StatusPill label="MATRIX" value={matrixState} /> : null}
-            {memoryScope !== "-" ? (
-              <StatusPill label="Memory" value={memoryScope} />
-            ) : null}
-            {memoryAuthority !== "-" ? (
-              <StatusPill label="Authority" value={memoryAuthority} />
-            ) : null}
+            {memoryScope !== "-" ? <StatusPill label="Memory" value={memoryScope} /> : null}
+            {memoryAuthority !== "-" ? <StatusPill label="Authority" value={memoryAuthority} /> : null}
             {memoryMode !== "-" ? <StatusPill label="Mode" value={memoryMode} /> : null}
-            {lastMemoryEvt !== "-" ? (
-              <StatusPill label="Last EVT" value={lastMemoryEvt} />
-            ) : null}
-            {lastMemoryOpc !== "-" ? (
-              <StatusPill label="Last OPC" value={lastMemoryOpc} />
-            ) : null}
+            {lastMemoryEvt !== "-" ? <StatusPill label="Last EVT" value={lastMemoryEvt} /> : null}
+            {lastMemoryOpc !== "-" ? <StatusPill label="Last OPC" value={lastMemoryOpc} /> : null}
           </div>
         ) : null}
 
@@ -1902,7 +1916,9 @@ function MessageBubble({
 
             {message.raw ? (
               <details>
-                <summary>Runtime details</summary>
+                <summary className="notranslate" translate="no">
+                  Runtime details
+                </summary>
 
                 <div className="joker-details-grid">
                   <MetricCard label="State" value={safeText(message.state, "-")} compact />
@@ -1920,18 +1936,10 @@ function MessageBubble({
                   <MetricCard label="MemoryHash" value={getMemoryHash(message.raw)} compact />
                   <MetricCard label="LastMemoryEVT" value={lastMemoryEvt} compact />
                   <MetricCard label="LastMemoryOPC" value={lastMemoryOpc} compact />
-                  <MetricCard
-                    label="MemoryChainHash"
-                    value={getLastMemoryChainHash(message.raw)}
-                    compact
-                  />
+                  <MetricCard label="MemoryChainHash" value={getLastMemoryChainHash(message.raw)} compact />
                   <MetricCard label="EngineHash" value={getEngineHash(message.raw)} compact />
                   <MetricCard label="ChainHash" value={getChainHash(message.raw)} compact />
-                  <MetricCard
-                    label="legalCertification"
-                    value={getLegalCertification(message.raw)}
-                    compact
-                  />
+                  <MetricCard label="legalCertification" value={getLegalCertification(message.raw)} compact />
                 </div>
 
                 <pre className="joker-json notranslate" translate="no">
@@ -1955,16 +1963,12 @@ export default function InterfacePage() {
   const [continuityRef, setContinuityRef] = useState<string | null>(null);
 
   const [iprHandoff, setIprHandoff] = useState<IprHandoff | null>(null);
-  const [iprAccountHandoff, setIprAccountHandoff] =
-    useState<IprHandoff | null>(null);
-  const [iprAccountSession, setIprAccountSession] =
-    useState<IprAccountSessionResponse | null>(null);
+  const [iprAccountHandoff, setIprAccountHandoff] = useState<IprHandoff | null>(null);
+  const [iprAccountSession, setIprAccountSession] = useState<IprAccountSessionResponse | null>(null);
 
-  const [iprHandoffSource, setIprHandoffSource] =
-    useState<IprHandoffSource>("none");
+  const [iprHandoffSource, setIprHandoffSource] = useState<IprHandoffSource>("none");
   const [iprHandoffError, setIprHandoffError] = useState<string | null>(null);
-  const [iprAccountSessionError, setIprAccountSessionError] =
-    useState<string | null>(null);
+  const [iprAccountSessionError, setIprAccountSessionError] = useState<string | null>(null);
 
   const [isChecking, setIsChecking] = useState(false);
   const [isCheckingIprSession, setIsCheckingIprSession] = useState(false);
@@ -2061,9 +2065,7 @@ export default function InterfacePage() {
         }
       });
 
-      const payload = await readJsonResponse<IprAccountSessionResponse>(
-        response
-      );
+      const payload = await readJsonResponse<IprAccountSessionResponse>(response);
 
       setIprAccountSession(payload);
 
@@ -2080,9 +2082,7 @@ export default function InterfacePage() {
       setIprAccountHandoff(handoff);
 
       if (!handoff) {
-        setIprAccountSessionError(
-          "IPR_ACCOUNT_SESSION_ACTIVE_BUT_HANDOFF_NOT_RECONSTRUCTED"
-        );
+        setIprAccountSessionError("IPR_ACCOUNT_SESSION_ACTIVE_BUT_HANDOFF_NOT_RECONSTRUCTED");
       }
     } catch (err) {
       setIprAccountSession(null);
@@ -2263,8 +2263,7 @@ export default function InterfacePage() {
       setMessages((current) => [...current, assistantMessage]);
       void checkIprAccountSession();
     } catch (err) {
-      const errorText =
-        err instanceof Error ? err.message : "CHAT_REQUEST_FAILED";
+      const errorText = err instanceof Error ? err.message : "CHAT_REQUEST_FAILED";
 
       setError(errorText);
 
@@ -2317,20 +2316,14 @@ export default function InterfacePage() {
     "EVT-0016-AI"
   );
 
-  const runtimeResponseEvt = fallbackDash(
-    getEvt(dashboardPayload),
-    "none"
-  );
+  const runtimeResponseEvt = fallbackDash(getEvt(dashboardPayload), "none");
 
   const runtimeOperationalCycle = fallbackDash(
     getOperationalCycle(dashboardPayload),
     "UP-CANONICO"
   );
 
-  const runtimeEventFamily = fallbackDash(
-    getEventFamily(dashboardPayload),
-    "UP-EVT"
-  );
+  const runtimeEventFamily = fallbackDash(getEventFamily(dashboardPayload), "UP-EVT");
 
   const runtimePreviousCheckpoint = getPreviousCheckpointRef(dashboardPayload);
 
@@ -2351,53 +2344,29 @@ export default function InterfacePage() {
   const runtimeMemoryAuthority = fallbackDash(
     getMemoryAuthority(lastAssistantPayload),
     effectiveIprHandoff
-      ? safeText(
-          iprAccountSession?.memory?.expectedAuthority,
-          "SERVER_RUNTIME_VALIDATED"
-        )
+      ? safeText(iprAccountSession?.memory?.expectedAuthority, "SERVER_RUNTIME_VALIDATED")
       : "SESSION_RUNTIME_ONLY"
   );
 
   const runtimeMemoryMode = fallbackDash(
     getMemoryPersistenceMode(lastAssistantPayload),
     effectiveIprHandoff
-      ? safeText(
-          iprAccountSession?.memory?.persistenceMode,
-          "PROCESS_MEMORY_MVP"
-        )
+      ? safeText(iprAccountSession?.memory?.persistenceMode, "PROCESS_MEMORY_MVP")
       : safeText(health?.memory?.persistenceMode, "PROCESS_MEMORY_MVP")
   );
 
-  const runtimeLastMemoryEvt = fallbackDash(
-    getLastMemoryEvt(lastAssistantPayload),
-    "none"
-  );
-
-  const runtimeLastMemoryOpc = fallbackDash(
-    getLastMemoryOpc(lastAssistantPayload),
-    "none"
-  );
-
+  const runtimeLastMemoryEvt = fallbackDash(getLastMemoryEvt(lastAssistantPayload), "none");
+  const runtimeLastMemoryOpc = fallbackDash(getLastMemoryOpc(lastAssistantPayload), "none");
   const runtimeLastMemoryChainHash = fallbackDash(
     getLastMemoryChainHash(lastAssistantPayload),
     "none"
   );
-
-  const runtimeMemoryHash = fallbackDash(
-    getMemoryHash(lastAssistantPayload),
-    "none"
-  );
-
-  const runtimeMemoryId = fallbackDash(
-    getMemoryId(lastAssistantPayload),
-    "not initialized"
-  );
-
+  const runtimeMemoryHash = fallbackDash(getMemoryHash(lastAssistantPayload), "none");
+  const runtimeMemoryId = fallbackDash(getMemoryId(lastAssistantPayload), "not initialized");
   const runtimeMemoryKeyHash = fallbackDash(
     getMemoryKeyHash(lastAssistantPayload),
     "not initialized"
   );
-
   const runtimeOpcProof = fallbackDash(getOpcProof(lastAssistantPayload), "none");
   const runtimeOpcChainHash = fallbackDash(getChainHash(lastAssistantPayload), "none");
   const runtimeEngineHash = fallbackDash(getEngineHash(lastAssistantPayload), "none");
@@ -2410,21 +2379,15 @@ export default function InterfacePage() {
     effectiveIprHandoff?.access.decision ||
     safeText(iprAccountSession?.access?.decision, "PENDING_SERVER_VALIDATION");
 
-  const certificateStatus =
-    effectiveIprHandoff?.certificate.certificate_status || "MISSING";
-
-  const certificateId =
-    effectiveIprHandoff?.certificate.certificate_id || "NO_CERTIFICATE";
-
-  const scope =
-    effectiveIprHandoff?.certificate.certificate_scope.join(", ") ||
-    "MATRIX_LIMITED";
+  const certificateStatus = effectiveIprHandoff?.certificate.certificate_status || "MISSING";
+  const certificateId = effectiveIprHandoff?.certificate.certificate_id || "NO_CERTIFICATE";
+  const scope = effectiveIprHandoff?.certificate.certificate_scope.join(", ") || "MATRIX_LIMITED";
 
   const identityRows: InfoItem[] = [
     { label: "Runtime IPR", value: "IPR-AI-0001" },
     { label: "Human IPR", value: humanIprLabel },
     { label: "Certificate", value: certificateId },
-    { label: "Cert. status", value: certificateStatus },
+    { label: "Certificate status", value: certificateStatus },
     { label: "Scope", value: scope },
     { label: "Source", value: effectiveIprHandoffSource }
   ];
@@ -2453,17 +2416,18 @@ export default function InterfacePage() {
   ];
 
   return (
-    <main className="joker-page" lang="en">
+    <main className="joker-page notranslate" lang="it" translate="no">
       <header className="joker-topbar">
         <div className="joker-brand">
           <div className="joker-logo notranslate" translate="no">
             {JOKER_SIGIL}
           </div>
           <div>
-            <strong className="notranslate" translate="no">AI JOKER-C2</strong>
-            <span>
-              <span className="notranslate" translate="no">HBCE</span>{" "}
-              governed AI runtime
+            <strong className="notranslate" translate="no">
+              AI JOKER-C2
+            </strong>
+            <span className="notranslate" translate="no">
+              HBCE governed AI runtime
             </span>
           </div>
         </div>
@@ -2499,21 +2463,45 @@ export default function InterfacePage() {
             HERMETICUM B.C.E. S.r.l.
           </span>
           <h1>
-            <span className="notranslate" translate="no">JOKER-C2</span>{" "}
+            <span className="notranslate" translate="no">
+              JOKER-C2
+            </span>{" "}
             dashboard
           </h1>
           <p>
-            Professional runtime console for <span className="notranslate" translate="no">IPR</span>{" "}
-            identity, <span className="notranslate" translate="no">IPR-bound memory</span>,{" "}
-            <span className="notranslate" translate="no">EVT</span> continuity,{" "}
-            <span className="notranslate" translate="no">OPC</span> technical proof receipts and{" "}
-            <span className="notranslate" translate="no">MATRIX</span> coordination.
-            No legal certification is implied:{" "}
-            <code className="notranslate" translate="no">legalCertification=false</code>.
+            Professional runtime console for{" "}
+            <span className="notranslate" translate="no">
+              IPR
+            </span>{" "}
+            identity,{" "}
+            <span className="notranslate" translate="no">
+              IPR-bound memory
+            </span>
+            ,{" "}
+            <span className="notranslate" translate="no">
+              EVT
+            </span>{" "}
+            continuity,{" "}
+            <span className="notranslate" translate="no">
+              OPC
+            </span>{" "}
+            technical proof receipts and{" "}
+            <span className="notranslate" translate="no">
+              MATRIX
+            </span>{" "}
+            coordination. No legal certification is implied:{" "}
+            <code className="notranslate" translate="no">
+              legalCertification=false
+            </code>
+            .
           </p>
           <div className="joker-origin-note">
-            <strong className="notranslate" translate="no">{runtimeProjectBirthDate}</strong>
-            <span>{runtimeProjectBirthLabel}</span>
+            <strong className="notranslate" translate="no">
+              {runtimeProjectBirthDate}
+            </strong>
+            <span className="notranslate" translate="no">
+              {runtimeProjectBirthLabel}
+            </span>
           </div>
         </div>
 
@@ -2540,16 +2528,17 @@ export default function InterfacePage() {
         >
           <div className="joker-panel-head">
             <div>
-              <span className="joker-kicker">
-                <span className="notranslate" translate="no">HBCE IPR</span>{" "}
-                biological subject
+              <span className="joker-kicker notranslate" translate="no">
+                HBCE IPR Biological Subject
               </span>
-              <h2 className="notranslate" translate="no">{subjectLabel}</h2>
+              <h2 className="notranslate" translate="no">
+                {subjectLabel}
+              </h2>
             </div>
             <StatusPill value={accessDecision} />
           </div>
 
-          <p>
+          <p className="notranslate" translate="no">
             {hasAccountSession
               ? "Server-side IPR account session detected. Authenticated session has priority over client-side transport."
               : effectiveIprHandoff
@@ -2560,19 +2549,14 @@ export default function InterfacePage() {
           <InfoList items={identityRows} />
 
           {iprAccountSessionError && !hasAccountSession ? (
-            <div className="joker-alert is-warn">
-              IPR account session:{" "}
-              <span className="notranslate" translate="no">
-                {iprAccountSessionError}
-              </span>
+            <div className="joker-alert is-warn notranslate" translate="no">
+              IPR account session: {iprAccountSessionError}
             </div>
           ) : null}
 
           {iprHandoffError ? (
-            <div className="joker-alert is-bad">
-              <span className="notranslate" translate="no">
-                {iprHandoffError}
-              </span>
+            <div className="joker-alert is-bad notranslate" translate="no">
+              {iprHandoffError}
             </div>
           ) : null}
 
@@ -2592,7 +2576,7 @@ export default function InterfacePage() {
             </button>
             <button
               type="button"
-              onClick={() => void sendMessage("do you know who I am?")}
+              onClick={() => void sendMessage("ciao JOKER-C2, sai chi sono?")}
               disabled={isSending}
             >
               Test recognition
@@ -2603,16 +2587,17 @@ export default function InterfacePage() {
         <div className="joker-panel">
           <div className="joker-panel-head">
             <div>
-              <span className="joker-kicker">Runtime memory</span>
-              <h2>
-                <span className="notranslate" translate="no">IPR-bound</span>{" "}
-                continuity
+              <span className="joker-kicker notranslate" translate="no">
+                Runtime memory
+              </span>
+              <h2 className="notranslate" translate="no">
+                IPR-bound continuity
               </h2>
             </div>
             <StatusPill value={runtimeMemoryScope} />
           </div>
 
-          <p>
+          <p className="notranslate" translate="no">
             Current memory preserves operational continuity. It does not
             automatically authorize future requests, lower risk, replace policy
             review, disable fail-closed logic or replace human oversight.
@@ -2624,20 +2609,20 @@ export default function InterfacePage() {
         <div className="joker-panel">
           <div className="joker-panel-head">
             <div>
-              <span className="joker-kicker">
-                <span className="notranslate" translate="no">EVT / OPC</span>{" "}
-                proof
+              <span className="joker-kicker notranslate" translate="no">
+                EVT / OPC proof
               </span>
-              <h2>Audit visibility</h2>
+              <h2 className="notranslate" translate="no">
+                Audit visibility
+              </h2>
             </div>
             <StatusPill value="technical proof" />
           </div>
 
-          <p>
-            <span className="notranslate" translate="no">OPC</span> remains a
-            technical proof receipt for audit and governance review. It is not
-            legal certification, not a qualified timestamp and not public
-            authority validation.
+          <p className="notranslate" translate="no">
+            OPC remains a technical proof receipt for audit and governance
+            review. It is not legal certification, not a qualified timestamp
+            and not public authority validation.
           </p>
 
           <InfoList items={proofRows} />
@@ -2650,16 +2635,16 @@ export default function InterfacePage() {
             <div className="joker-empty-logo notranslate" translate="no">
               {JOKER_SIGIL}
             </div>
-            <span className="joker-kicker notranslate" translate="no">AI JOKER-C2</span>
-            <h2>Runtime ready</h2>
-            <p>
+            <span className="joker-kicker notranslate" translate="no">
+              AI JOKER-C2
+            </span>
+            <h2 className="notranslate" translate="no">
+              Runtime ready
+            </h2>
+            <p className="notranslate" translate="no">
               Write below or use a quick prompt. This chat operates inside the
-              HBCE boundary: <span className="notranslate" translate="no">IPR</span>,{" "}
-              <span className="notranslate" translate="no">EVT</span>,{" "}
-              <span className="notranslate" translate="no">OPC</span>,{" "}
-              <span className="notranslate" translate="no">MATRIX</span>,{" "}
-              <span className="notranslate" translate="no">IPR-bound memory</span>,
-              audit and fail-closed logic.
+              HBCE boundary: IPR, EVT, OPC, MATRIX, IPR-bound memory, audit and
+              fail-closed logic.
             </p>
 
             <div className="joker-prompt-grid">
@@ -2698,10 +2683,16 @@ export default function InterfacePage() {
                 <div className="joker-message-body">
                   <div className="joker-message-head">
                     <div>
-                      <strong className="notranslate" translate="no">JOKER-C2</strong>
-                      <span>running governed operation</span>
+                      <strong className="notranslate" translate="no">
+                        JOKER-C2
+                      </strong>
+                      <span className="notranslate" translate="no">
+                        running governed operation
+                      </span>
                     </div>
-                    <time>processing</time>
+                    <time className="notranslate" translate="no">
+                      processing
+                    </time>
                   </div>
                   <div className="joker-thinking">
                     <span />
@@ -2719,14 +2710,12 @@ export default function InterfacePage() {
 
       <section className="joker-composer-shell">
         {error ? (
-          <div className="joker-alert is-bad composer-alert">
-            <span className="notranslate" translate="no">
-              {error}
-            </span>
+          <div className="joker-alert is-bad composer-alert notranslate" translate="no">
+            {error}
           </div>
         ) : null}
         {copied ? (
-          <div className="joker-alert is-good composer-alert">
+          <div className="joker-alert is-good composer-alert notranslate" translate="no">
             Response copied.
           </div>
         ) : null}
@@ -2736,22 +2725,18 @@ export default function InterfacePage() {
             {files.map((file) => (
               <div
                 key={file.id}
-                className={[
-                  "joker-file-chip",
-                  `is-${file.kind}`
-                ]
+                className={["joker-file-chip", `is-${file.kind}`]
                   .filter(Boolean)
                   .join(" ")}
                 title={`${file.name} · ${file.kind} · ${file.mimeType} · ${formatFileSize(file.size)}`}
+                translate="no"
               >
                 {file.kind === "image" && file.dataUrl ? (
-                  <img
-                    src={file.dataUrl}
-                    alt=""
-                    className="joker-file-preview"
-                  />
+                  <img src={file.dataUrl} alt="" className="joker-file-preview" />
                 ) : null}
-                <span className="notranslate" translate="no">{file.name}</span>
+                <span className="notranslate" translate="no">
+                  {file.name}
+                </span>
                 <em className="notranslate" translate="no">
                   {file.kind} · {formatFileSize(file.size)}
                 </em>
@@ -2761,11 +2746,7 @@ export default function InterfacePage() {
               </div>
             ))}
 
-            <button
-              type="button"
-              className="joker-clear-files"
-              onClick={clearFiles}
-            >
+            <button type="button" className="joker-clear-files" onClick={clearFiles}>
               Clear files
             </button>
           </div>
@@ -2809,13 +2790,10 @@ export default function InterfacePage() {
           </button>
         </form>
 
-        <div className="joker-footer-line">
+        <div className="joker-footer-line notranslate" translate="no">
           <span>Enter sends · Shift+Enter creates a new line</span>
           <span>
-            Session:{" "}
-            <span className="notranslate" translate="no">
-              {sessionId || "initializing"}
-            </span>
+            Session: <span>{sessionId || "initializing"}</span>
           </span>
         </div>
       </section>
@@ -2875,8 +2853,7 @@ export default function InterfacePage() {
           height: 40px;
           flex: 0 0 auto;
           border-radius: 16px;
-          background:
-            linear-gradient(135deg, rgba(6, 182, 212, 1), rgba(79, 70, 229, 1));
+          background: linear-gradient(135deg, rgba(6, 182, 212, 1), rgba(79, 70, 229, 1));
           color: white;
           font-weight: 950;
           box-shadow:
@@ -3130,7 +3107,6 @@ export default function InterfacePage() {
         }
 
         .joker-hero-grid,
-        .joker-metric-grid,
         .joker-details-grid {
           display: grid;
           gap: 10px;
@@ -3192,18 +3168,12 @@ export default function InterfacePage() {
           overflow-wrap: anywhere;
         }
 
-        .joker-metric-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          margin-top: 14px;
-        }
-
         .joker-metric {
           min-width: 0;
           padding: 13px;
           border: 1px solid rgba(71, 85, 105, 0.58);
           border-radius: 18px;
-          background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.52));
+          background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.52));
           overflow: hidden;
         }
 
@@ -3275,8 +3245,7 @@ export default function InterfacePage() {
           padding: 10px 11px;
           border: 1px solid rgba(71, 85, 105, 0.5);
           border-radius: 15px;
-          background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.48));
+          background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.48));
         }
 
         .joker-info-row dt {
@@ -3438,15 +3407,13 @@ export default function InterfacePage() {
           min-width: 0;
           border: 1px solid rgba(71, 85, 105, 0.55);
           border-radius: 24px;
-          background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.52));
+          background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.52));
           padding: 17px;
           box-shadow: 0 18px 44px rgba(0, 0, 0, 0.2);
         }
 
         .joker-message-user .joker-message-body {
-          background:
-            linear-gradient(180deg, rgba(8, 145, 178, 0.16), rgba(2, 6, 23, 0.46));
+          background: linear-gradient(180deg, rgba(8, 145, 178, 0.16), rgba(2, 6, 23, 0.46));
           border-color: rgba(34, 211, 238, 0.28);
         }
 
@@ -3691,8 +3658,7 @@ export default function InterfacePage() {
           padding: 10px;
           border: 1px solid rgba(71, 85, 105, 0.72);
           border-radius: 30px;
-          background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.96));
+          background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.96));
           box-shadow: 0 18px 58px rgba(0, 0, 0, 0.38);
         }
 
@@ -3773,7 +3739,6 @@ export default function InterfacePage() {
 
         @media (max-width: 860px) {
           .joker-hero-grid,
-          .joker-metric-grid,
           .joker-details-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
@@ -3804,7 +3769,6 @@ export default function InterfacePage() {
           }
 
           .joker-hero-grid,
-          .joker-metric-grid,
           .joker-details-grid {
             grid-template-columns: 1fr;
           }
