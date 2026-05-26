@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-import { resolveIprAccountSessionFromRequest } from "@/lib/ipr-auth-session-resolver";
+import { resolveIprAccountSessionFromRequestAsync } from "@/lib/ipr-auth-session-resolver";
 
 import {
   describeDefaultHbceDatabase,
@@ -4265,6 +4265,7 @@ function toPublicIprAccountSessionResolution(resolution: IprAccountSessionResolu
   return {
     authenticated: resolution.authenticated,
     reason: resolution.reason,
+    mode: resolution.mode,
     cookieName: resolution.cookieName,
     access: resolution.access,
     memory: resolution.memory,
@@ -4272,6 +4273,7 @@ function toPublicIprAccountSessionResolution(resolution: IprAccountSessionResolu
     session: resolution.session,
     accountProfile: resolution.accountProfile,
     reconstructedIprHandoff: resolution.reconstructedIprHandoff,
+    profileLookup: resolution.profileLookup,
     stores: resolution.stores,
     boundary: resolution.boundary
   };
@@ -4362,6 +4364,7 @@ function buildRuntimeDiagnostic(input: {
     iprAccountSession: {
       authenticated: input.iprAccountSession.authenticated,
       reason: input.iprAccountSession.reason,
+      mode: input.iprAccountSession.mode,
       cookieName: input.iprAccountSession.cookieName,
       accessDecision: input.iprAccountSession.access.decision,
       accessScope: input.iprAccountSession.access.scope,
@@ -4374,6 +4377,7 @@ function buildRuntimeDiagnostic(input: {
       sessionId: input.iprAccountSession.session?.sessionId || null,
       accountProfilePresent: Boolean(input.iprAccountSession.accountProfile),
       reconstructedHandoffPresent: Boolean(input.iprAccountSession.reconstructedIprHandoff),
+      profileLookup: input.iprAccountSession.profileLookup,
       expectedMemoryScope: input.iprAccountSession.memory.expectedScope,
       expectedAuthority: input.iprAccountSession.memory.expectedAuthority,
       expectedMatrixState: input.iprAccountSession.matrix.expectedState,
@@ -4489,7 +4493,7 @@ export async function POST(req: NextRequest) {
   const identity = getPrimaryIdentity();
   const files = normalizeFiles(body.files);
 
-  const iprAccountSession = resolveIprAccountSessionFromRequest(req);
+  const iprAccountSession = await resolveIprAccountSessionFromRequestAsync(req);
   const saasScope = resolveSaasScope({
     accountSession: iprAccountSession
   });
@@ -4517,6 +4521,7 @@ export async function POST(req: NextRequest) {
           "The active runtime identity source is an authenticated IPR account session.",
           "Authenticated IPR account session has priority over client-provided IPR handoff.",
           `Authenticated IPR account session reason: ${iprAccountSession.reason}.`,
+          `Authenticated IPR account session resolution mode: ${iprAccountSession.mode}.`,
           `Authenticated IPR account expected MATRIX state: ${iprAccountSession.matrix.expectedState}.`,
           `SaaS Core: ${SAAS_CORE_VERSION}.`,
           `Target persistence: ${SAAS_TARGET_PERSISTENCE}.`,
@@ -4529,6 +4534,8 @@ export async function POST(req: NextRequest) {
         ]
       : [
           "No authenticated IPR account session was available for this chat operation.",
+          `IPR account session reason: ${iprAccountSession.reason}.`,
+          `IPR account session resolution mode: ${iprAccountSession.mode}.`,
           "Runtime may use a valid client handoff only as fallback transport context.",
           `SaaS Core: ${SAAS_CORE_VERSION}.`,
           `Target persistence: ${SAAS_TARGET_PERSISTENCE}.`,
@@ -4665,6 +4672,7 @@ export async function POST(req: NextRequest) {
     ? [
         "Last operation used authenticated IPR account session as identity source.",
         `Last IPR account session reason: ${iprAccountSession.reason}.`,
+        `Last IPR account session resolution mode: ${iprAccountSession.mode}.`,
         `Last IPR account session id: ${iprAccountSession.session?.sessionId || "none"}.`,
         `Last IPR account id: ${iprAccountSession.access.accountId || "none"}.`,
         `Last SaaS tenant id: ${saas.tenantId || "none"}.`,
@@ -4672,7 +4680,8 @@ export async function POST(req: NextRequest) {
         "Client-provided IPR handoff was treated as lower-priority fallback transport context."
       ]
     : [
-        `Last operation did not use authenticated IPR account session. Reason: ${iprAccountSession.reason}.`
+        `Last operation did not use authenticated IPR account session. Reason: ${iprAccountSession.reason}.`,
+        `Last IPR account session resolution mode: ${iprAccountSession.mode}.`
       ];
 
   const databaseFacts = [
@@ -4961,7 +4970,7 @@ export async function GET(req: NextRequest) {
   const identity = getPrimaryIdentity();
   const standardModel = MODEL;
   const deepModel = DEEP_MODEL;
-  const iprAccountSession = resolveIprAccountSessionFromRequest(req);
+  const iprAccountSession = await resolveIprAccountSessionFromRequestAsync(req);
   const saasScope = resolveSaasScope({
     accountSession: iprAccountSession
   });
@@ -5026,7 +5035,8 @@ export async function GET(req: NextRequest) {
             "GET health check found an authenticated IPR account session. POST /api/chat can reconstruct IPR-bound runtime identity from this session.",
           targetPersistence: SAAS_TARGET_PERSISTENCE,
           databaseConfigured: database.configured,
-          databaseAvailable: database.available
+          databaseAvailable: database.available,
+          sessionResolutionMode: iprAccountSession.mode
         }
       : {
           scope: "RUNTIME_ONLY",
@@ -5036,7 +5046,8 @@ export async function GET(req: NextRequest) {
             "GET health check did not find an authenticated IPR account session and does not validate a client biological IPR handoff.",
           targetPersistence: SAAS_TARGET_PERSISTENCE,
           databaseConfigured: database.configured,
-          databaseAvailable: database.available
+          databaseAvailable: database.available,
+          sessionResolutionMode: iprAccountSession.mode
         },
     matrix: {
       state: iprAccountSession.matrix.expectedState,
