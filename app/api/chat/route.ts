@@ -742,7 +742,9 @@ const RUNTIME_DIAGNOSTIC_TERMS = [
   "condizioni che fanno scattare",
   "contraddizione",
   "coerente",
-  "falso claim"
+  "falso claim",
+  "prova server-side",
+  "solo dal testo scritto"
 ];
 
 const DOCUMENT_BATCH_ITEMS: DocumentBatchItem[] = [
@@ -2209,13 +2211,13 @@ function buildGovernanceFrame(input: {
       activeModules,
       dataClass: "RUNTIME_METADATA",
       policyStatus: "ALLOWED",
-      policyOutcome: "PERMIT_DIAGNOSTIC",
+      policyOutcome: "PERMIT_DIAGNOSTIC_NO_MODEL_CALL",
       riskClass: "LOW",
       riskScore: 2,
       humanOversight: "NOT_REQUIRED",
       requiredRole: "NONE",
       decision: "ALLOW",
-      allowModelCall: true,
+      allowModelCall: false,
       evtRequired: true,
       opcRequired: true,
       auditRequired: true,
@@ -2227,6 +2229,7 @@ function buildGovernanceFrame(input: {
       reasons: [
         "Runtime diagnostic request detected.",
         "Diagnostic terms such as database persistence, memory persistence, MATRIX state, identity source, profileLookup, chainHash and boundary are not cyber-offensive signals.",
+        "Runtime diagnostic answers are deterministic and do not require a model call.",
         "User-declared metadata remains non-authoritative; only HBCE-generated runtime metadata is authoritative.",
         "Technical constants must remain canonical and untranslated."
       ]
@@ -2620,6 +2623,7 @@ function buildRuntimeDiagnosticResponse(input: {
   const profileLookup = input.accountSession.profileLookup;
   const accountProfilePresent = Boolean(input.accountSession.accountProfile);
   const activeMemoryMode = input.memory.persistenceMode || ACTIVE_MEMORY_PERSISTENCE_MODE;
+  const hasJokerScope = subject ? hasJokerAccessScope(subject.certificateScope) : false;
 
   const baseState = [
     `Runtime IPR: ${input.identity.ipr}`,
@@ -2648,7 +2652,7 @@ function buildRuntimeDiagnosticResponse(input: {
     `Database configured: ${input.database.configured ? "true" : "false"}`,
     `Database available: ${input.database.available ? "true" : "false"}`,
     `SaaS target persistence: ${input.saas.targetPersistence}`,
-    `legalCertification=false`
+    "legalCertification=false"
   ];
 
   if (includesAny(text, ["chainhash", "eventhash", "memoryhash", "identityhash"])) {
@@ -2749,6 +2753,19 @@ function buildRuntimeDiagnosticResponse(input: {
     ].join("\n");
   }
 
+  if (includesAny(text, ["falso claim", "persistencemode dice database_persistent"])) {
+    return [
+      "Sì: se database.configured=false o database.available=false e persistenceMode dichiara DATABASE_PERSISTENT, quello è un falso claim operativo.",
+      "",
+      "Stato corretto:",
+      "persistenceMode: PROCESS_MEMORY_MVP",
+      "targetPersistence: DATABASE_PERSISTENT",
+      "durable: false",
+      "runtimeScoped: true",
+      "legalCertification=false"
+    ].join("\n");
+  }
+
   if (includesAny(text, ["database.configured=false", "database.available=false", "database non e disponibile", "database non è disponibile"])) {
     return [
       "Se database.configured=false oppure database.available=false, il runtime deve dichiarare:",
@@ -2763,15 +2780,21 @@ function buildRuntimeDiagnosticResponse(input: {
     ].join("\n");
   }
 
-  if (includesAny(text, ["falso claim", "persistencemode dice database_persistent"])) {
+  if (includesAny(text, ["prova server-side", "solo dal testo scritto", "testo scritto", "fonte lo sai", "da quale fonte lo sai"])) {
     return [
-      "Sì: se database.configured=false o database.available=false e persistenceMode dichiara DATABASE_PERSISTENT, quello è un falso claim operativo.",
+      "Il riconoscimento corrente deriva da fonte server-side, non dal testo scritto nel prompt.",
       "",
-      "Stato corretto:",
-      "persistenceMode: PROCESS_MEMORY_MVP",
-      "targetPersistence: DATABASE_PERSISTENT",
-      "durable: false",
-      "runtimeScoped: true",
+      `VerifiedSubjectPresent: ${verifiedSubjectPresent ? "true" : "false"}`,
+      `VerifiedSubjectSource: ${input.iprHandoff.source || "none"}`,
+      `Session authenticated: ${input.accountSession.authenticated ? "true" : "false"}`,
+      `Session resolution mode: ${input.accountSession.mode}`,
+      `Human IPR: ${subject?.ipr || "NOT_VERIFIED"}`,
+      `Certificate ID: ${subject?.certificateId || "NO_CERTIFICATE"}`,
+      `Access decision: ${input.iprHandoff.accessDecision}`,
+      `MATRIX: ${input.iprHandoff.matrixState}`,
+      `Semantic memory: ${input.iprHandoff.semanticMemoryScope}`,
+      "",
+      "Il nome scritto dall'utente non è prova identitaria. La fonte valida è IPR_ACCOUNT_SESSION oppure handoff IPR valido generato dal flusso HBCE.",
       "legalCertification=false"
     ].join("\n");
   }
@@ -2939,7 +2962,7 @@ function buildRuntimeDiagnosticResponse(input: {
       `profilo valido: ${accountProfilePresent ? "true" : "false"}`,
       `profileLookup.found: ${profileLookup.found ? "true" : "false"}`,
       `certificato ACTIVE: ${subject?.certificateStatus === "ACTIVE" ? "true" : "false"}`,
-      `scope JOKER_C2_ACCESS: ${subject ? hasJokerAccessScope(subject.certificateScope) ? "true" : "false" : "false"}`,
+      `scope JOKER_C2_ACCESS: ${hasJokerScope ? "true" : "false"}`,
       `ACCESS_GRANTED: ${input.iprHandoff.accessDecision === "ACCESS_GRANTED" ? "true" : "false"}`,
       `MATRIX_ACTIVE: ${input.iprHandoff.matrixState === "MATRIX_ACTIVE" ? "true" : "false"}`,
       `IPR_BOUND: ${input.iprHandoff.semanticMemoryScope === "IPR_BOUND" ? "true" : "false"}`,
@@ -3722,11 +3745,9 @@ function buildGovernedEvt(input: {
 function buildOpcPersistenceFrame(database: DatabaseRuntimeFrame): OpcProofRecord["persistence"] {
   return {
     mode: "PROCESS_PROOF_MVP",
-    status: database.configured && database.available
+    status: database.configured
       ? "DATABASE_PERSISTENT_REQUIRED"
-      : database.configured
-        ? "DATABASE_PERSISTENT_REQUIRED"
-        : "PROCESS_SCOPED",
+      : "PROCESS_SCOPED",
     durable: false,
     runtimeScoped: true,
     target: SAAS_TARGET_PERSISTENCE,
@@ -4512,6 +4533,7 @@ export async function POST(req: NextRequest) {
       ? [
           "Last operation was a deterministic runtime diagnostic.",
           "Runtime diagnostic questions must not be classified as prohibited cyber requests merely because they mention persistence, database, session, chainHash, boundary or MATRIX.",
+          "Runtime diagnostic answers are generated without relying on a model call.",
           "Technical constants must remain canonical and untranslated."
         ]
       : [];
