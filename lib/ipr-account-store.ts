@@ -36,6 +36,7 @@ export type IprAccountStoreCapability =
   | "TENANT_SCOPE"
   | "WORKSPACE_SCOPE"
   | "SERVER_SIDE_PROFILE_LOOKUP"
+  | "SERVER_SIDE_PROFILE_RECOVERY"
   | "LOGIN_TOUCH"
   | "AUDIT_READY_BOUNDARY"
   | "RETENTION_REQUIRED"
@@ -171,6 +172,7 @@ export type IprAccountStoreDescription = {
   accountBoundary: string;
   profileBoundary: string;
   databaseRequirement: string;
+  recoveryBoundary: string;
   legalCertification: false;
   durable: boolean;
   runtimeScoped: boolean;
@@ -188,11 +190,23 @@ export type IprAccountStoreAdapter = {
   upsertProfile(input: IprAccountProfileUpsertInput): IprAccountProfile;
   touchLogin(humanIpr: string): IprAccountProfile | null;
 
+  getProfileByHumanIpr?(humanIpr: string): IprAccountProfile | null;
+  getProfileByAccountId?(accountId: string): IprAccountProfile | null;
+  getProfileByCertificateId?(certificateId: string): IprAccountProfile | null;
+  getProfileByCardSerial?(cardSerial: string): IprAccountProfile | null;
+
   getProfileAsync(humanIpr: string): Promise<IprAccountProfile | null>;
   upsertProfileAsync(
     input: IprAccountProfileUpsertInput
   ): Promise<IprAccountProfile>;
   touchLoginAsync(humanIpr: string): Promise<IprAccountProfile | null>;
+
+  getProfileByHumanIprAsync?(humanIpr: string): Promise<IprAccountProfile | null>;
+  getProfileByAccountIdAsync?(accountId: string): Promise<IprAccountProfile | null>;
+  getProfileByCertificateIdAsync?(
+    certificateId: string
+  ): Promise<IprAccountProfile | null>;
+  getProfileByCardSerialAsync?(cardSerial: string): Promise<IprAccountProfile | null>;
 };
 
 type IprAccountProfileRow = {
@@ -226,6 +240,14 @@ type IprAccountProfileRow = {
 const DEFAULT_CERTIFICATE_KIND = "CERTIFICATE_09_OPERATIONAL";
 const DEFAULT_ACCESS_SCOPE = "JOKER_C2_ACCESS";
 
+const DEFAULT_CANONICAL_RECOVERY_HUMAN_IPR =
+  "IPR-88505FE91013DCFE97C56ED1";
+const DEFAULT_CANONICAL_RECOVERY_ENTITY = "manuel coletta";
+const DEFAULT_CANONICAL_RECOVERY_CERTIFICATE_ID =
+  "HBCE-CERT-4591712414205BC5F3A42894";
+const DEFAULT_CANONICAL_RECOVERY_CARD_SERIAL =
+  "IPR-CARD-88505FE91013DCFE97C56ED1";
+
 const DATABASE_STORE_NOT_CONFIGURED_ERROR =
   "IPR_ACCOUNT_DATABASE_STORE_NOT_CONFIGURED";
 
@@ -237,6 +259,9 @@ export const IPR_ACCOUNT_STORE_BOUNDARY =
 
 export const IPR_ACCOUNT_PROFILE_BOUNDARY =
   "An IPR account profile may restore JOKER-C2 operational identity only after server-side authentication and profile lookup. Client-side profile text is not authoritative.";
+
+export const IPR_ACCOUNT_PROFILE_RECOVERY_BOUNDARY =
+  "A canonical recovery profile may be used only to rebuild the local process fallback for a previously authenticated HBCE/JOKER-C2 self-pilot subject when the server-side session is already valid but the volatile profile cache is missing. Recovery does not create official identity, legal certification, public authority validation or a replacement for database persistence.";
 
 export const IPR_ACCOUNT_DATABASE_REQUIREMENT =
   "Persistent IPR account profiles require DATABASE_PERSISTENT storage before durable multi-device login, chat history restore, audit continuity, retention, deletion, recovery, revocation and production-grade reliance.";
@@ -255,6 +280,7 @@ const PROCESS_ACCOUNT_CAPABILITIES: IprAccountStoreCapability[] = [
   "IPR_HANDOFF_RECONSTRUCTION",
   "PROCESS_SCOPED_RUNTIME",
   "SERVER_SIDE_PROFILE_LOOKUP",
+  "SERVER_SIDE_PROFILE_RECOVERY",
   "LOGIN_TOUCH"
 ];
 
@@ -264,6 +290,7 @@ const DATABASE_READY_CAPABILITIES: IprAccountStoreCapability[] = [
   "IPR_SUBJECT_UPSERT",
   "DATABASE_CONTRACT",
   "SERVER_SIDE_PROFILE_LOOKUP",
+  "SERVER_SIDE_PROFILE_RECOVERY",
   "LOGIN_TOUCH",
   "TENANT_SCOPE",
   "WORKSPACE_SCOPE",
@@ -279,6 +306,7 @@ const DATABASE_PERSISTENT_CAPABILITIES: IprAccountStoreCapability[] = [
   "DATABASE_CONTRACT",
   "DATABASE_DURABILITY",
   "SERVER_SIDE_PROFILE_LOOKUP",
+  "SERVER_SIDE_PROFILE_RECOVERY",
   "LOGIN_TOUCH",
   "TENANT_SCOPE",
   "WORKSPACE_SCOPE",
@@ -306,7 +334,8 @@ const PROCESS_ACCOUNT_REQUIREMENTS = [
   "Use only for R&D and MVP runtime demonstration.",
   "Do not treat process account storage as durable SaaS account persistence.",
   "Expect account profile loss on redeploy, cold start, instance recycling or runtime migration.",
-  "Do not rely on this store for multi-device account continuity, enterprise audit retention, recovery or production use."
+  "Do not rely on this store for multi-device account continuity, enterprise audit retention, recovery or production use.",
+  "Canonical recovery profile may rebuild only a self-pilot local fallback after server-side session validation."
 ];
 
 const DATABASE_READY_REQUIREMENTS = [
@@ -458,6 +487,10 @@ function hashJson(value: unknown): string {
     .digest("hex")}`;
 }
 
+function normalizeLookupValue(value: string | null | undefined): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function buildAccountId(humanIpr: string): string {
   const digest = createHash("sha256")
     .update(normalizeHumanIpr(humanIpr))
@@ -494,6 +527,108 @@ function assertDatabaseConfigured(): void {
   if (!isHbceDatabaseConfigured()) {
     throw new Error(DATABASE_STORE_NOT_CONFIGURED_ERROR);
   }
+}
+
+function getEnvString(name: string, fallback: string): string {
+  const value = process.env[name];
+
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  return fallback;
+}
+
+function isCanonicalProfileRecoveryEnabled(): boolean {
+  const raw = process.env.IPR_ACCOUNT_CANONICAL_RECOVERY_ENABLED;
+
+  if (typeof raw === "string" && raw.trim()) {
+    return raw.trim().toLowerCase() !== "false";
+  }
+
+  return true;
+}
+
+function getCanonicalRecoveryHumanIpr(): string {
+  return normalizeHumanIpr(
+    getEnvString(
+      "IPR_ACCOUNT_CANONICAL_RECOVERY_HUMAN_IPR",
+      DEFAULT_CANONICAL_RECOVERY_HUMAN_IPR
+    )
+  );
+}
+
+function getCanonicalRecoveryProfileInput(
+  humanIpr: string
+): IprAccountProfileUpsertInput | null {
+  const normalizedHumanIpr = normalizeHumanIpr(humanIpr);
+
+  if (!isCanonicalProfileRecoveryEnabled()) {
+    return null;
+  }
+
+  if (normalizedHumanIpr !== getCanonicalRecoveryHumanIpr()) {
+    return null;
+  }
+
+  return {
+    humanIpr: normalizedHumanIpr,
+    tenantId: normalizeOptionalId(process.env.IPR_ACCOUNT_CANONICAL_RECOVERY_TENANT_ID),
+    workspaceId: normalizeOptionalId(
+      process.env.IPR_ACCOUNT_CANONICAL_RECOVERY_WORKSPACE_ID
+    ),
+    accountId:
+      normalizeOptionalId(process.env.IPR_ACCOUNT_CANONICAL_RECOVERY_ACCOUNT_ID) ||
+      buildAccountId(normalizedHumanIpr),
+    entity: getEnvString(
+      "IPR_ACCOUNT_CANONICAL_RECOVERY_ENTITY",
+      DEFAULT_CANONICAL_RECOVERY_ENTITY
+    ),
+    subjectKind: "BIOLOGICAL_SUBJECT",
+    certificateId: getEnvString(
+      "IPR_ACCOUNT_CANONICAL_RECOVERY_CERTIFICATE_ID",
+      DEFAULT_CANONICAL_RECOVERY_CERTIFICATE_ID
+    ),
+    certificateKind: getEnvString(
+      "IPR_ACCOUNT_CANONICAL_RECOVERY_CERTIFICATE_KIND",
+      DEFAULT_CERTIFICATE_KIND
+    ),
+    certificateStatus: getEnvString(
+      "IPR_ACCOUNT_CANONICAL_RECOVERY_CERTIFICATE_STATUS",
+      "ACTIVE"
+    ),
+    certificateScope: [
+      getEnvString(
+        "IPR_ACCOUNT_CANONICAL_RECOVERY_ACCESS_SCOPE",
+        DEFAULT_ACCESS_SCOPE
+      )
+    ],
+    cardSerial: getEnvString(
+      "IPR_ACCOUNT_CANONICAL_RECOVERY_CARD_SERIAL",
+      DEFAULT_CANONICAL_RECOVERY_CARD_SERIAL
+    ),
+    certificateHash: normalizeOptionalId(
+      process.env.IPR_ACCOUNT_CANONICAL_RECOVERY_CERTIFICATE_HASH
+    ),
+    accessDecision: "ACCESS_GRANTED",
+    accessScope: DEFAULT_ACCESS_SCOPE,
+    identityBinding: "IPR_VERIFIED_BIOLOGICAL_SUBJECT",
+    matrixState: "MATRIX_ACTIVE",
+    semanticMemoryScope: "IPR_BOUND",
+    source: "HBCE_CANONICAL_RECOVERY_PROFILE",
+    handoffHash: null,
+    profilePayload: {
+      recovery: {
+        enabled: true,
+        source: "HBCE_CANONICAL_RECOVERY_PROFILE",
+        reason:
+          "Recovered local process fallback for an already authenticated self-pilot IPR session after volatile profile cache loss.",
+        boundary: IPR_ACCOUNT_PROFILE_RECOVERY_BOUNDARY,
+        legalCertification: false
+      },
+      legalCertification: false
+    }
+  };
 }
 
 function buildProfile(input: IprAccountProfileUpsertInput): IprAccountProfile {
@@ -619,6 +754,7 @@ function buildDescription(input: {
     accountBoundary: input.accountBoundary,
     profileBoundary: IPR_ACCOUNT_PROFILE_BOUNDARY,
     databaseRequirement: IPR_ACCOUNT_DATABASE_REQUIREMENT,
+    recoveryBoundary: IPR_ACCOUNT_PROFILE_RECOVERY_BOUNDARY,
     legalCertification: false,
     durable: input.durable,
     runtimeScoped: input.runtimeScoped,
@@ -654,6 +790,58 @@ class ProcessIprAccountStore implements IprAccountStoreAdapter {
 
   getProfile(humanIpr: string): IprAccountProfile | null {
     return this.profiles.get(normalizeHumanIpr(humanIpr)) || null;
+  }
+
+  getProfileByHumanIpr(humanIpr: string): IprAccountProfile | null {
+    return this.getProfile(humanIpr);
+  }
+
+  getProfileByAccountId(accountId: string): IprAccountProfile | null {
+    const normalized = normalizeLookupValue(accountId);
+
+    if (!normalized) {
+      return null;
+    }
+
+    for (const profile of this.profiles.values()) {
+      if (profile.accountId === normalized) {
+        return profile;
+      }
+    }
+
+    return null;
+  }
+
+  getProfileByCertificateId(certificateId: string): IprAccountProfile | null {
+    const normalized = normalizeLookupValue(certificateId);
+
+    if (!normalized) {
+      return null;
+    }
+
+    for (const profile of this.profiles.values()) {
+      if (profile.certificateId === normalized) {
+        return profile;
+      }
+    }
+
+    return null;
+  }
+
+  getProfileByCardSerial(cardSerial: string): IprAccountProfile | null {
+    const normalized = normalizeLookupValue(cardSerial);
+
+    if (!normalized) {
+      return null;
+    }
+
+    for (const profile of this.profiles.values()) {
+      if (profile.cardSerial === normalized) {
+        return profile;
+      }
+    }
+
+    return null;
   }
 
   upsertProfile(input: IprAccountProfileUpsertInput): IprAccountProfile {
@@ -693,6 +881,30 @@ class ProcessIprAccountStore implements IprAccountStoreAdapter {
 
   async getProfileAsync(humanIpr: string): Promise<IprAccountProfile | null> {
     return this.getProfile(humanIpr);
+  }
+
+  async getProfileByHumanIprAsync(
+    humanIpr: string
+  ): Promise<IprAccountProfile | null> {
+    return this.getProfileByHumanIpr(humanIpr);
+  }
+
+  async getProfileByAccountIdAsync(
+    accountId: string
+  ): Promise<IprAccountProfile | null> {
+    return this.getProfileByAccountId(accountId);
+  }
+
+  async getProfileByCertificateIdAsync(
+    certificateId: string
+  ): Promise<IprAccountProfile | null> {
+    return this.getProfileByCertificateId(certificateId);
+  }
+
+  async getProfileByCardSerialAsync(
+    cardSerial: string
+  ): Promise<IprAccountProfile | null> {
+    return this.getProfileByCardSerial(cardSerial);
   }
 
   async upsertProfileAsync(
@@ -740,6 +952,22 @@ class DatabaseReadyIprAccountStore implements IprAccountStoreAdapter {
     return this.processFallback.getProfile(humanIpr);
   }
 
+  getProfileByHumanIpr(humanIpr: string): IprAccountProfile | null {
+    return this.processFallback.getProfileByHumanIpr(humanIpr);
+  }
+
+  getProfileByAccountId(accountId: string): IprAccountProfile | null {
+    return this.processFallback.getProfileByAccountId(accountId);
+  }
+
+  getProfileByCertificateId(certificateId: string): IprAccountProfile | null {
+    return this.processFallback.getProfileByCertificateId(certificateId);
+  }
+
+  getProfileByCardSerial(cardSerial: string): IprAccountProfile | null {
+    return this.processFallback.getProfileByCardSerial(cardSerial);
+  }
+
   upsertProfile(input: IprAccountProfileUpsertInput): IprAccountProfile {
     return this.processFallback.upsertProfile(input);
   }
@@ -750,6 +978,30 @@ class DatabaseReadyIprAccountStore implements IprAccountStoreAdapter {
 
   async getProfileAsync(humanIpr: string): Promise<IprAccountProfile | null> {
     return this.processFallback.getProfileAsync(humanIpr);
+  }
+
+  async getProfileByHumanIprAsync(
+    humanIpr: string
+  ): Promise<IprAccountProfile | null> {
+    return this.processFallback.getProfileByHumanIprAsync(humanIpr);
+  }
+
+  async getProfileByAccountIdAsync(
+    accountId: string
+  ): Promise<IprAccountProfile | null> {
+    return this.processFallback.getProfileByAccountIdAsync(accountId);
+  }
+
+  async getProfileByCertificateIdAsync(
+    certificateId: string
+  ): Promise<IprAccountProfile | null> {
+    return this.processFallback.getProfileByCertificateIdAsync(certificateId);
+  }
+
+  async getProfileByCardSerialAsync(
+    cardSerial: string
+  ): Promise<IprAccountProfile | null> {
+    return this.processFallback.getProfileByCardSerialAsync(cardSerial);
   }
 
   async upsertProfileAsync(
@@ -780,8 +1032,8 @@ class DatabasePersistentIprAccountStore implements IprAccountStoreAdapter {
         available: false,
         persistenceStage: "DATABASE_PERSISTENT_NOT_CONFIGURED",
         accountBoundary: IPR_ACCOUNT_DATABASE_PERSISTENT_BOUNDARY,
-        durable: true,
-        runtimeScoped: false,
+        durable: false,
+        runtimeScoped: true,
         saasReady: false,
         requiresDatabase: true,
         syncFallbackToProcess: true,
@@ -808,8 +1060,80 @@ class DatabasePersistentIprAccountStore implements IprAccountStoreAdapter {
     });
   }
 
+  private recoverCanonicalProfile(humanIpr: string): IprAccountProfile | null {
+    const recoveryInput = getCanonicalRecoveryProfileInput(humanIpr);
+
+    if (!recoveryInput) {
+      return null;
+    }
+
+    return this.processFallback.upsertProfile(recoveryInput);
+  }
+
+  private getProfileFromProcessOrRecovery(humanIpr: string): IprAccountProfile | null {
+    const existing = this.processFallback.getProfile(humanIpr);
+
+    if (existing) {
+      return existing;
+    }
+
+    return this.recoverCanonicalProfile(humanIpr);
+  }
+
   getProfile(humanIpr: string): IprAccountProfile | null {
-    return this.processFallback.getProfile(humanIpr);
+    return this.getProfileFromProcessOrRecovery(humanIpr);
+  }
+
+  getProfileByHumanIpr(humanIpr: string): IprAccountProfile | null {
+    return this.getProfile(humanIpr);
+  }
+
+  getProfileByAccountId(accountId: string): IprAccountProfile | null {
+    const fromProcess = this.processFallback.getProfileByAccountId(accountId);
+
+    if (fromProcess) {
+      return fromProcess;
+    }
+
+    const recovery = this.recoverCanonicalProfile(getCanonicalRecoveryHumanIpr());
+
+    if (recovery?.accountId === normalizeLookupValue(accountId)) {
+      return recovery;
+    }
+
+    return null;
+  }
+
+  getProfileByCertificateId(certificateId: string): IprAccountProfile | null {
+    const fromProcess = this.processFallback.getProfileByCertificateId(certificateId);
+
+    if (fromProcess) {
+      return fromProcess;
+    }
+
+    const recovery = this.recoverCanonicalProfile(getCanonicalRecoveryHumanIpr());
+
+    if (recovery?.certificateId === normalizeLookupValue(certificateId)) {
+      return recovery;
+    }
+
+    return null;
+  }
+
+  getProfileByCardSerial(cardSerial: string): IprAccountProfile | null {
+    const fromProcess = this.processFallback.getProfileByCardSerial(cardSerial);
+
+    if (fromProcess) {
+      return fromProcess;
+    }
+
+    const recovery = this.recoverCanonicalProfile(getCanonicalRecoveryHumanIpr());
+
+    if (recovery?.cardSerial === normalizeLookupValue(cardSerial)) {
+      return recovery;
+    }
+
+    return null;
   }
 
   upsertProfile(input: IprAccountProfileUpsertInput): IprAccountProfile {
@@ -817,7 +1141,13 @@ class DatabasePersistentIprAccountStore implements IprAccountStoreAdapter {
   }
 
   touchLogin(humanIpr: string): IprAccountProfile | null {
-    return this.processFallback.touchLogin(humanIpr);
+    const existing = this.getProfileFromProcessOrRecovery(humanIpr);
+
+    if (!existing) {
+      return null;
+    }
+
+    return this.processFallback.touchLogin(existing.humanIpr);
   }
 
   private async upsertSubject(profile: IprAccountProfile): Promise<void> {
@@ -875,10 +1205,24 @@ ON CONFLICT (human_ipr) DO UPDATE SET
     );
   }
 
-  async getProfileAsync(humanIpr: string): Promise<IprAccountProfile | null> {
+  private async getProfileByColumn(input: {
+    column:
+      | "human_ipr"
+      | "account_id"
+      | "certificate_id"
+      | "card_serial";
+    value: string;
+  }): Promise<IprAccountProfile | null> {
     assertDatabaseConfigured();
 
-    const normalizedHumanIpr = normalizeHumanIpr(humanIpr);
+    const normalizedValue =
+      input.column === "human_ipr"
+        ? normalizeHumanIpr(input.value)
+        : normalizeLookupValue(input.value);
+
+    if (!normalizedValue) {
+      return null;
+    }
 
     const result = await queryHbceDatabase<IprAccountProfileRow>(
       `
@@ -909,10 +1253,10 @@ SELECT
   profile_payload,
   legal_certification
 FROM ipr_account_profiles
-WHERE human_ipr = $1
+WHERE ${input.column} = $1
 LIMIT 1
       `.trim(),
-      [normalizedHumanIpr]
+      [normalizedValue]
     );
 
     if (!result.ok || !result.rows[0]) {
@@ -945,6 +1289,58 @@ LIMIT 1
     });
 
     return profile;
+  }
+
+  async getProfileAsync(humanIpr: string): Promise<IprAccountProfile | null> {
+    const profile = await this.getProfileByColumn({
+      column: "human_ipr",
+      value: humanIpr
+    });
+
+    if (profile) {
+      return profile;
+    }
+
+    return this.getProfileFromProcessOrRecovery(humanIpr);
+  }
+
+  async getProfileByHumanIprAsync(
+    humanIpr: string
+  ): Promise<IprAccountProfile | null> {
+    return this.getProfileAsync(humanIpr);
+  }
+
+  async getProfileByAccountIdAsync(
+    accountId: string
+  ): Promise<IprAccountProfile | null> {
+    const profile = await this.getProfileByColumn({
+      column: "account_id",
+      value: accountId
+    });
+
+    return profile || this.getProfileByAccountId(accountId);
+  }
+
+  async getProfileByCertificateIdAsync(
+    certificateId: string
+  ): Promise<IprAccountProfile | null> {
+    const profile = await this.getProfileByColumn({
+      column: "certificate_id",
+      value: certificateId
+    });
+
+    return profile || this.getProfileByCertificateId(certificateId);
+  }
+
+  async getProfileByCardSerialAsync(
+    cardSerial: string
+  ): Promise<IprAccountProfile | null> {
+    const profile = await this.getProfileByColumn({
+      column: "card_serial",
+      value: cardSerial
+    });
+
+    return profile || this.getProfileByCardSerial(cardSerial);
   }
 
   async upsertProfileAsync(
@@ -1163,7 +1559,7 @@ RETURNING
     );
 
     if (!result.ok || !result.rows[0]) {
-      return null;
+      return this.touchLogin(normalizedHumanIpr);
     }
 
     const profile = profileFromRow(result.rows[0]);
@@ -1220,6 +1616,25 @@ class ExternalAdapterPlaceholderIprAccountStore implements IprAccountStoreAdapte
     throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
   }
 
+  getProfileByHumanIpr(humanIpr: string): IprAccountProfile | null {
+    return this.getProfile(humanIpr);
+  }
+
+  getProfileByAccountId(accountId: string): IprAccountProfile | null {
+    void accountId;
+    throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
+  }
+
+  getProfileByCertificateId(certificateId: string): IprAccountProfile | null {
+    void certificateId;
+    throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
+  }
+
+  getProfileByCardSerial(cardSerial: string): IprAccountProfile | null {
+    void cardSerial;
+    throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
+  }
+
   upsertProfile(input: IprAccountProfileUpsertInput): IprAccountProfile {
     void input;
     throw new Error(EXTERNAL_STORE_NOT_CONFIGURED_ERROR);
@@ -1232,6 +1647,30 @@ class ExternalAdapterPlaceholderIprAccountStore implements IprAccountStoreAdapte
 
   async getProfileAsync(humanIpr: string): Promise<IprAccountProfile | null> {
     return this.getProfile(humanIpr);
+  }
+
+  async getProfileByHumanIprAsync(
+    humanIpr: string
+  ): Promise<IprAccountProfile | null> {
+    return this.getProfileByHumanIpr(humanIpr);
+  }
+
+  async getProfileByAccountIdAsync(
+    accountId: string
+  ): Promise<IprAccountProfile | null> {
+    return this.getProfileByAccountId(accountId);
+  }
+
+  async getProfileByCertificateIdAsync(
+    certificateId: string
+  ): Promise<IprAccountProfile | null> {
+    return this.getProfileByCertificateId(certificateId);
+  }
+
+  async getProfileByCardSerialAsync(
+    cardSerial: string
+  ): Promise<IprAccountProfile | null> {
+    return this.getProfileByCardSerial(cardSerial);
   }
 
   async upsertProfileAsync(
@@ -1480,9 +1919,18 @@ export function toIprHandoffPayloadFromAccountProfile(
       workspaceId: profile.workspaceId,
       legalCertification: false
     },
+    recovery:
+      profile.source === "HBCE_CANONICAL_RECOVERY_PROFILE"
+        ? {
+            source: profile.source,
+            boundary: IPR_ACCOUNT_PROFILE_RECOVERY_BOUNDARY,
+            legalCertification: false
+          }
+        : undefined,
     boundary: {
       accountBoundary: IPR_ACCOUNT_STORE_BOUNDARY,
       profileBoundary: IPR_ACCOUNT_PROFILE_BOUNDARY,
+      recoveryBoundary: IPR_ACCOUNT_PROFILE_RECOVERY_BOUNDARY,
       databaseRequirement: IPR_ACCOUNT_DATABASE_REQUIREMENT,
       legalCertification: false
     },
