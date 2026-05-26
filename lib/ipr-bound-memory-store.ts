@@ -1,7 +1,17 @@
+import { createHash } from "node:crypto";
+
 import {
   describeDefaultHbceDatabase,
+  ensureHbceDatabaseReady,
   isHbceDatabaseAvailable,
-  isHbceDatabaseConfigured
+  isHbceDatabaseConfigured,
+  queryHbceDatabase
+} from "./ipr-database";
+
+import type {
+  HbceDatabaseQueryResult,
+  HbceDatabaseQueryRow,
+  HbceDatabaseQueryValue
 } from "./ipr-database";
 
 export type IprBoundMemoryStoreKind =
@@ -19,6 +29,7 @@ export type IprBoundMemoryPersistenceStage =
   | "RUNTIME_VOLATILE"
   | "DATABASE_CONTRACT_READY"
   | "DATABASE_PERSISTENT_TARGET"
+  | "DATABASE_PERSISTENT_ACTIVE"
   | "EXTERNAL_ADAPTER_TARGET";
 
 export type IprBoundMemoryStoreCapability =
@@ -29,6 +40,8 @@ export type IprBoundMemoryStoreCapability =
   | "DATABASE_CONTRACT"
   | "DATABASE_CONNECTION_DETECTED"
   | "DATABASE_MEMORY_WRITER_REQUIRED"
+  | "DATABASE_MEMORY_WRITER_ACTIVE"
+  | "DATABASE_MEMORY_READER_ACTIVE"
   | "DATABASE_DURABILITY_TARGET"
   | "TENANT_SCOPE_REQUIRED"
   | "WORKSPACE_SCOPE_REQUIRED"
@@ -73,6 +86,12 @@ export type IprBoundMemoryStoreDescription = {
   database?: IprBoundMemoryStoreDatabaseDescription;
 };
 
+export type IprBoundMemoryDatabaseWriteContext = {
+  tenantId?: string | null;
+  workspaceId?: string | null;
+  threadId?: string | null;
+};
+
 export type IprBoundMemoryStoreAdapter<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
 > = {
@@ -93,20 +112,62 @@ export type IprBoundMemoryStoreAdapter<
   findByMemoryKeyHash(memoryKeyHash: string): TRecord | null;
 };
 
+export type IprBoundMemoryAsyncStoreAdapter<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+> = IprBoundMemoryStoreAdapter<TRecord> & {
+  getAsync(memoryKey: string): Promise<TRecord | undefined>;
+  setAsync(
+    memoryKey: string,
+    record: TRecord,
+    context?: IprBoundMemoryDatabaseWriteContext
+  ): Promise<TRecord>;
+  hasAsync(memoryKey: string): Promise<boolean>;
+  deleteAsync(memoryKey: string): Promise<boolean>;
+  clearAsync(): Promise<void>;
+  sizeAsync(): Promise<number>;
+  valuesAsync(): Promise<TRecord[]>;
+  findByMemoryKeyHashAsync(memoryKeyHash: string): Promise<TRecord | null>;
+};
+
+type MemoryRecordDatabaseRow = HbceDatabaseQueryRow & {
+  memory_id?: string;
+  memory_key_hash?: string;
+  human_ipr?: string | null;
+  runtime_ipr?: string | null;
+  session_id?: string | null;
+  thread_id?: string | null;
+  scope?: string | null;
+  authority?: string | null;
+  persistence_mode?: string | null;
+  memory_hash?: string | null;
+  memory_chain_hash?: string | null;
+  last_evt_id?: string | null;
+  last_opc_proof_id?: string | null;
+  last_opc_chain_hash?: string | null;
+  record_payload?: unknown;
+  record_count?: number | string;
+};
+
 const PROCESS_MEMORY_STORE_BOUNDARY =
   "This adapter stores IPR-bound memory in server-side process memory only. It is valid for MVP runtime demonstrations, but it is not durable enterprise storage and may reset on redeploy, cold start, instance recycling or runtime migration.";
 
 const DATABASE_READY_BOUNDARY =
-  "This adapter declares that the codebase is prepared for a future database memory layer. It is not an active durable store until a real database memory writer, access control, retention policy, encryption strategy and audit backend are connected.";
+  "This adapter declares that the codebase is prepared for a database memory layer. It is not an active durable store until the async database memory writer is used by the runtime path.";
 
 const DATABASE_PERSISTENT_BOUNDARY =
-  "This adapter declares the required target state for durable SaaS memory. DATABASE_PERSISTENT requires real database storage, tenant and workspace scoping, access control, encryption, audit logging, retention, deletion, backup, recovery and operational monitoring before use.";
+  "This adapter provides the async DATABASE_PERSISTENT target for durable SaaS memory through the memory_records table. It requires HBCE database availability, tenant and workspace scoping where available, access control, retention, deletion, backup, recovery and monitoring before production reliance.";
 
 const EXTERNAL_ADAPTER_BOUNDARY =
   "This adapter declares support for an external memory adapter supplied by the runtime. External adapters must enforce HBCE memory boundaries, IPR scoping, auditability, fail-closed behavior and legalCertification=false unless a valid regulated certification layer is later integrated.";
 
 const STORE_NOT_CONFIGURED_ERROR =
   "IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED";
+
+const DATABASE_ASYNC_REQUIRED_ERROR =
+  "IPR_BOUND_MEMORY_DATABASE_STORE_ASYNC_METHOD_REQUIRED";
+
+const DATABASE_CLEAR_DISABLED_ERROR =
+  "IPR_BOUND_MEMORY_DATABASE_CLEAR_DISABLED";
 
 const PROCESS_MEMORY_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "IPR_BOUND_MEMORY",
@@ -131,13 +192,14 @@ const DATABASE_READY_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "DELETION_REQUIRED"
 ];
 
-const DATABASE_PERSISTENT_TARGET_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
+const DATABASE_PERSISTENT_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "IPR_BOUND_MEMORY",
   "MEMORY_KEY_LOOKUP",
   "MEMORY_HASH_LOOKUP",
   "DATABASE_CONTRACT",
   "DATABASE_CONNECTION_DETECTED",
-  "DATABASE_MEMORY_WRITER_REQUIRED",
+  "DATABASE_MEMORY_WRITER_ACTIVE",
+  "DATABASE_MEMORY_READER_ACTIVE",
   "DATABASE_DURABILITY_TARGET",
   "TENANT_SCOPE_REQUIRED",
   "WORKSPACE_SCOPE_REQUIRED",
@@ -172,23 +234,23 @@ const PROCESS_MEMORY_REQUIREMENTS = [
 ];
 
 const DATABASE_READY_REQUIREMENTS = [
-  "Connect a real database memory writer.",
-  "Keep the current synchronous memory store contract as PROCESS_MEMORY_MVP until an async database persistence layer is implemented.",
+  "Connect and use the async database memory writer before claiming DATABASE_PERSISTENT continuity.",
+  "Keep the synchronous memory store contract as PROCESS_MEMORY_MVP until the route uses async memory functions.",
   "Define tenant and workspace scoping.",
   "Define access control.",
   "Define retention and deletion policy.",
   "Define encryption strategy.",
   "Define audit backend.",
   "Define backup and recovery before production use.",
-  "Do not claim DATABASE_PERSISTENT memory until write/read/update/delete operations are actually backed by the database."
+  "Do not claim DATABASE_PERSISTENT memory from the synchronous adapter path."
 ];
 
-const DATABASE_PERSISTENT_TARGET_REQUIREMENTS = [
+const DATABASE_PERSISTENT_REQUIREMENTS = [
   "Real database storage must be active.",
-  "A dedicated async memory persistence layer must write memory records to the database.",
-  "A dedicated async memory persistence layer must read memory records from the database.",
-  "Tenant isolation must be enforced.",
-  "Workspace isolation must be enforced.",
+  "The async memory persistence layer must write memory records to the memory_records table.",
+  "The async memory persistence layer must read memory records from the memory_records table.",
+  "Tenant isolation must be enforced when tenant_id is available.",
+  "Workspace isolation must be enforced when workspace_id is available.",
   "Subject IPR and runtime IPR binding must be persisted.",
   "Access control must be enforced before read, write, delete and audit operations.",
   "Encryption at rest and transport security must be defined.",
@@ -222,12 +284,22 @@ const processMemoryMap =
 globalMemoryStore.__HBCE_JOKER_C2_IPR_BOUND_MEMORY_STORE_V1__ =
   processMemoryMap;
 
+let databaseSchemaReadyPromise: Promise<void> | null = null;
+
 function normalizeMemoryKey(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
 function normalizeMemoryKeyHash(value: string): string {
   return value.replace(/\s+/g, "").trim().toUpperCase();
+}
+
+function sha256Hex(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex").toUpperCase();
+}
+
+function memoryKeyToHash(memoryKey: string): string {
+  return sha256Hex(assertMemoryKey(memoryKey));
 }
 
 function assertMemoryKey(memoryKey: string): string {
@@ -276,6 +348,66 @@ function normalizeMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function readRecordPath(value: unknown, path: string[]): unknown {
+  let current: unknown = value;
+
+  for (const key of path) {
+    if (!isRecord(current)) {
+      return undefined;
+    }
+
+    current = current[key];
+  }
+
+  return current;
+}
+
+function readStringPath(value: unknown, path: string[], fallback = ""): string {
+  const item = readRecordPath(value, path);
+
+  if (typeof item === "string" && item.trim()) {
+    return item.trim();
+  }
+
+  if (typeof item === "number" || typeof item === "boolean") {
+    return String(item);
+  }
+
+  return fallback;
+}
+
+function readNullableStringPath(value: unknown, path: string[]): string | null {
+  const text = readStringPath(value, path, "");
+
+  return text || null;
+}
+
+function safeJsonParse(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeJsonPayload(value: unknown): Record<string, unknown> | null {
+  if (isRecord(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = safeJsonParse(value);
+
+    return isRecord(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
 function getMemoryDatabaseDescription(): IprBoundMemoryStoreDatabaseDescription {
   const configured = isHbceDatabaseConfigured();
   const available = isHbceDatabaseAvailable();
@@ -285,11 +417,15 @@ function getMemoryDatabaseDescription(): IprBoundMemoryStoreDatabaseDescription 
     available,
     description: describeDefaultHbceDatabase(),
     note: available
-      ? "HBCE database connection is available, but IPR-bound memory still requires a dedicated async database memory writer before DATABASE_PERSISTENT can be claimed."
+      ? "HBCE database connection is available. The async DATABASE_PERSISTENT memory writer can use memory_records for durable IPR-bound memory when called by the runtime."
       : configured
         ? "HBCE database is configured but not fully available to the memory store contract."
         : "HBCE database is not configured. IPR-bound memory remains process-scoped unless an external adapter is supplied."
   };
+}
+
+function isDatabasePersistentUsable(): boolean {
+  return isHbceDatabaseConfigured() && isHbceDatabaseAvailable();
 }
 
 function resolveDatabasePlaceholderStatus(): IprBoundMemoryStoreStatus {
@@ -299,7 +435,21 @@ function resolveDatabasePlaceholderStatus(): IprBoundMemoryStoreStatus {
     return "NOT_CONFIGURED";
   }
 
-  return "DEGRADED";
+  return database.available ? "AVAILABLE" : "DEGRADED";
+}
+
+function resolveDatabasePersistentStatus(): IprBoundMemoryStoreStatus {
+  const database = getMemoryDatabaseDescription();
+
+  if (!database.configured) {
+    return "NOT_CONFIGURED";
+  }
+
+  if (!database.available) {
+    return "DEGRADED";
+  }
+
+  return "AVAILABLE";
 }
 
 function buildStoreDescription(input: {
@@ -339,11 +489,335 @@ function throwStoreNotConfigured(): never {
   throw new Error(STORE_NOT_CONFIGURED_ERROR);
 }
 
+function throwDatabaseAsyncRequired(): never {
+  throw new Error(DATABASE_ASYNC_REQUIRED_ERROR);
+}
+
+async function ensureDatabaseMemoryStoreReady(): Promise<void> {
+  if (!isHbceDatabaseConfigured()) {
+    throw new Error("IPR_BOUND_MEMORY_DATABASE_NOT_CONFIGURED");
+  }
+
+  if (!isHbceDatabaseAvailable()) {
+    throw new Error("IPR_BOUND_MEMORY_DATABASE_NOT_AVAILABLE");
+  }
+
+  if (!databaseSchemaReadyPromise) {
+    databaseSchemaReadyPromise = ensureHbceDatabaseReady().then((result) => {
+      if (!result.ok) {
+        throw new Error(
+          result.initialization.error ||
+            "IPR_BOUND_MEMORY_DATABASE_SCHEMA_INITIALIZATION_FAILED"
+        );
+      }
+    });
+  }
+
+  try {
+    await databaseSchemaReadyPromise;
+  } catch (error) {
+    databaseSchemaReadyPromise = null;
+    throw error;
+  }
+}
+
+function memoryRecordToDatabaseFields(
+  record: IprBoundMemoryStoreRecord,
+  context?: IprBoundMemoryDatabaseWriteContext
+): {
+  tenantId: string | null;
+  workspaceId: string | null;
+  memoryId: string;
+  memoryKeyHash: string;
+  humanIpr: string | null;
+  runtimeIpr: string;
+  sessionId: string;
+  threadId: string | null;
+  scope: string;
+  authority: string;
+  persistenceMode: "DATABASE_PERSISTENT";
+  memoryHash: string;
+  memoryChainHash: string | null;
+  lastEvtId: string | null;
+  lastOpcProofId: string | null;
+  lastOpcChainHash: string | null;
+  recordPayloadJson: string;
+} {
+  const normalizedRecord = normalizeMemoryRecord(record);
+
+  const runtimeIpr =
+    readStringPath(normalizedRecord, ["runtime", "ipr"], "") ||
+    "IPR-AI-0001";
+
+  const sessionId =
+    readStringPath(normalizedRecord, ["sessionId"], "") ||
+    "UNKNOWN_SESSION";
+
+  const scope =
+    readStringPath(normalizedRecord, ["scope"], "") ||
+    "RUNTIME_ONLY";
+
+  const authority =
+    readStringPath(normalizedRecord, ["authority"], "") ||
+    "SESSION_RUNTIME_ONLY";
+
+  const memoryHash =
+    readStringPath(normalizedRecord, ["memoryHash"], "") ||
+    sha256Hex(JSON.stringify(normalizedRecord));
+
+  const lastOpcChainHash = readNullableStringPath(
+    normalizedRecord,
+    ["lastOpcChainHash"]
+  );
+
+  return {
+    tenantId: context?.tenantId || null,
+    workspaceId: context?.workspaceId || null,
+    memoryId: normalizedRecord.memoryId,
+    memoryKeyHash: normalizedRecord.memoryKeyHash,
+    humanIpr: readNullableStringPath(normalizedRecord, ["subject", "ipr"]),
+    runtimeIpr,
+    sessionId,
+    threadId: context?.threadId || null,
+    scope,
+    authority,
+    persistenceMode: "DATABASE_PERSISTENT",
+    memoryHash,
+    memoryChainHash: memoryHash,
+    lastEvtId: readNullableStringPath(normalizedRecord, ["lastEvt"]),
+    lastOpcProofId: readNullableStringPath(normalizedRecord, ["lastOpcProofId"]),
+    lastOpcChainHash,
+    recordPayloadJson: JSON.stringify({
+      ...normalizedRecord,
+      persistenceMode: "DATABASE_PERSISTENT",
+      persistence: isRecord(normalizedRecord.persistence)
+        ? {
+            ...normalizedRecord.persistence,
+            mode: "DATABASE_PERSISTENT",
+            status: "DATABASE_PERSISTENT_ACTIVE",
+            durable: true,
+            runtimeScoped: false,
+            databaseRequired: false,
+            databaseReady: true,
+            target: "DATABASE_PERSISTENT",
+            legalCertification: false
+          }
+        : normalizedRecord.persistence
+    })
+  };
+}
+
+function databaseRowToMemoryRecord<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(row: MemoryRecordDatabaseRow): TRecord | null {
+  const payload = normalizeJsonPayload(row.record_payload);
+
+  if (!payload) {
+    return null;
+  }
+
+  const candidate = {
+    ...payload,
+    memoryId:
+      readStringPath(payload, ["memoryId"], "") ||
+      readStringPath(row, ["memory_id"], ""),
+    memoryKeyHash:
+      readStringPath(payload, ["memoryKeyHash"], "") ||
+      readStringPath(row, ["memory_key_hash"], "")
+  };
+
+  if (!readStringPath(candidate, ["memoryKey"], "")) {
+    return null;
+  }
+
+  const normalized = normalizeMemoryRecord(
+    candidate as unknown as TRecord
+  ) as TRecord;
+
+  return {
+    ...normalized,
+    persistenceMode: "DATABASE_PERSISTENT",
+    persistence: isRecord(normalized.persistence)
+      ? {
+          ...normalized.persistence,
+          mode: "DATABASE_PERSISTENT",
+          status: "DATABASE_PERSISTENT_ACTIVE",
+          durable: true,
+          runtimeScoped: false,
+          databaseRequired: false,
+          databaseReady: true,
+          target: "DATABASE_PERSISTENT",
+          legalCertification: false
+        }
+      : normalized.persistence
+  } as TRecord;
+}
+
+function cacheProcessMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
+  record: TRecord
+): TRecord {
+  const normalized = normalizeMemoryRecord(record);
+
+  processMemoryMap.set(normalized.memoryKey, normalized);
+
+  return normalized;
+}
+
+async function querySingleMemoryRecord<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(
+  sql: string,
+  params: HbceDatabaseQueryValue[]
+): Promise<TRecord | null> {
+  await ensureDatabaseMemoryStoreReady();
+
+  const result = await queryHbceDatabase<MemoryRecordDatabaseRow>(sql, params);
+
+  if (!result.ok) {
+    throw new Error(result.error || "IPR_BOUND_MEMORY_DATABASE_QUERY_FAILED");
+  }
+
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  return databaseRowToMemoryRecord<TRecord>(row);
+}
+
+async function upsertDatabaseMemoryRecord<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(
+  record: TRecord,
+  context?: IprBoundMemoryDatabaseWriteContext
+): Promise<TRecord> {
+  await ensureDatabaseMemoryStoreReady();
+
+  const normalizedRecord = normalizeMemoryRecord(record);
+  const fields = memoryRecordToDatabaseFields(normalizedRecord, context);
+
+  const result = await queryHbceDatabase<MemoryRecordDatabaseRow>(
+    `
+INSERT INTO memory_records (
+  memory_id,
+  tenant_id,
+  workspace_id,
+  memory_key_hash,
+  human_ipr,
+  runtime_ipr,
+  session_id,
+  thread_id,
+  scope,
+  authority,
+  persistence_mode,
+  memory_hash,
+  memory_chain_hash,
+  last_evt_id,
+  last_opc_proof_id,
+  last_opc_chain_hash,
+  record_payload,
+  legal_certification
+)
+VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9,
+  $10,
+  $11,
+  $12,
+  $13,
+  $14,
+  $15,
+  $16,
+  $17::jsonb,
+  false
+)
+ON CONFLICT (memory_id) DO UPDATE SET
+  tenant_id = EXCLUDED.tenant_id,
+  workspace_id = EXCLUDED.workspace_id,
+  memory_key_hash = EXCLUDED.memory_key_hash,
+  human_ipr = EXCLUDED.human_ipr,
+  runtime_ipr = EXCLUDED.runtime_ipr,
+  session_id = EXCLUDED.session_id,
+  thread_id = EXCLUDED.thread_id,
+  scope = EXCLUDED.scope,
+  authority = EXCLUDED.authority,
+  persistence_mode = EXCLUDED.persistence_mode,
+  memory_hash = EXCLUDED.memory_hash,
+  memory_chain_hash = EXCLUDED.memory_chain_hash,
+  last_evt_id = EXCLUDED.last_evt_id,
+  last_opc_proof_id = EXCLUDED.last_opc_proof_id,
+  last_opc_chain_hash = EXCLUDED.last_opc_chain_hash,
+  updated_at = now(),
+  record_payload = EXCLUDED.record_payload,
+  legal_certification = false
+RETURNING
+  memory_id,
+  memory_key_hash,
+  human_ipr,
+  runtime_ipr,
+  session_id,
+  thread_id,
+  scope,
+  authority,
+  persistence_mode,
+  memory_hash,
+  memory_chain_hash,
+  last_evt_id,
+  last_opc_proof_id,
+  last_opc_chain_hash,
+  record_payload;
+`.trim(),
+    [
+      fields.memoryId,
+      fields.tenantId,
+      fields.workspaceId,
+      fields.memoryKeyHash,
+      fields.humanIpr,
+      fields.runtimeIpr,
+      fields.sessionId,
+      fields.threadId,
+      fields.scope,
+      fields.authority,
+      fields.persistenceMode,
+      fields.memoryHash,
+      fields.memoryChainHash,
+      fields.lastEvtId,
+      fields.lastOpcProofId,
+      fields.lastOpcChainHash,
+      fields.recordPayloadJson
+    ]
+  );
+
+  if (!result.ok) {
+    throw new Error(result.error || "IPR_BOUND_MEMORY_DATABASE_UPSERT_FAILED");
+  }
+
+  const persisted =
+    result.rows[0] ? databaseRowToMemoryRecord<TRecord>(result.rows[0]) : null;
+
+  const finalRecord = persisted || ({
+    ...normalizedRecord,
+    persistenceMode: "DATABASE_PERSISTENT"
+  } as TRecord);
+
+  cacheProcessMemoryRecord(finalRecord);
+
+  return finalRecord;
+}
+
 export function createProcessMemoryStoreAdapter<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
 >(
   store: Map<string, TRecord> = processMemoryMap as Map<string, TRecord>
-): IprBoundMemoryStoreAdapter<TRecord> {
+): IprBoundMemoryAsyncStoreAdapter<TRecord> {
   return {
     name: "HBCE_JOKER_C2_PROCESS_MEMORY_STORE",
     kind: "PROCESS_MEMORY_MVP",
@@ -415,6 +889,38 @@ export function createProcessMemoryStoreAdapter<
       }
 
       return null;
+    },
+
+    async getAsync(memoryKey: string): Promise<TRecord | undefined> {
+      return this.get(memoryKey);
+    },
+
+    async setAsync(memoryKey: string, record: TRecord): Promise<TRecord> {
+      return this.set(memoryKey, record);
+    },
+
+    async hasAsync(memoryKey: string): Promise<boolean> {
+      return this.has(memoryKey);
+    },
+
+    async deleteAsync(memoryKey: string): Promise<boolean> {
+      return this.delete(memoryKey);
+    },
+
+    async clearAsync(): Promise<void> {
+      this.clear();
+    },
+
+    async sizeAsync(): Promise<number> {
+      return this.size();
+    },
+
+    async valuesAsync(): Promise<TRecord[]> {
+      return this.values();
+    },
+
+    async findByMemoryKeyHashAsync(memoryKeyHash: string): Promise<TRecord | null> {
+      return this.findByMemoryKeyHash(memoryKeyHash);
     }
   };
 }
@@ -433,7 +939,7 @@ function createUnavailableMemoryStoreAdapter<
   capabilities: IprBoundMemoryStoreCapability[];
   requirements: string[];
   databaseAware?: boolean;
-}): IprBoundMemoryStoreAdapter<TRecord> {
+}): IprBoundMemoryAsyncStoreAdapter<TRecord> {
   return {
     name: input.name,
     kind: input.kind,
@@ -496,13 +1002,51 @@ function createUnavailableMemoryStoreAdapter<
     findByMemoryKeyHash(memoryKeyHash: string): TRecord | null {
       void memoryKeyHash;
       return throwStoreNotConfigured();
+    },
+
+    async getAsync(memoryKey: string): Promise<TRecord | undefined> {
+      void memoryKey;
+      return throwStoreNotConfigured();
+    },
+
+    async setAsync(memoryKey: string, record: TRecord): Promise<TRecord> {
+      void memoryKey;
+      void record;
+      return throwStoreNotConfigured();
+    },
+
+    async hasAsync(memoryKey: string): Promise<boolean> {
+      void memoryKey;
+      return throwStoreNotConfigured();
+    },
+
+    async deleteAsync(memoryKey: string): Promise<boolean> {
+      void memoryKey;
+      return throwStoreNotConfigured();
+    },
+
+    async clearAsync(): Promise<void> {
+      throwStoreNotConfigured();
+    },
+
+    async sizeAsync(): Promise<number> {
+      return 0;
+    },
+
+    async valuesAsync(): Promise<TRecord[]> {
+      return [];
+    },
+
+    async findByMemoryKeyHashAsync(memoryKeyHash: string): Promise<TRecord | null> {
+      void memoryKeyHash;
+      return throwStoreNotConfigured();
     }
   };
 }
 
 export function createDatabaseReadyPlaceholderAdapter<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
->(): IprBoundMemoryStoreAdapter<TRecord> {
+>(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
   return createUnavailableMemoryStoreAdapter<TRecord>({
     name: "HBCE_JOKER_C2_DATABASE_READY_PLACEHOLDER",
     kind: "DATABASE_READY",
@@ -518,27 +1062,330 @@ export function createDatabaseReadyPlaceholderAdapter<
   });
 }
 
+export function createDatabasePersistentMemoryStoreAdapter<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
+  const databaseReady = isDatabasePersistentUsable();
+
+  return {
+    name: "HBCE_JOKER_C2_DATABASE_PERSISTENT_MEMORY_STORE",
+    kind: "DATABASE_PERSISTENT",
+    durable: databaseReady,
+    runtimeScoped: !databaseReady,
+
+    describe(): IprBoundMemoryStoreDescription {
+      const active = isDatabasePersistentUsable();
+
+      return buildStoreDescription({
+        name: this.name,
+        kind: this.kind,
+        status: resolveDatabasePersistentStatus(),
+        durable: active,
+        runtimeScoped: !active,
+        recordCount: 0,
+        boundary: DATABASE_PERSISTENT_BOUNDARY,
+        persistenceStage: active
+          ? "DATABASE_PERSISTENT_ACTIVE"
+          : "DATABASE_PERSISTENT_TARGET",
+        saasReady: active,
+        requiresDatabase: true,
+        capabilities: DATABASE_PERSISTENT_CAPABILITIES,
+        requirements: DATABASE_PERSISTENT_REQUIREMENTS,
+        database: getMemoryDatabaseDescription()
+      });
+    },
+
+    get(memoryKey: string): TRecord | undefined {
+      const cached = processIprBoundMemoryStore.get(memoryKey) as TRecord | undefined;
+
+      if (cached) {
+        return cached;
+      }
+
+      return throwDatabaseAsyncRequired();
+    },
+
+    set(memoryKey: string, record: TRecord): TRecord {
+      void memoryKey;
+      void record;
+      return throwDatabaseAsyncRequired();
+    },
+
+    has(memoryKey: string): boolean {
+      const cached = processIprBoundMemoryStore.has(memoryKey);
+
+      if (cached) {
+        return true;
+      }
+
+      return throwDatabaseAsyncRequired();
+    },
+
+    delete(memoryKey: string): boolean {
+      void memoryKey;
+      return throwDatabaseAsyncRequired();
+    },
+
+    clear(): void {
+      throwDatabaseAsyncRequired();
+    },
+
+    size(): number {
+      return 0;
+    },
+
+    values(): TRecord[] {
+      return [];
+    },
+
+    findByMemoryKeyHash(memoryKeyHash: string): TRecord | null {
+      const cached =
+        processIprBoundMemoryStore.findByMemoryKeyHash(memoryKeyHash) as
+          | TRecord
+          | null;
+
+      if (cached) {
+        return cached;
+      }
+
+      return throwDatabaseAsyncRequired();
+    },
+
+    async getAsync(memoryKey: string): Promise<TRecord | undefined> {
+      const normalizedKey = assertMemoryKey(memoryKey);
+      const memoryKeyHash = memoryKeyToHash(normalizedKey);
+
+      const record = await querySingleMemoryRecord<TRecord>(
+        `
+SELECT
+  memory_id,
+  memory_key_hash,
+  human_ipr,
+  runtime_ipr,
+  session_id,
+  thread_id,
+  scope,
+  authority,
+  persistence_mode,
+  memory_hash,
+  memory_chain_hash,
+  last_evt_id,
+  last_opc_proof_id,
+  last_opc_chain_hash,
+  record_payload
+FROM memory_records
+WHERE memory_key_hash = $1
+  AND record_payload ->> 'memoryKey' = $2
+  AND legal_certification = false
+ORDER BY updated_at DESC
+LIMIT 1;
+`.trim(),
+        [memoryKeyHash, normalizedKey]
+      );
+
+      if (record) {
+        cacheProcessMemoryRecord(record);
+      }
+
+      return record || undefined;
+    },
+
+    async setAsync(
+      memoryKey: string,
+      record: TRecord,
+      context?: IprBoundMemoryDatabaseWriteContext
+    ): Promise<TRecord> {
+      const normalizedKey = assertMemoryKey(memoryKey);
+      const normalizedRecord = normalizeMemoryRecord(record);
+
+      if (normalizedRecord.memoryKey !== normalizedKey) {
+        throw new Error("IPR_BOUND_MEMORY_STORE_KEY_RECORD_MISMATCH");
+      }
+
+      const persisted = await upsertDatabaseMemoryRecord<TRecord>(
+        {
+          ...normalizedRecord,
+          memoryKeyHash: assertMemoryKeyHash(normalizedRecord.memoryKeyHash)
+        },
+        context
+      );
+
+      cacheProcessMemoryRecord(persisted);
+
+      return persisted;
+    },
+
+    async hasAsync(memoryKey: string): Promise<boolean> {
+      const record = await this.getAsync(memoryKey);
+
+      return Boolean(record);
+    },
+
+    async deleteAsync(memoryKey: string): Promise<boolean> {
+      await ensureDatabaseMemoryStoreReady();
+
+      const normalizedKey = assertMemoryKey(memoryKey);
+      const memoryKeyHash = memoryKeyToHash(normalizedKey);
+
+      const result = await queryHbceDatabase<MemoryRecordDatabaseRow>(
+        `
+DELETE FROM memory_records
+WHERE memory_key_hash = $1
+  AND record_payload ->> 'memoryKey' = $2
+  AND legal_certification = false
+RETURNING memory_id;
+`.trim(),
+        [memoryKeyHash, normalizedKey]
+      );
+
+      if (!result.ok) {
+        throw new Error(result.error || "IPR_BOUND_MEMORY_DATABASE_DELETE_FAILED");
+      }
+
+      processIprBoundMemoryStore.delete(normalizedKey);
+
+      return result.rows.length > 0;
+    },
+
+    async clearAsync(): Promise<void> {
+      if (process.env.HBCE_ALLOW_MEMORY_DATABASE_CLEAR !== "true") {
+        throw new Error(DATABASE_CLEAR_DISABLED_ERROR);
+      }
+
+      await ensureDatabaseMemoryStoreReady();
+
+      const result = await queryHbceDatabase(
+        `
+DELETE FROM memory_records
+WHERE legal_certification = false;
+`.trim(),
+        []
+      );
+
+      if (!result.ok) {
+        throw new Error(result.error || "IPR_BOUND_MEMORY_DATABASE_CLEAR_FAILED");
+      }
+
+      processIprBoundMemoryStore.clear();
+    },
+
+    async sizeAsync(): Promise<number> {
+      await ensureDatabaseMemoryStoreReady();
+
+      const result = await queryHbceDatabase<MemoryRecordDatabaseRow>(
+        `
+SELECT COUNT(*)::text AS record_count
+FROM memory_records
+WHERE legal_certification = false;
+`.trim(),
+        []
+      );
+
+      if (!result.ok) {
+        throw new Error(result.error || "IPR_BOUND_MEMORY_DATABASE_SIZE_FAILED");
+      }
+
+      const count = result.rows[0]?.record_count;
+
+      if (typeof count === "number") {
+        return count;
+      }
+
+      if (typeof count === "string") {
+        const parsed = Number.parseInt(count, 10);
+
+        return Number.isFinite(parsed) ? parsed : 0;
+      }
+
+      return 0;
+    },
+
+    async valuesAsync(): Promise<TRecord[]> {
+      await ensureDatabaseMemoryStoreReady();
+
+      const result = await queryHbceDatabase<MemoryRecordDatabaseRow>(
+        `
+SELECT
+  memory_id,
+  memory_key_hash,
+  human_ipr,
+  runtime_ipr,
+  session_id,
+  thread_id,
+  scope,
+  authority,
+  persistence_mode,
+  memory_hash,
+  memory_chain_hash,
+  last_evt_id,
+  last_opc_proof_id,
+  last_opc_chain_hash,
+  record_payload
+FROM memory_records
+WHERE legal_certification = false
+ORDER BY updated_at DESC
+LIMIT 100;
+`.trim(),
+        []
+      );
+
+      if (!result.ok) {
+        throw new Error(result.error || "IPR_BOUND_MEMORY_DATABASE_VALUES_FAILED");
+      }
+
+      return result.rows
+        .map((row) => databaseRowToMemoryRecord<TRecord>(row))
+        .filter((record): record is TRecord => Boolean(record));
+    },
+
+    async findByMemoryKeyHashAsync(memoryKeyHash: string): Promise<TRecord | null> {
+      const normalizedHash = assertMemoryKeyHash(memoryKeyHash);
+
+      const record = await querySingleMemoryRecord<TRecord>(
+        `
+SELECT
+  memory_id,
+  memory_key_hash,
+  human_ipr,
+  runtime_ipr,
+  session_id,
+  thread_id,
+  scope,
+  authority,
+  persistence_mode,
+  memory_hash,
+  memory_chain_hash,
+  last_evt_id,
+  last_opc_proof_id,
+  last_opc_chain_hash,
+  record_payload
+FROM memory_records
+WHERE memory_key_hash = $1
+  AND legal_certification = false
+ORDER BY updated_at DESC
+LIMIT 1;
+`.trim(),
+        [normalizedHash]
+      );
+
+      if (record) {
+        cacheProcessMemoryRecord(record);
+      }
+
+      return record;
+    }
+  };
+}
+
 export function createDatabasePersistentPlaceholderAdapter<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
->(): IprBoundMemoryStoreAdapter<TRecord> {
-  return createUnavailableMemoryStoreAdapter<TRecord>({
-    name: "HBCE_JOKER_C2_DATABASE_PERSISTENT_TARGET_PLACEHOLDER",
-    kind: "DATABASE_READY",
-    durable: false,
-    runtimeScoped: false,
-    boundary: DATABASE_PERSISTENT_BOUNDARY,
-    persistenceStage: "DATABASE_PERSISTENT_TARGET",
-    saasReady: false,
-    requiresDatabase: true,
-    capabilities: DATABASE_PERSISTENT_TARGET_CAPABILITIES,
-    requirements: DATABASE_PERSISTENT_TARGET_REQUIREMENTS,
-    databaseAware: true
-  });
+>(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
+  return createDatabasePersistentMemoryStoreAdapter<TRecord>();
 }
 
 export function createExternalAdapterPlaceholder<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
->(): IprBoundMemoryStoreAdapter<TRecord> {
+>(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
   return createUnavailableMemoryStoreAdapter<TRecord>({
     name: "HBCE_JOKER_C2_EXTERNAL_MEMORY_ADAPTER_PLACEHOLDER",
     kind: "EXTERNAL_ADAPTER",
@@ -557,8 +1404,8 @@ export function createExternalAdapterPlaceholder<
 export function createExternalIprBoundMemoryStoreAdapter<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
 >(
-  adapter: IprBoundMemoryStoreAdapter<TRecord>
-): IprBoundMemoryStoreAdapter<TRecord> {
+  adapter: IprBoundMemoryAsyncStoreAdapter<TRecord>
+): IprBoundMemoryAsyncStoreAdapter<TRecord> {
   const description = adapter.describe();
 
   if (adapter.kind !== "EXTERNAL_ADAPTER") {
@@ -582,14 +1429,14 @@ export function createExternalIprBoundMemoryStoreAdapter<
 
 export const processIprBoundMemoryStore =
   createProcessMemoryStoreAdapter<IprBoundMemoryStoreRecord>(
-    processMemoryMap
+    processMemoryMap as Map<string, IprBoundMemoryStoreRecord>
   );
 
 export const databaseReadyIprBoundMemoryStore =
   createDatabaseReadyPlaceholderAdapter<IprBoundMemoryStoreRecord>();
 
 export const databasePersistentIprBoundMemoryStore =
-  createDatabasePersistentPlaceholderAdapter<IprBoundMemoryStoreRecord>();
+  createDatabasePersistentMemoryStoreAdapter<IprBoundMemoryStoreRecord>();
 
 export const externalIprBoundMemoryStore =
   createExternalAdapterPlaceholder<IprBoundMemoryStoreRecord>();
@@ -600,33 +1447,43 @@ export function getDefaultIprBoundMemoryStore<
   return processIprBoundMemoryStore as unknown as IprBoundMemoryStoreAdapter<TRecord>;
 }
 
+export function getDefaultIprBoundMemoryAsyncStore<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
+  if (isIprBoundMemoryDatabasePersistentActive()) {
+    return getDatabasePersistentIprBoundMemoryStore<TRecord>();
+  }
+
+  return getProcessIprBoundMemoryStore<TRecord>();
+}
+
 export function getProcessIprBoundMemoryStore<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
->(): IprBoundMemoryStoreAdapter<TRecord> {
-  return processIprBoundMemoryStore as unknown as IprBoundMemoryStoreAdapter<TRecord>;
+>(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
+  return processIprBoundMemoryStore as unknown as IprBoundMemoryAsyncStoreAdapter<TRecord>;
 }
 
 export function getDatabaseReadyIprBoundMemoryStore<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
->(): IprBoundMemoryStoreAdapter<TRecord> {
-  return databaseReadyIprBoundMemoryStore as unknown as IprBoundMemoryStoreAdapter<TRecord>;
+>(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
+  return databaseReadyIprBoundMemoryStore as unknown as IprBoundMemoryAsyncStoreAdapter<TRecord>;
 }
 
 export function getDatabasePersistentIprBoundMemoryStore<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
->(): IprBoundMemoryStoreAdapter<TRecord> {
-  return databasePersistentIprBoundMemoryStore as unknown as IprBoundMemoryStoreAdapter<TRecord>;
+>(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
+  return databasePersistentIprBoundMemoryStore as unknown as IprBoundMemoryAsyncStoreAdapter<TRecord>;
 }
 
 export function getExternalIprBoundMemoryStore<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
->(): IprBoundMemoryStoreAdapter<TRecord> {
-  return externalIprBoundMemoryStore as unknown as IprBoundMemoryStoreAdapter<TRecord>;
+>(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
+  return externalIprBoundMemoryStore as unknown as IprBoundMemoryAsyncStoreAdapter<TRecord>;
 }
 
 export function getSaasTargetIprBoundMemoryStore<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
->(): IprBoundMemoryStoreAdapter<TRecord> {
+>(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
   return getDatabasePersistentIprBoundMemoryStore<TRecord>();
 }
 
@@ -635,6 +1492,26 @@ export function selectIprBoundMemoryStore<
 >(
   kind: IprBoundMemoryStoreKind
 ): IprBoundMemoryStoreAdapter<TRecord> {
+  if (kind === "PROCESS_MEMORY_MVP") {
+    return getProcessIprBoundMemoryStore<TRecord>();
+  }
+
+  if (kind === "DATABASE_READY") {
+    return getDatabaseReadyIprBoundMemoryStore<TRecord>();
+  }
+
+  if (kind === "DATABASE_PERSISTENT") {
+    return getDatabasePersistentIprBoundMemoryStore<TRecord>();
+  }
+
+  return getExternalIprBoundMemoryStore<TRecord>();
+}
+
+export function selectIprBoundMemoryAsyncStore<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(
+  kind: IprBoundMemoryStoreKind
+): IprBoundMemoryAsyncStoreAdapter<TRecord> {
   if (kind === "PROCESS_MEMORY_MVP") {
     return getProcessIprBoundMemoryStore<TRecord>();
   }
@@ -659,15 +1536,35 @@ export function isIprBoundMemoryDatabaseAvailable(): boolean {
 }
 
 export function isIprBoundMemoryDatabasePersistentActive(): boolean {
-  return false;
+  return isDatabasePersistentUsable();
 }
 
 export function getIprBoundMemoryDatabaseDescription(): IprBoundMemoryStoreDatabaseDescription {
   return getMemoryDatabaseDescription();
 }
 
+export async function ensureIprBoundMemoryDatabaseReady(): Promise<void> {
+  await ensureDatabaseMemoryStoreReady();
+}
+
+export async function getRuntimeMemoryByKeyHashAsync(
+  memoryKeyHash: string
+): Promise<IprBoundMemoryStoreRecord | null> {
+  return getDefaultIprBoundMemoryAsyncStore().findByMemoryKeyHashAsync(
+    memoryKeyHash
+  );
+}
+
+export async function getRuntimeMemoryStoreSizeAsync(): Promise<number> {
+  return getDefaultIprBoundMemoryAsyncStore().sizeAsync();
+}
+
 export function describeDefaultIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
   return getDefaultIprBoundMemoryStore().describe();
+}
+
+export function describeDefaultIprBoundMemoryAsyncStore(): IprBoundMemoryStoreDescription {
+  return getDefaultIprBoundMemoryAsyncStore().describe();
 }
 
 export function describeProcessIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
@@ -711,4 +1608,8 @@ export function getRuntimeMemoryByKeyHash(
 
 export function clearProcessRuntimeMemory(): void {
   processIprBoundMemoryStore.clear();
+}
+
+export async function clearPersistentRuntimeMemoryForTestsOnly(): Promise<void> {
+  await getDatabasePersistentIprBoundMemoryStore().clearAsync();
 }
