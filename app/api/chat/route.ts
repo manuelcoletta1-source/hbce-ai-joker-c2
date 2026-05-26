@@ -45,6 +45,10 @@ import type { MatrixTransformativeMemoryEvaluation } from "@/lib/matrix-transfor
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+type JsonRecord = Record<string, unknown>;
+
 type RuntimeState = "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID";
 
 type RuntimeDecision =
@@ -587,8 +591,6 @@ type GeneratedResponse = {
     | "READINESS_CHECKLIST"
     | "DEFENSIVE_CYBER_RISK_ANALYSIS"
     | "COMMERCIAL_STRATEGY"
-    | "DOCUMENT_BATCH_PLAN"
-    | "COMMERCIAL_PARTNERSHIP"
     | "FALLBACK";
   multimodalAttempted?: boolean;
   multimodalFallbackUsed?: boolean;
@@ -712,7 +714,6 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bHERMETICUM\s*BCE\s*S\.r\.l\.\b/g, "HERMETICUM B.C.E. S.r.l."],
   [/\bHBCE\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
   [/\bHERMETICUM\s+B\.C\.E\.\s+B\.C\.E\./g, "HERMETICUM B.C.E."],
-
   [/\bContralto\b/g, "Alto"],
   [/\bcontralto\b/g, "alto"],
   [/\bAI Atto\b/g, "AI Act"],
@@ -722,7 +723,6 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bSOC arredamento\b/gi, "SOC operativo"],
   [/\bSOC mobiliario\b/gi, "SOC operativo"],
   [/\bSOCI\b/g, "SOC"],
-
   [/\bDiritti di proprietà intellettuale umani\b/gi, "IPR biologico"],
   [/\bDiritti di proprietà intellettuale umano\b/gi, "IPR biologico"],
   [/\bdiritti di proprietà intellettuale umani\b/gi, "IPR biologico"],
@@ -739,7 +739,6 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bDPI biologico\b/g, "IPR biologico"],
   [/\bIdentificativo DPI EVT traccia\b/g, "IPR identifica. EVT traccia"],
   [/\bIdentificativo DPI\b/g, "IPR"],
-
   [/\blegalCertificazione\b/g, "legalCertification"],
   [/\blegalcertificazione\b/g, "legalCertification"],
   [/\bcertificazionelegale=false\b/gi, "legalCertification=false"],
@@ -748,7 +747,6 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\blegal certification=false\b/gi, "legalCertification=false"],
   [/\blegal certification = false\b/gi, "legalCertification=false"],
   [/\bcertificazioneLegale=false\b/g, "legalCertification=false"],
-
   [/\bOPCRimane\b/g, "OPC rimane"],
   [/\bProof ricevute\b/g, "proof receipt"],
   [/\bproof ricevute\b/g, "proof receipt"],
@@ -769,18 +767,15 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bOPC sono prove ricevute tecnici\b/gi, "gli OPC sono ricevute tecniche di prova"],
   [/\bprova documentale\b/gi, "evidenza tecnica"],
   [/\bprove collega\b/gi, "prove che collegano"],
-
   [/\bnessuna pista di controllo, nessuna impresa di inaffidabilità\b/gi, "nessun audit trail, nessuna affidabilità enterprise-grade"],
   [/\bnessuna pista di controllo\b/gi, "nessun audit trail"],
   [/\bimpresa di inaffidabilità\b/gi, "affidabilità enterprise-grade"],
   [/\bpista di controllo\b/gi, "audit trail"],
-
   [/\btempestivi non controllati\b/gi, "prompt non controllati"],
   [/\bbut non autorizzato\b/gi, "accesso non autorizzato"],
   [/\bfurto di prove\b/gi, "furto di credenziali"],
   [/\bprendendo di mira gli illeciti\b/gi, "targeting illecito"],
   [/\btargeting degli illeciti\b/gi, "targeting illecito"],
-
   [/\bdimostrare la tecnica\b/gi, "prova tecnica"],
   [/\bdimostrare tecnico\b/gi, "prova tecnica"],
   [/\bdimostrare la prova tecnica\b/gi, "produrre prova tecnica"],
@@ -790,7 +785,6 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bflusso di lavoro\b/gi, "workflow"],
   [/\bprova di ricevimento\b/gi, "proof receipt"],
   [/\bprova ricevuta\b/gi, "proof receipt"],
-
   [/\bMagnete al piombo\b/gi, "Lead magnet"],
   [/\bmagnete al piombo\b/gi, "lead magnet"],
   [/\bprivacy del viso\b/gi, "consulenti privacy"],
@@ -806,7 +800,6 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bSingolo:\b/g, "Output:"],
   [/\bUnico:\b/g, "Output:"],
   [/\bBersaglio:\b/g, "Target:"],
-
   [/\bRiduzione dell'HBCE\b/gi, "Risoluzione HBCE"],
   [/\bRiduzione dell’HBCE\b/gi, "Risoluzione HBCE"],
   [/\bRiduzione HBCE\b/gi, "Risoluzione HBCE"],
@@ -824,7 +817,6 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bfallito-chiuso\b/gi, "fail-closed"],
   [/\bTabù temporale\b/gi, "timestamp"],
   [/\btabù temporale\b/gi, "timestamp"],
-
   [/\b-Figura;/g, "- Regione;"],
   [/\bFigura;/g, "Regione;"],
   [/\bComune;\s*-Figura;\s*-\s*Stato\b/g, "Comune; Regione; Stato"],
@@ -858,12 +850,10 @@ const CANONICAL_OUTPUT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bUso difensivo dell’IA del profilo\b/gi, "profilo di uso difensivo dell'AI"],
   [/\bPilota 100% indipendente\b/gi, "100% nel pilota"],
   [/\bterapia occupazionale corrotta\b/gi, "dipendenza operativa critica"],
-
   [/\bFonti utilizzati\b/gi, "Fonti utilizzate"],
   [/\bOggetto proponente\b/gi, "Soggetto proponente"],
   [/\bHemreticum\b/gi, "HERMETICUM"],
   [/\bHermeticum BCE\b/gi, "HERMETICUM B.C.E."],
-
   [/\bIPR\s*->\s*EVT\s*->\s*OPC\s*->\s*MATRIX\s*->\s*HBCE\b/g, "IPR → EVT → OPC → MATRIX → HBCE"],
   [/\bIPR identifica\. EVT traccia\. OPC prova\. Coordinato MATRIX\. HBCE governa\./g, "IPR identifica. EVT traccia. OPC prova. MATRIX coordina. HBCE governa."],
   [/\bIPR identifica\. EVT traccia\. OPC prova\. Coordinato MATRIX\. HBCE governa\b/g, "IPR identifica. EVT traccia. OPC prova. MATRIX coordina. HBCE governa."]
@@ -1052,7 +1042,7 @@ const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is JsonRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
@@ -1060,6 +1050,13 @@ function readPath(value: unknown, path: string[]): unknown {
   let current: unknown = value;
 
   for (const key of path) {
+    if (Array.isArray(current)) {
+      const index = Number(key);
+      if (!Number.isInteger(index)) return undefined;
+      current = current[index];
+      continue;
+    }
+
     if (!isRecord(current)) return undefined;
     current = current[key];
   }
@@ -1073,12 +1070,51 @@ function safeRuntimeString(value: unknown, fallback = ""): string {
   return fallback;
 }
 
+function safeRuntimeBoolean(value: unknown, fallback = false): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return fallback;
+}
+
+function safeRuntimeArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function safeRuntimeStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => safeRuntimeString(item, ""))
+      .filter(Boolean);
+  }
+
+  const text = safeRuntimeString(value, "");
+  if (!text) return [];
+
+  return text
+    .split(/[,\s|]+/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function firstRuntimeString(value: unknown, paths: string[][], fallback = ""): string {
   for (const path of paths) {
     const item = readPath(value, path);
     const text = safeRuntimeString(item, "");
 
     if (text) return text;
+  }
+
+  return fallback;
+}
+
+function firstRuntimeBoolean(value: unknown, paths: string[][], fallback = false): boolean {
+  for (const path of paths) {
+    const item = readPath(value, path);
+    if (typeof item === "boolean") return item;
   }
 
   return fallback;
@@ -1644,24 +1680,6 @@ function summarizeFiles(files: NormalizedFile[]) {
   };
 }
 
-function normalizeScope(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => safeRuntimeString(item, ""))
-      .filter(Boolean)
-      .map((item) => item.trim());
-  }
-
-  const text = safeRuntimeString(value, "");
-
-  if (!text) return [];
-
-  return text
-    .split(/[,\s|]+/g)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
 function hasJokerAccessScope(scope: string[]): boolean {
   return scope.some((item) => item.toUpperCase() === "JOKER_C2_ACCESS");
 }
@@ -1825,7 +1843,7 @@ function evaluateIprHandoff(value: unknown): IprHandoffEvaluation {
       ""
     ).toUpperCase() || "UNKNOWN";
 
-  const certificateScope = normalizeScope(
+  const certificateScope = safeRuntimeStringArray(
     readPath(value, ["certificate", "certificate_scope"]) ??
       readPath(value, ["certificate", "scope"]) ??
       readPath(value, ["operationalCertificate", "certificate_scope"]) ??
@@ -1952,30 +1970,49 @@ function evaluateIprHandoff(value: unknown): IprHandoffEvaluation {
 function toIprHandoffEvaluationFromAccountSession(
   resolution: IprAccountSessionResolution
 ): IprHandoffEvaluation {
-  const runtimeHandoff = resolution.runtimeHandoff;
-  const subject = runtimeHandoff.subject;
-  const certificate = runtimeHandoff.certificate;
+  const runtimeHandoff = readPath(resolution, ["runtimeHandoff"]);
+  const subject = readPath(runtimeHandoff, ["subject"]);
+  const certificate = readPath(runtimeHandoff, ["certificate"]);
+
+  const authenticated = safeRuntimeBoolean(readPath(resolution, ["authenticated"]));
+  const isValid = safeRuntimeBoolean(readPath(runtimeHandoff, ["isValid"]));
+  const subjectEntity = firstRuntimeString(subject, [["entity"], ["name"], ["fullName"], ["full_name"]], "VERIFIED_BIOLOGICAL_SUBJECT");
+  const subjectIpr = firstRuntimeString(subject, [["ipr"], ["iprId"], ["ipr_id"]], "");
+  const subjectKind = firstRuntimeString(subject, [["kind"]], "BIOLOGICAL_SUBJECT");
+  const certificateId = firstRuntimeString(certificate, [["certificateId"], ["certificate_id"], ["id"]], "");
+  const certificateKind = firstRuntimeString(certificate, [["certificateKind"], ["certificate_kind"], ["kind"]], "CERTIFICATE_09_OPERATIONAL");
+  const certificateStatus = firstRuntimeString(certificate, [["certificateStatus"], ["certificate_status"], ["status"]], "").toUpperCase();
+  const certificateScope = safeRuntimeStringArray(
+    readPath(certificate, ["certificateScope"]) ??
+      readPath(certificate, ["certificate_scope"]) ??
+      readPath(certificate, ["scope"])
+  );
+  const cardSerial = firstRuntimeString(certificate, [["cardSerial"], ["card_serial"]], "");
+  const certificateHash = firstRuntimeString(certificate, [["certificateHash"], ["certificate_hash"], ["hash"]], "");
+  const accessDecision = firstRuntimeString(runtimeHandoff, [["accessDecision"], ["access_decision"]], "PENDING_SERVER_VALIDATION");
+  const matrixState = firstRuntimeString(runtimeHandoff, [["matrixState"], ["matrix_state"]], "MATRIX_LIMITED");
+  const semanticMemoryScope = firstRuntimeString(runtimeHandoff, [["semanticMemoryScope"], ["semantic_memory_scope"]], "RUNTIME_ONLY");
+  const identityBinding = firstRuntimeString(runtimeHandoff, [["identityBinding"], ["identity_binding"]], "NO_VERIFIED_BIOLOGICAL_SUBJECT");
+  const source = firstRuntimeString(runtimeHandoff, [["source"]], "IPR_ACCOUNT_SESSION");
+  const reconstructedHandoff = readPath(resolution, ["reconstructedIprHandoff"]);
 
   const valid =
-    resolution.authenticated &&
-    runtimeHandoff.isValid &&
-    Boolean(subject?.ipr) &&
-    Boolean(certificate?.certificateId) &&
-    certificate?.certificateStatus === "ACTIVE" &&
-    Array.isArray(certificate.certificateScope) &&
-    hasJokerAccessScope(certificate.certificateScope);
+    authenticated &&
+    isValid &&
+    Boolean(subjectIpr) &&
+    Boolean(certificateId) &&
+    certificateStatus === "ACTIVE" &&
+    hasJokerAccessScope(certificateScope);
 
-  if (!valid || !subject || !certificate) {
+  if (!valid) {
     return {
       status: "INVALID",
       valid: false,
-      error: resolution.reason,
-      source: runtimeHandoff.source || "IPR_ACCOUNT_SESSION",
-      rawHash: resolution.reconstructedIprHandoff
-        ? sha256Short(resolution.reconstructedIprHandoff)
-        : null,
+      error: firstRuntimeString(resolution, [["reason"]], "IPR_ACCOUNT_SESSION_INVALID"),
+      source: source || "IPR_ACCOUNT_SESSION",
+      rawHash: reconstructedHandoff ? sha256Short(reconstructedHandoff) : null,
       validationMode: "R&D_STRUCTURAL_VALIDATION",
-      accessDecision: normalizeAccessDecision(runtimeHandoff.accessDecision),
+      accessDecision: normalizeAccessDecision(accessDecision),
       matrixState: "MATRIX_LIMITED",
       semanticMemoryScope: "RUNTIME_ONLY",
       identityBinding: "NO_VERIFIED_BIOLOGICAL_SUBJECT",
@@ -1988,24 +2025,22 @@ function toIprHandoffEvaluationFromAccountSession(
     valid: true,
     error: null,
     source: "IPR_ACCOUNT_SESSION",
-    rawHash: resolution.reconstructedIprHandoff
-      ? sha256Short(resolution.reconstructedIprHandoff)
-      : null,
+    rawHash: reconstructedHandoff ? sha256Short(reconstructedHandoff) : null,
     validationMode: "R&D_STRUCTURAL_VALIDATION",
     accessDecision: "ACCESS_GRANTED",
-    matrixState: normalizeMatrixState(runtimeHandoff.matrixState),
-    semanticMemoryScope: normalizeSemanticMemoryScope(runtimeHandoff.semanticMemoryScope),
-    identityBinding: normalizeIdentityBinding(runtimeHandoff.identityBinding),
+    matrixState: normalizeMatrixState(matrixState),
+    semanticMemoryScope: normalizeSemanticMemoryScope(semanticMemoryScope),
+    identityBinding: normalizeIdentityBinding(identityBinding),
     verifiedSubject: {
-      entity: subject.entity,
-      ipr: subject.ipr,
-      kind: subject.kind,
-      certificateId: certificate.certificateId,
-      certificateKind: certificate.certificateKind || "CERTIFICATE_09_OPERATIONAL",
+      entity: subjectEntity,
+      ipr: subjectIpr,
+      kind: subjectKind,
+      certificateId,
+      certificateKind,
       certificateStatus: "ACTIVE",
-      certificateScope: certificate.certificateScope,
-      cardSerial: certificate.cardSerial || null,
-      certificateHash: certificate.certificateHash || null,
+      certificateScope,
+      cardSerial: cardSerial || null,
+      certificateHash: certificateHash || null,
       accessDecision: "ACCESS_GRANTED",
       accessScope: "JOKER_C2_ACCESS",
       identityBinding: "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
@@ -2017,7 +2052,7 @@ function buildInvalidAccountSessionHandoff(input: {
   accountSession: IprAccountSessionResolution;
   clientHandoff: IprHandoffEvaluation;
 }): IprHandoffEvaluation {
-  const reason = input.accountSession.reason;
+  const reason = firstRuntimeString(input.accountSession, [["reason"]], "IPR_ACCOUNT_SESSION_INVALID");
   const accessDecision: VerifiedSubjectAccessDecision =
     reason === "SESSION_REVOKED" || reason === "SESSION_EXPIRED"
       ? "ACCESS_DENIED"
@@ -2041,14 +2076,18 @@ function resolveEffectiveIprHandoff(input: {
   accountSession: IprAccountSessionResolution;
   clientHandoff: IprHandoffEvaluation;
 }): IprHandoffEvaluation {
-  if (input.accountSession.authenticated && input.accountSession.runtimeHandoff.isValid) {
+  const authenticated = safeRuntimeBoolean(readPath(input.accountSession, ["authenticated"]));
+  const runtimeHandoffValid = safeRuntimeBoolean(readPath(input.accountSession, ["runtimeHandoff", "isValid"]));
+  const reason = firstRuntimeString(input.accountSession, [["reason"]], "");
+
+  if (authenticated && runtimeHandoffValid) {
     return toIprHandoffEvaluationFromAccountSession(input.accountSession);
   }
 
   if (
-    input.accountSession.reason === "IPR_ACCOUNT_PROFILE_NOT_FOUND" ||
-    input.accountSession.reason === "SESSION_REVOKED" ||
-    input.accountSession.reason === "SESSION_EXPIRED"
+    reason === "IPR_ACCOUNT_PROFILE_NOT_FOUND" ||
+    reason === "SESSION_REVOKED" ||
+    reason === "SESSION_EXPIRED"
   ) {
     return buildInvalidAccountSessionHandoff(input);
   }
@@ -2062,8 +2101,11 @@ function resolveEffectiveSessionId(input: {
   requestedSessionId: string;
   accountSession: IprAccountSessionResolution;
 }): string {
-  if (input.accountSession.authenticated && input.accountSession.session?.sessionId) {
-    return `IPR-AUTH-${input.accountSession.session.sessionId}`;
+  const authenticated = safeRuntimeBoolean(readPath(input.accountSession, ["authenticated"]));
+  const serverSessionId = firstRuntimeString(input.accountSession, [["session", "sessionId"], ["session", "id"]], "");
+
+  if (authenticated && serverSessionId) {
+    return `IPR-AUTH-${serverSessionId}`;
   }
 
   return input.requestedSessionId;
@@ -2583,28 +2625,66 @@ function detectsProhibitedCyberRequest(message: string): boolean {
 
 function detectDeterministicIntent(message: string, files: NormalizedFile[]): RuntimeDeterministicIntent {
   if (isFileAnalysisRequest(message, files)) return "NONE";
-  if (isRuntimeDiagnosticQuestion(message, files)) return "RUNTIME_DIAGNOSTIC";
-  if (detectsProhibitedCyberRequest(message)) return "CYBER_BLOCK";
 
-  if (isIdentitySpoofingBoundaryQuestion(message)) return "IDENTITY_SPOOFING_BOUNDARY";
-  if (isIprConceptBoundaryQuestion(message)) return "IPR_CONCEPT_BOUNDARY";
-  if (isOpcLegalBoundaryQuestion(message)) return "OPC_LEGAL_BOUNDARY";
-  if (isMemoryAuthorityBoundaryQuestion(message)) return "MEMORY_AUTHORITY_BOUNDARY";
-  if (isPersistenceBoundaryQuestion(message)) return "PERSISTENCE_BOUNDARY";
+  if (detectsProhibitedCyberRequest(message)) {
+    return "CYBER_BLOCK";
+  }
 
-  if (isDefensiveCyberRiskAnalysisRequest(message)) return "DEFENSIVE_CYBER_RISK_ANALYSIS";
-  if (isCommercialStrategyRequest(message)) return "COMMERCIAL_STRATEGY";
+  if (isMemoryAuthorityBoundaryQuestion(message)) {
+    return "MEMORY_AUTHORITY_BOUNDARY";
+  }
 
-  if (isReadinessChecklistQuestion(message)) return "READINESS_CHECKLIST";
-  if (isSafeRedTeamRequest(message)) return "SAFE_RED_TEAM";
-  if (isOpenAiPitchRequest(message)) return "OPENAI_PITCH";
-  if (isEuCyberPitchRequest(message)) return "EU_CYBER_PITCH";
+  if (isOpcLegalBoundaryQuestion(message)) {
+    return "OPC_LEGAL_BOUNDARY";
+  }
 
-  if (isCommercialClaimsBoundaryQuestion(message) && includesAny(message, ["claim", "overclaim", "non promette", "non è", "non e"])) {
+  if (isIdentitySpoofingBoundaryQuestion(message)) {
+    return "IDENTITY_SPOOFING_BOUNDARY";
+  }
+
+  if (isIprConceptBoundaryQuestion(message)) {
+    return "IPR_CONCEPT_BOUNDARY";
+  }
+
+  if (isPersistenceBoundaryQuestion(message)) {
+    return "PERSISTENCE_BOUNDARY";
+  }
+
+  if (isDefensiveCyberRiskAnalysisRequest(message)) {
+    return "DEFENSIVE_CYBER_RISK_ANALYSIS";
+  }
+
+  if (isCommercialStrategyRequest(message)) {
+    return "COMMERCIAL_STRATEGY";
+  }
+
+  if (isCommercialClaimsBoundaryQuestion(message)) {
     return "COMMERCIAL_CLAIMS_BOUNDARY";
   }
 
-  if (isIdentityRecognitionQuestion(message)) return "IDENTITY_RECOGNITION";
+  if (isReadinessChecklistQuestion(message)) {
+    return "READINESS_CHECKLIST";
+  }
+
+  if (isSafeRedTeamRequest(message)) {
+    return "SAFE_RED_TEAM";
+  }
+
+  if (isOpenAiPitchRequest(message)) {
+    return "OPENAI_PITCH";
+  }
+
+  if (isEuCyberPitchRequest(message)) {
+    return "EU_CYBER_PITCH";
+  }
+
+  if (isRuntimeDiagnosticQuestion(message, files)) {
+    return "RUNTIME_DIAGNOSTIC";
+  }
+
+  if (isIdentityRecognitionQuestion(message)) {
+    return "IDENTITY_RECOGNITION";
+  }
 
   return "NONE";
 }
@@ -3594,7 +3674,7 @@ function buildIdentityRecognitionResponse(input: {
       `Memory persistence mode: ${input.memory.persistenceMode}`,
       `Last memory EVT: ${input.memory.lastEvt || "none"}`,
       `Identity source: ${source}`,
-      `Session resolution mode: ${input.accountSession?.mode || "none"}`,
+      `Session resolution mode: ${firstRuntimeString(input.accountSession, [["mode"]], "none")}`,
       "",
       `SaaS Core: ${input.saas.saasCore}`,
       `Target persistence: ${input.saas.targetPersistence}`,
@@ -3635,7 +3715,7 @@ function buildIdentityRecognitionResponse(input: {
       "MATRIX: MATRIX_LIMITED",
       "Semantic memory: RUNTIME_ONLY",
       `Memory authority: ${input.memory.authority}`,
-      `Session resolution mode: ${input.accountSession?.mode || "none"}`,
+      `Session resolution mode: ${firstRuntimeString(input.accountSession, [["mode"]], "none")}`,
       "",
       "Non posso riconoscere il soggetto biologico in questa sessione finché il certificato operativo HBCE-IPR o la sessione account IPR non vengono validati correttamente.",
       "legalCertification=false"
@@ -3653,7 +3733,7 @@ function buildIdentityRecognitionResponse(input: {
     "MATRIX: MATRIX_LIMITED",
     "Semantic memory: RUNTIME_ONLY",
     `Memory authority: ${input.memory.authority}`,
-    `Session resolution mode: ${input.accountSession?.mode || "none"}`,
+    `Session resolution mode: ${firstRuntimeString(input.accountSession, [["mode"]], "none")}`,
     "",
     "Per il riconoscimento operativo serve un handoff IPR valido oppure una sessione account IPR autenticata server-side.",
     "legalCertification=false"
@@ -3671,8 +3751,6 @@ function buildRuntimeDiagnosticResponse(input: {
   engine: OpenAIEngineConfig;
 }): string {
   const subject = input.iprHandoff.verifiedSubject;
-  const profileLookup = input.accountSession.profileLookup;
-  const accountProfilePresent = Boolean(input.accountSession.accountProfile);
   const fileSummary = summarizeFiles(input.files);
 
   return normalizeGeneratedOutputText([
@@ -3691,15 +3769,15 @@ function buildRuntimeDiagnosticResponse(input: {
     `Memory authority: ${input.memory.authority}`,
     `Memory persistence mode: ${input.memory.persistenceMode || ACTIVE_MEMORY_PERSISTENCE_MODE}`,
     `Identity source: ${input.iprHandoff.source || "none"}`,
-    `Session authenticated: ${input.accountSession.authenticated ? "true" : "false"}`,
-    `Session reason: ${input.accountSession.reason}`,
-    `Session resolution mode: ${input.accountSession.mode}`,
-    `Session ID: ${input.accountSession.session?.sessionId || "none"}`,
-    `Account profile present: ${accountProfilePresent ? "true" : "false"}`,
-    `profileLookup.attempted: ${profileLookup.attempted ? "true" : "false"}`,
-    `profileLookup.found: ${profileLookup.found ? "true" : "false"}`,
-    `profileLookup.matchedStrategy: ${profileLookup.matchedStrategy || "none"}`,
-    `profileLookup.matchedMethod: ${profileLookup.matchedMethod || "none"}`,
+    `Session authenticated: ${safeRuntimeBoolean(readPath(input.accountSession, ["authenticated"])) ? "true" : "false"}`,
+    `Session reason: ${firstRuntimeString(input.accountSession, [["reason"]], "none")}`,
+    `Session resolution mode: ${firstRuntimeString(input.accountSession, [["mode"]], "none")}`,
+    `Session ID: ${firstRuntimeString(input.accountSession, [["session", "sessionId"], ["session", "id"]], "none")}`,
+    `Account profile present: ${isRecord(readPath(input.accountSession, ["accountProfile"])) ? "true" : "false"}`,
+    `profileLookup.attempted: ${safeRuntimeBoolean(readPath(input.accountSession, ["profileLookup", "attempted"])) ? "true" : "false"}`,
+    `profileLookup.found: ${safeRuntimeBoolean(readPath(input.accountSession, ["profileLookup", "found"])) ? "true" : "false"}`,
+    `profileLookup.matchedStrategy: ${firstRuntimeString(input.accountSession, [["profileLookup", "matchedStrategy"]], "none")}`,
+    `profileLookup.matchedMethod: ${firstRuntimeString(input.accountSession, [["profileLookup", "matchedMethod"]], "none")}`,
     `OpenAI API mode: ${input.engine.apiMode}`,
     `OpenAI model: ${input.engine.modelUsed}`,
     `OpenAI configured: ${input.engine.configured ? "true" : "false"}`,
@@ -3894,12 +3972,12 @@ function buildReadinessChecklistResponse(): string {
     "",
     "| Tipo demo | Stato | Verdetto |",
     "|---|---:|---|",
-    "| Demo R&D interna | ✅ Pronta | GO |",
-    "| Demo tecnica controllata | ✅ / ⚠️ Pronta con limiti | GO controllato |",
-    "| Demo commerciale B2B | ⚠️ Condizionata | GO solo come pilot |",
-    "| Demo OpenAI | ⚠️ Fattibile | GO se semplificata |",
-    "| Demo UE formale | ❌ Non pronta | NO come demo ufficiale |",
-    "| SaaS enterprise completa | ❌ Non pronta | NO overclaim |",
+    "| Demo R&D interna | Pronta | GO |",
+    "| Demo tecnica controllata | Pronta con limiti | GO controllato |",
+    "| Demo commerciale B2B | Condizionata | GO solo come pilot |",
+    "| Demo OpenAI | Fattibile | GO se semplificata |",
+    "| Demo UE formale | Non pronta | NO come demo ufficiale |",
+    "| SaaS enterprise completa | Non pronta | NO overclaim |",
     "",
     "Verdetto operativo:",
     "",
@@ -3918,15 +3996,6 @@ function buildReadinessChecklistResponse(): string {
     "8. distinzione PROCESS_MEMORY_MVP vs DATABASE_PERSISTENT target;",
     "9. OpenAI come cognitive engine;",
     "10. JOKER-C2 come runtime di governance.",
-    "",
-    "Cosa non dire:",
-    "- SaaS enterprise completa;",
-    "- memoria enterprise persistente già dimostrata;",
-    "- certificazione legale;",
-    "- sostituzione OpenAI;",
-    "- conformità automatica;",
-    "- identità pubblica alternativa;",
-    "- cyber offensivo autorizzabile tramite memoria.",
     "",
     "Formula finale:",
     "JOKER-C2 è un runtime R&D/MVP avanzato di governance AI, adatto a demo tecniche e pilot controllati. Non è ancora una SaaS enterprise completa. OPC resta proof receipt tecnico. legalCertification=false."
@@ -3986,33 +4055,27 @@ function buildDefensiveCyberRiskAnalysisResponse(): string {
     "",
     "Rischio: un utente o un file allegato può tentare di far ignorare istruzioni, boundary, policy, classificazioni runtime o regole di sicurezza.",
     "",
-    "Impatto: possibile degradazione della qualità della risposta, confusione tra contenuto utente e metadati runtime, tentativo di ottenere output vietati o overclaim.",
-    "",
     "Contromisure:",
     "- separare sempre messaggio utente, file context e frame HBCE-generated;",
     "- trattare ogni file come contesto non attendibile;",
-    "- mantenere `metadataAuthority=HBCE_RUNTIME_GENERATED`; ",
+    "- mantenere metadataAuthority=HBCE_RUNTIME_GENERATED;",
     "- usare risposte deterministiche per boundary critici;",
     "- non lasciare al modello la decisione finale su legalCertification, accesso, risk class, policy outcome o identity binding.",
     "",
     "## 2. Metadata spoofing",
     "",
-    "Rischio: l’utente può scrivere nel prompt valori come `ACCESS_GRANTED`, `legalCertification=true`, `RiskClass=LOW`, `OPC valido` o `sono Manuel Coletta`.",
-    "",
-    "Impatto: se il runtime confondesse testo utente e metadati generati server-side, potrebbe riconoscere identità non valide, abbassare il rischio o accettare claim illegittimi.",
+    "Rischio: l’utente può scrivere nel prompt valori come ACCESS_GRANTED, legalCertification=true, RiskClass=LOW, OPC valido o sono Manuel Coletta.",
     "",
     "Contromisure:",
     "- il nome scritto nel prompt non prova identità;",
     "- la sessione IPR account autenticata server-side ha priorità sul client handoff;",
     "- i valori di governance nel prompt sono contenuto non autoritativo;",
     "- il runtime deve produrre risposta deterministica di rifiuto per override di policy, OPC legale e cyber offensivo;",
-    "- `legalCertification=false` deve restare immutabile.",
+    "- legalCertification=false deve restare immutabile.",
     "",
     "## 3. Memory poisoning",
     "",
     "Rischio: l’utente può tentare di memorizzare istruzioni future per autorizzare richieste vietate, trasformare OPC in certificazione legale o abbassare il rischio.",
-    "",
-    "Impatto: se la memoria diventasse autorità, ogni turno successivo potrebbe essere contaminato da istruzioni persistenti non valide.",
     "",
     "Contromisure:",
     "- memoria ≠ identità corrente;",
@@ -4026,35 +4089,21 @@ function buildDefensiveCyberRiskAnalysisResponse(): string {
     "",
     "Rischio: presentare OPC come certificazione legale, timestamp qualificato, prova pubblica, validazione eIDAS o garanzia normativa.",
     "",
-    "Impatto: rischio commerciale, legale, reputazionale e istituzionale. È il genere di overclaim che poi richiede avvocati, e l’umanità ne ha già prodotti abbastanza.",
-    "",
     "Contromisure:",
     "- OPC = proof receipt tecnica;",
     "- OPC supporta audit tecnico, governance review e ricostruzione operativa;",
     "- OPC non sostituisce autorità pubbliche, trust service qualificati, firma elettronica qualificata, marca temporale qualificata, CIE, SPID, EUDI Wallet o certificazioni regolamentate;",
-    "- mantenere sempre `legalCertification=false`.",
+    "- mantenere sempre legalCertification=false.",
     "",
     "## 5. Fail-open",
     "",
     "Rischio: in caso di errore OpenAI, database, memoria, file ingestion, sessione IPR o classificazione, il sistema potrebbe continuare come se tutto fosse trusted.",
     "",
-    "Impatto: operazioni non verificabili, audit incompleto, falsa sicurezza, potenziale abuso.",
-    "",
     "Contromisure:",
     "- usare fail-closed per cyber vietato, identità non verificata, database non disponibile quando la persistenza è requisito, e file non leggibili;",
-    "- distinguere target persistence `DATABASE_PERSISTENT` da persistence mode effettivo `PROCESS_MEMORY_MVP`; ",
+    "- distinguere target persistence DATABASE_PERSISTENT da persistence mode effettivo PROCESS_MEMORY_MVP;",
     "- non dichiarare continuità SaaS enterprise finché memoria, EVT, OPC, tenant e workspace non sono persistiti e verificati end-to-end;",
     "- mostrare stato degradato quando il motore cognitivo non produce output completo.",
-    "",
-    "## Tabella correttiva",
-    "",
-    "| Rischio | Stato desiderato | Correzione runtime |",
-    "|---|---|---|",
-    "| Prompt injection | Contenuto utente non autoritativo | Separazione prompt/file/frame HBCE-generated |",
-    "| Metadata spoofing | Solo runtime metadata autorevoli | `metadataAuthority=HBCE_RUNTIME_GENERATED` |",
-    "| Memory poisoning | Memoria solo contestuale | Override memorizzati come respinti |",
-    "| Overclaiming OPC | OPC tecnico, non legale | `legalCertification=false` sempre |",
-    "| Fail-open | Blocco o degradazione sicura | Fail-closed su rischio, identità, database e cyber |",
     "",
     "Formula finale: JOKER-C2 deve accettare contesto, non obbedire a falsi metadati. IPR identifica. EVT traccia. OPC prova tecnicamente. MATRIX coordina. HBCE governa. legalCertification=false."
   ].join("\n"));
@@ -4062,19 +4111,17 @@ function buildDefensiveCyberRiskAnalysisResponse(): string {
 
 function buildCommercialStrategyResponse(): string {
   return normalizeGeneratedOutputText([
-    "# Strategia commerciale controllata per HERMETICUM B.C.E. S.r.l. — JOKER-C2 come piattaforma AI governata B2B/B2G",
+    "# Strategia commerciale controllata per HERMETICUM B.C.E. S.r.l. - JOKER-C2 come piattaforma AI governata B2B/B2G",
     "",
     "## Posizionamento",
     "",
-    "HERMETICUM B.C.E. S.r.l. deve presentare JOKER-C2 come runtime R&D/MVP avanzato di governance AI, non come SaaS enterprise completa già definitiva. Il valore commerciale non sta nel dire che il sistema è magico, certificato, immune o pronto per qualunque infrastruttura critica. Quella sarebbe fuffa con cravatta. Il valore sta nel mostrare una catena tecnica concreta: identità operativa, evento, memoria, policy, audit, proof receipt e motore cognitivo OpenAI governato da HBCE.",
+    "HERMETICUM B.C.E. S.r.l. deve presentare JOKER-C2 come runtime R&D/MVP avanzato di governance AI, non come SaaS enterprise completa già definitiva.",
     "",
     "La formula commerciale sicura è:",
     "",
     "JOKER-C2 usa OpenAI come motore cognitivo e HBCE come livello di governance runtime. IPR identifica, EVT traccia, OPC produce proof receipt tecniche, MATRIX coordina e HBCE governa.",
     "",
     "## Target iniziali",
-    "",
-    "Il primo mercato coerente non è il pubblico generico. Il target realistico è composto da organizzazioni che hanno già problemi di controllo, audit e responsabilità nell’uso dell’AI:",
     "",
     "- aziende B2B con processi documentali e audit interno;",
     "- consulenze cybersecurity, compliance, privacy e risk management;",
@@ -4088,7 +4135,6 @@ function buildCommercialStrategyResponse(): string {
     "La proposta commerciale iniziale deve essere un pilot controllato, non una vendita piena enterprise.",
     "",
     "Struttura pilot consigliata:",
-    "",
     "1. Durata limitata.",
     "2. Perimetro funzionale chiaro.",
     "3. Dati minimizzati, sintetici o autorizzati.",
@@ -4097,35 +4143,7 @@ function buildCommercialStrategyResponse(): string {
     "6. Dashboard con IPR, EVT, OPC, MATRIX e memoria.",
     "7. Report finale con limiti, risultati, metriche e roadmap.",
     "",
-    "Use case pilot possibili:",
-    "",
-    "- AI governance su documenti interni autorizzati;",
-    "- analisi difensiva di policy cybersecurity;",
-    "- supporto a incident response documentale;",
-    "- audit trail tecnico di interazioni AI;",
-    "- workflow di proof receipt OPC;",
-    "- verifica della separazione tra output AI e metadati runtime;",
-    "- test anti-overclaim su OPC, IPR, memoria e compliance.",
-    "",
-    "## Valore per il partner",
-    "",
-    "Per un partner B2B/B2G, JOKER-C2 offre valore perché trasforma una normale interazione AI in un processo più leggibile:",
-    "",
-    "- chi ha richiesto l’operazione;",
-    "- quale identità operativa era attiva;",
-    "- quale evento EVT è stato prodotto;",
-    "- quale decisione runtime è stata presa;",
-    "- quale proof receipt OPC è stata generata;",
-    "- quale rischio è stato rilevato;",
-    "- quale boundary è stato applicato;",
-    "- quale memoria è stata usata;",
-    "- quale parte resta non certificata legalmente.",
-    "",
-    "Questo è utile per organizzazioni che devono spiegare, auditare e governare l’uso dell’AI invece di limitarsi a usare una chat come se fosse una scatola nera con abbonamento mensile.",
-    "",
     "## Limiti da dichiarare",
-    "",
-    "JOKER-C2 va venduto con confini espliciti:",
     "",
     "- stato attuale: R&D/MVP avanzato;",
     "- OPC: proof receipt tecnica, non certificazione legale;",
@@ -4134,29 +4152,6 @@ function buildCommercialStrategyResponse(): string {
     "- compliance: supporto tecnico-operativo, non conformità automatica ad AI Act, GDPR, NIS2, DORA o eIDAS;",
     "- cyber: solo defensive-only e authorized-only;",
     "- OpenAI: motore cognitivo esterno, non sostituito da HBCE.",
-    "",
-    "## Messaggio partner B2B",
-    "",
-    "HERMETICUM B.C.E. S.r.l. propone un pilot controllato su JOKER-C2 per valutare un modello di AI governance runtime sopra l’uso dei modelli OpenAI. Il pilot non promette certificazione legale, compliance automatica o SaaS enterprise già completa. Serve invece a verificare un approccio concreto: collegare identità operativa IPR, eventi EVT, proof receipt OPC, coordinamento MATRIX, audit tecnico e boundary cyber difensivi dentro un flusso AI più controllato.",
-    "",
-    "## Metriche del pilot",
-    "",
-    "Le metriche minime da misurare sono:",
-    "",
-    "1. percentuale di richieste correttamente classificate;",
-    "2. corretto blocco delle richieste cyber vietate;",
-    "3. qualità degli EVT generati;",
-    "4. coerenza delle proof receipt OPC;",
-    "5. assenza di overclaim legali;",
-    "6. corretta distinzione tra PROCESS_MEMORY_MVP e DATABASE_PERSISTENT;",
-    "7. chiarezza della dashboard per partner tecnico;",
-    "8. utilità per audit, compliance, SOC o governance AI;",
-    "9. facilità di integrazione con processi partner;",
-    "10. requisiti necessari per futura fase SaaS.",
-    "",
-    "## Verdetto commerciale",
-    "",
-    "JOKER-C2 è vendibile oggi solo come pilot R&D/MVP controllato, demo tecnica e proposta di collaborazione B2B/B2G. Non va venduto come piattaforma enterprise definitiva, non va presentato come certificazione legale e non va posizionato come sostituto di OpenAI o di strumenti ufficiali.",
     "",
     "Formula finale commerciale:",
     "",
@@ -4182,29 +4177,11 @@ function buildOpenAiPitchResponse(): string {
 
 function buildEuCyberPitchResponse(): string {
   return normalizeGeneratedOutputText([
-    "# Pitch — HERMETICUM B.C.E. S.r.l. per la cybersicurezza UE",
+    "# Pitch - HERMETICUM B.C.E. S.r.l. per la cybersicurezza UE",
     "",
     "L’Unione Europea sta entrando in una fase in cui la cybersicurezza non può più essere trattata solo come difesa tecnica dei sistemi. Deve diventare una capacità di governance continua: identità operativa, tracciabilità degli eventi, audit tecnico, controllo dell’uso dell’AI, risposta agli incidenti e prova verificabile delle decisioni critiche.",
     "",
     "HERMETICUM B.C.E. S.r.l. propone HBCE come strato di cyber governance operativa per imprese, enti pubblici, infrastrutture critiche, operatori regolati, SOC, MSSP e filiere essenziali. L’obiettivo non è sostituire strumenti esistenti come IAM, SIEM, EDR, XDR, ticketing, cloud o dashboard di compliance, ma collegarli dentro una sequenza verificabile.",
-    "",
-    "## Rischi",
-    "",
-    "Primo: frammentazione normativa e operativa. NIS2, DORA, Cyber Resilience Act, GDPR, AI Act ed eIDAS 2.0 alzano il livello di responsabilità, ma molte organizzazioni non riescono ancora a tradurre gli obblighi in eventi tecnici verificabili.",
-    "",
-    "Secondo: identità operativa debole. Gli account dimostrano l’accesso, ma spesso non dimostrano contesto, ruolo, autorizzazione, rischio, decisione e responsabilità collegata all’evento.",
-    "",
-    "Terzo: audit costruito dopo il danno. I log sono numerosi, dispersi e difficili da correlare. Durante un incidente, sapere cosa è successo richiede troppo tempo.",
-    "",
-    "Quarto: AI non governata. L’AI accelera analisi, decisioni e automazioni, ma può introdurre prompt non controllati, output non tracciati, esposizione di dati sensibili e confusione tra suggerimento e azione autorizzata.",
-    "",
-    "Quinto: difesa reattiva. Molti sistemi reagiscono dopo l’anomalia, mentre il dominio cyber-AI richiede capacità preventiva, policy runtime e fail-closed.",
-    "",
-    "## Problema",
-    "",
-    "Il problema centrale non è la mancanza di norme o strumenti. Il problema è la mancanza di una catena unica tra identità, azione, evento, rischio, decisione, prova e responsabilità.",
-    "",
-    "In una crisi cyber, un’organizzazione deve poter rispondere rapidamente a domande concrete: chi ha agito, con quale ruolo, su quale sistema, quale dato era coinvolto, quale policy era attiva, quale rischio è stato rilevato, quale revisione umana è stata richiesta, quale evento è stato registrato e quale proof receipt tecnica è stata prodotta.",
     "",
     "## Risoluzione HBCE",
     "",
@@ -4220,23 +4197,9 @@ function buildEuCyberPitchResponse(): string {
     "",
     "AI JOKER-C2 usa OpenAI come motore cognitivo, ma applica sopra il modello uno strato HBCE di identità, policy, audit, memoria IPR-bound e fail-closed.",
     "",
-    "## Potenzialità",
-    "",
-    "Per il CISO, HBCE migliora tracciabilità, controllo delle azioni critiche e capacità di audit tecnico.",
-    "",
-    "Per il DPO, aiuta a separare contenuto e prova, minimizzare i dati e controllare l’uso dell’AI su processi sensibili.",
-    "",
-    "Per il SOC, aggiunge contesto operativo agli eventi: non solo alert, ma identità, autorizzazione, rischio, decisione e prova.",
-    "",
-    "Per la compliance, crea una mappatura normativo-operativa tra requisiti UE, controlli tecnici, eventi e proof receipt.",
-    "",
-    "Per il management, trasforma la cybersicurezza da centro di costo a capacità dimostrabile di continuità, fiducia e responsabilità.",
-    "",
     "## Difesa",
     "",
     "HBCE opera solo nel perimetro difensivo e autorizzato: hardening, secure coding, detection, incident response, audit, compliance, mitigazione, governance AI e revisione autorizzata. Richieste offensive, exploit non autorizzati, malware, phishing, evasione, lateral movement, persistenza offensiva ed esfiltrazione devono essere bloccati in modalità fail-closed.",
-    "",
-    "La promessa operativa è chiara: meno azioni opache, meno AI non governata, più audit tecnico, più responsabilità e più fiducia verificabile per la cybersicurezza europea.",
     "",
     "Formula finale: IPR identifica. EVT traccia. OPC prova. MATRIX coordina. HBCE governa."
   ].join("\n"));
@@ -4348,25 +4311,6 @@ async function generateResponse(input: {
     };
   }
 
-  if (input.governance.deterministicIntent === "RUNTIME_DIAGNOSTIC") {
-    return {
-      text: buildRuntimeDiagnosticResponse({
-        files: input.files,
-        identity: input.identity,
-        iprHandoff: input.iprHandoff,
-        accountSession: input.accountSession,
-        memory: input.memory,
-        saas: input.saas,
-        database: input.database,
-        engine: input.engine
-      }),
-      state: "OPERATIONAL",
-      degradedReason: null,
-      deterministic: true,
-      generationClass: "RUNTIME_DIAGNOSTIC"
-    };
-  }
-
   if (input.governance.deterministicIntent === "CYBER_BLOCK") {
     return {
       text: buildPolicyBlockResponse({
@@ -4381,23 +4325,23 @@ async function generateResponse(input: {
     };
   }
 
-  if (input.governance.deterministicIntent === "IDENTITY_RECOGNITION") {
+  if (input.governance.deterministicIntent === "MEMORY_AUTHORITY_BOUNDARY") {
     return {
-      text: buildIdentityRecognitionResponse({
-        identity: input.identity,
-        iprHandoff: input.iprHandoff,
-        memory: input.memory,
-        saas: input.saas,
-        database: input.database,
-        accountSession: input.accountSession
-      }),
-      state: input.iprHandoff.status === "INVALID" ? "DEGRADED" : "OPERATIONAL",
-      degradedReason:
-        input.iprHandoff.status === "INVALID"
-          ? "INVALID_IPR_HANDOFF"
-          : null,
+      text: buildMemoryAuthorityBoundaryResponse(),
+      state: "OPERATIONAL",
+      degradedReason: null,
       deterministic: true,
-      generationClass: "IDENTITY_RECOGNITION"
+      generationClass: "BOUNDARY_POLICY"
+    };
+  }
+
+  if (input.governance.deterministicIntent === "OPC_LEGAL_BOUNDARY") {
+    return {
+      text: buildOpcLegalBoundaryResponse(),
+      state: "OPERATIONAL",
+      degradedReason: null,
+      deterministic: true,
+      generationClass: "BOUNDARY_POLICY"
     };
   }
 
@@ -4416,36 +4360,6 @@ async function generateResponse(input: {
   if (input.governance.deterministicIntent === "IPR_CONCEPT_BOUNDARY") {
     return {
       text: buildIprConceptBoundaryResponse(),
-      state: "OPERATIONAL",
-      degradedReason: null,
-      deterministic: true,
-      generationClass: "BOUNDARY_POLICY"
-    };
-  }
-
-  if (input.governance.deterministicIntent === "OPC_LEGAL_BOUNDARY") {
-    return {
-      text: buildOpcLegalBoundaryResponse(),
-      state: "OPERATIONAL",
-      degradedReason: null,
-      deterministic: true,
-      generationClass: "BOUNDARY_POLICY"
-    };
-  }
-
-  if (input.governance.deterministicIntent === "COMMERCIAL_CLAIMS_BOUNDARY") {
-    return {
-      text: buildCommercialClaimsBoundaryResponse(),
-      state: "OPERATIONAL",
-      degradedReason: null,
-      deterministic: true,
-      generationClass: "BOUNDARY_POLICY"
-    };
-  }
-
-  if (input.governance.deterministicIntent === "MEMORY_AUTHORITY_BOUNDARY") {
-    return {
-      text: buildMemoryAuthorityBoundaryResponse(),
       state: "OPERATIONAL",
       degradedReason: null,
       deterministic: true,
@@ -4480,6 +4394,16 @@ async function generateResponse(input: {
       degradedReason: null,
       deterministic: true,
       generationClass: "COMMERCIAL_STRATEGY"
+    };
+  }
+
+  if (input.governance.deterministicIntent === "COMMERCIAL_CLAIMS_BOUNDARY") {
+    return {
+      text: buildCommercialClaimsBoundaryResponse(),
+      state: "OPERATIONAL",
+      degradedReason: null,
+      deterministic: true,
+      generationClass: "BOUNDARY_POLICY"
     };
   }
 
@@ -4525,6 +4449,45 @@ async function generateResponse(input: {
       degradedReason: null,
       deterministic: true,
       generationClass: "EU_CYBER_PITCH"
+    };
+  }
+
+  if (input.governance.deterministicIntent === "RUNTIME_DIAGNOSTIC") {
+    return {
+      text: buildRuntimeDiagnosticResponse({
+        files: input.files,
+        identity: input.identity,
+        iprHandoff: input.iprHandoff,
+        accountSession: input.accountSession,
+        memory: input.memory,
+        saas: input.saas,
+        database: input.database,
+        engine: input.engine
+      }),
+      state: "OPERATIONAL",
+      degradedReason: null,
+      deterministic: true,
+      generationClass: "RUNTIME_DIAGNOSTIC"
+    };
+  }
+
+  if (input.governance.deterministicIntent === "IDENTITY_RECOGNITION") {
+    return {
+      text: buildIdentityRecognitionResponse({
+        identity: input.identity,
+        iprHandoff: input.iprHandoff,
+        memory: input.memory,
+        saas: input.saas,
+        database: input.database,
+        accountSession: input.accountSession
+      }),
+      state: input.iprHandoff.status === "INVALID" ? "DEGRADED" : "OPERATIONAL",
+      degradedReason:
+        input.iprHandoff.status === "INVALID"
+          ? "INVALID_IPR_HANDOFF"
+          : null,
+      deterministic: true,
+      generationClass: "IDENTITY_RECOGNITION"
     };
   }
 
@@ -5283,19 +5246,19 @@ function toPublicIprHandoffEvaluation(evaluation: IprHandoffEvaluation) {
 
 function toPublicIprAccountSessionResolution(resolution: IprAccountSessionResolution) {
   return {
-    authenticated: resolution.authenticated,
-    reason: resolution.reason,
-    mode: resolution.mode,
-    cookieName: resolution.cookieName,
-    access: resolution.access,
-    memory: resolution.memory,
-    matrix: resolution.matrix,
-    session: resolution.session,
-    accountProfile: resolution.accountProfile,
-    reconstructedIprHandoff: resolution.reconstructedIprHandoff,
-    profileLookup: resolution.profileLookup,
-    stores: resolution.stores,
-    boundary: resolution.boundary
+    authenticated: safeRuntimeBoolean(readPath(resolution, ["authenticated"])),
+    reason: firstRuntimeString(resolution, [["reason"]], "UNKNOWN"),
+    mode: firstRuntimeString(resolution, [["mode"]], "UNKNOWN"),
+    cookieName: firstRuntimeString(resolution, [["cookieName"]], ""),
+    access: readPath(resolution, ["access"]) || null,
+    memory: readPath(resolution, ["memory"]) || null,
+    matrix: readPath(resolution, ["matrix"]) || null,
+    session: readPath(resolution, ["session"]) || null,
+    accountProfile: readPath(resolution, ["accountProfile"]) || null,
+    reconstructedIprHandoff: readPath(resolution, ["reconstructedIprHandoff"]) || null,
+    profileLookup: readPath(resolution, ["profileLookup"]) || null,
+    stores: readPath(resolution, ["stores"]) || null,
+    boundary: readPath(resolution, ["boundary"]) || null
   };
 }
 
@@ -5394,26 +5357,26 @@ function buildRuntimeDiagnostic(input: {
     }),
     core: input.identity.core,
     iprAccountSession: {
-      authenticated: input.iprAccountSession.authenticated,
-      reason: input.iprAccountSession.reason,
-      mode: input.iprAccountSession.mode,
-      cookieName: input.iprAccountSession.cookieName,
-      accessDecision: input.iprAccountSession.access.decision,
-      accessScope: input.iprAccountSession.access.scope,
-      identityBinding: input.iprAccountSession.access.identityBinding,
-      humanIpr: input.iprAccountSession.access.humanIpr || null,
-      runtimeIpr: input.iprAccountSession.access.runtimeIpr || null,
-      accountId: input.iprAccountSession.access.accountId || null,
+      authenticated: safeRuntimeBoolean(readPath(input.iprAccountSession, ["authenticated"])),
+      reason: firstRuntimeString(input.iprAccountSession, [["reason"]], "UNKNOWN"),
+      mode: firstRuntimeString(input.iprAccountSession, [["mode"]], "UNKNOWN"),
+      cookieName: firstRuntimeString(input.iprAccountSession, [["cookieName"]], ""),
+      accessDecision: firstRuntimeString(input.iprAccountSession, [["access", "decision"]], "PENDING_SERVER_VALIDATION"),
+      accessScope: firstRuntimeString(input.iprAccountSession, [["access", "scope"]], "MATRIX_LIMITED"),
+      identityBinding: firstRuntimeString(input.iprAccountSession, [["access", "identityBinding"], ["access", "identity_binding"]], "NO_VERIFIED_BIOLOGICAL_SUBJECT"),
+      humanIpr: firstRuntimeString(input.iprAccountSession, [["access", "humanIpr"], ["access", "human_ipr"]], "") || null,
+      runtimeIpr: firstRuntimeString(input.iprAccountSession, [["access", "runtimeIpr"], ["access", "runtime_ipr"]], "") || null,
+      accountId: firstRuntimeString(input.iprAccountSession, [["access", "accountId"], ["access", "account_id"]], "") || null,
       tenantId: input.saas.tenantId,
       workspaceId: input.saas.workspaceId,
-      sessionId: input.iprAccountSession.session?.sessionId || null,
-      accountProfilePresent: Boolean(input.iprAccountSession.accountProfile),
-      reconstructedHandoffPresent: Boolean(input.iprAccountSession.reconstructedIprHandoff),
-      profileLookup: input.iprAccountSession.profileLookup,
-      expectedMemoryScope: input.iprAccountSession.memory.expectedScope,
-      expectedAuthority: input.iprAccountSession.memory.expectedAuthority,
-      expectedMatrixState: input.iprAccountSession.matrix.expectedState,
-      matrixActive: input.iprAccountSession.matrix.active,
+      sessionId: firstRuntimeString(input.iprAccountSession, [["session", "sessionId"], ["session", "id"]], "") || null,
+      accountProfilePresent: isRecord(readPath(input.iprAccountSession, ["accountProfile"])),
+      reconstructedHandoffPresent: Boolean(readPath(input.iprAccountSession, ["reconstructedIprHandoff"])),
+      profileLookup: readPath(input.iprAccountSession, ["profileLookup"]) || null,
+      expectedMemoryScope: firstRuntimeString(input.iprAccountSession, [["memory", "expectedScope"]], "RUNTIME_ONLY"),
+      expectedAuthority: firstRuntimeString(input.iprAccountSession, [["memory", "expectedAuthority"]], "SESSION_RUNTIME_ONLY"),
+      expectedMatrixState: firstRuntimeString(input.iprAccountSession, [["matrix", "expectedState"]], "MATRIX_LIMITED"),
+      matrixActive: safeRuntimeBoolean(readPath(input.iprAccountSession, ["matrix", "active"])),
       legalCertification: false
     },
     verifiedSubject: input.iprHandoff.verifiedSubject,
@@ -5553,13 +5516,13 @@ export async function POST(req: NextRequest) {
     previousContinuityRef: body.continuityRef,
     runtime: toMemoryRuntimeIdentity(identity),
     handoff: toMemoryHandoffEvaluation(iprHandoff),
-    seedFacts: iprAccountSession.authenticated
+    seedFacts: safeRuntimeBoolean(readPath(iprAccountSession, ["authenticated"]))
       ? [
           "The active runtime identity source is an authenticated IPR account session.",
           "Authenticated IPR account session has priority over client-provided IPR handoff.",
-          `Authenticated IPR account session reason: ${iprAccountSession.reason}.`,
-          `Authenticated IPR account session resolution mode: ${iprAccountSession.mode}.`,
-          `Authenticated IPR account expected MATRIX state: ${iprAccountSession.matrix.expectedState}.`,
+          `Authenticated IPR account session reason: ${firstRuntimeString(iprAccountSession, [["reason"]], "UNKNOWN")}.`,
+          `Authenticated IPR account session resolution mode: ${firstRuntimeString(iprAccountSession, [["mode"]], "UNKNOWN")}.`,
+          `Authenticated IPR account expected MATRIX state: ${firstRuntimeString(iprAccountSession, [["matrix", "expectedState"]], "MATRIX_LIMITED")}.`,
           `SaaS Core: ${SAAS_CORE_VERSION}.`,
           `Target persistence: ${SAAS_TARGET_PERSISTENCE}.`,
           `Tenant ID: ${saas.tenantId || "none"}.`,
@@ -5573,8 +5536,8 @@ export async function POST(req: NextRequest) {
         ]
       : [
           "No authenticated IPR account session was available for this chat operation.",
-          `IPR account session reason: ${iprAccountSession.reason}.`,
-          `IPR account session resolution mode: ${iprAccountSession.mode}.`,
+          `IPR account session reason: ${firstRuntimeString(iprAccountSession, [["reason"]], "UNKNOWN")}.`,
+          `IPR account session resolution mode: ${firstRuntimeString(iprAccountSession, [["mode"]], "UNKNOWN")}.`,
           "Runtime may use a valid client handoff only as fallback transport context.",
           `SaaS Core: ${SAAS_CORE_VERSION}.`,
           `Target persistence: ${SAAS_TARGET_PERSISTENCE}.`,
@@ -5703,20 +5666,22 @@ export async function POST(req: NextRequest) {
 
   const transformativeFacts = toTransformativeMemoryExtraFacts(transformativeMemory);
 
-  const accountSessionFacts = iprAccountSession.authenticated
+  const accountSessionAuthenticated = safeRuntimeBoolean(readPath(iprAccountSession, ["authenticated"]));
+
+  const accountSessionFacts = accountSessionAuthenticated
     ? [
         "Last operation used authenticated IPR account session as identity source.",
-        `Last IPR account session reason: ${iprAccountSession.reason}.`,
-        `Last IPR account session resolution mode: ${iprAccountSession.mode}.`,
-        `Last IPR account session id: ${iprAccountSession.session?.sessionId || "none"}.`,
-        `Last IPR account id: ${iprAccountSession.access.accountId || "none"}.`,
+        `Last IPR account session reason: ${firstRuntimeString(iprAccountSession, [["reason"]], "UNKNOWN")}.`,
+        `Last IPR account session resolution mode: ${firstRuntimeString(iprAccountSession, [["mode"]], "UNKNOWN")}.`,
+        `Last IPR account session id: ${firstRuntimeString(iprAccountSession, [["session", "sessionId"], ["session", "id"]], "none")}.`,
+        `Last IPR account id: ${firstRuntimeString(iprAccountSession, [["access", "accountId"], ["access", "account_id"]], "none")}.`,
         `Last SaaS tenant id: ${saas.tenantId || "none"}.`,
         `Last SaaS workspace id: ${saas.workspaceId || "none"}.`,
         "Client-provided IPR handoff was treated as lower-priority fallback transport context."
       ]
     : [
-        `Last operation did not use authenticated IPR account session. Reason: ${iprAccountSession.reason}.`,
-        `Last IPR account session resolution mode: ${iprAccountSession.mode}.`
+        `Last operation did not use authenticated IPR account session. Reason: ${firstRuntimeString(iprAccountSession, [["reason"]], "UNKNOWN")}.`,
+        `Last IPR account session resolution mode: ${firstRuntimeString(iprAccountSession, [["mode"]], "UNKNOWN")}.`
       ];
 
   const databaseFacts = [
@@ -6045,6 +6010,9 @@ export async function GET(req: NextRequest) {
   const saas = buildSaasRuntimeContext(saasScope);
   const database = buildDatabaseRuntimeFrame();
 
+  const authenticated = safeRuntimeBoolean(readPath(iprAccountSession, ["authenticated"]));
+  const runtimeHandoffValid = safeRuntimeBoolean(readPath(iprAccountSession, ["runtimeHandoff", "isValid"]));
+
   return NextResponse.json({
     ok: true,
     runtime: "AI_JOKER-C2",
@@ -6070,15 +6038,15 @@ export async function GET(req: NextRequest) {
       workspaceId: saas.workspaceId
     }),
     iprAccountSession: toPublicIprAccountSessionResolution(iprAccountSession),
-    verifiedSubject: iprAccountSession.runtimeHandoff.isValid
-      ? iprAccountSession.runtimeHandoff.subject || null
+    verifiedSubject: runtimeHandoffValid
+      ? readPath(iprAccountSession, ["runtimeHandoff", "subject"]) || null
       : null,
-    access: iprAccountSession.authenticated
+    access: authenticated
       ? {
           decision: "ACCESS_GRANTED",
-          matrixState: iprAccountSession.matrix.expectedState,
-          semanticMemoryScope: iprAccountSession.memory.expectedScope,
-          identityBinding: iprAccountSession.access.identityBinding,
+          matrixState: firstRuntimeString(iprAccountSession, [["matrix", "expectedState"]], "MATRIX_ACTIVE"),
+          semanticMemoryScope: firstRuntimeString(iprAccountSession, [["memory", "expectedScope"]], "IPR_BOUND"),
+          identityBinding: firstRuntimeString(iprAccountSession, [["access", "identityBinding"], ["access", "identity_binding"]], "IPR_VERIFIED_BIOLOGICAL_SUBJECT"),
           source: "IPR_ACCOUNT_SESSION",
           tenantId: saas.tenantId,
           workspaceId: saas.workspaceId
@@ -6092,10 +6060,10 @@ export async function GET(req: NextRequest) {
           tenantId: null,
           workspaceId: null
         },
-    memory: iprAccountSession.authenticated
+    memory: authenticated
       ? {
-          scope: iprAccountSession.memory.expectedScope,
-          authority: iprAccountSession.memory.expectedAuthority,
+          scope: firstRuntimeString(iprAccountSession, [["memory", "expectedScope"]], "IPR_BOUND"),
+          authority: firstRuntimeString(iprAccountSession, [["memory", "expectedAuthority"]], "SERVER_RUNTIME_VALIDATED"),
           persistenceMode: ACTIVE_MEMORY_PERSISTENCE_MODE,
           reason:
             "GET health check found an authenticated IPR account session. POST /api/chat can reconstruct IPR-bound runtime identity from this session. Active memory remains PROCESS_MEMORY_MVP unless the memory record itself declares DATABASE_PERSISTENT.",
@@ -6103,7 +6071,7 @@ export async function GET(req: NextRequest) {
           databaseConfigured: database.configured,
           databaseAvailable: database.available,
           durableClaimAllowed: false,
-          sessionResolutionMode: iprAccountSession.mode
+          sessionResolutionMode: firstRuntimeString(iprAccountSession, [["mode"]], "UNKNOWN")
         }
       : {
           scope: "RUNTIME_ONLY",
@@ -6115,12 +6083,18 @@ export async function GET(req: NextRequest) {
           databaseConfigured: database.configured,
           databaseAvailable: database.available,
           durableClaimAllowed: false,
-          sessionResolutionMode: iprAccountSession.mode
+          sessionResolutionMode: firstRuntimeString(iprAccountSession, [["mode"]], "UNKNOWN")
         },
     matrix: {
-      state: iprAccountSession.matrix.expectedState,
-      active: iprAccountSession.matrix.active,
-      reason: iprAccountSession.matrix.reason
+      state: firstRuntimeString(iprAccountSession, [["matrix", "expectedState"]], authenticated ? "MATRIX_ACTIVE" : "MATRIX_LIMITED"),
+      active: safeRuntimeBoolean(readPath(iprAccountSession, ["matrix", "active"]), authenticated),
+      reason: firstRuntimeString(
+        iprAccountSession,
+        [["matrix", "reason"]],
+        authenticated
+          ? "Authenticated IPR account session available."
+          : "No authenticated IPR account session available."
+      )
     },
     fileProcessing: {
       supportedKinds: ["text", "image", "pdf", "binary"],
