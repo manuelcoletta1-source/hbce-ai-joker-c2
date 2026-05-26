@@ -210,6 +210,12 @@ type ChatMessage = {
   raw?: ChatApiResponse;
 };
 
+type InfoItem = {
+  label: string;
+  value: string;
+  tone?: "good" | "warn" | "bad";
+};
+
 const JOKER_SIGIL = "🜏";
 
 const CANONICAL_MANUEL_HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1";
@@ -331,11 +337,11 @@ function fallbackDash(value: string, fallback: string): string {
 }
 
 function compactHash(value: string): string {
-  if (!value || value === "-" || value === "none" || value.length <= 28) {
+  if (!value || value === "-" || value === "none" || value.length <= 34) {
     return value;
   }
 
-  return `${value.slice(0, 18)}…${value.slice(-10)}`;
+  return `${value.slice(0, 20)}…${value.slice(-10)}`;
 }
 
 function normalizeRuntimeDisplayText(value: string): string {
@@ -1129,7 +1135,7 @@ function getMonthlyReferenceLabel(payload?: ChatApiResponse | RuntimeHealth | nu
       ["operationalContext", "monthly_reference", "label"],
       ["runtime", "operationalContext", "monthly_reference", "label"],
       ["governedEvt", "operational_context", "monthly_reference", "label"],
-      ["modernEvt", "operationalContext", "monthly_reference", "label"],
+      ["modernEvt", "operational_context", "monthly_reference", "label"],
       ["identity", "monthlyReference", "label"]
     ],
     "Fourth monthly synchronization cycle"
@@ -1567,7 +1573,7 @@ function StatusPill({
       title={normalizedValue}
     >
       {label ? <b translate="no">{label}</b> : null}
-      <span translate="no">{normalizedValue}</span>
+      <span translate="no">{compactHash(normalizedValue)}</span>
     </span>
   );
 }
@@ -1601,6 +1607,29 @@ function MetricCard({
       <span translate="no">{label}</span>
       <strong translate="no">{compactHash(normalizedValue)}</strong>
     </div>
+  );
+}
+
+function InfoList({ items }: { items: InfoItem[] }) {
+  return (
+    <dl className="joker-info-list notranslate" translate="no">
+      {items.map((item) => {
+        const normalizedValue = normalizeVisibleRuntimeText(item.value);
+        const statusClass = item.tone ? `is-${item.tone}` : getStatusClass(normalizedValue);
+
+        return (
+          <div
+            key={`${item.label}-${normalizedValue}`}
+            className={["joker-info-row", statusClass].filter(Boolean).join(" ")}
+          >
+            <dt translate="no">{item.label}</dt>
+            <dd translate="no" title={normalizedValue}>
+              {compactHash(normalizedValue)}
+            </dd>
+          </div>
+        );
+      })}
+    </dl>
   );
 }
 
@@ -2216,6 +2245,38 @@ export default function InterfacePage() {
     effectiveIprHandoff?.certificate.certificate_scope.join(", ") ||
     "MATRIX_LIMITED";
 
+  const identityRows: InfoItem[] = [
+    { label: "Runtime IPR", value: "IPR-AI-0001" },
+    { label: "Human IPR", value: humanIprLabel },
+    { label: "Certificate", value: certificateId },
+    { label: "Cert. status", value: certificateStatus },
+    { label: "Scope", value: scope },
+    { label: "Source", value: effectiveIprHandoffSource }
+  ];
+
+  const memoryRows: InfoItem[] = [
+    { label: "MATRIX", value: runtimeMatrixState },
+    { label: "Authority", value: runtimeMemoryAuthority },
+    { label: "Persistence", value: runtimeMemoryMode },
+    { label: "Memory ID", value: runtimeMemoryId },
+    { label: "Memory key hash", value: runtimeMemoryKeyHash },
+    { label: "Memory hash", value: runtimeMemoryHash }
+  ];
+
+  const proofRows: InfoItem[] = [
+    { label: "Monthly reference", value: runtimeMonthlyReference },
+    { label: "Monthly label", value: runtimeMonthlyReferenceLabel },
+    { label: "Previous checkpoint", value: runtimePreviousCheckpoint },
+    { label: "Response EVT", value: runtimeResponseEvt },
+    { label: "OPC legalCertification", value: runtimeLegalCertification },
+    { label: "Current OPC", value: runtimeOpcProof },
+    { label: "Last memory EVT", value: runtimeLastMemoryEvt },
+    { label: "Last memory OPC", value: runtimeLastMemoryOpc },
+    { label: "Memory chain", value: runtimeLastMemoryChainHash },
+    { label: "OPC chain", value: runtimeOpcChainHash },
+    { label: "Engine hash", value: runtimeEngineHash }
+  ];
+
   return (
     <main className="joker-page notranslate" lang="en" translate="no">
       <header className="joker-topbar">
@@ -2257,15 +2318,14 @@ export default function InterfacePage() {
       <section className="joker-hero">
         <div className="joker-hero-copy">
           <span className="joker-kicker" translate="no">HERMETICUM B.C.E. S.r.l.</span>
-          <h1 translate="no">Governed runtime dashboard</h1>
+          <h1 translate="no">JOKER-C2 dashboard</h1>
           <p>
-            Operational interface for <span translate="no">JOKER-C2</span>:{" "}
-            <span translate="no">IPR</span> identity,{" "}
-            <span translate="no">IPR-bound memory</span>,{" "}
+            Professional runtime console for <span translate="no">IPR</span>{" "}
+            identity, <span translate="no">IPR-bound memory</span>,{" "}
             <span translate="no">EVT</span> continuity,{" "}
-            <span translate="no">OPC</span> technical proof receipts,{" "}
-            <span translate="no">MATRIX</span> coordination and
-            <code translate="no"> legalCertification=false</code>.
+            <span translate="no">OPC</span> technical proof receipts and{" "}
+            <span translate="no">MATRIX</span> coordination. No legal
+            certification is implied: <code translate="no">legalCertification=false</code>.
           </p>
           <div className="joker-origin-note notranslate" translate="no">
             <strong>{runtimeProjectBirthDate}</strong>
@@ -2312,14 +2372,7 @@ export default function InterfacePage() {
                 : "No biological IPR handoff or IPR account session detected. Runtime remains limited until server-side validation."}
           </p>
 
-          <div className="joker-metric-grid notranslate" translate="no">
-            <MetricCard label="Runtime IPR" value="IPR-AI-0001" compact />
-            <MetricCard label="Human IPR" value={humanIprLabel} compact />
-            <MetricCard label="Certificate" value={certificateId} compact />
-            <MetricCard label="Cert. status" value={certificateStatus} compact />
-            <MetricCard label="Scope" value={scope} compact />
-            <MetricCard label="Source" value={effectiveIprHandoffSource} compact />
-          </div>
+          <InfoList items={identityRows} />
 
           {iprAccountSessionError && !hasAccountSession ? (
             <div className="joker-alert is-warn notranslate" translate="no">
@@ -2372,14 +2425,7 @@ export default function InterfacePage() {
             review, disable fail-closed logic or replace human oversight.
           </p>
 
-          <div className="joker-metric-grid notranslate" translate="no">
-            <MetricCard label="MATRIX" value={runtimeMatrixState} compact />
-            <MetricCard label="Authority" value={runtimeMemoryAuthority} compact />
-            <MetricCard label="Persistence" value={runtimeMemoryMode} compact />
-            <MetricCard label="Memory ID" value={runtimeMemoryId} compact />
-            <MetricCard label="Memory key hash" value={runtimeMemoryKeyHash} compact />
-            <MetricCard label="Memory hash" value={runtimeMemoryHash} compact />
-          </div>
+          <InfoList items={memoryRows} />
         </div>
 
         <div className="joker-panel">
@@ -2397,19 +2443,7 @@ export default function InterfacePage() {
             qualified timestamp and not public authority validation.
           </p>
 
-          <div className="joker-metric-grid notranslate" translate="no">
-            <MetricCard label="Monthly reference" value={runtimeMonthlyReference} compact />
-            <MetricCard label="Monthly label" value={runtimeMonthlyReferenceLabel} compact />
-            <MetricCard label="Previous checkpoint" value={runtimePreviousCheckpoint} compact />
-            <MetricCard label="Response EVT" value={runtimeResponseEvt} compact />
-            <MetricCard label="OPC legalCertification" value={runtimeLegalCertification} compact />
-            <MetricCard label="Current OPC" value={runtimeOpcProof} compact />
-            <MetricCard label="Last memory EVT" value={runtimeLastMemoryEvt} compact />
-            <MetricCard label="Last memory OPC" value={runtimeLastMemoryOpc} compact />
-            <MetricCard label="Memory chain" value={runtimeLastMemoryChainHash} compact />
-            <MetricCard label="OPC chain" value={runtimeOpcChainHash} compact />
-            <MetricCard label="Engine hash" value={runtimeEngineHash} compact />
-          </div>
+          <InfoList items={proofRows} />
         </div>
       </section>
 
@@ -2427,8 +2461,7 @@ export default function InterfacePage() {
               <span translate="no">EVT</span>, <span translate="no">OPC</span>,{" "}
               <span translate="no">MATRIX</span>,{" "}
               <span translate="no">IPR-bound memory</span>, audit and
-              fail-closed logic. A chat with a spine, a rare event in the
-              swamp of digital improvisation.
+              fail-closed logic.
             </p>
 
             <div className="joker-prompt-grid notranslate" translate="no">
@@ -2593,12 +2626,12 @@ export default function InterfacePage() {
           top: 0;
           z-index: 30;
           display: grid;
-          grid-template-columns: minmax(210px, 0.75fr) minmax(0, 1.3fr) auto;
+          grid-template-columns: minmax(220px, 0.85fr) minmax(0, 1.5fr) auto;
           gap: 14px;
           align-items: center;
           padding: 14px 22px;
           border-bottom: 1px solid rgba(71, 85, 105, 0.55);
-          background: rgba(2, 6, 23, 0.78);
+          background: rgba(2, 6, 23, 0.82);
           backdrop-filter: blur(22px);
         }
 
@@ -2616,6 +2649,7 @@ export default function InterfacePage() {
           place-items: center;
           width: 40px;
           height: 40px;
+          flex: 0 0 auto;
           border-radius: 16px;
           background:
             linear-gradient(135deg, rgba(6, 182, 212, 1), rgba(79, 70, 229, 1));
@@ -2648,16 +2682,24 @@ export default function InterfacePage() {
 
         .joker-brand strong {
           display: block;
+          min-width: 0;
           color: #ffffff;
           font-size: 15px;
           letter-spacing: 0.02em;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .joker-brand span {
           display: block;
+          min-width: 0;
           margin-top: 2px;
           color: #94a3b8;
           font-size: 12px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .joker-health,
@@ -2666,7 +2708,15 @@ export default function InterfacePage() {
           align-items: center;
           gap: 8px;
           min-width: 0;
-          overflow: auto;
+          max-width: 100%;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(51, 65, 85, 0.9) transparent;
+        }
+
+        .joker-health {
+          padding: 2px;
         }
 
         .joker-top-actions,
@@ -2675,6 +2725,8 @@ export default function InterfacePage() {
           flex-wrap: wrap;
           gap: 8px;
           align-items: center;
+          justify-content: flex-end;
+          min-width: 0;
         }
 
         button {
@@ -2719,7 +2771,9 @@ export default function InterfacePage() {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          max-width: 100%;
+          min-width: 0;
+          max-width: 220px;
+          flex: 0 1 auto;
           padding: 6px 10px;
           border: 1px solid rgba(71, 85, 105, 0.68);
           border-radius: 999px;
@@ -2732,10 +2786,18 @@ export default function InterfacePage() {
         }
 
         .joker-pill b {
+          flex: 0 0 auto;
           color: #64748b;
           font-weight: 900;
           text-transform: uppercase;
           letter-spacing: 0.06em;
+        }
+
+        .joker-pill span {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .joker-pill.is-good {
@@ -2778,6 +2840,7 @@ export default function InterfacePage() {
         }
 
         .joker-hero-copy {
+          min-width: 0;
           padding: 26px;
         }
 
@@ -2785,6 +2848,7 @@ export default function InterfacePage() {
           display: flex;
           flex-direction: column;
           gap: 4px;
+          min-width: 0;
           margin-top: 18px;
           padding: 13px 14px;
           border: 1px solid rgba(34, 211, 238, 0.22);
@@ -2802,6 +2866,7 @@ export default function InterfacePage() {
           color: #94a3b8;
           font-size: 12px;
           line-height: 1.45;
+          overflow-wrap: anywhere;
         }
 
         .joker-kicker {
@@ -2817,9 +2882,9 @@ export default function InterfacePage() {
         .joker-empty h2 {
           margin: 10px 0 0;
           color: #ffffff;
-          font-size: clamp(36px, 5.8vw, 62px);
-          line-height: 0.95;
-          letter-spacing: -0.065em;
+          font-size: clamp(34px, 5.4vw, 58px);
+          line-height: 0.96;
+          letter-spacing: -0.055em;
         }
 
         .joker-hero p,
@@ -2829,6 +2894,7 @@ export default function InterfacePage() {
           color: #94a3b8;
           font-size: 14px;
           line-height: 1.7;
+          overflow-wrap: anywhere;
         }
 
         .joker-hero code {
@@ -2844,6 +2910,7 @@ export default function InterfacePage() {
         .joker-details-grid {
           display: grid;
           gap: 10px;
+          min-width: 0;
         }
 
         .joker-hero-grid {
@@ -2861,6 +2928,7 @@ export default function InterfacePage() {
         .joker-panel {
           min-width: 0;
           padding: 18px;
+          overflow: hidden;
         }
 
         .joker-panel.is-active {
@@ -2879,6 +2947,16 @@ export default function InterfacePage() {
           align-items: flex-start;
           justify-content: space-between;
           gap: 12px;
+          min-width: 0;
+        }
+
+        .joker-panel-head > div {
+          min-width: 0;
+        }
+
+        .joker-panel-head .joker-pill {
+          max-width: 46%;
+          flex-shrink: 1;
         }
 
         .joker-panel h2 {
@@ -2886,7 +2964,7 @@ export default function InterfacePage() {
           color: #f8fafc;
           font-size: 19px;
           letter-spacing: -0.025em;
-          line-height: 1.1;
+          line-height: 1.12;
           overflow-wrap: anywhere;
         }
 
@@ -2902,6 +2980,7 @@ export default function InterfacePage() {
           border-radius: 18px;
           background:
             linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.52));
+          overflow: hidden;
         }
 
         .joker-hero-grid .joker-metric {
@@ -2938,11 +3017,13 @@ export default function InterfacePage() {
 
         .joker-metric strong {
           display: block;
+          min-width: 0;
           margin-top: 8px;
           color: #e2e8f0;
           font-size: 13px;
           line-height: 1.35;
           overflow-wrap: anywhere;
+          word-break: break-word;
           font-family:
             ui-monospace,
             SFMono-Regular,
@@ -2954,12 +3035,79 @@ export default function InterfacePage() {
             monospace;
         }
 
+        .joker-info-list {
+          display: grid;
+          gap: 8px;
+          margin: 16px 0 0;
+          min-width: 0;
+        }
+
+        .joker-info-row {
+          display: grid;
+          grid-template-columns: minmax(112px, 0.42fr) minmax(0, 1fr);
+          gap: 12px;
+          align-items: start;
+          min-width: 0;
+          padding: 10px 11px;
+          border: 1px solid rgba(71, 85, 105, 0.5);
+          border-radius: 15px;
+          background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.48));
+        }
+
+        .joker-info-row dt {
+          min-width: 0;
+          color: #64748b;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0.08em;
+          line-height: 1.35;
+          text-transform: uppercase;
+        }
+
+        .joker-info-row dd {
+          min-width: 0;
+          margin: 0;
+          color: #e2e8f0;
+          font-size: 12px;
+          font-weight: 820;
+          line-height: 1.38;
+          text-align: right;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          font-family:
+            ui-monospace,
+            SFMono-Regular,
+            Menlo,
+            Monaco,
+            Consolas,
+            "Liberation Mono",
+            "Courier New",
+            monospace;
+        }
+
+        .joker-info-row.is-good {
+          border-color: rgba(34, 197, 94, 0.25);
+          background: rgba(20, 83, 45, 0.16);
+        }
+
+        .joker-info-row.is-warn {
+          border-color: rgba(251, 191, 36, 0.25);
+          background: rgba(120, 53, 15, 0.14);
+        }
+
+        .joker-info-row.is-bad {
+          border-color: rgba(248, 113, 113, 0.28);
+          background: rgba(127, 29, 29, 0.18);
+        }
+
         .joker-alert {
           margin-top: 12px;
           padding: 11px 12px;
           border-radius: 16px;
           font-size: 12px;
           line-height: 1.45;
+          overflow-wrap: anywhere;
         }
 
         .joker-alert.is-good {
@@ -2981,6 +3129,7 @@ export default function InterfacePage() {
         }
 
         .joker-panel-actions {
+          justify-content: flex-start;
           margin-top: 14px;
         }
 
@@ -3087,7 +3236,12 @@ export default function InterfacePage() {
           align-items: flex-start;
           justify-content: space-between;
           gap: 10px;
+          min-width: 0;
           margin-bottom: 10px;
+        }
+
+        .joker-message-head > div {
+          min-width: 0;
         }
 
         .joker-message-head strong {
@@ -3103,12 +3257,14 @@ export default function InterfacePage() {
           color: #64748b;
           font-size: 12px;
           line-height: 1.35;
+          overflow-wrap: anywhere;
         }
 
         .joker-message-text {
           margin: 0;
           white-space: pre-wrap;
           overflow-wrap: anywhere;
+          word-break: break-word;
           color: #e5edf8;
           font-size: 15px;
           line-height: 1.72;
@@ -3120,6 +3276,10 @@ export default function InterfacePage() {
           margin-top: 15px;
           padding-top: 15px;
           border-top: 1px solid rgba(71, 85, 105, 0.55);
+        }
+
+        .joker-runtime-strip .joker-pill {
+          max-width: 260px;
         }
 
         .joker-message-actions {
@@ -3137,6 +3297,7 @@ export default function InterfacePage() {
 
         details {
           width: 100%;
+          min-width: 0;
         }
 
         summary {
@@ -3164,6 +3325,7 @@ export default function InterfacePage() {
           line-height: 1.55;
           white-space: pre-wrap;
           overflow-wrap: anywhere;
+          word-break: break-word;
         }
 
         .joker-thinking {
@@ -3330,6 +3492,10 @@ export default function InterfacePage() {
             align-items: stretch;
           }
 
+          .joker-top-actions {
+            justify-content: flex-start;
+          }
+
           .joker-health {
             justify-content: flex-start;
           }
@@ -3342,6 +3508,10 @@ export default function InterfacePage() {
           .joker-hero-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
           }
+
+          .joker-panel-head .joker-pill {
+            max-width: 58%;
+          }
         }
 
         @media (max-width: 860px) {
@@ -3353,6 +3523,10 @@ export default function InterfacePage() {
 
           .joker-prompt-grid {
             grid-template-columns: 1fr;
+          }
+
+          .joker-info-row {
+            grid-template-columns: minmax(104px, 0.4fr) minmax(0, 1fr);
           }
         }
 
@@ -3376,6 +3550,23 @@ export default function InterfacePage() {
           .joker-metric-grid,
           .joker-details-grid {
             grid-template-columns: 1fr;
+          }
+
+          .joker-info-row {
+            grid-template-columns: 1fr;
+            gap: 5px;
+          }
+
+          .joker-info-row dd {
+            text-align: left;
+          }
+
+          .joker-panel-head {
+            flex-direction: column;
+          }
+
+          .joker-panel-head .joker-pill {
+            max-width: 100%;
           }
 
           .joker-chat {
