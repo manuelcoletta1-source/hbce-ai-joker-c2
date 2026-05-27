@@ -33,6 +33,8 @@ import type {
   IprBoundMemoryHandoffEvaluation,
   IprBoundMemoryRecord,
   IprBoundMemoryRuntimeIdentity,
+  IprBoundMemorySaasTier,
+  IprBoundMemorySubject,
   MemoryPersistenceMode,
   MemoryScope
 } from "@/lib/ipr-bound-memory";
@@ -1090,122 +1092,122 @@ function buildRuntimeDiagnosticsAnswer(args: {
     "Questa diagnostica non è stata prodotta dal modello OpenAI sul prompt iniziale. È stata costruita da /api/chat dopo la generazione di EVT, OPC, audit e model usage.",
     "",
     "## IPR",
-    "- Runtime entity: " + RUNTIME_ENTITY,
-    "- Runtime IPR: " + RUNTIME_IPR,
-    "- Human IPR: " + args.handoff.humanIpr,
-    "- Subject: " + args.handoff.subjectName,
-    "- Certificate: " + args.handoff.certificateId,
-    "- Certificate status: " + args.handoff.status,
-    "- Scope: " + args.handoff.scope,
-    "- Access decision: " + args.handoff.accessDecision,
-    "- Identity binding: " + args.handoff.identityBinding,
-    "- Handoff source: " + args.handoff.source,
-    "- Authority: " + args.handoff.authority,
+    "- Runtime entity: `" + RUNTIME_ENTITY + "`",
+    "- Runtime IPR: `" + RUNTIME_IPR + "`",
+    "- Human IPR: `" + args.handoff.humanIpr + "`",
+    "- Subject: `" + args.handoff.subjectName + "`",
+    "- Certificate: `" + args.handoff.certificateId + "`",
+    "- Certificate status: `" + args.handoff.status + "`",
+    "- Scope: `" + args.handoff.scope + "`",
+    "- Access decision: `" + args.handoff.accessDecision + "`",
+    "- Identity binding: `" + args.handoff.identityBinding + "`",
+    "- Handoff source: `" + args.handoff.source + "`",
+    "- Authority: `" + args.handoff.authority + "`",
     "",
     "## MATRIX",
-    "- State: " + args.handoff.matrixState,
-    "- Active: " + String(args.handoff.matrixState === "MATRIX_ACTIVE"),
-    "- Reason: " + args.handoff.reason,
+    "- State: `" + args.handoff.matrixState + "`",
+    "- Active: `" + String(args.handoff.matrixState === "MATRIX_ACTIVE") + "`",
+    "- Reason: `" + args.handoff.reason + "`",
     "",
     "## Memory",
-    "- Scope: " + args.memory.scope,
-    "- Authority: " + args.memory.authority,
-    "- Persistence mode: " + args.memory.persistenceMode,
-    "- Persistence status: " + args.memory.persistenceStatus,
-    "- Persistence durable: " + String(args.memory.persistenceDurable),
-    "- Persistence database ready: " + String(args.memory.persistenceDatabaseReady),
-    "- Persistence database required: " + String(args.memory.persistenceDatabaseRequired),
-    "- Memory ID: " + args.memory.memoryId,
-    "- Memory key hash: " + args.memory.memoryKeyHash,
-    "- Memory record hash: " + args.memory.memoryHash,
-    "- Session: " + args.memory.sessionId,
-    "- Turns: " + String(args.memory.turns),
-    "- Last EVT: " + args.memory.lastEvtId,
-    "- Last OPC: " + args.memory.lastOpcId,
-    "- Last OPC chain hash: " + args.memory.lastOpcChainHash,
-    "- Memory hash before: " + args.memoryHashBefore,
-    "- Memory hash after: " + args.memoryHashAfter,
+    "- Scope: `" + args.memory.scope + "`",
+    "- Authority: `" + args.memory.authority + "`",
+    "- Persistence mode: `" + args.memory.persistenceMode + "`",
+    "- Persistence status: `" + args.memory.persistenceStatus + "`",
+    "- Persistence durable: `" + String(args.memory.persistenceDurable) + "`",
+    "- Persistence database ready: `" + String(args.memory.persistenceDatabaseReady) + "`",
+    "- Persistence database required: `" + String(args.memory.persistenceDatabaseRequired) + "`",
+    "- Memory ID: `" + args.memory.memoryId + "`",
+    "- Memory key hash: `" + args.memory.memoryKeyHash + "`",
+    "- Memory record hash: `" + args.memory.memoryHash + "`",
+    "- Session: `" + args.memory.sessionId + "`",
+    "- Turns: `" + String(args.memory.turns) + "`",
+    "- Last EVT: `" + args.memory.lastEvtId + "`",
+    "- Last OPC: `" + args.memory.lastOpcId + "`",
+    "- Last OPC chain hash: `" + args.memory.lastOpcChainHash + "`",
+    "- Memory hash before: `" + args.memoryHashBefore + "`",
+    "- Memory hash after: `" + args.memoryHashAfter + "`",
     "",
     "## Memory store",
-    "- Store name: " + args.memory.storeName,
-    "- Store kind: " + args.memory.storeKind,
-    "- Store status: " + args.memory.storeStatus,
-    "- Store durable: " + String(args.memory.storeDurable),
-    "- Store runtime scoped: " + String(args.memory.storeRuntimeScoped),
-    "- Store record count: " + String(args.memory.storeRecordCount),
-    "- Store persistence stage: " + args.memory.storePersistenceStage,
-    "- Store SaaS ready: " + String(args.memory.storeSaasReady),
-    "- Store requires database: " + String(args.memory.storeRequiresDatabase),
-    "- Database configured: " + String(args.memory.databaseConfigured),
-    "- Database available: " + String(args.memory.databaseAvailable),
+    "- Store name: `" + args.memory.storeName + "`",
+    "- Store kind: `" + args.memory.storeKind + "`",
+    "- Store status: `" + args.memory.storeStatus + "`",
+    "- Store durable: `" + String(args.memory.storeDurable) + "`",
+    "- Store runtime scoped: `" + String(args.memory.storeRuntimeScoped) + "`",
+    "- Store record count: `" + String(args.memory.storeRecordCount) + "`",
+    "- Store persistence stage: `" + args.memory.storePersistenceStage + "`",
+    "- Store SaaS ready: `" + String(args.memory.storeSaasReady) + "`",
+    "- Store requires database: `" + String(args.memory.storeRequiresDatabase) + "`",
+    "- Database configured: `" + String(args.memory.databaseConfigured) + "`",
+    "- Database available: `" + String(args.memory.databaseAvailable) + "`",
     "",
     "## Database memory",
-    "- memory_records write attempted: " + String(args.memory.persistenceMode === "DATABASE_PERSISTENT"),
-    "- memory_records write status: " + memoryWriteStatus,
-    "- memory_records read available: " + String(args.memory.storeKind === "DATABASE_PERSISTENT"),
-    "- database flush errors: " + (flushErrors.length ? flushErrors.join(" | ") : "none"),
-    "- memory payload persistence mode: " + args.memory.persistenceMode,
+    "- memory_records write attempted: `" + String(args.memory.persistenceMode === "DATABASE_PERSISTENT") + "`",
+    "- memory_records write status: `" + memoryWriteStatus + "`",
+    "- memory_records read available: `" + String(args.memory.storeKind === "DATABASE_PERSISTENT") + "`",
+    "- database flush errors: `" + (flushErrors.length ? flushErrors.join(" | ") : "none") + "`",
+    "- memory payload persistence mode: `" + args.memory.persistenceMode + "`",
     "",
     "## EVT",
-    "- Canonical AI EVT: " + CANONICAL_EVT,
-    "- Previous canonical EVT: " + CANONICAL_PREV,
-    "- Response EVT: " + args.evt.id,
-    "- Previous response EVT: " + args.evt.prev,
-    "- EVT hash: " + args.evt.hash,
-    "- EVT verification: VERIFIABLE",
-    "- EVT persistence ok: " + evtPersistenceOk,
-    "- EVT persistence status: " + evtPersistenceStatus,
-    "- EVT persistence error: " + evtPersistenceError,
+    "- Canonical AI EVT: `" + CANONICAL_EVT + "`",
+    "- Previous canonical EVT: `" + CANONICAL_PREV + "`",
+    "- Response EVT: `" + args.evt.id + "`",
+    "- Previous response EVT: `" + args.evt.prev + "`",
+    "- EVT hash: `" + args.evt.hash + "`",
+    "- EVT verification: `VERIFIABLE`",
+    "- EVT persistence ok: `" + evtPersistenceOk + "`",
+    "- EVT persistence status: `" + evtPersistenceStatus + "`",
+    "- EVT persistence error: `" + evtPersistenceError + "`",
     "",
     "## OPC",
-    "- OPC proof ID: " + args.opc.id,
-    "- OPC verification: " + args.opc.verificationStatus,
-    "- OPC chain hash: " + args.opc.chainHash,
-    "- OPC event hash: " + args.opc.eventHash,
-    "- OPC persistence ok: " + opcPersistenceOk,
-    "- OPC persistence status: " + opcPersistenceStatus,
-    "- OPC persistence error: " + opcPersistenceError,
-    "- legalCertification: false",
+    "- OPC proof ID: `" + args.opc.id + "`",
+    "- OPC verification: `" + args.opc.verificationStatus + "`",
+    "- OPC chain hash: `" + args.opc.chainHash + "`",
+    "- OPC event hash: `" + args.opc.eventHash + "`",
+    "- OPC persistence ok: `" + opcPersistenceOk + "`",
+    "- OPC persistence status: `" + opcPersistenceStatus + "`",
+    "- OPC persistence error: `" + opcPersistenceError + "`",
+    "- legalCertification: `false`",
     "",
     "## Audit",
-    "- Audit ID: " + auditId,
-    "- Audit status: " + auditStatus,
-    "- Audit persistence ok: " + auditPersistenceOk,
-    "- Audit persistence status: " + auditPersistenceStatus,
-    "- Audit persistence error: " + auditPersistenceError,
+    "- Audit ID: `" + auditId + "`",
+    "- Audit status: `" + auditStatus + "`",
+    "- Audit persistence ok: `" + auditPersistenceOk + "`",
+    "- Audit persistence status: `" + auditPersistenceStatus + "`",
+    "- Audit persistence error: `" + auditPersistenceError + "`",
     "",
     "## Model usage",
-    "- Usage ID: " + usageId,
-    "- Usage status: " + usageStatus,
-    "- Provider: " + args.providerName,
-    "- Provider state: " + args.providerState,
-    "- Model: " + args.model,
-    "- Model level: " + args.modelLevel,
-    "- OpenAI configured: " + String(args.openAIConfigured),
-    "- Input tokens: " + String(args.tokenUsage.inputTokens ?? "not_available"),
-    "- Output tokens: " + String(args.tokenUsage.outputTokens ?? "not_available"),
-    "- Total tokens: " + String(args.tokenUsage.totalTokens ?? "not_available"),
-    "- Usage persistence ok: " + usagePersistenceOk,
-    "- Usage persistence status: " + usagePersistenceStatus,
-    "- Usage persistence error: " + usagePersistenceError,
+    "- Usage ID: `" + usageId + "`",
+    "- Usage status: `" + usageStatus + "`",
+    "- Provider: `" + args.providerName + "`",
+    "- Provider state: `" + args.providerState + "`",
+    "- Model: `" + args.model + "`",
+    "- Model level: `" + args.modelLevel + "`",
+    "- OpenAI configured: `" + String(args.openAIConfigured) + "`",
+    "- Input tokens: `" + String(args.tokenUsage.inputTokens ?? "not_available") + "`",
+    "- Output tokens: `" + String(args.tokenUsage.outputTokens ?? "not_available") + "`",
+    "- Total tokens: `" + String(args.tokenUsage.totalTokens ?? "not_available") + "`",
+    "- Usage persistence ok: `" + usagePersistenceOk + "`",
+    "- Usage persistence status: `" + usagePersistenceStatus + "`",
+    "- Usage persistence error: `" + usagePersistenceError + "`",
     "",
     "## SaaS context",
-    "- Project: Project HBCE R&D Transfer SaaS",
-    "- Release: SaaS Core v0.1",
-    "- Tenant ID: " + args.saasContext.tenantId,
-    "- Workspace ID: " + args.saasContext.workspaceId,
-    "- Subscription ID: " + args.saasContext.subscriptionId,
-    "- Account ID: " + args.saasContext.accountId,
-    "- Thread ID: " + args.saasContext.threadId,
-    "- Tier: " + args.saasContext.saasTier,
-    "- Source: " + args.saasContext.source,
+    "- Project: `Project HBCE R&D Transfer SaaS`",
+    "- Release: `SaaS Core v0.1`",
+    "- Tenant ID: `" + args.saasContext.tenantId + "`",
+    "- Workspace ID: `" + args.saasContext.workspaceId + "`",
+    "- Subscription ID: `" + args.saasContext.subscriptionId + "`",
+    "- Account ID: `" + args.saasContext.accountId + "`",
+    "- Thread ID: `" + args.saasContext.threadId + "`",
+    "- Tier: `" + args.saasContext.saasTier + "`",
+    "- Source: `" + args.saasContext.source + "`",
     "",
     "## Hashes",
-    "- Input hash: " + args.inputHash,
-    "- Output hash: " + args.outputHash,
-    "- Policy hash: " + args.policyHash,
-    "- Finish reason: " + String(args.finishReason ?? "none"),
-    "- Provider error: " + String(args.providerError ?? "none"),
+    "- Input hash: `" + args.inputHash + "`",
+    "- Output hash: `" + args.outputHash + "`",
+    "- Policy hash: `" + args.policyHash + "`",
+    "- Finish reason: `" + String(args.finishReason ?? "none") + "`",
+    "- Provider error: `" + String(args.providerError ?? "none") + "`",
     "",
     "## Boundary",
     "OPC, EVT, audit, model usage e memory persistence sono livelli tecnici di tracciabilità, ricostruzione operativa e governance. Non sono certificazione legale, non sono identità pubblica ufficiale e non sostituiscono revisione umana o legale.",
@@ -1431,7 +1433,7 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
 
   const flags: string[] = [];
 
-  if (/(api[-]?key|secret|password|private key|token|bearer\s+[a-z0-9.-]+)/i.test(text)) {
+  if (/(api[_-]?key|secret|password|private key|token|bearer\s+[a-z0-9._-]+)/i.test(text)) {
     flags.push("CREDENTIAL_OR_SECRET_PATTERN");
   }
 
@@ -2035,7 +2037,7 @@ function extractOperationalFact(message: string): string | null {
     return null;
   }
 
-  if (/(EVT-|IPR|OPC|JOKER|HBCE|MATRIX|memoria|memory|Vercel|GitHub|route.ts|api\/chat)/i.test(clean)) {
+  if (/(EVT-|IPR|OPC|JOKER|HBCE|MATRIX|memoria|memory|Vercel|GitHub|route\.ts|api\/chat)/i.test(clean)) {
     return "Operational note from user: " + clean;
   }
 
@@ -2909,26 +2911,26 @@ async function resolveSaasRuntimeContextFromDatabase(
   try {
     const result = await queryHbceDatabase<SaasContextDatabaseRow>(
       `
-        SELECT
-          p.tenant_id,
-          p.workspace_id,
-          p.account_id,
-          s.subscription_id,
-          s.tier
-        FROM ipr_account_profiles p
-        LEFT JOIN subscriptions s
-          ON s.tenant_id = p.tenant_id
-          AND s.workspace_id = p.workspace_id
-          AND s.status = 'ACTIVE'
-        WHERE p.human_ipr = $1
-          AND p.certificate_id = $2
-          AND p.certificate_status = 'ACTIVE'
-          AND p.access_decision = 'ACCESS_GRANTED'
-        ORDER BY
-          CASE WHEN s.tier = 'IPR' THEN 0 ELSE 1 END,
-          s.created_at DESC NULLS LAST
-        LIMIT 1;
-      `.trim(),
+SELECT
+  p.tenant_id,
+  p.workspace_id,
+  p.account_id,
+  s.subscription_id,
+  s.tier
+FROM ipr_account_profiles p
+LEFT JOIN subscriptions s
+  ON s.tenant_id = p.tenant_id
+ AND s.workspace_id = p.workspace_id
+ AND s.status = 'ACTIVE'
+WHERE p.human_ipr = $1
+  AND p.certificate_id = $2
+  AND p.certificate_status = 'ACTIVE'
+  AND p.access_decision = 'ACCESS_GRANTED'
+ORDER BY
+  CASE WHEN s.tier = 'IPR' THEN 0 ELSE 1 END,
+  s.created_at DESC NULLS LAST
+LIMIT 1;
+`.trim(),
       [handoff.humanIpr, handoff.certificateId]
     );
 
@@ -3083,8 +3085,6 @@ function resolveModelRoutingReason(model: string, policy: PolicyEvaluation): str
   if (policy.riskLevel === "MEDIUM") {
     return "Medium risk request kept under enhanced audit semantics.";
   }
-
-  void model;
 
   return "Standard model selected by MVP runtime policy.";
 }
