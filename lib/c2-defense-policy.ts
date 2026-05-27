@@ -430,8 +430,7 @@ export function normalizeC2DefensePolicyInput(
 
   const organizationVerified =
     input.organizationVerified ??
-    VERIFIED_ORGANIZATION_STATES.includes(organizationState) ??
-    false;
+    VERIFIED_ORGANIZATION_STATES.includes(organizationState);
 
   const workspaceActive =
     input.workspaceActive ?? ACTIVE_WORKSPACE_STATES.includes(workspaceState);
@@ -440,10 +439,13 @@ export function normalizeC2DefensePolicyInput(
   const cyberRelevance = input.cyberRelevance ?? inferredCyberRelevance;
 
   const hasAuthorizedPerimeter = input.hasAuthorizedPerimeter ?? false;
+
   const defensivePurpose =
     input.defensivePurpose ??
-    cyberRelevance === "DEFENSIVE" ||
-    c2TextIncludesAny(message, DEFENSIVE_TERMS);
+    (
+      cyberRelevance === "DEFENSIVE" ||
+      c2TextIncludesAny(message, DEFENSIVE_TERMS)
+    );
 
   const assetPerimeterState =
     input.assetPerimeterState ??
@@ -478,9 +480,11 @@ export function normalizeC2DefensePolicyInput(
     workspaceActive,
     forceC2Evaluation:
       input.forceC2Evaluation ??
-      requestedTier === "C2_DEFENSE" ||
-      requestedTier === "STRATEGIC" ||
-      cyberRelevance === "C2_RELEVANT"
+      (
+        requestedTier === "C2_DEFENSE" ||
+        requestedTier === "STRATEGIC" ||
+        cyberRelevance === "C2_RELEVANT"
+      )
   };
 }
 
