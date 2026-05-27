@@ -437,10 +437,24 @@ function mergeUniqueStrings(
   return merged.slice(-max);
 }
 
+function getPreferredDefaultRuntimeMemoryStore(): IprBoundMemoryStoreAdapter<IprBoundMemoryRecord> {
+  const databaseReadyStore =
+    getDatabaseReadyIprBoundMemoryStore<IprBoundMemoryRecord>();
+
+  if (
+    databaseReadyStore.kind === "DATABASE_PERSISTENT" ||
+    databaseReadyStore.kind === "DATABASE_READY"
+  ) {
+    return databaseReadyStore;
+  }
+
+  return getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>();
+}
+
 function resolveMemoryStore(
   store?: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>
 ): IprBoundMemoryStoreAdapter<IprBoundMemoryRecord> {
-  return store ?? getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>();
+  return store ?? getPreferredDefaultRuntimeMemoryStore();
 }
 
 function resolvePersistenceMode(
@@ -586,8 +600,7 @@ function buildMemoryKey(input: {
       input.tenantId,
       input.workspaceId,
       input.subjectIpr,
-      input.runtimeIpr,
-      input.sessionId
+      input.runtimeIpr
     ].join("::");
   }
 
@@ -680,8 +693,8 @@ function buildMemorySummary(input: {
     return [
       `JOKER-C2 is operating with IPR-bound memory for ${input.handoff.subject.entity}.`,
       `Human IPR ${input.handoff.subject.ipr} is bound to runtime IPR ${input.runtime.ipr}.`,
-      "Memory key is scoped to tenant + workspace + human_ipr + runtime_ipr + session_id.",
-      `Session ${input.sessionId} remains governed by HBCE policy, EVT continuity, OPC proof receipts and MATRIX coordination.`,
+      "Memory key is scoped to tenant + workspace + human_ipr + runtime_ipr; session_id remains runtime context and audit linkage.",
+      `Active session ${input.sessionId} remains governed by HBCE policy, EVT continuity, OPC proof receipts and MATRIX coordination.`,
       `${CURRENT_OPERATIONAL_EVT}/${CURRENT_OPERATIONAL_AI_EVT} marks the active UP-EVT synchronism for memory, runtime and SaaS Core v0.1.`,
       saasSentence,
       persistenceSentence
@@ -715,7 +728,8 @@ function buildDerivedCanonicalMemoryFacts(
     "The dedicated server-side memory module is lib/ipr-bound-memory.ts.",
     "The dedicated storage adapter layer is lib/ipr-bound-memory-store.ts.",
     "IPR identifies; EVT traces; Memory preserves continuity; OPC proves; MATRIX organizes; HBCE governs.",
-    "The memory key must be scoped to tenant + workspace + human_ipr + runtime_ipr + session_id when biological IPR is verified.",
+    "For IPR_BOUND durable continuity, the memory key is scoped to tenant + workspace + human_ipr + runtime_ipr; session_id remains event/audit context.",
+    "For RUNTIME_ONLY continuity, the memory key remains scoped to tenant + workspace + runtime_ipr + session_id.",
     "If the biological IPR is not verified, semantic memory remains RUNTIME_ONLY.",
     "If the biological IPR is verified server-side, semantic memory may become IPR_BOUND.",
     "Current biological subject recognition must be derived from active server-side IPR validation or valid IPR handoff, never from stale memory facts.",
@@ -1029,8 +1043,8 @@ export function getOrCreateRuntimeMemory(
 
     const updatedWithoutHash: IprBoundMemoryRecordWithoutHash = {
       memoryId: existing.memoryId,
-      memoryKey: existing.memoryKey,
-      memoryKeyHash: existing.memoryKeyHash,
+      memoryKey,
+      memoryKeyHash: sha256Hex(memoryKey),
       scope,
       authority,
       persistenceMode: persistence.mode,
@@ -1411,20 +1425,18 @@ export function toPublicMemoryRecord(
 }
 
 export function describeRuntimeMemoryStore(): IprBoundMemoryStoreDescription {
-  return describeDefaultIprBoundMemoryStore();
+  return getPreferredDefaultRuntimeMemoryStore().describe();
 }
 
 export function getRuntimeMemoryStoreSize(): number {
-  return getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>().size();
+  return getPreferredDefaultRuntimeMemoryStore().size();
 }
 
 export function getRuntimeMemoryByKeyHash(
   memoryKeyHash: string
 ): PublicIprBoundMemoryRecord | null {
   const memory =
-    getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>().findByMemoryKeyHash(
-      memoryKeyHash
-    );
+    getPreferredDefaultRuntimeMemoryStore().findByMemoryKeyHash(memoryKeyHash);
 
   if (!memory) {
     return null;
@@ -1434,9 +1446,7 @@ export function getRuntimeMemoryByKeyHash(
 }
 
 export function getRuntimeMemoryPersistenceFrame(): MemoryPersistenceFrame {
-  return buildMemoryPersistenceFrame(
-    getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>()
-  );
+  return buildMemoryPersistenceFrame(getPreferredDefaultRuntimeMemoryStore());
 }
 
 export function isRuntimeMemoryDatabaseReady(): boolean {
@@ -1461,4 +1471,8 @@ export function getProcessMemoryStoreDescription(): IprBoundMemoryStoreDescripti
 
 export function getDatabaseReadyMemoryStoreDescription(): IprBoundMemoryStoreDescription {
   return getDatabaseReadyIprBoundMemoryStore<IprBoundMemoryRecord>().describe();
+}
+
+export function getDefaultMemoryStoreDescription(): IprBoundMemoryStoreDescription {
+  return describeDefaultIprBoundMemoryStore();
 }
