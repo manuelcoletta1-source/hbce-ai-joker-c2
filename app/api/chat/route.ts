@@ -2,6 +2,17 @@ import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
+import { queryHbceDatabase } from "@/lib/ipr-database";
+import {
+  HBCE_SELF_PILOT_ACCOUNT_ID,
+  HBCE_SELF_PILOT_CERTIFICATE_ID,
+  HBCE_SELF_PILOT_HUMAN_IPR,
+  HBCE_SELF_PILOT_SUBSCRIPTION_ID,
+  HBCE_SELF_PILOT_SUBSCRIPTION_TIER,
+  HBCE_SELF_PILOT_TENANT_ID,
+  HBCE_SELF_PILOT_WORKSPACE_ID
+} from "@/lib/ipr-database-schema";
+
 import { appendRuntimeAuditLogRecordAsync } from "@/lib/runtime-audit-log";
 import { appendModelUsageLogRecordAsync } from "@/lib/model-usage-log";
 import { persistEventToDatabase } from "@/lib/evt-ledger";
@@ -179,12 +190,28 @@ type ProviderCompletionResult = {
   finishReason: string | null;
 };
 
+type SaasRuntimeSource =
+  | "BODY"
+  | "DATABASE_PROFILE"
+  | "SELF_PILOT_SCHEMA_FALLBACK"
+  | "PLACEHOLDER";
+
 type SaasRuntimeContext = {
   tenantId: string;
   workspaceId: string;
   subscriptionId: string;
+  accountId: string;
   threadId: string;
   saasTier: "BASE" | "IPR";
+  source: SaasRuntimeSource;
+};
+
+type SaasContextDatabaseRow = Record<string, unknown> & {
+  tenant_id?: unknown;
+  workspace_id?: unknown;
+  subscription_id?: unknown;
+  tier?: unknown;
+  account_id?: unknown;
 };
 
 type RuntimePersistenceBridgeResult = {
@@ -249,6 +276,16 @@ export async function GET(): Promise<NextResponse> {
       reason: "Health check only. IPR-bound memory is activated during POST when a valid handoff is present.",
       store: toJsonObject(memoryStore, {})
     },
+    saas: {
+      project: "Project HBCE R&D Transfer SaaS",
+      release: "SaaS Core v0.1",
+      tenantId: "SERVER_VALIDATION_REQUIRED",
+      workspaceId: "SERVER_VALIDATION_REQUIRED",
+      subscriptionId: "SERVER_VALIDATION_REQUIRED",
+      accountId: "SERVER_VALIDATION_REQUIRED",
+      source: "HEALTH_CHECK",
+      legalCertification: false
+    },
     matrix: {
       state: "MATRIX_LIMITED",
       active: false,
@@ -290,7 +327,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const handoff = resolveHandoff(request, body);
   const policy = evaluatePolicy(message, files);
-  const saasContext = resolveSaasRuntimeContext(body, handoff, sessionId);
+  const saasContext = await resolveSaasRuntimeContext(body, handoff, sessionId);
   let memory = getOrCreateMemory(sessionId, handoff, t, saasContext);
 
   const model = resolveModel(body, policy);
@@ -323,15 +360,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerState = "LOCAL_FALLBACK";
     providerName = "LOCAL";
   } else if (runtimeDiagnosticsRequested) {
-    answer = buildRuntimeDiagnosticsPreparationAnswer(handoff, memory, policy);
+    answer = buildRuntimeDiagnosticsPreparationAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (isIdentityRecognitionQuestion(message)) {
-    answer = buildIdentityRecognitionAnswer(handoff, memory, policy);
+    answer = buildIdentityRecognitionAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (!openAIConfigured) {
-    answer = buildLocalFallbackAnswer(message, handoff, policy, memory);
+    answer = buildLocalFallbackAnswer(message, handoff, policy, memory, saasContext);
     providerState = "LOCAL_FALLBACK";
     providerName = "LOCAL";
   } else {
@@ -455,7 +492,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     mode: memory.persistenceMode,
     memoryStore: memory.storeKind,
     memoryPersistenceStatus: memory.persistenceStatus,
-    memoryPersistenceDurable: memory.persistenceDurable
+    memoryPersistenceDurable: memory.persistenceDurable,
+    tenantId: saasContext.tenantId,
+    workspaceId: saasContext.workspaceId,
+    subscriptionId: saasContext.subscriptionId,
+    accountId: saasContext.accountId,
+    saasContextSource: saasContext.source
   };
 
   const finalAnswer = runtimeDiagnosticsRequested
@@ -537,7 +579,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       mode: memory.persistenceMode,
       memoryPersistenceStatus: memory.persistenceStatus,
       memoryPersistenceDurable: memory.persistenceDurable,
-      memoryStore: memory.storeKind
+      memoryStore: memory.storeKind,
+      tenantId: saasContext.tenantId,
+      workspaceId: saasContext.workspaceId,
+      subscriptionId: saasContext.subscriptionId,
+      accountId: saasContext.accountId,
+      saasContextSource: saasContext.source
     },
     runtimeName: RUNTIME_ENTITY,
     state: providerState,
@@ -566,8 +613,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       tenantId: saasContext.tenantId,
       workspaceId: saasContext.workspaceId,
       subscriptionId: saasContext.subscriptionId,
+      accountId: saasContext.accountId,
       threadId: saasContext.threadId,
       tier: saasContext.saasTier,
+      source: saasContext.source,
       memory: toPublicMemory(memory),
       evtPersistence: persistenceBridge.evtPersistence,
       opcPersistence: persistenceBridge.opcPersistence,
@@ -693,6 +742,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       tokenUsage: toJsonTokenUsage(tokenUsage),
       handoffSource: handoff.source,
       handoffReason: handoff.reason,
+      saasContext: {
+        tenantId: saasContext.tenantId,
+        workspaceId: saasContext.workspaceId,
+        subscriptionId: saasContext.subscriptionId,
+        accountId: saasContext.accountId,
+        threadId: saasContext.threadId,
+        tier: saasContext.saasTier,
+        source: saasContext.source,
+        legalCertification: false
+      },
       memory: toPublicMemory(memory),
       memoryStore: buildMemoryStoreDiagnostic(memory),
       memoryFlushErrors: getRuntimeMemoryFlushErrors(),
@@ -720,7 +779,13 @@ async function completeWithOpenAI(args: {
 
   if (!apiKey) {
     return {
-      answer: buildLocalFallbackAnswer(args.message, args.handoff, args.policy, args.memory),
+      answer: buildLocalFallbackAnswer(
+        args.message,
+        args.handoff,
+        args.policy,
+        args.memory,
+        buildPlaceholderSaasRuntimeContext(args.memory.sessionId, args.handoff)
+      ),
       usage: EMPTY_TOKEN_USAGE,
       finishReason: null
     };
@@ -923,7 +988,11 @@ function isRuntimeDiagnosticsQuestion(message: string): boolean {
     "matrix",
     "memoria",
     "memory",
-    "ipr"
+    "ipr",
+    "tenant",
+    "workspace",
+    "subscription",
+    "saas"
   ].some((term) => normalized.includes(normalizeText(term)));
 
   return hasDiagnosticIntent && hasOperationalTerms;
@@ -932,7 +1001,8 @@ function isRuntimeDiagnosticsQuestion(message: string): boolean {
 function buildRuntimeDiagnosticsPreparationAnswer(
   handoff: HandoffResolution,
   memory: RuntimeMemoryState,
-  policy: PolicyEvaluation
+  policy: PolicyEvaluation,
+  saasContext: SaasRuntimeContext
 ): string {
   return [
     "JOKER-C2 runtime diagnostics requested.",
@@ -947,6 +1017,10 @@ function buildRuntimeDiagnosticsPreparationAnswer(
     "Memory scope: " + memory.scope,
     "Memory persistence: " + memory.persistenceMode,
     "Memory store: " + memory.storeKind,
+    "Tenant ID: " + saasContext.tenantId,
+    "Workspace ID: " + saasContext.workspaceId,
+    "Subscription ID: " + saasContext.subscriptionId,
+    "SaaS context source: " + saasContext.source,
     "Policy decision: " + policy.decision,
     "Risk level: " + policy.riskLevel,
     "",
@@ -1123,8 +1197,10 @@ function buildRuntimeDiagnosticsAnswer(args: {
     "- Tenant ID: `" + args.saasContext.tenantId + "`",
     "- Workspace ID: `" + args.saasContext.workspaceId + "`",
     "- Subscription ID: `" + args.saasContext.subscriptionId + "`",
+    "- Account ID: `" + args.saasContext.accountId + "`",
     "- Thread ID: `" + args.saasContext.threadId + "`",
     "- Tier: `" + args.saasContext.saasTier + "`",
+    "- Source: `" + args.saasContext.source + "`",
     "",
     "## Hashes",
     "- Input hash: `" + args.inputHash + "`",
@@ -1143,7 +1219,8 @@ function buildRuntimeDiagnosticsAnswer(args: {
 function buildIdentityRecognitionAnswer(
   handoff: HandoffResolution,
   memory: RuntimeMemoryState,
-  policy: PolicyEvaluation
+  policy: PolicyEvaluation,
+  saasContext: SaasRuntimeContext
 ): string {
   if (handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
     return [
@@ -1171,6 +1248,11 @@ function buildIdentityRecognitionAnswer(
       "Memory persistence mode: " + memory.persistenceMode,
       "Memory persistence status: " + memory.persistenceStatus,
       "Memory store: " + memory.storeKind,
+      "Tenant ID: " + saasContext.tenantId,
+      "Workspace ID: " + saasContext.workspaceId,
+      "Subscription ID: " + saasContext.subscriptionId,
+      "Account ID: " + saasContext.accountId,
+      "SaaS source: " + saasContext.source,
       "Policy decision: " + policy.decision,
       "Risk level: " + policy.riskLevel,
       "",
@@ -1179,7 +1261,8 @@ function buildIdentityRecognitionAnswer(
       "- certificato operativo ACTIVE;",
       "- scope JOKER_C2_ACCESS;",
       "- binding IPR_VERIFIED_BIOLOGICAL_SUBJECT;",
-      "- validazione lato runtime.",
+      "- validazione lato runtime;",
+      "- contesto SaaS risolto da body, database profile o self-pilot schema fallback.",
       "",
       "Boundary: non ti riconosco dal nome scritto nel prompt, non dalla memoria generica e non da una dichiarazione utente. Ti riconosco solo dal frame IPR verificato.",
       "legalCertification=false"
@@ -1205,6 +1288,10 @@ function buildIdentityRecognitionAnswer(
     "Semantic memory: " + memory.scope,
     "Memory authority: " + memory.authority,
     "Memory persistence mode: " + memory.persistenceMode,
+    "Tenant ID: " + saasContext.tenantId,
+    "Workspace ID: " + saasContext.workspaceId,
+    "Subscription ID: " + saasContext.subscriptionId,
+    "SaaS source: " + saasContext.source,
     "",
     "Campi mancanti o non validi:",
     missing.length > 0 ? "- " + missing.join("\n- ") : "- UNKNOWN_HANDOFF_VALIDATION_GAP",
@@ -1271,7 +1358,8 @@ function buildLocalFallbackAnswer(
   message: string,
   handoff: HandoffResolution,
   policy: PolicyEvaluation,
-  memory: RuntimeMemoryState
+  memory: RuntimeMemoryState,
+  saasContext: SaasRuntimeContext
 ): string {
   const identityLine =
     handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
@@ -1288,6 +1376,10 @@ function buildLocalFallbackAnswer(
     "Risk level: " + policy.riskLevel + ".",
     "Memory scope: " + memory.scope + ".",
     "Memory persistence: " + memory.persistenceMode + ".",
+    "Tenant ID: " + saasContext.tenantId + ".",
+    "Workspace ID: " + saasContext.workspaceId + ".",
+    "Subscription ID: " + saasContext.subscriptionId + ".",
+    "SaaS source: " + saasContext.source + ".",
     "",
     "Messaggio ricevuto:",
     truncate(message || "Messaggio vuoto.", 1200),
@@ -1609,7 +1701,6 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       "operationalCertificate.accessScope",
       "operationalCertificate.access_scope",
       "operationalCertificate.certificateScope",
-      "operationalCertificate.certificate_scope",
       "operational_certificate.scope",
       "operational_certificate.accessScope",
       "operational_certificate.access_scope",
@@ -1736,7 +1827,11 @@ function getOrCreateMemory(
     seedFacts: [
       "Runtime /api/chat is using canonical IPR-bound memory module.",
       "Memory persistence is selected through lib/ipr-bound-memory-store.ts.",
-      "JOKER-C2 SaaS Core v0.1 requires database persistence for durable multi-session memory."
+      "JOKER-C2 SaaS Core v0.1 requires database persistence for durable multi-session memory.",
+      "SaaS tenant context: " + saasContext.tenantId + ".",
+      "SaaS workspace context: " + saasContext.workspaceId + ".",
+      "SaaS subscription context: " + saasContext.subscriptionId + ".",
+      "SaaS context source: " + saasContext.source + "."
     ],
     tenantId: normalizeOptionalSaasId(saasContext.tenantId),
     workspaceId: normalizeOptionalSaasId(saasContext.workspaceId),
@@ -2351,7 +2446,12 @@ function buildOpcDatabaseProofRecord(args: {
       currentHumanEvt: "EVT-0016",
       currentAiEvt: "EVT-0016-AI",
       cycle: "UP-CANONICO",
-      saasTarget: "DATABASE_PERSISTENT"
+      saasTarget: "DATABASE_PERSISTENT",
+      tenantId: args.saasContext.tenantId,
+      workspaceId: args.saasContext.workspaceId,
+      subscriptionId: args.saasContext.subscriptionId,
+      accountId: args.saasContext.accountId,
+      saasContextSource: args.saasContext.source
     },
     persistence: {
       mode: "DATABASE_READY",
@@ -2392,6 +2492,9 @@ function buildOpcDatabaseProofRecord(args: {
         "Risk level: " + args.policy.riskLevel + ".",
         "Human oversight: " + args.policy.humanOversight + ".",
         "Memory persistence mode: " + args.memory.persistenceMode + ".",
+        "SaaS tenant: " + args.saasContext.tenantId + ".",
+        "SaaS workspace: " + args.saasContext.workspaceId + ".",
+        "SaaS subscription: " + args.saasContext.subscriptionId + ".",
         "legalCertification=false."
       ]
     },
@@ -2681,7 +2784,50 @@ async function recordSaasAuditAndUsage(args: {
   }
 }
 
-function resolveSaasRuntimeContext(
+async function resolveSaasRuntimeContext(
+  body: JsonObject,
+  handoff: HandoffResolution,
+  sessionId: string
+): Promise<SaasRuntimeContext> {
+  const bodyContext = resolveSaasRuntimeContextFromBody(body, handoff, sessionId);
+
+  if (isConcreteSaasContext(bodyContext)) {
+    return {
+      ...bodyContext,
+      source: "BODY"
+    };
+  }
+
+  if (handoff.identityBinding !== "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
+    return bodyContext;
+  }
+
+  const databaseContext = await resolveSaasRuntimeContextFromDatabase(
+    handoff,
+    sessionId,
+    bodyContext
+  );
+
+  if (databaseContext) {
+    return databaseContext;
+  }
+
+  if (isCanonicalSelfPilotHandoff(handoff)) {
+    return {
+      tenantId: HBCE_SELF_PILOT_TENANT_ID,
+      workspaceId: HBCE_SELF_PILOT_WORKSPACE_ID,
+      subscriptionId: HBCE_SELF_PILOT_SUBSCRIPTION_ID,
+      accountId: HBCE_SELF_PILOT_ACCOUNT_ID,
+      threadId: bodyContext.threadId,
+      saasTier: normalizeSaasTier(HBCE_SELF_PILOT_SUBSCRIPTION_TIER, handoff),
+      source: "SELF_PILOT_SCHEMA_FALLBACK"
+    };
+  }
+
+  return bodyContext;
+}
+
+function resolveSaasRuntimeContextFromBody(
   body: JsonObject,
   handoff: HandoffResolution,
   sessionId: string
@@ -2716,6 +2862,24 @@ function resolveSaasRuntimeContext(
       "subscription.id"
     ]) || "NO_SUBSCRIPTION";
 
+  const accountId =
+    firstStringFromSources([body], [
+      "accountId",
+      "account_id",
+      "saas.accountId",
+      "saas.account_id",
+      "account.id"
+    ]) || "NO_ACCOUNT";
+
+  const requestedTier =
+    firstStringFromSources([body], [
+      "tier",
+      "saasTier",
+      "saas.tier",
+      "saas.saasTier",
+      "subscription.tier"
+    ]) || "";
+
   const threadId =
     firstStringFromSources([body], [
       "threadId",
@@ -2730,12 +2894,137 @@ function resolveSaasRuntimeContext(
     tenantId,
     workspaceId,
     subscriptionId,
+    accountId,
     threadId,
+    saasTier: normalizeSaasTier(requestedTier, handoff),
+    source: isAnySaasContextPresent(tenantId, workspaceId, subscriptionId, accountId)
+      ? "BODY"
+      : "PLACEHOLDER"
+  };
+}
+
+async function resolveSaasRuntimeContextFromDatabase(
+  handoff: HandoffResolution,
+  sessionId: string,
+  bodyContext: SaasRuntimeContext
+): Promise<SaasRuntimeContext | null> {
+  try {
+    const result = await queryHbceDatabase<SaasContextDatabaseRow>(
+      `
+SELECT
+  p.tenant_id,
+  p.workspace_id,
+  p.account_id,
+  s.subscription_id,
+  s.tier
+FROM ipr_account_profiles p
+LEFT JOIN subscriptions s
+  ON s.tenant_id = p.tenant_id
+ AND s.workspace_id = p.workspace_id
+ AND s.status = 'ACTIVE'
+WHERE p.human_ipr = $1
+  AND p.certificate_id = $2
+  AND p.certificate_status = 'ACTIVE'
+  AND p.access_decision = 'ACCESS_GRANTED'
+ORDER BY
+  CASE WHEN s.tier = 'IPR' THEN 0 ELSE 1 END,
+  s.created_at DESC NULLS LAST
+LIMIT 1;
+`.trim(),
+      [handoff.humanIpr, handoff.certificateId]
+    );
+
+    if (!result.ok || result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+
+    const tenantId = stringFromValue(row.tenant_id).trim() || bodyContext.tenantId;
+    const workspaceId = stringFromValue(row.workspace_id).trim() || bodyContext.workspaceId;
+    const accountId = stringFromValue(row.account_id).trim() || bodyContext.accountId;
+    const subscriptionId =
+      stringFromValue(row.subscription_id).trim() ||
+      (isCanonicalSelfPilotHandoff(handoff) ? HBCE_SELF_PILOT_SUBSCRIPTION_ID : bodyContext.subscriptionId);
+    const tier = stringFromValue(row.tier).trim();
+
+    return {
+      tenantId,
+      workspaceId,
+      subscriptionId,
+      accountId,
+      threadId: bodyContext.threadId || sessionId,
+      saasTier: normalizeSaasTier(tier, handoff),
+      source: "DATABASE_PROFILE"
+    };
+  } catch {
+    return null;
+  }
+}
+
+function isConcreteSaasContext(context: SaasRuntimeContext): boolean {
+  return (
+    context.tenantId !== "NO_TENANT" &&
+    context.workspaceId !== "NO_WORKSPACE" &&
+    context.subscriptionId !== "NO_SUBSCRIPTION"
+  );
+}
+
+function isAnySaasContextPresent(
+  tenantId: string,
+  workspaceId: string,
+  subscriptionId: string,
+  accountId: string
+): boolean {
+  return (
+    tenantId !== "NO_TENANT" ||
+    workspaceId !== "NO_WORKSPACE" ||
+    subscriptionId !== "NO_SUBSCRIPTION" ||
+    accountId !== "NO_ACCOUNT"
+  );
+}
+
+function isCanonicalSelfPilotHandoff(handoff: HandoffResolution): boolean {
+  return (
+    handoff.humanIpr === HBCE_SELF_PILOT_HUMAN_IPR &&
+    handoff.certificateId === HBCE_SELF_PILOT_CERTIFICATE_ID &&
+    handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
+  );
+}
+
+function buildPlaceholderSaasRuntimeContext(
+  sessionId: string,
+  handoff: HandoffResolution
+): SaasRuntimeContext {
+  return {
+    tenantId: "NO_TENANT",
+    workspaceId: "NO_WORKSPACE",
+    subscriptionId: "NO_SUBSCRIPTION",
+    accountId: "NO_ACCOUNT",
+    threadId: sessionId,
     saasTier:
       handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
         ? "IPR"
-        : "BASE"
+        : "BASE",
+    source: "PLACEHOLDER"
   };
+}
+
+function normalizeSaasTier(
+  value: string,
+  handoff: HandoffResolution
+): "BASE" | "IPR" {
+  const normalized = value.trim().toUpperCase();
+
+  if (normalized === "IPR") {
+    return "IPR";
+  }
+
+  if (handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
+    return "IPR";
+  }
+
+  return "BASE";
 }
 
 function mapPolicyDecisionToRuntimeDecision(policy: PolicyEvaluation): string {
@@ -2889,6 +3178,7 @@ function buildBoundary(): JsonObject {
     evt: "EVT supports technical traceability and database persistence target only; it is not legal certification.",
     audit: "Runtime audit log supports operational reconstruction only and does not create legal certification.",
     modelUsage: "Model usage log supports SaaS accounting and operational reconstruction only.",
+    saas: "Tenant, workspace, subscription and account profile records are technical-operational SaaS records and do not create legal certification.",
     aiGovernanceBoundary: "Runtime policy, risk and oversight records support auditability but do not replace human or legal review.",
     privacy: "Do not send unauthorized personal, medical, legal, financial or secret material to the runtime."
   };
