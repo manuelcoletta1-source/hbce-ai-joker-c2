@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type ChangeEvent,
   type FormEvent,
   type KeyboardEvent,
   useEffect,
@@ -9,24 +10,7 @@ import {
   useState
 } from "react";
 
-type RuntimeHealth = {
-  ok?: boolean;
-  runtime?: string;
-  state?: string;
-  provider?: string;
-  apiMode?: string;
-  model?: string;
-  standardModel?: string;
-  deepModel?: string;
-  openAIConfigured?: boolean;
-  operationalContext?: Record<string, unknown>;
-  identity?: Record<string, unknown>;
-  access?: Record<string, unknown>;
-  memory?: Record<string, unknown>;
-  matrix?: Record<string, unknown>;
-  boundary?: Record<string, unknown>;
-  error?: string;
-};
+type JsonRecord = Record<string, unknown>;
 
 type RuntimeFileKind = "text" | "image" | "pdf" | "binary";
 
@@ -45,90 +29,45 @@ type RuntimeFile = {
   uploaded: boolean;
 };
 
-type IprHandoffSource =
-  | "url"
-  | "sessionStorage"
-  | "localStorage"
-  | "accountSession"
-  | "none";
-
-type IprHandoff = {
-  handoff_type: "HBCE_IPR_HANDOFF" | string;
-  handoff_version: string;
-  source: string;
-  issued_at?: string;
-  subject: {
-    entity: string;
-    ipr: string;
-    kind: "BIOLOGICAL_SUBJECT" | string;
-  };
-  certificate: {
-    certificate_id: string;
-    certificate_kind: string;
-    certificate_status: string;
-    certificate_scope: string[];
-    card_serial?: string;
-    certificate_hash?: string;
-  };
-  access: {
-    decision: string;
-    scope: string;
-    identity_binding: string;
-  };
-  client_context: {
-    transport_source: IprHandoffSource;
-    client_validation: "HANDOFF_PRESENT_FOR_SERVER_VALIDATION";
-    authority: "CLIENT_TRANSPORT_ONLY" | "SERVER_RUNTIME_VALIDATED";
-    note: string;
-  };
-  rawPayload?: Record<string, unknown>;
-};
-
-type IprHandoffLoadResult = {
-  handoff: IprHandoff | null;
-  source: IprHandoffSource;
-  error: string | null;
+type RuntimeHealth = {
+  ok?: boolean;
+  status?: string;
+  runtime?: string;
+  runtimeEntity?: string;
+  runtimeIpr?: string;
+  runtimeLevel?: string;
+  state?: string;
+  timestamp?: string;
+  project?: JsonRecord;
+  provider?: JsonRecord;
+  models?: JsonRecord;
+  database?: JsonRecord;
+  persistence?: JsonRecord;
+  identity?: JsonRecord;
+  access?: JsonRecord;
+  memory?: JsonRecord;
+  matrix?: JsonRecord;
+  c2Defense?: JsonRecord;
+  runtimeAuditLog?: JsonRecord;
+  modelUsageLog?: JsonRecord;
+  operationalContext?: JsonRecord;
+  boundary?: JsonRecord;
+  error?: string;
 };
 
 type IprAccountSessionResponse = {
   ok?: boolean;
   authenticated?: boolean;
   reason?: string;
-  cookieName?: string;
-  session?: {
-    sessionId?: string;
-    humanIpr?: string;
-    runtimeIpr?: string;
-    status?: string;
-    createdAt?: string;
-    expiresAt?: string;
-    revokedAt?: string | null;
-    lastSeenAt?: string | null;
-    deviceLabel?: string;
-    legalCertification?: boolean;
-  };
-  accountProfile?: Record<string, unknown>;
-  reconstructedIprHandoff?: unknown;
-  access?: {
-    decision?: string;
-    scope?: string;
-    identityBinding?: string;
-    source?: string;
-    legalCertification?: boolean;
-  };
-  memory?: {
-    expectedScope?: string;
-    expectedAuthority?: string;
-    persistenceMode?: string;
-  };
-  matrix?: {
-    expectedState?: string;
-    active?: boolean;
-  };
-  boundary?: unknown;
-  legalCertification?: boolean;
   detail?: string;
   error?: string;
+  session?: JsonRecord;
+  accountProfile?: JsonRecord;
+  reconstructedIprHandoff?: unknown;
+  access?: JsonRecord;
+  memory?: JsonRecord;
+  matrix?: JsonRecord;
+  legalCertification?: boolean;
 };
 
 type ChatApiResponse = {
@@ -181,7 +120,6 @@ type ChatMessage = {
 type InfoItem = {
   label: string;
   value: string;
-  tone?: "good" | "warn" | "bad";
 };
 
 const JOKER_SIGIL = "🜏";
@@ -193,12 +131,12 @@ const DEFAULT_PROMPT =
   "JOKER-C2, esegui una diagnostica runtime completa. Dimmi modello OpenAI, Runtime IPR, Human IPR, MATRIX, memoria, EVT, OPC e legalCertification=false.";
 
 const QUICK_PROMPTS = [
-  "mostrami la diagnostica runtime: IPR, MATRIX, memoria, database, EVT e OPC",
   "ciao JOKER-C2, sai chi sono?",
-  "prepara una presentazione di 60 secondi per OpenAI",
-  "prepara un pitch, con rischi, problemi, risoluzioni, potenzialità, difesa. per la cybersicurezza UE",
-  "spiega IPR, EVT, OPC e memoria IPR-bound",
-  "fail-closed test: cosa succede se manca OPC?",
+  "mostrami la diagnostica runtime: IPR, MATRIX, memoria, database, EVT e OPC",
+  "registra come memoria operativa: EVT-0016 / EVT-0016-AI è il punto attivo del progetto JOKER-C2 SaaS Core v0.1",
+  "richiama la memoria operativa attiva del progetto SaaS Core v0.1",
+  "mostrami la diagnostica del model router JOKER-C2",
+  "preparami una valutazione difensiva dei rischi cyber del runtime JOKER-C2, senza exploit e senza istruzioni offensive",
   "spiega perché JOKER-C2 non è una AI generica"
 ];
 
@@ -231,8 +169,6 @@ const IMAGE_FILE_TYPES = new Set([
   "image/gif"
 ]);
 
-const PDF_FILE_TYPES = new Set(["application/pdf"]);
-
 const HANDOFF_STORAGE_KEY = "hbce_ipr_handoff";
 
 const LEGACY_HANDOFF_STORAGE_KEYS = [
@@ -251,15 +187,15 @@ const HANDOFF_QUERY_KEYS = [
 ];
 
 function buildId(prefix: string): string {
-  const random =
+  const suffix =
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID().slice(0, 8).toUpperCase()
       : Math.random().toString(36).slice(2, 10).toUpperCase();
 
-  return `${prefix}-${Date.now()}-${random}`;
+  return `${prefix}-${Date.now()}-${suffix}`;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is JsonRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
@@ -279,7 +215,7 @@ function readPath(value: unknown, path: string[]): unknown {
 
 function safeText(value: unknown, fallback = "-"): string {
   if (typeof value === "string" && value.trim()) {
-    return normalizeVisibleRuntimeText(value.trim());
+    return normalizeVisibleText(value.trim());
   }
 
   if (typeof value === "number" || typeof value === "boolean") {
@@ -310,19 +246,15 @@ function safeJson(value: unknown): string {
   }
 }
 
-function fallbackDash(value: string, fallback: string): string {
-  return value && value !== "-" ? value : fallback;
-}
-
-function compactHash(value: string): string {
-  if (!value || value === "-" || value === "none" || value.length <= 34) {
+function compact(value: string): string {
+  if (!value || value === "-" || value.length <= 38) {
     return value;
   }
 
-  return `${value.slice(0, 20)}…${value.slice(-10)}`;
+  return `${value.slice(0, 22)}…${value.slice(-10)}`;
 }
 
-function normalizeRuntimeSearchText(value: string): string {
+function normalizeSearchText(value: string): string {
   return value
     .replace(/\s+/g, " ")
     .trim()
@@ -331,128 +263,36 @@ function normalizeRuntimeSearchText(value: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-function normalizeVisibleRuntimeText(value: string): string {
-  let text = value;
-
-  const replacements: Array<[RegExp, string]> = [
-    [/\bManuele Coletta\b/g, CANONICAL_MANUEL_DISPLAY_NAME],
-    [/\bmanuale coletta\b/gi, CANONICAL_MANUEL_DISPLAY_NAME],
-    [/\bmanuel coletta\b/gi, CANONICAL_MANUEL_DISPLAY_NAME],
-
-    [/\bHERMETICUM\s*BCE\.\.\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
-    [/\bHERMETICUM\s*BCE\.\.\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
-    [/\bHERMETICUM\s*BCE\.\./gi, "HERMETICUM B.C.E."],
-    [/\bHERMETICUM\s*BCESrl\b/g, "HERMETICUM B.C.E. S.r.l."],
-    [/\bHERMETICUM\s*BESrl\b/g, "HERMETICUM B.C.E. S.r.l."],
-    [/\bHERMETICUM\s+BCE\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
-    [/\bHERMETICUM\s+BCE\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
-    [/\bHermeticumBCE\b/g, "HERMETICUM B.C.E."],
-    [/\bHermeticum\s+BCE\b/gi, "HERMETICUM B.C.E."],
-    [/\bHERMETICUM\s+BCE\b/g, "HERMETICUM B.C.E."],
-    [/\bHERMETICUM\s+B\.C\.E\.?\s*Srl\b/gi, "HERMETICUM B.C.E. S.r.l."],
-    [/\bHERMETICUM\s+B\.C\.E\.?\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l."],
-
-    [/\bDiritti di proprietà intellettuale umani\b/gi, "Human IPR"],
-    [/\bDiritti di proprietà intellettuale umano\b/gi, "Human IPR"],
-    [/\bdiritti di proprietà intellettuale umani\b/gi, "Human IPR"],
-    [/\bdiritti di proprietà intellettuale umano\b/gi, "Human IPR"],
-    [/\bDiritti di proprietà intellettuale sui soggetti biologici\b/gi, "HBCE IPR Biological Subject"],
-    [/\bdiritti di proprietà intellettuale sui soggetti biologici\b/gi, "HBCE IPR Biological Subject"],
-    [/\bDiritti di proprietà intellettuale\b/gi, "IPR"],
-    [/\bdiritti di proprietà intellettuale\b/gi, "IPR"],
-    [/\bproprietà intellettuale\b/gi, "IPR"],
-    [/\bIPR in fase di esecuzione\b/gi, "Runtime IPR"],
-    [/\bSessione di aggiornamento sulla proprietà intellettuale\b/gi, "Refresh IPR session"],
-    [/\bAggiornare il passaggio di consegne locale\b/gi, "Refresh local handoff"],
-    [/\bPassaggio di consegne locale chiaro\b/gi, "Clear local handoff"],
-    [/\bpassaggio di consegne\b/gi, "handoff"],
-    [/\bcontinuità legata alla proprietà intellettuale\b/gi, "IPR-bound continuity"],
-    [/\bDPI legato agli eventi\b/g, "IPR legato agli eventi"],
-    [/\bDPI operativo\b/g, "IPR operativo"],
-    [/\bDPI biologico\b/g, "IPR biologico"],
-
-    [/\bCertificazione legale OPC\b/gi, "OPC legalCertification"],
-    [/\bCertificato legale OPC falso\b/gi, "OPC legalCertification=false"],
-    [/\bcertificazionelegale=false\b/gi, "legalCertification=false"],
-    [/\bcertificazione legale=false\b/gi, "legalCertification=false"],
-    [/\blegalCertificazione\b/g, "legalCertification"],
-    [/\blegalcertificazione\b/g, "legalCertification"],
-    [/\blegalCertificazione=falso\b/gi, "legalCertification=false"],
-    [/\blegalCertification=falso\b/gi, "legalCertification=false"],
-    [/\blegalCertification=false=false\b/g, "legalCertification=false"],
-
-    [/\bOPCRimane\b/g, "OPC rimane"],
-    [/\bOPC\s*Rimane\b/g, "OPC rimane"],
-    [/\bproof ricevute il tecnico\b/gi, "proof receipt tecniche"],
-    [/\bproof ricevute tecnico\b/gi, "proof receipt tecnica"],
-    [/\bproof ricevute tecniche\b/gi, "proof receipt tecniche"],
-    [/\bproof ricevute\b/gi, "proof receipt"],
-    [/\bricezione di prove OPC\b/gi, "ricevute tecniche OPC"],
-    [/\bprova ricevuta tecnico\b/gi, "proof receipt tecnica"],
-    [/\bprova ricevuta tecnica\b/gi, "proof receipt tecnica"],
-    [/\bprova di ricevuta tecnico\b/gi, "proof receipt tecnica"],
-    [/\bprova di ricevuta tecnica\b/gi, "proof receipt tecnica"],
-
-    [/\bchiusura automatica in caso di errore\b/gi, "fail-closed"],
-    [/\bchiusura in caso di errore\b/gi, "fail-closed"],
-    [/\bchiusura fallita\b/gi, "fail-closed"],
-    [/\bfallito-chiuso\b/gi, "fail-closed"],
-    [/\bla policy non è stata chiusa correttamente\b/gi, "policy runtime, blocco, escalation e fail-closed"],
-    [/\bnessuna pista di controllo, nessuna impresa di inaffidabilità\b/gi, "nessun audit trail, nessun affidamento enterprise-grade"],
-
-    [/\bContralto\b/g, "Alto"],
-    [/\bcontralto\b/g, "alto"],
-    [/\bSOC arredamento\b/gi, "SOC enablement"],
-    [/\bSOCI\b/g, "SOC"],
-    [/\bAI Atto\b/g, "AI Act"],
-    [/\bAI atto\b/gi, "AI Act"],
-    [/\bbut non autorizzato\b/gi, "uso non autorizzato"],
-    [/\bprendendo di mira gli illeciti\b/gi, "targeting illecito"],
-    [/\bdimostrare la tecnica\b/gi, "evidenza tecnica"],
-    [/\bapplicazione della politica\b/gi, "policy enforcement"],
-    [/\bdisposizione autorizzata\b/gi, "azione autorizzata"],
-    [/\btecnico di revisione\b/gi, "audit tecnico"],
-    [/\binquilino\b/gi, "tenant"],
-    [/\bspazio di lavoro\b/gi, "workspace"],
-    [/\baccesso di integrazione\b/gi, "assessment di integrazione"],
-    [/\bpilota di piano\b/gi, "piano pilota"],
-
-    [/\bMagnete al piombo\b/gi, "Lead magnet"],
-    [/\bprivacy del viso\b/gi, "consulenti privacy"],
-    [/\brespirazione anale\b/gi, "revisione umana"],
-    [/\borganismi sessuali\b/gi, "organismi istituzionali"],
-    [/\brevisione contabile\b/gi, "audit"],
-    [/\bTabù temporale\b/gi, "timestamp"],
-    [/\battraversamento pedonale normativo-operativo\b/gi, "mappatura normativo-operativa"],
-    [/\battraversamento normativo-operativo\b/gi, "mappatura normativo-operativa"],
-    [/\bRiepilogo della richiesta:/gi, "Formula sintetica:"]
-  ];
-
-  for (const [pattern, replacement] of replacements) {
-    text = text.replace(pattern, replacement);
-  }
-
-  return text
-    .replace(/\bHERMETICUM B\.C\.E\.\s*S\.r\.l\.\s*S\.r\.l\./g, "HERMETICUM B.C.E. S.r.l.")
-    .replace(/\bHERMETICUM B\.C\.E\.\s*B\.C\.E\./g, "HERMETICUM B.C.E.")
+function normalizeVisibleText(value: string): string {
+  return value
+    .replace(/\bManuele Coletta\b/g, CANONICAL_MANUEL_DISPLAY_NAME)
+    .replace(/\bmanuale coletta\b/gi, CANONICAL_MANUEL_DISPLAY_NAME)
+    .replace(/\bmanuel coletta\b/gi, CANONICAL_MANUEL_DISPLAY_NAME)
+    .replace(/\bHERMETICUM\s+BCE\s*S\.?r\.?l\.?\b/gi, "HERMETICUM B.C.E. S.r.l.")
+    .replace(/\bHERMETICUM\s+BCE\b/gi, "HERMETICUM B.C.E.")
+    .replace(/\blegalCertificazione\b/g, "legalCertification")
+    .replace(/\blegalcertificazione\b/g, "legalCertification")
+    .replace(/\blegalCertification=falso\b/gi, "legalCertification=false")
+    .replace(/\bcertificazionelegale=false\b/gi, "legalCertification=false")
+    .replace(/\bchiusura in caso di errore\b/gi, "fail-closed")
+    .replace(/\bchiusura automatica in caso di errore\b/gi, "fail-closed")
+    .replace(/\bproprietà intellettuale\b/gi, "IPR")
+    .replace(/\bDiritti di proprietà intellettuale\b/gi, "IPR")
     .replace(/\bIPR IPR\b/g, "IPR")
     .replace(/\bOPC OPC\b/g, "OPC")
     .replace(/\bEVT EVT\b/g, "EVT")
     .replace(/\bMATRIX MATRIX\b/g, "MATRIX")
     .replace(/\bHBCE HBCE\b/g, "HBCE")
-    .replace(/\s+\n/g, "\n")
     .replace(/\n{4,}/g, "\n\n\n")
     .trim();
 }
 
-function canonicalizeSubjectName(value: string, ipr?: string | null): string {
-  const raw = normalizeVisibleRuntimeText(value.trim());
-
+function canonicalizeSubjectName(value: string, ipr?: string): string {
   if (ipr === CANONICAL_MANUEL_HUMAN_IPR) {
     return CANONICAL_MANUEL_DISPLAY_NAME;
   }
 
-  const normalized = normalizeRuntimeSearchText(raw);
+  const normalized = normalizeSearchText(value);
 
   if (
     normalized === "manuel coletta" ||
@@ -462,29 +302,7 @@ function canonicalizeSubjectName(value: string, ipr?: string | null): string {
     return CANONICAL_MANUEL_DISPLAY_NAME;
   }
 
-  return raw || "-";
-}
-
-function normalizeScope(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => safeText(item, ""))
-      .filter(Boolean)
-      .map((item) => item.trim());
-  }
-
-  const text = safeText(value, "");
-
-  if (!text) return [];
-
-  return text
-    .split(/[,\s|]+/g)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function hasJokerAccessScope(scope: string[]): boolean {
-  return scope.some((item) => item.toUpperCase() === "JOKER_C2_ACCESS");
+  return normalizeVisibleText(value || "-");
 }
 
 function decodeBase64Text(value: string): string | null {
@@ -502,28 +320,30 @@ function decodeBase64Text(value: string): string | null {
   }
 }
 
-function parseHandoffCandidate(raw: string): Record<string, unknown> | null {
+function parseJsonCandidate(raw: string): JsonRecord | null {
   const trimmed = raw.trim();
 
   if (!trimmed) return null;
 
-  const candidates = [
-    trimmed,
-    (() => {
-      try {
-        return decodeURIComponent(trimmed);
-      } catch {
-        return null;
-      }
-    })(),
-    decodeBase64Text(trimmed)
-  ].filter((item): item is string => Boolean(item));
+  const decodedUrl = (() => {
+    try {
+      return decodeURIComponent(trimmed);
+    } catch {
+      return null;
+    }
+  })();
+
+  const candidates = [trimmed, decodedUrl, decodeBase64Text(trimmed)].filter(
+    (item): item is string => Boolean(item)
+  );
 
   for (const candidate of candidates) {
     try {
       const parsed = JSON.parse(candidate);
 
-      if (isRecord(parsed)) return parsed;
+      if (isRecord(parsed)) {
+        return parsed;
+      }
     } catch {
       continue;
     }
@@ -532,294 +352,11 @@ function parseHandoffCandidate(raw: string): Record<string, unknown> | null {
   return null;
 }
 
-function normalizeIprHandoff(
-  payload: Record<string, unknown>,
-  source: IprHandoffSource
-): IprHandoff | null {
-  const subjectEntity = firstText(
-    payload,
-    [
-      ["subject", "entity"],
-      ["subject", "name"],
-      ["subject", "full_name"],
-      ["verifiedSubject", "entity"],
-      ["verifiedSubject", "name"],
-      ["verified_subject", "entity"],
-      ["verified_subject", "name"],
-      ["verified_subject_entity"],
-      ["verified_subject_name"],
-      ["holder", "name"],
-      ["holder", "full_name"],
-      ["identity", "name"],
-      ["identity", "full_name"],
-      ["entity"],
-      ["name"],
-      ["fullName"]
-    ],
-    ""
-  );
-
-  const subjectIpr = firstText(
-    payload,
-    [
-      ["subject", "ipr"],
-      ["subject", "ipr_id"],
-      ["verifiedSubject", "ipr"],
-      ["verified_subject", "ipr"],
-      ["verified_subject_ipr"],
-      ["subject_ipr"],
-      ["ipr"],
-      ["ipr_id"],
-      ["identity", "ipr"],
-      ["humanIpr"],
-      ["human_ipr"]
-    ],
-    ""
-  );
-
-  const subjectKind =
-    firstText(
-      payload,
-      [
-        ["subject", "kind"],
-        ["verifiedSubject", "kind"],
-        ["verified_subject", "kind"],
-        ["subject_kind"],
-        ["subjectKind"]
-      ],
-      ""
-    ) || "BIOLOGICAL_SUBJECT";
-
-  const certificateId = firstText(
-    payload,
-    [
-      ["certificate", "certificate_id"],
-      ["certificate", "certificateId"],
-      ["certificate", "id"],
-      ["operationalCertificate", "certificate_id"],
-      ["operationalCertificate", "certificateId"],
-      ["operational_certificate", "certificate_id"],
-      ["verified_subject_certificate_id"],
-      ["certificate_id"],
-      ["certificateId"]
-    ],
-    ""
-  );
-
-  const certificateKind =
-    firstText(
-      payload,
-      [
-        ["certificate", "certificate_kind"],
-        ["certificate", "certificateKind"],
-        ["certificate", "kind"],
-        ["operationalCertificate", "certificate_kind"],
-        ["operationalCertificate", "certificateKind"],
-        ["operational_certificate", "certificate_kind"],
-        ["certificate_kind"],
-        ["certificateKind"]
-      ],
-      ""
-    ) || "CERTIFICATE_09_OPERATIONAL";
-
-  const certificateStatus =
-    firstText(
-      payload,
-      [
-        ["certificate", "certificate_status"],
-        ["certificate", "certificateStatus"],
-        ["certificate", "status"],
-        ["operationalCertificate", "certificate_status"],
-        ["operationalCertificate", "certificateStatus"],
-        ["operational_certificate", "certificate_status"],
-        ["verified_subject_certificate_status"],
-        ["certificate_status"],
-        ["certificateStatus"]
-      ],
-      ""
-    ).toUpperCase() || "UNKNOWN";
-
-  const certificateScope = normalizeScope(
-    readPath(payload, ["certificate", "certificate_scope"]) ??
-      readPath(payload, ["certificate", "certificateScope"]) ??
-      readPath(payload, ["certificate", "scope"]) ??
-      readPath(payload, ["operationalCertificate", "certificate_scope"]) ??
-      readPath(payload, ["operationalCertificate", "certificateScope"]) ??
-      readPath(payload, ["operational_certificate", "certificate_scope"]) ??
-      readPath(payload, ["verified_subject_certificate_scope"]) ??
-      readPath(payload, ["certificate_scope"]) ??
-      readPath(payload, ["certificateScope"]) ??
-      readPath(payload, ["scope"]) ??
-      readPath(payload, ["accessScope"])
-  );
-
-  const cardSerial = firstText(
-    payload,
-    [
-      ["certificate", "card_serial"],
-      ["certificate", "cardSerial"],
-      ["operationalCertificate", "card_serial"],
-      ["operationalCertificate", "cardSerial"],
-      ["operational_certificate", "card_serial"],
-      ["verified_subject_card_serial"],
-      ["card_serial"],
-      ["cardSerial"]
-    ],
-    ""
-  );
-
-  const certificateHash = firstText(
-    payload,
-    [
-      ["certificate", "certificate_hash"],
-      ["certificate", "certificateHash"],
-      ["certificate", "hash"],
-      ["operationalCertificate", "certificate_hash"],
-      ["operationalCertificate", "certificateHash"],
-      ["operational_certificate", "certificate_hash"],
-      ["certificate_hash"],
-      ["certificateHash"],
-      ["hash"]
-    ],
-    ""
-  );
-
-  const accessDecision =
-    firstText(
-      payload,
-      [
-        ["access", "decision"],
-        ["access_decision"],
-        ["accessDecision"],
-        ["verified_subject_access_decision"]
-      ],
-      ""
-    ).toUpperCase() || "PENDING_SERVER_VALIDATION";
-
-  const accessScope =
-    firstText(
-      payload,
-      [
-        ["access", "scope"],
-        ["verified_subject_certificate_scope"],
-        ["certificate_scope"],
-        ["certificateScope"],
-        ["accessScope"]
-      ],
-      ""
-    ) || (hasJokerAccessScope(certificateScope) ? "JOKER_C2_ACCESS" : "UNKNOWN");
-
-  const identityBinding =
-    firstText(
-      payload,
-      [
-        ["access", "identity_binding"],
-        ["access", "identityBinding"],
-        ["identity_binding"],
-        ["identityBinding"]
-      ],
-      ""
-    ) || "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
-
-  if (!subjectIpr || !certificateId || certificateStatus !== "ACTIVE") {
-    return null;
-  }
-
-  const effectiveScope =
-    certificateScope.length > 0
-      ? certificateScope
-      : accessScope === "JOKER_C2_ACCESS"
-        ? ["JOKER_C2_ACCESS"]
-        : [];
-
-  if (!hasJokerAccessScope(effectiveScope)) {
-    return null;
-  }
-
-  return {
-    handoff_type:
-      firstText(payload, [["handoff_type"], ["type"]], "") || "HBCE_IPR_HANDOFF",
-    handoff_version:
-      firstText(payload, [["handoff_version"], ["version"]], "") || "1.0",
-    source:
-      source === "accountSession"
-        ? "IPR_ACCOUNT_SESSION"
-        : firstText(payload, [["source"], ["issuer"], ["app"]], "") ||
-          "HBCE_IPR_ONBOARDING_APP",
-    issued_at: firstText(payload, [["issued_at"], ["issuedAt"]], ""),
-    subject: {
-      entity: canonicalizeSubjectName(
-        subjectEntity || "VERIFIED_BIOLOGICAL_SUBJECT",
-        subjectIpr
-      ),
-      ipr: subjectIpr,
-      kind: subjectKind
-    },
-    certificate: {
-      certificate_id: certificateId,
-      certificate_kind: certificateKind,
-      certificate_status: certificateStatus,
-      certificate_scope: effectiveScope,
-      card_serial: cardSerial || undefined,
-      certificate_hash: certificateHash || undefined
-    },
-    access: {
-      decision: accessDecision,
-      scope: accessScope,
-      identity_binding: identityBinding
-    },
-    client_context: {
-      transport_source: source,
-      client_validation: "HANDOFF_PRESENT_FOR_SERVER_VALIDATION",
-      authority:
-        source === "accountSession"
-          ? "SERVER_RUNTIME_VALIDATED"
-          : "CLIENT_TRANSPORT_ONLY",
-      note:
-        source === "accountSession"
-          ? "The IPR handoff was reconstructed from the authenticated server-side IPR account session."
-          : "The browser can transport the IPR handoff, but only the JOKER-C2 API can validate and authorize it."
-    },
-    rawPayload: payload
-  };
-}
-
-function buildIprHandoffFromAccountSession(
-  payload: IprAccountSessionResponse | null
-): IprHandoff | null {
-  if (!payload || payload.authenticated !== true) return null;
-
-  if (isRecord(payload.reconstructedIprHandoff)) {
-    const normalized = normalizeIprHandoff(
-      payload.reconstructedIprHandoff,
-      "accountSession"
-    );
-
-    if (normalized) return normalized;
-  }
-
-  if (isRecord(payload.accountProfile)) {
-    return normalizeIprHandoff(payload.accountProfile, "accountSession");
-  }
-
-  return null;
-}
-
-function readStoredHandoff(key: string): string | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    return window.sessionStorage.getItem(key) || window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function persistHandoff(handoff: IprHandoff) {
+function persistHandoff(raw: JsonRecord) {
   if (typeof window === "undefined") return;
 
   try {
-    const serialized = JSON.stringify(handoff.rawPayload || handoff);
+    const serialized = JSON.stringify(raw);
 
     window.sessionStorage.setItem(HANDOFF_STORAGE_KEY, serialized);
     window.localStorage.setItem(HANDOFF_STORAGE_KEY, serialized);
@@ -866,7 +403,23 @@ function stripHandoffQueryParams() {
   }
 }
 
-function loadIprHandoffFromBrowser(): IprHandoffLoadResult {
+function readStoredHandoff(key: string): JsonRecord | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.sessionStorage.getItem(key) || window.localStorage.getItem(key);
+
+    return raw ? parseJsonCandidate(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function loadIprHandoffFromBrowser(): {
+  handoff: JsonRecord | null;
+  source: string;
+  error: string | null;
+} {
   if (typeof window === "undefined") {
     return {
       handoff: null,
@@ -883,15 +436,14 @@ function loadIprHandoffFromBrowser(): IprHandoffLoadResult {
 
       if (!raw) continue;
 
-      const parsed = parseHandoffCandidate(raw);
-      const handoff = parsed ? normalizeIprHandoff(parsed, "url") : null;
+      const parsed = parseJsonCandidate(raw);
 
-      if (handoff) {
-        persistHandoff(handoff);
+      if (parsed) {
+        persistHandoff(parsed);
         stripHandoffQueryParams();
 
         return {
-          handoff,
+          handoff: parsed,
           source: "url",
           error: null
         };
@@ -904,63 +456,24 @@ function loadIprHandoffFromBrowser(): IprHandoffLoadResult {
       };
     }
 
-    const sessionRaw = window.sessionStorage.getItem(HANDOFF_STORAGE_KEY);
+    const canonical = readStoredHandoff(HANDOFF_STORAGE_KEY);
 
-    if (sessionRaw) {
-      const parsed = parseHandoffCandidate(sessionRaw);
-      const handoff = parsed
-        ? normalizeIprHandoff(parsed, "sessionStorage")
-        : null;
-
-      if (handoff) {
-        return {
-          handoff,
-          source: "sessionStorage",
-          error: null
-        };
-      }
-
+    if (canonical) {
       return {
-        handoff: null,
-        source: "sessionStorage",
-        error: "Invalid IPR handoff in sessionStorage"
-      };
-    }
-
-    const localRaw = window.localStorage.getItem(HANDOFF_STORAGE_KEY);
-
-    if (localRaw) {
-      const parsed = parseHandoffCandidate(localRaw);
-      const handoff = parsed ? normalizeIprHandoff(parsed, "localStorage") : null;
-
-      if (handoff) {
-        return {
-          handoff,
-          source: "localStorage",
-          error: null
-        };
-      }
-
-      return {
-        handoff: null,
+        handoff: canonical,
         source: "localStorage",
-        error: "Invalid IPR handoff in localStorage"
+        error: null
       };
     }
 
     for (const key of LEGACY_HANDOFF_STORAGE_KEYS) {
-      const raw = readStoredHandoff(key);
+      const legacy = readStoredHandoff(key);
 
-      if (!raw) continue;
-
-      const parsed = parseHandoffCandidate(raw);
-      const handoff = parsed ? normalizeIprHandoff(parsed, "localStorage") : null;
-
-      if (handoff) {
-        persistHandoff(handoff);
+      if (legacy) {
+        persistHandoff(legacy);
 
         return {
-          handoff,
+          handoff: legacy,
           source: "localStorage",
           error: null
         };
@@ -972,19 +485,143 @@ function loadIprHandoffFromBrowser(): IprHandoffLoadResult {
       source: "none",
       error: null
     };
-  } catch (err) {
+  } catch (error) {
     return {
       handoff: null,
       source: "none",
-      error: err instanceof Error ? err.message : "IPR_HANDOFF_LOAD_FAILED"
+      error: error instanceof Error ? error.message : "IPR_HANDOFF_LOAD_FAILED"
     };
   }
 }
 
-function getAssistantText(payload: ChatApiResponse): string {
-  return normalizeVisibleRuntimeText(
-    safeText(payload.response || payload.text, "[EMPTY_RESPONSE]")
+function getHandoffSubjectIpr(handoff: JsonRecord | null): string {
+  if (!handoff) return "NOT_VERIFIED";
+
+  return firstText(
+    handoff,
+    [
+      ["subject", "ipr"],
+      ["subject", "ipr_id"],
+      ["verifiedSubject", "ipr"],
+      ["verified_subject", "ipr"],
+      ["verified_subject_ipr"],
+      ["subject_ipr"],
+      ["humanIpr"],
+      ["human_ipr"],
+      ["ipr"],
+      ["ipr_id"],
+      ["identity", "ipr"]
+    ],
+    "NOT_VERIFIED"
   );
+}
+
+function getHandoffSubjectName(handoff: JsonRecord | null, ipr: string): string {
+  if (!handoff) return "No verified subject";
+
+  const subject = firstText(
+    handoff,
+    [
+      ["subject", "entity"],
+      ["subject", "name"],
+      ["subject", "full_name"],
+      ["verifiedSubject", "entity"],
+      ["verifiedSubject", "name"],
+      ["verified_subject", "entity"],
+      ["verified_subject", "name"],
+      ["verified_subject_entity"],
+      ["verified_subject_name"],
+      ["holder", "name"],
+      ["holder", "full_name"],
+      ["identity", "name"],
+      ["identity", "full_name"],
+      ["entity"],
+      ["name"],
+      ["fullName"]
+    ],
+    "Verified biological subject"
+  );
+
+  return canonicalizeSubjectName(subject, ipr);
+}
+
+function getHandoffCertificateId(handoff: JsonRecord | null): string {
+  if (!handoff) return "NO_CERTIFICATE";
+
+  return firstText(
+    handoff,
+    [
+      ["certificate", "certificate_id"],
+      ["certificate", "certificateId"],
+      ["certificate", "id"],
+      ["operationalCertificate", "certificate_id"],
+      ["operationalCertificate", "certificateId"],
+      ["operational_certificate", "certificate_id"],
+      ["verified_subject_certificate_id"],
+      ["certificate_id"],
+      ["certificateId"]
+    ],
+    "NO_CERTIFICATE"
+  );
+}
+
+function getHandoffCertificateStatus(handoff: JsonRecord | null): string {
+  if (!handoff) return "MISSING";
+
+  return firstText(
+    handoff,
+    [
+      ["certificate", "certificate_status"],
+      ["certificate", "certificateStatus"],
+      ["certificate", "status"],
+      ["operationalCertificate", "certificate_status"],
+      ["operationalCertificate", "certificateStatus"],
+      ["operational_certificate", "certificate_status"],
+      ["verified_subject_certificate_status"],
+      ["certificate_status"],
+      ["certificateStatus"]
+    ],
+    "UNKNOWN"
+  ).toUpperCase();
+}
+
+function getHandoffAccessDecision(handoff: JsonRecord | null): string {
+  if (!handoff) return "PENDING_SERVER_VALIDATION";
+
+  return firstText(
+    handoff,
+    [
+      ["access", "decision"],
+      ["access_decision"],
+      ["accessDecision"],
+      ["verified_subject_access_decision"]
+    ],
+    "PENDING_SERVER_VALIDATION"
+  ).toUpperCase();
+}
+
+function getHandoffScope(handoff: JsonRecord | null): string {
+  if (!handoff) return "MATRIX_LIMITED";
+
+  const value =
+    readPath(handoff, ["certificate", "certificate_scope"]) ??
+    readPath(handoff, ["certificate", "certificateScope"]) ??
+    readPath(handoff, ["certificate", "scope"]) ??
+    readPath(handoff, ["verified_subject_certificate_scope"]) ??
+    readPath(handoff, ["certificate_scope"]) ??
+    readPath(handoff, ["certificateScope"]) ??
+    readPath(handoff, ["scope"]) ??
+    readPath(handoff, ["accessScope"]);
+
+  if (Array.isArray(value)) {
+    return value.map((item) => safeText(item, "")).filter(Boolean).join(", ");
+  }
+
+  return safeText(value, "MATRIX_LIMITED");
+}
+
+function getAssistantText(payload: ChatApiResponse): string {
+  return normalizeVisibleText(safeText(payload.response || payload.text, "[EMPTY_RESPONSE]"));
 }
 
 function getContinuityRef(payload: ChatApiResponse): string | null {
@@ -1019,235 +656,60 @@ function getModel(payload?: ChatApiResponse | RuntimeHealth | null): string {
       ["modelUsed"],
       ["model"],
       ["runtime", "model"],
-      ["runtime", "modelUsed"]
+      ["runtime", "modelUsed"],
+      ["provider", "model"],
+      ["models", "defaultModel"]
     ],
     "-"
   );
 }
 
-function getIpr(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
+function getRuntimeIpr(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "IPR-AI-0001";
 
   return firstText(
     payload,
     [
+      ["runtimeIpr"],
       ["identity", "runtimeIpr"],
       ["identity", "ipr"],
       ["runtime", "ipr"],
       ["runtime", "runtime_ipr"]
     ],
-    "-"
+    "IPR-AI-0001"
   );
 }
 
-function getCurrentAiEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "EVT-0016-AI";
-
-  return firstText(
-    payload,
-    [
-      ["operationalContext", "current_ai_evt"],
-      ["runtime", "operationalContext", "current_ai_evt"],
-      ["identity", "evt"],
-      ["identity", "checkpoint"],
-      ["governedEvt", "operational_context", "current_ai_evt"],
-      ["modernEvt", "operational_context", "current_ai_evt"]
-    ],
-    "EVT-0016-AI"
-  );
-}
-
-function getEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["continuityRef"],
-      ["governedEvt", "evt"],
-      ["modernEvt", "evt"],
-      ["evt", "evt"],
-      ["event", "evt"],
-      ["runtime", "governedEvt"],
-      ["runtime", "legacyEvt"]
-    ],
-    "-"
-  );
-}
-
-function getOperationalHumanEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "EVT-0016";
-
-  return firstText(
-    payload,
-    [
-      ["operationalContext", "current_evt"],
-      ["runtime", "operationalContext", "current_evt"],
-      ["governedEvt", "operational_context", "current_evt"],
-      ["modernEvt", "operational_context", "current_evt"]
-    ],
-    "EVT-0016"
-  );
-}
-
-function getOperationalCycle(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "UP-CANONICO";
-
-  return firstText(
-    payload,
-    [
-      ["operationalContext", "current_cycle"],
-      ["runtime", "operationalContext", "current_cycle"],
-      ["identity", "cycle"],
-      ["runtime", "cycle"],
-      ["governedEvt", "operational_context", "current_cycle"],
-      ["modernEvt", "operational_context", "current_cycle"]
-    ],
-    "UP-CANONICO"
-  );
-}
-
-function getEventFamily(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "UP-EVT";
-
-  return firstText(
-    payload,
-    [
-      ["operationalContext", "event_family"],
-      ["runtime", "operationalContext", "event_family"],
-      ["identity", "eventFamily"],
-      ["runtime", "eventFamily"],
-      ["governedEvt", "operational_context", "event_family"],
-      ["modernEvt", "operational_context", "event_family"]
-    ],
-    "UP-EVT"
-  );
-}
-
-function getProjectBirthDate(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "19/01/2026";
-
-  return firstText(
-    payload,
-    [
-      ["operationalContext", "project_birth", "display_date"],
-      ["runtime", "operationalContext", "project_birth", "display_date"],
-      ["governedEvt", "operational_context", "project_birth", "display_date"],
-      ["modernEvt", "operational_context", "project_birth", "display_date"],
-      ["identity", "projectBirth", "displayDate"],
-      ["identity", "projectBirth", "display_date"]
-    ],
-    "19/01/2026"
-  );
-}
-
-function getProjectBirthLabel(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "HBCE R&D / AI JOKER-C2 project birth date";
-
-  return firstText(
-    payload,
-    [
-      ["operationalContext", "project_birth", "label"],
-      ["runtime", "operationalContext", "project_birth", "label"],
-      ["governedEvt", "operational_context", "project_birth", "label"],
-      ["modernEvt", "operational_context", "project_birth", "label"],
-      ["identity", "projectBirth", "label"]
-    ],
-    "HBCE R&D / AI JOKER-C2 project birth date"
-  );
-}
-
-function getMonthlyReference(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "UP-MESE-4";
-
-  return firstText(
-    payload,
-    [
-      ["operationalContext", "monthly_reference", "cycle"],
-      ["runtime", "operationalContext", "monthly_reference", "cycle"],
-      ["governedEvt", "operational_context", "monthly_reference", "cycle"],
-      ["modernEvt", "operational_context", "monthly_reference", "cycle"],
-      ["identity", "monthlyReference", "cycle"]
-    ],
-    "UP-MESE-4"
-  );
-}
-
-function getMonthlyReferenceLabel(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "Fourth monthly synchronization cycle";
-
-  return firstText(
-    payload,
-    [
-      ["operationalContext", "monthly_reference", "label"],
-      ["runtime", "operationalContext", "monthly_reference", "label"],
-      ["governedEvt", "operational_context", "monthly_reference", "label"],
-      ["modernEvt", "operational_context", "monthly_reference", "label"],
-      ["identity", "monthlyReference", "label"]
-    ],
-    "Fourth monthly synchronization cycle"
-  );
-}
-
-function getPreviousCheckpointRef(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "EVT-0015 / EVT-0015-AI";
-
-  const human = firstText(
-    payload,
-    [
-      ["operationalContext", "previous_checkpoint_ref", "evt"],
-      ["runtime", "operationalContext", "previous_checkpoint_ref", "evt"],
-      ["governedEvt", "operational_context", "previous_checkpoint_ref", "evt"],
-      ["modernEvt", "operational_context", "previous_checkpoint_ref", "evt"],
-      ["identity", "previousCheckpointRef", "evt"]
-    ],
-    "EVT-0015"
-  );
-
-  const ai = firstText(
-    payload,
-    [
-      ["operationalContext", "previous_checkpoint_ref", "ai_evt"],
-      ["runtime", "operationalContext", "previous_checkpoint_ref", "ai_evt"],
-      ["governedEvt", "operational_context", "previous_checkpoint_ref", "ai_evt"],
-      ["modernEvt", "operational_context", "previous_checkpoint_ref", "ai_evt"],
-      ["identity", "previousCheckpointRef", "aiEvt"]
-    ],
-    "EVT-0015-AI"
-  );
-
-  return `${human} / ${ai}`;
-}
-
-function getVerifiedSubjectIpr(payload?: ChatApiResponse | null): string {
+function getHumanIpr(payload?: ChatApiResponse | RuntimeHealth | null): string {
   if (!payload) return "-";
 
   return firstText(
     payload,
     [
       ["verifiedSubject", "ipr"],
+      ["identity", "humanIpr"],
+      ["identity", "verifiedSubject", "ipr"],
       ["runtime", "verifiedSubject", "ipr"],
       ["runtime", "verified_subject_ipr"],
-      ["identity", "verifiedSubject", "ipr"],
-      ["identity", "verified_subject_ipr"]
+      ["access", "humanIpr"]
     ],
     "-"
   );
 }
 
-function getVerifiedSubjectName(payload?: ChatApiResponse | null): string {
+function getSubjectName(payload?: ChatApiResponse | null): string {
   if (!payload) return "-";
 
-  const ipr = getVerifiedSubjectIpr(payload);
+  const ipr = getHumanIpr(payload);
   const subject = firstText(
     payload,
     [
       ["verifiedSubject", "entity"],
       ["verifiedSubject", "name"],
-      ["runtime", "verifiedSubject", "entity"],
-      ["runtime", "verified_subject_entity"],
       ["identity", "verifiedSubject", "entity"],
-      ["identity", "verified_subject_entity"]
+      ["identity", "verified_subject_entity"],
+      ["runtime", "verifiedSubject", "entity"],
+      ["runtime", "verified_subject_entity"]
     ],
     "-"
   );
@@ -1274,7 +736,7 @@ function getMatrixState(payload?: ChatApiResponse | RuntimeHealth | null): strin
   );
 }
 
-function getSemanticMemoryScope(payload?: ChatApiResponse | RuntimeHealth | null): string {
+function getMemoryScope(payload?: ChatApiResponse | RuntimeHealth | null): string {
   if (!payload) return "-";
 
   return firstText(
@@ -1314,96 +776,65 @@ function getMemoryPersistenceMode(payload?: ChatApiResponse | RuntimeHealth | nu
     [
       ["semanticMemory", "persistenceMode"],
       ["memory", "persistenceMode"],
-      ["runtime", "memoryPersistenceMode"]
+      ["runtime", "memoryPersistenceMode"],
+      ["persistence", "activeMode"],
+      ["database", "mode"]
     ],
     "-"
   );
 }
 
-function getMemoryId(payload?: ChatApiResponse | RuntimeHealth | null): string {
+function getEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
   if (!payload) return "-";
 
   return firstText(
     payload,
     [
-      ["semanticMemory", "memoryId"],
-      ["memory", "memoryId"],
-      ["runtime", "memoryId"]
+      ["continuityRef"],
+      ["governedEvt", "evt"],
+      ["modernEvt", "evt"],
+      ["evt", "evt"],
+      ["event", "evt"],
+      ["runtime", "governedEvt"],
+      ["runtime", "legacyEvt"]
     ],
     "-"
   );
 }
 
-function getMemoryKeyHash(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
+function getCurrentAiEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "UP-EVT-0016-AI";
 
   return firstText(
     payload,
     [
-      ["semanticMemory", "memoryKeyHash"],
-      ["memory", "memoryKeyHash"],
-      ["runtime", "memoryKeyHash"]
+      ["operationalContext", "sourceEventAi"],
+      ["project", "sourceEventAi"],
+      ["operationalContext", "current_ai_evt"],
+      ["runtime", "operationalContext", "current_ai_evt"],
+      ["identity", "evt"],
+      ["identity", "checkpoint"],
+      ["governedEvt", "operational_context", "current_ai_evt"],
+      ["modernEvt", "operational_context", "current_ai_evt"]
     ],
-    "-"
+    "UP-EVT-0016-AI"
   );
 }
 
-function getMemoryHash(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
+function getCurrentHumanEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "UP-EVT-0016";
 
   return firstText(
     payload,
     [
-      ["semanticMemory", "memoryHash"],
-      ["memory", "memoryHash"],
-      ["runtime", "memoryHash"],
-      ["opc", "publicProof", "memoryHash"],
-      ["proof", "memoryHash"]
+      ["operationalContext", "sourceEvent"],
+      ["project", "sourceEvent"],
+      ["operationalContext", "current_evt"],
+      ["runtime", "operationalContext", "current_evt"],
+      ["governedEvt", "operational_context", "current_evt"],
+      ["modernEvt", "operational_context", "current_evt"]
     ],
-    "-"
-  );
-}
-
-function getLastMemoryEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["semanticMemory", "lastMemoryEvt"],
-      ["memory", "lastEvt"],
-      ["memory", "currentContinuityRef"],
-      ["runtime", "memoryLastEvt"]
-    ],
-    "-"
-  );
-}
-
-function getLastMemoryOpc(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["semanticMemory", "lastMemoryOpcProofId"],
-      ["memory", "lastOpcProofId"],
-      ["runtime", "memoryLastOpcProofId"]
-    ],
-    "-"
-  );
-}
-
-function getLastMemoryChainHash(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["semanticMemory", "lastMemoryOpcChainHash"],
-      ["memory", "lastOpcChainHash"],
-      ["runtime", "memoryLastOpcChainHash"]
-    ],
-    "-"
+    "UP-EVT-0016"
   );
 }
 
@@ -1441,20 +872,18 @@ function getChainHash(payload?: ChatApiResponse | null): string {
   );
 }
 
-function getEngineHash(payload?: ChatApiResponse | null): string {
-  if (!payload) return "-";
+function getLegalCertification(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "false";
 
   return firstText(
     payload,
     [
-      ["opc", "publicProof", "engineHash"],
-      ["opc", "record", "proof", "engineHash"],
-      ["opc", "engineHash"],
-      ["opcProof", "engineHash"],
-      ["proof", "engineHash"],
-      ["runtime", "opcEngineHash"]
+      ["boundary", "legalCertification"],
+      ["opcProof", "legalCertification"],
+      ["proof", "legalCertification"],
+      ["runtime", "legalCertification"]
     ],
-    "-"
+    "false"
   );
 }
 
@@ -1488,18 +917,48 @@ function getHbceModule(payload?: ChatApiResponse | null): string {
   );
 }
 
-function getLegalCertification(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "false";
+function getLastMemoryEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
 
   return firstText(
     payload,
     [
-      ["boundary", "legalCertification"],
-      ["opcProof", "legalCertification"],
-      ["proof", "legalCertification"],
-      ["runtime", "legalCertification"]
+      ["semanticMemory", "lastMemoryEvt"],
+      ["memory", "lastEvt"],
+      ["memory", "currentContinuityRef"],
+      ["runtime", "memoryLastEvt"]
     ],
-    "false"
+    "-"
+  );
+}
+
+function getLastMemoryOpc(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["semanticMemory", "lastMemoryOpcProofId"],
+      ["memory", "lastOpcProofId"],
+      ["runtime", "memoryLastOpcProofId"]
+    ],
+    "-"
+  );
+}
+
+function getMemoryHash(payload?: ChatApiResponse | RuntimeHealth | null): string {
+  if (!payload) return "-";
+
+  return firstText(
+    payload,
+    [
+      ["semanticMemory", "memoryHash"],
+      ["memory", "memoryHash"],
+      ["runtime", "memoryHash"],
+      ["opc", "publicProof", "memoryHash"],
+      ["proof", "memoryHash"]
+    ],
+    "-"
   );
 }
 
@@ -1507,13 +966,15 @@ function getStatusClass(value: string): string {
   const normalized = value.toUpperCase();
 
   if (
+    normalized.includes("OK") ||
     normalized.includes("ACTIVE") ||
     normalized.includes("GRANTED") ||
     normalized.includes("IPR_BOUND") ||
     normalized.includes("VALIDATED") ||
     normalized.includes("OPERATIONAL") ||
     normalized.includes("PASS") ||
-    normalized.includes("DATABASE_PERSISTENT")
+    normalized.includes("DATABASE_PERSISTENT") ||
+    normalized.includes("CONFIGURED")
   ) {
     return "is-good";
   }
@@ -1524,7 +985,8 @@ function getStatusClass(value: string): string {
     normalized.includes("PROCESS_MEMORY") ||
     normalized.includes("RUNTIME_ONLY") ||
     normalized.includes("MVP") ||
-    normalized.includes("DATABASE_READY")
+    normalized.includes("SERVER_VALIDATION_REQUIRED") ||
+    normalized.includes("NOT_VERIFIED")
   ) {
     return "is-warn";
   }
@@ -1534,7 +996,8 @@ function getStatusClass(value: string): string {
     normalized.includes("ERROR") ||
     normalized.includes("INVALID") ||
     normalized.includes("BLOCKED") ||
-    normalized.includes("FAILED")
+    normalized.includes("FAILED") ||
+    normalized.includes("HTTP_405")
   ) {
     return "is-bad";
   }
@@ -1568,28 +1031,12 @@ function resolveFileMimeType(file: File): string {
   return file.type || inferMimeTypeFromFileName(file.name);
 }
 
-function isTextFile(file: File): boolean {
-  const type = resolveFileMimeType(file);
-
-  return type.startsWith("text/") || TEXT_FILE_TYPES.has(type);
-}
-
-function isImageFile(file: File): boolean {
-  const type = resolveFileMimeType(file);
-
-  return type.startsWith("image/") || IMAGE_FILE_TYPES.has(type);
-}
-
-function isPdfFile(file: File): boolean {
-  const type = resolveFileMimeType(file);
-
-  return PDF_FILE_TYPES.has(type) || file.name.toLowerCase().endsWith(".pdf");
-}
-
 function resolveRuntimeFileKind(file: File): RuntimeFileKind {
-  if (isTextFile(file)) return "text";
-  if (isImageFile(file)) return "image";
-  if (isPdfFile(file)) return "pdf";
+  const type = resolveFileMimeType(file);
+
+  if (type.startsWith("text/") || TEXT_FILE_TYPES.has(type)) return "text";
+  if (type.startsWith("image/") || IMAGE_FILE_TYPES.has(type)) return "image";
+  if (type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) return "pdf";
 
   return "binary";
 }
@@ -1601,14 +1048,12 @@ function readFileAsDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(new Error("FILE_DATA_URL_READ_FAILED"));
 
     reader.onload = () => {
-      const result = reader.result;
-
-      if (typeof result !== "string") {
-        reject(new Error("FILE_DATA_URL_EMPTY_RESULT"));
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
         return;
       }
 
-      resolve(result);
+      reject(new Error("FILE_DATA_URL_EMPTY_RESULT"));
     };
 
     reader.readAsDataURL(file);
@@ -1745,7 +1190,7 @@ function StatusPill({
   label?: string;
   value: string;
 }) {
-  const visibleValue = normalizeVisibleRuntimeText(value);
+  const visibleValue = normalizeVisibleText(value);
 
   return (
     <span
@@ -1761,7 +1206,7 @@ function StatusPill({
         </b>
       ) : null}
       <span className="notranslate" translate="no">
-        {compactHash(visibleValue)}
+        {compact(visibleValue)}
       </span>
     </span>
   );
@@ -1769,24 +1214,16 @@ function StatusPill({
 
 function MetricCard({
   label,
-  value,
-  tone,
-  compact
+  value
 }: {
   label: string;
   value: string;
-  tone?: "good" | "warn" | "bad";
-  compact?: boolean;
 }) {
-  const visibleValue = normalizeVisibleRuntimeText(value);
+  const visibleValue = normalizeVisibleText(value);
 
   return (
     <div
-      className={[
-        "joker-metric",
-        tone ? `is-${tone}` : getStatusClass(visibleValue),
-        compact ? "is-compact" : ""
-      ]
+      className={["joker-metric", getStatusClass(visibleValue)]
         .filter(Boolean)
         .join(" ")}
       title={visibleValue}
@@ -1796,7 +1233,7 @@ function MetricCard({
         {label}
       </span>
       <strong className="notranslate" translate="no">
-        {compactHash(visibleValue)}
+        {compact(visibleValue)}
       </strong>
     </div>
   );
@@ -1806,20 +1243,21 @@ function InfoList({ items }: { items: InfoItem[] }) {
   return (
     <dl className="joker-info-list">
       {items.map((item) => {
-        const visibleValue = normalizeVisibleRuntimeText(item.value);
-        const statusClass = item.tone ? `is-${item.tone}` : getStatusClass(visibleValue);
+        const visibleValue = normalizeVisibleText(item.value);
 
         return (
           <div
             key={`${item.label}-${visibleValue}`}
-            className={["joker-info-row", statusClass].filter(Boolean).join(" ")}
+            className={["joker-info-row", getStatusClass(visibleValue)]
+              .filter(Boolean)
+              .join(" ")}
             translate="no"
           >
             <dt className="notranslate" translate="no">
               {item.label}
             </dt>
             <dd className="notranslate" translate="no" title={visibleValue}>
-              {compactHash(visibleValue)}
+              {compact(visibleValue)}
             </dd>
           </div>
         );
@@ -1839,15 +1277,17 @@ function MessageBubble({
   const isSystem = message.role === "system";
   const isAssistant = message.role === "assistant";
 
-  const verifiedSubjectName = isAssistant ? getVerifiedSubjectName(message.raw) : "-";
-  const verifiedSubjectIpr = isAssistant ? getVerifiedSubjectIpr(message.raw) : "-";
-  const matrixState = isAssistant ? getMatrixState(message.raw) : "-";
-  const memoryScope = isAssistant ? getSemanticMemoryScope(message.raw) : "-";
-  const memoryAuthority = isAssistant ? getMemoryAuthority(message.raw) : "-";
-  const memoryMode = isAssistant ? getMemoryPersistenceMode(message.raw) : "-";
-  const lastMemoryEvt = isAssistant ? getLastMemoryEvt(message.raw) : "-";
-  const lastMemoryOpc = isAssistant ? getLastMemoryOpc(message.raw) : "-";
-  const visibleContent = normalizeVisibleRuntimeText(message.content);
+  const visibleContent = normalizeVisibleText(message.content);
+  const raw = message.raw ?? null;
+
+  const verifiedSubjectName = raw ? getSubjectName(raw) : "-";
+  const verifiedSubjectIpr = raw ? getHumanIpr(raw) : "-";
+  const matrixState = raw ? getMatrixState(raw) : "-";
+  const memoryScope = raw ? getMemoryScope(raw) : "-";
+  const memoryAuthority = raw ? getMemoryAuthority(raw) : "-";
+  const memoryMode = raw ? getMemoryPersistenceMode(raw) : "-";
+  const lastMemoryEvt = raw ? getLastMemoryEvt(raw) : "-";
+  const lastMemoryOpc = raw ? getLastMemoryOpc(raw) : "-";
 
   return (
     <article
@@ -1871,7 +1311,7 @@ function MessageBubble({
             <strong className="notranslate" translate="no">
               {isUser ? "Manuel" : isSystem ? "System" : "JOKER-C2"}
             </strong>
-            {isAssistant && message.raw ? (
+            {isAssistant && raw ? (
               <span className="notranslate" translate="no">
                 {safeText(message.state, "-")} · {safeText(message.decision, "-")}
               </span>
@@ -1886,13 +1326,13 @@ function MessageBubble({
           {visibleContent}
         </pre>
 
-        {isAssistant && message.raw ? (
+        {isAssistant && raw ? (
           <div className="joker-runtime-strip notranslate" translate="no">
-            <StatusPill label="Model" value={getModel(message.raw)} />
-            <StatusPill label="Runtime IPR" value={getIpr(message.raw)} />
-            <StatusPill label="Current AI EVT" value={getCurrentAiEvt(message.raw)} />
-            <StatusPill label="Response EVT" value={getEvt(message.raw)} />
-            <StatusPill label="OPC" value={getOpcProof(message.raw)} />
+            <StatusPill label="Model" value={getModel(raw)} />
+            <StatusPill label="Runtime IPR" value={getRuntimeIpr(raw)} />
+            <StatusPill label="AI EVT" value={getCurrentAiEvt(raw)} />
+            <StatusPill label="Response EVT" value={getEvt(raw)} />
+            <StatusPill label="OPC" value={getOpcProof(raw)} />
             {verifiedSubjectIpr !== "-" ? (
               <StatusPill label="Human IPR" value={verifiedSubjectIpr} />
             ) : null}
@@ -1914,36 +1354,33 @@ function MessageBubble({
               Copy response
             </button>
 
-            {message.raw ? (
+            {raw ? (
               <details>
                 <summary className="notranslate" translate="no">
                   Runtime details
                 </summary>
 
                 <div className="joker-details-grid">
-                  <MetricCard label="State" value={safeText(message.state, "-")} compact />
-                  <MetricCard label="Decision" value={safeText(message.decision, "-")} compact />
-                  <MetricCard label="ProjectDomain" value={getProjectDomain(message.raw)} compact />
-                  <MetricCard label="HbceModule" value={getHbceModule(message.raw)} compact />
-                  <MetricCard label="Subject" value={verifiedSubjectName} compact />
-                  <MetricCard label="Human IPR" value={verifiedSubjectIpr} compact />
-                  <MetricCard label="MATRIX" value={matrixState} compact />
-                  <MetricCard label="SemanticMemory" value={memoryScope} compact />
-                  <MetricCard label="MemoryAuthority" value={memoryAuthority} compact />
-                  <MetricCard label="MemoryMode" value={memoryMode} compact />
-                  <MetricCard label="MemoryId" value={getMemoryId(message.raw)} compact />
-                  <MetricCard label="MemoryKeyHash" value={getMemoryKeyHash(message.raw)} compact />
-                  <MetricCard label="MemoryHash" value={getMemoryHash(message.raw)} compact />
-                  <MetricCard label="LastMemoryEVT" value={lastMemoryEvt} compact />
-                  <MetricCard label="LastMemoryOPC" value={lastMemoryOpc} compact />
-                  <MetricCard label="MemoryChainHash" value={getLastMemoryChainHash(message.raw)} compact />
-                  <MetricCard label="EngineHash" value={getEngineHash(message.raw)} compact />
-                  <MetricCard label="ChainHash" value={getChainHash(message.raw)} compact />
-                  <MetricCard label="legalCertification" value={getLegalCertification(message.raw)} compact />
+                  <MetricCard label="State" value={safeText(message.state, "-")} />
+                  <MetricCard label="Decision" value={safeText(message.decision, "-")} />
+                  <MetricCard label="ProjectDomain" value={getProjectDomain(raw)} />
+                  <MetricCard label="HbceModule" value={getHbceModule(raw)} />
+                  <MetricCard label="Subject" value={verifiedSubjectName} />
+                  <MetricCard label="Human IPR" value={verifiedSubjectIpr} />
+                  <MetricCard label="MATRIX" value={matrixState} />
+                  <MetricCard label="SemanticMemory" value={memoryScope} />
+                  <MetricCard label="MemoryAuthority" value={memoryAuthority} />
+                  <MetricCard label="MemoryMode" value={memoryMode} />
+                  <MetricCard label="MemoryHash" value={getMemoryHash(raw)} />
+                  <MetricCard label="LastMemoryEVT" value={lastMemoryEvt} />
+                  <MetricCard label="LastMemoryOPC" value={lastMemoryOpc} />
+                  <MetricCard label="OPC" value={getOpcProof(raw)} />
+                  <MetricCard label="ChainHash" value={getChainHash(raw)} />
+                  <MetricCard label="legalCertification" value={getLegalCertification(raw)} />
                 </div>
 
                 <pre className="joker-json notranslate" translate="no">
-                  {safeJson(message.raw)}
+                  {safeJson(raw)}
                 </pre>
               </details>
             ) : null}
@@ -1962,13 +1399,14 @@ export default function InterfacePage() {
   const [files, setFiles] = useState<RuntimeFile[]>([]);
   const [continuityRef, setContinuityRef] = useState<string | null>(null);
 
-  const [iprHandoff, setIprHandoff] = useState<IprHandoff | null>(null);
-  const [iprAccountHandoff, setIprAccountHandoff] = useState<IprHandoff | null>(null);
-  const [iprAccountSession, setIprAccountSession] = useState<IprAccountSessionResponse | null>(null);
-
-  const [iprHandoffSource, setIprHandoffSource] = useState<IprHandoffSource>("none");
+  const [iprHandoff, setIprHandoff] = useState<JsonRecord | null>(null);
+  const [iprHandoffSource, setIprHandoffSource] = useState("none");
   const [iprHandoffError, setIprHandoffError] = useState<string | null>(null);
-  const [iprAccountSessionError, setIprAccountSessionError] = useState<string | null>(null);
+
+  const [iprAccountSession, setIprAccountSession] =
+    useState<IprAccountSessionResponse | null>(null);
+  const [iprAccountSessionError, setIprAccountSessionError] =
+    useState<string | null>(null);
 
   const [isChecking, setIsChecking] = useState(false);
   const [isCheckingIprSession, setIsCheckingIprSession] = useState(false);
@@ -1992,10 +1430,22 @@ export default function InterfacePage() {
     return null;
   }, [messages]);
 
-  const effectiveIprHandoff = iprAccountHandoff || iprHandoff;
-  const effectiveIprHandoffSource: IprHandoffSource = iprAccountHandoff
-    ? "accountSession"
-    : iprHandoffSource;
+  const sessionHandoff = useMemo(() => {
+    const reconstructed = iprAccountSession?.reconstructedIprHandoff;
+
+    if (isRecord(reconstructed)) {
+      return reconstructed;
+    }
+
+    if (isRecord(iprAccountSession?.accountProfile)) {
+      return iprAccountSession.accountProfile;
+    }
+
+    return null;
+  }, [iprAccountSession]);
+
+  const effectiveIprHandoff = sessionHandoff || iprHandoff;
+  const effectiveIprHandoffSource = sessionHandoff ? "accountSession" : iprHandoffSource;
   const hasAccountSession = iprAccountSession?.authenticated === true;
 
   useEffect(() => {
@@ -2070,23 +1520,13 @@ export default function InterfacePage() {
       setIprAccountSession(payload);
 
       if (!response.ok || payload.authenticated !== true) {
-        setIprAccountHandoff(null);
         setIprAccountSessionError(
-          payload.reason || payload.detail || `HTTP_${response.status}`
+          payload.reason || payload.detail || payload.error || `HTTP_${response.status}`
         );
         return;
       }
-
-      const handoff = buildIprHandoffFromAccountSession(payload);
-
-      setIprAccountHandoff(handoff);
-
-      if (!handoff) {
-        setIprAccountSessionError("IPR_ACCOUNT_SESSION_ACTIVE_BUT_HANDOFF_NOT_RECONSTRUCTED");
-      }
     } catch (err) {
       setIprAccountSession(null);
-      setIprAccountHandoff(null);
       setIprAccountSessionError(
         err instanceof Error ? err.message : "IPR_ACCOUNT_SESSION_CHECK_FAILED"
       );
@@ -2100,10 +1540,13 @@ export default function InterfacePage() {
     setError(null);
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch("/api/health", {
         method: "GET",
         cache: "no-store",
-        credentials: "include"
+        credentials: "include",
+        headers: {
+          Accept: "application/json"
+        }
       });
 
       const payload = await readJsonResponse<RuntimeHealth>(response);
@@ -2121,7 +1564,9 @@ export default function InterfacePage() {
     }
   }
 
-  async function handleFiles(inputFiles: FileList | null) {
+  async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
+    const inputFiles = event.target.files;
+
     if (!inputFiles || inputFiles.length === 0) return;
 
     setError(null);
@@ -2206,7 +1651,8 @@ export default function InterfacePage() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          Accept: "application/json"
         },
         cache: "no-store",
         credentials: "include",
@@ -2222,6 +1668,7 @@ export default function InterfacePage() {
                   source: "IPR_ACCOUNT_SESSION",
                   session: iprAccountSession.session,
                   accountProfile: iprAccountSession.accountProfile,
+                  reconstructedIprHandoff: iprAccountSession.reconstructedIprHandoff,
                   access: iprAccountSession.access,
                   memory: iprAccountSession.memory,
                   matrix: iprAccountSession.matrix,
@@ -2238,7 +1685,7 @@ export default function InterfacePage() {
           payload.error ||
           payload.response ||
           payload.text ||
-          `Runtime request failed with HTTP ${response.status}`;
+          `Runtime request failed with HTTP_${response.status}`;
 
         throw new Error(errorText);
       }
@@ -2261,7 +1708,9 @@ export default function InterfacePage() {
       };
 
       setMessages((current) => [...current, assistantMessage]);
+
       void checkIprAccountSession();
+      void checkRuntime();
     } catch (err) {
       const errorText = err instanceof Error ? err.message : "CHAT_REQUEST_FAILED";
 
@@ -2295,96 +1744,71 @@ export default function InterfacePage() {
 
   const dashboardPayload = lastAssistantPayload || health;
 
-  const humanIprLabel = effectiveIprHandoff?.subject.ipr || "NOT_VERIFIED";
-  const subjectLabel = canonicalizeSubjectName(
-    effectiveIprHandoff?.subject.entity || "No verified subject",
-    humanIprLabel
-  );
+  const humanIprLabel =
+    getHumanIpr(lastAssistantPayload) !== "-"
+      ? getHumanIpr(lastAssistantPayload)
+      : hasAccountSession
+        ? safeText(iprAccountSession?.session?.humanIpr, CANONICAL_MANUEL_HUMAN_IPR)
+        : getHandoffSubjectIpr(effectiveIprHandoff);
 
-  const runtimeProjectBirthDate = getProjectBirthDate(dashboardPayload);
-  const runtimeProjectBirthLabel = getProjectBirthLabel(dashboardPayload);
-  const runtimeMonthlyReference = getMonthlyReference(dashboardPayload);
-  const runtimeMonthlyReferenceLabel = getMonthlyReferenceLabel(dashboardPayload);
-
-  const runtimeOperationalHumanEvt = fallbackDash(
-    getOperationalHumanEvt(dashboardPayload),
-    "EVT-0016"
-  );
-
-  const runtimeOperationalAiEvt = fallbackDash(
-    getCurrentAiEvt(dashboardPayload),
-    "EVT-0016-AI"
-  );
-
-  const runtimeResponseEvt = fallbackDash(getEvt(dashboardPayload), "none");
-
-  const runtimeOperationalCycle = fallbackDash(
-    getOperationalCycle(dashboardPayload),
-    "UP-CANONICO"
-  );
-
-  const runtimeEventFamily = fallbackDash(getEventFamily(dashboardPayload), "UP-EVT");
-
-  const runtimePreviousCheckpoint = getPreviousCheckpointRef(dashboardPayload);
-
-  const runtimeMatrixState = fallbackDash(
-    getMatrixState(lastAssistantPayload),
-    effectiveIprHandoff
-      ? safeText(iprAccountSession?.matrix?.expectedState, "MATRIX_ACTIVE")
-      : "MATRIX_LIMITED"
-  );
-
-  const runtimeMemoryScope = fallbackDash(
-    getSemanticMemoryScope(lastAssistantPayload),
-    effectiveIprHandoff
-      ? safeText(iprAccountSession?.memory?.expectedScope, "IPR_BOUND")
-      : "RUNTIME_ONLY"
-  );
-
-  const runtimeMemoryAuthority = fallbackDash(
-    getMemoryAuthority(lastAssistantPayload),
-    effectiveIprHandoff
-      ? safeText(iprAccountSession?.memory?.expectedAuthority, "SERVER_RUNTIME_VALIDATED")
-      : "SESSION_RUNTIME_ONLY"
-  );
-
-  const runtimeMemoryMode = fallbackDash(
-    getMemoryPersistenceMode(lastAssistantPayload),
-    effectiveIprHandoff
-      ? safeText(iprAccountSession?.memory?.persistenceMode, "PROCESS_MEMORY_MVP")
-      : safeText(health?.memory?.persistenceMode, "PROCESS_MEMORY_MVP")
-  );
-
-  const runtimeLastMemoryEvt = fallbackDash(getLastMemoryEvt(lastAssistantPayload), "none");
-  const runtimeLastMemoryOpc = fallbackDash(getLastMemoryOpc(lastAssistantPayload), "none");
-  const runtimeLastMemoryChainHash = fallbackDash(
-    getLastMemoryChainHash(lastAssistantPayload),
-    "none"
-  );
-  const runtimeMemoryHash = fallbackDash(getMemoryHash(lastAssistantPayload), "none");
-  const runtimeMemoryId = fallbackDash(getMemoryId(lastAssistantPayload), "not initialized");
-  const runtimeMemoryKeyHash = fallbackDash(
-    getMemoryKeyHash(lastAssistantPayload),
-    "not initialized"
-  );
-  const runtimeOpcProof = fallbackDash(getOpcProof(lastAssistantPayload), "none");
-  const runtimeOpcChainHash = fallbackDash(getChainHash(lastAssistantPayload), "none");
-  const runtimeEngineHash = fallbackDash(getEngineHash(lastAssistantPayload), "none");
-  const runtimeLegalCertification = fallbackDash(
-    getLegalCertification(lastAssistantPayload || health),
-    "false"
-  );
+  const subjectLabel =
+    getSubjectName(lastAssistantPayload) !== "-"
+      ? getSubjectName(lastAssistantPayload)
+      : getHandoffSubjectName(effectiveIprHandoff, humanIprLabel);
 
   const accessDecision =
-    effectiveIprHandoff?.access.decision ||
-    safeText(iprAccountSession?.access?.decision, "PENDING_SERVER_VALIDATION");
+    firstText(lastAssistantPayload, [["access", "decision"], ["identity", "accessDecision"]], "") ||
+    safeText(iprAccountSession?.access?.decision, "") ||
+    getHandoffAccessDecision(effectiveIprHandoff);
 
-  const certificateStatus = effectiveIprHandoff?.certificate.certificate_status || "MISSING";
-  const certificateId = effectiveIprHandoff?.certificate.certificate_id || "NO_CERTIFICATE";
-  const scope = effectiveIprHandoff?.certificate.certificate_scope.join(", ") || "MATRIX_LIMITED";
+  const certificateStatus = getHandoffCertificateStatus(effectiveIprHandoff);
+  const certificateId = getHandoffCertificateId(effectiveIprHandoff);
+  const scope = getHandoffScope(effectiveIprHandoff);
+
+  const runtimeState = safeText(health?.state, "CHECKING");
+  const runtimeModel = getModel(dashboardPayload);
+  const runtimeIpr = getRuntimeIpr(dashboardPayload);
+  const runtimeMatrixState =
+    getMatrixState(lastAssistantPayload) !== "-"
+      ? getMatrixState(lastAssistantPayload)
+      : safeText(iprAccountSession?.matrix?.expectedState, safeText(health?.matrix?.state, "MATRIX_LIMITED"));
+
+  const runtimeMemoryScope =
+    getMemoryScope(lastAssistantPayload) !== "-"
+      ? getMemoryScope(lastAssistantPayload)
+      : safeText(iprAccountSession?.memory?.expectedScope, safeText(health?.memory?.scope, "RUNTIME_ONLY"));
+
+  const runtimeMemoryAuthority =
+    getMemoryAuthority(lastAssistantPayload) !== "-"
+      ? getMemoryAuthority(lastAssistantPayload)
+      : safeText(iprAccountSession?.memory?.expectedAuthority, safeText(health?.memory?.authority, "RUNTIME_HEALTH_CHECK"));
+
+  const runtimeMemoryMode =
+    getMemoryPersistenceMode(lastAssistantPayload) !== "-"
+      ? getMemoryPersistenceMode(lastAssistantPayload)
+      : safeText(iprAccountSession?.memory?.persistenceMode, safeText(health?.persistence?.activeMode, "PROCESS_MEMORY_MVP"));
+
+  const runtimeHumanEvt = getCurrentHumanEvt(dashboardPayload);
+  const runtimeAiEvt = getCurrentAiEvt(dashboardPayload);
+  const runtimeResponseEvt = getEvt(lastAssistantPayload) === "-" ? "none" : getEvt(lastAssistantPayload);
+  const runtimeOpcProof = getOpcProof(lastAssistantPayload) === "-" ? "none" : getOpcProof(lastAssistantPayload);
+  const runtimeOpcChainHash = getChainHash(lastAssistantPayload) === "-" ? "none" : getChainHash(lastAssistantPayload);
+  const runtimeLegalCertification = getLegalCertification(lastAssistantPayload || health);
+  const runtimeLastMemoryEvt =
+    getLastMemoryEvt(lastAssistantPayload) === "-" ? "none" : getLastMemoryEvt(lastAssistantPayload);
+  const runtimeLastMemoryOpc =
+    getLastMemoryOpc(lastAssistantPayload) === "-" ? "none" : getLastMemoryOpc(lastAssistantPayload);
+  const runtimeMemoryHash =
+    getMemoryHash(lastAssistantPayload) === "-" ? "none" : getMemoryHash(lastAssistantPayload);
+
+  const databaseMode = safeText(health?.database?.mode, "UNKNOWN");
+  const openAIConfigured = safeText(health?.provider?.configured, "UNKNOWN");
+  const c2DefenseStatus = safeText(health?.c2Defense?.defaultState, "UNKNOWN");
+  const runtimeAuditMode = safeText(health?.runtimeAuditLog?.mode, "UNKNOWN");
+  const modelUsageMode = safeText(health?.modelUsageLog?.mode, "UNKNOWN");
 
   const identityRows: InfoItem[] = [
-    { label: "Runtime IPR", value: "IPR-AI-0001" },
+    { label: "Runtime IPR", value: runtimeIpr },
     { label: "Human IPR", value: humanIprLabel },
     { label: "Certificate", value: certificateId },
     { label: "Certificate status", value: certificateStatus },
@@ -2394,25 +1818,31 @@ export default function InterfacePage() {
 
   const memoryRows: InfoItem[] = [
     { label: "MATRIX", value: runtimeMatrixState },
+    { label: "Memory", value: runtimeMemoryScope },
     { label: "Authority", value: runtimeMemoryAuthority },
     { label: "Persistence", value: runtimeMemoryMode },
-    { label: "Memory ID", value: runtimeMemoryId },
-    { label: "Memory key hash", value: runtimeMemoryKeyHash },
-    { label: "Memory hash", value: runtimeMemoryHash }
+    { label: "Memory hash", value: runtimeMemoryHash },
+    { label: "Database", value: databaseMode }
   ];
 
   const proofRows: InfoItem[] = [
-    { label: "Monthly reference", value: runtimeMonthlyReference },
-    { label: "Monthly label", value: runtimeMonthlyReferenceLabel },
-    { label: "Previous checkpoint", value: runtimePreviousCheckpoint },
+    { label: "Human EVT", value: runtimeHumanEvt },
+    { label: "AI EVT", value: runtimeAiEvt },
     { label: "Response EVT", value: runtimeResponseEvt },
-    { label: "OPC legalCertification", value: runtimeLegalCertification },
     { label: "Current OPC", value: runtimeOpcProof },
+    { label: "OPC chain", value: runtimeOpcChainHash },
     { label: "Last memory EVT", value: runtimeLastMemoryEvt },
     { label: "Last memory OPC", value: runtimeLastMemoryOpc },
-    { label: "Memory chain", value: runtimeLastMemoryChainHash },
-    { label: "OPC chain", value: runtimeOpcChainHash },
-    { label: "Engine hash", value: runtimeEngineHash }
+    { label: "legalCertification", value: runtimeLegalCertification }
+  ];
+
+  const healthRows: InfoItem[] = [
+    { label: "OpenAI", value: openAIConfigured },
+    { label: "Model", value: runtimeModel },
+    { label: "Database", value: databaseMode },
+    { label: "C2 Defense", value: c2DefenseStatus },
+    { label: "Audit log", value: runtimeAuditMode },
+    { label: "Usage log", value: modelUsageMode }
   ];
 
   return (
@@ -2433,15 +1863,15 @@ export default function InterfacePage() {
         </div>
 
         <div className="joker-health">
-          <StatusPill value={safeText(health?.state, "CHECKING")} />
-          <StatusPill label="Model" value={safeText(health?.model, getModel(health))} />
-          <StatusPill label="Runtime IPR" value={safeText(health?.identity?.ipr, "IPR-AI-0001")} />
+          <StatusPill value={runtimeState} />
+          <StatusPill label="Model" value={runtimeModel} />
+          <StatusPill label="Runtime IPR" value={runtimeIpr} />
           <StatusPill label="Human IPR" value={humanIprLabel} />
           <StatusPill label="Memory" value={runtimeMemoryScope} />
         </div>
 
         <div className="joker-top-actions">
-          <button type="button" onClick={checkRuntime} disabled={isChecking}>
+          <button type="button" onClick={() => void checkRuntime()} disabled={isChecking}>
             {isChecking ? "Checking..." : "Runtime"}
           </button>
           <button
@@ -2469,27 +1899,27 @@ export default function InterfacePage() {
             dashboard
           </h1>
           <p>
-            Professional runtime console for{" "}
+            Console operativa per identità{" "}
             <span className="notranslate" translate="no">
               IPR
-            </span>{" "}
-            identity,{" "}
-            <span className="notranslate" translate="no">
-              IPR-bound memory
             </span>
-            ,{" "}
+            , memoria{" "}
+            <span className="notranslate" translate="no">
+              IPR-bound
+            </span>
+            , continuità{" "}
             <span className="notranslate" translate="no">
               EVT
-            </span>{" "}
-            continuity,{" "}
+            </span>
+            , ricevute tecniche{" "}
             <span className="notranslate" translate="no">
               OPC
             </span>{" "}
-            technical proof receipts and{" "}
+            e coordinamento{" "}
             <span className="notranslate" translate="no">
               MATRIX
-            </span>{" "}
-            coordination. No legal certification is implied:{" "}
+            </span>
+            . Nessuna certificazione legale è implicata:{" "}
             <code className="notranslate" translate="no">
               legalCertification=false
             </code>
@@ -2497,21 +1927,21 @@ export default function InterfacePage() {
           </p>
           <div className="joker-origin-note">
             <strong className="notranslate" translate="no">
-              {runtimeProjectBirthDate}
+              SaaS Core v0.1
             </strong>
             <span className="notranslate" translate="no">
-              {runtimeProjectBirthLabel}
+              Health endpoint: GET /api/health. Chat endpoint: POST /api/chat.
             </span>
           </div>
         </div>
 
         <div className="joker-hero-grid">
-          <MetricCard label="Project birth" value={runtimeProjectBirthDate} />
-          <MetricCard label="Monthly reference" value={runtimeMonthlyReference} />
-          <MetricCard label="Event family" value={runtimeEventFamily} />
-          <MetricCard label="Human EVT" value={runtimeOperationalHumanEvt} />
-          <MetricCard label="AI EVT" value={runtimeOperationalAiEvt} />
-          <MetricCard label="Cycle" value={runtimeOperationalCycle} />
+          <MetricCard label="Runtime" value={safeText(health?.runtime, "AI_JOKER-C2")} />
+          <MetricCard label="State" value={runtimeState} />
+          <MetricCard label="Database" value={databaseMode} />
+          <MetricCard label="Human EVT" value={runtimeHumanEvt} />
+          <MetricCard label="AI EVT" value={runtimeAiEvt} />
+          <MetricCard label="C2 Defense" value={c2DefenseStatus} />
         </div>
       </section>
 
@@ -2519,8 +1949,7 @@ export default function InterfacePage() {
         <div
           className={[
             "joker-panel",
-            "joker-identity-panel",
-            effectiveIprHandoff ? "is-active" : "",
+            effectiveIprHandoff || hasAccountSession ? "is-active" : "",
             iprHandoffError || iprAccountSessionError ? "is-error" : ""
           ]
             .filter(Boolean)
@@ -2540,9 +1969,9 @@ export default function InterfacePage() {
 
           <p className="notranslate" translate="no">
             {hasAccountSession
-              ? "Server-side IPR account session detected. Authenticated session has priority over client-side transport."
+              ? "Server-side IPR account session detected. Authenticated session has priority over local handoff."
               : effectiveIprHandoff
-                ? "Client-side IPR handoff detected. Authoritative validation happens in /api/chat."
+                ? "Client-side IPR handoff detected. Authoritative validation happens during POST /api/chat."
                 : "No biological IPR handoff or IPR account session detected. Runtime remains limited until server-side validation."}
           </p>
 
@@ -2598,9 +2027,9 @@ export default function InterfacePage() {
           </div>
 
           <p className="notranslate" translate="no">
-            Current memory preserves operational continuity. It does not
-            automatically authorize future requests, lower risk, replace policy
-            review, disable fail-closed logic or replace human oversight.
+            La memoria operativa non autentica da sola il soggetto, non abbassa
+            il rischio, non sostituisce policy review e non disattiva il
+            fail-closed.
           </p>
 
           <InfoList items={memoryRows} />
@@ -2620,12 +2049,34 @@ export default function InterfacePage() {
           </div>
 
           <p className="notranslate" translate="no">
-            OPC remains a technical proof receipt for audit and governance
-            review. It is not legal certification, not a qualified timestamp
-            and not public authority validation.
+            OPC resta una ricevuta tecnica per audit e governance. Non è una
+            certificazione legale, non è timestamp qualificato e non è validazione
+            di pubblica autorità.
           </p>
 
           <InfoList items={proofRows} />
+        </div>
+
+        <div className="joker-panel joker-panel-wide">
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker notranslate" translate="no">
+                Runtime health
+              </span>
+              <h2 className="notranslate" translate="no">
+                GET /api/health
+              </h2>
+            </div>
+            <StatusPill value={safeText(health?.status, "UNKNOWN")} />
+          </div>
+
+          <p className="notranslate" translate="no">
+            Questo pannello usa esclusivamente GET /api/health. La chat resta su
+            POST /api/chat. Quindi niente più HTTP_405 per la diagnostica, piccolo
+            miracolo della civiltà.
+          </p>
+
+          <InfoList items={healthRows} />
         </div>
       </section>
 
@@ -2642,9 +2093,8 @@ export default function InterfacePage() {
               Runtime ready
             </h2>
             <p className="notranslate" translate="no">
-              Write below or use a quick prompt. This chat operates inside the
-              HBCE boundary: IPR, EVT, OPC, MATRIX, IPR-bound memory, audit and
-              fail-closed logic.
+              Scrivi sotto o usa un prompt rapido. La chat opera nel boundary
+              HBCE: IPR, EVT, OPC, MATRIX, memoria IPR-bound, audit e fail-closed.
             </p>
 
             <div className="joker-prompt-grid">
@@ -2714,6 +2164,7 @@ export default function InterfacePage() {
             {error}
           </div>
         ) : null}
+
         {copied ? (
           <div className="joker-alert is-good composer-alert notranslate" translate="no">
             Response copied.
@@ -2759,7 +2210,7 @@ export default function InterfacePage() {
             multiple
             accept=".txt,.md,.markdown,.json,.csv,.html,.css,.js,.ts,.tsx,.xml,.yaml,.yml,.pdf,image/png,image/jpeg,image/webp,image/gif,text/*,application/json,application/pdf"
             style={{ display: "none" }}
-            onChange={(event) => void handleFiles(event.target.files)}
+            onChange={handleFiles}
           />
 
           <button
@@ -2916,10 +2367,6 @@ export default function InterfacePage() {
           scrollbar-color: rgba(51, 65, 85, 0.9) transparent;
         }
 
-        .joker-health {
-          padding: 2px;
-        }
-
         .joker-top-actions,
         .joker-panel-actions {
           display: flex;
@@ -2944,7 +2391,6 @@ export default function InterfacePage() {
             border-color 160ms ease,
             background 160ms ease,
             color 160ms ease,
-            transform 160ms ease,
             opacity 160ms ease,
             box-shadow 160ms ease;
         }
@@ -2959,7 +2405,6 @@ export default function InterfacePage() {
         button:disabled {
           cursor: not-allowed;
           opacity: 0.52;
-          transform: none;
           box-shadow: none;
         }
 
@@ -2973,7 +2418,7 @@ export default function InterfacePage() {
           align-items: center;
           gap: 6px;
           min-width: 0;
-          max-width: 220px;
+          max-width: 240px;
           flex: 0 1 auto;
           padding: 6px 10px;
           border: 1px solid rgba(71, 85, 105, 0.68);
@@ -3001,21 +2446,27 @@ export default function InterfacePage() {
           white-space: nowrap;
         }
 
-        .joker-pill.is-good {
-          border-color: rgba(34, 197, 94, 0.36);
-          background: rgba(20, 83, 45, 0.28);
+        .joker-pill.is-good,
+        .joker-metric.is-good,
+        .joker-info-row.is-good {
+          border-color: rgba(34, 197, 94, 0.34);
+          background: rgba(20, 83, 45, 0.22);
           color: #bbf7d0;
         }
 
-        .joker-pill.is-warn {
-          border-color: rgba(251, 191, 36, 0.36);
-          background: rgba(120, 53, 15, 0.22);
+        .joker-pill.is-warn,
+        .joker-metric.is-warn,
+        .joker-info-row.is-warn {
+          border-color: rgba(251, 191, 36, 0.34);
+          background: rgba(120, 53, 15, 0.18);
           color: #fde68a;
         }
 
-        .joker-pill.is-bad {
-          border-color: rgba(248, 113, 113, 0.38);
-          background: rgba(127, 29, 29, 0.26);
+        .joker-pill.is-bad,
+        .joker-metric.is-bad,
+        .joker-info-row.is-bad {
+          border-color: rgba(248, 113, 113, 0.36);
+          background: rgba(127, 29, 29, 0.22);
           color: #fecaca;
         }
 
@@ -3121,7 +2572,7 @@ export default function InterfacePage() {
           width: min(1180px, calc(100% - 36px));
           margin: 16px auto 0;
           display: grid;
-          grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr) minmax(0, 0.95fr);
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 16px;
         }
 
@@ -3129,6 +2580,10 @@ export default function InterfacePage() {
           min-width: 0;
           padding: 18px;
           overflow: hidden;
+        }
+
+        .joker-panel-wide {
+          grid-column: 1 / -1;
         }
 
         .joker-panel.is-active {
@@ -3154,11 +2609,6 @@ export default function InterfacePage() {
           min-width: 0;
         }
 
-        .joker-panel-head .joker-pill {
-          max-width: 46%;
-          flex-shrink: 1;
-        }
-
         .joker-panel h2 {
           margin: 4px 0 0;
           color: #f8fafc;
@@ -3179,25 +2629,6 @@ export default function InterfacePage() {
 
         .joker-hero-grid .joker-metric {
           min-height: 92px;
-        }
-
-        .joker-metric.is-compact {
-          padding: 11px;
-        }
-
-        .joker-metric.is-good {
-          border-color: rgba(34, 197, 94, 0.28);
-          background: rgba(20, 83, 45, 0.18);
-        }
-
-        .joker-metric.is-warn {
-          border-color: rgba(251, 191, 36, 0.26);
-          background: rgba(120, 53, 15, 0.16);
-        }
-
-        .joker-metric.is-bad {
-          border-color: rgba(248, 113, 113, 0.28);
-          background: rgba(127, 29, 29, 0.18);
         }
 
         .joker-metric span {
@@ -3277,21 +2708,6 @@ export default function InterfacePage() {
             "Liberation Mono",
             "Courier New",
             monospace;
-        }
-
-        .joker-info-row.is-good {
-          border-color: rgba(34, 197, 94, 0.25);
-          background: rgba(20, 83, 45, 0.16);
-        }
-
-        .joker-info-row.is-warn {
-          border-color: rgba(251, 191, 36, 0.25);
-          background: rgba(120, 53, 15, 0.14);
-        }
-
-        .joker-info-row.is-bad {
-          border-color: rgba(248, 113, 113, 0.28);
-          background: rgba(127, 29, 29, 0.18);
         }
 
         .joker-alert {
@@ -3429,10 +2845,6 @@ export default function InterfacePage() {
           gap: 10px;
           min-width: 0;
           margin-bottom: 10px;
-        }
-
-        .joker-message-head > div {
-          min-width: 0;
         }
 
         .joker-message-head strong {
@@ -3732,8 +3144,8 @@ export default function InterfacePage() {
             grid-template-columns: repeat(3, minmax(0, 1fr));
           }
 
-          .joker-panel-head .joker-pill {
-            max-width: 58%;
+          .joker-panel-wide {
+            grid-column: auto;
           }
         }
 
@@ -3784,10 +3196,6 @@ export default function InterfacePage() {
 
           .joker-panel-head {
             flex-direction: column;
-          }
-
-          .joker-panel-head .joker-pill {
-            max-width: 100%;
           }
 
           .joker-chat {
