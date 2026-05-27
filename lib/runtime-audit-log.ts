@@ -41,16 +41,16 @@ import {
   type RuntimeDecision,
   type RuntimeMemoryAuthority,
   type RuntimeMemoryScope,
+  type RuntimeModelRoutingResult,
   type RuntimePersistenceMode,
   type RuntimeRiskLevel,
   type SaasTier,
+  type SaasTierPolicyResult,
   type WorkspaceState
 } from "./saas-tier-types";
 
 import type { C2DefensePolicyResult } from "./c2-defense-policy";
-import type { RuntimeModelRoutingResult } from "./runtime-model-router";
 import type { RuntimeRiskPolicyResult } from "./runtime-risk-policy";
-import type { SaasTierPolicyResult } from "./saas-tier-types";
 
 export type RuntimeAuditLogPersistenceBoundary =
   | "PROCESS_MEMORY_MVP"
@@ -594,11 +594,13 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
       c2Policy?.cyberRelevance ??
       riskPolicy?.cyberRelevance ??
       saasPolicy?.cyberRelevance ??
+      modelRouting?.cyberRelevance ??
       "NONE",
     c2Boundary:
       c2Policy?.cyberBoundary ??
       riskPolicy?.c2Boundary ??
       saasPolicy?.cyberBoundary ??
+      modelRouting?.c2Boundary ??
       "C2_NOT_AVAILABLE",
     c2Decision: c2Policy?.decision ?? "ALLOW",
     c2Allowed: c2Policy?.allowed ?? false,
