@@ -39,15 +39,15 @@ import {
   type ProofRequirement,
   type RuntimeAuditState,
   type RuntimeDecision,
+  type RuntimeModelRoutingResult,
   type RuntimePersistenceMode,
   type RuntimeRiskLevel,
-  type SaasTier
+  type SaasTier,
+  type SaasTierPolicyResult
 } from "./saas-tier-types";
 
-import type { RuntimeModelRoutingResult } from "./runtime-model-router";
 import type { RuntimeAuditLogRecord } from "./runtime-audit-log";
 import type { RuntimeRiskPolicyResult } from "./runtime-risk-policy";
-import type { SaasTierPolicyResult } from "./saas-tier-types";
 import type { C2DefensePolicyResult } from "./c2-defense-policy";
 
 export type ModelUsageLogSource =
@@ -387,6 +387,42 @@ export function deriveModelUsageRecordStatus(input: {
   return "MVP_MEMORY_ONLY";
 }
 
+function getTierWeight(saasTier: SaasTier): number {
+  if (saasTier === "IPR") return 1.5;
+  if (saasTier === "PRO") return 2;
+  if (saasTier === "GOVERNANCE") return 3;
+  if (saasTier === "C2_DEFENSE") return 5;
+  if (saasTier === "STRATEGIC") return 6;
+
+  return 1;
+}
+
+function getModelWeight(modelLevel: ModelLevel): number {
+  if (modelLevel === "ENHANCED") return 1.5;
+  if (modelLevel === "ADVANCED") return 2.5;
+  if (modelLevel === "C2_ESCALATED") return 4;
+  if (modelLevel === "BLOCKED") return 0;
+
+  return 1;
+}
+
+function getRiskWeight(riskLevel: RuntimeRiskLevel): number {
+  if (riskLevel === "MEDIUM") return 1.25;
+  if (riskLevel === "HIGH") return 1.75;
+  if (riskLevel === "CRITICAL") return 2.5;
+  if (riskLevel === "BLOCKED") return 0;
+
+  return 1;
+}
+
+function getOperationalWeight(operationalValue: OperationalValueLevel): number {
+  if (operationalValue === "MEDIUM") return 1.25;
+  if (operationalValue === "HIGH") return 1.75;
+  if (operationalValue === "CRITICAL") return 2.5;
+
+  return 1;
+}
+
 export function deriveModelValueWeight(input: {
   saasTier: SaasTier;
   modelLevel: ModelLevel;
@@ -395,47 +431,15 @@ export function deriveModelValueWeight(input: {
   opcRequired: boolean;
   auditRequired: boolean;
 }): number {
-  const tierWeight: Record<SaasTier, number> = {
-    BASE: 1,
-    IPR: 1.5,
-    PRO: 2,
-    GOVERNANCE: 3,
-    C2_DEFENSE: 5,
-    STRATEGIC: 6
-  };
-
-  const modelWeight: Record<ModelLevel, number> = {
-    STANDARD: 1,
-    ENHANCED: 1.5,
-    ADVANCED: 2.5,
-    C2_ESCALATED: 4,
-    BLOCKED: 0
-  };
-
-  const riskWeight: Record<RuntimeRiskLevel, number> = {
-    LOW: 1,
-    MEDIUM: 1.25,
-    HIGH: 1.75,
-    CRITICAL: 2.5,
-    BLOCKED: 0
-  };
-
-  const operationalWeight: Record<OperationalValueLevel, number> = {
-    LOW: 1,
-    MEDIUM: 1.25,
-    HIGH: 1.75,
-    CRITICAL: 2.5
-  };
-
   const proofWeight = input.opcRequired ? 1.35 : 1;
   const auditWeight = input.auditRequired ? 1.2 : 1;
 
   return Number(
     (
-      tierWeight[input.saasTier] *
-      modelWeight[input.modelLevel] *
-      riskWeight[input.riskLevel] *
-      operationalWeight[input.operationalValue] *
+      getTierWeight(input.saasTier) *
+      getModelWeight(input.modelLevel) *
+      getRiskWeight(input.riskLevel) *
+      getOperationalWeight(input.operationalValue) *
       proofWeight *
       auditWeight
     ).toFixed(4)
@@ -456,7 +460,7 @@ export function deriveEstimatedCostUnits(input: {
 
   const tokenBasis =
     input.totalTokens ??
-    (input.inputTokens ?? 0) + (input.outputTokens ?? 0);
+    ((input.inputTokens ?? 0) + (input.outputTokens ?? 0));
 
   if (!tokenBasis || tokenBasis <= 0) {
     return Number(input.valueWeight.toFixed(4));
@@ -558,8 +562,8 @@ export function createModelUsageLogRecord(
       ? (inputTokens ?? 0) + (outputTokens ?? 0)
       : null);
 
-  const blocked = input.blocked ?? input.modelLevel === "BLOCKED";
-  const failClosed = input.failClosed ?? input.runtimeDecision === "FAIL_CLOSED";
+  const blocked = input.blocked ?? (input.modelLevel === "BLOCKED");
+  const failClosed = input.failClosed ?? (input.runtimeDecision === "FAIL_CLOSED");
   const allowed = input.allowed ?? (!blocked && !failClosed);
 
   const saasTier = input.saasTier ?? "BASE";
