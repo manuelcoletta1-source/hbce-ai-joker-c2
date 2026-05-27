@@ -188,6 +188,18 @@ ORDER BY table_name;
 `.trim();
 }
 
+function buildUnknownTableHealth(error: string): DatabaseTableHealth[] {
+  return HBCE_DATABASE_SCHEMA_TABLES.map(
+    (tableName): DatabaseTableHealth => ({
+      tableName,
+      required: true,
+      present: false,
+      status: "UNKNOWN",
+      error
+    })
+  );
+}
+
 async function readRequiredDatabaseTables(): Promise<{
   tables: DatabaseTableHealth[];
   missingTables: string[];
@@ -198,16 +210,12 @@ async function readRequiredDatabaseTables(): Promise<{
   );
 
   if (!result.ok) {
+    const error = result.error || "DATABASE_TABLE_HEALTH_QUERY_FAILED";
+
     return {
-      tables: HBCE_DATABASE_SCHEMA_TABLES.map((tableName) => ({
-        tableName,
-        required: true,
-        present: false,
-        status: "UNKNOWN",
-        error: result.error || "DATABASE_TABLE_HEALTH_QUERY_FAILED"
-      })),
+      tables: buildUnknownTableHealth(error),
       missingTables: [...HBCE_DATABASE_SCHEMA_TABLES],
-      error: result.error || "DATABASE_TABLE_HEALTH_QUERY_FAILED"
+      error
     };
   }
 
@@ -217,17 +225,19 @@ async function readRequiredDatabaseTables(): Promise<{
       .filter((value): value is string => typeof value === "string" && value.length > 0)
   );
 
-  const tables = HBCE_DATABASE_SCHEMA_TABLES.map((tableName) => {
-    const present = presentTables.has(tableName);
+  const tables: DatabaseTableHealth[] = HBCE_DATABASE_SCHEMA_TABLES.map(
+    (tableName): DatabaseTableHealth => {
+      const present = presentTables.has(tableName);
 
-    return {
-      tableName,
-      required: true as const,
-      present,
-      status: present ? "PRESENT" : "MISSING",
-      error: present ? null : `Required table ${tableName} is missing.`
-    };
-  });
+      return {
+        tableName,
+        required: true,
+        present,
+        status: present ? "PRESENT" : "MISSING",
+        error: present ? null : `Required table ${tableName} is missing.`
+      };
+    }
+  );
 
   return {
     tables,
@@ -246,6 +256,10 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
     const boundary = getHbceDatabaseBoundary();
 
     if (!configured || !available) {
+      const error = configured
+        ? "HBCE database adapter is not available."
+        : "DATABASE_URL is not configured.";
+
       return {
         configured,
         available,
@@ -260,17 +274,9 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
           status: configured ? "DATABASE_NOT_AVAILABLE" : "DATABASE_NOT_CONFIGURED",
           rowCount: 0,
           durationMs: 0,
-          error: configured
-            ? "HBCE database adapter is not available."
-            : "DATABASE_URL is not configured."
+          error
         },
-        tables: HBCE_DATABASE_SCHEMA_TABLES.map((tableName) => ({
-          tableName,
-          required: true,
-          present: false,
-          status: "UNKNOWN",
-          error: "Database unavailable during health check."
-        })),
+        tables: buildUnknownTableHealth("Database unavailable during health check."),
         missingTables: [...HBCE_DATABASE_SCHEMA_TABLES],
         requiredRuntimeTables: {
           evtRecords: false,
@@ -278,9 +284,7 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
           runtimeAuditLogs: false,
           modelUsage: false
         },
-        error: configured
-          ? "HBCE database adapter is not available."
-          : "DATABASE_URL is not configured."
+        error
       };
     }
 
@@ -330,6 +334,9 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
           : `HBCE database schema is not ready. Missing tables: ${tableHealth.missingTables.join(", ")}`)
     };
   } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "UNKNOWN_DATABASE_HEALTH_ERROR";
+
     return {
       configured: false,
       available: false,
@@ -345,15 +352,9 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
         status: "DATABASE_HEALTH_FAILED",
         rowCount: 0,
         durationMs: 0,
-        error: error instanceof Error ? error.message : "UNKNOWN_DATABASE_HEALTH_ERROR"
+        error: errorMessage
       },
-      tables: HBCE_DATABASE_SCHEMA_TABLES.map((tableName) => ({
-        tableName,
-        required: true,
-        present: false,
-        status: "UNKNOWN",
-        error: error instanceof Error ? error.message : "UNKNOWN_DATABASE_HEALTH_ERROR"
-      })),
+      tables: buildUnknownTableHealth(errorMessage),
       missingTables: [...HBCE_DATABASE_SCHEMA_TABLES],
       requiredRuntimeTables: {
         evtRecords: false,
@@ -361,7 +362,7 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
         runtimeAuditLogs: false,
         modelUsage: false
       },
-      error: error instanceof Error ? error.message : "UNKNOWN_DATABASE_HEALTH_ERROR"
+      error: errorMessage
     };
   }
 }
