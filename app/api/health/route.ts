@@ -7,17 +7,11 @@ import {
   isHbceDatabaseConfigured
 } from "@/lib/ipr-database";
 
-import {
-  getC2DefensePolicyHealth
-} from "@/lib/c2-defense-policy";
+import { getC2DefensePolicyHealth } from "@/lib/c2-defense-policy";
 
-import {
-  getRuntimeAuditLogHealth
-} from "@/lib/runtime-audit-log";
+import { getRuntimeAuditLogHealth } from "@/lib/runtime-audit-log";
 
-import {
-  getModelUsageLogHealth
-} from "@/lib/model-usage-log";
+import { getModelUsageLogHealth } from "@/lib/model-usage-log";
 
 import {
   HBCE_CORE,
@@ -44,6 +38,15 @@ type DatabaseHealth = {
   description: unknown;
   boundary: unknown;
   error: string | null;
+};
+
+type ComponentHealth = {
+  name: string;
+  status: HealthStatus;
+  configured: boolean;
+  available: boolean;
+  mode: string;
+  boundary: string;
 };
 
 function readEnv(name: string, fallback = ""): string {
@@ -79,11 +82,26 @@ function redactEnv(name: string): {
 function getModelConfig() {
   const defaultModel = readEnv("JOKER_MODEL", "gpt-4o-mini");
   const baseModel = readEnv("JOKER_MODEL_BASE", defaultModel);
-  const standardModel = readEnv("JOKER_MODEL_STANDARD", readEnv("JOKER_STANDARD_MODEL", defaultModel));
-  const enhancedModel = readEnv("JOKER_MODEL_ENHANCED", readEnv("JOKER_ENHANCED_MODEL", "gpt-4o"));
-  const deepModel = readEnv("JOKER_MODEL_DEEP", readEnv("JOKER_DEEP_MODEL", enhancedModel));
-  const frontierModel = readEnv("JOKER_MODEL_FRONTIER", readEnv("JOKER_FRONTIER_MODEL", deepModel));
-  const emergencyModel = readEnv("JOKER_MODEL_EMERGENCY", readEnv("JOKER_C2_MODEL", frontierModel));
+  const standardModel = readEnv(
+    "JOKER_MODEL_STANDARD",
+    readEnv("JOKER_STANDARD_MODEL", defaultModel)
+  );
+  const enhancedModel = readEnv(
+    "JOKER_MODEL_ENHANCED",
+    readEnv("JOKER_ENHANCED_MODEL", "gpt-4o")
+  );
+  const deepModel = readEnv(
+    "JOKER_MODEL_DEEP",
+    readEnv("JOKER_DEEP_MODEL", enhancedModel)
+  );
+  const frontierModel = readEnv(
+    "JOKER_MODEL_FRONTIER",
+    readEnv("JOKER_FRONTIER_MODEL", deepModel)
+  );
+  const emergencyModel = readEnv(
+    "JOKER_MODEL_EMERGENCY",
+    readEnv("JOKER_C2_MODEL", frontierModel)
+  );
 
   return {
     defaultModel,
@@ -104,7 +122,8 @@ function getOpenAIHealth() {
   return {
     provider: "OpenAI",
     configured,
-    apiMode: "responses",
+    available: configured,
+    apiMode: "chat.completions",
     apiKey: redactEnv("OPENAI_API_KEY"),
     model: models.defaultModel,
     models,
@@ -149,6 +168,10 @@ function deriveHealthStatus(input: {
   }
 
   if (input.database.error) {
+    return "DEGRADED";
+  }
+
+  if (!input.database.configured || !input.database.available) {
     return "DEGRADED";
   }
 
@@ -206,6 +229,23 @@ function buildProjectHealth() {
   };
 }
 
+function buildComponentHealth(input: {
+  name: string;
+  configured: boolean;
+  available: boolean;
+  mode: string;
+  boundary: string;
+}): ComponentHealth {
+  return {
+    name: input.name,
+    status: input.configured && input.available ? "OK" : "DEGRADED",
+    configured: input.configured,
+    available: input.available,
+    mode: input.mode,
+    boundary: input.boundary
+  };
+}
+
 function buildBoundaryHealth(database: DatabaseHealth) {
   return {
     ...RUNTIME_BOUNDARY_SUMMARY,
@@ -218,6 +258,10 @@ function buildBoundaryHealth(database: DatabaseHealth) {
       "OPC is a technical proof receipt for audit and governance review. It is not legal certification.",
     memory:
       "Memory does not authenticate identity, does not authorize future unsafe requests, does not lower cyber risk and does not bypass runtime policy.",
+    audit:
+      "Runtime audit logs support operational reconstruction, SaaS governance and review. They are not legal certification.",
+    modelUsage:
+      "Model usage logs support SaaS accounting, operational reconstruction and model cost visibility. They are not legal certification.",
     c2Defense:
       "C2 Defense is restricted to verified defensive cyber use inside an authorized perimeter. Payment alone does not grant C2 access.",
     persistence:
@@ -225,7 +269,7 @@ function buildBoundaryHealth(database: DatabaseHealth) {
         ? "Database persistence available. Durable claims still require actual persistent record writes."
         : "Database persistence unavailable or not configured. PROCESS_MEMORY_MVP boundary active.",
     provider:
-      "OpenAI provides the cognitive model. JOKER-C2 provides identity, governance, policy, EVT, OPC, memory and audit boundary logic."
+      "OpenAI provides the cognitive model. JOKER-C2 provides identity, governance, policy, EVT, OPC, memory, audit and SaaS accounting boundary logic."
   };
 }
 
@@ -234,11 +278,60 @@ export async function GET() {
   const openAI = getOpenAIHealth();
   const database = readDatabaseHealth();
   const persistence = buildPersistenceHealth(database);
+  const c2Defense = getC2DefensePolicyHealth();
+  const runtimeAuditLog = getRuntimeAuditLogHealth();
+  const modelUsageLog = getModelUsageLogHealth();
 
   const status = deriveHealthStatus({
     openAIConfigured: openAI.configured,
     database
   });
+
+  const componentHealth = {
+    provider: buildComponentHealth({
+      name: "OpenAI Provider",
+      configured: openAI.configured,
+      available: openAI.available,
+      mode: openAI.apiMode,
+      boundary: openAI.boundary
+    }),
+    database: buildComponentHealth({
+      name: "HBCE Database",
+      configured: database.configured,
+      available: database.available,
+      mode: database.mode,
+      boundary:
+        typeof database.boundary === "string"
+          ? database.boundary
+          : "HBCE database boundary available in database section."
+    }),
+    runtimeAuditLog: buildComponentHealth({
+      name: "Runtime Audit Log",
+      configured: true,
+      available: true,
+      mode:
+        typeof runtimeAuditLog.mode === "string"
+          ? runtimeAuditLog.mode
+          : "PROCESS_MEMORY_MVP",
+      boundary:
+        typeof runtimeAuditLog.boundary === "string"
+          ? runtimeAuditLog.boundary
+          : "Runtime audit log health boundary unavailable."
+    }),
+    modelUsageLog: buildComponentHealth({
+      name: "Model Usage Log",
+      configured: true,
+      available: true,
+      mode:
+        typeof modelUsageLog.mode === "string"
+          ? modelUsageLog.mode
+          : "PROCESS_MEMORY_MVP",
+      boundary:
+        typeof modelUsageLog.boundary === "string"
+          ? modelUsageLog.boundary
+          : "Model usage log health boundary unavailable."
+    })
+  };
 
   const payload = {
     ok: true,
@@ -259,6 +352,8 @@ export async function GET() {
     database,
 
     persistence,
+
+    components: componentHealth,
 
     identity: buildIdentityHealth(),
 
@@ -293,11 +388,28 @@ export async function GET() {
         "MATRIX_ACTIVE requires verified biological IPR context. GET /api/health exposes runtime readiness only."
     },
 
-    c2Defense: getC2DefensePolicyHealth(),
+    saasCore: {
+      project: HBCE_SAAS_PROJECT,
+      release: HBCE_SAAS_TARGET_RELEASE,
+      sourceEvent: HBCE_SAAS_SOURCE_EVENT,
+      sourceEventAi: HBCE_SAAS_SOURCE_EVENT_AI,
+      targetCheckpoint: HBCE_SAAS_TARGET_CHECKPOINT,
+      status,
+      runtimeReady: status === "OK",
+      providerReady: openAI.configured,
+      databaseReady: database.configured && database.available,
+      auditReady: true,
+      modelUsageReady: true,
+      legalCertification: false,
+      boundary:
+        "SaaS Core v0.1 requires governed runtime execution, OpenAI provider configuration, database persistence target, runtime audit logs, model usage logs, EVT continuity and OPC proof receipts."
+    },
 
-    runtimeAuditLog: getRuntimeAuditLogHealth(),
+    c2Defense,
 
-    modelUsageLog: getModelUsageLogHealth(),
+    runtimeAuditLog,
+
+    modelUsageLog,
 
     operationalContext: {
       project: HBCE_SAAS_PROJECT,
@@ -310,6 +422,10 @@ export async function GET() {
       provider: "OpenAI",
       openAIConfigured: openAI.configured,
       persistenceMode: persistence.activeMode,
+      databaseConfigured: database.configured,
+      databaseAvailable: database.available,
+      auditLogConfigured: true,
+      modelUsageLogConfigured: true,
       legalCertification: false
     },
 
@@ -322,7 +438,19 @@ export async function GET() {
       chat: {
         method: "POST",
         path: "/api/chat",
-        status: "EXPECTED_RUNTIME_ENDPOINT"
+        status: "ACTIVE_RUNTIME_ENDPOINT",
+        expectedOutputs: [
+          "answer",
+          "runtime",
+          "identity",
+          "memory",
+          "evt",
+          "opc",
+          "audit",
+          "modelUsage",
+          "saas",
+          "diagnostics"
+        ]
       },
       opc: {
         methods: ["GET", "POST"],
