@@ -81,9 +81,16 @@ export type HbceDatabaseReadyResult = {
 type HbceSchemaStatementRow = HbceDatabaseQueryRow & {
   index: number;
   ok: boolean;
-  status: "EXECUTED" | "FAILED" | "TABLE_PRESENT" | "TABLE_MISSING";
+  status:
+    | "EXECUTED"
+    | "FAILED"
+    | "TABLE_PRESENT"
+    | "TABLE_MISSING"
+    | "COLUMN_PRESENT"
+    | "COLUMN_MISSING";
   sqlHash: string | null;
   tableName?: string;
+  columnName?: string;
   error: string | null;
 };
 
@@ -95,6 +102,205 @@ const DATABASE_URL_ENV_KEYS = [
   "POSTGRES_PRISMA_URL",
   "POSTGRES_URL_NON_POOLING",
   "NEON_DATABASE_URL"
+];
+
+const MEMORY_RECORDS_COMPATIBILITY_SCHEMA_SQL = [
+  `
+CREATE TABLE IF NOT EXISTS memory_records (
+  memory_id text PRIMARY KEY,
+  tenant_id text,
+  workspace_id text,
+  memory_key_hash text NOT NULL,
+  human_ipr text,
+  runtime_ipr text NOT NULL DEFAULT 'IPR-AI-0001',
+  session_id text NOT NULL DEFAULT 'UNKNOWN_SESSION',
+  thread_id text,
+  scope text,
+  authority text,
+  persistence_mode text NOT NULL DEFAULT 'DATABASE_PERSISTENT',
+  memory_hash text,
+  memory_chain_hash text,
+  last_evt_id text,
+  last_opc_proof_id text,
+  last_opc_chain_hash text,
+  record_payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+  legal_certification boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS memory_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS tenant_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS workspace_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS memory_key_hash text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS human_ipr text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS runtime_ipr text DEFAULT 'IPR-AI-0001';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS session_id text DEFAULT 'UNKNOWN_SESSION';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS thread_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS scope text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS authority text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS persistence_mode text DEFAULT 'DATABASE_PERSISTENT';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS memory_hash text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS memory_chain_hash text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS last_evt_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS last_opc_proof_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS last_opc_chain_hash text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS record_payload jsonb DEFAULT '{}'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS legal_certification boolean DEFAULT false;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+`.trim(),
+  `
+UPDATE memory_records
+SET
+  runtime_ipr = COALESCE(runtime_ipr, 'IPR-AI-0001'),
+  session_id = COALESCE(session_id, 'UNKNOWN_SESSION'),
+  persistence_mode = COALESCE(persistence_mode, 'DATABASE_PERSISTENT'),
+  legal_certification = COALESCE(legal_certification, false),
+  created_at = COALESCE(created_at, now()),
+  updated_at = COALESCE(updated_at, now())
+WHERE
+  runtime_ipr IS NULL
+  OR session_id IS NULL
+  OR persistence_mode IS NULL
+  OR legal_certification IS NULL
+  OR created_at IS NULL
+  OR updated_at IS NULL;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN runtime_ipr SET DEFAULT 'IPR-AI-0001';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN session_id SET DEFAULT 'UNKNOWN_SESSION';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN persistence_mode SET DEFAULT 'DATABASE_PERSISTENT';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN legal_certification SET DEFAULT false;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN created_at SET DEFAULT now();
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN updated_at SET DEFAULT now();
+`.trim(),
+  `
+CREATE UNIQUE INDEX IF NOT EXISTS memory_records_memory_id_uidx
+ON memory_records (memory_id);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_memory_key_hash_idx
+ON memory_records (memory_key_hash);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_human_ipr_idx
+ON memory_records (human_ipr);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_runtime_ipr_idx
+ON memory_records (runtime_ipr);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_tenant_workspace_idx
+ON memory_records (tenant_id, workspace_id);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_updated_at_idx
+ON memory_records (updated_at DESC);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_legal_certification_idx
+ON memory_records (legal_certification);
+`.trim()
+];
+
+const MEMORY_RECORDS_REQUIRED_COLUMNS = [
+  "memory_id",
+  "tenant_id",
+  "workspace_id",
+  "memory_key_hash",
+  "human_ipr",
+  "runtime_ipr",
+  "session_id",
+  "thread_id",
+  "scope",
+  "authority",
+  "persistence_mode",
+  "memory_hash",
+  "memory_chain_hash",
+  "last_evt_id",
+  "last_opc_proof_id",
+  "last_opc_chain_hash",
+  "record_payload",
+  "legal_certification",
+  "created_at",
+  "updated_at"
 ];
 
 const DISABLED_DATABASE_DESCRIPTION: HbceDatabaseDescription = {
@@ -289,6 +495,20 @@ WHERE table_schema IN ('public', current_schema())
 `.trim();
 }
 
+function buildMemoryRecordsRequiredColumnsCheckSql(): string {
+  const columnList = MEMORY_RECORDS_REQUIRED_COLUMNS
+    .map((columnName) => sqlLiteral(columnName))
+    .join(", ");
+
+  return `
+SELECT column_name
+FROM information_schema.columns
+WHERE table_schema IN ('public', current_schema())
+  AND table_name = 'memory_records'
+  AND column_name IN (${columnList});
+`.trim();
+}
+
 class DisabledHbceDatabaseAdapter implements HbceDatabaseAdapter {
   describe(): HbceDatabaseDescription {
     return DISABLED_DATABASE_DESCRIPTION;
@@ -382,15 +602,24 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
 
   private async initializeSchemaOnce(): Promise<HbceDatabaseQueryResult> {
     const startedAt = nowMs();
-    const joinedSql = HBCE_DATABASE_SCHEMA_SQL.join("\n\n");
+    const compatibilitySql = MEMORY_RECORDS_COMPATIBILITY_SCHEMA_SQL.join("\n\n");
+    const joinedSql = [
+      HBCE_DATABASE_SCHEMA_SQL.join("\n\n"),
+      compatibilitySql
+    ].join("\n\n");
     const sql = this.getSql();
     const rows: HbceSchemaStatementRow[] = [];
 
     let executedStatements = 0;
     let failedStatements = 0;
 
-    for (let index = 0; index < HBCE_DATABASE_SCHEMA_SQL.length; index += 1) {
-      const statement = HBCE_DATABASE_SCHEMA_SQL[index];
+    const allStatements = [
+      ...HBCE_DATABASE_SCHEMA_SQL,
+      ...MEMORY_RECORDS_COMPATIBILITY_SCHEMA_SQL
+    ];
+
+    for (let index = 0; index < allStatements.length; index += 1) {
+      const statement = allStatements[index];
       const normalized = statement.trim();
 
       if (!normalized) {
@@ -440,7 +669,7 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
         const present = existingTables.has(tableName);
 
         rows.push({
-          index: HBCE_DATABASE_SCHEMA_SQL.length,
+          index: allStatements.length,
           ok: present,
           status: present ? "TABLE_PRESENT" : "TABLE_MISSING",
           sqlHash: null,
@@ -460,14 +689,63 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
       });
     }
 
-    if (missingTables.length > 0) {
+    let missingMemoryColumns: string[] = [];
+
+    try {
+      const columnResult = await sql.query(
+        buildMemoryRecordsRequiredColumnsCheckSql(),
+        []
+      );
+      const existingColumnRows = normalizeRows<{ column_name?: unknown }>(
+        columnResult
+      );
+      const existingColumns = new Set(
+        existingColumnRows
+          .map((row) => row.column_name)
+          .filter((value): value is string => typeof value === "string")
+      );
+
+      missingMemoryColumns = MEMORY_RECORDS_REQUIRED_COLUMNS.filter(
+        (columnName) => !existingColumns.has(columnName)
+      );
+
+      for (const columnName of MEMORY_RECORDS_REQUIRED_COLUMNS) {
+        const present = existingColumns.has(columnName);
+
+        rows.push({
+          index: allStatements.length + 1,
+          ok: present,
+          status: present ? "COLUMN_PRESENT" : "COLUMN_MISSING",
+          sqlHash: null,
+          tableName: "memory_records",
+          columnName,
+          error: present
+            ? null
+            : `Required column memory_records.${columnName} is missing.`
+        });
+      }
+    } catch (error) {
+      return buildResult<HbceDatabaseQueryRow>({
+        ok: false,
+        status: "INITIALIZATION_FAILED",
+        rows,
+        rowCount: executedStatements,
+        error: `Schema statements executed with ${failedStatements} statement error(s), but memory_records column verification failed: ${safeError(error)}`,
+        sql: joinedSql,
+        startedAt
+      });
+    }
+
+    if (missingTables.length > 0 || missingMemoryColumns.length > 0) {
       return buildResult<HbceDatabaseQueryRow>({
         ok: false,
         status: "INITIALIZATION_FAILED",
         rows,
         rowCount: executedStatements,
         error:
-          `HBCE database schema initialization incomplete. Missing tables: ${missingTables.join(", ")}. ` +
+          `HBCE database schema initialization incomplete. ` +
+          `Missing tables: ${missingTables.length ? missingTables.join(", ") : "none"}. ` +
+          `Missing memory_records columns: ${missingMemoryColumns.length ? missingMemoryColumns.join(", ") : "none"}. ` +
           `Statement failures: ${failedStatements}.`,
         sql: joinedSql,
         startedAt
