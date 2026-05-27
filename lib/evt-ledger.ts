@@ -1,10 +1,11 @@
 /**
  * AI JOKER-C2 EVT Ledger
  *
- * Append-only JSONL ledger for HBCE / MATRIX runtime events.
+ * Append-only ledger for HBCE / MATRIX runtime events.
  *
  * This module supports:
  * - append-only EVT persistence
+ * - database-backed EVT persistence target
  * - previous event reference lookup
  * - previous event hash lookup
  * - event reading
@@ -14,15 +15,13 @@
  * - compatibility with OPC proof receipts
  *
  * Prototype note:
- * This file-based ledger is suitable for local and prototype use.
- * Controlled deployment may require database storage, access control,
- * signing, backup, retention rules and external review.
+ * The file-based JSONL ledger is suitable for local and prototype use.
+ * Controlled deployment requires database storage, access control, backup,
+ * retention rules and external review.
  *
  * Serverless note:
  * On Vercel/serverless runtimes, local filesystem persistence may fail or
- * reset between invocations. In that case, append failures should not make
- * event generation unverifiable; they should be reported as persistence
- * failures while the generated event hash remains independently verifiable.
+ * reset between invocations. Database persistence is therefore the SaaS target.
  *
  * EVT creates traceability.
  * OPC creates the audit-oriented proof receipt.
@@ -33,6 +32,7 @@
 import { appendFile, mkdir, readFile, stat, writeFile } from "fs/promises";
 import os from "os";
 import path from "path";
+import { createHash } from "node:crypto";
 
 import type { RuntimeEvent, VerificationStatus } from "./runtime-types";
 
@@ -51,6 +51,14 @@ import {
   type RuntimeEventBatchVerificationReport
 } from "./evt-verify";
 
+import {
+  isHbceDatabaseAvailable,
+  isHbceDatabaseConfigured,
+  queryHbceDatabase
+} from "./ipr-database";
+
+import type { HbceDatabaseQueryRow } from "./ipr-database";
+
 const DEFAULT_LEDGER_FILENAME = "hbce-ai-joker-c2-events.jsonl";
 
 export const DEFAULT_LEDGER_DIR =
@@ -63,9 +71,40 @@ export const DEFAULT_LEDGER_FILE =
   process.env.HBCE_EVT_LEDGER_FILE ||
   path.join(DEFAULT_LEDGER_DIR, DEFAULT_LEDGER_FILENAME);
 
+export const EVT_LEDGER_DATABASE_TABLE = "evt_records";
+
 export type LedgerAppendStatus = "APPENDED" | "REJECTED" | "FAILED";
 
 export type LedgerReadStatus = "READY" | "EMPTY" | "MISSING" | "FAILED";
+
+export type EvtDatabasePersistenceStatus =
+  | "PERSISTED"
+  | "DATABASE_NOT_CONFIGURED"
+  | "DATABASE_NOT_AVAILABLE"
+  | "DATABASE_TABLE_MISSING"
+  | "DATABASE_SCHEMA_UNSUPPORTED"
+  | "DATABASE_WRITE_FAILED"
+  | "DATABASE_SKIPPED";
+
+export type EvtPersistenceMode =
+  | "PROCESS_FILE_LEDGER"
+  | "DATABASE_PERSISTENT_TARGET"
+  | "DATABASE_PERSISTENT"
+  | "FAILED";
+
+export type EvtDatabasePersistenceResult = {
+  ok: boolean;
+  status: EvtDatabasePersistenceStatus;
+  mode: EvtPersistenceMode;
+  evt: string;
+  prev: string;
+  hash: string;
+  chainHash: string;
+  table: string;
+  writtenColumns: string[];
+  error: string | null;
+  legalCertification: false;
+};
 
 export type LedgerAppendResult = {
   ok: boolean;
@@ -78,6 +117,8 @@ export type LedgerAppendResult = {
   reason: string;
   verificationStatus?: VerificationStatus;
   alreadyPresent?: boolean;
+  database?: EvtDatabasePersistenceResult;
+  legalCertification?: false;
 };
 
 export type LedgerReadResult = {
@@ -132,6 +173,749 @@ export type EventReference = {
   hbceModule: string;
 };
 
+export type EvtLedgerHealth = {
+  configured: true;
+  fileLedgerPath: string;
+  databaseConfigured: boolean;
+  databaseAvailable: boolean;
+  databaseTable: typeof EVT_LEDGER_DATABASE_TABLE;
+  databaseTarget: "DATABASE_PERSISTENT";
+  legalCertification: false;
+  boundary: string;
+};
+
+type EventDatabaseFields = {
+  evtId: string;
+  prevEvtId: string | null;
+  evtHash: string;
+  chainHash: string;
+  runtimeIpr: string | null;
+  humanIpr: string | null;
+  tenantId: string | null;
+  workspaceId: string | null;
+  subscriptionId: string | null;
+  sessionId: string | null;
+  threadId: string | null;
+  opcProofId: string | null;
+  auditId: string | null;
+  memoryId: string | null;
+  eventKind: string;
+  runtimeState: string | null;
+  runtimeDecision: string | null;
+  projectDomain: string | null;
+  hbceModule: string | null;
+  payloadJson: string;
+  legalCertification: false;
+};
+
+type InformationSchemaColumnRow = HbceDatabaseQueryRow & {
+  column_name?: string;
+};
+
+type EvtDatabaseRow = HbceDatabaseQueryRow & {
+  evt_id?: string;
+  event_id?: string;
+  evt_hash?: string;
+  event_hash?: string;
+  chain_hash?: string;
+};
+
+const NO_EVT_DATABASE_COLUMNS: string[] = [];
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function sha256(value: unknown): string {
+  return createHash("sha256").update(stableStringify(value)).digest("hex");
+}
+
+function stableStringify(value: unknown): string {
+  if (value === null || value === undefined) {
+    return String(value);
+  }
+
+  if (typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  return `{${Object.keys(record)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+    .join(",")}}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function getPathValue(value: unknown, pathParts: string[]): unknown {
+  let current: unknown = value;
+
+  for (const key of pathParts) {
+    if (!isRecord(current)) {
+      return undefined;
+    }
+
+    current = current[key];
+  }
+
+  return current;
+}
+
+function firstStringPath(
+  value: unknown,
+  paths: string[][],
+  fallback: string | null = null
+): string | null {
+  for (const pathParts of paths) {
+    const candidate = getPathValue(value, pathParts);
+
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
+
+    if (typeof candidate === "number" || typeof candidate === "boolean") {
+      return String(candidate);
+    }
+  }
+
+  return fallback;
+}
+
+function nullableText(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const normalized = trimmed.toUpperCase();
+
+  if (
+    normalized === "NONE" ||
+    normalized === "NULL" ||
+    normalized === "UNKNOWN" ||
+    normalized === "NOT_AVAILABLE" ||
+    normalized === "NOT_VERIFIED" ||
+    normalized === "NO_TENANT" ||
+    normalized === "NO_WORKSPACE" ||
+    normalized === "NO_SUBSCRIPTION" ||
+    normalized === "NO_SESSION" ||
+    normalized === "NO_THREAD" ||
+    normalized === "NO_OPC" ||
+    normalized === "NO_AUDIT" ||
+    normalized === "NO_MEMORY"
+  ) {
+    return null;
+  }
+
+  return trimmed;
+}
+
+function safeDatabaseError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return "UNKNOWN_EVT_DATABASE_ERROR";
+  }
+}
+
+function normalizeDatabaseRuntimeDecision(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.toUpperCase();
+
+  if (
+    normalized === "ALLOW" ||
+    normalized === "BLOCK" ||
+    normalized === "ESCALATE" ||
+    normalized === "FAIL_CLOSED"
+  ) {
+    return normalized;
+  }
+
+  if (
+    normalized === "ACCESS_GRANTED" ||
+    normalized === "ACCESS_GRANTED_ACCOUNT_SESSION" ||
+    normalized === "COMPLETED" ||
+    normalized === "OK"
+  ) {
+    return "ALLOW";
+  }
+
+  if (
+    normalized === "SERVER_VALIDATION_REQUIRED" ||
+    normalized === "PENDING_SERVER_VALIDATION" ||
+    normalized === "ACCESS_LIMITED"
+  ) {
+    return "ESCALATE";
+  }
+
+  if (normalized === "DENIED" || normalized === "REJECTED") {
+    return "BLOCK";
+  }
+
+  return null;
+}
+
+function normalizeDatabaseRuntimeState(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.toUpperCase();
+
+  if (
+    normalized === "OPERATIONAL" ||
+    normalized === "BLOCKED" ||
+    normalized === "INVALID" ||
+    normalized === "COMPLETED" ||
+    normalized === "FAILED"
+  ) {
+    return normalized;
+  }
+
+  if (normalized === "ALLOW" || normalized === "ACCESS_GRANTED") {
+    return "OPERATIONAL";
+  }
+
+  if (normalized === "BLOCK") {
+    return "BLOCKED";
+  }
+
+  if (normalized === "FAIL_CLOSED") {
+    return "INVALID";
+  }
+
+  return null;
+}
+
+function safeEventChainReference(event: Partial<RuntimeEvent>): string {
+  if (event.evt && event.trace?.hash) {
+    return `${event.evt}:${event.trace.hash}`;
+  }
+
+  return event.evt || "UNKNOWN_EVT";
+}
+
+function safeEventHash(event: RuntimeEvent): string {
+  return event.trace?.hash || sha256(event);
+}
+
+function buildEventChainHash(event: RuntimeEvent): string {
+  return `sha256:${sha256({
+    evt: event.evt,
+    prev: event.prev,
+    hash: event.trace?.hash ?? null,
+    chainReference: safeEventChainReference(event)
+  })}`;
+}
+
+function buildEventDatabaseFields(event: RuntimeEvent): EventDatabaseFields {
+  const summary = summarizeRuntimeEvent(event);
+  const eventRecord = event as unknown;
+
+  const runtimeIpr = firstStringPath(
+    eventRecord,
+    [
+      ["runtime", "ipr"],
+      ["identity", "runtimeIpr"],
+      ["identity", "runtime_ipr"],
+      ["runtimeIpr"],
+      ["runtime_ipr"]
+    ],
+    null
+  );
+
+  const humanIpr = firstStringPath(
+    eventRecord,
+    [
+      ["identity", "humanIpr"],
+      ["identity", "human_ipr"],
+      ["subject", "ipr"],
+      ["verifiedSubject", "ipr"],
+      ["humanIpr"],
+      ["human_ipr"]
+    ],
+    null
+  );
+
+  const tenantId = firstStringPath(
+    eventRecord,
+    [
+      ["saas", "tenantId"],
+      ["saas", "tenant_id"],
+      ["tenantId"],
+      ["tenant_id"]
+    ],
+    null
+  );
+
+  const workspaceId = firstStringPath(
+    eventRecord,
+    [
+      ["saas", "workspaceId"],
+      ["saas", "workspace_id"],
+      ["workspaceId"],
+      ["workspace_id"]
+    ],
+    null
+  );
+
+  const subscriptionId = firstStringPath(
+    eventRecord,
+    [
+      ["saas", "subscriptionId"],
+      ["saas", "subscription_id"],
+      ["subscriptionId"],
+      ["subscription_id"]
+    ],
+    null
+  );
+
+  const sessionId = firstStringPath(
+    eventRecord,
+    [
+      ["sessionId"],
+      ["session_id"],
+      ["session", "id"],
+      ["runtime", "sessionId"]
+    ],
+    null
+  );
+
+  const threadId = firstStringPath(
+    eventRecord,
+    [
+      ["threadId"],
+      ["thread_id"],
+      ["conversationId"],
+      ["conversation_id"],
+      ["runtime", "threadId"]
+    ],
+    null
+  );
+
+  const opcProofId = firstStringPath(
+    eventRecord,
+    [
+      ["opcProofId"],
+      ["opc_proof_id"],
+      ["opc", "proofId"],
+      ["opc", "id"],
+      ["proof", "proofId"]
+    ],
+    null
+  );
+
+  const auditId = firstStringPath(
+    eventRecord,
+    [
+      ["auditId"],
+      ["audit_id"],
+      ["audit", "auditId"],
+      ["audit", "id"]
+    ],
+    null
+  );
+
+  const memoryId = firstStringPath(
+    eventRecord,
+    [
+      ["memoryId"],
+      ["memory_id"],
+      ["memory", "id"],
+      ["memory", "memoryId"]
+    ],
+    null
+  );
+
+  const runtimeDecision = normalizeDatabaseRuntimeDecision(
+    firstStringPath(
+      eventRecord,
+      [
+        ["decision"],
+        ["runtimeDecision"],
+        ["runtime_decision"],
+        ["policy", "decision"],
+        ["governance", "decision"]
+      ],
+      null
+    )
+  );
+
+  const runtimeState = normalizeDatabaseRuntimeState(
+    firstStringPath(
+      eventRecord,
+      [
+        ["state"],
+        ["runtimeState"],
+        ["runtime_state"],
+        ["runtime", "state"],
+        ["governance", "state"]
+      ],
+      null
+    )
+  );
+
+  const eventKind =
+    firstStringPath(
+      eventRecord,
+      [
+        ["kind"],
+        ["eventKind"],
+        ["event_kind"],
+        ["type"],
+        ["event_type"]
+      ],
+      "RUNTIME_EVENT"
+    ) ?? "RUNTIME_EVENT";
+
+  const payload = {
+    ...((isRecord(eventRecord) ? eventRecord : {}) as Record<string, unknown>),
+    evtDatabasePersistence: {
+      table: EVT_LEDGER_DATABASE_TABLE,
+      chainReference: safeEventChainReference(event),
+      chainHash: buildEventChainHash(event),
+      projectDomain: summary.projectDomain,
+      hbceModule: summary.hbceModule,
+      runtimeIpr,
+      humanIpr,
+      tenantId,
+      workspaceId,
+      subscriptionId,
+      sessionId,
+      threadId,
+      opcProofId,
+      auditId,
+      memoryId,
+      legalCertification: false
+    }
+  };
+
+  return {
+    evtId: event.evt,
+    prevEvtId: nullableText(event.prev),
+    evtHash: safeEventHash(event),
+    chainHash: buildEventChainHash(event),
+    runtimeIpr: nullableText(runtimeIpr),
+    humanIpr: nullableText(humanIpr),
+    tenantId: nullableText(tenantId),
+    workspaceId: nullableText(workspaceId),
+    subscriptionId: nullableText(subscriptionId),
+    sessionId: nullableText(sessionId),
+    threadId: nullableText(threadId),
+    opcProofId: nullableText(opcProofId),
+    auditId: nullableText(auditId),
+    memoryId: nullableText(memoryId),
+    eventKind,
+    runtimeState,
+    runtimeDecision,
+    projectDomain: nullableText(summary.projectDomain),
+    hbceModule: nullableText(summary.hbceModule),
+    payloadJson: JSON.stringify(payload),
+    legalCertification: false
+  };
+}
+
+function quoteIdentifier(identifier: string): string {
+  if (!/^[a-z_][a-z0-9_]*$/i.test(identifier)) {
+    throw new Error(`Unsafe SQL identifier: ${identifier}`);
+  }
+
+  return `"${identifier}"`;
+}
+
+function chooseColumn(
+  available: Set<string>,
+  candidates: string[]
+): string | null {
+  for (const candidate of candidates) {
+    if (available.has(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function addColumnValue(
+  target: Array<{ column: string; value: unknown; jsonb?: boolean }>,
+  available: Set<string>,
+  candidates: string[],
+  value: unknown,
+  options: { jsonb?: boolean; required?: boolean } = {}
+): void {
+  const column = chooseColumn(available, candidates);
+
+  if (!column) {
+    if (options.required) {
+      throw new Error(`EVT schema missing required column: ${candidates.join(" | ")}`);
+    }
+
+    return;
+  }
+
+  target.push({
+    column,
+    value,
+    jsonb: options.jsonb
+  });
+}
+
+async function getEvtDatabaseColumns(): Promise<Set<string>> {
+  const result = await queryHbceDatabase<InformationSchemaColumnRow>(
+    `
+SELECT column_name
+FROM information_schema.columns
+WHERE table_name = $1
+  AND table_schema IN ('public', current_schema())
+ORDER BY ordinal_position;
+`.trim(),
+    [EVT_LEDGER_DATABASE_TABLE]
+  );
+
+  if (!result.ok) {
+    return new Set(NO_EVT_DATABASE_COLUMNS);
+  }
+
+  const columns = result.rows
+    .map((row) => row.column_name)
+    .filter((column): column is string => typeof column === "string" && column.length > 0);
+
+  return new Set(columns);
+}
+
+function buildEvtInsertStatement(input: {
+  columns: Array<{ column: string; value: unknown; jsonb?: boolean }>;
+}): {
+  sql: string;
+  params: unknown[];
+  writtenColumns: string[];
+} {
+  const writtenColumns = input.columns.map((item) => item.column);
+  const params = input.columns.map((item) => item.value);
+
+  const insertColumns = input.columns
+    .map((item) => quoteIdentifier(item.column))
+    .join(",\n  ");
+
+  const values = input.columns
+    .map((item, index) => {
+      const placeholder = `$${index + 1}`;
+      return item.jsonb ? `${placeholder}::jsonb` : placeholder;
+    })
+    .join(",\n  ");
+
+  const updateColumns = input.columns
+    .filter((item) => item.column !== "evt_id" && item.column !== "event_id")
+    .map((item) => {
+      const quoted = quoteIdentifier(item.column);
+      return `${quoted} = EXCLUDED.${quoted}`;
+    });
+
+  const conflictColumn = input.columns.some((item) => item.column === "evt_id")
+    ? "evt_id"
+    : input.columns.some((item) => item.column === "event_id")
+      ? "event_id"
+      : null;
+
+  if (!conflictColumn) {
+    throw new Error("EVT insert requires evt_id or event_id column.");
+  }
+
+  const updateSql =
+    updateColumns.length > 0
+      ? `DO UPDATE SET\n  ${updateColumns.join(",\n  ")}`
+      : "DO NOTHING";
+
+  const sql = `
+INSERT INTO ${quoteIdentifier(EVT_LEDGER_DATABASE_TABLE)} (
+  ${insertColumns}
+)
+VALUES (
+  ${values}
+)
+ON CONFLICT (${quoteIdentifier(conflictColumn)}) ${updateSql}
+RETURNING ${quoteIdentifier(conflictColumn)};
+`.trim();
+
+  return {
+    sql,
+    params,
+    writtenColumns
+  };
+}
+
+function buildEvtDatabaseColumnValues(
+  available: Set<string>,
+  fields: EventDatabaseFields
+): Array<{ column: string; value: unknown; jsonb?: boolean }> {
+  const values: Array<{ column: string; value: unknown; jsonb?: boolean }> = [];
+
+  addColumnValue(values, available, ["evt_id", "event_id"], fields.evtId, {
+    required: true
+  });
+  addColumnValue(values, available, ["prev_evt_id", "prev_event_id", "prev"], fields.prevEvtId);
+  addColumnValue(values, available, ["evt_hash", "event_hash", "hash"], fields.evtHash, {
+    required: true
+  });
+  addColumnValue(values, available, ["chain_hash"], fields.chainHash);
+  addColumnValue(values, available, ["runtime_ipr"], fields.runtimeIpr);
+  addColumnValue(values, available, ["human_ipr"], fields.humanIpr);
+  addColumnValue(values, available, ["tenant_id"], null);
+  addColumnValue(values, available, ["workspace_id"], null);
+  addColumnValue(values, available, ["subscription_id"], null);
+  addColumnValue(values, available, ["session_id"], null);
+  addColumnValue(values, available, ["thread_id"], null);
+  addColumnValue(values, available, ["opc_proof_id"], null);
+  addColumnValue(values, available, ["audit_id"], null);
+  addColumnValue(values, available, ["memory_id"], null);
+  addColumnValue(values, available, ["event_kind", "event_type", "kind"], fields.eventKind);
+  addColumnValue(values, available, ["runtime_state"], fields.runtimeState);
+  addColumnValue(values, available, ["runtime_decision"], fields.runtimeDecision);
+  addColumnValue(values, available, ["project_domain"], fields.projectDomain);
+  addColumnValue(values, available, ["hbce_module"], fields.hbceModule);
+  addColumnValue(values, available, ["payload", "event_payload"], fields.payloadJson, {
+    jsonb: true,
+    required: true
+  });
+  addColumnValue(values, available, ["legal_certification"], false);
+
+  return values;
+}
+
+export async function persistEventToDatabase(
+  event: RuntimeEvent
+): Promise<EvtDatabasePersistenceResult> {
+  const fields = buildEventDatabaseFields(event);
+
+  if (!isHbceDatabaseConfigured()) {
+    return {
+      ok: false,
+      status: "DATABASE_NOT_CONFIGURED",
+      mode: "PROCESS_FILE_LEDGER",
+      evt: fields.evtId,
+      prev: fields.prevEvtId ?? "",
+      hash: fields.evtHash,
+      chainHash: fields.chainHash,
+      table: EVT_LEDGER_DATABASE_TABLE,
+      writtenColumns: [],
+      error: "DATABASE_URL is not configured. EVT remains file/process ledger only.",
+      legalCertification: false
+    };
+  }
+
+  if (!isHbceDatabaseAvailable()) {
+    return {
+      ok: false,
+      status: "DATABASE_NOT_AVAILABLE",
+      mode: "PROCESS_FILE_LEDGER",
+      evt: fields.evtId,
+      prev: fields.prevEvtId ?? "",
+      hash: fields.evtHash,
+      chainHash: fields.chainHash,
+      table: EVT_LEDGER_DATABASE_TABLE,
+      writtenColumns: [],
+      error: "HBCE database adapter is not available. EVT remains file/process ledger only.",
+      legalCertification: false
+    };
+  }
+
+  try {
+    const available = await getEvtDatabaseColumns();
+
+    if (available.size === 0) {
+      return {
+        ok: false,
+        status: "DATABASE_TABLE_MISSING",
+        mode: "PROCESS_FILE_LEDGER",
+        evt: fields.evtId,
+        prev: fields.prevEvtId ?? "",
+        hash: fields.evtHash,
+        chainHash: fields.chainHash,
+        table: EVT_LEDGER_DATABASE_TABLE,
+        writtenColumns: [],
+        error: "evt_records table was not found in the active database schema.",
+        legalCertification: false
+      };
+    }
+
+    const columnValues = buildEvtDatabaseColumnValues(available, fields);
+    const statement = buildEvtInsertStatement({ columns: columnValues });
+
+    const result = await queryHbceDatabase<EvtDatabaseRow>(
+      statement.sql,
+      statement.params
+    );
+
+    if (!result.ok) {
+      return {
+        ok: false,
+        status: "DATABASE_WRITE_FAILED",
+        mode: "FAILED",
+        evt: fields.evtId,
+        prev: fields.prevEvtId ?? "",
+        hash: fields.evtHash,
+        chainHash: fields.chainHash,
+        table: EVT_LEDGER_DATABASE_TABLE,
+        writtenColumns: statement.writtenColumns,
+        error: result.error || "EVT_DATABASE_WRITE_FAILED",
+        legalCertification: false
+      };
+    }
+
+    return {
+      ok: true,
+      status: "PERSISTED",
+      mode: "DATABASE_PERSISTENT",
+      evt: fields.evtId,
+      prev: fields.prevEvtId ?? "",
+      hash: fields.evtHash,
+      chainHash: fields.chainHash,
+      table: EVT_LEDGER_DATABASE_TABLE,
+      writtenColumns: statement.writtenColumns,
+      error: null,
+      legalCertification: false
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: "DATABASE_WRITE_FAILED",
+      mode: "FAILED",
+      evt: fields.evtId,
+      prev: fields.prevEvtId ?? "",
+      hash: fields.evtHash,
+      chainHash: fields.chainHash,
+      table: EVT_LEDGER_DATABASE_TABLE,
+      writtenColumns: [],
+      error: safeDatabaseError(error),
+      legalCertification: false
+    };
+  }
+}
+
 export async function ensureLedger(
   ledgerPath = DEFAULT_LEDGER_FILE
 ): Promise<void> {
@@ -150,6 +934,8 @@ export async function appendEvent(
   event: RuntimeEvent,
   ledgerPath = DEFAULT_LEDGER_FILE
 ): Promise<LedgerAppendResult> {
+  let databasePersistence: EvtDatabasePersistenceResult | undefined;
+
   try {
     await ensureLedger(ledgerPath);
 
@@ -166,6 +952,7 @@ export async function appendEvent(
         ledgerPath,
         verificationStatus: verification.status,
         alreadyPresent: false,
+        legalCertification: false,
         reason: [
           "Runtime event is structurally invalid and was not appended.",
           verification.reasons.join(" ")
@@ -184,6 +971,7 @@ export async function appendEvent(
         ledgerPath,
         verificationStatus: verification.status,
         alreadyPresent: false,
+        legalCertification: false,
         reason: [
           "Runtime event hash is invalid and was not appended.",
           `ExpectedHash: ${verification.expectedHash || "unavailable"}.`,
@@ -195,9 +983,11 @@ export async function appendEvent(
     const existing = await readLedger(ledgerPath);
 
     if (existing.status === "FAILED") {
+      databasePersistence = await persistEventToDatabase(event);
+
       return {
-        ok: false,
-        status: "FAILED",
+        ok: databasePersistence.ok,
+        status: databasePersistence.ok ? "APPENDED" : "FAILED",
         evt: event.evt,
         prev: event.prev,
         hash: event.trace.hash,
@@ -205,7 +995,11 @@ export async function appendEvent(
         ledgerPath,
         verificationStatus: verification.status,
         alreadyPresent: false,
-        reason: `Ledger read failed before append: ${existing.reason}`
+        database: databasePersistence,
+        legalCertification: false,
+        reason: databasePersistence.ok
+          ? `File ledger read failed before append, but EVT database persistence succeeded: ${existing.reason}`
+          : `Ledger read failed before append and database persistence failed: ${existing.reason}`
       };
     }
 
@@ -214,6 +1008,8 @@ export async function appendEvent(
     );
 
     if (alreadyPresent) {
+      databasePersistence = await persistEventToDatabase(event);
+
       return {
         ok: true,
         status: "APPENDED",
@@ -224,6 +1020,8 @@ export async function appendEvent(
         ledgerPath,
         verificationStatus: verification.status,
         alreadyPresent: true,
+        database: databasePersistence,
+        legalCertification: false,
         reason:
           "Runtime event is already present in the EVT ledger. Append treated as idempotent success."
       };
@@ -232,9 +1030,11 @@ export async function appendEvent(
     const continuity = validateAppendContinuity(existing.events, event);
 
     if (!continuity.ok) {
+      databasePersistence = await persistEventToDatabase(event);
+
       return {
-        ok: false,
-        status: "REJECTED",
+        ok: databasePersistence.ok,
+        status: databasePersistence.ok ? "APPENDED" : "REJECTED",
         evt: event.evt,
         prev: event.prev,
         hash: event.trace.hash,
@@ -242,13 +1042,19 @@ export async function appendEvent(
         ledgerPath,
         verificationStatus: verification.status,
         alreadyPresent: false,
-        reason: continuity.reason
+        database: databasePersistence,
+        legalCertification: false,
+        reason: databasePersistence.ok
+          ? `${continuity.reason} Database persistence accepted the event as an independent SaaS persistence target.`
+          : continuity.reason
       };
     }
 
     const line = `${buildEventLine(event)}\n`;
 
     await appendFile(ledgerPath, line, "utf8");
+
+    databasePersistence = await persistEventToDatabase(event);
 
     return {
       ok: true,
@@ -260,12 +1066,31 @@ export async function appendEvent(
       ledgerPath,
       verificationStatus: verification.status,
       alreadyPresent: false,
-      reason: continuity.reason || "Runtime event appended to ledger."
+      database: databasePersistence,
+      legalCertification: false,
+      reason:
+        databasePersistence.ok
+          ? "Runtime event appended to file ledger and persisted to database."
+          : `${continuity.reason || "Runtime event appended to file ledger."} Database persistence did not complete: ${databasePersistence.error ?? databasePersistence.status}.`
     };
   } catch (error) {
-    return {
+    databasePersistence = await persistEventToDatabase(event).catch((databaseError) => ({
       ok: false,
-      status: "FAILED",
+      status: "DATABASE_WRITE_FAILED" as const,
+      mode: "FAILED" as const,
+      evt: event.evt,
+      prev: event.prev,
+      hash: event.trace?.hash ?? "",
+      chainHash: safeEventChainReference(event),
+      table: EVT_LEDGER_DATABASE_TABLE,
+      writtenColumns: [],
+      error: safeDatabaseError(databaseError),
+      legalCertification: false as const
+    }));
+
+    return {
+      ok: databasePersistence.ok,
+      status: databasePersistence.ok ? "APPENDED" : "FAILED",
       evt: event.evt,
       prev: event.prev,
       hash: event.trace?.hash,
@@ -273,10 +1098,12 @@ export async function appendEvent(
       ledgerPath,
       verificationStatus: "UNVERIFIED",
       alreadyPresent: false,
+      database: databasePersistence,
+      legalCertification: false,
       reason:
         error instanceof Error
-          ? `EVT ledger append failed: ${error.message}`
-          : "Unknown ledger append failure."
+          ? `EVT file ledger append failed: ${error.message}. Database status: ${databasePersistence.status}.`
+          : `Unknown ledger append failure. Database status: ${databasePersistence.status}.`
     };
   }
 }
@@ -611,6 +1438,25 @@ export async function buildLedgerDiagnostics(
   };
 }
 
+export function getEvtLedgerHealth(): EvtLedgerHealth {
+  const databaseConfigured = isHbceDatabaseConfigured();
+  const databaseAvailable = isHbceDatabaseAvailable();
+
+  return {
+    configured: true,
+    fileLedgerPath: DEFAULT_LEDGER_FILE,
+    databaseConfigured,
+    databaseAvailable,
+    databaseTable: EVT_LEDGER_DATABASE_TABLE,
+    databaseTarget: "DATABASE_PERSISTENT",
+    legalCertification: false,
+    boundary:
+      databaseConfigured && databaseAvailable
+        ? "EVT ledger is configured with database persistence target evt_records. File ledger remains best-effort for local/prototype continuity. EVT is technical traceability only; legalCertification=false."
+        : "EVT ledger is currently limited to file/process persistence. Database persistence requires a configured and available HBCE database. EVT is technical traceability only; legalCertification=false."
+  };
+}
+
 function buildStaticLedgerSummary(input: {
   ledgerPath: string;
   events: RuntimeEvent[];
@@ -761,14 +1607,6 @@ function isSameRuntimeEvent(left: RuntimeEvent, right: RuntimeEvent): boolean {
     left.trace?.hash === right.trace?.hash ||
     buildEventChainReference(left) === buildEventChainReference(right)
   );
-}
-
-function safeEventChainReference(event: Partial<RuntimeEvent>): string {
-  if (event.evt && event.trace?.hash) {
-    return `${event.evt}:${event.trace.hash}`;
-  }
-
-  return event.evt || "UNKNOWN_EVT";
 }
 
 function uniqueWarnings(warnings: string[]): string[] {
