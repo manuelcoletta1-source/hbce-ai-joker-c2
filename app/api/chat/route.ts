@@ -1688,7 +1688,7 @@ async function recordSaasAuditAndUsage(args: {
       operationalValue: riskLevel === "HIGH" ? "HIGH" : riskLevel === "MEDIUM" ? "MEDIUM" : "LOW",
       cyberRelevance,
       c2Boundary: "C2_NOT_AVAILABLE",
-      proofRequirement: "OPC_REQUIRED",
+      proofRequirement: "EVT_OPC",
 
       evtRequired: true,
       opcRequired: true,
