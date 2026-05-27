@@ -416,7 +416,7 @@ type OpcProofDatabaseFields = {
   previousProofHash: string | null;
   evtId: string;
   evtHash: string;
-  runtimeIpr: string | null;
+  runtimeIpr: string;
   humanIpr: string | null;
   sessionId: string | null;
   memoryId: string | null;
@@ -1055,7 +1055,7 @@ export function getOpcProofDatabaseHealth(): OpcProofDatabaseHealth {
     legalCertification: false,
     boundary:
       databaseConfigured && databaseAvailable
-        ? "OPC proof database writer is configured with DATABASE_PERSISTENT target opc_proofs. Relational references remain nullable while the full tenant/session/EVT/memory/IPR subject chain is being activated. OPC is technical proof only; legalCertification=false."
+        ? "OPC proof database writer is configured with DATABASE_PERSISTENT target opc_proofs. runtime_ipr is written as required runtime identity; biological IPR references remain payload-first while the full tenant/session/EVT/memory/IPR subject chain is being activated. OPC is technical proof only; legalCertification=false."
         : "OPC proof database writer is not fully active. Proof records remain process/runtime scoped unless DATABASE_PERSISTENT storage is configured and available. OPC is technical proof only; legalCertification=false."
   };
 }
@@ -1611,6 +1611,11 @@ function buildOpcProofDatabaseFields(record: OpcProofRecord): OpcProofDatabaseFi
     record
   });
 
+  const runtimeIpr =
+    nullableDatabaseText(record.identity.ipr) || "IPR-AI-0001";
+
+  const humanIprForPayload = nullableDatabaseText(record.identity.ipr);
+
   const payload = {
     ...record,
     opcDatabasePersistence: {
@@ -1621,15 +1626,15 @@ function buildOpcProofDatabaseFields(record: OpcProofRecord): OpcProofDatabaseFi
       evtHash: record.event.hash,
       chainHash: record.proof.chainHash,
       previousProofHash: record.proof.previousProofHash ?? null,
-      runtimeIpr: record.identity.ipr,
-      humanIpr: record.identity.ipr,
+      runtimeIpr,
+      humanIpr: humanIprForPayload,
       sessionId: record.sessionId ?? null,
       memoryId: record.memory?.memoryId ?? record.memory?.memoryKeyHash ?? null,
       memoryHash: record.proof.memoryHash ?? record.memory?.hash ?? null,
       projectDomain: record.runtime.projectDomain ?? null,
       hbceModule: record.runtime.hbceModule ?? null,
       persistenceBoundary:
-        "IPR and session relational columns remain nullable/payload-first until ipr_subjects, sessions and tenant/workspace ledgers are fully materialized.",
+        "runtime_ipr is written because the current database schema requires it. Biological IPR references remain payload-first/nullable until ipr_subjects, sessions and tenant/workspace ledgers are fully materialized.",
       legalCertification: false
     }
   };
@@ -1641,8 +1646,8 @@ function buildOpcProofDatabaseFields(record: OpcProofRecord): OpcProofDatabaseFi
     previousProofHash: record.proof.previousProofHash ?? null,
     evtId: record.event.evt,
     evtHash: record.event.hash,
-    runtimeIpr: nullableDatabaseText(record.identity.ipr),
-    humanIpr: nullableDatabaseText(record.identity.ipr),
+    runtimeIpr,
+    humanIpr: null,
     sessionId: nullableDatabaseText(record.sessionId),
     memoryId: nullableDatabaseText(record.memory?.memoryId ?? record.memory?.memoryKeyHash),
     memoryHash: nullableDatabaseText(record.proof.memoryHash ?? record.memory?.hash),
@@ -1961,7 +1966,9 @@ function buildOpcProofDatabaseColumnValues(
     toDatabaseValue(fields.evtHash)
   );
 
-  addColumnValue(values, available, ["runtime_ipr"], toDatabaseValue(null));
+  addColumnValue(values, available, ["runtime_ipr"], toDatabaseValue(fields.runtimeIpr), {
+    required: true
+  });
 
   addEveryColumnValue(
     values,
