@@ -1,7 +1,7 @@
-export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.1";
+export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.2";
 
 export const HBCE_DATABASE_SCHEMA_BOUNDARY =
-  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, sessions, chat continuity, IPR-bound memory, EVT records, OPC technical proof receipts and MATRIX Transformative Memory for runtime audit. It does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
+  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. It does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
 
 export const HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY =
   "All HBCE database records remain technical-operational records. legal_certification must remain false unless a future legally recognized qualified trust service, public authority process or regulated certification workflow is explicitly integrated.";
@@ -15,13 +15,19 @@ export const HBCE_PROJECT_BIRTH_LABEL =
 
 export const HBCE_MONTHLY_REFERENCE = "UP-MESE-4";
 
-export const HBCE_CURRENT_OPERATIONAL_EVT = "EVT-0016";
+export const HBCE_CURRENT_OPERATIONAL_EVT = "UP-EVT-0016";
 
-export const HBCE_CURRENT_OPERATIONAL_AI_EVT = "EVT-0016-AI";
+export const HBCE_CURRENT_OPERATIONAL_AI_EVT = "UP-EVT-0016-AI";
 
 export const HBCE_CURRENT_OPERATIONAL_CYCLE = "UP-CANONICO";
 
 export const HBCE_CURRENT_EVENT_FAMILY = "UP-EVT";
+
+export const HBCE_TARGET_RELEASE = "SaaS Core v0.1";
+
+export const HBCE_TARGET_CHECKPOINT_DATE = "2026-06-19T15:30:00+02:00";
+
+export const HBCE_TARGET_CYCLE = "UP-MESE-5";
 
 export const HBCE_DATABASE_SCHEMA_TABLES = [
   "hbce_schema_migrations",
@@ -29,6 +35,7 @@ export const HBCE_DATABASE_SCHEMA_TABLES = [
   "ipr_subjects",
   "saas_workspaces",
   "saas_workspace_memberships",
+  "subscriptions",
   "ipr_auth_credentials",
   "ipr_sessions",
   "ipr_account_profiles",
@@ -37,6 +44,8 @@ export const HBCE_DATABASE_SCHEMA_TABLES = [
   "memory_records",
   "evt_records",
   "opc_proofs",
+  "runtime_audit_logs",
+  "model_usage",
   "matrix_transformative_memory"
 ] as const;
 
@@ -54,6 +63,9 @@ export type HbceDatabaseSchemaDefinition = {
   currentOperationalAiEvt: typeof HBCE_CURRENT_OPERATIONAL_AI_EVT;
   currentOperationalCycle: typeof HBCE_CURRENT_OPERATIONAL_CYCLE;
   currentEventFamily: typeof HBCE_CURRENT_EVENT_FAMILY;
+  targetRelease: typeof HBCE_TARGET_RELEASE;
+  targetCheckpointDate: typeof HBCE_TARGET_CHECKPOINT_DATE;
+  targetCycle: typeof HBCE_TARGET_CYCLE;
   tables: readonly HbceDatabaseSchemaTable[];
   sql: readonly string[];
 };
@@ -157,6 +169,48 @@ CREATE TABLE IF NOT EXISTS saas_workspace_memberships (
   CONSTRAINT saas_workspace_memberships_status_check
     CHECK (status IN ('ACTIVE', 'SUSPENDED', 'REVOKED')),
   CONSTRAINT saas_workspace_memberships_legal_certification_false
+    CHECK (legal_certification = false)
+);
+`.trim(),
+
+  `
+CREATE TABLE IF NOT EXISTS subscriptions (
+  subscription_id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE CASCADE,
+  workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL,
+  tier TEXT NOT NULL DEFAULT 'BASE',
+  status TEXT NOT NULL DEFAULT 'ACTIVE',
+  billing_mode TEXT NOT NULL DEFAULT 'INTERNAL_R_AND_D',
+  starts_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ends_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  model_limit_daily INTEGER,
+  message_limit_daily INTEGER,
+  memory_limit_records INTEGER,
+  evt_required BOOLEAN NOT NULL DEFAULT true,
+  opc_required BOOLEAN NOT NULL DEFAULT true,
+  audit_required BOOLEAN NOT NULL DEFAULT true,
+  model_usage_logging_required BOOLEAN NOT NULL DEFAULT true,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  legal_certification BOOLEAN NOT NULL DEFAULT false,
+  CONSTRAINT subscriptions_tier_check
+    CHECK (tier IN ('BASE', 'IPR', 'PRO', 'GOVERNANCE', 'C2_DEFENSE', 'STRATEGIC')),
+  CONSTRAINT subscriptions_status_check
+    CHECK (status IN ('ACTIVE', 'TRIAL', 'PAUSED', 'SUSPENDED', 'CANCELLED', 'EXPIRED')),
+  CONSTRAINT subscriptions_billing_mode_check
+    CHECK (billing_mode IN ('INTERNAL_R_AND_D', 'PILOT', 'MANUAL_CONTRACT', 'STRIPE_READY', 'PUBLIC_SECTOR_CONTRACT')),
+  CONSTRAINT subscriptions_limits_non_negative
+    CHECK (
+      (model_limit_daily IS NULL OR model_limit_daily >= 0) AND
+      (message_limit_daily IS NULL OR message_limit_daily >= 0) AND
+      (memory_limit_records IS NULL OR memory_limit_records >= 0)
+    ),
+  CONSTRAINT subscriptions_legal_certification_false
     CHECK (legal_certification = false)
 );
 `.trim(),
@@ -487,6 +541,124 @@ CREATE TABLE IF NOT EXISTS opc_proofs (
 `.trim(),
 
   `
+CREATE TABLE IF NOT EXISTS runtime_audit_logs (
+  audit_id TEXT PRIMARY KEY,
+  tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL,
+  workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL,
+  subscription_id TEXT
+    REFERENCES subscriptions(subscription_id)
+    ON DELETE SET NULL,
+  human_ipr TEXT
+    REFERENCES ipr_subjects(human_ipr)
+    ON DELETE SET NULL,
+  runtime_ipr TEXT NOT NULL DEFAULT 'IPR-AI-0001',
+  session_id TEXT,
+  thread_id TEXT
+    REFERENCES chat_threads(thread_id)
+    ON DELETE SET NULL,
+  evt_id TEXT
+    REFERENCES evt_records(evt_id)
+    ON DELETE SET NULL,
+  opc_proof_id TEXT
+    REFERENCES opc_proofs(proof_id)
+    ON DELETE SET NULL,
+  memory_id TEXT
+    REFERENCES memory_records(memory_id)
+    ON DELETE SET NULL,
+  audit_kind TEXT NOT NULL DEFAULT 'RUNTIME_DECISION',
+  runtime_state TEXT NOT NULL DEFAULT 'UNKNOWN',
+  runtime_decision TEXT NOT NULL DEFAULT 'UNKNOWN',
+  risk_level TEXT NOT NULL DEFAULT 'UNKNOWN',
+  data_class TEXT,
+  context_class TEXT,
+  project_domain TEXT,
+  hbce_module TEXT,
+  model_level TEXT,
+  saas_tier TEXT,
+  c2_boundary TEXT,
+  blocked BOOLEAN NOT NULL DEFAULT false,
+  fail_closed BOOLEAN NOT NULL DEFAULT false,
+  human_oversight TEXT NOT NULL DEFAULT 'NOT_REQUIRED',
+  audit_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  legal_certification BOOLEAN NOT NULL DEFAULT false,
+  CONSTRAINT runtime_audit_logs_runtime_state_check
+    CHECK (runtime_state IN ('OPERATIONAL', 'DEGRADED', 'BLOCKED', 'INVALID', 'AUDIT_ONLY', 'MAINTENANCE', 'UNKNOWN')),
+  CONSTRAINT runtime_audit_logs_runtime_decision_check
+    CHECK (runtime_decision IN ('ALLOW', 'BLOCK', 'ESCALATE', 'DEGRADE', 'AUDIT', 'NOOP', 'UNKNOWN')),
+  CONSTRAINT runtime_audit_logs_risk_level_check
+    CHECK (risk_level IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', 'UNKNOWN')),
+  CONSTRAINT runtime_audit_logs_human_oversight_check
+    CHECK (human_oversight IN ('NOT_REQUIRED', 'RECOMMENDED', 'REQUIRED', 'MANDATORY_REVIEW')),
+  CONSTRAINT runtime_audit_logs_saas_tier_check
+    CHECK (saas_tier IS NULL OR saas_tier IN ('BASE', 'IPR', 'PRO', 'GOVERNANCE', 'C2_DEFENSE', 'STRATEGIC', 'UNKNOWN')),
+  CONSTRAINT runtime_audit_logs_legal_certification_false
+    CHECK (legal_certification = false)
+);
+`.trim(),
+
+  `
+CREATE TABLE IF NOT EXISTS model_usage (
+  usage_id TEXT PRIMARY KEY,
+  tenant_id TEXT
+    REFERENCES saas_tenants(tenant_id)
+    ON DELETE SET NULL,
+  workspace_id TEXT
+    REFERENCES saas_workspaces(workspace_id)
+    ON DELETE SET NULL,
+  subscription_id TEXT
+    REFERENCES subscriptions(subscription_id)
+    ON DELETE SET NULL,
+  human_ipr TEXT
+    REFERENCES ipr_subjects(human_ipr)
+    ON DELETE SET NULL,
+  runtime_ipr TEXT NOT NULL DEFAULT 'IPR-AI-0001',
+  session_id TEXT,
+  thread_id TEXT
+    REFERENCES chat_threads(thread_id)
+    ON DELETE SET NULL,
+  evt_id TEXT
+    REFERENCES evt_records(evt_id)
+    ON DELETE SET NULL,
+  opc_proof_id TEXT
+    REFERENCES opc_proofs(proof_id)
+    ON DELETE SET NULL,
+  audit_id TEXT
+    REFERENCES runtime_audit_logs(audit_id)
+    ON DELETE SET NULL,
+  provider TEXT NOT NULL DEFAULT 'openai',
+  model TEXT NOT NULL,
+  model_level TEXT NOT NULL DEFAULT 'BASE',
+  saas_tier TEXT NOT NULL DEFAULT 'BASE',
+  routing_reason TEXT,
+  input_tokens INTEGER NOT NULL DEFAULT 0,
+  output_tokens INTEGER NOT NULL DEFAULT 0,
+  total_tokens INTEGER NOT NULL DEFAULT 0,
+  estimated_cost_minor INTEGER NOT NULL DEFAULT 0,
+  currency TEXT NOT NULL DEFAULT 'EUR',
+  usage_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  legal_certification BOOLEAN NOT NULL DEFAULT false,
+  CONSTRAINT model_usage_model_level_check
+    CHECK (model_level IN ('BASE', 'STANDARD', 'ENHANCED', 'ADVANCED', 'C2', 'FRONTIER', 'UNKNOWN')),
+  CONSTRAINT model_usage_saas_tier_check
+    CHECK (saas_tier IN ('BASE', 'IPR', 'PRO', 'GOVERNANCE', 'C2_DEFENSE', 'STRATEGIC', 'UNKNOWN')),
+  CONSTRAINT model_usage_tokens_non_negative
+    CHECK (input_tokens >= 0 AND output_tokens >= 0 AND total_tokens >= 0),
+  CONSTRAINT model_usage_cost_non_negative
+    CHECK (estimated_cost_minor >= 0),
+  CONSTRAINT model_usage_legal_certification_false
+    CHECK (legal_certification = false)
+);
+`.trim(),
+
+  `
 CREATE TABLE IF NOT EXISTS matrix_transformative_memory (
   evaluation_id TEXT PRIMARY KEY,
   tenant_id TEXT
@@ -607,6 +779,13 @@ ALTER TABLE memory_records
 `.trim(),
 
   `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS thread_id TEXT
+    REFERENCES chat_threads(thread_id)
+    ON DELETE SET NULL;
+`.trim(),
+
+  `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS tenant_id TEXT
     REFERENCES saas_tenants(tenant_id)
@@ -696,6 +875,21 @@ CREATE INDEX IF NOT EXISTS idx_saas_workspace_memberships_human_ipr
   `
 CREATE INDEX IF NOT EXISTS idx_saas_workspace_memberships_workspace_role
   ON saas_workspace_memberships(workspace_id, role);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant_status
+  ON subscriptions(tenant_id, status);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_subscriptions_workspace_status
+  ON subscriptions(workspace_id, status);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_subscriptions_tier_status
+  ON subscriptions(tier, status);
 `.trim(),
 
   `
@@ -799,6 +993,46 @@ CREATE INDEX IF NOT EXISTS idx_opc_proofs_persistence_mode
 `.trim(),
 
   `
+CREATE INDEX IF NOT EXISTS idx_runtime_audit_logs_human_ipr_created_at
+  ON runtime_audit_logs(human_ipr, created_at DESC);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_runtime_audit_logs_workspace_created_at
+  ON runtime_audit_logs(workspace_id, created_at DESC);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_runtime_audit_logs_evt_id
+  ON runtime_audit_logs(evt_id);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_runtime_audit_logs_risk_decision
+  ON runtime_audit_logs(risk_level, runtime_decision);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_model_usage_human_ipr_created_at
+  ON model_usage(human_ipr, created_at DESC);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_model_usage_workspace_created_at
+  ON model_usage(workspace_id, created_at DESC);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_model_usage_subscription_created_at
+  ON model_usage(subscription_id, created_at DESC);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_model_usage_model_level
+  ON model_usage(model, model_level);
+`.trim(),
+
+  `
 CREATE INDEX IF NOT EXISTS idx_matrix_transformative_memory_human_ipr_created_at
   ON matrix_transformative_memory(human_ipr, created_at DESC);
 `.trim(),
@@ -816,23 +1050,26 @@ INSERT INTO hbce_schema_migrations (
   legal_certification
 )
 VALUES (
-  'HBCE-IPR-DB-v1.1',
-  'HBCE SaaS Core v0.1 persistent database schema for tenants, workspaces, memberships, IPR auth, account profiles, sessions, chat, memory, EVT, OPC and MATRIX Transformative Memory.',
+  'HBCE-IPR-DB-v1.2',
+  'HBCE SaaS Core v0.1 persistent database schema for tenants, workspaces, memberships, subscriptions, IPR auth, account profiles, sessions, chat, memory, EVT, OPC, runtime audit logs, model usage and MATRIX Transformative Memory.',
   jsonb_build_object(
     'projectBirthDate', '2026-01-19',
     'projectBirthLabel', 'HBCE R&D / AI JOKER-C2 project birth date',
     'monthlyReference', 'UP-MESE-4',
-    'currentOperationalEvt', 'EVT-0016',
-    'currentOperationalAiEvt', 'EVT-0016-AI',
+    'currentOperationalEvt', 'UP-EVT-0016',
+    'currentOperationalAiEvt', 'UP-EVT-0016-AI',
     'currentOperationalCycle', 'UP-CANONICO',
     'currentEventFamily', 'UP-EVT',
+    'targetRelease', 'SaaS Core v0.1',
+    'targetCheckpointDate', '2026-06-19T15:30:00+02:00',
+    'targetCycle', 'UP-MESE-5',
     'persistenceMode', 'DATABASE_PERSISTENT',
     'legalCertification', false,
-    'saasCore', 'v0.1',
     'tables', jsonb_build_array(
       'saas_tenants',
       'saas_workspaces',
       'saas_workspace_memberships',
+      'subscriptions',
       'ipr_subjects',
       'ipr_auth_credentials',
       'ipr_sessions',
@@ -842,6 +1079,8 @@ VALUES (
       'memory_records',
       'evt_records',
       'opc_proofs',
+      'runtime_audit_logs',
+      'model_usage',
       'matrix_transformative_memory'
     )
   ),
@@ -862,6 +1101,9 @@ export const HBCE_DATABASE_SCHEMA: HbceDatabaseSchemaDefinition = {
   currentOperationalAiEvt: HBCE_CURRENT_OPERATIONAL_AI_EVT,
   currentOperationalCycle: HBCE_CURRENT_OPERATIONAL_CYCLE,
   currentEventFamily: HBCE_CURRENT_EVENT_FAMILY,
+  targetRelease: HBCE_TARGET_RELEASE,
+  targetCheckpointDate: HBCE_TARGET_CHECKPOINT_DATE,
+  targetCycle: HBCE_TARGET_CYCLE,
   tables: HBCE_DATABASE_SCHEMA_TABLES,
   sql: HBCE_DATABASE_SCHEMA_SQL
 };
@@ -895,9 +1137,11 @@ export function getHbceDatabaseSaasCoreContext() {
     currentOperationalAiEvt: HBCE_CURRENT_OPERATIONAL_AI_EVT,
     currentOperationalCycle: HBCE_CURRENT_OPERATIONAL_CYCLE,
     currentEventFamily: HBCE_CURRENT_EVENT_FAMILY,
-    saasCore: "v0.1",
+    targetRelease: HBCE_TARGET_RELEASE,
+    targetCheckpointDate: HBCE_TARGET_CHECKPOINT_DATE,
+    targetCycle: HBCE_TARGET_CYCLE,
     legalCertification: false,
     statement:
-      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, memory, EVT, OPC, tenant, workspace and audit continuity."
+      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, memory, EVT, OPC, runtime audit, model usage, tenant and workspace continuity."
   };
 }
