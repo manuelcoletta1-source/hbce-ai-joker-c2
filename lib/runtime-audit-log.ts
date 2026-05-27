@@ -49,8 +49,15 @@ import {
   type WorkspaceState
 } from "./saas-tier-types";
 
+import {
+  isHbceDatabaseAvailable,
+  isHbceDatabaseConfigured,
+  queryHbceDatabase
+} from "./ipr-database";
+
 import type { C2DefensePolicyResult } from "./c2-defense-policy";
 import type { RuntimeRiskPolicyResult } from "./runtime-risk-policy";
+import type { HbceDatabaseQueryRow } from "./ipr-database";
 
 export type RuntimeAuditLogPersistenceBoundary =
   | "PROCESS_MEMORY_MVP"
@@ -71,6 +78,7 @@ export type RuntimeAuditLogRecordStatus =
   | "BLOCKED_RECORDED"
   | "FAIL_CLOSED_RECORDED"
   | "MVP_MEMORY_ONLY"
+  | "DATABASE_PERSISTENT_TARGET"
   | "PERSISTED";
 
 export type RuntimeAuditLogInput = {
@@ -84,7 +92,10 @@ export type RuntimeAuditLogInput = {
   runtimeIpr?: string;
   humanIpr?: string;
   organizationIpr?: string;
+  tenantId?: string;
   workspaceId?: string;
+  subscriptionId?: string;
+  threadId?: string;
 
   identityState?: IdentityState;
   organizationState?: OrganizationState;
@@ -129,6 +140,11 @@ export type RuntimeAuditLogInput = {
   decisionHash?: string | null;
   policyHash?: string | null;
 
+  dataClass?: string | null;
+  contextClass?: string | null;
+  projectDomain?: string | null;
+  hbceModule?: string | null;
+
   allowed?: boolean;
   failClosed?: boolean;
   blocked?: boolean;
@@ -157,7 +173,10 @@ export type RuntimeAuditLogRecord = {
   runtimeIpr: string;
   humanIpr: string;
   organizationIpr: string;
+  tenantId: string;
   workspaceId: string;
+  subscriptionId: string;
+  threadId: string;
 
   identityState: IdentityState;
   organizationState: OrganizationState;
@@ -202,6 +221,11 @@ export type RuntimeAuditLogRecord = {
   decisionHash: string | null;
   policyHash: string | null;
 
+  dataClass: string | null;
+  contextClass: string | null;
+  projectDomain: string | null;
+  hbceModule: string | null;
+
   allowed: boolean;
   failClosed: boolean;
   blocked: boolean;
@@ -222,6 +246,8 @@ export type RuntimeAuditLogHealth = {
   sourceEventAi: string;
   targetCheckpoint: string;
   mode: RuntimeAuditLogPersistenceBoundary;
+  databaseConfigured: boolean;
+  databaseAvailable: boolean;
   recordsInProcessMemory: number;
   maxProcessMemoryRecords: number;
   legalCertification: false;
@@ -235,6 +261,24 @@ export type RuntimeAuditLogListOptions = {
   saasTier?: SaasTier;
   c2Only?: boolean;
   includeBlocked?: boolean;
+};
+
+export type RuntimeAuditLogPersistenceResult = {
+  ok: boolean;
+  status:
+    | "PERSISTED"
+    | "DATABASE_NOT_CONFIGURED"
+    | "DATABASE_NOT_AVAILABLE"
+    | "DATABASE_WRITE_FAILED";
+  auditId: string;
+  auditHash: string;
+  error: string | null;
+  legalCertification: false;
+};
+
+type RuntimeAuditLogDatabaseRow = HbceDatabaseQueryRow & {
+  audit_id?: string;
+  audit_hash?: string;
 };
 
 const MAX_PROCESS_MEMORY_AUDIT_RECORDS = 250;
@@ -297,10 +341,32 @@ export function buildRuntimeAuditId(timestamp: string = nowIso()): string {
   return `AUDIT-${compactTimestamp}-${suffix}`;
 }
 
+function safeDatabaseError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return "UNKNOWN_RUNTIME_AUDIT_DATABASE_ERROR";
+  }
+}
+
+function normalizeAuditRuntimeDecision(value: RuntimeDecision | undefined): string {
+  return String(value || "UNKNOWN").toUpperCase();
+}
+
 export function deriveAuditRecordStatus(input: {
   blocked: boolean;
   failClosed: boolean;
   persistenceMode: RuntimePersistenceMode;
+  databaseConfigured?: boolean;
+  databaseAvailable?: boolean;
 }): RuntimeAuditLogRecordStatus {
   if (input.blocked) {
     return "BLOCKED_RECORDED";
@@ -311,7 +377,11 @@ export function deriveAuditRecordStatus(input: {
   }
 
   if (input.persistenceMode === "DATABASE_PERSISTENT") {
-    return "PERSISTED";
+    if (input.databaseConfigured && input.databaseAvailable) {
+      return "DATABASE_PERSISTENT_TARGET";
+    }
+
+    return "MVP_MEMORY_ONLY";
   }
 
   return "MVP_MEMORY_ONLY";
@@ -321,10 +391,14 @@ export function deriveAuditPersistenceBoundary(
   persistenceMode: RuntimePersistenceMode
 ): RuntimeAuditLogPersistenceBoundary {
   if (persistenceMode === "DATABASE_PERSISTENT") {
-    return "DATABASE_PERSISTENT";
+    return isHbceDatabaseConfigured() && isHbceDatabaseAvailable()
+      ? "DATABASE_PERSISTENT_TARGET"
+      : "DATABASE_PERSISTENT_TARGET";
   }
 
-  if (persistenceMode === "FAIL_CLOSED_PERSISTENCE") {
+  const persistenceText = String(persistenceMode);
+
+  if (persistenceText === "FAIL_CLOSED_PERSISTENCE") {
     return "FAIL_CLOSED_PERSISTENCE";
   }
 
@@ -338,9 +412,11 @@ export function buildRuntimeAuditBoundary(input: {
   const persistence =
     input.persistenceBoundary === "DATABASE_PERSISTENT"
       ? "Runtime audit log persistence is database-backed."
-      : input.persistenceBoundary === "FAIL_CLOSED_PERSISTENCE"
-        ? "Runtime audit log persistence is required but unavailable. Runtime must fail closed where required."
-        : "Runtime audit log is currently stored in process memory MVP and may be lost across serverless cold starts or deployments.";
+      : input.persistenceBoundary === "DATABASE_PERSISTENT_TARGET"
+        ? "Runtime audit log has a DATABASE_PERSISTENT target, but persistence is authoritative only after the async database writer succeeds."
+        : input.persistenceBoundary === "FAIL_CLOSED_PERSISTENCE"
+          ? "Runtime audit log persistence is required but unavailable. Runtime must fail closed where required."
+          : "Runtime audit log is currently stored in process memory MVP and may be lost across serverless cold starts or deployments.";
 
   return `${persistence} ${RUNTIME_BOUNDARY_SUMMARY.evt}. ${RUNTIME_BOUNDARY_SUMMARY.opc}. C2 boundary: ${input.c2Boundary}. legalCertification = false.`;
 }
@@ -360,7 +436,10 @@ export function buildRuntimeAuditHashPayload(
     runtimeIpr: record.runtimeIpr,
     humanIpr: record.humanIpr,
     organizationIpr: record.organizationIpr,
+    tenantId: record.tenantId,
     workspaceId: record.workspaceId,
+    subscriptionId: record.subscriptionId,
+    threadId: record.threadId,
     identityState: record.identityState,
     organizationState: record.organizationState,
     workspaceState: record.workspaceState,
@@ -394,6 +473,10 @@ export function buildRuntimeAuditHashPayload(
     outputHash: record.outputHash,
     decisionHash: record.decisionHash,
     policyHash: record.policyHash,
+    dataClass: record.dataClass,
+    contextClass: record.contextClass,
+    projectDomain: record.projectDomain,
+    hbceModule: record.hbceModule,
     allowed: record.allowed,
     failClosed: record.failClosed,
     blocked: record.blocked,
@@ -418,12 +501,13 @@ export function createRuntimeAuditLogRecord(
   const persistenceBoundary =
     input.persistenceBoundary ?? deriveAuditPersistenceBoundary(persistenceMode);
 
-  const blocked = input.blocked ?? (input.runtimeDecision === "BLOCK");
+  const runtimeDecisionText = normalizeAuditRuntimeDecision(input.runtimeDecision);
+  const blocked = input.blocked ?? runtimeDecisionText === "BLOCK";
 
   const failClosed =
     input.failClosed ??
     (
-      input.runtimeDecision === "FAIL_CLOSED" ||
+      runtimeDecisionText === "FAIL_CLOSED" ||
       input.c2FailClosed === true
     );
 
@@ -451,7 +535,10 @@ export function createRuntimeAuditLogRecord(
     runtimeIpr: normalizeAuditString(input.runtimeIpr, RUNTIME_IPR),
     humanIpr: normalizeAuditString(input.humanIpr, "NOT_VERIFIED"),
     organizationIpr: normalizeAuditString(input.organizationIpr, "NO_ORGANIZATION_IPR"),
+    tenantId: normalizeAuditString(input.tenantId, "NO_TENANT"),
     workspaceId: normalizeAuditString(input.workspaceId, "NO_WORKSPACE"),
+    subscriptionId: normalizeAuditString(input.subscriptionId, "NO_SUBSCRIPTION"),
+    threadId: normalizeAuditString(input.threadId, "NO_THREAD"),
 
     identityState: input.identityState ?? "NOT_VERIFIED",
     organizationState: input.organizationState ?? "NOT_REQUIRED",
@@ -499,6 +586,11 @@ export function createRuntimeAuditLogRecord(
     decisionHash: normalizeNullableAuditString(input.decisionHash),
     policyHash: normalizeNullableAuditString(input.policyHash),
 
+    dataClass: normalizeNullableAuditString(input.dataClass),
+    contextClass: normalizeNullableAuditString(input.contextClass),
+    projectDomain: normalizeNullableAuditString(input.projectDomain),
+    hbceModule: normalizeNullableAuditString(input.hbceModule),
+
     allowed,
     failClosed,
     blocked,
@@ -506,7 +598,9 @@ export function createRuntimeAuditLogRecord(
     status: deriveAuditRecordStatus({
       blocked,
       failClosed,
-      persistenceMode
+      persistenceMode,
+      databaseConfigured: isHbceDatabaseConfigured(),
+      databaseAvailable: isHbceDatabaseAvailable()
     }),
 
     reason: normalizeAuditString(input.reason, "Runtime audit record created."),
@@ -526,11 +620,7 @@ export function createRuntimeAuditLogRecord(
   };
 }
 
-export function appendRuntimeAuditLogRecord(
-  input: RuntimeAuditLogInput = {}
-): RuntimeAuditLogRecord {
-  const record = createRuntimeAuditLogRecord(input);
-
+function pushRuntimeAuditProcessMemory(record: RuntimeAuditLogRecord): RuntimeAuditLogRecord {
   runtimeAuditProcessMemory.unshift(record);
 
   if (runtimeAuditProcessMemory.length > MAX_PROCESS_MEMORY_AUDIT_RECORDS) {
@@ -540,13 +630,297 @@ export function appendRuntimeAuditLogRecord(
   return record;
 }
 
+export function appendRuntimeAuditLogRecord(
+  input: RuntimeAuditLogInput = {}
+): RuntimeAuditLogRecord {
+  const record = createRuntimeAuditLogRecord(input);
+
+  return pushRuntimeAuditProcessMemory(record);
+}
+
+function runtimeAuditRecordToDatabasePayload(
+  record: RuntimeAuditLogRecord
+): {
+  auditId: string;
+  tenantId: string | null;
+  workspaceId: string | null;
+  subscriptionId: string | null;
+  humanIpr: string | null;
+  runtimeIpr: string;
+  sessionId: string | null;
+  threadId: string | null;
+  evtId: string | null;
+  opcProofId: string | null;
+  memoryId: string | null;
+  auditKind: string;
+  runtimeState: string;
+  runtimeDecision: string;
+  riskLevel: string;
+  dataClass: string | null;
+  contextClass: string | null;
+  projectDomain: string | null;
+  hbceModule: string | null;
+  modelLevel: string | null;
+  saasTier: string | null;
+  c2Boundary: string | null;
+  blocked: boolean;
+  failClosed: boolean;
+  humanOversight: string;
+  auditHash: string;
+  payloadJson: string;
+} {
+  return {
+    auditId: record.auditId,
+    tenantId: record.tenantId === "NO_TENANT" ? null : record.tenantId,
+    workspaceId: record.workspaceId === "NO_WORKSPACE" ? null : record.workspaceId,
+    subscriptionId:
+      record.subscriptionId === "NO_SUBSCRIPTION" ? null : record.subscriptionId,
+    humanIpr: record.humanIpr === "NOT_VERIFIED" ? null : record.humanIpr,
+    runtimeIpr: record.runtimeIpr,
+    sessionId: record.sessionId === "NO_SESSION" ? null : record.sessionId,
+    threadId: record.threadId === "NO_THREAD" ? null : record.threadId,
+    evtId: record.evtRef,
+    opcProofId: record.opcRef,
+    memoryId: record.memoryRef,
+    auditKind: "RUNTIME_DECISION",
+    runtimeState: record.blocked
+      ? "BLOCKED"
+      : record.failClosed
+        ? "INVALID"
+        : "OPERATIONAL",
+    runtimeDecision: String(record.runtimeDecision || "UNKNOWN"),
+    riskLevel: String(record.riskLevel || "UNKNOWN"),
+    dataClass: record.dataClass,
+    contextClass: record.contextClass,
+    projectDomain: record.projectDomain,
+    hbceModule: record.hbceModule,
+    modelLevel: String(record.modelLevel || "UNKNOWN"),
+    saasTier: String(record.saasTier || "UNKNOWN"),
+    c2Boundary: String(record.c2Boundary || "C2_NOT_AVAILABLE"),
+    blocked: record.blocked,
+    failClosed: record.failClosed,
+    humanOversight:
+      record.auditState === "REQUIRED" || record.auditState === "MANDATORY_REVIEW"
+        ? "REQUIRED"
+        : "NOT_REQUIRED",
+    auditHash: record.auditHash,
+    payloadJson: JSON.stringify({
+      ...record,
+      legalCertification: false
+    })
+  };
+}
+
+export async function persistRuntimeAuditLogRecord(
+  record: RuntimeAuditLogRecord
+): Promise<RuntimeAuditLogPersistenceResult> {
+  if (!isHbceDatabaseConfigured()) {
+    return {
+      ok: false,
+      status: "DATABASE_NOT_CONFIGURED",
+      auditId: record.auditId,
+      auditHash: record.auditHash,
+      error: "DATABASE_URL is not configured. Runtime audit log remains PROCESS_MEMORY_MVP.",
+      legalCertification: false
+    };
+  }
+
+  if (!isHbceDatabaseAvailable()) {
+    return {
+      ok: false,
+      status: "DATABASE_NOT_AVAILABLE",
+      auditId: record.auditId,
+      auditHash: record.auditHash,
+      error: "HBCE database adapter is not available. Runtime audit log remains PROCESS_MEMORY_MVP.",
+      legalCertification: false
+    };
+  }
+
+  const fields = runtimeAuditRecordToDatabasePayload(record);
+
+  try {
+    const result = await queryHbceDatabase<RuntimeAuditLogDatabaseRow>(
+      `
+INSERT INTO runtime_audit_logs (
+  audit_id,
+  tenant_id,
+  workspace_id,
+  subscription_id,
+  human_ipr,
+  runtime_ipr,
+  session_id,
+  thread_id,
+  evt_id,
+  opc_proof_id,
+  memory_id,
+  audit_kind,
+  runtime_state,
+  runtime_decision,
+  risk_level,
+  data_class,
+  context_class,
+  project_domain,
+  hbce_module,
+  model_level,
+  saas_tier,
+  c2_boundary,
+  blocked,
+  fail_closed,
+  human_oversight,
+  audit_hash,
+  payload,
+  legal_certification
+)
+VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9,
+  $10,
+  $11,
+  $12,
+  $13,
+  $14,
+  $15,
+  $16,
+  $17,
+  $18,
+  $19,
+  $20,
+  $21,
+  $22,
+  $23,
+  $24,
+  $25,
+  $26,
+  $27::jsonb,
+  false
+)
+ON CONFLICT (audit_id) DO UPDATE SET
+  tenant_id = EXCLUDED.tenant_id,
+  workspace_id = EXCLUDED.workspace_id,
+  subscription_id = EXCLUDED.subscription_id,
+  human_ipr = EXCLUDED.human_ipr,
+  runtime_ipr = EXCLUDED.runtime_ipr,
+  session_id = EXCLUDED.session_id,
+  thread_id = EXCLUDED.thread_id,
+  evt_id = EXCLUDED.evt_id,
+  opc_proof_id = EXCLUDED.opc_proof_id,
+  memory_id = EXCLUDED.memory_id,
+  audit_kind = EXCLUDED.audit_kind,
+  runtime_state = EXCLUDED.runtime_state,
+  runtime_decision = EXCLUDED.runtime_decision,
+  risk_level = EXCLUDED.risk_level,
+  data_class = EXCLUDED.data_class,
+  context_class = EXCLUDED.context_class,
+  project_domain = EXCLUDED.project_domain,
+  hbce_module = EXCLUDED.hbce_module,
+  model_level = EXCLUDED.model_level,
+  saas_tier = EXCLUDED.saas_tier,
+  c2_boundary = EXCLUDED.c2_boundary,
+  blocked = EXCLUDED.blocked,
+  fail_closed = EXCLUDED.fail_closed,
+  human_oversight = EXCLUDED.human_oversight,
+  audit_hash = EXCLUDED.audit_hash,
+  payload = EXCLUDED.payload,
+  legal_certification = false
+RETURNING audit_id, audit_hash;
+`.trim(),
+      [
+        fields.auditId,
+        fields.tenantId,
+        fields.workspaceId,
+        fields.subscriptionId,
+        fields.humanIpr,
+        fields.runtimeIpr,
+        fields.sessionId,
+        fields.threadId,
+        fields.evtId,
+        fields.opcProofId,
+        fields.memoryId,
+        fields.auditKind,
+        fields.runtimeState,
+        fields.runtimeDecision,
+        fields.riskLevel,
+        fields.dataClass,
+        fields.contextClass,
+        fields.projectDomain,
+        fields.hbceModule,
+        fields.modelLevel,
+        fields.saasTier,
+        fields.c2Boundary,
+        fields.blocked,
+        fields.failClosed,
+        fields.humanOversight,
+        fields.auditHash,
+        fields.payloadJson
+      ]
+    );
+
+    if (!result.ok) {
+      return {
+        ok: false,
+        status: "DATABASE_WRITE_FAILED",
+        auditId: record.auditId,
+        auditHash: record.auditHash,
+        error: result.error || "RUNTIME_AUDIT_LOG_DATABASE_WRITE_FAILED",
+        legalCertification: false
+      };
+    }
+
+    record.status = "PERSISTED";
+    record.persistenceBoundary = "DATABASE_PERSISTENT";
+
+    return {
+      ok: true,
+      status: "PERSISTED",
+      auditId: record.auditId,
+      auditHash: record.auditHash,
+      error: null,
+      legalCertification: false
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: "DATABASE_WRITE_FAILED",
+      auditId: record.auditId,
+      auditHash: record.auditHash,
+      error: safeDatabaseError(error),
+      legalCertification: false
+    };
+  }
+}
+
+export async function appendRuntimeAuditLogRecordAsync(
+  input: RuntimeAuditLogInput = {}
+): Promise<{
+  record: RuntimeAuditLogRecord;
+  persistence: RuntimeAuditLogPersistenceResult;
+}> {
+  const record = appendRuntimeAuditLogRecord(input);
+  const persistence = await persistRuntimeAuditLogRecord(record);
+
+  return {
+    record,
+    persistence
+  };
+}
+
 export function appendRuntimeAuditLogRecordFromPolicies(input: {
   source?: RuntimeAuditLogSource;
   sessionId?: string;
   requestId?: string;
   humanIpr?: string;
   organizationIpr?: string;
+  tenantId?: string;
   workspaceId?: string;
+  subscriptionId?: string;
+  threadId?: string;
   saasPolicy?: SaasTierPolicyResult;
   riskPolicy?: RuntimeRiskPolicyResult;
   modelRouting?: RuntimeModelRoutingResult;
@@ -559,6 +933,10 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
   memoryHash?: string | null;
   inputHash?: string | null;
   outputHash?: string | null;
+  dataClass?: string | null;
+  contextClass?: string | null;
+  projectDomain?: string | null;
+  hbceModule?: string | null;
 }): RuntimeAuditLogRecord {
   const saasPolicy = input.saasPolicy;
   const riskPolicy = input.riskPolicy;
@@ -571,7 +949,10 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
     requestId: input.requestId,
     humanIpr: input.humanIpr,
     organizationIpr: input.organizationIpr,
+    tenantId: input.tenantId,
     workspaceId: input.workspaceId,
+    subscriptionId: input.subscriptionId,
+    threadId: input.threadId,
 
     identityState: saasPolicy?.identityState ?? "NOT_VERIFIED",
     organizationState: saasPolicy?.organizationState ?? "NOT_REQUIRED",
@@ -635,6 +1016,11 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
     inputHash: input.inputHash,
     outputHash: input.outputHash,
 
+    dataClass: input.dataClass,
+    contextClass: input.contextClass,
+    projectDomain: input.projectDomain,
+    hbceModule: input.hbceModule,
+
     decisionHash: sha256Audit({
       saasDecision: saasPolicy?.decision,
       riskDecision: riskPolicy?.decision,
@@ -669,6 +1055,45 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
       modelRouting?.routingReason ??
       "Runtime audit record created from policy outputs."
   });
+}
+
+export async function appendRuntimeAuditLogRecordFromPoliciesAsync(input: {
+  source?: RuntimeAuditLogSource;
+  sessionId?: string;
+  requestId?: string;
+  humanIpr?: string;
+  organizationIpr?: string;
+  tenantId?: string;
+  workspaceId?: string;
+  subscriptionId?: string;
+  threadId?: string;
+  saasPolicy?: SaasTierPolicyResult;
+  riskPolicy?: RuntimeRiskPolicyResult;
+  modelRouting?: RuntimeModelRoutingResult;
+  c2Policy?: C2DefensePolicyResult;
+  evtRef?: string | null;
+  evtHash?: string | null;
+  opcRef?: string | null;
+  opcProofHash?: string | null;
+  memoryRef?: string | null;
+  memoryHash?: string | null;
+  inputHash?: string | null;
+  outputHash?: string | null;
+  dataClass?: string | null;
+  contextClass?: string | null;
+  projectDomain?: string | null;
+  hbceModule?: string | null;
+}): Promise<{
+  record: RuntimeAuditLogRecord;
+  persistence: RuntimeAuditLogPersistenceResult;
+}> {
+  const record = appendRuntimeAuditLogRecordFromPolicies(input);
+  const persistence = await persistRuntimeAuditLogRecord(record);
+
+  return {
+    record,
+    persistence
+  };
 }
 
 export function listRuntimeAuditLogRecords(
@@ -738,7 +1163,10 @@ export function toPublicRuntimeAuditLogRecord(record: RuntimeAuditLogRecord): {
   runtimeIpr: string;
   humanIpr: string;
   organizationIpr: string;
+  tenantId: string;
   workspaceId: string;
+  subscriptionId: string;
+  threadId: string;
   identityState: IdentityState;
   saasTier: SaasTier;
   riskLevel: RuntimeRiskLevel;
@@ -780,7 +1208,10 @@ export function toPublicRuntimeAuditLogRecord(record: RuntimeAuditLogRecord): {
     runtimeIpr: record.runtimeIpr,
     humanIpr: record.humanIpr,
     organizationIpr: record.organizationIpr,
+    tenantId: record.tenantId,
     workspaceId: record.workspaceId,
+    subscriptionId: record.subscriptionId,
+    threadId: record.threadId,
     identityState: record.identityState,
     saasTier: record.saasTier,
     riskLevel: record.riskLevel,
@@ -831,6 +1262,10 @@ export function buildRuntimeAuditPromptFrame(record: RuntimeAuditLogRecord): str
     `Runtime entity: ${record.runtimeEntity}`,
     `Runtime IPR: ${record.runtimeIpr}`,
     `Human IPR: ${record.humanIpr}`,
+    `Tenant: ${record.tenantId}`,
+    `Workspace: ${record.workspaceId}`,
+    `Subscription: ${record.subscriptionId}`,
+    `Thread: ${record.threadId}`,
     `SaaS tier: ${record.saasTier}`,
     `Risk level: ${record.riskLevel}`,
     `Runtime decision: ${record.runtimeDecision}`,
@@ -846,6 +1281,7 @@ export function buildRuntimeAuditPromptFrame(record: RuntimeAuditLogRecord): str
     `Audit required: ${record.auditRequired}`,
     `EVT ref: ${record.evtRef ?? "none"}`,
     `OPC ref: ${record.opcRef ?? "none"}`,
+    `Memory ref: ${record.memoryRef ?? "none"}`,
     `Allowed: ${record.allowed}`,
     `Fail closed: ${record.failClosed}`,
     `Blocked: ${record.blocked}`,
@@ -856,6 +1292,9 @@ export function buildRuntimeAuditPromptFrame(record: RuntimeAuditLogRecord): str
 }
 
 export function getRuntimeAuditLogHealth(): RuntimeAuditLogHealth {
+  const databaseConfigured = isHbceDatabaseConfigured();
+  const databaseAvailable = isHbceDatabaseAvailable();
+
   return {
     configured: true,
     project: HBCE_SAAS_PROJECT,
@@ -863,11 +1302,15 @@ export function getRuntimeAuditLogHealth(): RuntimeAuditLogHealth {
     sourceEvent: HBCE_SAAS_SOURCE_EVENT,
     sourceEventAi: HBCE_SAAS_SOURCE_EVENT_AI,
     targetCheckpoint: HBCE_SAAS_TARGET_CHECKPOINT,
-    mode: "PROCESS_MEMORY_MVP",
+    mode: databaseConfigured && databaseAvailable
+      ? "DATABASE_PERSISTENT_TARGET"
+      : "PROCESS_MEMORY_MVP",
+    databaseConfigured,
+    databaseAvailable,
     recordsInProcessMemory: runtimeAuditProcessMemory.length,
     maxProcessMemoryRecords: MAX_PROCESS_MEMORY_AUDIT_RECORDS,
     legalCertification: false,
     boundary:
-      "Runtime audit log is configured in PROCESS_MEMORY_MVP mode. Database persistence target is defined by docs/DATABASE_PERSISTENCE_PLAN.md. Audit records support operational reconstruction only. legalCertification = false."
+      "Runtime audit log is configured for PROCESS_MEMORY_MVP with DATABASE_PERSISTENT target when the HBCE database is configured and the async writer is used. Audit records support operational reconstruction only. legalCertification = false."
   };
 }
