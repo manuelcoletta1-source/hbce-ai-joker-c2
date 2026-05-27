@@ -87,6 +87,9 @@ export type ModelUsageLogPersistenceBoundary =
   | "DATABASE_PERSISTENT"
   | "FAIL_CLOSED_PERSISTENCE";
 
+export type ModelUsageRuntimeModelLevel = ModelLevel | string;
+export type ModelUsageRuntimeProofRequirement = ProofRequirement | string;
+
 export type ModelUsagePersistenceResult = {
   ok: boolean;
   status:
@@ -110,7 +113,7 @@ export type ModelUsageTokenInput = {
 
 export type ModelUsageLogInput = {
   source?: ModelUsageLogSource;
-  provider?: ModelUsageProvider;
+  provider?: ModelUsageProvider | string;
 
   usageId?: string;
   timestamp?: string;
@@ -127,19 +130,19 @@ export type ModelUsageLogInput = {
   subscriptionId?: string;
   threadId?: string;
 
-  saasTier?: SaasTier;
+  saasTier?: SaasTier | string;
   selectedModel?: string;
-  modelLevel?: ModelLevel;
+  modelLevel?: ModelUsageRuntimeModelLevel;
   modelRoutingReason?: string;
 
-  riskLevel?: RuntimeRiskLevel;
-  runtimeDecision?: RuntimeDecision;
-  auditState?: RuntimeAuditState;
+  riskLevel?: RuntimeRiskLevel | string;
+  runtimeDecision?: RuntimeDecision | string;
+  auditState?: RuntimeAuditState | string;
 
-  operationalValue?: OperationalValueLevel;
-  cyberRelevance?: CyberRelevance;
-  c2Boundary?: C2BoundaryState;
-  proofRequirement?: ProofRequirement;
+  operationalValue?: OperationalValueLevel | string;
+  cyberRelevance?: CyberRelevance | string;
+  c2Boundary?: C2BoundaryState | string;
+  proofRequirement?: ModelUsageRuntimeProofRequirement;
 
   evtRequired?: boolean;
   opcRequired?: boolean;
@@ -199,19 +202,19 @@ export type ModelUsageLogRecord = {
   subscriptionId: string;
   threadId: string;
 
-  saasTier: SaasTier;
+  saasTier: SaasTier | string;
   selectedModel: string;
-  modelLevel: ModelLevel;
+  modelLevel: ModelUsageRuntimeModelLevel;
   modelRoutingReason: string;
 
-  riskLevel: RuntimeRiskLevel;
-  runtimeDecision: RuntimeDecision;
-  auditState: RuntimeAuditState;
+  riskLevel: RuntimeRiskLevel | string;
+  runtimeDecision: RuntimeDecision | string;
+  auditState: RuntimeAuditState | string;
 
-  operationalValue: OperationalValueLevel;
-  cyberRelevance: CyberRelevance;
-  c2Boundary: C2BoundaryState;
-  proofRequirement: ProofRequirement;
+  operationalValue: OperationalValueLevel | string;
+  cyberRelevance: CyberRelevance | string;
+  c2Boundary: C2BoundaryState | string;
+  proofRequirement: ModelUsageRuntimeProofRequirement;
 
   evtRequired: boolean;
   opcRequired: boolean;
@@ -253,9 +256,9 @@ export type ModelUsageLogListOptions = {
   limit?: number;
   sessionId?: string;
   humanIpr?: string;
-  saasTier?: SaasTier;
+  saasTier?: SaasTier | string;
   selectedModel?: string;
-  modelLevel?: ModelLevel;
+  modelLevel?: ModelUsageRuntimeModelLevel;
   c2Only?: boolean;
   includeBlocked?: boolean;
 };
@@ -297,6 +300,32 @@ export type ModelUsageLogHealth = {
 type ModelUsageDatabaseRow = HbceDatabaseQueryRow & {
   usage_id?: string;
   usage_hash?: string;
+};
+
+type ModelUsageDatabasePayload = {
+  usageId: string;
+  tenantId: string | null;
+  workspaceId: string | null;
+  subscriptionId: string | null;
+  humanIpr: string | null;
+  runtimeIpr: string;
+  sessionId: string | null;
+  threadId: string | null;
+  evtId: string | null;
+  opcProofId: string | null;
+  auditId: string | null;
+  provider: string;
+  model: string;
+  modelLevel: string | null;
+  saasTier: string | null;
+  routingReason: string | null;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  estimatedCostMinor: number;
+  currency: string;
+  usageHash: string;
+  payloadJson: string;
 };
 
 const MAX_PROCESS_MEMORY_MODEL_USAGE_RECORDS = 500;
@@ -405,42 +434,218 @@ function safeDatabaseError(error: unknown): string {
   }
 }
 
-function normalizeRuntimeDecisionText(value: RuntimeDecision | undefined): string {
+function normalizeRuntimeDecisionText(value: RuntimeDecision | string | undefined): string {
   return String(value || "UNKNOWN").toUpperCase();
 }
 
-function normalizeDatabaseModelLevel(modelLevel: ModelLevel): string {
-  const normalized = String(modelLevel || "UNKNOWN").toUpperCase();
+function normalizeDatabaseRuntimeDecision(value: RuntimeDecision | string | undefined): string {
+  const normalized = String(value || "ALLOW").toUpperCase();
 
-  if (normalized === "C2_ESCALATED") {
-    return "C2";
+  if (
+    normalized === "ALLOW" ||
+    normalized === "BLOCK" ||
+    normalized === "ESCALATE" ||
+    normalized === "FAIL_CLOSED"
+  ) {
+    return normalized;
   }
 
-  if (normalized === "BLOCKED") {
-    return "UNKNOWN";
+  if (
+    normalized === "ACCESS_GRANTED" ||
+    normalized === "ACCESS_GRANTED_ACCOUNT_SESSION" ||
+    normalized === "GRANTED" ||
+    normalized === "COMPLETED" ||
+    normalized === "OK"
+  ) {
+    return "ALLOW";
+  }
+
+  if (
+    normalized === "ACCESS_LIMITED" ||
+    normalized === "SERVER_VALIDATION_REQUIRED" ||
+    normalized === "PENDING_SERVER_VALIDATION" ||
+    normalized === "REVIEW" ||
+    normalized === "REQUIRES_REVIEW"
+  ) {
+    return "ESCALATE";
+  }
+
+  if (
+    normalized === "DENY" ||
+    normalized === "DENIED" ||
+    normalized === "DISALLOW" ||
+    normalized === "REJECT"
+  ) {
+    return "BLOCK";
+  }
+
+  return "ESCALATE";
+}
+
+function normalizeDatabaseRiskLevel(value: RuntimeRiskLevel | string | undefined): string {
+  const normalized = String(value || "LOW").toUpperCase();
+
+  if (
+    normalized === "LOW" ||
+    normalized === "MEDIUM" ||
+    normalized === "HIGH" ||
+    normalized === "CRITICAL"
+  ) {
+    return normalized;
+  }
+
+  return "LOW";
+}
+
+function normalizeDatabaseModelLevel(value: ModelUsageRuntimeModelLevel | undefined): string | null {
+  const normalized = String(value || "").toUpperCase();
+
+  if (!normalized || normalized === "UNKNOWN" || normalized === "NOT_SELECTED") {
+    return null;
   }
 
   if (
     normalized === "BASE" ||
     normalized === "STANDARD" ||
     normalized === "ENHANCED" ||
-    normalized === "ADVANCED" ||
-    normalized === "C2" ||
+    normalized === "DEEP" ||
     normalized === "FRONTIER" ||
-    normalized === "UNKNOWN"
+    normalized === "EMERGENCY" ||
+    normalized === "C2"
   ) {
     return normalized;
+  }
+
+  if (normalized === "ADVANCED") {
+    return "DEEP";
+  }
+
+  if (normalized === "C2_ESCALATED" || normalized === "C2_DEFENSE") {
+    return "C2";
+  }
+
+  if (normalized === "GOVERNANCE" || normalized === "PRO") {
+    return "ENHANCED";
+  }
+
+  if (normalized === "BLOCKED") {
+    return null;
+  }
+
+  return "STANDARD";
+}
+
+function normalizeDatabaseSaasTier(value: SaasTier | string | undefined): string | null {
+  const normalized = String(value || "").toUpperCase();
+
+  if (!normalized || normalized === "UNKNOWN") {
+    return null;
+  }
+
+  if (
+    normalized === "BASE" ||
+    normalized === "IPR" ||
+    normalized === "PRO" ||
+    normalized === "GOVERNANCE" ||
+    normalized === "C2_DEFENSE" ||
+    normalized === "STRATEGIC"
+  ) {
+    return normalized;
+  }
+
+  return "BASE";
+}
+
+function providerToDatabaseValue(provider: ModelUsageProvider | string): string {
+  const normalized = String(provider || "UNKNOWN").toUpperCase();
+
+  if (normalized === "OPENAI") {
+    return "openai";
+  }
+
+  if (normalized === "LOCAL" || normalized === "LOCAL_FALLBACK") {
+    return "local";
+  }
+
+  if (normalized === "MOCK") {
+    return "mock";
+  }
+
+  return "unknown";
+}
+
+function normalizeProvider(value: ModelUsageProvider | string | undefined): ModelUsageProvider {
+  const normalized = String(value || "OPENAI").toUpperCase();
+
+  if (normalized === "OPENAI") {
+    return "OPENAI";
+  }
+
+  if (normalized === "LOCAL" || normalized === "LOCAL_FALLBACK") {
+    return "LOCAL";
+  }
+
+  if (normalized === "MOCK") {
+    return "MOCK";
   }
 
   return "UNKNOWN";
 }
 
-function providerToDatabaseValue(provider: ModelUsageProvider): string {
-  return provider.toLowerCase();
+function nullableDatabaseText(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const normalized = trimmed.toUpperCase();
+
+  if (
+    normalized === "NONE" ||
+    normalized === "NO_SESSION" ||
+    normalized === "NO_THREAD" ||
+    normalized === "NO_TENANT" ||
+    normalized === "NO_WORKSPACE" ||
+    normalized === "NO_SUBSCRIPTION" ||
+    normalized === "NO_ORGANIZATION_IPR" ||
+    normalized === "NOT_VERIFIED" ||
+    normalized === "NO_CERTIFICATE" ||
+    normalized === "NO_AUDIT" ||
+    normalized === "NO_EVT" ||
+    normalized === "NO_OPC" ||
+    normalized === "NOT_SELECTED"
+  ) {
+    return null;
+  }
+
+  return trimmed;
 }
 
-function normalizeDatabaseNullable(value: string, emptyValue: string): string | null {
-  return value === emptyValue ? null : value;
+function normalizeDatabaseRoutingReason(value: string): string | null {
+  const trimmed = value.trim();
+
+  if (!trimmed || trimmed === "No model routing reason provided.") {
+    return null;
+  }
+
+  return trimmed;
+}
+
+function normalizeDatabaseTokenValue(value: number | null): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    return 0;
+  }
+
+  return Math.round(value);
+}
+
+function shouldWriteRelationalColumns(record: ModelUsageLogRecord): boolean {
+  return record.persistenceBoundary === "DATABASE_PERSISTENT";
 }
 
 export function deriveModelUsageAccountingMode(input: {
@@ -469,9 +674,7 @@ export function deriveUsagePersistenceBoundary(
   persistenceMode: RuntimePersistenceMode
 ): ModelUsageLogPersistenceBoundary {
   if (persistenceMode === "DATABASE_PERSISTENT") {
-    return isHbceDatabaseConfigured() && isHbceDatabaseAvailable()
-      ? "DATABASE_PERSISTENT_TARGET"
-      : "DATABASE_PERSISTENT_TARGET";
+    return "DATABASE_PERSISTENT_TARGET";
   }
 
   if (String(persistenceMode) === "FAIL_CLOSED_PERSISTENCE") {
@@ -507,50 +710,57 @@ export function deriveModelUsageRecordStatus(input: {
   return "MVP_MEMORY_ONLY";
 }
 
-function getTierWeight(saasTier: SaasTier): number {
-  if (saasTier === "IPR") return 1.5;
-  if (saasTier === "PRO") return 2;
-  if (saasTier === "GOVERNANCE") return 3;
-  if (saasTier === "C2_DEFENSE") return 5;
-  if (saasTier === "STRATEGIC") return 6;
+function getTierWeight(saasTier: SaasTier | string): number {
+  const normalized = String(saasTier).toUpperCase();
+
+  if (normalized === "IPR") return 1.5;
+  if (normalized === "PRO") return 2;
+  if (normalized === "GOVERNANCE") return 3;
+  if (normalized === "C2_DEFENSE") return 5;
+  if (normalized === "STRATEGIC") return 6;
 
   return 1;
 }
 
-function getModelWeight(modelLevel: ModelLevel): number {
+function getModelWeight(modelLevel: ModelUsageRuntimeModelLevel): number {
   const normalized = String(modelLevel || "STANDARD").toUpperCase();
 
   if (normalized === "ENHANCED") return 1.5;
-  if (normalized === "ADVANCED") return 2.5;
+  if (normalized === "ADVANCED" || normalized === "DEEP") return 2.5;
   if (normalized === "C2_ESCALATED" || normalized === "C2") return 4;
   if (normalized === "FRONTIER") return 5;
+  if (normalized === "EMERGENCY") return 6;
   if (normalized === "BLOCKED") return 0;
 
   return 1;
 }
 
-function getRiskWeight(riskLevel: RuntimeRiskLevel): number {
-  if (riskLevel === "MEDIUM") return 1.25;
-  if (riskLevel === "HIGH") return 1.75;
-  if (riskLevel === "CRITICAL") return 2.5;
-  if (String(riskLevel) === "BLOCKED") return 0;
+function getRiskWeight(riskLevel: RuntimeRiskLevel | string): number {
+  const normalized = String(riskLevel).toUpperCase();
+
+  if (normalized === "MEDIUM") return 1.25;
+  if (normalized === "HIGH") return 1.75;
+  if (normalized === "CRITICAL") return 2.5;
+  if (normalized === "BLOCKED") return 0;
 
   return 1;
 }
 
-function getOperationalWeight(operationalValue: OperationalValueLevel): number {
-  if (operationalValue === "MEDIUM") return 1.25;
-  if (operationalValue === "HIGH") return 1.75;
-  if (operationalValue === "CRITICAL") return 2.5;
+function getOperationalWeight(operationalValue: OperationalValueLevel | string): number {
+  const normalized = String(operationalValue).toUpperCase();
+
+  if (normalized === "MEDIUM") return 1.25;
+  if (normalized === "HIGH") return 1.75;
+  if (normalized === "CRITICAL") return 2.5;
 
   return 1;
 }
 
 export function deriveModelValueWeight(input: {
-  saasTier: SaasTier;
-  modelLevel: ModelLevel;
-  riskLevel: RuntimeRiskLevel;
-  operationalValue: OperationalValueLevel;
+  saasTier: SaasTier | string;
+  modelLevel: ModelUsageRuntimeModelLevel;
+  riskLevel: RuntimeRiskLevel | string;
+  operationalValue: OperationalValueLevel | string;
   opcRequired: boolean;
   auditRequired: boolean;
 }): number {
@@ -605,7 +815,7 @@ function deriveEstimatedCostMinor(input: {
 
 export function buildModelUsageBoundary(input: {
   persistenceBoundary: ModelUsageLogPersistenceBoundary;
-  c2Boundary: C2BoundaryState;
+  c2Boundary: C2BoundaryState | string;
 }): string {
   const persistence =
     input.persistenceBoundary === "DATABASE_PERSISTENT"
@@ -704,7 +914,9 @@ export function createModelUsageLogRecord(
       : null);
 
   const runtimeDecisionText = normalizeRuntimeDecisionText(input.runtimeDecision);
-  const blocked = input.blocked ?? input.modelLevel === "BLOCKED";
+  const normalizedInputModelLevel = String(input.modelLevel ?? "STANDARD").toUpperCase();
+
+  const blocked = input.blocked ?? normalizedInputModelLevel === "BLOCKED";
   const failClosed = input.failClosed ?? runtimeDecisionText === "FAIL_CLOSED";
   const allowed = input.allowed ?? (!blocked && !failClosed);
 
@@ -755,7 +967,7 @@ export function createModelUsageLogRecord(
     usageId,
     timestamp,
     source: input.source ?? "SYSTEM",
-    provider: input.provider ?? "OPENAI",
+    provider: normalizeProvider(input.provider),
 
     project: HBCE_SAAS_PROJECT,
     targetRelease: HBCE_SAAS_TARGET_RELEASE,
@@ -866,60 +1078,178 @@ export function appendModelUsageLogRecord(
   return pushModelUsageProcessMemory(record);
 }
 
-function modelUsageRecordToDatabasePayload(record: ModelUsageLogRecord): {
-  usageId: string;
-  tenantId: string | null;
-  workspaceId: string | null;
-  subscriptionId: string | null;
-  humanIpr: string | null;
-  runtimeIpr: string;
-  sessionId: string | null;
-  threadId: string | null;
-  evtId: string | null;
-  opcProofId: string | null;
-  auditId: string | null;
-  provider: string;
-  model: string;
-  modelLevel: string;
-  saasTier: string;
-  routingReason: string | null;
-  inputTokens: number;
-  outputTokens: number;
-  totalTokens: number;
-  estimatedCostMinor: number;
-  currency: string;
-  usageHash: string;
-  payloadJson: string;
-} {
+function modelUsageRecordToDatabasePayload(record: ModelUsageLogRecord): ModelUsageDatabasePayload {
+  const writeRelationalColumns = shouldWriteRelationalColumns(record);
+
+  const payload = {
+    ...record,
+    databaseColumnPolicy: {
+      relationalColumnsWritten: writeRelationalColumns,
+      reason: writeRelationalColumns
+        ? "Record already confirmed DATABASE_PERSISTENT."
+        : "Model usage references are preserved in payload JSONB while nullable relational columns remain null to avoid premature foreign key failures before tenant/session/EVT/OPC/audit ledger persistence is fully enabled."
+    },
+    databaseRefs: {
+      tenantId: record.tenantId,
+      workspaceId: record.workspaceId,
+      subscriptionId: record.subscriptionId,
+      humanIpr: record.humanIpr,
+      sessionId: record.sessionId,
+      threadId: record.threadId,
+      evtId: record.evtRef,
+      opcProofId: record.opcRef,
+      auditId: record.auditId
+    },
+    databaseRuntimeDecision: normalizeDatabaseRuntimeDecision(record.runtimeDecision),
+    databaseRiskLevel: normalizeDatabaseRiskLevel(record.riskLevel),
+    databaseModelLevel: normalizeDatabaseModelLevel(record.modelLevel),
+    databaseSaasTier: normalizeDatabaseSaasTier(record.saasTier),
+    databaseProvider: providerToDatabaseValue(record.provider),
+    legalCertification: false
+  };
+
   return {
     usageId: record.usageId,
-    tenantId: normalizeDatabaseNullable(record.tenantId, "NO_TENANT"),
-    workspaceId: normalizeDatabaseNullable(record.workspaceId, "NO_WORKSPACE"),
-    subscriptionId: normalizeDatabaseNullable(record.subscriptionId, "NO_SUBSCRIPTION"),
-    humanIpr: normalizeDatabaseNullable(record.humanIpr, "NOT_VERIFIED"),
-    runtimeIpr: record.runtimeIpr,
-    sessionId: normalizeDatabaseNullable(record.sessionId, "NO_SESSION"),
-    threadId: normalizeDatabaseNullable(record.threadId, "NO_THREAD"),
-    evtId: record.evtRef,
-    opcProofId: record.opcRef,
-    auditId: record.auditId,
+    tenantId: writeRelationalColumns ? nullableDatabaseText(record.tenantId) : null,
+    workspaceId: writeRelationalColumns ? nullableDatabaseText(record.workspaceId) : null,
+    subscriptionId: writeRelationalColumns ? nullableDatabaseText(record.subscriptionId) : null,
+    humanIpr: writeRelationalColumns ? nullableDatabaseText(record.humanIpr) : null,
+    runtimeIpr: normalizeUsageString(record.runtimeIpr, RUNTIME_IPR),
+    sessionId: writeRelationalColumns ? nullableDatabaseText(record.sessionId) : null,
+    threadId: writeRelationalColumns ? nullableDatabaseText(record.threadId) : null,
+    evtId: writeRelationalColumns ? nullableDatabaseText(record.evtRef) : null,
+    opcProofId: writeRelationalColumns ? nullableDatabaseText(record.opcRef) : null,
+    auditId: writeRelationalColumns ? nullableDatabaseText(record.auditId) : null,
     provider: providerToDatabaseValue(record.provider),
-    model: record.selectedModel,
+    model: normalizeUsageString(record.selectedModel, "NOT_SELECTED"),
     modelLevel: normalizeDatabaseModelLevel(record.modelLevel),
-    saasTier: String(record.saasTier || "UNKNOWN"),
-    routingReason: record.modelRoutingReason || null,
-    inputTokens: record.inputTokens ?? 0,
-    outputTokens: record.outputTokens ?? 0,
-    totalTokens: record.totalTokens ?? 0,
-    estimatedCostMinor: record.estimatedCostMinor,
-    currency: record.currency,
+    saasTier: normalizeDatabaseSaasTier(record.saasTier),
+    routingReason: normalizeDatabaseRoutingReason(record.modelRoutingReason),
+    inputTokens: normalizeDatabaseTokenValue(record.inputTokens),
+    outputTokens: normalizeDatabaseTokenValue(record.outputTokens),
+    totalTokens: normalizeDatabaseTokenValue(record.totalTokens),
+    estimatedCostMinor: normalizeDatabaseTokenValue(record.estimatedCostMinor),
+    currency: normalizeCurrency(record.currency),
     usageHash: record.usageHash,
-    payloadJson: JSON.stringify({
-      ...record,
-      databaseModelLevel: normalizeDatabaseModelLevel(record.modelLevel),
-      legalCertification: false
-    })
+    payloadJson: JSON.stringify(payload)
   };
+}
+
+async function persistModelUsageLogRecordFallback(
+  record: ModelUsageLogRecord,
+  fields: ModelUsageDatabasePayload,
+  previousError: string | null
+): Promise<ModelUsagePersistenceResult> {
+  try {
+    const result = await queryHbceDatabase<ModelUsageDatabaseRow>(
+      `
+INSERT INTO model_usage (
+  usage_id,
+  runtime_ipr,
+  provider,
+  model,
+  model_level,
+  saas_tier,
+  routing_reason,
+  input_tokens,
+  output_tokens,
+  total_tokens,
+  estimated_cost_minor,
+  currency,
+  usage_hash,
+  payload,
+  legal_certification
+)
+VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9,
+  $10,
+  $11,
+  $12,
+  $13,
+  $14::jsonb,
+  false
+)
+ON CONFLICT (usage_id) DO UPDATE SET
+  runtime_ipr = EXCLUDED.runtime_ipr,
+  provider = EXCLUDED.provider,
+  model = EXCLUDED.model,
+  model_level = EXCLUDED.model_level,
+  saas_tier = EXCLUDED.saas_tier,
+  routing_reason = EXCLUDED.routing_reason,
+  input_tokens = EXCLUDED.input_tokens,
+  output_tokens = EXCLUDED.output_tokens,
+  total_tokens = EXCLUDED.total_tokens,
+  estimated_cost_minor = EXCLUDED.estimated_cost_minor,
+  currency = EXCLUDED.currency,
+  usage_hash = EXCLUDED.usage_hash,
+  payload = EXCLUDED.payload,
+  legal_certification = false
+RETURNING usage_id, usage_hash;
+`.trim(),
+      [
+        fields.usageId,
+        fields.runtimeIpr,
+        fields.provider,
+        fields.model,
+        fields.modelLevel,
+        fields.saasTier,
+        fields.routingReason,
+        fields.inputTokens,
+        fields.outputTokens,
+        fields.totalTokens,
+        fields.estimatedCostMinor,
+        fields.currency,
+        fields.usageHash,
+        fields.payloadJson
+      ]
+    );
+
+    if (!result.ok) {
+      return {
+        ok: false,
+        status: "DATABASE_WRITE_FAILED",
+        usageId: record.usageId,
+        usageHash: record.usageHash,
+        error:
+          `${previousError || "MODEL_USAGE_DATABASE_WRITE_FAILED"} | fallback: ${
+            result.error || "MODEL_USAGE_DATABASE_FALLBACK_WRITE_FAILED"
+          }`,
+        legalCertification: false
+      };
+    }
+
+    record.status = "PERSISTED";
+    record.persistenceBoundary = "DATABASE_PERSISTENT";
+
+    return {
+      ok: true,
+      status: "PERSISTED",
+      usageId: record.usageId,
+      usageHash: record.usageHash,
+      error: null,
+      legalCertification: false
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: "DATABASE_WRITE_FAILED",
+      usageId: record.usageId,
+      usageHash: record.usageHash,
+      error:
+        `${previousError || "MODEL_USAGE_DATABASE_WRITE_FAILED"} | fallback: ${safeDatabaseError(
+          error
+        )}`,
+      legalCertification: false
+    };
+  }
 }
 
 export async function persistModelUsageLogRecord(
@@ -1058,14 +1388,11 @@ RETURNING usage_id, usage_hash;
     );
 
     if (!result.ok) {
-      return {
-        ok: false,
-        status: "DATABASE_WRITE_FAILED",
-        usageId: record.usageId,
-        usageHash: record.usageHash,
-        error: result.error || "MODEL_USAGE_DATABASE_WRITE_FAILED",
-        legalCertification: false
-      };
+      return persistModelUsageLogRecordFallback(
+        record,
+        fields,
+        result.error || "MODEL_USAGE_DATABASE_WRITE_FAILED"
+      );
     }
 
     record.status = "PERSISTED";
@@ -1080,14 +1407,7 @@ RETURNING usage_id, usage_hash;
       legalCertification: false
     };
   } catch (error) {
-    return {
-      ok: false,
-      status: "DATABASE_WRITE_FAILED",
-      usageId: record.usageId,
-      usageHash: record.usageHash,
-      error: safeDatabaseError(error),
-      legalCertification: false
-    };
+    return persistModelUsageLogRecordFallback(record, fields, safeDatabaseError(error));
   }
 }
 
@@ -1108,7 +1428,7 @@ export async function appendModelUsageLogRecordAsync(
 
 export function appendModelUsageLogRecordFromRuntime(input: {
   source?: ModelUsageLogSource;
-  provider?: ModelUsageProvider;
+  provider?: ModelUsageProvider | string;
   sessionId?: string;
   requestId?: string;
   humanIpr?: string;
@@ -1256,7 +1576,10 @@ export function appendModelUsageLogRecordFromRuntime(input: {
       Boolean(c2Policy?.allowed ?? true) &&
       Boolean(auditRecord?.allowed ?? true),
 
-    persistenceMode: saasPolicy?.persistenceMode ?? auditRecord?.persistenceMode ?? "PROCESS_MEMORY_MVP",
+    persistenceMode:
+      saasPolicy?.persistenceMode ??
+      auditRecord?.persistenceMode ??
+      "PROCESS_MEMORY_MVP",
 
     reason:
       modelRouting?.routingReason ??
@@ -1270,7 +1593,7 @@ export function appendModelUsageLogRecordFromRuntime(input: {
 
 export async function appendModelUsageLogRecordFromRuntimeAsync(input: {
   source?: ModelUsageLogSource;
-  provider?: ModelUsageProvider;
+  provider?: ModelUsageProvider | string;
   sessionId?: string;
   requestId?: string;
   humanIpr?: string;
@@ -1339,7 +1662,8 @@ export function listModelUsageLogRecords(
     records = records.filter(
       (record) =>
         record.saasTier === "C2_DEFENSE" ||
-        record.modelLevel === "C2_ESCALATED" ||
+        String(record.modelLevel).toUpperCase() === "C2_ESCALATED" ||
+        String(record.modelLevel).toUpperCase() === "C2" ||
         record.c2Boundary !== "C2_NOT_AVAILABLE" ||
         record.cyberRelevance === "C2_RELEVANT"
     );
@@ -1406,9 +1730,12 @@ export function summarizeModelUsageLogRecords(
     summary.totalOutputTokens += record.outputTokens ?? 0;
     summary.totalTokens += record.totalTokens ?? 0;
 
-    summary.byTier[record.saasTier] = (summary.byTier[record.saasTier] ?? 0) + 1;
-    summary.byModelLevel[record.modelLevel] =
-      (summary.byModelLevel[record.modelLevel] ?? 0) + 1;
+    const tierKey = String(record.saasTier);
+    const modelLevelKey = String(record.modelLevel);
+
+    summary.byTier[tierKey] = (summary.byTier[tierKey] ?? 0) + 1;
+    summary.byModelLevel[modelLevelKey] =
+      (summary.byModelLevel[modelLevelKey] ?? 0) + 1;
     summary.byModel[record.selectedModel] =
       (summary.byModel[record.selectedModel] ?? 0) + 1;
 
@@ -1442,16 +1769,16 @@ export function toPublicModelUsageLogRecord(record: ModelUsageLogRecord): {
   workspaceId: string;
   subscriptionId: string;
   threadId: string;
-  saasTier: SaasTier;
+  saasTier: SaasTier | string;
   selectedModel: string;
-  modelLevel: ModelLevel;
-  riskLevel: RuntimeRiskLevel;
-  runtimeDecision: RuntimeDecision;
-  auditState: RuntimeAuditState;
-  operationalValue: OperationalValueLevel;
-  cyberRelevance: CyberRelevance;
-  c2Boundary: C2BoundaryState;
-  proofRequirement: ProofRequirement;
+  modelLevel: ModelUsageRuntimeModelLevel;
+  riskLevel: RuntimeRiskLevel | string;
+  runtimeDecision: RuntimeDecision | string;
+  auditState: RuntimeAuditState | string;
+  operationalValue: OperationalValueLevel | string;
+  cyberRelevance: CyberRelevance | string;
+  c2Boundary: C2BoundaryState | string;
+  proofRequirement: ModelUsageRuntimeProofRequirement;
   evtRequired: boolean;
   opcRequired: boolean;
   auditRequired: boolean;
@@ -1469,6 +1796,7 @@ export function toPublicModelUsageLogRecord(record: ModelUsageLogRecord): {
   failClosed: boolean;
   allowed: boolean;
   persistenceMode: RuntimePersistenceMode;
+  persistenceBoundary: ModelUsageLogPersistenceBoundary;
   status: ModelUsageRecordStatus;
   legalCertification: false;
   usageHash: string;
@@ -1519,6 +1847,7 @@ export function toPublicModelUsageLogRecord(record: ModelUsageLogRecord): {
     failClosed: record.failClosed,
     allowed: record.allowed,
     persistenceMode: record.persistenceMode,
+    persistenceBoundary: record.persistenceBoundary,
     status: record.status,
     legalCertification: false,
     usageHash: record.usageHash,
@@ -1569,6 +1898,8 @@ export function buildModelUsagePromptFrame(record: ModelUsageLogRecord): string 
     `EVT ref: ${record.evtRef ?? "none"}`,
     `OPC ref: ${record.opcRef ?? "none"}`,
     `Audit ref: ${record.auditId ?? "none"}`,
+    `Persistence mode: ${record.persistenceMode}`,
+    `Persistence boundary: ${record.persistenceBoundary}`,
     `Allowed: ${record.allowed}`,
     `Fail closed: ${record.failClosed}`,
     `Blocked: ${record.blocked}`,
@@ -1598,6 +1929,6 @@ export function getModelUsageLogHealth(): ModelUsageLogHealth {
     maxProcessMemoryRecords: MAX_PROCESS_MEMORY_MODEL_USAGE_RECORDS,
     legalCertification: false,
     boundary:
-      "Model usage log is configured for PROCESS_MEMORY_MVP with DATABASE_PERSISTENT target when the HBCE database is configured and the async writer is used. Usage records support SaaS accounting and operational reconstruction only. legalCertification = false."
+      "Model usage log is configured for PROCESS_MEMORY_MVP with DATABASE_PERSISTENT target when the HBCE database is configured and the async writer is used. Relational references remain inside payload JSONB until tenant/session/EVT/OPC/audit ledger persistence is fully active, to avoid premature foreign key failures. Usage records support SaaS accounting and operational reconstruction only. legalCertification = false."
   };
 }
