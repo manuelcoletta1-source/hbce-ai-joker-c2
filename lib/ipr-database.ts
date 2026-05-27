@@ -61,14 +61,31 @@ export type HbceDatabaseDescription = {
 
 export type HbceDatabaseAdapter = {
   describe(): HbceDatabaseDescription;
+
   initializeSchema(): Promise<HbceDatabaseQueryResult>;
+
   query<Row extends HbceDatabaseQueryRow = HbceDatabaseQueryRow>(
     sql: string,
     params?: HbceDatabaseQueryValue[]
   ): Promise<HbceDatabaseQueryResult<Row>>;
 };
 
+export type HbceDatabaseReadyResult = {
+  ok: boolean;
+  description: HbceDatabaseDescription;
+  initialization: HbceDatabaseQueryResult;
+  schema: typeof HBCE_DATABASE_SCHEMA;
+};
+
 const NEON_SERVERLESS_DRIVER = "@neondatabase/serverless";
+
+const DATABASE_URL_ENV_KEYS = [
+  "DATABASE_URL",
+  "POSTGRES_URL",
+  "POSTGRES_PRISMA_URL",
+  "POSTGRES_URL_NON_POOLING",
+  "NEON_DATABASE_URL"
+];
 
 const DISABLED_DATABASE_DESCRIPTION: HbceDatabaseDescription = {
   configured: false,
@@ -121,16 +138,12 @@ function normalizeSql(sql: string): string {
 }
 
 function getDatabaseUrlFromEnv(): string | null {
-  const direct = process.env.DATABASE_URL;
+  for (const key of DATABASE_URL_ENV_KEYS) {
+    const value = process.env[key];
 
-  if (typeof direct === "string" && direct.trim()) {
-    return direct.trim();
-  }
-
-  const postgresUrl = process.env.POSTGRES_URL;
-
-  if (typeof postgresUrl === "string" && postgresUrl.trim()) {
-    return postgresUrl.trim();
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
   }
 
   return null;
@@ -138,6 +151,20 @@ function getDatabaseUrlFromEnv(): string | null {
 
 function isDatabaseUrlConfigured(): boolean {
   return Boolean(getDatabaseUrlFromEnv());
+}
+
+function inferDatabaseKind(databaseUrl: string | null): HbceDatabaseKind {
+  if (!databaseUrl) {
+    return "DISABLED";
+  }
+
+  const normalized = databaseUrl.toLowerCase();
+
+  if (normalized.includes("neon.tech") || normalized.includes("neon")) {
+    return "NEON_POSTGRES_HTTP";
+  }
+
+  return "POSTGRES_COMPATIBLE";
 }
 
 function isRecord(value: unknown): value is HbceDatabaseQueryRow {
@@ -154,6 +181,30 @@ function normalizeRows<Row extends HbceDatabaseQueryRow>(
   return value.filter(isRecord) as Row[];
 }
 
+function serializeQueryValue(value: HbceDatabaseQueryValue): unknown {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (value === null) {
+    return null;
+  }
+
+  if (Array.isArray(value)) {
+    return JSON.stringify(value);
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  return value;
+}
+
+function serializeQueryParams(params: HbceDatabaseQueryValue[]): unknown[] {
+  return params.map((param) => serializeQueryValue(param));
+}
+
 function buildResult<Row extends HbceDatabaseQueryRow>(input: {
   ok: boolean;
   status: HbceDatabaseStatus;
@@ -163,11 +214,13 @@ function buildResult<Row extends HbceDatabaseQueryRow>(input: {
   sql?: string | null;
   startedAt: number;
 }): HbceDatabaseQueryResult<Row> {
+  const rows = input.rows || [];
+
   return {
     ok: input.ok,
     status: input.status,
-    rows: input.rows || [],
-    rowCount: input.rowCount || 0,
+    rows,
+    rowCount: typeof input.rowCount === "number" ? input.rowCount : rows.length,
     error: input.error || null,
     sqlHash: input.sql ? simpleHash(normalizeSql(input.sql)) : null,
     durationMs: Math.max(0, nowMs() - input.startedAt)
@@ -185,6 +238,8 @@ class DisabledHbceDatabaseAdapter implements HbceDatabaseAdapter {
     return buildResult({
       ok: false,
       status: "NOT_CONFIGURED",
+      rows: [],
+      rowCount: 0,
       error:
         "DATABASE_URL is not configured. HBCE persistence remains unavailable and runtime must not claim DATABASE_PERSISTENT continuity.",
       startedAt
@@ -210,16 +265,19 @@ class DisabledHbceDatabaseAdapter implements HbceDatabaseAdapter {
 
 class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
   private readonly databaseUrl: string;
+  private readonly kind: HbceDatabaseKind;
+  private schemaInitializationPromise: Promise<HbceDatabaseQueryResult> | null = null;
 
   constructor(databaseUrl: string) {
     this.databaseUrl = databaseUrl;
+    this.kind = inferDatabaseKind(databaseUrl);
   }
 
   describe(): HbceDatabaseDescription {
     return {
       configured: true,
       available: true,
-      kind: "NEON_POSTGRES_HTTP",
+      kind: this.kind,
       status: "DRIVER_AVAILABLE",
       schemaVersion: HBCE_DATABASE_SCHEMA_VERSION,
       persistenceMode: HBCE_DATABASE_PERSISTENCE_MODE,
@@ -237,24 +295,45 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
   }
 
   async initializeSchema(): Promise<HbceDatabaseQueryResult> {
+    if (this.schemaInitializationPromise) {
+      return this.schemaInitializationPromise;
+    }
+
+    this.schemaInitializationPromise = this.initializeSchemaOnce();
+
+    const result = await this.schemaInitializationPromise;
+
+    if (!result.ok) {
+      this.schemaInitializationPromise = null;
+    }
+
+    return result;
+  }
+
+  private async initializeSchemaOnce(): Promise<HbceDatabaseQueryResult> {
     const startedAt = nowMs();
     const joinedSql = HBCE_DATABASE_SCHEMA_SQL.join("\n\n");
     const sql = this.getSql();
 
     try {
+      let executedStatements = 0;
+
       for (const statement of HBCE_DATABASE_SCHEMA_SQL) {
         const normalized = statement.trim();
 
-        if (normalized) {
-          await sql.query(normalized, []);
+        if (!normalized) {
+          continue;
         }
+
+        await sql.query(normalized, []);
+        executedStatements += 1;
       }
 
       return buildResult({
         ok: true,
         status: "AVAILABLE",
         rows: [],
-        rowCount: HBCE_DATABASE_SCHEMA_SQL.length,
+        rowCount: executedStatements,
         sql: joinedSql,
         startedAt
       });
@@ -262,6 +341,8 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
       return buildResult({
         ok: false,
         status: "INITIALIZATION_FAILED",
+        rows: [],
+        rowCount: 0,
         error: safeError(error),
         sql: joinedSql,
         startedAt
@@ -290,7 +371,10 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
 
     try {
       const sql = this.getSql();
-      const result = await sql.query(normalizedSql, params as unknown[]);
+      const result = await sql.query(
+        normalizedSql,
+        serializeQueryParams(params)
+      );
       const rows = normalizeRows<Row>(result);
 
       return buildResult<Row>({
@@ -350,7 +434,9 @@ export function isHbceDatabaseConfigured(): boolean {
 }
 
 export function isHbceDatabaseAvailable(): boolean {
-  return describeDefaultHbceDatabase().available;
+  const description = describeDefaultHbceDatabase();
+
+  return description.configured && description.available;
 }
 
 export async function initializeHbceDatabaseSchema(): Promise<HbceDatabaseQueryResult> {
@@ -366,12 +452,7 @@ export async function queryHbceDatabase<
   return getDefaultHbceDatabase().query<Row>(sql, params);
 }
 
-export async function ensureHbceDatabaseReady(): Promise<{
-  ok: boolean;
-  description: HbceDatabaseDescription;
-  initialization: HbceDatabaseQueryResult;
-  schema: typeof HBCE_DATABASE_SCHEMA;
-}> {
+export async function ensureHbceDatabaseReady(): Promise<HbceDatabaseReadyResult> {
   const database = getDefaultHbceDatabase();
   const initialization = await database.initializeSchema();
 
