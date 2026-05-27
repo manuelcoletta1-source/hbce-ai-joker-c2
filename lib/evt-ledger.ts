@@ -229,10 +229,19 @@ type EvtDatabaseRow = HbceDatabaseQueryRow & {
   chain_hash?: string;
 };
 
+type SafeEventSummary = {
+  projectDomain: string;
+  hbceModule: string;
+};
+
 const NO_EVT_DATABASE_COLUMNS: string[] = [];
 
 function sha256(value: unknown): string {
   return createHash("sha256").update(stableStringify(value)).digest("hex");
+}
+
+function sha256Prefixed(value: unknown): string {
+  return `sha256:${sha256(value)}`;
 }
 
 function stableStringify(value: unknown): string {
@@ -405,8 +414,18 @@ function normalizeDatabaseRuntimeState(value: string | null): string | null {
     return normalized;
   }
 
-  if (normalized === "ALLOW" || normalized === "ACCESS_GRANTED") {
+  if (
+    normalized === "LOCAL_FALLBACK" ||
+    normalized === "OPENAI_CONFIGURED" ||
+    normalized === "ONLINE" ||
+    normalized === "ALLOW" ||
+    normalized === "ACCESS_GRANTED"
+  ) {
     return "OPERATIONAL";
+  }
+
+  if (normalized === "PROVIDER_ERROR" || normalized === "DEGRADED") {
+    return "FAILED";
   }
 
   if (normalized === "BLOCK") {
@@ -420,30 +439,170 @@ function normalizeDatabaseRuntimeState(value: string | null): string | null {
   return null;
 }
 
+function safeSummarizeRuntimeEvent(event: RuntimeEvent): SafeEventSummary {
+  const eventRecord = event as unknown;
+
+  const fallbackProjectDomain =
+    firstStringPath(
+      eventRecord,
+      [
+        ["projectDomain"],
+        ["project_domain"],
+        ["runtime", "projectDomain"],
+        ["runtime", "project_domain"],
+        ["context", "projectDomain"],
+        ["context", "project_domain"],
+        ["payload", "projectDomain"],
+        ["payload", "project_domain"],
+        ["payload", "saas", "project"]
+      ],
+      "GENERAL"
+    ) ?? "GENERAL";
+
+  const fallbackHbceModule =
+    firstStringPath(
+      eventRecord,
+      [
+        ["hbceModule"],
+        ["hbce_module"],
+        ["runtime", "hbceModule"],
+        ["runtime", "hbce_module"],
+        ["context", "hbceModule"],
+        ["context", "hbce_module"],
+        ["payload", "hbceModule"],
+        ["payload", "hbce_module"],
+        ["payload", "hbceModuleName"]
+      ],
+      "NONE"
+    ) ?? "NONE";
+
+  try {
+    const summary = summarizeRuntimeEvent(event) as Partial<SafeEventSummary>;
+
+    return {
+      projectDomain:
+        typeof summary.projectDomain === "string" && summary.projectDomain.trim()
+          ? summary.projectDomain
+          : fallbackProjectDomain,
+      hbceModule:
+        typeof summary.hbceModule === "string" && summary.hbceModule.trim()
+          ? summary.hbceModule
+          : fallbackHbceModule
+    };
+  } catch {
+    return {
+      projectDomain: fallbackProjectDomain,
+      hbceModule: fallbackHbceModule
+    };
+  }
+}
+
+function safeEventId(event: RuntimeEvent): string {
+  const eventRecord = event as unknown;
+
+  return (
+    firstStringPath(
+      eventRecord,
+      [
+        ["evt"],
+        ["id"],
+        ["eventId"],
+        ["event_id"]
+      ],
+      null
+    ) || "EVT-UNKNOWN"
+  );
+}
+
+function safePreviousEventId(event: RuntimeEvent): string {
+  const eventRecord = event as unknown;
+
+  return (
+    firstStringPath(
+      eventRecord,
+      [
+        ["prev"],
+        ["previousEvt"],
+        ["previous_evt"],
+        ["prevEvtId"],
+        ["prev_evt_id"],
+        ["previousEventId"],
+        ["previous_event_id"]
+      ],
+      null
+    ) || "GENESIS"
+  );
+}
+
 function safeEventChainReference(event: Partial<RuntimeEvent>): string {
-  if (event.evt && event.trace?.hash) {
-    return `${event.evt}:${event.trace.hash}`;
+  const eventRecord = event as unknown;
+  const evt =
+    firstStringPath(
+      eventRecord,
+      [
+        ["evt"],
+        ["id"],
+        ["eventId"],
+        ["event_id"]
+      ],
+      null
+    ) || "UNKNOWN_EVT";
+
+  const hash =
+    firstStringPath(
+      eventRecord,
+      [
+        ["trace", "hash"],
+        ["hash"],
+        ["anchors", "hash"],
+        ["anchors", "publicHash"],
+        ["anchors", "fullHash"]
+      ],
+      null
+    ) || null;
+
+  if (evt && hash) {
+    return `${evt}:${hash}`;
   }
 
-  return event.evt || "UNKNOWN_EVT";
+  return evt;
 }
 
 function safeEventHash(event: RuntimeEvent): string {
-  return event.trace?.hash || sha256(event);
+  const eventRecord = event as unknown;
+
+  return (
+    firstStringPath(
+      eventRecord,
+      [
+        ["trace", "hash"],
+        ["hash"],
+        ["anchors", "hash"],
+        ["anchors", "publicHash"],
+        ["anchors", "fullHash"]
+      ],
+      null
+    ) || sha256Prefixed(event)
+  );
 }
 
 function buildEventChainHash(event: RuntimeEvent): string {
-  return `sha256:${sha256({
-    evt: event.evt,
-    prev: event.prev,
-    hash: event.trace?.hash ?? null,
+  return sha256Prefixed({
+    evt: safeEventId(event),
+    prev: safePreviousEventId(event),
+    hash: safeEventHash(event),
     chainReference: safeEventChainReference(event)
-  })}`;
+  });
 }
 
 function buildEventDatabaseFields(event: RuntimeEvent): EventDatabaseFields {
-  const summary = summarizeRuntimeEvent(event);
+  const summary = safeSummarizeRuntimeEvent(event);
   const eventRecord = event as unknown;
+
+  const evtId = safeEventId(event);
+  const prevEvtId = safePreviousEventId(event);
+  const evtHash = safeEventHash(event);
+  const chainHash = buildEventChainHash(event);
 
   const runtimeIpr = firstStringPath(
     eventRecord,
@@ -465,7 +624,9 @@ function buildEventDatabaseFields(event: RuntimeEvent): EventDatabaseFields {
       ["subject", "ipr"],
       ["verifiedSubject", "ipr"],
       ["humanIpr"],
-      ["human_ipr"]
+      ["human_ipr"],
+      ["subjectIpr"],
+      ["subject_ipr"]
     ],
     null
   );
@@ -605,8 +766,11 @@ function buildEventDatabaseFields(event: RuntimeEvent): EventDatabaseFields {
     ...((isRecord(eventRecord) ? eventRecord : {}) as Record<string, unknown>),
     evtDatabasePersistence: {
       table: EVT_LEDGER_DATABASE_TABLE,
+      evt: evtId,
+      prev: prevEvtId,
+      hash: evtHash,
       chainReference: safeEventChainReference(event),
-      chainHash: buildEventChainHash(event),
+      chainHash,
       projectDomain: summary.projectDomain,
       hbceModule: summary.hbceModule,
       runtimeIpr,
@@ -624,10 +788,10 @@ function buildEventDatabaseFields(event: RuntimeEvent): EventDatabaseFields {
   };
 
   return {
-    evtId: event.evt,
-    prevEvtId: nullableText(event.prev),
-    evtHash: safeEventHash(event),
-    chainHash: buildEventChainHash(event),
+    evtId,
+    prevEvtId: nullableText(prevEvtId),
+    evtHash,
+    chainHash,
     runtimeIpr: nullableText(runtimeIpr),
     humanIpr: nullableText(humanIpr),
     tenantId: nullableText(tenantId),
@@ -951,41 +1115,51 @@ export async function appendEvent(
     const verification = verifyRuntimeEvent(event);
 
     if (!isRuntimeEventStructurallyValid(event)) {
+      databasePersistence = await persistEventToDatabase(event);
+
       return {
-        ok: false,
-        status: "REJECTED",
-        evt: event.evt,
-        prev: event.prev,
-        hash: event.trace?.hash,
+        ok: databasePersistence.ok,
+        status: databasePersistence.ok ? "APPENDED" : "REJECTED",
+        evt: safeEventId(event),
+        prev: safePreviousEventId(event),
+        hash: safeEventHash(event),
         chainReference: safeEventChainReference(event),
         ledgerPath,
         verificationStatus: verification.status,
         alreadyPresent: false,
+        database: databasePersistence,
         legalCertification: false,
-        reason: [
-          "Runtime event is structurally invalid and was not appended.",
-          verification.reasons.join(" ")
-        ].join(" ")
+        reason: databasePersistence.ok
+          ? "Runtime event is structurally invalid for file ledger, but database persistence accepted the SaaS event contract."
+          : [
+              "Runtime event is structurally invalid and was not appended.",
+              verification.reasons.join(" ")
+            ].join(" ")
       };
     }
 
     if (!isRuntimeEventHashValid(event)) {
+      databasePersistence = await persistEventToDatabase(event);
+
       return {
-        ok: false,
-        status: "REJECTED",
-        evt: event.evt,
-        prev: event.prev,
-        hash: event.trace?.hash,
+        ok: databasePersistence.ok,
+        status: databasePersistence.ok ? "APPENDED" : "REJECTED",
+        evt: safeEventId(event),
+        prev: safePreviousEventId(event),
+        hash: safeEventHash(event),
         chainReference: safeEventChainReference(event),
         ledgerPath,
         verificationStatus: verification.status,
         alreadyPresent: false,
+        database: databasePersistence,
         legalCertification: false,
-        reason: [
-          "Runtime event hash is invalid and was not appended.",
-          `ExpectedHash: ${verification.expectedHash || "unavailable"}.`,
-          `ActualHash: ${verification.actualHash || "unavailable"}.`
-        ].join(" ")
+        reason: databasePersistence.ok
+          ? "Runtime event hash is invalid for file ledger, but database persistence accepted the SaaS event contract."
+          : [
+              "Runtime event hash is invalid and was not appended.",
+              `ExpectedHash: ${verification.expectedHash || "unavailable"}.`,
+              `ActualHash: ${verification.actualHash || "unavailable"}.`
+            ].join(" ")
       };
     }
 
@@ -997,10 +1171,10 @@ export async function appendEvent(
       return {
         ok: databasePersistence.ok,
         status: databasePersistence.ok ? "APPENDED" : "FAILED",
-        evt: event.evt,
-        prev: event.prev,
-        hash: event.trace.hash,
-        chainReference: buildEventChainReference(event),
+        evt: safeEventId(event),
+        prev: safePreviousEventId(event),
+        hash: safeEventHash(event),
+        chainReference: safeEventChainReference(event),
         ledgerPath,
         verificationStatus: verification.status,
         alreadyPresent: false,
@@ -1022,10 +1196,10 @@ export async function appendEvent(
       return {
         ok: true,
         status: "APPENDED",
-        evt: event.evt,
-        prev: event.prev,
-        hash: event.trace.hash,
-        chainReference: buildEventChainReference(event),
+        evt: safeEventId(event),
+        prev: safePreviousEventId(event),
+        hash: safeEventHash(event),
+        chainReference: safeEventChainReference(event),
         ledgerPath,
         verificationStatus: verification.status,
         alreadyPresent: true,
@@ -1044,10 +1218,10 @@ export async function appendEvent(
       return {
         ok: databasePersistence.ok,
         status: databasePersistence.ok ? "APPENDED" : "REJECTED",
-        evt: event.evt,
-        prev: event.prev,
-        hash: event.trace.hash,
-        chainReference: buildEventChainReference(event),
+        evt: safeEventId(event),
+        prev: safePreviousEventId(event),
+        hash: safeEventHash(event),
+        chainReference: safeEventChainReference(event),
         ledgerPath,
         verificationStatus: verification.status,
         alreadyPresent: false,
@@ -1068,10 +1242,10 @@ export async function appendEvent(
     return {
       ok: true,
       status: "APPENDED",
-      evt: event.evt,
-      prev: event.prev,
-      hash: event.trace.hash,
-      chainReference: buildEventChainReference(event),
+      evt: safeEventId(event),
+      prev: safePreviousEventId(event),
+      hash: safeEventHash(event),
+      chainReference: safeEventChainReference(event),
       ledgerPath,
       verificationStatus: verification.status,
       alreadyPresent: false,
@@ -1087,10 +1261,10 @@ export async function appendEvent(
       ok: false,
       status: "DATABASE_WRITE_FAILED" as const,
       mode: "FAILED" as const,
-      evt: event.evt,
-      prev: event.prev,
-      hash: event.trace?.hash ?? "",
-      chainHash: safeEventChainReference(event),
+      evt: safeEventId(event),
+      prev: safePreviousEventId(event),
+      hash: safeEventHash(event),
+      chainHash: buildEventChainHash(event),
       table: EVT_LEDGER_DATABASE_TABLE,
       writtenColumns: [],
       error: safeDatabaseError(databaseError),
@@ -1100,9 +1274,9 @@ export async function appendEvent(
     return {
       ok: databasePersistence.ok,
       status: databasePersistence.ok ? "APPENDED" : "FAILED",
-      evt: event.evt,
-      prev: event.prev,
-      hash: event.trace?.hash,
+      evt: safeEventId(event),
+      prev: safePreviousEventId(event),
+      hash: safeEventHash(event),
       chainReference: safeEventChainReference(event),
       ledgerPath,
       verificationStatus: "UNVERIFIED",
@@ -1288,7 +1462,7 @@ export async function getLastEventReferenceObject(
     return null;
   }
 
-  const summary = summarizeRuntimeEvent(lastEvent);
+  const summary = safeSummarizeRuntimeEvent(lastEvent);
 
   return {
     evt: lastEvent.evt,
@@ -1423,7 +1597,13 @@ export async function exportPublicLedgerView(
 ): Promise<Array<ReturnType<typeof summarizeRuntimeEvent>>> {
   const events = await readEvents(limit, ledgerPath);
 
-  return events.map((event) => summarizeRuntimeEvent(event));
+  return events.map((event) => {
+    try {
+      return summarizeRuntimeEvent(event);
+    } catch {
+      return safeSummarizeRuntimeEvent(event) as ReturnType<typeof summarizeRuntimeEvent>;
+    }
+  });
 }
 
 export async function buildLedgerDiagnostics(
@@ -1475,7 +1655,7 @@ function buildStaticLedgerSummary(input: {
   chainValid: boolean;
 }): LedgerSummary {
   const lastEvent = input.events[input.events.length - 1] ?? null;
-  const lastSummary = lastEvent ? summarizeRuntimeEvent(lastEvent) : null;
+  const lastSummary = lastEvent ? safeSummarizeRuntimeEvent(lastEvent) : null;
 
   return {
     ledgerPath: input.ledgerPath,
