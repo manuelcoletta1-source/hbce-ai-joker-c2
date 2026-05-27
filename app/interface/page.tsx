@@ -29,33 +29,40 @@ type RuntimeFile = {
   uploaded: boolean;
 };
 
-type RuntimeHealth = {
-  ok?: boolean;
-  status?: string;
-  runtime?: string;
-  runtimeEntity?: string;
-  runtimeIpr?: string;
-  runtimeLevel?: string;
-  state?: string;
-  timestamp?: string;
-  project?: JsonRecord;
-  provider?: JsonRecord;
-  models?: JsonRecord;
-  database?: JsonRecord;
-  persistence?: JsonRecord;
-  identity?: JsonRecord;
-  access?: JsonRecord;
-  memory?: JsonRecord;
-  matrix?: JsonRecord;
-  c2Defense?: JsonRecord;
-  runtimeAuditLog?: JsonRecord;
-  modelUsageLog?: JsonRecord;
-  operationalContext?: JsonRecord;
-  boundary?: JsonRecord;
-  error?: string;
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  createdAt: string;
+  raw?: JsonRecord | null;
 };
 
-type IprAccountSessionResponse = {
+type RuntimeStatus = {
+  model: string;
+  runtimeIpr: string;
+  humanIpr: string;
+  subject: string;
+  certificateId: string;
+  certificateStatus: string;
+  scope: string;
+  accessDecision: string;
+  identityBinding: string;
+  matrix: string;
+  memory: string;
+  authority: string;
+  persistence: string;
+  aiEvt: string;
+  responseEvt: string;
+  opc: string;
+  chainHash: string;
+  lastMemoryEvt: string;
+  lastMemoryOpc: string;
+  legalCertification: string;
+  database: string;
+  openAI: string;
+};
+
+type IprSessionResponse = {
   ok?: boolean;
   authenticated?: boolean;
   reason?: string;
@@ -70,104 +77,10 @@ type IprAccountSessionResponse = {
   legalCertification?: boolean;
 };
 
-type ChatApiResponse = {
-  ok?: boolean;
-  sessionId?: string;
-  requestedSessionId?: string;
-  response?: string;
-  text?: string;
-  state?: string;
-  decision?: string;
-  degradedReason?: string | null;
-  continuityRef?: string | null;
-  runtime?: unknown;
-  engine?: unknown;
-  governance?: unknown;
-  operationalContext?: unknown;
-  event?: unknown;
-  evt?: unknown;
-  modernEvt?: unknown;
-  governedEvt?: unknown;
-  opc?: unknown;
-  opcProof?: unknown;
-  proof?: unknown;
-  memory?: unknown;
-  semanticMemory?: unknown;
-  matrixTransformativeMemory?: unknown;
-  transformativeMemory?: unknown;
-  boundary?: unknown;
-  identity?: unknown;
-  verifiedSubject?: unknown;
-  matrix?: unknown;
-  access?: unknown;
-  iprHandoff?: unknown;
-  files?: unknown;
-  fileSummary?: unknown;
-  error?: string;
-};
-
-type ChatMessage = {
-  id: string;
-  role: "user" | "assistant" | "system";
-  content: string;
-  createdAt: string;
-  state?: string;
-  decision?: string;
-  continuityRef?: string | null;
-  raw?: ChatApiResponse;
-};
-
-type InfoItem = {
-  label: string;
-  value: string;
-};
-
 const JOKER_SIGIL = "🜏";
 
 const CANONICAL_MANUEL_HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1";
 const CANONICAL_MANUEL_DISPLAY_NAME = "Manuel Coletta";
-
-const DEFAULT_PROMPT =
-  "JOKER-C2, esegui una diagnostica runtime completa. Dimmi modello OpenAI, Runtime IPR, Human IPR, MATRIX, memoria, EVT, OPC e legalCertification=false.";
-
-const QUICK_PROMPTS = [
-  "ciao JOKER-C2, sai chi sono?",
-  "mostrami la diagnostica runtime: IPR, MATRIX, memoria, database, EVT e OPC",
-  "registra come memoria operativa: EVT-0016 / EVT-0016-AI è il punto attivo del progetto JOKER-C2 SaaS Core v0.1",
-  "richiama la memoria operativa attiva del progetto SaaS Core v0.1",
-  "mostrami la diagnostica del model router JOKER-C2",
-  "preparami una valutazione difensiva dei rischi cyber del runtime JOKER-C2, senza exploit e senza istruzioni offensive",
-  "spiega perché JOKER-C2 non è una AI generica"
-];
-
-const TEXT_FILE_TYPES = new Set([
-  "application/json",
-  "application/javascript",
-  "application/typescript",
-  "application/xml",
-  "application/xhtml+xml",
-  "application/x-yaml",
-  "application/yaml",
-  "application/toml",
-  "application/csv",
-  "application/ld+json",
-  "application/markdown",
-  "application/x-ndjson",
-  "text/plain",
-  "text/markdown",
-  "text/csv",
-  "text/html",
-  "text/css",
-  "text/javascript"
-]);
-
-const IMAGE_FILE_TYPES = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/jpg",
-  "image/webp",
-  "image/gif"
-]);
 
 const HANDOFF_STORAGE_KEY = "hbce_ipr_handoff";
 
@@ -186,6 +99,42 @@ const HANDOFF_QUERY_KEYS = [
   "handoff"
 ];
 
+const DEFAULT_PROMPT =
+  "JOKER-C2, esegui una diagnostica runtime completa. Dimmi modello OpenAI, Runtime IPR, Human IPR, MATRIX, memoria, EVT, OPC e legalCertification=false.";
+
+const QUICK_PROMPTS = [
+  "ciao JOKER-C2, sai chi sono?",
+  "mostrami la diagnostica runtime: IPR, MATRIX, memoria, database, EVT e OPC",
+  "registra come memoria operativa: EVT-0016 / EVT-0016-AI è il punto attivo del progetto JOKER-C2 SaaS Core v0.1",
+  "richiama la memoria operativa attiva del progetto SaaS Core v0.1",
+  "spiega perché JOKER-C2 non è una AI generica"
+];
+
+const TEXT_FILE_TYPES = new Set([
+  "application/json",
+  "application/javascript",
+  "application/typescript",
+  "application/xml",
+  "application/xhtml+xml",
+  "application/x-yaml",
+  "application/yaml",
+  "application/markdown",
+  "text/plain",
+  "text/markdown",
+  "text/csv",
+  "text/html",
+  "text/css",
+  "text/javascript"
+]);
+
+const IMAGE_FILE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+  "image/gif"
+]);
+
 function buildId(prefix: string): string {
   const suffix =
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -199,68 +148,15 @@ function isRecord(value: unknown): value is JsonRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function readPath(value: unknown, path: string[]): unknown {
+function getPath(value: unknown, path: string[]): unknown {
   let current: unknown = value;
 
   for (const key of path) {
-    if (!isRecord(current)) {
-      return undefined;
-    }
-
+    if (!isRecord(current)) return undefined;
     current = current[key];
   }
 
   return current;
-}
-
-function safeText(value: unknown, fallback = "-"): string {
-  if (typeof value === "string" && value.trim()) {
-    return normalizeVisibleText(value.trim());
-  }
-
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-
-  return fallback;
-}
-
-function firstText(value: unknown, paths: string[][], fallback = "-"): string {
-  for (const path of paths) {
-    const item = readPath(value, path);
-    const text = safeText(item, "");
-
-    if (text) {
-      return text;
-    }
-  }
-
-  return fallback;
-}
-
-function safeJson(value: unknown): string {
-  try {
-    return JSON.stringify(value ?? null, null, 2);
-  } catch {
-    return String(value);
-  }
-}
-
-function compact(value: string): string {
-  if (!value || value === "-" || value.length <= 38) {
-    return value;
-  }
-
-  return `${value.slice(0, 22)}…${value.slice(-10)}`;
-}
-
-function normalizeSearchText(value: string): string {
-  return value
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function normalizeVisibleText(value: string): string {
@@ -274,8 +170,6 @@ function normalizeVisibleText(value: string): string {
     .replace(/\blegalcertificazione\b/g, "legalCertification")
     .replace(/\blegalCertification=falso\b/gi, "legalCertification=false")
     .replace(/\bcertificazionelegale=false\b/gi, "legalCertification=false")
-    .replace(/\bchiusura in caso di errore\b/gi, "fail-closed")
-    .replace(/\bchiusura automatica in caso di errore\b/gi, "fail-closed")
     .replace(/\bproprietà intellettuale\b/gi, "IPR")
     .replace(/\bDiritti di proprietà intellettuale\b/gi, "IPR")
     .replace(/\bIPR IPR\b/g, "IPR")
@@ -287,10 +181,70 @@ function normalizeVisibleText(value: string): string {
     .trim();
 }
 
-function canonicalizeSubjectName(value: string, ipr?: string): string {
-  if (ipr === CANONICAL_MANUEL_HUMAN_IPR) {
-    return CANONICAL_MANUEL_DISPLAY_NAME;
+function text(value: unknown, fallback = "-"): string {
+  if (typeof value === "string" && value.trim()) {
+    return normalizeVisibleText(value.trim());
   }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  return fallback;
+}
+
+function first(value: unknown, paths: string[][], fallback = "-"): string {
+  for (const path of paths) {
+    const candidate = text(getPath(value, path), "");
+
+    if (candidate) return candidate;
+  }
+
+  return fallback;
+}
+
+function firstJoined(value: unknown, paths: string[][], fallback = "-"): string {
+  for (const path of paths) {
+    const candidate = getPath(value, path);
+    const flattened = flattenText(candidate).join(", ").trim();
+
+    if (flattened) return normalizeVisibleText(flattened);
+  }
+
+  return fallback;
+}
+
+function flattenText(value: unknown): string[] {
+  if (typeof value === "string" && value.trim()) return [value.trim()];
+  if (typeof value === "number" || typeof value === "boolean") return [String(value)];
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => flattenText(item));
+  }
+
+  if (isRecord(value)) {
+    return Object.values(value).flatMap((item) => flattenText(item));
+  }
+
+  return [];
+}
+
+function compact(value: string, max = 42): string {
+  if (!value || value === "-" || value.length <= max) return value;
+  return `${value.slice(0, Math.max(12, max - 18))}…${value.slice(-10)}`;
+}
+
+function normalizeSearchText(value: string): string {
+  return value
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function canonicalizeSubjectName(value: string, ipr?: string): string {
+  if (ipr === CANONICAL_MANUEL_HUMAN_IPR) return CANONICAL_MANUEL_DISPLAY_NAME;
 
   const normalized = normalizeSearchText(value);
 
@@ -303,6 +257,34 @@ function canonicalizeSubjectName(value: string, ipr?: string): string {
   }
 
   return normalizeVisibleText(value || "-");
+}
+
+function parseJsonCandidate(raw: string): JsonRecord | null {
+  const candidates: string[] = [];
+
+  candidates.push(raw);
+
+  try {
+    candidates.push(decodeURIComponent(raw));
+  } catch {
+    // Human civilization continues.
+  }
+
+  const decoded = decodeBase64Text(raw);
+
+  if (decoded) candidates.push(decoded);
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate) as unknown;
+
+      if (isRecord(parsed)) return parsed;
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
 }
 
 function decodeBase64Text(value: string): string | null {
@@ -320,48 +302,26 @@ function decodeBase64Text(value: string): string | null {
   }
 }
 
-function parseJsonCandidate(raw: string): JsonRecord | null {
-  const trimmed = raw.trim();
+function readStoredHandoff(key: string): JsonRecord | null {
+  if (typeof window === "undefined") return null;
 
-  if (!trimmed) return null;
-
-  const decodedUrl = (() => {
-    try {
-      return decodeURIComponent(trimmed);
-    } catch {
-      return null;
-    }
-  })();
-
-  const candidates = [trimmed, decodedUrl, decodeBase64Text(trimmed)].filter(
-    (item): item is string => Boolean(item)
-  );
-
-  for (const candidate of candidates) {
-    try {
-      const parsed = JSON.parse(candidate);
-
-      if (isRecord(parsed)) {
-        return parsed;
-      }
-    } catch {
-      continue;
-    }
+  try {
+    const raw = window.sessionStorage.getItem(key) || window.localStorage.getItem(key);
+    return raw ? parseJsonCandidate(raw) : null;
+  } catch {
+    return null;
   }
-
-  return null;
 }
 
-function persistHandoff(raw: JsonRecord) {
+function persistHandoff(handoff: JsonRecord) {
   if (typeof window === "undefined") return;
 
   try {
-    const serialized = JSON.stringify(raw);
-
+    const serialized = JSON.stringify(handoff);
     window.sessionStorage.setItem(HANDOFF_STORAGE_KEY, serialized);
     window.localStorage.setItem(HANDOFF_STORAGE_KEY, serialized);
   } catch {
-    return;
+    // Storage is apparently also a philosophical problem now.
   }
 }
 
@@ -377,7 +337,7 @@ function clearStoredHandoff() {
       window.localStorage.removeItem(key);
     }
   } catch {
-    return;
+    // Ignore.
   }
 }
 
@@ -399,19 +359,7 @@ function stripHandoffQueryParams() {
       window.history.replaceState({}, "", url.toString());
     }
   } catch {
-    return;
-  }
-}
-
-function readStoredHandoff(key: string): JsonRecord | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const raw = window.sessionStorage.getItem(key) || window.localStorage.getItem(key);
-
-    return raw ? parseJsonCandidate(raw) : null;
-  } catch {
-    return null;
+    // Ignore.
   }
 }
 
@@ -421,11 +369,7 @@ function loadIprHandoffFromBrowser(): {
   error: string | null;
 } {
   if (typeof window === "undefined") {
-    return {
-      handoff: null,
-      source: "none",
-      error: null
-    };
+    return { handoff: null, source: "none", error: null };
   }
 
   try {
@@ -438,21 +382,21 @@ function loadIprHandoffFromBrowser(): {
 
       const parsed = parseJsonCandidate(raw);
 
-      if (parsed) {
-        persistHandoff(parsed);
-        stripHandoffQueryParams();
-
+      if (!parsed) {
         return {
-          handoff: parsed,
+          handoff: null,
           source: "url",
-          error: null
+          error: `Invalid IPR handoff in URL parameter: ${key}`
         };
       }
 
+      persistHandoff(parsed);
+      stripHandoffQueryParams();
+
       return {
-        handoff: null,
+        handoff: parsed,
         source: "url",
-        error: `Invalid IPR handoff in URL parameter: ${key}`
+        error: null
       };
     }
 
@@ -480,11 +424,7 @@ function loadIprHandoffFromBrowser(): {
       }
     }
 
-    return {
-      handoff: null,
-      source: "none",
-      error: null
-    };
+    return { handoff: null, source: "none", error: null };
   } catch (error) {
     return {
       handoff: null,
@@ -497,7 +437,7 @@ function loadIprHandoffFromBrowser(): {
 function getHandoffSubjectIpr(handoff: JsonRecord | null): string {
   if (!handoff) return "NOT_VERIFIED";
 
-  return firstText(
+  return first(
     handoff,
     [
       ["subject", "ipr"],
@@ -508,9 +448,13 @@ function getHandoffSubjectIpr(handoff: JsonRecord | null): string {
       ["subject_ipr"],
       ["humanIpr"],
       ["human_ipr"],
+      ["biologicalIpr"],
+      ["biologicalIPR"],
       ["ipr"],
       ["ipr_id"],
-      ["identity", "ipr"]
+      ["identity", "ipr"],
+      ["identity", "humanIpr"],
+      ["biologicalSubject", "ipr"]
     ],
     "NOT_VERIFIED"
   );
@@ -519,7 +463,7 @@ function getHandoffSubjectIpr(handoff: JsonRecord | null): string {
 function getHandoffSubjectName(handoff: JsonRecord | null, ipr: string): string {
   if (!handoff) return "No verified subject";
 
-  const subject = firstText(
+  const subject = first(
     handoff,
     [
       ["subject", "entity"],
@@ -537,7 +481,8 @@ function getHandoffSubjectName(handoff: JsonRecord | null, ipr: string): string 
       ["identity", "full_name"],
       ["entity"],
       ["name"],
-      ["fullName"]
+      ["fullName"],
+      ["biologicalSubject", "name"]
     ],
     "Verified biological subject"
   );
@@ -548,7 +493,7 @@ function getHandoffSubjectName(handoff: JsonRecord | null, ipr: string): string 
 function getHandoffCertificateId(handoff: JsonRecord | null): string {
   if (!handoff) return "NO_CERTIFICATE";
 
-  return firstText(
+  return first(
     handoff,
     [
       ["certificate", "certificate_id"],
@@ -559,7 +504,9 @@ function getHandoffCertificateId(handoff: JsonRecord | null): string {
       ["operational_certificate", "certificate_id"],
       ["verified_subject_certificate_id"],
       ["certificate_id"],
-      ["certificateId"]
+      ["certificateId"],
+      ["certId"],
+      ["biologicalSubject", "certificateId"]
     ],
     "NO_CERTIFICATE"
   );
@@ -568,7 +515,7 @@ function getHandoffCertificateId(handoff: JsonRecord | null): string {
 function getHandoffCertificateStatus(handoff: JsonRecord | null): string {
   if (!handoff) return "MISSING";
 
-  return firstText(
+  return first(
     handoff,
     [
       ["certificate", "certificate_status"],
@@ -579,387 +526,328 @@ function getHandoffCertificateStatus(handoff: JsonRecord | null): string {
       ["operational_certificate", "certificate_status"],
       ["verified_subject_certificate_status"],
       ["certificate_status"],
-      ["certificateStatus"]
+      ["certificateStatus"],
+      ["status"],
+      ["biologicalSubject", "status"]
     ],
     "UNKNOWN"
-  ).toUpperCase();
-}
-
-function getHandoffAccessDecision(handoff: JsonRecord | null): string {
-  if (!handoff) return "PENDING_SERVER_VALIDATION";
-
-  return firstText(
-    handoff,
-    [
-      ["access", "decision"],
-      ["access_decision"],
-      ["accessDecision"],
-      ["verified_subject_access_decision"]
-    ],
-    "PENDING_SERVER_VALIDATION"
   ).toUpperCase();
 }
 
 function getHandoffScope(handoff: JsonRecord | null): string {
   if (!handoff) return "MATRIX_LIMITED";
 
-  const value =
-    readPath(handoff, ["certificate", "certificate_scope"]) ??
-    readPath(handoff, ["certificate", "certificateScope"]) ??
-    readPath(handoff, ["certificate", "scope"]) ??
-    readPath(handoff, ["verified_subject_certificate_scope"]) ??
-    readPath(handoff, ["certificate_scope"]) ??
-    readPath(handoff, ["certificateScope"]) ??
-    readPath(handoff, ["scope"]) ??
-    readPath(handoff, ["accessScope"]);
-
-  if (Array.isArray(value)) {
-    return value.map((item) => safeText(item, "")).filter(Boolean).join(", ");
-  }
-
-  return safeText(value, "MATRIX_LIMITED");
-}
-
-function getAssistantText(payload: ChatApiResponse): string {
-  return normalizeVisibleText(safeText(payload.response || payload.text, "[EMPTY_RESPONSE]"));
-}
-
-function getContinuityRef(payload: ChatApiResponse): string | null {
-  const direct = safeText(payload.continuityRef, "");
-
-  if (direct) return direct;
-
-  const resolved = firstText(
-    payload,
+  return firstJoined(
+    handoff,
     [
-      ["memory", "lastEvt"],
-      ["memory", "currentContinuityRef"],
-      ["semanticMemory", "lastMemoryEvt"],
-      ["governedEvt", "evt"],
-      ["modernEvt", "evt"],
-      ["evt", "evt"],
-      ["event", "evt"]
+      ["certificate", "certificate_scope"],
+      ["certificate", "certificateScope"],
+      ["certificate", "scope"],
+      ["operationalCertificate", "certificate_scope"],
+      ["operationalCertificate", "certificateScope"],
+      ["operational_certificate", "certificate_scope"],
+      ["verified_subject_certificate_scope"],
+      ["certificate_scope"],
+      ["certificateScope"],
+      ["access", "scope"],
+      ["access", "accessScope"],
+      ["accessScope"],
+      ["scope"],
+      ["biologicalSubject", "scope"]
     ],
-    ""
-  );
-
-  return resolved || null;
-}
-
-function getModel(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["engine", "modelUsed"],
-      ["modelUsed"],
-      ["model"],
-      ["runtime", "model"],
-      ["runtime", "modelUsed"],
-      ["provider", "model"],
-      ["models", "defaultModel"]
-    ],
-    "-"
+    "MATRIX_LIMITED"
   );
 }
 
-function getRuntimeIpr(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "IPR-AI-0001";
-
-  return firstText(
-    payload,
-    [
-      ["runtimeIpr"],
-      ["identity", "runtimeIpr"],
-      ["identity", "ipr"],
-      ["runtime", "ipr"],
-      ["runtime", "runtime_ipr"]
-    ],
-    "IPR-AI-0001"
+function getAnswer(payload: JsonRecord): string {
+  return normalizeVisibleText(
+    first(
+      payload,
+      [
+        ["response"],
+        ["text"],
+        ["answer"],
+        ["reply"],
+        ["output"],
+        ["content"],
+        ["message"],
+        ["assistantMessage"],
+        ["assistant", "content"]
+      ],
+      "[EMPTY_RESPONSE]"
+    )
   );
 }
 
-function getHumanIpr(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
+function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus {
+  const source = payload ?? {};
 
-  return firstText(
-    payload,
+  const humanIpr = first(
+    source,
     [
       ["verifiedSubject", "ipr"],
-      ["identity", "humanIpr"],
+      ["biologicalSubject", "humanIpr"],
       ["identity", "verifiedSubject", "ipr"],
-      ["runtime", "verifiedSubject", "ipr"],
-      ["runtime", "verified_subject_ipr"],
-      ["access", "humanIpr"]
-    ],
-    "-"
-  );
-}
-
-function getSubjectName(payload?: ChatApiResponse | null): string {
-  if (!payload) return "-";
-
-  const ipr = getHumanIpr(payload);
-  const subject = firstText(
-    payload,
-    [
-      ["verifiedSubject", "entity"],
-      ["verifiedSubject", "name"],
-      ["identity", "verifiedSubject", "entity"],
-      ["identity", "verified_subject_entity"],
-      ["runtime", "verifiedSubject", "entity"],
-      ["runtime", "verified_subject_entity"]
+      ["identity", "humanIpr"],
+      ["access", "humanIpr"],
+      ["runtime", "humanIpr"]
     ],
     "-"
   );
 
-  return subject === "-" ? "-" : canonicalizeSubjectName(subject, ipr);
-}
+  const subject = canonicalizeSubjectName(
+    first(
+      source,
+      [
+        ["verifiedSubject", "entity"],
+        ["verifiedSubject", "name"],
+        ["biologicalSubject", "name"],
+        ["identity", "verifiedSubject", "entity"],
+        ["identity", "verified_subject_entity"]
+      ],
+      humanIpr === CANONICAL_MANUEL_HUMAN_IPR ? CANONICAL_MANUEL_DISPLAY_NAME : "-"
+    ),
+    humanIpr
+  );
 
-function getMatrixState(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
+  const certificateId = first(
+    source,
     [
-      ["matrix", "state"],
-      ["matrix", "activation"],
-      ["access", "matrixState"],
-      ["identity", "matrixState"],
-      ["memory", "matrixState"],
-      ["runtime", "matrixState"],
-      ["runtime", "matrix_state"],
-      ["governance", "matrixState"]
+      ["verifiedSubject", "certificateId"],
+      ["biologicalSubject", "certificateId"],
+      ["identity", "verifiedSubject", "certificateId"],
+      ["iprHandoff", "verifiedSubject", "certificateId"]
     ],
     "-"
   );
-}
 
-function getMemoryScope(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
+  const certificateStatus = first(
+    source,
     [
-      ["semanticMemory", "scope"],
-      ["memory", "scope"],
-      ["access", "semanticMemoryScope"],
-      ["identity", "semanticMemoryScope"],
-      ["runtime", "memoryScope"],
-      ["runtime", "semanticMemoryScope"],
-      ["runtime", "semantic_memory_scope"]
+      ["verifiedSubject", "certificateStatus"],
+      ["biologicalSubject", "status"],
+      ["identity", "verifiedSubject", "certificateStatus"],
+      ["iprHandoff", "verifiedSubject", "certificateStatus"]
     ],
     "-"
   );
-}
 
-function getMemoryAuthority(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
+  const scope = firstJoined(
+    source,
     [
-      ["semanticMemory", "authority"],
-      ["memory", "authority"],
-      ["runtime", "memoryAuthority"]
+      ["verifiedSubject", "certificateScope"],
+      ["biologicalSubject", "scope"],
+      ["identity", "verifiedSubject", "certificateScope"],
+      ["iprHandoff", "verifiedSubject", "certificateScope"]
     ],
     "-"
   );
-}
 
-function getMemoryPersistenceMode(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["semanticMemory", "persistenceMode"],
-      ["memory", "persistenceMode"],
-      ["runtime", "memoryPersistenceMode"],
-      ["persistence", "activeMode"],
-      ["database", "mode"]
-    ],
-    "-"
-  );
-}
-
-function getEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["continuityRef"],
-      ["governedEvt", "evt"],
-      ["modernEvt", "evt"],
-      ["evt", "evt"],
-      ["event", "evt"],
-      ["runtime", "governedEvt"],
-      ["runtime", "legacyEvt"]
-    ],
-    "-"
-  );
-}
-
-function getCurrentAiEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "UP-EVT-0016-AI";
-
-  return firstText(
-    payload,
-    [
-      ["operationalContext", "sourceEventAi"],
-      ["project", "sourceEventAi"],
-      ["operationalContext", "current_ai_evt"],
-      ["runtime", "operationalContext", "current_ai_evt"],
-      ["identity", "evt"],
-      ["identity", "checkpoint"],
-      ["governedEvt", "operational_context", "current_ai_evt"],
-      ["modernEvt", "operational_context", "current_ai_evt"]
-    ],
-    "UP-EVT-0016-AI"
-  );
-}
-
-function getCurrentHumanEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "UP-EVT-0016";
-
-  return firstText(
-    payload,
-    [
-      ["operationalContext", "sourceEvent"],
-      ["project", "sourceEvent"],
-      ["operationalContext", "current_evt"],
-      ["runtime", "operationalContext", "current_evt"],
-      ["governedEvt", "operational_context", "current_evt"],
-      ["modernEvt", "operational_context", "current_evt"]
-    ],
-    "UP-EVT-0016"
-  );
-}
-
-function getOpcProof(payload?: ChatApiResponse | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["opc", "publicProof", "proofId"],
-      ["opc", "record", "proofId"],
-      ["opc", "proofId"],
-      ["opcProof", "proofId"],
-      ["proof", "proofId"],
-      ["runtime", "opcProofId"]
-    ],
-    "-"
-  );
-}
-
-function getChainHash(payload?: ChatApiResponse | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["opc", "publicProof", "chainHash"],
-      ["opc", "record", "proof", "chainHash"],
-      ["opc", "chainHash"],
-      ["opcProof", "chainHash"],
-      ["proof", "chainHash"],
-      ["runtime", "opcChainHash"]
-    ],
-    "-"
-  );
-}
-
-function getLegalCertification(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "false";
-
-  return firstText(
-    payload,
-    [
-      ["boundary", "legalCertification"],
-      ["opcProof", "legalCertification"],
-      ["proof", "legalCertification"],
-      ["runtime", "legalCertification"]
-    ],
-    "false"
-  );
-}
-
-function getProjectDomain(payload?: ChatApiResponse | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["governance", "projectDomain"],
-      ["projectDomain"],
-      ["runtime", "projectDomain"],
-      ["opc", "publicProof", "projectDomain"]
-    ],
-    "-"
-  );
-}
-
-function getHbceModule(payload?: ChatApiResponse | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["governance", "hbceModule"],
-      ["hbceModule"],
-      ["runtime", "hbceModule"],
-      ["opc", "publicProof", "hbceModule"]
-    ],
-    "-"
-  );
-}
-
-function getLastMemoryEvt(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["semanticMemory", "lastMemoryEvt"],
-      ["memory", "lastEvt"],
-      ["memory", "currentContinuityRef"],
-      ["runtime", "memoryLastEvt"]
-    ],
-    "-"
-  );
-}
-
-function getLastMemoryOpc(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["semanticMemory", "lastMemoryOpcProofId"],
-      ["memory", "lastOpcProofId"],
-      ["runtime", "memoryLastOpcProofId"]
-    ],
-    "-"
-  );
-}
-
-function getMemoryHash(payload?: ChatApiResponse | RuntimeHealth | null): string {
-  if (!payload) return "-";
-
-  return firstText(
-    payload,
-    [
-      ["semanticMemory", "memoryHash"],
-      ["memory", "memoryHash"],
-      ["runtime", "memoryHash"],
-      ["opc", "publicProof", "memoryHash"],
-      ["proof", "memoryHash"]
-    ],
-    "-"
-  );
+  return {
+    model: first(
+      source,
+      [
+        ["engine", "modelUsed"],
+        ["runtime", "model"],
+        ["runtime", "modelUsed"],
+        ["model"],
+        ["provider", "model"],
+        ["models", "defaultModel"]
+      ],
+      "-"
+    ),
+    runtimeIpr: first(
+      source,
+      [
+        ["runtime", "ipr"],
+        ["runtimeIpr"],
+        ["identity", "runtimeIpr"],
+        ["identity", "ipr"]
+      ],
+      "IPR-AI-0001"
+    ),
+    humanIpr,
+    subject,
+    certificateId,
+    certificateStatus,
+    scope,
+    accessDecision: first(
+      source,
+      [
+        ["access", "decision"],
+        ["biologicalSubject", "accessDecision"],
+        ["identity", "verifiedSubjectAccessDecision"]
+      ],
+      "-"
+    ),
+    identityBinding: first(
+      source,
+      [
+        ["access", "identityBinding"],
+        ["biologicalSubject", "identityBinding"],
+        ["identity", "identityBinding"]
+      ],
+      "-"
+    ),
+    matrix: first(
+      source,
+      [
+        ["access", "matrixState"],
+        ["matrix", "state"],
+        ["runtime", "matrix"],
+        ["identity", "matrixState"]
+      ],
+      "-"
+    ),
+    memory: first(
+      source,
+      [
+        ["access", "semanticMemoryScope"],
+        ["memory", "scope"],
+        ["semanticMemory", "scope"],
+        ["runtime", "memory"],
+        ["runtime", "memoryScope"]
+      ],
+      "-"
+    ),
+    authority: first(
+      source,
+      [
+        ["memory", "authority"],
+        ["semanticMemory", "authority"],
+        ["runtime", "authority"],
+        ["runtime", "memoryAuthority"]
+      ],
+      "-"
+    ),
+    persistence: first(
+      source,
+      [
+        ["memory", "persistenceMode"],
+        ["semanticMemory", "persistenceMode"],
+        ["runtime", "mode"],
+        ["runtime", "memoryPersistenceMode"],
+        ["persistence", "activeMode"],
+        ["database", "mode"]
+      ],
+      "-"
+    ),
+    aiEvt: first(
+      source,
+      [
+        ["runtime", "aiEvt"],
+        ["identity", "evt"],
+        ["identity", "checkpoint"],
+        ["operationalContext", "current_ai_evt"],
+        ["project", "sourceEventAi"]
+      ],
+      "EVT-0016-AI"
+    ),
+    responseEvt: first(
+      source,
+      [
+        ["runtime", "responseEvt"],
+        ["runtime", "responseEvtId"],
+        ["responseEvt"],
+        ["responseEvtId"],
+        ["evtId"],
+        ["currentEvt"],
+        ["continuity", "currentEvt"],
+        ["continuityRef"],
+        ["evt", "id"],
+        ["evt", "evt"],
+        ["event", "id"],
+        ["event", "evt"],
+        ["modernEvt", "id"],
+        ["modernEvt", "evt"],
+        ["governedEvt", "id"],
+        ["governedEvt", "evt"]
+      ],
+      "-"
+    ),
+    opc: first(
+      source,
+      [
+        ["runtime", "opc"],
+        ["runtime", "opcId"],
+        ["currentOpc"],
+        ["opcId"],
+        ["continuity", "currentOpc"],
+        ["opc", "id"],
+        ["opc", "proofId"],
+        ["opc", "publicProof", "proofId"],
+        ["opc", "record", "proofId"],
+        ["opcProof", "id"],
+        ["opcProof", "proofId"],
+        ["proof", "id"],
+        ["proof", "proofId"]
+      ],
+      "-"
+    ),
+    chainHash: first(
+      source,
+      [
+        ["continuity", "chainHash"],
+        ["opc", "publicProof", "chainHash"],
+        ["opc", "record", "chainHash"],
+        ["opc", "chainHash"],
+        ["opcProof", "chainHash"],
+        ["proof", "chainHash"]
+      ],
+      "-"
+    ),
+    lastMemoryEvt: first(
+      source,
+      [
+        ["memory", "lastEvtId"],
+        ["memory", "lastEvt"],
+        ["memory", "currentContinuityRef"],
+        ["semanticMemory", "lastMemoryEvt"],
+        ["runtime", "memoryLastEvt"]
+      ],
+      "-"
+    ),
+    lastMemoryOpc: first(
+      source,
+      [
+        ["memory", "lastOpcId"],
+        ["memory", "lastOpcProofId"],
+        ["semanticMemory", "lastMemoryOpcProofId"],
+        ["runtime", "memoryLastOpcProofId"]
+      ],
+      "-"
+    ),
+    legalCertification: first(
+      source,
+      [
+        ["boundary", "legalCertification"],
+        ["opcProof", "legalCertification"],
+        ["proof", "legalCertification"],
+        ["opc", "publicProof", "legalCertification"],
+        ["runtime", "legalCertification"]
+      ],
+      "false"
+    ),
+    database: first(
+      source,
+      [
+        ["database", "mode"],
+        ["database", "targetPersistence"],
+        ["persistence", "activeMode"],
+        ["memory", "persistenceMode"]
+      ],
+      "UNKNOWN"
+    ),
+    openAI: first(
+      source,
+      [
+        ["provider", "configured"],
+        ["openAIConfigured"],
+        ["openaiConfigured"]
+      ],
+      "UNKNOWN"
+    )
+  };
 }
 
 function getStatusClass(value: string): string {
@@ -967,14 +855,16 @@ function getStatusClass(value: string): string {
 
   if (
     normalized.includes("OK") ||
+    normalized.includes("ONLINE") ||
     normalized.includes("ACTIVE") ||
     normalized.includes("GRANTED") ||
     normalized.includes("IPR_BOUND") ||
     normalized.includes("VALIDATED") ||
     normalized.includes("OPERATIONAL") ||
-    normalized.includes("PASS") ||
+    normalized.includes("COMPLETED") ||
     normalized.includes("DATABASE_PERSISTENT") ||
-    normalized.includes("CONFIGURED")
+    normalized.includes("CONFIGURED") ||
+    normalized.includes("TRUE")
   ) {
     return "is-good";
   }
@@ -986,7 +876,9 @@ function getStatusClass(value: string): string {
     normalized.includes("RUNTIME_ONLY") ||
     normalized.includes("MVP") ||
     normalized.includes("SERVER_VALIDATION_REQUIRED") ||
-    normalized.includes("NOT_VERIFIED")
+    normalized.includes("NOT_VERIFIED") ||
+    normalized.includes("UNKNOWN") ||
+    normalized === "-"
   ) {
     return "is-warn";
   }
@@ -1005,241 +897,37 @@ function getStatusClass(value: string): string {
   return "";
 }
 
-function inferMimeTypeFromFileName(fileName: string): string {
-  const lower = fileName.toLowerCase();
-
-  if (lower.endsWith(".json")) return "application/json";
-  if (lower.endsWith(".md") || lower.endsWith(".markdown")) return "text/markdown";
-  if (lower.endsWith(".csv")) return "text/csv";
-  if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html";
-  if (lower.endsWith(".css")) return "text/css";
-  if (lower.endsWith(".js") || lower.endsWith(".mjs")) return "text/javascript";
-  if (lower.endsWith(".ts") || lower.endsWith(".tsx")) return "application/typescript";
-  if (lower.endsWith(".txt")) return "text/plain";
-  if (lower.endsWith(".xml")) return "application/xml";
-  if (lower.endsWith(".yaml") || lower.endsWith(".yml")) return "application/yaml";
-  if (lower.endsWith(".pdf")) return "application/pdf";
-  if (lower.endsWith(".png")) return "image/png";
-  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
-  if (lower.endsWith(".webp")) return "image/webp";
-  if (lower.endsWith(".gif")) return "image/gif";
-
-  return "application/octet-stream";
-}
-
-function resolveFileMimeType(file: File): string {
-  return file.type || inferMimeTypeFromFileName(file.name);
-}
-
-function resolveRuntimeFileKind(file: File): RuntimeFileKind {
-  const type = resolveFileMimeType(file);
-
-  if (type.startsWith("text/") || TEXT_FILE_TYPES.has(type)) return "text";
-  if (type.startsWith("image/") || IMAGE_FILE_TYPES.has(type)) return "image";
-  if (type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) return "pdf";
-
-  return "binary";
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onerror = () => reject(new Error("FILE_DATA_URL_READ_FAILED"));
-
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-        return;
-      }
-
-      reject(new Error("FILE_DATA_URL_EMPTY_RESULT"));
-    };
-
-    reader.readAsDataURL(file);
-  });
-}
-
-function extractBase64FromDataUrl(dataUrl: string): string {
-  const [, base64 = ""] = dataUrl.split(",", 2);
-
-  return base64;
-}
-
-function buildFileContentManifest(input: {
-  file: File;
-  kind: RuntimeFileKind;
-  type: string;
-  textLength?: number;
-  base64Length?: number;
-}): string {
-  return [
-    `FILE_NAME=${input.file.name}`,
-    `FILE_KIND=${input.kind}`,
-    `MIME_TYPE=${input.type}`,
-    `SIZE_BYTES=${input.file.size}`,
-    `TEXT_LENGTH=${input.textLength ?? 0}`,
-    `BASE64_LENGTH=${input.base64Length ?? 0}`,
-    input.kind === "image"
-      ? "MULTIMODAL_STATUS=IMAGE_READY_FOR_SERVER_SIDE_OPENAI_VISION"
-      : input.kind === "pdf"
-        ? "MULTIMODAL_STATUS=PDF_READY_FOR_SERVER_SIDE_EXTRACTION_OR_MODEL_FILE_HANDLING"
-        : input.kind === "text"
-          ? "MULTIMODAL_STATUS=TEXT_EXTRACTED_IN_BROWSER"
-          : "MULTIMODAL_STATUS=REFERENCE_ONLY_UNSUPPORTED_BINARY"
-  ].join("\n");
-}
-
-async function readRuntimeFile(file: File): Promise<RuntimeFile> {
-  const type = resolveFileMimeType(file);
-  const kind = resolveRuntimeFileKind(file);
-
-  if (kind === "text") {
-    const text = await file.text();
-
-    return {
-      id: buildId("FILE"),
-      name: file.name,
-      type,
-      mimeType: type,
-      size: file.size,
-      kind,
-      text,
-      content: text,
-      role: "context",
-      uploaded: true
-    };
-  }
-
-  if (kind === "image" || kind === "pdf") {
-    const dataUrl = await readFileAsDataUrl(file);
-    const base64 = extractBase64FromDataUrl(dataUrl);
-    const manifest = buildFileContentManifest({
-      file,
-      kind,
-      type,
-      base64Length: base64.length
-    });
-
-    return {
-      id: buildId("FILE"),
-      name: file.name,
-      type,
-      mimeType: type,
-      size: file.size,
-      kind,
-      text: manifest,
-      content: manifest,
-      dataUrl,
-      base64,
-      role: "context",
-      uploaded: true
-    };
-  }
-
-  const manifest = buildFileContentManifest({
-    file,
-    kind,
-    type
-  });
-
-  return {
-    id: buildId("FILE"),
-    name: file.name,
-    type,
-    mimeType: type,
-    size: file.size,
-    kind,
-    text: manifest,
-    content: manifest,
-    role: "reference_only",
-    uploaded: true
-  };
-}
-
-function formatFileSize(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes <= 0) {
-    return "0 B";
-  }
-
-  const units = ["B", "KB", "MB", "GB"];
-  const index = Math.min(
-    Math.floor(Math.log(bytes) / Math.log(1024)),
-    units.length - 1
-  );
-
-  const value = bytes / 1024 ** index;
-
-  return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
-}
-
-async function readJsonResponse<T>(response: Response): Promise<T> {
-  const raw = await response.text();
-
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    throw new Error(raw || `HTTP_${response.status}`);
-  }
-}
-
-function StatusPill({
-  label,
-  value
-}: {
-  label?: string;
-  value: string;
-}) {
+function StatusPill({ label, value }: { label?: string; value: string }) {
   const visibleValue = normalizeVisibleText(value);
 
   return (
     <span
-      className={["joker-pill", getStatusClass(visibleValue)]
-        .filter(Boolean)
-        .join(" ")}
+      className={["joker-pill", getStatusClass(visibleValue)].filter(Boolean).join(" ")}
       title={visibleValue}
       translate="no"
     >
-      {label ? (
-        <b className="notranslate" translate="no">
-          {label}
-        </b>
-      ) : null}
-      <span className="notranslate" translate="no">
-        {compact(visibleValue)}
-      </span>
+      {label ? <b>{label}</b> : null}
+      <span>{compact(visibleValue)}</span>
     </span>
   );
 }
 
-function MetricCard({
-  label,
-  value
-}: {
-  label: string;
-  value: string;
-}) {
+function MetricCard({ label, value }: { label: string; value: string }) {
   const visibleValue = normalizeVisibleText(value);
 
   return (
     <div
-      className={["joker-metric", getStatusClass(visibleValue)]
-        .filter(Boolean)
-        .join(" ")}
+      className={["joker-metric", getStatusClass(visibleValue)].filter(Boolean).join(" ")}
       title={visibleValue}
       translate="no"
     >
-      <span className="notranslate" translate="no">
-        {label}
-      </span>
-      <strong className="notranslate" translate="no">
-        {compact(visibleValue)}
-      </strong>
+      <span>{label}</span>
+      <strong>{compact(visibleValue, 54)}</strong>
     </div>
   );
 }
 
-function InfoList({ items }: { items: InfoItem[] }) {
+function InfoList({ items }: { items: Array<{ label: string; value: string }> }) {
   return (
     <dl className="joker-info-list">
       {items.map((item) => {
@@ -1253,12 +941,8 @@ function InfoList({ items }: { items: InfoItem[] }) {
               .join(" ")}
             translate="no"
           >
-            <dt className="notranslate" translate="no">
-              {item.label}
-            </dt>
-            <dd className="notranslate" translate="no" title={visibleValue}>
-              {compact(visibleValue)}
-            </dd>
+            <dt>{item.label}</dt>
+            <dd title={visibleValue}>{compact(visibleValue, 60)}</dd>
           </div>
         );
       })}
@@ -1276,75 +960,52 @@ function MessageBubble({
   const isUser = message.role === "user";
   const isSystem = message.role === "system";
   const isAssistant = message.role === "assistant";
-
+  const status = getRuntimeStatus(message.raw ?? null);
   const visibleContent = normalizeVisibleText(message.content);
-  const raw = message.raw ?? null;
-
-  const verifiedSubjectName = raw ? getSubjectName(raw) : "-";
-  const verifiedSubjectIpr = raw ? getHumanIpr(raw) : "-";
-  const matrixState = raw ? getMatrixState(raw) : "-";
-  const memoryScope = raw ? getMemoryScope(raw) : "-";
-  const memoryAuthority = raw ? getMemoryAuthority(raw) : "-";
-  const memoryMode = raw ? getMemoryPersistenceMode(raw) : "-";
-  const lastMemoryEvt = raw ? getLastMemoryEvt(raw) : "-";
-  const lastMemoryOpc = raw ? getLastMemoryOpc(raw) : "-";
 
   return (
     <article
       className={[
         "joker-message",
         isUser ? "joker-message-user" : "",
-        isAssistant ? "joker-message-assistant" : "",
-        isSystem ? "joker-message-system" : ""
+        isSystem ? "joker-message-system" : "",
+        isAssistant ? "joker-message-assistant" : ""
       ]
         .filter(Boolean)
         .join(" ")}
       translate="no"
     >
-      <div className="joker-message-avatar notranslate" translate="no">
-        {isUser ? "M" : isSystem ? "!" : JOKER_SIGIL}
-      </div>
+      <div className="joker-message-avatar">{isUser ? "M" : isSystem ? "!" : JOKER_SIGIL}</div>
 
       <div className="joker-message-body">
         <div className="joker-message-head">
           <div>
-            <strong className="notranslate" translate="no">
-              {isUser ? "Manuel" : isSystem ? "System" : "JOKER-C2"}
-            </strong>
-            {isAssistant && raw ? (
-              <span className="notranslate" translate="no">
-                {safeText(message.state, "-")} · {safeText(message.decision, "-")}
+            <strong>{isUser ? "Manuel" : isSystem ? "System" : "JOKER-C2"}</strong>
+            {isAssistant ? (
+              <span>
+                {first(message.raw, [["state"], ["status"]], "-")} ·{" "}
+                {first(message.raw, [["decision"], ["access", "decision"]], "-")}
               </span>
             ) : null}
           </div>
-          <time className="notranslate" translate="no">
-            {message.createdAt}
-          </time>
+          <time>{message.createdAt}</time>
         </div>
 
-        <pre className="joker-message-text notranslate" translate="no">
-          {visibleContent}
-        </pre>
+        <pre className="joker-message-text">{visibleContent}</pre>
 
-        {isAssistant && raw ? (
-          <div className="joker-runtime-strip notranslate" translate="no">
-            <StatusPill label="Model" value={getModel(raw)} />
-            <StatusPill label="Runtime IPR" value={getRuntimeIpr(raw)} />
-            <StatusPill label="AI EVT" value={getCurrentAiEvt(raw)} />
-            <StatusPill label="Response EVT" value={getEvt(raw)} />
-            <StatusPill label="OPC" value={getOpcProof(raw)} />
-            {verifiedSubjectIpr !== "-" ? (
-              <StatusPill label="Human IPR" value={verifiedSubjectIpr} />
-            ) : null}
-            {verifiedSubjectName !== "-" ? (
-              <StatusPill label="Subject" value={verifiedSubjectName} />
-            ) : null}
-            {matrixState !== "-" ? <StatusPill label="MATRIX" value={matrixState} /> : null}
-            {memoryScope !== "-" ? <StatusPill label="Memory" value={memoryScope} /> : null}
-            {memoryAuthority !== "-" ? <StatusPill label="Authority" value={memoryAuthority} /> : null}
-            {memoryMode !== "-" ? <StatusPill label="Mode" value={memoryMode} /> : null}
-            {lastMemoryEvt !== "-" ? <StatusPill label="Last EVT" value={lastMemoryEvt} /> : null}
-            {lastMemoryOpc !== "-" ? <StatusPill label="Last OPC" value={lastMemoryOpc} /> : null}
+        {isAssistant && message.raw ? (
+          <div className="joker-runtime-strip">
+            <StatusPill label="Model" value={status.model} />
+            <StatusPill label="Runtime IPR" value={status.runtimeIpr} />
+            <StatusPill label="AI EVT" value={status.aiEvt} />
+            <StatusPill label="Response EVT" value={status.responseEvt} />
+            <StatusPill label="OPC" value={status.opc} />
+            <StatusPill label="Human IPR" value={status.humanIpr} />
+            <StatusPill label="Subject" value={status.subject} />
+            <StatusPill label="MATRIX" value={status.matrix} />
+            <StatusPill label="Memory" value={status.memory} />
+            <StatusPill label="Authority" value={status.authority} />
+            <StatusPill label="Mode" value={status.persistence} />
           </div>
         ) : null}
 
@@ -1354,34 +1015,29 @@ function MessageBubble({
               Copy response
             </button>
 
-            {raw ? (
+            {message.raw ? (
               <details>
-                <summary className="notranslate" translate="no">
-                  Runtime details
-                </summary>
+                <summary>Runtime details</summary>
 
                 <div className="joker-details-grid">
-                  <MetricCard label="State" value={safeText(message.state, "-")} />
-                  <MetricCard label="Decision" value={safeText(message.decision, "-")} />
-                  <MetricCard label="ProjectDomain" value={getProjectDomain(raw)} />
-                  <MetricCard label="HbceModule" value={getHbceModule(raw)} />
-                  <MetricCard label="Subject" value={verifiedSubjectName} />
-                  <MetricCard label="Human IPR" value={verifiedSubjectIpr} />
-                  <MetricCard label="MATRIX" value={matrixState} />
-                  <MetricCard label="SemanticMemory" value={memoryScope} />
-                  <MetricCard label="MemoryAuthority" value={memoryAuthority} />
-                  <MetricCard label="MemoryMode" value={memoryMode} />
-                  <MetricCard label="MemoryHash" value={getMemoryHash(raw)} />
-                  <MetricCard label="LastMemoryEVT" value={lastMemoryEvt} />
-                  <MetricCard label="LastMemoryOPC" value={lastMemoryOpc} />
-                  <MetricCard label="OPC" value={getOpcProof(raw)} />
-                  <MetricCard label="ChainHash" value={getChainHash(raw)} />
-                  <MetricCard label="legalCertification" value={getLegalCertification(raw)} />
+                  <MetricCard label="Subject" value={status.subject} />
+                  <MetricCard label="Human IPR" value={status.humanIpr} />
+                  <MetricCard label="Certificate" value={status.certificateId} />
+                  <MetricCard label="Certificate status" value={status.certificateStatus} />
+                  <MetricCard label="Scope" value={status.scope} />
+                  <MetricCard label="Access" value={status.accessDecision} />
+                  <MetricCard label="Identity binding" value={status.identityBinding} />
+                  <MetricCard label="MATRIX" value={status.matrix} />
+                  <MetricCard label="Memory" value={status.memory} />
+                  <MetricCard label="Authority" value={status.authority} />
+                  <MetricCard label="Persistence" value={status.persistence} />
+                  <MetricCard label="Response EVT" value={status.responseEvt} />
+                  <MetricCard label="OPC" value={status.opc} />
+                  <MetricCard label="Chain hash" value={status.chainHash} />
+                  <MetricCard label="legalCertification" value={status.legalCertification} />
                 </div>
 
-                <pre className="joker-json notranslate" translate="no">
-                  {safeJson(raw)}
-                </pre>
+                <pre className="joker-json">{safeJson(message.raw)}</pre>
               </details>
             ) : null}
           </div>
@@ -1394,7 +1050,7 @@ function MessageBubble({
 export default function InterfacePage() {
   const [sessionId, setSessionId] = useState("");
   const [message, setMessage] = useState("");
-  const [health, setHealth] = useState<RuntimeHealth | null>(null);
+  const [health, setHealth] = useState<JsonRecord | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [files, setFiles] = useState<RuntimeFile[]>([]);
   const [continuityRef, setContinuityRef] = useState<string | null>(null);
@@ -1403,13 +1059,11 @@ export default function InterfacePage() {
   const [iprHandoffSource, setIprHandoffSource] = useState("none");
   const [iprHandoffError, setIprHandoffError] = useState<string | null>(null);
 
-  const [iprAccountSession, setIprAccountSession] =
-    useState<IprAccountSessionResponse | null>(null);
-  const [iprAccountSessionError, setIprAccountSessionError] =
-    useState<string | null>(null);
+  const [iprSession, setIprSession] = useState<IprSessionResponse | null>(null);
+  const [iprSessionError, setIprSessionError] = useState<string | null>(null);
 
   const [isChecking, setIsChecking] = useState(false);
-  const [isCheckingIprSession, setIsCheckingIprSession] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -1422,31 +1076,63 @@ export default function InterfacePage() {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       const item = messages[index];
 
-      if (item.role === "assistant" && item.raw) {
-        return item.raw;
-      }
+      if (item.role === "assistant" && item.raw) return item.raw;
     }
 
     return null;
   }, [messages]);
 
   const sessionHandoff = useMemo(() => {
-    const reconstructed = iprAccountSession?.reconstructedIprHandoff;
-
-    if (isRecord(reconstructed)) {
-      return reconstructed;
+    if (isRecord(iprSession?.reconstructedIprHandoff)) {
+      return iprSession.reconstructedIprHandoff;
     }
 
-    if (isRecord(iprAccountSession?.accountProfile)) {
-      return iprAccountSession.accountProfile;
+    if (isRecord(iprSession?.accountProfile)) {
+      return iprSession.accountProfile;
     }
 
     return null;
-  }, [iprAccountSession]);
+  }, [iprSession]);
 
-  const effectiveIprHandoff = sessionHandoff || iprHandoff;
-  const effectiveIprHandoffSource = sessionHandoff ? "accountSession" : iprHandoffSource;
-  const hasAccountSession = iprAccountSession?.authenticated === true;
+  const effectiveHandoff = sessionHandoff || iprHandoff;
+  const effectiveHandoffSource = sessionHandoff ? "accountSession" : iprHandoffSource;
+  const hasAccountSession = iprSession?.authenticated === true;
+
+  const dashboardPayload = lastAssistantPayload || health;
+  const dashboardStatus = getRuntimeStatus(dashboardPayload);
+
+  const handoffHumanIpr = getHandoffSubjectIpr(effectiveHandoff);
+  const humanIpr =
+    dashboardStatus.humanIpr !== "-"
+      ? dashboardStatus.humanIpr
+      : hasAccountSession
+        ? text(getPath(iprSession, ["session", "humanIpr"]), CANONICAL_MANUEL_HUMAN_IPR)
+        : handoffHumanIpr;
+
+  const subject =
+    dashboardStatus.subject !== "-"
+      ? dashboardStatus.subject
+      : getHandoffSubjectName(effectiveHandoff, humanIpr);
+
+  const certificateId =
+    dashboardStatus.certificateId !== "-"
+      ? dashboardStatus.certificateId
+      : getHandoffCertificateId(effectiveHandoff);
+
+  const certificateStatus =
+    dashboardStatus.certificateStatus !== "-"
+      ? dashboardStatus.certificateStatus
+      : getHandoffCertificateStatus(effectiveHandoff);
+
+  const scope =
+    dashboardStatus.scope !== "-"
+      ? dashboardStatus.scope
+      : getHandoffScope(effectiveHandoff);
+
+  const accessDecision =
+    dashboardStatus.accessDecision !== "-"
+      ? dashboardStatus.accessDecision
+      : first(iprSession, [["access", "decision"]], "PENDING_SERVER_VALIDATION");
 
   useEffect(() => {
     const stored =
@@ -1463,7 +1149,7 @@ export default function InterfacePage() {
     }
 
     refreshIprHandoff();
-    void checkIprAccountSession();
+    void checkIprSession();
     void checkRuntime();
   }, []);
 
@@ -1490,7 +1176,7 @@ export default function InterfacePage() {
 
   async function refreshIdentityContext() {
     refreshIprHandoff();
-    await checkIprAccountSession();
+    await checkIprSession();
   }
 
   function clearIprHandoff() {
@@ -1501,9 +1187,9 @@ export default function InterfacePage() {
     setIprHandoffError(null);
   }
 
-  async function checkIprAccountSession() {
-    setIsCheckingIprSession(true);
-    setIprAccountSessionError(null);
+  async function checkIprSession() {
+    setIsCheckingSession(true);
+    setIprSessionError(null);
 
     try {
       const response = await fetch("/api/auth/session", {
@@ -1515,23 +1201,22 @@ export default function InterfacePage() {
         }
       });
 
-      const payload = await readJsonResponse<IprAccountSessionResponse>(response);
+      const payload = await readJsonResponse<IprSessionResponse>(response);
 
-      setIprAccountSession(payload);
+      setIprSession(payload);
 
       if (!response.ok || payload.authenticated !== true) {
-        setIprAccountSessionError(
+        setIprSessionError(
           payload.reason || payload.detail || payload.error || `HTTP_${response.status}`
         );
-        return;
       }
     } catch (err) {
-      setIprAccountSession(null);
-      setIprAccountSessionError(
+      setIprSession(null);
+      setIprSessionError(
         err instanceof Error ? err.message : "IPR_ACCOUNT_SESSION_CHECK_FAILED"
       );
     } finally {
-      setIsCheckingIprSession(false);
+      setIsCheckingSession(false);
     }
   }
 
@@ -1549,10 +1234,10 @@ export default function InterfacePage() {
         }
       });
 
-      const payload = await readJsonResponse<RuntimeHealth>(response);
+      const payload = await readJsonResponse<JsonRecord>(response);
 
       if (!response.ok || payload.ok === false) {
-        throw new Error(payload.error || `HTTP_${response.status}`);
+        throw new Error(text(payload.error, `HTTP_${response.status}`));
       }
 
       setHealth(payload);
@@ -1608,7 +1293,7 @@ export default function InterfacePage() {
     }
 
     refreshIprHandoff();
-    void checkIprAccountSession();
+    void checkIprSession();
   }
 
   async function copyText(content: string) {
@@ -1661,61 +1346,66 @@ export default function InterfacePage() {
           sessionId,
           continuityRef,
           files,
-          iprHandoff: effectiveIprHandoff,
+          iprHandoff: effectiveHandoff,
           iprAccountSession:
-            iprAccountSession?.authenticated === true
+            iprSession?.authenticated === true
               ? {
                   source: "IPR_ACCOUNT_SESSION",
-                  session: iprAccountSession.session,
-                  accountProfile: iprAccountSession.accountProfile,
-                  reconstructedIprHandoff: iprAccountSession.reconstructedIprHandoff,
-                  access: iprAccountSession.access,
-                  memory: iprAccountSession.memory,
-                  matrix: iprAccountSession.matrix,
+                  session: iprSession.session,
+                  accountProfile: iprSession.accountProfile,
+                  reconstructedIprHandoff: iprSession.reconstructedIprHandoff,
+                  access: iprSession.access,
+                  memory: iprSession.memory,
+                  matrix: iprSession.matrix,
                   legalCertification: false
                 }
               : null
         })
       });
 
-      const payload = await readJsonResponse<ChatApiResponse>(response);
-
-      if (!response.ok || payload.ok === false) {
-        const errorText =
-          payload.error ||
-          payload.response ||
-          payload.text ||
-          `Runtime request failed with HTTP_${response.status}`;
-
-        throw new Error(errorText);
-      }
-
-      const nextContinuityRef = getContinuityRef(payload);
+      const payload = await readJsonResponse<JsonRecord>(response);
+      const answer = getAnswer(payload);
+      const nextContinuityRef =
+        first(
+          payload,
+          [
+            ["continuity", "currentEvt"],
+            ["continuityRef"],
+            ["responseEvt"],
+            ["responseEvtId"],
+            ["evt", "id"],
+            ["evt", "evt"],
+            ["event", "id"],
+            ["governedEvt", "id"],
+            ["modernEvt", "id"]
+          ],
+          ""
+        ) || null;
 
       if (nextContinuityRef) {
         setContinuityRef(nextContinuityRef);
       }
 
+      if (!response.ok && !answer) {
+        throw new Error(text(payload.error, `HTTP_${response.status}`));
+      }
+
       const assistantMessage: ChatMessage = {
         id: buildId("MSG-A"),
         role: "assistant",
-        content: getAssistantText(payload),
+        content: answer || text(payload.error, `Runtime request failed with HTTP_${response.status}`),
         createdAt: new Date().toLocaleString("it-IT"),
-        state: safeText(payload.state, "-"),
-        decision: safeText(payload.decision, "-"),
-        continuityRef: nextContinuityRef,
         raw: payload
       };
 
       setMessages((current) => [...current, assistantMessage]);
 
-      void checkIprAccountSession();
+      void checkIprSession();
       void checkRuntime();
     } catch (err) {
       const errorText = err instanceof Error ? err.message : "CHAT_REQUEST_FAILED";
 
       setError(errorText);
-
       setMessages((current) => [
         ...current,
         {
@@ -1742,132 +1432,53 @@ export default function InterfacePage() {
     }
   }
 
-  const dashboardPayload = lastAssistantPayload || health;
-
-  const humanIprLabel =
-    getHumanIpr(lastAssistantPayload) !== "-"
-      ? getHumanIpr(lastAssistantPayload)
-      : hasAccountSession
-        ? safeText(iprAccountSession?.session?.humanIpr, CANONICAL_MANUEL_HUMAN_IPR)
-        : getHandoffSubjectIpr(effectiveIprHandoff);
-
-  const subjectLabel =
-    getSubjectName(lastAssistantPayload) !== "-"
-      ? getSubjectName(lastAssistantPayload)
-      : getHandoffSubjectName(effectiveIprHandoff, humanIprLabel);
-
-  const accessDecision =
-    firstText(lastAssistantPayload, [["access", "decision"], ["identity", "accessDecision"]], "") ||
-    safeText(iprAccountSession?.access?.decision, "") ||
-    getHandoffAccessDecision(effectiveIprHandoff);
-
-  const certificateStatus = getHandoffCertificateStatus(effectiveIprHandoff);
-  const certificateId = getHandoffCertificateId(effectiveIprHandoff);
-  const scope = getHandoffScope(effectiveIprHandoff);
-
-  const runtimeState = safeText(health?.state, "CHECKING");
-  const runtimeModel = getModel(dashboardPayload);
-  const runtimeIpr = getRuntimeIpr(dashboardPayload);
-  const runtimeMatrixState =
-    getMatrixState(lastAssistantPayload) !== "-"
-      ? getMatrixState(lastAssistantPayload)
-      : safeText(iprAccountSession?.matrix?.expectedState, safeText(health?.matrix?.state, "MATRIX_LIMITED"));
-
-  const runtimeMemoryScope =
-    getMemoryScope(lastAssistantPayload) !== "-"
-      ? getMemoryScope(lastAssistantPayload)
-      : safeText(iprAccountSession?.memory?.expectedScope, safeText(health?.memory?.scope, "RUNTIME_ONLY"));
-
-  const runtimeMemoryAuthority =
-    getMemoryAuthority(lastAssistantPayload) !== "-"
-      ? getMemoryAuthority(lastAssistantPayload)
-      : safeText(iprAccountSession?.memory?.expectedAuthority, safeText(health?.memory?.authority, "RUNTIME_HEALTH_CHECK"));
-
-  const runtimeMemoryMode =
-    getMemoryPersistenceMode(lastAssistantPayload) !== "-"
-      ? getMemoryPersistenceMode(lastAssistantPayload)
-      : safeText(iprAccountSession?.memory?.persistenceMode, safeText(health?.persistence?.activeMode, "PROCESS_MEMORY_MVP"));
-
-  const runtimeHumanEvt = getCurrentHumanEvt(dashboardPayload);
-  const runtimeAiEvt = getCurrentAiEvt(dashboardPayload);
-  const runtimeResponseEvt = getEvt(lastAssistantPayload) === "-" ? "none" : getEvt(lastAssistantPayload);
-  const runtimeOpcProof = getOpcProof(lastAssistantPayload) === "-" ? "none" : getOpcProof(lastAssistantPayload);
-  const runtimeOpcChainHash = getChainHash(lastAssistantPayload) === "-" ? "none" : getChainHash(lastAssistantPayload);
-  const runtimeLegalCertification = getLegalCertification(lastAssistantPayload || health);
-  const runtimeLastMemoryEvt =
-    getLastMemoryEvt(lastAssistantPayload) === "-" ? "none" : getLastMemoryEvt(lastAssistantPayload);
-  const runtimeLastMemoryOpc =
-    getLastMemoryOpc(lastAssistantPayload) === "-" ? "none" : getLastMemoryOpc(lastAssistantPayload);
-  const runtimeMemoryHash =
-    getMemoryHash(lastAssistantPayload) === "-" ? "none" : getMemoryHash(lastAssistantPayload);
-
-  const databaseMode = safeText(health?.database?.mode, "UNKNOWN");
-  const openAIConfigured = safeText(health?.provider?.configured, "UNKNOWN");
-  const c2DefenseStatus = safeText(health?.c2Defense?.defaultState, "UNKNOWN");
-  const runtimeAuditMode = safeText(health?.runtimeAuditLog?.mode, "UNKNOWN");
-  const modelUsageMode = safeText(health?.modelUsageLog?.mode, "UNKNOWN");
-
-  const identityRows: InfoItem[] = [
-    { label: "Runtime IPR", value: runtimeIpr },
-    { label: "Human IPR", value: humanIprLabel },
+  const identityRows = [
+    { label: "Runtime IPR", value: dashboardStatus.runtimeIpr },
+    { label: "Subject", value: subject },
+    { label: "Human IPR", value: humanIpr },
     { label: "Certificate", value: certificateId },
     { label: "Certificate status", value: certificateStatus },
     { label: "Scope", value: scope },
-    { label: "Source", value: effectiveIprHandoffSource }
+    { label: "Access", value: accessDecision },
+    { label: "Binding", value: dashboardStatus.identityBinding },
+    { label: "Source", value: effectiveHandoffSource }
   ];
 
-  const memoryRows: InfoItem[] = [
-    { label: "MATRIX", value: runtimeMatrixState },
-    { label: "Memory", value: runtimeMemoryScope },
-    { label: "Authority", value: runtimeMemoryAuthority },
-    { label: "Persistence", value: runtimeMemoryMode },
-    { label: "Memory hash", value: runtimeMemoryHash },
-    { label: "Database", value: databaseMode }
+  const memoryRows = [
+    { label: "MATRIX", value: dashboardStatus.matrix },
+    { label: "Memory", value: dashboardStatus.memory },
+    { label: "Authority", value: dashboardStatus.authority },
+    { label: "Persistence", value: dashboardStatus.persistence },
+    { label: "Last EVT", value: dashboardStatus.lastMemoryEvt },
+    { label: "Last OPC", value: dashboardStatus.lastMemoryOpc },
+    { label: "Database", value: dashboardStatus.database }
   ];
 
-  const proofRows: InfoItem[] = [
-    { label: "Human EVT", value: runtimeHumanEvt },
-    { label: "AI EVT", value: runtimeAiEvt },
-    { label: "Response EVT", value: runtimeResponseEvt },
-    { label: "Current OPC", value: runtimeOpcProof },
-    { label: "OPC chain", value: runtimeOpcChainHash },
-    { label: "Last memory EVT", value: runtimeLastMemoryEvt },
-    { label: "Last memory OPC", value: runtimeLastMemoryOpc },
-    { label: "legalCertification", value: runtimeLegalCertification }
-  ];
-
-  const healthRows: InfoItem[] = [
-    { label: "OpenAI", value: openAIConfigured },
-    { label: "Model", value: runtimeModel },
-    { label: "Database", value: databaseMode },
-    { label: "C2 Defense", value: c2DefenseStatus },
-    { label: "Audit log", value: runtimeAuditMode },
-    { label: "Usage log", value: modelUsageMode }
+  const proofRows = [
+    { label: "AI EVT", value: dashboardStatus.aiEvt },
+    { label: "Response EVT", value: dashboardStatus.responseEvt },
+    { label: "OPC", value: dashboardStatus.opc },
+    { label: "Chain hash", value: dashboardStatus.chainHash },
+    { label: "legalCertification", value: dashboardStatus.legalCertification }
   ];
 
   return (
     <main className="joker-page notranslate" lang="it" translate="no">
       <header className="joker-topbar">
         <div className="joker-brand">
-          <div className="joker-logo notranslate" translate="no">
-            {JOKER_SIGIL}
-          </div>
+          <div className="joker-logo">{JOKER_SIGIL}</div>
           <div>
-            <strong className="notranslate" translate="no">
-              AI JOKER-C2
-            </strong>
-            <span className="notranslate" translate="no">
-              HBCE governed AI runtime
-            </span>
+            <strong>AI JOKER-C2</strong>
+            <span>HBCE governed AI runtime</span>
           </div>
         </div>
 
         <div className="joker-health">
-          <StatusPill value={runtimeState} />
-          <StatusPill label="Model" value={runtimeModel} />
-          <StatusPill label="Runtime IPR" value={runtimeIpr} />
-          <StatusPill label="Human IPR" value={humanIprLabel} />
-          <StatusPill label="Memory" value={runtimeMemoryScope} />
+          <StatusPill value={first(health, [["state"], ["status"]], "CHECKING")} />
+          <StatusPill label="Model" value={dashboardStatus.model} />
+          <StatusPill label="Runtime IPR" value={dashboardStatus.runtimeIpr} />
+          <StatusPill label="Human IPR" value={humanIpr} />
+          <StatusPill label="Memory" value={dashboardStatus.memory} />
         </div>
 
         <div className="joker-top-actions">
@@ -1877,9 +1488,9 @@ export default function InterfacePage() {
           <button
             type="button"
             onClick={() => void refreshIdentityContext()}
-            disabled={isCheckingIprSession}
+            disabled={isCheckingSession}
           >
-            {isCheckingIprSession ? "IPR..." : "IPR session"}
+            {isCheckingSession ? "IPR..." : "IPR session"}
           </button>
           <button type="button" onClick={newChat}>
             New chat
@@ -1889,59 +1500,23 @@ export default function InterfacePage() {
 
       <section className="joker-hero">
         <div className="joker-hero-copy">
-          <span className="joker-kicker notranslate" translate="no">
-            HERMETICUM B.C.E. S.r.l.
-          </span>
-          <h1>
-            <span className="notranslate" translate="no">
-              JOKER-C2
-            </span>{" "}
-            dashboard
-          </h1>
+          <span className="joker-kicker">Project HBCE R&D Transfer SaaS</span>
+          <h1>JOKER-C2 dashboard</h1>
           <p>
-            Console operativa per identità{" "}
-            <span className="notranslate" translate="no">
-              IPR
-            </span>
-            , memoria{" "}
-            <span className="notranslate" translate="no">
-              IPR-bound
-            </span>
-            , continuità{" "}
-            <span className="notranslate" translate="no">
-              EVT
-            </span>
-            , ricevute tecniche{" "}
-            <span className="notranslate" translate="no">
-              OPC
-            </span>{" "}
-            e coordinamento{" "}
-            <span className="notranslate" translate="no">
-              MATRIX
-            </span>
-            . Nessuna certificazione legale è implicata:{" "}
-            <code className="notranslate" translate="no">
-              legalCertification=false
-            </code>
-            .
+            Console operativa per transizione da R&D/MVP a SaaS Core v0.1: IPR
+            verificato, accesso governato, memoria IPR-bound, EVT, OPC,
+            dashboard audit, model routing e boundary C2 Defense.
           </p>
-          <div className="joker-origin-note">
-            <strong className="notranslate" translate="no">
-              SaaS Core v0.1
-            </strong>
-            <span className="notranslate" translate="no">
-              Health endpoint: GET /api/health. Chat endpoint: POST /api/chat.
-            </span>
-          </div>
+          <code>legalCertification=false</code>
         </div>
 
         <div className="joker-hero-grid">
-          <MetricCard label="Runtime" value={safeText(health?.runtime, "AI_JOKER-C2")} />
-          <MetricCard label="State" value={runtimeState} />
-          <MetricCard label="Database" value={databaseMode} />
-          <MetricCard label="Human EVT" value={runtimeHumanEvt} />
-          <MetricCard label="AI EVT" value={runtimeAiEvt} />
-          <MetricCard label="C2 Defense" value={c2DefenseStatus} />
+          <MetricCard label="Runtime" value="AI_JOKER-C2" />
+          <MetricCard label="Model" value={dashboardStatus.model} />
+          <MetricCard label="Human IPR" value={humanIpr} />
+          <MetricCard label="MATRIX" value={dashboardStatus.matrix} />
+          <MetricCard label="Response EVT" value={dashboardStatus.responseEvt} />
+          <MetricCard label="OPC" value={dashboardStatus.opc} />
         </div>
       </section>
 
@@ -1949,51 +1524,43 @@ export default function InterfacePage() {
         <div
           className={[
             "joker-panel",
-            effectiveIprHandoff || hasAccountSession ? "is-active" : "",
-            iprHandoffError || iprAccountSessionError ? "is-error" : ""
+            effectiveHandoff || hasAccountSession ? "is-active" : "",
+            iprHandoffError || iprSessionError ? "is-error" : ""
           ]
             .filter(Boolean)
             .join(" ")}
         >
           <div className="joker-panel-head">
             <div>
-              <span className="joker-kicker notranslate" translate="no">
-                HBCE IPR Biological Subject
-              </span>
-              <h2 className="notranslate" translate="no">
-                {subjectLabel}
-              </h2>
+              <span className="joker-kicker">HBCE IPR Biological Subject</span>
+              <h2>{subject}</h2>
             </div>
             <StatusPill value={accessDecision} />
           </div>
 
-          <p className="notranslate" translate="no">
+          <p>
             {hasAccountSession
               ? "Server-side IPR account session detected. Authenticated session has priority over local handoff."
-              : effectiveIprHandoff
+              : effectiveHandoff
                 ? "Client-side IPR handoff detected. Authoritative validation happens during POST /api/chat."
-                : "No biological IPR handoff or IPR account session detected. Runtime remains limited until server-side validation."}
+                : "No biological IPR handoff or account session detected. Runtime remains limited until server-side validation."}
           </p>
 
           <InfoList items={identityRows} />
 
-          {iprAccountSessionError && !hasAccountSession ? (
-            <div className="joker-alert is-warn notranslate" translate="no">
-              IPR account session: {iprAccountSessionError}
-            </div>
+          {iprSessionError && !hasAccountSession ? (
+            <div className="joker-alert is-warn">IPR account session: {iprSessionError}</div>
           ) : null}
 
           {iprHandoffError ? (
-            <div className="joker-alert is-bad notranslate" translate="no">
-              {iprHandoffError}
-            </div>
+            <div className="joker-alert is-bad">{iprHandoffError}</div>
           ) : null}
 
           <div className="joker-panel-actions">
             <button
               type="button"
               onClick={() => void refreshIdentityContext()}
-              disabled={isCheckingIprSession}
+              disabled={isCheckingSession}
             >
               Refresh IPR session
             </button>
@@ -2016,20 +1583,15 @@ export default function InterfacePage() {
         <div className="joker-panel">
           <div className="joker-panel-head">
             <div>
-              <span className="joker-kicker notranslate" translate="no">
-                Runtime memory
-              </span>
-              <h2 className="notranslate" translate="no">
-                IPR-bound continuity
-              </h2>
+              <span className="joker-kicker">Runtime memory</span>
+              <h2>IPR-bound continuity</h2>
             </div>
-            <StatusPill value={runtimeMemoryScope} />
+            <StatusPill value={dashboardStatus.memory} />
           </div>
 
-          <p className="notranslate" translate="no">
+          <p>
             La memoria operativa non autentica da sola il soggetto, non abbassa
-            il rischio, non sostituisce policy review e non disattiva il
-            fail-closed.
+            il rischio e non sostituisce la persistenza database.
           </p>
 
           <InfoList items={memoryRows} />
@@ -2038,61 +1600,29 @@ export default function InterfacePage() {
         <div className="joker-panel">
           <div className="joker-panel-head">
             <div>
-              <span className="joker-kicker notranslate" translate="no">
-                EVT / OPC proof
-              </span>
-              <h2 className="notranslate" translate="no">
-                Audit visibility
-              </h2>
+              <span className="joker-kicker">EVT / OPC proof</span>
+              <h2>Audit visibility</h2>
             </div>
             <StatusPill value="technical proof" />
           </div>
 
-          <p className="notranslate" translate="no">
-            OPC resta una ricevuta tecnica per audit e governance. Non è una
+          <p>
+            OPC è una ricevuta tecnica per audit e governance. Non è una
             certificazione legale, non è timestamp qualificato e non è validazione
             di pubblica autorità.
           </p>
 
           <InfoList items={proofRows} />
         </div>
-
-        <div className="joker-panel joker-panel-wide">
-          <div className="joker-panel-head">
-            <div>
-              <span className="joker-kicker notranslate" translate="no">
-                Runtime health
-              </span>
-              <h2 className="notranslate" translate="no">
-                GET /api/health
-              </h2>
-            </div>
-            <StatusPill value={safeText(health?.status, "UNKNOWN")} />
-          </div>
-
-          <p className="notranslate" translate="no">
-            Questo pannello usa esclusivamente GET /api/health. La chat resta su
-            POST /api/chat. Quindi niente più HTTP_405 per la diagnostica, piccolo
-            miracolo della civiltà.
-          </p>
-
-          <InfoList items={healthRows} />
-        </div>
       </section>
 
       <section className="joker-chat">
         {messages.length === 0 ? (
           <div className="joker-empty">
-            <div className="joker-empty-logo notranslate" translate="no">
-              {JOKER_SIGIL}
-            </div>
-            <span className="joker-kicker notranslate" translate="no">
-              AI JOKER-C2
-            </span>
-            <h2 className="notranslate" translate="no">
-              Runtime ready
-            </h2>
-            <p className="notranslate" translate="no">
+            <div className="joker-empty-logo">{JOKER_SIGIL}</div>
+            <span className="joker-kicker">AI JOKER-C2</span>
+            <h2>Runtime ready</h2>
+            <p>
               Scrivi sotto o usa un prompt rapido. La chat opera nel boundary
               HBCE: IPR, EVT, OPC, MATRIX, memoria IPR-bound, audit e fail-closed.
             </p>
@@ -2127,22 +1657,14 @@ export default function InterfacePage() {
 
             {isSending ? (
               <article className="joker-message joker-message-assistant">
-                <div className="joker-message-avatar notranslate" translate="no">
-                  {JOKER_SIGIL}
-                </div>
+                <div className="joker-message-avatar">{JOKER_SIGIL}</div>
                 <div className="joker-message-body">
                   <div className="joker-message-head">
                     <div>
-                      <strong className="notranslate" translate="no">
-                        JOKER-C2
-                      </strong>
-                      <span className="notranslate" translate="no">
-                        running governed operation
-                      </span>
+                      <strong>JOKER-C2</strong>
+                      <span>running governed operation</span>
                     </div>
-                    <time className="notranslate" translate="no">
-                      processing
-                    </time>
+                    <time>processing</time>
                   </div>
                   <div className="joker-thinking">
                     <span />
@@ -2159,16 +1681,10 @@ export default function InterfacePage() {
       </section>
 
       <section className="joker-composer-shell">
-        {error ? (
-          <div className="joker-alert is-bad composer-alert notranslate" translate="no">
-            {error}
-          </div>
-        ) : null}
+        {error ? <div className="joker-alert is-bad composer-alert">{error}</div> : null}
 
         {copied ? (
-          <div className="joker-alert is-good composer-alert notranslate" translate="no">
-            Response copied.
-          </div>
+          <div className="joker-alert is-good composer-alert">Response copied.</div>
         ) : null}
 
         {files.length > 0 ? (
@@ -2176,19 +1692,14 @@ export default function InterfacePage() {
             {files.map((file) => (
               <div
                 key={file.id}
-                className={["joker-file-chip", `is-${file.kind}`]
-                  .filter(Boolean)
-                  .join(" ")}
+                className={["joker-file-chip", `is-${file.kind}`].join(" ")}
                 title={`${file.name} · ${file.kind} · ${file.mimeType} · ${formatFileSize(file.size)}`}
-                translate="no"
               >
                 {file.kind === "image" && file.dataUrl ? (
                   <img src={file.dataUrl} alt="" className="joker-file-preview" />
                 ) : null}
-                <span className="notranslate" translate="no">
-                  {file.name}
-                </span>
-                <em className="notranslate" translate="no">
+                <span>{file.name}</span>
+                <em>
                   {file.kind} · {formatFileSize(file.size)}
                 </em>
                 <button type="button" onClick={() => removeFile(file.id)}>
@@ -2241,7 +1752,7 @@ export default function InterfacePage() {
           </button>
         </form>
 
-        <div className="joker-footer-line notranslate" translate="no">
+        <div className="joker-footer-line">
           <span>Enter sends · Shift+Enter creates a new line</span>
           <span>
             Session: <span>{sessionId || "initializing"}</span>
@@ -2257,7 +1768,6 @@ export default function InterfacePage() {
           background:
             radial-gradient(circle at 18% -8%, rgba(14, 165, 233, 0.18), transparent 34%),
             radial-gradient(circle at 84% 0%, rgba(99, 102, 241, 0.16), transparent 32%),
-            radial-gradient(circle at 50% 110%, rgba(34, 197, 94, 0.08), transparent 30%),
             linear-gradient(180deg, #020617 0%, #07111f 42%, #0f172a 100%);
           color: #e5edf8;
           font-family:
@@ -2270,10 +1780,6 @@ export default function InterfacePage() {
             sans-serif;
         }
 
-        .notranslate {
-          translate: no;
-        }
-
         .joker-topbar {
           position: sticky;
           top: 0;
@@ -2284,15 +1790,15 @@ export default function InterfacePage() {
           align-items: center;
           padding: 14px 22px;
           border-bottom: 1px solid rgba(71, 85, 105, 0.55);
-          background: rgba(2, 6, 23, 0.82);
+          background: rgba(2, 6, 23, 0.86);
           backdrop-filter: blur(22px);
         }
 
         .joker-brand {
-          min-width: 0;
           display: flex;
           align-items: center;
           gap: 12px;
+          min-width: 0;
         }
 
         .joker-logo,
@@ -2318,13 +1824,6 @@ export default function InterfacePage() {
           line-height: 1;
         }
 
-        .joker-message-avatar {
-          position: sticky;
-          top: 92px;
-          font-size: 20px;
-          line-height: 1;
-        }
-
         .joker-empty-logo {
           width: 76px;
           height: 76px;
@@ -2334,24 +1833,16 @@ export default function InterfacePage() {
 
         .joker-brand strong {
           display: block;
-          min-width: 0;
           color: #ffffff;
           font-size: 15px;
           letter-spacing: 0.02em;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
         }
 
         .joker-brand span {
           display: block;
-          min-width: 0;
           margin-top: 2px;
           color: #94a3b8;
           font-size: 12px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
         }
 
         .joker-health,
@@ -2363,8 +1854,6 @@ export default function InterfacePage() {
           max-width: 100%;
           overflow-x: auto;
           overflow-y: hidden;
-          scrollbar-width: thin;
-          scrollbar-color: rgba(51, 65, 85, 0.9) transparent;
         }
 
         .joker-top-actions,
@@ -2374,7 +1863,6 @@ export default function InterfacePage() {
           gap: 8px;
           align-items: center;
           justify-content: flex-end;
-          min-width: 0;
         }
 
         button {
@@ -2417,9 +1905,7 @@ export default function InterfacePage() {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          min-width: 0;
-          max-width: 240px;
-          flex: 0 1 auto;
+          max-width: 260px;
           padding: 6px 10px;
           border: 1px solid rgba(71, 85, 105, 0.68);
           border-radius: 999px;
@@ -2432,7 +1918,6 @@ export default function InterfacePage() {
         }
 
         .joker-pill b {
-          flex: 0 0 auto;
           color: #64748b;
           font-weight: 900;
           text-transform: uppercase;
@@ -2440,43 +1925,45 @@ export default function InterfacePage() {
         }
 
         .joker-pill span {
-          min-width: 0;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
 
-        .joker-pill.is-good,
-        .joker-metric.is-good,
-        .joker-info-row.is-good {
-          border-color: rgba(34, 197, 94, 0.34);
-          background: rgba(20, 83, 45, 0.22);
-          color: #bbf7d0;
+        .is-good {
+          border-color: rgba(34, 197, 94, 0.34) !important;
+          background: rgba(20, 83, 45, 0.22) !important;
+          color: #bbf7d0 !important;
         }
 
-        .joker-pill.is-warn,
-        .joker-metric.is-warn,
-        .joker-info-row.is-warn {
-          border-color: rgba(251, 191, 36, 0.34);
-          background: rgba(120, 53, 15, 0.18);
-          color: #fde68a;
+        .is-warn {
+          border-color: rgba(251, 191, 36, 0.34) !important;
+          background: rgba(120, 53, 15, 0.18) !important;
+          color: #fde68a !important;
         }
 
-        .joker-pill.is-bad,
-        .joker-metric.is-bad,
-        .joker-info-row.is-bad {
-          border-color: rgba(248, 113, 113, 0.36);
-          background: rgba(127, 29, 29, 0.22);
-          color: #fecaca;
+        .is-bad {
+          border-color: rgba(248, 113, 113, 0.36) !important;
+          background: rgba(127, 29, 29, 0.22) !important;
+          color: #fecaca !important;
         }
 
-        .joker-hero {
+        .joker-hero,
+        .joker-dashboard {
           width: min(1180px, calc(100% - 36px));
           margin: 22px auto 0;
           display: grid;
-          grid-template-columns: minmax(0, 0.95fr) minmax(420px, 1.05fr);
           gap: 16px;
+        }
+
+        .joker-hero {
+          grid-template-columns: minmax(0, 0.95fr) minmax(420px, 1.05fr);
           align-items: stretch;
+        }
+
+        .joker-dashboard {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          margin-top: 16px;
         }
 
         .joker-hero-copy,
@@ -2492,33 +1979,23 @@ export default function InterfacePage() {
         }
 
         .joker-hero-copy {
-          min-width: 0;
           padding: 26px;
         }
 
-        .joker-origin-note {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          min-width: 0;
-          margin-top: 18px;
-          padding: 13px 14px;
-          border: 1px solid rgba(34, 211, 238, 0.22);
-          border-radius: 18px;
-          background: rgba(8, 47, 73, 0.22);
+        .joker-panel {
+          padding: 18px;
+          overflow: hidden;
         }
 
-        .joker-origin-note strong {
-          color: #f8fafc;
-          font-size: 18px;
-          letter-spacing: -0.02em;
+        .joker-panel.is-active {
+          border-color: rgba(34, 211, 238, 0.34);
+          background:
+            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.13), transparent 30%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.55));
         }
 
-        .joker-origin-note span {
-          color: #94a3b8;
-          font-size: 12px;
-          line-height: 1.45;
-          overflow-wrap: anywhere;
+        .joker-panel.is-error {
+          border-color: rgba(248, 113, 113, 0.42);
         }
 
         .joker-kicker {
@@ -2550,51 +2027,28 @@ export default function InterfacePage() {
         }
 
         .joker-hero code {
+          display: inline-flex;
+          margin-top: 18px;
           color: #bae6fd;
           background: rgba(8, 47, 73, 0.48);
           border: 1px solid rgba(34, 211, 238, 0.2);
-          border-radius: 8px;
-          padding: 1px 5px;
+          border-radius: 10px;
+          padding: 6px 8px;
         }
 
         .joker-hero-grid,
         .joker-details-grid {
           display: grid;
           gap: 10px;
-          min-width: 0;
         }
 
         .joker-hero-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        .joker-dashboard {
-          width: min(1180px, calc(100% - 36px));
-          margin: 16px auto 0;
-          display: grid;
+        .joker-details-grid {
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 16px;
-        }
-
-        .joker-panel {
-          min-width: 0;
-          padding: 18px;
-          overflow: hidden;
-        }
-
-        .joker-panel-wide {
-          grid-column: 1 / -1;
-        }
-
-        .joker-panel.is-active {
-          border-color: rgba(34, 211, 238, 0.34);
-          background:
-            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.13), transparent 30%),
-            linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.55));
-        }
-
-        .joker-panel.is-error {
-          border-color: rgba(248, 113, 113, 0.42);
+          margin-top: 12px;
         }
 
         .joker-panel-head {
@@ -2602,11 +2056,6 @@ export default function InterfacePage() {
           align-items: flex-start;
           justify-content: space-between;
           gap: 12px;
-          min-width: 0;
-        }
-
-        .joker-panel-head > div {
-          min-width: 0;
         }
 
         .joker-panel h2 {
@@ -2642,7 +2091,6 @@ export default function InterfacePage() {
 
         .joker-metric strong {
           display: block;
-          min-width: 0;
           margin-top: 8px;
           color: #e2e8f0;
           font-size: 13px;
@@ -2664,7 +2112,6 @@ export default function InterfacePage() {
           display: grid;
           gap: 8px;
           margin: 16px 0 0;
-          min-width: 0;
         }
 
         .joker-info-row {
@@ -2672,7 +2119,6 @@ export default function InterfacePage() {
           grid-template-columns: minmax(112px, 0.42fr) minmax(0, 1fr);
           gap: 12px;
           align-items: start;
-          min-width: 0;
           padding: 10px 11px;
           border: 1px solid rgba(71, 85, 105, 0.5);
           border-radius: 15px;
@@ -2680,7 +2126,6 @@ export default function InterfacePage() {
         }
 
         .joker-info-row dt {
-          min-width: 0;
           color: #64748b;
           font-size: 10px;
           font-weight: 950;
@@ -2690,7 +2135,6 @@ export default function InterfacePage() {
         }
 
         .joker-info-row dd {
-          min-width: 0;
           margin: 0;
           color: #e2e8f0;
           font-size: 12px;
@@ -2717,24 +2161,6 @@ export default function InterfacePage() {
           font-size: 12px;
           line-height: 1.45;
           overflow-wrap: anywhere;
-        }
-
-        .joker-alert.is-good {
-          color: #bbf7d0;
-          border: 1px solid rgba(34, 197, 94, 0.35);
-          background: rgba(20, 83, 45, 0.24);
-        }
-
-        .joker-alert.is-warn {
-          color: #fde68a;
-          border: 1px solid rgba(251, 191, 36, 0.35);
-          background: rgba(120, 53, 15, 0.22);
-        }
-
-        .joker-alert.is-bad {
-          color: #fecaca;
-          border: 1px solid rgba(239, 68, 68, 0.35);
-          background: rgba(127, 29, 29, 0.26);
         }
 
         .joker-panel-actions {
@@ -2843,7 +2269,6 @@ export default function InterfacePage() {
           align-items: flex-start;
           justify-content: space-between;
           gap: 10px;
-          min-width: 0;
           margin-bottom: 10px;
         }
 
@@ -2881,10 +2306,6 @@ export default function InterfacePage() {
           border-top: 1px solid rgba(71, 85, 105, 0.55);
         }
 
-        .joker-runtime-strip .joker-pill {
-          max-width: 260px;
-        }
-
         .joker-message-actions {
           display: flex;
           flex-wrap: wrap;
@@ -2900,7 +2321,6 @@ export default function InterfacePage() {
 
         details {
           width: 100%;
-          min-width: 0;
         }
 
         summary {
@@ -2908,11 +2328,6 @@ export default function InterfacePage() {
           color: #94a3b8;
           font-size: 12px;
           font-weight: 850;
-        }
-
-        .joker-details-grid {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          margin-top: 12px;
         }
 
         .joker-json {
@@ -3007,22 +2422,6 @@ export default function InterfacePage() {
           font-size: 12px;
         }
 
-        .joker-file-chip.is-text {
-          border-color: rgba(34, 197, 94, 0.28);
-        }
-
-        .joker-file-chip.is-image {
-          border-color: rgba(34, 211, 238, 0.34);
-        }
-
-        .joker-file-chip.is-pdf {
-          border-color: rgba(251, 191, 36, 0.34);
-        }
-
-        .joker-file-chip.is-binary {
-          border-color: rgba(248, 113, 113, 0.32);
-        }
-
         .joker-file-chip span {
           max-width: 220px;
           overflow: hidden;
@@ -3054,10 +2453,6 @@ export default function InterfacePage() {
           height: 18px;
           background: rgba(71, 85, 105, 0.72);
           color: #e2e8f0;
-        }
-
-        .joker-clear-files {
-          cursor: pointer;
         }
 
         .joker-composer {
@@ -3122,45 +2517,26 @@ export default function InterfacePage() {
         }
 
         @media (max-width: 1180px) {
-          .joker-topbar {
+          .joker-topbar,
+          .joker-hero,
+          .joker-dashboard {
             grid-template-columns: 1fr;
-            align-items: stretch;
           }
 
           .joker-top-actions {
             justify-content: flex-start;
           }
 
-          .joker-health {
-            justify-content: flex-start;
-          }
-
-          .joker-hero,
-          .joker-dashboard {
-            grid-template-columns: 1fr;
-          }
-
           .joker-hero-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
-
-          .joker-panel-wide {
-            grid-column: auto;
           }
         }
 
         @media (max-width: 860px) {
           .joker-hero-grid,
-          .joker-details-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-
+          .joker-details-grid,
           .joker-prompt-grid {
             grid-template-columns: 1fr;
-          }
-
-          .joker-info-row {
-            grid-template-columns: minmax(104px, 0.4fr) minmax(0, 1fr);
           }
         }
 
@@ -3178,11 +2554,6 @@ export default function InterfacePage() {
           .joker-panel {
             border-radius: 22px;
             padding: 15px;
-          }
-
-          .joker-hero-grid,
-          .joker-details-grid {
-            grid-template-columns: 1fr;
           }
 
           .joker-info-row {
@@ -3208,7 +2579,6 @@ export default function InterfacePage() {
           }
 
           .joker-message-avatar {
-            position: static;
             width: 34px;
             height: 34px;
             border-radius: 13px;
@@ -3230,4 +2600,180 @@ export default function InterfacePage() {
       `}</style>
     </main>
   );
+}
+
+async function readRuntimeFile(file: File): Promise<RuntimeFile> {
+  const type = resolveFileMimeType(file);
+  const kind = resolveRuntimeFileKind(file);
+
+  if (kind === "text") {
+    const content = await file.text();
+
+    return {
+      id: buildId("FILE"),
+      name: file.name,
+      type,
+      mimeType: type,
+      size: file.size,
+      kind,
+      text: content,
+      content,
+      role: "context",
+      uploaded: true
+    };
+  }
+
+  if (kind === "image" || kind === "pdf") {
+    const dataUrl = await readFileAsDataUrl(file);
+    const base64 = extractBase64FromDataUrl(dataUrl);
+    const manifest = buildFileContentManifest({
+      file,
+      kind,
+      type,
+      base64Length: base64.length
+    });
+
+    return {
+      id: buildId("FILE"),
+      name: file.name,
+      type,
+      mimeType: type,
+      size: file.size,
+      kind,
+      text: manifest,
+      content: manifest,
+      dataUrl,
+      base64,
+      role: "context",
+      uploaded: true
+    };
+  }
+
+  const manifest = buildFileContentManifest({ file, kind, type });
+
+  return {
+    id: buildId("FILE"),
+    name: file.name,
+    type,
+    mimeType: type,
+    size: file.size,
+    kind,
+    text: manifest,
+    content: manifest,
+    role: "reference_only",
+    uploaded: true
+  };
+}
+
+function inferMimeTypeFromFileName(fileName: string): string {
+  const lower = fileName.toLowerCase();
+
+  if (lower.endsWith(".json")) return "application/json";
+  if (lower.endsWith(".md") || lower.endsWith(".markdown")) return "text/markdown";
+  if (lower.endsWith(".csv")) return "text/csv";
+  if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html";
+  if (lower.endsWith(".css")) return "text/css";
+  if (lower.endsWith(".js") || lower.endsWith(".mjs")) return "text/javascript";
+  if (lower.endsWith(".ts") || lower.endsWith(".tsx")) return "application/typescript";
+  if (lower.endsWith(".txt")) return "text/plain";
+  if (lower.endsWith(".xml")) return "application/xml";
+  if (lower.endsWith(".yaml") || lower.endsWith(".yml")) return "application/yaml";
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".gif")) return "image/gif";
+
+  return "application/octet-stream";
+}
+
+function resolveFileMimeType(file: File): string {
+  return file.type || inferMimeTypeFromFileName(file.name);
+}
+
+function resolveRuntimeFileKind(file: File): RuntimeFileKind {
+  const type = resolveFileMimeType(file);
+
+  if (type.startsWith("text/") || TEXT_FILE_TYPES.has(type)) return "text";
+  if (type.startsWith("image/") || IMAGE_FILE_TYPES.has(type)) return "image";
+  if (type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) return "pdf";
+
+  return "binary";
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => reject(new Error("FILE_DATA_URL_READ_FAILED"));
+
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error("FILE_DATA_URL_EMPTY_RESULT"));
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+function extractBase64FromDataUrl(dataUrl: string): string {
+  const [, base64 = ""] = dataUrl.split(",", 2);
+
+  return base64;
+}
+
+function buildFileContentManifest(input: {
+  file: File;
+  kind: RuntimeFileKind;
+  type: string;
+  textLength?: number;
+  base64Length?: number;
+}): string {
+  return [
+    `FILE_NAME=${input.file.name}`,
+    `FILE_KIND=${input.kind}`,
+    `MIME_TYPE=${input.type}`,
+    `SIZE_BYTES=${input.file.size}`,
+    `TEXT_LENGTH=${input.textLength ?? 0}`,
+    `BASE64_LENGTH=${input.base64Length ?? 0}`,
+    input.kind === "image"
+      ? "MULTIMODAL_STATUS=IMAGE_READY_FOR_SERVER_SIDE_OPENAI_VISION"
+      : input.kind === "pdf"
+        ? "MULTIMODAL_STATUS=PDF_READY_FOR_SERVER_SIDE_EXTRACTION_OR_MODEL_FILE_HANDLING"
+        : input.kind === "text"
+          ? "MULTIMODAL_STATUS=TEXT_EXTRACTED_IN_BROWSER"
+          : "MULTIMODAL_STATUS=REFERENCE_ONLY_UNSUPPORTED_BINARY"
+  ].join("\n");
+}
+
+function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+
+  const units = ["B", "KB", "MB", "GB"];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** index;
+
+  return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
+async function readJsonResponse<T>(response: Response): Promise<T> {
+  const raw = await response.text();
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    throw new Error(raw || `HTTP_${response.status}`);
+  }
+}
+
+function safeJson(value: unknown): string {
+  try {
+    return JSON.stringify(value ?? null, null, 2);
+  } catch {
+    return String(value);
+  }
 }
