@@ -131,6 +131,30 @@ CREATE TABLE IF NOT EXISTS memory_records (
 `.trim(),
   `
 ALTER TABLE IF EXISTS memory_records
+  DROP CONSTRAINT IF EXISTS memory_records_thread_id_fkey;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  DROP CONSTRAINT IF EXISTS memory_records_tenant_id_fkey;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  DROP CONSTRAINT IF EXISTS memory_records_workspace_id_fkey;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  DROP CONSTRAINT IF EXISTS memory_records_human_ipr_fkey;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  DROP CONSTRAINT IF EXISTS memory_records_runtime_ipr_fkey;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  DROP CONSTRAINT IF EXISTS memory_records_session_id_fkey;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
   ADD COLUMN IF NOT EXISTS memory_id text;
 `.trim(),
   `
@@ -265,6 +289,14 @@ ON memory_records (human_ipr);
   `
 CREATE INDEX IF NOT EXISTS memory_records_runtime_ipr_idx
 ON memory_records (runtime_ipr);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_session_id_idx
+ON memory_records (session_id);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_thread_id_idx
+ON memory_records (thread_id);
 `.trim(),
   `
 CREATE INDEX IF NOT EXISTS memory_records_tenant_workspace_idx
