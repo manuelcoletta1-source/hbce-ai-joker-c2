@@ -279,6 +279,68 @@ function canonicalizeSubjectName(value: string, ipr?: string): string {
   return normalizeVisibleText(value || "-");
 }
 
+function isBlankRuntimeValue(value: string): boolean {
+  const normalized = value.trim().toUpperCase();
+
+  return (
+    !normalized ||
+    normalized === "-" ||
+    normalized === "UNKNOWN" ||
+    normalized === "MISSING" ||
+    normalized === "NO_VALUE"
+  );
+}
+
+function isNegativeRuntimeValue(value: string): boolean {
+  const normalized = value.trim().toUpperCase();
+
+  return (
+    isBlankRuntimeValue(value) ||
+    normalized.includes("NOT_VERIFIED") ||
+    normalized.includes("NO_VERIFIED") ||
+    normalized.includes("NO_CERTIFICATE") ||
+    normalized.includes("SERVER_VALIDATION_REQUIRED") ||
+    normalized.includes("MATRIX_LIMITED") ||
+    normalized.includes("RUNTIME_ONLY") ||
+    normalized.includes("ACCESS_LIMITED") ||
+    normalized.includes("NO_VERIFIED_BIOLOGICAL_SUBJECT")
+  );
+}
+
+function firstUsableRuntimeValue(values: string[], fallback = "-"): string {
+  for (const value of values) {
+    const visible = normalizeVisibleText(value || "");
+
+    if (!isNegativeRuntimeValue(visible)) {
+      return visible;
+    }
+  }
+
+  return fallback;
+}
+
+function firstDisplayValue(values: string[], fallback = "-"): string {
+  for (const value of values) {
+    const visible = normalizeVisibleText(value || "");
+
+    if (!isBlankRuntimeValue(visible)) {
+      return visible;
+    }
+  }
+
+  return fallback;
+}
+
+function isActiveCertificateStatus(value: string): boolean {
+  const normalized = value.toUpperCase();
+
+  return normalized === "ACTIVE" || normalized === "VALID";
+}
+
+function hasJokerC2Scope(value: string): boolean {
+  return value.toUpperCase().includes("JOKER_C2_ACCESS");
+}
+
 function parseJsonCandidate(raw: string): JsonRecord | null {
   const candidates: string[] = [];
 
@@ -467,6 +529,7 @@ function getHandoffSubjectIpr(handoff: JsonRecord | null): string {
       ["verified_subject_ipr"],
       ["subject_ipr"],
       ["humanIpr"],
+      ["humanIPR"],
       ["human_ipr"],
       ["biologicalIpr"],
       ["biologicalIPR"],
@@ -474,9 +537,37 @@ function getHandoffSubjectIpr(handoff: JsonRecord | null): string {
       ["ipr_id"],
       ["identity", "ipr"],
       ["identity", "humanIpr"],
-      ["biologicalSubject", "ipr"]
+      ["identity", "human_ipr"],
+      ["biologicalSubject", "ipr"],
+      ["session", "humanIpr"],
+      ["session", "human_ipr"]
     ],
     "NOT_VERIFIED"
+  );
+}
+
+function getSessionHumanIpr(session: IprSessionResponse | null): string {
+  if (!session) return "";
+
+  return first(
+    session,
+    [
+      ["session", "humanIpr"],
+      ["session", "human_ipr"],
+      ["session", "subjectIpr"],
+      ["session", "subject_ipr"],
+      ["accountProfile", "humanIpr"],
+      ["accountProfile", "human_ipr"],
+      ["accountProfile", "subjectIpr"],
+      ["accountProfile", "subject_ipr"],
+      ["accountProfile", "ipr"],
+      ["reconstructedIprHandoff", "humanIpr"],
+      ["reconstructedIprHandoff", "human_ipr"],
+      ["reconstructedIprHandoff", "subject", "ipr"],
+      ["reconstructedIprHandoff", "verifiedSubject", "ipr"],
+      ["reconstructedIprHandoff", "verified_subject_ipr"]
+    ],
+    ""
   );
 }
 
@@ -510,6 +601,32 @@ function getHandoffSubjectName(handoff: JsonRecord | null, ipr: string): string 
   return canonicalizeSubjectName(subject, ipr);
 }
 
+function getSessionSubjectName(session: IprSessionResponse | null, ipr: string): string {
+  if (!session) return "";
+
+  return canonicalizeSubjectName(
+    first(
+      session,
+      [
+        ["session", "subjectName"],
+        ["session", "subject_name"],
+        ["session", "name"],
+        ["accountProfile", "subjectName"],
+        ["accountProfile", "subject_name"],
+        ["accountProfile", "name"],
+        ["accountProfile", "fullName"],
+        ["reconstructedIprHandoff", "subjectName"],
+        ["reconstructedIprHandoff", "name"],
+        ["reconstructedIprHandoff", "subject", "name"],
+        ["reconstructedIprHandoff", "verifiedSubject", "name"],
+        ["reconstructedIprHandoff", "verified_subject_name"]
+      ],
+      ""
+    ),
+    ipr
+  );
+}
+
 function getHandoffCertificateId(handoff: JsonRecord | null): string {
   if (!handoff) return "NO_CERTIFICATE";
 
@@ -532,6 +649,29 @@ function getHandoffCertificateId(handoff: JsonRecord | null): string {
   );
 }
 
+function getSessionCertificateId(session: IprSessionResponse | null): string {
+  if (!session) return "";
+
+  return first(
+    session,
+    [
+      ["session", "certificateId"],
+      ["session", "certificate_id"],
+      ["accountProfile", "certificateId"],
+      ["accountProfile", "certificate_id"],
+      ["accountProfile", "certificate", "certificateId"],
+      ["accountProfile", "certificate", "certificate_id"],
+      ["reconstructedIprHandoff", "certificateId"],
+      ["reconstructedIprHandoff", "certificate_id"],
+      ["reconstructedIprHandoff", "certificate", "certificateId"],
+      ["reconstructedIprHandoff", "certificate", "certificate_id"],
+      ["reconstructedIprHandoff", "operationalCertificate", "certificateId"],
+      ["reconstructedIprHandoff", "verified_subject_certificate_id"]
+    ],
+    ""
+  );
+}
+
 function getHandoffCertificateStatus(handoff: JsonRecord | null): string {
   if (!handoff) return "MISSING";
 
@@ -551,6 +691,31 @@ function getHandoffCertificateStatus(handoff: JsonRecord | null): string {
       ["biologicalSubject", "status"]
     ],
     "UNKNOWN"
+  ).toUpperCase();
+}
+
+function getSessionCertificateStatus(session: IprSessionResponse | null): string {
+  if (!session) return "";
+
+  return first(
+    session,
+    [
+      ["session", "certificateStatus"],
+      ["session", "certificate_status"],
+      ["session", "status"],
+      ["accountProfile", "certificateStatus"],
+      ["accountProfile", "certificate_status"],
+      ["accountProfile", "status"],
+      ["accountProfile", "certificate", "status"],
+      ["accountProfile", "certificate", "certificateStatus"],
+      ["reconstructedIprHandoff", "certificateStatus"],
+      ["reconstructedIprHandoff", "certificate_status"],
+      ["reconstructedIprHandoff", "status"],
+      ["reconstructedIprHandoff", "certificate", "status"],
+      ["reconstructedIprHandoff", "operationalCertificate", "status"],
+      ["reconstructedIprHandoff", "verified_subject_certificate_status"]
+    ],
+    ""
   ).toUpperCase();
 }
 
@@ -577,6 +742,147 @@ function getHandoffScope(handoff: JsonRecord | null): string {
     ],
     "MATRIX_LIMITED"
   );
+}
+
+function getSessionScope(session: IprSessionResponse | null): string {
+  if (!session) return "";
+
+  return firstJoined(
+    session,
+    [
+      ["session", "scope"],
+      ["session", "accessScope"],
+      ["session", "access_scope"],
+      ["accountProfile", "scope"],
+      ["accountProfile", "accessScope"],
+      ["accountProfile", "certificateScope"],
+      ["accountProfile", "certificate_scope"],
+      ["accountProfile", "certificate", "scope"],
+      ["accountProfile", "certificate", "certificateScope"],
+      ["reconstructedIprHandoff", "scope"],
+      ["reconstructedIprHandoff", "certificateScope"],
+      ["reconstructedIprHandoff", "certificate_scope"],
+      ["reconstructedIprHandoff", "certificate", "scope"],
+      ["reconstructedIprHandoff", "operationalCertificate", "scope"],
+      ["reconstructedIprHandoff", "verified_subject_certificate_scope"],
+      ["access", "scope"],
+      ["access", "accessScope"]
+    ],
+    ""
+  );
+}
+
+function buildEnrichedIprHandoff(input: {
+  base: JsonRecord | null;
+  subject: string;
+  humanIpr: string;
+  certificateId: string;
+  certificateStatus: string;
+  scope: string;
+  accessDecision: string;
+  identityBinding: string;
+}): JsonRecord | null {
+  const hasIdentity =
+    !isNegativeRuntimeValue(input.humanIpr) &&
+    !isNegativeRuntimeValue(input.certificateId) &&
+    isActiveCertificateStatus(input.certificateStatus) &&
+    hasJokerC2Scope(input.scope);
+
+  if (!input.base && !hasIdentity) {
+    return null;
+  }
+
+  const base = isRecord(input.base) ? { ...input.base } : {};
+
+  return {
+    ...base,
+    subjectName: input.subject,
+    name: input.subject,
+    humanIpr: input.humanIpr,
+    humanIPR: input.humanIpr,
+    human_ipr: input.humanIpr,
+    biologicalIpr: input.humanIpr,
+    subjectIpr: input.humanIpr,
+    verified_subject_ipr: input.humanIpr,
+    certificateId: input.certificateId,
+    certificateID: input.certificateId,
+    certificate_id: input.certificateId,
+    verified_subject_certificate_id: input.certificateId,
+    certificateStatus: input.certificateStatus,
+    certificate_status: input.certificateStatus,
+    verified_subject_certificate_status: input.certificateStatus,
+    scope: input.scope,
+    certificateScope: input.scope,
+    certificate_scope: input.scope,
+    verified_subject_certificate_scope: input.scope,
+    accessDecision: hasIdentity ? "ACCESS_GRANTED" : input.accessDecision,
+    access_decision: hasIdentity ? "ACCESS_GRANTED" : input.accessDecision,
+    identityBinding: hasIdentity
+      ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
+      : input.identityBinding,
+    identity_binding: hasIdentity
+      ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
+      : input.identityBinding,
+    subject: {
+      ...(isRecord(base.subject) ? base.subject : {}),
+      entity: input.subject,
+      name: input.subject,
+      ipr: input.humanIpr
+    },
+    verifiedSubject: {
+      ...(isRecord(base.verifiedSubject) ? base.verifiedSubject : {}),
+      entity: input.subject,
+      name: input.subject,
+      ipr: input.humanIpr,
+      certificateId: input.certificateId,
+      certificateStatus: input.certificateStatus,
+      certificateScope: input.scope
+    },
+    biologicalSubject: {
+      ...(isRecord(base.biologicalSubject) ? base.biologicalSubject : {}),
+      entity: input.subject,
+      name: input.subject,
+      ipr: input.humanIpr,
+      humanIpr: input.humanIpr,
+      certificateId: input.certificateId,
+      status: input.certificateStatus,
+      scope: input.scope
+    },
+    certificate: {
+      ...(isRecord(base.certificate) ? base.certificate : {}),
+      id: input.certificateId,
+      certificateId: input.certificateId,
+      certificate_id: input.certificateId,
+      status: input.certificateStatus,
+      certificateStatus: input.certificateStatus,
+      certificate_status: input.certificateStatus,
+      scope: input.scope,
+      certificateScope: input.scope,
+      certificate_scope: input.scope
+    },
+    operationalCertificate: {
+      ...(isRecord(base.operationalCertificate) ? base.operationalCertificate : {}),
+      id: input.certificateId,
+      certificateId: input.certificateId,
+      certificate_id: input.certificateId,
+      status: input.certificateStatus,
+      certificateStatus: input.certificateStatus,
+      certificate_status: input.certificateStatus,
+      scope: input.scope,
+      certificateScope: input.scope,
+      certificate_scope: input.scope
+    },
+    access: {
+      ...(isRecord(base.access) ? base.access : {}),
+      decision: hasIdentity ? "ACCESS_GRANTED" : input.accessDecision,
+      accessDecision: hasIdentity ? "ACCESS_GRANTED" : input.accessDecision,
+      identityBinding: hasIdentity
+        ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
+        : input.identityBinding,
+      scope: input.scope
+    },
+    legalCertification: false
+  };
 }
 
 function getAnswer(payload: JsonRecord): string {
@@ -1059,23 +1365,14 @@ function getStatusClass(value: string): string {
   const normalized = value.toUpperCase();
 
   if (
-    normalized.includes("OK") ||
-    normalized.includes("ONLINE") ||
-    normalized.includes("ACTIVE") ||
-    normalized.includes("GRANTED") ||
-    normalized.includes("IPR_BOUND") ||
-    normalized.includes("VALIDATED") ||
-    normalized.includes("OPERATIONAL") ||
-    normalized.includes("COMPLETED") ||
-    normalized.includes("DATABASE_PERSISTENT") ||
-    normalized.includes("CONFIGURED") ||
-    normalized.includes("PERSISTED") ||
-    normalized.includes("RECORDED") ||
-    normalized.includes("TECHNICAL_PROOF") ||
-    normalized.includes("EVT_OPC") ||
-    normalized.includes("TRUE")
+    normalized.includes("DENIED") ||
+    normalized.includes("ERROR") ||
+    normalized.includes("INVALID") ||
+    normalized.includes("BLOCKED") ||
+    normalized.includes("FAILED") ||
+    normalized.includes("HTTP_405")
   ) {
-    return "is-good";
+    return "is-bad";
   }
 
   if (
@@ -1096,14 +1393,24 @@ function getStatusClass(value: string): string {
   }
 
   if (
-    normalized.includes("DENIED") ||
-    normalized.includes("ERROR") ||
-    normalized.includes("INVALID") ||
-    normalized.includes("BLOCKED") ||
-    normalized.includes("FAILED") ||
-    normalized.includes("HTTP_405")
+    normalized.includes("OK") ||
+    normalized.includes("ONLINE") ||
+    normalized.includes("ACTIVE") ||
+    normalized.includes("GRANTED") ||
+    normalized.includes("IPR_BOUND") ||
+    normalized.includes("VALIDATED") ||
+    normalized.includes("OPERATIONAL") ||
+    normalized.includes("COMPLETED") ||
+    normalized.includes("DATABASE_PERSISTENT") ||
+    normalized.includes("CONFIGURED") ||
+    normalized.includes("PERSISTED") ||
+    normalized.includes("RECORDED") ||
+    normalized.includes("TECHNICAL_PROOF") ||
+    normalized.includes("EVT_OPC") ||
+    normalized.includes("READY") ||
+    normalized.includes("TRUE")
   ) {
-    return "is-bad";
+    return "is-good";
   }
 
   return "";
@@ -1322,38 +1629,143 @@ export default function InterfacePage() {
   const dashboardPayload = lastAssistantPayload || health;
   const dashboardStatus = getRuntimeStatus(dashboardPayload);
 
+  const sessionHumanIpr = getSessionHumanIpr(iprSession);
   const handoffHumanIpr = getHandoffSubjectIpr(effectiveHandoff);
-  const humanIpr =
-    dashboardStatus.humanIpr !== "-"
-      ? dashboardStatus.humanIpr
-      : hasAccountSession
-        ? text(getPath(iprSession, ["session", "humanIpr"]), CANONICAL_MANUEL_HUMAN_IPR)
-        : handoffHumanIpr;
 
-  const subject =
-    dashboardStatus.subject !== "-"
-      ? dashboardStatus.subject
-      : getHandoffSubjectName(effectiveHandoff, humanIpr);
+  const humanIpr = firstUsableRuntimeValue(
+    [
+      lastAssistantPayload ? dashboardStatus.humanIpr : "",
+      sessionHumanIpr,
+      handoffHumanIpr,
+      hasAccountSession ? CANONICAL_MANUEL_HUMAN_IPR : "",
+      dashboardStatus.humanIpr
+    ],
+    "NOT_VERIFIED"
+  );
 
-  const certificateId =
-    dashboardStatus.certificateId !== "-"
-      ? dashboardStatus.certificateId
-      : getHandoffCertificateId(effectiveHandoff);
+  const subject = firstDisplayValue(
+    [
+      lastAssistantPayload && !isNegativeRuntimeValue(dashboardStatus.humanIpr)
+        ? dashboardStatus.subject
+        : "",
+      getSessionSubjectName(iprSession, humanIpr),
+      getHandoffSubjectName(effectiveHandoff, humanIpr),
+      humanIpr === CANONICAL_MANUEL_HUMAN_IPR ? CANONICAL_MANUEL_DISPLAY_NAME : "",
+      dashboardStatus.subject
+    ],
+    "No verified subject"
+  );
 
-  const certificateStatus =
-    dashboardStatus.certificateStatus !== "-"
-      ? dashboardStatus.certificateStatus
-      : getHandoffCertificateStatus(effectiveHandoff);
+  const certificateId = firstUsableRuntimeValue(
+    [
+      lastAssistantPayload ? dashboardStatus.certificateId : "",
+      getSessionCertificateId(iprSession),
+      getHandoffCertificateId(effectiveHandoff),
+      dashboardStatus.certificateId
+    ],
+    "NO_CERTIFICATE"
+  );
 
-  const scope =
-    dashboardStatus.scope !== "-"
-      ? dashboardStatus.scope
-      : getHandoffScope(effectiveHandoff);
+  const certificateStatus = firstDisplayValue(
+    [
+      lastAssistantPayload && isActiveCertificateStatus(dashboardStatus.certificateStatus)
+        ? dashboardStatus.certificateStatus
+        : "",
+      getSessionCertificateStatus(iprSession),
+      getHandoffCertificateStatus(effectiveHandoff),
+      dashboardStatus.certificateStatus
+    ],
+    "MISSING"
+  );
 
-  const accessDecision =
-    dashboardStatus.accessDecision !== "-"
-      ? dashboardStatus.accessDecision
-      : first(iprSession, [["access", "decision"]], "PENDING_SERVER_VALIDATION");
+  const scope = firstUsableRuntimeValue(
+    [
+      lastAssistantPayload && hasJokerC2Scope(dashboardStatus.scope)
+        ? dashboardStatus.scope
+        : "",
+      getSessionScope(iprSession),
+      getHandoffScope(effectiveHandoff),
+      dashboardStatus.scope
+    ],
+    "MATRIX_LIMITED"
+  );
+
+  const accountIdentityReady =
+    hasAccountSession &&
+    !isNegativeRuntimeValue(humanIpr) &&
+    !isNegativeRuntimeValue(certificateId) &&
+    isActiveCertificateStatus(certificateStatus) &&
+    hasJokerC2Scope(scope);
+
+  const accessDecision = firstUsableRuntimeValue(
+    [
+      lastAssistantPayload ? dashboardStatus.accessDecision : "",
+      accountIdentityReady ? "ACCESS_GRANTED_ACCOUNT_SESSION" : "",
+      first(iprSession, [["access", "decision"], ["access", "accessDecision"]], ""),
+      dashboardStatus.accessDecision
+    ],
+    "SERVER_VALIDATION_REQUIRED"
+  );
+
+  const identityBinding = firstUsableRuntimeValue(
+    [
+      lastAssistantPayload ? dashboardStatus.identityBinding : "",
+      accountIdentityReady ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT" : "",
+      first(iprSession, [["access", "identityBinding"], ["access", "identity_binding"]], ""),
+      dashboardStatus.identityBinding
+    ],
+    "NOT_VERIFIED"
+  );
+
+  const matrixState = firstUsableRuntimeValue(
+    [
+      lastAssistantPayload ? dashboardStatus.matrix : "",
+      accountIdentityReady ? "MATRIX_ACCOUNT_SESSION_READY" : "",
+      first(iprSession, [["matrix", "state"], ["access", "matrixState"]], ""),
+      dashboardStatus.matrix
+    ],
+    "MATRIX_LIMITED"
+  );
+
+  const memoryScope = firstUsableRuntimeValue(
+    [
+      lastAssistantPayload ? dashboardStatus.memory : "",
+      accountIdentityReady ? "IPR_BOUND_ACCOUNT_SESSION_READY" : "",
+      first(iprSession, [["memory", "scope"], ["access", "semanticMemoryScope"]], ""),
+      dashboardStatus.memory
+    ],
+    "RUNTIME_ONLY"
+  );
+
+  const memoryAuthority = firstUsableRuntimeValue(
+    [
+      lastAssistantPayload ? dashboardStatus.authority : "",
+      accountIdentityReady ? "SERVER_ACCOUNT_SESSION_VALIDATED" : "",
+      first(iprSession, [["memory", "authority"]], ""),
+      dashboardStatus.authority
+    ],
+    "RUNTIME_HEALTH_CHECK"
+  );
+
+  const saasTier = firstUsableRuntimeValue(
+    [
+      lastAssistantPayload ? dashboardStatus.saasTier : "",
+      accountIdentityReady ? "IPR" : "",
+      dashboardStatus.saasTier
+    ],
+    "-"
+  );
+
+  const enrichedIprHandoff = buildEnrichedIprHandoff({
+    base: effectiveHandoff,
+    subject,
+    humanIpr,
+    certificateId,
+    certificateStatus,
+    scope,
+    accessDecision,
+    identityBinding
+  });
 
   useEffect(() => {
     const stored =
@@ -1567,7 +1979,7 @@ export default function InterfacePage() {
           sessionId,
           continuityRef,
           files,
-          iprHandoff: effectiveHandoff,
+          iprHandoff: enrichedIprHandoff,
           iprAccountSession:
             iprSession?.authenticated === true
               ? {
@@ -1661,14 +2073,14 @@ export default function InterfacePage() {
     { label: "Certificate status", value: certificateStatus },
     { label: "Scope", value: scope },
     { label: "Access", value: accessDecision },
-    { label: "Binding", value: dashboardStatus.identityBinding },
+    { label: "Binding", value: identityBinding },
     { label: "Source", value: effectiveHandoffSource }
   ];
 
   const memoryRows = [
-    { label: "MATRIX", value: dashboardStatus.matrix },
-    { label: "Memory", value: dashboardStatus.memory },
-    { label: "Authority", value: dashboardStatus.authority },
+    { label: "MATRIX", value: matrixState },
+    { label: "Memory", value: memoryScope },
+    { label: "Authority", value: memoryAuthority },
     { label: "Persistence", value: dashboardStatus.persistence },
     { label: "Last EVT", value: dashboardStatus.lastMemoryEvt },
     { label: "Last OPC", value: dashboardStatus.lastMemoryOpc },
@@ -1685,7 +2097,7 @@ export default function InterfacePage() {
 
   const saasRows = [
     { label: "Release", value: dashboardStatus.saasRelease },
-    { label: "Tier", value: dashboardStatus.saasTier },
+    { label: "Tier", value: saasTier },
     { label: "Core status", value: dashboardStatus.saasCoreStatus },
     { label: "OpenAI", value: dashboardStatus.openAI },
     { label: "Database configured", value: dashboardStatus.databaseConfigured },
@@ -1730,6 +2142,8 @@ export default function InterfacePage() {
           <StatusPill label="Model" value={dashboardStatus.model} />
           <StatusPill label="Runtime IPR" value={dashboardStatus.runtimeIpr} />
           <StatusPill label="Human IPR" value={humanIpr} />
+          <StatusPill label="MATRIX" value={matrixState} />
+          <StatusPill label="Memory" value={memoryScope} />
           <StatusPill label="Audit" value={dashboardStatus.auditStatus} />
           <StatusPill label="Usage" value={dashboardStatus.modelUsageStatus} />
         </div>
@@ -1768,12 +2182,13 @@ export default function InterfacePage() {
           <MetricCard label="Model" value={dashboardStatus.model} />
           <MetricCard label="Model level" value={dashboardStatus.modelLevel} />
           <MetricCard label="Human IPR" value={humanIpr} />
-          <MetricCard label="MATRIX" value={dashboardStatus.matrix} />
+          <MetricCard label="MATRIX" value={matrixState} />
+          <MetricCard label="Memory" value={memoryScope} />
           <MetricCard label="Response EVT" value={dashboardStatus.responseEvt} />
           <MetricCard label="OPC" value={dashboardStatus.opc} />
           <MetricCard label="Audit" value={dashboardStatus.auditId} />
           <MetricCard label="Usage" value={dashboardStatus.modelUsageId} />
-          <MetricCard label="SaaS tier" value={dashboardStatus.saasTier} />
+          <MetricCard label="SaaS tier" value={saasTier} />
         </div>
       </section>
 
@@ -1796,11 +2211,13 @@ export default function InterfacePage() {
           </div>
 
           <p>
-            {hasAccountSession
-              ? "Server-side IPR account session detected. Authenticated session has priority over local handoff."
-              : effectiveHandoff
-                ? "Client-side IPR handoff detected. Authoritative validation happens during POST /api/chat."
-                : "No biological IPR handoff or account session detected. Runtime remains limited until server-side validation."}
+            {accountIdentityReady
+              ? "Server-side IPR account session detected. Identity frame is ready for authoritative validation during POST /api/chat."
+              : hasAccountSession
+                ? "Server-side IPR account session detected, but the interface still needs a complete Human IPR, ACTIVE certificate and JOKER_C2_ACCESS scope frame."
+                : effectiveHandoff
+                  ? "Client-side IPR handoff detected. Authoritative validation happens during POST /api/chat."
+                  : "No biological IPR handoff or account session detected. Runtime remains limited until server-side validation."}
           </p>
 
           <InfoList items={identityRows} />
@@ -1843,7 +2260,7 @@ export default function InterfacePage() {
               <span className="joker-kicker">Runtime memory</span>
               <h2>IPR-bound continuity</h2>
             </div>
-            <StatusPill value={dashboardStatus.memory} />
+            <StatusPill value={memoryScope} />
           </div>
 
           <p>
