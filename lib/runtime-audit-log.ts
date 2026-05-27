@@ -287,6 +287,36 @@ type RuntimeAuditLogDatabaseRow = HbceDatabaseQueryRow & {
   audit_hash?: string;
 };
 
+type RuntimeAuditDatabasePayload = {
+  auditId: string;
+  tenantId: string | null;
+  workspaceId: string | null;
+  subscriptionId: string | null;
+  humanIpr: string | null;
+  runtimeIpr: string;
+  sessionId: string | null;
+  threadId: string | null;
+  evtId: string | null;
+  opcProofId: string | null;
+  memoryId: string | null;
+  auditKind: string;
+  runtimeState: string;
+  runtimeDecision: string;
+  riskLevel: string;
+  dataClass: string | null;
+  contextClass: string | null;
+  projectDomain: string | null;
+  hbceModule: string | null;
+  modelLevel: string | null;
+  saasTier: string | null;
+  c2Boundary: string | null;
+  blocked: boolean;
+  failClosed: boolean;
+  humanOversight: RuntimeAuditDatabaseHumanOversight;
+  auditHash: string;
+  payloadJson: string;
+};
+
 const MAX_PROCESS_MEMORY_AUDIT_RECORDS = 250;
 
 const runtimeAuditProcessMemory: RuntimeAuditLogRecord[] = [];
@@ -363,8 +393,176 @@ function safeDatabaseError(error: unknown): string {
   }
 }
 
-function normalizeAuditRuntimeDecision(value: RuntimeDecision | undefined): string {
+function normalizeAuditRuntimeDecision(value: RuntimeDecision | string | undefined): string {
   return String(value || "UNKNOWN").toUpperCase();
+}
+
+function nullableDatabaseText(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const normalized = trimmed.toUpperCase();
+
+  if (
+    normalized === "NONE" ||
+    normalized === "NO_SESSION" ||
+    normalized === "NO_THREAD" ||
+    normalized === "NO_TENANT" ||
+    normalized === "NO_WORKSPACE" ||
+    normalized === "NO_SUBSCRIPTION" ||
+    normalized === "NO_ORGANIZATION_IPR" ||
+    normalized === "NOT_VERIFIED" ||
+    normalized === "NO_CERTIFICATE" ||
+    normalized === "NO_MEMORY" ||
+    normalized === "NO_EVT" ||
+    normalized === "NO_OPC"
+  ) {
+    return null;
+  }
+
+  return trimmed;
+}
+
+function normalizeDatabaseRuntimeDecision(value: RuntimeDecision | string | undefined): string {
+  const normalized = String(value || "ALLOW").toUpperCase();
+
+  if (
+    normalized === "ALLOW" ||
+    normalized === "BLOCK" ||
+    normalized === "ESCALATE" ||
+    normalized === "FAIL_CLOSED"
+  ) {
+    return normalized;
+  }
+
+  if (
+    normalized === "ACCESS_GRANTED" ||
+    normalized === "ACCESS_GRANTED_ACCOUNT_SESSION" ||
+    normalized === "GRANTED" ||
+    normalized === "COMPLETED" ||
+    normalized === "OK"
+  ) {
+    return "ALLOW";
+  }
+
+  if (
+    normalized === "ACCESS_LIMITED" ||
+    normalized === "SERVER_VALIDATION_REQUIRED" ||
+    normalized === "PENDING_SERVER_VALIDATION" ||
+    normalized === "REVIEW" ||
+    normalized === "REQUIRES_REVIEW"
+  ) {
+    return "ESCALATE";
+  }
+
+  if (
+    normalized === "DENY" ||
+    normalized === "DENIED" ||
+    normalized === "DISALLOW" ||
+    normalized === "REJECT"
+  ) {
+    return "BLOCK";
+  }
+
+  return "ESCALATE";
+}
+
+function normalizeDatabaseRiskLevel(value: RuntimeRiskLevel | string | undefined): string {
+  const normalized = String(value || "LOW").toUpperCase();
+
+  if (normalized === "LOW" || normalized === "MEDIUM" || normalized === "HIGH" || normalized === "CRITICAL") {
+    return normalized;
+  }
+
+  return "LOW";
+}
+
+function normalizeDatabaseRuntimeState(record: RuntimeAuditLogRecord): string {
+  if (record.blocked) {
+    return "BLOCKED";
+  }
+
+  if (record.failClosed) {
+    return "INVALID";
+  }
+
+  return "OPERATIONAL";
+}
+
+function normalizeDatabaseModelLevel(value: ModelLevel | string | undefined): string | null {
+  const normalized = String(value || "").toUpperCase();
+
+  if (!normalized || normalized === "UNKNOWN" || normalized === "NOT_SELECTED") {
+    return null;
+  }
+
+  if (
+    normalized === "BASE" ||
+    normalized === "STANDARD" ||
+    normalized === "ENHANCED" ||
+    normalized === "DEEP" ||
+    normalized === "FRONTIER" ||
+    normalized === "EMERGENCY" ||
+    normalized === "C2"
+  ) {
+    return normalized;
+  }
+
+  if (normalized === "C2_ESCALATED" || normalized === "C2_DEFENSE") {
+    return "C2";
+  }
+
+  if (normalized === "GOVERNANCE" || normalized === "PRO") {
+    return "ENHANCED";
+  }
+
+  if (normalized === "ADVANCED") {
+    return "DEEP";
+  }
+
+  return "STANDARD";
+}
+
+function normalizeDatabaseSaasTier(value: SaasTier | string | undefined): string | null {
+  const normalized = String(value || "").toUpperCase();
+
+  if (!normalized || normalized === "UNKNOWN") {
+    return null;
+  }
+
+  if (
+    normalized === "BASE" ||
+    normalized === "IPR" ||
+    normalized === "PRO" ||
+    normalized === "GOVERNANCE" ||
+    normalized === "C2_DEFENSE" ||
+    normalized === "STRATEGIC"
+  ) {
+    return normalized;
+  }
+
+  return "BASE";
+}
+
+function normalizeDatabaseC2Boundary(value: C2BoundaryState | string | undefined): string | null {
+  const normalized = String(value || "").toUpperCase();
+
+  if (!normalized || normalized === "UNKNOWN") {
+    return null;
+  }
+
+  return normalized;
+}
+
+function shouldWriteRelationalColumns(record: RuntimeAuditLogRecord): boolean {
+  return record.persistenceBoundary === "DATABASE_PERSISTENT";
 }
 
 export function deriveDatabaseHumanOversight(
@@ -414,12 +612,10 @@ export function deriveAuditPersistenceBoundary(
   persistenceMode: RuntimePersistenceMode
 ): RuntimeAuditLogPersistenceBoundary {
   if (persistenceMode === "DATABASE_PERSISTENT") {
-    return isHbceDatabaseConfigured() && isHbceDatabaseAvailable()
-      ? "DATABASE_PERSISTENT_TARGET"
-      : "DATABASE_PERSISTENT_TARGET";
+    return "DATABASE_PERSISTENT_TARGET";
   }
 
-  const persistenceText = String(persistenceMode);
+  const persistenceText: string = String(persistenceMode);
 
   if (persistenceText === "FAIL_CLOSED_PERSISTENCE") {
     return "FAIL_CLOSED_PERSISTENCE";
@@ -535,7 +731,6 @@ export function createRuntimeAuditLogRecord(
     );
 
   const c2Boundary = input.c2Boundary ?? "C2_NOT_AVAILABLE";
-
   const allowed = input.allowed ?? (!blocked && !failClosed);
 
   const baseRecord: Omit<RuntimeAuditLogRecord, "auditHash"> = {
@@ -663,72 +858,60 @@ export function appendRuntimeAuditLogRecord(
 
 function runtimeAuditRecordToDatabasePayload(
   record: RuntimeAuditLogRecord
-): {
-  auditId: string;
-  tenantId: string | null;
-  workspaceId: string | null;
-  subscriptionId: string | null;
-  humanIpr: string | null;
-  runtimeIpr: string;
-  sessionId: string | null;
-  threadId: string | null;
-  evtId: string | null;
-  opcProofId: string | null;
-  memoryId: string | null;
-  auditKind: string;
-  runtimeState: string;
-  runtimeDecision: string;
-  riskLevel: string;
-  dataClass: string | null;
-  contextClass: string | null;
-  projectDomain: string | null;
-  hbceModule: string | null;
-  modelLevel: string | null;
-  saasTier: string | null;
-  c2Boundary: string | null;
-  blocked: boolean;
-  failClosed: boolean;
-  humanOversight: RuntimeAuditDatabaseHumanOversight;
-  auditHash: string;
-  payloadJson: string;
-} {
+): RuntimeAuditDatabasePayload {
+  const writeRelationalColumns = shouldWriteRelationalColumns(record);
+
+  const payload = {
+    ...record,
+    databaseColumnPolicy: {
+      relationalColumnsWritten: writeRelationalColumns,
+      reason: writeRelationalColumns
+        ? "Record already confirmed DATABASE_PERSISTENT."
+        : "Runtime audit references are preserved in payload JSONB while nullable relational columns remain null to avoid premature foreign key failures before tenant/session/EVT/OPC ledger persistence is fully enabled."
+    },
+    databaseRefs: {
+      tenantId: record.tenantId,
+      workspaceId: record.workspaceId,
+      subscriptionId: record.subscriptionId,
+      humanIpr: record.humanIpr,
+      sessionId: record.sessionId,
+      threadId: record.threadId,
+      evtId: record.evtRef,
+      opcProofId: record.opcRef,
+      memoryId: record.memoryRef
+    },
+    databaseHumanOversight: deriveDatabaseHumanOversight(record.auditState),
+    legalCertification: false
+  };
+
   return {
     auditId: record.auditId,
-    tenantId: record.tenantId === "NO_TENANT" ? null : record.tenantId,
-    workspaceId: record.workspaceId === "NO_WORKSPACE" ? null : record.workspaceId,
-    subscriptionId:
-      record.subscriptionId === "NO_SUBSCRIPTION" ? null : record.subscriptionId,
-    humanIpr: record.humanIpr === "NOT_VERIFIED" ? null : record.humanIpr,
-    runtimeIpr: record.runtimeIpr,
-    sessionId: record.sessionId === "NO_SESSION" ? null : record.sessionId,
-    threadId: record.threadId === "NO_THREAD" ? null : record.threadId,
-    evtId: record.evtRef,
-    opcProofId: record.opcRef,
-    memoryId: record.memoryRef,
+    tenantId: writeRelationalColumns ? nullableDatabaseText(record.tenantId) : null,
+    workspaceId: writeRelationalColumns ? nullableDatabaseText(record.workspaceId) : null,
+    subscriptionId: writeRelationalColumns ? nullableDatabaseText(record.subscriptionId) : null,
+    humanIpr: writeRelationalColumns ? nullableDatabaseText(record.humanIpr) : null,
+    runtimeIpr: normalizeAuditString(record.runtimeIpr, RUNTIME_IPR),
+    sessionId: writeRelationalColumns ? nullableDatabaseText(record.sessionId) : null,
+    threadId: writeRelationalColumns ? nullableDatabaseText(record.threadId) : null,
+    evtId: writeRelationalColumns ? nullableDatabaseText(record.evtRef) : null,
+    opcProofId: writeRelationalColumns ? nullableDatabaseText(record.opcRef) : null,
+    memoryId: writeRelationalColumns ? nullableDatabaseText(record.memoryRef) : null,
     auditKind: "RUNTIME_DECISION",
-    runtimeState: record.blocked
-      ? "BLOCKED"
-      : record.failClosed
-        ? "INVALID"
-        : "OPERATIONAL",
-    runtimeDecision: String(record.runtimeDecision || "UNKNOWN"),
-    riskLevel: String(record.riskLevel || "UNKNOWN"),
-    dataClass: record.dataClass,
-    contextClass: record.contextClass,
-    projectDomain: record.projectDomain,
-    hbceModule: record.hbceModule,
-    modelLevel: String(record.modelLevel || "UNKNOWN"),
-    saasTier: String(record.saasTier || "UNKNOWN"),
-    c2Boundary: String(record.c2Boundary || "C2_NOT_AVAILABLE"),
+    runtimeState: normalizeDatabaseRuntimeState(record),
+    runtimeDecision: normalizeDatabaseRuntimeDecision(record.runtimeDecision),
+    riskLevel: normalizeDatabaseRiskLevel(record.riskLevel),
+    dataClass: nullableDatabaseText(record.dataClass),
+    contextClass: nullableDatabaseText(record.contextClass),
+    projectDomain: nullableDatabaseText(record.projectDomain),
+    hbceModule: nullableDatabaseText(record.hbceModule),
+    modelLevel: normalizeDatabaseModelLevel(record.modelLevel),
+    saasTier: normalizeDatabaseSaasTier(record.saasTier),
+    c2Boundary: normalizeDatabaseC2Boundary(record.c2Boundary),
     blocked: record.blocked,
     failClosed: record.failClosed,
     humanOversight: deriveDatabaseHumanOversight(record.auditState),
     auditHash: record.auditHash,
-    payloadJson: JSON.stringify({
-      ...record,
-      databaseHumanOversight: deriveDatabaseHumanOversight(record.auditState),
-      legalCertification: false
-    })
+    payloadJson: JSON.stringify(payload)
   };
 }
 
@@ -1199,6 +1382,7 @@ export function toPublicRuntimeAuditLogRecord(record: RuntimeAuditLogRecord): {
   c2Boundary: C2BoundaryState;
   memoryScope: RuntimeMemoryScope;
   persistenceMode: RuntimePersistenceMode;
+  persistenceBoundary: RuntimeAuditLogPersistenceBoundary;
   evtRequired: boolean;
   opcRequired: boolean;
   auditRequired: boolean;
@@ -1244,6 +1428,7 @@ export function toPublicRuntimeAuditLogRecord(record: RuntimeAuditLogRecord): {
     c2Boundary: record.c2Boundary,
     memoryScope: record.memoryScope,
     persistenceMode: record.persistenceMode,
+    persistenceBoundary: record.persistenceBoundary,
     evtRequired: record.evtRequired,
     opcRequired: record.opcRequired,
     auditRequired: record.auditRequired,
@@ -1298,6 +1483,7 @@ export function buildRuntimeAuditPromptFrame(record: RuntimeAuditLogRecord): str
     `C2 boundary: ${record.c2Boundary}`,
     `Memory scope: ${record.memoryScope}`,
     `Persistence mode: ${record.persistenceMode}`,
+    `Persistence boundary: ${record.persistenceBoundary}`,
     `EVT required: ${record.evtRequired}`,
     `OPC required: ${record.opcRequired}`,
     `Audit required: ${record.auditRequired}`,
@@ -1333,6 +1519,6 @@ export function getRuntimeAuditLogHealth(): RuntimeAuditLogHealth {
     maxProcessMemoryRecords: MAX_PROCESS_MEMORY_AUDIT_RECORDS,
     legalCertification: false,
     boundary:
-      "Runtime audit log is configured for PROCESS_MEMORY_MVP with DATABASE_PERSISTENT target when the HBCE database is configured and the async writer is used. Audit records support operational reconstruction only. legalCertification = false."
+      "Runtime audit log is configured for PROCESS_MEMORY_MVP with DATABASE_PERSISTENT target when the HBCE database is configured and the async writer is used. Relational references remain inside payload JSONB until tenant/session/EVT/OPC ledger persistence is fully active, to avoid premature foreign key failures. Audit records support operational reconstruction only. legalCertification = false."
   };
 }
