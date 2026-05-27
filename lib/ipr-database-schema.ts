@@ -1,7 +1,7 @@
-export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.2";
+export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.3";
 
 export const HBCE_DATABASE_SCHEMA_BOUNDARY =
-  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. It does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
+  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
 
 export const HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY =
   "All HBCE database records remain technical-operational records. legal_certification must remain false unless a future legally recognized qualified trust service, public authority process or regulated certification workflow is explicitly integrated.";
@@ -94,10 +94,6 @@ CREATE TABLE IF NOT EXISTS saas_tenants (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT saas_tenants_status_check
-    CHECK (status IN ('ACTIVE', 'SUSPENDED', 'REVOKED', 'ARCHIVED')),
-  CONSTRAINT saas_tenants_plan_check
-    CHECK (plan IN ('INTERNAL_R_AND_D', 'PILOT', 'PROFESSIONAL', 'ENTERPRISE', 'PUBLIC_SECTOR')),
   CONSTRAINT saas_tenants_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -115,10 +111,6 @@ CREATE TABLE IF NOT EXISTS ipr_subjects (
   profile_hash TEXT,
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT ipr_subjects_human_ipr_format
-    CHECK (human_ipr LIKE 'IPR-%'),
-  CONSTRAINT ipr_subjects_status_check
-    CHECK (status IN ('ACTIVE', 'SUSPENDED', 'REVOKED', 'EXPIRED', 'UNKNOWN')),
   CONSTRAINT ipr_subjects_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -127,9 +119,7 @@ CREATE TABLE IF NOT EXISTS ipr_subjects (
   `
 CREATE TABLE IF NOT EXISTS saas_workspaces (
   workspace_id TEXT PRIMARY KEY,
-  tenant_id TEXT NOT NULL
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE CASCADE,
+  tenant_id TEXT,
   workspace_slug TEXT NOT NULL,
   name TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'ACTIVE',
@@ -138,8 +128,6 @@ CREATE TABLE IF NOT EXISTS saas_workspaces (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
   UNIQUE (tenant_id, workspace_slug),
-  CONSTRAINT saas_workspaces_status_check
-    CHECK (status IN ('ACTIVE', 'SUSPENDED', 'ARCHIVED')),
   CONSTRAINT saas_workspaces_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -148,15 +136,9 @@ CREATE TABLE IF NOT EXISTS saas_workspaces (
   `
 CREATE TABLE IF NOT EXISTS saas_workspace_memberships (
   membership_id TEXT PRIMARY KEY,
-  tenant_id TEXT NOT NULL
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE CASCADE,
-  workspace_id TEXT NOT NULL
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE CASCADE,
-  human_ipr TEXT NOT NULL
-    REFERENCES ipr_subjects(human_ipr)
-    ON DELETE CASCADE,
+  tenant_id TEXT,
+  workspace_id TEXT,
+  human_ipr TEXT,
   role TEXT NOT NULL DEFAULT 'OPERATOR',
   status TEXT NOT NULL DEFAULT 'ACTIVE',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -164,10 +146,6 @@ CREATE TABLE IF NOT EXISTS saas_workspace_memberships (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
   UNIQUE (workspace_id, human_ipr),
-  CONSTRAINT saas_workspace_memberships_role_check
-    CHECK (role IN ('OWNER', 'ADMIN', 'OPERATOR', 'AUDITOR', 'VIEWER')),
-  CONSTRAINT saas_workspace_memberships_status_check
-    CHECK (status IN ('ACTIVE', 'SUSPENDED', 'REVOKED')),
   CONSTRAINT saas_workspace_memberships_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -176,12 +154,8 @@ CREATE TABLE IF NOT EXISTS saas_workspace_memberships (
   `
 CREATE TABLE IF NOT EXISTS subscriptions (
   subscription_id TEXT PRIMARY KEY,
-  tenant_id TEXT NOT NULL
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE CASCADE,
-  workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL,
+  tenant_id TEXT,
+  workspace_id TEXT,
   tier TEXT NOT NULL DEFAULT 'BASE',
   status TEXT NOT NULL DEFAULT 'ACTIVE',
   billing_mode TEXT NOT NULL DEFAULT 'INTERNAL_R_AND_D',
@@ -198,12 +172,6 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   model_usage_logging_required BOOLEAN NOT NULL DEFAULT true,
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT subscriptions_tier_check
-    CHECK (tier IN ('BASE', 'IPR', 'PRO', 'GOVERNANCE', 'C2_DEFENSE', 'STRATEGIC')),
-  CONSTRAINT subscriptions_status_check
-    CHECK (status IN ('ACTIVE', 'TRIAL', 'PAUSED', 'SUSPENDED', 'CANCELLED', 'EXPIRED')),
-  CONSTRAINT subscriptions_billing_mode_check
-    CHECK (billing_mode IN ('INTERNAL_R_AND_D', 'PILOT', 'MANUAL_CONTRACT', 'STRIPE_READY', 'PUBLIC_SECTOR_CONTRACT')),
   CONSTRAINT subscriptions_limits_non_negative
     CHECK (
       (model_limit_daily IS NULL OR model_limit_daily >= 0) AND
@@ -217,9 +185,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 
   `
 CREATE TABLE IF NOT EXISTS ipr_auth_credentials (
-  human_ipr TEXT PRIMARY KEY
-    REFERENCES ipr_subjects(human_ipr)
-    ON DELETE CASCADE,
+  human_ipr TEXT PRIMARY KEY,
   password_algorithm TEXT NOT NULL,
   password_hash TEXT NOT NULL,
   password_salt TEXT NOT NULL,
@@ -243,9 +209,7 @@ CREATE TABLE IF NOT EXISTS ipr_auth_credentials (
   `
 CREATE TABLE IF NOT EXISTS ipr_sessions (
   session_id TEXT PRIMARY KEY,
-  human_ipr TEXT NOT NULL
-    REFERENCES ipr_subjects(human_ipr)
-    ON DELETE CASCADE,
+  human_ipr TEXT NOT NULL,
   runtime_ipr TEXT NOT NULL DEFAULT 'IPR-AI-0001',
   token_hash TEXT NOT NULL UNIQUE,
   status TEXT NOT NULL DEFAULT 'ACTIVE',
@@ -258,10 +222,6 @@ CREATE TABLE IF NOT EXISTS ipr_sessions (
   ip_address_hash TEXT,
   session_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT ipr_sessions_status_check
-    CHECK (status IN ('ACTIVE', 'REVOKED', 'EXPIRED')),
-  CONSTRAINT ipr_sessions_runtime_ipr_format
-    CHECK (runtime_ipr LIKE 'IPR-%'),
   CONSTRAINT ipr_sessions_expires_after_created
     CHECK (expires_at > created_at),
   CONSTRAINT ipr_sessions_legal_certification_false
@@ -271,15 +231,9 @@ CREATE TABLE IF NOT EXISTS ipr_sessions (
 
   `
 CREATE TABLE IF NOT EXISTS ipr_account_profiles (
-  human_ipr TEXT PRIMARY KEY
-    REFERENCES ipr_subjects(human_ipr)
-    ON DELETE CASCADE,
-  tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL,
-  workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL,
+  human_ipr TEXT PRIMARY KEY,
+  tenant_id TEXT,
+  workspace_id TEXT,
   account_id TEXT NOT NULL UNIQUE,
   entity TEXT NOT NULL,
   subject_kind TEXT NOT NULL DEFAULT 'BIOLOGICAL_SUBJECT',
@@ -302,14 +256,6 @@ CREATE TABLE IF NOT EXISTS ipr_account_profiles (
   last_login_at TIMESTAMPTZ,
   profile_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT ipr_account_profiles_certificate_status_check
-    CHECK (certificate_status IN ('ACTIVE', 'REVOKED', 'EXPIRED', 'SUSPENDED', 'UNKNOWN')),
-  CONSTRAINT ipr_account_profiles_access_decision_check
-    CHECK (access_decision IN ('ACCESS_GRANTED', 'ACCESS_DENIED', 'PENDING_SERVER_VALIDATION')),
-  CONSTRAINT ipr_account_profiles_matrix_state_check
-    CHECK (matrix_state IN ('MATRIX_ACTIVE', 'MATRIX_LIMITED')),
-  CONSTRAINT ipr_account_profiles_semantic_memory_scope_check
-    CHECK (semantic_memory_scope IN ('IPR_BOUND', 'RUNTIME_ONLY')),
   CONSTRAINT ipr_account_profiles_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -318,15 +264,9 @@ CREATE TABLE IF NOT EXISTS ipr_account_profiles (
   `
 CREATE TABLE IF NOT EXISTS chat_threads (
   thread_id TEXT PRIMARY KEY,
-  tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL,
-  workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL,
-  human_ipr TEXT
-    REFERENCES ipr_subjects(human_ipr)
-    ON DELETE SET NULL,
+  tenant_id TEXT,
+  workspace_id TEXT,
+  human_ipr TEXT,
   runtime_ipr TEXT NOT NULL DEFAULT 'IPR-AI-0001',
   session_id TEXT,
   title TEXT NOT NULL DEFAULT 'JOKER-C2 Chat',
@@ -341,12 +281,6 @@ CREATE TABLE IF NOT EXISTS chat_threads (
   last_opc_chain_hash TEXT,
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT chat_threads_runtime_ipr_format
-    CHECK (runtime_ipr LIKE 'IPR-%'),
-  CONSTRAINT chat_threads_scope_check
-    CHECK (scope IN ('IPR_BOUND', 'RUNTIME_ONLY')),
-  CONSTRAINT chat_threads_authority_check
-    CHECK (authority IN ('SERVER_RUNTIME_VALIDATED', 'SESSION_RUNTIME_ONLY')),
   CONSTRAINT chat_threads_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -355,18 +289,10 @@ CREATE TABLE IF NOT EXISTS chat_threads (
   `
 CREATE TABLE IF NOT EXISTS chat_messages (
   message_id TEXT PRIMARY KEY,
-  tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL,
-  workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL,
-  thread_id TEXT NOT NULL
-    REFERENCES chat_threads(thread_id)
-    ON DELETE CASCADE,
-  human_ipr TEXT
-    REFERENCES ipr_subjects(human_ipr)
-    ON DELETE SET NULL,
+  tenant_id TEXT,
+  workspace_id TEXT,
+  thread_id TEXT NOT NULL,
+  human_ipr TEXT,
   runtime_ipr TEXT NOT NULL DEFAULT 'IPR-AI-0001',
   session_id TEXT,
   role TEXT NOT NULL,
@@ -381,18 +307,6 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT chat_messages_role_check
-    CHECK (role IN ('user', 'assistant', 'system', 'runtime', 'tool')),
-  CONSTRAINT chat_messages_runtime_state_check
-    CHECK (
-      runtime_state IS NULL OR
-      runtime_state IN ('OPERATIONAL', 'DEGRADED', 'BLOCKED', 'INVALID', 'AUDIT_ONLY', 'MAINTENANCE', 'UNKNOWN')
-    ),
-  CONSTRAINT chat_messages_runtime_decision_check
-    CHECK (
-      runtime_decision IS NULL OR
-      runtime_decision IN ('ALLOW', 'BLOCK', 'ESCALATE', 'DEGRADE', 'AUDIT', 'NOOP', 'UNKNOWN')
-    ),
   CONSTRAINT chat_messages_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -401,21 +315,13 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   `
 CREATE TABLE IF NOT EXISTS memory_records (
   memory_id TEXT PRIMARY KEY,
-  tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL,
-  workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL,
+  tenant_id TEXT,
+  workspace_id TEXT,
   memory_key_hash TEXT NOT NULL,
-  human_ipr TEXT
-    REFERENCES ipr_subjects(human_ipr)
-    ON DELETE SET NULL,
+  human_ipr TEXT,
   runtime_ipr TEXT NOT NULL DEFAULT 'IPR-AI-0001',
   session_id TEXT NOT NULL,
-  thread_id TEXT
-    REFERENCES chat_threads(thread_id)
-    ON DELETE SET NULL,
+  thread_id TEXT,
   scope TEXT NOT NULL DEFAULT 'RUNTIME_ONLY',
   authority TEXT NOT NULL DEFAULT 'SESSION_RUNTIME_ONLY',
   persistence_mode TEXT NOT NULL DEFAULT 'DATABASE_PERSISTENT',
@@ -428,12 +334,6 @@ CREATE TABLE IF NOT EXISTS memory_records (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   record_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT memory_records_scope_check
-    CHECK (scope IN ('IPR_BOUND', 'RUNTIME_ONLY')),
-  CONSTRAINT memory_records_authority_check
-    CHECK (authority IN ('SERVER_RUNTIME_VALIDATED', 'SESSION_RUNTIME_ONLY')),
-  CONSTRAINT memory_records_persistence_mode_check
-    CHECK (persistence_mode IN ('PROCESS_MEMORY_MVP', 'DATABASE_READY', 'DATABASE_PERSISTENT', 'EXTERNAL_ADAPTER')),
   CONSTRAINT memory_records_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -442,45 +342,54 @@ CREATE TABLE IF NOT EXISTS memory_records (
   `
 CREATE TABLE IF NOT EXISTS evt_records (
   evt_id TEXT PRIMARY KEY,
+  event_id TEXT,
   prev_evt_id TEXT,
-  tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL,
-  workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL,
-  human_ipr TEXT
-    REFERENCES ipr_subjects(human_ipr)
-    ON DELETE SET NULL,
-  runtime_ipr TEXT NOT NULL DEFAULT 'IPR-AI-0001',
+  prev_event_id TEXT,
+  prev TEXT,
+  tenant_id TEXT,
+  workspace_id TEXT,
+  subscription_id TEXT,
+  human_ipr TEXT,
+  subject_ipr TEXT,
+  runtime_ipr TEXT DEFAULT 'IPR-AI-0001',
   session_id TEXT,
-  thread_id TEXT
-    REFERENCES chat_threads(thread_id)
-    ON DELETE SET NULL,
-  memory_id TEXT
-    REFERENCES memory_records(memory_id)
-    ON DELETE SET NULL,
-  event_kind TEXT NOT NULL DEFAULT 'CHAT_OPERATION',
-  event_family TEXT NOT NULL DEFAULT 'UP-EVT',
-  cycle TEXT NOT NULL DEFAULT 'UP-CANONICO',
-  runtime_state TEXT NOT NULL,
-  runtime_decision TEXT NOT NULL,
+  thread_id TEXT,
+  memory_id TEXT,
+  opc_proof_id TEXT,
+  audit_id TEXT,
+  event_kind TEXT DEFAULT 'CHAT_OPERATION',
+  event_type TEXT,
+  kind TEXT,
+  event_family TEXT DEFAULT 'UP-EVT',
+  cycle TEXT DEFAULT 'UP-CANONICO',
+  runtime_state TEXT,
+  state TEXT,
+  runtime_decision TEXT,
+  decision TEXT,
+  policy_decision TEXT,
+  risk_level TEXT,
+  memory_scope TEXT,
   context_class TEXT,
   intent_class TEXT,
   project_domain TEXT,
   hbce_module TEXT,
-  event_hash TEXT NOT NULL,
+  evt_hash TEXT,
+  event_hash TEXT,
+  hash TEXT,
   public_hash TEXT,
+  full_hash TEXT,
+  chain_hash TEXT,
+  input_hash TEXT,
+  output_hash TEXT,
+  policy_hash TEXT,
+  memory_hash TEXT,
   operational_context JSONB NOT NULL DEFAULT '{}'::jsonb,
+  anchors JSONB NOT NULL DEFAULT '{}'::jsonb,
+  trace JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  event_payload JSONB,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT evt_records_runtime_state_check
-    CHECK (runtime_state IN ('OPERATIONAL', 'DEGRADED', 'BLOCKED', 'INVALID', 'AUDIT_ONLY', 'MAINTENANCE', 'UNKNOWN')),
-  CONSTRAINT evt_records_runtime_decision_check
-    CHECK (runtime_decision IN ('ALLOW', 'BLOCK', 'ESCALATE', 'DEGRADE', 'AUDIT', 'NOOP', 'UNKNOWN')),
-  CONSTRAINT evt_records_event_family_check
-    CHECK (event_family IN ('UP-EVT', 'EVT', 'UP-MESE', 'RUNTIME')),
   CONSTRAINT evt_records_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -489,52 +398,59 @@ CREATE TABLE IF NOT EXISTS evt_records (
   `
 CREATE TABLE IF NOT EXISTS opc_proofs (
   proof_id TEXT PRIMARY KEY,
-  evt_id TEXT
-    REFERENCES evt_records(evt_id)
-    ON DELETE SET NULL,
-  tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL,
-  workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL,
-  human_ipr TEXT
-    REFERENCES ipr_subjects(human_ipr)
-    ON DELETE SET NULL,
-  runtime_ipr TEXT NOT NULL DEFAULT 'IPR-AI-0001',
+  id TEXT,
+  evt_id TEXT,
+  event_id TEXT,
+  tenant_id TEXT,
+  workspace_id TEXT,
+  subscription_id TEXT,
+  human_ipr TEXT,
+  subject_ipr TEXT,
+  runtime_ipr TEXT DEFAULT 'IPR-AI-0001',
   session_id TEXT,
-  thread_id TEXT
-    REFERENCES chat_threads(thread_id)
-    ON DELETE SET NULL,
-  memory_id TEXT
-    REFERENCES memory_records(memory_id)
-    ON DELETE SET NULL,
-  persistence_mode TEXT NOT NULL DEFAULT 'DATABASE_PERSISTENT',
-  persistence_status TEXT NOT NULL DEFAULT 'DATABASE_PERSISTENT_ACTIVE',
-  input_hash TEXT NOT NULL,
-  output_hash TEXT NOT NULL,
-  decision_hash TEXT NOT NULL,
-  event_hash TEXT NOT NULL,
-  engine_hash TEXT NOT NULL,
-  identity_hash TEXT NOT NULL,
+  thread_id TEXT,
+  memory_id TEXT,
+  kind TEXT DEFAULT 'OPERATIONAL_PROOF_RECORD',
+  proof_kind TEXT,
+  receipt_type TEXT DEFAULT 'OPC_TECHNICAL_PROOF_RECEIPT',
+  persistence_mode TEXT DEFAULT 'DATABASE_READY',
+  persistence_status TEXT DEFAULT 'DATABASE_CONTRACT_READY',
+  provider TEXT,
+  model TEXT,
+  model_level TEXT,
+  input_hash TEXT,
+  output_hash TEXT,
+  decision_hash TEXT,
+  event_hash TEXT,
+  evt_hash TEXT,
+  engine_hash TEXT,
+  identity_hash TEXT,
   handoff_hash TEXT,
-  memory_hash TEXT NOT NULL,
+  memory_hash TEXT,
   previous_proof_hash TEXT,
-  chain_hash TEXT NOT NULL,
-  audit_status TEXT NOT NULL DEFAULT 'NOT_REQUIRED',
-  verification_status TEXT NOT NULL DEFAULT 'VERIFIABLE',
+  chain_hash TEXT,
+  audit_status TEXT DEFAULT 'NOT_REQUIRED',
+  verification_status TEXT DEFAULT 'VERIFIABLE',
+  runtime_state TEXT,
+  runtime_decision TEXT,
+  risk_class TEXT,
+  policy_reference TEXT,
+  project_domain TEXT,
+  hbce_module TEXT,
   operational_context JSONB NOT NULL DEFAULT '{}'::jsonb,
+  identity JSONB NOT NULL DEFAULT '{}'::jsonb,
+  engine JSONB NOT NULL DEFAULT '{}'::jsonb,
+  event JSONB NOT NULL DEFAULT '{}'::jsonb,
+  memory JSONB NOT NULL DEFAULT '{}'::jsonb,
+  runtime JSONB NOT NULL DEFAULT '{}'::jsonb,
+  proof JSONB NOT NULL DEFAULT '{}'::jsonb,
+  audit JSONB NOT NULL DEFAULT '{}'::jsonb,
+  verification JSONB NOT NULL DEFAULT '{}'::jsonb,
+  boundary JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  proof_payload JSONB,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT opc_proofs_persistence_mode_check
-    CHECK (persistence_mode IN ('RUNTIME_ONLY', 'PROCESS_PROOF_MVP', 'DATABASE_READY', 'DATABASE_PERSISTENT', 'EXTERNAL_ADAPTER')),
-  CONSTRAINT opc_proofs_persistence_status_check
-    CHECK (persistence_status IN ('NOT_PERSISTED', 'PROCESS_SCOPED', 'DATABASE_CONTRACT_READY', 'DATABASE_PERSISTENT_REQUIRED', 'DATABASE_PERSISTENT_ACTIVE', 'EXTERNAL_ADAPTER_REQUIRED')),
-  CONSTRAINT opc_proofs_audit_status_check
-    CHECK (audit_status IN ('NOT_REQUIRED', 'READY', 'REQUIRED', 'OPEN', 'IN_REVIEW', 'REVIEWED', 'DISPUTED', 'LOCKED', 'REJECTED', 'CLOSED', 'FAILED')),
-  CONSTRAINT opc_proofs_verification_status_check
-    CHECK (verification_status IN ('VERIFIABLE', 'PARTIAL', 'INVALID', 'UNVERIFIED', 'ANCHORED', 'SUPERSEDED', 'DISPUTED')),
   CONSTRAINT opc_proofs_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -543,60 +459,68 @@ CREATE TABLE IF NOT EXISTS opc_proofs (
   `
 CREATE TABLE IF NOT EXISTS runtime_audit_logs (
   audit_id TEXT PRIMARY KEY,
-  tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL,
-  workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL,
-  subscription_id TEXT
-    REFERENCES subscriptions(subscription_id)
-    ON DELETE SET NULL,
-  human_ipr TEXT
-    REFERENCES ipr_subjects(human_ipr)
-    ON DELETE SET NULL,
-  runtime_ipr TEXT NOT NULL DEFAULT 'IPR-AI-0001',
+  source TEXT,
+  request_id TEXT,
+  tenant_id TEXT,
+  workspace_id TEXT,
+  subscription_id TEXT,
+  human_ipr TEXT,
+  organization_ipr TEXT,
+  runtime_ipr TEXT DEFAULT 'IPR-AI-0001',
   session_id TEXT,
-  thread_id TEXT
-    REFERENCES chat_threads(thread_id)
-    ON DELETE SET NULL,
-  evt_id TEXT
-    REFERENCES evt_records(evt_id)
-    ON DELETE SET NULL,
-  opc_proof_id TEXT
-    REFERENCES opc_proofs(proof_id)
-    ON DELETE SET NULL,
-  memory_id TEXT
-    REFERENCES memory_records(memory_id)
-    ON DELETE SET NULL,
-  audit_kind TEXT NOT NULL DEFAULT 'RUNTIME_DECISION',
-  runtime_state TEXT NOT NULL DEFAULT 'UNKNOWN',
-  runtime_decision TEXT NOT NULL DEFAULT 'UNKNOWN',
-  risk_level TEXT NOT NULL DEFAULT 'UNKNOWN',
+  thread_id TEXT,
+  evt_id TEXT,
+  evt_ref TEXT,
+  evt_hash TEXT,
+  opc_proof_id TEXT,
+  opc_ref TEXT,
+  opc_proof_hash TEXT,
+  memory_id TEXT,
+  memory_ref TEXT,
+  memory_hash TEXT,
+  identity_state TEXT,
+  organization_state TEXT,
+  workspace_state TEXT,
+  audit_kind TEXT DEFAULT 'RUNTIME_DECISION',
+  runtime_state TEXT DEFAULT 'UNKNOWN',
+  runtime_decision TEXT DEFAULT 'UNKNOWN',
+  audit_state TEXT DEFAULT 'NOT_REQUIRED',
+  risk_level TEXT DEFAULT 'UNKNOWN',
   data_class TEXT,
   context_class TEXT,
   project_domain TEXT,
   hbce_module TEXT,
   model_level TEXT,
+  selected_model TEXT,
+  model_routing_reason TEXT,
   saas_tier TEXT,
+  tier_decision TEXT,
+  access_decision TEXT,
+  cyber_relevance TEXT,
   c2_boundary TEXT,
+  c2_decision TEXT,
+  c2_allowed BOOLEAN,
+  c2_fail_closed BOOLEAN,
   blocked BOOLEAN NOT NULL DEFAULT false,
+  allowed BOOLEAN,
   fail_closed BOOLEAN NOT NULL DEFAULT false,
-  human_oversight TEXT NOT NULL DEFAULT 'NOT_REQUIRED',
-  audit_hash TEXT NOT NULL,
+  human_oversight TEXT DEFAULT 'NOT_REQUIRED',
+  memory_scope TEXT,
+  memory_authority TEXT,
+  persistence_mode TEXT,
+  evt_required BOOLEAN,
+  opc_required BOOLEAN,
+  audit_required BOOLEAN,
+  input_hash TEXT,
+  output_hash TEXT,
+  decision_hash TEXT,
+  policy_hash TEXT,
+  audit_hash TEXT,
+  reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  audit_payload JSONB,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT runtime_audit_logs_runtime_state_check
-    CHECK (runtime_state IN ('OPERATIONAL', 'DEGRADED', 'BLOCKED', 'INVALID', 'AUDIT_ONLY', 'MAINTENANCE', 'UNKNOWN')),
-  CONSTRAINT runtime_audit_logs_runtime_decision_check
-    CHECK (runtime_decision IN ('ALLOW', 'BLOCK', 'ESCALATE', 'DEGRADE', 'AUDIT', 'NOOP', 'UNKNOWN')),
-  CONSTRAINT runtime_audit_logs_risk_level_check
-    CHECK (risk_level IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', 'UNKNOWN')),
-  CONSTRAINT runtime_audit_logs_human_oversight_check
-    CHECK (human_oversight IN ('NOT_REQUIRED', 'RECOMMENDED', 'REQUIRED', 'MANDATORY_REVIEW')),
-  CONSTRAINT runtime_audit_logs_saas_tier_check
-    CHECK (saas_tier IS NULL OR saas_tier IN ('BASE', 'IPR', 'PRO', 'GOVERNANCE', 'C2_DEFENSE', 'STRATEGIC', 'UNKNOWN')),
   CONSTRAINT runtime_audit_logs_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -605,54 +529,72 @@ CREATE TABLE IF NOT EXISTS runtime_audit_logs (
   `
 CREATE TABLE IF NOT EXISTS model_usage (
   usage_id TEXT PRIMARY KEY,
-  tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL,
-  workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL,
-  subscription_id TEXT
-    REFERENCES subscriptions(subscription_id)
-    ON DELETE SET NULL,
-  human_ipr TEXT
-    REFERENCES ipr_subjects(human_ipr)
-    ON DELETE SET NULL,
-  runtime_ipr TEXT NOT NULL DEFAULT 'IPR-AI-0001',
+  source TEXT,
+  provider TEXT DEFAULT 'UNKNOWN',
+  tenant_id TEXT,
+  workspace_id TEXT,
+  subscription_id TEXT,
+  human_ipr TEXT,
+  organization_ipr TEXT,
+  runtime_ipr TEXT DEFAULT 'IPR-AI-0001',
   session_id TEXT,
-  thread_id TEXT
-    REFERENCES chat_threads(thread_id)
-    ON DELETE SET NULL,
-  evt_id TEXT
-    REFERENCES evt_records(evt_id)
-    ON DELETE SET NULL,
-  opc_proof_id TEXT
-    REFERENCES opc_proofs(proof_id)
-    ON DELETE SET NULL,
-  audit_id TEXT
-    REFERENCES runtime_audit_logs(audit_id)
-    ON DELETE SET NULL,
-  provider TEXT NOT NULL DEFAULT 'openai',
-  model TEXT NOT NULL,
-  model_level TEXT NOT NULL DEFAULT 'BASE',
-  saas_tier TEXT NOT NULL DEFAULT 'BASE',
+  thread_id TEXT,
+  request_id TEXT,
+  evt_id TEXT,
+  evt_ref TEXT,
+  evt_hash TEXT,
+  opc_proof_id TEXT,
+  opc_ref TEXT,
+  opc_proof_hash TEXT,
+  audit_id TEXT,
+  selected_model TEXT,
+  model TEXT,
+  model_level TEXT DEFAULT 'UNKNOWN',
+  model_routing_reason TEXT,
   routing_reason TEXT,
-  input_tokens INTEGER NOT NULL DEFAULT 0,
-  output_tokens INTEGER NOT NULL DEFAULT 0,
-  total_tokens INTEGER NOT NULL DEFAULT 0,
-  estimated_cost_minor INTEGER NOT NULL DEFAULT 0,
+  saas_tier TEXT DEFAULT 'BASE',
+  risk_level TEXT,
+  runtime_decision TEXT,
+  audit_state TEXT,
+  operational_value TEXT,
+  cyber_relevance TEXT,
+  c2_boundary TEXT,
+  proof_requirement TEXT,
+  evt_required BOOLEAN,
+  opc_required BOOLEAN,
+  audit_required BOOLEAN,
+  input_tokens INTEGER DEFAULT 0,
+  output_tokens INTEGER DEFAULT 0,
+  total_tokens INTEGER DEFAULT 0,
+  cached_input_tokens INTEGER DEFAULT 0,
+  reasoning_tokens INTEGER DEFAULT 0,
+  estimated_cost_units NUMERIC DEFAULT 0,
+  estimated_cost_minor INTEGER DEFAULT 0,
   currency TEXT NOT NULL DEFAULT 'EUR',
-  usage_hash TEXT NOT NULL,
+  accounting_mode TEXT,
+  blocked BOOLEAN NOT NULL DEFAULT false,
+  allowed BOOLEAN,
+  fail_closed BOOLEAN NOT NULL DEFAULT false,
+  persistence_mode TEXT,
+  usage_hash TEXT,
+  reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  usage_payload JSONB,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT model_usage_model_level_check
-    CHECK (model_level IN ('BASE', 'STANDARD', 'ENHANCED', 'ADVANCED', 'C2', 'FRONTIER', 'UNKNOWN')),
-  CONSTRAINT model_usage_saas_tier_check
-    CHECK (saas_tier IN ('BASE', 'IPR', 'PRO', 'GOVERNANCE', 'C2_DEFENSE', 'STRATEGIC', 'UNKNOWN')),
   CONSTRAINT model_usage_tokens_non_negative
-    CHECK (input_tokens >= 0 AND output_tokens >= 0 AND total_tokens >= 0),
+    CHECK (
+      COALESCE(input_tokens, 0) >= 0 AND
+      COALESCE(output_tokens, 0) >= 0 AND
+      COALESCE(total_tokens, 0) >= 0 AND
+      COALESCE(cached_input_tokens, 0) >= 0 AND
+      COALESCE(reasoning_tokens, 0) >= 0
+    ),
   CONSTRAINT model_usage_cost_non_negative
-    CHECK (estimated_cost_minor >= 0),
+    CHECK (
+      COALESCE(estimated_cost_units, 0) >= 0 AND
+      COALESCE(estimated_cost_minor, 0) >= 0
+    ),
   CONSTRAINT model_usage_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -661,29 +603,15 @@ CREATE TABLE IF NOT EXISTS model_usage (
   `
 CREATE TABLE IF NOT EXISTS matrix_transformative_memory (
   evaluation_id TEXT PRIMARY KEY,
-  tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL,
-  workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL,
-  source_evt_id TEXT
-    REFERENCES evt_records(evt_id)
-    ON DELETE SET NULL,
-  source_opc_proof_id TEXT
-    REFERENCES opc_proofs(proof_id)
-    ON DELETE SET NULL,
-  human_ipr TEXT
-    REFERENCES ipr_subjects(human_ipr)
-    ON DELETE SET NULL,
+  tenant_id TEXT,
+  workspace_id TEXT,
+  source_evt_id TEXT,
+  source_opc_proof_id TEXT,
+  human_ipr TEXT,
   runtime_ipr TEXT NOT NULL DEFAULT 'IPR-AI-0001',
   session_id TEXT,
-  thread_id TEXT
-    REFERENCES chat_threads(thread_id)
-    ON DELETE SET NULL,
-  memory_id TEXT
-    REFERENCES memory_records(memory_id)
-    ON DELETE SET NULL,
+  thread_id TEXT,
+  memory_id TEXT,
   evaluation_hash TEXT NOT NULL,
   memory_scope TEXT NOT NULL DEFAULT 'RUNTIME_ONLY',
   memory_authority TEXT NOT NULL DEFAULT 'SESSION_RUNTIME_ONLY',
@@ -700,12 +628,6 @@ CREATE TABLE IF NOT EXISTS matrix_transformative_memory (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
-  CONSTRAINT matrix_transformative_memory_scope_check
-    CHECK (memory_scope IN ('IPR_BOUND', 'RUNTIME_ONLY')),
-  CONSTRAINT matrix_transformative_memory_authority_check
-    CHECK (memory_authority IN ('SERVER_RUNTIME_VALIDATED', 'SESSION_RUNTIME_ONLY')),
-  CONSTRAINT matrix_transformative_memory_persistence_mode_check
-    CHECK (memory_persistence_mode IN ('PROCESS_MEMORY_MVP', 'DATABASE_READY', 'DATABASE_PERSISTENT', 'EXTERNAL_ADAPTER')),
   CONSTRAINT matrix_transformative_memory_counts_non_negative
     CHECK (
       insight_count >= 0 AND
@@ -723,138 +645,678 @@ CREATE TABLE IF NOT EXISTS matrix_transformative_memory (
 `.trim(),
 
   `
-ALTER TABLE ipr_account_profiles
-  ADD COLUMN IF NOT EXISTS tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL;
-`.trim(),
-
-  `
-ALTER TABLE ipr_account_profiles
-  ADD COLUMN IF NOT EXISTS workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL;
-`.trim(),
-
-  `
-ALTER TABLE chat_threads
-  ADD COLUMN IF NOT EXISTS tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL;
-`.trim(),
-
-  `
-ALTER TABLE chat_threads
-  ADD COLUMN IF NOT EXISTS workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL;
-`.trim(),
-
-  `
-ALTER TABLE chat_messages
-  ADD COLUMN IF NOT EXISTS tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL;
-`.trim(),
-
-  `
-ALTER TABLE chat_messages
-  ADD COLUMN IF NOT EXISTS workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL;
-`.trim(),
-
-  `
-ALTER TABLE memory_records
-  ADD COLUMN IF NOT EXISTS tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL;
-`.trim(),
-
-  `
-ALTER TABLE memory_records
-  ADD COLUMN IF NOT EXISTS workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL;
-`.trim(),
-
-  `
-ALTER TABLE memory_records
-  ADD COLUMN IF NOT EXISTS thread_id TEXT
-    REFERENCES chat_threads(thread_id)
-    ON DELETE SET NULL;
+ALTER TABLE evt_records
+  DROP CONSTRAINT IF EXISTS evt_records_runtime_state_check;
 `.trim(),
 
   `
 ALTER TABLE evt_records
-  ADD COLUMN IF NOT EXISTS tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL;
+  DROP CONSTRAINT IF EXISTS evt_records_runtime_decision_check;
 `.trim(),
 
   `
 ALTER TABLE evt_records
-  ADD COLUMN IF NOT EXISTS workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL;
+  DROP CONSTRAINT IF EXISTS evt_records_event_family_check;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  DROP CONSTRAINT IF EXISTS runtime_audit_logs_runtime_state_check;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  DROP CONSTRAINT IF EXISTS runtime_audit_logs_runtime_decision_check;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  DROP CONSTRAINT IF EXISTS runtime_audit_logs_risk_level_check;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  DROP CONSTRAINT IF EXISTS runtime_audit_logs_human_oversight_check;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  DROP CONSTRAINT IF EXISTS runtime_audit_logs_saas_tier_check;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  DROP CONSTRAINT IF EXISTS model_usage_model_level_check;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  DROP CONSTRAINT IF EXISTS model_usage_saas_tier_check;
 `.trim(),
 
   `
 ALTER TABLE evt_records
-  ADD COLUMN IF NOT EXISTS event_family TEXT NOT NULL DEFAULT 'UP-EVT';
+  ALTER COLUMN runtime_state DROP NOT NULL;
 `.trim(),
 
   `
 ALTER TABLE evt_records
-  ADD COLUMN IF NOT EXISTS cycle TEXT NOT NULL DEFAULT 'UP-CANONICO';
+  ALTER COLUMN runtime_decision DROP NOT NULL;
 `.trim(),
 
   `
 ALTER TABLE evt_records
-  ADD COLUMN IF NOT EXISTS operational_context JSONB NOT NULL DEFAULT '{}'::jsonb;
+  ADD COLUMN IF NOT EXISTS event_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS prev_event_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS prev TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS subscription_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS subject_ipr TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS opc_proof_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS audit_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS event_type TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS kind TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS state TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS decision TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS policy_decision TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS risk_level TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS memory_scope TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS evt_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS event_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS chain_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS input_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS output_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS policy_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS memory_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS anchors JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS trace JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS event_payload JSONB;
 `.trim(),
 
   `
 ALTER TABLE opc_proofs
-  ADD COLUMN IF NOT EXISTS tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL;
+  ALTER COLUMN input_hash DROP NOT NULL;
 `.trim(),
 
   `
 ALTER TABLE opc_proofs
-  ADD COLUMN IF NOT EXISTS workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL;
+  ALTER COLUMN output_hash DROP NOT NULL;
 `.trim(),
 
   `
 ALTER TABLE opc_proofs
-  ADD COLUMN IF NOT EXISTS persistence_mode TEXT NOT NULL DEFAULT 'DATABASE_PERSISTENT';
+  ALTER COLUMN decision_hash DROP NOT NULL;
 `.trim(),
 
   `
 ALTER TABLE opc_proofs
-  ADD COLUMN IF NOT EXISTS persistence_status TEXT NOT NULL DEFAULT 'DATABASE_PERSISTENT_ACTIVE';
+  ALTER COLUMN event_hash DROP NOT NULL;
 `.trim(),
 
   `
 ALTER TABLE opc_proofs
-  ADD COLUMN IF NOT EXISTS operational_context JSONB NOT NULL DEFAULT '{}'::jsonb;
+  ALTER COLUMN engine_hash DROP NOT NULL;
 `.trim(),
 
   `
-ALTER TABLE matrix_transformative_memory
-  ADD COLUMN IF NOT EXISTS tenant_id TEXT
-    REFERENCES saas_tenants(tenant_id)
-    ON DELETE SET NULL;
+ALTER TABLE opc_proofs
+  ALTER COLUMN identity_hash DROP NOT NULL;
 `.trim(),
 
   `
-ALTER TABLE matrix_transformative_memory
-  ADD COLUMN IF NOT EXISTS workspace_id TEXT
-    REFERENCES saas_workspaces(workspace_id)
-    ON DELETE SET NULL;
+ALTER TABLE opc_proofs
+  ALTER COLUMN memory_hash DROP NOT NULL;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ALTER COLUMN chain_hash DROP NOT NULL;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS event_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS subscription_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS subject_ipr TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS kind TEXT DEFAULT 'OPERATIONAL_PROOF_RECORD';
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS proof_kind TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS receipt_type TEXT DEFAULT 'OPC_TECHNICAL_PROOF_RECEIPT';
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS provider TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS model TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS model_level TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS evt_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS runtime_state TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS runtime_decision TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS risk_class TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS policy_reference TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS project_domain TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS hbce_module TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS identity JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS engine JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS event JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS memory JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS runtime JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS proof JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS audit JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS verification JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS boundary JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS proof_payload JSONB;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS source TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS request_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS organization_ipr TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS evt_ref TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS opc_ref TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS opc_proof_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS memory_ref TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS identity_state TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS organization_state TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS workspace_state TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS audit_state TEXT DEFAULT 'NOT_REQUIRED';
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS selected_model TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS model_routing_reason TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS tier_decision TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS access_decision TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS cyber_relevance TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS c2_decision TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS c2_allowed BOOLEAN;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS c2_fail_closed BOOLEAN;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS allowed BOOLEAN;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS memory_scope TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS memory_authority TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS persistence_mode TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS evt_required BOOLEAN;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS opc_required BOOLEAN;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS audit_required BOOLEAN;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS input_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS output_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS decision_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS policy_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS reason TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS audit_payload JSONB;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ALTER COLUMN model DROP NOT NULL;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ALTER COLUMN model_level DROP NOT NULL;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ALTER COLUMN saas_tier DROP NOT NULL;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ALTER COLUMN usage_hash DROP NOT NULL;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS source TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS organization_ipr TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS request_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS evt_ref TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS opc_ref TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS opc_proof_hash TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS selected_model TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS model_routing_reason TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS risk_level TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS runtime_decision TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS audit_state TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS operational_value TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS cyber_relevance TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS c2_boundary TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS proof_requirement TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS evt_required BOOLEAN;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS opc_required BOOLEAN;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS audit_required BOOLEAN;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS cached_input_tokens INTEGER DEFAULT 0;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS reasoning_tokens INTEGER DEFAULT 0;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS estimated_cost_units NUMERIC DEFAULT 0;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS accounting_mode TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS allowed BOOLEAN;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS fail_closed BOOLEAN NOT NULL DEFAULT false;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS persistence_mode TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS reason TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS usage_payload JSONB;
 `.trim(),
 
   `
@@ -868,28 +1330,8 @@ CREATE INDEX IF NOT EXISTS idx_saas_workspaces_tenant_slug
 `.trim(),
 
   `
-CREATE INDEX IF NOT EXISTS idx_saas_workspace_memberships_human_ipr
-  ON saas_workspace_memberships(human_ipr);
-`.trim(),
-
-  `
-CREATE INDEX IF NOT EXISTS idx_saas_workspace_memberships_workspace_role
-  ON saas_workspace_memberships(workspace_id, role);
-`.trim(),
-
-  `
 CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant_status
   ON subscriptions(tenant_id, status);
-`.trim(),
-
-  `
-CREATE INDEX IF NOT EXISTS idx_subscriptions_workspace_status
-  ON subscriptions(workspace_id, status);
-`.trim(),
-
-  `
-CREATE INDEX IF NOT EXISTS idx_subscriptions_tier_status
-  ON subscriptions(tier, status);
 `.trim(),
 
   `
@@ -903,18 +1345,8 @@ CREATE INDEX IF NOT EXISTS idx_ipr_sessions_token_hash
 `.trim(),
 
   `
-CREATE INDEX IF NOT EXISTS idx_ipr_sessions_expires_at
-  ON ipr_sessions(expires_at);
-`.trim(),
-
-  `
 CREATE INDEX IF NOT EXISTS idx_ipr_account_profiles_account_id
   ON ipr_account_profiles(account_id);
-`.trim(),
-
-  `
-CREATE INDEX IF NOT EXISTS idx_ipr_account_profiles_tenant_workspace
-  ON ipr_account_profiles(tenant_id, workspace_id);
 `.trim(),
 
   `
@@ -933,11 +1365,6 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_thread_created_at
 `.trim(),
 
   `
-CREATE INDEX IF NOT EXISTS idx_chat_messages_workspace_created_at
-  ON chat_messages(workspace_id, created_at DESC);
-`.trim(),
-
-  `
 CREATE INDEX IF NOT EXISTS idx_memory_records_memory_key_hash
   ON memory_records(memory_key_hash);
 `.trim(),
@@ -948,8 +1375,18 @@ CREATE INDEX IF NOT EXISTS idx_memory_records_human_ipr_updated_at
 `.trim(),
 
   `
-CREATE INDEX IF NOT EXISTS idx_memory_records_workspace_updated_at
-  ON memory_records(workspace_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_evt_records_evt_hash
+  ON evt_records(evt_hash);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_evt_records_event_hash
+  ON evt_records(event_hash);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_evt_records_chain_hash
+  ON evt_records(chain_hash);
 `.trim(),
 
   `
@@ -970,6 +1407,11 @@ CREATE INDEX IF NOT EXISTS idx_evt_records_workspace_created_at
   `
 CREATE INDEX IF NOT EXISTS idx_evt_records_event_family_cycle
   ON evt_records(event_family, cycle);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_opc_proofs_evt_id
+  ON opc_proofs(evt_id);
 `.trim(),
 
   `
@@ -1050,8 +1492,8 @@ INSERT INTO hbce_schema_migrations (
   legal_certification
 )
 VALUES (
-  'HBCE-IPR-DB-v1.2',
-  'HBCE SaaS Core v0.1 persistent database schema for tenants, workspaces, memberships, subscriptions, IPR auth, account profiles, sessions, chat, memory, EVT, OPC, runtime audit logs, model usage and MATRIX Transformative Memory.',
+  'HBCE-IPR-DB-v1.3',
+  'HBCE SaaS Core v0.1 tolerant persistent database schema for tenants, workspaces, memberships, subscriptions, IPR auth, account profiles, sessions, chat, memory, EVT, OPC, runtime audit logs, model usage and MATRIX Transformative Memory. Runtime persistence tables are tolerant of MVP-stage nullable relational references and preserve full reconstruction data in JSONB payloads.',
   jsonb_build_object(
     'projectBirthDate', '2026-01-19',
     'projectBirthLabel', 'HBCE R&D / AI JOKER-C2 project birth date',
@@ -1064,6 +1506,7 @@ VALUES (
     'targetCheckpointDate', '2026-06-19T15:30:00+02:00',
     'targetCycle', 'UP-MESE-5',
     'persistenceMode', 'DATABASE_PERSISTENT',
+    'schemaPolicy', 'runtime_tolerant_payload_first',
     'legalCertification', false,
     'tables', jsonb_build_array(
       'saas_tenants',
@@ -1142,6 +1585,6 @@ export function getHbceDatabaseSaasCoreContext() {
     targetCycle: HBCE_TARGET_CYCLE,
     legalCertification: false,
     statement:
-      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, memory, EVT, OPC, runtime audit, model usage, tenant and workspace continuity."
+      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, memory, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads."
   };
 }
