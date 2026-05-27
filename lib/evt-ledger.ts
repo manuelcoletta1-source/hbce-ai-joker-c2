@@ -203,8 +203,8 @@ type EventDatabaseFields = {
   auditId: string | null;
   memoryId: string | null;
   eventKind: string;
-  runtimeState: string | null;
-  runtimeDecision: string | null;
+  runtimeState: string;
+  runtimeDecision: string;
   projectDomain: string | null;
   hbceModule: string | null;
   payloadJson: string;
@@ -385,12 +385,14 @@ function normalizeDatabaseRuntimeDecision(value: string | null): string | null {
   if (
     normalized === "SERVER_VALIDATION_REQUIRED" ||
     normalized === "PENDING_SERVER_VALIDATION" ||
-    normalized === "ACCESS_LIMITED"
+    normalized === "ACCESS_LIMITED" ||
+    normalized === "MATRIX_LIMITED" ||
+    normalized === "NOT_VERIFIED"
   ) {
     return "ESCALATE";
   }
 
-  if (normalized === "DENIED" || normalized === "REJECTED") {
+  if (normalized === "DENIED" || normalized === "REJECTED" || normalized === "ACCESS_DENIED") {
     return "BLOCK";
   }
 
@@ -409,7 +411,11 @@ function normalizeDatabaseRuntimeState(value: string | null): string | null {
     normalized === "BLOCKED" ||
     normalized === "INVALID" ||
     normalized === "COMPLETED" ||
-    normalized === "FAILED"
+    normalized === "FAILED" ||
+    normalized === "DEGRADED" ||
+    normalized === "AUDIT_ONLY" ||
+    normalized === "MAINTENANCE" ||
+    normalized === "UNKNOWN"
   ) {
     return normalized;
   }
@@ -419,13 +425,18 @@ function normalizeDatabaseRuntimeState(value: string | null): string | null {
     normalized === "OPENAI_CONFIGURED" ||
     normalized === "ONLINE" ||
     normalized === "ALLOW" ||
-    normalized === "ACCESS_GRANTED"
+    normalized === "ACCESS_GRANTED" ||
+    normalized === "MATRIX_ACTIVE"
   ) {
     return "OPERATIONAL";
   }
 
-  if (normalized === "PROVIDER_ERROR" || normalized === "DEGRADED") {
-    return "FAILED";
+  if (
+    normalized === "PROVIDER_ERROR" ||
+    normalized === "DATABASE_WRITE_FAILED" ||
+    normalized === "MATRIX_LIMITED"
+  ) {
+    return "DEGRADED";
   }
 
   if (normalized === "BLOCK") {
@@ -554,6 +565,10 @@ function safeEventChainReference(event: Partial<RuntimeEvent>): string {
       [
         ["trace", "hash"],
         ["hash"],
+        ["evtHash"],
+        ["evt_hash"],
+        ["eventHash"],
+        ["event_hash"],
         ["anchors", "hash"],
         ["anchors", "publicHash"],
         ["anchors", "fullHash"]
@@ -577,6 +592,10 @@ function safeEventHash(event: RuntimeEvent): string {
       [
         ["trace", "hash"],
         ["hash"],
+        ["evtHash"],
+        ["evt_hash"],
+        ["eventHash"],
+        ["event_hash"],
         ["anchors", "hash"],
         ["anchors", "publicHash"],
         ["anchors", "fullHash"]
@@ -721,33 +740,38 @@ function buildEventDatabaseFields(event: RuntimeEvent): EventDatabaseFields {
     null
   );
 
-  const runtimeDecision = normalizeDatabaseRuntimeDecision(
-    firstStringPath(
-      eventRecord,
-      [
-        ["decision"],
-        ["runtimeDecision"],
-        ["runtime_decision"],
-        ["policy", "decision"],
-        ["governance", "decision"]
-      ],
-      null
-    )
-  );
+  const runtimeDecision =
+    normalizeDatabaseRuntimeDecision(
+      firstStringPath(
+        eventRecord,
+        [
+          ["decision"],
+          ["runtimeDecision"],
+          ["runtime_decision"],
+          ["policy", "decision"],
+          ["governance", "decision"],
+          ["access", "decision"],
+          ["identity", "accessDecision"]
+        ],
+        null
+      )
+    ) ?? "ALLOW";
 
-  const runtimeState = normalizeDatabaseRuntimeState(
-    firstStringPath(
-      eventRecord,
-      [
-        ["state"],
-        ["runtimeState"],
-        ["runtime_state"],
-        ["runtime", "state"],
-        ["governance", "state"]
-      ],
-      null
-    )
-  );
+  const runtimeState =
+    normalizeDatabaseRuntimeState(
+      firstStringPath(
+        eventRecord,
+        [
+          ["state"],
+          ["runtimeState"],
+          ["runtime_state"],
+          ["runtime", "state"],
+          ["governance", "state"],
+          ["matrix", "state"]
+        ],
+        null
+      )
+    ) ?? "OPERATIONAL";
 
   const eventKind =
     firstStringPath(
@@ -769,8 +793,12 @@ function buildEventDatabaseFields(event: RuntimeEvent): EventDatabaseFields {
       evt: evtId,
       prev: prevEvtId,
       hash: evtHash,
+      eventHash: evtHash,
+      evtHash,
       chainReference: safeEventChainReference(event),
       chainHash,
+      runtimeState,
+      runtimeDecision,
       projectDomain: summary.projectDomain,
       hbceModule: summary.hbceModule,
       runtimeIpr,
@@ -833,6 +861,10 @@ function chooseColumn(
   return null;
 }
 
+function hasColumnValue(target: EventColumnValue[], column: string): boolean {
+  return target.some((item) => item.column === column);
+}
+
 function addColumnValue(
   target: EventColumnValue[],
   available: Set<string>,
@@ -850,11 +882,43 @@ function addColumnValue(
     return;
   }
 
+  if (hasColumnValue(target, column)) {
+    return;
+  }
+
   target.push({
     column,
     value,
     jsonb: options.jsonb
   });
+}
+
+function addEveryColumnValue(
+  target: EventColumnValue[],
+  available: Set<string>,
+  candidates: string[],
+  value: HbceDatabaseQueryValue,
+  options: { jsonb?: boolean; required?: boolean } = {}
+): void {
+  let written = false;
+
+  for (const column of candidates) {
+    if (!available.has(column) || hasColumnValue(target, column)) {
+      continue;
+    }
+
+    target.push({
+      column,
+      value,
+      jsonb: options.jsonb
+    });
+
+    written = true;
+  }
+
+  if (!written && options.required) {
+    throw new Error(`EVT schema missing required column: ${candidates.join(" | ")}`);
+  }
 }
 
 async function getEvtDatabaseColumns(): Promise<Set<string>> {
@@ -947,16 +1011,30 @@ function buildEvtDatabaseColumnValues(
 ): EventColumnValue[] {
   const values: EventColumnValue[] = [];
 
-  addColumnValue(values, available, ["evt_id", "event_id"], toDatabaseValue(fields.evtId), {
+  addEveryColumnValue(values, available, ["evt_id", "event_id"], toDatabaseValue(fields.evtId), {
     required: true
   });
-  addColumnValue(values, available, ["prev_evt_id", "prev_event_id", "prev"], toDatabaseValue(fields.prevEvtId));
-  addColumnValue(values, available, ["evt_hash", "event_hash", "hash"], toDatabaseValue(fields.evtHash), {
-    required: true
-  });
-  addColumnValue(values, available, ["chain_hash"], toDatabaseValue(fields.chainHash));
+
+  addEveryColumnValue(
+    values,
+    available,
+    ["prev_evt_id", "prev_event_id", "prev"],
+    toDatabaseValue(fields.prevEvtId)
+  );
+
+  addEveryColumnValue(
+    values,
+    available,
+    ["evt_hash", "event_hash", "hash", "public_hash", "full_hash"],
+    toDatabaseValue(fields.evtHash),
+    {
+      required: true
+    }
+  );
+
+  addEveryColumnValue(values, available, ["chain_hash"], toDatabaseValue(fields.chainHash));
   addColumnValue(values, available, ["runtime_ipr"], toDatabaseValue(fields.runtimeIpr));
-  addColumnValue(values, available, ["human_ipr"], toDatabaseValue(fields.humanIpr));
+  addColumnValue(values, available, ["human_ipr", "subject_ipr"], toDatabaseValue(fields.humanIpr));
   addColumnValue(values, available, ["tenant_id"], toDatabaseValue(null));
   addColumnValue(values, available, ["workspace_id"], toDatabaseValue(null));
   addColumnValue(values, available, ["subscription_id"], toDatabaseValue(null));
@@ -965,15 +1043,42 @@ function buildEvtDatabaseColumnValues(
   addColumnValue(values, available, ["opc_proof_id"], toDatabaseValue(null));
   addColumnValue(values, available, ["audit_id"], toDatabaseValue(null));
   addColumnValue(values, available, ["memory_id"], toDatabaseValue(null));
-  addColumnValue(values, available, ["event_kind", "event_type", "kind"], toDatabaseValue(fields.eventKind));
-  addColumnValue(values, available, ["runtime_state"], toDatabaseValue(fields.runtimeState));
-  addColumnValue(values, available, ["runtime_decision"], toDatabaseValue(fields.runtimeDecision));
+
+  addEveryColumnValue(
+    values,
+    available,
+    ["event_kind", "event_type", "kind"],
+    toDatabaseValue(fields.eventKind)
+  );
+
+  addEveryColumnValue(
+    values,
+    available,
+    ["runtime_state", "state"],
+    toDatabaseValue(fields.runtimeState)
+  );
+
+  addEveryColumnValue(
+    values,
+    available,
+    ["runtime_decision", "decision"],
+    toDatabaseValue(fields.runtimeDecision)
+  );
+
   addColumnValue(values, available, ["project_domain"], toDatabaseValue(fields.projectDomain));
   addColumnValue(values, available, ["hbce_module"], toDatabaseValue(fields.hbceModule));
-  addColumnValue(values, available, ["payload", "event_payload"], toDatabaseValue(fields.payloadJson), {
-    jsonb: true,
-    required: true
-  });
+
+  addEveryColumnValue(
+    values,
+    available,
+    ["payload", "event_payload"],
+    toDatabaseValue(fields.payloadJson),
+    {
+      jsonb: true,
+      required: true
+    }
+  );
+
   addColumnValue(values, available, ["legal_certification"], toDatabaseValue(false));
 
   return values;
