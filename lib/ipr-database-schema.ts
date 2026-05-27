@@ -1,7 +1,7 @@
-export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.3";
+export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.4";
 
 export const HBCE_DATABASE_SCHEMA_BOUNDARY =
-  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
+  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.4 introduces the canonical HBCE internal self-pilot SaaS seed for tenant, workspace, subscription, IPR subject, membership and account profile continuity. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
 
 export const HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY =
   "All HBCE database records remain technical-operational records. legal_certification must remain false unless a future legally recognized qualified trust service, public authority process or regulated certification workflow is explicitly integrated.";
@@ -28,6 +28,40 @@ export const HBCE_TARGET_RELEASE = "SaaS Core v0.1";
 export const HBCE_TARGET_CHECKPOINT_DATE = "2026-06-19T15:30:00+02:00";
 
 export const HBCE_TARGET_CYCLE = "UP-MESE-5";
+
+export const HBCE_SELF_PILOT_TENANT_ID = "HBCE-TENANT-SELF-PILOT";
+
+export const HBCE_SELF_PILOT_TENANT_SLUG = "hbce-self-pilot";
+
+export const HBCE_SELF_PILOT_TENANT_NAME =
+  "HERMETICUM B.C.E. S.r.l. - Internal R&D Self-Pilot";
+
+export const HBCE_SELF_PILOT_WORKSPACE_ID = "HBCE-WORKSPACE-RND";
+
+export const HBCE_SELF_PILOT_WORKSPACE_SLUG = "rnd-saas-core";
+
+export const HBCE_SELF_PILOT_WORKSPACE_NAME =
+  "HBCE R&D SaaS Core Workspace";
+
+export const HBCE_SELF_PILOT_SUBSCRIPTION_ID = "HBCE-SUB-SAAS-CORE-V01";
+
+export const HBCE_SELF_PILOT_SUBSCRIPTION_TIER = "IPR";
+
+export const HBCE_SELF_PILOT_ACCOUNT_ID = "HBCE-ACCOUNT-MANUEL-SELF-PILOT";
+
+export const HBCE_SELF_PILOT_MEMBERSHIP_ID =
+  "HBCE-MEMBER-MANUEL-SELF-PILOT";
+
+export const HBCE_SELF_PILOT_HUMAN_IPR =
+  "IPR-88505FE91013DCFE97C56ED1";
+
+export const HBCE_SELF_PILOT_ENTITY = "Manuel Coletta";
+
+export const HBCE_SELF_PILOT_CERTIFICATE_ID =
+  "HBCE-CERT-4591712414205BC5F3A42894";
+
+export const HBCE_SELF_PILOT_CARD_SERIAL =
+  "IPR-CARD-88505FE91013DCFE97C56ED1";
 
 export const HBCE_DATABASE_SCHEMA_TABLES = [
   "hbce_schema_migrations",
@@ -66,6 +100,22 @@ export type HbceDatabaseSchemaDefinition = {
   targetRelease: typeof HBCE_TARGET_RELEASE;
   targetCheckpointDate: typeof HBCE_TARGET_CHECKPOINT_DATE;
   targetCycle: typeof HBCE_TARGET_CYCLE;
+  selfPilot: {
+    tenantId: typeof HBCE_SELF_PILOT_TENANT_ID;
+    tenantSlug: typeof HBCE_SELF_PILOT_TENANT_SLUG;
+    tenantName: typeof HBCE_SELF_PILOT_TENANT_NAME;
+    workspaceId: typeof HBCE_SELF_PILOT_WORKSPACE_ID;
+    workspaceSlug: typeof HBCE_SELF_PILOT_WORKSPACE_SLUG;
+    workspaceName: typeof HBCE_SELF_PILOT_WORKSPACE_NAME;
+    subscriptionId: typeof HBCE_SELF_PILOT_SUBSCRIPTION_ID;
+    subscriptionTier: typeof HBCE_SELF_PILOT_SUBSCRIPTION_TIER;
+    accountId: typeof HBCE_SELF_PILOT_ACCOUNT_ID;
+    membershipId: typeof HBCE_SELF_PILOT_MEMBERSHIP_ID;
+    humanIpr: typeof HBCE_SELF_PILOT_HUMAN_IPR;
+    entity: typeof HBCE_SELF_PILOT_ENTITY;
+    certificateId: typeof HBCE_SELF_PILOT_CERTIFICATE_ID;
+    cardSerial: typeof HBCE_SELF_PILOT_CARD_SERIAL;
+  };
   tables: readonly HbceDatabaseSchemaTable[];
   sql: readonly string[];
 };
@@ -1335,6 +1385,16 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant_status
 `.trim(),
 
   `
+CREATE INDEX IF NOT EXISTS idx_subscriptions_workspace_status
+  ON subscriptions(workspace_id, status);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_saas_workspace_memberships_human_ipr
+  ON saas_workspace_memberships(human_ipr);
+`.trim(),
+
+  `
 CREATE INDEX IF NOT EXISTS idx_ipr_sessions_human_ipr
   ON ipr_sessions(human_ipr);
 `.trim(),
@@ -1347,6 +1407,11 @@ CREATE INDEX IF NOT EXISTS idx_ipr_sessions_token_hash
   `
 CREATE INDEX IF NOT EXISTS idx_ipr_account_profiles_account_id
   ON ipr_account_profiles(account_id);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_ipr_account_profiles_tenant_workspace
+  ON ipr_account_profiles(tenant_id, workspace_id);
 `.trim(),
 
   `
@@ -1372,6 +1437,11 @@ CREATE INDEX IF NOT EXISTS idx_memory_records_memory_key_hash
   `
 CREATE INDEX IF NOT EXISTS idx_memory_records_human_ipr_updated_at
   ON memory_records(human_ipr, updated_at DESC);
+`.trim(),
+
+  `
+CREATE INDEX IF NOT EXISTS idx_memory_records_tenant_workspace_updated_at
+  ON memory_records(tenant_id, workspace_id, updated_at DESC);
 `.trim(),
 
   `
@@ -1485,6 +1555,301 @@ CREATE INDEX IF NOT EXISTS idx_matrix_transformative_memory_workspace_created_at
 `.trim(),
 
   `
+INSERT INTO saas_tenants (
+  tenant_id,
+  tenant_slug,
+  name,
+  status,
+  plan,
+  metadata,
+  legal_certification
+)
+VALUES (
+  '${HBCE_SELF_PILOT_TENANT_ID}',
+  '${HBCE_SELF_PILOT_TENANT_SLUG}',
+  '${HBCE_SELF_PILOT_TENANT_NAME}',
+  'ACTIVE',
+  'INTERNAL_R_AND_D',
+  jsonb_build_object(
+    'project', 'Project HBCE R&D Transfer SaaS',
+    'release', 'SaaS Core v0.1',
+    'role', 'INTERNAL_SELF_PILOT_TENANT',
+    'sourceEvent', 'UP-EVT-0016',
+    'targetCheckpointDate', '2026-06-19T15:30:00+02:00',
+    'legalCertification', false
+  ),
+  false
+)
+ON CONFLICT (tenant_id) DO UPDATE SET
+  tenant_slug = EXCLUDED.tenant_slug,
+  name = EXCLUDED.name,
+  status = EXCLUDED.status,
+  plan = EXCLUDED.plan,
+  metadata = EXCLUDED.metadata,
+  updated_at = now(),
+  legal_certification = false;
+`.trim(),
+
+  `
+INSERT INTO ipr_subjects (
+  human_ipr,
+  entity,
+  subject_kind,
+  status,
+  last_seen_at,
+  metadata,
+  legal_certification
+)
+VALUES (
+  '${HBCE_SELF_PILOT_HUMAN_IPR}',
+  '${HBCE_SELF_PILOT_ENTITY}',
+  'BIOLOGICAL_SUBJECT',
+  'ACTIVE',
+  now(),
+  jsonb_build_object(
+    'tenantId', '${HBCE_SELF_PILOT_TENANT_ID}',
+    'workspaceId', '${HBCE_SELF_PILOT_WORKSPACE_ID}',
+    'accountId', '${HBCE_SELF_PILOT_ACCOUNT_ID}',
+    'role', 'HBCE_INTERNAL_SELF_PILOT_OPERATOR',
+    'runtimeAccess', 'JOKER_C2_ACCESS',
+    'identityBinding', 'IPR_VERIFIED_BIOLOGICAL_SUBJECT',
+    'legalCertification', false
+  ),
+  false
+)
+ON CONFLICT (human_ipr) DO UPDATE SET
+  entity = EXCLUDED.entity,
+  subject_kind = EXCLUDED.subject_kind,
+  status = EXCLUDED.status,
+  last_seen_at = now(),
+  metadata = EXCLUDED.metadata,
+  updated_at = now(),
+  legal_certification = false;
+`.trim(),
+
+  `
+INSERT INTO saas_workspaces (
+  workspace_id,
+  tenant_id,
+  workspace_slug,
+  name,
+  status,
+  metadata,
+  legal_certification
+)
+VALUES (
+  '${HBCE_SELF_PILOT_WORKSPACE_ID}',
+  '${HBCE_SELF_PILOT_TENANT_ID}',
+  '${HBCE_SELF_PILOT_WORKSPACE_SLUG}',
+  '${HBCE_SELF_PILOT_WORKSPACE_NAME}',
+  'ACTIVE',
+  jsonb_build_object(
+    'project', 'Project HBCE R&D Transfer SaaS',
+    'release', 'SaaS Core v0.1',
+    'role', 'INTERNAL_R_AND_D_WORKSPACE',
+    'runtime', 'JOKER-C2',
+    'memoryTarget', 'DATABASE_PERSISTENT',
+    'evtRequired', true,
+    'opcRequired', true,
+    'auditRequired', true,
+    'modelUsageLoggingRequired', true,
+    'legalCertification', false
+  ),
+  false
+)
+ON CONFLICT (workspace_id) DO UPDATE SET
+  tenant_id = EXCLUDED.tenant_id,
+  workspace_slug = EXCLUDED.workspace_slug,
+  name = EXCLUDED.name,
+  status = EXCLUDED.status,
+  metadata = EXCLUDED.metadata,
+  updated_at = now(),
+  legal_certification = false;
+`.trim(),
+
+  `
+INSERT INTO saas_workspace_memberships (
+  membership_id,
+  tenant_id,
+  workspace_id,
+  human_ipr,
+  role,
+  status,
+  metadata,
+  legal_certification
+)
+VALUES (
+  '${HBCE_SELF_PILOT_MEMBERSHIP_ID}',
+  '${HBCE_SELF_PILOT_TENANT_ID}',
+  '${HBCE_SELF_PILOT_WORKSPACE_ID}',
+  '${HBCE_SELF_PILOT_HUMAN_IPR}',
+  'OWNER_OPERATOR',
+  'ACTIVE',
+  jsonb_build_object(
+    'project', 'Project HBCE R&D Transfer SaaS',
+    'release', 'SaaS Core v0.1',
+    'role', 'HBCE_INTERNAL_SELF_PILOT_OWNER_OPERATOR',
+    'humanOversightRole', 'SELF_PILOT_REVIEWER',
+    'legalCertification', false
+  ),
+  false
+)
+ON CONFLICT (workspace_id, human_ipr) DO UPDATE SET
+  membership_id = EXCLUDED.membership_id,
+  tenant_id = EXCLUDED.tenant_id,
+  role = EXCLUDED.role,
+  status = EXCLUDED.status,
+  metadata = EXCLUDED.metadata,
+  updated_at = now(),
+  legal_certification = false;
+`.trim(),
+
+  `
+INSERT INTO subscriptions (
+  subscription_id,
+  tenant_id,
+  workspace_id,
+  tier,
+  status,
+  billing_mode,
+  starts_at,
+  model_limit_daily,
+  message_limit_daily,
+  memory_limit_records,
+  evt_required,
+  opc_required,
+  audit_required,
+  model_usage_logging_required,
+  metadata,
+  legal_certification
+)
+VALUES (
+  '${HBCE_SELF_PILOT_SUBSCRIPTION_ID}',
+  '${HBCE_SELF_PILOT_TENANT_ID}',
+  '${HBCE_SELF_PILOT_WORKSPACE_ID}',
+  '${HBCE_SELF_PILOT_SUBSCRIPTION_TIER}',
+  'ACTIVE',
+  'INTERNAL_R_AND_D',
+  now(),
+  NULL,
+  NULL,
+  NULL,
+  true,
+  true,
+  true,
+  true,
+  jsonb_build_object(
+    'project', 'Project HBCE R&D Transfer SaaS',
+    'release', 'SaaS Core v0.1',
+    'subscriptionRole', 'INTERNAL_SELF_PILOT_SUBSCRIPTION',
+    'memoryTarget', 'DATABASE_PERSISTENT',
+    'evtRequired', true,
+    'opcRequired', true,
+    'auditRequired', true,
+    'modelUsageLoggingRequired', true,
+    'legalCertification', false
+  ),
+  false
+)
+ON CONFLICT (subscription_id) DO UPDATE SET
+  tenant_id = EXCLUDED.tenant_id,
+  workspace_id = EXCLUDED.workspace_id,
+  tier = EXCLUDED.tier,
+  status = EXCLUDED.status,
+  billing_mode = EXCLUDED.billing_mode,
+  evt_required = EXCLUDED.evt_required,
+  opc_required = EXCLUDED.opc_required,
+  audit_required = EXCLUDED.audit_required,
+  model_usage_logging_required = EXCLUDED.model_usage_logging_required,
+  metadata = EXCLUDED.metadata,
+  updated_at = now(),
+  legal_certification = false;
+`.trim(),
+
+  `
+INSERT INTO ipr_account_profiles (
+  human_ipr,
+  tenant_id,
+  workspace_id,
+  account_id,
+  entity,
+  subject_kind,
+  certificate_id,
+  certificate_kind,
+  certificate_status,
+  certificate_scope,
+  card_serial,
+  certificate_hash,
+  access_decision,
+  access_scope,
+  identity_binding,
+  matrix_state,
+  semantic_memory_scope,
+  source,
+  profile_payload,
+  legal_certification
+)
+VALUES (
+  '${HBCE_SELF_PILOT_HUMAN_IPR}',
+  '${HBCE_SELF_PILOT_TENANT_ID}',
+  '${HBCE_SELF_PILOT_WORKSPACE_ID}',
+  '${HBCE_SELF_PILOT_ACCOUNT_ID}',
+  '${HBCE_SELF_PILOT_ENTITY}',
+  'BIOLOGICAL_SUBJECT',
+  '${HBCE_SELF_PILOT_CERTIFICATE_ID}',
+  'CERTIFICATE_09_OPERATIONAL',
+  'ACTIVE',
+  jsonb_build_array('JOKER_C2_ACCESS'),
+  '${HBCE_SELF_PILOT_CARD_SERIAL}',
+  NULL,
+  'ACCESS_GRANTED',
+  'JOKER_C2_ACCESS',
+  'IPR_VERIFIED_BIOLOGICAL_SUBJECT',
+  'MATRIX_ACTIVE',
+  'IPR_BOUND',
+  'HBCE_INTERNAL_SELF_PILOT_SEED',
+  jsonb_build_object(
+    'project', 'Project HBCE R&D Transfer SaaS',
+    'release', 'SaaS Core v0.1',
+    'tenantId', '${HBCE_SELF_PILOT_TENANT_ID}',
+    'workspaceId', '${HBCE_SELF_PILOT_WORKSPACE_ID}',
+    'subscriptionId', '${HBCE_SELF_PILOT_SUBSCRIPTION_ID}',
+    'tier', '${HBCE_SELF_PILOT_SUBSCRIPTION_TIER}',
+    'runtime', 'JOKER-C2',
+    'memoryScope', 'IPR_BOUND',
+    'memoryPersistence', 'DATABASE_PERSISTENT',
+    'evtRequired', true,
+    'opcRequired', true,
+    'auditRequired', true,
+    'modelUsageLoggingRequired', true,
+    'legalCertification', false
+  ),
+  false
+)
+ON CONFLICT (human_ipr) DO UPDATE SET
+  tenant_id = EXCLUDED.tenant_id,
+  workspace_id = EXCLUDED.workspace_id,
+  account_id = EXCLUDED.account_id,
+  entity = EXCLUDED.entity,
+  subject_kind = EXCLUDED.subject_kind,
+  certificate_id = EXCLUDED.certificate_id,
+  certificate_kind = EXCLUDED.certificate_kind,
+  certificate_status = EXCLUDED.certificate_status,
+  certificate_scope = EXCLUDED.certificate_scope,
+  card_serial = EXCLUDED.card_serial,
+  certificate_hash = EXCLUDED.certificate_hash,
+  access_decision = EXCLUDED.access_decision,
+  access_scope = EXCLUDED.access_scope,
+  identity_binding = EXCLUDED.identity_binding,
+  matrix_state = EXCLUDED.matrix_state,
+  semantic_memory_scope = EXCLUDED.semantic_memory_scope,
+  source = EXCLUDED.source,
+  profile_payload = EXCLUDED.profile_payload,
+  updated_at = now(),
+  legal_certification = false;
+`.trim(),
+
+  `
 INSERT INTO hbce_schema_migrations (
   version,
   description,
@@ -1492,8 +1857,8 @@ INSERT INTO hbce_schema_migrations (
   legal_certification
 )
 VALUES (
-  'HBCE-IPR-DB-v1.3',
-  'HBCE SaaS Core v0.1 tolerant persistent database schema for tenants, workspaces, memberships, subscriptions, IPR auth, account profiles, sessions, chat, memory, EVT, OPC, runtime audit logs, model usage and MATRIX Transformative Memory. Runtime persistence tables are tolerant of MVP-stage nullable relational references and preserve full reconstruction data in JSONB payloads.',
+  'HBCE-IPR-DB-v1.4',
+  'HBCE SaaS Core v0.1 persistent database schema with canonical internal self-pilot seed for HERMETICUM B.C.E. tenant, R&D workspace, IPR subscription, Manuel Coletta IPR account profile, workspace membership, IPR subject, memory, EVT, OPC, runtime audit logs, model usage and MATRIX Transformative Memory. Runtime persistence tables remain tolerant of MVP-stage nullable relational references and preserve reconstruction data in JSONB payloads.',
   jsonb_build_object(
     'projectBirthDate', '2026-01-19',
     'projectBirthLabel', 'HBCE R&D / AI JOKER-C2 project birth date',
@@ -1506,7 +1871,21 @@ VALUES (
     'targetCheckpointDate', '2026-06-19T15:30:00+02:00',
     'targetCycle', 'UP-MESE-5',
     'persistenceMode', 'DATABASE_PERSISTENT',
-    'schemaPolicy', 'runtime_tolerant_payload_first',
+    'schemaPolicy', 'runtime_tolerant_payload_first_with_self_pilot_seed',
+    'selfPilot', jsonb_build_object(
+      'tenantId', '${HBCE_SELF_PILOT_TENANT_ID}',
+      'tenantSlug', '${HBCE_SELF_PILOT_TENANT_SLUG}',
+      'workspaceId', '${HBCE_SELF_PILOT_WORKSPACE_ID}',
+      'workspaceSlug', '${HBCE_SELF_PILOT_WORKSPACE_SLUG}',
+      'subscriptionId', '${HBCE_SELF_PILOT_SUBSCRIPTION_ID}',
+      'subscriptionTier', '${HBCE_SELF_PILOT_SUBSCRIPTION_TIER}',
+      'accountId', '${HBCE_SELF_PILOT_ACCOUNT_ID}',
+      'membershipId', '${HBCE_SELF_PILOT_MEMBERSHIP_ID}',
+      'humanIpr', '${HBCE_SELF_PILOT_HUMAN_IPR}',
+      'entity', '${HBCE_SELF_PILOT_ENTITY}',
+      'certificateId', '${HBCE_SELF_PILOT_CERTIFICATE_ID}',
+      'cardSerial', '${HBCE_SELF_PILOT_CARD_SERIAL}'
+    ),
     'legalCertification', false,
     'tables', jsonb_build_array(
       'saas_tenants',
@@ -1547,6 +1926,22 @@ export const HBCE_DATABASE_SCHEMA: HbceDatabaseSchemaDefinition = {
   targetRelease: HBCE_TARGET_RELEASE,
   targetCheckpointDate: HBCE_TARGET_CHECKPOINT_DATE,
   targetCycle: HBCE_TARGET_CYCLE,
+  selfPilot: {
+    tenantId: HBCE_SELF_PILOT_TENANT_ID,
+    tenantSlug: HBCE_SELF_PILOT_TENANT_SLUG,
+    tenantName: HBCE_SELF_PILOT_TENANT_NAME,
+    workspaceId: HBCE_SELF_PILOT_WORKSPACE_ID,
+    workspaceSlug: HBCE_SELF_PILOT_WORKSPACE_SLUG,
+    workspaceName: HBCE_SELF_PILOT_WORKSPACE_NAME,
+    subscriptionId: HBCE_SELF_PILOT_SUBSCRIPTION_ID,
+    subscriptionTier: HBCE_SELF_PILOT_SUBSCRIPTION_TIER,
+    accountId: HBCE_SELF_PILOT_ACCOUNT_ID,
+    membershipId: HBCE_SELF_PILOT_MEMBERSHIP_ID,
+    humanIpr: HBCE_SELF_PILOT_HUMAN_IPR,
+    entity: HBCE_SELF_PILOT_ENTITY,
+    certificateId: HBCE_SELF_PILOT_CERTIFICATE_ID,
+    cardSerial: HBCE_SELF_PILOT_CARD_SERIAL
+  },
   tables: HBCE_DATABASE_SCHEMA_TABLES,
   sql: HBCE_DATABASE_SCHEMA_SQL
 };
@@ -1583,8 +1978,24 @@ export function getHbceDatabaseSaasCoreContext() {
     targetRelease: HBCE_TARGET_RELEASE,
     targetCheckpointDate: HBCE_TARGET_CHECKPOINT_DATE,
     targetCycle: HBCE_TARGET_CYCLE,
+    selfPilot: {
+      tenantId: HBCE_SELF_PILOT_TENANT_ID,
+      tenantSlug: HBCE_SELF_PILOT_TENANT_SLUG,
+      tenantName: HBCE_SELF_PILOT_TENANT_NAME,
+      workspaceId: HBCE_SELF_PILOT_WORKSPACE_ID,
+      workspaceSlug: HBCE_SELF_PILOT_WORKSPACE_SLUG,
+      workspaceName: HBCE_SELF_PILOT_WORKSPACE_NAME,
+      subscriptionId: HBCE_SELF_PILOT_SUBSCRIPTION_ID,
+      subscriptionTier: HBCE_SELF_PILOT_SUBSCRIPTION_TIER,
+      accountId: HBCE_SELF_PILOT_ACCOUNT_ID,
+      membershipId: HBCE_SELF_PILOT_MEMBERSHIP_ID,
+      humanIpr: HBCE_SELF_PILOT_HUMAN_IPR,
+      entity: HBCE_SELF_PILOT_ENTITY,
+      certificateId: HBCE_SELF_PILOT_CERTIFICATE_ID,
+      cardSerial: HBCE_SELF_PILOT_CARD_SERIAL
+    },
     legalCertification: false,
     statement:
-      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, memory, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads."
+      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, memory, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. HBCE-IPR-DB-v1.4 seeds the internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
   };
 }
