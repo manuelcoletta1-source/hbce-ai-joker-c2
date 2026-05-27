@@ -57,7 +57,10 @@ import {
   queryHbceDatabase
 } from "./ipr-database";
 
-import type { HbceDatabaseQueryRow } from "./ipr-database";
+import type {
+  HbceDatabaseQueryRow,
+  HbceDatabaseQueryValue
+} from "./ipr-database";
 
 const DEFAULT_LEDGER_FILENAME = "hbce-ai-joker-c2-events.jsonl";
 
@@ -208,6 +211,12 @@ type EventDatabaseFields = {
   legalCertification: false;
 };
 
+type EventColumnValue = {
+  column: string;
+  value: HbceDatabaseQueryValue;
+  jsonb?: boolean;
+};
+
 type InformationSchemaColumnRow = HbceDatabaseQueryRow & {
   column_name?: string;
 };
@@ -221,10 +230,6 @@ type EvtDatabaseRow = HbceDatabaseQueryRow & {
 };
 
 const NO_EVT_DATABASE_COLUMNS: string[] = [];
-
-function nowIso(): string {
-  return new Date().toISOString();
-}
 
 function sha256(value: unknown): string {
   return createHash("sha256").update(stableStringify(value)).digest("hex");
@@ -337,6 +342,10 @@ function safeDatabaseError(error: unknown): string {
   } catch {
     return "UNKNOWN_EVT_DATABASE_ERROR";
   }
+}
+
+function toDatabaseValue(value: string | number | boolean | null): HbceDatabaseQueryValue {
+  return value;
 }
 
 function normalizeDatabaseRuntimeDecision(value: string | null): string | null {
@@ -661,10 +670,10 @@ function chooseColumn(
 }
 
 function addColumnValue(
-  target: Array<{ column: string; value: unknown; jsonb?: boolean }>,
+  target: EventColumnValue[],
   available: Set<string>,
   candidates: string[],
-  value: unknown,
+  value: HbceDatabaseQueryValue,
   options: { jsonb?: boolean; required?: boolean } = {}
 ): void {
   const column = chooseColumn(available, candidates);
@@ -708,14 +717,14 @@ ORDER BY ordinal_position;
 }
 
 function buildEvtInsertStatement(input: {
-  columns: Array<{ column: string; value: unknown; jsonb?: boolean }>;
+  columns: EventColumnValue[];
 }): {
   sql: string;
-  params: unknown[];
+  params: HbceDatabaseQueryValue[];
   writtenColumns: string[];
 } {
   const writtenColumns = input.columns.map((item) => item.column);
-  const params = input.columns.map((item) => item.value);
+  const params: HbceDatabaseQueryValue[] = input.columns.map((item) => item.value);
 
   const insertColumns = input.columns
     .map((item) => quoteIdentifier(item.column))
@@ -771,37 +780,37 @@ RETURNING ${quoteIdentifier(conflictColumn)};
 function buildEvtDatabaseColumnValues(
   available: Set<string>,
   fields: EventDatabaseFields
-): Array<{ column: string; value: unknown; jsonb?: boolean }> {
-  const values: Array<{ column: string; value: unknown; jsonb?: boolean }> = [];
+): EventColumnValue[] {
+  const values: EventColumnValue[] = [];
 
-  addColumnValue(values, available, ["evt_id", "event_id"], fields.evtId, {
+  addColumnValue(values, available, ["evt_id", "event_id"], toDatabaseValue(fields.evtId), {
     required: true
   });
-  addColumnValue(values, available, ["prev_evt_id", "prev_event_id", "prev"], fields.prevEvtId);
-  addColumnValue(values, available, ["evt_hash", "event_hash", "hash"], fields.evtHash, {
+  addColumnValue(values, available, ["prev_evt_id", "prev_event_id", "prev"], toDatabaseValue(fields.prevEvtId));
+  addColumnValue(values, available, ["evt_hash", "event_hash", "hash"], toDatabaseValue(fields.evtHash), {
     required: true
   });
-  addColumnValue(values, available, ["chain_hash"], fields.chainHash);
-  addColumnValue(values, available, ["runtime_ipr"], fields.runtimeIpr);
-  addColumnValue(values, available, ["human_ipr"], fields.humanIpr);
-  addColumnValue(values, available, ["tenant_id"], null);
-  addColumnValue(values, available, ["workspace_id"], null);
-  addColumnValue(values, available, ["subscription_id"], null);
-  addColumnValue(values, available, ["session_id"], null);
-  addColumnValue(values, available, ["thread_id"], null);
-  addColumnValue(values, available, ["opc_proof_id"], null);
-  addColumnValue(values, available, ["audit_id"], null);
-  addColumnValue(values, available, ["memory_id"], null);
-  addColumnValue(values, available, ["event_kind", "event_type", "kind"], fields.eventKind);
-  addColumnValue(values, available, ["runtime_state"], fields.runtimeState);
-  addColumnValue(values, available, ["runtime_decision"], fields.runtimeDecision);
-  addColumnValue(values, available, ["project_domain"], fields.projectDomain);
-  addColumnValue(values, available, ["hbce_module"], fields.hbceModule);
-  addColumnValue(values, available, ["payload", "event_payload"], fields.payloadJson, {
+  addColumnValue(values, available, ["chain_hash"], toDatabaseValue(fields.chainHash));
+  addColumnValue(values, available, ["runtime_ipr"], toDatabaseValue(fields.runtimeIpr));
+  addColumnValue(values, available, ["human_ipr"], toDatabaseValue(fields.humanIpr));
+  addColumnValue(values, available, ["tenant_id"], toDatabaseValue(null));
+  addColumnValue(values, available, ["workspace_id"], toDatabaseValue(null));
+  addColumnValue(values, available, ["subscription_id"], toDatabaseValue(null));
+  addColumnValue(values, available, ["session_id"], toDatabaseValue(null));
+  addColumnValue(values, available, ["thread_id"], toDatabaseValue(null));
+  addColumnValue(values, available, ["opc_proof_id"], toDatabaseValue(null));
+  addColumnValue(values, available, ["audit_id"], toDatabaseValue(null));
+  addColumnValue(values, available, ["memory_id"], toDatabaseValue(null));
+  addColumnValue(values, available, ["event_kind", "event_type", "kind"], toDatabaseValue(fields.eventKind));
+  addColumnValue(values, available, ["runtime_state"], toDatabaseValue(fields.runtimeState));
+  addColumnValue(values, available, ["runtime_decision"], toDatabaseValue(fields.runtimeDecision));
+  addColumnValue(values, available, ["project_domain"], toDatabaseValue(fields.projectDomain));
+  addColumnValue(values, available, ["hbce_module"], toDatabaseValue(fields.hbceModule));
+  addColumnValue(values, available, ["payload", "event_payload"], toDatabaseValue(fields.payloadJson), {
     jsonb: true,
     required: true
   });
-  addColumnValue(values, available, ["legal_certification"], false);
+  addColumnValue(values, available, ["legal_certification"], toDatabaseValue(false));
 
   return values;
 }
