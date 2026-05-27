@@ -1820,37 +1820,163 @@ export default function InterfacePage() {
     setIprHandoffError(null);
   }
 
-  async function checkIprSession() {
+  async function checkIprSession(): Promise<IprSessionResponse | null> {
     setIsCheckingSession(true);
     setIprSessionError(null);
 
     try {
-      const response = await fetch("/api/auth/session", {
-        method: "GET",
-        cache: "no-store",
-        credentials: "include",
-        headers: {
-          Accept: "application/json"
-        }
-      });
+      const snapshot = await fetchIprSessionSnapshot();
 
-      const payload = await readJsonResponse<IprSessionResponse>(response);
+      setIprSession(snapshot.payload);
+      setIprSessionError(snapshot.error);
 
-      setIprSession(payload);
-
-      if (!response.ok || payload.authenticated !== true) {
-        setIprSessionError(
-          payload.reason || payload.detail || payload.error || `HTTP_${response.status}`
-        );
-      }
-    } catch (err) {
-      setIprSession(null);
-      setIprSessionError(
-        err instanceof Error ? err.message : "IPR_ACCOUNT_SESSION_CHECK_FAILED"
-      );
+      return snapshot.payload;
     } finally {
       setIsCheckingSession(false);
     }
+  }
+
+  async function resolveRequestIdentityContext(): Promise<{
+    iprHandoff: JsonRecord | null;
+    iprAccountSession: JsonRecord | null;
+  }> {
+    const browserHandoffResult = loadIprHandoffFromBrowser();
+
+    setIprHandoff(browserHandoffResult.handoff);
+    setIprHandoffSource(browserHandoffResult.source);
+    setIprHandoffError(browserHandoffResult.error);
+
+    const sessionSnapshot = await fetchIprSessionSnapshot();
+
+    setIprSession(sessionSnapshot.payload);
+    setIprSessionError(sessionSnapshot.error);
+
+    const activeSession = sessionSnapshot.payload ?? iprSession;
+
+    const activeSessionHandoff = isRecord(activeSession?.reconstructedIprHandoff)
+      ? activeSession.reconstructedIprHandoff
+      : isRecord(activeSession?.accountProfile)
+        ? activeSession.accountProfile
+        : null;
+
+    const activeBaseHandoff =
+      activeSessionHandoff ||
+      browserHandoffResult.handoff ||
+      effectiveHandoff ||
+      iprHandoff;
+
+    const activeHasAccountSession =
+      activeSession?.authenticated === true || hasAccountSession;
+
+    const requestHumanIpr = firstUsableRuntimeValue(
+      [
+        getSessionHumanIpr(activeSession),
+        getHandoffSubjectIpr(activeBaseHandoff),
+        activeHasAccountSession ? CANONICAL_MANUEL_HUMAN_IPR : "",
+        humanIpr
+      ],
+      "NOT_VERIFIED"
+    );
+
+    const requestSubject = firstDisplayValue(
+      [
+        getSessionSubjectName(activeSession, requestHumanIpr),
+        getHandoffSubjectName(activeBaseHandoff, requestHumanIpr),
+        requestHumanIpr === CANONICAL_MANUEL_HUMAN_IPR
+          ? CANONICAL_MANUEL_DISPLAY_NAME
+          : "",
+        subject
+      ],
+      "No verified subject"
+    );
+
+    const requestCertificateId = firstUsableRuntimeValue(
+      [
+        getSessionCertificateId(activeSession),
+        getHandoffCertificateId(activeBaseHandoff),
+        certificateId
+      ],
+      "NO_CERTIFICATE"
+    );
+
+    const requestCertificateStatus = firstDisplayValue(
+      [
+        getSessionCertificateStatus(activeSession),
+        getHandoffCertificateStatus(activeBaseHandoff),
+        certificateStatus
+      ],
+      "MISSING"
+    );
+
+    const requestScope = firstUsableRuntimeValue(
+      [
+        getSessionScope(activeSession),
+        getHandoffScope(activeBaseHandoff),
+        scope
+      ],
+      "MATRIX_LIMITED"
+    );
+
+    const requestIdentityReady =
+      activeHasAccountSession &&
+      !isNegativeRuntimeValue(requestHumanIpr) &&
+      !isNegativeRuntimeValue(requestCertificateId) &&
+      isActiveCertificateStatus(requestCertificateStatus) &&
+      hasJokerC2Scope(requestScope);
+
+    const requestAccessDecision = firstUsableRuntimeValue(
+      [
+        requestIdentityReady ? "ACCESS_GRANTED_ACCOUNT_SESSION" : "",
+        first(activeSession, [["access", "decision"], ["access", "accessDecision"]], ""),
+        accessDecision
+      ],
+      "SERVER_VALIDATION_REQUIRED"
+    );
+
+    const requestIdentityBinding = firstUsableRuntimeValue(
+      [
+        requestIdentityReady ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT" : "",
+        first(activeSession, [["access", "identityBinding"], ["access", "identity_binding"]], ""),
+        identityBinding
+      ],
+      "NOT_VERIFIED"
+    );
+
+    const requestHandoff = buildEnrichedIprHandoff({
+      base: activeBaseHandoff,
+      subject: requestSubject,
+      humanIpr: requestHumanIpr,
+      certificateId: requestCertificateId,
+      certificateStatus: requestCertificateStatus,
+      scope: requestScope,
+      accessDecision: requestAccessDecision,
+      identityBinding: requestIdentityBinding
+    });
+
+    if (requestHandoff) {
+      persistHandoff(requestHandoff);
+      setIprHandoff(requestHandoff);
+      setIprHandoffSource(activeSessionHandoff ? "accountSession" : browserHandoffResult.source);
+    }
+
+    const requestAccountSession =
+      activeSession?.authenticated === true
+        ? {
+            source: "IPR_ACCOUNT_SESSION",
+            session: activeSession.session,
+            accountProfile: activeSession.accountProfile,
+            reconstructedIprHandoff: activeSession.reconstructedIprHandoff,
+            access: activeSession.access,
+            memory: activeSession.memory,
+            matrix: activeSession.matrix,
+            legalCertification: false
+          }
+        : null;
+
+    return {
+      iprHandoff: requestHandoff,
+      iprAccountSession: requestAccountSession
+    };
   }
 
   async function checkRuntime() {
@@ -1966,6 +2092,22 @@ export default function InterfacePage() {
     setMessages((current) => [...current, userMessage]);
 
     try {
+      const requestIdentity = await resolveRequestIdentityContext();
+
+      const fallbackAccountSession =
+        iprSession?.authenticated === true
+          ? {
+              source: "IPR_ACCOUNT_SESSION",
+              session: iprSession.session,
+              accountProfile: iprSession.accountProfile,
+              reconstructedIprHandoff: iprSession.reconstructedIprHandoff,
+              access: iprSession.access,
+              memory: iprSession.memory,
+              matrix: iprSession.matrix,
+              legalCertification: false
+            }
+          : null;
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -1979,20 +2121,16 @@ export default function InterfacePage() {
           sessionId,
           continuityRef,
           files,
-          iprHandoff: enrichedIprHandoff,
-          iprAccountSession:
-            iprSession?.authenticated === true
-              ? {
-                  source: "IPR_ACCOUNT_SESSION",
-                  session: iprSession.session,
-                  accountProfile: iprSession.accountProfile,
-                  reconstructedIprHandoff: iprSession.reconstructedIprHandoff,
-                  access: iprSession.access,
-                  memory: iprSession.memory,
-                  matrix: iprSession.matrix,
-                  legalCertification: false
-                }
-              : null
+          iprHandoff: requestIdentity.iprHandoff ?? enrichedIprHandoff,
+          iprAccountSession: requestIdentity.iprAccountSession ?? fallbackAccountSession,
+          identityTransport: {
+            source: requestIdentity.iprAccountSession
+              ? "IPR_ACCOUNT_SESSION_FRESH"
+              : requestIdentity.iprHandoff
+                ? "IPR_HANDOFF_FRESH"
+                : "NO_IPR_CONTEXT",
+            legalCertification: false
+          }
         })
       });
 
@@ -3326,6 +3464,41 @@ export default function InterfacePage() {
       `}</style>
     </main>
   );
+}
+
+async function fetchIprSessionSnapshot(): Promise<{
+  payload: IprSessionResponse | null;
+  error: string | null;
+}> {
+  try {
+    const response = await fetch("/api/auth/session", {
+      method: "GET",
+      cache: "no-store",
+      credentials: "include",
+      headers: {
+        Accept: "application/json"
+      }
+    });
+
+    const payload = await readJsonResponse<IprSessionResponse>(response);
+
+    if (!response.ok || payload.authenticated !== true) {
+      return {
+        payload,
+        error: payload.reason || payload.detail || payload.error || `HTTP_${response.status}`
+      };
+    }
+
+    return {
+      payload,
+      error: null
+    };
+  } catch (err) {
+    return {
+      payload: null,
+      error: err instanceof Error ? err.message : "IPR_ACCOUNT_SESSION_CHECK_FAILED"
+    };
+  }
 }
 
 async function readRuntimeFile(file: File): Promise<RuntimeFile> {
