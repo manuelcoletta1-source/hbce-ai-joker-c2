@@ -7,6 +7,27 @@ import { appendModelUsageLogRecordAsync } from "@/lib/model-usage-log";
 import { persistEventToDatabase } from "@/lib/evt-ledger";
 import { persistOpcProofRecordToDatabase } from "@/lib/opc-proof";
 
+import {
+  getOrCreateRuntimeMemory,
+  updateMemoryAfterCompletion,
+  toPublicMemoryRecord,
+  describeRuntimeMemoryStore,
+  getRuntimeMemoryFlushErrors,
+  isRuntimeMemoryDatabasePersistent,
+  isRuntimeMemoryDatabaseReady
+} from "@/lib/ipr-bound-memory";
+
+import type {
+  IprBoundMemoryCertificate,
+  IprBoundMemoryHandoffEvaluation,
+  IprBoundMemoryRecord,
+  IprBoundMemoryRuntimeIdentity,
+  IprBoundMemorySaasTier,
+  IprBoundMemorySubject,
+  MemoryPersistenceMode,
+  MemoryScope
+} from "@/lib/ipr-bound-memory";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -62,16 +83,36 @@ type PolicyEvaluation = {
 };
 
 type RuntimeMemoryState = {
+  record: IprBoundMemoryRecord;
   sessionId: string;
+  memoryId: string;
+  memoryKeyHash: string;
+  memoryHash: string;
   createdAt: string;
   updatedAt: string;
   turns: number;
-  scope: "IPR_BOUND" | "RUNTIME_ONLY";
-  authority: "SERVER_RUNTIME_VALIDATED" | "PROCESS_MEMORY_MVP";
-  persistenceMode: "PROCESS_MEMORY_MVP";
+  scope: MemoryScope;
+  authority: "SERVER_RUNTIME_VALIDATED" | "SESSION_RUNTIME_ONLY";
+  persistenceMode: MemoryPersistenceMode;
+  persistenceStatus: string;
+  persistenceDurable: boolean;
+  persistenceDatabaseReady: boolean;
+  persistenceDatabaseRequired: boolean;
+  storeName: string;
+  storeKind: string;
+  storeStatus: string;
+  storeDurable: boolean;
+  storeRuntimeScoped: boolean;
+  storeRecordCount: number;
+  storePersistenceStage: string;
+  storeSaasReady: boolean;
+  storeRequiresDatabase: boolean;
+  databaseConfigured: boolean;
+  databaseAvailable: boolean;
   subjectIpr: string;
   lastEvtId: string;
   lastOpcId: string;
+  lastOpcChainHash: string;
   lastUserMessage: string;
   lastAssistantMessage: string;
   facts: string[];
@@ -165,7 +206,6 @@ const LOCATION = "Torino, Italy";
 
 const DEFAULT_STANDARD_MODEL = "gpt-4o-mini";
 const DEFAULT_DEEP_MODEL = "gpt-4o";
-const MEMORY_LIMIT = 24;
 
 const EMPTY_TOKEN_USAGE: CompletionTokenUsage = {
   inputTokens: null,
@@ -175,12 +215,11 @@ const EMPTY_TOKEN_USAGE: CompletionTokenUsage = {
   reasoningTokens: null
 };
 
-const processMemory = new Map<string, RuntimeMemoryState>();
-
 export async function GET(): Promise<NextResponse> {
   const standardModel = process.env.JOKER_MODEL?.trim() || DEFAULT_STANDARD_MODEL;
   const deepModel = process.env.JOKER_DEEP_MODEL?.trim() || DEFAULT_DEEP_MODEL;
   const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
+  const memoryStore = describeRuntimeMemoryStore();
 
   return jsonResponse({
     ok: true,
@@ -201,9 +240,14 @@ export async function GET(): Promise<NextResponse> {
     },
     memory: {
       scope: "RUNTIME_ONLY",
-      authority: "PROCESS_MEMORY_MVP",
-      persistenceMode: "PROCESS_MEMORY_MVP",
-      reason: "Health check only. IPR-bound memory is activated during POST when a valid handoff is present."
+      authority: "SESSION_RUNTIME_ONLY",
+      persistenceMode: memoryStore.kind,
+      persistenceStatus: memoryStore.persistenceStage,
+      persistenceDurable: memoryStore.durable,
+      databaseReady: isRuntimeMemoryDatabaseReady(),
+      databasePersistent: isRuntimeMemoryDatabasePersistent(),
+      reason: "Health check only. IPR-bound memory is activated during POST when a valid handoff is present.",
+      store: toJsonObject(memoryStore, {})
     },
     matrix: {
       state: "MATRIX_LIMITED",
@@ -215,17 +259,18 @@ export async function GET(): Promise<NextResponse> {
       opc: "DATABASE_PERSISTENT_TARGET",
       audit: "DATABASE_PERSISTENT_TARGET",
       modelUsage: "DATABASE_PERSISTENT_TARGET",
+      memory: memoryStore.kind,
       legalCertification: false
     },
     audit: {
       configured: true,
-      mode: "PROCESS_MEMORY_MVP",
+      mode: "DATABASE_PERSISTENT_TARGET",
       target: "DATABASE_PERSISTENT",
       legalCertification: false
     },
     modelUsage: {
       configured: true,
-      mode: "PROCESS_MEMORY_MVP",
+      mode: "DATABASE_PERSISTENT_TARGET",
       target: "DATABASE_PERSISTENT",
       legalCertification: false
     },
@@ -245,8 +290,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const handoff = resolveHandoff(request, body);
   const policy = evaluatePolicy(message, files);
-  const memory = getOrCreateMemory(sessionId, handoff, t);
   const saasContext = resolveSaasRuntimeContext(body, handoff, sessionId);
+  let memory = getOrCreateMemory(sessionId, handoff, t, saasContext);
 
   const model = resolveModel(body, policy);
   const modelLevel = resolveModelLevel(model, policy);
@@ -338,7 +383,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryHash: memoryHashBefore
   });
 
-  updateMemoryAfterTurn({
+  memory = updateMemoryAfterTurn({
     memory,
     t,
     handoff,
@@ -346,7 +391,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     assistantMessage: safeAnswer,
     evtId: evt.id,
     opcId: opc.id,
-    policy
+    opcChainHash: opc.chainHash,
+    policy,
+    providerState
   });
 
   const memoryHashAfter = sha256(memory);
@@ -403,9 +450,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     opc: opc.id,
     opcId: opc.id,
     matrix: handoff.matrixState,
-    memory: handoff.semanticMemoryScope,
+    memory: memory.scope,
     authority: memory.authority,
-    mode: memory.persistenceMode
+    mode: memory.persistenceMode,
+    memoryStore: memory.storeKind,
+    memoryPersistenceStatus: memory.persistenceStatus,
+    memoryPersistenceDurable: memory.persistenceDurable
   };
 
   const finalAnswer = runtimeDiagnosticsRequested
@@ -439,7 +489,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     : safeAnswer;
 
   if (runtimeDiagnosticsRequested) {
-    memory.lastAssistantMessage = truncate(finalAnswer, 1000);
+    memory = updateAssistantDiagnosticMemory({
+      memory,
+      finalAnswer,
+      evtId: evt.id,
+      opcId: opc.id,
+      opcChainHash: opc.chainHash,
+      policy,
+      providerState
+    });
   }
 
   const finalOutputHash = sha256(finalAnswer);
@@ -474,9 +532,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       modelLevel,
       state: providerState,
       matrix: handoff.matrixState,
-      memory: handoff.semanticMemoryScope,
+      memory: memory.scope,
       authority: memory.authority,
-      mode: memory.persistenceMode
+      mode: memory.persistenceMode,
+      memoryPersistenceStatus: memory.persistenceStatus,
+      memoryPersistenceDurable: memory.persistenceDurable,
+      memoryStore: memory.storeKind
     },
     runtimeName: RUNTIME_ENTITY,
     state: providerState,
@@ -507,6 +568,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       subscriptionId: saasContext.subscriptionId,
       threadId: saasContext.threadId,
       tier: saasContext.saasTier,
+      memory: toPublicMemory(memory),
       evtPersistence: persistenceBridge.evtPersistence,
       opcPersistence: persistenceBridge.opcPersistence,
       audit: auditAndUsage.audit,
@@ -585,6 +647,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       opc: persistenceBridge.opcPersistence,
       audit: auditAndUsage.audit,
       modelUsage: auditAndUsage.modelUsage,
+      memory: toPublicMemory(memory),
       legalCertification: false
     },
 
@@ -630,6 +693,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       tokenUsage: toJsonTokenUsage(tokenUsage),
       handoffSource: handoff.source,
       handoffReason: handoff.reason,
+      memory: toPublicMemory(memory),
+      memoryStore: buildMemoryStoreDiagnostic(memory),
+      memoryFlushErrors: getRuntimeMemoryFlushErrors(),
       evtPersistence: persistenceBridge.evtPersistence,
       opcPersistence: persistenceBridge.opcPersistence,
       boundary: buildBoundary()
@@ -751,10 +817,20 @@ function buildSystemPrompt(
     "Human oversight: " + policy.humanOversight,
     "",
     "Memory frame:",
+    "Memory ID: " + memory.memoryId,
+    "Memory key hash: " + memory.memoryKeyHash,
+    "Memory hash: " + memory.memoryHash,
     "Session: " + memory.sessionId,
     "Turns: " + String(memory.turns),
     "Scope: " + memory.scope,
-    "Persistence: " + memory.persistenceMode,
+    "Authority: " + memory.authority,
+    "Persistence mode: " + memory.persistenceMode,
+    "Persistence status: " + memory.persistenceStatus,
+    "Persistence durable: " + String(memory.persistenceDurable),
+    "Store kind: " + memory.storeKind,
+    "Store persistence stage: " + memory.storePersistenceStage,
+    "Database configured: " + String(memory.databaseConfigured),
+    "Database available: " + String(memory.databaseAvailable),
     "Last EVT: " + memory.lastEvtId,
     "Last OPC: " + memory.lastOpcId,
     "Known operational facts: " + JSON.stringify(memory.facts.slice(-8)),
@@ -766,7 +842,7 @@ function buildSystemPrompt(
     "Answer in the same main language used by the user.",
     "Do not claim legal certification, public authority validation, eIDAS qualification or official identity issuance.",
     "Treat OPC as a technical proof receipt only.",
-    "Treat process memory as MVP memory, not durable database persistence.",
+    "Treat memory persistence according to the memory frame. DATABASE_PERSISTENT is durable only when persistence durable is true and the store is DATABASE_PERSISTENT.",
     "If the user asks who they are or whether JOKER-C2 recognizes them, answer only from the biological subject resolution frame.",
     "Never recognize a biological subject because the name is written in the prompt.",
     "If the user asks for GitHub or code work, provide complete files when requested, not partial patches.",
@@ -869,6 +945,8 @@ function buildRuntimeDiagnosticsPreparationAnswer(
     "Human IPR: " + handoff.humanIpr,
     "MATRIX: " + handoff.matrixState,
     "Memory scope: " + memory.scope,
+    "Memory persistence: " + memory.persistenceMode,
+    "Memory store: " + memory.storeKind,
     "Policy decision: " + policy.decision,
     "Risk level: " + policy.riskLevel,
     "",
@@ -926,6 +1004,14 @@ function buildRuntimeDiagnosticsAnswer(args: {
   const usagePersistenceOk = stringPath(args.auditAndUsage.modelUsage, "persistence.ok", "false");
   const usagePersistenceError = stringPath(args.auditAndUsage.modelUsage, "persistence.error", "none");
 
+  const flushErrors = getRuntimeMemoryFlushErrors();
+  const memoryWriteStatus =
+    args.memory.persistenceMode === "DATABASE_PERSISTENT" && flushErrors.length === 0
+      ? "DATABASE_PERSISTENT_ACTIVE_OR_SCHEDULED"
+      : args.memory.persistenceMode === "DATABASE_PERSISTENT"
+        ? "DATABASE_PERSISTENT_WITH_FLUSH_WARNINGS"
+        : "NOT_DATABASE_PERSISTENT";
+
   return [
     "Diagnostica runtime JOKER-C2 generata post-evento.",
     "",
@@ -953,12 +1039,40 @@ function buildRuntimeDiagnosticsAnswer(args: {
     "- Scope: `" + args.memory.scope + "`",
     "- Authority: `" + args.memory.authority + "`",
     "- Persistence mode: `" + args.memory.persistenceMode + "`",
+    "- Persistence status: `" + args.memory.persistenceStatus + "`",
+    "- Persistence durable: `" + String(args.memory.persistenceDurable) + "`",
+    "- Persistence database ready: `" + String(args.memory.persistenceDatabaseReady) + "`",
+    "- Persistence database required: `" + String(args.memory.persistenceDatabaseRequired) + "`",
+    "- Memory ID: `" + args.memory.memoryId + "`",
+    "- Memory key hash: `" + args.memory.memoryKeyHash + "`",
+    "- Memory record hash: `" + args.memory.memoryHash + "`",
     "- Session: `" + args.memory.sessionId + "`",
     "- Turns: `" + String(args.memory.turns) + "`",
     "- Last EVT: `" + args.memory.lastEvtId + "`",
     "- Last OPC: `" + args.memory.lastOpcId + "`",
+    "- Last OPC chain hash: `" + args.memory.lastOpcChainHash + "`",
     "- Memory hash before: `" + args.memoryHashBefore + "`",
     "- Memory hash after: `" + args.memoryHashAfter + "`",
+    "",
+    "## Memory store",
+    "- Store name: `" + args.memory.storeName + "`",
+    "- Store kind: `" + args.memory.storeKind + "`",
+    "- Store status: `" + args.memory.storeStatus + "`",
+    "- Store durable: `" + String(args.memory.storeDurable) + "`",
+    "- Store runtime scoped: `" + String(args.memory.storeRuntimeScoped) + "`",
+    "- Store record count: `" + String(args.memory.storeRecordCount) + "`",
+    "- Store persistence stage: `" + args.memory.storePersistenceStage + "`",
+    "- Store SaaS ready: `" + String(args.memory.storeSaasReady) + "`",
+    "- Store requires database: `" + String(args.memory.storeRequiresDatabase) + "`",
+    "- Database configured: `" + String(args.memory.databaseConfigured) + "`",
+    "- Database available: `" + String(args.memory.databaseAvailable) + "`",
+    "",
+    "## Database memory",
+    "- memory_records write attempted: `" + String(args.memory.persistenceMode === "DATABASE_PERSISTENT") + "`",
+    "- memory_records write status: `" + memoryWriteStatus + "`",
+    "- memory_records read available: `" + String(args.memory.storeKind === "DATABASE_PERSISTENT") + "`",
+    "- database flush errors: `" + (flushErrors.length ? flushErrors.join(" | ") : "none") + "`",
+    "- memory payload persistence mode: `" + args.memory.persistenceMode + "`",
     "",
     "## EVT",
     "- Canonical AI EVT: `" + CANONICAL_EVT + "`",
@@ -1020,7 +1134,7 @@ function buildRuntimeDiagnosticsAnswer(args: {
     "- Provider error: `" + String(args.providerError ?? "none") + "`",
     "",
     "## Boundary",
-    "OPC, EVT, audit e model usage sono livelli tecnici di tracciabilità, ricostruzione operativa e governance. Non sono certificazione legale, non sono identità pubblica ufficiale e non sostituiscono revisione umana o legale.",
+    "OPC, EVT, audit, model usage e memory persistence sono livelli tecnici di tracciabilità, ricostruzione operativa e governance. Non sono certificazione legale, non sono identità pubblica ufficiale e non sostituiscono revisione umana o legale.",
     "",
     "legalCertification=false"
   ].join("\n");
@@ -1052,9 +1166,11 @@ function buildIdentityRecognitionAnswer(
       "Access decision: " + handoff.accessDecision,
       "Identity binding: " + handoff.identityBinding,
       "MATRIX: " + handoff.matrixState,
-      "Semantic memory: " + handoff.semanticMemoryScope,
+      "Semantic memory: " + memory.scope,
       "Memory authority: " + memory.authority,
       "Memory persistence mode: " + memory.persistenceMode,
+      "Memory persistence status: " + memory.persistenceStatus,
+      "Memory store: " + memory.storeKind,
       "Policy decision: " + policy.decision,
       "Risk level: " + policy.riskLevel,
       "",
@@ -1086,7 +1202,7 @@ function buildIdentityRecognitionAnswer(
     "Access decision: " + handoff.accessDecision,
     "Identity binding: " + handoff.identityBinding,
     "MATRIX: " + handoff.matrixState,
-    "Semantic memory: " + handoff.semanticMemoryScope,
+    "Semantic memory: " + memory.scope,
     "Memory authority: " + memory.authority,
     "Memory persistence mode: " + memory.persistenceMode,
     "",
@@ -1171,11 +1287,12 @@ function buildLocalFallbackAnswer(
     "Policy decision: " + policy.decision + ".",
     "Risk level: " + policy.riskLevel + ".",
     "Memory scope: " + memory.scope + ".",
+    "Memory persistence: " + memory.persistenceMode + ".",
     "",
     "Messaggio ricevuto:",
     truncate(message || "Messaggio vuoto.", 1200),
     "",
-    "OPENAI_API_KEY non risulta configurata nel runtime Vercel, quindi la risposta cognitiva del modello non è stata invocata. EVT e OPC tecnici vengono comunque prodotti."
+    "OPENAI_API_KEY non risulta configurata nel runtime Vercel, quindi la risposta cognitiva del modello non è stata invocata. EVT, OPC, audit, model usage e memoria vengono comunque processati nei rispettivi boundary tecnici."
   ].join("\n");
 }
 
@@ -1201,7 +1318,7 @@ function buildProviderErrorAnswer(
     "Messaggio ricevuto:",
     truncate(message || "Messaggio vuoto.", 1200),
     "",
-    "EVT e OPC tecnici sono stati comunque generati per tracciare l’evento."
+    "EVT, OPC, audit, model usage e memoria tecnica sono stati comunque generati per tracciare l’evento."
   ].join("\n");
 }
 
@@ -1497,7 +1614,6 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       "operational_certificate.accessScope",
       "operational_certificate.access_scope",
       "operational_certificate.certificateScope",
-      "operational_certificate.certificate_scope",
       "access.scope",
       "access.accessScope",
       "access.access_scope"
@@ -1609,50 +1725,27 @@ function resolveHandoffFromReferer(request: NextRequest): string {
 function getOrCreateMemory(
   sessionId: string,
   handoff: HandoffResolution,
-  t: string
+  t: string,
+  saasContext: SaasRuntimeContext
 ): RuntimeMemoryState {
-  const memoryKey =
-    handoff.semanticMemoryScope === "IPR_BOUND"
-      ? "IPR:" + handoff.humanIpr
-      : "SESSION:" + sessionId;
-
-  const existing = processMemory.get(memoryKey);
-
-  if (existing) {
-    existing.updatedAt = t;
-    existing.scope = handoff.semanticMemoryScope;
-    existing.subjectIpr = handoff.humanIpr;
-    existing.authority =
-      handoff.semanticMemoryScope === "IPR_BOUND"
-        ? "SERVER_RUNTIME_VALIDATED"
-        : "PROCESS_MEMORY_MVP";
-    return existing;
-  }
-
-  const created: RuntimeMemoryState = {
+  const memory = getOrCreateRuntimeMemory({
     sessionId,
-    createdAt: t,
-    updatedAt: t,
-    turns: 0,
-    scope: handoff.semanticMemoryScope,
-    authority:
-      handoff.semanticMemoryScope === "IPR_BOUND"
-        ? "SERVER_RUNTIME_VALIDATED"
-        : "PROCESS_MEMORY_MVP",
-    persistenceMode: "PROCESS_MEMORY_MVP",
-    subjectIpr: handoff.humanIpr,
-    lastEvtId: "none",
-    lastOpcId: "none",
-    lastUserMessage: "",
-    lastAssistantMessage: "",
-    facts: [
-      "Runtime initialized under " + CANONICAL_EVT + " / " + CYCLE + ".",
-      "OPC is a technical proof receipt only; legalCertification=false."
-    ]
-  };
+    handoff: toMemoryHandoffEvaluation(handoff),
+    runtime: buildRuntimeMemoryIdentity(),
+    previousContinuityRef: CANONICAL_EVT,
+    seedFacts: [
+      "Runtime /api/chat is using canonical IPR-bound memory module.",
+      "Memory persistence is selected through lib/ipr-bound-memory-store.ts.",
+      "JOKER-C2 SaaS Core v0.1 requires database persistence for durable multi-session memory."
+    ],
+    tenantId: normalizeOptionalSaasId(saasContext.tenantId),
+    workspaceId: normalizeOptionalSaasId(saasContext.workspaceId),
+    subscriptionTier: saasContext.saasTier
+  });
 
-  processMemory.set(memoryKey, created);
-  return created;
+  void t;
+
+  return toRuntimeMemoryState(memory);
 }
 
 function updateMemoryAfterTurn(args: {
@@ -1663,44 +1756,183 @@ function updateMemoryAfterTurn(args: {
   assistantMessage: string;
   evtId: string;
   opcId: string;
+  opcChainHash: string;
   policy: PolicyEvaluation;
-}): void {
-  args.memory.updatedAt = args.t;
-  args.memory.turns += 1;
-  args.memory.scope = args.handoff.semanticMemoryScope;
-  args.memory.subjectIpr = args.handoff.humanIpr;
-  args.memory.authority =
-    args.handoff.semanticMemoryScope === "IPR_BOUND"
-      ? "SERVER_RUNTIME_VALIDATED"
-      : "PROCESS_MEMORY_MVP";
-  args.memory.lastEvtId = args.evtId;
-  args.memory.lastOpcId = args.opcId;
-  args.memory.lastUserMessage = truncate(args.userMessage, 1000);
-  args.memory.lastAssistantMessage = truncate(args.assistantMessage, 1000);
-
+  providerState: string;
+}): RuntimeMemoryState {
   const operationalFact = extractOperationalFact(args.userMessage);
 
-  if (operationalFact) {
-    args.memory.facts.push(operationalFact);
+  const updated = updateMemoryAfterCompletion({
+    memory: args.memory.record,
+    userMessage: args.userMessage,
+    assistantMessage: args.assistantMessage,
+    evt: args.evtId,
+    opcProofId: args.opcId,
+    opcChainHash: args.opcChainHash,
+    extraFacts: [
+      operationalFact || "",
+      "Last runtime state: " + (args.providerState === "PROVIDER_ERROR" ? "DEGRADED" : "OPERATIONAL") + ".",
+      "Last runtime decision: " + mapPolicyDecisionToRuntimeDecision(args.policy) + ".",
+      "Last runtime context class: API_CHAT.",
+      "Last runtime project domain: HBCE_JOKER_C2.",
+      "Last runtime HBCE module: JOKER_C2_RUNTIME.",
+      "Turn completed with policy=" +
+        args.policy.decision +
+        ", risk=" +
+        args.policy.riskLevel +
+        ", evt=" +
+        args.evtId +
+        ", opc=" +
+        args.opcId +
+        "."
+    ].filter(Boolean),
+    runtimeState: args.providerState === "PROVIDER_ERROR" ? "DEGRADED" : "OPERATIONAL",
+    runtimeDecision: mapPolicyDecisionToRuntimeDecision(args.policy),
+    generationClass: args.providerState,
+    contextClass: "API_CHAT",
+    projectDomain: "HBCE_JOKER_C2",
+    hbceModule: "JOKER_C2_RUNTIME",
+    trustedOutput: args.policy.decision !== "BLOCK" && args.providerState !== "PROVIDER_ERROR",
+    acceptedAsMemoryFact: args.policy.decision !== "BLOCK",
+    policyBlocked: args.policy.decision === "BLOCK"
+  });
+
+  void args.t;
+  void args.handoff;
+
+  return toRuntimeMemoryState(updated);
+}
+
+function updateAssistantDiagnosticMemory(args: {
+  memory: RuntimeMemoryState;
+  finalAnswer: string;
+  evtId: string;
+  opcId: string;
+  opcChainHash: string;
+  policy: PolicyEvaluation;
+  providerState: string;
+}): RuntimeMemoryState {
+  const updated = {
+    ...args.memory.record,
+    lastAssistantMessage: truncate(args.finalAnswer, 1000)
+  };
+
+  void args.evtId;
+  void args.opcId;
+  void args.opcChainHash;
+  void args.policy;
+  void args.providerState;
+
+  return toRuntimeMemoryState(updated as IprBoundMemoryRecord);
+}
+
+function toMemoryHandoffEvaluation(
+  handoff: HandoffResolution
+): IprBoundMemoryHandoffEvaluation {
+  const valid = handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
+  const subject: IprBoundMemorySubject | undefined = valid
+    ? {
+        entity: handoff.subjectName,
+        ipr: handoff.humanIpr,
+        kind: "BIOLOGICAL_SUBJECT"
+      }
+    : undefined;
+
+  const certificate: IprBoundMemoryCertificate | undefined = valid
+    ? {
+        certificateId: handoff.certificateId,
+        certificateStatus: handoff.status,
+        certificateScope: handoff.scope
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
+        certificateKind: "HBCE_JOKER_C2_OPERATIONAL_CERTIFICATE",
+        cardSerial: handoff.cardSerial
+      }
+    : undefined;
+
+  return {
+    isValid: valid,
+    source: handoff.source,
+    authority: handoff.authority,
+    matrixState: handoff.matrixState,
+    semanticMemoryScope: handoff.semanticMemoryScope,
+    reason: handoff.reason,
+    accessDecision: handoff.accessDecision,
+    identityBinding: handoff.identityBinding,
+    subject,
+    certificate
+  };
+}
+
+function buildRuntimeMemoryIdentity(): IprBoundMemoryRuntimeIdentity {
+  return {
+    entity: RUNTIME_ENTITY,
+    ipr: RUNTIME_IPR,
+    checkpoint: CANONICAL_EVT,
+    cycle: CYCLE,
+    core: CORE,
+    org: ORG,
+    location: LOCATION
+  };
+}
+
+function toRuntimeMemoryState(memory: IprBoundMemoryRecord): RuntimeMemoryState {
+  const publicMemory = toPublicMemoryRecord(memory);
+  const store = publicMemory.persistence.store;
+  const database = store.database;
+  const lastTurn = publicMemory.recentTurns[publicMemory.recentTurns.length - 1];
+
+  return {
+    record: memory,
+    sessionId: publicMemory.sessionId,
+    memoryId: publicMemory.memoryId,
+    memoryKeyHash: publicMemory.memoryKeyHash,
+    memoryHash: publicMemory.memoryHash,
+    createdAt: publicMemory.createdAt,
+    updatedAt: publicMemory.updatedAt,
+    turns: publicMemory.recentTurns.length,
+    scope: publicMemory.scope,
+    authority: publicMemory.authority,
+    persistenceMode: publicMemory.persistenceMode,
+    persistenceStatus: publicMemory.persistence.status,
+    persistenceDurable: publicMemory.persistence.durable,
+    persistenceDatabaseReady: publicMemory.persistence.databaseReady,
+    persistenceDatabaseRequired: publicMemory.persistence.databaseRequired,
+    storeName: store.name,
+    storeKind: store.kind,
+    storeStatus: store.status,
+    storeDurable: store.durable,
+    storeRuntimeScoped: store.runtimeScoped,
+    storeRecordCount: store.recordCount,
+    storePersistenceStage: store.persistenceStage,
+    storeSaasReady: store.saasReady,
+    storeRequiresDatabase: store.requiresDatabase,
+    databaseConfigured: database?.configured ?? false,
+    databaseAvailable: database?.available ?? false,
+    subjectIpr: publicMemory.subject?.ipr ?? "NOT_VERIFIED",
+    lastEvtId: publicMemory.lastEvt || "none",
+    lastOpcId: publicMemory.lastOpcProofId || "none",
+    lastOpcChainHash: publicMemory.lastOpcChainHash || "none",
+    lastUserMessage: lastTurn?.user || "",
+    lastAssistantMessage: lastTurn?.assistant || "",
+    facts: publicMemory.facts
+  };
+}
+
+function normalizeOptionalSaasId(value: string): string | undefined {
+  const normalized = value.trim();
+
+  if (
+    !normalized ||
+    normalized === "NO_TENANT" ||
+    normalized === "NO_WORKSPACE" ||
+    normalized === "NO_SUBSCRIPTION"
+  ) {
+    return undefined;
   }
 
-  args.memory.facts.push(
-    "Turn " +
-      String(args.memory.turns) +
-      " completed with policy=" +
-      args.policy.decision +
-      ", risk=" +
-      args.policy.riskLevel +
-      ", evt=" +
-      args.evtId +
-      ", opc=" +
-      args.opcId +
-      "."
-  );
-
-  if (args.memory.facts.length > MEMORY_LIMIT) {
-    args.memory.facts = args.memory.facts.slice(-MEMORY_LIMIT);
-  }
+  return normalized;
 }
 
 function extractOperationalFact(message: string): string | null {
@@ -1720,16 +1952,48 @@ function extractOperationalFact(message: string): string | null {
 function toPublicMemory(memory: RuntimeMemoryState): JsonObject {
   return {
     sessionId: memory.sessionId,
+    memoryId: memory.memoryId,
+    memoryKeyHash: memory.memoryKeyHash,
+    memoryHash: memory.memoryHash,
     createdAt: memory.createdAt,
     updatedAt: memory.updatedAt,
     turns: memory.turns,
     scope: memory.scope,
     authority: memory.authority,
     persistenceMode: memory.persistenceMode,
+    persistenceStatus: memory.persistenceStatus,
+    persistenceDurable: memory.persistenceDurable,
+    persistenceDatabaseReady: memory.persistenceDatabaseReady,
+    persistenceDatabaseRequired: memory.persistenceDatabaseRequired,
     subjectIpr: memory.subjectIpr,
     lastEvtId: memory.lastEvtId,
     lastOpcId: memory.lastOpcId,
-    facts: memory.facts
+    lastOpcChainHash: memory.lastOpcChainHash,
+    facts: memory.facts,
+    store: buildMemoryStoreDiagnostic(memory),
+    legalCertification: false
+  };
+}
+
+function buildMemoryStoreDiagnostic(memory: RuntimeMemoryState): JsonObject {
+  return {
+    name: memory.storeName,
+    kind: memory.storeKind,
+    status: memory.storeStatus,
+    durable: memory.storeDurable,
+    runtimeScoped: memory.storeRuntimeScoped,
+    recordCount: memory.storeRecordCount,
+    persistenceStage: memory.storePersistenceStage,
+    saasReady: memory.storeSaasReady,
+    requiresDatabase: memory.storeRequiresDatabase,
+    database: {
+      configured: memory.databaseConfigured,
+      available: memory.databaseAvailable
+    },
+    databaseReady: isRuntimeMemoryDatabaseReady(),
+    databasePersistent: isRuntimeMemoryDatabasePersistent(),
+    flushErrors: getRuntimeMemoryFlushErrors(),
+    legalCertification: false
   };
 }
 
@@ -1956,7 +2220,7 @@ function buildEvtDatabaseRuntimeEvent(args: {
     workspaceId: args.saasContext.workspaceId,
     subscriptionId: args.saasContext.subscriptionId,
     opcProofId: args.opc.id,
-    memoryId: args.memory.sessionId,
+    memoryId: args.memory.memoryId,
     state: args.providerState,
     runtimeState: args.providerState === "PROVIDER_ERROR" ? "DEGRADED" : "OPERATIONAL",
     decision: args.policy.decision,
@@ -2055,14 +2319,14 @@ function buildOpcDatabaseProofRecord(args: {
       evt: args.memory.lastEvtId,
       source: args.memory.scope,
       hash: args.memoryHash,
-      memoryId: args.memory.sessionId,
-      memoryKeyHash: sha256({
-        sessionId: args.memory.sessionId,
-        subjectIpr: args.memory.subjectIpr
-      }),
+      memoryId: args.memory.memoryId,
+      memoryKeyHash: args.memory.memoryKeyHash,
       scope: args.memory.scope,
       authority: args.memory.authority,
-      persistenceMode: args.memory.persistenceMode
+      persistenceMode: args.memory.persistenceMode,
+      persistenceStatus: args.memory.persistenceStatus,
+      durable: args.memory.persistenceDurable,
+      storeKind: args.memory.storeKind
     },
     runtime: {
       state: runtimeState,
@@ -2127,6 +2391,7 @@ function buildOpcDatabaseProofRecord(args: {
         "Policy decision: " + args.policy.decision + ".",
         "Risk level: " + args.policy.riskLevel + ".",
         "Human oversight: " + args.policy.humanOversight + ".",
+        "Memory persistence mode: " + args.memory.persistenceMode + ".",
         "legalCertification=false."
       ]
     },
@@ -2289,7 +2554,7 @@ async function recordSaasAuditAndUsage(args: {
       evtHash: args.evt.hash,
       opcRef: args.opc.id,
       opcProofHash: args.opc.chainHash,
-      memoryRef: args.memory.sessionId,
+      memoryRef: args.memory.memoryId,
       memoryHash: args.memoryHash,
 
       inputHash: args.inputHash,
@@ -2620,7 +2885,7 @@ function buildBoundary(): JsonObject {
     legalCertification: false,
     opc: "technical proof receipt only",
     ipr: "operational identity record, not public authority identity issuance",
-    memory: "PROCESS_MEMORY_MVP is volatile in serverless runtime and does not replace database persistence.",
+    memory: "IPR-bound memory preserves operational continuity only. DATABASE_PERSISTENT is the durable SaaS target when database store is active.",
     evt: "EVT supports technical traceability and database persistence target only; it is not legal certification.",
     audit: "Runtime audit log supports operational reconstruction only and does not create legal certification.",
     modelUsage: "Model usage log supports SaaS accounting and operational reconstruction only.",
