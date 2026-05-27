@@ -81,6 +81,12 @@ export type RuntimeAuditLogRecordStatus =
   | "DATABASE_PERSISTENT_TARGET"
   | "PERSISTED";
 
+export type RuntimeAuditDatabaseHumanOversight =
+  | "NOT_REQUIRED"
+  | "RECOMMENDED"
+  | "REQUIRED"
+  | "MANDATORY_REVIEW";
+
 export type RuntimeAuditLogInput = {
   source?: RuntimeAuditLogSource;
   sessionId?: string;
@@ -359,6 +365,23 @@ function safeDatabaseError(error: unknown): string {
 
 function normalizeAuditRuntimeDecision(value: RuntimeDecision | undefined): string {
   return String(value || "UNKNOWN").toUpperCase();
+}
+
+export function deriveDatabaseHumanOversight(
+  auditState: RuntimeAuditState
+): RuntimeAuditDatabaseHumanOversight {
+  switch (auditState) {
+    case "MANDATORY":
+      return "MANDATORY_REVIEW";
+    case "ENABLED":
+      return "RECOMMENDED";
+    case "BLOCKED":
+    case "FAIL_CLOSED":
+      return "REQUIRED";
+    case "NOT_REQUIRED":
+    default:
+      return "NOT_REQUIRED";
+  }
 }
 
 export function deriveAuditRecordStatus(input: {
@@ -665,7 +688,7 @@ function runtimeAuditRecordToDatabasePayload(
   c2Boundary: string | null;
   blocked: boolean;
   failClosed: boolean;
-  humanOversight: string;
+  humanOversight: RuntimeAuditDatabaseHumanOversight;
   auditHash: string;
   payloadJson: string;
 } {
@@ -699,13 +722,11 @@ function runtimeAuditRecordToDatabasePayload(
     c2Boundary: String(record.c2Boundary || "C2_NOT_AVAILABLE"),
     blocked: record.blocked,
     failClosed: record.failClosed,
-    humanOversight:
-      record.auditState === "REQUIRED" || record.auditState === "MANDATORY_REVIEW"
-        ? "REQUIRED"
-        : "NOT_REQUIRED",
+    humanOversight: deriveDatabaseHumanOversight(record.auditState),
     auditHash: record.auditHash,
     payloadJson: JSON.stringify({
       ...record,
+      databaseHumanOversight: deriveDatabaseHumanOversight(record.auditState),
       legalCertification: false
     })
   };
@@ -1042,7 +1063,7 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
     failClosed:
       Boolean(riskPolicy?.failClosed) ||
       Boolean(c2Policy?.failClosed) ||
-      saasPolicy?.decision === "FAIL_CLOSED",
+      String(saasPolicy?.decision) === "FAIL_CLOSED",
     blocked:
       riskPolicy?.decision === "BLOCK" ||
       modelRouting?.blocked === true ||
@@ -1270,6 +1291,7 @@ export function buildRuntimeAuditPromptFrame(record: RuntimeAuditLogRecord): str
     `Risk level: ${record.riskLevel}`,
     `Runtime decision: ${record.runtimeDecision}`,
     `Audit state: ${record.auditState}`,
+    `Database human oversight: ${deriveDatabaseHumanOversight(record.auditState)}`,
     `Model level: ${record.modelLevel}`,
     `Selected model: ${record.selectedModel}`,
     `Cyber relevance: ${record.cyberRelevance}`,
