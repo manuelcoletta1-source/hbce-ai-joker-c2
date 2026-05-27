@@ -6,6 +6,7 @@ import {
   HBCE_DATABASE_SCHEMA,
   HBCE_DATABASE_SCHEMA_BOUNDARY,
   HBCE_DATABASE_SCHEMA_SQL,
+  HBCE_DATABASE_SCHEMA_TABLES,
   HBCE_DATABASE_SCHEMA_VERSION
 } from "./ipr-database-schema";
 
@@ -77,6 +78,15 @@ export type HbceDatabaseReadyResult = {
   schema: typeof HBCE_DATABASE_SCHEMA;
 };
 
+type HbceSchemaStatementRow = HbceDatabaseQueryRow & {
+  index: number;
+  ok: boolean;
+  status: "EXECUTED" | "FAILED" | "TABLE_PRESENT" | "TABLE_MISSING";
+  sqlHash: string | null;
+  tableName?: string;
+  error: string | null;
+};
+
 const NEON_SERVERLESS_DRIVER = "@neondatabase/serverless";
 
 const DATABASE_URL_ENV_KEYS = [
@@ -135,6 +145,10 @@ function simpleHash(input: string): string {
 
 function normalizeSql(sql: string): string {
   return sql.replace(/\s+/g, " ").trim();
+}
+
+function sqlLiteral(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`;
 }
 
 function getDatabaseUrlFromEnv(): string | null {
@@ -227,6 +241,54 @@ function buildResult<Row extends HbceDatabaseQueryRow>(input: {
   };
 }
 
+function shouldAutoApplySchema(): boolean {
+  const raw =
+    process.env.HBCE_DATABASE_AUTO_SCHEMA ||
+    process.env.JOKER_DATABASE_AUTO_SCHEMA ||
+    "true";
+
+  return raw.trim().toLowerCase() !== "false";
+}
+
+function shouldInitializeBeforeQuery(sqlText: string): boolean {
+  const normalized = normalizeSql(sqlText).toLowerCase();
+
+  if (!normalized) {
+    return false;
+  }
+
+  if (normalized.includes("hbce_schema_migrations")) {
+    return false;
+  }
+
+  if (normalized.startsWith("create table")) {
+    return false;
+  }
+
+  if (normalized.startsWith("alter table")) {
+    return false;
+  }
+
+  if (normalized.startsWith("create index")) {
+    return false;
+  }
+
+  return true;
+}
+
+function buildRequiredTablesCheckSql(): string {
+  const tableList = HBCE_DATABASE_SCHEMA_TABLES
+    .map((tableName) => sqlLiteral(tableName))
+    .join(", ");
+
+  return `
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema IN ('public', current_schema())
+  AND table_name IN (${tableList});
+`.trim();
+}
+
 class DisabledHbceDatabaseAdapter implements HbceDatabaseAdapter {
   describe(): HbceDatabaseDescription {
     return DISABLED_DATABASE_DESCRIPTION;
@@ -267,6 +329,7 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
   private readonly databaseUrl: string;
   private readonly kind: HbceDatabaseKind;
   private schemaInitializationPromise: Promise<HbceDatabaseQueryResult> | null = null;
+  private schemaInitialized = false;
 
   constructor(databaseUrl: string) {
     this.databaseUrl = databaseUrl;
@@ -295,6 +358,10 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
   }
 
   async initializeSchema(): Promise<HbceDatabaseQueryResult> {
+    if (this.schemaInitialized && this.schemaInitializationPromise) {
+      return this.schemaInitializationPromise;
+    }
+
     if (this.schemaInitializationPromise) {
       return this.schemaInitializationPromise;
     }
@@ -303,8 +370,11 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
 
     const result = await this.schemaInitializationPromise;
 
-    if (!result.ok) {
+    if (result.ok) {
+      this.schemaInitialized = true;
+    } else {
       this.schemaInitializationPromise = null;
+      this.schemaInitialized = false;
     }
 
     return result;
@@ -314,40 +384,108 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
     const startedAt = nowMs();
     const joinedSql = HBCE_DATABASE_SCHEMA_SQL.join("\n\n");
     const sql = this.getSql();
+    const rows: HbceSchemaStatementRow[] = [];
 
-    try {
-      let executedStatements = 0;
+    let executedStatements = 0;
+    let failedStatements = 0;
 
-      for (const statement of HBCE_DATABASE_SCHEMA_SQL) {
-        const normalized = statement.trim();
+    for (let index = 0; index < HBCE_DATABASE_SCHEMA_SQL.length; index += 1) {
+      const statement = HBCE_DATABASE_SCHEMA_SQL[index];
+      const normalized = statement.trim();
 
-        if (!normalized) {
-          continue;
-        }
-
-        await sql.query(normalized, []);
-        executedStatements += 1;
+      if (!normalized) {
+        continue;
       }
 
-      return buildResult({
-        ok: true,
-        status: "AVAILABLE",
-        rows: [],
-        rowCount: executedStatements,
-        sql: joinedSql,
-        startedAt
-      });
+      try {
+        await sql.query(normalized, []);
+        executedStatements += 1;
+
+        rows.push({
+          index,
+          ok: true,
+          status: "EXECUTED",
+          sqlHash: simpleHash(normalizeSql(normalized)),
+          error: null
+        });
+      } catch (error) {
+        failedStatements += 1;
+
+        rows.push({
+          index,
+          ok: false,
+          status: "FAILED",
+          sqlHash: simpleHash(normalizeSql(normalized)),
+          error: safeError(error)
+        });
+      }
+    }
+
+    let missingTables: string[] = [];
+
+    try {
+      const tableResult = await sql.query(buildRequiredTablesCheckSql(), []);
+      const existingRows = normalizeRows<{ table_name?: unknown }>(tableResult);
+      const existingTables = new Set(
+        existingRows
+          .map((row) => row.table_name)
+          .filter((value): value is string => typeof value === "string")
+      );
+
+      missingTables = HBCE_DATABASE_SCHEMA_TABLES.filter(
+        (tableName) => !existingTables.has(tableName)
+      );
+
+      for (const tableName of HBCE_DATABASE_SCHEMA_TABLES) {
+        const present = existingTables.has(tableName);
+
+        rows.push({
+          index: HBCE_DATABASE_SCHEMA_SQL.length,
+          ok: present,
+          status: present ? "TABLE_PRESENT" : "TABLE_MISSING",
+          sqlHash: null,
+          tableName,
+          error: present ? null : `Required table ${tableName} is missing.`
+        });
+      }
     } catch (error) {
-      return buildResult({
+      return buildResult<HbceDatabaseQueryRow>({
         ok: false,
         status: "INITIALIZATION_FAILED",
-        rows: [],
-        rowCount: 0,
-        error: safeError(error),
+        rows,
+        rowCount: executedStatements,
+        error: `Schema statements executed with ${failedStatements} statement error(s), but required table verification failed: ${safeError(error)}`,
         sql: joinedSql,
         startedAt
       });
     }
+
+    if (missingTables.length > 0) {
+      return buildResult<HbceDatabaseQueryRow>({
+        ok: false,
+        status: "INITIALIZATION_FAILED",
+        rows,
+        rowCount: executedStatements,
+        error:
+          `HBCE database schema initialization incomplete. Missing tables: ${missingTables.join(", ")}. ` +
+          `Statement failures: ${failedStatements}.`,
+        sql: joinedSql,
+        startedAt
+      });
+    }
+
+    return buildResult<HbceDatabaseQueryRow>({
+      ok: true,
+      status: "AVAILABLE",
+      rows,
+      rowCount: executedStatements,
+      error:
+        failedStatements > 0
+          ? `Schema available with ${failedStatements} non-fatal statement failure(s). Existing incompatible constraints or legacy columns may already have been normalized.`
+          : null,
+      sql: joinedSql,
+      startedAt
+    });
   }
 
   async query<Row extends HbceDatabaseQueryRow = HbceDatabaseQueryRow>(
@@ -367,6 +505,10 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
         sql: sqlText,
         startedAt
       });
+    }
+
+    if (shouldAutoApplySchema() && shouldInitializeBeforeQuery(normalizedSql)) {
+      await this.initializeSchema();
     }
 
     try {
@@ -443,6 +585,10 @@ export async function initializeHbceDatabaseSchema(): Promise<HbceDatabaseQueryR
   return getDefaultHbceDatabase().initializeSchema();
 }
 
+export async function applyHbceDatabaseSchemaAsync(): Promise<HbceDatabaseQueryResult> {
+  return initializeHbceDatabaseSchema();
+}
+
 export async function queryHbceDatabase<
   Row extends HbceDatabaseQueryRow = HbceDatabaseQueryRow
 >(
@@ -468,6 +614,7 @@ export function getHbceDatabaseBoundary() {
   return {
     schemaVersion: HBCE_DATABASE_SCHEMA_VERSION,
     persistenceMode: HBCE_DATABASE_PERSISTENCE_MODE,
+    autoSchemaApply: shouldAutoApplySchema(),
     boundary: HBCE_DATABASE_SCHEMA_BOUNDARY,
     legalCertificationBoundary: HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY,
     legalCertification: false
