@@ -39,6 +39,7 @@ type ChatMessage = {
 
 type RuntimeStatus = {
   model: string;
+  modelLevel: string;
   runtimeIpr: string;
   humanIpr: string;
   subject: string;
@@ -59,7 +60,26 @@ type RuntimeStatus = {
   lastMemoryOpc: string;
   legalCertification: string;
   database: string;
+  databaseConfigured: string;
+  databaseAvailable: string;
   openAI: string;
+  saasTier: string;
+  saasRelease: string;
+  saasCoreStatus: string;
+  auditId: string;
+  auditStatus: string;
+  auditPersistence: string;
+  auditHash: string;
+  modelUsageId: string;
+  modelUsageStatus: string;
+  modelUsagePersistence: string;
+  accountingMode: string;
+  estimatedCostUnits: string;
+  estimatedCostMinor: string;
+  totalTokens: string;
+  inputTokens: string;
+  outputTokens: string;
+  usageHash: string;
 };
 
 type IprSessionResponse = {
@@ -100,13 +120,13 @@ const HANDOFF_QUERY_KEYS = [
 ];
 
 const DEFAULT_PROMPT =
-  "JOKER-C2, esegui una diagnostica runtime completa. Dimmi modello OpenAI, Runtime IPR, Human IPR, MATRIX, memoria, EVT, OPC e legalCertification=false.";
+  "JOKER-C2, esegui una diagnostica runtime completa. Dimmi modello OpenAI, Runtime IPR, Human IPR, MATRIX, memoria, EVT, OPC, audit, model usage, SaaS Core e legalCertification=false.";
 
 const QUICK_PROMPTS = [
   "ciao JOKER-C2, sai chi sono?",
-  "mostrami la diagnostica runtime: IPR, MATRIX, memoria, database, EVT e OPC",
+  "mostrami la diagnostica runtime: IPR, MATRIX, memoria, database, EVT, OPC, audit e model usage",
   "registra come memoria operativa: EVT-0016 / EVT-0016-AI è il punto attivo del progetto JOKER-C2 SaaS Core v0.1",
-  "richiama la memoria operativa attiva del progetto SaaS Core v0.1",
+  "mostrami auditId, usageId, token usage, costo stimato e persistence boundary dell'ultima risposta",
   "spiega perché JOKER-C2 non è una AI generica"
 ];
 
@@ -267,7 +287,7 @@ function parseJsonCandidate(raw: string): JsonRecord | null {
   try {
     candidates.push(decodeURIComponent(raw));
   } catch {
-    // Human civilization continues.
+    // Browser decoding failed. Society carries on heroically.
   }
 
   const decoded = decodeBase64Text(raw);
@@ -656,6 +676,16 @@ function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus
       ],
       "-"
     ),
+    modelLevel: first(
+      source,
+      [
+        ["runtime", "modelLevel"],
+        ["modelLevel"],
+        ["modelUsage", "modelLevel"],
+        ["saas", "modelUsage", "modelLevel"]
+      ],
+      "-"
+    ),
     runtimeIpr: first(
       source,
       [
@@ -824,6 +854,9 @@ function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus
         ["opcProof", "legalCertification"],
         ["proof", "legalCertification"],
         ["opc", "publicProof", "legalCertification"],
+        ["saas", "legalCertification"],
+        ["audit", "legalCertification"],
+        ["modelUsage", "legalCertification"],
         ["runtime", "legalCertification"]
       ],
       "false"
@@ -838,14 +871,186 @@ function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus
       ],
       "UNKNOWN"
     ),
+    databaseConfigured: first(
+      source,
+      [
+        ["database", "configured"],
+        ["persistence", "databaseConfigured"],
+        ["operationalContext", "databaseConfigured"],
+        ["components", "database", "configured"]
+      ],
+      "UNKNOWN"
+    ),
+    databaseAvailable: first(
+      source,
+      [
+        ["database", "available"],
+        ["persistence", "databaseAvailable"],
+        ["operationalContext", "databaseAvailable"],
+        ["components", "database", "available"]
+      ],
+      "UNKNOWN"
+    ),
     openAI: first(
       source,
       [
         ["provider", "configured"],
         ["openAIConfigured"],
-        ["openaiConfigured"]
+        ["openaiConfigured"],
+        ["operationalContext", "openAIConfigured"]
       ],
       "UNKNOWN"
+    ),
+    saasTier: first(
+      source,
+      [
+        ["saas", "tier"],
+        ["modelUsage", "saasTier"],
+        ["saasCore", "tier"]
+      ],
+      "-"
+    ),
+    saasRelease: first(
+      source,
+      [
+        ["saas", "release"],
+        ["saasCore", "release"],
+        ["project", "targetRelease"],
+        ["operationalContext", "release"]
+      ],
+      "SaaS Core v0.1"
+    ),
+    saasCoreStatus: first(
+      source,
+      [
+        ["saasCore", "status"],
+        ["state"],
+        ["status"]
+      ],
+      "-"
+    ),
+    auditId: first(
+      source,
+      [
+        ["audit", "auditId"],
+        ["saas", "audit", "auditId"]
+      ],
+      "-"
+    ),
+    auditStatus: first(
+      source,
+      [
+        ["audit", "status"],
+        ["saas", "audit", "status"],
+        ["runtimeAuditLog", "mode"],
+        ["components", "runtimeAuditLog", "status"]
+      ],
+      "-"
+    ),
+    auditPersistence: first(
+      source,
+      [
+        ["audit", "persistence", "status"],
+        ["saas", "audit", "persistence", "status"],
+        ["runtimeAuditLog", "mode"],
+        ["components", "runtimeAuditLog", "mode"]
+      ],
+      "-"
+    ),
+    auditHash: first(
+      source,
+      [
+        ["audit", "auditHash"],
+        ["saas", "audit", "auditHash"]
+      ],
+      "-"
+    ),
+    modelUsageId: first(
+      source,
+      [
+        ["modelUsage", "usageId"],
+        ["saas", "modelUsage", "usageId"]
+      ],
+      "-"
+    ),
+    modelUsageStatus: first(
+      source,
+      [
+        ["modelUsage", "status"],
+        ["saas", "modelUsage", "status"],
+        ["modelUsageLog", "mode"],
+        ["components", "modelUsageLog", "status"]
+      ],
+      "-"
+    ),
+    modelUsagePersistence: first(
+      source,
+      [
+        ["modelUsage", "persistence", "status"],
+        ["saas", "modelUsage", "persistence", "status"],
+        ["modelUsageLog", "mode"],
+        ["components", "modelUsageLog", "mode"]
+      ],
+      "-"
+    ),
+    accountingMode: first(
+      source,
+      [
+        ["modelUsage", "accountingMode"],
+        ["saas", "modelUsage", "accountingMode"]
+      ],
+      "-"
+    ),
+    estimatedCostUnits: first(
+      source,
+      [
+        ["modelUsage", "estimatedCostUnits"],
+        ["saas", "modelUsage", "estimatedCostUnits"]
+      ],
+      "-"
+    ),
+    estimatedCostMinor: first(
+      source,
+      [
+        ["modelUsage", "estimatedCostMinor"],
+        ["saas", "modelUsage", "estimatedCostMinor"]
+      ],
+      "-"
+    ),
+    totalTokens: first(
+      source,
+      [
+        ["modelUsage", "tokens", "totalTokens"],
+        ["saas", "modelUsage", "tokens", "totalTokens"],
+        ["diagnostics", "tokenUsage", "totalTokens"]
+      ],
+      "-"
+    ),
+    inputTokens: first(
+      source,
+      [
+        ["modelUsage", "tokens", "inputTokens"],
+        ["saas", "modelUsage", "tokens", "inputTokens"],
+        ["diagnostics", "tokenUsage", "inputTokens"]
+      ],
+      "-"
+    ),
+    outputTokens: first(
+      source,
+      [
+        ["modelUsage", "tokens", "outputTokens"],
+        ["saas", "modelUsage", "tokens", "outputTokens"],
+        ["diagnostics", "tokenUsage", "outputTokens"]
+      ],
+      "-"
+    ),
+    usageHash: first(
+      source,
+      [
+        ["modelUsage", "usageHash"],
+        ["saas", "modelUsage", "usageHash"]
+      ],
+      "-"
     )
   };
 }
@@ -864,6 +1069,10 @@ function getStatusClass(value: string): string {
     normalized.includes("COMPLETED") ||
     normalized.includes("DATABASE_PERSISTENT") ||
     normalized.includes("CONFIGURED") ||
+    normalized.includes("PERSISTED") ||
+    normalized.includes("RECORDED") ||
+    normalized.includes("TECHNICAL_PROOF") ||
+    normalized.includes("EVT_OPC") ||
     normalized.includes("TRUE")
   ) {
     return "is-good";
@@ -875,8 +1084,11 @@ function getStatusClass(value: string): string {
     normalized.includes("PROCESS_MEMORY") ||
     normalized.includes("RUNTIME_ONLY") ||
     normalized.includes("MVP") ||
+    normalized.includes("TARGET") ||
     normalized.includes("SERVER_VALIDATION_REQUIRED") ||
     normalized.includes("NOT_VERIFIED") ||
+    normalized.includes("NOT_AVAILABLE") ||
+    normalized.includes("NOT_SELECTED") ||
     normalized.includes("UNKNOWN") ||
     normalized === "-"
   ) {
@@ -996,15 +1208,17 @@ function MessageBubble({
         {isAssistant && message.raw ? (
           <div className="joker-runtime-strip">
             <StatusPill label="Model" value={status.model} />
+            <StatusPill label="Level" value={status.modelLevel} />
             <StatusPill label="Runtime IPR" value={status.runtimeIpr} />
             <StatusPill label="AI EVT" value={status.aiEvt} />
             <StatusPill label="Response EVT" value={status.responseEvt} />
             <StatusPill label="OPC" value={status.opc} />
+            <StatusPill label="Audit" value={status.auditId} />
+            <StatusPill label="Usage" value={status.modelUsageId} />
             <StatusPill label="Human IPR" value={status.humanIpr} />
             <StatusPill label="Subject" value={status.subject} />
             <StatusPill label="MATRIX" value={status.matrix} />
             <StatusPill label="Memory" value={status.memory} />
-            <StatusPill label="Authority" value={status.authority} />
             <StatusPill label="Mode" value={status.persistence} />
           </div>
         ) : null}
@@ -1034,6 +1248,13 @@ function MessageBubble({
                   <MetricCard label="Response EVT" value={status.responseEvt} />
                   <MetricCard label="OPC" value={status.opc} />
                   <MetricCard label="Chain hash" value={status.chainHash} />
+                  <MetricCard label="Audit ID" value={status.auditId} />
+                  <MetricCard label="Audit persistence" value={status.auditPersistence} />
+                  <MetricCard label="Usage ID" value={status.modelUsageId} />
+                  <MetricCard label="Usage persistence" value={status.modelUsagePersistence} />
+                  <MetricCard label="Accounting" value={status.accountingMode} />
+                  <MetricCard label="Total tokens" value={status.totalTokens} />
+                  <MetricCard label="Estimated cost minor" value={status.estimatedCostMinor} />
                   <MetricCard label="legalCertification" value={status.legalCertification} />
                 </div>
 
@@ -1462,6 +1683,37 @@ export default function InterfacePage() {
     { label: "legalCertification", value: dashboardStatus.legalCertification }
   ];
 
+  const saasRows = [
+    { label: "Release", value: dashboardStatus.saasRelease },
+    { label: "Tier", value: dashboardStatus.saasTier },
+    { label: "Core status", value: dashboardStatus.saasCoreStatus },
+    { label: "OpenAI", value: dashboardStatus.openAI },
+    { label: "Database configured", value: dashboardStatus.databaseConfigured },
+    { label: "Database available", value: dashboardStatus.databaseAvailable }
+  ];
+
+  const auditRows = [
+    { label: "Audit ID", value: dashboardStatus.auditId },
+    { label: "Audit status", value: dashboardStatus.auditStatus },
+    { label: "Audit persistence", value: dashboardStatus.auditPersistence },
+    { label: "Audit hash", value: dashboardStatus.auditHash },
+    { label: "Response EVT", value: dashboardStatus.responseEvt },
+    { label: "OPC", value: dashboardStatus.opc }
+  ];
+
+  const modelUsageRows = [
+    { label: "Usage ID", value: dashboardStatus.modelUsageId },
+    { label: "Usage status", value: dashboardStatus.modelUsageStatus },
+    { label: "Usage persistence", value: dashboardStatus.modelUsagePersistence },
+    { label: "Accounting", value: dashboardStatus.accountingMode },
+    { label: "Input tokens", value: dashboardStatus.inputTokens },
+    { label: "Output tokens", value: dashboardStatus.outputTokens },
+    { label: "Total tokens", value: dashboardStatus.totalTokens },
+    { label: "Cost units", value: dashboardStatus.estimatedCostUnits },
+    { label: "Cost minor", value: dashboardStatus.estimatedCostMinor },
+    { label: "Usage hash", value: dashboardStatus.usageHash }
+  ];
+
   return (
     <main className="joker-page notranslate" lang="it" translate="no">
       <header className="joker-topbar">
@@ -1478,7 +1730,8 @@ export default function InterfacePage() {
           <StatusPill label="Model" value={dashboardStatus.model} />
           <StatusPill label="Runtime IPR" value={dashboardStatus.runtimeIpr} />
           <StatusPill label="Human IPR" value={humanIpr} />
-          <StatusPill label="Memory" value={dashboardStatus.memory} />
+          <StatusPill label="Audit" value={dashboardStatus.auditStatus} />
+          <StatusPill label="Usage" value={dashboardStatus.modelUsageStatus} />
         </div>
 
         <div className="joker-top-actions">
@@ -1505,7 +1758,7 @@ export default function InterfacePage() {
           <p>
             Console operativa per transizione da R&D/MVP a SaaS Core v0.1: IPR
             verificato, accesso governato, memoria IPR-bound, EVT, OPC,
-            dashboard audit, model routing e boundary C2 Defense.
+            dashboard audit, model usage, model routing e boundary C2 Defense.
           </p>
           <code>legalCertification=false</code>
         </div>
@@ -1513,10 +1766,14 @@ export default function InterfacePage() {
         <div className="joker-hero-grid">
           <MetricCard label="Runtime" value="AI_JOKER-C2" />
           <MetricCard label="Model" value={dashboardStatus.model} />
+          <MetricCard label="Model level" value={dashboardStatus.modelLevel} />
           <MetricCard label="Human IPR" value={humanIpr} />
           <MetricCard label="MATRIX" value={dashboardStatus.matrix} />
           <MetricCard label="Response EVT" value={dashboardStatus.responseEvt} />
           <MetricCard label="OPC" value={dashboardStatus.opc} />
+          <MetricCard label="Audit" value={dashboardStatus.auditId} />
+          <MetricCard label="Usage" value={dashboardStatus.modelUsageId} />
+          <MetricCard label="SaaS tier" value={dashboardStatus.saasTier} />
         </div>
       </section>
 
@@ -1614,6 +1871,57 @@ export default function InterfacePage() {
 
           <InfoList items={proofRows} />
         </div>
+
+        <div className="joker-panel">
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker">SaaS Core</span>
+              <h2>Runtime product layer</h2>
+            </div>
+            <StatusPill value={dashboardStatus.saasCoreStatus} />
+          </div>
+
+          <p>
+            Stato operativo del passaggio da demo R&D a SaaS Core v0.1: provider,
+            database, tier, persistenza, audit e usage accounting.
+          </p>
+
+          <InfoList items={saasRows} />
+        </div>
+
+        <div className="joker-panel">
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker">Runtime Audit Log</span>
+              <h2>Decision reconstruction</h2>
+            </div>
+            <StatusPill value={dashboardStatus.auditStatus} />
+          </div>
+
+          <p>
+            L’audit runtime registra decisione, rischio, modello, memoria, EVT,
+            OPC e boundary. Serve a ricostruire l’operazione, non a fare miracoli notarili.
+          </p>
+
+          <InfoList items={auditRows} />
+        </div>
+
+        <div className="joker-panel">
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker">Model Usage Log</span>
+              <h2>SaaS accounting</h2>
+            </div>
+            <StatusPill value={dashboardStatus.modelUsageStatus} />
+          </div>
+
+          <p>
+            Il model usage log collega modello, token, costo stimato, SaaS tier,
+            audit, EVT e OPC. Il contatore non è poesia, ma almeno paga le bollette.
+          </p>
+
+          <InfoList items={modelUsageRows} />
+        </div>
       </section>
 
       <section className="joker-chat">
@@ -1624,7 +1932,8 @@ export default function InterfacePage() {
             <h2>Runtime ready</h2>
             <p>
               Scrivi sotto o usa un prompt rapido. La chat opera nel boundary
-              HBCE: IPR, EVT, OPC, MATRIX, memoria IPR-bound, audit e fail-closed.
+              HBCE: IPR, EVT, OPC, MATRIX, memoria IPR-bound, runtime audit,
+              model usage, SaaS accounting e fail-closed.
             </p>
 
             <div className="joker-prompt-grid">
