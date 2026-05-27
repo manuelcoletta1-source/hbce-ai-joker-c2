@@ -9,7 +9,6 @@ import {
 } from "./ipr-database";
 
 import type {
-  HbceDatabaseQueryResult,
   HbceDatabaseQueryRow,
   HbceDatabaseQueryValue
 } from "./ipr-database";
@@ -59,6 +58,24 @@ export type IprBoundMemoryStoreRecord = {
   memoryId: string;
   memoryKey: string;
   memoryKeyHash: string;
+  tenantId?: string;
+  workspaceId?: string;
+  threadId?: string;
+  sessionId?: string;
+  subject?: {
+    ipr?: string;
+    [key: string]: unknown;
+  };
+  runtime?: {
+    ipr?: string;
+    [key: string]: unknown;
+  };
+  saas?: {
+    tenantId?: string;
+    workspaceId?: string;
+    subscriptionTier?: string;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 };
 
@@ -131,6 +148,8 @@ export type IprBoundMemoryAsyncStoreAdapter<
 
 type MemoryRecordDatabaseRow = HbceDatabaseQueryRow & {
   memory_id?: string;
+  tenant_id?: string | null;
+  workspace_id?: string | null;
   memory_key_hash?: string;
   human_ipr?: string | null;
   runtime_ipr?: string | null;
@@ -298,10 +317,6 @@ function sha256Hex(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex").toUpperCase();
 }
 
-function memoryKeyToHash(memoryKey: string): string {
-  return sha256Hex(assertMemoryKey(memoryKey));
-}
-
 function assertMemoryKey(memoryKey: string): string {
   const normalized = normalizeMemoryKey(memoryKey);
 
@@ -310,6 +325,10 @@ function assertMemoryKey(memoryKey: string): string {
   }
 
   return normalized;
+}
+
+function memoryKeyToHash(memoryKey: string): string {
+  return sha256Hex(assertMemoryKey(memoryKey));
 }
 
 function assertMemoryKeyHash(memoryKeyHash: string): string {
@@ -384,6 +403,18 @@ function readNullableStringPath(value: unknown, path: string[]): string | null {
   const text = readStringPath(value, path, "");
 
   return text || null;
+}
+
+function firstNullableStringPath(value: unknown, paths: string[][]): string | null {
+  for (const path of paths) {
+    const text = readNullableStringPath(value, path);
+
+    if (text) {
+      return text;
+    }
+  }
+
+  return null;
 }
 
 function safeJsonParse(value: string): unknown {
@@ -545,6 +576,20 @@ function memoryRecordToDatabaseFields(
 } {
   const normalizedRecord = normalizeMemoryRecord(record);
 
+  const tenantId =
+    context?.tenantId ||
+    firstNullableStringPath(normalizedRecord, [
+      ["tenantId"],
+      ["saas", "tenantId"]
+    ]);
+
+  const workspaceId =
+    context?.workspaceId ||
+    firstNullableStringPath(normalizedRecord, [
+      ["workspaceId"],
+      ["saas", "workspaceId"]
+    ]);
+
   const runtimeIpr =
     readStringPath(normalizedRecord, ["runtime", "ipr"], "") ||
     "IPR-AI-0001";
@@ -552,6 +597,14 @@ function memoryRecordToDatabaseFields(
   const sessionId =
     readStringPath(normalizedRecord, ["sessionId"], "") ||
     "UNKNOWN_SESSION";
+
+  const threadId =
+    context?.threadId ||
+    firstNullableStringPath(normalizedRecord, [
+      ["threadId"],
+      ["conversationId"],
+      ["sessionId"]
+    ]);
 
   const scope =
     readStringPath(normalizedRecord, ["scope"], "") ||
@@ -570,15 +623,49 @@ function memoryRecordToDatabaseFields(
     ["lastOpcChainHash"]
   );
 
+  const persistentPayload = {
+    ...normalizedRecord,
+    tenantId,
+    workspaceId,
+    threadId,
+    persistenceMode: "DATABASE_PERSISTENT",
+    persistence: isRecord(normalizedRecord.persistence)
+      ? {
+          ...normalizedRecord.persistence,
+          mode: "DATABASE_PERSISTENT",
+          status: "DATABASE_PERSISTENT_ACTIVE",
+          durable: true,
+          runtimeScoped: false,
+          databaseRequired: false,
+          databaseReady: true,
+          target: "DATABASE_PERSISTENT",
+          legalCertification: false
+        }
+      : normalizedRecord.persistence,
+    saas: isRecord(normalizedRecord.saas)
+      ? {
+          ...normalizedRecord.saas,
+          tenantId: tenantId ?? normalizedRecord.saas.tenantId,
+          workspaceId: workspaceId ?? normalizedRecord.saas.workspaceId,
+          memoryTarget: "DATABASE_PERSISTENT",
+          auditRequired: true,
+          modelUsageLoggingRequired: true,
+          evtRequired: true,
+          opcRequired: true,
+          legalCertification: false
+        }
+      : normalizedRecord.saas
+  };
+
   return {
-    tenantId: context?.tenantId || null,
-    workspaceId: context?.workspaceId || null,
+    tenantId,
+    workspaceId,
     memoryId: normalizedRecord.memoryId,
     memoryKeyHash: normalizedRecord.memoryKeyHash,
     humanIpr: readNullableStringPath(normalizedRecord, ["subject", "ipr"]),
     runtimeIpr,
     sessionId,
-    threadId: context?.threadId || null,
+    threadId,
     scope,
     authority,
     persistenceMode: "DATABASE_PERSISTENT",
@@ -587,23 +674,7 @@ function memoryRecordToDatabaseFields(
     lastEvtId: readNullableStringPath(normalizedRecord, ["lastEvt"]),
     lastOpcProofId: readNullableStringPath(normalizedRecord, ["lastOpcProofId"]),
     lastOpcChainHash,
-    recordPayloadJson: JSON.stringify({
-      ...normalizedRecord,
-      persistenceMode: "DATABASE_PERSISTENT",
-      persistence: isRecord(normalizedRecord.persistence)
-        ? {
-            ...normalizedRecord.persistence,
-            mode: "DATABASE_PERSISTENT",
-            status: "DATABASE_PERSISTENT_ACTIVE",
-            durable: true,
-            runtimeScoped: false,
-            databaseRequired: false,
-            databaseReady: true,
-            target: "DATABASE_PERSISTENT",
-            legalCertification: false
-          }
-        : normalizedRecord.persistence
-    })
+    recordPayloadJson: JSON.stringify(persistentPayload)
   };
 }
 
@@ -618,6 +689,12 @@ function databaseRowToMemoryRecord<
 
   const candidate = {
     ...payload,
+    tenantId:
+      readStringPath(payload, ["tenantId"], "") ||
+      readStringPath(row, ["tenant_id"], ""),
+    workspaceId:
+      readStringPath(payload, ["workspaceId"], "") ||
+      readStringPath(row, ["workspace_id"], ""),
     memoryId:
       readStringPath(payload, ["memoryId"], "") ||
       readStringPath(row, ["memory_id"], ""),
@@ -649,7 +726,24 @@ function databaseRowToMemoryRecord<
           target: "DATABASE_PERSISTENT",
           legalCertification: false
         }
-      : normalized.persistence
+      : normalized.persistence,
+    saas: isRecord(normalized.saas)
+      ? {
+          ...normalized.saas,
+          tenantId:
+            readStringPath(normalized, ["tenantId"], "") ||
+            readStringPath(normalized.saas, ["tenantId"], ""),
+          workspaceId:
+            readStringPath(normalized, ["workspaceId"], "") ||
+            readStringPath(normalized.saas, ["workspaceId"], ""),
+          memoryTarget: "DATABASE_PERSISTENT",
+          auditRequired: true,
+          modelUsageLoggingRequired: true,
+          evtRequired: true,
+          opcRequired: true,
+          legalCertification: false
+        }
+      : normalized.saas
   } as TRecord;
 }
 
@@ -760,6 +854,8 @@ ON CONFLICT (memory_id) DO UPDATE SET
   legal_certification = false
 RETURNING
   memory_id,
+  tenant_id,
+  workspace_id,
   memory_key_hash,
   human_ipr,
   runtime_ipr,
@@ -805,6 +901,9 @@ RETURNING
 
   const finalRecord = persisted || ({
     ...normalizedRecord,
+    tenantId: fields.tenantId ?? normalizedRecord.tenantId,
+    workspaceId: fields.workspaceId ?? normalizedRecord.workspaceId,
+    threadId: fields.threadId ?? normalizedRecord.threadId,
     persistenceMode: "DATABASE_PERSISTENT"
   } as TRecord);
 
@@ -1159,6 +1258,8 @@ export function createDatabasePersistentMemoryStoreAdapter<
         `
 SELECT
   memory_id,
+  tenant_id,
+  workspace_id,
   memory_key_hash,
   human_ipr,
   runtime_ipr,
@@ -1307,6 +1408,8 @@ WHERE legal_certification = false;
         `
 SELECT
   memory_id,
+  tenant_id,
+  workspace_id,
   memory_key_hash,
   human_ipr,
   runtime_ipr,
@@ -1345,6 +1448,8 @@ LIMIT 100;
         `
 SELECT
   memory_id,
+  tenant_id,
+  workspace_id,
   memory_key_hash,
   human_ipr,
   runtime_ipr,
