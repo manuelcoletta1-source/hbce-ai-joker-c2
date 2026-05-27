@@ -1476,3 +1476,5 @@ export function getDatabaseReadyMemoryStoreDescription(): IprBoundMemoryStoreDes
 export function getDefaultMemoryStoreDescription(): IprBoundMemoryStoreDescription {
   return describeDefaultIprBoundMemoryStore();
 }
+
+export { getRuntimeMemoryFlushErrors } from "./ipr-bound-memory-store";
