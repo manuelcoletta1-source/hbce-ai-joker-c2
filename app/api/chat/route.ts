@@ -2,9 +2,15 @@ import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
+import { appendRuntimeAuditLogRecordAsync } from "@/lib/runtime-audit-log";
+import { appendModelUsageLogRecordAsync } from "@/lib/model-usage-log";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+type RuntimeAuditAppendInput = Parameters<typeof appendRuntimeAuditLogRecordAsync>[0];
+type ModelUsageAppendInput = Parameters<typeof appendModelUsageLogRecordAsync>[0];
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
@@ -114,6 +120,28 @@ type OpcProofRecord = {
   verificationStatus: "TECHNICAL_PROOF_GENERATED";
 };
 
+type CompletionTokenUsage = {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+  cachedInputTokens: number | null;
+  reasoningTokens: number | null;
+};
+
+type ProviderCompletionResult = {
+  answer: string;
+  usage: CompletionTokenUsage;
+  finishReason: string | null;
+};
+
+type SaasRuntimeContext = {
+  tenantId: string;
+  workspaceId: string;
+  subscriptionId: string;
+  threadId: string;
+  saasTier: "BASE" | "IPR";
+};
+
 const RUNTIME_ENTITY = "AI_JOKER";
 const RUNTIME_IPR = "IPR-AI-0001";
 const ORG = "HERMETICUM B.C.E. S.r.l.";
@@ -129,6 +157,14 @@ const LOCATION = "Torino, Italy";
 const DEFAULT_STANDARD_MODEL = "gpt-4o-mini";
 const DEFAULT_DEEP_MODEL = "gpt-4o";
 const MEMORY_LIMIT = 24;
+
+const EMPTY_TOKEN_USAGE: CompletionTokenUsage = {
+  inputTokens: null,
+  outputTokens: null,
+  totalTokens: null,
+  cachedInputTokens: null,
+  reasoningTokens: null
+};
 
 const processMemory = new Map<string, RuntimeMemoryState>();
 
@@ -165,6 +201,18 @@ export async function GET(): Promise<NextResponse> {
       active: false,
       reason: "Waiting for server-side IPR handoff validation."
     },
+    audit: {
+      configured: true,
+      mode: "PROCESS_MEMORY_MVP",
+      target: "DATABASE_PERSISTENT",
+      legalCertification: false
+    },
+    modelUsage: {
+      configured: true,
+      mode: "PROCESS_MEMORY_MVP",
+      target: "DATABASE_PERSISTENT",
+      legalCertification: false
+    },
     boundary: buildBoundary()
   });
 }
@@ -181,8 +229,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const handoff = resolveHandoff(request, body);
   const policy = evaluatePolicy(message, files);
   const memory = getOrCreateMemory(sessionId, handoff, t);
+  const saasContext = resolveSaasRuntimeContext(body, handoff, sessionId);
 
   const model = resolveModel(body, policy);
+  const modelLevel = resolveModelLevel(model, policy);
   const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
 
   const inputFrame = {
@@ -191,7 +241,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     files,
     handoff,
     policy,
-    memoryBefore: toPublicMemory(memory)
+    memoryBefore: toPublicMemory(memory),
+    saasContext
   };
 
   const inputHash = sha256(inputFrame);
@@ -200,19 +251,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   let answer = "";
   let providerState: "COMPLETED" | "LOCAL_FALLBACK" | "PROVIDER_ERROR" = "COMPLETED";
   let providerError: string | null = null;
+  let providerName: "OPENAI" | "LOCAL" | "UNKNOWN" = "LOCAL";
+  let tokenUsage: CompletionTokenUsage = EMPTY_TOKEN_USAGE;
+  let finishReason: string | null = null;
 
   if (policy.decision === "BLOCK") {
     answer = buildBlockedAnswer(policy);
     providerState = "LOCAL_FALLBACK";
+    providerName = "LOCAL";
   } else if (isIdentityRecognitionQuestion(message)) {
     answer = buildIdentityRecognitionAnswer(handoff, memory, policy);
     providerState = "COMPLETED";
+    providerName = "LOCAL";
   } else if (!openAIConfigured) {
     answer = buildLocalFallbackAnswer(message, handoff, policy, memory);
     providerState = "LOCAL_FALLBACK";
+    providerName = "LOCAL";
   } else {
     try {
-      answer = await completeWithOpenAI({
+      const completion = await completeWithOpenAI({
         message,
         history: incomingMessages,
         files,
@@ -221,15 +278,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         memory,
         model
       });
+
+      answer = completion.answer;
+      tokenUsage = completion.usage;
+      finishReason = completion.finishReason;
       providerState = "COMPLETED";
+      providerName = "OPENAI";
     } catch (error) {
       providerError = errorToMessage(error);
       answer = buildProviderErrorAnswer(message, handoff, policy, providerError);
       providerState = "PROVIDER_ERROR";
+      providerName = "OPENAI";
     }
   }
 
   const safeAnswer = normalizeAssistantAnswer(answer, message, handoff, policy);
+  const outputHash = sha256(safeAnswer);
+  const policyHash = sha256(policy);
 
   const evt = buildEvtRecord({
     t,
@@ -246,8 +311,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     handoff,
     evt,
     inputHash,
-    outputHash: sha256(safeAnswer),
-    policyHash: sha256(policy),
+    outputHash,
+    policyHash,
     memoryHash: memoryHashBefore
   });
 
@@ -262,11 +327,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     policy
   });
 
+  const memoryHashAfter = sha256(memory);
+
+  const auditAndUsage = await recordSaasAuditAndUsage({
+    sessionId,
+    requestId: buildRequestId(sessionId, t),
+    handoff,
+    policy,
+    memory,
+    saasContext,
+    model,
+    modelLevel,
+    providerName,
+    tokenUsage,
+    evt,
+    opc,
+    inputHash,
+    outputHash,
+    policyHash,
+    memoryHash: memoryHashAfter,
+    providerState
+  });
+
   const publicEvt = buildPublicEvt(evt);
   const publicOpc = buildPublicOpc(opc);
 
   const runtimeDetails = {
     model,
+    modelLevel,
     runtimeIpr: RUNTIME_IPR,
     aiEvt: CANONICAL_EVT,
     responseEvt: evt.id,
@@ -305,6 +393,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       opc: opc.id,
       opcId: opc.id,
       model,
+      modelLevel,
       state: providerState,
       matrix: handoff.matrixState,
       memory: handoff.semanticMemoryScope,
@@ -315,8 +404,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     state: providerState,
     status: providerState,
     provider: "openai",
+    providerName,
     apiMode: openAIConfigured ? "OPENAI_CONFIGURED" : "LOCAL_FALLBACK",
     model,
+    modelLevel,
     standardModel: process.env.JOKER_MODEL?.trim() || DEFAULT_STANDARD_MODEL,
     deepModel: process.env.JOKER_DEEP_MODEL?.trim() || DEFAULT_DEEP_MODEL,
     openAIConfigured,
@@ -328,6 +419,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       matrixState: handoff.matrixState,
       semanticMemoryScope: handoff.semanticMemoryScope,
       identityBinding: handoff.identityBinding
+    },
+
+    saas: {
+      project: "Project HBCE R&D Transfer SaaS",
+      release: "SaaS Core v0.1",
+      tenantId: saasContext.tenantId,
+      workspaceId: saasContext.workspaceId,
+      subscriptionId: saasContext.subscriptionId,
+      threadId: saasContext.threadId,
+      tier: saasContext.saasTier,
+      audit: auditAndUsage.audit,
+      modelUsage: auditAndUsage.modelUsage,
+      legalCertification: false
     },
 
     biologicalSubject: {
@@ -392,6 +496,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     currentOpc: opc.id,
     opcId: opc.id,
 
+    audit: auditAndUsage.audit,
+    modelUsage: auditAndUsage.modelUsage,
+
     continuity: {
       currentEvt: evt.id,
       previousEvt: evt.prev,
@@ -422,10 +529,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     diagnostics: {
       inputHash,
-      outputHash: sha256(safeAnswer),
+      outputHash,
+      policyHash,
       memoryHashBefore,
-      memoryHashAfter: sha256(memory),
+      memoryHashAfter,
       providerError,
+      finishReason,
+      tokenUsage: toJsonTokenUsage(tokenUsage),
       handoffSource: handoff.source,
       handoffReason: handoff.reason,
       boundary: buildBoundary()
@@ -445,11 +555,15 @@ async function completeWithOpenAI(args: {
   policy: PolicyEvaluation;
   memory: RuntimeMemoryState;
   model: string;
-}): Promise<string> {
+}): Promise<ProviderCompletionResult> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
 
   if (!apiKey) {
-    return buildLocalFallbackAnswer(args.message, args.handoff, args.policy, args.memory);
+    return {
+      answer: buildLocalFallbackAnswer(args.message, args.handoff, args.policy, args.memory),
+      usage: EMPTY_TOKEN_USAGE,
+      finishReason: null
+    };
   }
 
   const client = new OpenAI({ apiKey });
@@ -487,12 +601,21 @@ async function completeWithOpenAI(args: {
   });
 
   const content = completion.choices[0]?.message?.content?.trim();
+  const finishReason = completion.choices[0]?.finish_reason ?? null;
 
   if (!content) {
-    return buildEmptyProviderFallback(args.message, args.handoff, args.policy);
+    return {
+      answer: buildEmptyProviderFallback(args.message, args.handoff, args.policy),
+      usage: normalizeCompletionUsage(completion.usage),
+      finishReason
+    };
   }
 
-  return content;
+  return {
+    answer: content,
+    usage: normalizeCompletionUsage(completion.usage),
+    finishReason
+  };
 }
 
 function buildSystemPrompt(
@@ -1431,6 +1554,391 @@ function buildPublicOpc(opc: OpcProofRecord): JsonObject {
   };
 }
 
+async function recordSaasAuditAndUsage(args: {
+  sessionId: string;
+  requestId: string;
+  handoff: HandoffResolution;
+  policy: PolicyEvaluation;
+  memory: RuntimeMemoryState;
+  saasContext: SaasRuntimeContext;
+  model: string;
+  modelLevel: string;
+  providerName: "OPENAI" | "LOCAL" | "UNKNOWN";
+  tokenUsage: CompletionTokenUsage;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  inputHash: string;
+  outputHash: string;
+  policyHash: string;
+  memoryHash: string;
+  providerState: string;
+}): Promise<{
+  audit: JsonObject;
+  modelUsage: JsonObject;
+}> {
+  try {
+    const runtimeDecision = mapPolicyDecisionToRuntimeDecision(args.policy);
+    const auditState = mapPolicyToAuditState(args.policy);
+    const riskLevel = args.policy.riskLevel;
+    const cyberRelevance = args.policy.flags.includes("CYBER_RISK_TERMS")
+      ? "C2_RELEVANT"
+      : "NONE";
+
+    const auditResult = await appendRuntimeAuditLogRecordAsync({
+      source: "API_CHAT",
+      sessionId: args.sessionId,
+      requestId: args.requestId,
+      humanIpr: args.handoff.humanIpr,
+      organizationIpr: "NO_ORGANIZATION_IPR",
+      tenantId: args.saasContext.tenantId,
+      workspaceId: args.saasContext.workspaceId,
+      subscriptionId: args.saasContext.subscriptionId,
+      threadId: args.saasContext.threadId,
+
+      identityState:
+        args.handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
+          ? "VERIFIED"
+          : "NOT_VERIFIED",
+      organizationState: "NOT_REQUIRED",
+      workspaceState:
+        args.saasContext.workspaceId === "NO_WORKSPACE"
+          ? "NOT_REQUIRED"
+          : "ACTIVE",
+
+      saasTier: args.saasContext.saasTier,
+      tierDecision: args.policy.decision === "BLOCK" ? "BLOCK" : "ALLOW",
+      accessDecision: args.handoff.accessDecision === "ACCESS_GRANTED" ? "ALLOW" : "BLOCK",
+
+      riskLevel,
+      runtimeDecision,
+      auditState,
+
+      modelLevel: args.modelLevel,
+      selectedModel: args.model,
+      modelRoutingReason: resolveModelRoutingReason(args.model, args.policy),
+
+      cyberRelevance,
+      c2Boundary: "C2_NOT_AVAILABLE",
+      c2Decision: "ALLOW",
+      c2Allowed: false,
+      c2FailClosed: false,
+
+      memoryScope: args.memory.scope,
+      memoryAuthority:
+        args.memory.authority === "SERVER_RUNTIME_VALIDATED"
+          ? "SERVER_RUNTIME_VALIDATED"
+          : "RUNTIME_ONLY",
+      persistenceMode: args.memory.persistenceMode,
+
+      evtRequired: true,
+      opcRequired: true,
+      auditRequired: args.policy.humanOversight !== "NOT_REQUIRED",
+
+      evtRef: args.evt.id,
+      evtHash: args.evt.hash,
+      opcRef: args.opc.id,
+      opcProofHash: args.opc.chainHash,
+      memoryRef: args.memory.sessionId,
+      memoryHash: args.memoryHash,
+
+      inputHash: args.inputHash,
+      outputHash: args.outputHash,
+      decisionHash: sha256({
+        policy: args.policy,
+        handoff: args.handoff.accessDecision,
+        providerState: args.providerState
+      }),
+      policyHash: args.policyHash,
+
+      dataClass: args.policy.dataClass,
+      contextClass: "API_CHAT",
+      projectDomain: "HBCE_JOKER_C2",
+      hbceModule: "JOKER_C2_RUNTIME",
+
+      allowed: args.policy.decision !== "BLOCK",
+      failClosed: false,
+      blocked: args.policy.decision === "BLOCK",
+
+      reason: args.policy.reason
+    } as RuntimeAuditAppendInput);
+
+    const modelUsageResult = await appendModelUsageLogRecordAsync({
+      source: "API_CHAT",
+      provider: args.providerName,
+      sessionId: args.sessionId,
+      requestId: args.requestId,
+      auditId: auditResult.record.auditId,
+
+      humanIpr: args.handoff.humanIpr,
+      organizationIpr: "NO_ORGANIZATION_IPR",
+      tenantId: args.saasContext.tenantId,
+      workspaceId: args.saasContext.workspaceId,
+      subscriptionId: args.saasContext.subscriptionId,
+      threadId: args.saasContext.threadId,
+
+      saasTier: args.saasContext.saasTier,
+      selectedModel: args.model,
+      modelLevel: args.modelLevel,
+      modelRoutingReason: resolveModelRoutingReason(args.model, args.policy),
+
+      riskLevel,
+      runtimeDecision,
+      auditState,
+
+      operationalValue: riskLevel === "HIGH" ? "HIGH" : riskLevel === "MEDIUM" ? "MEDIUM" : "LOW",
+      cyberRelevance,
+      c2Boundary: "C2_NOT_AVAILABLE",
+      proofRequirement: "OPC_REQUIRED",
+
+      evtRequired: true,
+      opcRequired: true,
+      auditRequired: args.policy.humanOversight !== "NOT_REQUIRED",
+
+      evtRef: args.evt.id,
+      evtHash: args.evt.hash,
+      opcRef: args.opc.id,
+      opcProofHash: args.opc.chainHash,
+
+      inputTokens: args.tokenUsage.inputTokens,
+      outputTokens: args.tokenUsage.outputTokens,
+      totalTokens: args.tokenUsage.totalTokens,
+      cachedInputTokens: args.tokenUsage.cachedInputTokens,
+      reasoningTokens: args.tokenUsage.reasoningTokens,
+
+      blocked: args.policy.decision === "BLOCK",
+      failClosed: false,
+      allowed: args.policy.decision !== "BLOCK",
+
+      persistenceMode: args.memory.persistenceMode,
+
+      reason: "Model usage record created from /api/chat runtime execution."
+    } as ModelUsageAppendInput);
+
+    return {
+      audit: {
+        ok: true,
+        auditId: auditResult.record.auditId,
+        auditHash: auditResult.record.auditHash,
+        status: auditResult.record.status,
+        persistence: {
+          ok: auditResult.persistence.ok,
+          status: auditResult.persistence.status,
+          error: auditResult.persistence.error,
+          legalCertification: false
+        },
+        legalCertification: false
+      },
+      modelUsage: {
+        ok: true,
+        usageId: modelUsageResult.record.usageId,
+        usageHash: modelUsageResult.record.usageHash,
+        status: modelUsageResult.record.status,
+        accountingMode: modelUsageResult.record.accountingMode,
+        estimatedCostUnits: modelUsageResult.record.estimatedCostUnits,
+        estimatedCostMinor: modelUsageResult.record.estimatedCostMinor,
+        currency: modelUsageResult.record.currency,
+        tokens: toJsonTokenUsage(args.tokenUsage),
+        persistence: {
+          ok: modelUsageResult.persistence.ok,
+          status: modelUsageResult.persistence.status,
+          error: modelUsageResult.persistence.error,
+          legalCertification: false
+        },
+        legalCertification: false
+      }
+    };
+  } catch (error) {
+    return {
+      audit: {
+        ok: false,
+        status: "AUDIT_LOGGING_FAILED",
+        error: errorToMessage(error),
+        legalCertification: false
+      },
+      modelUsage: {
+        ok: false,
+        status: "MODEL_USAGE_LOGGING_SKIPPED",
+        error: errorToMessage(error),
+        legalCertification: false
+      }
+    };
+  }
+}
+
+function resolveSaasRuntimeContext(
+  body: JsonObject,
+  handoff: HandoffResolution,
+  sessionId: string
+): SaasRuntimeContext {
+  const tenantId =
+    firstStringFromSources([body], [
+      "tenantId",
+      "tenant_id",
+      "saas.tenantId",
+      "saas.tenant_id",
+      "workspace.tenantId",
+      "workspace.tenant_id"
+    ]) || "NO_TENANT";
+
+  const workspaceId =
+    firstStringFromSources([body], [
+      "workspaceId",
+      "workspace_id",
+      "saas.workspaceId",
+      "saas.workspace_id",
+      "workspace.id",
+      "workspace.workspaceId",
+      "workspace.workspace_id"
+    ]) || "NO_WORKSPACE";
+
+  const subscriptionId =
+    firstStringFromSources([body], [
+      "subscriptionId",
+      "subscription_id",
+      "saas.subscriptionId",
+      "saas.subscription_id",
+      "subscription.id"
+    ]) || "NO_SUBSCRIPTION";
+
+  const threadId =
+    firstStringFromSources([body], [
+      "threadId",
+      "thread_id",
+      "conversationId",
+      "conversation_id",
+      "saas.threadId",
+      "saas.thread_id"
+    ]) || sessionId;
+
+  return {
+    tenantId,
+    workspaceId,
+    subscriptionId,
+    threadId,
+    saasTier:
+      handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
+        ? "IPR"
+        : "BASE"
+  };
+}
+
+function mapPolicyDecisionToRuntimeDecision(policy: PolicyEvaluation): string {
+  if (policy.decision === "BLOCK") {
+    return "BLOCK";
+  }
+
+  if (policy.decision === "ESCALATE") {
+    return "ESCALATE";
+  }
+
+  return "ALLOW";
+}
+
+function mapPolicyToAuditState(policy: PolicyEvaluation): string {
+  if (policy.decision === "BLOCK") {
+    return "BLOCKED";
+  }
+
+  if (policy.humanOversight === "REQUIRED") {
+    return "MANDATORY";
+  }
+
+  if (policy.humanOversight === "RECOMMENDED") {
+    return "ENABLED";
+  }
+
+  return "NOT_REQUIRED";
+}
+
+function resolveModelLevel(model: string, policy: PolicyEvaluation): string {
+  const deepModel = process.env.JOKER_DEEP_MODEL?.trim() || DEFAULT_DEEP_MODEL;
+
+  if (policy.decision === "BLOCK") {
+    return "BLOCKED";
+  }
+
+  if (model === deepModel || policy.riskLevel === "HIGH") {
+    return "ADVANCED";
+  }
+
+  if (policy.riskLevel === "MEDIUM") {
+    return "ENHANCED";
+  }
+
+  return "STANDARD";
+}
+
+function resolveModelRoutingReason(model: string, policy: PolicyEvaluation): string {
+  if (policy.decision === "BLOCK") {
+    return "Runtime blocked the request before model execution.";
+  }
+
+  if (policy.riskLevel === "HIGH") {
+    return "High risk request routed to deep model target.";
+  }
+
+  if (policy.riskLevel === "MEDIUM") {
+    return "Medium risk request kept under enhanced audit semantics.";
+  }
+
+  return "Standard model selected by MVP runtime policy.";
+}
+
+function buildRequestId(sessionId: string, timestamp: string): string {
+  return "REQ-" + sha256({ sessionId, timestamp, nonce: randomUUID() }).replace("sha256:", "").slice(0, 16).toUpperCase();
+}
+
+function normalizeCompletionUsage(usage: unknown): CompletionTokenUsage {
+  const record = isJsonObject(usage) ? usage : {};
+
+  const inputTokens =
+    numberFromUnknown(record.prompt_tokens) ??
+    numberFromUnknown(record.input_tokens);
+
+  const outputTokens =
+    numberFromUnknown(record.completion_tokens) ??
+    numberFromUnknown(record.output_tokens);
+
+  const totalTokens =
+    numberFromUnknown(record.total_tokens) ??
+    (inputTokens !== null || outputTokens !== null
+      ? (inputTokens ?? 0) + (outputTokens ?? 0)
+      : null);
+
+  const promptTokensDetails = isJsonObject(record.prompt_tokens_details)
+    ? record.prompt_tokens_details
+    : {};
+  const completionTokensDetails = isJsonObject(record.completion_tokens_details)
+    ? record.completion_tokens_details
+    : {};
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+    cachedInputTokens: numberFromUnknown(promptTokensDetails.cached_tokens),
+    reasoningTokens: numberFromUnknown(completionTokensDetails.reasoning_tokens)
+  };
+}
+
+function numberFromUnknown(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+
+  return Math.round(value);
+}
+
+function toJsonTokenUsage(usage: CompletionTokenUsage): JsonObject {
+  return {
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    totalTokens: usage.totalTokens,
+    cachedInputTokens: usage.cachedInputTokens,
+    reasoningTokens: usage.reasoningTokens
+  };
+}
+
 function buildRuntimeIdentity(): JsonObject {
   return {
     entity: RUNTIME_ENTITY,
@@ -1462,6 +1970,8 @@ function buildBoundary(): JsonObject {
     opc: "technical proof receipt only",
     ipr: "operational identity record, not public authority identity issuance",
     memory: "PROCESS_MEMORY_MVP is volatile in serverless runtime and does not replace database persistence.",
+    audit: "Runtime audit log supports operational reconstruction only and does not create legal certification.",
+    modelUsage: "Model usage log supports SaaS accounting and operational reconstruction only.",
     aiGovernanceBoundary: "Runtime policy, risk and oversight records support auditability but do not replace human or legal review.",
     privacy: "Do not send unauthorized personal, medical, legal, financial or secret material to the runtime."
   };
