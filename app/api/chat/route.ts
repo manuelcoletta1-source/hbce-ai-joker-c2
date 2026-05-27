@@ -241,6 +241,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const incomingMessages = normalizeIncomingMessages(body.messages);
   const message = normalizeUserMessage(body, incomingMessages);
   const files = normalizeFiles(body.files);
+  const runtimeDiagnosticsRequested = isRuntimeDiagnosticsQuestion(message);
 
   const handoff = resolveHandoff(request, body);
   const policy = evaluatePolicy(message, files);
@@ -258,7 +259,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     handoff,
     policy,
     memoryBefore: toPublicMemory(memory),
-    saasContext
+    saasContext,
+    runtimeDiagnosticsRequested
   };
 
   const inputHash = sha256(inputFrame);
@@ -274,6 +276,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (policy.decision === "BLOCK") {
     answer = buildBlockedAnswer(policy);
     providerState = "LOCAL_FALLBACK";
+    providerName = "LOCAL";
+  } else if (runtimeDiagnosticsRequested) {
+    answer = buildRuntimeDiagnosticsPreparationAnswer(handoff, memory, policy);
+    providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (isIdentityRecognitionQuestion(message)) {
     answer = buildIdentityRecognitionAnswer(handoff, memory, policy);
@@ -402,20 +408,57 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     mode: memory.persistenceMode
   };
 
+  const finalAnswer = runtimeDiagnosticsRequested
+    ? buildRuntimeDiagnosticsAnswer({
+        t,
+        sessionId,
+        handoff,
+        policy,
+        memory,
+        saasContext,
+        model,
+        modelLevel,
+        providerName,
+        providerState,
+        openAIConfigured,
+        evt,
+        opc,
+        publicEvt,
+        publicOpc,
+        persistenceBridge,
+        auditAndUsage,
+        inputHash,
+        outputHash,
+        policyHash,
+        memoryHashBefore,
+        memoryHashAfter,
+        tokenUsage,
+        providerError,
+        finishReason
+      })
+    : safeAnswer;
+
+  if (runtimeDiagnosticsRequested) {
+    memory.lastAssistantMessage = truncate(finalAnswer, 1000);
+  }
+
+  const finalOutputHash = sha256(finalAnswer);
+  const finalMemoryHash = sha256(memory);
+
   const payload = {
     ok: policy.decision !== "BLOCK",
 
-    answer: safeAnswer,
-    response: safeAnswer,
-    reply: safeAnswer,
-    message: safeAnswer,
-    output: safeAnswer,
-    content: safeAnswer,
-    text: safeAnswer,
-    assistantMessage: safeAnswer,
+    answer: finalAnswer,
+    response: finalAnswer,
+    reply: finalAnswer,
+    message: finalAnswer,
+    output: finalAnswer,
+    content: finalAnswer,
+    text: finalAnswer,
+    assistantMessage: finalAnswer,
     assistant: {
       role: "assistant",
-      content: safeAnswer
+      content: finalAnswer
     },
 
     sessionId,
@@ -574,11 +617,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     runtime_details: runtimeDetails,
 
     diagnostics: {
+      mode: runtimeDiagnosticsRequested ? "RUNTIME_LOCAL_POST_GENERATION" : "STANDARD_RESPONSE",
       inputHash,
       outputHash,
+      finalOutputHash,
       policyHash,
       memoryHashBefore,
       memoryHashAfter,
+      finalMemoryHash,
       providerError,
       finishReason,
       tokenUsage: toJsonTokenUsage(tokenUsage),
@@ -771,6 +817,213 @@ function isIdentityRecognitionQuestion(message: string): boolean {
     "verified subject",
     "human ipr"
   ].some((term) => normalized.includes(normalizeText(term)));
+}
+
+function isRuntimeDiagnosticsQuestion(message: string): boolean {
+  const normalized = normalizeText(message);
+
+  const hasDiagnosticIntent = [
+    "diagnostica",
+    "diagnostic",
+    "diagnostics",
+    "runtime details",
+    "runtime detail",
+    "mostrami diagnostica",
+    "diagnostica completa",
+    "stato runtime",
+    "runtime status",
+    "debug runtime",
+    "health runtime"
+  ].some((term) => normalized.includes(normalizeText(term)));
+
+  const hasOperationalTerms = [
+    "evt",
+    "opc",
+    "audit",
+    "usage",
+    "model usage",
+    "persistenza",
+    "persistence",
+    "matrix",
+    "memoria",
+    "memory",
+    "ipr"
+  ].some((term) => normalized.includes(normalizeText(term)));
+
+  return hasDiagnosticIntent && hasOperationalTerms;
+}
+
+function buildRuntimeDiagnosticsPreparationAnswer(
+  handoff: HandoffResolution,
+  memory: RuntimeMemoryState,
+  policy: PolicyEvaluation
+): string {
+  return [
+    "JOKER-C2 runtime diagnostics requested.",
+    "",
+    "The runtime is preparing a post-generation diagnostic response.",
+    "This placeholder is used only to create a deterministic output frame before EVT, OPC, audit and model usage records are produced.",
+    "",
+    "Runtime entity: " + RUNTIME_ENTITY,
+    "Runtime IPR: " + RUNTIME_IPR,
+    "Human IPR: " + handoff.humanIpr,
+    "MATRIX: " + handoff.matrixState,
+    "Memory scope: " + memory.scope,
+    "Policy decision: " + policy.decision,
+    "Risk level: " + policy.riskLevel,
+    "",
+    "Boundary: final diagnostics are generated by /api/chat after EVT, OPC, audit and usage execution. legalCertification=false"
+  ].join("\n");
+}
+
+function buildRuntimeDiagnosticsAnswer(args: {
+  t: string;
+  sessionId: string;
+  handoff: HandoffResolution;
+  policy: PolicyEvaluation;
+  memory: RuntimeMemoryState;
+  saasContext: SaasRuntimeContext;
+  model: string;
+  modelLevel: string;
+  providerName: "OPENAI" | "LOCAL" | "UNKNOWN";
+  providerState: string;
+  openAIConfigured: boolean;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  publicEvt: JsonObject;
+  publicOpc: JsonObject;
+  persistenceBridge: RuntimePersistenceBridgeResult;
+  auditAndUsage: {
+    audit: JsonObject;
+    modelUsage: JsonObject;
+  };
+  inputHash: string;
+  outputHash: string;
+  policyHash: string;
+  memoryHashBefore: string;
+  memoryHashAfter: string;
+  tokenUsage: CompletionTokenUsage;
+  providerError: string | null;
+  finishReason: string | null;
+}): string {
+  const evtPersistenceStatus = stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN");
+  const evtPersistenceOk = stringPath(args.persistenceBridge.evtPersistence, "ok", "false");
+  const evtPersistenceError = stringPath(args.persistenceBridge.evtPersistence, "error", "none");
+
+  const opcPersistenceStatus = stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN");
+  const opcPersistenceOk = stringPath(args.persistenceBridge.opcPersistence, "ok", "false");
+  const opcPersistenceError = stringPath(args.persistenceBridge.opcPersistence, "error", "none");
+
+  const auditStatus = stringPath(args.auditAndUsage.audit, "status", "UNKNOWN");
+  const auditId = stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID");
+  const auditPersistenceStatus = stringPath(args.auditAndUsage.audit, "persistence.status", "UNKNOWN");
+  const auditPersistenceOk = stringPath(args.auditAndUsage.audit, "persistence.ok", "false");
+  const auditPersistenceError = stringPath(args.auditAndUsage.audit, "persistence.error", "none");
+
+  const usageStatus = stringPath(args.auditAndUsage.modelUsage, "status", "UNKNOWN");
+  const usageId = stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID");
+  const usagePersistenceStatus = stringPath(args.auditAndUsage.modelUsage, "persistence.status", "UNKNOWN");
+  const usagePersistenceOk = stringPath(args.auditAndUsage.modelUsage, "persistence.ok", "false");
+  const usagePersistenceError = stringPath(args.auditAndUsage.modelUsage, "persistence.error", "none");
+
+  return [
+    "Diagnostica runtime JOKER-C2 generata post-evento.",
+    "",
+    "Questa diagnostica non è stata prodotta dal modello OpenAI sul prompt iniziale. È stata costruita da /api/chat dopo la generazione di EVT, OPC, audit e model usage.",
+    "",
+    "## IPR",
+    "- Runtime entity: `" + RUNTIME_ENTITY + "`",
+    "- Runtime IPR: `" + RUNTIME_IPR + "`",
+    "- Human IPR: `" + args.handoff.humanIpr + "`",
+    "- Subject: `" + args.handoff.subjectName + "`",
+    "- Certificate: `" + args.handoff.certificateId + "`",
+    "- Certificate status: `" + args.handoff.status + "`",
+    "- Scope: `" + args.handoff.scope + "`",
+    "- Access decision: `" + args.handoff.accessDecision + "`",
+    "- Identity binding: `" + args.handoff.identityBinding + "`",
+    "- Handoff source: `" + args.handoff.source + "`",
+    "- Authority: `" + args.handoff.authority + "`",
+    "",
+    "## MATRIX",
+    "- State: `" + args.handoff.matrixState + "`",
+    "- Active: `" + String(args.handoff.matrixState === "MATRIX_ACTIVE") + "`",
+    "- Reason: `" + args.handoff.reason + "`",
+    "",
+    "## Memory",
+    "- Scope: `" + args.memory.scope + "`",
+    "- Authority: `" + args.memory.authority + "`",
+    "- Persistence mode: `" + args.memory.persistenceMode + "`",
+    "- Session: `" + args.memory.sessionId + "`",
+    "- Turns: `" + String(args.memory.turns) + "`",
+    "- Last EVT: `" + args.memory.lastEvtId + "`",
+    "- Last OPC: `" + args.memory.lastOpcId + "`",
+    "- Memory hash before: `" + args.memoryHashBefore + "`",
+    "- Memory hash after: `" + args.memoryHashAfter + "`",
+    "",
+    "## EVT",
+    "- Canonical AI EVT: `" + CANONICAL_EVT + "`",
+    "- Previous canonical EVT: `" + CANONICAL_PREV + "`",
+    "- Response EVT: `" + args.evt.id + "`",
+    "- Previous response EVT: `" + args.evt.prev + "`",
+    "- EVT hash: `" + args.evt.hash + "`",
+    "- EVT verification: `VERIFIABLE`",
+    "- EVT persistence ok: `" + evtPersistenceOk + "`",
+    "- EVT persistence status: `" + evtPersistenceStatus + "`",
+    "- EVT persistence error: `" + evtPersistenceError + "`",
+    "",
+    "## OPC",
+    "- OPC proof ID: `" + args.opc.id + "`",
+    "- OPC verification: `" + args.opc.verificationStatus + "`",
+    "- OPC chain hash: `" + args.opc.chainHash + "`",
+    "- OPC event hash: `" + args.opc.eventHash + "`",
+    "- OPC persistence ok: `" + opcPersistenceOk + "`",
+    "- OPC persistence status: `" + opcPersistenceStatus + "`",
+    "- OPC persistence error: `" + opcPersistenceError + "`",
+    "- legalCertification: `false`",
+    "",
+    "## Audit",
+    "- Audit ID: `" + auditId + "`",
+    "- Audit status: `" + auditStatus + "`",
+    "- Audit persistence ok: `" + auditPersistenceOk + "`",
+    "- Audit persistence status: `" + auditPersistenceStatus + "`",
+    "- Audit persistence error: `" + auditPersistenceError + "`",
+    "",
+    "## Model usage",
+    "- Usage ID: `" + usageId + "`",
+    "- Usage status: `" + usageStatus + "`",
+    "- Provider: `" + args.providerName + "`",
+    "- Provider state: `" + args.providerState + "`",
+    "- Model: `" + args.model + "`",
+    "- Model level: `" + args.modelLevel + "`",
+    "- OpenAI configured: `" + String(args.openAIConfigured) + "`",
+    "- Input tokens: `" + String(args.tokenUsage.inputTokens ?? "not_available") + "`",
+    "- Output tokens: `" + String(args.tokenUsage.outputTokens ?? "not_available") + "`",
+    "- Total tokens: `" + String(args.tokenUsage.totalTokens ?? "not_available") + "`",
+    "- Usage persistence ok: `" + usagePersistenceOk + "`",
+    "- Usage persistence status: `" + usagePersistenceStatus + "`",
+    "- Usage persistence error: `" + usagePersistenceError + "`",
+    "",
+    "## SaaS context",
+    "- Project: `Project HBCE R&D Transfer SaaS`",
+    "- Release: `SaaS Core v0.1`",
+    "- Tenant ID: `" + args.saasContext.tenantId + "`",
+    "- Workspace ID: `" + args.saasContext.workspaceId + "`",
+    "- Subscription ID: `" + args.saasContext.subscriptionId + "`",
+    "- Thread ID: `" + args.saasContext.threadId + "`",
+    "- Tier: `" + args.saasContext.saasTier + "`",
+    "",
+    "## Hashes",
+    "- Input hash: `" + args.inputHash + "`",
+    "- Output hash: `" + args.outputHash + "`",
+    "- Policy hash: `" + args.policyHash + "`",
+    "- Finish reason: `" + String(args.finishReason ?? "none") + "`",
+    "- Provider error: `" + String(args.providerError ?? "none") + "`",
+    "",
+    "## Boundary",
+    "OPC, EVT, audit e model usage sono livelli tecnici di tracciabilità, ricostruzione operativa e governance. Non sono certificazione legale, non sono identità pubblica ufficiale e non sostituiscono revisione umana o legale.",
+    "",
+    "legalCertification=false"
+  ].join("\n");
 }
 
 function buildIdentityRecognitionAnswer(
@@ -2667,6 +2920,24 @@ function stringFromValue(value: unknown): string {
   }
 
   return "";
+}
+
+function stringPath(source: JsonObject, path: string, fallback: string): string {
+  const value = getPath(source, path);
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (value === null) {
+    return "null";
+  }
+
+  return fallback;
 }
 
 function asJsonObject(value: unknown): JsonObject | null {
