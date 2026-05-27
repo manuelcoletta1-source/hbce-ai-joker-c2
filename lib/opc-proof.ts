@@ -1055,7 +1055,7 @@ export function getOpcProofDatabaseHealth(): OpcProofDatabaseHealth {
     legalCertification: false,
     boundary:
       databaseConfigured && databaseAvailable
-        ? "OPC proof database writer is configured with DATABASE_PERSISTENT target opc_proofs. Relational references remain nullable while the full tenant/session/EVT/memory chain is being activated. OPC is technical proof only; legalCertification=false."
+        ? "OPC proof database writer is configured with DATABASE_PERSISTENT target opc_proofs. Relational references remain nullable while the full tenant/session/EVT/memory/IPR subject chain is being activated. OPC is technical proof only; legalCertification=false."
         : "OPC proof database writer is not fully active. Proof records remain process/runtime scoped unless DATABASE_PERSISTENT storage is configured and available. OPC is technical proof only; legalCertification=false."
   };
 }
@@ -1628,6 +1628,8 @@ function buildOpcProofDatabaseFields(record: OpcProofRecord): OpcProofDatabaseFi
       memoryHash: record.proof.memoryHash ?? record.memory?.hash ?? null,
       projectDomain: record.runtime.projectDomain ?? null,
       hbceModule: record.runtime.hbceModule ?? null,
+      persistenceBoundary:
+        "IPR and session relational columns remain nullable/payload-first until ipr_subjects, sessions and tenant/workspace ledgers are fully materialized.",
       legalCertification: false
     }
   };
@@ -1679,7 +1681,10 @@ function nullableDatabaseText(value: unknown): string | null {
     normalized === "NO_SESSION" ||
     normalized === "NO_MEMORY" ||
     normalized === "NO_OPC" ||
-    normalized === "NO_EVT"
+    normalized === "NO_EVT" ||
+    normalized === "NO_TENANT" ||
+    normalized === "NO_WORKSPACE" ||
+    normalized === "NO_SUBSCRIPTION"
   ) {
     return null;
   }
@@ -1825,6 +1830,10 @@ function chooseColumn(
   return null;
 }
 
+function hasColumnValue(target: OpcProofColumnValue[], column: string): boolean {
+  return target.some((item) => item.column === column);
+}
+
 function addColumnValue(
   target: OpcProofColumnValue[],
   available: Set<string>,
@@ -1842,11 +1851,43 @@ function addColumnValue(
     return;
   }
 
+  if (hasColumnValue(target, column)) {
+    return;
+  }
+
   target.push({
     column,
     value,
     jsonb: options.jsonb
   });
+}
+
+function addEveryColumnValue(
+  target: OpcProofColumnValue[],
+  available: Set<string>,
+  candidates: string[],
+  value: HbceDatabaseQueryValue,
+  options: { jsonb?: boolean; required?: boolean } = {}
+): void {
+  let written = false;
+
+  for (const column of candidates) {
+    if (!available.has(column) || hasColumnValue(target, column)) {
+      continue;
+    }
+
+    target.push({
+      column,
+      value,
+      jsonb: options.jsonb
+    });
+
+    written = true;
+  }
+
+  if (!written && options.required) {
+    throw new Error(`OPC schema missing required column: ${candidates.join(" | ")}`);
+  }
 }
 
 async function getOpcProofDatabaseColumns(): Promise<Set<string>> {
@@ -1878,19 +1919,57 @@ function buildOpcProofDatabaseColumnValues(
 ): OpcProofColumnValue[] {
   const values: OpcProofColumnValue[] = [];
 
-  addColumnValue(values, available, ["proof_id", "opc_proof_id", "id"], toDatabaseValue(fields.proofId), {
-    required: true
-  });
+  addColumnValue(
+    values,
+    available,
+    ["proof_id", "opc_proof_id", "id"],
+    toDatabaseValue(fields.proofId),
+    {
+      required: true
+    }
+  );
 
-  addColumnValue(values, available, ["proof_hash", "opc_hash", "hash"], toDatabaseValue(fields.proofHash));
+  addEveryColumnValue(
+    values,
+    available,
+    ["proof_hash", "opc_hash", "hash"],
+    toDatabaseValue(fields.proofHash)
+  );
+
   addColumnValue(values, available, ["chain_hash"], toDatabaseValue(fields.chainHash), {
     required: true
   });
-  addColumnValue(values, available, ["previous_proof_hash", "prev_proof_hash"], toDatabaseValue(fields.previousProofHash));
-  addColumnValue(values, available, ["evt_id", "event_id"], toDatabaseValue(fields.evtId));
-  addColumnValue(values, available, ["evt_hash", "event_hash"], toDatabaseValue(fields.evtHash));
-  addColumnValue(values, available, ["runtime_ipr"], toDatabaseValue(fields.runtimeIpr));
-  addColumnValue(values, available, ["human_ipr"], toDatabaseValue(fields.humanIpr));
+
+  addEveryColumnValue(
+    values,
+    available,
+    ["previous_proof_hash", "prev_proof_hash"],
+    toDatabaseValue(fields.previousProofHash)
+  );
+
+  addEveryColumnValue(
+    values,
+    available,
+    ["evt_id", "event_id"],
+    toDatabaseValue(fields.evtId)
+  );
+
+  addEveryColumnValue(
+    values,
+    available,
+    ["evt_hash", "event_hash"],
+    toDatabaseValue(fields.evtHash)
+  );
+
+  addColumnValue(values, available, ["runtime_ipr"], toDatabaseValue(null));
+
+  addEveryColumnValue(
+    values,
+    available,
+    ["human_ipr", "subject_ipr"],
+    toDatabaseValue(null)
+  );
+
   addColumnValue(values, available, ["session_id"], toDatabaseValue(null));
   addColumnValue(values, available, ["memory_id"], toDatabaseValue(null));
   addColumnValue(values, available, ["memory_hash"], toDatabaseValue(fields.memoryHash));
@@ -1901,13 +1980,16 @@ function buildOpcProofDatabaseColumnValues(
   addColumnValue(values, available, ["hbce_module"], toDatabaseValue(fields.hbceModule));
   addColumnValue(values, available, ["audit_status"], toDatabaseValue(fields.auditStatus));
   addColumnValue(values, available, ["verification_status"], toDatabaseValue(fields.verificationStatus));
+
   addColumnValue(values, available, ["public_payload", "public_view"], toDatabaseValue(fields.publicPayloadJson), {
     jsonb: true
   });
+
   addColumnValue(values, available, ["payload", "proof_payload"], toDatabaseValue(fields.payloadJson), {
     jsonb: true,
     required: true
   });
+
   addColumnValue(values, available, ["legal_certification"], toDatabaseValue(false));
 
   return values;
