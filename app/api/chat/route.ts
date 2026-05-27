@@ -4,6 +4,8 @@ import OpenAI from "openai";
 
 import { appendRuntimeAuditLogRecordAsync } from "@/lib/runtime-audit-log";
 import { appendModelUsageLogRecordAsync } from "@/lib/model-usage-log";
+import { persistEventToDatabase } from "@/lib/evt-ledger";
+import { persistOpcProofRecordToDatabase } from "@/lib/opc-proof";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +13,8 @@ export const maxDuration = 60;
 
 type RuntimeAuditAppendInput = Parameters<typeof appendRuntimeAuditLogRecordAsync>[0];
 type ModelUsageAppendInput = Parameters<typeof appendModelUsageLogRecordAsync>[0];
+type EvtDatabaseRuntimeEvent = Parameters<typeof persistEventToDatabase>[0];
+type OpcDatabaseProofRecord = Parameters<typeof persistOpcProofRecordToDatabase>[0];
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
@@ -142,6 +146,11 @@ type SaasRuntimeContext = {
   saasTier: "BASE" | "IPR";
 };
 
+type RuntimePersistenceBridgeResult = {
+  evtPersistence: JsonObject;
+  opcPersistence: JsonObject;
+};
+
 const RUNTIME_ENTITY = "AI_JOKER";
 const RUNTIME_IPR = "IPR-AI-0001";
 const ORG = "HERMETICUM B.C.E. S.r.l.";
@@ -200,6 +209,13 @@ export async function GET(): Promise<NextResponse> {
       state: "MATRIX_LIMITED",
       active: false,
       reason: "Waiting for server-side IPR handoff validation."
+    },
+    persistence: {
+      evt: "DATABASE_PERSISTENT_TARGET",
+      opc: "DATABASE_PERSISTENT_TARGET",
+      audit: "DATABASE_PERSISTENT_TARGET",
+      modelUsage: "DATABASE_PERSISTENT_TARGET",
+      legalCertification: false
     },
     audit: {
       configured: true,
@@ -329,6 +345,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const memoryHashAfter = sha256(memory);
 
+  const persistenceBridge = await persistEvtAndOpc({
+    t,
+    sessionId,
+    handoff,
+    policy,
+    memory,
+    saasContext,
+    model,
+    modelLevel,
+    providerName,
+    providerState,
+    evt,
+    opc,
+    inputHash,
+    outputHash,
+    policyHash,
+    memoryHash: memoryHashAfter
+  });
+
   const auditAndUsage = await recordSaasAuditAndUsage({
     sessionId,
     requestId: buildRequestId(sessionId, t),
@@ -349,8 +384,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerState
   });
 
-  const publicEvt = buildPublicEvt(evt);
-  const publicOpc = buildPublicOpc(opc);
+  const publicEvt = buildPublicEvt(evt, persistenceBridge.evtPersistence);
+  const publicOpc = buildPublicOpc(opc, persistenceBridge.opcPersistence);
 
   const runtimeDetails = {
     model,
@@ -429,6 +464,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       subscriptionId: saasContext.subscriptionId,
       threadId: saasContext.threadId,
       tier: saasContext.saasTier,
+      evtPersistence: persistenceBridge.evtPersistence,
+      opcPersistence: persistenceBridge.opcPersistence,
       audit: auditAndUsage.audit,
       modelUsage: auditAndUsage.modelUsage,
       legalCertification: false
@@ -481,6 +518,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       proofId: opc.id,
       record: opc,
       publicProof: publicOpc,
+      persistence: persistenceBridge.opcPersistence,
       verification: {
         status: opc.verificationStatus,
         legalCertification: false
@@ -498,6 +536,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     audit: auditAndUsage.audit,
     modelUsage: auditAndUsage.modelUsage,
+
+    persistence: {
+      evt: persistenceBridge.evtPersistence,
+      opc: persistenceBridge.opcPersistence,
+      audit: auditAndUsage.audit,
+      modelUsage: auditAndUsage.modelUsage,
+      legalCertification: false
+    },
 
     continuity: {
       currentEvt: evt.id,
@@ -538,6 +584,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       tokenUsage: toJsonTokenUsage(tokenUsage),
       handoffSource: handoff.source,
       handoffReason: handoff.reason,
+      evtPersistence: persistenceBridge.evtPersistence,
+      opcPersistence: persistenceBridge.opcPersistence,
       boundary: buildBoundary()
     },
 
@@ -1519,7 +1567,7 @@ function buildOpcProofRecord(args: {
   };
 }
 
-function buildPublicEvt(evt: EvtRecord): JsonObject {
+function buildPublicEvt(evt: EvtRecord, persistence?: JsonObject): JsonObject {
   return {
     ...evt,
     evt: evt.id,
@@ -1529,6 +1577,11 @@ function buildPublicEvt(evt: EvtRecord): JsonObject {
       canonicalization: "deterministic-json",
       hash: evt.hash
     },
+    persistence: persistence ?? {
+      ok: false,
+      status: "NOT_ATTEMPTED",
+      legalCertification: false
+    },
     verification: {
       status: "VERIFIABLE",
       legalCertification: false
@@ -1536,7 +1589,7 @@ function buildPublicEvt(evt: EvtRecord): JsonObject {
   };
 }
 
-function buildPublicOpc(opc: OpcProofRecord): JsonObject {
+function buildPublicOpc(opc: OpcProofRecord, persistence?: JsonObject): JsonObject {
   return {
     ...opc,
     id: opc.id,
@@ -1545,6 +1598,11 @@ function buildPublicOpc(opc: OpcProofRecord): JsonObject {
     eventId: opc.evt,
     eventHash: opc.evtHash,
     chainHash: opc.chainHash,
+    persistence: persistence ?? {
+      ok: false,
+      status: "NOT_ATTEMPTED",
+      legalCertification: false
+    },
     verificationStatus: opc.verificationStatus,
     legalCertification: false,
     verification: {
@@ -1552,6 +1610,346 @@ function buildPublicOpc(opc: OpcProofRecord): JsonObject {
       legalCertification: false
     }
   };
+}
+
+async function persistEvtAndOpc(args: {
+  t: string;
+  sessionId: string;
+  handoff: HandoffResolution;
+  policy: PolicyEvaluation;
+  memory: RuntimeMemoryState;
+  saasContext: SaasRuntimeContext;
+  model: string;
+  modelLevel: string;
+  providerName: "OPENAI" | "LOCAL" | "UNKNOWN";
+  providerState: string;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  inputHash: string;
+  outputHash: string;
+  policyHash: string;
+  memoryHash: string;
+}): Promise<RuntimePersistenceBridgeResult> {
+  const fallbackEvt = {
+    ok: false,
+    status: "EVT_DATABASE_PERSISTENCE_SKIPPED",
+    error: "EVT persistence was not completed.",
+    legalCertification: false
+  };
+
+  const fallbackOpc = {
+    ok: false,
+    status: "OPC_DATABASE_PERSISTENCE_SKIPPED",
+    error: "OPC persistence was not completed.",
+    legalCertification: false
+  };
+
+  try {
+    const runtimeEvent = buildEvtDatabaseRuntimeEvent(args);
+    const evtPersistence = await persistEventToDatabase(runtimeEvent);
+
+    const opcDatabaseRecord = buildOpcDatabaseProofRecord(args);
+    const opcPersistence = await persistOpcProofRecordToDatabase(opcDatabaseRecord);
+
+    return {
+      evtPersistence: toJsonObject(evtPersistence, fallbackEvt),
+      opcPersistence: toJsonObject(opcPersistence, fallbackOpc)
+    };
+  } catch (error) {
+    return {
+      evtPersistence: {
+        ...fallbackEvt,
+        error: errorToMessage(error)
+      },
+      opcPersistence: {
+        ...fallbackOpc,
+        error: errorToMessage(error)
+      }
+    };
+  }
+}
+
+function buildEvtDatabaseRuntimeEvent(args: {
+  t: string;
+  sessionId: string;
+  handoff: HandoffResolution;
+  policy: PolicyEvaluation;
+  memory: RuntimeMemoryState;
+  saasContext: SaasRuntimeContext;
+  model: string;
+  modelLevel: string;
+  providerName: "OPENAI" | "LOCAL" | "UNKNOWN";
+  providerState: string;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  inputHash: string;
+  outputHash: string;
+  policyHash: string;
+  memoryHash: string;
+}): EvtDatabaseRuntimeEvent {
+  return {
+    evt: args.evt.id,
+    prev: args.evt.prev,
+    t: args.evt.t,
+    kind: "RUNTIME_EVENT",
+    eventKind: "JOKER_C2_CHAT_COMPLETION",
+    entity: RUNTIME_ENTITY,
+    runtimeIpr: RUNTIME_IPR,
+    humanIpr: args.handoff.humanIpr,
+    subjectIpr: args.handoff.humanIpr,
+    sessionId: args.sessionId,
+    threadId: args.saasContext.threadId,
+    tenantId: args.saasContext.tenantId,
+    workspaceId: args.saasContext.workspaceId,
+    subscriptionId: args.saasContext.subscriptionId,
+    opcProofId: args.opc.id,
+    memoryId: args.memory.sessionId,
+    state: args.providerState,
+    runtimeState: args.providerState === "PROVIDER_ERROR" ? "DEGRADED" : "OPERATIONAL",
+    decision: args.policy.decision,
+    runtimeDecision: mapPolicyDecisionToRuntimeDecision(args.policy),
+    riskLevel: args.policy.riskLevel,
+    projectDomain: "HBCE_ECOSISTEMA_AI",
+    hbceModule: "MATRIX",
+    inputHash: args.inputHash,
+    outputHash: args.outputHash,
+    policyHash: args.policyHash,
+    memoryHash: args.memoryHash,
+    trace: {
+      hash_algorithm: "sha256",
+      canonicalization: "deterministic-json",
+      hash: args.evt.hash
+    },
+    anchors: args.evt.anchors,
+    payload: {
+      runtime: RUNTIME_ENTITY,
+      runtimeIpr: RUNTIME_IPR,
+      canonicalEvt: CANONICAL_EVT,
+      handoff: args.handoff,
+      policy: args.policy,
+      memory: toPublicMemory(args.memory),
+      saas: args.saasContext,
+      model: args.model,
+      modelLevel: args.modelLevel,
+      providerName: args.providerName,
+      opcProofId: args.opc.id,
+      legalCertification: false
+    },
+    legalCertification: false
+  } as unknown as EvtDatabaseRuntimeEvent;
+}
+
+function buildOpcDatabaseProofRecord(args: {
+  t: string;
+  sessionId: string;
+  handoff: HandoffResolution;
+  policy: PolicyEvaluation;
+  memory: RuntimeMemoryState;
+  saasContext: SaasRuntimeContext;
+  model: string;
+  modelLevel: string;
+  providerName: "OPENAI" | "LOCAL" | "UNKNOWN";
+  providerState: string;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  inputHash: string;
+  outputHash: string;
+  policyHash: string;
+  memoryHash: string;
+}): OpcDatabaseProofRecord {
+  const runtimeDecision = mapPolicyDecisionToOpcDecision(args.policy);
+  const runtimeState = mapProviderStateToOpcRuntimeState(args.providerState);
+  const riskClass = mapPolicyRiskToOpcRisk(args.policy.riskLevel);
+  const auditStatus = mapPolicyToOpcAuditStatus(args.policy);
+  const engineHash = sha256({
+    provider: args.providerName,
+    model: args.model,
+    modelLevel: args.modelLevel
+  });
+
+  return {
+    proofId: args.opc.id,
+    kind: "OPERATIONAL_PROOF_RECORD",
+    timestamp: args.opc.timestamp,
+    identity: {
+      entity: RUNTIME_ENTITY,
+      ipr: RUNTIME_IPR,
+      core: CORE,
+      organization: ORG,
+      runtimeRole: "HBCE_governed_runtime"
+    },
+    sessionId: args.sessionId,
+    engine: {
+      provider: args.providerName === "OPENAI" ? "OpenAI" : args.providerName,
+      apiMode: "chat.completions",
+      role: "cognitive_engine",
+      runtimeRole: "HBCE_governed_runtime",
+      modelUsed: args.model,
+      standardModel: process.env.JOKER_MODEL?.trim() || DEFAULT_STANDARD_MODEL,
+      deepModel: process.env.JOKER_DEEP_MODEL?.trim() || DEFAULT_DEEP_MODEL,
+      mode: args.modelLevel === "STANDARD" ? "standard" : "deep",
+      configured: Boolean(process.env.OPENAI_API_KEY?.trim()),
+      projectBirthDate: "2026-01-19",
+      projectBirthLabel: "HBCE R&D / AI JOKER-C2 project birth date"
+    },
+    event: {
+      evt: args.evt.id,
+      prev: args.evt.prev,
+      hash: args.evt.hash,
+      kind: "UP-EVT"
+    },
+    memory: {
+      evt: args.memory.lastEvtId,
+      source: args.memory.scope,
+      hash: args.memoryHash,
+      memoryId: args.memory.sessionId,
+      memoryKeyHash: sha256({
+        sessionId: args.memory.sessionId,
+        subjectIpr: args.memory.subjectIpr
+      }),
+      scope: args.memory.scope,
+      authority: args.memory.authority,
+      persistenceMode: args.memory.persistenceMode
+    },
+    runtime: {
+      state: runtimeState,
+      decision: runtimeDecision,
+      contextClass: "API_CHAT",
+      intentClass: "CHAT_COMPLETION",
+      projectDomain: "HBCE_ECOSISTEMA_AI",
+      hbceModule: "MATRIX",
+      riskClass,
+      policyReference: "JOKER_C2_MVP_POLICY",
+      policyOutcome: args.policy.decision,
+      humanOversight: args.policy.humanOversight,
+      operationType: "CHAT_COMPLETION",
+      operationStatus: args.providerState,
+      failClosed: false
+    },
+    operationalContext: {
+      projectBirthDate: "2026-01-19",
+      projectBirthLabel: "HBCE R&D / AI JOKER-C2 project birth date",
+      monthlyReference: "UP-MESE-4",
+      eventFamily: "UP-EVT",
+      currentHumanEvt: "EVT-0016",
+      currentAiEvt: "EVT-0016-AI",
+      cycle: "UP-CANONICO",
+      saasTarget: "DATABASE_PERSISTENT"
+    },
+    persistence: {
+      mode: "DATABASE_READY",
+      status: "DATABASE_CONTRACT_READY",
+      durable: false,
+      runtimeScoped: false,
+      databaseRequired: true,
+      target: "DATABASE_PERSISTENT",
+      statement:
+        "OPC proof is prepared for database persistence. Durable status is confirmed by the database writer result."
+    },
+    proof: {
+      inputHash: args.inputHash,
+      outputHash: args.outputHash,
+      decisionHash: sha256({
+        policy: args.policy,
+        runtimeDecision,
+        providerState: args.providerState
+      }),
+      eventHash: args.opc.eventHash,
+      engineHash,
+      memoryHash: args.memoryHash,
+      previousProofHash: null,
+      chainHash: args.opc.chainHash
+    },
+    audit: {
+      status: auditStatus,
+      reviewRequired: args.policy.humanOversight !== "NOT_REQUIRED",
+      reviewerRole:
+        args.policy.humanOversight === "REQUIRED"
+          ? "HUMAN_REVIEWER"
+          : args.policy.humanOversight === "RECOMMENDED"
+            ? "AUDITOR"
+            : undefined,
+      reasons: [
+        "OPC proof generated by /api/chat.",
+        "Policy decision: " + args.policy.decision + ".",
+        "Risk level: " + args.policy.riskLevel + ".",
+        "Human oversight: " + args.policy.humanOversight + ".",
+        "legalCertification=false."
+      ]
+    },
+    verification: {
+      status: "VERIFIABLE",
+      hashAlgorithm: "sha256",
+      canonicalization: "deterministic-json"
+    },
+    boundary: {
+      legalCertification: false,
+      statement:
+        "OPC is a technical proof receipt for audit, verification and governance review. It does not create legal certification.",
+      aiGovernanceBoundary:
+        "The AI model does not govern HBCE. HBCE governs the use of AI models.",
+      moduleBoundary:
+        "HBCE modules are technical-operational stack functions and not automatic legal authority.",
+      persistenceBoundary:
+        "DATABASE_PERSISTENT is the SaaS target. The database writer result determines durable persistence."
+    }
+  } as unknown as OpcDatabaseProofRecord;
+}
+
+function mapProviderStateToOpcRuntimeState(
+  providerState: string
+): "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID" | "AUDIT_ONLY" | "MAINTENANCE" {
+  if (providerState === "PROVIDER_ERROR") {
+    return "DEGRADED";
+  }
+
+  return "OPERATIONAL";
+}
+
+function mapPolicyDecisionToOpcDecision(
+  policy: PolicyEvaluation
+): "ALLOW" | "AUDIT" | "DEGRADE" | "ESCALATE" | "BLOCK" | "NOOP" {
+  if (policy.decision === "BLOCK") {
+    return "BLOCK";
+  }
+
+  if (policy.decision === "ESCALATE") {
+    return "ESCALATE";
+  }
+
+  if (policy.humanOversight !== "NOT_REQUIRED") {
+    return "AUDIT";
+  }
+
+  return "ALLOW";
+}
+
+function mapPolicyRiskToOpcRisk(
+  riskLevel: PolicyEvaluation["riskLevel"]
+): "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | "PROHIBITED" | "UNKNOWN" {
+  if (riskLevel === "HIGH") {
+    return "HIGH";
+  }
+
+  if (riskLevel === "MEDIUM") {
+    return "MEDIUM";
+  }
+
+  return "LOW";
+}
+
+function mapPolicyToOpcAuditStatus(
+  policy: PolicyEvaluation
+): "NOT_REQUIRED" | "READY" | "REQUIRED" | "OPEN" | "IN_REVIEW" | "REVIEWED" | "DISPUTED" | "LOCKED" | "REJECTED" | "CLOSED" | "FAILED" {
+  if (policy.decision === "BLOCK" || policy.humanOversight === "REQUIRED") {
+    return "REQUIRED";
+  }
+
+  if (policy.humanOversight === "RECOMMENDED") {
+    return "READY";
+  }
+
+  return "NOT_REQUIRED";
 }
 
 async function recordSaasAuditAndUsage(args: {
@@ -1970,6 +2368,7 @@ function buildBoundary(): JsonObject {
     opc: "technical proof receipt only",
     ipr: "operational identity record, not public authority identity issuance",
     memory: "PROCESS_MEMORY_MVP is volatile in serverless runtime and does not replace database persistence.",
+    evt: "EVT supports technical traceability and database persistence target only; it is not legal certification.",
     audit: "Runtime audit log supports operational reconstruction only and does not create legal certification.",
     modelUsage: "Model usage log supports SaaS accounting and operational reconstruction only.",
     aiGovernanceBoundary: "Runtime policy, risk and oversight records support auditability but do not replace human or legal review.",
@@ -2282,6 +2681,12 @@ function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function toJsonObject(value: unknown, fallback: JsonObject): JsonObject {
+  const object = asJsonObject(toCanonicalValue(value));
+
+  return object || fallback;
+}
+
 function buildId(prefix: "EVT" | "OPC", isoDate: string): string {
   const compactTime = isoDate
     .replace(/[-:]/g, "")
@@ -2311,7 +2716,7 @@ function canonicalize(value: unknown): string {
   return JSON.stringify(toCanonicalValue(value));
 }
 
-function toCanonicalValue(value: unknown): unknown {
+function toCanonicalValue(value: unknown): JsonValue {
   if (value === undefined) {
     return null;
   }
@@ -2333,12 +2738,13 @@ function toCanonicalValue(value: unknown): unknown {
     return value.map((item) => toCanonicalValue(item));
   }
 
-  if (isJsonObject(value)) {
-    const sorted: Record<string, unknown> = {};
-    const keys = Object.keys(value).sort();
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const sorted: JsonObject = {};
+    const keys = Object.keys(record).sort();
 
     for (const key of keys) {
-      sorted[key] = toCanonicalValue(value[key]);
+      sorted[key] = toCanonicalValue(record[key]);
     }
 
     return sorted;
