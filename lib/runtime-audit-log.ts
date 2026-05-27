@@ -418,14 +418,18 @@ export function createRuntimeAuditLogRecord(
   const persistenceBoundary =
     input.persistenceBoundary ?? deriveAuditPersistenceBoundary(persistenceMode);
 
-  const blocked = input.blocked ?? input.runtimeDecision === "BLOCK";
+  const blocked = input.blocked ?? (input.runtimeDecision === "BLOCK");
+
   const failClosed =
     input.failClosed ??
-    input.runtimeDecision === "FAIL_CLOSED" ??
-    input.c2FailClosed ??
-    false;
+    (
+      input.runtimeDecision === "FAIL_CLOSED" ||
+      input.c2FailClosed === true
+    );
 
   const c2Boundary = input.c2Boundary ?? "C2_NOT_AVAILABLE";
+
+  const allowed = input.allowed ?? (!blocked && !failClosed);
 
   const baseRecord: Omit<RuntimeAuditLogRecord, "auditHash"> = {
     auditId,
@@ -495,7 +499,7 @@ export function createRuntimeAuditLogRecord(
     decisionHash: normalizeNullableAuditString(input.decisionHash),
     policyHash: normalizeNullableAuditString(input.policyHash),
 
-    allowed: input.allowed ?? !blocked && !failClosed,
+    allowed,
     failClosed,
     blocked,
 
