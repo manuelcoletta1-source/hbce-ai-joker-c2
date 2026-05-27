@@ -23,9 +23,11 @@ type PublicFileSnapshot = {
   preview?: string;
 };
 
+type HandoffSource = "body" | "query" | "header" | "referer" | "none";
+
 type HandoffResolution = {
   detected: boolean;
-  source: "body" | "query" | "header" | "none";
+  source: HandoffSource;
   authority: "SERVER_RUNTIME_VALIDATED" | "SERVER_VALIDATION_REQUIRED";
   subjectName: string;
   humanIpr: string;
@@ -113,6 +115,7 @@ const CANONICAL_PREV = "EVT-0015-AI";
 const CANONICAL_MONTHLY_REF = "EVT-0015-AI / UP-MESE-4";
 const PROJECT_BIRTH = "2026-01-19T15:30:00+01:00";
 const LOCATION = "Torino, Italy";
+
 const DEFAULT_STANDARD_MODEL = "gpt-4o-mini";
 const DEFAULT_DEEP_MODEL = "gpt-4o";
 const MEMORY_LIMIT = 24;
@@ -120,9 +123,9 @@ const MEMORY_LIMIT = 24;
 const processMemory = new Map<string, RuntimeMemoryState>();
 
 export async function GET(): Promise<NextResponse> {
-  const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
   const standardModel = process.env.JOKER_MODEL?.trim() || DEFAULT_STANDARD_MODEL;
   const deepModel = process.env.JOKER_DEEP_MODEL?.trim() || DEFAULT_DEEP_MODEL;
+  const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
 
   return jsonResponse({
     ok: true,
@@ -134,28 +137,7 @@ export async function GET(): Promise<NextResponse> {
     standardModel,
     deepModel,
     openAIConfigured,
-    identity: {
-      entity: RUNTIME_ENTITY,
-      ipr: RUNTIME_IPR,
-      evt: CANONICAL_EVT,
-      prev: CANONICAL_PREV,
-      eventFamily: EVENT_FAMILY,
-      state: "ACTIVE",
-      cycle: CYCLE,
-      core: CORE,
-      org: ORG,
-      location: LOCATION,
-      projectBirth: {
-        t: PROJECT_BIRTH,
-        root: "EVT-0008",
-        proto: "UNEBDO-ΦΩ"
-      },
-      monthlyReference: {
-        evt: "EVT-0015-AI",
-        cycle: "UP-MESE-4",
-        t: "2026-05-19T15:30:00+02:00"
-      }
-    },
+    identity: buildRuntimeIdentity(),
     access: {
       decision: "SERVER_VALIDATION_REQUIRED",
       matrixState: "MATRIX_LIMITED",
@@ -166,8 +148,7 @@ export async function GET(): Promise<NextResponse> {
       scope: "RUNTIME_ONLY",
       authority: "PROCESS_MEMORY_MVP",
       persistenceMode: "PROCESS_MEMORY_MVP",
-      reason:
-        "Health check only. IPR-bound memory is activated during POST when a valid handoff is present."
+      reason: "Health check only. IPR-bound memory is activated during POST when a valid handoff is present."
     },
     matrix: {
       state: "MATRIX_LIMITED",
@@ -181,26 +162,29 @@ export async function GET(): Promise<NextResponse> {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const t = new Date().toISOString();
   const body = await readJsonBody(request);
+
   const sessionId = resolveSessionId(body);
   const incomingMessages = normalizeIncomingMessages(body.messages);
   const message = normalizeUserMessage(body, incomingMessages);
   const files = normalizeFiles(body.files);
+
   const handoff = resolveHandoff(request, body);
   const policy = evaluatePolicy(message, files);
   const memory = getOrCreateMemory(sessionId, handoff, t);
+
   const model = resolveModel(body, policy);
   const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
 
-  const userInputFrame = {
+  const inputFrame = {
+    sessionId,
     message,
     files,
-    sessionId,
     handoff,
     policy,
     memoryBefore: toPublicMemory(memory)
   };
 
-  const inputHash = sha256(userInputFrame);
+  const inputHash = sha256(inputFrame);
   const memoryHashBefore = sha256(memory);
 
   let answer = "";
@@ -232,6 +216,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
   }
 
+  const safeAnswer = normalizeAssistantAnswer(answer, message, handoff, policy);
+
   const evt = buildEvtRecord({
     t,
     sessionId,
@@ -247,7 +233,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     handoff,
     evt,
     inputHash,
-    outputHash: sha256(answer),
+    outputHash: sha256(safeAnswer),
     policyHash: sha256(policy),
     memoryHash: memoryHashBefore
   });
@@ -257,55 +243,60 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     t,
     handoff,
     userMessage: message,
-    assistantMessage: answer,
+    assistantMessage: safeAnswer,
     evtId: evt.id,
     opcId: opc.id,
     policy
   });
 
+  const runtimeDetails = {
+    model,
+    runtimeIpr: RUNTIME_IPR,
+    aiEvt: CANONICAL_EVT,
+    responseEvt: evt.id,
+    opc: opc.id,
+    matrix: handoff.matrixState,
+    memory: handoff.semanticMemoryScope,
+    authority: memory.authority,
+    mode: memory.persistenceMode
+  };
+
   const payload = {
     ok: policy.decision !== "BLOCK",
-    answer,
-    reply: answer,
-    message: answer,
-    output: answer,
+
+    answer: safeAnswer,
+    response: safeAnswer,
+    reply: safeAnswer,
+    message: safeAnswer,
+    output: safeAnswer,
+    content: safeAnswer,
+    text: safeAnswer,
+    assistantMessage: safeAnswer,
+    assistant: {
+      role: "assistant",
+      content: safeAnswer
+    },
+
     sessionId,
     runtime: RUNTIME_ENTITY,
     state: providerState,
+    status: providerState,
     provider: "openai",
     apiMode: openAIConfigured ? "OPENAI_CONFIGURED" : "LOCAL_FALLBACK",
     model,
     standardModel: process.env.JOKER_MODEL?.trim() || DEFAULT_STANDARD_MODEL,
     deepModel: process.env.JOKER_DEEP_MODEL?.trim() || DEFAULT_DEEP_MODEL,
     openAIConfigured,
-    identity: {
-      entity: RUNTIME_ENTITY,
-      ipr: RUNTIME_IPR,
-      evt: CANONICAL_EVT,
-      prev: CANONICAL_PREV,
-      eventFamily: EVENT_FAMILY,
-      state: "ACTIVE",
-      cycle: CYCLE,
-      core: CORE,
-      org: ORG,
-      location: LOCATION,
-      projectBirth: {
-        t: PROJECT_BIRTH,
-        root: "EVT-0008",
-        proto: "UNEBDO-ΦΩ"
-      },
-      monthlyReference: {
-        evt: "EVT-0015-AI",
-        cycle: "UP-MESE-4",
-        t: "2026-05-19T15:30:00+02:00"
-      }
-    },
+
+    identity: buildRuntimeIdentity(),
+
     access: {
       decision: handoff.accessDecision,
       matrixState: handoff.matrixState,
       semanticMemoryScope: handoff.semanticMemoryScope,
       identityBinding: handoff.identityBinding
     },
+
     biologicalSubject: {
       name: handoff.subjectName,
       humanIpr: handoff.humanIpr,
@@ -317,7 +308,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       authority: handoff.authority,
       reason: handoff.reason
     },
+
     memory: toPublicMemory(memory),
+
     matrix: {
       state: handoff.matrixState,
       active: handoff.matrixState === "MATRIX_ACTIVE",
@@ -326,8 +319,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           ? "Server-side runtime accepted the IPR handoff for this request."
           : "No valid IPR handoff was accepted for this request."
     },
+
     evt,
     opc,
+
+    responseEvt: evt.id,
+    responseEvtId: evt.id,
+    evtId: evt.id,
+    currentEvt: evt.id,
+    currentOpc: opc.id,
+    opcId: opc.id,
+    opcProof: opc,
+    proof: opc,
+
     continuity: {
       currentEvt: evt.id,
       previousEvt: evt.prev,
@@ -336,26 +340,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       canonicalRuntimeEvt: CANONICAL_EVT,
       monthlyReference: CANONICAL_MONTHLY_REF
     },
+
     policy,
+
     risk: {
       level: policy.riskLevel,
       flags: policy.flags,
       decision: policy.decision
     },
+
     oversight: {
       required: policy.humanOversight === "REQUIRED",
       recommendation: policy.humanOversight,
       reason: policy.reason
     },
+
     files,
+
+    runtimeDetails,
+    runtime_details: runtimeDetails,
+
     diagnostics: {
       inputHash,
-      outputHash: sha256(answer),
+      outputHash: sha256(safeAnswer),
       memoryHashBefore,
       memoryHashAfter: sha256(memory),
       providerError,
+      handoffSource: handoff.source,
+      handoffReason: handoff.reason,
       boundary: buildBoundary()
     },
+
     boundary: buildBoundary()
   };
 
@@ -390,28 +405,26 @@ async function completeWithOpenAI(args: {
 
   const userPrompt = buildUserPrompt(args.message, args.files);
 
-  const messages = [
-    {
-      role: "system" as const,
-      content: systemPrompt
-    },
-    ...safeHistory,
-    {
-      role: "user" as const,
-      content: userPrompt
-    }
-  ];
-
   const completion = await client.chat.completions.create({
     model: args.model,
-    messages,
+    messages: [
+      {
+        role: "system",
+        content: systemPrompt
+      },
+      ...safeHistory,
+      {
+        role: "user",
+        content: userPrompt
+      }
+    ],
     temperature: 0.35
   });
 
   const content = completion.choices[0]?.message?.content?.trim();
 
   if (!content) {
-    return "JOKER-C2 runtime attivo, ma il provider non ha restituito contenuto utile. EVT e OPC sono comunque stati generati per tracciare l’evento.";
+    return buildEmptyProviderFallback(args.message, args.handoff, args.policy);
   }
 
   return content;
@@ -439,9 +452,12 @@ function buildSystemPrompt(
     "",
     "Biological subject resolution:",
     "Detected: " + String(handoff.detected),
+    "Source: " + handoff.source,
     "Subject: " + handoff.subjectName,
     "Human IPR: " + handoff.humanIpr,
     "Certificate: " + handoff.certificateId,
+    "Status: " + handoff.status,
+    "Scope: " + handoff.scope,
     "Access decision: " + handoff.accessDecision,
     "Identity binding: " + handoff.identityBinding,
     "Memory scope: " + handoff.semanticMemoryScope,
@@ -476,14 +492,55 @@ function buildSystemPrompt(
 
 function buildUserPrompt(message: string, files: PublicFileSnapshot[]): string {
   if (files.length === 0) {
-    return message;
+    return message || "Messaggio utente vuoto.";
   }
 
   return [
-    message,
+    message || "Messaggio utente vuoto.",
     "",
     "File snapshots available to this request:",
     JSON.stringify(files, null, 2)
+  ].join("\n");
+}
+
+function normalizeAssistantAnswer(
+  answer: string,
+  message: string,
+  handoff: HandoffResolution,
+  policy: PolicyEvaluation
+): string {
+  const clean = answer.trim();
+
+  if (clean.length > 0) {
+    return clean;
+  }
+
+  return buildEmptyProviderFallback(message, handoff, policy);
+}
+
+function buildEmptyProviderFallback(
+  message: string,
+  handoff: HandoffResolution,
+  policy: PolicyEvaluation
+): string {
+  const identityLine =
+    handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
+      ? "Identità operativa rilevata: " + handoff.subjectName + " / " + handoff.humanIpr + "."
+      : "Nessun IPR biologico verificato in questa richiesta.";
+
+  return [
+    "JOKER-C2 runtime attivo.",
+    "",
+    identityLine,
+    "Runtime entity: " + RUNTIME_ENTITY + ".",
+    "Runtime IPR: " + RUNTIME_IPR + ".",
+    "Policy decision: " + policy.decision + ".",
+    "Risk level: " + policy.riskLevel + ".",
+    "",
+    "La risposta del provider era vuota, quindi il runtime ha generato questa risposta di continuità per evitare [EMPTY_RESPONSE].",
+    "",
+    "Messaggio ricevuto:",
+    truncate(message || "Messaggio vuoto.", 1200)
   ].join("\n");
 }
 
@@ -495,11 +552,7 @@ function buildLocalFallbackAnswer(
 ): string {
   const identityLine =
     handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
-      ? "Identità operativa rilevata: " +
-        handoff.subjectName +
-        " / " +
-        handoff.humanIpr +
-        "."
+      ? "Identità operativa rilevata: " + handoff.subjectName + " / " + handoff.humanIpr + "."
       : "Nessun IPR biologico verificato in questa richiesta.";
 
   return [
@@ -513,9 +566,9 @@ function buildLocalFallbackAnswer(
     "Memory scope: " + memory.scope + ".",
     "",
     "Messaggio ricevuto:",
-    truncate(message, 1200),
+    truncate(message || "Messaggio vuoto.", 1200),
     "",
-    "OPENAI_API_KEY non risulta configurata nel runtime Vercel, quindi la risposta cognitiva del modello non è stata invocata. EVT e OPC tecnici vengono comunque prodotti per mantenere continuità operativa."
+    "OPENAI_API_KEY non risulta configurata nel runtime Vercel, quindi la risposta cognitiva del modello non è stata invocata. EVT e OPC tecnici vengono comunque prodotti."
   ].join("\n");
 }
 
@@ -539,9 +592,9 @@ function buildProviderErrorAnswer(
     "Errore provider: " + providerError,
     "",
     "Messaggio ricevuto:",
-    truncate(message, 1200),
+    truncate(message || "Messaggio vuoto.", 1200),
     "",
-    "EVT e OPC tecnici sono stati comunque generati per tracciare il fallimento del provider, perché almeno qualcuno qui deve comportarsi con continuità."
+    "EVT e OPC tecnici sono stati comunque generati per tracciare l’evento."
   ].join("\n");
 }
 
@@ -558,7 +611,10 @@ function buildBlockedAnswer(policy: PolicyEvaluation): string {
 }
 
 function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEvaluation {
-  const text = [message, ...files.map((file) => file.preview || "")].join("\n").toLowerCase();
+  const text = [message, ...files.map((file) => file.preview || "")]
+    .join("\n")
+    .toLowerCase();
+
   const flags: string[] = [];
 
   if (/(api[_-]?key|secret|password|private key|token|bearer\s+[a-z0-9._-]+)/i.test(text)) {
@@ -588,8 +644,7 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
       riskLevel: "HIGH",
       humanOversight: "REQUIRED",
       flags,
-      reason:
-        "The request contains both cyber-risk terms and possible credential or secret material."
+      reason: "The request contains both cyber-risk terms and possible credential or secret material."
     };
   }
 
@@ -600,8 +655,7 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
       riskLevel: hasCyberRisk || hasSecrets ? "MEDIUM" : "LOW",
       humanOversight: hasCyberRisk || hasSecrets ? "RECOMMENDED" : "NOT_REQUIRED",
       flags,
-      reason:
-        "The request can proceed, but the runtime records additional operational caution."
+      reason: "The request can proceed, but the runtime records additional operational caution."
     };
   }
 
@@ -621,6 +675,7 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     asJsonObject(body.handoff) ||
     asJsonObject(body.identityHandoff) ||
     asJsonObject(body.identity) ||
+    asJsonObject(body.biologicalSubject) ||
     null;
 
   const bodyEncoded =
@@ -634,6 +689,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
   const queryEncoded =
     request.nextUrl.searchParams.get("hbce_ipr_handoff_b64") ||
     request.nextUrl.searchParams.get("ipr_handoff_b64") ||
+    request.nextUrl.searchParams.get("iprHandoffB64") ||
+    request.nextUrl.searchParams.get("handoffB64") ||
     "";
 
   const headerEncoded =
@@ -641,19 +698,26 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     request.headers.get("x-ipr-handoff-b64") ||
     "";
 
+  const refererEncoded = resolveHandoffFromReferer(request);
+
+  const decodedHeader = headerEncoded ? decodeBase64Json(headerEncoded) : null;
   const decodedBody = bodyEncoded ? decodeBase64Json(bodyEncoded) : null;
   const decodedQuery = queryEncoded ? decodeBase64Json(queryEncoded) : null;
-  const decodedHeader = headerEncoded ? decodeBase64Json(headerEncoded) : null;
+  const decodedReferer = refererEncoded ? decodeBase64Json(refererEncoded) : null;
 
-  const source: HandoffResolution["source"] = decodedHeader
-    ? "header"
-    : decodedBody || bodyObject
-      ? "body"
-      : decodedQuery
-        ? "query"
-        : "none";
+  let source: HandoffSource = "none";
 
-  const sources = [decodedHeader, decodedBody, bodyObject, decodedQuery, body];
+  if (decodedHeader) {
+    source = "header";
+  } else if (decodedBody || bodyObject) {
+    source = "body";
+  } else if (decodedQuery) {
+    source = "query";
+  } else if (decodedReferer) {
+    source = "referer";
+  }
+
+  const sources = [decodedHeader, decodedBody, bodyObject, decodedQuery, decodedReferer, body];
 
   const subjectName =
     firstStringFromSources(sources, [
@@ -664,7 +728,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       "identity.subjectName",
       "identity.name",
       "subject.name",
-      "human.name"
+      "human.name",
+      "biologicalSubject.name"
     ]) || "No verified subject";
 
   const humanIpr =
@@ -679,7 +744,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       "identity.humanIpr",
       "identity.ipr",
       "subject.ipr",
-      "human.ipr"
+      "human.ipr",
+      "biologicalSubject.ipr"
     ]) || "NOT_VERIFIED";
 
   const certificateId =
@@ -690,7 +756,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       "certId",
       "cert",
       "identity.certificateId",
-      "certificate.id"
+      "certificate.id",
+      "certificate.certificateId"
     ]) || "NO_CERTIFICATE";
 
   const cardSerial =
@@ -700,7 +767,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       "iprCard",
       "iprCardSerial",
       "identity.cardSerial",
-      "card.serial"
+      "card.serial",
+      "iprCard.serial"
     ]) || "NO_CARD";
 
   const status =
@@ -712,14 +780,18 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     ]) || "MISSING";
 
   const scope =
-    firstStringFromSources(sources, ["scope", "accessScope", "identity.scope", "certificate.scope"]) ||
-    "MATRIX_LIMITED";
+    firstStringFromSources(sources, [
+      "scope",
+      "accessScope",
+      "identity.scope",
+      "certificate.scope"
+    ]) || "MATRIX_LIMITED";
 
   const hasHumanIpr = humanIpr !== "NOT_VERIFIED" && humanIpr.trim().length > 0;
-  const hasCertificate =
-    certificateId !== "NO_CERTIFICATE" && certificateId.trim().length > 0;
+  const hasCertificate = certificateId !== "NO_CERTIFICATE" && certificateId.trim().length > 0;
   const active = status.toUpperCase() === "ACTIVE";
   const jokerScope = scope.toUpperCase().includes("JOKER_C2_ACCESS");
+
   const accepted = hasHumanIpr && hasCertificate && active && jokerScope;
 
   if (!accepted) {
@@ -739,7 +811,7 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       semanticMemoryScope: "RUNTIME_ONLY",
       reason:
         source === "none"
-          ? "No IPR handoff was found in body, query or headers."
+          ? "No IPR handoff was found in body, query, header or referer."
           : "IPR handoff was detected but did not satisfy human IPR, certificate, ACTIVE status and JOKER_C2_ACCESS scope together."
     };
   }
@@ -758,9 +830,30 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     identityBinding: "IPR_VERIFIED_BIOLOGICAL_SUBJECT",
     matrixState: "MATRIX_ACTIVE",
     semanticMemoryScope: "IPR_BOUND",
-    reason:
-      "IPR handoff accepted server-side for this request using human IPR, certificate, ACTIVE status and JOKER_C2_ACCESS scope."
+    reason: "IPR handoff accepted server-side for this request."
   };
+}
+
+function resolveHandoffFromReferer(request: NextRequest): string {
+  const referer = request.headers.get("referer") || request.headers.get("referrer") || "";
+
+  if (!referer) {
+    return "";
+  }
+
+  try {
+    const url = new URL(referer);
+
+    return (
+      url.searchParams.get("hbce_ipr_handoff_b64") ||
+      url.searchParams.get("ipr_handoff_b64") ||
+      url.searchParams.get("iprHandoffB64") ||
+      url.searchParams.get("handoffB64") ||
+      ""
+    );
+  } catch {
+    return "";
+  }
 }
 
 function getOrCreateMemory(
@@ -779,6 +872,10 @@ function getOrCreateMemory(
     existing.updatedAt = t;
     existing.scope = handoff.semanticMemoryScope;
     existing.subjectIpr = handoff.humanIpr;
+    existing.authority =
+      handoff.semanticMemoryScope === "IPR_BOUND"
+        ? "SERVER_RUNTIME_VALIDATED"
+        : "PROCESS_MEMORY_MVP";
     return existing;
   }
 
@@ -822,6 +919,10 @@ function updateMemoryAfterTurn(args: {
   args.memory.turns += 1;
   args.memory.scope = args.handoff.semanticMemoryScope;
   args.memory.subjectIpr = args.handoff.humanIpr;
+  args.memory.authority =
+    args.handoff.semanticMemoryScope === "IPR_BOUND"
+      ? "SERVER_RUNTIME_VALIDATED"
+      : "PROCESS_MEMORY_MVP";
   args.memory.lastEvtId = args.evtId;
   args.memory.lastOpcId = args.opcId;
   args.memory.lastUserMessage = truncate(args.userMessage, 1000);
@@ -955,17 +1056,39 @@ function buildOpcProofRecord(args: {
   };
 }
 
+function buildRuntimeIdentity(): JsonObject {
+  return {
+    entity: RUNTIME_ENTITY,
+    ipr: RUNTIME_IPR,
+    evt: CANONICAL_EVT,
+    prev: CANONICAL_PREV,
+    eventFamily: EVENT_FAMILY,
+    state: "ACTIVE",
+    cycle: CYCLE,
+    core: CORE,
+    org: ORG,
+    location: LOCATION,
+    projectBirth: {
+      t: PROJECT_BIRTH,
+      root: "EVT-0008",
+      proto: "UNEBDO-ΦΩ"
+    },
+    monthlyReference: {
+      evt: "EVT-0015-AI",
+      cycle: "UP-MESE-4",
+      t: "2026-05-19T15:30:00+02:00"
+    }
+  };
+}
+
 function buildBoundary(): JsonObject {
   return {
     legalCertification: false,
     opc: "technical proof receipt only",
     ipr: "operational identity record, not public authority identity issuance",
-    memory:
-      "PROCESS_MEMORY_MVP is volatile in serverless runtime and does not replace database persistence.",
-    aiGovernanceBoundary:
-      "Runtime policy, risk and oversight records support auditability but do not replace human or legal review.",
-    privacy:
-      "Do not send unauthorized personal, medical, legal, financial or secret material to the runtime."
+    memory: "PROCESS_MEMORY_MVP is volatile in serverless runtime and does not replace database persistence.",
+    aiGovernanceBoundary: "Runtime policy, risk and oversight records support auditability but do not replace human or legal review.",
+    privacy: "Do not send unauthorized personal, medical, legal, financial or secret material to the runtime."
   };
 }
 
@@ -990,11 +1113,17 @@ function resolveSessionId(body: JsonObject): string {
     return fromBody;
   }
 
-  return "joker-c2-session-" + randomUUID();
+  return "JOKER-API-" + randomUUID();
 }
 
 function normalizeUserMessage(body: JsonObject, turns: ChatTurn[]): string {
-  const direct = firstStringFromSources([body], ["message", "prompt", "input", "text", "content"]);
+  const direct = firstStringFromSources([body], [
+    "message",
+    "prompt",
+    "input",
+    "text",
+    "content"
+  ]);
 
   if (direct) {
     return direct;
@@ -1092,7 +1221,11 @@ function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
 }
 
 function resolveModel(body: JsonObject, policy: PolicyEvaluation): string {
-  const requested = firstStringFromSources([body], ["model", "jokerModel", "runtimeModel"]);
+  const requested = firstStringFromSources([body], [
+    "model",
+    "jokerModel",
+    "runtimeModel"
+  ]);
 
   if (requested && /^[a-zA-Z0-9._:-]+$/.test(requested)) {
     return requested;
@@ -1107,8 +1240,12 @@ function resolveModel(body: JsonObject, policy: PolicyEvaluation): string {
 
 function decodeBase64Json(value: string): JsonObject | null {
   try {
-    const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    const decodedURIComponent = decodeURIComponent(value);
+    const normalized = decodedURIComponent.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(
+      normalized.length + ((4 - (normalized.length % 4)) % 4),
+      "="
+    );
     const decoded = Buffer.from(padded, "base64").toString("utf8");
     const parsed = JSON.parse(decoded) as unknown;
     return asJsonObject(parsed);
