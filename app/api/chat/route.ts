@@ -2619,6 +2619,17 @@ function toMemoryHandoffEvaluation(
     certificate
   };
 }
+function stringFromValue(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  return "";
+}
 function buildRuntimeIdentity(): JsonObject {
   return {
     entity: RUNTIME_ENTITY,
