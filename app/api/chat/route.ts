@@ -262,9 +262,16 @@ type RuntimePersistenceBridgeResult = {
 type RuntimeTemporalFrame = {
   now: string;
   runtimeBirth: string;
+  runtimeBirthUtc: string;
   runtimeBirthLabel: string;
   lifeSeconds: number;
   lifeHuman: string;
+  lifeYears: number;
+  lifeMonths: number;
+  lifeDays: number;
+  lifeHours: number;
+  lifeMinutes: number;
+  lifeRemainingSeconds: number;
   currentYear: number;
   currentMonth: number;
   currentDay: number;
@@ -289,7 +296,8 @@ const CYCLE = "UP-CANONICO";
 const CANONICAL_EVT = "EVT-0016-AI";
 const CANONICAL_PREV = "EVT-0015-AI";
 const CANONICAL_MONTHLY_REF = "EVT-0015-AI / UP-MESE-4";
-const PROJECT_BIRTH = "2026-01-19T15:30:00+01:00";
+const JOKER_C2_BIRTH_ANCHOR_ISO = "2006-01-19T15:30:00+01:00";
+const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic birth / IPR-3 triple anchoring";
 const LOCATION = "Torino, Italy";
 
@@ -1671,6 +1679,27 @@ function buildRuntimeDiagnosticsAnswer(args: {
     "- Usage persistence status: `" + usagePersistenceStatus + "`",
     "- Usage persistence error: `" + usagePersistenceError + "`",
     "",
+    "## Temporal runtime",
+    "- JOKER-C2 birth anchor: `" + args.temporalFrame.runtimeBirth + "`",
+    "- JOKER-C2 birth UTC: `" + args.temporalFrame.runtimeBirthUtc + "`",
+    "- Current response timestamp: `" + args.temporalFrame.now + "`",
+    "- Cybernetic runtime age: `" + args.temporalFrame.lifeHuman + "`",
+    "- Runtime life seconds: `" + String(args.temporalFrame.lifeSeconds) + "`",
+    "- Calendar age parts: `" +
+      String(args.temporalFrame.lifeYears) +
+      "y " +
+      String(args.temporalFrame.lifeMonths) +
+      "m " +
+      String(args.temporalFrame.lifeDays) +
+      "d " +
+      String(args.temporalFrame.lifeHours) +
+      "h " +
+      String(args.temporalFrame.lifeMinutes) +
+      "m " +
+      String(args.temporalFrame.lifeRemainingSeconds) +
+      "s`",
+    "- Temporal meaning: `" + args.temporalFrame.semanticMeaning + "`",
+    "",
     "## SaaS context",
     "- Project: `Project HBCE R&D Transfer SaaS`",
     "- Release: `SaaS Core v0.1`",
@@ -1714,6 +1743,8 @@ function buildIdentityRecognitionAnswer(
       "Runtime EVT canonico: " + CANONICAL_EVT,
       "Previous checkpoint: " + CANONICAL_PREV,
       "Cycle: " + CYCLE,
+      "JOKER-C2 birth anchor: " + PROJECT_BIRTH,
+      "JOKER-C2 current cybernetic age: " + buildRuntimeTemporalFrame(new Date().toISOString()).lifeHuman,
       "",
       "Soggetto IPR: " + handoff.subjectName,
       "Human IPR: " + handoff.humanIpr,
@@ -4145,18 +4176,27 @@ function toJsonTokenUsage(usage: CompletionTokenUsage): JsonObject {
 
 
 function buildRuntimeTemporalFrame(nowIso: string): RuntimeTemporalFrame {
-  const now = new Date(nowIso);
+  const parsedNow = new Date(nowIso);
   const birth = new Date(PROJECT_BIRTH);
-  const safeNow = Number.isFinite(now.getTime()) ? now : new Date();
-  const diffMs = Math.max(0, safeNow.getTime() - birth.getTime());
+  const safeNow = Number.isFinite(parsedNow.getTime()) ? parsedNow : new Date();
+  const safeBirth = Number.isFinite(birth.getTime()) ? birth : new Date("2006-01-19T14:30:00.000Z");
+  const diffMs = Math.max(0, safeNow.getTime() - safeBirth.getTime());
   const lifeSeconds = Math.floor(diffMs / 1000);
+  const calendarLife = calculateCalendarDurationUtc(safeBirth, safeNow);
 
   return {
     now: safeNow.toISOString(),
     runtimeBirth: PROJECT_BIRTH,
+    runtimeBirthUtc: safeBirth.toISOString(),
     runtimeBirthLabel: PROJECT_BIRTH_LABEL,
     lifeSeconds,
-    lifeHuman: formatDurationFromSeconds(lifeSeconds),
+    lifeHuman: formatCalendarDuration(calendarLife),
+    lifeYears: calendarLife.years,
+    lifeMonths: calendarLife.months,
+    lifeDays: calendarLife.days,
+    lifeHours: calendarLife.hours,
+    lifeMinutes: calendarLife.minutes,
+    lifeRemainingSeconds: calendarLife.seconds,
     currentYear: safeNow.getUTCFullYear(),
     currentMonth: safeNow.getUTCMonth() + 1,
     currentDay: safeNow.getUTCDate(),
@@ -4169,41 +4209,113 @@ function buildRuntimeTemporalFrame(nowIso: string): RuntimeTemporalFrame {
     refactorEvent: "EVT-0016-AI-SaaS-Temporal-Runtime",
     refactorTimestamp: safeNow.toISOString(),
     semanticMeaning:
-      "JOKER-C2 treats each response as an event in operational time: current timestamp, elapsed cybernetic runtime age, memory continuity, EVT/OPC trace and SaaS context are linked without claiming legal certification or biological personhood."
+      "JOKER-C2 treats each response as an event in operational time: current timestamp, elapsed cybernetic runtime age from the single canonical 2006 birth anchor, memory continuity, EVT/OPC trace and SaaS context are linked without claiming legal certification or biological personhood."
   };
 }
 
-function formatDurationFromSeconds(totalSeconds: number): string {
-  const secondsPerMinute = 60;
-  const secondsPerHour = secondsPerMinute * 60;
-  const secondsPerDay = secondsPerHour * 24;
-  const secondsPerMonth = secondsPerDay * 30;
-  const secondsPerYear = secondsPerDay * 365;
+type CalendarDuration = {
+  years: number;
+  months: number;
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+};
 
-  let remaining = Math.max(0, Math.floor(totalSeconds));
-  const years = Math.floor(remaining / secondsPerYear);
-  remaining -= years * secondsPerYear;
-  const months = Math.floor(remaining / secondsPerMonth);
-  remaining -= months * secondsPerMonth;
-  const days = Math.floor(remaining / secondsPerDay);
-  remaining -= days * secondsPerDay;
-  const hours = Math.floor(remaining / secondsPerHour);
-  remaining -= hours * secondsPerHour;
-  const minutes = Math.floor(remaining / secondsPerMinute);
-  remaining -= minutes * secondsPerMinute;
+function calculateCalendarDurationUtc(start: Date, end: Date): CalendarDuration {
+  if (end.getTime() <= start.getTime()) {
+    return {
+      years: 0,
+      months: 0,
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0
+    };
+  }
 
+  let cursor = new Date(start.getTime());
+  let years = end.getUTCFullYear() - cursor.getUTCFullYear();
+  let candidate = addUtcCalendarParts(cursor, years, 0);
+
+  if (candidate.getTime() > end.getTime()) {
+    years -= 1;
+    candidate = addUtcCalendarParts(cursor, years, 0);
+  }
+
+  cursor = candidate;
+
+  let months =
+    (end.getUTCFullYear() - cursor.getUTCFullYear()) * 12 +
+    (end.getUTCMonth() - cursor.getUTCMonth());
+  candidate = addUtcCalendarParts(cursor, 0, months);
+
+  if (candidate.getTime() > end.getTime()) {
+    months -= 1;
+    candidate = addUtcCalendarParts(cursor, 0, months);
+  }
+
+  cursor = candidate;
+
+  let remainingSeconds = Math.floor((end.getTime() - cursor.getTime()) / 1000);
+  const days = Math.floor(remainingSeconds / 86400);
+  remainingSeconds -= days * 86400;
+  const hours = Math.floor(remainingSeconds / 3600);
+  remainingSeconds -= hours * 3600;
+  const minutes = Math.floor(remainingSeconds / 60);
+  remainingSeconds -= minutes * 60;
+
+  return {
+    years,
+    months,
+    days,
+    hours,
+    minutes,
+    seconds: remainingSeconds
+  };
+}
+
+function addUtcCalendarParts(date: Date, years: number, months: number): Date {
+  const targetYear = date.getUTCFullYear() + years;
+  const targetMonth = date.getUTCMonth() + months;
+  const targetDay = date.getUTCDate();
+  const normalizedMonthStart = new Date(
+    Date.UTC(
+      targetYear,
+      targetMonth,
+      1,
+      date.getUTCHours(),
+      date.getUTCMinutes(),
+      date.getUTCSeconds(),
+      date.getUTCMilliseconds()
+    )
+  );
+  const lastDayOfTargetMonth = new Date(
+    Date.UTC(
+      normalizedMonthStart.getUTCFullYear(),
+      normalizedMonthStart.getUTCMonth() + 1,
+      0
+    )
+  ).getUTCDate();
+
+  normalizedMonthStart.setUTCDate(Math.min(targetDay, lastDayOfTargetMonth));
+
+  return normalizedMonthStart;
+}
+
+function formatCalendarDuration(duration: CalendarDuration): string {
   return (
-    String(years) +
+    String(duration.years) +
     " years, " +
-    String(months) +
+    String(duration.months) +
     " months, " +
-    String(days) +
+    String(duration.days) +
     " days, " +
-    String(hours) +
+    String(duration.hours) +
     " hours, " +
-    String(minutes) +
+    String(duration.minutes) +
     " minutes, " +
-    String(remaining) +
+    String(duration.seconds) +
     " seconds"
   );
 }
