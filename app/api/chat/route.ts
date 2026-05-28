@@ -2619,7 +2619,34 @@ function toMemoryHandoffEvaluation(
     certificate
   };
 }
-
+function buildRuntimeIdentity(): JsonObject {
+  return {
+    entity: RUNTIME_ENTITY,
+    ipr: RUNTIME_IPR,
+    evt: CANONICAL_EVT,
+    prev: CANONICAL_PREV,
+    eventFamily: EVENT_FAMILY,
+    state: "ACTIVE",
+    cycle: CYCLE,
+    core: CORE,
+    org: ORG,
+    location: LOCATION,
+    projectBirth: {
+      t: PROJECT_BIRTH,
+      root: "EVT-0008",
+      proto: "UNEBDO-ΦΩ"
+    },
+    monthlyReference: {
+      evt: "EVT-0015-AI",
+      cycle: "UP-MESE-4",
+      t: "2026-05-19T15:30:00+02:00"
+    },
+    boundary: {
+      legalCertification: false,
+      opc: "technical proof receipt only"
+    }
+  };
+}
 function buildRuntimeMemoryIdentity(): IprBoundMemoryRuntimeIdentity {
   return {
     entity: RUNTIME_ENTITY,
