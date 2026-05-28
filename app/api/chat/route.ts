@@ -2971,6 +2971,46 @@ function buildPublicOpc(opc: OpcProofRecord, persistence?: JsonObject): JsonObje
   };
 }
 
+function getCognitiveChain(memory: RuntimeMemoryState): JsonObject[] {
+  const raw = (memory as unknown as { cognitiveChain?: unknown }).cognitiveChain;
+
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw
+    .map((item) => asJsonObject(item))
+    .filter((item): item is JsonObject => Boolean(item));
+}
+
+function evaluateCognitiveChainPass(
+  chain: JsonObject[],
+  memory: RuntimeMemoryState,
+  handoff: HandoffResolution,
+  saasContext: SaasRuntimeContext
+): JsonObject {
+  const hasIprBinding = handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
+  const hasPersistentMemory = memory.persistenceMode === "DATABASE_PERSISTENT";
+  const hasTenantWorkspace =
+    saasContext.tenantId !== "NO_TENANT" && saasContext.workspaceId !== "NO_WORKSPACE";
+  const hasEvtOpc = memory.lastEvtId !== "none" && memory.lastOpcId !== "none";
+
+  const pass = hasIprBinding && hasPersistentMemory && hasTenantWorkspace && hasEvtOpc;
+
+  return {
+    pass,
+    nodes: chain.length,
+    hasIprBinding,
+    hasPersistentMemory,
+    hasTenantWorkspace,
+    hasEvtOpc,
+    reason: pass
+      ? "COGNITIVE_CHAIN_PERSISTENT_MEMORY_PASS"
+      : "COGNITIVE_CHAIN_INCOMPLETE_OR_NOT_FULLY_SCOPED",
+    legalCertification: false
+  };
+}
+
 async function persistEvtAndOpc(args: {
   t: string;
   sessionId: string;
@@ -3046,6 +3086,14 @@ function buildEvtDatabaseRuntimeEvent(args: {
   policyHash: string;
   memoryHash: string;
 }): EvtDatabaseRuntimeEvent {
+  const cognitiveChain = getCognitiveChain(args.memory);
+  const cognitiveChainPass = evaluateCognitiveChainPass(
+    cognitiveChain,
+    args.memory,
+    args.handoff,
+    args.saasContext
+  );
+
   return {
     evt: args.evt.id,
     prev: args.evt.prev,
@@ -3089,13 +3137,8 @@ function buildEvtDatabaseRuntimeEvent(args: {
       handoff: args.handoff,
       policy: args.policy,
       memory: toPublicMemory(args.memory),
-      cognitiveChain: args.memory.cognitiveChain,
-      cognitiveChainPass: evaluateCognitiveChainPass(
-        args.memory.cognitiveChain,
-        args.memory,
-        args.handoff,
-        args.saasContext
-      ),
+      cognitiveChain,
+      cognitiveChainPass,
       saas: args.saasContext,
       model: args.model,
       modelLevel: args.modelLevel,
@@ -3130,8 +3173,9 @@ function buildOpcDatabaseProofRecord(args: {
   const runtimeState = mapProviderStateToOpcRuntimeState(args.providerState);
   const riskClass = mapPolicyRiskToOpcRisk(args.policy.riskLevel);
   const auditStatus = mapPolicyToOpcAuditStatus(args.policy);
+  const cognitiveChain = getCognitiveChain(args.memory);
   const chainPass = evaluateCognitiveChainPass(
-    args.memory.cognitiveChain,
+    cognitiveChain,
     args.memory,
     args.handoff,
     args.saasContext
@@ -3186,9 +3230,9 @@ function buildOpcDatabaseProofRecord(args: {
       persistenceStatus: args.memory.persistenceStatus,
       durable: args.memory.persistenceDurable,
       storeKind: args.memory.storeKind,
-      cognitiveChainNodes: args.memory.cognitiveChain.length,
-      cognitiveChainPass: chainPass.pass,
-      cognitiveChainReason: chainPass.reason
+      cognitiveChainNodes: cognitiveChain.length,
+      cognitiveChainPass: Boolean(chainPass.pass),
+      cognitiveChainReason: stringFromValue(chainPass.reason)
     },
     runtime: {
       state: runtimeState,
@@ -3242,7 +3286,8 @@ function buildOpcDatabaseProofRecord(args: {
       decisionHash: sha256({
         policy: args.policy,
         runtimeDecision,
-        providerState: args.providerState
+        providerState: args.providerState,
+        cognitiveChain
       }),
       eventHash: args.opc.eventHash,
       engineHash,
@@ -3267,7 +3312,7 @@ function buildOpcDatabaseProofRecord(args: {
         "Risk level: " + args.policy.riskLevel + ".",
         "Human oversight: " + args.policy.humanOversight + ".",
         "Memory persistence mode: " + args.memory.persistenceMode + ".",
-        "Cognitive chain nodes: " + String(args.memory.cognitiveChain.length) + ".",
+        "Cognitive chain nodes: " + String(cognitiveChain.length) + ".",
         "Cognitive chain PASS: " + String(chainPass.pass) + ".",
         "Alien Code pipeline: " + HBCE_ALIEN_CODE_PIPELINE.tauTraceRecord + ".",
         "SaaS tenant: " + args.saasContext.tenantId + ".",
@@ -3302,34 +3347,64 @@ function buildOpcDatabaseProofRecord(args: {
 function mapProviderStateToOpcRuntimeState(
   providerState: string
 ): "OPERATIONAL" | "DEGRADED" | "BLOCKED" | "INVALID" | "AUDIT_ONLY" | "MAINTENANCE" {
-  if (providerState === "PROVIDER_ERROR") return "DEGRADED";
+  if (providerState === "PROVIDER_ERROR") {
+    return "DEGRADED";
+  }
+
   return "OPERATIONAL";
 }
 
 function mapPolicyDecisionToOpcDecision(
   policy: PolicyEvaluation
 ): "ALLOW" | "AUDIT" | "DEGRADE" | "ESCALATE" | "BLOCK" | "NOOP" {
-  if (policy.operationDecision === "BLOCK" || policy.decision === "BLOCK") return "BLOCK";
-  if (policy.operationDecision === "REFUSED") return "AUDIT";
-  if (policy.operationDecision === "LIMITED") return "AUDIT";
-  if (policy.decision === "ESCALATE") return "ESCALATE";
-  if (policy.humanOversight !== "NOT_REQUIRED") return "AUDIT";
+  if (policy.operationDecision === "BLOCK" || policy.decision === "BLOCK") {
+    return "BLOCK";
+  }
+
+  if (policy.operationDecision === "REFUSED") {
+    return "AUDIT";
+  }
+
+  if (policy.operationDecision === "LIMITED") {
+    return "AUDIT";
+  }
+
+  if (policy.decision === "ESCALATE") {
+    return "ESCALATE";
+  }
+
+  if (policy.humanOversight !== "NOT_REQUIRED") {
+    return "AUDIT";
+  }
+
   return "ALLOW";
 }
 
 function mapPolicyRiskToOpcRisk(
   riskLevel: PolicyEvaluation["riskLevel"]
 ): "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | "PROHIBITED" | "UNKNOWN" {
-  if (riskLevel === "HIGH") return "HIGH";
-  if (riskLevel === "MEDIUM") return "MEDIUM";
+  if (riskLevel === "HIGH") {
+    return "HIGH";
+  }
+
+  if (riskLevel === "MEDIUM") {
+    return "MEDIUM";
+  }
+
   return "LOW";
 }
 
 function mapPolicyToOpcAuditStatus(
   policy: PolicyEvaluation
 ): "NOT_REQUIRED" | "READY" | "REQUIRED" | "OPEN" | "IN_REVIEW" | "REVIEWED" | "DISPUTED" | "LOCKED" | "REJECTED" | "CLOSED" | "FAILED" {
-  if (policy.decision === "BLOCK" || policy.humanOversight === "REQUIRED") return "REQUIRED";
-  if (policy.humanOversight === "RECOMMENDED" || policy.refused || policy.limited) return "READY";
+  if (policy.decision === "BLOCK" || policy.humanOversight === "REQUIRED") {
+    return "REQUIRED";
+  }
+
+  if (policy.humanOversight === "RECOMMENDED" || policy.refused || policy.limited) {
+    return "READY";
+  }
+
   return "NOT_REQUIRED";
 }
 
@@ -3359,6 +3434,7 @@ async function recordSaasAuditAndUsage(args: {
     const runtimeDecision = mapPolicyDecisionToRuntimeDecision(args.policy);
     const auditState = mapPolicyToAuditState(args.policy);
     const riskLevel = args.policy.riskLevel;
+    const cognitiveChain = getCognitiveChain(args.memory);
     const cyberRelevance = args.policy.flags.includes("CYBER_RISK_TERMS")
       ? "C2_RELEVANT"
       : "NONE";
@@ -3379,9 +3455,7 @@ async function recordSaasAuditAndUsage(args: {
           : "NOT_VERIFIED",
       organizationState: "NOT_REQUIRED",
       workspaceState:
-        args.saasContext.workspaceId === "NO_WORKSPACE"
-          ? "NOT_REQUIRED"
-          : "ACTIVE",
+        args.saasContext.workspaceId === "NO_WORKSPACE" ? "NOT_REQUIRED" : "ACTIVE",
       saasTier: args.saasContext.saasTier,
       tierDecision: args.policy.decision === "BLOCK" ? "BLOCK" : "ALLOW",
       accessDecision: args.handoff.accessDecision === "ACCESS_GRANTED" ? "ALLOW" : "BLOCK",
@@ -3420,7 +3494,7 @@ async function recordSaasAuditAndUsage(args: {
         policy: args.policy,
         handoff: args.handoff.accessDecision,
         providerState: args.providerState,
-        cognitiveChain: args.memory.cognitiveChain
+        cognitiveChain
       }),
       policyHash: args.policyHash,
       dataClass: args.policy.dataClass,
@@ -3492,7 +3566,7 @@ async function recordSaasAuditAndUsage(args: {
         refused: args.policy.refused,
         limited: args.policy.limited,
         failClosed: args.policy.failClosed,
-        cognitiveChainNodes: args.memory.cognitiveChain.length,
+        cognitiveChainNodes: cognitiveChain.length,
         persistence: {
           ok: auditResult.persistence.ok,
           status: auditResult.persistence.status,
