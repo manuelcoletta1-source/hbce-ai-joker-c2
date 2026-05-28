@@ -1359,18 +1359,20 @@ function buildLegalBoundaryAnswer(
   memory: RuntimeMemoryState,
   saasContext: SaasRuntimeContext
 ): string {
+  const temporalFrame = buildRuntimeTemporalFrame(new Date().toISOString());
+
   return [
     "Limiti legali e tecnici da dichiarare per IPR, EVT e OPC.",
     "",
     "## Temporal runtime",
-    "- Current timestamp: `" + args.temporalFrame.now + "`",
-    "- Runtime birth: `" + args.temporalFrame.runtimeBirth + "`",
-    "- Runtime age: `" + args.temporalFrame.lifeHuman + "`",
-    "- Runtime life seconds: `" + String(args.temporalFrame.lifeSeconds) + "`",
+    "- Current timestamp: `" + temporalFrame.now + "`",
+    "- Runtime birth: `" + temporalFrame.runtimeBirth + "`",
+    "- Runtime age: `" + temporalFrame.lifeHuman + "`",
+    "- Runtime life seconds: `" + String(temporalFrame.lifeSeconds) + "`",
     "- Current event family: `" + EVENT_FAMILY + "`",
     "- Canonical runtime EVT: `" + CANONICAL_EVT + "`",
     "- Monthly reference: `" + CANONICAL_MONTHLY_REF + "`",
-    "- Semantic meaning: `" + args.temporalFrame.semanticMeaning + "`",
+    "- Semantic meaning: `" + temporalFrame.semanticMeaning + "`",
     "",
     "## IPR",
     "- IPR è un record operativo di identità e continuità dentro il perimetro HBCE/JOKER-C2.",
@@ -4710,7 +4712,7 @@ function toCanonicalValue(value: unknown): JsonValue {
     typeof value === "number" ||
     typeof value === "boolean"
   ) {
-    return value;
+    return value as JsonValue;
   }
 
 
