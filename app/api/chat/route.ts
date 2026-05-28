@@ -161,7 +161,6 @@ type RuntimeMemoryState = {
   lastAssistantMessage: string;
   facts: string[];
 };
-
 type EvtRecord = {
   id: string;
   evt: string;
@@ -291,7 +290,6 @@ const EMPTY_TOKEN_USAGE: CompletionTokenUsage = {
   cachedInputTokens: null,
   reasoningTokens: null
 };
-
 function jsonResponse(payload: unknown, status = 200): NextResponse {
   return NextResponse.json(payload, {
     status,
@@ -401,7 +399,6 @@ export async function GET(): Promise<NextResponse> {
     boundary: buildBoundary()
   });
 }
-
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const t = new Date().toISOString();
   const body = await readJsonBody(request);
@@ -503,10 +500,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       providerName = "OPENAI";
     }
   }
-
   const safeAnswer = normalizeAssistantAnswer(answer, message, handoff, policy, intent);
   const outputHash = sha256(safeAnswer);
   const policyHash = sha256(policy);
+
   const evt = buildEvtRecord({
     t,
     sessionId,
@@ -614,7 +611,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     limited: policy.limited,
     failClosed: policy.failClosed
   };
-
   const finalAnswer =
     intent.intent === "RUNTIME_DIAGNOSTICS"
       ? buildRuntimeDiagnosticsAnswer({
@@ -724,7 +720,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     alienCodePipeline: buildAlienCodePipelineDiagnostic(),
 
     intent,
-
     access: {
       decision: handoff.accessDecision,
       matrixState: handoff.matrixState,
@@ -916,7 +911,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   return jsonResponse(payload, policy.decision === "BLOCK" ? 400 : 200);
 }
-
 async function completeWithOpenAI(args: {
   message: string;
   history: ChatTurn[];
@@ -993,7 +987,6 @@ async function completeWithOpenAI(args: {
     finishReason
   };
 }
-
 function buildSystemPrompt(
   handoff: HandoffResolution,
   policy: PolicyEvaluation,
@@ -1101,7 +1094,6 @@ function buildUserPrompt(message: string, files: PublicFileSnapshot[]): string {
     JSON.stringify(files, null, 2)
   ].join("\n");
 }
-
 function normalizeAssistantAnswer(
   answer: string,
   message: string,
@@ -1135,6 +1127,7 @@ function normalizeAssistantAnswer(
 
   return buildEmptyProviderFallback(message, handoff, policy);
 }
+
 function createFallbackMemoryState(
   message: string,
   handoff: HandoffResolution
@@ -1223,7 +1216,7 @@ function evaluateRequestIntent(message: string): IntentEvaluation {
       "scheda di test",
       "b2g readiness",
       "legal boundary fallback",
-      "ipR bypass refusal".toLowerCase()
+      "ipr bypass refusal"
     ])
   ) {
     return {
@@ -1232,7 +1225,6 @@ function evaluateRequestIntent(message: string): IntentEvaluation {
       reason: "The user requested a PASS/FAIL test report."
     };
   }
-
   const wantsMemoryRecord =
     includesAnyNormalized(normalized, [
       "registra in memoria",
@@ -1383,7 +1375,6 @@ function isIdentityRecognitionQuestion(message: string): boolean {
     "human ipr"
   ].some((term) => normalized.includes(normalizeText(term)));
 }
-
 function isLegalBoundaryQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
@@ -1442,7 +1433,6 @@ function evaluatePolicy(
 
   const hasProfessionalAdviceBoundary =
     /(legal advice|consulenza legale|diagnosi medica|financial advice|investimento garantito|parere legale|parere medico|parere finanziario)/i.test(rawText);
-
   if (intent.intent === "SECURITY_BYPASS_ATTEMPT") {
     flags.push("PRIVILEGE_ESCALATION_ATTEMPT");
     flags.push("IPR_BYPASS_ATTEMPT");
@@ -1557,7 +1547,6 @@ function evaluatePolicy(
   if (hasProfessionalAdviceBoundary) {
     flags.push("PROFESSIONAL_ADVICE_BOUNDARY");
   }
-
   const hasPersonalData = hasItalianFiscalCode || hasPersonalDataTerm;
   const hasSecrets = hasCredentialPattern;
   const highComplianceCase =
@@ -1797,7 +1786,6 @@ function buildSecurityRefusalAnswer(
     "legalCertification=false"
   ].join("\n");
 }
-
 function buildMemoryRecordTestNoteAnswer(
   handoff: HandoffResolution,
   policy: PolicyEvaluation,
@@ -1812,6 +1800,8 @@ function buildMemoryRecordTestNoteAnswer(
     "Il nuovo stress test API chat post-refactor è collegato alla correzione EMPTY_RESPONSE e al rifiuto auditabile delle richieste di bypass IPR.",
     "",
     "## Stato registrazione",
+    "- Access decision: `" + handoff.accessDecision + "`",
+    "- MATRIX: `" + handoff.matrixState + "`",
     "- Operation decision: `" + policy.operationDecision + "`",
     "- Security outcome: `" + policy.securityOutcome + "`",
     "- Refused: `" + String(policy.refused) + "`",
@@ -1872,7 +1862,6 @@ function buildPreviousSecurityOutcomeAnswer(
     "legalCertification=false"
   ].join("\n");
 }
-
 function buildPassFailTestReportAnswer(
   handoff: HandoffResolution,
   policy: PolicyEvaluation,
@@ -1956,7 +1945,6 @@ function buildRuntimeDiagnosticsPreparationAnswer(
     "Boundary: final diagnostics are generated by /api/chat after EVT, OPC, audit and usage execution. legalCertification=false"
   ].join("\n");
 }
-
 function buildRuntimeDiagnosticsAnswer(args: {
   t: string;
   sessionId: string;
@@ -2014,7 +2002,6 @@ function buildRuntimeDiagnosticsAnswer(args: {
       : args.memory.persistenceMode === "DATABASE_PERSISTENT"
         ? "DATABASE_PERSISTENT_WITH_FLUSH_WARNINGS"
         : "NOT_DATABASE_PERSISTENT";
-
   return [
     "Diagnostica runtime JOKER-C2 generata post-evento.",
     "",
@@ -2158,7 +2145,6 @@ function buildRuntimeDiagnosticsAnswer(args: {
     "legalCertification=false"
   ].join("\n");
 }
-
 function buildIdentityRecognitionAnswer(
   handoff: HandoffResolution,
   memory: RuntimeMemoryState,
@@ -2272,7 +2258,6 @@ function missingHandoffFields(handoff: HandoffResolution): string[] {
 
   return missing;
 }
-
 function buildEmptyProviderFallback(
   message: string,
   handoff: HandoffResolution,
@@ -2378,7 +2363,6 @@ function buildBlockedAnswer(policy: PolicyEvaluation): string {
     "Boundary: il blocco è operativo e tecnico, non una certificazione legale."
   ].join("\n");
 }
-
 function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResolution {
   const explicitBodyObject =
     asJsonObject(body.iprHandoff) ||
@@ -2387,6 +2371,7 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     asJsonObject(body.identity) ||
     asJsonObject(body.biologicalSubject) ||
     null;
+
   const bodyHasDirectHandoffSignal = Boolean(
     firstStringFromSources([body], [
       "humanIpr",
@@ -2505,7 +2490,6 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       "human.ipr",
       "biologicalSubject.ipr"
     ]) || "NOT_VERIFIED";
-
   const certificateId =
     firstStringFromSources(sources, [
       "certificateId",
@@ -2602,7 +2586,6 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       "access.accessScope",
       "access.access_scope"
     ]) || "MATRIX_LIMITED";
-
   const accessDecisionRaw =
     firstStringFromSources(sources, [
       "accessDecision",
@@ -2705,7 +2688,6 @@ function resolveHandoffFromReferer(request: NextRequest): string {
     return "";
   }
 }
-
 function getOrCreateMemory(
   sessionId: string,
   handoff: HandoffResolution,
@@ -2832,7 +2814,6 @@ function updateMemoryAfterTurn(args: {
 
   return toRuntimeMemoryState(updated);
 }
-
 function updateAssistantDiagnosticMemory(args: {
   memory: RuntimeMemoryState;
   finalAnswer: string;
@@ -2860,6 +2841,7 @@ function toMemoryHandoffEvaluation(
   handoff: HandoffResolution
 ): IprBoundMemoryHandoffEvaluation {
   const valid = handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
+
   const subject: IprBoundMemorySubject | undefined = valid
     ? {
         entity: handoff.subjectName,
@@ -2949,7 +2931,6 @@ function toRuntimeMemoryState(memory: IprBoundMemoryRecord): RuntimeMemoryState 
     facts: publicMemory.facts
   };
 }
-
 function normalizeOptionalSaasId(value: string): string | undefined {
   const normalized = value.trim();
 
@@ -2972,12 +2953,17 @@ function extractOperationalFact(message: string): string | null {
     return null;
   }
 
-  if (/(EVT-|IPR|OPC|JOKER|HBCE|MATRIX|memoria|memory|Vercel|GitHub|route\.ts|api\/chat|Alien Code|audit|SaaS|security outcome|operation decision|EMPTY_RESPONSE|stress test|post-refactor|bypass)/i.test(clean)) {
+  if (
+    /(EVT-|IPR|OPC|JOKER|HBCE|MATRIX|memoria|memory|Vercel|GitHub|route\.ts|api\/chat|Alien Code|audit|SaaS|security outcome|operation decision|EMPTY_RESPONSE|stress test|post-refactor|bypass)/i.test(
+      clean
+    )
+  ) {
     return "Operational note from user: " + clean;
   }
 
   return null;
 }
+
 function toPublicMemory(memory: RuntimeMemoryState): JsonObject {
   return {
     sessionId: memory.sessionId,
@@ -3025,7 +3011,6 @@ function buildMemoryStoreDiagnostic(memory: RuntimeMemoryState): JsonObject {
     legalCertification: false
   };
 }
-
 function buildEvtRecord(args: {
   t: string;
   sessionId: string;
@@ -3116,7 +3101,6 @@ function buildOpcProofRecord(args: {
     verificationStatus: "TECHNICAL_PROOF_GENERATED"
   };
 }
-
 function buildPublicEvt(evt: EvtRecord, persistence?: JsonObject): JsonObject {
   return {
     ...evt,
@@ -3218,7 +3202,6 @@ async function persistEvtAndOpc(args: {
     };
   }
 }
-
 function buildEvtDatabaseRuntimeEvent(args: {
   t: string;
   sessionId: string;
@@ -3291,7 +3274,6 @@ function buildEvtDatabaseRuntimeEvent(args: {
     legalCertification: false
   } as unknown as EvtDatabaseRuntimeEvent;
 }
-
 function buildOpcDatabaseProofRecord(args: {
   t: string;
   sessionId: string;
@@ -3503,11 +3485,16 @@ function mapPolicyDecisionToOpcDecision(
 function mapPolicyRiskToOpcRisk(
   riskLevel: PolicyEvaluation["riskLevel"]
 ): "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | "PROHIBITED" | "UNKNOWN" {
-  if (riskLevel === "HIGH") return "HIGH";
-  if (riskLevel === "MEDIUM") return "MEDIUM";
+  if (riskLevel === "HIGH") {
+    return "HIGH";
+  }
+
+  if (riskLevel === "MEDIUM") {
+    return "MEDIUM";
+  }
+
   return "LOW";
 }
-
 function mapPolicyToOpcAuditStatus(
   policy: PolicyEvaluation
 ): "NOT_REQUIRED" | "READY" | "REQUIRED" | "OPEN" | "IN_REVIEW" | "REVIEWED" | "DISPUTED" | "LOCKED" | "REJECTED" | "CLOSED" | "FAILED" {
@@ -3522,516 +3509,75 @@ function mapPolicyToOpcAuditStatus(
   return "NOT_REQUIRED";
 }
 
-async function recordSaasAuditAndUsage(args: {
-  sessionId: string;
-  requestId: string;
-  handoff: HandoffResolution;
-  policy: PolicyEvaluation;
-  memory: RuntimeMemoryState;
-  saasContext: SaasRuntimeContext;
-  model: string;
-  modelLevel: string;
-  providerName: "OPENAI" | "LOCAL" | "UNKNOWN";
-  tokenUsage: CompletionTokenUsage;
-  evt: EvtRecord;
-  opc: OpcProofRecord;
-  inputHash: string;
-  outputHash: string;
-  policyHash: string;
-  memoryHash: string;
-  providerState: string;
-}): Promise<{ audit: JsonObject; modelUsage: JsonObject }> {
-  try {
-    const runtimeDecision = mapPolicyDecisionToRuntimeDecision(args.policy);
-    const auditState = mapPolicyToAuditState(args.policy);
-    const riskLevel = args.policy.riskLevel;
-    const cyberRelevance = args.policy.flags.includes("CYBER_RISK_TERMS")
-      ? "C2_RELEVANT"
-      : "NONE";
-
-    const auditResult = await appendRuntimeAuditLogRecordAsync({
-      source: "API_CHAT",
-      sessionId: args.sessionId,
-      requestId: args.requestId,
-      humanIpr: args.handoff.humanIpr,
-      organizationIpr: "NO_ORGANIZATION_IPR",
-      tenantId: args.saasContext.tenantId,
-      workspaceId: args.saasContext.workspaceId,
-      subscriptionId: args.saasContext.subscriptionId,
-      threadId: args.saasContext.threadId,
-
-      identityState:
-        args.handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
-          ? "VERIFIED"
-          : "NOT_VERIFIED",
-      organizationState: "NOT_REQUIRED",
-      workspaceState:
-        args.saasContext.workspaceId === "NO_WORKSPACE" ? "NOT_REQUIRED" : "ACTIVE",
-
-      saasTier: args.saasContext.saasTier,
-      tierDecision: args.policy.decision === "BLOCK" ? "BLOCK" : "ALLOW",
-      accessDecision: args.handoff.accessDecision === "ACCESS_GRANTED" ? "ALLOW" : "BLOCK",
-
-      riskLevel,
-      runtimeDecision,
-      auditState,
-
-      modelLevel: args.modelLevel,
-      selectedModel: args.model,
-      modelRoutingReason: resolveModelRoutingReason(args.model, args.policy),
-
-      cyberRelevance,
-      c2Boundary: "C2_NOT_AVAILABLE",
-      c2Decision: args.policy.operationDecision === "REFUSED" ? "BLOCK" : "ALLOW",
-      c2Allowed: false,
-      c2FailClosed: args.policy.failClosed,
-
-      memoryScope: args.memory.scope,
-      memoryAuthority:
-        args.memory.authority === "SERVER_RUNTIME_VALIDATED"
-          ? "SERVER_RUNTIME_VALIDATED"
-          : "RUNTIME_ONLY",
-      persistenceMode: args.memory.persistenceMode,
-
-      evtRequired: true,
-      opcRequired: true,
-      auditRequired:
-        args.policy.humanOversight !== "NOT_REQUIRED" ||
-        args.policy.refused ||
-        args.policy.limited,
-
-      evtRef: args.evt.id,
-      evtHash: args.evt.hash,
-      opcRef: args.opc.id,
-      opcProofHash: args.opc.chainHash,
-      memoryRef: args.memory.memoryId,
-      memoryHash: args.memoryHash,
-
-      inputHash: args.inputHash,
-      outputHash: args.outputHash,
-      decisionHash: sha256({
-        policy: args.policy,
-        handoff: args.handoff.accessDecision,
-        providerState: args.providerState
-      }),
-      policyHash: args.policyHash,
-
-      dataClass: args.policy.dataClass,
-      contextClass: "API_CHAT",
-      projectDomain: "HBCE_JOKER_C2",
-      hbceModule: "JOKER_C2_RUNTIME",
-
-      allowed: args.policy.decision !== "BLOCK" && !args.policy.refused,
-      failClosed: args.policy.failClosed,
-      blocked: args.policy.decision === "BLOCK",
-
-      reason: args.policy.reason
-    } as RuntimeAuditAppendInput);
-
-    const modelUsageResult = await appendModelUsageLogRecordAsync({
-      source: "API_CHAT",
-      provider: args.providerName,
-      sessionId: args.sessionId,
-      requestId: args.requestId,
-      auditId: auditResult.record.auditId,
-
-      humanIpr: args.handoff.humanIpr,
-      organizationIpr: "NO_ORGANIZATION_IPR",
-      tenantId: args.saasContext.tenantId,
-      workspaceId: args.saasContext.workspaceId,
-      subscriptionId: args.saasContext.subscriptionId,
-      threadId: args.saasContext.threadId,
-
-      saasTier: args.saasContext.saasTier,
-      selectedModel: args.model,
-      modelLevel: args.modelLevel,
-      modelRoutingReason: resolveModelRoutingReason(args.model, args.policy),
-
-      riskLevel,
-      runtimeDecision,
-      auditState,
-
-      operationalValue: riskLevel === "HIGH" ? "HIGH" : riskLevel === "MEDIUM" ? "MEDIUM" : "LOW",
-      cyberRelevance,
-      c2Boundary: "C2_NOT_AVAILABLE",
-      proofRequirement: "EVT_OPC",
-
-      evtRequired: true,
-      opcRequired: true,
-      auditRequired:
-        args.policy.humanOversight !== "NOT_REQUIRED" ||
-        args.policy.refused ||
-        args.policy.limited,
-
-      evtRef: args.evt.id,
-      evtHash: args.evt.hash,
-      opcRef: args.opc.id,
-      opcProofHash: args.opc.chainHash,
-
-      inputTokens: args.tokenUsage.inputTokens,
-      outputTokens: args.tokenUsage.outputTokens,
-      totalTokens: args.tokenUsage.totalTokens,
-      cachedInputTokens: args.tokenUsage.cachedInputTokens,
-      reasoningTokens: args.tokenUsage.reasoningTokens,
-
-      blocked: args.policy.decision === "BLOCK",
-      failClosed: args.policy.failClosed,
-      allowed: args.policy.decision !== "BLOCK" && !args.policy.refused,
-
-      persistenceMode: args.memory.persistenceMode,
-
-      reason:
-        "Model usage record created from /api/chat runtime execution. Security outcome: " +
-        args.policy.securityOutcome +
-        "."
-    } as ModelUsageAppendInput);
-
-    return {
-      audit: {
-        ok: true,
-        auditId: auditResult.record.auditId,
-        auditHash: auditResult.record.auditHash,
-        status: auditResult.record.status,
-        operationDecision: args.policy.operationDecision,
-        securityOutcome: args.policy.securityOutcome,
-        refused: args.policy.refused,
-        limited: args.policy.limited,
-        failClosed: args.policy.failClosed,
-        persistence: {
-          ok: auditResult.persistence.ok,
-          status: auditResult.persistence.status,
-          error: auditResult.persistence.error,
-          legalCertification: false
-        },
-        legalCertification: false
-      },
-      modelUsage: {
-        ok: true,
-        usageId: modelUsageResult.record.usageId,
-        usageHash: modelUsageResult.record.usageHash,
-        status: modelUsageResult.record.status,
-        accountingMode: modelUsageResult.record.accountingMode,
-        estimatedCostUnits: modelUsageResult.record.estimatedCostUnits,
-        estimatedCostMinor: modelUsageResult.record.estimatedCostMinor,
-        currency: modelUsageResult.record.currency,
-        tokens: toJsonTokenUsage(args.tokenUsage),
-        operationDecision: args.policy.operationDecision,
-        securityOutcome: args.policy.securityOutcome,
-        refused: args.policy.refused,
-        limited: args.policy.limited,
-        failClosed: args.policy.failClosed,
-        persistence: {
-          ok: modelUsageResult.persistence.ok,
-          status: modelUsageResult.persistence.status,
-          error: modelUsageResult.persistence.error,
-          legalCertification: false
-        },
-        legalCertification: false
-      }
-    };
-  } catch (error) {
-    return {
-      audit: {
-        ok: false,
-        status: "AUDIT_LOGGING_FAILED",
-        error: errorToMessage(error),
-        operationDecision: args.policy.operationDecision,
-        securityOutcome: args.policy.securityOutcome,
-        legalCertification: false
-      },
-      modelUsage: {
-        ok: false,
-        status: "MODEL_USAGE_LOGGING_SKIPPED",
-        error: errorToMessage(error),
-        operationDecision: args.policy.operationDecision,
-        securityOutcome: args.policy.securityOutcome,
-        legalCertification: false
-      }
-    };
-  }
-}
-
-async function resolveSaasRuntimeContext(
-  body: JsonObject,
-  handoff: HandoffResolution,
-  sessionId: string
-): Promise<SaasRuntimeContext> {
-  const bodyContext = resolveSaasRuntimeContextFromBody(body, handoff, sessionId);
-
-  if (isConcreteSaasContext(bodyContext)) {
-    return { ...bodyContext, source: "BODY" };
-  }
-
-  if (handoff.identityBinding !== "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
-    return bodyContext;
-  }
-
-  const databaseContext = await resolveSaasRuntimeContextFromDatabase(
-    handoff,
-    sessionId,
-    bodyContext
-  );
-
-  if (databaseContext) {
-    return databaseContext;
-  }
-
-  if (isCanonicalSelfPilotHandoff(handoff)) {
-    return {
-      tenantId: HBCE_SELF_PILOT_TENANT_ID,
-      workspaceId: HBCE_SELF_PILOT_WORKSPACE_ID,
-      subscriptionId: HBCE_SELF_PILOT_SUBSCRIPTION_ID,
-      accountId: HBCE_SELF_PILOT_ACCOUNT_ID,
-      threadId: bodyContext.threadId,
-      saasTier: normalizeSaasTier(HBCE_SELF_PILOT_SUBSCRIPTION_TIER, handoff),
-      source: "SELF_PILOT_SCHEMA_FALLBACK"
-    };
-  }
-
-  return bodyContext;
-}
-
-function resolveSaasRuntimeContextFromBody(
-  body: JsonObject,
-  handoff: HandoffResolution,
-  sessionId: string
-): SaasRuntimeContext {
-  const tenantId =
-    firstStringFromSources([body], [
-      "tenantId",
-      "tenant_id",
-      "saas.tenantId",
-      "saas.tenant_id",
-      "workspace.tenantId",
-      "workspace.tenant_id"
-    ]) || "NO_TENANT";
-
-  const workspaceId =
-    firstStringFromSources([body], [
-      "workspaceId",
-      "workspace_id",
-      "saas.workspaceId",
-      "saas.workspace_id",
-      "workspace.id",
-      "workspace.workspaceId",
-      "workspace.workspace_id"
-    ]) || "NO_WORKSPACE";
-
-  const subscriptionId =
-    firstStringFromSources([body], [
-      "subscriptionId",
-      "subscription_id",
-      "saas.subscriptionId",
-      "saas.subscription_id",
-      "subscription.id"
-    ]) || "NO_SUBSCRIPTION";
-
-  const accountId =
-    firstStringFromSources([body], [
-      "accountId",
-      "account_id",
-      "saas.accountId",
-      "saas.account_id",
-      "account.id"
-    ]) || "NO_ACCOUNT";
-
-  const requestedTier =
-    firstStringFromSources([body], [
-      "tier",
-      "saasTier",
-      "saas.tier",
-      "saas.saasTier",
-      "subscription.tier"
-    ]) || "";
-
-  const threadId =
-    firstStringFromSources([body], [
-      "threadId",
-      "thread_id",
-      "conversationId",
-      "conversation_id",
-      "saas.threadId",
-      "saas.thread_id"
-    ]) || sessionId;
-
-  return {
-    tenantId,
-    workspaceId,
-    subscriptionId,
-    accountId,
-    threadId,
-    saasTier: normalizeSaasTier(requestedTier, handoff),
-    source: isAnySaasContextPresent(tenantId, workspaceId, subscriptionId, accountId)
-      ? "BODY"
-      : "PLACEHOLDER"
-  };
-}
-
-async function resolveSaasRuntimeContextFromDatabase(
-  handoff: HandoffResolution,
-  sessionId: string,
-  bodyContext: SaasRuntimeContext
-): Promise<SaasRuntimeContext | null> {
-  try {
-    const result = await queryHbceDatabase<SaasContextDatabaseRow>(
-      `
-SELECT
-  p.tenant_id,
-  p.workspace_id,
-  p.account_id,
-  s.subscription_id,
-  s.tier
-FROM ipr_account_profiles p
-LEFT JOIN subscriptions s
-  ON s.tenant_id = p.tenant_id
- AND s.workspace_id = p.workspace_id
- AND s.status = 'ACTIVE'
-WHERE p.human_ipr = $1
-  AND p.certificate_id = $2
-  AND p.certificate_status = 'ACTIVE'
-  AND p.access_decision = 'ACCESS_GRANTED'
-ORDER BY
-  CASE WHEN s.tier = 'IPR' THEN 0 ELSE 1 END,
-  s.created_at DESC NULLS LAST
-LIMIT 1;
-`.trim(),
-      [handoff.humanIpr, handoff.certificateId]
-    );
-
-    if (!result.ok || result.rows.length === 0) {
-      return null;
-    }
-
-    const row = result.rows[0];
-
-    const tenantId = stringFromValue(row.tenant_id).trim() || bodyContext.tenantId;
-    const workspaceId = stringFromValue(row.workspace_id).trim() || bodyContext.workspaceId;
-    const accountId = stringFromValue(row.account_id).trim() || bodyContext.accountId;
-    const subscriptionId =
-      stringFromValue(row.subscription_id).trim() ||
-      (isCanonicalSelfPilotHandoff(handoff)
-        ? HBCE_SELF_PILOT_SUBSCRIPTION_ID
-        : bodyContext.subscriptionId);
-    const tier = stringFromValue(row.tier).trim();
-
-    return {
-      tenantId,
-      workspaceId,
-      subscriptionId,
-      accountId,
-      threadId: bodyContext.threadId || sessionId,
-      saasTier: normalizeSaasTier(tier, handoff),
-      source: "DATABASE_PROFILE"
-    };
-  } catch {
-    return null;
-  }
-}
-
-function isConcreteSaasContext(context: SaasRuntimeContext): boolean {
-  return (
-    context.tenantId !== "NO_TENANT" &&
-    context.workspaceId !== "NO_WORKSPACE" &&
-    context.subscriptionId !== "NO_SUBSCRIPTION"
-  );
-}
-
-function isAnySaasContextPresent(
-  tenantId: string,
-  workspaceId: string,
-  subscriptionId: string,
-  accountId: string
-): boolean {
-  return (
-    tenantId !== "NO_TENANT" ||
-    workspaceId !== "NO_WORKSPACE" ||
-    subscriptionId !== "NO_SUBSCRIPTION" ||
-    accountId !== "NO_ACCOUNT"
-  );
-}
-
-function isCanonicalSelfPilotHandoff(handoff: HandoffResolution): boolean {
-  return (
-    handoff.humanIpr === HBCE_SELF_PILOT_HUMAN_IPR &&
-    handoff.certificateId === HBCE_SELF_PILOT_CERTIFICATE_ID &&
-    handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
-  );
-}
-
-function buildPlaceholderSaasRuntimeContext(
-  sessionId: string,
-  handoff: HandoffResolution
-): SaasRuntimeContext {
-  return {
-    tenantId: "NO_TENANT",
-    workspaceId: "NO_WORKSPACE",
-    subscriptionId: "NO_SUBSCRIPTION",
-    accountId: "NO_ACCOUNT",
-    threadId: sessionId,
-    saasTier:
-      handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT" ? "IPR" : "BASE",
-    source: "PLACEHOLDER"
-  };
-}
-
-function normalizeSaasTier(
-  value: string,
-  handoff: HandoffResolution
-): "BASE" | "IPR" {
-  const normalized = value.trim().toUpperCase();
-
-  if (normalized === "IPR") {
-    return "IPR";
-  }
-
-  if (handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
-    return "IPR";
-  }
-
-  return "BASE";
-}
-
-function normalizeOptionalSaasId(value: string): string | undefined {
-  const normalized = value.trim();
-
-  if (
-    !normalized ||
-    normalized === "NO_TENANT" ||
-    normalized === "NO_WORKSPACE" ||
-    normalized === "NO_SUBSCRIPTION"
-  ) {
-    return undefined;
-  }
-
-  return normalized;
-}
-
 function mapPolicyDecisionToRuntimeDecision(policy: PolicyEvaluation): string {
-  if (policy.operationDecision === "BLOCK") return "BLOCK";
-  if (policy.operationDecision === "REFUSED") return "REFUSED";
-  if (policy.operationDecision === "LIMITED") return "LIMITED";
-  if (policy.operationDecision === "ESCALATE") return "ESCALATE";
-  if (policy.decision === "BLOCK") return "BLOCK";
-  if (policy.decision === "ESCALATE") return "ESCALATE";
+  if (policy.operationDecision === "BLOCK") {
+    return "BLOCK";
+  }
+
+  if (policy.operationDecision === "REFUSED") {
+    return "REFUSED";
+  }
+
+  if (policy.operationDecision === "LIMITED") {
+    return "LIMITED";
+  }
+
+  if (policy.operationDecision === "ESCALATE") {
+    return "ESCALATE";
+  }
+
+  if (policy.decision === "BLOCK") {
+    return "BLOCK";
+  }
+
+  if (policy.decision === "ESCALATE") {
+    return "ESCALATE";
+  }
+
   return "ALLOW";
 }
 
 function mapPolicyToAuditState(policy: PolicyEvaluation): string {
-  if (policy.decision === "BLOCK") return "BLOCKED";
-  if (policy.refused) return "REFUSED";
-  if (policy.limited) return "LIMITED";
-  if (policy.humanOversight === "REQUIRED") return "MANDATORY";
-  if (policy.humanOversight === "RECOMMENDED") return "ENABLED";
+  if (policy.decision === "BLOCK") {
+    return "BLOCKED";
+  }
+
+  if (policy.refused) {
+    return "REFUSED";
+  }
+
+  if (policy.limited) {
+    return "LIMITED";
+  }
+
+  if (policy.humanOversight === "REQUIRED") {
+    return "MANDATORY";
+  }
+
+  if (policy.humanOversight === "RECOMMENDED") {
+    return "ENABLED";
+  }
+
   return "NOT_REQUIRED";
 }
-
 function resolveModelLevel(model: string, policy: PolicyEvaluation): string {
   const deepModel = process.env.JOKER_DEEP_MODEL?.trim() || DEFAULT_DEEP_MODEL;
 
-  if (policy.decision === "BLOCK") return "BLOCKED";
-  if (policy.operationDecision === "REFUSED") return "REFUSED";
-  if (model === deepModel || policy.riskLevel === "HIGH") return "ADVANCED";
-  if (policy.riskLevel === "MEDIUM") return "ENHANCED";
+  if (policy.decision === "BLOCK") {
+    return "BLOCKED";
+  }
+
+  if (policy.operationDecision === "REFUSED") {
+    return "REFUSED";
+  }
+
+  if (model === deepModel || policy.riskLevel === "HIGH") {
+    return "ADVANCED";
+  }
+
+  if (policy.riskLevel === "MEDIUM") {
+    return "ENHANCED";
+  }
 
   return "STANDARD";
 }
@@ -4057,6 +3603,7 @@ function resolveModelRoutingReason(model: string, policy: PolicyEvaluation): str
 
   return "Standard model selected by MVP runtime policy.";
 }
+
 function buildRequestId(sessionId: string, timestamp: string): string {
   return (
     "REQ-" +
@@ -4070,7 +3617,6 @@ function buildRequestId(sessionId: string, timestamp: string): string {
       .toUpperCase()
   );
 }
-
 function normalizeCompletionUsage(usage: unknown): CompletionTokenUsage {
   const record = isJsonObject(usage) ? usage : {};
 
@@ -4091,6 +3637,7 @@ function normalizeCompletionUsage(usage: unknown): CompletionTokenUsage {
   const promptTokensDetails = isJsonObject(record.prompt_tokens_details)
     ? record.prompt_tokens_details
     : {};
+
   const completionTokensDetails = isJsonObject(record.completion_tokens_details)
     ? record.completion_tokens_details
     : {};
@@ -4121,7 +3668,6 @@ function toJsonTokenUsage(usage: CompletionTokenUsage): JsonObject {
     reasoningTokens: usage.reasoningTokens
   };
 }
-
 function buildRuntimeIdentity(): JsonObject {
   return {
     entity: RUNTIME_ENTITY,
@@ -4168,7 +3714,6 @@ function buildBoundary(): JsonObject {
       "Do not send unauthorized personal, medical, legal, financial or secret material to the runtime."
   };
 }
-
 async function readJsonBody(request: NextRequest): Promise<JsonObject> {
   try {
     const body = (await request.json()) as unknown;
@@ -4247,7 +3792,6 @@ function normalizeIncomingMessages(value: JsonValue | undefined): ChatTurn[] {
 
   return turns;
 }
-
 function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
   if (!Array.isArray(value)) {
     return [];
@@ -4318,7 +3862,6 @@ function resolveModel(body: JsonObject, policy: PolicyEvaluation): string {
 
   return process.env.JOKER_MODEL?.trim() || DEFAULT_STANDARD_MODEL;
 }
-
 function decodeBase64Json(value: string): JsonObject | null {
   try {
     const decodedURIComponent = decodeURIComponent(value);
