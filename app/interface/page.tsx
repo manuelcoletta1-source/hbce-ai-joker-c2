@@ -2336,7 +2336,42 @@ function InfoList({ items }: { items: Array<{ label: string; value: string }> })
 }
 
 
+
+function formatEuropeRomeTemporalSnapshot(value: string): string {
+  const visible = normalizeVisibleText(value || "");
+  const parsed = Date.parse(visible);
+
+
+  if (!Number.isFinite(parsed)) {
+    return visible || "-";
+  }
+
+
+  const date = new Date(parsed);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: JOKER_C2_BIRTH_ANCHOR_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date);
+
+
+  const getPart = (type: string) => parts.find((part) => part.type === type)?.value || "00";
+  const milliseconds = String(date.getUTCMilliseconds()).padStart(3, "0");
+
+
+  return `${getPart("year")}-${getPart("month")}-${getPart("day")}T${getPart("hour")}:${getPart("minute")}:${getPart("second")}.${milliseconds} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}`;
+}
+
+
 function DualTimeSealCard({ seal }: { seal: DualTimeMessageSeal }) {
+  const localSnapshot = formatEuropeRomeTemporalSnapshot(seal.utcSnapshot);
+
+
   return (
     <div className="joker-dual-time-seal" translate="no" aria-label="JOKER-C2 Dual-Time Seal">
       <div className="joker-dual-time-seal-head">
@@ -2347,8 +2382,8 @@ function DualTimeSealCard({ seal }: { seal: DualTimeMessageSeal }) {
 
       <div className="joker-dual-time-rails">
         <div>
-          <span>UTC/LIVE</span>
-          <strong>{seal.utcSnapshot}</strong>
+          <span>LOCAL/LIVE</span>
+          <strong title={`UTC ${seal.utcSnapshot}`}>{localSnapshot}</strong>
         </div>
 
 
@@ -2361,6 +2396,7 @@ function DualTimeSealCard({ seal }: { seal: DualTimeMessageSeal }) {
 
       <div className="joker-dual-time-meta">
         <span title={seal.dualTimeHash}>Hash {compact(seal.dualTimeHash, 36)}</span>
+        <span title={seal.utcSnapshot}>UTC {compact(seal.utcSnapshot, 38)}</span>
         <span title={seal.birthAnchorLocale}>Birth {compact(seal.birthAnchorLocale, 46)}</span>
         <span>legalCertification=false</span>
         {seal.evtId !== "-" ? <span title={seal.evtId}>EVT {compact(seal.evtId, 34)}</span> : null}
