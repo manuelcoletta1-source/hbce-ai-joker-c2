@@ -334,11 +334,12 @@ function buildJokerTemporalRuntimeSnapshot(now = new Date()): JokerTemporalRunti
 }
 
 
-function toFrozenUtcSnapshot(value: string): string {
+function toFrozenUtcSnapshot(value: string, fallbackNow?: Date): string {
   const visible = normalizeVisibleText(value || "");
+  const fallbackSnapshot = buildJokerTemporalRuntimeSnapshot(fallbackNow ?? new Date());
 
 
-  if (!visible || visible === "-") return buildJokerTemporalRuntimeSnapshot().utcResponseTime;
+  if (!visible || isBlankRuntimeValue(visible)) return fallbackSnapshot.utcResponseTime;
 
 
   const parsed = Date.parse(visible);
@@ -350,6 +351,101 @@ function toFrozenUtcSnapshot(value: string): string {
 
 
   return visible;
+}
+
+
+function buildFrozenTemporalSnapshotFromUtc(value: string, fallbackNow?: Date): JokerTemporalRuntimeSnapshot {
+  const fallbackDate = fallbackNow ?? new Date();
+  const frozenUtc = toFrozenUtcSnapshot(value, fallbackDate);
+  const parsed = Date.parse(frozenUtc);
+
+
+  if (Number.isFinite(parsed)) {
+    return buildJokerTemporalRuntimeSnapshot(new Date(parsed));
+  }
+
+
+  return buildJokerTemporalRuntimeSnapshot(fallbackDate);
+}
+
+
+function deriveUtcSnapshotFromOperationalId(value: string): string {
+  const visible = normalizeVisibleText(value || "");
+  const match = visible.match(/(?:EVT|OPC|AUDIT|USAGE)[-_](20\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/i);
+
+
+  if (!match) return "";
+
+
+  const [, year, month, day, hour, minute, second] = match;
+  const candidate = `${year}-${month}-${day}T${hour}:${minute}:${second}.000Z`;
+  const parsed = Date.parse(candidate);
+
+
+  if (!Number.isFinite(parsed)) return "";
+
+
+  return new Date(parsed).toISOString();
+}
+
+
+function getCanonicalAssistantEventUtcSnapshot(runtimeStatus: RuntimeStatus | null): string {
+  if (!runtimeStatus) return "";
+
+
+  return firstDisplayValue(
+    [
+      deriveUtcSnapshotFromOperationalId(runtimeStatus.responseEvt),
+      deriveUtcSnapshotFromOperationalId(runtimeStatus.opc),
+      deriveUtcSnapshotFromOperationalId(runtimeStatus.auditId),
+      deriveUtcSnapshotFromOperationalId(runtimeStatus.modelUsageId)
+    ],
+    ""
+  );
+}
+
+
+
+
+function getPayloadDualTimeSealValue(
+  payload: JsonRecord | null | undefined,
+  role: ChatMessage["role"],
+  field: string,
+  fallback = ""
+): string {
+  if (!payload) return fallback;
+
+
+  const responsePaths = [
+    ["temporalSeals", "response", field],
+    ["responseTemporalSeal", field],
+    ["assistantTemporalSeal", field],
+    ["temporalSeal", field]
+  ];
+
+
+  const requestPaths = [
+    ["temporalSeals", "request", field],
+    ["requestTemporalSeal", field],
+    ["userTemporalSeal", field]
+  ];
+
+
+  const systemPaths = [
+    ["temporalSeals", "system", field],
+    ["systemTemporalSeal", field]
+  ];
+
+
+  const rolePaths = role === "assistant" ? responsePaths : role === "system" ? systemPaths : requestPaths;
+  const commonPaths = [
+    ["temporal", field],
+    ["runtime", "temporal", field],
+    ["temporalCertificate", field]
+  ];
+
+
+  return first(payload, [...rolePaths, ...commonPaths], fallback);
 }
 
 
@@ -397,25 +493,65 @@ function buildDualTimeMessageSeal(input: {
   now?: Date;
   payload?: JsonRecord | null;
 }): DualTimeMessageSeal {
-  const snapshot = buildJokerTemporalRuntimeSnapshot(input.now ?? new Date());
+  const fallbackNow = input.now ?? new Date();
+  const fallbackSnapshot = buildJokerTemporalRuntimeSnapshot(fallbackNow);
   const runtimeStatus = input.payload ? getRuntimeStatus(input.payload) : null;
   const role = input.role === "assistant" ? "JOKER_C2" : input.role === "system" ? "SYSTEM" : "MANUEL";
-  const utcSnapshot = toFrozenUtcSnapshot(runtimeStatus?.utcResponseTime || snapshot.utcResponseTime);
-  const cyberneticLifetimeSnapshot = firstDisplayValue(
-    [runtimeStatus?.runtimeAge || "", snapshot.lifeHuman],
-    snapshot.lifeHuman
+
+
+  const assistantEventUtcSnapshot = input.role === "assistant"
+    ? getCanonicalAssistantEventUtcSnapshot(runtimeStatus)
+    : "";
+  const payloadUtcSnapshot = firstDisplayValue(
+    [
+      assistantEventUtcSnapshot,
+      getPayloadDualTimeSealValue(input.payload, input.role, "utcSnapshot"),
+      getPayloadDualTimeSealValue(input.payload, input.role, "utcResponseTime"),
+      getPayloadDualTimeSealValue(input.payload, input.role, "utcClock"),
+      runtimeStatus?.utcResponseTime || "",
+      fallbackSnapshot.utcResponseTime
+    ],
+    fallbackSnapshot.utcResponseTime
   );
-  const lifeSecondsSnapshot = firstDisplayValue(
-    [runtimeStatus?.runtimeLifeSeconds || "", snapshot.lifeSeconds],
-    snapshot.lifeSeconds
+  const utcSnapshot = toFrozenUtcSnapshot(payloadUtcSnapshot, fallbackNow);
+  const canonicalTemporalSnapshot = buildFrozenTemporalSnapshotFromUtc(utcSnapshot, fallbackNow);
+
+
+  const cyberneticLifetimeSnapshot = canonicalTemporalSnapshot.lifeHuman;
+  const lifeSecondsSnapshot = canonicalTemporalSnapshot.lifeSeconds;
+  const evtId = firstDisplayValue(
+    [getPayloadDualTimeSealValue(input.payload, input.role, "evtId"), runtimeStatus?.responseEvt || ""],
+    "-"
   );
-  const evtId = runtimeStatus?.responseEvt || "-";
-  const opcId = runtimeStatus?.opc || "-";
-  const auditId = runtimeStatus?.auditId || "-";
-  const usageId = runtimeStatus?.modelUsageId || "-";
-  const persistence = runtimeStatus
-    ? `EVT=${runtimeStatus.auditStatus === "-" ? runtimeStatus.persistence : "PERSISTED"} · OPC=${runtimeStatus.opc && runtimeStatus.opc !== "-" ? runtimeStatus.auditPersistence || "PERSISTED" : "-"}`
-    : "FROZEN_CLIENT_SIDE";
+  const opcId = firstDisplayValue(
+    [getPayloadDualTimeSealValue(input.payload, input.role, "opcId"), runtimeStatus?.opc || ""],
+    "-"
+  );
+  const auditId = firstDisplayValue(
+    [getPayloadDualTimeSealValue(input.payload, input.role, "auditId"), runtimeStatus?.auditId || ""],
+    "-"
+  );
+  const usageId = firstDisplayValue(
+    [getPayloadDualTimeSealValue(input.payload, input.role, "usageId"), runtimeStatus?.modelUsageId || ""],
+    "-"
+  );
+  const payloadPersistence = getPayloadDualTimeSealValue(input.payload, input.role, "persistence");
+  const persistence = firstDisplayValue(
+    [
+      payloadPersistence,
+      runtimeStatus
+        ? `EVT=${runtimeStatus.responseEvt && runtimeStatus.responseEvt !== "-" ? "PERSISTED" : runtimeStatus.persistence} · OPC=${runtimeStatus.opc && runtimeStatus.opc !== "-" ? runtimeStatus.auditPersistence || "PERSISTED" : "-"}`
+        : ""
+    ],
+    "FROZEN_CLIENT_SIDE"
+  );
+  const temporalProof = firstDisplayValue(
+    [
+      getPayloadDualTimeSealValue(input.payload, input.role, "temporalProof"),
+      runtimeStatus?.temporalProof || ""
+    ],
+    "UTC_LIVE_PLUS_CYBER_LIFE_FROZEN_SEAL"
+  );
 
 
   return {
@@ -431,7 +567,7 @@ function buildDualTimeMessageSeal(input: {
     auditId,
     usageId,
     persistence,
-    temporalProof: runtimeStatus?.temporalProof || "UTC_LIVE_PLUS_CYBER_LIFE_FROZEN_SEAL",
+    temporalProof,
     dualTimeHash: buildDualTimeHash({
       role,
       messageId: input.messageId,
