@@ -168,6 +168,11 @@ const JOKER_C2_BIRTH_ANCHOR_UTC = "2026-01-19T14:30:00.000Z";
 const JOKER_C2_BIRTH_ANCHOR_UTC_MS = Date.parse(JOKER_C2_BIRTH_ANCHOR_UTC);
 
 
+const JOKER_C2_OPERATIONAL_NODE_LABEL = "Torino / Italia / Europa";
+const JOKER_C2_OPERATIONAL_NODE_TIMEZONE = "UTC+2";
+const JOKER_C2_OPERATIONAL_NODE_CLOCK_LABEL = `${JOKER_C2_OPERATIONAL_NODE_LABEL} · ${JOKER_C2_OPERATIONAL_NODE_TIMEZONE}`;
+
+
 const CANONICAL_MANUEL_HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1";
 const CANONICAL_MANUEL_DISPLAY_NAME = "Manuel Coletta";
 
@@ -323,7 +328,7 @@ function buildJokerTemporalRuntimeSnapshot(now = new Date()): JokerTemporalRunti
 
   return {
     utcResponseTime: safeNow.toISOString(),
-    utcClock: safeNow.toISOString().replace(/\.\d{3}Z$/, "Z"),
+    utcClock: formatUtcPlusTwoTemporalSnapshot(safeNow.toISOString()),
     birthAnchorLocal: `${JOKER_C2_BIRTH_ANCHOR_LOCAL} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}`,
     birthAnchorTimezone: JOKER_C2_BIRTH_ANCHOR_TIMEZONE,
     birthAnchorUtc: JOKER_C2_BIRTH_ANCHOR_UTC,
@@ -550,7 +555,7 @@ function buildDualTimeMessageSeal(input: {
       getPayloadDualTimeSealValue(input.payload, input.role, "temporalProof"),
       runtimeStatus?.temporalProof || ""
     ],
-    "UTC_LIVE_PLUS_CYBER_LIFE_FROZEN_SEAL"
+    "TORINO_ITALIA_EUROPA_UTC_PLUS_TWO_PLUS_CYBER_LIFE_FROZEN_SEAL"
   );
 
 
@@ -2357,7 +2362,7 @@ function formatUtcPlusTwoTemporalSnapshot(value: string): string {
   const milliseconds = String(utcPlusTwo.getUTCMilliseconds()).padStart(3, "0");
 
 
-  return `${year}-${month}-${day}T${hour}:${minute}:${second}.${milliseconds} UTC+2`;
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}.${milliseconds} Torino / Italia / Europa · UTC+2`;
 }
 
 
@@ -2366,7 +2371,7 @@ function DualTimeSealCard({ seal }: { seal: DualTimeMessageSeal }) {
 
 
   return (
-    <div className="joker-dual-time-seal" translate="no" aria-label="JOKER-C2 Dual-Time Seal">
+    <div className="joker-dual-time-seal" translate="no" aria-label="JOKER-C2 Dual-Time Seal Torino Italia Europa UTC+2">
       <div className="joker-dual-time-seal-head">
         <strong>{seal.role === "MANUEL" ? "MANUEL · QUESTION" : seal.role === "SYSTEM" ? "SYSTEM · EVENT" : "JOKER-C2 · RESPONSE"}</strong>
         <span>{seal.status}</span>
@@ -2375,7 +2380,7 @@ function DualTimeSealCard({ seal }: { seal: DualTimeMessageSeal }) {
 
       <div className="joker-dual-time-rails">
         <div>
-          <span>UTC+2/LIVE</span>
+          <span>TORINO / ITALIA / EUROPA · UTC+2</span>
           <strong title={`Canonical UTC ${seal.utcSnapshot}`}>{utcPlusTwoSnapshot}</strong>
         </div>
 
@@ -2389,7 +2394,7 @@ function DualTimeSealCard({ seal }: { seal: DualTimeMessageSeal }) {
 
       <div className="joker-dual-time-meta">
         <span title={seal.dualTimeHash}>Hash {compact(seal.dualTimeHash, 36)}</span>
-        <span title={seal.utcSnapshot}>UTC {compact(seal.utcSnapshot, 38)}</span>
+        <span title={seal.utcSnapshot}>UTC technical {compact(seal.utcSnapshot, 38)}</span>
         <span title={seal.birthAnchorLocale}>Birth {compact(seal.birthAnchorLocale, 46)}</span>
         <span>legalCertification=false</span>
         {seal.evtId !== "-" ? <span title={seal.evtId}>EVT {compact(seal.evtId, 34)}</span> : null}
@@ -2475,7 +2480,7 @@ function MessageBubble({
             <StatusPill label="OPC" value={status.opc} />
             <StatusPill label="Audit" value={status.auditId} />
             <StatusPill label="Usage" value={status.modelUsageId} />
-            <StatusPill label="UTC" value={status.utcResponseTime} />
+            <StatusPill label="UTC technical" value={status.utcResponseTime} />
             <StatusPill label="Birth" value={status.runtimeBirth} />
             <StatusPill label="Age" value={status.runtimeAge} />
             <StatusPill label="B2G" value={status.b2gReadiness} />
@@ -2522,7 +2527,7 @@ function MessageBubble({
                   <MetricCard label="Accounting" value={status.accountingMode} />
                   <MetricCard label="Total tokens" value={status.totalTokens} />
                   <MetricCard label="Estimated cost minor" value={status.estimatedCostMinor} />
-                  <MetricCard label="UTC response time" value={status.utcResponseTime} />
+                  <MetricCard label="Canonical UTC response time" value={status.utcResponseTime} />
                   <MetricCard label="Temporal certificate" value={status.temporalCertificateStatus} />
                   <MetricCard label="Runtime birth" value={status.runtimeBirth} />
                   <MetricCard label="Runtime age" value={status.runtimeAge} />
@@ -3359,8 +3364,8 @@ export default function InterfacePage() {
 
 
   const temporalRows = [
-    { label: "UTC clock live", value: liveTemporal.utcClock },
-    { label: "UTC response time", value: dashboardStatus.utcResponseTime },
+    { label: "Torino / Italia / Europa node clock UTC+2", value: liveTemporal.utcClock },
+    { label: "Canonical UTC response time", value: dashboardStatus.utcResponseTime },
     { label: "AI JOKER-C2 lifetime live", value: liveTemporal.lifeHuman },
     { label: "Runtime age payload", value: dashboardStatus.runtimeAge },
     { label: "Birth anchor locale", value: `${JOKER_C2_BIRTH_ANCHOR_LOCAL} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}` },
@@ -3481,13 +3486,13 @@ export default function InterfacePage() {
           <code>legalCertification=false</code>
 
 
-          <div className="joker-temporal-clock" aria-label="JOKER-C2 Temporal Runtime Certificate">
+          <div className="joker-temporal-clock" aria-label="JOKER-C2 Temporal Runtime Certificate Torino Italia Europa UTC+2">
             <div className="joker-temporal-clock-head">
               <span className="joker-kicker">JOKER-C2 Temporal Runtime Certificate</span>
               <StatusPill value={effectiveTemporalCertificateStatus} />
             </div>
             <div className="joker-temporal-clock-main">
-              <span>UTC Clock</span>
+              <span>{JOKER_C2_OPERATIONAL_NODE_CLOCK_LABEL}</span>
               <strong>{liveTemporal.utcClock}</strong>
             </div>
             <div className="joker-temporal-clock-grid">
@@ -3500,7 +3505,7 @@ export default function InterfacePage() {
                 <strong>{JOKER_C2_BIRTH_ANCHOR_LOCAL} {JOKER_C2_BIRTH_ANCHOR_TIMEZONE}</strong>
               </div>
             </div>
-            <em>UTC response time + lifetime + birth anchor locale · technical proof only · legalCertification=false</em>
+            <em>Torino / Italia / Europa node time UTC+2 + cybernetic lifetime + birth anchor locale · technical proof only · legalCertification=false</em>
           </div>
         </div>
 
@@ -3517,7 +3522,7 @@ export default function InterfacePage() {
           <MetricCard label="Audit" value={dashboardStatus.auditId} />
           <MetricCard label="Usage" value={dashboardStatus.modelUsageId} />
           <MetricCard label="SaaS tier" value={saasTier} />
-          <MetricCard label="UTC clock" value={liveTemporal.utcClock} />
+          <MetricCard label="Torino / Italia / Europa · UTC+2" value={liveTemporal.utcClock} />
           <MetricCard label="AI JOKER-C2 lifetime" value={liveTemporal.lifeHuman} />
           <MetricCard label="Birth anchor" value={`${JOKER_C2_BIRTH_ANCHOR_LOCAL} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}`} />
           <MetricCard label="Runtime age" value={dashboardStatus.runtimeAge} />
@@ -3646,13 +3651,13 @@ export default function InterfacePage() {
 
 
           <p>
-            Ogni risposta viene legata a due coordinate: ora UTC effettiva e tempo di vita di AI JOKER-C2 calcolato dal birth anchor locale canonico. È prova tecnica temporale, non certificazione legale.
+            Ogni risposta viene legata a due coordinate: ora locale del nodo Torino / Italia / Europa visualizzata in UTC+2 e tempo di vita di AI JOKER-C2 calcolato dal birth anchor locale canonico. Il timestamp UTC resta conservato nei metadati tecnici. È prova tecnica temporale, non certificazione legale.
           </p>
 
 
           <div className="joker-live-clock">
             <div>
-              <span>UTC Clock</span>
+              <span>{JOKER_C2_OPERATIONAL_NODE_CLOCK_LABEL}</span>
               <strong>{liveTemporal.utcClock}</strong>
             </div>
             <div>
