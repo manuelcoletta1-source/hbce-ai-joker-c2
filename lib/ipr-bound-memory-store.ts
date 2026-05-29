@@ -708,9 +708,25 @@ function normalizeRegisteredEventName(value: unknown): string {
 function readRegisteredEventsFromRecord(
   record: IprBoundMemoryStoreRecord
 ): IprBoundMemoryRegisteredEvent[] {
-  const rawEvents = readRecordPath(record, ["registeredEvents"]);
+  const rawEvents: unknown[] = [];
+  const rawRegisteredEvents = readRecordPath(record, ["registeredEvents"]);
 
-  if (!Array.isArray(rawEvents)) {
+  if (Array.isArray(rawRegisteredEvents)) {
+    rawEvents.push(...rawRegisteredEvents);
+  }
+
+  const rawLastRegisteredEvent = readRecordPath(record, ["lastRegisteredEvent"]);
+  const rawRegisteredEvent = readRecordPath(record, ["registeredEvent"]);
+
+  if (isRecord(rawLastRegisteredEvent)) {
+    rawEvents.push(rawLastRegisteredEvent);
+  }
+
+  if (isRecord(rawRegisteredEvent)) {
+    rawEvents.push(rawRegisteredEvent);
+  }
+
+  if (rawEvents.length === 0) {
     return [];
   }
 
@@ -730,15 +746,25 @@ function readRegisteredEventsFromRecord(
     ["accountId"],
     ["saas", "accountId"]
   ]);
-  const fallbackHumanIpr = readNullableStringPath(record, ["subject", "ipr"]);
+  const fallbackHumanIpr = firstNullableStringPath(record, [
+    ["humanIpr"],
+    ["subjectIpr"],
+    ["subject", "ipr"]
+  ]);
   const fallbackRuntimeIpr =
-    readStringPath(record, ["runtime", "ipr"], "") || "IPR-AI-0001";
+    readStringPath(record, ["runtimeIpr"], "") ||
+    readStringPath(record, ["runtime", "ipr"], "") ||
+    "IPR-AI-0001";
 
   const registeredEvents: IprBoundMemoryRegisteredEvent[] = [];
+  const seen = new Set<string>();
 
   rawEvents.filter(isRecord).forEach((event, index) => {
     const eventName = normalizeRegisteredEventName(
-      readStringPath(event, ["eventName"], "") ||
+      readStringPath(event, ["registeredEventName"], "") ||
+        readStringPath(event, ["registeredName"], "") ||
+        readStringPath(event, ["eventName"], "") ||
+        readStringPath(event, ["eventKey"], "") ||
         readStringPath(event, ["name"], "") ||
         readStringPath(event, ["event_name"], "")
     );
@@ -749,12 +775,14 @@ function readRegisteredEventsFromRecord(
 
     const evtId = firstNullableStringPath(event, [
       ["evtId"],
+      ["lastEvt"],
       ["evt"],
       ["evt_id"]
     ]);
     const opcProofId = firstNullableStringPath(event, [
       ["opcProofId"],
       ["opcId"],
+      ["lastOpc"],
       ["opc"],
       ["opc_proof_id"]
     ]);
@@ -764,12 +792,28 @@ function readRegisteredEventsFromRecord(
       readStringPath(event, ["createdAt"], "") ||
       readStringPath(event, ["created_at"], "") ||
       new Date().toISOString();
-    const eventNameHash = sha256Hex(eventName.toUpperCase());
+    const eventContent =
+      readStringPath(event, ["registeredEventContent"], "") ||
+      readStringPath(event, ["eventContent"], "") ||
+      readStringPath(event, ["content"], "") ||
+      readStringPath(event, ["description"], "") ||
+      eventName;
+    const eventHash =
+      readStringPath(event, ["registeredEventHash"], "") ||
+      readStringPath(event, ["eventHash"], "") ||
+      readStringPath(event, ["hash"], "") ||
+      `sha256:${sha256Hex(eventContent).toLowerCase()}`;
+    const eventNameHash =
+      readStringPath(event, ["eventNameHash"], "") ||
+      readStringPath(event, ["event_name_hash"], "") ||
+      sha256Hex(eventName.toUpperCase());
     const continuityHash =
       readStringPath(event, ["continuityHash"], "") ||
+      readStringPath(event, ["continuity_hash"], "") ||
       sha256Hex(
         [
           eventName,
+          eventHash,
           record.memoryId,
           evtId || "NO_EVT",
           opcProofId || "NO_OPC",
@@ -779,8 +823,18 @@ function readRegisteredEventsFromRecord(
       );
     const registeredEventId =
       readStringPath(event, ["registeredEventId"], "") ||
+      readStringPath(event, ["registered_event_id"], "") ||
       readStringPath(event, ["eventId"], "") ||
-      `MRE-${sha256Hex(`${record.memoryId}::${eventName}::${evtId || index}`).slice(0, 16)}`;
+      readStringPath(event, ["id"], "") ||
+      `REVT-${sha256Hex(`${record.memoryId}::${eventName}::${eventHash}::${evtId || index}`).slice(0, 16)}`;
+
+    const dedupeKey = `${registeredEventId}::${eventName}`;
+
+    if (seen.has(dedupeKey)) {
+      return;
+    }
+
+    seen.add(dedupeKey);
 
     registeredEvents.push({
       registeredEventId,
@@ -799,7 +853,7 @@ function readRegisteredEventsFromRecord(
         firstNullableStringPath(event, [["accountId"], ["account_id"]]) ||
         fallbackAccountId,
       humanIpr:
-        firstNullableStringPath(event, [["humanIpr"], ["human_ipr"]]) ||
+        firstNullableStringPath(event, [["humanIpr"], ["human_ipr"], ["subjectIpr"]]) ||
         fallbackHumanIpr,
       runtimeIpr:
         readStringPath(event, ["runtimeIpr"], "") ||
@@ -822,15 +876,30 @@ function readRegisteredEventsFromRecord(
       createdAt,
       payload: {
         ...event,
+        registeredEventId,
+        registeredEventName: eventName,
+        registeredEventContent: eventContent,
+        registeredEventHash: eventHash,
         eventName,
+        eventContent,
+        eventHash,
+        eventKey: eventName,
+        evtId,
+        opcProofId,
+        auditId,
+        usageId,
+        source:
+          readStringPath(event, ["source"], "") ||
+          "IPR_BOUND_MEMORY_RECORD_PAYLOAD",
         legalCertification: false
       },
       legalCertification: false
     });
   });
 
-  return registeredEvents;
+  return registeredEvents.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
+
 function databaseRowToRegisteredMemoryEvent(
   row: MemoryRegisteredEventDatabaseRow
 ): IprBoundMemoryRegisteredEvent | null {
@@ -871,6 +940,154 @@ function databaseRowToRegisteredMemoryEvent(
     legalCertification: false
   };
 }
+
+
+function registeredMemoryEventToRecordPayload(
+  event: IprBoundMemoryRegisteredEvent
+): Record<string, unknown> {
+  const payload = isRecord(event.payload) ? event.payload : {};
+  const registeredEventName =
+    readStringPath(payload, ["registeredEventName"], "") ||
+    readStringPath(payload, ["eventName"], "") ||
+    event.eventName;
+  const registeredEventContent =
+    readStringPath(payload, ["registeredEventContent"], "") ||
+    readStringPath(payload, ["eventContent"], "") ||
+    readStringPath(payload, ["content"], "") ||
+    registeredEventName;
+  const registeredEventHash =
+    readStringPath(payload, ["registeredEventHash"], "") ||
+    readStringPath(payload, ["eventHash"], "") ||
+    `sha256:${sha256Hex(registeredEventContent).toLowerCase()}`;
+
+  return {
+    ...payload,
+    registeredEventId: event.registeredEventId,
+    registeredEventName,
+    registeredEventContent,
+    registeredEventHash,
+    eventId: event.registeredEventId,
+    eventName: registeredEventName,
+    eventKey: registeredEventName,
+    eventContent: registeredEventContent,
+    eventHash: registeredEventHash,
+    eventNameHash: event.eventNameHash,
+    tenantId: event.tenantId,
+    workspaceId: event.workspaceId,
+    subscriptionId: event.subscriptionId,
+    accountId: event.accountId,
+    humanIpr: event.humanIpr,
+    runtimeIpr: event.runtimeIpr,
+    memoryId: event.memoryId,
+    evtId: event.evtId,
+    opcProofId: event.opcProofId,
+    opcId: event.opcProofId,
+    auditId: event.auditId,
+    usageId: event.usageId,
+    eventScope: event.eventScope,
+    eventStatus: event.eventStatus,
+    continuityHash: event.continuityHash,
+    createdAt: event.createdAt,
+    source:
+      readStringPath(payload, ["source"], "") ||
+      "DATABASE_REGISTERED_EVENT_TABLE",
+    legalCertification: false
+  };
+}
+
+function mergeRegisteredMemoryEvents(
+  events: IprBoundMemoryRegisteredEvent[]
+): IprBoundMemoryRegisteredEvent[] {
+  const byId = new Map<string, IprBoundMemoryRegisteredEvent>();
+
+  for (const event of events) {
+    const key = `${event.registeredEventId}::${event.eventName}`;
+    byId.set(key, event);
+  }
+
+  return Array.from(byId.values()).sort((a, b) =>
+    a.createdAt.localeCompare(b.createdAt)
+  );
+}
+
+function attachRegisteredEventsToRecord<TRecord extends IprBoundMemoryStoreRecord>(
+  record: TRecord,
+  events: IprBoundMemoryRegisteredEvent[]
+): TRecord {
+  const mergedEvents = mergeRegisteredMemoryEvents([
+    ...readRegisteredEventsFromRecord(record),
+    ...events
+  ]);
+
+  if (mergedEvents.length === 0) {
+    return record;
+  }
+
+  const payloadEvents = mergedEvents.map(registeredMemoryEventToRecordPayload);
+  const lastRegisteredEvent = payloadEvents[payloadEvents.length - 1];
+
+  return {
+    ...record,
+    registeredEvents: payloadEvents,
+    lastRegisteredEvent,
+    registeredEvent: lastRegisteredEvent
+  } as TRecord;
+}
+
+async function listRegisteredMemoryEventsForRecord(
+  record: IprBoundMemoryStoreRecord
+): Promise<IprBoundMemoryRegisteredEvent[]> {
+  const tenantId = firstNullableStringPath(record, [["tenantId"], ["saas", "tenantId"]]);
+  const workspaceId = firstNullableStringPath(record, [["workspaceId"], ["saas", "workspaceId"]]);
+  const humanIpr = firstNullableStringPath(record, [["humanIpr"], ["subjectIpr"], ["subject", "ipr"]]);
+  const memoryId = readNullableStringPath(record, ["memoryId"]);
+  const scopedEvents: IprBoundMemoryRegisteredEvent[] = [];
+
+  try {
+    scopedEvents.push(
+      ...(await listRegisteredMemoryEventsAsync({
+        tenantId,
+        workspaceId,
+        humanIpr,
+        memoryId,
+        limit: 100
+      }))
+    );
+  } catch (error) {
+    rememberFlushError(error);
+  }
+
+  if (scopedEvents.length > 0) {
+    return scopedEvents;
+  }
+
+  try {
+    scopedEvents.push(
+      ...(await listRegisteredMemoryEventsAsync({
+        tenantId,
+        workspaceId,
+        humanIpr,
+        limit: 100
+      }))
+    );
+  } catch (error) {
+    rememberFlushError(error);
+  }
+
+  return scopedEvents;
+}
+
+async function hydrateRegisteredEventsIntoRecord<
+  TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
+>(record: TRecord | null): Promise<TRecord | null> {
+  if (!record) {
+    return null;
+  }
+
+  const databaseEvents = await listRegisteredMemoryEventsForRecord(record);
+  return attachRegisteredEventsToRecord(record, databaseEvents);
+}
+
 
 
 async function upsertDatabaseRegisteredMemoryEvents(
@@ -1249,7 +1466,42 @@ async function upsertDatabaseMemoryRecord<
 
 
   const normalizedRecord = normalizeMemoryRecord(record);
-  const fields = memoryRecordToDatabaseFields(normalizedRecord, context);
+  const existingByMemoryId = await querySingleMemoryRecord<TRecord>(
+    `
+SELECT
+  memory_id,
+  tenant_id,
+  workspace_id,
+  memory_key_hash,
+  human_ipr,
+  runtime_ipr,
+  session_id,
+  thread_id,
+  scope,
+  authority,
+  persistence_mode,
+  memory_hash,
+  memory_chain_hash,
+  last_evt_id,
+  last_opc_proof_id,
+  last_opc_chain_hash,
+  record_payload
+FROM memory_records
+WHERE memory_id = $1
+  AND legal_certification = false
+ORDER BY updated_at DESC
+LIMIT 1;
+`.trim(),
+    [normalizedRecord.memoryId]
+  );
+  const mergedForPersistence = attachRegisteredEventsToRecord(
+    normalizedRecord,
+    existingByMemoryId ? readRegisteredEventsFromRecord(existingByMemoryId) : []
+  );
+  const hydratedForPersistence =
+    (await hydrateRegisteredEventsIntoRecord<TRecord>(mergedForPersistence)) ||
+    mergedForPersistence;
+  const fields = memoryRecordToDatabaseFields(hydratedForPersistence, context);
 
 
   const result = await queryHbceDatabase<MemoryRecordDatabaseRow>(
@@ -1359,18 +1611,19 @@ RETURNING
   }
 
 
-  await upsertDatabaseRegisteredMemoryEvents(normalizedRecord);
+  await upsertDatabaseRegisteredMemoryEvents(hydratedForPersistence);
 
 
   const persisted =
     result.rows[0] ? databaseRowToMemoryRecord<TRecord>(result.rows[0]) : null;
 
 
-  const finalRecord = persisted || ({
-    ...normalizedRecord,
-    tenantId: fields.tenantId ?? normalizedRecord.tenantId,
-    workspaceId: fields.workspaceId ?? normalizedRecord.workspaceId,
-    threadId: fields.threadId ?? normalizedRecord.threadId,
+  const hydratedPersisted = await hydrateRegisteredEventsIntoRecord<TRecord>(persisted);
+  const finalRecord = hydratedPersisted || ({
+    ...hydratedForPersistence,
+    tenantId: fields.tenantId ?? hydratedForPersistence.tenantId,
+    workspaceId: fields.workspaceId ?? hydratedForPersistence.workspaceId,
+    threadId: fields.threadId ?? hydratedForPersistence.threadId,
     persistenceMode: "DATABASE_PERSISTENT"
   } as TRecord);
 
@@ -1804,6 +2057,11 @@ export function createDatabasePersistentMemoryStoreAdapter<
 
 
       if (cached) {
+        const hydratedCached = await hydrateRegisteredEventsIntoRecord<TRecord>(cached);
+        if (hydratedCached) {
+          cacheProcessMemoryRecord(hydratedCached);
+          return hydratedCached;
+        }
         return cached;
       }
 
@@ -1842,12 +2100,14 @@ LIMIT 1;
       );
 
 
-      if (record) {
-        cacheProcessMemoryRecord(record);
+      const hydratedRecord = await hydrateRegisteredEventsIntoRecord<TRecord>(record);
+
+      if (hydratedRecord) {
+        cacheProcessMemoryRecord(hydratedRecord);
       }
 
 
-      return record || undefined;
+      return hydratedRecord || undefined;
     },
 
 
@@ -2026,9 +2286,14 @@ LIMIT 100;
       }
 
 
-      return result.rows
+      const records = result.rows
         .map((row) => databaseRowToMemoryRecord<TRecord>(row))
         .filter((record): record is TRecord => Boolean(record));
+      const hydratedRecords = await Promise.all(
+        records.map((record) => hydrateRegisteredEventsIntoRecord<TRecord>(record))
+      );
+
+      return hydratedRecords.filter((record): record is TRecord => Boolean(record));
     },
 
 
@@ -2042,6 +2307,11 @@ LIMIT 100;
 
 
       if (cached) {
+        const hydratedCached = await hydrateRegisteredEventsIntoRecord<TRecord>(cached);
+        if (hydratedCached) {
+          cacheProcessMemoryRecord(hydratedCached);
+          return hydratedCached;
+        }
         return cached;
       }
 
@@ -2076,12 +2346,14 @@ LIMIT 1;
       );
 
 
-      if (record) {
-        cacheProcessMemoryRecord(record);
+      const hydratedRecord = await hydrateRegisteredEventsIntoRecord<TRecord>(record);
+
+      if (hydratedRecord) {
+        cacheProcessMemoryRecord(hydratedRecord);
       }
 
 
-      return record;
+      return hydratedRecord;
     }
   };
 }
@@ -2369,9 +2641,21 @@ LIMIT 1;
   }
 
 
-  return result.rows[0]
-    ? databaseRowToRegisteredMemoryEvent(result.rows[0])
-    : null;
+  if (result.rows[0]) {
+    return databaseRowToRegisteredMemoryEvent(result.rows[0]);
+  }
+
+  if (input.memoryId) {
+    return findRegisteredMemoryEventByNameAsync({
+      eventName,
+      tenantId: input.tenantId ?? null,
+      workspaceId: input.workspaceId ?? null,
+      humanIpr: input.humanIpr ?? null,
+      memoryId: null
+    });
+  }
+
+  return null;
 }
 
 
