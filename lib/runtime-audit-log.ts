@@ -19,7 +19,9 @@
  * They do not create legal certification.
  */
 
+
 import { createHash, randomUUID } from "node:crypto";
+
 
 import {
   HBCE_CORE,
@@ -49,21 +51,25 @@ import {
   type WorkspaceState
 } from "./saas-tier-types";
 
+
 import {
   isHbceDatabaseAvailable,
   isHbceDatabaseConfigured,
   queryHbceDatabase
 } from "./ipr-database";
 
+
 import type { C2DefensePolicyResult } from "./c2-defense-policy";
 import type { RuntimeRiskPolicyResult } from "./runtime-risk-policy";
 import type { HbceDatabaseQueryRow } from "./ipr-database";
+
 
 export type RuntimeAuditLogPersistenceBoundary =
   | "PROCESS_MEMORY_MVP"
   | "DATABASE_PERSISTENT_TARGET"
   | "DATABASE_PERSISTENT"
   | "FAIL_CLOSED_PERSISTENCE";
+
 
 export type RuntimeAuditLogSource =
   | "API_CHAT"
@@ -73,6 +79,7 @@ export type RuntimeAuditLogSource =
   | "DEMO_SCRIPT"
   | "SYSTEM";
 
+
 export type RuntimeAuditLogRecordStatus =
   | "RECORDED"
   | "BLOCKED_RECORDED"
@@ -81,11 +88,13 @@ export type RuntimeAuditLogRecordStatus =
   | "DATABASE_PERSISTENT_TARGET"
   | "PERSISTED";
 
+
 export type RuntimeAuditDatabaseHumanOversight =
   | "NOT_REQUIRED"
   | "RECOMMENDED"
   | "REQUIRED"
   | "MANDATORY_REVIEW";
+
 
 export type RuntimeAuditLogInput = {
   source?: RuntimeAuditLogSource;
@@ -94,6 +103,7 @@ export type RuntimeAuditLogInput = {
   auditId?: string;
   timestamp?: string;
 
+
   runtimeEntity?: string;
   runtimeIpr?: string;
   humanIpr?: string;
@@ -101,23 +111,36 @@ export type RuntimeAuditLogInput = {
   tenantId?: string;
   workspaceId?: string;
   subscriptionId?: string;
+  accountId?: string;
   threadId?: string;
+
+  usageId?: string | null;
+  registeredEventId?: string | null;
+  registeredEventName?: string | null;
+  registeredEventHash?: string | null;
+  previousEvtRef?: string | null;
+  previousOpcRef?: string | null;
+
 
   identityState?: IdentityState;
   organizationState?: OrganizationState;
   workspaceState?: WorkspaceState;
 
+
   saasTier?: SaasTier;
   tierDecision?: RuntimeDecision;
   accessDecision?: RuntimeDecision;
+
 
   riskLevel?: RuntimeRiskLevel;
   runtimeDecision?: RuntimeDecision;
   auditState?: RuntimeAuditState;
 
+
   modelLevel?: ModelLevel;
   selectedModel?: string;
   modelRoutingReason?: string;
+
 
   cyberRelevance?: CyberRelevance;
   c2Boundary?: C2BoundaryState;
@@ -125,14 +148,17 @@ export type RuntimeAuditLogInput = {
   c2Allowed?: boolean;
   c2FailClosed?: boolean;
 
+
   memoryScope?: RuntimeMemoryScope;
   memoryAuthority?: RuntimeMemoryAuthority;
   persistenceMode?: RuntimePersistenceMode;
   persistenceBoundary?: RuntimeAuditLogPersistenceBoundary;
 
+
   evtRequired?: boolean;
   opcRequired?: boolean;
   auditRequired?: boolean;
+
 
   evtRef?: string | null;
   evtHash?: string | null;
@@ -141,28 +167,34 @@ export type RuntimeAuditLogInput = {
   memoryRef?: string | null;
   memoryHash?: string | null;
 
+
   inputHash?: string | null;
   outputHash?: string | null;
   decisionHash?: string | null;
   policyHash?: string | null;
+
 
   dataClass?: string | null;
   contextClass?: string | null;
   projectDomain?: string | null;
   hbceModule?: string | null;
 
+
   allowed?: boolean;
   failClosed?: boolean;
   blocked?: boolean;
+
 
   reason?: string;
   boundary?: string;
 };
 
+
 export type RuntimeAuditLogRecord = {
   auditId: string;
   timestamp: string;
   source: RuntimeAuditLogSource;
+
 
   project: typeof HBCE_SAAS_PROJECT;
   targetRelease: typeof HBCE_SAAS_TARGET_RELEASE;
@@ -172,8 +204,10 @@ export type RuntimeAuditLogRecord = {
   organization: typeof HBCE_ORGANIZATION;
   core: typeof HBCE_CORE;
 
+
   sessionId: string;
   requestId: string;
+
 
   runtimeEntity: string;
   runtimeIpr: string;
@@ -182,23 +216,36 @@ export type RuntimeAuditLogRecord = {
   tenantId: string;
   workspaceId: string;
   subscriptionId: string;
+  accountId: string;
   threadId: string;
+
+  usageId: string | null;
+  registeredEventId: string | null;
+  registeredEventName: string | null;
+  registeredEventHash: string | null;
+  previousEvtRef: string | null;
+  previousOpcRef: string | null;
+
 
   identityState: IdentityState;
   organizationState: OrganizationState;
   workspaceState: WorkspaceState;
 
+
   saasTier: SaasTier;
   tierDecision: RuntimeDecision;
   accessDecision: RuntimeDecision;
+
 
   riskLevel: RuntimeRiskLevel;
   runtimeDecision: RuntimeDecision;
   auditState: RuntimeAuditState;
 
+
   modelLevel: ModelLevel;
   selectedModel: string;
   modelRoutingReason: string;
+
 
   cyberRelevance: CyberRelevance;
   c2Boundary: C2BoundaryState;
@@ -206,14 +253,17 @@ export type RuntimeAuditLogRecord = {
   c2Allowed: boolean;
   c2FailClosed: boolean;
 
+
   memoryScope: RuntimeMemoryScope;
   memoryAuthority: RuntimeMemoryAuthority;
   persistenceMode: RuntimePersistenceMode;
   persistenceBoundary: RuntimeAuditLogPersistenceBoundary;
 
+
   evtRequired: boolean;
   opcRequired: boolean;
   auditRequired: boolean;
+
 
   evtRef: string | null;
   evtHash: string | null;
@@ -222,27 +272,33 @@ export type RuntimeAuditLogRecord = {
   memoryRef: string | null;
   memoryHash: string | null;
 
+
   inputHash: string | null;
   outputHash: string | null;
   decisionHash: string | null;
   policyHash: string | null;
+
 
   dataClass: string | null;
   contextClass: string | null;
   projectDomain: string | null;
   hbceModule: string | null;
 
+
   allowed: boolean;
   failClosed: boolean;
   blocked: boolean;
+
 
   status: RuntimeAuditLogRecordStatus;
   reason: string;
   boundary: string;
 
+
   legalCertification: false;
   auditHash: string;
 };
+
 
 export type RuntimeAuditLogHealth = {
   configured: true;
@@ -260,6 +316,7 @@ export type RuntimeAuditLogHealth = {
   boundary: string;
 };
 
+
 export type RuntimeAuditLogListOptions = {
   limit?: number;
   sessionId?: string;
@@ -268,6 +325,7 @@ export type RuntimeAuditLogListOptions = {
   c2Only?: boolean;
   includeBlocked?: boolean;
 };
+
 
 export type RuntimeAuditLogPersistenceResult = {
   ok: boolean;
@@ -282,16 +340,19 @@ export type RuntimeAuditLogPersistenceResult = {
   legalCertification: false;
 };
 
+
 type RuntimeAuditLogDatabaseRow = HbceDatabaseQueryRow & {
   audit_id?: string;
   audit_hash?: string;
 };
+
 
 type RuntimeAuditDatabasePayload = {
   auditId: string;
   tenantId: string | null;
   workspaceId: string | null;
   subscriptionId: string | null;
+  accountId: string | null;
   humanIpr: string | null;
   runtimeIpr: string;
   sessionId: string | null;
@@ -299,6 +360,12 @@ type RuntimeAuditDatabasePayload = {
   evtId: string | null;
   opcProofId: string | null;
   memoryId: string | null;
+  usageId: string | null;
+  registeredEventId: string | null;
+  registeredEventName: string | null;
+  registeredEventHash: string | null;
+  previousEvtId: string | null;
+  previousOpcId: string | null;
   auditKind: string;
   runtimeState: string;
   runtimeDecision: string;
@@ -317,48 +384,62 @@ type RuntimeAuditDatabasePayload = {
   payloadJson: string;
 };
 
+
 const MAX_PROCESS_MEMORY_AUDIT_RECORDS = 250;
 
+
 const runtimeAuditProcessMemory: RuntimeAuditLogRecord[] = [];
+
 
 export function nowIso(): string {
   return new Date().toISOString();
 }
+
 
 export function normalizeAuditString(value: unknown, fallback: string): string {
   if (typeof value !== "string") {
     return fallback;
   }
 
+
   const trimmed = value.trim();
+
 
   return trimmed || fallback;
 }
+
 
 export function normalizeNullableAuditString(value: unknown): string | null {
   if (typeof value !== "string") {
     return null;
   }
 
+
   const trimmed = value.trim();
+
 
   return trimmed || null;
 }
+
 
 export function stableAuditStringify(value: unknown): string {
   if (value === null || value === undefined) {
     return String(value);
   }
 
+
   if (typeof value !== "object") {
     return JSON.stringify(value);
   }
+
 
   if (Array.isArray(value)) {
     return `[${value.map((item) => stableAuditStringify(item)).join(",")}]`;
   }
 
+
   const record = value as Record<string, unknown>;
+
 
   return `{${Object.keys(record)
     .sort()
@@ -366,25 +447,31 @@ export function stableAuditStringify(value: unknown): string {
     .join(",")}}`;
 }
 
+
 export function sha256Audit(value: unknown): string {
   return createHash("sha256").update(stableAuditStringify(value)).digest("hex");
 }
+
 
 export function buildRuntimeAuditId(timestamp: string = nowIso()): string {
   const compactTimestamp = timestamp.replace(/\D/g, "").slice(0, 14);
   const suffix = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
 
+
   return `AUDIT-${compactTimestamp}-${suffix}`;
 }
+
 
 function safeDatabaseError(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
 
+
   if (typeof error === "string") {
     return error;
   }
+
 
   try {
     return JSON.stringify(error);
@@ -393,22 +480,28 @@ function safeDatabaseError(error: unknown): string {
   }
 }
 
+
 function normalizeAuditRuntimeDecision(value: RuntimeDecision | string | undefined): string {
   return String(value || "UNKNOWN").toUpperCase();
 }
+
 
 function nullableDatabaseText(value: string | null | undefined): string | null {
   if (typeof value !== "string") {
     return null;
   }
 
+
   const trimmed = value.trim();
+
 
   if (!trimmed) {
     return null;
   }
 
+
   const normalized = trimmed.toUpperCase();
+
 
   if (
     normalized === "NONE" ||
@@ -417,6 +510,11 @@ function nullableDatabaseText(value: string | null | undefined): string | null {
     normalized === "NO_TENANT" ||
     normalized === "NO_WORKSPACE" ||
     normalized === "NO_SUBSCRIPTION" ||
+    normalized === "NO_ACCOUNT" ||
+    normalized === "NO_USAGE" ||
+    normalized === "NO_REGISTERED_EVENT" ||
+    normalized === "NO_PREVIOUS_EVT" ||
+    normalized === "NO_PREVIOUS_OPC" ||
     normalized === "NO_ORGANIZATION_IPR" ||
     normalized === "NOT_VERIFIED" ||
     normalized === "NO_CERTIFICATE" ||
@@ -427,11 +525,14 @@ function nullableDatabaseText(value: string | null | undefined): string | null {
     return null;
   }
 
+
   return trimmed;
 }
 
+
 function normalizeDatabaseRuntimeDecision(value: RuntimeDecision | string | undefined): string {
   const normalized = String(value || "ALLOW").toUpperCase();
+
 
   if (
     normalized === "ALLOW" ||
@@ -441,6 +542,7 @@ function normalizeDatabaseRuntimeDecision(value: RuntimeDecision | string | unde
   ) {
     return normalized;
   }
+
 
   if (
     normalized === "ACCESS_GRANTED" ||
@@ -452,6 +554,7 @@ function normalizeDatabaseRuntimeDecision(value: RuntimeDecision | string | unde
     return "ALLOW";
   }
 
+
   if (
     normalized === "ACCESS_LIMITED" ||
     normalized === "SERVER_VALIDATION_REQUIRED" ||
@@ -462,6 +565,7 @@ function normalizeDatabaseRuntimeDecision(value: RuntimeDecision | string | unde
     return "ESCALATE";
   }
 
+
   if (
     normalized === "DENY" ||
     normalized === "DENIED" ||
@@ -471,37 +575,47 @@ function normalizeDatabaseRuntimeDecision(value: RuntimeDecision | string | unde
     return "BLOCK";
   }
 
+
   return "ESCALATE";
 }
 
+
 function normalizeDatabaseRiskLevel(value: RuntimeRiskLevel | string | undefined): string {
   const normalized = String(value || "LOW").toUpperCase();
+
 
   if (normalized === "LOW" || normalized === "MEDIUM" || normalized === "HIGH" || normalized === "CRITICAL") {
     return normalized;
   }
 
+
   return "LOW";
 }
+
 
 function normalizeDatabaseRuntimeState(record: RuntimeAuditLogRecord): string {
   if (record.blocked) {
     return "BLOCKED";
   }
 
+
   if (record.failClosed) {
     return "INVALID";
   }
 
+
   return "OPERATIONAL";
 }
+
 
 function normalizeDatabaseModelLevel(value: ModelLevel | string | undefined): string | null {
   const normalized = String(value || "").toUpperCase();
 
+
   if (!normalized || normalized === "UNKNOWN" || normalized === "NOT_SELECTED") {
     return null;
   }
+
 
   if (
     normalized === "BASE" ||
@@ -515,27 +629,34 @@ function normalizeDatabaseModelLevel(value: ModelLevel | string | undefined): st
     return normalized;
   }
 
+
   if (normalized === "C2_ESCALATED" || normalized === "C2_DEFENSE") {
     return "C2";
   }
+
 
   if (normalized === "GOVERNANCE" || normalized === "PRO") {
     return "ENHANCED";
   }
 
+
   if (normalized === "ADVANCED") {
     return "DEEP";
   }
 
+
   return "STANDARD";
 }
+
 
 function normalizeDatabaseSaasTier(value: SaasTier | string | undefined): string | null {
   const normalized = String(value || "").toUpperCase();
 
+
   if (!normalized || normalized === "UNKNOWN") {
     return null;
   }
+
 
   if (
     normalized === "BASE" ||
@@ -548,22 +669,28 @@ function normalizeDatabaseSaasTier(value: SaasTier | string | undefined): string
     return normalized;
   }
 
+
   return "BASE";
 }
 
+
 function normalizeDatabaseC2Boundary(value: C2BoundaryState | string | undefined): string | null {
   const normalized = String(value || "").toUpperCase();
+
 
   if (!normalized || normalized === "UNKNOWN") {
     return null;
   }
 
+
   return normalized;
 }
+
 
 function shouldWriteRelationalColumns(record: RuntimeAuditLogRecord): boolean {
   return record.persistenceBoundary === "DATABASE_PERSISTENT";
 }
+
 
 export function deriveDatabaseHumanOversight(
   auditState: RuntimeAuditState
@@ -582,6 +709,7 @@ export function deriveDatabaseHumanOversight(
   }
 }
 
+
 export function deriveAuditRecordStatus(input: {
   blocked: boolean;
   failClosed: boolean;
@@ -593,20 +721,25 @@ export function deriveAuditRecordStatus(input: {
     return "BLOCKED_RECORDED";
   }
 
+
   if (input.failClosed) {
     return "FAIL_CLOSED_RECORDED";
   }
+
 
   if (input.persistenceMode === "DATABASE_PERSISTENT") {
     if (input.databaseConfigured && input.databaseAvailable) {
       return "DATABASE_PERSISTENT_TARGET";
     }
 
+
     return "MVP_MEMORY_ONLY";
   }
 
+
   return "MVP_MEMORY_ONLY";
 }
+
 
 export function deriveAuditPersistenceBoundary(
   persistenceMode: RuntimePersistenceMode
@@ -615,14 +748,18 @@ export function deriveAuditPersistenceBoundary(
     return "DATABASE_PERSISTENT_TARGET";
   }
 
+
   const persistenceText: string = String(persistenceMode);
+
 
   if (persistenceText === "FAIL_CLOSED_PERSISTENCE") {
     return "FAIL_CLOSED_PERSISTENCE";
   }
 
+
   return "PROCESS_MEMORY_MVP";
 }
+
 
 export function buildRuntimeAuditBoundary(input: {
   persistenceBoundary: RuntimeAuditLogPersistenceBoundary;
@@ -637,8 +774,10 @@ export function buildRuntimeAuditBoundary(input: {
           ? "Runtime audit log persistence is required but unavailable. Runtime must fail closed where required."
           : "Runtime audit log is currently stored in process memory MVP and may be lost across serverless cold starts or deployments.";
 
+
   return `${persistence} ${RUNTIME_BOUNDARY_SUMMARY.evt}. ${RUNTIME_BOUNDARY_SUMMARY.opc}. C2 boundary: ${input.c2Boundary}. legalCertification = false.`;
 }
+
 
 export function buildRuntimeAuditHashPayload(
   record: Omit<RuntimeAuditLogRecord, "auditHash">
@@ -658,7 +797,14 @@ export function buildRuntimeAuditHashPayload(
     tenantId: record.tenantId,
     workspaceId: record.workspaceId,
     subscriptionId: record.subscriptionId,
+    accountId: record.accountId,
     threadId: record.threadId,
+    usageId: record.usageId,
+    registeredEventId: record.registeredEventId,
+    registeredEventName: record.registeredEventName,
+    registeredEventHash: record.registeredEventHash,
+    previousEvtRef: record.previousEvtRef,
+    previousOpcRef: record.previousOpcRef,
     identityState: record.identityState,
     organizationState: record.organizationState,
     workspaceState: record.workspaceState,
@@ -704,11 +850,13 @@ export function buildRuntimeAuditHashPayload(
   };
 }
 
+
 export function buildRuntimeAuditHash(
   record: Omit<RuntimeAuditLogRecord, "auditHash">
 ): string {
   return sha256Audit(buildRuntimeAuditHashPayload(record));
 }
+
 
 export function createRuntimeAuditLogRecord(
   input: RuntimeAuditLogInput = {}
@@ -716,12 +864,15 @@ export function createRuntimeAuditLogRecord(
   const timestamp = input.timestamp ?? nowIso();
   const auditId = normalizeAuditString(input.auditId, buildRuntimeAuditId(timestamp));
 
+
   const persistenceMode = input.persistenceMode ?? "PROCESS_MEMORY_MVP";
   const persistenceBoundary =
     input.persistenceBoundary ?? deriveAuditPersistenceBoundary(persistenceMode);
 
+
   const runtimeDecisionText = normalizeAuditRuntimeDecision(input.runtimeDecision);
   const blocked = input.blocked ?? runtimeDecisionText === "BLOCK";
+
 
   const failClosed =
     input.failClosed ??
@@ -730,13 +881,16 @@ export function createRuntimeAuditLogRecord(
       input.c2FailClosed === true
     );
 
+
   const c2Boundary = input.c2Boundary ?? "C2_NOT_AVAILABLE";
   const allowed = input.allowed ?? (!blocked && !failClosed);
+
 
   const baseRecord: Omit<RuntimeAuditLogRecord, "auditHash"> = {
     auditId,
     timestamp,
     source: input.source ?? "SYSTEM",
+
 
     project: HBCE_SAAS_PROJECT,
     targetRelease: HBCE_SAAS_TARGET_RELEASE,
@@ -746,8 +900,10 @@ export function createRuntimeAuditLogRecord(
     organization: HBCE_ORGANIZATION,
     core: HBCE_CORE,
 
+
     sessionId: normalizeAuditString(input.sessionId, "NO_SESSION"),
     requestId: normalizeAuditString(input.requestId, randomUUID()),
+
 
     runtimeEntity: normalizeAuditString(input.runtimeEntity, RUNTIME_ENTITY),
     runtimeIpr: normalizeAuditString(input.runtimeIpr, RUNTIME_IPR),
@@ -756,19 +912,31 @@ export function createRuntimeAuditLogRecord(
     tenantId: normalizeAuditString(input.tenantId, "NO_TENANT"),
     workspaceId: normalizeAuditString(input.workspaceId, "NO_WORKSPACE"),
     subscriptionId: normalizeAuditString(input.subscriptionId, "NO_SUBSCRIPTION"),
+    accountId: normalizeAuditString(input.accountId, "NO_ACCOUNT"),
     threadId: normalizeAuditString(input.threadId, "NO_THREAD"),
+
+    usageId: normalizeNullableAuditString(input.usageId),
+    registeredEventId: normalizeNullableAuditString(input.registeredEventId),
+    registeredEventName: normalizeNullableAuditString(input.registeredEventName),
+    registeredEventHash: normalizeNullableAuditString(input.registeredEventHash),
+    previousEvtRef: normalizeNullableAuditString(input.previousEvtRef),
+    previousOpcRef: normalizeNullableAuditString(input.previousOpcRef),
+
 
     identityState: input.identityState ?? "NOT_VERIFIED",
     organizationState: input.organizationState ?? "NOT_REQUIRED",
     workspaceState: input.workspaceState ?? "NOT_REQUIRED",
 
+
     saasTier: input.saasTier ?? "BASE",
     tierDecision: input.tierDecision ?? "ALLOW",
     accessDecision: input.accessDecision ?? input.tierDecision ?? "ALLOW",
 
+
     riskLevel: input.riskLevel ?? "LOW",
     runtimeDecision: input.runtimeDecision ?? "ALLOW",
     auditState: input.auditState ?? "NOT_REQUIRED",
+
 
     modelLevel: input.modelLevel ?? "STANDARD",
     selectedModel: normalizeAuditString(input.selectedModel, "NOT_SELECTED"),
@@ -777,20 +945,24 @@ export function createRuntimeAuditLogRecord(
       "No model routing reason provided."
     ),
 
+
     cyberRelevance: input.cyberRelevance ?? "NONE",
     c2Boundary,
     c2Decision: input.c2Decision ?? "ALLOW",
     c2Allowed: input.c2Allowed ?? false,
     c2FailClosed: input.c2FailClosed ?? false,
 
+
     memoryScope: input.memoryScope ?? "RUNTIME_ONLY",
     memoryAuthority: input.memoryAuthority ?? "RUNTIME_ONLY",
     persistenceMode,
     persistenceBoundary,
 
+
     evtRequired: input.evtRequired ?? false,
     opcRequired: input.opcRequired ?? false,
     auditRequired: input.auditRequired ?? false,
+
 
     evtRef: normalizeNullableAuditString(input.evtRef),
     evtHash: normalizeNullableAuditString(input.evtHash),
@@ -799,19 +971,23 @@ export function createRuntimeAuditLogRecord(
     memoryRef: normalizeNullableAuditString(input.memoryRef),
     memoryHash: normalizeNullableAuditString(input.memoryHash),
 
+
     inputHash: normalizeNullableAuditString(input.inputHash),
     outputHash: normalizeNullableAuditString(input.outputHash),
     decisionHash: normalizeNullableAuditString(input.decisionHash),
     policyHash: normalizeNullableAuditString(input.policyHash),
+
 
     dataClass: normalizeNullableAuditString(input.dataClass),
     contextClass: normalizeNullableAuditString(input.contextClass),
     projectDomain: normalizeNullableAuditString(input.projectDomain),
     hbceModule: normalizeNullableAuditString(input.hbceModule),
 
+
     allowed,
     failClosed,
     blocked,
+
 
     status: deriveAuditRecordStatus({
       blocked,
@@ -821,6 +997,7 @@ export function createRuntimeAuditLogRecord(
       databaseAvailable: isHbceDatabaseAvailable()
     }),
 
+
     reason: normalizeAuditString(input.reason, "Runtime audit record created."),
     boundary:
       input.boundary ??
@@ -829,8 +1006,10 @@ export function createRuntimeAuditLogRecord(
         c2Boundary
       }),
 
+
     legalCertification: false
   };
+
 
   return {
     ...baseRecord,
@@ -838,28 +1017,35 @@ export function createRuntimeAuditLogRecord(
   };
 }
 
+
 function pushRuntimeAuditProcessMemory(record: RuntimeAuditLogRecord): RuntimeAuditLogRecord {
   runtimeAuditProcessMemory.unshift(record);
+
 
   if (runtimeAuditProcessMemory.length > MAX_PROCESS_MEMORY_AUDIT_RECORDS) {
     runtimeAuditProcessMemory.length = MAX_PROCESS_MEMORY_AUDIT_RECORDS;
   }
 
+
   return record;
 }
+
 
 export function appendRuntimeAuditLogRecord(
   input: RuntimeAuditLogInput = {}
 ): RuntimeAuditLogRecord {
   const record = createRuntimeAuditLogRecord(input);
 
+
   return pushRuntimeAuditProcessMemory(record);
 }
+
 
 function runtimeAuditRecordToDatabasePayload(
   record: RuntimeAuditLogRecord
 ): RuntimeAuditDatabasePayload {
   const writeRelationalColumns = shouldWriteRelationalColumns(record);
+
 
   const payload = {
     ...record,
@@ -873,22 +1059,31 @@ function runtimeAuditRecordToDatabasePayload(
       tenantId: record.tenantId,
       workspaceId: record.workspaceId,
       subscriptionId: record.subscriptionId,
+      accountId: record.accountId,
       humanIpr: record.humanIpr,
       sessionId: record.sessionId,
       threadId: record.threadId,
       evtId: record.evtRef,
       opcProofId: record.opcRef,
-      memoryId: record.memoryRef
+      memoryId: record.memoryRef,
+      usageId: record.usageId,
+      registeredEventId: record.registeredEventId,
+      registeredEventName: record.registeredEventName,
+      registeredEventHash: record.registeredEventHash,
+      previousEvtId: record.previousEvtRef,
+      previousOpcId: record.previousOpcRef
     },
     databaseHumanOversight: deriveDatabaseHumanOversight(record.auditState),
     legalCertification: false
   };
+
 
   return {
     auditId: record.auditId,
     tenantId: writeRelationalColumns ? nullableDatabaseText(record.tenantId) : null,
     workspaceId: writeRelationalColumns ? nullableDatabaseText(record.workspaceId) : null,
     subscriptionId: writeRelationalColumns ? nullableDatabaseText(record.subscriptionId) : null,
+    accountId: writeRelationalColumns ? nullableDatabaseText(record.accountId) : null,
     humanIpr: writeRelationalColumns ? nullableDatabaseText(record.humanIpr) : null,
     runtimeIpr: normalizeAuditString(record.runtimeIpr, RUNTIME_IPR),
     sessionId: writeRelationalColumns ? nullableDatabaseText(record.sessionId) : null,
@@ -896,6 +1091,12 @@ function runtimeAuditRecordToDatabasePayload(
     evtId: writeRelationalColumns ? nullableDatabaseText(record.evtRef) : null,
     opcProofId: writeRelationalColumns ? nullableDatabaseText(record.opcRef) : null,
     memoryId: writeRelationalColumns ? nullableDatabaseText(record.memoryRef) : null,
+    usageId: writeRelationalColumns ? nullableDatabaseText(record.usageId) : null,
+    registeredEventId: writeRelationalColumns ? nullableDatabaseText(record.registeredEventId) : null,
+    registeredEventName: writeRelationalColumns ? nullableDatabaseText(record.registeredEventName) : null,
+    registeredEventHash: writeRelationalColumns ? nullableDatabaseText(record.registeredEventHash) : null,
+    previousEvtId: writeRelationalColumns ? nullableDatabaseText(record.previousEvtRef) : null,
+    previousOpcId: writeRelationalColumns ? nullableDatabaseText(record.previousOpcRef) : null,
     auditKind: "RUNTIME_DECISION",
     runtimeState: normalizeDatabaseRuntimeState(record),
     runtimeDecision: normalizeDatabaseRuntimeDecision(record.runtimeDecision),
@@ -915,6 +1116,7 @@ function runtimeAuditRecordToDatabasePayload(
   };
 }
 
+
 export async function persistRuntimeAuditLogRecord(
   record: RuntimeAuditLogRecord
 ): Promise<RuntimeAuditLogPersistenceResult> {
@@ -929,6 +1131,7 @@ export async function persistRuntimeAuditLogRecord(
     };
   }
 
+
   if (!isHbceDatabaseAvailable()) {
     return {
       ok: false,
@@ -940,7 +1143,9 @@ export async function persistRuntimeAuditLogRecord(
     };
   }
 
+
   const fields = runtimeAuditRecordToDatabasePayload(record);
+
 
   try {
     const result = await queryHbceDatabase<RuntimeAuditLogDatabaseRow>(
@@ -1066,6 +1271,7 @@ RETURNING audit_id, audit_hash;
       ]
     );
 
+
     if (!result.ok) {
       return {
         ok: false,
@@ -1077,8 +1283,10 @@ RETURNING audit_id, audit_hash;
       };
     }
 
+
     record.status = "PERSISTED";
     record.persistenceBoundary = "DATABASE_PERSISTENT";
+
 
     return {
       ok: true,
@@ -1100,6 +1308,7 @@ RETURNING audit_id, audit_hash;
   }
 }
 
+
 export async function appendRuntimeAuditLogRecordAsync(
   input: RuntimeAuditLogInput = {}
 ): Promise<{
@@ -1109,11 +1318,13 @@ export async function appendRuntimeAuditLogRecordAsync(
   const record = appendRuntimeAuditLogRecord(input);
   const persistence = await persistRuntimeAuditLogRecord(record);
 
+
   return {
     record,
     persistence
   };
 }
+
 
 export function appendRuntimeAuditLogRecordFromPolicies(input: {
   source?: RuntimeAuditLogSource;
@@ -1124,7 +1335,15 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
   tenantId?: string;
   workspaceId?: string;
   subscriptionId?: string;
+  accountId?: string;
   threadId?: string;
+
+  usageId?: string | null;
+  registeredEventId?: string | null;
+  registeredEventName?: string | null;
+  registeredEventHash?: string | null;
+  previousEvtRef?: string | null;
+  previousOpcRef?: string | null;
   saasPolicy?: SaasTierPolicyResult;
   riskPolicy?: RuntimeRiskPolicyResult;
   modelRouting?: RuntimeModelRoutingResult;
@@ -1147,6 +1366,7 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
   const modelRouting = input.modelRouting;
   const c2Policy = input.c2Policy;
 
+
   return appendRuntimeAuditLogRecord({
     source: input.source ?? "API_CHAT",
     sessionId: input.sessionId,
@@ -1156,24 +1376,36 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
     tenantId: input.tenantId,
     workspaceId: input.workspaceId,
     subscriptionId: input.subscriptionId,
+    accountId: input.accountId,
     threadId: input.threadId,
+    usageId: input.usageId,
+    registeredEventId: input.registeredEventId,
+    registeredEventName: input.registeredEventName,
+    registeredEventHash: input.registeredEventHash,
+    previousEvtRef: input.previousEvtRef,
+    previousOpcRef: input.previousOpcRef,
+
 
     identityState: saasPolicy?.identityState ?? "NOT_VERIFIED",
     organizationState: saasPolicy?.organizationState ?? "NOT_REQUIRED",
     workspaceState: saasPolicy?.workspaceState ?? "NOT_REQUIRED",
 
+
     saasTier: saasPolicy?.tier ?? modelRouting?.tier ?? "BASE",
     tierDecision: saasPolicy?.decision ?? "ALLOW",
     accessDecision: saasPolicy?.decision ?? "ALLOW",
+
 
     riskLevel: riskPolicy?.riskLevel ?? saasPolicy?.riskLevel ?? modelRouting?.riskLevel ?? "LOW",
     runtimeDecision: riskPolicy?.decision ?? saasPolicy?.decision ?? "ALLOW",
     auditState: riskPolicy?.auditState ?? saasPolicy?.auditState ?? "NOT_REQUIRED",
 
+
     modelLevel: modelRouting?.modelLevel ?? saasPolicy?.modelLevel ?? "STANDARD",
     selectedModel: modelRouting?.selectedModel ?? "NOT_SELECTED",
     modelRoutingReason:
       modelRouting?.routingReason ?? "No model routing record provided.",
+
 
     cyberRelevance:
       c2Policy?.cyberRelevance ??
@@ -1191,9 +1423,11 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
     c2Allowed: c2Policy?.allowed ?? false,
     c2FailClosed: c2Policy?.failClosed ?? false,
 
+
     memoryScope: saasPolicy?.memoryScope ?? "RUNTIME_ONLY",
     memoryAuthority: saasPolicy?.memoryAuthority ?? "RUNTIME_ONLY",
     persistenceMode: saasPolicy?.persistenceMode ?? "PROCESS_MEMORY_MVP",
+
 
     evtRequired:
       Boolean(saasPolicy?.evtRequired) ||
@@ -1211,6 +1445,7 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
       Boolean(modelRouting?.auditRequired) ||
       Boolean(c2Policy?.auditRequired),
 
+
     evtRef: input.evtRef,
     evtHash: input.evtHash,
     opcRef: input.opcRef,
@@ -1220,10 +1455,12 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
     inputHash: input.inputHash,
     outputHash: input.outputHash,
 
+
     dataClass: input.dataClass,
     contextClass: input.contextClass,
     projectDomain: input.projectDomain,
     hbceModule: input.hbceModule,
+
 
     decisionHash: sha256Audit({
       saasDecision: saasPolicy?.decision,
@@ -1237,6 +1474,7 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
       modelRouting,
       c2Policy
     }),
+
 
     allowed:
       Boolean(saasPolicy?.allowed ?? true) &&
@@ -1252,6 +1490,7 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
       modelRouting?.blocked === true ||
       c2Policy?.decision === "BLOCK",
 
+
     reason:
       c2Policy?.reason ??
       riskPolicy?.reason ??
@@ -1260,6 +1499,7 @@ export function appendRuntimeAuditLogRecordFromPolicies(input: {
       "Runtime audit record created from policy outputs."
   });
 }
+
 
 export async function appendRuntimeAuditLogRecordFromPoliciesAsync(input: {
   source?: RuntimeAuditLogSource;
@@ -1270,7 +1510,15 @@ export async function appendRuntimeAuditLogRecordFromPoliciesAsync(input: {
   tenantId?: string;
   workspaceId?: string;
   subscriptionId?: string;
+  accountId?: string;
   threadId?: string;
+
+  usageId?: string | null;
+  registeredEventId?: string | null;
+  registeredEventName?: string | null;
+  registeredEventHash?: string | null;
+  previousEvtRef?: string | null;
+  previousOpcRef?: string | null;
   saasPolicy?: SaasTierPolicyResult;
   riskPolicy?: RuntimeRiskPolicyResult;
   modelRouting?: RuntimeModelRoutingResult;
@@ -1294,30 +1542,37 @@ export async function appendRuntimeAuditLogRecordFromPoliciesAsync(input: {
   const record = appendRuntimeAuditLogRecordFromPolicies(input);
   const persistence = await persistRuntimeAuditLogRecord(record);
 
+
   return {
     record,
     persistence
   };
 }
 
+
 export function listRuntimeAuditLogRecords(
   options: RuntimeAuditLogListOptions = {}
 ): RuntimeAuditLogRecord[] {
   const limit = Math.max(1, Math.min(options.limit ?? 50, MAX_PROCESS_MEMORY_AUDIT_RECORDS));
 
+
   let records = [...runtimeAuditProcessMemory];
+
 
   if (options.sessionId) {
     records = records.filter((record) => record.sessionId === options.sessionId);
   }
 
+
   if (options.humanIpr) {
     records = records.filter((record) => record.humanIpr === options.humanIpr);
   }
 
+
   if (options.saasTier) {
     records = records.filter((record) => record.saasTier === options.saasTier);
   }
+
 
   if (options.c2Only) {
     records = records.filter(
@@ -1328,16 +1583,20 @@ export function listRuntimeAuditLogRecords(
     );
   }
 
+
   if (!options.includeBlocked) {
     records = records.filter((record) => !record.blocked);
   }
 
+
   return records.slice(0, limit);
 }
+
 
 export function getRuntimeAuditLogRecord(auditId: string): RuntimeAuditLogRecord | null {
   return runtimeAuditProcessMemory.find((record) => record.auditId === auditId) ?? null;
 }
+
 
 export function clearRuntimeAuditLogProcessMemory(): {
   cleared: number;
@@ -1347,6 +1606,7 @@ export function clearRuntimeAuditLogProcessMemory(): {
   const cleared = runtimeAuditProcessMemory.length;
   runtimeAuditProcessMemory.length = 0;
 
+
   return {
     cleared,
     mode: "PROCESS_MEMORY_MVP",
@@ -1354,6 +1614,7 @@ export function clearRuntimeAuditLogProcessMemory(): {
       "Runtime audit process memory cleared. This does not affect future database persistence targets."
   };
 }
+
 
 export function toPublicRuntimeAuditLogRecord(record: RuntimeAuditLogRecord): {
   auditId: string;
@@ -1370,7 +1631,15 @@ export function toPublicRuntimeAuditLogRecord(record: RuntimeAuditLogRecord): {
   tenantId: string;
   workspaceId: string;
   subscriptionId: string;
+  accountId: string;
   threadId: string;
+
+  usageId: string | null;
+  registeredEventId: string | null;
+  registeredEventName: string | null;
+  registeredEventHash: string | null;
+  previousEvtRef: string | null;
+  previousOpcRef: string | null;
   identityState: IdentityState;
   saasTier: SaasTier;
   riskLevel: RuntimeRiskLevel;
@@ -1416,7 +1685,14 @@ export function toPublicRuntimeAuditLogRecord(record: RuntimeAuditLogRecord): {
     tenantId: record.tenantId,
     workspaceId: record.workspaceId,
     subscriptionId: record.subscriptionId,
+    accountId: record.accountId,
     threadId: record.threadId,
+    usageId: record.usageId,
+    registeredEventId: record.registeredEventId,
+    registeredEventName: record.registeredEventName,
+    registeredEventHash: record.registeredEventHash,
+    previousEvtRef: record.previousEvtRef,
+    previousOpcRef: record.previousOpcRef,
     identityState: record.identityState,
     saasTier: record.saasTier,
     riskLevel: record.riskLevel,
@@ -1449,11 +1725,13 @@ export function toPublicRuntimeAuditLogRecord(record: RuntimeAuditLogRecord): {
   };
 }
 
+
 export function toPublicRuntimeAuditLogRecords(
   records: RuntimeAuditLogRecord[]
 ): ReturnType<typeof toPublicRuntimeAuditLogRecord>[] {
   return records.map((record) => toPublicRuntimeAuditLogRecord(record));
 }
+
 
 export function buildRuntimeAuditPromptFrame(record: RuntimeAuditLogRecord): string {
   return [
@@ -1471,7 +1749,14 @@ export function buildRuntimeAuditPromptFrame(record: RuntimeAuditLogRecord): str
     `Tenant: ${record.tenantId}`,
     `Workspace: ${record.workspaceId}`,
     `Subscription: ${record.subscriptionId}`,
+    `Account: ${record.accountId}`,
     `Thread: ${record.threadId}`,
+    `Usage ID: ${record.usageId ?? "none"}`,
+    `Registered event ID: ${record.registeredEventId ?? "none"}`,
+    `Registered event name: ${record.registeredEventName ?? "none"}`,
+    `Registered event hash: ${record.registeredEventHash ?? "none"}`,
+    `Previous EVT ref: ${record.previousEvtRef ?? "none"}`,
+    `Previous OPC ref: ${record.previousOpcRef ?? "none"}`,
     `SaaS tier: ${record.saasTier}`,
     `Risk level: ${record.riskLevel}`,
     `Runtime decision: ${record.runtimeDecision}`,
@@ -1499,9 +1784,11 @@ export function buildRuntimeAuditPromptFrame(record: RuntimeAuditLogRecord): str
   ].join("\n");
 }
 
+
 export function getRuntimeAuditLogHealth(): RuntimeAuditLogHealth {
   const databaseConfigured = isHbceDatabaseConfigured();
   const databaseAvailable = isHbceDatabaseAvailable();
+
 
   return {
     configured: true,
