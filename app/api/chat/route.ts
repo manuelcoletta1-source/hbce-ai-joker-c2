@@ -7641,6 +7641,19 @@ function normalizeText(value: string): string {
 }
 
 
+function normalizePositiveInteger(value: unknown, fallback: number): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return fallback;
+  }
+
+  const normalized = Math.floor(value);
+
+  if (normalized <= 0) {
+    return fallback;
+  }
+
+  return normalized;
+}
 
 
 function truncate(value: string, maxLength: number): string {
