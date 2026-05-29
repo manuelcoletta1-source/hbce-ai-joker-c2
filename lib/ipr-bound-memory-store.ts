@@ -259,7 +259,6 @@ const PROCESS_MEMORY_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "IPR_BOUND_MEMORY",
   "MEMORY_KEY_LOOKUP",
   "MEMORY_HASH_LOOKUP",
-  "REGISTERED_EVENT_LOOKUP",
   "PROCESS_SCOPED_RUNTIME"
 ];
 
@@ -268,7 +267,6 @@ const DATABASE_READY_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "IPR_BOUND_MEMORY",
   "MEMORY_KEY_LOOKUP",
   "MEMORY_HASH_LOOKUP",
-  "REGISTERED_EVENT_LOOKUP",
   "DATABASE_CONTRACT",
   "DATABASE_CONNECTION_DETECTED",
   "DATABASE_MEMORY_WRITER_REQUIRED",
@@ -286,7 +284,6 @@ const DATABASE_PERSISTENT_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "IPR_BOUND_MEMORY",
   "MEMORY_KEY_LOOKUP",
   "MEMORY_HASH_LOOKUP",
-  "REGISTERED_EVENT_LOOKUP",
   "DATABASE_CONTRACT",
   "DATABASE_CONNECTION_DETECTED",
   "DATABASE_MEMORY_WRITER_ACTIVE",
@@ -309,7 +306,6 @@ const EXTERNAL_ADAPTER_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "IPR_BOUND_MEMORY",
   "MEMORY_KEY_LOOKUP",
   "MEMORY_HASH_LOOKUP",
-  "REGISTERED_EVENT_LOOKUP",
   "EXTERNAL_ADAPTER_CONTRACT",
   "TENANT_SCOPE_REQUIRED",
   "WORKSPACE_SCOPE_REQUIRED",
@@ -714,11 +710,9 @@ function readRegisteredEventsFromRecord(
 ): IprBoundMemoryRegisteredEvent[] {
   const rawEvents = readRecordPath(record, ["registeredEvents"]);
 
-
   if (!Array.isArray(rawEvents)) {
     return [];
   }
-
 
   const fallbackTenantId = firstNullableStringPath(record, [
     ["tenantId"],
@@ -740,108 +734,103 @@ function readRegisteredEventsFromRecord(
   const fallbackRuntimeIpr =
     readStringPath(record, ["runtime", "ipr"], "") || "IPR-AI-0001";
 
+  const registeredEvents: IprBoundMemoryRegisteredEvent[] = [];
 
-  return rawEvents
-    .filter(isRecord)
-    .map((event, index) => {
-      const eventName = normalizeRegisteredEventName(
-        readStringPath(event, ["eventName"], "") ||
-          readStringPath(event, ["name"], "") ||
-          readStringPath(event, ["event_name"], "")
-      );
+  rawEvents.filter(isRecord).forEach((event, index) => {
+    const eventName = normalizeRegisteredEventName(
+      readStringPath(event, ["eventName"], "") ||
+        readStringPath(event, ["name"], "") ||
+        readStringPath(event, ["event_name"], "")
+    );
 
+    if (!eventName) {
+      return;
+    }
 
-      if (!eventName) {
-        return null;
-      }
-
-
-      const evtId = firstNullableStringPath(event, [
-        ["evtId"],
-        ["evt"],
-        ["evt_id"]
-      ]);
-      const opcProofId = firstNullableStringPath(event, [
-        ["opcProofId"],
-        ["opcId"],
-        ["opc"],
-        ["opc_proof_id"]
-      ]);
-      const auditId = firstNullableStringPath(event, [["auditId"], ["audit_id"]]);
-      const usageId = firstNullableStringPath(event, [["usageId"], ["usage_id"]]);
-      const createdAt =
-        readStringPath(event, ["createdAt"], "") ||
-        readStringPath(event, ["created_at"], "") ||
-        new Date().toISOString();
-      const eventNameHash = sha256Hex(eventName.toUpperCase());
-      const continuityHash =
-        readStringPath(event, ["continuityHash"], "") ||
-        sha256Hex(
-          [
-            eventName,
-            record.memoryId,
-            evtId || "NO_EVT",
-            opcProofId || "NO_OPC",
-            auditId || "NO_AUDIT",
-            usageId || "NO_USAGE"
-          ].join("::")
-        );
-      const registeredEventId =
-        readStringPath(event, ["registeredEventId"], "") ||
-        readStringPath(event, ["eventId"], "") ||
-        `MRE-${sha256Hex(`${record.memoryId}::${eventName}::${evtId || index}`).slice(0, 16)}`;
-
-
-      return {
-        registeredEventId,
-        eventName,
-        eventNameHash,
-        tenantId:
-          firstNullableStringPath(event, [["tenantId"], ["tenant_id"]]) ||
-          fallbackTenantId,
-        workspaceId:
-          firstNullableStringPath(event, [["workspaceId"], ["workspace_id"]]) ||
-          fallbackWorkspaceId,
-        subscriptionId:
-          firstNullableStringPath(event, [["subscriptionId"], ["subscription_id"]]) ||
-          fallbackSubscriptionId,
-        accountId:
-          firstNullableStringPath(event, [["accountId"], ["account_id"]]) ||
-          fallbackAccountId,
-        humanIpr:
-          firstNullableStringPath(event, [["humanIpr"], ["human_ipr"]]) ||
-          fallbackHumanIpr,
-        runtimeIpr:
-          readStringPath(event, ["runtimeIpr"], "") ||
-          readStringPath(event, ["runtime_ipr"], "") ||
-          fallbackRuntimeIpr,
-        memoryId: record.memoryId,
-        evtId,
-        opcProofId,
-        auditId,
-        usageId,
-        eventScope:
-          readStringPath(event, ["eventScope"], "") ||
-          readStringPath(event, ["event_scope"], "") ||
-          "IPR_BOUND",
-        eventStatus:
-          readStringPath(event, ["eventStatus"], "") ||
-          readStringPath(event, ["event_status"], "") ||
-          "ACTIVE",
-        continuityHash,
-        createdAt,
-        payload: {
-          ...event,
+    const evtId = firstNullableStringPath(event, [
+      ["evtId"],
+      ["evt"],
+      ["evt_id"]
+    ]);
+    const opcProofId = firstNullableStringPath(event, [
+      ["opcProofId"],
+      ["opcId"],
+      ["opc"],
+      ["opc_proof_id"]
+    ]);
+    const auditId = firstNullableStringPath(event, [["auditId"], ["audit_id"]]);
+    const usageId = firstNullableStringPath(event, [["usageId"], ["usage_id"]]);
+    const createdAt =
+      readStringPath(event, ["createdAt"], "") ||
+      readStringPath(event, ["created_at"], "") ||
+      new Date().toISOString();
+    const eventNameHash = sha256Hex(eventName.toUpperCase());
+    const continuityHash =
+      readStringPath(event, ["continuityHash"], "") ||
+      sha256Hex(
+        [
           eventName,
-          legalCertification: false
-        },
-        legalCertification: false as const
-      } satisfies IprBoundMemoryRegisteredEvent;
-    })
-    .filter((event): event is IprBoundMemoryRegisteredEvent => Boolean(event));
+          record.memoryId,
+          evtId || "NO_EVT",
+          opcProofId || "NO_OPC",
+          auditId || "NO_AUDIT",
+          usageId || "NO_USAGE"
+        ].join("::")
+      );
+    const registeredEventId =
+      readStringPath(event, ["registeredEventId"], "") ||
+      readStringPath(event, ["eventId"], "") ||
+      `MRE-${sha256Hex(`${record.memoryId}::${eventName}::${evtId || index}`).slice(0, 16)}`;
+
+    registeredEvents.push({
+      registeredEventId,
+      eventName,
+      eventNameHash,
+      tenantId:
+        firstNullableStringPath(event, [["tenantId"], ["tenant_id"]]) ||
+        fallbackTenantId,
+      workspaceId:
+        firstNullableStringPath(event, [["workspaceId"], ["workspace_id"]]) ||
+        fallbackWorkspaceId,
+      subscriptionId:
+        firstNullableStringPath(event, [["subscriptionId"], ["subscription_id"]]) ||
+        fallbackSubscriptionId,
+      accountId:
+        firstNullableStringPath(event, [["accountId"], ["account_id"]]) ||
+        fallbackAccountId,
+      humanIpr:
+        firstNullableStringPath(event, [["humanIpr"], ["human_ipr"]]) ||
+        fallbackHumanIpr,
+      runtimeIpr:
+        readStringPath(event, ["runtimeIpr"], "") ||
+        readStringPath(event, ["runtime_ipr"], "") ||
+        fallbackRuntimeIpr,
+      memoryId: record.memoryId,
+      evtId,
+      opcProofId,
+      auditId,
+      usageId,
+      eventScope:
+        readStringPath(event, ["eventScope"], "") ||
+        readStringPath(event, ["event_scope"], "") ||
+        "IPR_BOUND",
+      eventStatus:
+        readStringPath(event, ["eventStatus"], "") ||
+        readStringPath(event, ["event_status"], "") ||
+        "ACTIVE",
+      continuityHash,
+      createdAt,
+      payload: {
+        ...event,
+        eventName,
+        legalCertification: false
+      },
+      legalCertification: false
+    });
+  });
+
+  return registeredEvents;
 }
-
-
 function databaseRowToRegisteredMemoryEvent(
   row: MemoryRegisteredEventDatabaseRow
 ): IprBoundMemoryRegisteredEvent | null {
