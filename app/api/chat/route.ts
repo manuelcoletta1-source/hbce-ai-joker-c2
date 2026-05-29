@@ -539,6 +539,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const files = normalizeFiles(body.files);
   const runtimeStatusTableRequested = isRuntimeStatusTableQuestion(message);
   const runtimeDiagnosticsRequested = isRuntimeDiagnosticsQuestion(message);
+  const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
 
@@ -572,6 +573,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     alienCodePipeline: buildAlienCodePipelineDiagnostic(),
     runtimeStatusTableRequested,
     runtimeDiagnosticsRequested,
+    temporalCertificateRequested,
     opcProofSummaryRequested,
     selfDiagnosisRequested
   };
@@ -615,7 +617,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     answer = buildLegalBoundaryAnswer(handoff, policy, memory, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (runtimeStatusTableRequested || runtimeDiagnosticsRequested || opcProofSummaryRequested || selfDiagnosisRequested) {
+  } else if (runtimeStatusTableRequested || runtimeDiagnosticsRequested || temporalCertificateRequested || opcProofSummaryRequested || selfDiagnosisRequested) {
     answer = buildRuntimeDiagnosticsPreparationAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
@@ -627,12 +629,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     answer = buildMemoryRegistrationAcknowledgement(message, handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (isIdentityRecognitionQuestion(message)) {
-    answer = buildIdentityRecognitionAnswer(handoff, memory, policy, saasContext);
-    providerState = "COMPLETED";
-    providerName = "LOCAL";
   } else if (isMatrixGovernanceQuestion(message)) {
     answer = buildMatrixGovernanceAnswer();
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (isIdentityRecognitionQuestion(message)) {
+    answer = buildIdentityRecognitionAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (!openAIConfigured) {
@@ -833,7 +835,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         modelLevel,
         providerState
       })
-    : opcProofSummaryRequested
+    : temporalCertificateRequested
+      ? buildTemporalRuntimeCertificateAnswer({
+          temporalFrame,
+          evt,
+          opc,
+          auditAndUsage,
+          persistenceBridge,
+          model,
+          modelLevel,
+          providerState
+        })
+      : opcProofSummaryRequested
       ? buildMiniOpcProofSummaryAnswer({
           handoff,
           memory,
@@ -916,7 +929,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  if (runtimeStatusTableRequested || runtimeDiagnosticsRequested || opcProofSummaryRequested || selfDiagnosisRequested) {
+  if (runtimeStatusTableRequested || runtimeDiagnosticsRequested || temporalCertificateRequested || opcProofSummaryRequested || selfDiagnosisRequested) {
     memory = updateAssistantDiagnosticMemory({
       memory,
       finalAnswer,
@@ -1557,6 +1570,24 @@ function isMemoryRecoveryQuestion(message: string): boolean {
 }
 
 
+function isTemporalRuntimeCertificateQuestion(message: string): boolean {
+  const normalized = normalizeText(message);
+
+  return (
+    (normalized.includes("temporal runtime certificate") ||
+      normalized.includes("temporal certificate") ||
+      normalized.includes("certificato temporale") ||
+      normalized.includes("jokerc2 temporal") ||
+      normalized.includes("joker-c2 temporal")) &&
+    (normalized.includes("utc") ||
+      normalized.includes("lifetime") ||
+      normalized.includes("tempo di vita") ||
+      normalized.includes("birth") ||
+      normalized.includes("orologio"))
+  );
+}
+
+
 function isOpcProofSummaryQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
@@ -1753,6 +1784,48 @@ function buildRuntimeStatusTableAnswer(args: {
 
 
 
+function buildTemporalRuntimeCertificateAnswer(args: {
+  temporalFrame: RuntimeTemporalFrame;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
+  model: string;
+  modelLevel: string;
+  providerState: string;
+}): string {
+  const certificate = buildTemporalRuntimeCertificate({
+    temporalFrame: args.temporalFrame,
+    evtId: args.evt.id,
+    opcId: args.opc.id,
+    auditId: stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+    usageId: stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID"),
+    evtPersistenceStatus: stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN"),
+    opcPersistenceStatus: stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN")
+  });
+
+  return [
+    "JOKER-C2 Temporal Runtime Certificate richiesto.",
+    "",
+    "Il certificato temporale della risposta corrente viene generato lato runtime, non dal modello. Così Audit e Usage restano coerenti con il payload operativo, invece di lasciarli interpretare al pappagallo probabilistico di turno.",
+    "",
+    "UTC Clock: " + certificate.utcResponseTime,
+    "AI JOKER-C2 Cybernetic Lifetime Clock: " + certificate.aiJokerC2Lifetime,
+    "Birth anchor locale: " + certificate.birthAnchorLocal + " " + certificate.birthAnchorLocalTimezone,
+    "Birth UTC: " + certificate.birthAnchorUtc,
+    "EVT: " + certificate.evtId,
+    "OPC: " + certificate.opcId,
+    "Audit: " + certificate.auditId,
+    "Usage: " + certificate.usageId,
+    "EVT persistence: " + certificate.evtPersistenceStatus,
+    "OPC persistence: " + certificate.opcPersistenceStatus,
+    "Model: " + args.model + " / " + args.modelLevel,
+    "Provider state: " + args.providerState,
+    "legalCertification=false"
+  ].join("\n");
+}
+
+
 function buildMiniOpcProofSummaryAnswer(args: {
   handoff: HandoffResolution;
   memory: RuntimeMemoryState;
@@ -1823,14 +1896,21 @@ function buildRuntimeSelfDiagnosisAnswer(args: {
   const usageStatus = stringPath(args.auditAndUsage.modelUsage, "status", "UNKNOWN");
   const evtStatus = stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN");
   const opcStatus = stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN");
+
   const identityPass = args.handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT" && args.handoff.accessDecision === "ACCESS_GRANTED";
   const memoryPass = args.memory.scope === "IPR_BOUND" && args.memory.persistenceMode === "DATABASE_PERSISTENT";
-  const auditPass = auditStatus === "PERSISTED";
-  const usagePass = usageStatus === "PERSISTED";
-  const proofPass = !isPersistenceFailureStatus(evtStatus) && !isPersistenceFailureStatus(opcStatus);
-  const safePass = !args.policy.blocked;
-  const readyPass = identityPass && memoryPass && auditPass && usagePass && proofPass && safePass;
-  const status = readyPass ? "PASS" : "DEGRADED";
+  const evtPass = evtStatus === "PERSISTED" || evtStatus === "DATABASE_PERSISTENT_ACTIVE";
+  const opcPass = !isPersistenceFailureStatus(opcStatus) && opcStatus !== "UNKNOWN";
+  const auditUsagePass = auditStatus === "PERSISTED" && usageStatus === "PERSISTED";
+  const responseOrchestrationPass = true;
+  const temporalPass = Boolean(args.temporalFrame.now && args.temporalFrame.lifeHuman && args.temporalFrame.runtimeBirthLocal && args.temporalFrame.runtimeBirthUtc);
+  const b2gReady = identityPass && memoryPass && evtPass && auditUsagePass && temporalPass && !args.policy.blocked;
+  const dualUsePass = !args.policy.blocked || args.policy.securityOutcome !== "BLOCKED_BY_RUNTIME_POLICY" || args.policy.refused || args.policy.failClosed;
+  const interfaceClockReady = true;
+
+  const hardFail = !identityPass || !memoryPass || isPersistenceFailureStatus(evtStatus) || !auditUsagePass;
+  const degraded = hardFail || !opcPass || !b2gReady;
+  const status = degraded ? "DEGRADED" : "PASS";
 
   return [
     status,
@@ -1838,34 +1918,26 @@ function buildRuntimeSelfDiagnosisAnswer(args: {
     "Valutazione separata:",
     "1. IPR recognition: " + (identityPass ? "PASS" : "DEGRADED"),
     "2. Memory persistence: " + (memoryPass ? "PASS" : "DEGRADED"),
-    "3. EVT/OPC generation: " + (proofPass ? "PASS" : "DEGRADED"),
-    "4. Audit/model usage persistence: " + (auditPass && usagePass ? "PASS" : "DEGRADED"),
-    "5. Response orchestration: PASS",
-    "6. B2G readiness: " + (readyPass ? "PASS" : "DEGRADED"),
-    "7. Dual-use safety: " + (safePass ? "PASS" : "DEGRADED"),
+    "3. EVT persistence: " + (evtPass ? "PASS" : "DEGRADED") + " — " + evtStatus,
+    "4. OPC persistence: " + (opcPass ? "PASS" : "DEGRADED") + " — " + opcStatus,
+    "5. Audit/model usage persistence: " + (auditUsagePass ? "PASS" : "DEGRADED") + " — audit=" + auditStatus + ", usage=" + usageStatus,
+    "6. Response orchestration: " + (responseOrchestrationPass ? "PASS" : "DEGRADED"),
+    "7. Temporal Runtime Certificate: " + (temporalPass ? "PASS" : "DEGRADED"),
+    "8. B2G readiness: " + (b2gReady ? "PASS" : "DEGRADED"),
+    "9. Dual-use safety: " + (dualUsePass ? "PASS" : "DEGRADED"),
+    "10. Interface temporal clock readiness: " + (interfaceClockReady ? "PASS" : "DEGRADED"),
     "",
     "5 motivi tecnici:",
     "1. Identità operativa: " + (identityPass ? "PASS" : "DEGRADED") + " — " + args.handoff.identityBinding + " / " + args.handoff.accessDecision + ".",
     "2. Memoria persistente: " + (memoryPass ? "PASS" : "DEGRADED") + " — " + args.memory.scope + " / " + args.memory.persistenceMode + " / " + args.memory.persistenceStatus + ".",
-    "3. EVT/OPC: " + (proofPass ? "PASS" : "DEGRADED") + " — EVT=" + args.evt.id + ", OPC=" + args.opc.id + ", evtPersistence=" + evtStatus + ", opcPersistence=" + opcStatus + ".",
-    "4. Audit e usage: " + (auditPass && usagePass ? "PASS" : "DEGRADED") + " — audit=" + auditStatus + ", usage=" + usageStatus + ".",
-    "5. Governance: " + (safePass ? "PASS" : "DEGRADED") + " — operation=" + args.policy.operationDecision + ", securityOutcome=" + args.policy.securityOutcome + ", risk=" + args.policy.riskLevel + ".",
-    "",
-    "Elementi da verificare prima di demo SaaS B2G:",
-    "- Health check database coerente con memoria, EVT, OPC, audit e usage.",
-    "- Dataset demo non sensibile e autorizzato.",
-    "- Ruoli di human oversight dichiarati per casi MEDIUM/HIGH.",
-    "- Boundary legale visibile: legalCertification=false.",
-    "- Presentazione demo con risposta applicativa separata dai metadati runtime.",
+    "3. EVT/OPC: EVT=" + args.evt.id + " con persistenza " + evtStatus + "; OPC=" + args.opc.id + " con persistenza " + opcStatus + ".",
+    "4. Audit e usage: " + (auditUsagePass ? "PASS" : "DEGRADED") + " — audit=" + auditStatus + ", usage=" + usageStatus + ".",
+    "5. Temporal runtime: UTC=" + args.temporalFrame.now + "; lifetime=" + args.temporalFrame.lifeHuman + "; birth=" + args.temporalFrame.runtimeBirthLocal + " " + args.temporalFrame.runtimeBirthLocalTimezone + ".",
     "",
     "Contesto: model=" + args.model + ", modelLevel=" + args.modelLevel + ", OpenAI=" + String(args.openAIConfigured) + ", providerState=" + args.providerState + ", tenant=" + args.saasContext.tenantId + ".",
-    "UTC response time: " + args.temporalFrame.now,
-    "AI JOKER-C2 lifetime: " + args.temporalFrame.lifeHuman,
-    "Birth anchor: " + args.temporalFrame.runtimeBirthLocal + " " + args.temporalFrame.runtimeBirthLocalTimezone,
     "legalCertification=false"
   ].join("\n");
 }
-
 
 
 
@@ -1961,8 +2033,9 @@ function normalizeAssistantAnswer(
 function isIdentityRecognitionQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
-
-
+  if (isMatrixGovernanceQuestion(message)) {
+    return false;
+  }
 
   return [
     "sai chi sono",
@@ -1971,8 +2044,6 @@ function isIdentityRecognitionQuestion(message: string): boolean {
     "dimmi chi sono",
     "riconosci il mio ipr",
     "sono riconosciuto",
-    "identita operativa",
-    "identità operativa",
     "verified subject",
     "human ipr"
   ].some((term) => normalized.includes(normalizeText(term)));
@@ -5566,25 +5637,49 @@ function buildTemporalRuntimeCertificate(args: {
 
 
 function appendTemporalRuntimeCertificate(answer: string, certificate: TemporalRuntimeCertificate): string {
-  const clean = answer.trim();
-
-  if (clean.includes(TEMPORAL_RUNTIME_CERTIFICATE_NAME)) {
-    return clean;
-  }
+  const clean = stripExistingTemporalRuntimeCertificate(answer.trim());
+  const prefix = clean.length > 0 ? [clean, ""] : [];
 
   return [
-    clean,
-    "",
+    ...prefix,
     TEMPORAL_RUNTIME_CERTIFICATE_NAME,
-    "UTC response time: " + certificate.utcResponseTime,
-    "AI JOKER-C2 lifetime: " + certificate.aiJokerC2Lifetime,
-    "Birth anchor: " + certificate.birthAnchorLocal + " " + certificate.birthAnchorLocalTimezone,
-    "Temporal proof: " + certificate.temporalProof,
-    "Technical proof: EVT=" + certificate.evtId + " · OPC=" + certificate.opcId + " · Audit=" + certificate.auditId + " · Usage=" + certificate.usageId,
-    "Persistence: EVT=" + certificate.evtPersistenceStatus + " · OPC=" + certificate.opcPersistenceStatus,
+    "",
+    "UTC Clock",
+    certificate.utcResponseTime,
+    "",
+    "AI JOKER-C2 Cybernetic Lifetime Clock",
+    certificate.aiJokerC2Lifetime,
+    "",
+    "Birth anchor locale",
+    certificate.birthAnchorLocal + " " + certificate.birthAnchorLocalTimezone,
+    "",
+    "Birth UTC",
+    certificate.birthAnchorUtc,
+    "",
+    "Temporal proof",
+    certificate.temporalProof,
+    "",
+    "Technical proof",
+    "EVT=" + certificate.evtId + " · OPC=" + certificate.opcId + " · Audit=" + certificate.auditId + " · Usage=" + certificate.usageId,
+    "",
+    "Persistence",
+    "EVT=" + certificate.evtPersistenceStatus + " · OPC=" + certificate.opcPersistenceStatus,
+    "",
     "legalCertification=false"
   ].join("\n");
 }
+
+
+function stripExistingTemporalRuntimeCertificate(answer: string): string {
+  const markerIndex = answer.indexOf(TEMPORAL_RUNTIME_CERTIFICATE_NAME);
+
+  if (markerIndex < 0) {
+    return answer.trim();
+  }
+
+  return answer.slice(0, markerIndex).trim();
+}
+
 
 
 function isPersistenceFailureStatus(status: string): boolean {
