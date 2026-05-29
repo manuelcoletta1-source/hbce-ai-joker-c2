@@ -334,6 +334,30 @@ type RuntimeTemporalFrame = {
 };
 
 
+type DualTimeMessageSeal = JsonObject & {
+  name: "JOKER-C2 Dual-Time Seal";
+  status: "FROZEN_DUAL_TIME_SEAL";
+  role: "MANUEL" | "JOKER_C2";
+  messageKind: "QUESTION" | "RESPONSE";
+  utcSnapshot: string;
+  cyberneticLifetimeSnapshot: string;
+  cyberneticLifeSecondsSnapshot: number;
+  birthAnchorLocale: string;
+  birthAnchorLocalTimezone: string;
+  birthUtc: string;
+  temporalProof: "UTC_SNAPSHOT_PLUS_CYBERNETIC_LIFETIME_SNAPSHOT";
+  technicalProof: "EVT_OPC_AUDIT_USAGE_LINKED" | "REQUEST_CAPTURED_FOR_EVT_OPC_AUDIT_USAGE";
+  evtId: string;
+  opcId: string;
+  auditId: string;
+  usageId: string;
+  contentHash: string;
+  sessionId: string;
+  dualTimeHash: string;
+  legalCertification: false;
+};
+
+
 
 
 const RUNTIME_ENTITY = "AI_JOKER";
@@ -924,7 +948,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  const finalAnswer = appendTemporalRuntimeCertificate(finalAnswerBase, temporalCertificate);
+  const finalAnswer = buildAnswerWithExternalDualTimeSeal(finalAnswerBase, temporalCertificate);
 
 
 
@@ -946,6 +970,32 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const finalOutputHash = sha256(finalAnswer);
   const finalMemoryHash = sha256(memory);
+  const auditId = stringPath(auditAndUsage.audit, "auditId", "NO_AUDIT_ID");
+  const usageId = stringPath(auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID");
+  const requestTemporalSeal = buildDualTimeMessageSeal({
+    role: "MANUEL",
+    messageKind: "QUESTION",
+    temporalFrame,
+    sessionId,
+    contentHash: inputHash,
+    evtId: evt.id,
+    opcId: opc.id,
+    auditId,
+    usageId,
+    technicalProof: "REQUEST_CAPTURED_FOR_EVT_OPC_AUDIT_USAGE"
+  });
+  const responseTemporalSeal = buildDualTimeMessageSeal({
+    role: "JOKER_C2",
+    messageKind: "RESPONSE",
+    temporalFrame,
+    sessionId,
+    contentHash: finalOutputHash,
+    evtId: evt.id,
+    opcId: opc.id,
+    auditId,
+    usageId,
+    technicalProof: "EVT_OPC_AUDIT_USAGE_LINKED"
+  });
   const payload = {
     ok: policy.decision !== "BLOCK",
 
@@ -962,7 +1012,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     assistantMessage: finalAnswer,
     assistant: {
       role: "assistant",
-      content: finalAnswer
+      content: finalAnswer,
+      temporalSeal: responseTemporalSeal
+    },
+
+
+
+
+    temporalSeal: responseTemporalSeal,
+    responseTemporalSeal,
+    assistantTemporalSeal: responseTemporalSeal,
+    requestTemporalSeal,
+    userTemporalSeal: requestTemporalSeal,
+    temporalSeals: {
+      request: requestTemporalSeal,
+      response: responseTemporalSeal
     },
 
 
@@ -977,6 +1041,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       responseEvtId: evt.id,
       temporal: temporalFrame,
       temporalCertificate,
+      temporalSeal: responseTemporalSeal,
       runtimeAge: temporalFrame.lifeHuman,
       runtimeLifeSeconds: temporalFrame.lifeSeconds,
       opc: opc.id,
@@ -1185,6 +1250,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       runtimeAge: temporalFrame.lifeHuman,
       runtimeLifeSeconds: temporalFrame.lifeSeconds,
       temporalCertificate,
+      temporalSeal: responseTemporalSeal,
+      requestTemporalSeal,
       temporalSemanticMeaning: temporalFrame.semanticMeaning
     },
 
@@ -1247,6 +1314,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       handoffReason: handoff.reason,
       temporal: temporalFrame,
       temporalCertificate,
+      temporalSeal: responseTemporalSeal,
+      requestTemporalSeal,
       saasContext: {
         tenantId: saasContext.tenantId,
         workspaceId: saasContext.workspaceId,
@@ -1805,14 +1874,10 @@ function buildTemporalRuntimeCertificateAnswer(args: {
   });
 
   return [
-    "JOKER-C2 Temporal Runtime Certificate richiesto.",
+    "Temporal Runtime Certificate generato.",
     "",
-    "Il certificato temporale della risposta corrente viene generato lato runtime, non dal modello. Così Audit e Usage restano coerenti con il payload operativo, invece di lasciarli interpretare al pappagallo probabilistico di turno.",
+    "Il certificato temporale della risposta corrente non viene più scritto dentro il corpo chat: viene esposto come Dual-Time Message Seal esterno, con UTC/LIVE e CYBER/LIFE congelati sul messaggio.",
     "",
-    "UTC Clock: " + certificate.utcResponseTime,
-    "AI JOKER-C2 Cybernetic Lifetime Clock: " + certificate.aiJokerC2Lifetime,
-    "Birth anchor locale: " + certificate.birthAnchorLocal + " " + certificate.birthAnchorLocalTimezone,
-    "Birth UTC: " + certificate.birthAnchorUtc,
     "EVT: " + certificate.evtId,
     "OPC: " + certificate.opcId,
     "Audit: " + certificate.auditId,
@@ -1821,6 +1886,7 @@ function buildTemporalRuntimeCertificateAnswer(args: {
     "OPC persistence: " + certificate.opcPersistenceStatus,
     "Model: " + args.model + " / " + args.modelLevel,
     "Provider state: " + args.providerState,
+    "Seal: available in payload.temporalSeal and rendered outside the chat bubble.",
     "legalCertification=false"
   ].join("\n");
 }
@@ -1869,9 +1935,8 @@ function buildMiniOpcProofSummaryAnswer(args: {
     "- OPC verification: " + args.opc.verificationStatus,
     "- OPC persistence: " + stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN"),
     "- Chain hash: " + args.opc.chainHash,
-    "- UTC response time: " + String(temporalCertificate.utcResponseTime),
-    "- AI JOKER-C2 lifetime: " + String(temporalCertificate.aiJokerC2Lifetime),
-    "- Birth anchor: " + String(temporalCertificate.birthAnchorLocal),
+    "- Temporal proof: " + String(temporalCertificate.temporalProof),
+    "- Dual-Time Seal: exposed outside the chat body through payload.temporalSeal",
     "- Boundary: technical proof receipt only; legalCertification=false"
   ].join("\n");
 }
@@ -5636,6 +5701,64 @@ function buildTemporalRuntimeCertificate(args: {
 }
 
 
+function buildDualTimeMessageSeal(args: {
+  role: "MANUEL" | "JOKER_C2";
+  messageKind: "QUESTION" | "RESPONSE";
+  temporalFrame: RuntimeTemporalFrame;
+  sessionId: string;
+  contentHash: string;
+  evtId: string;
+  opcId: string;
+  auditId: string;
+  usageId: string;
+  technicalProof: "EVT_OPC_AUDIT_USAGE_LINKED" | "REQUEST_CAPTURED_FOR_EVT_OPC_AUDIT_USAGE";
+}): DualTimeMessageSeal {
+  const base = {
+    name: "JOKER-C2 Dual-Time Seal" as const,
+    status: "FROZEN_DUAL_TIME_SEAL" as const,
+    role: args.role,
+    messageKind: args.messageKind,
+    utcSnapshot: args.temporalFrame.now,
+    cyberneticLifetimeSnapshot: args.temporalFrame.lifeHuman,
+    cyberneticLifeSecondsSnapshot: args.temporalFrame.lifeSeconds,
+    birthAnchorLocale: args.temporalFrame.runtimeBirthLocal,
+    birthAnchorLocalTimezone: args.temporalFrame.runtimeBirthLocalTimezone,
+    birthUtc: args.temporalFrame.runtimeBirthUtc,
+    temporalProof: "UTC_SNAPSHOT_PLUS_CYBERNETIC_LIFETIME_SNAPSHOT" as const,
+    technicalProof: args.technicalProof,
+    evtId: args.evtId,
+    opcId: args.opcId,
+    auditId: args.auditId,
+    usageId: args.usageId,
+    contentHash: args.contentHash,
+    sessionId: args.sessionId,
+    legalCertification: false as const
+  };
+
+  return {
+    ...base,
+    dualTimeHash: "dual-time:" + sha256(base)
+  };
+}
+
+
+function buildAnswerWithExternalDualTimeSeal(answer: string, certificate: TemporalRuntimeCertificate): string {
+  const clean = stripExistingTemporalRuntimeCertificate(answer.trim());
+
+  if (clean.length > 0) {
+    return clean;
+  }
+
+  return [
+    "Risposta generata.",
+    "",
+    "Il Dual-Time Message Seal è stato allegato fuori dalla bolla chat con UTC/LIVE e CYBER/LIFE congelati sul messaggio.",
+    "EVT=" + certificate.evtId + " · OPC=" + certificate.opcId + " · Audit=" + certificate.auditId + " · Usage=" + certificate.usageId,
+    "legalCertification=false"
+  ].join("\n");
+}
+
+
 function appendTemporalRuntimeCertificate(answer: string, certificate: TemporalRuntimeCertificate): string {
   const clean = stripExistingTemporalRuntimeCertificate(answer.trim());
   const prefix = clean.length > 0 ? [clean, ""] : [];
@@ -5671,13 +5794,14 @@ function appendTemporalRuntimeCertificate(answer: string, certificate: TemporalR
 
 
 function stripExistingTemporalRuntimeCertificate(answer: string): string {
-  const markerIndex = answer.indexOf(TEMPORAL_RUNTIME_CERTIFICATE_NAME);
+  const lines = answer.split(/\r?\n/);
+  const markerIndex = lines.findIndex((line) => line.trim() === TEMPORAL_RUNTIME_CERTIFICATE_NAME);
 
   if (markerIndex < 0) {
     return answer.trim();
   }
 
-  return answer.slice(0, markerIndex).trim();
+  return lines.slice(0, markerIndex).join("\n").trim();
 }
 
 
