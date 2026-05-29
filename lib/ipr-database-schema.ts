@@ -1,67 +1,95 @@
-export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.4";
+export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.5";
+
 
 export const HBCE_DATABASE_SCHEMA_BOUNDARY =
-  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.4 introduces the canonical HBCE internal self-pilot SaaS seed for tenant, workspace, subscription, IPR subject, membership and account profile continuity. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
+  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.5 introduces memory_registered_events for named SaaS B2G event recall and preserves the canonical HBCE internal self-pilot SaaS seed for tenant, workspace, subscription, IPR subject, membership and account profile continuity. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
+
 
 export const HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY =
   "All HBCE database records remain technical-operational records. legal_certification must remain false unless a future legally recognized qualified trust service, public authority process or regulated certification workflow is explicitly integrated.";
 
+
 export const HBCE_DATABASE_PERSISTENCE_MODE = "DATABASE_PERSISTENT";
 
+
 export const HBCE_PROJECT_BIRTH_DATE = "2026-01-19";
+
 
 export const HBCE_PROJECT_BIRTH_LABEL =
   "HBCE R&D / AI JOKER-C2 project birth date";
 
+
 export const HBCE_MONTHLY_REFERENCE = "UP-MESE-4";
+
 
 export const HBCE_CURRENT_OPERATIONAL_EVT = "UP-EVT-0016";
 
+
 export const HBCE_CURRENT_OPERATIONAL_AI_EVT = "UP-EVT-0016-AI";
+
 
 export const HBCE_CURRENT_OPERATIONAL_CYCLE = "UP-CANONICO";
 
+
 export const HBCE_CURRENT_EVENT_FAMILY = "UP-EVT";
+
 
 export const HBCE_TARGET_RELEASE = "SaaS Core v0.1";
 
+
 export const HBCE_TARGET_CHECKPOINT_DATE = "2026-06-19T15:30:00+02:00";
+
 
 export const HBCE_TARGET_CYCLE = "UP-MESE-5";
 
+
 export const HBCE_SELF_PILOT_TENANT_ID = "HBCE-TENANT-SELF-PILOT";
 
+
 export const HBCE_SELF_PILOT_TENANT_SLUG = "hbce-self-pilot";
+
 
 export const HBCE_SELF_PILOT_TENANT_NAME =
   "HERMETICUM B.C.E. S.r.l. - Internal R&D Self-Pilot";
 
+
 export const HBCE_SELF_PILOT_WORKSPACE_ID = "HBCE-WORKSPACE-RND";
 
+
 export const HBCE_SELF_PILOT_WORKSPACE_SLUG = "rnd-saas-core";
+
 
 export const HBCE_SELF_PILOT_WORKSPACE_NAME =
   "HBCE R&D SaaS Core Workspace";
 
+
 export const HBCE_SELF_PILOT_SUBSCRIPTION_ID = "HBCE-SUB-SAAS-CORE-V01";
+
 
 export const HBCE_SELF_PILOT_SUBSCRIPTION_TIER = "IPR";
 
+
 export const HBCE_SELF_PILOT_ACCOUNT_ID = "HBCE-ACCOUNT-MANUEL-SELF-PILOT";
+
 
 export const HBCE_SELF_PILOT_MEMBERSHIP_ID =
   "HBCE-MEMBER-MANUEL-SELF-PILOT";
 
+
 export const HBCE_SELF_PILOT_HUMAN_IPR =
   "IPR-88505FE91013DCFE97C56ED1";
 
+
 export const HBCE_SELF_PILOT_ENTITY = "Manuel Coletta";
+
 
 export const HBCE_SELF_PILOT_CERTIFICATE_ID =
   "HBCE-CERT-4591712414205BC5F3A42894";
 
+
 export const HBCE_SELF_PILOT_CARD_SERIAL =
   "IPR-CARD-88505FE91013DCFE97C56ED1";
+
 
 export const HBCE_DATABASE_SCHEMA_TABLES = [
   "hbce_schema_migrations",
@@ -76,6 +104,7 @@ export const HBCE_DATABASE_SCHEMA_TABLES = [
   "chat_threads",
   "chat_messages",
   "memory_records",
+  "memory_registered_events",
   "evt_records",
   "opc_proofs",
   "runtime_audit_logs",
@@ -83,8 +112,10 @@ export const HBCE_DATABASE_SCHEMA_TABLES = [
   "matrix_transformative_memory"
 ] as const;
 
+
 export type HbceDatabaseSchemaTable =
   (typeof HBCE_DATABASE_SCHEMA_TABLES)[number];
+
 
 export type HbceDatabaseSchemaDefinition = {
   version: typeof HBCE_DATABASE_SCHEMA_VERSION;
@@ -120,6 +151,7 @@ export type HbceDatabaseSchemaDefinition = {
   sql: readonly string[];
 };
 
+
 export const HBCE_DATABASE_SCHEMA_SQL: readonly string[] = [
   `
 CREATE TABLE IF NOT EXISTS hbce_schema_migrations (
@@ -132,6 +164,7 @@ CREATE TABLE IF NOT EXISTS hbce_schema_migrations (
     CHECK (legal_certification = false)
 );
 `.trim(),
+
 
   `
 CREATE TABLE IF NOT EXISTS saas_tenants (
@@ -148,6 +181,7 @@ CREATE TABLE IF NOT EXISTS saas_tenants (
     CHECK (legal_certification = false)
 );
 `.trim(),
+
 
   `
 CREATE TABLE IF NOT EXISTS ipr_subjects (
@@ -166,6 +200,7 @@ CREATE TABLE IF NOT EXISTS ipr_subjects (
 );
 `.trim(),
 
+
   `
 CREATE TABLE IF NOT EXISTS saas_workspaces (
   workspace_id TEXT PRIMARY KEY,
@@ -182,6 +217,7 @@ CREATE TABLE IF NOT EXISTS saas_workspaces (
     CHECK (legal_certification = false)
 );
 `.trim(),
+
 
   `
 CREATE TABLE IF NOT EXISTS saas_workspace_memberships (
@@ -200,6 +236,7 @@ CREATE TABLE IF NOT EXISTS saas_workspace_memberships (
     CHECK (legal_certification = false)
 );
 `.trim(),
+
 
   `
 CREATE TABLE IF NOT EXISTS subscriptions (
@@ -233,6 +270,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 );
 `.trim(),
 
+
   `
 CREATE TABLE IF NOT EXISTS ipr_auth_credentials (
   human_ipr TEXT PRIMARY KEY,
@@ -256,6 +294,7 @@ CREATE TABLE IF NOT EXISTS ipr_auth_credentials (
 );
 `.trim(),
 
+
   `
 CREATE TABLE IF NOT EXISTS ipr_sessions (
   session_id TEXT PRIMARY KEY,
@@ -278,6 +317,7 @@ CREATE TABLE IF NOT EXISTS ipr_sessions (
     CHECK (legal_certification = false)
 );
 `.trim(),
+
 
   `
 CREATE TABLE IF NOT EXISTS ipr_account_profiles (
@@ -311,6 +351,7 @@ CREATE TABLE IF NOT EXISTS ipr_account_profiles (
 );
 `.trim(),
 
+
   `
 CREATE TABLE IF NOT EXISTS chat_threads (
   thread_id TEXT PRIMARY KEY,
@@ -335,6 +376,7 @@ CREATE TABLE IF NOT EXISTS chat_threads (
     CHECK (legal_certification = false)
 );
 `.trim(),
+
 
   `
 CREATE TABLE IF NOT EXISTS chat_messages (
@@ -362,6 +404,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 );
 `.trim(),
 
+
   `
 CREATE TABLE IF NOT EXISTS memory_records (
   memory_id TEXT PRIMARY KEY,
@@ -388,6 +431,34 @@ CREATE TABLE IF NOT EXISTS memory_records (
     CHECK (legal_certification = false)
 );
 `.trim(),
+
+
+  `
+CREATE TABLE IF NOT EXISTS memory_registered_events (
+  registered_event_id TEXT PRIMARY KEY,
+  tenant_id TEXT,
+  workspace_id TEXT,
+  subscription_id TEXT,
+  account_id TEXT,
+  human_ipr TEXT,
+  runtime_ipr TEXT DEFAULT 'IPR-AI-0001',
+  memory_id TEXT,
+  evt_id TEXT,
+  opc_proof_id TEXT,
+  audit_id TEXT,
+  usage_id TEXT,
+  event_name TEXT NOT NULL,
+  event_scope TEXT DEFAULT 'IPR_BOUND',
+  event_status TEXT DEFAULT 'ACTIVE',
+  continuity_hash TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  legal_certification BOOLEAN NOT NULL DEFAULT false,
+  CONSTRAINT memory_registered_events_legal_certification_false
+    CHECK (legal_certification = false)
+);
+`.trim(),
+
 
   `
 CREATE TABLE IF NOT EXISTS evt_records (
@@ -444,6 +515,7 @@ CREATE TABLE IF NOT EXISTS evt_records (
     CHECK (legal_certification = false)
 );
 `.trim(),
+
 
   `
 CREATE TABLE IF NOT EXISTS opc_proofs (
@@ -505,6 +577,7 @@ CREATE TABLE IF NOT EXISTS opc_proofs (
     CHECK (legal_certification = false)
 );
 `.trim(),
+
 
   `
 CREATE TABLE IF NOT EXISTS runtime_audit_logs (
@@ -575,6 +648,7 @@ CREATE TABLE IF NOT EXISTS runtime_audit_logs (
     CHECK (legal_certification = false)
 );
 `.trim(),
+
 
   `
 CREATE TABLE IF NOT EXISTS model_usage (
@@ -650,6 +724,7 @@ CREATE TABLE IF NOT EXISTS model_usage (
 );
 `.trim(),
 
+
   `
 CREATE TABLE IF NOT EXISTS matrix_transformative_memory (
   evaluation_id TEXT PRIMARY KEY,
@@ -694,865 +769,1068 @@ CREATE TABLE IF NOT EXISTS matrix_transformative_memory (
 );
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   DROP CONSTRAINT IF EXISTS evt_records_runtime_state_check;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   DROP CONSTRAINT IF EXISTS evt_records_runtime_decision_check;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   DROP CONSTRAINT IF EXISTS evt_records_event_family_check;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   DROP CONSTRAINT IF EXISTS runtime_audit_logs_runtime_state_check;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   DROP CONSTRAINT IF EXISTS runtime_audit_logs_runtime_decision_check;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   DROP CONSTRAINT IF EXISTS runtime_audit_logs_risk_level_check;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   DROP CONSTRAINT IF EXISTS runtime_audit_logs_human_oversight_check;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   DROP CONSTRAINT IF EXISTS runtime_audit_logs_saas_tier_check;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   DROP CONSTRAINT IF EXISTS model_usage_model_level_check;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   DROP CONSTRAINT IF EXISTS model_usage_saas_tier_check;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ALTER COLUMN runtime_state DROP NOT NULL;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ALTER COLUMN runtime_decision DROP NOT NULL;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS event_id TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS prev_event_id TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS prev TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS subscription_id TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS subject_ipr TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS opc_proof_id TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS audit_id TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS event_type TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS kind TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS state TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS decision TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS policy_decision TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS risk_level TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS memory_scope TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS evt_hash TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS event_hash TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS hash TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS chain_hash TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS input_hash TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS output_hash TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS policy_hash TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS memory_hash TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS anchors JSONB NOT NULL DEFAULT '{}'::jsonb;
 `.trim(),
+
 
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS trace JSONB NOT NULL DEFAULT '{}'::jsonb;
 `.trim(),
 
+
   `
 ALTER TABLE evt_records
   ADD COLUMN IF NOT EXISTS event_payload JSONB;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ALTER COLUMN input_hash DROP NOT NULL;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ALTER COLUMN output_hash DROP NOT NULL;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ALTER COLUMN decision_hash DROP NOT NULL;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ALTER COLUMN event_hash DROP NOT NULL;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ALTER COLUMN engine_hash DROP NOT NULL;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ALTER COLUMN identity_hash DROP NOT NULL;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ALTER COLUMN memory_hash DROP NOT NULL;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ALTER COLUMN chain_hash DROP NOT NULL;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS id TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS event_id TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS subscription_id TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS subject_ipr TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS kind TEXT DEFAULT 'OPERATIONAL_PROOF_RECORD';
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS proof_kind TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS receipt_type TEXT DEFAULT 'OPC_TECHNICAL_PROOF_RECEIPT';
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS provider TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS model TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS model_level TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS evt_hash TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS runtime_state TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS runtime_decision TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS risk_class TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS policy_reference TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS project_domain TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS hbce_module TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS identity JSONB NOT NULL DEFAULT '{}'::jsonb;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS engine JSONB NOT NULL DEFAULT '{}'::jsonb;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS event JSONB NOT NULL DEFAULT '{}'::jsonb;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS memory JSONB NOT NULL DEFAULT '{}'::jsonb;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS runtime JSONB NOT NULL DEFAULT '{}'::jsonb;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS proof JSONB NOT NULL DEFAULT '{}'::jsonb;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS audit JSONB NOT NULL DEFAULT '{}'::jsonb;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS verification JSONB NOT NULL DEFAULT '{}'::jsonb;
 `.trim(),
+
 
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS boundary JSONB NOT NULL DEFAULT '{}'::jsonb;
 `.trim(),
 
+
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS proof_payload JSONB;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS source TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS request_id TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS organization_ipr TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS evt_ref TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS opc_ref TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS opc_proof_hash TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS memory_ref TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS identity_state TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS organization_state TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS workspace_state TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS audit_state TEXT DEFAULT 'NOT_REQUIRED';
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS selected_model TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS model_routing_reason TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS tier_decision TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS access_decision TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS cyber_relevance TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS c2_decision TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS c2_allowed BOOLEAN;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS c2_fail_closed BOOLEAN;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS allowed BOOLEAN;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS memory_scope TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS memory_authority TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS persistence_mode TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS evt_required BOOLEAN;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS opc_required BOOLEAN;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS audit_required BOOLEAN;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS input_hash TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS output_hash TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS decision_hash TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS policy_hash TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS reason TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE runtime_audit_logs
   ADD COLUMN IF NOT EXISTS audit_payload JSONB;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ALTER COLUMN model DROP NOT NULL;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ALTER COLUMN model_level DROP NOT NULL;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ALTER COLUMN saas_tier DROP NOT NULL;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ALTER COLUMN usage_hash DROP NOT NULL;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS source TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS organization_ipr TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS request_id TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS evt_ref TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS opc_ref TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS opc_proof_hash TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS selected_model TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS model_routing_reason TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS risk_level TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS runtime_decision TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS audit_state TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS operational_value TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS cyber_relevance TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS c2_boundary TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS proof_requirement TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS evt_required BOOLEAN;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS opc_required BOOLEAN;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS audit_required BOOLEAN;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS cached_input_tokens INTEGER DEFAULT 0;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS reasoning_tokens INTEGER DEFAULT 0;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS estimated_cost_units NUMERIC DEFAULT 0;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS accounting_mode TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS allowed BOOLEAN;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS fail_closed BOOLEAN NOT NULL DEFAULT false;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS persistence_mode TEXT;
 `.trim(),
+
 
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS reason TEXT;
 `.trim(),
 
+
   `
 ALTER TABLE model_usage
   ADD COLUMN IF NOT EXISTS usage_payload JSONB;
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_saas_tenants_slug
   ON saas_tenants(tenant_slug);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_saas_workspaces_tenant_slug
   ON saas_workspaces(tenant_id, workspace_slug);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant_status
   ON subscriptions(tenant_id, status);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_subscriptions_workspace_status
   ON subscriptions(workspace_id, status);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_saas_workspace_memberships_human_ipr
   ON saas_workspace_memberships(human_ipr);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_ipr_sessions_human_ipr
   ON ipr_sessions(human_ipr);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_ipr_sessions_token_hash
   ON ipr_sessions(token_hash);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_ipr_account_profiles_account_id
   ON ipr_account_profiles(account_id);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_ipr_account_profiles_tenant_workspace
   ON ipr_account_profiles(tenant_id, workspace_id);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_chat_threads_human_ipr_updated_at
   ON chat_threads(human_ipr, updated_at DESC);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_chat_threads_workspace_updated_at
   ON chat_threads(workspace_id, updated_at DESC);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_chat_messages_thread_created_at
   ON chat_messages(thread_id, created_at ASC);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_memory_records_memory_key_hash
   ON memory_records(memory_key_hash);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_memory_records_human_ipr_updated_at
   ON memory_records(human_ipr, updated_at DESC);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_memory_records_tenant_workspace_updated_at
   ON memory_records(tenant_id, workspace_id, updated_at DESC);
 `.trim(),
 
+
+  `
+CREATE INDEX IF NOT EXISTS idx_memory_registered_events_human_ipr_created_at
+  ON memory_registered_events(human_ipr, created_at DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_memory_registered_events_evt_id
+  ON memory_registered_events(evt_id);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_memory_registered_events_workspace_created_at
+  ON memory_registered_events(tenant_id, workspace_id, created_at DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_memory_registered_events_event_name
+  ON memory_registered_events(event_name);
+`.trim(),
+
+
+  `
+CREATE UNIQUE INDEX IF NOT EXISTS idx_memory_registered_events_scope_name_uidx
+  ON memory_registered_events(tenant_id, workspace_id, human_ipr, event_name);
+`.trim(),
+
+
   `
 CREATE INDEX IF NOT EXISTS idx_evt_records_evt_hash
   ON evt_records(evt_hash);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_evt_records_event_hash
   ON evt_records(event_hash);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_evt_records_chain_hash
   ON evt_records(chain_hash);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_evt_records_human_ipr_created_at
   ON evt_records(human_ipr, created_at DESC);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_evt_records_session_id_created_at
   ON evt_records(session_id, created_at DESC);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_evt_records_workspace_created_at
   ON evt_records(workspace_id, created_at DESC);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_evt_records_event_family_cycle
   ON evt_records(event_family, cycle);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_opc_proofs_evt_id
   ON opc_proofs(evt_id);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_opc_proofs_human_ipr_created_at
   ON opc_proofs(human_ipr, created_at DESC);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_opc_proofs_workspace_created_at
   ON opc_proofs(workspace_id, created_at DESC);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_opc_proofs_chain_hash
   ON opc_proofs(chain_hash);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_opc_proofs_persistence_mode
   ON opc_proofs(persistence_mode, persistence_status);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_runtime_audit_logs_human_ipr_created_at
   ON runtime_audit_logs(human_ipr, created_at DESC);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_runtime_audit_logs_workspace_created_at
   ON runtime_audit_logs(workspace_id, created_at DESC);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_runtime_audit_logs_evt_id
   ON runtime_audit_logs(evt_id);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_runtime_audit_logs_risk_decision
   ON runtime_audit_logs(risk_level, runtime_decision);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_model_usage_human_ipr_created_at
   ON model_usage(human_ipr, created_at DESC);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_model_usage_workspace_created_at
   ON model_usage(workspace_id, created_at DESC);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_model_usage_subscription_created_at
   ON model_usage(subscription_id, created_at DESC);
 `.trim(),
+
 
   `
 CREATE INDEX IF NOT EXISTS idx_model_usage_model_level
   ON model_usage(model, model_level);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_matrix_transformative_memory_human_ipr_created_at
   ON matrix_transformative_memory(human_ipr, created_at DESC);
 `.trim(),
 
+
   `
 CREATE INDEX IF NOT EXISTS idx_matrix_transformative_memory_workspace_created_at
   ON matrix_transformative_memory(workspace_id, created_at DESC);
 `.trim(),
+
 
   `
 INSERT INTO saas_tenants (
@@ -1590,6 +1868,7 @@ ON CONFLICT (tenant_id) DO UPDATE SET
   legal_certification = false;
 `.trim(),
 
+
   `
 INSERT INTO ipr_subjects (
   human_ipr,
@@ -1626,6 +1905,7 @@ ON CONFLICT (human_ipr) DO UPDATE SET
   updated_at = now(),
   legal_certification = false;
 `.trim(),
+
 
   `
 INSERT INTO saas_workspaces (
@@ -1667,6 +1947,7 @@ ON CONFLICT (workspace_id) DO UPDATE SET
   legal_certification = false;
 `.trim(),
 
+
   `
 INSERT INTO saas_workspace_memberships (
   membership_id,
@@ -1703,6 +1984,7 @@ ON CONFLICT (workspace_id, human_ipr) DO UPDATE SET
   updated_at = now(),
   legal_certification = false;
 `.trim(),
+
 
   `
 INSERT INTO subscriptions (
@@ -1765,6 +2047,7 @@ ON CONFLICT (subscription_id) DO UPDATE SET
   updated_at = now(),
   legal_certification = false;
 `.trim(),
+
 
   `
 INSERT INTO ipr_account_profiles (
@@ -1849,6 +2132,7 @@ ON CONFLICT (human_ipr) DO UPDATE SET
   legal_certification = false;
 `.trim(),
 
+
   `
 INSERT INTO hbce_schema_migrations (
   version,
@@ -1857,8 +2141,8 @@ INSERT INTO hbce_schema_migrations (
   legal_certification
 )
 VALUES (
-  'HBCE-IPR-DB-v1.4',
-  'HBCE SaaS Core v0.1 persistent database schema with canonical internal self-pilot seed for HERMETICUM B.C.E. tenant, R&D workspace, IPR subscription, Manuel Coletta IPR account profile, workspace membership, IPR subject, memory, EVT, OPC, runtime audit logs, model usage and MATRIX Transformative Memory. Runtime persistence tables remain tolerant of MVP-stage nullable relational references and preserve reconstruction data in JSONB payloads.',
+  'HBCE-IPR-DB-v1.5',
+  'HBCE SaaS Core v0.1 persistent database schema with registered memory events and canonical internal self-pilot seed for HERMETICUM B.C.E. tenant, R&D workspace, IPR subscription, Manuel Coletta IPR account profile, workspace membership, IPR subject, memory, memory registered events, EVT, OPC, runtime audit logs, model usage and MATRIX Transformative Memory. Runtime persistence tables remain tolerant of MVP-stage nullable relational references and preserve reconstruction data in JSONB payloads.',
   jsonb_build_object(
     'projectBirthDate', '2026-01-19',
     'projectBirthLabel', 'HBCE R&D / AI JOKER-C2 project birth date',
@@ -1899,6 +2183,7 @@ VALUES (
       'chat_threads',
       'chat_messages',
       'memory_records',
+      'memory_registered_events',
       'evt_records',
       'opc_proofs',
       'runtime_audit_logs',
@@ -1911,6 +2196,7 @@ VALUES (
 ON CONFLICT (version) DO NOTHING;
 `.trim()
 ];
+
 
 export const HBCE_DATABASE_SCHEMA: HbceDatabaseSchemaDefinition = {
   version: HBCE_DATABASE_SCHEMA_VERSION,
@@ -1946,23 +2232,28 @@ export const HBCE_DATABASE_SCHEMA: HbceDatabaseSchemaDefinition = {
   sql: HBCE_DATABASE_SCHEMA_SQL
 };
 
+
 export function buildHbceDatabaseSchemaSql(): string {
   return HBCE_DATABASE_SCHEMA_SQL.join("\n\n");
 }
+
 
 export function getHbceDatabaseSchemaDefinition(): HbceDatabaseSchemaDefinition {
   return HBCE_DATABASE_SCHEMA;
 }
 
+
 export function getHbceDatabaseTableNames(): HbceDatabaseSchemaTable[] {
   return [...HBCE_DATABASE_SCHEMA_TABLES];
 }
+
 
 export function isHbceDatabaseSchemaTable(
   value: string
 ): value is HbceDatabaseSchemaTable {
   return HBCE_DATABASE_SCHEMA_TABLES.includes(value as HbceDatabaseSchemaTable);
 }
+
 
 export function getHbceDatabaseSaasCoreContext() {
   return {
@@ -1996,6 +2287,6 @@ export function getHbceDatabaseSaasCoreContext() {
     },
     legalCertification: false,
     statement:
-      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, memory, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. HBCE-IPR-DB-v1.4 seeds the internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
+      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, memory, registered memory events, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. HBCE-IPR-DB-v1.5 seeds the internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
   };
 }
