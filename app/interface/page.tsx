@@ -2359,10 +2359,9 @@ function formatUtcPlusTwoTemporalSnapshot(value: string): string {
   const hour = String(utcPlusTwo.getUTCHours()).padStart(2, "0");
   const minute = String(utcPlusTwo.getUTCMinutes()).padStart(2, "0");
   const second = String(utcPlusTwo.getUTCSeconds()).padStart(2, "0");
-  const milliseconds = String(utcPlusTwo.getUTCMilliseconds()).padStart(3, "0");
 
 
-  return `${year}-${month}-${day}T${hour}:${minute}:${second}.${milliseconds} Torino / Italia / Europa · UTC+2`;
+  return `${year}-${month}-${day} ${hour}:${minute}:${second} Torino / Italia / Europa · UTC+2`;
 }
 
 
