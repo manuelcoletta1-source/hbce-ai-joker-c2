@@ -86,6 +86,9 @@ type RuntimeStatus = {
   inputTokens: string;
   outputTokens: string;
   usageHash: string;
+  utcResponseTime: string;
+  temporalCertificateStatus: string;
+  temporalProof: string;
   runtimeBirth: string;
   runtimeBirthUtc: string;
   runtimeAge: string;
@@ -125,6 +128,24 @@ type IprSessionResponse = {
 
 
 const JOKER_SIGIL = "🜏";
+
+
+type JokerTemporalRuntimeSnapshot = {
+  utcResponseTime: string;
+  utcClock: string;
+  birthAnchorLocal: string;
+  birthAnchorTimezone: string;
+  birthAnchorUtc: string;
+  lifeHuman: string;
+  lifeSeconds: string;
+  certificateStatus: string;
+};
+
+
+const JOKER_C2_BIRTH_ANCHOR_LOCAL = "2026-01-19T15:30:00+01:00";
+const JOKER_C2_BIRTH_ANCHOR_TIMEZONE = "Europe/Rome";
+const JOKER_C2_BIRTH_ANCHOR_UTC = "2026-01-19T14:30:00.000Z";
+const JOKER_C2_BIRTH_ANCHOR_UTC_MS = Date.parse(JOKER_C2_BIRTH_ANCHOR_UTC);
 
 
 const CANONICAL_MANUEL_HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1";
@@ -189,6 +210,108 @@ const IMAGE_FILE_TYPES = new Set([
   "image/webp",
   "image/gif"
 ]);
+
+
+function utcMonthDays(year: number, monthIndex: number): number {
+  return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+}
+
+
+function calculateJokerLifetimeParts(now: Date): {
+  years: number;
+  months: number;
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+} {
+  const birth = new Date(JOKER_C2_BIRTH_ANCHOR_UTC);
+
+
+  if (!Number.isFinite(birth.getTime()) || now.getTime() <= birth.getTime()) {
+    return { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+  }
+
+
+  let years = now.getUTCFullYear() - birth.getUTCFullYear();
+  let months = now.getUTCMonth() - birth.getUTCMonth();
+  let days = now.getUTCDate() - birth.getUTCDate();
+  let hours = now.getUTCHours() - birth.getUTCHours();
+  let minutes = now.getUTCMinutes() - birth.getUTCMinutes();
+  let seconds = now.getUTCSeconds() - birth.getUTCSeconds();
+
+
+  if (seconds < 0) {
+    seconds += 60;
+    minutes -= 1;
+  }
+
+
+  if (minutes < 0) {
+    minutes += 60;
+    hours -= 1;
+  }
+
+
+  if (hours < 0) {
+    hours += 24;
+    days -= 1;
+  }
+
+
+  if (days < 0) {
+    months -= 1;
+    const previousMonthIndex = (now.getUTCMonth() + 11) % 12;
+    const previousMonthYear = previousMonthIndex === 11
+      ? now.getUTCFullYear() - 1
+      : now.getUTCFullYear();
+
+
+    days += utcMonthDays(previousMonthYear, previousMonthIndex);
+  }
+
+
+  if (months < 0) {
+    months += 12;
+    years -= 1;
+  }
+
+
+  return {
+    years: Math.max(0, years),
+    months: Math.max(0, months),
+    days: Math.max(0, days),
+    hours: Math.max(0, hours),
+    minutes: Math.max(0, minutes),
+    seconds: Math.max(0, seconds)
+  };
+}
+
+
+function formatJokerLifetime(parts: ReturnType<typeof calculateJokerLifetimeParts>): string {
+  return `${parts.years} years, ${parts.months} months, ${parts.days} days, ${parts.hours} hours, ${parts.minutes} minutes, ${parts.seconds} seconds`;
+}
+
+
+function buildJokerTemporalRuntimeSnapshot(now = new Date()): JokerTemporalRuntimeSnapshot {
+  const safeNow = Number.isFinite(now.getTime()) ? now : new Date();
+  const lifeSeconds = Math.max(
+    0,
+    Math.floor((safeNow.getTime() - JOKER_C2_BIRTH_ANCHOR_UTC_MS) / 1000)
+  );
+
+
+  return {
+    utcResponseTime: safeNow.toISOString(),
+    utcClock: safeNow.toISOString().replace(/\.\d{3}Z$/, "Z"),
+    birthAnchorLocal: `${JOKER_C2_BIRTH_ANCHOR_LOCAL} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}`,
+    birthAnchorTimezone: JOKER_C2_BIRTH_ANCHOR_TIMEZONE,
+    birthAnchorUtc: JOKER_C2_BIRTH_ANCHOR_UTC,
+    lifeHuman: formatJokerLifetime(calculateJokerLifetimeParts(safeNow)),
+    lifeSeconds: String(lifeSeconds),
+    certificateStatus: "ACTIVE_TEMPORAL_RUNTIME_CERTIFICATE"
+  };
+}
 
 
 function buildId(prefix: string): string {
@@ -1077,7 +1200,7 @@ function deriveB2GReadiness(status: Pick<RuntimeStatus,
   const hasPersistedLogs =
     status.auditStatus.toUpperCase().includes("PERSISTED") &&
     status.modelUsageStatus.toUpperCase().includes("PERSISTED");
-  const has2026Birth = status.runtimeBirth === "2026-01-19T15:30:00+01:00";
+  const has2026Birth = status.runtimeBirth === JOKER_C2_BIRTH_ANCHOR_LOCAL;
 
   if (hasRequiredIds && hasPersistentMemory && hasPersistedLogs && has2026Birth) {
     return "READY";
@@ -1549,44 +1672,92 @@ function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus
       ],
       "-"
     ),
+    utcResponseTime: first(
+      source,
+      [
+        ["temporalCertificate", "utcResponseTime"],
+        ["temporalCertificate", "utc"],
+        ["temporal", "utcResponseTime"],
+        ["temporal", "currentTimestamp"],
+        ["runtime", "temporal", "utcResponseTime"],
+        ["diagnostics", "temporal", "currentResponseTimestamp"],
+        ["diagnostics", "temporal", "currentTimestamp"]
+      ],
+      "-"
+    ),
+    temporalCertificateStatus: first(
+      source,
+      [
+        ["temporalCertificate", "status"],
+        ["temporal", "certificateStatus"],
+        ["runtime", "temporal", "certificateStatus"]
+      ],
+      "ACTIVE_TEMPORAL_RUNTIME_CERTIFICATE"
+    ),
+    temporalProof: first(
+      source,
+      [
+        ["temporalCertificate", "temporalProof"],
+        ["temporalCertificate", "proof"],
+        ["temporal", "temporalProof"],
+        ["runtime", "temporal", "temporalProof"]
+      ],
+      "EVT_OPC_AUDIT_USAGE_LINKED"
+    ),
     runtimeBirth: first(
       source,
       [
+        ["temporalCertificate", "birthAnchorLocal"],
+        ["temporalCertificate", "birthAnchor", "local"],
+        ["temporal", "birthAnchorLocal"],
         ["temporal", "runtimeBirth"],
+        ["runtime", "temporal", "birthAnchorLocal"],
         ["runtime", "temporal", "runtimeBirth"],
         ["continuity", "runtimeBirth"],
         ["identity", "projectBirth", "t"]
       ],
-      "-"
+      JOKER_C2_BIRTH_ANCHOR_LOCAL
     ),
     runtimeBirthUtc: first(
       source,
       [
+        ["temporalCertificate", "birthAnchorUtc"],
+        ["temporalCertificate", "birthAnchor", "utc"],
+        ["temporal", "birthAnchorUtc"],
         ["temporal", "runtimeBirthUtc"],
+        ["runtime", "temporal", "birthAnchorUtc"],
         ["runtime", "temporal", "runtimeBirthUtc"],
         ["diagnostics", "temporal", "runtimeBirthUtc"]
       ],
-      "-"
+      JOKER_C2_BIRTH_ANCHOR_UTC
     ),
     runtimeAge: first(
       source,
       [
+        ["temporalCertificate", "lifeHuman"],
+        ["temporalCertificate", "jokerLifetime"],
         ["temporal", "lifeHuman"],
+        ["temporal", "jokerLifetime"],
+        ["runtime", "temporal", "lifeHuman"],
         ["runtime", "runtimeAge"],
         ["continuity", "runtimeAge"],
         ["identity", "projectBirth", "runtimeAge"]
       ],
-      "-"
+      buildJokerTemporalRuntimeSnapshot().lifeHuman
     ),
     runtimeLifeSeconds: first(
       source,
       [
+        ["temporalCertificate", "lifeSeconds"],
+        ["temporalCertificate", "jokerLifeSeconds"],
         ["temporal", "lifeSeconds"],
+        ["temporal", "jokerLifeSeconds"],
+        ["runtime", "temporal", "lifeSeconds"],
         ["runtime", "runtimeLifeSeconds"],
         ["continuity", "runtimeLifeSeconds"],
         ["identity", "projectBirth", "runtimeLifeSeconds"]
       ],
-      "-"
+      buildJokerTemporalRuntimeSnapshot().lifeSeconds
     ),
     tenantId: first(
       source,
@@ -1930,6 +2101,7 @@ function MessageBubble({
             <StatusPill label="OPC" value={status.opc} />
             <StatusPill label="Audit" value={status.auditId} />
             <StatusPill label="Usage" value={status.modelUsageId} />
+            <StatusPill label="UTC" value={status.utcResponseTime} />
             <StatusPill label="Birth" value={status.runtimeBirth} />
             <StatusPill label="Age" value={status.runtimeAge} />
             <StatusPill label="B2G" value={status.b2gReadiness} />
@@ -1976,6 +2148,8 @@ function MessageBubble({
                   <MetricCard label="Accounting" value={status.accountingMode} />
                   <MetricCard label="Total tokens" value={status.totalTokens} />
                   <MetricCard label="Estimated cost minor" value={status.estimatedCostMinor} />
+                  <MetricCard label="UTC response time" value={status.utcResponseTime} />
+                  <MetricCard label="Temporal certificate" value={status.temporalCertificateStatus} />
                   <MetricCard label="Runtime birth" value={status.runtimeBirth} />
                   <MetricCard label="Runtime age" value={status.runtimeAge} />
                   <MetricCard label="Tenant" value={status.tenantId} />
@@ -2023,6 +2197,7 @@ export default function InterfacePage() {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [clockNow, setClockNow] = useState<Date>(() => new Date());
 
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -2065,6 +2240,19 @@ export default function InterfacePage() {
 
   const dashboardPayload = lastAssistantPayload || health;
   const dashboardStatus = getRuntimeStatus(dashboardPayload);
+  const liveTemporal = useMemo(() => buildJokerTemporalRuntimeSnapshot(clockNow), [clockNow]);
+  const effectiveRuntimeBirth = firstDisplayValue(
+    [dashboardStatus.runtimeBirth],
+    JOKER_C2_BIRTH_ANCHOR_LOCAL
+  );
+  const effectiveRuntimeBirthUtc = firstDisplayValue(
+    [dashboardStatus.runtimeBirthUtc],
+    JOKER_C2_BIRTH_ANCHOR_UTC
+  );
+  const effectiveTemporalCertificateStatus =
+    effectiveRuntimeBirth === JOKER_C2_BIRTH_ANCHOR_LOCAL
+      ? liveTemporal.certificateStatus
+      : "FAIL_TEMPORAL_ANCHOR";
 
 
   const sessionHumanIpr = getSessionHumanIpr(iprSession);
@@ -2240,6 +2428,16 @@ export default function InterfacePage() {
     refreshIprHandoff();
     void checkIprSession();
     void checkRuntime();
+  }, []);
+
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setClockNow(new Date());
+    }, 1000);
+
+
+    return () => window.clearInterval(intervalId);
   }, []);
 
 
@@ -2761,11 +2959,16 @@ export default function InterfacePage() {
 
 
   const temporalRows = [
-    { label: "Birth anchor", value: dashboardStatus.runtimeBirth },
-    { label: "Birth UTC", value: dashboardStatus.runtimeBirthUtc },
-    { label: "Runtime age", value: dashboardStatus.runtimeAge },
-    { label: "Life seconds", value: dashboardStatus.runtimeLifeSeconds },
-    { label: "2026-only", value: dashboardStatus.runtimeBirth === "2026-01-19T15:30:00+01:00" ? "PASS_2026_ONLY" : "FAIL_TEMPORAL_ANCHOR" }
+    { label: "UTC clock live", value: liveTemporal.utcClock },
+    { label: "UTC response time", value: dashboardStatus.utcResponseTime },
+    { label: "AI JOKER-C2 lifetime live", value: liveTemporal.lifeHuman },
+    { label: "Runtime age payload", value: dashboardStatus.runtimeAge },
+    { label: "Birth anchor locale", value: `${JOKER_C2_BIRTH_ANCHOR_LOCAL} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}` },
+    { label: "Birth UTC", value: effectiveRuntimeBirthUtc },
+    { label: "Life seconds live", value: liveTemporal.lifeSeconds },
+    { label: "Temporal proof", value: dashboardStatus.temporalProof },
+    { label: "Temporal certificate", value: effectiveTemporalCertificateStatus },
+    { label: "2026-only", value: effectiveRuntimeBirth === JOKER_C2_BIRTH_ANCHOR_LOCAL ? "PASS_2026_ONLY" : "FAIL_TEMPORAL_ANCHOR" }
   ];
 
 
@@ -2876,6 +3079,29 @@ export default function InterfacePage() {
             dashboard audit, model usage, model routing e boundary C2 Defense.
           </p>
           <code>legalCertification=false</code>
+
+
+          <div className="joker-temporal-clock" aria-label="JOKER-C2 Temporal Runtime Certificate">
+            <div className="joker-temporal-clock-head">
+              <span className="joker-kicker">JOKER-C2 Temporal Runtime Certificate</span>
+              <StatusPill value={effectiveTemporalCertificateStatus} />
+            </div>
+            <div className="joker-temporal-clock-main">
+              <span>UTC Clock</span>
+              <strong>{liveTemporal.utcClock}</strong>
+            </div>
+            <div className="joker-temporal-clock-grid">
+              <div>
+                <span>AI JOKER-C2 lifetime</span>
+                <strong>{liveTemporal.lifeHuman}</strong>
+              </div>
+              <div>
+                <span>Birth anchor</span>
+                <strong>{JOKER_C2_BIRTH_ANCHOR_LOCAL} {JOKER_C2_BIRTH_ANCHOR_TIMEZONE}</strong>
+              </div>
+            </div>
+            <em>UTC response time + lifetime + birth anchor locale · technical proof only · legalCertification=false</em>
+          </div>
         </div>
 
 
@@ -2891,7 +3117,9 @@ export default function InterfacePage() {
           <MetricCard label="Audit" value={dashboardStatus.auditId} />
           <MetricCard label="Usage" value={dashboardStatus.modelUsageId} />
           <MetricCard label="SaaS tier" value={saasTier} />
-          <MetricCard label="Birth anchor" value={dashboardStatus.runtimeBirth} />
+          <MetricCard label="UTC clock" value={liveTemporal.utcClock} />
+          <MetricCard label="AI JOKER-C2 lifetime" value={liveTemporal.lifeHuman} />
+          <MetricCard label="Birth anchor" value={`${JOKER_C2_BIRTH_ANCHOR_LOCAL} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}`} />
           <MetricCard label="Runtime age" value={dashboardStatus.runtimeAge} />
           <MetricCard label="B2G readiness" value={dashboardStatus.b2gReadiness} />
         </div>
@@ -3007,19 +3235,35 @@ export default function InterfacePage() {
         </div>
 
 
-        <div className="joker-panel">
+        <div className="joker-panel joker-temporal-panel">
           <div className="joker-panel-head">
             <div>
               <span className="joker-kicker">Temporal runtime</span>
-              <h2>2026-only continuity</h2>
+              <h2>Temporal Runtime Certificate</h2>
             </div>
-            <StatusPill value={dashboardStatus.runtimeBirth === "2026-01-19T15:30:00+01:00" ? "PASS_2026_ONLY" : "FAIL_TEMPORAL_ANCHOR"} />
+            <StatusPill value={effectiveTemporalCertificateStatus} />
           </div>
 
 
           <p>
-            La nascita runtime deve restare agganciata solo al 19/01/2026. Se qui ricompare un anno errato, il sistema sta barando peggio di un calendario ubriaco.
+            Ogni risposta viene legata a due coordinate: ora UTC effettiva e tempo di vita di AI JOKER-C2 calcolato dal birth anchor locale canonico. È prova tecnica temporale, non certificazione legale.
           </p>
+
+
+          <div className="joker-live-clock">
+            <div>
+              <span>UTC Clock</span>
+              <strong>{liveTemporal.utcClock}</strong>
+            </div>
+            <div>
+              <span>AI JOKER-C2 lifetime</span>
+              <strong>{liveTemporal.lifeHuman}</strong>
+            </div>
+            <div>
+              <span>Birth anchor locale</span>
+              <strong>{JOKER_C2_BIRTH_ANCHOR_LOCAL} {JOKER_C2_BIRTH_ANCHOR_TIMEZONE}</strong>
+            </div>
+          </div>
 
 
           <InfoList items={temporalRows} />
@@ -3570,6 +3814,115 @@ export default function InterfacePage() {
           border: 1px solid rgba(34, 211, 238, 0.2);
           border-radius: 10px;
           padding: 6px 8px;
+        }
+
+
+        .joker-temporal-clock,
+        .joker-live-clock {
+          margin-top: 18px;
+          padding: 14px;
+          border: 1px solid rgba(34, 211, 238, 0.24);
+          border-radius: 20px;
+          background:
+            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.14), transparent 38%),
+            linear-gradient(180deg, rgba(8, 47, 73, 0.32), rgba(15, 23, 42, 0.54));
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+
+        .joker-temporal-clock-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+        }
+
+
+        .joker-temporal-clock-main {
+          margin-top: 14px;
+          padding: 12px;
+          border-radius: 16px;
+          background: rgba(2, 6, 23, 0.42);
+          border: 1px solid rgba(148, 163, 184, 0.16);
+        }
+
+
+        .joker-temporal-clock-main span,
+        .joker-temporal-clock-grid span,
+        .joker-live-clock span {
+          display: block;
+          color: #67e8f9;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+
+
+        .joker-temporal-clock-main strong,
+        .joker-temporal-clock-grid strong,
+        .joker-live-clock strong {
+          display: block;
+          margin-top: 6px;
+          color: #f8fafc;
+          font-family:
+            ui-monospace,
+            SFMono-Regular,
+            Menlo,
+            Monaco,
+            Consolas,
+            "Liberation Mono",
+            "Courier New",
+            monospace;
+          font-size: 13px;
+          line-height: 1.42;
+          overflow-wrap: anywhere;
+        }
+
+
+        .joker-temporal-clock-main strong {
+          font-size: 18px;
+          letter-spacing: -0.02em;
+        }
+
+
+        .joker-temporal-clock-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 10px;
+          margin-top: 10px;
+        }
+
+
+        .joker-temporal-clock-grid div,
+        .joker-live-clock div {
+          min-width: 0;
+          padding: 11px;
+          border-radius: 14px;
+          border: 1px solid rgba(148, 163, 184, 0.14);
+          background: rgba(2, 6, 23, 0.34);
+        }
+
+
+        .joker-live-clock {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+
+        .joker-temporal-clock em {
+          display: block;
+          margin-top: 12px;
+          color: #94a3b8;
+          font-size: 11px;
+          font-style: normal;
+          line-height: 1.45;
+        }
+
+
+        .joker-temporal-panel {
+          border-color: rgba(34, 211, 238, 0.38);
         }
 
 
@@ -4134,7 +4487,8 @@ export default function InterfacePage() {
         @media (max-width: 860px) {
           .joker-hero-grid,
           .joker-details-grid,
-          .joker-prompt-grid {
+          .joker-prompt-grid,
+          .joker-temporal-clock-grid {
             grid-template-columns: 1fr;
           }
         }
