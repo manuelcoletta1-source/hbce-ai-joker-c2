@@ -19,7 +19,9 @@
  * They do not create legal certification.
  */
 
+
 import { createHash, randomUUID } from "node:crypto";
+
 
 import {
   HBCE_CORE,
@@ -46,16 +48,19 @@ import {
   type SaasTierPolicyResult
 } from "./saas-tier-types";
 
+
 import {
   isHbceDatabaseAvailable,
   isHbceDatabaseConfigured,
   queryHbceDatabase
 } from "./ipr-database";
 
+
 import type { RuntimeAuditLogRecord } from "./runtime-audit-log";
 import type { RuntimeRiskPolicyResult } from "./runtime-risk-policy";
 import type { C2DefensePolicyResult } from "./c2-defense-policy";
 import type { HbceDatabaseQueryRow } from "./ipr-database";
+
 
 export type ModelUsageLogSource =
   | "API_CHAT"
@@ -65,13 +70,16 @@ export type ModelUsageLogSource =
   | "DEMO_SCRIPT"
   | "SYSTEM";
 
+
 export type ModelUsageProvider = "OPENAI" | "LOCAL" | "MOCK" | "UNKNOWN";
+
 
 export type ModelUsageAccountingMode =
   | "TOKENS_REPORTED"
   | "TOKENS_ESTIMATED"
   | "USAGE_NOT_AVAILABLE"
   | "BLOCKED_NO_USAGE";
+
 
 export type ModelUsageRecordStatus =
   | "RECORDED"
@@ -81,14 +89,17 @@ export type ModelUsageRecordStatus =
   | "DATABASE_PERSISTENT_TARGET"
   | "PERSISTED";
 
+
 export type ModelUsageLogPersistenceBoundary =
   | "PROCESS_MEMORY_MVP"
   | "DATABASE_PERSISTENT_TARGET"
   | "DATABASE_PERSISTENT"
   | "FAIL_CLOSED_PERSISTENCE";
 
+
 export type ModelUsageRuntimeModelLevel = ModelLevel | string;
 export type ModelUsageRuntimeProofRequirement = ProofRequirement | string;
+
 
 export type ModelUsagePersistenceResult = {
   ok: boolean;
@@ -103,6 +114,7 @@ export type ModelUsagePersistenceResult = {
   legalCertification: false;
 };
 
+
 export type ModelUsageTokenInput = {
   inputTokens?: number | null;
   outputTokens?: number | null;
@@ -111,15 +123,18 @@ export type ModelUsageTokenInput = {
   reasoningTokens?: number | null;
 };
 
+
 export type ModelUsageLogInput = {
   source?: ModelUsageLogSource;
   provider?: ModelUsageProvider | string;
+
 
   usageId?: string;
   timestamp?: string;
   sessionId?: string;
   requestId?: string;
   auditId?: string | null;
+
 
   runtimeEntity?: string;
   runtimeIpr?: string;
@@ -128,30 +143,45 @@ export type ModelUsageLogInput = {
   tenantId?: string;
   workspaceId?: string;
   subscriptionId?: string;
+  accountId?: string;
   threadId?: string;
+
+  memoryRef?: string | null;
+  memoryHash?: string | null;
+  registeredEventId?: string | null;
+  registeredEventName?: string | null;
+  registeredEventHash?: string | null;
+  previousEvtRef?: string | null;
+  previousOpcRef?: string | null;
+
 
   saasTier?: SaasTier | string;
   selectedModel?: string;
   modelLevel?: ModelUsageRuntimeModelLevel;
   modelRoutingReason?: string;
 
+
   riskLevel?: RuntimeRiskLevel | string;
   runtimeDecision?: RuntimeDecision | string;
   auditState?: RuntimeAuditState | string;
+
 
   operationalValue?: OperationalValueLevel | string;
   cyberRelevance?: CyberRelevance | string;
   c2Boundary?: C2BoundaryState | string;
   proofRequirement?: ModelUsageRuntimeProofRequirement;
 
+
   evtRequired?: boolean;
   opcRequired?: boolean;
   auditRequired?: boolean;
+
 
   evtRef?: string | null;
   evtHash?: string | null;
   opcRef?: string | null;
   opcProofHash?: string | null;
+
 
   inputTokens?: number | null;
   outputTokens?: number | null;
@@ -159,27 +189,33 @@ export type ModelUsageLogInput = {
   cachedInputTokens?: number | null;
   reasoningTokens?: number | null;
 
+
   estimatedCostUnits?: number | null;
   estimatedCostMinor?: number | null;
   currency?: string | null;
   valueWeight?: number | null;
 
+
   blocked?: boolean;
   failClosed?: boolean;
   allowed?: boolean;
 
+
   persistenceMode?: RuntimePersistenceMode;
   persistenceBoundary?: ModelUsageLogPersistenceBoundary;
+
 
   reason?: string;
   boundary?: string;
 };
+
 
 export type ModelUsageLogRecord = {
   usageId: string;
   timestamp: string;
   source: ModelUsageLogSource;
   provider: ModelUsageProvider;
+
 
   project: typeof HBCE_SAAS_PROJECT;
   targetRelease: typeof HBCE_SAAS_TARGET_RELEASE;
@@ -189,9 +225,11 @@ export type ModelUsageLogRecord = {
   organization: typeof HBCE_ORGANIZATION;
   core: typeof HBCE_CORE;
 
+
   sessionId: string;
   requestId: string;
   auditId: string | null;
+
 
   runtimeEntity: string;
   runtimeIpr: string;
@@ -200,30 +238,45 @@ export type ModelUsageLogRecord = {
   tenantId: string;
   workspaceId: string;
   subscriptionId: string;
+  accountId: string;
   threadId: string;
+
+  memoryRef: string | null;
+  memoryHash: string | null;
+  registeredEventId: string | null;
+  registeredEventName: string | null;
+  registeredEventHash: string | null;
+  previousEvtRef: string | null;
+  previousOpcRef: string | null;
+
 
   saasTier: SaasTier | string;
   selectedModel: string;
   modelLevel: ModelUsageRuntimeModelLevel;
   modelRoutingReason: string;
 
+
   riskLevel: RuntimeRiskLevel | string;
   runtimeDecision: RuntimeDecision | string;
   auditState: RuntimeAuditState | string;
+
 
   operationalValue: OperationalValueLevel | string;
   cyberRelevance: CyberRelevance | string;
   c2Boundary: C2BoundaryState | string;
   proofRequirement: ModelUsageRuntimeProofRequirement;
 
+
   evtRequired: boolean;
   opcRequired: boolean;
   auditRequired: boolean;
+
 
   evtRef: string | null;
   evtHash: string | null;
   opcRef: string | null;
   opcProofHash: string | null;
+
 
   inputTokens: number | null;
   outputTokens: number | null;
@@ -231,26 +284,32 @@ export type ModelUsageLogRecord = {
   cachedInputTokens: number | null;
   reasoningTokens: number | null;
 
+
   accountingMode: ModelUsageAccountingMode;
   estimatedCostUnits: number;
   estimatedCostMinor: number;
   currency: string;
   valueWeight: number;
 
+
   blocked: boolean;
   failClosed: boolean;
   allowed: boolean;
 
+
   persistenceMode: RuntimePersistenceMode;
   persistenceBoundary: ModelUsageLogPersistenceBoundary;
+
 
   status: ModelUsageRecordStatus;
   reason: string;
   boundary: string;
 
+
   legalCertification: false;
   usageHash: string;
 };
+
 
 export type ModelUsageLogListOptions = {
   limit?: number;
@@ -262,6 +321,7 @@ export type ModelUsageLogListOptions = {
   c2Only?: boolean;
   includeBlocked?: boolean;
 };
+
 
 export type ModelUsageLogSummary = {
   totalRecords: number;
@@ -281,6 +341,7 @@ export type ModelUsageLogSummary = {
   boundary: string;
 };
 
+
 export type ModelUsageLogHealth = {
   configured: true;
   project: string;
@@ -297,16 +358,19 @@ export type ModelUsageLogHealth = {
   boundary: string;
 };
 
+
 type ModelUsageDatabaseRow = HbceDatabaseQueryRow & {
   usage_id?: string;
   usage_hash?: string;
 };
+
 
 type ModelUsageDatabasePayload = {
   usageId: string;
   tenantId: string | null;
   workspaceId: string | null;
   subscriptionId: string | null;
+  accountId: string | null;
   humanIpr: string | null;
   runtimeIpr: string;
   sessionId: string | null;
@@ -314,6 +378,12 @@ type ModelUsageDatabasePayload = {
   evtId: string | null;
   opcProofId: string | null;
   auditId: string | null;
+  memoryId: string | null;
+  registeredEventId: string | null;
+  registeredEventName: string | null;
+  registeredEventHash: string | null;
+  previousEvtId: string | null;
+  previousOpcProofId: string | null;
   provider: string;
   model: string;
   modelLevel: string | null;
@@ -328,78 +398,100 @@ type ModelUsageDatabasePayload = {
   payloadJson: string;
 };
 
+
 const MAX_PROCESS_MEMORY_MODEL_USAGE_RECORDS = 500;
 
+
 const modelUsageProcessMemory: ModelUsageLogRecord[] = [];
+
 
 export function nowIso(): string {
   return new Date().toISOString();
 }
+
 
 export function normalizeUsageString(value: unknown, fallback: string): string {
   if (typeof value !== "string") {
     return fallback;
   }
 
+
   const trimmed = value.trim();
+
 
   return trimmed || fallback;
 }
+
 
 export function normalizeNullableUsageString(value: unknown): string | null {
   if (typeof value !== "string") {
     return null;
   }
 
+
   const trimmed = value.trim();
+
 
   return trimmed || null;
 }
+
 
 export function normalizeUsageNumber(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return null;
   }
 
+
   if (value < 0) {
     return null;
   }
 
+
   return Math.round(value);
 }
+
 
 function normalizeUsageFloat(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return null;
   }
 
+
   if (value < 0) {
     return null;
   }
 
+
   return Number(value.toFixed(4));
 }
+
 
 function normalizeCurrency(value: unknown): string {
   const normalized = normalizeUsageString(value, "EUR").toUpperCase();
 
+
   return normalized.length === 3 ? normalized : "EUR";
 }
+
 
 export function stableUsageStringify(value: unknown): string {
   if (value === null || value === undefined) {
     return String(value);
   }
 
+
   if (typeof value !== "object") {
     return JSON.stringify(value);
   }
+
 
   if (Array.isArray(value)) {
     return `[${value.map((item) => stableUsageStringify(item)).join(",")}]`;
   }
 
+
   const record = value as Record<string, unknown>;
+
 
   return `{${Object.keys(record)
     .sort()
@@ -407,25 +499,31 @@ export function stableUsageStringify(value: unknown): string {
     .join(",")}}`;
 }
 
+
 export function sha256Usage(value: unknown): string {
   return createHash("sha256").update(stableUsageStringify(value)).digest("hex");
 }
+
 
 export function buildModelUsageId(timestamp: string = nowIso()): string {
   const compactTimestamp = timestamp.replace(/\D/g, "").slice(0, 14);
   const suffix = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
 
+
   return `USAGE-${compactTimestamp}-${suffix}`;
 }
+
 
 function safeDatabaseError(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
 
+
   if (typeof error === "string") {
     return error;
   }
+
 
   try {
     return JSON.stringify(error);
@@ -434,12 +532,15 @@ function safeDatabaseError(error: unknown): string {
   }
 }
 
+
 function normalizeRuntimeDecisionText(value: RuntimeDecision | string | undefined): string {
   return String(value || "UNKNOWN").toUpperCase();
 }
 
+
 function normalizeDatabaseRuntimeDecision(value: RuntimeDecision | string | undefined): string {
   const normalized = String(value || "ALLOW").toUpperCase();
+
 
   if (
     normalized === "ALLOW" ||
@@ -449,6 +550,7 @@ function normalizeDatabaseRuntimeDecision(value: RuntimeDecision | string | unde
   ) {
     return normalized;
   }
+
 
   if (
     normalized === "ACCESS_GRANTED" ||
@@ -460,6 +562,7 @@ function normalizeDatabaseRuntimeDecision(value: RuntimeDecision | string | unde
     return "ALLOW";
   }
 
+
   if (
     normalized === "ACCESS_LIMITED" ||
     normalized === "SERVER_VALIDATION_REQUIRED" ||
@@ -470,6 +573,7 @@ function normalizeDatabaseRuntimeDecision(value: RuntimeDecision | string | unde
     return "ESCALATE";
   }
 
+
   if (
     normalized === "DENY" ||
     normalized === "DENIED" ||
@@ -479,11 +583,14 @@ function normalizeDatabaseRuntimeDecision(value: RuntimeDecision | string | unde
     return "BLOCK";
   }
 
+
   return "ESCALATE";
 }
 
+
 function normalizeDatabaseRiskLevel(value: RuntimeRiskLevel | string | undefined): string {
   const normalized = String(value || "LOW").toUpperCase();
+
 
   if (
     normalized === "LOW" ||
@@ -494,15 +601,19 @@ function normalizeDatabaseRiskLevel(value: RuntimeRiskLevel | string | undefined
     return normalized;
   }
 
+
   return "LOW";
 }
+
 
 function normalizeDatabaseModelLevel(value: ModelUsageRuntimeModelLevel | undefined): string | null {
   const normalized = String(value || "").toUpperCase();
 
+
   if (!normalized || normalized === "UNKNOWN" || normalized === "NOT_SELECTED") {
     return null;
   }
+
 
   if (
     normalized === "BASE" ||
@@ -516,31 +627,39 @@ function normalizeDatabaseModelLevel(value: ModelUsageRuntimeModelLevel | undefi
     return normalized;
   }
 
+
   if (normalized === "ADVANCED") {
     return "DEEP";
   }
+
 
   if (normalized === "C2_ESCALATED" || normalized === "C2_DEFENSE") {
     return "C2";
   }
 
+
   if (normalized === "GOVERNANCE" || normalized === "PRO") {
     return "ENHANCED";
   }
+
 
   if (normalized === "BLOCKED") {
     return null;
   }
 
+
   return "STANDARD";
 }
+
 
 function normalizeDatabaseSaasTier(value: SaasTier | string | undefined): string | null {
   const normalized = String(value || "").toUpperCase();
 
+
   if (!normalized || normalized === "UNKNOWN") {
     return null;
   }
+
 
   if (
     normalized === "BASE" ||
@@ -553,57 +672,73 @@ function normalizeDatabaseSaasTier(value: SaasTier | string | undefined): string
     return normalized;
   }
 
+
   return "BASE";
 }
 
+
 function providerToDatabaseValue(provider: ModelUsageProvider | string): string {
   const normalized = String(provider || "UNKNOWN").toUpperCase();
+
 
   if (normalized === "OPENAI") {
     return "openai";
   }
 
+
   if (normalized === "LOCAL" || normalized === "LOCAL_FALLBACK") {
     return "local";
   }
+
 
   if (normalized === "MOCK") {
     return "mock";
   }
 
+
   return "unknown";
 }
 
+
 function normalizeProvider(value: ModelUsageProvider | string | undefined): ModelUsageProvider {
   const normalized = String(value || "OPENAI").toUpperCase();
+
 
   if (normalized === "OPENAI") {
     return "OPENAI";
   }
 
+
   if (normalized === "LOCAL" || normalized === "LOCAL_FALLBACK") {
     return "LOCAL";
   }
+
 
   if (normalized === "MOCK") {
     return "MOCK";
   }
 
+
   return "UNKNOWN";
 }
+
 
 function nullableDatabaseText(value: string | null | undefined): string | null {
   if (typeof value !== "string") {
     return null;
   }
 
+
   const trimmed = value.trim();
+
 
   if (!trimmed) {
     return null;
   }
 
+
   const normalized = trimmed.toUpperCase();
+
 
   if (
     normalized === "NONE" ||
@@ -612,6 +747,7 @@ function nullableDatabaseText(value: string | null | undefined): string | null {
     normalized === "NO_TENANT" ||
     normalized === "NO_WORKSPACE" ||
     normalized === "NO_SUBSCRIPTION" ||
+    normalized === "NO_ACCOUNT" ||
     normalized === "NO_ORGANIZATION_IPR" ||
     normalized === "NOT_VERIFIED" ||
     normalized === "NO_CERTIFICATE" ||
@@ -623,30 +759,38 @@ function nullableDatabaseText(value: string | null | undefined): string | null {
     return null;
   }
 
+
   return trimmed;
 }
 
+
 function normalizeDatabaseRoutingReason(value: string): string | null {
   const trimmed = value.trim();
+
 
   if (!trimmed || trimmed === "No model routing reason provided.") {
     return null;
   }
 
+
   return trimmed;
 }
+
 
 function normalizeDatabaseTokenValue(value: number | null): number {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
     return 0;
   }
 
+
   return Math.round(value);
 }
+
 
 function shouldWriteRelationalColumns(record: ModelUsageLogRecord): boolean {
   return record.persistenceBoundary === "DATABASE_PERSISTENT";
 }
+
 
 export function deriveModelUsageAccountingMode(input: {
   blocked: boolean;
@@ -659,6 +803,7 @@ export function deriveModelUsageAccountingMode(input: {
     return "BLOCKED_NO_USAGE";
   }
 
+
   if (
     input.inputTokens !== null ||
     input.outputTokens !== null ||
@@ -667,8 +812,10 @@ export function deriveModelUsageAccountingMode(input: {
     return "TOKENS_REPORTED";
   }
 
+
   return "USAGE_NOT_AVAILABLE";
 }
+
 
 export function deriveUsagePersistenceBoundary(
   persistenceMode: RuntimePersistenceMode
@@ -677,12 +824,15 @@ export function deriveUsagePersistenceBoundary(
     return "DATABASE_PERSISTENT_TARGET";
   }
 
+
   if (String(persistenceMode) === "FAIL_CLOSED_PERSISTENCE") {
     return "FAIL_CLOSED_PERSISTENCE";
   }
 
+
   return "PROCESS_MEMORY_MVP";
 }
+
 
 export function deriveModelUsageRecordStatus(input: {
   blocked: boolean;
@@ -695,23 +845,29 @@ export function deriveModelUsageRecordStatus(input: {
     return "BLOCKED_RECORDED";
   }
 
+
   if (input.failClosed) {
     return "FAIL_CLOSED_RECORDED";
   }
+
 
   if (input.persistenceMode === "DATABASE_PERSISTENT") {
     if (input.databaseConfigured && input.databaseAvailable) {
       return "DATABASE_PERSISTENT_TARGET";
     }
 
+
     return "MVP_MEMORY_ONLY";
   }
+
 
   return "MVP_MEMORY_ONLY";
 }
 
+
 function getTierWeight(saasTier: SaasTier | string): number {
   const normalized = String(saasTier).toUpperCase();
+
 
   if (normalized === "IPR") return 1.5;
   if (normalized === "PRO") return 2;
@@ -719,11 +875,14 @@ function getTierWeight(saasTier: SaasTier | string): number {
   if (normalized === "C2_DEFENSE") return 5;
   if (normalized === "STRATEGIC") return 6;
 
+
   return 1;
 }
 
+
 function getModelWeight(modelLevel: ModelUsageRuntimeModelLevel): number {
   const normalized = String(modelLevel || "STANDARD").toUpperCase();
+
 
   if (normalized === "ENHANCED") return 1.5;
   if (normalized === "ADVANCED" || normalized === "DEEP") return 2.5;
@@ -732,29 +891,37 @@ function getModelWeight(modelLevel: ModelUsageRuntimeModelLevel): number {
   if (normalized === "EMERGENCY") return 6;
   if (normalized === "BLOCKED") return 0;
 
+
   return 1;
 }
 
+
 function getRiskWeight(riskLevel: RuntimeRiskLevel | string): number {
   const normalized = String(riskLevel).toUpperCase();
+
 
   if (normalized === "MEDIUM") return 1.25;
   if (normalized === "HIGH") return 1.75;
   if (normalized === "CRITICAL") return 2.5;
   if (normalized === "BLOCKED") return 0;
 
+
   return 1;
 }
 
+
 function getOperationalWeight(operationalValue: OperationalValueLevel | string): number {
   const normalized = String(operationalValue).toUpperCase();
+
 
   if (normalized === "MEDIUM") return 1.25;
   if (normalized === "HIGH") return 1.75;
   if (normalized === "CRITICAL") return 2.5;
 
+
   return 1;
 }
+
 
 export function deriveModelValueWeight(input: {
   saasTier: SaasTier | string;
@@ -766,6 +933,7 @@ export function deriveModelValueWeight(input: {
 }): number {
   const proofWeight = input.opcRequired ? 1.35 : 1;
   const auditWeight = input.auditRequired ? 1.2 : 1;
+
 
   return Number(
     (
@@ -779,6 +947,7 @@ export function deriveModelValueWeight(input: {
   );
 }
 
+
 export function deriveEstimatedCostUnits(input: {
   totalTokens: number | null;
   inputTokens: number | null;
@@ -791,16 +960,20 @@ export function deriveEstimatedCostUnits(input: {
     return 0;
   }
 
+
   const tokenBasis =
     input.totalTokens ??
     ((input.inputTokens ?? 0) + (input.outputTokens ?? 0));
+
 
   if (!tokenBasis || tokenBasis <= 0) {
     return Number(input.valueWeight.toFixed(4));
   }
 
+
   return Number(((tokenBasis / 1000) * input.valueWeight).toFixed(4));
 }
+
 
 function deriveEstimatedCostMinor(input: {
   explicitMinor: number | null;
@@ -810,8 +983,10 @@ function deriveEstimatedCostMinor(input: {
     return input.explicitMinor;
   }
 
+
   return Math.max(0, Math.round(input.estimatedCostUnits * 100));
 }
+
 
 export function buildModelUsageBoundary(input: {
   persistenceBoundary: ModelUsageLogPersistenceBoundary;
@@ -826,8 +1001,10 @@ export function buildModelUsageBoundary(input: {
           ? "Model usage persistence is required but unavailable. Runtime must fail closed where required."
           : "Model usage is currently stored in process memory MVP and may be lost across serverless cold starts or deployments.";
 
+
   return `${persistence} Model usage supports SaaS accounting and operational reconstruction. ${RUNTIME_BOUNDARY_SUMMARY.opc}. ${RUNTIME_BOUNDARY_SUMMARY.evt}. C2 boundary: ${input.c2Boundary}. legalCertification = false.`;
 }
+
 
 export function buildModelUsageHashPayload(
   record: Omit<ModelUsageLogRecord, "usageHash">
@@ -849,7 +1026,15 @@ export function buildModelUsageHashPayload(
     tenantId: record.tenantId,
     workspaceId: record.workspaceId,
     subscriptionId: record.subscriptionId,
+    accountId: record.accountId,
     threadId: record.threadId,
+    memoryRef: record.memoryRef,
+    memoryHash: record.memoryHash,
+    registeredEventId: record.registeredEventId,
+    registeredEventName: record.registeredEventName,
+    registeredEventHash: record.registeredEventHash,
+    previousEvtRef: record.previousEvtRef,
+    previousOpcRef: record.previousOpcRef,
     saasTier: record.saasTier,
     selectedModel: record.selectedModel,
     modelLevel: record.modelLevel,
@@ -885,11 +1070,13 @@ export function buildModelUsageHashPayload(
   };
 }
 
+
 export function buildModelUsageHash(
   record: Omit<ModelUsageLogRecord, "usageHash">
 ): string {
   return sha256Usage(buildModelUsageHashPayload(record));
 }
+
 
 export function createModelUsageLogRecord(
   input: ModelUsageLogInput = {}
@@ -897,9 +1084,11 @@ export function createModelUsageLogRecord(
   const timestamp = input.timestamp ?? nowIso();
   const usageId = normalizeUsageString(input.usageId, buildModelUsageId(timestamp));
 
+
   const persistenceMode = input.persistenceMode ?? "PROCESS_MEMORY_MVP";
   const persistenceBoundary =
     input.persistenceBoundary ?? deriveUsagePersistenceBoundary(persistenceMode);
+
 
   const inputTokens = normalizeUsageNumber(input.inputTokens);
   const outputTokens = normalizeUsageNumber(input.outputTokens);
@@ -907,18 +1096,22 @@ export function createModelUsageLogRecord(
   const cachedInputTokens = normalizeUsageNumber(input.cachedInputTokens);
   const reasoningTokens = normalizeUsageNumber(input.reasoningTokens);
 
+
   const totalTokens =
     explicitTotalTokens ??
     (inputTokens !== null || outputTokens !== null
       ? (inputTokens ?? 0) + (outputTokens ?? 0)
       : null);
 
+
   const runtimeDecisionText = normalizeRuntimeDecisionText(input.runtimeDecision);
   const normalizedInputModelLevel = String(input.modelLevel ?? "STANDARD").toUpperCase();
+
 
   const blocked = input.blocked ?? normalizedInputModelLevel === "BLOCKED";
   const failClosed = input.failClosed ?? runtimeDecisionText === "FAIL_CLOSED";
   const allowed = input.allowed ?? (!blocked && !failClosed);
+
 
   const saasTier = input.saasTier ?? "BASE";
   const modelLevel = input.modelLevel ?? "STANDARD";
@@ -927,6 +1120,7 @@ export function createModelUsageLogRecord(
   const opcRequired = input.opcRequired ?? false;
   const auditRequired = input.auditRequired ?? false;
   const c2Boundary = input.c2Boundary ?? "C2_NOT_AVAILABLE";
+
 
   const valueWeight =
     normalizeUsageFloat(input.valueWeight) ??
@@ -939,6 +1133,7 @@ export function createModelUsageLogRecord(
       auditRequired
     });
 
+
   const estimatedCostUnits =
     normalizeUsageFloat(input.estimatedCostUnits) ??
     deriveEstimatedCostUnits({
@@ -950,10 +1145,12 @@ export function createModelUsageLogRecord(
       failClosed
     });
 
+
   const estimatedCostMinor = deriveEstimatedCostMinor({
     explicitMinor: normalizeUsageNumber(input.estimatedCostMinor),
     estimatedCostUnits
   });
+
 
   const accountingMode = deriveModelUsageAccountingMode({
     blocked,
@@ -963,11 +1160,13 @@ export function createModelUsageLogRecord(
     totalTokens
   });
 
+
   const baseRecord: Omit<ModelUsageLogRecord, "usageHash"> = {
     usageId,
     timestamp,
     source: input.source ?? "SYSTEM",
     provider: normalizeProvider(input.provider),
+
 
     project: HBCE_SAAS_PROJECT,
     targetRelease: HBCE_SAAS_TARGET_RELEASE,
@@ -977,9 +1176,11 @@ export function createModelUsageLogRecord(
     organization: HBCE_ORGANIZATION,
     core: HBCE_CORE,
 
+
     sessionId: normalizeUsageString(input.sessionId, "NO_SESSION"),
     requestId: normalizeUsageString(input.requestId, randomUUID()),
     auditId: normalizeNullableUsageString(input.auditId),
+
 
     runtimeEntity: normalizeUsageString(input.runtimeEntity, RUNTIME_ENTITY),
     runtimeIpr: normalizeUsageString(input.runtimeIpr, RUNTIME_IPR),
@@ -988,7 +1189,17 @@ export function createModelUsageLogRecord(
     tenantId: normalizeUsageString(input.tenantId, "NO_TENANT"),
     workspaceId: normalizeUsageString(input.workspaceId, "NO_WORKSPACE"),
     subscriptionId: normalizeUsageString(input.subscriptionId, "NO_SUBSCRIPTION"),
+    accountId: normalizeUsageString(input.accountId, "NO_ACCOUNT"),
     threadId: normalizeUsageString(input.threadId, "NO_THREAD"),
+
+    memoryRef: normalizeNullableUsageString(input.memoryRef),
+    memoryHash: normalizeNullableUsageString(input.memoryHash),
+    registeredEventId: normalizeNullableUsageString(input.registeredEventId),
+    registeredEventName: normalizeNullableUsageString(input.registeredEventName),
+    registeredEventHash: normalizeNullableUsageString(input.registeredEventHash),
+    previousEvtRef: normalizeNullableUsageString(input.previousEvtRef),
+    previousOpcRef: normalizeNullableUsageString(input.previousOpcRef),
+
 
     saasTier,
     selectedModel: normalizeUsageString(input.selectedModel, "NOT_SELECTED"),
@@ -998,23 +1209,28 @@ export function createModelUsageLogRecord(
       "No model routing reason provided."
     ),
 
+
     riskLevel,
     runtimeDecision: input.runtimeDecision ?? "ALLOW",
     auditState: input.auditState ?? "NOT_REQUIRED",
+
 
     operationalValue,
     cyberRelevance: input.cyberRelevance ?? "NONE",
     c2Boundary,
     proofRequirement: input.proofRequirement ?? "NONE",
 
+
     evtRequired: input.evtRequired ?? false,
     opcRequired,
     auditRequired,
+
 
     evtRef: normalizeNullableUsageString(input.evtRef),
     evtHash: normalizeNullableUsageString(input.evtHash),
     opcRef: normalizeNullableUsageString(input.opcRef),
     opcProofHash: normalizeNullableUsageString(input.opcProofHash),
+
 
     inputTokens,
     outputTokens,
@@ -1022,18 +1238,22 @@ export function createModelUsageLogRecord(
     cachedInputTokens,
     reasoningTokens,
 
+
     accountingMode,
     estimatedCostUnits,
     estimatedCostMinor,
     currency: normalizeCurrency(input.currency),
     valueWeight,
 
+
     blocked,
     failClosed,
     allowed,
 
+
     persistenceMode,
     persistenceBoundary,
+
 
     status: deriveModelUsageRecordStatus({
       blocked,
@@ -1043,6 +1263,7 @@ export function createModelUsageLogRecord(
       databaseAvailable: isHbceDatabaseAvailable()
     }),
 
+
     reason: normalizeUsageString(input.reason, "Model usage record created."),
     boundary:
       input.boundary ??
@@ -1051,8 +1272,10 @@ export function createModelUsageLogRecord(
         c2Boundary
       }),
 
+
     legalCertification: false
   };
+
 
   return {
     ...baseRecord,
@@ -1060,26 +1283,33 @@ export function createModelUsageLogRecord(
   };
 }
 
+
 function pushModelUsageProcessMemory(record: ModelUsageLogRecord): ModelUsageLogRecord {
   modelUsageProcessMemory.unshift(record);
+
 
   if (modelUsageProcessMemory.length > MAX_PROCESS_MEMORY_MODEL_USAGE_RECORDS) {
     modelUsageProcessMemory.length = MAX_PROCESS_MEMORY_MODEL_USAGE_RECORDS;
   }
 
+
   return record;
 }
+
 
 export function appendModelUsageLogRecord(
   input: ModelUsageLogInput = {}
 ): ModelUsageLogRecord {
   const record = createModelUsageLogRecord(input);
 
+
   return pushModelUsageProcessMemory(record);
 }
 
+
 function modelUsageRecordToDatabasePayload(record: ModelUsageLogRecord): ModelUsageDatabasePayload {
   const writeRelationalColumns = shouldWriteRelationalColumns(record);
+
 
   const payload = {
     ...record,
@@ -1093,12 +1323,19 @@ function modelUsageRecordToDatabasePayload(record: ModelUsageLogRecord): ModelUs
       tenantId: record.tenantId,
       workspaceId: record.workspaceId,
       subscriptionId: record.subscriptionId,
+      accountId: record.accountId,
       humanIpr: record.humanIpr,
       sessionId: record.sessionId,
       threadId: record.threadId,
       evtId: record.evtRef,
       opcProofId: record.opcRef,
-      auditId: record.auditId
+      auditId: record.auditId,
+      memoryId: record.memoryRef,
+      registeredEventId: record.registeredEventId,
+      registeredEventName: record.registeredEventName,
+      registeredEventHash: record.registeredEventHash,
+      previousEvtId: record.previousEvtRef,
+      previousOpcProofId: record.previousOpcRef
     },
     databaseRuntimeDecision: normalizeDatabaseRuntimeDecision(record.runtimeDecision),
     databaseRiskLevel: normalizeDatabaseRiskLevel(record.riskLevel),
@@ -1108,11 +1345,13 @@ function modelUsageRecordToDatabasePayload(record: ModelUsageLogRecord): ModelUs
     legalCertification: false
   };
 
+
   return {
     usageId: record.usageId,
     tenantId: writeRelationalColumns ? nullableDatabaseText(record.tenantId) : null,
     workspaceId: writeRelationalColumns ? nullableDatabaseText(record.workspaceId) : null,
     subscriptionId: writeRelationalColumns ? nullableDatabaseText(record.subscriptionId) : null,
+    accountId: writeRelationalColumns ? nullableDatabaseText(record.accountId) : null,
     humanIpr: writeRelationalColumns ? nullableDatabaseText(record.humanIpr) : null,
     runtimeIpr: normalizeUsageString(record.runtimeIpr, RUNTIME_IPR),
     sessionId: writeRelationalColumns ? nullableDatabaseText(record.sessionId) : null,
@@ -1120,6 +1359,12 @@ function modelUsageRecordToDatabasePayload(record: ModelUsageLogRecord): ModelUs
     evtId: writeRelationalColumns ? nullableDatabaseText(record.evtRef) : null,
     opcProofId: writeRelationalColumns ? nullableDatabaseText(record.opcRef) : null,
     auditId: writeRelationalColumns ? nullableDatabaseText(record.auditId) : null,
+    memoryId: writeRelationalColumns ? nullableDatabaseText(record.memoryRef) : null,
+    registeredEventId: writeRelationalColumns ? nullableDatabaseText(record.registeredEventId) : null,
+    registeredEventName: writeRelationalColumns ? nullableDatabaseText(record.registeredEventName) : null,
+    registeredEventHash: writeRelationalColumns ? nullableDatabaseText(record.registeredEventHash) : null,
+    previousEvtId: writeRelationalColumns ? nullableDatabaseText(record.previousEvtRef) : null,
+    previousOpcProofId: writeRelationalColumns ? nullableDatabaseText(record.previousOpcRef) : null,
     provider: providerToDatabaseValue(record.provider),
     model: normalizeUsageString(record.selectedModel, "NOT_SELECTED"),
     modelLevel: normalizeDatabaseModelLevel(record.modelLevel),
@@ -1134,6 +1379,7 @@ function modelUsageRecordToDatabasePayload(record: ModelUsageLogRecord): ModelUs
     payloadJson: JSON.stringify(payload)
   };
 }
+
 
 async function persistModelUsageLogRecordFallback(
   record: ModelUsageLogRecord,
@@ -1212,6 +1458,7 @@ RETURNING usage_id, usage_hash;
       ]
     );
 
+
     if (!result.ok) {
       return {
         ok: false,
@@ -1226,8 +1473,10 @@ RETURNING usage_id, usage_hash;
       };
     }
 
+
     record.status = "PERSISTED";
     record.persistenceBoundary = "DATABASE_PERSISTENT";
+
 
     return {
       ok: true,
@@ -1252,6 +1501,7 @@ RETURNING usage_id, usage_hash;
   }
 }
 
+
 export async function persistModelUsageLogRecord(
   record: ModelUsageLogRecord
 ): Promise<ModelUsagePersistenceResult> {
@@ -1266,6 +1516,7 @@ export async function persistModelUsageLogRecord(
     };
   }
 
+
   if (!isHbceDatabaseAvailable()) {
     return {
       ok: false,
@@ -1277,7 +1528,9 @@ export async function persistModelUsageLogRecord(
     };
   }
 
+
   const fields = modelUsageRecordToDatabasePayload(record);
+
 
   try {
     const result = await queryHbceDatabase<ModelUsageDatabaseRow>(
@@ -1387,6 +1640,7 @@ RETURNING usage_id, usage_hash;
       ]
     );
 
+
     if (!result.ok) {
       return persistModelUsageLogRecordFallback(
         record,
@@ -1395,8 +1649,10 @@ RETURNING usage_id, usage_hash;
       );
     }
 
+
     record.status = "PERSISTED";
     record.persistenceBoundary = "DATABASE_PERSISTENT";
+
 
     return {
       ok: true,
@@ -1411,6 +1667,7 @@ RETURNING usage_id, usage_hash;
   }
 }
 
+
 export async function appendModelUsageLogRecordAsync(
   input: ModelUsageLogInput = {}
 ): Promise<{
@@ -1420,11 +1677,13 @@ export async function appendModelUsageLogRecordAsync(
   const record = appendModelUsageLogRecord(input);
   const persistence = await persistModelUsageLogRecord(record);
 
+
   return {
     record,
     persistence
   };
 }
+
 
 export function appendModelUsageLogRecordFromRuntime(input: {
   source?: ModelUsageLogSource;
@@ -1436,7 +1695,17 @@ export function appendModelUsageLogRecordFromRuntime(input: {
   tenantId?: string;
   workspaceId?: string;
   subscriptionId?: string;
+  accountId?: string;
   threadId?: string;
+
+  memoryRef?: string | null;
+  memoryHash?: string | null;
+  registeredEventId?: string | null;
+  registeredEventName?: string | null;
+  registeredEventHash?: string | null;
+  previousEvtRef?: string | null;
+  previousOpcRef?: string | null;
+
 
   saasPolicy?: SaasTierPolicyResult;
   riskPolicy?: RuntimeRiskPolicyResult;
@@ -1444,10 +1713,12 @@ export function appendModelUsageLogRecordFromRuntime(input: {
   c2Policy?: C2DefensePolicyResult;
   auditRecord?: RuntimeAuditLogRecord | null;
 
+
   evtRef?: string | null;
   evtHash?: string | null;
   opcRef?: string | null;
   opcProofHash?: string | null;
+
 
   usage?: ModelUsageTokenInput | null;
 }): ModelUsageLogRecord {
@@ -1457,20 +1728,33 @@ export function appendModelUsageLogRecordFromRuntime(input: {
   const c2Policy = input.c2Policy;
   const auditRecord = input.auditRecord ?? null;
 
+
   return appendModelUsageLogRecord({
     source: input.source ?? "API_CHAT",
     provider: input.provider ?? "OPENAI",
 
+
     sessionId: input.sessionId,
     requestId: input.requestId,
     auditId: auditRecord?.auditId ?? null,
+
 
     humanIpr: input.humanIpr,
     organizationIpr: input.organizationIpr,
     tenantId: input.tenantId ?? auditRecord?.tenantId,
     workspaceId: input.workspaceId ?? auditRecord?.workspaceId,
     subscriptionId: input.subscriptionId ?? auditRecord?.subscriptionId,
+    accountId: input.accountId ?? auditRecord?.accountId,
     threadId: input.threadId ?? auditRecord?.threadId,
+
+    memoryRef: input.memoryRef ?? auditRecord?.memoryRef ?? null,
+    memoryHash: input.memoryHash ?? auditRecord?.memoryHash ?? null,
+    registeredEventId: input.registeredEventId ?? auditRecord?.registeredEventId ?? null,
+    registeredEventName: input.registeredEventName ?? auditRecord?.registeredEventName ?? null,
+    registeredEventHash: input.registeredEventHash ?? auditRecord?.registeredEventHash ?? null,
+    previousEvtRef: input.previousEvtRef ?? auditRecord?.previousEvtRef ?? null,
+    previousOpcRef: input.previousOpcRef ?? auditRecord?.previousOpcRef ?? null,
+
 
     saasTier: saasPolicy?.tier ?? modelRouting?.tier ?? auditRecord?.saasTier ?? "BASE",
     selectedModel:
@@ -1486,6 +1770,7 @@ export function appendModelUsageLogRecordFromRuntime(input: {
       modelRouting?.routingReason ??
       auditRecord?.modelRoutingReason ??
       "No model routing record provided.",
+
 
     riskLevel:
       riskPolicy?.riskLevel ??
@@ -1503,6 +1788,7 @@ export function appendModelUsageLogRecordFromRuntime(input: {
       saasPolicy?.auditState ??
       auditRecord?.auditState ??
       "NOT_REQUIRED",
+
 
     operationalValue:
       riskPolicy?.operationalValue ??
@@ -1529,6 +1815,7 @@ export function appendModelUsageLogRecordFromRuntime(input: {
       "C2_NOT_AVAILABLE",
     proofRequirement: riskPolicy?.proofRequirement ?? "NONE",
 
+
     evtRequired:
       Boolean(saasPolicy?.evtRequired) ||
       Boolean(riskPolicy?.evtRequired) ||
@@ -1548,16 +1835,19 @@ export function appendModelUsageLogRecordFromRuntime(input: {
       Boolean(c2Policy?.auditRequired) ||
       Boolean(auditRecord?.auditRequired),
 
+
     evtRef: input.evtRef ?? auditRecord?.evtRef ?? null,
     evtHash: input.evtHash ?? auditRecord?.evtHash ?? null,
     opcRef: input.opcRef ?? auditRecord?.opcRef ?? null,
     opcProofHash: input.opcProofHash ?? auditRecord?.opcProofHash ?? null,
+
 
     inputTokens: input.usage?.inputTokens ?? null,
     outputTokens: input.usage?.outputTokens ?? null,
     totalTokens: input.usage?.totalTokens ?? null,
     cachedInputTokens: input.usage?.cachedInputTokens ?? null,
     reasoningTokens: input.usage?.reasoningTokens ?? null,
+
 
     blocked:
       Boolean(modelRouting?.blocked) ||
@@ -1576,10 +1866,12 @@ export function appendModelUsageLogRecordFromRuntime(input: {
       Boolean(c2Policy?.allowed ?? true) &&
       Boolean(auditRecord?.allowed ?? true),
 
+
     persistenceMode:
       saasPolicy?.persistenceMode ??
       auditRecord?.persistenceMode ??
       "PROCESS_MEMORY_MVP",
+
 
     reason:
       modelRouting?.routingReason ??
@@ -1591,6 +1883,7 @@ export function appendModelUsageLogRecordFromRuntime(input: {
   });
 }
 
+
 export async function appendModelUsageLogRecordFromRuntimeAsync(input: {
   source?: ModelUsageLogSource;
   provider?: ModelUsageProvider | string;
@@ -1601,7 +1894,17 @@ export async function appendModelUsageLogRecordFromRuntimeAsync(input: {
   tenantId?: string;
   workspaceId?: string;
   subscriptionId?: string;
+  accountId?: string;
   threadId?: string;
+
+  memoryRef?: string | null;
+  memoryHash?: string | null;
+  registeredEventId?: string | null;
+  registeredEventName?: string | null;
+  registeredEventHash?: string | null;
+  previousEvtRef?: string | null;
+  previousOpcRef?: string | null;
+
 
   saasPolicy?: SaasTierPolicyResult;
   riskPolicy?: RuntimeRiskPolicyResult;
@@ -1609,10 +1912,12 @@ export async function appendModelUsageLogRecordFromRuntimeAsync(input: {
   c2Policy?: C2DefensePolicyResult;
   auditRecord?: RuntimeAuditLogRecord | null;
 
+
   evtRef?: string | null;
   evtHash?: string | null;
   opcRef?: string | null;
   opcProofHash?: string | null;
+
 
   usage?: ModelUsageTokenInput | null;
 }): Promise<{
@@ -1622,11 +1927,13 @@ export async function appendModelUsageLogRecordFromRuntimeAsync(input: {
   const record = appendModelUsageLogRecordFromRuntime(input);
   const persistence = await persistModelUsageLogRecord(record);
 
+
   return {
     record,
     persistence
   };
 }
+
 
 export function listModelUsageLogRecords(
   options: ModelUsageLogListOptions = {}
@@ -1636,27 +1943,34 @@ export function listModelUsageLogRecords(
     Math.min(options.limit ?? 50, MAX_PROCESS_MEMORY_MODEL_USAGE_RECORDS)
   );
 
+
   let records = [...modelUsageProcessMemory];
+
 
   if (options.sessionId) {
     records = records.filter((record) => record.sessionId === options.sessionId);
   }
 
+
   if (options.humanIpr) {
     records = records.filter((record) => record.humanIpr === options.humanIpr);
   }
+
 
   if (options.saasTier) {
     records = records.filter((record) => record.saasTier === options.saasTier);
   }
 
+
   if (options.selectedModel) {
     records = records.filter((record) => record.selectedModel === options.selectedModel);
   }
 
+
   if (options.modelLevel) {
     records = records.filter((record) => record.modelLevel === options.modelLevel);
   }
+
 
   if (options.c2Only) {
     records = records.filter(
@@ -1669,18 +1983,22 @@ export function listModelUsageLogRecords(
     );
   }
 
+
   if (!options.includeBlocked) {
     records = records.filter((record) => !record.blocked);
   }
 
+
   return records.slice(0, limit);
 }
+
 
 export function getModelUsageLogRecord(
   usageId: string
 ): ModelUsageLogRecord | null {
   return modelUsageProcessMemory.find((record) => record.usageId === usageId) ?? null;
 }
+
 
 export function clearModelUsageLogProcessMemory(): {
   cleared: number;
@@ -1690,6 +2008,7 @@ export function clearModelUsageLogProcessMemory(): {
   const cleared = modelUsageProcessMemory.length;
   modelUsageProcessMemory.length = 0;
 
+
   return {
     cleared,
     mode: "PROCESS_MEMORY_MVP",
@@ -1697,6 +2016,7 @@ export function clearModelUsageLogProcessMemory(): {
       "Model usage process memory cleared. This does not affect future database persistence targets."
   };
 }
+
 
 export function summarizeModelUsageLogRecords(
   records: ModelUsageLogRecord[]
@@ -1720,18 +2040,22 @@ export function summarizeModelUsageLogRecords(
       "Model usage summary supports SaaS accounting and operational reconstruction only. legalCertification = false."
   };
 
+
   for (const record of records) {
     summary.totalEstimatedCostUnits = Number(
       (summary.totalEstimatedCostUnits + record.estimatedCostUnits).toFixed(4)
     );
+
 
     summary.totalEstimatedCostMinor += record.estimatedCostMinor;
     summary.totalInputTokens += record.inputTokens ?? 0;
     summary.totalOutputTokens += record.outputTokens ?? 0;
     summary.totalTokens += record.totalTokens ?? 0;
 
+
     const tierKey = String(record.saasTier);
     const modelLevelKey = String(record.modelLevel);
+
 
     summary.byTier[tierKey] = (summary.byTier[tierKey] ?? 0) + 1;
     summary.byModelLevel[modelLevelKey] =
@@ -1739,17 +2063,21 @@ export function summarizeModelUsageLogRecords(
     summary.byModel[record.selectedModel] =
       (summary.byModel[record.selectedModel] ?? 0) + 1;
 
+
     if (record.blocked) {
       summary.blockedRecords += 1;
     }
+
 
     if (record.failClosed) {
       summary.failClosedRecords += 1;
     }
   }
 
+
   return summary;
 }
+
 
 export function toPublicModelUsageLogRecord(record: ModelUsageLogRecord): {
   usageId: string;
@@ -1768,7 +2096,15 @@ export function toPublicModelUsageLogRecord(record: ModelUsageLogRecord): {
   tenantId: string;
   workspaceId: string;
   subscriptionId: string;
+  accountId: string;
   threadId: string;
+  memoryRef: string | null;
+  memoryHash: string | null;
+  registeredEventId: string | null;
+  registeredEventName: string | null;
+  registeredEventHash: string | null;
+  previousEvtRef: string | null;
+  previousOpcRef: string | null;
   saasTier: SaasTier | string;
   selectedModel: string;
   modelLevel: ModelUsageRuntimeModelLevel;
@@ -1819,7 +2155,15 @@ export function toPublicModelUsageLogRecord(record: ModelUsageLogRecord): {
     tenantId: record.tenantId,
     workspaceId: record.workspaceId,
     subscriptionId: record.subscriptionId,
+    accountId: record.accountId,
     threadId: record.threadId,
+    memoryRef: record.memoryRef,
+    memoryHash: record.memoryHash,
+    registeredEventId: record.registeredEventId,
+    registeredEventName: record.registeredEventName,
+    registeredEventHash: record.registeredEventHash,
+    previousEvtRef: record.previousEvtRef,
+    previousOpcRef: record.previousOpcRef,
     saasTier: record.saasTier,
     selectedModel: record.selectedModel,
     modelLevel: record.modelLevel,
@@ -1855,11 +2199,13 @@ export function toPublicModelUsageLogRecord(record: ModelUsageLogRecord): {
   };
 }
 
+
 export function toPublicModelUsageLogRecords(
   records: ModelUsageLogRecord[]
 ): ReturnType<typeof toPublicModelUsageLogRecord>[] {
   return records.map((record) => toPublicModelUsageLogRecord(record));
 }
+
 
 export function buildModelUsagePromptFrame(record: ModelUsageLogRecord): string {
   return [
@@ -1878,7 +2224,14 @@ export function buildModelUsagePromptFrame(record: ModelUsageLogRecord): string 
     `Tenant: ${record.tenantId}`,
     `Workspace: ${record.workspaceId}`,
     `Subscription: ${record.subscriptionId}`,
+    `Account: ${record.accountId}`,
     `Thread: ${record.threadId}`,
+    `Memory ref: ${record.memoryRef ?? "none"}`,
+    `Registered event ID: ${record.registeredEventId ?? "none"}`,
+    `Registered event name: ${record.registeredEventName ?? "none"}`,
+    `Registered event hash: ${record.registeredEventHash ?? "none"}`,
+    `Previous EVT ref: ${record.previousEvtRef ?? "none"}`,
+    `Previous OPC ref: ${record.previousOpcRef ?? "none"}`,
     `SaaS tier: ${record.saasTier}`,
     `Selected model: ${record.selectedModel}`,
     `Model level: ${record.modelLevel}`,
@@ -1909,9 +2262,11 @@ export function buildModelUsagePromptFrame(record: ModelUsageLogRecord): string 
   ].join("\n");
 }
 
+
 export function getModelUsageLogHealth(): ModelUsageLogHealth {
   const databaseConfigured = isHbceDatabaseConfigured();
   const databaseAvailable = isHbceDatabaseAvailable();
+
 
   return {
     configured: true,
