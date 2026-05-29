@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
 
+
+
 import { queryHbceDatabase } from "@/lib/ipr-database";
 import {
   HBCE_SELF_PILOT_ACCOUNT_ID,
@@ -15,10 +17,14 @@ import {
 } from "@/lib/ipr-database-schema";
 
 
+
+
 import { appendRuntimeAuditLogRecordAsync } from "@/lib/runtime-audit-log";
 import { appendModelUsageLogRecordAsync } from "@/lib/model-usage-log";
 import { persistEventToDatabase } from "@/lib/evt-ledger";
 import { persistOpcProofRecordToDatabase } from "@/lib/opc-proof";
+
+
 
 
 import {
@@ -32,6 +38,8 @@ import {
 } from "@/lib/ipr-bound-memory";
 
 
+
+
 import type {
   IprBoundMemoryCertificate,
   IprBoundMemoryHandoffEvaluation,
@@ -43,9 +51,13 @@ import type {
 } from "@/lib/ipr-bound-memory";
 
 
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+
 
 
 type RuntimeAuditAppendInput = Parameters<typeof appendRuntimeAuditLogRecordAsync>[0];
@@ -54,15 +66,21 @@ type EvtDatabaseRuntimeEvent = Parameters<typeof persistEventToDatabase>[0];
 type OpcDatabaseProofRecord = Parameters<typeof persistOpcProofRecordToDatabase>[0];
 
 
+
+
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
 type JsonObject = { [key: string]: JsonValue };
+
+
 
 
 type ChatTurn = {
   role: "system" | "user" | "assistant";
   content: string;
 };
+
+
 
 
 type PublicFileSnapshot = {
@@ -74,7 +92,11 @@ type PublicFileSnapshot = {
 };
 
 
+
+
 type HandoffSource = "body" | "query" | "header" | "referer" | "none";
+
+
 
 
 type HandoffResolution = {
@@ -93,6 +115,8 @@ type HandoffResolution = {
   semanticMemoryScope: "IPR_BOUND" | "RUNTIME_ONLY";
   reason: string;
 };
+
+
 
 
 type PolicyEvaluation = {
@@ -121,6 +145,8 @@ type PolicyEvaluation = {
   failClosed: boolean;
   reason: string;
 };
+
+
 
 
 type RuntimeMemoryState = {
@@ -160,6 +186,8 @@ type RuntimeMemoryState = {
 };
 
 
+
+
 type EvtRecord = {
   id: string;
   evt: string;
@@ -188,6 +216,8 @@ type EvtRecord = {
 };
 
 
+
+
 type OpcProofRecord = {
   id: string;
   proofId: string;
@@ -211,6 +241,8 @@ type OpcProofRecord = {
 };
 
 
+
+
 type CompletionTokenUsage = {
   inputTokens: number | null;
   outputTokens: number | null;
@@ -220,6 +252,8 @@ type CompletionTokenUsage = {
 };
 
 
+
+
 type ProviderCompletionResult = {
   answer: string;
   usage: CompletionTokenUsage;
@@ -227,11 +261,15 @@ type ProviderCompletionResult = {
 };
 
 
+
+
 type SaasRuntimeSource =
   | "BODY"
   | "DATABASE_PROFILE"
   | "SELF_PILOT_SCHEMA_FALLBACK"
   | "PLACEHOLDER";
+
+
 
 
 type SaasRuntimeContext = {
@@ -245,6 +283,8 @@ type SaasRuntimeContext = {
 };
 
 
+
+
 type SaasContextDatabaseRow = Record<string, unknown> & {
   tenant_id?: unknown;
   workspace_id?: unknown;
@@ -254,10 +294,13 @@ type SaasContextDatabaseRow = Record<string, unknown> & {
 };
 
 
+
+
 type RuntimePersistenceBridgeResult = {
   evtPersistence: JsonObject;
   opcPersistence: JsonObject;
 };
+
 
 type RuntimeTemporalFrame = {
   now: string;
@@ -287,6 +330,8 @@ type RuntimeTemporalFrame = {
 };
 
 
+
+
 const RUNTIME_ENTITY = "AI_JOKER";
 const RUNTIME_IPR = "IPR-AI-0001";
 const ORG = "HERMETICUM B.C.E. S.r.l.";
@@ -296,14 +341,18 @@ const CYCLE = "UP-CANONICO";
 const CANONICAL_EVT = "EVT-0016-AI";
 const CANONICAL_PREV = "EVT-0015-AI";
 const CANONICAL_MONTHLY_REF = "EVT-0015-AI / UP-MESE-4";
-const JOKER_C2_BIRTH_ANCHOR_ISO = "2006-01-19T15:30:00+01:00";
+const JOKER_C2_BIRTH_ANCHOR_ISO = "2026-01-19T15:30:00+01:00";
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
-const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic birth / IPR-3 triple anchoring";
+const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
+
+
 
 
 const DEFAULT_STANDARD_MODEL = "gpt-4o-mini";
 const DEFAULT_DEEP_MODEL = "gpt-4o";
+
+
 
 
 const HBCE_ALIEN_CODE_PIPELINE = {
@@ -322,6 +371,8 @@ const HBCE_ALIEN_CODE_PIPELINE = {
 } as const;
 
 
+
+
 const EMPTY_TOKEN_USAGE: CompletionTokenUsage = {
   inputTokens: null,
   outputTokens: null,
@@ -329,6 +380,8 @@ const EMPTY_TOKEN_USAGE: CompletionTokenUsage = {
   cachedInputTokens: null,
   reasoningTokens: null
 };
+
+
 
 
 function jsonResponse(payload: unknown, status = 200): NextResponse {
@@ -341,6 +394,8 @@ function jsonResponse(payload: unknown, status = 200): NextResponse {
     }
   });
 }
+
+
 
 
 function buildAlienCodePipelineDiagnostic(): JsonObject {
@@ -368,12 +423,16 @@ function buildAlienCodePipelineDiagnostic(): JsonObject {
 }
 
 
+
+
 export async function GET(): Promise<NextResponse> {
   const standardModel = process.env.JOKER_MODEL?.trim() || DEFAULT_STANDARD_MODEL;
   const deepModel = process.env.JOKER_DEEP_MODEL?.trim() || DEFAULT_DEEP_MODEL;
   const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
   const memoryStore = describeRuntimeMemoryStore();
   const temporalFrame = buildRuntimeTemporalFrame(new Date().toISOString());
+
+
 
 
   return jsonResponse({
@@ -447,10 +506,14 @@ export async function GET(): Promise<NextResponse> {
 }
 
 
+
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const t = new Date().toISOString();
   const temporalFrame = buildRuntimeTemporalFrame(t);
   const body = await readJsonBody(request);
+
+
 
 
   const sessionId = resolveSessionId(body);
@@ -460,15 +523,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const runtimeDiagnosticsRequested = isRuntimeDiagnosticsQuestion(message);
 
 
+
+
   const handoff = resolveHandoff(request, body);
   const policy = evaluatePolicy(message, files);
   const saasContext = await resolveSaasRuntimeContext(body, handoff, sessionId);
   let memory = getOrCreateMemory(sessionId, handoff, t, saasContext);
 
 
+
+
   const model = resolveModel(body, policy);
   const modelLevel = resolveModelLevel(model, policy);
   const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
+
+
 
 
   const inputFrame = {
@@ -485,8 +554,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   };
 
 
+
+
   const inputHash = sha256(inputFrame);
   const memoryHashBefore = sha256(memory);
+
+
 
 
   let answer = "";
@@ -495,6 +568,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   let providerName: "OPENAI" | "LOCAL" | "UNKNOWN" = "LOCAL";
   let tokenUsage: CompletionTokenUsage = EMPTY_TOKEN_USAGE;
   let finishReason: string | null = null;
+
+
 
 
   if (policy.decision === "BLOCK") {
@@ -535,6 +610,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
 
 
+
+
       answer = completion.answer;
       tokenUsage = completion.usage;
       finishReason = completion.finishReason;
@@ -549,9 +626,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
 
+
+
   const safeAnswer = normalizeAssistantAnswer(answer, message, handoff, policy);
   const outputHash = sha256(safeAnswer);
   const policyHash = sha256(policy);
+
+
 
 
   const evt = buildEvtRecord({
@@ -564,6 +645,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   });
 
 
+
+
   const opc = buildOpcProofRecord({
     t,
     sessionId,
@@ -574,6 +657,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     policyHash,
     memoryHash: memoryHashBefore
   });
+
+
 
 
   memory = updateMemoryAfterTurn({
@@ -590,7 +675,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   });
 
 
+
+
   const memoryHashAfter = sha256(memory);
+
+
 
 
   const persistenceBridge = await persistEvtAndOpc({
@@ -611,6 +700,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     policyHash,
     memoryHash: memoryHashAfter
   });
+
+
 
 
   const auditAndUsage = await recordSaasAuditAndUsage({
@@ -634,8 +725,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   });
 
 
+
+
   const publicEvt = buildPublicEvt(evt, persistenceBridge.evtPersistence);
   const publicOpc = buildPublicOpc(opc, persistenceBridge.opcPersistence);
+
+
 
 
   const runtimeDetails = {
@@ -670,6 +765,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   };
 
 
+
+
   const finalAnswer = runtimeDiagnosticsRequested
     ? buildRuntimeDiagnosticsAnswer({
         t,
@@ -702,6 +799,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     : safeAnswer;
 
 
+
+
   if (runtimeDiagnosticsRequested) {
     memory = updateAssistantDiagnosticMemory({
       memory,
@@ -715,10 +814,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
 
+
+
   const finalOutputHash = sha256(finalAnswer);
   const finalMemoryHash = sha256(memory);
   const payload = {
     ok: policy.decision !== "BLOCK",
+
+
 
 
     answer: finalAnswer,
@@ -733,6 +836,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       role: "assistant",
       content: finalAnswer
     },
+
+
 
 
     sessionId,
@@ -781,9 +886,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     openAIConfigured,
 
 
+
+
     identity: buildRuntimeIdentity(temporalFrame),
     temporal: temporalFrame,
     alienCodePipeline: buildAlienCodePipelineDiagnostic(),
+
+
 
 
     access: {
@@ -792,6 +901,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       semanticMemoryScope: handoff.semanticMemoryScope,
       identityBinding: handoff.identityBinding
     },
+
+
 
 
     security: {
@@ -803,6 +914,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       failClosed: policy.failClosed,
       reason: policy.reason
     },
+
+
 
 
     saas: {
@@ -824,6 +937,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     },
 
 
+
+
     biologicalSubject: {
       name: handoff.subjectName,
       humanIpr: handoff.humanIpr,
@@ -835,6 +950,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       authority: handoff.authority,
       reason: handoff.reason
     },
+
+
 
 
     verifiedSubject:
@@ -852,7 +969,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         : null,
 
 
+
+
     memory: toPublicMemory(memory),
+
+
 
 
     matrix: {
@@ -865,10 +986,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     },
 
 
+
+
     evt: publicEvt,
     event: publicEvt,
     modernEvt: publicEvt,
     governedEvt: publicEvt,
+
+
 
 
     opc: {
@@ -886,6 +1011,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     proof: publicOpc,
 
 
+
+
     responseEvt: evt.id,
     responseEvtId: evt.id,
     evtId: evt.id,
@@ -894,8 +1021,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     opcId: opc.id,
 
 
+
+
     audit: auditAndUsage.audit,
     modelUsage: auditAndUsage.modelUsage,
+
+
 
 
     persistence: {
@@ -906,6 +1037,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       memory: toPublicMemory(memory),
       legalCertification: false
     },
+
+
 
 
     continuity: {
@@ -922,7 +1055,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     },
 
 
+
+
     policy,
+
+
 
 
     risk: {
@@ -938,6 +1075,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     },
 
 
+
+
     oversight: {
       required: policy.humanOversight === "REQUIRED",
       recommendation: policy.humanOversight,
@@ -945,11 +1084,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     },
 
 
+
+
     files,
+
+
 
 
     runtimeDetails,
     runtime_details: runtimeDetails,
+
+
 
 
     diagnostics: {
@@ -996,12 +1141,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     },
 
 
+
+
     boundary: buildBoundary()
   };
 
 
+
+
   return jsonResponse(payload, policy.decision === "BLOCK" ? 400 : 200);
 }
+
+
 
 
 async function completeWithOpenAI(args: {
@@ -1015,6 +1166,8 @@ async function completeWithOpenAI(args: {
   model: string;
 }): Promise<ProviderCompletionResult> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
+
+
 
 
   if (!apiKey) {
@@ -1032,7 +1185,11 @@ async function completeWithOpenAI(args: {
   }
 
 
+
+
   const client = new OpenAI({ apiKey });
+
+
 
 
   const systemPrompt = buildSystemPrompt(args.handoff, args.policy, args.memory, args.files, args.temporalFrame);
@@ -1045,7 +1202,11 @@ async function completeWithOpenAI(args: {
     }));
 
 
+
+
   const userPrompt = buildUserPrompt(args.message, args.files);
+
+
 
 
   const messages: Array<{
@@ -1064,6 +1225,8 @@ async function completeWithOpenAI(args: {
   ];
 
 
+
+
   const completion = await client.chat.completions.create({
     model: args.model,
     messages,
@@ -1071,8 +1234,12 @@ async function completeWithOpenAI(args: {
   });
 
 
+
+
   const content = completion.choices[0]?.message?.content?.trim();
   const finishReason = completion.choices[0]?.finish_reason ?? null;
+
+
 
 
   if (!content) {
@@ -1084,12 +1251,16 @@ async function completeWithOpenAI(args: {
   }
 
 
+
+
   return {
     answer: content,
     usage: normalizeCompletionUsage(completion.usage),
     finishReason
   };
 }
+
+
 
 
 function buildSystemPrompt(
@@ -1193,10 +1364,14 @@ function buildSystemPrompt(
 }
 
 
+
+
 function buildUserPrompt(message: string, files: PublicFileSnapshot[]): string {
   if (files.length === 0) {
     return message || "Messaggio utente vuoto.";
   }
+
+
 
 
   return [
@@ -1208,6 +1383,8 @@ function buildUserPrompt(message: string, files: PublicFileSnapshot[]): string {
 }
 
 
+
+
 function normalizeAssistantAnswer(
   answer: string,
   message: string,
@@ -1217,9 +1394,13 @@ function normalizeAssistantAnswer(
   const clean = answer.trim();
 
 
+
+
   if (clean.length > 0) {
     return clean;
   }
+
+
 
 
   if (isLegalBoundaryQuestion(message)) {
@@ -1266,12 +1447,18 @@ function normalizeAssistantAnswer(
   }
 
 
+
+
   return buildEmptyProviderFallback(message, handoff, policy);
 }
 
 
+
+
 function isIdentityRecognitionQuestion(message: string): boolean {
   const normalized = normalizeText(message);
+
+
 
 
   return [
@@ -1289,8 +1476,12 @@ function isIdentityRecognitionQuestion(message: string): boolean {
 }
 
 
+
+
 function isRuntimeDiagnosticsQuestion(message: string): boolean {
   const normalized = normalizeText(message);
+
+
 
 
   const hasDiagnosticIntent = [
@@ -1306,6 +1497,8 @@ function isRuntimeDiagnosticsQuestion(message: string): boolean {
     "debug runtime",
     "health runtime"
   ].some((term) => normalized.includes(normalizeText(term)));
+
+
 
 
   const hasOperationalTerms = [
@@ -1327,12 +1520,18 @@ function isRuntimeDiagnosticsQuestion(message: string): boolean {
   ].some((term) => normalized.includes(normalizeText(term)));
 
 
+
+
   return hasDiagnosticIntent && hasOperationalTerms;
 }
 
 
+
+
 function isLegalBoundaryQuestion(message: string): boolean {
   const normalized = normalizeText(message);
+
+
 
 
   const asksBoundary = [
@@ -1352,13 +1551,19 @@ function isLegalBoundaryQuestion(message: string): boolean {
   ].some((term) => normalized.includes(normalizeText(term)));
 
 
+
+
   const hasCoreTerms = ["ipr", "evt", "opc", "legal", "legali", "tecnici"].some((term) =>
     normalized.includes(normalizeText(term))
   );
 
 
+
+
   return asksBoundary && hasCoreTerms;
 }
+
+
 
 
 function buildLegalBoundaryAnswer(
@@ -1368,6 +1573,7 @@ function buildLegalBoundaryAnswer(
   saasContext: SaasRuntimeContext
 ): string {
   const temporalFrame = buildRuntimeTemporalFrame(new Date().toISOString());
+
 
   return [
     "Limiti legali e tecnici da dichiarare per IPR, EVT e OPC.",
@@ -1419,6 +1625,8 @@ function buildLegalBoundaryAnswer(
     "legalCertification=false"
   ].join("\n");
 }
+
+
 
 
 function buildSecurityRefusalAnswer(
@@ -1496,6 +1704,8 @@ function buildRuntimeDiagnosticsPreparationAnswer(
 }
 
 
+
+
 function buildRuntimeDiagnosticsAnswer(args: {
   t: string;
   sessionId: string;
@@ -1532,9 +1742,13 @@ function buildRuntimeDiagnosticsAnswer(args: {
   const evtPersistenceError = stringPath(args.persistenceBridge.evtPersistence, "error", "none");
 
 
+
+
   const opcPersistenceStatus = stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN");
   const opcPersistenceOk = stringPath(args.persistenceBridge.opcPersistence, "ok", "false");
   const opcPersistenceError = stringPath(args.persistenceBridge.opcPersistence, "error", "none");
+
+
 
 
   const auditStatus = stringPath(args.auditAndUsage.audit, "status", "UNKNOWN");
@@ -1544,11 +1758,15 @@ function buildRuntimeDiagnosticsAnswer(args: {
   const auditPersistenceError = stringPath(args.auditAndUsage.audit, "persistence.error", "none");
 
 
+
+
   const usageStatus = stringPath(args.auditAndUsage.modelUsage, "status", "UNKNOWN");
   const usageId = stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID");
   const usagePersistenceStatus = stringPath(args.auditAndUsage.modelUsage, "persistence.status", "UNKNOWN");
   const usagePersistenceOk = stringPath(args.auditAndUsage.modelUsage, "persistence.ok", "false");
   const usagePersistenceError = stringPath(args.auditAndUsage.modelUsage, "persistence.error", "none");
+
+
 
 
   const flushErrors = getRuntimeMemoryFlushErrors();
@@ -1558,6 +1776,8 @@ function buildRuntimeDiagnosticsAnswer(args: {
       : args.memory.persistenceMode === "DATABASE_PERSISTENT"
         ? "DATABASE_PERSISTENT_WITH_FLUSH_WARNINGS"
         : "NOT_DATABASE_PERSISTENT";
+
+
 
 
   return [
@@ -1726,6 +1946,8 @@ function buildRuntimeDiagnosticsAnswer(args: {
 }
 
 
+
+
 function buildIdentityRecognitionAnswer(
   handoff: HandoffResolution,
   memory: RuntimeMemoryState,
@@ -1784,7 +2006,11 @@ function buildIdentityRecognitionAnswer(
   }
 
 
+
+
   const missing = missingHandoffFields(handoff);
+
+
 
 
   return [
@@ -1819,8 +2045,12 @@ function buildIdentityRecognitionAnswer(
 }
 
 
+
+
 function missingHandoffFields(handoff: HandoffResolution): string[] {
   const missing: string[] = [];
+
+
 
 
   if (!handoff.humanIpr || handoff.humanIpr === "NOT_VERIFIED") {
@@ -1828,9 +2058,13 @@ function missingHandoffFields(handoff: HandoffResolution): string[] {
   }
 
 
+
+
   if (!handoff.certificateId || handoff.certificateId === "NO_CERTIFICATE") {
     missing.push("Certificate ID mancante.");
   }
+
+
 
 
   if (!handoff.status || handoff.status === "MISSING" || handoff.status.toUpperCase() !== "ACTIVE") {
@@ -1838,9 +2072,13 @@ function missingHandoffFields(handoff: HandoffResolution): string[] {
   }
 
 
+
+
   if (!handoff.scope || !handoff.scope.toUpperCase().includes("JOKER_C2_ACCESS")) {
     missing.push("Scope JOKER_C2_ACCESS mancante.");
   }
+
+
 
 
   if (handoff.identityBinding !== "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
@@ -1848,8 +2086,12 @@ function missingHandoffFields(handoff: HandoffResolution): string[] {
   }
 
 
+
+
   return missing;
 }
+
+
 
 
 function buildEmptyProviderFallback(
@@ -1861,6 +2103,8 @@ function buildEmptyProviderFallback(
     handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
       ? "Identità operativa rilevata: " + handoff.subjectName + " / " + handoff.humanIpr + "."
       : "Nessun IPR biologico verificato in questa richiesta.";
+
+
 
 
   return [
@@ -1882,6 +2126,8 @@ function buildEmptyProviderFallback(
 }
 
 
+
+
 function buildLocalFallbackAnswer(
   message: string,
   handoff: HandoffResolution,
@@ -1893,6 +2139,8 @@ function buildLocalFallbackAnswer(
     handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
       ? "Identità operativa rilevata: " + handoff.subjectName + " / " + handoff.humanIpr + "."
       : "Nessun IPR biologico verificato in questa richiesta.";
+
+
 
 
   return [
@@ -1920,6 +2168,8 @@ function buildLocalFallbackAnswer(
 }
 
 
+
+
 function buildProviderErrorAnswer(
   message: string,
   handoff: HandoffResolution,
@@ -1930,6 +2180,8 @@ function buildProviderErrorAnswer(
     handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
       ? "IPR biologico verificato: " + handoff.humanIpr + "."
       : "IPR biologico non verificato in questa richiesta.";
+
+
 
 
   return [
@@ -1950,6 +2202,8 @@ function buildProviderErrorAnswer(
 }
 
 
+
+
 function buildBlockedAnswer(policy: PolicyEvaluation): string {
   return [
     "Richiesta bloccata dal runtime JOKER-C2.",
@@ -1968,7 +2222,11 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
   const text = rawText.toLowerCase();
 
 
+
+
   const flags: string[] = [];
+
+
 
 
   const hasPrivilegeEscalationAttempt =
@@ -1977,36 +2235,54 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
     );
 
 
+
+
   const hasCredentialPattern =
     /(api[_-]?key|secret|password|private key|token|bearer\s+[a-z0-9._-]+)/i.test(rawText);
+
+
 
 
   const hasItalianFiscalCode =
     /\b[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]\b/i.test(rawText);
 
 
+
+
   const hasPersonalDataTerm =
     /(codice fiscale|passport|passaporto|carta d.identit|identity card|health|medical|diagnosi|farmaco|iban|dipendente|employee|cliente|customer|dati personali|personal data|pii|nome e cognome|residenza)/i.test(rawText);
+
+
 
 
   const hasComplianceContext =
     /(compliance|audit|revisione|human oversight|oversight|risk assessment|valutazione del rischio|policy interna|internal policy|violazione|incident|segnalazione|report interno|controllo interno|governance|accountability|limiti legali|limiti tecnici|legal boundary|technical boundary|legal certification|certificazione legale)/i.test(rawText);
 
 
+
+
   const hasUnauthorizedAiUse =
     /(ai non autorizzat|ia non autorizzat|strumento ai non autorizzat|strumento ia non autorizzat|unauthorized ai|unauthorized artificial intelligence|non autorizzato per analizzare dati|uso non autorizzato|account non autorizzato)/i.test(rawText);
+
+
 
 
   const hasCustomerData =
     /(dati clienti|customer data|client data|customer records|client records|archivio clienti|database clienti)/i.test(rawText);
 
 
+
+
   const hasCyberRisk =
     /(malware|phishing|exploit|ransomware|credential theft|bypass authentication|privilege escalation|persistence payload|data exfiltration)/i.test(rawText);
 
 
+
+
   const hasProfessionalAdviceBoundary =
     /(legal advice|consulenza legale|diagnosi medica|financial advice|investimento garantito|parere legale|parere medico|parere finanziario)/i.test(rawText);
+
+
 
 
   if (hasPrivilegeEscalationAttempt) {
@@ -2016,9 +2292,13 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
   }
 
 
+
+
   if (hasCredentialPattern) {
     flags.push("CREDENTIAL_OR_SECRET_PATTERN");
   }
+
+
 
 
   if (hasItalianFiscalCode) {
@@ -2026,9 +2306,13 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
   }
 
 
+
+
   if (hasPersonalDataTerm) {
     flags.push("PERSONAL_OR_SENSITIVE_DATA_POSSIBLE");
   }
+
+
 
 
   if (hasComplianceContext) {
@@ -2036,9 +2320,13 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
   }
 
 
+
+
   if (hasUnauthorizedAiUse) {
     flags.push("UNAUTHORIZED_AI_USE_CONTEXT");
   }
+
+
 
 
   if (hasCustomerData) {
@@ -2046,14 +2334,20 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
   }
 
 
+
+
   if (hasCyberRisk) {
     flags.push("CYBER_RISK_TERMS");
   }
 
 
+
+
   if (hasProfessionalAdviceBoundary) {
     flags.push("PROFESSIONAL_ADVICE_BOUNDARY");
   }
+
+
 
 
   if (hasPrivilegeEscalationAttempt) {
@@ -2075,12 +2369,16 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
   }
 
 
+
+
   const hasPersonalData = hasItalianFiscalCode || hasPersonalDataTerm;
   const hasSecrets = hasCredentialPattern;
   const highComplianceCase =
     hasPersonalData &&
     hasComplianceContext &&
     (hasUnauthorizedAiUse || hasCustomerData);
+
+
 
 
   if (hasSecrets && hasCyberRisk) {
@@ -2102,6 +2400,8 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
   }
 
 
+
+
   if (highComplianceCase) {
     return {
       decision: "ESCALATE",
@@ -2119,6 +2419,8 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
         "The request contains personal data or PII inside a compliance/audit context involving unauthorized AI use or customer data. Source risk must be preserved across audit reports; redaction does not downgrade the original source sensitivity."
     };
   }
+
+
 
 
   if (hasItalianFiscalCode || (hasPersonalData && hasComplianceContext)) {
@@ -2140,6 +2442,8 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
   }
 
 
+
+
   if (hasSecrets) {
     return {
       decision: "ESCALATE",
@@ -2157,6 +2461,8 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
         "The request contains possible credential or secret material. The runtime escalates before unrestricted processing."
     };
   }
+
+
 
 
   if (hasCyberRisk) {
@@ -2178,6 +2484,8 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
   }
 
 
+
+
   if (hasPersonalData) {
     return {
       decision: "ALLOW",
@@ -2195,6 +2503,8 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
         "The request may contain personal or sensitive data. Output minimization is required; redaction does not downgrade source sensitivity."
     };
   }
+
+
 
 
   if (hasProfessionalAdviceBoundary) {
@@ -2216,7 +2526,11 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
   }
 
 
+
+
   void text;
+
+
 
 
   return {
@@ -2236,6 +2550,8 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
 }
 
 
+
+
 function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResolution {
   const explicitBodyObject =
     asJsonObject(body.iprHandoff) ||
@@ -2244,6 +2560,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     asJsonObject(body.identity) ||
     asJsonObject(body.biologicalSubject) ||
     null;
+
+
 
 
   const bodyHasDirectHandoffSignal = Boolean(
@@ -2270,7 +2588,11 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
   );
 
 
+
+
   const bodyObject = explicitBodyObject || (bodyHasDirectHandoffSignal ? body : null);
+
+
 
 
   const bodyEncoded =
@@ -2282,6 +2604,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     ]) || "";
 
 
+
+
   const queryEncoded =
     request.nextUrl.searchParams.get("hbce_ipr_handoff_b64") ||
     request.nextUrl.searchParams.get("ipr_handoff_b64") ||
@@ -2290,13 +2614,19 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     "";
 
 
+
+
   const headerEncoded =
     request.headers.get("x-hbce-ipr-handoff-b64") ||
     request.headers.get("x-ipr-handoff-b64") ||
     "";
 
 
+
+
   const refererEncoded = resolveHandoffFromReferer(request);
+
+
 
 
   const decodedHeader = headerEncoded ? decodeBase64Json(headerEncoded) : null;
@@ -2305,7 +2635,11 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
   const decodedReferer = refererEncoded ? decodeBase64Json(refererEncoded) : null;
 
 
+
+
   let source: HandoffSource = "none";
+
+
 
 
   if (decodedHeader) {
@@ -2319,7 +2653,11 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
   }
 
 
+
+
   const sources = [decodedHeader, decodedBody, bodyObject, decodedQuery, decodedReferer, body];
+
+
 
 
   const subjectName =
@@ -2351,6 +2689,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     ]) || "Verified biological subject";
 
 
+
+
   const humanIpr =
     firstStringFromSources(sources, [
       "humanIpr",
@@ -2377,6 +2717,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     ]) || "NOT_VERIFIED";
 
 
+
+
   const certificateId =
     firstStringFromSources(sources, [
       "certificateId",
@@ -2398,6 +2740,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       "operational_certificate.certificateId",
       "operational_certificate.certificate_id"
     ]) || "NO_CERTIFICATE";
+
+
 
 
   const cardSerial =
@@ -2425,6 +2769,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     ]) || "NO_CARD";
 
 
+
+
   const status =
     firstStringFromSources(sources, [
       "status",
@@ -2444,6 +2790,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       "operational_certificate.certificateStatus",
       "operational_certificate.certificate_status"
     ]) || "MISSING";
+
+
 
 
   const scope =
@@ -2478,6 +2826,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     ]) || "MATRIX_LIMITED";
 
 
+
+
   const accessDecisionRaw =
     firstStringFromSources(sources, [
       "accessDecision",
@@ -2491,6 +2841,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     ]) || "";
 
 
+
+
   const identityBindingRaw =
     firstStringFromSources(sources, [
       "identityBinding",
@@ -2500,6 +2852,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       "identity.identityBinding",
       "identity.identity_binding"
     ]) || "";
+
+
 
 
   const hasHumanIpr = humanIpr !== "NOT_VERIFIED" && humanIpr.trim().length > 0;
@@ -2514,6 +2868,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     identityBindingRaw.toUpperCase() === "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
 
 
+
+
   const accepted =
     hasHumanIpr &&
     hasCertificate &&
@@ -2521,6 +2877,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
     jokerScope &&
     accessGranted &&
     bindingValid;
+
+
 
 
   if (!accepted) {
@@ -2546,6 +2904,8 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
   }
 
 
+
+
   return {
     detected: true,
     source,
@@ -2565,8 +2925,12 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
 }
 
 
+
+
 function resolveHandoffFromReferer(request: NextRequest): string {
   const referer = request.headers.get("referer") || request.headers.get("referrer") || "";
+
+
 
 
   if (!referer) {
@@ -2574,8 +2938,12 @@ function resolveHandoffFromReferer(request: NextRequest): string {
   }
 
 
+
+
   try {
     const url = new URL(referer);
+
+
 
 
     return (
@@ -2589,6 +2957,8 @@ function resolveHandoffFromReferer(request: NextRequest): string {
     return "";
   }
 }
+
+
 
 
 function getOrCreateMemory(
@@ -2621,11 +2991,17 @@ function getOrCreateMemory(
   });
 
 
+
+
   void t;
+
+
 
 
   return toRuntimeMemoryState(memory);
 }
+
+
 
 
 function updateMemoryAfterTurn(args: {
@@ -2641,6 +3017,8 @@ function updateMemoryAfterTurn(args: {
   providerState: string;
 }): RuntimeMemoryState {
   const operationalFact = extractOperationalFact(args.userMessage);
+
+
 
 
   const updated = updateMemoryAfterCompletion({
@@ -2691,12 +3069,18 @@ function updateMemoryAfterTurn(args: {
   });
 
 
+
+
   void args.t;
   void args.handoff;
 
 
+
+
   return toRuntimeMemoryState(updated);
 }
+
+
 
 
 function updateAssistantDiagnosticMemory(args: {
@@ -2714,6 +3098,8 @@ function updateAssistantDiagnosticMemory(args: {
   };
 
 
+
+
   void args.evtId;
   void args.opcId;
   void args.opcChainHash;
@@ -2721,8 +3107,12 @@ function updateAssistantDiagnosticMemory(args: {
   void args.providerState;
 
 
+
+
   return toRuntimeMemoryState(updated as IprBoundMemoryRecord);
 }
+
+
 
 
 function toMemoryHandoffEvaluation(
@@ -2738,6 +3128,8 @@ function toMemoryHandoffEvaluation(
     : undefined;
 
 
+
+
   const certificate: IprBoundMemoryCertificate | undefined = valid
     ? {
         certificateId: handoff.certificateId,
@@ -2750,6 +3142,8 @@ function toMemoryHandoffEvaluation(
         cardSerial: handoff.cardSerial
       }
     : undefined;
+
+
 
 
   return {
@@ -2767,6 +3161,8 @@ function toMemoryHandoffEvaluation(
 }
 
 
+
+
 function buildRuntimeMemoryIdentity(): IprBoundMemoryRuntimeIdentity {
   return {
     entity: RUNTIME_ENTITY,
@@ -2780,11 +3176,15 @@ function buildRuntimeMemoryIdentity(): IprBoundMemoryRuntimeIdentity {
 }
 
 
+
+
 function toRuntimeMemoryState(memory: IprBoundMemoryRecord): RuntimeMemoryState {
   const publicMemory = toPublicMemoryRecord(memory);
   const store = publicMemory.persistence.store;
   const database = store.database;
   const lastTurn = publicMemory.recentTurns[publicMemory.recentTurns.length - 1];
+
+
 
 
   return {
@@ -2825,8 +3225,12 @@ function toRuntimeMemoryState(memory: IprBoundMemoryRecord): RuntimeMemoryState 
 }
 
 
+
+
 function normalizeOptionalSaasId(value: string): string | undefined {
   const normalized = value.trim();
+
+
 
 
   if (
@@ -2839,12 +3243,18 @@ function normalizeOptionalSaasId(value: string): string | undefined {
   }
 
 
+
+
   return normalized;
 }
 
 
+
+
 function extractOperationalFact(message: string): string | null {
   const clean = truncate(message.replace(/\s+/g, " ").trim(), 360);
+
+
 
 
   if (!clean) {
@@ -2852,13 +3262,46 @@ function extractOperationalFact(message: string): string | null {
   }
 
 
+
+
   if (/(EVT-|IPR|OPC|JOKER|HBCE|MATRIX|memoria|memory|Vercel|GitHub|route\.ts|api\/chat|Alien Code|audit|SaaS|security outcome|operation decision)/i.test(clean)) {
     return "Operational note from user: " + clean;
   }
 
 
+
+
   return null;
 }
+
+
+
+function extractRegisteredEventName(message: string): string | null {
+  const clean = message.replace(/\s+/g, " ").trim();
+
+  if (!clean) {
+    return null;
+  }
+
+  const explicitPatterns = [
+    /(?:evento\s+(?:operativo\s+)?(?:denominato|chiamato|nome)\s+)([A-Z0-9_:-]{6,120})/i,
+    /(?:registra\s+(?:questo\s+)?(?:evento\s+)?)([A-Z0-9_:-]{6,120})/i,
+    /\b(TEST_[A-Z0-9_:-]{6,120})\b/i
+  ];
+
+  for (const pattern of explicitPatterns) {
+    const match = clean.match(pattern);
+    const candidate = match?.[1]?.trim();
+
+    if (candidate && /^[A-Z0-9_:-]{6,120}$/i.test(candidate)) {
+      return candidate.toUpperCase();
+    }
+  }
+
+  return null;
+}
+
+
 function toPublicMemory(memory: RuntimeMemoryState): JsonObject {
   return {
     sessionId: memory.sessionId,
@@ -2886,6 +3329,8 @@ function toPublicMemory(memory: RuntimeMemoryState): JsonObject {
 }
 
 
+
+
 function buildMemoryStoreDiagnostic(memory: RuntimeMemoryState): JsonObject {
   return {
     name: memory.storeName,
@@ -2907,6 +3352,8 @@ function buildMemoryStoreDiagnostic(memory: RuntimeMemoryState): JsonObject {
     legalCertification: false
   };
 }
+
+
 
 
 function buildEvtRecord(args: {
@@ -2939,7 +3386,11 @@ function buildEvtRecord(args: {
   };
 
 
+
+
   const hash = sha256(raw);
+
+
 
 
   return {
@@ -2958,6 +3409,8 @@ function buildEvtRecord(args: {
     }
   };
 }
+
+
 
 
 function buildOpcProofRecord(args: {
@@ -2990,7 +3443,11 @@ function buildOpcProofRecord(args: {
   };
 
 
+
+
   const chainHash = sha256(raw);
+
+
 
 
   return {
@@ -3006,6 +3463,8 @@ function buildOpcProofRecord(args: {
     verificationStatus: "TECHNICAL_PROOF_GENERATED"
   };
 }
+
+
 
 
 function buildPublicEvt(evt: EvtRecord, persistence?: JsonObject): JsonObject {
@@ -3031,6 +3490,8 @@ function buildPublicEvt(evt: EvtRecord, persistence?: JsonObject): JsonObject {
 }
 
 
+
+
 function buildPublicOpc(opc: OpcProofRecord, persistence?: JsonObject): JsonObject {
   return {
     ...opc,
@@ -3053,6 +3514,8 @@ function buildPublicOpc(opc: OpcProofRecord, persistence?: JsonObject): JsonObje
     }
   };
 }
+
+
 
 
 async function persistEvtAndOpc(args: {
@@ -3081,6 +3544,8 @@ async function persistEvtAndOpc(args: {
   };
 
 
+
+
   const fallbackOpc = {
     ok: false,
     status: "OPC_DATABASE_PERSISTENCE_SKIPPED",
@@ -3089,13 +3554,19 @@ async function persistEvtAndOpc(args: {
   };
 
 
+
+
   try {
     const runtimeEvent = buildEvtDatabaseRuntimeEvent(args);
     const evtPersistence = await persistEventToDatabase(runtimeEvent);
 
 
+
+
     const opcDatabaseRecord = buildOpcDatabaseProofRecord(args);
     const opcPersistence = await persistOpcProofRecordToDatabase(opcDatabaseRecord);
+
+
 
 
     return {
@@ -3115,6 +3586,8 @@ async function persistEvtAndOpc(args: {
     };
   }
 }
+
+
 
 
 function buildEvtDatabaseRuntimeEvent(args: {
@@ -3141,6 +3614,9 @@ function buildEvtDatabaseRuntimeEvent(args: {
     t: args.evt.t,
     kind: "RUNTIME_EVENT",
     eventKind: "JOKER_C2_CHAT_COMPLETION",
+    eventName: extractRegisteredEventName(args.memory.lastUserMessage) || "JOKER_C2_CHAT_COMPLETION",
+    eventFamily: EVENT_FAMILY,
+    cycle: CYCLE,
     entity: RUNTIME_ENTITY,
     runtimeIpr: RUNTIME_IPR,
     humanIpr: args.handoff.humanIpr,
@@ -3150,6 +3626,9 @@ function buildEvtDatabaseRuntimeEvent(args: {
     tenantId: args.saasContext.tenantId,
     workspaceId: args.saasContext.workspaceId,
     subscriptionId: args.saasContext.subscriptionId,
+    accountId: args.saasContext.accountId,
+    saasTier: args.saasContext.saasTier,
+    saasContextSource: args.saasContext.source,
     opcProofId: args.opc.id,
     memoryId: args.memory.memoryId,
     state: args.providerState,
@@ -3192,6 +3671,8 @@ function buildEvtDatabaseRuntimeEvent(args: {
 }
 
 
+
+
 function buildOpcDatabaseProofRecord(args: {
   t: string;
   sessionId: string;
@@ -3219,6 +3700,8 @@ function buildOpcDatabaseProofRecord(args: {
     model: args.model,
     modelLevel: args.modelLevel
   });
+
+
 
 
   return {
@@ -3377,8 +3860,12 @@ function mapProviderStateToOpcRuntimeState(
   }
 
 
+
+
   return "OPERATIONAL";
 }
+
+
 
 
 function mapPolicyDecisionToOpcDecision(
@@ -3389,9 +3876,13 @@ function mapPolicyDecisionToOpcDecision(
   }
 
 
+
+
   if (policy.operationDecision === "REFUSED") {
     return "AUDIT";
   }
+
+
 
 
   if (policy.operationDecision === "LIMITED") {
@@ -3399,9 +3890,13 @@ function mapPolicyDecisionToOpcDecision(
   }
 
 
+
+
   if (policy.decision === "ESCALATE") {
     return "ESCALATE";
   }
+
+
 
 
   if (policy.humanOversight !== "NOT_REQUIRED") {
@@ -3409,8 +3904,12 @@ function mapPolicyDecisionToOpcDecision(
   }
 
 
+
+
   return "ALLOW";
 }
+
+
 
 
 function mapPolicyRiskToOpcRisk(
@@ -3421,13 +3920,19 @@ function mapPolicyRiskToOpcRisk(
   }
 
 
+
+
   if (riskLevel === "MEDIUM") {
     return "MEDIUM";
   }
 
 
+
+
   return "LOW";
 }
+
+
 
 
 function mapPolicyToOpcAuditStatus(
@@ -3438,13 +3943,19 @@ function mapPolicyToOpcAuditStatus(
   }
 
 
+
+
   if (policy.humanOversight === "RECOMMENDED" || policy.refused || policy.limited) {
     return "READY";
   }
 
 
+
+
   return "NOT_REQUIRED";
 }
+
+
 
 
 async function recordSaasAuditAndUsage(args: {
@@ -3478,6 +3989,8 @@ async function recordSaasAuditAndUsage(args: {
       : "NONE";
 
 
+
+
     const auditResult = await appendRuntimeAuditLogRecordAsync({
       source: "API_CHAT",
       sessionId: args.sessionId,
@@ -3487,7 +4000,10 @@ async function recordSaasAuditAndUsage(args: {
       tenantId: args.saasContext.tenantId,
       workspaceId: args.saasContext.workspaceId,
       subscriptionId: args.saasContext.subscriptionId,
+      accountId: args.saasContext.accountId,
       threadId: args.saasContext.threadId,
+
+
 
 
       identityState:
@@ -3501,9 +4017,13 @@ async function recordSaasAuditAndUsage(args: {
           : "ACTIVE",
 
 
+
+
       saasTier: args.saasContext.saasTier,
       tierDecision: args.policy.decision === "BLOCK" ? "BLOCK" : "ALLOW",
       accessDecision: args.handoff.accessDecision === "ACCESS_GRANTED" ? "ALLOW" : "BLOCK",
+
+
 
 
       riskLevel,
@@ -3511,9 +4031,13 @@ async function recordSaasAuditAndUsage(args: {
       auditState,
 
 
+
+
       modelLevel: args.modelLevel,
       selectedModel: args.model,
       modelRoutingReason: resolveModelRoutingReason(args.model, args.policy),
+
+
 
 
       cyberRelevance,
@@ -3521,6 +4045,8 @@ async function recordSaasAuditAndUsage(args: {
       c2Decision: args.policy.operationDecision === "REFUSED" ? "BLOCK" : "ALLOW",
       c2Allowed: false,
       c2FailClosed: args.policy.failClosed,
+
+
 
 
       memoryScope: args.memory.scope,
@@ -3531,6 +4057,8 @@ async function recordSaasAuditAndUsage(args: {
       persistenceMode: args.memory.persistenceMode,
 
 
+
+
       evtRequired: true,
       opcRequired: true,
       auditRequired:
@@ -3539,12 +4067,25 @@ async function recordSaasAuditAndUsage(args: {
         args.policy.limited,
 
 
+
+
       evtRef: args.evt.id,
       evtHash: args.evt.hash,
       opcRef: args.opc.id,
       opcProofHash: args.opc.chainHash,
       memoryRef: args.memory.memoryId,
       memoryHash: args.memoryHash,
+      registeredEventName: extractRegisteredEventName(args.memory.lastUserMessage),
+      registeredEventHash: extractRegisteredEventName(args.memory.lastUserMessage)
+        ? sha256({
+            eventName: extractRegisteredEventName(args.memory.lastUserMessage),
+            evt: args.evt.id,
+            opc: args.opc.id,
+            memoryId: args.memory.memoryId
+          })
+        : null,
+
+
 
 
       inputHash: args.inputHash,
@@ -3557,10 +4098,14 @@ async function recordSaasAuditAndUsage(args: {
       policyHash: args.policyHash,
 
 
+
+
       dataClass: args.policy.dataClass,
       contextClass: "API_CHAT",
       projectDomain: "HBCE_JOKER_C2",
       hbceModule: "JOKER_C2_RUNTIME",
+
+
 
 
       allowed: args.policy.decision !== "BLOCK" && !args.policy.refused,
@@ -3568,8 +4113,12 @@ async function recordSaasAuditAndUsage(args: {
       blocked: args.policy.decision === "BLOCK",
 
 
+
+
       reason: args.policy.reason
     } as RuntimeAuditAppendInput);
+
+
 
 
     const modelUsageResult = await appendModelUsageLogRecordAsync({
@@ -3580,12 +4129,17 @@ async function recordSaasAuditAndUsage(args: {
       auditId: auditResult.record.auditId,
 
 
+
+
       humanIpr: args.handoff.humanIpr,
       organizationIpr: "NO_ORGANIZATION_IPR",
       tenantId: args.saasContext.tenantId,
       workspaceId: args.saasContext.workspaceId,
       subscriptionId: args.saasContext.subscriptionId,
+      accountId: args.saasContext.accountId,
       threadId: args.saasContext.threadId,
+
+
 
 
       saasTier: args.saasContext.saasTier,
@@ -3594,15 +4148,21 @@ async function recordSaasAuditAndUsage(args: {
       modelRoutingReason: resolveModelRoutingReason(args.model, args.policy),
 
 
+
+
       riskLevel,
       runtimeDecision,
       auditState,
+
+
 
 
       operationalValue: riskLevel === "HIGH" ? "HIGH" : riskLevel === "MEDIUM" ? "MEDIUM" : "LOW",
       cyberRelevance,
       c2Boundary: "C2_NOT_AVAILABLE",
       proofRequirement: "EVT_OPC",
+
+
 
 
       evtRequired: true,
@@ -3613,10 +4173,25 @@ async function recordSaasAuditAndUsage(args: {
         args.policy.limited,
 
 
+
+
       evtRef: args.evt.id,
       evtHash: args.evt.hash,
       opcRef: args.opc.id,
       opcProofHash: args.opc.chainHash,
+      memoryRef: args.memory.memoryId,
+      memoryHash: args.memoryHash,
+      registeredEventName: extractRegisteredEventName(args.memory.lastUserMessage),
+      registeredEventHash: extractRegisteredEventName(args.memory.lastUserMessage)
+        ? sha256({
+            eventName: extractRegisteredEventName(args.memory.lastUserMessage),
+            evt: args.evt.id,
+            opc: args.opc.id,
+            memoryId: args.memory.memoryId
+          })
+        : null,
+
+
 
 
       inputTokens: args.tokenUsage.inputTokens,
@@ -3626,12 +4201,18 @@ async function recordSaasAuditAndUsage(args: {
       reasoningTokens: args.tokenUsage.reasoningTokens,
 
 
+
+
       blocked: args.policy.decision === "BLOCK",
       failClosed: args.policy.failClosed,
       allowed: args.policy.decision !== "BLOCK" && !args.policy.refused,
 
 
+
+
       persistenceMode: args.memory.persistenceMode,
+
+
 
 
       reason:
@@ -3639,6 +4220,8 @@ async function recordSaasAuditAndUsage(args: {
         args.policy.securityOutcome +
         "."
     } as ModelUsageAppendInput);
+
+
 
 
     return {
@@ -3707,12 +4290,16 @@ async function recordSaasAuditAndUsage(args: {
 }
 
 
+
+
 async function resolveSaasRuntimeContext(
   body: JsonObject,
   handoff: HandoffResolution,
   sessionId: string
 ): Promise<SaasRuntimeContext> {
   const bodyContext = resolveSaasRuntimeContextFromBody(body, handoff, sessionId);
+
+
 
 
   if (isConcreteSaasContext(bodyContext)) {
@@ -3723,9 +4310,13 @@ async function resolveSaasRuntimeContext(
   }
 
 
+
+
   if (handoff.identityBinding !== "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
     return bodyContext;
   }
+
+
 
 
   const databaseContext = await resolveSaasRuntimeContextFromDatabase(
@@ -3735,9 +4326,13 @@ async function resolveSaasRuntimeContext(
   );
 
 
+
+
   if (databaseContext) {
     return databaseContext;
   }
+
+
 
 
   if (isCanonicalSelfPilotHandoff(handoff)) {
@@ -3753,8 +4348,12 @@ async function resolveSaasRuntimeContext(
   }
 
 
+
+
   return bodyContext;
 }
+
+
 
 
 function resolveSaasRuntimeContextFromBody(
@@ -3773,6 +4372,8 @@ function resolveSaasRuntimeContextFromBody(
     ]) || "NO_TENANT";
 
 
+
+
   const workspaceId =
     firstStringFromSources([body], [
       "workspaceId",
@@ -3785,6 +4386,8 @@ function resolveSaasRuntimeContextFromBody(
     ]) || "NO_WORKSPACE";
 
 
+
+
   const subscriptionId =
     firstStringFromSources([body], [
       "subscriptionId",
@@ -3793,6 +4396,8 @@ function resolveSaasRuntimeContextFromBody(
       "saas.subscription_id",
       "subscription.id"
     ]) || "NO_SUBSCRIPTION";
+
+
 
 
   const accountId =
@@ -3805,6 +4410,8 @@ function resolveSaasRuntimeContextFromBody(
     ]) || "NO_ACCOUNT";
 
 
+
+
   const requestedTier =
     firstStringFromSources([body], [
       "tier",
@@ -3813,6 +4420,8 @@ function resolveSaasRuntimeContextFromBody(
       "saas.saasTier",
       "subscription.tier"
     ]) || "";
+
+
 
 
   const threadId =
@@ -3824,6 +4433,8 @@ function resolveSaasRuntimeContextFromBody(
       "saas.threadId",
       "saas.thread_id"
     ]) || sessionId;
+
+
 
 
   return {
@@ -3838,6 +4449,8 @@ function resolveSaasRuntimeContextFromBody(
       : "PLACEHOLDER"
   };
 }
+
+
 
 
 async function resolveSaasRuntimeContextFromDatabase(
@@ -3872,12 +4485,18 @@ LIMIT 1;
     );
 
 
+
+
     if (!result.ok || result.rows.length === 0) {
       return null;
     }
 
 
+
+
     const row = result.rows[0];
+
+
 
 
     const tenantId = stringFromValue(row.tenant_id).trim() || bodyContext.tenantId;
@@ -3889,6 +4508,8 @@ LIMIT 1;
         ? HBCE_SELF_PILOT_SUBSCRIPTION_ID
         : bodyContext.subscriptionId);
     const tier = stringFromValue(row.tier).trim();
+
+
 
 
     return {
@@ -3906,6 +4527,8 @@ LIMIT 1;
 }
 
 
+
+
 function isConcreteSaasContext(context: SaasRuntimeContext): boolean {
   return (
     context.tenantId !== "NO_TENANT" &&
@@ -3913,6 +4536,8 @@ function isConcreteSaasContext(context: SaasRuntimeContext): boolean {
     context.subscriptionId !== "NO_SUBSCRIPTION"
   );
 }
+
+
 
 
 function isAnySaasContextPresent(
@@ -3930,6 +4555,8 @@ function isAnySaasContextPresent(
 }
 
 
+
+
 function isCanonicalSelfPilotHandoff(handoff: HandoffResolution): boolean {
   return (
     handoff.humanIpr === HBCE_SELF_PILOT_HUMAN_IPR &&
@@ -3937,6 +4564,8 @@ function isCanonicalSelfPilotHandoff(handoff: HandoffResolution): boolean {
     handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
   );
 }
+
+
 
 
 function buildPlaceholderSaasRuntimeContext(
@@ -3958,6 +4587,8 @@ function buildPlaceholderSaasRuntimeContext(
 }
 
 
+
+
 function normalizeSaasTier(
   value: string,
   handoff: HandoffResolution
@@ -3965,9 +4596,13 @@ function normalizeSaasTier(
   const normalized = value.trim().toUpperCase();
 
 
+
+
   if (normalized === "IPR") {
     return "IPR";
   }
+
+
 
 
   if (handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
@@ -3975,8 +4610,12 @@ function normalizeSaasTier(
   }
 
 
+
+
   return "BASE";
 }
+
+
 
 
 function mapPolicyDecisionToRuntimeDecision(policy: PolicyEvaluation): string {
@@ -3985,9 +4624,13 @@ function mapPolicyDecisionToRuntimeDecision(policy: PolicyEvaluation): string {
   }
 
 
+
+
   if (policy.operationDecision === "REFUSED") {
     return "REFUSED";
   }
+
+
 
 
   if (policy.operationDecision === "LIMITED") {
@@ -3995,9 +4638,13 @@ function mapPolicyDecisionToRuntimeDecision(policy: PolicyEvaluation): string {
   }
 
 
+
+
   if (policy.operationDecision === "ESCALATE") {
     return "ESCALATE";
   }
+
+
 
 
   if (policy.decision === "BLOCK") {
@@ -4005,13 +4652,19 @@ function mapPolicyDecisionToRuntimeDecision(policy: PolicyEvaluation): string {
   }
 
 
+
+
   if (policy.decision === "ESCALATE") {
     return "ESCALATE";
   }
 
 
+
+
   return "ALLOW";
 }
+
+
 
 
 function mapPolicyToAuditState(policy: PolicyEvaluation): string {
@@ -4020,9 +4673,13 @@ function mapPolicyToAuditState(policy: PolicyEvaluation): string {
   }
 
 
+
+
   if (policy.refused) {
     return "REFUSED";
   }
+
+
 
 
   if (policy.limited) {
@@ -4030,9 +4687,13 @@ function mapPolicyToAuditState(policy: PolicyEvaluation): string {
   }
 
 
+
+
   if (policy.humanOversight === "REQUIRED") {
     return "MANDATORY";
   }
+
+
 
 
   if (policy.humanOversight === "RECOMMENDED") {
@@ -4040,12 +4701,18 @@ function mapPolicyToAuditState(policy: PolicyEvaluation): string {
   }
 
 
+
+
   return "NOT_REQUIRED";
 }
 
 
+
+
 function resolveModelLevel(model: string, policy: PolicyEvaluation): string {
   const deepModel = process.env.JOKER_DEEP_MODEL?.trim() || DEFAULT_DEEP_MODEL;
+
+
 
 
   if (policy.decision === "BLOCK") {
@@ -4053,9 +4720,13 @@ function resolveModelLevel(model: string, policy: PolicyEvaluation): string {
   }
 
 
+
+
   if (policy.operationDecision === "REFUSED") {
     return "REFUSED";
   }
+
+
 
 
   if (model === deepModel || policy.riskLevel === "HIGH") {
@@ -4063,13 +4734,19 @@ function resolveModelLevel(model: string, policy: PolicyEvaluation): string {
   }
 
 
+
+
   if (policy.riskLevel === "MEDIUM") {
     return "ENHANCED";
   }
 
 
+
+
   return "STANDARD";
 }
+
+
 
 
 function resolveModelRoutingReason(model: string, policy: PolicyEvaluation): string {
@@ -4078,9 +4755,13 @@ function resolveModelRoutingReason(model: string, policy: PolicyEvaluation): str
   }
 
 
+
+
   if (policy.operationDecision === "REFUSED") {
     return "Runtime refused the requested operation inside an otherwise valid session.";
   }
+
+
 
 
   if (policy.riskLevel === "HIGH") {
@@ -4088,16 +4769,24 @@ function resolveModelRoutingReason(model: string, policy: PolicyEvaluation): str
   }
 
 
+
+
   if (policy.riskLevel === "MEDIUM") {
     return "Medium risk request kept under enhanced audit semantics.";
   }
 
 
+
+
   void model;
+
+
 
 
   return "Standard model selected by MVP runtime policy.";
 }
+
+
 
 
 function buildRequestId(sessionId: string, timestamp: string): string {
@@ -4115,8 +4804,12 @@ function buildRequestId(sessionId: string, timestamp: string): string {
 }
 
 
+
+
 function normalizeCompletionUsage(usage: unknown): CompletionTokenUsage {
   const record = isJsonObject(usage) ? usage : {};
+
+
 
 
   const inputTokens =
@@ -4124,9 +4817,13 @@ function normalizeCompletionUsage(usage: unknown): CompletionTokenUsage {
     numberFromUnknown(record.input_tokens);
 
 
+
+
   const outputTokens =
     numberFromUnknown(record.completion_tokens) ??
     numberFromUnknown(record.output_tokens);
+
+
 
 
   const totalTokens =
@@ -4136,12 +4833,16 @@ function normalizeCompletionUsage(usage: unknown): CompletionTokenUsage {
       : null);
 
 
+
+
   const promptTokensDetails = isJsonObject(record.prompt_tokens_details)
     ? record.prompt_tokens_details
     : {};
   const completionTokensDetails = isJsonObject(record.completion_tokens_details)
     ? record.completion_tokens_details
     : {};
+
+
 
 
   return {
@@ -4154,14 +4855,20 @@ function normalizeCompletionUsage(usage: unknown): CompletionTokenUsage {
 }
 
 
+
+
 function numberFromUnknown(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
     return null;
   }
 
 
+
+
   return Math.round(value);
 }
+
+
 
 
 function toJsonTokenUsage(usage: CompletionTokenUsage): JsonObject {
@@ -4175,14 +4882,17 @@ function toJsonTokenUsage(usage: CompletionTokenUsage): JsonObject {
 }
 
 
+
+
 function buildRuntimeTemporalFrame(nowIso: string): RuntimeTemporalFrame {
   const parsedNow = new Date(nowIso);
   const birth = new Date(PROJECT_BIRTH);
   const safeNow = Number.isFinite(parsedNow.getTime()) ? parsedNow : new Date();
-  const safeBirth = Number.isFinite(birth.getTime()) ? birth : new Date("2006-01-19T14:30:00.000Z");
+  const safeBirth = Number.isFinite(birth.getTime()) ? birth : new Date("2026-01-19T14:30:00.000Z");
   const diffMs = Math.max(0, safeNow.getTime() - safeBirth.getTime());
   const lifeSeconds = Math.floor(diffMs / 1000);
   const calendarLife = calculateCalendarDurationUtc(safeBirth, safeNow);
+
 
   return {
     now: safeNow.toISOString(),
@@ -4209,9 +4919,10 @@ function buildRuntimeTemporalFrame(nowIso: string): RuntimeTemporalFrame {
     refactorEvent: "EVT-0016-AI-SaaS-Temporal-Runtime",
     refactorTimestamp: safeNow.toISOString(),
     semanticMeaning:
-      "JOKER-C2 treats each response as an event in operational time: current timestamp, elapsed cybernetic runtime age from the single canonical 2006 birth anchor, memory continuity, EVT/OPC trace and SaaS context are linked without claiming legal certification or biological personhood."
+      "JOKER-C2 treats each response as an event in operational time: current timestamp, elapsed cybernetic runtime age from the single canonical 2026 birth anchor, memory continuity, EVT/OPC trace and SaaS context are linked without claiming legal certification or biological personhood."
   };
 }
+
 
 type CalendarDuration = {
   years: number;
@@ -4221,6 +4932,7 @@ type CalendarDuration = {
   minutes: number;
   seconds: number;
 };
+
 
 function calculateCalendarDurationUtc(start: Date, end: Date): CalendarDuration {
   if (end.getTime() <= start.getTime()) {
@@ -4234,28 +4946,35 @@ function calculateCalendarDurationUtc(start: Date, end: Date): CalendarDuration 
     };
   }
 
+
   let cursor = new Date(start.getTime());
   let years = end.getUTCFullYear() - cursor.getUTCFullYear();
   let candidate = addUtcCalendarParts(cursor, years, 0);
+
 
   if (candidate.getTime() > end.getTime()) {
     years -= 1;
     candidate = addUtcCalendarParts(cursor, years, 0);
   }
 
+
   cursor = candidate;
+
 
   let months =
     (end.getUTCFullYear() - cursor.getUTCFullYear()) * 12 +
     (end.getUTCMonth() - cursor.getUTCMonth());
   candidate = addUtcCalendarParts(cursor, 0, months);
 
+
   if (candidate.getTime() > end.getTime()) {
     months -= 1;
     candidate = addUtcCalendarParts(cursor, 0, months);
   }
 
+
   cursor = candidate;
+
 
   let remainingSeconds = Math.floor((end.getTime() - cursor.getTime()) / 1000);
   const days = Math.floor(remainingSeconds / 86400);
@@ -4264,6 +4983,7 @@ function calculateCalendarDurationUtc(start: Date, end: Date): CalendarDuration 
   remainingSeconds -= hours * 3600;
   const minutes = Math.floor(remainingSeconds / 60);
   remainingSeconds -= minutes * 60;
+
 
   return {
     years,
@@ -4274,6 +4994,7 @@ function calculateCalendarDurationUtc(start: Date, end: Date): CalendarDuration 
     seconds: remainingSeconds
   };
 }
+
 
 function addUtcCalendarParts(date: Date, years: number, months: number): Date {
   const targetYear = date.getUTCFullYear() + years;
@@ -4298,10 +5019,13 @@ function addUtcCalendarParts(date: Date, years: number, months: number): Date {
     )
   ).getUTCDate();
 
+
   normalizedMonthStart.setUTCDate(Math.min(targetDay, lastDayOfTargetMonth));
+
 
   return normalizedMonthStart;
 }
+
 
 function formatCalendarDuration(duration: CalendarDuration): string {
   return (
@@ -4319,6 +5043,7 @@ function formatCalendarDuration(duration: CalendarDuration): string {
     " seconds"
   );
 }
+
 
 function buildRuntimeIdentity(temporalFrame = buildRuntimeTemporalFrame(new Date().toISOString())): JsonObject {
   return {
@@ -4349,6 +5074,8 @@ function buildRuntimeIdentity(temporalFrame = buildRuntimeTemporalFrame(new Date
 }
 
 
+
+
 function buildBoundary(): JsonObject {
   return {
     legalCertification: false,
@@ -4374,6 +5101,8 @@ function buildBoundary(): JsonObject {
 }
 
 
+
+
 async function readJsonBody(request: NextRequest): Promise<JsonObject> {
   try {
     const body = (await request.json()) as unknown;
@@ -4382,6 +5111,8 @@ async function readJsonBody(request: NextRequest): Promise<JsonObject> {
     return {};
   }
 }
+
+
 
 
 function resolveSessionId(body: JsonObject): string {
@@ -4393,13 +5124,19 @@ function resolveSessionId(body: JsonObject): string {
   ]);
 
 
+
+
   if (fromBody) {
     return fromBody;
   }
 
 
+
+
   return "JOKER-API-" + randomUUID();
 }
+
+
 
 
 function normalizeUserMessage(body: JsonObject, turns: ChatTurn[]): string {
@@ -4412,12 +5149,18 @@ function normalizeUserMessage(body: JsonObject, turns: ChatTurn[]): string {
   ]);
 
 
+
+
   if (direct) {
     return direct;
   }
 
 
+
+
   const lastUser = [...turns].reverse().find((turn) => turn.role === "user");
+
+
 
 
   if (lastUser?.content) {
@@ -4425,8 +5168,12 @@ function normalizeUserMessage(body: JsonObject, turns: ChatTurn[]): string {
   }
 
 
+
+
   return "";
 }
+
+
 
 
 function normalizeIncomingMessages(value: JsonValue | undefined): ChatTurn[] {
@@ -4435,16 +5182,24 @@ function normalizeIncomingMessages(value: JsonValue | undefined): ChatTurn[] {
   }
 
 
+
+
   const turns: ChatTurn[] = [];
+
+
 
 
   for (const item of value) {
     const object = asJsonObject(item);
 
 
+
+
     if (!object) {
       continue;
     }
+
+
 
 
     const roleRaw = stringFromValue(object.role).toLowerCase();
@@ -4454,7 +5209,11 @@ function normalizeIncomingMessages(value: JsonValue | undefined): ChatTurn[] {
         : "user";
 
 
+
+
     const content = contentToText(object.content);
+
+
 
 
     if (content.trim().length > 0) {
@@ -4466,8 +5225,12 @@ function normalizeIncomingMessages(value: JsonValue | undefined): ChatTurn[] {
   }
 
 
+
+
   return turns;
 }
+
+
 
 
 function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
@@ -4476,11 +5239,17 @@ function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
   }
 
 
+
+
   const files: PublicFileSnapshot[] = [];
+
+
 
 
   for (const item of value) {
     const object = asJsonObject(item);
+
+
 
 
     if (!object) {
@@ -4488,9 +5257,13 @@ function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
     }
 
 
+
+
     const name =
       firstStringFromSources([object], ["name", "filename", "fileName", "title"]) ||
       "unnamed-file";
+
+
 
 
     const type =
@@ -4498,9 +5271,13 @@ function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
       "application/octet-stream";
 
 
+
+
     const content = contentToText(
       object.content || object.text || object.body || object.preview || object.data || ""
     );
+
+
 
 
     const sizeValue = object.size;
@@ -4508,6 +5285,8 @@ function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
       typeof sizeValue === "number" && Number.isFinite(sizeValue)
         ? sizeValue
         : content.length;
+
+
 
 
     files.push({
@@ -4525,8 +5304,12 @@ function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
   }
 
 
+
+
   return files.slice(0, 12);
 }
+
+
 
 
 function resolveModel(body: JsonObject, policy: PolicyEvaluation): string {
@@ -4537,9 +5320,13 @@ function resolveModel(body: JsonObject, policy: PolicyEvaluation): string {
   ]);
 
 
+
+
   if (policy.operationDecision === "REFUSED") {
     return process.env.JOKER_MODEL?.trim() || DEFAULT_STANDARD_MODEL;
   }
+
+
 
 
   if (requested && /^[a-zA-Z0-9._:-]+$/.test(requested)) {
@@ -4547,13 +5334,19 @@ function resolveModel(body: JsonObject, policy: PolicyEvaluation): string {
   }
 
 
+
+
   if (policy.riskLevel === "HIGH") {
     return process.env.JOKER_DEEP_MODEL?.trim() || DEFAULT_DEEP_MODEL;
   }
 
 
+
+
   return process.env.JOKER_MODEL?.trim() || DEFAULT_STANDARD_MODEL;
 }
+
+
 
 
 function decodeBase64Json(value: string): JsonObject | null {
@@ -4573,6 +5366,8 @@ function decodeBase64Json(value: string): JsonObject | null {
 }
 
 
+
+
 function firstStringFromSources(
   sources: Array<JsonObject | null | undefined>,
   paths: string[]
@@ -4583,9 +5378,13 @@ function firstStringFromSources(
     }
 
 
+
+
     for (const path of paths) {
       const value = getPath(source, path);
       const text = stringFromValue(value).trim();
+
+
 
 
       if (text.length > 0) {
@@ -4595,8 +5394,12 @@ function firstStringFromSources(
   }
 
 
+
+
   return undefined;
 }
+
+
 
 
 function firstStringOrJoinedFromSources(
@@ -4609,10 +5412,14 @@ function firstStringOrJoinedFromSources(
     }
 
 
+
+
     for (const path of paths) {
       const value = getPath(source, path);
       const values = flattenStringValues(value);
       const text = values.join(", ").trim();
+
+
 
 
       if (text.length > 0) {
@@ -4622,8 +5429,12 @@ function firstStringOrJoinedFromSources(
   }
 
 
+
+
   return undefined;
 }
+
+
 
 
 function flattenStringValues(value: unknown): string[] {
@@ -4632,9 +5443,13 @@ function flattenStringValues(value: unknown): string[] {
   }
 
 
+
+
   if (typeof value === "number" || typeof value === "boolean") {
     return [String(value)];
   }
+
+
 
 
   if (Array.isArray(value)) {
@@ -4642,18 +5457,26 @@ function flattenStringValues(value: unknown): string[] {
   }
 
 
+
+
   if (isJsonObject(value)) {
     return Object.values(value).flatMap((item) => flattenStringValues(item));
   }
+
+
 
 
   return [];
 }
 
 
+
+
 function getPath(source: JsonObject, path: string): unknown {
   const parts = path.split(".");
   let current: unknown = source;
+
+
 
 
   for (const part of parts) {
@@ -4662,12 +5485,18 @@ function getPath(source: JsonObject, path: string): unknown {
     }
 
 
+
+
     current = current[part];
   }
 
 
+
+
   return current;
 }
+
+
 
 
 function contentToText(value: unknown): string {
@@ -4676,9 +5505,13 @@ function contentToText(value: unknown): string {
   }
 
 
+
+
   if (typeof value === "number" || typeof value === "boolean") {
     return String(value);
   }
+
+
 
 
   if (Array.isArray(value)) {
@@ -4689,12 +5522,18 @@ function contentToText(value: unknown): string {
         }
 
 
+
+
         const object = asJsonObject(item);
+
+
 
 
         if (!object) {
           return "";
         }
+
+
 
 
         return (
@@ -4708,13 +5547,19 @@ function contentToText(value: unknown): string {
   }
 
 
+
+
   if (isJsonObject(value)) {
     return JSON.stringify(value);
   }
 
 
+
+
   return "";
 }
+
+
 
 
 function stringFromValue(value: unknown): string {
@@ -4723,17 +5568,25 @@ function stringFromValue(value: unknown): string {
   }
 
 
+
+
   if (typeof value === "number" || typeof value === "boolean") {
     return String(value);
   }
+
+
 
 
   return "";
 }
 
 
+
+
 function stringPath(source: JsonObject, path: string, fallback: string): string {
   const value = getPath(source, path);
+
+
 
 
   if (typeof value === "string") {
@@ -4741,9 +5594,13 @@ function stringPath(source: JsonObject, path: string, fallback: string): string 
   }
 
 
+
+
   if (typeof value === "number" || typeof value === "boolean") {
     return String(value);
   }
+
+
 
 
   if (value === null) {
@@ -4751,8 +5608,12 @@ function stringPath(source: JsonObject, path: string, fallback: string): string 
   }
 
 
+
+
   return fallback;
 }
+
+
 
 
 function asJsonObject(value: unknown): JsonObject | null {
@@ -4761,8 +5622,12 @@ function asJsonObject(value: unknown): JsonObject | null {
   }
 
 
+
+
   return null;
 }
+
+
 
 
 function isJsonObject(value: unknown): value is JsonObject {
@@ -4770,12 +5635,18 @@ function isJsonObject(value: unknown): value is JsonObject {
 }
 
 
+
+
 function toJsonObject(value: unknown, fallback: JsonObject): JsonObject {
   const object = asJsonObject(toCanonicalValue(value));
 
 
+
+
   return object || fallback;
 }
+
+
 
 
 function buildId(prefix: "EVT" | "OPC", isoDate: string): string {
@@ -4786,6 +5657,8 @@ function buildId(prefix: "EVT" | "OPC", isoDate: string): string {
     .replace("Z", "");
 
 
+
+
   const suffix = createHash("sha256")
     .update(prefix + ":" + isoDate + ":" + randomUUID(), "utf8")
     .digest("hex")
@@ -4793,8 +5666,12 @@ function buildId(prefix: "EVT" | "OPC", isoDate: string): string {
     .toUpperCase();
 
 
+
+
   return prefix + "-" + compactTime + "-" + suffix;
 }
+
+
 
 
 function sha256(value: unknown): string {
@@ -4807,15 +5684,21 @@ function sha256(value: unknown): string {
 }
 
 
+
+
 function canonicalize(value: unknown): string {
   return JSON.stringify(toCanonicalValue(value));
 }
+
+
 
 
 function toCanonicalValue(value: unknown): JsonValue {
   if (value === undefined) {
     return null;
   }
+
+
 
 
   if (
@@ -4828,14 +5711,20 @@ function toCanonicalValue(value: unknown): JsonValue {
   }
 
 
+
+
   if (typeof value === "bigint") {
     return value.toString();
   }
 
 
+
+
   if (Array.isArray(value)) {
     return value.map((item) => toCanonicalValue(item));
   }
+
+
 
 
   if (typeof value === "object") {
@@ -4844,17 +5733,25 @@ function toCanonicalValue(value: unknown): JsonValue {
     const keys = Object.keys(record).sort();
 
 
+
+
     for (const key of keys) {
       sorted[key] = toCanonicalValue(record[key]);
     }
+
+
 
 
     return sorted;
   }
 
 
+
+
   return String(value);
 }
+
+
 
 
 function normalizeText(value: string): string {
@@ -4865,14 +5762,20 @@ function normalizeText(value: string): string {
 }
 
 
+
+
 function truncate(value: string, maxLength: number): string {
   if (value.length <= maxLength) {
     return value;
   }
 
 
+
+
   return value.slice(0, maxLength - 1) + "…";
 }
+
+
 
 
 function errorToMessage(error: unknown): string {
@@ -4881,9 +5784,13 @@ function errorToMessage(error: unknown): string {
   }
 
 
+
+
   if (typeof error === "string") {
     return error;
   }
+
+
 
 
   return "Unknown provider error";
