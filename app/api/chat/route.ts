@@ -207,6 +207,64 @@ type RuntimeMemoryState = {
 };
 
 
+type PublicSemanticMemorySnapshot = {
+  enabled: true;
+  type: "MEMORIA_SEMANTICA_ESOTEROLOGICA_API_CHAT";
+  formula: string;
+  definition: string;
+  persistable: boolean;
+  memoryId: string;
+  quality: EsoterologicalSemanticMemoryRecord["semantic"]["quality"];
+  continuityGain: EsoterologicalSemanticMemoryRecord["rascensional"]["continuityGain"];
+  thresholdDetected: boolean;
+  couplingState: EsoterologicalSemanticMemoryRecord["alienCode"]["couplingState"];
+  activatedTerms: Array<{
+    n: number;
+    term: string;
+    score: number;
+    matchedSignals: string[];
+  }>;
+  topTerms: string[];
+  primaryAxis: EsoterologicalSemanticMemoryRecord["corpus"]["primaryAxis"];
+  policy: {
+    saveRaw: false;
+    saveSynthesis: boolean;
+    reusableInPrompt: boolean;
+    failClosedReason?: string;
+  };
+  source: {
+    kind: EsoterologicalSemanticMemoryRecord["source"]["kind"];
+    chatMessageId: string;
+    evtId: string;
+    opcId: string;
+    timestamp: string;
+  };
+  ipr: EsoterologicalSemanticMemoryRecord["ipr"];
+  runtime: {
+    entity: string;
+    access: HandoffResolution["accessDecision"];
+    matrix: HandoffResolution["matrixState"];
+    memory: RuntimeMemoryState["scope"];
+    persistenceMode: RuntimeMemoryState["persistenceMode"];
+    persistenceStatus: string;
+    tenantId: string;
+    workspaceId: string;
+    policyDecision: PolicyEvaluation["decision"];
+    operationDecision: PolicyEvaluation["operationDecision"];
+    evtPersistenceStatus: string;
+    opcPersistenceStatus: string;
+    auditId: string;
+    usageId: string;
+  };
+  boundary: {
+    opc: "technical proof receipt only";
+    legalCertification: false;
+    saveRaw: false;
+    publicContract: "controlled semantic memory snapshot";
+  };
+};
+
+
 
 
 type RegisteredOperationalEvent = {
@@ -1151,6 +1209,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     usageId,
     technicalProof: "EVT_OPC_AUDIT_USAGE_LINKED"
   });
+  const publicSemanticMemory = buildPublicSemanticMemorySnapshot({
+    record: esoterologicalSemanticMemory,
+    persistable: esoterologicalSemanticMemoryPersistable,
+    handoff,
+    memory,
+    policy,
+    saasContext,
+    evt,
+    opc,
+    auditAndUsage,
+    persistenceBridge
+  });
   const payload = {
     ok: policy.decision !== "BLOCK",
 
@@ -1241,15 +1311,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     identity: buildRuntimeIdentity(temporalFrame),
     temporal: temporalFrame,
     alienCodePipeline: buildAlienCodePipelineDiagnostic(),
-    esoterologicalSemanticMemory,
-    semanticMemory: {
-      type: "MEMORIA_SEMANTICA_ESOTEROLOGICA_API_CHAT",
-      formula: getCanonicalSemanticMemoryFormula(),
-      definition: getCanonicalSemanticMemoryDefinition(),
-      persistable: esoterologicalSemanticMemoryPersistable,
-      record: esoterologicalSemanticMemory,
-      promptSafeSummary: toPromptSafeEsoterologicalMemorySummary(esoterologicalSemanticMemory)
-    },
+    semanticMemory: publicSemanticMemory,
+    semanticMemoryPublic: publicSemanticMemory,
+    esoterologicalSemanticMemory: publicSemanticMemory,
+    esoterologicalSemanticMemoryRecord: esoterologicalSemanticMemory,
+    semanticMemoryPromptSafeSummary: toPromptSafeEsoterologicalMemorySummary(esoterologicalSemanticMemory),
 
 
 
@@ -1288,7 +1354,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       tier: saasContext.saasTier,
       source: saasContext.source,
       memory: toPublicMemory(memory),
-      esoterologicalSemanticMemory,
+      semanticMemory: publicSemanticMemory,
+      esoterologicalSemanticMemory: publicSemanticMemory,
       semanticMemoryPersistable: esoterologicalSemanticMemoryPersistable,
       registeredEvent: registeredEventForPayload,
       registeredEvents: memory.registeredEvents,
@@ -1498,7 +1565,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         legalCertification: false
       },
       alienCodePipeline: buildAlienCodePipelineDiagnostic(),
-      esoterologicalSemanticMemory,
+      semanticMemory: publicSemanticMemory,
+      esoterologicalSemanticMemory: publicSemanticMemory,
+      esoterologicalSemanticMemoryRecord: esoterologicalSemanticMemory,
       semanticMemoryPersistable: esoterologicalSemanticMemoryPersistable,
       memory: toPublicMemory(memory),
       registeredEvent: registeredEventForPayload,
@@ -1765,6 +1834,86 @@ function isEsoterologicalSemanticMemoryQuestion(message: string): boolean {
       normalized.includes("tempo") &&
       (normalized.includes("alien code") || normalized.includes("codice alieno") || normalized.includes("ipr") || normalized.includes("evt") || normalized.includes("opc") || normalized.includes("matrix")))
   );
+}
+
+
+
+function buildPublicSemanticMemorySnapshot(args: {
+  record: EsoterologicalSemanticMemoryRecord;
+  persistable: boolean;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
+  maxTerms?: number;
+}): PublicSemanticMemorySnapshot {
+  const maxTerms = normalizePositiveInteger(args.maxTerms, 12);
+  const activatedTerms = args.record.corpus.activatedTerms
+    .slice(0, maxTerms)
+    .map((term) => ({
+      n: term.n,
+      term: term.term,
+      score: term.score,
+      matchedSignals: term.matchedSignals
+    }));
+
+  return {
+    enabled: true,
+    type: "MEMORIA_SEMANTICA_ESOTEROLOGICA_API_CHAT",
+    formula: getCanonicalSemanticMemoryFormula(),
+    definition: getCanonicalSemanticMemoryDefinition(),
+    persistable: args.persistable,
+    memoryId: args.record.memoryId,
+    quality: args.record.semantic.quality,
+    continuityGain: args.record.rascensional.continuityGain,
+    thresholdDetected: args.record.rascensional.thresholdDetected,
+    couplingState: args.record.alienCode.couplingState,
+    activatedTerms,
+    topTerms: activatedTerms.slice(0, 5).map((term) => `${term.n} | ${term.term}`),
+    primaryAxis: args.record.corpus.primaryAxis,
+    policy: {
+      saveRaw: false,
+      saveSynthesis: args.record.policy.saveSynthesis,
+      reusableInPrompt: args.record.policy.reusableInPrompt,
+      ...(args.record.policy.failClosedReason
+        ? { failClosedReason: args.record.policy.failClosedReason }
+        : {})
+    },
+    source: {
+      kind: args.record.source.kind,
+      chatMessageId: args.record.source.chatMessageId,
+      evtId: args.evt.id,
+      opcId: args.opc.id,
+      timestamp: args.record.source.timestamp
+    },
+    ipr: args.record.ipr,
+    runtime: {
+      entity: RUNTIME_ENTITY,
+      access: args.handoff.accessDecision,
+      matrix: args.handoff.matrixState,
+      memory: args.memory.scope,
+      persistenceMode: args.memory.persistenceMode,
+      persistenceStatus: args.memory.persistenceStatus,
+      tenantId: args.saasContext.tenantId,
+      workspaceId: args.saasContext.workspaceId,
+      policyDecision: args.policy.decision,
+      operationDecision: args.policy.operationDecision,
+      evtPersistenceStatus: stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN"),
+      opcPersistenceStatus: stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN"),
+      auditId: stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+      usageId: stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID")
+    },
+    boundary: {
+      opc: "technical proof receipt only",
+      legalCertification: false,
+      saveRaw: false,
+      publicContract: "controlled semantic memory snapshot"
+    }
+  };
 }
 
 
