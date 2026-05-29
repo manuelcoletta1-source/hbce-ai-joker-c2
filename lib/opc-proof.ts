@@ -315,6 +315,26 @@ export type OpcSaasContext = {
 };
 
 
+export type OpcTemporalRuntimeCertificate = {
+  name: "JOKER-C2 Temporal Runtime Certificate";
+  utcResponseTime: string;
+  birthAnchorLocal: "2026-01-19T15:30:00+01:00 Europe/Rome" | string;
+  birthAnchorUtc: "2026-01-19T14:30:00.000Z" | string;
+  lifetime: string;
+  lifeSeconds: number;
+  calendarAge: {
+    years: number;
+    months: number;
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  };
+  temporalProof: "EVT_OPC_AUDIT_LINKED";
+  legalCertification: false;
+};
+
+
 export type OpcProofRecord = {
   proofId: string;
   kind: OpcProofKind;
@@ -328,6 +348,7 @@ export type OpcProofRecord = {
   operationalContext?: OpcOperationalContext;
   persistence?: OpcPersistenceFrame;
   saasContext?: OpcSaasContext;
+  temporalRuntimeCertificate: OpcTemporalRuntimeCertificate;
   proof: OpcProofHashes;
   audit: OpcAuditFrame;
   verification: {
@@ -360,6 +381,7 @@ export type OpcProofRecordInput = {
   operationalContext?: Partial<OpcOperationalContext>;
   persistenceMode?: OpcProofPersistenceMode;
   saasContext?: Partial<OpcSaasContext>;
+  temporalRuntimeCertificate?: Partial<OpcTemporalRuntimeCertificate>;
 };
 
 
@@ -394,6 +416,7 @@ export type OpcProofPublicView = {
   operationalContext?: OpcOperationalContext;
   persistence?: OpcPersistenceFrame;
   saasContext?: OpcSaasContext;
+  temporalRuntimeCertificate?: OpcTemporalRuntimeCertificate;
   legalCertification: false;
 };
 
@@ -428,6 +451,7 @@ export type OpcProofDatabasePersistenceStatus =
   | "DATABASE_NOT_AVAILABLE"
   | "DATABASE_TABLE_MISSING"
   | "DATABASE_SCHEMA_UNSUPPORTED"
+  | "DATABASE_DEFERRED"
   | "DATABASE_WRITE_FAILED";
 
 
@@ -435,6 +459,7 @@ export type OpcProofDatabasePersistenceMode =
   | "PROCESS_PROOF_MVP"
   | "DATABASE_PERSISTENT_TARGET"
   | "DATABASE_PERSISTENT"
+  | "DATABASE_DEFERRED"
   | "FAILED";
 
 
@@ -494,6 +519,11 @@ type OpcProofDatabaseFields = {
   hbceModule: string | null;
   auditStatus: string | null;
   verificationStatus: string | null;
+  utcResponseTime: string | null;
+  birthAnchorLocal: string | null;
+  birthAnchorUtc: string | null;
+  jokerLifetime: string | null;
+  jokerLifeSeconds: number | null;
   payloadJson: string;
   publicPayloadJson: string;
   legalCertification: false;
@@ -509,6 +539,30 @@ type OpcProofColumnValue = {
 
 type InformationSchemaColumnRow = HbceDatabaseQueryRow & {
   column_name?: string;
+};
+
+
+type InformationSchemaForeignKeyRow = HbceDatabaseQueryRow & {
+  constraint_name?: string;
+  source_column?: string;
+  referenced_table?: string;
+  referenced_column?: string;
+};
+
+
+type OpcProofForeignKeyReference = {
+  constraintName: string;
+  sourceColumn: string;
+  referencedTable: string;
+  referencedColumn: string;
+};
+
+
+type OpcEvtReferenceGuard = {
+  ok: boolean;
+  deferred: boolean;
+  error: string | null;
+  reference?: OpcProofForeignKeyReference;
 };
 
 
@@ -540,6 +594,11 @@ const DEFAULT_ENGINE_MODEL = "gpt-5.5";
 const DEFAULT_PROJECT_BIRTH_DATE = "2026-01-19";
 const DEFAULT_PROJECT_BIRTH_LABEL =
   "HBCE R&D / AI JOKER-C2 project birth date";
+const JOKER_C2_TEMPORAL_CERTIFICATE_NAME =
+  "JOKER-C2 Temporal Runtime Certificate";
+const JOKER_C2_BIRTH_ANCHOR_LOCAL =
+  "2026-01-19T15:30:00+01:00 Europe/Rome";
+const JOKER_C2_BIRTH_ANCHOR_UTC = "2026-01-19T14:30:00.000Z";
 
 
 const DEFAULT_MONTHLY_REFERENCE = "UP-MESE-4";
@@ -595,6 +654,10 @@ export function createOpcProofRecord(
   const operationalContext = normalizeOperationalContext(input.operationalContext);
   const persistence = normalizePersistenceFrame(input.persistenceMode);
   const saasContext = normalizeSaasContext(input.saasContext);
+  const temporalRuntimeCertificate = buildOpcTemporalRuntimeCertificate(
+    timestamp,
+    input.temporalRuntimeCertificate
+  );
 
 
   const inputHash = sha256Canonical({
@@ -651,6 +714,7 @@ export function createOpcProofRecord(
     runtime,
     operationalContext,
     persistence,
+    temporalRuntimeCertificate,
     inputHash,
     outputHash,
     decisionHash,
@@ -677,6 +741,7 @@ export function createOpcProofRecord(
     operationalContext,
     persistence,
     saasContext,
+    temporalRuntimeCertificate,
     proof: {
       inputHash,
       outputHash,
@@ -776,6 +841,10 @@ export function verifyOpcProofRecord(
     runtime: normalizeRuntimeSnapshot(record.runtime),
     operationalContext: normalizedOperationalContext,
     persistence: normalizedPersistence,
+    temporalRuntimeCertificate: buildOpcTemporalRuntimeCertificate(
+      record.timestamp,
+      record.temporalRuntimeCertificate
+    ),
     inputHash: record.proof.inputHash,
     outputHash: record.proof.outputHash,
     decisionHash: record.proof.decisionHash,
@@ -855,6 +924,7 @@ export function toPublicOpcProofRecord(
     operationalContext: record.operationalContext,
     persistence: record.persistence,
     saasContext: record.saasContext,
+    temporalRuntimeCertificate: record.temporalRuntimeCertificate,
     legalCertification: false
   };
 }
@@ -1101,6 +1171,28 @@ export async function persistOpcProofRecordToDatabase(
     }
 
 
+    const evtReferenceGuard = await verifyOpcEvtParentReference(available, fields);
+
+
+    if (!evtReferenceGuard.ok) {
+      return {
+        ok: false,
+        status: "DATABASE_DEFERRED",
+        mode: "DATABASE_DEFERRED",
+        proofId: fields.proofId,
+        proofHash: fields.proofHash,
+        chainHash: fields.chainHash,
+        evtId: fields.evtId,
+        table: OPC_DATABASE_TABLE,
+        writtenColumns: [],
+        error:
+          evtReferenceGuard.error ||
+          "OPC proof persistence deferred because the referenced EVT parent record is not available yet.",
+        legalCertification: false
+      };
+    }
+
+
     const columnValues = buildOpcProofDatabaseColumnValues(available, fields);
     const statement = buildOpcProofInsertStatement({ columns: columnValues });
 
@@ -1112,17 +1204,23 @@ export async function persistOpcProofRecordToDatabase(
 
 
     if (!result.ok) {
+      const error = result.error || "OPC_PROOF_DATABASE_WRITE_FAILED";
+      const deferredByEvtForeignKey = isOpcEvtForeignKeyError(error);
+
+
       return {
         ok: false,
-        status: "DATABASE_WRITE_FAILED",
-        mode: "FAILED",
+        status: deferredByEvtForeignKey ? "DATABASE_DEFERRED" : "DATABASE_WRITE_FAILED",
+        mode: deferredByEvtForeignKey ? "DATABASE_DEFERRED" : "FAILED",
         proofId: fields.proofId,
         proofHash: fields.proofHash,
         chainHash: fields.chainHash,
         evtId: fields.evtId,
         table: OPC_DATABASE_TABLE,
         writtenColumns: statement.writtenColumns,
-        error: result.error || "OPC_PROOF_DATABASE_WRITE_FAILED",
+        error: deferredByEvtForeignKey
+          ? `OPC proof persistence deferred until EVT parent is persisted: ${error}`
+          : error,
         legalCertification: false
       };
     }
@@ -1214,6 +1312,151 @@ export function getOpcProofDatabaseHealth(): OpcProofDatabaseHealth {
 }
 
 
+
+function buildOpcTemporalRuntimeCertificate(
+  timestamp: string,
+  override?: Partial<OpcTemporalRuntimeCertificate>
+): OpcTemporalRuntimeCertificate {
+  const responseDate = parseValidDate(timestamp) || new Date();
+  const birthDate = new Date(JOKER_C2_BIRTH_ANCHOR_UTC);
+  const calendarAge = buildUtcCalendarAge(birthDate, responseDate);
+  const lifeSeconds = Math.max(
+    0,
+    Math.floor((responseDate.getTime() - birthDate.getTime()) / 1000)
+  );
+
+
+  return {
+    name: JOKER_C2_TEMPORAL_CERTIFICATE_NAME,
+    utcResponseTime: responseDate.toISOString(),
+    birthAnchorLocal: JOKER_C2_BIRTH_ANCHOR_LOCAL,
+    birthAnchorUtc: JOKER_C2_BIRTH_ANCHOR_UTC,
+    lifetime: formatJokerLifetime(calendarAge),
+    lifeSeconds,
+    calendarAge,
+    temporalProof: "EVT_OPC_AUDIT_LINKED",
+    legalCertification: false,
+    ...sanitizeTemporalOverride(override)
+  };
+}
+
+
+function sanitizeTemporalOverride(
+  override?: Partial<OpcTemporalRuntimeCertificate>
+): Partial<OpcTemporalRuntimeCertificate> {
+  if (!override) {
+    return {};
+  }
+
+
+  const sanitized: Partial<OpcTemporalRuntimeCertificate> = {
+    legalCertification: false
+  };
+
+
+  if (typeof override.utcResponseTime === "string" && override.utcResponseTime.trim()) {
+    sanitized.utcResponseTime = override.utcResponseTime.trim();
+  }
+
+
+  if (typeof override.lifetime === "string" && override.lifetime.trim()) {
+    sanitized.lifetime = override.lifetime.trim();
+  }
+
+
+  if (typeof override.lifeSeconds === "number" && Number.isFinite(override.lifeSeconds)) {
+    sanitized.lifeSeconds = Math.max(0, Math.floor(override.lifeSeconds));
+  }
+
+
+  if (override.calendarAge) {
+    sanitized.calendarAge = override.calendarAge;
+  }
+
+
+  return sanitized;
+}
+
+
+function parseValidDate(value: string | undefined): Date | null {
+  if (!value) {
+    return null;
+  }
+
+
+  const date = new Date(value);
+
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+
+  return date;
+}
+
+
+function buildUtcCalendarAge(start: Date, end: Date): OpcTemporalRuntimeCertificate["calendarAge"] {
+  const safeEnd = end.getTime() >= start.getTime() ? end : start;
+
+
+  let years = safeEnd.getUTCFullYear() - start.getUTCFullYear();
+  let months = safeEnd.getUTCMonth() - start.getUTCMonth();
+  let days = safeEnd.getUTCDate() - start.getUTCDate();
+  let hours = safeEnd.getUTCHours() - start.getUTCHours();
+  let minutes = safeEnd.getUTCMinutes() - start.getUTCMinutes();
+  let seconds = safeEnd.getUTCSeconds() - start.getUTCSeconds();
+
+
+  if (seconds < 0) {
+    seconds += 60;
+    minutes -= 1;
+  }
+
+
+  if (minutes < 0) {
+    minutes += 60;
+    hours -= 1;
+  }
+
+
+  if (hours < 0) {
+    hours += 24;
+    days -= 1;
+  }
+
+
+  if (days < 0) {
+    const previousMonthDays = new Date(
+      Date.UTC(safeEnd.getUTCFullYear(), safeEnd.getUTCMonth(), 0)
+    ).getUTCDate();
+    days += previousMonthDays;
+    months -= 1;
+  }
+
+
+  if (months < 0) {
+    months += 12;
+    years -= 1;
+  }
+
+
+  return {
+    years: Math.max(0, years),
+    months: Math.max(0, months),
+    days: Math.max(0, days),
+    hours: Math.max(0, hours),
+    minutes: Math.max(0, minutes),
+    seconds: Math.max(0, seconds)
+  };
+}
+
+
+function formatJokerLifetime(age: OpcTemporalRuntimeCertificate["calendarAge"]): string {
+  return `${age.years} years, ${age.months} months, ${age.days} days, ${age.hours} hours, ${age.minutes} minutes, ${age.seconds} seconds`;
+}
+
+
 function sortCanonical(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map((item) => sortCanonical(item));
@@ -1268,6 +1511,7 @@ function buildOpcChainHash(input: {
   runtime: OpcRuntimeSnapshot;
   operationalContext?: OpcOperationalContext;
   persistence?: OpcPersistenceFrame;
+  temporalRuntimeCertificate?: OpcTemporalRuntimeCertificate;
   inputHash: string;
   outputHash: string;
   decisionHash: string;
@@ -1327,6 +1571,11 @@ function buildOpcChainHash(input: {
 
   if (input.persistence) {
     chainPayload.persistence = normalizePersistenceFrame(input.persistence.mode);
+  }
+
+
+  if (input.temporalRuntimeCertificate) {
+    chainPayload.temporalRuntimeCertificate = input.temporalRuntimeCertificate;
   }
 
 
@@ -1991,6 +2240,13 @@ function buildOpcProofDatabaseFields(record: OpcProofRecord): OpcProofDatabaseFi
       eventName: saasContext?.eventName ?? null,
       eventFamily: saasContext?.eventFamily ?? null,
       cycle: saasContext?.cycle ?? null,
+      utcResponseTime: record.temporalRuntimeCertificate.utcResponseTime,
+      birthAnchorLocal: record.temporalRuntimeCertificate.birthAnchorLocal,
+      birthAnchorUtc: record.temporalRuntimeCertificate.birthAnchorUtc,
+      jokerLifetime: record.temporalRuntimeCertificate.lifetime,
+      jokerLifeSeconds: record.temporalRuntimeCertificate.lifeSeconds,
+      temporalCertificateName: record.temporalRuntimeCertificate.name,
+      temporalProof: record.temporalRuntimeCertificate.temporalProof,
       projectDomain: record.runtime.projectDomain ?? null,
       hbceModule: record.runtime.hbceModule ?? null,
       persistenceBoundary:
@@ -2030,6 +2286,13 @@ function buildOpcProofDatabaseFields(record: OpcProofRecord): OpcProofDatabaseFi
     hbceModule: nullableDatabaseText(record.runtime.hbceModule),
     auditStatus: normalizeDatabaseAuditStatus(record.audit.status),
     verificationStatus: normalizeDatabaseVerificationStatus(record.verification.status),
+    utcResponseTime: nullableDatabaseText(record.temporalRuntimeCertificate.utcResponseTime),
+    birthAnchorLocal: nullableDatabaseText(record.temporalRuntimeCertificate.birthAnchorLocal),
+    birthAnchorUtc: nullableDatabaseText(record.temporalRuntimeCertificate.birthAnchorUtc),
+    jokerLifetime: nullableDatabaseText(record.temporalRuntimeCertificate.lifetime),
+    jokerLifeSeconds: Number.isFinite(record.temporalRuntimeCertificate.lifeSeconds)
+      ? record.temporalRuntimeCertificate.lifeSeconds
+      : null,
     payloadJson: JSON.stringify(payload),
     publicPayloadJson: JSON.stringify(publicView),
     legalCertification: false
@@ -2337,6 +2600,131 @@ ORDER BY ordinal_position;
 }
 
 
+
+async function verifyOpcEvtParentReference(
+  available: Set<string>,
+  fields: OpcProofDatabaseFields
+): Promise<OpcEvtReferenceGuard> {
+  const evtColumn = chooseColumn(available, ["evt_id", "event_id"]);
+
+
+  if (!evtColumn || !fields.evtId) {
+    return { ok: true, deferred: false, error: null };
+  }
+
+
+  const reference = await getOpcProofForeignKeyReference(evtColumn);
+
+
+  if (!reference) {
+    return { ok: true, deferred: false, error: null };
+  }
+
+
+  const exists = await doesReferencedOpcRowExist(
+    reference.referencedTable,
+    reference.referencedColumn,
+    fields.evtId
+  );
+
+
+  if (exists) {
+    return { ok: true, deferred: false, error: null, reference };
+  }
+
+
+  return {
+    ok: false,
+    deferred: true,
+    reference,
+    error:
+      `OPC proof persistence deferred: ${OPC_DATABASE_TABLE}.${reference.sourceColumn} references ` +
+      `${reference.referencedTable}.${reference.referencedColumn}, but EVT ${fields.evtId} is not present yet. ` +
+      "Persist EVT first, then persist OPC. legalCertification=false."
+  };
+}
+
+
+async function getOpcProofForeignKeyReference(
+  sourceColumn: string
+): Promise<OpcProofForeignKeyReference | null> {
+  const result = await queryHbceDatabase<InformationSchemaForeignKeyRow>(
+    `
+SELECT
+  tc.constraint_name,
+  kcu.column_name AS source_column,
+  ccu.table_name AS referenced_table,
+  ccu.column_name AS referenced_column
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+  ON tc.constraint_name = kcu.constraint_name
+  AND tc.table_schema = kcu.table_schema
+JOIN information_schema.constraint_column_usage ccu
+  ON ccu.constraint_name = tc.constraint_name
+  AND ccu.table_schema = tc.table_schema
+WHERE tc.constraint_type = 'FOREIGN KEY'
+  AND tc.table_name = $1
+  AND tc.table_schema IN ('public', current_schema())
+  AND kcu.column_name = $2
+LIMIT 1;
+`.trim(),
+    [OPC_DATABASE_TABLE, sourceColumn]
+  );
+
+
+  if (!result.ok || result.rows.length === 0) {
+    return null;
+  }
+
+
+  const row = result.rows[0];
+
+
+  if (
+    !row.constraint_name ||
+    !row.source_column ||
+    !row.referenced_table ||
+    !row.referenced_column
+  ) {
+    return null;
+  }
+
+
+  return {
+    constraintName: row.constraint_name,
+    sourceColumn: row.source_column,
+    referencedTable: row.referenced_table,
+    referencedColumn: row.referenced_column
+  };
+}
+
+
+async function doesReferencedOpcRowExist(
+  table: string,
+  column: string,
+  value: string
+): Promise<boolean> {
+  const result = await queryHbceDatabase<HbceDatabaseQueryRow>(
+    `SELECT 1 AS found FROM ${quoteIdentifier(table)} WHERE ${quoteIdentifier(column)} = $1 LIMIT 1;`,
+    [value]
+  );
+
+
+  return result.ok && result.rows.length > 0;
+}
+
+
+function isOpcEvtForeignKeyError(error: string): boolean {
+  const normalized = error.toLowerCase();
+
+
+  return (
+    normalized.includes("foreign key") &&
+    (normalized.includes("evt") || normalized.includes("event"))
+  );
+}
+
+
 function buildOpcProofDatabaseColumnValues(
   available: Set<string>,
   fields: OpcProofDatabaseFields
@@ -2426,6 +2814,11 @@ function buildOpcProofDatabaseColumnValues(
   addColumnValue(values, available, ["hbce_module"], toDatabaseValue(fields.hbceModule));
   addColumnValue(values, available, ["audit_status"], toDatabaseValue(fields.auditStatus));
   addColumnValue(values, available, ["verification_status"], toDatabaseValue(fields.verificationStatus));
+  addColumnValue(values, available, ["utc_response_time", "response_utc", "timestamp_utc"], toDatabaseValue(fields.utcResponseTime));
+  addColumnValue(values, available, ["birth_anchor_local", "joker_birth_anchor_local"], toDatabaseValue(fields.birthAnchorLocal));
+  addColumnValue(values, available, ["birth_anchor_utc", "joker_birth_anchor_utc"], toDatabaseValue(fields.birthAnchorUtc));
+  addColumnValue(values, available, ["joker_lifetime", "runtime_lifetime", "ai_joker_lifetime"], toDatabaseValue(fields.jokerLifetime));
+  addColumnValue(values, available, ["joker_life_seconds", "runtime_life_seconds"], toDatabaseValue(fields.jokerLifeSeconds));
 
 
   addColumnValue(values, available, ["public_payload", "public_view"], toDatabaseValue(fields.publicPayloadJson), {
