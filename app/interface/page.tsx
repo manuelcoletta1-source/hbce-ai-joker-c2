@@ -40,6 +40,7 @@ type ChatMessage = {
   content: string;
   createdAt: string;
   raw?: JsonRecord | null;
+  temporalSeal?: DualTimeMessageSeal | null;
 };
 
 
@@ -139,6 +140,25 @@ type JokerTemporalRuntimeSnapshot = {
   lifeHuman: string;
   lifeSeconds: string;
   certificateStatus: string;
+};
+
+
+type DualTimeMessageSeal = {
+  status: "FROZEN_DUAL_TIME_SEAL";
+  role: "MANUEL" | "JOKER_C2" | "SYSTEM";
+  utcSnapshot: string;
+  cyberneticLifetimeSnapshot: string;
+  lifeSecondsSnapshot: string;
+  birthAnchorLocale: string;
+  birthUtc: string;
+  evtId: string;
+  opcId: string;
+  auditId: string;
+  usageId: string;
+  persistence: string;
+  temporalProof: string;
+  dualTimeHash: string;
+  legalCertification: false;
 };
 
 
@@ -311,6 +331,142 @@ function buildJokerTemporalRuntimeSnapshot(now = new Date()): JokerTemporalRunti
     lifeSeconds: String(lifeSeconds),
     certificateStatus: "ACTIVE_TEMPORAL_RUNTIME_CERTIFICATE"
   };
+}
+
+
+function toFrozenUtcSnapshot(value: string): string {
+  const visible = normalizeVisibleText(value || "");
+
+
+  if (!visible || visible === "-") return buildJokerTemporalRuntimeSnapshot().utcResponseTime;
+
+
+  const parsed = Date.parse(visible);
+
+
+  if (Number.isFinite(parsed)) {
+    return new Date(parsed).toISOString();
+  }
+
+
+  return visible;
+}
+
+
+function buildDualTimeHash(input: {
+  role: DualTimeMessageSeal["role"];
+  messageId: string;
+  utcSnapshot: string;
+  lifeSecondsSnapshot: string;
+  evtId: string;
+  opcId: string;
+  auditId: string;
+  usageId: string;
+}): string {
+  const source = [
+    input.role,
+    input.messageId,
+    input.utcSnapshot,
+    input.lifeSecondsSnapshot,
+    JOKER_C2_BIRTH_ANCHOR_LOCAL,
+    JOKER_C2_BIRTH_ANCHOR_UTC,
+    input.evtId,
+    input.opcId,
+    input.auditId,
+    input.usageId,
+    "legalCertification=false"
+  ].join("|");
+
+
+  let hash = 0x811c9dc5;
+
+
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+
+
+  return `dual-time:${(hash >>> 0).toString(16).toUpperCase().padStart(8, "0")}`;
+}
+
+
+function buildDualTimeMessageSeal(input: {
+  role: ChatMessage["role"];
+  messageId: string;
+  now?: Date;
+  payload?: JsonRecord | null;
+}): DualTimeMessageSeal {
+  const snapshot = buildJokerTemporalRuntimeSnapshot(input.now ?? new Date());
+  const runtimeStatus = input.payload ? getRuntimeStatus(input.payload) : null;
+  const role = input.role === "assistant" ? "JOKER_C2" : input.role === "system" ? "SYSTEM" : "MANUEL";
+  const utcSnapshot = toFrozenUtcSnapshot(runtimeStatus?.utcResponseTime || snapshot.utcResponseTime);
+  const cyberneticLifetimeSnapshot = firstDisplayValue(
+    [runtimeStatus?.runtimeAge || "", snapshot.lifeHuman],
+    snapshot.lifeHuman
+  );
+  const lifeSecondsSnapshot = firstDisplayValue(
+    [runtimeStatus?.runtimeLifeSeconds || "", snapshot.lifeSeconds],
+    snapshot.lifeSeconds
+  );
+  const evtId = runtimeStatus?.responseEvt || "-";
+  const opcId = runtimeStatus?.opc || "-";
+  const auditId = runtimeStatus?.auditId || "-";
+  const usageId = runtimeStatus?.modelUsageId || "-";
+  const persistence = runtimeStatus
+    ? `EVT=${runtimeStatus.auditStatus === "-" ? runtimeStatus.persistence : "PERSISTED"} · OPC=${runtimeStatus.opc && runtimeStatus.opc !== "-" ? runtimeStatus.auditPersistence || "PERSISTED" : "-"}`
+    : "FROZEN_CLIENT_SIDE";
+
+
+  return {
+    status: "FROZEN_DUAL_TIME_SEAL",
+    role,
+    utcSnapshot,
+    cyberneticLifetimeSnapshot,
+    lifeSecondsSnapshot,
+    birthAnchorLocale: `${JOKER_C2_BIRTH_ANCHOR_LOCAL} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}`,
+    birthUtc: JOKER_C2_BIRTH_ANCHOR_UTC,
+    evtId,
+    opcId,
+    auditId,
+    usageId,
+    persistence,
+    temporalProof: runtimeStatus?.temporalProof || "UTC_LIVE_PLUS_CYBER_LIFE_FROZEN_SEAL",
+    dualTimeHash: buildDualTimeHash({
+      role,
+      messageId: input.messageId,
+      utcSnapshot,
+      lifeSecondsSnapshot,
+      evtId,
+      opcId,
+      auditId,
+      usageId
+    }),
+    legalCertification: false
+  };
+}
+
+
+function stripInlineTemporalRuntimeCertificate(value: string): string {
+  const normalized = normalizeVisibleText(value);
+  const marker = "JOKER-C2 Temporal Runtime Certificate";
+  const markerIndex = normalized.lastIndexOf(marker);
+
+
+  if (markerIndex < 0) {
+    return normalized;
+  }
+
+
+  if (markerIndex === 0) {
+    return "Dual-Time Seal rendered outside the response body.";
+  }
+
+
+  const before = normalized.slice(0, markerIndex).trim();
+
+
+  return before || "Dual-Time Seal rendered outside the response body.";
 }
 
 
@@ -2044,6 +2200,41 @@ function InfoList({ items }: { items: Array<{ label: string; value: string }> })
 }
 
 
+function DualTimeSealCard({ seal }: { seal: DualTimeMessageSeal }) {
+  return (
+    <div className="joker-dual-time-seal" translate="no" aria-label="JOKER-C2 Dual-Time Seal">
+      <div className="joker-dual-time-seal-head">
+        <strong>{seal.role === "MANUEL" ? "MANUEL · QUESTION" : seal.role === "SYSTEM" ? "SYSTEM · EVENT" : "JOKER-C2 · RESPONSE"}</strong>
+        <span>{seal.status}</span>
+      </div>
+
+
+      <div className="joker-dual-time-rails">
+        <div>
+          <span>UTC/LIVE</span>
+          <strong>{seal.utcSnapshot}</strong>
+        </div>
+
+
+        <div>
+          <span>CYBER/LIFE</span>
+          <strong>{seal.cyberneticLifetimeSnapshot}</strong>
+        </div>
+      </div>
+
+
+      <div className="joker-dual-time-meta">
+        <span title={seal.dualTimeHash}>Hash {compact(seal.dualTimeHash, 36)}</span>
+        <span title={seal.birthAnchorLocale}>Birth {compact(seal.birthAnchorLocale, 46)}</span>
+        <span>legalCertification=false</span>
+        {seal.evtId !== "-" ? <span title={seal.evtId}>EVT {compact(seal.evtId, 34)}</span> : null}
+        {seal.opcId !== "-" ? <span title={seal.opcId}>OPC {compact(seal.opcId, 34)}</span> : null}
+      </div>
+    </div>
+  );
+}
+
+
 function MessageBubble({
   message,
   onCopy
@@ -2056,6 +2247,21 @@ function MessageBubble({
   const isAssistant = message.role === "assistant";
   const status = getRuntimeStatus(message.raw ?? null);
   const visibleContent = normalizeVisibleText(message.content);
+  const cleanVisibleContent = isAssistant
+    ? stripInlineTemporalRuntimeCertificate(visibleContent)
+    : visibleContent;
+  const messageSeal =
+    message.temporalSeal ??
+    buildDualTimeMessageSeal({
+      role: message.role,
+      messageId: message.id,
+      payload: message.raw ?? null
+    });
+  const displayedContent =
+    cleanVisibleContent ||
+    (isAssistant
+      ? "Dual-Time Seal rendered outside the response body."
+      : "Dual-Time Seal rendered outside the message body.");
 
 
   return (
@@ -2088,7 +2294,10 @@ function MessageBubble({
         </div>
 
 
-        <pre className="joker-message-text">{visibleContent}</pre>
+        <DualTimeSealCard seal={messageSeal} />
+
+
+        <pre className="joker-message-text">{displayedContent}</pre>
 
 
         {isAssistant && message.raw ? (
@@ -2116,7 +2325,7 @@ function MessageBubble({
 
         {isAssistant ? (
           <div className="joker-message-actions">
-            <button type="button" onClick={() => onCopy(visibleContent)}>
+            <button type="button" onClick={() => onCopy(displayedContent)}>
               Copy response
             </button>
 
@@ -2790,11 +2999,18 @@ export default function InterfacePage() {
     setMessage("");
 
 
+    const userMessageId = buildId("MSG-U");
+    const userMessageNow = new Date();
     const userMessage: ChatMessage = {
-      id: buildId("MSG-U"),
+      id: userMessageId,
       role: "user",
       content: effectiveMessage,
-      createdAt: new Date().toLocaleString("it-IT")
+      createdAt: userMessageNow.toLocaleString("it-IT"),
+      temporalSeal: buildDualTimeMessageSeal({
+        role: "user",
+        messageId: userMessageId,
+        now: userMessageNow
+      })
     };
 
 
@@ -2877,12 +3093,20 @@ export default function InterfacePage() {
       }
 
 
+      const assistantMessageId = buildId("MSG-A");
+      const assistantMessageNow = new Date();
       const assistantMessage: ChatMessage = {
-        id: buildId("MSG-A"),
+        id: assistantMessageId,
         role: "assistant",
         content: answer || text(payload.error, `Runtime request failed with HTTP_${response.status}`),
-        createdAt: new Date().toLocaleString("it-IT"),
-        raw: payload
+        createdAt: assistantMessageNow.toLocaleString("it-IT"),
+        raw: payload,
+        temporalSeal: buildDualTimeMessageSeal({
+          role: "assistant",
+          messageId: assistantMessageId,
+          now: assistantMessageNow,
+          payload
+        })
       };
 
 
@@ -2898,12 +3122,23 @@ export default function InterfacePage() {
       setError(errorText);
       setMessages((current) => [
         ...current,
-        {
-          id: buildId("MSG-S"),
-          role: "system",
-          content: `Runtime error: ${errorText}`,
-          createdAt: new Date().toLocaleString("it-IT")
-        }
+        (() => {
+          const systemMessageId = buildId("MSG-S");
+          const systemMessageNow = new Date();
+
+
+          return {
+            id: systemMessageId,
+            role: "system" as const,
+            content: `Runtime error: ${errorText}`,
+            createdAt: systemMessageNow.toLocaleString("it-IT"),
+            temporalSeal: buildDualTimeMessageSeal({
+              role: "system",
+              messageId: systemMessageId,
+              now: systemMessageNow
+            })
+          };
+        })()
       ]);
     } finally {
       setIsSending(false);
@@ -4222,6 +4457,112 @@ export default function InterfacePage() {
         }
 
 
+        .joker-dual-time-seal {
+          margin: 0 0 13px;
+          padding: 12px;
+          border: 1px solid rgba(34, 211, 238, 0.28);
+          border-radius: 18px;
+          background:
+            linear-gradient(135deg, rgba(8, 145, 178, 0.14), rgba(79, 70, 229, 0.08)),
+            rgba(2, 6, 23, 0.44);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+
+        .joker-message-user .joker-dual-time-seal {
+          border-color: rgba(34, 211, 238, 0.36);
+          background:
+            linear-gradient(135deg, rgba(14, 116, 144, 0.2), rgba(2, 6, 23, 0.28)),
+            rgba(8, 47, 73, 0.2);
+        }
+
+
+        .joker-dual-time-seal-head {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          margin-bottom: 9px;
+        }
+
+
+        .joker-dual-time-seal-head strong {
+          color: #f8fafc;
+          font-size: 12px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+
+        .joker-dual-time-seal-head span {
+          color: #67e8f9;
+          font-size: 11px;
+          font-weight: 850;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+        }
+
+
+        .joker-dual-time-rails {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+        }
+
+
+        .joker-dual-time-rails div {
+          min-width: 0;
+          padding: 10px;
+          border: 1px solid rgba(71, 85, 105, 0.5);
+          border-radius: 14px;
+          background: rgba(15, 23, 42, 0.62);
+        }
+
+
+        .joker-dual-time-rails span,
+        .joker-dual-time-meta span {
+          display: block;
+          color: #94a3b8;
+          font-size: 10px;
+          font-weight: 850;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+        }
+
+
+        .joker-dual-time-rails strong {
+          display: block;
+          margin-top: 4px;
+          color: #e0f2fe;
+          font-size: 12px;
+          line-height: 1.35;
+          overflow-wrap: anywhere;
+        }
+
+
+        .joker-dual-time-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 7px;
+          margin-top: 9px;
+        }
+
+
+        .joker-dual-time-meta span {
+          display: inline-flex;
+          max-width: 100%;
+          padding: 5px 7px;
+          border: 1px solid rgba(71, 85, 105, 0.48);
+          border-radius: 999px;
+          background: rgba(2, 6, 23, 0.48);
+          color: #cbd5e1;
+          overflow-wrap: anywhere;
+          text-transform: none;
+          letter-spacing: 0;
+        }
+
+
         .joker-runtime-strip {
           flex-wrap: wrap;
           margin-top: 15px;
@@ -4488,7 +4829,8 @@ export default function InterfacePage() {
           .joker-hero-grid,
           .joker-details-grid,
           .joker-prompt-grid,
-          .joker-temporal-clock-grid {
+          .joker-temporal-clock-grid,
+          .joker-dual-time-rails {
             grid-template-columns: 1fr;
           }
         }
