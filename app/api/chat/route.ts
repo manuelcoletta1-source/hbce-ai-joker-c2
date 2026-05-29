@@ -54,6 +54,24 @@ import type {
 
 
 
+import {
+  buildEsoterologicalSemanticMemoryRecord,
+  getCanonicalSemanticMemoryDefinition,
+  getCanonicalSemanticMemoryFormula,
+  shouldPersistEsoterologicalSemanticMemoryRecord,
+  toPromptSafeEsoterologicalMemorySummary
+} from "@/lib/esoterological-semantic-memory";
+
+
+
+import type {
+  EsoterologicalIdentityBinding,
+  EsoterologicalSemanticMemoryRecord
+} from "@/lib/esoterological-semantic-memory";
+
+
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -603,6 +621,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const memoryRegistrationRequested = isMemoryRegistrationQuestion(message);
   const memoryRecoveryRequested = isMemoryRecoveryQuestion(message);
   const apiSdkB2GPresentationRequested = isApiSdkB2GPresentationQuestion(message);
+  const esoterologicalSemanticMemoryRequested = isEsoterologicalSemanticMemoryQuestion(message);
 
 
 
@@ -639,7 +658,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     selfDiagnosisRequested,
     memoryRegistrationRequested,
     memoryRecoveryRequested,
-    apiSdkB2GPresentationRequested
+    apiSdkB2GPresentationRequested,
+    esoterologicalSemanticMemoryRequested
   };
 
 
@@ -689,6 +709,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (apiSdkB2GPresentationRequested) {
     answer = buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (esoterologicalSemanticMemoryRequested) {
+    answer = buildEsoterologicalSemanticMemoryPreparationAnswer(message, handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (isAiClassicComparisonQuestion(message)) {
@@ -784,6 +808,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
+  const esoterologicalSemanticMemory = buildEsoterologicalSemanticMemoryRecord({
+    message,
+    humanIpr: handoff.humanIpr,
+    runtimeIpr: RUNTIME_IPR,
+    identityBinding: mapHandoffToEsoterologicalIdentityBinding(handoff),
+    sourceKind: "CHAT_MESSAGE",
+    chatMessageId: buildChatMessageSemanticId(sessionId, t, message),
+    evtId: evt.id,
+    opcId: opc.id,
+    timestamp: t,
+    alienCodeSource: "GLOSSARIO_CANONICO",
+    organismSystemCoupling: buildOrganismSystemCouplingLabel(handoff),
+    reusableInPrompt: true,
+    maxTerms: 12,
+    minScore: 2.25
+  });
+  const esoterologicalSemanticMemoryPersistable = shouldPersistEsoterologicalSemanticMemoryRecord(esoterologicalSemanticMemory);
+
+
+
+
   const registeredEventForMemory = registeredEventCandidate
     ? enrichRegisteredOperationalEvent(registeredEventCandidate, {
         evtId: evt.id,
@@ -810,6 +855,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerState,
     registeredEvent: registeredEventForMemory,
     registeredEventName: registeredEventForMemory?.registeredEventName ?? null,
+    esoterologicalSemanticMemory,
+    esoterologicalSemanticMemoryPersistable,
     saasContext
   });
 
@@ -939,6 +986,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ? buildMemoryRecoveryAnswer(memory)
       : apiSdkB2GPresentationRequested
         ? buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext)
+      : esoterologicalSemanticMemoryRequested
+        ? buildEsoterologicalSemanticMemoryAnswer({
+            record: esoterologicalSemanticMemory,
+            persistable: esoterologicalSemanticMemoryPersistable,
+            handoff,
+            memory,
+            policy,
+            saasContext,
+            evt,
+            opc,
+            auditAndUsage,
+            persistenceBridge
+          })
         : runtimeStatusTableRequested
     ? buildRuntimeStatusTableAnswer({
         handoff,
@@ -1180,6 +1240,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     identity: buildRuntimeIdentity(temporalFrame),
     temporal: temporalFrame,
     alienCodePipeline: buildAlienCodePipelineDiagnostic(),
+    esoterologicalSemanticMemory,
+    semanticMemory: {
+      type: "MEMORIA_SEMANTICA_ESOTEROLOGICA_API_CHAT",
+      formula: getCanonicalSemanticMemoryFormula(),
+      definition: getCanonicalSemanticMemoryDefinition(),
+      persistable: esoterologicalSemanticMemoryPersistable,
+      record: esoterologicalSemanticMemory,
+      promptSafeSummary: toPromptSafeEsoterologicalMemorySummary(esoterologicalSemanticMemory)
+    },
 
 
 
@@ -1218,6 +1287,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       tier: saasContext.saasTier,
       source: saasContext.source,
       memory: toPublicMemory(memory),
+      esoterologicalSemanticMemory,
+      semanticMemoryPersistable: esoterologicalSemanticMemoryPersistable,
       registeredEvent: registeredEventForPayload,
       registeredEvents: memory.registeredEvents,
       evtPersistence: persistenceBridge.evtPersistence,
@@ -1426,6 +1497,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         legalCertification: false
       },
       alienCodePipeline: buildAlienCodePipelineDiagnostic(),
+      esoterologicalSemanticMemory,
+      semanticMemoryPersistable: esoterologicalSemanticMemoryPersistable,
       memory: toPublicMemory(memory),
       registeredEvent: registeredEventForPayload,
       registeredEvents: memory.registeredEvents,
@@ -1670,6 +1743,167 @@ function buildSystemPrompt(
       2
     )
   ].join("\n");
+}
+
+
+
+function isEsoterologicalSemanticMemoryQuestion(message: string): boolean {
+  const normalized = normalizeText(message);
+
+  return (
+    normalized.includes("memoria semantica esoterologica") ||
+    normalized.includes("semantic memory") ||
+    normalized.includes("activatedterms") ||
+    normalized.includes("continuitygain") ||
+    normalized.includes("esoterologicalsemanticmemoryrecord") ||
+    normalized.includes("record semantico") ||
+    normalized.includes("glossario canonico") ||
+    (normalized.includes("decisione") &&
+      normalized.includes("costo") &&
+      normalized.includes("traccia") &&
+      normalized.includes("tempo") &&
+      (normalized.includes("alien code") || normalized.includes("codice alieno") || normalized.includes("ipr") || normalized.includes("evt") || normalized.includes("opc") || normalized.includes("matrix")))
+  );
+}
+
+
+
+function buildEsoterologicalSemanticMemoryPreparationAnswer(
+  message: string,
+  handoff: HandoffResolution,
+  memory: RuntimeMemoryState,
+  policy: PolicyEvaluation,
+  saasContext: SaasRuntimeContext
+): string {
+  void message;
+
+  return [
+    "MEMORIA SEMANTICA ESOTEROLOGICA API CHAT: richiesta riconosciuta.",
+    "",
+    "Il runtime genererà un record semantico dopo la costruzione di EVT e OPC, perché il record corretto deve essere collegato alla traccia tecnica reale della risposta corrente.",
+    "",
+    "Identity binding: " + handoff.identityBinding,
+    "Human IPR: " + handoff.humanIpr,
+    "Runtime IPR: " + RUNTIME_IPR,
+    "Memory scope: " + memory.scope,
+    "Memory persistence: " + memory.persistenceMode + " / " + memory.persistenceStatus,
+    "Policy: " + policy.decision + " / " + policy.operationDecision,
+    "Tenant: " + saasContext.tenantId,
+    "Workspace: " + saasContext.workspaceId,
+    "Boundary: saveRaw=false; OPC is a technical proof receipt only; legalCertification=false"
+  ].join("\n");
+}
+
+
+
+function buildEsoterologicalSemanticMemoryAnswer(args: {
+  record: EsoterologicalSemanticMemoryRecord;
+  persistable: boolean;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
+}): string {
+  const activatedTerms = args.record.corpus.activatedTerms.map((term) => ({
+    n: term.n,
+    term: term.term,
+    score: term.score,
+    matchedSignals: term.matchedSignals
+  }));
+
+  const syntheticRecord = {
+    memoryId: args.record.memoryId,
+    ipr: args.record.ipr,
+    source: args.record.source,
+    semantic: args.record.semantic,
+    corpus: {
+      activatedTerms,
+      primaryAxis: args.record.corpus.primaryAxis,
+      volumeRefs: args.record.corpus.volumeRefs
+    },
+    alienCode: args.record.alienCode,
+    rascensional: args.record.rascensional,
+    policy: args.record.policy,
+    runtime: {
+      entity: RUNTIME_ENTITY,
+      access: args.handoff.accessDecision,
+      matrix: args.handoff.matrixState,
+      memory: args.memory.scope,
+      persistenceMode: args.memory.persistenceMode,
+      persistenceStatus: args.memory.persistenceStatus,
+      tenantId: args.saasContext.tenantId,
+      workspaceId: args.saasContext.workspaceId,
+      policyDecision: args.policy.decision,
+      operationDecision: args.policy.operationDecision,
+      evtPersistenceStatus: stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN"),
+      opcPersistenceStatus: stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN"),
+      auditId: stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+      usageId: stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID"),
+      legalCertification: false
+    }
+  };
+
+  return [
+    "MEMORIA SEMANTICA ESOTEROLOGICA API CHAT — record generato.",
+    "",
+    "Formula canonica:",
+    getCanonicalSemanticMemoryFormula(),
+    "",
+    "Definizione:",
+    getCanonicalSemanticMemoryDefinition(),
+    "",
+    "activatedTerms:",
+    JSON.stringify(activatedTerms, null, 2),
+    "",
+    "semantic.quality: " + args.record.semantic.quality,
+    "rascensional.continuityGain: " + args.record.rascensional.continuityGain,
+    "rascensional.thresholdDetected: " + String(args.record.rascensional.thresholdDetected),
+    "alienCode.couplingState: " + args.record.alienCode.couplingState,
+    "policy.saveRaw: " + String(args.record.policy.saveRaw),
+    "policy.saveSynthesis: " + String(args.record.policy.saveSynthesis),
+    "policy.reusableInPrompt: " + String(args.record.policy.reusableInPrompt),
+    "persistable: " + String(args.persistable),
+    "EVT: " + args.evt.id,
+    "OPC: " + args.opc.id,
+    "Boundary: OPC is a technical proof receipt only; legalCertification=false",
+    "",
+    "record semantico sintetico JSON:",
+    JSON.stringify(syntheticRecord, null, 2)
+  ].join("\n");
+}
+
+
+
+function mapHandoffToEsoterologicalIdentityBinding(
+  handoff: HandoffResolution
+): EsoterologicalIdentityBinding {
+  if (handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
+    return "IPR_VERIFIED";
+  }
+
+  if (handoff.detected) {
+    return "IPR_PENDING";
+  }
+
+  return "UNVERIFIED";
+}
+
+
+
+function buildOrganismSystemCouplingLabel(handoff: HandoffResolution): string {
+  const subject = handoff.subjectName && handoff.subjectName !== "UNKNOWN_SUBJECT" ? handoff.subjectName : "UNVERIFIED_SUBJECT";
+
+  return subject + " / AI JOKER-C2";
+}
+
+
+
+function buildChatMessageSemanticId(sessionId: string, timestamp: string, message: string): string {
+  return "CHAT-SEM-" + sha256({ sessionId, timestamp, message }).slice(0, 16).toUpperCase();
 }
 
 
@@ -4000,6 +4234,8 @@ function updateMemoryAfterTurn(args: {
   providerState: string;
   registeredEvent?: RegisteredOperationalEvent | null;
   registeredEventName?: string | null;
+  esoterologicalSemanticMemory?: EsoterologicalSemanticMemoryRecord | null;
+  esoterologicalSemanticMemoryPersistable?: boolean;
   saasContext: SaasRuntimeContext;
 }): RuntimeMemoryState {
   const operationalFact = extractOperationalFact(args.userMessage);
@@ -4017,6 +4253,9 @@ function updateMemoryAfterTurn(args: {
     extraFacts: [
       operationalFact || "",
       args.registeredEvent ? serializeRegisteredOperationalEventFact(args.registeredEvent) : "",
+      args.esoterologicalSemanticMemory && args.esoterologicalSemanticMemoryPersistable
+        ? toPromptSafeEsoterologicalMemorySummary(args.esoterologicalSemanticMemory)
+        : "",
       "Runtime age at turn: " + buildRuntimeTemporalFrame(args.t).lifeHuman + ".",
       "Runtime timestamp at turn: " + args.t + ".",
       "Last runtime state: " + (args.providerState === "PROVIDER_ERROR" ? "DEGRADED" : "OPERATIONAL") + ".",
