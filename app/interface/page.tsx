@@ -1,5 +1,6 @@
 "use client";
 
+
 import {
   type ChangeEvent,
   type FormEvent,
@@ -10,9 +11,12 @@ import {
   useState
 } from "react";
 
+
 type JsonRecord = Record<string, unknown>;
 
+
 type RuntimeFileKind = "text" | "image" | "pdf" | "binary";
+
 
 type RuntimeFile = {
   id: string;
@@ -29,6 +33,7 @@ type RuntimeFile = {
   uploaded: boolean;
 };
 
+
 type ChatMessage = {
   id: string;
   role: "user" | "assistant" | "system";
@@ -36,6 +41,7 @@ type ChatMessage = {
   createdAt: string;
   raw?: JsonRecord | null;
 };
+
 
 type RuntimeStatus = {
   model: string;
@@ -80,7 +86,27 @@ type RuntimeStatus = {
   inputTokens: string;
   outputTokens: string;
   usageHash: string;
+  runtimeBirth: string;
+  runtimeBirthUtc: string;
+  runtimeAge: string;
+  runtimeLifeSeconds: string;
+  tenantId: string;
+  workspaceId: string;
+  subscriptionId: string;
+  accountId: string;
+  threadId: string;
+  saasSource: string;
+  memoryId: string;
+  memoryHash: string;
+  memoryKeyHash: string;
+  registeredEventId: string;
+  registeredEventName: string;
+  registeredEventHash: string;
+  previousEvt: string;
+  previousOpc: string;
+  b2gReadiness: string;
 };
+
 
 type IprSessionResponse = {
   ok?: boolean;
@@ -97,12 +123,16 @@ type IprSessionResponse = {
   legalCertification?: boolean;
 };
 
+
 const JOKER_SIGIL = "🜏";
+
 
 const CANONICAL_MANUEL_HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1";
 const CANONICAL_MANUEL_DISPLAY_NAME = "Manuel Coletta";
 
+
 const HANDOFF_STORAGE_KEY = "hbce_ipr_handoff";
+
 
 const LEGACY_HANDOFF_STORAGE_KEYS = [
   "hbce-ipr-handoff",
@@ -110,6 +140,7 @@ const LEGACY_HANDOFF_STORAGE_KEYS = [
   "iprHandoff",
   "ipr_handoff"
 ];
+
 
 const HANDOFF_QUERY_KEYS = [
   "hbce_ipr_handoff",
@@ -119,16 +150,19 @@ const HANDOFF_QUERY_KEYS = [
   "handoff"
 ];
 
+
 const DEFAULT_PROMPT =
-  "JOKER-C2, esegui una diagnostica runtime completa. Dimmi modello OpenAI, Runtime IPR, Human IPR, MATRIX, memoria, EVT, OPC, audit, model usage, SaaS Core e legalCertification=false.";
+  "JOKER-C2, esegui una diagnostica runtime completa. Dimmi modello OpenAI, Runtime IPR, Human IPR, birth anchor 2026-only, runtime age, MATRIX, memoria, EVT, OPC, audit, model usage, SaaS Core, tenant, workspace, subscription, account e legalCertification=false.";
+
 
 const QUICK_PROMPTS = [
-  "ciao JOKER-C2, sai chi sono?",
-  "mostrami la diagnostica runtime: IPR, MATRIX, memoria, database, EVT, OPC, audit e model usage",
-  "registra come memoria operativa: EVT-0016 / EVT-0016-AI è il punto attivo del progetto JOKER-C2 SaaS Core v0.1",
-  "mostrami auditId, usageId, token usage, costo stimato e persistence boundary dell'ultima risposta",
-  "spiega perché JOKER-C2 non è una AI generica"
+  "JOKER-C2, riconosci il mio IPR operativo e indica il birth anchor runtime attivo. Deve risultare solo 2026-01-19T15:30:00+01:00.",
+  "mostrami la diagnostica runtime: IPR, MATRIX, memoria, database, EVT, OPC, audit, model usage e SaaS context",
+  "registra un nuovo evento operativo denominato TEST_SAAS_B2G_UI_001, collegandolo a Human IPR, tenant, workspace, subscription, account, memory ID, EVT, OPC, audit ID e usage ID.",
+  "richiama dalla memoria persistente l’evento TEST_SAAS_B2G_UI_001 e verifica stesso Human IPR, tenant, workspace, subscription, account e memory ID.",
+  "dammi il verdetto finale SaaS B2G: READY, PARTIAL_READY o NOT_READY, valutando solo IPR, memoria, EVT, OPC, audit, usage, tenant/workspace/subscription/account e birth anchor 2026-only."
 ];
+
 
 const TEXT_FILE_TYPES = new Set([
   "application/json",
@@ -147,6 +181,7 @@ const TEXT_FILE_TYPES = new Set([
   "text/javascript"
 ]);
 
+
 const IMAGE_FILE_TYPES = new Set([
   "image/png",
   "image/jpeg",
@@ -155,29 +190,36 @@ const IMAGE_FILE_TYPES = new Set([
   "image/gif"
 ]);
 
+
 function buildId(prefix: string): string {
   const suffix =
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID().slice(0, 8).toUpperCase()
       : Math.random().toString(36).slice(2, 10).toUpperCase();
 
+
   return `${prefix}-${Date.now()}-${suffix}`;
 }
+
 
 function isRecord(value: unknown): value is JsonRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+
 function getPath(value: unknown, path: string[]): unknown {
   let current: unknown = value;
+
 
   for (const key of path) {
     if (!isRecord(current)) return undefined;
     current = current[key];
   }
 
+
   return current;
 }
+
 
 function normalizeVisibleText(value: string): string {
   return value
@@ -201,58 +243,73 @@ function normalizeVisibleText(value: string): string {
     .trim();
 }
 
+
 function text(value: unknown, fallback = "-"): string {
   if (typeof value === "string" && value.trim()) {
     return normalizeVisibleText(value.trim());
   }
 
+
   if (typeof value === "number" || typeof value === "boolean") {
     return String(value);
   }
 
+
   return fallback;
 }
+
 
 function first(value: unknown, paths: string[][], fallback = "-"): string {
   for (const path of paths) {
     const candidate = text(getPath(value, path), "");
 
+
     if (candidate) return candidate;
   }
 
+
   return fallback;
 }
+
 
 function firstJoined(value: unknown, paths: string[][], fallback = "-"): string {
   for (const path of paths) {
     const candidate = getPath(value, path);
     const flattened = flattenText(candidate).join(", ").trim();
 
+
     if (flattened) return normalizeVisibleText(flattened);
   }
 
+
   return fallback;
 }
+
 
 function flattenText(value: unknown): string[] {
   if (typeof value === "string" && value.trim()) return [value.trim()];
   if (typeof value === "number" || typeof value === "boolean") return [String(value)];
 
+
   if (Array.isArray(value)) {
     return value.flatMap((item) => flattenText(item));
   }
+
 
   if (isRecord(value)) {
     return Object.values(value).flatMap((item) => flattenText(item));
   }
 
+
   return [];
 }
+
 
 function compact(value: string, max = 42): string {
   if (!value || value === "-" || value.length <= max) return value;
   return `${value.slice(0, Math.max(12, max - 18))}…${value.slice(-10)}`;
 }
+
 
 function normalizeSearchText(value: string): string {
   return value
@@ -263,10 +320,13 @@ function normalizeSearchText(value: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+
 function canonicalizeSubjectName(value: string, ipr?: string): string {
   if (ipr === CANONICAL_MANUEL_HUMAN_IPR) return CANONICAL_MANUEL_DISPLAY_NAME;
 
+
   const normalized = normalizeSearchText(value);
+
 
   if (
     normalized === "manuel coletta" ||
@@ -276,11 +336,14 @@ function canonicalizeSubjectName(value: string, ipr?: string): string {
     return CANONICAL_MANUEL_DISPLAY_NAME;
   }
 
+
   return normalizeVisibleText(value || "-");
 }
 
+
 function isBlankRuntimeValue(value: string): boolean {
   const normalized = value.trim().toUpperCase();
+
 
   return (
     !normalized ||
@@ -291,8 +354,10 @@ function isBlankRuntimeValue(value: string): boolean {
   );
 }
 
+
 function isNegativeRuntimeValue(value: string): boolean {
   const normalized = value.trim().toUpperCase();
+
 
   return (
     isBlankRuntimeValue(value) ||
@@ -307,44 +372,56 @@ function isNegativeRuntimeValue(value: string): boolean {
   );
 }
 
+
 function firstUsableRuntimeValue(values: string[], fallback = "-"): string {
   for (const value of values) {
     const visible = normalizeVisibleText(value || "");
+
 
     if (!isNegativeRuntimeValue(visible)) {
       return visible;
     }
   }
 
+
   return fallback;
 }
+
 
 function firstDisplayValue(values: string[], fallback = "-"): string {
   for (const value of values) {
     const visible = normalizeVisibleText(value || "");
+
 
     if (!isBlankRuntimeValue(visible)) {
       return visible;
     }
   }
 
+
   return fallback;
 }
+
 
 function isActiveCertificateStatus(value: string): boolean {
   const normalized = value.toUpperCase();
 
+
   return normalized === "ACTIVE" || normalized === "VALID";
 }
+
 
 function hasJokerC2Scope(value: string): boolean {
   return value.toUpperCase().includes("JOKER_C2_ACCESS");
 }
 
+
 function parseJsonCandidate(raw: string): JsonRecord | null {
   const candidates: string[] = [];
 
+
   candidates.push(raw);
+
 
   try {
     candidates.push(decodeURIComponent(raw));
@@ -352,13 +429,17 @@ function parseJsonCandidate(raw: string): JsonRecord | null {
     // Browser decoding failed. Society carries on heroically.
   }
 
+
   const decoded = decodeBase64Text(raw);
 
+
   if (decoded) candidates.push(decoded);
+
 
   for (const candidate of candidates) {
     try {
       const parsed = JSON.parse(candidate) as unknown;
+
 
       if (isRecord(parsed)) return parsed;
     } catch {
@@ -366,11 +447,14 @@ function parseJsonCandidate(raw: string): JsonRecord | null {
     }
   }
 
+
   return null;
 }
 
+
 function decodeBase64Text(value: string): string | null {
   if (typeof window === "undefined") return null;
+
 
   try {
     const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
@@ -378,14 +462,17 @@ function decodeBase64Text(value: string): string | null {
     const binary = window.atob(padded);
     const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
 
+
     return new TextDecoder().decode(bytes);
   } catch {
     return null;
   }
 }
 
+
 function readStoredHandoff(key: string): JsonRecord | null {
   if (typeof window === "undefined") return null;
+
 
   try {
     const raw = window.sessionStorage.getItem(key) || window.localStorage.getItem(key);
@@ -395,8 +482,10 @@ function readStoredHandoff(key: string): JsonRecord | null {
   }
 }
 
+
 function persistHandoff(handoff: JsonRecord) {
   if (typeof window === "undefined") return;
+
 
   try {
     const serialized = JSON.stringify(handoff);
@@ -407,12 +496,15 @@ function persistHandoff(handoff: JsonRecord) {
   }
 }
 
+
 function clearStoredHandoff() {
   if (typeof window === "undefined") return;
+
 
   try {
     window.sessionStorage.removeItem(HANDOFF_STORAGE_KEY);
     window.localStorage.removeItem(HANDOFF_STORAGE_KEY);
+
 
     for (const key of LEGACY_HANDOFF_STORAGE_KEYS) {
       window.sessionStorage.removeItem(key);
@@ -423,12 +515,15 @@ function clearStoredHandoff() {
   }
 }
 
+
 function stripHandoffQueryParams() {
   if (typeof window === "undefined") return;
+
 
   try {
     const url = new URL(window.location.href);
     let changed = false;
+
 
     for (const key of HANDOFF_QUERY_KEYS) {
       if (url.searchParams.has(key)) {
@@ -437,6 +532,7 @@ function stripHandoffQueryParams() {
       }
     }
 
+
     if (changed) {
       window.history.replaceState({}, "", url.toString());
     }
@@ -444,6 +540,7 @@ function stripHandoffQueryParams() {
     // Ignore.
   }
 }
+
 
 function loadIprHandoffFromBrowser(): {
   handoff: JsonRecord | null;
@@ -454,15 +551,20 @@ function loadIprHandoffFromBrowser(): {
     return { handoff: null, source: "none", error: null };
   }
 
+
   try {
     const url = new URL(window.location.href);
+
 
     for (const key of HANDOFF_QUERY_KEYS) {
       const raw = url.searchParams.get(key);
 
+
       if (!raw) continue;
 
+
       const parsed = parseJsonCandidate(raw);
+
 
       if (!parsed) {
         return {
@@ -472,8 +574,10 @@ function loadIprHandoffFromBrowser(): {
         };
       }
 
+
       persistHandoff(parsed);
       stripHandoffQueryParams();
+
 
       return {
         handoff: parsed,
@@ -482,7 +586,9 @@ function loadIprHandoffFromBrowser(): {
       };
     }
 
+
     const canonical = readStoredHandoff(HANDOFF_STORAGE_KEY);
+
 
     if (canonical) {
       return {
@@ -492,11 +598,14 @@ function loadIprHandoffFromBrowser(): {
       };
     }
 
+
     for (const key of LEGACY_HANDOFF_STORAGE_KEYS) {
       const legacy = readStoredHandoff(key);
 
+
       if (legacy) {
         persistHandoff(legacy);
+
 
         return {
           handoff: legacy,
@@ -505,6 +614,7 @@ function loadIprHandoffFromBrowser(): {
         };
       }
     }
+
 
     return { handoff: null, source: "none", error: null };
   } catch (error) {
@@ -516,8 +626,10 @@ function loadIprHandoffFromBrowser(): {
   }
 }
 
+
 function getHandoffSubjectIpr(handoff: JsonRecord | null): string {
   if (!handoff) return "NOT_VERIFIED";
+
 
   return first(
     handoff,
@@ -546,8 +658,10 @@ function getHandoffSubjectIpr(handoff: JsonRecord | null): string {
   );
 }
 
+
 function getSessionHumanIpr(session: IprSessionResponse | null): string {
   if (!session) return "";
+
 
   return first(
     session,
@@ -571,8 +685,10 @@ function getSessionHumanIpr(session: IprSessionResponse | null): string {
   );
 }
 
+
 function getHandoffSubjectName(handoff: JsonRecord | null, ipr: string): string {
   if (!handoff) return "No verified subject";
+
 
   const subject = first(
     handoff,
@@ -598,11 +714,14 @@ function getHandoffSubjectName(handoff: JsonRecord | null, ipr: string): string 
     "Verified biological subject"
   );
 
+
   return canonicalizeSubjectName(subject, ipr);
 }
 
+
 function getSessionSubjectName(session: IprSessionResponse | null, ipr: string): string {
   if (!session) return "";
+
 
   return canonicalizeSubjectName(
     first(
@@ -627,8 +746,10 @@ function getSessionSubjectName(session: IprSessionResponse | null, ipr: string):
   );
 }
 
+
 function getHandoffCertificateId(handoff: JsonRecord | null): string {
   if (!handoff) return "NO_CERTIFICATE";
+
 
   return first(
     handoff,
@@ -649,8 +770,10 @@ function getHandoffCertificateId(handoff: JsonRecord | null): string {
   );
 }
 
+
 function getSessionCertificateId(session: IprSessionResponse | null): string {
   if (!session) return "";
+
 
   return first(
     session,
@@ -672,8 +795,10 @@ function getSessionCertificateId(session: IprSessionResponse | null): string {
   );
 }
 
+
 function getHandoffCertificateStatus(handoff: JsonRecord | null): string {
   if (!handoff) return "MISSING";
+
 
   return first(
     handoff,
@@ -694,8 +819,10 @@ function getHandoffCertificateStatus(handoff: JsonRecord | null): string {
   ).toUpperCase();
 }
 
+
 function getSessionCertificateStatus(session: IprSessionResponse | null): string {
   if (!session) return "";
+
 
   return first(
     session,
@@ -719,8 +846,10 @@ function getSessionCertificateStatus(session: IprSessionResponse | null): string
   ).toUpperCase();
 }
 
+
 function getHandoffScope(handoff: JsonRecord | null): string {
   if (!handoff) return "MATRIX_LIMITED";
+
 
   return firstJoined(
     handoff,
@@ -744,8 +873,10 @@ function getHandoffScope(handoff: JsonRecord | null): string {
   );
 }
 
+
 function getSessionScope(session: IprSessionResponse | null): string {
   if (!session) return "";
+
 
   return firstJoined(
     session,
@@ -772,6 +903,7 @@ function getSessionScope(session: IprSessionResponse | null): string {
   );
 }
 
+
 function buildEnrichedIprHandoff(input: {
   base: JsonRecord | null;
   subject: string;
@@ -788,11 +920,14 @@ function buildEnrichedIprHandoff(input: {
     isActiveCertificateStatus(input.certificateStatus) &&
     hasJokerC2Scope(input.scope);
 
+
   if (!input.base && !hasIdentity) {
     return null;
   }
 
+
   const base = isRecord(input.base) ? { ...input.base } : {};
+
 
   return {
     ...base,
@@ -885,6 +1020,7 @@ function buildEnrichedIprHandoff(input: {
   };
 }
 
+
 function getAnswer(payload: JsonRecord): string {
   return normalizeVisibleText(
     first(
@@ -905,8 +1041,58 @@ function getAnswer(payload: JsonRecord): string {
   );
 }
 
+
+function deriveB2GReadiness(status: Pick<RuntimeStatus,
+  | "humanIpr"
+  | "memory"
+  | "persistence"
+  | "responseEvt"
+  | "opc"
+  | "auditId"
+  | "auditStatus"
+  | "modelUsageId"
+  | "modelUsageStatus"
+  | "tenantId"
+  | "workspaceId"
+  | "subscriptionId"
+  | "accountId"
+  | "runtimeBirth"
+>): "READY" | "PARTIAL_READY" | "NOT_READY" {
+  const required = [
+    status.humanIpr,
+    status.responseEvt,
+    status.opc,
+    status.auditId,
+    status.modelUsageId,
+    status.tenantId,
+    status.workspaceId,
+    status.subscriptionId,
+    status.accountId
+  ];
+
+  const hasRequiredIds = required.every((value) => !isNegativeRuntimeValue(value));
+  const hasPersistentMemory =
+    status.memory.toUpperCase().includes("IPR_BOUND") &&
+    status.persistence.toUpperCase().includes("DATABASE_PERSISTENT");
+  const hasPersistedLogs =
+    status.auditStatus.toUpperCase().includes("PERSISTED") &&
+    status.modelUsageStatus.toUpperCase().includes("PERSISTED");
+  const has2026Birth = status.runtimeBirth === "2026-01-19T15:30:00+01:00";
+
+  if (hasRequiredIds && hasPersistentMemory && hasPersistedLogs && has2026Birth) {
+    return "READY";
+  }
+
+  if (hasRequiredIds || hasPersistentMemory || hasPersistedLogs || has2026Birth) {
+    return "PARTIAL_READY";
+  }
+
+  return "NOT_READY";
+}
+
 function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus {
   const source = payload ?? {};
+
 
   const humanIpr = first(
     source,
@@ -920,6 +1106,7 @@ function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus
     ],
     "-"
   );
+
 
   const subject = canonicalizeSubjectName(
     first(
@@ -936,6 +1123,7 @@ function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus
     humanIpr
   );
 
+
   const certificateId = first(
     source,
     [
@@ -946,6 +1134,7 @@ function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus
     ],
     "-"
   );
+
 
   const certificateStatus = first(
     source,
@@ -958,6 +1147,7 @@ function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus
     "-"
   );
 
+
   const scope = firstJoined(
     source,
     [
@@ -969,7 +1159,8 @@ function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus
     "-"
   );
 
-  return {
+
+  const status: RuntimeStatus = {
     model: first(
       source,
       [
@@ -1357,12 +1548,215 @@ function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus
         ["saas", "modelUsage", "usageHash"]
       ],
       "-"
-    )
+    ),
+    runtimeBirth: first(
+      source,
+      [
+        ["temporal", "runtimeBirth"],
+        ["runtime", "temporal", "runtimeBirth"],
+        ["continuity", "runtimeBirth"],
+        ["identity", "projectBirth", "t"]
+      ],
+      "-"
+    ),
+    runtimeBirthUtc: first(
+      source,
+      [
+        ["temporal", "runtimeBirthUtc"],
+        ["runtime", "temporal", "runtimeBirthUtc"],
+        ["diagnostics", "temporal", "runtimeBirthUtc"]
+      ],
+      "-"
+    ),
+    runtimeAge: first(
+      source,
+      [
+        ["temporal", "lifeHuman"],
+        ["runtime", "runtimeAge"],
+        ["continuity", "runtimeAge"],
+        ["identity", "projectBirth", "runtimeAge"]
+      ],
+      "-"
+    ),
+    runtimeLifeSeconds: first(
+      source,
+      [
+        ["temporal", "lifeSeconds"],
+        ["runtime", "runtimeLifeSeconds"],
+        ["continuity", "runtimeLifeSeconds"],
+        ["identity", "projectBirth", "runtimeLifeSeconds"]
+      ],
+      "-"
+    ),
+    tenantId: first(
+      source,
+      [
+        ["saas", "tenantId"],
+        ["runtime", "tenantId"],
+        ["diagnostics", "saasContext", "tenantId"],
+        ["opc", "record", "operationalContext", "tenantId"]
+      ],
+      "-"
+    ),
+    workspaceId: first(
+      source,
+      [
+        ["saas", "workspaceId"],
+        ["runtime", "workspaceId"],
+        ["diagnostics", "saasContext", "workspaceId"],
+        ["opc", "record", "operationalContext", "workspaceId"]
+      ],
+      "-"
+    ),
+    subscriptionId: first(
+      source,
+      [
+        ["saas", "subscriptionId"],
+        ["runtime", "subscriptionId"],
+        ["diagnostics", "saasContext", "subscriptionId"],
+        ["opc", "record", "operationalContext", "subscriptionId"]
+      ],
+      "-"
+    ),
+    accountId: first(
+      source,
+      [
+        ["saas", "accountId"],
+        ["runtime", "accountId"],
+        ["diagnostics", "saasContext", "accountId"],
+        ["opc", "record", "operationalContext", "accountId"]
+      ],
+      "-"
+    ),
+    threadId: first(
+      source,
+      [
+        ["saas", "threadId"],
+        ["runtime", "threadId"],
+        ["diagnostics", "saasContext", "threadId"]
+      ],
+      "-"
+    ),
+    saasSource: first(
+      source,
+      [
+        ["saas", "source"],
+        ["runtime", "saasContextSource"],
+        ["diagnostics", "saasContext", "source"],
+        ["opc", "record", "operationalContext", "saasContextSource"]
+      ],
+      "-"
+    ),
+    memoryId: first(
+      source,
+      [
+        ["memory", "memoryId"],
+        ["saas", "memory", "memoryId"],
+        ["diagnostics", "memory", "memoryId"],
+        ["opc", "record", "memory", "memoryId"]
+      ],
+      "-"
+    ),
+    memoryHash: first(
+      source,
+      [
+        ["memory", "memoryHash"],
+        ["diagnostics", "memory", "memoryHash"],
+        ["opc", "record", "memory", "hash"],
+        ["modelUsage", "memoryHash"]
+      ],
+      "-"
+    ),
+    memoryKeyHash: first(
+      source,
+      [
+        ["memory", "memoryKeyHash"],
+        ["diagnostics", "memory", "memoryKeyHash"],
+        ["opc", "record", "memory", "memoryKeyHash"]
+      ],
+      "-"
+    ),
+    registeredEventId: first(
+      source,
+      [
+        ["registeredEvent", "registeredEventId"],
+        ["registeredEvent", "eventId"],
+        ["saas", "registeredEvent", "registeredEventId"],
+        ["audit", "registeredEventId"],
+        ["modelUsage", "registeredEventId"]
+      ],
+      "-"
+    ),
+    registeredEventName: first(
+      source,
+      [
+        ["registeredEvent", "registeredEventName"],
+        ["registeredEvent", "eventName"],
+        ["saas", "registeredEvent", "registeredEventName"],
+        ["audit", "registeredEventName"],
+        ["modelUsage", "registeredEventName"]
+      ],
+      "-"
+    ),
+    registeredEventHash: first(
+      source,
+      [
+        ["registeredEvent", "registeredEventHash"],
+        ["registeredEvent", "eventHash"],
+        ["saas", "registeredEvent", "registeredEventHash"],
+        ["audit", "registeredEventHash"],
+        ["modelUsage", "registeredEventHash"]
+      ],
+      "-"
+    ),
+    previousEvt: first(
+      source,
+      [
+        ["continuity", "previousEvt"],
+        ["evt", "prev"],
+        ["event", "prev"],
+        ["audit", "previousEvtRef"],
+        ["modelUsage", "previousEvtRef"]
+      ],
+      "-"
+    ),
+    previousOpc: first(
+      source,
+      [
+        ["continuity", "previousOpc"],
+        ["audit", "previousOpcRef"],
+        ["modelUsage", "previousOpcRef"]
+      ],
+      "-"
+    ),
+    b2gReadiness: "PARTIAL_READY"
+  };
+
+  return {
+    ...status,
+    b2gReadiness: deriveB2GReadiness(status)
   };
 }
 
+
 function getStatusClass(value: string): string {
   const normalized = value.toUpperCase();
+
+
+  if (normalized === "NOT_READY" || normalized === "FAIL_TEMPORAL_ANCHOR") {
+    return "is-bad";
+  }
+
+
+  if (normalized === "PARTIAL_READY") {
+    return "is-warn";
+  }
+
+
+  if (normalized === "READY" || normalized === "PASS_2026_ONLY") {
+    return "is-good";
+  }
+
 
   if (
     normalized.includes("DENIED") ||
@@ -1374,6 +1768,7 @@ function getStatusClass(value: string): string {
   ) {
     return "is-bad";
   }
+
 
   if (
     normalized.includes("LIMITED") ||
@@ -1391,6 +1786,7 @@ function getStatusClass(value: string): string {
   ) {
     return "is-warn";
   }
+
 
   if (
     normalized.includes("OK") ||
@@ -1413,11 +1809,14 @@ function getStatusClass(value: string): string {
     return "is-good";
   }
 
+
   return "";
 }
 
+
 function StatusPill({ label, value }: { label?: string; value: string }) {
   const visibleValue = normalizeVisibleText(value);
+
 
   return (
     <span
@@ -1431,8 +1830,10 @@ function StatusPill({ label, value }: { label?: string; value: string }) {
   );
 }
 
+
 function MetricCard({ label, value }: { label: string; value: string }) {
   const visibleValue = normalizeVisibleText(value);
+
 
   return (
     <div
@@ -1446,11 +1847,13 @@ function MetricCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+
 function InfoList({ items }: { items: Array<{ label: string; value: string }> }) {
   return (
     <dl className="joker-info-list">
       {items.map((item) => {
         const visibleValue = normalizeVisibleText(item.value);
+
 
         return (
           <div
@@ -1469,6 +1872,7 @@ function InfoList({ items }: { items: Array<{ label: string; value: string }> })
   );
 }
 
+
 function MessageBubble({
   message,
   onCopy
@@ -1481,6 +1885,7 @@ function MessageBubble({
   const isAssistant = message.role === "assistant";
   const status = getRuntimeStatus(message.raw ?? null);
   const visibleContent = normalizeVisibleText(message.content);
+
 
   return (
     <article
@@ -1496,6 +1901,7 @@ function MessageBubble({
     >
       <div className="joker-message-avatar">{isUser ? "M" : isSystem ? "!" : JOKER_SIGIL}</div>
 
+
       <div className="joker-message-body">
         <div className="joker-message-head">
           <div>
@@ -1510,7 +1916,9 @@ function MessageBubble({
           <time>{message.createdAt}</time>
         </div>
 
+
         <pre className="joker-message-text">{visibleContent}</pre>
+
 
         {isAssistant && message.raw ? (
           <div className="joker-runtime-strip">
@@ -1522,6 +1930,9 @@ function MessageBubble({
             <StatusPill label="OPC" value={status.opc} />
             <StatusPill label="Audit" value={status.auditId} />
             <StatusPill label="Usage" value={status.modelUsageId} />
+            <StatusPill label="Birth" value={status.runtimeBirth} />
+            <StatusPill label="Age" value={status.runtimeAge} />
+            <StatusPill label="B2G" value={status.b2gReadiness} />
             <StatusPill label="Human IPR" value={status.humanIpr} />
             <StatusPill label="Subject" value={status.subject} />
             <StatusPill label="MATRIX" value={status.matrix} />
@@ -1530,15 +1941,18 @@ function MessageBubble({
           </div>
         ) : null}
 
+
         {isAssistant ? (
           <div className="joker-message-actions">
             <button type="button" onClick={() => onCopy(visibleContent)}>
               Copy response
             </button>
 
+
             {message.raw ? (
               <details>
                 <summary>Runtime details</summary>
+
 
                 <div className="joker-details-grid">
                   <MetricCard label="Subject" value={status.subject} />
@@ -1562,8 +1976,18 @@ function MessageBubble({
                   <MetricCard label="Accounting" value={status.accountingMode} />
                   <MetricCard label="Total tokens" value={status.totalTokens} />
                   <MetricCard label="Estimated cost minor" value={status.estimatedCostMinor} />
+                  <MetricCard label="Runtime birth" value={status.runtimeBirth} />
+                  <MetricCard label="Runtime age" value={status.runtimeAge} />
+                  <MetricCard label="Tenant" value={status.tenantId} />
+                  <MetricCard label="Workspace" value={status.workspaceId} />
+                  <MetricCard label="Subscription" value={status.subscriptionId} />
+                  <MetricCard label="Account" value={status.accountId} />
+                  <MetricCard label="Memory ID" value={status.memoryId} />
+                  <MetricCard label="Registered event" value={status.registeredEventName} />
+                  <MetricCard label="B2G readiness" value={status.b2gReadiness} />
                   <MetricCard label="legalCertification" value={status.legalCertification} />
                 </div>
+
 
                 <pre className="joker-json">{safeJson(message.raw)}</pre>
               </details>
@@ -1575,6 +1999,7 @@ function MessageBubble({
   );
 }
 
+
 export default function InterfacePage() {
   const [sessionId, setSessionId] = useState("");
   const [message, setMessage] = useState("");
@@ -1583,12 +2008,15 @@ export default function InterfacePage() {
   const [files, setFiles] = useState<RuntimeFile[]>([]);
   const [continuityRef, setContinuityRef] = useState<string | null>(null);
 
+
   const [iprHandoff, setIprHandoff] = useState<JsonRecord | null>(null);
   const [iprHandoffSource, setIprHandoffSource] = useState("none");
   const [iprHandoffError, setIprHandoffError] = useState<string | null>(null);
 
+
   const [iprSession, setIprSession] = useState<IprSessionResponse | null>(null);
   const [iprSessionError, setIprSessionError] = useState<string | null>(null);
+
 
   const [isChecking, setIsChecking] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(false);
@@ -1596,41 +2024,52 @@ export default function InterfacePage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
 
   const lastAssistantPayload = useMemo(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       const item = messages[index];
 
+
       if (item.role === "assistant" && item.raw) return item.raw;
     }
 
+
     return null;
   }, [messages]);
+
 
   const sessionHandoff = useMemo(() => {
     if (isRecord(iprSession?.reconstructedIprHandoff)) {
       return iprSession.reconstructedIprHandoff;
     }
 
+
     if (isRecord(iprSession?.accountProfile)) {
       return iprSession.accountProfile;
     }
 
+
     return null;
   }, [iprSession]);
+
 
   const effectiveHandoff = sessionHandoff || iprHandoff;
   const effectiveHandoffSource = sessionHandoff ? "accountSession" : iprHandoffSource;
   const hasAccountSession = iprSession?.authenticated === true;
 
+
   const dashboardPayload = lastAssistantPayload || health;
   const dashboardStatus = getRuntimeStatus(dashboardPayload);
 
+
   const sessionHumanIpr = getSessionHumanIpr(iprSession);
   const handoffHumanIpr = getHandoffSubjectIpr(effectiveHandoff);
+
 
   const humanIpr = firstUsableRuntimeValue(
     [
@@ -1642,6 +2081,7 @@ export default function InterfacePage() {
     ],
     "NOT_VERIFIED"
   );
+
 
   const subject = firstDisplayValue(
     [
@@ -1656,6 +2096,7 @@ export default function InterfacePage() {
     "No verified subject"
   );
 
+
   const certificateId = firstUsableRuntimeValue(
     [
       lastAssistantPayload ? dashboardStatus.certificateId : "",
@@ -1665,6 +2106,7 @@ export default function InterfacePage() {
     ],
     "NO_CERTIFICATE"
   );
+
 
   const certificateStatus = firstDisplayValue(
     [
@@ -1678,6 +2120,7 @@ export default function InterfacePage() {
     "MISSING"
   );
 
+
   const scope = firstUsableRuntimeValue(
     [
       lastAssistantPayload && hasJokerC2Scope(dashboardStatus.scope)
@@ -1690,12 +2133,14 @@ export default function InterfacePage() {
     "MATRIX_LIMITED"
   );
 
+
   const accountIdentityReady =
     hasAccountSession &&
     !isNegativeRuntimeValue(humanIpr) &&
     !isNegativeRuntimeValue(certificateId) &&
     isActiveCertificateStatus(certificateStatus) &&
     hasJokerC2Scope(scope);
+
 
   const accessDecision = firstUsableRuntimeValue(
     [
@@ -1707,6 +2152,7 @@ export default function InterfacePage() {
     "SERVER_VALIDATION_REQUIRED"
   );
 
+
   const identityBinding = firstUsableRuntimeValue(
     [
       lastAssistantPayload ? dashboardStatus.identityBinding : "",
@@ -1716,6 +2162,7 @@ export default function InterfacePage() {
     ],
     "NOT_VERIFIED"
   );
+
 
   const matrixState = firstUsableRuntimeValue(
     [
@@ -1727,6 +2174,7 @@ export default function InterfacePage() {
     "MATRIX_LIMITED"
   );
 
+
   const memoryScope = firstUsableRuntimeValue(
     [
       lastAssistantPayload ? dashboardStatus.memory : "",
@@ -1736,6 +2184,7 @@ export default function InterfacePage() {
     ],
     "RUNTIME_ONLY"
   );
+
 
   const memoryAuthority = firstUsableRuntimeValue(
     [
@@ -1747,6 +2196,7 @@ export default function InterfacePage() {
     "RUNTIME_HEALTH_CHECK"
   );
 
+
   const saasTier = firstUsableRuntimeValue(
     [
       lastAssistantPayload ? dashboardStatus.saasTier : "",
@@ -1755,6 +2205,7 @@ export default function InterfacePage() {
     ],
     "-"
   );
+
 
   const enrichedIprHandoff = buildEnrichedIprHandoff({
     base: effectiveHandoff,
@@ -1767,50 +2218,63 @@ export default function InterfacePage() {
     identityBinding
   });
 
+
   useEffect(() => {
     const stored =
       typeof window !== "undefined"
         ? window.localStorage.getItem("hbce-joker-c2-session-id")
         : null;
 
+
     const nextSessionId = stored || buildId("JOKER-UI");
 
+
     setSessionId(nextSessionId);
+
 
     if (typeof window !== "undefined") {
       window.localStorage.setItem("hbce-joker-c2-session-id", nextSessionId);
     }
+
 
     refreshIprHandoff();
     void checkIprSession();
     void checkRuntime();
   }, []);
 
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, isSending]);
 
+
   useEffect(() => {
     const textarea = textareaRef.current;
 
+
     if (!textarea) return;
+
 
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 220)}px`;
   }, [message]);
 
+
   function refreshIprHandoff() {
     const result = loadIprHandoffFromBrowser();
+
 
     setIprHandoff(result.handoff);
     setIprHandoffSource(result.source);
     setIprHandoffError(result.error);
   }
 
+
   async function refreshIdentityContext() {
     refreshIprHandoff();
     await checkIprSession();
   }
+
 
   function clearIprHandoff() {
     clearStoredHandoff();
@@ -1820,15 +2284,19 @@ export default function InterfacePage() {
     setIprHandoffError(null);
   }
 
+
   async function checkIprSession(): Promise<IprSessionResponse | null> {
     setIsCheckingSession(true);
     setIprSessionError(null);
 
+
     try {
       const snapshot = await fetchIprSessionSnapshot();
 
+
       setIprSession(snapshot.payload);
       setIprSessionError(snapshot.error);
+
 
       return snapshot.payload;
     } finally {
@@ -1836,22 +2304,28 @@ export default function InterfacePage() {
     }
   }
 
+
   async function resolveRequestIdentityContext(): Promise<{
     iprHandoff: JsonRecord | null;
     iprAccountSession: JsonRecord | null;
   }> {
     const browserHandoffResult = loadIprHandoffFromBrowser();
 
+
     setIprHandoff(browserHandoffResult.handoff);
     setIprHandoffSource(browserHandoffResult.source);
     setIprHandoffError(browserHandoffResult.error);
 
+
     const sessionSnapshot = await fetchIprSessionSnapshot();
+
 
     setIprSession(sessionSnapshot.payload);
     setIprSessionError(sessionSnapshot.error);
 
+
     const activeSession = sessionSnapshot.payload ?? iprSession;
+
 
     const activeSessionHandoff = isRecord(activeSession?.reconstructedIprHandoff)
       ? activeSession.reconstructedIprHandoff
@@ -1859,14 +2333,17 @@ export default function InterfacePage() {
         ? activeSession.accountProfile
         : null;
 
+
     const activeBaseHandoff =
       activeSessionHandoff ||
       browserHandoffResult.handoff ||
       effectiveHandoff ||
       iprHandoff;
 
+
     const activeHasAccountSession =
       activeSession?.authenticated === true || hasAccountSession;
+
 
     const requestHumanIpr = firstUsableRuntimeValue(
       [
@@ -1877,6 +2354,7 @@ export default function InterfacePage() {
       ],
       "NOT_VERIFIED"
     );
+
 
     const requestSubject = firstDisplayValue(
       [
@@ -1890,6 +2368,7 @@ export default function InterfacePage() {
       "No verified subject"
     );
 
+
     const requestCertificateId = firstUsableRuntimeValue(
       [
         getSessionCertificateId(activeSession),
@@ -1898,6 +2377,7 @@ export default function InterfacePage() {
       ],
       "NO_CERTIFICATE"
     );
+
 
     const requestCertificateStatus = firstDisplayValue(
       [
@@ -1908,6 +2388,7 @@ export default function InterfacePage() {
       "MISSING"
     );
 
+
     const requestScope = firstUsableRuntimeValue(
       [
         getSessionScope(activeSession),
@@ -1917,12 +2398,14 @@ export default function InterfacePage() {
       "MATRIX_LIMITED"
     );
 
+
     const requestIdentityReady =
       activeHasAccountSession &&
       !isNegativeRuntimeValue(requestHumanIpr) &&
       !isNegativeRuntimeValue(requestCertificateId) &&
       isActiveCertificateStatus(requestCertificateStatus) &&
       hasJokerC2Scope(requestScope);
+
 
     const requestAccessDecision = firstUsableRuntimeValue(
       [
@@ -1933,6 +2416,7 @@ export default function InterfacePage() {
       "SERVER_VALIDATION_REQUIRED"
     );
 
+
     const requestIdentityBinding = firstUsableRuntimeValue(
       [
         requestIdentityReady ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT" : "",
@@ -1941,6 +2425,7 @@ export default function InterfacePage() {
       ],
       "NOT_VERIFIED"
     );
+
 
     const requestHandoff = buildEnrichedIprHandoff({
       base: activeBaseHandoff,
@@ -1953,11 +2438,13 @@ export default function InterfacePage() {
       identityBinding: requestIdentityBinding
     });
 
+
     if (requestHandoff) {
       persistHandoff(requestHandoff);
       setIprHandoff(requestHandoff);
       setIprHandoffSource(activeSessionHandoff ? "accountSession" : browserHandoffResult.source);
     }
+
 
     const requestAccountSession =
       activeSession?.authenticated === true
@@ -1973,15 +2460,18 @@ export default function InterfacePage() {
           }
         : null;
 
+
     return {
       iprHandoff: requestHandoff,
       iprAccountSession: requestAccountSession
     };
   }
 
+
   async function checkRuntime() {
     setIsChecking(true);
     setError(null);
+
 
     try {
       const response = await fetch("/api/health", {
@@ -1993,11 +2483,14 @@ export default function InterfacePage() {
         }
       });
 
+
       const payload = await readJsonResponse<JsonRecord>(response);
+
 
       if (!response.ok || payload.ok === false) {
         throw new Error(text(payload.error, `HTTP_${response.status}`));
       }
+
 
       setHealth(payload);
     } catch (err) {
@@ -2008,16 +2501,21 @@ export default function InterfacePage() {
     }
   }
 
+
   async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
     const inputFiles = event.target.files;
 
+
     if (!inputFiles || inputFiles.length === 0) return;
 
+
     setError(null);
+
 
     try {
       const selected = Array.from(inputFiles);
       const nextFiles = await Promise.all(selected.map(readRuntimeFile));
+
 
       setFiles((current) => [...current, ...nextFiles]);
     } catch (err) {
@@ -2029,16 +2527,20 @@ export default function InterfacePage() {
     }
   }
 
+
   function removeFile(id: string) {
     setFiles((current) => current.filter((file) => file.id !== id));
   }
+
 
   function clearFiles() {
     setFiles([]);
   }
 
+
   function newChat() {
     const nextSessionId = buildId("JOKER-UI");
+
 
     setSessionId(nextSessionId);
     setMessages([]);
@@ -2047,13 +2549,16 @@ export default function InterfacePage() {
     setMessage("");
     setError(null);
 
+
     if (typeof window !== "undefined") {
       window.localStorage.setItem("hbce-joker-c2-session-id", nextSessionId);
     }
 
+
     refreshIprHandoff();
     void checkIprSession();
   }
+
 
   async function copyText(content: string) {
     try {
@@ -2067,20 +2572,25 @@ export default function InterfacePage() {
     }
   }
 
+
   async function sendMessage(forceMessage?: string) {
     const outgoing = (forceMessage ?? message).trim();
+
 
     if (!outgoing && files.length === 0) {
       setError("Write a message or attach a supported file.");
       return;
     }
 
+
     const effectiveMessage =
       outgoing || "Analyze the active files as JOKER-C2 operational context.";
+
 
     setError(null);
     setIsSending(true);
     setMessage("");
+
 
     const userMessage: ChatMessage = {
       id: buildId("MSG-U"),
@@ -2089,10 +2599,13 @@ export default function InterfacePage() {
       createdAt: new Date().toLocaleString("it-IT")
     };
 
+
     setMessages((current) => [...current, userMessage]);
+
 
     try {
       const requestIdentity = await resolveRequestIdentityContext();
+
 
       const fallbackAccountSession =
         iprSession?.authenticated === true
@@ -2107,6 +2620,7 @@ export default function InterfacePage() {
               legalCertification: false
             }
           : null;
+
 
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -2134,6 +2648,7 @@ export default function InterfacePage() {
         })
       });
 
+
       const payload = await readJsonResponse<JsonRecord>(response);
       const answer = getAnswer(payload);
       const nextContinuityRef =
@@ -2153,13 +2668,16 @@ export default function InterfacePage() {
           ""
         ) || null;
 
+
       if (nextContinuityRef) {
         setContinuityRef(nextContinuityRef);
       }
 
+
       if (!response.ok && !answer) {
         throw new Error(text(payload.error, `HTTP_${response.status}`));
       }
+
 
       const assistantMessage: ChatMessage = {
         id: buildId("MSG-A"),
@@ -2169,12 +2687,15 @@ export default function InterfacePage() {
         raw: payload
       };
 
+
       setMessages((current) => [...current, assistantMessage]);
+
 
       void checkIprSession();
       void checkRuntime();
     } catch (err) {
       const errorText = err instanceof Error ? err.message : "CHAT_REQUEST_FAILED";
+
 
       setError(errorText);
       setMessages((current) => [
@@ -2191,10 +2712,12 @@ export default function InterfacePage() {
     }
   }
 
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void sendMessage();
   }
+
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -2202,6 +2725,7 @@ export default function InterfacePage() {
       void sendMessage();
     }
   }
+
 
   const identityRows = [
     { label: "Runtime IPR", value: dashboardStatus.runtimeIpr },
@@ -2215,6 +2739,7 @@ export default function InterfacePage() {
     { label: "Source", value: effectiveHandoffSource }
   ];
 
+
   const memoryRows = [
     { label: "MATRIX", value: matrixState },
     { label: "Memory", value: memoryScope },
@@ -2225,6 +2750,7 @@ export default function InterfacePage() {
     { label: "Database", value: dashboardStatus.database }
   ];
 
+
   const proofRows = [
     { label: "AI EVT", value: dashboardStatus.aiEvt },
     { label: "Response EVT", value: dashboardStatus.responseEvt },
@@ -2233,14 +2759,31 @@ export default function InterfacePage() {
     { label: "legalCertification", value: dashboardStatus.legalCertification }
   ];
 
+
+  const temporalRows = [
+    { label: "Birth anchor", value: dashboardStatus.runtimeBirth },
+    { label: "Birth UTC", value: dashboardStatus.runtimeBirthUtc },
+    { label: "Runtime age", value: dashboardStatus.runtimeAge },
+    { label: "Life seconds", value: dashboardStatus.runtimeLifeSeconds },
+    { label: "2026-only", value: dashboardStatus.runtimeBirth === "2026-01-19T15:30:00+01:00" ? "PASS_2026_ONLY" : "FAIL_TEMPORAL_ANCHOR" }
+  ];
+
+
   const saasRows = [
     { label: "Release", value: dashboardStatus.saasRelease },
     { label: "Tier", value: saasTier },
     { label: "Core status", value: dashboardStatus.saasCoreStatus },
+    { label: "Tenant", value: dashboardStatus.tenantId },
+    { label: "Workspace", value: dashboardStatus.workspaceId },
+    { label: "Subscription", value: dashboardStatus.subscriptionId },
+    { label: "Account", value: dashboardStatus.accountId },
+    { label: "Thread", value: dashboardStatus.threadId },
+    { label: "Source", value: dashboardStatus.saasSource },
     { label: "OpenAI", value: dashboardStatus.openAI },
     { label: "Database configured", value: dashboardStatus.databaseConfigured },
     { label: "Database available", value: dashboardStatus.databaseAvailable }
   ];
+
 
   const auditRows = [
     { label: "Audit ID", value: dashboardStatus.auditId },
@@ -2250,6 +2793,20 @@ export default function InterfacePage() {
     { label: "Response EVT", value: dashboardStatus.responseEvt },
     { label: "OPC", value: dashboardStatus.opc }
   ];
+
+
+  const registeredEventRows = [
+    { label: "Registered event ID", value: dashboardStatus.registeredEventId },
+    { label: "Registered event name", value: dashboardStatus.registeredEventName },
+    { label: "Registered event hash", value: dashboardStatus.registeredEventHash },
+    { label: "Memory ID", value: dashboardStatus.memoryId },
+    { label: "Memory hash", value: dashboardStatus.memoryHash },
+    { label: "Memory key hash", value: dashboardStatus.memoryKeyHash },
+    { label: "Previous EVT", value: dashboardStatus.previousEvt },
+    { label: "Previous OPC", value: dashboardStatus.previousOpc },
+    { label: "B2G readiness", value: dashboardStatus.b2gReadiness }
+  ];
+
 
   const modelUsageRows = [
     { label: "Usage ID", value: dashboardStatus.modelUsageId },
@@ -2264,6 +2821,7 @@ export default function InterfacePage() {
     { label: "Usage hash", value: dashboardStatus.usageHash }
   ];
 
+
   return (
     <main className="joker-page notranslate" lang="it" translate="no">
       <header className="joker-topbar">
@@ -2275,6 +2833,7 @@ export default function InterfacePage() {
           </div>
         </div>
 
+
         <div className="joker-health">
           <StatusPill value={first(health, [["state"], ["status"]], "CHECKING")} />
           <StatusPill label="Model" value={dashboardStatus.model} />
@@ -2284,7 +2843,10 @@ export default function InterfacePage() {
           <StatusPill label="Memory" value={memoryScope} />
           <StatusPill label="Audit" value={dashboardStatus.auditStatus} />
           <StatusPill label="Usage" value={dashboardStatus.modelUsageStatus} />
+          <StatusPill label="Birth" value={dashboardStatus.runtimeBirth} />
+          <StatusPill label="B2G" value={dashboardStatus.b2gReadiness} />
         </div>
+
 
         <div className="joker-top-actions">
           <button type="button" onClick={() => void checkRuntime()} disabled={isChecking}>
@@ -2303,6 +2865,7 @@ export default function InterfacePage() {
         </div>
       </header>
 
+
       <section className="joker-hero">
         <div className="joker-hero-copy">
           <span className="joker-kicker">Project HBCE R&D Transfer SaaS</span>
@@ -2314,6 +2877,7 @@ export default function InterfacePage() {
           </p>
           <code>legalCertification=false</code>
         </div>
+
 
         <div className="joker-hero-grid">
           <MetricCard label="Runtime" value="AI_JOKER-C2" />
@@ -2327,8 +2891,12 @@ export default function InterfacePage() {
           <MetricCard label="Audit" value={dashboardStatus.auditId} />
           <MetricCard label="Usage" value={dashboardStatus.modelUsageId} />
           <MetricCard label="SaaS tier" value={saasTier} />
+          <MetricCard label="Birth anchor" value={dashboardStatus.runtimeBirth} />
+          <MetricCard label="Runtime age" value={dashboardStatus.runtimeAge} />
+          <MetricCard label="B2G readiness" value={dashboardStatus.b2gReadiness} />
         </div>
       </section>
+
 
       <section className="joker-dashboard">
         <div
@@ -2348,6 +2916,7 @@ export default function InterfacePage() {
             <StatusPill value={accessDecision} />
           </div>
 
+
           <p>
             {accountIdentityReady
               ? "Server-side IPR account session detected. Identity frame is ready for authoritative validation during POST /api/chat."
@@ -2358,15 +2927,19 @@ export default function InterfacePage() {
                   : "No biological IPR handoff or account session detected. Runtime remains limited until server-side validation."}
           </p>
 
+
           <InfoList items={identityRows} />
+
 
           {iprSessionError && !hasAccountSession ? (
             <div className="joker-alert is-warn">IPR account session: {iprSessionError}</div>
           ) : null}
 
+
           {iprHandoffError ? (
             <div className="joker-alert is-bad">{iprHandoffError}</div>
           ) : null}
+
 
           <div className="joker-panel-actions">
             <button
@@ -2392,6 +2965,7 @@ export default function InterfacePage() {
           </div>
         </div>
 
+
         <div className="joker-panel">
           <div className="joker-panel-head">
             <div>
@@ -2401,13 +2975,16 @@ export default function InterfacePage() {
             <StatusPill value={memoryScope} />
           </div>
 
+
           <p>
             La memoria operativa non autentica da sola il soggetto, non abbassa
             il rischio e non sostituisce la persistenza database.
           </p>
 
+
           <InfoList items={memoryRows} />
         </div>
+
 
         <div className="joker-panel">
           <div className="joker-panel-head">
@@ -2418,14 +2995,36 @@ export default function InterfacePage() {
             <StatusPill value="technical proof" />
           </div>
 
+
           <p>
             OPC è una ricevuta tecnica per audit e governance. Non è una
             certificazione legale, non è timestamp qualificato e non è validazione
             di pubblica autorità.
           </p>
 
+
           <InfoList items={proofRows} />
         </div>
+
+
+        <div className="joker-panel">
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker">Temporal runtime</span>
+              <h2>2026-only continuity</h2>
+            </div>
+            <StatusPill value={dashboardStatus.runtimeBirth === "2026-01-19T15:30:00+01:00" ? "PASS_2026_ONLY" : "FAIL_TEMPORAL_ANCHOR"} />
+          </div>
+
+
+          <p>
+            La nascita runtime deve restare agganciata solo al 19/01/2026. Se qui ricompare un anno errato, il sistema sta barando peggio di un calendario ubriaco.
+          </p>
+
+
+          <InfoList items={temporalRows} />
+        </div>
+
 
         <div className="joker-panel">
           <div className="joker-panel-head">
@@ -2436,13 +3035,16 @@ export default function InterfacePage() {
             <StatusPill value={dashboardStatus.saasCoreStatus} />
           </div>
 
+
           <p>
             Stato operativo del passaggio da demo R&D a SaaS Core v0.1: provider,
             database, tier, persistenza, audit e usage accounting.
           </p>
 
+
           <InfoList items={saasRows} />
         </div>
+
 
         <div className="joker-panel">
           <div className="joker-panel-head">
@@ -2453,13 +3055,16 @@ export default function InterfacePage() {
             <StatusPill value={dashboardStatus.auditStatus} />
           </div>
 
+
           <p>
             L’audit runtime registra decisione, rischio, modello, memoria, EVT,
             OPC e boundary. Serve a ricostruire l’operazione, non a fare miracoli notarili.
           </p>
 
+
           <InfoList items={auditRows} />
         </div>
+
 
         <div className="joker-panel">
           <div className="joker-panel-head">
@@ -2470,14 +3075,36 @@ export default function InterfacePage() {
             <StatusPill value={dashboardStatus.modelUsageStatus} />
           </div>
 
+
           <p>
             Il model usage log collega modello, token, costo stimato, SaaS tier,
             audit, EVT e OPC. Il contatore non è poesia, ma almeno paga le bollette.
           </p>
 
+
           <InfoList items={modelUsageRows} />
         </div>
+
+
+        <div className="joker-panel">
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker">Registered Event</span>
+              <h2>SaaS B2G memory registry</h2>
+            </div>
+            <StatusPill value={dashboardStatus.b2gReadiness} />
+          </div>
+
+
+          <p>
+            Questo blocco verifica se l’evento nominato, la memoria persistente, EVT, OPC, audit e usage stanno convergendo nello stesso contesto SaaS. Cioè la parte in cui smettiamo di collezionare ID e iniziamo a usarli.
+          </p>
+
+
+          <InfoList items={registeredEventRows} />
+        </div>
       </section>
+
 
       <section className="joker-chat">
         {messages.length === 0 ? (
@@ -2491,6 +3118,7 @@ export default function InterfacePage() {
               model usage, SaaS accounting e fail-closed.
             </p>
 
+
             <div className="joker-prompt-grid">
               {QUICK_PROMPTS.map((prompt) => (
                 <button
@@ -2503,6 +3131,7 @@ export default function InterfacePage() {
                 </button>
               ))}
             </div>
+
 
             <button
               type="button"
@@ -2518,6 +3147,7 @@ export default function InterfacePage() {
             {messages.map((item) => (
               <MessageBubble key={item.id} message={item} onCopy={copyText} />
             ))}
+
 
             {isSending ? (
               <article className="joker-message joker-message-assistant">
@@ -2539,17 +3169,21 @@ export default function InterfacePage() {
               </article>
             ) : null}
 
+
             <div ref={bottomRef} />
           </div>
         )}
       </section>
 
+
       <section className="joker-composer-shell">
         {error ? <div className="joker-alert is-bad composer-alert">{error}</div> : null}
+
 
         {copied ? (
           <div className="joker-alert is-good composer-alert">Response copied.</div>
         ) : null}
+
 
         {files.length > 0 ? (
           <div className="joker-file-bar">
@@ -2572,11 +3206,13 @@ export default function InterfacePage() {
               </div>
             ))}
 
+
             <button type="button" className="joker-clear-files" onClick={clearFiles}>
               Clear files
             </button>
           </div>
         ) : null}
+
 
         <form onSubmit={handleSubmit} className="joker-composer">
           <input
@@ -2588,6 +3224,7 @@ export default function InterfacePage() {
             onChange={handleFiles}
           />
 
+
           <button
             type="button"
             className="joker-icon-button"
@@ -2597,6 +3234,7 @@ export default function InterfacePage() {
             +
           </button>
 
+
           <textarea
             ref={textareaRef}
             value={message}
@@ -2605,6 +3243,7 @@ export default function InterfacePage() {
             placeholder="Write to JOKER-C2..."
             rows={1}
           />
+
 
           <button
             type="submit"
@@ -2616,6 +3255,7 @@ export default function InterfacePage() {
           </button>
         </form>
 
+
         <div className="joker-footer-line">
           <span>Enter sends · Shift+Enter creates a new line</span>
           <span>
@@ -2623,6 +3263,7 @@ export default function InterfacePage() {
           </span>
         </div>
       </section>
+
 
       <style jsx>{`
         .joker-page {
@@ -2644,6 +3285,7 @@ export default function InterfacePage() {
             sans-serif;
         }
 
+
         .joker-topbar {
           position: sticky;
           top: 0;
@@ -2658,12 +3300,14 @@ export default function InterfacePage() {
           backdrop-filter: blur(22px);
         }
 
+
         .joker-brand {
           display: flex;
           align-items: center;
           gap: 12px;
           min-width: 0;
         }
+
 
         .joker-logo,
         .joker-empty-logo,
@@ -2682,11 +3326,13 @@ export default function InterfacePage() {
             inset 0 1px 0 rgba(255, 255, 255, 0.22);
         }
 
+
         .joker-logo,
         .joker-empty-logo {
           font-size: 24px;
           line-height: 1;
         }
+
 
         .joker-empty-logo {
           width: 76px;
@@ -2695,6 +3341,7 @@ export default function InterfacePage() {
           font-size: 36px;
         }
 
+
         .joker-brand strong {
           display: block;
           color: #ffffff;
@@ -2702,12 +3349,14 @@ export default function InterfacePage() {
           letter-spacing: 0.02em;
         }
 
+
         .joker-brand span {
           display: block;
           margin-top: 2px;
           color: #94a3b8;
           font-size: 12px;
         }
+
 
         .joker-health,
         .joker-runtime-strip {
@@ -2720,6 +3369,7 @@ export default function InterfacePage() {
           overflow-y: hidden;
         }
 
+
         .joker-top-actions,
         .joker-panel-actions {
           display: flex;
@@ -2728,6 +3378,7 @@ export default function InterfacePage() {
           align-items: center;
           justify-content: flex-end;
         }
+
 
         button {
           appearance: none;
@@ -2747,6 +3398,7 @@ export default function InterfacePage() {
             box-shadow 160ms ease;
         }
 
+
         button:hover {
           border-color: rgba(34, 211, 238, 0.72);
           color: #eff6ff;
@@ -2754,16 +3406,19 @@ export default function InterfacePage() {
           box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.08);
         }
 
+
         button:disabled {
           cursor: not-allowed;
           opacity: 0.52;
           box-shadow: none;
         }
 
+
         .joker-top-actions button,
         .joker-panel-actions button {
           padding: 8px 12px;
         }
+
 
         .joker-pill {
           display: inline-flex;
@@ -2781,6 +3436,7 @@ export default function InterfacePage() {
           white-space: nowrap;
         }
 
+
         .joker-pill b {
           color: #64748b;
           font-weight: 900;
@@ -2788,11 +3444,13 @@ export default function InterfacePage() {
           letter-spacing: 0.06em;
         }
 
+
         .joker-pill span {
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
+
 
         .is-good {
           border-color: rgba(34, 197, 94, 0.34) !important;
@@ -2800,17 +3458,20 @@ export default function InterfacePage() {
           color: #bbf7d0 !important;
         }
 
+
         .is-warn {
           border-color: rgba(251, 191, 36, 0.34) !important;
           background: rgba(120, 53, 15, 0.18) !important;
           color: #fde68a !important;
         }
 
+
         .is-bad {
           border-color: rgba(248, 113, 113, 0.36) !important;
           background: rgba(127, 29, 29, 0.22) !important;
           color: #fecaca !important;
         }
+
 
         .joker-hero,
         .joker-dashboard {
@@ -2820,15 +3481,18 @@ export default function InterfacePage() {
           gap: 16px;
         }
 
+
         .joker-hero {
           grid-template-columns: minmax(0, 0.95fr) minmax(420px, 1.05fr);
           align-items: stretch;
         }
 
+
         .joker-dashboard {
           grid-template-columns: repeat(3, minmax(0, 1fr));
           margin-top: 16px;
         }
+
 
         .joker-hero-copy,
         .joker-panel {
@@ -2842,14 +3506,17 @@ export default function InterfacePage() {
             inset 0 1px 0 rgba(255, 255, 255, 0.04);
         }
 
+
         .joker-hero-copy {
           padding: 26px;
         }
+
 
         .joker-panel {
           padding: 18px;
           overflow: hidden;
         }
+
 
         .joker-panel.is-active {
           border-color: rgba(34, 211, 238, 0.34);
@@ -2858,9 +3525,11 @@ export default function InterfacePage() {
             linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.55));
         }
 
+
         .joker-panel.is-error {
           border-color: rgba(248, 113, 113, 0.42);
         }
+
 
         .joker-kicker {
           display: inline-flex;
@@ -2871,6 +3540,7 @@ export default function InterfacePage() {
           text-transform: uppercase;
         }
 
+
         .joker-hero h1,
         .joker-empty h2 {
           margin: 10px 0 0;
@@ -2879,6 +3549,7 @@ export default function InterfacePage() {
           line-height: 0.96;
           letter-spacing: -0.055em;
         }
+
 
         .joker-hero p,
         .joker-panel p,
@@ -2890,6 +3561,7 @@ export default function InterfacePage() {
           overflow-wrap: anywhere;
         }
 
+
         .joker-hero code {
           display: inline-flex;
           margin-top: 18px;
@@ -2900,20 +3572,24 @@ export default function InterfacePage() {
           padding: 6px 8px;
         }
 
+
         .joker-hero-grid,
         .joker-details-grid {
           display: grid;
           gap: 10px;
         }
 
+
         .joker-hero-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
 
         .joker-details-grid {
           grid-template-columns: repeat(3, minmax(0, 1fr));
           margin-top: 12px;
         }
+
 
         .joker-panel-head {
           display: flex;
@@ -2921,6 +3597,7 @@ export default function InterfacePage() {
           justify-content: space-between;
           gap: 12px;
         }
+
 
         .joker-panel h2 {
           margin: 4px 0 0;
@@ -2931,6 +3608,7 @@ export default function InterfacePage() {
           overflow-wrap: anywhere;
         }
 
+
         .joker-metric {
           min-width: 0;
           padding: 13px;
@@ -2940,9 +3618,11 @@ export default function InterfacePage() {
           overflow: hidden;
         }
 
+
         .joker-hero-grid .joker-metric {
           min-height: 92px;
         }
+
 
         .joker-metric span {
           display: block;
@@ -2952,6 +3632,7 @@ export default function InterfacePage() {
           letter-spacing: 0.09em;
           text-transform: uppercase;
         }
+
 
         .joker-metric strong {
           display: block;
@@ -2972,11 +3653,13 @@ export default function InterfacePage() {
             monospace;
         }
 
+
         .joker-info-list {
           display: grid;
           gap: 8px;
           margin: 16px 0 0;
         }
+
 
         .joker-info-row {
           display: grid;
@@ -2989,6 +3672,7 @@ export default function InterfacePage() {
           background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.48));
         }
 
+
         .joker-info-row dt {
           color: #64748b;
           font-size: 10px;
@@ -2997,6 +3681,7 @@ export default function InterfacePage() {
           line-height: 1.35;
           text-transform: uppercase;
         }
+
 
         .joker-info-row dd {
           margin: 0;
@@ -3018,6 +3703,7 @@ export default function InterfacePage() {
             monospace;
         }
 
+
         .joker-alert {
           margin-top: 12px;
           padding: 11px 12px;
@@ -3027,16 +3713,19 @@ export default function InterfacePage() {
           overflow-wrap: anywhere;
         }
 
+
         .joker-panel-actions {
           justify-content: flex-start;
           margin-top: 14px;
         }
+
 
         .joker-chat {
           min-height: 0;
           overflow-y: auto;
           padding: 30px 18px 22px;
         }
+
 
         .joker-empty {
           width: min(860px, 100%);
@@ -3049,14 +3738,17 @@ export default function InterfacePage() {
           text-align: center;
         }
 
+
         .joker-empty h2 {
           font-size: clamp(32px, 5vw, 54px);
         }
+
 
         .joker-empty p {
           max-width: 760px;
           font-size: 15px;
         }
+
 
         .joker-prompt-grid {
           width: min(820px, 100%);
@@ -3065,6 +3757,7 @@ export default function InterfacePage() {
           gap: 10px;
           margin-top: 26px;
         }
+
 
         .joker-prompt-grid button {
           min-height: 56px;
@@ -3075,12 +3768,14 @@ export default function InterfacePage() {
           background: rgba(2, 6, 23, 0.42);
         }
 
+
         .joker-default-prompt {
           margin-top: 12px;
           padding: 11px 16px;
           border-color: rgba(34, 211, 238, 0.42);
           background: rgba(8, 47, 73, 0.42);
         }
+
 
         .joker-message-list {
           width: min(1010px, 100%);
@@ -3090,6 +3785,7 @@ export default function InterfacePage() {
           padding-bottom: 8px;
         }
 
+
         .joker-message {
           display: grid;
           grid-template-columns: 42px minmax(0, 1fr);
@@ -3097,17 +3793,20 @@ export default function InterfacePage() {
           align-items: flex-start;
         }
 
+
         .joker-message-user .joker-message-avatar {
           background: linear-gradient(135deg, #334155, #0f172a);
           box-shadow: none;
           font-size: 16px;
         }
 
+
         .joker-message-system .joker-message-avatar {
           background: linear-gradient(135deg, #ef4444, #7f1d1d);
           box-shadow: none;
           font-size: 16px;
         }
+
 
         .joker-message-body {
           min-width: 0;
@@ -3118,15 +3817,18 @@ export default function InterfacePage() {
           box-shadow: 0 18px 44px rgba(0, 0, 0, 0.2);
         }
 
+
         .joker-message-user .joker-message-body {
           background: linear-gradient(180deg, rgba(8, 145, 178, 0.16), rgba(2, 6, 23, 0.46));
           border-color: rgba(34, 211, 238, 0.28);
         }
 
+
         .joker-message-system .joker-message-body {
           background: rgba(127, 29, 29, 0.22);
           border-color: rgba(248, 113, 113, 0.32);
         }
+
 
         .joker-message-head {
           display: flex;
@@ -3136,12 +3838,14 @@ export default function InterfacePage() {
           margin-bottom: 10px;
         }
 
+
         .joker-message-head strong {
           display: block;
           color: #f8fafc;
           font-size: 13px;
           letter-spacing: 0.02em;
         }
+
 
         .joker-message-head span,
         .joker-message-head time {
@@ -3151,6 +3855,7 @@ export default function InterfacePage() {
           line-height: 1.35;
           overflow-wrap: anywhere;
         }
+
 
         .joker-message-text {
           margin: 0;
@@ -3163,12 +3868,14 @@ export default function InterfacePage() {
           font-family: inherit;
         }
 
+
         .joker-runtime-strip {
           flex-wrap: wrap;
           margin-top: 15px;
           padding-top: 15px;
           border-top: 1px solid rgba(71, 85, 105, 0.55);
         }
+
 
         .joker-message-actions {
           display: flex;
@@ -3178,14 +3885,17 @@ export default function InterfacePage() {
           margin-top: 13px;
         }
 
+
         .joker-message-actions button {
           padding: 8px 11px;
           font-size: 12px;
         }
 
+
         details {
           width: 100%;
         }
+
 
         summary {
           cursor: pointer;
@@ -3193,6 +3903,7 @@ export default function InterfacePage() {
           font-size: 12px;
           font-weight: 850;
         }
+
 
         .joker-json {
           margin: 12px 0 0;
@@ -3210,12 +3921,14 @@ export default function InterfacePage() {
           word-break: break-word;
         }
 
+
         .joker-thinking {
           display: flex;
           align-items: center;
           gap: 7px;
           height: 28px;
         }
+
 
         .joker-thinking span {
           width: 8px;
@@ -3225,13 +3938,16 @@ export default function InterfacePage() {
           animation: jokerPulse 1s infinite ease-in-out;
         }
 
+
         .joker-thinking span:nth-child(2) {
           animation-delay: 0.16s;
         }
 
+
         .joker-thinking span:nth-child(3) {
           animation-delay: 0.32s;
         }
+
 
         @keyframes jokerPulse {
           0%,
@@ -3241,11 +3957,13 @@ export default function InterfacePage() {
             opacity: 0.45;
           }
 
+
           40% {
             transform: scale(1);
             opacity: 1;
           }
         }
+
 
         .joker-composer-shell {
           position: sticky;
@@ -3259,10 +3977,12 @@ export default function InterfacePage() {
           backdrop-filter: blur(22px);
         }
 
+
         .composer-alert {
           width: min(1010px, 100%);
           margin: 0 auto 10px;
         }
+
 
         .joker-file-bar {
           width: min(1010px, 100%);
@@ -3271,6 +3991,7 @@ export default function InterfacePage() {
           flex-wrap: wrap;
           gap: 8px;
         }
+
 
         .joker-file-chip,
         .joker-clear-files {
@@ -3286,12 +4007,14 @@ export default function InterfacePage() {
           font-size: 12px;
         }
 
+
         .joker-file-chip span {
           max-width: 220px;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
+
 
         .joker-file-chip em {
           color: #64748b;
@@ -3302,6 +4025,7 @@ export default function InterfacePage() {
           white-space: nowrap;
         }
 
+
         .joker-file-preview {
           width: 24px;
           height: 24px;
@@ -3309,6 +4033,7 @@ export default function InterfacePage() {
           object-fit: cover;
           border: 1px solid rgba(148, 163, 184, 0.35);
         }
+
 
         .joker-file-chip button {
           border: 0;
@@ -3318,6 +4043,7 @@ export default function InterfacePage() {
           background: rgba(71, 85, 105, 0.72);
           color: #e2e8f0;
         }
+
 
         .joker-composer {
           width: min(1010px, 100%);
@@ -3333,6 +4059,7 @@ export default function InterfacePage() {
           box-shadow: 0 18px 58px rgba(0, 0, 0, 0.38);
         }
 
+
         .joker-icon-button,
         .joker-send {
           width: 40px;
@@ -3345,11 +4072,13 @@ export default function InterfacePage() {
           line-height: 1;
         }
 
+
         .joker-send {
           border-color: rgba(34, 211, 238, 0.65);
           background: linear-gradient(135deg, #0891b2, #4f46e5);
           color: #ffffff;
         }
+
 
         .joker-composer textarea {
           width: 100%;
@@ -3365,9 +4094,11 @@ export default function InterfacePage() {
           line-height: 1.55;
         }
 
+
         .joker-composer textarea::placeholder {
           color: #64748b;
         }
+
 
         .joker-footer-line {
           width: min(1010px, 100%);
@@ -3380,6 +4111,7 @@ export default function InterfacePage() {
           line-height: 1.4;
         }
 
+
         @media (max-width: 1180px) {
           .joker-topbar,
           .joker-hero,
@@ -3387,14 +4119,17 @@ export default function InterfacePage() {
             grid-template-columns: 1fr;
           }
 
+
           .joker-top-actions {
             justify-content: flex-start;
           }
+
 
           .joker-hero-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
           }
         }
+
 
         @media (max-width: 860px) {
           .joker-hero-grid,
@@ -3404,15 +4139,18 @@ export default function InterfacePage() {
           }
         }
 
+
         @media (max-width: 640px) {
           .joker-topbar {
             padding: 12px;
           }
 
+
           .joker-hero,
           .joker-dashboard {
             width: calc(100% - 20px);
           }
+
 
           .joker-hero-copy,
           .joker-panel {
@@ -3420,27 +4158,33 @@ export default function InterfacePage() {
             padding: 15px;
           }
 
+
           .joker-info-row {
             grid-template-columns: 1fr;
             gap: 5px;
           }
 
+
           .joker-info-row dd {
             text-align: left;
           }
+
 
           .joker-panel-head {
             flex-direction: column;
           }
 
+
           .joker-chat {
             padding: 22px 10px 14px;
           }
+
 
           .joker-message {
             grid-template-columns: 1fr;
             gap: 8px;
           }
+
 
           .joker-message-avatar {
             width: 34px;
@@ -3448,14 +4192,17 @@ export default function InterfacePage() {
             border-radius: 13px;
           }
 
+
           .joker-message-body {
             border-radius: 20px;
             padding: 14px;
           }
 
+
           .joker-composer-shell {
             padding: 10px;
           }
+
 
           .joker-footer-line {
             flex-direction: column;
@@ -3465,6 +4212,7 @@ export default function InterfacePage() {
     </main>
   );
 }
+
 
 async function fetchIprSessionSnapshot(): Promise<{
   payload: IprSessionResponse | null;
@@ -3480,7 +4228,9 @@ async function fetchIprSessionSnapshot(): Promise<{
       }
     });
 
+
     const payload = await readJsonResponse<IprSessionResponse>(response);
+
 
     if (!response.ok || payload.authenticated !== true) {
       return {
@@ -3488,6 +4238,7 @@ async function fetchIprSessionSnapshot(): Promise<{
         error: payload.reason || payload.detail || payload.error || `HTTP_${response.status}`
       };
     }
+
 
     return {
       payload,
@@ -3501,12 +4252,15 @@ async function fetchIprSessionSnapshot(): Promise<{
   }
 }
 
+
 async function readRuntimeFile(file: File): Promise<RuntimeFile> {
   const type = resolveFileMimeType(file);
   const kind = resolveRuntimeFileKind(file);
 
+
   if (kind === "text") {
     const content = await file.text();
+
 
     return {
       id: buildId("FILE"),
@@ -3522,6 +4276,7 @@ async function readRuntimeFile(file: File): Promise<RuntimeFile> {
     };
   }
 
+
   if (kind === "image" || kind === "pdf") {
     const dataUrl = await readFileAsDataUrl(file);
     const base64 = extractBase64FromDataUrl(dataUrl);
@@ -3531,6 +4286,7 @@ async function readRuntimeFile(file: File): Promise<RuntimeFile> {
       type,
       base64Length: base64.length
     });
+
 
     return {
       id: buildId("FILE"),
@@ -3548,7 +4304,9 @@ async function readRuntimeFile(file: File): Promise<RuntimeFile> {
     };
   }
 
+
   const manifest = buildFileContentManifest({ file, kind, type });
+
 
   return {
     id: buildId("FILE"),
@@ -3564,8 +4322,10 @@ async function readRuntimeFile(file: File): Promise<RuntimeFile> {
   };
 }
 
+
 function inferMimeTypeFromFileName(fileName: string): string {
   const lower = fileName.toLowerCase();
+
 
   if (lower.endsWith(".json")) return "application/json";
   if (lower.endsWith(".md") || lower.endsWith(".markdown")) return "text/markdown";
@@ -3583,28 +4343,36 @@ function inferMimeTypeFromFileName(fileName: string): string {
   if (lower.endsWith(".webp")) return "image/webp";
   if (lower.endsWith(".gif")) return "image/gif";
 
+
   return "application/octet-stream";
 }
+
 
 function resolveFileMimeType(file: File): string {
   return file.type || inferMimeTypeFromFileName(file.name);
 }
 
+
 function resolveRuntimeFileKind(file: File): RuntimeFileKind {
   const type = resolveFileMimeType(file);
+
 
   if (type.startsWith("text/") || TEXT_FILE_TYPES.has(type)) return "text";
   if (type.startsWith("image/") || IMAGE_FILE_TYPES.has(type)) return "image";
   if (type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) return "pdf";
 
+
   return "binary";
 }
+
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
+
     reader.onerror = () => reject(new Error("FILE_DATA_URL_READ_FAILED"));
+
 
     reader.onload = () => {
       if (typeof reader.result === "string") {
@@ -3612,18 +4380,23 @@ function readFileAsDataUrl(file: File): Promise<string> {
         return;
       }
 
+
       reject(new Error("FILE_DATA_URL_EMPTY_RESULT"));
     };
+
 
     reader.readAsDataURL(file);
   });
 }
 
+
 function extractBase64FromDataUrl(dataUrl: string): string {
   const [, base64 = ""] = dataUrl.split(",", 2);
 
+
   return base64;
 }
+
 
 function buildFileContentManifest(input: {
   file: File;
@@ -3649,18 +4422,23 @@ function buildFileContentManifest(input: {
   ].join("\n");
 }
 
+
 function formatFileSize(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+
 
   const units = ["B", "KB", "MB", "GB"];
   const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
   const value = bytes / 1024 ** index;
 
+
   return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
 }
 
+
 async function readJsonResponse<T>(response: Response): Promise<T> {
   const raw = await response.text();
+
 
   try {
     return JSON.parse(raw) as T;
@@ -3668,6 +4446,7 @@ async function readJsonResponse<T>(response: Response): Promise<T> {
     throw new Error(raw || `HTTP_${response.status}`);
   }
 }
+
 
 function safeJson(value: unknown): string {
   try {
