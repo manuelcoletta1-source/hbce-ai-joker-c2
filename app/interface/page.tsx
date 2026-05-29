@@ -112,6 +112,66 @@ type RuntimeStatus = {
 };
 
 
+type PublicSemanticMemoryActivatedTerm = {
+  n: string;
+  term: string;
+  score: string;
+  matchedSignals: string[];
+};
+
+
+type PublicSemanticMemorySnapshot = {
+  available: boolean;
+  enabled: string;
+  type: string;
+  formula: string;
+  definition: string;
+  persistable: string;
+  memoryId: string;
+  quality: string;
+  continuityGain: string;
+  thresholdDetected: string;
+  couplingState: string;
+  activatedTerms: PublicSemanticMemoryActivatedTerm[];
+  topTerms: string[];
+  primaryAxis: {
+    decision: string;
+    cost: string;
+    trace: string;
+    time: string;
+  };
+  policy: {
+    saveRaw: string;
+    saveSynthesis: string;
+    reusableInPrompt: string;
+  };
+  source: {
+    evtId: string;
+    opcId: string;
+    timestamp: string;
+  };
+  ipr: {
+    humanIpr: string;
+    runtimeIpr: string;
+    identityBinding: string;
+  };
+  runtime: {
+    access: string;
+    matrix: string;
+    memory: string;
+    persistenceMode: string;
+    persistenceStatus: string;
+    tenantId: string;
+    workspaceId: string;
+    legalCertification: string;
+  };
+  boundary: {
+    legalCertification: string;
+    technicalProofOnly: string;
+  };
+};
+
+
 type IprSessionResponse = {
   ok?: boolean;
   authenticated?: boolean;
@@ -703,6 +763,198 @@ function firstJoined(value: unknown, paths: string[][], fallback = "-"): string 
 
 
   return fallback;
+}
+
+
+function firstRecord(value: unknown, paths: string[][]): JsonRecord | null {
+  for (const path of paths) {
+    const candidate = getPath(value, path);
+
+
+    if (isRecord(candidate)) {
+      return candidate;
+    }
+  }
+
+
+  return null;
+}
+
+
+function firstArray(value: unknown, paths: string[][]): unknown[] {
+  for (const path of paths) {
+    const candidate = getPath(value, path);
+
+
+    if (Array.isArray(candidate)) {
+      return candidate;
+    }
+  }
+
+
+  return [];
+}
+
+
+function booleanLike(value: unknown, fallback = "-"): string {
+  if (typeof value === "boolean") {
+    return String(value);
+  }
+
+
+  if (typeof value === "number") {
+    return value === 0 ? "false" : "true";
+  }
+
+
+  if (typeof value === "string" && value.trim()) {
+    const normalized = value.trim().toLowerCase();
+
+
+    if (["true", "false"].includes(normalized)) {
+      return normalized;
+    }
+
+
+    return normalizeVisibleText(value.trim());
+  }
+
+
+  return fallback;
+}
+
+
+function flattenTopTerms(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+
+  return value
+    .map((item) => {
+      if (typeof item === "string") return normalizeVisibleText(item);
+      if (isRecord(item)) return text(item.term, "");
+      return "";
+    })
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+
+function normalizeSemanticActivatedTerms(value: unknown[]): PublicSemanticMemoryActivatedTerm[] {
+  return value
+    .filter(isRecord)
+    .map((term) => ({
+      n: text(term.n, "-"),
+      term: text(term.term, "-"),
+      score: text(term.score, "-"),
+      matchedSignals: Array.isArray(term.matchedSignals)
+        ? term.matchedSignals.map((signal) => text(signal, "")).filter(Boolean).slice(0, 8)
+        : []
+    }))
+    .filter((term) => term.term !== "-")
+    .slice(0, 12);
+}
+
+
+function isSemanticMemoryLike(record: JsonRecord | null): record is JsonRecord {
+  if (!record) return false;
+
+
+  return Boolean(
+    text(record.memoryId, "") ||
+      text(record.quality, "") ||
+      text(record.continuityGain, "") ||
+      text(record.couplingState, "") ||
+      isRecord(record.semantic) ||
+      isRecord(record.corpus) ||
+      isRecord(record.alienCode) ||
+      isRecord(record.rascensional) ||
+      isRecord(record.policy)
+  );
+}
+
+
+function getPublicSemanticMemorySnapshot(
+  payload: JsonRecord | null | undefined
+): PublicSemanticMemorySnapshot {
+  const source = payload ?? {};
+  const candidateRecords = [
+    firstRecord(source, [["semanticMemoryPublic"]]),
+    firstRecord(source, [["saas", "semanticMemory"]]),
+    firstRecord(source, [["diagnostics", "semanticMemory"]]),
+    firstRecord(source, [["esoterologicalSemanticMemory"]]),
+    firstRecord(source, [["esoterologicalSemanticMemoryRecord"]]),
+    firstRecord(source, [["semanticMemory"]])
+  ];
+
+
+  const record = candidateRecords.find(isSemanticMemoryLike) ?? null;
+  const available = Boolean(record);
+
+
+  const activatedTerms = normalizeSemanticActivatedTerms(
+    firstArray(record, [["activatedTerms"], ["corpus", "activatedTerms"]])
+  );
+  const publicTopTerms = flattenTopTerms(getPath(record, ["topTerms"]));
+  const topTerms = publicTopTerms.length
+    ? publicTopTerms
+    : activatedTerms.map((term) => `${term.n} | ${term.term}`).slice(0, 8);
+
+
+  return {
+    available,
+    enabled: booleanLike(getPath(record, ["enabled"]), available ? "true" : "false"),
+    type: first(record, [["type"]], available ? "MEMORIA_SEMANTICA_ESOTEROLOGICA_API_CHAT" : "NOT_AVAILABLE"),
+    formula: first(record, [["formula"]], "-"),
+    definition: first(record, [["definition"]], "-"),
+    persistable: booleanLike(getPath(record, ["persistable"]), "-"),
+    memoryId: first(record, [["memoryId"]], "-"),
+    quality: first(record, [["quality"], ["semantic", "quality"]], "-"),
+    continuityGain: first(record, [["continuityGain"], ["rascensional", "continuityGain"]], "-"),
+    thresholdDetected: booleanLike(
+      getPath(record, ["thresholdDetected"]) ?? getPath(record, ["rascensional", "thresholdDetected"]),
+      "-"
+    ),
+    couplingState: first(record, [["couplingState"], ["alienCode", "couplingState"]], "-"),
+    activatedTerms,
+    topTerms,
+    primaryAxis: {
+      decision: first(record, [["primaryAxis", "decision"], ["corpus", "primaryAxis", "decision"]], "-"),
+      cost: first(record, [["primaryAxis", "cost"], ["corpus", "primaryAxis", "cost"]], "-"),
+      trace: first(record, [["primaryAxis", "trace"], ["corpus", "primaryAxis", "trace"]], "-"),
+      time: first(record, [["primaryAxis", "time"], ["corpus", "primaryAxis", "time"]], "-")
+    },
+    policy: {
+      saveRaw: booleanLike(getPath(record, ["policy", "saveRaw"]), "-"),
+      saveSynthesis: booleanLike(getPath(record, ["policy", "saveSynthesis"]), "-"),
+      reusableInPrompt: booleanLike(getPath(record, ["policy", "reusableInPrompt"]), "-")
+    },
+    source: {
+      evtId: first(record, [["source", "evtId"], ["evtId"]], "-"),
+      opcId: first(record, [["source", "opcId"], ["opcId"]], "-"),
+      timestamp: first(record, [["source", "timestamp"], ["timestamp"]], "-")
+    },
+    ipr: {
+      humanIpr: first(record, [["ipr", "humanIpr"], ["humanIpr"]], "-"),
+      runtimeIpr: first(record, [["ipr", "runtimeIpr"], ["runtimeIpr"]], "-"),
+      identityBinding: first(record, [["ipr", "identityBinding"], ["identityBinding"]], "-")
+    },
+    runtime: {
+      access: first(record, [["runtime", "access"]], "-"),
+      matrix: first(record, [["runtime", "matrix"]], "-"),
+      memory: first(record, [["runtime", "memory"]], "-"),
+      persistenceMode: first(record, [["runtime", "persistenceMode"]], "-"),
+      persistenceStatus: first(record, [["runtime", "persistenceStatus"]], "-"),
+      tenantId: first(record, [["runtime", "tenantId"]], "-"),
+      workspaceId: first(record, [["runtime", "workspaceId"]], "-"),
+      legalCertification: first(record, [["runtime", "legalCertification"], ["boundary", "legalCertification"]], "false")
+    },
+    boundary: {
+      legalCertification: first(record, [["boundary", "legalCertification"], ["runtime", "legalCertification"]], "false"),
+      technicalProofOnly: first(record, [["boundary", "technicalProofOnly"]], "true")
+    }
+  };
 }
 
 
@@ -2415,6 +2667,7 @@ function MessageBubble({
   const isSystem = message.role === "system";
   const isAssistant = message.role === "assistant";
   const status = getRuntimeStatus(message.raw ?? null);
+  const semanticMemory = getPublicSemanticMemorySnapshot(message.raw ?? null);
   const visibleContent = normalizeVisibleText(message.content);
   const cleanVisibleContent = isAssistant
     ? stripInlineTemporalRuntimeCertificate(visibleContent)
@@ -2488,7 +2741,18 @@ function MessageBubble({
             <StatusPill label="MATRIX" value={status.matrix} />
             <StatusPill label="Memory" value={status.memory} />
             <StatusPill label="Mode" value={status.persistence} />
+            {semanticMemory.available ? (
+              <>
+                <StatusPill label="Semantic" value={semanticMemory.quality} />
+                <StatusPill label="Coupling" value={semanticMemory.couplingState} />
+              </>
+            ) : null}
           </div>
+        ) : null}
+
+
+        {isAssistant && semanticMemory.available ? (
+          <SemanticMemoryCard snapshot={semanticMemory} compactMode />
         ) : null}
 
 
@@ -2537,6 +2801,16 @@ function MessageBubble({
                   <MetricCard label="Memory ID" value={status.memoryId} />
                   <MetricCard label="Registered event" value={status.registeredEventName} />
                   <MetricCard label="B2G readiness" value={status.b2gReadiness} />
+                  {semanticMemory.available ? (
+                    <>
+                      <MetricCard label="Semantic memory" value={semanticMemory.memoryId} />
+                      <MetricCard label="Semantic quality" value={semanticMemory.quality} />
+                      <MetricCard label="Continuity gain" value={semanticMemory.continuityGain} />
+                      <MetricCard label="Coupling state" value={semanticMemory.couplingState} />
+                      <MetricCard label="saveRaw" value={semanticMemory.policy.saveRaw} />
+                      <MetricCard label="saveSynthesis" value={semanticMemory.policy.saveSynthesis} />
+                    </>
+                  ) : null}
                   <MetricCard label="legalCertification" value={status.legalCertification} />
                 </div>
 
@@ -2618,6 +2892,7 @@ export default function InterfacePage() {
 
   const dashboardPayload = lastAssistantPayload || health;
   const dashboardStatus = getRuntimeStatus(dashboardPayload);
+  const dashboardSemanticMemory = getPublicSemanticMemorySnapshot(dashboardPayload);
   const liveTemporal = useMemo(() => buildJokerTemporalRuntimeSnapshot(clockNow), [clockNow]);
   const effectiveRuntimeBirth = firstDisplayValue(
     [dashboardStatus.runtimeBirth],
@@ -3353,6 +3628,23 @@ export default function InterfacePage() {
   ];
 
 
+  const semanticMemoryRows = [
+    { label: "Enabled", value: dashboardSemanticMemory.enabled },
+    { label: "Memory ID", value: dashboardSemanticMemory.memoryId },
+    { label: "Quality", value: dashboardSemanticMemory.quality },
+    { label: "Continuity gain", value: dashboardSemanticMemory.continuityGain },
+    { label: "Coupling state", value: dashboardSemanticMemory.couplingState },
+    { label: "Persistable", value: dashboardSemanticMemory.persistable },
+    { label: "Threshold", value: dashboardSemanticMemory.thresholdDetected },
+    { label: "saveRaw", value: dashboardSemanticMemory.policy.saveRaw },
+    { label: "saveSynthesis", value: dashboardSemanticMemory.policy.saveSynthesis },
+    { label: "Reusable", value: dashboardSemanticMemory.policy.reusableInPrompt },
+    { label: "Semantic EVT", value: dashboardSemanticMemory.source.evtId },
+    { label: "Semantic OPC", value: dashboardSemanticMemory.source.opcId },
+    { label: "legalCertification", value: dashboardSemanticMemory.boundary.legalCertification }
+  ];
+
+
   const proofRows = [
     { label: "AI EVT", value: dashboardStatus.aiEvt },
     { label: "Response EVT", value: dashboardStatus.responseEvt },
@@ -3448,6 +3740,9 @@ export default function InterfacePage() {
           <StatusPill label="Human IPR" value={humanIpr} />
           <StatusPill label="MATRIX" value={matrixState} />
           <StatusPill label="Memory" value={memoryScope} />
+          {dashboardSemanticMemory.available ? (
+            <StatusPill label="Semantic" value={dashboardSemanticMemory.quality} />
+          ) : null}
           <StatusPill label="Audit" value={dashboardStatus.auditStatus} />
           <StatusPill label="Usage" value={dashboardStatus.modelUsageStatus} />
           <StatusPill label="Birth" value={dashboardStatus.runtimeBirth} />
@@ -3516,6 +3811,8 @@ export default function InterfacePage() {
           <MetricCard label="Human IPR" value={humanIpr} />
           <MetricCard label="MATRIX" value={matrixState} />
           <MetricCard label="Memory" value={memoryScope} />
+          <MetricCard label="Semantic quality" value={dashboardSemanticMemory.available ? dashboardSemanticMemory.quality : "NOT_AVAILABLE"} />
+          <MetricCard label="Coupling state" value={dashboardSemanticMemory.available ? dashboardSemanticMemory.couplingState : "NOT_AVAILABLE"} />
           <MetricCard label="Response EVT" value={dashboardStatus.responseEvt} />
           <MetricCard label="OPC" value={dashboardStatus.opc} />
           <MetricCard label="Audit" value={dashboardStatus.auditId} />
@@ -3615,6 +3912,29 @@ export default function InterfacePage() {
 
 
           <InfoList items={memoryRows} />
+        </div>
+
+
+        <div className={dashboardSemanticMemory.available ? "joker-panel is-active" : "joker-panel"}>
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker">Semantic memory</span>
+              <h2>Corpus classifier</h2>
+            </div>
+            <StatusPill value={dashboardSemanticMemory.available ? dashboardSemanticMemory.quality : "NOT_AVAILABLE"} />
+          </div>
+
+
+          <p>
+            Snapshot pubblico controllato della memoria semantica esoterologica: qualità,
+            continuità, coupling state, termini canonici, policy di salvataggio e boundary.
+          </p>
+
+
+          <InfoList items={semanticMemoryRows} />
+
+
+          <SemanticMemoryCard snapshot={dashboardSemanticMemory} />
         </div>
 
 
@@ -4975,6 +5295,140 @@ export default function InterfacePage() {
         }
 
 
+        .joker-semantic-card {
+          margin-top: 14px;
+          padding: 14px;
+          border: 1px solid rgba(34, 211, 238, 0.24);
+          border-radius: 20px;
+          background:
+            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.12), transparent 32%),
+            linear-gradient(180deg, rgba(8, 47, 73, 0.24), rgba(15, 23, 42, 0.5));
+        }
+
+
+        .joker-semantic-card.is-compact {
+          padding: 12px;
+          border-radius: 18px;
+        }
+
+
+        .joker-semantic-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+
+        .joker-semantic-head h3 {
+          margin: 5px 0 0;
+          color: #f8fafc;
+          font-size: 15px;
+          letter-spacing: -0.02em;
+        }
+
+
+        .joker-semantic-pills {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          gap: 6px;
+        }
+
+
+        .joker-semantic-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+          margin-top: 12px;
+        }
+
+
+        .joker-semantic-card.is-compact .joker-semantic-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+
+        .joker-semantic-terms {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 7px;
+          margin-top: 12px;
+        }
+
+
+        .joker-semantic-term {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          max-width: 100%;
+          padding: 6px 8px;
+          border: 1px solid rgba(103, 232, 249, 0.18);
+          border-radius: 999px;
+          background: rgba(2, 6, 23, 0.42);
+          color: #dbeafe;
+          font-size: 11px;
+          font-weight: 760;
+        }
+
+
+        .joker-semantic-term b {
+          display: inline-grid;
+          place-items: center;
+          min-width: 20px;
+          height: 20px;
+          padding: 0 5px;
+          border-radius: 999px;
+          background: rgba(34, 211, 238, 0.16);
+          color: #67e8f9;
+          font-size: 10px;
+          font-weight: 950;
+        }
+
+
+        .joker-semantic-term em {
+          color: #94a3b8;
+          font-size: 10px;
+          font-style: normal;
+        }
+
+
+        .joker-semantic-axis {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+          margin-top: 12px;
+        }
+
+
+        .joker-semantic-axis div {
+          padding: 10px;
+          border: 1px solid rgba(148, 163, 184, 0.14);
+          border-radius: 14px;
+          background: rgba(2, 6, 23, 0.32);
+        }
+
+
+        .joker-semantic-axis span {
+          display: block;
+          color: #67e8f9;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+
+
+        .joker-semantic-axis strong {
+          display: block;
+          margin-top: 6px;
+          color: #dbeafe;
+          font-size: 12px;
+          font-weight: 720;
+          line-height: 1.55;
+        }
+
+
         @media (max-width: 1180px) {
           .joker-topbar,
           .joker-hero,
@@ -4999,7 +5453,10 @@ export default function InterfacePage() {
           .joker-details-grid,
           .joker-prompt-grid,
           .joker-temporal-clock-grid,
-          .joker-dual-time-rails {
+          .joker-dual-time-rails,
+          .joker-semantic-grid,
+          .joker-semantic-axis,
+          .joker-semantic-card.is-compact .joker-semantic-grid {
             grid-template-columns: 1fr;
           }
         }
