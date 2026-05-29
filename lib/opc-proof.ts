@@ -330,7 +330,10 @@ export type OpcTemporalRuntimeCertificate = {
     minutes: number;
     seconds: number;
   };
-  temporalProof: "EVT_OPC_AUDIT_LINKED";
+  temporalProof:
+    | "EVT_OPC_AUDIT_LINKED"
+    | "EVT_OPC_AUDIT_USAGE_LINKED"
+    | "UTC_RESPONSE_TIME_PLUS_CYBERNETIC_LIFETIME";
   legalCertification: false;
 };
 
@@ -563,6 +566,29 @@ type OpcEvtReferenceGuard = {
   deferred: boolean;
   error: string | null;
   reference?: OpcProofForeignKeyReference;
+};
+
+
+type OpcDatabaseWriteProfile =
+  | "FULL_RELATIONAL"
+  | "PAYLOAD_FIRST";
+
+
+type OpcProofInsertStatement = {
+  sql: string;
+  params: HbceDatabaseQueryValue[];
+  writtenColumns: string[];
+  conflictMode: "UPSERT" | "PLAIN_INSERT";
+};
+
+
+type OpcProofDatabaseWriteAttempt = {
+  ok: boolean;
+  profile: OpcDatabaseWriteProfile;
+  statement: OpcProofInsertStatement;
+  result: Awaited<ReturnType<typeof queryHbceDatabase<OpcProofDatabaseRow>>>;
+  retriedWithoutConflict: boolean;
+  error: string | null;
 };
 
 
@@ -1172,88 +1198,233 @@ export async function persistOpcProofRecordToDatabase(
 
 
     const evtReferenceGuard = await verifyOpcEvtParentReference(available, fields);
+    const primaryProfile: OpcDatabaseWriteProfile = evtReferenceGuard.ok
+      ? "FULL_RELATIONAL"
+      : "PAYLOAD_FIRST";
 
 
-    if (!evtReferenceGuard.ok) {
-      return {
-        ok: false,
-        status: "DATABASE_DEFERRED",
-        mode: "DATABASE_DEFERRED",
-        proofId: fields.proofId,
-        proofHash: fields.proofHash,
-        chainHash: fields.chainHash,
-        evtId: fields.evtId,
-        table: OPC_DATABASE_TABLE,
-        writtenColumns: [],
-        error:
-          evtReferenceGuard.error ||
-          "OPC proof persistence deferred because the referenced EVT parent record is not available yet.",
-        legalCertification: false
-      };
-    }
-
-
-    const columnValues = buildOpcProofDatabaseColumnValues(available, fields);
-    const statement = buildOpcProofInsertStatement({ columns: columnValues });
-
-
-    const result = await queryHbceDatabase<OpcProofDatabaseRow>(
-      statement.sql,
-      statement.params
+    const primaryAttempt = await executeOpcProofDatabaseWrite(
+      available,
+      fields,
+      primaryProfile
     );
 
 
-    if (!result.ok) {
-      const error = result.error || "OPC_PROOF_DATABASE_WRITE_FAILED";
-      const deferredByEvtForeignKey = isOpcEvtForeignKeyError(error);
+    if (primaryAttempt.ok) {
+      return buildOpcProofPersistenceSuccess(fields, primaryAttempt.statement);
+    }
+
+
+    const shouldTryPayloadFirstFallback =
+      primaryProfile === "FULL_RELATIONAL" &&
+      shouldFallbackToPayloadFirst(primaryAttempt.error || "");
+
+
+    if (shouldTryPayloadFirstFallback) {
+      const payloadFirstAttempt = await executeOpcProofDatabaseWrite(
+        available,
+        fields,
+        "PAYLOAD_FIRST"
+      );
+
+
+      if (payloadFirstAttempt.ok) {
+        return buildOpcProofPersistenceSuccess(fields, payloadFirstAttempt.statement);
+      }
+
+
+      const fallbackError = joinOpcDatabaseErrors(
+        primaryAttempt.error,
+        payloadFirstAttempt.error
+      );
 
 
       return {
         ok: false,
-        status: deferredByEvtForeignKey ? "DATABASE_DEFERRED" : "DATABASE_WRITE_FAILED",
-        mode: deferredByEvtForeignKey ? "DATABASE_DEFERRED" : "FAILED",
+        status: isOpcEvtForeignKeyError(primaryAttempt.error || "")
+          ? "DATABASE_DEFERRED"
+          : "DATABASE_WRITE_FAILED",
+        mode: isOpcEvtForeignKeyError(primaryAttempt.error || "")
+          ? "DATABASE_DEFERRED"
+          : "FAILED",
         proofId: fields.proofId,
         proofHash: fields.proofHash,
         chainHash: fields.chainHash,
         evtId: fields.evtId,
         table: OPC_DATABASE_TABLE,
-        writtenColumns: statement.writtenColumns,
-        error: deferredByEvtForeignKey
-          ? `OPC proof persistence deferred until EVT parent is persisted: ${error}`
-          : error,
+        writtenColumns: payloadFirstAttempt.statement.writtenColumns,
+        error: fallbackError,
         legalCertification: false
       };
     }
 
 
     return {
-      ok: true,
-      status: "PERSISTED",
-      mode: "DATABASE_PERSISTENT",
+      ok: false,
+      status: evtReferenceGuard.deferred || isOpcEvtForeignKeyError(primaryAttempt.error || "")
+        ? "DATABASE_DEFERRED"
+        : "DATABASE_WRITE_FAILED",
+      mode: evtReferenceGuard.deferred || isOpcEvtForeignKeyError(primaryAttempt.error || "")
+        ? "DATABASE_DEFERRED"
+        : "FAILED",
       proofId: fields.proofId,
       proofHash: fields.proofHash,
       chainHash: fields.chainHash,
       evtId: fields.evtId,
       table: OPC_DATABASE_TABLE,
-      writtenColumns: statement.writtenColumns,
-      error: null,
+      writtenColumns: primaryAttempt.statement.writtenColumns,
+      error:
+        evtReferenceGuard.error && primaryAttempt.error
+          ? `${evtReferenceGuard.error} Primary write error: ${primaryAttempt.error}`
+          : evtReferenceGuard.error || primaryAttempt.error || "OPC_PROOF_DATABASE_WRITE_FAILED",
       legalCertification: false
     };
   } catch (error) {
+    const safeError = safeDatabaseError(error);
+
+
     return {
       ok: false,
-      status: "DATABASE_WRITE_FAILED",
-      mode: "FAILED",
+      status: isOpcEvtForeignKeyError(safeError) ? "DATABASE_DEFERRED" : "DATABASE_WRITE_FAILED",
+      mode: isOpcEvtForeignKeyError(safeError) ? "DATABASE_DEFERRED" : "FAILED",
       proofId: fields.proofId,
       proofHash: fields.proofHash,
       chainHash: fields.chainHash,
       evtId: fields.evtId,
       table: OPC_DATABASE_TABLE,
       writtenColumns: [],
-      error: safeDatabaseError(error),
+      error: safeError,
       legalCertification: false
     };
   }
+}
+
+
+async function executeOpcProofDatabaseWrite(
+  available: Set<string>,
+  fields: OpcProofDatabaseFields,
+  profile: OpcDatabaseWriteProfile
+): Promise<OpcProofDatabaseWriteAttempt> {
+  const columnValues = buildOpcProofDatabaseColumnValues(available, fields, profile);
+  const upsertStatement = buildOpcProofInsertStatement({
+    columns: columnValues,
+    conflictMode: "UPSERT"
+  });
+
+
+  const upsertResult = await queryHbceDatabase<OpcProofDatabaseRow>(
+    upsertStatement.sql,
+    upsertStatement.params
+  );
+
+
+  if (upsertResult.ok || !isOpcUpsertConflictTargetError(upsertResult.error || "")) {
+    return {
+      ok: upsertResult.ok,
+      profile,
+      statement: upsertStatement,
+      result: upsertResult,
+      retriedWithoutConflict: false,
+      error: upsertResult.ok ? null : upsertResult.error || "OPC_PROOF_DATABASE_WRITE_FAILED"
+    };
+  }
+
+
+  const plainInsertStatement = buildOpcProofInsertStatement({
+    columns: columnValues,
+    conflictMode: "PLAIN_INSERT"
+  });
+
+
+  const plainInsertResult = await queryHbceDatabase<OpcProofDatabaseRow>(
+    plainInsertStatement.sql,
+    plainInsertStatement.params
+  );
+
+
+  return {
+    ok: plainInsertResult.ok,
+    profile,
+    statement: plainInsertStatement,
+    result: plainInsertResult,
+    retriedWithoutConflict: true,
+    error: plainInsertResult.ok
+      ? null
+      : joinOpcDatabaseErrors(upsertResult.error || null, plainInsertResult.error || null)
+  };
+}
+
+
+function buildOpcProofPersistenceSuccess(
+  fields: OpcProofDatabaseFields,
+  statement: OpcProofInsertStatement
+): OpcProofDatabasePersistenceResult {
+  return {
+    ok: true,
+    status: "PERSISTED",
+    mode: "DATABASE_PERSISTENT",
+    proofId: fields.proofId,
+    proofHash: fields.proofHash,
+    chainHash: fields.chainHash,
+    evtId: fields.evtId,
+    table: OPC_DATABASE_TABLE,
+    writtenColumns: statement.writtenColumns,
+    error: null,
+    legalCertification: false
+  };
+}
+
+
+function shouldFallbackToPayloadFirst(error: string): boolean {
+  if (!error) {
+    return false;
+  }
+
+
+  const normalized = error.toLowerCase();
+
+
+  return (
+    isOpcEvtForeignKeyError(error) ||
+    normalized.includes("foreign key") ||
+    normalized.includes("violates") ||
+    normalized.includes("constraint") ||
+    normalized.includes("not present") ||
+    normalized.includes("not found") ||
+    normalized.includes("does not exist") ||
+    normalized.includes("invalid input value") ||
+    normalized.includes("cannot be cast") ||
+    normalized.includes("type")
+  );
+}
+
+
+function isOpcUpsertConflictTargetError(error: string): boolean {
+  const normalized = error.toLowerCase();
+
+
+  return (
+    normalized.includes("on conflict") &&
+    normalized.includes("no unique")
+  ) || normalized.includes("there is no unique or exclusion constraint matching the on conflict specification");
+}
+
+
+function joinOpcDatabaseErrors(
+  first: string | null | undefined,
+  second: string | null | undefined
+): string | null {
+  const parts = [first, second]
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter(Boolean);
+
+
+  if (parts.length === 0) {
+    return null;
+  }
+
+
+  return Array.from(new Set(parts)).join(" | fallback: ");
 }
 
 
@@ -1334,7 +1505,7 @@ function buildOpcTemporalRuntimeCertificate(
     lifetime: formatJokerLifetime(calendarAge),
     lifeSeconds,
     calendarAge,
-    temporalProof: "EVT_OPC_AUDIT_LINKED",
+    temporalProof: "EVT_OPC_AUDIT_USAGE_LINKED",
     legalCertification: false,
     ...sanitizeTemporalOverride(override)
   };
@@ -2719,17 +2890,23 @@ function isOpcEvtForeignKeyError(error: string): boolean {
 
 
   return (
-    normalized.includes("foreign key") &&
-    (normalized.includes("evt") || normalized.includes("event"))
+    (normalized.includes("foreign key") &&
+      (normalized.includes("evt") || normalized.includes("event"))) ||
+    normalized.includes("opc_proofs_evt_id_fkey") ||
+    normalized.includes("opc_proofs_event_id_fkey") ||
+    normalized.includes("evt_id_fkey") ||
+    normalized.includes("event_id_fkey")
   );
 }
 
 
 function buildOpcProofDatabaseColumnValues(
   available: Set<string>,
-  fields: OpcProofDatabaseFields
+  fields: OpcProofDatabaseFields,
+  profile: OpcDatabaseWriteProfile = "FULL_RELATIONAL"
 ): OpcProofColumnValue[] {
   const values: OpcProofColumnValue[] = [];
+  const relationalWrite = profile === "FULL_RELATIONAL";
 
 
   addColumnValue(
@@ -2764,12 +2941,14 @@ function buildOpcProofDatabaseColumnValues(
   );
 
 
-  addEveryColumnValue(
-    values,
-    available,
-    ["evt_id", "event_id"],
-    toDatabaseValue(fields.evtId)
-  );
+  if (relationalWrite) {
+    addEveryColumnValue(
+      values,
+      available,
+      ["evt_id", "event_id"],
+      toDatabaseValue(fields.evtId)
+    );
+  }
 
 
   addEveryColumnValue(
@@ -2785,28 +2964,32 @@ function buildOpcProofDatabaseColumnValues(
   });
 
 
-  addEveryColumnValue(
-    values,
-    available,
-    ["human_ipr", "subject_ipr"],
-    toDatabaseValue(fields.humanIpr)
-  );
+  if (relationalWrite) {
+    addEveryColumnValue(
+      values,
+      available,
+      ["human_ipr", "subject_ipr"],
+      toDatabaseValue(fields.humanIpr)
+    );
 
 
-  addColumnValue(values, available, ["tenant_id"], toDatabaseValue(fields.tenantId));
-  addColumnValue(values, available, ["workspace_id"], toDatabaseValue(fields.workspaceId));
-  addColumnValue(values, available, ["subscription_id"], toDatabaseValue(fields.subscriptionId));
-  addColumnValue(values, available, ["account_id"], toDatabaseValue(fields.accountId));
-  addColumnValue(values, available, ["saas_tier", "tier", "subscription_tier"], toDatabaseValue(fields.tier));
-  addColumnValue(values, available, ["source", "context_source", "saas_source"], toDatabaseValue(fields.source));
-  addColumnValue(values, available, ["audit_id"], toDatabaseValue(fields.auditId));
-  addColumnValue(values, available, ["usage_id", "model_usage_id"], toDatabaseValue(fields.usageId));
-  addColumnValue(values, available, ["event_name", "named_event"], toDatabaseValue(fields.eventName));
-  addColumnValue(values, available, ["event_family"], toDatabaseValue(fields.eventFamily));
-  addColumnValue(values, available, ["cycle"], toDatabaseValue(fields.cycle));
-  addColumnValue(values, available, ["session_id"], toDatabaseValue(fields.sessionId));
-  addColumnValue(values, available, ["memory_id"], toDatabaseValue(fields.memoryId));
-  addColumnValue(values, available, ["memory_hash"], toDatabaseValue(fields.memoryHash));
+    addColumnValue(values, available, ["tenant_id"], toDatabaseValue(fields.tenantId));
+    addColumnValue(values, available, ["workspace_id"], toDatabaseValue(fields.workspaceId));
+    addColumnValue(values, available, ["subscription_id"], toDatabaseValue(fields.subscriptionId));
+    addColumnValue(values, available, ["account_id"], toDatabaseValue(fields.accountId));
+    addColumnValue(values, available, ["saas_tier", "tier", "subscription_tier"], toDatabaseValue(fields.tier));
+    addColumnValue(values, available, ["source", "context_source", "saas_source"], toDatabaseValue(fields.source));
+    addColumnValue(values, available, ["audit_id"], toDatabaseValue(fields.auditId));
+    addColumnValue(values, available, ["usage_id", "model_usage_id"], toDatabaseValue(fields.usageId));
+    addColumnValue(values, available, ["event_name", "named_event"], toDatabaseValue(fields.eventName));
+    addColumnValue(values, available, ["event_family"], toDatabaseValue(fields.eventFamily));
+    addColumnValue(values, available, ["cycle"], toDatabaseValue(fields.cycle));
+    addColumnValue(values, available, ["session_id"], toDatabaseValue(fields.sessionId));
+    addColumnValue(values, available, ["memory_id"], toDatabaseValue(fields.memoryId));
+    addColumnValue(values, available, ["memory_hash"], toDatabaseValue(fields.memoryHash));
+  }
+
+
   addColumnValue(values, available, ["runtime_state"], toDatabaseValue(fields.runtimeState));
   addColumnValue(values, available, ["runtime_decision"], toDatabaseValue(fields.runtimeDecision));
   addColumnValue(values, available, ["risk_class", "risk_level"], toDatabaseValue(fields.riskClass));
@@ -2841,13 +3024,11 @@ function buildOpcProofDatabaseColumnValues(
 
 function buildOpcProofInsertStatement(input: {
   columns: OpcProofColumnValue[];
-}): {
-  sql: string;
-  params: HbceDatabaseQueryValue[];
-  writtenColumns: string[];
-} {
+  conflictMode?: "UPSERT" | "PLAIN_INSERT";
+}): OpcProofInsertStatement {
   const writtenColumns = input.columns.map((item) => item.column);
   const params: HbceDatabaseQueryValue[] = input.columns.map((item) => item.value);
+  const conflictMode = input.conflictMode || "UPSERT";
 
 
   const insertColumns = input.columns
@@ -2874,6 +3055,27 @@ function buildOpcProofInsertStatement(input: {
 
   if (!conflictColumn) {
     throw new Error("OPC insert requires proof_id, opc_proof_id or id column.");
+  }
+
+
+  if (conflictMode === "PLAIN_INSERT") {
+    const sql = `
+INSERT INTO ${quoteIdentifier(OPC_DATABASE_TABLE)} (
+  ${insertColumns}
+)
+VALUES (
+  ${values}
+)
+RETURNING ${quoteIdentifier(conflictColumn)};
+`.trim();
+
+
+    return {
+      sql,
+      params,
+      writtenColumns,
+      conflictMode
+    };
   }
 
 
@@ -2906,7 +3108,8 @@ RETURNING ${quoteIdentifier(conflictColumn)};
   return {
     sql,
     params,
-    writtenColumns
+    writtenColumns,
+    conflictMode
   };
 }
 
