@@ -305,8 +305,12 @@ type RuntimePersistenceBridgeResult = {
 type RuntimeTemporalFrame = {
   now: string;
   runtimeBirth: string;
+  runtimeBirthLocal: string;
+  runtimeBirthLocalTimezone: string;
   runtimeBirthUtc: string;
   runtimeBirthLabel: string;
+  temporalCertificateName: string;
+  temporalCertificateStatus: "ACTIVE";
   lifeSeconds: number;
   lifeHuman: string;
   lifeYears: number;
@@ -342,6 +346,9 @@ const CANONICAL_EVT = "EVT-0016-AI";
 const CANONICAL_PREV = "EVT-0015-AI";
 const CANONICAL_MONTHLY_REF = "EVT-0015-AI / UP-MESE-4";
 const JOKER_C2_BIRTH_ANCHOR_ISO = "2026-01-19T15:30:00+01:00";
+const JOKER_C2_BIRTH_ANCHOR_TIMEZONE = "Europe/Rome";
+const JOKER_C2_BIRTH_ANCHOR_UTC = "2026-01-19T14:30:00.000Z";
+const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate";
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
@@ -431,6 +438,15 @@ export async function GET(): Promise<NextResponse> {
   const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
   const memoryStore = describeRuntimeMemoryStore();
   const temporalFrame = buildRuntimeTemporalFrame(new Date().toISOString());
+  const temporalCertificate = buildTemporalRuntimeCertificate({
+    temporalFrame,
+    evtId: "HEALTH_CHECK_EVT_PENDING",
+    opcId: "HEALTH_CHECK_OPC_PENDING",
+    auditId: "HEALTH_CHECK_AUDIT_PENDING",
+    usageId: "HEALTH_CHECK_USAGE_PENDING",
+    evtPersistenceStatus: "HEALTH_CHECK_ONLY",
+    opcPersistenceStatus: "HEALTH_CHECK_ONLY"
+  });
 
 
 
@@ -447,6 +463,7 @@ export async function GET(): Promise<NextResponse> {
     openAIConfigured,
     identity: buildRuntimeIdentity(temporalFrame),
     temporal: temporalFrame,
+    temporalCertificate,
     alienCodePipeline: buildAlienCodePipelineDiagnostic(),
     access: {
       decision: "SERVER_VALIDATION_REQUIRED",
@@ -520,6 +537,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const incomingMessages = normalizeIncomingMessages(body.messages);
   const message = normalizeUserMessage(body, incomingMessages);
   const files = normalizeFiles(body.files);
+  const runtimeStatusTableRequested = isRuntimeStatusTableQuestion(message);
   const runtimeDiagnosticsRequested = isRuntimeDiagnosticsQuestion(message);
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
@@ -552,7 +570,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     saasContext,
     temporalFrame,
     alienCodePipeline: buildAlienCodePipelineDiagnostic(),
-    runtimeDiagnosticsRequested
+    runtimeStatusTableRequested,
+    runtimeDiagnosticsRequested,
+    opcProofSummaryRequested,
+    selfDiagnosisRequested
   };
 
 
@@ -582,10 +603,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (isLegalBoundaryQuestion(message)) {
-    answer = buildLegalBoundaryAnswer(handoff, policy, memory, saasContext);
-    providerState = "COMPLETED";
-    providerName = "LOCAL";
   } else if (isAiClassicComparisonQuestion(message)) {
     answer = buildAiClassicComparisonAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
@@ -594,24 +611,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     answer = buildB2GInstitutionalAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (isMatrixGovernanceQuestion(message)) {
-    answer = buildMatrixGovernanceAnswer();
+  } else if (isLegalBoundaryQuestion(message)) {
+    answer = buildLegalBoundaryAnswer(handoff, policy, memory, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (isMemoryRegistrationQuestion(message)) {
-    answer = buildMemoryRegistrationAcknowledgement(message, handoff, memory, policy, saasContext);
+  } else if (runtimeStatusTableRequested || runtimeDiagnosticsRequested || opcProofSummaryRequested || selfDiagnosisRequested) {
+    answer = buildRuntimeDiagnosticsPreparationAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (isMemoryRecoveryQuestion(message)) {
     answer = buildMemoryRecoveryAnswer(memory);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (runtimeDiagnosticsRequested || opcProofSummaryRequested || selfDiagnosisRequested) {
-    answer = buildRuntimeDiagnosticsPreparationAnswer(handoff, memory, policy, saasContext);
+  } else if (isMemoryRegistrationQuestion(message)) {
+    answer = buildMemoryRegistrationAcknowledgement(message, handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (isIdentityRecognitionQuestion(message)) {
     answer = buildIdentityRecognitionAnswer(handoff, memory, policy, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (isMatrixGovernanceQuestion(message)) {
+    answer = buildMatrixGovernanceAnswer();
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (!openAIConfigured) {
@@ -763,6 +784,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     responseEvt: evt.id,
     responseEvtId: evt.id,
     temporal: temporalFrame,
+    temporalCertificate: buildTemporalRuntimeCertificate({
+      temporalFrame,
+      evtId: evt.id,
+      opcId: opc.id,
+      auditId: stringPath(auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+      usageId: stringPath(auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID"),
+      evtPersistenceStatus: stringPath(persistenceBridge.evtPersistence, "status", "UNKNOWN"),
+      opcPersistenceStatus: stringPath(persistenceBridge.opcPersistence, "status", "UNKNOWN")
+    }),
     runtimeAge: temporalFrame.lifeHuman,
     runtimeLifeSeconds: temporalFrame.lifeSeconds,
     opc: opc.id,
@@ -789,34 +819,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  const finalAnswer = runtimeDiagnosticsRequested
-    ? buildRuntimeDiagnosticsAnswer({
-        t,
-        sessionId,
+  const finalAnswerBase = runtimeStatusTableRequested
+    ? buildRuntimeStatusTableAnswer({
         handoff,
-        policy,
         memory,
         temporalFrame,
         saasContext,
-        model,
-        modelLevel,
-        providerName,
-        providerState,
-        openAIConfigured,
         evt,
         opc,
-        publicEvt,
-        publicOpc,
-        persistenceBridge,
         auditAndUsage,
-        inputHash,
-        outputHash,
-        policyHash,
-        memoryHashBefore,
-        memoryHashAfter,
-        tokenUsage,
-        providerError,
-        finishReason
+        persistenceBridge,
+        model,
+        modelLevel,
+        providerState
       })
     : opcProofSummaryRequested
       ? buildMiniOpcProofSummaryAnswer({
@@ -830,7 +845,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           persistenceBridge,
           model,
           modelLevel,
-          providerState
+          providerState,
+          temporalFrame
         })
       : selfDiagnosisRequested
         ? buildRuntimeSelfDiagnosisAnswer({
@@ -845,14 +861,62 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             model,
             modelLevel,
             openAIConfigured,
-            providerState
+            providerState,
+            temporalFrame
           })
-        : safeAnswer;
+        : runtimeDiagnosticsRequested
+          ? buildRuntimeDiagnosticsAnswer({
+              t,
+              sessionId,
+              handoff,
+              policy,
+              memory,
+              temporalFrame,
+              saasContext,
+              model,
+              modelLevel,
+              providerName,
+              providerState,
+              openAIConfigured,
+              evt,
+              opc,
+              publicEvt,
+              publicOpc,
+              persistenceBridge,
+              auditAndUsage,
+              inputHash,
+              outputHash,
+              policyHash,
+              memoryHashBefore,
+              memoryHashAfter,
+              tokenUsage,
+              providerError,
+              finishReason
+            })
+          : safeAnswer;
 
 
 
 
-  if (runtimeDiagnosticsRequested || opcProofSummaryRequested || selfDiagnosisRequested) {
+  const temporalCertificate = buildTemporalRuntimeCertificate({
+    temporalFrame,
+    evtId: evt.id,
+    opcId: opc.id,
+    auditId: stringPath(auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+    usageId: stringPath(auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID"),
+    evtPersistenceStatus: stringPath(persistenceBridge.evtPersistence, "status", "UNKNOWN"),
+    opcPersistenceStatus: stringPath(persistenceBridge.opcPersistence, "status", "UNKNOWN")
+  });
+
+
+
+
+  const finalAnswer = appendTemporalRuntimeCertificate(finalAnswerBase, temporalCertificate);
+
+
+
+
+  if (runtimeStatusTableRequested || runtimeDiagnosticsRequested || opcProofSummaryRequested || selfDiagnosisRequested) {
     memory = updateAssistantDiagnosticMemory({
       memory,
       finalAnswer,
@@ -899,6 +963,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       responseEvt: evt.id,
       responseEvtId: evt.id,
       temporal: temporalFrame,
+      temporalCertificate,
       runtimeAge: temporalFrame.lifeHuman,
       runtimeLifeSeconds: temporalFrame.lifeSeconds,
       opc: opc.id,
@@ -1100,8 +1165,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       canonicalRuntimeEvt: CANONICAL_EVT,
       monthlyReference: CANONICAL_MONTHLY_REF,
       runtimeBirth: temporalFrame.runtimeBirth,
+      runtimeBirthLocal: temporalFrame.runtimeBirthLocal,
+      runtimeBirthLocalTimezone: temporalFrame.runtimeBirthLocalTimezone,
+      runtimeBirthUtc: temporalFrame.runtimeBirthUtc,
+      utcResponseTime: temporalFrame.now,
       runtimeAge: temporalFrame.lifeHuman,
       runtimeLifeSeconds: temporalFrame.lifeSeconds,
+      temporalCertificate,
       temporalSemanticMeaning: temporalFrame.semanticMeaning
     },
 
@@ -1163,6 +1233,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       handoffSource: handoff.source,
       handoffReason: handoff.reason,
       temporal: temporalFrame,
+      temporalCertificate,
       saasContext: {
         tenantId: saasContext.tenantId,
         workspaceId: saasContext.workspaceId,
@@ -1331,6 +1402,10 @@ function buildSystemPrompt(
     cycle: CYCLE,
     now: temporalFrame.now,
     birth: temporalFrame.runtimeBirth,
+    birthLocal: temporalFrame.runtimeBirthLocal,
+    birthLocalTimezone: temporalFrame.runtimeBirthLocalTimezone,
+    birthUtc: temporalFrame.runtimeBirthUtc,
+    temporalCertificate: TEMPORAL_RUNTIME_CERTIFICATE_NAME,
     runtimeAge: temporalFrame.lifeHuman,
     legalCertification: false
   };
@@ -1449,18 +1524,36 @@ function isMatrixGovernanceQuestion(message: string): boolean {
 function isMemoryRegistrationQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
-  return normalized.includes("registra") && normalized.includes("memoria") && normalized.includes("evento");
+  const asksRetrieval =
+    normalized.includes("recupera") ||
+    normalized.includes("recuperami") ||
+    normalized.includes("mostra") ||
+    normalized.includes("dimmi") ||
+    normalized.includes("estrai");
+
+  const asksRegistration = /(?:^|\s)(registra|registrare|salva|salvare|memorizza|memorizzare)(?:\s|$)/i.test(normalized);
+
+  return !asksRetrieval && asksRegistration && normalized.includes("memoria") && normalized.includes("evento");
 }
 
 
 function isMemoryRecoveryQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
-  return (
-    (normalized.includes("recupera") || normalized.includes("mostra") || normalized.includes("dimmi")) &&
-    normalized.includes("memoria") &&
-    (normalized.includes("ultimo evento") || normalized.includes("evento operativo"))
-  );
+  const asksRetrieval =
+    normalized.includes("recupera") ||
+    normalized.includes("recuperami") ||
+    normalized.includes("mostra") ||
+    normalized.includes("dimmi") ||
+    normalized.includes("estrai");
+
+  const targetsOperationalEvent =
+    normalized.includes("ultimo evento") ||
+    normalized.includes("evento operativo") ||
+    normalized.includes("evento registrato") ||
+    normalized.includes("registrato in memoria");
+
+  return asksRetrieval && normalized.includes("memoria") && targetsOperationalEvent;
 }
 
 
@@ -1608,6 +1701,58 @@ function buildMemoryRecoveryAnswer(memory: RuntimeMemoryState): string {
 }
 
 
+function buildRuntimeStatusTableAnswer(args: {
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  temporalFrame: RuntimeTemporalFrame;
+  saasContext: SaasRuntimeContext;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
+  model: string;
+  modelLevel: string;
+  providerState: string;
+}): string {
+  const auditStatus = stringPath(args.auditAndUsage.audit, "status", "UNKNOWN");
+  const usageStatus = stringPath(args.auditAndUsage.modelUsage, "status", "UNKNOWN");
+  const evtStatus = stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN");
+  const opcStatus = stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN");
+
+  return [
+    "| Campo | Valore |",
+    "|---|---|",
+    "| Runtime Entity | " + RUNTIME_ENTITY + " |",
+    "| Runtime IPR | " + RUNTIME_IPR + " |",
+    "| Human IPR | " + args.handoff.humanIpr + " |",
+    "| Subject | " + args.handoff.subjectName + " |",
+    "| Certificate Status | " + args.handoff.status + " |",
+    "| Access Status | " + args.handoff.accessDecision + " |",
+    "| Identity Binding | " + args.handoff.identityBinding + " |",
+    "| MATRIX | " + args.handoff.matrixState + " |",
+    "| Memory Scope | " + args.memory.scope + " |",
+    "| Persistence Mode | " + args.memory.persistenceMode + " |",
+    "| Persistence Status | " + args.memory.persistenceStatus + " |",
+    "| EVT | " + args.evt.id + " |",
+    "| EVT Persistence | " + evtStatus + " |",
+    "| OPC | " + args.opc.id + " |",
+    "| OPC Persistence | " + opcStatus + " |",
+    "| Audit Status | " + auditStatus + " |",
+    "| Model Usage Status | " + usageStatus + " |",
+    "| Model | " + args.model + " / " + args.modelLevel + " |",
+    "| Provider State | " + args.providerState + " |",
+    "| Tenant | " + args.saasContext.tenantId + " |",
+    "| Workspace | " + args.saasContext.workspaceId + " |",
+    "| UTC Response Time | " + args.temporalFrame.now + " |",
+    "| AI JOKER-C2 Lifetime | " + args.temporalFrame.lifeHuman + " |",
+    "| Birth Anchor | " + args.temporalFrame.runtimeBirthLocal + " " + args.temporalFrame.runtimeBirthLocalTimezone + " |",
+    "| legalCertification | false |"
+  ].join("\n");
+}
+
+
+
+
 function buildMiniOpcProofSummaryAnswer(args: {
   handoff: HandoffResolution;
   memory: RuntimeMemoryState;
@@ -1620,7 +1765,18 @@ function buildMiniOpcProofSummaryAnswer(args: {
   model: string;
   modelLevel: string;
   providerState: string;
+  temporalFrame: RuntimeTemporalFrame;
 }): string {
+  const temporalCertificate = buildTemporalRuntimeCertificate({
+    temporalFrame: args.temporalFrame,
+    evtId: args.evt.id,
+    opcId: args.opc.id,
+    auditId: stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+    usageId: stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID"),
+    evtPersistenceStatus: stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN"),
+    opcPersistenceStatus: stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN")
+  });
+
   return [
     "Mini OPC Proof Summary.",
     "",
@@ -1640,6 +1796,9 @@ function buildMiniOpcProofSummaryAnswer(args: {
     "- OPC verification: " + args.opc.verificationStatus,
     "- OPC persistence: " + stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN"),
     "- Chain hash: " + args.opc.chainHash,
+    "- UTC response time: " + String(temporalCertificate.utcResponseTime),
+    "- AI JOKER-C2 lifetime: " + String(temporalCertificate.aiJokerC2Lifetime),
+    "- Birth anchor: " + String(temporalCertificate.birthAnchorLocal),
     "- Boundary: technical proof receipt only; legalCertification=false"
   ].join("\n");
 }
@@ -1658,6 +1817,7 @@ function buildRuntimeSelfDiagnosisAnswer(args: {
   modelLevel: string;
   openAIConfigured: boolean;
   providerState: string;
+  temporalFrame: RuntimeTemporalFrame;
 }): string {
   const auditStatus = stringPath(args.auditAndUsage.audit, "status", "UNKNOWN");
   const usageStatus = stringPath(args.auditAndUsage.modelUsage, "status", "UNKNOWN");
@@ -1667,13 +1827,22 @@ function buildRuntimeSelfDiagnosisAnswer(args: {
   const memoryPass = args.memory.scope === "IPR_BOUND" && args.memory.persistenceMode === "DATABASE_PERSISTENT";
   const auditPass = auditStatus === "PERSISTED";
   const usagePass = usageStatus === "PERSISTED";
-  const proofPass = evtStatus !== "FAILED" && opcStatus !== "FAILED";
-  const safePass = !args.policy.blocked && !args.policy.failClosed;
+  const proofPass = !isPersistenceFailureStatus(evtStatus) && !isPersistenceFailureStatus(opcStatus);
+  const safePass = !args.policy.blocked;
   const readyPass = identityPass && memoryPass && auditPass && usagePass && proofPass && safePass;
   const status = readyPass ? "PASS" : "DEGRADED";
 
   return [
     status,
+    "",
+    "Valutazione separata:",
+    "1. IPR recognition: " + (identityPass ? "PASS" : "DEGRADED"),
+    "2. Memory persistence: " + (memoryPass ? "PASS" : "DEGRADED"),
+    "3. EVT/OPC generation: " + (proofPass ? "PASS" : "DEGRADED"),
+    "4. Audit/model usage persistence: " + (auditPass && usagePass ? "PASS" : "DEGRADED"),
+    "5. Response orchestration: PASS",
+    "6. B2G readiness: " + (readyPass ? "PASS" : "DEGRADED"),
+    "7. Dual-use safety: " + (safePass ? "PASS" : "DEGRADED"),
     "",
     "5 motivi tecnici:",
     "1. Identità operativa: " + (identityPass ? "PASS" : "DEGRADED") + " — " + args.handoff.identityBinding + " / " + args.handoff.accessDecision + ".",
@@ -1690,6 +1859,9 @@ function buildRuntimeSelfDiagnosisAnswer(args: {
     "- Presentazione demo con risposta applicativa separata dai metadati runtime.",
     "",
     "Contesto: model=" + args.model + ", modelLevel=" + args.modelLevel + ", OpenAI=" + String(args.openAIConfigured) + ", providerState=" + args.providerState + ", tenant=" + args.saasContext.tenantId + ".",
+    "UTC response time: " + args.temporalFrame.now,
+    "AI JOKER-C2 lifetime: " + args.temporalFrame.lifeHuman,
+    "Birth anchor: " + args.temporalFrame.runtimeBirthLocal + " " + args.temporalFrame.runtimeBirthLocalTimezone,
     "legalCertification=false"
   ].join("\n");
 }
@@ -1824,6 +1996,8 @@ function isRuntimeDiagnosticsQuestion(message: string): boolean {
     "mostrami diagnostica",
     "diagnostica completa",
     "stato runtime",
+    "stato tecnico",
+    "formato tabella",
     "stato operativo",
     "stato operativo completo",
     "runtime status",
@@ -1858,6 +2032,43 @@ function isRuntimeDiagnosticsQuestion(message: string): boolean {
 
 
   return hasDiagnosticIntent && hasOperationalTerms;
+}
+
+
+
+
+function isRuntimeStatusTableQuestion(message: string): boolean {
+  const normalized = normalizeText(message);
+
+  const asksStatus =
+    normalized.includes("stato tecnico") ||
+    normalized.includes("stato operativo completo") ||
+    normalized.includes("runtime status") ||
+    normalized.includes("stato del runtime") ||
+    normalized.includes("stato runtime") ||
+    normalized.includes("mostrami lo stato") ||
+    normalized.includes("formato tabella");
+
+  const hasRuntimeTerms = [
+    "runtime",
+    "runtime entity",
+    "runtime ipr",
+    "human ipr",
+    "certificate",
+    "access status",
+    "matrix",
+    "memory",
+    "memoria",
+    "persistence",
+    "persistenza",
+    "evt",
+    "opc",
+    "audit",
+    "usage",
+    "legalcertification"
+  ].some((term) => normalized.includes(normalizeText(term)));
+
+  return asksStatus && hasRuntimeTerms;
 }
 
 
@@ -4015,6 +4226,15 @@ function buildEvtDatabaseRuntimeEvent(args: {
       opcProofId: args.opc.id,
       alienCodePipeline: buildAlienCodePipelineDiagnostic(),
       temporal: buildRuntimeTemporalFrame(args.t),
+      temporalRuntimeCertificate: buildTemporalRuntimeCertificate({
+        temporalFrame: buildRuntimeTemporalFrame(args.t),
+        evtId: args.evt.id,
+        opcId: args.opc.id,
+        auditId: "PENDING_AUDIT",
+        usageId: "PENDING_USAGE",
+        evtPersistenceStatus: "PENDING_DATABASE_WRITER",
+        opcPersistenceStatus: "PENDING_DATABASE_WRITER"
+      }),
       legalCertification: false
     },
     legalCertification: false
@@ -4086,6 +4306,15 @@ function buildOpcDatabaseProofRecord(args: {
       hash: args.evt.hash,
       kind: "UP-EVT"
     },
+    temporalRuntimeCertificate: buildTemporalRuntimeCertificate({
+      temporalFrame: buildRuntimeTemporalFrame(args.t),
+      evtId: args.evt.id,
+      opcId: args.opc.id,
+      auditId: "PENDING_AUDIT",
+      usageId: "PENDING_USAGE",
+      evtPersistenceStatus: "PENDING_DATABASE_WRITER",
+      opcPersistenceStatus: "PENDING_DATABASE_WRITER"
+    }),
     memory: {
       evt: args.memory.lastEvtId,
       source: args.memory.scope,
@@ -4121,6 +4350,9 @@ function buildOpcDatabaseProofRecord(args: {
     },
     operationalContext: {
       projectBirthDate: PROJECT_BIRTH,
+      projectBirthLocal: JOKER_C2_BIRTH_ANCHOR_ISO,
+      projectBirthLocalTimezone: JOKER_C2_BIRTH_ANCHOR_TIMEZONE,
+      projectBirthUtc: JOKER_C2_BIRTH_ANCHOR_UTC,
       projectBirthLabel: PROJECT_BIRTH_LABEL,
       monthlyReference: "UP-MESE-4",
       eventFamily: "UP-EVT",
@@ -5239,7 +5471,7 @@ function buildRuntimeTemporalFrame(nowIso: string): RuntimeTemporalFrame {
   const parsedNow = new Date(nowIso);
   const birth = new Date(PROJECT_BIRTH);
   const safeNow = Number.isFinite(parsedNow.getTime()) ? parsedNow : new Date();
-  const safeBirth = Number.isFinite(birth.getTime()) ? birth : new Date("2026-01-19T14:30:00.000Z");
+  const safeBirth = Number.isFinite(birth.getTime()) ? birth : new Date(JOKER_C2_BIRTH_ANCHOR_UTC);
   const diffMs = Math.max(0, safeNow.getTime() - safeBirth.getTime());
   const lifeSeconds = Math.floor(diffMs / 1000);
   const calendarLife = calculateCalendarDurationUtc(safeBirth, safeNow);
@@ -5248,8 +5480,12 @@ function buildRuntimeTemporalFrame(nowIso: string): RuntimeTemporalFrame {
   return {
     now: safeNow.toISOString(),
     runtimeBirth: PROJECT_BIRTH,
+    runtimeBirthLocal: JOKER_C2_BIRTH_ANCHOR_ISO,
+    runtimeBirthLocalTimezone: JOKER_C2_BIRTH_ANCHOR_TIMEZONE,
     runtimeBirthUtc: safeBirth.toISOString(),
     runtimeBirthLabel: PROJECT_BIRTH_LABEL,
+    temporalCertificateName: TEMPORAL_RUNTIME_CERTIFICATE_NAME,
+    temporalCertificateStatus: "ACTIVE",
     lifeSeconds,
     lifeHuman: formatCalendarDuration(calendarLife),
     lifeYears: calendarLife.years,
@@ -5270,9 +5506,93 @@ function buildRuntimeTemporalFrame(nowIso: string): RuntimeTemporalFrame {
     refactorEvent: "EVT-0016-AI-SaaS-Temporal-Runtime",
     refactorTimestamp: safeNow.toISOString(),
     semanticMeaning:
-      "JOKER-C2 treats each response as an event in operational time: current timestamp, elapsed cybernetic runtime age from the single canonical 2026 birth anchor, memory continuity, EVT/OPC trace and SaaS context are linked without claiming legal certification or biological personhood."
+      "JOKER-C2 treats each response as an event in operational time: current timestamp, elapsed cybernetic runtime age from the single canonical 2026 local birth anchor (Europe/Rome), memory continuity, EVT/OPC trace and SaaS context are linked without claiming legal certification or biological personhood."
   };
 }
+
+
+type TemporalRuntimeCertificate = JsonObject & {
+  name: string;
+  status: "ACTIVE";
+  utcResponseTime: string;
+  aiJokerC2Lifetime: string;
+  aiJokerC2LifeSeconds: number;
+  birthAnchorLocal: string;
+  birthAnchorLocalTimezone: string;
+  birthAnchorUtc: string;
+  evtId: string;
+  opcId: string;
+  auditId: string;
+  usageId: string;
+  evtPersistenceStatus: string;
+  opcPersistenceStatus: string;
+  temporalProof: "UTC_RESPONSE_TIME_PLUS_JOKER_C2_LIFETIME";
+  technicalProof: "EVT_OPC_AUDIT_LINKED";
+  legalCertification: false;
+};
+
+
+function buildTemporalRuntimeCertificate(args: {
+  temporalFrame: RuntimeTemporalFrame;
+  evtId: string;
+  opcId: string;
+  auditId: string;
+  usageId: string;
+  evtPersistenceStatus: string;
+  opcPersistenceStatus: string;
+}): TemporalRuntimeCertificate {
+  return {
+    name: TEMPORAL_RUNTIME_CERTIFICATE_NAME,
+    status: "ACTIVE",
+    utcResponseTime: args.temporalFrame.now,
+    aiJokerC2Lifetime: args.temporalFrame.lifeHuman,
+    aiJokerC2LifeSeconds: args.temporalFrame.lifeSeconds,
+    birthAnchorLocal: args.temporalFrame.runtimeBirthLocal,
+    birthAnchorLocalTimezone: args.temporalFrame.runtimeBirthLocalTimezone,
+    birthAnchorUtc: args.temporalFrame.runtimeBirthUtc,
+    evtId: args.evtId,
+    opcId: args.opcId,
+    auditId: args.auditId,
+    usageId: args.usageId,
+    evtPersistenceStatus: args.evtPersistenceStatus,
+    opcPersistenceStatus: args.opcPersistenceStatus,
+    temporalProof: "UTC_RESPONSE_TIME_PLUS_JOKER_C2_LIFETIME",
+    technicalProof: "EVT_OPC_AUDIT_LINKED",
+    boundary:
+      "Technical temporal runtime certificate only. It identifies the response by UTC time and AI JOKER-C2 lifetime. It is not a qualified timestamp, public authority certification or legal certification.",
+    legalCertification: false
+  };
+}
+
+
+function appendTemporalRuntimeCertificate(answer: string, certificate: TemporalRuntimeCertificate): string {
+  const clean = answer.trim();
+
+  if (clean.includes(TEMPORAL_RUNTIME_CERTIFICATE_NAME)) {
+    return clean;
+  }
+
+  return [
+    clean,
+    "",
+    TEMPORAL_RUNTIME_CERTIFICATE_NAME,
+    "UTC response time: " + certificate.utcResponseTime,
+    "AI JOKER-C2 lifetime: " + certificate.aiJokerC2Lifetime,
+    "Birth anchor: " + certificate.birthAnchorLocal + " " + certificate.birthAnchorLocalTimezone,
+    "Temporal proof: " + certificate.temporalProof,
+    "Technical proof: EVT=" + certificate.evtId + " · OPC=" + certificate.opcId + " · Audit=" + certificate.auditId + " · Usage=" + certificate.usageId,
+    "Persistence: EVT=" + certificate.evtPersistenceStatus + " · OPC=" + certificate.opcPersistenceStatus,
+    "legalCertification=false"
+  ].join("\n");
+}
+
+
+function isPersistenceFailureStatus(status: string): boolean {
+  const normalized = normalizeText(status);
+  return normalized.includes("failed") || normalized.includes("error") || normalized.includes("write_failed");
+}
+
+
 
 
 type CalendarDuration = {
