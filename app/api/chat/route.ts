@@ -676,9 +676,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
-  const memoryRegistrationRequested = isMemoryRegistrationQuestion(message);
-  const memoryRecoveryRequested = isMemoryRecoveryQuestion(message);
   const esoterologicalSemanticMemoryRequested = isEsoterologicalSemanticMemoryQuestion(message);
+  const memoryRegistrationRequested =
+    !esoterologicalSemanticMemoryRequested && isMemoryRegistrationQuestion(message);
+  const memoryRecoveryRequested =
+    !esoterologicalSemanticMemoryRequested && isMemoryRecoveryQuestion(message);
   const apiSdkB2GPresentationRequested =
     !esoterologicalSemanticMemoryRequested && isApiSdkB2GPresentationQuestion(message);
 
@@ -758,16 +760,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
+  } else if (esoterologicalSemanticMemoryRequested) {
+    answer = buildEsoterologicalSemanticMemoryPreparationAnswer(message, handoff, memory, policy, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
   } else if (memoryRegistrationRequested) {
     answer = buildMemoryRegistrationPreparationAnswer(registeredEventCandidate, handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (memoryRecoveryRequested) {
     answer = buildMemoryRecoveryAnswer(memory);
-    providerState = "COMPLETED";
-    providerName = "LOCAL";
-  } else if (esoterologicalSemanticMemoryRequested) {
-    answer = buildEsoterologicalSemanticMemoryPreparationAnswer(message, handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (apiSdkB2GPresentationRequested) {
@@ -1029,9 +1031,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  const finalAnswerBase = memoryRegistrationRequested
-    ? buildMemoryRegistrationFinalAnswer({
-        registeredEvent: registeredEventForPayload,
+  const finalAnswerBase = esoterologicalSemanticMemoryRequested
+    ? buildEsoterologicalSemanticMemoryAnswer({
+        record: esoterologicalSemanticMemory,
+        persistable: esoterologicalSemanticMemoryPersistable,
         handoff,
         memory,
         policy,
@@ -1041,22 +1044,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         auditAndUsage,
         persistenceBridge
       })
-    : memoryRecoveryRequested
-      ? buildMemoryRecoveryAnswer(memory)
-      : esoterologicalSemanticMemoryRequested
-        ? buildEsoterologicalSemanticMemoryAnswer({
-            record: esoterologicalSemanticMemory,
-            persistable: esoterologicalSemanticMemoryPersistable,
-            handoff,
-            memory,
-            policy,
-            saasContext,
-            evt,
-            opc,
-            auditAndUsage,
-            persistenceBridge
-          })
-      : apiSdkB2GPresentationRequested
+    : memoryRegistrationRequested
+      ? buildMemoryRegistrationFinalAnswer({
+          registeredEvent: registeredEventForPayload,
+          handoff,
+          memory,
+          policy,
+          saasContext,
+          evt,
+          opc,
+          auditAndUsage,
+          persistenceBridge
+        })
+      : memoryRecoveryRequested
+        ? buildMemoryRecoveryAnswer(memory)
+        : apiSdkB2GPresentationRequested
         ? buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext)
         : runtimeStatusTableRequested
     ? buildRuntimeStatusTableAnswer({
@@ -1822,9 +1824,28 @@ function isEsoterologicalSemanticMemoryQuestion(message: string): boolean {
 
   return (
     normalized.includes("memoria semantica esoterologica") ||
+    normalized.includes("memoria semantica api chat") ||
     normalized.includes("semantic memory") ||
+    normalized.includes("semanticmemory") ||
+    normalized.includes("semanticmemorypublic") ||
+    normalized.includes("semanticmemorypublic.enabled") ||
+    normalized.includes("semanticmemorypublic.memoryid") ||
+    normalized.includes("semanticmemorypublic.quality") ||
+    normalized.includes("semanticmemorypublic.continuitygain") ||
+    normalized.includes("semanticmemorypublic.couplingstate") ||
+    normalized.includes("semanticmemorypublic.persistable") ||
+    normalized.includes("semanticmemorypublic.policy.saveraw") ||
+    normalized.includes("semanticmemorypublic.policy.savesynthesis") ||
+    normalized.includes("semanticmemorypublic.activatedterms") ||
+    normalized.includes("semanticmemorypublic.source.evtid") ||
+    normalized.includes("semanticmemorypublic.source.opcid") ||
+    normalized.includes("semanticmemorypublic.boundary.legalcertification") ||
     normalized.includes("activatedterms") ||
     normalized.includes("continuitygain") ||
+    normalized.includes("couplingstate") ||
+    normalized.includes("saveraw") ||
+    normalized.includes("savesynthesis") ||
+    normalized.includes("reusableinprompt") ||
     normalized.includes("esoterologicalsemanticmemoryrecord") ||
     normalized.includes("record semantico") ||
     normalized.includes("glossario canonico") ||
@@ -2093,7 +2114,20 @@ function isMatrixGovernanceQuestion(message: string): boolean {
 
 
 function isMemoryRegistrationQuestion(message: string): boolean {
+  if (isEsoterologicalSemanticMemoryQuestion(message)) {
+    return false;
+  }
+
   const normalized = normalizeText(message);
+
+  if (
+    normalized.includes("non registrare") ||
+    normalized.includes("non salvare") ||
+    normalized.includes("analizza soltanto") ||
+    normalized.includes("analizza solo")
+  ) {
+    return false;
+  }
 
   const asksRetrieval =
     normalized.includes("recupera") ||
@@ -2109,6 +2143,10 @@ function isMemoryRegistrationQuestion(message: string): boolean {
 
 
 function isMemoryRecoveryQuestion(message: string): boolean {
+  if (isEsoterologicalSemanticMemoryQuestion(message)) {
+    return false;
+  }
+
   const normalized = normalizeText(message);
 
   const asksRetrieval =
