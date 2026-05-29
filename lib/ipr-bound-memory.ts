@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 
+
 import {
   describeDefaultIprBoundMemoryStore,
   getDatabaseReadyIprBoundMemoryStore,
@@ -7,12 +8,15 @@ import {
   getProcessIprBoundMemoryStore
 } from "./ipr-bound-memory-store";
 
+
 import type {
   IprBoundMemoryStoreAdapter,
   IprBoundMemoryStoreDescription
 } from "./ipr-bound-memory-store";
 
+
 export type MemoryScope = "RUNTIME_ONLY" | "IPR_BOUND";
+
 
 export type MemoryPersistenceMode =
   | "PROCESS_MEMORY_MVP"
@@ -20,20 +24,24 @@ export type MemoryPersistenceMode =
   | "DATABASE_PERSISTENT"
   | "EXTERNAL_ADAPTER";
 
+
 export type MemoryPersistenceStatus =
   | "PROCESS_SCOPED"
   | "DATABASE_READY_PENDING_WRITER"
   | "DATABASE_PERSISTENT_ACTIVE"
   | "EXTERNAL_ADAPTER_CONTROLLED";
 
+
 export type MemoryAuthority =
   | "SESSION_RUNTIME_ONLY"
   | "SERVER_RUNTIME_VALIDATED";
+
 
 export type MemorySubjectKind =
   | "BIOLOGICAL_SUBJECT"
   | "AI_RUNTIME"
   | "UNKNOWN";
+
 
 export type MemoryTurnRuntimeState =
   | "OPERATIONAL"
@@ -41,6 +49,7 @@ export type MemoryTurnRuntimeState =
   | "BLOCKED"
   | "INVALID"
   | "UNKNOWN";
+
 
 export type MemoryTurnRuntimeDecision =
   | "ALLOW"
@@ -51,11 +60,13 @@ export type MemoryTurnRuntimeDecision =
   | "NOOP"
   | "UNKNOWN";
 
+
 export type MemoryTurnTrustStatus =
   | "TRUSTED_OPERATIONAL_OUTPUT"
   | "TRACE_ONLY_BLOCKED"
   | "TRACE_ONLY_DEGRADED"
   | "UNVERIFIED_TRACE";
+
 
 export type IprBoundMemorySaasTier =
   | "BASE"
@@ -66,11 +77,13 @@ export type IprBoundMemorySaasTier =
   | "STRATEGIC"
   | "UNKNOWN";
 
+
 export type IprBoundMemorySubject = {
   entity: string;
   ipr: string;
   kind: MemorySubjectKind | string;
 };
+
 
 export type IprBoundMemoryCertificate = {
   certificateId: string;
@@ -81,6 +94,7 @@ export type IprBoundMemoryCertificate = {
   certificateHash?: string;
 };
 
+
 export type IprBoundMemoryRuntimeIdentity = {
   entity: string;
   ipr: string;
@@ -90,6 +104,7 @@ export type IprBoundMemoryRuntimeIdentity = {
   org?: string;
   location?: string;
 };
+
 
 export type IprBoundMemoryHandoffEvaluation = {
   isValid: boolean;
@@ -104,6 +119,7 @@ export type IprBoundMemoryHandoffEvaluation = {
   certificate?: IprBoundMemoryCertificate;
 };
 
+
 export type MemoryPersistenceFrame = {
   mode: MemoryPersistenceMode;
   status: MemoryPersistenceStatus;
@@ -117,6 +133,7 @@ export type MemoryPersistenceFrame = {
   boundary: string;
   legalCertification: false;
 };
+
 
 export type IprBoundMemorySaasFrame = {
   project: "Project HBCE R&D Transfer SaaS";
@@ -139,6 +156,7 @@ export type IprBoundMemorySaasFrame = {
   boundary: string;
 };
 
+
 export type MemoryEventLink = {
   evt: string;
   opcProofId?: string;
@@ -147,6 +165,33 @@ export type MemoryEventLink = {
   userMessageHash: string;
   assistantMessageHash: string;
 };
+
+
+export type RegisteredMemoryEvent = {
+  eventName: string;
+  eventKey: string;
+  evt: string;
+  opcProofId?: string;
+  opcChainHash?: string;
+  auditId?: string;
+  usageId?: string;
+  tenantId: string;
+  workspaceId: string;
+  subscriptionTier: IprBoundMemorySaasTier;
+  subscriptionId?: string;
+  accountId?: string;
+  memoryId: string;
+  memoryKeyHash: string;
+  sessionId: string;
+  humanIpr?: string;
+  runtimeIpr: string;
+  source: "USER_DECLARED_EVENT" | "RUNTIME_NAMED_EVENT" | "SYSTEM_DERIVED_EVENT";
+  createdAt: string;
+  userMessageHash: string;
+  assistantMessageHash: string;
+  legalCertification: false;
+};
+
 
 export type MemoryTurn = {
   user: string;
@@ -165,6 +210,7 @@ export type MemoryTurn = {
   policyBlocked: boolean;
   memoryBoundary: string;
 };
+
 
 export type IprBoundMemoryRecordWithoutHash = {
   memoryId: string;
@@ -189,15 +235,18 @@ export type IprBoundMemoryRecordWithoutHash = {
   lastOpcProofId?: string;
   lastOpcChainHash?: string;
   eventLinks: MemoryEventLink[];
+  registeredEvents: RegisteredMemoryEvent[];
   facts: string[];
   recentTurns: MemoryTurn[];
   summary: string;
   [key: string]: unknown;
 };
 
+
 export type IprBoundMemoryRecord = IprBoundMemoryRecordWithoutHash & {
   memoryHash: string;
 };
+
 
 export type GetOrCreateRuntimeMemoryInput = {
   sessionId: string;
@@ -211,6 +260,7 @@ export type GetOrCreateRuntimeMemoryInput = {
   store?: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>;
 };
 
+
 export type UpdateMemoryAfterCompletionInput = {
   memory: IprBoundMemoryRecord;
   userMessage: string;
@@ -218,6 +268,11 @@ export type UpdateMemoryAfterCompletionInput = {
   evt: string;
   opcProofId?: string;
   opcChainHash?: string;
+  auditId?: string;
+  usageId?: string;
+  namedEventName?: string;
+  subscriptionId?: string;
+  accountId?: string;
   extraFacts?: string[];
   runtimeState?: MemoryTurnRuntimeState | string;
   runtimeDecision?: MemoryTurnRuntimeDecision | string;
@@ -231,6 +286,7 @@ export type UpdateMemoryAfterCompletionInput = {
   policyBlocked?: boolean;
   store?: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>;
 };
+
 
 export type PublicIprBoundMemoryRecord = {
   memoryId: string;
@@ -254,17 +310,21 @@ export type PublicIprBoundMemoryRecord = {
   lastOpcProofId?: string;
   lastOpcChainHash?: string;
   eventLinks: MemoryEventLink[];
+  registeredEvents: RegisteredMemoryEvent[];
   facts: string[];
   recentTurns: MemoryTurn[];
   summary: string;
   memoryHash: string;
 };
 
+
 const MAX_MEMORY_FACTS = 36;
 const MAX_MEMORY_EVENTS = 32;
+const MAX_REGISTERED_EVENTS = 64;
 const MAX_MEMORY_TURNS = 10;
 const MAX_MEMORY_TEXT_CHARS = 900;
 const MAX_MEMORY_SUMMARY_CHARS = 2600;
+
 
 const CURRENT_OPERATIONAL_EVT = "UP-EVT-0016";
 const CURRENT_OPERATIONAL_AI_EVT = "UP-EVT-0016-AI";
@@ -273,28 +333,36 @@ const CURRENT_MONTHLY_CHECKPOINT = "EVT-0015";
 const CURRENT_MONTHLY_AI_CHECKPOINT = "EVT-0015-AI";
 const CURRENT_MONTHLY_CYCLE = "UP-MESE-4";
 
+
 const SAAS_PROJECT = "Project HBCE R&D Transfer SaaS";
 const SAAS_RELEASE = "SaaS Core v0.1";
 const SAAS_TARGET_CHECKPOINT_DATE = "2026-06-19T15:30:00+02:00";
 const SAAS_TARGET_CYCLE = "UP-MESE-5";
 
+
 export const IPR_BOUND_MEMORY_BOUNDARY =
   "IPR-bound memory preserves operational continuity only. It cannot override HBCE governance, policy evaluation, cyber safety boundaries, human oversight, fail-closed logic, current identity validation, tenant authorization, SaaS tier authorization, model routing policy, audit requirements or legal certification boundaries.";
+
 
 export const CURRENT_IDENTITY_MEMORY_BOUNDARY =
   "Current biological subject and certificate fields are authoritative only when the active memory scope is IPR_BOUND and authority is SERVER_RUNTIME_VALIDATED. Historical memory may preserve prior traces, but it must not be used as current biological identity validation.";
 
+
 export const TRACE_ONLY_MEMORY_BOUNDARY =
   "Blocked, degraded or rejected turns may be preserved for traceability only. They must not be treated as accepted operational facts, authorization rules, SaaS entitlement rules or future policy instructions.";
+
 
 export const DATABASE_PERSISTENT_REQUIREMENT =
   "PROCESS_MEMORY_MVP provides temporary R&D process memory only. DATABASE_PERSISTENT is required for durable multi-session SaaS continuity, enterprise audit, replay, retention, deletion policy, tenant/workspace continuity, model usage records and robust governance.";
 
+
 export const DATABASE_PERSISTENCE_MEMORY_BOUNDARY =
   "A memory record may expose DATABASE_READY only as a preparation state. Only DATABASE_PERSISTENT may be treated as durable SaaS memory continuity. DATABASE_READY and PROCESS_MEMORY_MVP must not claim durable SaaS persistence.";
 
+
 export const SAAS_MEMORY_BOUNDARY =
   "SaaS memory fields prepare productization only. Tenant, workspace and subscription tier values support routing and audit context, but they do not create billing rights, legal certification, public authority identity validation or automatic authorization.";
+
 
 const CANONICAL_MEMORY_SAFETY_FACTS = [
   "IPR-bound memory preserves operational continuity only.",
@@ -311,6 +379,7 @@ const CANONICAL_MEMORY_SAFETY_FACTS = [
   DATABASE_PERSISTENCE_MEMORY_BOUNDARY
 ];
 
+
 const MEMORY_REJECTION_SIGNALS = [
   "non accetto",
   "non memorizzo",
@@ -326,6 +395,7 @@ const MEMORY_REJECTION_SIGNALS = [
   "policy block",
   "fail-closed"
 ];
+
 
 const MEMORY_POISONING_SIGNALS = [
   "ignora la memoria precedente",
@@ -353,6 +423,7 @@ const MEMORY_POISONING_SIGNALS = [
   "workspace authorized forever"
 ];
 
+
 const CURRENT_IDENTITY_FACT_PREFIXES = [
   "The verified biological subject is",
   "The verified biological IPR is",
@@ -362,9 +433,11 @@ const CURRENT_IDENTITY_FACT_PREFIXES = [
   "The active IPR Card serial is"
 ];
 
+
 export function sha256Hex(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex").toUpperCase();
 }
+
 
 export function truncateRuntimeText(
   value: string,
@@ -372,35 +445,44 @@ export function truncateRuntimeText(
 ): string {
   const normalized = value.replace(/\s+/g, " ").trim();
 
+
   if (normalized.length <= max) {
     return normalized;
   }
 
+
   return `${normalized.slice(0, Math.max(0, max - 3)).trim()}...`;
 }
+
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") {
     const serialized = JSON.stringify(value);
 
+
     return typeof serialized === "string" ? serialized : "undefined";
   }
+
 
   if (Array.isArray(value)) {
     return `[${value.map((item) => stableStringify(item)).join(",")}]`;
   }
 
+
   const record = value as Record<string, unknown>;
   const keys = Object.keys(record).sort();
+
 
   return `{${keys
     .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
     .join(",")}}`;
 }
 
+
 function normalizeFact(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
+
 
 function normalizeRuntimeText(value: string): string {
   return value
@@ -408,6 +490,73 @@ function normalizeRuntimeText(value: string): string {
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "");
 }
+
+
+export function normalizeRegisteredEventKey(value: string): string {
+  return normalizeRuntimeText(value)
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toUpperCase();
+}
+
+
+function extractNamedEventName(input: UpdateMemoryAfterCompletionInput): string | null {
+  const explicit = input.namedEventName?.trim();
+
+  if (explicit) {
+    return explicit;
+  }
+
+  const text = input.userMessage.replace(/\s+/g, " " ).trim();
+
+  const quoted = text.match(/(?:registra|register|denominato|named|nome evento|evento denominato)\s+(?:un\s+nuovo\s+)?(?:evento\s+operativo\s+)?(?:denominato\s*)?["“”'`]?([A-Z0-9][A-Z0-9_.:-]{4,})["“”'`]?/i);
+
+  if (quoted?.[1]) {
+    return quoted[1].trim();
+  }
+
+  const token = text.match(/\b([A-Z][A-Z0-9]+(?:_[A-Z0-9]+){2,})\b/);
+
+  if (/(registra|register|evento operativo|named event|evento nominato)/i.test(text) && token?.[1]) {
+    return token[1].trim();
+  }
+
+  return null;
+}
+
+
+function upsertRegisteredMemoryEvent(
+  current: RegisteredMemoryEvent[],
+  next: RegisteredMemoryEvent
+): RegisteredMemoryEvent[] {
+  const filtered = current.filter((event) => event.eventKey !== next.eventKey);
+
+  return [...filtered, next].slice(-MAX_REGISTERED_EVENTS);
+}
+
+
+export function findRegisteredMemoryEvent(
+  memory: IprBoundMemoryRecord | PublicIprBoundMemoryRecord,
+  eventName: string
+): RegisteredMemoryEvent | null {
+  const eventKey = normalizeRegisteredEventKey(eventName);
+
+  if (!eventKey) {
+    return null;
+  }
+
+  return (memory.registeredEvents || []).find((event) => event.eventKey === eventKey) || null;
+}
+
+
+export function getLastRegisteredMemoryEvent(
+  memory: IprBoundMemoryRecord | PublicIprBoundMemoryRecord
+): RegisteredMemoryEvent | null {
+  const events = memory.registeredEvents || [];
+
+  return events.length ? events[events.length - 1] : null;
+}
+
 
 function mergeUniqueStrings(
   current: string[],
@@ -417,29 +566,37 @@ function mergeUniqueStrings(
   const merged: string[] = [];
   const seen = new Set<string>();
 
+
   for (const item of [...current, ...next]) {
     const normalized = normalizeFact(item);
+
 
     if (!normalized) {
       continue;
     }
 
+
     const key = normalized.toLowerCase();
+
 
     if (seen.has(key)) {
       continue;
     }
 
+
     seen.add(key);
     merged.push(normalized);
   }
 
+
   return merged.slice(-max);
 }
+
 
 function getPreferredDefaultRuntimeMemoryStore(): IprBoundMemoryStoreAdapter<IprBoundMemoryRecord> {
   const databaseReadyStore =
     getDatabaseReadyIprBoundMemoryStore<IprBoundMemoryRecord>();
+
 
   if (
     databaseReadyStore.kind === "DATABASE_PERSISTENT" ||
@@ -448,14 +605,17 @@ function getPreferredDefaultRuntimeMemoryStore(): IprBoundMemoryStoreAdapter<Ipr
     return databaseReadyStore;
   }
 
+
   return getDefaultIprBoundMemoryStore<IprBoundMemoryRecord>();
 }
+
 
 function resolveMemoryStore(
   store?: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>
 ): IprBoundMemoryStoreAdapter<IprBoundMemoryRecord> {
   return store ?? getPreferredDefaultRuntimeMemoryStore();
 }
+
 
 function resolvePersistenceMode(
   store: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>
@@ -464,16 +624,20 @@ function resolvePersistenceMode(
     return "PROCESS_MEMORY_MVP";
   }
 
+
   if (store.kind === "DATABASE_READY") {
     return "DATABASE_READY";
   }
+
 
   if (store.kind === "DATABASE_PERSISTENT") {
     return "DATABASE_PERSISTENT";
   }
 
+
   return "EXTERNAL_ADAPTER";
 }
+
 
 function resolvePersistenceStatus(
   mode: MemoryPersistenceMode
@@ -482,16 +646,20 @@ function resolvePersistenceStatus(
     return "PROCESS_SCOPED";
   }
 
+
   if (mode === "DATABASE_READY") {
     return "DATABASE_READY_PENDING_WRITER";
   }
+
 
   if (mode === "DATABASE_PERSISTENT") {
     return "DATABASE_PERSISTENT_ACTIVE";
   }
 
+
   return "EXTERNAL_ADAPTER_CONTROLLED";
 }
+
 
 function buildMemoryPersistenceFrame(
   store: IprBoundMemoryStoreAdapter<IprBoundMemoryRecord>
@@ -500,6 +668,7 @@ function buildMemoryPersistenceFrame(
   const status = resolvePersistenceStatus(mode);
   const durable = mode === "DATABASE_PERSISTENT";
   const databaseReady = mode === "DATABASE_READY" || mode === "DATABASE_PERSISTENT";
+
 
   return {
     mode,
@@ -516,8 +685,10 @@ function buildMemoryPersistenceFrame(
   };
 }
 
+
 function normalizeSaasTier(value: unknown): IprBoundMemorySaasTier {
   const normalized = String(value || "").trim().toUpperCase();
+
 
   if (
     normalized === "BASE" ||
@@ -530,25 +701,31 @@ function normalizeSaasTier(value: unknown): IprBoundMemorySaasTier {
     return normalized;
   }
 
+
   return "UNKNOWN";
 }
+
 
 function buildDefaultTenantId(input: GetOrCreateRuntimeMemoryInput): string {
   if (input.tenantId?.trim()) {
     return input.tenantId.trim();
   }
 
+
   if (input.handoff.subject?.ipr) {
     return `TENANT-IPR-${sha256Hex(input.handoff.subject.ipr).slice(0, 12)}`;
   }
 
+
   return `TENANT-RUNTIME-${sha256Hex(input.runtime.ipr).slice(0, 12)}`;
 }
+
 
 function buildDefaultWorkspaceId(input: GetOrCreateRuntimeMemoryInput): string {
   if (input.workspaceId?.trim()) {
     return input.workspaceId.trim();
   }
+
 
   if (input.handoff.subject?.ipr) {
     return `WORKSPACE-IPR-${sha256Hex(
@@ -556,8 +733,10 @@ function buildDefaultWorkspaceId(input: GetOrCreateRuntimeMemoryInput): string {
     ).slice(0, 12)}`;
   }
 
+
   return `WORKSPACE-SESSION-${sha256Hex(input.sessionId).slice(0, 12)}`;
 }
+
 
 function buildSaasFrame(input: {
   tenantId: string;
@@ -586,6 +765,7 @@ function buildSaasFrame(input: {
   };
 }
 
+
 function buildMemoryKey(input: {
   scope: MemoryScope;
   subjectIpr?: string;
@@ -604,6 +784,7 @@ function buildMemoryKey(input: {
     ].join("::");
   }
 
+
   return [
     "RUNTIME_ONLY",
     input.tenantId,
@@ -613,17 +794,20 @@ function buildMemoryKey(input: {
   ].join("::");
 }
 
+
 function resolveMemoryScope(
   handoff: IprBoundMemoryHandoffEvaluation
 ): MemoryScope {
   return handoff.isValid && handoff.subject?.ipr ? "IPR_BOUND" : "RUNTIME_ONLY";
 }
 
+
 function resolveMemoryAuthority(scope: MemoryScope): MemoryAuthority {
   return scope === "IPR_BOUND"
     ? "SERVER_RUNTIME_VALIDATED"
     : "SESSION_RUNTIME_ONLY";
 }
+
 
 function resolveCurrentIdentitySnapshot(input: {
   scope: MemoryScope;
@@ -639,6 +823,7 @@ function resolveCurrentIdentitySnapshot(input: {
     };
   }
 
+
   if (!input.handoff.isValid || !input.handoff.subject?.ipr) {
     return {
       subject: undefined,
@@ -646,11 +831,13 @@ function resolveCurrentIdentitySnapshot(input: {
     };
   }
 
+
   return {
     subject: input.handoff.subject,
     certificate: input.handoff.certificate
   };
 }
+
 
 function isCurrentIdentityAuthoritative(input: {
   scope: MemoryScope;
@@ -664,17 +851,21 @@ function isCurrentIdentityAuthoritative(input: {
   );
 }
 
+
 function sanitizeCurrentIdentityFactsForRuntimeOnly(facts: string[]): string[] {
   const blockedPrefixes = CURRENT_IDENTITY_FACT_PREFIXES.map((prefix) =>
     normalizeRuntimeText(prefix)
   );
 
+
   return facts.filter((fact) => {
     const normalized = normalizeRuntimeText(fact);
+
 
     return !blockedPrefixes.some((prefix) => normalized.startsWith(prefix));
   });
 }
+
 
 function buildMemorySummary(input: {
   handoff: IprBoundMemoryHandoffEvaluation;
@@ -687,7 +878,9 @@ function buildMemorySummary(input: {
     ? "Memory persistence is DATABASE_PERSISTENT and may be treated as durable runtime continuity within the configured HBCE database boundary."
     : `Memory persistence is ${input.persistence.mode}; durable SaaS continuity must not be claimed until DATABASE_PERSISTENT is active.`;
 
+
   const saasSentence = `${input.saas.project} is active toward ${input.saas.release}, checkpoint ${input.saas.targetCheckpointDate}, tenant ${input.saas.tenantId}, workspace ${input.saas.workspaceId}, tier ${input.saas.subscriptionTier}.`;
+
 
   if (input.handoff.isValid && input.handoff.subject) {
     return [
@@ -701,6 +894,7 @@ function buildMemorySummary(input: {
     ].join(" ");
   }
 
+
   return [
     "JOKER-C2 is operating with runtime-only memory.",
     "No verified biological IPR is available for this session.",
@@ -712,6 +906,7 @@ function buildMemorySummary(input: {
     persistenceSentence
   ].join(" ");
 }
+
 
 function buildDerivedCanonicalMemoryFacts(
   input: GetOrCreateRuntimeMemoryInput,
@@ -755,9 +950,11 @@ function buildDerivedCanonicalMemoryFacts(
       : "The current memory persistence frame is not durable and must not be described as enterprise-grade SaaS continuity."
   ];
 
+
   if (input.previousContinuityRef) {
     facts.push(`The previous runtime continuity reference is ${input.previousContinuityRef}.`);
   }
+
 
   if (input.handoff.isValid && input.handoff.subject) {
     facts.push(
@@ -776,6 +973,7 @@ function buildDerivedCanonicalMemoryFacts(
     );
   }
 
+
   if (input.handoff.isValid && input.handoff.certificate) {
     facts.push(
       `The active operational certificate is ${input.handoff.certificate.certificateId}.`,
@@ -783,38 +981,49 @@ function buildDerivedCanonicalMemoryFacts(
       `The operational certificate scope is ${input.handoff.certificate.certificateScope.join(", ")}.`
     );
 
+
     if (input.handoff.certificate.cardSerial) {
       facts.push(`The active IPR Card serial is ${input.handoff.certificate.cardSerial}.`);
     }
   }
 
+
   if (input.seedFacts?.length) {
     facts.push(...input.seedFacts);
   }
 
+
   return mergeUniqueStrings([], facts, MAX_MEMORY_FACTS);
 }
+
 
 function extractFactValue(facts: string[], prefix: string): string | undefined {
   const normalizedPrefix = normalizeRuntimeText(prefix);
 
+
   for (const fact of facts) {
     const normalizedFact = normalizeRuntimeText(fact);
+
 
     if (!normalizedFact.startsWith(normalizedPrefix)) {
       continue;
     }
 
+
     const value = fact.slice(prefix.length).trim();
+
 
     return value.replace(/\.$/, "").trim() || undefined;
   }
 
+
   return undefined;
 }
 
+
 function normalizeMemoryTurnState(value: unknown): MemoryTurnRuntimeState {
   const normalized = String(value || "").trim().toUpperCase();
+
 
   if (
     normalized === "OPERATIONAL" ||
@@ -825,11 +1034,14 @@ function normalizeMemoryTurnState(value: unknown): MemoryTurnRuntimeState {
     return normalized;
   }
 
+
   return "UNKNOWN";
 }
 
+
 function normalizeMemoryTurnDecision(value: unknown): MemoryTurnRuntimeDecision {
   const normalized = String(value || "").trim().toUpperCase();
+
 
   if (
     normalized === "ALLOW" ||
@@ -842,14 +1054,18 @@ function normalizeMemoryTurnDecision(value: unknown): MemoryTurnRuntimeDecision 
     return normalized;
   }
 
+
   return "UNKNOWN";
 }
+
 
 function hasSignal(value: string, signals: string[]): boolean {
   const normalized = normalizeRuntimeText(value);
 
+
   return signals.some((signal) => normalized.includes(normalizeRuntimeText(signal)));
 }
+
 
 function hasMemoryRejectionSignal(input: {
   userMessage: string;
@@ -860,6 +1076,7 @@ function hasMemoryRejectionSignal(input: {
     hasSignal(input.userMessage, MEMORY_POISONING_SIGNALS)
   );
 }
+
 
 function deriveTurnRuntimeMetadata(input: UpdateMemoryAfterCompletionInput): {
   runtimeState: MemoryTurnRuntimeState;
@@ -875,33 +1092,41 @@ function deriveTurnRuntimeMetadata(input: UpdateMemoryAfterCompletionInput): {
 } {
   const facts = input.extraFacts ?? [];
 
+
   const runtimeState = normalizeMemoryTurnState(
     input.runtimeState ?? extractFactValue(facts, "Last runtime state:")
   );
+
 
   const runtimeDecision = normalizeMemoryTurnDecision(
     input.runtimeDecision ?? extractFactValue(facts, "Last runtime decision:")
   );
 
+
   const generationClass =
     input.generationClass ??
     extractFactValue(facts, "Last response generation class:");
+
 
   const degradedReason =
     input.degradedReason ??
     extractFactValue(facts, "Last generation was DEGRADED with reason:");
 
+
   const contextClass =
     input.contextClass ??
     extractFactValue(facts, "Last runtime context class:");
+
 
   const projectDomain =
     input.projectDomain ??
     extractFactValue(facts, "Last runtime project domain:");
 
+
   const hbceModule =
     input.hbceModule ??
     extractFactValue(facts, "Last runtime HBCE module:");
+
 
   const policyBlocked =
     input.policyBlocked ??
@@ -911,17 +1136,21 @@ function deriveTurnRuntimeMetadata(input: UpdateMemoryAfterCompletionInput): {
       generationClass === "POLICY_BLOCK"
     );
 
+
   const degraded =
     runtimeState === "DEGRADED" || runtimeDecision === "DEGRADE";
+
 
   const rejectedMemoryMutation = hasMemoryRejectionSignal({
     userMessage: input.userMessage,
     assistantMessage: input.assistantMessage
   });
 
+
   const acceptedAsMemoryFact =
     input.acceptedAsMemoryFact ??
     (!policyBlocked && !degraded && !rejectedMemoryMutation);
+
 
   const trustedOutput =
     input.trustedOutput ??
@@ -932,6 +1161,7 @@ function deriveTurnRuntimeMetadata(input: UpdateMemoryAfterCompletionInput): {
       acceptedAsMemoryFact
     );
 
+
   const trustStatus: MemoryTurnTrustStatus = policyBlocked
     ? "TRACE_ONLY_BLOCKED"
     : degraded
@@ -939,6 +1169,7 @@ function deriveTurnRuntimeMetadata(input: UpdateMemoryAfterCompletionInput): {
       : trustedOutput
         ? "TRUSTED_OPERATIONAL_OUTPUT"
         : "UNVERIFIED_TRACE";
+
 
   return {
     runtimeState,
@@ -953,6 +1184,7 @@ function deriveTurnRuntimeMetadata(input: UpdateMemoryAfterCompletionInput): {
     policyBlocked
   };
 }
+
 
 export function buildMemoryRecordHash(
   record: IprBoundMemoryRecordWithoutHash | IprBoundMemoryRecord
@@ -991,13 +1223,16 @@ export function buildMemoryRecordHash(
     lastOpcProofId: record.lastOpcProofId,
     lastOpcChainHash: record.lastOpcChainHash,
     eventLinks: record.eventLinks,
+    registeredEvents: record.registeredEvents || [],
     facts: record.facts,
     recentTurns: record.recentTurns,
     summary: record.summary
   };
 
+
   return sha256Hex(stableStringify(canonical));
 }
+
 
 export function getOrCreateRuntimeMemory(
   input: GetOrCreateRuntimeMemoryInput
@@ -1006,8 +1241,10 @@ export function getOrCreateRuntimeMemory(
   const now = new Date().toISOString();
   const persistence = buildMemoryPersistenceFrame(store);
 
+
   const scope = resolveMemoryScope(input.handoff);
   const authority = resolveMemoryAuthority(scope);
+
 
   const tenantId = buildDefaultTenantId(input);
   const workspaceId = buildDefaultWorkspaceId(input);
@@ -1018,6 +1255,7 @@ export function getOrCreateRuntimeMemory(
     subscriptionTier
   });
 
+
   const memoryKey = buildMemoryKey({
     scope,
     subjectIpr: input.handoff.subject?.ipr,
@@ -1027,12 +1265,15 @@ export function getOrCreateRuntimeMemory(
     workspaceId
   });
 
+
   const existing = store.get(memoryKey);
+
 
   const currentIdentity = resolveCurrentIdentitySnapshot({
     scope,
     handoff: input.handoff
   });
+
 
   if (existing) {
     const nextFacts = buildDerivedCanonicalMemoryFacts(input, persistence, saas);
@@ -1040,6 +1281,7 @@ export function getOrCreateRuntimeMemory(
       scope === "IPR_BOUND"
         ? existing.facts
         : sanitizeCurrentIdentityFactsForRuntimeOnly(existing.facts);
+
 
     const updatedWithoutHash: IprBoundMemoryRecordWithoutHash = {
       memoryId: existing.memoryId,
@@ -1064,6 +1306,7 @@ export function getOrCreateRuntimeMemory(
       lastOpcProofId: existing.lastOpcProofId,
       lastOpcChainHash: existing.lastOpcChainHash,
       eventLinks: existing.eventLinks,
+      registeredEvents: existing.registeredEvents || [],
       facts: mergeUniqueStrings(existingFacts, nextFacts, MAX_MEMORY_FACTS),
       recentTurns: existing.recentTurns,
       summary: buildMemorySummary({
@@ -1075,15 +1318,19 @@ export function getOrCreateRuntimeMemory(
       })
     };
 
+
     const updated: IprBoundMemoryRecord = {
       ...updatedWithoutHash,
       memoryHash: buildMemoryRecordHash(updatedWithoutHash)
     };
 
+
     store.set(memoryKey, updated);
+
 
     return updated;
   }
+
 
   const createdWithoutHash: IprBoundMemoryRecordWithoutHash = {
     memoryId: `MEM-${sha256Hex(`${memoryKey}::${now}::${randomUUID()}`).slice(0, 16)}`,
@@ -1108,6 +1355,7 @@ export function getOrCreateRuntimeMemory(
     lastOpcProofId: undefined,
     lastOpcChainHash: undefined,
     eventLinks: [],
+    registeredEvents: [],
     facts: buildDerivedCanonicalMemoryFacts(input, persistence, saas),
     recentTurns: [],
     summary: buildMemorySummary({
@@ -1119,15 +1367,19 @@ export function getOrCreateRuntimeMemory(
     })
   };
 
+
   const created: IprBoundMemoryRecord = {
     ...createdWithoutHash,
     memoryHash: buildMemoryRecordHash(createdWithoutHash)
   };
 
+
   store.set(memoryKey, created);
+
 
   return created;
 }
+
 
 export function updateMemoryAfterCompletion(
   input: UpdateMemoryAfterCompletionInput
@@ -1135,6 +1387,7 @@ export function updateMemoryAfterCompletion(
   const store = resolveMemoryStore(input.store);
   const now = new Date().toISOString();
   const persistence = buildMemoryPersistenceFrame(store);
+
 
   const saas = {
     ...input.memory.saas,
@@ -1147,7 +1400,9 @@ export function updateMemoryAfterCompletion(
     boundary: SAAS_MEMORY_BOUNDARY
   } satisfies IprBoundMemorySaasFrame;
 
+
   const turnMetadata = deriveTurnRuntimeMetadata(input);
+
 
   const eventLink: MemoryEventLink = {
     evt: input.evt,
@@ -1157,6 +1412,37 @@ export function updateMemoryAfterCompletion(
     userMessageHash: sha256Hex(input.userMessage),
     assistantMessageHash: sha256Hex(input.assistantMessage)
   };
+
+
+  const namedEventName = extractNamedEventName(input);
+  const registeredEvent: RegisteredMemoryEvent | null =
+    namedEventName && !turnMetadata.policyBlocked && turnMetadata.acceptedAsMemoryFact
+      ? {
+          eventName: namedEventName,
+          eventKey: normalizeRegisteredEventKey(namedEventName),
+          evt: input.evt,
+          opcProofId: input.opcProofId,
+          opcChainHash: input.opcChainHash,
+          auditId: input.auditId,
+          usageId: input.usageId,
+          tenantId: input.memory.tenantId,
+          workspaceId: input.memory.workspaceId,
+          subscriptionTier: input.memory.subscriptionTier,
+          subscriptionId: input.subscriptionId,
+          accountId: input.accountId,
+          memoryId: input.memory.memoryId,
+          memoryKeyHash: input.memory.memoryKeyHash,
+          sessionId: input.memory.sessionId,
+          humanIpr: input.memory.subject?.ipr,
+          runtimeIpr: input.memory.runtime.ipr,
+          source: input.namedEventName ? "RUNTIME_NAMED_EVENT" : "USER_DECLARED_EVENT",
+          createdAt: now,
+          userMessageHash: sha256Hex(input.userMessage),
+          assistantMessageHash: sha256Hex(input.assistantMessage),
+          legalCertification: false
+        }
+      : null;
+
 
   const turn: MemoryTurn = {
     user: truncateRuntimeText(input.userMessage),
@@ -1179,6 +1465,7 @@ export function updateMemoryAfterCompletion(
         : TRACE_ONLY_MEMORY_BOUNDARY
   };
 
+
   const turnTreatmentFacts = [
     `Last memory turn trust status: ${turn.trustStatus}.`,
     `Last memory turn accepted as fact: ${turn.acceptedAsMemoryFact ? "true" : "false"}.`,
@@ -1197,13 +1484,18 @@ export function updateMemoryAfterCompletion(
       ? "Last memory update used DATABASE_PERSISTENT durable persistence."
       : "Last memory update did not use durable DATABASE_PERSISTENT storage.",
     `Last memory update remained under ${SAAS_RELEASE} transition boundary.`,
-    `Last memory update was linked to SaaS tenant ${saas.tenantId} and workspace ${saas.workspaceId}.`
+    `Last memory update was linked to SaaS tenant ${saas.tenantId} and workspace ${saas.workspaceId}.`,
+    registeredEvent
+      ? `Registered named event ${registeredEvent.eventName} with EVT ${registeredEvent.evt}.`
+      : ""
   ].filter(Boolean);
+
 
   const baseFacts =
     input.memory.scope === "IPR_BOUND"
       ? input.memory.facts
       : sanitizeCurrentIdentityFactsForRuntimeOnly(input.memory.facts);
+
 
   const nextFacts = mergeUniqueStrings(
     baseFacts,
@@ -1215,10 +1507,14 @@ export function updateMemoryAfterCompletion(
     MAX_MEMORY_FACTS
   );
 
+
   const summaryAdditions = [
     `Last governed interaction was linked to ${input.evt}.`,
     input.opcProofId ? `Last OPC proof receipt is ${input.opcProofId}.` : "",
     input.opcChainHash ? `Last OPC chain hash is ${input.opcChainHash}.` : "",
+    registeredEvent
+      ? `Last registered named event is ${registeredEvent.eventName} linked to ${registeredEvent.evt}.`
+      : "",
     turn.trustStatus !== "TRUSTED_OPERATIONAL_OUTPUT"
       ? `Last memory turn is ${turn.trustStatus} and is preserved for traceability only.`
       : "",
@@ -1231,18 +1527,22 @@ export function updateMemoryAfterCompletion(
     `${SAAS_PROJECT} remains active toward ${SAAS_RELEASE}.`
   ].filter(Boolean);
 
+
   const updatedSummary = truncateRuntimeText(
     [input.memory.summary, ...summaryAdditions].join(" "),
     MAX_MEMORY_SUMMARY_CHARS
   );
 
+
   const currentSubject = isCurrentIdentityAuthoritative(input.memory)
     ? input.memory.subject
     : undefined;
 
+
   const currentCertificate = isCurrentIdentityAuthoritative(input.memory)
     ? input.memory.certificate
     : undefined;
+
 
   const updatedWithoutHash: IprBoundMemoryRecordWithoutHash = {
     memoryId: input.memory.memoryId,
@@ -1267,20 +1567,27 @@ export function updateMemoryAfterCompletion(
     lastOpcProofId: input.opcProofId ?? input.memory.lastOpcProofId,
     lastOpcChainHash: input.opcChainHash ?? input.memory.lastOpcChainHash,
     eventLinks: [...input.memory.eventLinks, eventLink].slice(-MAX_MEMORY_EVENTS),
+    registeredEvents: registeredEvent
+      ? upsertRegisteredMemoryEvent(input.memory.registeredEvents || [], registeredEvent)
+      : input.memory.registeredEvents || [],
     facts: nextFacts,
     recentTurns: [...input.memory.recentTurns, turn].slice(-MAX_MEMORY_TURNS),
     summary: updatedSummary
   };
+
 
   const updated: IprBoundMemoryRecord = {
     ...updatedWithoutHash,
     memoryHash: buildMemoryRecordHash(updatedWithoutHash)
   };
 
+
   store.set(updated.memoryKey, updated);
+
 
   return updated;
 }
+
 
 function formatMemoryTurnForPrompt(turn: MemoryTurn, index: number): string {
   return [
@@ -1304,13 +1611,16 @@ function formatMemoryTurnForPrompt(turn: MemoryTurn, index: number): string {
     .join(" ");
 }
 
+
 export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
   const currentIdentityAuthoritative = isCurrentIdentityAuthoritative(memory);
+
 
   const subjectLine =
     currentIdentityAuthoritative && memory.subject
       ? `Verified biological subject: ${memory.subject.entity} (${memory.subject.ipr}).`
       : "Verified biological subject: NOT_VERIFIED.";
+
 
   const certificateLine =
     currentIdentityAuthoritative && memory.certificate
@@ -1321,11 +1631,13 @@ export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
         ].join(" ")
       : "Certificate: NO_CERTIFICATE.";
 
+
   const recentTurns = memory.recentTurns.length
     ? memory.recentTurns
         .map((turn, index) => formatMemoryTurnForPrompt(turn, index))
         .join("\n")
     : "No previous memory turns recorded in this runtime process.";
+
 
   return [
     "HBCE-GENERATED IPR-BOUND MEMORY CONTEXT",
@@ -1367,6 +1679,10 @@ export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
     `Last memory EVT: ${memory.lastEvt || "none"}`,
     `Last memory OPC proof: ${memory.lastOpcProofId || "none"}`,
     `Last memory OPC chain hash: ${memory.lastOpcChainHash || "none"}`,
+    `Registered named events: ${(memory.registeredEvents || []).length}`,
+    ...(memory.registeredEvents || []).slice(-8).map((event) =>
+      `Registered event ${event.eventName}: EVT=${event.evt}; OPC=${event.opcProofId || "none"}; Audit=${event.auditId || "none"}; Usage=${event.usageId || "none"}; Tenant=${event.tenantId}; Workspace=${event.workspaceId}; Memory=${event.memoryId}; Created=${event.createdAt}.`
+    ),
     `Summary: ${memory.summary}`,
     "Canonical memory facts:",
     ...memory.facts.map((fact) => `- ${fact}`),
@@ -1387,10 +1703,12 @@ export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
   ].join("\n");
 }
 
+
 export function toPublicMemoryRecord(
   memory: IprBoundMemoryRecord
 ): PublicIprBoundMemoryRecord {
   const currentIdentityAuthoritative = isCurrentIdentityAuthoritative(memory);
+
 
   return {
     memoryId: memory.memoryId,
@@ -1414,6 +1732,7 @@ export function toPublicMemoryRecord(
     lastOpcProofId: memory.lastOpcProofId,
     lastOpcChainHash: memory.lastOpcChainHash,
     eventLinks: memory.eventLinks,
+    registeredEvents: memory.registeredEvents || [],
     facts:
       currentIdentityAuthoritative
         ? memory.facts
@@ -1424,13 +1743,16 @@ export function toPublicMemoryRecord(
   };
 }
 
+
 export function describeRuntimeMemoryStore(): IprBoundMemoryStoreDescription {
   return getPreferredDefaultRuntimeMemoryStore().describe();
 }
 
+
 export function getRuntimeMemoryStoreSize(): number {
   return getPreferredDefaultRuntimeMemoryStore().size();
 }
+
 
 export function getRuntimeMemoryByKeyHash(
   memoryKeyHash: string
@@ -1438,43 +1760,55 @@ export function getRuntimeMemoryByKeyHash(
   const memory =
     getPreferredDefaultRuntimeMemoryStore().findByMemoryKeyHash(memoryKeyHash);
 
+
   if (!memory) {
     return null;
   }
 
+
   return toPublicMemoryRecord(memory);
 }
+
 
 export function getRuntimeMemoryPersistenceFrame(): MemoryPersistenceFrame {
   return buildMemoryPersistenceFrame(getPreferredDefaultRuntimeMemoryStore());
 }
 
+
 export function isRuntimeMemoryDatabaseReady(): boolean {
   const persistence = getRuntimeMemoryPersistenceFrame();
+
 
   return persistence.databaseReady;
 }
 
+
 export function isRuntimeMemoryDatabasePersistent(): boolean {
   const persistence = getRuntimeMemoryPersistenceFrame();
 
+
   return persistence.mode === "DATABASE_PERSISTENT" && persistence.durable;
 }
+
 
 export function clearProcessRuntimeMemory(): void {
   getProcessIprBoundMemoryStore<IprBoundMemoryRecord>().clear();
 }
 
+
 export function getProcessMemoryStoreDescription(): IprBoundMemoryStoreDescription {
   return getProcessIprBoundMemoryStore<IprBoundMemoryRecord>().describe();
 }
+
 
 export function getDatabaseReadyMemoryStoreDescription(): IprBoundMemoryStoreDescription {
   return getDatabaseReadyIprBoundMemoryStore<IprBoundMemoryRecord>().describe();
 }
 
+
 export function getDefaultMemoryStoreDescription(): IprBoundMemoryStoreDescription {
   return describeDefaultIprBoundMemoryStore();
 }
+
 
 export { getRuntimeMemoryFlushErrors } from "./ipr-bound-memory-store";
