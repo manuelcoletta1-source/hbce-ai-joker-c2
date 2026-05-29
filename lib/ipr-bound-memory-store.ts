@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 
 
+
+
 import {
   describeDefaultHbceDatabase,
   ensureHbceDatabaseReady,
@@ -10,10 +12,14 @@ import {
 } from "./ipr-database";
 
 
+
+
 import type {
   HbceDatabaseQueryRow,
   HbceDatabaseQueryValue
 } from "./ipr-database";
+
+
 
 
 export type IprBoundMemoryStoreKind =
@@ -23,10 +29,14 @@ export type IprBoundMemoryStoreKind =
   | "EXTERNAL_ADAPTER";
 
 
+
+
 export type IprBoundMemoryStoreStatus =
   | "AVAILABLE"
   | "NOT_CONFIGURED"
   | "DEGRADED";
+
+
 
 
 export type IprBoundMemoryPersistenceStage =
@@ -37,10 +47,13 @@ export type IprBoundMemoryPersistenceStage =
   | "EXTERNAL_ADAPTER_TARGET";
 
 
+
+
 export type IprBoundMemoryStoreCapability =
   | "IPR_BOUND_MEMORY"
   | "MEMORY_KEY_LOOKUP"
   | "MEMORY_HASH_LOOKUP"
+  | "REGISTERED_EVENT_LOOKUP"
   | "PROCESS_SCOPED_RUNTIME"
   | "DATABASE_CONTRACT"
   | "DATABASE_CONNECTION_DETECTED"
@@ -59,6 +72,8 @@ export type IprBoundMemoryStoreCapability =
   | "RECOVERY_REQUIRED"
   | "MONITORING_REQUIRED"
   | "EXTERNAL_ADAPTER_CONTRACT";
+
+
 
 
 export type IprBoundMemoryStoreRecord = {
@@ -87,6 +102,8 @@ export type IprBoundMemoryStoreRecord = {
 };
 
 
+
+
 export type IprBoundMemoryRegisteredEvent = {
   registeredEventId: string;
   eventName: string;
@@ -111,12 +128,16 @@ export type IprBoundMemoryRegisteredEvent = {
 };
 
 
+
+
 export type IprBoundMemoryStoreDatabaseDescription = {
   configured: boolean;
   available: boolean;
   description: ReturnType<typeof describeDefaultHbceDatabase>;
   note: string;
 };
+
+
 
 
 export type IprBoundMemoryStoreDescription = {
@@ -137,11 +158,15 @@ export type IprBoundMemoryStoreDescription = {
 };
 
 
+
+
 export type IprBoundMemoryDatabaseWriteContext = {
   tenantId?: string | null;
   workspaceId?: string | null;
   threadId?: string | null;
 };
+
+
 
 
 export type IprBoundMemoryStoreAdapter<
@@ -153,7 +178,11 @@ export type IprBoundMemoryStoreAdapter<
   runtimeScoped: boolean;
 
 
+
+
   describe(): IprBoundMemoryStoreDescription;
+
+
 
 
   get(memoryKey: string): TRecord | undefined;
@@ -165,6 +194,8 @@ export type IprBoundMemoryStoreAdapter<
   values(): TRecord[];
   findByMemoryKeyHash(memoryKeyHash: string): TRecord | null;
 };
+
+
 
 
 export type IprBoundMemoryAsyncStoreAdapter<
@@ -183,6 +214,8 @@ export type IprBoundMemoryAsyncStoreAdapter<
   valuesAsync(): Promise<TRecord[]>;
   findByMemoryKeyHashAsync(memoryKeyHash: string): Promise<TRecord | null>;
 };
+
+
 
 
 type MemoryRecordDatabaseRow = HbceDatabaseQueryRow & {
@@ -205,6 +238,8 @@ type MemoryRecordDatabaseRow = HbceDatabaseQueryRow & {
   record_payload?: unknown;
   record_count?: number | string;
 };
+
+
 
 
 type MemoryRegisteredEventDatabaseRow = HbceDatabaseQueryRow & {
@@ -231,28 +266,42 @@ type MemoryRegisteredEventDatabaseRow = HbceDatabaseQueryRow & {
 };
 
 
+
+
 const PROCESS_MEMORY_STORE_BOUNDARY =
   "This adapter stores IPR-bound memory in server-side process memory only. It is valid for MVP runtime demonstrations, but it is not durable enterprise storage and may reset on redeploy, cold start, instance recycling or runtime migration.";
+
+
 
 
 const DATABASE_READY_BOUNDARY =
   "This adapter declares that the codebase is prepared for a database memory layer. It is not an active durable store until the async database memory writer is used by the runtime path.";
 
 
+
+
 const DATABASE_PERSISTENT_BOUNDARY =
   "This adapter provides the DATABASE_PERSISTENT target for durable SaaS memory through the memory_records table. The synchronous runtime path writes to process cache and schedules database persistence; the async path performs authoritative database read/write. It requires HBCE database availability, tenant and workspace scoping where available, access control, retention, deletion, backup, recovery and monitoring before production reliance.";
+
+
 
 
 const EXTERNAL_ADAPTER_BOUNDARY =
   "This adapter declares support for an external memory adapter supplied by the runtime. External adapters must enforce HBCE memory boundaries, IPR scoping, auditability, fail-closed behavior and legalCertification=false unless a valid regulated certification layer is later integrated.";
 
 
+
+
 const STORE_NOT_CONFIGURED_ERROR =
   "IPR_BOUND_MEMORY_DATABASE_STORE_NOT_CONFIGURED";
 
 
+
+
 const DATABASE_CLEAR_DISABLED_ERROR =
   "IPR_BOUND_MEMORY_DATABASE_CLEAR_DISABLED";
+
+
 
 
 const PROCESS_MEMORY_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
@@ -262,6 +311,8 @@ const PROCESS_MEMORY_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "REGISTERED_EVENT_LOOKUP",
   "PROCESS_SCOPED_RUNTIME"
 ];
+
+
 
 
 const DATABASE_READY_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
@@ -280,6 +331,8 @@ const DATABASE_READY_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "RETENTION_REQUIRED",
   "DELETION_REQUIRED"
 ];
+
+
 
 
 const DATABASE_PERSISTENT_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
@@ -305,6 +358,8 @@ const DATABASE_PERSISTENT_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
 ];
 
 
+
+
 const EXTERNAL_ADAPTER_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
   "IPR_BOUND_MEMORY",
   "MEMORY_KEY_LOOKUP",
@@ -320,12 +375,16 @@ const EXTERNAL_ADAPTER_CAPABILITIES: IprBoundMemoryStoreCapability[] = [
 ];
 
 
+
+
 const PROCESS_MEMORY_REQUIREMENTS = [
   "Use only for MVP runtime demonstrations.",
   "Do not treat process memory as durable SaaS storage.",
   "Do not rely on this adapter for enterprise audit, replay, retention or deletion guarantees.",
   "Expect reset on redeploy, cold start, instance recycling or runtime migration."
 ];
+
+
 
 
 const DATABASE_READY_REQUIREMENTS = [
@@ -338,6 +397,8 @@ const DATABASE_READY_REQUIREMENTS = [
   "Define audit backend.",
   "Define backup and recovery before production use."
 ];
+
+
 
 
 const DATABASE_PERSISTENT_REQUIREMENTS = [
@@ -357,6 +418,8 @@ const DATABASE_PERSISTENT_REQUIREMENTS = [
 ];
 
 
+
+
 const EXTERNAL_ADAPTER_REQUIREMENTS = [
   "External adapter must implement the full IprBoundMemoryStoreAdapter contract.",
   "External adapter must preserve IPR-bound memory boundaries.",
@@ -364,6 +427,8 @@ const EXTERNAL_ADAPTER_REQUIREMENTS = [
   "External adapter must expose auditability and fail-closed behavior.",
   "External adapter must preserve legalCertification=false unless a regulated certification layer is later integrated."
 ];
+
+
 
 
 type HbceJokerC2GlobalMemoryStore = typeof globalThis & {
@@ -375,7 +440,11 @@ type HbceJokerC2GlobalMemoryStore = typeof globalThis & {
 };
 
 
+
+
 const globalMemoryStore = globalThis as HbceJokerC2GlobalMemoryStore;
+
+
 
 
 const processMemoryMap =
@@ -383,19 +452,29 @@ const processMemoryMap =
   new Map<string, IprBoundMemoryStoreRecord>();
 
 
+
+
 globalMemoryStore.__HBCE_JOKER_C2_IPR_BOUND_MEMORY_STORE_V1__ =
   processMemoryMap;
+
+
 
 
 const memoryFlushErrors =
   globalMemoryStore.__HBCE_JOKER_C2_IPR_BOUND_MEMORY_FLUSH_ERRORS_V1__ ?? [];
 
 
+
+
 globalMemoryStore.__HBCE_JOKER_C2_IPR_BOUND_MEMORY_FLUSH_ERRORS_V1__ =
   memoryFlushErrors;
 
 
+
+
 let databaseSchemaReadyPromise: Promise<void> | null = null;
+
+
 
 
 function normalizeMemoryKey(value: string): string {
@@ -403,9 +482,13 @@ function normalizeMemoryKey(value: string): string {
 }
 
 
+
+
 function normalizeMemoryKeyHash(value: string): string {
   return value.replace(/\s+/g, "").trim().toUpperCase();
 }
+
+
 
 
 function sha256Hex(value: string): string {
@@ -413,8 +496,12 @@ function sha256Hex(value: string): string {
 }
 
 
+
+
 function assertMemoryKey(memoryKey: string): string {
   const normalized = normalizeMemoryKey(memoryKey);
+
+
 
 
   if (!normalized) {
@@ -422,8 +509,12 @@ function assertMemoryKey(memoryKey: string): string {
   }
 
 
+
+
   return normalized;
 }
+
+
 
 
 function memoryKeyToHash(memoryKey: string): string {
@@ -431,8 +522,12 @@ function memoryKeyToHash(memoryKey: string): string {
 }
 
 
+
+
 function assertMemoryKeyHash(memoryKeyHash: string): string {
   const normalized = normalizeMemoryKeyHash(memoryKeyHash);
+
+
 
 
   if (!normalized) {
@@ -440,8 +535,12 @@ function assertMemoryKeyHash(memoryKeyHash: string): string {
   }
 
 
+
+
   return normalized;
 }
+
+
 
 
 function assertMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
@@ -452,13 +551,19 @@ function assertMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
   }
 
 
+
+
   if (!record.memoryId || !record.memoryKey || !record.memoryKeyHash) {
     throw new Error("IPR_BOUND_MEMORY_STORE_INCOMPLETE_RECORD");
   }
 
 
+
+
   return record;
 }
+
+
 
 
 function normalizeMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
@@ -466,6 +571,8 @@ function normalizeMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
 ): TRecord {
   const safeRecord = assertMemoryRecord(record);
   const memoryKey = assertMemoryKey(safeRecord.memoryKey);
+
+
 
 
   return {
@@ -476,13 +583,19 @@ function normalizeMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
 }
 
 
+
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 
+
+
 function readRecordPath(value: unknown, path: string[]): unknown {
   let current: unknown = value;
+
+
 
 
   for (const key of path) {
@@ -491,16 +604,24 @@ function readRecordPath(value: unknown, path: string[]): unknown {
     }
 
 
+
+
     current = current[key];
   }
+
+
 
 
   return current;
 }
 
 
+
+
 function readStringPath(value: unknown, path: string[], fallback = ""): string {
   const item = readRecordPath(value, path);
+
+
 
 
   if (typeof item === "string" && item.trim()) {
@@ -508,26 +629,38 @@ function readStringPath(value: unknown, path: string[], fallback = ""): string {
   }
 
 
+
+
   if (typeof item === "number" || typeof item === "boolean") {
     return String(item);
   }
+
+
 
 
   return fallback;
 }
 
 
+
+
 function readNullableStringPath(value: unknown, path: string[]): string | null {
   const text = readStringPath(value, path, "");
+
+
 
 
   return text || null;
 }
 
 
+
+
 function firstNullableStringPath(value: unknown, paths: string[][]): string | null {
   for (const path of paths) {
     const text = readNullableStringPath(value, path);
+
+
 
 
     if (text) {
@@ -536,8 +669,12 @@ function firstNullableStringPath(value: unknown, paths: string[][]): string | nu
   }
 
 
+
+
   return null;
 }
+
+
 
 
 function safeJsonParse(value: string): unknown {
@@ -549,27 +686,39 @@ function safeJsonParse(value: string): unknown {
 }
 
 
+
+
 function normalizeJsonPayload(value: unknown): Record<string, unknown> | null {
   if (isRecord(value)) {
     return value;
   }
 
 
+
+
   if (typeof value === "string" && value.trim()) {
     const parsed = safeJsonParse(value);
+
+
 
 
     return isRecord(parsed) ? parsed : null;
   }
 
 
+
+
   return null;
 }
+
+
 
 
 function getMemoryDatabaseDescription(): IprBoundMemoryStoreDatabaseDescription {
   const configured = isHbceDatabaseConfigured();
   const available = isHbceDatabaseAvailable();
+
+
 
 
   return {
@@ -585,31 +734,45 @@ function getMemoryDatabaseDescription(): IprBoundMemoryStoreDatabaseDescription 
 }
 
 
+
+
 function isDatabasePersistentUsable(): boolean {
   return isHbceDatabaseConfigured() && isHbceDatabaseAvailable();
 }
+
+
 
 
 function resolveDatabasePlaceholderStatus(): IprBoundMemoryStoreStatus {
   const database = getMemoryDatabaseDescription();
 
 
+
+
   if (!database.configured) {
     return "NOT_CONFIGURED";
   }
+
+
 
 
   return database.available ? "AVAILABLE" : "DEGRADED";
 }
 
 
+
+
 function resolveDatabasePersistentStatus(): IprBoundMemoryStoreStatus {
   const database = getMemoryDatabaseDescription();
+
+
 
 
   if (!database.configured) {
     return "NOT_CONFIGURED";
   }
+
+
 
 
   if (!database.available) {
@@ -617,8 +780,12 @@ function resolveDatabasePersistentStatus(): IprBoundMemoryStoreStatus {
   }
 
 
+
+
   return "AVAILABLE";
 }
+
+
 
 
 function buildStoreDescription(input: {
@@ -655,14 +822,20 @@ function buildStoreDescription(input: {
 }
 
 
+
+
 function throwStoreNotConfigured(): never {
   throw new Error(STORE_NOT_CONFIGURED_ERROR);
 }
 
 
+
+
 function rememberFlushError(error: unknown): void {
   const message = error instanceof Error ? error.message : String(error);
   memoryFlushErrors.push(message);
+
+
 
 
   while (memoryFlushErrors.length > 20) {
@@ -671,15 +844,21 @@ function rememberFlushError(error: unknown): void {
 }
 
 
+
+
 async function ensureDatabaseMemoryStoreReady(): Promise<void> {
   if (!isHbceDatabaseConfigured()) {
     throw new Error("IPR_BOUND_MEMORY_DATABASE_NOT_CONFIGURED");
   }
 
 
+
+
   if (!isHbceDatabaseAvailable()) {
     throw new Error("IPR_BOUND_MEMORY_DATABASE_NOT_AVAILABLE");
   }
+
+
 
 
   if (!databaseSchemaReadyPromise) {
@@ -694,6 +873,8 @@ async function ensureDatabaseMemoryStoreReady(): Promise<void> {
   }
 
 
+
+
   try {
     await databaseSchemaReadyPromise;
   } catch (error) {
@@ -704,9 +885,14 @@ async function ensureDatabaseMemoryStoreReady(): Promise<void> {
 
 
 
+
+
+
 function normalizeRegisteredEventName(value: unknown): string {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
+
+
 
 
 function readRegisteredEventsFromRecord(
@@ -715,9 +901,13 @@ function readRegisteredEventsFromRecord(
   const rawEvents = readRecordPath(record, ["registeredEvents"]);
 
 
+
+
   if (!Array.isArray(rawEvents)) {
     return [];
   }
+
+
 
 
   const fallbackTenantId = firstNullableStringPath(record, [
@@ -741,6 +931,8 @@ function readRegisteredEventsFromRecord(
     readStringPath(record, ["runtime", "ipr"], "") || "IPR-AI-0001";
 
 
+
+
   return rawEvents
     .filter(isRecord)
     .map((event, index) => {
@@ -751,9 +943,13 @@ function readRegisteredEventsFromRecord(
       );
 
 
+
+
       if (!eventName) {
         return null;
       }
+
+
 
 
       const evtId = firstNullableStringPath(event, [
@@ -790,6 +986,8 @@ function readRegisteredEventsFromRecord(
         readStringPath(event, ["registeredEventId"], "") ||
         readStringPath(event, ["eventId"], "") ||
         `MRE-${sha256Hex(`${record.memoryId}::${eventName}::${evtId || index}`).slice(0, 16)}`;
+
+
 
 
       return {
@@ -842,10 +1040,14 @@ function readRegisteredEventsFromRecord(
 }
 
 
+
+
 function databaseRowToRegisteredMemoryEvent(
   row: MemoryRegisteredEventDatabaseRow
 ): IprBoundMemoryRegisteredEvent | null {
   const eventName = normalizeRegisteredEventName(row.event_name);
+
+
 
 
   if (!eventName || !row.registered_event_id || !row.event_name_hash) {
@@ -853,7 +1055,11 @@ function databaseRowToRegisteredMemoryEvent(
   }
 
 
+
+
   const payload = normalizeJsonPayload(row.payload) || {};
+
+
 
 
   return {
@@ -884,10 +1090,14 @@ function databaseRowToRegisteredMemoryEvent(
 }
 
 
+
+
 async function upsertDatabaseRegisteredMemoryEvents(
   record: IprBoundMemoryStoreRecord
 ): Promise<void> {
   const events = readRegisteredEventsFromRecord(record);
+
+
 
 
   if (events.length === 0) {
@@ -895,7 +1105,11 @@ async function upsertDatabaseRegisteredMemoryEvents(
   }
 
 
+
+
   await ensureDatabaseMemoryStoreReady();
+
+
 
 
   for (const event of events) {
@@ -986,6 +1200,8 @@ ON CONFLICT (registered_event_id) DO UPDATE SET
     );
 
 
+
+
     if (!result.ok) {
       throw new Error(
         result.error || "IPR_BOUND_MEMORY_REGISTERED_EVENT_UPSERT_FAILED"
@@ -993,6 +1209,8 @@ ON CONFLICT (registered_event_id) DO UPDATE SET
     }
   }
 }
+
+
 
 
 function memoryRecordToDatabaseFields(
@@ -1020,12 +1238,16 @@ function memoryRecordToDatabaseFields(
   const normalizedRecord = normalizeMemoryRecord(record);
 
 
+
+
   const tenantId =
     context?.tenantId ||
     firstNullableStringPath(normalizedRecord, [
       ["tenantId"],
       ["saas", "tenantId"]
     ]);
+
+
 
 
   const workspaceId =
@@ -1036,14 +1258,20 @@ function memoryRecordToDatabaseFields(
     ]);
 
 
+
+
   const runtimeIpr =
     readStringPath(normalizedRecord, ["runtime", "ipr"], "") ||
     "IPR-AI-0001";
 
 
+
+
   const sessionId =
     readStringPath(normalizedRecord, ["sessionId"], "") ||
     "UNKNOWN_SESSION";
+
+
 
 
   const threadId =
@@ -1055,9 +1283,13 @@ function memoryRecordToDatabaseFields(
     ]);
 
 
+
+
   const scope =
     readStringPath(normalizedRecord, ["scope"], "") ||
     "RUNTIME_ONLY";
+
+
 
 
   const authority =
@@ -1065,15 +1297,21 @@ function memoryRecordToDatabaseFields(
     "SESSION_RUNTIME_ONLY";
 
 
+
+
   const memoryHash =
     readStringPath(normalizedRecord, ["memoryHash"], "") ||
     sha256Hex(JSON.stringify(normalizedRecord));
+
+
 
 
   const lastOpcChainHash = readNullableStringPath(
     normalizedRecord,
     ["lastOpcChainHash"]
   );
+
+
 
 
   const persistentPayload = {
@@ -1111,6 +1349,8 @@ function memoryRecordToDatabaseFields(
   };
 
 
+
+
   return {
     tenantId,
     workspaceId,
@@ -1133,15 +1373,21 @@ function memoryRecordToDatabaseFields(
 }
 
 
+
+
 function databaseRowToMemoryRecord<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
 >(row: MemoryRecordDatabaseRow): TRecord | null {
   const payload = normalizeJsonPayload(row.record_payload);
 
 
+
+
   if (!payload) {
     return null;
   }
+
+
 
 
   const candidate = {
@@ -1161,14 +1407,20 @@ function databaseRowToMemoryRecord<
   };
 
 
+
+
   if (!readStringPath(candidate, ["memoryKey"], "")) {
     return null;
   }
 
 
+
+
   const normalized = normalizeMemoryRecord(
     candidate as unknown as TRecord
   ) as TRecord;
+
+
 
 
   return {
@@ -1208,17 +1460,25 @@ function databaseRowToMemoryRecord<
 }
 
 
+
+
 function cacheProcessMemoryRecord<TRecord extends IprBoundMemoryStoreRecord>(
   record: TRecord
 ): TRecord {
   const normalized = normalizeMemoryRecord(record);
 
 
+
+
   processMemoryMap.set(normalized.memoryKey, normalized);
+
+
 
 
   return normalized;
 }
+
+
 
 
 async function querySingleMemoryRecord<
@@ -1230,7 +1490,11 @@ async function querySingleMemoryRecord<
   await ensureDatabaseMemoryStoreReady();
 
 
+
+
   const result = await queryHbceDatabase<MemoryRecordDatabaseRow>(sql, params);
+
+
 
 
   if (!result.ok) {
@@ -1238,7 +1502,11 @@ async function querySingleMemoryRecord<
   }
 
 
+
+
   const row = result.rows[0];
+
+
 
 
   if (!row) {
@@ -1246,8 +1514,12 @@ async function querySingleMemoryRecord<
   }
 
 
+
+
   return databaseRowToMemoryRecord<TRecord>(row);
 }
+
+
 
 
 async function upsertDatabaseMemoryRecord<
@@ -1259,8 +1531,12 @@ async function upsertDatabaseMemoryRecord<
   await ensureDatabaseMemoryStoreReady();
 
 
+
+
   const normalizedRecord = normalizeMemoryRecord(record);
   const fields = memoryRecordToDatabaseFields(normalizedRecord, context);
+
+
 
 
   const result = await queryHbceDatabase<MemoryRecordDatabaseRow>(
@@ -1365,16 +1641,24 @@ RETURNING
   );
 
 
+
+
   if (!result.ok) {
     throw new Error(result.error || "IPR_BOUND_MEMORY_DATABASE_UPSERT_FAILED");
   }
 
 
+
+
   await upsertDatabaseRegisteredMemoryEvents(normalizedRecord);
+
+
 
 
   const persisted =
     result.rows[0] ? databaseRowToMemoryRecord<TRecord>(result.rows[0]) : null;
+
+
 
 
   const finalRecord = persisted || ({
@@ -1386,11 +1670,17 @@ RETURNING
   } as TRecord);
 
 
+
+
   cacheProcessMemoryRecord(finalRecord);
+
+
 
 
   return finalRecord;
 }
+
+
 
 
 function scheduleDatabaseMemoryFlush<
@@ -1404,10 +1694,14 @@ function scheduleDatabaseMemoryFlush<
   }
 
 
+
+
   void upsertDatabaseMemoryRecord(record, context).catch((error) => {
     rememberFlushError(error);
   });
 }
+
+
 
 
 export function createProcessMemoryStoreAdapter<
@@ -1420,6 +1714,8 @@ export function createProcessMemoryStoreAdapter<
     kind: "PROCESS_MEMORY_MVP",
     durable: false,
     runtimeScoped: true,
+
+
 
 
     describe(): IprBoundMemoryStoreDescription {
@@ -1441,9 +1737,13 @@ export function createProcessMemoryStoreAdapter<
     },
 
 
+
+
     get(memoryKey: string): TRecord | undefined {
       return store.get(assertMemoryKey(memoryKey));
     },
+
+
 
 
     set(memoryKey: string, record: TRecord): TRecord {
@@ -1451,16 +1751,24 @@ export function createProcessMemoryStoreAdapter<
       const normalizedRecord = normalizeMemoryRecord(record);
 
 
+
+
       if (normalizedRecord.memoryKey !== normalizedKey) {
         throw new Error("IPR_BOUND_MEMORY_STORE_KEY_RECORD_MISMATCH");
       }
 
 
+
+
       store.set(normalizedKey, normalizedRecord);
+
+
 
 
       return normalizedRecord;
     },
+
+
 
 
     has(memoryKey: string): boolean {
@@ -1468,9 +1776,13 @@ export function createProcessMemoryStoreAdapter<
     },
 
 
+
+
     delete(memoryKey: string): boolean {
       return store.delete(assertMemoryKey(memoryKey));
     },
+
+
 
 
     clear(): void {
@@ -1478,9 +1790,13 @@ export function createProcessMemoryStoreAdapter<
     },
 
 
+
+
     size(): number {
       return store.size;
     },
+
+
 
 
     values(): TRecord[] {
@@ -1488,8 +1804,12 @@ export function createProcessMemoryStoreAdapter<
     },
 
 
+
+
     findByMemoryKeyHash(memoryKeyHash: string): TRecord | null {
       const normalizedHash = assertMemoryKeyHash(memoryKeyHash);
+
+
 
 
       for (const record of store.values()) {
@@ -1499,8 +1819,12 @@ export function createProcessMemoryStoreAdapter<
       }
 
 
+
+
       return null;
     },
+
+
 
 
     async getAsync(memoryKey: string): Promise<TRecord | undefined> {
@@ -1508,9 +1832,13 @@ export function createProcessMemoryStoreAdapter<
     },
 
 
+
+
     async setAsync(memoryKey: string, record: TRecord): Promise<TRecord> {
       return this.set(memoryKey, record);
     },
+
+
 
 
     async hasAsync(memoryKey: string): Promise<boolean> {
@@ -1518,9 +1846,13 @@ export function createProcessMemoryStoreAdapter<
     },
 
 
+
+
     async deleteAsync(memoryKey: string): Promise<boolean> {
       return this.delete(memoryKey);
     },
+
+
 
 
     async clearAsync(): Promise<void> {
@@ -1528,9 +1860,13 @@ export function createProcessMemoryStoreAdapter<
     },
 
 
+
+
     async sizeAsync(): Promise<number> {
       return this.size();
     },
+
+
 
 
     async valuesAsync(): Promise<TRecord[]> {
@@ -1538,11 +1874,15 @@ export function createProcessMemoryStoreAdapter<
     },
 
 
+
+
     async findByMemoryKeyHashAsync(memoryKeyHash: string): Promise<TRecord | null> {
       return this.findByMemoryKeyHash(memoryKeyHash);
     }
   };
 }
+
+
 
 
 function createUnavailableMemoryStoreAdapter<
@@ -1567,6 +1907,8 @@ function createUnavailableMemoryStoreAdapter<
     runtimeScoped: input.runtimeScoped,
 
 
+
+
     describe(): IprBoundMemoryStoreDescription {
       return buildStoreDescription({
         name: this.name,
@@ -1588,10 +1930,14 @@ function createUnavailableMemoryStoreAdapter<
     },
 
 
+
+
     get(memoryKey: string): TRecord | undefined {
       void memoryKey;
       return throwStoreNotConfigured();
     },
+
+
 
 
     set(memoryKey: string, record: TRecord): TRecord {
@@ -1601,10 +1947,14 @@ function createUnavailableMemoryStoreAdapter<
     },
 
 
+
+
     has(memoryKey: string): boolean {
       void memoryKey;
       return throwStoreNotConfigured();
     },
+
+
 
 
     delete(memoryKey: string): boolean {
@@ -1613,9 +1963,13 @@ function createUnavailableMemoryStoreAdapter<
     },
 
 
+
+
     clear(): void {
       throwStoreNotConfigured();
     },
+
+
 
 
     size(): number {
@@ -1623,9 +1977,13 @@ function createUnavailableMemoryStoreAdapter<
     },
 
 
+
+
     values(): TRecord[] {
       return [];
     },
+
+
 
 
     findByMemoryKeyHash(memoryKeyHash: string): TRecord | null {
@@ -1634,10 +1992,14 @@ function createUnavailableMemoryStoreAdapter<
     },
 
 
+
+
     async getAsync(memoryKey: string): Promise<TRecord | undefined> {
       void memoryKey;
       return throwStoreNotConfigured();
     },
+
+
 
 
     async setAsync(memoryKey: string, record: TRecord): Promise<TRecord> {
@@ -1647,10 +2009,14 @@ function createUnavailableMemoryStoreAdapter<
     },
 
 
+
+
     async hasAsync(memoryKey: string): Promise<boolean> {
       void memoryKey;
       return throwStoreNotConfigured();
     },
+
+
 
 
     async deleteAsync(memoryKey: string): Promise<boolean> {
@@ -1659,9 +2025,13 @@ function createUnavailableMemoryStoreAdapter<
     },
 
 
+
+
     async clearAsync(): Promise<void> {
       throwStoreNotConfigured();
     },
+
+
 
 
     async sizeAsync(): Promise<number> {
@@ -1669,9 +2039,13 @@ function createUnavailableMemoryStoreAdapter<
     },
 
 
+
+
     async valuesAsync(): Promise<TRecord[]> {
       return [];
     },
+
+
 
 
     async findByMemoryKeyHashAsync(memoryKeyHash: string): Promise<TRecord | null> {
@@ -1680,6 +2054,8 @@ function createUnavailableMemoryStoreAdapter<
     }
   };
 }
+
+
 
 
 export function createDatabaseReadyPlaceholderAdapter<
@@ -1701,6 +2077,8 @@ export function createDatabaseReadyPlaceholderAdapter<
 }
 
 
+
+
 export function createDatabasePersistentMemoryStoreAdapter<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
 >(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
@@ -1711,8 +2089,12 @@ export function createDatabasePersistentMemoryStoreAdapter<
     runtimeScoped: !isDatabasePersistentUsable(),
 
 
+
+
     describe(): IprBoundMemoryStoreDescription {
       const active = isDatabasePersistentUsable();
+
+
 
 
       return buildStoreDescription({
@@ -1735,9 +2117,13 @@ export function createDatabasePersistentMemoryStoreAdapter<
     },
 
 
+
+
     get(memoryKey: string): TRecord | undefined {
       return processIprBoundMemoryStore.get(memoryKey) as TRecord | undefined;
     },
+
+
 
 
     set(memoryKey: string, record: TRecord): TRecord {
@@ -1745,9 +2131,13 @@ export function createDatabasePersistentMemoryStoreAdapter<
       const normalizedRecord = normalizeMemoryRecord(record);
 
 
+
+
       if (normalizedRecord.memoryKey !== normalizedKey) {
         throw new Error("IPR_BOUND_MEMORY_STORE_KEY_RECORD_MISMATCH");
       }
+
+
 
 
       const cached = {
@@ -1756,12 +2146,18 @@ export function createDatabasePersistentMemoryStoreAdapter<
       } as TRecord;
 
 
+
+
       cacheProcessMemoryRecord(cached);
       scheduleDatabaseMemoryFlush(cached);
 
 
+
+
       return cached;
     },
+
+
 
 
     has(memoryKey: string): boolean {
@@ -1769,9 +2165,13 @@ export function createDatabasePersistentMemoryStoreAdapter<
     },
 
 
+
+
     delete(memoryKey: string): boolean {
       const normalizedKey = assertMemoryKey(memoryKey);
       const deleted = processIprBoundMemoryStore.delete(normalizedKey);
+
+
 
 
       if (isDatabasePersistentUsable()) {
@@ -1781,8 +2181,12 @@ export function createDatabasePersistentMemoryStoreAdapter<
       }
 
 
+
+
       return deleted;
     },
+
+
 
 
     clear(): void {
@@ -1790,14 +2194,20 @@ export function createDatabasePersistentMemoryStoreAdapter<
     },
 
 
+
+
     size(): number {
       return processIprBoundMemoryStore.size();
     },
 
 
+
+
     values(): TRecord[] {
       return processIprBoundMemoryStore.values() as TRecord[];
     },
+
+
 
 
     findByMemoryKeyHash(memoryKeyHash: string): TRecord | null {
@@ -1807,6 +2217,8 @@ export function createDatabasePersistentMemoryStoreAdapter<
     },
 
 
+
+
     async getAsync(memoryKey: string): Promise<TRecord | undefined> {
       const normalizedKey = assertMemoryKey(memoryKey);
       const cached = processIprBoundMemoryStore.get(normalizedKey) as
@@ -1814,12 +2226,18 @@ export function createDatabasePersistentMemoryStoreAdapter<
         | undefined;
 
 
+
+
       if (cached) {
         return cached;
       }
 
 
+
+
       const memoryKeyHash = memoryKeyToHash(normalizedKey);
+
+
 
 
       const record = await querySingleMemoryRecord<TRecord>(
@@ -1853,13 +2271,19 @@ LIMIT 1;
       );
 
 
+
+
       if (record) {
         cacheProcessMemoryRecord(record);
       }
 
 
+
+
       return record || undefined;
     },
+
+
 
 
     async setAsync(
@@ -1871,9 +2295,13 @@ LIMIT 1;
       const normalizedRecord = normalizeMemoryRecord(record);
 
 
+
+
       if (normalizedRecord.memoryKey !== normalizedKey) {
         throw new Error("IPR_BOUND_MEMORY_STORE_KEY_RECORD_MISMATCH");
       }
+
+
 
 
       const persisted = await upsertDatabaseMemoryRecord<TRecord>(
@@ -1886,27 +2314,41 @@ LIMIT 1;
       );
 
 
+
+
       cacheProcessMemoryRecord(persisted);
+
+
 
 
       return persisted;
     },
 
 
+
+
     async hasAsync(memoryKey: string): Promise<boolean> {
       const record = await this.getAsync(memoryKey);
+
+
 
 
       return Boolean(record);
     },
 
 
+
+
     async deleteAsync(memoryKey: string): Promise<boolean> {
       await ensureDatabaseMemoryStoreReady();
 
 
+
+
       const normalizedKey = assertMemoryKey(memoryKey);
       const memoryKeyHash = memoryKeyToHash(normalizedKey);
+
+
 
 
       const result = await queryHbceDatabase<MemoryRecordDatabaseRow>(
@@ -1921,16 +2363,24 @@ RETURNING memory_id;
       );
 
 
+
+
       if (!result.ok) {
         throw new Error(result.error || "IPR_BOUND_MEMORY_DATABASE_DELETE_FAILED");
       }
 
 
+
+
       processIprBoundMemoryStore.delete(normalizedKey);
+
+
 
 
       return result.rows.length > 0;
     },
+
+
 
 
     async clearAsync(): Promise<void> {
@@ -1939,7 +2389,11 @@ RETURNING memory_id;
       }
 
 
+
+
       await ensureDatabaseMemoryStoreReady();
+
+
 
 
       const result = await queryHbceDatabase(
@@ -1951,17 +2405,25 @@ WHERE legal_certification = false;
       );
 
 
+
+
       if (!result.ok) {
         throw new Error(result.error || "IPR_BOUND_MEMORY_DATABASE_CLEAR_FAILED");
       }
+
+
 
 
       processIprBoundMemoryStore.clear();
     },
 
 
+
+
     async sizeAsync(): Promise<number> {
       await ensureDatabaseMemoryStoreReady();
+
+
 
 
       const result = await queryHbceDatabase<MemoryRecordDatabaseRow>(
@@ -1974,12 +2436,18 @@ WHERE legal_certification = false;
       );
 
 
+
+
       if (!result.ok) {
         throw new Error(result.error || "IPR_BOUND_MEMORY_DATABASE_SIZE_FAILED");
       }
 
 
+
+
       const count = result.rows[0]?.record_count;
+
+
 
 
       if (typeof count === "number") {
@@ -1987,20 +2455,30 @@ WHERE legal_certification = false;
       }
 
 
+
+
       if (typeof count === "string") {
         const parsed = Number.parseInt(count, 10);
+
+
 
 
         return Number.isFinite(parsed) ? parsed : 0;
       }
 
 
+
+
       return 0;
     },
 
 
+
+
     async valuesAsync(): Promise<TRecord[]> {
       await ensureDatabaseMemoryStoreReady();
+
+
 
 
       const result = await queryHbceDatabase<MemoryRecordDatabaseRow>(
@@ -2032,9 +2510,13 @@ LIMIT 100;
       );
 
 
+
+
       if (!result.ok) {
         throw new Error(result.error || "IPR_BOUND_MEMORY_DATABASE_VALUES_FAILED");
       }
+
+
 
 
       return result.rows
@@ -2043,8 +2525,12 @@ LIMIT 100;
     },
 
 
+
+
     async findByMemoryKeyHashAsync(memoryKeyHash: string): Promise<TRecord | null> {
       const normalizedHash = assertMemoryKeyHash(memoryKeyHash);
+
+
 
 
       const cached = processIprBoundMemoryStore.findByMemoryKeyHash(normalizedHash) as
@@ -2052,9 +2538,13 @@ LIMIT 100;
         | null;
 
 
+
+
       if (cached) {
         return cached;
       }
+
+
 
 
       const record = await querySingleMemoryRecord<TRecord>(
@@ -2087,9 +2577,13 @@ LIMIT 1;
       );
 
 
+
+
       if (record) {
         cacheProcessMemoryRecord(record);
       }
+
+
 
 
       return record;
@@ -2098,11 +2592,15 @@ LIMIT 1;
 }
 
 
+
+
 export function createDatabasePersistentPlaceholderAdapter<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
 >(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
   return createDatabasePersistentMemoryStoreAdapter<TRecord>();
 }
+
+
 
 
 export function createExternalAdapterPlaceholder<
@@ -2124,6 +2622,8 @@ export function createExternalAdapterPlaceholder<
 }
 
 
+
+
 export function createExternalIprBoundMemoryStoreAdapter<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
 >(
@@ -2132,9 +2632,13 @@ export function createExternalIprBoundMemoryStoreAdapter<
   const description = adapter.describe();
 
 
+
+
   if (adapter.kind !== "EXTERNAL_ADAPTER") {
     throw new Error("IPR_BOUND_MEMORY_EXTERNAL_ADAPTER_KIND_REQUIRED");
   }
+
+
 
 
   if (description.legalCertification !== false) {
@@ -2142,9 +2646,13 @@ export function createExternalIprBoundMemoryStoreAdapter<
   }
 
 
+
+
   if (!adapter.durable) {
     throw new Error("IPR_BOUND_MEMORY_EXTERNAL_ADAPTER_MUST_BE_DURABLE");
   }
+
+
 
 
   if (adapter.runtimeScoped) {
@@ -2152,8 +2660,12 @@ export function createExternalIprBoundMemoryStoreAdapter<
   }
 
 
+
+
   return adapter;
 }
+
+
 
 
 export const processIprBoundMemoryStore =
@@ -2162,16 +2674,24 @@ export const processIprBoundMemoryStore =
   );
 
 
+
+
 export const databaseReadyIprBoundMemoryStore =
   createDatabaseReadyPlaceholderAdapter<IprBoundMemoryStoreRecord>();
+
+
 
 
 export const databasePersistentIprBoundMemoryStore =
   createDatabasePersistentMemoryStoreAdapter<IprBoundMemoryStoreRecord>();
 
 
+
+
 export const externalIprBoundMemoryStore =
   createExternalAdapterPlaceholder<IprBoundMemoryStoreRecord>();
+
+
 
 
 export function getDefaultIprBoundMemoryStore<
@@ -2182,8 +2702,12 @@ export function getDefaultIprBoundMemoryStore<
   }
 
 
+
+
   return processIprBoundMemoryStore as unknown as IprBoundMemoryStoreAdapter<TRecord>;
 }
+
+
 
 
 export function getDefaultIprBoundMemoryAsyncStore<
@@ -2194,8 +2718,12 @@ export function getDefaultIprBoundMemoryAsyncStore<
   }
 
 
+
+
   return getProcessIprBoundMemoryStore<TRecord>();
 }
+
+
 
 
 export function getProcessIprBoundMemoryStore<
@@ -2203,6 +2731,8 @@ export function getProcessIprBoundMemoryStore<
 >(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
   return processIprBoundMemoryStore as unknown as IprBoundMemoryAsyncStoreAdapter<TRecord>;
 }
+
+
 
 
 export function getDatabaseReadyIprBoundMemoryStore<
@@ -2213,8 +2743,12 @@ export function getDatabaseReadyIprBoundMemoryStore<
   }
 
 
+
+
   return databaseReadyIprBoundMemoryStore as unknown as IprBoundMemoryAsyncStoreAdapter<TRecord>;
 }
+
+
 
 
 export function getDatabasePersistentIprBoundMemoryStore<
@@ -2224,6 +2758,8 @@ export function getDatabasePersistentIprBoundMemoryStore<
 }
 
 
+
+
 export function getExternalIprBoundMemoryStore<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
 >(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
@@ -2231,11 +2767,15 @@ export function getExternalIprBoundMemoryStore<
 }
 
 
+
+
 export function getSaasTargetIprBoundMemoryStore<
   TRecord extends IprBoundMemoryStoreRecord = IprBoundMemoryStoreRecord
 >(): IprBoundMemoryAsyncStoreAdapter<TRecord> {
   return getDatabasePersistentIprBoundMemoryStore<TRecord>();
 }
+
+
 
 
 export function selectIprBoundMemoryStore<
@@ -2248,9 +2788,13 @@ export function selectIprBoundMemoryStore<
   }
 
 
+
+
   if (kind === "DATABASE_READY") {
     return getDatabaseReadyIprBoundMemoryStore<TRecord>();
   }
+
+
 
 
   if (kind === "DATABASE_PERSISTENT") {
@@ -2258,8 +2802,12 @@ export function selectIprBoundMemoryStore<
   }
 
 
+
+
   return getExternalIprBoundMemoryStore<TRecord>();
 }
+
+
 
 
 export function selectIprBoundMemoryAsyncStore<
@@ -2272,9 +2820,13 @@ export function selectIprBoundMemoryAsyncStore<
   }
 
 
+
+
   if (kind === "DATABASE_READY") {
     return getDatabaseReadyIprBoundMemoryStore<TRecord>();
   }
+
+
 
 
   if (kind === "DATABASE_PERSISTENT") {
@@ -2282,8 +2834,12 @@ export function selectIprBoundMemoryAsyncStore<
   }
 
 
+
+
   return getExternalIprBoundMemoryStore<TRecord>();
 }
+
+
 
 
 export function isIprBoundMemoryDatabaseConfigured(): boolean {
@@ -2291,9 +2847,13 @@ export function isIprBoundMemoryDatabaseConfigured(): boolean {
 }
 
 
+
+
 export function isIprBoundMemoryDatabaseAvailable(): boolean {
   return isHbceDatabaseAvailable();
 }
+
+
 
 
 export function isIprBoundMemoryDatabasePersistentActive(): boolean {
@@ -2301,14 +2861,21 @@ export function isIprBoundMemoryDatabasePersistentActive(): boolean {
 }
 
 
+
+
 export function getIprBoundMemoryDatabaseDescription(): IprBoundMemoryStoreDatabaseDescription {
   return getMemoryDatabaseDescription();
 }
 
 
+
+
 export async function ensureIprBoundMemoryDatabaseReady(): Promise<void> {
   await ensureDatabaseMemoryStoreReady();
 }
+
+
+
 
 
 
@@ -2322,12 +2889,18 @@ export async function findRegisteredMemoryEventByNameAsync(input: {
   await ensureDatabaseMemoryStoreReady();
 
 
+
+
   const eventName = normalizeRegisteredEventName(input.eventName);
+
+
 
 
   if (!eventName) {
     throw new Error("IPR_BOUND_MEMORY_REGISTERED_EVENT_NAME_REQUIRED");
   }
+
+
 
 
   const result = await queryHbceDatabase<MemoryRegisteredEventDatabaseRow>(
@@ -2373,6 +2946,8 @@ LIMIT 1;
   );
 
 
+
+
   if (!result.ok) {
     throw new Error(
       result.error || "IPR_BOUND_MEMORY_REGISTERED_EVENT_LOOKUP_FAILED"
@@ -2380,10 +2955,14 @@ LIMIT 1;
   }
 
 
+
+
   return result.rows[0]
     ? databaseRowToRegisteredMemoryEvent(result.rows[0])
     : null;
 }
+
+
 
 
 export async function listRegisteredMemoryEventsAsync(input: {
@@ -2394,6 +2973,8 @@ export async function listRegisteredMemoryEventsAsync(input: {
   limit?: number;
 } = {}): Promise<IprBoundMemoryRegisteredEvent[]> {
   await ensureDatabaseMemoryStoreReady();
+
+
 
 
   const limit = Math.min(Math.max(input.limit ?? 25, 1), 100);
@@ -2439,6 +3020,8 @@ LIMIT $5;
   );
 
 
+
+
   if (!result.ok) {
     throw new Error(
       result.error || "IPR_BOUND_MEMORY_REGISTERED_EVENTS_LIST_FAILED"
@@ -2446,10 +3029,14 @@ LIMIT $5;
   }
 
 
+
+
   return result.rows
     .map((row) => databaseRowToRegisteredMemoryEvent(row))
     .filter((event): event is IprBoundMemoryRegisteredEvent => Boolean(event));
 }
+
+
 
 
 export async function getRuntimeMemoryByKeyHashAsync(
@@ -2461,9 +3048,13 @@ export async function getRuntimeMemoryByKeyHashAsync(
 }
 
 
+
+
 export async function getRuntimeMemoryStoreSizeAsync(): Promise<number> {
   return getDefaultIprBoundMemoryAsyncStore().sizeAsync();
 }
+
+
 
 
 export function describeDefaultIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
@@ -2471,9 +3062,13 @@ export function describeDefaultIprBoundMemoryStore(): IprBoundMemoryStoreDescrip
 }
 
 
+
+
 export function describeDefaultIprBoundMemoryAsyncStore(): IprBoundMemoryStoreDescription {
   return getDefaultIprBoundMemoryAsyncStore().describe();
 }
+
+
 
 
 export function describeProcessIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
@@ -2481,9 +3076,13 @@ export function describeProcessIprBoundMemoryStore(): IprBoundMemoryStoreDescrip
 }
 
 
+
+
 export function describeDatabaseReadyIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
   return getDatabaseReadyIprBoundMemoryStore().describe();
 }
+
+
 
 
 export function describeDatabasePersistentIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
@@ -2491,14 +3090,20 @@ export function describeDatabasePersistentIprBoundMemoryStore(): IprBoundMemoryS
 }
 
 
+
+
 export function describeExternalIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
   return getExternalIprBoundMemoryStore().describe();
 }
 
 
+
+
 export function describeSaasTargetIprBoundMemoryStore(): IprBoundMemoryStoreDescription {
   return getSaasTargetIprBoundMemoryStore().describe();
 }
+
+
 
 
 export function listIprBoundMemoryStoreDescriptions(): IprBoundMemoryStoreDescription[] {
@@ -2511,9 +3116,13 @@ export function listIprBoundMemoryStoreDescriptions(): IprBoundMemoryStoreDescri
 }
 
 
+
+
 export function getRuntimeMemoryStoreSize(): number {
   return getDefaultIprBoundMemoryStore().size();
 }
+
+
 
 
 export function getRuntimeMemoryByKeyHash(
@@ -2523,14 +3132,20 @@ export function getRuntimeMemoryByKeyHash(
 }
 
 
+
+
 export function getRuntimeMemoryFlushErrors(): string[] {
   return [...memoryFlushErrors];
 }
 
 
+
+
 export function clearProcessRuntimeMemory(): void {
   processIprBoundMemoryStore.clear();
 }
+
+
 
 
 export async function clearPersistentRuntimeMemoryForTestsOnly(): Promise<void> {
