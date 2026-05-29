@@ -1,8 +1,8 @@
-export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.5";
+export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.6";
 
 
 export const HBCE_DATABASE_SCHEMA_BOUNDARY =
-  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.5 introduces memory_registered_events for named SaaS B2G event recall and preserves the canonical HBCE internal self-pilot SaaS seed for tenant, workspace, subscription, IPR subject, membership and account profile continuity. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
+  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.6 introduces the JOKER-C2 Temporal Runtime Certificate, preserves memory_registered_events for named SaaS B2G event recall and preserves the canonical HBCE internal self-pilot SaaS seed for tenant, workspace, subscription, IPR subject, membership and account profile continuity. The temporal certificate is a technical runtime frame built from UTC response time, the canonical local birth anchor and AI JOKER-C2 lifetime; it is not a qualified timestamp or legal certification. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
 
 
 export const HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY =
@@ -13,6 +13,25 @@ export const HBCE_DATABASE_PERSISTENCE_MODE = "DATABASE_PERSISTENT";
 
 
 export const HBCE_PROJECT_BIRTH_DATE = "2026-01-19";
+
+
+export const HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL =
+  "2026-01-19T15:30:00+01:00";
+
+
+export const HBCE_JOKER_C2_BIRTH_TIME_ZONE = "Europe/Rome";
+
+
+export const HBCE_JOKER_C2_BIRTH_ANCHOR_UTC =
+  "2026-01-19T14:30:00.000Z";
+
+
+export const HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME =
+  "JOKER-C2 Temporal Runtime Certificate";
+
+
+export const HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_BOUNDARY =
+  "JOKER-C2 Temporal Runtime Certificate links UTC response time, canonical local birth anchor and AI JOKER-C2 lifetime as a technical-operational temporal frame. It is not legal certification, not a qualified timestamp and not public authority validation.";
 
 
 export const HBCE_PROJECT_BIRTH_LABEL =
@@ -123,6 +142,13 @@ export type HbceDatabaseSchemaDefinition = {
   boundary: string;
   legalCertificationBoundary: string;
   projectBirthDate: typeof HBCE_PROJECT_BIRTH_DATE;
+  temporalRuntime: {
+    certificateName: typeof HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME;
+    birthAnchorLocal: typeof HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL;
+    birthTimeZone: typeof HBCE_JOKER_C2_BIRTH_TIME_ZONE;
+    birthAnchorUtc: typeof HBCE_JOKER_C2_BIRTH_ANCHOR_UTC;
+    boundary: typeof HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_BOUNDARY;
+  };
   monthlyReference: typeof HBCE_MONTHLY_REFERENCE;
   currentOperationalEvt: typeof HBCE_CURRENT_OPERATIONAL_EVT;
   currentOperationalAiEvt: typeof HBCE_CURRENT_OPERATIONAL_AI_EVT;
@@ -393,6 +419,12 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   evt_id TEXT,
   opc_proof_id TEXT,
   opc_chain_hash TEXT,
+  temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb,
+  response_utc TIMESTAMPTZ,
+  birth_anchor_local TEXT,
+  birth_anchor_utc TIMESTAMPTZ,
+  joker_lifetime TEXT,
+  joker_life_seconds BIGINT,
   runtime_state TEXT,
   runtime_decision TEXT,
   generation_class TEXT,
@@ -423,6 +455,12 @@ CREATE TABLE IF NOT EXISTS memory_records (
   last_evt_id TEXT,
   last_opc_proof_id TEXT,
   last_opc_chain_hash TEXT,
+  temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb,
+  response_utc TIMESTAMPTZ,
+  birth_anchor_local TEXT,
+  birth_anchor_utc TIMESTAMPTZ,
+  joker_lifetime TEXT,
+  joker_life_seconds BIGINT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   record_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -451,6 +489,12 @@ CREATE TABLE IF NOT EXISTS memory_registered_events (
   event_scope TEXT DEFAULT 'IPR_BOUND',
   event_status TEXT DEFAULT 'ACTIVE',
   continuity_hash TEXT,
+  temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb,
+  response_utc TIMESTAMPTZ,
+  birth_anchor_local TEXT,
+  birth_anchor_utc TIMESTAMPTZ,
+  joker_lifetime TEXT,
+  joker_life_seconds BIGINT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
@@ -504,6 +548,12 @@ CREATE TABLE IF NOT EXISTS evt_records (
   output_hash TEXT,
   policy_hash TEXT,
   memory_hash TEXT,
+  temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb,
+  response_utc TIMESTAMPTZ,
+  birth_anchor_local TEXT,
+  birth_anchor_utc TIMESTAMPTZ,
+  joker_lifetime TEXT,
+  joker_life_seconds BIGINT,
   operational_context JSONB NOT NULL DEFAULT '{}'::jsonb,
   anchors JSONB NOT NULL DEFAULT '{}'::jsonb,
   trace JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -559,6 +609,12 @@ CREATE TABLE IF NOT EXISTS opc_proofs (
   policy_reference TEXT,
   project_domain TEXT,
   hbce_module TEXT,
+  temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb,
+  response_utc TIMESTAMPTZ,
+  birth_anchor_local TEXT,
+  birth_anchor_utc TIMESTAMPTZ,
+  joker_lifetime TEXT,
+  joker_life_seconds BIGINT,
   operational_context JSONB NOT NULL DEFAULT '{}'::jsonb,
   identity JSONB NOT NULL DEFAULT '{}'::jsonb,
   engine JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -638,6 +694,12 @@ CREATE TABLE IF NOT EXISTS runtime_audit_logs (
   output_hash TEXT,
   decision_hash TEXT,
   policy_hash TEXT,
+  temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb,
+  response_utc TIMESTAMPTZ,
+  birth_anchor_local TEXT,
+  birth_anchor_utc TIMESTAMPTZ,
+  joker_lifetime TEXT,
+  joker_life_seconds BIGINT,
   audit_hash TEXT,
   reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -700,6 +762,12 @@ CREATE TABLE IF NOT EXISTS model_usage (
   allowed BOOLEAN,
   fail_closed BOOLEAN NOT NULL DEFAULT false,
   persistence_mode TEXT,
+  temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb,
+  response_utc TIMESTAMPTZ,
+  birth_anchor_local TEXT,
+  birth_anchor_utc TIMESTAMPTZ,
+  joker_lifetime TEXT,
+  joker_life_seconds BIGINT,
   usage_hash TEXT,
   reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -737,6 +805,12 @@ CREATE TABLE IF NOT EXISTS matrix_transformative_memory (
   session_id TEXT,
   thread_id TEXT,
   memory_id TEXT,
+  temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb,
+  response_utc TIMESTAMPTZ,
+  birth_anchor_local TEXT,
+  birth_anchor_utc TIMESTAMPTZ,
+  joker_lifetime TEXT,
+  joker_life_seconds BIGINT,
   evaluation_hash TEXT NOT NULL,
   memory_scope TEXT NOT NULL DEFAULT 'RUNTIME_ONLY',
   memory_authority TEXT NOT NULL DEFAULT 'SESSION_RUNTIME_ONLY',
@@ -827,6 +901,99 @@ ALTER TABLE model_usage
   `
 ALTER TABLE model_usage
   DROP CONSTRAINT IF EXISTS model_usage_saas_tier_check;
+`.trim(),
+
+
+
+
+
+  `
+ALTER TABLE chat_messages
+  DROP CONSTRAINT IF EXISTS chat_messages_thread_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE memory_records
+  DROP CONSTRAINT IF EXISTS memory_records_thread_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE memory_registered_events
+  DROP CONSTRAINT IF EXISTS memory_registered_events_memory_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE memory_registered_events
+  DROP CONSTRAINT IF EXISTS memory_registered_events_evt_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE memory_registered_events
+  DROP CONSTRAINT IF EXISTS memory_registered_events_opc_proof_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE evt_records
+  DROP CONSTRAINT IF EXISTS evt_records_thread_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE evt_records
+  DROP CONSTRAINT IF EXISTS evt_records_memory_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE opc_proofs
+  DROP CONSTRAINT IF EXISTS opc_proofs_evt_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE opc_proofs
+  DROP CONSTRAINT IF EXISTS opc_proofs_thread_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE runtime_audit_logs
+  DROP CONSTRAINT IF EXISTS runtime_audit_logs_evt_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE runtime_audit_logs
+  DROP CONSTRAINT IF EXISTS runtime_audit_logs_opc_proof_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE runtime_audit_logs
+  DROP CONSTRAINT IF EXISTS runtime_audit_logs_thread_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE model_usage
+  DROP CONSTRAINT IF EXISTS model_usage_evt_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE model_usage
+  DROP CONSTRAINT IF EXISTS model_usage_opc_proof_id_fkey;
+`.trim(),
+
+
+  `
+ALTER TABLE model_usage
+  DROP CONSTRAINT IF EXISTS model_usage_thread_id_fkey;
 `.trim(),
 
 
@@ -1580,6 +1747,249 @@ ALTER TABLE model_usage
 `.trim(),
 
 
+
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS response_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS birth_anchor_local TEXT;
+`.trim(),
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS birth_anchor_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS joker_lifetime TEXT;
+`.trim(),
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS joker_life_seconds BIGINT;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS response_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS birth_anchor_local TEXT;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS birth_anchor_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS joker_lifetime TEXT;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS joker_life_seconds BIGINT;
+`.trim(),
+
+  `
+ALTER TABLE memory_registered_events
+  ADD COLUMN IF NOT EXISTS temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE memory_registered_events
+  ADD COLUMN IF NOT EXISTS response_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE memory_registered_events
+  ADD COLUMN IF NOT EXISTS birth_anchor_local TEXT;
+`.trim(),
+
+  `
+ALTER TABLE memory_registered_events
+  ADD COLUMN IF NOT EXISTS birth_anchor_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE memory_registered_events
+  ADD COLUMN IF NOT EXISTS joker_lifetime TEXT;
+`.trim(),
+
+  `
+ALTER TABLE memory_registered_events
+  ADD COLUMN IF NOT EXISTS joker_life_seconds BIGINT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS response_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS birth_anchor_local TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS birth_anchor_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS joker_lifetime TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS joker_life_seconds BIGINT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS response_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS birth_anchor_local TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS birth_anchor_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS joker_lifetime TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS joker_life_seconds BIGINT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS response_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS birth_anchor_local TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS birth_anchor_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS joker_lifetime TEXT;
+`.trim(),
+
+  `
+ALTER TABLE runtime_audit_logs
+  ADD COLUMN IF NOT EXISTS joker_life_seconds BIGINT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS response_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS birth_anchor_local TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS birth_anchor_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS joker_lifetime TEXT;
+`.trim(),
+
+  `
+ALTER TABLE model_usage
+  ADD COLUMN IF NOT EXISTS joker_life_seconds BIGINT;
+`.trim(),
+
+  `
+ALTER TABLE matrix_transformative_memory
+  ADD COLUMN IF NOT EXISTS temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE matrix_transformative_memory
+  ADD COLUMN IF NOT EXISTS response_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE matrix_transformative_memory
+  ADD COLUMN IF NOT EXISTS birth_anchor_local TEXT;
+`.trim(),
+
+  `
+ALTER TABLE matrix_transformative_memory
+  ADD COLUMN IF NOT EXISTS birth_anchor_utc TIMESTAMPTZ;
+`.trim(),
+
+  `
+ALTER TABLE matrix_transformative_memory
+  ADD COLUMN IF NOT EXISTS joker_lifetime TEXT;
+`.trim(),
+
+  `
+ALTER TABLE matrix_transformative_memory
+  ADD COLUMN IF NOT EXISTS joker_life_seconds BIGINT;
+`.trim(),
+
+
   `
 CREATE INDEX IF NOT EXISTS idx_saas_tenants_slug
   ON saas_tenants(tenant_slug);
@@ -1832,6 +2242,33 @@ CREATE INDEX IF NOT EXISTS idx_matrix_transformative_memory_workspace_created_at
 `.trim(),
 
 
+
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_evt_records_response_utc
+  ON evt_records(response_utc DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_opc_proofs_response_utc
+  ON opc_proofs(response_utc DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_runtime_audit_logs_response_utc
+  ON runtime_audit_logs(response_utc DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_model_usage_response_utc
+  ON model_usage(response_utc DESC);
+`.trim(),
+
+
   `
 INSERT INTO saas_tenants (
   tenant_id,
@@ -1854,7 +2291,10 @@ VALUES (
     'role', 'INTERNAL_SELF_PILOT_TENANT',
     'sourceEvent', 'UP-EVT-0016',
     'targetCheckpointDate', '2026-06-19T15:30:00+02:00',
-    'legalCertification', false
+    'legalCertification', false,
+    'temporalCertificate', '${HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME}',
+    'birthAnchorLocal', '${HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL}',
+    'birthTimeZone', '${HBCE_JOKER_C2_BIRTH_TIME_ZONE}'
   ),
   false
 )
@@ -1892,7 +2332,10 @@ VALUES (
     'role', 'HBCE_INTERNAL_SELF_PILOT_OPERATOR',
     'runtimeAccess', 'JOKER_C2_ACCESS',
     'identityBinding', 'IPR_VERIFIED_BIOLOGICAL_SUBJECT',
-    'legalCertification', false
+    'legalCertification', false,
+    'temporalCertificate', '${HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME}',
+    'birthAnchorLocal', '${HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL}',
+    'birthTimeZone', '${HBCE_JOKER_C2_BIRTH_TIME_ZONE}'
   ),
   false
 )
@@ -1933,7 +2376,10 @@ VALUES (
     'opcRequired', true,
     'auditRequired', true,
     'modelUsageLoggingRequired', true,
-    'legalCertification', false
+    'legalCertification', false,
+    'temporalCertificate', '${HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME}',
+    'birthAnchorLocal', '${HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL}',
+    'birthTimeZone', '${HBCE_JOKER_C2_BIRTH_TIME_ZONE}'
   ),
   false
 )
@@ -1971,7 +2417,10 @@ VALUES (
     'release', 'SaaS Core v0.1',
     'role', 'HBCE_INTERNAL_SELF_PILOT_OWNER_OPERATOR',
     'humanOversightRole', 'SELF_PILOT_REVIEWER',
-    'legalCertification', false
+    'legalCertification', false,
+    'temporalCertificate', '${HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME}',
+    'birthAnchorLocal', '${HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL}',
+    'birthTimeZone', '${HBCE_JOKER_C2_BIRTH_TIME_ZONE}'
   ),
   false
 )
@@ -2029,7 +2478,10 @@ VALUES (
     'opcRequired', true,
     'auditRequired', true,
     'modelUsageLoggingRequired', true,
-    'legalCertification', false
+    'legalCertification', false,
+    'temporalCertificate', '${HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME}',
+    'birthAnchorLocal', '${HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL}',
+    'birthTimeZone', '${HBCE_JOKER_C2_BIRTH_TIME_ZONE}'
   ),
   false
 )
@@ -2105,7 +2557,10 @@ VALUES (
     'opcRequired', true,
     'auditRequired', true,
     'modelUsageLoggingRequired', true,
-    'legalCertification', false
+    'legalCertification', false,
+    'temporalCertificate', '${HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME}',
+    'birthAnchorLocal', '${HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL}',
+    'birthTimeZone', '${HBCE_JOKER_C2_BIRTH_TIME_ZONE}'
   ),
   false
 )
@@ -2141,10 +2596,15 @@ INSERT INTO hbce_schema_migrations (
   legal_certification
 )
 VALUES (
-  'HBCE-IPR-DB-v1.5',
-  'HBCE SaaS Core v0.1 persistent database schema with registered memory events and canonical internal self-pilot seed for HERMETICUM B.C.E. tenant, R&D workspace, IPR subscription, Manuel Coletta IPR account profile, workspace membership, IPR subject, memory, memory registered events, EVT, OPC, runtime audit logs, model usage and MATRIX Transformative Memory. Runtime persistence tables remain tolerant of MVP-stage nullable relational references and preserve reconstruction data in JSONB payloads.',
+  'HBCE-IPR-DB-v1.6',
+  'HBCE SaaS Core v0.1 persistent database schema with temporal runtime certificate, registered memory events and canonical internal self-pilot seed for HERMETICUM B.C.E. tenant, R&D workspace, IPR subscription, Manuel Coletta IPR account profile, workspace membership, IPR subject, memory, memory registered events, EVT, OPC, runtime audit logs, model usage and MATRIX Transformative Memory. Runtime persistence tables remain tolerant of MVP-stage nullable relational references and preserve reconstruction data in JSONB payloads.',
   jsonb_build_object(
     'projectBirthDate', '2026-01-19',
+    'temporalCertificateName', '${HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME}',
+    'birthAnchorLocal', '${HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL}',
+    'birthTimeZone', '${HBCE_JOKER_C2_BIRTH_TIME_ZONE}',
+    'birthAnchorUtc', '${HBCE_JOKER_C2_BIRTH_ANCHOR_UTC}',
+    'temporalCertificateBoundary', '${HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_BOUNDARY}',
     'projectBirthLabel', 'HBCE R&D / AI JOKER-C2 project birth date',
     'monthlyReference', 'UP-MESE-4',
     'currentOperationalEvt', 'UP-EVT-0016',
@@ -2204,6 +2664,13 @@ export const HBCE_DATABASE_SCHEMA: HbceDatabaseSchemaDefinition = {
   boundary: HBCE_DATABASE_SCHEMA_BOUNDARY,
   legalCertificationBoundary: HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY,
   projectBirthDate: HBCE_PROJECT_BIRTH_DATE,
+  temporalRuntime: {
+    certificateName: HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME,
+    birthAnchorLocal: HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL,
+    birthTimeZone: HBCE_JOKER_C2_BIRTH_TIME_ZONE,
+    birthAnchorUtc: HBCE_JOKER_C2_BIRTH_ANCHOR_UTC,
+    boundary: HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_BOUNDARY
+  },
   monthlyReference: HBCE_MONTHLY_REFERENCE,
   currentOperationalEvt: HBCE_CURRENT_OPERATIONAL_EVT,
   currentOperationalAiEvt: HBCE_CURRENT_OPERATIONAL_AI_EVT,
@@ -2261,6 +2728,13 @@ export function getHbceDatabaseSaasCoreContext() {
     persistenceMode: HBCE_DATABASE_PERSISTENCE_MODE,
     projectBirthDate: HBCE_PROJECT_BIRTH_DATE,
     projectBirthLabel: HBCE_PROJECT_BIRTH_LABEL,
+    temporalRuntime: {
+      certificateName: HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME,
+      birthAnchorLocal: HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL,
+      birthTimeZone: HBCE_JOKER_C2_BIRTH_TIME_ZONE,
+      birthAnchorUtc: HBCE_JOKER_C2_BIRTH_ANCHOR_UTC,
+      boundary: HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_BOUNDARY
+    },
     monthlyReference: HBCE_MONTHLY_REFERENCE,
     currentOperationalEvt: HBCE_CURRENT_OPERATIONAL_EVT,
     currentOperationalAiEvt: HBCE_CURRENT_OPERATIONAL_AI_EVT,
@@ -2287,6 +2761,18 @@ export function getHbceDatabaseSaasCoreContext() {
     },
     legalCertification: false,
     statement:
-      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, memory, registered memory events, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. HBCE-IPR-DB-v1.5 seeds the internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
+      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, memory, registered memory events, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. HBCE-IPR-DB-v1.6 also exposes the JOKER-C2 Temporal Runtime Certificate for UTC response time, canonical local birth anchor and AI JOKER-C2 lifetime. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. HBCE-IPR-DB-v1.6 seeds the internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
+  };
+}
+
+
+export function getHbceJokerTemporalRuntimeCertificateDefinition() {
+  return {
+    certificateName: HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME,
+    birthAnchorLocal: HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL,
+    birthTimeZone: HBCE_JOKER_C2_BIRTH_TIME_ZONE,
+    birthAnchorUtc: HBCE_JOKER_C2_BIRTH_ANCHOR_UTC,
+    boundary: HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_BOUNDARY,
+    legalCertification: false
   };
 }
