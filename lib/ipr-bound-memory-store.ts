@@ -2289,11 +2289,17 @@ LIMIT 100;
       const records = result.rows
         .map((row) => databaseRowToMemoryRecord<TRecord>(row))
         .filter((record): record is TRecord => Boolean(record));
-      const hydratedRecords = await Promise.all(
-        records.map((record) => hydrateRegisteredEventsIntoRecord<TRecord>(record))
-      );
+      const hydratedRecords: TRecord[] = [];
 
-      return hydratedRecords.filter((record): record is TRecord => Boolean(record));
+      for (const record of records) {
+        const hydratedRecord = await hydrateRegisteredEventsIntoRecord<TRecord>(record);
+
+        if (hydratedRecord) {
+          hydratedRecords.push(hydratedRecord);
+        }
+      }
+
+      return hydratedRecords;
     },
 
 
