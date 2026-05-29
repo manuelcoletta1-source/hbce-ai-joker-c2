@@ -2594,6 +2594,122 @@ function InfoList({ items }: { items: Array<{ label: string; value: string }> })
 
 
 
+function SemanticMemoryCard({
+  snapshot,
+  compactMode = false
+}: {
+  snapshot: PublicSemanticMemorySnapshot;
+  compactMode?: boolean;
+}) {
+  const visibleTerms = snapshot.activatedTerms.slice(0, compactMode ? 6 : 12);
+  const fallbackTopTerms = snapshot.topTerms.slice(0, compactMode ? 6 : 12);
+
+
+  if (!snapshot.available) {
+    return (
+      <section className={["joker-semantic-card", compactMode ? "is-compact" : ""]
+        .filter(Boolean)
+        .join(" ")}
+      >
+        <div className="joker-semantic-head">
+          <div>
+            <span className="joker-kicker">Semantic memory</span>
+            <h3>MEMORIA SEMANTICA ESOTEROLOGICA API CHAT</h3>
+          </div>
+          <div className="joker-semantic-pills">
+            <StatusPill value="NOT_AVAILABLE" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+
+  return (
+    <section
+      className={["joker-semantic-card", compactMode ? "is-compact" : ""]
+        .filter(Boolean)
+        .join(" ")}
+      translate="no"
+    >
+      <div className="joker-semantic-head">
+        <div>
+          <span className="joker-kicker">Semantic memory</span>
+          <h3>MEMORIA SEMANTICA ESOTEROLOGICA API CHAT</h3>
+        </div>
+
+
+        <div className="joker-semantic-pills">
+          <StatusPill label="Quality" value={snapshot.quality} />
+          <StatusPill label="Continuity" value={snapshot.continuityGain} />
+          <StatusPill label="Coupling" value={snapshot.couplingState} />
+        </div>
+      </div>
+
+
+      <div className="joker-semantic-grid">
+        <MetricCard label="Memory ID" value={snapshot.memoryId} />
+        <MetricCard label="Persistable" value={snapshot.persistable} />
+        <MetricCard label="Threshold" value={snapshot.thresholdDetected} />
+        <MetricCard label="saveRaw" value={snapshot.policy.saveRaw} />
+        <MetricCard label="saveSynthesis" value={snapshot.policy.saveSynthesis} />
+        <MetricCard label="Reusable" value={snapshot.policy.reusableInPrompt} />
+        <MetricCard label="EVT" value={snapshot.source.evtId} />
+        <MetricCard label="OPC" value={snapshot.source.opcId} />
+        {!compactMode ? <MetricCard label="Human IPR" value={snapshot.ipr.humanIpr} /> : null}
+        {!compactMode ? <MetricCard label="Runtime IPR" value={snapshot.ipr.runtimeIpr} /> : null}
+        {!compactMode ? <MetricCard label="Persistence" value={snapshot.runtime.persistenceStatus} /> : null}
+        {!compactMode ? <MetricCard label="legalCertification" value={snapshot.boundary.legalCertification} /> : null}
+      </div>
+
+
+      {visibleTerms.length > 0 ? (
+        <div className="joker-semantic-terms" aria-label="Activated canonical terms">
+          {visibleTerms.map((term) => (
+            <span key={`${snapshot.memoryId}-${term.n}-${term.term}`} className="joker-semantic-term" title={term.matchedSignals.join(" · ") || term.term}>
+              <b>{term.n}</b>
+              <span>{term.term}</span>
+              {term.score !== "-" ? <em>{term.score}</em> : null}
+            </span>
+          ))}
+        </div>
+      ) : fallbackTopTerms.length > 0 ? (
+        <div className="joker-semantic-terms" aria-label="Top semantic terms">
+          {fallbackTopTerms.map((term) => (
+            <span key={`${snapshot.memoryId}-${term}`} className="joker-semantic-term">
+              <span>{term}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+
+      {!compactMode ? (
+        <div className="joker-semantic-axis">
+          <div>
+            <span>Decisione</span>
+            <strong>{snapshot.primaryAxis.decision}</strong>
+          </div>
+          <div>
+            <span>Costo</span>
+            <strong>{snapshot.primaryAxis.cost}</strong>
+          </div>
+          <div>
+            <span>Traccia</span>
+            <strong>{snapshot.primaryAxis.trace}</strong>
+          </div>
+          <div>
+            <span>Tempo</span>
+            <strong>{snapshot.primaryAxis.time}</strong>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+
+
 function formatUtcPlusTwoTemporalSnapshot(value: string): string {
   const visible = normalizeVisibleText(value || "");
   const parsed = Date.parse(visible);
