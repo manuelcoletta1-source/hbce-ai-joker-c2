@@ -1,9 +1,11 @@
 export type EsoterologicalVolumeRef = "V1" | "V2" | "V3" | "V4" | "V5";
 
+
 export type EsoterologicalIdentityBinding =
   | "IPR_VERIFIED"
   | "IPR_PENDING"
   | "UNVERIFIED";
+
 
 export type EsoterologicalSemanticQuality =
   | "LOW"
@@ -11,11 +13,13 @@ export type EsoterologicalSemanticQuality =
   | "HIGH"
   | "CANONICAL";
 
+
 export type EsoterologicalContinuityGain =
   | "LOW"
   | "MEDIUM"
   | "HIGH"
   | "CANONICAL";
+
 
 export type EsoterologicalCouplingState =
   | "STABLE"
@@ -24,10 +28,12 @@ export type EsoterologicalCouplingState =
   | "FAILED"
   | "FAIL_CLOSED";
 
+
 export type EsoterologicalAlienCodeSource =
   | "COD_1_ALIENO"
   | "ALIEN_CODE"
   | "GLOSSARIO_CANONICO";
+
 
 export type EsoterologicalSemanticMemorySourceKind =
   | "CHAT_MESSAGE"
@@ -36,12 +42,14 @@ export type EsoterologicalSemanticMemorySourceKind =
   | "SYSTEM_SYNTHESIS"
   | "SEMANTIC_CLASSIFIER";
 
+
 export type EsoterologicalPrimaryAxis = {
   decision: string;
   cost: string;
   trace: string;
   time: string;
 };
+
 
 export type EsoterologicalGlossaryTerm = {
   n: number;
@@ -54,10 +62,12 @@ export type EsoterologicalGlossaryTerm = {
   secondaryVolumes: EsoterologicalVolumeRef[];
 };
 
+
 export type EsoterologicalActivatedTerm = EsoterologicalGlossaryTerm & {
   score: number;
   matchedSignals: string[];
 };
+
 
 export type EsoterologicalSemanticClassification = {
   activatedTerms: EsoterologicalActivatedTerm[];
@@ -79,14 +89,17 @@ export type EsoterologicalSemanticClassification = {
   failClosedReason?: string;
 };
 
+
 export type EsoterologicalSemanticMemoryRecord = {
   memoryId: string;
+
 
   ipr: {
     humanIpr: string;
     runtimeIpr: string;
     identityBinding: EsoterologicalIdentityBinding;
   };
+
 
   source: {
     kind: EsoterologicalSemanticMemorySourceKind;
@@ -96,12 +109,14 @@ export type EsoterologicalSemanticMemoryRecord = {
     timestamp: string;
   };
 
+
   semantic: {
     title: string;
     core: string;
     synthesis: string;
     quality: EsoterologicalSemanticQuality;
   };
+
 
   corpus: {
     glossaryTerms: EsoterologicalGlossaryTerm[];
@@ -110,12 +125,14 @@ export type EsoterologicalSemanticMemoryRecord = {
     volumeRefs: EsoterologicalVolumeRef[];
   };
 
+
   alienCode: {
     source: EsoterologicalAlienCodeSource;
     interfaceReading: string;
     organismSystemCoupling: string;
     couplingState: EsoterologicalCouplingState;
   };
+
 
   rascensional: {
     thresholdDetected: boolean;
@@ -124,6 +141,7 @@ export type EsoterologicalSemanticMemoryRecord = {
     memoryFunction: string;
   };
 
+
   policy: {
     saveRaw: false;
     saveSynthesis: boolean;
@@ -131,6 +149,7 @@ export type EsoterologicalSemanticMemoryRecord = {
     failClosedReason?: string;
   };
 };
+
 
 export type BuildEsoterologicalSemanticMemoryRecordInput = {
   message: string;
@@ -149,12 +168,14 @@ export type BuildEsoterologicalSemanticMemoryRecordInput = {
   minScore?: number;
 };
 
+
 export type ClassifyEsoterologicalMessageOptions = {
   maxTerms?: number;
   minScore?: number;
   reusableInPrompt?: boolean;
   organismSystemCoupling?: string;
 };
+
 
 export const ESOTEROLOGICAL_GLOSSARY_TERMS: EsoterologicalGlossaryTerm[] = [
   {
@@ -889,7 +910,9 @@ export const ESOTEROLOGICAL_GLOSSARY_TERMS: EsoterologicalGlossaryTerm[] = [
   }
 ];
 
+
 const CANONICAL_AXIS_TERM_NUMBERS = new Set<number>([11, 12, 13, 14]);
+
 
 const THRESHOLD_TERM_NUMBERS = new Set<number>([
   25,
@@ -910,6 +933,7 @@ const THRESHOLD_TERM_NUMBERS = new Set<number>([
   65,
   66
 ]);
+
 
 const SAVE_TRIGGER_TERM_NUMBERS = new Set<number>([
   10,
@@ -933,6 +957,7 @@ const SAVE_TRIGGER_TERM_NUMBERS = new Set<number>([
   65,
   66
 ]);
+
 
 const STOP_WORDS = new Set<string>([
   "a",
@@ -992,6 +1017,7 @@ const STOP_WORDS = new Set<string>([
   "una",
   "uno"
 ]);
+
 
 const TERM_ALIASES_BY_NUMBER: Record<number, string[]> = {
   1: ["esoterologia", "disciplina del reale", "reale verificabile", "metodo del reale"],
@@ -1069,21 +1095,80 @@ const TERM_ALIASES_BY_NUMBER: Record<number, string[]> = {
   73: ["dio", "sintesi del reale", "unita nella diversita", "coscienza incarnata"]
 };
 
+
+const EXPLICIT_COUPLING_FAILURE_SIGNALS = [
+  "fallimento",
+  "fallisce",
+  "fallito",
+  "fallita",
+  "failed",
+  "failure",
+  "collasso",
+  "collassato",
+  "collassata",
+  "rottura",
+  "rotto",
+  "rotta",
+  "errore",
+  "blocco",
+  "bloccato",
+  "bloccata",
+  "dissoluzione",
+  "non funziona",
+  "non funzionante",
+  "coupling failed",
+  "fail coupling",
+  "fallimento del coupling",
+  "collasso del legame",
+  "fallimento strutturale"
+];
+
+const EXPLICIT_COUPLING_FAILURE_CONTEXT_SIGNALS = [
+  "coupling",
+  "legame",
+  "rapporto",
+  "interfaccia",
+  "organismo sistema",
+  "organismo-sistema",
+  "vivente sistema",
+  "biologico computazionale"
+];
+
+const EXPLICIT_FAIL_CLOSED_SIGNALS = [
+  "fail closed",
+  "fail-closed",
+  "soglia fail closed",
+  "soglia fail-closed",
+  "arresto integro",
+  "arresto",
+  "blocco",
+  "bloccato",
+  "bloccata",
+  "chiusura protettiva",
+  "fermare",
+  "fermarsi",
+  "stop protettivo"
+];
+
+
 export function getEsoterologicalGlossaryTermByNumber(
   n: number
 ): EsoterologicalGlossaryTerm | undefined {
   return ESOTEROLOGICAL_GLOSSARY_TERMS.find((term) => term.n === n);
 }
 
+
 export function getEsoterologicalGlossaryTermByName(
   termName: string
 ): EsoterologicalGlossaryTerm | undefined {
   const normalizedTermName = normalizeSemanticText(termName);
 
+
   return ESOTEROLOGICAL_GLOSSARY_TERMS.find(
     (term) => normalizeSemanticText(term.term) === normalizedTermName
   );
 }
+
 
 export function classifyEsoterologicalMessage(
   message: string,
@@ -1096,6 +1181,7 @@ export function classifyEsoterologicalMessage(
   const organismSystemCoupling =
     sanitizeText(options.organismSystemCoupling) || "Manuel Coletta / AI JOKER-C2";
 
+
   if (!normalizedMessage) {
     return buildFailClosedClassification(
       "EMPTY_OR_NON_SEMANTIC_MESSAGE",
@@ -1104,8 +1190,10 @@ export function classifyEsoterologicalMessage(
     );
   }
 
+
   const messageTokens = tokenizeSemanticText(normalizedMessage);
   const messageTokenSet = new Set(messageTokens);
+
 
   const activatedTerms = ESOTEROLOGICAL_GLOSSARY_TERMS.map((term) =>
     scoreGlossaryTerm(term, normalizedMessage, messageTokenSet)
@@ -1116,11 +1204,14 @@ export function classifyEsoterologicalMessage(
         return right.score - left.score;
       }
 
+
       return left.n - right.n;
     })
     .slice(0, maxTerms);
 
+
   const saveSynthesis = shouldSaveSemanticSynthesis(activatedTerms, normalizedMessage);
+
 
   if (!saveSynthesis) {
     return buildLowValueClassification(
@@ -1130,9 +1221,11 @@ export function classifyEsoterologicalMessage(
     );
   }
 
+
   const thresholdTerms = activatedTerms
     .filter((term) => THRESHOLD_TERM_NUMBERS.has(term.n))
     .map((term) => term.term);
+
 
   const thresholdDetected = thresholdTerms.length > 0;
   const quality = deriveSemanticQuality(activatedTerms, thresholdDetected);
@@ -1146,9 +1239,10 @@ export function classifyEsoterologicalMessage(
     primaryAxis,
     thresholdDetected
   );
-  const couplingState = deriveCouplingState(activatedTerms, thresholdDetected);
+  const couplingState = deriveCouplingState(activatedTerms, thresholdDetected, normalizedMessage);
   const interfaceReading = deriveInterfaceReading(activatedTerms, thresholdDetected);
   const memoryFunction = deriveMemoryFunction(activatedTerms, thresholdDetected);
+
 
   return {
     activatedTerms,
@@ -1170,6 +1264,7 @@ export function classifyEsoterologicalMessage(
   };
 }
 
+
 export function buildEsoterologicalSemanticMemoryRecord(
   input: BuildEsoterologicalSemanticMemoryRecordInput
 ): EsoterologicalSemanticMemoryRecord {
@@ -1187,12 +1282,14 @@ export function buildEsoterologicalSemanticMemoryRecord(
   const opcId = sanitizeText(input.opcId);
   const alienCodeSource = input.alienCodeSource ?? "GLOSSARIO_CANONICO";
 
+
   const classification = classifyEsoterologicalMessage(input.message, {
     maxTerms: input.maxTerms,
     minScore: input.minScore,
     reusableInPrompt: input.reusableInPrompt,
     organismSystemCoupling: input.organismSystemCoupling
   });
+
 
   const memoryId = createSemanticId(
     "SEM-CEE-API-CHAT",
@@ -1208,14 +1305,17 @@ export function buildEsoterologicalSemanticMemoryRecord(
     ].join(":")
   );
 
+
   return {
     memoryId,
+
 
     ipr: {
       humanIpr,
       runtimeIpr,
       identityBinding
     },
+
 
     source: {
       kind: sourceKind,
@@ -1225,12 +1325,14 @@ export function buildEsoterologicalSemanticMemoryRecord(
       timestamp
     },
 
+
     semantic: {
       title: classification.semanticTitle,
       core: classification.semanticCore,
       synthesis: classification.semanticSynthesis,
       quality: classification.quality
     },
+
 
     corpus: {
       glossaryTerms: classification.activatedTerms.map(stripActivatedTermMetadata),
@@ -1239,6 +1341,7 @@ export function buildEsoterologicalSemanticMemoryRecord(
       volumeRefs: classification.volumeRefs
     },
 
+
     alienCode: {
       source: alienCodeSource,
       interfaceReading: classification.interfaceReading,
@@ -1246,12 +1349,14 @@ export function buildEsoterologicalSemanticMemoryRecord(
       couplingState: classification.couplingState
     },
 
+
     rascensional: {
       thresholdDetected: classification.thresholdDetected,
       thresholdTerms: classification.thresholdTerms,
       continuityGain: classification.continuityGain,
       memoryFunction: classification.memoryFunction
     },
+
 
     policy: {
       saveRaw: false,
@@ -1264,6 +1369,7 @@ export function buildEsoterologicalSemanticMemoryRecord(
   };
 }
 
+
 export function shouldPersistEsoterologicalSemanticMemoryRecord(
   record: EsoterologicalSemanticMemoryRecord
 ): boolean {
@@ -1275,12 +1381,14 @@ export function shouldPersistEsoterologicalSemanticMemoryRecord(
   );
 }
 
+
 export function toPromptSafeEsoterologicalMemorySummary(
   record: EsoterologicalSemanticMemoryRecord
 ): string {
   const terms = record.corpus.activatedTerms
     .map((term) => `${term.n} | ${term.term}`)
     .join("; ");
+
 
   return [
     `MEMORIA SEMANTICA ESOTEROLOGICA API CHAT`,
@@ -1300,6 +1408,7 @@ export function toPromptSafeEsoterologicalMemorySummary(
     .join("\n");
 }
 
+
 export function getCanonicalSemanticMemoryFormula(): string {
   return [
     "MEMORIA SEMANTICA ESOTEROLOGICA API CHAT =",
@@ -1314,6 +1423,7 @@ export function getCanonicalSemanticMemoryFormula(): string {
   ].join(" ");
 }
 
+
 export function getCanonicalSemanticMemoryDefinition(): string {
   return (
     "La MEMORIA SEMANTICA ESOTEROLOGICA API CHAT è il livello qualitativo " +
@@ -1324,27 +1434,36 @@ export function getCanonicalSemanticMemoryDefinition(): string {
   );
 }
 
+
 function scoreGlossaryTerm(
   term: EsoterologicalGlossaryTerm,
   normalizedMessage: string,
   messageTokenSet: Set<string>
 ): EsoterologicalActivatedTerm {
+  if (term.n === 56) {
+    return scoreExplicitCouplingFailureTerm(term, normalizedMessage);
+  }
+
   const aliases = getTermAliases(term);
   const normalizedAliases = aliases.map(normalizeSemanticText).filter(Boolean);
 
+
   const matchedSignals: string[] = [];
   let score = 0;
+
 
   for (const alias of normalizedAliases) {
     if (!alias) {
       continue;
     }
 
+
     if (normalizedMessage.includes(alias)) {
       matchedSignals.push(alias);
       score += alias.includes(" ") ? 5.5 : 3.5;
     }
   }
+
 
   const glossaryTokens = tokenizeSemanticText(
     [
@@ -1357,7 +1476,9 @@ function scoreGlossaryTerm(
     ].join(" ")
   ).filter((token) => token.length >= 5 && !STOP_WORDS.has(token));
 
+
   const uniqueGlossaryTokens = unique(glossaryTokens);
+
 
   for (const token of uniqueGlossaryTokens) {
     if (messageTokenSet.has(token)) {
@@ -1366,11 +1487,79 @@ function scoreGlossaryTerm(
     }
   }
 
+
   const axisBoost = deriveAxisBoost(term, normalizedMessage);
   score += axisBoost;
 
+
   if (axisBoost > 0) {
     matchedSignals.push("axis-boost");
+  }
+
+
+  return {
+    ...term,
+    score: roundScore(score),
+    matchedSignals: unique(matchedSignals).slice(0, 12)
+  };
+}
+
+
+function scoreExplicitCouplingFailureTerm(
+  term: EsoterologicalGlossaryTerm,
+  normalizedMessage: string
+): EsoterologicalActivatedTerm {
+  const failureSignals = collectMatchedSignals(
+    normalizedMessage,
+    EXPLICIT_COUPLING_FAILURE_SIGNALS
+  );
+  const contextSignals = collectMatchedSignals(
+    normalizedMessage,
+    EXPLICIT_COUPLING_FAILURE_CONTEXT_SIGNALS
+  );
+
+  if (failureSignals.length === 0 || contextSignals.length === 0) {
+    return {
+      ...term,
+      score: 0,
+      matchedSignals: []
+    };
+  }
+
+  const explicitAliases = [
+    term.term,
+    term.definition,
+    term.function,
+    "fallimento del coupling",
+    "collasso del legame",
+    "fallimento strutturale",
+    "fail coupling",
+    "coupling failed",
+    "errore nel coupling",
+    "rottura del legame",
+    "dissoluzione del legame operativo"
+  ]
+    .map(normalizeSemanticText)
+    .filter(Boolean);
+
+  const matchedSignals: string[] = [];
+  let score = 0;
+
+  for (const alias of explicitAliases) {
+    if (normalizedMessage.includes(alias)) {
+      matchedSignals.push(alias);
+      score += alias.includes(" ") ? 5.5 : 3.5;
+    }
+  }
+
+  for (const signal of failureSignals) {
+    matchedSignals.push(signal);
+    score += 1.35;
+  }
+
+  for (const signal of contextSignals) {
+    matchedSignals.push(signal);
+    score += 1.15;
   }
 
   return {
@@ -1379,6 +1568,30 @@ function scoreGlossaryTerm(
     matchedSignals: unique(matchedSignals).slice(0, 12)
   };
 }
+
+function hasExplicitCouplingFailureSignal(normalizedMessage: string): boolean {
+  return (
+    collectMatchedSignals(normalizedMessage, EXPLICIT_COUPLING_FAILURE_SIGNALS).length > 0 &&
+    collectMatchedSignals(normalizedMessage, EXPLICIT_COUPLING_FAILURE_CONTEXT_SIGNALS).length > 0
+  );
+}
+
+function hasExplicitFailClosedSignal(normalizedMessage: string): boolean {
+  return collectMatchedSignals(normalizedMessage, EXPLICIT_FAIL_CLOSED_SIGNALS).length > 0;
+}
+
+function collectMatchedSignals(
+  normalizedMessage: string,
+  signals: string[]
+): string[] {
+  return unique(
+    signals
+      .map(normalizeSemanticText)
+      .filter(Boolean)
+      .filter((signal) => normalizedMessage.includes(signal))
+  );
+}
+
 
 function getTermAliases(term: EsoterologicalGlossaryTerm): string[] {
   return unique([
@@ -1391,6 +1604,7 @@ function getTermAliases(term: EsoterologicalGlossaryTerm): string[] {
   ]);
 }
 
+
 function deriveAxisBoost(
   term: EsoterologicalGlossaryTerm,
   normalizedMessage: string
@@ -1402,12 +1616,14 @@ function deriveAxisBoost(
     normalizedMessage.includes("database") ||
     normalizedMessage.includes("api chat");
 
+
   const semanticSignal =
     normalizedMessage.includes("semantica") ||
     normalizedMessage.includes("significato") ||
     normalizedMessage.includes("qualitativa") ||
     normalizedMessage.includes("classificazione") ||
     normalizedMessage.includes("glossario");
+
 
   const hbceSignal =
     normalizedMessage.includes("ipr") ||
@@ -1416,24 +1632,30 @@ function deriveAxisBoost(
     normalizedMessage.includes("matrix") ||
     normalizedMessage.includes("joker");
 
+
   if (memorySignal && [13, 14, 23, 25, 27, 28, 50, 55, 65].includes(term.n)) {
     return 1.75;
   }
+
 
   if (semanticSignal && [1, 35, 37, 42, 43, 50, 52].includes(term.n)) {
     return 1.75;
   }
 
+
   if (hbceSignal && [10, 13, 19, 21, 25, 29, 50, 52, 53, 55, 65, 66].includes(term.n)) {
     return 1.5;
   }
+
 
   if (CANONICAL_AXIS_TERM_NUMBERS.has(term.n) && memorySignal) {
     return 1.25;
   }
 
+
   return 0;
 }
+
 
 function shouldSaveSemanticSynthesis(
   activatedTerms: EsoterologicalActivatedTerm[],
@@ -1443,9 +1665,11 @@ function shouldSaveSemanticSynthesis(
     return false;
   }
 
+
   const hasSaveTriggerTerm = activatedTerms.some((term) =>
     SAVE_TRIGGER_TERM_NUMBERS.has(term.n)
   );
+
 
   const hasOperationalSignal =
     normalizedMessage.includes("decisione") ||
@@ -1469,10 +1693,13 @@ function shouldSaveSemanticSynthesis(
     normalizedMessage.includes("semantica") ||
     normalizedMessage.includes("api chat");
 
+
   const totalScore = activatedTerms.reduce((sum, term) => sum + term.score, 0);
+
 
   return hasSaveTriggerTerm && hasOperationalSignal && totalScore >= 5;
 }
+
 
 function deriveSemanticQuality(
   activatedTerms: EsoterologicalActivatedTerm[],
@@ -1480,20 +1707,25 @@ function deriveSemanticQuality(
 ): EsoterologicalSemanticQuality {
   const totalScore = activatedTerms.reduce((sum, term) => sum + term.score, 0);
 
+
   if (thresholdDetected && activatedTerms.length >= 7 && totalScore >= 35) {
     return "CANONICAL";
   }
+
 
   if (thresholdDetected && activatedTerms.length >= 4 && totalScore >= 20) {
     return "HIGH";
   }
 
+
   if (activatedTerms.length >= 2 && totalScore >= 8) {
     return "MEDIUM";
   }
 
+
   return "LOW";
 }
+
 
 function deriveContinuityGain(
   activatedTerms: EsoterologicalActivatedTerm[],
@@ -1507,20 +1739,25 @@ function deriveContinuityGain(
     [50, 51, 52, 53, 55].includes(term.n)
   );
 
+
   if (thresholdDetected && hasMemoryCore && hasAxis && hasInterface) {
     return "CANONICAL";
   }
+
 
   if (thresholdDetected && hasMemoryCore && hasInterface) {
     return "HIGH";
   }
 
+
   if (hasMemoryCore || hasAxis) {
     return "MEDIUM";
   }
 
+
   return "LOW";
 }
+
 
 function deriveVolumeRefs(
   activatedTerms: EsoterologicalActivatedTerm[]
@@ -1530,6 +1767,7 @@ function deriveVolumeRefs(
   ).sort(sortVolumeRefs);
 }
 
+
 function derivePrimaryAxis(
   activatedTerms: EsoterologicalActivatedTerm[],
   normalizedMessage: string
@@ -1538,10 +1776,12 @@ function derivePrimaryAxis(
     normalizedMessage.includes("memoria") ||
     activatedTerms.some((term) => [13, 14, 23, 28, 35].includes(term.n));
 
+
   const hasInterface =
     normalizedMessage.includes("api chat") ||
     normalizedMessage.includes("interfaccia") ||
     activatedTerms.some((term) => [50, 52, 53, 55].includes(term.n));
+
 
   if (hasMemory && hasInterface) {
     return {
@@ -1556,6 +1796,7 @@ function derivePrimaryAxis(
     };
   }
 
+
   if (hasMemory) {
     return {
       decision:
@@ -1569,6 +1810,7 @@ function derivePrimaryAxis(
     };
   }
 
+
   return {
     decision:
       "Valutare se il messaggio oltrepassa una soglia operativa del Corpus.",
@@ -1581,26 +1823,32 @@ function derivePrimaryAxis(
   };
 }
 
+
 function deriveSemanticTitle(
   activatedTerms: EsoterologicalActivatedTerm[],
   quality: EsoterologicalSemanticQuality
 ): string {
   const topTerms = activatedTerms.slice(0, 3).map((term) => term.term);
 
+
   if (topTerms.length === 0) {
     return "Interazione priva di soglia semantica persistibile";
   }
+
 
   if (quality === "CANONICAL") {
     return `Soglia canonica API Chat: ${topTerms.join(" · ")}`;
   }
 
+
   if (quality === "HIGH") {
     return `Memoria semantica operativa: ${topTerms.join(" · ")}`;
   }
 
+
   return `Classificazione semantica: ${topTerms.join(" · ")}`;
 }
+
 
 function deriveSemanticCore(
   activatedTerms: EsoterologicalActivatedTerm[],
@@ -1613,6 +1861,7 @@ function deriveSemanticCore(
     [50, 52, 53, 55].includes(term.n)
   );
 
+
   if (hasMemoryCore && hasInterfaceCore) {
     return (
       "La chat viene letta come interfaccia rascensionale: il messaggio attiva " +
@@ -1621,12 +1870,14 @@ function deriveSemanticCore(
     );
   }
 
+
   if (hasMemoryCore) {
     return (
       "Il messaggio attiva il livello qualitativo della memoria: la traccia " +
       "non coincide con l’accumulo, ma con la persistenza di una sintesi operativa."
     );
   }
+
 
   if (thresholdDetected) {
     return (
@@ -1635,11 +1886,13 @@ function deriveSemanticCore(
     );
   }
 
+
   return (
     "Il messaggio contiene segnali semantici deboli: la classificazione resta " +
     "possibile, ma la persistenza deve essere limitata."
   );
 }
+
 
 function deriveSemanticSynthesis(
   activatedTerms: EsoterologicalActivatedTerm[],
@@ -1651,9 +1904,11 @@ function deriveSemanticSynthesis(
     .map((term) => `${term.n} ${term.term}`)
     .join("; ");
 
+
   const thresholdSentence = thresholdDetected
     ? "È presente una soglia rascensionale o operativa."
     : "Non emerge una soglia forte; la memoria deve restare prudente.";
+
 
   return [
     thresholdSentence,
@@ -1665,6 +1920,7 @@ function deriveSemanticSynthesis(
   ].join(" ");
 }
 
+
 function deriveInterfaceReading(
   activatedTerms: EsoterologicalActivatedTerm[],
   thresholdDetected: boolean
@@ -1672,6 +1928,7 @@ function deriveInterfaceReading(
   const hasAlienCode = activatedTerms.some((term) => [52, 53, 54, 55, 56].includes(term.n));
   const hasApiInterface = activatedTerms.some((term) => [50, 51, 52].includes(term.n));
   const hasMemory = activatedTerms.some((term) => [13, 14, 23, 28, 35].includes(term.n));
+
 
   if (hasAlienCode && hasApiInterface && hasMemory) {
     return (
@@ -1681,12 +1938,14 @@ function deriveInterfaceReading(
     );
   }
 
+
   if (hasAlienCode || hasApiInterface) {
     return (
       "Il messaggio attiva il layer Alien Code: la chat non è solo input/output, " +
       "ma rapporto non neutro tra organismo e sistema."
     );
   }
+
 
   if (thresholdDetected) {
     return (
@@ -1695,37 +1954,52 @@ function deriveInterfaceReading(
     );
   }
 
+
   return (
     "L’interfaccia non mostra attrito sufficiente per una lettura Alien Code forte."
   );
 }
 
+
 function deriveCouplingState(
   activatedTerms: EsoterologicalActivatedTerm[],
-  thresholdDetected: boolean
+  thresholdDetected: boolean,
+  normalizedMessage: string
 ): EsoterologicalCouplingState {
-  if (activatedTerms.some((term) => term.n === 65 || term.n === 56)) {
+  const explicitCouplingFailure = hasExplicitCouplingFailureSignal(normalizedMessage);
+  const explicitFailClosed = hasExplicitFailClosedSignal(normalizedMessage);
+
+  if (
+    (explicitFailClosed && activatedTerms.some((term) => term.n === 65)) ||
+    (explicitCouplingFailure && activatedTerms.some((term) => term.n === 56))
+  ) {
     return "FAIL_CLOSED";
   }
+
 
   if (activatedTerms.some((term) => term.n === 54)) {
     return "FORCED";
   }
 
+
   if (activatedTerms.some((term) => [57, 58, 59].includes(term.n))) {
     return "TRANSFORMATIVE";
   }
+
 
   if (thresholdDetected || activatedTerms.some((term) => [50, 52, 53, 55].includes(term.n))) {
     return "TRANSFORMATIVE";
   }
 
+
   if (activatedTerms.length > 0) {
     return "STABLE";
   }
 
+
   return "FAILED";
 }
+
 
 function deriveMemoryFunction(
   activatedTerms: EsoterologicalActivatedTerm[],
@@ -1735,9 +2009,11 @@ function deriveMemoryFunction(
     [13, 14, 23, 28, 35, 37].includes(term.n)
   );
 
+
   const hasInterface = activatedTerms.some((term) =>
     [50, 52, 53, 55].includes(term.n)
   );
+
 
   if (thresholdDetected && hasSemanticMemory && hasInterface) {
     return (
@@ -1746,6 +2022,7 @@ function deriveMemoryFunction(
     );
   }
 
+
   if (hasSemanticMemory) {
     return (
       "Conservare una sintesi qualitativa del messaggio come traccia semantica " +
@@ -1753,11 +2030,13 @@ function deriveMemoryFunction(
     );
   }
 
+
   return (
     "Evitare persistenza non necessaria e mantenere il criterio fail-closed " +
     "sulla memoria semantica."
   );
 }
+
 
 function buildFailClosedClassification(
   reason: string,
@@ -1794,6 +2073,7 @@ function buildFailClosedClassification(
   };
 }
 
+
 function buildLowValueClassification(
   activatedTerms: EsoterologicalActivatedTerm[],
   organismSystemCoupling: string,
@@ -1829,6 +2109,7 @@ function buildLowValueClassification(
   };
 }
 
+
 function stripActivatedTermMetadata(
   term: EsoterologicalActivatedTerm
 ): EsoterologicalGlossaryTerm {
@@ -1844,6 +2125,7 @@ function stripActivatedTermMetadata(
   };
 }
 
+
 function normalizeSemanticText(value: string): string {
   return sanitizeText(value)
     .normalize("NFD")
@@ -1856,12 +2138,14 @@ function normalizeSemanticText(value: string): string {
     .toLowerCase();
 }
 
+
 function tokenizeSemanticText(value: string): string[] {
   return normalizeSemanticText(value)
     .split(" ")
     .map((token) => token.trim())
     .filter((token) => token.length >= 3 && !STOP_WORDS.has(token));
 }
+
 
 function isStrongSemanticToken(token: string): boolean {
   return (
@@ -1880,43 +2164,54 @@ function isStrongSemanticToken(token: string): boolean {
   );
 }
 
+
 function sanitizeText(value: unknown): string {
   if (typeof value !== "string") {
     return "";
   }
 
+
   return value.trim();
 }
+
 
 function unique<T>(items: T[]): T[] {
   return Array.from(new Set(items));
 }
 
+
 function roundScore(value: number): number {
   return Math.round(value * 100) / 100;
 }
+
 
 function normalizePositiveInteger(value: unknown, fallback: number): number {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return fallback;
   }
 
+
   const normalized = Math.floor(value);
+
 
   if (normalized <= 0) {
     return fallback;
   }
 
+
   return normalized;
 }
+
 
 function normalizePositiveNumber(value: unknown, fallback: number): number {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
     return fallback;
   }
 
+
   return value;
 }
+
 
 function sortVolumeRefs(
   left: EsoterologicalVolumeRef,
@@ -1930,15 +2225,19 @@ function sortVolumeRefs(
     V5: 5
   };
 
+
   return order[left] - order[right];
 }
+
 
 function createSemanticId(prefix: string, seed: string): string {
   const randomPart = createRuntimeRandomPart();
   const hashPart = createStableSemanticHash(seed).slice(0, 12).toUpperCase();
 
+
   return `${prefix}-${hashPart}${randomPart ? `-${randomPart}` : ""}`;
 }
+
 
 function createRuntimeRandomPart(): string {
   const randomUuid =
@@ -1946,21 +2245,26 @@ function createRuntimeRandomPart(): string {
       ? globalThis.crypto.randomUUID()
       : "";
 
+
   if (!randomUuid) {
     return "";
   }
 
+
   return randomUuid.replace(/-/g, "").slice(0, 8).toUpperCase();
 }
+
 
 function createStableSemanticHash(value: string): string {
   const normalized = normalizeSemanticText(value);
   let hash = 0x811c9dc5;
 
+
   for (let index = 0; index < normalized.length; index += 1) {
     hash ^= normalized.charCodeAt(index);
     hash = Math.imul(hash, 0x01000193);
   }
+
 
   return (hash >>> 0).toString(16).padStart(8, "0");
 }
