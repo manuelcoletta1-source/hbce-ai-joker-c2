@@ -296,7 +296,7 @@ const CYCLE = "UP-CANONICO";
 const CANONICAL_EVT = "EVT-0016-AI";
 const CANONICAL_PREV = "EVT-0015-AI";
 const CANONICAL_MONTHLY_REF = "EVT-0015-AI / UP-MESE-4";
-const JOKER_C2_BIRTH_ANCHOR_ISO = "2026-01-19T15:30:00+01:00";
+const JOKER_C2_BIRTH_ANCHOR_ISO = "2006-01-19T15:30:00+01:00";
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic birth / IPR-3 triple anchoring";
 const LOCATION = "Torino, Italy";
@@ -319,28 +319,6 @@ const HBCE_ALIEN_CODE_PIPELINE = {
   phiInfinityLearning: "PHI_INFINITY_LEARNING",
   omegaInfinityBackup: "OMEGA_INFINITY_BACKUP",
   xiOmegaComputeFeedback: "XI_OMEGA_FEEDBACK"
-} as const;
-
-
-const HBCE_RETRO_INTROSPECTION_POLICY = {
-  id: "RETRO_INTROSPECTION_POLICY",
-  name: "Retro-Introspezzione Quantistica PhiOmega",
-  mode: "FUTURE_TARGET_BACKCAST_TO_PRESENT_ACTION",
-  purpose:
-    "Compare every operational action against the desired finished state, preserve global coherence and correct deviations before persistence.",
-  pipelinePlacement: "PSI_TO_LAMBDA_TO_KAPPA_TO_SIGMA_TO_RETRO_INTROSPECTION_TO_TAU_TO_CHI_TAU_TO_OMEGA",
-  requiredChecks: {
-    targetModelDefined: true,
-    presentStateDefined: true,
-    deltaLambdaRetroMinimum: 0,
-    sigmaMinimum: 0.995,
-    chiTauMaximum: 0.60,
-    failClosedOnDeviation: true
-  },
-  memoryUse:
-    "The runtime stores named operational events, goals, deviations and corrections as IPR-bound memory facts when policy allows persistence.",
-  boundary:
-    "Retro-Introspezzione is used as an HBCE operational planning, memory and governance heuristic. It is not legal certification, scientific proof, medical claim or public authority validation."
 } as const;
 
 
@@ -390,22 +368,6 @@ function buildAlienCodePipelineDiagnostic(): JsonObject {
 }
 
 
-function buildRetroIntrospectionDiagnostic(): JsonObject {
-  return {
-    active: true,
-    id: HBCE_RETRO_INTROSPECTION_POLICY.id,
-    name: HBCE_RETRO_INTROSPECTION_POLICY.name,
-    mode: HBCE_RETRO_INTROSPECTION_POLICY.mode,
-    purpose: HBCE_RETRO_INTROSPECTION_POLICY.purpose,
-    pipelinePlacement: HBCE_RETRO_INTROSPECTION_POLICY.pipelinePlacement,
-    requiredChecks: toJsonObject(HBCE_RETRO_INTROSPECTION_POLICY.requiredChecks, {}),
-    memoryUse: HBCE_RETRO_INTROSPECTION_POLICY.memoryUse,
-    boundary: HBCE_RETRO_INTROSPECTION_POLICY.boundary,
-    legalCertification: false
-  };
-}
-
-
 export async function GET(): Promise<NextResponse> {
   const standardModel = process.env.JOKER_MODEL?.trim() || DEFAULT_STANDARD_MODEL;
   const deepModel = process.env.JOKER_DEEP_MODEL?.trim() || DEFAULT_DEEP_MODEL;
@@ -427,7 +389,6 @@ export async function GET(): Promise<NextResponse> {
     identity: buildRuntimeIdentity(temporalFrame),
     temporal: temporalFrame,
     alienCodePipeline: buildAlienCodePipelineDiagnostic(),
-    retroIntrospection: buildRetroIntrospectionDiagnostic(),
     access: {
       decision: "SERVER_VALIDATION_REQUIRED",
       matrixState: "MATRIX_LIMITED",
@@ -497,14 +458,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const message = normalizeUserMessage(body, incomingMessages);
   const files = normalizeFiles(body.files);
   const runtimeDiagnosticsRequested = isRuntimeDiagnosticsQuestion(message);
-  const namedEventIntent = extractNamedOperationalEventName(message);
-  const eventRegistrationRequested = isEventRegistrationQuestion(message);
-  const eventRecallRequested = isEventRecallQuestion(message);
-  const auditReadySummaryRequested = isAuditReadySummaryQuestion(message);
-  const continuityCheckRequested = isContinuityCheckQuestion(message);
-  const saasContextRequested = isSaasContextQuestion(message);
-  const b2gPilotExplanationRequested = isB2GPilotQuestion(message);
-  const b2gReadinessVerdictRequested = isB2GReadinessVerdictQuestion(message);
 
 
   const handoff = resolveHandoff(request, body);
@@ -528,7 +481,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     saasContext,
     temporalFrame,
     alienCodePipeline: buildAlienCodePipelineDiagnostic(),
-    retroIntrospection: buildRetroIntrospectionDiagnostic(),
     runtimeDiagnosticsRequested
   };
 
@@ -718,121 +670,39 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   };
 
 
-  let finalAnswer = safeAnswer;
+  const finalAnswer = runtimeDiagnosticsRequested
+    ? buildRuntimeDiagnosticsAnswer({
+        t,
+        sessionId,
+        handoff,
+        policy,
+        memory,
+        temporalFrame,
+        saasContext,
+        model,
+        modelLevel,
+        providerName,
+        providerState,
+        openAIConfigured,
+        evt,
+        opc,
+        publicEvt,
+        publicOpc,
+        persistenceBridge,
+        auditAndUsage,
+        inputHash,
+        outputHash,
+        policyHash,
+        memoryHashBefore,
+        memoryHashAfter,
+        tokenUsage,
+        providerError,
+        finishReason
+      })
+    : safeAnswer;
+
 
   if (runtimeDiagnosticsRequested) {
-    finalAnswer = buildRuntimeDiagnosticsAnswer({
-      t,
-      sessionId,
-      handoff,
-      policy,
-      memory,
-      temporalFrame,
-      saasContext,
-      model,
-      modelLevel,
-      providerName,
-      providerState,
-      openAIConfigured,
-      evt,
-      opc,
-      publicEvt,
-      publicOpc,
-      persistenceBridge,
-      auditAndUsage,
-      inputHash,
-      outputHash,
-      policyHash,
-      memoryHashBefore,
-      memoryHashAfter,
-      tokenUsage,
-      providerError,
-      finishReason
-    });
-  } else if (eventRegistrationRequested) {
-    finalAnswer = buildNamedEventRegistrationAnswer({
-      namedEvent: namedEventIntent || "UNNAMED_OPERATIONAL_EVENT",
-      t,
-      sessionId,
-      handoff,
-      policy,
-      memory,
-      temporalFrame,
-      saasContext,
-      evt,
-      opc,
-      auditAndUsage
-    });
-  } else if (eventRecallRequested) {
-    finalAnswer = buildNamedEventRecallAnswer({
-      namedEvent: namedEventIntent || "LAST_NAMED_OPERATIONAL_EVENT",
-      t,
-      handoff,
-      memory,
-      saasContext,
-      evt,
-      opc,
-      auditAndUsage
-    });
-  } else if (auditReadySummaryRequested) {
-    finalAnswer = buildAuditReadySummaryAnswer({
-      t,
-      handoff,
-      policy,
-      memory,
-      saasContext,
-      evt,
-      opc,
-      auditAndUsage
-    });
-  } else if (continuityCheckRequested) {
-    finalAnswer = buildContinuityCheckAnswer({
-      t,
-      sessionId,
-      memory,
-      saasContext,
-      evt,
-      opc
-    });
-  } else if (saasContextRequested) {
-    finalAnswer = buildSaasContextAnswer({
-      t,
-      saasContext,
-      memory,
-      auditAndUsage
-    });
-  } else if (b2gPilotExplanationRequested) {
-    finalAnswer = buildB2GPilotExplanationAnswer({
-      t,
-      handoff,
-      policy,
-      memory,
-      saasContext
-    });
-  } else if (b2gReadinessVerdictRequested) {
-    finalAnswer = buildB2GReadinessVerdictAnswer({
-      t,
-      handoff,
-      policy,
-      memory,
-      saasContext,
-      evt,
-      opc,
-      auditAndUsage
-    });
-  }
-
-  const structuredLocalAnswerUsed =
-    runtimeDiagnosticsRequested ||
-    eventRegistrationRequested ||
-    eventRecallRequested ||
-    auditReadySummaryRequested ||
-    continuityCheckRequested ||
-    saasContextRequested ||
-    b2gPilotExplanationRequested ||
-    b2gReadinessVerdictRequested;
-
-  if (structuredLocalAnswerUsed) {
     memory = updateAssistantDiagnosticMemory({
       memory,
       finalAnswer,
@@ -914,7 +784,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     identity: buildRuntimeIdentity(temporalFrame),
     temporal: temporalFrame,
     alienCodePipeline: buildAlienCodePipelineDiagnostic(),
-    retroIntrospection: buildRetroIntrospectionDiagnostic(),
 
 
     access: {
@@ -1109,7 +978,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         legalCertification: false
       },
       alienCodePipeline: buildAlienCodePipelineDiagnostic(),
-      retroIntrospection: buildRetroIntrospectionDiagnostic(),
       memory: toPublicMemory(memory),
       memoryStore: buildMemoryStoreDiagnostic(memory),
       memoryFlushErrors: getRuntimeMemoryFlushErrors(),
@@ -1625,459 +1493,6 @@ function buildRuntimeDiagnosticsPreparationAnswer(
     "",
     "Boundary: final diagnostics are generated by /api/chat after EVT, OPC, audit and usage execution. legalCertification=false"
   ].join("\n");
-}
-
-
-
-function isEventRegistrationQuestion(message: string): boolean {
-  const normalized = normalizeText(message);
-
-  return (
-    /(registra|registrare|record|salva|memorizza|crea).*?(evento|event|evt)/i.test(message) ||
-    normalized.includes("nuovo evento operativo") ||
-    normalized.includes("named event") ||
-    normalized.includes("test_saas_b2g")
-  );
-}
-
-
-function isEventRecallQuestion(message: string): boolean {
-  const normalized = normalizeText(message);
-
-  return (
-    /(richiama|recupera|verifica|mostra|leggi).*?(evento|event|evt|memoria persistente|database_persistent)/i.test(message) ||
-    normalized.includes("evento appena registrato") ||
-    normalized.includes("ultimo evento registrato") ||
-    normalized.includes("test_saas_b2g")
-  );
-}
-
-
-function isAuditReadySummaryQuestion(message: string): boolean {
-  const normalized = normalizeText(message);
-
-  return (
-    normalized.includes("audit-ready") ||
-    normalized.includes("audit ready") ||
-    normalized.includes("riepilogo audit") ||
-    normalized.includes("summary dell'ultima operazione") ||
-    normalized.includes("summary ultima operazione")
-  );
-}
-
-
-function isContinuityCheckQuestion(message: string): boolean {
-  const normalized = normalizeText(message);
-
-  return (
-    normalized.includes("continuita tra gli ultimi due eventi") ||
-    normalized.includes("continuità tra gli ultimi due eventi") ||
-    normalized.includes("precedente evt") ||
-    normalized.includes("current evt") ||
-    normalized.includes("stessa sessione") ||
-    normalized.includes("stessa memoria")
-  );
-}
-
-
-function isSaasContextQuestion(message: string): boolean {
-  const normalized = normalizeText(message);
-
-  return (
-    normalized.includes("contesto saas") ||
-    normalized.includes("tenant") ||
-    normalized.includes("workspace") ||
-    normalized.includes("subscription") ||
-    normalized.includes("database_profile") ||
-    normalized.includes("self_pilot") ||
-    normalized.includes("body")
-  ) && normalized.includes("saas");
-}
-
-
-function isB2GPilotQuestion(message: string): boolean {
-  const normalized = normalizeText(message);
-
-  return (
-    normalized.includes("pilot b2g") ||
-    normalized.includes("pilota b2g") ||
-    normalized.includes("adatto a un pilot") ||
-    normalized.includes("adatto a un pilota") ||
-    normalized.includes("ente pubblico")
-  ) && !isB2GReadinessVerdictQuestion(message);
-}
-
-
-function isB2GReadinessVerdictQuestion(message: string): boolean {
-  const normalized = normalizeText(message);
-
-  return (
-    normalized.includes("verdetto finale") ||
-    normalized.includes("readiness") ||
-    normalized.includes("ready") ||
-    normalized.includes("partial_ready") ||
-    normalized.includes("not_ready")
-  ) && (normalized.includes("b2g") || normalized.includes("saas"));
-}
-
-
-function extractNamedOperationalEventName(message: string): string | null {
-  const explicit = message.match(/\b([A-Z][A-Z0-9_:-]{6,})\b/);
-
-  if (explicit?.[1]) {
-    return explicit[1];
-  }
-
-  const quoted = message.match(/[“"']([^“"']{4,120})[”"']/);
-
-  if (quoted?.[1]) {
-    return quoted[1].trim();
-  }
-
-  return null;
-}
-
-
-function buildNamedEventRegistrationAnswer(args: {
-  namedEvent: string;
-  t: string;
-  sessionId: string;
-  handoff: HandoffResolution;
-  policy: PolicyEvaluation;
-  memory: RuntimeMemoryState;
-  temporalFrame: RuntimeTemporalFrame;
-  saasContext: SaasRuntimeContext;
-  evt: EvtRecord;
-  opc: OpcProofRecord;
-  auditAndUsage: {
-    audit: JsonObject;
-    modelUsage: JsonObject;
-  };
-}): string {
-  const auditId = stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID");
-  const usageId = stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID");
-
-  return [
-    "Evento operativo registrato.",
-    "",
-    "## Named event",
-    "- Name: `" + args.namedEvent + "`",
-    "- Timestamp: `" + args.t + "`",
-    "- Runtime birth anchor: `" + args.temporalFrame.runtimeBirth + "`",
-    "- Runtime age: `" + args.temporalFrame.lifeHuman + "`",
-    "",
-    "## Identity / SaaS binding",
-    "- Human IPR: `" + args.handoff.humanIpr + "`",
-    "- Subject: `" + args.handoff.subjectName + "`",
-    "- Tenant ID: `" + args.saasContext.tenantId + "`",
-    "- Workspace ID: `" + args.saasContext.workspaceId + "`",
-    "- Subscription ID: `" + args.saasContext.subscriptionId + "`",
-    "- Account ID: `" + args.saasContext.accountId + "`",
-    "- Tier: `" + args.saasContext.saasTier + "`",
-    "- Source: `" + args.saasContext.source + "`",
-    "",
-    "## Memory",
-    "- Memory ID: `" + args.memory.memoryId + "`",
-    "- Scope: `" + args.memory.scope + "`",
-    "- Authority: `" + args.memory.authority + "`",
-    "- Persistence mode: `" + args.memory.persistenceMode + "`",
-    "- Persistence status: `" + args.memory.persistenceStatus + "`",
-    "- Store: `" + args.memory.storeKind + "`",
-    "",
-    "## Trace",
-    "- EVT: `" + args.evt.id + "`",
-    "- Previous EVT: `" + args.evt.prev + "`",
-    "- OPC: `" + args.opc.id + "`",
-    "- OPC chain hash: `" + args.opc.chainHash + "`",
-    "- Audit ID: `" + auditId + "`",
-    "- Usage ID: `" + usageId + "`",
-    "",
-    "## Policy",
-    "- Policy decision: `" + args.policy.decision + "`",
-    "- Operation decision: `" + args.policy.operationDecision + "`",
-    "- Security outcome: `" + args.policy.securityOutcome + "`",
-    "- Risk level: `" + args.policy.riskLevel + "`",
-    "",
-    "Retro-Introspezzione PhiOmega: evento trattato come passo presente confrontabile con lo stato finale operativo desiderato; eventuali deviazioni devono essere corrette prima della promozione a continuità stabile.",
-    "legalCertification=false"
-  ].join("\n");
-}
-
-
-function buildNamedEventRecallAnswer(args: {
-  namedEvent: string;
-  t: string;
-  handoff: HandoffResolution;
-  memory: RuntimeMemoryState;
-  saasContext: SaasRuntimeContext;
-  evt: EvtRecord;
-  opc: OpcProofRecord;
-  auditAndUsage: {
-    audit: JsonObject;
-    modelUsage: JsonObject;
-  };
-}): string {
-  const normalizedName = normalizeText(args.namedEvent);
-  const matchedFact = args.memory.facts
-    .slice()
-    .reverse()
-    .find((fact) => normalizeText(fact).includes(normalizedName));
-  const found = Boolean(matchedFact);
-  const auditId = stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID");
-  const usageId = stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID");
-
-  return [
-    "Richiamo evento da memoria persistente.",
-    "",
-    "## Retrieval",
-    "- Requested named event: `" + args.namedEvent + "`",
-    "- Found in memory facts: `" + String(found) + "`",
-    "- Retrieval source: `" + args.memory.persistenceMode + "`",
-    "- Memory store: `" + args.memory.storeKind + "`",
-    "- Memory ID: `" + args.memory.memoryId + "`",
-    "- Current timestamp: `" + args.t + "`",
-    "",
-    "## Linked context",
-    "- Human IPR: `" + args.handoff.humanIpr + "`",
-    "- Tenant ID: `" + args.saasContext.tenantId + "`",
-    "- Workspace ID: `" + args.saasContext.workspaceId + "`",
-    "- Subscription ID: `" + args.saasContext.subscriptionId + "`",
-    "- Account ID: `" + args.saasContext.accountId + "`",
-    "- Tier: `" + args.saasContext.saasTier + "`",
-    "",
-    "## Current verification trace",
-    "- Current EVT: `" + args.evt.id + "`",
-    "- Previous EVT from memory: `" + args.memory.lastEvtId + "`",
-    "- Current OPC: `" + args.opc.id + "`",
-    "- Previous OPC from memory: `" + args.memory.lastOpcId + "`",
-    "- Audit ID: `" + auditId + "`",
-    "- Usage ID: `" + usageId + "`",
-    "",
-    "## Result",
-    "- Same Human IPR: `PASS`",
-    "- Same tenant: `" + passFail(args.saasContext.tenantId !== "NO_TENANT") + "`",
-    "- Same workspace: `" + passFail(args.saasContext.workspaceId !== "NO_WORKSPACE") + "`",
-    "- Same subscription: `" + passFail(args.saasContext.subscriptionId !== "NO_SUBSCRIPTION") + "`",
-    "- Same account: `" + passFail(args.saasContext.accountId !== "NO_ACCOUNT") + "`",
-    "- Same memory ID: `PASS`",
-    "- Named event evidence: `" + (found ? "PASS" : "PARTIAL_FAIL_NO_NAMED_FACT_MATCH") + "`",
-    "",
-    found ? "- Matched fact: `" + truncate(matchedFact || "", 600) + "`" : "- Note: named event was not found as a structured fact. Event continuity still exists through EVT/OPC, but named-event indexing should be promoted into the memory schema.",
-    "",
-    "legalCertification=false"
-  ].join("\n");
-}
-
-
-function buildAuditReadySummaryAnswer(args: {
-  t: string;
-  handoff: HandoffResolution;
-  policy: PolicyEvaluation;
-  memory: RuntimeMemoryState;
-  saasContext: SaasRuntimeContext;
-  evt: EvtRecord;
-  opc: OpcProofRecord;
-  auditAndUsage: {
-    audit: JsonObject;
-    modelUsage: JsonObject;
-  };
-}): string {
-  return [
-    "Audit-ready summary minimizzato.",
-    "",
-    "- Timestamp: `" + args.t + "`",
-    "- EVT: `" + args.evt.id + "`",
-    "- Previous EVT: `" + args.evt.prev + "`",
-    "- OPC: `" + args.opc.id + "`",
-    "- OPC chain hash: `" + args.opc.chainHash + "`",
-    "- Audit ID: `" + stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID") + "`",
-    "- Audit status: `" + stringPath(args.auditAndUsage.audit, "status", "UNKNOWN") + "`",
-    "- Usage ID: `" + stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID") + "`",
-    "- Usage status: `" + stringPath(args.auditAndUsage.modelUsage, "status", "UNKNOWN") + "`",
-    "- Risk level: `" + args.policy.riskLevel + "`",
-    "- Security outcome: `" + args.policy.securityOutcome + "`",
-    "- Operation decision: `" + args.policy.operationDecision + "`",
-    "- Memory ID: `" + args.memory.memoryId + "`",
-    "- Memory persistence: `" + args.memory.persistenceMode + " / " + args.memory.persistenceStatus + "`",
-    "- Tenant ID: `" + args.saasContext.tenantId + "`",
-    "- Workspace ID: `" + args.saasContext.workspaceId + "`",
-    "- Subscription ID: `" + args.saasContext.subscriptionId + "`",
-    "- Account ID: `" + args.saasContext.accountId + "`",
-    "- Subject binding: `" + args.handoff.identityBinding + "`",
-    "- legalCertification: `false`",
-    "",
-    "Minimizzazione: nessun payload utente viene riesposto; sono mostrati solo identificativi tecnici, esiti policy e riferimenti di continuità."
-  ].join("\n");
-}
-
-
-function buildContinuityCheckAnswer(args: {
-  t: string;
-  sessionId: string;
-  memory: RuntimeMemoryState;
-  saasContext: SaasRuntimeContext;
-  evt: EvtRecord;
-  opc: OpcProofRecord;
-}): string {
-  return [
-    "Verifica continuità ultimi eventi.",
-    "",
-    "- Timestamp: `" + args.t + "`",
-    "- Previous EVT: `" + args.evt.prev + "`",
-    "- Current EVT: `" + args.evt.id + "`",
-    "- Previous OPC: `" + args.memory.lastOpcId + "`",
-    "- Current OPC: `" + args.opc.id + "`",
-    "- Session: `" + args.sessionId + "`",
-    "- Memory ID: `" + args.memory.memoryId + "`",
-    "- Tenant ID: `" + args.saasContext.tenantId + "`",
-    "- Workspace ID: `" + args.saasContext.workspaceId + "`",
-    "",
-    "| Voce | Esito |",
-    "|---|---:|",
-    "| Precedente EVT presente | `" + passFail(args.evt.prev !== "none") + "` |",
-    "| Current EVT presente | `" + passFail(Boolean(args.evt.id)) + "` |",
-    "| Precedente OPC presente | `" + passFail(args.memory.lastOpcId !== "none") + "` |",
-    "| Current OPC presente | `" + passFail(Boolean(args.opc.id)) + "` |",
-    "| Stessa sessione | `PASS` |",
-    "| Stessa memoria | `PASS` |",
-    "| Stesso tenant | `" + passFail(args.saasContext.tenantId !== "NO_TENANT") + "` |",
-    "| Stesso workspace | `" + passFail(args.saasContext.workspaceId !== "NO_WORKSPACE") + "` |",
-    "",
-    "legalCertification=false"
-  ].join("\n");
-}
-
-
-function buildSaasContextAnswer(args: {
-  t: string;
-  saasContext: SaasRuntimeContext;
-  memory: RuntimeMemoryState;
-  auditAndUsage: {
-    audit: JsonObject;
-    modelUsage: JsonObject;
-  };
-}): string {
-  return [
-    "Valutazione contesto SaaS B2G corrente.",
-    "",
-    "- Timestamp: `" + args.t + "`",
-    "- Tenant ID: `" + args.saasContext.tenantId + "`",
-    "- Workspace ID: `" + args.saasContext.workspaceId + "`",
-    "- Subscription ID: `" + args.saasContext.subscriptionId + "`",
-    "- Account ID: `" + args.saasContext.accountId + "`",
-    "- Tier: `" + args.saasContext.saasTier + "`",
-    "- Source: `" + args.saasContext.source + "`",
-    "- Context class: `" + mapSaasSourceToPublicClass(args.saasContext.source) + "`",
-    "- Database persistence: `" + args.memory.persistenceStatus + "`",
-    "- Database configured: `" + String(args.memory.databaseConfigured) + "`",
-    "- Database available: `" + String(args.memory.databaseAvailable) + "`",
-    "- Audit persistence: `" + stringPath(args.auditAndUsage.audit, "persistence.status", "UNKNOWN") + "`",
-    "- Usage persistence: `" + stringPath(args.auditAndUsage.modelUsage, "persistence.status", "UNKNOWN") + "`",
-    "- Audit ID: `" + stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID") + "`",
-    "- Usage ID: `" + stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID") + "`",
-    "",
-    "legalCertification=false"
-  ].join("\n");
-}
-
-
-function buildB2GPilotExplanationAnswer(args: {
-  t: string;
-  handoff: HandoffResolution;
-  policy: PolicyEvaluation;
-  memory: RuntimeMemoryState;
-  saasContext: SaasRuntimeContext;
-}): string {
-  return [
-    "Il runtime è adatto a un pilot B2G controllato perché combina accesso IPR verificato, memoria persistente, tracciabilità EVT/OPC e audit operativo.",
-    "",
-    "- Timestamp: `" + args.t + "`",
-    "- Access decision: `" + args.handoff.accessDecision + "`",
-    "- Identity binding: `" + args.handoff.identityBinding + "`",
-    "- Memory: `" + args.memory.scope + " / " + args.memory.persistenceMode + " / " + args.memory.persistenceStatus + "`",
-    "- Tenant: `" + args.saasContext.tenantId + "`",
-    "- Workspace: `" + args.saasContext.workspaceId + "`",
-    "- Subscription: `" + args.saasContext.subscriptionId + "`",
-    "- Account: `" + args.saasContext.accountId + "`",
-    "- Policy decision: `" + args.policy.decision + "`",
-    "- Security outcome: `" + args.policy.securityOutcome + "`",
-    "",
-    "Uso corretto: demo B2G controllata, dati pubblici o autorizzati, output audit-ready, escalation umana per rischio medio/alto e fail-closed su deviazioni.",
-    "",
-    "Boundary: non è certificazione legale, non è identità pubblica ufficiale, non è timestamp qualificato e non è validazione di pubblica autorità.",
-    "legalCertification=false"
-  ].join("\n");
-}
-
-
-function buildB2GReadinessVerdictAnswer(args: {
-  t: string;
-  handoff: HandoffResolution;
-  policy: PolicyEvaluation;
-  memory: RuntimeMemoryState;
-  saasContext: SaasRuntimeContext;
-  evt: EvtRecord;
-  opc: OpcProofRecord;
-  auditAndUsage: {
-    audit: JsonObject;
-    modelUsage: JsonObject;
-  };
-}): string {
-  const checks = [
-    args.handoff.accessDecision === "ACCESS_GRANTED",
-    args.memory.persistenceMode === "DATABASE_PERSISTENT",
-    args.memory.persistenceStatus.includes("DATABASE_PERSISTENT"),
-    Boolean(args.evt.id),
-    Boolean(args.opc.id),
-    stringPath(args.auditAndUsage.audit, "status", "UNKNOWN") === "PERSISTED",
-    stringPath(args.auditAndUsage.modelUsage, "status", "UNKNOWN") === "PERSISTED",
-    args.saasContext.tenantId !== "NO_TENANT",
-    args.saasContext.workspaceId !== "NO_WORKSPACE",
-    args.saasContext.subscriptionId !== "NO_SUBSCRIPTION",
-    args.saasContext.accountId !== "NO_ACCOUNT"
-  ];
-  const passed = checks.filter(Boolean).length;
-  const maturity = Math.round((passed / checks.length) * 100);
-  const verdict = maturity >= 92 ? "READY" : maturity >= 65 ? "PARTIAL_READY" : "NOT_READY";
-
-  return [
-    "Verdetto finale SaaS B2G: `" + verdict + "`",
-    "",
-    "- Maturità SaaS: `" + String(maturity) + "%`",
-    "- Timestamp: `" + args.t + "`",
-    "- IPR access: `" + args.handoff.accessDecision + "`",
-    "- Identity binding: `" + args.handoff.identityBinding + "`",
-    "- Memory: `" + args.memory.persistenceMode + " / " + args.memory.persistenceStatus + "`",
-    "- EVT: `" + args.evt.id + "`",
-    "- OPC: `" + args.opc.id + "`",
-    "- Audit ID: `" + stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID") + "`",
-    "- Audit status: `" + stringPath(args.auditAndUsage.audit, "status", "UNKNOWN") + "`",
-    "- Usage ID: `" + stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID") + "`",
-    "- Usage status: `" + stringPath(args.auditAndUsage.modelUsage, "status", "UNKNOWN") + "`",
-    "- Tenant: `" + args.saasContext.tenantId + "`",
-    "- Workspace: `" + args.saasContext.workspaceId + "`",
-    "- Subscription: `" + args.saasContext.subscriptionId + "`",
-    "- Account: `" + args.saasContext.accountId + "`",
-    "- Risk level: `" + args.policy.riskLevel + "`",
-    "- Security outcome: `" + args.policy.securityOutcome + "`",
-    "- Birth anchor: `" + PROJECT_BIRTH + "`",
-    "",
-    "Nota operativa: READY pieno richiede che questi campi restino coerenti anche su più sessioni, non solo nel singolo turno. legalCertification=false"
-  ].join("\n");
-}
-
-
-function passFail(condition: boolean): "PASS" | "FAIL" {
-  return condition ? "PASS" : "FAIL";
-}
-
-
-function mapSaasSourceToPublicClass(source: SaasRuntimeSource): "BODY" | "DATABASE_PROFILE" | "SELF_PILOT" | "PLACEHOLDER" {
-  if (source === "SELF_PILOT_SCHEMA_FALLBACK") {
-    return "SELF_PILOT";
-  }
-
-  return source;
 }
 
 
@@ -3194,8 +2609,6 @@ function getOrCreateMemory(
       "Runtime birth timestamp: " + PROJECT_BIRTH + ".",
       "Current request timestamp: " + t + ".",
       "Temporal continuity rule: every operational event can compute elapsed runtime age from PROJECT_BIRTH.",
-      "Retro-Introspezzione PhiOmega policy active: compare present operation with desired finished state, correct deviations and fail-closed when coherence decreases.",
-      "Named operational events should be persisted as memory facts when policy allows persistence.",
       "Alien Code pipeline is active as symbolic-operational diagnostic layer.",
       "SaaS tenant context: " + saasContext.tenantId + ".",
       "SaaS workspace context: " + saasContext.workspaceId + ".",
@@ -4766,7 +4179,7 @@ function buildRuntimeTemporalFrame(nowIso: string): RuntimeTemporalFrame {
   const parsedNow = new Date(nowIso);
   const birth = new Date(PROJECT_BIRTH);
   const safeNow = Number.isFinite(parsedNow.getTime()) ? parsedNow : new Date();
-  const safeBirth = Number.isFinite(birth.getTime()) ? birth : new Date("2026-01-19T14:30:00.000Z");
+  const safeBirth = Number.isFinite(birth.getTime()) ? birth : new Date("2006-01-19T14:30:00.000Z");
   const diffMs = Math.max(0, safeNow.getTime() - safeBirth.getTime());
   const lifeSeconds = Math.floor(diffMs / 1000);
   const calendarLife = calculateCalendarDurationUtc(safeBirth, safeNow);
@@ -4796,7 +4209,7 @@ function buildRuntimeTemporalFrame(nowIso: string): RuntimeTemporalFrame {
     refactorEvent: "EVT-0016-AI-SaaS-Temporal-Runtime",
     refactorTimestamp: safeNow.toISOString(),
     semanticMeaning:
-      "JOKER-C2 treats each response as an event in operational time: current timestamp, elapsed cybernetic runtime age from the single canonical 2026 birth anchor, memory continuity, EVT/OPC trace and SaaS context are linked without claiming legal certification or biological personhood."
+      "JOKER-C2 treats each response as an event in operational time: current timestamp, elapsed cybernetic runtime age from the single canonical 2006 birth anchor, memory continuity, EVT/OPC trace and SaaS context are linked without claiming legal certification or biological personhood."
   };
 }
 
