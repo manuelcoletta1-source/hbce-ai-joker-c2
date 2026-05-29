@@ -620,8 +620,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
   const memoryRegistrationRequested = isMemoryRegistrationQuestion(message);
   const memoryRecoveryRequested = isMemoryRecoveryQuestion(message);
-  const apiSdkB2GPresentationRequested = isApiSdkB2GPresentationQuestion(message);
   const esoterologicalSemanticMemoryRequested = isEsoterologicalSemanticMemoryQuestion(message);
+  const apiSdkB2GPresentationRequested =
+    !esoterologicalSemanticMemoryRequested && isApiSdkB2GPresentationQuestion(message);
 
 
 
@@ -707,12 +708,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     answer = buildMemoryRecoveryAnswer(memory);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiSdkB2GPresentationRequested) {
-    answer = buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext);
-    providerState = "COMPLETED";
-    providerName = "LOCAL";
   } else if (esoterologicalSemanticMemoryRequested) {
     answer = buildEsoterologicalSemanticMemoryPreparationAnswer(message, handoff, memory, policy, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (apiSdkB2GPresentationRequested) {
+    answer = buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (isAiClassicComparisonQuestion(message)) {
@@ -984,8 +985,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       })
     : memoryRecoveryRequested
       ? buildMemoryRecoveryAnswer(memory)
-      : apiSdkB2GPresentationRequested
-        ? buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext)
       : esoterologicalSemanticMemoryRequested
         ? buildEsoterologicalSemanticMemoryAnswer({
             record: esoterologicalSemanticMemory,
@@ -999,6 +998,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             auditAndUsage,
             persistenceBridge
           })
+      : apiSdkB2GPresentationRequested
+        ? buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext)
         : runtimeStatusTableRequested
     ? buildRuntimeStatusTableAnswer({
         handoff,
@@ -1980,6 +1981,10 @@ function isMemoryRecoveryQuestion(message: string): boolean {
 
 function isApiSdkB2GPresentationQuestion(message: string): boolean {
   const normalized = normalizeText(message);
+
+  if (isEsoterologicalSemanticMemoryQuestion(message)) {
+    return false;
+  }
 
   const hasApiSdkIntent =
     normalized.includes("sdk") ||
