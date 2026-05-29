@@ -46,6 +46,7 @@ import type {
   IprBoundMemoryRecord,
   IprBoundMemoryRuntimeIdentity,
   IprBoundMemorySubject,
+  RegisteredMemoryEvent,
   MemoryPersistenceMode,
   MemoryScope
 } from "@/lib/ipr-bound-memory";
@@ -149,25 +150,6 @@ type PolicyEvaluation = {
 
 
 
-type RegisteredOperationalEvent = {
-  id: string;
-  name: string;
-  content: string;
-  hash: string;
-  registeredAt: string;
-  memoryId: string;
-  evtId: string;
-  opcId: string;
-  auditId: string;
-  usageId: string;
-  source: "REGISTER_MEMORY_EVENT_INTENT" | "MEMORY_FACT_RECOVERY";
-  persistenceMode: string;
-  persistenceStatus: string;
-  legalCertification: false;
-};
-
-
-
 type RuntimeMemoryState = {
   record: IprBoundMemoryRecord;
   sessionId: string;
@@ -201,10 +183,42 @@ type RuntimeMemoryState = {
   lastOpcChainHash: string;
   lastUserMessage: string;
   lastAssistantMessage: string;
-  lastRegisteredEvent: RegisteredOperationalEvent | null;
   facts: string[];
+  registeredEvents: RegisteredOperationalEvent[];
+  lastRegisteredEvent: RegisteredOperationalEvent | null;
 };
 
+
+
+
+type RegisteredOperationalEvent = {
+  registeredEventId: string;
+  registeredEventName: string;
+  registeredEventKey: string;
+  registeredEventContent: string;
+  registeredEventHash: string;
+  memoryId: string;
+  memoryKeyHash: string;
+  sessionId: string;
+  source: string;
+  evtId: string;
+  opcId: string;
+  opcChainHash: string;
+  auditId: string;
+  usageId: string;
+  tenantId: string;
+  workspaceId: string;
+  subscriptionId: string;
+  accountId: string;
+  saasTier: string;
+  humanIpr: string;
+  runtimeIpr: string;
+  createdAt: string;
+  contentHash: string;
+  persistenceMode: string;
+  persistenceStatus: string;
+  legalCertification: false;
+};
 
 
 
@@ -586,10 +600,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
-  const executiveVerdictRequested = isExecutiveB2GVerdictQuestion(message);
-  const apiSdkPresentationRequested = isApiSdkPresentationQuestion(message);
   const memoryRegistrationRequested = isMemoryRegistrationQuestion(message);
   const memoryRecoveryRequested = isMemoryRecoveryQuestion(message);
+  const apiSdkB2GPresentationRequested = isApiSdkB2GPresentationQuestion(message);
 
 
 
@@ -624,10 +637,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     temporalCertificateRequested,
     opcProofSummaryRequested,
     selfDiagnosisRequested,
-    executiveVerdictRequested,
-    apiSdkPresentationRequested,
     memoryRegistrationRequested,
-    memoryRecoveryRequested
+    memoryRecoveryRequested,
+    apiSdkB2GPresentationRequested
   };
 
 
@@ -635,6 +647,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const inputHash = sha256(inputFrame);
   const memoryHashBefore = sha256(memory);
+  const registeredEventCandidate = memoryRegistrationRequested
+    ? buildRegisteredOperationalEventCandidate({
+        message,
+        memory,
+        handoff,
+        saasContext,
+        t,
+        source: "REGISTER_MEMORY_EVENT_INTENT"
+      })
+    : null;
 
 
 
@@ -658,15 +680,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (memoryRegistrationRequested) {
-    answer = buildMemoryRegistrationAcknowledgement(message, handoff, memory, policy, saasContext);
+    answer = buildMemoryRegistrationPreparationAnswer(registeredEventCandidate, handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (memoryRecoveryRequested) {
     answer = buildMemoryRecoveryAnswer(memory);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiSdkPresentationRequested) {
-    answer = buildHbceIprRuntimeApiSdkAnswer(handoff, memory, policy, saasContext);
+  } else if (apiSdkB2GPresentationRequested) {
+    answer = buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (isAiClassicComparisonQuestion(message)) {
@@ -681,7 +703,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     answer = buildLegalBoundaryAnswer(handoff, policy, memory, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (runtimeStatusTableRequested || runtimeDiagnosticsRequested || temporalCertificateRequested || opcProofSummaryRequested || selfDiagnosisRequested || executiveVerdictRequested) {
+  } else if (runtimeStatusTableRequested || runtimeDiagnosticsRequested || temporalCertificateRequested || opcProofSummaryRequested || selfDiagnosisRequested) {
     answer = buildRuntimeDiagnosticsPreparationAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
@@ -762,6 +784,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
+  const registeredEventForMemory = registeredEventCandidate
+    ? enrichRegisteredOperationalEvent(registeredEventCandidate, {
+        evtId: evt.id,
+        opcId: opc.id,
+        opcChainHash: opc.chainHash,
+        auditId: "PENDING_AUDIT",
+        usageId: "PENDING_USAGE"
+      })
+    : null;
+
+
+
+
   memory = updateMemoryAfterTurn({
     memory,
     t,
@@ -772,7 +807,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     opcId: opc.id,
     opcChainHash: opc.chainHash,
     policy,
-    providerState
+    providerState,
+    registeredEvent: registeredEventForMemory,
+    registeredEventName: registeredEventForMemory?.registeredEventName ?? null,
+    saasContext
   });
 
 
@@ -828,45 +866,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  let registeredEvent: RegisteredOperationalEvent | null = memory.lastRegisteredEvent;
-
-
-
-
-  if (memoryRegistrationRequested) {
-    registeredEvent = buildRegisteredOperationalEvent({
-      message,
-      t,
-      memory,
-      evt,
-      opc,
-      auditId: stringPath(auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
-      usageId: stringPath(auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID")
-    });
-
-
-
-
-    if (registeredEvent) {
-      memory = upsertRegisteredEventInMemory({
-        memory,
-        registeredEvent,
-        userMessage: message,
-        assistantMessage: safeAnswer,
-        policy,
-        providerState,
-        opcChainHash: opc.chainHash
-      });
-    }
-  } else {
-    registeredEvent = memory.lastRegisteredEvent;
-  }
-
-
-
-
   const publicEvt = buildPublicEvt(evt, persistenceBridge.evtPersistence);
   const publicOpc = buildPublicOpc(opc, persistenceBridge.opcPersistence);
+  const registeredEventForPayload = buildRegisteredEventForCurrentResponse({
+    candidate: registeredEventCandidate,
+    memory,
+    evt,
+    opc,
+    auditAndUsage,
+    saasContext
+  });
 
 
 
@@ -899,10 +908,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryStore: memory.storeKind,
     memoryPersistenceStatus: memory.persistenceStatus,
     memoryPersistenceDurable: memory.persistenceDurable,
-    registeredEventId: memory.lastRegisteredEvent?.id || null,
-    registeredEventName: memory.lastRegisteredEvent?.name || null,
-    registeredEventHash: memory.lastRegisteredEvent?.hash || null,
-    registeredEvent: memory.lastRegisteredEvent,
     tenantId: saasContext.tenantId,
     workspaceId: saasContext.workspaceId,
     subscriptionId: saasContext.subscriptionId,
@@ -919,18 +924,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
   const finalAnswerBase = memoryRegistrationRequested
-    ? buildMemoryRegistrationResultAnswer({
-        registeredEvent,
-        memory,
+    ? buildMemoryRegistrationFinalAnswer({
+        registeredEvent: registeredEventForPayload,
         handoff,
+        memory,
         policy,
-        saasContext
+        saasContext,
+        evt,
+        opc,
+        auditAndUsage,
+        persistenceBridge
       })
     : memoryRecoveryRequested
       ? buildMemoryRecoveryAnswer(memory)
-      : apiSdkPresentationRequested
-      ? buildHbceIprRuntimeApiSdkAnswer(handoff, memory, policy, saasContext)
-      : runtimeStatusTableRequested
+      : apiSdkB2GPresentationRequested
+        ? buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext)
+        : runtimeStatusTableRequested
     ? buildRuntimeStatusTableAnswer({
         handoff,
         memory,
@@ -970,22 +979,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           providerState,
           temporalFrame
         })
-      : executiveVerdictRequested
-        ? buildRuntimeExecutiveVerdictAnswer({
-            handoff,
-            memory,
-            policy,
-            saasContext,
-            evt,
-            opc,
-            auditAndUsage,
-            persistenceBridge,
-            model,
-            modelLevel,
-            openAIConfigured,
-            providerState,
-            temporalFrame
-          })
       : selfDiagnosisRequested
         ? buildRuntimeSelfDiagnosisAnswer({
             handoff,
@@ -1054,7 +1047,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  if (runtimeStatusTableRequested || runtimeDiagnosticsRequested || temporalCertificateRequested || opcProofSummaryRequested || selfDiagnosisRequested || executiveVerdictRequested || apiSdkPresentationRequested) {
+  if (runtimeStatusTableRequested || runtimeDiagnosticsRequested || temporalCertificateRequested || opcProofSummaryRequested || selfDiagnosisRequested) {
     memory = updateAssistantDiagnosticMemory({
       memory,
       finalAnswer,
@@ -1134,9 +1127,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
     sessionId,
-    registeredEventId: memory.lastRegisteredEvent?.id || null,
-    registeredEventName: memory.lastRegisteredEvent?.name || null,
-    registeredEventHash: memory.lastRegisteredEvent?.hash || null,
     runtime: {
       entity: RUNTIME_ENTITY,
       ipr: RUNTIME_IPR,
@@ -1159,10 +1149,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       mode: memory.persistenceMode,
       memoryPersistenceStatus: memory.persistenceStatus,
       memoryPersistenceDurable: memory.persistenceDurable,
-      registeredEventId: memory.lastRegisteredEvent?.id || null,
-      registeredEventName: memory.lastRegisteredEvent?.name || null,
-      registeredEventHash: memory.lastRegisteredEvent?.hash || null,
-      registeredEvent: memory.lastRegisteredEvent,
       memoryStore: memory.storeKind,
       tenantId: saasContext.tenantId,
       workspaceId: saasContext.workspaceId,
@@ -1173,7 +1159,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       securityOutcome: policy.securityOutcome,
       refused: policy.refused,
       limited: policy.limited,
-      failClosed: policy.failClosed
+      failClosed: policy.failClosed,
+      registeredEvent: registeredEventForPayload
     },
     runtimeName: RUNTIME_ENTITY,
     state: providerState,
@@ -1231,10 +1218,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       tier: saasContext.saasTier,
       source: saasContext.source,
       memory: toPublicMemory(memory),
-      registeredEventId: memory.lastRegisteredEvent?.id || null,
-      registeredEventName: memory.lastRegisteredEvent?.name || null,
-      registeredEventHash: memory.lastRegisteredEvent?.hash || null,
-      registeredEvent: memory.lastRegisteredEvent,
+      registeredEvent: registeredEventForPayload,
+      registeredEvents: memory.registeredEvents,
       evtPersistence: persistenceBridge.evtPersistence,
       opcPersistence: persistenceBridge.opcPersistence,
       audit: auditAndUsage.audit,
@@ -1278,13 +1263,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
     memory: toPublicMemory(memory),
-    registeredEvent,
-    lastRegisteredEvent: memory.lastRegisteredEvent,
-    registeredEventRegistry: {
-      ready: Boolean(memory.lastRegisteredEvent),
-      event: memory.lastRegisteredEvent,
-      legalCertification: false
-    },
+    registeredEvent: registeredEventForPayload,
+    registeredEvents: memory.registeredEvents,
 
 
 
@@ -1371,8 +1351,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       temporalCertificate,
       temporalSeal: responseTemporalSeal,
       requestTemporalSeal,
-      temporalSemanticMeaning: temporalFrame.semanticMeaning,
-      registeredEvent: memory.lastRegisteredEvent
+      temporalSemanticMeaning: temporalFrame.semanticMeaning
     },
 
 
@@ -1448,7 +1427,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
       alienCodePipeline: buildAlienCodePipelineDiagnostic(),
       memory: toPublicMemory(memory),
-      registeredEvent: memory.lastRegisteredEvent,
+      registeredEvent: registeredEventForPayload,
+      registeredEvents: memory.registeredEvents,
       memoryStore: buildMemoryStoreDiagnostic(memory),
       memoryFlushErrors: getRuntimeMemoryFlushErrors(),
       evtPersistence: persistenceBridge.evtPersistence,
@@ -1707,7 +1687,7 @@ function isAiClassicComparisonQuestion(message: string): boolean {
 function isB2GInstitutionalRuntimeQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
-  if (isApiSdkPresentationQuestion(message) || isMemoryRegistrationQuestion(message) || isMemoryRecoveryQuestion(message)) {
+  if (isApiSdkB2GPresentationQuestion(message) || isMemoryRegistrationQuestion(message) || isMemoryRecoveryQuestion(message)) {
     return false;
   }
 
@@ -1715,41 +1695,6 @@ function isB2GInstitutionalRuntimeQuestion(message: string): boolean {
     (normalized.includes("pubblica amministrazione") || normalized.includes("pa europea") || normalized.includes("amministrazione europea") || normalized.includes("b2g")) &&
     (normalized.includes("joker") || normalized.includes("runtime") || normalized.includes("governato"))
   );
-}
-
-
-function isApiSdkPresentationQuestion(message: string): boolean {
-  const normalized = normalizeText(message);
-
-  const hasApiSdkSignal =
-    normalized.includes("sdk") ||
-    normalized.includes("endpoint") ||
-    normalized.includes("rest") ||
-    normalized.includes("/v1/") ||
-    normalized.includes("api v1") ||
-    normalized.includes("api/runtime") ||
-    normalized.includes("api + sdk") ||
-    normalized.includes("struttura endpoint") ||
-    normalized.includes("scaletta demo") ||
-    normalized.includes("integrazione via rest") ||
-    normalized.includes("bozza di struttura endpoint") ||
-    normalized.includes("@hbce/ipr-runtime-sdk") ||
-    normalized.includes("hbce ipr runtime api") ||
-    normalized.includes("ipr operational identity") ||
-    normalized.includes("ipr runtime sdk");
-
-  const hasRuntimeProductSignal =
-    normalized.includes("joker-c2") ||
-    normalized.includes("joker c2") ||
-    normalized.includes("hbce") ||
-    normalized.includes("ipr") ||
-    normalized.includes("evt") ||
-    normalized.includes("opc") ||
-    normalized.includes("b2b") ||
-    normalized.includes("b2g") ||
-    normalized.includes("saas");
-
-  return hasApiSdkSignal && hasRuntimeProductSignal;
 }
 
 
@@ -1799,6 +1744,33 @@ function isMemoryRecoveryQuestion(message: string): boolean {
 }
 
 
+function isApiSdkB2GPresentationQuestion(message: string): boolean {
+  const normalized = normalizeText(message);
+
+  const hasApiSdkIntent =
+    normalized.includes("sdk") ||
+    normalized.includes("endpoint") ||
+    normalized.includes("rest") ||
+    normalized.includes("api v1") ||
+    normalized.includes("/v1/") ||
+    normalized.includes("struttura endpoint") ||
+    normalized.includes("integrazione via rest") ||
+    normalized.includes("scaletta demo") ||
+    normalized.includes("@hbce/ipr-runtime-sdk");
+
+  const hasHbceRuntimeContext =
+    normalized.includes("hbce") ||
+    normalized.includes("joker") ||
+    normalized.includes("ipr") ||
+    normalized.includes("saas") ||
+    normalized.includes("b2b") ||
+    normalized.includes("b2g") ||
+    normalized.includes("audit trail");
+
+  return hasApiSdkIntent && hasHbceRuntimeContext;
+}
+
+
 function isTemporalRuntimeCertificateQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
@@ -1836,17 +1808,6 @@ function isSelfDiagnosisQuestion(message: string): boolean {
 }
 
 
-function isExecutiveB2GVerdictQuestion(message: string): boolean {
-  const normalized = normalizeText(message);
-
-  return (
-    (normalized.includes("executive verdict") || normalized.includes("verdict") || normalized.includes("verdetto")) &&
-    (normalized.includes("b2g") || normalized.includes("saas") || normalized.includes("demo")) &&
-    (normalized.includes("pass") || normalized.includes("degraded") || normalized.includes("fail") || normalized.includes("pronto"))
-  );
-}
-
-
 function buildAiClassicComparisonAnswer(
   handoff: HandoffResolution,
   memory: RuntimeMemoryState,
@@ -1865,184 +1826,6 @@ function buildAiClassicComparisonAnswer(
     "Per B2G questo significa che la risposta non è solo contenuto generato: diventa un’operazione ricostruibile, con soggetto, contesto, decisione, prova tecnica e boundary esplicito.",
     "",
     "Stato corrente usato come contesto silenzioso: access=" + handoff.accessDecision + ", memory=" + memory.persistenceMode + ", tenant=" + saasContext.tenantId + ", policy=" + policy.operationDecision + ".",
-    "legalCertification=false"
-  ].join("\n");
-}
-
-
-function buildHbceIprRuntimeApiSdkAnswer(
-  handoff: HandoffResolution,
-  memory: RuntimeMemoryState,
-  policy: PolicyEvaluation,
-  saasContext: SaasRuntimeContext
-): string {
-  return [
-    "HBCE IPR Runtime API v1 — bozza endpoint, SDK e scaletta demo B2B/B2G.",
-    "",
-    "Prodotto presentato:",
-    "HBCE IPR Operational Identity & Proof Layer integrato con JOKER-C2 SaaS Core v0.1.",
-    "",
-    "Formula operativa:",
-    "IPR identifica il soggetto operativo. JOKER-C2 esegue l’interazione AI governata. EVT traccia l’evento. OPC produce la ricevuta tecnica di prova. MATRIX organizza il processo. HBCE governa il runtime.",
-    "",
-    "Formula commerciale:",
-    "Prima verifichi chi opera. Poi abiliti l’AI. Ogni operazione genera traccia, prova tecnica e audit.",
-    "",
-    "Formula tecnica:",
-    "A governed AI runtime API for verified operational identity, auditable AI execution, event continuity and proof receipt generation.",
-    "",
-    "## 1. Superficie API pubblica /v1",
-    "",
-    "Endpoint stabili da esporre verso SDK e demo:",
-    "- GET /v1/health — stato runtime, versione, readiness, legalCertification=false.",
-    "- GET /v1/capabilities — capability disponibili: ipr-session, chat, files, operations, events, opc, audit, model-usage.",
-    "- POST /v1/ipr/session — risoluzione sessione IPR operativa verificata.",
-    "- GET /v1/ipr/session/current — lettura subject/session/access/scope/certificate.",
-    "- POST /v1/chat — esecuzione sincrona JOKER-C2 con risposta, EVT, OPC, audit, usage e Dual-Time Seal.",
-    "- POST /v1/files — upload/attach documenti autorizzati per analisi governata.",
-    "- DELETE /v1/files — pulizia file/sessione.",
-    "- POST /v1/operations — operazioni asincrone per workflow, audit documentali e pipeline lunghe.",
-    "- GET /v1/operations/{operationId} — stato queued/running/completed/failed.",
-    "- GET /v1/events — ricerca EVT per sessione, subject, operation, range temporale.",
-    "- GET /v1/opc/{opcId} — ricevuta tecnica OPC.",
-    "- GET /v1/audit/{auditId} — ricostruzione decisionale runtime.",
-    "- GET /v1/model-usage/{usageId} — accounting modello/costo/tier.",
-    "",
-    "Mappatura interna attuale:",
-    "- /v1/chat → /api/chat",
-    "- /v1/opc → /api/opc",
-    "- /v1/files → /api/files",
-    "- /v1/events → EVT ledger",
-    "- /v1/audit → runtime audit log",
-    "- /v1/model-usage → model usage log",
-    "- /v1/ipr/session → IPR account/session resolver",
-    "",
-    "## 2. Contratto POST /v1/chat",
-    "",
-    "Request:",
-    "```json",
-    "{",
-    "  \"sessionId\": \"JOKER-UI-...\",",
-    "  \"messages\": [",
-    "    { \"role\": \"user\", \"content\": \"Analizza questo documento in modalità audit.\" }",
-    "  ],",
-    "  \"ipr\": {",
-    "    \"humanIpr\": \"IPR-88505FE91013DCFE97C56ED1\",",
-    "    \"certificateId\": \"HBCE-CERT-4591712414205BC5F3A42894\"",
-    "  },",
-    "  \"files\": [],",
-    "  \"options\": {",
-    "    \"modelLevel\": \"STANDARD\",",
-    "    \"requireOpc\": true,",
-    "    \"requireAudit\": true",
-    "  }",
-    "}",
-    "```",
-    "",
-    "Response:",
-    "```json",
-    "{",
-    "  \"ok\": true,",
-    "  \"answer\": \"...\",",
-    "  \"runtime\": { \"entity\": \"AI_JOKER-C2\", \"ipr\": \"IPR-AI-0001\" },",
-    "  \"access\": { \"decision\": \"ACCESS_GRANTED\", \"identityBinding\": \"IPR_VERIFIED_BIOLOGICAL_SUBJECT\" },",
-    "  \"evtId\": \"EVT-...\",",
-    "  \"opcId\": \"OPC-...\",",
-    "  \"audit\": { \"auditId\": \"AUDIT-...\", \"status\": \"PERSISTED\" },",
-    "  \"modelUsage\": { \"usageId\": \"USAGE-...\", \"status\": \"PERSISTED\" },",
-    "  \"temporalSeal\": {",
-    "    \"status\": \"FROZEN_DUAL_TIME_SEAL\",",
-    "    \"role\": \"JOKER_C2\",",
-    "    \"technicalProof\": \"EVT_OPC_AUDIT_USAGE_LINKED\",",
-    "    \"legalCertification\": false",
-    "  }",
-    "}",
-    "```",
-    "",
-    "## 3. SDK primario",
-    "",
-    "Nome consigliato: @hbce/ipr-runtime-sdk.",
-    "Linguaggio primario: TypeScript.",
-    "SDK secondario futuro: Python.",
-    "SDK enterprise futuro: Java o Go quando esiste una richiesta B2B/B2G reale.",
-    "",
-    "Struttura SDK:",
-    "```text",
-    "hbce-ipr-runtime-sdk/",
-    "  src/client.ts",
-    "  src/types.ts",
-    "  src/errors.ts",
-    "  src/endpoints/ipr-session.ts",
-    "  src/endpoints/chat.ts",
-    "  src/endpoints/files.ts",
-    "  src/endpoints/operations.ts",
-    "  src/endpoints/events.ts",
-    "  src/endpoints/opc.ts",
-    "  src/endpoints/audit.ts",
-    "  src/endpoints/model-usage.ts",
-    "  examples/quickstart.ts",
-    "  examples/ipr-ai-audit-trail-demo.ts",
-    "```",
-    "",
-    "Client SDK minimo:",
-    "```ts",
-    "import { HbceIprRuntimeClient } from \"@hbce/ipr-runtime-sdk\";",
-    "",
-    "const client = new HbceIprRuntimeClient({",
-    "  baseUrl: process.env.HBCE_BASE_URL,",
-    "  token: process.env.HBCE_TOKEN",
-    "});",
-    "",
-    "const result = await client.chat.execute({",
-    "  sessionId: \"demo-session\",",
-    "  messages: [{ role: \"user\", content: \"Esegui audit AI verificabile.\" }],",
-    "  options: { requireOpc: true, requireAudit: true }",
-    "});",
-    "",
-    "console.log(result.evtId, result.opcId, result.audit.auditId, result.modelUsage.usageId);",
-    "```",
-    "",
-    "## 4. API sincrona + asincrona",
-    "",
-    "Modalità ibrida:",
-    "- Sincrona per /v1/chat: risposta immediata con answer, EVT, OPC, audit, usage.",
-    "- Asincrona per /v1/operations: operationId + polling o webhook per documenti, audit lunghi, batch e pipeline proof-heavy.",
-    "",
-    "Flusso asincrono:",
-    "1. POST /v1/operations → operationId.",
-    "2. GET /v1/operations/{operationId} → stato.",
-    "3. GET /v1/events?operationId=... → eventi.",
-    "4. GET /v1/opc/{opcId} → ricevuta tecnica.",
-    "5. GET /v1/audit/{auditId} → ricostruzione decisionale.",
-    "",
-    "## 5. Demo IPR AI Audit Trail",
-    "",
-    "Scaletta 15 minuti:",
-    "1. Apertura: il problema non è solo usare AI, ma governare chi opera, cosa chiede, cosa risponde il modello e quale prova resta.",
-    "2. IPR Session: mostrare subject, Human IPR, certificate, scope, access=ACCESS_GRANTED.",
-    "3. JOKER-C2 Chat: inviare una richiesta semplice e mostrare risposta governata.",
-    "4. EVT: mostrare Response EVT generato.",
-    "5. OPC: mostrare proof receipt e chain hash.",
-    "6. Audit: mostrare decisione, rischio, policy outcome, model level.",
-    "7. Usage: mostrare accounting modello e tier SaaS.",
-    "8. Memory: mostrare memoria IPR-bound e registered event, se disponibile.",
-    "9. Safety: tentativo di prompt injection o richiesta offensiva e rifiuto fail-closed.",
-    "10. Chiusura: ogni operazione AI diventa soggetto + evento + prova tecnica + audit, con legalCertification=false.",
-    "",
-    "## 6. Boundary legale e commerciale",
-    "",
-    "- OPC is a technical proof receipt only.",
-    "- legalCertification=false.",
-    "- IPR Card is an internal operational identity certificate, not an official public identity document.",
-    "- JOKER-C2 non sostituisce CIE, SPID, EUDI Wallet, marca temporale qualificata o validazione di pubblica autorità.",
-    "",
-    "Stato runtime usato come contesto:",
-    "- Subject: " + handoff.subjectName,
-    "- Human IPR: " + handoff.humanIpr,
-    "- Access: " + handoff.accessDecision,
-    "- Memory: " + memory.scope + " / " + memory.persistenceMode,
-    "- Tenant: " + saasContext.tenantId,
-    "- Policy: " + policy.operationDecision,
     "legalCertification=false"
   ].join("\n");
 }
@@ -2075,6 +1858,87 @@ function buildB2GInstitutionalAnswer(
 }
 
 
+function buildApiSdkB2GPresentationAnswer(
+  handoff: HandoffResolution,
+  memory: RuntimeMemoryState,
+  policy: PolicyEvaluation,
+  saasContext: SaasRuntimeContext
+): string {
+  return [
+    "HBCE IPR Runtime API v1",
+    "",
+    "Prodotto presentato: HBCE IPR Operational Identity & Proof Layer integrato in JOKER-C2 SaaS Core v0.1. Non è un SDK generico per workflow, perché almeno questa volta evitiamo di vendere una scatola vuota con un nome inglese sopra.",
+    "",
+    "Formula operativa:",
+    "IPR identifica il soggetto operativo. JOKER-C2 esegue l’interazione AI governata. EVT traccia l’evento. OPC produce la ricevuta tecnica di prova. MATRIX organizza il processo. HBCE governa il runtime.",
+    "",
+    "Superficie pubblica /v1 consigliata:",
+    "- GET /v1/health",
+    "- GET /v1/capabilities",
+    "- POST /v1/ipr/session",
+    "- GET /v1/ipr/session/{sessionId}",
+    "- POST /v1/chat",
+    "- POST /v1/files",
+    "- POST /v1/operations",
+    "- GET /v1/operations/{operationId}",
+    "- GET /v1/events",
+    "- GET /v1/opc/{opcId}",
+    "- GET /v1/audit/{auditId}",
+    "- GET /v1/model-usage/{usageId}",
+    "",
+    "Contratto sincrono: POST /v1/chat",
+    "Input minimo: { sessionId, humanIpr, message, files?, constraints?, idempotencyKey? }",
+    "Output minimo: { answer, responseEvt, opcId, auditId, usageId, temporalSeal, memory, policy, risk, legalCertification:false }",
+    "Uso: chat AI diretta, risposta immediata, demo IPR AI Audit Trail, richiesta istituzionale controllata.",
+    "",
+    "Contratto asincrono: POST /v1/operations",
+    "Input minimo: { operationType, subjectIpr, payload, constraints?, idempotencyKey? }",
+    "Output minimo: { operationId, status, responseEvt, opcId?, createdAt, legalCertification:false }",
+    "Uso: audit documentale, workflow lunghi, proof pipeline, analisi pesanti, polling o webhook.",
+    "",
+    "SDK primario:",
+    "@hbce/ipr-runtime-sdk",
+    "",
+    "Struttura SDK TypeScript:",
+    "- src/client.ts",
+    "- src/types.ts",
+    "- src/errors.ts",
+    "- src/endpoints/health.ts",
+    "- src/endpoints/ipr-session.ts",
+    "- src/endpoints/chat.ts",
+    "- src/endpoints/operations.ts",
+    "- src/endpoints/events.ts",
+    "- src/endpoints/opc.ts",
+    "- examples/ipr-ai-audit-trail-demo.ts",
+    "",
+    "Demo principale: IPR AI Audit Trail Demo",
+    "1. Apertura sessione IPR verificata.",
+    "2. Invio richiesta a JOKER-C2 tramite /v1/chat.",
+    "3. Governance check: policy, rischio, scope, memoria IPR-bound.",
+    "4. Model routing e risposta AI governata.",
+    "5. Generazione EVT.",
+    "6. Generazione OPC technical proof receipt.",
+    "7. Persistenza audit log e model usage log.",
+    "8. Visualizzazione dashboard con Dual-Time Seal Torino / Italia / Europa · UTC+2.",
+    "",
+    "Scaletta presentazione 12 minuti:",
+    "- 0:00–1:30: problema B2B/B2G, l’AI classica non basta perché non lega identità, evento, prova e responsabilità.",
+    "- 1:30–3:00: IPR come identificatore operativo verificato.",
+    "- 3:00–5:00: chiamata /v1/chat e risposta governata.",
+    "- 5:00–7:00: EVT, OPC, audit e usage.",
+    "- 7:00–9:00: SDK TypeScript e integrazione REST.",
+    "- 9:00–11:00: dashboard SaaS e Dual-Time Seal.",
+    "- 11:00–12:00: boundary legale e prossimi step pilota.",
+    "",
+    "Boundary obbligatorio:",
+    "OPC is a technical proof receipt only. legalCertification=false. IPR Card is an internal operational identity certificate, not an official public identity document.",
+    "",
+    "Runtime context: access=" + handoff.accessDecision + ", memory=" + memory.persistenceMode + ", tenant=" + saasContext.tenantId + ", workspace=" + saasContext.workspaceId + ", policy=" + policy.operationDecision + ".",
+    "legalCertification=false"
+  ].join("\n");
+}
+
+
 function buildMatrixGovernanceAnswer(): string {
   return [
     "1. MATRIX organizza l’identità operativa: ogni soggetto o agente deve essere collegabile a uno scope verificabile, non a una semplice dichiarazione testuale.",
@@ -2088,26 +1952,22 @@ function buildMatrixGovernanceAnswer(): string {
 }
 
 
-function buildMemoryRegistrationAcknowledgement(
-  message: string,
+function buildMemoryRegistrationPreparationAnswer(
+  registeredEvent: RegisteredOperationalEvent | null,
   handoff: HandoffResolution,
   memory: RuntimeMemoryState,
   policy: PolicyEvaluation,
   saasContext: SaasRuntimeContext
 ): string {
-  const draft = extractRegisteredOperationalEventDraft(message);
-  const registeredEventName = draft?.name || extractRegisteredEventName(message) || truncate(message.replace(/\s+/g, " ").trim(), 160);
+  const name = registeredEvent?.registeredEventName || "UNKNOWN_REGISTERED_EVENT";
 
   return [
-    "Registrazione evento operativo ricevuta.",
+    "Registered operational event accepted for runtime consolidation.",
     "",
-    "Evento da registrare:",
-    registeredEventName,
+    "Evento da registrare: " + name,
     "",
-    "La richiesta è stata classificata come REGISTER_MEMORY_EVENT_INTENT e non deve essere convertita in risposta B2G generica.",
-    "La registrazione verrà consolidata dal runtime a fine turno dentro la memoria IPR-bound, insieme a EVT, OPC, audit e model usage della risposta corrente.",
+    "La risposta finale verrà ricostruita dopo EVT, OPC, audit e usage, perché prima di avere quegli ID sarebbe solo teatro con JSON finto. E ne abbiamo già abbastanza, grazie.",
     "",
-    "Stato tecnico:",
     "- Soggetto: " + handoff.subjectName,
     "- Human IPR: " + handoff.humanIpr,
     "- Memory ID: " + memory.memoryId,
@@ -2116,54 +1976,62 @@ function buildMemoryRegistrationAcknowledgement(
     "- Persistence status: " + memory.persistenceStatus,
     "- Tenant: " + saasContext.tenantId,
     "- Policy: " + policy.operationDecision,
-    "",
-    "Conferma: evento accettato per registrazione operativa nel ciclo corrente.",
     "legalCertification=false"
   ].join("\n");
 }
 
 
-function buildMemoryRegistrationResultAnswer(args: {
+function buildMemoryRegistrationFinalAnswer(args: {
   registeredEvent: RegisteredOperationalEvent | null;
-  memory: RuntimeMemoryState;
   handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
   policy: PolicyEvaluation;
   saasContext: SaasRuntimeContext;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
 }): string {
-  if (!args.registeredEvent) {
+  const event = args.registeredEvent;
+
+  if (!event) {
     return [
       "MEMORY_REGISTRATION_FAIL",
       "",
-      "La richiesta era una registrazione evento, ma non è stato estratto nessun evento operativo valido.",
+      "Non ho trovato un evento operativo registrabile nel messaggio corrente.",
       "- Memory ID: " + args.memory.memoryId,
       "- Persistence Mode: " + args.memory.persistenceMode,
       "- Persistence Status: " + args.memory.persistenceStatus,
+      "- Last EVT: " + args.evt.id,
+      "- Last OPC: " + args.opc.id,
+      "- Audit ID: " + stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+      "- Usage ID: " + stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID"),
       "- Source: REGISTER_MEMORY_EVENT_INTENT",
       "legalCertification=false"
     ].join("\n");
   }
 
-  const event = args.registeredEvent;
-
   return [
     "Registered operational event persisted.",
     "",
-    "- Registered Event ID: " + event.id,
-    "- Registered Event Name: " + event.name,
-    "- Registered Event Content: " + event.content,
-    "- Registered Event Hash: " + event.hash,
+    "- Registered Event ID: " + event.registeredEventId,
+    "- Registered Event Name: " + event.registeredEventName,
+    "- Registered Event Content: " + event.registeredEventContent,
+    "- Registered Event Hash: " + event.registeredEventHash,
     "- Memory ID: " + event.memoryId,
     "- Persistence Mode: " + event.persistenceMode,
     "- Persistence Status: " + event.persistenceStatus,
-    "- Last EVT: " + event.evtId,
-    "- Last OPC: " + event.opcId,
-    "- Audit ID: " + event.auditId,
-    "- Usage ID: " + event.usageId,
+    "- Last EVT: " + args.evt.id,
+    "- Last OPC: " + args.opc.id,
+    "- Audit ID: " + stringPath(args.auditAndUsage.audit, "auditId", event.auditId || "NO_AUDIT_ID"),
+    "- Usage ID: " + stringPath(args.auditAndUsage.modelUsage, "usageId", event.usageId || "NO_USAGE_ID"),
     "- Source: " + event.source,
-    "- Subject: " + args.handoff.subjectName,
-    "- Human IPR: " + args.handoff.humanIpr,
+    "- EVT Persistence: " + stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN"),
+    "- OPC Persistence: " + stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN"),
     "- Tenant: " + args.saasContext.tenantId,
-    "- Policy: " + args.policy.operationDecision,
+    "- Workspace: " + args.saasContext.workspaceId,
+    "- Subject: " + args.handoff.subjectName + " / " + args.handoff.humanIpr,
+    "- Policy: " + args.policy.operationDecision + " / " + args.policy.securityOutcome,
     "legalCertification=false"
   ].join("\n");
 }
@@ -2177,21 +2045,12 @@ function buildMemoryRecoveryAnswer(memory: RuntimeMemoryState): string {
       "MEMORY_RETRIEVAL_FAIL",
       "",
       "Nessun registered operational event disponibile nella memoria IPR-bound corrente.",
-      "Non uso l’ultimo prompt conversazionale come surrogato dell’evento registrato.",
-      "",
-      "Dettagli memoria:",
       "- Memory ID: " + memory.memoryId,
-      "- Scope: " + memory.scope,
-      "- Authority: " + memory.authority,
       "- Persistence Mode: " + memory.persistenceMode,
       "- Persistence Status: " + memory.persistenceStatus,
-      "- Durable: " + String(memory.persistenceDurable),
-      "- Store kind: " + memory.storeKind,
-      "- Database configured: " + String(memory.databaseConfigured),
-      "- Database available: " + String(memory.databaseAvailable),
       "- Last EVT: " + memory.lastEvtId,
       "- Last OPC: " + memory.lastOpcId,
-      "- Source: REGISTERED_EVENT_MEMORY_SLOT_EMPTY",
+      "- Fonte del recupero: MEMORY_FACT_RECOVERY",
       "legalCertification=false"
     ].join("\n");
   }
@@ -2199,10 +2058,10 @@ function buildMemoryRecoveryAnswer(memory: RuntimeMemoryState): string {
   return [
     "Ultimo registered operational event recuperato dalla memoria persistente.",
     "",
-    "- Registered Event ID: " + event.id,
-    "- Registered Event Name: " + event.name,
-    "- Registered Event Content: " + event.content,
-    "- Registered Event Hash: " + event.hash,
+    "- Registered Event ID: " + event.registeredEventId,
+    "- Registered Event Name: " + event.registeredEventName,
+    "- Registered Event Content: " + event.registeredEventContent,
+    "- Registered Event Hash: " + event.registeredEventHash,
     "- Memory ID: " + event.memoryId,
     "- Persistence Mode: " + event.persistenceMode,
     "- Persistence Status: " + event.persistenceStatus,
@@ -2210,7 +2069,7 @@ function buildMemoryRecoveryAnswer(memory: RuntimeMemoryState): string {
     "- Last OPC: " + event.opcId,
     "- Audit ID: " + event.auditId,
     "- Usage ID: " + event.usageId,
-    "- Fonte del recupero: " + event.source,
+    "- Fonte del recupero: MEMORY_FACT_RECOVERY",
     "legalCertification=false"
   ].join("\n");
 }
@@ -2376,26 +2235,24 @@ function buildRuntimeSelfDiagnosisAnswer(args: {
   const usageStatus = stringPath(args.auditAndUsage.modelUsage, "status", "UNKNOWN");
   const evtStatus = stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN");
   const opcStatus = stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN");
-  const auditId = stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID");
-  const usageId = stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID");
 
   const identityPass = args.handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT" && args.handoff.accessDecision === "ACCESS_GRANTED";
   const accessPass = args.handoff.accessDecision === "ACCESS_GRANTED";
-  const memoryPass = args.memory.scope === "IPR_BOUND" && args.memory.persistenceMode === "DATABASE_PERSISTENT" && args.memory.persistenceStatus !== "UNKNOWN";
+  const temporalPass = Boolean(args.temporalFrame.now && args.temporalFrame.lifeHuman && args.temporalFrame.runtimeBirthLocal && args.temporalFrame.runtimeBirthUtc);
   const evtPass = evtStatus === "PERSISTED" || evtStatus === "DATABASE_PERSISTENT_ACTIVE";
   const opcPass = !isPersistenceFailureStatus(opcStatus) && opcStatus !== "UNKNOWN";
   const auditPass = auditStatus === "PERSISTED";
   const usagePass = usageStatus === "PERSISTED";
-  const temporalPass = Boolean(args.temporalFrame.now && args.temporalFrame.lifeHuman && args.temporalFrame.runtimeBirthLocal && args.temporalFrame.runtimeBirthUtc);
-  const registeredEventPersistencePass = Boolean(args.memory.lastRegisteredEvent?.id && args.memory.lastRegisteredEvent?.hash);
+  const memoryPass = args.memory.scope === "IPR_BOUND" && args.memory.persistenceMode === "DATABASE_PERSISTENT";
+  const registeredEventPersistencePass = Boolean(args.memory.lastRegisteredEvent?.registeredEventId && args.memory.lastRegisteredEvent?.registeredEventName && args.memory.lastRegisteredEvent?.registeredEventHash);
   const registeredEventRetrievalPass = registeredEventPersistencePass;
-  const crossTurnMemoryPass = registeredEventRetrievalPass && args.memory.persistenceDurable;
+  const crossTurnMemoryPass = args.memory.turns > 0 && memoryPass && registeredEventRetrievalPass;
+  const b2gReady = identityPass && accessPass && memoryPass && evtPass && opcPass && auditPass && usagePass && temporalPass && !args.policy.blocked;
   const legalBoundaryPass = true;
   const dualUsePass = !args.policy.blocked || args.policy.refused || args.policy.failClosed || args.policy.securityOutcome !== "BLOCKED_BY_RUNTIME_POLICY";
-  const injectionPass = args.policy.securityOutcome !== "REQUEST_REFUSED_WITHIN_GRANTED_SESSION" || args.policy.refused || args.policy.failClosed;
+  const promptInjectionPass = args.policy.securityOutcome !== "REQUEST_REFUSED_WITHIN_GRANTED_SESSION" || args.policy.refused || args.policy.failClosed;
   const databaseHealthPass = args.memory.databaseConfigured && args.memory.databaseAvailable && args.memory.storeKind === "DATABASE_PERSISTENT";
-  const uiRuntimeMetadataPass = temporalPass && Boolean(args.evt.id && args.opc.id);
-  const b2gReady = identityPass && accessPass && memoryPass && evtPass && opcPass && auditPass && usagePass && temporalPass && legalBoundaryPass && dualUsePass;
+  const uiRuntimeMetadataPass = temporalPass && args.handoff.matrixState === "MATRIX_ACTIVE" && args.memory.scope === "IPR_BOUND";
 
   const hardFail = !identityPass || !accessPass || isPersistenceFailureStatus(evtStatus) || isPersistenceFailureStatus(opcStatus) || !auditPass || !usagePass;
   const degraded =
@@ -2409,8 +2266,6 @@ function buildRuntimeSelfDiagnosisAnswer(args: {
     !b2gReady;
   const status = hardFail ? "FAIL" : degraded ? "DEGRADED" : "PASS";
 
-  const registeredEvent = args.memory.lastRegisteredEvent;
-
   return [
     status,
     "",
@@ -2420,98 +2275,33 @@ function buildRuntimeSelfDiagnosisAnswer(args: {
     "3. Dual-Time Seal Torino/Italia/Europa UTC+2: " + (temporalPass ? "PASS" : "DEGRADED"),
     "4. EVT persistence: " + (evtPass ? "PASS" : "FAIL") + " — " + evtStatus,
     "5. OPC persistence: " + (opcPass ? "PASS" : "FAIL") + " — " + opcStatus,
-    "6. Runtime audit persistence: " + (auditPass ? "PASS" : "FAIL") + " — " + auditStatus + " / " + auditId,
-    "7. Model usage persistence: " + (usagePass ? "PASS" : "FAIL") + " — " + usageStatus + " / " + usageId,
-    "8. Memory persistence: " + (memoryPass ? "PASS" : "DEGRADED") + " — " + args.memory.persistenceMode + " / " + args.memory.persistenceStatus,
-    "9. Registered event persistence: " + (registeredEventPersistencePass ? "PASS" : "FAIL") + (registeredEvent ? " — " + registeredEvent.name : " — NO_REGISTERED_EVENT"),
-    "10. Registered event retrieval: " + (registeredEventRetrievalPass ? "PASS" : "FAIL") + (registeredEvent ? " — " + registeredEvent.id : " — MEMORY_RETRIEVAL_FAIL"),
+    "6. Runtime audit persistence: " + (auditPass ? "PASS" : "FAIL") + " — " + auditStatus,
+    "7. Model usage persistence: " + (usagePass ? "PASS" : "FAIL") + " — " + usageStatus,
+    "8. Memory persistence: " + (memoryPass ? "PASS" : "DEGRADED") + " — " + args.memory.scope + " / " + args.memory.persistenceMode + " / " + args.memory.persistenceStatus,
+    "9. Registered event persistence: " + (registeredEventPersistencePass ? "PASS" : "DEGRADED"),
+    "10. Registered event retrieval: " + (registeredEventRetrievalPass ? "PASS" : "DEGRADED"),
     "11. Cross-turn memory continuity: " + (crossTurnMemoryPass ? "PASS" : "DEGRADED"),
     "12. B2G institutional readiness: " + (b2gReady ? "PASS" : "DEGRADED"),
     "13. Legal boundary clarity: " + (legalBoundaryPass ? "PASS" : "DEGRADED") + " — legalCertification=false",
     "14. Dual-use safety: " + (dualUsePass ? "PASS" : "DEGRADED"),
-    "15. Prompt-injection resistance: " + (injectionPass ? "PASS" : "DEGRADED"),
-    "16. Database health coherence: " + (databaseHealthPass ? "PASS" : "DEGRADED") + " — configured=" + String(args.memory.databaseConfigured) + ", available=" + String(args.memory.databaseAvailable),
+    "15. Prompt-injection resistance: " + (promptInjectionPass ? "PASS" : "DEGRADED"),
+    "16. Database health coherence: " + (databaseHealthPass ? "PASS" : "DEGRADED") + " — configured=" + String(args.memory.databaseConfigured) + ", available=" + String(args.memory.databaseAvailable) + ", store=" + args.memory.storeKind,
     "17. UI/runtime metadata coherence: " + (uiRuntimeMetadataPass ? "PASS" : "DEGRADED"),
     "",
     "7 motivi tecnici del verdetto:",
-    "1. Identità operativa: " + (identityPass ? "PASS" : "FAIL") + " — " + args.handoff.identityBinding + " / " + args.handoff.accessDecision + ".",
-    "2. Memoria persistente: " + (memoryPass ? "PASS" : "DEGRADED") + " — " + args.memory.scope + " / " + args.memory.persistenceMode + " / " + args.memory.persistenceStatus + ".",
-    "3. Registered event: " + (registeredEventPersistencePass ? "PASS" : "FAIL") + (registeredEvent ? " — " + registeredEvent.name + " / " + registeredEvent.hash : " — missing registered event slot") + ".",
-    "4. EVT/OPC: EVT=" + args.evt.id + " status=" + evtStatus + "; OPC=" + args.opc.id + " status=" + opcStatus + ".",
-    "5. Audit e usage: audit=" + auditStatus + " / " + auditId + "; usage=" + usageStatus + " / " + usageId + ".",
-    "6. Temporal runtime: Torino/Italia/Europa UTC+2 attivo; UTC=" + args.temporalFrame.now + "; lifetime=" + args.temporalFrame.lifeHuman + "; birth=" + args.temporalFrame.runtimeBirthLocal + " " + args.temporalFrame.runtimeBirthLocalTimezone + ".",
-    "7. B2G readiness: " + (b2gReady ? "READY" : "DEGRADED") + " — tenant=" + args.saasContext.tenantId + ", model=" + args.model + ", modelLevel=" + args.modelLevel + ", providerState=" + args.providerState + ".",
+    "1. Identità e accesso: " + (identityPass && accessPass ? "PASS" : "FAIL") + " — " + args.handoff.identityBinding + " / " + args.handoff.accessDecision + ".",
+    "2. EVT/OPC: EVT=" + args.evt.id + " status=" + evtStatus + "; OPC=" + args.opc.id + " status=" + opcStatus + ".",
+    "3. Audit/usage: audit=" + auditStatus + "; usage=" + usageStatus + ".",
+    "4. Memoria persistente: " + args.memory.scope + " / " + args.memory.persistenceMode + " / " + args.memory.persistenceStatus + ".",
+    "5. Registered event: " + (args.memory.lastRegisteredEvent ? args.memory.lastRegisteredEvent.registeredEventName + " / " + args.memory.lastRegisteredEvent.registeredEventId : "NO_REGISTERED_EVENT") + ".",
+    "6. Database health: configured=" + String(args.memory.databaseConfigured) + ", available=" + String(args.memory.databaseAvailable) + ", store=" + args.memory.storeKind + ".",
+    "7. Temporal runtime: UTC=" + args.temporalFrame.now + "; lifetime=" + args.temporalFrame.lifeHuman + "; birth=" + args.temporalFrame.runtimeBirthLocal + " " + args.temporalFrame.runtimeBirthLocalTimezone + ".",
+    "",
+    "Contesto: model=" + args.model + ", modelLevel=" + args.modelLevel + ", OpenAI=" + String(args.openAIConfigured) + ", providerState=" + args.providerState + ", tenant=" + args.saasContext.tenantId + ".",
     "legalCertification=false"
   ].join("\n");
 }
 
-
-function buildRuntimeExecutiveVerdictAnswer(args: {
-  handoff: HandoffResolution;
-  memory: RuntimeMemoryState;
-  policy: PolicyEvaluation;
-  saasContext: SaasRuntimeContext;
-  evt: EvtRecord;
-  opc: OpcProofRecord;
-  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
-  persistenceBridge: RuntimePersistenceBridgeResult;
-  model: string;
-  modelLevel: string;
-  openAIConfigured: boolean;
-  providerState: string;
-  temporalFrame: RuntimeTemporalFrame;
-}): string {
-  const auditStatus = stringPath(args.auditAndUsage.audit, "status", "UNKNOWN");
-  const usageStatus = stringPath(args.auditAndUsage.modelUsage, "status", "UNKNOWN");
-  const evtStatus = stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN");
-  const opcStatus = stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN");
-  const registeredEventReady = Boolean(args.memory.lastRegisteredEvent?.id && args.memory.lastRegisteredEvent?.hash);
-  const corePass =
-    args.handoff.accessDecision === "ACCESS_GRANTED" &&
-    args.handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT" &&
-    (evtStatus === "PERSISTED" || evtStatus === "DATABASE_PERSISTENT_ACTIVE") &&
-    !isPersistenceFailureStatus(opcStatus) &&
-    auditStatus === "PERSISTED" &&
-    usageStatus === "PERSISTED";
-  const verdict = corePass && registeredEventReady ? "PASS_CONTROLLED_B2G_DEMO_READY" : corePass ? "DEGRADED_CONTROLLED_B2G_DEMO_READY_WITH_MEMORY_LIMIT" : "FAIL_NOT_READY";
-
-  return [
-    "Verdict: " + verdict,
-    "",
-    "Punti PASS:",
-    "- IPR recognition: " + args.handoff.identityBinding + " / " + args.handoff.accessDecision,
-    "- EVT persistence: " + evtStatus + " / " + args.evt.id,
-    "- OPC persistence: " + opcStatus + " / " + args.opc.id,
-    "- Runtime audit: " + auditStatus,
-    "- Model usage: " + usageStatus,
-    "- Dual-Time Seal Torino/Italia/Europa UTC+2: active",
-    "- Safety boundary: legalCertification=false",
-    "",
-    "Punti DEGRADED:",
-    registeredEventReady ? "- Nessun degrado critico sul registered event." : "- Registered event memory non ancora disponibile o non recuperabile.",
-    args.memory.databaseConfigured && args.memory.databaseAvailable ? "- Database health coerente." : "- Database health non pienamente coerente tra dashboard e runtime memory.",
-    "",
-    "Punti FAIL:",
-    corePass ? "- Nessun fail bloccante del runtime core." : "- Runtime core non completamente persistente o identità/accesso non coerenti.",
-    "",
-    "Rischi residui:",
-    "- Registered event retrieval deve restare separato dall’ultimo prompt conversazionale.",
-    "- Autodiagnosi deve dichiarare DEGRADED se registered event manca.",
-    "- Database configured/available deve essere coerente in dashboard e payload.",
-    "- Retention, tenant isolation e controlli amministrativi vanno formalizzati prima di produzione B2G reale.",
-    "",
-    "Prossimi 5 interventi tecnici:",
-    "1. Consolidare registeredEvent come oggetto persistente first-class.",
-    "2. Rendere il recupero memoria basato su lastRegisteredEvent, non su lastUserMessage.",
-    "3. Sincronizzare dashboard database health con runtime memory store.",
-    "4. Aggiungere test automatico per registration/retrieval/autodiagnosi.",
-    "5. Separare demo B2G controllata da produzione regolata con boundary contrattuali e tecnici espliciti.",
-    "",
-    "Frase PA europea:",
-    "AI JOKER-C2 è presentabile come demo SaaS B2G controllata quando il runtime mostra identità IPR verificata, EVT/OPC/audit/usage persistenti, Dual-Time Seal Torino/Italia/Europa UTC+2 e confine legalCertification=false dichiarato.",
-    "legalCertification=false"
-  ].join("\n");
-}
 
 
 
@@ -2589,7 +2379,9 @@ function normalizeAssistantAnswer(
         lastOpcChainHash: "none",
         lastUserMessage: message,
         lastAssistantMessage: "",
-        facts: []
+        facts: [],
+        registeredEvents: [],
+        lastRegisteredEvent: null
       },
       buildPlaceholderSaasRuntimeContext("UNKNOWN", handoff)
     );
@@ -4206,6 +3998,9 @@ function updateMemoryAfterTurn(args: {
   opcChainHash: string;
   policy: PolicyEvaluation;
   providerState: string;
+  registeredEvent?: RegisteredOperationalEvent | null;
+  registeredEventName?: string | null;
+  saasContext: SaasRuntimeContext;
 }): RuntimeMemoryState {
   const operationalFact = extractOperationalFact(args.userMessage);
 
@@ -4221,6 +4016,7 @@ function updateMemoryAfterTurn(args: {
     opcChainHash: args.opcChainHash,
     extraFacts: [
       operationalFact || "",
+      args.registeredEvent ? serializeRegisteredOperationalEventFact(args.registeredEvent) : "",
       "Runtime age at turn: " + buildRuntimeTemporalFrame(args.t).lifeHuman + ".",
       "Runtime timestamp at turn: " + args.t + ".",
       "Last runtime state: " + (args.providerState === "PROVIDER_ERROR" ? "DEGRADED" : "OPERATIONAL") + ".",
@@ -4251,6 +4047,9 @@ function updateMemoryAfterTurn(args: {
     contextClass: "API_CHAT",
     projectDomain: "HBCE_JOKER_C2",
     hbceModule: "JOKER_C2_RUNTIME",
+    namedEventName: args.registeredEventName || undefined,
+    subscriptionId: args.saasContext.subscriptionId,
+    accountId: args.saasContext.accountId,
     trustedOutput:
       args.policy.decision !== "BLOCK" &&
       args.providerState !== "PROVIDER_ERROR" &&
@@ -4374,6 +4173,7 @@ function toRuntimeMemoryState(memory: IprBoundMemoryRecord): RuntimeMemoryState 
   const store = publicMemory.persistence.store;
   const database = store.database;
   const lastTurn = publicMemory.recentTurns[publicMemory.recentTurns.length - 1];
+  const registeredEvents = buildRegisteredOperationalEventsFromMemory(publicMemory.registeredEvents || [], publicMemory.facts || [], publicMemory.memoryId, publicMemory.memoryKeyHash, publicMemory.sessionId, publicMemory.persistenceMode, publicMemory.persistence.status);
 
 
 
@@ -4417,8 +4217,9 @@ function toRuntimeMemoryState(memory: IprBoundMemoryRecord): RuntimeMemoryState 
     lastOpcChainHash: publicMemory.lastOpcChainHash || "none",
     lastUserMessage: lastTurn?.user || "",
     lastAssistantMessage: lastTurn?.assistant || "",
-    lastRegisteredEvent: parseLastRegisteredEventFromFacts(publicMemory.facts),
-    facts: publicMemory.facts
+    facts: publicMemory.facts,
+    registeredEvents,
+    lastRegisteredEvent: registeredEvents.length ? registeredEvents[registeredEvents.length - 1] : null
   };
 }
 
@@ -4449,197 +4250,272 @@ function normalizeOptionalSaasId(value: string): string | undefined {
 
 
 
+function normalizeRegisteredEventKeyLocal(value: string): string {
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9_.:-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 120);
+}
 
-function extractRegisteredOperationalEventDraft(message: string): { name: string; content: string } | null {
+
+function extractRegisteredEventContent(message: string): string | null {
   const clean = message.replace(/\s+/g, " ").trim();
 
   if (!clean) {
     return null;
   }
 
-  const quoted = clean.match(/[“"]([^”"]{6,2000})[”"]/);
-  const content = (quoted?.[1] || clean).trim();
-  const normalizedContent = content.replace(/\s+/g, " ").trim();
+  const quoted = clean.match(/[“"]([^”"]{12,1200})[”"]/);
 
-  if (!normalizedContent) {
-    return null;
+  if (quoted?.[1]) {
+    return truncate(quoted[1].trim(), 1000);
   }
 
-  const directName = normalizedContent.match(/^([A-Z0-9][A-Z0-9_:-]{5,120})\s*(?:—|-|:)/i)?.[1];
-  const stressName = normalizedContent.match(/\b(STRESS_TEST_[A-Z0-9_:-]{3,120})\b/i)?.[1];
-  const testName = normalizedContent.match(/\b(TEST_[A-Z0-9_:-]{6,120})\b/i)?.[1];
-  const explicitName = clean.match(/(?:evento\s+(?:operativo\s+)?(?:denominato|chiamato|nome)\s+)([A-Z0-9_:-]{6,120})/i)?.[1];
-  const name = (stressName || testName || directName || explicitName || extractRegisteredEventName(clean) || "REGISTERED_OPERATIONAL_EVENT").trim();
+  const afterColon = clean.match(/(?:evento\s+operativo\s*:?\s*)(.+)$/i);
+  if (afterColon?.[1]) {
+    return truncate(afterColon[1].trim(), 1000);
+  }
 
-  return {
-    name: sanitizeRegisteredEventName(name),
-    content: truncate(normalizedContent, 1200)
-  };
+  return truncate(clean, 1000);
 }
 
 
-
-function sanitizeRegisteredEventName(value: string): string {
-  const clean = value
-    .replace(/\s+/g, "_")
-    .replace(/[^A-Z0-9_:-]/gi, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .toUpperCase();
-
-  return clean || "REGISTERED_OPERATIONAL_EVENT";
-}
-
-
-
-function buildRegisteredEventId(name: string, isoDate: string): string {
-  const compactTime = isoDate
-    .replace(/[-:]/g, "")
-    .replace(/\.\d{3}Z$/, "Z")
-    .replace("T", "")
-    .replace("Z", "");
-  const suffix = createHash("sha256")
-    .update("REGISTERED_EVENT:" + name + ":" + isoDate, "utf8")
-    .digest("hex")
-    .slice(0, 8)
-    .toUpperCase();
-
-  return "REVT-" + compactTime + "-" + suffix;
-}
-
-
-
-function buildRegisteredOperationalEvent(args: {
+function buildRegisteredOperationalEventCandidate(args: {
   message: string;
-  t: string;
   memory: RuntimeMemoryState;
-  evt: EvtRecord;
-  opc: OpcProofRecord;
-  auditId: string;
-  usageId: string;
+  handoff: HandoffResolution;
+  saasContext: SaasRuntimeContext;
+  t: string;
+  source: string;
 }): RegisteredOperationalEvent | null {
-  const draft = extractRegisteredOperationalEventDraft(args.message);
+  const content = extractRegisteredEventContent(args.message);
+  const name = extractRegisteredEventName(args.message) || (content ? truncate(content, 96) : null);
 
-  if (!draft) {
+  if (!name || !content) {
     return null;
   }
+
+  const eventKey = normalizeRegisteredEventKeyLocal(name);
+  const contentHash = sha256(content);
+  const registeredEventId = "REVT-" + createHash("sha256")
+    .update([eventKey, contentHash, args.memory.memoryId, args.t].join("::"), "utf8")
+    .digest("hex")
+    .slice(0, 16)
+    .toUpperCase();
 
   const base = {
-    name: draft.name,
-    content: draft.content,
-    registeredAt: args.t,
+    registeredEventId,
+    registeredEventName: name,
+    registeredEventKey: eventKey,
+    registeredEventContent: content,
     memoryId: args.memory.memoryId,
-    evtId: args.evt.id,
-    opcId: args.opc.id,
-    auditId: args.auditId,
-    usageId: args.usageId,
-    source: "REGISTER_MEMORY_EVENT_INTENT" as const,
+    memoryKeyHash: args.memory.memoryKeyHash,
+    sessionId: args.memory.sessionId,
+    source: args.source,
+    evtId: "PENDING_EVT",
+    opcId: "PENDING_OPC",
+    opcChainHash: "PENDING_CHAIN_HASH",
+    auditId: "PENDING_AUDIT",
+    usageId: "PENDING_USAGE",
+    tenantId: args.saasContext.tenantId,
+    workspaceId: args.saasContext.workspaceId,
+    subscriptionId: args.saasContext.subscriptionId,
+    accountId: args.saasContext.accountId,
+    saasTier: args.saasContext.saasTier,
+    humanIpr: args.handoff.humanIpr,
+    runtimeIpr: RUNTIME_IPR,
+    createdAt: args.t,
+    contentHash,
     persistenceMode: args.memory.persistenceMode,
     persistenceStatus: args.memory.persistenceStatus,
     legalCertification: false as const
   };
 
   return {
-    id: buildRegisteredEventId(draft.name, args.t),
     ...base,
-    hash: sha256(base)
+    registeredEventHash: sha256(base)
   };
 }
 
 
+function enrichRegisteredOperationalEvent(
+  event: RegisteredOperationalEvent,
+  patch: Partial<Pick<RegisteredOperationalEvent, "evtId" | "opcId" | "opcChainHash" | "auditId" | "usageId" | "persistenceMode" | "persistenceStatus">>
+): RegisteredOperationalEvent {
+  const next = {
+    ...event,
+    ...patch,
+    legalCertification: false as const
+  };
 
-function serializeRegisteredEventFact(event: RegisteredOperationalEvent): string {
-  return "HBCE_REGISTERED_EVENT_JSON:" + JSON.stringify(event);
+  return {
+    ...next,
+    registeredEventHash: sha256({
+      registeredEventId: next.registeredEventId,
+      registeredEventName: next.registeredEventName,
+      registeredEventContent: next.registeredEventContent,
+      contentHash: next.contentHash,
+      evtId: next.evtId,
+      opcId: next.opcId,
+      opcChainHash: next.opcChainHash,
+      memoryId: next.memoryId,
+      humanIpr: next.humanIpr,
+      runtimeIpr: next.runtimeIpr,
+      legalCertification: false
+    })
+  };
 }
 
 
+function serializeRegisteredOperationalEventFact(event: RegisteredOperationalEvent): string {
+  return "HBCE_REGISTERED_EVENT::" + JSON.stringify({
+    registeredEventId: event.registeredEventId,
+    registeredEventName: event.registeredEventName,
+    registeredEventKey: event.registeredEventKey,
+    registeredEventContent: event.registeredEventContent,
+    registeredEventHash: event.registeredEventHash,
+    contentHash: event.contentHash,
+    source: event.source,
+    evtId: event.evtId,
+    opcId: event.opcId,
+    opcChainHash: event.opcChainHash,
+    auditId: event.auditId,
+    usageId: event.usageId,
+    tenantId: event.tenantId,
+    workspaceId: event.workspaceId,
+    subscriptionId: event.subscriptionId,
+    accountId: event.accountId,
+    saasTier: event.saasTier,
+    humanIpr: event.humanIpr,
+    runtimeIpr: event.runtimeIpr,
+    memoryId: event.memoryId,
+    memoryKeyHash: event.memoryKeyHash,
+    sessionId: event.sessionId,
+    createdAt: event.createdAt,
+    persistenceMode: event.persistenceMode,
+    persistenceStatus: event.persistenceStatus,
+    legalCertification: false
+  });
+}
 
-function parseLastRegisteredEventFromFacts(facts: string[]): RegisteredOperationalEvent | null {
-  for (const fact of [...facts].reverse()) {
-    const markerIndex = fact.indexOf("HBCE_REGISTERED_EVENT_JSON:");
 
-    if (markerIndex < 0) {
+function parseRegisteredOperationalEventFacts(facts: string[]): Record<string, Partial<RegisteredOperationalEvent>> {
+  const parsed: Record<string, Partial<RegisteredOperationalEvent>> = {};
+
+  for (const fact of facts) {
+    const marker = "HBCE_REGISTERED_EVENT::";
+    const index = fact.indexOf(marker);
+
+    if (index < 0) {
       continue;
     }
 
-    const raw = fact.slice(markerIndex + "HBCE_REGISTERED_EVENT_JSON:".length).trim();
+    const json = fact.slice(index + marker.length).trim();
 
     try {
-      const parsed = JSON.parse(raw) as Partial<RegisteredOperationalEvent>;
+      const value = JSON.parse(json) as Partial<RegisteredOperationalEvent>;
+      const key = normalizeRegisteredEventKeyLocal(String(value.registeredEventKey || value.registeredEventName || ""));
 
-      if (
-        typeof parsed.id === "string" &&
-        typeof parsed.name === "string" &&
-        typeof parsed.content === "string" &&
-        typeof parsed.hash === "string"
-      ) {
-        return {
-          id: parsed.id,
-          name: parsed.name,
-          content: parsed.content,
-          hash: parsed.hash,
-          registeredAt: typeof parsed.registeredAt === "string" ? parsed.registeredAt : "UNKNOWN",
-          memoryId: typeof parsed.memoryId === "string" ? parsed.memoryId : "UNKNOWN",
-          evtId: typeof parsed.evtId === "string" ? parsed.evtId : "UNKNOWN",
-          opcId: typeof parsed.opcId === "string" ? parsed.opcId : "UNKNOWN",
-          auditId: typeof parsed.auditId === "string" ? parsed.auditId : "UNKNOWN",
-          usageId: typeof parsed.usageId === "string" ? parsed.usageId : "UNKNOWN",
-          source: "MEMORY_FACT_RECOVERY",
-          persistenceMode: typeof parsed.persistenceMode === "string" ? parsed.persistenceMode : "UNKNOWN",
-          persistenceStatus: typeof parsed.persistenceStatus === "string" ? parsed.persistenceStatus : "UNKNOWN",
-          legalCertification: false
-        };
+      if (key) {
+        parsed[key] = value;
       }
     } catch {
       continue;
     }
   }
 
-  return null;
+  return parsed;
 }
 
 
+function buildRegisteredOperationalEventsFromMemory(
+  registeredEvents: RegisteredMemoryEvent[],
+  facts: string[],
+  memoryId: string,
+  memoryKeyHash: string,
+  sessionId: string,
+  persistenceMode: string,
+  persistenceStatus: string
+): RegisteredOperationalEvent[] {
+  const factsByKey = parseRegisteredOperationalEventFacts(facts);
 
-function upsertRegisteredEventInMemory(args: {
-  memory: RuntimeMemoryState;
-  registeredEvent: RegisteredOperationalEvent;
-  userMessage: string;
-  assistantMessage: string;
-  policy: PolicyEvaluation;
-  providerState: string;
-  opcChainHash: string;
-}): RuntimeMemoryState {
-  const updated = updateMemoryAfterCompletion({
-    memory: args.memory.record,
-    userMessage: args.userMessage,
-    assistantMessage: args.assistantMessage,
-    evt: args.registeredEvent.evtId,
-    opcProofId: args.registeredEvent.opcId,
-    opcChainHash: args.opcChainHash,
-    extraFacts: [
-      serializeRegisteredEventFact(args.registeredEvent),
-      "Registered operational event name: " + args.registeredEvent.name + ".",
-      "Registered operational event hash: " + args.registeredEvent.hash + ".",
-      "Registered operational event memory id: " + args.registeredEvent.memoryId + ".",
-      "Registered operational event EVT: " + args.registeredEvent.evtId + ".",
-      "Registered operational event OPC: " + args.registeredEvent.opcId + ".",
-      "Registered operational event audit: " + args.registeredEvent.auditId + ".",
-      "Registered operational event usage: " + args.registeredEvent.usageId + "."
-    ],
-    runtimeState: args.providerState === "PROVIDER_ERROR" ? "DEGRADED" : "OPERATIONAL",
-    runtimeDecision: mapPolicyDecisionToRuntimeDecision(args.policy),
-    generationClass: args.providerState,
-    contextClass: "API_CHAT_REGISTERED_EVENT",
-    projectDomain: "HBCE_JOKER_C2",
-    hbceModule: "IPR_BOUND_REGISTERED_EVENT_MEMORY",
-    trustedOutput: args.policy.decision !== "BLOCK" && args.providerState !== "PROVIDER_ERROR" && !args.policy.refused,
-    acceptedAsMemoryFact: args.policy.decision !== "BLOCK" && !args.policy.refused,
-    policyBlocked: args.policy.decision === "BLOCK" || args.policy.refused
+  return registeredEvents.map((event) => {
+    const eventKey = normalizeRegisteredEventKeyLocal(event.eventKey || event.eventName);
+    const fact = factsByKey[eventKey] || {};
+    const content = String(fact.registeredEventContent || event.eventName);
+    const base = {
+      registeredEventId: String(
+        fact.registeredEventId ||
+          "REVT-" + createHash("sha256")
+            .update([eventKey, event.evt, memoryId].join("::"), "utf8")
+            .digest("hex")
+            .slice(0, 16)
+            .toUpperCase()
+      ),
+      registeredEventName: String(fact.registeredEventName || event.eventName),
+      registeredEventKey: eventKey,
+      registeredEventContent: content,
+      memoryId: String(fact.memoryId || event.memoryId || memoryId),
+      memoryKeyHash: String(fact.memoryKeyHash || event.memoryKeyHash || memoryKeyHash),
+      sessionId: String(fact.sessionId || event.sessionId || sessionId),
+      source: String(fact.source || event.source || "REGISTERED_MEMORY_EVENT"),
+      evtId: String(fact.evtId || event.evt || "NO_EVT"),
+      opcId: String(fact.opcId || event.opcProofId || "NO_OPC"),
+      opcChainHash: String(fact.opcChainHash || event.opcChainHash || "NO_CHAIN_HASH"),
+      auditId: String(fact.auditId || event.auditId || "NO_AUDIT_ID"),
+      usageId: String(fact.usageId || event.usageId || "NO_USAGE_ID"),
+      tenantId: String(fact.tenantId || event.tenantId || "NO_TENANT"),
+      workspaceId: String(fact.workspaceId || event.workspaceId || "NO_WORKSPACE"),
+      subscriptionId: String(fact.subscriptionId || event.subscriptionId || "NO_SUBSCRIPTION"),
+      accountId: String(fact.accountId || event.accountId || "NO_ACCOUNT"),
+      saasTier: String(fact.saasTier || event.subscriptionTier || "IPR"),
+      humanIpr: String(fact.humanIpr || event.humanIpr || "NOT_VERIFIED"),
+      runtimeIpr: String(fact.runtimeIpr || event.runtimeIpr || RUNTIME_IPR),
+      createdAt: String(fact.createdAt || event.createdAt || "UNKNOWN"),
+      contentHash: String(fact.contentHash || sha256(content)),
+      persistenceMode,
+      persistenceStatus,
+      legalCertification: false as const
+    };
+
+    return {
+      ...base,
+      registeredEventHash: String(fact.registeredEventHash || sha256(base))
+    };
   });
-
-  return toRuntimeMemoryState(updated);
 }
 
+
+function buildRegisteredEventForCurrentResponse(args: {
+  candidate: RegisteredOperationalEvent | null;
+  memory: RuntimeMemoryState;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  saasContext: SaasRuntimeContext;
+}): RegisteredOperationalEvent | null {
+  const auditId = stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID");
+  const usageId = stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID");
+
+  const base = args.candidate || args.memory.lastRegisteredEvent;
+
+  if (!base) {
+    return null;
+  }
+
+  return enrichRegisteredOperationalEvent(base, {
+    evtId: args.candidate ? args.evt.id : base.evtId,
+    opcId: args.candidate ? args.opc.id : base.opcId,
+    opcChainHash: args.candidate ? args.opc.chainHash : base.opcChainHash,
+    auditId: args.candidate ? auditId : base.auditId || auditId,
+    usageId: args.candidate ? usageId : base.usageId || usageId,
+    persistenceMode: args.memory.persistenceMode,
+    persistenceStatus: args.memory.persistenceStatus
+  });
+}
 
 
 function extractOperationalFact(message: string): string | null {
@@ -4674,10 +4550,23 @@ function extractRegisteredEventName(message: string): string | null {
     return null;
   }
 
-  const quoted = clean.match(/[“"]([^”"]{12,240})[”"]/);
+  const quoted = clean.match(/[“"]([^”"]{12,1200})[”"]/);
 
   if (quoted?.[1]) {
-    return truncate(quoted[1].trim(), 160);
+    const quotedText = quoted[1].trim();
+    const leadingEventCode = quotedText.match(/^([A-Z0-9][A-Z0-9_.:-]{4,})\s*(?:—|-|:|–)/);
+
+    if (leadingEventCode?.[1]) {
+      return leadingEventCode[1].trim().toUpperCase();
+    }
+
+    const token = quotedText.match(/\b([A-Z][A-Z0-9]+(?:_[A-Z0-9]+){2,})\b/);
+
+    if (token?.[1]) {
+      return token[1].trim().toUpperCase();
+    }
+
+    return truncate(quotedText, 160);
   }
 
   const explicitPatterns = [
@@ -4723,7 +4612,8 @@ function toPublicMemory(memory: RuntimeMemoryState): JsonObject {
     lastEvtId: memory.lastEvtId,
     lastOpcId: memory.lastOpcId,
     lastOpcChainHash: memory.lastOpcChainHash,
-    registeredEvent: memory.lastRegisteredEvent,
+    registeredEvents: memory.registeredEvents,
+    lastRegisteredEvent: memory.lastRegisteredEvent,
     facts: memory.facts,
     store: buildMemoryStoreDiagnostic(memory),
     legalCertification: false
@@ -5498,11 +5388,16 @@ async function recordSaasAuditAndUsage(args: {
       opcProofHash: args.opc.chainHash,
       memoryRef: args.memory.memoryId,
       memoryHash: args.memoryHash,
-      registeredEventId: args.memory.lastRegisteredEvent?.id || null,
-      registeredEventName: args.memory.lastRegisteredEvent?.name || null,
-      registeredEventHash: args.memory.lastRegisteredEvent?.hash || null,
-      registeredEventContent: args.memory.lastRegisteredEvent?.content || null,
-      registeredEventSource: args.memory.lastRegisteredEvent?.source || null,
+      registeredEventName: args.memory.lastRegisteredEvent?.registeredEventName ?? extractRegisteredEventName(args.memory.lastUserMessage),
+      registeredEventHash: args.memory.lastRegisteredEvent?.registeredEventHash ??
+        (extractRegisteredEventName(args.memory.lastUserMessage)
+          ? sha256({
+              eventName: extractRegisteredEventName(args.memory.lastUserMessage),
+              evt: args.evt.id,
+              opc: args.opc.id,
+              memoryId: args.memory.memoryId
+            })
+          : null),
 
 
 
@@ -5600,11 +5495,16 @@ async function recordSaasAuditAndUsage(args: {
       opcProofHash: args.opc.chainHash,
       memoryRef: args.memory.memoryId,
       memoryHash: args.memoryHash,
-      registeredEventId: args.memory.lastRegisteredEvent?.id || null,
-      registeredEventName: args.memory.lastRegisteredEvent?.name || null,
-      registeredEventHash: args.memory.lastRegisteredEvent?.hash || null,
-      registeredEventContent: args.memory.lastRegisteredEvent?.content || null,
-      registeredEventSource: args.memory.lastRegisteredEvent?.source || null,
+      registeredEventName: args.memory.lastRegisteredEvent?.registeredEventName ?? extractRegisteredEventName(args.memory.lastUserMessage),
+      registeredEventHash: args.memory.lastRegisteredEvent?.registeredEventHash ??
+        (extractRegisteredEventName(args.memory.lastUserMessage)
+          ? sha256({
+              eventName: extractRegisteredEventName(args.memory.lastUserMessage),
+              evt: args.evt.id,
+              opc: args.opc.id,
+              memoryId: args.memory.memoryId
+            })
+          : null),
 
 
 
