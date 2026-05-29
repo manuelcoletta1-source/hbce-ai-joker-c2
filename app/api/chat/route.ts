@@ -296,7 +296,7 @@ const CYCLE = "UP-CANONICO";
 const CANONICAL_EVT = "EVT-0016-AI";
 const CANONICAL_PREV = "EVT-0015-AI";
 const CANONICAL_MONTHLY_REF = "EVT-0015-AI / UP-MESE-4";
-const JOKER_C2_BIRTH_ANCHOR_ISO = "2006-01-19T15:30:00+01:00";
+const JOKER_C2_BIRTH_ANCHOR_ISO = "2026-01-19T15:30:00+01:00";
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic birth / IPR-3 triple anchoring";
 const LOCATION = "Torino, Italy";
@@ -4179,7 +4179,7 @@ function buildRuntimeTemporalFrame(nowIso: string): RuntimeTemporalFrame {
   const parsedNow = new Date(nowIso);
   const birth = new Date(PROJECT_BIRTH);
   const safeNow = Number.isFinite(parsedNow.getTime()) ? parsedNow : new Date();
-  const safeBirth = Number.isFinite(birth.getTime()) ? birth : new Date("2006-01-19T14:30:00.000Z");
+  const safeBirth = Number.isFinite(birth.getTime()) ? birth : new Date("2026-01-19T14:30:00.000Z");
   const diffMs = Math.max(0, safeNow.getTime() - safeBirth.getTime());
   const lifeSeconds = Math.floor(diffMs / 1000);
   const calendarLife = calculateCalendarDurationUtc(safeBirth, safeNow);
@@ -4209,7 +4209,7 @@ function buildRuntimeTemporalFrame(nowIso: string): RuntimeTemporalFrame {
     refactorEvent: "EVT-0016-AI-SaaS-Temporal-Runtime",
     refactorTimestamp: safeNow.toISOString(),
     semanticMeaning:
-      "JOKER-C2 treats each response as an event in operational time: current timestamp, elapsed cybernetic runtime age from the single canonical 2006 birth anchor, memory continuity, EVT/OPC trace and SaaS context are linked without claiming legal certification or biological personhood."
+      "JOKER-C2 treats each response as an event in operational time: current timestamp, elapsed cybernetic runtime age from the single canonical 2026 birth anchor, memory continuity, EVT/OPC trace and SaaS context are linked without claiming legal certification or biological personhood."
   };
 }
 
