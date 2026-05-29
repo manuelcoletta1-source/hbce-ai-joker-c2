@@ -170,6 +170,8 @@ export type MemoryEventLink = {
 export type RegisteredMemoryEvent = {
   eventName: string;
   eventKey: string;
+  eventContent: string;
+  eventHash: string;
   evt: string;
   opcProofId?: string;
   opcChainHash?: string;
@@ -496,32 +498,126 @@ export function normalizeRegisteredEventKey(value: string): string {
   return normalizeRuntimeText(value)
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "")
+    .slice(0, 180)
     .toUpperCase();
 }
 
 
-function extractNamedEventName(input: UpdateMemoryAfterCompletionInput): string | null {
-  const explicit = input.namedEventName?.trim();
+function cleanRegisteredEventText(value: string): string {
+  return value
+    .replace(/^[\s:："“”'`]+/, "")
+    .replace(/[\s"“”'`]+$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+
+function isMemoryRegistrationRequest(value: string): boolean {
+  const normalized = normalizeRuntimeText(value);
+
+  return (
+    /\b(registra|register|salva|save|memorizza|ricorda|remember)\b/.test(normalized) &&
+    /(memoria|memory|evento operativo|operational event|evento nominato|registered event)/.test(normalized)
+  );
+}
+
+
+function buildRegisteredEventTitle(value: string): string {
+  const cleaned = cleanRegisteredEventText(value);
+
+  if (!cleaned) {
+    return "UNNAMED_OPERATIONAL_EVENT";
+  }
+
+  const firstSentence = cleaned
+    .split(/(?<=[.!?])\s+/)[0]
+    ?.trim();
+
+  return truncateRuntimeText(firstSentence || cleaned, 180);
+}
+
+
+function extractQuotedRegisteredEventContent(value: string): string | null {
+  const registrationIntent =
+    /(?:registra|register|salva|save|memorizza|ricorda|remember|evento\s+operativo|operational\s+event)/i;
+
+  if (!registrationIntent.test(value)) {
+    return null;
+  }
+
+  const quoted = value.match(/["“”'`]([^"“”'`]{8,1200})["“”'`]/);
+
+  if (!quoted?.[1]) {
+    return null;
+  }
+
+  return truncateRuntimeText(cleanRegisteredEventText(quoted[1]), 700);
+}
+
+
+function extractColonRegisteredEventContent(value: string): string | null {
+  const colon = value.match(
+    /(?:registra|register|salva|save|memorizza|ricorda|remember)[\s\S]{0,240}?(?:evento\s+operativo|operational\s+event)[\s\S]{0,80}?[:：]\s*([\s\S]{8,1200})/i
+  );
+
+  if (!colon?.[1]) {
+    return null;
+  }
+
+  const firstBlock = colon[1]
+    .split(/\n{2,}/)[0]
+    ?.replace(/(?:conferma|indica|riporta|include|with|return)\b[\s\S]*$/i, "")
+    .trim();
+
+  return firstBlock ? truncateRuntimeText(cleanRegisteredEventText(firstBlock), 700) : null;
+}
+
+
+export function extractRegisteredMemoryEventContent(
+  input: UpdateMemoryAfterCompletionInput | string
+): string | null {
+  const text = typeof input === "string" ? input : input.userMessage;
+  const explicit = typeof input === "string" ? undefined : input.namedEventName?.trim();
 
   if (explicit) {
-    return explicit;
+    return truncateRuntimeText(cleanRegisteredEventText(explicit), 700);
   }
 
-  const text = input.userMessage.replace(/\s+/g, " " ).trim();
+  const quotedContent = extractQuotedRegisteredEventContent(text);
 
-  const quoted = text.match(/(?:registra|register|denominato|named|nome evento|evento denominato)\s+(?:un\s+nuovo\s+)?(?:evento\s+operativo\s+)?(?:denominato\s*)?["“”'`]?([A-Z0-9][A-Z0-9_.:-]{4,})["“”'`]?/i);
-
-  if (quoted?.[1]) {
-    return quoted[1].trim();
+  if (quotedContent) {
+    return quotedContent;
   }
 
-  const token = text.match(/\b([A-Z][A-Z0-9]+(?:_[A-Z0-9]+){2,})\b/);
+  const colonContent = extractColonRegisteredEventContent(text);
 
-  if (/(registra|register|evento operativo|named event|evento nominato)/i.test(text) && token?.[1]) {
+  if (colonContent) {
+    return colonContent;
+  }
+
+  const normalizedText = text.replace(/\s+/g, " ").trim();
+  const token = normalizedText.match(/\b([A-Z][A-Z0-9]+(?:_[A-Z0-9]+){2,})\b/);
+
+  if (isMemoryRegistrationRequest(normalizedText) && token?.[1]) {
     return token[1].trim();
   }
 
+  if (isMemoryRegistrationRequest(normalizedText)) {
+    return truncateRuntimeText(normalizedText, 700);
+  }
+
   return null;
+}
+
+
+function extractNamedEventName(input: UpdateMemoryAfterCompletionInput): string | null {
+  const content = extractRegisteredMemoryEventContent(input);
+
+  if (!content) {
+    return null;
+  }
+
+  return buildRegisteredEventTitle(content);
 }
 
 
@@ -1414,12 +1510,35 @@ export function updateMemoryAfterCompletion(
   };
 
 
-  const namedEventName = extractNamedEventName(input);
+  const registeredEventContent = extractRegisteredMemoryEventContent(input);
+  const namedEventName = registeredEventContent
+    ? buildRegisteredEventTitle(registeredEventContent)
+    : null;
+  const registeredEventHash = registeredEventContent
+    ? sha256Hex(
+        stableStringify({
+          content: registeredEventContent,
+          evt: input.evt,
+          opcProofId: input.opcProofId || "NO_OPC",
+          auditId: input.auditId || "NO_AUDIT",
+          usageId: input.usageId || "NO_USAGE",
+          memoryId: input.memory.memoryId,
+          memoryKeyHash: input.memory.memoryKeyHash,
+          legalCertification: false
+        })
+      )
+    : null;
   const registeredEvent: RegisteredMemoryEvent | null =
-    namedEventName && !turnMetadata.policyBlocked && turnMetadata.acceptedAsMemoryFact
+    registeredEventContent &&
+    namedEventName &&
+    registeredEventHash &&
+    !turnMetadata.policyBlocked &&
+    turnMetadata.acceptedAsMemoryFact
       ? {
           eventName: namedEventName,
-          eventKey: normalizeRegisteredEventKey(namedEventName),
+          eventKey: normalizeRegisteredEventKey(registeredEventContent),
+          eventContent: registeredEventContent,
+          eventHash: registeredEventHash,
           evt: input.evt,
           opcProofId: input.opcProofId,
           opcChainHash: input.opcChainHash,
@@ -1486,7 +1605,7 @@ export function updateMemoryAfterCompletion(
     `Last memory update remained under ${SAAS_RELEASE} transition boundary.`,
     `Last memory update was linked to SaaS tenant ${saas.tenantId} and workspace ${saas.workspaceId}.`,
     registeredEvent
-      ? `Registered named event ${registeredEvent.eventName} with EVT ${registeredEvent.evt}.`
+      ? `Registered operational event ${registeredEvent.eventName} with EVT ${registeredEvent.evt}, OPC ${registeredEvent.opcProofId || "none"}, Audit ${registeredEvent.auditId || "none"}, Usage ${registeredEvent.usageId || "none"}, Hash ${registeredEvent.eventHash}. Content: ${registeredEvent.eventContent}.`
       : ""
   ].filter(Boolean);
 
@@ -1513,7 +1632,7 @@ export function updateMemoryAfterCompletion(
     input.opcProofId ? `Last OPC proof receipt is ${input.opcProofId}.` : "",
     input.opcChainHash ? `Last OPC chain hash is ${input.opcChainHash}.` : "",
     registeredEvent
-      ? `Last registered named event is ${registeredEvent.eventName} linked to ${registeredEvent.evt}.`
+      ? `Last registered operational event is ${registeredEvent.eventName}; content: ${registeredEvent.eventContent}; hash ${registeredEvent.eventHash}; linked to EVT ${registeredEvent.evt}, OPC ${registeredEvent.opcProofId || "none"}, Audit ${registeredEvent.auditId || "none"}, Usage ${registeredEvent.usageId || "none"}.`
       : "",
     turn.trustStatus !== "TRUSTED_OPERATIONAL_OUTPUT"
       ? `Last memory turn is ${turn.trustStatus} and is preserved for traceability only.`
@@ -1681,7 +1800,7 @@ export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
     `Last memory OPC chain hash: ${memory.lastOpcChainHash || "none"}`,
     `Registered named events: ${(memory.registeredEvents || []).length}`,
     ...(memory.registeredEvents || []).slice(-8).map((event) =>
-      `Registered event ${event.eventName}: EVT=${event.evt}; OPC=${event.opcProofId || "none"}; Audit=${event.auditId || "none"}; Usage=${event.usageId || "none"}; Tenant=${event.tenantId}; Workspace=${event.workspaceId}; Memory=${event.memoryId}; Created=${event.createdAt}.`
+      `Registered event ${event.eventName}: Content=${event.eventContent || event.eventName}; Hash=${event.eventHash || "NO_EVENT_HASH"}; EVT=${event.evt}; OPC=${event.opcProofId || "none"}; Audit=${event.auditId || "none"}; Usage=${event.usageId || "none"}; Tenant=${event.tenantId}; Workspace=${event.workspaceId}; Memory=${event.memoryId}; Created=${event.createdAt}; Source=${event.source}; legalCertification=false.`
     ),
     `Summary: ${memory.summary}`,
     "Canonical memory facts:",
