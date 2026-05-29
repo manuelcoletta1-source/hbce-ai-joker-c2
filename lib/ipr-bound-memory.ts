@@ -167,7 +167,19 @@ export type MemoryEventLink = {
 };
 
 
+export type RegisteredMemoryEventSource =
+  | "REGISTER_MEMORY_EVENT_INTENT"
+  | "USER_DECLARED_EVENT"
+  | "RUNTIME_NAMED_EVENT"
+  | "SYSTEM_DERIVED_EVENT"
+  | "MEMORY_IMPORT";
+
+
 export type RegisteredMemoryEvent = {
+  registeredEventId: string;
+  registeredEventName: string;
+  registeredEventContent: string;
+  registeredEventHash: string;
   eventName: string;
   eventKey: string;
   eventContent: string;
@@ -187,12 +199,15 @@ export type RegisteredMemoryEvent = {
   sessionId: string;
   humanIpr?: string;
   runtimeIpr: string;
-  source: "USER_DECLARED_EVENT" | "RUNTIME_NAMED_EVENT" | "SYSTEM_DERIVED_EVENT";
+  source: RegisteredMemoryEventSource;
   createdAt: string;
   userMessageHash: string;
   assistantMessageHash: string;
   legalCertification: false;
 };
+
+
+export type RegisteredOperationalEvent = RegisteredMemoryEvent;
 
 
 export type MemoryTurn = {
@@ -238,6 +253,7 @@ export type IprBoundMemoryRecordWithoutHash = {
   lastOpcChainHash?: string;
   eventLinks: MemoryEventLink[];
   registeredEvents: RegisteredMemoryEvent[];
+  lastRegisteredEvent?: RegisteredMemoryEvent;
   facts: string[];
   recentTurns: MemoryTurn[];
   summary: string;
@@ -273,6 +289,10 @@ export type UpdateMemoryAfterCompletionInput = {
   auditId?: string;
   usageId?: string;
   namedEventName?: string;
+  registeredEventId?: string;
+  registeredEventName?: string;
+  registeredEventContent?: string;
+  registeredEventSource?: RegisteredMemoryEventSource | string;
   subscriptionId?: string;
   accountId?: string;
   extraFacts?: string[];
@@ -313,6 +333,7 @@ export type PublicIprBoundMemoryRecord = {
   lastOpcChainHash?: string;
   eventLinks: MemoryEventLink[];
   registeredEvents: RegisteredMemoryEvent[];
+  lastRegisteredEvent?: RegisteredMemoryEvent;
   facts: string[];
   recentTurns: MemoryTurn[];
   summary: string;
@@ -522,18 +543,76 @@ function isMemoryRegistrationRequest(value: string): boolean {
 }
 
 
-function buildRegisteredEventTitle(value: string): string {
+function extractRegisteredEventCode(value: string): string | null {
+  const cleaned = cleanRegisteredEventText(value);
+  const directCode = cleaned.match(/([A-Z][A-Z0-9]+(?:_[A-Z0-9]+){1,})/);
+
+  return directCode?.[1]?.trim() || null;
+}
+
+
+function buildRegisteredEventTitle(value: string, explicitName?: string | null): string {
+  const explicit = cleanRegisteredEventText(explicitName || "");
+
+  if (explicit) {
+    return truncateRuntimeText(explicit, 180);
+  }
+
   const cleaned = cleanRegisteredEventText(value);
 
   if (!cleaned) {
     return "UNNAMED_OPERATIONAL_EVENT";
   }
 
-  const firstSentence = cleaned
-    .split(/(?<=[.!?])\s+/)[0]
+  const code = extractRegisteredEventCode(cleaned);
+
+  if (code) {
+    return code;
+  }
+
+  const firstSegment = cleaned
+    .split(/\s+[—–-]\s+|\s*:\s+|(?<=[.!?])\s+/)[0]
     ?.trim();
 
-  return truncateRuntimeText(firstSentence || cleaned, 180);
+  return truncateRuntimeText(firstSegment || cleaned, 180);
+}
+
+
+function buildRegisteredEventId(input: {
+  explicitId?: string;
+  eventName: string;
+  eventContent: string;
+  memoryId: string;
+  evt: string;
+  createdAt: string;
+}): string {
+  const explicit = input.explicitId?.trim();
+
+  if (explicit) {
+    return explicit;
+  }
+
+  return `REVT-${sha256Hex(stableStringify(input)).slice(0, 16)}`;
+}
+
+
+function normalizeRegisteredMemoryEventSource(
+  value: unknown,
+  fallback: RegisteredMemoryEventSource
+): RegisteredMemoryEventSource {
+  const normalized = String(value || "").trim().toUpperCase();
+
+  if (
+    normalized === "REGISTER_MEMORY_EVENT_INTENT" ||
+    normalized === "USER_DECLARED_EVENT" ||
+    normalized === "RUNTIME_NAMED_EVENT" ||
+    normalized === "SYSTEM_DERIVED_EVENT" ||
+    normalized === "MEMORY_IMPORT"
+  ) {
+    return normalized;
+  }
+
+  return fallback;
 }
 
 
@@ -577,9 +656,14 @@ export function extractRegisteredMemoryEventContent(
   input: UpdateMemoryAfterCompletionInput | string
 ): string | null {
   const text = typeof input === "string" ? input : input.userMessage;
+
+  if (typeof input !== "string" && input.registeredEventContent?.trim()) {
+    return truncateRuntimeText(cleanRegisteredEventText(input.registeredEventContent), 900);
+  }
+
   const explicit = typeof input === "string" ? undefined : input.namedEventName?.trim();
 
-  if (explicit) {
+  if (explicit && !isMemoryRegistrationRequest(text)) {
     return truncateRuntimeText(cleanRegisteredEventText(explicit), 700);
   }
 
@@ -595,8 +679,12 @@ export function extractRegisteredMemoryEventContent(
     return colonContent;
   }
 
+  if (explicit) {
+    return truncateRuntimeText(cleanRegisteredEventText(explicit), 700);
+  }
+
   const normalizedText = text.replace(/\s+/g, " ").trim();
-  const token = normalizedText.match(/\b([A-Z][A-Z0-9]+(?:_[A-Z0-9]+){2,})\b/);
+  const token = normalizedText.match(/([A-Z][A-Z0-9]+(?:_[A-Z0-9]+){1,})/);
 
   if (isMemoryRegistrationRequest(normalizedText) && token?.[1]) {
     return token[1].trim();
@@ -617,7 +705,7 @@ function extractNamedEventName(input: UpdateMemoryAfterCompletionInput): string 
     return null;
   }
 
-  return buildRegisteredEventTitle(content);
+  return buildRegisteredEventTitle(content, input.registeredEventName || input.namedEventName || null);
 }
 
 
@@ -641,16 +729,35 @@ export function findRegisteredMemoryEvent(
     return null;
   }
 
-  return (memory.registeredEvents || []).find((event) => event.eventKey === eventKey) || null;
+  return (
+    (memory.registeredEvents || []).find((event) =>
+      event.eventKey === eventKey ||
+      normalizeRegisteredEventKey(event.eventName) === eventKey ||
+      normalizeRegisteredEventKey(event.registeredEventName) === eventKey ||
+      normalizeRegisteredEventKey(event.eventContent) === eventKey ||
+      normalizeRegisteredEventKey(event.registeredEventContent) === eventKey
+    ) || null
+  );
 }
 
 
 export function getLastRegisteredMemoryEvent(
   memory: IprBoundMemoryRecord | PublicIprBoundMemoryRecord
 ): RegisteredMemoryEvent | null {
+  if (memory.lastRegisteredEvent) {
+    return memory.lastRegisteredEvent;
+  }
+
   const events = memory.registeredEvents || [];
 
   return events.length ? events[events.length - 1] : null;
+}
+
+
+export function getLastRegisteredOperationalEvent(
+  memory: IprBoundMemoryRecord | PublicIprBoundMemoryRecord
+): RegisteredOperationalEvent | null {
+  return getLastRegisteredMemoryEvent(memory);
 }
 
 
@@ -1320,6 +1427,7 @@ export function buildMemoryRecordHash(
     lastOpcChainHash: record.lastOpcChainHash,
     eventLinks: record.eventLinks,
     registeredEvents: record.registeredEvents || [],
+    lastRegisteredEvent: record.lastRegisteredEvent,
     facts: record.facts,
     recentTurns: record.recentTurns,
     summary: record.summary
@@ -1403,6 +1511,7 @@ export function getOrCreateRuntimeMemory(
       lastOpcChainHash: existing.lastOpcChainHash,
       eventLinks: existing.eventLinks,
       registeredEvents: existing.registeredEvents || [],
+      lastRegisteredEvent: existing.lastRegisteredEvent,
       facts: mergeUniqueStrings(existingFacts, nextFacts, MAX_MEMORY_FACTS),
       recentTurns: existing.recentTurns,
       summary: buildMemorySummary({
@@ -1452,6 +1561,7 @@ export function getOrCreateRuntimeMemory(
     lastOpcChainHash: undefined,
     eventLinks: [],
     registeredEvents: [],
+    lastRegisteredEvent: undefined,
     facts: buildDerivedCanonicalMemoryFacts(input, persistence, saas),
     recentTurns: [],
     summary: buildMemorySummary({
@@ -1512,12 +1622,27 @@ export function updateMemoryAfterCompletion(
 
   const registeredEventContent = extractRegisteredMemoryEventContent(input);
   const namedEventName = registeredEventContent
-    ? buildRegisteredEventTitle(registeredEventContent)
+    ? buildRegisteredEventTitle(
+        registeredEventContent,
+        input.registeredEventName || input.namedEventName || null
+      )
     : null;
-  const registeredEventHash = registeredEventContent
+  const registeredEventId = registeredEventContent && namedEventName
+    ? buildRegisteredEventId({
+        explicitId: input.registeredEventId,
+        eventName: namedEventName,
+        eventContent: registeredEventContent,
+        memoryId: input.memory.memoryId,
+        evt: input.evt,
+        createdAt: now
+      })
+    : null;
+  const registeredEventHash = registeredEventContent && namedEventName && registeredEventId
     ? sha256Hex(
         stableStringify({
-          content: registeredEventContent,
+          registeredEventId,
+          registeredEventName: namedEventName,
+          registeredEventContent,
           evt: input.evt,
           opcProofId: input.opcProofId || "NO_OPC",
           auditId: input.auditId || "NO_AUDIT",
@@ -1528,15 +1653,26 @@ export function updateMemoryAfterCompletion(
         })
       )
     : null;
+  const registeredEventSource = normalizeRegisteredMemoryEventSource(
+    input.registeredEventSource,
+    input.registeredEventName || input.namedEventName
+      ? "REGISTER_MEMORY_EVENT_INTENT"
+      : "USER_DECLARED_EVENT"
+  );
   const registeredEvent: RegisteredMemoryEvent | null =
     registeredEventContent &&
     namedEventName &&
+    registeredEventId &&
     registeredEventHash &&
     !turnMetadata.policyBlocked &&
     turnMetadata.acceptedAsMemoryFact
       ? {
+          registeredEventId,
+          registeredEventName: namedEventName,
+          registeredEventContent,
+          registeredEventHash,
           eventName: namedEventName,
-          eventKey: normalizeRegisteredEventKey(registeredEventContent),
+          eventKey: normalizeRegisteredEventKey(namedEventName),
           eventContent: registeredEventContent,
           eventHash: registeredEventHash,
           evt: input.evt,
@@ -1554,7 +1690,7 @@ export function updateMemoryAfterCompletion(
           sessionId: input.memory.sessionId,
           humanIpr: input.memory.subject?.ipr,
           runtimeIpr: input.memory.runtime.ipr,
-          source: input.namedEventName ? "RUNTIME_NAMED_EVENT" : "USER_DECLARED_EVENT",
+          source: registeredEventSource,
           createdAt: now,
           userMessageHash: sha256Hex(input.userMessage),
           assistantMessageHash: sha256Hex(input.assistantMessage),
@@ -1689,6 +1825,7 @@ export function updateMemoryAfterCompletion(
     registeredEvents: registeredEvent
       ? upsertRegisteredMemoryEvent(input.memory.registeredEvents || [], registeredEvent)
       : input.memory.registeredEvents || [],
+    lastRegisteredEvent: registeredEvent || input.memory.lastRegisteredEvent,
     facts: nextFacts,
     recentTurns: [...input.memory.recentTurns, turn].slice(-MAX_MEMORY_TURNS),
     summary: updatedSummary
@@ -1799,8 +1936,11 @@ export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
     `Last memory OPC proof: ${memory.lastOpcProofId || "none"}`,
     `Last memory OPC chain hash: ${memory.lastOpcChainHash || "none"}`,
     `Registered named events: ${(memory.registeredEvents || []).length}`,
+    memory.lastRegisteredEvent
+      ? `Last registered event: ID=${memory.lastRegisteredEvent.registeredEventId}; Name=${memory.lastRegisteredEvent.registeredEventName}; Content=${memory.lastRegisteredEvent.registeredEventContent}; Hash=${memory.lastRegisteredEvent.registeredEventHash}; EVT=${memory.lastRegisteredEvent.evt}; OPC=${memory.lastRegisteredEvent.opcProofId || "none"}; Audit=${memory.lastRegisteredEvent.auditId || "none"}; Usage=${memory.lastRegisteredEvent.usageId || "none"}; Source=${memory.lastRegisteredEvent.source}; legalCertification=false.`
+      : "Last registered event: none.",
     ...(memory.registeredEvents || []).slice(-8).map((event) =>
-      `Registered event ${event.eventName}: Content=${event.eventContent || event.eventName}; Hash=${event.eventHash || "NO_EVENT_HASH"}; EVT=${event.evt}; OPC=${event.opcProofId || "none"}; Audit=${event.auditId || "none"}; Usage=${event.usageId || "none"}; Tenant=${event.tenantId}; Workspace=${event.workspaceId}; Memory=${event.memoryId}; Created=${event.createdAt}; Source=${event.source}; legalCertification=false.`
+      `Registered event ${event.registeredEventName || event.eventName}: ID=${event.registeredEventId}; Content=${event.registeredEventContent || event.eventContent || event.eventName}; Hash=${event.registeredEventHash || event.eventHash || "NO_EVENT_HASH"}; EVT=${event.evt}; OPC=${event.opcProofId || "none"}; Audit=${event.auditId || "none"}; Usage=${event.usageId || "none"}; Tenant=${event.tenantId}; Workspace=${event.workspaceId}; Memory=${event.memoryId}; Created=${event.createdAt}; Source=${event.source}; legalCertification=false.`
     ),
     `Summary: ${memory.summary}`,
     "Canonical memory facts:",
@@ -1852,6 +1992,7 @@ export function toPublicMemoryRecord(
     lastOpcChainHash: memory.lastOpcChainHash,
     eventLinks: memory.eventLinks,
     registeredEvents: memory.registeredEvents || [],
+    lastRegisteredEvent: memory.lastRegisteredEvent,
     facts:
       currentIdentityAuthoritative
         ? memory.facts
