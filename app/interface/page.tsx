@@ -2337,7 +2337,7 @@ function InfoList({ items }: { items: Array<{ label: string; value: string }> })
 
 
 
-function formatEuropeRomeTemporalSnapshot(value: string): string {
+function formatUtcPlusTwoTemporalSnapshot(value: string): string {
   const visible = normalizeVisibleText(value || "");
   const parsed = Date.parse(visible);
 
@@ -2347,29 +2347,22 @@ function formatEuropeRomeTemporalSnapshot(value: string): string {
   }
 
 
-  const date = new Date(parsed);
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: JOKER_C2_BIRTH_ANCHOR_TIMEZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23"
-  }).formatToParts(date);
+  const utcPlusTwo = new Date(parsed + 2 * 60 * 60 * 1000);
+  const year = String(utcPlusTwo.getUTCFullYear()).padStart(4, "0");
+  const month = String(utcPlusTwo.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(utcPlusTwo.getUTCDate()).padStart(2, "0");
+  const hour = String(utcPlusTwo.getUTCHours()).padStart(2, "0");
+  const minute = String(utcPlusTwo.getUTCMinutes()).padStart(2, "0");
+  const second = String(utcPlusTwo.getUTCSeconds()).padStart(2, "0");
+  const milliseconds = String(utcPlusTwo.getUTCMilliseconds()).padStart(3, "0");
 
 
-  const getPart = (type: string) => parts.find((part) => part.type === type)?.value || "00";
-  const milliseconds = String(date.getUTCMilliseconds()).padStart(3, "0");
-
-
-  return `${getPart("year")}-${getPart("month")}-${getPart("day")}T${getPart("hour")}:${getPart("minute")}:${getPart("second")}.${milliseconds} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}`;
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}.${milliseconds} UTC+2`;
 }
 
 
 function DualTimeSealCard({ seal }: { seal: DualTimeMessageSeal }) {
-  const localSnapshot = formatEuropeRomeTemporalSnapshot(seal.utcSnapshot);
+  const utcPlusTwoSnapshot = formatUtcPlusTwoTemporalSnapshot(seal.utcSnapshot);
 
 
   return (
@@ -2382,8 +2375,8 @@ function DualTimeSealCard({ seal }: { seal: DualTimeMessageSeal }) {
 
       <div className="joker-dual-time-rails">
         <div>
-          <span>LOCAL/LIVE</span>
-          <strong title={`UTC ${seal.utcSnapshot}`}>{localSnapshot}</strong>
+          <span>UTC+2/LIVE</span>
+          <strong title={`Canonical UTC ${seal.utcSnapshot}`}>{utcPlusTwoSnapshot}</strong>
         </div>
 
 
