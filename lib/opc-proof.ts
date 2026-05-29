@@ -57,7 +57,9 @@
  * Verification reconstructs the operation.
  */
 
+
 import { createHash, randomUUID } from "node:crypto";
+
 
 import {
   isHbceDatabaseAvailable,
@@ -65,12 +67,15 @@ import {
   queryHbceDatabase
 } from "./ipr-database";
 
+
 import type {
   HbceDatabaseQueryRow,
   HbceDatabaseQueryValue
 } from "./ipr-database";
 
+
 export type OpcProofKind = "OPERATIONAL_PROOF_RECORD";
+
 
 export type OpcVerificationStatus =
   | "VERIFIABLE"
@@ -80,6 +85,7 @@ export type OpcVerificationStatus =
   | "ANCHORED"
   | "SUPERSEDED"
   | "DISPUTED";
+
 
 export type OpcAuditStatus =
   | "NOT_REQUIRED"
@@ -94,6 +100,7 @@ export type OpcAuditStatus =
   | "CLOSED"
   | "FAILED";
 
+
 export type OpcRuntimeState =
   | "OPERATIONAL"
   | "DEGRADED"
@@ -101,6 +108,7 @@ export type OpcRuntimeState =
   | "INVALID"
   | "AUDIT_ONLY"
   | "MAINTENANCE";
+
 
 export type OpcRuntimeDecision =
   | "ALLOW"
@@ -110,6 +118,7 @@ export type OpcRuntimeDecision =
   | "BLOCK"
   | "NOOP";
 
+
 export type OpcRiskClass =
   | "LOW"
   | "MEDIUM"
@@ -117,6 +126,7 @@ export type OpcRiskClass =
   | "CRITICAL"
   | "PROHIBITED"
   | "UNKNOWN";
+
 
 export type OpcProjectDomain =
   | "MATRIX"
@@ -126,6 +136,7 @@ export type OpcProjectDomain =
   | "HBCE_ECOSISTEMA_AI"
   | "GENERAL"
   | "MULTI_DOMAIN";
+
 
 export type OpcHbceModule =
   | "UNEBDO"
@@ -137,12 +148,14 @@ export type OpcHbceModule =
   | "MATRIX"
   | "NONE";
 
+
 export type OpcRuntimeRole =
   | "IPR_RUNTIME_DEMONSTRATOR"
   | "HBCE_governed_runtime"
   | "GOVERNED_AI_RUNTIME"
   | "AUDIT_RUNTIME"
   | "RESEARCH_PROTOTYPE";
+
 
 export type OpcMemorySource =
   | "NONE"
@@ -153,12 +166,14 @@ export type OpcMemorySource =
   | "USER_FILE"
   | "RUNTIME_CONTEXT";
 
+
 export type OpcProofPersistenceMode =
   | "RUNTIME_ONLY"
   | "PROCESS_PROOF_MVP"
   | "DATABASE_READY"
   | "DATABASE_PERSISTENT"
   | "EXTERNAL_ADAPTER";
+
 
 export type OpcProofPersistenceStatus =
   | "NOT_PERSISTED"
@@ -168,11 +183,13 @@ export type OpcProofPersistenceStatus =
   | "DATABASE_PERSISTENT_ACTIVE"
   | "EXTERNAL_ADAPTER_REQUIRED";
 
+
 export type OpcEngineProvider = "OpenAI" | string;
 export type OpcEngineApiMode = "chat.completions" | "responses" | string;
 export type OpcEngineRole = "cognitive_engine" | string;
 export type OpcGovernedRuntimeRole = "HBCE_governed_runtime" | string;
 export type OpcEngineMode = "standard" | "deep" | string;
+
 
 export type OpcEngineSnapshot = {
   provider: OpcEngineProvider;
@@ -188,8 +205,10 @@ export type OpcEngineSnapshot = {
   projectBirthLabel?: string;
 };
 
+
 export type OpcHashAlgorithm = "sha256";
 export type OpcCanonicalization = "deterministic-json";
+
 
 export type OpcIdentityBinding = {
   entity: string;
@@ -199,12 +218,14 @@ export type OpcIdentityBinding = {
   runtimeRole?: OpcRuntimeRole;
 };
 
+
 export type OpcEventReference = {
   evt: string;
   prev: string;
   hash: string;
   kind?: string;
 };
+
 
 export type OpcMemoryReference = {
   evt?: string;
@@ -216,6 +237,7 @@ export type OpcMemoryReference = {
   authority?: string;
   persistenceMode?: string;
 };
+
 
 export type OpcRuntimeSnapshot = {
   state: OpcRuntimeState;
@@ -233,6 +255,7 @@ export type OpcRuntimeSnapshot = {
   failClosed?: boolean;
 };
 
+
 export type OpcProofHashes = {
   inputHash: string;
   outputHash: string;
@@ -244,12 +267,14 @@ export type OpcProofHashes = {
   chainHash: string;
 };
 
+
 export type OpcAuditFrame = {
   status: OpcAuditStatus;
   reviewRequired: boolean;
   reviewerRole?: string;
   reasons: string[];
 };
+
 
 export type OpcOperationalContext = {
   projectBirthDate: string;
@@ -262,6 +287,7 @@ export type OpcOperationalContext = {
   saasTarget: "DATABASE_PERSISTENT" | string;
 };
 
+
 export type OpcPersistenceFrame = {
   mode: OpcProofPersistenceMode;
   status: OpcProofPersistenceStatus;
@@ -271,6 +297,23 @@ export type OpcPersistenceFrame = {
   target: "DATABASE_PERSISTENT";
   statement: string;
 };
+
+
+export type OpcSaasContext = {
+  tenantId?: string;
+  workspaceId?: string;
+  subscriptionId?: string;
+  accountId?: string;
+  tier?: string;
+  source?: "BODY" | "DATABASE_PROFILE" | "SELF_PILOT_SCHEMA_FALLBACK" | string;
+  auditId?: string;
+  usageId?: string;
+  eventName?: string;
+  eventFamily?: string;
+  cycle?: string;
+  legalCertification: false;
+};
+
 
 export type OpcProofRecord = {
   proofId: string;
@@ -284,6 +327,7 @@ export type OpcProofRecord = {
   runtime: OpcRuntimeSnapshot;
   operationalContext?: OpcOperationalContext;
   persistence?: OpcPersistenceFrame;
+  saasContext?: OpcSaasContext;
   proof: OpcProofHashes;
   audit: OpcAuditFrame;
   verification: {
@@ -300,6 +344,7 @@ export type OpcProofRecord = {
   };
 };
 
+
 export type OpcProofRecordInput = {
   identity: OpcIdentityBinding;
   sessionId?: string;
@@ -314,7 +359,9 @@ export type OpcProofRecordInput = {
   timestamp?: string;
   operationalContext?: Partial<OpcOperationalContext>;
   persistenceMode?: OpcProofPersistenceMode;
+  saasContext?: Partial<OpcSaasContext>;
 };
+
 
 export type OpcProofPublicView = {
   proofId: string;
@@ -346,8 +393,10 @@ export type OpcProofPublicView = {
   verificationStatus: OpcVerificationStatus;
   operationalContext?: OpcOperationalContext;
   persistence?: OpcPersistenceFrame;
+  saasContext?: OpcSaasContext;
   legalCertification: false;
 };
+
 
 export type OpcProofVerificationReport = {
   status: OpcVerificationStatus;
@@ -360,6 +409,7 @@ export type OpcProofVerificationReport = {
   reasons: string[];
 };
 
+
 export type OpcProofSaasReadinessReport = {
   proofId: string;
   saasReady: boolean;
@@ -371,6 +421,7 @@ export type OpcProofSaasReadinessReport = {
   requirements: string[];
 };
 
+
 export type OpcProofDatabasePersistenceStatus =
   | "PERSISTED"
   | "DATABASE_NOT_CONFIGURED"
@@ -379,11 +430,13 @@ export type OpcProofDatabasePersistenceStatus =
   | "DATABASE_SCHEMA_UNSUPPORTED"
   | "DATABASE_WRITE_FAILED";
 
+
 export type OpcProofDatabasePersistenceMode =
   | "PROCESS_PROOF_MVP"
   | "DATABASE_PERSISTENT_TARGET"
   | "DATABASE_PERSISTENT"
   | "FAILED";
+
 
 export type OpcProofDatabasePersistenceResult = {
   ok: boolean;
@@ -399,6 +452,7 @@ export type OpcProofDatabasePersistenceResult = {
   legalCertification: false;
 };
 
+
 export type OpcProofDatabaseHealth = {
   configured: true;
   databaseConfigured: boolean;
@@ -409,6 +463,7 @@ export type OpcProofDatabaseHealth = {
   boundary: string;
 };
 
+
 type OpcProofDatabaseFields = {
   proofId: string;
   proofHash: string;
@@ -416,6 +471,17 @@ type OpcProofDatabaseFields = {
   previousProofHash: string | null;
   evtId: string;
   evtHash: string;
+  tenantId: string | null;
+  workspaceId: string | null;
+  subscriptionId: string | null;
+  accountId: string | null;
+  tier: string | null;
+  source: string | null;
+  auditId: string | null;
+  usageId: string | null;
+  eventName: string | null;
+  eventFamily: string | null;
+  cycle: string | null;
   runtimeIpr: string;
   humanIpr: string | null;
   sessionId: string | null;
@@ -433,15 +499,18 @@ type OpcProofDatabaseFields = {
   legalCertification: false;
 };
 
+
 type OpcProofColumnValue = {
   column: string;
   value: HbceDatabaseQueryValue;
   jsonb?: boolean;
 };
 
+
 type InformationSchemaColumnRow = HbceDatabaseQueryRow & {
   column_name?: string;
 };
+
 
 type OpcProofDatabaseRow = HbceDatabaseQueryRow & {
   proof_id?: string;
@@ -450,13 +519,16 @@ type OpcProofDatabaseRow = HbceDatabaseQueryRow & {
   chain_hash?: string;
 };
 
+
 const OPC_KIND: OpcProofKind = "OPERATIONAL_PROOF_RECORD";
 const HASH_ALGORITHM: OpcHashAlgorithm = "sha256";
 const CANONICALIZATION: OpcCanonicalization = "deterministic-json";
 
+
 const DEFAULT_CORE = "HBCE-CORE-v3";
 const DEFAULT_ORGANIZATION = "HERMETICUM B.C.E. S.r.l.";
 const DEFAULT_RUNTIME_ROLE: OpcRuntimeRole = "HBCE_governed_runtime";
+
 
 const DEFAULT_ENGINE_PROVIDER = "OpenAI";
 const DEFAULT_ENGINE_API_MODE = "chat.completions";
@@ -464,9 +536,11 @@ const DEFAULT_ENGINE_ROLE = "cognitive_engine";
 const DEFAULT_ENGINE_RUNTIME_ROLE = "HBCE_governed_runtime";
 const DEFAULT_ENGINE_MODEL = "gpt-5.5";
 
+
 const DEFAULT_PROJECT_BIRTH_DATE = "2026-01-19";
 const DEFAULT_PROJECT_BIRTH_LABEL =
   "HBCE R&D / AI JOKER-C2 project birth date";
+
 
 const DEFAULT_MONTHLY_REFERENCE = "UP-MESE-4";
 const DEFAULT_EVENT_FAMILY = "UP-EVT";
@@ -475,19 +549,25 @@ const DEFAULT_CURRENT_AI_EVT = "EVT-0016-AI";
 const DEFAULT_CURRENT_CYCLE = "UP-CANONICO";
 const DEFAULT_SAAS_TARGET = "DATABASE_PERSISTENT";
 
+
 export const OPC_DATABASE_TABLE = "opc_proofs";
+
 
 const NON_CERTIFICATION_STATEMENT =
   "OPC is a technical proof receipt for audit, verification and governance review. It does not create automatic legal certification, regulatory approval, institutional recognition or legally binding evidence status by default.";
 
+
 const AI_GOVERNANCE_BOUNDARY =
   "The AI model does not govern HBCE. HBCE governs the use of AI models.";
+
 
 const MODULE_BOUNDARY =
   "HBCE modules are technical-operational stack functions. They are not book collections and they are not automatic legal authority.";
 
+
 const OPC_PERSISTENCE_BOUNDARY =
   "OPC proof records are technical proof receipts. For SaaS use, OPC records require DATABASE_PERSISTENT storage, tenant/workspace scoping, access control, audit logging, retention, deletion, backup and recovery. Process-scoped proof handling is MVP-only.";
+
 
 const OPC_SAAS_REQUIREMENTS = [
   "Persist OPC proof records in DATABASE_PERSISTENT storage.",
@@ -500,7 +580,9 @@ const OPC_SAAS_REQUIREMENTS = [
   "Add access control, audit logging, retention, deletion, backup and recovery before production use."
 ];
 
+
 const NO_OPC_DATABASE_COLUMNS: string[] = [];
+
 
 export function createOpcProofRecord(
   input: OpcProofRecordInput
@@ -512,31 +594,38 @@ export function createOpcProofRecord(
   const engine = normalizeEngineSnapshot(input.engine);
   const operationalContext = normalizeOperationalContext(input.operationalContext);
   const persistence = normalizePersistenceFrame(input.persistenceMode);
+  const saasContext = normalizeSaasContext(input.saasContext);
+
 
   const inputHash = sha256Canonical({
     type: "input",
     payload: input.inputPayload
   });
 
+
   const outputHash = sha256Canonical({
     type: "output",
     payload: input.outputPayload
   });
+
 
   const decisionHash = sha256Canonical({
     type: "decision",
     runtime
   });
 
+
   const eventHash = sha256Canonical({
     type: "event",
     event: input.event
   });
 
+
   const engineHash = sha256Canonical({
     type: "engine",
     engine
   });
+
 
   const memoryHash = input.memory
     ? sha256Canonical({
@@ -545,9 +634,11 @@ export function createOpcProofRecord(
       })
     : undefined;
 
+
   const previousProofHash = normalizePreviousProofHash(
     input.previousProofHash
   );
+
 
   const chainHash = buildOpcChainHash({
     proofId,
@@ -569,7 +660,9 @@ export function createOpcProofRecord(
     previousProofHash
   });
 
+
   const audit = normalizeAuditFrame(input.audit, runtime, engine, persistence);
+
 
   return {
     proofId,
@@ -583,6 +676,7 @@ export function createOpcProofRecord(
     runtime,
     operationalContext,
     persistence,
+    saasContext,
     proof: {
       inputHash,
       outputHash,
@@ -609,11 +703,13 @@ export function createOpcProofRecord(
   };
 }
 
+
 export function verifyOpcProofRecord(
   record: OpcProofRecord
 ): OpcProofVerificationReport {
   const missingFields = getOpcProofRecordMissingFields(record);
   const structurallyValid = missingFields.length === 0;
+
 
   if (!structurallyValid) {
     return {
@@ -631,13 +727,16 @@ export function verifyOpcProofRecord(
     };
   }
 
+
   const previousProofHash = normalizePreviousProofHash(
     record.proof.previousProofHash
   );
 
+
   const normalizedEngine = record.engine
     ? normalizeEngineSnapshot(record.engine)
     : undefined;
+
 
   const expectedEngineHash = normalizedEngine
     ? sha256Canonical({
@@ -646,20 +745,25 @@ export function verifyOpcProofRecord(
       })
     : undefined;
 
+
   const storedEngineHash = record.proof.engineHash;
+
 
   const engineHashMatches =
     !normalizedEngine ||
     !storedEngineHash ||
     storedEngineHash === expectedEngineHash;
 
+
   const normalizedOperationalContext = record.operationalContext
     ? normalizeOperationalContext(record.operationalContext)
     : undefined;
 
+
   const normalizedPersistence = record.persistence
     ? normalizePersistenceFrame(record.persistence.mode)
     : undefined;
+
 
   const expectedChainHash = buildOpcChainHash({
     proofId: record.proofId,
@@ -681,8 +785,10 @@ export function verifyOpcProofRecord(
     previousProofHash
   });
 
+
   const chainHashMatches = expectedChainHash === record.proof.chainHash;
   const hashMatches = chainHashMatches && engineHashMatches;
+
 
   return {
     status: hashMatches ? "VERIFIABLE" : "INVALID",
@@ -713,6 +819,7 @@ export function verifyOpcProofRecord(
         ]
   };
 }
+
 
 export function toPublicOpcProofRecord(
   record: OpcProofRecord
@@ -747,21 +854,26 @@ export function toPublicOpcProofRecord(
     verificationStatus: record.verification.status,
     operationalContext: record.operationalContext,
     persistence: record.persistence,
+    saasContext: record.saasContext,
     legalCertification: false
   };
 }
+
 
 export function buildOpcProofRecordLine(record: OpcProofRecord): string {
   return JSON.stringify(record);
 }
 
+
 export function parseOpcProofRecordLine(line: string): OpcProofRecord | null {
   try {
     const parsed = JSON.parse(line) as OpcProofRecord;
 
+
     if (!isOpcProofRecordStructurallyValid(parsed)) {
       return null;
     }
+
 
     return normalizeOpcProofRecord(parsed);
   } catch {
@@ -769,23 +881,28 @@ export function parseOpcProofRecordLine(line: string): OpcProofRecord | null {
   }
 }
 
+
 export function isOpcProofRecordStructurallyValid(
   record: Partial<OpcProofRecord>
 ): record is OpcProofRecord {
   return getOpcProofRecordMissingFields(record).length === 0;
 }
 
+
 export function getOpcProofRecordMissingFields(
   record: Partial<OpcProofRecord>
 ): string[] {
   const missing: string[] = [];
 
+
   if (!record.proofId) missing.push("proofId");
   if (record.kind !== OPC_KIND) missing.push("kind");
   if (!record.timestamp) missing.push("timestamp");
 
+
   if (!record.identity?.entity) missing.push("identity.entity");
   if (!record.identity?.ipr) missing.push("identity.ipr");
+
 
   if (record.engine) {
     if (!record.engine.provider) missing.push("engine.provider");
@@ -795,9 +912,11 @@ export function getOpcProofRecordMissingFields(
     if (!record.engine.modelUsed) missing.push("engine.modelUsed");
   }
 
+
   if (!record.event?.evt) missing.push("event.evt");
   if (!record.event?.prev) missing.push("event.prev");
   if (!record.event?.hash) missing.push("event.hash");
+
 
   if (!record.runtime?.state) missing.push("runtime.state");
   if (!record.runtime?.decision) missing.push("runtime.decision");
@@ -807,38 +926,48 @@ export function getOpcProofRecordMissingFields(
     missing.push("runtime.policyReference");
   }
 
+
   if (!record.proof?.inputHash) missing.push("proof.inputHash");
   if (!record.proof?.outputHash) missing.push("proof.outputHash");
   if (!record.proof?.decisionHash) missing.push("proof.decisionHash");
   if (!record.proof?.eventHash) missing.push("proof.eventHash");
   if (!record.proof?.chainHash) missing.push("proof.chainHash");
 
+
   if (!record.audit?.status) missing.push("audit.status");
+
 
   if (typeof record.audit?.reviewRequired !== "boolean") {
     missing.push("audit.reviewRequired");
   }
 
+
   if (!Array.isArray(record.audit?.reasons)) {
     missing.push("audit.reasons");
   }
 
+
   if (!record.verification?.status) missing.push("verification.status");
+
 
   if (record.verification?.hashAlgorithm !== HASH_ALGORITHM) {
     missing.push("verification.hashAlgorithm");
   }
 
+
   if (record.verification?.canonicalization !== CANONICALIZATION) {
     missing.push("verification.canonicalization");
   }
+
 
   if (record.boundary?.legalCertification !== false) {
     missing.push("boundary.legalCertification");
   }
 
+
   return missing;
 }
+
 
 export function buildOpcSaasReadinessReport(
   record: OpcProofRecord
@@ -846,11 +975,14 @@ export function buildOpcSaasReadinessReport(
   const persistence =
     record.persistence || normalizePersistenceFrame("RUNTIME_ONLY");
 
+
   const databasePersistentRequired =
     persistence.mode !== "DATABASE_PERSISTENT" ||
     persistence.status !== "DATABASE_PERSISTENT_ACTIVE";
 
+
   const verification = verifyOpcProofRecord(record);
+
 
   const saasReady =
     verification.status === "VERIFIABLE" &&
@@ -859,6 +991,7 @@ export function buildOpcSaasReadinessReport(
     persistence.durable === true &&
     persistence.runtimeScoped === false &&
     record.boundary.legalCertification === false;
+
 
   return {
     proofId: record.proofId,
@@ -882,29 +1015,36 @@ export function buildOpcSaasReadinessReport(
   };
 }
 
+
 export function sha256Canonical(value: unknown): string {
   const canonical = canonicalize(value);
   const hash = createHash("sha256").update(canonical, "utf8").digest("hex");
 
+
   return `sha256:${hash}`;
 }
+
 
 export function sha256Short(value: unknown): string {
   const canonical = canonicalize(value);
   const hash = createHash("sha256").update(canonical, "utf8").digest("hex");
 
+
   return `sha256:${hash.slice(0, 16)}`;
 }
+
 
 export function canonicalize(value: unknown): string {
   return JSON.stringify(sortCanonical(value));
 }
+
 
 export async function persistOpcProofRecordToDatabase(
   record: OpcProofRecord
 ): Promise<OpcProofDatabasePersistenceResult> {
   const normalized = normalizeOpcProofRecord(record);
   const fields = buildOpcProofDatabaseFields(normalized);
+
 
   if (!isHbceDatabaseConfigured()) {
     return {
@@ -922,6 +1062,7 @@ export async function persistOpcProofRecordToDatabase(
     };
   }
 
+
   if (!isHbceDatabaseAvailable()) {
     return {
       ok: false,
@@ -938,8 +1079,10 @@ export async function persistOpcProofRecordToDatabase(
     };
   }
 
+
   try {
     const available = await getOpcProofDatabaseColumns();
+
 
     if (available.size === 0) {
       return {
@@ -957,13 +1100,16 @@ export async function persistOpcProofRecordToDatabase(
       };
     }
 
+
     const columnValues = buildOpcProofDatabaseColumnValues(available, fields);
     const statement = buildOpcProofInsertStatement({ columns: columnValues });
+
 
     const result = await queryHbceDatabase<OpcProofDatabaseRow>(
       statement.sql,
       statement.params
     );
+
 
     if (!result.ok) {
       return {
@@ -980,6 +1126,7 @@ export async function persistOpcProofRecordToDatabase(
         legalCertification: false
       };
     }
+
 
     return {
       ok: true,
@@ -1011,6 +1158,7 @@ export async function persistOpcProofRecordToDatabase(
   }
 }
 
+
 export async function createAndPersistOpcProofRecord(
   input: OpcProofRecordInput
 ): Promise<{
@@ -1024,7 +1172,9 @@ export async function createAndPersistOpcProofRecord(
     persistenceMode: input.persistenceMode ?? "DATABASE_READY"
   });
 
+
   const persistence = await persistOpcProofRecordToDatabase(record);
+
 
   const persistedRecord =
     persistence.ok && record.persistence
@@ -1034,6 +1184,7 @@ export async function createAndPersistOpcProofRecord(
         }
       : record;
 
+
   return {
     record: persistedRecord,
     publicView: toPublicOpcProofRecord(persistedRecord),
@@ -1042,9 +1193,11 @@ export async function createAndPersistOpcProofRecord(
   };
 }
 
+
 export function getOpcProofDatabaseHealth(): OpcProofDatabaseHealth {
   const databaseConfigured = isHbceDatabaseConfigured();
   const databaseAvailable = isHbceDatabaseAvailable();
+
 
   return {
     configured: true,
@@ -1060,29 +1213,36 @@ export function getOpcProofDatabaseHealth(): OpcProofDatabaseHealth {
   };
 }
 
+
 function sortCanonical(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map((item) => sortCanonical(item));
   }
 
+
   if (value && typeof value === "object") {
     const record = value as Record<string, unknown>;
+
 
     return Object.keys(record)
       .sort()
       .reduce<Record<string, unknown>>((accumulator, key) => {
         const item = record[key];
 
+
         if (typeof item !== "undefined") {
           accumulator[key] = sortCanonical(item);
         }
+
 
         return accumulator;
       }, {});
   }
 
+
   return value;
 }
+
 
 function buildOpcProofId(timestamp = new Date().toISOString()): string {
   const compactTimestamp = timestamp
@@ -1090,10 +1250,12 @@ function buildOpcProofId(timestamp = new Date().toISOString()): string {
     .slice(0, 14)
     .padEnd(14, "0");
 
+
   return `OPC-${compactTimestamp}-${randomUUID()
     .replace(/-/g, "")
     .slice(0, 8)}`.toUpperCase();
 }
+
 
 function buildOpcChainHash(input: {
   proofId: string;
@@ -1118,6 +1280,7 @@ function buildOpcChainHash(input: {
     input.previousProofHash
   );
 
+
   const hashes: Record<string, string | null> = {
     inputHash: input.inputHash,
     outputHash: input.outputHash,
@@ -1127,9 +1290,11 @@ function buildOpcChainHash(input: {
     previousProofHash
   };
 
+
   if (input.engineHash) {
     hashes.engineHash = input.engineHash;
   }
+
 
   const chainPayload: Record<string, unknown> = {
     proofId: input.proofId,
@@ -1147,9 +1312,11 @@ function buildOpcChainHash(input: {
     canonicalization: CANONICALIZATION
   };
 
+
   if (input.engine) {
     chainPayload.engine = normalizeEngineSnapshot(input.engine);
   }
+
 
   if (input.operationalContext) {
     chainPayload.operationalContext = normalizeOperationalContext(
@@ -1157,12 +1324,15 @@ function buildOpcChainHash(input: {
     );
   }
 
+
   if (input.persistence) {
     chainPayload.persistence = normalizePersistenceFrame(input.persistence.mode);
   }
 
+
   return sha256Canonical(chainPayload);
 }
+
 
 function normalizeIdentity(identity: OpcIdentityBinding): OpcIdentityBinding {
   return {
@@ -1173,6 +1343,7 @@ function normalizeIdentity(identity: OpcIdentityBinding): OpcIdentityBinding {
     runtimeRole: identity.runtimeRole || DEFAULT_RUNTIME_ROLE
   };
 }
+
 
 function normalizeOperationalContext(
   context?: Partial<OpcOperationalContext>
@@ -1205,10 +1376,12 @@ function normalizeOperationalContext(
   };
 }
 
+
 function normalizePersistenceFrame(
   mode?: OpcProofPersistenceMode
 ): OpcPersistenceFrame {
   const persistenceMode = mode || "PROCESS_PROOF_MVP";
+
 
   if (persistenceMode === "DATABASE_PERSISTENT") {
     return {
@@ -1223,6 +1396,7 @@ function normalizePersistenceFrame(
     };
   }
 
+
   if (persistenceMode === "DATABASE_READY") {
     return {
       mode: "DATABASE_READY",
@@ -1235,6 +1409,7 @@ function normalizePersistenceFrame(
         "OPC proof contract is prepared for database persistence, but durable DATABASE_PERSISTENT storage is not active yet."
     };
   }
+
 
   if (persistenceMode === "EXTERNAL_ADAPTER") {
     return {
@@ -1249,6 +1424,7 @@ function normalizePersistenceFrame(
     };
   }
 
+
   if (persistenceMode === "RUNTIME_ONLY") {
     return {
       mode: "RUNTIME_ONLY",
@@ -1262,6 +1438,7 @@ function normalizePersistenceFrame(
     };
   }
 
+
   return {
     mode: "PROCESS_PROOF_MVP",
     status: "PROCESS_SCOPED",
@@ -1274,6 +1451,7 @@ function normalizePersistenceFrame(
   };
 }
 
+
 function normalizeEngineSnapshot(
   engine?: Partial<OpcEngineSnapshot>
 ): OpcEngineSnapshot {
@@ -1281,15 +1459,19 @@ function normalizeEngineSnapshot(
     stringOrDefault(engine?.standardModel, process.env.JOKER_MODEL) ||
     DEFAULT_ENGINE_MODEL;
 
+
   const deepModel =
     stringOrDefault(engine?.deepModel, process.env.JOKER_DEEP_MODEL) ||
     DEFAULT_ENGINE_MODEL;
 
+
   const mode = stringOrDefault(engine?.mode, "deep") || "deep";
+
 
   const modelUsed =
     stringOrDefault(engine?.modelUsed, undefined) ||
     (mode === "standard" ? standardModel : deepModel);
+
 
   return {
     provider:
@@ -1321,6 +1503,7 @@ function normalizeEngineSnapshot(
   };
 }
 
+
 function normalizeRuntimeSnapshot(
   runtime: OpcRuntimeSnapshot
 ): OpcRuntimeSnapshot {
@@ -1333,14 +1516,17 @@ function normalizeRuntimeSnapshot(
   };
 }
 
+
 function inferHbceModuleForRuntime(runtime: OpcRuntimeSnapshot): OpcHbceModule {
   if (runtime.projectDomain === "HBCE_ECOSISTEMA_AI") {
     return "MATRIX";
   }
 
+
   if (runtime.projectDomain === "U.S.E.") {
     return "UNEBDO";
   }
+
 
   if (
     runtime.contextClass === "SECURITY" ||
@@ -1350,6 +1536,7 @@ function inferHbceModuleForRuntime(runtime: OpcRuntimeSnapshot): OpcHbceModule {
     return "CyberGlobal";
   }
 
+
   if (
     runtime.contextClass === "COMPLIANCE" ||
     runtime.contextClass === "GOVERNANCE" ||
@@ -1358,6 +1545,7 @@ function inferHbceModuleForRuntime(runtime: OpcRuntimeSnapshot): OpcHbceModule {
     return "OPC";
   }
 
+
   if (
     runtime.contextClass === "AI_GOVERNANCE" ||
     runtime.contextClass === "HBCE_ECOSISTEMA_AI"
@@ -1365,16 +1553,20 @@ function inferHbceModuleForRuntime(runtime: OpcRuntimeSnapshot): OpcHbceModule {
     return "MATRIX";
   }
 
+
   if (runtime.contextClass === "MATRIX") {
     return "MATRIX";
   }
+
 
   if (runtime.contextClass === "IPR" || runtime.contextClass === "IDENTITY") {
     return "UNEBDO";
   }
 
+
   return "NONE";
 }
+
 
 function normalizeOpcProofRecord(record: OpcProofRecord): OpcProofRecord {
   return {
@@ -1388,6 +1580,9 @@ function normalizeOpcProofRecord(record: OpcProofRecord): OpcProofRecord {
     persistence: record.persistence
       ? normalizePersistenceFrame(record.persistence.mode)
       : undefined,
+    saasContext: record.saasContext
+      ? normalizeSaasContext(record.saasContext)
+      : undefined,
     boundary: record.boundary || {
       legalCertification: false,
       statement: NON_CERTIFICATION_STATEMENT,
@@ -1398,6 +1593,7 @@ function normalizeOpcProofRecord(record: OpcProofRecord): OpcProofRecord {
   };
 }
 
+
 function normalizePreviousProofHash(
   value: string | null | undefined
 ): string | null {
@@ -1405,14 +1601,18 @@ function normalizePreviousProofHash(
     return null;
   }
 
+
   const trimmed = value.trim();
+
 
   if (!trimmed || trimmed === "-" || trimmed.toUpperCase() === "GENESIS") {
     return null;
   }
 
+
   return trimmed;
 }
+
 
 function normalizeAuditFrame(
   audit: Partial<OpcAuditFrame> | undefined,
@@ -1422,10 +1622,12 @@ function normalizeAuditFrame(
 ): OpcAuditFrame {
   const normalizedRuntime = normalizeRuntimeSnapshot(runtime);
 
+
   const reviewRequired =
     typeof audit?.reviewRequired === "boolean"
       ? audit.reviewRequired
       : inferReviewRequired(normalizedRuntime, persistence);
+
 
   return {
     status: audit?.status || inferAuditStatus(normalizedRuntime, reviewRequired),
@@ -1439,6 +1641,7 @@ function normalizeAuditFrame(
   };
 }
 
+
 function inferAuditStatus(
   runtime: OpcRuntimeSnapshot,
   reviewRequired: boolean
@@ -1447,20 +1650,25 @@ function inferAuditStatus(
     return "REQUIRED";
   }
 
+
   if (runtime.decision === "AUDIT" || reviewRequired) {
     return "READY";
   }
+
 
   if (runtime.riskClass === "MEDIUM" || runtime.riskClass === "HIGH") {
     return "READY";
   }
 
+
   if (runtime.riskClass === "CRITICAL" || runtime.riskClass === "UNKNOWN") {
     return "REQUIRED";
   }
 
+
   return "NOT_REQUIRED";
 }
+
 
 function inferReviewRequired(
   runtime: OpcRuntimeSnapshot,
@@ -1478,6 +1686,7 @@ function inferReviewRequired(
   );
 }
 
+
 function inferReviewerRole(
   runtime: OpcRuntimeSnapshot,
   reviewRequired: boolean
@@ -1486,9 +1695,11 @@ function inferReviewerRole(
     return undefined;
   }
 
+
   if (runtime.riskClass === "CRITICAL" || runtime.decision === "ESCALATE") {
     return "HUMAN_REVIEWER";
   }
+
 
   if (
     runtime.projectDomain === "U.S.E." ||
@@ -1499,6 +1710,7 @@ function inferReviewerRole(
     return "CIVIC_INFRASTRUCTURE_REVIEWER";
   }
 
+
   if (
     runtime.projectDomain === "HBCE_ECOSISTEMA_AI" ||
     runtime.contextClass === "HBCE_ECOSISTEMA_AI" ||
@@ -1507,12 +1719,14 @@ function inferReviewerRole(
     return "AI_GOVERNANCE_REVIEWER";
   }
 
+
   if (
     runtime.hbceModule === "CyberGlobal" ||
     runtime.contextClass === "SECURITY"
   ) {
     return "SECURITY_REVIEWER";
   }
+
 
   if (
     runtime.hbceModule === "MATRIX" ||
@@ -1521,12 +1735,15 @@ function inferReviewerRole(
     return "MATRIX_RUNTIME_REVIEWER";
   }
 
+
   if (runtime.decision === "AUDIT" || runtime.riskClass === "MEDIUM") {
     return "AUDITOR";
   }
 
+
   return "REVIEWER";
 }
+
 
 function buildAuditReasons(
   runtime: OpcRuntimeSnapshot,
@@ -1541,6 +1758,7 @@ function buildAuditReasons(
     `Policy reference: ${runtime.policyReference}.`
   ];
 
+
   if (engine) {
     reasons.push(`Cognitive engine provider: ${engine.provider}.`);
     reasons.push(`Cognitive engine model: ${engine.modelUsed}.`);
@@ -1549,19 +1767,23 @@ function buildAuditReasons(
     reasons.push(`Project birth date: ${engine.projectBirthDate}.`);
   }
 
+
   if (runtime.projectDomain) {
     reasons.push(`Project domain: ${runtime.projectDomain}.`);
   }
 
+
   if (runtime.hbceModule) {
     reasons.push(`HBCE module: ${runtime.hbceModule}.`);
   }
+
 
   if (persistence) {
     reasons.push(`OPC persistence mode: ${persistence.mode}.`);
     reasons.push(`OPC persistence status: ${persistence.status}.`);
     reasons.push(persistence.statement);
   }
+
 
   if (
     runtime.projectDomain === "U.S.E." ||
@@ -1574,6 +1796,7 @@ function buildAuditReasons(
     );
   }
 
+
   if (
     runtime.projectDomain === "HBCE_ECOSISTEMA_AI" ||
     runtime.contextClass === "HBCE_ECOSISTEMA_AI" ||
@@ -1582,9 +1805,11 @@ function buildAuditReasons(
     reasons.push(AI_GOVERNANCE_BOUNDARY);
   }
 
+
   if (runtime.hbceModule && runtime.hbceModule !== "NONE") {
     reasons.push(MODULE_BOUNDARY);
   }
+
 
   if (runtime.hbceModule === "MATRIX") {
     reasons.push(
@@ -1592,17 +1817,137 @@ function buildAuditReasons(
     );
   }
 
+
   if (reviewRequired) {
     reasons.push("Review is required or recommended by runtime governance.");
   } else {
     reasons.push("Review is not required for this proof record.");
   }
 
+
   reasons.push(OPC_PERSISTENCE_BOUNDARY);
   reasons.push(NON_CERTIFICATION_STATEMENT);
 
+
   return reasons;
 }
+
+
+function readUnknownRecordPath(value: unknown, path: string[]): unknown {
+  let current: unknown = value;
+
+
+  for (const key of path) {
+    if (!current || typeof current !== "object" || Array.isArray(current)) {
+      return undefined;
+    }
+
+
+    current = (current as Record<string, unknown>)[key];
+  }
+
+
+  return current;
+}
+
+
+function readOptionalTextPath(value: unknown, paths: string[][]): string | undefined {
+  for (const path of paths) {
+    const item = readUnknownRecordPath(value, path);
+
+
+    if (typeof item === "string" && item.trim()) {
+      return item.trim();
+    }
+
+
+    if (typeof item === "number" || typeof item === "boolean") {
+      return String(item);
+    }
+  }
+
+
+  return undefined;
+}
+
+
+function normalizeSaasContext(context?: Partial<OpcSaasContext>): OpcSaasContext | undefined {
+  if (!context) {
+    return undefined;
+  }
+
+
+  const normalized: OpcSaasContext = {
+    tenantId: stringOrDefault(context.tenantId, undefined),
+    workspaceId: stringOrDefault(context.workspaceId, undefined),
+    subscriptionId: stringOrDefault(context.subscriptionId, undefined),
+    accountId: stringOrDefault(context.accountId, undefined),
+    tier: stringOrDefault(context.tier, undefined),
+    source: stringOrDefault(context.source, undefined),
+    auditId: stringOrDefault(context.auditId, undefined),
+    usageId: stringOrDefault(context.usageId, undefined),
+    eventName: stringOrDefault(context.eventName, undefined),
+    eventFamily: stringOrDefault(context.eventFamily, DEFAULT_EVENT_FAMILY),
+    cycle: stringOrDefault(context.cycle, DEFAULT_CURRENT_CYCLE),
+    legalCertification: false
+  };
+
+
+  const hasRuntimeValue = Boolean(
+    normalized.tenantId ||
+      normalized.workspaceId ||
+      normalized.subscriptionId ||
+      normalized.accountId ||
+      normalized.tier ||
+      normalized.source ||
+      normalized.auditId ||
+      normalized.usageId ||
+      normalized.eventName
+  );
+
+
+  return hasRuntimeValue ? normalized : undefined;
+}
+
+
+function inferSaasContextFromRecord(record: OpcProofRecord): OpcSaasContext | undefined {
+  const recordValue = record as unknown;
+  const payloadValue = readUnknownRecordPath(recordValue, ["payload"]);
+  const inputPayloadValue = readUnknownRecordPath(recordValue, ["inputPayload"]);
+  const candidates = [recordValue, payloadValue, inputPayloadValue];
+
+
+  const read = (paths: string[][]): string | undefined => {
+    for (const candidate of candidates) {
+      const value = readOptionalTextPath(candidate, paths);
+
+
+      if (value) {
+        return value;
+      }
+    }
+
+
+    return undefined;
+  };
+
+
+  return normalizeSaasContext({
+    tenantId: record.saasContext?.tenantId || read([["saasContext", "tenantId"], ["saas", "tenantId"], ["tenantId"], ["tenant_id"]]),
+    workspaceId: record.saasContext?.workspaceId || read([["saasContext", "workspaceId"], ["saas", "workspaceId"], ["workspaceId"], ["workspace_id"]]),
+    subscriptionId: record.saasContext?.subscriptionId || read([["saasContext", "subscriptionId"], ["saas", "subscriptionId"], ["subscriptionId"], ["subscription_id"]]),
+    accountId: record.saasContext?.accountId || read([["saasContext", "accountId"], ["saas", "accountId"], ["accountId"], ["account_id"]]),
+    tier: record.saasContext?.tier || read([["saasContext", "tier"], ["saas", "tier"], ["saas", "subscriptionTier"], ["tier"]]),
+    source: record.saasContext?.source || read([["saasContext", "source"], ["saas", "source"], ["source"]]),
+    auditId: record.saasContext?.auditId || read([["saasContext", "auditId"], ["audit", "auditId"], ["auditId"], ["audit_id"]]),
+    usageId: record.saasContext?.usageId || read([["saasContext", "usageId"], ["usage", "usageId"], ["usageId"], ["usage_id"]]),
+    eventName: record.saasContext?.eventName || read([["saasContext", "eventName"], ["eventName"], ["event_name"], ["namedEvent", "eventName"]]),
+    eventFamily: record.saasContext?.eventFamily || record.operationalContext?.eventFamily || DEFAULT_EVENT_FAMILY,
+    cycle: record.saasContext?.cycle || record.operationalContext?.cycle || DEFAULT_CURRENT_CYCLE,
+    legalCertification: false
+  });
+}
+
 
 function buildOpcProofDatabaseFields(record: OpcProofRecord): OpcProofDatabaseFields {
   const publicView = toPublicOpcProofRecord(record);
@@ -1611,10 +1956,14 @@ function buildOpcProofDatabaseFields(record: OpcProofRecord): OpcProofDatabaseFi
     record
   });
 
+
   const runtimeIpr =
     nullableDatabaseText(record.identity.ipr) || "IPR-AI-0001";
 
+
   const humanIprForPayload = nullableDatabaseText(record.identity.ipr);
+  const saasContext = inferSaasContextFromRecord(record);
+
 
   const payload = {
     ...record,
@@ -1631,6 +1980,17 @@ function buildOpcProofDatabaseFields(record: OpcProofRecord): OpcProofDatabaseFi
       sessionId: record.sessionId ?? null,
       memoryId: record.memory?.memoryId ?? record.memory?.memoryKeyHash ?? null,
       memoryHash: record.proof.memoryHash ?? record.memory?.hash ?? null,
+      tenantId: saasContext?.tenantId ?? null,
+      workspaceId: saasContext?.workspaceId ?? null,
+      subscriptionId: saasContext?.subscriptionId ?? null,
+      accountId: saasContext?.accountId ?? null,
+      tier: saasContext?.tier ?? null,
+      source: saasContext?.source ?? null,
+      auditId: saasContext?.auditId ?? null,
+      usageId: saasContext?.usageId ?? null,
+      eventName: saasContext?.eventName ?? null,
+      eventFamily: saasContext?.eventFamily ?? null,
+      cycle: saasContext?.cycle ?? null,
       projectDomain: record.runtime.projectDomain ?? null,
       hbceModule: record.runtime.hbceModule ?? null,
       persistenceBoundary:
@@ -1639,6 +1999,7 @@ function buildOpcProofDatabaseFields(record: OpcProofRecord): OpcProofDatabaseFi
     }
   };
 
+
   return {
     proofId: record.proofId,
     proofHash,
@@ -1646,8 +2007,19 @@ function buildOpcProofDatabaseFields(record: OpcProofRecord): OpcProofDatabaseFi
     previousProofHash: record.proof.previousProofHash ?? null,
     evtId: record.event.evt,
     evtHash: record.event.hash,
+    tenantId: nullableDatabaseText(saasContext?.tenantId),
+    workspaceId: nullableDatabaseText(saasContext?.workspaceId),
+    subscriptionId: nullableDatabaseText(saasContext?.subscriptionId),
+    accountId: nullableDatabaseText(saasContext?.accountId),
+    tier: nullableDatabaseText(saasContext?.tier),
+    source: nullableDatabaseText(saasContext?.source),
+    auditId: nullableDatabaseText(saasContext?.auditId),
+    usageId: nullableDatabaseText(saasContext?.usageId),
+    eventName: nullableDatabaseText(saasContext?.eventName),
+    eventFamily: nullableDatabaseText(saasContext?.eventFamily),
+    cycle: nullableDatabaseText(saasContext?.cycle),
     runtimeIpr,
-    humanIpr: null,
+    humanIpr: humanIprForPayload,
     sessionId: nullableDatabaseText(record.sessionId),
     memoryId: nullableDatabaseText(record.memory?.memoryId ?? record.memory?.memoryKeyHash),
     memoryHash: nullableDatabaseText(record.proof.memoryHash ?? record.memory?.hash),
@@ -1664,18 +2036,23 @@ function buildOpcProofDatabaseFields(record: OpcProofRecord): OpcProofDatabaseFi
   };
 }
 
+
 function nullableDatabaseText(value: unknown): string | null {
   if (typeof value !== "string") {
     return null;
   }
 
+
   const trimmed = value.trim();
+
 
   if (!trimmed) {
     return null;
   }
 
+
   const normalized = trimmed.toUpperCase();
+
 
   if (
     normalized === "NONE" ||
@@ -1694,15 +2071,19 @@ function nullableDatabaseText(value: unknown): string | null {
     return null;
   }
 
+
   return trimmed;
 }
+
 
 function normalizeDatabaseRuntimeState(value: string | undefined): string | null {
   if (!value) {
     return null;
   }
 
+
   const normalized = value.toUpperCase();
+
 
   if (
     normalized === "OPERATIONAL" ||
@@ -1715,15 +2096,19 @@ function normalizeDatabaseRuntimeState(value: string | undefined): string | null
     return normalized;
   }
 
+
   return null;
 }
+
 
 function normalizeDatabaseRuntimeDecision(value: string | undefined): string | null {
   if (!value) {
     return null;
   }
 
+
   const normalized = value.toUpperCase();
+
 
   if (
     normalized === "ALLOW" ||
@@ -1736,15 +2121,19 @@ function normalizeDatabaseRuntimeDecision(value: string | undefined): string | n
     return normalized;
   }
 
+
   return null;
 }
+
 
 function normalizeDatabaseRiskClass(value: string | undefined): string | null {
   if (!value) {
     return null;
   }
 
+
   const normalized = value.toUpperCase();
+
 
   if (
     normalized === "LOW" ||
@@ -1757,15 +2146,19 @@ function normalizeDatabaseRiskClass(value: string | undefined): string | null {
     return normalized;
   }
 
+
   return "UNKNOWN";
 }
+
 
 function normalizeDatabaseAuditStatus(value: string | undefined): string | null {
   if (!value) {
     return null;
   }
 
+
   const normalized = value.toUpperCase();
+
 
   if (
     normalized === "NOT_REQUIRED" ||
@@ -1783,15 +2176,19 @@ function normalizeDatabaseAuditStatus(value: string | undefined): string | null 
     return normalized;
   }
 
+
   return null;
 }
+
 
 function normalizeDatabaseVerificationStatus(value: string | undefined): string | null {
   if (!value) {
     return null;
   }
 
+
   const normalized = value.toUpperCase();
+
 
   if (
     normalized === "VERIFIABLE" ||
@@ -1805,8 +2202,10 @@ function normalizeDatabaseVerificationStatus(value: string | undefined): string 
     return normalized;
   }
 
+
   return null;
 }
+
 
 function toDatabaseValue(
   value: string | number | boolean | null
@@ -1814,13 +2213,16 @@ function toDatabaseValue(
   return value;
 }
 
+
 function quoteIdentifier(identifier: string): string {
   if (!/^[a-z_][a-z0-9_]*$/i.test(identifier)) {
     throw new Error(`Unsafe SQL identifier: ${identifier}`);
   }
 
+
   return `"${identifier}"`;
 }
+
 
 function chooseColumn(
   available: Set<string>,
@@ -1832,12 +2234,15 @@ function chooseColumn(
     }
   }
 
+
   return null;
 }
+
 
 function hasColumnValue(target: OpcProofColumnValue[], column: string): boolean {
   return target.some((item) => item.column === column);
 }
+
 
 function addColumnValue(
   target: OpcProofColumnValue[],
@@ -1848,17 +2253,21 @@ function addColumnValue(
 ): void {
   const column = chooseColumn(available, candidates);
 
+
   if (!column) {
     if (options.required) {
       throw new Error(`OPC schema missing required column: ${candidates.join(" | ")}`);
     }
 
+
     return;
   }
+
 
   if (hasColumnValue(target, column)) {
     return;
   }
+
 
   target.push({
     column,
@@ -1866,6 +2275,7 @@ function addColumnValue(
     jsonb: options.jsonb
   });
 }
+
 
 function addEveryColumnValue(
   target: OpcProofColumnValue[],
@@ -1876,10 +2286,12 @@ function addEveryColumnValue(
 ): void {
   let written = false;
 
+
   for (const column of candidates) {
     if (!available.has(column) || hasColumnValue(target, column)) {
       continue;
     }
+
 
     target.push({
       column,
@@ -1887,13 +2299,16 @@ function addEveryColumnValue(
       jsonb: options.jsonb
     });
 
+
     written = true;
   }
+
 
   if (!written && options.required) {
     throw new Error(`OPC schema missing required column: ${candidates.join(" | ")}`);
   }
 }
+
 
 async function getOpcProofDatabaseColumns(): Promise<Set<string>> {
   const result = await queryHbceDatabase<InformationSchemaColumnRow>(
@@ -1907,22 +2322,27 @@ ORDER BY ordinal_position;
     [OPC_DATABASE_TABLE]
   );
 
+
   if (!result.ok) {
     return new Set(NO_OPC_DATABASE_COLUMNS);
   }
+
 
   const columns = result.rows
     .map((row) => row.column_name)
     .filter((column): column is string => typeof column === "string" && column.length > 0);
 
+
   return new Set(columns);
 }
+
 
 function buildOpcProofDatabaseColumnValues(
   available: Set<string>,
   fields: OpcProofDatabaseFields
 ): OpcProofColumnValue[] {
   const values: OpcProofColumnValue[] = [];
+
 
   addColumnValue(
     values,
@@ -1934,6 +2354,7 @@ function buildOpcProofDatabaseColumnValues(
     }
   );
 
+
   addEveryColumnValue(
     values,
     available,
@@ -1941,9 +2362,11 @@ function buildOpcProofDatabaseColumnValues(
     toDatabaseValue(fields.proofHash)
   );
 
+
   addColumnValue(values, available, ["chain_hash"], toDatabaseValue(fields.chainHash), {
     required: true
   });
+
 
   addEveryColumnValue(
     values,
@@ -1952,12 +2375,14 @@ function buildOpcProofDatabaseColumnValues(
     toDatabaseValue(fields.previousProofHash)
   );
 
+
   addEveryColumnValue(
     values,
     available,
     ["evt_id", "event_id"],
     toDatabaseValue(fields.evtId)
   );
+
 
   addEveryColumnValue(
     values,
@@ -1966,19 +2391,33 @@ function buildOpcProofDatabaseColumnValues(
     toDatabaseValue(fields.evtHash)
   );
 
+
   addColumnValue(values, available, ["runtime_ipr"], toDatabaseValue(fields.runtimeIpr), {
     required: true
   });
+
 
   addEveryColumnValue(
     values,
     available,
     ["human_ipr", "subject_ipr"],
-    toDatabaseValue(null)
+    toDatabaseValue(fields.humanIpr)
   );
 
-  addColumnValue(values, available, ["session_id"], toDatabaseValue(null));
-  addColumnValue(values, available, ["memory_id"], toDatabaseValue(null));
+
+  addColumnValue(values, available, ["tenant_id"], toDatabaseValue(fields.tenantId));
+  addColumnValue(values, available, ["workspace_id"], toDatabaseValue(fields.workspaceId));
+  addColumnValue(values, available, ["subscription_id"], toDatabaseValue(fields.subscriptionId));
+  addColumnValue(values, available, ["account_id"], toDatabaseValue(fields.accountId));
+  addColumnValue(values, available, ["saas_tier", "tier", "subscription_tier"], toDatabaseValue(fields.tier));
+  addColumnValue(values, available, ["source", "context_source", "saas_source"], toDatabaseValue(fields.source));
+  addColumnValue(values, available, ["audit_id"], toDatabaseValue(fields.auditId));
+  addColumnValue(values, available, ["usage_id", "model_usage_id"], toDatabaseValue(fields.usageId));
+  addColumnValue(values, available, ["event_name", "named_event"], toDatabaseValue(fields.eventName));
+  addColumnValue(values, available, ["event_family"], toDatabaseValue(fields.eventFamily));
+  addColumnValue(values, available, ["cycle"], toDatabaseValue(fields.cycle));
+  addColumnValue(values, available, ["session_id"], toDatabaseValue(fields.sessionId));
+  addColumnValue(values, available, ["memory_id"], toDatabaseValue(fields.memoryId));
   addColumnValue(values, available, ["memory_hash"], toDatabaseValue(fields.memoryHash));
   addColumnValue(values, available, ["runtime_state"], toDatabaseValue(fields.runtimeState));
   addColumnValue(values, available, ["runtime_decision"], toDatabaseValue(fields.runtimeDecision));
@@ -1988,19 +2427,24 @@ function buildOpcProofDatabaseColumnValues(
   addColumnValue(values, available, ["audit_status"], toDatabaseValue(fields.auditStatus));
   addColumnValue(values, available, ["verification_status"], toDatabaseValue(fields.verificationStatus));
 
+
   addColumnValue(values, available, ["public_payload", "public_view"], toDatabaseValue(fields.publicPayloadJson), {
     jsonb: true
   });
+
 
   addColumnValue(values, available, ["payload", "proof_payload"], toDatabaseValue(fields.payloadJson), {
     jsonb: true,
     required: true
   });
 
+
   addColumnValue(values, available, ["legal_certification"], toDatabaseValue(false));
+
 
   return values;
 }
+
 
 function buildOpcProofInsertStatement(input: {
   columns: OpcProofColumnValue[];
@@ -2012,9 +2456,11 @@ function buildOpcProofInsertStatement(input: {
   const writtenColumns = input.columns.map((item) => item.column);
   const params: HbceDatabaseQueryValue[] = input.columns.map((item) => item.value);
 
+
   const insertColumns = input.columns
     .map((item) => quoteIdentifier(item.column))
     .join(",\n  ");
+
 
   const values = input.columns
     .map((item, index) => {
@@ -2022,6 +2468,7 @@ function buildOpcProofInsertStatement(input: {
       return item.jsonb ? `${placeholder}::jsonb` : placeholder;
     })
     .join(",\n  ");
+
 
   const conflictColumn = input.columns.some((item) => item.column === "proof_id")
     ? "proof_id"
@@ -2031,9 +2478,11 @@ function buildOpcProofInsertStatement(input: {
         ? "id"
         : null;
 
+
   if (!conflictColumn) {
     throw new Error("OPC insert requires proof_id, opc_proof_id or id column.");
   }
+
 
   const updateColumns = input.columns
     .filter((item) => item.column !== conflictColumn)
@@ -2042,10 +2491,12 @@ function buildOpcProofInsertStatement(input: {
       return `${quoted} = EXCLUDED.${quoted}`;
     });
 
+
   const updateSql =
     updateColumns.length > 0
       ? `DO UPDATE SET\n  ${updateColumns.join(",\n  ")}`
       : "DO NOTHING";
+
 
   const sql = `
 INSERT INTO ${quoteIdentifier(OPC_DATABASE_TABLE)} (
@@ -2058,6 +2509,7 @@ ON CONFLICT (${quoteIdentifier(conflictColumn)}) ${updateSql}
 RETURNING ${quoteIdentifier(conflictColumn)};
 `.trim();
 
+
   return {
     sql,
     params,
@@ -2065,14 +2517,17 @@ RETURNING ${quoteIdentifier(conflictColumn)};
   };
 }
 
+
 function safeDatabaseError(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
 
+
   if (typeof error === "string") {
     return error;
   }
+
 
   try {
     return JSON.stringify(error);
@@ -2081,9 +2536,11 @@ function safeDatabaseError(error: unknown): string {
   }
 }
 
+
 function uniqueReasons(reasons: string[]): string[] {
   return Array.from(new Set(reasons.filter(Boolean)));
 }
+
 
 function stringOrDefault(
   value: string | undefined,
@@ -2093,9 +2550,11 @@ function stringOrDefault(
     return value.trim();
   }
 
+
   if (typeof fallback === "string" && fallback.trim()) {
     return fallback.trim();
   }
+
 
   return undefined;
 }
