@@ -87,6 +87,12 @@ export const DEFAULT_LEDGER_FILE =
 export const EVT_LEDGER_DATABASE_TABLE = "evt_records";
 
 
+export const JOKER_C2_BIRTH_ANCHOR_LOCAL = "2026-01-19T15:30:00+01:00";
+export const JOKER_C2_BIRTH_ANCHOR_TIMEZONE = "Europe/Rome";
+export const JOKER_C2_BIRTH_ANCHOR_UTC = "2026-01-19T14:30:00.000Z";
+export const JOKER_C2_TEMPORAL_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate";
+
+
 export type LedgerAppendStatus = "APPENDED" | "REJECTED" | "FAILED";
 
 
@@ -95,6 +101,7 @@ export type LedgerReadStatus = "READY" | "EMPTY" | "MISSING" | "FAILED";
 
 export type EvtDatabasePersistenceStatus =
   | "PERSISTED"
+  | "DATABASE_THREAD_PARENT_FAILED"
   | "DATABASE_NOT_CONFIGURED"
   | "DATABASE_NOT_AVAILABLE"
   | "DATABASE_TABLE_MISSING"
@@ -110,6 +117,49 @@ export type EvtPersistenceMode =
   | "FAILED";
 
 
+export type JokerC2TemporalRuntimeCertificate = {
+  name: typeof JOKER_C2_TEMPORAL_CERTIFICATE_NAME;
+  utcResponseTime: string;
+  birthAnchorLocal: typeof JOKER_C2_BIRTH_ANCHOR_LOCAL;
+  birthAnchorTimezone: typeof JOKER_C2_BIRTH_ANCHOR_TIMEZONE;
+  birthAnchorUtc: typeof JOKER_C2_BIRTH_ANCHOR_UTC;
+  lifetime: string;
+  lifetimeSeconds: number;
+  calendarAgeParts: {
+    years: number;
+    months: number;
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  };
+  temporalCertificateHash: string;
+  legalCertification: false;
+};
+
+
+export type EvtDatabaseThreadPreconditionStatus =
+  | "NOT_REQUIRED"
+  | "NO_THREAD_ID"
+  | "NO_THREAD_COLUMN"
+  | "NO_FOREIGN_KEY"
+  | "ALREADY_PRESENT"
+  | "CREATED"
+  | "FAILED";
+
+
+export type EvtDatabaseThreadPreconditionResult = {
+  ok: boolean;
+  status: EvtDatabaseThreadPreconditionStatus;
+  threadId: string | null;
+  localColumn: string | null;
+  referencedTable: string | null;
+  referencedColumn: string | null;
+  writtenColumns: string[];
+  error: string | null;
+};
+
+
 export type EvtDatabasePersistenceResult = {
   ok: boolean;
   status: EvtDatabasePersistenceStatus;
@@ -120,6 +170,7 @@ export type EvtDatabasePersistenceResult = {
   chainHash: string;
   table: string;
   writtenColumns: string[];
+  threadPrecondition?: EvtDatabaseThreadPreconditionResult;
   error: string | null;
   legalCertification: false;
 };
@@ -237,6 +288,14 @@ type EventDatabaseFields = {
   runtimeDecision: string;
   projectDomain: string | null;
   hbceModule: string | null;
+  utcResponseTime: string;
+  birthAnchorLocal: string;
+  birthAnchorTimezone: string;
+  birthAnchorUtc: string;
+  jokerLifetime: string;
+  jokerLifetimeSeconds: number;
+  temporalCertificateJson: string;
+  temporalCertificateHash: string;
   payloadJson: string;
   legalCertification: false;
 };
@@ -251,6 +310,27 @@ type EventColumnValue = {
 
 type InformationSchemaColumnRow = HbceDatabaseQueryRow & {
   column_name?: string;
+};
+
+
+type EvtThreadForeignKeyRow = HbceDatabaseQueryRow & {
+  local_column?: string;
+  foreign_table_schema?: string;
+  foreign_table_name?: string;
+  foreign_column_name?: string;
+};
+
+
+type EvtThreadForeignKeyReference = {
+  localColumn: string;
+  foreignTableSchema: string;
+  foreignTableName: string;
+  foreignColumnName: string;
+};
+
+
+type DatabasePresenceRow = HbceDatabaseQueryRow & {
+  present?: number | string | boolean;
 };
 
 
@@ -279,6 +359,127 @@ function sha256(value: unknown): string {
 
 function sha256Prefixed(value: unknown): string {
   return `sha256:${sha256(value)}`;
+}
+
+
+function addUtcCalendarParts(
+  date: Date,
+  parts: { years?: number; months?: number; days?: number; hours?: number; minutes?: number; seconds?: number }
+): Date {
+  const next = new Date(date.getTime());
+
+
+  next.setUTCFullYear(next.getUTCFullYear() + (parts.years ?? 0));
+  next.setUTCMonth(next.getUTCMonth() + (parts.months ?? 0));
+  next.setUTCDate(next.getUTCDate() + (parts.days ?? 0));
+  next.setUTCHours(next.getUTCHours() + (parts.hours ?? 0));
+  next.setUTCMinutes(next.getUTCMinutes() + (parts.minutes ?? 0));
+  next.setUTCSeconds(next.getUTCSeconds() + (parts.seconds ?? 0));
+
+
+  return next;
+}
+
+
+function buildCalendarAgeParts(start: Date, end: Date): JokerC2TemporalRuntimeCertificate["calendarAgeParts"] {
+  const safeEnd = end.getTime() >= start.getTime() ? end : start;
+  let cursor = new Date(start.getTime());
+  let years = 0;
+  let months = 0;
+
+
+  while (addUtcCalendarParts(cursor, { years: 1 }).getTime() <= safeEnd.getTime()) {
+    cursor = addUtcCalendarParts(cursor, { years: 1 });
+    years += 1;
+  }
+
+
+  while (addUtcCalendarParts(cursor, { months: 1 }).getTime() <= safeEnd.getTime()) {
+    cursor = addUtcCalendarParts(cursor, { months: 1 });
+    months += 1;
+  }
+
+
+  let remainingSeconds = Math.max(0, Math.floor((safeEnd.getTime() - cursor.getTime()) / 1000));
+  const days = Math.floor(remainingSeconds / 86400);
+  remainingSeconds -= days * 86400;
+  const hours = Math.floor(remainingSeconds / 3600);
+  remainingSeconds -= hours * 3600;
+  const minutes = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds - minutes * 60;
+
+
+  return {
+    years,
+    months,
+    days,
+    hours,
+    minutes,
+    seconds
+  };
+}
+
+
+function formatJokerLifetime(parts: JokerC2TemporalRuntimeCertificate["calendarAgeParts"]): string {
+  return [
+    `${parts.years} years`,
+    `${parts.months} months`,
+    `${parts.days} days`,
+    `${parts.hours} hours`,
+    `${parts.minutes} minutes`,
+    `${parts.seconds} seconds`
+  ].join(", ");
+}
+
+
+function normalizeDate(value: unknown): Date | null {
+  if (value instanceof Date && Number.isFinite(value.getTime())) {
+    return value;
+  }
+
+
+  if (typeof value !== "string" && typeof value !== "number") {
+    return null;
+  }
+
+
+  const candidate = new Date(value);
+
+
+  return Number.isFinite(candidate.getTime()) ? candidate : null;
+}
+
+
+export function buildJokerC2TemporalRuntimeCertificate(
+  responseTime: Date = new Date()
+): JokerC2TemporalRuntimeCertificate {
+  const birthUtc = new Date(JOKER_C2_BIRTH_ANCHOR_UTC);
+  const normalizedResponseTime = Number.isFinite(responseTime.getTime())
+    ? responseTime
+    : new Date();
+  const utcResponseTime = normalizedResponseTime.toISOString();
+  const lifetimeSeconds = Math.max(
+    0,
+    Math.floor((normalizedResponseTime.getTime() - birthUtc.getTime()) / 1000)
+  );
+  const calendarAgeParts = buildCalendarAgeParts(birthUtc, normalizedResponseTime);
+  const baseCertificate: Omit<JokerC2TemporalRuntimeCertificate, "temporalCertificateHash"> = {
+    name: JOKER_C2_TEMPORAL_CERTIFICATE_NAME,
+    utcResponseTime,
+    birthAnchorLocal: JOKER_C2_BIRTH_ANCHOR_LOCAL,
+    birthAnchorTimezone: JOKER_C2_BIRTH_ANCHOR_TIMEZONE,
+    birthAnchorUtc: JOKER_C2_BIRTH_ANCHOR_UTC,
+    lifetime: formatJokerLifetime(calendarAgeParts),
+    lifetimeSeconds,
+    calendarAgeParts,
+    legalCertification: false as const
+  };
+
+
+  return {
+    ...baseCertificate,
+    temporalCertificateHash: sha256Prefixed(baseCertificate)
+  };
 }
 
 
@@ -697,6 +898,34 @@ function safeEventHash(event: RuntimeEvent): string {
 }
 
 
+function extractEventResponseTime(event: RuntimeEvent): Date {
+  const eventRecord = event as unknown;
+  const candidate = firstStringPath(
+    eventRecord,
+    [
+      ["temporalRuntime", "utcResponseTime"],
+      ["temporal_runtime", "utc_response_time"],
+      ["temporalCertificate", "utcResponseTime"],
+      ["temporal_certificate", "utc_response_time"],
+      ["response", "utcResponseTime"],
+      ["response", "timestamp"],
+      ["runtime", "responseTime"],
+      ["runtime", "timestamp"],
+      ["payload", "utcResponseTime"],
+      ["payload", "timestamp"],
+      ["createdAt"],
+      ["created_at"],
+      ["timestamp"],
+      ["t"]
+    ],
+    null
+  );
+
+
+  return normalizeDate(candidate) ?? new Date();
+}
+
+
 function buildEventChainHash(event: RuntimeEvent): string {
   return sha256Prefixed({
     evt: safeEventId(event),
@@ -716,6 +945,9 @@ function buildEventDatabaseFields(event: RuntimeEvent): EventDatabaseFields {
   const prevEvtId = safePreviousEventId(event);
   const evtHash = safeEventHash(event);
   const chainHash = buildEventChainHash(event);
+  const temporalCertificate = buildJokerC2TemporalRuntimeCertificate(
+    extractEventResponseTime(event)
+  );
 
 
   const runtimeIpr = firstStringPath(
@@ -999,6 +1231,14 @@ function buildEventDatabaseFields(event: RuntimeEvent): EventDatabaseFields {
       evtHash,
       chainReference: safeEventChainReference(event),
       chainHash,
+      temporalRuntimeCertificate: temporalCertificate,
+      utcResponseTime: temporalCertificate.utcResponseTime,
+      birthAnchorLocal: temporalCertificate.birthAnchorLocal,
+      birthAnchorTimezone: temporalCertificate.birthAnchorTimezone,
+      birthAnchorUtc: temporalCertificate.birthAnchorUtc,
+      jokerLifetime: temporalCertificate.lifetime,
+      jokerLifetimeSeconds: temporalCertificate.lifetimeSeconds,
+      temporalCertificateHash: temporalCertificate.temporalCertificateHash,
       runtimeState,
       runtimeDecision,
       projectDomain: summary.projectDomain,
@@ -1052,6 +1292,14 @@ function buildEventDatabaseFields(event: RuntimeEvent): EventDatabaseFields {
     runtimeDecision,
     projectDomain: nullableText(summary.projectDomain),
     hbceModule: nullableText(summary.hbceModule),
+    utcResponseTime: temporalCertificate.utcResponseTime,
+    birthAnchorLocal: temporalCertificate.birthAnchorLocal,
+    birthAnchorTimezone: temporalCertificate.birthAnchorTimezone,
+    birthAnchorUtc: temporalCertificate.birthAnchorUtc,
+    jokerLifetime: temporalCertificate.lifetime,
+    jokerLifetimeSeconds: temporalCertificate.lifetimeSeconds,
+    temporalCertificateJson: JSON.stringify(temporalCertificate),
+    temporalCertificateHash: temporalCertificate.temporalCertificateHash,
     payloadJson: JSON.stringify(payload),
     legalCertification: false
   };
@@ -1065,6 +1313,11 @@ function quoteIdentifier(identifier: string): string {
 
 
   return `"${identifier}"`;
+}
+
+
+function quoteQualifiedTable(schema: string | null, table: string): string {
+  return schema ? `${quoteIdentifier(schema)}.${quoteIdentifier(table)}` : quoteIdentifier(table);
 }
 
 
@@ -1150,6 +1403,317 @@ function addEveryColumnValue(
 
   if (!written && options.required) {
     throw new Error(`EVT schema missing required column: ${candidates.join(" | ")}`);
+  }
+}
+
+
+async function getDatabaseColumnsForTable(
+  tableName: string,
+  tableSchema: string | null = null
+): Promise<Set<string>> {
+  const result = await queryHbceDatabase<InformationSchemaColumnRow>(
+    tableSchema
+      ? `
+SELECT column_name
+FROM information_schema.columns
+WHERE table_name = $1
+  AND table_schema = $2
+ORDER BY ordinal_position;
+`.trim()
+      : `
+SELECT column_name
+FROM information_schema.columns
+WHERE table_name = $1
+  AND table_schema IN ('public', current_schema())
+ORDER BY ordinal_position;
+`.trim(),
+    tableSchema ? [tableName, tableSchema] : [tableName]
+  );
+
+
+  if (!result.ok) {
+    return new Set(NO_EVT_DATABASE_COLUMNS);
+  }
+
+
+  const columns = result.rows
+    .map((row) => row.column_name)
+    .filter((column): column is string => typeof column === "string" && column.length > 0);
+
+
+  return new Set(columns);
+}
+
+
+async function getEvtThreadForeignKeyReference(): Promise<EvtThreadForeignKeyReference | null> {
+  const result = await queryHbceDatabase<EvtThreadForeignKeyRow>(
+    `
+SELECT
+  kcu.column_name AS local_column,
+  ccu.table_schema AS foreign_table_schema,
+  ccu.table_name AS foreign_table_name,
+  ccu.column_name AS foreign_column_name
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+  ON tc.constraint_name = kcu.constraint_name
+  AND tc.table_schema = kcu.table_schema
+JOIN information_schema.constraint_column_usage ccu
+  ON ccu.constraint_name = tc.constraint_name
+  AND ccu.table_schema = tc.table_schema
+WHERE tc.constraint_type = 'FOREIGN KEY'
+  AND tc.table_name = $1
+  AND tc.table_schema IN ('public', current_schema())
+  AND kcu.column_name = 'thread_id'
+LIMIT 1;
+`.trim(),
+    [EVT_LEDGER_DATABASE_TABLE]
+  );
+
+
+  if (!result.ok) {
+    return null;
+  }
+
+
+  const row = result.rows[0];
+
+
+  if (
+    !row?.local_column ||
+    !row.foreign_table_name ||
+    !row.foreign_column_name
+  ) {
+    return null;
+  }
+
+
+  return {
+    localColumn: row.local_column,
+    foreignTableSchema: row.foreign_table_schema || "public",
+    foreignTableName: row.foreign_table_name,
+    foreignColumnName: row.foreign_column_name
+  };
+}
+
+
+function buildThreadParentColumnValues(input: {
+  available: Set<string>;
+  fields: EventDatabaseFields;
+  reference: EvtThreadForeignKeyReference;
+  nowIso: string;
+}): EventColumnValue[] {
+  const values: EventColumnValue[] = [];
+  const threadLabel = `JOKER-C2 thread ${input.fields.threadId}`;
+
+
+  addColumnValue(
+    values,
+    input.available,
+    [input.reference.foreignColumnName],
+    toDatabaseValue(input.fields.threadId),
+    { required: true }
+  );
+
+
+  if (input.reference.foreignColumnName !== "thread_id") {
+    addColumnValue(values, input.available, ["thread_id"], toDatabaseValue(input.fields.threadId));
+  }
+
+
+  addColumnValue(values, input.available, ["tenant_id"], toDatabaseValue(input.fields.tenantId));
+  addColumnValue(values, input.available, ["workspace_id"], toDatabaseValue(input.fields.workspaceId));
+  addColumnValue(values, input.available, ["subscription_id"], toDatabaseValue(input.fields.subscriptionId));
+  addColumnValue(values, input.available, ["account_id"], toDatabaseValue(input.fields.accountId));
+  addColumnValue(values, input.available, ["session_id"], toDatabaseValue(input.fields.sessionId));
+  addColumnValue(values, input.available, ["runtime_ipr"], toDatabaseValue(input.fields.runtimeIpr));
+  addColumnValue(values, input.available, ["human_ipr", "subject_ipr"], toDatabaseValue(input.fields.humanIpr));
+  addColumnValue(values, input.available, ["source"], toDatabaseValue(input.fields.source ?? "EVT_LEDGER_THREAD_FK_REPAIR"));
+  addColumnValue(values, input.available, ["status", "state"], toDatabaseValue("ACTIVE"));
+  addColumnValue(values, input.available, ["title", "name", "thread_name"], toDatabaseValue(threadLabel));
+  addColumnValue(values, input.available, ["created_at"], toDatabaseValue(input.nowIso));
+  addColumnValue(values, input.available, ["updated_at"], toDatabaseValue(input.nowIso));
+  addColumnValue(values, input.available, ["legal_certification"], toDatabaseValue(false));
+
+
+  return values;
+}
+
+
+function buildThreadParentInsertStatement(input: {
+  schema: string | null;
+  table: string;
+  conflictColumn: string;
+  columns: EventColumnValue[];
+}): { sql: string; params: HbceDatabaseQueryValue[]; writtenColumns: string[] } {
+  const writtenColumns = input.columns.map((item) => item.column);
+  const params = input.columns.map((item) => item.value);
+  const insertColumns = input.columns.map((item) => quoteIdentifier(item.column)).join(",\n  ");
+  const values = input.columns
+    .map((item, index) => {
+      const placeholder = `$${index + 1}`;
+      return item.jsonb ? `${placeholder}::jsonb` : placeholder;
+    })
+    .join(",\n  ");
+
+
+  return {
+    sql: `
+INSERT INTO ${quoteQualifiedTable(input.schema, input.table)} (
+  ${insertColumns}
+)
+VALUES (
+  ${values}
+)
+ON CONFLICT (${quoteIdentifier(input.conflictColumn)}) DO NOTHING
+RETURNING ${quoteIdentifier(input.conflictColumn)};
+`.trim(),
+    params,
+    writtenColumns
+  };
+}
+
+
+async function ensureEvtThreadParentRecord(input: {
+  availableEvtColumns: Set<string>;
+  fields: EventDatabaseFields;
+}): Promise<EvtDatabaseThreadPreconditionResult> {
+  if (!input.fields.threadId) {
+    return {
+      ok: true,
+      status: "NO_THREAD_ID",
+      threadId: null,
+      localColumn: null,
+      referencedTable: null,
+      referencedColumn: null,
+      writtenColumns: [],
+      error: null
+    };
+  }
+
+
+  if (!input.availableEvtColumns.has("thread_id")) {
+    return {
+      ok: true,
+      status: "NO_THREAD_COLUMN",
+      threadId: input.fields.threadId,
+      localColumn: null,
+      referencedTable: null,
+      referencedColumn: null,
+      writtenColumns: [],
+      error: null
+    };
+  }
+
+
+  try {
+    const reference = await getEvtThreadForeignKeyReference();
+
+
+    if (!reference) {
+      return {
+        ok: true,
+        status: "NO_FOREIGN_KEY",
+        threadId: input.fields.threadId,
+        localColumn: "thread_id",
+        referencedTable: null,
+        referencedColumn: null,
+        writtenColumns: [],
+        error: null
+      };
+    }
+
+
+    const qualifiedTable = quoteQualifiedTable(reference.foreignTableSchema, reference.foreignTableName);
+    const presence = await queryHbceDatabase<DatabasePresenceRow>(
+      `SELECT 1 AS present FROM ${qualifiedTable} WHERE ${quoteIdentifier(reference.foreignColumnName)} = $1 LIMIT 1;`,
+      [input.fields.threadId]
+    );
+
+
+    if (presence.ok && presence.rows.length > 0) {
+      return {
+        ok: true,
+        status: "ALREADY_PRESENT",
+        threadId: input.fields.threadId,
+        localColumn: reference.localColumn,
+        referencedTable: reference.foreignTableName,
+        referencedColumn: reference.foreignColumnName,
+        writtenColumns: [],
+        error: null
+      };
+    }
+
+
+    const threadColumns = await getDatabaseColumnsForTable(
+      reference.foreignTableName,
+      reference.foreignTableSchema
+    );
+
+
+    if (threadColumns.size === 0) {
+      return {
+        ok: false,
+        status: "FAILED",
+        threadId: input.fields.threadId,
+        localColumn: reference.localColumn,
+        referencedTable: reference.foreignTableName,
+        referencedColumn: reference.foreignColumnName,
+        writtenColumns: [],
+        error: `Referenced thread table ${reference.foreignTableName} was not found or has no visible columns.`
+      };
+    }
+
+
+    const columnValues = buildThreadParentColumnValues({
+      available: threadColumns,
+      fields: input.fields,
+      reference,
+      nowIso: input.fields.utcResponseTime
+    });
+    const statement = buildThreadParentInsertStatement({
+      schema: reference.foreignTableSchema,
+      table: reference.foreignTableName,
+      conflictColumn: reference.foreignColumnName,
+      columns: columnValues
+    });
+    const insert = await queryHbceDatabase<DatabasePresenceRow>(statement.sql, statement.params);
+
+
+    if (!insert.ok) {
+      return {
+        ok: false,
+        status: "FAILED",
+        threadId: input.fields.threadId,
+        localColumn: reference.localColumn,
+        referencedTable: reference.foreignTableName,
+        referencedColumn: reference.foreignColumnName,
+        writtenColumns: statement.writtenColumns,
+        error: insert.error || "EVT_THREAD_PARENT_INSERT_FAILED"
+      };
+    }
+
+
+    return {
+      ok: true,
+      status: "CREATED",
+      threadId: input.fields.threadId,
+      localColumn: reference.localColumn,
+      referencedTable: reference.foreignTableName,
+      referencedColumn: reference.foreignColumnName,
+      writtenColumns: statement.writtenColumns,
+      error: null
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: "FAILED",
+      threadId: input.fields.threadId,
+      localColumn: "thread_id",
+      referencedTable: null,
+      referencedColumn: null,
+      writtenColumns: [],
+      error: safeDatabaseError(error)
+    };
   }
 }
 
@@ -1328,6 +1892,20 @@ function buildEvtDatabaseColumnValues(
 
   addColumnValue(values, available, ["project_domain"], toDatabaseValue(fields.projectDomain));
   addColumnValue(values, available, ["hbce_module"], toDatabaseValue(fields.hbceModule));
+  addColumnValue(values, available, ["utc_response_time", "response_utc", "timestamp_utc"], toDatabaseValue(fields.utcResponseTime));
+  addColumnValue(values, available, ["birth_anchor_local"], toDatabaseValue(fields.birthAnchorLocal));
+  addColumnValue(values, available, ["birth_anchor_timezone"], toDatabaseValue(fields.birthAnchorTimezone));
+  addColumnValue(values, available, ["birth_anchor_utc"], toDatabaseValue(fields.birthAnchorUtc));
+  addColumnValue(values, available, ["joker_lifetime", "runtime_lifetime"], toDatabaseValue(fields.jokerLifetime));
+  addColumnValue(values, available, ["joker_lifetime_seconds", "runtime_lifetime_seconds"], toDatabaseValue(fields.jokerLifetimeSeconds));
+  addColumnValue(values, available, ["temporal_certificate_hash"], toDatabaseValue(fields.temporalCertificateHash));
+  addColumnValue(
+    values,
+    available,
+    ["temporal_certificate", "temporal_runtime_certificate"],
+    toDatabaseValue(fields.temporalCertificateJson),
+    { jsonb: true }
+  );
 
 
   addEveryColumnValue(
@@ -1353,6 +1931,7 @@ export async function persistEventToDatabase(
   event: RuntimeEvent
 ): Promise<EvtDatabasePersistenceResult> {
   const fields = buildEventDatabaseFields(event);
+  let threadPrecondition: EvtDatabaseThreadPreconditionResult | undefined;
 
 
   if (!isHbceDatabaseConfigured()) {
@@ -1410,6 +1989,30 @@ export async function persistEventToDatabase(
     }
 
 
+    threadPrecondition = await ensureEvtThreadParentRecord({
+      availableEvtColumns: available,
+      fields
+    });
+
+
+    if (!threadPrecondition.ok) {
+      return {
+        ok: false,
+        status: "DATABASE_THREAD_PARENT_FAILED",
+        mode: "FAILED",
+        evt: fields.evtId,
+        prev: fields.prevEvtId ?? "",
+        hash: fields.evtHash,
+        chainHash: fields.chainHash,
+        table: EVT_LEDGER_DATABASE_TABLE,
+        writtenColumns: [],
+        threadPrecondition,
+        error: threadPrecondition.error || "EVT_THREAD_PARENT_PRECONDITION_FAILED",
+        legalCertification: false
+      };
+    }
+
+
     const columnValues = buildEvtDatabaseColumnValues(available, fields);
     const statement = buildEvtInsertStatement({ columns: columnValues });
 
@@ -1431,6 +2034,7 @@ export async function persistEventToDatabase(
         chainHash: fields.chainHash,
         table: EVT_LEDGER_DATABASE_TABLE,
         writtenColumns: statement.writtenColumns,
+        threadPrecondition,
         error: result.error || "EVT_DATABASE_WRITE_FAILED",
         legalCertification: false
       };
@@ -1447,6 +2051,7 @@ export async function persistEventToDatabase(
       chainHash: fields.chainHash,
       table: EVT_LEDGER_DATABASE_TABLE,
       writtenColumns: statement.writtenColumns,
+      threadPrecondition,
       error: null,
       legalCertification: false
     };
@@ -1461,6 +2066,7 @@ export async function persistEventToDatabase(
       chainHash: fields.chainHash,
       table: EVT_LEDGER_DATABASE_TABLE,
       writtenColumns: [],
+      threadPrecondition,
       error: safeDatabaseError(error),
       legalCertification: false
     };
