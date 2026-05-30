@@ -552,7 +552,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-IPR-TRAINING-RECALL-v2";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-IPR-TRAINING-REELABORATION-v3";
 
 
 
@@ -744,17 +744,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
-  const trainingMemoryRecallRequested = isTrainingMemoryRecallQuestion(message);
+  const trainingReelaborationRequested = isTrainingReelaborationQuestion(message);
+  const trainingBehaviorRequested = !trainingReelaborationRequested && isTrainingBehaviorQuestion(message);
+  const trainingMemoryRecallRequested =
+    !trainingReelaborationRequested && !trainingBehaviorRequested && isTrainingMemoryRecallQuestion(message);
+  const trainingRouteSelected = trainingReelaborationRequested
+    ? "TRAINING_REELABORATION_READY"
+    : trainingBehaviorRequested
+      ? "TRAINING_BEHAVIOR_READY"
+      : trainingMemoryRecallRequested
+        ? "TRAINING_MEMORY_READY"
+        : "NONE";
+  const trainingRouteRequested = trainingReelaborationRequested || trainingBehaviorRequested || trainingMemoryRecallRequested;
   const esoterologicalSemanticMemoryRequested =
-    !trainingMemoryRecallRequested && isEsoterologicalSemanticMemoryQuestion(message);
+    !trainingRouteRequested && isEsoterologicalSemanticMemoryQuestion(message);
   const memoryRegistrationRequested =
-    !trainingMemoryRecallRequested && !esoterologicalSemanticMemoryRequested && isMemoryRegistrationQuestion(message);
+    !trainingRouteRequested && !esoterologicalSemanticMemoryRequested && isMemoryRegistrationQuestion(message);
   const memoryRecoveryRequested =
-    !trainingMemoryRecallRequested && !esoterologicalSemanticMemoryRequested && isMemoryRecoveryQuestion(message);
+    !trainingRouteRequested && !esoterologicalSemanticMemoryRequested && isMemoryRecoveryQuestion(message);
   const apiSdkB2GPresentationRequested =
-    !trainingMemoryRecallRequested && !esoterologicalSemanticMemoryRequested && isApiSdkB2GPresentationQuestion(message);
+    !trainingRouteRequested && !esoterologicalSemanticMemoryRequested && isApiSdkB2GPresentationQuestion(message);
   const iprRecallRequested =
-    trainingMemoryRecallRequested || (!esoterologicalSemanticMemoryRequested && isIprMemoryRecallQuestion(message));
+    trainingRouteRequested || (!esoterologicalSemanticMemoryRequested && isIprMemoryRecallQuestion(message));
 
 
 
@@ -801,7 +812,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryRecoveryRequested,
     apiSdkB2GPresentationRequested,
     iprRecallRequested,
+    trainingReelaborationRequested,
+    trainingBehaviorRequested,
     trainingMemoryRecallRequested,
+    trainingRouteSelected,
     esoterologicalSemanticMemoryRequested,
     iprRecall
   };
@@ -841,6 +855,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (trainingReelaborationRequested) {
+    answer = buildIprTrainingReelaborationAnswer({
+      recall: iprRecall,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (trainingBehaviorRequested) {
+    answer = buildIprTrainingBehaviorAnswer({
+      recall: iprRecall,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (trainingMemoryRecallRequested) {
@@ -1686,6 +1720,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       registeredEvents: memory.registeredEvents,
       memoryStore: buildMemoryStoreDiagnostic(memory),
       memoryFlushErrors: getRuntimeMemoryFlushErrors(),
+      training: {
+        reelaborationRequested: trainingReelaborationRequested,
+        behaviorRequested: trainingBehaviorRequested,
+        memoryRecallRequested: trainingMemoryRecallRequested,
+        routeSelected: trainingRouteSelected,
+        legalCertification: false
+      },
       iprRecall: {
         injected: iprRecall.injected,
         status: iprRecall.status,
@@ -1923,7 +1964,8 @@ function buildSystemPrompt(
     "For ordinary explanatory questions, answer the user’s actual question first. Keep operational metadata out of the main answer.",
     "Use known memory facts only when directly relevant to the question. Do not force memory facts into unrelated explanations.",
     "When an IPR recall memory block is injected and the user asks to recall prior IPR memory, use that block before general knowledge and before generic legal-boundary answers.",
-    "When the user writes 'step test addestramento AI JOKER-C2' or asks for operational training recall, answer from the injected IPR training memory and use TRAINING_MEMORY_READY if a matching record exists.",
+    "Training routing priority is strict: TEST TRAINING v1.2, rielaborazione, soft delete, duplicate memories, recall pulito or prompt memory block cleanup must produce TRAINING_REELABORATION_READY when a training memory exists; TEST TRAINING v1.1, applica regola, file reale, SHA-256 or diff reale must produce TRAINING_BEHAVIOR_READY when a training memory exists; only pure training recall must produce TRAINING_MEMORY_READY.",
+    "When the user writes 'step test addestramento AI JOKER-C2' or asks for operational training recall without behavior or reelaboration intent, answer from the injected IPR training memory and use TRAINING_MEMORY_READY if a matching record exists.",
     "For recall requests, report only IDs present in the injected IPR recall block. If the block is empty, say RECALL_EMPTY instead of inventing memory IDs.",
     "If the user asks who they are or whether JOKER-C2 recognizes them, answer only from the identity context. Never infer identity from the prompt text.",
     "If the user asks for a diagnostic, status, EVT/OPC proof, memory retrieval or audit summary, use the runtime context accurately and avoid inventing unavailable values.",
@@ -2668,8 +2710,84 @@ function isMemoryRecoveryQuestion(message: string): boolean {
 
 
 
+function isTrainingReelaborationQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  const hasReelaborationTrigger =
+    normalized.includes("test training v1.2") ||
+    normalized.includes("apprendimento e rielaborazione operativa") ||
+    normalized.includes("training_reelaboration_ready") ||
+    normalized.includes("rielaborazione") ||
+    normalized.includes("rielaborare") ||
+    normalized.includes("nuova regola operativa") ||
+    normalized.includes("non devi limitarti a richiamare") ||
+    normalized.includes("non devi rispondere solo training_memory_ready") ||
+    normalized.includes("soft delete") ||
+    normalized.includes("delete-record") ||
+    normalized.includes("memoria salvata per errore") ||
+    normalized.includes("memoria duplicata") ||
+    normalized.includes("recall pulito") ||
+    normalized.includes("prompt memory block");
+
+  const hasTrainingContext =
+    normalized.includes("training") ||
+    normalized.includes("addestramento") ||
+    normalized.includes("memoria ipr") ||
+    normalized.includes("joker-c2") ||
+    normalized.includes("joker c2");
+
+  return hasTrainingContext && hasReelaborationTrigger;
+}
+
+
+
+function isTrainingBehaviorQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  if (isTrainingReelaborationQuestion(message)) {
+    return false;
+  }
+
+  const hasBehaviorTrigger =
+    normalized.includes("test training v1.1") ||
+    normalized.includes("applica regola") ||
+    normalized.includes("applicazione comportamentale") ||
+    normalized.includes("training_behavior_ready") ||
+    normalized.includes("non generare codice") ||
+    normalized.includes("non inventare file") ||
+    normalized.includes("file reale") ||
+    normalized.includes("sha-256") ||
+    normalized.includes("sha256") ||
+    normalized.includes("diff reale") ||
+    normalized.includes("file integrale") ||
+    normalized.includes("commit del file");
+
+  const hasTrainingContext =
+    normalized.includes("training") ||
+    normalized.includes("addestramento") ||
+    normalized.includes("memoria ipr") ||
+    normalized.includes("joker-c2") ||
+    normalized.includes("joker c2");
+
+  return hasTrainingContext && hasBehaviorTrigger;
+}
+
+
+
 function isTrainingMemoryRecallQuestion(message: string): boolean {
   if (!message.trim()) {
+    return false;
+  }
+
+  if (isTrainingReelaborationQuestion(message) || isTrainingBehaviorQuestion(message)) {
     return false;
   }
 
@@ -2771,6 +2889,162 @@ function selectTrainingMemoryRecallItem(items: IprRecallInjectionItem[]): IprRec
     haystack.includes("addestramento operativo");
 
   return matchedTrainingMemory ? best.item : null;
+}
+
+
+
+function buildIprTrainingBehaviorAnswer(args: {
+  recall: IprRecallInjection;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const primary = selectTrainingMemoryRecallItem(args.recall.items);
+
+  if (!primary) {
+    return [
+      "FAIL TRAINING BEHAVIOR",
+      "",
+      `Recall status: ${args.recall.status}`,
+      `recallInjected: ${String(args.recall.injected)}`,
+      `recallItemsCount: ${String(args.recall.items.length)}`,
+      `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+      args.recall.error ? `Errore recall: ${args.recall.error}` : "Errore recall: none",
+      "Motivo: nessuna memoria IPR di addestramento operativo disponibile per applicare la procedura comportamentale.",
+      "legalCertification=false"
+    ].join("\n");
+  }
+
+  return [
+    "TRAINING_BEHAVIOR_READY — regola di addestramento operativo applicata al comportamento runtime.",
+    "",
+    "1. Memoria usata come base",
+    `memoryId: ${primary.memoryId || "NO_MEMORY_ID_IN_RECALL_RECORD"}`,
+    `sourceSavedChatId: ${primary.sourceSavedChatId || "NO_SAVED_CHAT_IN_RECALL_RECORD"}`,
+    `EVT: ${primary.lastEvtId || "NO_EVT_IN_RECALL_RECORD"}`,
+    `OPC: ${primary.lastOpcProofId || "NO_OPC_IN_RECALL_RECORD"}`,
+    "",
+    "2. Tipo di addestramento",
+    "Questo è addestramento operativo del runtime HBCE/JOKER-C2 tramite memoria IPR persistente, non fine-tuning del modello base. Il modello non viene riaddestrato nei pesi: il runtime applica una regola operativa richiamata da memory_records.",
+    "",
+    "3. Procedura obbligatoria per file GitHub/Vercel/HBCE",
+    "Non posso rifattorizzare senza file reale caricato o incollato da Manuel Coletta.",
+    "Devo lavorare solo sul file reale ricevuto, non su memoria vaga o ricostruzione approssimativa.",
+    "Prima di modificare devo calcolare path, byte, numero righe e SHA-256 del file originale.",
+    "Dopo la rifattorizzazione devo calcolare path, byte, numero righe e SHA-256 del file rifattorizzato.",
+    "Devo mostrare un diff reale: righe aggiunte, righe rimosse, funzioni modificate, marker nuovi e controllo TypeScript quando pertinente.",
+    "Devo dichiarare DIVERSO/UGUALE e PASS/FAIL.",
+    "Devo consegnare il file integrale completo, non patch parziali.",
+    "Devo fornire il commit del file.",
+    "Se il file reale non è disponibile, devo chiederlo o dichiarare che non posso rifattorizzare.",
+    "",
+    "4. Decisione · Costo · Traccia · Tempo",
+    "Decisione: applicare la regola operativa invece di limitarsi a richiamarla.",
+    "Costo: evitare falsi fix, file inventati, patch parziali e deploy inutili.",
+    "Traccia: usare SHA-256, diff reale, memoryId, EVT, OPC e audit tecnico.",
+    "Tempo: rendere il comportamento riusabile nelle future operazioni GitHub/Vercel/HBCE.",
+    "",
+    "5. Collegamento HBCE",
+    `Human IPR: ${args.handoff.humanIpr}`,
+    `Runtime memory ID: ${args.memory.memoryId}`,
+    `Tenant: ${args.saasContext.tenantId}`,
+    `Workspace: ${args.saasContext.workspaceId}`,
+    `recallInjected: ${String(args.recall.injected)}`,
+    `recallItemsCount: ${String(args.recall.items.length)}`,
+    `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+    "MATRIX: continuità operativa, verifica e governance del processo.",
+    "",
+    "6. Boundary",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+
+function buildIprTrainingReelaborationAnswer(args: {
+  recall: IprRecallInjection;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const primary = selectTrainingMemoryRecallItem(args.recall.items);
+
+  if (!primary) {
+    return [
+      "FAIL TRAINING REELABORATION",
+      "",
+      `Recall status: ${args.recall.status}`,
+      `recallInjected: ${String(args.recall.injected)}`,
+      `recallItemsCount: ${String(args.recall.items.length)}`,
+      `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+      args.recall.error ? `Errore recall: ${args.recall.error}` : "Errore recall: none",
+      "Motivo: nessuna memoria IPR di addestramento operativo disponibile come base di rielaborazione.",
+      "legalCertification=false"
+    ].join("\n");
+  }
+
+  const duplicateMemoryIds = args.recall.memoryIds.filter((memoryId) => memoryId && memoryId !== primary.memoryId);
+
+  return [
+    "TRAINING_REELABORATION_READY — memoria IPR rielaborata in nuova regola operativa.",
+    "",
+    "1. Memoria precedente usata come base di apprendimento",
+    `memoryId base: ${primary.memoryId || "NO_MEMORY_ID_IN_RECALL_RECORD"}`,
+    `sourceSavedChatId: ${primary.sourceSavedChatId || "NO_SAVED_CHAT_IN_RECALL_RECORD"}`,
+    `sourceThreadId: ${primary.sourceThreadId || primary.sessionId || args.recall.sessionId}`,
+    `EVT: ${primary.lastEvtId || "NO_EVT_IN_RECALL_RECORD"}`,
+    `OPC: ${primary.lastOpcProofId || "NO_OPC_IN_RECALL_RECORD"}`,
+    `additionalMemoryIds: ${duplicateMemoryIds.join(", ") || "none"}`,
+    "",
+    "2. Perché è rielaborazione e non semplice recall",
+    "Non sto ripetendo soltanto TRAINING_MEMORY_READY. Uso la memoria IPR di addestramento operativo come base e la trasformo in una nuova regola di governo del recall: una memoria salvata può essere mantenuta, esclusa o disattivata in base alla sua qualità operativa.",
+    "",
+    "3. Nuova regola operativa appresa",
+    "Una memoria IPR non è definitiva solo perché è stata salvata.",
+    "Una memoria duplicata, errata, incompleta o non più utile deve poter essere esclusa dal recall tramite soft delete operativo.",
+    "Il soft delete non cancella fisicamente la traccia: imposta la memoria come non riusabile, la rimuove dal prompt memory block e conserva audit, memoryId, EVT e OPC quando disponibili.",
+    "Il prompt memory block deve usare solo memorie attive, riusabili e coerenti con l'operazione corrente.",
+    "Una risposta FAIL non va salvata su IPR. Se è stata salvata per errore, va rimossa da IPR recall. Se è duplicata, va disattivato il doppione.",
+    "",
+    "4. Decisione · Costo · Traccia · Tempo",
+    "Decisione: salvare solo memorie PASS e rimuovere dal recall memorie duplicate, errate, incomplete o inutili.",
+    "Costo: evitare recall sporco, doppioni, confusione operativa e prompt memory block sovraccarico.",
+    "Traccia: conservare memoryId, EVT, OPC, audit e stato soft-delete senza inventare ID né cancellare la storia tecnica.",
+    "Tempo: rendere il runtime più fluido e pulito nei test futuri, mantenendo continuità verificabile.",
+    "",
+    "5. Comportamento futuro atteso",
+    "Se una risposta è PASS, può essere salvata su IPR come sintesi operativa riusabile.",
+    "Se una risposta è FAIL, non va salvata su IPR.",
+    "Se una risposta FAIL è già stata salvata, va rimossa da IPR recall tramite delete-record endpoint.",
+    "Se una memoria è duplicata, va disattivato il doppione e deve restare attiva solo la memoria migliore o più recente.",
+    "Se il recall diventa rumoroso, il prompt memory block deve essere pulito prima di continuare la programmazione.",
+    "",
+    "6. Collegamento HBCE",
+    `Human IPR: ${args.handoff.humanIpr}`,
+    `Runtime memory ID: ${args.memory.memoryId}`,
+    `Tenant: ${args.saasContext.tenantId}`,
+    `Workspace: ${args.saasContext.workspaceId}`,
+    `recallInjected: ${String(args.recall.injected)}`,
+    `recallItemsCount: ${String(args.recall.items.length)}`,
+    `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+    "memory_records: fonte della memoria IPR persistente e riusabile.",
+    "prompt memory block: deve ricevere solo record attivi, coerenti e reusableInPrompt=true.",
+    "delete-record endpoint: strumento operativo per soft delete e rimozione dal recall senza cancellazione fisica.",
+    "MATRIX: organizza continuità, responsabilità, audit e governo del processo.",
+    "",
+    "7. Stato rielaborazione",
+    "quality: CANONICAL",
+    "classification: USER_SELECTED_CHAT_MEMORY_REELABORATION",
+    `policyDecision: ${args.policy.decision}`,
+    `operationDecision: ${args.policy.operationDecision}`,
+    "",
+    "8. Boundary",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
 }
 
 
