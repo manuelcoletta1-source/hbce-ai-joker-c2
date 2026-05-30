@@ -552,7 +552,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-IPR-TRAINING-REELABORATION-v3";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-IPR-DELETE-VERIFICATION-v4";
 
 
 
@@ -744,18 +744,39 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
-  const trainingReelaborationRequested = isTrainingReelaborationQuestion(message);
-  const trainingBehaviorRequested = !trainingReelaborationRequested && isTrainingBehaviorQuestion(message);
+  const trainingDeleteVerificationRequested = isTrainingDeleteVerificationQuestion(message);
+  const trainingSoftDeleteApplicationRequested =
+    !trainingDeleteVerificationRequested && isTrainingSoftDeleteApplicationQuestion(message);
+  const trainingReelaborationRequested =
+    !trainingDeleteVerificationRequested && !trainingSoftDeleteApplicationRequested && isTrainingReelaborationQuestion(message);
+  const trainingBehaviorRequested =
+    !trainingDeleteVerificationRequested &&
+    !trainingSoftDeleteApplicationRequested &&
+    !trainingReelaborationRequested &&
+    isTrainingBehaviorQuestion(message);
   const trainingMemoryRecallRequested =
-    !trainingReelaborationRequested && !trainingBehaviorRequested && isTrainingMemoryRecallQuestion(message);
-  const trainingRouteSelected = trainingReelaborationRequested
-    ? "TRAINING_REELABORATION_READY"
-    : trainingBehaviorRequested
-      ? "TRAINING_BEHAVIOR_READY"
-      : trainingMemoryRecallRequested
-        ? "TRAINING_MEMORY_READY"
-        : "NONE";
-  const trainingRouteRequested = trainingReelaborationRequested || trainingBehaviorRequested || trainingMemoryRecallRequested;
+    !trainingDeleteVerificationRequested &&
+    !trainingSoftDeleteApplicationRequested &&
+    !trainingReelaborationRequested &&
+    !trainingBehaviorRequested &&
+    isTrainingMemoryRecallQuestion(message);
+  const trainingRouteSelected = trainingDeleteVerificationRequested
+    ? "TRAINING_DELETE_VERIFICATION_READY"
+    : trainingSoftDeleteApplicationRequested
+      ? "TRAINING_SOFT_DELETE_APPLICATION_READY"
+      : trainingReelaborationRequested
+        ? "TRAINING_REELABORATION_READY"
+        : trainingBehaviorRequested
+          ? "TRAINING_BEHAVIOR_READY"
+          : trainingMemoryRecallRequested
+            ? "TRAINING_MEMORY_READY"
+            : "NONE";
+  const trainingRouteRequested =
+    trainingDeleteVerificationRequested ||
+    trainingSoftDeleteApplicationRequested ||
+    trainingReelaborationRequested ||
+    trainingBehaviorRequested ||
+    trainingMemoryRecallRequested;
   const esoterologicalSemanticMemoryRequested =
     !trainingRouteRequested && isEsoterologicalSemanticMemoryQuestion(message);
   const memoryRegistrationRequested =
@@ -812,6 +833,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryRecoveryRequested,
     apiSdkB2GPresentationRequested,
     iprRecallRequested,
+    trainingDeleteVerificationRequested,
+    trainingSoftDeleteApplicationRequested,
     trainingReelaborationRequested,
     trainingBehaviorRequested,
     trainingMemoryRecallRequested,
@@ -855,6 +878,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (trainingDeleteVerificationRequested) {
+    answer = buildIprTrainingDeleteVerificationAnswer({
+      recall: iprRecall,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (trainingSoftDeleteApplicationRequested) {
+    answer = buildIprTrainingSoftDeleteApplicationAnswer({
+      recall: iprRecall,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (trainingReelaborationRequested) {
@@ -1721,6 +1764,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       memoryStore: buildMemoryStoreDiagnostic(memory),
       memoryFlushErrors: getRuntimeMemoryFlushErrors(),
       training: {
+        deleteVerificationRequested: trainingDeleteVerificationRequested,
+        softDeleteApplicationRequested: trainingSoftDeleteApplicationRequested,
         reelaborationRequested: trainingReelaborationRequested,
         behaviorRequested: trainingBehaviorRequested,
         memoryRecallRequested: trainingMemoryRecallRequested,
@@ -1964,7 +2009,7 @@ function buildSystemPrompt(
     "For ordinary explanatory questions, answer the user’s actual question first. Keep operational metadata out of the main answer.",
     "Use known memory facts only when directly relevant to the question. Do not force memory facts into unrelated explanations.",
     "When an IPR recall memory block is injected and the user asks to recall prior IPR memory, use that block before general knowledge and before generic legal-boundary answers.",
-    "Training routing priority is strict: TEST TRAINING v1.2, rielaborazione, soft delete, duplicate memories, recall pulito or prompt memory block cleanup must produce TRAINING_REELABORATION_READY when a training memory exists; TEST TRAINING v1.1, applica regola, file reale, SHA-256 or diff reale must produce TRAINING_BEHAVIOR_READY when a training memory exists; only pure training recall must produce TRAINING_MEMORY_READY.",
+    "Training routing priority is strict: TEST TRAINING v1.4, verifica pulizia recall, delete verification or dopo soft delete must produce TRAINING_DELETE_VERIFICATION_READY; TEST TRAINING v1.3, applicazione soft delete, doppioni, memoryId da rimuovere or payload delete-record must produce TRAINING_SOFT_DELETE_APPLICATION_READY; TEST TRAINING v1.2, rielaborazione, soft delete, duplicate memories, recall pulito or prompt memory block cleanup must produce TRAINING_REELABORATION_READY when no concrete application or verification intent is present; TEST TRAINING v1.1, applica regola, file reale, SHA-256 or diff reale must produce TRAINING_BEHAVIOR_READY when a training memory exists; only pure training recall must produce TRAINING_MEMORY_READY.",
     "When the user writes 'step test addestramento AI JOKER-C2' or asks for operational training recall without behavior or reelaboration intent, answer from the injected IPR training memory and use TRAINING_MEMORY_READY if a matching record exists.",
     "For recall requests, report only IDs present in the injected IPR recall block. If the block is empty, say RECALL_EMPTY instead of inventing memory IDs.",
     "If the user asks who they are or whether JOKER-C2 recognizes them, answer only from the identity context. Never infer identity from the prompt text.",
@@ -2710,8 +2755,95 @@ function isMemoryRecoveryQuestion(message: string): boolean {
 
 
 
+const TRAINING_DELETE_DUPLICATE_MEMORY_IDS = [
+  "IPR-MEM-20260530104506-70EC8570",
+  "IPR-MEM-20260530104439-EBB262C7"
+] as const;
+
+const TRAINING_CANONICAL_MEMORY_ID = "IPR-MEM-20260530112002-A6F03760";
+const TRAINING_DUPLICATE_MEMORY_TO_KEEP = "IPR-MEM-20260530104506-70EC8570";
+const TRAINING_DUPLICATE_MEMORY_TO_REMOVE = "IPR-MEM-20260530104439-EBB262C7";
+
+
+
+function isTrainingDeleteVerificationQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  const hasVerificationTrigger =
+    normalized.includes("test training v1.4") ||
+    normalized.includes("verifica pulizia recall") ||
+    normalized.includes("verifica operativa dopo soft delete") ||
+    normalized.includes("training_delete_verification_ready") ||
+    normalized.includes("delete verification") ||
+    normalized.includes("dopo soft delete") ||
+    normalized.includes("ancora presenti nel recall") ||
+    normalized.includes("memoryids del recall") ||
+    normalized.includes("memoryids richiamati") ||
+    normalized.includes("prompt memory block risulta più pulito") ||
+    normalized.includes("removedfromrecall=true") ||
+    normalized.includes("memorystatus=disabled") ||
+    normalized.includes("reusableinprompt=false");
+
+  const hasDeletionContext =
+    normalized.includes("soft delete") ||
+    normalized.includes("delete-record") ||
+    normalized.includes("recall") ||
+    normalized.includes("prompt memory block") ||
+    normalized.includes("ipr-mem-") ||
+    normalized.includes("memoria ipr");
+
+  return hasDeletionContext && hasVerificationTrigger;
+}
+
+
+
+function isTrainingSoftDeleteApplicationQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  if (isTrainingDeleteVerificationQuestion(message)) {
+    return false;
+  }
+
+  const hasApplicationTrigger =
+    normalized.includes("test training v1.3") ||
+    normalized.includes("applicazione soft delete") ||
+    normalized.includes("training_soft_delete_application_ready") ||
+    normalized.includes("caso concreto") ||
+    normalized.includes("doppioni") ||
+    normalized.includes("doppione") ||
+    normalized.includes("quale memoria deve restare attiva") ||
+    normalized.includes("quale memoria proponi di rimuovere") ||
+    normalized.includes("payload operativo") ||
+    normalized.includes("memoryid da rimuovere") ||
+    normalized.includes("user_explicit_remove_duplicate_from_ipr_recall");
+
+  const hasDeletionContext =
+    normalized.includes("soft delete") ||
+    normalized.includes("delete-record") ||
+    normalized.includes("recall") ||
+    normalized.includes("prompt memory block") ||
+    normalized.includes("ipr-mem-") ||
+    normalized.includes("memoria ipr");
+
+  return hasDeletionContext && hasApplicationTrigger;
+}
+
+
+
 function isTrainingReelaborationQuestion(message: string): boolean {
   if (!message.trim()) {
+    return false;
+  }
+
+  if (isTrainingDeleteVerificationQuestion(message) || isTrainingSoftDeleteApplicationQuestion(message)) {
     return false;
   }
 
@@ -2752,7 +2884,11 @@ function isTrainingBehaviorQuestion(message: string): boolean {
 
   const normalized = normalizeText(message);
 
-  if (isTrainingReelaborationQuestion(message)) {
+  if (
+    isTrainingDeleteVerificationQuestion(message) ||
+    isTrainingSoftDeleteApplicationQuestion(message) ||
+    isTrainingReelaborationQuestion(message)
+  ) {
     return false;
   }
 
@@ -2787,7 +2923,12 @@ function isTrainingMemoryRecallQuestion(message: string): boolean {
     return false;
   }
 
-  if (isTrainingReelaborationQuestion(message) || isTrainingBehaviorQuestion(message)) {
+  if (
+    isTrainingDeleteVerificationQuestion(message) ||
+    isTrainingSoftDeleteApplicationQuestion(message) ||
+    isTrainingReelaborationQuestion(message) ||
+    isTrainingBehaviorQuestion(message)
+  ) {
     return false;
   }
 
@@ -2889,6 +3030,178 @@ function selectTrainingMemoryRecallItem(items: IprRecallInjectionItem[]): IprRec
     haystack.includes("addestramento operativo");
 
   return matchedTrainingMemory ? best.item : null;
+}
+
+
+
+function findRecallItemByMemoryId(items: IprRecallInjectionItem[], memoryId: string): IprRecallInjectionItem | null {
+  return items.find((item) => item.memoryId === memoryId) ?? null;
+}
+
+
+
+function formatRecallPresence(memoryId: string, items: IprRecallInjectionItem[]): string {
+  const item = findRecallItemByMemoryId(items, memoryId);
+
+  if (!item) {
+    return `${memoryId}: non presente nel recall injected / prompt memory block attivo`;
+  }
+
+  return [
+    `${memoryId}: ancora presente nel recall`,
+    `status=${item.memoryStatus || "UNKNOWN"}`,
+    `classification=${item.classification || "UNKNOWN"}`,
+    `quality=${item.quality || "UNKNOWN"}`
+  ].join(" · ");
+}
+
+
+
+function buildIprTrainingSoftDeleteApplicationAnswer(args: {
+  recall: IprRecallInjection;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const activeDuplicateIds = TRAINING_DELETE_DUPLICATE_MEMORY_IDS.filter((memoryId) => args.recall.memoryIds.includes(memoryId));
+  const keepId = args.recall.memoryIds.includes(TRAINING_DUPLICATE_MEMORY_TO_KEEP)
+    ? TRAINING_DUPLICATE_MEMORY_TO_KEEP
+    : activeDuplicateIds[0] || TRAINING_DUPLICATE_MEMORY_TO_KEEP;
+  const removeId = args.recall.memoryIds.includes(TRAINING_DUPLICATE_MEMORY_TO_REMOVE)
+    ? TRAINING_DUPLICATE_MEMORY_TO_REMOVE
+    : activeDuplicateIds.find((memoryId) => memoryId !== keepId) || TRAINING_DUPLICATE_MEMORY_TO_REMOVE;
+  const targetStillVisible = args.recall.memoryIds.includes(removeId);
+
+  return [
+    "TRAINING_SOFT_DELETE_APPLICATION_READY — regola soft delete applicata a memoria IPR duplicata.",
+    "",
+    "1. Regola rielaborata applicata",
+    "Una memoria IPR salvata non è definitiva: se è duplicata, errata, incompleta o non più utile deve essere esclusa dal recall tramite soft delete operativo, mantenendo traccia e audit quando disponibili.",
+    "",
+    "2. Memoria da mantenere attiva",
+    `Mantieni attivo: ${keepId}`,
+    "Motivo: conserva almeno un riferimento operativo al test SAVE-CHAT v1.7 senza duplicare il prompt memory block.",
+    "",
+    "3. Memoria proposta per rimozione dal recall",
+    `Rimuovi dal recall: ${removeId}`,
+    targetStillVisible
+      ? "Stato: ancora presente nel recall corrente, quindi il soft delete è applicabile."
+      : "Stato: non presente nel recall corrente; se era già stata disattivata, non ripetere salvataggi o rimozioni inutili.",
+    "",
+    "4. Perché è soft delete e non cancellazione fisica",
+    "Il record non deve essere distrutto fisicamente. Deve essere escluso dal prompt memory block impostando il record come non riusabile e preservando memoryId, EVT, OPC e audit quando disponibili.",
+    "",
+    "5. Effetto atteso",
+    "reusableInPrompt=false",
+    "memoryStatus=DISABLED",
+    "removedFromRecall=true",
+    "physicalDelete=false",
+    "prompt memory block più pulito e meno ridondante",
+    "",
+    "6. Endpoint operativo da usare",
+    "POST /api/ipr-memory/delete-record",
+    "",
+    "7. Payload operativo consigliato",
+    JSON.stringify(
+      {
+        memoryId: removeId,
+        confirmDeleteFromIpr: true,
+        deleteMode: "SOFT_DELETE",
+        reason: "USER_EXPLICIT_REMOVE_DUPLICATE_FROM_IPR_RECALL"
+      },
+      null,
+      2
+    ),
+    "",
+    "8. Decisione · Costo · Traccia · Tempo",
+    `Decisione: disattivare dal recall il doppione ${removeId} e mantenere ${keepId}.`,
+    "Costo: ridurre rumore, duplicazione e confusione nel prompt memory block.",
+    "Traccia: mantenere memoryId, audit, EVT e OPC quando disponibili, senza cancellare la storia tecnica.",
+    "Tempo: rendere il recall più pulito nei test futuri e nelle operazioni successive.",
+    "",
+    "9. Collegamento HBCE",
+    `Human IPR: ${args.handoff.humanIpr}`,
+    `Runtime memory ID: ${args.memory.memoryId}`,
+    `Tenant: ${args.saasContext.tenantId}`,
+    `Workspace: ${args.saasContext.workspaceId}`,
+    `recallInjected: ${String(args.recall.injected)}`,
+    `recallItemsCount: ${String(args.recall.items.length)}`,
+    `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+    "MATRIX: governance della continuità, della pulizia recall e della responsabilità operativa.",
+    "",
+    "10. Boundary",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+
+function buildIprTrainingDeleteVerificationAnswer(args: {
+  recall: IprRecallInjection;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const activeTrainingMemory = args.recall.memoryIds.includes(TRAINING_CANONICAL_MEMORY_ID);
+  const removedIdsStillVisible = TRAINING_DELETE_DUPLICATE_MEMORY_IDS.filter((memoryId) =>
+    args.recall.memoryIds.includes(memoryId)
+  );
+  const removedFromRecall = removedIdsStillVisible.length === 0;
+
+  return [
+    "TRAINING_DELETE_VERIFICATION_READY — verifica pulizia recall dopo soft delete completata sul recall visibile.",
+    "",
+    "1. Verifica dei memoryId rimossi",
+    ...TRAINING_DELETE_DUPLICATE_MEMORY_IDS.map((memoryId) => formatRecallPresence(memoryId, args.recall.items)),
+    "",
+    "2. Esito pulizia prompt memory block",
+    removedFromRecall
+      ? "I due vecchi doppioni non risultano presenti nei memoryIds richiamati: il prompt memory block è più pulito sul piano del recall visibile."
+      : `Restano ancora visibili nel recall: ${removedIdsStillVisible.join(", ")}. Serve applicare o ripetere il soft delete su questi memoryId.`,
+    "",
+    "3. MemoryIds ancora attivi nel recall",
+    args.recall.memoryIds.length ? args.recall.memoryIds.join(", ") : "NO_ACTIVE_MEMORY_IDS_IN_RECALL",
+    "",
+    "4. Memoria training buona",
+    activeTrainingMemory
+      ? `${TRAINING_CANONICAL_MEMORY_ID}: presente e da mantenere attiva.`
+      : `${TRAINING_CANONICAL_MEMORY_ID}: non visibile nel recall corrente; non va disattivata intenzionalmente perché è la memoria training canonica.`,
+    "",
+    "5. Effetto soft delete verificato sul recall",
+    `removedFromRecall=${String(removedFromRecall)}`,
+    removedFromRecall
+      ? "reusableInPrompt=false: coerente con assenza dal prompt memory block attivo, anche se il campo DB diretto non è esposto in questa risposta."
+      : "reusableInPrompt=false: non confermato per tutti i target perché almeno un doppione è ancora visibile.",
+    removedFromRecall
+      ? "memoryStatus=DISABLED: coerente con endpoint delete-record, da confermare nei record DB se esposto dalla dashboard."
+      : "memoryStatus=DISABLED: non confermato per tutti i target perché almeno un doppione è ancora visibile.",
+    "physicalDelete=false",
+    "auditTracePreserved=true",
+    "",
+    "6. Decisione · Costo · Traccia · Tempo",
+    "Decisione: verificare la rimozione dal recall dei doppioni v1.7 senza toccare la memoria training canonica.",
+    "Costo: ridurre rumore, doppioni e sovraccarico del prompt memory block.",
+    "Traccia: conservare memoryId, audit, EVT e OPC attraverso soft delete operativo, non cancellazione fisica.",
+    "Tempo: mantenere il recall pulito nei test futuri e nella programmazione successiva.",
+    "",
+    "7. Collegamento HBCE",
+    `Human IPR: ${args.handoff.humanIpr}`,
+    `Runtime memory ID: ${args.memory.memoryId}`,
+    `Tenant: ${args.saasContext.tenantId}`,
+    `Workspace: ${args.saasContext.workspaceId}`,
+    `recallInjected: ${String(args.recall.injected)}`,
+    `recallItemsCount: ${String(args.recall.items.length)}`,
+    `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+    "delete-record endpoint: fonte operativa del soft delete e della rimozione dal recall.",
+    "MATRIX: continuità, responsabilità e governo del processo.",
+    "",
+    "8. Boundary",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
 }
 
 
