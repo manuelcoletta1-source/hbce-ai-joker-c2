@@ -55,6 +55,10 @@ type RuntimeFile = {
   textLength: number;
   reason: string;
   fileHash?: string;
+  documentProfileId?: string | null;
+  documentProfileStatus?: string | null;
+  documentProfileHash?: string | null;
+  documentProfileReason?: string | null;
 };
 
 
@@ -205,6 +209,10 @@ type PublicRuntimeFileSnapshot = {
   textLength: string;
   fileHash: string;
   reason: string;
+  documentProfileId: string;
+  documentProfileStatus: string;
+  documentProfileHash: string;
+  documentProfileReason: string;
 };
 
 
@@ -222,6 +230,55 @@ type PublicFileIngestionSnapshot = {
   legalCertification: string;
   opc: string;
   files: PublicRuntimeFileSnapshot[];
+};
+
+
+type PublicDocumentProfileSnapshot = {
+  profileId: string;
+  profileKeyHash: string;
+  fileId: string;
+  filename: string;
+  fileHash: string;
+  textStatus: string;
+  textLength: string;
+  mimeType: string;
+  docFamily: string;
+  volume: string;
+  title: string;
+  canonicalAxis: string;
+  summary: string;
+  keyTerms: string[];
+  semanticTerms: string[];
+  memoryId: string;
+  sourceSavedChatId: string;
+  lastEvtId: string;
+  lastOpcProofId: string;
+  profileStatus: string;
+  quality: string;
+  reusableInPrompt: string;
+  profileHash: string;
+  legalCertification: string;
+  source: string;
+  persistenceStatus: string;
+  error: string;
+};
+
+
+type PublicDocumentRegistrySnapshot = {
+  available: boolean;
+  source: string;
+  status: string;
+  table: string;
+  attempted: string;
+  persistedCount: string;
+  failedCount: string;
+  rowCount: string;
+  profileCount: string;
+  reusableCount: string;
+  linkedMemoryCount: string;
+  legalCertification: string;
+  opc: string;
+  profiles: PublicDocumentProfileSnapshot[];
 };
 
 
@@ -264,7 +321,7 @@ const EMPTY_IPR_MEMORY_DASHBOARD: IprMemoryDashboardState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-FILE-INGESTION-DIAGNOSTICS-v1.4";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-DOCUMENT-REGISTRY-v1.5";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -1075,7 +1132,11 @@ function normalizePublicRuntimeFileSnapshot(record: JsonRecord): PublicRuntimeFi
     mode: first(record, [["mode"], ["fileMode"]], "-"),
     textLength: first(record, [["textLength"], ["contentLength"], ["characters"]], "0"),
     fileHash: first(record, [["fileHash"], ["hash"], ["sha256"]], "-"),
-    reason: first(record, [["reason"], ["message"], ["detail"]], "-")
+    reason: first(record, [["reason"], ["message"], ["detail"]], "-"),
+    documentProfileId: first(record, [["documentProfileId"], ["profileId"]], "-"),
+    documentProfileStatus: first(record, [["documentProfileStatus"], ["profileStatus"]], "-"),
+    documentProfileHash: first(record, [["documentProfileHash"], ["profileHash"]], "-"),
+    documentProfileReason: first(record, [["documentProfileReason"], ["profileReason"]], "-")
   };
 }
 
@@ -1129,6 +1190,184 @@ function getPublicFileIngestionSnapshot(
     legalCertification: first(record, [["legalCertification"], ["summary", "legalCertification"]], "false"),
     opc: first(record, [["opc"], ["summary", "opc"]], "technical proof receipt only"),
     files: fileRecords
+  };
+}
+
+
+function normalizeDocumentProfileTerms(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+
+  return Array.from(
+    new Set(
+      value.flatMap((item) => {
+        if (typeof item === "string" && item.trim()) {
+          return [item.trim()];
+        }
+
+
+        if (isRecord(item)) {
+          return [
+            first(item, [["term"], ["name"], ["label"], ["value"]], "")
+          ].filter((term) => term && term !== "-");
+        }
+
+
+        return [];
+      })
+    )
+  ).slice(0, 16);
+}
+
+
+function unwrapDocumentProfileRecord(record: JsonRecord): JsonRecord {
+  const nested = firstRecord(record, [["profile"], ["documentProfile"]]);
+
+
+  return nested ?? record;
+}
+
+
+function normalizePublicDocumentProfileSnapshot(record: JsonRecord): PublicDocumentProfileSnapshot {
+  const profile = unwrapDocumentProfileRecord(record);
+  const input = firstRecord(record, [["input"]]);
+
+
+  return {
+    profileId: first(profile, [["profileId"], ["id"], ["documentProfileId"]], first(record, [["profileId"], ["documentProfileId"]], "-")),
+    profileKeyHash: first(profile, [["profileKeyHash"]], "-"),
+    fileId: first(profile, [["fileId"]], first(record, [["fileId"], ["id"]], "-")),
+    filename: first(profile, [["filename"], ["name"]], first(record, [["filename"], ["name"]], "-")),
+    fileHash: first(profile, [["fileHash"], ["hash"], ["sha256"]], first(record, [["fileHash"], ["hash"], ["sha256"]], "-")),
+    textStatus: first(profile, [["textStatus"], ["status"]], first(record, [["textStatus"], ["status"]], "-")),
+    textLength: first(profile, [["textLength"]], first(record, [["textLength"]], "0")),
+    mimeType: first(profile, [["mimeType"], ["type"]], first(record, [["mimeType"], ["type"]], "-")),
+    docFamily: first(profile, [["docFamily"]], first(input, [["docFamily"]], first(record, [["docFamily"]], "-"))),
+    volume: first(profile, [["volume"]], first(input, [["volume"]], first(record, [["volume"]], "-"))),
+    title: first(profile, [["title"]], first(input, [["title"]], first(record, [["title"]], "-"))),
+    canonicalAxis: first(profile, [["canonicalAxis"]], first(input, [["canonicalAxis"]], first(record, [["canonicalAxis"]], "-"))),
+    summary: first(profile, [["summary"]], first(record, [["summary"], ["reason"]], "-")),
+    keyTerms: normalizeDocumentProfileTerms(getPath(profile, ["keyTerms"]) ?? getPath(input, ["keyTerms"])),
+    semanticTerms: normalizeDocumentProfileTerms(getPath(profile, ["semanticTerms"])),
+    memoryId: first(profile, [["memoryId"]], first(record, [["memoryId"]], "-")),
+    sourceSavedChatId: first(profile, [["sourceSavedChatId"]], first(record, [["sourceSavedChatId"]], "-")),
+    lastEvtId: first(profile, [["lastEvtId"]], first(record, [["lastEvtId"], ["evtId"]], "-")),
+    lastOpcProofId: first(profile, [["lastOpcProofId"]], first(record, [["lastOpcProofId"], ["opcId"]], "-")),
+    profileStatus: first(profile, [["profileStatus"]], first(record, [["profileStatus"]], "-")),
+    quality: first(profile, [["quality"]], first(record, [["quality"]], "-")),
+    reusableInPrompt: booleanLike(getPath(profile, ["reusableInPrompt"]) ?? getPath(input, ["reusableInPrompt"]), "-"),
+    profileHash: first(profile, [["profileHash"]], first(record, [["profileHash"], ["documentProfileHash"]], "-")),
+    legalCertification: booleanLike(getPath(profile, ["legalCertification"]), "false"),
+    source: first(record, [["source"]], isRecord(getPath(record, ["profile"])) ? "DOCUMENT_PROFILE_RESULT" : "DOCUMENT_PROFILE"),
+    persistenceStatus: first(record, [["status"]], first(profile, [["profileStatus"]], "-")),
+    error: first(record, [["error"]], "-")
+  };
+}
+
+
+function collectDocumentProfileRecordsFromPayload(payload: JsonRecord | null | undefined): JsonRecord[] {
+  if (!payload) {
+    return [];
+  }
+
+
+  const sources: unknown[] = [
+    getPath(payload, ["documentProfiles"]),
+    getPath(payload, ["documentProfiles", "profiles"]),
+    getPath(payload, ["documentRegistry", "profiles"]),
+    getPath(payload, ["documentRegistry", "profileStatuses"]),
+    getPath(payload, ["diagnostics", "documentProfiles"]),
+    getPath(payload, ["diagnostics", "documentRegistry", "profiles"]),
+    getPath(payload, ["diagnostics", "documentRegistry", "profileStatuses"]),
+    getPath(payload, ["runtime", "documentProfiles"]),
+    getPath(payload, ["runtime", "documentRegistry", "profiles"])
+  ];
+
+
+  return sources.flatMap((source) => {
+    if (Array.isArray(source)) {
+      return source.filter(isRecord);
+    }
+
+
+    if (isRecord(source)) {
+      const nested = firstArray(source, [["profiles"], ["rows"], ["items"], ["profileStatuses"]]).filter(isRecord);
+
+
+      return nested.length > 0 ? nested : [source];
+    }
+
+
+    return [];
+  });
+}
+
+
+function dedupeDocumentProfiles(profiles: PublicDocumentProfileSnapshot[]): PublicDocumentProfileSnapshot[] {
+  const seen = new Set<string>();
+  const result: PublicDocumentProfileSnapshot[] = [];
+
+
+  for (const profile of profiles) {
+    const key = [profile.profileId, profile.fileId, profile.filename, profile.fileHash]
+      .filter((item) => item && item !== "-")
+      .join(":") || `${profile.title}:${profile.summary}`;
+
+
+    if (seen.has(key)) {
+      continue;
+    }
+
+
+    seen.add(key);
+    result.push(profile);
+  }
+
+
+  return result;
+}
+
+
+function getPublicDocumentRegistrySnapshot(
+  payload: JsonRecord | null | undefined,
+  fallbackPayload?: JsonRecord | null
+): PublicDocumentRegistrySnapshot {
+  const sources = [payload, fallbackPayload].filter(isRecord);
+  const registryRecords = sources
+    .flatMap((source) => [
+      firstRecord(source, [["documentRegistry"]]),
+      firstRecord(source, [["diagnostics", "documentRegistry"]]),
+      firstRecord(source, [["runtime", "documentRegistry"]])
+    ])
+    .filter(isRecord);
+  const registry = registryRecords[0] ?? null;
+  const profiles = dedupeDocumentProfiles(
+    sources
+      .flatMap((source) => collectDocumentProfileRecordsFromPayload(source))
+      .map(normalizePublicDocumentProfileSnapshot)
+  ).slice(0, 20);
+  const linkedMemoryCount = profiles.filter((profile) => !isBlankRuntimeValue(profile.memoryId)).length;
+  const reusableCount = profiles.filter((profile) => profile.reusableInPrompt === "true").length;
+  const available = Boolean(registry) || profiles.length > 0;
+
+
+  return {
+    available,
+    source: registry ? "DOCUMENT_REGISTRY_PAYLOAD" : profiles.length > 0 ? "DOCUMENT_PROFILE_RECORDS" : "NOT_AVAILABLE",
+    status: first(registry, [["status"]], available ? "DOCUMENT_REGISTRY_READY" : "NOT_AVAILABLE"),
+    table: first(registry, [["table"]], available ? "document_profiles" : "-"),
+    attempted: booleanLike(getPath(registry, ["attempted"]), available ? "true" : "false"),
+    persistedCount: first(registry, [["persistedCount"]], String(profiles.length)),
+    failedCount: first(registry, [["failedCount"]], "0"),
+    rowCount: first(fallbackPayload, [["documentProfiles", "rowCount"]], first(registry, [["rowCount"]], String(profiles.length))),
+    profileCount: String(profiles.length),
+    reusableCount: String(reusableCount),
+    linkedMemoryCount: String(linkedMemoryCount),
+    legalCertification: first(registry, [["legalCertification"]], "false"),
+    opc: first(registry, [["opc"]], "technical proof receipt only"),
+    profiles
   };
 }
 
@@ -2954,7 +3193,7 @@ function FileIngestionCard({
             <div key={`${file.id}-${file.fileHash}`} className="joker-file-ingestion-row">
               <span title={file.name}>{compact(file.name, 34)}</span>
               <StatusPill value={file.status} />
-              <em title={file.reason}>{compact(file.reason, 78)}</em>
+              <em title={file.documentProfileId !== "-" ? `${file.documentProfileId} · ${file.reason}` : file.reason}>{compact(file.documentProfileId !== "-" ? `${file.documentProfileId} · ${file.reason}` : file.reason, 78)}</em>
             </div>
           ))}
         </div>
@@ -2977,6 +3216,73 @@ function FileIngestionCard({
   );
 }
 
+
+
+function DocumentRegistryCard({
+  snapshot,
+  compactMode = false
+}: {
+  snapshot: PublicDocumentRegistrySnapshot;
+  compactMode?: boolean;
+}) {
+  const visibleProfiles = snapshot.profiles.slice(0, compactMode ? 4 : 8);
+
+
+  return (
+    <section className={["joker-document-registry-card", compactMode ? "is-compact" : ""].filter(Boolean).join(" ")} translate="no">
+      <div className="joker-semantic-head">
+        <div>
+          <span className="joker-kicker">Cybernetic document registry</span>
+          <h3>document_profiles · dynamic recall</h3>
+        </div>
+        <div className="joker-semantic-pills">
+          <StatusPill label="Registry" value={snapshot.status} />
+          <StatusPill label="Profiles" value={snapshot.profileCount} />
+          <StatusPill label="Linked" value={snapshot.linkedMemoryCount} />
+        </div>
+      </div>
+
+
+      <div className="joker-semantic-grid">
+        <MetricCard label="Table" value={snapshot.table} />
+        <MetricCard label="Persisted" value={snapshot.persistedCount} />
+        <MetricCard label="Failed" value={snapshot.failedCount} />
+        <MetricCard label="Reusable" value={snapshot.reusableCount} />
+      </div>
+
+
+      {visibleProfiles.length > 0 ? (
+        <div className="joker-document-profile-list" aria-label="Document profiles available for dynamic recall">
+          <strong>Document profile records</strong>
+          {visibleProfiles.map((profile) => (
+            <div key={`${profile.profileId}-${profile.fileHash}-${profile.memoryId}`} className="joker-document-profile-row">
+              <div>
+                <span title={profile.filename}>{compact(profile.filename, compactMode ? 30 : 42)}</span>
+                <em title={profile.title}>{compact(profile.title, compactMode ? 38 : 64)}</em>
+              </div>
+              <StatusPill value={profile.textStatus} />
+              <StatusPill label="Family" value={profile.docFamily} />
+              <StatusPill label="Volume" value={profile.volume} />
+              <div>
+                <span title={profile.memoryId}>{compact(profile.memoryId, compactMode ? 24 : 34)}</span>
+                <em title={profile.canonicalAxis}>{compact(profile.canonicalAxis, compactMode ? 30 : 54)}</em>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="joker-file-ingestion-list">
+          <strong>Document profile records</strong>
+          <div className="joker-file-ingestion-row">
+            <span>NO_DOCUMENT_PROFILES</span>
+            <StatusPill value="NOT_AVAILABLE" />
+            <em>Carica un file o richiama /api/files con includeProfiles=true per popolare il registry.</em>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
 
 
 function SemanticMemoryCard({
@@ -3175,6 +3481,7 @@ function MessageBubble({
   const isAssistant = message.role === "assistant";
   const status = getRuntimeStatus(message.raw ?? null);
   const semanticMemory = getPublicSemanticMemorySnapshot(message.raw ?? null);
+  const documentRegistry = getPublicDocumentRegistrySnapshot(message.raw ?? null);
   const visibleContent = normalizeVisibleText(message.content);
   const cleanVisibleContent = isAssistant
     ? stripInlineTemporalRuntimeCertificate(visibleContent)
@@ -3254,12 +3561,20 @@ function MessageBubble({
                 <StatusPill label="Coupling" value={semanticMemory.couplingState} />
               </>
             ) : null}
+            {documentRegistry.available ? (
+              <StatusPill label="Docs" value={documentRegistry.profileCount} />
+            ) : null}
           </div>
         ) : null}
 
 
         {isAssistant && semanticMemory.available ? (
           <SemanticMemoryCard snapshot={semanticMemory} compactMode />
+        ) : null}
+
+
+        {isAssistant && documentRegistry.available ? (
+          <DocumentRegistryCard snapshot={documentRegistry} compactMode />
         ) : null}
 
 
@@ -3329,6 +3644,14 @@ function MessageBubble({
                       <MetricCard label="saveSynthesis" value={semanticMemory.policy.saveSynthesis} />
                     </>
                   ) : null}
+                  {documentRegistry.available ? (
+                    <>
+                      <MetricCard label="Document registry" value={documentRegistry.status} />
+                      <MetricCard label="Document profiles" value={documentRegistry.profileCount} />
+                      <MetricCard label="Linked profiles" value={documentRegistry.linkedMemoryCount} />
+                      <MetricCard label="Registry table" value={documentRegistry.table} />
+                    </>
+                  ) : null}
                   <MetricCard label="legalCertification" value={status.legalCertification} />
                 </div>
 
@@ -3350,6 +3673,7 @@ export default function InterfacePage() {
   const [health, setHealth] = useState<JsonRecord | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [files, setFiles] = useState<RuntimeFile[]>([]);
+  const [fileRegistryPayload, setFileRegistryPayload] = useState<JsonRecord | null>(null);
   const [continuityRef, setContinuityRef] = useState<string | null>(null);
 
 
@@ -3422,6 +3746,7 @@ export default function InterfacePage() {
   const dashboardStatus = getRuntimeStatus(dashboardPayload);
   const dashboardSemanticMemory = getPublicSemanticMemorySnapshot(dashboardPayload);
   const dashboardFileIngestion = getPublicFileIngestionSnapshot(dashboardPayload);
+  const dashboardDocumentRegistry = getPublicDocumentRegistrySnapshot(dashboardPayload, fileRegistryPayload);
   const localPromptReadyCount = files.filter((file) =>
     ["TEXT_READY", "PDF_CLIENT_PAYLOAD_READY", "PDF_INGESTION_READY"].includes(file.status)
   ).length;
@@ -4122,6 +4447,40 @@ export default function InterfacePage() {
           usageId: dashboardStatus.modelUsageId,
           selectedMessageIds: messages.map((item) => item.id),
           messages: buildIprSaveMessages(messages),
+          activeFiles: files.map((file) => ({
+            fileId: file.id,
+            id: file.id,
+            filename: file.name,
+            name: file.name,
+            fileHash: file.fileHash,
+            mimeType: file.mimeType,
+            status: file.status,
+            mode: file.mode,
+            textLength: file.textLength,
+            documentProfileId: file.documentProfileId ?? null,
+            documentProfileStatus: file.documentProfileStatus ?? null,
+            legalCertification: false
+          })),
+          documentProfiles: dashboardDocumentRegistry.profiles.map((profile) => ({
+            profileId: profile.profileId,
+            fileId: profile.fileId,
+            filename: profile.filename,
+            fileHash: profile.fileHash,
+            docFamily: profile.docFamily,
+            volume: profile.volume,
+            title: profile.title,
+            memoryId: profile.memoryId,
+            profileStatus: profile.profileStatus,
+            reusableInPrompt: profile.reusableInPrompt,
+            legalCertification: false
+          })),
+          documentRegistry: {
+            source: dashboardDocumentRegistry.source,
+            table: dashboardDocumentRegistry.table,
+            profileCount: dashboardDocumentRegistry.profileCount,
+            linkedMemoryCount: dashboardDocumentRegistry.linkedMemoryCount,
+            legalCertification: false
+          },
           messageCount: messages.length,
           saveRaw: false,
           saveSynthesis: true,
@@ -4269,9 +4628,11 @@ export default function InterfacePage() {
     try {
       const selected = Array.from(inputFiles);
       const nextFiles = await Promise.all(selected.map(readRuntimeFile));
+      const mergedFiles = [...files, ...nextFiles];
 
 
-      setFiles((current) => [...current, ...nextFiles]);
+      setFiles(mergedFiles);
+      await syncFilesToDocumentRegistry(mergedFiles, true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "FILE_READ_FAILED");
     } finally {
@@ -4283,12 +4644,17 @@ export default function InterfacePage() {
 
 
   function removeFile(id: string) {
-    setFiles((current) => current.filter((file) => file.id !== id));
+    const nextFiles = files.filter((file) => file.id !== id);
+
+
+    setFiles(nextFiles);
+    void syncFilesToDocumentRegistry(nextFiles, true);
   }
 
 
   function clearFiles() {
     setFiles([]);
+    void clearServerFileSession();
   }
 
 
@@ -4299,6 +4665,7 @@ export default function InterfacePage() {
     setSessionId(nextSessionId);
     setMessages([]);
     setFiles([]);
+    setFileRegistryPayload(null);
     setContinuityRef(null);
     setMessage("");
     setError(null);
@@ -4323,6 +4690,69 @@ export default function InterfacePage() {
       }
     } catch {
       setCopied(false);
+    }
+  }
+
+
+  async function syncFilesToDocumentRegistry(nextFiles: RuntimeFile[], replace = true) {
+    try {
+      const response = await fetch("/api/files", {
+        method: "POST",
+        cache: "no-store",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          sessionId,
+          threadId: activeThreadId,
+          humanIpr,
+          runtimeIpr: dashboardStatus.runtimeIpr,
+          tenantId: activeTenantId,
+          workspaceId: activeWorkspaceId,
+          sourceKind: "JOKER_C2_INTERFACE_FILE_UPLOAD",
+          replace,
+          files: nextFiles,
+          legalCertification: false
+        })
+      });
+      const payload = await readJsonResponse<JsonRecord>(response);
+
+
+      if (!response.ok || payload.ok === false) {
+        throw new Error(text(payload.error, `FILES_HTTP_${response.status}`));
+      }
+
+
+      setFileRegistryPayload(payload);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "DOCUMENT_PROFILE_REGISTRY_SYNC_FAILED");
+    }
+  }
+
+
+  async function clearServerFileSession() {
+    try {
+      const response = await fetch(`/api/files?sessionId=${encodeURIComponent(sessionId)}`, {
+        method: "DELETE",
+        cache: "no-store",
+        credentials: "include",
+        headers: {
+          Accept: "application/json"
+        }
+      });
+      const payload = await readJsonResponse<JsonRecord>(response);
+
+
+      if (!response.ok || payload.ok === false) {
+        throw new Error(text(payload.error, `FILES_DELETE_HTTP_${response.status}`));
+      }
+
+
+      setFileRegistryPayload(payload);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "FILE_SESSION_CLEAR_FAILED");
     }
   }
 
@@ -4540,6 +4970,9 @@ export default function InterfacePage() {
     { label: "Local files", value: String(files.length) },
     { label: "Local prompt-ready", value: String(localPromptReadyCount) },
     { label: "Local PDF payload", value: String(localPdfPayloadCount) },
+    { label: "Document registry", value: dashboardDocumentRegistry.status },
+    { label: "Document profiles", value: dashboardDocumentRegistry.profileCount },
+    { label: "Linked profiles", value: dashboardDocumentRegistry.linkedMemoryCount },
     { label: "legalCertification", value: dashboardFileIngestion.legalCertification },
     { label: "OPC", value: dashboardFileIngestion.opc }
   ];
@@ -4648,6 +5081,8 @@ export default function InterfacePage() {
     { label: "Saved chats", value: String(iprMemoryDashboard.memorySaves.length) },
     { label: "Memory records", value: String(iprMemoryDashboard.memoryRecords.length) },
     { label: "Recall items", value: String(iprMemoryDashboard.recallItems.length) },
+    { label: "Document profiles", value: dashboardDocumentRegistry.profileCount },
+    { label: "Linked docs", value: dashboardDocumentRegistry.linkedMemoryCount },
     { label: "Last refresh UTC", value: iprMemoryDashboard.lastRefreshUtc || "-" },
     { label: "legalCertification", value: "false" }
   ];
@@ -4672,6 +5107,7 @@ export default function InterfacePage() {
           <StatusPill label="Human IPR" value={humanIpr} />
           <StatusPill label="MATRIX" value={matrixState} />
           <StatusPill label="Memory" value={memoryScope} />
+          <StatusPill label="Docs" value={dashboardDocumentRegistry.available ? dashboardDocumentRegistry.status : "NO_DOC_REGISTRY"} />
           {dashboardSemanticMemory.available ? (
             <StatusPill label="Semantic" value={dashboardSemanticMemory.quality} />
           ) : null}
@@ -4745,6 +5181,8 @@ export default function InterfacePage() {
           <MetricCard label="Memory" value={memoryScope} />
           <MetricCard label="Semantic quality" value={dashboardSemanticMemory.available ? dashboardSemanticMemory.quality : "NOT_AVAILABLE"} />
           <MetricCard label="File context" value={dashboardFileIngestion.available ? dashboardFileIngestion.status : files.length > 0 ? "LOCAL_FILES_READY" : "NOT_AVAILABLE"} />
+          <MetricCard label="Document profiles" value={dashboardDocumentRegistry.profileCount} />
+          <MetricCard label="Linked document memory" value={dashboardDocumentRegistry.linkedMemoryCount} />
           <MetricCard label="Coupling state" value={dashboardSemanticMemory.available ? dashboardSemanticMemory.couplingState : "NOT_AVAILABLE"} />
           <MetricCard label="Response EVT" value={dashboardStatus.responseEvt} />
           <MetricCard label="OPC" value={dashboardStatus.opc} />
@@ -4861,7 +5299,7 @@ export default function InterfacePage() {
           <p>
             Questo blocco distingue file caricati localmente, testo pronto per il prompt,
             PDF con payload binario, PDF letto davvero, PDF solo metadato e fallimento parser.
-            Sì, finalmente il PDF smette di fingersi testo per sport.
+            Ora mostra anche il registry cyber: il file non resta più allegato volante, diventa documentProfile richiamabile.
           </p>
 
 
@@ -4869,6 +5307,7 @@ export default function InterfacePage() {
 
 
           <FileIngestionCard snapshot={dashboardFileIngestion} localFiles={files} />
+          <DocumentRegistryCard snapshot={dashboardDocumentRegistry} />
         </div>
 
 
@@ -6668,7 +7107,8 @@ export default function InterfacePage() {
 
 
         .joker-semantic-card,
-        .joker-file-ingestion-card {
+        .joker-file-ingestion-card,
+        .joker-document-registry-card {
           margin-top: 14px;
           padding: 14px;
           border: 1px solid rgba(34, 211, 238, 0.24);
@@ -6679,7 +7119,8 @@ export default function InterfacePage() {
         }
 
 
-        .joker-semantic-card.is-compact {
+        .joker-semantic-card.is-compact,
+        .joker-document-registry-card.is-compact {
           padding: 12px;
           border-radius: 18px;
         }
@@ -6836,6 +7277,64 @@ export default function InterfacePage() {
           color: #94a3b8;
           font-style: normal;
           line-height: 1.4;
+        }
+
+
+        .joker-document-profile-list {
+          margin-top: 12px;
+          display: grid;
+          gap: 8px;
+        }
+
+
+        .joker-document-profile-list > strong {
+          color: #67e8f9;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+
+
+        .joker-document-profile-row {
+          display: grid;
+          grid-template-columns: minmax(150px, 1.6fr) auto auto auto minmax(140px, 1.2fr);
+          gap: 8px;
+          align-items: center;
+          padding: 9px;
+          border: 1px solid rgba(148, 163, 184, 0.14);
+          border-radius: 15px;
+          background: rgba(2, 6, 23, 0.34);
+          color: #cbd5e1;
+          font-size: 11px;
+        }
+
+
+        .joker-document-profile-row div {
+          min-width: 0;
+        }
+
+
+        .joker-document-profile-row span,
+        .joker-document-profile-row em {
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+
+        .joker-document-profile-row span {
+          color: #e2e8f0;
+          font-weight: 820;
+        }
+
+
+        .joker-document-profile-row em {
+          margin-top: 3px;
+          color: #94a3b8;
+          font-style: normal;
+          line-height: 1.35;
         }
 
 
