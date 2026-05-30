@@ -42,6 +42,10 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+const HEALTH_REVISION = "HBCE-HEALTH-IPR-MEMORY-FORCE-DYNAMIC-v2.1";
 
 
 type HealthStatus = "OK" | "DEGRADED";
@@ -71,6 +75,7 @@ type DatabaseHealth = {
     rowCount: number;
     durationMs: number;
     error: string | null;
+    warnings: string[];
   };
   tables: DatabaseTableHealth[];
   missingTables: string[];
@@ -439,6 +444,35 @@ function buildIprMemoryHealth(database: DatabaseHealth) {
 }
 
 
+function compactWarnings(...values: Array<string | null | undefined>): string[] {
+  return Array.from(
+    new Set(
+      values
+        .map((value) => (typeof value === "string" ? value.trim() : ""))
+        .filter((value) => value.length > 0)
+    )
+  );
+}
+
+
+function isReadySchemaNonFatalWarning(value: string | null | undefined): boolean {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  const normalized = value.toLowerCase();
+
+  return (
+    normalized.includes("non-fatal") ||
+    normalized.includes("schema available") ||
+    normalized.includes("already have been normalized") ||
+    normalized.includes("existing incompatible constraints") ||
+    normalized.includes("legacy columns may already have been normalized")
+  );
+}
+
+
+
 async function readDatabaseHealth(): Promise<DatabaseHealth> {
   try {
     const configured = isHbceDatabaseConfigured();
@@ -467,12 +501,14 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
           status: configured ? "DATABASE_NOT_AVAILABLE" : "DATABASE_NOT_CONFIGURED",
           rowCount: 0,
           durationMs: 0,
-          error
+          error,
+          warnings: []
         },
         tables: buildUnknownTableHealth("Database unavailable during health check."),
         missingTables: [...HBCE_DATABASE_SCHEMA_TABLES],
         requiredRuntimeTables: buildUnavailableRequiredRuntimeTables(),
-        error
+        error,
+        warnings: []
       };
     }
 
@@ -494,6 +530,23 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
     );
 
 
+    const requiredRuntimeTables =
+      buildRequiredRuntimeTablesFromPresentTables(presentTableNames);
+    const readySchemaNonFatalWarning =
+      schemaReady &&
+      requiredRuntimeTables.iprMemoryApi &&
+      isReadySchemaNonFatalWarning(initialization.error)
+        ? initialization.error
+        : null;
+    const warnings = compactWarnings(readySchemaNonFatalWarning);
+
+    const fatalError =
+      tableHealth.error ||
+      (schemaReady
+        ? null
+        : `HBCE database schema is not ready. Missing tables: ${tableHealth.missingTables.join(", ")}`) ||
+      (readySchemaNonFatalWarning ? null : initialization.error);
+
     return {
       configured,
       available,
@@ -508,17 +561,14 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
         status: initialization.status,
         rowCount: initialization.rowCount,
         durationMs: initialization.durationMs,
-        error: initialization.error
+        error: readySchemaNonFatalWarning ? null : initialization.error,
+        warnings
       },
       tables: tableHealth.tables,
       missingTables: tableHealth.missingTables,
-      requiredRuntimeTables: buildRequiredRuntimeTablesFromPresentTables(presentTableNames),
-      error:
-        initialization.error ||
-        tableHealth.error ||
-        (schemaReady
-          ? null
-          : `HBCE database schema is not ready. Missing tables: ${tableHealth.missingTables.join(", ")}`)
+      requiredRuntimeTables,
+      error: fatalError,
+      warnings
     };
   } catch (error) {
     const errorMessage =
@@ -540,12 +590,14 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
         status: "DATABASE_HEALTH_FAILED",
         rowCount: 0,
         durationMs: 0,
-        error: errorMessage
+        error: errorMessage,
+        warnings: []
       },
       tables: buildUnknownTableHealth(errorMessage),
       missingTables: [...HBCE_DATABASE_SCHEMA_TABLES],
       requiredRuntimeTables: buildUnavailableRequiredRuntimeTables(),
-      error: errorMessage
+      error: errorMessage,
+      warnings: []
     };
   }
 }
@@ -559,16 +611,21 @@ function deriveHealthStatus(input: {
     return "DEGRADED";
   }
 
-
-  if (input.database.error) {
-    return "DEGRADED";
-  }
-
-
   if (!input.database.configured || !input.database.available || !input.database.schemaReady) {
     return "DEGRADED";
   }
 
+  if (input.database.missingTables.length > 0) {
+    return "DEGRADED";
+  }
+
+  if (!input.database.requiredRuntimeTables.iprMemoryApi) {
+    return "DEGRADED";
+  }
+
+  if (input.database.error) {
+    return "DEGRADED";
+  }
 
   return "OK";
 }
@@ -593,6 +650,7 @@ function buildPersistenceHealth(database: DatabaseHealth) {
     schemaReady: database.schemaReady,
     schemaVersion: database.schemaVersion,
     schemaInitialization: database.initialization,
+    warnings: database.warnings,
     missingTables: database.missingTables,
     requiredRuntimeTables: database.requiredRuntimeTables,
     processMemoryMvp: database.mode === "PROCESS_MEMORY_MVP",
@@ -690,6 +748,7 @@ export async function GET() {
   const runtimeAuditLog = getRuntimeAuditLogHealth();
   const modelUsageLog = getModelUsageLogHealth();
   const iprMemory = buildIprMemoryHealth(database);
+  const healthWarnings = database.warnings;
 
 
   const status = deriveHealthStatus({
@@ -776,7 +835,9 @@ export async function GET() {
 
   const payload = {
     ok: true,
+    healthRevision: HEALTH_REVISION,
     status,
+    warnings: healthWarnings,
     runtime: "AI_JOKER-C2",
     runtimeEntity: RUNTIME_ENTITY,
     runtimeIpr: RUNTIME_IPR,
@@ -801,6 +862,7 @@ export async function GET() {
       version: HBCE_DATABASE_SCHEMA_VERSION,
       ready: database.schemaReady,
       initialization: database.initialization,
+      warnings: database.warnings,
       requiredTables: database.tables,
       missingTables: database.missingTables,
       requiredRuntimeTables: database.requiredRuntimeTables,
@@ -885,6 +947,7 @@ export async function GET() {
         database.requiredRuntimeTables.memoryRecords &&
         database.requiredRuntimeTables.iprMemoryCore,
       legalCertification: false,
+      warnings: healthWarnings,
       boundary:
         "SaaS Core v0.1 requires governed runtime execution, OpenAI provider configuration, database persistence target, runtime audit logs, model usage logs, EVT continuity and OPC proof receipts."
     },
@@ -925,6 +988,7 @@ export async function GET() {
       missingTables: database.missingTables,
       auditLogConfigured: true,
       modelUsageLogConfigured: true,
+      databaseWarnings: healthWarnings,
       legalCertification: false
     },
 
@@ -1036,6 +1100,7 @@ export async function GET() {
       "Cache-Control": "no-store, max-age=0",
       "X-HBCE-Runtime": "AI_JOKER-C2",
       "X-HBCE-Target-Release": "SaaS Core v0.1",
+      "X-HBCE-Health-Revision": HEALTH_REVISION,
       "X-HBCE-Legal-Certification": "false"
     }
   });
@@ -1047,6 +1112,7 @@ export async function OPTIONS() {
     {
       ok: true,
       endpoint: "/api/health",
+      healthRevision: HEALTH_REVISION,
       methods: ["GET", "OPTIONS"],
       runtime: "AI_JOKER-C2",
       legalCertification: false,
@@ -1059,6 +1125,7 @@ export async function OPTIONS() {
         Allow: "GET, OPTIONS",
         "Cache-Control": "no-store, max-age=0",
         "X-HBCE-Runtime": "AI_JOKER-C2",
+        "X-HBCE-Health-Revision": HEALTH_REVISION,
         "X-HBCE-Legal-Certification": "false"
       }
     }
