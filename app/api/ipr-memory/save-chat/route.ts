@@ -39,7 +39,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.5";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.6";
 const THREAD_AUTHORITY_RUNTIME_VALIDATED = "SERVER_RUNTIME_VALIDATED";
 const THREAD_SCOPE_RUNTIME_ONLY = "RUNTIME_ONLY";
 const SAVE_INTENT_USER_EXPLICIT_TO_IPR = "USER_EXPLICIT_SAVE_TO_IPR";
@@ -345,6 +345,27 @@ function coalesceBoolean(defaultValue: boolean, ...values: unknown[]): boolean {
 
 function isRecord(value: unknown): value is JsonRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+
+function extractErrorDiagnostics(error: unknown): JsonRecord {
+  const record = isRecord(error) ? error : {};
+  const name =
+    error instanceof Error ? error.name : normalizeString(record.name) ?? "UnknownError";
+  const message =
+    error instanceof Error ? error.message : normalizeString(record.message) ?? String(error);
+
+  return {
+    name,
+    message,
+    code: normalizeString(record.code),
+    constraint: normalizeString(record.constraint),
+    table: normalizeString(record.table),
+    column: normalizeString(record.column),
+    detail: normalizeString(record.detail),
+    hint: normalizeString(record.hint),
+    severity: normalizeString(record.severity)
+  };
 }
 
 function normalizeStringArray(value: unknown): string[] {
@@ -834,7 +855,10 @@ async function buildSavePayload(request: NextRequest) {
           .map((row) => normalizeString(row.message_id))
           .filter((messageId): messageId is string => Boolean(messageId));
 
-  const saveResult = await saveIprChatToMemoryDatabase({
+  let saveResult: Awaited<ReturnType<typeof saveIprChatToMemoryDatabase>>;
+
+  try {
+    saveResult = await saveIprChatToMemoryDatabase({
     tenantId: context.tenantId,
     workspaceId: context.workspaceId,
     subscriptionId: context.subscriptionId,
@@ -880,7 +904,29 @@ async function buildSavePayload(request: NextRequest) {
       routeVersion: ROUTE_VERSION
     },
     createdAt: context.createdAt
-  });
+    });
+  } catch (error) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "IPR_CHAT_MEMORY_SAVE_THROWN",
+        error: error instanceof Error ? error.message : "Unhandled save-chat database error.",
+        stage: "saveIprChatToMemoryDatabase",
+        databaseOperation: "saveIprChatToMemoryDatabase",
+        diagnostics: {
+          routeVersion: ROUTE_VERSION,
+          stage: "saveIprChatToMemoryDatabase",
+          error: extractErrorDiagnostics(error),
+          threadId: context.threadId,
+          attemptedSelectedMessageIds: selectedMessageIds.length,
+          persistedProvidedMessages: messagePersistResults.length,
+          persistedProvidedMessageRows: messagePersistResults.reduce((total, result) => total + result.rowCount, 0),
+          legalCertification: false
+        }
+      },
+      { status: 207 }
+    );
+  }
 
   const publicSave = saveResult.saveResult.rows[0]
     ? toPublicIprChatMemorySave(saveResult.saveResult.rows[0])
@@ -901,7 +947,7 @@ async function buildSavePayload(request: NextRequest) {
     result.rows.map(toPublicIprChatMessage)
   );
 
-  const httpStatus = saveResult.ok ? 201 : 500;
+  const httpStatus = saveResult.ok ? 201 : 207;
 
   return jsonResponse(
     {
@@ -947,6 +993,9 @@ async function buildSavePayload(request: NextRequest) {
       },
       temporalCertificate: context.temporalCertificate,
       diagnostics: {
+        routeStage: saveResult.ok ? "SAVE_COMPLETED" : "SAVE_IPR_CHAT_TO_MEMORY_DATABASE_PARTIAL_OR_FAILED",
+        controlledPartialFailure: !saveResult.ok,
+        databaseOperation: "saveIprChatToMemoryDatabase",
         database: {
           available: databaseReady.description.available,
           configured: databaseReady.description.configured,
@@ -1009,10 +1058,17 @@ export async function POST(request: NextRequest) {
     return jsonResponse(
       {
         ok: false,
-        status: "SAVE_CHAT_ROUTE_ERROR",
-        error: error instanceof Error ? error.message : "Unknown save-chat IPR memory route error."
+        status: "SAVE_CHAT_ROUTE_THROWN",
+        error: error instanceof Error ? error.message : "Unknown save-chat IPR memory route error.",
+        stage: "POST_OUTER_CATCH",
+        diagnostics: {
+          routeVersion: ROUTE_VERSION,
+          stage: "POST_OUTER_CATCH",
+          error: extractErrorDiagnostics(error),
+          legalCertification: false
+        }
       },
-      { status: 500 }
+      { status: 207 }
     );
   }
 }
