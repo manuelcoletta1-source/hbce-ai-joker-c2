@@ -40,7 +40,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.7";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.8";
 const THREAD_AUTHORITY_RUNTIME_VALIDATED = "SERVER_RUNTIME_VALIDATED";
 const THREAD_SCOPE_RUNTIME_ONLY = "RUNTIME_ONLY";
 const SAVE_INTENT_USER_EXPLICIT_TO_IPR = "USER_EXPLICIT_SAVE_TO_IPR";
@@ -306,17 +306,38 @@ function normalizeRuntimeStateForDatabase(value: unknown): string | null {
 
 
 
-function buildFallbackMemoryId(context: SaveChatRouteContext, savedChatId: string | null): string {
+function buildMemoryIdempotencyKey(context: SaveChatRouteContext): string {
+  const normalizedPrimaryIntention = context.primaryIntention.replace(/\s+/g, " ").trim();
+  const normalizedRadicalIntention = context.radicalIntention.replace(/\s+/g, " ").trim();
   const seed = [
-    "HBCE-IPR-MEMORY-FALLBACK",
+    "HBCE-IPR-MEMORY-IDEMPOTENCY-v1",
     context.humanIpr ?? "NO_HUMAN_IPR",
+    context.runtimeIpr ?? DEFAULT_RUNTIME_IPR,
+    context.tenantId ?? "NO_TENANT",
+    context.workspaceId ?? "NO_WORKSPACE",
     context.threadId ?? "NO_THREAD",
-    savedChatId ?? "NO_SAVED_CHAT",
-    context.evtId ?? "NO_EVT",
-    context.primaryIntention
+    context.classification ?? "NO_CLASSIFICATION",
+    normalizedPrimaryIntention,
+    normalizedRadicalIntention,
+    context.saveScope,
+    String(context.saveSynthesis),
+    String(context.reusableInPrompt)
   ].join("|");
 
-  return `MEM-IPR-${createHash("sha256").update(seed).digest("hex").slice(0, 16).toUpperCase()}`;
+  return createHash("sha256").update(seed).digest("hex");
+}
+
+function buildFallbackMemoryId(context: SaveChatRouteContext, savedChatId: string | null): string {
+  const stableKey = buildMemoryIdempotencyKey(context);
+  const seed = [
+    "HBCE-IPR-MEMORY-FALLBACK-STABLE",
+    stableKey,
+    context.humanIpr ?? "NO_HUMAN_IPR",
+    context.threadId ?? "NO_THREAD",
+    savedChatId ? "SAVED_CHAT_PRESENT" : "NO_SAVED_CHAT"
+  ].join("|");
+
+  return `IPR-MEM-${createHash("sha256").update(seed).digest("hex").slice(0, 16).toUpperCase()}`;
 }
 
 function buildFallbackRegisteredEventId(memoryId: string, eventName: string): string {
@@ -339,6 +360,70 @@ function buildFallbackMemoryKeyHash(context: SaveChatRouteContext): string {
     .digest("hex");
 }
 
+async function findExistingReusableMemoryRecordForContext(context: SaveChatRouteContext) {
+  const primaryIntention = context.primaryIntention.replace(/\s+/g, " ").trim();
+  const radicalIntention = context.radicalIntention.replace(/\s+/g, " ").trim();
+  const idempotencyKey = buildMemoryIdempotencyKey(context);
+
+  if (!context.humanIpr || !context.threadId || !primaryIntention) {
+    return {
+      attempted: false,
+      reason: "MISSING_HUMAN_IPR_THREAD_OR_INTENTION",
+      idempotencyKey,
+      result: null,
+      row: null,
+      error: null
+    };
+  }
+
+  try {
+    const result = await queryHbceDatabase<Record<string, unknown>>(
+      `
+SELECT *
+FROM memory_records
+WHERE human_ipr = $1
+  AND thread_id = $2
+  AND COALESCE(reusable_in_prompt, false) = true
+  AND COALESCE(legal_certification, false) = false
+  AND (
+    record_payload->>'idempotencyKey' = $3
+    OR record_payload->>'primaryIntention' = $4
+    OR record_payload->>'radicalIntention' = $5
+    OR memory_summary = $6
+  )
+ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
+LIMIT 1;
+`.trim(),
+      [
+        context.humanIpr,
+        context.threadId,
+        idempotencyKey,
+        primaryIntention,
+        radicalIntention,
+        context.memorySummary
+      ]
+    );
+
+    return {
+      attempted: true,
+      reason: result.rows[0] ? "EXISTING_REUSABLE_MEMORY_FOUND" : "NO_EXISTING_REUSABLE_MEMORY",
+      idempotencyKey,
+      result,
+      row: result.rows[0] ?? null,
+      error: result.error ?? null
+    };
+  } catch (error) {
+    return {
+      attempted: true,
+      reason: "EXISTING_MEMORY_LOOKUP_THROWN_CONTINUING",
+      idempotencyKey,
+      result: null,
+      row: null,
+      error: error instanceof Error ? error.message : "Unknown memory idempotency lookup error."
+    };
+  }
+}
+
 async function persistFallbackMemoryRecordToDatabase(input: {
   context: SaveChatRouteContext;
   savedChatId: string | null;
@@ -353,6 +438,8 @@ async function persistFallbackMemoryRecordToDatabase(input: {
     routeVersion: ROUTE_VERSION,
     savedChatId: input.savedChatId,
     memoryId,
+    idempotencyKey: buildMemoryIdempotencyKey(input.context),
+    idempotencyPolicy: "THREAD_PRIMARY_INTENTION_REUSABLE_MEMORY",
     primaryIntention: input.context.primaryIntention,
     radicalIntention: input.context.radicalIntention,
     selectedMessageIds: input.selectedMessageIds,
@@ -1167,6 +1254,92 @@ async function buildSavePayload(request: NextRequest) {
           .map((row) => normalizeString(row.message_id))
           .filter((messageId): messageId is string => Boolean(messageId));
 
+  const publicPersistedMessages = messagePersistResults.flatMap((result) =>
+    result.rows.map(toPublicIprChatMessage)
+  );
+
+  const existingMemoryLookup = await findExistingReusableMemoryRecordForContext(context);
+  const existingMemory = existingMemoryLookup.row ? toPublicIprMemoryRecord(existingMemoryLookup.row) : null;
+
+  if (existingMemory) {
+    const existingMemoryId = normalizeString((existingMemory as JsonRecord).memoryId);
+    const existingThread = threadUpsertResult?.rows[0]
+      ? toPublicIprChatThread(threadUpsertResult.rows[0])
+      : null;
+
+    return jsonResponse(
+      {
+        ok: true,
+        routeVersion: ROUTE_VERSION,
+        status: "IPR_CHAT_MEMORY_ALREADY_EXISTS",
+        idempotent: true,
+        idempotencyKey: existingMemoryLookup.idempotencyKey,
+        existingMemoryId,
+        memoryId: existingMemoryId,
+        savedChatId: null,
+        memory: existingMemory,
+        savedChat: null,
+        registeredEvent: null,
+        thread: existingThread,
+        persistedMessages: publicPersistedMessages,
+        context: {
+          humanIpr: context.humanIpr,
+          runtimeIpr: context.runtimeIpr,
+          tenantId: context.tenantId,
+          workspaceId: context.workspaceId,
+          subscriptionId: context.subscriptionId,
+          accountId: context.accountId,
+          sessionId: context.sessionId,
+          threadId: context.threadId,
+          strictIdentity: context.strictIdentity,
+          saveIntent: context.saveIntent,
+          saveScope: context.saveScope,
+          classification: context.classification
+        },
+        iprMeaning: {
+          identityPrimaryRecord:
+            "The verified operational identity chain binding subject, tenant, workspace, session, EVT, OPC and audit.",
+          intenzionePrimariaRadicale:
+            "The same primary radical intention was already saved as reusable IPR-bound memory.",
+          savedPrimaryIntention: context.primaryIntention
+        },
+        policy: {
+          explicitUserAuthorization: context.confirmSaveToIpr,
+          rawContentSaved: context.rawContentSaved,
+          rawContentPolicy: context.rawContentPolicy,
+          saveRaw: context.saveRaw,
+          saveSynthesis: context.saveSynthesis,
+          reusableInPrompt: context.reusableInPrompt,
+          legalCertification: false
+        },
+        diagnostics: {
+          routeStage: "IDEMPOTENT_MEMORY_FOUND",
+          databaseOperation: "findExistingReusableMemoryRecordForContext",
+          duplicatePrevented: true,
+          memoryRecordCreated: false,
+          savedChatCreated: false,
+          existingMemoryLookup: {
+            attempted: existingMemoryLookup.attempted,
+            reason: existingMemoryLookup.reason,
+            ok: existingMemoryLookup.result?.ok ?? null,
+            rowCount: existingMemoryLookup.result?.rowCount ?? null,
+            status: existingMemoryLookup.result?.status ?? null,
+            sqlHash: existingMemoryLookup.result?.sqlHash ?? null,
+            durationMs: existingMemoryLookup.result?.durationMs ?? null,
+            error: existingMemoryLookup.error
+          },
+          persistedProvidedMessages: {
+            attempted: context.persistProvidedMessages,
+            count: messagePersistResults.length,
+            rowCount: messagePersistResults.reduce((total, result) => total + result.rowCount, 0)
+          },
+          legalCertification: false
+        }
+      },
+      { status: 200 }
+    );
+  }
+
   let saveResult: Awaited<ReturnType<typeof saveIprChatToMemoryDatabase>>;
 
   try {
@@ -1211,6 +1384,8 @@ async function buildSavePayload(request: NextRequest) {
       threadTitle: context.threadTitle,
       selectedMessageIds,
       providedMessagesPersisted: messagePersistResults.length,
+      idempotencyKey: buildMemoryIdempotencyKey(context),
+      idempotencyPolicy: "THREAD_PRIMARY_INTENTION_REUSABLE_MEMORY",
       rawContentSaved: context.rawContentSaved,
       rawContentPolicy: context.rawContentPolicy,
       routeVersion: ROUTE_VERSION
@@ -1254,10 +1429,6 @@ async function buildSavePayload(request: NextRequest) {
     : threadUpsertResult?.rows[0]
       ? toPublicIprChatThread(threadUpsertResult.rows[0])
       : null;
-
-  const publicPersistedMessages = messagePersistResults.flatMap((result) =>
-    result.rows.map(toPublicIprChatMessage)
-  );
 
   const fallbackMemoryResult = publicMemory
     ? null
@@ -1369,6 +1540,17 @@ async function buildSavePayload(request: NextRequest) {
           count: messagePersistResults.length,
           rowCount: messagePersistResults.reduce((total, result) => total + result.rowCount, 0)
         },
+        existingMemoryLookup: {
+          attempted: existingMemoryLookup.attempted,
+          reason: existingMemoryLookup.reason,
+          idempotencyKey: existingMemoryLookup.idempotencyKey,
+          ok: existingMemoryLookup.result?.ok ?? null,
+          rowCount: existingMemoryLookup.result?.rowCount ?? null,
+          status: existingMemoryLookup.result?.status ?? null,
+          sqlHash: existingMemoryLookup.result?.sqlHash ?? null,
+          durationMs: existingMemoryLookup.result?.durationMs ?? null,
+          error: existingMemoryLookup.error
+        },
         save: buildPublicDiagnostics(saveResult),
         routeFallbackMemoryRecord: fallbackMemoryResult
           ? {
@@ -1420,7 +1602,7 @@ export async function GET() {
       primaryIntention:
         "string; canonical meaning: IPR as Intenzione Primaria Radicale saved from the chat",
       selectedMessageIds: "string[]",
-      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO, runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE and runtimeState is stored legacy-safe before database insert; v1.7 creates a route-level fallback memory_records row when the library save creates saved_chat but no reusable memory record",
+      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO, runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE and runtimeState is stored legacy-safe before database insert; v1.8 adds idempotent deduplication before save, then falls back to a route-level memory_records row only when no reusable memory exists",
       saveRaw: "boolean; default false",
       saveSynthesis: "boolean; default true",
       reusableInPrompt: "boolean; default true"
