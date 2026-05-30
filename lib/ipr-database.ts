@@ -399,6 +399,7 @@ export type IprMemoryRecordDatabaseInput = {
   jokerLifetime?: string | null;
   jokerLifeSeconds?: number | null;
   recordPayload?: Record<string, unknown>;
+  deletedAt?: string | Date | null;
   createdAt?: string | Date | null;
 };
 
@@ -442,6 +443,7 @@ export type IprMemoryRecordDatabaseRow = HbceDatabaseQueryRow & {
   joker_life_seconds?: unknown;
   created_at?: unknown;
   updated_at?: unknown;
+  deleted_at?: unknown;
   record_payload?: unknown;
   legal_certification?: unknown;
 };
@@ -502,13 +504,35 @@ CREATE TABLE IF NOT EXISTS memory_records (
   scope text,
   authority text,
   persistence_mode text NOT NULL DEFAULT 'DATABASE_PERSISTENT',
+  memory_kind text NOT NULL DEFAULT 'RUNTIME_MEMORY',
+  memory_status text NOT NULL DEFAULT 'ACTIVE',
+  source_kind text NOT NULL DEFAULT 'RUNTIME_MEMORY',
+  source_thread_id text,
+  source_saved_chat_id text,
+  source_message_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+  memory_title text,
+  memory_summary text,
+  save_raw boolean NOT NULL DEFAULT false,
+  save_synthesis boolean NOT NULL DEFAULT true,
+  reusable_in_prompt boolean NOT NULL DEFAULT false,
+  classification text,
+  quality text,
+  threshold_detected boolean,
+  semantic_terms jsonb NOT NULL DEFAULT '[]'::jsonb,
   memory_hash text,
   memory_chain_hash text,
   last_evt_id text,
   last_opc_proof_id text,
   last_opc_chain_hash text,
+  temporal_certificate jsonb NOT NULL DEFAULT '{}'::jsonb,
+  response_utc timestamptz,
+  birth_anchor_local text,
+  birth_anchor_utc timestamptz,
+  joker_lifetime text,
+  joker_life_seconds integer,
   record_payload jsonb NOT NULL DEFAULT '{}'::jsonb,
   legal_certification boolean NOT NULL DEFAULT false,
+  deleted_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -583,6 +607,66 @@ ALTER TABLE IF EXISTS memory_records
 `.trim(),
   `
 ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS memory_kind text DEFAULT 'RUNTIME_MEMORY';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS memory_status text DEFAULT 'ACTIVE';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS source_kind text DEFAULT 'RUNTIME_MEMORY';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS source_thread_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS source_saved_chat_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS source_message_ids jsonb DEFAULT '[]'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS memory_title text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS memory_summary text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS save_raw boolean DEFAULT false;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS save_synthesis boolean DEFAULT true;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS reusable_in_prompt boolean DEFAULT false;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS classification text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS quality text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS threshold_detected boolean;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS semantic_terms jsonb DEFAULT '[]'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
   ADD COLUMN IF NOT EXISTS memory_hash text;
 `.trim(),
   `
@@ -603,11 +687,39 @@ ALTER TABLE IF EXISTS memory_records
 `.trim(),
   `
 ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS temporal_certificate jsonb DEFAULT '{}'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS response_utc timestamptz;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS birth_anchor_local text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS birth_anchor_utc timestamptz;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS joker_lifetime text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS joker_life_seconds integer;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
   ADD COLUMN IF NOT EXISTS record_payload jsonb DEFAULT '{}'::jsonb;
 `.trim(),
   `
 ALTER TABLE IF EXISTS memory_records
   ADD COLUMN IF NOT EXISTS legal_certification boolean DEFAULT false;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 `.trim(),
   `
 ALTER TABLE IF EXISTS memory_records
@@ -623,6 +735,16 @@ SET
   runtime_ipr = COALESCE(runtime_ipr, 'IPR-AI-0001'),
   session_id = COALESCE(session_id, 'UNKNOWN_SESSION'),
   persistence_mode = COALESCE(persistence_mode, 'DATABASE_PERSISTENT'),
+  memory_kind = COALESCE(memory_kind, 'RUNTIME_MEMORY'),
+  memory_status = COALESCE(NULLIF(memory_status, ''), 'ACTIVE'),
+  source_kind = COALESCE(source_kind, 'RUNTIME_MEMORY'),
+  source_message_ids = COALESCE(source_message_ids, '[]'::jsonb),
+  save_raw = COALESCE(save_raw, false),
+  save_synthesis = COALESCE(save_synthesis, true),
+  reusable_in_prompt = COALESCE(reusable_in_prompt, false),
+  semantic_terms = COALESCE(semantic_terms, '[]'::jsonb),
+  temporal_certificate = COALESCE(temporal_certificate, '{}'::jsonb),
+  record_payload = COALESCE(record_payload, '{}'::jsonb),
   legal_certification = COALESCE(legal_certification, false),
   created_at = COALESCE(created_at, now()),
   updated_at = COALESCE(updated_at, now())
@@ -630,6 +752,17 @@ WHERE
   runtime_ipr IS NULL
   OR session_id IS NULL
   OR persistence_mode IS NULL
+  OR memory_kind IS NULL
+  OR memory_status IS NULL
+  OR memory_status = ''
+  OR source_kind IS NULL
+  OR source_message_ids IS NULL
+  OR save_raw IS NULL
+  OR save_synthesis IS NULL
+  OR reusable_in_prompt IS NULL
+  OR semantic_terms IS NULL
+  OR temporal_certificate IS NULL
+  OR record_payload IS NULL
   OR legal_certification IS NULL
   OR created_at IS NULL
   OR updated_at IS NULL;
@@ -645,6 +778,46 @@ ALTER TABLE IF EXISTS memory_records
   `
 ALTER TABLE IF EXISTS memory_records
   ALTER COLUMN persistence_mode SET DEFAULT 'DATABASE_PERSISTENT';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN memory_kind SET DEFAULT 'RUNTIME_MEMORY';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN memory_status SET DEFAULT 'ACTIVE';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN source_kind SET DEFAULT 'RUNTIME_MEMORY';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN source_message_ids SET DEFAULT '[]'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN save_raw SET DEFAULT false;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN save_synthesis SET DEFAULT true;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN reusable_in_prompt SET DEFAULT false;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN semantic_terms SET DEFAULT '[]'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN temporal_certificate SET DEFAULT '{}'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_records
+  ALTER COLUMN record_payload SET DEFAULT '{}'::jsonb;
 `.trim(),
   `
 ALTER TABLE IF EXISTS memory_records
@@ -693,6 +866,34 @@ ON memory_records (updated_at DESC);
   `
 CREATE INDEX IF NOT EXISTS memory_records_legal_certification_idx
 ON memory_records (legal_certification);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_status_idx
+ON memory_records (memory_status);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_reusable_prompt_idx
+ON memory_records (reusable_in_prompt);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_deleted_at_idx
+ON memory_records (deleted_at);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_source_saved_chat_idx
+ON memory_records (source_saved_chat_id);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_quality_idx
+ON memory_records (quality);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_records_recall_active_idx
+ON memory_records (human_ipr, tenant_id, workspace_id, updated_at DESC)
+WHERE legal_certification = false
+  AND reusable_in_prompt = true
+  AND COALESCE(memory_status, 'ACTIVE') = 'ACTIVE'
+  AND deleted_at IS NULL;
 `.trim()
 ];
 
@@ -903,13 +1104,35 @@ const MEMORY_RECORDS_REQUIRED_COLUMNS = [
   "scope",
   "authority",
   "persistence_mode",
+  "memory_kind",
+  "memory_status",
+  "source_kind",
+  "source_thread_id",
+  "source_saved_chat_id",
+  "source_message_ids",
+  "memory_title",
+  "memory_summary",
+  "save_raw",
+  "save_synthesis",
+  "reusable_in_prompt",
+  "classification",
+  "quality",
+  "threshold_detected",
+  "semantic_terms",
   "memory_hash",
   "memory_chain_hash",
   "last_evt_id",
   "last_opc_proof_id",
   "last_opc_chain_hash",
+  "temporal_certificate",
+  "response_utc",
+  "birth_anchor_local",
+  "birth_anchor_utc",
+  "joker_lifetime",
+  "joker_life_seconds",
   "record_payload",
   "legal_certification",
+  "deleted_at",
   "created_at",
   "updated_at"
 ];
@@ -2172,6 +2395,7 @@ INSERT INTO memory_records (
   joker_life_seconds,
   created_at,
   updated_at,
+  deleted_at,
   record_payload,
   legal_certification
 )
@@ -2185,7 +2409,7 @@ VALUES (
   $23, $24, $25::boolean, COALESCE($26::jsonb, '[]'::jsonb), $27, $28,
   $29, $30, $31, COALESCE($32::jsonb, '{}'::jsonb), $33::timestamptz,
   $34, $35::timestamptz, $36, $37,
-  COALESCE($38::timestamptz, now()), now(), COALESCE($39::jsonb, '{}'::jsonb), false
+  COALESCE($38::timestamptz, now()), now(), $39::timestamptz, COALESCE($40::jsonb, '{}'::jsonb), false
 )
 ON CONFLICT (memory_id)
 DO UPDATE SET
@@ -2225,6 +2449,7 @@ DO UPDATE SET
   birth_anchor_utc = COALESCE(EXCLUDED.birth_anchor_utc, memory_records.birth_anchor_utc),
   joker_lifetime = COALESCE(EXCLUDED.joker_lifetime, memory_records.joker_lifetime),
   joker_life_seconds = COALESCE(EXCLUDED.joker_life_seconds, memory_records.joker_life_seconds),
+  deleted_at = COALESCE(EXCLUDED.deleted_at, memory_records.deleted_at),
   record_payload = COALESCE(memory_records.record_payload, '{}'::jsonb) || COALESCE(EXCLUDED.record_payload, '{}'::jsonb),
   legal_certification = false,
   updated_at = now()
@@ -2269,6 +2494,7 @@ RETURNING *;
       input.jokerLifetime ?? null,
       input.jokerLifeSeconds ?? null,
       createdAt,
+      toIsoDateOrNull(input.deletedAt),
       input.recordPayload ?? {}
     ]
   );
@@ -2667,6 +2893,7 @@ LIMIT $6;
 }
 
 export async function listIprMemoryRecordsFromDatabase(input: {
+  memoryId?: string | null;
   humanIpr?: string | null;
   tenantId?: string | null;
   workspaceId?: string | null;
@@ -2674,25 +2901,47 @@ export async function listIprMemoryRecordsFromDatabase(input: {
   sourceSavedChatId?: string | null;
   reusableInPrompt?: boolean | null;
   memoryStatus?: string | null;
+  includeSoftDeleted?: boolean | null;
   limit?: number;
 } = {}): Promise<HbceDatabaseQueryResult<IprMemoryRecordDatabaseRow>> {
   const limit = clampDatabaseLimit(input.limit, 20, 100);
+  const includeSoftDeleted = input.includeSoftDeleted === true;
 
   return queryHbceDatabase<IprMemoryRecordDatabaseRow>(
     `
 SELECT *
 FROM memory_records
-WHERE ($1::text IS NULL OR human_ipr = $1)
-  AND ($2::text IS NULL OR tenant_id = $2)
-  AND ($3::text IS NULL OR workspace_id = $3)
-  AND ($4::text IS NULL OR source_thread_id = $4 OR thread_id = $4)
-  AND ($5::text IS NULL OR source_saved_chat_id = $5)
-  AND ($6::boolean IS NULL OR reusable_in_prompt = $6)
-  AND ($7::text IS NULL OR memory_status = $7)
-ORDER BY updated_at DESC, created_at DESC
-LIMIT $8;
+WHERE ($1::text IS NULL OR memory_id = $1)
+  AND ($2::text IS NULL OR human_ipr = $2)
+  AND ($3::text IS NULL OR tenant_id = $3)
+  AND ($4::text IS NULL OR workspace_id = $4)
+  AND ($5::text IS NULL OR source_thread_id = $5 OR thread_id = $5)
+  AND ($6::text IS NULL OR source_saved_chat_id = $6)
+  AND ($7::boolean IS NULL OR reusable_in_prompt = $7)
+  AND ($8::text IS NULL OR memory_status = $8)
+  AND (
+    $9::boolean = true
+    OR $8::text IS NOT NULL
+    OR (
+      COALESCE(memory_status, 'ACTIVE') = 'ACTIVE'
+      AND deleted_at IS NULL
+    )
+  )
+ORDER BY
+  CASE COALESCE(quality, '')
+    WHEN 'CANONICAL' THEN 0
+    WHEN 'TRAINING' THEN 1
+    WHEN 'USER_SELECTED' THEN 2
+    WHEN 'OPERATIONAL' THEN 3
+    ELSE 4
+  END ASC,
+  COALESCE(threshold_detected, false) DESC,
+  updated_at DESC,
+  created_at DESC
+LIMIT $10;
 `.trim(),
     [
+      input.memoryId ?? null,
       input.humanIpr ?? null,
       input.tenantId ?? null,
       input.workspaceId ?? null,
@@ -2700,6 +2949,7 @@ LIMIT $8;
       input.sourceSavedChatId ?? null,
       input.reusableInPrompt ?? null,
       input.memoryStatus ?? null,
+      includeSoftDeleted,
       limit
     ]
   );
@@ -2717,7 +2967,24 @@ export async function recallReusableIprMemoryRecordsFromDatabase(input: {
     workspaceId: input.workspaceId ?? null,
     reusableInPrompt: true,
     memoryStatus: "ACTIVE",
+    includeSoftDeleted: false,
     limit: input.limit ?? 10
+  });
+}
+
+export async function getIprMemoryRecordStatusFromDatabase(input: {
+  memoryId: string;
+  humanIpr?: string | null;
+  tenantId?: string | null;
+  workspaceId?: string | null;
+}): Promise<HbceDatabaseQueryResult<IprMemoryRecordDatabaseRow>> {
+  return listIprMemoryRecordsFromDatabase({
+    memoryId: input.memoryId,
+    humanIpr: input.humanIpr ?? null,
+    tenantId: input.tenantId ?? null,
+    workspaceId: input.workspaceId ?? null,
+    includeSoftDeleted: true,
+    limit: 1
   });
 }
 
@@ -2873,6 +3140,7 @@ export function toPublicIprMemoryRecord(
     responseUtc: stringOrNull(row.response_utc),
     createdAt: stringOrNull(row.created_at),
     updatedAt: stringOrNull(row.updated_at),
+    deletedAt: stringOrNull(row.deleted_at),
     recordPayload: jsonOrNull(row.record_payload),
     legalCertification: false
   };
