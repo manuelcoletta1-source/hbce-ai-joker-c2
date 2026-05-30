@@ -39,8 +39,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.1";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.2";
 const THREAD_AUTHORITY_RUNTIME_VALIDATED = "SERVER_RUNTIME_VALIDATED";
+const THREAD_SCOPE_RUNTIME_ONLY = "RUNTIME_ONLY";
 const SAVE_INTENT_USER_EXPLICIT_TO_IPR = "USER_EXPLICIT_SAVE_TO_IPR";
 const DEFAULT_RUNTIME_IPR = "IPR-AI-0001";
 const DEFAULT_THREAD_TITLE = "JOKER-C2 IPR saved chat";
@@ -644,7 +645,7 @@ async function buildSavePayload(request: NextRequest) {
         runtimeIpr: context.runtimeIpr,
         sessionId: context.sessionId,
         title: context.threadTitle,
-        scope: "IPR_BOUND_CHAT",
+        scope: THREAD_SCOPE_RUNTIME_ONLY,
         authority: THREAD_AUTHORITY_RUNTIME_VALIDATED,
         continuityRef: context.previousSaveHash,
         lastEvtId: context.evtId,
@@ -657,6 +658,8 @@ async function buildSavePayload(request: NextRequest) {
           ...context.metadata,
           createdOrTouchedBy: ROUTE_VERSION,
           threadAuthority: THREAD_AUTHORITY_RUNTIME_VALIDATED,
+          threadScope: THREAD_SCOPE_RUNTIME_ONLY,
+          iprMemoryScope: "IPR_BOUND_EXPLICIT_SAVE",
           saveIntent: context.saveIntent,
           legalCertification: false
         }
