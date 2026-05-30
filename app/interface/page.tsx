@@ -18,6 +18,24 @@ type JsonRecord = Record<string, unknown>;
 type RuntimeFileKind = "text" | "image" | "pdf" | "binary";
 
 
+type RuntimeFileStatus =
+  | "TEXT_READY"
+  | "PDF_CLIENT_PAYLOAD_READY"
+  | "PDF_INGESTION_READY"
+  | "PDF_METADATA_ONLY"
+  | "PDF_INGESTION_FAIL"
+  | "REFERENCE_ONLY"
+  | "REJECTED";
+
+
+type RuntimeFileMode =
+  | "TEXT"
+  | "PDF_BINARY_PAYLOAD"
+  | "PDF_TEXT"
+  | "REFERENCE_ONLY"
+  | "REJECTED";
+
+
 type RuntimeFile = {
   id: string;
   name: string;
@@ -29,8 +47,14 @@ type RuntimeFile = {
   content: string;
   dataUrl?: string;
   base64?: string;
+  base64Length?: number;
   role: "context" | "reference_only";
   uploaded: boolean;
+  status: RuntimeFileStatus;
+  mode: RuntimeFileMode;
+  textLength: number;
+  reason: string;
+  fileHash?: string;
 };
 
 
@@ -172,6 +196,35 @@ type PublicSemanticMemorySnapshot = {
 };
 
 
+type PublicRuntimeFileSnapshot = {
+  id: string;
+  name: string;
+  mimeType: string;
+  status: string;
+  mode: string;
+  textLength: string;
+  fileHash: string;
+  reason: string;
+};
+
+
+type PublicFileIngestionSnapshot = {
+  available: boolean;
+  status: string;
+  promptReadyCount: string;
+  textReadyCount: string;
+  pdfReadyCount: string;
+  pdfMetadataOnlyCount: string;
+  pdfIngestionFailCount: string;
+  referenceOnlyCount: string;
+  rejectedCount: string;
+  totalTextLength: string;
+  legalCertification: string;
+  opc: string;
+  files: PublicRuntimeFileSnapshot[];
+};
+
+
 type IprSessionResponse = {
   ok?: boolean;
   authenticated?: boolean;
@@ -211,7 +264,7 @@ const EMPTY_IPR_MEMORY_DASHBOARD: IprMemoryDashboardState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-IPR-MEMORY-DELETE-ACTIONS-v1.3";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-FILE-INGESTION-DIAGNOSTICS-v1.4";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -977,6 +1030,105 @@ function getPublicSemanticMemorySnapshot(
       legalCertification: first(record, [["boundary", "legalCertification"], ["runtime", "legalCertification"]], "false"),
       technicalProofOnly: first(record, [["boundary", "technicalProofOnly"]], "true")
     }
+  };
+}
+
+
+function normalizePublicRuntimeFileStatus(value: unknown): string {
+  const normalized = text(value, "").trim().toUpperCase();
+
+
+  if (!normalized) {
+    return "NOT_AVAILABLE";
+  }
+
+
+  if (normalized === "PDF_CLIENT_PAYLOAD_READY") {
+    return "PDF_CLIENT_PAYLOAD_READY";
+  }
+
+
+  if (
+    normalized === "TEXT_READY" ||
+    normalized === "PDF_INGESTION_READY" ||
+    normalized === "PDF_METADATA_ONLY" ||
+    normalized === "PDF_INGESTION_FAIL" ||
+    normalized === "REFERENCE_ONLY" ||
+    normalized === "REJECTED"
+  ) {
+    return normalized;
+  }
+
+
+  return normalized;
+}
+
+
+function normalizePublicRuntimeFileSnapshot(record: JsonRecord): PublicRuntimeFileSnapshot {
+  return {
+    id: first(record, [["id"], ["fileId"]], "-"),
+    name: first(record, [["name"], ["fileName"]], "runtime-file"),
+    mimeType: first(record, [["mimeType"], ["type"]], "-"),
+    status: normalizePublicRuntimeFileStatus(
+      getPath(record, ["status"]) ?? getPath(record, ["fileStatus"]) ?? getPath(record, ["ingestionStatus"])
+    ),
+    mode: first(record, [["mode"], ["fileMode"]], "-"),
+    textLength: first(record, [["textLength"], ["contentLength"], ["characters"]], "0"),
+    fileHash: first(record, [["fileHash"], ["hash"], ["sha256"]], "-"),
+    reason: first(record, [["reason"], ["message"], ["detail"]], "-")
+  };
+}
+
+
+function isFileIngestionLike(record: JsonRecord | null): record is JsonRecord {
+  if (!record) return false;
+
+
+  return Boolean(
+    text(record.status, "") ||
+      text(record.promptReadyCount, "") ||
+      text(getPath(record, ["summary", "promptReadyCount"]), "") ||
+      Array.isArray(record.files)
+  );
+}
+
+
+function getPublicFileIngestionSnapshot(
+  payload: JsonRecord | null | undefined
+): PublicFileIngestionSnapshot {
+  const source = payload ?? {};
+  const candidateRecords = [
+    firstRecord(source, [["fileIngestion"]]),
+    firstRecord(source, [["diagnostics", "fileIngestion"]]),
+    firstRecord(source, [["runtime", "fileIngestion"]]),
+    firstRecord(source, [["uploadedFiles"]])
+  ];
+  const record = candidateRecords.find(isFileIngestionLike) ?? null;
+  const fileRecords = firstArray(record, [["files"], ["activeFiles"], ["runtimeFiles"]])
+    .filter(isRecord)
+    .map(normalizePublicRuntimeFileSnapshot)
+    .slice(0, 12);
+  const available = Boolean(record) || fileRecords.length > 0;
+
+
+  return {
+    available,
+    status: first(
+      record,
+      [["status"], ["ingestionStatus"], ["summary", "status"]],
+      available ? "FILE_INGESTION_READY" : "NOT_AVAILABLE"
+    ),
+    promptReadyCount: first(record, [["promptReadyCount"], ["summary", "promptReadyCount"]], "0"),
+    textReadyCount: first(record, [["textReadyCount"], ["summary", "textReadyCount"]], "0"),
+    pdfReadyCount: first(record, [["pdfReadyCount"], ["summary", "pdfReadyCount"]], "0"),
+    pdfMetadataOnlyCount: first(record, [["pdfMetadataOnlyCount"], ["summary", "pdfMetadataOnlyCount"]], "0"),
+    pdfIngestionFailCount: first(record, [["pdfIngestionFailCount"], ["summary", "pdfIngestionFailCount"]], "0"),
+    referenceOnlyCount: first(record, [["referenceOnlyCount"], ["summary", "referenceOnlyCount"]], "0"),
+    rejectedCount: first(record, [["rejectedCount"], ["summary", "rejectedCount"]], "0"),
+    totalTextLength: first(record, [["totalTextLength"], ["summary", "totalTextLength"]], "0"),
+    legalCertification: first(record, [["legalCertification"], ["summary", "legalCertification"]], "false"),
+    opc: first(record, [["opc"], ["summary", "opc"]], "technical proof receipt only"),
+    files: fileRecords
   };
 }
 
@@ -2507,6 +2659,7 @@ function getStatusClass(value: string): string {
     normalized.includes("INVALID") ||
     normalized.includes("BLOCKED") ||
     normalized.includes("FAILED") ||
+    normalized.includes("FAIL") ||
     normalized.includes("HTTP_405")
   ) {
     return "is-bad";
@@ -2524,6 +2677,9 @@ function getStatusClass(value: string): string {
     normalized.includes("NOT_VERIFIED") ||
     normalized.includes("NOT_AVAILABLE") ||
     normalized.includes("NOT_SELECTED") ||
+    normalized.includes("METADATA_ONLY") ||
+    normalized.includes("REFERENCE_ONLY") ||
+    normalized.includes("CLIENT_PAYLOAD") ||
     normalized.includes("UNKNOWN") ||
     normalized === "-"
   ) {
@@ -2750,6 +2906,75 @@ function getChatThreadTitle(messages: ChatMessage[], sessionId: string): string 
   const source = firstUserMessage ? normalizeVisibleText(firstUserMessage.content) : sessionId;
 
   return compact(source || "JOKER-C2 IPR chat", 88);
+}
+
+
+
+function FileIngestionCard({
+  snapshot,
+  localFiles
+}: {
+  snapshot: PublicFileIngestionSnapshot;
+  localFiles: RuntimeFile[];
+}) {
+  const visibleServerFiles = snapshot.files.slice(0, 8);
+  const visibleLocalFiles = localFiles.slice(0, 8);
+
+
+  return (
+    <section className="joker-file-ingestion-card" translate="no">
+      <div className="joker-semantic-head">
+        <div>
+          <span className="joker-kicker">File ingestion</span>
+          <h3>TXT / PDF runtime context</h3>
+        </div>
+        <div className="joker-semantic-pills">
+          <StatusPill label="Server" value={snapshot.status} />
+          <StatusPill label="Local" value={localFiles.length > 0 ? "LOCAL_FILES_READY" : "NO_LOCAL_FILES"} />
+        </div>
+      </div>
+
+
+      <div className="joker-semantic-grid">
+        <MetricCard label="Prompt ready" value={snapshot.promptReadyCount} />
+        <MetricCard label="PDF ready" value={snapshot.pdfReadyCount} />
+        <MetricCard label="PDF metadata only" value={snapshot.pdfMetadataOnlyCount} />
+        <MetricCard label="PDF fail" value={snapshot.pdfIngestionFailCount} />
+        <MetricCard label="Text ready" value={snapshot.textReadyCount} />
+        <MetricCard label="Reference only" value={snapshot.referenceOnlyCount} />
+        <MetricCard label="Rejected" value={snapshot.rejectedCount} />
+        <MetricCard label="Total text" value={snapshot.totalTextLength} />
+      </div>
+
+
+      {visibleServerFiles.length > 0 ? (
+        <div className="joker-file-ingestion-list" aria-label="Server file ingestion results">
+          <strong>Server ingestion result</strong>
+          {visibleServerFiles.map((file) => (
+            <div key={`${file.id}-${file.fileHash}`} className="joker-file-ingestion-row">
+              <span title={file.name}>{compact(file.name, 34)}</span>
+              <StatusPill value={file.status} />
+              <em title={file.reason}>{compact(file.reason, 78)}</em>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+
+      {visibleLocalFiles.length > 0 ? (
+        <div className="joker-file-ingestion-list" aria-label="Local files waiting for runtime ingestion">
+          <strong>Local payload prepared</strong>
+          {visibleLocalFiles.map((file) => (
+            <div key={file.id} className="joker-file-ingestion-row">
+              <span title={file.name}>{compact(file.name, 34)}</span>
+              <StatusPill value={file.status} />
+              <em title={file.reason}>{compact(file.reason, 78)}</em>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
 }
 
 
@@ -3196,6 +3421,11 @@ export default function InterfacePage() {
   const dashboardPayload = lastAssistantPayload || health;
   const dashboardStatus = getRuntimeStatus(dashboardPayload);
   const dashboardSemanticMemory = getPublicSemanticMemorySnapshot(dashboardPayload);
+  const dashboardFileIngestion = getPublicFileIngestionSnapshot(dashboardPayload);
+  const localPromptReadyCount = files.filter((file) =>
+    ["TEXT_READY", "PDF_CLIENT_PAYLOAD_READY", "PDF_INGESTION_READY"].includes(file.status)
+  ).length;
+  const localPdfPayloadCount = files.filter((file) => file.status === "PDF_CLIENT_PAYLOAD_READY").length;
   const liveTemporal = useMemo(() => buildJokerTemporalRuntimeSnapshot(clockNow), [clockNow]);
   const effectiveRuntimeBirth = firstDisplayValue(
     [dashboardStatus.runtimeBirth],
@@ -4301,6 +4531,20 @@ export default function InterfacePage() {
   ];
 
 
+  const fileIngestionRows = [
+    { label: "Server status", value: dashboardFileIngestion.status },
+    { label: "Prompt ready server", value: dashboardFileIngestion.promptReadyCount },
+    { label: "PDF ready server", value: dashboardFileIngestion.pdfReadyCount },
+    { label: "PDF metadata only", value: dashboardFileIngestion.pdfMetadataOnlyCount },
+    { label: "PDF ingestion fail", value: dashboardFileIngestion.pdfIngestionFailCount },
+    { label: "Local files", value: String(files.length) },
+    { label: "Local prompt-ready", value: String(localPromptReadyCount) },
+    { label: "Local PDF payload", value: String(localPdfPayloadCount) },
+    { label: "legalCertification", value: dashboardFileIngestion.legalCertification },
+    { label: "OPC", value: dashboardFileIngestion.opc }
+  ];
+
+
   const semanticMemoryRows = [
     { label: "Enabled", value: dashboardSemanticMemory.enabled },
     { label: "Memory ID", value: dashboardSemanticMemory.memoryId },
@@ -4500,6 +4744,7 @@ export default function InterfacePage() {
           <MetricCard label="MATRIX" value={matrixState} />
           <MetricCard label="Memory" value={memoryScope} />
           <MetricCard label="Semantic quality" value={dashboardSemanticMemory.available ? dashboardSemanticMemory.quality : "NOT_AVAILABLE"} />
+          <MetricCard label="File context" value={dashboardFileIngestion.available ? dashboardFileIngestion.status : files.length > 0 ? "LOCAL_FILES_READY" : "NOT_AVAILABLE"} />
           <MetricCard label="Coupling state" value={dashboardSemanticMemory.available ? dashboardSemanticMemory.couplingState : "NOT_AVAILABLE"} />
           <MetricCard label="Response EVT" value={dashboardStatus.responseEvt} />
           <MetricCard label="OPC" value={dashboardStatus.opc} />
@@ -4600,6 +4845,30 @@ export default function InterfacePage() {
 
 
           <InfoList items={memoryRows} />
+        </div>
+
+
+        <div className={dashboardFileIngestion.available || files.length > 0 ? "joker-panel is-active" : "joker-panel"}>
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker">File ingestion</span>
+              <h2>TXT / PDF runtime context</h2>
+            </div>
+            <StatusPill value={dashboardFileIngestion.available ? dashboardFileIngestion.status : files.length > 0 ? "LOCAL_FILES_READY" : "NOT_AVAILABLE"} />
+          </div>
+
+
+          <p>
+            Questo blocco distingue file caricati localmente, testo pronto per il prompt,
+            PDF con payload binario, PDF letto davvero, PDF solo metadato e fallimento parser.
+            Sì, finalmente il PDF smette di fingersi testo per sport.
+          </p>
+
+
+          <InfoList items={fileIngestionRows} />
+
+
+          <FileIngestionCard snapshot={dashboardFileIngestion} localFiles={files} />
         </div>
 
 
@@ -5064,14 +5333,14 @@ export default function InterfacePage() {
               <div
                 key={file.id}
                 className={["joker-file-chip", `is-${file.kind}`].join(" ")}
-                title={`${file.name} · ${file.kind} · ${file.mimeType} · ${formatFileSize(file.size)}`}
+                title={`${file.name} · ${file.status} · ${file.mimeType} · ${formatFileSize(file.size)} · ${file.reason}`}
               >
                 {file.kind === "image" && file.dataUrl ? (
                   <img src={file.dataUrl} alt="" className="joker-file-preview" />
                 ) : null}
                 <span>{file.name}</span>
                 <em>
-                  {file.kind} · {formatFileSize(file.size)}
+                  {file.status} · {file.kind} · {formatFileSize(file.size)}
                 </em>
                 <button type="button" onClick={() => removeFile(file.id)}>
                   ×
@@ -6398,7 +6667,8 @@ export default function InterfacePage() {
         }
 
 
-        .joker-semantic-card {
+        .joker-semantic-card,
+        .joker-file-ingestion-card {
           margin-top: 14px;
           padding: 14px;
           border: 1px solid rgba(34, 211, 238, 0.24);
@@ -6529,6 +6799,43 @@ export default function InterfacePage() {
           font-size: 12px;
           font-weight: 720;
           line-height: 1.55;
+        }
+
+
+        .joker-file-ingestion-list {
+          margin-top: 12px;
+          display: grid;
+          gap: 7px;
+        }
+
+
+        .joker-file-ingestion-list > strong {
+          color: #67e8f9;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+
+
+        .joker-file-ingestion-row {
+          display: grid;
+          grid-template-columns: minmax(120px, 1.1fr) auto minmax(160px, 2fr);
+          gap: 8px;
+          align-items: center;
+          padding: 8px;
+          border: 1px solid rgba(148, 163, 184, 0.14);
+          border-radius: 14px;
+          background: rgba(2, 6, 23, 0.32);
+          color: #cbd5e1;
+          font-size: 11px;
+        }
+
+
+        .joker-file-ingestion-row em {
+          color: #94a3b8;
+          font-style: normal;
+          line-height: 1.4;
         }
 
 
@@ -6704,12 +7011,45 @@ async function readRuntimeFile(file: File): Promise<RuntimeFile> {
       text: content,
       content,
       role: "context",
-      uploaded: true
+      uploaded: true,
+      status: "TEXT_READY",
+      mode: "TEXT",
+      textLength: content.length,
+      reason: "Readable text file prepared for JOKER-C2 prompt context."
     };
   }
 
 
-  if (kind === "image" || kind === "pdf") {
+  if (kind === "pdf") {
+    const dataUrl = await readFileAsDataUrl(file);
+    const base64 = extractBase64FromDataUrl(dataUrl);
+
+
+    return {
+      id: buildId("FILE"),
+      name: file.name,
+      type,
+      mimeType: type,
+      size: file.size,
+      kind,
+      text: "",
+      content: "",
+      dataUrl,
+      base64,
+      base64Length: base64.length,
+      role: "context",
+      uploaded: true,
+      status: base64 ? "PDF_CLIENT_PAYLOAD_READY" : "PDF_METADATA_ONLY",
+      mode: base64 ? "PDF_BINARY_PAYLOAD" : "REFERENCE_ONLY",
+      textLength: 0,
+      reason: base64
+        ? "PDF binary payload prepared for server-side extraction. The server must return PDF_INGESTION_READY, PDF_METADATA_ONLY or PDF_INGESTION_FAIL."
+        : "PDF metadata detected, but no base64 payload was produced by the browser."
+    };
+  }
+
+
+  if (kind === "image") {
     const dataUrl = await readFileAsDataUrl(file);
     const base64 = extractBase64FromDataUrl(dataUrl);
     const manifest = buildFileContentManifest({
@@ -6731,8 +7071,13 @@ async function readRuntimeFile(file: File): Promise<RuntimeFile> {
       content: manifest,
       dataUrl,
       base64,
+      base64Length: base64.length,
       role: "context",
-      uploaded: true
+      uploaded: true,
+      status: "REFERENCE_ONLY",
+      mode: "REFERENCE_ONLY",
+      textLength: 0,
+      reason: "Image file prepared as reference-only visual payload."
     };
   }
 
@@ -6750,7 +7095,11 @@ async function readRuntimeFile(file: File): Promise<RuntimeFile> {
     text: manifest,
     content: manifest,
     role: "reference_only",
-    uploaded: true
+    uploaded: true,
+    status: "REFERENCE_ONLY",
+    mode: "REFERENCE_ONLY",
+    textLength: 0,
+    reason: "Binary file kept as reference-only because no safe text extraction is available in the browser."
   };
 }
 
