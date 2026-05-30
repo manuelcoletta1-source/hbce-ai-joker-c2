@@ -8824,10 +8824,11 @@ function inferRuntimeFileMimeType(name: string): string {
 }
 
 function resolveRuntimeFileText(object: JsonObject): string {
-  const directText = firstStringOrJoinedFromSources(
-    [object],
-    ["text", "content", "body", "preview", "extractedText", "fileText"]
-  );
+  const directText =
+    firstStringOrJoinedFromSources(
+      [object],
+      ["text", "content", "body", "preview", "extractedText", "fileText"]
+    ) || "";
 
   if (directText.trim()) {
     return directText.slice(0, 120000);
@@ -8837,10 +8838,11 @@ function resolveRuntimeFileText(object: JsonObject): string {
   const dataObject = asJsonObject(data);
 
   if (dataObject) {
-    const nestedText = firstStringOrJoinedFromSources(
-      [dataObject],
-      ["text", "content", "body", "preview", "extractedText", "fileText"]
-    );
+    const nestedText =
+      firstStringOrJoinedFromSources(
+        [dataObject],
+        ["text", "content", "body", "preview", "extractedText", "fileText"]
+      ) || "";
 
     if (nestedText.trim()) {
       return nestedText.slice(0, 120000);
@@ -9729,4 +9731,3 @@ function errorToMessage(error: unknown): string {
 
   return "Unknown provider error";
 }
-
