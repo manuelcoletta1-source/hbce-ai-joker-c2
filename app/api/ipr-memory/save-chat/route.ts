@@ -40,7 +40,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.8";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.9";
+const IDEMPOTENCY_POLICY = "THREAD_PRIMARY_INTENTION_REUSABLE_MEMORY";
+const IDEMPOTENCY_SEED_VERSION = "HBCE-IPR-MEMORY-IDEMPOTENCY-v1";
+const IDEMPOTENT_READY_STATUS = "SAVE_CHAT_IDEMPOTENT_READY";
+const LEGACY_IDEMPOTENT_STATUS = "IPR_CHAT_MEMORY_ALREADY_EXISTS";
 const THREAD_AUTHORITY_RUNTIME_VALIDATED = "SERVER_RUNTIME_VALIDATED";
 const THREAD_SCOPE_RUNTIME_ONLY = "RUNTIME_ONLY";
 const SAVE_INTENT_USER_EXPLICIT_TO_IPR = "USER_EXPLICIT_SAVE_TO_IPR";
@@ -310,7 +314,7 @@ function buildMemoryIdempotencyKey(context: SaveChatRouteContext): string {
   const normalizedPrimaryIntention = context.primaryIntention.replace(/\s+/g, " ").trim();
   const normalizedRadicalIntention = context.radicalIntention.replace(/\s+/g, " ").trim();
   const seed = [
-    "HBCE-IPR-MEMORY-IDEMPOTENCY-v1",
+    IDEMPOTENCY_SEED_VERSION,
     context.humanIpr ?? "NO_HUMAN_IPR",
     context.runtimeIpr ?? DEFAULT_RUNTIME_IPR,
     context.tenantId ?? "NO_TENANT",
@@ -325,6 +329,17 @@ function buildMemoryIdempotencyKey(context: SaveChatRouteContext): string {
   ].join("|");
 
   return createHash("sha256").update(seed).digest("hex");
+}
+
+function buildMemoryIdempotencyHash(context: SaveChatRouteContext): string {
+  return `sha256:${buildMemoryIdempotencyKey(context)}`;
+}
+
+function buildMemoryIdempotencyAliases(context: SaveChatRouteContext): string[] {
+  const rawKey = buildMemoryIdempotencyKey(context);
+  const hashKey = `sha256:${rawKey}`;
+
+  return Array.from(new Set([rawKey, hashKey]));
 }
 
 function buildFallbackMemoryId(context: SaveChatRouteContext, savedChatId: string | null): string {
@@ -364,12 +379,16 @@ async function findExistingReusableMemoryRecordForContext(context: SaveChatRoute
   const primaryIntention = context.primaryIntention.replace(/\s+/g, " ").trim();
   const radicalIntention = context.radicalIntention.replace(/\s+/g, " ").trim();
   const idempotencyKey = buildMemoryIdempotencyKey(context);
+  const idempotencyHash = buildMemoryIdempotencyHash(context);
+  const idempotencyAliases = buildMemoryIdempotencyAliases(context);
 
   if (!context.humanIpr || !context.threadId || !primaryIntention) {
     return {
       attempted: false,
       reason: "MISSING_HUMAN_IPR_THREAD_OR_INTENTION",
       idempotencyKey,
+      idempotencyHash,
+      idempotencyAliases,
       result: null,
       row: null,
       error: null
@@ -385,11 +404,13 @@ WHERE human_ipr = $1
   AND thread_id = $2
   AND COALESCE(reusable_in_prompt, false) = true
   AND COALESCE(legal_certification, false) = false
+  AND COALESCE(memory_status, 'ACTIVE') = 'ACTIVE'
   AND (
     record_payload->>'idempotencyKey' = $3
-    OR record_payload->>'primaryIntention' = $4
-    OR record_payload->>'radicalIntention' = $5
-    OR memory_summary = $6
+    OR record_payload->>'idempotencyHash' = $4
+    OR record_payload->>'primaryIntention' = $5
+    OR record_payload->>'radicalIntention' = $6
+    OR memory_summary = $7
   )
 ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
 LIMIT 1;
@@ -398,6 +419,7 @@ LIMIT 1;
         context.humanIpr,
         context.threadId,
         idempotencyKey,
+        idempotencyHash,
         primaryIntention,
         radicalIntention,
         context.memorySummary
@@ -408,6 +430,8 @@ LIMIT 1;
       attempted: true,
       reason: result.rows[0] ? "EXISTING_REUSABLE_MEMORY_FOUND" : "NO_EXISTING_REUSABLE_MEMORY",
       idempotencyKey,
+      idempotencyHash,
+      idempotencyAliases,
       result,
       row: result.rows[0] ?? null,
       error: result.error ?? null
@@ -417,6 +441,8 @@ LIMIT 1;
       attempted: true,
       reason: "EXISTING_MEMORY_LOOKUP_THROWN_CONTINUING",
       idempotencyKey,
+      idempotencyHash,
+      idempotencyAliases,
       result: null,
       row: null,
       error: error instanceof Error ? error.message : "Unknown memory idempotency lookup error."
@@ -439,7 +465,9 @@ async function persistFallbackMemoryRecordToDatabase(input: {
     savedChatId: input.savedChatId,
     memoryId,
     idempotencyKey: buildMemoryIdempotencyKey(input.context),
-    idempotencyPolicy: "THREAD_PRIMARY_INTENTION_REUSABLE_MEMORY",
+    idempotencyHash: buildMemoryIdempotencyHash(input.context),
+    idempotencyAliases: buildMemoryIdempotencyAliases(input.context),
+    idempotencyPolicy: IDEMPOTENCY_POLICY,
     primaryIntention: input.context.primaryIntention,
     radicalIntention: input.context.radicalIntention,
     selectedMessageIds: input.selectedMessageIds,
@@ -1271,9 +1299,14 @@ async function buildSavePayload(request: NextRequest) {
       {
         ok: true,
         routeVersion: ROUTE_VERSION,
-        status: "IPR_CHAT_MEMORY_ALREADY_EXISTS",
+        status: IDEMPOTENT_READY_STATUS,
+        legacyStatus: LEGACY_IDEMPOTENT_STATUS,
+        created: false,
+        duplicatePrevented: true,
         idempotent: true,
         idempotencyKey: existingMemoryLookup.idempotencyKey,
+        idempotencyHash: existingMemoryLookup.idempotencyHash,
+        idempotencyAliases: existingMemoryLookup.idempotencyAliases,
         existingMemoryId,
         memoryId: existingMemoryId,
         savedChatId: null,
@@ -1385,7 +1418,9 @@ async function buildSavePayload(request: NextRequest) {
       selectedMessageIds,
       providedMessagesPersisted: messagePersistResults.length,
       idempotencyKey: buildMemoryIdempotencyKey(context),
-      idempotencyPolicy: "THREAD_PRIMARY_INTENTION_REUSABLE_MEMORY",
+      idempotencyHash: buildMemoryIdempotencyHash(context),
+      idempotencyAliases: buildMemoryIdempotencyAliases(context),
+      idempotencyPolicy: IDEMPOTENCY_POLICY,
       rawContentSaved: context.rawContentSaved,
       rawContentPolicy: context.rawContentPolicy,
       routeVersion: ROUTE_VERSION
@@ -1544,6 +1579,8 @@ async function buildSavePayload(request: NextRequest) {
           attempted: existingMemoryLookup.attempted,
           reason: existingMemoryLookup.reason,
           idempotencyKey: existingMemoryLookup.idempotencyKey,
+          idempotencyHash: existingMemoryLookup.idempotencyHash,
+          idempotencyAliases: existingMemoryLookup.idempotencyAliases,
           ok: existingMemoryLookup.result?.ok ?? null,
           rowCount: existingMemoryLookup.result?.rowCount ?? null,
           status: existingMemoryLookup.result?.status ?? null,
@@ -1602,7 +1639,7 @@ export async function GET() {
       primaryIntention:
         "string; canonical meaning: IPR as Intenzione Primaria Radicale saved from the chat",
       selectedMessageIds: "string[]",
-      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO, runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE and runtimeState is stored legacy-safe before database insert; v1.8 adds idempotent deduplication before save, then falls back to a route-level memory_records row only when no reusable memory exists",
+      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO, runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE and runtimeState is stored legacy-safe before database insert; v1.9 hardens idempotent deduplication before save, returns SAVE_CHAT_IDEMPOTENT_READY for duplicates, then falls back to a route-level memory_records row only when no reusable memory exists",
       saveRaw: "boolean; default false",
       saveSynthesis: "boolean; default true",
       reusableInPrompt: "boolean; default true"
@@ -1635,3 +1672,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
