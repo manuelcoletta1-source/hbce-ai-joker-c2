@@ -39,7 +39,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.0";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.1";
+const THREAD_AUTHORITY_RUNTIME_VALIDATED = "SERVER_RUNTIME_VALIDATED";
+const SAVE_INTENT_USER_EXPLICIT_TO_IPR = "USER_EXPLICIT_SAVE_TO_IPR";
 const DEFAULT_RUNTIME_IPR = "IPR-AI-0001";
 const DEFAULT_THREAD_TITLE = "JOKER-C2 IPR saved chat";
 const DEFAULT_MEMORY_TITLE = "Saved JOKER-C2 chat on IPR";
@@ -409,7 +411,7 @@ function resolveContext(request: NextRequest, input: SaveChatRouteInput): SaveCh
     memorySummary: coalesceString(input.memorySummary, input.primaryIntention, input.radicalIntention) ?? DEFAULT_MEMORY_SUMMARY,
     primaryIntention,
     radicalIntention: coalesceString(input.radicalIntention, input.primaryIntention) ?? primaryIntention,
-    saveIntent: coalesceString(input.saveIntent) ?? "USER_EXPLICIT_SAVE_TO_IPR",
+    saveIntent: coalesceString(input.saveIntent) ?? SAVE_INTENT_USER_EXPLICIT_TO_IPR,
     saveScope: coalesceString(input.saveScope) ?? "IPR_BOUND",
     classification: coalesceString(input.classification) ?? "USER_SELECTED_CHAT_MEMORY",
     evtId: coalesceString(input.evtId, readHeaderString(request, "x-hbce-evt-id")),
@@ -527,7 +529,7 @@ async function persistProvidedMessages(context: SaveChatRouteContext) {
         jokerLifetime: context.jokerLifetime,
         jokerLifeSeconds: context.jokerLifeSeconds,
         runtimeState: normalizeString(message.runtimeState) ?? "IPR_MEMORY_SAVE_ROUTE",
-        runtimeDecision: normalizeString(message.runtimeDecision) ?? "USER_EXPLICIT_SAVE_TO_IPR",
+        runtimeDecision: normalizeString(message.runtimeDecision) ?? SAVE_INTENT_USER_EXPLICIT_TO_IPR,
         generationClass: normalizeString(message.generationClass) ?? "CHAT_MEMORY_SAVE",
         messageVisibility: normalizeString(message.messageVisibility) ?? "THREAD",
         includedInIprMemory: true,
@@ -643,7 +645,7 @@ async function buildSavePayload(request: NextRequest) {
         sessionId: context.sessionId,
         title: context.threadTitle,
         scope: "IPR_BOUND_CHAT",
-        authority: "USER_EXPLICIT_SAVE_TO_IPR",
+        authority: THREAD_AUTHORITY_RUNTIME_VALIDATED,
         continuityRef: context.previousSaveHash,
         lastEvtId: context.evtId,
         lastOpcProofId: context.opcProofId,
@@ -654,6 +656,7 @@ async function buildSavePayload(request: NextRequest) {
         metadata: {
           ...context.metadata,
           createdOrTouchedBy: ROUTE_VERSION,
+          threadAuthority: THREAD_AUTHORITY_RUNTIME_VALIDATED,
           saveIntent: context.saveIntent,
           legalCertification: false
         }
@@ -783,6 +786,7 @@ async function buildSavePayload(request: NextRequest) {
   return jsonResponse(
     {
       ok: saveResult.ok,
+      routeVersion: ROUTE_VERSION,
       status: saveResult.ok ? "IPR_CHAT_MEMORY_SAVED" : "IPR_CHAT_MEMORY_SAVE_PARTIAL_OR_FAILED",
       context: {
         humanIpr: context.humanIpr,
@@ -854,6 +858,7 @@ async function buildSavePayload(request: NextRequest) {
 export async function GET() {
   return jsonResponse({
     ok: true,
+    routeVersion: ROUTE_VERSION,
     status: "SAVE_CHAT_ROUTE_READY",
     method: "POST",
     required: {
