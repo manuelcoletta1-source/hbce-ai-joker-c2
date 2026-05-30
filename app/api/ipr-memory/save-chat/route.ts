@@ -42,7 +42,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-DOCUMENT-PROFILE-LINK-v2.0";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-DOCUMENT-PROFILE-LINK-v2.1";
 const IDEMPOTENCY_POLICY = "THREAD_PRIMARY_INTENTION_REUSABLE_MEMORY";
 const IDEMPOTENCY_SEED_VERSION = "HBCE-IPR-MEMORY-IDEMPOTENCY-v1";
 const IDEMPOTENT_READY_STATUS = "SAVE_CHAT_IDEMPOTENT_READY";
@@ -70,6 +70,15 @@ type DocumentProfileLinkCandidate = {
   filename: string | null;
   source: string;
   confidence: "DIRECT" | "STRUCTURED" | "INFERRED";
+};
+
+type DocumentProfileLinkCandidateInput = {
+  profileId?: unknown;
+  fileId?: unknown;
+  fileHash?: unknown;
+  filename?: unknown;
+  source?: unknown;
+  confidence?: unknown;
 };
 
 type DocumentProfileLinkResult = {
@@ -984,17 +993,29 @@ function normalizeDocumentFilename(value: unknown): string | null {
   return cleaned.slice(0, 220);
 }
 
+function normalizeDocumentProfileLinkConfidence(
+  value: unknown
+): DocumentProfileLinkCandidate["confidence"] {
+  const normalized = normalizeString(value)?.toUpperCase();
+
+  if (normalized === "DIRECT" || normalized === "STRUCTURED" || normalized === "INFERRED") {
+    return normalized;
+  }
+
+  return "INFERRED";
+}
+
 function pushDocumentProfileLinkCandidate(
   candidates: DocumentProfileLinkCandidate[],
-  candidate: Partial<DocumentProfileLinkCandidate>
+  candidate: DocumentProfileLinkCandidateInput
 ) {
   const normalizedCandidate: DocumentProfileLinkCandidate = {
     profileId: normalizeDocumentProfileId(candidate.profileId),
     fileId: normalizeFileId(candidate.fileId),
     fileHash: normalizeFileHash(candidate.fileHash),
     filename: normalizeDocumentFilename(candidate.filename),
-    source: candidate.source || "UNKNOWN",
-    confidence: candidate.confidence || "INFERRED"
+    source: normalizeString(candidate.source) || "UNKNOWN",
+    confidence: normalizeDocumentProfileLinkConfidence(candidate.confidence)
   };
 
   if (
