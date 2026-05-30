@@ -45,7 +45,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
-const HEALTH_REVISION = "HBCE-HEALTH-IPR-MEMORY-FORCE-DYNAMIC-v2.1";
+const HEALTH_REVISION = "HBCE-HEALTH-IPR-MEMORY-FORCE-DYNAMIC-v2.2";
 
 
 type HealthStatus = "OK" | "DEGRADED";
@@ -93,6 +93,7 @@ type DatabaseHealth = {
     iprMemoryApi: boolean;
   };
   error: string | null;
+  warnings: string[];
 };
 
 
