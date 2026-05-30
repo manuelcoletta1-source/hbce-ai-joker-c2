@@ -278,7 +278,7 @@ function toIsoString(value: unknown): string | null {
 }
 
 function isMemoryRecordOutsideRecall(row: MemoryRecordRow): boolean {
-  const memoryStatus = normalizeUpperString(row.memory_status);
+  const memoryStatus = normalizeUpperString(row.memory_status) || "";
   const deletedAt = toIsoString(row.deleted_at);
 
   return (
