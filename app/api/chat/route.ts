@@ -102,12 +102,39 @@ type ChatTurn = {
 
 
 
+type PublicFileStatus =
+  | "TEXT_READY"
+  | "PDF_INGESTION_READY"
+  | "PDF_METADATA_ONLY"
+  | "PDF_INGESTION_FAIL"
+  | "REFERENCE_ONLY"
+  | "REJECTED"
+  | "UNKNOWN";
+
+type PublicFileMode =
+  | "TEXT"
+  | "PDF_TEXT"
+  | "REFERENCE_ONLY"
+  | "REJECTED"
+  | "UNKNOWN";
+
 type PublicFileSnapshot = {
+  id?: string;
   name: string;
   type: string;
+  mimeType: string;
   size: number;
   hash: string;
+  fileHash: string;
+  status: PublicFileStatus;
+  mode: PublicFileMode;
+  reason: string;
+  role: string;
+  textLength: number;
+  promptReady: boolean;
   preview?: string;
+  text?: string;
+  content?: string;
 };
 
 
@@ -552,7 +579,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-IPR-DELETE-VERIFICATION-v4";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-PDF-INGESTION-INJECTION-v5";
 
 
 
@@ -738,7 +765,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const sessionId = resolveSessionId(body);
   const incomingMessages = normalizeIncomingMessages(body.messages);
   const message = normalizeUserMessage(body, incomingMessages);
-  const files = normalizeFiles(body.files);
+  const files = resolveRuntimeFilesForChat(body.files, sessionId);
+  const fileIngestionRequested = isFileIngestionQuestion(message, files);
   const runtimeStatusTableRequested = isRuntimeStatusTableQuestion(message);
   const runtimeDiagnosticsRequested = isRuntimeDiagnosticsQuestion(message);
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
@@ -833,6 +861,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryRecoveryRequested,
     apiSdkB2GPresentationRequested,
     iprRecallRequested,
+    fileIngestionRequested,
+    fileIngestion: buildFileIngestionSummary(files),
     trainingDeleteVerificationRequested,
     trainingSoftDeleteApplicationRequested,
     trainingReelaborationRequested,
@@ -878,6 +908,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (fileIngestionRequested) {
+    answer = buildFileIngestionAnswer({
+      files,
+      handoff,
+      policy,
+      memory,
+      saasContext
+    });
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (trainingDeleteVerificationRequested) {
@@ -1206,7 +1246,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     securityOutcome: policy.securityOutcome,
     refused: policy.refused,
     limited: policy.limited,
-    failClosed: policy.failClosed
+    failClosed: policy.failClosed,
+    fileIngestion: buildFileIngestionSummary(files)
   };
 
 
@@ -1714,6 +1755,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
     files,
+    fileIngestion: buildFileIngestionSummary(files),
 
 
 
@@ -2020,6 +2062,8 @@ function buildSystemPrompt(
     "Answer in the same main language used by the user.",
     "If the user asks for GitHub or code work, provide complete files when requested, not partial patches.",
     "If visibility is incomplete, say so clearly.",
+    "File ingestion routing is strict: TEXT_READY and PDF_INGESTION_READY are usable prompt context; PDF_METADATA_ONLY means the file exists but no readable PDF text reached the chat runtime; PDF_INGESTION_FAIL means a PDF payload reached the runtime but text extraction failed; REFERENCE_ONLY and REJECTED must not be treated as readable content.",
+    "If the user runs a file ingestion test and a PDF has status PDF_INGESTION_READY, answer PDF_INGESTION_READY and cite the detected filename, text availability and key terms found in the extracted text. If only metadata is available, answer PDF_METADATA_ONLY. Never pretend to have read PDF text that is not present in file text/content/preview.",
     "",
     iprRecall.injected ? "Injected IPR recall memory block:" : "Injected IPR recall memory block: RECALL_EMPTY",
     iprRecall.injected ? iprRecall.promptBlock : "No reusable IPR memory record was available for this request.",
@@ -2032,12 +2076,21 @@ function buildSystemPrompt(
         policy: policyContext,
         memory: memoryContext,
         iprRecall: recallContext,
+        fileIngestion: buildFileIngestionSummary(files),
         files: files.map((file) => ({
+          id: file.id,
           name: file.name,
           type: file.type,
+          mimeType: file.mimeType,
           size: file.size,
           hash: file.hash,
-          hasPreview: Boolean(file.preview)
+          status: file.status,
+          mode: file.mode,
+          textLength: file.textLength,
+          promptReady: file.promptReady,
+          hasPreview: Boolean(file.preview),
+          hasText: Boolean(getPromptTextForFile(file).trim()),
+          reason: file.reason
         }))
       },
       null,
@@ -4111,15 +4164,61 @@ function buildUserPrompt(message: string, files: PublicFileSnapshot[]): string {
     return message || "Messaggio utente vuoto.";
   }
 
+  const promptReadyFiles = files.filter((file) => file.promptReady);
+  const blockedFiles = files.filter((file) => !file.promptReady);
 
-
-
-  return [
+  const sections = [
     message || "Messaggio utente vuoto.",
     "",
-    "File snapshots available to this request:",
-    JSON.stringify(files, null, 2)
-  ].join("\n");
+    "HBCE/JOKER-C2 file ingestion summary:",
+    JSON.stringify(buildFileIngestionSummary(files), null, 2)
+  ];
+
+  if (promptReadyFiles.length > 0) {
+    sections.push("", "Readable file context injected into this request:");
+
+    for (const file of promptReadyFiles) {
+      const text = getPromptTextForFile(file);
+
+      sections.push(
+        [
+          "----- BEGIN FILE CONTEXT -----",
+          "name: " + file.name,
+          "status: " + file.status,
+          "mode: " + file.mode,
+          "mimeType: " + file.mimeType,
+          "textLength: " + String(file.textLength),
+          "hash: " + file.hash,
+          "reason: " + file.reason,
+          "",
+          truncate(text, 24000),
+          "------ END FILE CONTEXT ------"
+        ].join("\n")
+      );
+    }
+  }
+
+  if (blockedFiles.length > 0) {
+    sections.push(
+      "",
+      "Files not injected as readable prompt context:",
+      JSON.stringify(
+        blockedFiles.map((file) => ({
+          id: file.id,
+          name: file.name,
+          status: file.status,
+          mode: file.mode,
+          mimeType: file.mimeType,
+          textLength: file.textLength,
+          reason: file.reason
+        })),
+        null,
+        2
+      )
+    );
+  }
+
+  return sections.join("\n");
 }
 
 
@@ -8525,81 +8624,611 @@ function normalizeIncomingMessages(value: JsonValue | undefined): ChatTurn[] {
 
 
 
+function resolveRuntimeFilesForChat(
+  value: JsonValue | undefined,
+  sessionId: string
+): PublicFileSnapshot[] {
+  const storedFiles = readStoredRuntimeFiles(sessionId);
+  const requestFiles = normalizeFiles(value);
+
+  return mergePublicFiles([...storedFiles, ...requestFiles]).slice(0, 12);
+}
+
+function readStoredRuntimeFiles(sessionId: string): PublicFileSnapshot[] {
+  const globalStore = (
+    globalThis as typeof globalThis & {
+      __HBCE_JOKER_C2_FILE_STORE__?: Map<string, unknown[]>;
+    }
+  ).__HBCE_JOKER_C2_FILE_STORE__;
+
+  if (!globalStore || typeof globalStore.get !== "function") {
+    return [];
+  }
+
+  const stored = globalStore.get(sessionId);
+
+  if (!Array.isArray(stored)) {
+    return [];
+  }
+
+  return normalizeFiles(toCanonicalValue(stored) as JsonValue);
+}
+
+function mergePublicFiles(files: PublicFileSnapshot[]): PublicFileSnapshot[] {
+  const seen = new Map<string, PublicFileSnapshot>();
+
+  for (const file of files) {
+    const key = file.id || `${file.name}:${file.hash}:${file.status}`;
+
+    if (!seen.has(key)) {
+      seen.set(key, file);
+      continue;
+    }
+
+    const existing = seen.get(key);
+
+    if (!existing) {
+      seen.set(key, file);
+      continue;
+    }
+
+    if (!existing.promptReady && file.promptReady) {
+      seen.set(key, file);
+      continue;
+    }
+
+    if (
+      existing.promptReady === file.promptReady &&
+      getPromptTextForFile(file).length > getPromptTextForFile(existing).length
+    ) {
+      seen.set(key, file);
+    }
+  }
+
+  return Array.from(seen.values());
+}
+
 function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
   if (!Array.isArray(value)) {
     return [];
   }
 
-
-
-
   const files: PublicFileSnapshot[] = [];
-
-
-
 
   for (const item of value) {
     const object = asJsonObject(item);
-
-
-
 
     if (!object) {
       continue;
     }
 
-
-
-
     const name =
-      firstStringFromSources([object], ["name", "filename", "fileName", "title"]) ||
-      "unnamed-file";
+      firstStringFromSources([object], [
+        "name",
+        "filename",
+        "fileName",
+        "title"
+      ]) || "unnamed-file";
 
+    const mimeType =
+      firstStringFromSources([object], [
+        "mimeType",
+        "type",
+        "mime",
+        "contentType"
+      ]) || inferRuntimeFileMimeType(name);
 
-
-
-    const type =
-      firstStringFromSources([object], ["type", "mimeType", "mime", "contentType"]) ||
-      "application/octet-stream";
-
-
-
-
-    const content = contentToText(
-      object.content || object.text || object.body || object.preview || object.data || ""
+    const type = mimeType;
+    const role = firstStringFromSources([object], ["role", "purpose"]) || "context";
+    const content = resolveRuntimeFileText(object);
+    const textLength = normalizePositiveInteger(
+      numberFromUnknown(object.textLength) ?? content.length,
+      content.length
     );
-
-
-
-
-    const sizeValue = object.size;
-    const size =
-      typeof sizeValue === "number" && Number.isFinite(sizeValue)
-        ? sizeValue
-        : content.length;
-
-
-
+    const size = normalizePositiveInteger(
+      numberFromUnknown(object.size) ?? textLength,
+      textLength
+    );
+    const declaredStatus = normalizePublicFileStatus(
+      firstStringFromSources([object], ["status", "fileStatus", "ingestionStatus"])
+    );
+    const status = resolvePublicFileStatus({
+      name,
+      mimeType,
+      declaredStatus,
+      content
+    });
+    const mode = resolvePublicFileMode(
+      firstStringFromSources([object], ["mode", "fileMode", "ingestionMode"]),
+      status
+    );
+    const fileHash =
+      firstStringFromSources([object], ["fileHash", "hash", "sha256"]) ||
+      sha256({
+        name,
+        mimeType,
+        size,
+        status,
+        content
+      });
+    const id = firstStringFromSources([object], ["id", "fileId", "runtimeFileId"]) || undefined;
+    const reason =
+      firstStringFromSources([object], ["reason", "diagnostic", "message"]) ||
+      defaultFileStatusReason(status);
+    const promptReady = isPromptReadyFileStatus(status) && content.trim().length > 0;
+    const preview = content ? truncate(content, 2000) : undefined;
 
     files.push({
+      id,
       name,
       type,
+      mimeType,
       size,
-      hash: sha256({
-        name,
-        type,
-        size,
-        content
-      }),
-      preview: content ? truncate(content, 2000) : undefined
+      hash: fileHash,
+      fileHash,
+      status,
+      mode,
+      reason,
+      role,
+      textLength: content.length > 0 ? content.length : textLength,
+      promptReady,
+      preview,
+      text: promptReady ? content : undefined,
+      content: promptReady ? content : undefined
     });
   }
 
-
-
-
   return files.slice(0, 12);
 }
+
+function inferRuntimeFileMimeType(name: string): string {
+  const normalizedName = name.toLowerCase();
+
+  if (normalizedName.endsWith(".pdf")) {
+    return "application/pdf";
+  }
+
+  if (normalizedName.endsWith(".txt")) {
+    return "text/plain";
+  }
+
+  if (normalizedName.endsWith(".md") || normalizedName.endsWith(".markdown")) {
+    return "application/markdown";
+  }
+
+  if (normalizedName.endsWith(".json")) {
+    return "application/json";
+  }
+
+  if (normalizedName.endsWith(".csv")) {
+    return "application/csv";
+  }
+
+  if (normalizedName.endsWith(".xml")) {
+    return "application/xml";
+  }
+
+  if (normalizedName.endsWith(".yaml") || normalizedName.endsWith(".yml")) {
+    return "application/yaml";
+  }
+
+  if (normalizedName.endsWith(".ts") || normalizedName.endsWith(".tsx")) {
+    return "application/typescript";
+  }
+
+  if (normalizedName.endsWith(".js") || normalizedName.endsWith(".jsx")) {
+    return "application/javascript";
+  }
+
+  return "application/octet-stream";
+}
+
+function resolveRuntimeFileText(object: JsonObject): string {
+  const directText = firstStringOrJoinedFromSources(
+    [object],
+    ["text", "content", "body", "preview", "extractedText", "fileText"]
+  );
+
+  if (directText.trim()) {
+    return directText.slice(0, 120000);
+  }
+
+  const data = object.data;
+  const dataObject = asJsonObject(data);
+
+  if (dataObject) {
+    const nestedText = firstStringOrJoinedFromSources(
+      [dataObject],
+      ["text", "content", "body", "preview", "extractedText", "fileText"]
+    );
+
+    if (nestedText.trim()) {
+      return nestedText.slice(0, 120000);
+    }
+  }
+
+  return "";
+}
+
+function normalizePublicFileStatus(value: string): PublicFileStatus {
+  const normalized = value.trim().toUpperCase();
+
+  if (normalized === "TEXT_READY") {
+    return "TEXT_READY";
+  }
+
+  if (normalized === "PDF_INGESTION_READY") {
+    return "PDF_INGESTION_READY";
+  }
+
+  if (normalized === "PDF_METADATA_ONLY") {
+    return "PDF_METADATA_ONLY";
+  }
+
+  if (normalized === "PDF_INGESTION_FAIL") {
+    return "PDF_INGESTION_FAIL";
+  }
+
+  if (normalized === "REFERENCE_ONLY") {
+    return "REFERENCE_ONLY";
+  }
+
+  if (normalized === "REJECTED") {
+    return "REJECTED";
+  }
+
+  return "UNKNOWN";
+}
+
+function resolvePublicFileStatus(args: {
+  name: string;
+  mimeType: string;
+  declaredStatus: PublicFileStatus;
+  content: string;
+}): PublicFileStatus {
+  const isPdf =
+    args.mimeType.toLowerCase().includes("pdf") ||
+    args.name.toLowerCase().endsWith(".pdf");
+
+  if (
+    (args.declaredStatus === "TEXT_READY" ||
+      args.declaredStatus === "PDF_INGESTION_READY") &&
+    !args.content.trim()
+  ) {
+    return isPdf ? "PDF_METADATA_ONLY" : "REFERENCE_ONLY";
+  }
+
+  if (args.declaredStatus !== "UNKNOWN") {
+    return args.declaredStatus;
+  }
+
+  if (isPdf && args.content.trim()) {
+    return "PDF_INGESTION_READY";
+  }
+
+  if (isPdf) {
+    return "PDF_METADATA_ONLY";
+  }
+
+  if (args.content.trim()) {
+    return "TEXT_READY";
+  }
+
+  return "REFERENCE_ONLY";
+}
+
+function resolvePublicFileMode(value: string, status: PublicFileStatus): PublicFileMode {
+  const normalized = value.trim().toUpperCase();
+
+  if (normalized === "TEXT") {
+    return "TEXT";
+  }
+
+  if (normalized === "PDF_TEXT") {
+    return "PDF_TEXT";
+  }
+
+  if (normalized === "REFERENCE_ONLY") {
+    return "REFERENCE_ONLY";
+  }
+
+  if (normalized === "REJECTED") {
+    return "REJECTED";
+  }
+
+  if (status === "TEXT_READY") {
+    return "TEXT";
+  }
+
+  if (status === "PDF_INGESTION_READY") {
+    return "PDF_TEXT";
+  }
+
+  if (status === "REJECTED") {
+    return "REJECTED";
+  }
+
+  if (
+    status === "PDF_METADATA_ONLY" ||
+    status === "PDF_INGESTION_FAIL" ||
+    status === "REFERENCE_ONLY"
+  ) {
+    return "REFERENCE_ONLY";
+  }
+
+  return "UNKNOWN";
+}
+
+function isPromptReadyFileStatus(status: PublicFileStatus): boolean {
+  return status === "TEXT_READY" || status === "PDF_INGESTION_READY";
+}
+
+function defaultFileStatusReason(status: PublicFileStatus): string {
+  if (status === "TEXT_READY") {
+    return "Text file content is available to the chat runtime.";
+  }
+
+  if (status === "PDF_INGESTION_READY") {
+    return "PDF text content is available to the chat runtime.";
+  }
+
+  if (status === "PDF_METADATA_ONLY") {
+    return "PDF metadata is available, but no readable text reached the chat runtime.";
+  }
+
+  if (status === "PDF_INGESTION_FAIL") {
+    return "PDF payload was received, but readable text extraction failed.";
+  }
+
+  if (status === "REFERENCE_ONLY") {
+    return "File is visible as a reference only and is not usable as prompt text.";
+  }
+
+  if (status === "REJECTED") {
+    return "File was rejected by the ingestion layer.";
+  }
+
+  return "File ingestion status is unknown.";
+}
+
+function getPromptTextForFile(file: PublicFileSnapshot): string {
+  return file.text || file.content || file.preview || "";
+}
+
+function buildFileIngestionSummary(files: PublicFileSnapshot[]) {
+  const promptReadyFiles = files.filter((file) => file.promptReady);
+  const pdfReadyFiles = files.filter((file) => file.status === "PDF_INGESTION_READY");
+  const pdfMetadataOnlyFiles = files.filter((file) => file.status === "PDF_METADATA_ONLY");
+  const pdfFailFiles = files.filter((file) => file.status === "PDF_INGESTION_FAIL");
+  const textReadyFiles = files.filter((file) => file.status === "TEXT_READY");
+
+  return {
+    status: resolveDominantFileIngestionStatus(files),
+    count: files.length,
+    promptReadyCount: promptReadyFiles.length,
+    textReadyCount: textReadyFiles.length,
+    pdfReadyCount: pdfReadyFiles.length,
+    pdfMetadataOnlyCount: pdfMetadataOnlyFiles.length,
+    pdfIngestionFailCount: pdfFailFiles.length,
+    referenceOnlyCount: files.filter((file) => file.status === "REFERENCE_ONLY").length,
+    rejectedCount: files.filter((file) => file.status === "REJECTED").length,
+    totalPromptTextLength: promptReadyFiles.reduce(
+      (sum, file) => sum + getPromptTextForFile(file).length,
+      0
+    ),
+    files: files.map((file) => ({
+      id: file.id,
+      name: file.name,
+      mimeType: file.mimeType,
+      status: file.status,
+      mode: file.mode,
+      textLength: getPromptTextForFile(file).length,
+      promptReady: file.promptReady,
+      hash: file.hash,
+      reason: file.reason
+    })),
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
+function resolveDominantFileIngestionStatus(files: PublicFileSnapshot[]): PublicFileStatus | "NO_FILES" {
+  if (files.length === 0) {
+    return "NO_FILES";
+  }
+
+  if (files.some((file) => file.status === "PDF_INGESTION_READY")) {
+    return "PDF_INGESTION_READY";
+  }
+
+  if (files.some((file) => file.status === "TEXT_READY")) {
+    return "TEXT_READY";
+  }
+
+  if (files.some((file) => file.status === "PDF_INGESTION_FAIL")) {
+    return "PDF_INGESTION_FAIL";
+  }
+
+  if (files.some((file) => file.status === "PDF_METADATA_ONLY")) {
+    return "PDF_METADATA_ONLY";
+  }
+
+  if (files.some((file) => file.status === "REFERENCE_ONLY")) {
+    return "REFERENCE_ONLY";
+  }
+
+  if (files.some((file) => file.status === "REJECTED")) {
+    return "REJECTED";
+  }
+
+  return "UNKNOWN";
+}
+
+function isFileIngestionQuestion(
+  message: string,
+  files: PublicFileSnapshot[]
+): boolean {
+  const normalized = normalizeText(message);
+
+  if (files.length === 0) {
+    return false;
+  }
+
+  return (
+    normalized.includes("test file ingestion") ||
+    normalized.includes("file ingestion") ||
+    normalized.includes("lettura file") ||
+    normalized.includes("lettura pdf") ||
+    normalized.includes("pdf ingestion") ||
+    normalized.includes("pdf_metadata_only") ||
+    normalized.includes("pdf_ingestion_ready") ||
+    normalized.includes("codice unico") ||
+    normalized.includes("file e stato letto") ||
+    normalized.includes("file è stato letto")
+  );
+}
+
+function buildFileIngestionAnswer(args: {
+  files: PublicFileSnapshot[];
+  handoff: HandoffResolution;
+  policy: PolicyEvaluation;
+  memory: RuntimeMemoryState;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const summary = buildFileIngestionSummary(args.files);
+  const status = summary.status;
+  const promptReadyFiles = args.files.filter((file) => file.promptReady);
+  const pdfReadyFiles = args.files.filter(
+    (file) => file.status === "PDF_INGESTION_READY"
+  );
+  const pdfMetadataOnlyFiles = args.files.filter(
+    (file) => file.status === "PDF_METADATA_ONLY"
+  );
+  const pdfFailFiles = args.files.filter(
+    (file) => file.status === "PDF_INGESTION_FAIL"
+  );
+  const primaryFile =
+    pdfReadyFiles[0] ||
+    promptReadyFiles[0] ||
+    pdfMetadataOnlyFiles[0] ||
+    pdfFailFiles[0] ||
+    args.files[0];
+
+  const primaryText = primaryFile ? getPromptTextForFile(primaryFile) : "";
+  const detectedConcepts = detectHbceConcepts(primaryText);
+  const keyLine = detectFileIngestionKeyLine(primaryText);
+
+  if (status === "PDF_INGESTION_READY") {
+    return [
+      "PDF_INGESTION_READY",
+      "",
+      "1. Nome del file rilevato: **" + (primaryFile?.name || "NO_FILE") + "**",
+      "2. Contenuto disponibile al runtime: **Sì (testo PDF estratto e iniettabile nel prompt)**",
+      keyLine
+        ? "3. Frase/codice chiave contenuto nel PDF: **“" + keyLine + "”**"
+        : "3. Frase/codice chiave contenuto nel PDF: **non rilevato automaticamente nella preview disponibile**",
+      "4. Concetti HBCE presenti nel file:",
+      "   - **IPR**: " + detectedConcepts.ipr,
+      "   - **EVT**: " + detectedConcepts.evt,
+      "   - **OPC**: " + detectedConcepts.opc,
+      "   - **MATRIX**: " + detectedConcepts.matrix,
+      "5. File prompt-ready: **" + String(summary.promptReadyCount) + "**",
+      "6. legalCertification=false",
+      "7. OPC=technical proof receipt only"
+    ].join("\n");
+  }
+
+  if (status === "TEXT_READY") {
+    return [
+      "FILE_INGESTION_READY",
+      "",
+      "1. Nome del file rilevato: **" + (primaryFile?.name || "NO_FILE") + "**",
+      "2. Contenuto disponibile al runtime: **Sì (preview/testo disponibile)**",
+      keyLine
+        ? "3. Frase chiave contenuta nel file: **“" + keyLine + "”**"
+        : "3. Frase chiave contenuta nel file: **non rilevata automaticamente nella preview disponibile**",
+      "4. Concetti HBCE presenti nel file:",
+      "   - **IPR**: " + detectedConcepts.ipr,
+      "   - **EVT**: " + detectedConcepts.evt,
+      "   - **OPC**: " + detectedConcepts.opc,
+      "   - **MATRIX**: " + detectedConcepts.matrix,
+      "5. legalCertification=false",
+      "6. OPC=technical proof receipt only"
+    ].join("\n");
+  }
+
+  if (status === "PDF_INGESTION_FAIL") {
+    return [
+      "PDF_INGESTION_FAIL",
+      "legalCertification=false",
+      "",
+      "1. Nome del file rilevato: **" + (primaryFile?.name || "NO_FILE") + "**",
+      "2. Contenuto disponibile al runtime: **No**",
+      "3. Diagnostica: **payload PDF ricevuto, ma testo non estratto**",
+      "4. Causa probabile: PDF scansionato, image-only, cifrato o struttura non supportata dal parser leggero.",
+      "5. OPC=technical proof receipt only"
+    ].join("\n");
+  }
+
+  if (status === "PDF_METADATA_ONLY") {
+    return [
+      "PDF_METADATA_ONLY",
+      "legalCertification=false",
+      "",
+      "1. Nome del file rilevato: **" + (primaryFile?.name || "NO_FILE") + "**",
+      "2. Contenuto disponibile al runtime: **No**",
+      "3. Diagnostica: **il PDF è arrivato alla chat solo come metadato/referenza; testo/content/preview non sono disponibili**",
+      "4. Prossimo controllo: verificare che `app/api/files/route.ts` restituisca `PDF_INGESTION_READY` con `includeText=true` o che l’interfaccia passi `text/content` a `/api/chat`.",
+      "5. OPC=technical proof receipt only"
+    ].join("\n");
+  }
+
+  return [
+    String(status),
+    "legalCertification=false",
+    "",
+    "1. File rilevati: **" + String(summary.count) + "**",
+    "2. File prompt-ready: **" + String(summary.promptReadyCount) + "**",
+    "3. Stato dominante: **" + String(status) + "**",
+    "4. OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+function detectHbceConcepts(text: string) {
+  const normalized = normalizeText(text);
+
+  return {
+    ipr: normalized.includes("ipr") ? "presente" : "non rilevato",
+    evt: normalized.includes("evt") ? "presente" : "non rilevato",
+    opc: normalized.includes("opc") ? "presente" : "non rilevato",
+    matrix: normalized.includes("matrix") ? "presente" : "non rilevato"
+  };
+}
+
+function detectFileIngestionKeyLine(text: string): string | null {
+  const lines = text
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const priority = lines.find((line) => {
+    const normalized = normalizeText(line);
+
+    return (
+      normalized.includes("file e stato letto correttamente") ||
+      normalized.includes("file è stato letto correttamente") ||
+      normalized.includes("codice unico") ||
+      normalized.includes("pdf") ||
+      normalized.includes("ipr") ||
+      normalized.includes("evt") ||
+      normalized.includes("opc") ||
+      normalized.includes("matrix")
+    );
+  });
+
+  return priority ? truncate(priority, 240) : null;
+}
+
 
 
 
