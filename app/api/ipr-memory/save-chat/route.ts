@@ -39,7 +39,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.4";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.5";
 const THREAD_AUTHORITY_RUNTIME_VALIDATED = "SERVER_RUNTIME_VALIDATED";
 const THREAD_SCOPE_RUNTIME_ONLY = "RUNTIME_ONLY";
 const SAVE_INTENT_USER_EXPLICIT_TO_IPR = "USER_EXPLICIT_SAVE_TO_IPR";
@@ -276,6 +276,34 @@ function normalizeRuntimeDecisionForDatabase(value: unknown): string {
   return RUNTIME_DECISION_ALLOW;
 }
 
+function normalizeRuntimeStateForDatabase(value: unknown): string | null {
+  const normalized = normalizeString(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const token = normalized
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  if (!token) {
+    return null;
+  }
+
+  /*
+   * Legacy Neon/Postgres databases may still expose chat_messages_runtime_state_check.
+   * Runtime state has evolved from a small enum into a descriptive runtime label
+   * such as COMPLETED, ACCESS_GRANTED, ASSISTANT_RESPONSE, USER_MESSAGE or
+   * JOKER_C2_SAAS_CORE_HEALTHY. Passing those labels directly can violate the
+   * legacy check. We store the raw value in metadata and keep the database column
+   * null, which is valid for CHECK constraints and avoids corrupt enum mapping.
+   */
+  return null;
+}
+
+
 function readHeaderString(request: NextRequest, name: string): string | null {
   return normalizeString(request.headers.get(name));
 }
@@ -350,7 +378,7 @@ function normalizeMessages(value: unknown): SaveChatMessageInput[] {
         evtId: normalizeString(message.evtId),
         opcProofId: normalizeString(message.opcProofId),
         opcChainHash: normalizeString(message.opcChainHash),
-        runtimeState: normalizeString(message.runtimeState),
+        runtimeState: normalizeRuntimeStateForDatabase(message.runtimeState),
         runtimeDecision: normalizeRuntimeDecisionForDatabase(message.runtimeDecision),
         generationClass: normalizeString(message.generationClass),
         messageVisibility: normalizeString(message.messageVisibility),
@@ -616,7 +644,7 @@ async function persistProvidedMessages(context: SaveChatRouteContext) {
         birthAnchorUtc: context.birthAnchorUtc,
         jokerLifetime: context.jokerLifetime,
         jokerLifeSeconds: context.jokerLifeSeconds,
-        runtimeState: normalizeString(message.runtimeState) ?? "IPR_MEMORY_SAVE_ROUTE",
+        runtimeState: normalizeRuntimeStateForDatabase(message.runtimeState),
         runtimeDecision: normalizeRuntimeDecisionForDatabase(message.runtimeDecision),
         generationClass: normalizeString(message.generationClass) ?? "CHAT_MEMORY_SAVE",
         messageVisibility: normalizeString(message.messageVisibility) ?? "THREAD",
@@ -628,6 +656,8 @@ async function persistProvidedMessages(context: SaveChatRouteContext) {
         metadata: {
           ...(message.metadata ?? {}),
           source: "IPR_MEMORY_SAVE_CHAT_ROUTE",
+          originalRuntimeState: normalizeString(message.runtimeState) ?? "IPR_MEMORY_SAVE_ROUTE",
+          runtimeStateDatabasePolicy: "NULL_TO_SATISFY_LEGACY_CHAT_MESSAGES_RUNTIME_STATE_CHECK",
           rawContentSavedInMemory: context.rawContentSaved,
           legalCertification: false
         },
@@ -960,7 +990,7 @@ export async function GET() {
       primaryIntention:
         "string; canonical meaning: IPR as Intenzione Primaria Radicale saved from the chat",
       selectedMessageIds: "string[]",
-      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO and runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE before database insert",
+      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO, runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE and runtimeState is stored legacy-safe before database insert",
       saveRaw: "boolean; default false",
       saveSynthesis: "boolean; default true",
       reusableInPrompt: "boolean; default true"
