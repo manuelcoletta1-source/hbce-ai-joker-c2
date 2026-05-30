@@ -1,9 +1,10 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
   ensureHbceDatabaseReady,
   persistIprChatMessageToDatabase,
+  queryHbceDatabase,
   saveIprChatToMemoryDatabase,
   toPublicIprChatMemorySave,
   toPublicIprChatMessage,
@@ -39,7 +40,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.6";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.7";
 const THREAD_AUTHORITY_RUNTIME_VALIDATED = "SERVER_RUNTIME_VALIDATED";
 const THREAD_SCOPE_RUNTIME_ONLY = "RUNTIME_ONLY";
 const SAVE_INTENT_USER_EXPLICIT_TO_IPR = "USER_EXPLICIT_SAVE_TO_IPR";
@@ -303,6 +304,317 @@ function normalizeRuntimeStateForDatabase(value: unknown): string | null {
   return null;
 }
 
+
+
+function buildFallbackMemoryId(context: SaveChatRouteContext, savedChatId: string | null): string {
+  const seed = [
+    "HBCE-IPR-MEMORY-FALLBACK",
+    context.humanIpr ?? "NO_HUMAN_IPR",
+    context.threadId ?? "NO_THREAD",
+    savedChatId ?? "NO_SAVED_CHAT",
+    context.evtId ?? "NO_EVT",
+    context.primaryIntention
+  ].join("|");
+
+  return `MEM-IPR-${createHash("sha256").update(seed).digest("hex").slice(0, 16).toUpperCase()}`;
+}
+
+function buildFallbackRegisteredEventId(memoryId: string, eventName: string): string {
+  return `REVT-${createHash("sha256").update(`${memoryId}|${eventName}`).digest("hex").slice(0, 16).toUpperCase()}`;
+}
+
+function buildFallbackMemoryKeyHash(context: SaveChatRouteContext): string {
+  return createHash("sha256")
+    .update(
+      [
+        context.humanIpr ?? "NO_HUMAN_IPR",
+        context.runtimeIpr,
+        context.tenantId ?? "NO_TENANT",
+        context.workspaceId ?? "NO_WORKSPACE",
+        context.sessionId ?? "NO_SESSION",
+        context.threadId ?? "NO_THREAD",
+        "IPR_BOUND_EXPLICIT_SAVE"
+      ].join("|")
+    )
+    .digest("hex");
+}
+
+async function persistFallbackMemoryRecordToDatabase(input: {
+  context: SaveChatRouteContext;
+  savedChatId: string | null;
+  memoryId: string | null;
+  selectedMessageIds: string[];
+  providedMessagesPersisted: number;
+}) {
+  const memoryId = input.memoryId ?? buildFallbackMemoryId(input.context, input.savedChatId);
+  const memoryKeyHash = buildFallbackMemoryKeyHash(input.context);
+  const recordPayload: JsonRecord = {
+    source: "SAVE_CHAT_ROUTE_MEMORY_RECORD_FALLBACK",
+    routeVersion: ROUTE_VERSION,
+    savedChatId: input.savedChatId,
+    memoryId,
+    primaryIntention: input.context.primaryIntention,
+    radicalIntention: input.context.radicalIntention,
+    selectedMessageIds: input.selectedMessageIds,
+    providedMessagesPersisted: input.providedMessagesPersisted,
+    evtId: input.context.evtId,
+    opcProofId: input.context.opcProofId,
+    auditId: input.context.auditId,
+    usageId: input.context.usageId,
+    policy: {
+      saveRaw: input.context.saveRaw,
+      saveSynthesis: input.context.saveSynthesis,
+      reusableInPrompt: input.context.reusableInPrompt,
+      rawContentSaved: input.context.rawContentSaved,
+      rawContentPolicy: input.context.rawContentPolicy,
+      legalCertification: false
+    },
+    boundary: {
+      opc: "technical proof receipt only",
+      legalCertification: false
+    }
+  };
+  const memoryHash = createHash("sha256").update(JSON.stringify(recordPayload)).digest("hex");
+  const memoryChainHash = createHash("sha256")
+    .update(`${input.context.previousSaveHash ?? "NO_PREVIOUS_SAVE"}|${memoryHash}`)
+    .digest("hex");
+
+  return queryHbceDatabase<Record<string, unknown>>(
+    `
+INSERT INTO memory_records (
+  memory_id,
+  tenant_id,
+  workspace_id,
+  memory_key_hash,
+  human_ipr,
+  runtime_ipr,
+  session_id,
+  thread_id,
+  scope,
+  authority,
+  persistence_mode,
+  memory_kind,
+  memory_status,
+  source_kind,
+  source_thread_id,
+  source_saved_chat_id,
+  source_message_ids,
+  memory_title,
+  memory_summary,
+  save_raw,
+  save_synthesis,
+  reusable_in_prompt,
+  classification,
+  quality,
+  threshold_detected,
+  semantic_terms,
+  memory_hash,
+  memory_chain_hash,
+  last_evt_id,
+  last_opc_proof_id,
+  last_opc_chain_hash,
+  temporal_certificate,
+  response_utc,
+  birth_anchor_local,
+  birth_anchor_utc,
+  joker_lifetime,
+  joker_life_seconds,
+  record_payload,
+  legal_certification,
+  created_at,
+  updated_at
+)
+VALUES (
+  $1, $2, $3, $4, $5, COALESCE($6, 'IPR-AI-0001'), COALESCE($7, $8, $9),
+  $8, 'RUNTIME_ONLY', 'SESSION_RUNTIME_ONLY', 'DATABASE_PERSISTENT', 'RUNTIME_MEMORY',
+  'ACTIVE', 'RUNTIME_MEMORY', $8, $10, COALESCE($11::jsonb, '[]'::jsonb),
+  $12, $13, $14, $15, $16, $17, 'CANONICAL', true,
+  '[]'::jsonb, $18, $19, $20, $21, $22, COALESCE($23::jsonb, '{}'::jsonb),
+  COALESCE($24::timestamptz, now()), $25, $26::timestamptz, $27, $28,
+  COALESCE($29::jsonb, '{}'::jsonb), false, COALESCE($24::timestamptz, now()), now()
+)
+ON CONFLICT (memory_id)
+DO UPDATE SET
+  tenant_id = EXCLUDED.tenant_id,
+  workspace_id = EXCLUDED.workspace_id,
+  memory_key_hash = EXCLUDED.memory_key_hash,
+  human_ipr = EXCLUDED.human_ipr,
+  runtime_ipr = EXCLUDED.runtime_ipr,
+  session_id = EXCLUDED.session_id,
+  thread_id = EXCLUDED.thread_id,
+  source_thread_id = EXCLUDED.source_thread_id,
+  source_saved_chat_id = EXCLUDED.source_saved_chat_id,
+  source_message_ids = EXCLUDED.source_message_ids,
+  memory_title = EXCLUDED.memory_title,
+  memory_summary = EXCLUDED.memory_summary,
+  save_raw = EXCLUDED.save_raw,
+  save_synthesis = EXCLUDED.save_synthesis,
+  reusable_in_prompt = EXCLUDED.reusable_in_prompt,
+  classification = EXCLUDED.classification,
+  quality = EXCLUDED.quality,
+  threshold_detected = EXCLUDED.threshold_detected,
+  memory_hash = EXCLUDED.memory_hash,
+  memory_chain_hash = EXCLUDED.memory_chain_hash,
+  last_evt_id = EXCLUDED.last_evt_id,
+  last_opc_proof_id = EXCLUDED.last_opc_proof_id,
+  last_opc_chain_hash = EXCLUDED.last_opc_chain_hash,
+  temporal_certificate = EXCLUDED.temporal_certificate,
+  response_utc = EXCLUDED.response_utc,
+  birth_anchor_local = EXCLUDED.birth_anchor_local,
+  birth_anchor_utc = EXCLUDED.birth_anchor_utc,
+  joker_lifetime = EXCLUDED.joker_lifetime,
+  joker_life_seconds = EXCLUDED.joker_life_seconds,
+  record_payload = EXCLUDED.record_payload,
+  legal_certification = false,
+  updated_at = now()
+RETURNING *;
+`.trim(),
+    [
+      memoryId,
+      input.context.tenantId,
+      input.context.workspaceId,
+      memoryKeyHash,
+      input.context.humanIpr,
+      input.context.runtimeIpr,
+      input.context.sessionId,
+      input.context.threadId,
+      input.context.humanIpr,
+      input.savedChatId,
+      JSON.stringify(input.selectedMessageIds),
+      input.context.memoryTitle,
+      input.context.memorySummary,
+      input.context.saveRaw,
+      input.context.saveSynthesis,
+      input.context.reusableInPrompt,
+      input.context.classification,
+      memoryHash,
+      memoryChainHash,
+      input.context.evtId,
+      input.context.opcProofId,
+      null,
+      JSON.stringify(input.context.temporalCertificate),
+      input.context.responseUtc,
+      input.context.birthAnchorLocal,
+      input.context.birthAnchorUtc,
+      input.context.jokerLifetime,
+      input.context.jokerLifeSeconds,
+      JSON.stringify(recordPayload)
+    ]
+  );
+}
+
+async function persistFallbackRegisteredEventToDatabase(input: {
+  context: SaveChatRouteContext;
+  savedChatId: string | null;
+  memoryId: string;
+}) {
+  const eventName = input.context.memoryTitle || input.context.primaryIntention || "Saved JOKER-C2 chat on IPR";
+  const registeredEventId = buildFallbackRegisteredEventId(input.memoryId, eventName);
+  const payload: JsonRecord = {
+    source: "SAVE_CHAT_ROUTE_REGISTERED_EVENT_FALLBACK",
+    routeVersion: ROUTE_VERSION,
+    registeredEventId,
+    savedChatId: input.savedChatId,
+    memoryId: input.memoryId,
+    eventName,
+    evtId: input.context.evtId,
+    opcProofId: input.context.opcProofId,
+    auditId: input.context.auditId,
+    usageId: input.context.usageId,
+    legalCertification: false
+  };
+  const continuityHash = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+
+  return queryHbceDatabase<Record<string, unknown>>(
+    `
+INSERT INTO memory_registered_events (
+  registered_event_id,
+  tenant_id,
+  workspace_id,
+  subscription_id,
+  account_id,
+  human_ipr,
+  runtime_ipr,
+  memory_id,
+  source_saved_chat_id,
+  evt_id,
+  opc_proof_id,
+  audit_id,
+  usage_id,
+  event_name,
+  event_scope,
+  event_status,
+  continuity_hash,
+  temporal_certificate,
+  response_utc,
+  birth_anchor_local,
+  birth_anchor_utc,
+  joker_lifetime,
+  joker_life_seconds,
+  payload,
+  legal_certification,
+  created_at
+)
+VALUES (
+  $1, $2, $3, $4, $5, $6, COALESCE($7, 'IPR-AI-0001'), $8, $9, $10,
+  $11, $12, $13, $14, 'IPR_BOUND', 'ACTIVE', $15, COALESCE($16::jsonb, '{}'::jsonb),
+  COALESCE($17::timestamptz, now()), $18, $19::timestamptz, $20, $21,
+  COALESCE($22::jsonb, '{}'::jsonb), false, COALESCE($17::timestamptz, now())
+)
+ON CONFLICT (registered_event_id)
+DO UPDATE SET
+  tenant_id = EXCLUDED.tenant_id,
+  workspace_id = EXCLUDED.workspace_id,
+  subscription_id = EXCLUDED.subscription_id,
+  account_id = EXCLUDED.account_id,
+  human_ipr = EXCLUDED.human_ipr,
+  runtime_ipr = EXCLUDED.runtime_ipr,
+  memory_id = EXCLUDED.memory_id,
+  source_saved_chat_id = EXCLUDED.source_saved_chat_id,
+  evt_id = EXCLUDED.evt_id,
+  opc_proof_id = EXCLUDED.opc_proof_id,
+  audit_id = EXCLUDED.audit_id,
+  usage_id = EXCLUDED.usage_id,
+  event_name = EXCLUDED.event_name,
+  event_scope = EXCLUDED.event_scope,
+  event_status = EXCLUDED.event_status,
+  continuity_hash = EXCLUDED.continuity_hash,
+  temporal_certificate = EXCLUDED.temporal_certificate,
+  response_utc = EXCLUDED.response_utc,
+  birth_anchor_local = EXCLUDED.birth_anchor_local,
+  birth_anchor_utc = EXCLUDED.birth_anchor_utc,
+  joker_lifetime = EXCLUDED.joker_lifetime,
+  joker_life_seconds = EXCLUDED.joker_life_seconds,
+  payload = EXCLUDED.payload,
+  legal_certification = false
+RETURNING *;
+`.trim(),
+    [
+      registeredEventId,
+      input.context.tenantId,
+      input.context.workspaceId,
+      input.context.subscriptionId,
+      input.context.accountId,
+      input.context.humanIpr,
+      input.context.runtimeIpr,
+      input.memoryId,
+      input.savedChatId,
+      input.context.evtId,
+      input.context.opcProofId,
+      input.context.auditId,
+      input.context.usageId,
+      eventName,
+      continuityHash,
+      JSON.stringify(input.context.temporalCertificate),
+      input.context.responseUtc,
+      input.context.birthAnchorLocal,
+      input.context.birthAnchorUtc,
+      input.context.jokerLifetime,
+      input.context.jokerLifeSeconds,
+      JSON.stringify(payload)
+    ]
+  );
+}
 
 function readHeaderString(request: NextRequest, name: string): string | null {
   return normalizeString(request.headers.get(name));
@@ -947,13 +1259,53 @@ async function buildSavePayload(request: NextRequest) {
     result.rows.map(toPublicIprChatMessage)
   );
 
-  const httpStatus = saveResult.ok ? 201 : 207;
+  const fallbackMemoryResult = publicMemory
+    ? null
+    : await persistFallbackMemoryRecordToDatabase({
+        context,
+        savedChatId: saveResult.savedChatId,
+        memoryId: saveResult.memoryId,
+        selectedMessageIds,
+        providedMessagesPersisted: messagePersistResults.length
+      });
+
+  const fallbackMemory = fallbackMemoryResult?.rows[0]
+    ? toPublicIprMemoryRecord(fallbackMemoryResult.rows[0])
+    : null;
+
+  const effectiveMemory = publicMemory ?? fallbackMemory;
+  const effectiveMemoryId =
+    normalizeString((effectiveMemory as JsonRecord | null)?.memoryId) ?? saveResult.memoryId;
+
+  const fallbackRegisteredEventResult = publicRegisteredEvent || !effectiveMemoryId
+    ? null
+    : await persistFallbackRegisteredEventToDatabase({
+        context,
+        savedChatId: saveResult.savedChatId,
+        memoryId: effectiveMemoryId,
+      });
+
+  const fallbackRegisteredEvent = fallbackRegisteredEventResult?.rows[0]
+    ? toPublicRegisteredMemoryEvent(fallbackRegisteredEventResult.rows[0])
+    : null;
+
+  const effectiveRegisteredEvent = publicRegisteredEvent ?? fallbackRegisteredEvent;
+  const effectiveOk = Boolean(
+    saveResult.saveResult.ok &&
+      (publicMemory || (fallbackMemoryResult?.ok && fallbackMemory))
+  );
+  const httpStatus = effectiveOk ? 201 : 207;
+  const status = effectiveOk
+    ? publicMemory
+      ? "IPR_CHAT_MEMORY_SAVED"
+      : "IPR_CHAT_MEMORY_SAVED_WITH_ROUTE_MEMORY_FALLBACK"
+    : "IPR_CHAT_MEMORY_SAVE_PARTIAL_OR_FAILED";
 
   return jsonResponse(
     {
-      ok: saveResult.ok,
+      ok: effectiveOk,
       routeVersion: ROUTE_VERSION,
-      status: saveResult.ok ? "IPR_CHAT_MEMORY_SAVED" : "IPR_CHAT_MEMORY_SAVE_PARTIAL_OR_FAILED",
+      status,
       context: {
         humanIpr: context.humanIpr,
         runtimeIpr: context.runtimeIpr,
@@ -976,10 +1328,10 @@ async function buildSavePayload(request: NextRequest) {
         savedPrimaryIntention: context.primaryIntention
       },
       savedChatId: saveResult.savedChatId,
-      memoryId: saveResult.memoryId,
+      memoryId: effectiveMemoryId,
       savedChat: publicSave,
-      memory: publicMemory,
-      registeredEvent: publicRegisteredEvent,
+      memory: effectiveMemory,
+      registeredEvent: effectiveRegisteredEvent,
       thread: publicThread,
       persistedMessages: publicPersistedMessages,
       policy: {
@@ -993,8 +1345,8 @@ async function buildSavePayload(request: NextRequest) {
       },
       temporalCertificate: context.temporalCertificate,
       diagnostics: {
-        routeStage: saveResult.ok ? "SAVE_COMPLETED" : "SAVE_IPR_CHAT_TO_MEMORY_DATABASE_PARTIAL_OR_FAILED",
-        controlledPartialFailure: !saveResult.ok,
+        routeStage: effectiveOk ? "SAVE_COMPLETED" : "SAVE_IPR_CHAT_TO_MEMORY_DATABASE_PARTIAL_OR_FAILED",
+        controlledPartialFailure: !effectiveOk,
         databaseOperation: "saveIprChatToMemoryDatabase",
         database: {
           available: databaseReady.description.available,
@@ -1017,7 +1369,36 @@ async function buildSavePayload(request: NextRequest) {
           count: messagePersistResults.length,
           rowCount: messagePersistResults.reduce((total, result) => total + result.rowCount, 0)
         },
-        save: buildPublicDiagnostics(saveResult)
+        save: buildPublicDiagnostics(saveResult),
+        routeFallbackMemoryRecord: fallbackMemoryResult
+          ? {
+              attempted: true,
+              ok: fallbackMemoryResult.ok,
+              rowCount: fallbackMemoryResult.rowCount,
+              status: fallbackMemoryResult.status,
+              sqlHash: fallbackMemoryResult.sqlHash,
+              durationMs: fallbackMemoryResult.durationMs,
+              error: fallbackMemoryResult.error,
+              memoryId: effectiveMemoryId
+            }
+          : {
+              attempted: false,
+              reason: publicMemory ? "LIBRARY_MEMORY_RECORD_PRESENT" : "NO_EFFECTIVE_MEMORY_ID"
+            },
+        routeFallbackRegisteredEvent: fallbackRegisteredEventResult
+          ? {
+              attempted: true,
+              ok: fallbackRegisteredEventResult.ok,
+              rowCount: fallbackRegisteredEventResult.rowCount,
+              status: fallbackRegisteredEventResult.status,
+              sqlHash: fallbackRegisteredEventResult.sqlHash,
+              durationMs: fallbackRegisteredEventResult.durationMs,
+              error: fallbackRegisteredEventResult.error
+            }
+          : {
+              attempted: false,
+              reason: publicRegisteredEvent ? "LIBRARY_REGISTERED_EVENT_PRESENT" : "NO_EFFECTIVE_MEMORY_ID"
+            }
       }
     },
     { status: httpStatus }
@@ -1039,7 +1420,7 @@ export async function GET() {
       primaryIntention:
         "string; canonical meaning: IPR as Intenzione Primaria Radicale saved from the chat",
       selectedMessageIds: "string[]",
-      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO, runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE and runtimeState is stored legacy-safe before database insert",
+      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO, runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE and runtimeState is stored legacy-safe before database insert; v1.7 creates a route-level fallback memory_records row when the library save creates saved_chat but no reusable memory record",
       saveRaw: "boolean; default false",
       saveSynthesis: "boolean; default true",
       reusableInPrompt: "boolean; default true"
