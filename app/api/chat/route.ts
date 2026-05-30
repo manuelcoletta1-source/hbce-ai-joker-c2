@@ -8850,8 +8850,8 @@ function resolveRuntimeFileText(object: JsonObject): string {
   return "";
 }
 
-function normalizePublicFileStatus(value: string): PublicFileStatus {
-  const normalized = value.trim().toUpperCase();
+function normalizePublicFileStatus(value: unknown): PublicFileStatus {
+  const normalized = typeof value === "string" ? value.trim().toUpperCase() : "";
 
   if (normalized === "TEXT_READY") {
     return "TEXT_READY";
@@ -8917,8 +8917,8 @@ function resolvePublicFileStatus(args: {
   return "REFERENCE_ONLY";
 }
 
-function resolvePublicFileMode(value: string, status: PublicFileStatus): PublicFileMode {
-  const normalized = value.trim().toUpperCase();
+function resolvePublicFileMode(value: unknown, status: PublicFileStatus): PublicFileMode {
+  const normalized = typeof value === "string" ? value.trim().toUpperCase() : "";
 
   if (normalized === "TEXT") {
     return "TEXT";
@@ -9729,3 +9729,4 @@ function errorToMessage(error: unknown): string {
 
   return "Unknown provider error";
 }
+
