@@ -1,7 +1,10 @@
 import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
-import { queryHbceDatabase } from "@/lib/ipr-database";
+import {
+  getIprMemoryRecordStatusFromDatabase,
+  type IprMemoryRecordDatabaseRow
+} from "@/lib/ipr-database";
 import {
   HBCE_SELF_PILOT_HUMAN_IPR,
   HBCE_SELF_PILOT_TENANT_ID,
@@ -17,37 +20,13 @@ type MemoryRecordOperationalStatus =
   | "SOFT_DELETED"
   | "NOT_FOUND"
   | "DATABASE_UNAVAILABLE"
+  | "INVALID_MEMORY_ID"
   | "UNKNOWN";
-
-type MemoryRecordStatusRow = Record<string, unknown> & {
-  memory_id?: unknown;
-  human_ipr?: unknown;
-  tenant_id?: unknown;
-  workspace_id?: unknown;
-  memory_title?: unknown;
-  memory_summary?: unknown;
-  classification?: unknown;
-  quality?: unknown;
-  memory_kind?: unknown;
-  memory_status?: unknown;
-  source_kind?: unknown;
-  source_thread_id?: unknown;
-  source_saved_chat_id?: unknown;
-  session_id?: unknown;
-  last_evt_id?: unknown;
-  last_opc_proof_id?: unknown;
-  last_opc_chain_hash?: unknown;
-  reusable_in_prompt?: unknown;
-  legal_certification?: unknown;
-  created_at?: unknown;
-  updated_at?: unknown;
-  deleted_at?: unknown;
-  semantic_terms?: unknown;
-};
 
 type PublicMemoryRecordStatus = {
   ok: boolean;
   endpoint: "IPR_MEMORY_RECORD_STATUS";
+  routeVersion: typeof ROUTE_VERSION;
   status: MemoryRecordOperationalStatus;
   exists: boolean;
   memoryId: string | null;
@@ -55,6 +34,7 @@ type PublicMemoryRecordStatus = {
   tenantId: string | null;
   workspaceId: string | null;
   reusableInPrompt: boolean | null;
+  promptEligible: boolean;
   memoryStatus: string | null;
   memoryTitle: string | null;
   memorySummary: string | null;
@@ -73,13 +53,36 @@ type PublicMemoryRecordStatus = {
   deletedAt: string | null;
   semanticTerms: unknown;
   recordHash: string | null;
+  filtersApplied: {
+    humanIpr: string | null;
+    tenantId: string | null;
+    workspaceId: string | null;
+    useSelfPilotDefaults: boolean;
+  };
+  database: {
+    ok: boolean;
+    status: string | null;
+    rowCount: number;
+    durationMs: number | null;
+    sqlHash: string | null;
+    error: string | null;
+  };
   reason: string;
   legalCertification: false;
   opc: "technical proof receipt only";
 };
 
 const ENDPOINT = "IPR_MEMORY_RECORD_STATUS" as const;
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-RECORD-STATUS-v2.0";
 const MEMORY_ID_MAX_LENGTH = 128;
+const MEMORY_ID_PATTERN = /^[A-Za-z0-9:_\-.]+$/;
+
+const SOFT_DELETED_STATUSES = new Set([
+  "SOFT_DELETED",
+  "DISABLED",
+  "DELETED",
+  "INACTIVE"
+]);
 
 function stringOrNull(value: unknown): string | null {
   if (typeof value !== "string") {
@@ -121,16 +124,6 @@ function booleanOrNull(value: unknown): boolean | null {
   return null;
 }
 
-function normalizeMemoryId(value: unknown): string | null {
-  const memoryId = stringOrNull(value);
-
-  if (!memoryId) {
-    return null;
-  }
-
-  return memoryId.slice(0, MEMORY_ID_MAX_LENGTH);
-}
-
 function normalizeOptionalFilter(value: unknown): string | null {
   const normalized = stringOrNull(value);
 
@@ -139,6 +132,48 @@ function normalizeOptionalFilter(value: unknown): string | null {
   }
 
   return normalized;
+}
+
+function parseBooleanFlag(value: unknown): boolean {
+  return booleanOrNull(value) === true;
+}
+
+function normalizeMemoryId(value: unknown): {
+  ok: boolean;
+  memoryId: string | null;
+  error: string | null;
+} {
+  const memoryId = stringOrNull(value);
+
+  if (!memoryId) {
+    return {
+      ok: false,
+      memoryId: null,
+      error: "MISSING_MEMORY_ID"
+    };
+  }
+
+  if (memoryId.length > MEMORY_ID_MAX_LENGTH) {
+    return {
+      ok: false,
+      memoryId: memoryId.slice(0, MEMORY_ID_MAX_LENGTH),
+      error: "INVALID_MEMORY_ID_LENGTH"
+    };
+  }
+
+  if (!MEMORY_ID_PATTERN.test(memoryId)) {
+    return {
+      ok: false,
+      memoryId,
+      error: "INVALID_MEMORY_ID_FORMAT"
+    };
+  }
+
+  return {
+    ok: true,
+    memoryId,
+    error: null
+  };
 }
 
 function buildHash(value: unknown): string {
@@ -152,28 +187,46 @@ function normalizeDatabaseTimestamp(value: unknown): string | null {
     return value.toISOString();
   }
 
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return new Date(value).toISOString();
+  }
+
   return stringOrNull(value);
+}
+
+function normalizeMemoryStatus(value: unknown): string | null {
+  const normalized = stringOrNull(value);
+
+  return normalized ? normalized.toUpperCase() : null;
+}
+
+function isSoftDeletedRecord(args: {
+  memoryStatus: string | null;
+  deletedAt: string | null;
+}): boolean {
+  return Boolean(args.deletedAt) || SOFT_DELETED_STATUSES.has(args.memoryStatus || "");
 }
 
 function resolveOperationalStatus(args: {
   exists: boolean;
   memoryStatus: string | null;
   reusableInPrompt: boolean | null;
+  deletedAt: string | null;
 }): MemoryRecordOperationalStatus {
   if (!args.exists) {
     return "NOT_FOUND";
   }
 
-  const normalizedStatus = (args.memoryStatus || "").trim().toUpperCase();
-
   if (
-    normalizedStatus === "SOFT_DELETED" ||
-    normalizedStatus === "DELETED" ||
-    normalizedStatus === "INACTIVE" ||
-    normalizedStatus === "DISABLED"
+    isSoftDeletedRecord({
+      memoryStatus: args.memoryStatus,
+      deletedAt: args.deletedAt
+    })
   ) {
     return "SOFT_DELETED";
   }
+
+  const normalizedStatus = args.memoryStatus || "ACTIVE";
 
   if (normalizedStatus === "ACTIVE" && args.reusableInPrompt === true) {
     return "ACTIVE_REUSABLE";
@@ -183,6 +236,10 @@ function resolveOperationalStatus(args: {
     return "ACTIVE_NOT_REUSABLE";
   }
 
+  if (args.reusableInPrompt === true) {
+    return "ACTIVE_REUSABLE";
+  }
+
   if (args.reusableInPrompt === false) {
     return "ACTIVE_NOT_REUSABLE";
   }
@@ -190,62 +247,101 @@ function resolveOperationalStatus(args: {
   return "UNKNOWN";
 }
 
+function isPromptEligible(status: MemoryRecordOperationalStatus): boolean {
+  return status === "ACTIVE_REUSABLE";
+}
+
 function buildReason(status: MemoryRecordOperationalStatus): string {
   switch (status) {
     case "ACTIVE_REUSABLE":
-      return "Memory record exists, is ACTIVE and is reusable in prompt recall.";
+      return "Memory record exists, is active and is reusable in prompt recall.";
     case "ACTIVE_NOT_REUSABLE":
       return "Memory record exists but is not reusable in prompt recall.";
     case "SOFT_DELETED":
-      return "Memory record exists but is excluded from prompt recall by soft-delete or inactive status.";
+      return "Memory record exists but is excluded from prompt recall by soft-delete, inactive status or deleted_at.";
     case "NOT_FOUND":
       return "No memory record was found for the requested memoryId and filters.";
     case "DATABASE_UNAVAILABLE":
       return "The memory database query failed or is currently unavailable.";
+    case "INVALID_MEMORY_ID":
+      return "The requested memoryId is missing or invalid.";
     case "UNKNOWN":
     default:
       return "Memory record exists, but its operational recall status could not be classified deterministically.";
   }
 }
 
-function toPublicMemoryRecordStatus(
-  row: MemoryRecordStatusRow | null,
-  fallbackMemoryId: string | null,
-  statusOverride?: MemoryRecordOperationalStatus
-): PublicMemoryRecordStatus {
+function buildDatabaseSnapshot(args?: {
+  ok?: boolean;
+  status?: unknown;
+  rowCount?: unknown;
+  durationMs?: unknown;
+  sqlHash?: unknown;
+  error?: unknown;
+}): PublicMemoryRecordStatus["database"] {
+  return {
+    ok: args?.ok === true,
+    status: stringOrNull(args?.status),
+    rowCount:
+      typeof args?.rowCount === "number" && Number.isFinite(args.rowCount)
+        ? args.rowCount
+        : 0,
+    durationMs:
+      typeof args?.durationMs === "number" && Number.isFinite(args.durationMs)
+        ? args.durationMs
+        : null,
+    sqlHash: stringOrNull(args?.sqlHash),
+    error: stringOrNull(args?.error)
+  };
+}
+
+function toPublicMemoryRecordStatus(input: {
+  row: IprMemoryRecordDatabaseRow | null;
+  fallbackMemoryId: string | null;
+  filtersApplied: PublicMemoryRecordStatus["filtersApplied"];
+  database: PublicMemoryRecordStatus["database"];
+  statusOverride?: MemoryRecordOperationalStatus;
+}): PublicMemoryRecordStatus {
+  const row = input.row;
   const exists = Boolean(row);
-  const memoryStatus = stringOrNull(row?.memory_status);
+  const memoryStatus = normalizeMemoryStatus(row?.memory_status);
   const reusableInPrompt = booleanOrNull(row?.reusable_in_prompt);
-  const status = statusOverride ||
+  const deletedAt = normalizeDatabaseTimestamp(row?.deleted_at);
+  const status =
+    input.statusOverride ||
     resolveOperationalStatus({
       exists,
       memoryStatus,
-      reusableInPrompt
+      reusableInPrompt,
+      deletedAt
     });
 
+  const publicMemoryId = stringOrNull(row?.memory_id) || input.fallbackMemoryId;
   const recordSnapshot = row
     ? {
-        memoryId: stringOrNull(row.memory_id),
+        memoryId: publicMemoryId,
         humanIpr: stringOrNull(row.human_ipr),
         tenantId: stringOrNull(row.tenant_id),
         workspaceId: stringOrNull(row.workspace_id),
         memoryStatus,
         reusableInPrompt,
         updatedAt: normalizeDatabaseTimestamp(row.updated_at),
-        deletedAt: normalizeDatabaseTimestamp(row.deleted_at)
+        deletedAt
       }
     : null;
 
   return {
-    ok: status !== "DATABASE_UNAVAILABLE",
+    ok: status !== "DATABASE_UNAVAILABLE" && status !== "INVALID_MEMORY_ID",
     endpoint: ENDPOINT,
+    routeVersion: ROUTE_VERSION,
     status,
     exists,
-    memoryId: stringOrNull(row?.memory_id) || fallbackMemoryId,
+    memoryId: publicMemoryId,
     humanIpr: stringOrNull(row?.human_ipr),
     tenantId: stringOrNull(row?.tenant_id),
     workspaceId: stringOrNull(row?.workspace_id),
     reusableInPrompt,
+    promptEligible: isPromptEligible(status),
     memoryStatus,
     memoryTitle: stringOrNull(row?.memory_title),
     memorySummary: stringOrNull(row?.memory_summary),
@@ -261,9 +357,11 @@ function toPublicMemoryRecordStatus(
     lastOpcChainHash: stringOrNull(row?.last_opc_chain_hash),
     createdAt: normalizeDatabaseTimestamp(row?.created_at),
     updatedAt: normalizeDatabaseTimestamp(row?.updated_at),
-    deletedAt: normalizeDatabaseTimestamp(row?.deleted_at),
+    deletedAt,
     semanticTerms: row?.semantic_terms ?? null,
     recordHash: recordSnapshot ? buildHash(recordSnapshot) : null,
+    filtersApplied: input.filtersApplied,
+    database: input.database,
     reason: buildReason(status),
     legalCertification: false,
     opc: "technical proof receipt only"
@@ -275,10 +373,26 @@ function buildErrorResponse(args: {
   memoryId: string | null;
   message: string;
   httpStatus: number;
+  filtersApplied?: PublicMemoryRecordStatus["filtersApplied"];
+  database?: PublicMemoryRecordStatus["database"];
 }) {
+  const response = toPublicMemoryRecordStatus({
+    row: null,
+    fallbackMemoryId: args.memoryId,
+    filtersApplied:
+      args.filtersApplied || {
+        humanIpr: null,
+        tenantId: null,
+        workspaceId: null,
+        useSelfPilotDefaults: false
+      },
+    database: args.database || buildDatabaseSnapshot(),
+    statusOverride: args.status
+  });
+
   return NextResponse.json(
     {
-      ...toPublicMemoryRecordStatus(null, args.memoryId, args.status),
+      ...response,
       ok: false,
       error: args.message
     },
@@ -288,87 +402,86 @@ function buildErrorResponse(args: {
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
-  const memoryId = normalizeMemoryId(url.searchParams.get("memoryId"));
+  const parsedMemoryId = normalizeMemoryId(url.searchParams.get("memoryId"));
 
-  if (!memoryId) {
+  if (!parsedMemoryId.ok) {
     return buildErrorResponse({
-      status: "NOT_FOUND",
-      memoryId: null,
-      message: "MISSING_MEMORY_ID",
+      status: "INVALID_MEMORY_ID",
+      memoryId: parsedMemoryId.memoryId,
+      message: parsedMemoryId.error || "INVALID_MEMORY_ID",
       httpStatus: 400
     });
   }
 
+  const useSelfPilotDefaults = parseBooleanFlag(url.searchParams.get("useSelfPilotDefaults"));
+
   const humanIpr =
     normalizeOptionalFilter(url.searchParams.get("humanIpr")) ||
-    HBCE_SELF_PILOT_HUMAN_IPR;
+    (useSelfPilotDefaults ? HBCE_SELF_PILOT_HUMAN_IPR : null);
   const tenantId =
     normalizeOptionalFilter(url.searchParams.get("tenantId")) ||
-    HBCE_SELF_PILOT_TENANT_ID;
+    (useSelfPilotDefaults ? HBCE_SELF_PILOT_TENANT_ID : null);
   const workspaceId =
     normalizeOptionalFilter(url.searchParams.get("workspaceId")) ||
-    HBCE_SELF_PILOT_WORKSPACE_ID;
+    (useSelfPilotDefaults ? HBCE_SELF_PILOT_WORKSPACE_ID : null);
+
+  const filtersApplied = {
+    humanIpr,
+    tenantId,
+    workspaceId,
+    useSelfPilotDefaults
+  };
 
   try {
-    const result = await queryHbceDatabase<MemoryRecordStatusRow>(
-      `
-SELECT
-  memory_id,
-  human_ipr,
-  tenant_id,
-  workspace_id,
-  memory_title,
-  memory_summary,
-  classification,
-  quality,
-  memory_kind,
-  memory_status,
-  source_kind,
-  source_thread_id,
-  source_saved_chat_id,
-  session_id,
-  last_evt_id,
-  last_opc_proof_id,
-  last_opc_chain_hash,
-  reusable_in_prompt,
-  legal_certification,
-  created_at,
-  updated_at,
-  deleted_at,
-  semantic_terms
-FROM memory_records
-WHERE memory_id = $1
-  AND ($2::text IS NULL OR human_ipr = $2)
-  AND ($3::text IS NULL OR tenant_id = $3)
-  AND ($4::text IS NULL OR workspace_id = $4)
-  AND legal_certification = false
-ORDER BY updated_at DESC NULLS LAST
-LIMIT 1
-      `.trim(),
-      [memoryId, humanIpr || null, tenantId || null, workspaceId || null]
-    );
+    const result = await getIprMemoryRecordStatusFromDatabase({
+      memoryId: parsedMemoryId.memoryId || "",
+      humanIpr,
+      tenantId,
+      workspaceId
+    });
+
+    const database = buildDatabaseSnapshot(result);
 
     if (!result.ok) {
       return buildErrorResponse({
         status: "DATABASE_UNAVAILABLE",
-        memoryId,
+        memoryId: parsedMemoryId.memoryId,
         message: result.error || "MEMORY_RECORD_STATUS_QUERY_FAILED",
-        httpStatus: 503
+        httpStatus: 503,
+        filtersApplied,
+        database
       });
     }
 
     const row = result.rows[0] || null;
-    const publicStatus = toPublicMemoryRecordStatus(row, memoryId);
+    const publicStatus = toPublicMemoryRecordStatus({
+      row,
+      fallbackMemoryId: parsedMemoryId.memoryId,
+      filtersApplied,
+      database
+    });
 
     return NextResponse.json(publicStatus, {
-      status: publicStatus.exists ? 200 : 404
+      status: 200
     });
   } catch (error) {
     return buildErrorResponse({
       status: "DATABASE_UNAVAILABLE",
-      memoryId,
-      message: error instanceof Error ? error.message : "MEMORY_RECORD_STATUS_UNEXPECTED_ERROR",
-      httpStatus: 503
+      memoryId: parsedMemoryId.memoryId,
+      message:
+        error instanceof Error
+          ? error.message
+          : "MEMORY_RECORD_STATUS_UNEXPECTED_ERROR",
+      httpStatus: 503,
+      filtersApplied,
+      database: buildDatabaseSnapshot({
+        ok: false,
+        status: "ERROR",
+        error:
+          error instanceof Error
+            ? error.message
+            : "MEMORY_RECORD_STATUS_UNEXPECTED_ERROR"
+      })
     });
   }
 }
