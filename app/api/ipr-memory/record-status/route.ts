@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   getIprMemoryRecordStatusFromDatabase,
+  listDocumentProfilesFromDatabase,
+  toPublicDocumentProfile,
+  type DocumentProfileDatabaseRow,
   type IprMemoryRecordDatabaseRow
 } from "@/lib/ipr-database";
 import {
@@ -22,6 +25,25 @@ type MemoryRecordOperationalStatus =
   | "DATABASE_UNAVAILABLE"
   | "INVALID_MEMORY_ID"
   | "UNKNOWN";
+
+type DocumentRegistryOperationalStatus =
+  | "AVAILABLE"
+  | "NO_LINKED_PROFILE"
+  | "SKIPPED"
+  | "DATABASE_UNAVAILABLE";
+
+type PublicDocumentRegistrySnapshot = {
+  ok: boolean;
+  status: DocumentRegistryOperationalStatus;
+  linkedProfileCount: number;
+  profiles: Record<string, unknown>[];
+  durationMs: number | null;
+  sqlHash: string | null;
+  error: string | null;
+  reason: string;
+  legalCertification: false;
+  opc: "technical proof receipt only";
+};
 
 type PublicMemoryRecordStatus = {
   ok: boolean;
@@ -53,6 +75,7 @@ type PublicMemoryRecordStatus = {
   deletedAt: string | null;
   semanticTerms: unknown;
   recordHash: string | null;
+  documentRegistry: PublicDocumentRegistrySnapshot;
   filtersApplied: {
     humanIpr: string | null;
     tenantId: string | null;
@@ -73,7 +96,7 @@ type PublicMemoryRecordStatus = {
 };
 
 const ENDPOINT = "IPR_MEMORY_RECORD_STATUS" as const;
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-RECORD-STATUS-v2.0";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-RECORD-STATUS-DOCUMENT-LINK-v3.0";
 const MEMORY_ID_MAX_LENGTH = 128;
 const MEMORY_ID_PATTERN = /^[A-Za-z0-9:_\-.]+$/;
 
@@ -295,11 +318,121 @@ function buildDatabaseSnapshot(args?: {
   };
 }
 
+function buildDocumentRegistrySnapshot(args?: {
+  status?: DocumentRegistryOperationalStatus;
+  profiles?: DocumentProfileDatabaseRow[];
+  durationMs?: unknown;
+  sqlHash?: unknown;
+  error?: unknown;
+  reason?: string;
+}): PublicDocumentRegistrySnapshot {
+  const profiles = Array.isArray(args?.profiles) ? args.profiles : [];
+  const status: DocumentRegistryOperationalStatus =
+    args?.status || (profiles.length > 0 ? "AVAILABLE" : "NO_LINKED_PROFILE");
+  const error = stringOrNull(args?.error);
+
+  return {
+    ok: status === "AVAILABLE" || status === "NO_LINKED_PROFILE" || status === "SKIPPED",
+    status,
+    linkedProfileCount: profiles.length,
+    profiles: profiles.map((profile) => toPublicDocumentProfile(profile)),
+    durationMs:
+      typeof args?.durationMs === "number" && Number.isFinite(args.durationMs)
+        ? args.durationMs
+        : null,
+    sqlHash: stringOrNull(args?.sqlHash),
+    error,
+    reason:
+      args?.reason ||
+      (status === "AVAILABLE"
+        ? "One or more document profiles are linked to this memoryId."
+        : status === "NO_LINKED_PROFILE"
+          ? "No document profile is currently linked to this memoryId."
+          : status === "DATABASE_UNAVAILABLE"
+            ? "The document profile registry query failed or is currently unavailable."
+            : "Document profile lookup was skipped for this status."),
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
+async function resolveLinkedDocumentRegistry(input: {
+  memoryId: string | null;
+  humanIpr: string | null;
+  tenantId: string | null;
+  workspaceId: string | null;
+  memoryExists: boolean;
+  memoryStatus: MemoryRecordOperationalStatus;
+}): Promise<PublicDocumentRegistrySnapshot> {
+  if (!input.memoryId || input.memoryStatus === "INVALID_MEMORY_ID") {
+    return buildDocumentRegistrySnapshot({
+      status: "SKIPPED",
+      reason: "Document profile lookup skipped because the memoryId is missing or invalid."
+    });
+  }
+
+  if (!input.memoryExists) {
+    return buildDocumentRegistrySnapshot({
+      status: "SKIPPED",
+      reason: "Document profile lookup skipped because the memory record was not found."
+    });
+  }
+
+  if (input.memoryStatus === "DATABASE_UNAVAILABLE") {
+    return buildDocumentRegistrySnapshot({
+      status: "SKIPPED",
+      reason: "Document profile lookup skipped because the memory database is unavailable."
+    });
+  }
+
+  try {
+    const result = await listDocumentProfilesFromDatabase({
+      memoryId: input.memoryId,
+      humanIpr: input.humanIpr,
+      tenantId: input.tenantId,
+      workspaceId: input.workspaceId,
+      includeSoftDeleted: false,
+      limit: 25
+    });
+
+    if (!result.ok) {
+      return buildDocumentRegistrySnapshot({
+        status: "DATABASE_UNAVAILABLE",
+        profiles: [],
+        durationMs: result.durationMs,
+        sqlHash: result.sqlHash,
+        error: result.error || "DOCUMENT_PROFILE_REGISTRY_QUERY_FAILED"
+      });
+    }
+
+    return buildDocumentRegistrySnapshot({
+      status: result.rows.length > 0 ? "AVAILABLE" : "NO_LINKED_PROFILE",
+      profiles: result.rows,
+      durationMs: result.durationMs,
+      sqlHash: result.sqlHash,
+      reason:
+        result.rows.length > 0
+          ? "Linked document profiles were found for this memoryId."
+          : "The memory record exists, but no document profile is currently linked to it."
+    });
+  } catch (error) {
+    return buildDocumentRegistrySnapshot({
+      status: "DATABASE_UNAVAILABLE",
+      profiles: [],
+      error:
+        error instanceof Error
+          ? error.message
+          : "DOCUMENT_PROFILE_REGISTRY_UNEXPECTED_ERROR"
+    });
+  }
+}
+
 function toPublicMemoryRecordStatus(input: {
   row: IprMemoryRecordDatabaseRow | null;
   fallbackMemoryId: string | null;
   filtersApplied: PublicMemoryRecordStatus["filtersApplied"];
   database: PublicMemoryRecordStatus["database"];
+  documentRegistry?: PublicDocumentRegistrySnapshot;
   statusOverride?: MemoryRecordOperationalStatus;
 }): PublicMemoryRecordStatus {
   const row = input.row;
@@ -360,6 +493,12 @@ function toPublicMemoryRecordStatus(input: {
     deletedAt,
     semanticTerms: row?.semantic_terms ?? null,
     recordHash: recordSnapshot ? buildHash(recordSnapshot) : null,
+    documentRegistry:
+      input.documentRegistry ||
+      buildDocumentRegistrySnapshot({
+        status: "SKIPPED",
+        reason: "Document profile lookup was not executed for this response."
+      }),
     filtersApplied: input.filtersApplied,
     database: input.database,
     reason: buildReason(status),
@@ -454,11 +593,32 @@ export async function GET(req: NextRequest) {
     }
 
     const row = result.rows[0] || null;
+    const memoryStatus = normalizeMemoryStatus(row?.memory_status);
+    const reusableInPrompt = booleanOrNull(row?.reusable_in_prompt);
+    const deletedAt = normalizeDatabaseTimestamp(row?.deleted_at);
+    const operationalStatus = resolveOperationalStatus({
+      exists: Boolean(row),
+      memoryStatus,
+      reusableInPrompt,
+      deletedAt
+    });
+    const publicMemoryId = stringOrNull(row?.memory_id) || parsedMemoryId.memoryId;
+    const documentRegistry = await resolveLinkedDocumentRegistry({
+      memoryId: publicMemoryId,
+      humanIpr: stringOrNull(row?.human_ipr) || humanIpr,
+      tenantId: stringOrNull(row?.tenant_id) || tenantId,
+      workspaceId: stringOrNull(row?.workspace_id) || workspaceId,
+      memoryExists: Boolean(row),
+      memoryStatus: operationalStatus
+    });
+
     const publicStatus = toPublicMemoryRecordStatus({
       row,
       fallbackMemoryId: parsedMemoryId.memoryId,
       filtersApplied,
-      database
+      database,
+      documentRegistry,
+      statusOverride: operationalStatus
     });
 
     return NextResponse.json(publicStatus, {
