@@ -68,6 +68,47 @@ export type MemoryTurnTrustStatus =
   | "UNVERIFIED_TRACE";
 
 
+export type MemoryRecordStatus =
+  | "ACTIVE"
+  | "SOFT_DELETED"
+  | "DISABLED"
+  | "DELETED"
+  | "INACTIVE"
+  | "UNKNOWN";
+
+
+export type MemoryRecallQuality =
+  | "CANONICAL"
+  | "TRAINING"
+  | "USER_SELECTED"
+  | "OPERATIONAL"
+  | "TRACE_ONLY"
+  | "TECHNICAL_TEST"
+  | "LOW_SIGNAL";
+
+
+export type MemoryRecallEligibility =
+  | "PROMPT_READY"
+  | "EXCLUDED_SOFT_DELETED"
+  | "EXCLUDED_NOT_REUSABLE"
+  | "EXCLUDED_TRACE_ONLY"
+  | "DIAGNOSTIC_ONLY";
+
+
+export type MemoryRecallPolicy = {
+  status: MemoryRecordStatus;
+  reusableInPrompt: boolean;
+  promptEligible: boolean;
+  eligibility: MemoryRecallEligibility;
+  recallScore: number;
+  recallQuality: MemoryRecallQuality;
+  reason: string;
+  scoringVersion: string;
+  softDeletedAt?: string;
+  legalCertification: false;
+};
+
+
 export type IprBoundMemorySaasTier =
   | "BASE"
   | "IPR"
@@ -226,6 +267,10 @@ export type MemoryTurn = {
   acceptedAsMemoryFact: boolean;
   policyBlocked: boolean;
   memoryBoundary: string;
+  recallScore?: number;
+  recallQuality?: MemoryRecallQuality;
+  promptEligible?: boolean;
+  recallReason?: string;
 };
 
 
@@ -257,6 +302,13 @@ export type IprBoundMemoryRecordWithoutHash = {
   facts: string[];
   recentTurns: MemoryTurn[];
   summary: string;
+  memoryStatus?: MemoryRecordStatus;
+  reusableInPrompt?: boolean;
+  promptEligible?: boolean;
+  recallScore?: number;
+  recallQuality?: MemoryRecallQuality;
+  recallPolicy?: MemoryRecallPolicy;
+  softDeletedAt?: string;
   [key: string]: unknown;
 };
 
@@ -337,6 +389,13 @@ export type PublicIprBoundMemoryRecord = {
   facts: string[];
   recentTurns: MemoryTurn[];
   summary: string;
+  memoryStatus?: MemoryRecordStatus;
+  reusableInPrompt?: boolean;
+  promptEligible?: boolean;
+  recallScore?: number;
+  recallQuality?: MemoryRecallQuality;
+  recallPolicy?: MemoryRecallPolicy;
+  softDeletedAt?: string;
   memoryHash: string;
 };
 
@@ -347,6 +406,58 @@ const MAX_REGISTERED_EVENTS = 64;
 const MAX_MEMORY_TURNS = 10;
 const MAX_MEMORY_TEXT_CHARS = 900;
 const MAX_MEMORY_SUMMARY_CHARS = 2600;
+const MEMORY_RECALL_SCORING_VERSION = "HBCE-IPR-MEMORY-RECALL-SCORING-v1.0";
+const MIN_PROMPT_RECALL_SCORE = 30;
+
+
+const CANONICAL_RECALL_SIGNALS = [
+  "canonical",
+  "canonico",
+  "glossario canonico",
+  "decisione",
+  "costo",
+  "traccia",
+  "tempo",
+  "ipr",
+  "evt",
+  "opc",
+  "matrix",
+  "rascensionale",
+  "semantica",
+  "alien code",
+  "codice alieno"
+];
+
+const TRAINING_RECALL_SIGNALS = [
+  "training",
+  "addestramento",
+  "test training",
+  "reelaboration",
+  "rielaborazione",
+  "recall",
+  "apprendimento operativo"
+];
+
+const USER_SELECTED_RECALL_SIGNALS = [
+  "user_selected",
+  "save-chat",
+  "save chat",
+  "primary intention",
+  "intenzione primaria",
+  "intenzione radicale",
+  "manual user save"
+];
+
+const TECHNICAL_TEST_RECALL_SIGNALS = [
+  "fallback",
+  "prova",
+  "ciao prova",
+  "test tecnico",
+  "debug",
+  "temporary",
+  "placeholder",
+  "lorem ipsum"
+];
 
 
 const CURRENT_OPERATIONAL_EVT = "UP-EVT-0016";
@@ -1281,6 +1392,354 @@ function hasMemoryRejectionSignal(input: {
 }
 
 
+
+function normalizeUnknownString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+
+function normalizeMemoryRecordStatus(value: unknown): MemoryRecordStatus {
+  const normalized = normalizeUnknownString(value).toUpperCase();
+
+  if (
+    normalized === "ACTIVE" ||
+    normalized === "SOFT_DELETED" ||
+    normalized === "DISABLED" ||
+    normalized === "DELETED" ||
+    normalized === "INACTIVE"
+  ) {
+    return normalized;
+  }
+
+  return "ACTIVE";
+}
+
+
+function isSoftDeletedMemoryStatus(status: MemoryRecordStatus): boolean {
+  return (
+    status === "SOFT_DELETED" ||
+    status === "DISABLED" ||
+    status === "DELETED" ||
+    status === "INACTIVE"
+  );
+}
+
+
+function normalizeReusableInPrompt(value: unknown, fallback = true): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  const normalized = normalizeUnknownString(value).toLowerCase();
+
+  if (["false", "0", "no", "disabled", "not_reusable"].includes(normalized)) {
+    return false;
+  }
+
+  if (["true", "1", "yes", "enabled", "reusable"].includes(normalized)) {
+    return true;
+  }
+
+  return fallback;
+}
+
+
+function scoreSignals(value: string, signals: string[], weight: number): number {
+  const normalized = normalizeRuntimeText(value);
+
+  return signals.reduce((score, signal) => {
+    return normalized.includes(normalizeRuntimeText(signal)) ? score + weight : score;
+  }, 0);
+}
+
+
+function clampRecallScore(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+
+function deriveRecallQualityFromScore(
+  score: number,
+  value: string,
+  trustStatus?: MemoryTurnTrustStatus
+): MemoryRecallQuality {
+  if (trustStatus && trustStatus !== "TRUSTED_OPERATIONAL_OUTPUT") {
+    return "TRACE_ONLY";
+  }
+
+  const canonicalScore = scoreSignals(value, CANONICAL_RECALL_SIGNALS, 1);
+  const trainingScore = scoreSignals(value, TRAINING_RECALL_SIGNALS, 1);
+  const userSelectedScore = scoreSignals(value, USER_SELECTED_RECALL_SIGNALS, 1);
+  const technicalScore = scoreSignals(value, TECHNICAL_TEST_RECALL_SIGNALS, 1);
+
+  if (technicalScore >= 2 && score < 70) {
+    return "TECHNICAL_TEST";
+  }
+
+  if (canonicalScore >= 3 || score >= 80) {
+    return "CANONICAL";
+  }
+
+  if (trainingScore >= 2) {
+    return "TRAINING";
+  }
+
+  if (userSelectedScore >= 2) {
+    return "USER_SELECTED";
+  }
+
+  if (score >= MIN_PROMPT_RECALL_SCORE) {
+    return "OPERATIONAL";
+  }
+
+  return "LOW_SIGNAL";
+}
+
+
+function buildTurnRecallPolicy(turn: MemoryTurn): {
+  recallScore: number;
+  recallQuality: MemoryRecallQuality;
+  promptEligible: boolean;
+  recallReason: string;
+} {
+  const text = [
+    turn.user,
+    turn.assistant,
+    turn.contextClass,
+    turn.projectDomain,
+    turn.hbceModule,
+    turn.generationClass,
+    turn.evt
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const trusted = turn.trustStatus === "TRUSTED_OPERATIONAL_OUTPUT";
+  const baseScore = trusted ? 25 : 0;
+  const canonicalScore = scoreSignals(text, CANONICAL_RECALL_SIGNALS, 9);
+  const trainingScore = scoreSignals(text, TRAINING_RECALL_SIGNALS, 7);
+  const userSelectedScore = scoreSignals(text, USER_SELECTED_RECALL_SIGNALS, 6);
+  const technicalPenalty = scoreSignals(text, TECHNICAL_TEST_RECALL_SIGNALS, 10);
+  const evtScore = turn.evt ? 8 : 0;
+  const acceptedScore = turn.acceptedAsMemoryFact ? 12 : -20;
+  const policyPenalty = turn.policyBlocked ? 40 : 0;
+
+  const recallScore = clampRecallScore(
+    baseScore +
+      canonicalScore +
+      trainingScore +
+      userSelectedScore +
+      evtScore +
+      acceptedScore -
+      technicalPenalty -
+      policyPenalty
+  );
+  const recallQuality = deriveRecallQualityFromScore(
+    recallScore,
+    text,
+    turn.trustStatus
+  );
+  const promptEligible =
+    trusted &&
+    turn.acceptedAsMemoryFact &&
+    !turn.policyBlocked &&
+    recallQuality !== "TECHNICAL_TEST" &&
+    recallScore >= MIN_PROMPT_RECALL_SCORE;
+
+  return {
+    recallScore,
+    recallQuality,
+    promptEligible,
+    recallReason: promptEligible
+      ? "Turn is trusted, accepted and semantically useful for prompt recall."
+      : "Turn is preserved for audit/traceability or has low semantic recall value."
+  };
+}
+
+
+export function buildMemoryRecallPolicy(
+  memory: Partial<IprBoundMemoryRecordWithoutHash | IprBoundMemoryRecord>
+): MemoryRecallPolicy {
+  const status = normalizeMemoryRecordStatus(memory.memoryStatus);
+  const reusableInPrompt = normalizeReusableInPrompt(memory.reusableInPrompt, true);
+  const softDeletedAt = normalizeUnknownString(memory.softDeletedAt);
+  const text = [
+    memory.summary,
+    ...(Array.isArray(memory.facts) ? memory.facts : []),
+    ...(Array.isArray(memory.registeredEvents)
+      ? memory.registeredEvents.map((event) =>
+          [
+            event.registeredEventName || event.eventName,
+            event.registeredEventContent || event.eventContent,
+            event.source,
+            event.evt,
+            event.opcProofId
+          ]
+            .filter(Boolean)
+            .join(" ")
+        )
+      : [])
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const canonicalScore = scoreSignals(text, CANONICAL_RECALL_SIGNALS, 8);
+  const trainingScore = scoreSignals(text, TRAINING_RECALL_SIGNALS, 6);
+  const userSelectedScore = scoreSignals(text, USER_SELECTED_RECALL_SIGNALS, 6);
+  const technicalPenalty = scoreSignals(text, TECHNICAL_TEST_RECALL_SIGNALS, 10);
+  const registeredEventScore = Array.isArray(memory.registeredEvents)
+    ? Math.min(memory.registeredEvents.length * 3, 15)
+    : 0;
+  const evtScore = memory.lastEvt ? 5 : 0;
+  const opcScore = memory.lastOpcProofId ? 5 : 0;
+
+  const recallScore = clampRecallScore(
+    35 +
+      canonicalScore +
+      trainingScore +
+      userSelectedScore +
+      registeredEventScore +
+      evtScore +
+      opcScore -
+      technicalPenalty
+  );
+  const recallQuality = deriveRecallQualityFromScore(recallScore, text);
+
+  if (isSoftDeletedMemoryStatus(status) || softDeletedAt) {
+    return {
+      status,
+      reusableInPrompt: false,
+      promptEligible: false,
+      eligibility: "EXCLUDED_SOFT_DELETED",
+      recallScore: 0,
+      recallQuality: "TRACE_ONLY",
+      reason:
+        "Memory record is soft-deleted/disabled and must never be injected into the prompt.",
+      scoringVersion: MEMORY_RECALL_SCORING_VERSION,
+      softDeletedAt: softDeletedAt || undefined,
+      legalCertification: false
+    };
+  }
+
+  if (!reusableInPrompt) {
+    return {
+      status,
+      reusableInPrompt: false,
+      promptEligible: false,
+      eligibility: "EXCLUDED_NOT_REUSABLE",
+      recallScore,
+      recallQuality,
+      reason:
+        "Memory record is active but marked reusableInPrompt=false; it remains diagnostic only.",
+      scoringVersion: MEMORY_RECALL_SCORING_VERSION,
+      legalCertification: false
+    };
+  }
+
+  if (recallQuality === "TECHNICAL_TEST" && recallScore < 70) {
+    return {
+      status,
+      reusableInPrompt,
+      promptEligible: false,
+      eligibility: "DIAGNOSTIC_ONLY",
+      recallScore,
+      recallQuality,
+      reason:
+        "Memory record looks like a technical/fallback test and is downgraded to diagnostic recall.",
+      scoringVersion: MEMORY_RECALL_SCORING_VERSION,
+      legalCertification: false
+    };
+  }
+
+  return {
+    status,
+    reusableInPrompt,
+    promptEligible: recallScore >= MIN_PROMPT_RECALL_SCORE,
+    eligibility:
+      recallScore >= MIN_PROMPT_RECALL_SCORE ? "PROMPT_READY" : "DIAGNOSTIC_ONLY",
+    recallScore,
+    recallQuality,
+    reason:
+      recallScore >= MIN_PROMPT_RECALL_SCORE
+        ? "Memory record is active, reusable and eligible for prompt recall."
+        : "Memory record is active but has insufficient semantic recall score.",
+    scoringVersion: MEMORY_RECALL_SCORING_VERSION,
+    legalCertification: false
+  };
+}
+
+
+type MemoryRecordRecallFields = Pick<
+  IprBoundMemoryRecordWithoutHash,
+  | "memoryStatus"
+  | "reusableInPrompt"
+  | "promptEligible"
+  | "recallScore"
+  | "recallQuality"
+  | "recallPolicy"
+  | "softDeletedAt"
+>;
+
+
+function withMemoryRecallPolicy<
+  T extends Omit<IprBoundMemoryRecordWithoutHash, keyof MemoryRecordRecallFields>
+>(memory: T & Partial<MemoryRecordRecallFields>): T & MemoryRecordRecallFields {
+  const recallPolicy = buildMemoryRecallPolicy(memory);
+
+  return {
+    ...memory,
+    memoryStatus: recallPolicy.status,
+    reusableInPrompt: recallPolicy.reusableInPrompt,
+    promptEligible: recallPolicy.promptEligible,
+    recallScore: recallPolicy.recallScore,
+    recallQuality: recallPolicy.recallQuality,
+    recallPolicy,
+    softDeletedAt: recallPolicy.softDeletedAt
+  };
+}
+
+
+export function getPromptReadyMemoryTurns(turns: MemoryTurn[]): MemoryTurn[] {
+  return turns
+    .map((turn) => {
+      const policy = buildTurnRecallPolicy(turn);
+
+      return {
+        ...turn,
+        recallScore: turn.recallScore ?? policy.recallScore,
+        recallQuality: turn.recallQuality ?? policy.recallQuality,
+        promptEligible: turn.promptEligible ?? policy.promptEligible,
+        recallReason: turn.recallReason ?? policy.recallReason
+      };
+    })
+    .filter((turn) => turn.promptEligible !== false)
+    .slice(-MAX_MEMORY_TURNS);
+}
+
+
+export function getPromptReadyMemoryFacts(facts: string[]): string[] {
+  return facts
+    .filter((fact) => {
+      const normalized = normalizeRuntimeText(fact);
+
+      if (!normalized) {
+        return false;
+      }
+
+      if (TECHNICAL_TEST_RECALL_SIGNALS.some((signal) => normalized.includes(signal))) {
+        return false;
+      }
+
+      return true;
+    })
+    .slice(-MAX_MEMORY_FACTS);
+}
+
+
 function deriveTurnRuntimeMetadata(input: UpdateMemoryAfterCompletionInput): {
   runtimeState: MemoryTurnRuntimeState;
   runtimeDecision: MemoryTurnRuntimeDecision;
@@ -1430,7 +1889,14 @@ export function buildMemoryRecordHash(
     lastRegisteredEvent: record.lastRegisteredEvent,
     facts: record.facts,
     recentTurns: record.recentTurns,
-    summary: record.summary
+    summary: record.summary,
+    memoryStatus: record.memoryStatus,
+    reusableInPrompt: record.reusableInPrompt,
+    promptEligible: record.promptEligible,
+    recallScore: record.recallScore,
+    recallQuality: record.recallQuality,
+    recallPolicy: record.recallPolicy,
+    softDeletedAt: record.softDeletedAt
   };
 
 
@@ -1487,7 +1953,7 @@ export function getOrCreateRuntimeMemory(
         : sanitizeCurrentIdentityFactsForRuntimeOnly(existing.facts);
 
 
-    const updatedWithoutHash: IprBoundMemoryRecordWithoutHash = {
+    const updatedWithoutHash: IprBoundMemoryRecordWithoutHash = withMemoryRecallPolicy({
       memoryId: existing.memoryId,
       memoryKey,
       memoryKeyHash: sha256Hex(memoryKey),
@@ -1521,7 +1987,7 @@ export function getOrCreateRuntimeMemory(
         persistence,
         saas
       })
-    };
+    });
 
 
     const updated: IprBoundMemoryRecord = {
@@ -1537,7 +2003,7 @@ export function getOrCreateRuntimeMemory(
   }
 
 
-  const createdWithoutHash: IprBoundMemoryRecordWithoutHash = {
+  const createdWithoutHash: IprBoundMemoryRecordWithoutHash = withMemoryRecallPolicy({
     memoryId: `MEM-${sha256Hex(`${memoryKey}::${now}::${randomUUID()}`).slice(0, 16)}`,
     memoryKey,
     memoryKeyHash: sha256Hex(memoryKey),
@@ -1571,7 +2037,7 @@ export function getOrCreateRuntimeMemory(
       persistence,
       saas
     })
-  };
+  });
 
 
   const created: IprBoundMemoryRecord = {
@@ -1699,7 +2165,7 @@ export function updateMemoryAfterCompletion(
       : null;
 
 
-  const turn: MemoryTurn = {
+  const turnWithoutRecall: MemoryTurn = {
     user: truncateRuntimeText(input.userMessage),
     assistant: truncateRuntimeText(input.assistantMessage),
     createdAt: now,
@@ -1718,6 +2184,14 @@ export function updateMemoryAfterCompletion(
       turnMetadata.trustStatus === "TRUSTED_OPERATIONAL_OUTPUT"
         ? IPR_BOUND_MEMORY_BOUNDARY
         : TRACE_ONLY_MEMORY_BOUNDARY
+  };
+  const turnRecall = buildTurnRecallPolicy(turnWithoutRecall);
+  const turn: MemoryTurn = {
+    ...turnWithoutRecall,
+    recallScore: turnRecall.recallScore,
+    recallQuality: turnRecall.recallQuality,
+    promptEligible: turnRecall.promptEligible,
+    recallReason: turnRecall.recallReason
   };
 
 
@@ -1799,7 +2273,7 @@ export function updateMemoryAfterCompletion(
     : undefined;
 
 
-  const updatedWithoutHash: IprBoundMemoryRecordWithoutHash = {
+  const updatedWithoutHash: IprBoundMemoryRecordWithoutHash = withMemoryRecallPolicy({
     memoryId: input.memory.memoryId,
     memoryKey: input.memory.memoryKey,
     memoryKeyHash: input.memory.memoryKeyHash,
@@ -1829,7 +2303,7 @@ export function updateMemoryAfterCompletion(
     facts: nextFacts,
     recentTurns: [...input.memory.recentTurns, turn].slice(-MAX_MEMORY_TURNS),
     summary: updatedSummary
-  };
+  });
 
 
   const updated: IprBoundMemoryRecord = {
@@ -1861,6 +2335,10 @@ function formatMemoryTurnForPrompt(turn: MemoryTurn, index: number): string {
     `Trust status: ${turn.trustStatus}`,
     `Accepted as memory fact: ${turn.acceptedAsMemoryFact ? "true" : "false"}`,
     `Policy blocked: ${turn.policyBlocked ? "true" : "false"}`,
+    typeof turn.recallScore === "number" ? `Recall score: ${turn.recallScore}` : "",
+    turn.recallQuality ? `Recall quality: ${turn.recallQuality}` : "",
+    typeof turn.promptEligible === "boolean" ? `Prompt eligible: ${turn.promptEligible ? "true" : "false"}` : "",
+    turn.recallReason ? `Recall reason: ${turn.recallReason}` : "",
     `Boundary: ${turn.memoryBoundary}`
   ]
     .filter(Boolean)
@@ -1870,6 +2348,26 @@ function formatMemoryTurnForPrompt(turn: MemoryTurn, index: number): string {
 
 export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
   const currentIdentityAuthoritative = isCurrentIdentityAuthoritative(memory);
+  const recallPolicy = buildMemoryRecallPolicy(memory);
+
+  if (!recallPolicy.promptEligible) {
+    return [
+      "HBCE-GENERATED IPR-BOUND MEMORY CONTEXT",
+      `Memory ID: ${memory.memoryId}`,
+      `Memory key hash: ${memory.memoryKeyHash}`,
+      "Prompt injection status: EXCLUDED",
+      `Recall eligibility: ${recallPolicy.eligibility}`,
+      `Recall score: ${recallPolicy.recallScore}`,
+      `Recall quality: ${recallPolicy.recallQuality}`,
+      `Recall reason: ${recallPolicy.reason}`,
+      `Memory status: ${recallPolicy.status}`,
+      `Reusable in prompt: ${recallPolicy.reusableInPrompt ? "true" : "false"}`,
+      `Soft deleted at: ${recallPolicy.softDeletedAt || "none"}`,
+      "This memory record is preserved for audit/diagnostics only and must not be used as active prompt memory.",
+      "legalCertification=false",
+      "OPC=technical proof receipt only"
+    ].join("\n");
+  }
 
 
   const subjectLine =
@@ -1888,11 +2386,18 @@ export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
       : "Certificate: NO_CERTIFICATE.";
 
 
-  const recentTurns = memory.recentTurns.length
-    ? memory.recentTurns
+  const promptReadyTurns = getPromptReadyMemoryTurns(memory.recentTurns);
+  const promptReadyFacts = getPromptReadyMemoryFacts(
+    currentIdentityAuthoritative
+      ? memory.facts
+      : sanitizeCurrentIdentityFactsForRuntimeOnly(memory.facts)
+  );
+
+  const recentTurns = promptReadyTurns.length
+    ? promptReadyTurns
         .map((turn, index) => formatMemoryTurnForPrompt(turn, index))
         .join("\n")
-    : "No previous memory turns recorded in this runtime process.";
+    : "No prompt-eligible memory turns recorded for this runtime process.";
 
 
   return [
@@ -1928,6 +2433,14 @@ export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
     certificateLine,
     `Current identity authoritative: ${currentIdentityAuthoritative ? "true" : "false"}`,
     `Current identity boundary: ${CURRENT_IDENTITY_MEMORY_BOUNDARY}`,
+    `Memory status: ${recallPolicy.status}`,
+    `Reusable in prompt: ${recallPolicy.reusableInPrompt ? "true" : "false"}`,
+    `Prompt eligible: ${recallPolicy.promptEligible ? "true" : "false"}`,
+    `Recall eligibility: ${recallPolicy.eligibility}`,
+    `Recall score: ${recallPolicy.recallScore}`,
+    `Recall quality: ${recallPolicy.recallQuality}`,
+    `Recall scoring version: ${recallPolicy.scoringVersion}`,
+    `Recall reason: ${recallPolicy.reason}`,
     `Operational EVT: ${CURRENT_OPERATIONAL_EVT}`,
     `Operational AI EVT: ${CURRENT_OPERATIONAL_AI_EVT}`,
     `Operational cycle: ${CURRENT_OPERATIONAL_CYCLE}`,
@@ -1944,7 +2457,7 @@ export function buildMemoryPromptFrame(memory: IprBoundMemoryRecord): string {
     ),
     `Summary: ${memory.summary}`,
     "Canonical memory facts:",
-    ...memory.facts.map((fact) => `- ${fact}`),
+    ...promptReadyFacts.map((fact) => `- ${fact}`),
     "Recent memory turns:",
     recentTurns,
     "Memory boundary:",
@@ -1967,6 +2480,7 @@ export function toPublicMemoryRecord(
   memory: IprBoundMemoryRecord
 ): PublicIprBoundMemoryRecord {
   const currentIdentityAuthoritative = isCurrentIdentityAuthoritative(memory);
+  const recallPolicy = buildMemoryRecallPolicy(memory);
 
 
   return {
@@ -1997,8 +2511,15 @@ export function toPublicMemoryRecord(
       currentIdentityAuthoritative
         ? memory.facts
         : sanitizeCurrentIdentityFactsForRuntimeOnly(memory.facts),
-    recentTurns: memory.recentTurns,
+    recentTurns: getPromptReadyMemoryTurns(memory.recentTurns),
     summary: memory.summary,
+    memoryStatus: recallPolicy.status,
+    reusableInPrompt: recallPolicy.reusableInPrompt,
+    promptEligible: recallPolicy.promptEligible,
+    recallScore: recallPolicy.recallScore,
+    recallQuality: recallPolicy.recallQuality,
+    recallPolicy,
+    softDeletedAt: recallPolicy.softDeletedAt,
     memoryHash: memory.memoryHash
   };
 }
