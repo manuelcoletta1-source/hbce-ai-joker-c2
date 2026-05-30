@@ -39,7 +39,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.2";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.3";
 const THREAD_AUTHORITY_RUNTIME_VALIDATED = "SERVER_RUNTIME_VALIDATED";
 const THREAD_SCOPE_RUNTIME_ONLY = "RUNTIME_ONLY";
 const SAVE_INTENT_USER_EXPLICIT_TO_IPR = "USER_EXPLICIT_SAVE_TO_IPR";
@@ -186,6 +186,66 @@ function truncateString(value: string, maxLength: number): string {
   return `${value.slice(0, Math.max(0, maxLength - 20))}\n[TRUNCATED_BY_ROUTE]`;
 }
 
+function normalizeTimestampForDatabase(value: unknown, fallbackIso: string | null = null): string | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? fallbackIso : value.toISOString();
+  }
+
+  if (typeof value !== "string") {
+    return fallbackIso;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return fallbackIso;
+  }
+
+  const directDate = new Date(trimmed);
+  if (!Number.isNaN(directDate.getTime())) {
+    return directDate.toISOString();
+  }
+
+  const italianDateTime = trimmed.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:,?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
+  );
+
+  if (italianDateTime) {
+    const [, dayRaw, monthRaw, yearRaw, hourRaw = "0", minuteRaw = "0", secondRaw = "0"] = italianDateTime;
+    const day = Number.parseInt(dayRaw, 10);
+    const month = Number.parseInt(monthRaw, 10);
+    const year = Number.parseInt(yearRaw, 10);
+    const hour = Number.parseInt(hourRaw, 10);
+    const minute = Number.parseInt(minuteRaw, 10);
+    const second = Number.parseInt(secondRaw, 10);
+
+    const valid =
+      year >= 1970 &&
+      month >= 1 &&
+      month <= 12 &&
+      day >= 1 &&
+      day <= 31 &&
+      hour >= 0 &&
+      hour <= 23 &&
+      minute >= 0 &&
+      minute <= 59 &&
+      second >= 0 &&
+      second <= 59;
+
+    if (valid) {
+      const normalizedLocal = `${yearRaw}-${monthRaw.padStart(2, "0")}-${dayRaw.padStart(2, "0")}T${hourRaw.padStart(
+        2,
+        "0"
+      )}:${minuteRaw.padStart(2, "0")}:${secondRaw.padStart(2, "0")}+02:00`;
+      const parsedItalianDate = new Date(normalizedLocal);
+      if (!Number.isNaN(parsedItalianDate.getTime())) {
+        return parsedItalianDate.toISOString();
+      }
+    }
+  }
+
+  return fallbackIso;
+}
+
 function readHeaderString(request: NextRequest, name: string): string | null {
   return normalizeString(request.headers.get(name));
 }
@@ -264,10 +324,7 @@ function normalizeMessages(value: unknown): SaveChatMessageInput[] {
         runtimeDecision: normalizeString(message.runtimeDecision),
         generationClass: normalizeString(message.generationClass),
         messageVisibility: normalizeString(message.messageVisibility),
-        createdAt:
-          typeof message.createdAt === "string" || message.createdAt instanceof Date
-            ? message.createdAt
-            : null,
+        createdAt: normalizeTimestampForDatabase(message.createdAt),
         metadata: isRecord(message.metadata) ? message.metadata : null
       };
     })
@@ -439,7 +496,7 @@ function resolveContext(request: NextRequest, input: SaveChatRouteInput): SaveCh
     birthAnchorUtc: HBCE_JOKER_C2_BIRTH_ANCHOR_UTC,
     jokerLifetime: lifetime.label,
     jokerLifeSeconds: lifetime.seconds,
-    createdAt: input.createdAt ?? null,
+    createdAt: normalizeTimestampForDatabase(input.createdAt, responseUtc),
     payload: {
       ...(isRecord(input.payload) ? input.payload : {}),
       iprSaaSMeaning: {
@@ -544,7 +601,7 @@ async function persistProvidedMessages(context: SaveChatRouteContext) {
           rawContentSavedInMemory: context.rawContentSaved,
           legalCertification: false
         },
-        createdAt: message.createdAt ?? null
+        createdAt: normalizeTimestampForDatabase(message.createdAt, context.responseUtc)
       };
 
       return persistIprChatMessageToDatabase(input);
@@ -873,7 +930,7 @@ export async function GET() {
       primaryIntention:
         "string; canonical meaning: IPR as Intenzione Primaria Radicale saved from the chat",
       selectedMessageIds: "string[]",
-      messages: "optional message snapshots to persist before save",
+      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO before database insert",
       saveRaw: "boolean; default false",
       saveSynthesis: "boolean; default true",
       reusableInPrompt: "boolean; default true"
