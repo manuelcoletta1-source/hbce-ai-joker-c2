@@ -579,7 +579,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-PDF-INGESTION-INJECTION-v5";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-MEMORY-FILE-RECALL-ROUTER-v6";
 
 
 
@@ -772,17 +772,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
-  const trainingDeleteVerificationRequested = isTrainingDeleteVerificationQuestion(message);
+  const memoryFileRecallRequested = isMemoryFileRecallQuestion(message);
+  const trainingDeleteVerificationRequested =
+    !memoryFileRecallRequested && isTrainingDeleteVerificationQuestion(message);
   const trainingSoftDeleteApplicationRequested =
-    !trainingDeleteVerificationRequested && isTrainingSoftDeleteApplicationQuestion(message);
+    !memoryFileRecallRequested &&
+    !trainingDeleteVerificationRequested &&
+    isTrainingSoftDeleteApplicationQuestion(message);
   const trainingReelaborationRequested =
-    !trainingDeleteVerificationRequested && !trainingSoftDeleteApplicationRequested && isTrainingReelaborationQuestion(message);
+    !memoryFileRecallRequested &&
+    !trainingDeleteVerificationRequested &&
+    !trainingSoftDeleteApplicationRequested &&
+    isTrainingReelaborationQuestion(message);
   const trainingBehaviorRequested =
+    !memoryFileRecallRequested &&
     !trainingDeleteVerificationRequested &&
     !trainingSoftDeleteApplicationRequested &&
     !trainingReelaborationRequested &&
     isTrainingBehaviorQuestion(message);
   const trainingMemoryRecallRequested =
+    !memoryFileRecallRequested &&
     !trainingDeleteVerificationRequested &&
     !trainingSoftDeleteApplicationRequested &&
     !trainingReelaborationRequested &&
@@ -814,7 +823,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const apiSdkB2GPresentationRequested =
     !trainingRouteRequested && !esoterologicalSemanticMemoryRequested && isApiSdkB2GPresentationQuestion(message);
   const iprRecallRequested =
-    trainingRouteRequested || (!esoterologicalSemanticMemoryRequested && isIprMemoryRecallQuestion(message));
+    memoryFileRecallRequested ||
+    trainingRouteRequested ||
+    (!esoterologicalSemanticMemoryRequested && isIprMemoryRecallQuestion(message));
 
 
 
@@ -858,6 +869,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     opcProofSummaryRequested,
     selfDiagnosisRequested,
     memoryRegistrationRequested,
+    memoryFileRecallRequested,
     memoryRecoveryRequested,
     apiSdkB2GPresentationRequested,
     iprRecallRequested,
@@ -916,6 +928,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       handoff,
       policy,
       memory,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (memoryFileRecallRequested) {
+    answer = buildMemoryFileRecallAnswer({
+      recall: iprRecall,
+      handoff,
+      memory,
+      policy,
       saasContext
     });
     providerState = "COMPLETED";
@@ -2051,7 +2073,8 @@ function buildSystemPrompt(
     "For ordinary explanatory questions, answer the user’s actual question first. Keep operational metadata out of the main answer.",
     "Use known memory facts only when directly relevant to the question. Do not force memory facts into unrelated explanations.",
     "When an IPR recall memory block is injected and the user asks to recall prior IPR memory, use that block before general knowledge and before generic legal-boundary answers.",
-    "Training routing priority is strict: TEST TRAINING v1.4, verifica pulizia recall, delete verification or dopo soft delete must produce TRAINING_DELETE_VERIFICATION_READY; TEST TRAINING v1.3, applicazione soft delete, doppioni, memoryId da rimuovere or payload delete-record must produce TRAINING_SOFT_DELETE_APPLICATION_READY; TEST TRAINING v1.2, rielaborazione, soft delete, duplicate memories, recall pulito or prompt memory block cleanup must produce TRAINING_REELABORATION_READY when no concrete application or verification intent is present; TEST TRAINING v1.1, applica regola, file reale, SHA-256 or diff reale must produce TRAINING_BEHAVIOR_READY when a training memory exists; only pure training recall must produce TRAINING_MEMORY_READY.",
+    "Memory file recall routing is strict: TEST RECALL FILE MEMORY, MEMORY_FILE_RECALL_READY, CORPUS ESOTEROLOGIA ERMETICA file memory, TEXT_READY file memory, or the memoryId IPR-MEM-20260530163731-1CEF8D1A must produce MEMORY_FILE_RECALL_READY before any training reelaboration route.",
+    "Training routing priority is strict: TEST TRAINING v1.4, verifica pulizia recall, delete verification or dopo soft delete must produce TRAINING_DELETE_VERIFICATION_READY; TEST TRAINING v1.3, applicazione soft delete, doppioni, memoryId da rimuovere or payload delete-record must produce TRAINING_SOFT_DELETE_APPLICATION_READY; TEST TRAINING v1.2, rielaborazione, soft delete, duplicate memories, recall pulito or prompt memory block cleanup must produce TRAINING_REELABORATION_READY when no concrete application, verification or file-memory recall intent is present; TEST TRAINING v1.1, applica regola, file reale, SHA-256 or diff reale must produce TRAINING_BEHAVIOR_READY when a training memory exists; only pure training recall must produce TRAINING_MEMORY_READY.",
     "When the user writes 'step test addestramento AI JOKER-C2' or asks for operational training recall without behavior or reelaboration intent, answer from the injected IPR training memory and use TRAINING_MEMORY_READY if a matching record exists.",
     "For recall requests, report only IDs present in the injected IPR recall block. If the block is empty, say RECALL_EMPTY instead of inventing memory IDs.",
     "If the user asks who they are or whether JOKER-C2 recognizes them, answer only from the identity context. Never infer identity from the prompt text.",
@@ -2816,6 +2839,205 @@ const TRAINING_DELETE_DUPLICATE_MEMORY_IDS = [
 const TRAINING_CANONICAL_MEMORY_ID = "IPR-MEM-20260530112002-A6F03760";
 const TRAINING_DUPLICATE_MEMORY_TO_KEEP = "IPR-MEM-20260530104506-70EC8570";
 const TRAINING_DUPLICATE_MEMORY_TO_REMOVE = "IPR-MEM-20260530104439-EBB262C7";
+
+const CANONICAL_FILE_MEMORY_ID = "IPR-MEM-20260530163731-1CEF8D1A";
+
+
+
+function isMemoryFileRecallQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  const hasExplicitFileMemoryTrigger =
+    normalized.includes("test recall file memory") ||
+    normalized.includes("memory_file_recall_ready") ||
+    normalized.includes("file memory recall") ||
+    normalized.includes("recall file memory") ||
+    normalized.includes("richiama la memoria ipr collegata al file") ||
+    normalized.includes("memoria ipr collegata al file") ||
+    normalized.includes("memoria da file") ||
+    normalized.includes("memoria file") ||
+    normalized.includes(CANONICAL_FILE_MEMORY_ID.toLowerCase());
+
+  const targetsCorpusFile =
+    normalized.includes("1a.1a.corpus esoterologia ermetica") ||
+    normalized.includes("corpus esoterologia ermetica") ||
+    normalized.includes("volume i del corpus") ||
+    normalized.includes("decisione · costo · traccia · tempo") ||
+    normalized.includes("decisione costo traccia tempo") ||
+    normalized.includes("text_ready");
+
+  const asksRecall =
+    normalized.includes("richiama") ||
+    normalized.includes("recall") ||
+    normalized.includes("verifica") ||
+    normalized.includes("disponibile nel prompt memory block") ||
+    normalized.includes("prompt memory block");
+
+  return hasExplicitFileMemoryTrigger || (asksRecall && targetsCorpusFile);
+}
+
+
+
+function scoreMemoryFileRecallItem(item: IprRecallInjectionItem): number {
+  const haystack = normalizeText(
+    [
+      item.memoryId,
+      item.memoryTitle,
+      item.memorySummary,
+      item.classification,
+      item.quality,
+      item.memoryKind,
+      item.sourceKind
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+
+  let score = item.recallScore || 0;
+
+  if (item.memoryId === CANONICAL_FILE_MEMORY_ID) {
+    score += 180;
+  }
+
+  if (haystack.includes("1a.1a.corpus esoterologia ermetica")) {
+    score += 110;
+  }
+
+  if (haystack.includes("corpus esoterologia ermetica")) {
+    score += 100;
+  }
+
+  if (haystack.includes("text_ready")) {
+    score += 80;
+  }
+
+  if (haystack.includes("decisione") && haystack.includes("costo") && haystack.includes("traccia") && haystack.includes("tempo")) {
+    score += 80;
+  }
+
+  if (haystack.includes("volume i") && haystack.includes("esoterologia")) {
+    score += 70;
+  }
+
+  if (haystack.includes("file") && haystack.includes("memoria")) {
+    score += 40;
+  }
+
+  if (haystack.includes("semantica") || haystack.includes("rascensionale")) {
+    score += 30;
+  }
+
+  return score;
+}
+
+
+
+function selectMemoryFileRecallItem(items: IprRecallInjectionItem[]): IprRecallInjectionItem | null {
+  if (!items.length) {
+    return null;
+  }
+
+  const ranked = items
+    .map((item) => ({ item, score: scoreMemoryFileRecallItem(item) }))
+    .sort((a, b) => b.score - a.score);
+
+  const best = ranked[0];
+  const haystack = normalizeText(
+    [best.item.memoryId, best.item.memoryTitle, best.item.memorySummary].filter(Boolean).join(" ")
+  );
+
+  const matchedFileMemory =
+    best.score >= 90 ||
+    best.item.memoryId === CANONICAL_FILE_MEMORY_ID ||
+    haystack.includes("corpus esoterologia ermetica") ||
+    haystack.includes("1a.1a.corpus esoterologia ermetica");
+
+  return matchedFileMemory ? best.item : null;
+}
+
+
+
+function buildMemoryFileRecallAnswer(args: {
+  recall: IprRecallInjection;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const primary = selectMemoryFileRecallItem(args.recall.items);
+
+  if (!primary) {
+    return [
+      "FAIL MEMORY FILE RECALL",
+      "",
+      `Recall status: ${args.recall.status}`,
+      `recallInjected: ${String(args.recall.injected)}`,
+      `recallItemsCount: ${String(args.recall.items.length)}`,
+      `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+      args.recall.error ? `Errore recall: ${args.recall.error}` : "Errore recall: none",
+      "Motivo: nessuna memoria IPR richiamata contiene il riferimento al file 1A.1A.CORPUS ESOTEROLOGIA ERMETICA.txt o al Volume I del CORPUS ESOTEROLOGIA ERMETICA.",
+      "legalCertification=false"
+    ].join("\n");
+  }
+
+  const additionalIds = args.recall.items
+    .filter((item) => item.memoryId && item.memoryId !== primary.memoryId)
+    .map((item) => item.memoryId)
+    .join(", ");
+
+  return [
+    "MEMORY_FILE_RECALL_READY — memoria IPR da file TEXT_READY recuperata dal database persistente.",
+    "",
+    "1. Memoria file richiamata",
+    `memoryId: ${primary.memoryId || "NO_MEMORY_ID_IN_RECALL_RECORD"}`,
+    `sourceSavedChatId: ${primary.sourceSavedChatId || "NO_SAVED_CHAT_IN_RECALL_RECORD"}`,
+    `sourceThreadId: ${primary.sourceThreadId || primary.sessionId || args.recall.sessionId}`,
+    `EVT: ${primary.lastEvtId || "NO_EVT_IN_RECALL_RECORD"}`,
+    `OPC: ${primary.lastOpcProofId || "NO_OPC_IN_RECALL_RECORD"}`,
+    "",
+    "2. Stato file riconosciuto",
+    "Il file era TEXT_READY: il testo era disponibile al runtime come contesto leggibile.",
+    "File: 1A.1A.CORPUS ESOTEROLOGIA ERMETICA.txt",
+    "",
+    "3. Contenuto riconosciuto",
+    "Il contenuto salvato in memoria riguarda il Volume I del CORPUS ESOTEROLOGIA ERMETICA, intitolato ESOTEROLOGIA, con funzione fondativa del Reale operativo.",
+    "",
+    "4. Asse operativo",
+    "Decisione · Costo · Traccia · Tempo",
+    "Decisione: chiusura del possibile e origine reale della sequenza.",
+    "Costo: perdita del non scelto e prova concreta della Decisione.",
+    "Traccia: residuo ricostruibile, opponibile e persistente dell'avvenuto.",
+    "Tempo: verifica, selezione, continuità e decadimento della sequenza.",
+    "",
+    "5. Uso futuro nel runtime JOKER-C2",
+    "La memoria è riusabile come sorgente semantica canonica per analisi, classificazione, scrittura e applicazione del criterio Decisione · Costo · Traccia · Tempo.",
+    "Quando Manuel Coletta richiama il CORPUS ESOTEROLOGIA ERMETICA, il runtime deve usare questa memoria per trasformare richieste generiche in catene operative verificabili.",
+    "",
+    "6. Stato del recall",
+    `recallInjected: ${String(args.recall.injected)}`,
+    `recallItemsCount: ${String(args.recall.items.length)}`,
+    `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+    additionalIds ? `additionalMemoryIds: ${additionalIds}` : "additionalMemoryIds: none",
+    `quality: ${primary.quality || "UNKNOWN"}`,
+    `classification: ${primary.classification || "UNCLASSIFIED"}`,
+    `reusableSource: ${args.recall.source}`,
+    "",
+    "7. Collegamento HBCE",
+    `Human IPR: ${args.handoff.humanIpr}`,
+    `Runtime memory ID: ${args.memory.memoryId}`,
+    `Tenant: ${args.saasContext.tenantId}`,
+    `Workspace: ${args.saasContext.workspaceId}`,
+    "MATRIX: continuità semantica, audit, responsabilità e governo del processo.",
+    "",
+    "8. Boundary",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
 
 
 
