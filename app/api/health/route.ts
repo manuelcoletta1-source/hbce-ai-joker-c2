@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+
 import {
   describeDefaultHbceDatabase,
   getHbceDatabaseBoundary,
@@ -9,16 +10,21 @@ import {
   queryHbceDatabase
 } from "@/lib/ipr-database";
 
+
 import {
   HBCE_DATABASE_SCHEMA_TABLES,
   HBCE_DATABASE_SCHEMA_VERSION
 } from "@/lib/ipr-database-schema";
 
+
 import { getC2DefensePolicyHealth } from "@/lib/c2-defense-policy";
+
 
 import { getRuntimeAuditLogHealth } from "@/lib/runtime-audit-log";
 
+
 import { getModelUsageLogHealth } from "@/lib/model-usage-log";
+
 
 import {
   HBCE_CORE,
@@ -33,10 +39,13 @@ import {
   RUNTIME_IPR
 } from "@/lib/saas-tier-types";
 
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+
 type HealthStatus = "OK" | "DEGRADED";
+
 
 type DatabaseTableHealth = {
   tableName: string;
@@ -45,6 +54,7 @@ type DatabaseTableHealth = {
   status: "PRESENT" | "MISSING" | "UNKNOWN";
   error: string | null;
 };
+
 
 type DatabaseHealth = {
   configured: boolean;
@@ -69,9 +79,17 @@ type DatabaseHealth = {
     opcProofs: boolean;
     runtimeAuditLogs: boolean;
     modelUsage: boolean;
+    chatThreads: boolean;
+    chatMessages: boolean;
+    iprChatMemorySaves: boolean;
+    memoryRecords: boolean;
+    memoryRegisteredEvents: boolean;
+    iprMemoryCore: boolean;
+    iprMemoryApi: boolean;
   };
   error: string | null;
 };
+
 
 type ComponentHealth = {
   name: string;
@@ -82,25 +100,32 @@ type ComponentHealth = {
   boundary: string;
 };
 
+
 type InformationSchemaTableRow = Record<string, unknown> & {
   table_name?: string;
 };
 
+
 function readEnv(name: string, fallback = ""): string {
   const value = process.env[name];
+
 
   if (typeof value !== "string") {
     return fallback;
   }
 
+
   const trimmed = value.trim();
+
 
   return trimmed || fallback;
 }
 
+
 function isEnvConfigured(name: string): boolean {
   return Boolean(readEnv(name));
 }
+
 
 function redactEnv(name: string): {
   name: string;
@@ -109,6 +134,7 @@ function redactEnv(name: string): {
 } {
   const configured = isEnvConfigured(name);
 
+
   return {
     name,
     configured,
@@ -116,9 +142,11 @@ function redactEnv(name: string): {
   };
 }
 
+
 function sqlLiteral(value: string): string {
   return `'${value.replace(/'/g, "''")}'`;
 }
+
 
 function getModelConfig() {
   const defaultModel = readEnv("JOKER_MODEL", "gpt-4o-mini");
@@ -144,6 +172,7 @@ function getModelConfig() {
     readEnv("JOKER_C2_MODEL", frontierModel)
   );
 
+
   return {
     defaultModel,
     baseModel,
@@ -156,9 +185,11 @@ function getModelConfig() {
   };
 }
 
+
 function getOpenAIHealth() {
   const configured = isEnvConfigured("OPENAI_API_KEY");
   const models = getModelConfig();
+
 
   return {
     provider: "OpenAI",
@@ -174,10 +205,12 @@ function getOpenAIHealth() {
   };
 }
 
+
 function buildRequiredTablesSql(): string {
   const tableList = HBCE_DATABASE_SCHEMA_TABLES
     .map((tableName) => sqlLiteral(tableName))
     .join(", ");
+
 
   return `
 SELECT table_name
@@ -187,6 +220,7 @@ WHERE table_schema IN ('public', current_schema())
 ORDER BY table_name;
 `.trim();
 }
+
 
 function buildUnknownTableHealth(error: string): DatabaseTableHealth[] {
   return HBCE_DATABASE_SCHEMA_TABLES.map(
@@ -200,6 +234,7 @@ function buildUnknownTableHealth(error: string): DatabaseTableHealth[] {
   );
 }
 
+
 async function readRequiredDatabaseTables(): Promise<{
   tables: DatabaseTableHealth[];
   missingTables: string[];
@@ -209,8 +244,10 @@ async function readRequiredDatabaseTables(): Promise<{
     buildRequiredTablesSql()
   );
 
+
   if (!result.ok) {
     const error = result.error || "DATABASE_TABLE_HEALTH_QUERY_FAILED";
+
 
     return {
       tables: buildUnknownTableHealth(error),
@@ -219,15 +256,18 @@ async function readRequiredDatabaseTables(): Promise<{
     };
   }
 
+
   const presentTables = new Set(
     result.rows
       .map((row) => row.table_name)
       .filter((value): value is string => typeof value === "string" && value.length > 0)
   );
 
+
   const tables: DatabaseTableHealth[] = HBCE_DATABASE_SCHEMA_TABLES.map(
     (tableName): DatabaseTableHealth => {
       const present = presentTables.has(tableName);
+
 
       return {
         tableName,
@@ -239,6 +279,7 @@ async function readRequiredDatabaseTables(): Promise<{
     }
   );
 
+
   return {
     tables,
     missingTables: tables
@@ -248,6 +289,156 @@ async function readRequiredDatabaseTables(): Promise<{
   };
 }
 
+
+
+function hasRequiredTable(
+  presentTableNames: ReadonlySet<string>,
+  ...tableNames: string[]
+): boolean {
+  return tableNames.some((tableName) => presentTableNames.has(tableName));
+}
+
+
+function buildUnavailableRequiredRuntimeTables(): DatabaseHealth["requiredRuntimeTables"] {
+  return {
+    evtRecords: false,
+    opcProofs: false,
+    runtimeAuditLogs: false,
+    modelUsage: false,
+    chatThreads: false,
+    chatMessages: false,
+    iprChatMemorySaves: false,
+    memoryRecords: false,
+    memoryRegisteredEvents: false,
+    iprMemoryCore: false,
+    iprMemoryApi: false
+  };
+}
+
+
+function buildRequiredRuntimeTablesFromPresentTables(
+  presentTableNames: ReadonlySet<string>
+): DatabaseHealth["requiredRuntimeTables"] {
+  const chatThreads = hasRequiredTable(
+    presentTableNames,
+    "chat_threads",
+    "ipr_chat_sessions"
+  );
+  const chatMessages = hasRequiredTable(
+    presentTableNames,
+    "chat_messages",
+    "ipr_chat_messages"
+  );
+  const iprChatMemorySaves = hasRequiredTable(
+    presentTableNames,
+    "ipr_chat_memory_saves"
+  );
+  const memoryRecords = hasRequiredTable(presentTableNames, "memory_records");
+  const memoryRegisteredEvents = hasRequiredTable(
+    presentTableNames,
+    "memory_registered_events"
+  );
+
+  return {
+    evtRecords: presentTableNames.has("evt_records"),
+    opcProofs: presentTableNames.has("opc_proofs"),
+    runtimeAuditLogs: presentTableNames.has("runtime_audit_logs"),
+    modelUsage: presentTableNames.has("model_usage"),
+    chatThreads,
+    chatMessages,
+    iprChatMemorySaves,
+    memoryRecords,
+    memoryRegisteredEvents,
+    iprMemoryCore:
+      chatThreads &&
+      chatMessages &&
+      iprChatMemorySaves &&
+      memoryRecords &&
+      memoryRegisteredEvents,
+    iprMemoryApi:
+      chatThreads &&
+      chatMessages &&
+      iprChatMemorySaves &&
+      memoryRecords &&
+      memoryRegisteredEvents
+  };
+}
+
+
+function buildIprMemoryHealth(database: DatabaseHealth) {
+  const required = database.requiredRuntimeTables;
+  const available =
+    database.configured &&
+    database.available &&
+    database.schemaReady &&
+    required.iprMemoryApi;
+
+  return {
+    status: available ? "OK" : "DEGRADED",
+    mode: available ? "DATABASE_PERSISTENT" : "PROCESS_MEMORY_MVP",
+    configured: database.configured,
+    available,
+    persistent: available,
+    legalCertification: false,
+    identityPrimaryRecord: {
+      enabled: required.iprMemoryCore,
+      boundary:
+        "IPR identifies the operational subject and binds memory records to tenant, workspace, session, EVT, OPC and audit context."
+    },
+    intenzionePrimariaRadicale: {
+      enabled: required.iprMemoryCore,
+      boundary:
+        "IPR memory stores a selected operational synthesis of the chat intention. It must not persist raw conversation by default and must not bypass policy."
+    },
+    tables: {
+      chatThreads: required.chatThreads,
+      chatMessages: required.chatMessages,
+      iprChatMemorySaves: required.iprChatMemorySaves,
+      memoryRecords: required.memoryRecords,
+      memoryRegisteredEvents: required.memoryRegisteredEvents
+    },
+    endpoints: {
+      recent: {
+        method: "GET/POST",
+        path: "/api/ipr-memory/recent",
+        status: required.chatThreads ? "EXPECTED_ACTIVE" : "WAITING_FOR_SCHEMA"
+      },
+      saveChat: {
+        method: "POST",
+        path: "/api/ipr-memory/save-chat",
+        status:
+          required.iprChatMemorySaves && required.memoryRecords
+            ? "EXPECTED_ACTIVE"
+            : "WAITING_FOR_SCHEMA"
+      },
+      records: {
+        method: "GET/POST",
+        path: "/api/ipr-memory/records",
+        status: required.memoryRecords ? "EXPECTED_ACTIVE" : "WAITING_FOR_SCHEMA"
+      },
+      recall: {
+        method: "GET/POST",
+        path: "/api/ipr-memory/recall",
+        status:
+          required.memoryRecords && required.iprMemoryCore
+            ? "EXPECTED_ACTIVE"
+            : "WAITING_FOR_SCHEMA"
+      }
+    },
+    recallPolicy: {
+      rawConversationDefault: false,
+      synthesisDefault: true,
+      reusableInPromptOnly: true,
+      explicitSaveRequired: true,
+      policyBypassAllowed: false
+    },
+    boundary: available
+      ? "IPR memory API tables are available. Recent chats, explicit save-to-IPR, memory records and controlled recall may operate against database persistence."
+      : "IPR memory API is not fully ready. Runtime must not claim durable IPR memory until the required schema and database are active."
+  };
+}
+
+
 async function readDatabaseHealth(): Promise<DatabaseHealth> {
   try {
     const configured = isHbceDatabaseConfigured();
@@ -255,10 +446,12 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
     const description = describeDefaultHbceDatabase();
     const boundary = getHbceDatabaseBoundary();
 
+
     if (!configured || !available) {
       const error = configured
         ? "HBCE database adapter is not available."
         : "DATABASE_URL is not configured.";
+
 
       return {
         configured,
@@ -278,29 +471,28 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
         },
         tables: buildUnknownTableHealth("Database unavailable during health check."),
         missingTables: [...HBCE_DATABASE_SCHEMA_TABLES],
-        requiredRuntimeTables: {
-          evtRecords: false,
-          opcProofs: false,
-          runtimeAuditLogs: false,
-          modelUsage: false
-        },
+        requiredRuntimeTables: buildUnavailableRequiredRuntimeTables(),
         error
       };
     }
 
+
     const initialization = await initializeHbceDatabaseSchema();
     const tableHealth = await readRequiredDatabaseTables();
+
 
     const schemaReady =
       initialization.ok &&
       !tableHealth.error &&
       tableHealth.missingTables.length === 0;
 
+
     const presentTableNames = new Set(
       tableHealth.tables
         .filter((table) => table.present)
         .map((table) => table.tableName)
     );
+
 
     return {
       configured,
@@ -320,12 +512,7 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
       },
       tables: tableHealth.tables,
       missingTables: tableHealth.missingTables,
-      requiredRuntimeTables: {
-        evtRecords: presentTableNames.has("evt_records"),
-        opcProofs: presentTableNames.has("opc_proofs"),
-        runtimeAuditLogs: presentTableNames.has("runtime_audit_logs"),
-        modelUsage: presentTableNames.has("model_usage")
-      },
+      requiredRuntimeTables: buildRequiredRuntimeTablesFromPresentTables(presentTableNames),
       error:
         initialization.error ||
         tableHealth.error ||
@@ -336,6 +523,7 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "UNKNOWN_DATABASE_HEALTH_ERROR";
+
 
     return {
       configured: false,
@@ -356,16 +544,12 @@ async function readDatabaseHealth(): Promise<DatabaseHealth> {
       },
       tables: buildUnknownTableHealth(errorMessage),
       missingTables: [...HBCE_DATABASE_SCHEMA_TABLES],
-      requiredRuntimeTables: {
-        evtRecords: false,
-        opcProofs: false,
-        runtimeAuditLogs: false,
-        modelUsage: false
-      },
+      requiredRuntimeTables: buildUnavailableRequiredRuntimeTables(),
       error: errorMessage
     };
   }
 }
+
 
 function deriveHealthStatus(input: {
   openAIConfigured: boolean;
@@ -375,24 +559,30 @@ function deriveHealthStatus(input: {
     return "DEGRADED";
   }
 
+
   if (input.database.error) {
     return "DEGRADED";
   }
+
 
   if (!input.database.configured || !input.database.available || !input.database.schemaReady) {
     return "DEGRADED";
   }
 
+
   return "OK";
 }
+
 
 function buildRuntimeState(status: HealthStatus): string {
   if (status === "OK") {
     return "JOKER_C2_SAAS_CORE_HEALTHY";
   }
 
+
   return "JOKER_C2_SAAS_CORE_DEGRADED";
 }
+
 
 function buildPersistenceHealth(database: DatabaseHealth) {
   return {
@@ -415,6 +605,7 @@ function buildPersistenceHealth(database: DatabaseHealth) {
   };
 }
 
+
 function buildIdentityHealth() {
   return {
     runtimeEntity: RUNTIME_ENTITY,
@@ -429,6 +620,7 @@ function buildIdentityHealth() {
   };
 }
 
+
 function buildProjectHealth() {
   return {
     project: HBCE_SAAS_PROJECT,
@@ -441,6 +633,7 @@ function buildProjectHealth() {
     state: "SAAS_CORE_V0_1_PREPARATION"
   };
 }
+
 
 function buildComponentHealth(input: {
   name: string;
@@ -459,6 +652,7 @@ function buildComponentHealth(input: {
   };
 }
 
+
 function buildBoundaryHealth(database: DatabaseHealth) {
   return {
     ...RUNTIME_BOUNDARY_SUMMARY,
@@ -470,7 +664,7 @@ function buildBoundaryHealth(database: DatabaseHealth) {
     opc:
       "OPC is a technical proof receipt for audit and governance review. It is not legal certification.",
     memory:
-      "Memory does not authenticate identity, does not authorize future unsafe requests, does not lower cyber risk and does not bypass runtime policy.",
+      "Memory does not authenticate identity, does not authorize future unsafe requests, does not lower cyber risk and does not bypass runtime policy. IPR memory stores selected operational synthesis and Intenzione Primaria Radicale only through explicit save workflow.",
     audit:
       "Runtime audit logs support operational reconstruction, SaaS governance and review. They are not legal certification.",
     modelUsage:
@@ -486,6 +680,7 @@ function buildBoundaryHealth(database: DatabaseHealth) {
   };
 }
 
+
 export async function GET() {
   const timestamp = new Date().toISOString();
   const openAI = getOpenAIHealth();
@@ -494,11 +689,14 @@ export async function GET() {
   const c2Defense = getC2DefensePolicyHealth();
   const runtimeAuditLog = getRuntimeAuditLogHealth();
   const modelUsageLog = getModelUsageLogHealth();
+  const iprMemory = buildIprMemoryHealth(database);
+
 
   const status = deriveHealthStatus({
     openAIConfigured: openAI.configured,
     database
   });
+
 
   const componentHealth = {
     provider: buildComponentHealth({
@@ -544,6 +742,13 @@ export async function GET() {
           ? modelUsageLog.boundary
           : "Model usage log health boundary unavailable."
     }),
+    iprMemory: buildComponentHealth({
+      name: "IPR Memory API",
+      configured: database.configured,
+      available: iprMemory.available,
+      mode: iprMemory.mode,
+      boundary: iprMemory.boundary
+    }),
     evtLedger: buildComponentHealth({
       name: "EVT Records",
       configured: true,
@@ -568,6 +773,7 @@ export async function GET() {
     })
   };
 
+
   const payload = {
     ok: true,
     status,
@@ -578,13 +784,18 @@ export async function GET() {
     state: buildRuntimeState(status),
     timestamp,
 
+
     project: buildProjectHealth(),
+
 
     provider: openAI,
 
+
     models: openAI.models,
 
+
     database,
+
 
     schema: {
       version: HBCE_DATABASE_SCHEMA_VERSION,
@@ -596,11 +807,15 @@ export async function GET() {
       legalCertification: false
     },
 
+
     persistence,
+
 
     components: componentHealth,
 
+
     identity: buildIdentityHealth(),
+
 
     access: {
       decision: "SERVER_VALIDATION_REQUIRED",
@@ -614,8 +829,9 @@ export async function GET() {
         "GET /api/health is a runtime configuration check. It does not grant biological IPR access."
     },
 
+
     memory: {
-      scope: "RUNTIME_ONLY",
+      scope: iprMemory.available ? "IPR_BOUND_AVAILABLE" : "RUNTIME_ONLY",
       authority: "RUNTIME_HEALTH_CHECK",
       persistenceMode: persistence.activeMode,
       targetPersistence: persistence.target,
@@ -623,9 +839,18 @@ export async function GET() {
       databaseAvailable: database.available,
       schemaReady: database.schemaReady,
       durableClaimAllowed: persistence.durableClaimAllowed,
+      iprMemoryApiAvailable: iprMemory.available,
+      iprMemoryCoreReady: database.requiredRuntimeTables.iprMemoryCore,
+      explicitSaveRequired: true,
+      rawConversationDefault: false,
+      reusableInPromptOnly: true,
       boundary:
-        "Health endpoint does not create or update IPR-bound memory. Memory state for real operations is evaluated during POST /api/chat."
+        "Health endpoint does not create or update IPR-bound memory. IPR memory is created only through explicit save-to-IPR workflow and recalled through controlled reusable memory."
     },
+
+
+    iprMemory,
+
 
     matrix: {
       state: "MATRIX_LIMITED",
@@ -633,6 +858,7 @@ export async function GET() {
       reason:
         "MATRIX_ACTIVE requires verified biological IPR context. GET /api/health exposes runtime readiness only."
     },
+
 
     saasCore: {
       project: HBCE_SAAS_PROJECT,
@@ -649,16 +875,29 @@ export async function GET() {
       opcReady: database.requiredRuntimeTables.opcProofs,
       auditReady: database.requiredRuntimeTables.runtimeAuditLogs,
       modelUsageReady: database.requiredRuntimeTables.modelUsage,
+      iprMemoryReady: iprMemory.available,
+      iprMemoryCoreReady: database.requiredRuntimeTables.iprMemoryCore,
+      recentChatsReady: database.requiredRuntimeTables.chatThreads,
+      saveChatToIprReady:
+        database.requiredRuntimeTables.iprChatMemorySaves &&
+        database.requiredRuntimeTables.memoryRecords,
+      memoryRecallReady:
+        database.requiredRuntimeTables.memoryRecords &&
+        database.requiredRuntimeTables.iprMemoryCore,
       legalCertification: false,
       boundary:
         "SaaS Core v0.1 requires governed runtime execution, OpenAI provider configuration, database persistence target, runtime audit logs, model usage logs, EVT continuity and OPC proof receipts."
     },
 
+
     c2Defense,
+
 
     runtimeAuditLog,
 
+
     modelUsageLog,
+
 
     operationalContext: {
       project: HBCE_SAAS_PROJECT,
@@ -674,11 +913,21 @@ export async function GET() {
       databaseConfigured: database.configured,
       databaseAvailable: database.available,
       schemaReady: database.schemaReady,
+      iprMemoryReady: iprMemory.available,
+      iprMemoryCoreReady: database.requiredRuntimeTables.iprMemoryCore,
+      recentChatsReady: database.requiredRuntimeTables.chatThreads,
+      saveChatToIprReady:
+        database.requiredRuntimeTables.iprChatMemorySaves &&
+        database.requiredRuntimeTables.memoryRecords,
+      memoryRecallReady:
+        database.requiredRuntimeTables.memoryRecords &&
+        database.requiredRuntimeTables.iprMemoryCore,
       missingTables: database.missingTables,
       auditLogConfigured: true,
       modelUsageLogConfigured: true,
       legalCertification: false
     },
+
 
     endpoints: {
       health: {
@@ -713,12 +962,21 @@ export async function GET() {
         path: "/api/files",
         status: "EXPECTED_FILE_CONTEXT_ENDPOINT"
       },
+      iprMemory: {
+        methods: ["GET", "POST"],
+        basePath: "/api/ipr-memory",
+        status: iprMemory.available
+          ? "EXPECTED_MEMORY_ENDPOINTS_ACTIVE"
+          : "EXPECTED_MEMORY_ENDPOINTS_PENDING_SCHEMA",
+        routes: iprMemory.endpoints
+      },
       interface: {
         method: "GET",
         path: "/interface",
         status: "EXPECTED_RUNTIME_INTERFACE"
       }
     },
+
 
     dashboard: {
       requiredPanels: [
@@ -729,6 +987,10 @@ export async function GET() {
         "Persistence",
         "Database Schema",
         "Memory",
+        "IPR Memory Console",
+        "Chat Recenti",
+        "Salva questa chat su IPR",
+        "Recall Memoria IPR",
         "MATRIX",
         "C2 Defense",
         "Runtime Audit Log",
@@ -751,6 +1013,11 @@ export async function GET() {
         "databaseAvailable",
         "schemaReady",
         "missingTables",
+        "iprMemoryReady",
+        "iprMemoryCoreReady",
+        "recentChatsReady",
+        "saveChatToIprReady",
+        "memoryRecallReady",
         "c2Defense",
         "runtimeAuditLog",
         "modelUsageLog",
@@ -758,8 +1025,10 @@ export async function GET() {
       ]
     },
 
+
     boundary: buildBoundaryHealth(database)
   };
+
 
   return NextResponse.json(payload, {
     status: 200,
@@ -771,6 +1040,7 @@ export async function GET() {
     }
   });
 }
+
 
 export async function OPTIONS() {
   return NextResponse.json(
