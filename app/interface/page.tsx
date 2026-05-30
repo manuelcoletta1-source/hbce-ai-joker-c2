@@ -211,6 +211,7 @@ const EMPTY_IPR_MEMORY_DASHBOARD: IprMemoryDashboardState = {
 
 
 const JOKER_SIGIL = "🜏";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-IPR-MESSAGE-ACTIONS-v1.2";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -2914,10 +2915,16 @@ function DualTimeSealCard({ seal }: { seal: DualTimeMessageSeal }) {
 
 function MessageBubble({
   message,
-  onCopy
+  onCopy,
+  onSaveChatToIpr,
+  canSaveChatToIpr,
+  isSavingChatToIpr
 }: {
   message: ChatMessage;
   onCopy: (content: string) => void;
+  onSaveChatToIpr: () => Promise<void>;
+  canSaveChatToIpr: boolean;
+  isSavingChatToIpr: boolean;
 }) {
   const isUser = message.role === "user";
   const isSystem = message.role === "system";
@@ -3016,6 +3023,17 @@ function MessageBubble({
           <div className="joker-message-actions">
             <button type="button" onClick={() => onCopy(displayedContent)}>
               Copy response
+            </button>
+
+
+            <button
+              type="button"
+              className="joker-save-ipr-button"
+              onClick={() => void onSaveChatToIpr()}
+              disabled={!canSaveChatToIpr || isSavingChatToIpr}
+              title="Salva l’intera chat corrente su IPR come Intenzione Primaria Radicale"
+            >
+              {isSavingChatToIpr ? "Saving on IPR..." : "Salva questa chat su IPR"}
             </button>
 
 
@@ -4282,6 +4300,7 @@ export default function InterfacePage() {
     { label: "Tenant", value: activeTenantId },
     { label: "Workspace", value: activeWorkspaceId },
     { label: "Thread", value: activeThreadId },
+    { label: "Interface revision", value: INTERFACE_REVISION },
     { label: "Recent chats", value: String(iprMemoryDashboard.recentThreads.length) },
     { label: "Saved chats", value: String(iprMemoryDashboard.memorySaves.length) },
     { label: "Memory records", value: String(iprMemoryDashboard.memoryRecords.length) },
@@ -4855,7 +4874,14 @@ export default function InterfacePage() {
         ) : (
           <div className="joker-message-list">
             {messages.map((item) => (
-              <MessageBubble key={item.id} message={item} onCopy={copyText} />
+              <MessageBubble
+                key={item.id}
+                message={item}
+                onCopy={copyText}
+                onSaveChatToIpr={saveCurrentChatToIpr}
+                canSaveChatToIpr={canUseIprMemory && messages.length > 0}
+                isSavingChatToIpr={isSavingChatToIpr}
+              />
             ))}
 
 
@@ -5970,6 +5996,15 @@ export default function InterfacePage() {
         .joker-message-actions button {
           padding: 8px 11px;
           font-size: 12px;
+        }
+
+
+        .joker-message-actions .joker-save-ipr-button {
+          border-color: rgba(34, 211, 238, 0.42);
+          background:
+            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.16), transparent 42%),
+            rgba(8, 47, 73, 0.48);
+          color: #e0f2fe;
         }
 
 
