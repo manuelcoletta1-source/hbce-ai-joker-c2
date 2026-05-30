@@ -211,7 +211,7 @@ const EMPTY_IPR_MEMORY_DASHBOARD: IprMemoryDashboardState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-IPR-MESSAGE-ACTIONS-v1.2";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-IPR-MEMORY-DELETE-ACTIONS-v1.3";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -2673,6 +2673,25 @@ function getIprMemoryRecordId(record: JsonRecord): string {
 }
 
 
+function getIprMemoryRecordMemoryId(record: JsonRecord): string {
+  const candidate = firstRecordText(
+    record,
+    [
+      ["memoryId"],
+      ["memory", "memoryId"],
+      ["memoryRecord", "memoryId"],
+      ["record", "memoryId"],
+      ["sourceMemoryId"],
+      ["iprMemoryId"]
+    ],
+    ""
+  );
+
+
+  return candidate.startsWith("IPR-MEM-") ? candidate : "";
+}
+
+
 function getIprMemoryRecordTimestamp(record: JsonRecord): string {
   return firstRecordText(
     record,
@@ -3128,6 +3147,7 @@ export default function InterfacePage() {
 
   const [isLoadingIprMemory, setIsLoadingIprMemory] = useState(false);
   const [isSavingChatToIpr, setIsSavingChatToIpr] = useState(false);
+  const [isRemovingIprMemoryId, setIsRemovingIprMemoryId] = useState<string | null>(null);
   const [iprMemoryError, setIprMemoryError] = useState<string | null>(null);
   const [iprMemoryNotice, setIprMemoryNotice] = useState<string | null>(null);
   const [iprMemoryDashboard, setIprMemoryDashboard] = useState<IprMemoryDashboardState>(
@@ -3923,6 +3943,85 @@ export default function InterfacePage() {
       setIprMemoryError(err instanceof Error ? err.message : "IPR_CHAT_SAVE_FAILED");
     } finally {
       setIsSavingChatToIpr(false);
+    }
+  }
+
+
+  async function removeIprMemoryRecordFromRecall(record: JsonRecord, source: "memory-record" | "recall-item" | "recent-chat") {
+    const memoryId = getIprMemoryRecordMemoryId(record);
+
+
+    if (!memoryId) {
+      setIprMemoryError("Cannot remove this IPR item because no memoryId is exposed by the dashboard payload.");
+      return;
+    }
+
+
+    if (!canUseIprMemory) {
+      setIprMemoryError("Cannot remove IPR memory without verified Human IPR, tenant and workspace.");
+      return;
+    }
+
+
+    const title = getIprMemoryRecordTitle(record);
+    const confirmed = window.confirm(
+      `Rimuovere questa memoria dal recall IPR?\n\n${memoryId}\n${compact(title, 140)}\n\nIl record verrà disattivato, non cancellato fisicamente. legalCertification=false`
+    );
+
+
+    if (!confirmed) return;
+
+
+    setIsRemovingIprMemoryId(memoryId);
+    setIprMemoryError(null);
+    setIprMemoryNotice(null);
+
+
+    try {
+      const response = await fetch("/api/ipr-memory/delete-record", {
+        method: "POST",
+        cache: "no-store",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          memoryId,
+          humanIpr,
+          tenantId: activeTenantId,
+          workspaceId: activeWorkspaceId,
+          confirmDeleteFromIpr: true,
+          deleteMode: "SOFT_DELETE",
+          reason: "USER_EXPLICIT_REMOVE_FROM_IPR_RECALL",
+          strictIdentity: true,
+          source,
+          interfaceRevision: INTERFACE_REVISION,
+          legalCertification: false
+        })
+      });
+
+
+      const payload = await readJsonResponse<JsonRecord>(response);
+
+
+      if (!response.ok || payload.ok === false) {
+        throw new Error(text(payload.error, `DELETE_RECORD_HTTP_${response.status}`));
+      }
+
+
+      const removedFromRecall = booleanLike(getPath(payload, ["removedFromRecall"]), "true");
+      const status = first(payload, [["status"]], "IPR_MEMORY_RECORD_DISABLED");
+
+
+      setIprMemoryNotice(
+        `IPR memory removed from recall. memoryId=${memoryId} · status=${status} · removedFromRecall=${removedFromRecall}`
+      );
+      await refreshIprMemoryDashboard();
+    } catch (err) {
+      setIprMemoryError(err instanceof Error ? err.message : "IPR_MEMORY_DELETE_FAILED");
+    } finally {
+      setIsRemovingIprMemoryId(null);
     }
   }
 
@@ -4740,6 +4839,18 @@ export default function InterfacePage() {
                       <span>Messages {first(record, [["messageCount"], ["messagesCount"]], "0")}</span>
                       <span>IPR save {first(record, [["iprSaveStatus"], ["saveStatus"]], "-")}</span>
                     </div>
+                    {getIprMemoryRecordMemoryId(record) ? (
+                      <div className="joker-memory-actions">
+                        <button
+                          type="button"
+                          className="joker-memory-danger-button"
+                          onClick={() => void removeIprMemoryRecordFromRecall(record, "recent-chat")}
+                          disabled={isRemovingIprMemoryId === getIprMemoryRecordMemoryId(record) || !canUseIprMemory}
+                        >
+                          {isRemovingIprMemoryId === getIprMemoryRecordMemoryId(record) ? "Rimozione..." : "Rimuovi da IPR recall"}
+                        </button>
+                      </div>
+                    ) : null}
                   </article>
                 ))}
               </div>
@@ -4776,6 +4887,20 @@ export default function InterfacePage() {
                       <span title={first(record, [["memoryId"]], "-")}>Memory {compact(first(record, [["memoryId"]], "-"), 32)}</span>
                       <span>{first(record, [["classification"]], "USER_SELECTED_CHAT_MEMORY")}</span>
                       <span>Reusable {booleanLike(getPath(record, ["reusableInPrompt"]), first(record, [["reusableInPrompt"]], "-"))}</span>
+                    </div>
+                    <div className="joker-memory-actions">
+                      <button
+                        type="button"
+                        className="joker-memory-danger-button"
+                        onClick={() => void removeIprMemoryRecordFromRecall(record, "memory-record")}
+                        disabled={
+                          !getIprMemoryRecordMemoryId(record) ||
+                          isRemovingIprMemoryId === getIprMemoryRecordMemoryId(record) ||
+                          !canUseIprMemory
+                        }
+                      >
+                        {isRemovingIprMemoryId === getIprMemoryRecordMemoryId(record) ? "Rimozione..." : "Rimuovi da IPR recall"}
+                      </button>
                     </div>
                   </article>
                 ))}
@@ -4814,6 +4939,18 @@ export default function InterfacePage() {
                       <span>{first(record, [["sourceKind"]], "IPR_MEMORY")}</span>
                       <span>EVT {compact(first(record, [["evtId"]], "-"), 28)}</span>
                     </div>
+                    {getIprMemoryRecordMemoryId(record) ? (
+                      <div className="joker-memory-actions">
+                        <button
+                          type="button"
+                          className="joker-memory-danger-button"
+                          onClick={() => void removeIprMemoryRecordFromRecall(record, "recall-item")}
+                          disabled={isRemovingIprMemoryId === getIprMemoryRecordMemoryId(record) || !canUseIprMemory}
+                        >
+                          {isRemovingIprMemoryId === getIprMemoryRecordMemoryId(record) ? "Rimozione..." : "Rimuovi da IPR recall"}
+                        </button>
+                      </div>
+                    ) : null}
                   </article>
                 ))}
               </div>
@@ -5674,6 +5811,39 @@ export default function InterfacePage() {
           font-size: 10px;
           font-weight: 820;
           overflow-wrap: anywhere;
+        }
+
+
+        .joker-memory-actions {
+          display: flex;
+          justify-content: flex-end;
+          margin-top: 10px;
+        }
+
+
+        .joker-memory-danger-button {
+          border: 1px solid rgba(248, 113, 113, 0.42);
+          border-radius: 999px;
+          padding: 7px 10px;
+          background: rgba(127, 29, 29, 0.22);
+          color: #fecaca;
+          cursor: pointer;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.01em;
+        }
+
+
+        .joker-memory-danger-button:hover:not(:disabled) {
+          border-color: rgba(252, 165, 165, 0.74);
+          background: rgba(153, 27, 27, 0.36);
+          color: #fee2e2;
+        }
+
+
+        .joker-memory-danger-button:disabled {
+          cursor: not-allowed;
+          opacity: 0.46;
         }
 
 
