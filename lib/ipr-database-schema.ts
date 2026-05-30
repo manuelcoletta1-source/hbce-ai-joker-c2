@@ -1,8 +1,8 @@
-export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.6";
+export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.7";
 
 
 export const HBCE_DATABASE_SCHEMA_BOUNDARY =
-  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.6 introduces the JOKER-C2 Temporal Runtime Certificate, preserves memory_registered_events for named SaaS B2G event recall and preserves the canonical HBCE internal self-pilot SaaS seed for tenant, workspace, subscription, IPR subject, membership and account profile continuity. The temporal certificate is a technical runtime frame built from UTC response time, the canonical local birth anchor and AI JOKER-C2 lifetime; it is not a qualified timestamp or legal certification. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
+  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, explicit IPR chat memory saves, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.7 introduces the JOKER-C2 Temporal Runtime Certificate, preserves memory_registered_events for named SaaS B2G event recall, adds ipr_chat_memory_saves for explicit user-authorized Save this chat to IPR workflows and preserves the canonical HBCE internal self-pilot SaaS seed for tenant, workspace, subscription, IPR subject, membership and account profile continuity. The temporal certificate is a technical runtime frame built from UTC response time, the canonical local birth anchor and AI JOKER-C2 lifetime; it is not a qualified timestamp or legal certification. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
 
 
 export const HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY =
@@ -122,6 +122,7 @@ export const HBCE_DATABASE_SCHEMA_TABLES = [
   "ipr_account_profiles",
   "chat_threads",
   "chat_messages",
+  "ipr_chat_memory_saves",
   "memory_records",
   "memory_registered_events",
   "evt_records",
@@ -396,8 +397,19 @@ CREATE TABLE IF NOT EXISTS chat_threads (
   last_evt_id TEXT,
   last_opc_proof_id TEXT,
   last_opc_chain_hash TEXT,
+  recent_status TEXT NOT NULL DEFAULT 'ACTIVE',
+  saved_to_ipr BOOLEAN NOT NULL DEFAULT false,
+  saved_chat_id TEXT,
+  saved_memory_id TEXT,
+  memory_save_status TEXT NOT NULL DEFAULT 'NOT_SAVED',
+  message_count INTEGER NOT NULL DEFAULT 0,
+  pinned BOOLEAN NOT NULL DEFAULT false,
+  archived BOOLEAN NOT NULL DEFAULT false,
+  last_message_preview TEXT,
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
+  CONSTRAINT chat_threads_message_count_non_negative
+    CHECK (message_count >= 0),
   CONSTRAINT chat_threads_legal_certification_false
     CHECK (legal_certification = false)
 );
@@ -428,10 +440,68 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   runtime_state TEXT,
   runtime_decision TEXT,
   generation_class TEXT,
+  message_visibility TEXT NOT NULL DEFAULT 'THREAD',
+  included_in_ipr_memory BOOLEAN NOT NULL DEFAULT false,
+  save_candidate BOOLEAN NOT NULL DEFAULT false,
+  source_save_id TEXT,
+  content_hash_policy TEXT NOT NULL DEFAULT 'FULL_CONTENT_HASHED',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   legal_certification BOOLEAN NOT NULL DEFAULT false,
   CONSTRAINT chat_messages_legal_certification_false
+    CHECK (legal_certification = false)
+);
+`.trim(),
+
+
+  `
+CREATE TABLE IF NOT EXISTS ipr_chat_memory_saves (
+  saved_chat_id TEXT PRIMARY KEY,
+  tenant_id TEXT,
+  workspace_id TEXT,
+  subscription_id TEXT,
+  account_id TEXT,
+  human_ipr TEXT,
+  runtime_ipr TEXT NOT NULL DEFAULT 'IPR-AI-0001',
+  session_id TEXT,
+  thread_id TEXT,
+  memory_id TEXT,
+  registered_event_id TEXT,
+  evt_id TEXT,
+  opc_proof_id TEXT,
+  audit_id TEXT,
+  usage_id TEXT,
+  save_intent TEXT NOT NULL DEFAULT 'USER_EXPLICIT_SAVE_TO_IPR',
+  save_scope TEXT NOT NULL DEFAULT 'IPR_BOUND',
+  save_status TEXT NOT NULL DEFAULT 'SAVED',
+  memory_status TEXT NOT NULL DEFAULT 'ACTIVE',
+  memory_title TEXT NOT NULL DEFAULT 'Saved JOKER-C2 chat',
+  memory_summary TEXT NOT NULL DEFAULT '',
+  classification TEXT NOT NULL DEFAULT 'USER_SELECTED_CHAT_MEMORY',
+  raw_content_saved BOOLEAN NOT NULL DEFAULT false,
+  raw_content_policy TEXT NOT NULL DEFAULT 'SYNTHESIS_ONLY_BY_DEFAULT',
+  save_raw BOOLEAN NOT NULL DEFAULT false,
+  save_synthesis BOOLEAN NOT NULL DEFAULT true,
+  reusable_in_prompt BOOLEAN NOT NULL DEFAULT true,
+  selected_message_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+  message_count INTEGER NOT NULL DEFAULT 0,
+  save_hash TEXT,
+  memory_hash TEXT,
+  previous_save_hash TEXT,
+  continuity_hash TEXT,
+  temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb,
+  response_utc TIMESTAMPTZ,
+  birth_anchor_local TEXT,
+  birth_anchor_utc TIMESTAMPTZ,
+  joker_lifetime TEXT,
+  joker_life_seconds BIGINT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  legal_certification BOOLEAN NOT NULL DEFAULT false,
+  CONSTRAINT ipr_chat_memory_saves_message_count_non_negative
+    CHECK (message_count >= 0),
+  CONSTRAINT ipr_chat_memory_saves_legal_certification_false
     CHECK (legal_certification = false)
 );
 `.trim(),
@@ -450,6 +520,21 @@ CREATE TABLE IF NOT EXISTS memory_records (
   scope TEXT NOT NULL DEFAULT 'RUNTIME_ONLY',
   authority TEXT NOT NULL DEFAULT 'SESSION_RUNTIME_ONLY',
   persistence_mode TEXT NOT NULL DEFAULT 'DATABASE_PERSISTENT',
+  memory_kind TEXT NOT NULL DEFAULT 'RUNTIME_MEMORY',
+  memory_status TEXT NOT NULL DEFAULT 'ACTIVE',
+  source_kind TEXT NOT NULL DEFAULT 'RUNTIME_MEMORY',
+  source_thread_id TEXT,
+  source_saved_chat_id TEXT,
+  source_message_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+  memory_title TEXT,
+  memory_summary TEXT,
+  save_raw BOOLEAN NOT NULL DEFAULT false,
+  save_synthesis BOOLEAN NOT NULL DEFAULT true,
+  reusable_in_prompt BOOLEAN NOT NULL DEFAULT false,
+  classification TEXT,
+  quality TEXT,
+  threshold_detected BOOLEAN,
+  semantic_terms JSONB NOT NULL DEFAULT '[]'::jsonb,
   memory_hash TEXT NOT NULL,
   memory_chain_hash TEXT,
   last_evt_id TEXT,
@@ -481,6 +566,7 @@ CREATE TABLE IF NOT EXISTS memory_registered_events (
   human_ipr TEXT,
   runtime_ipr TEXT DEFAULT 'IPR-AI-0001',
   memory_id TEXT,
+  source_saved_chat_id TEXT,
   evt_id TEXT,
   opc_proof_id TEXT,
   audit_id TEXT,
@@ -1780,6 +1866,76 @@ ALTER TABLE chat_messages
 `.trim(),
 
   `
+ALTER TABLE chat_threads
+  ADD COLUMN IF NOT EXISTS recent_status TEXT NOT NULL DEFAULT 'ACTIVE';
+`.trim(),
+
+  `
+ALTER TABLE chat_threads
+  ADD COLUMN IF NOT EXISTS saved_to_ipr BOOLEAN NOT NULL DEFAULT false;
+`.trim(),
+
+  `
+ALTER TABLE chat_threads
+  ADD COLUMN IF NOT EXISTS saved_chat_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE chat_threads
+  ADD COLUMN IF NOT EXISTS saved_memory_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE chat_threads
+  ADD COLUMN IF NOT EXISTS memory_save_status TEXT NOT NULL DEFAULT 'NOT_SAVED';
+`.trim(),
+
+  `
+ALTER TABLE chat_threads
+  ADD COLUMN IF NOT EXISTS message_count INTEGER NOT NULL DEFAULT 0;
+`.trim(),
+
+  `
+ALTER TABLE chat_threads
+  ADD COLUMN IF NOT EXISTS pinned BOOLEAN NOT NULL DEFAULT false;
+`.trim(),
+
+  `
+ALTER TABLE chat_threads
+  ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT false;
+`.trim(),
+
+  `
+ALTER TABLE chat_threads
+  ADD COLUMN IF NOT EXISTS last_message_preview TEXT;
+`.trim(),
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS message_visibility TEXT NOT NULL DEFAULT 'THREAD';
+`.trim(),
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS included_in_ipr_memory BOOLEAN NOT NULL DEFAULT false;
+`.trim(),
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS save_candidate BOOLEAN NOT NULL DEFAULT false;
+`.trim(),
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS source_save_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS content_hash_policy TEXT NOT NULL DEFAULT 'FULL_CONTENT_HASHED';
+`.trim(),
+
+  `
 ALTER TABLE memory_records
   ADD COLUMN IF NOT EXISTS temporal_certificate JSONB NOT NULL DEFAULT '{}'::jsonb;
 `.trim(),
@@ -1807,6 +1963,86 @@ ALTER TABLE memory_records
   `
 ALTER TABLE memory_records
   ADD COLUMN IF NOT EXISTS joker_life_seconds BIGINT;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS memory_kind TEXT NOT NULL DEFAULT 'RUNTIME_MEMORY';
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS memory_status TEXT NOT NULL DEFAULT 'ACTIVE';
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS source_kind TEXT NOT NULL DEFAULT 'RUNTIME_MEMORY';
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS source_thread_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS source_saved_chat_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS source_message_ids JSONB NOT NULL DEFAULT '[]'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS memory_title TEXT;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS memory_summary TEXT;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS save_raw BOOLEAN NOT NULL DEFAULT false;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS save_synthesis BOOLEAN NOT NULL DEFAULT true;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS reusable_in_prompt BOOLEAN NOT NULL DEFAULT false;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS classification TEXT;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS quality TEXT;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS threshold_detected BOOLEAN;
+`.trim(),
+
+  `
+ALTER TABLE memory_records
+  ADD COLUMN IF NOT EXISTS semantic_terms JSONB NOT NULL DEFAULT '[]'::jsonb;
+`.trim(),
+
+  `
+ALTER TABLE memory_registered_events
+  ADD COLUMN IF NOT EXISTS source_saved_chat_id TEXT;
 `.trim(),
 
   `
@@ -2063,6 +2299,54 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_thread_created_at
 
 
   `
+CREATE INDEX IF NOT EXISTS idx_chat_threads_saved_to_ipr_updated_at
+  ON chat_threads(saved_to_ipr, updated_at DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_chat_threads_memory_save_status_updated_at
+  ON chat_threads(memory_save_status, updated_at DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_ipr_chat_memory_saves_human_ipr_created_at
+  ON ipr_chat_memory_saves(human_ipr, created_at DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_ipr_chat_memory_saves_workspace_created_at
+  ON ipr_chat_memory_saves(tenant_id, workspace_id, created_at DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_ipr_chat_memory_saves_thread_created_at
+  ON ipr_chat_memory_saves(thread_id, created_at DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_ipr_chat_memory_saves_memory_id
+  ON ipr_chat_memory_saves(memory_id);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_ipr_chat_memory_saves_evt_id
+  ON ipr_chat_memory_saves(evt_id);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_ipr_chat_memory_saves_opc_proof_id
+  ON ipr_chat_memory_saves(opc_proof_id);
+`.trim(),
+
+
+  `
 CREATE INDEX IF NOT EXISTS idx_memory_records_memory_key_hash
   ON memory_records(memory_key_hash);
 `.trim(),
@@ -2077,6 +2361,24 @@ CREATE INDEX IF NOT EXISTS idx_memory_records_human_ipr_updated_at
   `
 CREATE INDEX IF NOT EXISTS idx_memory_records_tenant_workspace_updated_at
   ON memory_records(tenant_id, workspace_id, updated_at DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_memory_records_source_thread_updated_at
+  ON memory_records(source_thread_id, updated_at DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_memory_records_source_saved_chat_updated_at
+  ON memory_records(source_saved_chat_id, updated_at DESC);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_memory_records_reusable_prompt_updated_at
+  ON memory_records(human_ipr, reusable_in_prompt, updated_at DESC);
 `.trim(),
 
 
@@ -2596,8 +2898,8 @@ INSERT INTO hbce_schema_migrations (
   legal_certification
 )
 VALUES (
-  'HBCE-IPR-DB-v1.6',
-  'HBCE SaaS Core v0.1 persistent database schema with temporal runtime certificate, registered memory events and canonical internal self-pilot seed for HERMETICUM B.C.E. tenant, R&D workspace, IPR subscription, Manuel Coletta IPR account profile, workspace membership, IPR subject, memory, memory registered events, EVT, OPC, runtime audit logs, model usage and MATRIX Transformative Memory. Runtime persistence tables remain tolerant of MVP-stage nullable relational references and preserve reconstruction data in JSONB payloads.',
+  'HBCE-IPR-DB-v1.7',
+  'HBCE SaaS Core v0.1 persistent database schema with temporal runtime certificate, explicit IPR chat memory saves, registered memory events and canonical internal self-pilot seed for HERMETICUM B.C.E. tenant, R&D workspace, IPR subscription, Manuel Coletta IPR account profile, workspace membership, IPR subject, chat continuity, explicit IPR chat memory saves, memory, memory registered events, EVT, OPC, runtime audit logs, model usage and MATRIX Transformative Memory. Runtime persistence tables remain tolerant of MVP-stage nullable relational references and preserve reconstruction data in JSONB payloads.',
   jsonb_build_object(
     'projectBirthDate', '2026-01-19',
     'temporalCertificateName', '${HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME}',
@@ -2642,6 +2944,7 @@ VALUES (
       'ipr_account_profiles',
       'chat_threads',
       'chat_messages',
+      'ipr_chat_memory_saves',
       'memory_records',
       'memory_registered_events',
       'evt_records',
@@ -2761,7 +3064,7 @@ export function getHbceDatabaseSaasCoreContext() {
     },
     legalCertification: false,
     statement:
-      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, memory, registered memory events, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. HBCE-IPR-DB-v1.6 also exposes the JOKER-C2 Temporal Runtime Certificate for UTC response time, canonical local birth anchor and AI JOKER-C2 lifetime. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. HBCE-IPR-DB-v1.6 seeds the internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
+      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, chat continuity, explicit IPR chat memory saves, memory, registered memory events, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. HBCE-IPR-DB-v1.7 also exposes the JOKER-C2 Temporal Runtime Certificate for UTC response time, canonical local birth anchor and AI JOKER-C2 lifetime. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. Explicit Save this chat to IPR is modeled outside /api/chat through ipr_chat_memory_saves, allowing /api/chat to answer while memory save operations remain auditable, consent-based and IPR-bound. HBCE-IPR-DB-v1.7 seeds the internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
   };
 }
 
@@ -2776,3 +3079,4 @@ export function getHbceJokerTemporalRuntimeCertificateDefinition() {
     legalCertification: false
   };
 }
+
