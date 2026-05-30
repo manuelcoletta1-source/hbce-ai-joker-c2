@@ -39,10 +39,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.3";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.4";
 const THREAD_AUTHORITY_RUNTIME_VALIDATED = "SERVER_RUNTIME_VALIDATED";
 const THREAD_SCOPE_RUNTIME_ONLY = "RUNTIME_ONLY";
 const SAVE_INTENT_USER_EXPLICIT_TO_IPR = "USER_EXPLICIT_SAVE_TO_IPR";
+const RUNTIME_DECISION_ALLOW = "ALLOW";
+const RUNTIME_DECISION_BLOCK = "BLOCK";
+const RUNTIME_DECISION_ESCALATE = "ESCALATE";
 const DEFAULT_RUNTIME_IPR = "IPR-AI-0001";
 const DEFAULT_THREAD_TITLE = "JOKER-C2 IPR saved chat";
 const DEFAULT_MEMORY_TITLE = "Saved JOKER-C2 chat on IPR";
@@ -246,6 +249,33 @@ function normalizeTimestampForDatabase(value: unknown, fallbackIso: string | nul
   return fallbackIso;
 }
 
+function normalizeRuntimeDecisionForDatabase(value: unknown): string {
+  const normalized = normalizeString(value);
+  if (!normalized) {
+    return RUNTIME_DECISION_ALLOW;
+  }
+
+  const token = normalized
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  if (!token) {
+    return RUNTIME_DECISION_ALLOW;
+  }
+
+  if (token === RUNTIME_DECISION_BLOCK || token.includes("BLOCK") || token.includes("DENY") || token.includes("FAIL_CLOSED")) {
+    return RUNTIME_DECISION_BLOCK;
+  }
+
+  if (token === RUNTIME_DECISION_ESCALATE || token.includes("ESCALATE") || token.includes("HUMAN_REVIEW")) {
+    return RUNTIME_DECISION_ESCALATE;
+  }
+
+  return RUNTIME_DECISION_ALLOW;
+}
+
 function readHeaderString(request: NextRequest, name: string): string | null {
   return normalizeString(request.headers.get(name));
 }
@@ -321,7 +351,7 @@ function normalizeMessages(value: unknown): SaveChatMessageInput[] {
         opcProofId: normalizeString(message.opcProofId),
         opcChainHash: normalizeString(message.opcChainHash),
         runtimeState: normalizeString(message.runtimeState),
-        runtimeDecision: normalizeString(message.runtimeDecision),
+        runtimeDecision: normalizeRuntimeDecisionForDatabase(message.runtimeDecision),
         generationClass: normalizeString(message.generationClass),
         messageVisibility: normalizeString(message.messageVisibility),
         createdAt: normalizeTimestampForDatabase(message.createdAt),
@@ -587,7 +617,7 @@ async function persistProvidedMessages(context: SaveChatRouteContext) {
         jokerLifetime: context.jokerLifetime,
         jokerLifeSeconds: context.jokerLifeSeconds,
         runtimeState: normalizeString(message.runtimeState) ?? "IPR_MEMORY_SAVE_ROUTE",
-        runtimeDecision: normalizeString(message.runtimeDecision) ?? SAVE_INTENT_USER_EXPLICIT_TO_IPR,
+        runtimeDecision: normalizeRuntimeDecisionForDatabase(message.runtimeDecision),
         generationClass: normalizeString(message.generationClass) ?? "CHAT_MEMORY_SAVE",
         messageVisibility: normalizeString(message.messageVisibility) ?? "THREAD",
         includedInIprMemory: true,
@@ -930,7 +960,7 @@ export async function GET() {
       primaryIntention:
         "string; canonical meaning: IPR as Intenzione Primaria Radicale saved from the chat",
       selectedMessageIds: "string[]",
-      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO before database insert",
+      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO and runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE before database insert",
       saveRaw: "boolean; default false",
       saveSynthesis: "boolean; default true",
       reusableInPrompt: "boolean; default true"
