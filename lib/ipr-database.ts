@@ -448,6 +448,91 @@ export type IprMemoryRecordDatabaseRow = HbceDatabaseQueryRow & {
   legal_certification?: unknown;
 };
 
+
+
+export type DocumentProfileDatabaseInput = {
+  profileId?: string | null;
+  profileKeyHash?: string | null;
+  fileId?: string | null;
+  filename: string;
+  fileHash?: string | null;
+  tenantId?: string | null;
+  workspaceId?: string | null;
+  humanIpr?: string | null;
+  runtimeIpr?: string | null;
+  sessionId?: string | null;
+  threadId?: string | null;
+  sourceKind?: string | null;
+  textStatus?: string | null;
+  textLength?: number | null;
+  mimeType?: string | null;
+  docFamily?: string | null;
+  volume?: string | null;
+  title?: string | null;
+  subtitle?: string | null;
+  canonicalAxis?: string | null;
+  summary?: string | null;
+  keyTerms?: string[];
+  semanticTerms?: unknown[];
+  documentMetadata?: Record<string, unknown>;
+  memoryId?: string | null;
+  sourceSavedChatId?: string | null;
+  lastEvtId?: string | null;
+  lastOpcProofId?: string | null;
+  auditId?: string | null;
+  usageId?: string | null;
+  profileStatus?: string | null;
+  quality?: string | null;
+  reusableInPrompt?: boolean | null;
+  profileHash?: string | null;
+  lastSeenAt?: string | Date | null;
+  deletedAt?: string | Date | null;
+  createdAt?: string | Date | null;
+};
+
+export type DocumentProfileDatabaseRow = HbceDatabaseQueryRow & {
+  profile_id?: unknown;
+  profile_key_hash?: unknown;
+  file_id?: unknown;
+  filename?: unknown;
+  file_hash?: unknown;
+  tenant_id?: unknown;
+  workspace_id?: unknown;
+  human_ipr?: unknown;
+  runtime_ipr?: unknown;
+  session_id?: unknown;
+  thread_id?: unknown;
+  source_kind?: unknown;
+  text_status?: unknown;
+  text_length?: unknown;
+  mime_type?: unknown;
+  doc_family?: unknown;
+  volume?: unknown;
+  title?: unknown;
+  subtitle?: unknown;
+  canonical_axis?: unknown;
+  summary?: unknown;
+  key_terms?: unknown;
+  semantic_terms?: unknown;
+  document_metadata?: unknown;
+  memory_id?: unknown;
+  source_saved_chat_id?: unknown;
+  last_evt_id?: unknown;
+  last_opc_proof_id?: unknown;
+  audit_id?: unknown;
+  usage_id?: unknown;
+  profile_status?: unknown;
+  quality?: unknown;
+  reusable_in_prompt?: unknown;
+  profile_hash?: unknown;
+  recall_score?: unknown;
+  legal_certification?: unknown;
+  last_seen_at?: unknown;
+  created_at?: unknown;
+  updated_at?: unknown;
+  deleted_at?: unknown;
+};
+
 export type SaveIprChatToMemoryDatabaseResult = {
   ok: boolean;
   savedChatId: string;
@@ -1092,6 +1177,359 @@ ON memory_registered_events (created_at DESC);
 ];
 
 
+
+
+const DOCUMENT_PROFILES_COMPATIBILITY_SCHEMA_SQL = [
+  `
+CREATE TABLE IF NOT EXISTS document_profiles (
+  profile_id text PRIMARY KEY,
+  profile_key_hash text NOT NULL,
+  file_id text,
+  filename text NOT NULL,
+  file_hash text NOT NULL,
+  tenant_id text,
+  workspace_id text,
+  human_ipr text,
+  runtime_ipr text NOT NULL DEFAULT 'IPR-AI-0001',
+  session_id text,
+  thread_id text,
+  source_kind text NOT NULL DEFAULT 'FILE_UPLOAD',
+  text_status text NOT NULL DEFAULT 'UNKNOWN',
+  text_length integer,
+  mime_type text,
+  doc_family text,
+  volume text,
+  title text,
+  subtitle text,
+  canonical_axis text,
+  summary text,
+  key_terms jsonb NOT NULL DEFAULT '[]'::jsonb,
+  semantic_terms jsonb NOT NULL DEFAULT '[]'::jsonb,
+  document_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  memory_id text,
+  source_saved_chat_id text,
+  last_evt_id text,
+  last_opc_proof_id text,
+  audit_id text,
+  usage_id text,
+  profile_status text NOT NULL DEFAULT 'ACTIVE',
+  quality text,
+  reusable_in_prompt boolean NOT NULL DEFAULT true,
+  profile_hash text,
+  legal_certification boolean NOT NULL DEFAULT false,
+  last_seen_at timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  deleted_at timestamptz
+);
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS profile_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS profile_key_hash text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS file_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS filename text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS file_hash text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS tenant_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS workspace_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS human_ipr text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS runtime_ipr text DEFAULT 'IPR-AI-0001';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS session_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS thread_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS source_kind text DEFAULT 'FILE_UPLOAD';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS text_status text DEFAULT 'UNKNOWN';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS text_length integer;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS mime_type text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS doc_family text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS volume text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS title text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS subtitle text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS canonical_axis text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS summary text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS key_terms jsonb DEFAULT '[]'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS semantic_terms jsonb DEFAULT '[]'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS document_metadata jsonb DEFAULT '{}'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS memory_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS source_saved_chat_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS last_evt_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS last_opc_proof_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS audit_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS usage_id text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS profile_status text DEFAULT 'ACTIVE';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS quality text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS reusable_in_prompt boolean DEFAULT true;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS profile_hash text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS legal_certification boolean DEFAULT false;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS last_seen_at timestamptz DEFAULT now();
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+`.trim(),
+  `
+UPDATE document_profiles
+SET
+  profile_id = COALESCE(NULLIF(profile_id, ''), 'DOC-PROFILE-' || upper(substr(md5(COALESCE(file_hash, filename, file_id, 'unknown_document')), 1, 16))),
+  profile_key_hash = COALESCE(NULLIF(profile_key_hash, ''), 'legacyhash:' || md5(COALESCE(human_ipr, 'UNKNOWN_IPR') || '|' || COALESCE(tenant_id, 'NO_TENANT') || '|' || COALESCE(workspace_id, 'NO_WORKSPACE') || '|' || COALESCE(file_hash, filename, file_id, 'NO_FILE'))),
+  filename = COALESCE(NULLIF(filename, ''), 'UNKNOWN_FILENAME'),
+  file_hash = COALESCE(NULLIF(file_hash, ''), 'legacyhash:' || md5(COALESCE(file_id, filename, profile_id, 'NO_FILE_HASH'))),
+  runtime_ipr = COALESCE(runtime_ipr, 'IPR-AI-0001'),
+  source_kind = COALESCE(NULLIF(source_kind, ''), 'FILE_UPLOAD'),
+  text_status = COALESCE(NULLIF(text_status, ''), 'UNKNOWN'),
+  key_terms = COALESCE(key_terms, '[]'::jsonb),
+  semantic_terms = COALESCE(semantic_terms, '[]'::jsonb),
+  document_metadata = COALESCE(document_metadata, '{}'::jsonb),
+  profile_status = COALESCE(NULLIF(profile_status, ''), 'ACTIVE'),
+  reusable_in_prompt = COALESCE(reusable_in_prompt, true),
+  legal_certification = COALESCE(legal_certification, false),
+  last_seen_at = COALESCE(last_seen_at, now()),
+  created_at = COALESCE(created_at, now()),
+  updated_at = COALESCE(updated_at, now())
+WHERE
+  profile_id IS NULL
+  OR profile_id = ''
+  OR profile_key_hash IS NULL
+  OR profile_key_hash = ''
+  OR filename IS NULL
+  OR filename = ''
+  OR file_hash IS NULL
+  OR file_hash = ''
+  OR runtime_ipr IS NULL
+  OR source_kind IS NULL
+  OR source_kind = ''
+  OR text_status IS NULL
+  OR text_status = ''
+  OR key_terms IS NULL
+  OR semantic_terms IS NULL
+  OR document_metadata IS NULL
+  OR profile_status IS NULL
+  OR profile_status = ''
+  OR reusable_in_prompt IS NULL
+  OR legal_certification IS NULL
+  OR last_seen_at IS NULL
+  OR created_at IS NULL
+  OR updated_at IS NULL;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ALTER COLUMN runtime_ipr SET DEFAULT 'IPR-AI-0001';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ALTER COLUMN source_kind SET DEFAULT 'FILE_UPLOAD';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ALTER COLUMN text_status SET DEFAULT 'UNKNOWN';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ALTER COLUMN key_terms SET DEFAULT '[]'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ALTER COLUMN semantic_terms SET DEFAULT '[]'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ALTER COLUMN document_metadata SET DEFAULT '{}'::jsonb;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ALTER COLUMN profile_status SET DEFAULT 'ACTIVE';
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ALTER COLUMN reusable_in_prompt SET DEFAULT true;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ALTER COLUMN legal_certification SET DEFAULT false;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ALTER COLUMN last_seen_at SET DEFAULT now();
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ALTER COLUMN created_at SET DEFAULT now();
+`.trim(),
+  `
+ALTER TABLE IF EXISTS document_profiles
+  ALTER COLUMN updated_at SET DEFAULT now();
+`.trim(),
+  `
+CREATE UNIQUE INDEX IF NOT EXISTS document_profiles_profile_id_uidx
+ON document_profiles (profile_id);
+`.trim(),
+  `
+CREATE UNIQUE INDEX IF NOT EXISTS document_profiles_profile_key_hash_uidx
+ON document_profiles (profile_key_hash);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS document_profiles_file_id_idx
+ON document_profiles (file_id);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS document_profiles_filename_idx
+ON document_profiles (filename);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS document_profiles_file_hash_idx
+ON document_profiles (file_hash);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS document_profiles_memory_id_idx
+ON document_profiles (memory_id);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS document_profiles_human_ipr_idx
+ON document_profiles (human_ipr);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS document_profiles_tenant_workspace_idx
+ON document_profiles (tenant_id, workspace_id);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS document_profiles_doc_family_idx
+ON document_profiles (doc_family);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS document_profiles_volume_idx
+ON document_profiles (volume);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS document_profiles_text_status_idx
+ON document_profiles (text_status);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS document_profiles_updated_at_idx
+ON document_profiles (updated_at DESC);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS document_profiles_recall_active_idx
+ON document_profiles (human_ipr, tenant_id, workspace_id, updated_at DESC)
+WHERE legal_certification = false
+  AND reusable_in_prompt = true
+  AND COALESCE(profile_status, 'ACTIVE') = 'ACTIVE'
+  AND deleted_at IS NULL;
+`.trim()
+];
+
+
 const MEMORY_RECORDS_REQUIRED_COLUMNS = [
   "memory_id",
   "tenant_id",
@@ -1167,6 +1605,51 @@ const MEMORY_REGISTERED_EVENTS_REQUIRED_COLUMNS = [
   "legal_certification",
   "created_at",
   "updated_at"
+];
+
+
+
+
+const DOCUMENT_PROFILES_REQUIRED_COLUMNS = [
+  "profile_id",
+  "profile_key_hash",
+  "file_id",
+  "filename",
+  "file_hash",
+  "tenant_id",
+  "workspace_id",
+  "human_ipr",
+  "runtime_ipr",
+  "session_id",
+  "thread_id",
+  "source_kind",
+  "text_status",
+  "text_length",
+  "mime_type",
+  "doc_family",
+  "volume",
+  "title",
+  "subtitle",
+  "canonical_axis",
+  "summary",
+  "key_terms",
+  "semantic_terms",
+  "document_metadata",
+  "memory_id",
+  "source_saved_chat_id",
+  "last_evt_id",
+  "last_opc_proof_id",
+  "audit_id",
+  "usage_id",
+  "profile_status",
+  "quality",
+  "reusable_in_prompt",
+  "profile_hash",
+  "legal_certification",
+  "last_seen_at",
+  "created_at",
+  "updated_at",
+  "deleted_at"
 ];
 
 
@@ -1434,6 +1917,24 @@ WHERE table_schema IN ('public', current_schema())
 }
 
 
+
+
+function buildDocumentProfilesRequiredColumnsCheckSql(): string {
+  const columnList = DOCUMENT_PROFILES_REQUIRED_COLUMNS
+    .map((columnName) => sqlLiteral(columnName))
+    .join(", ");
+
+
+  return `
+SELECT column_name
+FROM information_schema.columns
+WHERE table_schema IN ('public', current_schema())
+  AND table_name = 'document_profiles'
+  AND column_name IN (${columnList});
+`.trim();
+}
+
+
 class DisabledHbceDatabaseAdapter implements HbceDatabaseAdapter {
   describe(): HbceDatabaseDescription {
     return DISABLED_DATABASE_DESCRIPTION;
@@ -1544,7 +2045,8 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
     const startedAt = nowMs();
     const compatibilitySql = [
       ...MEMORY_RECORDS_COMPATIBILITY_SCHEMA_SQL,
-      ...MEMORY_REGISTERED_EVENTS_COMPATIBILITY_SCHEMA_SQL
+      ...MEMORY_REGISTERED_EVENTS_COMPATIBILITY_SCHEMA_SQL,
+      ...DOCUMENT_PROFILES_COMPATIBILITY_SCHEMA_SQL
     ].join("\n\n");
     const joinedSql = [
       HBCE_DATABASE_SCHEMA_SQL.join("\n\n"),
@@ -1561,7 +2063,8 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
     const allStatements = [
       ...HBCE_DATABASE_SCHEMA_SQL,
       ...MEMORY_RECORDS_COMPATIBILITY_SCHEMA_SQL,
-      ...MEMORY_REGISTERED_EVENTS_COMPATIBILITY_SCHEMA_SQL
+      ...MEMORY_REGISTERED_EVENTS_COMPATIBILITY_SCHEMA_SQL,
+      ...DOCUMENT_PROFILES_COMPATIBILITY_SCHEMA_SQL
     ];
 
 
@@ -1750,7 +2253,59 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
     }
 
 
-    if (missingTables.length > 0 || missingMemoryColumns.length > 0 || missingRegisteredEventColumns.length > 0) {
+    let missingDocumentProfileColumns: string[] = [];
+
+
+    try {
+      const documentProfileColumnResult = await sql.query(
+        buildDocumentProfilesRequiredColumnsCheckSql(),
+        []
+      );
+      const existingDocumentProfileColumnRows = normalizeRows<{ column_name?: unknown }>(
+        documentProfileColumnResult
+      );
+      const existingDocumentProfileColumns = new Set(
+        existingDocumentProfileColumnRows
+          .map((row) => row.column_name)
+          .filter((value): value is string => typeof value === "string")
+      );
+
+
+      missingDocumentProfileColumns = DOCUMENT_PROFILES_REQUIRED_COLUMNS.filter(
+        (columnName) => !existingDocumentProfileColumns.has(columnName)
+      );
+
+
+      for (const columnName of DOCUMENT_PROFILES_REQUIRED_COLUMNS) {
+        const present = existingDocumentProfileColumns.has(columnName);
+
+
+        rows.push({
+          index: allStatements.length + 3,
+          ok: present,
+          status: present ? "COLUMN_PRESENT" : "COLUMN_MISSING",
+          sqlHash: null,
+          tableName: "document_profiles",
+          columnName,
+          error: present
+            ? null
+            : `Required column document_profiles.${columnName} is missing.`
+        });
+      }
+    } catch (error) {
+      return buildResult<HbceDatabaseQueryRow>({
+        ok: false,
+        status: "INITIALIZATION_FAILED",
+        rows,
+        rowCount: executedStatements,
+        error: `Schema statements executed with ${failedStatements} statement error(s), but document_profiles column verification failed: ${safeError(error)}`,
+        sql: joinedSql,
+        startedAt
+      });
+    }
+
+
+    if (missingTables.length > 0 || missingMemoryColumns.length > 0 || missingRegisteredEventColumns.length > 0 || missingDocumentProfileColumns.length > 0) {
       return buildResult<HbceDatabaseQueryRow>({
         ok: false,
         status: "INITIALIZATION_FAILED",
@@ -1761,6 +2316,7 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
           `Missing tables: ${missingTables.length ? missingTables.join(", ") : "none"}. ` +
           `Missing memory_records columns: ${missingMemoryColumns.length ? missingMemoryColumns.join(", ") : "none"}. ` +
           `Missing memory_registered_events columns: ${missingRegisteredEventColumns.length ? missingRegisteredEventColumns.join(", ") : "none"}. ` +
+          `Missing document_profiles columns: ${missingDocumentProfileColumns.length ? missingDocumentProfileColumns.join(", ") : "none"}. ` +
           `Statement failures: ${failedStatements}.`,
         sql: joinedSql,
         startedAt
@@ -2021,6 +2577,31 @@ function createDatabaseId(prefix: string): string {
   const randomPart = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
 
   return `${prefix}-${timePart}-${randomPart}`;
+}
+
+
+
+function createDocumentProfileId(profileKeyHash: string): string {
+  const normalized = profileKeyHash.replace(/^sha256:/, "").replace(/[^a-fA-F0-9]/g, "");
+  const digest = normalized || createHash("sha256").update(profileKeyHash).digest("hex");
+
+  return `DOC-PROFILE-${digest.slice(0, 16).toUpperCase()}`;
+}
+
+function buildDocumentProfileKeyHash(input: {
+  humanIpr?: string | null;
+  tenantId?: string | null;
+  workspaceId?: string | null;
+  fileHash?: string | null;
+  fileId?: string | null;
+  filename?: string | null;
+}): string {
+  return sha256([
+    input.humanIpr || "UNKNOWN_IPR",
+    input.tenantId || "NO_TENANT",
+    input.workspaceId || "NO_WORKSPACE",
+    input.fileHash || input.fileId || input.filename || "NO_FILE"
+  ].join("|"));
 }
 
 function buildIprRadicalIntentionPayload(input: {
@@ -2988,6 +3569,394 @@ export async function getIprMemoryRecordStatusFromDatabase(input: {
   });
 }
 
+
+
+export async function upsertDocumentProfileToDatabase(
+  input: DocumentProfileDatabaseInput
+): Promise<HbceDatabaseQueryResult<DocumentProfileDatabaseRow>> {
+  const filename = input.filename.trim() || "UNKNOWN_FILENAME";
+  const fileHash = input.fileHash || sha256([
+    input.fileId || "NO_FILE_ID",
+    filename,
+    input.textLength ?? "NO_TEXT_LENGTH",
+    input.summary || "NO_SUMMARY"
+  ].join("|"));
+  const profileKeyHash = input.profileKeyHash || buildDocumentProfileKeyHash({
+    humanIpr: input.humanIpr ?? null,
+    tenantId: input.tenantId ?? null,
+    workspaceId: input.workspaceId ?? null,
+    fileHash,
+    fileId: input.fileId ?? null,
+    filename
+  });
+  const profileId = input.profileId || createDocumentProfileId(profileKeyHash);
+  const profileHash = input.profileHash || sha256(JSON.stringify({
+    profileId,
+    profileKeyHash,
+    fileId: input.fileId ?? null,
+    filename,
+    fileHash,
+    docFamily: input.docFamily ?? null,
+    volume: input.volume ?? null,
+    title: input.title ?? null,
+    canonicalAxis: input.canonicalAxis ?? null,
+    summary: input.summary ?? null,
+    keyTerms: input.keyTerms ?? [],
+    memoryId: input.memoryId ?? null
+  }));
+
+  return queryHbceDatabase<DocumentProfileDatabaseRow>(
+    `
+INSERT INTO document_profiles (
+  profile_id,
+  profile_key_hash,
+  file_id,
+  filename,
+  file_hash,
+  tenant_id,
+  workspace_id,
+  human_ipr,
+  runtime_ipr,
+  session_id,
+  thread_id,
+  source_kind,
+  text_status,
+  text_length,
+  mime_type,
+  doc_family,
+  volume,
+  title,
+  subtitle,
+  canonical_axis,
+  summary,
+  key_terms,
+  semantic_terms,
+  document_metadata,
+  memory_id,
+  source_saved_chat_id,
+  last_evt_id,
+  last_opc_proof_id,
+  audit_id,
+  usage_id,
+  profile_status,
+  quality,
+  reusable_in_prompt,
+  profile_hash,
+  legal_certification,
+  last_seen_at,
+  created_at,
+  updated_at,
+  deleted_at
+)
+VALUES (
+  $1, $2, $3, $4, $5, $6, $7, $8, COALESCE($9, 'IPR-AI-0001'),
+  $10, $11, COALESCE(NULLIF($12, ''), 'FILE_UPLOAD'), COALESCE(NULLIF($13, ''), 'UNKNOWN'),
+  $14, $15, $16, $17, $18, $19, $20, $21,
+  COALESCE($22::jsonb, '[]'::jsonb), COALESCE($23::jsonb, '[]'::jsonb),
+  COALESCE($24::jsonb, '{}'::jsonb), $25, $26, $27, $28, $29, $30,
+  COALESCE(NULLIF($31, ''), 'ACTIVE'), $32, COALESCE($33::boolean, true), $34,
+  false, COALESCE($35::timestamptz, now()), COALESCE($36::timestamptz, now()), now(), $37::timestamptz
+)
+ON CONFLICT (profile_key_hash)
+DO UPDATE SET
+  file_id = COALESCE(EXCLUDED.file_id, document_profiles.file_id),
+  filename = COALESCE(NULLIF(EXCLUDED.filename, ''), document_profiles.filename),
+  file_hash = COALESCE(NULLIF(EXCLUDED.file_hash, ''), document_profiles.file_hash),
+  tenant_id = COALESCE(EXCLUDED.tenant_id, document_profiles.tenant_id),
+  workspace_id = COALESCE(EXCLUDED.workspace_id, document_profiles.workspace_id),
+  human_ipr = COALESCE(EXCLUDED.human_ipr, document_profiles.human_ipr),
+  runtime_ipr = COALESCE(EXCLUDED.runtime_ipr, document_profiles.runtime_ipr),
+  session_id = COALESCE(EXCLUDED.session_id, document_profiles.session_id),
+  thread_id = COALESCE(EXCLUDED.thread_id, document_profiles.thread_id),
+  source_kind = COALESCE(NULLIF(EXCLUDED.source_kind, ''), document_profiles.source_kind),
+  text_status = COALESCE(NULLIF(EXCLUDED.text_status, ''), document_profiles.text_status),
+  text_length = COALESCE(EXCLUDED.text_length, document_profiles.text_length),
+  mime_type = COALESCE(EXCLUDED.mime_type, document_profiles.mime_type),
+  doc_family = COALESCE(EXCLUDED.doc_family, document_profiles.doc_family),
+  volume = COALESCE(EXCLUDED.volume, document_profiles.volume),
+  title = COALESCE(EXCLUDED.title, document_profiles.title),
+  subtitle = COALESCE(EXCLUDED.subtitle, document_profiles.subtitle),
+  canonical_axis = COALESCE(EXCLUDED.canonical_axis, document_profiles.canonical_axis),
+  summary = COALESCE(EXCLUDED.summary, document_profiles.summary),
+  key_terms = CASE
+    WHEN EXCLUDED.key_terms IS NULL OR EXCLUDED.key_terms = '[]'::jsonb THEN document_profiles.key_terms
+    ELSE EXCLUDED.key_terms
+  END,
+  semantic_terms = CASE
+    WHEN EXCLUDED.semantic_terms IS NULL OR EXCLUDED.semantic_terms = '[]'::jsonb THEN document_profiles.semantic_terms
+    ELSE EXCLUDED.semantic_terms
+  END,
+  document_metadata = COALESCE(document_profiles.document_metadata, '{}'::jsonb) || COALESCE(EXCLUDED.document_metadata, '{}'::jsonb),
+  memory_id = COALESCE(EXCLUDED.memory_id, document_profiles.memory_id),
+  source_saved_chat_id = COALESCE(EXCLUDED.source_saved_chat_id, document_profiles.source_saved_chat_id),
+  last_evt_id = COALESCE(EXCLUDED.last_evt_id, document_profiles.last_evt_id),
+  last_opc_proof_id = COALESCE(EXCLUDED.last_opc_proof_id, document_profiles.last_opc_proof_id),
+  audit_id = COALESCE(EXCLUDED.audit_id, document_profiles.audit_id),
+  usage_id = COALESCE(EXCLUDED.usage_id, document_profiles.usage_id),
+  profile_status = COALESCE(NULLIF(EXCLUDED.profile_status, ''), document_profiles.profile_status),
+  quality = COALESCE(EXCLUDED.quality, document_profiles.quality),
+  reusable_in_prompt = EXCLUDED.reusable_in_prompt,
+  profile_hash = EXCLUDED.profile_hash,
+  legal_certification = false,
+  last_seen_at = now(),
+  updated_at = now(),
+  deleted_at = COALESCE(EXCLUDED.deleted_at, document_profiles.deleted_at)
+RETURNING *;
+`.trim(),
+    [
+      profileId,
+      profileKeyHash,
+      input.fileId ?? null,
+      filename,
+      fileHash,
+      input.tenantId ?? null,
+      input.workspaceId ?? null,
+      input.humanIpr ?? null,
+      input.runtimeIpr ?? null,
+      input.sessionId ?? null,
+      input.threadId ?? null,
+      input.sourceKind ?? null,
+      input.textStatus ?? null,
+      input.textLength ?? null,
+      input.mimeType ?? null,
+      input.docFamily ?? null,
+      input.volume ?? null,
+      input.title ?? null,
+      input.subtitle ?? null,
+      input.canonicalAxis ?? null,
+      input.summary ?? null,
+      input.keyTerms ?? [],
+      input.semanticTerms ?? [],
+      input.documentMetadata ?? {},
+      input.memoryId ?? null,
+      input.sourceSavedChatId ?? null,
+      input.lastEvtId ?? null,
+      input.lastOpcProofId ?? null,
+      input.auditId ?? null,
+      input.usageId ?? null,
+      input.profileStatus ?? null,
+      input.quality ?? null,
+      input.reusableInPrompt ?? true,
+      profileHash,
+      toIsoDateOrNull(input.lastSeenAt),
+      toIsoDateOrNull(input.createdAt),
+      toIsoDateOrNull(input.deletedAt)
+    ]
+  );
+}
+
+export async function linkDocumentProfileToIprMemoryFromDatabase(input: {
+  profileId?: string | null;
+  fileId?: string | null;
+  fileHash?: string | null;
+  filename?: string | null;
+  humanIpr?: string | null;
+  tenantId?: string | null;
+  workspaceId?: string | null;
+  memoryId: string;
+  sourceSavedChatId?: string | null;
+  evtId?: string | null;
+  opcProofId?: string | null;
+  auditId?: string | null;
+  usageId?: string | null;
+  quality?: string | null;
+  reusableInPrompt?: boolean | null;
+}): Promise<HbceDatabaseQueryResult<DocumentProfileDatabaseRow>> {
+  return queryHbceDatabase<DocumentProfileDatabaseRow>(
+    `
+WITH matched AS (
+  SELECT profile_id
+  FROM document_profiles
+  WHERE ($1::text IS NULL OR profile_id = $1)
+    AND ($2::text IS NULL OR file_id = $2)
+    AND ($3::text IS NULL OR file_hash = $3)
+    AND ($4::text IS NULL OR filename = $4)
+    AND ($5::text IS NULL OR human_ipr = $5)
+    AND ($6::text IS NULL OR tenant_id = $6)
+    AND ($7::text IS NULL OR workspace_id = $7)
+    AND COALESCE(profile_status, 'ACTIVE') = 'ACTIVE'
+    AND deleted_at IS NULL
+  ORDER BY updated_at DESC, created_at DESC
+  LIMIT 1
+)
+UPDATE document_profiles
+SET
+  memory_id = $8,
+  source_saved_chat_id = COALESCE($9, source_saved_chat_id),
+  last_evt_id = COALESCE($10, last_evt_id),
+  last_opc_proof_id = COALESCE($11, last_opc_proof_id),
+  audit_id = COALESCE($12, audit_id),
+  usage_id = COALESCE($13, usage_id),
+  quality = COALESCE($14, quality),
+  reusable_in_prompt = COALESCE($15::boolean, reusable_in_prompt),
+  last_seen_at = now(),
+  updated_at = now(),
+  legal_certification = false
+FROM matched
+WHERE document_profiles.profile_id = matched.profile_id
+RETURNING document_profiles.*;
+`.trim(),
+    [
+      input.profileId ?? null,
+      input.fileId ?? null,
+      input.fileHash ?? null,
+      input.filename ?? null,
+      input.humanIpr ?? null,
+      input.tenantId ?? null,
+      input.workspaceId ?? null,
+      input.memoryId,
+      input.sourceSavedChatId ?? null,
+      input.evtId ?? null,
+      input.opcProofId ?? null,
+      input.auditId ?? null,
+      input.usageId ?? null,
+      input.quality ?? null,
+      input.reusableInPrompt ?? null
+    ]
+  );
+}
+
+export async function listDocumentProfilesFromDatabase(input: {
+  profileId?: string | null;
+  fileId?: string | null;
+  filename?: string | null;
+  fileHash?: string | null;
+  memoryId?: string | null;
+  humanIpr?: string | null;
+  tenantId?: string | null;
+  workspaceId?: string | null;
+  docFamily?: string | null;
+  volume?: string | null;
+  textStatus?: string | null;
+  profileStatus?: string | null;
+  reusableInPrompt?: boolean | null;
+  includeSoftDeleted?: boolean | null;
+  limit?: number;
+}): Promise<HbceDatabaseQueryResult<DocumentProfileDatabaseRow>> {
+  const limit = clampDatabaseLimit(input.limit, 25, 100);
+  const includeSoftDeleted = input.includeSoftDeleted === true;
+
+  return queryHbceDatabase<DocumentProfileDatabaseRow>(
+    `
+SELECT *
+FROM document_profiles
+WHERE ($1::text IS NULL OR profile_id = $1)
+  AND ($2::text IS NULL OR file_id = $2)
+  AND ($3::text IS NULL OR filename = $3)
+  AND ($4::text IS NULL OR file_hash = $4)
+  AND ($5::text IS NULL OR memory_id = $5)
+  AND ($6::text IS NULL OR human_ipr = $6)
+  AND ($7::text IS NULL OR tenant_id = $7)
+  AND ($8::text IS NULL OR workspace_id = $8)
+  AND ($9::text IS NULL OR doc_family = $9)
+  AND ($10::text IS NULL OR volume = $10)
+  AND ($11::text IS NULL OR text_status = $11)
+  AND ($12::text IS NULL OR profile_status = $12)
+  AND ($13::boolean IS NULL OR reusable_in_prompt = $13)
+  AND (
+    $14::boolean = true
+    OR (
+      COALESCE(profile_status, 'ACTIVE') = 'ACTIVE'
+      AND deleted_at IS NULL
+    )
+  )
+ORDER BY updated_at DESC, created_at DESC
+LIMIT $15;
+`.trim(),
+    [
+      input.profileId ?? null,
+      input.fileId ?? null,
+      input.filename ?? null,
+      input.fileHash ?? null,
+      input.memoryId ?? null,
+      input.humanIpr ?? null,
+      input.tenantId ?? null,
+      input.workspaceId ?? null,
+      input.docFamily ?? null,
+      input.volume ?? null,
+      input.textStatus ?? null,
+      input.profileStatus ?? null,
+      input.reusableInPrompt ?? null,
+      includeSoftDeleted,
+      limit
+    ]
+  );
+}
+
+export async function findDocumentProfilesForRecallFromDatabase(input: {
+  query?: string | null;
+  memoryId?: string | null;
+  filename?: string | null;
+  fileHash?: string | null;
+  docFamily?: string | null;
+  volume?: string | null;
+  humanIpr?: string | null;
+  tenantId?: string | null;
+  workspaceId?: string | null;
+  limit?: number;
+}): Promise<HbceDatabaseQueryResult<DocumentProfileDatabaseRow>> {
+  const limit = clampDatabaseLimit(input.limit, 10, 50);
+  const query = stringOrNull(input.query);
+
+  return queryHbceDatabase<DocumentProfileDatabaseRow>(
+    `
+SELECT
+  document_profiles.*,
+  (
+    CASE WHEN $1::text IS NOT NULL AND memory_id = $1 THEN 120 ELSE 0 END +
+    CASE WHEN $2::text IS NOT NULL AND filename = $2 THEN 100 ELSE 0 END +
+    CASE WHEN $3::text IS NOT NULL AND file_hash = $3 THEN 95 ELSE 0 END +
+    CASE WHEN $4::text IS NOT NULL AND doc_family = $4 THEN 35 ELSE 0 END +
+    CASE WHEN $5::text IS NOT NULL AND volume = $5 THEN 30 ELSE 0 END +
+    CASE WHEN $6::text IS NOT NULL AND (
+      filename ILIKE '%' || $6 || '%'
+      OR COALESCE(title, '') ILIKE '%' || $6 || '%'
+      OR COALESCE(subtitle, '') ILIKE '%' || $6 || '%'
+      OR COALESCE(summary, '') ILIKE '%' || $6 || '%'
+      OR COALESCE(doc_family, '') ILIKE '%' || $6 || '%'
+      OR COALESCE(volume, '') ILIKE '%' || $6 || '%'
+      OR COALESCE(canonical_axis, '') ILIKE '%' || $6 || '%'
+      OR key_terms::text ILIKE '%' || $6 || '%'
+      OR semantic_terms::text ILIKE '%' || $6 || '%'
+    ) THEN 25 ELSE 0 END +
+    CASE COALESCE(quality, '')
+      WHEN 'CANONICAL' THEN 12
+      WHEN 'OPERATIONAL' THEN 8
+      ELSE 0
+    END +
+    CASE WHEN COALESCE(text_status, '') = 'TEXT_READY' THEN 10 ELSE 0 END
+  ) AS recall_score
+FROM document_profiles
+WHERE ($7::text IS NULL OR human_ipr = $7)
+  AND ($8::text IS NULL OR tenant_id = $8)
+  AND ($9::text IS NULL OR workspace_id = $9)
+  AND ($1::text IS NULL OR memory_id = $1)
+  AND ($2::text IS NULL OR filename = $2 OR filename ILIKE '%' || $2 || '%')
+  AND ($3::text IS NULL OR file_hash = $3)
+  AND ($4::text IS NULL OR doc_family = $4)
+  AND ($5::text IS NULL OR volume = $5)
+  AND reusable_in_prompt = true
+  AND COALESCE(profile_status, 'ACTIVE') = 'ACTIVE'
+  AND deleted_at IS NULL
+  AND legal_certification = false
+ORDER BY recall_score DESC, updated_at DESC, created_at DESC
+LIMIT $10;
+`.trim(),
+    [
+      input.memoryId ?? null,
+      input.filename ?? null,
+      input.fileHash ?? null,
+      input.docFamily ?? null,
+      input.volume ?? null,
+      query,
+      input.humanIpr ?? null,
+      input.tenantId ?? null,
+      input.workspaceId ?? null,
+      limit
+    ]
+  );
+}
+
 export function toPublicIprChatThread(
   row: IprChatThreadDatabaseRow
 ): Record<string, unknown> {
@@ -3142,6 +4111,55 @@ export function toPublicIprMemoryRecord(
     updatedAt: stringOrNull(row.updated_at),
     deletedAt: stringOrNull(row.deleted_at),
     recordPayload: jsonOrNull(row.record_payload),
+    legalCertification: false
+  };
+}
+
+
+
+export function toPublicDocumentProfile(
+  row: DocumentProfileDatabaseRow
+): Record<string, unknown> {
+  return {
+    profileId: stringOrNull(row.profile_id),
+    profileKeyHash: stringOrNull(row.profile_key_hash),
+    fileId: stringOrNull(row.file_id),
+    filename: stringOrNull(row.filename),
+    fileHash: stringOrNull(row.file_hash),
+    tenantId: stringOrNull(row.tenant_id),
+    workspaceId: stringOrNull(row.workspace_id),
+    humanIpr: stringOrNull(row.human_ipr),
+    runtimeIpr: stringOrNull(row.runtime_ipr),
+    sessionId: stringOrNull(row.session_id),
+    threadId: stringOrNull(row.thread_id),
+    sourceKind: stringOrNull(row.source_kind),
+    textStatus: stringOrNull(row.text_status),
+    textLength: numberOrNull(row.text_length),
+    mimeType: stringOrNull(row.mime_type),
+    docFamily: stringOrNull(row.doc_family),
+    volume: stringOrNull(row.volume),
+    title: stringOrNull(row.title),
+    subtitle: stringOrNull(row.subtitle),
+    canonicalAxis: stringOrNull(row.canonical_axis),
+    summary: stringOrNull(row.summary),
+    keyTerms: jsonOrNull(row.key_terms),
+    semanticTerms: jsonOrNull(row.semantic_terms),
+    documentMetadata: jsonOrNull(row.document_metadata),
+    memoryId: stringOrNull(row.memory_id),
+    sourceSavedChatId: stringOrNull(row.source_saved_chat_id),
+    lastEvtId: stringOrNull(row.last_evt_id),
+    lastOpcProofId: stringOrNull(row.last_opc_proof_id),
+    auditId: stringOrNull(row.audit_id),
+    usageId: stringOrNull(row.usage_id),
+    profileStatus: stringOrNull(row.profile_status),
+    quality: stringOrNull(row.quality),
+    reusableInPrompt: row.reusable_in_prompt !== false,
+    profileHash: stringOrNull(row.profile_hash),
+    recallScore: numberOrNull(row.recall_score),
+    lastSeenAt: stringOrNull(row.last_seen_at),
+    createdAt: stringOrNull(row.created_at),
+    updatedAt: stringOrNull(row.updated_at),
+    deletedAt: stringOrNull(row.deleted_at),
     legalCertification: false
   };
 }
