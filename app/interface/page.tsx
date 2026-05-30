@@ -188,6 +188,28 @@ type IprSessionResponse = {
 };
 
 
+type IprMemoryDashboardState = {
+  recentThreads: JsonRecord[];
+  memorySaves: JsonRecord[];
+  memoryRecords: JsonRecord[];
+  registeredEvents: JsonRecord[];
+  recallItems: JsonRecord[];
+  promptMemoryBlock: string;
+  lastRefreshUtc: string;
+};
+
+
+const EMPTY_IPR_MEMORY_DASHBOARD: IprMemoryDashboardState = {
+  recentThreads: [],
+  memorySaves: [],
+  memoryRecords: [],
+  registeredEvents: [],
+  recallItems: [],
+  promptMemoryBlock: "",
+  lastRefreshUtc: ""
+};
+
+
 const JOKER_SIGIL = "🜏";
 
 
@@ -2593,6 +2615,124 @@ function InfoList({ items }: { items: Array<{ label: string; value: string }> })
 }
 
 
+function jsonRecords(value: unknown): JsonRecord[] {
+  return Array.isArray(value) ? value.filter(isRecord) : [];
+}
+
+
+function firstRecordText(record: JsonRecord, paths: string[][], fallback = "-"): string {
+  return first(record, paths, fallback);
+}
+
+
+function getIprMemoryRecordTitle(record: JsonRecord): string {
+  return firstRecordText(
+    record,
+    [
+      ["memoryTitle"],
+      ["title"],
+      ["threadTitle"],
+      ["primaryIntention"],
+      ["radicalIntention"],
+      ["memorySummary"]
+    ],
+    "IPR memory record"
+  );
+}
+
+
+function getIprMemoryRecordSummary(record: JsonRecord): string {
+  return firstRecordText(
+    record,
+    [
+      ["memorySummary"],
+      ["summary"],
+      ["primaryIntention"],
+      ["radicalIntention"],
+      ["preview"],
+      ["lastMessagePreview"]
+    ],
+    "No memory synthesis available."
+  );
+}
+
+
+function getIprMemoryRecordId(record: JsonRecord): string {
+  return firstRecordText(
+    record,
+    [
+      ["memoryId"],
+      ["savedChatId"],
+      ["threadId"],
+      ["registeredEventId"],
+      ["id"]
+    ],
+    "-"
+  );
+}
+
+
+function getIprMemoryRecordTimestamp(record: JsonRecord): string {
+  return firstRecordText(
+    record,
+    [
+      ["updatedAt"],
+      ["createdAt"],
+      ["savedAt"],
+      ["registeredAt"],
+      ["lastMessageAt"]
+    ],
+    "-"
+  );
+}
+
+
+function buildIprSaveMessages(messages: ChatMessage[]): JsonRecord[] {
+  return messages.map((item, index) => {
+    const status = getRuntimeStatus(item.raw ?? null);
+
+    return {
+      messageId: item.id,
+      role: item.role,
+      content: normalizeVisibleText(item.content),
+      evtId: status.responseEvt !== "-" ? status.responseEvt : status.aiEvt,
+      opcProofId: status.opc,
+      opcChainHash: status.chainHash,
+      runtimeState: first(item.raw, [["state"], ["status"]], item.role === "assistant" ? "ASSISTANT_RESPONSE" : "USER_MESSAGE"),
+      runtimeDecision: first(item.raw, [["decision"], ["access", "decision"]], "-"),
+      generationClass: first(item.raw, [["generationClass"], ["class"], ["contextClass"]], "-"),
+      messageVisibility: "IPR_CHAT_RECENT_HISTORY",
+      createdAt: item.createdAt,
+      metadata: {
+        sequenceIndex: index,
+        hasRawPayload: Boolean(item.raw),
+        temporalSeal: item.temporalSeal ?? null,
+        legalCertification: false
+      }
+    };
+  });
+}
+
+
+function getLatestUserIntention(messages: ChatMessage[]): string {
+  const userMessages = messages.filter((item) => item.role === "user" && normalizeVisibleText(item.content));
+
+  if (userMessages.length === 0) {
+    return "Salvataggio esplicito della chat JOKER-C2 su IPR come Intenzione Primaria Radicale.";
+  }
+
+  return normalizeVisibleText(userMessages[userMessages.length - 1].content).slice(0, 1200);
+}
+
+
+function getChatThreadTitle(messages: ChatMessage[], sessionId: string): string {
+  const firstUserMessage = messages.find((item) => item.role === "user" && normalizeVisibleText(item.content));
+  const source = firstUserMessage ? normalizeVisibleText(firstUserMessage.content) : sessionId;
+
+  return compact(source || "JOKER-C2 IPR chat", 88);
+}
+
+
 
 function SemanticMemoryCard({
   snapshot,
@@ -2968,6 +3108,15 @@ export default function InterfacePage() {
   const [clockNow, setClockNow] = useState<Date>(() => new Date());
 
 
+  const [isLoadingIprMemory, setIsLoadingIprMemory] = useState(false);
+  const [isSavingChatToIpr, setIsSavingChatToIpr] = useState(false);
+  const [iprMemoryError, setIprMemoryError] = useState<string | null>(null);
+  const [iprMemoryNotice, setIprMemoryNotice] = useState<string | null>(null);
+  const [iprMemoryDashboard, setIprMemoryDashboard] = useState<IprMemoryDashboardState>(
+    EMPTY_IPR_MEMORY_DASHBOARD
+  );
+
+
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -3176,6 +3325,58 @@ export default function InterfacePage() {
   });
 
 
+  const activeTenantId = firstUsableRuntimeValue(
+    [
+      dashboardStatus.tenantId,
+      first(iprSession, [["session", "tenantId"], ["accountProfile", "tenantId"]], "")
+    ],
+    "HBCE-TENANT-SELF-PILOT"
+  );
+
+
+  const activeWorkspaceId = firstUsableRuntimeValue(
+    [
+      dashboardStatus.workspaceId,
+      first(iprSession, [["session", "workspaceId"], ["accountProfile", "workspaceId"]], "")
+    ],
+    "HBCE-WORKSPACE-RND"
+  );
+
+
+  const activeSubscriptionId = firstUsableRuntimeValue(
+    [
+      dashboardStatus.subscriptionId,
+      first(iprSession, [["session", "subscriptionId"], ["accountProfile", "subscriptionId"]], "")
+    ],
+    "HBCE-SUBSCRIPTION-SELF-PILOT"
+  );
+
+
+  const activeAccountId = firstUsableRuntimeValue(
+    [
+      dashboardStatus.accountId,
+      first(iprSession, [["session", "accountId"], ["accountProfile", "accountId"]], "")
+    ],
+    "HBCE-ACCOUNT-SELF-PILOT"
+  );
+
+
+  const activeThreadId = firstUsableRuntimeValue(
+    [dashboardStatus.threadId, sessionId],
+    sessionId || "JOKER-UI-UNINITIALIZED"
+  );
+
+
+  const canUseIprMemory =
+    !isNegativeRuntimeValue(humanIpr) &&
+    !isNegativeRuntimeValue(activeTenantId) &&
+    !isNegativeRuntimeValue(activeWorkspaceId);
+
+
+  const currentPrimaryIntention = getLatestUserIntention(messages);
+  const currentThreadTitle = getChatThreadTitle(messages, activeThreadId);
+
+
   useEffect(() => {
     const stored =
       typeof window !== "undefined"
@@ -3198,6 +3399,13 @@ export default function InterfacePage() {
     void checkIprSession();
     void checkRuntime();
   }, []);
+
+
+  useEffect(() => {
+    if (!sessionId || !canUseIprMemory) return;
+
+    void refreshIprMemoryDashboard();
+  }, [sessionId, humanIpr, activeTenantId, activeWorkspaceId]);
 
 
   useEffect(() => {
@@ -3465,6 +3673,238 @@ export default function InterfacePage() {
       setError(err instanceof Error ? err.message : "HEALTH_CHECK_FAILED");
     } finally {
       setIsChecking(false);
+    }
+  }
+
+
+  function buildIprMemoryRequestBase(): JsonRecord {
+    return {
+      humanIpr,
+      tenantId: activeTenantId,
+      workspaceId: activeWorkspaceId,
+      sessionId,
+      threadId: activeThreadId,
+      strictIdentity: true,
+      legalCertification: false
+    };
+  }
+
+
+  async function refreshIprMemoryDashboard() {
+    if (!canUseIprMemory) {
+      setIprMemoryError("IPR memory requires verified Human IPR, tenant and workspace.");
+      return;
+    }
+
+
+    setIsLoadingIprMemory(true);
+    setIprMemoryError(null);
+
+
+    try {
+      const base = buildIprMemoryRequestBase();
+
+      const [recentResponse, recordsResponse, recallResponse] = await Promise.all([
+        fetch("/api/ipr-memory/recent", {
+          method: "POST",
+          cache: "no-store",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json"
+          },
+          body: JSON.stringify({
+            ...base,
+            includeArchived: false,
+            includeMessages: false,
+            includeMemorySaves: true,
+            includeReusableMemory: true,
+            limit: 10,
+            messageLimit: 20
+          })
+        }),
+        fetch("/api/ipr-memory/records", {
+          method: "POST",
+          cache: "no-store",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json"
+          },
+          body: JSON.stringify({
+            ...base,
+            includeInactive: false,
+            includeMemorySaves: true,
+            includeRegisteredEvents: true,
+            reusableInPrompt: true,
+            limit: 10
+          })
+        }),
+        fetch("/api/ipr-memory/recall", {
+          method: "POST",
+          cache: "no-store",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json"
+          },
+          body: JSON.stringify({
+            ...base,
+            query: currentPrimaryIntention,
+            currentMessage: message,
+            includePromptBlock: true,
+            includeRecords: false,
+            includeDiagnostics: true,
+            limit: 6,
+            promptMaxChars: 4000
+          })
+        })
+      ]);
+
+
+      const recentPayload = await readJsonResponse<JsonRecord>(recentResponse);
+      const recordsPayload = await readJsonResponse<JsonRecord>(recordsResponse);
+      const recallPayload = await readJsonResponse<JsonRecord>(recallResponse);
+
+
+      if (!recentResponse.ok || recentPayload.ok === false) {
+        throw new Error(text(recentPayload.error, `RECENT_HTTP_${recentResponse.status}`));
+      }
+
+
+      if (!recordsResponse.ok || recordsPayload.ok === false) {
+        throw new Error(text(recordsPayload.error, `RECORDS_HTTP_${recordsResponse.status}`));
+      }
+
+
+      if (!recallResponse.ok || recallPayload.ok === false) {
+        throw new Error(text(recallPayload.error, `RECALL_HTTP_${recallResponse.status}`));
+      }
+
+
+      setIprMemoryDashboard({
+        recentThreads: jsonRecords(recentPayload.threads),
+        memorySaves: [
+          ...jsonRecords(recentPayload.memorySaves),
+          ...jsonRecords(recordsPayload.memorySaves)
+        ],
+        memoryRecords: jsonRecords(recordsPayload.memoryRecords),
+        registeredEvents: jsonRecords(recordsPayload.registeredEvents),
+        recallItems: jsonRecords(recallPayload.recallItems),
+        promptMemoryBlock: text(recallPayload.promptMemoryBlock, ""),
+        lastRefreshUtc: new Date().toISOString()
+      });
+      setIprMemoryNotice("IPR memory dashboard refreshed.");
+    } catch (err) {
+      setIprMemoryError(err instanceof Error ? err.message : "IPR_MEMORY_REFRESH_FAILED");
+    } finally {
+      setIsLoadingIprMemory(false);
+    }
+  }
+
+
+  async function saveCurrentChatToIpr() {
+    if (messages.length === 0) {
+      setIprMemoryError("No chat messages available to save on IPR.");
+      return;
+    }
+
+
+    if (!canUseIprMemory) {
+      setIprMemoryError("Cannot save chat on IPR without verified Human IPR, tenant and workspace.");
+      return;
+    }
+
+
+    setIsSavingChatToIpr(true);
+    setIprMemoryError(null);
+    setIprMemoryNotice(null);
+
+
+    try {
+      const response = await fetch("/api/ipr-memory/save-chat", {
+        method: "POST",
+        cache: "no-store",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          confirmSaveToIpr: true,
+          humanIpr,
+          runtimeIpr: dashboardStatus.runtimeIpr,
+          tenantId: activeTenantId,
+          workspaceId: activeWorkspaceId,
+          subscriptionId: activeSubscriptionId,
+          accountId: activeAccountId,
+          sessionId,
+          threadId: activeThreadId,
+          threadTitle: currentThreadTitle,
+          memoryTitle: `IPR · ${currentThreadTitle}`,
+          memorySummary: `Intenzione Primaria Radicale: ${currentPrimaryIntention}`,
+          primaryIntention: currentPrimaryIntention,
+          radicalIntention: currentPrimaryIntention,
+          saveIntent: "USER_EXPLICIT_SAVE_TO_IPR",
+          saveScope: "IPR_BOUND",
+          classification: "USER_SELECTED_CHAT_MEMORY",
+          evtId: dashboardStatus.responseEvt,
+          opcProofId: dashboardStatus.opc,
+          auditId: dashboardStatus.auditId,
+          usageId: dashboardStatus.modelUsageId,
+          selectedMessageIds: messages.map((item) => item.id),
+          messages: buildIprSaveMessages(messages),
+          messageCount: messages.length,
+          saveRaw: false,
+          saveSynthesis: true,
+          reusableInPrompt: true,
+          rawContentSaved: false,
+          rawContentPolicy: "SYNTHESIS_ONLY_BY_DEFAULT",
+          createThreadIfMissing: true,
+          persistProvidedMessages: true,
+          strictIdentity: true,
+          temporalCertificate: {
+            status: effectiveTemporalCertificateStatus,
+            nodeClock: liveTemporal.utcClock,
+            responseUtc: liveTemporal.utcResponseTime,
+            birthAnchorLocal: JOKER_C2_BIRTH_ANCHOR_LOCAL,
+            birthAnchorUtc: JOKER_C2_BIRTH_ANCHOR_UTC,
+            jokerLifetime: liveTemporal.lifeHuman,
+            jokerLifeSeconds: liveTemporal.lifeSeconds,
+            legalCertification: false
+          },
+          metadata: {
+            source: "JOKER_C2_INTERFACE_SAVE_CHAT_BUTTON",
+            iprMeaning: {
+              identityPrimaryRecord: "Identity Primary Record",
+              intenzionePrimariaRadicale: "Intenzione Primaria Radicale"
+            },
+            uiSessionId: sessionId,
+            savedAt: new Date().toISOString(),
+            legalCertification: false
+          }
+        })
+      });
+
+
+      const payload = await readJsonResponse<JsonRecord>(response);
+
+
+      if (!response.ok || payload.ok === false) {
+        throw new Error(text(payload.error, `SAVE_CHAT_HTTP_${response.status}`));
+      }
+
+
+      const savedChatId = first(payload, [["savedChatId"]], "-");
+      const memoryId = first(payload, [["memoryId"]], "-");
+
+
+      setIprMemoryNotice(`Chat saved on IPR. savedChatId=${savedChatId} · memoryId=${memoryId}`);
+      await refreshIprMemoryDashboard();
+    } catch (err) {
+      setIprMemoryError(err instanceof Error ? err.message : "IPR_CHAT_SAVE_FAILED");
+    } finally {
+      setIsSavingChatToIpr(false);
     }
   }
 
@@ -3837,6 +4277,20 @@ export default function InterfacePage() {
   ];
 
 
+  const iprMemoryControlRows = [
+    { label: "Human IPR", value: humanIpr },
+    { label: "Tenant", value: activeTenantId },
+    { label: "Workspace", value: activeWorkspaceId },
+    { label: "Thread", value: activeThreadId },
+    { label: "Recent chats", value: String(iprMemoryDashboard.recentThreads.length) },
+    { label: "Saved chats", value: String(iprMemoryDashboard.memorySaves.length) },
+    { label: "Memory records", value: String(iprMemoryDashboard.memoryRecords.length) },
+    { label: "Recall items", value: String(iprMemoryDashboard.recallItems.length) },
+    { label: "Last refresh UTC", value: iprMemoryDashboard.lastRefreshUtc || "-" },
+    { label: "legalCertification", value: "false" }
+  ];
+
+
   return (
     <main className="joker-page notranslate" lang="it" translate="no">
       <header className="joker-topbar">
@@ -4186,6 +4640,178 @@ export default function InterfacePage() {
 
 
           <InfoList items={registeredEventRows} />
+        </div>
+      </section>
+
+
+      <section className="joker-ipr-memory">
+        <div className={canUseIprMemory ? "joker-panel is-active" : "joker-panel is-error"}>
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker">IPR memory console</span>
+              <h2>Chat recenti · Intenzione Primaria Radicale</h2>
+            </div>
+            <StatusPill value={canUseIprMemory ? "IPR_MEMORY_READY" : "IPR_MEMORY_BLOCKED"} />
+          </div>
+
+
+          <p>
+            Layer UI separato da /api/chat: legge chat recenti, mostra memorie IPR e salva
+            la chat solo con azione esplicita. IPR qui significa sia Identity Primary
+            Record sia Intenzione Primaria Radicale.
+          </p>
+
+
+          <InfoList items={iprMemoryControlRows} />
+
+
+          {iprMemoryError ? (
+            <div className="joker-alert is-bad">{iprMemoryError}</div>
+          ) : null}
+
+
+          {iprMemoryNotice ? (
+            <div className="joker-alert is-good">{iprMemoryNotice}</div>
+          ) : null}
+
+
+          <div className="joker-panel-actions">
+            <button
+              type="button"
+              onClick={() => void refreshIprMemoryDashboard()}
+              disabled={isLoadingIprMemory || !canUseIprMemory}
+            >
+              {isLoadingIprMemory ? "Refreshing memory..." : "Refresh IPR memory"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void saveCurrentChatToIpr()}
+              disabled={isSavingChatToIpr || messages.length === 0 || !canUseIprMemory}
+            >
+              {isSavingChatToIpr ? "Saving on IPR..." : "Salva questa chat su IPR"}
+            </button>
+          </div>
+        </div>
+
+
+        <div className="joker-memory-grid">
+          <div className="joker-memory-column">
+            <div className="joker-memory-column-head">
+              <div>
+                <span className="joker-kicker">Recent chats</span>
+                <h3>Chat recenti</h3>
+              </div>
+              <StatusPill value={String(iprMemoryDashboard.recentThreads.length)} />
+            </div>
+
+
+            {iprMemoryDashboard.recentThreads.length > 0 ? (
+              <div className="joker-memory-list">
+                {iprMemoryDashboard.recentThreads.map((record, index) => (
+                  <article key={`recent-${getIprMemoryRecordId(record)}-${index}`} className="joker-memory-item">
+                    <div className="joker-memory-item-head">
+                      <strong title={getIprMemoryRecordTitle(record)}>
+                        {compact(getIprMemoryRecordTitle(record), 72)}
+                      </strong>
+                      <span>{compact(getIprMemoryRecordTimestamp(record), 34)}</span>
+                    </div>
+                    <p>{compact(getIprMemoryRecordSummary(record), 180)}</p>
+                    <div className="joker-memory-meta">
+                      <span title={first(record, [["threadId"]], "-")}>Thread {compact(first(record, [["threadId"]], "-"), 32)}</span>
+                      <span>Messages {first(record, [["messageCount"], ["messagesCount"]], "0")}</span>
+                      <span>IPR save {first(record, [["iprSaveStatus"], ["saveStatus"]], "-")}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="joker-empty-mini">
+                Nessuna chat recente caricata. Premi Refresh IPR memory, perché apparentemente anche le dashboard hanno bisogno di essere invitate.
+              </div>
+            )}
+          </div>
+
+
+          <div className="joker-memory-column">
+            <div className="joker-memory-column-head">
+              <div>
+                <span className="joker-kicker">IPR records</span>
+                <h3>Memorie IPR</h3>
+              </div>
+              <StatusPill value={String(iprMemoryDashboard.memoryRecords.length)} />
+            </div>
+
+
+            {iprMemoryDashboard.memoryRecords.length > 0 ? (
+              <div className="joker-memory-list">
+                {iprMemoryDashboard.memoryRecords.map((record, index) => (
+                  <article key={`memory-${getIprMemoryRecordId(record)}-${index}`} className="joker-memory-item">
+                    <div className="joker-memory-item-head">
+                      <strong title={getIprMemoryRecordTitle(record)}>
+                        {compact(getIprMemoryRecordTitle(record), 72)}
+                      </strong>
+                      <span>{compact(getIprMemoryRecordTimestamp(record), 34)}</span>
+                    </div>
+                    <p>{compact(getIprMemoryRecordSummary(record), 220)}</p>
+                    <div className="joker-memory-meta">
+                      <span title={first(record, [["memoryId"]], "-")}>Memory {compact(first(record, [["memoryId"]], "-"), 32)}</span>
+                      <span>{first(record, [["classification"]], "USER_SELECTED_CHAT_MEMORY")}</span>
+                      <span>Reusable {booleanLike(getPath(record, ["reusableInPrompt"]), first(record, [["reusableInPrompt"]], "-"))}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="joker-empty-mini">
+                Nessuna memoria IPR persistente caricata. Il bottone “Salva questa chat su IPR” serve proprio a questo, incredibile ma lineare.
+              </div>
+            )}
+          </div>
+
+
+          <div className="joker-memory-column">
+            <div className="joker-memory-column-head">
+              <div>
+                <span className="joker-kicker">Recall</span>
+                <h3>Prompt memory block</h3>
+              </div>
+              <StatusPill value={iprMemoryDashboard.promptMemoryBlock ? "READY" : "EMPTY"} />
+            </div>
+
+
+            {iprMemoryDashboard.recallItems.length > 0 ? (
+              <div className="joker-memory-list">
+                {iprMemoryDashboard.recallItems.slice(0, 4).map((record, index) => (
+                  <article key={`recall-${getIprMemoryRecordId(record)}-${index}`} className="joker-memory-item">
+                    <div className="joker-memory-item-head">
+                      <strong title={getIprMemoryRecordTitle(record)}>
+                        {compact(getIprMemoryRecordTitle(record), 72)}
+                      </strong>
+                      <span>score {first(record, [["score"], ["rankScore"]], "-")}</span>
+                    </div>
+                    <p>{compact(getIprMemoryRecordSummary(record), 180)}</p>
+                    <div className="joker-memory-meta">
+                      <span>{first(record, [["quality"]], "-")}</span>
+                      <span>{first(record, [["sourceKind"]], "IPR_MEMORY")}</span>
+                      <span>EVT {compact(first(record, [["evtId"]], "-"), 28)}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="joker-empty-mini">
+                Nessun recall riusabile. Bene: almeno non stiamo iniettando ricordi a caso nella chat come coriandoli.
+              </div>
+            )}
+
+
+            {iprMemoryDashboard.promptMemoryBlock ? (
+              <details className="joker-memory-prompt-block">
+                <summary>Show prompt memory block</summary>
+                <pre>{iprMemoryDashboard.promptMemoryBlock}</pre>
+              </details>
+            ) : null}
+          </div>
         </div>
       </section>
 
@@ -4558,7 +5184,8 @@ export default function InterfacePage() {
 
 
         .joker-hero,
-        .joker-dashboard {
+        .joker-dashboard,
+        .joker-ipr-memory {
           width: min(1180px, calc(100% - 36px));
           margin: 22px auto 0;
           display: grid;
@@ -4910,6 +5537,161 @@ export default function InterfacePage() {
         .joker-panel-actions {
           justify-content: flex-start;
           margin-top: 14px;
+        }
+
+
+        .joker-ipr-memory {
+          margin-top: 16px;
+        }
+
+
+        .joker-memory-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 16px;
+        }
+
+
+        .joker-memory-column {
+          min-width: 0;
+          border: 1px solid rgba(71, 85, 105, 0.5);
+          border-radius: 24px;
+          background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.66), rgba(2, 6, 23, 0.44)),
+            rgba(2, 6, 23, 0.52);
+          padding: 15px;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+        }
+
+
+        .joker-memory-column-head,
+        .joker-memory-item-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+          min-width: 0;
+        }
+
+
+        .joker-memory-column h3 {
+          margin: 6px 0 0;
+          color: #f8fafc;
+          font-size: 18px;
+          letter-spacing: -0.02em;
+        }
+
+
+        .joker-memory-list {
+          display: grid;
+          gap: 10px;
+          margin-top: 14px;
+        }
+
+
+        .joker-memory-item {
+          min-width: 0;
+          border: 1px solid rgba(51, 65, 85, 0.78);
+          border-radius: 18px;
+          padding: 12px;
+          background:
+            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.08), transparent 38%),
+            rgba(15, 23, 42, 0.62);
+        }
+
+
+        .joker-memory-item strong {
+          min-width: 0;
+          color: #e0f2fe;
+          font-size: 13px;
+          line-height: 1.35;
+          overflow-wrap: anywhere;
+        }
+
+
+        .joker-memory-item-head span {
+          flex: 0 0 auto;
+          color: #64748b;
+          font-size: 10px;
+          font-weight: 850;
+          line-height: 1.3;
+          text-align: right;
+          max-width: 150px;
+          overflow-wrap: anywhere;
+        }
+
+
+        .joker-memory-item p {
+          margin: 9px 0 0;
+          color: #a8b7cc;
+          font-size: 12px;
+          line-height: 1.55;
+          overflow-wrap: anywhere;
+        }
+
+
+        .joker-memory-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 10px;
+        }
+
+
+        .joker-memory-meta span {
+          max-width: 100%;
+          border: 1px solid rgba(71, 85, 105, 0.5);
+          border-radius: 999px;
+          padding: 4px 7px;
+          background: rgba(2, 6, 23, 0.42);
+          color: #94a3b8;
+          font-size: 10px;
+          font-weight: 820;
+          overflow-wrap: anywhere;
+        }
+
+
+        .joker-empty-mini {
+          margin-top: 14px;
+          border: 1px dashed rgba(71, 85, 105, 0.74);
+          border-radius: 18px;
+          padding: 14px;
+          color: #94a3b8;
+          font-size: 12px;
+          line-height: 1.55;
+          background: rgba(2, 6, 23, 0.32);
+        }
+
+
+        .joker-memory-prompt-block {
+          margin-top: 12px;
+          border: 1px solid rgba(34, 211, 238, 0.2);
+          border-radius: 16px;
+          background: rgba(8, 47, 73, 0.22);
+          overflow: hidden;
+        }
+
+
+        .joker-memory-prompt-block summary {
+          cursor: pointer;
+          padding: 10px 12px;
+          color: #bae6fd;
+          font-size: 12px;
+          font-weight: 850;
+        }
+
+
+        .joker-memory-prompt-block pre {
+          margin: 0;
+          max-height: 260px;
+          overflow: auto;
+          padding: 12px;
+          border-top: 1px solid rgba(34, 211, 238, 0.16);
+          color: #cbd5e1;
+          font-size: 11px;
+          line-height: 1.55;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
         }
 
 
@@ -5553,6 +6335,11 @@ export default function InterfacePage() {
           }
 
 
+          .joker-memory-grid {
+            grid-template-columns: 1fr;
+          }
+
+
           .joker-top-actions {
             justify-content: flex-start;
           }
@@ -5572,7 +6359,8 @@ export default function InterfacePage() {
           .joker-dual-time-rails,
           .joker-semantic-grid,
           .joker-semantic-axis,
-          .joker-semantic-card.is-compact .joker-semantic-grid {
+          .joker-semantic-card.is-compact .joker-semantic-grid,
+          .joker-memory-grid {
             grid-template-columns: 1fr;
           }
         }
@@ -5585,7 +6373,8 @@ export default function InterfacePage() {
 
 
           .joker-hero,
-          .joker-dashboard {
+          .joker-dashboard,
+          .joker-ipr-memory {
             width: calc(100% - 20px);
           }
 
