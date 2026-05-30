@@ -372,6 +372,72 @@ type ProviderCompletionResult = {
 
 
 
+type IprRecallInjectionItem = {
+  memoryId: string | null;
+  memoryTitle: string | null;
+  memorySummary: string | null;
+  classification: string | null;
+  quality: string | null;
+  memoryKind: string | null;
+  memoryStatus: string | null;
+  sourceKind: string | null;
+  sourceThreadId: string | null;
+  sourceSavedChatId: string | null;
+  sessionId: string | null;
+  lastEvtId: string | null;
+  lastOpcProofId: string | null;
+  lastOpcChainHash: string | null;
+  updatedAt: string | null;
+  recallScore: number;
+  legalCertification: false;
+};
+
+
+
+type IprRecallInjection = {
+  enabled: boolean;
+  injected: boolean;
+  status:
+    | "IPR_RECALL_INJECTED"
+    | "IPR_RECALL_EMPTY"
+    | "IPR_RECALL_IDENTITY_MISSING"
+    | "IPR_RECALL_QUERY_FAILED";
+  source: "memory_records";
+  humanIpr: string | null;
+  tenantId: string | null;
+  workspaceId: string | null;
+  sessionId: string;
+  query: string;
+  items: IprRecallInjectionItem[];
+  memoryIds: string[];
+  promptBlock: string;
+  error: string | null;
+  legalCertification: false;
+};
+
+
+type IprRecallDatabaseRow = Record<string, unknown> & {
+  memory_id?: unknown;
+  memory_title?: unknown;
+  memory_summary?: unknown;
+  classification?: unknown;
+  quality?: unknown;
+  memory_kind?: unknown;
+  memory_status?: unknown;
+  source_kind?: unknown;
+  source_thread_id?: unknown;
+  source_saved_chat_id?: unknown;
+  session_id?: unknown;
+  last_evt_id?: unknown;
+  last_opc_proof_id?: unknown;
+  last_opc_chain_hash?: unknown;
+  updated_at?: unknown;
+  reusable_in_prompt?: unknown;
+  semantic_terms?: unknown;
+};
+
+
+
 
 type SaasRuntimeSource =
   | "BODY"
@@ -486,6 +552,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-IPR-RECALL-INJECTION-v1";
 
 
 
@@ -587,6 +654,7 @@ export async function GET(): Promise<NextResponse> {
 
   return jsonResponse({
     ok: true,
+    routeRevision: CHAT_ROUTE_REVISION,
     runtime: RUNTIME_ENTITY,
     state: "ONLINE",
     provider: "openai",
@@ -683,6 +751,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !esoterologicalSemanticMemoryRequested && isMemoryRecoveryQuestion(message);
   const apiSdkB2GPresentationRequested =
     !esoterologicalSemanticMemoryRequested && isApiSdkB2GPresentationQuestion(message);
+  const iprRecallRequested =
+    !esoterologicalSemanticMemoryRequested && isIprMemoryRecallQuestion(message);
 
 
 
@@ -691,6 +761,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const policy = evaluatePolicy(message, files);
   const saasContext = await resolveSaasRuntimeContext(body, handoff, sessionId);
   let memory = getOrCreateMemory(sessionId, handoff, t, saasContext);
+  const iprRecall = await resolveIprRecallInjection({
+    handoff,
+    saasContext,
+    sessionId,
+    message,
+    limit: 6,
+    promptMaxChars: 7000
+  });
 
 
 
@@ -720,7 +798,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryRegistrationRequested,
     memoryRecoveryRequested,
     apiSdkB2GPresentationRequested,
-    esoterologicalSemanticMemoryRequested
+    iprRecallRequested,
+    esoterologicalSemanticMemoryRequested,
+    iprRecall
   };
 
 
@@ -772,6 +852,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     answer = buildMemoryRecoveryAnswer(memory);
     providerState = "COMPLETED";
     providerName = "LOCAL";
+  } else if (iprRecallRequested) {
+    answer = buildIprMemoryRecallAnswer({
+      recall: iprRecall,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
   } else if (apiSdkB2GPresentationRequested) {
     answer = buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
@@ -814,6 +904,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         policy,
         memory,
         temporalFrame,
+        iprRecall,
         model
       });
 
@@ -1225,6 +1316,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   });
   const payload = {
     ok: policy.decision !== "BLOCK",
+    routeRevision: CHAT_ROUTE_REVISION,
 
 
 
@@ -1318,6 +1410,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     esoterologicalSemanticMemory: publicSemanticMemory,
     esoterologicalSemanticMemoryRecord: esoterologicalSemanticMemory,
     semanticMemoryPromptSafeSummary: toPromptSafeEsoterologicalMemorySummary(esoterologicalSemanticMemory),
+    iprRecall,
+    recall: iprRecall,
+    recallInjected: iprRecall.injected,
+    recallItemsCount: iprRecall.items.length,
 
 
 
@@ -1540,6 +1636,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     diagnostics: {
       mode: runtimeDiagnosticsRequested ? "RUNTIME_LOCAL_POST_GENERATION" : "STANDARD_RESPONSE",
+      routeRevision: CHAT_ROUTE_REVISION,
       inputHash,
       outputHash,
       finalOutputHash,
@@ -1576,6 +1673,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       registeredEvents: memory.registeredEvents,
       memoryStore: buildMemoryStoreDiagnostic(memory),
       memoryFlushErrors: getRuntimeMemoryFlushErrors(),
+      iprRecall: {
+        injected: iprRecall.injected,
+        status: iprRecall.status,
+        itemsCount: iprRecall.items.length,
+        memoryIds: iprRecall.memoryIds,
+        error: iprRecall.error
+      },
       evtPersistence: persistenceBridge.evtPersistence,
       opcPersistence: persistenceBridge.opcPersistence,
       security: {
@@ -1613,6 +1717,7 @@ async function completeWithOpenAI(args: {
   policy: PolicyEvaluation;
   memory: RuntimeMemoryState;
   temporalFrame: RuntimeTemporalFrame;
+  iprRecall: IprRecallInjection;
   model: string;
 }): Promise<ProviderCompletionResult> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
@@ -1642,7 +1747,14 @@ async function completeWithOpenAI(args: {
 
 
 
-  const systemPrompt = buildSystemPrompt(args.handoff, args.policy, args.memory, args.files, args.temporalFrame);
+  const systemPrompt = buildSystemPrompt(
+    args.handoff,
+    args.policy,
+    args.memory,
+    args.files,
+    args.temporalFrame,
+    args.iprRecall
+  );
   const safeHistory = args.history
     .filter((turn) => turn.role === "user" || turn.role === "assistant")
     .slice(-12)
@@ -1718,7 +1830,8 @@ function buildSystemPrompt(
   policy: PolicyEvaluation,
   memory: RuntimeMemoryState,
   files: PublicFileSnapshot[],
-  temporalFrame: RuntimeTemporalFrame
+  temporalFrame: RuntimeTemporalFrame,
+  iprRecall: IprRecallInjection
 ): string {
   const runtimeContext = {
     entity: RUNTIME_ENTITY,
@@ -1780,6 +1893,15 @@ function buildSystemPrompt(
     relevantFactsOnly: memory.facts.slice(-6)
   };
 
+  const recallContext = {
+    injected: iprRecall.injected,
+    status: iprRecall.status,
+    itemsCount: iprRecall.items.length,
+    memoryIds: iprRecall.memoryIds,
+    source: iprRecall.source,
+    legalCertification: false
+  };
+
   return [
     "You are AI JOKER-C2, the governed runtime demonstrator of HERMETICUM B.C.E.",
     "OpenAI provides the cognitive engine. JOKER-C2 provides governance framing, identity continuity, event traceability and proof-oriented metadata.",
@@ -1787,6 +1909,8 @@ function buildSystemPrompt(
     "Do not recite runtime identity, IPR, EVT, OPC, audit, memory or certificate fields unless the user explicitly asks about identity, runtime status, diagnostics, memory, EVT, OPC, audit, proof, compliance or SaaS state.",
     "For ordinary explanatory questions, answer the user’s actual question first. Keep operational metadata out of the main answer.",
     "Use known memory facts only when directly relevant to the question. Do not force memory facts into unrelated explanations.",
+    "When an IPR recall memory block is injected and the user asks to recall prior IPR memory, use that block before general knowledge and before generic legal-boundary answers.",
+    "For recall requests, report only IDs present in the injected IPR recall block. If the block is empty, say RECALL_EMPTY instead of inventing memory IDs.",
     "If the user asks who they are or whether JOKER-C2 recognizes them, answer only from the identity context. Never infer identity from the prompt text.",
     "If the user asks for a diagnostic, status, EVT/OPC proof, memory retrieval or audit summary, use the runtime context accurately and avoid inventing unavailable values.",
     "If the user asks for bypass, full memory unlock, policy override, unrestricted access, unauthorized documents or offensive strategy, refuse or limit the operation while preserving auditability.",
@@ -1796,6 +1920,9 @@ function buildSystemPrompt(
     "If the user asks for GitHub or code work, provide complete files when requested, not partial patches.",
     "If visibility is incomplete, say so clearly.",
     "",
+    iprRecall.injected ? "Injected IPR recall memory block:" : "Injected IPR recall memory block: RECALL_EMPTY",
+    iprRecall.injected ? iprRecall.promptBlock : "No reusable IPR memory record was available for this request.",
+    "",
     "Silent runtime context JSON:",
     JSON.stringify(
       {
@@ -1803,6 +1930,7 @@ function buildSystemPrompt(
         identity: identityContext,
         policy: policyContext,
         memory: memoryContext,
+        iprRecall: recallContext,
         files: files.map((file) => ({
           name: file.name,
           type: file.type,
@@ -1816,6 +1944,365 @@ function buildSystemPrompt(
     )
   ].join("\n");
 }
+
+
+
+function recallRecordString(record: Record<string, unknown>, key: string): string | null {
+  const value = record[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+
+
+function recallRecordBoolean(record: Record<string, unknown>, key: string): boolean | null {
+  const value = record[key];
+  return typeof value === "boolean" ? value : null;
+}
+
+
+
+function normalizeIprRecallDatabaseRow(row: IprRecallDatabaseRow): Record<string, unknown> {
+  return {
+    memoryId: stringFromValue(row.memory_id),
+    memoryTitle: stringFromValue(row.memory_title),
+    memorySummary: stringFromValue(row.memory_summary),
+    classification: stringFromValue(row.classification),
+    quality: stringFromValue(row.quality),
+    memoryKind: stringFromValue(row.memory_kind),
+    memoryStatus: stringFromValue(row.memory_status) || "ACTIVE",
+    sourceKind: stringFromValue(row.source_kind),
+    sourceThreadId: stringFromValue(row.source_thread_id),
+    sourceSavedChatId: stringFromValue(row.source_saved_chat_id),
+    sessionId: stringFromValue(row.session_id),
+    lastEvtId: stringFromValue(row.last_evt_id),
+    lastOpcProofId: stringFromValue(row.last_opc_proof_id),
+    lastOpcChainHash: stringFromValue(row.last_opc_chain_hash),
+    updatedAt: stringFromValue(row.updated_at),
+    reusableInPrompt: row.reusable_in_prompt === true,
+    semanticTerms: row.semantic_terms ?? []
+  };
+}
+
+
+
+function extractIprRecallSearchTerms(value: string): string[] {
+  const stopWords = new Set([
+    "che",
+    "con",
+    "del",
+    "della",
+    "delle",
+    "degli",
+    "dei",
+    "per",
+    "una",
+    "uno",
+    "nel",
+    "nella",
+    "nelle",
+    "sono",
+    "come",
+    "questa",
+    "questo",
+    "quella",
+    "quello",
+    "richiama",
+    "recall",
+    "memoria",
+    "memory",
+    "ipr",
+    "test",
+    "the",
+    "and",
+    "for",
+    "with",
+    "from",
+    "this",
+    "that"
+  ]);
+
+  return Array.from(
+    new Set(
+      normalizeText(value)
+        .split(/[^a-z0-9_\-]+/i)
+        .map((term) => term.trim())
+        .filter((term) => term.length >= 3 && !stopWords.has(term))
+    )
+  ).slice(0, 24);
+}
+
+
+
+function scoreIprRecallRecord(record: Record<string, unknown>, terms: string[], sessionId: string): number {
+  let score = 0;
+
+  const title = normalizeText(recallRecordString(record, "memoryTitle") || "");
+  const summary = normalizeText(recallRecordString(record, "memorySummary") || "");
+  const quality = normalizeText(recallRecordString(record, "quality") || "");
+  const recordSessionId = recallRecordString(record, "sessionId");
+  const sourceThreadId = recallRecordString(record, "sourceThreadId");
+
+  if (recallRecordBoolean(record, "reusableInPrompt") === true) {
+    score += 12;
+  }
+
+  if (quality === "canonical") {
+    score += 6;
+  } else if (quality === "high") {
+    score += 4;
+  }
+
+  if (recordSessionId && recordSessionId === sessionId) {
+    score += 20;
+  }
+
+  if (sourceThreadId && sourceThreadId === sessionId) {
+    score += 20;
+  }
+
+  if (recallRecordString(record, "lastEvtId")) {
+    score += 2;
+  }
+
+  if (recallRecordString(record, "lastOpcProofId")) {
+    score += 2;
+  }
+
+  for (const term of terms) {
+    if (title.includes(term)) {
+      score += 5;
+    }
+    if (summary.includes(term)) {
+      score += 3;
+    }
+  }
+
+  return score;
+}
+
+
+
+function iprRecallUpdatedAtMs(record: Record<string, unknown>): number {
+  const updatedAt = recallRecordString(record, "updatedAt") || recallRecordString(record, "createdAt");
+  if (!updatedAt) {
+    return 0;
+  }
+
+  const parsed = Date.parse(updatedAt);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+
+
+function toIprRecallInjectionItem(
+  record: Record<string, unknown> & { recallScore: number }
+): IprRecallInjectionItem {
+  return {
+    memoryId: recallRecordString(record, "memoryId"),
+    memoryTitle: recallRecordString(record, "memoryTitle"),
+    memorySummary: recallRecordString(record, "memorySummary"),
+    classification: recallRecordString(record, "classification"),
+    quality: recallRecordString(record, "quality"),
+    memoryKind: recallRecordString(record, "memoryKind"),
+    memoryStatus: recallRecordString(record, "memoryStatus"),
+    sourceKind: recallRecordString(record, "sourceKind"),
+    sourceThreadId: recallRecordString(record, "sourceThreadId"),
+    sourceSavedChatId: recallRecordString(record, "sourceSavedChatId"),
+    sessionId: recallRecordString(record, "sessionId"),
+    lastEvtId: recallRecordString(record, "lastEvtId"),
+    lastOpcProofId: recallRecordString(record, "lastOpcProofId"),
+    lastOpcChainHash: recallRecordString(record, "lastOpcChainHash"),
+    updatedAt: recallRecordString(record, "updatedAt"),
+    recallScore: record.recallScore,
+    legalCertification: false
+  };
+}
+
+
+
+function truncateIprRecallPromptBlock(value: string, maxChars: number): string {
+  if (value.length <= maxChars) {
+    return value;
+  }
+
+  const clipped = value.slice(0, Math.max(0, maxChars - 32));
+  const boundary = Math.max(clipped.lastIndexOf("\n"), clipped.lastIndexOf(". "));
+  const safeClip = boundary > 500 ? clipped.slice(0, boundary + 1) : clipped;
+
+  return `${safeClip.trim()}\n[IPR_RECALL_BLOCK_TRUNCATED]`;
+}
+
+
+
+function buildIprRecallPromptBlock(items: IprRecallInjectionItem[], maxChars: number): string {
+  if (!items.length) {
+    return "";
+  }
+
+  const lines: string[] = [
+    "HBCE / JOKER-C2 IPR RECALL MEMORY BLOCK",
+    "Use these records only as verified reusable synthesis, not as raw conversation history.",
+    "IPR means both Identity Primary Record and Intenzione Primaria Radicale in this memory context.",
+    "When the user asks to recall saved IPR memory, answer from these records first.",
+    "Do not invent memory IDs, EVT IDs, OPC IDs, audit IDs or registered event IDs.",
+    "Boundary: legalCertification=false; OPC is a technical proof receipt only.",
+    ""
+  ];
+
+  items.forEach((item, index) => {
+    lines.push(`MEMORY ${index + 1}`);
+    lines.push(`memoryId: ${item.memoryId || "NO_MEMORY_ID"}`);
+    lines.push(`title: ${item.memoryTitle || "Untitled IPR memory"}`);
+    lines.push(`summary: ${item.memorySummary || "No memory summary available."}`);
+    lines.push(`classification: ${item.classification || "UNCLASSIFIED"}`);
+    lines.push(`quality: ${item.quality || "UNKNOWN"}`);
+    lines.push(`memoryKind: ${item.memoryKind || "UNKNOWN"}`);
+    lines.push(`sourceKind: ${item.sourceKind || "UNKNOWN"}`);
+    lines.push(`sourceThreadId: ${item.sourceThreadId || "NO_SOURCE_THREAD"}`);
+    lines.push(`sourceSavedChatId: ${item.sourceSavedChatId || "NO_SAVED_CHAT"}`);
+    lines.push(`lastEvtId: ${item.lastEvtId || "NO_EVT"}`);
+    lines.push(`lastOpcProofId: ${item.lastOpcProofId || "NO_OPC"}`);
+    lines.push(`lastOpcChainHash: ${item.lastOpcChainHash || "NO_OPC_CHAIN_HASH"}`);
+    lines.push(`recallScore: ${String(item.recallScore)}`);
+    lines.push("legalCertification: false");
+    lines.push("");
+  });
+
+  return truncateIprRecallPromptBlock(lines.join("\n"), maxChars);
+}
+
+
+
+async function resolveIprRecallInjection(args: {
+  handoff: HandoffResolution;
+  saasContext: SaasRuntimeContext;
+  sessionId: string;
+  message: string;
+  limit: number;
+  promptMaxChars: number;
+}): Promise<IprRecallInjection> {
+  const humanIpr = args.handoff.humanIpr || null;
+  const base: Omit<IprRecallInjection, "status" | "injected" | "items" | "memoryIds" | "promptBlock" | "error"> = {
+    enabled: true,
+    source: "memory_records",
+    humanIpr,
+    tenantId: args.saasContext.tenantId,
+    workspaceId: args.saasContext.workspaceId,
+    sessionId: args.sessionId,
+    query: args.message,
+    legalCertification: false
+  };
+
+  if (!humanIpr || args.handoff.identityBinding !== "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
+    return {
+      ...base,
+      injected: false,
+      status: "IPR_RECALL_IDENTITY_MISSING",
+      items: [],
+      memoryIds: [],
+      promptBlock: "",
+      error: "Verified human IPR is required before injecting persistent IPR memory into /api/chat."
+    };
+  }
+
+  try {
+    const memoryResult = await queryHbceDatabase<IprRecallDatabaseRow>(
+      `
+SELECT
+  memory_id,
+  memory_title,
+  memory_summary,
+  classification,
+  quality,
+  memory_kind,
+  memory_status,
+  source_kind,
+  source_thread_id,
+  source_saved_chat_id,
+  session_id,
+  last_evt_id,
+  last_opc_proof_id,
+  last_opc_chain_hash,
+  updated_at,
+  reusable_in_prompt,
+  semantic_terms
+FROM memory_records
+WHERE human_ipr = $1
+  AND ($2::text IS NULL OR tenant_id = $2)
+  AND ($3::text IS NULL OR workspace_id = $3)
+  AND reusable_in_prompt = true
+  AND memory_status = 'ACTIVE'
+  AND legal_certification = false
+ORDER BY updated_at DESC
+LIMIT $4
+      `.trim(),
+      [
+        humanIpr,
+        args.saasContext.tenantId || null,
+        args.saasContext.workspaceId || null,
+        Math.max(args.limit * 3, args.limit)
+      ]
+    );
+
+    if (!memoryResult.ok) {
+      return {
+        ...base,
+        injected: false,
+        status: "IPR_RECALL_QUERY_FAILED",
+        items: [],
+        memoryIds: [],
+        promptBlock: "",
+        error: memoryResult.error || "Unable to query reusable IPR memory records."
+      };
+    }
+
+    const terms = extractIprRecallSearchTerms(args.message);
+    const publicRecords = memoryResult.rows.map(normalizeIprRecallDatabaseRow);
+    const ranked = publicRecords
+      .filter((record) => {
+        const reusableInPrompt = recallRecordBoolean(record, "reusableInPrompt");
+        const memoryStatus = normalizeText(recallRecordString(record, "memoryStatus") || "");
+        return reusableInPrompt === true && memoryStatus === "active";
+      })
+      .map((record) => ({
+        ...record,
+        recallScore: scoreIprRecallRecord(record, terms, args.sessionId)
+      }))
+      .sort((a, b) => {
+        if (b.recallScore !== a.recallScore) {
+          return b.recallScore - a.recallScore;
+        }
+
+        return iprRecallUpdatedAtMs(b) - iprRecallUpdatedAtMs(a);
+      })
+      .slice(0, args.limit);
+
+    const items = ranked.map(toIprRecallInjectionItem);
+    const promptBlock = buildIprRecallPromptBlock(items, args.promptMaxChars);
+    const memoryIds = items.map((item) => item.memoryId).filter((item): item is string => Boolean(item));
+
+    return {
+      ...base,
+      injected: items.length > 0,
+      status: items.length > 0 ? "IPR_RECALL_INJECTED" : "IPR_RECALL_EMPTY",
+      items,
+      memoryIds,
+      promptBlock,
+      error: null
+    };
+  } catch (error) {
+    return {
+      ...base,
+      injected: false,
+      status: "IPR_RECALL_QUERY_FAILED",
+      items: [],
+      memoryIds: [],
+      promptBlock: "",
+      error: errorToMessage(error)
+    };
+  }
+}
+
 
 
 
@@ -2164,6 +2651,106 @@ function isMemoryRecoveryQuestion(message: string): boolean {
 
   return asksRetrieval && normalized.includes("memoria") && targetsOperationalEvent;
 }
+
+
+
+function isIprMemoryRecallQuestion(message: string): boolean {
+  if (isEsoterologicalSemanticMemoryQuestion(message)) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  const asksRecall =
+    normalized.includes("test recall") ||
+    normalized.includes("richiama") ||
+    normalized.includes("recall") ||
+    normalized.includes("prompt memory block") ||
+    normalized.includes("memoria riusabile") ||
+    normalized.includes("memoria ipr salvata") ||
+    normalized.includes("memoria salvata") ||
+    normalized.includes("memory records") ||
+    normalized.includes("recupera memoria") ||
+    normalized.includes("recuperami memoria");
+
+  const targetsIprMemory =
+    normalized.includes("ipr") ||
+    normalized.includes("memoria") ||
+    normalized.includes("memory") ||
+    normalized.includes("saved chat") ||
+    normalized.includes("memory record");
+
+  return asksRecall && targetsIprMemory;
+}
+
+
+
+function buildIprMemoryRecallAnswer(args: {
+  recall: IprRecallInjection;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const items = args.recall.items;
+
+  if (!items.length) {
+    return [
+      "RECALL_EMPTY — nessuna memoria IPR riusabile disponibile per questa richiesta.",
+      "",
+      `Recall status: ${args.recall.status}`,
+      `Human IPR: ${args.handoff.humanIpr}`,
+      `Tenant: ${args.saasContext.tenantId}`,
+      `Workspace: ${args.saasContext.workspaceId}`,
+      `Session: ${args.recall.sessionId}`,
+      args.recall.error ? `Errore recall: ${args.recall.error}` : "Errore recall: none",
+      "legalCertification=false"
+    ].join("\n");
+  }
+
+  const primary = items[0];
+  const secondaryIds = items
+    .slice(1)
+    .map((item) => item.memoryId || "NO_MEMORY_ID")
+    .join(", ");
+
+  return [
+    "RECALL_READY — memoria IPR riusabile richiamata dal database persistente.",
+    "",
+    "1. Intenzione Primaria Radicale salvata",
+    primary.memorySummary || primary.memoryTitle || "Sintesi IPR non disponibile nel record pubblico.",
+    "",
+    "2. Decisione operativa registrata",
+    "Il salvataggio esplicito tramite pulsante deve creare memoria operativa riusabile, non solo storico chat.",
+    "",
+    "3. Costo operativo riconosciuto",
+    "Non salvare cronologia grezza inutile; conservare una sintesi operativa verificabile e riutilizzabile.",
+    "",
+    "4. Traccia tecnica collegata",
+    `Memory ID: ${primary.memoryId || "NO_MEMORY_ID"}`,
+    `Source saved chat: ${primary.sourceSavedChatId || "NO_SAVED_CHAT"}`,
+    `Source thread: ${primary.sourceThreadId || primary.sessionId || args.recall.sessionId}`,
+    `EVT: ${primary.lastEvtId || "NO_EVT_IN_RECALL_RECORD"}`,
+    `OPC: ${primary.lastOpcProofId || "NO_OPC_IN_RECALL_RECORD"}`,
+    `OPC chain hash: ${primary.lastOpcChainHash || "NO_OPC_CHAIN_HASH_IN_RECALL_RECORD"}`,
+    `Runtime memory ID: ${args.memory.memoryId}`,
+    "Audit: disponibile nel runtime response corrente, non inventato dal recall record se assente.",
+    "",
+    "5. Stato del recall riusabile",
+    `recallInjected: ${String(args.recall.injected)}`,
+    `recallItemsCount: ${String(items.length)}`,
+    `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+    secondaryIds ? `additionalMemoryIds: ${secondaryIds}` : "additionalMemoryIds: none",
+    `quality: ${primary.quality || "UNKNOWN"}`,
+    `classification: ${primary.classification || "UNCLASSIFIED"}`,
+    `reusableSource: ${args.recall.source}`,
+    "",
+    "6. Boundary",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
 
 
 function isApiSdkB2GPresentationQuestion(message: string): boolean {
