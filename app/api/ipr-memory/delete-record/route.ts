@@ -17,10 +17,20 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const ROUTE_NAME = "HBCE IPR Memory Delete Record Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-DELETE-RECORD-v1.0";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-DELETE-RECORD-v1.1";
 const DELETE_MODE_SOFT_DELETE = "SOFT_DELETE";
 const DELETE_REASON_DEFAULT = "USER_EXPLICIT_REMOVE_FROM_IPR_RECALL";
-const DISABLED_MEMORY_STATUS = "DISABLED";
+const SOFT_DELETED_MEMORY_STATUS = "SOFT_DELETED";
+const LEGACY_DISABLED_MEMORY_STATUS = "DISABLED";
+const DELETE_READY_STATUS = "IPR_MEMORY_RECORD_SOFT_DELETED";
+const DELETE_ALREADY_OUTSIDE_RECALL_STATUS = "IPR_MEMORY_RECORD_ALREADY_OUTSIDE_RECALL";
+
+const MEMORY_STATUSES_OUTSIDE_RECALL = new Set([
+  SOFT_DELETED_MEMORY_STATUS,
+  LEGACY_DISABLED_MEMORY_STATUS,
+  "DELETED",
+  "INACTIVE"
+]);
 
 type JsonRecord = Record<string, unknown>;
 
@@ -61,6 +71,7 @@ type MemoryRecordRow = {
   source_saved_chat_id?: string | null;
   last_evt_id?: string | null;
   last_opc_proof_id?: string | null;
+  deleted_at?: string | Date | null;
   updated_at?: string | Date | null;
   record_payload?: unknown;
 };
@@ -254,6 +265,29 @@ function extractErrorDiagnostics(error: unknown): DatabaseErrorShape {
   };
 }
 
+function toIsoString(value: unknown): string | null {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  return null;
+}
+
+function isMemoryRecordOutsideRecall(row: MemoryRecordRow): boolean {
+  const memoryStatus = normalizeUpperString(row.memory_status);
+  const deletedAt = toIsoString(row.deleted_at);
+
+  return (
+    MEMORY_STATUSES_OUTSIDE_RECALL.has(memoryStatus) ||
+    row.reusable_in_prompt === false ||
+    Boolean(deletedAt)
+  );
+}
+
 function toPublicMemoryRecord(row: MemoryRecordRow | null): JsonRecord | null {
   if (!row) {
     return null;
@@ -274,12 +308,8 @@ function toPublicMemoryRecord(row: MemoryRecordRow | null): JsonRecord | null {
     sourceSavedChatId: row.source_saved_chat_id || null,
     lastEvtId: row.last_evt_id || null,
     lastOpcProofId: row.last_opc_proof_id || null,
-    updatedAt:
-      row.updated_at instanceof Date
-        ? row.updated_at.toISOString()
-        : typeof row.updated_at === "string"
-          ? row.updated_at
-          : null,
+    deletedAt: toIsoString(row.deleted_at),
+    updatedAt: toIsoString(row.updated_at),
     legalCertification: false
   };
 }
@@ -302,6 +332,7 @@ SELECT
   source_saved_chat_id,
   last_evt_id,
   last_opc_proof_id,
+  deleted_at,
   updated_at,
   record_payload
 FROM memory_records
@@ -327,9 +358,11 @@ async function disableMemoryRecord(context: DeleteRecordContext, existing: Memor
       workspaceId: context.workspaceId,
       previousMemoryStatus: existing.memory_status || null,
       previousReusableInPrompt: existing.reusable_in_prompt ?? null,
+      previousDeletedAt: toIsoString(existing.deleted_at),
+      nextMemoryStatus: SOFT_DELETED_MEMORY_STATUS,
       removedFromRecall: true,
       legalCertification: false,
-      removedAt: new Date().toISOString()
+      softDeletedAt: new Date().toISOString()
     }
   };
 
@@ -339,6 +372,7 @@ UPDATE memory_records
 SET
   memory_status = $5,
   reusable_in_prompt = false,
+  deleted_at = COALESCE(deleted_at, now()),
   updated_at = now(),
   record_payload = COALESCE(record_payload, '{}'::jsonb) || $6::jsonb
 WHERE memory_id = $1
@@ -361,6 +395,7 @@ RETURNING
   source_saved_chat_id,
   last_evt_id,
   last_opc_proof_id,
+  deleted_at,
   updated_at,
   record_payload
     `.trim(),
@@ -369,7 +404,7 @@ RETURNING
       context.humanIpr,
       context.tenantId,
       context.workspaceId,
-      DISABLED_MEMORY_STATUS,
+      SOFT_DELETED_MEMORY_STATUS,
       JSON.stringify(removalPayload)
     ]
   );
@@ -384,7 +419,7 @@ async function disableRegisteredEventsForMemory(context: DeleteRecordContext) {
       requestedByHumanIpr: context.humanIpr,
       removedFromRecall: true,
       legalCertification: false,
-      removedAt: new Date().toISOString()
+      softDeletedAt: new Date().toISOString()
     }
   };
 
@@ -555,13 +590,12 @@ async function buildDeleteRecordPayload(request: NextRequest) {
   }
 
   const existingPublic = toPublicMemoryRecord(existing);
-  const alreadyDisabled =
-    normalizeUpperString(existing.memory_status) !== "ACTIVE" || existing.reusable_in_prompt === false;
+  const alreadyOutsideRecall = isMemoryRecordOutsideRecall(existing);
 
-  if (alreadyDisabled) {
+  if (alreadyOutsideRecall) {
     return jsonResponse({
       ok: true,
-      status: "IPR_MEMORY_RECORD_ALREADY_DISABLED",
+      status: DELETE_ALREADY_OUTSIDE_RECALL_STATUS,
       memoryId: context.memoryId,
       removedFromRecall: true,
       reusableInPrompt: false,
@@ -585,7 +619,7 @@ async function buildDeleteRecordPayload(request: NextRequest) {
           }
         },
         recallImpact:
-          "Record was already outside active recall because memory_status is not ACTIVE or reusable_in_prompt is false."
+          "Record was already outside active recall because memory_status is not ACTIVE, reusable_in_prompt is false or deleted_at is already set."
       }
     });
   }
@@ -621,11 +655,11 @@ async function buildDeleteRecordPayload(request: NextRequest) {
 
   return jsonResponse({
     ok: true,
-    status: "IPR_MEMORY_RECORD_DISABLED",
+    status: DELETE_READY_STATUS,
     memoryId: context.memoryId,
     removedFromRecall: true,
     reusableInPrompt: false,
-    memoryStatus: DISABLED_MEMORY_STATUS,
+    memoryStatus: SOFT_DELETED_MEMORY_STATUS,
     deleteMode: DELETE_MODE_SOFT_DELETE,
     reason: context.reason,
     before: existingPublic,
@@ -684,6 +718,8 @@ export async function GET() {
     ok: true,
     status: "DELETE_RECORD_ROUTE_READY",
     method: "POST or DELETE",
+    successStatus: DELETE_READY_STATUS,
+    idempotentOutsideRecallStatus: DELETE_ALREADY_OUTSIDE_RECALL_STATUS,
     required: {
       memoryId: "string",
       confirmDeleteFromIpr: true
@@ -697,11 +733,13 @@ export async function GET() {
       strictIdentity: "boolean"
     },
     effects: {
-      memoryStatus: DISABLED_MEMORY_STATUS,
+      memoryStatus: SOFT_DELETED_MEMORY_STATUS,
       reusableInPrompt: false,
       removedFromRecall: true,
       physicalDelete: false,
-      auditTracePreserved: true
+      auditTracePreserved: true,
+      recordStatusEndpoint:
+        "/api/ipr-memory/record-status?memoryId=IPR-MEM-..."
     },
     example: {
       memoryId: "IPR-MEM-20260530104506-70EC8570",
