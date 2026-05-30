@@ -3,12 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   ensureHbceDatabaseReady,
+  linkDocumentProfileToIprMemoryFromDatabase,
   persistIprChatMessageToDatabase,
   queryHbceDatabase,
   saveIprChatToMemoryDatabase,
   toPublicIprChatMemorySave,
   toPublicIprChatMessage,
   toPublicIprChatThread,
+  toPublicDocumentProfile,
   toPublicIprMemoryRecord,
   toPublicRegisteredMemoryEvent,
   upsertIprChatThreadToDatabase,
@@ -40,7 +42,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-v1.9";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-DOCUMENT-PROFILE-LINK-v2.0";
 const IDEMPOTENCY_POLICY = "THREAD_PRIMARY_INTENTION_REUSABLE_MEMORY";
 const IDEMPOTENCY_SEED_VERSION = "HBCE-IPR-MEMORY-IDEMPOTENCY-v1";
 const IDEMPOTENT_READY_STATUS = "SAVE_CHAT_IDEMPOTENT_READY";
@@ -60,6 +62,25 @@ const MAX_MESSAGE_INPUT = 300;
 const MAX_MESSAGE_CONTENT_LENGTH = 80_000;
 
 type JsonRecord = Record<string, unknown>;
+
+type DocumentProfileLinkCandidate = {
+  profileId: string | null;
+  fileId: string | null;
+  fileHash: string | null;
+  filename: string | null;
+  source: string;
+  confidence: "DIRECT" | "STRUCTURED" | "INFERRED";
+};
+
+type DocumentProfileLinkResult = {
+  attempted: boolean;
+  reason: string;
+  candidateCount: number;
+  linkedCount: number;
+  linkedProfiles: JsonRecord[];
+  attempts: JsonRecord[];
+  errors: JsonRecord[];
+};
 
 type SaveChatMessageInput = {
   messageId?: string | null;
@@ -110,6 +131,22 @@ type SaveChatRouteInput = {
   createThreadIfMissing?: boolean | string | number | null;
   persistProvidedMessages?: boolean | string | number | null;
   strictIdentity?: boolean | string | number | null;
+  documentProfileId?: string | null;
+  documentProfileIds?: unknown;
+  documentProfileKeyHash?: string | null;
+  fileId?: string | null;
+  fileHash?: string | null;
+  filename?: string | null;
+  documentFilename?: string | null;
+  documentFilenames?: unknown;
+  docFamily?: string | null;
+  volume?: string | null;
+  title?: string | null;
+  documentProfile?: JsonRecord | null;
+  documentProfiles?: unknown;
+  activeFile?: JsonRecord | null;
+  activeFiles?: unknown;
+  files?: unknown;
   temporalCertificate?: JsonRecord | null;
   createdAt?: string | Date | null;
   payload?: JsonRecord | null;
@@ -159,6 +196,7 @@ type SaveChatRouteContext = {
   createdAt: string | Date | null;
   payload: JsonRecord;
   metadata: JsonRecord;
+  documentLinkCandidates: DocumentProfileLinkCandidate[];
 };
 
 function jsonResponse(payload: JsonRecord, init?: ResponseInit) {
@@ -731,6 +769,95 @@ RETURNING *;
   );
 }
 
+function buildSkippedDocumentProfileLinkResult(reason: string): DocumentProfileLinkResult {
+  return {
+    attempted: false,
+    reason,
+    candidateCount: 0,
+    linkedCount: 0,
+    linkedProfiles: [],
+    attempts: [],
+    errors: []
+  };
+}
+
+async function linkDocumentProfilesToIprMemory(input: {
+  context: SaveChatRouteContext;
+  memoryId: string | null;
+  sourceSavedChatId: string | null;
+}): Promise<DocumentProfileLinkResult> {
+  if (!input.memoryId) {
+    return buildSkippedDocumentProfileLinkResult("NO_EFFECTIVE_MEMORY_ID");
+  }
+
+  if (input.context.documentLinkCandidates.length === 0) {
+    return buildSkippedDocumentProfileLinkResult("NO_DOCUMENT_PROFILE_CANDIDATES");
+  }
+
+  const attempts: JsonRecord[] = [];
+  const errors: JsonRecord[] = [];
+  const linkedProfiles: JsonRecord[] = [];
+
+  for (const candidate of input.context.documentLinkCandidates) {
+    try {
+      const result = await linkDocumentProfileToIprMemoryFromDatabase({
+        profileId: candidate.profileId,
+        fileId: candidate.fileId,
+        fileHash: candidate.fileHash,
+        filename: candidate.filename,
+        humanIpr: input.context.humanIpr,
+        tenantId: input.context.tenantId,
+        workspaceId: input.context.workspaceId,
+        memoryId: input.memoryId,
+        sourceSavedChatId: input.sourceSavedChatId,
+        evtId: input.context.evtId,
+        opcProofId: input.context.opcProofId,
+        auditId: input.context.auditId,
+        usageId: input.context.usageId,
+        quality: "CANONICAL",
+        reusableInPrompt: input.context.reusableInPrompt
+      });
+
+      const publicRows = result.rows.map((row) => toPublicDocumentProfile(row));
+      linkedProfiles.push(...publicRows);
+      attempts.push({
+        candidate,
+        ok: result.ok,
+        rowCount: result.rowCount,
+        status: result.status,
+        sqlHash: result.sqlHash,
+        durationMs: result.durationMs,
+        error: result.error,
+        linkedProfileIds: publicRows.map((profile) => profile.profileId)
+      });
+    } catch (error) {
+      errors.push({
+        candidate,
+        error: extractErrorDiagnostics(error)
+      });
+    }
+  }
+
+  const uniqueProfiles = Array.from(
+    new Map(
+      linkedProfiles.map((profile) => [
+        normalizeString(profile.profileId) || normalizeString(profile.filename) || JSON.stringify(profile),
+        profile
+      ])
+    ).values()
+  );
+
+  return {
+    attempted: true,
+    reason: uniqueProfiles.length > 0 ? "DOCUMENT_PROFILE_LINKED_TO_IPR_MEMORY" : "NO_DOCUMENT_PROFILE_MATCHED",
+    candidateCount: input.context.documentLinkCandidates.length,
+    linkedCount: uniqueProfiles.length,
+    linkedProfiles: uniqueProfiles,
+    attempts,
+    errors
+  };
+}
+
 function readHeaderString(request: NextRequest, name: string): string | null {
   return normalizeString(request.headers.get(name));
 }
@@ -807,6 +934,231 @@ function normalizeStringArray(value: unknown): string[] {
         .filter((item): item is string => Boolean(item))
     )
   );
+}
+
+function normalizeDocumentProfileId(value: unknown): string | null {
+  const normalized = normalizeString(value);
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized.toUpperCase().startsWith("DOC-PROFILE-") ? normalized : null;
+}
+
+function normalizeFileHash(value: unknown): string | null {
+  const normalized = normalizeString(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const match = normalized.match(/(?:sha256:)?[a-fA-F0-9]{64}/);
+  if (!match) {
+    return null;
+  }
+
+  const digest = match[0].replace(/^sha256:/i, "").toLowerCase();
+  return `sha256:${digest}`;
+}
+
+function normalizeFileId(value: unknown): string | null {
+  const normalized = normalizeString(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const match = normalized.match(/(?:FILE|file)-[A-Za-z0-9_-]{8,}/);
+  return match ? match[0] : null;
+}
+
+function normalizeDocumentFilename(value: unknown): string | null {
+  const normalized = normalizeString(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const cleaned = normalized.replace(/^`+|`+$/g, "").trim();
+  if (!/\.(txt|md|markdown|pdf|docx|json|csv|xml|yaml|yml|ts|tsx|js|jsx)$/i.test(cleaned)) {
+    return null;
+  }
+
+  return cleaned.slice(0, 220);
+}
+
+function pushDocumentProfileLinkCandidate(
+  candidates: DocumentProfileLinkCandidate[],
+  candidate: Partial<DocumentProfileLinkCandidate>
+) {
+  const normalizedCandidate: DocumentProfileLinkCandidate = {
+    profileId: normalizeDocumentProfileId(candidate.profileId),
+    fileId: normalizeFileId(candidate.fileId),
+    fileHash: normalizeFileHash(candidate.fileHash),
+    filename: normalizeDocumentFilename(candidate.filename),
+    source: candidate.source || "UNKNOWN",
+    confidence: candidate.confidence || "INFERRED"
+  };
+
+  if (
+    !normalizedCandidate.profileId &&
+    !normalizedCandidate.fileId &&
+    !normalizedCandidate.fileHash &&
+    !normalizedCandidate.filename
+  ) {
+    return;
+  }
+
+  const key = [
+    normalizedCandidate.profileId || "NO_PROFILE",
+    normalizedCandidate.fileId || "NO_FILE_ID",
+    normalizedCandidate.fileHash || "NO_HASH",
+    normalizedCandidate.filename || "NO_FILENAME"
+  ].join("|");
+
+  if (
+    candidates.some((existing) =>
+      [
+        existing.profileId || "NO_PROFILE",
+        existing.fileId || "NO_FILE_ID",
+        existing.fileHash || "NO_HASH",
+        existing.filename || "NO_FILENAME"
+      ].join("|") === key
+    )
+  ) {
+    return;
+  }
+
+  candidates.push(normalizedCandidate);
+}
+
+function collectDocumentProfileLinkCandidatesFromRecord(
+  candidates: DocumentProfileLinkCandidate[],
+  value: unknown,
+  source: string
+) {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      collectDocumentProfileLinkCandidatesFromRecord(candidates, item, `${source}[${index}]`)
+    );
+    return;
+  }
+
+  if (!isRecord(value)) {
+    return;
+  }
+
+  pushDocumentProfileLinkCandidate(candidates, {
+    profileId: value.profileId ?? value.documentProfileId ?? value.document_profile_id,
+    fileId: value.fileId ?? value.file_id ?? value.id,
+    fileHash: value.fileHash ?? value.file_hash ?? value.hash ?? value.sha256,
+    filename: value.filename ?? value.fileName ?? value.name ?? value.documentFilename,
+    source,
+    confidence: "STRUCTURED"
+  });
+}
+
+function collectDocumentProfileLinkCandidatesFromText(
+  candidates: DocumentProfileLinkCandidate[],
+  value: unknown,
+  source: string
+) {
+  const text = normalizeString(value);
+  if (!text) {
+    return;
+  }
+
+  for (const match of text.matchAll(/DOC-PROFILE-[A-Fa-f0-9]{8,32}/g)) {
+    pushDocumentProfileLinkCandidate(candidates, {
+      profileId: match[0],
+      source,
+      confidence: "INFERRED"
+    });
+  }
+
+  for (const match of text.matchAll(/(?:FILE|file)-[A-Za-z0-9_-]{8,}/g)) {
+    pushDocumentProfileLinkCandidate(candidates, {
+      fileId: match[0],
+      source,
+      confidence: "INFERRED"
+    });
+  }
+
+  for (const match of text.matchAll(/(?:sha256:)?[a-fA-F0-9]{64}/g)) {
+    pushDocumentProfileLinkCandidate(candidates, {
+      fileHash: match[0],
+      source,
+      confidence: "INFERRED"
+    });
+  }
+
+  for (const match of text.matchAll(/[`"]?([A-Za-z0-9À-ÿ_.()\[\]{}\- ]+\.(?:txt|md|markdown|pdf|docx|json|csv|xml|yaml|yml|ts|tsx|js|jsx))[`"]?/gi)) {
+    pushDocumentProfileLinkCandidate(candidates, {
+      filename: match[1],
+      source,
+      confidence: "INFERRED"
+    });
+  }
+}
+
+function buildDocumentProfileLinkCandidates(
+  input: SaveChatRouteInput,
+  contextText: {
+    threadTitle: string;
+    memoryTitle: string;
+    memorySummary: string;
+    primaryIntention: string;
+    radicalIntention: string;
+  }
+): DocumentProfileLinkCandidate[] {
+  const candidates: DocumentProfileLinkCandidate[] = [];
+
+  pushDocumentProfileLinkCandidate(candidates, {
+    profileId: input.documentProfileId,
+    fileId: input.fileId,
+    fileHash: input.fileHash,
+    filename: input.filename ?? input.documentFilename,
+    source: "DIRECT_SAVE_CHAT_INPUT",
+    confidence: "DIRECT"
+  });
+
+  for (const profileId of normalizeStringArray(input.documentProfileIds)) {
+    pushDocumentProfileLinkCandidate(candidates, {
+      profileId,
+      source: "DIRECT_SAVE_CHAT_INPUT.documentProfileIds",
+      confidence: "DIRECT"
+    });
+  }
+
+  for (const filename of normalizeStringArray(input.documentFilenames)) {
+    pushDocumentProfileLinkCandidate(candidates, {
+      filename,
+      source: "DIRECT_SAVE_CHAT_INPUT.documentFilenames",
+      confidence: "DIRECT"
+    });
+  }
+
+  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.documentProfile, "input.documentProfile");
+  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.documentProfiles, "input.documentProfiles");
+  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.activeFile, "input.activeFile");
+  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.activeFiles, "input.activeFiles");
+  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.files, "input.files");
+  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.payload, "input.payload");
+  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.metadata, "input.metadata");
+
+  collectDocumentProfileLinkCandidatesFromText(candidates, contextText.threadTitle, "context.threadTitle");
+  collectDocumentProfileLinkCandidatesFromText(candidates, contextText.memoryTitle, "context.memoryTitle");
+  collectDocumentProfileLinkCandidatesFromText(candidates, contextText.memorySummary, "context.memorySummary");
+  collectDocumentProfileLinkCandidatesFromText(candidates, contextText.primaryIntention, "context.primaryIntention");
+  collectDocumentProfileLinkCandidatesFromText(candidates, contextText.radicalIntention, "context.radicalIntention");
+
+  if (Array.isArray(input.messages)) {
+    input.messages.slice(0, MAX_MESSAGE_INPUT).forEach((message, index) => {
+      if (isRecord(message)) {
+        collectDocumentProfileLinkCandidatesFromRecord(candidates, message.metadata, `input.messages[${index}].metadata`);
+        collectDocumentProfileLinkCandidatesFromText(candidates, message.content, `input.messages[${index}].content`);
+      }
+    });
+  }
+
+  return candidates.slice(0, 12);
 }
 
 function normalizeMessages(value: unknown): SaveChatMessageInput[] {
@@ -956,6 +1308,19 @@ function resolveContext(request: NextRequest, input: SaveChatRouteInput): SaveCh
     jokerLifeSeconds: lifetime.seconds
   });
 
+  const threadTitle = coalesceString(input.threadTitle, input.memoryTitle) ?? DEFAULT_THREAD_TITLE;
+  const memoryTitle = coalesceString(input.memoryTitle) ?? DEFAULT_MEMORY_TITLE;
+  const memorySummary =
+    coalesceString(input.memorySummary, input.primaryIntention, input.radicalIntention) ?? DEFAULT_MEMORY_SUMMARY;
+  const radicalIntention = coalesceString(input.radicalIntention, input.primaryIntention) ?? primaryIntention;
+  const documentLinkCandidates = buildDocumentProfileLinkCandidates(input, {
+    threadTitle,
+    memoryTitle,
+    memorySummary,
+    primaryIntention,
+    radicalIntention
+  });
+
   return {
     confirmSaveToIpr: coalesceBoolean(
       false,
@@ -970,11 +1335,11 @@ function resolveContext(request: NextRequest, input: SaveChatRouteInput): SaveCh
     accountId,
     sessionId: coalesceString(input.sessionId, readHeaderString(request, "x-hbce-session-id")),
     threadId,
-    threadTitle: coalesceString(input.threadTitle, input.memoryTitle) ?? DEFAULT_THREAD_TITLE,
-    memoryTitle: coalesceString(input.memoryTitle) ?? DEFAULT_MEMORY_TITLE,
-    memorySummary: coalesceString(input.memorySummary, input.primaryIntention, input.radicalIntention) ?? DEFAULT_MEMORY_SUMMARY,
+    threadTitle,
+    memoryTitle,
+    memorySummary,
     primaryIntention,
-    radicalIntention: coalesceString(input.radicalIntention, input.primaryIntention) ?? primaryIntention,
+    radicalIntention,
     saveIntent: coalesceString(input.saveIntent) ?? SAVE_INTENT_USER_EXPLICIT_TO_IPR,
     saveScope: coalesceString(input.saveScope) ?? "IPR_BOUND",
     classification: coalesceString(input.classification) ?? "USER_SELECTED_CHAT_MEMORY",
@@ -1015,9 +1380,23 @@ function resolveContext(request: NextRequest, input: SaveChatRouteInput): SaveCh
       },
       selfPilot: {
         subscriptionTier: HBCE_SELF_PILOT_SUBSCRIPTION_TIER
+      },
+      documentRegistry: {
+        candidateCount: documentLinkCandidates.length,
+        candidateSources: documentLinkCandidates.map((candidate) => candidate.source),
+        routeVersion: ROUTE_VERSION,
+        legalCertification: false
       }
     },
-    metadata: isRecord(input.metadata) ? input.metadata : {}
+    metadata: {
+      ...(isRecord(input.metadata) ? input.metadata : {}),
+      documentRegistry: {
+        candidateCount: documentLinkCandidates.length,
+        candidateSources: documentLinkCandidates.map((candidate) => candidate.source),
+        legalCertification: false
+      }
+    },
+    documentLinkCandidates
   };
 }
 
@@ -1294,6 +1673,12 @@ async function buildSavePayload(request: NextRequest) {
     const existingThread = threadUpsertResult?.rows[0]
       ? toPublicIprChatThread(threadUpsertResult.rows[0])
       : null;
+    const existingSourceSavedChatId = normalizeString((existingMemory as JsonRecord).sourceSavedChatId);
+    const existingDocumentProfileLink = await linkDocumentProfilesToIprMemory({
+      context,
+      memoryId: existingMemoryId,
+      sourceSavedChatId: existingSourceSavedChatId
+    });
 
     return jsonResponse(
       {
@@ -1315,6 +1700,15 @@ async function buildSavePayload(request: NextRequest) {
         registeredEvent: null,
         thread: existingThread,
         persistedMessages: publicPersistedMessages,
+        documentRegistry: {
+          attempted: existingDocumentProfileLink.attempted,
+          reason: existingDocumentProfileLink.reason,
+          candidateCount: existingDocumentProfileLink.candidateCount,
+          linkedCount: existingDocumentProfileLink.linkedCount,
+          legalCertification: false,
+          opc: "technical proof receipt only"
+        },
+        documentProfiles: existingDocumentProfileLink.linkedProfiles,
         context: {
           humanIpr: context.humanIpr,
           runtimeIpr: context.runtimeIpr,
@@ -1365,6 +1759,14 @@ async function buildSavePayload(request: NextRequest) {
             attempted: context.persistProvidedMessages,
             count: messagePersistResults.length,
             rowCount: messagePersistResults.reduce((total, result) => total + result.rowCount, 0)
+          },
+          documentProfileLink: {
+            attempted: existingDocumentProfileLink.attempted,
+            reason: existingDocumentProfileLink.reason,
+            candidateCount: existingDocumentProfileLink.candidateCount,
+            linkedCount: existingDocumentProfileLink.linkedCount,
+            attempts: existingDocumentProfileLink.attempts,
+            errors: existingDocumentProfileLink.errors
           },
           legalCertification: false
         }
@@ -1506,6 +1908,11 @@ async function buildSavePayload(request: NextRequest) {
       ? "IPR_CHAT_MEMORY_SAVED"
       : "IPR_CHAT_MEMORY_SAVED_WITH_ROUTE_MEMORY_FALLBACK"
     : "IPR_CHAT_MEMORY_SAVE_PARTIAL_OR_FAILED";
+  const documentProfileLink = await linkDocumentProfilesToIprMemory({
+    context,
+    memoryId: effectiveMemoryId,
+    sourceSavedChatId: saveResult.savedChatId
+  });
 
   return jsonResponse(
     {
@@ -1540,6 +1947,15 @@ async function buildSavePayload(request: NextRequest) {
       registeredEvent: effectiveRegisteredEvent,
       thread: publicThread,
       persistedMessages: publicPersistedMessages,
+      documentRegistry: {
+        attempted: documentProfileLink.attempted,
+        reason: documentProfileLink.reason,
+        candidateCount: documentProfileLink.candidateCount,
+        linkedCount: documentProfileLink.linkedCount,
+        legalCertification: false,
+        opc: "technical proof receipt only"
+      },
+      documentProfiles: documentProfileLink.linkedProfiles,
       policy: {
         explicitUserAuthorization: context.confirmSaveToIpr,
         rawContentSaved: context.rawContentSaved,
@@ -1589,6 +2005,14 @@ async function buildSavePayload(request: NextRequest) {
           error: existingMemoryLookup.error
         },
         save: buildPublicDiagnostics(saveResult),
+        documentProfileLink: {
+          attempted: documentProfileLink.attempted,
+          reason: documentProfileLink.reason,
+          candidateCount: documentProfileLink.candidateCount,
+          linkedCount: documentProfileLink.linkedCount,
+          attempts: documentProfileLink.attempts,
+          errors: documentProfileLink.errors
+        },
         routeFallbackMemoryRecord: fallbackMemoryResult
           ? {
               attempted: true,
@@ -1672,4 +2096,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
