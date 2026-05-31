@@ -95,6 +95,7 @@ export type RegisteredMemoryEventDatabaseInput = {
   registeredEventId?: string | null;
   eventName: string;
   normalizedEventName?: string;
+  eventNameHash?: string | null;
   evt: string;
   opcProofId?: string | null;
   opcChainHash?: string | null;
@@ -124,6 +125,7 @@ export type RegisteredMemoryEventDatabaseRow = HbceDatabaseQueryRow & {
   registered_event_id?: unknown;
   event_name?: unknown;
   normalized_event_name?: unknown;
+  event_name_hash?: unknown;
   evt?: unknown;
   opc_proof_id?: unknown;
   opc_chain_hash?: unknown;
@@ -989,6 +991,7 @@ CREATE TABLE IF NOT EXISTS memory_registered_events (
   registered_event_id text,
   event_name text NOT NULL,
   normalized_event_name text NOT NULL,
+  event_name_hash text,
   evt text NOT NULL,
   opc_proof_id text,
   opc_chain_hash text,
@@ -1028,6 +1031,10 @@ ALTER TABLE IF EXISTS memory_registered_events
   `
 ALTER TABLE IF EXISTS memory_registered_events
   ADD COLUMN IF NOT EXISTS normalized_event_name text;
+`.trim(),
+  `
+ALTER TABLE IF EXISTS memory_registered_events
+  ADD COLUMN IF NOT EXISTS event_name_hash text;
 `.trim(),
   `
 ALTER TABLE IF EXISTS memory_registered_events
@@ -1134,6 +1141,7 @@ UPDATE memory_registered_events
 SET
   registered_event_id = COALESCE(NULLIF(registered_event_id, ''), 'REVT-' || upper(substr(md5(COALESCE(memory_id, '') || ':' || COALESCE(event_name, evt, 'unnamed_event')), 1, 16))),
   normalized_event_name = COALESCE(NULLIF(normalized_event_name, ''), lower(regexp_replace(COALESCE(event_name, evt, 'unnamed_event'), '\s+', '_', 'g'))),
+  event_name_hash = COALESCE(NULLIF(event_name_hash, ''), 'legacy-md5:' || md5(COALESCE(event_name, evt, 'unnamed_event'))),
   runtime_ipr = COALESCE(runtime_ipr, 'IPR-AI-0001'),
   record_payload = COALESCE(record_payload, '{}'::jsonb),
   legal_certification = COALESCE(legal_certification, false),
@@ -1144,6 +1152,8 @@ WHERE
   OR registered_event_id = ''
   OR normalized_event_name IS NULL
   OR normalized_event_name = ''
+  OR event_name_hash IS NULL
+  OR event_name_hash = ''
   OR runtime_ipr IS NULL
   OR record_payload IS NULL
   OR legal_certification IS NULL
@@ -1157,6 +1167,10 @@ ON memory_registered_events (memory_id, normalized_event_name);
   `
 CREATE INDEX IF NOT EXISTS memory_registered_events_name_idx
 ON memory_registered_events (normalized_event_name);
+`.trim(),
+  `
+CREATE INDEX IF NOT EXISTS memory_registered_events_event_name_hash_idx
+ON memory_registered_events (event_name_hash);
 `.trim(),
   `
 CREATE INDEX IF NOT EXISTS memory_registered_events_evt_idx
@@ -1580,6 +1594,7 @@ const MEMORY_REGISTERED_EVENTS_REQUIRED_COLUMNS = [
   "registered_event_id",
   "event_name",
   "normalized_event_name",
+  "event_name_hash",
   "evt",
   "opc_proof_id",
   "opc_chain_hash",
@@ -4171,6 +4186,7 @@ export async function persistRegisteredMemoryEventToDatabase(
   const normalizedEventName = normalizeRegisteredEventName(
     input.normalizedEventName || eventName
   );
+  const eventNameHash = input.eventNameHash || sha256(normalizedEventName);
   const createdAt = input.createdAt instanceof Date
     ? input.createdAt.toISOString()
     : input.createdAt || new Date().toISOString();
@@ -4185,6 +4201,7 @@ INSERT INTO memory_registered_events (
   registered_event_id,
   event_name,
   normalized_event_name,
+  event_name_hash,
   evt,
   opc_proof_id,
   opc_chain_hash,
@@ -4212,14 +4229,15 @@ INSERT INTO memory_registered_events (
   updated_at
 )
 VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-  COALESCE($12, 'IPR-AI-0001'), $13, $14, $15, $16, $17, $18,
-  $19, $20, $21, $22, $23, $24, COALESCE($25::jsonb, '{}'::jsonb), false,
-  COALESCE($26::timestamptz, now()), now()
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+  COALESCE($13, 'IPR-AI-0001'), $14, $15, $16, $17, $18, $19,
+  $20, $21, $22, $23, $24, $25, COALESCE($26::jsonb, '{}'::jsonb), false,
+  COALESCE($27::timestamptz, now()), now()
 )
 ON CONFLICT (memory_id, normalized_event_name)
 DO UPDATE SET
   event_name = EXCLUDED.event_name,
+  event_name_hash = EXCLUDED.event_name_hash,
   evt = EXCLUDED.evt,
   opc_proof_id = EXCLUDED.opc_proof_id,
   opc_chain_hash = EXCLUDED.opc_chain_hash,
@@ -4249,6 +4267,7 @@ RETURNING *;
       registeredEventId,
       eventName,
       normalizedEventName,
+      eventNameHash,
       input.evt,
       input.opcProofId ?? null,
       input.opcChainHash ?? null,
@@ -4285,22 +4304,24 @@ export async function getRegisteredMemoryEventFromDatabase(input: {
   workspaceId?: string | null;
 }): Promise<HbceDatabaseQueryResult<RegisteredMemoryEventDatabaseRow>> {
   const normalizedEventName = normalizeRegisteredEventName(input.eventName);
+  const eventNameHash = sha256(normalizedEventName);
 
 
   return queryHbceDatabase<RegisteredMemoryEventDatabaseRow>(
     `
 SELECT *
 FROM memory_registered_events
-WHERE normalized_event_name = $1
-  AND ($2::text IS NULL OR memory_id = $2)
-  AND ($3::text IS NULL OR human_ipr = $3)
-  AND ($4::text IS NULL OR tenant_id = $4)
-  AND ($5::text IS NULL OR workspace_id = $5)
+WHERE (normalized_event_name = $1 OR event_name_hash = $2)
+  AND ($3::text IS NULL OR memory_id = $3)
+  AND ($4::text IS NULL OR human_ipr = $4)
+  AND ($5::text IS NULL OR tenant_id = $5)
+  AND ($6::text IS NULL OR workspace_id = $6)
 ORDER BY updated_at DESC, created_at DESC
 LIMIT 1;
 `.trim(),
     [
       normalizedEventName,
+      eventNameHash,
       input.memoryId ?? null,
       input.humanIpr ?? null,
       input.tenantId ?? null,
@@ -4349,6 +4370,7 @@ export function toPublicRegisteredMemoryEvent(
     registeredEventId: stringOrNull(row.registered_event_id),
     eventName: stringOrNull(row.event_name),
     normalizedEventName: stringOrNull(row.normalized_event_name),
+    eventNameHash: stringOrNull(row.event_name_hash),
     evt: stringOrNull(row.evt),
     opcProofId: stringOrNull(row.opc_proof_id),
     opcChainHash: stringOrNull(row.opc_chain_hash),
