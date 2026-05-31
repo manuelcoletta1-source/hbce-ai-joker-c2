@@ -595,7 +595,9 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0";
+const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
+const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
 
 
@@ -806,12 +808,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
   const documentMemoryRecallRequested = isCyberneticDocumentMemoryRecallQuestion(message);
-  const selfPilotProjectScopeBridgeRequested = isSelfPilotProjectScopeBridgeQuestion({
-    message,
-    documentMemoryRecallRequested,
-    runtimeDiagnosticsRequested,
-    runtimeStatusTableRequested
-  });
+  const selfPilotProjectScopeBridgeRequested =
+    isSelfPilotProjectScopeBridgeQuestion({
+      message,
+      documentMemoryRecallRequested,
+      runtimeDiagnosticsRequested,
+      runtimeStatusTableRequested
+    }) ||
+    hasSelfPilotHandoffBridgeSignal({
+      message,
+      body,
+      runtimeDiagnosticsRequested,
+      runtimeStatusTableRequested,
+      documentMemoryRecallRequested
+    });
   const routeRevisionGuardRequested = isRouteRevisionGuardQuestion(message);
   const memoryChainRecallRequested =
     !documentMemoryRecallRequested && isCyberneticMemoryChainRecallQuestion(message);
@@ -5191,6 +5201,131 @@ function isSelfPilotProjectScopeBridgeQuestion(args: {
 }
 
 
+
+function hasSelfPilotHandoffBridgeSignal(args: {
+  message: string;
+  body: JsonObject;
+  runtimeDiagnosticsRequested: boolean;
+  runtimeStatusTableRequested: boolean;
+  documentMemoryRecallRequested: boolean;
+}): boolean {
+  if (!CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED) {
+    return false;
+  }
+
+
+
+
+  const normalizedMessage = normalizeText(args.message);
+  const bridgeEnabled = [
+    "selfPilotMemoryScopeBridge.enabled",
+    "selfPilotScopeBridge.enabled",
+    "selfPilotProjectScopeBridge.enabled",
+    "identityTransport.selfPilotMemoryScopeBridge.enabled"
+  ].some((path) => normalizeText(stringFromValue(getPath(args.body, path))) === "true");
+  const bridgeApplied = [
+    "selfPilotMemoryScopeBridge.applied",
+    "selfPilotScopeBridge.applied",
+    "selfPilotProjectScopeBridge.applied",
+    "identityTransport.selfPilotMemoryScopeBridge.applied"
+  ].some((path) => normalizeText(stringFromValue(getPath(args.body, path))) === "true");
+  const interfaceRevision =
+    firstStringFromSources([args.body], [
+      "interfaceRevision",
+      "identityTransport.interfaceRevision",
+      "ui.interfaceRevision",
+      "client.interfaceRevision"
+    ]) || "";
+  const identityTransportSource =
+    firstStringFromSources([args.body], [
+      "identityTransport.source",
+      "identityTransport.mode",
+      "selfPilotMemoryScopeBridge.reason",
+      "selfPilotScopeBridge.reason"
+    ]) || "";
+  const authSessionReason =
+    firstStringFromSources([args.body], [
+      "iprAccountSession.reason",
+      "authSession.reason",
+      "session.reason"
+    ]) || "";
+  const authSessionAuthenticated = [
+    "iprAccountSession.authenticated",
+    "authSession.authenticated",
+    "session.authenticated"
+  ].some((path) => normalizeText(stringFromValue(getPath(args.body, path))) === "true");
+  const bodyHumanIpr =
+    firstStringFromSources([args.body], [
+      "humanIpr",
+      "humanIPR",
+      "biologicalIpr",
+      "subjectIpr",
+      "iprHandoff.humanIpr",
+      "iprHandoff.humanIPR",
+      "iprHandoff.biologicalIpr",
+      "iprHandoff.subjectIpr",
+      "iprHandoff.verifiedSubject.ipr",
+      "reconstructedIprHandoff.humanIpr",
+      "iprAccountSession.reconstructedIprHandoff.humanIpr",
+      "iprAccountSession.reconstructedIprHandoff.humanIPR",
+      "iprAccountSession.reconstructedIprHandoff.verifiedSubject.ipr",
+      "iprAccountSession.accountProfile.humanIpr",
+      "iprAccountSession.accountProfile.human_ipr"
+    ]) || "";
+  const bodyTenantId =
+    firstStringFromSources([args.body], [
+      "tenantId",
+      "tenant_id",
+      "saas.tenantId",
+      "saas.tenant_id",
+      "iprAccountSession.session.tenantId",
+      "iprAccountSession.accountProfile.tenantId",
+      "iprAccountSession.accountProfile.tenant_id"
+    ]) || "";
+  const bodyWorkspaceId =
+    firstStringFromSources([args.body], [
+      "workspaceId",
+      "workspace_id",
+      "saas.workspaceId",
+      "saas.workspace_id",
+      "iprAccountSession.session.workspaceId",
+      "iprAccountSession.accountProfile.workspaceId",
+      "iprAccountSession.accountProfile.workspace_id"
+    ]) || "";
+  const sessionId =
+    firstStringFromSources([args.body], ["sessionId", "threadId", "conversationId"]) || "";
+  const selfPilotRevision = normalizeText(interfaceRevision).includes("self_pilot_memory_scope_bridge");
+  const selfPilotTransport = normalizeText(identityTransportSource).includes("self_pilot");
+  const selfPilotAuthSession =
+    normalizeText(authSessionReason).includes("self_pilot_session_bridge_active") ||
+    (authSessionAuthenticated && normalizeText(authSessionReason).includes("session_active"));
+  const canonicalSelfPilotIdentity =
+    bodyHumanIpr === HBCE_SELF_PILOT_HUMAN_IPR ||
+    bodyTenantId === HBCE_SELF_PILOT_TENANT_ID ||
+    bodyWorkspaceId === HBCE_SELF_PILOT_WORKSPACE_ID;
+  const controlledRuntimeDiagnostic =
+    (args.runtimeDiagnosticsRequested || args.runtimeStatusTableRequested) &&
+    (normalizedMessage.includes("ipr") || normalizedMessage.includes("diagnostica") || normalizedMessage.includes("diagnostic"));
+  const jokerInterfaceSession = normalizeText(sessionId).startsWith("joker-ui-");
+
+
+
+
+  return (
+    bridgeEnabled ||
+    bridgeApplied ||
+    selfPilotRevision ||
+    selfPilotTransport ||
+    selfPilotAuthSession ||
+    canonicalSelfPilotIdentity ||
+    (jokerInterfaceSession && controlledRuntimeDiagnostic) ||
+    (args.documentMemoryRecallRequested && jokerInterfaceSession)
+  );
+}
+
+
+
+
 function applySelfPilotProjectScopeBridge(
   handoff: HandoffResolution,
   args: {
@@ -5201,12 +5336,24 @@ function applySelfPilotProjectScopeBridge(
     runtimeStatusTableRequested: boolean;
   }
 ): HandoffResolution {
-  if (!isSelfPilotProjectScopeBridgeQuestion({
+  const projectAwareBridgeQuestion = isSelfPilotProjectScopeBridgeQuestion({
     message: args.message,
     documentMemoryRecallRequested: args.documentMemoryRecallRequested,
     runtimeDiagnosticsRequested: args.runtimeDiagnosticsRequested,
     runtimeStatusTableRequested: args.runtimeStatusTableRequested
-  })) {
+  });
+  const identityBridgeSignal = hasSelfPilotHandoffBridgeSignal({
+    message: args.message,
+    body: args.body,
+    documentMemoryRecallRequested: args.documentMemoryRecallRequested,
+    runtimeDiagnosticsRequested: args.runtimeDiagnosticsRequested,
+    runtimeStatusTableRequested: args.runtimeStatusTableRequested
+  });
+
+
+
+
+  if (!projectAwareBridgeQuestion && !identityBridgeSignal) {
     return handoff;
   }
 
@@ -5252,6 +5399,7 @@ function applySelfPilotProjectScopeBridge(
     mentionsCanonicalWorkspace ||
     mentionsCorpusProject ||
     bodyMatchesSelfPilot ||
+    identityBridgeSignal ||
     normalized.includes("project_aware_document_recall_test") ||
     normalized.includes("diagnostic_scope_check");
 
@@ -5266,15 +5414,15 @@ function applySelfPilotProjectScopeBridge(
     subjectName: handoff.subjectName || "Verified biological subject",
     humanIpr: HBCE_SELF_PILOT_HUMAN_IPR,
     certificateId: HBCE_SELF_PILOT_CERTIFICATE_ID,
-    cardSerial: handoff.cardSerial && handoff.cardSerial !== "NO_CARD" ? handoff.cardSerial : "SELF_PILOT_SCOPE_BRIDGE_CARD",
+    cardSerial: handoff.cardSerial && handoff.cardSerial !== "NO_CARD" ? handoff.cardSerial : HBCE_SELF_PILOT_CARD_SERIAL,
     status: "ACTIVE",
-    scope: "JOKER_C2_ACCESS SELF_PILOT_PROJECT_AWARE_DOCUMENT_RECALL",
+    scope: "JOKER_C2_ACCESS",
     accessDecision: "ACCESS_GRANTED",
     identityBinding: "IPR_VERIFIED_BIOLOGICAL_SUBJECT",
     matrixState: "MATRIX_ACTIVE",
     semanticMemoryScope: "IPR_BOUND",
     reason:
-      "Self-pilot project scope bridge accepted this request as a controlled technical test for project-aware document recall. legalCertification=false; OPC remains technical proof receipt only."
+      "Self-pilot handoff bridge reconciled the interface/auth-session identity payload into a controlled server-side IPR handoff for this R&D runtime. legalCertification=false; OPC remains technical proof receipt only."
   };
 }
 
@@ -6455,12 +6603,33 @@ function evaluatePolicy(message: string, files: PublicFileSnapshot[]): PolicyEva
 
 
 function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResolution {
+  const authSessionHandoffObject =
+    asJsonObject(getPath(body, "iprAccountSession.reconstructedIprHandoff")) ||
+    asJsonObject(getPath(body, "authSession.reconstructedIprHandoff")) ||
+    asJsonObject(getPath(body, "session.reconstructedIprHandoff")) ||
+    null;
+
+
+
+
+  const authSessionAccountProfileObject =
+    asJsonObject(getPath(body, "iprAccountSession.accountProfile")) ||
+    asJsonObject(getPath(body, "authSession.accountProfile")) ||
+    asJsonObject(getPath(body, "session.accountProfile")) ||
+    null;
+
+
+
+
   const explicitBodyObject =
     asJsonObject(body.iprHandoff) ||
     asJsonObject(body.handoff) ||
     asJsonObject(body.identityHandoff) ||
+    asJsonObject(body.reconstructedIprHandoff) ||
+    authSessionHandoffObject ||
     asJsonObject(body.identity) ||
     asJsonObject(body.biologicalSubject) ||
+    authSessionAccountProfileObject ||
     null;
 
 
@@ -6485,7 +6654,11 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
       "certificate.certificate_id",
       "operationalCertificate.certificateId",
       "operationalCertificate.certificate_id",
-      "operational_certificate.certificate_id"
+      "operational_certificate.certificate_id",
+      "iprAccountSession.reconstructedIprHandoff.humanIpr",
+      "iprAccountSession.reconstructedIprHandoff.certificateId",
+      "iprAccountSession.accountProfile.humanIpr",
+      "iprAccountSession.accountProfile.certificateId"
     ])
   );
 
@@ -6557,7 +6730,16 @@ function resolveHandoff(request: NextRequest, body: JsonObject): HandoffResoluti
 
 
 
-  const sources = [decodedHeader, decodedBody, bodyObject, decodedQuery, decodedReferer, body];
+  const sources = [
+    decodedHeader,
+    decodedBody,
+    bodyObject,
+    authSessionHandoffObject,
+    authSessionAccountProfileObject,
+    decodedQuery,
+    decodedReferer,
+    body
+  ];
 
 
 
