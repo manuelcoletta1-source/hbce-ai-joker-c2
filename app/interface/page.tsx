@@ -357,7 +357,7 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-GPTLIKE-SAAS-CONSOLE-v1.9";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v1.6";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -5470,9 +5470,7 @@ export default function InterfacePage() {
         </div>
 
 
-        <details className="joker-hero-details">
-          <summary>Runtime compact status</summary>
-          <div className="joker-hero-grid">
+        <div className="joker-hero-grid">
           <MetricCard label="Runtime" value="AI_JOKER-C2" />
           <MetricCard label="Model" value={dashboardStatus.model} />
           <MetricCard label="Model level" value={dashboardStatus.modelLevel} />
@@ -5494,14 +5492,11 @@ export default function InterfacePage() {
           <MetricCard label="Birth anchor" value={`${JOKER_C2_BIRTH_ANCHOR_LOCAL} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}`} />
           <MetricCard label="Runtime age" value={dashboardStatus.runtimeAge} />
           <MetricCard label="B2G readiness" value={dashboardStatus.b2gReadiness} />
-          </div>
-        </details>
+        </div>
       </section>
 
 
-      <details className="joker-diagnostics-drawer">
-        <summary>Full diagnostic / Registry / Audit / Usage</summary>
-        <section className="joker-dashboard">
+      <section className="joker-dashboard">
         <div
           className={[
             "joker-panel",
@@ -5822,7 +5817,7 @@ export default function InterfacePage() {
               </div>
               <StatusPill value={cyberneticChainReady ? "CYBER_CHAIN_READY" : cyberneticMemoryChain.status} />
             </div>
-            <p>La chat scelta viene salvata come memoria IPR-bound; EVT la colloca nel tempo operativo; OPC produce la ricevuta tecnica. La memoria riusabile resta in memory_records.</p>
+            <p>La chat scelta viene salvata come memoria IPR-bound; EVT la colloca nel tempo operativo; OPC ne produce la ricevuta tecnica. La memoria riusabile resta in memory_records, non nello scontrino OPC. Piccola concessione alla realtà.</p>
             <InfoList items={cyberneticMemoryChainRows} />
             <div className="joker-cyber-chain-steps" aria-label="Cybernetic memory chain actions">
               <button type="button" className="joker-memory-primary-button" onClick={() => void saveCurrentChatToIpr()} disabled={isSavingChatToIpr || messages.length === 0 || !canUseIprMemory}>{isSavingChatToIpr ? "Saving..." : "1 · Chat → IPR"}</button>
@@ -5941,7 +5936,7 @@ export default function InterfacePage() {
               </div>
             ) : (
               <div className="joker-empty-mini">
-                Nessuna memoria IPR persistente caricata. Usa “Salva questa chat su IPR” per creare una memoria selezionata e verificabile.
+                Nessuna memoria IPR persistente caricata. Il bottone “Salva questa chat su IPR” serve proprio a questo, incredibile ma lineare.
               </div>
             )}
           </div>
@@ -5992,7 +5987,7 @@ export default function InterfacePage() {
               </div>
             ) : (
               <div className="joker-empty-mini">
-                Nessun recall riusabile disponibile. Le memorie richiamabili compariranno qui dopo il salvataggio IPR.
+                Nessun recall riusabile. Bene: almeno non stiamo iniettando ricordi a caso nella chat come coriandoli.
               </div>
             )}
 
@@ -6005,46 +6000,9 @@ export default function InterfacePage() {
             ) : null}
           </div>
         </div>
-        </section>
-      </details>
+      </section>
 
 
-      <section className="joker-minimal-workspace" aria-label="JOKER-C2 minimal SaaS workspace">
-        <aside className="joker-left-rail" aria-label="Workspace navigation">
-          <div className="joker-side-card joker-side-card-primary">
-            <span className="joker-kicker">Workspace</span>
-            <strong>JOKER-C2 SaaS</strong>
-            <p>Chat centrale, memoria IPR e diagnostica laterale per uso operativo SaaS B2G.</p>
-            <button type="button" onClick={newChat}>New chat</button>
-          </div>
-
-          <div className="joker-side-card">
-            <span className="joker-kicker">IPR memories</span>
-            <strong>{iprMemoryDashboard.memoryRecords.length}</strong>
-            <p>{iprMemoryDashboard.recallItems.length} recall item · {iprMemoryDashboard.memorySaves.length} saved chats</p>
-            <button type="button" onClick={() => void refreshIprMemoryDashboard()} disabled={isLoadingIprMemory}>
-              {isLoadingIprMemory ? "Refreshing..." : "Refresh memory"}
-            </button>
-          </div>
-
-          <div className="joker-side-card">
-            <span className="joker-kicker">Documents</span>
-            <strong>{dashboardDocumentRegistry.profileCount}</strong>
-            <p>{dashboardDocumentRegistry.linkedMemoryCount} linked · {dashboardDocumentRegistry.status}</p>
-            <button type="button" onClick={() => fileInputRef.current?.click()}>Add file</button>
-          </div>
-
-          <div className="joker-side-card">
-            <span className="joker-kicker">Diagnostics</span>
-            <strong>{dashboardStatus.b2gReadiness}</strong>
-            <p>Audit {dashboardStatus.auditStatus} · Usage {dashboardStatus.modelUsageStatus}</p>
-            <button type="button" onClick={() => void checkRuntime()} disabled={isChecking}>
-              {isChecking ? "Checking..." : "Runtime check"}
-            </button>
-          </div>
-        </aside>
-
-        <div className="joker-chat-column">
       <section className="joker-chat">
         {messages.length === 0 ? (
           <div className="joker-empty">
@@ -6210,73 +6168,13 @@ export default function InterfacePage() {
           </span>
         </div>
       </section>
-        </div>
-
-        <aside className="joker-right-rail" aria-label="Operational memory chain">
-          <div className="joker-side-card joker-clock-card" aria-label="JOKER-C2 Temporal Runtime Certificate sempre visibile">
-            <div className="joker-temporal-clock" aria-label="JOKER-C2 Temporal Runtime Certificate Torino Italia Europa UTC+2">
-              <div className="joker-temporal-clock-head">
-                <span className="joker-kicker">JOKER-C2 Temporal Runtime Certificate</span>
-                <StatusPill value={effectiveTemporalCertificateStatus} />
-              </div>
-              <div className="joker-temporal-clock-main">
-                <span>{JOKER_C2_OPERATIONAL_NODE_CLOCK_LABEL}</span>
-                <strong>{liveTemporal.utcClock}</strong>
-              </div>
-              <div className="joker-temporal-clock-grid">
-                <div>
-                  <span>AI JOKER-C2 lifetime</span>
-                  <strong>{liveTemporal.lifeHuman}</strong>
-                </div>
-                <div>
-                  <span>Birth anchor</span>
-                  <strong>{JOKER_C2_BIRTH_ANCHOR_LOCAL} {JOKER_C2_BIRTH_ANCHOR_TIMEZONE}</strong>
-                </div>
-              </div>
-              <em>Torino / Italia / Europa node time UTC+2 + cybernetic lifetime + birth anchor locale · technical proof only · legalCertification=false</em>
-            </div>
-          </div>
-
-          <div className="joker-side-card joker-chain-rail-card">
-            <div className="joker-panel-head">
-              <div>
-                <span className="joker-kicker">IPR · EVT · OPC</span>
-                <h2>Memory chain</h2>
-              </div>
-              <StatusPill value={cyberneticChainReady ? "READY" : cyberneticMemoryChain.status} />
-            </div>
-            <InfoList items={[
-              { label: "IPR-MEM", value: cyberneticMemoryChain.memoryId },
-              { label: "EVT", value: cyberneticMemoryChain.evtId },
-              { label: "OPC", value: cyberneticMemoryChain.opcId },
-              { label: "Record", value: cyberneticMemoryChain.recordStatus },
-              { label: "Reusable", value: cyberneticMemoryChain.reusableInPrompt },
-              { label: "legalCertification", value: "false" }
-            ]} />
-            <div className="joker-chain-buttons">
-              <button type="button" onClick={() => void saveCurrentChatToIpr()} disabled={!canUseIprMemory || messages.length === 0 || isSavingChatToIpr}>
-                {isSavingChatToIpr ? "Saving..." : "1 Chat → IPR"}
-              </button>
-              <button type="button" onClick={() => void bindCurrentIprMemoryToEvt()} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)}>2 IPR → EVT</button>
-              <button type="button" onClick={() => void bindCurrentEvtToOpc()} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)}>3 EVT → OPC</button>
-              <button type="button" onClick={() => void injectCurrentIprMemoryIntoChat()} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)}>4 Inject</button>
-            </div>
-            <div className="joker-chain-buttons joker-chain-buttons-secondary">
-              <button type="button" onClick={() => void checkCyberneticMemoryRecordStatus()} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)}>Record-status</button>
-              <button type="button" onClick={() => void copyRuntimeId("IPR-MEM", cyberneticMemoryChain.memoryId)} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)}>Copy IPR</button>
-              <button type="button" onClick={() => void copyRuntimeId("EVT", cyberneticMemoryChain.evtId)} disabled={isBlankRuntimeValue(cyberneticMemoryChain.evtId)}>Copy EVT</button>
-              <button type="button" onClick={() => void copyRuntimeId("OPC", cyberneticMemoryChain.opcId)} disabled={isBlankRuntimeValue(cyberneticMemoryChain.opcId)}>Copy OPC</button>
-            </div>
-            <p className="joker-side-note">OPC è ricevuta tecnica. La memoria riusabile resta in memory_records.</p>
-          </div>
-        </aside>
-      </section>
 
 
       <style jsx>{`
         .joker-page {
-          min-height: 100dvh;
-          display: block;
+          min-height: 100vh;
+          display: grid;
+          grid-template-rows: auto auto auto 1fr auto;
           background:
             radial-gradient(circle at 18% -8%, rgba(14, 165, 233, 0.18), transparent 34%),
             radial-gradient(circle at 84% 0%, rgba(99, 102, 241, 0.16), transparent 32%),
@@ -6290,152 +6188,6 @@ export default function InterfacePage() {
             BlinkMacSystemFont,
             "Segoe UI",
             sans-serif;
-          overflow-x: hidden;
-        }
-
-
-
-
-        .joker-minimal-workspace {
-          display: grid;
-          grid-template-columns: minmax(220px, 270px) minmax(0, 1fr) minmax(280px, 360px);
-          gap: 16px;
-          align-items: stretch;
-          width: min(1720px, calc(100vw - 28px));
-          margin: 0 auto 22px;
-        }
-
-        .joker-left-rail,
-        .joker-right-rail {
-          position: sticky;
-          top: 190px;
-          align-self: start;
-          display: grid;
-          gap: 12px;
-          max-height: calc(100dvh - 210px);
-          overflow: auto;
-          padding-right: 2px;
-          scrollbar-width: thin;
-        }
-
-        .joker-chat-column {
-          min-width: 0;
-          min-height: 620px;
-          height: calc(100dvh - 230px);
-          display: flex;
-          flex-direction: column;
-          gap: 0;
-          border: 1px solid rgba(71, 85, 105, 0.54);
-          border-radius: 30px;
-          background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0.74), rgba(2, 6, 23, 0.78)),
-            rgba(2, 6, 23, 0.72);
-          box-shadow: 0 24px 72px rgba(2, 6, 23, 0.32);
-          overflow: hidden;
-        }
-
-        .joker-side-card,
-        .joker-diagnostics-drawer,
-        .joker-hero-details {
-          border: 1px solid rgba(71, 85, 105, 0.54);
-          background: rgba(15, 23, 42, 0.66);
-          box-shadow: 0 18px 44px rgba(2, 6, 23, 0.26);
-          backdrop-filter: blur(18px);
-        }
-
-        .joker-side-card {
-          display: grid;
-          gap: 10px;
-          padding: 14px;
-          border-radius: 24px;
-        }
-
-        .joker-side-card-primary {
-          border-color: rgba(34, 211, 238, 0.34);
-          background: linear-gradient(180deg, rgba(14, 165, 233, 0.18), rgba(15, 23, 42, 0.72));
-        }
-
-        .joker-side-card strong {
-          color: #ffffff;
-          font-size: 18px;
-          line-height: 1.1;
-          word-break: break-word;
-        }
-
-        .joker-side-card p,
-        .joker-side-note {
-          margin: 0;
-          color: #94a3b8;
-          font-size: 12px;
-          line-height: 1.45;
-        }
-
-        .joker-chain-rail-card {
-          border-color: rgba(34, 211, 238, 0.36);
-        }
-
-        .joker-chain-buttons {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 8px;
-        }
-
-        .joker-chain-buttons button {
-          width: 100%;
-          min-height: 36px;
-          padding: 8px 10px;
-          border-radius: 14px;
-        }
-
-        .joker-chain-buttons-secondary button {
-          font-size: 12px;
-          color: #bfdbfe;
-          background: rgba(15, 23, 42, 0.5);
-        }
-
-        .joker-diagnostics-drawer {
-          width: min(1720px, calc(100vw - 28px));
-          margin: 0 auto 14px;
-          border-radius: 24px;
-          overflow: hidden;
-        }
-
-        .joker-diagnostics-drawer > summary,
-        .joker-hero-details > summary {
-          cursor: pointer;
-          list-style: none;
-          padding: 14px 18px;
-          color: #e0f2fe;
-          font-weight: 850;
-          letter-spacing: 0.01em;
-        }
-
-        .joker-diagnostics-drawer > summary::-webkit-details-marker,
-        .joker-hero-details > summary::-webkit-details-marker {
-          display: none;
-        }
-
-        .joker-diagnostics-drawer > summary::after,
-        .joker-hero-details > summary::after {
-          content: "Apri";
-          float: right;
-          color: #94a3b8;
-          font-size: 12px;
-          font-weight: 800;
-        }
-
-        .joker-diagnostics-drawer[open] > summary::after,
-        .joker-hero-details[open] > summary::after {
-          content: "Chiudi";
-        }
-
-        .joker-hero-details {
-          border-radius: 24px;
-          overflow: hidden;
-        }
-
-        .joker-hero-details .joker-hero-grid {
-          padding: 0 14px 14px;
         }
 
 
@@ -7572,10 +7324,13 @@ export default function InterfacePage() {
 
 
         .joker-composer-shell {
+          position: sticky;
+          bottom: 0;
+          z-index: 25;
           padding: 14px 18px 18px;
           border-top: 1px solid rgba(71, 85, 105, 0.55);
           background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(2, 6, 23, 0.94) 18%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(2, 6, 23, 0.94) 18%),
             rgba(2, 6, 23, 0.94);
           backdrop-filter: blur(22px);
         }
@@ -7947,348 +7702,97 @@ export default function InterfacePage() {
         }
 
 
-
-
-        .joker-hero {
-          position: sticky;
-          top: 68px;
-          z-index: 24;
-          width: min(1720px, calc(100vw - 28px));
-          margin: 14px auto;
-          padding: 14px;
-          border-radius: 28px;
-        }
-
-        .joker-hero-copy {
-          gap: 12px;
-        }
-
-        .joker-hero-copy h1 {
-          margin: 0;
-          font-size: clamp(22px, 2.5vw, 34px);
-        }
-
-        .joker-hero-copy > p {
-          max-width: 920px;
-          margin: 0;
-          color: #a8b7ca;
-        }
-
-        .joker-temporal-clock {
-          margin-top: 10px;
-        }
-
-        .joker-chat {
-          flex: 1 1 auto;
-          min-height: 0;
-          height: auto;
-          margin: 0;
-          border-radius: 0;
-          overflow-y: auto;
-          padding: 24px 18px 18px;
-        }
-
-        .joker-composer-shell {
-          position: relative;
-          bottom: auto;
-          z-index: 3;
-          flex: 0 0 auto;
-          width: 100%;
-          margin: 0;
-          border-radius: 0;
-          border: 0;
-          border-top: 1px solid rgba(71, 85, 105, 0.55);
-          background:
-            linear-gradient(180deg, rgba(2, 6, 23, 0.7), rgba(2, 6, 23, 0.96)),
-            rgba(2, 6, 23, 0.96);
-          backdrop-filter: blur(18px);
-          box-shadow: 0 -12px 34px rgba(2, 6, 23, 0.2);
-        }
-
-        .joker-dashboard {
-          margin: 0;
-          width: 100%;
-          padding: 14px;
-        }
-
-
-
-        /* HBCE SaaS v1.9: GPT-like console hierarchy.
-           Chat is the product surface; diagnostics are tools, not furniture. */
-        .joker-page {
-          height: 100dvh;
-          min-height: 100dvh;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .joker-topbar {
-          flex: 0 0 auto;
-          min-height: 66px;
-          grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.2fr) auto;
-          padding: 10px 16px;
-        }
-
-        .joker-health {
-          max-height: 40px;
-        }
-
-        .joker-hero {
-          display: none !important;
-        }
-
-        .joker-diagnostics-drawer {
-          position: fixed;
-          left: 14px;
-          bottom: 14px;
-          width: min(320px, calc(100vw - 28px));
-          max-height: calc(100dvh - 110px);
-          margin: 0;
-          z-index: 70;
-          border-radius: 20px;
-          overflow: auto;
-        }
-
-        .joker-diagnostics-drawer:not([open]) {
-          max-height: 48px;
-          overflow: hidden;
-        }
-
-        .joker-diagnostics-drawer > summary {
-          padding: 12px 14px;
-          background: rgba(2, 6, 23, 0.92);
-        }
-
-        .joker-diagnostics-drawer .joker-dashboard,
-        .joker-diagnostics-drawer .joker-ipr-memory {
-          width: 100%;
-          margin: 0;
-          padding: 12px;
-          grid-template-columns: 1fr;
-        }
-
-        .joker-minimal-workspace {
-          flex: 1 1 auto;
-          min-height: 0;
-          height: auto;
-          width: 100%;
-          max-width: none;
-          margin: 0;
-          padding: 12px 14px 14px;
-          display: grid;
-          grid-template-columns: 280px minmax(0, 1fr) 360px;
-          gap: 12px;
-          align-items: stretch;
-        }
-
-        .joker-left-rail,
-        .joker-right-rail {
-          position: static;
-          top: auto;
-          min-height: 0;
-          height: 100%;
-          max-height: none;
-          overflow-y: auto;
-          overflow-x: hidden;
-          padding: 0 2px 0 0;
-          align-self: stretch;
-          align-content: start;
-        }
-
-        .joker-side-card {
-          border-radius: 18px;
-          padding: 12px;
-        }
-
-        .joker-side-card p,
-        .joker-side-note {
-          font-size: 11px;
-          line-height: 1.38;
-        }
-
-        .joker-side-card strong {
-          font-size: 16px;
-        }
-
-        .joker-clock-card {
-          border-color: rgba(34, 211, 238, 0.44);
-          background:
-            radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.18), transparent 42%),
-            rgba(15, 23, 42, 0.72);
-        }
-
-        .joker-clock-card .joker-temporal-clock {
-          margin-top: 0;
-          padding: 12px;
-          border-radius: 16px;
-          background:
-            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.16), transparent 34%),
-            rgba(2, 6, 23, 0.46);
-        }
-
-        .joker-clock-card .joker-temporal-clock-main strong {
-          font-size: 15px;
-        }
-
-        .joker-clock-card .joker-temporal-clock-grid div {
-          padding: 9px;
-        }
-
-        .joker-chat-column {
-          height: 100%;
-          min-height: 0;
-          border-radius: 22px;
-          border-color: rgba(71, 85, 105, 0.44);
-          background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0.52), rgba(2, 6, 23, 0.74)),
-            rgba(2, 6, 23, 0.78);
-        }
-
-        .joker-chat {
-          flex: 1 1 auto;
-          min-height: 0;
-          overflow-y: auto;
-          padding: 26px 18px 18px;
-        }
-
-        .joker-message-list,
-        .joker-empty,
-        .joker-composer,
-        .joker-file-bar,
-        .composer-alert,
-        .joker-footer-line {
-          width: min(980px, 100%);
-        }
-
-        .joker-composer-shell {
-          flex: 0 0 auto;
-          padding: 12px 16px 14px;
-          background:
-            linear-gradient(180deg, rgba(2, 6, 23, 0.18), rgba(2, 6, 23, 0.96) 18%),
-            rgba(2, 6, 23, 0.96);
-        }
-
-        .joker-composer {
-          border-radius: 24px;
-          box-shadow: 0 12px 38px rgba(0, 0, 0, 0.34);
-        }
-
-        .joker-composer textarea {
-          min-height: 42px;
-          max-height: 180px;
-        }
-
-        .joker-empty {
-          min-height: 100%;
-          justify-content: center;
-        }
-
-        .joker-empty h2 {
-          font-size: clamp(30px, 4vw, 46px);
-        }
-
-        .joker-prompt-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .joker-chain-buttons {
-          grid-template-columns: 1fr 1fr;
-        }
-
-        .joker-info-row {
-          grid-template-columns: minmax(88px, 0.38fr) minmax(0, 1fr);
-        }
-
-        
-        @media (max-width: 1400px) {
-          .joker-minimal-workspace {
-            grid-template-columns: 250px minmax(0, 1fr) 330px;
-          }
-
-          .joker-topbar {
-            grid-template-columns: minmax(220px, 1fr) minmax(0, 1fr) auto;
-          }
-        }
-
         @media (max-width: 1180px) {
-          .joker-page {
-            height: auto;
-            min-height: 100dvh;
-            overflow: auto;
-          }
-
-          .joker-topbar {
-            position: sticky;
+          .joker-topbar,
+          .joker-hero,
+          .joker-dashboard {
             grid-template-columns: 1fr;
-            align-items: start;
           }
 
-          .joker-health {
-            max-height: none;
-          }
 
-          .joker-minimal-workspace {
-            height: auto;
-            min-height: calc(100dvh - 120px);
+          .joker-memory-grid {
             grid-template-columns: 1fr;
-            padding: 12px;
           }
 
-          .joker-left-rail,
-          .joker-right-rail {
-            height: auto;
-            max-height: none;
-            overflow: visible;
+
+          .joker-cyber-chain-steps,
+          .joker-cyber-chain-steps.is-secondary {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
-          .joker-chat-column {
-            height: min(860px, calc(100dvh - 130px));
-            min-height: 620px;
-            order: -1;
+
+          .joker-top-actions {
+            justify-content: flex-start;
           }
 
-          .joker-diagnostics-drawer {
-            position: static;
-            width: calc(100% - 24px);
-            max-height: none;
-            margin: 0 auto 12px;
+
+          .joker-hero-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
           }
         }
 
+
         @media (max-width: 860px) {
-          .joker-topbar {
-            padding: 10px;
-          }
-
-          .joker-minimal-workspace {
-            padding: 10px;
-          }
-
-          .joker-left-rail,
-          .joker-right-rail {
+          .joker-hero-grid,
+          .joker-details-grid,
+          .joker-prompt-grid,
+          .joker-temporal-clock-grid,
+          .joker-dual-time-rails,
+          .joker-semantic-grid,
+          .joker-semantic-axis,
+          .joker-semantic-card.is-compact .joker-semantic-grid,
+          .joker-memory-grid {
             grid-template-columns: 1fr;
           }
+        }
 
-          .joker-chat-column {
-            min-height: 580px;
-            height: calc(100dvh - 112px);
-            border-radius: 18px;
+
+        @media (max-width: 640px) {
+          .joker-topbar {
+            padding: 12px;
           }
+
+
+          .joker-hero,
+          .joker-dashboard,
+          .joker-ipr-memory {
+            width: calc(100% - 20px);
+          }
+
+
+          .joker-hero-copy,
+          .joker-panel {
+            border-radius: 22px;
+            padding: 15px;
+          }
+
+
+          .joker-info-row {
+            grid-template-columns: 1fr;
+            gap: 5px;
+          }
+
+
+          .joker-info-row dd {
+            text-align: left;
+          }
+
+
+          .joker-panel-head {
+            flex-direction: column;
+          }
+
 
           .joker-chat {
-            padding: 20px 10px 12px;
+            padding: 22px 10px 14px;
           }
 
-          .joker-prompt-grid {
-            grid-template-columns: 1fr;
-          }
 
           .joker-message {
             grid-template-columns: 1fr;
             gap: 8px;
           }
+
 
           .joker-message-avatar {
             width: 34px;
@@ -8296,37 +7800,23 @@ export default function InterfacePage() {
             border-radius: 13px;
           }
 
-          .joker-dual-time-rails {
-            grid-template-columns: 1fr;
-          }
-        }
 
-        @media (max-width: 640px) {
-          .joker-health {
-            display: none;
+          .joker-message-body {
+            border-radius: 20px;
+            padding: 14px;
           }
 
-          .joker-top-actions {
-            justify-content: flex-start;
-          }
 
           .joker-composer-shell {
             padding: 10px;
           }
 
-          .joker-composer {
-            grid-template-columns: 36px minmax(0, 1fr) 36px;
-            border-radius: 22px;
-          }
 
-          .joker-composer textarea {
-            min-height: 44px;
-          }
-
-          .joker-chain-buttons,
-          .joker-chain-buttons-secondary {
+          .joker-cyber-chain-steps,
+          .joker-cyber-chain-steps.is-secondary {
             grid-template-columns: 1fr;
           }
+
 
           .joker-footer-line {
             flex-direction: column;
