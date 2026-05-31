@@ -320,8 +320,44 @@ const EMPTY_IPR_MEMORY_DASHBOARD: IprMemoryDashboardState = {
 };
 
 
+type CyberneticMemoryChainState = {
+  memoryId: string;
+  savedChatId: string;
+  evtId: string;
+  opcId: string;
+  auditId: string;
+  usageId: string;
+  status: string;
+  promptEligible: string;
+  reusableInPrompt: string;
+  source: string;
+  recordStatus: string;
+  documentRegistryStatus: string;
+  linkedProfileCount: string;
+  updatedAt: string;
+};
+
+
+const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
+  memoryId: "-",
+  savedChatId: "-",
+  evtId: "-",
+  opcId: "-",
+  auditId: "-",
+  usageId: "-",
+  status: "NOT_READY",
+  promptEligible: "false",
+  reusableInPrompt: "false",
+  source: "NONE",
+  recordStatus: "NOT_CHECKED",
+  documentRegistryStatus: "NOT_CHECKED",
+  linkedProfileCount: "0",
+  updatedAt: "-"
+};
+
+
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-DOCUMENT-REGISTRY-v1.5";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v1.6";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -3102,6 +3138,74 @@ function getIprMemoryRecordTimestamp(record: JsonRecord): string {
 }
 
 
+function getIprMemoryRecordEvtId(record: JsonRecord): string {
+  return firstRecordText(record, [["evtId"], ["lastEvtId"], ["lastEvt"], ["responseEvt"], ["registeredEventId"], ["source", "evtId"], ["memory", "lastEvtId"], ["memoryRecord", "evtId"], ["record", "evtId"]], "-");
+}
+
+
+function getIprMemoryRecordOpcId(record: JsonRecord): string {
+  return firstRecordText(record, [["opcId"], ["opcProofId"], ["lastOpcProofId"], ["lastOpcId"], ["opc"], ["source", "opcId"], ["memory", "lastOpcProofId"], ["memoryRecord", "opcId"], ["record", "opcId"]], "-");
+}
+
+
+function getIprMemoryRecordSavedChatId(record: JsonRecord): string {
+  return firstRecordText(record, [["savedChatId"], ["sourceSavedChatId"], ["chatSaveId"], ["source", "savedChatId"], ["memoryRecord", "savedChatId"], ["record", "savedChatId"]], "-");
+}
+
+
+function getRecordStatusPayloadRecord(payload: JsonRecord | null | undefined): JsonRecord | null {
+  if (!payload) return null;
+  return firstRecord(payload, [["memoryRecord"], ["record"], ["memory"], ["status", "memoryRecord"], ["data", "memoryRecord"]]);
+}
+
+
+function buildCyberneticMemoryChainSnapshot(payload: JsonRecord | null | undefined, fallback?: Partial<CyberneticMemoryChainState>): CyberneticMemoryChainState {
+  const source = payload ?? {};
+  const record = getRecordStatusPayloadRecord(source) ?? source;
+  const documentRegistry = firstRecord(source, [["documentRegistry"], ["registry", "documentRegistry"]]);
+  const memoryId = firstUsableRuntimeValue([first(record, [["memoryId"], ["id"]], ""), first(source, [["memoryId"], ["savedMemoryId"], ["memory", "memoryId"]], ""), fallback?.memoryId ?? ""], "-");
+
+  return {
+    memoryId,
+    savedChatId: firstUsableRuntimeValue([getIprMemoryRecordSavedChatId(record), first(source, [["savedChatId"], ["sourceSavedChatId"]], ""), fallback?.savedChatId ?? ""], "-"),
+    evtId: firstUsableRuntimeValue([getIprMemoryRecordEvtId(record), first(source, [["evtId"], ["lastEvtId"], ["responseEvt"], ["evt", "id"]], ""), fallback?.evtId ?? ""], "-"),
+    opcId: firstUsableRuntimeValue([getIprMemoryRecordOpcId(record), first(source, [["opcId"], ["opcProofId"], ["opc"], ["opc", "id"]], ""), fallback?.opcId ?? ""], "-"),
+    auditId: firstUsableRuntimeValue([first(record, [["auditId"]], ""), first(source, [["auditId"], ["audit", "auditId"]], ""), fallback?.auditId ?? ""], "-"),
+    usageId: firstUsableRuntimeValue([first(record, [["usageId"], ["modelUsageId"]], ""), first(source, [["usageId"], ["modelUsageId"], ["usage", "usageId"]], ""), fallback?.usageId ?? ""], "-"),
+    status: firstDisplayValue([first(record, [["memoryStatus"], ["status"], ["recordStatus"]], ""), first(source, [["memoryStatus"], ["status"]], ""), fallback?.status ?? ""], "UNKNOWN"),
+    promptEligible: firstDisplayValue([booleanLike(getPath(record, ["promptEligible"]), ""), first(record, [["promptEligible"]], ""), first(source, [["promptEligible"]], ""), fallback?.promptEligible ?? ""], "false"),
+    reusableInPrompt: firstDisplayValue([booleanLike(getPath(record, ["reusableInPrompt"]), ""), first(record, [["reusableInPrompt"]], ""), first(source, [["reusableInPrompt"]], ""), fallback?.reusableInPrompt ?? ""], "false"),
+    source: firstDisplayValue([fallback?.source ?? "", first(source, [["source"]], "")], "IPR_MEMORY_CHAIN"),
+    recordStatus: firstDisplayValue([first(source, [["recordStatus"], ["status"], ["memoryStatus"]], ""), fallback?.recordStatus ?? ""], "NOT_CHECKED"),
+    documentRegistryStatus: firstDisplayValue([first(documentRegistry, [["status"], ["reason"]], ""), first(source, [["documentRegistryStatus"]], ""), fallback?.documentRegistryStatus ?? ""], "NOT_CHECKED"),
+    linkedProfileCount: firstDisplayValue([first(documentRegistry, [["linkedProfileCount"], ["profileCount"]], ""), first(source, [["linkedProfileCount"]], ""), fallback?.linkedProfileCount ?? ""], "0"),
+    updatedAt: firstDisplayValue([getIprMemoryRecordTimestamp(record), first(source, [["checkedAt"], ["updatedAt"], ["createdAt"]], ""), fallback?.updatedAt ?? ""], new Date().toISOString())
+  };
+}
+
+
+function isUsableCyberneticMemoryId(value: string): boolean {
+  return value.trim().startsWith("IPR-MEM-");
+}
+
+
+function buildCyberneticMemoryRecallPrompt(chain: CyberneticMemoryChainState): string {
+  return [
+    "CYBERNETIC_MEMORY_RECALL_REQUEST v1.0", "", "Richiama questa memoria IPR come memoria cibernetica riusabile nel runtime JOKER-C2.", "Non creare nuova memoria semantica generica.", "Non salvare nulla se non viene richiesta una nuova persistenza esplicita.", "", `memoryId: ${chain.memoryId}`, `evtId: ${chain.evtId}`, `opcId: ${chain.opcId}`, "", "Risposta attesa:", "CYBERNETIC_MEMORY_RECALL_READY", "", "Indica in modo tecnico:", "- memoryId richiamato", "- EVT collegato", "- OPC collegato", "- stato memoria", "- promptEligible", "- reusableInPrompt", "- eventuale documentRegistry", "- legalCertification=false", "- OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+function buildCyberneticEvtBindingPrompt(chain: CyberneticMemoryChainState): string {
+  return ["CYBERNETIC_MEMORY_EVT_BINDING_REQUEST v1.0", "", "Verifica il collegamento tra memoria IPR ed EVT per la memoria selezionata.", "Non creare memoria semantica generica.", "Non salvare nuova memoria.", "", `memoryId: ${chain.memoryId}`, `evtId: ${chain.evtId}`, "", "Risposta attesa:", "IPR_MEMORY_EVT_BINDING_READY", "", "Indica: memoryId, evtId, Human IPR, tenant, workspace, stato EVT, legalCertification=false, OPC=technical proof receipt only."].join("\n");
+}
+
+
+function buildCyberneticOpcBindingPrompt(chain: CyberneticMemoryChainState): string {
+  return ["CYBERNETIC_MEMORY_OPC_BINDING_REQUEST v1.0", "", "Verifica il collegamento tra EVT e OPC per la memoria selezionata.", "Non creare memoria semantica generica.", "Non salvare nuova memoria.", "", `memoryId: ${chain.memoryId}`, `evtId: ${chain.evtId}`, `opcId: ${chain.opcId}`, "", "Risposta attesa:", "EVT_OPC_BINDING_READY", "", "Indica: memoryId, evtId, opcId, hash/proof status, legalCertification=false, OPC=technical proof receipt only."].join("\n");
+}
+
+
 function buildIprSaveMessages(messages: ChatMessage[]): JsonRecord[] {
   return messages.map((item, index) => {
     const status = getRuntimeStatus(item.raw ?? null);
@@ -3467,12 +3571,14 @@ function MessageBubble({
   message,
   onCopy,
   onSaveChatToIpr,
+  onCopyRuntimeId,
   canSaveChatToIpr,
   isSavingChatToIpr
 }: {
   message: ChatMessage;
   onCopy: (content: string) => void;
   onSaveChatToIpr: () => Promise<void>;
+  onCopyRuntimeId: (label: string, value: string) => Promise<void>;
   canSaveChatToIpr: boolean;
   isSavingChatToIpr: boolean;
 }) {
@@ -3482,6 +3588,9 @@ function MessageBubble({
   const status = getRuntimeStatus(message.raw ?? null);
   const semanticMemory = getPublicSemanticMemorySnapshot(message.raw ?? null);
   const documentRegistry = getPublicDocumentRegistrySnapshot(message.raw ?? null);
+  const messageMemoryId = firstUsableRuntimeValue([status.memoryId, semanticMemory.memoryId], "-");
+  const messageEvtId = firstUsableRuntimeValue([status.responseEvt, status.aiEvt, semanticMemory.source.evtId], "-");
+  const messageOpcId = firstUsableRuntimeValue([status.opc, semanticMemory.source.opcId], "-");
   const visibleContent = normalizeVisibleText(message.content);
   const cleanVisibleContent = isAssistant
     ? stripInlineTemporalRuntimeCertificate(visibleContent)
@@ -3582,6 +3691,21 @@ function MessageBubble({
           <div className="joker-message-actions">
             <button type="button" onClick={() => onCopy(displayedContent)}>
               Copy response
+            </button>
+
+
+            <button type="button" onClick={() => void onCopyRuntimeId("IPR-MEM", messageMemoryId)} disabled={!isUsableCyberneticMemoryId(messageMemoryId)} title="Copia il memoryId esposto dalla risposta">
+              Copy IPR-MEM
+            </button>
+
+
+            <button type="button" onClick={() => void onCopyRuntimeId("EVT", messageEvtId)} disabled={isBlankRuntimeValue(messageEvtId)} title="Copia l’EVT collegato alla risposta">
+              Copy EVT
+            </button>
+
+
+            <button type="button" onClick={() => void onCopyRuntimeId("OPC", messageOpcId)} disabled={isBlankRuntimeValue(messageOpcId)} title="Copia l’OPC collegato alla risposta">
+              Copy OPC
             </button>
 
 
@@ -3702,6 +3826,10 @@ export default function InterfacePage() {
   const [iprMemoryDashboard, setIprMemoryDashboard] = useState<IprMemoryDashboardState>(
     EMPTY_IPR_MEMORY_DASHBOARD
   );
+  const [cyberneticMemoryChain, setCyberneticMemoryChain] = useState<CyberneticMemoryChainState>(
+    EMPTY_CYBERNETIC_MEMORY_CHAIN
+  );
+  const [isCheckingCyberneticMemory, setIsCheckingCyberneticMemory] = useState(false);
 
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -4396,6 +4524,107 @@ export default function InterfacePage() {
   }
 
 
+  async function checkCyberneticMemoryRecordStatus(memoryIdOverride?: string) {
+    const memoryId = memoryIdOverride || cyberneticMemoryChain.memoryId;
+
+    if (!isUsableCyberneticMemoryId(memoryId)) {
+      setIprMemoryError("No valid IPR-MEM memoryId available for record-status verification.");
+      return null;
+    }
+
+    if (!canUseIprMemory) {
+      setIprMemoryError("Cannot verify IPR memory chain without verified Human IPR, tenant and workspace.");
+      return null;
+    }
+
+    setIsCheckingCyberneticMemory(true);
+    setIprMemoryError(null);
+
+    try {
+      const query = new URLSearchParams({ memoryId, humanIpr, tenantId: activeTenantId, workspaceId: activeWorkspaceId, includeDocumentRegistry: "true", strictIdentity: "true" });
+      const response = await fetch(`/api/ipr-memory/record-status?${query.toString()}`, { method: "GET", cache: "no-store", credentials: "include", headers: { Accept: "application/json" } });
+      const payload = await readJsonResponse<JsonRecord>(response);
+
+      if (!response.ok || payload.ok === false) {
+        throw new Error(text(payload.error, `RECORD_STATUS_HTTP_${response.status}`));
+      }
+
+      const nextChain = buildCyberneticMemoryChainSnapshot(payload, { ...cyberneticMemoryChain, memoryId, source: "RECORD_STATUS_VERIFICATION", updatedAt: new Date().toISOString() });
+      setCyberneticMemoryChain(nextChain);
+      setIprMemoryNotice(`Record-status verified. memoryId=${nextChain.memoryId} · EVT=${nextChain.evtId} · OPC=${nextChain.opcId} · docs=${nextChain.linkedProfileCount}`);
+      return nextChain;
+    } catch (err) {
+      setIprMemoryError(err instanceof Error ? err.message : "CYBERNETIC_MEMORY_STATUS_FAILED");
+      return null;
+    } finally {
+      setIsCheckingCyberneticMemory(false);
+    }
+  }
+
+
+  async function bindCurrentIprMemoryToEvt() {
+    const verifiedChain = await checkCyberneticMemoryRecordStatus();
+    if (!verifiedChain) return;
+    if (isBlankRuntimeValue(verifiedChain.evtId)) {
+      setIprMemoryError("IPR memory exists, but no EVT is exposed yet. The save-chat route must persist or expose evtId before SaaS-grade binding.");
+      return;
+    }
+    setIprMemoryNotice(`IPR→EVT binding verified. memoryId=${verifiedChain.memoryId} · evtId=${verifiedChain.evtId}`);
+  }
+
+
+  async function bindCurrentEvtToOpc() {
+    const verifiedChain = await checkCyberneticMemoryRecordStatus();
+    if (!verifiedChain) return;
+    if (isBlankRuntimeValue(verifiedChain.evtId)) {
+      setIprMemoryError("Cannot verify EVT→OPC because no EVT is exposed by the selected memory.");
+      return;
+    }
+    if (isBlankRuntimeValue(verifiedChain.opcId)) {
+      setIprMemoryError("EVT is present, but no OPC proof is exposed yet. The chain is not SaaS-grade until OPC is linked.");
+      return;
+    }
+    setIprMemoryNotice(`EVT→OPC binding verified. evtId=${verifiedChain.evtId} · opcId=${verifiedChain.opcId} · legalCertification=false`);
+  }
+
+
+  async function injectCurrentIprMemoryIntoChat() {
+    if (!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)) {
+      setIprMemoryError("No valid IPR-MEM memoryId available to inject into chat.");
+      return;
+    }
+    await sendMessage(buildCyberneticMemoryRecallPrompt(cyberneticMemoryChain));
+  }
+
+
+  async function askChatToVerifyIprEvtBinding() {
+    if (!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)) {
+      setIprMemoryError("No valid IPR-MEM memoryId available for IPR→EVT chat verification.");
+      return;
+    }
+    await sendMessage(buildCyberneticEvtBindingPrompt(cyberneticMemoryChain));
+  }
+
+
+  async function askChatToVerifyEvtOpcBinding() {
+    if (!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)) {
+      setIprMemoryError("No valid IPR-MEM memoryId available for EVT→OPC chat verification.");
+      return;
+    }
+    await sendMessage(buildCyberneticOpcBindingPrompt(cyberneticMemoryChain));
+  }
+
+
+  async function copyRuntimeId(label: string, value: string) {
+    if (isBlankRuntimeValue(value)) {
+      setIprMemoryError(`${label} is not available for copy.`);
+      return;
+    }
+    await copyText(value);
+    setIprMemoryNotice(`${label} copied: ${value}`);
+  }
+
+
   async function saveCurrentChatToIpr() {
     if (messages.length === 0) {
       setIprMemoryError("No chat messages available to save on IPR.");
@@ -4524,15 +4753,58 @@ export default function InterfacePage() {
 
       const savedChatId = first(payload, [["savedChatId"]], "-");
       const memoryId = first(payload, [["memoryId"]], "-");
+      const evtId = firstUsableRuntimeValue([first(payload, [["evtId"], ["lastEvtId"], ["responseEvt"], ["evt", "id"]], ""), dashboardStatus.responseEvt], "-");
+      const opcId = firstUsableRuntimeValue([first(payload, [["opcId"], ["opcProofId"], ["opc"], ["opc", "id"]], ""), dashboardStatus.opc], "-");
+      const savedChain = buildCyberneticMemoryChainSnapshot(payload, {
+        memoryId,
+        savedChatId,
+        evtId,
+        opcId,
+        auditId: firstUsableRuntimeValue([first(payload, [["auditId"]], ""), dashboardStatus.auditId], "-"),
+        usageId: firstUsableRuntimeValue([first(payload, [["usageId"], ["modelUsageId"]], ""), dashboardStatus.modelUsageId], "-"),
+        status: "ACTIVE_REUSABLE",
+        promptEligible: "true",
+        reusableInPrompt: "true",
+        source: "SAVE_CHAT_TO_IPR",
+        updatedAt: new Date().toISOString()
+      });
 
-
-      setIprMemoryNotice(`Chat saved on IPR. savedChatId=${savedChatId} · memoryId=${memoryId}`);
+      setCyberneticMemoryChain(savedChain);
+      setIprMemoryNotice(`Chat saved on IPR. savedChatId=${savedChatId} · memoryId=${memoryId} · EVT=${savedChain.evtId} · OPC=${savedChain.opcId}`);
       await refreshIprMemoryDashboard();
+
+      if (isUsableCyberneticMemoryId(memoryId)) {
+        void checkCyberneticMemoryRecordStatus(memoryId);
+      }
     } catch (err) {
       setIprMemoryError(err instanceof Error ? err.message : "IPR_CHAT_SAVE_FAILED");
     } finally {
       setIsSavingChatToIpr(false);
     }
+  }
+
+
+  function selectIprMemoryRecordForCyberneticChain(record: JsonRecord, source: "memory-record" | "recall-item" | "recent-chat") {
+    const memoryId = getIprMemoryRecordMemoryId(record);
+    if (!memoryId) {
+      setIprMemoryError("Cannot select this item for the cybernetic chain because no IPR-MEM memoryId is exposed.");
+      return;
+    }
+
+    const nextChain = buildCyberneticMemoryChainSnapshot(record, {
+      memoryId,
+      savedChatId: getIprMemoryRecordSavedChatId(record),
+      evtId: getIprMemoryRecordEvtId(record),
+      opcId: getIprMemoryRecordOpcId(record),
+      status: first(record, [["memoryStatus"], ["status"]], "SELECTED"),
+      promptEligible: firstDisplayValue([booleanLike(getPath(record, ["promptEligible"]), ""), first(record, [["promptEligible"]], "")], "false"),
+      reusableInPrompt: firstDisplayValue([booleanLike(getPath(record, ["reusableInPrompt"]), ""), first(record, [["reusableInPrompt"]], "")], "false"),
+      source,
+      updatedAt: new Date().toISOString()
+    });
+
+    setCyberneticMemoryChain(nextChain);
+    setIprMemoryNotice(`Selected cybernetic memory chain. memoryId=${nextChain.memoryId} · EVT=${nextChain.evtId} · OPC=${nextChain.opcId}`);
   }
 
 
@@ -4606,6 +4878,9 @@ export default function InterfacePage() {
       setIprMemoryNotice(
         `IPR memory removed from recall. memoryId=${memoryId} · status=${status} · removedFromRecall=${removedFromRecall}`
       );
+      if (cyberneticMemoryChain.memoryId === memoryId) {
+        setCyberneticMemoryChain({ ...cyberneticMemoryChain, status: "DELETED", promptEligible: "false", reusableInPrompt: "false", recordStatus: status, updatedAt: new Date().toISOString() });
+      }
       await refreshIprMemoryDashboard();
     } catch (err) {
       setIprMemoryError(err instanceof Error ? err.message : "IPR_MEMORY_DELETE_FAILED");
@@ -5088,6 +5363,29 @@ export default function InterfacePage() {
   ];
 
 
+  const cyberneticMemoryChainRows = [
+    { label: "IPR Memory", value: cyberneticMemoryChain.memoryId },
+    { label: "Saved chat", value: cyberneticMemoryChain.savedChatId },
+    { label: "EVT", value: cyberneticMemoryChain.evtId },
+    { label: "OPC", value: cyberneticMemoryChain.opcId },
+    { label: "Audit", value: cyberneticMemoryChain.auditId },
+    { label: "Usage", value: cyberneticMemoryChain.usageId },
+    { label: "Status", value: cyberneticMemoryChain.status },
+    { label: "Prompt eligible", value: cyberneticMemoryChain.promptEligible },
+    { label: "Reusable", value: cyberneticMemoryChain.reusableInPrompt },
+    { label: "Record status", value: cyberneticMemoryChain.recordStatus },
+    { label: "Document registry", value: cyberneticMemoryChain.documentRegistryStatus },
+    { label: "Linked profiles", value: cyberneticMemoryChain.linkedProfileCount },
+    { label: "Source", value: cyberneticMemoryChain.source },
+    { label: "Updated", value: cyberneticMemoryChain.updatedAt },
+    { label: "legalCertification", value: "false" },
+    { label: "OPC boundary", value: "technical proof receipt only" }
+  ];
+
+
+  const cyberneticChainReady = isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId) && !isBlankRuntimeValue(cyberneticMemoryChain.evtId) && !isBlankRuntimeValue(cyberneticMemoryChain.opcId);
+
+
   return (
     <main className="joker-page notranslate" lang="it" translate="no">
       <header className="joker-topbar">
@@ -5142,8 +5440,8 @@ export default function InterfacePage() {
           <h1>JOKER-C2 dashboard</h1>
           <p>
             Console operativa per transizione da R&D/MVP a SaaS Core v0.1: IPR
-            verificato, accesso governato, memoria IPR-bound, EVT, OPC,
-            dashboard audit, model usage, model routing e boundary C2 Defense.
+            verificato, accesso governato, memoria cibernetica IPR-bound, EVT, OPC,
+            dashboard audit, model usage, model routing e boundary B2G.
           </p>
           <code>legalCertification=false</code>
 
@@ -5502,20 +5800,39 @@ export default function InterfacePage() {
 
 
           <div className="joker-panel-actions">
-            <button
-              type="button"
-              onClick={() => void refreshIprMemoryDashboard()}
-              disabled={isLoadingIprMemory || !canUseIprMemory}
-            >
+            <button type="button" onClick={() => void refreshIprMemoryDashboard()} disabled={isLoadingIprMemory || !canUseIprMemory}>
               {isLoadingIprMemory ? "Refreshing memory..." : "Refresh IPR memory"}
             </button>
-            <button
-              type="button"
-              onClick={() => void saveCurrentChatToIpr()}
-              disabled={isSavingChatToIpr || messages.length === 0 || !canUseIprMemory}
-            >
-              {isSavingChatToIpr ? "Saving on IPR..." : "Salva questa chat su IPR"}
+            <button type="button" className="joker-memory-primary-button" onClick={() => void saveCurrentChatToIpr()} disabled={isSavingChatToIpr || messages.length === 0 || !canUseIprMemory}>
+              {isSavingChatToIpr ? "Saving on IPR..." : "1 · Save chat → IPR"}
             </button>
+          </div>
+
+
+          <div className={cyberneticChainReady ? "joker-cyber-chain is-ready" : "joker-cyber-chain"}>
+            <div className="joker-memory-column-head">
+              <div>
+                <span className="joker-kicker">IPR · EVT · OPC</span>
+                <h3>Memoria cibernetica SaaS chain</h3>
+              </div>
+              <StatusPill value={cyberneticChainReady ? "CYBER_CHAIN_READY" : cyberneticMemoryChain.status} />
+            </div>
+            <p>La chat scelta viene salvata come memoria IPR-bound; EVT la colloca nel tempo operativo; OPC ne produce la ricevuta tecnica. La memoria riusabile resta in memory_records, non nello scontrino OPC. Piccola concessione alla realtà.</p>
+            <InfoList items={cyberneticMemoryChainRows} />
+            <div className="joker-cyber-chain-steps" aria-label="Cybernetic memory chain actions">
+              <button type="button" className="joker-memory-primary-button" onClick={() => void saveCurrentChatToIpr()} disabled={isSavingChatToIpr || messages.length === 0 || !canUseIprMemory}>{isSavingChatToIpr ? "Saving..." : "1 · Chat → IPR"}</button>
+              <button type="button" onClick={() => void bindCurrentIprMemoryToEvt()} disabled={isCheckingCyberneticMemory || !isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId) || !canUseIprMemory}>{isCheckingCyberneticMemory ? "Checking..." : "2 · IPR → EVT"}</button>
+              <button type="button" onClick={() => void bindCurrentEvtToOpc()} disabled={isCheckingCyberneticMemory || !isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId) || !canUseIprMemory}>{isCheckingCyberneticMemory ? "Checking..." : "3 · EVT → OPC"}</button>
+              <button type="button" onClick={() => void injectCurrentIprMemoryIntoChat()} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId) || isSending}>4 · Inject memory → Chat</button>
+            </div>
+            <div className="joker-cyber-chain-steps is-secondary" aria-label="Cybernetic memory utility actions">
+              <button type="button" onClick={() => void checkCyberneticMemoryRecordStatus()} disabled={isCheckingCyberneticMemory || !isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId) || !canUseIprMemory}>Record-status</button>
+              <button type="button" onClick={() => void copyRuntimeId("IPR-MEM", cyberneticMemoryChain.memoryId)} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)}>Copy IPR-MEM</button>
+              <button type="button" onClick={() => void copyRuntimeId("EVT", cyberneticMemoryChain.evtId)} disabled={isBlankRuntimeValue(cyberneticMemoryChain.evtId)}>Copy EVT</button>
+              <button type="button" onClick={() => void copyRuntimeId("OPC", cyberneticMemoryChain.opcId)} disabled={isBlankRuntimeValue(cyberneticMemoryChain.opcId)}>Copy OPC</button>
+              <button type="button" onClick={() => void askChatToVerifyIprEvtBinding()} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId) || isSending}>Ask chat: IPR→EVT</button>
+              <button type="button" onClick={() => void askChatToVerifyEvtOpcBinding()} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId) || isSending}>Ask chat: EVT→OPC</button>
+            </div>
           </div>
         </div>
 
@@ -5549,6 +5866,8 @@ export default function InterfacePage() {
                     </div>
                     {getIprMemoryRecordMemoryId(record) ? (
                       <div className="joker-memory-actions">
+                        <button type="button" onClick={() => selectIprMemoryRecordForCyberneticChain(record, "recent-chat")} disabled={!canUseIprMemory}>Usa nella catena</button>
+                        <button type="button" onClick={() => void copyRuntimeId("IPR-MEM", getIprMemoryRecordMemoryId(record))} disabled={!getIprMemoryRecordMemoryId(record)}>Copy IPR-MEM</button>
                         <button
                           type="button"
                           className="joker-memory-danger-button"
@@ -5597,6 +5916,8 @@ export default function InterfacePage() {
                       <span>Reusable {booleanLike(getPath(record, ["reusableInPrompt"]), first(record, [["reusableInPrompt"]], "-"))}</span>
                     </div>
                     <div className="joker-memory-actions">
+                      <button type="button" onClick={() => selectIprMemoryRecordForCyberneticChain(record, "memory-record")} disabled={!getIprMemoryRecordMemoryId(record) || !canUseIprMemory}>Usa nella catena</button>
+                      <button type="button" onClick={() => void copyRuntimeId("IPR-MEM", getIprMemoryRecordMemoryId(record))} disabled={!getIprMemoryRecordMemoryId(record)}>Copy IPR-MEM</button>
                       <button
                         type="button"
                         className="joker-memory-danger-button"
@@ -5649,6 +5970,8 @@ export default function InterfacePage() {
                     </div>
                     {getIprMemoryRecordMemoryId(record) ? (
                       <div className="joker-memory-actions">
+                        <button type="button" onClick={() => selectIprMemoryRecordForCyberneticChain(record, "recall-item")} disabled={!canUseIprMemory}>Usa nella catena</button>
+                        <button type="button" onClick={() => void copyRuntimeId("IPR-MEM", getIprMemoryRecordMemoryId(record))} disabled={!getIprMemoryRecordMemoryId(record)}>Copy IPR-MEM</button>
                         <button
                           type="button"
                           className="joker-memory-danger-button"
@@ -5724,6 +6047,7 @@ export default function InterfacePage() {
                 message={item}
                 onCopy={copyText}
                 onSaveChatToIpr={saveCurrentChatToIpr}
+                onCopyRuntimeId={copyRuntimeId}
                 canSaveChatToIpr={canUseIprMemory && messages.length > 0}
                 isSavingChatToIpr={isSavingChatToIpr}
               />
@@ -6413,6 +6737,46 @@ export default function InterfacePage() {
 
         .joker-ipr-memory {
           margin-top: 16px;
+        }
+
+
+        .joker-cyber-chain {
+          margin-top: 16px;
+          padding: 14px;
+          border: 1px solid rgba(71, 85, 105, 0.56);
+          border-radius: 22px;
+          background:
+            radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.1), transparent 34%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.46));
+        }
+
+
+        .joker-cyber-chain.is-ready {
+          border-color: rgba(34, 197, 94, 0.38);
+          background:
+            radial-gradient(circle at 0% 0%, rgba(34, 197, 94, 0.12), transparent 34%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.46));
+        }
+
+
+        .joker-cyber-chain-steps {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 14px;
+        }
+
+
+        .joker-cyber-chain-steps.is-secondary {
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+          margin-top: 10px;
+        }
+
+
+        .joker-memory-primary-button {
+          border-color: rgba(34, 211, 238, 0.48);
+          background: rgba(8, 47, 73, 0.7);
+          color: #e0f2fe;
         }
 
 
@@ -7351,6 +7715,12 @@ export default function InterfacePage() {
           }
 
 
+          .joker-cyber-chain-steps,
+          .joker-cyber-chain-steps.is-secondary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+
           .joker-top-actions {
             justify-content: flex-start;
           }
@@ -7439,6 +7809,12 @@ export default function InterfacePage() {
 
           .joker-composer-shell {
             padding: 10px;
+          }
+
+
+          .joker-cyber-chain-steps,
+          .joker-cyber-chain-steps.is-secondary {
+            grid-template-columns: 1fr;
           }
 
 
