@@ -493,6 +493,7 @@ type DocumentProfileRecall = {
   sessionId: string;
   query: string;
   requestedMemoryIds: string[];
+  requestedProfileIds: string[];
   requestedFilename: string | null;
   requestedDocFamily: string | null;
   requestedVolume: string | null;
@@ -641,7 +642,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6";
 
 
 
@@ -3104,6 +3105,54 @@ async function queryDocumentProfilesForRecall(args: {
 }
 
 
+
+function applyStrictRequestedDocumentProfileFilter(args: {
+  items: DocumentProfileRecallItem[];
+  requestedProfileIds: string[];
+  requestedMemoryIds: string[];
+}): DocumentProfileRecallItem[] {
+  const requestedProfileSet = new Set(args.requestedProfileIds.map((item) => item.toUpperCase()));
+  const requestedMemorySet = new Set(args.requestedMemoryIds.map((item) => item.toUpperCase()));
+
+  if (!requestedProfileSet.size) {
+    return args.items;
+  }
+
+  const exactProfileMatches = args.items.filter(
+    (item) => item.profileId && requestedProfileSet.has(item.profileId.toUpperCase())
+  );
+
+  if (!exactProfileMatches.length) {
+    return [];
+  }
+
+  if (!requestedMemorySet.size) {
+    return exactProfileMatches;
+  }
+
+  const exactProfileAndMemoryMatches = exactProfileMatches.filter(
+    (item) => item.memoryId && requestedMemorySet.has(item.memoryId.toUpperCase())
+  );
+
+  return exactProfileAndMemoryMatches.length ? exactProfileAndMemoryMatches : exactProfileMatches;
+}
+
+function documentProfileRecallRegistryStatus(recall: DocumentProfileRecall | null): string {
+  if (!recall) {
+    return "DOCUMENT_PROFILE_RECALL_NOT_EXECUTED";
+  }
+
+  if (recall.status === "DOCUMENT_PROFILE_RECALL_INJECTED") {
+    return "AVAILABLE";
+  }
+
+  if (recall.status === "DOCUMENT_PROFILE_RECALL_EMPTY") {
+    return "EMPTY";
+  }
+
+  return recall.status;
+}
+
 async function resolveDocumentProfileRecall(args: {
   handoff: HandoffResolution;
   saasContext: SaasRuntimeContext;
@@ -3115,6 +3164,7 @@ async function resolveDocumentProfileRecall(args: {
 }): Promise<DocumentProfileRecall> {
   const humanIpr = args.handoff.humanIpr || null;
   const requestedMemoryIds = extractRequestedIprMemoryIds(args.message);
+  const requestedProfileIds = extractRequestedDocumentProfileIds(args.message);
   const requestedFilename = extractRequestedDocumentFilename(args.message, args.files);
   const requestedDocFamily = inferDocumentRecallFamily(args.message);
   const requestedVolume = inferDocumentRecallVolume(args.message);
@@ -3128,6 +3178,7 @@ async function resolveDocumentProfileRecall(args: {
     sessionId: args.sessionId,
     query: args.message,
     requestedMemoryIds,
+    requestedProfileIds,
     requestedFilename,
     requestedDocFamily,
     requestedVolume,
@@ -3149,7 +3200,7 @@ async function resolveDocumentProfileRecall(args: {
 
   try {
     const firstRequestedMemoryId = requestedMemoryIds[0] || null;
-    const items = await queryDocumentProfilesForRecall({
+    const queriedItems = await queryDocumentProfilesForRecall({
       message: args.message,
       requestedMemoryId: firstRequestedMemoryId,
       requestedFilename,
@@ -3161,8 +3212,14 @@ async function resolveDocumentProfileRecall(args: {
       limit: args.limit
     });
 
-    const profileIds = items.map((item) => item.profileId).filter((item): item is string => Boolean(item));
-    const memoryIds = items.map((item) => item.memoryId).filter((item): item is string => Boolean(item));
+    const items = applyStrictRequestedDocumentProfileFilter({
+      items: queriedItems,
+      requestedProfileIds,
+      requestedMemoryIds
+    });
+
+    const profileIds = Array.from(new Set(items.map((item) => item.profileId).filter((item): item is string => Boolean(item))));
+    const memoryIds = Array.from(new Set(items.map((item) => item.memoryId).filter((item): item is string => Boolean(item))));
     const promptBlock = buildDocumentProfilePromptBlock(items, args.promptMaxChars);
 
     return {
@@ -3573,6 +3630,13 @@ function buildCyberneticDocumentMemoryRecallAnswer(args: {
   const memoryForStatus = linkedMemory || primaryMemory;
   const requestedMemoryIds = extractRequestedIprMemoryIds(args.message);
   const requestedProfileIds = extractRequestedDocumentProfileIds(args.message);
+  const visibleDocumentProfiles = documentProfile
+    ? [documentProfile]
+    : args.documentProfileRecall?.items || [];
+  const visibleProfileIds = Array.from(
+    new Set(visibleDocumentProfiles.map((item) => item.profileId).filter((item): item is string => Boolean(item)))
+  );
+  const visibleLinkedProfileCount = visibleDocumentProfiles.length;
 
   if (!documentProfile) {
     return [
@@ -3598,7 +3662,8 @@ function buildCyberneticDocumentMemoryRecallAnswer(args: {
   const promptEligible = memoryForStatus?.memoryStatus
     ? normalizeText(memoryForStatus.memoryStatus) === "active"
     : true;
-  const linkedProfileCount = args.documentProfileRecall?.items.length || 1;
+  const linkedProfileCount = visibleLinkedProfileCount || 1;
+  const documentRegistryStatus = documentProfileRecallRegistryStatus(args.documentProfileRecall);
 
   return [
     "CYBER_DOCUMENT_MEMORY_RECALL_READY",
@@ -3616,7 +3681,7 @@ function buildCyberneticDocumentMemoryRecallAnswer(args: {
     `OPC chain hash: ${memoryForStatus?.lastOpcChainHash || "NO_OPC_CHAIN_HASH_IN_RECALL_RECORD"}`,
     "",
     "3. Document Registry collegato",
-    `documentRegistry.status: ${args.documentProfileRecall?.status === "DOCUMENT_PROFILE_RECALL_INJECTED" ? "AVAILABLE" : args.documentProfileRecall?.status || "UNKNOWN"}`,
+    `documentRegistry.status: ${documentRegistryStatus}`,
     `linkedProfileCount: ${String(linkedProfileCount)}`,
     `documentProfileId: ${documentProfile.profileId || requestedProfileIds[0] || "NO_DOCUMENT_PROFILE_ID"}`,
     `profileId: ${documentProfile.profileId || requestedProfileIds[0] || "NO_DOCUMENT_PROFILE_ID"}`,
@@ -3647,7 +3712,8 @@ function buildCyberneticDocumentMemoryRecallAnswer(args: {
     `documentProfileRecallInjected: ${String(args.documentProfileRecall?.injected || false)}`,
     `recallItemsCount: ${String(args.recall.items.length)}`,
     `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
-    `profileIds: ${args.documentProfileRecall?.profileIds.join(", ") || "NO_PROFILE_IDS"}`,
+    `profileIds: ${visibleProfileIds.join(", ") || "NO_PROFILE_IDS"}`,
+    `strictDocumentProfileFilter: ${requestedProfileIds.length > 0 ? "REQUESTED_PROFILE_ID_APPLIED" : "NO_REQUESTED_PROFILE_ID"}`,
     "",
     "6. Sintesi operativa della memoria",
     memoryForStatus?.memorySummary || memoryForStatus?.memoryTitle || documentProfile.summary || "Sintesi memoria documentale non disponibile nel record pubblico.",
@@ -3657,7 +3723,7 @@ function buildCyberneticDocumentMemoryRecallAnswer(args: {
     `Runtime memory ID: ${args.memory.memoryId}`,
     `Tenant: ${args.saasContext.tenantId}`,
     `Workspace: ${args.saasContext.workspaceId}`,
-    "Document registry: AVAILABLE; linkedProfileCount=1 quando il record-status collega memory_records e document_profiles.",
+    `Document registry: ${documentRegistryStatus}; linkedProfileCount=${String(linkedProfileCount)} after requested documentProfileId filtering.`,
     "",
     "8. Boundary",
     "legalCertification=false",
