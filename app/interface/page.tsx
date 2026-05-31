@@ -357,7 +357,7 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v1.6";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-MINIMAL-SAAS-DASHBOARD-v1.7";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -5470,7 +5470,9 @@ export default function InterfacePage() {
         </div>
 
 
-        <div className="joker-hero-grid">
+        <details className="joker-hero-details">
+          <summary>Runtime compact status</summary>
+          <div className="joker-hero-grid">
           <MetricCard label="Runtime" value="AI_JOKER-C2" />
           <MetricCard label="Model" value={dashboardStatus.model} />
           <MetricCard label="Model level" value={dashboardStatus.modelLevel} />
@@ -5492,11 +5494,14 @@ export default function InterfacePage() {
           <MetricCard label="Birth anchor" value={`${JOKER_C2_BIRTH_ANCHOR_LOCAL} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}`} />
           <MetricCard label="Runtime age" value={dashboardStatus.runtimeAge} />
           <MetricCard label="B2G readiness" value={dashboardStatus.b2gReadiness} />
-        </div>
+          </div>
+        </details>
       </section>
 
 
-      <section className="joker-dashboard">
+      <details className="joker-diagnostics-drawer">
+        <summary>Full diagnostic / Registry / Audit / Usage</summary>
+        <section className="joker-dashboard">
         <div
           className={[
             "joker-panel",
@@ -6000,9 +6005,46 @@ export default function InterfacePage() {
             ) : null}
           </div>
         </div>
-      </section>
+        </section>
+      </details>
 
 
+      <section className="joker-minimal-workspace" aria-label="JOKER-C2 minimal SaaS workspace">
+        <aside className="joker-left-rail" aria-label="Workspace navigation">
+          <div className="joker-side-card joker-side-card-primary">
+            <span className="joker-kicker">Workspace</span>
+            <strong>JOKER-C2 SaaS</strong>
+            <p>Chat centrale, memoria IPR e diagnostica laterale. Finalmente meno scroll, miracolo minore.</p>
+            <button type="button" onClick={newChat}>New chat</button>
+          </div>
+
+          <div className="joker-side-card">
+            <span className="joker-kicker">IPR memories</span>
+            <strong>{iprMemoryDashboard.memoryRecords.length}</strong>
+            <p>{iprMemoryDashboard.recallItems.length} recall item · {iprMemoryDashboard.memorySaves.length} saved chats</p>
+            <button type="button" onClick={() => void refreshIprMemoryDashboard()} disabled={isLoadingIprMemory}>
+              {isLoadingIprMemory ? "Refreshing..." : "Refresh memory"}
+            </button>
+          </div>
+
+          <div className="joker-side-card">
+            <span className="joker-kicker">Documents</span>
+            <strong>{dashboardDocumentRegistry.profileCount}</strong>
+            <p>{dashboardDocumentRegistry.linkedMemoryCount} linked · {dashboardDocumentRegistry.status}</p>
+            <button type="button" onClick={() => fileInputRef.current?.click()}>Add file</button>
+          </div>
+
+          <div className="joker-side-card">
+            <span className="joker-kicker">Diagnostics</span>
+            <strong>{dashboardStatus.b2gReadiness}</strong>
+            <p>Audit {dashboardStatus.auditStatus} · Usage {dashboardStatus.modelUsageStatus}</p>
+            <button type="button" onClick={() => void checkRuntime()} disabled={isChecking}>
+              {isChecking ? "Checking..." : "Runtime check"}
+            </button>
+          </div>
+        </aside>
+
+        <div className="joker-chat-column">
       <section className="joker-chat">
         {messages.length === 0 ? (
           <div className="joker-empty">
@@ -6168,13 +6210,50 @@ export default function InterfacePage() {
           </span>
         </div>
       </section>
+        </div>
+
+        <aside className="joker-right-rail" aria-label="Operational memory chain">
+          <div className="joker-side-card joker-chain-rail-card">
+            <div className="joker-panel-head">
+              <div>
+                <span className="joker-kicker">IPR · EVT · OPC</span>
+                <h2>Memory chain</h2>
+              </div>
+              <StatusPill value={cyberneticChainReady ? "READY" : cyberneticMemoryChain.status} />
+            </div>
+            <InfoList items={[
+              { label: "IPR-MEM", value: cyberneticMemoryChain.memoryId },
+              { label: "EVT", value: cyberneticMemoryChain.evtId },
+              { label: "OPC", value: cyberneticMemoryChain.opcId },
+              { label: "Record", value: cyberneticMemoryChain.recordStatus },
+              { label: "Reusable", value: cyberneticMemoryChain.reusableInPrompt },
+              { label: "legalCertification", value: "false" }
+            ]} />
+            <div className="joker-chain-buttons">
+              <button type="button" onClick={() => void saveCurrentChatToIpr()} disabled={!canUseIprMemory || messages.length === 0 || isSavingChatToIpr}>
+                {isSavingChatToIpr ? "Saving..." : "1 Chat → IPR"}
+              </button>
+              <button type="button" onClick={() => void bindCurrentIprMemoryToEvt()} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)}>2 IPR → EVT</button>
+              <button type="button" onClick={() => void bindCurrentEvtToOpc()} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)}>3 EVT → OPC</button>
+              <button type="button" onClick={() => void injectCurrentIprMemoryIntoChat()} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)}>4 Inject</button>
+            </div>
+            <div className="joker-chain-buttons joker-chain-buttons-secondary">
+              <button type="button" onClick={() => void checkCyberneticMemoryRecordStatus()} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)}>Record-status</button>
+              <button type="button" onClick={() => void copyRuntimeId("IPR-MEM", cyberneticMemoryChain.memoryId)} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)}>Copy IPR</button>
+              <button type="button" onClick={() => void copyRuntimeId("EVT", cyberneticMemoryChain.evtId)} disabled={isBlankRuntimeValue(cyberneticMemoryChain.evtId)}>Copy EVT</button>
+              <button type="button" onClick={() => void copyRuntimeId("OPC", cyberneticMemoryChain.opcId)} disabled={isBlankRuntimeValue(cyberneticMemoryChain.opcId)}>Copy OPC</button>
+            </div>
+            <p className="joker-side-note">OPC è ricevuta tecnica. La memoria riusabile resta in memory_records. Sì, ripeterlo serve.</p>
+          </div>
+        </aside>
+      </section>
 
 
       <style jsx>{`
         .joker-page {
           min-height: 100vh;
           display: grid;
-          grid-template-rows: auto auto auto 1fr auto;
+          grid-template-rows: auto auto auto 1fr;
           background:
             radial-gradient(circle at 18% -8%, rgba(14, 165, 233, 0.18), transparent 34%),
             radial-gradient(circle at 84% 0%, rgba(99, 102, 241, 0.16), transparent 32%),
@@ -6188,6 +6267,140 @@ export default function InterfacePage() {
             BlinkMacSystemFont,
             "Segoe UI",
             sans-serif;
+        }
+
+
+
+
+        .joker-minimal-workspace {
+          display: grid;
+          grid-template-columns: minmax(210px, 260px) minmax(0, 1fr) minmax(260px, 340px);
+          gap: 16px;
+          align-items: start;
+          width: min(1720px, calc(100vw - 28px));
+          margin: 0 auto 22px;
+        }
+
+        .joker-left-rail,
+        .joker-right-rail {
+          position: sticky;
+          top: 92px;
+          display: grid;
+          gap: 12px;
+          max-height: calc(100vh - 112px);
+          overflow: auto;
+          scrollbar-width: thin;
+        }
+
+        .joker-chat-column {
+          min-width: 0;
+          display: grid;
+          grid-template-rows: minmax(0, 1fr) auto;
+          gap: 14px;
+        }
+
+        .joker-side-card,
+        .joker-diagnostics-drawer,
+        .joker-hero-details {
+          border: 1px solid rgba(71, 85, 105, 0.54);
+          background: rgba(15, 23, 42, 0.66);
+          box-shadow: 0 18px 44px rgba(2, 6, 23, 0.26);
+          backdrop-filter: blur(18px);
+        }
+
+        .joker-side-card {
+          display: grid;
+          gap: 10px;
+          padding: 14px;
+          border-radius: 24px;
+        }
+
+        .joker-side-card-primary {
+          border-color: rgba(34, 211, 238, 0.34);
+          background: linear-gradient(180deg, rgba(14, 165, 233, 0.18), rgba(15, 23, 42, 0.72));
+        }
+
+        .joker-side-card strong {
+          color: #ffffff;
+          font-size: 18px;
+          line-height: 1.1;
+          word-break: break-word;
+        }
+
+        .joker-side-card p,
+        .joker-side-note {
+          margin: 0;
+          color: #94a3b8;
+          font-size: 12px;
+          line-height: 1.45;
+        }
+
+        .joker-chain-rail-card {
+          border-color: rgba(34, 211, 238, 0.36);
+        }
+
+        .joker-chain-buttons {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+        }
+
+        .joker-chain-buttons button {
+          width: 100%;
+          min-height: 36px;
+          padding: 8px 10px;
+          border-radius: 14px;
+        }
+
+        .joker-chain-buttons-secondary button {
+          font-size: 12px;
+          color: #bfdbfe;
+          background: rgba(15, 23, 42, 0.5);
+        }
+
+        .joker-diagnostics-drawer {
+          width: min(1720px, calc(100vw - 28px));
+          margin: 0 auto 14px;
+          border-radius: 24px;
+          overflow: hidden;
+        }
+
+        .joker-diagnostics-drawer > summary,
+        .joker-hero-details > summary {
+          cursor: pointer;
+          list-style: none;
+          padding: 14px 18px;
+          color: #e0f2fe;
+          font-weight: 850;
+          letter-spacing: 0.01em;
+        }
+
+        .joker-diagnostics-drawer > summary::-webkit-details-marker,
+        .joker-hero-details > summary::-webkit-details-marker {
+          display: none;
+        }
+
+        .joker-diagnostics-drawer > summary::after,
+        .joker-hero-details > summary::after {
+          content: "Apri";
+          float: right;
+          color: #94a3b8;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .joker-diagnostics-drawer[open] > summary::after,
+        .joker-hero-details[open] > summary::after {
+          content: "Chiudi";
+        }
+
+        .joker-hero-details {
+          border-radius: 24px;
+          overflow: hidden;
+        }
+
+        .joker-hero-details .joker-hero-grid {
+          padding: 0 14px 14px;
         }
 
 
@@ -7699,6 +7912,63 @@ export default function InterfacePage() {
           color: #94a3b8;
           font-style: normal;
           line-height: 1.35;
+        }
+
+
+
+
+        .joker-hero {
+          position: sticky;
+          top: 68px;
+          z-index: 24;
+          width: min(1720px, calc(100vw - 28px));
+          margin: 14px auto;
+          padding: 14px;
+          border-radius: 28px;
+        }
+
+        .joker-hero-copy {
+          gap: 12px;
+        }
+
+        .joker-hero-copy h1 {
+          margin: 0;
+          font-size: clamp(22px, 2.5vw, 34px);
+        }
+
+        .joker-hero-copy > p {
+          max-width: 920px;
+          margin: 0;
+          color: #a8b7ca;
+        }
+
+        .joker-temporal-clock {
+          margin-top: 10px;
+        }
+
+        .joker-chat {
+          min-height: calc(100vh - 340px);
+          margin: 0;
+          border-radius: 28px;
+        }
+
+        .joker-composer-shell {
+          position: sticky;
+          bottom: 12px;
+          z-index: 20;
+          width: 100%;
+          margin: 0;
+          border-radius: 24px;
+          border: 1px solid rgba(71, 85, 105, 0.5);
+          background: rgba(2, 6, 23, 0.84);
+          backdrop-filter: blur(18px);
+          box-shadow: 0 -12px 34px rgba(2, 6, 23, 0.25);
+        }
+
+        .joker-dashboard {
+          margin: 0;
+          width: 100%;
+          padding: 14px;
         }
 
 
