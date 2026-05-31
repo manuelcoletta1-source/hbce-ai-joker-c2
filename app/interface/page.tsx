@@ -357,7 +357,7 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v1.6";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v1.7-SELF_PILOT_MEMORY_SCOPE_BRIDGE";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -404,6 +404,21 @@ const JOKER_C2_OPERATIONAL_NODE_CLOCK_LABEL = `${JOKER_C2_OPERATIONAL_NODE_LABEL
 
 const CANONICAL_MANUEL_HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1";
 const CANONICAL_MANUEL_DISPLAY_NAME = "Manuel Coletta";
+
+
+const HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED = true;
+const HBCE_SELF_PILOT_TENANT_ID = "HBCE-TENANT-SELF-PILOT";
+const HBCE_SELF_PILOT_WORKSPACE_ID = "HBCE-WORKSPACE-RND";
+const HBCE_SELF_PILOT_SUBSCRIPTION_ID = "HBCE-SUBSCRIPTION-SELF-PILOT";
+const HBCE_SELF_PILOT_ACCOUNT_ID = "HBCE-ACCOUNT-SELF-PILOT";
+const HBCE_SELF_PILOT_CERTIFICATE_ID = "HBCE-SELF-PILOT-CERTIFICATE";
+const HBCE_SELF_PILOT_CERTIFICATE_STATUS = "ACTIVE";
+const HBCE_SELF_PILOT_SCOPE = "JOKER_C2_ACCESS_SELF_PILOT";
+const HBCE_SELF_PILOT_ACCESS_DECISION = "ACCESS_GRANTED_SELF_PILOT_SCOPE_BRIDGE";
+const HBCE_SELF_PILOT_IDENTITY_BINDING = "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
+const HBCE_SELF_PILOT_MATRIX_STATE = "MATRIX_ACTIVE_SELF_PILOT_SCOPE_BRIDGE";
+const HBCE_SELF_PILOT_MEMORY_SCOPE = "IPR_BOUND_SELF_PILOT_SCOPE_BRIDGE";
+const HBCE_SELF_PILOT_MEMORY_AUTHORITY = "SELF_PILOT_MEMORY_SCOPE_BRIDGE";
 
 
 const HANDOFF_STORAGE_KEY = "hbce_ipr_handoff";
@@ -1486,6 +1501,11 @@ function isNegativeRuntimeValue(value: string): boolean {
     normalized.includes("NOT_VERIFIED") ||
     normalized.includes("NO_VERIFIED") ||
     normalized.includes("NO_CERTIFICATE") ||
+    normalized.includes("NO_TENANT") ||
+    normalized.includes("NO_WORKSPACE") ||
+    normalized.includes("NO_SUBSCRIPTION") ||
+    normalized.includes("NO_ACCOUNT") ||
+    normalized.includes("NO_SESSION") ||
     normalized.includes("SERVER_VALIDATION_REQUIRED") ||
     normalized.includes("MATRIX_LIMITED") ||
     normalized.includes("RUNTIME_ONLY") ||
@@ -3904,6 +3924,7 @@ export default function InterfacePage() {
       sessionHumanIpr,
       handoffHumanIpr,
       hasAccountSession ? CANONICAL_MANUEL_HUMAN_IPR : "",
+      HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED ? CANONICAL_MANUEL_HUMAN_IPR : "",
       dashboardStatus.humanIpr
     ],
     "NOT_VERIFIED"
@@ -3929,6 +3950,7 @@ export default function InterfacePage() {
       lastAssistantPayload ? dashboardStatus.certificateId : "",
       getSessionCertificateId(iprSession),
       getHandoffCertificateId(effectiveHandoff),
+      HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED ? HBCE_SELF_PILOT_CERTIFICATE_ID : "",
       dashboardStatus.certificateId
     ],
     "NO_CERTIFICATE"
@@ -3942,6 +3964,7 @@ export default function InterfacePage() {
         : "",
       getSessionCertificateStatus(iprSession),
       getHandoffCertificateStatus(effectiveHandoff),
+      HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED ? HBCE_SELF_PILOT_CERTIFICATE_STATUS : "",
       dashboardStatus.certificateStatus
     ],
     "MISSING"
@@ -3955,10 +3978,19 @@ export default function InterfacePage() {
         : "",
       getSessionScope(iprSession),
       getHandoffScope(effectiveHandoff),
+      HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED ? HBCE_SELF_PILOT_SCOPE : "",
       dashboardStatus.scope
     ],
     "MATRIX_LIMITED"
   );
+
+
+  const selfPilotMemoryScopeBridgeReady =
+    HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED &&
+    humanIpr === CANONICAL_MANUEL_HUMAN_IPR &&
+    certificateId === HBCE_SELF_PILOT_CERTIFICATE_ID &&
+    isActiveCertificateStatus(certificateStatus) &&
+    hasJokerC2Scope(scope);
 
 
   const accountIdentityReady =
@@ -3973,6 +4005,7 @@ export default function InterfacePage() {
     [
       lastAssistantPayload ? dashboardStatus.accessDecision : "",
       accountIdentityReady ? "ACCESS_GRANTED_ACCOUNT_SESSION" : "",
+      selfPilotMemoryScopeBridgeReady ? HBCE_SELF_PILOT_ACCESS_DECISION : "",
       first(iprSession, [["access", "decision"], ["access", "accessDecision"]], ""),
       dashboardStatus.accessDecision
     ],
@@ -3984,6 +4017,7 @@ export default function InterfacePage() {
     [
       lastAssistantPayload ? dashboardStatus.identityBinding : "",
       accountIdentityReady ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT" : "",
+      selfPilotMemoryScopeBridgeReady ? HBCE_SELF_PILOT_IDENTITY_BINDING : "",
       first(iprSession, [["access", "identityBinding"], ["access", "identity_binding"]], ""),
       dashboardStatus.identityBinding
     ],
@@ -3995,6 +4029,7 @@ export default function InterfacePage() {
     [
       lastAssistantPayload ? dashboardStatus.matrix : "",
       accountIdentityReady ? "MATRIX_ACCOUNT_SESSION_READY" : "",
+      selfPilotMemoryScopeBridgeReady ? HBCE_SELF_PILOT_MATRIX_STATE : "",
       first(iprSession, [["matrix", "state"], ["access", "matrixState"]], ""),
       dashboardStatus.matrix
     ],
@@ -4006,6 +4041,7 @@ export default function InterfacePage() {
     [
       lastAssistantPayload ? dashboardStatus.memory : "",
       accountIdentityReady ? "IPR_BOUND_ACCOUNT_SESSION_READY" : "",
+      selfPilotMemoryScopeBridgeReady ? HBCE_SELF_PILOT_MEMORY_SCOPE : "",
       first(iprSession, [["memory", "scope"], ["access", "semanticMemoryScope"]], ""),
       dashboardStatus.memory
     ],
@@ -4017,6 +4053,7 @@ export default function InterfacePage() {
     [
       lastAssistantPayload ? dashboardStatus.authority : "",
       accountIdentityReady ? "SERVER_ACCOUNT_SESSION_VALIDATED" : "",
+      selfPilotMemoryScopeBridgeReady ? HBCE_SELF_PILOT_MEMORY_AUTHORITY : "",
       first(iprSession, [["memory", "authority"]], ""),
       dashboardStatus.authority
     ],
@@ -4028,6 +4065,7 @@ export default function InterfacePage() {
     [
       lastAssistantPayload ? dashboardStatus.saasTier : "",
       accountIdentityReady ? "IPR" : "",
+      selfPilotMemoryScopeBridgeReady ? "SELF_PILOT" : "",
       dashboardStatus.saasTier
     ],
     "-"
@@ -4051,7 +4089,7 @@ export default function InterfacePage() {
       dashboardStatus.tenantId,
       first(iprSession, [["session", "tenantId"], ["accountProfile", "tenantId"]], "")
     ],
-    "HBCE-TENANT-SELF-PILOT"
+    HBCE_SELF_PILOT_TENANT_ID
   );
 
 
@@ -4060,7 +4098,7 @@ export default function InterfacePage() {
       dashboardStatus.workspaceId,
       first(iprSession, [["session", "workspaceId"], ["accountProfile", "workspaceId"]], "")
     ],
-    "HBCE-WORKSPACE-RND"
+    HBCE_SELF_PILOT_WORKSPACE_ID
   );
 
 
@@ -4069,7 +4107,7 @@ export default function InterfacePage() {
       dashboardStatus.subscriptionId,
       first(iprSession, [["session", "subscriptionId"], ["accountProfile", "subscriptionId"]], "")
     ],
-    "HBCE-SUBSCRIPTION-SELF-PILOT"
+    HBCE_SELF_PILOT_SUBSCRIPTION_ID
   );
 
 
@@ -4078,7 +4116,7 @@ export default function InterfacePage() {
       dashboardStatus.accountId,
       first(iprSession, [["session", "accountId"], ["accountProfile", "accountId"]], "")
     ],
-    "HBCE-ACCOUNT-SELF-PILOT"
+    HBCE_SELF_PILOT_ACCOUNT_ID
   );
 
 
@@ -4086,6 +4124,12 @@ export default function InterfacePage() {
     [dashboardStatus.threadId, sessionId],
     sessionId || "JOKER-UI-UNINITIALIZED"
   );
+
+
+  const selfPilotMemoryScopeBridgeApplied =
+    selfPilotMemoryScopeBridgeReady &&
+    activeTenantId === HBCE_SELF_PILOT_TENANT_ID &&
+    activeWorkspaceId === HBCE_SELF_PILOT_WORKSPACE_ID;
 
 
   const canUseIprMemory =
@@ -4401,10 +4445,42 @@ export default function InterfacePage() {
   function buildIprMemoryRequestBase(): JsonRecord {
     return {
       humanIpr,
+      runtimeIpr: dashboardStatus.runtimeIpr,
       tenantId: activeTenantId,
       workspaceId: activeWorkspaceId,
+      subscriptionId: activeSubscriptionId,
+      accountId: activeAccountId,
       sessionId,
       threadId: activeThreadId,
+      certificateId,
+      certificateStatus,
+      scope,
+      accessDecision,
+      identityBinding,
+      matrixState,
+      memoryScope,
+      memoryAuthority,
+      iprHandoff: enrichedIprHandoff,
+      identityTransport: {
+        source: selfPilotMemoryScopeBridgeApplied
+          ? "SELF_PILOT_MEMORY_SCOPE_BRIDGE"
+          : hasAccountSession
+            ? "IPR_ACCOUNT_SESSION"
+            : enrichedIprHandoff
+              ? "IPR_HANDOFF"
+              : "NO_IPR_CONTEXT",
+        interfaceRevision: INTERFACE_REVISION,
+        legalCertification: false
+      },
+      selfPilotMemoryScopeBridge: {
+        enabled: HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED,
+        applied: selfPilotMemoryScopeBridgeApplied,
+        reason: selfPilotMemoryScopeBridgeApplied
+          ? "UI_SELF_PILOT_MEMORY_SCOPE_READY"
+          : "SERVER_OR_HANDOFF_SCOPE",
+        legalCertification: false
+      },
+      interfaceRevision: INTERFACE_REVISION,
       strictIdentity: true,
       legalCertification: false
     };
@@ -4413,7 +4489,7 @@ export default function InterfacePage() {
 
   async function refreshIprMemoryDashboard() {
     if (!canUseIprMemory) {
-      setIprMemoryError("IPR memory requires verified Human IPR, tenant and workspace.");
+      setIprMemoryError("IPR memory requires verified Human IPR, tenant and workspace. Self-pilot scope bridge did not activate.");
       return;
     }
 
@@ -4533,7 +4609,7 @@ export default function InterfacePage() {
     }
 
     if (!canUseIprMemory) {
-      setIprMemoryError("Cannot verify IPR memory chain without verified Human IPR, tenant and workspace.");
+      setIprMemoryError("Cannot verify IPR memory chain without verified Human IPR, tenant and workspace. Self-pilot scope bridge did not activate.");
       return null;
     }
 
@@ -4633,7 +4709,7 @@ export default function InterfacePage() {
 
 
     if (!canUseIprMemory) {
-      setIprMemoryError("Cannot save chat on IPR without verified Human IPR, tenant and workspace.");
+      setIprMemoryError("Cannot save chat on IPR without verified Human IPR, tenant and workspace. Self-pilot scope bridge did not activate.");
       return;
     }
 
@@ -4660,6 +4736,32 @@ export default function InterfacePage() {
           workspaceId: activeWorkspaceId,
           subscriptionId: activeSubscriptionId,
           accountId: activeAccountId,
+          certificateId,
+          certificateStatus,
+          scope,
+          accessDecision,
+          identityBinding,
+          matrixState,
+          memoryScope,
+          memoryAuthority,
+          iprHandoff: enrichedIprHandoff,
+          identityTransport: {
+            source: selfPilotMemoryScopeBridgeApplied
+              ? "SELF_PILOT_MEMORY_SCOPE_BRIDGE"
+              : hasAccountSession
+                ? "IPR_ACCOUNT_SESSION"
+                : enrichedIprHandoff
+                  ? "IPR_HANDOFF"
+                  : "NO_IPR_CONTEXT",
+            interfaceRevision: INTERFACE_REVISION,
+            legalCertification: false
+          },
+          selfPilotMemoryScopeBridge: {
+            enabled: HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED,
+            applied: selfPilotMemoryScopeBridgeApplied,
+            legalCertification: false
+          },
+          interfaceRevision: INTERFACE_REVISION,
           sessionId,
           threadId: activeThreadId,
           threadTitle: currentThreadTitle,
@@ -4819,7 +4921,7 @@ export default function InterfacePage() {
 
 
     if (!canUseIprMemory) {
-      setIprMemoryError("Cannot remove IPR memory without verified Human IPR, tenant and workspace.");
+      setIprMemoryError("Cannot remove IPR memory without verified Human IPR, tenant and workspace. Self-pilot scope bridge did not activate.");
       return;
     }
 
@@ -4986,6 +5088,18 @@ export default function InterfacePage() {
           runtimeIpr: dashboardStatus.runtimeIpr,
           tenantId: activeTenantId,
           workspaceId: activeWorkspaceId,
+          subscriptionId: activeSubscriptionId,
+          accountId: activeAccountId,
+          certificateId,
+          certificateStatus,
+          scope,
+          iprHandoff: enrichedIprHandoff,
+          selfPilotMemoryScopeBridge: {
+            enabled: HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED,
+            applied: selfPilotMemoryScopeBridgeApplied,
+            legalCertification: false
+          },
+          interfaceRevision: INTERFACE_REVISION,
           sourceKind: "JOKER_C2_INTERFACE_FILE_UPLOAD",
           replace,
           files: nextFiles,
@@ -5099,8 +5213,28 @@ export default function InterfacePage() {
         body: JSON.stringify({
           message: effectiveMessage,
           sessionId,
+          threadId: activeThreadId,
           continuityRef,
           files,
+          humanIpr,
+          runtimeIpr: dashboardStatus.runtimeIpr,
+          tenantId: activeTenantId,
+          workspaceId: activeWorkspaceId,
+          subscriptionId: activeSubscriptionId,
+          accountId: activeAccountId,
+          certificateId,
+          certificateStatus,
+          scope,
+          accessDecision,
+          identityBinding,
+          matrixState,
+          memoryScope,
+          interfaceRevision: INTERFACE_REVISION,
+          selfPilotMemoryScopeBridge: {
+            enabled: HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED,
+            applied: selfPilotMemoryScopeBridgeApplied,
+            legalCertification: false
+          },
           iprHandoff: requestIdentity.iprHandoff ?? enrichedIprHandoff,
           iprAccountSession: requestIdentity.iprAccountSession ?? fallbackAccountSession,
           identityTransport: {
@@ -5108,7 +5242,9 @@ export default function InterfacePage() {
               ? "IPR_ACCOUNT_SESSION_FRESH"
               : requestIdentity.iprHandoff
                 ? "IPR_HANDOFF_FRESH"
-                : "NO_IPR_CONTEXT",
+                : selfPilotMemoryScopeBridgeApplied
+                  ? "SELF_PILOT_MEMORY_SCOPE_BRIDGE"
+                  : "NO_IPR_CONTEXT",
             legalCertification: false
           }
         })
@@ -5350,6 +5486,9 @@ export default function InterfacePage() {
     { label: "Human IPR", value: humanIpr },
     { label: "Tenant", value: activeTenantId },
     { label: "Workspace", value: activeWorkspaceId },
+    { label: "Memory scope bridge", value: selfPilotMemoryScopeBridgeApplied ? "SELF_PILOT_SCOPE_BRIDGE_ACTIVE" : "SERVER_SCOPE" },
+    { label: "Access", value: accessDecision },
+    { label: "Memory scope", value: memoryScope },
     { label: "Thread", value: activeThreadId },
     { label: "Interface revision", value: INTERFACE_REVISION },
     { label: "Recent chats", value: String(iprMemoryDashboard.recentThreads.length) },
@@ -5781,8 +5920,9 @@ export default function InterfacePage() {
 
           <p>
             Layer UI separato da /api/chat: legge chat recenti, mostra memorie IPR e salva
-            la chat solo con azione esplicita. IPR qui significa sia Identity Primary
-            Record sia Intenzione Primaria Radicale.
+            la chat solo con azione esplicita. In modalità self-pilot usa il bridge IPR/tenant/workspace
+            per non bloccare la memoria quando la sessione account non espone ancora lo scope completo.
+            IPR qui significa sia Identity Primary Record sia Intenzione Primaria Radicale.
           </p>
 
 
