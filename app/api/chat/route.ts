@@ -11,7 +11,11 @@ import {
   extractRequestedDocumentProfileIds,
   resolveCyberneticDocumentProfileRecall as resolveDocumentProfileRecall
 } from "@/lib/cybernetic-document-recall";
-import type { CyberneticDocumentProfileRecall as DocumentProfileRecall } from "@/lib/cybernetic-document-recall";
+import type {
+  CyberneticDocumentProfileRecall as DocumentProfileRecall,
+  CyberneticDocumentProjectContext as DocumentRecallProjectContext,
+  CyberneticDocumentRecallConfig as DocumentRecallConfig
+} from "@/lib/cybernetic-document-recall";
 import {
   HBCE_SELF_PILOT_ACCOUNT_ID,
   HBCE_SELF_PILOT_CERTIFICATE_ID,
@@ -492,6 +496,12 @@ type SaasRuntimeContext = {
 };
 
 
+type DocumentRecallRuntimeScope = {
+  projectContext: DocumentRecallProjectContext;
+  recallConfig: DocumentRecallConfig;
+};
+
+
 
 
 type SaasContextDatabaseRow = Record<string, unknown> & {
@@ -585,13 +595,30 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8";
 
 
 
 
 const DEFAULT_STANDARD_MODEL = "gpt-4o-mini";
 const DEFAULT_DEEP_MODEL = "gpt-4o";
+
+const DEFAULT_DOCUMENT_RECALL_PROJECT_ID =
+  process.env.HBCE_DOCUMENT_RECALL_PROJECT_ID?.trim() ||
+  process.env.HBCE_DOCUMENT_PROJECT_ID?.trim() ||
+  "HBCE-CORPUS-SELF-PILOT";
+const DEFAULT_DOCUMENT_RECALL_PROJECT_KEY =
+  process.env.HBCE_DOCUMENT_RECALL_PROJECT_KEY?.trim() ||
+  "CORPUS_ESOTEROLOGIA_ERMETICA";
+const DEFAULT_DOCUMENT_RECALL_PROJECT_NAME =
+  process.env.HBCE_DOCUMENT_RECALL_PROJECT_NAME?.trim() ||
+  "CORPUS ESOTEROLOGIA ERMETICA";
+const DEFAULT_DOCUMENT_RECALL_MODULE_ID =
+  process.env.HBCE_DOCUMENT_RECALL_MODULE_ID?.trim() ||
+  "HBCE-CORPUS-CYBERNETIC-DOCUMENT-MODULE";
+const DEFAULT_DOCUMENT_RECALL_MODULE_NAME =
+  process.env.HBCE_DOCUMENT_RECALL_MODULE_NAME?.trim() ||
+  "Cybernetic Document Recall Module";
 
 
 
@@ -891,6 +918,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const handoff = resolveHandoff(request, body);
   const policy = evaluatePolicy(message, files);
   const saasContext = await resolveSaasRuntimeContext(body, handoff, sessionId);
+  const documentRecallRuntimeScope = resolveCyberneticDocumentRecallRuntimeScope({
+    body,
+    message,
+    files,
+    saasContext
+  });
   let memory = getOrCreateMemory(sessionId, handoff, t, saasContext);
   const iprRecall = await resolveIprRecallInjection({
     handoff,
@@ -900,10 +933,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     limit: noSavePersistenceRequested ? 0 : 6,
     promptMaxChars: noSavePersistenceRequested ? 0 : 7000
   });
-  const documentProfileRecall = documentMemoryRecallRequested
+  const documentProfileRecall: DocumentProfileRecall | null = documentMemoryRecallRequested
     ? await resolveDocumentProfileRecall({
         handoff,
         saasContext,
+        projectContext: documentRecallRuntimeScope.projectContext,
+        recallConfig: documentRecallRuntimeScope.recallConfig,
         sessionId,
         message,
         files,
@@ -960,7 +995,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     semanticMemoryRouteSuppressed,
     esoterologicalSemanticMemoryRequested,
     iprRecall,
-    documentProfileRecall
+    documentProfileRecall,
+    documentRecallProjectContext: documentRecallRuntimeScope.projectContext,
+    documentRecallConfig: documentRecallRuntimeScope.recallConfig
   };
 
 
@@ -1027,7 +1064,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       handoff,
       memory,
       policy,
-      saasContext
+      saasContext,
+      projectContext: documentRecallRuntimeScope.projectContext,
+      recallConfig: documentRecallRuntimeScope.recallConfig
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
@@ -8221,6 +8260,369 @@ async function recordSaasAuditAndUsage(args: {
   }
 }
 
+
+
+
+function resolveCyberneticDocumentRecallRuntimeScope(args: {
+  body: JsonObject;
+  message: string;
+  files: PublicFileSnapshot[];
+  saasContext: SaasRuntimeContext;
+}): DocumentRecallRuntimeScope {
+  const inferredDocFamily = inferCyberneticDocumentRecallDocFamily(args.message, args.files);
+  const bodyProjectId = firstStringFromSources([args.body], [
+    "projectId",
+    "project_id",
+    "project.id",
+    "project.projectId",
+    "project.project_id",
+    "saas.projectId",
+    "saas.project_id",
+    "documentProjectId",
+    "document_project_id",
+    "documentRecall.projectId",
+    "documentRecall.project_id",
+    "cyberneticDocumentRecall.projectId",
+    "cyberneticDocumentRecall.project_id"
+  ]);
+  const bodyProjectKey = firstStringFromSources([args.body], [
+    "projectKey",
+    "project_key",
+    "project.key",
+    "project.projectKey",
+    "documentRecall.projectKey",
+    "documentRecall.project_key",
+    "cyberneticDocumentRecall.projectKey",
+    "cyberneticDocumentRecall.project_key"
+  ]);
+  const bodyProjectName = firstStringFromSources([args.body], [
+    "projectName",
+    "project_name",
+    "project.name",
+    "documentRecall.projectName",
+    "documentRecall.project_name",
+    "cyberneticDocumentRecall.projectName",
+    "cyberneticDocumentRecall.project_name"
+  ]);
+  const bodyDocumentModuleId = firstStringFromSources([args.body], [
+    "documentModuleId",
+    "document_module_id",
+    "documentModule.id",
+    "documentModule.moduleId",
+    "documentRecall.documentModuleId",
+    "documentRecall.document_module_id",
+    "cyberneticDocumentRecall.documentModuleId",
+    "cyberneticDocumentRecall.document_module_id"
+  ]);
+  const bodyDocumentModuleName = firstStringFromSources([args.body], [
+    "documentModuleName",
+    "document_module_name",
+    "documentModule.name",
+    "documentRecall.documentModuleName",
+    "documentRecall.document_module_name",
+    "cyberneticDocumentRecall.documentModuleName",
+    "cyberneticDocumentRecall.document_module_name"
+  ]);
+  const bodyDocFamily = firstStringFromSources([args.body], [
+    "docFamily",
+    "doc_family",
+    "documentFamily",
+    "document_family",
+    "documentRecall.docFamily",
+    "documentRecall.doc_family",
+    "cyberneticDocumentRecall.docFamily",
+    "cyberneticDocumentRecall.doc_family"
+  ]);
+
+  const projectContext: DocumentRecallProjectContext = {
+    projectId: bodyProjectId || DEFAULT_DOCUMENT_RECALL_PROJECT_ID,
+    projectKey: bodyProjectKey || DEFAULT_DOCUMENT_RECALL_PROJECT_KEY,
+    projectName: bodyProjectName || DEFAULT_DOCUMENT_RECALL_PROJECT_NAME,
+    documentModuleId: bodyDocumentModuleId || DEFAULT_DOCUMENT_RECALL_MODULE_ID,
+    documentModuleName: bodyDocumentModuleName || DEFAULT_DOCUMENT_RECALL_MODULE_NAME,
+    docFamily: normalizeDocumentRecallFamilyName(bodyDocFamily) || inferredDocFamily
+  };
+
+  const allowedDocFamilies = firstStringArrayFromSources([args.body], [
+    "allowedDocFamilies",
+    "allowed_doc_families",
+    "documentRecall.allowedDocFamilies",
+    "documentRecall.allowed_doc_families",
+    "cyberneticDocumentRecall.allowedDocFamilies",
+    "cyberneticDocumentRecall.allowed_doc_families",
+    "documentModule.allowedDocFamilies",
+    "documentModule.allowed_doc_families"
+  ])
+    .map(normalizeDocumentRecallFamilyName)
+    .filter((item): item is string => Boolean(item));
+
+  if (projectContext.docFamily && !allowedDocFamilies.includes(projectContext.docFamily)) {
+    allowedDocFamilies.push(projectContext.docFamily);
+  }
+
+  const requestedMemoryIds = extractRequestedIprMemoryIds(args.message);
+  const requestedProfileIds = extractRequestedDocumentProfileIds(args.message);
+  const requestedDocumentCount = Math.max(requestedMemoryIds.length, requestedProfileIds.length, 1);
+  const bodyMaxDocumentCount = firstPositiveIntegerFromSources([args.body], [
+    "maxDocumentCount",
+    "max_document_count",
+    "documentRecall.maxDocumentCount",
+    "documentRecall.max_document_count",
+    "cyberneticDocumentRecall.maxDocumentCount",
+    "cyberneticDocumentRecall.max_document_count"
+  ]);
+  const bodyPromptMaxChars = firstPositiveIntegerFromSources([args.body], [
+    "documentRecallPromptMaxChars",
+    "document_recall_prompt_max_chars",
+    "promptMaxChars",
+    "prompt_max_chars",
+    "documentRecall.promptMaxChars",
+    "documentRecall.prompt_max_chars",
+    "cyberneticDocumentRecall.promptMaxChars",
+    "cyberneticDocumentRecall.prompt_max_chars"
+  ]);
+
+  const policyMode = normalizeDocumentRecallPolicyMode(
+    firstStringFromSources([args.body], [
+      "documentRecallPolicyMode",
+      "document_recall_policy_mode",
+      "documentRecall.policyMode",
+      "documentRecall.policy_mode",
+      "cyberneticDocumentRecall.policyMode",
+      "cyberneticDocumentRecall.policy_mode"
+    ])
+  );
+
+  const recallConfig: DocumentRecallConfig = {
+    projectContext,
+    policyMode,
+    maxDocumentCount: Math.max(bodyMaxDocumentCount || 0, requestedDocumentCount, 1),
+    promptMaxChars: bodyPromptMaxChars || (requestedDocumentCount > 1 ? 18000 : 7000),
+    allowedDocFamilies,
+    requireVerifiedIpr: firstBooleanFromSources([args.body], [
+      "documentRecall.requireVerifiedIpr",
+      "documentRecall.require_verified_ipr",
+      "cyberneticDocumentRecall.requireVerifiedIpr",
+      "cyberneticDocumentRecall.require_verified_ipr"
+    ], true),
+    requireTenantScope: firstBooleanFromSources([args.body], [
+      "documentRecall.requireTenantScope",
+      "documentRecall.require_tenant_scope",
+      "cyberneticDocumentRecall.requireTenantScope",
+      "cyberneticDocumentRecall.require_tenant_scope"
+    ], true),
+    requireWorkspaceScope: firstBooleanFromSources([args.body], [
+      "documentRecall.requireWorkspaceScope",
+      "documentRecall.require_workspace_scope",
+      "cyberneticDocumentRecall.requireWorkspaceScope",
+      "cyberneticDocumentRecall.require_workspace_scope"
+    ], true),
+    requireProjectScope: firstBooleanFromSources([args.body], [
+      "documentRecall.requireProjectScope",
+      "documentRecall.require_project_scope",
+      "cyberneticDocumentRecall.requireProjectScope",
+      "cyberneticDocumentRecall.require_project_scope"
+    ], false),
+    allowCrossTenantRecall: firstBooleanFromSources([args.body], [
+      "documentRecall.allowCrossTenantRecall",
+      "documentRecall.allow_cross_tenant_recall",
+      "cyberneticDocumentRecall.allowCrossTenantRecall",
+      "cyberneticDocumentRecall.allow_cross_tenant_recall"
+    ], false),
+    allowCrossWorkspaceRecall: firstBooleanFromSources([args.body], [
+      "documentRecall.allowCrossWorkspaceRecall",
+      "documentRecall.allow_cross_workspace_recall",
+      "cyberneticDocumentRecall.allowCrossWorkspaceRecall",
+      "cyberneticDocumentRecall.allow_cross_workspace_recall"
+    ], false),
+    allowCrossProjectRecall: firstBooleanFromSources([args.body], [
+      "documentRecall.allowCrossProjectRecall",
+      "documentRecall.allow_cross_project_recall",
+      "cyberneticDocumentRecall.allowCrossProjectRecall",
+      "cyberneticDocumentRecall.allow_cross_project_recall"
+    ], false),
+    failClosedOnMissingRequestedIds: firstBooleanFromSources([args.body], [
+      "documentRecall.failClosedOnMissingRequestedIds",
+      "documentRecall.fail_closed_on_missing_requested_ids",
+      "cyberneticDocumentRecall.failClosedOnMissingRequestedIds",
+      "cyberneticDocumentRecall.fail_closed_on_missing_requested_ids"
+    ], policyMode !== "PARTIAL_ALLOWED"),
+    orderedRecall: firstBooleanFromSources([args.body], [
+      "documentRecall.orderedRecall",
+      "documentRecall.ordered_recall",
+      "cyberneticDocumentRecall.orderedRecall",
+      "cyberneticDocumentRecall.ordered_recall"
+    ], true)
+  };
+
+  return {
+    projectContext,
+    recallConfig
+  };
+}
+
+function normalizeDocumentRecallPolicyMode(value: string | undefined): NonNullable<DocumentRecallConfig["policyMode"]> {
+  const normalized = normalizeText(value || "").replace(/[\s-]+/g, "_").toUpperCase();
+
+  if (normalized === "STRICT") {
+    return "STRICT";
+  }
+
+  if (normalized === "PARTIAL_ALLOWED") {
+    return "PARTIAL_ALLOWED";
+  }
+
+  return "FAIL_CLOSED_ON_MISSING";
+}
+
+function normalizeDocumentRecallFamilyName(value: string | undefined | null): string | null {
+  const normalized = stringFromValue(value).trim();
+
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized.toUpperCase().replace(/[\s-]+/g, "_");
+}
+
+function inferCyberneticDocumentRecallDocFamily(
+  message: string,
+  files: PublicFileSnapshot[]
+): string | null {
+  const fileText = files
+    .map((file) => [file.name, file.reason, file.role].filter(Boolean).join(" "))
+    .join(" ");
+  const normalized = normalizeText(`${message} ${fileText}`);
+
+  if (
+    normalized.includes("corpus esoterologia") ||
+    normalized.includes("corpus esoterologia ermetica") ||
+    normalized.includes("lex hermeticum") ||
+    normalized.includes("alien code") ||
+    normalized.includes("portale dell'anticristo") ||
+    normalized.includes("portale dell anticristo") ||
+    normalized.includes("volumi corpus") ||
+    normalized.includes("corpus volumes")
+  ) {
+    return "CORPUS_ESOTEROLOGIA_ERMETICA";
+  }
+
+  if (normalized.includes("apokalypsis")) {
+    return "APOKALYPSIS";
+  }
+
+  if (
+    normalized.includes("u.s.e") ||
+    normalized.includes("united states of europe") ||
+    normalized.includes("voto digitale federato") ||
+    normalized.includes("costituzione operativa europea")
+  ) {
+    return "USE";
+  }
+
+  return null;
+}
+
+function firstPositiveIntegerFromSources(
+  sources: Array<JsonObject | null | undefined>,
+  paths: string[]
+): number | null {
+  for (const source of sources) {
+    if (!source) {
+      continue;
+    }
+
+    for (const path of paths) {
+      const value = getPath(source, path);
+      const numeric = typeof value === "number"
+        ? value
+        : typeof value === "string"
+          ? Number(value.trim())
+          : NaN;
+
+      if (Number.isFinite(numeric) && numeric > 0) {
+        return Math.floor(numeric);
+      }
+    }
+  }
+
+  return null;
+}
+
+function firstBooleanFromSources(
+  sources: Array<JsonObject | null | undefined>,
+  paths: string[],
+  fallback: boolean
+): boolean {
+  for (const source of sources) {
+    if (!source) {
+      continue;
+    }
+
+    for (const path of paths) {
+      const value = getPath(source, path);
+
+      if (typeof value === "boolean") {
+        return value;
+      }
+
+      if (typeof value === "string") {
+        const normalized = normalizeText(value);
+
+        if (["true", "1", "yes", "si", "sì", "allow", "enabled"].includes(normalized)) {
+          return true;
+        }
+
+        if (["false", "0", "no", "deny", "disabled"].includes(normalized)) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return fallback;
+}
+
+function firstStringArrayFromSources(
+  sources: Array<JsonObject | null | undefined>,
+  paths: string[]
+): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const source of sources) {
+    if (!source) {
+      continue;
+    }
+
+    for (const path of paths) {
+      const rawValues = flattenStringValues(getPath(source, path));
+      const values = rawValues.flatMap((value) =>
+        value
+          .split(/[,\n;|]+/g)
+          .map((item) => item.trim())
+          .filter(Boolean)
+      );
+
+      for (const value of values) {
+        const key = normalizeText(value);
+
+        if (!key || seen.has(key)) {
+          continue;
+        }
+
+        seen.add(key);
+        result.push(value);
+      }
+
+      if (result.length > 0) {
+        return result;
+      }
+    }
+  }
+
+  return result;
+}
 
 
 
