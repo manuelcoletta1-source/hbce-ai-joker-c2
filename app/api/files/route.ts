@@ -20,7 +20,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3";
 
 
 type FileStatus =
@@ -131,6 +131,143 @@ type DocumentProfileContext = {
   tenantId: string;
   workspaceId: string;
   sourceKind: string;
+};
+
+
+type CanonicalCorpusVolumeProfile = {
+  volume: "V1" | "V2" | "V3" | "V4" | "V5";
+  title: string;
+  summary: string;
+  keyTerms: string[];
+};
+
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_CANONICAL_FIX_v3";
+
+const CANONICAL_CORPUS_VOLUME_PROFILES: Record<CanonicalCorpusVolumeProfile["volume"], CanonicalCorpusVolumeProfile> = {
+  V1: {
+    volume: "V1",
+    title: "ESOTEROLOGIA",
+    summary:
+      "Profilo documento ESOTEROLOGIA Volume I del CORPUS ESOTEROLOGIA ERMETICA: fonda il criterio del Reale operativo e l'asse Decisione · Costo · Traccia · Tempo come grammatica di verificazione della realtà operativa.",
+    keyTerms: [
+      "Decisione",
+      "Costo",
+      "Traccia",
+      "Tempo",
+      "Reale operativo",
+      "Corpus Esoterologia Ermetica",
+      "Esoterologia",
+      "Scienza esoterologica",
+      "Soglia di realtà",
+      "Traccia opponibile",
+      "IPR"
+    ]
+  },
+  V2: {
+    volume: "V2",
+    title: "MATRIX / 05-04-2026",
+    summary:
+      "Profilo documento MATRIX / 05-04-2026 Volume II del CORPUS ESOTEROLOGIA ERMETICA: trasferisce la griglia Decisione · Costo · Traccia · Tempo nel dominio istituzionale, leggendo istituzioni, Stato, esecuzione, fiscalità, debito, sicurezza, forza, conflitto, decadimento e ordine globale come sequenze operative distribuite.",
+    keyTerms: [
+      "Matrix",
+      "Decisione",
+      "Costo",
+      "Traccia",
+      "Tempo",
+      "Reale operativo",
+      "Corpus Esoterologia Ermetica",
+      "Esoterologia",
+      "Dominio istituzionale",
+      "Istituzione come sequenza distribuita",
+      "Stato come configurazione operativa",
+      "Esecuzione",
+      "Fiscalità",
+      "Debito",
+      "Sicurezza",
+      "Forza",
+      "Conflitto",
+      "Decadimento",
+      "Ordine globale",
+      "Regime di validità",
+      "Verificabilità distribuita",
+      "IPR",
+      "MATRIX"
+    ]
+  },
+  V3: {
+    volume: "V3",
+    title: "LEX HERMETICUM",
+    summary:
+      "Profilo documento LEX HERMETICUM Volume III del CORPUS ESOTEROLOGIA ERMETICA: formalizza validità, opponibilità, responsabilità, traccia e decadimento nel dominio istituzionale, con l'asse Decisione · Costo · Traccia · Tempo come criterio operativo.",
+    keyTerms: [
+      "Lex Hermeticum",
+      "Decisione",
+      "Costo",
+      "Traccia",
+      "Tempo",
+      "Regime di validità",
+      "Validità operativa",
+      "Opponibilità",
+      "Responsabilità",
+      "Traccia opponibile",
+      "Decadimento",
+      "Corpus Esoterologia Ermetica",
+      "Esoterologia",
+      "IPR",
+      "EVT",
+      "OPC"
+    ]
+  },
+  V4: {
+    volume: "V4",
+    title: "ALIEN CODE — FRAMEWORK OPERATIVO PER LA TRACCIABILITÀ RASCENSIONALE",
+    summary:
+      "Profilo documento ALIEN CODE Volume IV del CORPUS ESOTEROLOGIA ERMETICA: definisce il framework operativo per la tracciabilità rascensionale, l'interfaccia rascensionale e l'accoppiamento organismo-sistema attraverso Decisione · Costo · Traccia · Tempo.",
+    keyTerms: [
+      "Alien Code",
+      "Decisione",
+      "Costo",
+      "Traccia",
+      "Tempo",
+      "Interfaccia rascensionale",
+      "Unità qubitronica",
+      "Riconconicità organismo-sistema",
+      "Accoppiamento organismo-sistema",
+      "Soglia di realtà",
+      "Evento operativo",
+      "Campo rascensionale",
+      "Loop biocibernetico",
+      "Traccia opponibile",
+      "Decadimento",
+      "Corpus Esoterologia Ermetica",
+      "IPR"
+    ]
+  },
+  V5: {
+    volume: "V5",
+    title: "IL PORTALE DELL’ANTICRISTO",
+    summary:
+      "Profilo documento IL PORTALE DELL’ANTICRISTO Volume V del CORPUS ESOTEROLOGIA ERMETICA: tratta Apocalisse come regime di esposizione, Anticristo come configurazione di rottura del campo umano e Portale come soglia operativa verificabile tramite Decisione · Costo · Traccia · Tempo.",
+    keyTerms: [
+      "Il Portale dell’Anticristo",
+      "Apocalisse",
+      "Anticristo",
+      "Portale",
+      "Regime di esposizione",
+      "Soglia operativa",
+      "Decisione",
+      "Costo",
+      "Traccia",
+      "Tempo",
+      "Reale operativo",
+      "Traccia opponibile",
+      "Continuità esposta",
+      "Scienza esoterologica",
+      "Informazione come incidenza sul campo umano",
+      "Corpus Esoterologia Ermetica",
+      "IPR"
+    ]
+  }
 };
 
 
@@ -1031,8 +1168,70 @@ function includesAll(normalized: string, terms: string[]): boolean {
 }
 
 
+
+function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCorpusVolumeProfile | null {
+  const normalizedName = normalizeSearchText(file.name);
+  const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 30000)}`);
+
+
+  if (
+    normalizedName.includes("5e 5e il portale dell anticristo") ||
+    normalized.includes("il portale dell anticristo") ||
+    includesAll(normalized, ["anticristo", "portale", "apocalisse"])
+  ) {
+    return CANONICAL_CORPUS_VOLUME_PROFILES.V5;
+  }
+
+
+  if (
+    normalizedName.includes("4d 4d alien code") ||
+    normalized.includes("framework operativo per la tracciabilita rascensionale") ||
+    includesAll(normalized, ["alien code", "interfaccia rascensionale"]) ||
+    includesAll(normalized, ["unita qubitronica", "riconconicita"])
+  ) {
+    return CANONICAL_CORPUS_VOLUME_PROFILES.V4;
+  }
+
+
+  if (
+    normalizedName.includes("3c 3c lex hermeticum") ||
+    normalized.includes("lex hermeticum") ||
+    includesAll(normalized, ["regime di validita", "opponibilita", "responsabilita"])
+  ) {
+    return CANONICAL_CORPUS_VOLUME_PROFILES.V3;
+  }
+
+
+  if (
+    normalizedName.includes("2b 2b matrix") ||
+    normalized.includes("matrix 05 04 2026") ||
+    includesAll(normalized, ["dominio istituzionale", "fiscalita", "debito"])
+  ) {
+    return CANONICAL_CORPUS_VOLUME_PROFILES.V2;
+  }
+
+
+  if (
+    normalizedName.includes("1a 1a corpus esoterologia ermetica") ||
+    includesAll(normalizedName, ["corpus esoterologia ermetica"]) ||
+    includesAll(normalized, ["corpus esoterologia ermetica", "volume i", "esoterologia"])
+  ) {
+    return CANONICAL_CORPUS_VOLUME_PROFILES.V1;
+  }
+
+
+  return null;
+}
+
+
 function inferDocumentFamily(file: StoredRuntimeFile): string | null {
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 12000)}`);
+  const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (canonicalCorpusProfile) {
+    return "CORPUS_ESOTEROLOGIA_ERMETICA";
+  }
 
 
   if (normalized.includes("apokalypsis")) {
@@ -1082,6 +1281,14 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 
 function inferDocumentVolume(file: StoredRuntimeFile): string | null {
+  const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (canonicalCorpusProfile) {
+    return canonicalCorpusProfile.volume;
+  }
+
+
   const raw = `${file.name}\n${file.text.slice(0, 16000)}`;
   const normalized = normalizeSearchText(raw);
   const directMatch = raw.match(/\bVolume\s+(I{1,3}|IV|V|VI{0,3}|IX|X|1|2|3|4|5|6|7|8|9|10)\b/i);
@@ -1140,6 +1347,14 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 function inferDocumentTitle(file: StoredRuntimeFile): string | null {
+  const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (canonicalCorpusProfile) {
+    return canonicalCorpusProfile.title;
+  }
+
+
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 12000)}`);
   const lines = extractFirstNonEmptyLines(file.text, 10);
 
@@ -1201,6 +1416,14 @@ function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
 
 
 function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
+  const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (canonicalCorpusProfile) {
+    return Array.from(new Set(canonicalCorpusProfile.keyTerms)).slice(0, 32);
+  }
+
+
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 30000)}`);
   const terms = DOCUMENT_KEY_TERM_CANDIDATES.filter((term) => {
     return normalized.includes(normalizeSearchText(term));
@@ -1221,6 +1444,7 @@ function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
 
 
 function buildDocumentSummary(file: StoredRuntimeFile): string {
+  const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
   const family = inferDocumentFamily(file);
   const volume = inferDocumentVolume(file);
   const title = inferDocumentTitle(file);
@@ -1229,6 +1453,11 @@ function buildDocumentSummary(file: StoredRuntimeFile): string {
 
   if (!isPromptTextStatus(file.status)) {
     return `Documento registrato come ${file.status}. Il file resta tracciabile per hash e metadati, ma non contiene testo pronto per il prompt.`;
+  }
+
+
+  if (canonicalCorpusProfile) {
+    return canonicalCorpusProfile.summary;
   }
 
 
@@ -1258,6 +1487,7 @@ function buildDocumentProfileInput(
   file: StoredRuntimeFile,
   context: DocumentProfileContext
 ): DocumentProfileDatabaseInput {
+  const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
   const docFamily = inferDocumentFamily(file);
   const volume = inferDocumentVolume(file);
   const title = inferDocumentTitle(file);
@@ -1290,6 +1520,10 @@ function buildDocumentProfileInput(
     semanticTerms: keyTerms.map((term) => ({ term, source: "AUTO_PROFILE" })),
     documentMetadata: {
       routeVersion: FILE_ROUTE_REVISION,
+      canonicalProfileRevision: DOCUMENT_PROFILE_CANONICAL_FIX_REVISION,
+      canonicalProfileApplied: Boolean(canonicalCorpusProfile),
+      canonicalVolume: canonicalCorpusProfile?.volume ?? null,
+      canonicalTitle: canonicalCorpusProfile?.title ?? null,
       fileId: file.id,
       filename: file.name,
       fileHash: file.fileHash,
