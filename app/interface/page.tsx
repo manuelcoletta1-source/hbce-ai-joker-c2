@@ -357,7 +357,7 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-MINIMAL-SAAS-DASHBOARD-v1.7";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-PROFESSIONAL-SAAS-DASHBOARD-v1.8";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -5822,7 +5822,7 @@ export default function InterfacePage() {
               </div>
               <StatusPill value={cyberneticChainReady ? "CYBER_CHAIN_READY" : cyberneticMemoryChain.status} />
             </div>
-            <p>La chat scelta viene salvata come memoria IPR-bound; EVT la colloca nel tempo operativo; OPC ne produce la ricevuta tecnica. La memoria riusabile resta in memory_records, non nello scontrino OPC. Piccola concessione alla realtà.</p>
+            <p>La chat scelta viene salvata come memoria IPR-bound; EVT la colloca nel tempo operativo; OPC produce la ricevuta tecnica. La memoria riusabile resta in memory_records.</p>
             <InfoList items={cyberneticMemoryChainRows} />
             <div className="joker-cyber-chain-steps" aria-label="Cybernetic memory chain actions">
               <button type="button" className="joker-memory-primary-button" onClick={() => void saveCurrentChatToIpr()} disabled={isSavingChatToIpr || messages.length === 0 || !canUseIprMemory}>{isSavingChatToIpr ? "Saving..." : "1 · Chat → IPR"}</button>
@@ -5941,7 +5941,7 @@ export default function InterfacePage() {
               </div>
             ) : (
               <div className="joker-empty-mini">
-                Nessuna memoria IPR persistente caricata. Il bottone “Salva questa chat su IPR” serve proprio a questo, incredibile ma lineare.
+                Nessuna memoria IPR persistente caricata. Usa “Salva questa chat su IPR” per creare una memoria selezionata e verificabile.
               </div>
             )}
           </div>
@@ -5992,7 +5992,7 @@ export default function InterfacePage() {
               </div>
             ) : (
               <div className="joker-empty-mini">
-                Nessun recall riusabile. Bene: almeno non stiamo iniettando ricordi a caso nella chat come coriandoli.
+                Nessun recall riusabile disponibile. Le memorie richiamabili compariranno qui dopo il salvataggio IPR.
               </div>
             )}
 
@@ -6014,7 +6014,7 @@ export default function InterfacePage() {
           <div className="joker-side-card joker-side-card-primary">
             <span className="joker-kicker">Workspace</span>
             <strong>JOKER-C2 SaaS</strong>
-            <p>Chat centrale, memoria IPR e diagnostica laterale. Finalmente meno scroll, miracolo minore.</p>
+            <p>Chat centrale, memoria IPR e diagnostica laterale per uso operativo SaaS B2G.</p>
             <button type="button" onClick={newChat}>New chat</button>
           </div>
 
@@ -6243,7 +6243,7 @@ export default function InterfacePage() {
               <button type="button" onClick={() => void copyRuntimeId("EVT", cyberneticMemoryChain.evtId)} disabled={isBlankRuntimeValue(cyberneticMemoryChain.evtId)}>Copy EVT</button>
               <button type="button" onClick={() => void copyRuntimeId("OPC", cyberneticMemoryChain.opcId)} disabled={isBlankRuntimeValue(cyberneticMemoryChain.opcId)}>Copy OPC</button>
             </div>
-            <p className="joker-side-note">OPC è ricevuta tecnica. La memoria riusabile resta in memory_records. Sì, ripeterlo serve.</p>
+            <p className="joker-side-note">OPC è ricevuta tecnica. La memoria riusabile resta in memory_records.</p>
           </div>
         </aside>
       </section>
@@ -6251,9 +6251,8 @@ export default function InterfacePage() {
 
       <style jsx>{`
         .joker-page {
-          min-height: 100vh;
-          display: grid;
-          grid-template-rows: auto auto auto 1fr;
+          min-height: 100dvh;
+          display: block;
           background:
             radial-gradient(circle at 18% -8%, rgba(14, 165, 233, 0.18), transparent 34%),
             radial-gradient(circle at 84% 0%, rgba(99, 102, 241, 0.16), transparent 32%),
@@ -6267,6 +6266,7 @@ export default function InterfacePage() {
             BlinkMacSystemFont,
             "Segoe UI",
             sans-serif;
+          overflow-x: hidden;
         }
 
 
@@ -6274,9 +6274,9 @@ export default function InterfacePage() {
 
         .joker-minimal-workspace {
           display: grid;
-          grid-template-columns: minmax(210px, 260px) minmax(0, 1fr) minmax(260px, 340px);
+          grid-template-columns: minmax(220px, 270px) minmax(0, 1fr) minmax(280px, 360px);
           gap: 16px;
-          align-items: start;
+          align-items: stretch;
           width: min(1720px, calc(100vw - 28px));
           margin: 0 auto 22px;
         }
@@ -6284,19 +6284,30 @@ export default function InterfacePage() {
         .joker-left-rail,
         .joker-right-rail {
           position: sticky;
-          top: 92px;
+          top: 190px;
+          align-self: start;
           display: grid;
           gap: 12px;
-          max-height: calc(100vh - 112px);
+          max-height: calc(100dvh - 210px);
           overflow: auto;
+          padding-right: 2px;
           scrollbar-width: thin;
         }
 
         .joker-chat-column {
           min-width: 0;
-          display: grid;
-          grid-template-rows: minmax(0, 1fr) auto;
-          gap: 14px;
+          min-height: 620px;
+          height: calc(100dvh - 230px);
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+          border: 1px solid rgba(71, 85, 105, 0.54);
+          border-radius: 30px;
+          background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.74), rgba(2, 6, 23, 0.78)),
+            rgba(2, 6, 23, 0.72);
+          box-shadow: 0 24px 72px rgba(2, 6, 23, 0.32);
+          overflow: hidden;
         }
 
         .joker-side-card,
@@ -7537,13 +7548,10 @@ export default function InterfacePage() {
 
 
         .joker-composer-shell {
-          position: sticky;
-          bottom: 0;
-          z-index: 25;
           padding: 14px 18px 18px;
           border-top: 1px solid rgba(71, 85, 105, 0.55);
           background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(2, 6, 23, 0.94) 18%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(2, 6, 23, 0.94) 18%),
             rgba(2, 6, 23, 0.94);
           backdrop-filter: blur(22px);
         }
@@ -7947,22 +7955,30 @@ export default function InterfacePage() {
         }
 
         .joker-chat {
-          min-height: calc(100vh - 340px);
+          flex: 1 1 auto;
+          min-height: 0;
+          height: auto;
           margin: 0;
-          border-radius: 28px;
+          border-radius: 0;
+          overflow-y: auto;
+          padding: 24px 18px 18px;
         }
 
         .joker-composer-shell {
-          position: sticky;
-          bottom: 12px;
-          z-index: 20;
+          position: relative;
+          bottom: auto;
+          z-index: 3;
+          flex: 0 0 auto;
           width: 100%;
           margin: 0;
-          border-radius: 24px;
-          border: 1px solid rgba(71, 85, 105, 0.5);
-          background: rgba(2, 6, 23, 0.84);
+          border-radius: 0;
+          border: 0;
+          border-top: 1px solid rgba(71, 85, 105, 0.55);
+          background:
+            linear-gradient(180deg, rgba(2, 6, 23, 0.7), rgba(2, 6, 23, 0.96)),
+            rgba(2, 6, 23, 0.96);
           backdrop-filter: blur(18px);
-          box-shadow: 0 -12px 34px rgba(2, 6, 23, 0.25);
+          box-shadow: 0 -12px 34px rgba(2, 6, 23, 0.2);
         }
 
         .joker-dashboard {
@@ -7972,11 +7988,43 @@ export default function InterfacePage() {
         }
 
 
+        @media (max-width: 1400px) {
+          .joker-minimal-workspace {
+            grid-template-columns: minmax(210px, 260px) minmax(0, 1fr);
+          }
+
+          .joker-right-rail {
+            position: static;
+            grid-column: 1 / -1;
+            grid-template-columns: minmax(0, 1fr);
+            max-height: none;
+            overflow: visible;
+          }
+        }
+
         @media (max-width: 1180px) {
           .joker-topbar,
           .joker-hero,
           .joker-dashboard {
             grid-template-columns: 1fr;
+          }
+
+          .joker-minimal-workspace {
+            grid-template-columns: 1fr;
+            width: min(1180px, calc(100vw - 22px));
+          }
+
+          .joker-left-rail,
+          .joker-right-rail {
+            position: static;
+            max-height: none;
+            overflow: visible;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .joker-chat-column {
+            height: min(780px, calc(100dvh - 160px));
+            min-height: 560px;
           }
 
 
@@ -8003,6 +8051,20 @@ export default function InterfacePage() {
 
 
         @media (max-width: 860px) {
+          .joker-left-rail,
+          .joker-right-rail {
+            grid-template-columns: 1fr;
+          }
+
+          .joker-hero {
+            position: static;
+          }
+
+          .joker-chat-column {
+            min-height: 540px;
+            height: 72dvh;
+          }
+
           .joker-hero-grid,
           .joker-details-grid,
           .joker-prompt-grid,
@@ -8079,6 +8141,15 @@ export default function InterfacePage() {
 
           .joker-composer-shell {
             padding: 10px;
+          }
+
+          .joker-composer {
+            grid-template-columns: 36px minmax(0, 1fr) 36px;
+            border-radius: 22px;
+          }
+
+          .joker-composer textarea {
+            min-height: 42px;
           }
 
 
