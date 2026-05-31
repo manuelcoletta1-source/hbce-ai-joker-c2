@@ -17,18 +17,20 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const ROUTE_NAME = "HBCE IPR Memory Delete Record Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-DELETE-RECORD-v1.1";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-DELETE-RECORD-v1.3";
 const DELETE_MODE_SOFT_DELETE = "SOFT_DELETE";
 const DELETE_REASON_DEFAULT = "USER_EXPLICIT_REMOVE_FROM_IPR_RECALL";
-const SOFT_DELETED_MEMORY_STATUS = "SOFT_DELETED";
+const SOFT_DELETED_MEMORY_STATUS = "DELETED";
+const LEGACY_SOFT_DELETED_MEMORY_STATUS = "SOFT_DELETED";
 const LEGACY_DISABLED_MEMORY_STATUS = "DISABLED";
 const DELETE_READY_STATUS = "IPR_MEMORY_RECORD_SOFT_DELETED";
 const DELETE_ALREADY_OUTSIDE_RECALL_STATUS = "IPR_MEMORY_RECORD_ALREADY_OUTSIDE_RECALL";
+const RECORD_STATUS_EXPECTED_AFTER_DELETE = "NOT_PROMPT_ELIGIBLE";
 
 const MEMORY_STATUSES_OUTSIDE_RECALL = new Set([
   SOFT_DELETED_MEMORY_STATUS,
+  LEGACY_SOFT_DELETED_MEMORY_STATUS,
   LEGACY_DISABLED_MEMORY_STATUS,
-  "DELETED",
   "INACTIVE"
 ]);
 
@@ -599,6 +601,7 @@ async function buildDeleteRecordPayload(request: NextRequest) {
       memoryId: context.memoryId,
       removedFromRecall: true,
       reusableInPrompt: false,
+      promptEligible: false,
       duplicateSafe: true,
       before: existingPublic,
       after: existingPublic,
@@ -608,6 +611,17 @@ async function buildDeleteRecordPayload(request: NextRequest) {
         workspaceId: context.workspaceId,
         deleteMode: context.deleteMode,
         reason: context.reason
+      },
+      deletionPolicy: {
+        physicalDelete: false,
+        softDelete: true,
+        activeRecallExcluded: true,
+        promptInjectionExcluded: true,
+        promptEligible: false,
+        recordStatusExpected: RECORD_STATUS_EXPECTED_AFTER_DELETE,
+        auditTracePreserved: true,
+        idempotent: true,
+        legalCertification: false
       },
       diagnostics: {
         database: {
@@ -619,7 +633,7 @@ async function buildDeleteRecordPayload(request: NextRequest) {
           }
         },
         recallImpact:
-          "Record was already outside active recall because memory_status is not ACTIVE, reusable_in_prompt is false or deleted_at is already set."
+          "Record was already outside active recall because memory_status is not ACTIVE, reusable_in_prompt is false or deleted_at is already set. It remains promptEligible=false."
       }
     });
   }
@@ -659,7 +673,9 @@ async function buildDeleteRecordPayload(request: NextRequest) {
     memoryId: context.memoryId,
     removedFromRecall: true,
     reusableInPrompt: false,
+    promptEligible: false,
     memoryStatus: SOFT_DELETED_MEMORY_STATUS,
+    recordStatusExpected: RECORD_STATUS_EXPECTED_AFTER_DELETE,
     deleteMode: DELETE_MODE_SOFT_DELETE,
     reason: context.reason,
     before: existingPublic,
@@ -681,6 +697,8 @@ async function buildDeleteRecordPayload(request: NextRequest) {
       softDelete: true,
       activeRecallExcluded: true,
       promptInjectionExcluded: true,
+      promptEligible: false,
+      recordStatusExpected: RECORD_STATUS_EXPECTED_AFTER_DELETE,
       auditTracePreserved: true,
       legalCertification: false
     },
@@ -708,7 +726,7 @@ async function buildDeleteRecordPayload(request: NextRequest) {
         }
       },
       recallImpact:
-        "Recall routes require memory_status=ACTIVE and reusable_in_prompt=true, so this memory is excluded from future prompt memory blocks."
+        "Recall routes require memory_status=ACTIVE, reusable_in_prompt=true and deleted_at IS NULL. This memory is soft-deleted, promptEligible=false and excluded from future prompt memory blocks."
     }
   });
 }
@@ -728,14 +746,16 @@ export async function GET() {
       humanIpr: "string; required in strictIdentity mode",
       tenantId: "string",
       workspaceId: "string",
-      deleteMode: "SOFT_DELETE only",
+      deleteMode: "SOFT_DELETE only; physical delete refused",
       reason: "string; default USER_EXPLICIT_REMOVE_FROM_IPR_RECALL",
       strictIdentity: "boolean"
     },
     effects: {
       memoryStatus: SOFT_DELETED_MEMORY_STATUS,
       reusableInPrompt: false,
+      promptEligible: false,
       removedFromRecall: true,
+      recordStatusExpected: RECORD_STATUS_EXPECTED_AFTER_DELETE,
       physicalDelete: false,
       auditTracePreserved: true,
       recordStatusEndpoint:
