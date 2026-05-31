@@ -357,7 +357,7 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-PROFESSIONAL-SAAS-DASHBOARD-v1.8";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-GPTLIKE-SAAS-CONSOLE-v1.9";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -6213,6 +6213,30 @@ export default function InterfacePage() {
         </div>
 
         <aside className="joker-right-rail" aria-label="Operational memory chain">
+          <div className="joker-side-card joker-clock-card" aria-label="JOKER-C2 Temporal Runtime Certificate sempre visibile">
+            <div className="joker-temporal-clock" aria-label="JOKER-C2 Temporal Runtime Certificate Torino Italia Europa UTC+2">
+              <div className="joker-temporal-clock-head">
+                <span className="joker-kicker">JOKER-C2 Temporal Runtime Certificate</span>
+                <StatusPill value={effectiveTemporalCertificateStatus} />
+              </div>
+              <div className="joker-temporal-clock-main">
+                <span>{JOKER_C2_OPERATIONAL_NODE_CLOCK_LABEL}</span>
+                <strong>{liveTemporal.utcClock}</strong>
+              </div>
+              <div className="joker-temporal-clock-grid">
+                <div>
+                  <span>AI JOKER-C2 lifetime</span>
+                  <strong>{liveTemporal.lifeHuman}</strong>
+                </div>
+                <div>
+                  <span>Birth anchor</span>
+                  <strong>{JOKER_C2_BIRTH_ANCHOR_LOCAL} {JOKER_C2_BIRTH_ANCHOR_TIMEZONE}</strong>
+                </div>
+              </div>
+              <em>Torino / Italia / Europa node time UTC+2 + cybernetic lifetime + birth anchor locale · technical proof only · legalCertification=false</em>
+            </div>
+          </div>
+
           <div className="joker-side-card joker-chain-rail-card">
             <div className="joker-panel-head">
               <div>
@@ -7988,143 +8012,283 @@ export default function InterfacePage() {
         }
 
 
+
+        /* HBCE SaaS v1.9: GPT-like console hierarchy.
+           Chat is the product surface; diagnostics are tools, not furniture. */
+        .joker-page {
+          height: 100dvh;
+          min-height: 100dvh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .joker-topbar {
+          flex: 0 0 auto;
+          min-height: 66px;
+          grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.2fr) auto;
+          padding: 10px 16px;
+        }
+
+        .joker-health {
+          max-height: 40px;
+        }
+
+        .joker-hero {
+          display: none !important;
+        }
+
+        .joker-diagnostics-drawer {
+          position: fixed;
+          left: 14px;
+          bottom: 14px;
+          width: min(320px, calc(100vw - 28px));
+          max-height: calc(100dvh - 110px);
+          margin: 0;
+          z-index: 70;
+          border-radius: 20px;
+          overflow: auto;
+        }
+
+        .joker-diagnostics-drawer:not([open]) {
+          max-height: 48px;
+          overflow: hidden;
+        }
+
+        .joker-diagnostics-drawer > summary {
+          padding: 12px 14px;
+          background: rgba(2, 6, 23, 0.92);
+        }
+
+        .joker-diagnostics-drawer .joker-dashboard,
+        .joker-diagnostics-drawer .joker-ipr-memory {
+          width: 100%;
+          margin: 0;
+          padding: 12px;
+          grid-template-columns: 1fr;
+        }
+
+        .joker-minimal-workspace {
+          flex: 1 1 auto;
+          min-height: 0;
+          height: auto;
+          width: 100%;
+          max-width: none;
+          margin: 0;
+          padding: 12px 14px 14px;
+          display: grid;
+          grid-template-columns: 280px minmax(0, 1fr) 360px;
+          gap: 12px;
+          align-items: stretch;
+        }
+
+        .joker-left-rail,
+        .joker-right-rail {
+          position: static;
+          top: auto;
+          min-height: 0;
+          height: 100%;
+          max-height: none;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding: 0 2px 0 0;
+          align-self: stretch;
+          align-content: start;
+        }
+
+        .joker-side-card {
+          border-radius: 18px;
+          padding: 12px;
+        }
+
+        .joker-side-card p,
+        .joker-side-note {
+          font-size: 11px;
+          line-height: 1.38;
+        }
+
+        .joker-side-card strong {
+          font-size: 16px;
+        }
+
+        .joker-clock-card {
+          border-color: rgba(34, 211, 238, 0.44);
+          background:
+            radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.18), transparent 42%),
+            rgba(15, 23, 42, 0.72);
+        }
+
+        .joker-clock-card .joker-temporal-clock {
+          margin-top: 0;
+          padding: 12px;
+          border-radius: 16px;
+          background:
+            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.16), transparent 34%),
+            rgba(2, 6, 23, 0.46);
+        }
+
+        .joker-clock-card .joker-temporal-clock-main strong {
+          font-size: 15px;
+        }
+
+        .joker-clock-card .joker-temporal-clock-grid div {
+          padding: 9px;
+        }
+
+        .joker-chat-column {
+          height: 100%;
+          min-height: 0;
+          border-radius: 22px;
+          border-color: rgba(71, 85, 105, 0.44);
+          background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.52), rgba(2, 6, 23, 0.74)),
+            rgba(2, 6, 23, 0.78);
+        }
+
+        .joker-chat {
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow-y: auto;
+          padding: 26px 18px 18px;
+        }
+
+        .joker-message-list,
+        .joker-empty,
+        .joker-composer,
+        .joker-file-bar,
+        .composer-alert,
+        .joker-footer-line {
+          width: min(980px, 100%);
+        }
+
+        .joker-composer-shell {
+          flex: 0 0 auto;
+          padding: 12px 16px 14px;
+          background:
+            linear-gradient(180deg, rgba(2, 6, 23, 0.18), rgba(2, 6, 23, 0.96) 18%),
+            rgba(2, 6, 23, 0.96);
+        }
+
+        .joker-composer {
+          border-radius: 24px;
+          box-shadow: 0 12px 38px rgba(0, 0, 0, 0.34);
+        }
+
+        .joker-composer textarea {
+          min-height: 42px;
+          max-height: 180px;
+        }
+
+        .joker-empty {
+          min-height: 100%;
+          justify-content: center;
+        }
+
+        .joker-empty h2 {
+          font-size: clamp(30px, 4vw, 46px);
+        }
+
+        .joker-prompt-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .joker-chain-buttons {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .joker-info-row {
+          grid-template-columns: minmax(88px, 0.38fr) minmax(0, 1fr);
+        }
+
+        
         @media (max-width: 1400px) {
           .joker-minimal-workspace {
-            grid-template-columns: minmax(210px, 260px) minmax(0, 1fr);
+            grid-template-columns: 250px minmax(0, 1fr) 330px;
           }
 
-          .joker-right-rail {
-            position: static;
-            grid-column: 1 / -1;
-            grid-template-columns: minmax(0, 1fr);
-            max-height: none;
-            overflow: visible;
+          .joker-topbar {
+            grid-template-columns: minmax(220px, 1fr) minmax(0, 1fr) auto;
           }
         }
 
         @media (max-width: 1180px) {
-          .joker-topbar,
-          .joker-hero,
-          .joker-dashboard {
+          .joker-page {
+            height: auto;
+            min-height: 100dvh;
+            overflow: auto;
+          }
+
+          .joker-topbar {
+            position: sticky;
             grid-template-columns: 1fr;
+            align-items: start;
+          }
+
+          .joker-health {
+            max-height: none;
           }
 
           .joker-minimal-workspace {
+            height: auto;
+            min-height: calc(100dvh - 120px);
             grid-template-columns: 1fr;
-            width: min(1180px, calc(100vw - 22px));
+            padding: 12px;
           }
 
           .joker-left-rail,
           .joker-right-rail {
-            position: static;
+            height: auto;
             max-height: none;
             overflow: visible;
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
           .joker-chat-column {
-            height: min(780px, calc(100dvh - 160px));
-            min-height: 560px;
+            height: min(860px, calc(100dvh - 130px));
+            min-height: 620px;
+            order: -1;
           }
 
-
-          .joker-memory-grid {
-            grid-template-columns: 1fr;
-          }
-
-
-          .joker-cyber-chain-steps,
-          .joker-cyber-chain-steps.is-secondary {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-
-
-          .joker-top-actions {
-            justify-content: flex-start;
-          }
-
-
-          .joker-hero-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+          .joker-diagnostics-drawer {
+            position: static;
+            width: calc(100% - 24px);
+            max-height: none;
+            margin: 0 auto 12px;
           }
         }
 
-
         @media (max-width: 860px) {
+          .joker-topbar {
+            padding: 10px;
+          }
+
+          .joker-minimal-workspace {
+            padding: 10px;
+          }
+
           .joker-left-rail,
           .joker-right-rail {
             grid-template-columns: 1fr;
           }
 
-          .joker-hero {
-            position: static;
-          }
-
           .joker-chat-column {
-            min-height: 540px;
-            height: 72dvh;
+            min-height: 580px;
+            height: calc(100dvh - 112px);
+            border-radius: 18px;
           }
-
-          .joker-hero-grid,
-          .joker-details-grid,
-          .joker-prompt-grid,
-          .joker-temporal-clock-grid,
-          .joker-dual-time-rails,
-          .joker-semantic-grid,
-          .joker-semantic-axis,
-          .joker-semantic-card.is-compact .joker-semantic-grid,
-          .joker-memory-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-
-
-        @media (max-width: 640px) {
-          .joker-topbar {
-            padding: 12px;
-          }
-
-
-          .joker-hero,
-          .joker-dashboard,
-          .joker-ipr-memory {
-            width: calc(100% - 20px);
-          }
-
-
-          .joker-hero-copy,
-          .joker-panel {
-            border-radius: 22px;
-            padding: 15px;
-          }
-
-
-          .joker-info-row {
-            grid-template-columns: 1fr;
-            gap: 5px;
-          }
-
-
-          .joker-info-row dd {
-            text-align: left;
-          }
-
-
-          .joker-panel-head {
-            flex-direction: column;
-          }
-
 
           .joker-chat {
-            padding: 22px 10px 14px;
+            padding: 20px 10px 12px;
           }
 
+          .joker-prompt-grid {
+            grid-template-columns: 1fr;
+          }
 
           .joker-message {
             grid-template-columns: 1fr;
             gap: 8px;
           }
-
 
           .joker-message-avatar {
             width: 34px;
@@ -8132,12 +8296,19 @@ export default function InterfacePage() {
             border-radius: 13px;
           }
 
+          .joker-dual-time-rails {
+            grid-template-columns: 1fr;
+          }
+        }
 
-          .joker-message-body {
-            border-radius: 20px;
-            padding: 14px;
+        @media (max-width: 640px) {
+          .joker-health {
+            display: none;
           }
 
+          .joker-top-actions {
+            justify-content: flex-start;
+          }
 
           .joker-composer-shell {
             padding: 10px;
@@ -8149,15 +8320,13 @@ export default function InterfacePage() {
           }
 
           .joker-composer textarea {
-            min-height: 42px;
+            min-height: 44px;
           }
 
-
-          .joker-cyber-chain-steps,
-          .joker-cyber-chain-steps.is-secondary {
+          .joker-chain-buttons,
+          .joker-chain-buttons-secondary {
             grid-template-columns: 1fr;
           }
-
 
           .joker-footer-line {
             flex-direction: column;
