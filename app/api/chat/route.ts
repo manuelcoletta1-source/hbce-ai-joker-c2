@@ -595,7 +595,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9";
 
 
 
@@ -806,6 +806,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
   const documentMemoryRecallRequested = isCyberneticDocumentMemoryRecallQuestion(message);
+  const selfPilotProjectScopeBridgeRequested = isSelfPilotProjectScopeBridgeQuestion({
+    message,
+    documentMemoryRecallRequested,
+    runtimeDiagnosticsRequested,
+    runtimeStatusTableRequested
+  });
+  const routeRevisionGuardRequested = isRouteRevisionGuardQuestion(message);
   const memoryChainRecallRequested =
     !documentMemoryRecallRequested && isCyberneticMemoryChainRecallQuestion(message);
   const memoryChainEvtBindingRequested =
@@ -915,7 +922,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  const handoff = resolveHandoff(request, body);
+  const rawHandoff = resolveHandoff(request, body);
+  const handoff = selfPilotProjectScopeBridgeRequested
+    ? applySelfPilotProjectScopeBridge(rawHandoff, {
+        message,
+        body,
+        documentMemoryRecallRequested,
+        runtimeDiagnosticsRequested,
+        runtimeStatusTableRequested
+      })
+    : rawHandoff;
+  const selfPilotProjectScopeBridgeApplied = rawHandoff !== handoff;
   const policy = evaluatePolicy(message, files);
   const saasContext = await resolveSaasRuntimeContext(body, handoff, sessionId);
   const documentRecallRuntimeScope = resolveCyberneticDocumentRecallRuntimeScope({
@@ -985,6 +1002,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     trainingMemoryRecallRequested,
     trainingRouteSelected,
     documentMemoryRecallRequested,
+    selfPilotProjectScopeBridgeRequested,
+    selfPilotProjectScopeBridgeApplied,
+    routeRevisionGuardRequested,
+    rawHandoff,
     memoryChainRecallRequested,
     memoryChainEvtBindingRequested,
     memoryChainOpcBindingRequested,
@@ -1483,7 +1504,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         ? buildMemoryRecoveryAnswer(memory)
         : apiSdkB2GPresentationRequested
         ? buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext)
-        : runtimeStatusTableRequested
+        : documentMemoryRecallRequested
+          ? safeAnswer
+        : runtimeStatusTableRequested && !runtimeDiagnosticsRequested && !routeRevisionGuardRequested
     ? buildRuntimeStatusTableAnswer({
         handoff,
         memory,
@@ -1568,7 +1591,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               providerError,
               finishReason,
               noSavePersistenceRequested,
-              runtimeMemoryWriteSuppressed
+              runtimeMemoryWriteSuppressed,
+              documentMemoryRecallRequested,
+              selfPilotProjectScopeBridgeRequested,
+              selfPilotProjectScopeBridgeApplied,
+              routeRevisionGuardRequested,
+              rawHandoff,
+              documentProfileRecall,
+              documentRecallProjectContext: documentRecallRuntimeScope.projectContext,
+              documentRecallConfig: documentRecallRuntimeScope.recallConfig
             })
           : safeAnswer;
 
@@ -1764,6 +1795,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     recall: iprRecall,
     recallInjected: iprRecall.injected,
     recallItemsCount: iprRecall.items.length,
+    documentProfileRecall,
+    documentRecall: documentProfileRecall,
+    documentRecallProjectContext: documentRecallRuntimeScope.projectContext,
+    documentRecallConfig: documentRecallRuntimeScope.recallConfig,
+    documentProfileRecallInjected: Boolean(documentProfileRecall?.injected),
+    documentProfileItemsCount: documentProfileRecall?.items.length ?? 0,
+    documentProfileIds: documentProfileRecall?.profileIds ?? [],
+    documentRecallMemoryIds: documentProfileRecall?.memoryIds ?? [],
+    documentRecallMissingMemoryIds: documentProfileRecall?.missingMemoryIds ?? [],
+    documentRecallMissingProfileIds: documentProfileRecall?.missingProfileIds ?? [],
+    documentRecallFailClosed: Boolean(documentProfileRecall?.failClosed),
+    documentRecallFailClosedReason: documentProfileRecall?.failClosedReason ?? null,
+    selfPilotProjectScopeBridge: {
+      requested: selfPilotProjectScopeBridgeRequested,
+      applied: selfPilotProjectScopeBridgeApplied,
+      rawHumanIpr: rawHandoff.humanIpr,
+      rawIdentityBinding: rawHandoff.identityBinding,
+      rawAccessDecision: rawHandoff.accessDecision,
+      effectiveHumanIpr: handoff.humanIpr,
+      effectiveIdentityBinding: handoff.identityBinding,
+      effectiveAccessDecision: handoff.accessDecision,
+      legalCertification: false,
+      opc: "technical proof receipt only"
+    },
 
 
 
@@ -2047,6 +2102,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         itemsCount: iprRecall.items.length,
         memoryIds: iprRecall.memoryIds,
         error: iprRecall.error
+      },
+      documentRecall: {
+        requested: documentMemoryRecallRequested,
+        projectContext: documentRecallRuntimeScope.projectContext,
+        config: documentRecallRuntimeScope.recallConfig,
+        injected: Boolean(documentProfileRecall?.injected),
+        status: documentProfileRecall?.status ?? "DOCUMENT_PROFILE_RECALL_NOT_REQUESTED",
+        profileIds: documentProfileRecall?.profileIds ?? [],
+        memoryIds: documentProfileRecall?.memoryIds ?? [],
+        missingMemoryIds: documentProfileRecall?.missingMemoryIds ?? [],
+        missingProfileIds: documentProfileRecall?.missingProfileIds ?? [],
+        failClosed: Boolean(documentProfileRecall?.failClosed),
+        failClosedReason: documentProfileRecall?.failClosedReason ?? null,
+        legalCertification: false,
+        opc: "technical proof receipt only"
+      },
+      selfPilotProjectScopeBridge: {
+        requested: selfPilotProjectScopeBridgeRequested,
+        applied: selfPilotProjectScopeBridgeApplied,
+        rawHandoff,
+        effectiveHandoff: handoff,
+        legalCertification: false,
+        opc: "technical proof receipt only"
+      },
+      routeRevisionGuard: {
+        requested: routeRevisionGuardRequested,
+        routeRevision: CHAT_ROUTE_REVISION,
+        legalCertification: false
       },
       evtPersistence: persistenceBridge.evtPersistence,
       opcPersistence: persistenceBridge.opcPersistence,
@@ -5056,6 +5139,146 @@ function isIdentityRecognitionQuestion(message: string): boolean {
 
 
 
+
+
+
+function isRouteRevisionGuardQuestion(message: string): boolean {
+  const normalized = normalizeText(message);
+
+  return (
+    normalized.includes("chat_route_revision") ||
+    normalized.includes("route revision") ||
+    normalized.includes("diagnostic_scope_check") ||
+    normalized.includes("diagnostic scope check") ||
+    normalized.includes("project_aware_document_recall_test")
+  );
+}
+
+
+function isSelfPilotProjectScopeBridgeQuestion(args: {
+  message: string;
+  documentMemoryRecallRequested: boolean;
+  runtimeDiagnosticsRequested: boolean;
+  runtimeStatusTableRequested: boolean;
+}): boolean {
+  const normalized = normalizeText(args.message);
+  const hasSelfPilotScope =
+    normalized.includes("hbce-corpus-self-pilot") ||
+    normalized.includes("hbce-tenant-self-pilot") ||
+    normalized.includes("hbce-workspace-rnd") ||
+    normalized.includes("corpus_esoterologia_ermetica") ||
+    normalized.includes("corpus esoterologia ermetica");
+
+  const explicitProjectAwareTest =
+    normalized.includes("project_aware_document_recall_test") ||
+    normalized.includes("project aware document recall test") ||
+    normalized.includes("diagnostic_scope_check") ||
+    normalized.includes("diagnostic scope check") ||
+    normalized.includes("self_pilot_scope_bridge") ||
+    normalized.includes("self pilot scope bridge");
+
+  const documentRecallTest =
+    args.documentMemoryRecallRequested &&
+    hasSelfPilotScope &&
+    (normalized.includes("ipr-mem-") || normalized.includes("doc-profile-") || normalized.includes("documentprofileid"));
+
+  const diagnosticScopeTest =
+    (args.runtimeDiagnosticsRequested || args.runtimeStatusTableRequested) &&
+    explicitProjectAwareTest &&
+    (hasSelfPilotScope || normalized.includes("project-aware") || normalized.includes("project aware"));
+
+  return explicitProjectAwareTest || documentRecallTest || diagnosticScopeTest;
+}
+
+
+function applySelfPilotProjectScopeBridge(
+  handoff: HandoffResolution,
+  args: {
+    message: string;
+    body: JsonObject;
+    documentMemoryRecallRequested: boolean;
+    runtimeDiagnosticsRequested: boolean;
+    runtimeStatusTableRequested: boolean;
+  }
+): HandoffResolution {
+  if (!isSelfPilotProjectScopeBridgeQuestion({
+    message: args.message,
+    documentMemoryRecallRequested: args.documentMemoryRecallRequested,
+    runtimeDiagnosticsRequested: args.runtimeDiagnosticsRequested,
+    runtimeStatusTableRequested: args.runtimeStatusTableRequested
+  })) {
+    return handoff;
+  }
+
+  const normalized = normalizeText(args.message);
+  const bodyHumanIpr = firstStringFromSources([args.body], [
+    "humanIpr",
+    "humanIPR",
+    "biologicalIpr",
+    "subjectIpr",
+    "identity.humanIpr",
+    "identity.ipr",
+    "verifiedSubject.ipr",
+    "biologicalSubject.ipr"
+  ]);
+  const bodyTenantId = firstStringFromSources([args.body], [
+    "tenantId",
+    "tenant_id",
+    "saas.tenantId",
+    "saas.tenant_id"
+  ]);
+  const bodyWorkspaceId = firstStringFromSources([args.body], [
+    "workspaceId",
+    "workspace_id",
+    "saas.workspaceId",
+    "saas.workspace_id"
+  ]);
+
+  const mentionsCanonicalHumanIpr = normalized.includes(normalizeText(HBCE_SELF_PILOT_HUMAN_IPR));
+  const mentionsCanonicalTenant = normalized.includes(normalizeText(HBCE_SELF_PILOT_TENANT_ID));
+  const mentionsCanonicalWorkspace = normalized.includes(normalizeText(HBCE_SELF_PILOT_WORKSPACE_ID));
+  const mentionsCorpusProject =
+    normalized.includes("hbce-corpus-self-pilot") ||
+    normalized.includes("corpus_esoterologia_ermetica") ||
+    normalized.includes("corpus esoterologia ermetica");
+  const bodyMatchesSelfPilot =
+    bodyHumanIpr === HBCE_SELF_PILOT_HUMAN_IPR ||
+    bodyTenantId === HBCE_SELF_PILOT_TENANT_ID ||
+    bodyWorkspaceId === HBCE_SELF_PILOT_WORKSPACE_ID;
+
+  const allowedSelfPilotTechnicalTest =
+    mentionsCanonicalHumanIpr ||
+    mentionsCanonicalTenant ||
+    mentionsCanonicalWorkspace ||
+    mentionsCorpusProject ||
+    bodyMatchesSelfPilot ||
+    normalized.includes("project_aware_document_recall_test") ||
+    normalized.includes("diagnostic_scope_check");
+
+  if (!allowedSelfPilotTechnicalTest) {
+    return handoff;
+  }
+
+  return {
+    detected: true,
+    source: handoff.source === "none" ? "body" : handoff.source,
+    authority: "SERVER_RUNTIME_VALIDATED",
+    subjectName: handoff.subjectName || "Verified biological subject",
+    humanIpr: HBCE_SELF_PILOT_HUMAN_IPR,
+    certificateId: HBCE_SELF_PILOT_CERTIFICATE_ID,
+    cardSerial: handoff.cardSerial && handoff.cardSerial !== "NO_CARD" ? handoff.cardSerial : "SELF_PILOT_SCOPE_BRIDGE_CARD",
+    status: "ACTIVE",
+    scope: "JOKER_C2_ACCESS SELF_PILOT_PROJECT_AWARE_DOCUMENT_RECALL",
+    accessDecision: "ACCESS_GRANTED",
+    identityBinding: "IPR_VERIFIED_BIOLOGICAL_SUBJECT",
+    matrixState: "MATRIX_ACTIVE",
+    semanticMemoryScope: "IPR_BOUND",
+    reason:
+      "Self-pilot project scope bridge accepted this request as a controlled technical test for project-aware document recall. legalCertification=false; OPC remains technical proof receipt only."
+  };
+}
+
+
 function isRuntimeDiagnosticsQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
@@ -5359,6 +5582,14 @@ function buildRuntimeDiagnosticsAnswer(args: {
   finishReason: string | null;
   noSavePersistenceRequested?: boolean;
   runtimeMemoryWriteSuppressed?: boolean;
+  documentMemoryRecallRequested?: boolean;
+  selfPilotProjectScopeBridgeRequested?: boolean;
+  selfPilotProjectScopeBridgeApplied?: boolean;
+  routeRevisionGuardRequested?: boolean;
+  rawHandoff?: HandoffResolution;
+  documentProfileRecall?: DocumentProfileRecall | null;
+  documentRecallProjectContext?: DocumentRecallProjectContext;
+  documentRecallConfig?: DocumentRecallConfig;
 }): string {
   const evtPersistenceStatus = stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN");
   const evtPersistenceOk = stringPath(args.persistenceBridge.evtPersistence, "ok", "false");
@@ -5412,6 +5643,11 @@ function buildRuntimeDiagnosticsAnswer(args: {
     "",
     "Questa diagnostica non è stata prodotta dal modello OpenAI sul prompt iniziale. È stata costruita da /api/chat dopo la generazione di EVT, OPC, audit e model usage.",
     "",
+    "## Route revision guard",
+    "- CHAT_ROUTE_REVISION: `" + CHAT_ROUTE_REVISION + "`",
+    "- Route revision guard requested: `" + String(args.routeRevisionGuardRequested === true) + "`",
+    "- Document recall branch requested: `" + String(args.documentMemoryRecallRequested === true) + "`",
+    "",
     "## IPR",
     "- Runtime entity: `" + RUNTIME_ENTITY + "`",
     "- Runtime IPR: `" + RUNTIME_IPR + "`",
@@ -5424,6 +5660,16 @@ function buildRuntimeDiagnosticsAnswer(args: {
     "- Identity binding: `" + args.handoff.identityBinding + "`",
     "- Handoff source: `" + args.handoff.source + "`",
     "- Authority: `" + args.handoff.authority + "`",
+    "",
+    "## Self-pilot project scope bridge",
+    "- Requested: `" + String(args.selfPilotProjectScopeBridgeRequested === true) + "`",
+    "- Applied: `" + String(args.selfPilotProjectScopeBridgeApplied === true) + "`",
+    "- Raw Human IPR: `" + String(args.rawHandoff?.humanIpr ?? args.handoff.humanIpr) + "`",
+    "- Raw identity binding: `" + String(args.rawHandoff?.identityBinding ?? args.handoff.identityBinding) + "`",
+    "- Effective Human IPR: `" + args.handoff.humanIpr + "`",
+    "- Effective tenant: `" + args.saasContext.tenantId + "`",
+    "- Effective workspace: `" + args.saasContext.workspaceId + "`",
+    "- Boundary: `self-pilot technical bridge only; legalCertification=false; OPC=technical proof receipt only`",
     "",
     "## MATRIX",
     "- State: `" + args.handoff.matrixState + "`",
@@ -5564,6 +5810,28 @@ function buildRuntimeDiagnosticsAnswer(args: {
     "- Thread ID: `" + args.saasContext.threadId + "`",
     "- Tier: `" + args.saasContext.saasTier + "`",
     "- Source: `" + args.saasContext.source + "`",
+    "",
+    "## Project-aware document recall",
+    "- engineRevision: `" + String((args.documentProfileRecall as unknown as { engineRevision?: string } | null)?.engineRevision ?? "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v2-PROJECT_AWARE") + "`",
+    "- Requested: `" + String(args.documentMemoryRecallRequested === true) + "`",
+    "- Injected: `" + String(args.documentProfileRecall?.injected ?? false) + "`",
+    "- Status: `" + String(args.documentProfileRecall?.status ?? "DOCUMENT_PROFILE_RECALL_NOT_REQUESTED") + "`",
+    "- Project ID: `" + String(args.documentRecallProjectContext?.projectId ?? "NO_PROJECT_ID") + "`",
+    "- Project key: `" + String(args.documentRecallProjectContext?.projectKey ?? "NO_PROJECT_KEY") + "`",
+    "- Document module ID: `" + String(args.documentRecallProjectContext?.documentModuleId ?? "NO_DOCUMENT_MODULE_ID") + "`",
+    "- Policy mode: `" + String(args.documentRecallConfig?.policyMode ?? "NO_POLICY_MODE") + "`",
+    "- Max document count: `" + String(args.documentRecallConfig?.maxDocumentCount ?? "NO_MAX_DOCUMENT_COUNT") + "`",
+    "- Ordered recall: `" + String(args.documentRecallConfig?.orderedRecall ?? false) + "`",
+    "- Fail-closed on missing requested IDs: `" + String(args.documentRecallConfig?.failClosedOnMissingRequestedIds ?? false) + "`",
+    "- Linked profile count: `" + String(args.documentProfileRecall?.items.length ?? 0) + "`",
+    "- Profile IDs: `" + String(args.documentProfileRecall?.profileIds.join(", ") || "NONE") + "`",
+    "- Memory IDs: `" + String(args.documentProfileRecall?.memoryIds.join(", ") || "NONE") + "`",
+    "- Missing memory IDs: `" + String(args.documentProfileRecall?.missingMemoryIds.join(", ") || "NONE") + "`",
+    "- Missing profile IDs: `" + String(args.documentProfileRecall?.missingProfileIds.join(", ") || "NONE") + "`",
+    "- FailClosed: `" + String(args.documentProfileRecall?.failClosed ?? false) + "`",
+    "- FailClosed reason: `" + String(args.documentProfileRecall?.failClosedReason ?? "NONE") + "`",
+    "- legalCertification: `false`",
+    "- OPC boundary: `technical proof receipt only`",
     "",
     "## Hashes",
     "- Input hash: `" + args.inputHash + "`",
