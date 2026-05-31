@@ -579,7 +579,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-PDF-INGESTION-INJECTION-v5";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-PDF-INGESTION-INJECTION-v5-TYPE_FIX_v8_2";
 
 
 
@@ -8730,7 +8730,7 @@ function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
       textLength
     );
     const declaredStatus = normalizePublicFileStatus(
-      firstStringFromSources([object], ["status", "fileStatus", "ingestionStatus"])
+      firstStringFromSources([object], ["status", "fileStatus", "ingestionStatus"]) || ""
     );
     const status = resolvePublicFileStatus({
       name,
@@ -8739,7 +8739,7 @@ function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
       content
     });
     const mode = resolvePublicFileMode(
-      firstStringFromSources([object], ["mode", "fileMode", "ingestionMode"]),
+      firstStringFromSources([object], ["mode", "fileMode", "ingestionMode"]) || "",
       status
     );
     const fileHash =
@@ -8824,10 +8824,11 @@ function inferRuntimeFileMimeType(name: string): string {
 }
 
 function resolveRuntimeFileText(object: JsonObject): string {
-  const directText = firstStringOrJoinedFromSources(
-    [object],
-    ["text", "content", "body", "preview", "extractedText", "fileText"]
-  );
+  const directText =
+    firstStringOrJoinedFromSources(
+      [object],
+      ["text", "content", "body", "preview", "extractedText", "fileText"]
+    ) || "";
 
   if (directText.trim()) {
     return directText.slice(0, 120000);
@@ -8837,10 +8838,11 @@ function resolveRuntimeFileText(object: JsonObject): string {
   const dataObject = asJsonObject(data);
 
   if (dataObject) {
-    const nestedText = firstStringOrJoinedFromSources(
-      [dataObject],
-      ["text", "content", "body", "preview", "extractedText", "fileText"]
-    );
+    const nestedText =
+      firstStringOrJoinedFromSources(
+        [dataObject],
+        ["text", "content", "body", "preview", "extractedText", "fileText"]
+      ) || "";
 
     if (nestedText.trim()) {
       return nestedText.slice(0, 120000);
@@ -8850,8 +8852,8 @@ function resolveRuntimeFileText(object: JsonObject): string {
   return "";
 }
 
-function normalizePublicFileStatus(value: string): PublicFileStatus {
-  const normalized = value.trim().toUpperCase();
+function normalizePublicFileStatus(value: string | null | undefined): PublicFileStatus {
+  const normalized = (value || "").trim().toUpperCase();
 
   if (normalized === "TEXT_READY") {
     return "TEXT_READY";
@@ -8917,8 +8919,8 @@ function resolvePublicFileStatus(args: {
   return "REFERENCE_ONLY";
 }
 
-function resolvePublicFileMode(value: string, status: PublicFileStatus): PublicFileMode {
-  const normalized = value.trim().toUpperCase();
+function resolvePublicFileMode(value: string | null | undefined, status: PublicFileStatus): PublicFileMode {
+  const normalized = (value || "").trim().toUpperCase();
 
   if (normalized === "TEXT") {
     return "TEXT";
@@ -9729,4 +9731,3 @@ function errorToMessage(error: unknown): string {
 
   return "Unknown provider error";
 }
-
