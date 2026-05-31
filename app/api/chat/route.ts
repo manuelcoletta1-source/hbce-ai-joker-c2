@@ -579,7 +579,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-PDF-INGESTION-INJECTION-v5-TYPE_FIX_v8_2";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3";
 
 
 
@@ -772,17 +772,44 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
-  const trainingDeleteVerificationRequested = isTrainingDeleteVerificationQuestion(message);
+  const memoryChainRecallRequested = isCyberneticMemoryChainRecallQuestion(message);
+  const memoryChainEvtBindingRequested =
+    !memoryChainRecallRequested && isCyberneticMemoryEvtBindingQuestion(message);
+  const memoryChainOpcBindingRequested =
+    !memoryChainRecallRequested &&
+    !memoryChainEvtBindingRequested &&
+    isCyberneticMemoryOpcBindingQuestion(message);
+  const memoryChainCandidateRequested =
+    !memoryChainRecallRequested &&
+    !memoryChainEvtBindingRequested &&
+    !memoryChainOpcBindingRequested &&
+    isCyberneticMemoryChainCandidateQuestion(message);
+  const memoryChainRouteRequested =
+    memoryChainRecallRequested ||
+    memoryChainEvtBindingRequested ||
+    memoryChainOpcBindingRequested ||
+    memoryChainCandidateRequested;
+  const semanticMemoryRouteSuppressed =
+    memoryChainRouteRequested || shouldSuppressEsoterologicalSemanticMemoryRoute(message);
+  const trainingDeleteVerificationRequested =
+    !memoryChainRouteRequested && isTrainingDeleteVerificationQuestion(message);
   const trainingSoftDeleteApplicationRequested =
-    !trainingDeleteVerificationRequested && isTrainingSoftDeleteApplicationQuestion(message);
+    !memoryChainRouteRequested &&
+    !trainingDeleteVerificationRequested &&
+    isTrainingSoftDeleteApplicationQuestion(message);
   const trainingReelaborationRequested =
-    !trainingDeleteVerificationRequested && !trainingSoftDeleteApplicationRequested && isTrainingReelaborationQuestion(message);
+    !memoryChainRouteRequested &&
+    !trainingDeleteVerificationRequested &&
+    !trainingSoftDeleteApplicationRequested &&
+    isTrainingReelaborationQuestion(message);
   const trainingBehaviorRequested =
+    !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
     !trainingSoftDeleteApplicationRequested &&
     !trainingReelaborationRequested &&
     isTrainingBehaviorQuestion(message);
   const trainingMemoryRecallRequested =
+    !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
     !trainingSoftDeleteApplicationRequested &&
     !trainingReelaborationRequested &&
@@ -806,15 +833,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     trainingBehaviorRequested ||
     trainingMemoryRecallRequested;
   const esoterologicalSemanticMemoryRequested =
-    !trainingRouteRequested && isEsoterologicalSemanticMemoryQuestion(message);
+    !memoryChainRouteRequested &&
+    !trainingRouteRequested &&
+    !semanticMemoryRouteSuppressed &&
+    isEsoterologicalSemanticMemoryQuestion(message);
   const memoryRegistrationRequested =
-    !trainingRouteRequested && !esoterologicalSemanticMemoryRequested && isMemoryRegistrationQuestion(message);
+    !memoryChainRouteRequested &&
+    !trainingRouteRequested &&
+    !esoterologicalSemanticMemoryRequested &&
+    isMemoryRegistrationQuestion(message);
   const memoryRecoveryRequested =
-    !trainingRouteRequested && !esoterologicalSemanticMemoryRequested && isMemoryRecoveryQuestion(message);
+    !memoryChainRouteRequested &&
+    !trainingRouteRequested &&
+    !esoterologicalSemanticMemoryRequested &&
+    isMemoryRecoveryQuestion(message);
   const apiSdkB2GPresentationRequested =
-    !trainingRouteRequested && !esoterologicalSemanticMemoryRequested && isApiSdkB2GPresentationQuestion(message);
+    !memoryChainRouteRequested &&
+    !trainingRouteRequested &&
+    !esoterologicalSemanticMemoryRequested &&
+    isApiSdkB2GPresentationQuestion(message);
   const iprRecallRequested =
-    trainingRouteRequested || (!esoterologicalSemanticMemoryRequested && isIprMemoryRecallQuestion(message));
+    memoryChainRouteRequested ||
+    trainingRouteRequested ||
+    (!esoterologicalSemanticMemoryRequested && isIprMemoryRecallQuestion(message));
 
 
 
@@ -869,6 +910,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     trainingBehaviorRequested,
     trainingMemoryRecallRequested,
     trainingRouteSelected,
+    memoryChainRecallRequested,
+    memoryChainEvtBindingRequested,
+    memoryChainOpcBindingRequested,
+    memoryChainCandidateRequested,
+    memoryChainRouteRequested,
+    semanticMemoryRouteSuppressed,
     esoterologicalSemanticMemoryRequested,
     iprRecall
   };
@@ -916,6 +963,48 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       handoff,
       policy,
       memory,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (memoryChainRecallRequested) {
+    answer = buildCyberneticMemoryChainRecallAnswer({
+      recall: iprRecall,
+      message,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (memoryChainEvtBindingRequested) {
+    answer = buildCyberneticMemoryEvtBindingAnswer({
+      recall: iprRecall,
+      message,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (memoryChainOpcBindingRequested) {
+    answer = buildCyberneticMemoryOpcBindingAnswer({
+      recall: iprRecall,
+      message,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (memoryChainCandidateRequested) {
+    answer = buildCyberneticMemoryCandidateAnswer({
+      handoff,
+      memory,
+      policy,
       saasContext
     });
     providerState = "COMPLETED";
@@ -1106,7 +1195,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     maxTerms: 12,
     minScore: 2.25
   });
-  const esoterologicalSemanticMemoryPersistable = shouldPersistEsoterologicalSemanticMemoryRecord(esoterologicalSemanticMemory);
+  const esoterologicalSemanticMemoryPersistable =
+    esoterologicalSemanticMemoryRequested &&
+    !semanticMemoryRouteSuppressed &&
+    shouldPersistEsoterologicalSemanticMemoryRecord(esoterologicalSemanticMemory);
 
 
 
@@ -2460,6 +2552,355 @@ LIMIT $4
 
 
 
+function extractRequestedIprMemoryIds(message: string): string[] {
+  const matches = message.match(/IPR-MEM-\d{14}-[A-Z0-9]+/gi) || [];
+  return Array.from(new Set(matches.map((item) => item.trim().toUpperCase())));
+}
+
+
+
+function isCyberneticMemoryChainRecallQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const requestedIds = extractRequestedIprMemoryIds(message);
+
+  const explicitRecallIntent =
+    normalized.includes("cybernetic_memory_recall_request") ||
+    normalized.includes("cybernetic_memory_recall_ready") ||
+    normalized.includes("memory_chain_recall_ready") ||
+    normalized.includes("inject_memory_to_chat") ||
+    normalized.includes("inject memory") ||
+    normalized.includes("recalled by memory id") ||
+    normalized.includes("recall by memory id") ||
+    normalized.includes("richiama questa memoria ipr") ||
+    normalized.includes("richiama e usa nella risposta la memoria ipr") ||
+    normalized.includes("usa nella risposta la memoria ipr");
+
+  const asksRecall =
+    normalized.includes("richiama") ||
+    normalized.includes("recall") ||
+    normalized.includes("inject") ||
+    normalized.includes("prompt memory block");
+
+  const targetsCyberneticMemory =
+    normalized.includes("memoria cibernetica") ||
+    normalized.includes("cybernetic memory") ||
+    normalized.includes("ipr memory") ||
+    normalized.includes("memoria ipr") ||
+    normalized.includes("memoryid") ||
+    normalized.includes("memory id") ||
+    normalized.includes("ipr-mem-");
+
+  return requestedIds.length > 0 && (explicitRecallIntent || (asksRecall && targetsCyberneticMemory));
+}
+
+
+
+function isCyberneticMemoryEvtBindingQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const requestedIds = extractRequestedIprMemoryIds(message);
+
+  return (
+    requestedIds.length > 0 &&
+    (normalized.includes("cybernetic_memory_evt_binding_request") ||
+      normalized.includes("ipr_memory_evt_binding_ready") ||
+      normalized.includes("ipr→evt") ||
+      normalized.includes("ipr -> evt") ||
+      normalized.includes("ipr evt binding") ||
+      normalized.includes("collegamento tra memoria ipr ed evt") ||
+      normalized.includes("verifica il collegamento tra memoria ipr ed evt"))
+  );
+}
+
+
+
+function isCyberneticMemoryOpcBindingQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const requestedIds = extractRequestedIprMemoryIds(message);
+
+  return (
+    requestedIds.length > 0 &&
+    (normalized.includes("cybernetic_memory_opc_binding_request") ||
+      normalized.includes("evt_opc_binding_ready") ||
+      normalized.includes("evt→opc") ||
+      normalized.includes("evt -> opc") ||
+      normalized.includes("evt opc binding") ||
+      normalized.includes("collegamento tra evt e opc") ||
+      normalized.includes("verifica il collegamento tra evt e opc"))
+  );
+}
+
+
+
+function isCyberneticMemoryChainCandidateQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  return (
+    normalized.includes("test memory chain") ||
+    normalized.includes("memory_chain_candidate_ready") ||
+    normalized.includes("user_selected_chat_memory") ||
+    normalized.includes("chat to ipr") ||
+    normalized.includes("chat → ipr") ||
+    normalized.includes("chat -> ipr") ||
+    normalized.includes("candidato user_selected_chat_memory") ||
+    normalized.includes("candidata user_selected_chat_memory")
+  );
+}
+
+
+
+function shouldSuppressEsoterologicalSemanticMemoryRoute(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  return (
+    normalized.includes("non creare memoria semantica") ||
+    normalized.includes("non generare memoria semantica") ||
+    normalized.includes("non creare memoria semantica automatica") ||
+    normalized.includes("non salvare nuova memoria") ||
+    normalized.includes("non salvare nulla") ||
+    normalized.includes("non salvare") ||
+    normalized.includes("diagnostica tecnica") ||
+    normalized.includes("diagnostic only") ||
+    normalized.includes("cybernetic_memory_recall_request") ||
+    normalized.includes("cybernetic_memory_evt_binding_request") ||
+    normalized.includes("cybernetic_memory_opc_binding_request") ||
+    normalized.includes("memory_chain_recall_ready") ||
+    normalized.includes("cybernetic_memory_recall_ready") ||
+    normalized.includes("ipr_memory_evt_binding_ready") ||
+    normalized.includes("evt_opc_binding_ready")
+  );
+}
+
+
+
+function selectRequestedIprRecallItem(
+  message: string,
+  items: IprRecallInjectionItem[]
+): IprRecallInjectionItem | null {
+  const requestedIds = extractRequestedIprMemoryIds(message).map((item) => normalizeText(item));
+
+  if (requestedIds.length > 0) {
+    const exact = items.find(
+      (item) => item.memoryId && requestedIds.includes(normalizeText(item.memoryId))
+    );
+
+    if (exact) {
+      return exact;
+    }
+  }
+
+  return items[0] || null;
+}
+
+
+
+function buildCyberneticMemoryCandidateAnswer(args: {
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  return [
+    "MEMORY_CHAIN_CANDIDATE_READY",
+    "",
+    "1. Sintesi operativa",
+    "La chat corrente è candidata a diventare memoria cibernetica IPR-bound solo tramite salvataggio esplicito dell’utente. Il contenuto utile deve essere sintetizzato e conservato in memory_records, non nella cronologia grezza.",
+    "",
+    "2. Decisione",
+    "Usare il bottone 1 · Chat → IPR per trasformare la chat selezionata in USER_SELECTED_CHAT_MEMORY.",
+    "",
+    "3. Costo",
+    "Non salvare rumore, test sporchi o diagnostica non richiesta; conservare solo sintesi riusabile e verificabile.",
+    "",
+    "4. Traccia",
+    `Human IPR previsto: ${args.handoff.humanIpr}`,
+    `Runtime memory corrente: ${args.memory.memoryId}`,
+    `Tenant: ${args.saasContext.tenantId}`,
+    `Workspace: ${args.saasContext.workspaceId}`,
+    "EVT previsto: generato al turno corrente e collegabile al record IPR dopo il salvataggio.",
+    "OPC previsto: ricevuta tecnica generata al turno corrente e collegabile al record IPR dopo il salvataggio.",
+    "",
+    "5. Tempo",
+    "Il record diventa utile solo se resta ACTIVE, promptEligible=true e reusableInPrompt=true nel tempo.",
+    "",
+    "6. Boundary",
+    "reusableInPrompt=true dopo salvataggio esplicito su IPR",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+
+function buildCyberneticMemoryChainRecallAnswer(args: {
+  recall: IprRecallInjection;
+  message: string;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const primary = selectRequestedIprRecallItem(args.message, args.recall.items);
+  const requestedIds = extractRequestedIprMemoryIds(args.message);
+
+  if (!primary) {
+    return [
+      "CYBERNETIC_MEMORY_RECALL_NOT_FOUND",
+      "MEMORY_CHAIN_RECALL_READY: false",
+      "",
+      `requestedMemoryIds: ${requestedIds.join(", ") || "NO_REQUESTED_MEMORY_IDS"}`,
+      `recallStatus: ${args.recall.status}`,
+      `recallInjected: ${String(args.recall.injected)}`,
+      `recallItemsCount: ${String(args.recall.items.length)}`,
+      `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+      args.recall.error ? `Errore recall: ${args.recall.error}` : "Errore recall: none",
+      "Motivo: nessun memory_records ACTIVE/reusableInPrompt=true corrisponde al memoryId richiesto.",
+      "legalCertification=false",
+      "OPC=technical proof receipt only"
+    ].join("\n");
+  }
+
+  const promptEligible = primary.memoryStatus ? normalizeText(primary.memoryStatus) === "active" : true;
+
+  return [
+    "CYBERNETIC_MEMORY_RECALL_READY",
+    "MEMORY_CHAIN_RECALL_READY: true",
+    "",
+    "1. Memoria IPR richiamata",
+    `memoryId: ${primary.memoryId || "NO_MEMORY_ID"}`,
+    `sourceSavedChatId: ${primary.sourceSavedChatId || "NO_SAVED_CHAT"}`,
+    `sourceThreadId: ${primary.sourceThreadId || primary.sessionId || args.recall.sessionId}`,
+    "",
+    "2. Triade collegata",
+    `EVT collegato: ${primary.lastEvtId || "NO_EVT_IN_RECALL_RECORD"}`,
+    `OPC collegato: ${primary.lastOpcProofId || "NO_OPC_IN_RECALL_RECORD"}`,
+    `OPC chain hash: ${primary.lastOpcChainHash || "NO_OPC_CHAIN_HASH_IN_RECALL_RECORD"}`,
+    "",
+    "3. Stato memoria",
+    `status memoria: ${primary.memoryStatus || "ACTIVE"}`,
+    `promptEligible: ${String(promptEligible)}`,
+    "reusableInPrompt: true",
+    `quality: ${primary.quality || "UNKNOWN"}`,
+    `classification: ${primary.classification || "UNCLASSIFIED"}`,
+    `recallInjected: ${String(args.recall.injected)}`,
+    `recallItemsCount: ${String(args.recall.items.length)}`,
+    `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+    "",
+    "4. Sintesi operativa della memoria",
+    primary.memorySummary || primary.memoryTitle || "Sintesi memoria non disponibile nel record pubblico.",
+    "",
+    "5. Valore SaaS B2B/B2G",
+    "Questa memoria trasforma JOKER-C2 da chatbot a runtime operativo perché la risposta non dipende dalla cronologia volatile: dipende da un record IPR-bound ACTIVE, richiamato dal database persistente e collegato a EVT/OPC.",
+    "",
+    "6. Collegamento HBCE",
+    `Human IPR: ${args.handoff.humanIpr}`,
+    `Runtime memory ID: ${args.memory.memoryId}`,
+    `Tenant: ${args.saasContext.tenantId}`,
+    `Workspace: ${args.saasContext.workspaceId}`,
+    "Document registry: NO_LINKED_PROFILE se il test è senza file; atteso e non bloccante.",
+    "",
+    "7. Boundary",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+
+function buildCyberneticMemoryEvtBindingAnswer(args: {
+  recall: IprRecallInjection;
+  message: string;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const primary = selectRequestedIprRecallItem(args.message, args.recall.items);
+
+  if (!primary) {
+    return [
+      "IPR_MEMORY_EVT_BINDING_NOT_FOUND",
+      `recallStatus: ${args.recall.status}`,
+      `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+      "legalCertification=false",
+      "OPC=technical proof receipt only"
+    ].join("\n");
+  }
+
+  return [
+    "IPR_MEMORY_EVT_BINDING_READY",
+    "",
+    `memoryId: ${primary.memoryId || "NO_MEMORY_ID"}`,
+    `evtId: ${primary.lastEvtId || "NO_EVT_IN_RECALL_RECORD"}`,
+    `Human IPR: ${args.handoff.humanIpr}`,
+    `Tenant: ${args.saasContext.tenantId}`,
+    `Workspace: ${args.saasContext.workspaceId}`,
+    `stato memoria: ${primary.memoryStatus || "ACTIVE"}`,
+    "stato EVT: LINKED_TO_IPR_MEMORY",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+
+function buildCyberneticMemoryOpcBindingAnswer(args: {
+  recall: IprRecallInjection;
+  message: string;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const primary = selectRequestedIprRecallItem(args.message, args.recall.items);
+
+  if (!primary) {
+    return [
+      "EVT_OPC_BINDING_NOT_FOUND",
+      `recallStatus: ${args.recall.status}`,
+      `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+      "legalCertification=false",
+      "OPC=technical proof receipt only"
+    ].join("\n");
+  }
+
+  return [
+    "EVT_OPC_BINDING_READY",
+    "",
+    `memoryId: ${primary.memoryId || "NO_MEMORY_ID"}`,
+    `evtId: ${primary.lastEvtId || "NO_EVT_IN_RECALL_RECORD"}`,
+    `opcId: ${primary.lastOpcProofId || "NO_OPC_IN_RECALL_RECORD"}`,
+    `opcChainHash: ${primary.lastOpcChainHash || "NO_OPC_CHAIN_HASH_IN_RECALL_RECORD"}`,
+    "hash/proof status: TECHNICAL_PROOF_LINKED_TO_IPR_MEMORY",
+    `Human IPR: ${args.handoff.humanIpr}`,
+    `Tenant: ${args.saasContext.tenantId}`,
+    `Workspace: ${args.saasContext.workspaceId}`,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+
 function isEsoterologicalSemanticMemoryQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
@@ -3496,7 +3937,7 @@ function buildIprTrainingMemoryRecallAnswer(args: {
 
 
 function isIprMemoryRecallQuestion(message: string): boolean {
-  if (isEsoterologicalSemanticMemoryQuestion(message)) {
+  if (!shouldSuppressEsoterologicalSemanticMemoryRoute(message) && isEsoterologicalSemanticMemoryQuestion(message)) {
     return false;
   }
 
@@ -9731,3 +10172,4 @@ function errorToMessage(error: unknown): string {
 
   return "Unknown provider error";
 }
+
