@@ -357,7 +357,7 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v1.7-SELF_PILOT_MEMORY_SCOPE_BRIDGE";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v1.8-TEMPORAL_DISPLAY_UTC_LOCAL_BRIDGE";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -3042,23 +3042,36 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 }
 
 
-function InfoList({ items }: { items: Array<{ label: string; value: string }> }) {
+type InfoListItem = {
+  label: string;
+  value: string;
+  detail?: string;
+  title?: string;
+};
+
+
+function InfoList({ items }: { items: InfoListItem[] }) {
   return (
     <dl className="joker-info-list">
       {items.map((item) => {
         const visibleValue = normalizeVisibleText(item.value);
+        const visibleDetail = item.detail ? normalizeVisibleText(item.detail) : "";
+        const title = normalizeVisibleText(item.title || [visibleValue, visibleDetail].filter(Boolean).join(" · "));
 
 
         return (
           <div
-            key={`${item.label}-${visibleValue}`}
-            className={["joker-info-row", getStatusClass(visibleValue)]
+            key={`${item.label}-${visibleValue}-${visibleDetail}`}
+            className={["joker-info-row", visibleDetail ? "has-detail" : "", getStatusClass(visibleValue)]
               .filter(Boolean)
               .join(" ")}
             translate="no"
           >
             <dt>{item.label}</dt>
-            <dd title={visibleValue}>{compact(visibleValue, 60)}</dd>
+            <dd title={title}>
+              <span>{compact(visibleValue, visibleDetail ? 54 : 60)}</span>
+              {visibleDetail ? <small>{compact(visibleDetail, 72)}</small> : null}
+            </dd>
           </div>
         );
       })}
@@ -3545,6 +3558,51 @@ function formatUtcPlusTwoTemporalSnapshot(value: string): string {
 
 
   return `${year}-${month}-${day} ${hour}:${minute}:${second} Torino / Italia / Europa · UTC+2`;
+}
+
+
+type TemporalDisplayValue = {
+  utc: string;
+  local: string;
+  title: string;
+};
+
+
+function formatUtcAndRomeTemporalDisplay(value: string | null | undefined): TemporalDisplayValue {
+  const visible = normalizeVisibleText(value || "");
+  const parsed = Date.parse(visible);
+
+
+  if (!visible || !Number.isFinite(parsed)) {
+    const fallback = visible || "-";
+
+
+    return {
+      utc: fallback,
+      local: fallback,
+      title: fallback
+    };
+  }
+
+
+  const date = new Date(parsed);
+  const utc = date.toISOString();
+  const local = new Intl.DateTimeFormat("it-IT", {
+    timeZone: JOKER_C2_BIRTH_ANCHOR_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  }).format(date);
+
+
+  return {
+    utc,
+    local: `${local} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}`,
+    title: `UTC ${utc} · ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE} ${local}`
+  };
 }
 
 
@@ -5482,6 +5540,10 @@ export default function InterfacePage() {
   ];
 
 
+  const lastRefreshTemporalDisplay = formatUtcAndRomeTemporalDisplay(iprMemoryDashboard.lastRefreshUtc);
+  const cyberneticChainUpdatedTemporalDisplay = formatUtcAndRomeTemporalDisplay(cyberneticMemoryChain.updatedAt);
+
+
   const iprMemoryControlRows = [
     { label: "Human IPR", value: humanIpr },
     { label: "Tenant", value: activeTenantId },
@@ -5497,7 +5559,7 @@ export default function InterfacePage() {
     { label: "Recall items", value: String(iprMemoryDashboard.recallItems.length) },
     { label: "Document profiles", value: dashboardDocumentRegistry.profileCount },
     { label: "Linked docs", value: dashboardDocumentRegistry.linkedMemoryCount },
-    { label: "Last refresh UTC", value: iprMemoryDashboard.lastRefreshUtc || "-" },
+    { label: "Last refresh", value: `UTC ${lastRefreshTemporalDisplay.utc}`, detail: lastRefreshTemporalDisplay.local, title: lastRefreshTemporalDisplay.title },
     { label: "legalCertification", value: "false" }
   ];
 
@@ -5516,7 +5578,7 @@ export default function InterfacePage() {
     { label: "Document registry", value: cyberneticMemoryChain.documentRegistryStatus },
     { label: "Linked profiles", value: cyberneticMemoryChain.linkedProfileCount },
     { label: "Source", value: cyberneticMemoryChain.source },
-    { label: "Updated", value: cyberneticMemoryChain.updatedAt },
+    { label: "Updated", value: `UTC ${cyberneticChainUpdatedTemporalDisplay.utc}`, detail: cyberneticChainUpdatedTemporalDisplay.local, title: cyberneticChainUpdatedTemporalDisplay.title },
     { label: "legalCertification", value: "false" },
     { label: "OPC boundary", value: "technical proof receipt only" }
   ];
@@ -6856,6 +6918,21 @@ export default function InterfacePage() {
             "Liberation Mono",
             "Courier New",
             monospace;
+        }
+
+
+        .joker-info-row dd span,
+        .joker-info-row dd small {
+          display: block;
+        }
+
+
+        .joker-info-row dd small {
+          margin-top: 3px;
+          color: #94a3b8;
+          font-size: 10px;
+          font-weight: 760;
+          line-height: 1.35;
         }
 
 
