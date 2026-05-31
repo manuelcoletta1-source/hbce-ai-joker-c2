@@ -20,7 +20,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-GLOSSARY_CANONICAL_FIX-v4";
 
 
 type FileStatus =
@@ -135,15 +135,53 @@ type DocumentProfileContext = {
 
 
 type CanonicalCorpusVolumeProfile = {
-  volume: "V1" | "V2" | "V3" | "V4" | "V5";
+  volume: "GLOSSARY" | "V1" | "V2" | "V3" | "V4" | "V5";
   title: string;
   summary: string;
   keyTerms: string[];
+  canonicalDocumentKind?: string;
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_CANONICAL_FIX_v3";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_GLOSSARY_CANONICAL_FIX_v4";
 
-const CANONICAL_CORPUS_VOLUME_PROFILES: Record<CanonicalCorpusVolumeProfile["volume"], CanonicalCorpusVolumeProfile> = {
+const CANONICAL_CORPUS_GLOSSARY_PROFILE: CanonicalCorpusVolumeProfile = {
+  volume: "GLOSSARY",
+  title: "GLOSSARIO CANONICO DEL CORPUS",
+  canonicalDocumentKind: "CANONICAL_GLOSSARY",
+  summary:
+    "Profilo documento GLOSSARIO CANONICO DEL CORPUS: lessico canonico trasversale del CORPUS ESOTEROLOGIA ERMETICA, con mappatura delle voci operative, appartenenza primaria ai volumi e sviluppo secondario V1-V5. Stabilizza l'asse Decisione · Costo · Traccia · Tempo, IPR-CEE, Rascensionale, Alien Code e le soglie operative come vocabolario riusabile del runtime.",
+  keyTerms: [
+    "Glossario Canonico del Corpus",
+    "Esoterologia",
+    "IPR-CEE",
+    "Decisione",
+    "Costo",
+    "Traccia",
+    "Tempo",
+    "Rascensionale",
+    "Innesco rascensionale",
+    "Soglia operativa",
+    "Soglia fail-closed",
+    "Sigillo operativo",
+    "Traccia opponibile",
+    "Codice alieno / Alien Code",
+    "Interfaccia rascensionale",
+    "Accoppiamento organismo-sistema",
+    "Riconconicità organismo-sistema",
+    "Unità qubitronica",
+    "Corpus Esoterologia Ermetica",
+    "V1",
+    "V2",
+    "V3",
+    "V4",
+    "V5",
+    "IPR",
+    "EVT",
+    "OPC"
+  ]
+};
+
+const CANONICAL_CORPUS_VOLUME_PROFILES: Record<"V1" | "V2" | "V3" | "V4" | "V5", CanonicalCorpusVolumeProfile> = {
   V1: {
     volume: "V1",
     title: "ESOTEROLOGIA",
@@ -342,6 +380,14 @@ const REFERENCE_ONLY_MIME_TYPES = new Set([
 const CANONICAL_AXIS_DCTT = "Decisione · Costo · Traccia · Tempo";
 
 const DOCUMENT_KEY_TERM_CANDIDATES = [
+  "Glossario Canonico del Corpus",
+  "IPR-CEE",
+  "Soglia fail-closed",
+  "Sigillo operativo",
+  "Codice alieno / Alien Code",
+  "Accoppiamento organismo-sistema",
+  "Rascensionale",
+  "Innesco rascensionale",
   "Matrix",
   "Decisione",
   "Costo",
@@ -1169,9 +1215,34 @@ function includesAll(normalized: string, terms: string[]): boolean {
 
 
 
+function isCanonicalCorpusGlossary(file: StoredRuntimeFile): boolean {
+  const normalizedName = normalizeSearchText(file.name);
+  const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 60000)}`);
+
+  const hasExplicitGlossaryTitle =
+    normalizedName.includes("glossario canonico del corpus") ||
+    normalized.includes("glossario canonico del corpus");
+
+  const hasCanonicalGlossaryStructure =
+    normalized.includes("con volume di appartenenza primaria") ||
+    normalized.includes("n a b c d e v vs");
+
+  const hasCrossVolumeCanonicalLexicon =
+    includesAll(normalized, ["ipr cee", "decisione", "costo", "traccia", "tempo"]) &&
+    includesAll(normalized, ["soglia fail closed", "dio"]);
+
+  return Boolean(hasExplicitGlossaryTitle && (hasCanonicalGlossaryStructure || hasCrossVolumeCanonicalLexicon));
+}
+
+
 function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCorpusVolumeProfile | null {
   const normalizedName = normalizeSearchText(file.name);
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 30000)}`);
+
+
+  if (isCanonicalCorpusGlossary(file)) {
+    return CANONICAL_CORPUS_GLOSSARY_PROFILE;
+  }
 
 
   if (
@@ -1522,8 +1593,10 @@ function buildDocumentProfileInput(
       routeVersion: FILE_ROUTE_REVISION,
       canonicalProfileRevision: DOCUMENT_PROFILE_CANONICAL_FIX_REVISION,
       canonicalProfileApplied: Boolean(canonicalCorpusProfile),
+      canonicalDocumentKind: canonicalCorpusProfile?.canonicalDocumentKind ?? null,
       canonicalVolume: canonicalCorpusProfile?.volume ?? null,
       canonicalTitle: canonicalCorpusProfile?.title ?? null,
+      glossaryGuardApplied: canonicalCorpusProfile?.canonicalDocumentKind === "CANONICAL_GLOSSARY",
       fileId: file.id,
       filename: file.name,
       fileHash: file.fileHash,
