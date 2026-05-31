@@ -579,7 +579,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4";
 
 
 
@@ -789,26 +789,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryChainEvtBindingRequested ||
     memoryChainOpcBindingRequested ||
     memoryChainCandidateRequested;
+  const noSavePersistenceRequested =
+    !memoryChainRouteRequested && isHardNoSavePersistenceQuestion(message);
+  const runtimeMemoryWriteSuppressed = noSavePersistenceRequested;
   const semanticMemoryRouteSuppressed =
-    memoryChainRouteRequested || shouldSuppressEsoterologicalSemanticMemoryRoute(message);
+    noSavePersistenceRequested ||
+    memoryChainRouteRequested ||
+    shouldSuppressEsoterologicalSemanticMemoryRoute(message);
   const trainingDeleteVerificationRequested =
-    !memoryChainRouteRequested && isTrainingDeleteVerificationQuestion(message);
+    !noSavePersistenceRequested &&
+    !memoryChainRouteRequested &&
+    isTrainingDeleteVerificationQuestion(message);
   const trainingSoftDeleteApplicationRequested =
+    !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
     isTrainingSoftDeleteApplicationQuestion(message);
   const trainingReelaborationRequested =
+    !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
     !trainingSoftDeleteApplicationRequested &&
     isTrainingReelaborationQuestion(message);
   const trainingBehaviorRequested =
+    !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
     !trainingSoftDeleteApplicationRequested &&
     !trainingReelaborationRequested &&
     isTrainingBehaviorQuestion(message);
   const trainingMemoryRecallRequested =
+    !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
     !trainingSoftDeleteApplicationRequested &&
@@ -833,29 +844,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     trainingBehaviorRequested ||
     trainingMemoryRecallRequested;
   const esoterologicalSemanticMemoryRequested =
+    !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
     !semanticMemoryRouteSuppressed &&
     isEsoterologicalSemanticMemoryQuestion(message);
   const memoryRegistrationRequested =
+    !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
     !esoterologicalSemanticMemoryRequested &&
     isMemoryRegistrationQuestion(message);
   const memoryRecoveryRequested =
+    !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
     !esoterologicalSemanticMemoryRequested &&
     isMemoryRecoveryQuestion(message);
   const apiSdkB2GPresentationRequested =
+    !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
     !esoterologicalSemanticMemoryRequested &&
     isApiSdkB2GPresentationQuestion(message);
   const iprRecallRequested =
-    memoryChainRouteRequested ||
-    trainingRouteRequested ||
-    (!esoterologicalSemanticMemoryRequested && isIprMemoryRecallQuestion(message));
+    !noSavePersistenceRequested &&
+    (memoryChainRouteRequested ||
+      trainingRouteRequested ||
+      (!esoterologicalSemanticMemoryRequested && isIprMemoryRecallQuestion(message)));
 
 
 
@@ -869,8 +885,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     saasContext,
     sessionId,
     message,
-    limit: 6,
-    promptMaxChars: 7000
+    limit: noSavePersistenceRequested ? 0 : 6,
+    promptMaxChars: noSavePersistenceRequested ? 0 : 7000
   });
 
 
@@ -915,6 +931,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryChainOpcBindingRequested,
     memoryChainCandidateRequested,
     memoryChainRouteRequested,
+    noSavePersistenceRequested,
+    runtimeMemoryWriteSuppressed,
     semanticMemoryRouteSuppressed,
     esoterologicalSemanticMemoryRequested,
     iprRecall
@@ -955,6 +973,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (noSavePersistenceRequested) {
+    answer = buildNoSaveGuardAnswer({
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (fileIngestionRequested) {
@@ -1179,7 +1206,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  const esoterologicalSemanticMemory = buildEsoterologicalSemanticMemoryRecord({
+  const esoterologicalSemanticMemoryCandidate = buildEsoterologicalSemanticMemoryRecord({
     message,
     humanIpr: handoff.humanIpr,
     runtimeIpr: RUNTIME_IPR,
@@ -1191,11 +1218,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     timestamp: t,
     alienCodeSource: "GLOSSARIO_CANONICO",
     organismSystemCoupling: buildOrganismSystemCouplingLabel(handoff),
-    reusableInPrompt: true,
+    reusableInPrompt: !noSavePersistenceRequested,
     maxTerms: 12,
     minScore: 2.25
   });
+  const esoterologicalSemanticMemory = noSavePersistenceRequested
+    ? applyNoSavePolicyToEsoterologicalSemanticMemoryRecord(esoterologicalSemanticMemoryCandidate)
+    : esoterologicalSemanticMemoryCandidate;
   const esoterologicalSemanticMemoryPersistable =
+    !noSavePersistenceRequested &&
     esoterologicalSemanticMemoryRequested &&
     !semanticMemoryRouteSuppressed &&
     shouldPersistEsoterologicalSemanticMemoryRecord(esoterologicalSemanticMemory);
@@ -1216,23 +1247,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  memory = updateMemoryAfterTurn({
-    memory,
-    t,
-    handoff,
-    userMessage: message,
-    assistantMessage: safeAnswer,
-    evtId: evt.id,
-    opcId: opc.id,
-    opcChainHash: opc.chainHash,
-    policy,
-    providerState,
-    registeredEvent: registeredEventForMemory,
-    registeredEventName: registeredEventForMemory?.registeredEventName ?? null,
-    esoterologicalSemanticMemory,
-    esoterologicalSemanticMemoryPersistable,
-    saasContext
-  });
+  if (!runtimeMemoryWriteSuppressed) {
+    memory = updateMemoryAfterTurn({
+      memory,
+      t,
+      handoff,
+      userMessage: message,
+      assistantMessage: safeAnswer,
+      evtId: evt.id,
+      opcId: opc.id,
+      opcChainHash: opc.chainHash,
+      policy,
+      providerState,
+      registeredEvent: registeredEventForMemory,
+      registeredEventName: registeredEventForMemory?.registeredEventName ?? null,
+      esoterologicalSemanticMemory,
+      esoterologicalSemanticMemoryPersistable,
+      saasContext
+    });
+  }
 
 
 
@@ -1457,7 +1490,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               memoryHashAfter,
               tokenUsage,
               providerError,
-              finishReason
+              finishReason,
+              noSavePersistenceRequested,
+              runtimeMemoryWriteSuppressed
             })
           : safeAnswer;
 
@@ -1482,7 +1517,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  if (runtimeStatusTableRequested || runtimeDiagnosticsRequested || temporalCertificateRequested || opcProofSummaryRequested || selfDiagnosisRequested) {
+  if (
+    !runtimeMemoryWriteSuppressed &&
+    (runtimeStatusTableRequested ||
+      runtimeDiagnosticsRequested ||
+      temporalCertificateRequested ||
+      opcProofSummaryRequested ||
+      selfDiagnosisRequested)
+  ) {
     memory = updateAssistantDiagnosticMemory({
       memory,
       finalAnswer,
@@ -1628,6 +1670,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     identity: buildRuntimeIdentity(temporalFrame),
     temporal: temporalFrame,
     alienCodePipeline: buildAlienCodePipelineDiagnostic(),
+    noSaveGuard: {
+      requested: noSavePersistenceRequested,
+      noMemoryCreated: noSavePersistenceRequested,
+      runtimeMemoryWriteSuppressed,
+      semanticMemoryPersistable: esoterologicalSemanticMemoryPersistable,
+      reusableInPrompt: !noSavePersistenceRequested,
+      legalCertification: false,
+      opc: "technical proof receipt only"
+    },
     semanticMemory: publicSemanticMemory,
     semanticMemoryPublic: publicSemanticMemory,
     esoterologicalSemanticMemory: publicSemanticMemory,
@@ -1675,6 +1726,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       tier: saasContext.saasTier,
       source: saasContext.source,
       memory: toPublicMemory(memory),
+      noSaveGuard: {
+        requested: noSavePersistenceRequested,
+        runtimeMemoryWriteSuppressed,
+        semanticMemoryPersistable: esoterologicalSemanticMemoryPersistable,
+        reusableInPrompt: !noSavePersistenceRequested,
+        legalCertification: false,
+        opc: "technical proof receipt only"
+      },
       semanticMemory: publicSemanticMemory,
       esoterologicalSemanticMemory: publicSemanticMemory,
       semanticMemoryPersistable: esoterologicalSemanticMemoryPersistable,
@@ -2664,6 +2723,63 @@ function isCyberneticMemoryChainCandidateQuestion(message: string): boolean {
 
 
 
+function isHardNoSavePersistenceQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  const explicitMemoryCreationSignals = [
+    "test memory chain",
+    "memory_chain_candidate_ready",
+    "user_selected_chat_memory",
+    "chat to ipr",
+    "chat → ipr",
+    "chat -> ipr",
+    "candidato user_selected_chat_memory",
+    "candidata user_selected_chat_memory",
+    "save chat to ipr",
+    "salva questa chat su ipr"
+  ];
+
+  const negativeGuardSignals = [
+    "test negative guard",
+    "no_memory_created",
+    "non salvare questo messaggio",
+    "non creare memoria ipr",
+    "non creare memoria semantica",
+    "non generare record riusabile",
+    "non aggiungere nulla a memory_records",
+    "non rendere questo contenuto reusableinprompt",
+    "non rendere questo contenuto reusable in prompt",
+    "non salvare nulla",
+    "non salvare nuova memoria",
+    "non salvare"
+  ];
+
+  if (normalized.includes("test negative guard") || normalized.includes("no_memory_created")) {
+    return true;
+  }
+
+  if (explicitMemoryCreationSignals.some((signal) => normalized.includes(signal))) {
+    return false;
+  }
+
+  const hasNoSaveSignal = negativeGuardSignals.some((signal) => normalized.includes(signal));
+  const mentionsPersistenceTarget =
+    normalized.includes("memoria") ||
+    normalized.includes("memory_records") ||
+    normalized.includes("reusableinprompt") ||
+    normalized.includes("riusabile") ||
+    normalized.includes("persistenza") ||
+    normalized.includes("salvare");
+
+  return hasNoSaveSignal && mentionsPersistenceTarget;
+}
+
+
+
 function shouldSuppressEsoterologicalSemanticMemoryRoute(message: string): boolean {
   if (!message.trim()) {
     return false;
@@ -3017,6 +3133,64 @@ function buildPublicSemanticMemorySnapshot(args: {
       publicContract: "controlled semantic memory snapshot"
     }
   };
+}
+
+
+
+function applyNoSavePolicyToEsoterologicalSemanticMemoryRecord(
+  record: EsoterologicalSemanticMemoryRecord
+): EsoterologicalSemanticMemoryRecord {
+  return {
+    ...record,
+    policy: {
+      ...record.policy,
+      saveRaw: false,
+      saveSynthesis: false,
+      reusableInPrompt: false,
+      failClosedReason: "NO_SAVE_GUARD_REQUESTED"
+    }
+  };
+}
+
+
+
+function buildNoSaveGuardAnswer(args: {
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  return [
+    "NO_MEMORY_CREATED",
+    "",
+    "NO_SAVE_GUARD_READY: true",
+    "semanticMemoryPersistable=false",
+    "semanticMemoryReusableInPrompt=false",
+    "runtimeMemoryWriteSuppressed=true",
+    "noNewIprMemory=true",
+    "noNewSemanticMemoryPersistable=true",
+    "",
+    "1. Decisione",
+    "Il prompt contiene un comando esplicito di non persistenza. /api/chat conserva solo EVT, OPC, audit e model usage come tracciabilità tecnica dell’operazione corrente.",
+    "",
+    "2. Memoria",
+    "Nessuna nuova memoria IPR-bound deve essere creata da questo turno. Nessuna sintesi semantica deve diventare persistable o reusableInPrompt.",
+    "",
+    "3. Boundary operativo",
+    "EVT/OPC/audit restano ammessi perché sono ricevute tecniche e ricostruzione operativa, non memoria riusabile del contenuto.",
+    "",
+    "4. Stato runtime",
+    "Human IPR: " + args.handoff.humanIpr,
+    "Runtime IPR: " + RUNTIME_IPR,
+    "Memory scope: " + args.memory.scope,
+    "Tenant: " + args.saasContext.tenantId,
+    "Workspace: " + args.saasContext.workspaceId,
+    "Policy: " + args.policy.decision + " / " + args.policy.operationDecision,
+    "",
+    "5. Boundary",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
 }
 
 
@@ -5060,6 +5234,8 @@ function buildRuntimeDiagnosticsAnswer(args: {
   tokenUsage: CompletionTokenUsage;
   providerError: string | null;
   finishReason: string | null;
+  noSavePersistenceRequested?: boolean;
+  runtimeMemoryWriteSuppressed?: boolean;
 }): string {
   const evtPersistenceStatus = stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN");
   const evtPersistenceOk = stringPath(args.persistenceBridge.evtPersistence, "ok", "false");
@@ -5094,8 +5270,12 @@ function buildRuntimeDiagnosticsAnswer(args: {
 
 
   const flushErrors = getRuntimeMemoryFlushErrors();
-  const memoryWriteStatus =
-    args.memory.persistenceMode === "DATABASE_PERSISTENT" && flushErrors.length === 0
+  const runtimeMemoryWriteSuppressed = args.runtimeMemoryWriteSuppressed === true;
+  const noSavePersistenceRequested = args.noSavePersistenceRequested === true;
+  const memoryWriteAttempted = !runtimeMemoryWriteSuppressed && args.memory.persistenceMode === "DATABASE_PERSISTENT";
+  const memoryWriteStatus = runtimeMemoryWriteSuppressed
+    ? "NO_MEMORY_WRITE_SUPPRESSED"
+    : args.memory.persistenceMode === "DATABASE_PERSISTENT" && flushErrors.length === 0
       ? "DATABASE_PERSISTENT_ACTIVE_OR_SCHEDULED"
       : args.memory.persistenceMode === "DATABASE_PERSISTENT"
         ? "DATABASE_PERSISTENT_WITH_FLUSH_WARNINGS"
@@ -5141,6 +5321,13 @@ function buildRuntimeDiagnosticsAnswer(args: {
     "- Flags: `" + args.policy.flags.join(", ") + "`",
     "- Reason: `" + args.policy.reason + "`",
     "",
+    "## No-save guard",
+    "- Requested: `" + String(noSavePersistenceRequested) + "`",
+    "- Runtime memory write suppressed: `" + String(runtimeMemoryWriteSuppressed) + "`",
+    "- New reusable memory allowed: `" + String(!runtimeMemoryWriteSuppressed) + "`",
+    "- Expected semantic persistable: `false`",
+    "- Boundary: `EVT/OPC/audit may persist; prompt content must not become reusable memory when guard is active.`",
+    "",
     "## Memory",
     "- Scope: `" + args.memory.scope + "`",
     "- Authority: `" + args.memory.authority + "`",
@@ -5174,7 +5361,7 @@ function buildRuntimeDiagnosticsAnswer(args: {
     "- Database available: `" + String(args.memory.databaseAvailable) + "`",
     "",
     "## Database memory",
-    "- memory_records write attempted: `" + String(args.memory.persistenceMode === "DATABASE_PERSISTENT") + "`",
+    "- memory_records write attempted: `" + String(memoryWriteAttempted) + "`",
     "- memory_records write status: `" + memoryWriteStatus + "`",
     "- memory_records read available: `" + String(args.memory.storeKind === "DATABASE_PERSISTENT") + "`",
     "- database flush errors: `" + (flushErrors.length ? flushErrors.join(" | ") : "none") + "`",
