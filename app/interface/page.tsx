@@ -361,7 +361,7 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v1.9-DOCUMENT_PROFILE_MEMORY_SELECTOR";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v1.10-RECORDS_PAYLOAD_DOCUMENT_REGISTRY_BRIDGE";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -4649,6 +4649,8 @@ export default function InterfacePage() {
             includeInactive: false,
             includeMemorySaves: true,
             includeRegisteredEvents: true,
+            includeDocumentProfiles: true,
+            onlyLinkedDocumentProfiles: false,
             reusableInPrompt: true,
             limit: 10
           })
@@ -4707,6 +4709,7 @@ export default function InterfacePage() {
         promptMemoryBlock: text(recallPayload.promptMemoryBlock, ""),
         lastRefreshUtc: new Date().toISOString()
       });
+      setFileRegistryPayload(recordsPayload);
       setIprMemoryNotice("IPR memory dashboard refreshed.");
     } catch (err) {
       setIprMemoryError(err instanceof Error ? err.message : "IPR_MEMORY_REFRESH_FAILED");
