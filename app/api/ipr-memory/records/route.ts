@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   ensureHbceDatabaseReady,
+  queryHbceDatabase,
   listIprChatMemorySavesFromDatabase,
   listIprMemoryRecordsFromDatabase,
   listRegisteredMemoryEventsFromDatabase,
@@ -23,7 +24,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Records Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-RECORDS-v1.1-DOCUMENT_PROFILE_BRIDGE";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-RECORDS-v1.2-RESTORE_SOFT_DELETED_MEMORY";
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 200;
 
@@ -39,6 +40,10 @@ type RecordsRouteInput = {
   savedChatId?: string | null;
   sourceSavedChatId?: string | null;
   memoryId?: string | null;
+  restoreMemoryId?: string | null;
+  action?: string | null;
+  operation?: string | null;
+  allowMutationViaGet?: boolean | string | number | null;
   classification?: string | null;
   memoryStatus?: string | null;
   reusableInPrompt?: boolean | string | number | null;
@@ -59,6 +64,9 @@ type RecordsRouteContext = {
   sourceThreadId: string | null;
   sourceSavedChatId: string | null;
   memoryId: string | null;
+  restoreMemoryId: string | null;
+  action: string | null;
+  allowMutationViaGet: boolean;
   classification: string | null;
   memoryStatus: string | null;
   reusableInPrompt: boolean | null;
@@ -80,7 +88,7 @@ function jsonResponse(payload: JsonRecord, init?: ResponseInit) {
       persistenceMode: HBCE_DATABASE_PERSISTENCE_MODE,
       legalCertification: false,
       boundary:
-        "IPR memory records retrieval is a read-only SaaS endpoint. It does not create legal certification, does not create new memory and does not replace official identity, public authority or trust-service workflows."
+        "IPR memory records retrieval and explicitly requested soft-deleted recall restoration are technical SaaS operations. They do not create legal certification, do not create new memory and do not replace official identity, public authority or trust-service workflows."
     },
     init
   );
@@ -98,6 +106,28 @@ function normalizeString(value: unknown): string | null {
 function normalizeUpperString(value: unknown): string | null {
   const normalized = normalizeString(value);
   return normalized ? normalized.toUpperCase() : null;
+}
+
+function normalizeActionString(value: unknown): string | null {
+  const normalized = normalizeString(value);
+  return normalized ? normalized.toUpperCase().replace(/[\s-]+/g, "_") : null;
+}
+
+function isRestoreMemoryAction(action: string | null): boolean {
+  if (!action) {
+    return false;
+  }
+
+  return [
+    "RESTORE",
+    "RESTORE_MEMORY",
+    "RESTORE_IPR_MEMORY",
+    "RESTORE_MEMORY_RECALL",
+    "RESTORE_SOFT_DELETED_MEMORY",
+    "REACTIVATE_MEMORY",
+    "REACTIVATE_IPR_MEMORY",
+    "REACTIVATE_RECALL"
+  ].includes(action);
 }
 
 function readHeaderString(request: NextRequest, name: string): string | null {
@@ -200,6 +230,10 @@ function readInputFromSearchParams(searchParams: URLSearchParams): RecordsRouteI
     savedChatId: readSearchString(searchParams, "savedChatId"),
     sourceSavedChatId: readSearchString(searchParams, "sourceSavedChatId"),
     memoryId: readSearchString(searchParams, "memoryId"),
+    restoreMemoryId: readSearchString(searchParams, "restoreMemoryId"),
+    action: readSearchString(searchParams, "action"),
+    operation: readSearchString(searchParams, "operation"),
+    allowMutationViaGet: searchParams.get("allowMutationViaGet"),
     classification: readSearchString(searchParams, "classification"),
     memoryStatus: readSearchString(searchParams, "memoryStatus"),
     reusableInPrompt: searchParams.get("reusableInPrompt"),
@@ -268,6 +302,9 @@ function resolveContext(request: NextRequest, input: RecordsRouteInput): Records
     sourceThreadId: coalesceString(input.sourceThreadId, input.threadId),
     sourceSavedChatId: coalesceString(input.sourceSavedChatId, input.savedChatId),
     memoryId: coalesceString(input.memoryId),
+    restoreMemoryId: coalesceString(input.restoreMemoryId, input.memoryId),
+    action: normalizeActionString(coalesceString(input.action, input.operation)),
+    allowMutationViaGet: coalesceBoolean(false, input.allowMutationViaGet),
     classification: normalizeUpperString(input.classification),
     memoryStatus: includeInactive ? explicitMemoryStatus : explicitMemoryStatus || "ACTIVE",
     reusableInPrompt: coalesceOptionalBoolean(input.reusableInPrompt),
@@ -389,6 +426,243 @@ function buildDocumentRegistrySummary(documentProfiles: Record<string, unknown>[
   };
 }
 
+async function restoreSoftDeletedMemoryRecord(args: {
+  request: NextRequest;
+  context: RecordsRouteContext;
+  databaseReady: Awaited<ReturnType<typeof ensureHbceDatabaseReady>>;
+}) {
+  const { request, context, databaseReady } = args;
+  const restoreMemoryId = context.restoreMemoryId || context.memoryId;
+
+  if (request.method !== "POST" && !context.allowMutationViaGet) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "RESTORE_MEMORY_REQUIRES_POST",
+        error:
+          "Soft-deleted memory restoration mutates recall eligibility. Use POST or pass allowMutationViaGet=true explicitly for a controlled manual diagnostic restore.",
+        context: {
+          action: context.action,
+          memoryId: restoreMemoryId,
+          method: request.method
+        }
+      },
+      { status: 405 }
+    );
+  }
+
+  if (!restoreMemoryId) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "RESTORE_MEMORY_ID_REQUIRED",
+        error: "memoryId or restoreMemoryId is required to restore a soft-deleted IPR memory record.",
+        context: {
+          action: context.action,
+          humanIpr: context.humanIpr,
+          tenantId: context.tenantId,
+          workspaceId: context.workspaceId
+        }
+      },
+      { status: 400 }
+    );
+  }
+
+  if (!context.humanIpr) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "RESTORE_MEMORY_IPR_REQUIRED",
+        error: "humanIpr is required before restoring recall eligibility for an IPR memory record.",
+        context: {
+          action: context.action,
+          memoryId: restoreMemoryId,
+          tenantId: context.tenantId,
+          workspaceId: context.workspaceId
+        }
+      },
+      { status: 400 }
+    );
+  }
+
+  const restoreResult = await queryHbceDatabase<Record<string, unknown>>(
+    `
+UPDATE memory_records
+SET
+  memory_status = 'ACTIVE',
+  reusable_in_prompt = true,
+  deleted_at = NULL,
+  updated_at = NOW()
+WHERE memory_id = $1
+  AND human_ipr = $2
+  AND ($3::text IS NULL OR tenant_id = $3)
+  AND ($4::text IS NULL OR workspace_id = $4)
+  AND legal_certification = false
+RETURNING
+  memory_id,
+  memory_title,
+  memory_summary,
+  classification,
+  quality,
+  memory_kind,
+  memory_status,
+  source_kind,
+  source_thread_id,
+  source_saved_chat_id,
+  session_id,
+  last_evt_id,
+  last_opc_proof_id,
+  last_opc_chain_hash,
+  updated_at,
+  reusable_in_prompt,
+  semantic_terms
+    `.trim(),
+    [restoreMemoryId, context.humanIpr, context.tenantId, context.workspaceId]
+  );
+
+  if (!restoreResult.ok) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "RESTORE_MEMORY_QUERY_FAILED",
+        error: restoreResult.error || "Unable to restore soft-deleted memory record.",
+        database: {
+          available: databaseReady.description.available,
+          configured: databaseReady.description.configured,
+          kind: databaseReady.description.kind
+        },
+        query: {
+          sqlHash: restoreResult.sqlHash,
+          durationMs: restoreResult.durationMs
+        }
+      },
+      { status: 500 }
+    );
+  }
+
+  const restoredMemoryRecords = restoreResult.rows.map(toPublicIprMemoryRecord);
+  const restoredMemory = restoredMemoryRecords[0] ?? null;
+
+  if (!restoredMemory) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "RESTORE_MEMORY_NOT_FOUND",
+        error:
+          "No matching memory_records row was found for restore under the current Human IPR / tenant / workspace boundary.",
+        context: {
+          action: context.action,
+          memoryId: restoreMemoryId,
+          humanIpr: context.humanIpr,
+          tenantId: context.tenantId,
+          workspaceId: context.workspaceId
+        },
+        query: {
+          rowCount: restoreResult.rows.length,
+          sqlHash: restoreResult.sqlHash,
+          durationMs: restoreResult.durationMs
+        }
+      },
+      { status: 404 }
+    );
+  }
+
+  const allowedMemoryIds = new Set([restoreMemoryId]);
+  const restoreContext: RecordsRouteContext = {
+    ...context,
+    memoryId: restoreMemoryId,
+    memoryStatus: "ACTIVE",
+    reusableInPrompt: null,
+    includeDocumentProfiles: true,
+    onlyLinkedDocumentProfiles: false
+  };
+
+  const documentProfilesResult = await listDocumentProfilesFromDatabase({
+    humanIpr: context.humanIpr,
+    tenantId: context.tenantId,
+    workspaceId: context.workspaceId,
+    includeSoftDeleted: false,
+    limit: context.limit
+  });
+
+  const publicDocumentProfiles = documentProfilesResult.ok
+    ? filterPublicDocumentProfiles(
+        documentProfilesResult.rows.map(toPublicDocumentProfile),
+        restoreContext,
+        allowedMemoryIds
+      )
+    : [];
+
+  const linkedDocumentProfiles = publicDocumentProfiles.filter((profile) => Boolean(getPublicString(profile, "memoryId")));
+  const documentRegistry = buildDocumentRegistrySummary(publicDocumentProfiles);
+
+  return jsonResponse({
+    ok: true,
+    status: "RESTORE_MEMORY_RECALL_READY",
+    action: context.action,
+    restored: true,
+    restoredMemoryId: restoreMemoryId,
+    memoryRecord: restoredMemory,
+    memoryRecords: restoredMemoryRecords,
+    documentRegistry,
+    documentProfiles: {
+      ok: documentProfilesResult.ok,
+      status: documentProfilesResult.status,
+      rowCount: publicDocumentProfiles.length,
+      linkedProfileCount: linkedDocumentProfiles.length,
+      error: documentProfilesResult.error ?? null,
+      sqlHash: documentProfilesResult.sqlHash ?? null,
+      durationMs: documentProfilesResult.durationMs ?? null,
+      profiles: publicDocumentProfiles
+    },
+    linkedDocumentProfiles,
+    expectedNextState: {
+      memoryStatus: "ACTIVE",
+      promptEligible: true,
+      reusableInPrompt: true,
+      documentRegistry: documentRegistry.status,
+      linkedProfileCount: linkedDocumentProfiles.length,
+      legalCertification: false,
+      opc: "technical proof receipt only"
+    },
+    context: {
+      humanIpr: context.humanIpr,
+      tenantId: context.tenantId,
+      workspaceId: context.workspaceId,
+      sessionId: context.sessionId,
+      sourceThreadId: context.sourceThreadId,
+      sourceSavedChatId: context.sourceSavedChatId,
+      memoryId: restoreMemoryId,
+      strictIdentity: context.strictIdentity,
+      limit: context.limit
+    },
+    diagnostics: {
+      database: {
+        available: databaseReady.description.available,
+        configured: databaseReady.description.configured,
+        kind: databaseReady.description.kind,
+        initializationStatus: databaseReady.initialization.status
+      },
+      query: {
+        restoreMemory: {
+          ok: restoreResult.ok,
+          rowCount: restoreResult.rows.length,
+          durationMs: restoreResult.durationMs,
+          sqlHash: restoreResult.sqlHash
+        },
+        documentProfiles: {
+          ok: documentProfilesResult.ok,
+          rowCount: documentProfilesResult.rowCount,
+          durationMs: documentProfilesResult.durationMs,
+          sqlHash: documentProfilesResult.sqlHash,
+          error: documentProfilesResult.error,
+          linkedProfileCount: linkedDocumentProfiles.length
+        }
+      }
+    }
+  });
+}
+
 async function buildRecordsPayload(request: NextRequest) {
   const input = await readInputFromRequest(request);
   const context = resolveContext(request, input);
@@ -434,6 +708,10 @@ async function buildRecordsPayload(request: NextRequest) {
       },
       { status: 503 }
     );
+  }
+
+  if (isRestoreMemoryAction(context.action)) {
+    return restoreSoftDeletedMemoryRecord({ request, context, databaseReady });
   }
 
   const memoryResult = await listIprMemoryRecordsFromDatabase({
@@ -538,6 +816,9 @@ async function buildRecordsPayload(request: NextRequest) {
       sourceThreadId: context.sourceThreadId,
       sourceSavedChatId: context.sourceSavedChatId,
       memoryId: context.memoryId,
+      restoreMemoryId: context.restoreMemoryId,
+      action: context.action,
+      allowMutationViaGet: context.allowMutationViaGet,
       classification: context.classification,
       memoryStatus: context.memoryStatus,
       reusableInPrompt: context.reusableInPrompt,
