@@ -371,7 +371,7 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.0-CANONICAL_DOCUMENT_MEMORY_GUARD";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.1-DOCUMENT_REGISTRY_REFRESH_GUARD";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -1440,6 +1440,53 @@ function getPublicDocumentRegistrySnapshot(
     profiles
   };
 }
+
+
+function buildDocumentRegistryPayloadFromSnapshot(snapshot: PublicDocumentRegistrySnapshot): JsonRecord {
+  return {
+    ok: true,
+    documentRegistry: {
+      status: snapshot.status,
+      table: snapshot.table,
+      attempted: snapshot.attempted,
+      persistedCount: snapshot.persistedCount,
+      failedCount: snapshot.failedCount,
+      rowCount: snapshot.rowCount,
+      profileCount: snapshot.profileCount,
+      linkedProfileCount: snapshot.linkedMemoryCount,
+      reusableCount: snapshot.reusableCount,
+      legalCertification: snapshot.legalCertification,
+      opc: snapshot.opc
+    },
+    documentProfiles: {
+      status: snapshot.status,
+      rowCount: snapshot.rowCount,
+      profileCount: snapshot.profileCount,
+      linkedProfileCount: snapshot.linkedMemoryCount,
+      reusableCount: snapshot.reusableCount,
+      profiles: snapshot.profiles
+    },
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
+
+async function tryReadOptionalJsonResponse(response: Response): Promise<JsonRecord | null> {
+  try {
+    const payload = await readJsonResponse<JsonRecord>(response);
+
+    if (!response.ok || payload.ok === false) {
+      return null;
+    }
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+
 
 
 function isLinkedDocumentProfile(profile: PublicDocumentProfileSnapshot): boolean {
@@ -4726,7 +4773,21 @@ export default function InterfacePage() {
     try {
       const base = buildIprMemoryRequestBase();
 
-      const [recentResponse, recordsResponse, recallResponse] = await Promise.all([
+      const filesQuery = new URLSearchParams({
+        sessionId,
+        threadId: activeThreadId,
+        humanIpr,
+        tenantId: activeTenantId,
+        workspaceId: activeWorkspaceId,
+        includeProfiles: "true",
+        includeDocumentProfiles: "true",
+        includeDocumentRegistry: "true",
+        includeLinkedProfiles: "true",
+        reusableInPrompt: "true",
+        legalCertification: "false"
+      });
+
+      const [recentResponse, recordsResponse, recallResponse, filesResponse] = await Promise.all([
         fetch("/api/ipr-memory/recent", {
           method: "POST",
           cache: "no-store",
@@ -4758,6 +4819,9 @@ export default function InterfacePage() {
             includeInactive: false,
             includeMemorySaves: true,
             includeRegisteredEvents: true,
+            includeDocumentRegistry: true,
+            includeDocumentProfiles: true,
+            includeProfiles: true,
             reusableInPrompt: true,
             limit: 10
           })
@@ -4777,9 +4841,19 @@ export default function InterfacePage() {
             includePromptBlock: true,
             includeRecords: false,
             includeDiagnostics: true,
+            includeDocumentRegistry: true,
+            includeDocumentProfiles: true,
             limit: 6,
             promptMaxChars: 4000
           })
+        }),
+        fetch(`/api/files?${filesQuery.toString()}`, {
+          method: "GET",
+          cache: "no-store",
+          credentials: "include",
+          headers: {
+            Accept: "application/json"
+          }
         })
       ]);
 
@@ -4787,6 +4861,7 @@ export default function InterfacePage() {
       const recentPayload = await readJsonResponse<JsonRecord>(recentResponse);
       const recordsPayload = await readJsonResponse<JsonRecord>(recordsResponse);
       const recallPayload = await readJsonResponse<JsonRecord>(recallResponse);
+      const filesPayload = await tryReadOptionalJsonResponse(filesResponse);
 
 
       if (!recentResponse.ok || recentPayload.ok === false) {
@@ -4812,6 +4887,15 @@ export default function InterfacePage() {
       const nextMemoryRecords = jsonRecords(recordsPayload.memoryRecords);
       const nextRegisteredEvents = jsonRecords(recordsPayload.registeredEvents);
       const nextRecallItems = jsonRecords(recallPayload.recallItems);
+      const nextRegistrySnapshot = getPublicDocumentRegistrySnapshot(filesPayload ?? null, recordsPayload);
+      const nextRegistryPayload = nextRegistrySnapshot.available
+        ? buildDocumentRegistryPayloadFromSnapshot(nextRegistrySnapshot)
+        : filesPayload;
+      const nextLinkedDocumentProfiles = nextRegistrySnapshot.profiles.filter(isLinkedDocumentProfile);
+
+      if (nextRegistryPayload) {
+        setFileRegistryPayload(nextRegistryPayload);
+      }
 
       setIprMemoryDashboard({
         recentThreads: nextRecentThreads,
@@ -4827,7 +4911,7 @@ export default function InterfacePage() {
         const canonicalRecord = nextMemoryRecords[0];
         const canonicalMemoryId = getIprMemoryRecordMemoryId(canonicalRecord);
         if (canonicalMemoryId) {
-          const matchingProfile = linkedDocumentProfiles.find((profile) => profile.memoryId === canonicalMemoryId);
+          const matchingProfile = nextLinkedDocumentProfiles.find((profile) => profile.memoryId === canonicalMemoryId);
           const canonicalChain = matchingProfile
             ? buildCyberneticMemoryChainSnapshot(getDocumentProfileChainRecord(matchingProfile), {
                 memoryId: matchingProfile.memoryId,
@@ -4863,7 +4947,7 @@ export default function InterfacePage() {
         }
       }
 
-      setIprMemoryNotice("IPR memory dashboard refreshed.");
+      setIprMemoryNotice(nextRegistrySnapshot.available ? `IPR memory dashboard refreshed. documentProfiles=${nextRegistrySnapshot.profileCount} · linked=${nextRegistrySnapshot.linkedMemoryCount}` : "IPR memory dashboard refreshed.");
     } catch (err) {
       setIprMemoryError(err instanceof Error ? err.message : "IPR_MEMORY_REFRESH_FAILED");
     } finally {
