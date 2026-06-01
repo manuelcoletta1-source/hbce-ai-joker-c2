@@ -338,6 +338,11 @@ type CyberneticMemoryChainState = {
   recordStatus: string;
   documentRegistryStatus: string;
   linkedProfileCount: string;
+  documentProfileId: string;
+  documentProfileTitle: string;
+  documentProfileVolume: string;
+  documentProfileFilename: string;
+  documentProfileFileHash: string;
   updatedAt: string;
 };
 
@@ -356,12 +361,17 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
   recordStatus: "NOT_CHECKED",
   documentRegistryStatus: "NOT_CHECKED",
   linkedProfileCount: "0",
+  documentProfileId: "-",
+  documentProfileTitle: "-",
+  documentProfileVolume: "-",
+  documentProfileFilename: "-",
+  documentProfileFileHash: "-",
   updatedAt: "-"
 };
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v1.10-RECORDS_PAYLOAD_DOCUMENT_REGISTRY_BRIDGE";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.0-CANONICAL_DOCUMENT_MEMORY_GUARD";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -1434,6 +1444,51 @@ function getPublicDocumentRegistrySnapshot(
 
 function isLinkedDocumentProfile(profile: PublicDocumentProfileSnapshot): boolean {
   return isUsableCyberneticMemoryId(profile.memoryId);
+}
+
+
+function normalizeRuntimeFilename(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+
+function findLinkedDocumentProfileForRuntimeFiles(
+  profiles: PublicDocumentProfileSnapshot[],
+  runtimeFiles: RuntimeFile[]
+): PublicDocumentProfileSnapshot | null {
+  const linkedProfiles = profiles.filter(isLinkedDocumentProfile);
+
+  if (linkedProfiles.length === 0 || runtimeFiles.length === 0) {
+    return null;
+  }
+
+  const activeFiles = runtimeFiles.filter((file) =>
+    ["TEXT_READY", "PDF_CLIENT_PAYLOAD_READY", "PDF_INGESTION_READY"].includes(file.status)
+  );
+
+  for (const runtimeFile of activeFiles) {
+    const filename = normalizeRuntimeFilename(runtimeFile.name);
+    const matchingProfile = linkedProfiles.find((profile) => {
+      const profileFilename = normalizeRuntimeFilename(profile.filename);
+      const sameDocumentProfile =
+        !isBlankRuntimeValue(runtimeFile.documentProfileId ?? "-") &&
+        runtimeFile.documentProfileId === profile.profileId;
+      const sameFileId = !isBlankRuntimeValue(profile.fileId) && profile.fileId === runtimeFile.id;
+      const sameFileHash =
+        !isBlankRuntimeValue(profile.fileHash) &&
+        !isBlankRuntimeValue(runtimeFile.fileHash ?? "-") &&
+        profile.fileHash === runtimeFile.fileHash;
+      const sameFilename = filename.length > 0 && profileFilename.length > 0 && profileFilename === filename;
+
+      return sameDocumentProfile || sameFileId || sameFileHash || sameFilename;
+    });
+
+    if (matchingProfile) {
+      return matchingProfile;
+    }
+  }
+
+  return null;
 }
 
 
@@ -3252,6 +3307,7 @@ function buildCyberneticMemoryChainSnapshot(payload: JsonRecord | null | undefin
   const source = payload ?? {};
   const record = getRecordStatusPayloadRecord(source) ?? source;
   const documentRegistry = firstRecord(source, [["documentRegistry"], ["registry", "documentRegistry"]]);
+  const documentProfile = firstRecord(source, [["documentProfile"], ["profile"], ["documentRegistry", "documentProfile"]]);
   const memoryId = firstUsableRuntimeValue([first(record, [["memoryId"], ["id"]], ""), first(source, [["memoryId"], ["savedMemoryId"], ["memory", "memoryId"]], ""), fallback?.memoryId ?? ""], "-");
 
   return {
@@ -3268,6 +3324,11 @@ function buildCyberneticMemoryChainSnapshot(payload: JsonRecord | null | undefin
     recordStatus: firstDisplayValue([first(source, [["recordStatus"], ["status"], ["memoryStatus"]], ""), fallback?.recordStatus ?? ""], "NOT_CHECKED"),
     documentRegistryStatus: firstDisplayValue([first(documentRegistry, [["status"], ["reason"]], ""), first(source, [["documentRegistryStatus"]], ""), fallback?.documentRegistryStatus ?? ""], "NOT_CHECKED"),
     linkedProfileCount: firstDisplayValue([first(documentRegistry, [["linkedProfileCount"], ["profileCount"]], ""), first(source, [["linkedProfileCount"]], ""), fallback?.linkedProfileCount ?? ""], "0"),
+    documentProfileId: firstUsableRuntimeValue([first(documentProfile, [["profileId"], ["documentProfileId"], ["id"]], ""), first(documentRegistry, [["profileId"], ["documentProfileId"]], ""), first(source, [["documentProfileId"], ["profileId"]], ""), fallback?.documentProfileId ?? ""], "-"),
+    documentProfileTitle: firstDisplayValue([first(documentProfile, [["title"]], ""), first(documentRegistry, [["title"]], ""), first(source, [["documentProfileTitle"], ["title"]], ""), fallback?.documentProfileTitle ?? ""], "-"),
+    documentProfileVolume: firstDisplayValue([first(documentProfile, [["volume"]], ""), first(documentRegistry, [["volume"]], ""), first(source, [["documentProfileVolume"], ["volume"]], ""), fallback?.documentProfileVolume ?? ""], "-"),
+    documentProfileFilename: firstDisplayValue([first(documentProfile, [["filename"], ["name"]], ""), first(documentRegistry, [["filename"], ["name"]], ""), first(source, [["documentProfileFilename"], ["filename"]], ""), fallback?.documentProfileFilename ?? ""], "-"),
+    documentProfileFileHash: firstDisplayValue([first(documentProfile, [["fileHash"], ["hash"]], ""), first(documentRegistry, [["fileHash"], ["hash"]], ""), first(source, [["documentProfileFileHash"], ["fileHash"]], ""), fallback?.documentProfileFileHash ?? ""], "-"),
     updatedAt: firstDisplayValue([getIprMemoryRecordTimestamp(record), first(source, [["checkedAt"], ["updatedAt"], ["createdAt"]], ""), fallback?.updatedAt ?? ""], new Date().toISOString())
   };
 }
@@ -3279,8 +3340,50 @@ function isUsableCyberneticMemoryId(value: string): boolean {
 
 
 function buildCyberneticMemoryRecallPrompt(chain: CyberneticMemoryChainState): string {
+  const hasDocumentProfile = !isBlankRuntimeValue(chain.documentProfileId);
+
   return [
-    "CYBERNETIC_MEMORY_RECALL_REQUEST v1.0", "", "Richiama questa memoria IPR come memoria cibernetica riusabile nel runtime JOKER-C2.", "Non creare nuova memoria semantica generica.", "Non salvare nulla se non viene richiesta una nuova persistenza esplicita.", "Se la memoria è collegata a document_profiles, esegui anche il recall documentale dinamico.", "", `memoryId: ${chain.memoryId}`, `evtId: ${chain.evtId}`, `opcId: ${chain.opcId}`, `documentRegistryStatus: ${chain.documentRegistryStatus}`, `linkedProfileCount: ${chain.linkedProfileCount}`, "", "Risposta attesa:", "CYBERNETIC_MEMORY_RECALL_READY", "MEMORY_CHAIN_RECALL_READY: true", "DOCUMENT_MEMORY_RECALL_READY: true se linkedProfileCount > 0", "", "Indica in modo tecnico:", "- memoryId richiamato", "- EVT collegato", "- OPC collegato", "- stato memoria", "- promptEligible", "- reusableInPrompt", "- documentRegistry.status", "- linkedProfileCount", "- documentProfileRecallInjected", "- profileId/title/volume se disponibili", "- legalCertification=false", "- OPC=technical proof receipt only"
+    "CYBERNETIC_MEMORY_RECALL_REQUEST v1.1",
+    "",
+    "Richiama questa memoria IPR già esistente come memoria cibernetica riusabile nel runtime JOKER-C2.",
+    "Non creare nuova memoria IPR-bound.",
+    "Non creare nuova memoria semantica generica.",
+    "Non salvare nulla di nuovo.",
+    "Se la memoria è collegata a document_profiles, esegui anche il recall documentale dinamico.",
+    "",
+    `memoryId: ${chain.memoryId}`,
+    `evtId: ${chain.evtId}`,
+    `opcId: ${chain.opcId}`,
+    `documentRegistryStatus: ${chain.documentRegistryStatus}`,
+    `linkedProfileCount: ${chain.linkedProfileCount}`,
+    hasDocumentProfile ? `documentProfileId: ${chain.documentProfileId}` : "documentProfileId: -",
+    hasDocumentProfile ? `expectedTitle: ${chain.documentProfileTitle}` : "expectedTitle: -",
+    hasDocumentProfile ? `expectedVolume: ${chain.documentProfileVolume}` : "expectedVolume: -",
+    hasDocumentProfile ? `expectedFilename: ${chain.documentProfileFilename}` : "expectedFilename: -",
+    hasDocumentProfile ? `expectedProfileFileHash: ${chain.documentProfileFileHash}` : "expectedProfileFileHash: -",
+    "",
+    "Risposta obbligatoria:",
+    "CYBERNETIC_MEMORY_RECALL_READY",
+    "MEMORY_CHAIN_RECALL_READY: true",
+    "DOCUMENT_MEMORY_RECALL_READY: true se linkedProfileCount > 0",
+    "",
+    "Indica in modo tecnico:",
+    "- memoryId richiamato",
+    "- documentProfileId richiamato se disponibile",
+    "- EVT collegato",
+    "- OPC collegato",
+    "- stato memoria",
+    "- promptEligible",
+    "- reusableInPrompt",
+    "- documentRegistry.status",
+    "- linkedProfileCount",
+    "- documentProfileRecallInjected",
+    "- profileId/title/volume se disponibili",
+    "- NO_SAVE_GUARD_READY se attivo",
+    "- runtimeMemoryWriteSuppressed",
+    "- noNewIprMemory",
+    "- legalCertification=false",
+    "- OPC=technical proof receipt only"
   ].join("\n");
 }
 
@@ -4011,6 +4114,12 @@ export default function InterfacePage() {
   const dashboardFileIngestion = getPublicFileIngestionSnapshot(dashboardPayload);
   const dashboardDocumentRegistry = getPublicDocumentRegistrySnapshot(dashboardPayload, fileRegistryPayload);
   const linkedDocumentProfiles = dashboardDocumentRegistry.profiles.filter(isLinkedDocumentProfile);
+  const selectedCanonicalDocumentProfile =
+    linkedDocumentProfiles.find((profile) => profile.memoryId === cyberneticMemoryChain.memoryId) ??
+    linkedDocumentProfiles.find((profile) => profile.profileId === cyberneticMemoryChain.documentProfileId) ??
+    null;
+  const activeFileAlreadyLinkedProfile = findLinkedDocumentProfileForRuntimeFiles(linkedDocumentProfiles, files);
+  const activeFileAlreadyLinked = Boolean(activeFileAlreadyLinkedProfile);
   const localPromptReadyCount = files.filter((file) =>
     ["TEXT_READY", "PDF_CLIENT_PAYLOAD_READY", "PDF_INGESTION_READY"].includes(file.status)
   ).length;
@@ -4649,8 +4758,6 @@ export default function InterfacePage() {
             includeInactive: false,
             includeMemorySaves: true,
             includeRegisteredEvents: true,
-            includeDocumentProfiles: true,
-            onlyLinkedDocumentProfiles: false,
             reusableInPrompt: true,
             limit: 10
           })
@@ -4697,19 +4804,65 @@ export default function InterfacePage() {
       }
 
 
+      const nextRecentThreads = jsonRecords(recentPayload.threads);
+      const nextMemorySaves = [
+        ...jsonRecords(recentPayload.memorySaves),
+        ...jsonRecords(recordsPayload.memorySaves)
+      ];
+      const nextMemoryRecords = jsonRecords(recordsPayload.memoryRecords);
+      const nextRegisteredEvents = jsonRecords(recordsPayload.registeredEvents);
+      const nextRecallItems = jsonRecords(recallPayload.recallItems);
+
       setIprMemoryDashboard({
-        recentThreads: jsonRecords(recentPayload.threads),
-        memorySaves: [
-          ...jsonRecords(recentPayload.memorySaves),
-          ...jsonRecords(recordsPayload.memorySaves)
-        ],
-        memoryRecords: jsonRecords(recordsPayload.memoryRecords),
-        registeredEvents: jsonRecords(recordsPayload.registeredEvents),
-        recallItems: jsonRecords(recallPayload.recallItems),
+        recentThreads: nextRecentThreads,
+        memorySaves: nextMemorySaves,
+        memoryRecords: nextMemoryRecords,
+        registeredEvents: nextRegisteredEvents,
+        recallItems: nextRecallItems,
         promptMemoryBlock: text(recallPayload.promptMemoryBlock, ""),
         lastRefreshUtc: new Date().toISOString()
       });
-      setFileRegistryPayload(recordsPayload);
+
+      if (!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId) && nextMemoryRecords.length === 1) {
+        const canonicalRecord = nextMemoryRecords[0];
+        const canonicalMemoryId = getIprMemoryRecordMemoryId(canonicalRecord);
+        if (canonicalMemoryId) {
+          const matchingProfile = linkedDocumentProfiles.find((profile) => profile.memoryId === canonicalMemoryId);
+          const canonicalChain = matchingProfile
+            ? buildCyberneticMemoryChainSnapshot(getDocumentProfileChainRecord(matchingProfile), {
+                memoryId: matchingProfile.memoryId,
+                savedChatId: matchingProfile.sourceSavedChatId,
+                evtId: matchingProfile.lastEvtId,
+                opcId: matchingProfile.lastOpcProofId,
+                auditId: matchingProfile.auditId,
+                usageId: matchingProfile.usageId,
+                status: matchingProfile.profileStatus || "ACTIVE",
+                promptEligible: "true",
+                reusableInPrompt: matchingProfile.reusableInPrompt,
+                source: "REFRESH_CANONICAL_DOCUMENT_MEMORY",
+                recordStatus: "ACTIVE_REUSABLE",
+                documentRegistryStatus: "AVAILABLE",
+                linkedProfileCount: "1",
+                documentProfileId: matchingProfile.profileId,
+                documentProfileTitle: matchingProfile.title,
+                documentProfileVolume: matchingProfile.volume,
+                documentProfileFilename: matchingProfile.filename,
+                documentProfileFileHash: matchingProfile.fileHash,
+                updatedAt: new Date().toISOString()
+              })
+            : buildCyberneticMemoryChainSnapshot(canonicalRecord, {
+                memoryId: canonicalMemoryId,
+                savedChatId: getIprMemoryRecordSavedChatId(canonicalRecord),
+                evtId: getIprMemoryRecordEvtId(canonicalRecord),
+                opcId: getIprMemoryRecordOpcId(canonicalRecord),
+                source: "REFRESH_CANONICAL_MEMORY_RECORD",
+                updatedAt: new Date().toISOString()
+              });
+
+          setCyberneticMemoryChain(canonicalChain);
+        }
+      }
+
       setIprMemoryNotice("IPR memory dashboard refreshed.");
     } catch (err) {
       setIprMemoryError(err instanceof Error ? err.message : "IPR_MEMORY_REFRESH_FAILED");
@@ -4829,6 +4982,38 @@ export default function InterfacePage() {
 
     if (!canUseIprMemory) {
       setIprMemoryError("Cannot save chat on IPR without verified Human IPR, tenant and workspace. Self-pilot scope bridge did not activate.");
+      return;
+    }
+
+
+    const alreadyLinkedProfile = findLinkedDocumentProfileForRuntimeFiles(linkedDocumentProfiles, files);
+    if (alreadyLinkedProfile) {
+      const record = getDocumentProfileChainRecord(alreadyLinkedProfile);
+      const nextChain = buildCyberneticMemoryChainSnapshot(record, {
+        memoryId: alreadyLinkedProfile.memoryId,
+        savedChatId: alreadyLinkedProfile.sourceSavedChatId,
+        evtId: alreadyLinkedProfile.lastEvtId,
+        opcId: alreadyLinkedProfile.lastOpcProofId,
+        auditId: alreadyLinkedProfile.auditId,
+        usageId: alreadyLinkedProfile.usageId,
+        status: alreadyLinkedProfile.profileStatus || "ACTIVE",
+        promptEligible: "true",
+        reusableInPrompt: alreadyLinkedProfile.reusableInPrompt,
+        source: "CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD",
+        recordStatus: "ACTIVE_REUSABLE",
+        documentRegistryStatus: "AVAILABLE",
+        linkedProfileCount: "1",
+        documentProfileId: alreadyLinkedProfile.profileId,
+        documentProfileTitle: alreadyLinkedProfile.title,
+        documentProfileVolume: alreadyLinkedProfile.volume,
+        documentProfileFilename: alreadyLinkedProfile.filename,
+        documentProfileFileHash: alreadyLinkedProfile.fileHash,
+        updatedAt: new Date().toISOString()
+      });
+
+      setCyberneticMemoryChain(nextChain);
+      setIprMemoryNotice(`Save skipped: active file is already linked to canonical IPR memory. memoryId=${nextChain.memoryId} · profileId=${alreadyLinkedProfile.profileId} · volume=${alreadyLinkedProfile.volume}`);
+      void checkCyberneticMemoryRecordStatus(nextChain.memoryId);
       return;
     }
 
@@ -4987,6 +5172,11 @@ export default function InterfacePage() {
         promptEligible: "true",
         reusableInPrompt: "true",
         source: "SAVE_CHAT_TO_IPR",
+        documentProfileId: first(payload, [["documentProfileId"], ["documentRegistry", "profileId"]], "-"),
+        documentProfileTitle: first(payload, [["documentProfileTitle"], ["documentRegistry", "title"]], "-"),
+        documentProfileVolume: first(payload, [["documentProfileVolume"], ["documentRegistry", "volume"]], "-"),
+        documentProfileFilename: first(payload, [["documentProfileFilename"], ["documentRegistry", "filename"]], "-"),
+        documentProfileFileHash: first(payload, [["documentProfileFileHash"], ["documentRegistry", "fileHash"]], "-"),
         updatedAt: new Date().toISOString()
       });
 
@@ -5050,6 +5240,11 @@ export default function InterfacePage() {
       recordStatus: "ACTIVE_REUSABLE",
       documentRegistryStatus: "AVAILABLE",
       linkedProfileCount: "1",
+      documentProfileId: profile.profileId,
+      documentProfileTitle: profile.title,
+      documentProfileVolume: profile.volume,
+      documentProfileFilename: profile.filename,
+      documentProfileFileHash: profile.fileHash,
       updatedAt: new Date().toISOString()
     });
 
@@ -5308,6 +5503,19 @@ export default function InterfacePage() {
       outgoing || "Analyze the active files as JOKER-C2 operational context.";
 
 
+    const cyberneticRecallRequestActive =
+      effectiveMessage.includes("CYBERNETIC_MEMORY_RECALL_REQUEST") ||
+      effectiveMessage.includes("CYBER_DOCUMENT_MEMORY_RECALL_REQUEST");
+    const requestedMemoryIdsForChat =
+      cyberneticRecallRequestActive && isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId)
+        ? [cyberneticMemoryChain.memoryId]
+        : [];
+    const requestedDocumentProfileIdsForChat =
+      cyberneticRecallRequestActive && !isBlankRuntimeValue(cyberneticMemoryChain.documentProfileId)
+        ? [cyberneticMemoryChain.documentProfileId]
+        : [];
+
+
     setError(null);
     setIsSending(true);
     setMessage("");
@@ -5378,6 +5586,10 @@ export default function InterfacePage() {
           matrixState,
           memoryScope,
           interfaceRevision: INTERFACE_REVISION,
+          cyberneticMemoryRecallRequest: cyberneticRecallRequestActive,
+          requestedMemoryIds: requestedMemoryIdsForChat,
+          requestedDocumentProfileIds: requestedDocumentProfileIdsForChat,
+          selectedCyberneticMemoryChain: cyberneticRecallRequestActive ? cyberneticMemoryChain : null,
           selfPilotMemoryScopeBridge: {
             enabled: HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED,
             applied: selfPilotMemoryScopeBridgeApplied,
@@ -6095,10 +6307,40 @@ export default function InterfacePage() {
             <button type="button" onClick={() => void refreshIprMemoryDashboard()} disabled={isLoadingIprMemory || !canUseIprMemory}>
               {isLoadingIprMemory ? "Refreshing memory..." : "Refresh IPR memory"}
             </button>
-            <button type="button" className="joker-memory-primary-button" onClick={() => void saveCurrentChatToIpr()} disabled={isSavingChatToIpr || messages.length === 0 || !canUseIprMemory}>
-              {isSavingChatToIpr ? "Saving on IPR..." : "1 · Save chat → IPR"}
+            <button type="button" className="joker-memory-primary-button" onClick={() => void saveCurrentChatToIpr()} disabled={isSavingChatToIpr || messages.length === 0 || !canUseIprMemory || activeFileAlreadyLinked}>
+              {isSavingChatToIpr ? "Saving on IPR..." : activeFileAlreadyLinked ? "Already linked on IPR" : "1 · Save chat → IPR"}
             </button>
           </div>
+
+
+          {selectedCanonicalDocumentProfile ? (
+            <div className="joker-canonical-memory-card">
+              <span className="joker-kicker">ACTIVE_CANONICAL_DOCUMENT_MEMORY</span>
+              <strong>{selectedCanonicalDocumentProfile.title} · {selectedCanonicalDocumentProfile.volume}</strong>
+              <p>{compact(selectedCanonicalDocumentProfile.summary, 220)}</p>
+              <div className="joker-memory-meta">
+                <span title={cyberneticMemoryChain.memoryId}>IPR-MEM {compact(cyberneticMemoryChain.memoryId, 34)}</span>
+                <span title={selectedCanonicalDocumentProfile.profileId}>DOC {compact(selectedCanonicalDocumentProfile.profileId, 30)}</span>
+                <span>Registry {cyberneticMemoryChain.documentRegistryStatus}</span>
+                <span>Linked {cyberneticMemoryChain.linkedProfileCount}</span>
+              </div>
+            </div>
+          ) : null}
+
+
+          {activeFileAlreadyLinkedProfile ? (
+            <div className="joker-canonical-memory-card is-warning">
+              <span className="joker-kicker">SAVE_GUARD_ACTIVE</span>
+              <strong>File attivo già collegato a IPR</strong>
+              <p>Il bottone Save è bloccato per evitare duplicati. Usa Record-status o Inject sulla memoria esistente, perché collezionare doppioni non è una strategia SaaS.</p>
+              <div className="joker-memory-meta">
+                <span title={activeFileAlreadyLinkedProfile.memoryId}>IPR-MEM {compact(activeFileAlreadyLinkedProfile.memoryId, 34)}</span>
+                <span title={activeFileAlreadyLinkedProfile.profileId}>DOC {compact(activeFileAlreadyLinkedProfile.profileId, 30)}</span>
+                <span>{activeFileAlreadyLinkedProfile.title}</span>
+                <span>{activeFileAlreadyLinkedProfile.volume}</span>
+              </div>
+            </div>
+          ) : null}
 
 
           <div className={cyberneticChainReady ? "joker-cyber-chain is-ready" : "joker-cyber-chain"}>
@@ -6112,7 +6354,7 @@ export default function InterfacePage() {
             <p>La chat scelta viene salvata come memoria IPR-bound; EVT la colloca nel tempo operativo; OPC ne produce la ricevuta tecnica. La memoria riusabile resta in memory_records, non nello scontrino OPC. Piccola concessione alla realtà.</p>
             <InfoList items={cyberneticMemoryChainRows} />
             <div className="joker-cyber-chain-steps" aria-label="Cybernetic memory chain actions">
-              <button type="button" className="joker-memory-primary-button" onClick={() => void saveCurrentChatToIpr()} disabled={isSavingChatToIpr || messages.length === 0 || !canUseIprMemory}>{isSavingChatToIpr ? "Saving..." : "1 · Chat → IPR"}</button>
+              <button type="button" className="joker-memory-primary-button" onClick={() => void saveCurrentChatToIpr()} disabled={isSavingChatToIpr || messages.length === 0 || !canUseIprMemory || activeFileAlreadyLinked}>{isSavingChatToIpr ? "Saving..." : activeFileAlreadyLinked ? "Already linked" : "1 · Chat → IPR"}</button>
               <button type="button" onClick={() => void bindCurrentIprMemoryToEvt()} disabled={isCheckingCyberneticMemory || !isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId) || !canUseIprMemory}>{isCheckingCyberneticMemory ? "Checking..." : "2 · IPR → EVT"}</button>
               <button type="button" onClick={() => void bindCurrentEvtToOpc()} disabled={isCheckingCyberneticMemory || !isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId) || !canUseIprMemory}>{isCheckingCyberneticMemory ? "Checking..." : "3 · EVT → OPC"}</button>
               <button type="button" onClick={() => void injectCurrentIprMemoryIntoChat()} disabled={!isUsableCyberneticMemoryId(cyberneticMemoryChain.memoryId) || isSending}>4 · Inject memory → Chat</button>
@@ -6719,6 +6961,32 @@ export default function InterfacePage() {
 
         .joker-hero,
         .joker-dashboard,
+
+        .joker-canonical-memory-card {
+          margin-top: 14px;
+          padding: 14px;
+          border: 1px solid rgba(212, 175, 55, 0.42);
+          border-radius: 18px;
+          background: rgba(212, 175, 55, 0.07);
+        }
+
+        .joker-canonical-memory-card.is-warning {
+          border-color: rgba(255, 181, 71, 0.46);
+          background: rgba(255, 181, 71, 0.08);
+        }
+
+        .joker-canonical-memory-card strong {
+          display: block;
+          margin-top: 4px;
+          color: #f6e6a9;
+        }
+
+        .joker-canonical-memory-card p {
+          margin: 8px 0 0;
+          color: rgba(245, 245, 245, 0.78);
+          line-height: 1.5;
+        }
+
         .joker-ipr-memory {
           width: min(1180px, calc(100% - 36px));
           margin: 22px auto 0;
