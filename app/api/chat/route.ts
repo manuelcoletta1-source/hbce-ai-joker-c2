@@ -595,7 +595,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-DIAGNOSTIC_NO_SAVE_GUARD-v9_1";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -802,7 +802,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const message = normalizeUserMessage(body, incomingMessages);
   const files = resolveRuntimeFilesForChat(body.files, sessionId);
   const fileIngestionRequested = isFileIngestionQuestion(message, files);
-  const documentProfileCreationCheckRequested = isDocumentProfileCreationCheckQuestion(message);
   const runtimeStatusTableRequested = isRuntimeStatusTableQuestion(message);
   const runtimeDiagnosticsRequested = isRuntimeDiagnosticsQuestion(message);
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
@@ -846,11 +845,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryChainEvtBindingRequested ||
     memoryChainOpcBindingRequested ||
     memoryChainCandidateRequested;
+  const hardNoSavePersistenceRequested = isHardNoSavePersistenceQuestion(message);
+  const recallNoSaveBoundaryRequested = memoryChainRouteRequested && hardNoSavePersistenceRequested;
   const noSavePersistenceRequested =
-    documentProfileCreationCheckRequested || isHardNoSavePersistenceQuestion(message);
-  const runtimeMemoryWriteSuppressed = noSavePersistenceRequested;
+    !memoryChainRouteRequested && hardNoSavePersistenceRequested;
+  const runtimeMemoryWriteSuppressed = hardNoSavePersistenceRequested;
   const semanticMemoryRouteSuppressed =
-    noSavePersistenceRequested ||
+    runtimeMemoryWriteSuppressed ||
     memoryChainRouteRequested ||
     shouldSuppressEsoterologicalSemanticMemoryRoute(message);
   const trainingDeleteVerificationRequested =
@@ -961,8 +962,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     limit: noSavePersistenceRequested ? 0 : 6,
     promptMaxChars: noSavePersistenceRequested ? 0 : 7000
   });
-  const documentProfileRecall: DocumentProfileRecall | null =
-    documentMemoryRecallRequested || documentProfileCreationCheckRequested
+  const documentProfileRecall: DocumentProfileRecall | null = documentMemoryRecallRequested
     ? await resolveDocumentProfileRecall({
         handoff,
         saasContext,
@@ -1014,7 +1014,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     trainingMemoryRecallRequested,
     trainingRouteSelected,
     documentMemoryRecallRequested,
-    documentProfileCreationCheckRequested,
     selfPilotProjectScopeBridgeRequested,
     selfPilotProjectScopeBridgeApplied,
     routeRevisionGuardRequested,
@@ -1024,6 +1023,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryChainOpcBindingRequested,
     memoryChainCandidateRequested,
     memoryChainRouteRequested,
+    hardNoSavePersistenceRequested,
+    recallNoSaveBoundaryRequested,
     noSavePersistenceRequested,
     runtimeMemoryWriteSuppressed,
     semanticMemoryRouteSuppressed,
@@ -1069,18 +1070,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
-    providerState = "COMPLETED";
-    providerName = "LOCAL";
-  } else if (documentProfileCreationCheckRequested) {
-    answer = buildDocumentProfileCreationCheckOnlyAnswer({
-      message,
-      files,
-      documentProfileRecall,
-      handoff,
-      memory,
-      policy,
-      saasContext
-    });
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (noSavePersistenceRequested) {
@@ -1340,15 +1329,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     timestamp: t,
     alienCodeSource: "GLOSSARIO_CANONICO",
     organismSystemCoupling: buildOrganismSystemCouplingLabel(handoff),
-    reusableInPrompt: !noSavePersistenceRequested,
+    reusableInPrompt: !runtimeMemoryWriteSuppressed,
     maxTerms: 12,
     minScore: 2.25
   });
-  const esoterologicalSemanticMemory = noSavePersistenceRequested
+  const esoterologicalSemanticMemory = runtimeMemoryWriteSuppressed
     ? applyNoSavePolicyToEsoterologicalSemanticMemoryRecord(esoterologicalSemanticMemoryCandidate)
     : esoterologicalSemanticMemoryCandidate;
   const esoterologicalSemanticMemoryPersistable =
-    !noSavePersistenceRequested &&
+    !runtimeMemoryWriteSuppressed &&
     esoterologicalSemanticMemoryRequested &&
     !semanticMemoryRouteSuppressed &&
     shouldPersistEsoterologicalSemanticMemoryRecord(esoterologicalSemanticMemory);
@@ -1618,7 +1607,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               noSavePersistenceRequested,
               runtimeMemoryWriteSuppressed,
               documentMemoryRecallRequested,
-              documentProfileCreationCheckRequested,
               selfPilotProjectScopeBridgeRequested,
               selfPilotProjectScopeBridgeApplied,
               routeRevisionGuardRequested,
@@ -1645,7 +1633,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  const finalAnswer = buildAnswerWithExternalDualTimeSeal(finalAnswerBase, temporalCertificate);
+  const guardedFinalAnswerBase =
+    recallNoSaveBoundaryRequested && memoryChainRouteRequested
+      ? appendNoSaveRecallBoundary(finalAnswerBase)
+      : finalAnswerBase;
+
+
+
+
+  const finalAnswer = buildAnswerWithExternalDualTimeSeal(guardedFinalAnswerBase, temporalCertificate);
 
 
 
@@ -1804,13 +1800,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     temporal: temporalFrame,
     alienCodePipeline: buildAlienCodePipelineDiagnostic(),
     noSaveGuard: {
-      requested: noSavePersistenceRequested,
-      diagnosticMode: documentProfileCreationCheckRequested,
+      requested: hardNoSavePersistenceRequested,
       noMemoryCreated: noSavePersistenceRequested,
+      recallAllowedWriteSuppressed: recallNoSaveBoundaryRequested,
       runtimeMemoryWriteSuppressed,
-      semanticMemorySuppressed: semanticMemoryRouteSuppressed,
       semanticMemoryPersistable: esoterologicalSemanticMemoryPersistable,
-      reusableInPrompt: !noSavePersistenceRequested,
+      reusableInPrompt: !runtimeMemoryWriteSuppressed,
       legalCertification: false,
       opc: "technical proof receipt only"
     },
@@ -1886,12 +1881,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       source: saasContext.source,
       memory: toPublicMemory(memory),
       noSaveGuard: {
-        requested: noSavePersistenceRequested,
-        diagnosticMode: documentProfileCreationCheckRequested,
+        requested: hardNoSavePersistenceRequested,
+        recallAllowedWriteSuppressed: recallNoSaveBoundaryRequested,
         runtimeMemoryWriteSuppressed,
-        semanticMemorySuppressed: semanticMemoryRouteSuppressed,
         semanticMemoryPersistable: esoterologicalSemanticMemoryPersistable,
-        reusableInPrompt: !noSavePersistenceRequested,
+        reusableInPrompt: !runtimeMemoryWriteSuppressed,
         legalCertification: false,
         opc: "technical proof receipt only"
       },
@@ -2125,13 +2119,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         memoryRecallRequested: trainingMemoryRecallRequested,
         routeSelected: trainingRouteSelected,
         legalCertification: false
-      },
-      documentProfileCreationCheck: {
-        requested: documentProfileCreationCheckRequested,
-        semanticMemorySuppressed: semanticMemoryRouteSuppressed,
-        runtimeMemoryWriteSuppressed,
-        legalCertification: false,
-        opc: "technical proof receipt only"
       },
       iprRecall: {
         injected: iprRecall.injected,
@@ -2949,10 +2936,6 @@ function isCyberneticMemoryChainCandidateQuestion(message: string): boolean {
 
   const normalized = normalizeText(message);
 
-  if (isDocumentProfileCreationCheckQuestion(message)) {
-    return true;
-  }
-
   return (
     normalized.includes("test memory chain") ||
     normalized.includes("memory_chain_candidate_ready") ||
@@ -2967,41 +2950,12 @@ function isCyberneticMemoryChainCandidateQuestion(message: string): boolean {
 
 
 
-function isDocumentProfileCreationCheckQuestion(message: string): boolean {
-  if (!message.trim()) {
-    return false;
-  }
-
-  const normalized = normalizeText(message);
-  const relaxed = normalized.replace(/[_-]+/g, " ");
-
-  return (
-    normalized.includes("document_profile_creation_check") ||
-    normalized.includes("document_profile_creation_check_only") ||
-    normalized.includes("documentprofilecreated") ||
-    normalized.includes("documentprofileid") ||
-    normalized.includes("missingprofilereason") ||
-    relaxed.includes("document profile creation check") ||
-    relaxed.includes("document profile creation check only") ||
-    relaxed.includes("expected document profile") ||
-    relaxed.includes("return only diagnosticmode") ||
-    (relaxed.includes("active file") && relaxed.includes("expected document profile"))
-  );
-}
-
-
-
 function isHardNoSavePersistenceQuestion(message: string): boolean {
   if (!message.trim()) {
     return false;
   }
 
   const normalized = normalizeText(message);
-  const relaxed = normalized.replace(/[_-]+/g, " ");
-
-  if (isDocumentProfileCreationCheckQuestion(message)) {
-    return true;
-  }
 
   const explicitMemoryCreationSignals = [
     "test memory chain",
@@ -3019,18 +2973,6 @@ function isHardNoSavePersistenceQuestion(message: string): boolean {
   const negativeGuardSignals = [
     "test negative guard",
     "no_memory_created",
-    "no save",
-    "no_save",
-    "diagnostic only",
-    "diagnostic_only",
-    "do not create semantic memory",
-    "do_not_create_semantic_memory",
-    "do not create runtime memory",
-    "do_not_create_runtime_memory",
-    "do not save synthesis",
-    "do_not_save_synthesis",
-    "document profile creation check only",
-    "document_profile_creation_check_only",
     "non salvare questo messaggio",
     "non creare memoria ipr",
     "non creare memoria semantica",
@@ -3043,17 +2985,7 @@ function isHardNoSavePersistenceQuestion(message: string): boolean {
     "non salvare"
   ];
 
-  if (
-    normalized.includes("test negative guard") ||
-    normalized.includes("no_memory_created") ||
-    normalized.includes("no_save") ||
-    normalized.includes("diagnostic_only") ||
-    relaxed.includes("no save") ||
-    relaxed.includes("diagnostic only") ||
-    normalized.includes("do_not_create_semantic_memory") ||
-    normalized.includes("do_not_create_runtime_memory") ||
-    normalized.includes("do_not_save_synthesis")
-  ) {
+  if (normalized.includes("test negative guard") || normalized.includes("no_memory_created")) {
     return true;
   }
 
@@ -3061,20 +2993,14 @@ function isHardNoSavePersistenceQuestion(message: string): boolean {
     return false;
   }
 
-  const hasNoSaveSignal = negativeGuardSignals.some(
-    (signal) => normalized.includes(signal) || relaxed.includes(signal)
-  );
+  const hasNoSaveSignal = negativeGuardSignals.some((signal) => normalized.includes(signal));
   const mentionsPersistenceTarget =
     normalized.includes("memoria") ||
     normalized.includes("memory_records") ||
     normalized.includes("reusableinprompt") ||
     normalized.includes("riusabile") ||
     normalized.includes("persistenza") ||
-    normalized.includes("salvare") ||
-    normalized.includes("semantic_memory") ||
-    normalized.includes("runtime_memory") ||
-    normalized.includes("save_synthesis") ||
-    normalized.includes("document_profile");
+    normalized.includes("salvare");
 
   return hasNoSaveSignal && mentionsPersistenceTarget;
 }
@@ -3097,12 +3023,6 @@ function shouldSuppressEsoterologicalSemanticMemoryRoute(message: string): boole
     normalized.includes("non salvare") ||
     normalized.includes("diagnostica tecnica") ||
     normalized.includes("diagnostic only") ||
-    normalized.includes("diagnostic_only") ||
-    normalized.includes("no_save") ||
-    normalized.includes("do_not_create_semantic_memory") ||
-    normalized.includes("do_not_create_runtime_memory") ||
-    normalized.includes("do_not_save_synthesis") ||
-    normalized.includes("document_profile_creation_check") ||
     normalized.includes("cybernetic_document_memory_recall_test") ||
     normalized.includes("cyber_document_memory_recall_ready") ||
     normalized.includes("document_profile_recall_and_summary") ||
@@ -3447,164 +3367,6 @@ function buildPublicSemanticMemorySnapshot(args: {
 
 
 
-function buildDocumentProfileCreationCheckOnlyAnswer(args: {
-  message: string;
-  files: PublicFileSnapshot[];
-  documentProfileRecall: DocumentProfileRecall | null;
-  handoff: HandoffResolution;
-  memory: RuntimeMemoryState;
-  policy: PolicyEvaluation;
-  saasContext: SaasRuntimeContext;
-}): string {
-  const summary = buildFileIngestionSummary(args.files);
-  const primaryFile = selectPrimaryDiagnosticFile(args.files);
-  const primaryText = primaryFile ? getPromptTextForFile(primaryFile) : "";
-  const expected = inferExpectedDocumentProfileFromDiagnosticInput(
-    args.message,
-    primaryFile,
-    primaryText
-  );
-  const linkedProfileCount = args.documentProfileRecall?.items.length ?? 0;
-  const profileIds = args.documentProfileRecall?.profileIds ?? [];
-  const missingProfileIds = args.documentProfileRecall?.missingProfileIds ?? [];
-  const documentProfileCreated = linkedProfileCount > 0 || profileIds.length > 0;
-  const documentProfileId = profileIds[0] || "NO_DOCUMENT_PROFILE_ID";
-  const missingProfileReason = documentProfileCreated
-    ? "NONE"
-    : primaryFile
-      ? "NO_LINKED_DOCUMENT_PROFILE_FOUND_FOR_ACTIVE_FILE"
-      : "NO_ACTIVE_FILE_IN_REQUEST";
-
-  return [
-    "DOCUMENT_PROFILE_CREATION_CHECK_ONLY",
-    "diagnosticMode: true",
-    "semanticMemorySuppressed: true",
-    "runtimeMemoryWriteSuppressed: true",
-    "memoryCreated: false",
-    "saveSynthesis: false",
-    "persistable: false",
-    "reusableInPrompt: false",
-    "",
-    "fileIngestion.status: " + String(summary.status),
-    "textStatus: " + String(primaryFile?.status || "NO_FILE"),
-    "filename: " + String(primaryFile?.name || "NO_FILE"),
-    "textLength: " + String(primaryFile ? getPromptTextForFile(primaryFile).length || primaryFile.textLength : 0),
-    "fileHash: " + String(primaryFile?.fileHash || primaryFile?.hash || "NO_FILE_HASH"),
-    "detected title: " + expected.title,
-    "detected volume: " + expected.volume,
-    "docFamily: " + expected.docFamily,
-    "canonicalAxis: " + expected.canonicalAxis,
-    "documentRegistry.status: " + String(args.documentProfileRecall?.status || "DOCUMENT_PROFILE_RECALL_NOT_REQUESTED"),
-    "documentProfileCreated: " + String(documentProfileCreated),
-    "documentProfileId: " + documentProfileId,
-    "profileId: " + documentProfileId,
-    "linkedProfileCount: " + String(linkedProfileCount),
-    "linkedDocsCount: " + String(linkedProfileCount),
-    "missingProfileIds: " + String(missingProfileIds.join(", ") || "NONE"),
-    "missingProfileReason: " + missingProfileReason,
-    "Human IPR: " + args.handoff.humanIpr,
-    "Runtime memory ID: " + args.memory.memoryId,
-    "Tenant: " + args.saasContext.tenantId,
-    "Workspace: " + args.saasContext.workspaceId,
-    "policyDecision: " + args.policy.decision,
-    "operationDecision: " + args.policy.operationDecision,
-    "legalCertification=false",
-    "OPC=technical proof receipt only"
-  ].join("\n");
-}
-
-
-
-function selectPrimaryDiagnosticFile(files: PublicFileSnapshot[]): PublicFileSnapshot | null {
-  return (
-    files.find((file) => file.status === "TEXT_READY" && file.promptReady) ||
-    files.find((file) => file.promptReady) ||
-    files.find((file) => file.status === "TEXT_READY") ||
-    files[0] ||
-    null
-  );
-}
-
-
-
-function inferExpectedDocumentProfileFromDiagnosticInput(
-  message: string,
-  file: PublicFileSnapshot | null,
-  text: string
-): {
-  title: string;
-  volume: string;
-  docFamily: string;
-  canonicalAxis: string;
-} {
-  const source = normalizeText([
-    message,
-    file?.name || "",
-    text.slice(0, 4000)
-  ].join("\n"));
-
-  if (
-    source.includes("alien code") ||
-    source.includes("codice alieno") ||
-    source.includes("4d.4d") ||
-    source.includes("volume iv") ||
-    source.includes("volume 4") ||
-    source.includes(" v4")
-  ) {
-    return {
-      title: "ALIEN CODE",
-      volume: "V4",
-      docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
-      canonicalAxis: "Decisione · Costo · Traccia · Tempo"
-    };
-  }
-
-  if (source.includes("lex hermeticum") || source.includes("3c.3c") || source.includes("volume iii")) {
-    return {
-      title: "LEX HERMETICUM",
-      volume: "V3",
-      docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
-      canonicalAxis: "Decisione · Costo · Traccia · Tempo"
-    };
-  }
-
-  if (source.includes("matrix") || source.includes("2b.2b") || source.includes("volume ii")) {
-    return {
-      title: "MATRIX / 05-04-2026",
-      volume: "V2",
-      docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
-      canonicalAxis: "Decisione · Costo · Traccia · Tempo"
-    };
-  }
-
-  if (source.includes("glossario canonico")) {
-    return {
-      title: "GLOSSARIO CANONICO DEL CORPUS",
-      volume: "GLOSSARY",
-      docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
-      canonicalAxis: "Decisione · Costo · Traccia · Tempo"
-    };
-  }
-
-  if (source.includes("esoterologia") || source.includes("1a.1a") || source.includes("volume i")) {
-    return {
-      title: "ESOTEROLOGIA",
-      volume: "V1",
-      docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
-      canonicalAxis: "Decisione · Costo · Traccia · Tempo"
-    };
-  }
-
-  return {
-    title: "UNKNOWN_DOCUMENT_PROFILE_TITLE",
-    volume: "UNKNOWN_VOLUME",
-    docFamily: "UNKNOWN_DOC_FAMILY",
-    canonicalAxis: "Decisione · Costo · Traccia · Tempo"
-  };
-}
-
-
-
 function applyNoSavePolicyToEsoterologicalSemanticMemoryRecord(
   record: EsoterologicalSemanticMemoryRecord
 ): EsoterologicalSemanticMemoryRecord {
@@ -3656,6 +3418,29 @@ function buildNoSaveGuardAnswer(args: {
     "Policy: " + args.policy.decision + " / " + args.policy.operationDecision,
     "",
     "5. Boundary",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+function appendNoSaveRecallBoundary(answer: string): string {
+  const normalizedAnswer = answer.trim();
+  if (!normalizedAnswer || normalizedAnswer.includes("NO_SAVE_GUARD_READY: true")) {
+    return answer;
+  }
+
+  return [
+    normalizedAnswer,
+    "",
+    "NO_SAVE_GUARD_READY: true",
+    "semanticMemoryPersistable=false",
+    "semanticMemoryReusableInPrompt=false",
+    "runtimeMemoryWriteSuppressed=true",
+    "noNewIprMemory=true",
+    "noNewSemanticMemoryPersistable=true",
+    "noSaveGuardMode=RECALL_ALLOWED_WRITE_SUPPRESSED",
+    "Boundary: la richiesta contiene un comando di non persistenza; JOKER-C2 richiama memoria/profilo esistente ma non crea nuova memoria IPR-bound né memoria semantica riusabile.",
     "legalCertification=false",
     "OPC=technical proof receipt only"
   ].join("\n");
@@ -5983,7 +5768,6 @@ function buildRuntimeDiagnosticsAnswer(args: {
   noSavePersistenceRequested?: boolean;
   runtimeMemoryWriteSuppressed?: boolean;
   documentMemoryRecallRequested?: boolean;
-  documentProfileCreationCheckRequested?: boolean;
   selfPilotProjectScopeBridgeRequested?: boolean;
   selfPilotProjectScopeBridgeApplied?: boolean;
   routeRevisionGuardRequested?: boolean;
