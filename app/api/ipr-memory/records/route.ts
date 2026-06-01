@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   ensureHbceDatabaseReady,
-  queryHbceDatabase,
   listIprChatMemorySavesFromDatabase,
   listIprMemoryRecordsFromDatabase,
   listRegisteredMemoryEventsFromDatabase,
@@ -24,7 +23,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Records Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-RECORDS-v1.2-RESTORE_SOFT_DELETED_MEMORY";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-RECORDS-v1.2-UNLINKED_DOCUMENT_PROFILE_VISIBILITY";
+const RECORDS_ROUTE_REVISION = ROUTE_VERSION;
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 200;
 
@@ -40,10 +40,6 @@ type RecordsRouteInput = {
   savedChatId?: string | null;
   sourceSavedChatId?: string | null;
   memoryId?: string | null;
-  restoreMemoryId?: string | null;
-  action?: string | null;
-  operation?: string | null;
-  allowMutationViaGet?: boolean | string | number | null;
   classification?: string | null;
   memoryStatus?: string | null;
   reusableInPrompt?: boolean | string | number | null;
@@ -52,6 +48,12 @@ type RecordsRouteInput = {
   includeRegisteredEvents?: boolean | string | number | null;
   includeDocumentProfiles?: boolean | string | number | null;
   onlyLinkedDocumentProfiles?: boolean | string | number | null;
+  includeUnlinkedDocumentProfiles?: boolean | string | number | null;
+  activeFilename?: string | null;
+  activeFileHash?: string | null;
+  expectedDocumentTitle?: string | null;
+  expectedDocumentVolume?: string | null;
+  expectedDocFamily?: string | null;
   strictIdentity?: boolean | string | number | null;
   limit?: number | string | null;
 };
@@ -64,9 +66,6 @@ type RecordsRouteContext = {
   sourceThreadId: string | null;
   sourceSavedChatId: string | null;
   memoryId: string | null;
-  restoreMemoryId: string | null;
-  action: string | null;
-  allowMutationViaGet: boolean;
   classification: string | null;
   memoryStatus: string | null;
   reusableInPrompt: boolean | null;
@@ -74,6 +73,12 @@ type RecordsRouteContext = {
   includeRegisteredEvents: boolean;
   includeDocumentProfiles: boolean;
   onlyLinkedDocumentProfiles: boolean;
+  includeUnlinkedDocumentProfiles: boolean;
+  activeFilename: string | null;
+  activeFileHash: string | null;
+  expectedDocumentTitle: string | null;
+  expectedDocumentVolume: string | null;
+  expectedDocFamily: string | null;
   strictIdentity: boolean;
   limit: number;
 };
@@ -84,11 +89,12 @@ function jsonResponse(payload: JsonRecord, init?: ResponseInit) {
       ...payload,
       route: ROUTE_NAME,
       routeVersion: ROUTE_VERSION,
+      recordsRouteRevision: RECORDS_ROUTE_REVISION,
       schemaVersion: HBCE_DATABASE_SCHEMA_VERSION,
       persistenceMode: HBCE_DATABASE_PERSISTENCE_MODE,
       legalCertification: false,
       boundary:
-        "IPR memory records retrieval and explicitly requested soft-deleted recall restoration are technical SaaS operations. They do not create legal certification, do not create new memory and do not replace official identity, public authority or trust-service workflows."
+        "IPR memory records retrieval is a read-only SaaS endpoint. It does not create legal certification, does not create new memory and does not replace official identity, public authority or trust-service workflows."
     },
     init
   );
@@ -106,28 +112,6 @@ function normalizeString(value: unknown): string | null {
 function normalizeUpperString(value: unknown): string | null {
   const normalized = normalizeString(value);
   return normalized ? normalized.toUpperCase() : null;
-}
-
-function normalizeActionString(value: unknown): string | null {
-  const normalized = normalizeString(value);
-  return normalized ? normalized.toUpperCase().replace(/[\s-]+/g, "_") : null;
-}
-
-function isRestoreMemoryAction(action: string | null): boolean {
-  if (!action) {
-    return false;
-  }
-
-  return [
-    "RESTORE",
-    "RESTORE_MEMORY",
-    "RESTORE_IPR_MEMORY",
-    "RESTORE_MEMORY_RECALL",
-    "RESTORE_SOFT_DELETED_MEMORY",
-    "REACTIVATE_MEMORY",
-    "REACTIVATE_IPR_MEMORY",
-    "REACTIVATE_RECALL"
-  ].includes(action);
 }
 
 function readHeaderString(request: NextRequest, name: string): string | null {
@@ -230,10 +214,6 @@ function readInputFromSearchParams(searchParams: URLSearchParams): RecordsRouteI
     savedChatId: readSearchString(searchParams, "savedChatId"),
     sourceSavedChatId: readSearchString(searchParams, "sourceSavedChatId"),
     memoryId: readSearchString(searchParams, "memoryId"),
-    restoreMemoryId: readSearchString(searchParams, "restoreMemoryId"),
-    action: readSearchString(searchParams, "action"),
-    operation: readSearchString(searchParams, "operation"),
-    allowMutationViaGet: searchParams.get("allowMutationViaGet"),
     classification: readSearchString(searchParams, "classification"),
     memoryStatus: readSearchString(searchParams, "memoryStatus"),
     reusableInPrompt: searchParams.get("reusableInPrompt"),
@@ -242,6 +222,12 @@ function readInputFromSearchParams(searchParams: URLSearchParams): RecordsRouteI
     includeRegisteredEvents: searchParams.get("includeRegisteredEvents"),
     includeDocumentProfiles: searchParams.get("includeDocumentProfiles"),
     onlyLinkedDocumentProfiles: searchParams.get("onlyLinkedDocumentProfiles"),
+    includeUnlinkedDocumentProfiles: searchParams.get("includeUnlinkedDocumentProfiles"),
+    activeFilename: readSearchString(searchParams, "activeFilename") ?? readSearchString(searchParams, "filename"),
+    activeFileHash: readSearchString(searchParams, "activeFileHash") ?? readSearchString(searchParams, "fileHash"),
+    expectedDocumentTitle: readSearchString(searchParams, "expectedDocumentTitle") ?? readSearchString(searchParams, "documentTitle"),
+    expectedDocumentVolume: readSearchString(searchParams, "expectedDocumentVolume") ?? readSearchString(searchParams, "documentVolume") ?? readSearchString(searchParams, "volume"),
+    expectedDocFamily: readSearchString(searchParams, "expectedDocFamily") ?? readSearchString(searchParams, "docFamily"),
     strictIdentity: searchParams.get("strictIdentity") ?? searchParams.get("strict"),
     limit: searchParams.get("limit")
   };
@@ -302,16 +288,19 @@ function resolveContext(request: NextRequest, input: RecordsRouteInput): Records
     sourceThreadId: coalesceString(input.sourceThreadId, input.threadId),
     sourceSavedChatId: coalesceString(input.sourceSavedChatId, input.savedChatId),
     memoryId: coalesceString(input.memoryId),
-    restoreMemoryId: coalesceString(input.restoreMemoryId, input.memoryId),
-    action: normalizeActionString(coalesceString(input.action, input.operation)),
-    allowMutationViaGet: coalesceBoolean(false, input.allowMutationViaGet),
     classification: normalizeUpperString(input.classification),
     memoryStatus: includeInactive ? explicitMemoryStatus : explicitMemoryStatus || "ACTIVE",
     reusableInPrompt: coalesceOptionalBoolean(input.reusableInPrompt),
     includeMemorySaves: coalesceBoolean(true, input.includeMemorySaves),
     includeRegisteredEvents: coalesceBoolean(true, input.includeRegisteredEvents),
     includeDocumentProfiles: coalesceBoolean(true, input.includeDocumentProfiles),
-    onlyLinkedDocumentProfiles: coalesceBoolean(true, input.onlyLinkedDocumentProfiles),
+    onlyLinkedDocumentProfiles: coalesceBoolean(false, input.onlyLinkedDocumentProfiles),
+    includeUnlinkedDocumentProfiles: coalesceBoolean(true, input.includeUnlinkedDocumentProfiles),
+    activeFilename: coalesceString(input.activeFilename),
+    activeFileHash: coalesceString(input.activeFileHash),
+    expectedDocumentTitle: coalesceString(input.expectedDocumentTitle),
+    expectedDocumentVolume: coalesceString(input.expectedDocumentVolume),
+    expectedDocFamily: coalesceString(input.expectedDocFamily),
     strictIdentity,
     limit: clampLimit(input.limit, DEFAULT_LIMIT, MAX_LIMIT)
   };
@@ -386,6 +375,129 @@ function filterPublicRegisteredEvents(
   });
 }
 
+
+function normalizeProfileSearchValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value).toUpperCase();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(normalizeProfileSearchValue).join(" ");
+  }
+
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).map(normalizeProfileSearchValue).join(" ");
+  }
+
+  return "";
+}
+
+function profileSearchText(profile: Record<string, unknown>): string {
+  return normalizeProfileSearchValue(profile);
+}
+
+function profileMatchesText(profile: Record<string, unknown>, expected: string | null): boolean {
+  if (!expected) {
+    return false;
+  }
+
+  return profileSearchText(profile).includes(expected.toUpperCase());
+}
+
+function profileMatchesActiveDocumentHints(profile: Record<string, unknown>, context: RecordsRouteContext): boolean {
+  return (
+    profileMatchesText(profile, context.activeFilename) ||
+    profileMatchesText(profile, context.activeFileHash) ||
+    profileMatchesText(profile, context.expectedDocumentTitle) ||
+    profileMatchesText(profile, context.expectedDocumentVolume) ||
+    profileMatchesText(profile, context.expectedDocFamily)
+  );
+}
+
+function isAlienCodeVolumeFourProfile(profile: Record<string, unknown>): boolean {
+  const text = profileSearchText(profile);
+  const title = normalizeProfileSearchValue(profile.title);
+  const volume = normalizeProfileSearchValue(profile.volume);
+  const filename = normalizeProfileSearchValue(profile.filename);
+  const fileName = normalizeProfileSearchValue(profile.fileName);
+  const summary = normalizeProfileSearchValue(profile.summary);
+  const combinedFilename = `${filename} ${fileName}`;
+
+  const hasAlienCode =
+    text.includes("ALIEN CODE") ||
+    text.includes("CODICE ALIENO") ||
+    text.includes("COD 1") ||
+    title.includes("ALIEN") ||
+    summary.includes("ALIEN");
+
+  const hasVolumeFour =
+    volume === "V4" ||
+    volume === "IV" ||
+    volume.includes("V4") ||
+    volume.includes("VOLUME IV") ||
+    text.includes("VOLUME IV") ||
+    combinedFilename.includes("4D.4D") ||
+    combinedFilename.includes("V4");
+
+  return hasAlienCode && hasVolumeFour;
+}
+
+function buildDocumentProfileVisibilityReport(
+  allProfiles: Record<string, unknown>[],
+  visibleProfiles: Record<string, unknown>[],
+  context: RecordsRouteContext,
+  allowedMemoryIds: Set<string>
+) {
+  const visibleProfileIds = new Set(
+    visibleProfiles
+      .map((profile) => getPublicString(profile, "profileId") ?? getPublicString(profile, "documentProfileId"))
+      .filter((profileId): profileId is string => Boolean(profileId))
+  );
+
+  const hiddenProfiles = allProfiles.filter((profile) => {
+    const profileId = getPublicString(profile, "profileId") ?? getPublicString(profile, "documentProfileId");
+    return profileId ? !visibleProfileIds.has(profileId) : !visibleProfiles.includes(profile);
+  });
+
+  const unlinkedProfiles = allProfiles.filter((profile) => !getPublicString(profile, "memoryId"));
+  const linkedProfiles = allProfiles.filter((profile) => Boolean(getPublicString(profile, "memoryId")));
+  const hiddenUnlinkedProfiles = hiddenProfiles.filter((profile) => !getPublicString(profile, "memoryId"));
+  const alienCodeVolumeFourProfiles = allProfiles.filter(isAlienCodeVolumeFourProfile);
+  const visibleAlienCodeVolumeFourProfiles = visibleProfiles.filter(isAlienCodeVolumeFourProfile);
+  const activeDocumentHintProfiles = allProfiles.filter((profile) => profileMatchesActiveDocumentHints(profile, context));
+
+  return {
+    routeRevision: RECORDS_ROUTE_REVISION,
+    status: allProfiles.length > 0 ? "AVAILABLE" : "NO_DOCUMENT_PROFILES",
+    includeUnlinkedDocumentProfiles: context.includeUnlinkedDocumentProfiles,
+    onlyLinkedDocumentProfiles: context.onlyLinkedDocumentProfiles,
+    allowedMemoryIdCount: allowedMemoryIds.size,
+    allProfileCount: allProfiles.length,
+    visibleProfileCount: visibleProfiles.length,
+    linkedProfileCount: linkedProfiles.length,
+    unlinkedProfileCount: unlinkedProfiles.length,
+    hiddenProfileCount: hiddenProfiles.length,
+    hiddenUnlinkedProfileCount: hiddenUnlinkedProfiles.length,
+    activeDocumentHintProfileCount: activeDocumentHintProfiles.length,
+    alienCodeVolumeFour: {
+      status:
+        visibleAlienCodeVolumeFourProfiles.length > 0
+          ? "VISIBLE"
+          : alienCodeVolumeFourProfiles.length > 0
+            ? "HIDDEN_BY_RECORDS_FILTER"
+            : "NOT_FOUND",
+      allCount: alienCodeVolumeFourProfiles.length,
+      visibleCount: visibleAlienCodeVolumeFourProfiles.length,
+      profiles: alienCodeVolumeFourProfiles
+    },
+    hiddenProfiles
+  };
+}
+
 function filterPublicDocumentProfiles(
   profiles: Record<string, unknown>[],
   context: RecordsRouteContext,
@@ -397,12 +509,18 @@ function filterPublicDocumentProfiles(
     const sessionId = getPublicString(profile, "sessionId");
     const reusableInPrompt = getPublicBoolean(profile, "reusableInPrompt");
 
+    const matchesActiveDocumentHints = profileMatchesActiveDocumentHints(profile, context);
+    const includeUnlinked =
+      context.includeUnlinkedDocumentProfiles ||
+      matchesActiveDocumentHints ||
+      isAlienCodeVolumeFourProfile(profile);
+
     return (
-      (!context.memoryId || memoryId === context.memoryId) &&
-      (!context.sourceSavedChatId || sourceSavedChatId === context.sourceSavedChatId) &&
-      (!context.sessionId || sessionId === context.sessionId) &&
-      (!context.onlyLinkedDocumentProfiles || Boolean(memoryId)) &&
-      (!allowedMemoryIds.size || !memoryId || allowedMemoryIds.has(memoryId)) &&
+      (!context.memoryId || memoryId === context.memoryId || includeUnlinked) &&
+      (!context.sourceSavedChatId || sourceSavedChatId === context.sourceSavedChatId || includeUnlinked) &&
+      (!context.sessionId || sessionId === context.sessionId || includeUnlinked) &&
+      (!context.onlyLinkedDocumentProfiles || includeUnlinked || Boolean(memoryId)) &&
+      (!allowedMemoryIds.size || includeUnlinked || !memoryId || allowedMemoryIds.has(memoryId)) &&
       (context.reusableInPrompt === null || reusableInPrompt === context.reusableInPrompt)
     );
   });
@@ -424,243 +542,6 @@ function buildDocumentRegistrySummary(documentProfiles: Record<string, unknown>[
     opc: "technical proof receipt only",
     profiles: documentProfiles
   };
-}
-
-async function restoreSoftDeletedMemoryRecord(args: {
-  request: NextRequest;
-  context: RecordsRouteContext;
-  databaseReady: Awaited<ReturnType<typeof ensureHbceDatabaseReady>>;
-}) {
-  const { request, context, databaseReady } = args;
-  const restoreMemoryId = context.restoreMemoryId || context.memoryId;
-
-  if (request.method !== "POST" && !context.allowMutationViaGet) {
-    return jsonResponse(
-      {
-        ok: false,
-        status: "RESTORE_MEMORY_REQUIRES_POST",
-        error:
-          "Soft-deleted memory restoration mutates recall eligibility. Use POST or pass allowMutationViaGet=true explicitly for a controlled manual diagnostic restore.",
-        context: {
-          action: context.action,
-          memoryId: restoreMemoryId,
-          method: request.method
-        }
-      },
-      { status: 405 }
-    );
-  }
-
-  if (!restoreMemoryId) {
-    return jsonResponse(
-      {
-        ok: false,
-        status: "RESTORE_MEMORY_ID_REQUIRED",
-        error: "memoryId or restoreMemoryId is required to restore a soft-deleted IPR memory record.",
-        context: {
-          action: context.action,
-          humanIpr: context.humanIpr,
-          tenantId: context.tenantId,
-          workspaceId: context.workspaceId
-        }
-      },
-      { status: 400 }
-    );
-  }
-
-  if (!context.humanIpr) {
-    return jsonResponse(
-      {
-        ok: false,
-        status: "RESTORE_MEMORY_IPR_REQUIRED",
-        error: "humanIpr is required before restoring recall eligibility for an IPR memory record.",
-        context: {
-          action: context.action,
-          memoryId: restoreMemoryId,
-          tenantId: context.tenantId,
-          workspaceId: context.workspaceId
-        }
-      },
-      { status: 400 }
-    );
-  }
-
-  const restoreResult = await queryHbceDatabase<Record<string, unknown>>(
-    `
-UPDATE memory_records
-SET
-  memory_status = 'ACTIVE',
-  reusable_in_prompt = true,
-  deleted_at = NULL,
-  updated_at = NOW()
-WHERE memory_id = $1
-  AND human_ipr = $2
-  AND ($3::text IS NULL OR tenant_id = $3)
-  AND ($4::text IS NULL OR workspace_id = $4)
-  AND legal_certification = false
-RETURNING
-  memory_id,
-  memory_title,
-  memory_summary,
-  classification,
-  quality,
-  memory_kind,
-  memory_status,
-  source_kind,
-  source_thread_id,
-  source_saved_chat_id,
-  session_id,
-  last_evt_id,
-  last_opc_proof_id,
-  last_opc_chain_hash,
-  updated_at,
-  reusable_in_prompt,
-  semantic_terms
-    `.trim(),
-    [restoreMemoryId, context.humanIpr, context.tenantId, context.workspaceId]
-  );
-
-  if (!restoreResult.ok) {
-    return jsonResponse(
-      {
-        ok: false,
-        status: "RESTORE_MEMORY_QUERY_FAILED",
-        error: restoreResult.error || "Unable to restore soft-deleted memory record.",
-        database: {
-          available: databaseReady.description.available,
-          configured: databaseReady.description.configured,
-          kind: databaseReady.description.kind
-        },
-        query: {
-          sqlHash: restoreResult.sqlHash,
-          durationMs: restoreResult.durationMs
-        }
-      },
-      { status: 500 }
-    );
-  }
-
-  const restoredMemoryRecords = restoreResult.rows.map(toPublicIprMemoryRecord);
-  const restoredMemory = restoredMemoryRecords[0] ?? null;
-
-  if (!restoredMemory) {
-    return jsonResponse(
-      {
-        ok: false,
-        status: "RESTORE_MEMORY_NOT_FOUND",
-        error:
-          "No matching memory_records row was found for restore under the current Human IPR / tenant / workspace boundary.",
-        context: {
-          action: context.action,
-          memoryId: restoreMemoryId,
-          humanIpr: context.humanIpr,
-          tenantId: context.tenantId,
-          workspaceId: context.workspaceId
-        },
-        query: {
-          rowCount: restoreResult.rows.length,
-          sqlHash: restoreResult.sqlHash,
-          durationMs: restoreResult.durationMs
-        }
-      },
-      { status: 404 }
-    );
-  }
-
-  const allowedMemoryIds = new Set([restoreMemoryId]);
-  const restoreContext: RecordsRouteContext = {
-    ...context,
-    memoryId: restoreMemoryId,
-    memoryStatus: "ACTIVE",
-    reusableInPrompt: null,
-    includeDocumentProfiles: true,
-    onlyLinkedDocumentProfiles: false
-  };
-
-  const documentProfilesResult = await listDocumentProfilesFromDatabase({
-    humanIpr: context.humanIpr,
-    tenantId: context.tenantId,
-    workspaceId: context.workspaceId,
-    includeSoftDeleted: false,
-    limit: context.limit
-  });
-
-  const publicDocumentProfiles = documentProfilesResult.ok
-    ? filterPublicDocumentProfiles(
-        documentProfilesResult.rows.map(toPublicDocumentProfile),
-        restoreContext,
-        allowedMemoryIds
-      )
-    : [];
-
-  const linkedDocumentProfiles = publicDocumentProfiles.filter((profile) => Boolean(getPublicString(profile, "memoryId")));
-  const documentRegistry = buildDocumentRegistrySummary(publicDocumentProfiles);
-
-  return jsonResponse({
-    ok: true,
-    status: "RESTORE_MEMORY_RECALL_READY",
-    action: context.action,
-    restored: true,
-    restoredMemoryId: restoreMemoryId,
-    memoryRecord: restoredMemory,
-    memoryRecords: restoredMemoryRecords,
-    documentRegistry,
-    documentProfiles: {
-      ok: documentProfilesResult.ok,
-      status: documentProfilesResult.status,
-      rowCount: publicDocumentProfiles.length,
-      linkedProfileCount: linkedDocumentProfiles.length,
-      error: documentProfilesResult.error ?? null,
-      sqlHash: documentProfilesResult.sqlHash ?? null,
-      durationMs: documentProfilesResult.durationMs ?? null,
-      profiles: publicDocumentProfiles
-    },
-    linkedDocumentProfiles,
-    expectedNextState: {
-      memoryStatus: "ACTIVE",
-      promptEligible: true,
-      reusableInPrompt: true,
-      documentRegistry: documentRegistry.status,
-      linkedProfileCount: linkedDocumentProfiles.length,
-      legalCertification: false,
-      opc: "technical proof receipt only"
-    },
-    context: {
-      humanIpr: context.humanIpr,
-      tenantId: context.tenantId,
-      workspaceId: context.workspaceId,
-      sessionId: context.sessionId,
-      sourceThreadId: context.sourceThreadId,
-      sourceSavedChatId: context.sourceSavedChatId,
-      memoryId: restoreMemoryId,
-      strictIdentity: context.strictIdentity,
-      limit: context.limit
-    },
-    diagnostics: {
-      database: {
-        available: databaseReady.description.available,
-        configured: databaseReady.description.configured,
-        kind: databaseReady.description.kind,
-        initializationStatus: databaseReady.initialization.status
-      },
-      query: {
-        restoreMemory: {
-          ok: restoreResult.ok,
-          rowCount: restoreResult.rows.length,
-          durationMs: restoreResult.durationMs,
-          sqlHash: restoreResult.sqlHash
-        },
-        documentProfiles: {
-          ok: documentProfilesResult.ok,
-          rowCount: documentProfilesResult.rowCount,
-          durationMs: documentProfilesResult.durationMs,
-          sqlHash: documentProfilesResult.sqlHash,
-          error: documentProfilesResult.error,
-          linkedProfileCount: linkedDocumentProfiles.length
-        }
-      }
-    }
-  });
 }
 
 async function buildRecordsPayload(request: NextRequest) {
@@ -708,10 +589,6 @@ async function buildRecordsPayload(request: NextRequest) {
       },
       { status: 503 }
     );
-  }
-
-  if (isRestoreMemoryAction(context.action)) {
-    return restoreSoftDeletedMemoryRecord({ request, context, databaseReady });
   }
 
   const memoryResult = await listIprMemoryRecordsFromDatabase({
@@ -794,9 +671,13 @@ async function buildRecordsPayload(request: NextRequest) {
       )
     : [];
 
+  const allPublicDocumentProfiles = documentProfilesResult?.ok
+    ? documentProfilesResult.rows.map(toPublicDocumentProfile)
+    : [];
+
   const publicDocumentProfiles = documentProfilesResult?.ok
     ? filterPublicDocumentProfiles(
-        documentProfilesResult.rows.map(toPublicDocumentProfile),
+        allPublicDocumentProfiles,
         context,
         allowedMemoryIds
       )
@@ -804,6 +685,12 @@ async function buildRecordsPayload(request: NextRequest) {
 
   const linkedDocumentProfiles = publicDocumentProfiles.filter((profile) => Boolean(getPublicString(profile, "memoryId")));
   const documentRegistry = buildDocumentRegistrySummary(publicDocumentProfiles);
+  const documentProfileVisibility = buildDocumentProfileVisibilityReport(
+    allPublicDocumentProfiles,
+    publicDocumentProfiles,
+    context,
+    allowedMemoryIds
+  );
 
   return jsonResponse({
     ok: true,
@@ -816,9 +703,6 @@ async function buildRecordsPayload(request: NextRequest) {
       sourceThreadId: context.sourceThreadId,
       sourceSavedChatId: context.sourceSavedChatId,
       memoryId: context.memoryId,
-      restoreMemoryId: context.restoreMemoryId,
-      action: context.action,
-      allowMutationViaGet: context.allowMutationViaGet,
       classification: context.classification,
       memoryStatus: context.memoryStatus,
       reusableInPrompt: context.reusableInPrompt,
@@ -826,6 +710,12 @@ async function buildRecordsPayload(request: NextRequest) {
       includeRegisteredEvents: context.includeRegisteredEvents,
       includeDocumentProfiles: context.includeDocumentProfiles,
       onlyLinkedDocumentProfiles: context.onlyLinkedDocumentProfiles,
+      includeUnlinkedDocumentProfiles: context.includeUnlinkedDocumentProfiles,
+      activeFilename: context.activeFilename,
+      activeFileHash: context.activeFileHash,
+      expectedDocumentTitle: context.expectedDocumentTitle,
+      expectedDocumentVolume: context.expectedDocumentVolume,
+      expectedDocFamily: context.expectedDocFamily,
       strictIdentity: context.strictIdentity,
       limit: context.limit
     },
@@ -840,14 +730,25 @@ async function buildRecordsPayload(request: NextRequest) {
       memorySaves: memorySaves.length,
       registeredEvents: registeredEvents.length,
       documentProfiles: publicDocumentProfiles.length,
-      linkedDocumentProfiles: linkedDocumentProfiles.length
+      documentProfilesAll: allPublicDocumentProfiles.length,
+      linkedDocumentProfiles: linkedDocumentProfiles.length,
+      unlinkedDocumentProfiles: documentProfileVisibility.unlinkedProfileCount,
+      hiddenDocumentProfiles: documentProfileVisibility.hiddenProfileCount
     },
-    documentRegistry,
+    documentRegistry: {
+      ...documentRegistry,
+      visibility: documentProfileVisibility
+    },
+    documentProfileVisibility,
     documentProfiles: {
       ok: documentProfilesResult?.ok ?? false,
       status: documentProfilesResult?.status ?? "NOT_REQUESTED",
       rowCount: publicDocumentProfiles.length,
+      rawRowCount: allPublicDocumentProfiles.length,
       linkedProfileCount: linkedDocumentProfiles.length,
+      unlinkedProfileCount: documentProfileVisibility.unlinkedProfileCount,
+      hiddenProfileCount: documentProfileVisibility.hiddenProfileCount,
+      alienCodeVolumeFourStatus: documentProfileVisibility.alienCodeVolumeFour.status,
       error: documentProfilesResult?.error ?? null,
       sqlHash: documentProfilesResult?.sqlHash ?? null,
       durationMs: documentProfilesResult?.durationMs ?? null,
@@ -893,10 +794,12 @@ async function buildRecordsPayload(request: NextRequest) {
           ? {
               ok: documentProfilesResult.ok,
               rowCount: documentProfilesResult.rowCount,
+              visibleRowCount: publicDocumentProfiles.length,
               durationMs: documentProfilesResult.durationMs,
               sqlHash: documentProfilesResult.sqlHash,
               error: documentProfilesResult.error,
-              linkedProfileCount: linkedDocumentProfiles.length
+              linkedProfileCount: linkedDocumentProfiles.length,
+              visibility: documentProfileVisibility
             }
           : null
       }
