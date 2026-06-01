@@ -45,7 +45,7 @@ export const dynamic = "force-dynamic";
 
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-DOCUMENT-AWARE-IDEMPOTENCY-v2.3";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-ACTIVE-DOCUMENT-LINK-v2.4";
 const IDEMPOTENCY_POLICY = "THREAD_PRIMARY_INTENTION_REUSABLE_MEMORY";
 const DOCUMENT_AWARE_IDEMPOTENCY_POLICY = "DOCUMENT_PROFILE_STRICT_REUSABLE_MEMORY";
 const NO_DOCUMENT_SCOPE = "NO_DOCUMENT_SCOPE";
@@ -1342,6 +1342,73 @@ function collectDocumentProfileLinkCandidatesFromText(
 }
 
 
+function normalizeCandidateFilenameForMatch(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+
+  const normalized = value
+    .replace(/\\/g, "/")
+    .split("/")
+    .pop()
+    ?.replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+
+  return normalized || null;
+}
+
+
+function candidateHasDocumentAnchor(candidate: DocumentProfileLinkCandidate): boolean {
+  return Boolean(candidate.profileId || candidate.fileId || candidate.fileHash || candidate.filename);
+}
+
+
+function candidateMatchesAnchor(
+  candidate: DocumentProfileLinkCandidate,
+  anchor: DocumentProfileLinkCandidate
+): boolean {
+  if (candidate.profileId && anchor.profileId && candidate.profileId === anchor.profileId) {
+    return true;
+  }
+
+
+  if (candidate.fileId && anchor.fileId && candidate.fileId === anchor.fileId) {
+    return true;
+  }
+
+
+  if (candidate.fileHash && anchor.fileHash && candidate.fileHash === anchor.fileHash) {
+    return true;
+  }
+
+
+  const candidateFilename = normalizeCandidateFilenameForMatch(candidate.filename);
+  const anchorFilename = normalizeCandidateFilenameForMatch(anchor.filename);
+  return Boolean(candidateFilename && anchorFilename && candidateFilename === anchorFilename);
+}
+
+
+function candidateMatchesAnyAnchor(
+  candidate: DocumentProfileLinkCandidate,
+  anchors: DocumentProfileLinkCandidate[]
+): boolean {
+  return anchors.some((anchor) => candidateMatchesAnchor(candidate, anchor));
+}
+
+
+function pushManyDocumentProfileLinkCandidates(
+  target: DocumentProfileLinkCandidate[],
+  candidates: DocumentProfileLinkCandidate[]
+) {
+  for (const candidate of candidates) {
+    pushDocumentProfileLinkCandidate(target, candidate);
+  }
+}
+
+
 function buildDocumentProfileLinkCandidates(
   input: SaveChatRouteInput,
   contextText: {
@@ -1352,10 +1419,12 @@ function buildDocumentProfileLinkCandidates(
     radicalIntention: string;
   }
 ): DocumentProfileLinkCandidate[] {
-  const candidates: DocumentProfileLinkCandidate[] = [];
+  const directAndActiveCandidates: DocumentProfileLinkCandidate[] = [];
+  const registryCandidates: DocumentProfileLinkCandidate[] = [];
+  const textFallbackCandidates: DocumentProfileLinkCandidate[] = [];
 
 
-  pushDocumentProfileLinkCandidate(candidates, {
+  pushDocumentProfileLinkCandidate(directAndActiveCandidates, {
     profileId: input.documentProfileId,
     fileId: input.fileId,
     fileHash: input.fileHash,
@@ -1366,7 +1435,7 @@ function buildDocumentProfileLinkCandidates(
 
 
   for (const profileId of normalizeStringArray(input.documentProfileIds)) {
-    pushDocumentProfileLinkCandidate(candidates, {
+    pushDocumentProfileLinkCandidate(directAndActiveCandidates, {
       profileId,
       source: "DIRECT_SAVE_CHAT_INPUT.documentProfileIds",
       confidence: "DIRECT"
@@ -1375,7 +1444,7 @@ function buildDocumentProfileLinkCandidates(
 
 
   for (const filename of normalizeStringArray(input.documentFilenames)) {
-    pushDocumentProfileLinkCandidate(candidates, {
+    pushDocumentProfileLinkCandidate(directAndActiveCandidates, {
       filename,
       source: "DIRECT_SAVE_CHAT_INPUT.documentFilenames",
       confidence: "DIRECT"
@@ -1383,33 +1452,61 @@ function buildDocumentProfileLinkCandidates(
   }
 
 
-  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.documentProfile, "input.documentProfile");
-  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.documentProfiles, "input.documentProfiles");
-  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.activeFile, "input.activeFile");
-  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.activeFiles, "input.activeFiles");
-  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.files, "input.files");
-  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.payload, "input.payload");
-  collectDocumentProfileLinkCandidatesFromRecord(candidates, input.metadata, "input.metadata");
+  collectDocumentProfileLinkCandidatesFromRecord(directAndActiveCandidates, input.documentProfile, "input.documentProfile");
+  collectDocumentProfileLinkCandidatesFromRecord(directAndActiveCandidates, input.activeFile, "input.activeFile");
+  collectDocumentProfileLinkCandidatesFromRecord(directAndActiveCandidates, input.activeFiles, "input.activeFiles");
+  collectDocumentProfileLinkCandidatesFromRecord(directAndActiveCandidates, input.files, "input.files");
 
 
-  collectDocumentProfileLinkCandidatesFromText(candidates, contextText.threadTitle, "context.threadTitle");
-  collectDocumentProfileLinkCandidatesFromText(candidates, contextText.memoryTitle, "context.memoryTitle");
-  collectDocumentProfileLinkCandidatesFromText(candidates, contextText.memorySummary, "context.memorySummary");
-  collectDocumentProfileLinkCandidatesFromText(candidates, contextText.primaryIntention, "context.primaryIntention");
-  collectDocumentProfileLinkCandidatesFromText(candidates, contextText.radicalIntention, "context.radicalIntention");
+  collectDocumentProfileLinkCandidatesFromRecord(registryCandidates, input.documentProfiles, "input.documentProfiles");
+  collectDocumentProfileLinkCandidatesFromRecord(registryCandidates, input.payload, "input.payload");
+  collectDocumentProfileLinkCandidatesFromRecord(registryCandidates, input.metadata, "input.metadata");
+
+
+  collectDocumentProfileLinkCandidatesFromText(textFallbackCandidates, contextText.threadTitle, "context.threadTitle");
+  collectDocumentProfileLinkCandidatesFromText(textFallbackCandidates, contextText.memoryTitle, "context.memoryTitle");
+  collectDocumentProfileLinkCandidatesFromText(textFallbackCandidates, contextText.memorySummary, "context.memorySummary");
+  collectDocumentProfileLinkCandidatesFromText(textFallbackCandidates, contextText.primaryIntention, "context.primaryIntention");
+  collectDocumentProfileLinkCandidatesFromText(textFallbackCandidates, contextText.radicalIntention, "context.radicalIntention");
 
 
   if (Array.isArray(input.messages)) {
     input.messages.slice(0, MAX_MESSAGE_INPUT).forEach((message, index) => {
       if (isRecord(message)) {
-        collectDocumentProfileLinkCandidatesFromRecord(candidates, message.metadata, `input.messages[${index}].metadata`);
-        collectDocumentProfileLinkCandidatesFromText(candidates, message.content, `input.messages[${index}].content`);
+        collectDocumentProfileLinkCandidatesFromRecord(textFallbackCandidates, message.metadata, `input.messages[${index}].metadata`);
+        collectDocumentProfileLinkCandidatesFromText(textFallbackCandidates, message.content, `input.messages[${index}].content`);
       }
     });
   }
 
 
-  return candidates.slice(0, 12);
+  const selectedCandidates: DocumentProfileLinkCandidate[] = [];
+  const activeAnchors = directAndActiveCandidates.filter(candidateHasDocumentAnchor);
+
+
+  if (activeAnchors.length > 0) {
+    pushManyDocumentProfileLinkCandidates(selectedCandidates, directAndActiveCandidates);
+
+
+    for (const candidate of registryCandidates) {
+      if (candidateMatchesAnyAnchor(candidate, activeAnchors)) {
+        pushDocumentProfileLinkCandidate(selectedCandidates, candidate);
+      }
+    }
+
+
+    for (const candidate of textFallbackCandidates) {
+      if (candidateMatchesAnyAnchor(candidate, activeAnchors)) {
+        pushDocumentProfileLinkCandidate(selectedCandidates, candidate);
+      }
+    }
+  } else {
+    collectDocumentProfileLinkCandidatesFromRecord(selectedCandidates, input.documentProfile, "input.documentProfile.noActiveAnchor");
+    pushManyDocumentProfileLinkCandidates(selectedCandidates, textFallbackCandidates);
+  }
+
+
+  return selectedCandidates.slice(0, 6);
 }
 
 
