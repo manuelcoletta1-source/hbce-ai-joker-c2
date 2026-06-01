@@ -20,7 +20,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-GLOSSARY_CANONICAL_FIX-v4";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4";
 
 
 type FileStatus =
@@ -135,53 +135,15 @@ type DocumentProfileContext = {
 
 
 type CanonicalCorpusVolumeProfile = {
-  volume: "GLOSSARY" | "V1" | "V2" | "V3" | "V4" | "V5";
+  volume: "V1" | "V2" | "V3" | "V4" | "V5";
   title: string;
   summary: string;
   keyTerms: string[];
-  canonicalDocumentKind?: string;
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_GLOSSARY_CANONICAL_FIX_v4";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_ALIEN_CODE_V4_PROFILE_FIX_v4";
 
-const CANONICAL_CORPUS_GLOSSARY_PROFILE: CanonicalCorpusVolumeProfile = {
-  volume: "GLOSSARY",
-  title: "GLOSSARIO CANONICO DEL CORPUS",
-  canonicalDocumentKind: "CANONICAL_GLOSSARY",
-  summary:
-    "Profilo documento GLOSSARIO CANONICO DEL CORPUS: lessico canonico trasversale del CORPUS ESOTEROLOGIA ERMETICA, con mappatura delle voci operative, appartenenza primaria ai volumi e sviluppo secondario V1-V5. Stabilizza l'asse Decisione · Costo · Traccia · Tempo, IPR-CEE, Rascensionale, Alien Code e le soglie operative come vocabolario riusabile del runtime.",
-  keyTerms: [
-    "Glossario Canonico del Corpus",
-    "Esoterologia",
-    "IPR-CEE",
-    "Decisione",
-    "Costo",
-    "Traccia",
-    "Tempo",
-    "Rascensionale",
-    "Innesco rascensionale",
-    "Soglia operativa",
-    "Soglia fail-closed",
-    "Sigillo operativo",
-    "Traccia opponibile",
-    "Codice alieno / Alien Code",
-    "Interfaccia rascensionale",
-    "Accoppiamento organismo-sistema",
-    "Riconconicità organismo-sistema",
-    "Unità qubitronica",
-    "Corpus Esoterologia Ermetica",
-    "V1",
-    "V2",
-    "V3",
-    "V4",
-    "V5",
-    "IPR",
-    "EVT",
-    "OPC"
-  ]
-};
-
-const CANONICAL_CORPUS_VOLUME_PROFILES: Record<"V1" | "V2" | "V3" | "V4" | "V5", CanonicalCorpusVolumeProfile> = {
+const CANONICAL_CORPUS_VOLUME_PROFILES: Record<CanonicalCorpusVolumeProfile["volume"], CanonicalCorpusVolumeProfile> = {
   V1: {
     volume: "V1",
     title: "ESOTEROLOGIA",
@@ -258,11 +220,15 @@ const CANONICAL_CORPUS_VOLUME_PROFILES: Record<"V1" | "V2" | "V3" | "V4" | "V5",
   },
   V4: {
     volume: "V4",
-    title: "ALIEN CODE — FRAMEWORK OPERATIVO PER LA TRACCIABILITÀ RASCENSIONALE",
+    title: "ALIEN CODE",
     summary:
-      "Profilo documento ALIEN CODE Volume IV del CORPUS ESOTEROLOGIA ERMETICA: definisce il framework operativo per la tracciabilità rascensionale, l'interfaccia rascensionale e l'accoppiamento organismo-sistema attraverso Decisione · Costo · Traccia · Tempo.",
+      "Profilo documento ALIEN CODE Volume IV del CORPUS ESOTEROLOGIA ERMETICA: formalizza il framework operativo per la tracciabilità rascensionale, l'interfaccia rascensionale e l'accoppiamento organismo-sistema attraverso Decisione · Costo · Traccia · Tempo.",
     keyTerms: [
       "Alien Code",
+      "Codice alieno",
+      "Volume IV",
+      "Framework operativo per la tracciabilità rascensionale",
+      "Tracciabilità rascensionale",
       "Decisione",
       "Costo",
       "Traccia",
@@ -271,6 +237,8 @@ const CANONICAL_CORPUS_VOLUME_PROFILES: Record<"V1" | "V2" | "V3" | "V4" | "V5",
       "Unità qubitronica",
       "Riconconicità organismo-sistema",
       "Accoppiamento organismo-sistema",
+      "Accoppiamento forzato",
+      "Fallimento del coupling",
       "Soglia di realtà",
       "Evento operativo",
       "Campo rascensionale",
@@ -380,14 +348,6 @@ const REFERENCE_ONLY_MIME_TYPES = new Set([
 const CANONICAL_AXIS_DCTT = "Decisione · Costo · Traccia · Tempo";
 
 const DOCUMENT_KEY_TERM_CANDIDATES = [
-  "Glossario Canonico del Corpus",
-  "IPR-CEE",
-  "Soglia fail-closed",
-  "Sigillo operativo",
-  "Codice alieno / Alien Code",
-  "Accoppiamento organismo-sistema",
-  "Rascensionale",
-  "Innesco rascensionale",
   "Matrix",
   "Decisione",
   "Costo",
@@ -1215,33 +1175,33 @@ function includesAll(normalized: string, terms: string[]): boolean {
 
 
 
-function isCanonicalCorpusGlossary(file: StoredRuntimeFile): boolean {
-  const normalizedName = normalizeSearchText(file.name);
-  const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 60000)}`);
-
-  const hasExplicitGlossaryTitle =
-    normalizedName.includes("glossario canonico del corpus") ||
-    normalized.includes("glossario canonico del corpus");
-
-  const hasCanonicalGlossaryStructure =
-    normalized.includes("con volume di appartenenza primaria") ||
-    normalized.includes("n a b c d e v vs");
-
-  const hasCrossVolumeCanonicalLexicon =
-    includesAll(normalized, ["ipr cee", "decisione", "costo", "traccia", "tempo"]) &&
-    includesAll(normalized, ["soglia fail closed", "dio"]);
-
-  return Boolean(hasExplicitGlossaryTitle && (hasCanonicalGlossaryStructure || hasCrossVolumeCanonicalLexicon));
-}
-
-
 function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCorpusVolumeProfile | null {
   const normalizedName = normalizeSearchText(file.name);
+  const normalizedHead = normalizeSearchText(`${file.name}\n${file.text.slice(0, 16000)}`);
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 30000)}`);
 
+  const explicitV4ByFilename =
+    normalizedName.includes("4d 4d alien code") ||
+    includesAll(normalizedName, ["alien code", "tracciabilita rascensionale"]) ||
+    includesAll(normalizedName, ["codice alieno", "tracciabilita rascensionale"]);
 
-  if (isCanonicalCorpusGlossary(file)) {
-    return CANONICAL_CORPUS_GLOSSARY_PROFILE;
+  const explicitV4ByHeader =
+    includesAll(normalizedHead, ["alien code", "volume iv"]) ||
+    includesAll(normalizedHead, ["alien code", "volume 4"]) ||
+    includesAll(normalizedHead, ["codice alieno", "volume iv"]) ||
+    includesAll(normalizedHead, ["framework operativo", "tracciabilita rascensionale"]) ||
+    includesAll(normalizedHead, ["alien code", "accoppiamento organismo sistema"]);
+
+  if (
+    explicitV4ByFilename ||
+    explicitV4ByHeader ||
+    normalized.includes("framework operativo per la tracciabilita rascensionale") ||
+    includesAll(normalized, ["alien code", "interfaccia rascensionale"]) ||
+    includesAll(normalized, ["codice alieno", "interfaccia rascensionale"]) ||
+    includesAll(normalized, ["unita qubitronica", "riconconicita"]) ||
+    includesAll(normalized, ["accoppiamento organismo sistema", "fallimento del coupling"])
+  ) {
+    return CANONICAL_CORPUS_VOLUME_PROFILES.V4;
   }
 
 
@@ -1251,16 +1211,6 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
     includesAll(normalized, ["anticristo", "portale", "apocalisse"])
   ) {
     return CANONICAL_CORPUS_VOLUME_PROFILES.V5;
-  }
-
-
-  if (
-    normalizedName.includes("4d 4d alien code") ||
-    normalized.includes("framework operativo per la tracciabilita rascensionale") ||
-    includesAll(normalized, ["alien code", "interfaccia rascensionale"]) ||
-    includesAll(normalized, ["unita qubitronica", "riconconicita"])
-  ) {
-    return CANONICAL_CORPUS_VOLUME_PROFILES.V4;
   }
 
 
@@ -1593,10 +1543,19 @@ function buildDocumentProfileInput(
       routeVersion: FILE_ROUTE_REVISION,
       canonicalProfileRevision: DOCUMENT_PROFILE_CANONICAL_FIX_REVISION,
       canonicalProfileApplied: Boolean(canonicalCorpusProfile),
-      canonicalDocumentKind: canonicalCorpusProfile?.canonicalDocumentKind ?? null,
       canonicalVolume: canonicalCorpusProfile?.volume ?? null,
       canonicalTitle: canonicalCorpusProfile?.title ?? null,
-      glossaryGuardApplied: canonicalCorpusProfile?.canonicalDocumentKind === "CANONICAL_GLOSSARY",
+      canonicalDocumentKind: canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null,
+      alienCodeV4GuardApplied: canonicalCorpusProfile?.volume === "V4",
+      alienCodeV4ExpectedProfile:
+        canonicalCorpusProfile?.volume === "V4"
+          ? {
+              title: CANONICAL_CORPUS_VOLUME_PROFILES.V4.title,
+              volume: CANONICAL_CORPUS_VOLUME_PROFILES.V4.volume,
+              docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
+              canonicalAxis: CANONICAL_AXIS_DCTT
+            }
+          : null,
       fileId: file.id,
       filename: file.name,
       fileHash: file.fileHash,
@@ -2216,6 +2175,11 @@ export async function POST(req: NextRequest) {
         title: profile.input.title,
         canonicalAxis: profile.input.canonicalAxis,
         reusableInPrompt: profile.input.reusableInPrompt,
+        alienCodeV4ProfileDetected:
+          profile.input.docFamily === "CORPUS_ESOTEROLOGIA_ERMETICA" &&
+          profile.input.volume === "V4" &&
+          typeof profile.input.title === "string" &&
+          normalizeSearchText(profile.input.title).includes("alien code"),
         error: profile.error
       }))
     },
