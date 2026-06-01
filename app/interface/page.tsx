@@ -257,6 +257,10 @@ type PublicDocumentProfileSnapshot = {
   quality: string;
   reusableInPrompt: string;
   profileHash: string;
+  canonicalDocumentKind: string;
+  glossaryGuardApplied: string;
+  auditId: string;
+  usageId: string;
   legalCertification: string;
   source: string;
   persistenceStatus: string;
@@ -357,7 +361,7 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v1.8-TEMPORAL_DISPLAY_UTC_LOCAL_BRIDGE";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v1.9-DOCUMENT_PROFILE_MEMORY_SELECTOR";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -1284,6 +1288,7 @@ function unwrapDocumentProfileRecord(record: JsonRecord): JsonRecord {
 function normalizePublicDocumentProfileSnapshot(record: JsonRecord): PublicDocumentProfileSnapshot {
   const profile = unwrapDocumentProfileRecord(record);
   const input = firstRecord(record, [["input"]]);
+  const metadata = firstRecord(profile, [["documentMetadata"], ["metadata"]]) ?? firstRecord(record, [["documentMetadata"], ["metadata"]]);
 
 
   return {
@@ -1310,6 +1315,10 @@ function normalizePublicDocumentProfileSnapshot(record: JsonRecord): PublicDocum
     quality: first(profile, [["quality"]], first(record, [["quality"]], "-")),
     reusableInPrompt: booleanLike(getPath(profile, ["reusableInPrompt"]) ?? getPath(input, ["reusableInPrompt"]), "-"),
     profileHash: first(profile, [["profileHash"]], first(record, [["profileHash"], ["documentProfileHash"]], "-")),
+    canonicalDocumentKind: first(profile, [["canonicalDocumentKind"]], first(metadata, [["canonicalDocumentKind"]], first(input, [["canonicalDocumentKind"]], "-"))),
+    glossaryGuardApplied: booleanLike(getPath(profile, ["glossaryGuardApplied"]) ?? getPath(metadata, ["glossaryGuardApplied"]) ?? getPath(input, ["glossaryGuardApplied"]), "-"),
+    auditId: first(profile, [["auditId"]], first(record, [["auditId"]], "-")),
+    usageId: first(profile, [["usageId"], ["modelUsageId"]], first(record, [["usageId"], ["modelUsageId"]], "-")),
     legalCertification: booleanLike(getPath(profile, ["legalCertification"]), "false"),
     source: first(record, [["source"]], isRecord(getPath(record, ["profile"])) ? "DOCUMENT_PROFILE_RESULT" : "DOCUMENT_PROFILE"),
     persistenceStatus: first(record, [["status"]], first(profile, [["profileStatus"]], "-")),
@@ -1419,6 +1428,53 @@ function getPublicDocumentRegistrySnapshot(
     legalCertification: first(registry, [["legalCertification"]], "false"),
     opc: first(registry, [["opc"]], "technical proof receipt only"),
     profiles
+  };
+}
+
+
+function isLinkedDocumentProfile(profile: PublicDocumentProfileSnapshot): boolean {
+  return isUsableCyberneticMemoryId(profile.memoryId);
+}
+
+
+function getDocumentProfileChainRecord(profile: PublicDocumentProfileSnapshot): JsonRecord {
+  return {
+    memoryId: profile.memoryId,
+    sourceSavedChatId: profile.sourceSavedChatId,
+    lastEvtId: profile.lastEvtId,
+    lastOpcProofId: profile.lastOpcProofId,
+    auditId: profile.auditId,
+    usageId: profile.usageId,
+    memoryStatus: profile.profileStatus || "ACTIVE",
+    status: profile.profileStatus || "ACTIVE",
+    promptEligible: isLinkedDocumentProfile(profile) ? "true" : "false",
+    reusableInPrompt: profile.reusableInPrompt,
+    updatedAt: new Date().toISOString(),
+    source: "DOCUMENT_PROFILE_MEMORY_SELECTOR",
+    documentRegistry: {
+      status: isLinkedDocumentProfile(profile) ? "AVAILABLE" : "NO_LINKED_PROFILE",
+      linkedProfileCount: isLinkedDocumentProfile(profile) ? "1" : "0",
+      profileCount: "1",
+      profileId: profile.profileId,
+      title: profile.title,
+      volume: profile.volume,
+      canonicalDocumentKind: profile.canonicalDocumentKind,
+      legalCertification: false,
+      opc: "technical proof receipt only"
+    },
+    documentProfile: {
+      profileId: profile.profileId,
+      filename: profile.filename,
+      fileHash: profile.fileHash,
+      docFamily: profile.docFamily,
+      volume: profile.volume,
+      title: profile.title,
+      canonicalAxis: profile.canonicalAxis,
+      canonicalDocumentKind: profile.canonicalDocumentKind,
+      glossaryGuardApplied: profile.glossaryGuardApplied,
+      profileStatus: profile.profileStatus,
+      quality: profile.quality
+    }
   };
 }
 
@@ -3224,7 +3280,7 @@ function isUsableCyberneticMemoryId(value: string): boolean {
 
 function buildCyberneticMemoryRecallPrompt(chain: CyberneticMemoryChainState): string {
   return [
-    "CYBERNETIC_MEMORY_RECALL_REQUEST v1.0", "", "Richiama questa memoria IPR come memoria cibernetica riusabile nel runtime JOKER-C2.", "Non creare nuova memoria semantica generica.", "Non salvare nulla se non viene richiesta una nuova persistenza esplicita.", "", `memoryId: ${chain.memoryId}`, `evtId: ${chain.evtId}`, `opcId: ${chain.opcId}`, "", "Risposta attesa:", "CYBERNETIC_MEMORY_RECALL_READY", "", "Indica in modo tecnico:", "- memoryId richiamato", "- EVT collegato", "- OPC collegato", "- stato memoria", "- promptEligible", "- reusableInPrompt", "- eventuale documentRegistry", "- legalCertification=false", "- OPC=technical proof receipt only"
+    "CYBERNETIC_MEMORY_RECALL_REQUEST v1.0", "", "Richiama questa memoria IPR come memoria cibernetica riusabile nel runtime JOKER-C2.", "Non creare nuova memoria semantica generica.", "Non salvare nulla se non viene richiesta una nuova persistenza esplicita.", "Se la memoria è collegata a document_profiles, esegui anche il recall documentale dinamico.", "", `memoryId: ${chain.memoryId}`, `evtId: ${chain.evtId}`, `opcId: ${chain.opcId}`, `documentRegistryStatus: ${chain.documentRegistryStatus}`, `linkedProfileCount: ${chain.linkedProfileCount}`, "", "Risposta attesa:", "CYBERNETIC_MEMORY_RECALL_READY", "MEMORY_CHAIN_RECALL_READY: true", "DOCUMENT_MEMORY_RECALL_READY: true se linkedProfileCount > 0", "", "Indica in modo tecnico:", "- memoryId richiamato", "- EVT collegato", "- OPC collegato", "- stato memoria", "- promptEligible", "- reusableInPrompt", "- documentRegistry.status", "- linkedProfileCount", "- documentProfileRecallInjected", "- profileId/title/volume se disponibili", "- legalCertification=false", "- OPC=technical proof receipt only"
   ].join("\n");
 }
 
@@ -3400,6 +3456,7 @@ function DocumentRegistryCard({
               <StatusPill value={profile.textStatus} />
               <StatusPill label="Family" value={profile.docFamily} />
               <StatusPill label="Volume" value={profile.volume} />
+              {!compactMode ? <StatusPill label="Kind" value={profile.canonicalDocumentKind} /> : null}
               <div>
                 <span title={profile.memoryId}>{compact(profile.memoryId, compactMode ? 24 : 34)}</span>
                 <em title={profile.canonicalAxis}>{compact(profile.canonicalAxis, compactMode ? 30 : 54)}</em>
@@ -3953,6 +4010,7 @@ export default function InterfacePage() {
   const dashboardSemanticMemory = getPublicSemanticMemorySnapshot(dashboardPayload);
   const dashboardFileIngestion = getPublicFileIngestionSnapshot(dashboardPayload);
   const dashboardDocumentRegistry = getPublicDocumentRegistrySnapshot(dashboardPayload, fileRegistryPayload);
+  const linkedDocumentProfiles = dashboardDocumentRegistry.profiles.filter(isLinkedDocumentProfile);
   const localPromptReadyCount = files.filter((file) =>
     ["TEXT_READY", "PDF_CLIENT_PAYLOAD_READY", "PDF_INGESTION_READY"].includes(file.status)
   ).length;
@@ -4944,7 +5002,7 @@ export default function InterfacePage() {
   }
 
 
-  function selectIprMemoryRecordForCyberneticChain(record: JsonRecord, source: "memory-record" | "recall-item" | "recent-chat") {
+  function selectIprMemoryRecordForCyberneticChain(record: JsonRecord, source: "memory-record" | "recall-item" | "recent-chat" | "document-profile") {
     const memoryId = getIprMemoryRecordMemoryId(record);
     if (!memoryId) {
       setIprMemoryError("Cannot select this item for the cybernetic chain because no IPR-MEM memoryId is exposed.");
@@ -4965,6 +5023,35 @@ export default function InterfacePage() {
 
     setCyberneticMemoryChain(nextChain);
     setIprMemoryNotice(`Selected cybernetic memory chain. memoryId=${nextChain.memoryId} · EVT=${nextChain.evtId} · OPC=${nextChain.opcId}`);
+  }
+
+
+  function selectDocumentProfileForCyberneticChain(profile: PublicDocumentProfileSnapshot) {
+    if (!isLinkedDocumentProfile(profile)) {
+      setIprMemoryError("Cannot select this document profile because it is not linked to an IPR-MEM memoryId yet.");
+      return;
+    }
+
+    const record = getDocumentProfileChainRecord(profile);
+    const nextChain = buildCyberneticMemoryChainSnapshot(record, {
+      memoryId: profile.memoryId,
+      savedChatId: profile.sourceSavedChatId,
+      evtId: profile.lastEvtId,
+      opcId: profile.lastOpcProofId,
+      auditId: profile.auditId,
+      usageId: profile.usageId,
+      status: profile.profileStatus || "ACTIVE",
+      promptEligible: "true",
+      reusableInPrompt: profile.reusableInPrompt,
+      source: "document-profile",
+      recordStatus: "ACTIVE_REUSABLE",
+      documentRegistryStatus: "AVAILABLE",
+      linkedProfileCount: "1",
+      updatedAt: new Date().toISOString()
+    });
+
+    setCyberneticMemoryChain(nextChain);
+    setIprMemoryNotice(`Selected document profile chain. profileId=${profile.profileId} · memoryId=${nextChain.memoryId} · volume=${profile.volume}`);
   }
 
 
@@ -6139,6 +6226,53 @@ export default function InterfacePage() {
             ) : (
               <div className="joker-empty-mini">
                 Nessuna memoria IPR persistente caricata. Il bottone “Salva questa chat su IPR” serve proprio a questo, incredibile ma lineare.
+              </div>
+            )}
+          </div>
+
+
+          <div className="joker-memory-column">
+            <div className="joker-memory-column-head">
+              <div>
+                <span className="joker-kicker">Document profiles</span>
+                <h3>Memorie documentali</h3>
+              </div>
+              <StatusPill value={String(linkedDocumentProfiles.length)} />
+            </div>
+
+
+            {linkedDocumentProfiles.length > 0 ? (
+              <div className="joker-memory-list">
+                {linkedDocumentProfiles.slice(0, 6).map((profile, index) => (
+                  <article key={`document-profile-chain-${profile.profileId}-${index}`} className="joker-memory-item is-document-profile">
+                    <div className="joker-memory-item-head">
+                      <strong title={profile.title}>{compact(profile.title, 72)}</strong>
+                      <span>{compact(profile.volume, 20)}</span>
+                    </div>
+                    <p>{compact(profile.summary, 220)}</p>
+                    <div className="joker-memory-meta">
+                      <span title={profile.profileId}>Profile {compact(profile.profileId, 28)}</span>
+                      <span title={profile.memoryId}>Memory {compact(profile.memoryId, 28)}</span>
+                      <span>{profile.canonicalDocumentKind}</span>
+                      <span>Linked docs 1</span>
+                    </div>
+                    <div className="joker-memory-meta">
+                      <span title={profile.filename}>{compact(profile.filename, 36)}</span>
+                      <span>{profile.quality}</span>
+                      <span>Reusable {profile.reusableInPrompt}</span>
+                      <span>Glossary guard {profile.glossaryGuardApplied}</span>
+                    </div>
+                    <div className="joker-memory-actions">
+                      <button type="button" onClick={() => selectDocumentProfileForCyberneticChain(profile)} disabled={!canUseIprMemory}>Usa profilo nella catena</button>
+                      <button type="button" onClick={() => void copyRuntimeId("IPR-MEM", profile.memoryId)} disabled={!isLinkedDocumentProfile(profile)}>Copy IPR-MEM</button>
+                      <button type="button" onClick={() => void copyRuntimeId("DOC-PROFILE", profile.profileId)} disabled={isBlankRuntimeValue(profile.profileId)}>Copy DOC-PROFILE</button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="joker-empty-mini">
+                Nessun profilo documento collegato a IPR-MEM nella vista corrente. Il registry può esistere, ma senza memoryId la chain non deve fingere di avere un documento, perché poi nasce il solito teatro.
               </div>
             )}
           </div>
