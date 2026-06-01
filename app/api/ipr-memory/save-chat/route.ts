@@ -45,7 +45,7 @@ export const dynamic = "force-dynamic";
 
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-DOCUMENT-AWARE-IDEMPOTENCY-v2.2";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-DOCUMENT-AWARE-IDEMPOTENCY-v2.3";
 const IDEMPOTENCY_POLICY = "THREAD_PRIMARY_INTENTION_REUSABLE_MEMORY";
 const DOCUMENT_AWARE_IDEMPOTENCY_POLICY = "DOCUMENT_PROFILE_STRICT_REUSABLE_MEMORY";
 const NO_DOCUMENT_SCOPE = "NO_DOCUMENT_SCOPE";
@@ -439,7 +439,9 @@ function buildDocumentScopeHash(context: SaveChatRouteContext): string | null {
 }
 
 
-function buildDocumentScopeDiagnostics(context: Pick<SaveChatRouteContext, "documentLinkCandidates">): JsonRecord {
+function buildDocumentScopeDiagnostics(
+  context: Pick<SaveChatRouteContext, "documentLinkCandidates"> & Partial<SaveChatRouteContext>
+): JsonRecord {
   const documentScopeTokens = buildDocumentScopeTokensFromCandidates(context.documentLinkCandidates);
   const documentScopeHash = buildDocumentScopeHashFromTokens(documentScopeTokens);
 
