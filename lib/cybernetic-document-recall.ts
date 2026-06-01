@@ -1,11 +1,12 @@
 import {
   findDocumentProfilesForRecallFromDatabase,
+  listDocumentProfilesFromDatabase,
   toPublicDocumentProfile
 } from "@/lib/ipr-database";
 import type { DocumentProfileDatabaseRow } from "@/lib/ipr-database";
 
 export const CYBERNETIC_DOCUMENT_RECALL_ENGINE_REVISION =
-  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v2-PROJECT_AWARE";
+  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v3-DIRECT_PROFILE_LOOKUP";
 
 export type CyberneticDocumentFileSnapshot = {
   name?: string | null;
@@ -824,6 +825,48 @@ function buildDocumentProfilePromptBlock(items: CyberneticDocumentProfileRecallI
   return truncateCyberneticDocumentPromptBlock(lines.join("\n"), maxChars);
 }
 
+
+async function queryDocumentProfilesByDirectRegistryLookup(args: {
+  requestedMemoryIds: string[];
+  requestedProfileIds: string[];
+  humanIpr: string | null;
+  tenantId: string | null;
+  workspaceId: string | null;
+  limit: number;
+}): Promise<CyberneticDocumentProfileRecallItem[]> {
+  const requestedMemorySet = new Set(args.requestedMemoryIds.map((item) => normalizeText(item)).filter(Boolean));
+  const requestedProfileSet = new Set(args.requestedProfileIds.map((item) => normalizeText(item)).filter(Boolean));
+
+  if (!requestedMemorySet.size && !requestedProfileSet.size) {
+    return [];
+  }
+
+  try {
+    const result = await listDocumentProfilesFromDatabase({
+      humanIpr: args.humanIpr,
+      tenantId: args.tenantId,
+      workspaceId: args.workspaceId,
+      includeSoftDeleted: false,
+      limit: Math.max(args.limit, requestedMemorySet.size + requestedProfileSet.size, 50)
+    });
+
+    if (!result.ok) {
+      return [];
+    }
+
+    return dedupeDocumentProfileRecallItems(result.rows.map(normalizeDocumentProfileRow))
+      .filter((item) => item.reusableInPrompt !== false && item.profileStatus !== "DELETED")
+      .filter((item) => {
+        const memoryMatch = item.memoryId ? requestedMemorySet.has(normalizeText(item.memoryId)) : false;
+        const profileMatch = item.profileId ? requestedProfileSet.has(normalizeText(item.profileId)) : false;
+        return memoryMatch || profileMatch;
+      })
+      .slice(0, Math.max(args.limit, requestedMemorySet.size + requestedProfileSet.size, 1));
+  } catch {
+    return [];
+  }
+}
+
 async function queryDocumentProfilesForRecall(args: {
   message: string;
   requestedMemoryId: string | null;
@@ -1129,6 +1172,20 @@ export async function resolveCyberneticDocumentProfileRecall(args: {
         limit: queryLimit
       });
     }
+
+    const directRequestedItems = await queryDocumentProfilesByDirectRegistryLookup({
+      requestedMemoryIds,
+      requestedProfileIds,
+      humanIpr,
+      tenantId: args.saasContext.tenantId || null,
+      workspaceId: args.saasContext.workspaceId || null,
+      limit: queryLimit
+    });
+
+    queriedItems = dedupeDocumentProfileRecallItems([
+      ...directRequestedItems,
+      ...queriedItems
+    ]);
 
     const strictItems = applyStrictRequestedDocumentProfileFilter({
       items: queriedItems,
@@ -1536,3 +1593,4 @@ export function buildCyberneticDocumentMemoryRecallAnswer(args: CyberneticDocume
     "OPC=technical proof receipt only"
   ].join("\n");
 }
+
