@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
+
 import {
   ensureHbceDatabaseReady,
   linkDocumentProfileToIprMemoryFromDatabase,
@@ -38,12 +39,16 @@ import {
   HBCE_TARGET_RELEASE
 } from "@/lib/ipr-database-schema";
 
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-DOCUMENT-PROFILE-LINK-v2.1";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-DOCUMENT-AWARE-IDEMPOTENCY-v2.2";
 const IDEMPOTENCY_POLICY = "THREAD_PRIMARY_INTENTION_REUSABLE_MEMORY";
+const DOCUMENT_AWARE_IDEMPOTENCY_POLICY = "DOCUMENT_PROFILE_STRICT_REUSABLE_MEMORY";
+const NO_DOCUMENT_SCOPE = "NO_DOCUMENT_SCOPE";
 const IDEMPOTENCY_SEED_VERSION = "HBCE-IPR-MEMORY-IDEMPOTENCY-v1";
 const IDEMPOTENT_READY_STATUS = "SAVE_CHAT_IDEMPOTENT_READY";
 const LEGACY_IDEMPOTENT_STATUS = "IPR_CHAT_MEMORY_ALREADY_EXISTS";
@@ -61,7 +66,9 @@ const DEFAULT_MEMORY_SUMMARY =
 const MAX_MESSAGE_INPUT = 300;
 const MAX_MESSAGE_CONTENT_LENGTH = 80_000;
 
+
 type JsonRecord = Record<string, unknown>;
+
 
 type DocumentProfileLinkCandidate = {
   profileId: string | null;
@@ -72,6 +79,7 @@ type DocumentProfileLinkCandidate = {
   confidence: "DIRECT" | "STRUCTURED" | "INFERRED";
 };
 
+
 type DocumentProfileLinkCandidateInput = {
   profileId?: unknown;
   fileId?: unknown;
@@ -80,6 +88,7 @@ type DocumentProfileLinkCandidateInput = {
   source?: unknown;
   confidence?: unknown;
 };
+
 
 type DocumentProfileLinkResult = {
   attempted: boolean;
@@ -90,6 +99,7 @@ type DocumentProfileLinkResult = {
   attempts: JsonRecord[];
   errors: JsonRecord[];
 };
+
 
 type SaveChatMessageInput = {
   messageId?: string | null;
@@ -105,6 +115,7 @@ type SaveChatMessageInput = {
   createdAt?: string | Date | null;
   metadata?: JsonRecord | null;
 };
+
 
 type SaveChatRouteInput = {
   confirmSaveToIpr?: boolean | string | number | null;
@@ -162,6 +173,7 @@ type SaveChatRouteInput = {
   metadata?: JsonRecord | null;
 };
 
+
 type SaveChatRouteContext = {
   confirmSaveToIpr: boolean;
   humanIpr: string | null;
@@ -208,6 +220,7 @@ type SaveChatRouteContext = {
   documentLinkCandidates: DocumentProfileLinkCandidate[];
 };
 
+
 function jsonResponse(payload: JsonRecord, init?: ResponseInit) {
   return NextResponse.json(
     {
@@ -224,45 +237,55 @@ function jsonResponse(payload: JsonRecord, init?: ResponseInit) {
   );
 }
 
+
 function normalizeString(value: unknown): string | null {
   if (typeof value !== "string") {
     return null;
   }
 
+
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
 }
+
 
 function truncateString(value: string, maxLength: number): string {
   if (value.length <= maxLength) {
     return value;
   }
 
+
   return `${value.slice(0, Math.max(0, maxLength - 20))}\n[TRUNCATED_BY_ROUTE]`;
 }
+
 
 function normalizeTimestampForDatabase(value: unknown, fallbackIso: string | null = null): string | null {
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? fallbackIso : value.toISOString();
   }
 
+
   if (typeof value !== "string") {
     return fallbackIso;
   }
+
 
   const trimmed = value.trim();
   if (!trimmed) {
     return fallbackIso;
   }
 
+
   const directDate = new Date(trimmed);
   if (!Number.isNaN(directDate.getTime())) {
     return directDate.toISOString();
   }
 
+
   const italianDateTime = trimmed.match(
     /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:,?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
   );
+
 
   if (italianDateTime) {
     const [, dayRaw, monthRaw, yearRaw, hourRaw = "0", minuteRaw = "0", secondRaw = "0"] = italianDateTime;
@@ -272,6 +295,7 @@ function normalizeTimestampForDatabase(value: unknown, fallbackIso: string | nul
     const hour = Number.parseInt(hourRaw, 10);
     const minute = Number.parseInt(minuteRaw, 10);
     const second = Number.parseInt(secondRaw, 10);
+
 
     const valid =
       year >= 1970 &&
@@ -286,6 +310,7 @@ function normalizeTimestampForDatabase(value: unknown, fallbackIso: string | nul
       second >= 0 &&
       second <= 59;
 
+
     if (valid) {
       const normalizedLocal = `${yearRaw}-${monthRaw.padStart(2, "0")}-${dayRaw.padStart(2, "0")}T${hourRaw.padStart(
         2,
@@ -298,8 +323,10 @@ function normalizeTimestampForDatabase(value: unknown, fallbackIso: string | nul
     }
   }
 
+
   return fallbackIso;
 }
+
 
 function normalizeRuntimeDecisionForDatabase(value: unknown): string {
   const normalized = normalizeString(value);
@@ -307,26 +334,32 @@ function normalizeRuntimeDecisionForDatabase(value: unknown): string {
     return RUNTIME_DECISION_ALLOW;
   }
 
+
   const token = normalized
     .trim()
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
 
+
   if (!token) {
     return RUNTIME_DECISION_ALLOW;
   }
+
 
   if (token === RUNTIME_DECISION_BLOCK || token.includes("BLOCK") || token.includes("DENY") || token.includes("FAIL_CLOSED")) {
     return RUNTIME_DECISION_BLOCK;
   }
 
+
   if (token === RUNTIME_DECISION_ESCALATE || token.includes("ESCALATE") || token.includes("HUMAN_REVIEW")) {
     return RUNTIME_DECISION_ESCALATE;
   }
 
+
   return RUNTIME_DECISION_ALLOW;
 }
+
 
 function normalizeRuntimeStateForDatabase(value: unknown): string | null {
   const normalized = normalizeString(value);
@@ -334,15 +367,18 @@ function normalizeRuntimeStateForDatabase(value: unknown): string | null {
     return null;
   }
 
+
   const token = normalized
     .trim()
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
 
+
   if (!token) {
     return null;
   }
+
 
   /*
    * Legacy Neon/Postgres databases may still expose chat_messages_runtime_state_check.
@@ -356,10 +392,82 @@ function normalizeRuntimeStateForDatabase(value: unknown): string | null {
 }
 
 
+function buildDocumentScopeTokensFromCandidates(candidates: DocumentProfileLinkCandidate[]): string[] {
+  const tokens: string[] = [];
+
+
+  for (const candidate of candidates) {
+    if (candidate.profileId) {
+      tokens.push(`profile:${candidate.profileId.toUpperCase()}`);
+    }
+
+
+    if (candidate.fileHash) {
+      tokens.push(`hash:${candidate.fileHash.toLowerCase()}`);
+    }
+
+
+    if (candidate.fileId) {
+      tokens.push(`file:${candidate.fileId}`);
+    }
+
+
+    if (candidate.filename) {
+      tokens.push(`name:${candidate.filename.replace(/\s+/g, " ").trim().toLowerCase()}`);
+    }
+  }
+
+
+  return Array.from(new Set(tokens)).sort();
+}
+
+
+function buildDocumentScopeHashFromTokens(tokens: string[]): string | null {
+  if (tokens.length === 0) {
+    return null;
+  }
+
+
+  return `sha256:${createHash("sha256").update(tokens.join("|")).digest("hex")}`;
+}
+
+
+function buildDocumentScopeHash(context: SaveChatRouteContext): string | null {
+  return buildDocumentScopeHashFromTokens(
+    buildDocumentScopeTokensFromCandidates(context.documentLinkCandidates)
+  );
+}
+
+
+function buildDocumentScopeDiagnostics(context: Pick<SaveChatRouteContext, "documentLinkCandidates">): JsonRecord {
+  const documentScopeTokens = buildDocumentScopeTokensFromCandidates(context.documentLinkCandidates);
+  const documentScopeHash = buildDocumentScopeHashFromTokens(documentScopeTokens);
+
+
+  return {
+    candidateCount: context.documentLinkCandidates.length,
+    candidateSources: context.documentLinkCandidates.map((candidate) => candidate.source),
+    candidates: context.documentLinkCandidates,
+    documentScopeTokens,
+    documentScopeHash,
+    documentScoped: Boolean(documentScopeHash),
+    idempotencyPolicy: documentScopeHash ? DOCUMENT_AWARE_IDEMPOTENCY_POLICY : IDEMPOTENCY_POLICY,
+    routeVersion: ROUTE_VERSION,
+    legalCertification: false
+  };
+}
+
+
+
+
+
+
+
 
 function buildMemoryIdempotencyKey(context: SaveChatRouteContext): string {
   const normalizedPrimaryIntention = context.primaryIntention.replace(/\s+/g, " ").trim();
   const normalizedRadicalIntention = context.radicalIntention.replace(/\s+/g, " ").trim();
+  const documentScopeHash = buildDocumentScopeHash(context) ?? NO_DOCUMENT_SCOPE;
   const seed = [
     IDEMPOTENCY_SEED_VERSION,
     context.humanIpr ?? "NO_HUMAN_IPR",
@@ -371,23 +479,29 @@ function buildMemoryIdempotencyKey(context: SaveChatRouteContext): string {
     normalizedPrimaryIntention,
     normalizedRadicalIntention,
     context.saveScope,
+    documentScopeHash,
     String(context.saveSynthesis),
     String(context.reusableInPrompt)
   ].join("|");
 
+
   return createHash("sha256").update(seed).digest("hex");
 }
+
 
 function buildMemoryIdempotencyHash(context: SaveChatRouteContext): string {
   return `sha256:${buildMemoryIdempotencyKey(context)}`;
 }
 
+
 function buildMemoryIdempotencyAliases(context: SaveChatRouteContext): string[] {
   const rawKey = buildMemoryIdempotencyKey(context);
   const hashKey = `sha256:${rawKey}`;
 
+
   return Array.from(new Set([rawKey, hashKey]));
 }
+
 
 function buildFallbackMemoryId(context: SaveChatRouteContext, savedChatId: string | null): string {
   const stableKey = buildMemoryIdempotencyKey(context);
@@ -399,12 +513,15 @@ function buildFallbackMemoryId(context: SaveChatRouteContext, savedChatId: strin
     savedChatId ? "SAVED_CHAT_PRESENT" : "NO_SAVED_CHAT"
   ].join("|");
 
+
   return `IPR-MEM-${createHash("sha256").update(seed).digest("hex").slice(0, 16).toUpperCase()}`;
 }
+
 
 function buildFallbackRegisteredEventId(memoryId: string, eventName: string): string {
   return `REVT-${createHash("sha256").update(`${memoryId}|${eventName}`).digest("hex").slice(0, 16).toUpperCase()}`;
 }
+
 
 function buildFallbackMemoryKeyHash(context: SaveChatRouteContext): string {
   return createHash("sha256")
@@ -416,11 +533,13 @@ function buildFallbackMemoryKeyHash(context: SaveChatRouteContext): string {
         context.workspaceId ?? "NO_WORKSPACE",
         context.sessionId ?? "NO_SESSION",
         context.threadId ?? "NO_THREAD",
+        buildDocumentScopeHash(context) ?? NO_DOCUMENT_SCOPE,
         "IPR_BOUND_EXPLICIT_SAVE"
       ].join("|")
     )
     .digest("hex");
 }
+
 
 async function findExistingReusableMemoryRecordForContext(context: SaveChatRouteContext) {
   const primaryIntention = context.primaryIntention.replace(/\s+/g, " ").trim();
@@ -428,11 +547,18 @@ async function findExistingReusableMemoryRecordForContext(context: SaveChatRoute
   const idempotencyKey = buildMemoryIdempotencyKey(context);
   const idempotencyHash = buildMemoryIdempotencyHash(context);
   const idempotencyAliases = buildMemoryIdempotencyAliases(context);
+  const documentScopeHash = buildDocumentScopeHash(context);
+  const documentScoped = Boolean(documentScopeHash);
+  const lookupMode = documentScoped ? "DOCUMENT_SCOPE_STRICT" : "LEGACY_THREAD_INTENTION";
+
 
   if (!context.humanIpr || !context.threadId || !primaryIntention) {
     return {
       attempted: false,
       reason: "MISSING_HUMAN_IPR_THREAD_OR_INTENTION",
+      lookupMode,
+      documentScoped,
+      documentScopeHash,
       idempotencyKey,
       idempotencyHash,
       idempotencyAliases,
@@ -442,9 +568,39 @@ async function findExistingReusableMemoryRecordForContext(context: SaveChatRoute
     };
   }
 
+
   try {
-    const result = await queryHbceDatabase<Record<string, unknown>>(
-      `
+    const result = documentScoped
+      ? await queryHbceDatabase<Record<string, unknown>>(
+          `
+SELECT *
+FROM memory_records
+WHERE human_ipr = $1
+  AND thread_id = $2
+  AND COALESCE(reusable_in_prompt, false) = true
+  AND COALESCE(legal_certification, false) = false
+  AND COALESCE(memory_status, 'ACTIVE') = 'ACTIVE'
+  AND (
+    record_payload->>'idempotencyKey' = $3
+    OR record_payload->>'idempotencyHash' = $4
+    OR record_payload->'documentRegistry'->>'documentScopeHash' = $8
+  )
+ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
+LIMIT 1;
+`.trim(),
+          [
+            context.humanIpr,
+            context.threadId,
+            idempotencyKey,
+            idempotencyHash,
+            primaryIntention,
+            radicalIntention,
+            context.memorySummary,
+            documentScopeHash
+          ]
+        )
+      : await queryHbceDatabase<Record<string, unknown>>(
+          `
 SELECT *
 FROM memory_records
 WHERE human_ipr = $1
@@ -462,20 +618,30 @@ WHERE human_ipr = $1
 ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
 LIMIT 1;
 `.trim(),
-      [
-        context.humanIpr,
-        context.threadId,
-        idempotencyKey,
-        idempotencyHash,
-        primaryIntention,
-        radicalIntention,
-        context.memorySummary
-      ]
-    );
+          [
+            context.humanIpr,
+            context.threadId,
+            idempotencyKey,
+            idempotencyHash,
+            primaryIntention,
+            radicalIntention,
+            context.memorySummary
+          ]
+        );
+
 
     return {
       attempted: true,
-      reason: result.rows[0] ? "EXISTING_REUSABLE_MEMORY_FOUND" : "NO_EXISTING_REUSABLE_MEMORY",
+      reason: result.rows[0]
+        ? documentScoped
+          ? "EXISTING_DOCUMENT_SCOPED_REUSABLE_MEMORY_FOUND"
+          : "EXISTING_REUSABLE_MEMORY_FOUND"
+        : documentScoped
+          ? "NO_EXISTING_DOCUMENT_SCOPED_REUSABLE_MEMORY"
+          : "NO_EXISTING_REUSABLE_MEMORY",
+      lookupMode,
+      documentScoped,
+      documentScopeHash,
       idempotencyKey,
       idempotencyHash,
       idempotencyAliases,
@@ -487,6 +653,9 @@ LIMIT 1;
     return {
       attempted: true,
       reason: "EXISTING_MEMORY_LOOKUP_THROWN_CONTINUING",
+      lookupMode,
+      documentScoped,
+      documentScopeHash,
       idempotencyKey,
       idempotencyHash,
       idempotencyAliases,
@@ -514,7 +683,8 @@ async function persistFallbackMemoryRecordToDatabase(input: {
     idempotencyKey: buildMemoryIdempotencyKey(input.context),
     idempotencyHash: buildMemoryIdempotencyHash(input.context),
     idempotencyAliases: buildMemoryIdempotencyAliases(input.context),
-    idempotencyPolicy: IDEMPOTENCY_POLICY,
+    idempotencyPolicy: buildDocumentScopeHash(input.context) ? DOCUMENT_AWARE_IDEMPOTENCY_POLICY : IDEMPOTENCY_POLICY,
+    documentRegistry: buildDocumentScopeDiagnostics(input.context),
     primaryIntention: input.context.primaryIntention,
     radicalIntention: input.context.radicalIntention,
     selectedMessageIds: input.selectedMessageIds,
@@ -540,6 +710,7 @@ async function persistFallbackMemoryRecordToDatabase(input: {
   const memoryChainHash = createHash("sha256")
     .update(`${input.context.previousSaveHash ?? "NO_PREVIOUS_SAVE"}|${memoryHash}`)
     .digest("hex");
+
 
   return queryHbceDatabase<Record<string, unknown>>(
     `
@@ -665,6 +836,7 @@ RETURNING *;
   );
 }
 
+
 async function persistFallbackRegisteredEventToDatabase(input: {
   context: SaveChatRouteContext;
   savedChatId: string | null;
@@ -686,6 +858,7 @@ async function persistFallbackRegisteredEventToDatabase(input: {
     legalCertification: false
   };
   const continuityHash = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+
 
   return queryHbceDatabase<Record<string, unknown>>(
     `
@@ -778,6 +951,7 @@ RETURNING *;
   );
 }
 
+
 function buildSkippedDocumentProfileLinkResult(reason: string): DocumentProfileLinkResult {
   return {
     attempted: false,
@@ -790,6 +964,7 @@ function buildSkippedDocumentProfileLinkResult(reason: string): DocumentProfileL
   };
 }
 
+
 async function linkDocumentProfilesToIprMemory(input: {
   context: SaveChatRouteContext;
   memoryId: string | null;
@@ -799,13 +974,16 @@ async function linkDocumentProfilesToIprMemory(input: {
     return buildSkippedDocumentProfileLinkResult("NO_EFFECTIVE_MEMORY_ID");
   }
 
+
   if (input.context.documentLinkCandidates.length === 0) {
     return buildSkippedDocumentProfileLinkResult("NO_DOCUMENT_PROFILE_CANDIDATES");
   }
 
+
   const attempts: JsonRecord[] = [];
   const errors: JsonRecord[] = [];
   const linkedProfiles: JsonRecord[] = [];
+
 
   for (const candidate of input.context.documentLinkCandidates) {
     try {
@@ -827,6 +1005,7 @@ async function linkDocumentProfilesToIprMemory(input: {
         reusableInPrompt: input.context.reusableInPrompt
       });
 
+
       const publicRows = result.rows.map((row) => toPublicDocumentProfile(row));
       linkedProfiles.push(...publicRows);
       attempts.push({
@@ -847,6 +1026,7 @@ async function linkDocumentProfilesToIprMemory(input: {
     }
   }
 
+
   const uniqueProfiles = Array.from(
     new Map(
       linkedProfiles.map((profile) => [
@@ -855,6 +1035,7 @@ async function linkDocumentProfilesToIprMemory(input: {
       ])
     ).values()
   );
+
 
   return {
     attempted: true,
@@ -867,9 +1048,11 @@ async function linkDocumentProfilesToIprMemory(input: {
   };
 }
 
+
 function readHeaderString(request: NextRequest, name: string): string | null {
   return normalizeString(request.headers.get(name));
 }
+
 
 function coalesceString(...values: unknown[]): string | null {
   for (const value of values) {
@@ -879,8 +1062,10 @@ function coalesceString(...values: unknown[]): string | null {
     }
   }
 
+
   return null;
 }
+
 
 function coalesceBoolean(defaultValue: boolean, ...values: unknown[]): boolean {
   for (const value of values) {
@@ -888,9 +1073,11 @@ function coalesceBoolean(defaultValue: boolean, ...values: unknown[]): boolean {
       return value;
     }
 
+
     if (typeof value === "number") {
       return value !== 0;
     }
+
 
     if (typeof value === "string") {
       const normalized = value.trim().toLowerCase();
@@ -903,12 +1090,16 @@ function coalesceBoolean(defaultValue: boolean, ...values: unknown[]): boolean {
     }
   }
 
+
   return defaultValue;
 }
+
 
 function isRecord(value: unknown): value is JsonRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
+
+
 
 
 function extractErrorDiagnostics(error: unknown): JsonRecord {
@@ -917,6 +1108,7 @@ function extractErrorDiagnostics(error: unknown): JsonRecord {
     error instanceof Error ? error.name : normalizeString(record.name) ?? "UnknownError";
   const message =
     error instanceof Error ? error.message : normalizeString(record.message) ?? String(error);
+
 
   return {
     name,
@@ -931,10 +1123,12 @@ function extractErrorDiagnostics(error: unknown): JsonRecord {
   };
 }
 
+
 function normalizeStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
   }
+
 
   return Array.from(
     new Set(
@@ -945,14 +1139,17 @@ function normalizeStringArray(value: unknown): string[] {
   );
 }
 
+
 function normalizeDocumentProfileId(value: unknown): string | null {
   const normalized = normalizeString(value);
   if (!normalized) {
     return null;
   }
 
+
   return normalized.toUpperCase().startsWith("DOC-PROFILE-") ? normalized : null;
 }
+
 
 function normalizeFileHash(value: unknown): string | null {
   const normalized = normalizeString(value);
@@ -960,14 +1157,17 @@ function normalizeFileHash(value: unknown): string | null {
     return null;
   }
 
+
   const match = normalized.match(/(?:sha256:)?[a-fA-F0-9]{64}/);
   if (!match) {
     return null;
   }
 
+
   const digest = match[0].replace(/^sha256:/i, "").toLowerCase();
   return `sha256:${digest}`;
 }
+
 
 function normalizeFileId(value: unknown): string | null {
   const normalized = normalizeString(value);
@@ -975,9 +1175,11 @@ function normalizeFileId(value: unknown): string | null {
     return null;
   }
 
+
   const match = normalized.match(/(?:FILE|file)-[A-Za-z0-9_-]{8,}/);
   return match ? match[0] : null;
 }
+
 
 function normalizeDocumentFilename(value: unknown): string | null {
   const normalized = normalizeString(value);
@@ -985,25 +1187,31 @@ function normalizeDocumentFilename(value: unknown): string | null {
     return null;
   }
 
+
   const cleaned = normalized.replace(/^`+|`+$/g, "").trim();
   if (!/\.(txt|md|markdown|pdf|docx|json|csv|xml|yaml|yml|ts|tsx|js|jsx)$/i.test(cleaned)) {
     return null;
   }
 
+
   return cleaned.slice(0, 220);
 }
+
 
 function normalizeDocumentProfileLinkConfidence(
   value: unknown
 ): DocumentProfileLinkCandidate["confidence"] {
   const normalized = normalizeString(value)?.toUpperCase();
 
+
   if (normalized === "DIRECT" || normalized === "STRUCTURED" || normalized === "INFERRED") {
     return normalized;
   }
 
+
   return "INFERRED";
 }
+
 
 function pushDocumentProfileLinkCandidate(
   candidates: DocumentProfileLinkCandidate[],
@@ -1018,6 +1226,7 @@ function pushDocumentProfileLinkCandidate(
     confidence: normalizeDocumentProfileLinkConfidence(candidate.confidence)
   };
 
+
   if (
     !normalizedCandidate.profileId &&
     !normalizedCandidate.fileId &&
@@ -1027,12 +1236,14 @@ function pushDocumentProfileLinkCandidate(
     return;
   }
 
+
   const key = [
     normalizedCandidate.profileId || "NO_PROFILE",
     normalizedCandidate.fileId || "NO_FILE_ID",
     normalizedCandidate.fileHash || "NO_HASH",
     normalizedCandidate.filename || "NO_FILENAME"
   ].join("|");
+
 
   if (
     candidates.some((existing) =>
@@ -1047,8 +1258,10 @@ function pushDocumentProfileLinkCandidate(
     return;
   }
 
+
   candidates.push(normalizedCandidate);
 }
+
 
 function collectDocumentProfileLinkCandidatesFromRecord(
   candidates: DocumentProfileLinkCandidate[],
@@ -1062,9 +1275,11 @@ function collectDocumentProfileLinkCandidatesFromRecord(
     return;
   }
 
+
   if (!isRecord(value)) {
     return;
   }
+
 
   pushDocumentProfileLinkCandidate(candidates, {
     profileId: value.profileId ?? value.documentProfileId ?? value.document_profile_id,
@@ -1076,6 +1291,7 @@ function collectDocumentProfileLinkCandidatesFromRecord(
   });
 }
 
+
 function collectDocumentProfileLinkCandidatesFromText(
   candidates: DocumentProfileLinkCandidate[],
   value: unknown,
@@ -1086,6 +1302,7 @@ function collectDocumentProfileLinkCandidatesFromText(
     return;
   }
 
+
   for (const match of text.matchAll(/DOC-PROFILE-[A-Fa-f0-9]{8,32}/g)) {
     pushDocumentProfileLinkCandidate(candidates, {
       profileId: match[0],
@@ -1093,6 +1310,7 @@ function collectDocumentProfileLinkCandidatesFromText(
       confidence: "INFERRED"
     });
   }
+
 
   for (const match of text.matchAll(/(?:FILE|file)-[A-Za-z0-9_-]{8,}/g)) {
     pushDocumentProfileLinkCandidate(candidates, {
@@ -1102,6 +1320,7 @@ function collectDocumentProfileLinkCandidatesFromText(
     });
   }
 
+
   for (const match of text.matchAll(/(?:sha256:)?[a-fA-F0-9]{64}/g)) {
     pushDocumentProfileLinkCandidate(candidates, {
       fileHash: match[0],
@@ -1109,6 +1328,7 @@ function collectDocumentProfileLinkCandidatesFromText(
       confidence: "INFERRED"
     });
   }
+
 
   for (const match of text.matchAll(/[`"]?([A-Za-z0-9À-ÿ_.()\[\]{}\- ]+\.(?:txt|md|markdown|pdf|docx|json|csv|xml|yaml|yml|ts|tsx|js|jsx))[`"]?/gi)) {
     pushDocumentProfileLinkCandidate(candidates, {
@@ -1118,6 +1338,7 @@ function collectDocumentProfileLinkCandidatesFromText(
     });
   }
 }
+
 
 function buildDocumentProfileLinkCandidates(
   input: SaveChatRouteInput,
@@ -1131,6 +1352,7 @@ function buildDocumentProfileLinkCandidates(
 ): DocumentProfileLinkCandidate[] {
   const candidates: DocumentProfileLinkCandidate[] = [];
 
+
   pushDocumentProfileLinkCandidate(candidates, {
     profileId: input.documentProfileId,
     fileId: input.fileId,
@@ -1140,6 +1362,7 @@ function buildDocumentProfileLinkCandidates(
     confidence: "DIRECT"
   });
 
+
   for (const profileId of normalizeStringArray(input.documentProfileIds)) {
     pushDocumentProfileLinkCandidate(candidates, {
       profileId,
@@ -1147,6 +1370,7 @@ function buildDocumentProfileLinkCandidates(
       confidence: "DIRECT"
     });
   }
+
 
   for (const filename of normalizeStringArray(input.documentFilenames)) {
     pushDocumentProfileLinkCandidate(candidates, {
@@ -1156,6 +1380,7 @@ function buildDocumentProfileLinkCandidates(
     });
   }
 
+
   collectDocumentProfileLinkCandidatesFromRecord(candidates, input.documentProfile, "input.documentProfile");
   collectDocumentProfileLinkCandidatesFromRecord(candidates, input.documentProfiles, "input.documentProfiles");
   collectDocumentProfileLinkCandidatesFromRecord(candidates, input.activeFile, "input.activeFile");
@@ -1164,11 +1389,13 @@ function buildDocumentProfileLinkCandidates(
   collectDocumentProfileLinkCandidatesFromRecord(candidates, input.payload, "input.payload");
   collectDocumentProfileLinkCandidatesFromRecord(candidates, input.metadata, "input.metadata");
 
+
   collectDocumentProfileLinkCandidatesFromText(candidates, contextText.threadTitle, "context.threadTitle");
   collectDocumentProfileLinkCandidatesFromText(candidates, contextText.memoryTitle, "context.memoryTitle");
   collectDocumentProfileLinkCandidatesFromText(candidates, contextText.memorySummary, "context.memorySummary");
   collectDocumentProfileLinkCandidatesFromText(candidates, contextText.primaryIntention, "context.primaryIntention");
   collectDocumentProfileLinkCandidatesFromText(candidates, contextText.radicalIntention, "context.radicalIntention");
+
 
   if (Array.isArray(input.messages)) {
     input.messages.slice(0, MAX_MESSAGE_INPUT).forEach((message, index) => {
@@ -1179,13 +1406,16 @@ function buildDocumentProfileLinkCandidates(
     });
   }
 
+
   return candidates.slice(0, 12);
 }
+
 
 function normalizeMessages(value: unknown): SaveChatMessageInput[] {
   if (!Array.isArray(value)) {
     return [];
   }
+
 
   return value
     .slice(0, MAX_MESSAGE_INPUT)
@@ -1210,6 +1440,7 @@ function normalizeMessages(value: unknown): SaveChatMessageInput[] {
     .filter((message) => Boolean(message.content));
 }
 
+
 function parseInteger(value: unknown, fallback: number): number {
   const parsed =
     typeof value === "number"
@@ -1218,16 +1449,20 @@ function parseInteger(value: unknown, fallback: number): number {
         ? Number.parseInt(value, 10)
         : Number.NaN;
 
+
   if (!Number.isFinite(parsed)) {
     return fallback;
   }
 
+
   return Math.max(0, Math.round(parsed));
 }
+
 
 function buildMessageId(index: number): string {
   return `CHAT-MSG-${Date.now()}-${index + 1}-${randomUUID().slice(0, 8).toUpperCase()}`;
 }
+
 
 function buildJokerLifetime(now: Date) {
   const birth = new Date(HBCE_JOKER_C2_BIRTH_ANCHOR_UTC);
@@ -1236,11 +1471,13 @@ function buildJokerLifetime(now: Date) {
   const hours = Math.floor((seconds % 86_400) / 3_600);
   const minutes = Math.floor((seconds % 3_600) / 60);
 
+
   return {
     seconds,
     label: `${days}d ${hours}h ${minutes}m since ${HBCE_JOKER_C2_BIRTH_ANCHOR_LOCAL}`
   };
 }
+
 
 function buildTemporalCertificate(input: {
   base?: JsonRecord | null;
@@ -1268,6 +1505,7 @@ function buildTemporalCertificate(input: {
   };
 }
 
+
 async function readInputFromRequest(request: NextRequest): Promise<SaveChatRouteInput> {
   try {
     const body = (await request.json()) as SaveChatRouteInput | null;
@@ -1277,11 +1515,13 @@ async function readInputFromRequest(request: NextRequest): Promise<SaveChatRoute
   }
 }
 
+
 function resolveContext(request: NextRequest, input: SaveChatRouteInput): SaveChatRouteContext {
   const strictIdentity = coalesceBoolean(false, input.strictIdentity, readHeaderString(request, "x-hbce-strict-identity"));
   const now = new Date();
   const responseUtc = now.toISOString();
   const lifetime = buildJokerLifetime(now);
+
 
   const humanIpr = coalesceString(
     input.humanIpr,
@@ -1290,11 +1530,13 @@ function resolveContext(request: NextRequest, input: SaveChatRouteInput): SaveCh
     strictIdentity ? null : HBCE_SELF_PILOT_HUMAN_IPR
   );
 
+
   const tenantId = coalesceString(
     input.tenantId,
     readHeaderString(request, "x-hbce-tenant-id"),
     strictIdentity ? null : HBCE_SELF_PILOT_TENANT_ID
   );
+
 
   const workspaceId = coalesceString(
     input.workspaceId,
@@ -1302,17 +1544,20 @@ function resolveContext(request: NextRequest, input: SaveChatRouteInput): SaveCh
     strictIdentity ? null : HBCE_SELF_PILOT_WORKSPACE_ID
   );
 
+
   const subscriptionId = coalesceString(
     input.subscriptionId,
     readHeaderString(request, "x-hbce-subscription-id"),
     strictIdentity ? null : HBCE_SELF_PILOT_SUBSCRIPTION_ID
   );
 
+
   const accountId = coalesceString(
     input.accountId,
     readHeaderString(request, "x-hbce-account-id"),
     strictIdentity ? null : HBCE_SELF_PILOT_ACCOUNT_ID
   );
+
 
   const threadId = coalesceString(input.threadId, readHeaderString(request, "x-hbce-thread-id"));
   const messages = normalizeMessages(input.messages);
@@ -1329,6 +1574,7 @@ function resolveContext(request: NextRequest, input: SaveChatRouteInput): SaveCh
     jokerLifeSeconds: lifetime.seconds
   });
 
+
   const threadTitle = coalesceString(input.threadTitle, input.memoryTitle) ?? DEFAULT_THREAD_TITLE;
   const memoryTitle = coalesceString(input.memoryTitle) ?? DEFAULT_MEMORY_TITLE;
   const memorySummary =
@@ -1341,6 +1587,7 @@ function resolveContext(request: NextRequest, input: SaveChatRouteInput): SaveCh
     primaryIntention,
     radicalIntention
   });
+
 
   return {
     confirmSaveToIpr: coalesceBoolean(
@@ -1402,24 +1649,42 @@ function resolveContext(request: NextRequest, input: SaveChatRouteInput): SaveCh
       selfPilot: {
         subscriptionTier: HBCE_SELF_PILOT_SUBSCRIPTION_TIER
       },
-      documentRegistry: {
-        candidateCount: documentLinkCandidates.length,
-        candidateSources: documentLinkCandidates.map((candidate) => candidate.source),
-        routeVersion: ROUTE_VERSION,
-        legalCertification: false
-      }
+      documentRegistry: buildDocumentScopeDiagnostics({
+        documentLinkCandidates,
+        primaryIntention,
+        radicalIntention,
+        humanIpr,
+        runtimeIpr: coalesceString(input.runtimeIpr, readHeaderString(request, "x-hbce-runtime-ipr")) ?? DEFAULT_RUNTIME_IPR,
+        tenantId,
+        workspaceId,
+        threadId,
+        classification: coalesceString(input.classification) ?? "USER_SELECTED_CHAT_MEMORY",
+        saveScope: coalesceString(input.saveScope) ?? "IPR_BOUND",
+        saveSynthesis: coalesceBoolean(true, input.saveSynthesis),
+        reusableInPrompt: coalesceBoolean(true, input.reusableInPrompt)
+      })
     },
     metadata: {
       ...(isRecord(input.metadata) ? input.metadata : {}),
-      documentRegistry: {
-        candidateCount: documentLinkCandidates.length,
-        candidateSources: documentLinkCandidates.map((candidate) => candidate.source),
-        legalCertification: false
-      }
+      documentRegistry: buildDocumentScopeDiagnostics({
+        documentLinkCandidates,
+        primaryIntention,
+        radicalIntention,
+        humanIpr,
+        runtimeIpr: coalesceString(input.runtimeIpr, readHeaderString(request, "x-hbce-runtime-ipr")) ?? DEFAULT_RUNTIME_IPR,
+        tenantId,
+        workspaceId,
+        threadId,
+        classification: coalesceString(input.classification) ?? "USER_SELECTED_CHAT_MEMORY",
+        saveScope: coalesceString(input.saveScope) ?? "IPR_BOUND",
+        saveSynthesis: coalesceBoolean(true, input.saveSynthesis),
+        reusableInPrompt: coalesceBoolean(true, input.reusableInPrompt)
+      })
     },
     documentLinkCandidates
   };
 }
+
 
 function buildPublicDiagnostics(result: Awaited<ReturnType<typeof saveIprChatToMemoryDatabase>>) {
   return {
@@ -1466,10 +1731,12 @@ function buildPublicDiagnostics(result: Awaited<ReturnType<typeof saveIprChatToM
   };
 }
 
+
 async function persistProvidedMessages(context: SaveChatRouteContext) {
   if (!context.persistProvidedMessages || !context.threadId || context.messages.length === 0) {
     return [];
   }
+
 
   const results = await Promise.all(
     context.messages.map((message, index) => {
@@ -1512,16 +1779,20 @@ async function persistProvidedMessages(context: SaveChatRouteContext) {
         createdAt: normalizeTimestampForDatabase(message.createdAt, context.responseUtc)
       };
 
+
       return persistIprChatMessageToDatabase(input);
     })
   );
 
+
   return results;
 }
+
 
 async function buildSavePayload(request: NextRequest) {
   const input = await readInputFromRequest(request);
   const context = resolveContext(request, input);
+
 
   if (!context.confirmSaveToIpr) {
     return jsonResponse(
@@ -1542,6 +1813,7 @@ async function buildSavePayload(request: NextRequest) {
     );
   }
 
+
   if (context.strictIdentity && !context.humanIpr) {
     return jsonResponse(
       {
@@ -1560,6 +1832,7 @@ async function buildSavePayload(request: NextRequest) {
     );
   }
 
+
   if (!context.threadId) {
     return jsonResponse(
       {
@@ -1576,7 +1849,9 @@ async function buildSavePayload(request: NextRequest) {
     );
   }
 
+
   const databaseReady = await ensureHbceDatabaseReady();
+
 
   if (!databaseReady.ok) {
     return jsonResponse(
@@ -1600,6 +1875,7 @@ async function buildSavePayload(request: NextRequest) {
       { status: 503 }
     );
   }
+
 
   const threadUpsertResult = context.createThreadIfMissing
     ? await upsertIprChatThreadToDatabase({
@@ -1631,6 +1907,7 @@ async function buildSavePayload(request: NextRequest) {
       })
     : null;
 
+
   if (threadUpsertResult && !threadUpsertResult.ok) {
     return jsonResponse(
       {
@@ -1648,8 +1925,10 @@ async function buildSavePayload(request: NextRequest) {
     );
   }
 
+
   const messagePersistResults = await persistProvidedMessages(context);
   const failedMessagePersist = messagePersistResults.find((result) => !result.ok);
+
 
   if (failedMessagePersist) {
     return jsonResponse(
@@ -1674,6 +1953,7 @@ async function buildSavePayload(request: NextRequest) {
     );
   }
 
+
   const selectedMessageIds =
     context.selectedMessageIds.length > 0
       ? context.selectedMessageIds
@@ -1682,12 +1962,15 @@ async function buildSavePayload(request: NextRequest) {
           .map((row) => normalizeString(row.message_id))
           .filter((messageId): messageId is string => Boolean(messageId));
 
+
   const publicPersistedMessages = messagePersistResults.flatMap((result) =>
     result.rows.map(toPublicIprChatMessage)
   );
 
+
   const existingMemoryLookup = await findExistingReusableMemoryRecordForContext(context);
   const existingMemory = existingMemoryLookup.row ? toPublicIprMemoryRecord(existingMemoryLookup.row) : null;
+
 
   if (existingMemory) {
     const existingMemoryId = normalizeString((existingMemory as JsonRecord).memoryId);
@@ -1700,6 +1983,7 @@ async function buildSavePayload(request: NextRequest) {
       memoryId: existingMemoryId,
       sourceSavedChatId: existingSourceSavedChatId
     });
+
 
     return jsonResponse(
       {
@@ -1722,6 +2006,7 @@ async function buildSavePayload(request: NextRequest) {
         thread: existingThread,
         persistedMessages: publicPersistedMessages,
         documentRegistry: {
+          ...buildDocumentScopeDiagnostics(context),
           attempted: existingDocumentProfileLink.attempted,
           reason: existingDocumentProfileLink.reason,
           candidateCount: existingDocumentProfileLink.candidateCount,
@@ -1769,6 +2054,9 @@ async function buildSavePayload(request: NextRequest) {
           existingMemoryLookup: {
             attempted: existingMemoryLookup.attempted,
             reason: existingMemoryLookup.reason,
+            lookupMode: existingMemoryLookup.lookupMode,
+            documentScoped: existingMemoryLookup.documentScoped,
+            documentScopeHash: existingMemoryLookup.documentScopeHash,
             ok: existingMemoryLookup.result?.ok ?? null,
             rowCount: existingMemoryLookup.result?.rowCount ?? null,
             status: existingMemoryLookup.result?.status ?? null,
@@ -1796,7 +2084,9 @@ async function buildSavePayload(request: NextRequest) {
     );
   }
 
+
   let saveResult: Awaited<ReturnType<typeof saveIprChatToMemoryDatabase>>;
+
 
   try {
     saveResult = await saveIprChatToMemoryDatabase({
@@ -1843,7 +2133,12 @@ async function buildSavePayload(request: NextRequest) {
       idempotencyKey: buildMemoryIdempotencyKey(context),
       idempotencyHash: buildMemoryIdempotencyHash(context),
       idempotencyAliases: buildMemoryIdempotencyAliases(context),
-      idempotencyPolicy: IDEMPOTENCY_POLICY,
+      idempotencyPolicy: buildDocumentScopeHash(context) ? DOCUMENT_AWARE_IDEMPOTENCY_POLICY : IDEMPOTENCY_POLICY,
+      documentRegistry: {
+        ...(isRecord(context.payload.documentRegistry) ? context.payload.documentRegistry : {}),
+        ...buildDocumentScopeDiagnostics(context),
+        linkedDuringSave: true
+      },
       rawContentSaved: context.rawContentSaved,
       rawContentPolicy: context.rawContentPolicy,
       routeVersion: ROUTE_VERSION
@@ -1873,6 +2168,7 @@ async function buildSavePayload(request: NextRequest) {
     );
   }
 
+
   const publicSave = saveResult.saveResult.rows[0]
     ? toPublicIprChatMemorySave(saveResult.saveResult.rows[0])
     : null;
@@ -1888,6 +2184,7 @@ async function buildSavePayload(request: NextRequest) {
       ? toPublicIprChatThread(threadUpsertResult.rows[0])
       : null;
 
+
   const fallbackMemoryResult = publicMemory
     ? null
     : await persistFallbackMemoryRecordToDatabase({
@@ -1898,13 +2195,16 @@ async function buildSavePayload(request: NextRequest) {
         providedMessagesPersisted: messagePersistResults.length
       });
 
+
   const fallbackMemory = fallbackMemoryResult?.rows[0]
     ? toPublicIprMemoryRecord(fallbackMemoryResult.rows[0])
     : null;
 
+
   const effectiveMemory = publicMemory ?? fallbackMemory;
   const effectiveMemoryId =
     normalizeString((effectiveMemory as JsonRecord | null)?.memoryId) ?? saveResult.memoryId;
+
 
   const fallbackRegisteredEventResult = publicRegisteredEvent || !effectiveMemoryId
     ? null
@@ -1914,9 +2214,11 @@ async function buildSavePayload(request: NextRequest) {
         memoryId: effectiveMemoryId,
       });
 
+
   const fallbackRegisteredEvent = fallbackRegisteredEventResult?.rows[0]
     ? toPublicRegisteredMemoryEvent(fallbackRegisteredEventResult.rows[0])
     : null;
+
 
   const effectiveRegisteredEvent = publicRegisteredEvent ?? fallbackRegisteredEvent;
   const effectiveOk = Boolean(
@@ -1934,6 +2236,7 @@ async function buildSavePayload(request: NextRequest) {
     memoryId: effectiveMemoryId,
     sourceSavedChatId: saveResult.savedChatId
   });
+
 
   return jsonResponse(
     {
@@ -1969,6 +2272,7 @@ async function buildSavePayload(request: NextRequest) {
       thread: publicThread,
       persistedMessages: publicPersistedMessages,
       documentRegistry: {
+        ...buildDocumentScopeDiagnostics(context),
         attempted: documentProfileLink.attempted,
         reason: documentProfileLink.reason,
         candidateCount: documentProfileLink.candidateCount,
@@ -2015,6 +2319,9 @@ async function buildSavePayload(request: NextRequest) {
         existingMemoryLookup: {
           attempted: existingMemoryLookup.attempted,
           reason: existingMemoryLookup.reason,
+          lookupMode: existingMemoryLookup.lookupMode,
+          documentScoped: existingMemoryLookup.documentScoped,
+          documentScopeHash: existingMemoryLookup.documentScopeHash,
           idempotencyKey: existingMemoryLookup.idempotencyKey,
           idempotencyHash: existingMemoryLookup.idempotencyHash,
           idempotencyAliases: existingMemoryLookup.idempotencyAliases,
@@ -2069,6 +2376,7 @@ async function buildSavePayload(request: NextRequest) {
   );
 }
 
+
 export async function GET() {
   return jsonResponse({
     ok: true,
@@ -2084,7 +2392,7 @@ export async function GET() {
       primaryIntention:
         "string; canonical meaning: IPR as Intenzione Primaria Radicale saved from the chat",
       selectedMessageIds: "string[]",
-      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO, runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE and runtimeState is stored legacy-safe before database insert; v1.9 hardens idempotent deduplication before save, returns SAVE_CHAT_IDEMPOTENT_READY for duplicates, then falls back to a route-level memory_records row only when no reusable memory exists",
+      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO, runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE and runtimeState is stored legacy-safe before database insert; v2.2 adds document-aware idempotency so a new active TEXT_READY document creates or reuses only a document-scoped reusable memory, not a previous thread memory",
       saveRaw: "boolean; default false",
       saveSynthesis: "boolean; default true",
       reusableInPrompt: "boolean; default true"
@@ -2095,6 +2403,7 @@ export async function GET() {
     }
   });
 }
+
 
 export async function POST(request: NextRequest) {
   try {
