@@ -5,8 +5,10 @@ import {
   listIprChatMemorySavesFromDatabase,
   listIprMemoryRecordsFromDatabase,
   listRegisteredMemoryEventsFromDatabase,
+  listDocumentProfilesFromDatabase,
   toPublicIprChatMemorySave,
   toPublicIprMemoryRecord,
+  toPublicDocumentProfile,
   toPublicRegisteredMemoryEvent
 } from "@/lib/ipr-database";
 import {
@@ -21,7 +23,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROUTE_NAME = "HBCE IPR Memory Records Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-RECORDS-v1.0";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-RECORDS-v1.1-DOCUMENT_PROFILE_BRIDGE";
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 200;
 
@@ -43,6 +45,8 @@ type RecordsRouteInput = {
   includeInactive?: boolean | string | number | null;
   includeMemorySaves?: boolean | string | number | null;
   includeRegisteredEvents?: boolean | string | number | null;
+  includeDocumentProfiles?: boolean | string | number | null;
+  onlyLinkedDocumentProfiles?: boolean | string | number | null;
   strictIdentity?: boolean | string | number | null;
   limit?: number | string | null;
 };
@@ -60,6 +64,8 @@ type RecordsRouteContext = {
   reusableInPrompt: boolean | null;
   includeMemorySaves: boolean;
   includeRegisteredEvents: boolean;
+  includeDocumentProfiles: boolean;
+  onlyLinkedDocumentProfiles: boolean;
   strictIdentity: boolean;
   limit: number;
 };
@@ -200,6 +206,8 @@ function readInputFromSearchParams(searchParams: URLSearchParams): RecordsRouteI
     includeInactive: searchParams.get("includeInactive"),
     includeMemorySaves: searchParams.get("includeMemorySaves"),
     includeRegisteredEvents: searchParams.get("includeRegisteredEvents"),
+    includeDocumentProfiles: searchParams.get("includeDocumentProfiles"),
+    onlyLinkedDocumentProfiles: searchParams.get("onlyLinkedDocumentProfiles"),
     strictIdentity: searchParams.get("strictIdentity") ?? searchParams.get("strict"),
     limit: searchParams.get("limit")
   };
@@ -265,6 +273,8 @@ function resolveContext(request: NextRequest, input: RecordsRouteInput): Records
     reusableInPrompt: coalesceOptionalBoolean(input.reusableInPrompt),
     includeMemorySaves: coalesceBoolean(true, input.includeMemorySaves),
     includeRegisteredEvents: coalesceBoolean(true, input.includeRegisteredEvents),
+    includeDocumentProfiles: coalesceBoolean(true, input.includeDocumentProfiles),
+    onlyLinkedDocumentProfiles: coalesceBoolean(true, input.onlyLinkedDocumentProfiles),
     strictIdentity,
     limit: clampLimit(input.limit, DEFAULT_LIMIT, MAX_LIMIT)
   };
@@ -337,6 +347,46 @@ function filterPublicRegisteredEvents(
       matchesOptionalString(sessionId, context.sessionId)
     );
   });
+}
+
+function filterPublicDocumentProfiles(
+  profiles: Record<string, unknown>[],
+  context: RecordsRouteContext,
+  allowedMemoryIds: Set<string>
+): Record<string, unknown>[] {
+  return profiles.filter((profile) => {
+    const memoryId = getPublicString(profile, "memoryId");
+    const sourceSavedChatId = getPublicString(profile, "sourceSavedChatId");
+    const sessionId = getPublicString(profile, "sessionId");
+    const reusableInPrompt = getPublicBoolean(profile, "reusableInPrompt");
+
+    return (
+      (!context.memoryId || memoryId === context.memoryId) &&
+      (!context.sourceSavedChatId || sourceSavedChatId === context.sourceSavedChatId) &&
+      (!context.sessionId || sessionId === context.sessionId) &&
+      (!context.onlyLinkedDocumentProfiles || Boolean(memoryId)) &&
+      (!allowedMemoryIds.size || !memoryId || allowedMemoryIds.has(memoryId)) &&
+      (context.reusableInPrompt === null || reusableInPrompt === context.reusableInPrompt)
+    );
+  });
+}
+
+function buildDocumentRegistrySummary(documentProfiles: Record<string, unknown>[]) {
+  const linkedProfiles = documentProfiles.filter((profile) => Boolean(getPublicString(profile, "memoryId")));
+  const reusableProfiles = documentProfiles.filter((profile) => getPublicBoolean(profile, "reusableInPrompt") === true);
+
+  return {
+    status: documentProfiles.length > 0 ? "AVAILABLE" : "NO_DOCUMENT_PROFILES",
+    table: "document_profiles",
+    rowCount: documentProfiles.length,
+    profileCount: documentProfiles.length,
+    linkedProfileCount: linkedProfiles.length,
+    linkedMemoryCount: linkedProfiles.length,
+    reusableCount: reusableProfiles.length,
+    legalCertification: false,
+    opc: "technical proof receipt only",
+    profiles: documentProfiles
+  };
 }
 
 async function buildRecordsPayload(request: NextRequest) {
@@ -444,6 +494,16 @@ async function buildRecordsPayload(request: NextRequest) {
       })
     : null;
 
+  const documentProfilesResult = context.includeDocumentProfiles
+    ? await listDocumentProfilesFromDatabase({
+        humanIpr: context.humanIpr,
+        tenantId: context.tenantId,
+        workspaceId: context.workspaceId,
+        includeSoftDeleted: false,
+        limit: context.limit
+      })
+    : null;
+
   const memorySaves = memorySavesResult?.ok
     ? filterPublicMemorySaves(memorySavesResult.rows.map(toPublicIprChatMemorySave), context)
     : [];
@@ -455,6 +515,17 @@ async function buildRecordsPayload(request: NextRequest) {
         allowedMemoryIds
       )
     : [];
+
+  const publicDocumentProfiles = documentProfilesResult?.ok
+    ? filterPublicDocumentProfiles(
+        documentProfilesResult.rows.map(toPublicDocumentProfile),
+        context,
+        allowedMemoryIds
+      )
+    : [];
+
+  const linkedDocumentProfiles = publicDocumentProfiles.filter((profile) => Boolean(getPublicString(profile, "memoryId")));
+  const documentRegistry = buildDocumentRegistrySummary(publicDocumentProfiles);
 
   return jsonResponse({
     ok: true,
@@ -472,6 +543,8 @@ async function buildRecordsPayload(request: NextRequest) {
       reusableInPrompt: context.reusableInPrompt,
       includeMemorySaves: context.includeMemorySaves,
       includeRegisteredEvents: context.includeRegisteredEvents,
+      includeDocumentProfiles: context.includeDocumentProfiles,
+      onlyLinkedDocumentProfiles: context.onlyLinkedDocumentProfiles,
       strictIdentity: context.strictIdentity,
       limit: context.limit
     },
@@ -484,8 +557,22 @@ async function buildRecordsPayload(request: NextRequest) {
     counts: {
       memoryRecords: memoryRecords.length,
       memorySaves: memorySaves.length,
-      registeredEvents: registeredEvents.length
+      registeredEvents: registeredEvents.length,
+      documentProfiles: publicDocumentProfiles.length,
+      linkedDocumentProfiles: linkedDocumentProfiles.length
     },
+    documentRegistry,
+    documentProfiles: {
+      ok: documentProfilesResult?.ok ?? false,
+      status: documentProfilesResult?.status ?? "NOT_REQUESTED",
+      rowCount: publicDocumentProfiles.length,
+      linkedProfileCount: linkedDocumentProfiles.length,
+      error: documentProfilesResult?.error ?? null,
+      sqlHash: documentProfilesResult?.sqlHash ?? null,
+      durationMs: documentProfilesResult?.durationMs ?? null,
+      profiles: publicDocumentProfiles
+    },
+    linkedDocumentProfiles,
     memoryRecords,
     memorySaves,
     registeredEvents,
@@ -519,6 +606,16 @@ async function buildRecordsPayload(request: NextRequest) {
               durationMs: registeredEventsResult.durationMs,
               sqlHash: registeredEventsResult.sqlHash,
               error: registeredEventsResult.error
+            }
+          : null,
+        documentProfiles: documentProfilesResult
+          ? {
+              ok: documentProfilesResult.ok,
+              rowCount: documentProfilesResult.rowCount,
+              durationMs: documentProfilesResult.durationMs,
+              sqlHash: documentProfilesResult.sqlHash,
+              error: documentProfilesResult.error,
+              linkedProfileCount: linkedDocumentProfiles.length
             }
           : null
       }
