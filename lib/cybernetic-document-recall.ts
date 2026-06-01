@@ -6,7 +6,7 @@ import {
 import type { DocumentProfileDatabaseRow } from "@/lib/ipr-database";
 
 export const CYBERNETIC_DOCUMENT_RECALL_ENGINE_REVISION =
-  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v3-DIRECT_PROFILE_LOOKUP";
+  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v4-LINKED_PROFILE_DIRECT_MATCH";
 
 export type CyberneticDocumentFileSnapshot = {
   name?: string | null;
@@ -681,6 +681,121 @@ export function extractRequestedDocumentProfileIds(message: string): string[] {
   return Array.from(new Set(matches.map((item) => item.trim().toUpperCase())));
 }
 
+export function extractRequestedSavedChatIds(message: string): string[] {
+  const matches = message.match(/IPR-CHAT-SAVE-\d{14}-[A-Z0-9]+/gi) || [];
+  return Array.from(new Set(matches.map((item) => item.trim().toUpperCase())));
+}
+
+function normalizeDirectLookupToken(value: string | null | undefined): string | null {
+  const normalized = normalizeNullableText(value);
+
+  return normalized ? normalized.toUpperCase() : null;
+}
+
+function directLookupSet(values: Array<string | null | undefined>): Set<string> {
+  return new Set(
+    values
+      .map(normalizeDirectLookupToken)
+      .filter((item): item is string => Boolean(item))
+  );
+}
+
+function directLookupHasExactValue(values: Array<string | null | undefined>, lookup: Set<string>): boolean {
+  if (!lookup.size) {
+    return false;
+  }
+
+  return values.some((value) => {
+    const normalized = normalizeDirectLookupToken(value);
+    return normalized ? lookup.has(normalized) : false;
+  });
+}
+
+function documentProfileScopeConflicts(args: {
+  item: CyberneticDocumentProfileRecallItem;
+  humanIpr: string | null;
+  tenantId: string | null;
+  workspaceId: string | null;
+}): boolean {
+  const expectedTenantId = normalizeDocumentScopeId(args.tenantId);
+  const expectedWorkspaceId = normalizeDocumentScopeId(args.workspaceId);
+  const expectedHumanIpr = normalizeDocumentScopeId(args.humanIpr);
+
+  if (expectedTenantId && hasConflictingScopeValue({
+    item: args.item,
+    expected: expectedTenantId,
+    aliases: ["tenantId", "tenant_id", "tenant"],
+    requireValue: false
+  })) {
+    return true;
+  }
+
+  if (expectedWorkspaceId && hasConflictingScopeValue({
+    item: args.item,
+    expected: expectedWorkspaceId,
+    aliases: ["workspaceId", "workspace_id", "workspace"],
+    requireValue: false
+  })) {
+    return true;
+  }
+
+  if (expectedHumanIpr && hasConflictingScopeValue({
+    item: args.item,
+    expected: expectedHumanIpr,
+    aliases: ["humanIpr", "human_ipr", "ipr", "subjectIpr"],
+    requireValue: false
+  })) {
+    return true;
+  }
+
+  return false;
+}
+
+function documentProfileMatchesLinkedDirectRequest(args: {
+  item: CyberneticDocumentProfileRecallItem;
+  requestedMemoryIds: string[];
+  requestedProfileIds: string[];
+  requestedSavedChatIds: string[];
+  sessionId: string | null;
+  requestedFilename: string | null;
+}): boolean {
+  const requestedMemorySet = directLookupSet(args.requestedMemoryIds);
+  const requestedProfileSet = directLookupSet(args.requestedProfileIds);
+  const requestedSavedChatSet = directLookupSet(args.requestedSavedChatIds);
+  const requestedSessionSet = directLookupSet([args.sessionId]);
+  const requestedFilename = normalizeText(args.requestedFilename || "");
+
+  if (directLookupHasExactValue([args.item.profileId], requestedProfileSet)) {
+    return true;
+  }
+
+  if (directLookupHasExactValue([args.item.memoryId], requestedMemorySet)) {
+    return true;
+  }
+
+  if (directLookupHasExactValue([args.item.sourceSavedChatId], requestedSavedChatSet)) {
+    return true;
+  }
+
+  if (directLookupHasExactValue([
+    documentProfileString(args.item.publicProfile, "sessionId"),
+    documentProfileString(args.item.publicProfile, "threadId")
+  ], requestedSessionSet)) {
+    return true;
+  }
+
+  if (requestedFilename) {
+    const filename = normalizeText(args.item.filename || "");
+    return Boolean(filename && filename.includes(requestedFilename));
+  }
+
+  return false;
+}
+
+function isActiveReusableDocumentProfileRecallItem(item: CyberneticDocumentProfileRecallItem): boolean {
+  return item.reusableInPrompt !== false && item.profileStatus !== "DELETED";
+}
+
 function normalizeDocumentProfileRow(row: DocumentProfileDatabaseRow): CyberneticDocumentProfileRecallItem {
   const publicProfile = toPublicDocumentProfile(row) as Record<string, unknown>;
 
@@ -825,48 +940,6 @@ function buildDocumentProfilePromptBlock(items: CyberneticDocumentProfileRecallI
   return truncateCyberneticDocumentPromptBlock(lines.join("\n"), maxChars);
 }
 
-
-async function queryDocumentProfilesByDirectRegistryLookup(args: {
-  requestedMemoryIds: string[];
-  requestedProfileIds: string[];
-  humanIpr: string | null;
-  tenantId: string | null;
-  workspaceId: string | null;
-  limit: number;
-}): Promise<CyberneticDocumentProfileRecallItem[]> {
-  const requestedMemorySet = new Set(args.requestedMemoryIds.map((item) => normalizeText(item)).filter(Boolean));
-  const requestedProfileSet = new Set(args.requestedProfileIds.map((item) => normalizeText(item)).filter(Boolean));
-
-  if (!requestedMemorySet.size && !requestedProfileSet.size) {
-    return [];
-  }
-
-  try {
-    const result = await listDocumentProfilesFromDatabase({
-      humanIpr: args.humanIpr,
-      tenantId: args.tenantId,
-      workspaceId: args.workspaceId,
-      includeSoftDeleted: false,
-      limit: Math.max(args.limit, requestedMemorySet.size + requestedProfileSet.size, 50)
-    });
-
-    if (!result.ok) {
-      return [];
-    }
-
-    return dedupeDocumentProfileRecallItems(result.rows.map(normalizeDocumentProfileRow))
-      .filter((item) => item.reusableInPrompt !== false && item.profileStatus !== "DELETED")
-      .filter((item) => {
-        const memoryMatch = item.memoryId ? requestedMemorySet.has(normalizeText(item.memoryId)) : false;
-        const profileMatch = item.profileId ? requestedProfileSet.has(normalizeText(item.profileId)) : false;
-        return memoryMatch || profileMatch;
-      })
-      .slice(0, Math.max(args.limit, requestedMemorySet.size + requestedProfileSet.size, 1));
-  } catch {
-    return [];
-  }
-}
-
 async function queryDocumentProfilesForRecall(args: {
   message: string;
   requestedMemoryId: string | null;
@@ -933,7 +1006,7 @@ async function queryDocumentProfilesForRecall(args: {
 
   const requestedMemoryIds = args.requestedMemoryId ? [args.requestedMemoryId] : [];
   const deduped = dedupeDocumentProfileRecallItems(results)
-    .filter((item) => item.reusableInPrompt !== false && item.profileStatus !== "DELETED")
+    .filter(isActiveReusableDocumentProfileRecallItem)
     .sort((a, b) =>
       scoreDocumentProfileFallback(b, args.message, requestedMemoryIds) -
       scoreDocumentProfileFallback(a, args.message, requestedMemoryIds)
@@ -946,6 +1019,126 @@ async function queryDocumentProfilesForRecall(args: {
 
   return deduped;
 }
+
+async function queryDocumentProfilesByLinkedDirectMatch(args: {
+  message: string;
+  requestedMemoryIds: string[];
+  requestedProfileIds: string[];
+  requestedFilename: string | null;
+  requestedDocFamily: string | null;
+  requestedVolume: string | null;
+  humanIpr: string | null;
+  tenantId: string | null;
+  workspaceId: string | null;
+  sessionId: string | null;
+  limit: number;
+}): Promise<CyberneticDocumentProfileRecallItem[]> {
+  const requestedSavedChatIds = extractRequestedSavedChatIds(args.message);
+  const explicitLookupRequested = Boolean(
+    args.requestedMemoryIds.length
+    || args.requestedProfileIds.length
+    || requestedSavedChatIds.length
+    || args.requestedFilename
+  );
+
+  if (!explicitLookupRequested) {
+    return [];
+  }
+
+  const scopeAttempts: Array<{
+    humanIpr: string | null;
+    tenantId: string | null;
+    workspaceId: string | null;
+  }> = [
+    {
+      humanIpr: args.humanIpr,
+      tenantId: args.tenantId,
+      workspaceId: args.workspaceId
+    },
+    {
+      humanIpr: null,
+      tenantId: args.tenantId,
+      workspaceId: args.workspaceId
+    },
+    {
+      humanIpr: args.humanIpr,
+      tenantId: null,
+      workspaceId: null
+    },
+    {
+      humanIpr: null,
+      tenantId: null,
+      workspaceId: null
+    }
+  ];
+
+  const results: CyberneticDocumentProfileRecallItem[] = [];
+  const seenScopeKeys = new Set<string>();
+  let lastError: string | null = null;
+
+  for (const scope of scopeAttempts) {
+    const scopeKey = [
+      scope.humanIpr || "NO_HUMAN_IPR",
+      scope.tenantId || "NO_TENANT",
+      scope.workspaceId || "NO_WORKSPACE"
+    ].join("|");
+
+    if (seenScopeKeys.has(scopeKey)) {
+      continue;
+    }
+
+    seenScopeKeys.add(scopeKey);
+
+    const queryResult = await listDocumentProfilesFromDatabase({
+      humanIpr: scope.humanIpr,
+      tenantId: scope.tenantId,
+      workspaceId: scope.workspaceId,
+      includeSoftDeleted: false,
+      limit: Math.max(args.limit, args.requestedMemoryIds.length + args.requestedProfileIds.length + requestedSavedChatIds.length, 50)
+    });
+
+    if (!queryResult.ok) {
+      lastError = queryResult.error || "DOCUMENT_PROFILE_DIRECT_LOOKUP_FAILED";
+      continue;
+    }
+
+    const normalizedRows = queryResult.rows
+      .map(normalizeDocumentProfileRow)
+      .filter(isActiveReusableDocumentProfileRecallItem)
+      .filter((item) =>
+        documentProfileMatchesLinkedDirectRequest({
+          item,
+          requestedMemoryIds: args.requestedMemoryIds,
+          requestedProfileIds: args.requestedProfileIds,
+          requestedSavedChatIds,
+          sessionId: args.sessionId,
+          requestedFilename: args.requestedFilename
+        })
+      )
+      .filter((item) => !documentProfileScopeConflicts({
+        item,
+        humanIpr: args.humanIpr,
+        tenantId: args.tenantId,
+        workspaceId: args.workspaceId
+      }));
+
+    results.push(...normalizedRows);
+  }
+
+  const deduped = dedupeDocumentProfileRecallItems(results)
+    .sort((a, b) =>
+      scoreDocumentProfileFallback(b, args.message, args.requestedMemoryIds) -
+      scoreDocumentProfileFallback(a, args.message, args.requestedMemoryIds)
+    )
+    .slice(0, args.limit);
+
+  if (!deduped.length && lastError) {
+    throw new Error(lastError);
+  }
+
+  return deduped;
+}
+
 
 function applyStrictRequestedDocumentProfileFilter(args: {
   items: CyberneticDocumentProfileRecallItem[];
@@ -1173,17 +1366,21 @@ export async function resolveCyberneticDocumentProfileRecall(args: {
       });
     }
 
-    const directRequestedItems = await queryDocumentProfilesByDirectRegistryLookup({
+    const directLinkedItems = await queryDocumentProfilesByLinkedDirectMatch({
+      message: args.message,
       requestedMemoryIds,
       requestedProfileIds,
+      requestedFilename,
+      requestedDocFamily,
+      requestedVolume,
       humanIpr,
       tenantId: args.saasContext.tenantId || null,
       workspaceId: args.saasContext.workspaceId || null,
+      sessionId: args.sessionId || null,
       limit: queryLimit
     });
-
     queriedItems = dedupeDocumentProfileRecallItems([
-      ...directRequestedItems,
+      ...directLinkedItems,
       ...queriedItems
     ]);
 
@@ -1197,18 +1394,40 @@ export async function resolveCyberneticDocumentProfileRecall(args: {
       saasContext: args.saasContext,
       config
     });
+    const explicitDirectMatchAvailable = strictItems.some((item) =>
+      documentProfileMatchesLinkedDirectRequest({
+        item,
+        requestedMemoryIds,
+        requestedProfileIds,
+        requestedSavedChatIds: extractRequestedSavedChatIds(args.message),
+        sessionId: args.sessionId || null,
+        requestedFilename
+      })
+    );
+    const isolatedItems = isolated.items.length || !explicitDirectMatchAvailable
+      ? isolated.items
+      : strictItems.filter((item) =>
+          !documentProfileScopeConflicts({
+            item,
+            humanIpr,
+            tenantId: args.saasContext.tenantId || null,
+            workspaceId: args.saasContext.workspaceId || null
+          })
+        );
     const orderedItems = config.orderedRecall
       ? orderedDocumentProfileRecallItemsFromRequests({
-          items: isolated.items,
+          items: isolatedItems,
           requestedProfileIds,
           requestedMemoryIds
         })
-      : isolated.items;
+      : isolatedItems;
     const items = orderedItems.slice(0, queryLimit);
     const profileIds = Array.from(new Set(items.map((item) => item.profileId).filter((item): item is string => Boolean(item))));
     const memoryIds = Array.from(new Set(items.map((item) => item.memoryId).filter((item): item is string => Boolean(item))));
-    const missingMemoryIds = requestedMemoryIds.filter((memoryId) => !memoryIds.includes(memoryId));
-    const missingProfileIds = requestedProfileIds.filter((profileId) => !profileIds.includes(profileId));
+    const memoryIdSet = new Set(memoryIds.map((memoryId) => memoryId.toUpperCase()));
+    const profileIdSet = new Set(profileIds.map((profileId) => profileId.toUpperCase()));
+    const missingMemoryIds = requestedMemoryIds.filter((memoryId) => !memoryIdSet.has(memoryId.toUpperCase()));
+    const missingProfileIds = requestedProfileIds.filter((profileId) => !profileIdSet.has(profileId.toUpperCase()));
     const explicitRequestCount = requestedMemoryIds.length + requestedProfileIds.length;
     const failClosed = Boolean(
       explicitRequestCount > 0
