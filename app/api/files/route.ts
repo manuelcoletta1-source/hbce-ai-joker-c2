@@ -21,7 +21,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1";
 
 
 type FileStatus =
@@ -69,7 +69,7 @@ type LongDocumentMode =
 
 type DocumentOutlineEntry = {
   index: number;
-  sectionType: "TITLE" | "PART" | "CHAPTER" | "APPENDIX" | "CONCLUSION" | "BOUNDARY" | "SECTION";
+  sectionType: "TITLE" | "PART" | "CHAPTER" | "MAJOR_SECTION" | "SUBSECTION" | "APPENDIX" | "GLOSSARY_ENTRY" | "CONCLUSION" | "BOUNDARY" | "SECTION";
   label: string;
   lineNumber: number;
   charStart: number;
@@ -172,6 +172,11 @@ type StoredRuntimeFile = {
   textLength: number;
   fullTextLength: number;
   promptTextLength: number;
+  sourceFileHash: string;
+  normalizedTextHash: string;
+  runtimePromptTextHash: string;
+  sourceByteLength: number;
+  normalizedTextLength: number;
   textSourceKind: TextSourceKind;
   textCoverageStatus: TextCoverageStatus;
   fullDocumentCoverage: boolean;
@@ -1272,12 +1277,55 @@ function extractPdfText(file: RuntimeFile): PdfExtractionResult {
 
 
 
+
 function normalizeHeadingLabel(value: string): string {
   return value.replace(/\s+/g, " ").trim().slice(0, 240);
 }
 
 
-function classifyOutlineLine(line: string): DocumentOutlineEntry["sectionType"] | null {
+function normalizeOutlineSearchText(value: string): string {
+  return normalizeSearchText(value);
+}
+
+
+function findCorpusBodyStartLine(lines: string[]): number {
+  const premessaIndex = lines.findIndex((line) => /^\s*PREMESSA\s*$/i.test(line));
+  const searchStart = premessaIndex >= 0 ? premessaIndex + 1 : 0;
+  const firstBodyMajor = lines.findIndex((line, index) =>
+    index >= searchStart && /^\s*0\.\s+ATTO DI APERTURA\s*$/i.test(line)
+  );
+
+
+  if (firstBodyMajor >= 0) {
+    return firstBodyMajor;
+  }
+
+
+  return premessaIndex >= 0 ? premessaIndex : 0;
+}
+
+
+function isInsideGlossaryTable(lines: string[], index: number): boolean {
+  for (let cursor = index; cursor >= Math.max(0, index - 40); cursor -= 1) {
+    const line = normalizeHeadingLabel(lines[cursor] ?? "");
+
+
+    if (/^GLOSSARIO CANONICO DEL CORPUS$/i.test(line) || /^N\.\s*\|\s*A\s*\|\s*B\s*\|/i.test(line)) {
+      return true;
+    }
+
+
+    if (/^15\.2\s+Protocollo di citazione interna del glossario/i.test(line)) {
+      return false;
+    }
+  }
+
+
+  return false;
+}
+
+
+function classifyOutlineLine(line: string, lines: string[] = [], index = 0): DocumentOutlineEntry["sectionType"] | null {
   const normalized = normalizeHeadingLabel(line);
 
 
@@ -1293,6 +1341,21 @@ function classifyOutlineLine(line: string): DocumentOutlineEntry["sectionType"] 
 
   if (/^parte\s+[ivxlcdm]+\b/i.test(normalized)) {
     return "PART";
+  }
+
+
+  if (/^\d{1,2}\.\s+[A-ZÀ-Ú][A-ZÀ-Ú0-9\s·,–—\-’']+$/u.test(normalized)) {
+    return "MAJOR_SECTION";
+  }
+
+
+  if (/^\d{1,2}\.\d+\s+/.test(normalized)) {
+    if (isInsideGlossaryTable(lines, index)) {
+      return "GLOSSARY_ENTRY";
+    }
+
+
+    return normalized.startsWith("15.") ? "APPENDIX" : "SUBSECTION";
   }
 
 
@@ -1322,26 +1385,30 @@ function classifyOutlineLine(line: string): DocumentOutlineEntry["sectionType"] 
 
 function extractDocumentOutline(text: string): DocumentOutlineSummary {
   const entries: DocumentOutlineEntry[] = [];
-  let charCursor = 0;
+  const allLines = text.split("\n");
+  const bodyStartLine = findCorpusBodyStartLine(allLines);
+  const bodyStartChar = allLines.slice(0, bodyStartLine).reduce((sum, line) => sum + line.length + 1, 0);
+  const lines = allLines.slice(bodyStartLine);
+  let charCursor = bodyStartChar;
   let currentPart: string | null = null;
   let currentChapter: string | null = null;
-  const lines = text.split("\n");
 
 
-  for (let index = 0; index < lines.length; index += 1) {
-    const rawLine = lines[index] ?? "";
+  for (let localIndex = 0; localIndex < lines.length; localIndex += 1) {
+    const rawLine = lines[localIndex] ?? "";
     const label = normalizeHeadingLabel(rawLine);
-    const sectionType = classifyOutlineLine(label);
+    const absoluteLineIndex = bodyStartLine + localIndex;
+    const sectionType = classifyOutlineLine(label, allLines, absoluteLineIndex);
 
 
-    if (sectionType && entries.length < FULL_DOCUMENT_OUTLINE_MAX_ENTRIES) {
-      if (sectionType === "PART") {
+    if (sectionType && sectionType !== "GLOSSARY_ENTRY" && entries.length < FULL_DOCUMENT_OUTLINE_MAX_ENTRIES) {
+      if (sectionType === "PART" || sectionType === "MAJOR_SECTION") {
         currentPart = label;
         currentChapter = null;
       }
 
 
-      if (sectionType === "CHAPTER") {
+      if (sectionType === "CHAPTER" || sectionType === "SUBSECTION") {
         currentChapter = label;
       }
 
@@ -1355,7 +1422,7 @@ function extractDocumentOutline(text: string): DocumentOutlineSummary {
         index: entries.length,
         sectionType,
         label,
-        lineNumber: index + 1,
+        lineNumber: absoluteLineIndex + 1,
         charStart: charCursor,
         headingPath
       });
@@ -1366,20 +1433,23 @@ function extractDocumentOutline(text: string): DocumentOutlineSummary {
   }
 
 
-  const partsDetected = entries.filter((entry) => entry.sectionType === "PART").length;
-  const chaptersDetected = entries.filter((entry) => entry.sectionType === "CHAPTER").length;
+  const majorSections = entries.filter((entry) => entry.sectionType === "MAJOR_SECTION");
+  const partSections = entries.filter((entry) => entry.sectionType === "PART");
+  const subsections = entries.filter((entry) => entry.sectionType === "SUBSECTION" || entry.sectionType === "CHAPTER");
   const appendices = entries.filter((entry) => entry.sectionType === "APPENDIX");
   const boundaryDetected = entries.some((entry) => entry.sectionType === "BOUNDARY");
-  const conclusionDetected = entries.some((entry) => entry.sectionType === "CONCLUSION");
+  const conclusionDetected = entries.some((entry) => entry.sectionType === "CONCLUSION") || /Formula canonica finale/i.test(text);
+  const mainSectionEntries = majorSections.length > 0 ? majorSections : partSections;
+  const lastMainSection = mainSectionEntries[mainSectionEntries.length - 1] ?? entries[entries.length - 1] ?? null;
 
 
   return {
     outlineStatus: entries.length > 0 ? "READY" : "EMPTY",
-    partsDetected,
-    chaptersDetected,
+    partsDetected: majorSections.length > 0 ? majorSections.length : partSections.length,
+    chaptersDetected: subsections.length + appendices.length,
     appendicesDetected: appendices.length,
-    firstSectionDetected: entries[0]?.label ?? null,
-    lastSectionDetected: entries[entries.length - 1]?.label ?? null,
+    firstSectionDetected: mainSectionEntries[0]?.label ?? entries[0]?.label ?? null,
+    lastSectionDetected: lastMainSection?.label ?? null,
     lastAppendixDetected: appendices[appendices.length - 1]?.label ?? null,
     boundaryDetected,
     conclusionDetected,
@@ -1537,15 +1607,18 @@ function buildStoredRuntimeFileBase(args: {
 }): StoredRuntimeFile {
   const coverage = classifyTextCoverage(args.textSourceKind, args.text.length);
   const documentOutline = extractDocumentOutline(args.text);
+  const sourceFileHash = buildHash(args.text || {
+    name: args.name,
+    mimeType: args.mimeType,
+    size: args.declaredSize,
+    status: args.status
+  });
+  const normalizedTextHash = buildHash(args.text);
+  const runtimePromptTextHash = buildHash(args.text);
   const provisionalFile: Pick<StoredRuntimeFile, "id" | "name" | "fileHash" | "text" | "documentOutline"> = {
     id: args.id,
     name: args.name,
-    fileHash: buildHash(args.text || {
-      name: args.name,
-      mimeType: args.mimeType,
-      size: args.declaredSize,
-      status: args.status
-    }),
+    fileHash: sourceFileHash,
     text: args.text,
     documentOutline
   };
@@ -1564,6 +1637,11 @@ function buildStoredRuntimeFileBase(args: {
     textLength: args.text.length,
     fullTextLength: args.text.length,
     promptTextLength: args.text.length,
+    sourceFileHash,
+    normalizedTextHash,
+    runtimePromptTextHash,
+    sourceByteLength: Buffer.byteLength(args.text, "utf8"),
+    normalizedTextLength: args.text.length,
     textSourceKind: args.textSourceKind,
     textCoverageStatus: coverage.textCoverageStatus,
     fullDocumentCoverage: coverage.fullDocumentCoverage,
@@ -2038,6 +2116,11 @@ function buildDocumentProfileInput(
       fileId: file.id,
       filename: file.name,
       fileHash: file.fileHash,
+      sourceFileHash: file.sourceFileHash,
+      normalizedTextHash: file.normalizedTextHash,
+      runtimePromptTextHash: file.runtimePromptTextHash,
+      sourceByteLength: file.sourceByteLength,
+      normalizedTextLength: file.normalizedTextLength,
       mimeType: file.mimeType,
       type: file.type,
       size: file.size,
@@ -2188,6 +2271,13 @@ async function ensureDocumentTextChunksTable(): Promise<{ ok: boolean; error: st
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+
+    CREATE INDEX IF NOT EXISTS idx_document_text_chunks_profile
+      ON document_text_chunks (tenant_id, workspace_id, document_profile_id, chunk_index);
+
+    CREATE INDEX IF NOT EXISTS idx_document_text_chunks_file
+      ON document_text_chunks (tenant_id, workspace_id, file_id, file_hash, chunk_index);
   `;
 
 
@@ -2219,6 +2309,9 @@ async function persistDocumentChunksForFile(
   documentProfileId: string | null
 ): Promise<DocumentChunkPersistenceResult> {
   const startedAt = Date.now();
+
+
+  storeRuntimeDocumentChunks(file, documentProfileId);
 
 
   if (!isPromptTextStatus(file.status) || file.documentChunks.length === 0) {
@@ -2392,6 +2485,77 @@ async function persistDocumentChunksForFile(
 }
 
 
+
+function buildDeterministicDocumentProfileId(file: StoredRuntimeFile, context: DocumentProfileContext): string {
+  return buildHash({
+    tenantId: context.tenantId,
+    workspaceId: context.workspaceId,
+    humanIpr: context.humanIpr,
+    fileId: file.id,
+    fileHash: file.fileHash,
+    filename: file.name
+  }).replace("sha256:", "DOC-PROFILE-").slice(0, 28).toUpperCase();
+}
+
+
+function extractPersistedDocumentProfileId(
+  publicProfile: Record<string, unknown> | null,
+  row: Record<string, unknown> | null | undefined,
+  file: StoredRuntimeFile,
+  context: DocumentProfileContext
+): string {
+  const candidates = [
+    publicProfile?.profileId,
+    publicProfile?.documentProfileId,
+    publicProfile?.id,
+    row?.profile_id,
+    row?.profileId,
+    row?.document_profile_id,
+    row?.id
+  ];
+
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+
+  return buildDeterministicDocumentProfileId(file, context);
+}
+
+
+function withResolvedPublicProfileId<T extends Record<string, unknown> | null>(
+  profile: T,
+  profileId: string
+): T {
+  if (!profile) {
+    return profile;
+  }
+
+
+  return {
+    ...profile,
+    profileId,
+    documentProfileId: profile.documentProfileId ?? profileId
+  } as T;
+}
+
+
+function storeRuntimeDocumentChunks(file: StoredRuntimeFile, documentProfileId: string | null): void {
+  const store = getDocumentChunkStore();
+  const key = `${file.id}:${file.fileHash}`;
+  const chunks = file.documentChunks.map((chunk) => ({
+    ...chunk,
+    documentProfileId
+  }));
+
+
+  store.set(key, chunks);
+}
+
+
 async function persistDocumentProfilesForSession(
   files: StoredRuntimeFile[],
   context: DocumentProfileContext
@@ -2437,10 +2601,13 @@ async function persistDocumentProfilesForSession(
 
     try {
       const result = await upsertDocumentProfileToDatabase(input);
-      const row = result.rows[0];
-      const publicProfile = row
+      const row = result.rows[0] as Record<string, unknown> | undefined;
+      const canonicalPublicProfile = row
         ? canonicalizePublicDocumentProfileForRead(toPublicDocumentProfile(row) as Record<string, unknown>)
         : null;
+      const resolvedProfileId = extractPersistedDocumentProfileId(canonicalPublicProfile, row, file, context);
+      const publicProfile = withResolvedPublicProfileId(canonicalPublicProfile, resolvedProfileId);
+      const chunks = await persistDocumentChunksForFile(file, context, resolvedProfileId);
 
 
       results.push({
@@ -2448,18 +2615,14 @@ async function persistDocumentProfilesForSession(
         filename: file.name,
         fileHash: file.fileHash,
         attempted: true,
-        ok: result.ok && result.rowCount > 0,
+        ok: result.ok && result.rowCount > 0 && chunks.ok,
         status: result.ok && result.rowCount > 0 ? "PERSISTED" : "PERSISTENCE_FAILED",
         rowCount: result.rowCount,
-        error: result.error,
-        sqlHash: result.sqlHash,
-        durationMs: result.durationMs,
+        error: result.error || chunks.error,
+        sqlHash: chunks.sqlHash || result.sqlHash,
+        durationMs: result.durationMs + chunks.durationMs,
         profile: publicProfile,
-        chunks: await persistDocumentChunksForFile(
-          file,
-          context,
-          typeof publicProfile?.profileId === "string" ? publicProfile.profileId : null
-        ),
+        chunks,
         input: buildDocumentProfilePersistenceInputSummary(input, file)
       });
     } catch (error) {
@@ -2797,6 +2960,11 @@ function summarizeFiles(files: StoredRuntimeFile[], includeText: boolean, includ
     textLength: file.textLength,
     fullTextLength: file.fullTextLength,
     promptTextLength: file.promptTextLength,
+    sourceFileHash: file.sourceFileHash,
+    normalizedTextHash: file.normalizedTextHash,
+    runtimePromptTextHash: file.runtimePromptTextHash,
+    sourceByteLength: file.sourceByteLength,
+    normalizedTextLength: file.normalizedTextLength,
     textSourceKind: file.textSourceKind,
     textCoverageStatus: file.textCoverageStatus,
     fullDocumentCoverage: file.fullDocumentCoverage,
@@ -2895,7 +3063,7 @@ function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
     maxTextCharsPerFile: MAX_TEXT_CHARS_PER_FILE,
     maxTotalTextCharsPerSession: MAX_TOTAL_TEXT_CHARS_PER_SESSION,
     routeVersion: FILE_ROUTE_REVISION,
-    longDocumentEngine: "LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0",
+    longDocumentEngine: "LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_1",
     documentRegistry: "DOCUMENT_PROFILES",
     documentTextChunks: "document_text_chunks",
     cyberneticMethod: "FILE_UPLOAD_TO_FULL_TEXT_CHUNKS_TO_DOCUMENT_PROFILE_TO_DYNAMIC_RECALL",
@@ -2965,7 +3133,7 @@ export async function POST(req: NextRequest) {
     routeVersion: FILE_ROUTE_REVISION,
     sessionId,
     replaced: Boolean(body.replace),
-    cyberneticMethod: "FILE_UPLOAD_TO_DOCUMENT_PROFILE_TO_DYNAMIC_RECALL",
+    cyberneticMethod: "FILE_UPLOAD_TO_FULL_TEXT_CHUNKS_TO_DOCUMENT_PROFILE_TO_DYNAMIC_RECALL",
     documentRegistry: {
       table: "document_profiles",
       attempted: documentProfiles.length > 0,
@@ -3007,6 +3175,7 @@ export async function POST(req: NextRequest) {
       persistedCount: documentProfiles.reduce((sum, profile) => sum + (profile.chunks?.persistedCount ?? 0), 0),
       expectedCount: documentProfiles.reduce((sum, profile) => sum + (profile.chunks?.chunkCount ?? 0), 0),
       failedCount: documentProfiles.filter((profile) => profile.chunks && !profile.chunks.ok).length,
+      runtimeChunkStoreCount: Array.from(getDocumentChunkStore().values()).reduce((sum, chunks) => sum + chunks.length, 0),
       statuses: documentProfiles.map((profile) => profile.chunks).filter(Boolean)
     },
     summary: buildSessionSummary(sessionId, nextFiles),
