@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -5346,6 +5346,126 @@ function documentProfileRecallLinkedProfileCount(documentProfileRecall: Document
   return profiles ? profiles.length : 0;
 }
 
+function documentProfileRecallCandidateItems(documentProfileRecall: DocumentProfileRecall | null): JsonObject[] {
+  const recallObject = documentProfileRecall as unknown as JsonObject | null;
+
+  if (!recallObject) {
+    return [];
+  }
+
+  const arrays: unknown[] = [
+    recallObject.items,
+    recallObject.profiles,
+    recallObject.documentProfiles,
+    recallObject.linkedProfiles
+  ];
+  const candidates: JsonObject[] = [];
+
+  for (const possibleArray of arrays) {
+    if (!Array.isArray(possibleArray)) {
+      continue;
+    }
+
+    for (const item of possibleArray) {
+      const object = asJsonObject(item);
+
+      if (object) {
+        candidates.push(object);
+      }
+    }
+  }
+
+  const directProfile = asJsonObject(recallObject.profile) || asJsonObject(recallObject.documentProfile);
+
+  if (directProfile) {
+    candidates.push(directProfile);
+  }
+
+  if (stringPath(recallObject, "profileId", "") || stringPath(recallObject, "documentProfileId", "")) {
+    candidates.push(recallObject);
+  }
+
+  return candidates;
+}
+
+function selectDocumentProfileRecallMetadata(
+  documentProfileRecall: DocumentProfileRecall | null,
+  file: PublicFileSnapshot,
+  documentProfileId: string
+): JsonObject | null {
+  const candidates = documentProfileRecallCandidateItems(documentProfileRecall);
+
+  if (!candidates.length) {
+    return null;
+  }
+
+  const normalizedFileName = normalizeText(file.name);
+  const normalizedFileHash = normalizeText(file.fileHash || file.hash || "");
+  const normalizedDocumentProfileId = normalizeText(documentProfileId);
+
+  const exactMatch = candidates.find((candidate) => {
+    const candidateProfileId = normalizeText(
+      stringPath(candidate, "profileId", "") || stringPath(candidate, "documentProfileId", "")
+    );
+    const candidateFilename = normalizeText(stringPath(candidate, "filename", "") || stringPath(candidate, "sourceDocument", ""));
+    const candidateFileHash = normalizeText(
+      stringPath(candidate, "fileHash", "") ||
+        stringPath(candidate, "documentMetadata.fileHash", "") ||
+        stringPath(candidate, "documentMetadata.sourceFileHash", "")
+    );
+
+    return (
+      (normalizedDocumentProfileId && candidateProfileId === normalizedDocumentProfileId) ||
+      (normalizedFileHash && candidateFileHash === normalizedFileHash) ||
+      (normalizedFileName && candidateFilename === normalizedFileName)
+    );
+  });
+
+  return exactMatch || candidates[0] || null;
+}
+
+function documentProfileMetadataString(
+  metadata: JsonObject | null,
+  paths: string[],
+  fallback: string
+): string {
+  if (!metadata) {
+    return fallback;
+  }
+
+  for (const path of paths) {
+    const value = stringPath(metadata, path, "").trim();
+
+    if (value && value !== "null") {
+      return value;
+    }
+  }
+
+  return fallback;
+}
+
+function inferDocumentKindFromProfileOrFile(metadata: JsonObject | null, volume: string): string {
+  const fromProfile = documentProfileMetadataString(
+    metadata,
+    ["canonicalDocumentKind", "documentKind", "documentMetadata.canonicalDocumentKind"],
+    ""
+  );
+
+  if (fromProfile) {
+    return fromProfile;
+  }
+
+  if (volume === "V1") {
+    return "FOUNDATIONAL_VOLUME";
+  }
+
+  if (volume === "UNKNOWN") {
+    return "UNKNOWN";
+  }
+
+  return "CANONICAL_CORPUS_VOLUME";
+}
+
 function buildFullDocumentCoverageAuditDiagnostic(args: {
   message: string;
   files: PublicFileSnapshot[];
@@ -5449,6 +5569,29 @@ function buildFullDocumentCoverageAuditDiagnostic(args: {
     stringPath(recallObject || {}, "status", "") ||
     "NO_DOCUMENT_PROFILE_STATUS";
 
+  const profileMetadata = selectDocumentProfileRecallMetadata(args.documentProfileRecall, file, documentProfileId);
+  const docFamily = documentProfileMetadataString(
+    profileMetadata,
+    ["docFamily", "documentMetadata.docFamily"],
+    inferDocFamilyFromAuditFile(file, text)
+  );
+  const volume = documentProfileMetadataString(
+    profileMetadata,
+    ["volume", "canonicalVolume", "documentMetadata.canonicalVolume"],
+    inferVolumeFromAuditFile(file, text)
+  );
+  const title = documentProfileMetadataString(
+    profileMetadata,
+    ["title", "canonicalTitle", "documentMetadata.canonicalTitle"],
+    inferTitleFromAuditFile(file, text)
+  );
+  const canonicalAxis = documentProfileMetadataString(
+    profileMetadata,
+    ["canonicalAxis", "documentMetadata.canonicalAxis"],
+    inferCanonicalAxisFromAuditFile(file, text)
+  );
+  const documentKind = inferDocumentKindFromProfileOrFile(profileMetadata, volume);
+
   const ready =
     fullDocumentCoverage &&
     textCoverageStatus === "TEXT_READY_FULL" &&
@@ -5501,11 +5644,11 @@ function buildFullDocumentCoverageAuditDiagnostic(args: {
     documentChunksPersisted,
     documentChunksPersistedCount,
     outlineStatus,
-    docFamily: inferDocFamilyFromAuditFile(file, text),
-    volume: inferVolumeFromAuditFile(file, text),
-    title: inferTitleFromAuditFile(file, text),
-    documentKind: "FOUNDATIONAL_VOLUME",
-    canonicalAxis: inferCanonicalAxisFromAuditFile(file, text),
+    docFamily,
+    volume,
+    title,
+    documentKind,
+    canonicalAxis,
     majorSectionsDetected,
     subsectionsDetected,
     appendicesDetected,
