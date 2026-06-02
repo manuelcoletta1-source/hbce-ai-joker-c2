@@ -605,7 +605,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MULTI_DOCUMENT_IPR_BRIDGE-v9_5";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -2994,10 +2994,6 @@ function bridgeIprRecallFromDocumentProfileRecall(args: DocumentProfileMemoryBri
     return args.recall;
   }
 
-  if (args.recall.items.length > 0) {
-    return args.recall;
-  }
-
   const documentProfileRecall = args.documentProfileRecall;
 
   if (!documentProfileRecall?.injected || documentProfileRecall.failClosed) {
@@ -3008,7 +3004,16 @@ function bridgeIprRecallFromDocumentProfileRecall(args: DocumentProfileMemoryBri
     requestedMemoryIds.map((memoryId, index) => [normalizeText(memoryId), index])
   );
 
-  const bridgeProfile = documentProfileRecall.items
+  const existingItemsByMemoryId = new Map<string, IprRecallInjectionItem>();
+  args.recall.items.forEach((item) => {
+    const memoryKey = normalizeText(item.memoryId || "");
+    if (memoryKey && requestedMemoryOrder.has(memoryKey) && !existingItemsByMemoryId.has(memoryKey)) {
+      existingItemsByMemoryId.set(memoryKey, item);
+    }
+  });
+
+  const bridgeProfilesByMemoryId = new Map<string, DocumentProfileRecall["items"][number]>();
+  documentProfileRecall.items
     .filter((item) => item.memoryId && requestedMemoryOrder.has(normalizeText(item.memoryId)))
     .sort((a, b) => {
       const aIndex = requestedMemoryOrder.get(normalizeText(a.memoryId || "")) ?? 999999;
@@ -3019,37 +3024,72 @@ function bridgeIprRecallFromDocumentProfileRecall(args: DocumentProfileMemoryBri
       }
 
       return (b.recallScore ?? 0) - (a.recallScore ?? 0);
-    })[0];
+    })
+    .forEach((item) => {
+      const memoryKey = normalizeText(item.memoryId || "");
+      if (memoryKey && !bridgeProfilesByMemoryId.has(memoryKey)) {
+        bridgeProfilesByMemoryId.set(memoryKey, item);
+      }
+    });
 
-  if (!bridgeProfile?.memoryId) {
+  if (!bridgeProfilesByMemoryId.size && !existingItemsByMemoryId.size) {
     return args.recall;
   }
 
-  const bridgeItem: IprRecallInjectionItem = {
-    memoryId: bridgeProfile.memoryId,
-    memoryTitle: bridgeProfile.title ? `IPR · ${bridgeProfile.title}` : "IPR · Document profile memory bridge",
-    memorySummary:
-      bridgeProfile.summary ||
-      [bridgeProfile.title, bridgeProfile.volume, bridgeProfile.filename].filter(Boolean).join(" · ") ||
-      "Requested IPR memory resolved through linked document profile.",
-    classification: "USER_SELECTED_CHAT_MEMORY",
-    quality: bridgeProfile.quality || "CANONICAL",
-    memoryKind: "DOCUMENT_PROFILE_MEMORY",
-    memoryStatus: "ACTIVE",
-    sourceKind: "DOCUMENT_PROFILE_MEMORY_BRIDGE",
-    sourceThreadId: null,
-    sourceSavedChatId: bridgeProfile.sourceSavedChatId,
-    sessionId: args.recall.sessionId,
-    lastEvtId: bridgeProfile.lastEvtId,
-    lastOpcProofId: bridgeProfile.lastOpcProofId,
-    lastOpcChainHash: null,
-    updatedAt: bridgeProfile.updatedAt,
-    recallScore: 100000,
-    legalCertification: false
+  const bridgeItemFromProfile = (
+    bridgeProfile: DocumentProfileRecall["items"][number]
+  ): IprRecallInjectionItem | null => {
+    if (!bridgeProfile.memoryId) {
+      return null;
+    }
+
+    return {
+      memoryId: bridgeProfile.memoryId,
+      memoryTitle: bridgeProfile.title ? `IPR · ${bridgeProfile.title}` : "IPR · Document profile memory bridge",
+      memorySummary:
+        bridgeProfile.summary ||
+        [bridgeProfile.title, bridgeProfile.volume, bridgeProfile.filename].filter(Boolean).join(" · ") ||
+        "Requested IPR memory resolved through linked document profile.",
+      classification: "USER_SELECTED_CHAT_MEMORY",
+      quality: bridgeProfile.quality || "CANONICAL",
+      memoryKind: "DOCUMENT_PROFILE_MEMORY",
+      memoryStatus: "ACTIVE",
+      sourceKind: "DOCUMENT_PROFILE_MEMORY_BRIDGE",
+      sourceThreadId: null,
+      sourceSavedChatId: bridgeProfile.sourceSavedChatId,
+      sessionId: args.recall.sessionId,
+      lastEvtId: bridgeProfile.lastEvtId,
+      lastOpcProofId: bridgeProfile.lastOpcProofId,
+      lastOpcChainHash: null,
+      updatedAt: bridgeProfile.updatedAt,
+      recallScore: 100000,
+      legalCertification: false
+    };
   };
 
-  const items = [bridgeItem];
-  const memoryIds = [bridgeProfile.memoryId];
+  const items = requestedMemoryIds.flatMap((memoryId) => {
+    const memoryKey = normalizeText(memoryId);
+    const existingItem = existingItemsByMemoryId.get(memoryKey);
+    if (existingItem) {
+      return [existingItem];
+    }
+
+    const bridgeProfile = bridgeProfilesByMemoryId.get(memoryKey);
+    const bridgeItem = bridgeProfile ? bridgeItemFromProfile(bridgeProfile) : null;
+    return bridgeItem ? [bridgeItem] : [];
+  });
+
+  const memoryIds = Array.from(
+    new Set(items.map((item) => item.memoryId).filter((memoryId): memoryId is string => Boolean(memoryId)))
+  );
+  const normalizedResolvedMemoryIds = new Set(memoryIds.map((memoryId) => normalizeText(memoryId)));
+  const everyRequestedMemoryResolved = requestedMemoryIds.every((memoryId) =>
+    normalizedResolvedMemoryIds.has(normalizeText(memoryId))
+  );
+
+  if (!items.length) {
+    return args.recall;
+  }
 
   return {
     ...args.recall,
@@ -3058,9 +3098,11 @@ function bridgeIprRecallFromDocumentProfileRecall(args: DocumentProfileMemoryBri
     items,
     memoryIds,
     strictRequestedMemoryOnly: true,
-    strictRequestedMemoryFilter: "REQUESTED_MEMORY_ID_APPLIED",
+    strictRequestedMemoryFilter: everyRequestedMemoryResolved
+      ? "REQUESTED_MEMORY_ID_APPLIED"
+      : "REQUESTED_MEMORY_ID_NOT_FOUND",
     promptBlock: buildIprRecallPromptBlock(items, args.promptMaxChars),
-    error: null
+    error: everyRequestedMemoryResolved ? null : args.recall.error
   };
 }
 
