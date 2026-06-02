@@ -447,6 +447,12 @@ type IprRecallInjection = {
   query: string;
   items: IprRecallInjectionItem[];
   memoryIds: string[];
+  requestedMemoryIds?: string[];
+  strictRequestedMemoryOnly?: boolean;
+  strictRequestedMemoryFilter?:
+    | "NOT_REQUESTED"
+    | "REQUESTED_MEMORY_ID_APPLIED"
+    | "REQUESTED_MEMORY_ID_NOT_FOUND";
   promptBlock: string;
   error: string | null;
   legalCertification: false;
@@ -595,7 +601,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -1092,28 +1098,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (documentMemoryRecallRequested) {
-    answer = buildCyberneticDocumentMemoryRecallAnswer({
-      recall: iprRecall,
-      documentProfileRecall,
-      message,
-      handoff,
-      memory,
-      policy,
-      saasContext,
-      projectContext: documentRecallRuntimeScope.projectContext,
-      recallConfig: documentRecallRuntimeScope.recallConfig
-    });
+    answer = appendStrictRequestedMemoryFilterSummary(
+      buildCyberneticDocumentMemoryRecallAnswer({
+        recall: iprRecall,
+        documentProfileRecall,
+        message,
+        handoff,
+        memory,
+        policy,
+        saasContext,
+        projectContext: documentRecallRuntimeScope.projectContext,
+        recallConfig: documentRecallRuntimeScope.recallConfig
+      }),
+      iprRecall,
+      message
+    );
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (memoryChainRecallRequested) {
-    answer = buildCyberneticMemoryChainRecallAnswer({
-      recall: iprRecall,
-      message,
-      handoff,
-      memory,
-      policy,
-      saasContext
-    });
+    answer = appendStrictRequestedMemoryFilterSummary(
+      buildCyberneticMemoryChainRecallAnswer({
+        recall: iprRecall,
+        message,
+        handoff,
+        memory,
+        policy,
+        saasContext
+      }),
+      iprRecall,
+      message
+    );
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (memoryChainEvtBindingRequested) {
@@ -2125,6 +2139,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         status: iprRecall.status,
         itemsCount: iprRecall.items.length,
         memoryIds: iprRecall.memoryIds,
+        requestedMemoryIds: iprRecall.requestedMemoryIds ?? [],
+        strictRequestedMemoryOnly: Boolean(iprRecall.strictRequestedMemoryOnly),
+        strictRequestedMemoryFilter: iprRecall.strictRequestedMemoryFilter ?? "NOT_REQUESTED",
         error: iprRecall.error
       },
       documentRecall: {
@@ -2670,6 +2687,11 @@ async function resolveIprRecallInjection(args: {
   promptMaxChars: number;
 }): Promise<IprRecallInjection> {
   const humanIpr = args.handoff.humanIpr || null;
+  const requestedMemoryIds = extractRequestedIprMemoryIds(args.message);
+  const strictRequestedMemoryOnly = requestedMemoryIds.length > 0;
+  const strictRequestedMemoryFilterBase = strictRequestedMemoryOnly
+    ? "REQUESTED_MEMORY_ID_NOT_FOUND"
+    : "NOT_REQUESTED";
   const base: Omit<IprRecallInjection, "status" | "injected" | "items" | "memoryIds" | "promptBlock" | "error"> = {
     enabled: true,
     source: "memory_records",
@@ -2678,6 +2700,9 @@ async function resolveIprRecallInjection(args: {
     workspaceId: args.saasContext.workspaceId,
     sessionId: args.sessionId,
     query: args.message,
+    requestedMemoryIds,
+    strictRequestedMemoryOnly,
+    strictRequestedMemoryFilter: strictRequestedMemoryFilterBase,
     legalCertification: false
   };
 
@@ -2694,6 +2719,9 @@ async function resolveIprRecallInjection(args: {
   }
 
   try {
+    const effectiveDbLimit = strictRequestedMemoryOnly
+      ? Math.max(requestedMemoryIds.length, 1)
+      : Math.max(args.limit * 3, args.limit);
     const memoryResult = await queryHbceDatabase<IprRecallDatabaseRow>(
       `
 SELECT
@@ -2718,17 +2746,24 @@ FROM memory_records
 WHERE human_ipr = $1
   AND ($2::text IS NULL OR tenant_id = $2)
   AND ($3::text IS NULL OR workspace_id = $3)
+  AND ($4::text[] IS NULL OR memory_id = ANY($4::text[]))
   AND reusable_in_prompt = true
   AND memory_status = 'ACTIVE'
   AND legal_certification = false
-ORDER BY updated_at DESC
-LIMIT $4
+ORDER BY
+  CASE
+    WHEN $4::text[] IS NULL THEN 0
+    ELSE COALESCE(array_position($4::text[], memory_id::text), 999999)
+  END ASC,
+  updated_at DESC
+LIMIT $5
       `.trim(),
       [
         humanIpr,
         args.saasContext.tenantId || null,
         args.saasContext.workspaceId || null,
-        Math.max(args.limit * 3, args.limit)
+        strictRequestedMemoryOnly ? requestedMemoryIds : null,
+        effectiveDbLimit
       ]
     );
 
@@ -2745,32 +2780,60 @@ LIMIT $4
     }
 
     const terms = extractIprRecallSearchTerms(args.message);
+    const strictRequestedMemoryOrder = new Map(
+      requestedMemoryIds.map((memoryId, index) => [normalizeText(memoryId), index])
+    );
+    const strictRequestedMemorySet = new Set(strictRequestedMemoryOrder.keys());
     const publicRecords = memoryResult.rows.map(normalizeIprRecallDatabaseRow);
     const ranked = publicRecords
       .filter((record) => {
         const reusableInPrompt = recallRecordBoolean(record, "reusableInPrompt");
         const memoryStatus = normalizeText(recallRecordString(record, "memoryStatus") || "");
-        return reusableInPrompt === true && memoryStatus === "active";
+        const memoryId = normalizeText(recallRecordString(record, "memoryId") || "");
+        return (
+          reusableInPrompt === true &&
+          memoryStatus === "active" &&
+          (!strictRequestedMemoryOnly || strictRequestedMemorySet.has(memoryId))
+        );
       })
       .map((record) => ({
         ...record,
-        recallScore: scoreIprRecallRecord(record, terms, args.sessionId)
+        recallScore: strictRequestedMemoryOnly
+          ? 100000 - (strictRequestedMemoryOrder.get(normalizeText(recallRecordString(record, "memoryId") || "")) ?? 999999)
+          : scoreIprRecallRecord(record, terms, args.sessionId)
       }))
       .sort((a, b) => {
+        if (strictRequestedMemoryOnly) {
+          const aIndex = strictRequestedMemoryOrder.get(normalizeText(recallRecordString(a, "memoryId") || "")) ?? 999999;
+          const bIndex = strictRequestedMemoryOrder.get(normalizeText(recallRecordString(b, "memoryId") || "")) ?? 999999;
+
+          if (aIndex !== bIndex) {
+            return aIndex - bIndex;
+          }
+        }
+
         if (b.recallScore !== a.recallScore) {
           return b.recallScore - a.recallScore;
         }
 
         return iprRecallUpdatedAtMs(b) - iprRecallUpdatedAtMs(a);
       })
-      .slice(0, args.limit);
+      .slice(0, strictRequestedMemoryOnly ? requestedMemoryIds.length : args.limit);
 
     const items = ranked.map(toIprRecallInjectionItem);
     const promptBlock = buildIprRecallPromptBlock(items, args.promptMaxChars);
     const memoryIds = items.map((item) => item.memoryId).filter((item): item is string => Boolean(item));
+    const strictRequestedMemoryFilter = strictRequestedMemoryOnly
+      ? items.length > 0
+        ? "REQUESTED_MEMORY_ID_APPLIED"
+        : "REQUESTED_MEMORY_ID_NOT_FOUND"
+      : "NOT_REQUESTED";
 
     return {
       ...base,
+      requestedMemoryIds,
+      strictRequestedMemoryOnly,
+      strictRequestedMemoryFilter,
       injected: items.length > 0,
       status: items.length > 0 ? "IPR_RECALL_INJECTED" : "IPR_RECALL_EMPTY",
       items,
@@ -2797,6 +2860,40 @@ LIMIT $4
 function extractRequestedIprMemoryIds(message: string): string[] {
   const matches = message.match(/IPR-MEM-\d{14}-[A-Z0-9]+/gi) || [];
   return Array.from(new Set(matches.map((item) => item.trim().toUpperCase())));
+}
+
+
+
+function appendStrictRequestedMemoryFilterSummary(
+  answer: string,
+  recall: IprRecallInjection,
+  message: string
+): string {
+  const requestedMemoryIds = extractRequestedIprMemoryIds(message);
+
+  if (!requestedMemoryIds.length) {
+    return answer;
+  }
+
+  const strictRequestedMemoryFilter =
+    recall.strictRequestedMemoryFilter ??
+    (recall.memoryIds.some((memoryId) => requestedMemoryIds.includes(memoryId))
+      ? "REQUESTED_MEMORY_ID_APPLIED"
+      : "REQUESTED_MEMORY_ID_NOT_FOUND");
+
+  return [
+    answer.trim(),
+    "",
+    "STRICT_REQUESTED_MEMORY_ONLY",
+    "strictRequestedMemoryOnly: true",
+    `strictRequestedMemoryFilter: ${strictRequestedMemoryFilter}`,
+    `requestedMemoryIds: ${requestedMemoryIds.join(", ")}`,
+    `recallItemsCount: ${String(recall.items.length)}`,
+    `memoryIds: ${recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+    "Boundary: explicit memoryId requests are resolved fail-closed against the requested memory set, not against the whole reusable prompt block.",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
 }
 
 
@@ -11332,3 +11429,4 @@ function errorToMessage(error: unknown): string {
 
   return "Unknown provider error";
 }
+
