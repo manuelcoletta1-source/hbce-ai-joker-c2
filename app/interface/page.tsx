@@ -59,6 +59,38 @@ type RuntimeFile = {
   documentProfileStatus?: string | null;
   documentProfileHash?: string | null;
   documentProfileReason?: string | null;
+  sourceFileHash?: string | null;
+  normalizedTextHash?: string | null;
+  runtimePromptTextHash?: string | null;
+  sourceByteLength?: number | null;
+  normalizedTextLength?: number | null;
+  fullTextLength?: number | null;
+  promptTextLength?: number | null;
+  textSourceKind?: string | null;
+  textCoverageStatus?: string | null;
+  fullDocumentCoverage?: boolean | null;
+  fullDocumentCoverageReason?: string | null;
+  longDocumentMode?: string | null;
+  documentChunkCount?: number | null;
+  documentChunksPersisted?: boolean | null;
+  documentChunksPersistedCount?: number | null;
+  documentChunkPersistenceStatus?: string | null;
+  documentChunkPersistenceReason?: string | null;
+  outlineStatus?: string | null;
+  majorSectionsDetected?: number | null;
+  subsectionsDetected?: number | null;
+  appendicesDetected?: number | null;
+  glossaryEntriesDetected?: number | null;
+  firstSectionDetected?: string | null;
+  lastSectionDetected?: string | null;
+  lastAppendixDetected?: string | null;
+  boundaryDetected?: boolean | null;
+  conclusionDetected?: boolean | null;
+  tailVerified?: boolean | null;
+  canonicalStatus?: string | null;
+  memorySaveAllowed?: boolean | null;
+  documentObjectBridgeStatus?: string | null;
+  documentObjectBridgeRevision?: string | null;
 };
 
 
@@ -213,6 +245,24 @@ type PublicRuntimeFileSnapshot = {
   documentProfileStatus: string;
   documentProfileHash: string;
   documentProfileReason: string;
+  sourceFileHash: string;
+  normalizedTextHash: string;
+  runtimePromptTextHash: string;
+  textCoverageStatus: string;
+  fullDocumentCoverage: string;
+  fullDocumentCoverageReason: string;
+  longDocumentMode: string;
+  documentChunkCount: string;
+  documentChunksPersisted: string;
+  documentChunksPersistedCount: string;
+  outlineStatus: string;
+  majorSectionsDetected: string;
+  subsectionsDetected: string;
+  appendicesDetected: string;
+  glossaryEntriesDetected: string;
+  canonicalStatus: string;
+  tailVerified: string;
+  memorySaveAllowed: string;
 };
 
 
@@ -259,6 +309,30 @@ type PublicDocumentProfileSnapshot = {
   profileHash: string;
   canonicalDocumentKind: string;
   glossaryGuardApplied: string;
+  sourceFileHash: string;
+  normalizedTextHash: string;
+  runtimePromptTextHash: string;
+  textCoverageStatus: string;
+  fullDocumentCoverage: string;
+  fullDocumentCoverageReason: string;
+  longDocumentMode: string;
+  documentChunkCount: string;
+  documentChunksPersisted: string;
+  documentChunksPersistedCount: string;
+  documentChunkPersistenceStatus: string;
+  outlineStatus: string;
+  majorSectionsDetected: string;
+  subsectionsDetected: string;
+  appendicesDetected: string;
+  glossaryEntriesDetected: string;
+  firstSectionDetected: string;
+  lastSectionDetected: string;
+  lastAppendixDetected: string;
+  boundaryDetected: string;
+  conclusionDetected: string;
+  canonicalStatus: string;
+  tailVerified: string;
+  memorySaveAllowed: string;
   auditId: string;
   usageId: string;
   legalCertification: string;
@@ -371,7 +445,8 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.1-DOCUMENT_REGISTRY_REFRESH_GUARD";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.2-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE";
+const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -1201,7 +1276,25 @@ function normalizePublicRuntimeFileSnapshot(record: JsonRecord): PublicRuntimeFi
     documentProfileId: first(record, [["documentProfileId"], ["profileId"]], "-"),
     documentProfileStatus: first(record, [["documentProfileStatus"], ["profileStatus"]], "-"),
     documentProfileHash: first(record, [["documentProfileHash"], ["profileHash"]], "-"),
-    documentProfileReason: first(record, [["documentProfileReason"], ["profileReason"]], "-")
+    documentProfileReason: first(record, [["documentProfileReason"], ["profileReason"]], "-"),
+    sourceFileHash: first(record, [["sourceFileHash"]], "-"),
+    normalizedTextHash: first(record, [["normalizedTextHash"]], "-"),
+    runtimePromptTextHash: first(record, [["runtimePromptTextHash"]], "-"),
+    textCoverageStatus: first(record, [["textCoverageStatus"]], "-"),
+    fullDocumentCoverage: booleanLike(getPath(record, ["fullDocumentCoverage"]), "-"),
+    fullDocumentCoverageReason: first(record, [["fullDocumentCoverageReason"]], "-"),
+    longDocumentMode: first(record, [["longDocumentMode"]], "-"),
+    documentChunkCount: first(record, [["documentChunkCount"]], "0"),
+    documentChunksPersisted: booleanLike(getPath(record, ["documentChunksPersisted"]), "-"),
+    documentChunksPersistedCount: first(record, [["documentChunksPersistedCount"]], "0"),
+    outlineStatus: first(record, [["outlineStatus"], ["documentOutline", "outlineStatus"]], "-"),
+    majorSectionsDetected: first(record, [["majorSectionsDetected"], ["documentOutline", "partsDetected"]], "0"),
+    subsectionsDetected: first(record, [["subsectionsDetected"], ["documentOutline", "chaptersDetected"]], "0"),
+    appendicesDetected: first(record, [["appendicesDetected"], ["documentOutline", "appendicesDetected"]], "0"),
+    glossaryEntriesDetected: first(record, [["glossaryEntriesDetected"]], "0"),
+    canonicalStatus: first(record, [["canonicalStatus"]], "-"),
+    tailVerified: booleanLike(getPath(record, ["tailVerified"]), "false"),
+    memorySaveAllowed: booleanLike(getPath(record, ["memorySaveAllowed"]), "false")
   };
 }
 
@@ -1327,6 +1420,30 @@ function normalizePublicDocumentProfileSnapshot(record: JsonRecord): PublicDocum
     profileHash: first(profile, [["profileHash"]], first(record, [["profileHash"], ["documentProfileHash"]], "-")),
     canonicalDocumentKind: first(profile, [["canonicalDocumentKind"]], first(metadata, [["canonicalDocumentKind"]], first(input, [["canonicalDocumentKind"]], "-"))),
     glossaryGuardApplied: booleanLike(getPath(profile, ["glossaryGuardApplied"]) ?? getPath(metadata, ["glossaryGuardApplied"]) ?? getPath(input, ["glossaryGuardApplied"]), "-"),
+    sourceFileHash: first(profile, [["sourceFileHash"]], first(metadata, [["sourceFileHash"]], first(input, [["sourceFileHash"]], "-"))),
+    normalizedTextHash: first(profile, [["normalizedTextHash"]], first(metadata, [["normalizedTextHash"]], first(input, [["normalizedTextHash"]], "-"))),
+    runtimePromptTextHash: first(profile, [["runtimePromptTextHash"]], first(metadata, [["runtimePromptTextHash"]], first(input, [["runtimePromptTextHash"]], "-"))),
+    textCoverageStatus: first(profile, [["textCoverageStatus"]], first(metadata, [["textCoverageStatus"]], first(input, [["textCoverageStatus"]], "-"))),
+    fullDocumentCoverage: booleanLike(getPath(profile, ["fullDocumentCoverage"]) ?? getPath(metadata, ["fullDocumentCoverage"]) ?? getPath(input, ["fullDocumentCoverage"]), "false"),
+    fullDocumentCoverageReason: first(profile, [["fullDocumentCoverageReason"]], first(metadata, [["fullDocumentCoverageReason"]], first(input, [["fullDocumentCoverageReason"]], "-"))),
+    longDocumentMode: first(profile, [["longDocumentMode"]], first(metadata, [["longDocumentMode"]], first(input, [["longDocumentMode"]], "-"))),
+    documentChunkCount: first(profile, [["documentChunkCount"]], first(metadata, [["documentChunkCount"]], first(input, [["documentChunkCount"]], "0"))),
+    documentChunksPersisted: booleanLike(getPath(profile, ["documentChunksPersisted"]) ?? getPath(metadata, ["documentChunksPersisted"]) ?? getPath(input, ["documentChunksPersisted"]), "false"),
+    documentChunksPersistedCount: first(profile, [["documentChunksPersistedCount"]], first(metadata, [["documentChunksPersistedCount"]], first(input, [["documentChunksPersistedCount"]], "0"))),
+    documentChunkPersistenceStatus: first(profile, [["documentChunkPersistenceStatus"]], first(metadata, [["documentChunkPersistenceStatus"]], first(input, [["documentChunkPersistenceStatus"]], "-"))),
+    outlineStatus: first(profile, [["outlineStatus"], ["documentOutline", "outlineStatus"]], first(metadata, [["outlineStatus"], ["documentOutline", "outlineStatus"]], "-")),
+    majorSectionsDetected: first(profile, [["majorSectionsDetected"], ["documentOutline", "partsDetected"]], first(metadata, [["majorSectionsDetected"], ["documentOutline", "partsDetected"]], "0")),
+    subsectionsDetected: first(profile, [["subsectionsDetected"], ["documentOutline", "chaptersDetected"]], first(metadata, [["subsectionsDetected"], ["documentOutline", "chaptersDetected"]], "0")),
+    appendicesDetected: first(profile, [["appendicesDetected"], ["documentOutline", "appendicesDetected"]], first(metadata, [["appendicesDetected"], ["documentOutline", "appendicesDetected"]], "0")),
+    glossaryEntriesDetected: first(profile, [["glossaryEntriesDetected"]], first(metadata, [["glossaryEntriesDetected"]], "0")),
+    firstSectionDetected: first(profile, [["firstSectionDetected"], ["documentOutline", "firstSectionDetected"]], first(metadata, [["firstSectionDetected"], ["documentOutline", "firstSectionDetected"]], "-")),
+    lastSectionDetected: first(profile, [["lastSectionDetected"], ["documentOutline", "lastSectionDetected"]], first(metadata, [["lastSectionDetected"], ["documentOutline", "lastSectionDetected"]], "-")),
+    lastAppendixDetected: first(profile, [["lastAppendixDetected"], ["documentOutline", "lastAppendixDetected"]], first(metadata, [["lastAppendixDetected"], ["documentOutline", "lastAppendixDetected"]], "-")),
+    boundaryDetected: booleanLike(getPath(profile, ["boundaryDetected"]) ?? getPath(profile, ["documentOutline", "boundaryDetected"]) ?? getPath(metadata, ["boundaryDetected"]) ?? getPath(metadata, ["documentOutline", "boundaryDetected"]), "false"),
+    conclusionDetected: booleanLike(getPath(profile, ["conclusionDetected"]) ?? getPath(profile, ["documentOutline", "conclusionDetected"]) ?? getPath(metadata, ["conclusionDetected"]) ?? getPath(metadata, ["documentOutline", "conclusionDetected"]), "false"),
+    canonicalStatus: first(profile, [["canonicalStatus"]], first(metadata, [["canonicalStatus"]], "-")),
+    tailVerified: booleanLike(getPath(profile, ["tailVerified"]) ?? getPath(metadata, ["tailVerified"]), "false"),
+    memorySaveAllowed: booleanLike(getPath(profile, ["memorySaveAllowed"]) ?? getPath(metadata, ["memorySaveAllowed"]), "false"),
     auditId: first(profile, [["auditId"]], first(record, [["auditId"]], "-")),
     usageId: first(profile, [["usageId"], ["modelUsageId"]], first(record, [["usageId"], ["modelUsageId"]], "-")),
     legalCertification: booleanLike(getPath(profile, ["legalCertification"]), "false"),
@@ -1700,6 +1817,451 @@ function firstDisplayValue(values: string[], fallback = "-"): string {
 
 
   return fallback;
+}
+
+
+
+function toNullableNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value.trim());
+
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+
+  return null;
+}
+
+
+function firstNumberValue(values: unknown[], fallback: number | null = null): number | null {
+  for (const value of values) {
+    const parsed = toNullableNumber(value);
+
+
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+
+
+  return fallback;
+}
+
+
+function toNullableBoolean(value: unknown): boolean | null {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+
+
+  if (typeof value === "string" && value.trim()) {
+    const normalized = value.trim().toLowerCase();
+
+
+    if (["true", "1", "yes", "y", "on", "pass", "passed", "ready", "available", "pERSISTED".toLowerCase()].includes(normalized)) {
+      return true;
+    }
+
+
+    if (["false", "0", "no", "n", "off", "fail", "failed", "missing", "unknown", "not_available", "none", "null"].includes(normalized)) {
+      return false;
+    }
+  }
+
+
+  return null;
+}
+
+
+function firstBooleanValue(values: unknown[], fallback: boolean | null = null): boolean | null {
+  for (const value of values) {
+    const parsed = toNullableBoolean(value);
+
+
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+
+
+  return fallback;
+}
+
+
+function collectRuntimeFileRecordsFromPayload(payload: JsonRecord | null | undefined): JsonRecord[] {
+  if (!payload) {
+    return [];
+  }
+
+
+  const sources: unknown[] = [
+    getPath(payload, ["files"]),
+    getPath(payload, ["activeFiles"]),
+    getPath(payload, ["runtimeFiles"]),
+    getPath(payload, ["latestFile"]),
+    getPath(payload, ["fileIngestion", "files"]),
+    getPath(payload, ["diagnostics", "files"]),
+    getPath(payload, ["diagnostics", "latestFile"]),
+    getPath(payload, ["runtime", "fileIngestion", "files"]),
+    getPath(payload, ["runtime", "files"])
+  ];
+
+
+  return sources.flatMap((source) => {
+    if (Array.isArray(source)) {
+      return source.filter(isRecord);
+    }
+
+
+    return isRecord(source) ? [source] : [];
+  });
+}
+
+
+function findRuntimeFileRecordForLocalFile(file: RuntimeFile, records: JsonRecord[]): JsonRecord | null {
+  const localName = normalizeRuntimeFilename(file.name);
+  const localHash = normalizeVisibleText(file.fileHash ?? "");
+
+
+  return (
+    records.find((record) => {
+      const recordId = first(record, [["id"], ["fileId"]], "");
+      const recordName = normalizeRuntimeFilename(first(record, [["name"], ["filename"]], ""));
+      const recordHash = firstDisplayValue(
+        [
+          first(record, [["fileHash"], ["hash"], ["sha256"]], ""),
+          first(record, [["sourceFileHash"]], "")
+        ],
+        ""
+      );
+
+
+      const sameId = Boolean(recordId && recordId === file.id);
+      const sameName = Boolean(localName && recordName && localName === recordName);
+      const sameHash = Boolean(localHash && recordHash && localHash === recordHash);
+
+
+      return sameId || sameHash || sameName;
+    }) ?? null
+  );
+}
+
+
+function findDocumentProfileForRuntimeFile(
+  profiles: PublicDocumentProfileSnapshot[],
+  file: RuntimeFile,
+  runtimeRecord: JsonRecord | null
+): PublicDocumentProfileSnapshot | null {
+  const runtimeProfileId = firstDisplayValue(
+    [
+      file.documentProfileId ?? "",
+      first(runtimeRecord, [["documentProfileId"], ["profileId"]], "")
+    ],
+    ""
+  );
+  const filename = normalizeRuntimeFilename(file.name);
+  const runtimeFilename = normalizeRuntimeFilename(first(runtimeRecord, [["name"], ["filename"]], ""));
+  const effectiveFilename = runtimeFilename || filename;
+  const runtimeFileHash = firstDisplayValue(
+    [
+      file.fileHash ?? "",
+      file.sourceFileHash ?? "",
+      first(runtimeRecord, [["fileHash"], ["hash"], ["sha256"]], ""),
+      first(runtimeRecord, [["sourceFileHash"]], "")
+    ],
+    ""
+  );
+
+
+  return (
+    profiles.find((profile) => {
+      const sameProfileId = Boolean(runtimeProfileId && profile.profileId === runtimeProfileId);
+      const sameFileId = !isBlankRuntimeValue(profile.fileId) && profile.fileId === file.id;
+      const sameHash = Boolean(runtimeFileHash && !isBlankRuntimeValue(profile.fileHash) && profile.fileHash === runtimeFileHash);
+      const sameFilename = Boolean(effectiveFilename && normalizeRuntimeFilename(profile.filename) === effectiveFilename);
+
+
+      return sameProfileId || sameFileId || sameHash || sameFilename;
+    }) ?? null
+  );
+}
+
+
+function deriveDocumentObjectCanonicalStatus(file: RuntimeFile): string {
+  if (!file.documentProfileId) {
+    return "DOCUMENT_PROFILE_MISSING";
+  }
+
+
+  if (file.fullDocumentCoverage !== true) {
+    return "FULL_DOCUMENT_COVERAGE_NOT_CONFIRMED";
+  }
+
+
+  if ((file.documentChunkCount ?? 0) > 0 && file.documentChunksPersisted !== true) {
+    return "DOCUMENT_CHUNKS_NOT_PERSISTED";
+  }
+
+
+  if (file.tailVerified !== true) {
+    return "TAIL_VERIFICATION_NOT_AVAILABLE";
+  }
+
+
+  return "CANONICAL_READY";
+}
+
+
+function deriveDocumentObjectMemorySaveAllowed(file: RuntimeFile): boolean {
+  return (
+    Boolean(file.documentProfileId) &&
+    file.fullDocumentCoverage === true &&
+    (file.documentChunkCount ?? 0) > 0 &&
+    file.documentChunksPersisted === true &&
+    file.tailVerified === true
+  );
+}
+
+
+function enrichRuntimeFileWithDocumentObjectBridge(
+  file: RuntimeFile,
+  runtimeRecord: JsonRecord | null,
+  profile: PublicDocumentProfileSnapshot | null
+): RuntimeFile {
+  const sourceFileHash = firstDisplayValue(
+    [
+      first(runtimeRecord, [["sourceFileHash"]], ""),
+      profile?.sourceFileHash ?? "",
+      file.sourceFileHash ?? "",
+      first(runtimeRecord, [["fileHash"], ["hash"], ["sha256"]], ""),
+      profile?.fileHash ?? "",
+      file.fileHash ?? ""
+    ],
+    ""
+  );
+  const normalizedTextHash = firstDisplayValue(
+    [first(runtimeRecord, [["normalizedTextHash"]], ""), profile?.normalizedTextHash ?? "", file.normalizedTextHash ?? ""],
+    ""
+  );
+  const runtimePromptTextHash = firstDisplayValue(
+    [first(runtimeRecord, [["runtimePromptTextHash"]], ""), profile?.runtimePromptTextHash ?? "", file.runtimePromptTextHash ?? ""],
+    ""
+  );
+  const documentProfileId = firstDisplayValue(
+    [
+      first(runtimeRecord, [["documentProfileId"], ["profileId"]], ""),
+      profile?.profileId ?? "",
+      file.documentProfileId ?? ""
+    ],
+    ""
+  );
+  const documentProfileStatus = firstDisplayValue(
+    [
+      first(runtimeRecord, [["documentProfileStatus"], ["profileStatus"]], ""),
+      profile?.profileStatus ?? "",
+      file.documentProfileStatus ?? ""
+    ],
+    ""
+  );
+  const documentProfileHash = firstDisplayValue(
+    [first(runtimeRecord, [["documentProfileHash"], ["profileHash"]], ""), profile?.profileHash ?? "", file.documentProfileHash ?? ""],
+    ""
+  );
+  const documentProfileReason = firstDisplayValue(
+    [first(runtimeRecord, [["documentProfileReason"], ["profileReason"], ["reason"]], ""), profile?.summary ?? "", file.documentProfileReason ?? ""],
+    ""
+  );
+  const documentChunkCount = firstNumberValue(
+    [
+      getPath(runtimeRecord, ["documentChunkCount"]),
+      profile?.documentChunkCount,
+      file.documentChunkCount
+    ],
+    file.documentChunkCount ?? 0
+  );
+  const documentChunksPersisted = firstBooleanValue(
+    [
+      getPath(runtimeRecord, ["documentChunksPersisted"]),
+      profile?.documentChunksPersisted,
+      file.documentChunksPersisted
+    ],
+    file.documentChunksPersisted ?? false
+  );
+  const fullDocumentCoverage = firstBooleanValue(
+    [
+      getPath(runtimeRecord, ["fullDocumentCoverage"]),
+      profile?.fullDocumentCoverage,
+      file.fullDocumentCoverage
+    ],
+    file.fullDocumentCoverage ?? false
+  );
+  const tailVerified = firstBooleanValue(
+    [getPath(runtimeRecord, ["tailVerified"]), profile?.tailVerified, file.tailVerified],
+    file.tailVerified ?? false
+  );
+  const enriched: RuntimeFile = {
+    ...file,
+    fileHash: firstDisplayValue([first(runtimeRecord, [["fileHash"], ["hash"], ["sha256"]], ""), profile?.fileHash ?? "", file.fileHash ?? sourceFileHash], file.fileHash || sourceFileHash || "") || undefined,
+    sourceFileHash: sourceFileHash || null,
+    normalizedTextHash: normalizedTextHash || null,
+    runtimePromptTextHash: runtimePromptTextHash || null,
+    sourceByteLength: firstNumberValue([getPath(runtimeRecord, ["sourceByteLength"]), file.sourceByteLength], file.sourceByteLength ?? null),
+    normalizedTextLength: firstNumberValue([getPath(runtimeRecord, ["normalizedTextLength"]), file.normalizedTextLength], file.normalizedTextLength ?? null),
+    fullTextLength: firstNumberValue([getPath(runtimeRecord, ["fullTextLength"]), file.fullTextLength], file.fullTextLength ?? file.textLength),
+    promptTextLength: firstNumberValue([getPath(runtimeRecord, ["promptTextLength"]), file.promptTextLength], file.promptTextLength ?? file.textLength),
+    textSourceKind: firstDisplayValue([first(runtimeRecord, [["textSourceKind"]], ""), file.textSourceKind ?? ""], file.textSourceKind ?? "FULL_TEXT_CLIENT_PAYLOAD"),
+    textCoverageStatus: firstDisplayValue([first(runtimeRecord, [["textCoverageStatus"]], ""), profile?.textCoverageStatus ?? "", file.textCoverageStatus ?? ""], file.textCoverageStatus ?? "TEXT_READY_FULL"),
+    fullDocumentCoverage,
+    fullDocumentCoverageReason: firstDisplayValue([first(runtimeRecord, [["fullDocumentCoverageReason"]], ""), profile?.fullDocumentCoverageReason ?? "", file.fullDocumentCoverageReason ?? ""], file.fullDocumentCoverageReason ?? "-"),
+    longDocumentMode: firstDisplayValue([first(runtimeRecord, [["longDocumentMode"]], ""), profile?.longDocumentMode ?? "", file.longDocumentMode ?? ""], file.longDocumentMode ?? "-"),
+    documentProfileId: documentProfileId || null,
+    documentProfileStatus: documentProfileStatus || null,
+    documentProfileHash: documentProfileHash || null,
+    documentProfileReason: documentProfileReason || null,
+    documentChunkCount,
+    documentChunksPersisted,
+    documentChunksPersistedCount: firstNumberValue([getPath(runtimeRecord, ["documentChunksPersistedCount"]), profile?.documentChunksPersistedCount, file.documentChunksPersistedCount], file.documentChunksPersistedCount ?? 0),
+    documentChunkPersistenceStatus: firstDisplayValue([first(runtimeRecord, [["documentChunkPersistenceStatus"]], ""), profile?.documentChunkPersistenceStatus ?? "", file.documentChunkPersistenceStatus ?? ""], file.documentChunkPersistenceStatus ?? "-"),
+    documentChunkPersistenceReason: firstDisplayValue([first(runtimeRecord, [["documentChunkPersistenceReason"]], ""), file.documentChunkPersistenceReason ?? ""], file.documentChunkPersistenceReason ?? "-"),
+    outlineStatus: firstDisplayValue([first(runtimeRecord, [["outlineStatus"], ["documentOutline", "outlineStatus"]], ""), profile?.outlineStatus ?? "", file.outlineStatus ?? ""], file.outlineStatus ?? "-"),
+    majorSectionsDetected: firstNumberValue([getPath(runtimeRecord, ["majorSectionsDetected"]), getPath(runtimeRecord, ["documentOutline", "partsDetected"]), profile?.majorSectionsDetected, file.majorSectionsDetected], file.majorSectionsDetected ?? null),
+    subsectionsDetected: firstNumberValue([getPath(runtimeRecord, ["subsectionsDetected"]), getPath(runtimeRecord, ["documentOutline", "chaptersDetected"]), profile?.subsectionsDetected, file.subsectionsDetected], file.subsectionsDetected ?? null),
+    appendicesDetected: firstNumberValue([getPath(runtimeRecord, ["appendicesDetected"]), getPath(runtimeRecord, ["documentOutline", "appendicesDetected"]), profile?.appendicesDetected, file.appendicesDetected], file.appendicesDetected ?? null),
+    glossaryEntriesDetected: firstNumberValue([getPath(runtimeRecord, ["glossaryEntriesDetected"]), profile?.glossaryEntriesDetected, file.glossaryEntriesDetected], file.glossaryEntriesDetected ?? null),
+    firstSectionDetected: firstDisplayValue([first(runtimeRecord, [["firstSectionDetected"], ["documentOutline", "firstSectionDetected"]], ""), profile?.firstSectionDetected ?? "", file.firstSectionDetected ?? ""], file.firstSectionDetected ?? "-"),
+    lastSectionDetected: firstDisplayValue([first(runtimeRecord, [["lastSectionDetected"], ["documentOutline", "lastSectionDetected"]], ""), profile?.lastSectionDetected ?? "", file.lastSectionDetected ?? ""], file.lastSectionDetected ?? "-"),
+    lastAppendixDetected: firstDisplayValue([first(runtimeRecord, [["lastAppendixDetected"], ["documentOutline", "lastAppendixDetected"]], ""), profile?.lastAppendixDetected ?? "", file.lastAppendixDetected ?? ""], file.lastAppendixDetected ?? "-"),
+    boundaryDetected: firstBooleanValue([getPath(runtimeRecord, ["boundaryDetected"]), getPath(runtimeRecord, ["documentOutline", "boundaryDetected"]), profile?.boundaryDetected, file.boundaryDetected], file.boundaryDetected ?? false),
+    conclusionDetected: firstBooleanValue([getPath(runtimeRecord, ["conclusionDetected"]), getPath(runtimeRecord, ["documentOutline", "conclusionDetected"]), profile?.conclusionDetected, file.conclusionDetected], file.conclusionDetected ?? false),
+    tailVerified,
+    canonicalStatus: firstDisplayValue([first(runtimeRecord, [["canonicalStatus"]], ""), profile?.canonicalStatus ?? "", file.canonicalStatus ?? ""], "-"),
+    memorySaveAllowed: firstBooleanValue([getPath(runtimeRecord, ["memorySaveAllowed"]), profile?.memorySaveAllowed, file.memorySaveAllowed], false),
+    documentObjectBridgeStatus: "DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_READY",
+    documentObjectBridgeRevision: DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION
+  };
+
+
+  const canonicalStatus = enriched.canonicalStatus && enriched.canonicalStatus !== "-" ? enriched.canonicalStatus : deriveDocumentObjectCanonicalStatus(enriched);
+  const memorySaveAllowed = deriveDocumentObjectMemorySaveAllowed({ ...enriched, canonicalStatus });
+
+
+  return {
+    ...enriched,
+    canonicalStatus,
+    memorySaveAllowed
+  };
+}
+
+
+function enrichRuntimeFilesWithDocumentObjectBridge(
+  localFiles: RuntimeFile[],
+  payload: JsonRecord | null | undefined,
+  snapshot: PublicDocumentRegistrySnapshot
+): RuntimeFile[] {
+  const runtimeRecords = collectRuntimeFileRecordsFromPayload(payload);
+
+
+  return localFiles.map((file) => {
+    const runtimeRecord = findRuntimeFileRecordForLocalFile(file, runtimeRecords);
+    const profile = findDocumentProfileForRuntimeFile(snapshot.profiles, file, runtimeRecord);
+
+
+    if (!runtimeRecord && !profile) {
+      return {
+        ...file,
+        documentObjectBridgeStatus: "DOCUMENT_OBJECT_METADATA_NOT_AVAILABLE",
+        documentObjectBridgeRevision: DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION,
+        canonicalStatus: file.canonicalStatus ?? "DOCUMENT_OBJECT_METADATA_NOT_AVAILABLE",
+        memorySaveAllowed: false
+      };
+    }
+
+
+    return enrichRuntimeFileWithDocumentObjectBridge(file, runtimeRecord, profile);
+  });
+}
+
+
+function buildDocumentObjectActiveFilesPayload(
+  localFiles: RuntimeFile[],
+  snapshot: PublicDocumentRegistrySnapshot,
+  fallbackPayload?: JsonRecord | null
+): JsonRecord[] {
+  const enrichedFiles = enrichRuntimeFilesWithDocumentObjectBridge(localFiles, fallbackPayload, snapshot);
+
+
+  return enrichedFiles.map((file) => ({
+    fileId: file.id,
+    id: file.id,
+    filename: file.name,
+    name: file.name,
+    type: file.type,
+    mimeType: file.mimeType,
+    size: file.size,
+    kind: file.kind,
+    text: file.text,
+    content: file.content,
+    role: file.role,
+    uploaded: file.uploaded,
+    status: file.status,
+    mode: file.mode,
+    textLength: file.textLength,
+    fullTextLength: file.fullTextLength ?? file.textLength,
+    promptTextLength: file.promptTextLength ?? file.textLength,
+    source: file.status,
+    reason: file.reason,
+    fileHash: file.fileHash ?? file.sourceFileHash ?? null,
+    hash: file.fileHash ?? file.sourceFileHash ?? null,
+    sourceFileHash: file.sourceFileHash ?? file.fileHash ?? null,
+    normalizedTextHash: file.normalizedTextHash ?? null,
+    runtimePromptTextHash: file.runtimePromptTextHash ?? null,
+    sourceByteLength: file.sourceByteLength ?? null,
+    normalizedTextLength: file.normalizedTextLength ?? null,
+    textSourceKind: file.textSourceKind ?? null,
+    textCoverageStatus: file.textCoverageStatus ?? null,
+    fullDocumentCoverage: file.fullDocumentCoverage ?? false,
+    fullDocumentCoverageReason: file.fullDocumentCoverageReason ?? null,
+    longDocumentMode: file.longDocumentMode ?? null,
+    documentProfileId: file.documentProfileId ?? null,
+    documentProfileStatus: file.documentProfileStatus ?? null,
+    documentProfileHash: file.documentProfileHash ?? null,
+    documentProfileReason: file.documentProfileReason ?? null,
+    documentChunkCount: file.documentChunkCount ?? 0,
+    documentChunksPersisted: file.documentChunksPersisted ?? false,
+    documentChunksPersistedCount: file.documentChunksPersistedCount ?? 0,
+    documentChunkPersistenceStatus: file.documentChunkPersistenceStatus ?? null,
+    documentChunkPersistenceReason: file.documentChunkPersistenceReason ?? null,
+    outlineStatus: file.outlineStatus ?? null,
+    majorSectionsDetected: file.majorSectionsDetected ?? null,
+    subsectionsDetected: file.subsectionsDetected ?? null,
+    appendicesDetected: file.appendicesDetected ?? null,
+    glossaryEntriesDetected: file.glossaryEntriesDetected ?? null,
+    firstSectionDetected: file.firstSectionDetected ?? null,
+    lastSectionDetected: file.lastSectionDetected ?? null,
+    lastAppendixDetected: file.lastAppendixDetected ?? null,
+    boundaryDetected: file.boundaryDetected ?? false,
+    conclusionDetected: file.conclusionDetected ?? false,
+    tailVerified: file.tailVerified ?? false,
+    canonicalStatus: file.canonicalStatus ?? "DOCUMENT_OBJECT_METADATA_NOT_AVAILABLE",
+    memorySaveAllowed: file.memorySaveAllowed ?? false,
+    documentObjectBridgeStatus: file.documentObjectBridgeStatus ?? "DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_READY",
+    documentObjectBridgeRevision: file.documentObjectBridgeRevision ?? DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION,
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  }));
 }
 
 
@@ -4897,6 +5459,11 @@ export default function InterfacePage() {
         setFileRegistryPayload(nextRegistryPayload);
       }
 
+
+      if (filesPayload) {
+        setFiles((current) => enrichRuntimeFilesWithDocumentObjectBridge(current, filesPayload, nextRegistrySnapshot));
+      }
+
       setIprMemoryDashboard({
         recentThreads: nextRecentThreads,
         memorySaves: nextMemorySaves,
@@ -5108,6 +5675,14 @@ export default function InterfacePage() {
 
 
     try {
+      const activeDocumentObjectFiles = buildDocumentObjectActiveFilesPayload(
+        files,
+        dashboardDocumentRegistry,
+        fileRegistryPayload
+      );
+      const activeDocumentRegistryPayload = buildDocumentRegistryPayloadFromSnapshot(dashboardDocumentRegistry);
+
+
       const response = await fetch("/api/ipr-memory/save-chat", {
         method: "POST",
         cache: "no-store",
@@ -5166,40 +5741,17 @@ export default function InterfacePage() {
           usageId: dashboardStatus.modelUsageId,
           selectedMessageIds: messages.map((item) => item.id),
           messages: buildIprSaveMessages(messages),
-          activeFiles: files.map((file) => ({
-            fileId: file.id,
-            id: file.id,
-            filename: file.name,
-            name: file.name,
-            fileHash: file.fileHash,
-            mimeType: file.mimeType,
-            status: file.status,
-            mode: file.mode,
-            textLength: file.textLength,
-            documentProfileId: file.documentProfileId ?? null,
-            documentProfileStatus: file.documentProfileStatus ?? null,
-            legalCertification: false
-          })),
-          documentProfiles: dashboardDocumentRegistry.profiles.map((profile) => ({
-            profileId: profile.profileId,
-            fileId: profile.fileId,
-            filename: profile.filename,
-            fileHash: profile.fileHash,
-            docFamily: profile.docFamily,
-            volume: profile.volume,
-            title: profile.title,
-            memoryId: profile.memoryId,
-            profileStatus: profile.profileStatus,
-            reusableInPrompt: profile.reusableInPrompt,
-            legalCertification: false
-          })),
-          documentRegistry: {
-            source: dashboardDocumentRegistry.source,
-            table: dashboardDocumentRegistry.table,
-            profileCount: dashboardDocumentRegistry.profileCount,
-            linkedMemoryCount: dashboardDocumentRegistry.linkedMemoryCount,
-            legalCertification: false
+          activeFiles: activeDocumentObjectFiles,
+          documentObjectBridge: {
+            status: "DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_READY",
+            revision: DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION,
+            activeFileCount: activeDocumentObjectFiles.length,
+            documentProfileCount: dashboardDocumentRegistry.profiles.length,
+            legalCertification: false,
+            opc: "technical proof receipt only"
           },
+          documentProfiles: activeDocumentRegistryPayload.documentProfiles,
+          documentRegistry: activeDocumentRegistryPayload.documentRegistry,
           messageCount: messages.length,
           saveRaw: false,
           saveSynthesis: true,
@@ -5541,6 +6093,11 @@ export default function InterfacePage() {
       }
 
 
+      const nextRegistrySnapshot = getPublicDocumentRegistrySnapshot(payload, payload);
+      const enrichedFiles = enrichRuntimeFilesWithDocumentObjectBridge(nextFiles, payload, nextRegistrySnapshot);
+
+
+      setFiles(enrichedFiles);
       setFileRegistryPayload(payload);
     } catch (err) {
       setError(err instanceof Error ? err.message : "DOCUMENT_PROFILE_REGISTRY_SYNC_FAILED");
@@ -5642,6 +6199,14 @@ export default function InterfacePage() {
           : null;
 
 
+      const activeDocumentObjectFiles = buildDocumentObjectActiveFilesPayload(
+        files,
+        dashboardDocumentRegistry,
+        fileRegistryPayload
+      );
+      const activeDocumentRegistryPayload = buildDocumentRegistryPayloadFromSnapshot(dashboardDocumentRegistry);
+
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -5655,7 +6220,19 @@ export default function InterfacePage() {
           sessionId,
           threadId: activeThreadId,
           continuityRef,
-          files,
+          files: activeDocumentObjectFiles,
+          activeFiles: activeDocumentObjectFiles,
+          documentObjectBridge: {
+            status: "DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_READY",
+            revision: DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION,
+            activeFileCount: activeDocumentObjectFiles.length,
+            documentProfileCount: dashboardDocumentRegistry.profiles.length,
+            legalCertification: false,
+            opc: "technical proof receipt only"
+          },
+          documentRegistry: activeDocumentRegistryPayload.documentRegistry,
+          documentProfiles: activeDocumentRegistryPayload.documentProfiles,
+          fileRegistryPayload,
           humanIpr,
           runtimeIpr: dashboardStatus.runtimeIpr,
           tenantId: activeTenantId,
