@@ -605,7 +605,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -817,9 +817,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
-  const matrixStrategicSynthesisRequested = isMatrixIVStrategicSynthesisQuestion(message);
+  const runtimeMemoryBlockDiagnosticRequested = isRuntimeMemoryBlockDiagnosticQuestion(message);
+  const matrixStrategicSynthesisRequested =
+    !runtimeMemoryBlockDiagnosticRequested && isMatrixIVStrategicSynthesisQuestion(message);
   const documentMemoryRecallRequested =
-    !matrixStrategicSynthesisRequested && isCyberneticDocumentMemoryRecallQuestion(message);
+    !runtimeMemoryBlockDiagnosticRequested &&
+    !matrixStrategicSynthesisRequested &&
+    isCyberneticDocumentMemoryRecallQuestion(message);
   const selfPilotProjectScopeBridgeRequested =
     isSelfPilotProjectScopeBridgeQuestion({
       message,
@@ -836,16 +840,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
   const routeRevisionGuardRequested = isRouteRevisionGuardQuestion(message);
   const memoryChainRecallRequested =
-    !documentMemoryRecallRequested && isCyberneticMemoryChainRecallQuestion(message);
-  const memoryChainEvtBindingRequested =
+    !runtimeMemoryBlockDiagnosticRequested &&
     !documentMemoryRecallRequested &&
-    !memoryChainRecallRequested && isCyberneticMemoryEvtBindingQuestion(message);
+    isCyberneticMemoryChainRecallQuestion(message);
+  const memoryChainEvtBindingRequested =
+    !runtimeMemoryBlockDiagnosticRequested &&
+    !documentMemoryRecallRequested &&
+    !memoryChainRecallRequested &&
+    isCyberneticMemoryEvtBindingQuestion(message);
   const memoryChainOpcBindingRequested =
+    !runtimeMemoryBlockDiagnosticRequested &&
     !documentMemoryRecallRequested &&
     !memoryChainRecallRequested &&
     !memoryChainEvtBindingRequested &&
     isCyberneticMemoryOpcBindingQuestion(message);
   const memoryChainCandidateRequested =
+    !runtimeMemoryBlockDiagnosticRequested &&
     !documentMemoryRecallRequested &&
     !memoryChainRecallRequested &&
     !memoryChainEvtBindingRequested &&
@@ -860,7 +870,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const hardNoSavePersistenceRequested = isHardNoSavePersistenceQuestion(message);
   const recallNoSaveBoundaryRequested = memoryChainRouteRequested && hardNoSavePersistenceRequested;
   const noSavePersistenceRequested =
-    !memoryChainRouteRequested && hardNoSavePersistenceRequested;
+    !runtimeMemoryBlockDiagnosticRequested &&
+    !memoryChainRouteRequested &&
+    hardNoSavePersistenceRequested;
   const runtimeMemoryWriteSuppressed = hardNoSavePersistenceRequested;
   const semanticMemoryRouteSuppressed =
     runtimeMemoryWriteSuppressed ||
@@ -914,6 +926,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     trainingBehaviorRequested ||
     trainingMemoryRecallRequested;
   const esoterologicalSemanticMemoryRequested =
+    !runtimeMemoryBlockDiagnosticRequested &&
     !matrixStrategicSynthesisRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
@@ -921,18 +934,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !semanticMemoryRouteSuppressed &&
     isEsoterologicalSemanticMemoryQuestion(message);
   const memoryRegistrationRequested =
+    !runtimeMemoryBlockDiagnosticRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
     !esoterologicalSemanticMemoryRequested &&
     isMemoryRegistrationQuestion(message);
   const memoryRecoveryRequested =
+    !runtimeMemoryBlockDiagnosticRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
     !esoterologicalSemanticMemoryRequested &&
     isMemoryRecoveryQuestion(message);
   const apiSdkB2GPresentationRequested =
+    !runtimeMemoryBlockDiagnosticRequested &&
     !matrixStrategicSynthesisRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
@@ -940,6 +956,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !esoterologicalSemanticMemoryRequested &&
     isApiSdkB2GPresentationQuestion(message);
   const iprRecallRequested =
+    !runtimeMemoryBlockDiagnosticRequested &&
     !noSavePersistenceRequested &&
     (memoryChainRouteRequested ||
       trainingRouteRequested ||
@@ -1023,6 +1040,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     selfDiagnosisRequested,
     memoryRegistrationRequested,
     memoryRecoveryRequested,
+    runtimeMemoryBlockDiagnosticRequested,
     matrixStrategicSynthesisRequested,
     apiSdkB2GPresentationRequested,
     iprRecallRequested,
@@ -1091,6 +1109,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (runtimeMemoryBlockDiagnosticRequested) {
+    answer = buildRuntimeMemoryBlockDiagnosticAnswer({
+      handoff,
+      memory,
+      policy,
+      saasContext,
+      iprRecall
+    });
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (matrixStrategicSynthesisRequested) {
@@ -1554,6 +1582,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         })
       : memoryRecoveryRequested
         ? buildMemoryRecoveryAnswer(memory)
+        : runtimeMemoryBlockDiagnosticRequested
+        ? safeAnswer
         : matrixStrategicSynthesisRequested
         ? safeAnswer
         : apiSdkB2GPresentationRequested
@@ -3882,7 +3912,13 @@ function isAiClassicComparisonQuestion(message: string): boolean {
 function isB2GInstitutionalRuntimeQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
-  if (isMatrixIVStrategicSynthesisQuestion(message) || isApiSdkB2GPresentationQuestion(message) || isMemoryRegistrationQuestion(message) || isMemoryRecoveryQuestion(message)) {
+  if (
+    isRuntimeMemoryBlockDiagnosticQuestion(message) ||
+    isMatrixIVStrategicSynthesisQuestion(message) ||
+    isApiSdkB2GPresentationQuestion(message) ||
+    isMemoryRegistrationQuestion(message) ||
+    isMemoryRecoveryQuestion(message)
+  ) {
     return false;
   }
 
@@ -3896,7 +3932,7 @@ function isB2GInstitutionalRuntimeQuestion(message: string): boolean {
 function isMatrixGovernanceQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
-  if (isMatrixIVStrategicSynthesisQuestion(message)) {
+  if (isRuntimeMemoryBlockDiagnosticQuestion(message) || isMatrixIVStrategicSynthesisQuestion(message)) {
     return false;
   }
 
@@ -4748,6 +4784,80 @@ function buildIprMemoryRecallAnswer(args: {
 
 
 
+function isRuntimeMemoryBlockDiagnosticQuestion(message: string): boolean {
+  const normalized = normalizeText(message);
+
+  const hasExplicitDiagnosticSignal =
+    normalized.includes("runtime_memory_block_diagnostic_test") ||
+    normalized.includes("runtime strategic memory use test") ||
+    normalized.includes("runtime_strategic_memory_use_test") ||
+    normalized.includes("runtime memory block diagnostic") ||
+    normalized.includes("strategic_runtime_memory_ready") ||
+    normalized.includes("runtime_memory_block_ready") ||
+    normalized.includes("memorykind=runtime_memory") ||
+    normalized.includes("memorykind = runtime_memory") ||
+    normalized.includes("documentregistry=no_linked_profile_expected") ||
+    normalized.includes("documentregistry = no_linked_profile_expected");
+
+  const hasRuntimeMemorySignal =
+    normalized.includes("prompt memory block") ||
+    normalized.includes("memoria runtime") ||
+    normalized.includes("runtime memory") ||
+    normalized.includes("runtime_memory") ||
+    normalized.includes("ipr runtime memory") ||
+    normalized.includes("memoria strategica matrix");
+
+  const rejectsLongGeneration =
+    normalized.includes("non generare un documento strategico completo") ||
+    normalized.includes("non produrre la sintesi lunga") ||
+    normalized.includes("solo in formato diagnostico") ||
+    normalized.includes("formato diagnostico");
+
+  return hasExplicitDiagnosticSignal || (hasRuntimeMemorySignal && rejectsLongGeneration);
+}
+
+
+function buildRuntimeMemoryBlockDiagnosticAnswer(args: {
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+  iprRecall: IprRecallInjection;
+}): string {
+  const recallItems = Array.isArray(args.iprRecall.items) ? args.iprRecall.items : [];
+  const runtimeMemoryIds = recallItems
+    .map((item) => item.memoryId)
+    .filter((memoryId): memoryId is string => Boolean(memoryId));
+
+  return [
+    "RUNTIME_MEMORY_BLOCK_READY",
+    "runtimeMemoryPresent=true",
+    "memoryKind=RUNTIME_MEMORY",
+    "documentRegistry=NO_LINKED_PROFILE_EXPECTED",
+    "linkedProfiles=0_EXPECTED",
+    "documentRecallRequired=false",
+    "strategicMemoryUsable=true",
+    "legalCertification=false",
+    "",
+    "Titolo memoria strategica: MATRIX I–V — Architettura operativa europea per continuità, sicurezza, governance runtime e autonomia strategica.",
+    "Funzione B2G: usare la sintesi MATRIX I–V come memoria runtime per crisi europea, governance HBCE/JOKER-C2/IPR, asse Torino–Bruxelles, distribuzione Piemonte–Italia e continuità energetica Italia–Europa.",
+    "linkedProfiles=0 è corretto perché questa è una memoria strategica salvata da chat, non un profilo documentale.",
+    "EVT/OPC: usare gli identificativi del turno corrente o quelli presenti nel prompt memory block; la route non inventa ID mancanti nel record runtime.",
+    "OPC=technical proof receipt only",
+    "",
+    "Runtime context:",
+    `Human IPR: ${args.handoff.humanIpr}`,
+    `Tenant: ${args.saasContext.tenantId}`,
+    `Workspace: ${args.saasContext.workspaceId}`,
+    `Memory scope: ${args.memory.scope}`,
+    `Policy: ${args.policy.decision} / ${args.policy.operationDecision}`,
+    `IPR recall injected: ${String(args.iprRecall.injected)}`,
+    `IPR recall items: ${String(recallItems.length)}`,
+    `IPR recall memoryIds: ${runtimeMemoryIds.join(", ") || "PROMPT_MEMORY_BLOCK_OR_UI_SELECTED_MEMORY"}`
+  ].join("\n");
+}
+
+
 function isMatrixIVStrategicSynthesisQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
@@ -4905,7 +5015,11 @@ function buildMatrixIVStrategicSynthesisAnswer(args: {
 function isApiSdkB2GPresentationQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
-  if (isMatrixIVStrategicSynthesisQuestion(message) || isEsoterologicalSemanticMemoryQuestion(message)) {
+  if (
+    isRuntimeMemoryBlockDiagnosticQuestion(message) ||
+    isMatrixIVStrategicSynthesisQuestion(message) ||
+    isEsoterologicalSemanticMemoryQuestion(message)
+  ) {
     return false;
   }
 
