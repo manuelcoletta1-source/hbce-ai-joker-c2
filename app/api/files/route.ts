@@ -20,7 +20,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_PROFILE_FIX-v5";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1";
 
 
 type FileStatus =
@@ -141,7 +141,7 @@ type CanonicalCorpusVolumeProfile = {
   keyTerms: string[];
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_PROFILE_FIX_v5";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1";
 
 const CANONICAL_CORPUS_VOLUME_PROFILES: Record<CanonicalCorpusVolumeProfile["volume"], CanonicalCorpusVolumeProfile> = {
   V1: {
@@ -1186,10 +1186,8 @@ function includesAll(normalized: string, terms: string[]): boolean {
 
 function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCorpusVolumeProfile | null {
   const normalizedName = normalizeSearchText(file.name);
-  const normalizedHead = normalizeSearchText(`${file.name}
-${file.text.slice(0, 16000)}`);
-  const normalized = normalizeSearchText(`${file.name}
-${file.text.slice(0, 30000)}`);
+  const normalizedHead = normalizeSearchText(`${file.name}\n${file.text.slice(0, 16000)}`);
+  const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 30000)}`);
 
   const explicitV5ByFilename =
     normalizedName.includes("5e 5e il portale dell anticristo") ||
@@ -1202,8 +1200,8 @@ ${file.text.slice(0, 30000)}`);
     includesAll(normalizedHead, ["anticristo", "configurazione di rottura"]) ||
     includesAll(normalizedHead, ["portale", "soglia operativa"]);
 
-  // V5 must be resolved before the V4 semantic guard because Volume V can mention
-  // terms inherited from ALIEN CODE / Volume IV while closing the Corpus sequence.
+  // V5 must be resolved before the V4 semantic guard. Volume V can quote or reuse
+  // V4 terms while closing the Corpus sequence, so filename/header identity wins.
   if (
     explicitV5ByFilename ||
     explicitV5ByHeader ||
@@ -1239,7 +1237,6 @@ ${file.text.slice(0, 30000)}`);
     return CANONICAL_CORPUS_VOLUME_PROFILES.V4;
   }
 
-
   if (
     normalizedName.includes("3c 3c lex hermeticum") ||
     normalized.includes("lex hermeticum") ||
@@ -1269,8 +1266,6 @@ ${file.text.slice(0, 30000)}`);
 
   return null;
 }
-
-
 
 function inferDocumentFamily(file: StoredRuntimeFile): string | null {
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 12000)}`);
@@ -1619,8 +1614,7 @@ function buildDocumentProfileInput(
 }
 
 
-
-function getCanonicalCorpusProfileFromFilename(value: unknown): CanonicalCorpusVolumeProfile | null {
+function canonicalCorpusProfileFromFilenameForRead(value: unknown): CanonicalCorpusVolumeProfile | null {
   if (typeof value !== "string" || !value.trim()) {
     return null;
   }
@@ -1642,34 +1636,17 @@ function getCanonicalCorpusProfileFromFilename(value: unknown): CanonicalCorpusV
     return CANONICAL_CORPUS_VOLUME_PROFILES.V4;
   }
 
-  if (normalizedName.includes("3c 3c lex hermeticum")) {
-    return CANONICAL_CORPUS_VOLUME_PROFILES.V3;
-  }
-
-  if (normalizedName.includes("2b 2b matrix")) {
-    return CANONICAL_CORPUS_VOLUME_PROFILES.V2;
-  }
-
-  if (normalizedName.includes("1a 1a corpus esoterologia ermetica")) {
-    return CANONICAL_CORPUS_VOLUME_PROFILES.V1;
-  }
-
   return null;
 }
 
-function canonicalizePublicDocumentProfile(profile: Record<string, unknown> | null): Record<string, unknown> | null {
-  if (!profile) {
-    return null;
-  }
-
+function canonicalizePublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
   const filename = profile.filename ?? profile.fileName;
-  const canonicalProfile = getCanonicalCorpusProfileFromFilename(filename);
+  const canonicalProfile = canonicalCorpusProfileFromFilenameForRead(filename);
 
   if (!canonicalProfile) {
     return profile;
   }
 
-  const keyTerms = Array.from(new Set(canonicalProfile.keyTerms)).slice(0, 32);
   const existingMetadata =
     profile.documentMetadata && typeof profile.documentMetadata === "object"
       ? profile.documentMetadata as Record<string, unknown>
@@ -1682,8 +1659,7 @@ function canonicalizePublicDocumentProfile(profile: Record<string, unknown> | nu
     title: canonicalProfile.title,
     canonicalAxis: CANONICAL_AXIS_DCTT,
     summary: canonicalProfile.summary,
-    keyTerms,
-    semanticTerms: keyTerms.map((term) => ({ term, source: "FILENAME_CANONICAL_PROFILE_GUARD" })),
+    keyTerms: Array.from(new Set(canonicalProfile.keyTerms)).slice(0, 32),
     documentMetadata: {
       ...existingMetadata,
       canonicalProfileRevision: DOCUMENT_PROFILE_CANONICAL_FIX_REVISION,
@@ -1692,13 +1668,14 @@ function canonicalizePublicDocumentProfile(profile: Record<string, unknown> | nu
       canonicalVolume: canonicalProfile.volume,
       canonicalTitle: canonicalProfile.title,
       canonicalDocumentKind: "CANONICAL_CORPUS_VOLUME",
-      v5PortaleGuardApplied: canonicalProfile.volume === "V5",
+      portaleV5GuardApplied: canonicalProfile.volume === "V5",
       alienCodeV4GuardApplied: canonicalProfile.volume === "V4",
       legalCertification: false,
       opc: "technical proof receipt only"
     }
   };
 }
+
 
 async function persistDocumentProfilesForSession(
   files: StoredRuntimeFile[],
@@ -1753,7 +1730,7 @@ async function persistDocumentProfilesForSession(
       const result = await upsertDocumentProfileToDatabase(input);
       const row = result.rows[0];
       const publicProfile = row
-        ? canonicalizePublicDocumentProfile(toPublicDocumentProfile(row) as Record<string, unknown>)
+        ? canonicalizePublicDocumentProfileForRead(toPublicDocumentProfile(row) as Record<string, unknown>)
         : null;
 
 
@@ -2300,11 +2277,6 @@ export async function POST(req: NextRequest) {
           profile.input.volume === "V4" &&
           typeof profile.input.title === "string" &&
           normalizeSearchText(profile.input.title).includes("alien code"),
-        portaleV5ProfileDetected:
-          profile.input.docFamily === "CORPUS_ESOTEROLOGIA_ERMETICA" &&
-          profile.input.volume === "V5" &&
-          typeof profile.input.title === "string" &&
-          normalizeSearchText(profile.input.title).includes("portale dell anticristo"),
         error: profile.error
       }))
     },
@@ -2347,8 +2319,7 @@ export async function GET(req: NextRequest) {
         durationMs: result.durationMs,
         profiles: result.rows
           .map((row) => toPublicDocumentProfile(row) as Record<string, unknown>)
-          .map(canonicalizePublicDocumentProfile)
-          .filter((profile): profile is Record<string, unknown> => Boolean(profile))
+          .map(canonicalizePublicDocumentProfileForRead)
       })).catch((error) => ({
         ok: false,
         status: "QUERY_FAILED",
