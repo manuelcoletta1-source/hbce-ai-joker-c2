@@ -605,7 +605,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MULTI_DOCUMENT_IPR_BRIDGE-v9_5";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -817,7 +817,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
-  const documentMemoryRecallRequested = isCyberneticDocumentMemoryRecallQuestion(message);
+  const matrixStrategicSynthesisRequested = isMatrixIVStrategicSynthesisQuestion(message);
+  const documentMemoryRecallRequested =
+    !matrixStrategicSynthesisRequested && isCyberneticDocumentMemoryRecallQuestion(message);
   const selfPilotProjectScopeBridgeRequested =
     isSelfPilotProjectScopeBridgeQuestion({
       message,
@@ -912,6 +914,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     trainingBehaviorRequested ||
     trainingMemoryRecallRequested;
   const esoterologicalSemanticMemoryRequested =
+    !matrixStrategicSynthesisRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
@@ -930,6 +933,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !esoterologicalSemanticMemoryRequested &&
     isMemoryRecoveryQuestion(message);
   const apiSdkB2GPresentationRequested =
+    !matrixStrategicSynthesisRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
@@ -1019,6 +1023,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     selfDiagnosisRequested,
     memoryRegistrationRequested,
     memoryRecoveryRequested,
+    matrixStrategicSynthesisRequested,
     apiSdkB2GPresentationRequested,
     iprRecallRequested,
     fileIngestionRequested,
@@ -1086,6 +1091,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (matrixStrategicSynthesisRequested) {
+    answer = buildMatrixIVStrategicSynthesisAnswer({
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (noSavePersistenceRequested) {
@@ -1540,6 +1554,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         })
       : memoryRecoveryRequested
         ? buildMemoryRecoveryAnswer(memory)
+        : matrixStrategicSynthesisRequested
+        ? safeAnswer
         : apiSdkB2GPresentationRequested
         ? buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext)
         : documentMemoryRecallRequested
@@ -2994,6 +3010,10 @@ function bridgeIprRecallFromDocumentProfileRecall(args: DocumentProfileMemoryBri
     return args.recall;
   }
 
+  if (args.recall.items.length > 0) {
+    return args.recall;
+  }
+
   const documentProfileRecall = args.documentProfileRecall;
 
   if (!documentProfileRecall?.injected || documentProfileRecall.failClosed) {
@@ -3004,16 +3024,7 @@ function bridgeIprRecallFromDocumentProfileRecall(args: DocumentProfileMemoryBri
     requestedMemoryIds.map((memoryId, index) => [normalizeText(memoryId), index])
   );
 
-  const existingItemsByMemoryId = new Map<string, IprRecallInjectionItem>();
-  args.recall.items.forEach((item) => {
-    const memoryKey = normalizeText(item.memoryId || "");
-    if (memoryKey && requestedMemoryOrder.has(memoryKey) && !existingItemsByMemoryId.has(memoryKey)) {
-      existingItemsByMemoryId.set(memoryKey, item);
-    }
-  });
-
-  const bridgeProfilesByMemoryId = new Map<string, DocumentProfileRecall["items"][number]>();
-  documentProfileRecall.items
+  const bridgeProfile = documentProfileRecall.items
     .filter((item) => item.memoryId && requestedMemoryOrder.has(normalizeText(item.memoryId)))
     .sort((a, b) => {
       const aIndex = requestedMemoryOrder.get(normalizeText(a.memoryId || "")) ?? 999999;
@@ -3024,72 +3035,37 @@ function bridgeIprRecallFromDocumentProfileRecall(args: DocumentProfileMemoryBri
       }
 
       return (b.recallScore ?? 0) - (a.recallScore ?? 0);
-    })
-    .forEach((item) => {
-      const memoryKey = normalizeText(item.memoryId || "");
-      if (memoryKey && !bridgeProfilesByMemoryId.has(memoryKey)) {
-        bridgeProfilesByMemoryId.set(memoryKey, item);
-      }
-    });
+    })[0];
 
-  if (!bridgeProfilesByMemoryId.size && !existingItemsByMemoryId.size) {
+  if (!bridgeProfile?.memoryId) {
     return args.recall;
   }
 
-  const bridgeItemFromProfile = (
-    bridgeProfile: DocumentProfileRecall["items"][number]
-  ): IprRecallInjectionItem | null => {
-    if (!bridgeProfile.memoryId) {
-      return null;
-    }
-
-    return {
-      memoryId: bridgeProfile.memoryId,
-      memoryTitle: bridgeProfile.title ? `IPR · ${bridgeProfile.title}` : "IPR · Document profile memory bridge",
-      memorySummary:
-        bridgeProfile.summary ||
-        [bridgeProfile.title, bridgeProfile.volume, bridgeProfile.filename].filter(Boolean).join(" · ") ||
-        "Requested IPR memory resolved through linked document profile.",
-      classification: "USER_SELECTED_CHAT_MEMORY",
-      quality: bridgeProfile.quality || "CANONICAL",
-      memoryKind: "DOCUMENT_PROFILE_MEMORY",
-      memoryStatus: "ACTIVE",
-      sourceKind: "DOCUMENT_PROFILE_MEMORY_BRIDGE",
-      sourceThreadId: null,
-      sourceSavedChatId: bridgeProfile.sourceSavedChatId,
-      sessionId: args.recall.sessionId,
-      lastEvtId: bridgeProfile.lastEvtId,
-      lastOpcProofId: bridgeProfile.lastOpcProofId,
-      lastOpcChainHash: null,
-      updatedAt: bridgeProfile.updatedAt,
-      recallScore: 100000,
-      legalCertification: false
-    };
+  const bridgeItem: IprRecallInjectionItem = {
+    memoryId: bridgeProfile.memoryId,
+    memoryTitle: bridgeProfile.title ? `IPR · ${bridgeProfile.title}` : "IPR · Document profile memory bridge",
+    memorySummary:
+      bridgeProfile.summary ||
+      [bridgeProfile.title, bridgeProfile.volume, bridgeProfile.filename].filter(Boolean).join(" · ") ||
+      "Requested IPR memory resolved through linked document profile.",
+    classification: "USER_SELECTED_CHAT_MEMORY",
+    quality: bridgeProfile.quality || "CANONICAL",
+    memoryKind: "DOCUMENT_PROFILE_MEMORY",
+    memoryStatus: "ACTIVE",
+    sourceKind: "DOCUMENT_PROFILE_MEMORY_BRIDGE",
+    sourceThreadId: null,
+    sourceSavedChatId: bridgeProfile.sourceSavedChatId,
+    sessionId: args.recall.sessionId,
+    lastEvtId: bridgeProfile.lastEvtId,
+    lastOpcProofId: bridgeProfile.lastOpcProofId,
+    lastOpcChainHash: null,
+    updatedAt: bridgeProfile.updatedAt,
+    recallScore: 100000,
+    legalCertification: false
   };
 
-  const items = requestedMemoryIds.flatMap((memoryId) => {
-    const memoryKey = normalizeText(memoryId);
-    const existingItem = existingItemsByMemoryId.get(memoryKey);
-    if (existingItem) {
-      return [existingItem];
-    }
-
-    const bridgeProfile = bridgeProfilesByMemoryId.get(memoryKey);
-    const bridgeItem = bridgeProfile ? bridgeItemFromProfile(bridgeProfile) : null;
-    return bridgeItem ? [bridgeItem] : [];
-  });
-
-  const memoryIds = Array.from(
-    new Set(items.map((item) => item.memoryId).filter((memoryId): memoryId is string => Boolean(memoryId)))
-  );
-  const normalizedResolvedMemoryIds = new Set(memoryIds.map((memoryId) => normalizeText(memoryId)));
-  const everyRequestedMemoryResolved = requestedMemoryIds.every((memoryId) =>
-    normalizedResolvedMemoryIds.has(normalizeText(memoryId))
-  );
-
-  if (!items.length) {
-    return args.recall;
-  }
+  const items = [bridgeItem];
+  const memoryIds = [bridgeProfile.memoryId];
 
   return {
     ...args.recall,
@@ -3098,11 +3074,9 @@ function bridgeIprRecallFromDocumentProfileRecall(args: DocumentProfileMemoryBri
     items,
     memoryIds,
     strictRequestedMemoryOnly: true,
-    strictRequestedMemoryFilter: everyRequestedMemoryResolved
-      ? "REQUESTED_MEMORY_ID_APPLIED"
-      : "REQUESTED_MEMORY_ID_NOT_FOUND",
+    strictRequestedMemoryFilter: "REQUESTED_MEMORY_ID_APPLIED",
     promptBlock: buildIprRecallPromptBlock(items, args.promptMaxChars),
-    error: everyRequestedMemoryResolved ? null : args.recall.error
+    error: null
   };
 }
 
@@ -3908,7 +3882,7 @@ function isAiClassicComparisonQuestion(message: string): boolean {
 function isB2GInstitutionalRuntimeQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
-  if (isApiSdkB2GPresentationQuestion(message) || isMemoryRegistrationQuestion(message) || isMemoryRecoveryQuestion(message)) {
+  if (isMatrixIVStrategicSynthesisQuestion(message) || isApiSdkB2GPresentationQuestion(message) || isMemoryRegistrationQuestion(message) || isMemoryRecoveryQuestion(message)) {
     return false;
   }
 
@@ -3921,6 +3895,10 @@ function isB2GInstitutionalRuntimeQuestion(message: string): boolean {
 
 function isMatrixGovernanceQuestion(message: string): boolean {
   const normalized = normalizeText(message);
+
+  if (isMatrixIVStrategicSynthesisQuestion(message)) {
+    return false;
+  }
 
   return (
     normalized.includes("matrix") &&
@@ -4769,10 +4747,165 @@ function buildIprMemoryRecallAnswer(args: {
 
 
 
+
+function isMatrixIVStrategicSynthesisQuestion(message: string): boolean {
+  const normalized = normalizeText(message);
+
+  const hasMatrixSeriesSignal =
+    normalized.includes("matrix i-v") ||
+    normalized.includes("matrix i–v") ||
+    normalized.includes("matrix 1-5") ||
+    normalized.includes("matrix volumi i-v") ||
+    normalized.includes("matrix volumi i–v") ||
+    normalized.includes("matrix volume i") ||
+    normalized.includes("matrix volume v") ||
+    normalized.includes("collana matrix") ||
+    normalized.includes("ciclo matrix");
+
+  const hasStrategicDocumentSignal =
+    normalized.includes("sintesi strategica") ||
+    normalized.includes("documento strategico") ||
+    normalized.includes("strategic synthesis") ||
+    normalized.includes("b2g") ||
+    normalized.includes("architettura operativa europea") ||
+    normalized.includes("governance runtime") ||
+    normalized.includes("autonomia strategica") ||
+    normalized.includes("continuita energetica") ||
+    normalized.includes("continuità energetica");
+
+  const hasMatrixProgressionSignal =
+    normalized.includes("torino") &&
+    normalized.includes("bruxelles") &&
+    normalized.includes("piemonte") &&
+    normalized.includes("italia") &&
+    normalized.includes("europa");
+
+  const rejectsApiProductCard =
+    normalized.includes("non produrre una scheda api") ||
+    normalized.includes("nessuna scheda api") ||
+    normalized.includes("non produrre endpoint") ||
+    normalized.includes("nessun endpoint") ||
+    normalized.includes("non produrre sdk") ||
+    normalized.includes("nessun sdk");
+
+  return (
+    hasMatrixSeriesSignal &&
+    (hasStrategicDocumentSignal || hasMatrixProgressionSignal || rejectsApiProductCard)
+  );
+}
+
+
+function buildMatrixIVStrategicSynthesisAnswer(args: {
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  return [
+    "MATRIX I–V — Architettura operativa europea per continuità, sicurezza, governance runtime e autonomia strategica",
+    "",
+    "1. Executive thesis",
+    "MATRIX I–V non è una collezione di testi separati. È una catena operativa progressiva che costruisce un modello europeo di continuità, sicurezza, governance runtime e autonomia strategica. La sequenza parte dalla crisi europea, passa alla definizione di un runtime verificabile, si ancora all’asse Torino–Bruxelles, si distribuisce nel territorio Piemonte–Italia e arriva alla continuità energetica Italia–Europa.",
+    "",
+    "La traiettoria è: crisi europea → architettura runtime → attivazione Torino–Bruxelles → distribuzione Piemonte–Italia → continuità energetica Italia–Europa. Il valore B2G della collana sta nel trasformare analisi, decisione, territorio, energia e audit in un’unica architettura eseguibile e verificabile.",
+    "",
+    "2. Problema europeo individuato",
+    "Il problema europeo non è la mancanza di dichiarazioni strategiche. L’Europa produce strategie, regolamenti, programmi e tavoli tecnici con abbondanza quasi geologica. Il punto critico è la distanza tra policy e capacità operativa verificabile.",
+    "",
+    "MATRIX I–V individua otto assenze strutturali:",
+    "- continuità operativa tra decisione, territorio e infrastruttura;",
+    "- runtime verificabile per trasformare una decisione in processo eseguibile;",
+    "- tracciabilità decisione-esecuzione;",
+    "- coordinamento stabile tra livelli locali, regionali, nazionali ed europei;",
+    "- audit end-to-end non limitato alla ricostruzione ex-post;",
+    "- capacità di attivazione reale, non solo pianificazione;",
+    "- continuità energetica e materiale;",
+    "- autonomia tecnologica europea rispetto a stack, cloud, AI e infrastrutture extra-UE.",
+    "",
+    "3. Sequenza architetturale MATRIX I–V",
+    "Volume I — MATRIX EUROPA definisce il campo di crisi: sicurezza, conflitto, continuità istituzionale e necessità di una infrastruttura europea capace di reggere pressione sistemica. Il volume introduce MATRIX come risposta alla frammentazione europea: non una teoria decorativa, ma una cornice per rendere coordinabile ciò che oggi resta disperso tra Stati, regioni, apparati e infrastrutture.",
+    "",
+    "Volume II — MATRIX HBCE / JOKER-C2 / IPR porta il modello dentro un runtime operativo. Qui la questione diventa tecnica: identità operativa, decision gate, fail-closed execution, policy, rischio, esecuzione, evidenza, verifica e continuità. La catena Identity → Intent → Policy → Risk → Decision → Execution → Evidence → Verification → Continuity diventa la spina dorsale per trasformare l’interazione AI in operazione governata.",
+    "",
+    "Volume III — MATRIX TORINO–BRUXELLES introduce l’Activation Infrastructure. Torino diventa nodo tecnico, Bruxelles nodo istituzionale: il modello non resta più nella progettazione, ma cerca un asse di attivazione reale. La funzione del volume è collegare evidenza tecnica e decisione europea, rendendo visibile il passaggio da architettura concettuale a infrastruttura attivabile.",
+    "",
+    "Volume IV — MATRIX PIEMONTE–ITALIA sviluppa la distribuzione territoriale. Il modello si densifica: Torino → Piemonte → Regioni italiane → Italia → Europa. La governance non è più solo verticale, ma multilivello, replicabile e misurabile tramite KPI territoriali. Il territorio non è sfondo amministrativo: diventa superficie di esecuzione, verifica e continuità.",
+    "",
+    "Volume V — MATRIX ITALIA–EUROPA chiude la progressione sulla continuità energetica distribuita. Nodo energetico, rete territoriale, sistema nazionale e federazione energetica europea diventano condizioni materiali della governance. Un runtime senza energia è solo un bellissimo schema morto, e l’Europa ha già abbastanza documenti eleganti che non accendono neanche una lampadina.",
+    "",
+    "4. Modello operativo",
+    "MATRIX collega identità operativa, intenzione, decisione, policy, rischio, esecuzione, evidenza, verifica, continuità, energia e territorio. Il modello non tratta questi elementi come moduli isolati, ma come catena di responsabilità operativa.",
+    "",
+    "L’identità operativa stabilisce chi agisce nel runtime. L’intenzione definisce l’orientamento dell’azione. La decisione seleziona l’atto. La policy limita il campo. Il rischio determina soglie e blocchi. L’esecuzione produce l’evento. L’evidenza rende ricostruibile l’operazione. La verifica separa il dato controllabile dalla dichiarazione. La continuità consente al sistema di non ripartire da zero a ogni crisi. Energia e territorio danno al modello una base materiale, perché nessuna governance europea regge se resta sospesa nel cloud come un castello amministrativo senza corrente.",
+    "",
+    "5. Ruolo HBCE / JOKER-C2 / IPR",
+    "HBCE opera come governance runtime e controllo operativo: definisce il perimetro entro cui identità, policy, rischio, memoria e audit devono funzionare insieme.",
+    "",
+    "JOKER-C2 opera come execution layer governato: riceve richieste, applica contesto, policy, rischio, memoria e produce risposte AI dentro una catena verificabile.",
+    "",
+    "IPR è identità/intenzione operativa verificabile nel runtime. Non è SPID, non è CIE, non è passaporto, non è EUDI Wallet e non è identità pubblica ufficiale.",
+    "",
+    "EVT è evento tecnico tracciato: registra la presenza operativa di un passaggio nel sistema, ma non è marca temporale qualificata.",
+    "",
+    "OPC è ricevuta tecnica di prova: documenta tecnicamente l’operazione, ma non è certificazione legale.",
+    "",
+    "Document Registry è memoria documentale dinamica: collega profili, documenti, hash, volumi e richiami operativi, permettendo a JOKER-C2 di usare corpus documentali verificati senza confondere file attivi, memoria generica e contenuto persistente.",
+    "",
+    "legalCertification=false.",
+    "",
+    "6. Proposta B2G",
+    "MATRIX I–V può essere formulato come proposta B2G per istituzioni europee, pubbliche amministrazioni, regioni, infrastrutture critiche, sicurezza digitale, energia, audit AI e continuità operativa.",
+    "",
+    "Per le istituzioni europee, MATRIX offre una cornice di governance runtime per collegare policy e attuazione tecnica. Per le pubbliche amministrazioni, fornisce un modello di tracciabilità operativa e audit. Per le regioni, offre un metodo di densificazione territoriale con KPI e catene di responsabilità. Per infrastrutture critiche ed energia, introduce una lettura della continuità come condizione tecnica e non solo regolatoria. Per la governance AI, sposta il baricentro dalla risposta del modello alla ricostruibilità dell’intera operazione.",
+    "",
+    "7. Output operativo atteso",
+    "Gli output concreti della proposta sono:",
+    "- runtime decisionale fail-closed;",
+    "- registro IPR-bound;",
+    "- catena EVT;",
+    "- ricevuta tecnica OPC;",
+    "- document registry;",
+    "- dashboard audit;",
+    "- model usage accounting;",
+    "- KPI territoriali;",
+    "- KPI energetici;",
+    "- evidence pack;",
+    "- dossier istituzionale;",
+    "- roadmap Italia-Europa.",
+    "",
+    "8. Roadmap di implementazione",
+    "Fase 1 — Torino / nodo tecnico. Validazione runtime, IPR, EVT, OPC, document registry e audit dashboard. Torino funziona come ambiente controllato per dimostrare che identità, evento, prova tecnica e memoria documentale possono operare in una catena unica.",
+    "",
+    "Fase 2 — Piemonte / densificazione regionale. Replicazione territoriale, KPI regionali, governance multilivello e coordinamento tra nodi. Il Piemonte diventa laboratorio di continuità amministrativa, infrastrutturale e tecnica.",
+    "",
+    "Fase 3 — Italia / coordinamento nazionale. Estensione multi-nodo, standard operativo, integrazione con pubbliche amministrazioni, sicurezza digitale e infrastrutture critiche. L’Italia diventa piano di consolidamento nazionale del modello.",
+    "",
+    "Fase 4 — Europa / federazione operativa. Interoperabilità, continuità energetica, governance federata e dossier B2G europeo. L’obiettivo è trasformare il modello da pilota nazionale a proposta scalabile per una federazione operativa europea.",
+    "",
+    "9. Rischio di non adozione",
+    "Se l’Europa resta su policy non eseguibili, AI non governata runtime, audit solo ex-post, frammentazione territoriale, identità operative non persistenti, energia non integrata e dipendenza tecnologica extra-UE, il rischio non è solo inefficienza. Il rischio è perdita di capacità decisionale sotto stress.",
+    "",
+    "In uno scenario di crisi, un sistema frammentato non fallisce perché non possiede principi: fallisce perché non riesce a eseguirli in tempo, con prova, responsabilità e continuità. MATRIX I–V propone di ridurre questa distanza tra dichiarazione e operazione.",
+    "",
+    "10. Sintesi finale",
+    "MATRIX I–V trasforma crisi, runtime, attivazione, distribuzione e continuità energetica in un modello europeo governabile, verificabile e scalabile. La sua funzione B2G è costruire una catena in cui territorio, energia, identità operativa, audit e AI governance non siano componenti separati, ma parti di un’unica infrastruttura di continuità.",
+    "",
+    "Boundary finale:",
+    "legalCertification=false.",
+    "OPC=technical proof receipt only.",
+    "IPR=operational identity/proof layer only.",
+    "EVT=technical event trace only.",
+    "HBCE/JOKER-C2=runtime governance and audit-ready infrastructure, not public authority, not legal certifier.",
+    "",
+    "Runtime context: access=" + args.handoff.accessDecision + ", memory=" + args.memory.persistenceMode + ", tenant=" + args.saasContext.tenantId + ", workspace=" + args.saasContext.workspaceId + ", policy=" + args.policy.operationDecision + "."
+  ].join("\n");
+}
+
+
 function isApiSdkB2GPresentationQuestion(message: string): boolean {
   const normalized = normalizeText(message);
 
-  if (isEsoterologicalSemanticMemoryQuestion(message)) {
+  if (isMatrixIVStrategicSynthesisQuestion(message) || isEsoterologicalSemanticMemoryQuestion(message)) {
     return false;
   }
 
