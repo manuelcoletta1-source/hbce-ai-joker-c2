@@ -21,10 +21,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_1";
-const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_1";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_2";
+const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_2";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_FILE_HASH_CHUNK";
-const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_1";
+const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_2";
 
 
 type FileStatus =
@@ -201,6 +201,7 @@ type StoredRuntimeFile = {
   documentChunksPersistedCount?: number | null;
   documentChunkPersistenceStatus?: DocumentChunkPersistenceStatus | null;
   documentChunkPersistenceReason?: string | null;
+  documentChunkPersistenceError?: string | null;
   documentChunkPersistenceRevision?: string | null;
   documentChunkPersistenceScope?: string | null;
   documentChunkDerivedFromHumanIpr?: string | null;
@@ -2069,6 +2070,110 @@ function buildDocumentSummary(file: StoredRuntimeFile): string {
 }
 
 
+function describeDocumentChunkPersistenceReason(chunks: DocumentChunkPersistenceResult | null | undefined): string | null {
+  if (!chunks) {
+    return null;
+  }
+
+
+  if (!chunks.attempted) {
+    return "SKIPPED_NO_PROMPT_TEXT_OR_NO_CHUNKS";
+  }
+
+
+  if (chunks.ok && chunks.databaseVerified && chunks.persistedCount === chunks.chunkCount) {
+    return "DATABASE_VERIFIED";
+  }
+
+
+  if (chunks.status === "DATABASE_NOT_READY") {
+    return "DATABASE_NOT_READY";
+  }
+
+
+  if (chunks.databaseVerified && chunks.persistedCount !== chunks.chunkCount) {
+    return "DATABASE_COUNT_MISMATCH";
+  }
+
+
+  return chunks.error || "DOCUMENT_CHUNK_PERSISTENCE_FAILED";
+}
+
+
+function buildDocumentChunkPersistenceProofMetadata(chunks: DocumentChunkPersistenceResult | null | undefined): Record<string, unknown> {
+  return {
+    documentChunksPersisted: chunks?.ok ?? false,
+    documentChunksPersistedCount: chunks?.persistedCount ?? 0,
+    documentChunkPersistenceAttempted: chunks?.attempted ?? false,
+    documentChunkPersistenceStatus: chunks?.status ?? null,
+    documentChunkPersistenceReason: describeDocumentChunkPersistenceReason(chunks),
+    documentChunkPersistenceError: chunks?.error ?? null,
+    documentChunkPersistenceRevision: chunks?.persistenceRevision ?? DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION,
+    documentChunkPersistenceScope: chunks?.persistenceScope ?? DOCUMENT_CHUNK_PERSISTENCE_SCOPE,
+    documentChunkDatabaseVerified: chunks?.databaseVerified ?? false,
+    documentChunkVerificationCount: chunks?.verificationCount ?? 0,
+    documentChunkVerificationSqlHash: chunks?.verificationSqlHash ?? null,
+    documentChunkInsertedCount: chunks?.insertedCount ?? 0,
+    documentChunkExpectedCount: chunks?.chunkCount ?? 0,
+    documentChunkDerivedFromHumanIpr: chunks?.derivedFromHumanIpr ?? null,
+    derivedFromHumanIpr: chunks?.derivedFromHumanIpr ?? null,
+    tenantId: chunks?.tenantId ?? null,
+    workspaceId: chunks?.workspaceId ?? null,
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
+
+function applyDocumentChunkPersistenceProofToInput(
+  input: DocumentProfileDatabaseInput,
+  chunks: DocumentChunkPersistenceResult | null
+): DocumentProfileDatabaseInput {
+  const existingMetadata =
+    input.documentMetadata && typeof input.documentMetadata === "object"
+      ? input.documentMetadata as Record<string, unknown>
+      : {};
+
+
+  return {
+    ...input,
+    documentMetadata: {
+      ...existingMetadata,
+      ...buildDocumentChunkPersistenceProofMetadata(chunks),
+      routeVersion: FILE_ROUTE_REVISION,
+      postUploadChunkProofRevision: DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION
+    }
+  };
+}
+
+
+function withDocumentChunkPersistenceProof<T extends Record<string, unknown> | null>(
+  profile: T,
+  chunks: DocumentChunkPersistenceResult | null
+): T {
+  if (!profile) {
+    return profile;
+  }
+
+
+  const existingMetadata =
+    profile.documentMetadata && typeof profile.documentMetadata === "object"
+      ? profile.documentMetadata as Record<string, unknown>
+      : {};
+
+
+  return {
+    ...profile,
+    documentMetadata: {
+      ...existingMetadata,
+      ...buildDocumentChunkPersistenceProofMetadata(chunks),
+      routeVersion: FILE_ROUTE_REVISION,
+      postUploadChunkProofRevision: DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION
+    }
+  } as T;
+}
+
+
 function buildDocumentProfileInput(
   file: StoredRuntimeFile,
   context: DocumentProfileContext
@@ -2850,8 +2955,19 @@ async function persistDocumentProfilesForSession(
         ? canonicalizePublicDocumentProfileForRead(toPublicDocumentProfile(row) as Record<string, unknown>)
         : null;
       const resolvedProfileId = extractPersistedDocumentProfileId(canonicalPublicProfile, row, file, context);
-      const publicProfile = withResolvedPublicProfileId(canonicalPublicProfile, resolvedProfileId);
       const chunks = await persistDocumentChunksForFile(file, context, resolvedProfileId);
+      const proofInput = applyDocumentChunkPersistenceProofToInput(input, chunks);
+      const proofResult = await upsertDocumentProfileToDatabase(proofInput);
+      const proofRow = proofResult.rows[0] as Record<string, unknown> | undefined;
+      const proofPublicProfile = proofRow
+        ? canonicalizePublicDocumentProfileForRead(toPublicDocumentProfile(proofRow) as Record<string, unknown>)
+        : canonicalPublicProfile;
+      const publicProfile = withDocumentChunkPersistenceProof(
+        withResolvedPublicProfileId(proofPublicProfile, resolvedProfileId),
+        chunks
+      );
+      const profileOk = result.ok && result.rowCount > 0;
+      const proofOk = proofResult.ok && proofResult.rowCount > 0;
 
 
       results.push({
@@ -2859,15 +2975,15 @@ async function persistDocumentProfilesForSession(
         filename: file.name,
         fileHash: file.fileHash,
         attempted: true,
-        ok: result.ok && result.rowCount > 0 && chunks.ok,
-        status: result.ok && result.rowCount > 0 ? "PERSISTED" : "PERSISTENCE_FAILED",
-        rowCount: result.rowCount,
-        error: result.error || chunks.error,
-        sqlHash: chunks.sqlHash || result.sqlHash,
-        durationMs: result.durationMs + chunks.durationMs,
+        ok: profileOk && chunks.ok && proofOk,
+        status: profileOk && proofOk ? "PERSISTED" : "PERSISTENCE_FAILED",
+        rowCount: proofResult.rowCount || result.rowCount,
+        error: result.error || chunks.error || proofResult.error,
+        sqlHash: proofResult.sqlHash || chunks.sqlHash || result.sqlHash,
+        durationMs: result.durationMs + chunks.durationMs + proofResult.durationMs,
         profile: publicProfile,
         chunks,
-        input: buildDocumentProfilePersistenceInputSummary(input, file)
+        input: buildDocumentProfilePersistenceInputSummary(proofInput, file)
       });
     } catch (error) {
       results.push({
@@ -2926,7 +3042,8 @@ function attachDocumentProfileResults(
       documentChunksPersisted: result.chunks?.ok ?? false,
       documentChunksPersistedCount: result.chunks?.persistedCount ?? 0,
       documentChunkPersistenceStatus: result.chunks?.status ?? null,
-      documentChunkPersistenceReason: result.chunks?.error ?? null,
+      documentChunkPersistenceReason: describeDocumentChunkPersistenceReason(result.chunks),
+      documentChunkPersistenceError: result.chunks?.error ?? null,
       documentChunkPersistenceRevision: result.chunks?.persistenceRevision ?? null,
       documentChunkPersistenceScope: result.chunks?.persistenceScope ?? null,
       documentChunkDerivedFromHumanIpr: result.chunks?.derivedFromHumanIpr ?? null,
@@ -3224,6 +3341,13 @@ function summarizeFiles(files: StoredRuntimeFile[], includeText: boolean, includ
     documentChunksPersisted: file.documentChunksPersisted ?? null,
     documentChunksPersistedCount: file.documentChunksPersistedCount ?? null,
     documentChunkPersistenceStatus: file.documentChunkPersistenceStatus ?? null,
+    documentChunkPersistenceReason: file.documentChunkPersistenceReason ?? null,
+    documentChunkPersistenceError: file.documentChunkPersistenceError ?? null,
+    documentChunkPersistenceRevision: file.documentChunkPersistenceRevision ?? null,
+    documentChunkPersistenceScope: file.documentChunkPersistenceScope ?? null,
+    documentChunkDerivedFromHumanIpr: file.documentChunkDerivedFromHumanIpr ?? null,
+    documentChunkDatabaseVerified: file.documentChunkDatabaseVerified ?? null,
+    documentChunkVerificationCount: file.documentChunkVerificationCount ?? null,
     documentOutline: {
       outlineStatus: file.documentOutline.outlineStatus,
       partsDetected: file.documentOutline.partsDetected,
@@ -3283,6 +3407,7 @@ type FilesRouteDiagnosticContext = {
   humanIpr: string;
   tenantId: string;
   workspaceId: string;
+  publicDocumentProfiles?: Record<string, unknown>[];
 };
 
 
@@ -3340,6 +3465,7 @@ function buildDiagnosticFileSnapshot(file: StoredRuntimeFile | null) {
     documentChunksPersistedCount: file.documentChunksPersistedCount ?? null,
     documentChunkPersistenceStatus: file.documentChunkPersistenceStatus ?? null,
     documentChunkPersistenceReason: file.documentChunkPersistenceReason ?? null,
+    documentChunkPersistenceError: file.documentChunkPersistenceError ?? null,
     documentChunkPersistenceRevision: file.documentChunkPersistenceRevision ?? null,
     documentChunkPersistenceScope: file.documentChunkPersistenceScope ?? null,
     documentChunkDerivedFromHumanIpr: file.documentChunkDerivedFromHumanIpr ?? null,
@@ -3429,6 +3555,179 @@ async function checkDatabaseObjectAvailability(requestedName: string): Promise<D
 }
 
 
+function readRecordString(record: Record<string, unknown>, key: string): string | null {
+  const value = record[key];
+
+
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+
+function readRecordNumber(record: Record<string, unknown>, key: string): number | null {
+  const value = record[key];
+  const numeric = typeof value === "number" ? value : Number(value);
+
+
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+
+function readProfileMetadata(profile: Record<string, unknown> | null | undefined): Record<string, unknown> {
+  if (!profile || !profile.documentMetadata || typeof profile.documentMetadata !== "object") {
+    return {};
+  }
+
+
+  return profile.documentMetadata as Record<string, unknown>;
+}
+
+
+function chooseLatestCanonicalDocumentProfile(
+  profiles: Record<string, unknown>[] | null | undefined
+): Record<string, unknown> | null {
+  if (!profiles || profiles.length === 0) {
+    return null;
+  }
+
+
+  const canonicalFullTextProfiles = profiles.filter((profile) => {
+    const metadata = readProfileMetadata(profile);
+
+
+    return (
+      readRecordString(profile, "humanIpr") === HBCE_SELF_PILOT_HUMAN_IPR &&
+      readRecordString(metadata, "textCoverageStatus") === "TEXT_READY_FULL" &&
+      readRecordString(metadata, "longDocumentMode") === "CHUNKED_FULL_TEXT"
+    );
+  });
+
+
+  return canonicalFullTextProfiles[0] ?? profiles[0] ?? null;
+}
+
+
+async function countPersistedDocumentChunksForProfile(
+  profile: Record<string, unknown> | null,
+  context: FilesRouteDiagnosticContext
+): Promise<{ ok: boolean; count: number; error: string | null; sqlHash: string | null; durationMs: number }> {
+  const startedAt = Date.now();
+
+
+  if (!profile) {
+    return {
+      ok: false,
+      count: 0,
+      error: "DOCUMENT_PROFILE_NOT_AVAILABLE",
+      sqlHash: null,
+      durationMs: 0
+    };
+  }
+
+
+  const profileId = readRecordString(profile, "profileId") || readRecordString(profile, "documentProfileId");
+  const fileHash = readRecordString(profile, "fileHash");
+  const humanIpr = readRecordString(profile, "humanIpr") || context.humanIpr;
+  const tenantId = readRecordString(profile, "tenantId") || context.tenantId;
+  const workspaceId = readRecordString(profile, "workspaceId") || context.workspaceId;
+
+
+  if (!profileId || !fileHash || !humanIpr || !tenantId || !workspaceId) {
+    return {
+      ok: false,
+      count: 0,
+      error: "DOCUMENT_PROFILE_CHUNK_COUNT_MISSING_SCOPE",
+      sqlHash: null,
+      durationMs: Date.now() - startedAt
+    };
+  }
+
+
+  const sql = `
+    SELECT COUNT(*)::int AS count
+    FROM document_text_chunks
+    WHERE document_profile_id = $1
+      AND file_hash = $2
+      AND human_ipr = $3
+      AND tenant_id = $4
+      AND workspace_id = $5
+  `;
+
+
+  try {
+    const result = await queryHbceDatabase(sql, [profileId, fileHash, humanIpr, tenantId, workspaceId]);
+    const row = result.rows[0] as Record<string, unknown> | undefined;
+    const count = Number(row?.count ?? 0);
+
+
+    return {
+      ok: result.ok,
+      count: Number.isFinite(count) ? count : 0,
+      error: result.error,
+      sqlHash: result.sqlHash,
+      durationMs: Date.now() - startedAt
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      count: 0,
+      error: error instanceof Error ? error.message : "DOCUMENT_PROFILE_CHUNK_COUNT_QUERY_FAILED",
+      sqlHash: buildHash(sql),
+      durationMs: Date.now() - startedAt
+    };
+  }
+}
+
+
+function buildDiagnosticDocumentProfileSnapshot(
+  profile: Record<string, unknown> | null,
+  persistedCount: number | null = null
+) {
+  if (!profile) {
+    return null;
+  }
+
+
+  const metadata = readProfileMetadata(profile);
+  const expectedCount = readRecordNumber(metadata, "documentChunkCount") ?? readRecordNumber(profile, "documentChunkCount") ?? 0;
+  const metadataPersistedCount = readRecordNumber(metadata, "documentChunksPersistedCount");
+  const effectivePersistedCount = persistedCount ?? metadataPersistedCount ?? 0;
+  const metadataPersisted = metadata.documentChunksPersisted === true;
+  const databaseVerified = metadata.documentChunkDatabaseVerified === true || (expectedCount > 0 && effectivePersistedCount === expectedCount);
+
+
+  return {
+    profileId: readRecordString(profile, "profileId") || readRecordString(profile, "documentProfileId"),
+    fileId: readRecordString(profile, "fileId"),
+    filename: readRecordString(profile, "filename"),
+    fileHash: readRecordString(profile, "fileHash"),
+    humanIpr: readRecordString(profile, "humanIpr"),
+    tenantId: readRecordString(profile, "tenantId"),
+    workspaceId: readRecordString(profile, "workspaceId"),
+    textStatus: readRecordString(profile, "textStatus"),
+    textLength: readRecordNumber(profile, "textLength"),
+    docFamily: readRecordString(profile, "docFamily"),
+    volume: readRecordString(profile, "volume"),
+    title: readRecordString(profile, "title"),
+    profileStatus: readRecordString(profile, "profileStatus"),
+    routeVersion: readRecordString(metadata, "routeVersion"),
+    textCoverageStatus: readRecordString(metadata, "textCoverageStatus"),
+    fullDocumentCoverage: metadata.fullDocumentCoverage === true,
+    longDocumentMode: readRecordString(metadata, "longDocumentMode"),
+    documentChunkCount: expectedCount,
+    documentChunksPersisted: metadataPersisted || (expectedCount > 0 && effectivePersistedCount === expectedCount),
+    documentChunksPersistedCount: effectivePersistedCount,
+    documentChunkPersistenceStatus: readRecordString(metadata, "documentChunkPersistenceStatus"),
+    documentChunkPersistenceReason: readRecordString(metadata, "documentChunkPersistenceReason"),
+    documentChunkPersistenceError: readRecordString(metadata, "documentChunkPersistenceError"),
+    documentChunkPersistenceRevision: readRecordString(metadata, "documentChunkPersistenceRevision"),
+    documentChunkDatabaseVerified: databaseVerified,
+    documentChunkDerivedFromHumanIpr: readRecordString(metadata, "documentChunkDerivedFromHumanIpr") || readRecordString(metadata, "derivedFromHumanIpr"),
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
+
 async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContext) {
   const latestFile = getLatestRuntimeFile(context.files);
   const readiness = await ensureHbceDatabaseReady().catch((error) => ({
@@ -3455,11 +3754,17 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
   const runtimeChunkStoreCount = Array.from(getDocumentChunkStore().values()).reduce((sum, chunks) => sum + chunks.length, 0);
   const totalDocumentChunks = context.files.reduce((sum, file) => sum + file.documentChunkCount, 0);
   const persistedDocumentChunks = context.files.reduce((sum, file) => sum + (file.documentChunksPersistedCount ?? 0), 0);
+  const latestDocumentProfile = chooseLatestCanonicalDocumentProfile(context.publicDocumentProfiles);
+  const latestDocumentProfileChunkCount = await countPersistedDocumentChunksForProfile(latestDocumentProfile, context);
+  const latestDocumentProfileSnapshot = buildDiagnosticDocumentProfileSnapshot(
+    latestDocumentProfile,
+    latestDocumentProfileChunkCount.ok ? latestDocumentProfileChunkCount.count : null
+  );
   const missingCriticalFields: string[] = [];
 
 
-  if (!latestFile) {
-    missingCriticalFields.push("latestFile");
+  if (!latestFile && !latestDocumentProfileSnapshot) {
+    missingCriticalFields.push("latestFile|latestDocumentProfile");
   }
 
 
@@ -3495,6 +3800,8 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
     latestFile && latestFile.fullDocumentCoverage !== true ? "LATEST_FILE_FULL_DOCUMENT_COVERAGE_FALSE" : null,
     latestFile && latestFile.longDocumentMode === "CHUNKED_FULL_TEXT" && latestFile.documentChunkCount <= 0 ? "LATEST_FILE_CHUNKS_NOT_BUILT" : null,
     latestFile && latestFile.documentChunkCount > 0 && latestFile.documentChunksPersisted !== true ? "LATEST_FILE_CHUNKS_NOT_PERSISTED" : null,
+    !latestFile && latestDocumentProfileSnapshot && latestDocumentProfileSnapshot.documentChunkCount > 0 && latestDocumentProfileSnapshot.documentChunksPersisted !== true ? "LATEST_DOCUMENT_PROFILE_CHUNKS_NOT_PERSISTED" : null,
+    latestDocumentProfile && !latestDocumentProfileChunkCount.ok ? "LATEST_DOCUMENT_PROFILE_CHUNK_COUNT_QUERY_FAILED" : null,
     missingCriticalFields.length > 0 ? `MISSING_CRITICAL_FIELDS:${missingCriticalFields.join(",")}` : null
   ].filter(Boolean) as string[];
 
@@ -3505,7 +3812,7 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
     endpoint: "HBCE_FILES_INGESTION",
     fileRouteRevision: FILE_ROUTE_REVISION,
     routeVersion: FILE_ROUTE_REVISION,
-    selfDiagnosticRevision: "FILES_ROUTE_SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_1",
+    selfDiagnosticRevision: "FILES_ROUTE_SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_2",
     documentChunkDatabasePersistenceRevision: DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION,
     sessionId: context.sessionId,
     activeFileCount: context.files.length,
@@ -3522,6 +3829,15 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
     runtimeChunkStoreCount,
     totalDocumentChunks,
     persistedDocumentChunks,
+    latestDocumentProfile: latestDocumentProfileSnapshot,
+    latestCanonicalProfile: latestDocumentProfileSnapshot,
+    latestProfileChunkPersistence: {
+      ok: latestDocumentProfileChunkCount.ok,
+      count: latestDocumentProfileChunkCount.count,
+      error: latestDocumentProfileChunkCount.error,
+      sqlHash: latestDocumentProfileChunkCount.sqlHash,
+      durationMs: latestDocumentProfileChunkCount.durationMs
+    },
     database: {
       configured: Boolean(readiness.description.configured),
       available: Boolean(readiness.ok && readiness.description.available),
@@ -3546,7 +3862,8 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
     files: context.files.map((file) => buildDiagnosticFileSnapshot(file)),
     failClosed: failReasons.length > 0,
     failReason: failReasons.length > 0 ? failReasons.join("|") : "NONE",
-    memorySaveAllowed: false,
+    documentMemoryReady: failReasons.length === 0,
+    memorySaveAllowed: failReasons.length === 0,
     noIprSaveAllowedDuringDiagnostic: true,
     legalCertification: false,
     opc: "technical proof receipt only"
@@ -3602,7 +3919,7 @@ function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
     maxTextCharsPerFile: MAX_TEXT_CHARS_PER_FILE,
     maxTotalTextCharsPerSession: MAX_TOTAL_TEXT_CHARS_PER_SESSION,
     routeVersion: FILE_ROUTE_REVISION,
-    longDocumentEngine: "LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_3_CHUNK_DATABASE_PERSISTENCE_HARDENING",
+    longDocumentEngine: "LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_3_2_POST_UPLOAD_CHUNK_PROOF",
     documentRegistry: "DOCUMENT_PROFILES",
     documentTextChunks: "document_text_chunks",
     cyberneticMethod: "FILE_UPLOAD_TO_FULL_TEXT_CHUNKS_TO_DOCUMENT_PROFILE_TO_DYNAMIC_RECALL",
@@ -3671,7 +3988,10 @@ export async function POST(req: NextRequest) {
     files: nextFiles,
     humanIpr: context.humanIpr,
     tenantId: context.tenantId,
-    workspaceId: context.workspaceId
+    workspaceId: context.workspaceId,
+    publicDocumentProfiles: documentProfiles
+      .map((profile) => profile.profile)
+      .filter((profile): profile is Record<string, unknown> => Boolean(profile))
   });
 
 
@@ -3709,6 +4029,12 @@ export async function POST(req: NextRequest) {
         chunksPersisted: profile.chunks?.ok ?? false,
         chunksPersistedCount: profile.chunks?.persistedCount ?? 0,
         chunkPersistenceStatus: profile.chunks?.status ?? null,
+        chunkPersistenceReason: describeDocumentChunkPersistenceReason(profile.chunks),
+        chunkPersistenceError: profile.chunks?.error ?? null,
+        chunkPersistenceRevision: profile.chunks?.persistenceRevision ?? null,
+        chunkDatabaseVerified: profile.chunks?.databaseVerified ?? null,
+        chunkVerificationCount: profile.chunks?.verificationCount ?? null,
+        derivedFromHumanIpr: profile.chunks?.derivedFromHumanIpr ?? null,
         alienCodeV4ProfileDetected:
           profile.input.docFamily === "CORPUS_ESOTEROLOGIA_ERMETICA" &&
           profile.input.volume === "V4" &&
@@ -3790,7 +4116,11 @@ export async function GET(req: NextRequest) {
         files,
         humanIpr,
         tenantId,
-        workspaceId
+        workspaceId,
+        publicDocumentProfiles:
+          documentProfiles && Array.isArray(documentProfiles.profiles)
+            ? documentProfiles.profiles
+            : []
       })
     : null;
 
