@@ -20,7 +20,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_PROFILE_FIX-v5";
 
 
 type FileStatus =
@@ -141,7 +141,7 @@ type CanonicalCorpusVolumeProfile = {
   keyTerms: string[];
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_ALIEN_CODE_V4_PROFILE_FIX_v4";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_PROFILE_FIX_v5";
 
 const CANONICAL_CORPUS_VOLUME_PROFILES: Record<CanonicalCorpusVolumeProfile["volume"], CanonicalCorpusVolumeProfile> = {
   V1: {
@@ -377,6 +377,15 @@ const DOCUMENT_KEY_TERM_CANDIDATES = [
   "Alien Code",
   "COD 1 Alieno",
   "Interfaccia rascensionale",
+  "Il Portale dell’Anticristo",
+  "Apocalisse",
+  "Anticristo",
+  "Portale",
+  "Regime di esposizione",
+  "Soglia operativa",
+  "Apostasia globale",
+  "1110 giorni",
+  "Irreintegrabilità",
   "IPR",
   "EVT",
   "OPC",
@@ -1177,8 +1186,34 @@ function includesAll(normalized: string, terms: string[]): boolean {
 
 function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCorpusVolumeProfile | null {
   const normalizedName = normalizeSearchText(file.name);
-  const normalizedHead = normalizeSearchText(`${file.name}\n${file.text.slice(0, 16000)}`);
-  const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 30000)}`);
+  const normalizedHead = normalizeSearchText(`${file.name}
+${file.text.slice(0, 16000)}`);
+  const normalized = normalizeSearchText(`${file.name}
+${file.text.slice(0, 30000)}`);
+
+  const explicitV5ByFilename =
+    normalizedName.includes("5e 5e il portale dell anticristo") ||
+    includesAll(normalizedName, ["portale", "anticristo"]);
+
+  const explicitV5ByHeader =
+    includesAll(normalizedHead, ["il portale dell anticristo", "volume v"]) ||
+    includesAll(normalizedHead, ["il portale dell anticristo", "volume 5"]) ||
+    includesAll(normalizedHead, ["apocalisse", "regime di esposizione"]) ||
+    includesAll(normalizedHead, ["anticristo", "configurazione di rottura"]) ||
+    includesAll(normalizedHead, ["portale", "soglia operativa"]);
+
+  // V5 must be resolved before the V4 semantic guard because Volume V can mention
+  // terms inherited from ALIEN CODE / Volume IV while closing the Corpus sequence.
+  if (
+    explicitV5ByFilename ||
+    explicitV5ByHeader ||
+    normalized.includes("il portale dell anticristo") ||
+    includesAll(normalized, ["anticristo", "portale", "apocalisse"]) ||
+    includesAll(normalized, ["apostasia globale", "1110 giorni"]) ||
+    includesAll(normalized, ["sigillo del volume", "chiusura del portale"])
+  ) {
+    return CANONICAL_CORPUS_VOLUME_PROFILES.V5;
+  }
 
   const explicitV4ByFilename =
     normalizedName.includes("4d 4d alien code") ||
@@ -1202,15 +1237,6 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
     includesAll(normalized, ["accoppiamento organismo sistema", "fallimento del coupling"])
   ) {
     return CANONICAL_CORPUS_VOLUME_PROFILES.V4;
-  }
-
-
-  if (
-    normalizedName.includes("5e 5e il portale dell anticristo") ||
-    normalized.includes("il portale dell anticristo") ||
-    includesAll(normalized, ["anticristo", "portale", "apocalisse"])
-  ) {
-    return CANONICAL_CORPUS_VOLUME_PROFILES.V5;
   }
 
 
@@ -1243,6 +1269,7 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
 
   return null;
 }
+
 
 
 function inferDocumentFamily(file: StoredRuntimeFile): string | null {
@@ -1547,11 +1574,21 @@ function buildDocumentProfileInput(
       canonicalTitle: canonicalCorpusProfile?.title ?? null,
       canonicalDocumentKind: canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null,
       alienCodeV4GuardApplied: canonicalCorpusProfile?.volume === "V4",
+      portaleV5GuardApplied: canonicalCorpusProfile?.volume === "V5",
       alienCodeV4ExpectedProfile:
         canonicalCorpusProfile?.volume === "V4"
           ? {
               title: CANONICAL_CORPUS_VOLUME_PROFILES.V4.title,
               volume: CANONICAL_CORPUS_VOLUME_PROFILES.V4.volume,
+              docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
+              canonicalAxis: CANONICAL_AXIS_DCTT
+            }
+          : null,
+      portaleV5ExpectedProfile:
+        canonicalCorpusProfile?.volume === "V5"
+          ? {
+              title: CANONICAL_CORPUS_VOLUME_PROFILES.V5.title,
+              volume: CANONICAL_CORPUS_VOLUME_PROFILES.V5.volume,
               docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
               canonicalAxis: CANONICAL_AXIS_DCTT
             }
@@ -1581,6 +1618,87 @@ function buildDocumentProfileInput(
   };
 }
 
+
+
+function getCanonicalCorpusProfileFromFilename(value: unknown): CanonicalCorpusVolumeProfile | null {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  const normalizedName = normalizeSearchText(value);
+
+  if (
+    normalizedName.includes("5e 5e il portale dell anticristo") ||
+    includesAll(normalizedName, ["portale", "anticristo"])
+  ) {
+    return CANONICAL_CORPUS_VOLUME_PROFILES.V5;
+  }
+
+  if (
+    normalizedName.includes("4d 4d alien code") ||
+    includesAll(normalizedName, ["alien code", "tracciabilita rascensionale"]) ||
+    includesAll(normalizedName, ["codice alieno", "tracciabilita rascensionale"])
+  ) {
+    return CANONICAL_CORPUS_VOLUME_PROFILES.V4;
+  }
+
+  if (normalizedName.includes("3c 3c lex hermeticum")) {
+    return CANONICAL_CORPUS_VOLUME_PROFILES.V3;
+  }
+
+  if (normalizedName.includes("2b 2b matrix")) {
+    return CANONICAL_CORPUS_VOLUME_PROFILES.V2;
+  }
+
+  if (normalizedName.includes("1a 1a corpus esoterologia ermetica")) {
+    return CANONICAL_CORPUS_VOLUME_PROFILES.V1;
+  }
+
+  return null;
+}
+
+function canonicalizePublicDocumentProfile(profile: Record<string, unknown> | null): Record<string, unknown> | null {
+  if (!profile) {
+    return null;
+  }
+
+  const filename = profile.filename ?? profile.fileName;
+  const canonicalProfile = getCanonicalCorpusProfileFromFilename(filename);
+
+  if (!canonicalProfile) {
+    return profile;
+  }
+
+  const keyTerms = Array.from(new Set(canonicalProfile.keyTerms)).slice(0, 32);
+  const existingMetadata =
+    profile.documentMetadata && typeof profile.documentMetadata === "object"
+      ? profile.documentMetadata as Record<string, unknown>
+      : {};
+
+  return {
+    ...profile,
+    docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
+    volume: canonicalProfile.volume,
+    title: canonicalProfile.title,
+    canonicalAxis: CANONICAL_AXIS_DCTT,
+    summary: canonicalProfile.summary,
+    keyTerms,
+    semanticTerms: keyTerms.map((term) => ({ term, source: "FILENAME_CANONICAL_PROFILE_GUARD" })),
+    documentMetadata: {
+      ...existingMetadata,
+      canonicalProfileRevision: DOCUMENT_PROFILE_CANONICAL_FIX_REVISION,
+      canonicalProfileApplied: true,
+      canonicalProfileReadGuardApplied: true,
+      canonicalVolume: canonicalProfile.volume,
+      canonicalTitle: canonicalProfile.title,
+      canonicalDocumentKind: "CANONICAL_CORPUS_VOLUME",
+      v5PortaleGuardApplied: canonicalProfile.volume === "V5",
+      alienCodeV4GuardApplied: canonicalProfile.volume === "V4",
+      legalCertification: false,
+      opc: "technical proof receipt only"
+    }
+  };
+}
 
 async function persistDocumentProfilesForSession(
   files: StoredRuntimeFile[],
@@ -1634,7 +1752,9 @@ async function persistDocumentProfilesForSession(
     try {
       const result = await upsertDocumentProfileToDatabase(input);
       const row = result.rows[0];
-      const publicProfile = row ? toPublicDocumentProfile(row) : null;
+      const publicProfile = row
+        ? canonicalizePublicDocumentProfile(toPublicDocumentProfile(row) as Record<string, unknown>)
+        : null;
 
 
       results.push({
@@ -2180,6 +2300,11 @@ export async function POST(req: NextRequest) {
           profile.input.volume === "V4" &&
           typeof profile.input.title === "string" &&
           normalizeSearchText(profile.input.title).includes("alien code"),
+        portaleV5ProfileDetected:
+          profile.input.docFamily === "CORPUS_ESOTEROLOGIA_ERMETICA" &&
+          profile.input.volume === "V5" &&
+          typeof profile.input.title === "string" &&
+          normalizeSearchText(profile.input.title).includes("portale dell anticristo"),
         error: profile.error
       }))
     },
@@ -2220,7 +2345,10 @@ export async function GET(req: NextRequest) {
         error: result.error,
         sqlHash: result.sqlHash,
         durationMs: result.durationMs,
-        profiles: result.rows.map(toPublicDocumentProfile)
+        profiles: result.rows
+          .map((row) => toPublicDocumentProfile(row) as Record<string, unknown>)
+          .map(canonicalizePublicDocumentProfile)
+          .filter((profile): profile is Record<string, unknown> => Boolean(profile))
       })).catch((error) => ({
         ok: false,
         status: "QUERY_FAILED",
