@@ -6,7 +6,7 @@ import {
 import type { DocumentProfileDatabaseRow } from "@/lib/ipr-database";
 
 export const CYBERNETIC_DOCUMENT_RECALL_ENGINE_REVISION =
-  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v4-LINKED_PROFILE_DIRECT_MATCH";
+  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY";
 
 export type CyberneticDocumentFileSnapshot = {
   name?: string | null;
@@ -120,6 +120,11 @@ export type CyberneticDocumentProfileRecall = {
   query: string;
   requestedMemoryIds: string[];
   requestedProfileIds: string[];
+  strictRequestedMemoryOnly: boolean;
+  strictRequestedMemoryFilter:
+    | "NO_REQUESTED_MEMORY_ID"
+    | "REQUESTED_MEMORY_ID_APPLIED"
+    | "REQUESTED_MEMORY_ID_NOT_FOUND";
   requestedFilename: string | null;
   requestedDocFamily: string | null;
   requestedVolume: string | null;
@@ -1155,6 +1160,11 @@ function applyStrictRequestedDocumentProfileFilter(args: {
   const exactItems = args.items.filter((item) => {
     const profileMatch = item.profileId ? requestedProfileSet.has(item.profileId.toUpperCase()) : false;
     const memoryMatch = item.memoryId ? requestedMemorySet.has(item.memoryId.toUpperCase()) : false;
+
+    if (requestedProfileSet.size && requestedMemorySet.size) {
+      return profileMatch && memoryMatch;
+    }
+
     return profileMatch || memoryMatch;
   });
 
@@ -1280,6 +1290,10 @@ export async function resolveCyberneticDocumentProfileRecall(args: {
     query: args.message,
     requestedMemoryIds,
     requestedProfileIds,
+    strictRequestedMemoryOnly: requestedMemoryIds.length > 0,
+    strictRequestedMemoryFilter: requestedMemoryIds.length > 0
+      ? "REQUESTED_MEMORY_ID_APPLIED"
+      : "NO_REQUESTED_MEMORY_ID",
     requestedFilename,
     requestedDocFamily,
     requestedVolume,
@@ -1489,6 +1503,53 @@ function selectRequestedIprRecallItem(message: string, items: CyberneticIprRecal
   return items[0] || null;
 }
 
+type StrictRequestedIprRecallContext = CyberneticIprRecallContext & {
+  requestedMemoryIds: string[];
+  strictRequestedMemoryOnly: boolean;
+  strictRequestedMemoryFilter:
+    | "NO_REQUESTED_MEMORY_ID"
+    | "REQUESTED_MEMORY_ID_APPLIED"
+    | "REQUESTED_MEMORY_ID_NOT_FOUND";
+};
+
+function filterIprRecallContextByRequestedMemoryId(
+  message: string,
+  recall: CyberneticIprRecallContext
+): StrictRequestedIprRecallContext {
+  const requestedMemoryIds = extractRequestedIprMemoryIds(message);
+
+  if (!requestedMemoryIds.length) {
+    return {
+      ...recall,
+      requestedMemoryIds,
+      strictRequestedMemoryOnly: false,
+      strictRequestedMemoryFilter: "NO_REQUESTED_MEMORY_ID"
+    };
+  }
+
+  const requestedMemorySet = new Set(requestedMemoryIds.map((item) => item.toUpperCase()));
+  const filteredItems = recall.items.filter(
+    (item) => item.memoryId ? requestedMemorySet.has(item.memoryId.toUpperCase()) : false
+  );
+  const filteredMemoryIds = Array.from(new Set([
+    ...filteredItems
+      .map((item) => item.memoryId)
+      .filter((item): item is string => Boolean(item)),
+    ...recall.memoryIds.filter((memoryId) => requestedMemorySet.has(memoryId.toUpperCase()))
+  ]));
+
+  return {
+    ...recall,
+    items: filteredItems,
+    memoryIds: filteredMemoryIds,
+    requestedMemoryIds,
+    strictRequestedMemoryOnly: true,
+    strictRequestedMemoryFilter: filteredItems.length || filteredMemoryIds.length
+      ? "REQUESTED_MEMORY_ID_APPLIED"
+      : "REQUESTED_MEMORY_ID_NOT_FOUND"
+  };
+}
+
 function selectDocumentProfileRecallItem(
   documentProfileRecall: CyberneticDocumentProfileRecall | null,
   message: string
@@ -1582,6 +1643,7 @@ function isMultiDocumentMemoryRecallRequested(message: string): boolean {
 function buildCyberneticMultiDocumentMemoryRecallAnswer(args: CyberneticDocumentMemoryRecallAnswerInput): string {
   const requestedMemoryIds = extractRequestedIprMemoryIds(args.message);
   const requestedProfileIds = extractRequestedDocumentProfileIds(args.message);
+  const visibleRecall = filterIprRecallContextByRequestedMemoryId(args.message, args.recall);
   const documentProfiles = orderedRequestedDocumentProfileRecallItems(args.documentProfileRecall, args.message);
   const visibleProfileIds = Array.from(
     new Set(documentProfiles.map((item) => item.profileId).filter((item): item is string => Boolean(item)))
@@ -1654,10 +1716,12 @@ function buildCyberneticMultiDocumentMemoryRecallAnswer(args: CyberneticDocument
     `missingProfileIds: ${missingProfileIds.join(", ") || "NONE"}`,
     `failClosed: ${String(failClosed)}`,
     `failClosedReason: ${args.documentProfileRecall?.failClosedReason || "NONE"}`,
-    `recallInjected: ${String(args.recall.injected)}`,
+    `recallInjected: ${String(visibleRecall.injected)}`,
     `documentProfileRecallInjected: ${String(args.documentProfileRecall?.injected || false)}`,
-    `recallItemsCount: ${String(args.recall.items.length)}`,
+    `recallItemsCount: ${String(visibleRecall.items.length)}`,
     `documentProfileItemsCount: ${String(args.documentProfileRecall?.items.length || 0)}`,
+    `strictRequestedMemoryOnly: ${String(visibleRecall.strictRequestedMemoryOnly)}`,
+    `strictRequestedMemoryFilter: ${visibleRecall.strictRequestedMemoryFilter}`,
     `strictDocumentProfileFilter: ${requestedProfileIds.length > 0 ? "REQUESTED_PROFILE_SET_APPLIED" : "NO_REQUESTED_PROFILE_ID"}`,
     "",
     "2. Scope isolation",
@@ -1690,9 +1754,10 @@ export function buildCyberneticDocumentMemoryRecallAnswer(args: CyberneticDocume
     return buildCyberneticMultiDocumentMemoryRecallAnswer(args);
   }
 
-  const primaryMemory = selectRequestedIprRecallItem(args.message, args.recall.items);
+  const visibleRecall = filterIprRecallContextByRequestedMemoryId(args.message, args.recall);
+  const primaryMemory = selectRequestedIprRecallItem(args.message, visibleRecall.items);
   const documentProfile = selectDocumentProfileRecallItem(args.documentProfileRecall, args.message);
-  const linkedMemory = documentProfile ? findMatchingRecallMemoryItem(args.recall, documentProfile) : null;
+  const linkedMemory = documentProfile ? findMatchingRecallMemoryItem(visibleRecall, documentProfile) : null;
   const memoryForStatus = linkedMemory || primaryMemory;
   const requestedMemoryIds = extractRequestedIprMemoryIds(args.message);
   const requestedProfileIds = extractRequestedDocumentProfileIds(args.message);
@@ -1718,12 +1783,14 @@ export function buildCyberneticDocumentMemoryRecallAnswer(args: CyberneticDocume
       `failClosedReason: ${args.documentProfileRecall?.failClosedReason || "NONE"}`,
       `requestedMemoryIds: ${requestedMemoryIds.join(", ") || "NO_REQUESTED_MEMORY_IDS"}`,
       `requestedDocumentProfileIds: ${requestedProfileIds.join(", ") || "NO_REQUESTED_DOCUMENT_PROFILE_IDS"}`,
-      `memoryRecallStatus: ${args.recall.status}`,
-      `memoryRecallInjected: ${String(args.recall.injected)}`,
+      `memoryRecallStatus: ${visibleRecall.status}`,
+      `memoryRecallInjected: ${String(visibleRecall.injected)}`,
       `documentProfileRecallStatus: ${args.documentProfileRecall?.status || "DOCUMENT_PROFILE_RECALL_NOT_EXECUTED"}`,
       `documentProfileRecallInjected: ${String(args.documentProfileRecall?.injected || false)}`,
       `linkedProfileCount: ${String(args.documentProfileRecall?.items.length || 0)}`,
-      `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+      `memoryIds: ${visibleRecall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+      `strictRequestedMemoryOnly: ${String(visibleRecall.strictRequestedMemoryOnly)}`,
+      `strictRequestedMemoryFilter: ${visibleRecall.strictRequestedMemoryFilter}`,
       `profileIds: ${args.documentProfileRecall?.profileIds.join(", ") || "NO_PROFILE_IDS"}`,
       `missingMemoryIds: ${args.documentProfileRecall?.missingMemoryIds.join(", ") || "NONE"}`,
       `missingProfileIds: ${args.documentProfileRecall?.missingProfileIds.join(", ") || "NONE"}`,
@@ -1748,7 +1815,7 @@ export function buildCyberneticDocumentMemoryRecallAnswer(args: CyberneticDocume
     "1. Memoria IPR richiamata",
     `memoryId: ${documentProfile.memoryId || memoryForStatus?.memoryId || requestedMemoryIds[0] || "NO_MEMORY_ID"}`,
     `sourceSavedChatId: ${documentProfile.sourceSavedChatId || memoryForStatus?.sourceSavedChatId || "NO_SAVED_CHAT"}`,
-    `sourceThreadId: ${memoryForStatus?.sourceThreadId || memoryForStatus?.sessionId || args.recall.sessionId}`,
+    `sourceThreadId: ${memoryForStatus?.sourceThreadId || memoryForStatus?.sessionId || visibleRecall.sessionId}`,
     "",
     "2. Triade collegata",
     `EVT collegato: ${documentProfile.lastEvtId || memoryForStatus?.lastEvtId || "NO_EVT_IN_RECALL_RECORD"}`,
@@ -1787,10 +1854,12 @@ export function buildCyberneticDocumentMemoryRecallAnswer(args: CyberneticDocume
     `reusableInPrompt: ${String(documentProfile.reusableInPrompt)}`,
     `quality: ${documentProfile.quality || memoryForStatus?.quality || "UNKNOWN"}`,
     `classification: ${memoryForStatus?.classification || "USER_SELECTED_CHAT_MEMORY"}`,
-    `recallInjected: ${String(args.recall.injected)}`,
+    `recallInjected: ${String(visibleRecall.injected)}`,
     `documentProfileRecallInjected: ${String(args.documentProfileRecall?.injected || false)}`,
-    `recallItemsCount: ${String(args.recall.items.length)}`,
-    `memoryIds: ${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+    `recallItemsCount: ${String(visibleRecall.items.length)}`,
+    `memoryIds: ${visibleRecall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+    `strictRequestedMemoryOnly: ${String(visibleRecall.strictRequestedMemoryOnly)}`,
+    `strictRequestedMemoryFilter: ${visibleRecall.strictRequestedMemoryFilter}`,
     `profileIds: ${visibleProfileIds.join(", ") || "NO_PROFILE_IDS"}`,
     `missingMemoryIds: ${args.documentProfileRecall?.missingMemoryIds.join(", ") || "NONE"}`,
     `missingProfileIds: ${args.documentProfileRecall?.missingProfileIds.join(", ") || "NONE"}`,
