@@ -21,10 +21,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_2";
-const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_2";
-const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_FILE_HASH_CHUNK";
-const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_2";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
+const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
+const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
+const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
 
 
 type FileStatus =
@@ -3625,17 +3625,28 @@ async function countPersistedDocumentChunksForProfile(
 
 
   const profileId = readRecordString(profile, "profileId") || readRecordString(profile, "documentProfileId");
+  const fileId = readRecordString(profile, "fileId");
   const fileHash = readRecordString(profile, "fileHash");
   const humanIpr = readRecordString(profile, "humanIpr") || context.humanIpr;
   const tenantId = readRecordString(profile, "tenantId") || context.tenantId;
   const workspaceId = readRecordString(profile, "workspaceId") || context.workspaceId;
 
 
-  if (!profileId || !fileHash || !humanIpr || !tenantId || !workspaceId) {
+  if (!profileId || !fileId || !fileHash || !humanIpr || !tenantId || !workspaceId) {
+    const missingScope = [
+      !profileId ? "documentProfileId" : null,
+      !fileId ? "fileId" : null,
+      !fileHash ? "fileHash" : null,
+      !humanIpr ? "humanIpr" : null,
+      !tenantId ? "tenantId" : null,
+      !workspaceId ? "workspaceId" : null
+    ].filter(Boolean).join(",");
+
+
     return {
       ok: false,
       count: 0,
-      error: "DOCUMENT_PROFILE_CHUNK_COUNT_MISSING_SCOPE",
+      error: `DOCUMENT_PROFILE_CHUNK_COUNT_MISSING_SCOPE:${missingScope || "UNKNOWN"}`,
       sqlHash: null,
       durationMs: Date.now() - startedAt
     };
@@ -3645,16 +3656,17 @@ async function countPersistedDocumentChunksForProfile(
   const sql = `
     SELECT COUNT(*)::int AS count
     FROM document_text_chunks
-    WHERE document_profile_id = $1
-      AND file_hash = $2
+    WHERE tenant_id = $1
+      AND workspace_id = $2
       AND human_ipr = $3
-      AND tenant_id = $4
-      AND workspace_id = $5
+      AND document_profile_id = $4
+      AND file_id = $5
+      AND file_hash = $6
   `;
 
 
   try {
-    const result = await queryHbceDatabase(sql, [profileId, fileHash, humanIpr, tenantId, workspaceId]);
+    const result = await queryHbceDatabase(sql, [tenantId, workspaceId, humanIpr, profileId, fileId, fileHash]);
     const row = result.rows[0] as Record<string, unknown> | undefined;
     const count = Number(row?.count ?? 0);
 
@@ -3677,7 +3689,6 @@ async function countPersistedDocumentChunksForProfile(
   }
 }
 
-
 function buildDiagnosticDocumentProfileSnapshot(
   profile: Record<string, unknown> | null,
   persistedCount: number | null = null
@@ -3692,7 +3703,8 @@ function buildDiagnosticDocumentProfileSnapshot(
   const metadataPersistedCount = readRecordNumber(metadata, "documentChunksPersistedCount");
   const effectivePersistedCount = persistedCount ?? metadataPersistedCount ?? 0;
   const metadataPersisted = metadata.documentChunksPersisted === true;
-  const databaseVerified = metadata.documentChunkDatabaseVerified === true || (expectedCount > 0 && effectivePersistedCount === expectedCount);
+  const countMatchesExpected = expectedCount > 0 && effectivePersistedCount === expectedCount;
+  const databaseVerified = metadata.documentChunkDatabaseVerified === true && countMatchesExpected;
 
 
   return {
@@ -3714,8 +3726,10 @@ function buildDiagnosticDocumentProfileSnapshot(
     fullDocumentCoverage: metadata.fullDocumentCoverage === true,
     longDocumentMode: readRecordString(metadata, "longDocumentMode"),
     documentChunkCount: expectedCount,
-    documentChunksPersisted: metadataPersisted || (expectedCount > 0 && effectivePersistedCount === expectedCount),
+    documentChunksPersisted: metadataPersisted && countMatchesExpected,
     documentChunksPersistedCount: effectivePersistedCount,
+    documentChunkCountMatchesExpected: countMatchesExpected,
+    documentChunkDiagnosticScope: DOCUMENT_CHUNK_PERSISTENCE_SCOPE,
     documentChunkPersistenceStatus: readRecordString(metadata, "documentChunkPersistenceStatus"),
     documentChunkPersistenceReason: readRecordString(metadata, "documentChunkPersistenceReason"),
     documentChunkPersistenceError: readRecordString(metadata, "documentChunkPersistenceError"),
@@ -3801,6 +3815,7 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
     latestFile && latestFile.longDocumentMode === "CHUNKED_FULL_TEXT" && latestFile.documentChunkCount <= 0 ? "LATEST_FILE_CHUNKS_NOT_BUILT" : null,
     latestFile && latestFile.documentChunkCount > 0 && latestFile.documentChunksPersisted !== true ? "LATEST_FILE_CHUNKS_NOT_PERSISTED" : null,
     !latestFile && latestDocumentProfileSnapshot && latestDocumentProfileSnapshot.documentChunkCount > 0 && latestDocumentProfileSnapshot.documentChunksPersisted !== true ? "LATEST_DOCUMENT_PROFILE_CHUNKS_NOT_PERSISTED" : null,
+    !latestFile && latestDocumentProfileSnapshot && latestDocumentProfileSnapshot.documentChunkCount > 0 && latestDocumentProfileSnapshot.documentChunksPersistedCount !== latestDocumentProfileSnapshot.documentChunkCount ? "LATEST_DOCUMENT_PROFILE_CHUNK_COUNT_MISMATCH" : null,
     latestDocumentProfile && !latestDocumentProfileChunkCount.ok ? "LATEST_DOCUMENT_PROFILE_CHUNK_COUNT_QUERY_FAILED" : null,
     missingCriticalFields.length > 0 ? `MISSING_CRITICAL_FIELDS:${missingCriticalFields.join(",")}` : null
   ].filter(Boolean) as string[];
@@ -3812,7 +3827,7 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
     endpoint: "HBCE_FILES_INGESTION",
     fileRouteRevision: FILE_ROUTE_REVISION,
     routeVersion: FILE_ROUTE_REVISION,
-    selfDiagnosticRevision: "FILES_ROUTE_SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_2",
+    selfDiagnosticRevision: "FILES_ROUTE_SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3",
     documentChunkDatabasePersistenceRevision: DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION,
     sessionId: context.sessionId,
     activeFileCount: context.files.length,
@@ -3834,6 +3849,9 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
     latestProfileChunkPersistence: {
       ok: latestDocumentProfileChunkCount.ok,
       count: latestDocumentProfileChunkCount.count,
+      expectedCount: latestDocumentProfileSnapshot?.documentChunkCount ?? null,
+      countMatchesExpected: latestDocumentProfileSnapshot?.documentChunkCountMatchesExpected ?? false,
+      scope: DOCUMENT_CHUNK_PERSISTENCE_SCOPE,
       error: latestDocumentProfileChunkCount.error,
       sqlHash: latestDocumentProfileChunkCount.sqlHash,
       durationMs: latestDocumentProfileChunkCount.durationMs
@@ -3919,7 +3937,7 @@ function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
     maxTextCharsPerFile: MAX_TEXT_CHARS_PER_FILE,
     maxTotalTextCharsPerSession: MAX_TOTAL_TEXT_CHARS_PER_SESSION,
     routeVersion: FILE_ROUTE_REVISION,
-    longDocumentEngine: "LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_3_2_POST_UPLOAD_CHUNK_PROOF",
+    longDocumentEngine: "LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_3_3_CHUNK_DB_SCOPE_DEDUP",
     documentRegistry: "DOCUMENT_PROFILES",
     documentTextChunks: "document_text_chunks",
     cyberneticMethod: "FILE_UPLOAD_TO_FULL_TEXT_CHUNKS_TO_DOCUMENT_PROFILE_TO_DYNAMIC_RECALL",
