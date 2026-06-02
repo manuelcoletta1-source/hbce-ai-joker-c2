@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -842,6 +842,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const files = resolveRuntimeFilesForChat(body.files, sessionId);
   const fileIngestionRequested = isFileIngestionQuestion(message, files);
   const fullDocumentCoverageAuditRequested = isFullDocumentCoverageAuditQuestion(message);
+  const iprCanonicalDocumentMemorySaveRequested =
+    !fullDocumentCoverageAuditRequested && isIprCanonicalDocumentMemorySaveRequest(message);
   const runtimeStatusTableRequested =
     !fullDocumentCoverageAuditRequested && isRuntimeStatusTableQuestion(message);
   const runtimeDiagnosticsRequested =
@@ -903,7 +905,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryChainEvtBindingRequested ||
     memoryChainOpcBindingRequested ||
     memoryChainCandidateRequested;
-  const hardNoSavePersistenceRequested = isHardNoSavePersistenceQuestion(message);
+  const hardNoSavePersistenceRequested =
+    !iprCanonicalDocumentMemorySaveRequested && isHardNoSavePersistenceQuestion(message);
   const recallNoSaveBoundaryRequested = memoryChainRouteRequested && hardNoSavePersistenceRequested;
   const noSavePersistenceRequested =
     fullDocumentCoverageAuditRequested ||
@@ -914,6 +917,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     fullDocumentCoverageAuditRequested || hardNoSavePersistenceRequested;
   const semanticMemoryRouteSuppressed =
     runtimeMemoryWriteSuppressed ||
+    iprCanonicalDocumentMemorySaveRequested ||
     memoryChainRouteRequested ||
     shouldSuppressEsoterologicalSemanticMemoryRoute(message);
   const trainingDeleteVerificationRequested =
@@ -966,6 +970,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const esoterologicalSemanticMemoryRequested =
     !runtimeMemoryBlockDiagnosticRequested &&
     !matrixStrategicSynthesisRequested &&
+    !iprCanonicalDocumentMemorySaveRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
@@ -973,6 +978,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     isEsoterologicalSemanticMemoryQuestion(message);
   const memoryRegistrationRequested =
     !runtimeMemoryBlockDiagnosticRequested &&
+    !iprCanonicalDocumentMemorySaveRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
@@ -980,6 +986,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     isMemoryRegistrationQuestion(message);
   const memoryRecoveryRequested =
     !runtimeMemoryBlockDiagnosticRequested &&
+    !iprCanonicalDocumentMemorySaveRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
@@ -988,6 +995,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const apiSdkB2GPresentationRequested =
     !runtimeMemoryBlockDiagnosticRequested &&
     !matrixStrategicSynthesisRequested &&
+    !iprCanonicalDocumentMemorySaveRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
@@ -995,6 +1003,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     isApiSdkB2GPresentationQuestion(message);
   const iprRecallRequested =
     !runtimeMemoryBlockDiagnosticRequested &&
+    !iprCanonicalDocumentMemorySaveRequested &&
     !noSavePersistenceRequested &&
     (memoryChainRouteRequested ||
       trainingRouteRequested ||
@@ -1031,7 +1040,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     limit: noSavePersistenceRequested ? 0 : 6,
     promptMaxChars: noSavePersistenceRequested ? 0 : 7000
   });
-  const documentProfileRecall: DocumentProfileRecall | null = documentMemoryRecallRequested
+  const documentProfileRecall: DocumentProfileRecall | null =
+    documentMemoryRecallRequested || iprCanonicalDocumentMemorySaveRequested
     ? await resolveDocumentProfileRecall({
         handoff,
         saasContext,
@@ -1080,6 +1090,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryRecoveryRequested,
     runtimeMemoryBlockDiagnosticRequested,
     fullDocumentCoverageAuditRequested,
+    iprCanonicalDocumentMemorySaveRequested,
     matrixStrategicSynthesisRequested,
     apiSdkB2GPresentationRequested,
     iprRecallRequested,
@@ -1308,6 +1319,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   } else if (trainingMemoryRecallRequested) {
     answer = buildIprTrainingMemoryRecallAnswer({
       recall: iprRecall,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (iprCanonicalDocumentMemorySaveRequested) {
+    answer = buildIprCanonicalDocumentMemoryPreparationAnswer({
+      message,
+      files,
+      documentProfileRecall,
       handoff,
       memory,
       policy,
@@ -1608,8 +1631,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  const finalAnswerBase = esoterologicalSemanticMemoryRequested
-    ? buildEsoterologicalSemanticMemoryAnswer({
+  const finalAnswerBase = iprCanonicalDocumentMemorySaveRequested
+    ? buildIprCanonicalDocumentMemoryReadyAnswer({
+        message,
+        files,
+        documentProfileRecall,
+        handoff,
+        memory,
+        policy,
+        saasContext,
+        evt,
+        opc,
+        auditAndUsage,
+        persistenceBridge
+      })
+    : esoterologicalSemanticMemoryRequested
+      ? buildEsoterologicalSemanticMemoryAnswer({
         record: esoterologicalSemanticMemory,
         persistable: esoterologicalSemanticMemoryPersistable,
         handoff,
@@ -1822,6 +1859,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     usageId,
     technicalProof: "EVT_OPC_AUDIT_USAGE_LINKED"
   });
+  const quantumMemoryCollapse = iprCanonicalDocumentMemorySaveRequested
+    ? buildQuantumMemoryCollapseSnapshot({
+        message,
+        files,
+        documentProfileRecall,
+        handoff,
+        memory,
+        policy,
+        saasContext,
+        evt,
+        opc,
+        auditAndUsage,
+        persistenceBridge
+      })
+    : null;
   const publicSemanticMemory = buildPublicSemanticMemorySnapshot({
     record: esoterologicalSemanticMemory,
     persistable: esoterologicalSemanticMemoryPersistable,
@@ -1940,6 +1992,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     esoterologicalSemanticMemory: publicSemanticMemory,
     esoterologicalSemanticMemoryRecord: esoterologicalSemanticMemory,
     semanticMemoryPromptSafeSummary: toPromptSafeEsoterologicalMemorySummary(esoterologicalSemanticMemory),
+    iprCanonicalDocumentMemory: quantumMemoryCollapse,
+    canonicalDocumentMemoryReady: Boolean(quantumMemoryCollapse && quantumMemoryCollapse.readyForIprSave === true),
+    quantumMemoryCollapse,
+    quantumMemoryLayer: quantumMemoryCollapse,
+    semanticMemoryRouteSuppressedForDocumentSave: iprCanonicalDocumentMemorySaveRequested,
     iprRecall,
     recall: iprRecall,
     recallInjected: iprRecall.injected,
@@ -5526,6 +5583,324 @@ function buildFullDocumentCoverageAuditAnswer(args: {
     "runtimeMemoryWriteSuppressed=true",
     "newReusableMemoryAllowed=false",
     "failReason=" + diagnostic.failReason,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+
+function isIprCanonicalDocumentMemorySaveRequest(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  const explicitNoSaveDiagnostic =
+    normalized.includes("no_save") ||
+    normalized.includes("diagnostic_only") ||
+    normalized.includes("diagnostic only") ||
+    normalized.includes("non salvare nulla") ||
+    normalized.includes("non creare nuova memoria ipr") ||
+    normalized.includes("non creare memoria ipr") ||
+    normalized.includes("no new ipr memory");
+
+  if (explicitNoSaveDiagnostic) {
+    return false;
+  }
+
+  const explicitCanonicalSaveIntent =
+    normalized.includes("crea memoria ipr canonica") ||
+    normalized.includes("memoria ipr canonica") ||
+    normalized.includes("ipr canonical document memory") ||
+    normalized.includes("ipr_canonical_document_memory") ||
+    normalized.includes("iprcanonicaldocumentmemory") ||
+    normalized.includes("ipr canonical document") ||
+    normalized.includes("memoria ipr-bound") ||
+    normalized.includes("memoria ipr bound") ||
+    normalized.includes("memoria documentale ipr") ||
+    normalized.includes("ipr document memory") ||
+    normalized.includes("document memory save") ||
+    normalized.includes("readyforiprsave") ||
+    normalized.includes("ready for ipr save") ||
+    normalized.includes("save chat → ipr") ||
+    normalized.includes("save chat -> ipr") ||
+    normalized.includes("save chat to ipr") ||
+    normalized.includes("salvataggio ipr") ||
+    normalized.includes("salvare in ipr") ||
+    normalized.includes("salva in ipr");
+
+  const quantumCollapseIntent =
+    normalized.includes("collasso quantistico") ||
+    normalized.includes("quantum memory collapse") ||
+    normalized.includes("quantum_memory_collapse") ||
+    normalized.includes("memoria quantistica operativa") ||
+    normalized.includes("quantum memory layer");
+
+  const documentProfileSignals =
+    normalized.includes("documentprofileid") ||
+    normalized.includes("document profile id") ||
+    normalized.includes("doc-profile-") ||
+    normalized.includes("filehash") ||
+    normalized.includes("file hash") ||
+    normalized.includes("fulldocumentcoverage") ||
+    normalized.includes("full-document coverage") ||
+    normalized.includes("documentchunkspersisted") ||
+    normalized.includes("document chunks persisted") ||
+    normalized.includes("clean_runtime") ||
+    normalized.includes("clean runtime") ||
+    normalized.includes("corpus volume i") ||
+    normalized.includes("corpus volume 1") ||
+    normalized.includes("volume i") ||
+    normalized.includes("esoterologia");
+
+  const sourceDocumentSignals =
+    normalized.includes("1a.1a.corpus_esoterologia_ermetica_clean_runtime.txt") ||
+    normalized.includes("corpus esoterologia ermetica") ||
+    normalized.includes("docfamily") ||
+    normalized.includes("canonicalaxis") ||
+    normalized.includes("decisione") &&
+      normalized.includes("costo") &&
+      normalized.includes("traccia") &&
+      normalized.includes("tempo");
+
+  return (explicitCanonicalSaveIntent || quantumCollapseIntent) && documentProfileSignals && sourceDocumentSignals;
+}
+
+function buildQuantumMemoryStatesForDocument(diagnostic: FullDocumentCoverageAuditDiagnostic): JsonValue[] {
+  const baseScope = diagnostic.ready ? "COLLAPSIBLE" : "NOT_COLLAPSIBLE";
+
+  return [
+    {
+      id: "QSTATE-01",
+      label: "Fondazione disciplinare",
+      psi: "Intenzione direttiva del Volume I come apertura del CORPUS ESOTEROLOGIA ERMETICA.",
+      lambda: "Coerenza informazionale del documento fondativo.",
+      weight: diagnostic.title === "ESOTEROLOGIA" ? 0.97 : 0.82,
+      status: baseScope
+    },
+    {
+      id: "QSTATE-02",
+      label: "Reale operativo",
+      psi: "Distinzione tra apparire simbolico e sequenza verificabile.",
+      lambda: "Criterio operativo di realtà applicato al documento.",
+      weight: diagnostic.fullDocumentCoverage ? 0.96 : 0.55,
+      status: baseScope
+    },
+    {
+      id: "QSTATE-03",
+      label: "Decisione · Costo · Traccia · Tempo",
+      psi: "Asse canonico minimo della verificazione.",
+      lambda: diagnostic.canonicalAxis,
+      weight: diagnostic.canonicalAxis === "Decisione · Costo · Traccia · Tempo" ? 0.99 : 0.7,
+      status: baseScope
+    },
+    {
+      id: "QSTATE-04",
+      label: "Traccia opponibile",
+      psi: "Trasformazione dell'atto in sequenza ricostruibile.",
+      lambda: "DocumentProfile + hash + chunk persistence + Human IPR.",
+      weight: diagnostic.documentChunksPersisted ? 0.98 : 0.45,
+      status: baseScope
+    },
+    {
+      id: "QSTATE-05",
+      label: "Glossario canonico",
+      psi: "Vocabolario operativo riusabile dal runtime.",
+      lambda: "Glossario entries detected: " + String(diagnostic.glossaryEntriesDetected),
+      weight: diagnostic.glossaryEntriesDetected > 0 ? 0.94 : 0.5,
+      status: baseScope
+    },
+    {
+      id: "QSTATE-06",
+      label: "Continuità verso Volume II / MATRIX",
+      psi: "Passaggio dal fondamento disciplinare al dominio applicativo-istituzionale.",
+      lambda: "V1 → V2 continuity gate.",
+      weight: diagnostic.volume === "V1" ? 0.91 : 0.62,
+      status: baseScope
+    }
+  ];
+}
+
+function buildQuantumMemoryCollapseSnapshot(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
+}): JsonObject {
+  const diagnostic = buildFullDocumentCoverageAuditDiagnostic({
+    message: args.message,
+    files: args.files,
+    documentProfileRecall: args.documentProfileRecall,
+    documentMemoryRecallRequested: true
+  });
+  const quantumStates = buildQuantumMemoryStatesForDocument(diagnostic);
+  const humanIprBound = args.handoff.humanIpr === HBCE_SELF_PILOT_HUMAN_IPR || args.handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
+  const readyForIprSave = diagnostic.ready && humanIprBound && args.policy.decision !== "BLOCK";
+
+  return {
+    enabled: true,
+    revision: "IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER",
+    status: readyForIprSave ? "QUANTUM_MEMORY_COLLAPSE_READY" : "QUANTUM_MEMORY_COLLAPSE_BLOCKED",
+    readyForIprSave,
+    semanticMemoryRouteSuppressed: true,
+    semanticMemoryRouteSuppressionReason: "DOCUMENT_IPR_CANONICAL_SAVE_REQUEST",
+    saveRaw: false,
+    saveQuantumStates: false,
+    saveFinalCollapseOnly: true,
+    sourceDocument: diagnostic.activeFilename,
+    documentProfileId: diagnostic.documentProfileId,
+    documentProfileStatus: diagnostic.documentProfileStatus,
+    fileHash: diagnostic.runtimeFileHash,
+    docFamily: diagnostic.docFamily,
+    volume: diagnostic.volume,
+    title: diagnostic.title,
+    canonicalAxis: diagnostic.canonicalAxis,
+    textCoverageStatus: diagnostic.textCoverageStatus,
+    fullDocumentCoverage: diagnostic.fullDocumentCoverage,
+    longDocumentMode: diagnostic.longDocumentMode,
+    documentChunkCount: diagnostic.documentChunkCount,
+    documentChunksPersisted: diagnostic.documentChunksPersisted,
+    documentChunksPersistedCount: diagnostic.documentChunksPersistedCount,
+    outlineStatus: diagnostic.outlineStatus,
+    glossaryEntriesDetected: diagnostic.glossaryEntriesDetected,
+    truncationDetected: diagnostic.truncationDetected,
+    failReason: diagnostic.failReason,
+    quantumStatesDetected: quantumStates.length,
+    quantumStates,
+    collapseTarget: "IPR_CANONICAL_DOCUMENT_MEMORY",
+    collapseReason: readyForIprSave
+      ? "DOCUMENT_PROFILE_VERIFIED+FULL_DOCUMENT_COVERAGE+CHUNKS_PERSISTED_6_OF_6+HUMAN_IPR_BOUND+SEMANTIC_ROUTE_SUPPRESSED"
+      : diagnostic.failReason,
+    quantumFormula: "DocumentProfile + Ψ intentionVector + Λ informationalCoherence + Σ feedback/coherence + Ω adaptiveMemory + Τ truthDensity + Χτ ethicalGate + Decisione · Costo · Traccia · Tempo",
+    humanIpr: args.handoff.humanIpr,
+    runtimeIpr: RUNTIME_IPR,
+    derivedFromHumanIpr: args.handoff.humanIpr,
+    tenantId: args.saasContext.tenantId,
+    workspaceId: args.saasContext.workspaceId,
+    evtId: args.evt.id,
+    opcId: args.opc.id,
+    evtPersistenceStatus: stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN"),
+    opcPersistenceStatus: stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN"),
+    auditId: stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+    usageId: stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID"),
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
+function buildIprCanonicalDocumentMemoryPreparationAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const diagnostic = buildFullDocumentCoverageAuditDiagnostic({
+    message: args.message,
+    files: args.files,
+    documentProfileRecall: args.documentProfileRecall,
+    documentMemoryRecallRequested: true
+  });
+
+  return [
+    "IPR_CANONICAL_DOCUMENT_MEMORY_PREP_READY",
+    "sourceDocument=" + diagnostic.activeFilename,
+    "documentProfileId=" + diagnostic.documentProfileId,
+    "fileHash=" + diagnostic.runtimeFileHash,
+    "fullDocumentCoverage=" + String(diagnostic.fullDocumentCoverage),
+    "documentChunksPersisted=" + String(diagnostic.documentChunksPersisted),
+    "documentChunksPersistedCount=" + String(diagnostic.documentChunksPersistedCount),
+    "quantumMemoryLayer=ACTIVE_PRE_PERSISTENT",
+    "semanticMemoryRouteSuppressed=true",
+    "readyForIprSaveAfterEvtOpc=" + String(diagnostic.ready),
+    "Human IPR=" + args.handoff.humanIpr,
+    "Tenant=" + args.saasContext.tenantId,
+    "Workspace=" + args.saasContext.workspaceId,
+    "Memory scope=" + args.memory.scope,
+    "Policy=" + args.policy.decision + " / " + args.policy.operationDecision,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+function buildIprCanonicalDocumentMemoryReadyAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
+}): string {
+  const collapse = buildQuantumMemoryCollapseSnapshot(args);
+  const states = Array.isArray(collapse.quantumStates) ? collapse.quantumStates : [];
+  const stateLines = states.map((state) => {
+    const item = state as JsonObject;
+    return `- ${stringFromValue(item.id) || "QSTATE"} — ${stringFromValue(item.label) || "UNKNOWN"} · weight=${String(item.weight ?? "UNKNOWN")} · status=${stringFromValue(item.status) || "UNKNOWN"}`;
+  });
+
+  return [
+    String(collapse.readyForIprSave === true ? "IPR_CANONICAL_DOCUMENT_MEMORY_READY" : "IPR_CANONICAL_DOCUMENT_MEMORY_BLOCKED"),
+    "",
+    "sourceDocument=" + String(collapse.sourceDocument),
+    "documentProfileId=" + String(collapse.documentProfileId),
+    "documentProfileStatus=" + String(collapse.documentProfileStatus),
+    "fileHash=" + String(collapse.fileHash),
+    "docFamily=" + String(collapse.docFamily),
+    "volume=" + String(collapse.volume),
+    "title=" + String(collapse.title),
+    "canonicalAxis=" + String(collapse.canonicalAxis),
+    "",
+    "textCoverageStatus=" + String(collapse.textCoverageStatus),
+    "fullDocumentCoverage=" + String(collapse.fullDocumentCoverage),
+    "longDocumentMode=" + String(collapse.longDocumentMode),
+    "documentChunkCount=" + String(collapse.documentChunkCount),
+    "documentChunksPersisted=" + String(collapse.documentChunksPersisted),
+    "documentChunksPersistedCount=" + String(collapse.documentChunksPersistedCount),
+    "outlineStatus=" + String(collapse.outlineStatus),
+    "glossaryEntriesDetected=" + String(collapse.glossaryEntriesDetected),
+    "truncationDetected=" + String(collapse.truncationDetected),
+    "failReason=" + String(collapse.failReason),
+    "",
+    "quantumMemoryLayer=ACTIVE_PRE_PERSISTENT",
+    "quantumMemoryStatus=" + String(collapse.status),
+    "quantumStatesDetected=" + String(collapse.quantumStatesDetected),
+    "collapseTarget=" + String(collapse.collapseTarget),
+    "collapseReason=" + String(collapse.collapseReason),
+    "saveRaw=false",
+    "saveQuantumStates=false",
+    "saveFinalCollapseOnly=true",
+    "semanticMemoryRouteSuppressed=" + String(collapse.semanticMemoryRouteSuppressed),
+    "semanticMemoryRouteSuppressionReason=" + String(collapse.semanticMemoryRouteSuppressionReason),
+    "readyForIprSave=" + String(collapse.readyForIprSave),
+    "",
+    "quantumStates:",
+    ...stateLines,
+    "",
+    "derivedFromHumanIpr=" + String(collapse.derivedFromHumanIpr),
+    "humanIpr=" + String(collapse.humanIpr),
+    "runtimeIpr=" + String(collapse.runtimeIpr),
+    "tenantId=" + String(collapse.tenantId),
+    "workspaceId=" + String(collapse.workspaceId),
+    "EVT=" + String(collapse.evtId),
+    "OPC=" + String(collapse.opcId),
+    "auditId=" + String(collapse.auditId),
+    "usageId=" + String(collapse.usageId),
     "legalCertification=false",
     "OPC=technical proof receipt only"
   ].join("\n");
