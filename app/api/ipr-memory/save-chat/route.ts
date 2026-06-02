@@ -15,6 +15,7 @@ import {
   toPublicIprMemoryRecord,
   toPublicRegisteredMemoryEvent,
   upsertIprChatThreadToDatabase,
+  type DocumentProfileDatabaseRow,
   type IprChatMessageDatabaseInput
 } from "@/lib/ipr-database";
 import {
@@ -45,7 +46,7 @@ export const dynamic = "force-dynamic";
 
 
 const ROUTE_NAME = "HBCE IPR Memory Save Chat Route";
-const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-ACTIVE-DOCUMENT-LINK-v2.4";
+const ROUTE_VERSION = "HBCE-IPR-MEMORY-SAVE-CHAT-ACTIVE-DOCUMENT-LINK-v2.5-V5_DOCUMENT_PROFILE_LINK";
 const IDEMPOTENCY_POLICY = "THREAD_PRIMARY_INTENTION_REUSABLE_MEMORY";
 const DOCUMENT_AWARE_IDEMPOTENCY_POLICY = "DOCUMENT_PROFILE_STRICT_REUSABLE_MEMORY";
 const NO_DOCUMENT_SCOPE = "NO_DOCUMENT_SCOPE";
@@ -397,6 +398,9 @@ function buildDocumentScopeTokensFromCandidates(candidates: DocumentProfileLinkC
 
 
   for (const candidate of candidates) {
+    const hasStableDocumentAnchor = Boolean(candidate.profileId || candidate.fileHash || candidate.filename);
+
+
     if (candidate.profileId) {
       tokens.push(`profile:${candidate.profileId.toUpperCase()}`);
     }
@@ -407,13 +411,20 @@ function buildDocumentScopeTokensFromCandidates(candidates: DocumentProfileLinkC
     }
 
 
-    if (candidate.fileId) {
-      tokens.push(`file:${candidate.fileId}`);
+    if (candidate.filename) {
+      tokens.push(`name:${candidate.filename.replace(/\s+/g, " ").trim().toLowerCase()}`);
     }
 
 
-    if (candidate.filename) {
-      tokens.push(`name:${candidate.filename.replace(/\s+/g, " ").trim().toLowerCase()}`);
+    /*
+     * Runtime FILE-* identifiers can be ephemeral across uploads/re-ingestion.
+     * They are useful as a last-resort anchor, but they must not dominate the
+     * idempotency scope when a stable filename, file hash or document profile is
+     * already present. Otherwise the same corpus file can create duplicate IPR
+     * memories every time the frontend receives a new transient FILE-* id.
+     */
+    if (candidate.fileId && !hasStableDocumentAnchor) {
+      tokens.push(`file:${candidate.fileId}`);
     }
   }
 
@@ -954,6 +965,251 @@ RETURNING *;
 }
 
 
+
+type KnownCorpusDocumentProfilePatch = {
+  docFamily: string;
+  volume: string;
+  title: string;
+  subtitle: string | null;
+  canonicalAxis: string;
+  summary: string;
+  keyTerms: string[];
+  semanticTerms: string[];
+  documentMetadata: JsonRecord;
+};
+
+
+function buildKnownCorpusPatchFromFilename(filename: string | null): KnownCorpusDocumentProfilePatch | null {
+  const normalizedFilename = normalizeCandidateFilenameForMatch(filename);
+  if (!normalizedFilename) {
+    return null;
+  }
+
+
+  const canonicalAxis = "Decisione · Costo · Traccia · Tempo";
+
+
+  if (
+    normalizedFilename.includes("5e.5e.il portale") ||
+    normalizedFilename.includes("il portale dell") ||
+    normalizedFilename.includes("portale dell")
+  ) {
+    return {
+      docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
+      volume: "V5",
+      title: "IL PORTALE DELL’ANTICRISTO",
+      subtitle: null,
+      canonicalAxis,
+      summary:
+        "Profilo documento IL PORTALE DELL’ANTICRISTO Volume V del CORPUS ESOTEROLOGIA ERMETICA: formalizza la soglia finale di esposizione, il regime apocalittico operativo e il portale come configurazione terminale leggibile attraverso Decisione · Costo · Traccia · Tempo.",
+      keyTerms: [
+        "Il Portale dell’Anticristo",
+        "Portale dell'Anticristo",
+        "Volume V",
+        "Apocalisse",
+        "Anticristo",
+        "Regime di esposizione",
+        "Soglia operativa",
+        "Soglia terminale",
+        "Decisione",
+        "Costo",
+        "Traccia",
+        "Tempo",
+        "Esoterologia",
+        "Campo operativo",
+        "Campo rascensionale",
+        "Traccia opponibile",
+        "Decadimento",
+        "Corpus Esoterologia Ermetica",
+        "IPR"
+      ],
+      semanticTerms: [
+        "Il Portale dell’Anticristo",
+        "Volume V",
+        "Apocalisse",
+        "Anticristo",
+        "Regime di esposizione",
+        "Soglia operativa",
+        "Decisione",
+        "Costo",
+        "Traccia",
+        "Tempo",
+        "Campo rascensionale",
+        "Corpus Esoterologia Ermetica",
+        "IPR"
+      ],
+      documentMetadata: {
+        canonicalCorrection: "V5_PORTALE_DELL_ANTICRISTO_FILENAME_GUARD",
+        routeVersion: ROUTE_VERSION,
+        legalCertification: false
+      }
+    };
+  }
+
+
+  if (normalizedFilename.includes("4d.4d.alien code") || normalizedFilename.includes("alien code")) {
+    return {
+      docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
+      volume: "V4",
+      title: "ALIEN CODE",
+      subtitle: null,
+      canonicalAxis,
+      summary:
+        "Profilo documento ALIEN CODE Volume IV del CORPUS ESOTEROLOGIA ERMETICA: formalizza il framework operativo per la tracciabilità rascensionale, l'interfaccia rascensionale e l'accoppiamento organismo-sistema attraverso Decisione · Costo · Traccia · Tempo.",
+      keyTerms: [
+        "Alien Code",
+        "Codice alieno",
+        "Volume IV",
+        "Tracciabilità rascensionale",
+        "Interfaccia rascensionale",
+        "Decisione",
+        "Costo",
+        "Traccia",
+        "Tempo",
+        "Corpus Esoterologia Ermetica",
+        "IPR"
+      ],
+      semanticTerms: [
+        "Alien Code",
+        "Codice alieno",
+        "Volume IV",
+        "Tracciabilità rascensionale",
+        "Decisione",
+        "Costo",
+        "Traccia",
+        "Tempo",
+        "Corpus Esoterologia Ermetica",
+        "IPR"
+      ],
+      documentMetadata: {
+        canonicalCorrection: "V4_ALIEN_CODE_FILENAME_GUARD",
+        routeVersion: ROUTE_VERSION,
+        legalCertification: false
+      }
+    };
+  }
+
+
+  return null;
+}
+
+
+function buildRelaxedDocumentProfileLinkCandidates(
+  candidates: DocumentProfileLinkCandidate[]
+): DocumentProfileLinkCandidate[] {
+  const relaxed: DocumentProfileLinkCandidate[] = [];
+
+
+  for (const candidate of candidates) {
+    pushDocumentProfileLinkCandidate(relaxed, candidate);
+
+
+    if (candidate.profileId) {
+      pushDocumentProfileLinkCandidate(relaxed, {
+        profileId: candidate.profileId,
+        source: `${candidate.source}.profileIdOnly`,
+        confidence: candidate.confidence
+      });
+    }
+
+
+    if (candidate.fileHash) {
+      pushDocumentProfileLinkCandidate(relaxed, {
+        fileHash: candidate.fileHash,
+        source: `${candidate.source}.fileHashOnly`,
+        confidence: candidate.confidence
+      });
+    }
+
+
+    if (candidate.filename) {
+      pushDocumentProfileLinkCandidate(relaxed, {
+        filename: candidate.filename,
+        source: `${candidate.source}.filenameOnly`,
+        confidence: candidate.confidence
+      });
+    }
+
+
+    /*
+     * FILE-* can be a runtime-only ingestion id. Keep it as the weakest final
+     * fallback, never as the only precision mechanism for canonical corpus files.
+     */
+    if (candidate.fileId && !candidate.profileId && !candidate.fileHash && !candidate.filename) {
+      pushDocumentProfileLinkCandidate(relaxed, {
+        fileId: candidate.fileId,
+        source: `${candidate.source}.fileIdOnly`,
+        confidence: candidate.confidence
+      });
+    }
+  }
+
+
+  return relaxed;
+}
+
+
+async function applyKnownCorpusDocumentProfilePatch(input: {
+  row: DocumentProfileDatabaseRow;
+  context: SaveChatRouteContext;
+}): Promise<DocumentProfileDatabaseRow> {
+  const profileId = normalizeDocumentProfileId(input.row.profile_id);
+  const filename = normalizeDocumentFilename(input.row.filename);
+  const patch = buildKnownCorpusPatchFromFilename(filename);
+
+
+  if (!profileId || !patch) {
+    return input.row;
+  }
+
+
+  const result = await queryHbceDatabase<DocumentProfileDatabaseRow>(
+    `
+UPDATE document_profiles
+SET
+  doc_family = $2,
+  volume = $3,
+  title = $4,
+  subtitle = $5,
+  canonical_axis = $6,
+  summary = $7,
+  key_terms = $8::jsonb,
+  semantic_terms = $9::jsonb,
+  document_metadata = COALESCE(document_metadata, '{}'::jsonb) || $10::jsonb,
+  profile_status = 'ACTIVE',
+  quality = COALESCE(quality, 'CANONICAL'),
+  reusable_in_prompt = true,
+  last_seen_at = now(),
+  updated_at = now(),
+  legal_certification = false
+WHERE profile_id = $1
+  AND ($11::text IS NULL OR human_ipr = $11)
+  AND ($12::text IS NULL OR tenant_id = $12)
+  AND ($13::text IS NULL OR workspace_id = $13)
+RETURNING *;
+`.trim(),
+    [
+      profileId,
+      patch.docFamily,
+      patch.volume,
+      patch.title,
+      patch.subtitle,
+      patch.canonicalAxis,
+      patch.summary,
+      JSON.stringify(patch.keyTerms),
+      JSON.stringify(patch.semanticTerms),
+      JSON.stringify(patch.documentMetadata),
+      input.context.humanIpr,
+      input.context.tenantId,
+      input.context.workspaceId
+    ]
+  );
+
+
+  return result.rows[0] ?? input.row;
+}
+
+
 function buildSkippedDocumentProfileLinkResult(reason: string): DocumentProfileLinkResult {
   return {
     attempted: false,
@@ -987,7 +1243,10 @@ async function linkDocumentProfilesToIprMemory(input: {
   const linkedProfiles: JsonRecord[] = [];
 
 
-  for (const candidate of input.context.documentLinkCandidates) {
+  const linkCandidates = buildRelaxedDocumentProfileLinkCandidates(input.context.documentLinkCandidates);
+
+
+  for (const candidate of linkCandidates) {
     try {
       const result = await linkDocumentProfileToIprMemoryFromDatabase({
         profileId: candidate.profileId,
@@ -1008,7 +1267,18 @@ async function linkDocumentProfilesToIprMemory(input: {
       });
 
 
-      const publicRows = result.rows.map((row) => toPublicDocumentProfile(row));
+      const patchedRows: DocumentProfileDatabaseRow[] = [];
+      for (const row of result.rows) {
+        patchedRows.push(
+          await applyKnownCorpusDocumentProfilePatch({
+            row,
+            context: input.context
+          })
+        );
+      }
+
+
+      const publicRows = patchedRows.map((row) => toPublicDocumentProfile(row));
       linkedProfiles.push(...publicRows);
       attempts.push({
         candidate,
@@ -1018,7 +1288,12 @@ async function linkDocumentProfilesToIprMemory(input: {
         sqlHash: result.sqlHash,
         durationMs: result.durationMs,
         error: result.error,
-        linkedProfileIds: publicRows.map((profile) => profile.profileId)
+        linkedProfileIds: publicRows.map((profile) => profile.profileId),
+        relaxedCandidate: candidate.source.includes("Only"),
+        metadataPatchApplied: publicRows.some((profile) => {
+          const filename = normalizeDocumentFilename((profile as JsonRecord).filename);
+          return Boolean(buildKnownCorpusPatchFromFilename(filename));
+        })
       });
     } catch (error) {
       errors.push({
@@ -2491,7 +2766,7 @@ export async function GET() {
       primaryIntention:
         "string; canonical meaning: IPR as Intenzione Primaria Radicale saved from the chat",
       selectedMessageIds: "string[]",
-      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO, runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE and runtimeState is stored legacy-safe before database insert; v2.2 adds document-aware idempotency so a new active TEXT_READY document creates or reuses only a document-scoped reusable memory, not a previous thread memory",
+      messages: "optional message snapshots to persist before save; createdAt is normalized to ISO, runtimeDecision is normalized to ALLOW/BLOCK/ESCALATE and runtimeState is stored legacy-safe before database insert; v2.2 adds document-aware idempotency so a new active TEXT_READY document creates or reuses only a document-scoped reusable memory, not a previous thread memory; v2.5 relaxes document profile linking from ephemeral FILE-* ids to stable filename/profile/hash anchors and canonicalizes the V5 Portale profile when filename proves the corpus volume",
       saveRaw: "boolean; default false",
       saveSynthesis: "boolean; default true",
       reusableInPrompt: "boolean; default true"
