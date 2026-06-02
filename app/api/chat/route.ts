@@ -132,6 +132,19 @@ type PublicFileMode =
   | "REJECTED"
   | "UNKNOWN";
 
+type PublicDocumentOutlineSnapshot = {
+  outlineStatus?: string;
+  partsDetected?: number;
+  chaptersDetected?: number;
+  appendicesDetected?: number;
+  firstSectionDetected?: string | null;
+  lastSectionDetected?: string | null;
+  lastAppendixDetected?: string | null;
+  boundaryDetected?: boolean | null;
+  conclusionDetected?: boolean | null;
+  entries?: JsonValue;
+};
+
 type PublicFileSnapshot = {
   id?: string;
   name: string;
@@ -145,6 +158,22 @@ type PublicFileSnapshot = {
   reason: string;
   role: string;
   textLength: number;
+  fullTextLength?: number;
+  promptTextLength?: number;
+  textSourceKind?: string;
+  textCoverageStatus?: string;
+  fullDocumentCoverage?: boolean;
+  fullDocumentCoverageReason?: string;
+  longDocumentMode?: string;
+  documentChunkCount?: number;
+  documentChunksPersisted?: boolean | null;
+  documentChunksPersistedCount?: number | null;
+  documentChunkPersistenceStatus?: string | null;
+  documentOutline?: PublicDocumentOutlineSnapshot;
+  documentProfileId?: string | null;
+  documentProfileStatus?: string | null;
+  documentProfileHash?: string | null;
+  documentProfileReason?: string | null;
   promptReady: boolean;
   preview?: string;
   text?: string;
@@ -605,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -812,18 +841,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const message = normalizeUserMessage(body, incomingMessages);
   const files = resolveRuntimeFilesForChat(body.files, sessionId);
   const fileIngestionRequested = isFileIngestionQuestion(message, files);
-  const runtimeStatusTableRequested = isRuntimeStatusTableQuestion(message);
-  const runtimeDiagnosticsRequested = isRuntimeDiagnosticsQuestion(message);
+  const fullDocumentCoverageAuditRequested = isFullDocumentCoverageAuditQuestion(message);
+  const runtimeStatusTableRequested =
+    !fullDocumentCoverageAuditRequested && isRuntimeStatusTableQuestion(message);
+  const runtimeDiagnosticsRequested =
+    !fullDocumentCoverageAuditRequested && isRuntimeDiagnosticsQuestion(message);
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
-  const runtimeMemoryBlockDiagnosticRequested = isRuntimeMemoryBlockDiagnosticQuestion(message);
+  const runtimeMemoryBlockDiagnosticRequested =
+    !fullDocumentCoverageAuditRequested && isRuntimeMemoryBlockDiagnosticQuestion(message);
   const matrixStrategicSynthesisRequested =
-    !runtimeMemoryBlockDiagnosticRequested && isMatrixIVStrategicSynthesisQuestion(message);
-  const documentMemoryRecallRequested =
+    !fullDocumentCoverageAuditRequested &&
     !runtimeMemoryBlockDiagnosticRequested &&
-    !matrixStrategicSynthesisRequested &&
-    isCyberneticDocumentMemoryRecallQuestion(message);
+    isMatrixIVStrategicSynthesisQuestion(message);
+  const documentMemoryRecallRequested =
+    fullDocumentCoverageAuditRequested ||
+    (!runtimeMemoryBlockDiagnosticRequested &&
+      !matrixStrategicSynthesisRequested &&
+      isCyberneticDocumentMemoryRecallQuestion(message));
   const selfPilotProjectScopeBridgeRequested =
     isSelfPilotProjectScopeBridgeQuestion({
       message,
@@ -870,10 +906,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const hardNoSavePersistenceRequested = isHardNoSavePersistenceQuestion(message);
   const recallNoSaveBoundaryRequested = memoryChainRouteRequested && hardNoSavePersistenceRequested;
   const noSavePersistenceRequested =
-    !runtimeMemoryBlockDiagnosticRequested &&
-    !memoryChainRouteRequested &&
-    hardNoSavePersistenceRequested;
-  const runtimeMemoryWriteSuppressed = hardNoSavePersistenceRequested;
+    fullDocumentCoverageAuditRequested ||
+    (!runtimeMemoryBlockDiagnosticRequested &&
+      !memoryChainRouteRequested &&
+      hardNoSavePersistenceRequested);
+  const runtimeMemoryWriteSuppressed =
+    fullDocumentCoverageAuditRequested || hardNoSavePersistenceRequested;
   const semanticMemoryRouteSuppressed =
     runtimeMemoryWriteSuppressed ||
     memoryChainRouteRequested ||
@@ -1002,8 +1040,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         sessionId,
         message,
         files,
-        limit: 6,
-        promptMaxChars: 5000
+        limit: fullDocumentCoverageAuditRequested ? 12 : 6,
+        promptMaxChars: fullDocumentCoverageAuditRequested ? 0 : 5000
       })
     : null;
   iprRecall = bridgeIprRecallFromDocumentProfileRecall({
@@ -1041,6 +1079,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryRegistrationRequested,
     memoryRecoveryRequested,
     runtimeMemoryBlockDiagnosticRequested,
+    fullDocumentCoverageAuditRequested,
     matrixStrategicSynthesisRequested,
     apiSdkB2GPresentationRequested,
     iprRecallRequested,
@@ -1109,6 +1148,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (fullDocumentCoverageAuditRequested) {
+    answer = buildFullDocumentCoverageAuditAnswer({
+      message,
+      files,
+      documentProfileRecall,
+      documentMemoryRecallRequested,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (runtimeMemoryBlockDiagnosticRequested) {
@@ -1549,7 +1601,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     refused: policy.refused,
     limited: policy.limited,
     failClosed: policy.failClosed,
-    fileIngestion: buildFileIngestionSummary(files)
+    fileIngestion: buildFileIngestionSummary(files),
+    fullDocumentCoverageAuditRequested
   };
 
 
@@ -1582,6 +1635,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         })
       : memoryRecoveryRequested
         ? buildMemoryRecoveryAnswer(memory)
+        : fullDocumentCoverageAuditRequested
+        ? safeAnswer
         : runtimeMemoryBlockDiagnosticRequested
         ? safeAnswer
         : matrixStrategicSynthesisRequested
@@ -1680,6 +1735,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               selfPilotProjectScopeBridgeRequested,
               selfPilotProjectScopeBridgeApplied,
               routeRevisionGuardRequested,
+              fullDocumentCoverageAuditRequested,
               rawHandoff,
               documentProfileRecall,
               documentRecallProjectContext: documentRecallRuntimeScope.projectContext,
@@ -2494,6 +2550,16 @@ function buildSystemPrompt(
           status: file.status,
           mode: file.mode,
           textLength: file.textLength,
+          fullTextLength: file.fullTextLength ?? file.textLength,
+          promptTextLength: file.promptTextLength ?? getPromptTextForFile(file).length,
+          textCoverageStatus: file.textCoverageStatus ?? "UNKNOWN",
+          fullDocumentCoverage: file.fullDocumentCoverage ?? false,
+          longDocumentMode: file.longDocumentMode ?? "UNKNOWN",
+          documentChunkCount: file.documentChunkCount ?? 0,
+          documentChunksPersisted: file.documentChunksPersisted ?? null,
+          documentChunksPersistedCount: file.documentChunksPersistedCount ?? null,
+          documentOutline: file.documentOutline ?? null,
+          documentProfileId: file.documentProfileId ?? null,
           promptReady: file.promptReady,
           hasPreview: Boolean(file.preview),
           hasText: Boolean(getPromptTextForFile(file).trim()),
@@ -4817,6 +4883,49 @@ function isRuntimeMemoryBlockDiagnosticQuestion(message: string): boolean {
 }
 
 
+function isFullDocumentCoverageAuditQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  const hasExplicitAuditSignal =
+    normalized.includes("full_document_coverage_audit") ||
+    normalized.includes("full_document_ingestion_ready") ||
+    normalized.includes("full document coverage audit") ||
+    normalized.includes("full document ingestion") ||
+    normalized.includes("documento letto integralmente") ||
+    normalized.includes("copertura integrale") ||
+    normalized.includes("lettura integrale") ||
+    normalized.includes("text_ready_full") ||
+    normalized.includes("long_document_chunked_ready") ||
+    normalized.includes("documentchunkspersisted") ||
+    normalized.includes("document chunks persisted") ||
+    normalized.includes("outline status") ||
+    normalized.includes("outlinestatus") ||
+    normalized.includes("glossaryentriesdetected") ||
+    normalized.includes("lastappendixdetected");
+
+  const targetsActiveFile =
+    normalized.includes("file attivo") ||
+    normalized.includes("activefilename") ||
+    normalized.includes("active filename") ||
+    normalized.includes(".txt") ||
+    normalized.includes("corpus") ||
+    normalized.includes("matrix") ||
+    normalized.includes("hbce");
+
+  const excludesRuntimeMemoryBlock =
+    !normalized.includes("runtime_memory_block_diagnostic_test") &&
+    !normalized.includes("runtime_memory_block_ready") &&
+    !normalized.includes("memorykind=runtime_memory");
+
+  return hasExplicitAuditSignal && targetsActiveFile && excludesRuntimeMemoryBlock;
+}
+
+
+
 function buildRuntimeMemoryBlockDiagnosticAnswer(args: {
   handoff: HandoffResolution;
   memory: RuntimeMemoryState;
@@ -4902,6 +5011,524 @@ function isMatrixIVStrategicSynthesisQuestion(message: string): boolean {
     hasMatrixSeriesSignal &&
     (hasStrategicDocumentSignal || hasMatrixProgressionSignal || rejectsApiProductCard)
   );
+}
+
+
+
+type FullDocumentCoverageAuditDiagnostic = {
+  ready: boolean;
+  activeFilename: string;
+  runtimeFileHash: string;
+  expectedSourceHash: string;
+  hashMatchesExpected: boolean | null;
+  textCoverageStatus: string;
+  fullDocumentCoverage: boolean;
+  longDocumentMode: string;
+  documentChunkCount: number;
+  documentChunksPersisted: boolean;
+  documentChunksPersistedCount: number;
+  outlineStatus: string;
+  docFamily: string;
+  volume: string;
+  title: string;
+  documentKind: string;
+  canonicalAxis: string;
+  majorSectionsDetected: number;
+  subsectionsDetected: number;
+  appendicesDetected: number;
+  glossaryDetected: boolean;
+  glossaryEntriesDetected: number;
+  firstSectionDetected: string;
+  lastSectionDetected: string;
+  lastAppendixDetected: string;
+  truncationDetected: boolean;
+  truncationReason: string;
+  documentProfileId: string;
+  documentProfileStatus: string;
+  documentProfileRecallRequested: boolean;
+  documentProfileRecallInjected: boolean;
+  linkedProfileCount: number;
+  failReason: string;
+};
+
+function extractExpectedSourceHash(message: string): string {
+  const match =
+    message.match(/expectedSourceHash\s*=\s*([a-f0-9]{64})/i) ||
+    message.match(/expected\s+source\s+hash\s*[:=]\s*([a-f0-9]{64})/i);
+
+  return match?.[1]?.toLowerCase() || "NOT_PROVIDED";
+}
+
+function selectActiveAuditFile(message: string, files: PublicFileSnapshot[]): PublicFileSnapshot | null {
+  if (files.length === 0) {
+    return null;
+  }
+
+  const normalizedMessage = normalizeText(message);
+  const exactFilename = files.find((file) => normalizeText(file.name) && normalizedMessage.includes(normalizeText(file.name)));
+
+  if (exactFilename) {
+    return exactFilename;
+  }
+
+  const promptReady = files.find((file) => file.promptReady && getPromptTextForFile(file).trim().length > 0);
+
+  return promptReady || files[0] || null;
+}
+
+function buildOutlineFromRuntimeText(text: string): PublicDocumentOutlineSnapshot & {
+  majorSectionsDetected: number;
+  subsectionsDetected: number;
+  glossaryEntriesDetected: number;
+} {
+  const bodyStartCandidates = [
+    text.indexOf("\nPREMESSA"),
+    text.indexOf("\r\nPREMESSA"),
+    text.indexOf("\n0. ATTO DI APERTURA"),
+    text.indexOf("\r\n0. ATTO DI APERTURA")
+  ].filter((index) => index >= 0);
+  const bodyStart = bodyStartCandidates.length > 0 ? Math.min(...bodyStartCandidates) : 0;
+  const body = text.slice(bodyStart);
+  const lines = body.split(/\r?\n/).map((line) => line.trim());
+
+  const majorSections: string[] = [];
+  const subsections: string[] = [];
+
+  for (const line of lines) {
+    if (/^\d+\.\d+\s+/.test(line)) {
+      subsections.push(line);
+      continue;
+    }
+
+    if (/^\d+\.\s+/.test(line)) {
+      majorSections.push(line);
+    }
+  }
+
+  const appendices = subsections.filter((heading) => heading.startsWith("15."));
+  const glossaryEntriesDetected = (body.match(/^\d+\s+\|\s+/gm) || []).length;
+  const firstSectionDetected = majorSections[0] || "";
+  const lastSectionDetected = majorSections[majorSections.length - 1] || "";
+  const lastAppendixDetected = appendices[appendices.length - 1] || "";
+
+  return {
+    outlineStatus:
+      majorSections.length > 0 && (lastSectionDetected || lastAppendixDetected) ? "READY" : "NOT_READY",
+    partsDetected: majorSections.length,
+    chaptersDetected: subsections.length,
+    appendicesDetected: appendices.length,
+    firstSectionDetected,
+    lastSectionDetected,
+    lastAppendixDetected,
+    boundaryDetected:
+      normalizeText(body).includes("legalcertification=false") ||
+      normalizeText(body).includes("opc=technical proof receipt only"),
+    conclusionDetected: normalizeText(body).includes("formula canonica finale"),
+    majorSectionsDetected: majorSections.length,
+    subsectionsDetected: subsections.length,
+    glossaryEntriesDetected
+  };
+}
+
+function stringFromJsonObject(object: JsonObject, keys: string[]): string | undefined {
+  return firstStringFromSources([object], keys) || undefined;
+}
+
+function numberFromJsonObject(object: JsonObject, keys: string[], fallback: number): number {
+  for (const key of keys) {
+    const value = numberFromUnknown(object[key]);
+
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return Math.max(0, Math.floor(value));
+    }
+  }
+
+  return fallback;
+}
+
+function booleanFromJsonObject(object: JsonObject, keys: string[]): boolean | null {
+  for (const key of keys) {
+    const value = booleanFromUnknown(object[key]);
+
+    if (value !== null) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function normalizeRuntimeDocumentOutline(object: JsonObject, text: string): PublicDocumentOutlineSnapshot {
+  const outlineObject = asJsonObject(object.documentOutline) || asJsonObject(object.outline) || null;
+  const inferred = buildOutlineFromRuntimeText(text);
+
+  if (!outlineObject) {
+    return inferred;
+  }
+
+  return {
+    outlineStatus: stringFromJsonObject(outlineObject, ["outlineStatus", "status"]) || inferred.outlineStatus,
+    partsDetected: numberFromJsonObject(outlineObject, ["partsDetected", "majorSectionsDetected"], inferred.partsDetected ?? inferred.majorSectionsDetected),
+    chaptersDetected: numberFromJsonObject(outlineObject, ["chaptersDetected", "subsectionsDetected"], inferred.chaptersDetected ?? inferred.subsectionsDetected),
+    appendicesDetected: numberFromJsonObject(outlineObject, ["appendicesDetected"], inferred.appendicesDetected ?? 0),
+    firstSectionDetected: stringFromJsonObject(outlineObject, ["firstSectionDetected"]) ?? inferred.firstSectionDetected ?? null,
+    lastSectionDetected: stringFromJsonObject(outlineObject, ["lastSectionDetected"]) ?? inferred.lastSectionDetected ?? null,
+    lastAppendixDetected: stringFromJsonObject(outlineObject, ["lastAppendixDetected"]) ?? inferred.lastAppendixDetected ?? null,
+    boundaryDetected: booleanFromJsonObject(outlineObject, ["boundaryDetected"]) ?? inferred.boundaryDetected ?? null,
+    conclusionDetected: booleanFromJsonObject(outlineObject, ["conclusionDetected"]) ?? inferred.conclusionDetected ?? null,
+    entries: outlineObject.entries as JsonValue | undefined
+  };
+}
+
+function inferDocFamilyFromAuditFile(file: PublicFileSnapshot, text: string): string {
+  const normalized = normalizeText(`${file.name}\n${text.slice(0, 20000)}`);
+
+  if (normalized.includes("corpus esoterologia ermetica")) {
+    return "CORPUS_ESOTEROLOGIA_ERMETICA";
+  }
+
+  if (normalized.includes("hbce ecosistema ai")) {
+    return "HBCE_ECOSYSTEM_AI";
+  }
+
+  if (normalized.includes("matrix")) {
+    return "MATRIX";
+  }
+
+  return "UNKNOWN";
+}
+
+function inferVolumeFromAuditFile(file: PublicFileSnapshot, text: string): string {
+  const normalized = normalizeText(`${file.name}\n${text.slice(0, 20000)}`);
+
+  if (normalized.includes("volume i") || normalized.includes("_v1") || normalized.includes(" v1")) {
+    return "V1";
+  }
+
+  if (normalized.includes("volume ii") || normalized.includes("_v2") || normalized.includes(" v2")) {
+    return "V2";
+  }
+
+  if (normalized.includes("volume iii") || normalized.includes("_v3") || normalized.includes(" v3")) {
+    return "V3";
+  }
+
+  if (normalized.includes("volume iv") || normalized.includes("_v4") || normalized.includes(" v4")) {
+    return "V4";
+  }
+
+  if (normalized.includes("volume v") || normalized.includes("_v5") || normalized.includes(" v5")) {
+    return "V5";
+  }
+
+  return "UNKNOWN";
+}
+
+function inferTitleFromAuditFile(file: PublicFileSnapshot, text: string): string {
+  const normalized = normalizeText(`${file.name}\n${text.slice(0, 12000)}`);
+
+  if (normalized.includes("esoterologia")) {
+    return "ESOTEROLOGIA";
+  }
+
+  if (normalized.includes("hbce ecosistema ai")) {
+    return "HBCE ECOSISTEMA AI";
+  }
+
+  if (normalized.includes("matrix")) {
+    return "MATRIX";
+  }
+
+  return "UNKNOWN";
+}
+
+function inferCanonicalAxisFromAuditFile(file: PublicFileSnapshot, text: string): string {
+  const normalized = normalizeText(`${file.name}\n${text.slice(0, 40000)}`);
+
+  if (
+    normalized.includes("decisione") &&
+    normalized.includes("costo") &&
+    normalized.includes("traccia") &&
+    normalized.includes("tempo")
+  ) {
+    return "Decisione · Costo · Traccia · Tempo";
+  }
+
+  if (
+    normalized.includes("ai governance") ||
+    normalized.includes("joker-c2") ||
+    normalized.includes("matrix")
+  ) {
+    return "AI governance · IPR · EVT · OPC · MATRIX · AI JOKER-C2";
+  }
+
+  return "UNKNOWN";
+}
+
+function documentProfileRecallLinkedProfileCount(documentProfileRecall: DocumentProfileRecall | null): number {
+  const recallObject = documentProfileRecall as unknown as JsonObject | null;
+
+  if (!recallObject) {
+    return 0;
+  }
+
+  const direct = numberFromUnknown(recallObject.linkedProfileCount);
+
+  if (typeof direct === "number" && Number.isFinite(direct)) {
+    return Math.max(0, Math.floor(direct));
+  }
+
+  const profiles = Array.isArray(recallObject.profiles)
+    ? recallObject.profiles
+    : Array.isArray(recallObject.documentProfiles)
+      ? recallObject.documentProfiles
+      : Array.isArray(recallObject.items)
+        ? recallObject.items
+        : null;
+
+  return profiles ? profiles.length : 0;
+}
+
+function buildFullDocumentCoverageAuditDiagnostic(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  documentMemoryRecallRequested: boolean;
+}): FullDocumentCoverageAuditDiagnostic {
+  const file = selectActiveAuditFile(args.message, args.files);
+  const expectedSourceHash = extractExpectedSourceHash(args.message);
+
+  if (!file) {
+    return {
+      ready: false,
+      activeFilename: "NO_ACTIVE_FILE",
+      runtimeFileHash: "NO_FILE_HASH",
+      expectedSourceHash,
+      hashMatchesExpected: expectedSourceHash === "NOT_PROVIDED" ? null : false,
+      textCoverageStatus: "NO_FILE",
+      fullDocumentCoverage: false,
+      longDocumentMode: "NO_FILE",
+      documentChunkCount: 0,
+      documentChunksPersisted: false,
+      documentChunksPersistedCount: 0,
+      outlineStatus: "NO_FILE",
+      docFamily: "UNKNOWN",
+      volume: "UNKNOWN",
+      title: "UNKNOWN",
+      documentKind: "UNKNOWN",
+      canonicalAxis: "UNKNOWN",
+      majorSectionsDetected: 0,
+      subsectionsDetected: 0,
+      appendicesDetected: 0,
+      glossaryDetected: false,
+      glossaryEntriesDetected: 0,
+      firstSectionDetected: "NONE",
+      lastSectionDetected: "NONE",
+      lastAppendixDetected: "NONE",
+      truncationDetected: true,
+      truncationReason: "NO_ACTIVE_FILE_AVAILABLE_TO_CHAT_ROUTE",
+      documentProfileId: "NO_DOCUMENT_PROFILE_ID",
+      documentProfileStatus: "NO_DOCUMENT_PROFILE_STATUS",
+      documentProfileRecallRequested: args.documentMemoryRecallRequested,
+      documentProfileRecallInjected: false,
+      linkedProfileCount: 0,
+      failReason: "NO_ACTIVE_FILE"
+    };
+  }
+
+  const text = getPromptTextForFile(file);
+  const inferredOutline = buildOutlineFromRuntimeText(text);
+  const outline = file.documentOutline || inferredOutline;
+  const runtimeFileHash = file.fileHash || file.hash || sha256({ name: file.name, text });
+  const hashMatchesExpected =
+    expectedSourceHash === "NOT_PROVIDED" ? null : normalizeText(runtimeFileHash) === normalizeText(expectedSourceHash);
+
+  const fullTextLength = file.fullTextLength ?? text.length;
+  const promptTextLength = file.promptTextLength ?? text.length;
+  const fullDocumentCoverage =
+    file.fullDocumentCoverage === true ||
+    Boolean(
+      text.trim().length > 0 &&
+      outline.lastSectionDetected &&
+      outline.lastAppendixDetected &&
+      (outline.chaptersDetected ?? inferredOutline.subsectionsDetected) > 0
+    );
+  const textCoverageStatus =
+    file.textCoverageStatus ||
+    (fullDocumentCoverage ? "TEXT_READY_FULL" : text.trim().length > 0 ? "TEXT_READY_PARTIAL" : "TEXT_PREVIEW_ONLY");
+  const longDocumentMode =
+    file.longDocumentMode ||
+    ((file.documentChunkCount ?? 0) > 0 ? "CHUNKED_FULL_TEXT" : fullDocumentCoverage ? "FULL_TEXT_IN_RUNTIME" : "PREVIEW_OR_PARTIAL_TEXT");
+  const documentChunkCount = file.documentChunkCount ?? 0;
+  const documentChunksPersisted = file.documentChunksPersisted === true;
+  const documentChunksPersistedCount = file.documentChunksPersistedCount ?? 0;
+  const outlineStatus = outline.outlineStatus || inferredOutline.outlineStatus || "NOT_READY";
+  const majorSectionsDetected = outline.partsDetected ?? inferredOutline.majorSectionsDetected;
+  const subsectionsDetected = outline.chaptersDetected ?? inferredOutline.subsectionsDetected;
+  const appendicesDetected = outline.appendicesDetected ?? inferredOutline.appendicesDetected ?? 0;
+  const glossaryEntriesDetected = inferredOutline.glossaryEntriesDetected;
+  const truncationDetected =
+    !fullDocumentCoverage ||
+    (fullTextLength > promptTextLength && promptTextLength > 0) ||
+    textCoverageStatus === "TEXT_READY_PARTIAL" ||
+    textCoverageStatus === "TEXT_PREVIEW_ONLY";
+  const truncationReason = truncationDetected
+    ? file.fullDocumentCoverageReason ||
+      (fullTextLength > promptTextLength
+        ? "PROMPT_TEXT_LENGTH_SMALLER_THAN_FULL_TEXT_LENGTH"
+        : "FULL_DOCUMENT_COVERAGE_NOT_PROVEN")
+    : "NONE";
+
+  const recallObject = args.documentProfileRecall as unknown as JsonObject | null;
+  const documentProfileRecallInjected = Boolean(recallObject && booleanFromUnknown(recallObject.injected) === true);
+  const linkedProfileCount = documentProfileRecallLinkedProfileCount(args.documentProfileRecall);
+  const documentProfileId =
+    file.documentProfileId ||
+    stringPath(recallObject || {}, "profileId", "") ||
+    stringPath(recallObject || {}, "documentProfileId", "") ||
+    "NO_DOCUMENT_PROFILE_ID";
+  const documentProfileStatus =
+    file.documentProfileStatus ||
+    stringPath(recallObject || {}, "status", "") ||
+    "NO_DOCUMENT_PROFILE_STATUS";
+
+  const ready =
+    fullDocumentCoverage &&
+    textCoverageStatus === "TEXT_READY_FULL" &&
+    (longDocumentMode === "CHUNKED_FULL_TEXT" || documentChunkCount > 0) &&
+    documentChunksPersisted &&
+    documentChunksPersistedCount >= Math.max(1, documentChunkCount) &&
+    outlineStatus === "READY" &&
+    !truncationDetected;
+
+  const failReasons: string[] = [];
+
+  if (!fullDocumentCoverage) {
+    failReasons.push("FULL_DOCUMENT_COVERAGE_FALSE");
+  }
+
+  if (textCoverageStatus !== "TEXT_READY_FULL") {
+    failReasons.push("TEXT_COVERAGE_STATUS_NOT_FULL");
+  }
+
+  if (!(longDocumentMode === "CHUNKED_FULL_TEXT" || documentChunkCount > 0)) {
+    failReasons.push("LONG_DOCUMENT_CHUNKED_MODE_NOT_CONFIRMED");
+  }
+
+  if (!documentChunksPersisted) {
+    failReasons.push("DOCUMENT_CHUNKS_NOT_PERSISTED");
+  }
+
+  if (outlineStatus !== "READY") {
+    failReasons.push("DOCUMENT_OUTLINE_NOT_READY");
+  }
+
+  if (truncationDetected) {
+    failReasons.push("TRUNCATION_OR_PARTIAL_COVERAGE_DETECTED");
+  }
+
+  if (expectedSourceHash !== "NOT_PROVIDED" && hashMatchesExpected !== true) {
+    failReasons.push("RUNTIME_FILE_HASH_DOES_NOT_MATCH_EXPECTED_SOURCE_HASH");
+  }
+
+  return {
+    ready,
+    activeFilename: file.name,
+    runtimeFileHash,
+    expectedSourceHash,
+    hashMatchesExpected,
+    textCoverageStatus,
+    fullDocumentCoverage,
+    longDocumentMode,
+    documentChunkCount,
+    documentChunksPersisted,
+    documentChunksPersistedCount,
+    outlineStatus,
+    docFamily: inferDocFamilyFromAuditFile(file, text),
+    volume: inferVolumeFromAuditFile(file, text),
+    title: inferTitleFromAuditFile(file, text),
+    documentKind: "FOUNDATIONAL_VOLUME",
+    canonicalAxis: inferCanonicalAxisFromAuditFile(file, text),
+    majorSectionsDetected,
+    subsectionsDetected,
+    appendicesDetected,
+    glossaryDetected: glossaryEntriesDetected > 0,
+    glossaryEntriesDetected,
+    firstSectionDetected: String(outline.firstSectionDetected || inferredOutline.firstSectionDetected || "NONE"),
+    lastSectionDetected: String(outline.lastSectionDetected || inferredOutline.lastSectionDetected || "NONE"),
+    lastAppendixDetected: String(outline.lastAppendixDetected || inferredOutline.lastAppendixDetected || "NONE"),
+    truncationDetected,
+    truncationReason,
+    documentProfileId,
+    documentProfileStatus,
+    documentProfileRecallRequested: args.documentMemoryRecallRequested,
+    documentProfileRecallInjected,
+    linkedProfileCount,
+    failReason: ready ? "NONE" : failReasons.join("|") || "UNKNOWN"
+  };
+}
+
+function buildFullDocumentCoverageAuditAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  documentMemoryRecallRequested: boolean;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const diagnostic = buildFullDocumentCoverageAuditDiagnostic({
+    message: args.message,
+    files: args.files,
+    documentProfileRecall: args.documentProfileRecall,
+    documentMemoryRecallRequested: args.documentMemoryRecallRequested
+  });
+
+  const header = diagnostic.ready
+    ? "FULL_DOCUMENT_INGESTION_READY"
+    : "FULL_DOCUMENT_COVERAGE_AUDIT_FAIL";
+
+  return [
+    header,
+    "activeFilename=" + diagnostic.activeFilename,
+    "runtimeFileHash=" + diagnostic.runtimeFileHash,
+    "expectedSourceHash=" + diagnostic.expectedSourceHash,
+    "hashMatchesExpected=" + String(diagnostic.hashMatchesExpected ?? "NOT_CHECKED"),
+    "textCoverageStatus=" + diagnostic.textCoverageStatus,
+    "fullDocumentCoverage=" + String(diagnostic.fullDocumentCoverage),
+    "longDocumentMode=" + diagnostic.longDocumentMode,
+    "documentChunkCount=" + String(diagnostic.documentChunkCount),
+    "documentChunksPersisted=" + String(diagnostic.documentChunksPersisted),
+    "documentChunksPersistedCount=" + String(diagnostic.documentChunksPersistedCount),
+    "outlineStatus=" + diagnostic.outlineStatus,
+    "docFamily=" + diagnostic.docFamily,
+    "volume=" + diagnostic.volume,
+    "title=" + diagnostic.title,
+    "documentKind=" + diagnostic.documentKind,
+    "canonicalAxis=" + diagnostic.canonicalAxis,
+    "majorSectionsDetected=" + String(diagnostic.majorSectionsDetected),
+    "subsectionsDetected=" + String(diagnostic.subsectionsDetected),
+    "appendicesDetected=" + String(diagnostic.appendicesDetected),
+    "glossaryDetected=" + String(diagnostic.glossaryDetected),
+    "glossaryEntriesDetected=" + String(diagnostic.glossaryEntriesDetected),
+    "firstSectionDetected=" + diagnostic.firstSectionDetected,
+    "lastSectionDetected=" + diagnostic.lastSectionDetected,
+    "lastAppendixDetected=" + diagnostic.lastAppendixDetected,
+    "truncationDetected=" + String(diagnostic.truncationDetected),
+    "truncationReason=" + diagnostic.truncationReason,
+    "documentProfileRecallRequested=" + String(diagnostic.documentProfileRecallRequested),
+    "documentProfileRecallInjected=" + String(diagnostic.documentProfileRecallInjected),
+    "linkedProfileCount=" + String(diagnostic.linkedProfileCount),
+    "documentProfileId=" + diagnostic.documentProfileId,
+    "documentProfileStatus=" + diagnostic.documentProfileStatus,
+    "noSaveDiagnosticMode=true",
+    "runtimeMemoryWriteSuppressed=true",
+    "newReusableMemoryAllowed=false",
+    "failReason=" + diagnostic.failReason,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
 }
 
 
@@ -5610,6 +6237,18 @@ function buildUserPrompt(message: string, files: PublicFileSnapshot[]): string {
           "mode: " + file.mode,
           "mimeType: " + file.mimeType,
           "textLength: " + String(file.textLength),
+          "fullTextLength: " + String(file.fullTextLength ?? file.textLength),
+          "promptTextLength: " + String(file.promptTextLength ?? text.length),
+          "textCoverageStatus: " + String(file.textCoverageStatus ?? "UNKNOWN"),
+          "fullDocumentCoverage: " + String(file.fullDocumentCoverage ?? false),
+          "longDocumentMode: " + String(file.longDocumentMode ?? "UNKNOWN"),
+          "documentChunkCount: " + String(file.documentChunkCount ?? 0),
+          "documentChunksPersisted: " + String(file.documentChunksPersisted ?? null),
+          "documentChunksPersistedCount: " + String(file.documentChunksPersistedCount ?? 0),
+          "outlineStatus: " + String(file.documentOutline?.outlineStatus ?? "UNKNOWN"),
+          "lastSectionDetected: " + String(file.documentOutline?.lastSectionDetected ?? "UNKNOWN"),
+          "lastAppendixDetected: " + String(file.documentOutline?.lastAppendixDetected ?? "UNKNOWN"),
+          "documentProfileId: " + String(file.documentProfileId ?? "NO_DOCUMENT_PROFILE_ID"),
           "hash: " + file.hash,
           "reason: " + file.reason,
           "",
@@ -6325,6 +6964,7 @@ function buildRuntimeDiagnosticsAnswer(args: {
   selfPilotProjectScopeBridgeRequested?: boolean;
   selfPilotProjectScopeBridgeApplied?: boolean;
   routeRevisionGuardRequested?: boolean;
+  fullDocumentCoverageAuditRequested?: boolean;
   rawHandoff?: HandoffResolution;
   documentProfileRecall?: DocumentProfileRecall | null;
   documentRecallProjectContext?: DocumentRecallProjectContext;
@@ -6386,6 +7026,7 @@ function buildRuntimeDiagnosticsAnswer(args: {
     "- CHAT_ROUTE_REVISION: `" + CHAT_ROUTE_REVISION + "`",
     "- Route revision guard requested: `" + String(args.routeRevisionGuardRequested === true) + "`",
     "- Document recall branch requested: `" + String(args.documentMemoryRecallRequested === true) + "`",
+    "- Full document coverage audit requested: `" + String(args.fullDocumentCoverageAuditRequested === true) + "`",
     "",
     "## IPR",
     "- Runtime entity: `" + RUNTIME_ENTITY + "`",
@@ -10913,6 +11554,48 @@ function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
     const promptReady = isPromptReadyFileStatus(status) && content.trim().length > 0;
     const preview = content ? truncate(content, 2000) : undefined;
 
+    const fullTextLength = normalizePositiveInteger(
+      numberFromUnknown(object.fullTextLength) ?? numberFromUnknown(object.originalTextLength) ?? textLength,
+      textLength
+    );
+    const promptTextLength = normalizePositiveInteger(
+      numberFromUnknown(object.promptTextLength) ?? (content.length > 0 ? content.length : textLength),
+      content.length > 0 ? content.length : textLength
+    );
+    const textCoverageStatus =
+      firstStringFromSources([object], ["textCoverageStatus", "coverageStatus"]) ||
+      (content.length > 0 && fullTextLength <= promptTextLength ? "TEXT_READY_FULL" : "UNKNOWN");
+    const fullDocumentCoverage =
+      booleanFromUnknown(object.fullDocumentCoverage) ??
+      (textCoverageStatus === "TEXT_READY_FULL" && content.length > 0 && fullTextLength <= promptTextLength);
+    const longDocumentMode =
+      firstStringFromSources([object], ["longDocumentMode", "documentMode"]) ||
+      (fullDocumentCoverage ? "FULL_TEXT_IN_RUNTIME" : "UNKNOWN");
+    const documentChunkCount = normalizePositiveInteger(
+      numberFromUnknown(object.documentChunkCount) ?? numberFromUnknown(object.chunkCount) ?? 0,
+      0
+    );
+    const documentChunksPersisted = booleanFromUnknown(object.documentChunksPersisted);
+    const documentChunksPersistedCount = normalizePositiveInteger(
+      numberFromUnknown(object.documentChunksPersistedCount) ?? numberFromUnknown(object.persistedDocumentChunks) ?? 0,
+      0
+    );
+    const documentChunkPersistenceStatus =
+      firstStringFromSources([object], ["documentChunkPersistenceStatus", "chunkPersistenceStatus"]) || null;
+    const documentOutline = normalizeRuntimeDocumentOutline(object, content);
+    const documentProfileId =
+      firstStringFromSources([object], ["documentProfileId", "profileId"]) || null;
+    const documentProfileStatus =
+      firstStringFromSources([object], ["documentProfileStatus", "profileStatus"]) || null;
+    const documentProfileHash =
+      firstStringFromSources([object], ["documentProfileHash", "profileHash"]) || null;
+    const documentProfileReason =
+      firstStringFromSources([object], ["documentProfileReason", "profileReason"]) || null;
+    const fullDocumentCoverageReason =
+      firstStringFromSources([object], ["fullDocumentCoverageReason", "coverageReason"]) ||
+      (fullDocumentCoverage ? "FULL_DOCUMENT_COVERAGE_CONFIRMED" : "FULL_DOCUMENT_COVERAGE_NOT_PROVEN");
+    const textSourceKind = firstStringFromSources([object], ["textSourceKind", "textSource"]) || undefined;
+
     files.push({
       id,
       name,
@@ -10926,6 +11609,22 @@ function normalizeFiles(value: JsonValue | undefined): PublicFileSnapshot[] {
       reason,
       role,
       textLength: content.length > 0 ? content.length : textLength,
+      fullTextLength,
+      promptTextLength,
+      textSourceKind,
+      textCoverageStatus,
+      fullDocumentCoverage,
+      fullDocumentCoverageReason,
+      longDocumentMode,
+      documentChunkCount,
+      documentChunksPersisted,
+      documentChunksPersistedCount,
+      documentChunkPersistenceStatus,
+      documentOutline,
+      documentProfileId,
+      documentProfileStatus,
+      documentProfileHash,
+      documentProfileReason,
       promptReady,
       preview,
       text: promptReady ? content : undefined,
@@ -10986,7 +11685,7 @@ function resolveRuntimeFileText(object: JsonObject): string {
     ) || "";
 
   if (directText.trim()) {
-    return directText.slice(0, 120000);
+    return directText;
   }
 
   const data = object.data;
@@ -11000,7 +11699,7 @@ function resolveRuntimeFileText(object: JsonObject): string {
       ) || "";
 
     if (nestedText.trim()) {
-      return nestedText.slice(0, 120000);
+      return nestedText;
     }
   }
 
@@ -11173,6 +11872,10 @@ function buildFileIngestionSummary(files: PublicFileSnapshot[]) {
       (sum, file) => sum + getPromptTextForFile(file).length,
       0
     ),
+    fullDocumentCoverageCount: files.filter((file) => file.fullDocumentCoverage === true).length,
+    partialDocumentCoverageCount: promptReadyFiles.filter((file) => file.fullDocumentCoverage !== true).length,
+    totalDocumentChunks: files.reduce((sum, file) => sum + (file.documentChunkCount ?? 0), 0),
+    persistedDocumentChunks: files.reduce((sum, file) => sum + (file.documentChunksPersistedCount ?? 0), 0),
     files: files.map((file) => ({
       id: file.id,
       name: file.name,
@@ -11180,6 +11883,16 @@ function buildFileIngestionSummary(files: PublicFileSnapshot[]) {
       status: file.status,
       mode: file.mode,
       textLength: getPromptTextForFile(file).length,
+      fullTextLength: file.fullTextLength ?? file.textLength,
+      promptTextLength: file.promptTextLength ?? getPromptTextForFile(file).length,
+      textCoverageStatus: file.textCoverageStatus ?? "UNKNOWN",
+      fullDocumentCoverage: file.fullDocumentCoverage ?? false,
+      longDocumentMode: file.longDocumentMode ?? "UNKNOWN",
+      documentChunkCount: file.documentChunkCount ?? 0,
+      documentChunksPersisted: file.documentChunksPersisted ?? null,
+      documentChunksPersistedCount: file.documentChunksPersistedCount ?? null,
+      documentOutline: file.documentOutline ?? null,
+      documentProfileId: file.documentProfileId ?? null,
       promptReady: file.promptReady,
       hash: file.hash,
       reason: file.reason
