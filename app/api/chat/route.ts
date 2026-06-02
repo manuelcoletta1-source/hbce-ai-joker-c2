@@ -605,7 +605,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -964,7 +964,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     saasContext
   });
   let memory = getOrCreateMemory(sessionId, handoff, t, saasContext);
-  const iprRecall = await resolveIprRecallInjection({
+  let iprRecall = await resolveIprRecallInjection({
     handoff,
     saasContext,
     sessionId,
@@ -985,6 +985,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         promptMaxChars: 5000
       })
     : null;
+  iprRecall = bridgeIprRecallFromDocumentProfileRecall({
+    recall: iprRecall,
+    documentProfileRecall,
+    message,
+    promptMaxChars: noSavePersistenceRequested ? 0 : 7000
+  });
 
 
 
@@ -2953,6 +2959,10 @@ function appendStrictRequestedMemoryFilterSummary(
       ? "REQUESTED_MEMORY_ID_APPLIED"
       : "REQUESTED_MEMORY_ID_NOT_FOUND");
 
+  const recallSourceKinds = Array.from(
+    new Set(recall.items.map((item) => item.sourceKind).filter((item): item is string => Boolean(item)))
+  );
+
   return [
     answer.trim(),
     "",
@@ -2962,10 +2972,96 @@ function appendStrictRequestedMemoryFilterSummary(
     `requestedMemoryIds: ${requestedMemoryIds.join(", ")}`,
     `recallItemsCount: ${String(recall.items.length)}`,
     `memoryIds: ${recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+    `recallSourceKinds: ${recallSourceKinds.join(", ") || "NO_RECALL_SOURCE_KINDS"}`,
     "Boundary: explicit memoryId requests are resolved fail-closed against the requested memory set, not against the whole reusable prompt block.",
     "legalCertification=false",
     "OPC=technical proof receipt only"
   ].join("\n");
+}
+
+
+type DocumentProfileMemoryBridgeArgs = {
+  recall: IprRecallInjection;
+  documentProfileRecall: DocumentProfileRecall | null;
+  message: string;
+  promptMaxChars: number;
+};
+
+function bridgeIprRecallFromDocumentProfileRecall(args: DocumentProfileMemoryBridgeArgs): IprRecallInjection {
+  const requestedMemoryIds = extractRequestedIprMemoryIds(args.message);
+
+  if (!requestedMemoryIds.length) {
+    return args.recall;
+  }
+
+  if (args.recall.items.length > 0) {
+    return args.recall;
+  }
+
+  const documentProfileRecall = args.documentProfileRecall;
+
+  if (!documentProfileRecall?.injected || documentProfileRecall.failClosed) {
+    return args.recall;
+  }
+
+  const requestedMemoryOrder = new Map(
+    requestedMemoryIds.map((memoryId, index) => [normalizeText(memoryId), index])
+  );
+
+  const bridgeProfile = documentProfileRecall.items
+    .filter((item) => item.memoryId && requestedMemoryOrder.has(normalizeText(item.memoryId)))
+    .sort((a, b) => {
+      const aIndex = requestedMemoryOrder.get(normalizeText(a.memoryId || "")) ?? 999999;
+      const bIndex = requestedMemoryOrder.get(normalizeText(b.memoryId || "")) ?? 999999;
+
+      if (aIndex !== bIndex) {
+        return aIndex - bIndex;
+      }
+
+      return (b.recallScore ?? 0) - (a.recallScore ?? 0);
+    })[0];
+
+  if (!bridgeProfile?.memoryId) {
+    return args.recall;
+  }
+
+  const bridgeItem: IprRecallInjectionItem = {
+    memoryId: bridgeProfile.memoryId,
+    memoryTitle: bridgeProfile.title ? `IPR · ${bridgeProfile.title}` : "IPR · Document profile memory bridge",
+    memorySummary:
+      bridgeProfile.summary ||
+      [bridgeProfile.title, bridgeProfile.volume, bridgeProfile.filename].filter(Boolean).join(" · ") ||
+      "Requested IPR memory resolved through linked document profile.",
+    classification: "USER_SELECTED_CHAT_MEMORY",
+    quality: bridgeProfile.quality || "CANONICAL",
+    memoryKind: "DOCUMENT_PROFILE_MEMORY",
+    memoryStatus: "ACTIVE",
+    sourceKind: "DOCUMENT_PROFILE_MEMORY_BRIDGE",
+    sourceThreadId: null,
+    sourceSavedChatId: bridgeProfile.sourceSavedChatId,
+    sessionId: args.recall.sessionId,
+    lastEvtId: bridgeProfile.lastEvtId,
+    lastOpcProofId: bridgeProfile.lastOpcProofId,
+    lastOpcChainHash: null,
+    updatedAt: bridgeProfile.updatedAt,
+    recallScore: 100000,
+    legalCertification: false
+  };
+
+  const items = [bridgeItem];
+  const memoryIds = [bridgeProfile.memoryId];
+
+  return {
+    ...args.recall,
+    injected: true,
+    status: "IPR_RECALL_INJECTED",
+    items,
+    memoryIds,
+    strictRequestedMemoryOnly: true,
+    strictRequestedMemoryFilter: "REQUESTED_MEMORY_ID_APPLIED",
+    promptBlock: buildIprRecallPromptBlock(items, args.promptMaxChars),
+    error: null
+  };
 }
 
 
