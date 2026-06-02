@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   ensureHbceDatabaseReady,
   listDocumentProfilesFromDatabase,
+  queryHbceDatabase,
   toPublicDocumentProfile,
   upsertDocumentProfileToDatabase,
   type DocumentProfileDatabaseInput
@@ -20,7 +21,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0";
 
 
 type FileStatus =
@@ -37,6 +38,100 @@ type FileMode =
   | "PDF_TEXT"
   | "REFERENCE_ONLY"
   | "REJECTED";
+
+
+type TextSourceKind =
+  | "TEXT"
+  | "CONTENT"
+  | "PREVIEW"
+  | "PDF_DIRECT_TEXT"
+  | "PDF_BINARY"
+  | "PDF_BASE64"
+  | "PDF_DATA_URL"
+  | "NONE";
+
+
+type TextCoverageStatus =
+  | "TEXT_READY_FULL"
+  | "TEXT_READY_PARTIAL"
+  | "TEXT_PREVIEW_ONLY"
+  | "TEXT_EMPTY"
+  | "TEXT_UNSUPPORTED";
+
+
+type LongDocumentMode =
+  | "INLINE_TEXT"
+  | "CHUNKED_FULL_TEXT"
+  | "PREVIEW_ONLY"
+  | "REFERENCE_ONLY"
+  | "REJECTED";
+
+
+type DocumentOutlineEntry = {
+  index: number;
+  sectionType: "TITLE" | "PART" | "CHAPTER" | "APPENDIX" | "CONCLUSION" | "BOUNDARY" | "SECTION";
+  label: string;
+  lineNumber: number;
+  charStart: number;
+  headingPath: string;
+};
+
+
+type DocumentOutlineSummary = {
+  outlineStatus: "READY" | "EMPTY";
+  partsDetected: number;
+  chaptersDetected: number;
+  appendicesDetected: number;
+  firstSectionDetected: string | null;
+  lastSectionDetected: string | null;
+  lastAppendixDetected: string | null;
+  boundaryDetected: boolean;
+  conclusionDetected: boolean;
+  entries: DocumentOutlineEntry[];
+};
+
+
+type LongDocumentChunk = {
+  id: string;
+  documentProfileId: string | null;
+  fileId: string;
+  filename: string;
+  fileHash: string;
+  chunkIndex: number;
+  charStart: number;
+  charEnd: number;
+  text: string;
+  textHash: string;
+  headingPath: string | null;
+  sectionType: string | null;
+  createdAt: string;
+};
+
+
+type DocumentChunkPersistenceStatus =
+  | "PERSISTED"
+  | "DATABASE_NOT_READY"
+  | "PERSISTENCE_FAILED"
+  | "SKIPPED";
+
+
+type DocumentChunkPersistenceResult = {
+  attempted: boolean;
+  ok: boolean;
+  status: DocumentChunkPersistenceStatus;
+  table: "document_text_chunks";
+  documentProfileId: string | null;
+  fileId: string;
+  filename: string;
+  fileHash: string;
+  chunkCount: number;
+  persistedCount: number;
+  fullDocumentCoverage: boolean;
+  textCoverageStatus: TextCoverageStatus;
+  error: string | null;
+  sqlHash: string | null;
+  durationMs: number;
+};
 
 
 type DocumentProfilePersistenceStatus =
@@ -75,6 +170,20 @@ type StoredRuntimeFile = {
   content: string;
   role: string;
   textLength: number;
+  fullTextLength: number;
+  promptTextLength: number;
+  textSourceKind: TextSourceKind;
+  textCoverageStatus: TextCoverageStatus;
+  fullDocumentCoverage: boolean;
+  fullDocumentCoverageReason: string;
+  longDocumentMode: LongDocumentMode;
+  documentOutline: DocumentOutlineSummary;
+  documentChunkCount: number;
+  documentChunks: LongDocumentChunk[];
+  documentChunksPersisted?: boolean | null;
+  documentChunksPersistedCount?: number | null;
+  documentChunkPersistenceStatus?: DocumentChunkPersistenceStatus | null;
+  documentChunkPersistenceReason?: string | null;
   fileHash: string;
   status: FileStatus;
   mode: FileMode;
@@ -113,6 +222,7 @@ type DocumentProfilePersistenceResult = {
   sqlHash: string | null;
   durationMs: number;
   profile: Record<string, unknown> | null;
+  chunks: DocumentChunkPersistenceResult | null;
   input: {
     docFamily: string | null;
     volume: string | null;
@@ -120,6 +230,13 @@ type DocumentProfilePersistenceResult = {
     canonicalAxis: string | null;
     keyTerms: string[];
     reusableInPrompt: boolean;
+    textCoverageStatus: TextCoverageStatus;
+    fullDocumentCoverage: boolean;
+    chunkCount: number;
+    outlineStatus: DocumentOutlineSummary["outlineStatus"];
+    partsDetected: number;
+    chaptersDetected: number;
+    appendicesDetected: number;
   };
 };
 
@@ -278,6 +395,7 @@ const CANONICAL_CORPUS_VOLUME_PROFILES: Record<CanonicalCorpusVolumeProfile["vol
 
 
 type FileStore = Map<string, StoredRuntimeFile[]>;
+type DocumentChunkStore = Map<string, LongDocumentChunk[]>;
 
 
 type PdfExtractionResult = {
@@ -291,13 +409,18 @@ type PdfExtractionResult = {
 
 declare global {
   var __HBCE_JOKER_C2_FILE_STORE__: FileStore | undefined;
+  var __HBCE_JOKER_C2_DOCUMENT_CHUNK_STORE__: DocumentChunkStore | undefined;
 }
 
 
 const MAX_FILES_PER_SESSION = 12;
-const MAX_TEXT_CHARS_PER_FILE = 120_000;
-const MAX_TOTAL_TEXT_CHARS_PER_SESSION = 300_000;
+const MAX_TEXT_CHARS_PER_FILE = 20_000_000;
+const MAX_TOTAL_TEXT_CHARS_PER_SESSION = 20_000_000;
 const MAX_FILE_NAME_LENGTH = 180;
+const LONG_DOCUMENT_CHUNK_TARGET_CHARS = 24_000;
+const LONG_DOCUMENT_CHUNK_OVERLAP_CHARS = 600;
+const LONG_DOCUMENT_CHUNK_INSERT_BATCH_SIZE = 16;
+const FULL_DOCUMENT_OUTLINE_MAX_ENTRIES = 256;
 
 
 const TEXT_MIME_PREFIXES = ["text/"];
@@ -400,6 +523,16 @@ function getFileStore(): FileStore {
 
 
   return globalThis.__HBCE_JOKER_C2_FILE_STORE__;
+}
+
+
+function getDocumentChunkStore(): DocumentChunkStore {
+  if (!globalThis.__HBCE_JOKER_C2_DOCUMENT_CHUNK_STORE__) {
+    globalThis.__HBCE_JOKER_C2_DOCUMENT_CHUNK_STORE__ = new Map();
+  }
+
+
+  return globalThis.__HBCE_JOKER_C2_DOCUMENT_CHUNK_STORE__;
 }
 
 
@@ -560,8 +693,7 @@ function safeTrimText(value: string): string {
   return value
     .replace(/\u0000/g, "")
     .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .slice(0, MAX_TEXT_CHARS_PER_FILE);
+    .replace(/\r/g, "\n");
 }
 
 
@@ -628,23 +760,28 @@ function looksLikeReadableExtractedText(value: string): boolean {
 }
 
 
-function extractDirectText(file: RuntimeFile): string {
+function extractDirectTextWithSource(file: RuntimeFile): { text: string; source: TextSourceKind } {
   if (typeof file.text === "string") {
-    return file.text;
+    return { text: file.text, source: "TEXT" };
   }
 
 
   if (typeof file.content === "string") {
-    return file.content;
+    return { text: file.content, source: "CONTENT" };
   }
 
 
   if (typeof file.preview === "string") {
-    return file.preview;
+    return { text: file.preview, source: "PREVIEW" };
   }
 
 
-  return "";
+  return { text: "", source: "NONE" };
+}
+
+
+function extractDirectText(file: RuntimeFile): string {
+  return extractDirectTextWithSource(file).text;
 }
 
 
@@ -1135,6 +1272,316 @@ function extractPdfText(file: RuntimeFile): PdfExtractionResult {
 
 
 
+function normalizeHeadingLabel(value: string): string {
+  return value.replace(/\s+/g, " ").trim().slice(0, 240);
+}
+
+
+function classifyOutlineLine(line: string): DocumentOutlineEntry["sectionType"] | null {
+  const normalized = normalizeHeadingLabel(line);
+
+
+  if (!normalized) {
+    return null;
+  }
+
+
+  if (/^boundary operativo$/i.test(normalized)) {
+    return "BOUNDARY";
+  }
+
+
+  if (/^parte\s+[ivxlcdm]+\b/i.test(normalized)) {
+    return "PART";
+  }
+
+
+  if (/^(\d+\.\s*)?capitolo\s+[ivxlcdm]+\b/i.test(normalized) || /^\d+\.\s*capitolo\s+/i.test(normalized)) {
+    return "CHAPTER";
+  }
+
+
+  if (/^a\.\d+\b/i.test(normalized)) {
+    return "APPENDIX";
+  }
+
+
+  if (/^conclusione\b/i.test(normalized)) {
+    return "CONCLUSION";
+  }
+
+
+  if (/^hbce ecosistema ai$/i.test(normalized)) {
+    return "TITLE";
+  }
+
+
+  return null;
+}
+
+
+function extractDocumentOutline(text: string): DocumentOutlineSummary {
+  const entries: DocumentOutlineEntry[] = [];
+  let charCursor = 0;
+  let currentPart: string | null = null;
+  let currentChapter: string | null = null;
+  const lines = text.split("\n");
+
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const rawLine = lines[index] ?? "";
+    const label = normalizeHeadingLabel(rawLine);
+    const sectionType = classifyOutlineLine(label);
+
+
+    if (sectionType && entries.length < FULL_DOCUMENT_OUTLINE_MAX_ENTRIES) {
+      if (sectionType === "PART") {
+        currentPart = label;
+        currentChapter = null;
+      }
+
+
+      if (sectionType === "CHAPTER") {
+        currentChapter = label;
+      }
+
+
+      const headingPath = [currentPart, currentChapter, sectionType === "APPENDIX" ? label : null]
+        .filter(Boolean)
+        .join(" / ") || label;
+
+
+      entries.push({
+        index: entries.length,
+        sectionType,
+        label,
+        lineNumber: index + 1,
+        charStart: charCursor,
+        headingPath
+      });
+    }
+
+
+    charCursor += rawLine.length + 1;
+  }
+
+
+  const partsDetected = entries.filter((entry) => entry.sectionType === "PART").length;
+  const chaptersDetected = entries.filter((entry) => entry.sectionType === "CHAPTER").length;
+  const appendices = entries.filter((entry) => entry.sectionType === "APPENDIX");
+  const boundaryDetected = entries.some((entry) => entry.sectionType === "BOUNDARY");
+  const conclusionDetected = entries.some((entry) => entry.sectionType === "CONCLUSION");
+
+
+  return {
+    outlineStatus: entries.length > 0 ? "READY" : "EMPTY",
+    partsDetected,
+    chaptersDetected,
+    appendicesDetected: appendices.length,
+    firstSectionDetected: entries[0]?.label ?? null,
+    lastSectionDetected: entries[entries.length - 1]?.label ?? null,
+    lastAppendixDetected: appendices[appendices.length - 1]?.label ?? null,
+    boundaryDetected,
+    conclusionDetected,
+    entries
+  };
+}
+
+
+function findHeadingForChunk(outline: DocumentOutlineSummary, charStart: number): { headingPath: string | null; sectionType: string | null } {
+  let selected: DocumentOutlineEntry | null = null;
+
+
+  for (const entry of outline.entries) {
+    if (entry.charStart <= charStart) {
+      selected = entry;
+      continue;
+    }
+
+
+    break;
+  }
+
+
+  return {
+    headingPath: selected?.headingPath ?? selected?.label ?? null,
+    sectionType: selected?.sectionType ?? null
+  };
+}
+
+
+function buildLongDocumentChunks(file: Pick<StoredRuntimeFile, "id" | "name" | "fileHash" | "text" | "documentOutline">): LongDocumentChunk[] {
+  const text = file.text;
+
+
+  if (!text.trim()) {
+    return [];
+  }
+
+
+  const chunks: LongDocumentChunk[] = [];
+  let charStart = 0;
+  const createdAt = nowIso();
+
+
+  while (charStart < text.length) {
+    let charEnd = Math.min(text.length, charStart + LONG_DOCUMENT_CHUNK_TARGET_CHARS);
+
+
+    if (charEnd < text.length) {
+      const paragraphBreak = text.lastIndexOf("\n\n", charEnd);
+      const lineBreak = text.lastIndexOf("\n", charEnd);
+      const breakPoint = paragraphBreak > charStart + 8000 ? paragraphBreak : lineBreak > charStart + 8000 ? lineBreak : -1;
+
+
+      if (breakPoint > charStart) {
+        charEnd = breakPoint;
+      }
+    }
+
+
+    const chunkText = text.slice(charStart, charEnd).trim();
+
+
+    if (chunkText) {
+      const heading = findHeadingForChunk(file.documentOutline, charStart);
+      const textHash = buildHash(chunkText);
+      const id = buildHash({
+        fileId: file.id,
+        fileHash: file.fileHash,
+        chunkIndex: chunks.length,
+        charStart,
+        charEnd,
+        textHash
+      }).replace("sha256:", "docchunk-").slice(0, 48);
+
+
+      chunks.push({
+        id,
+        documentProfileId: null,
+        fileId: file.id,
+        filename: file.name,
+        fileHash: file.fileHash,
+        chunkIndex: chunks.length,
+        charStart,
+        charEnd,
+        text: chunkText,
+        textHash,
+        headingPath: heading.headingPath,
+        sectionType: heading.sectionType,
+        createdAt
+      });
+    }
+
+
+    if (charEnd >= text.length) {
+      break;
+    }
+
+
+    charStart = Math.max(charEnd - LONG_DOCUMENT_CHUNK_OVERLAP_CHARS, charStart + 1);
+  }
+
+
+  return chunks;
+}
+
+
+function classifyTextCoverage(source: TextSourceKind, textLength: number): {
+  textCoverageStatus: TextCoverageStatus;
+  fullDocumentCoverage: boolean;
+  fullDocumentCoverageReason: string;
+  longDocumentMode: LongDocumentMode;
+} {
+  if (textLength <= 0) {
+    return {
+      textCoverageStatus: "TEXT_EMPTY",
+      fullDocumentCoverage: false,
+      fullDocumentCoverageReason: "No readable text was extracted from the file payload.",
+      longDocumentMode: "REFERENCE_ONLY"
+    };
+  }
+
+
+  if (source === "PREVIEW") {
+    return {
+      textCoverageStatus: "TEXT_PREVIEW_ONLY",
+      fullDocumentCoverage: false,
+      fullDocumentCoverageReason: "Only file.preview was provided by the client; full document coverage cannot be claimed from preview text.",
+      longDocumentMode: "PREVIEW_ONLY"
+    };
+  }
+
+
+  return {
+    textCoverageStatus: "TEXT_READY_FULL",
+    fullDocumentCoverage: true,
+    fullDocumentCoverageReason: "Full text payload was available to /api/files and no per-file text cap was applied.",
+    longDocumentMode: textLength > LONG_DOCUMENT_CHUNK_TARGET_CHARS ? "CHUNKED_FULL_TEXT" : "INLINE_TEXT"
+  };
+}
+
+
+function buildStoredRuntimeFileBase(args: {
+  id: string;
+  name: string;
+  mimeType: string;
+  declaredSize: number;
+  text: string;
+  role: string;
+  status: FileStatus;
+  mode: FileMode;
+  reason: string;
+  textSourceKind: TextSourceKind;
+  timestamp: string;
+}): StoredRuntimeFile {
+  const coverage = classifyTextCoverage(args.textSourceKind, args.text.length);
+  const documentOutline = extractDocumentOutline(args.text);
+  const provisionalFile: Pick<StoredRuntimeFile, "id" | "name" | "fileHash" | "text" | "documentOutline"> = {
+    id: args.id,
+    name: args.name,
+    fileHash: buildHash(args.text || {
+      name: args.name,
+      mimeType: args.mimeType,
+      size: args.declaredSize,
+      status: args.status
+    }),
+    text: args.text,
+    documentOutline
+  };
+  const documentChunks = isPromptTextStatus(args.status) ? buildLongDocumentChunks(provisionalFile) : [];
+
+
+  return {
+    id: args.id,
+    name: args.name,
+    mimeType: args.mimeType,
+    type: args.mimeType,
+    size: args.declaredSize,
+    text: args.text,
+    content: args.text,
+    role: args.role,
+    textLength: args.text.length,
+    fullTextLength: args.text.length,
+    promptTextLength: args.text.length,
+    textSourceKind: args.textSourceKind,
+    textCoverageStatus: coverage.textCoverageStatus,
+    fullDocumentCoverage: coverage.fullDocumentCoverage,
+    fullDocumentCoverageReason: coverage.fullDocumentCoverageReason,
+    longDocumentMode: coverage.longDocumentMode,
+    documentOutline,
+    documentChunkCount: documentChunks.length,
+    documentChunks,
+    fileHash: provisionalFile.fileHash,
+    status: args.status,
+    mode: args.mode,
+    reason: `${args.reason} FullDocumentCoverage=${coverage.fullDocumentCoverage ? "true" : "false"}. TextCoverageStatus=${coverage.textCoverageStatus}. legalCertification=false. OPC=technical proof receipt only.`,
+    createdAt: args.timestamp,
+    updatedAt: args.timestamp
+  };
+}
+
+
 function normalizeSearchText(value: string): string {
   return value
     .toLowerCase()
@@ -1599,7 +2046,29 @@ function buildDocumentProfileInput(
       mode: file.mode,
       reason: file.reason,
       textLength: file.textLength,
+      fullTextLength: file.fullTextLength,
+      promptTextLength: file.promptTextLength,
       textStoredInProfile: false,
+      textSourceKind: file.textSourceKind,
+      textCoverageStatus: file.textCoverageStatus,
+      fullDocumentCoverage: file.fullDocumentCoverage,
+      fullDocumentCoverageReason: file.fullDocumentCoverageReason,
+      longDocumentMode: file.longDocumentMode,
+      documentChunkCount: file.documentChunkCount,
+      documentChunksPersisted: file.documentChunksPersisted ?? null,
+      documentChunksPersistedCount: file.documentChunksPersistedCount ?? null,
+      documentOutline: {
+        outlineStatus: file.documentOutline.outlineStatus,
+        partsDetected: file.documentOutline.partsDetected,
+        chaptersDetected: file.documentOutline.chaptersDetected,
+        appendicesDetected: file.documentOutline.appendicesDetected,
+        firstSectionDetected: file.documentOutline.firstSectionDetected,
+        lastSectionDetected: file.documentOutline.lastSectionDetected,
+        lastAppendixDetected: file.documentOutline.lastAppendixDetected,
+        boundaryDetected: file.documentOutline.boundaryDetected,
+        conclusionDetected: file.documentOutline.conclusionDetected,
+        entries: file.documentOutline.entries
+      },
       sourceKind: context.sourceKind,
       legalCertification: false,
       opc: "technical proof receipt only"
@@ -1610,6 +2079,25 @@ function buildDocumentProfileInput(
     lastSeenAt: nowIso(),
     createdAt: file.createdAt,
     deletedAt: null
+  };
+}
+
+
+function buildDocumentProfilePersistenceInputSummary(input: DocumentProfileDatabaseInput, file: StoredRuntimeFile) {
+  return {
+    docFamily: input.docFamily ?? null,
+    volume: input.volume ?? null,
+    title: input.title ?? null,
+    canonicalAxis: input.canonicalAxis ?? null,
+    keyTerms: input.keyTerms ?? [],
+    reusableInPrompt: input.reusableInPrompt !== false,
+    textCoverageStatus: file.textCoverageStatus,
+    fullDocumentCoverage: file.fullDocumentCoverage,
+    chunkCount: file.documentChunkCount,
+    outlineStatus: file.documentOutline.outlineStatus,
+    partsDetected: file.documentOutline.partsDetected,
+    chaptersDetected: file.documentOutline.chaptersDetected,
+    appendicesDetected: file.documentOutline.appendicesDetected
   };
 }
 
@@ -1677,6 +2165,233 @@ function canonicalizePublicDocumentProfileForRead<T extends Record<string, unkno
 }
 
 
+async function ensureDocumentTextChunksTable(): Promise<{ ok: boolean; error: string | null; sqlHash: string | null; durationMs: number }> {
+  const sql = `
+    CREATE TABLE IF NOT EXISTS document_text_chunks (
+      id TEXT PRIMARY KEY,
+      tenant_id TEXT NOT NULL,
+      workspace_id TEXT NOT NULL,
+      human_ipr TEXT NOT NULL,
+      runtime_ipr TEXT NOT NULL,
+      document_profile_id TEXT,
+      file_id TEXT NOT NULL,
+      filename TEXT NOT NULL,
+      file_hash TEXT NOT NULL,
+      chunk_index INTEGER NOT NULL,
+      char_start INTEGER NOT NULL,
+      char_end INTEGER NOT NULL,
+      text_hash TEXT NOT NULL,
+      heading_path TEXT,
+      section_type TEXT,
+      text TEXT NOT NULL,
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `;
+
+
+  try {
+    const startedAt = Date.now();
+    const result = await queryHbceDatabase(sql);
+
+
+    return {
+      ok: result.ok,
+      error: result.error,
+      sqlHash: result.sqlHash,
+      durationMs: Date.now() - startedAt
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "DOCUMENT_TEXT_CHUNKS_TABLE_INIT_FAILED",
+      sqlHash: buildHash(sql),
+      durationMs: 0
+    };
+  }
+}
+
+
+async function persistDocumentChunksForFile(
+  file: StoredRuntimeFile,
+  context: DocumentProfileContext,
+  documentProfileId: string | null
+): Promise<DocumentChunkPersistenceResult> {
+  const startedAt = Date.now();
+
+
+  if (!isPromptTextStatus(file.status) || file.documentChunks.length === 0) {
+    return {
+      attempted: false,
+      ok: true,
+      status: "SKIPPED",
+      table: "document_text_chunks",
+      documentProfileId,
+      fileId: file.id,
+      filename: file.name,
+      fileHash: file.fileHash,
+      chunkCount: 0,
+      persistedCount: 0,
+      fullDocumentCoverage: file.fullDocumentCoverage,
+      textCoverageStatus: file.textCoverageStatus,
+      error: null,
+      sqlHash: null,
+      durationMs: 0
+    };
+  }
+
+
+  const table = await ensureDocumentTextChunksTable();
+
+
+  if (!table.ok) {
+    return {
+      attempted: true,
+      ok: false,
+      status: "DATABASE_NOT_READY",
+      table: "document_text_chunks",
+      documentProfileId,
+      fileId: file.id,
+      filename: file.name,
+      fileHash: file.fileHash,
+      chunkCount: file.documentChunks.length,
+      persistedCount: 0,
+      fullDocumentCoverage: file.fullDocumentCoverage,
+      textCoverageStatus: file.textCoverageStatus,
+      error: table.error,
+      sqlHash: table.sqlHash,
+      durationMs: table.durationMs
+    };
+  }
+
+
+  try {
+    await queryHbceDatabase(
+      `DELETE FROM document_text_chunks WHERE tenant_id = $1 AND workspace_id = $2 AND file_id = $3 AND file_hash = $4`,
+      [context.tenantId, context.workspaceId, file.id, file.fileHash]
+    );
+
+
+    let persistedCount = 0;
+    let lastSqlHash: string | null = null;
+
+
+    for (let index = 0; index < file.documentChunks.length; index += LONG_DOCUMENT_CHUNK_INSERT_BATCH_SIZE) {
+      const batch = file.documentChunks.slice(index, index + LONG_DOCUMENT_CHUNK_INSERT_BATCH_SIZE);
+
+
+      for (const chunk of batch) {
+        const metadata = {
+          routeVersion: FILE_ROUTE_REVISION,
+          sourceKind: context.sourceKind,
+          textCoverageStatus: file.textCoverageStatus,
+          fullDocumentCoverage: file.fullDocumentCoverage,
+          fullDocumentCoverageReason: file.fullDocumentCoverageReason,
+          longDocumentMode: file.longDocumentMode,
+          outlineStatus: file.documentOutline.outlineStatus,
+          partsDetected: file.documentOutline.partsDetected,
+          chaptersDetected: file.documentOutline.chaptersDetected,
+          appendicesDetected: file.documentOutline.appendicesDetected,
+          firstSectionDetected: file.documentOutline.firstSectionDetected,
+          lastSectionDetected: file.documentOutline.lastSectionDetected,
+          lastAppendixDetected: file.documentOutline.lastAppendixDetected,
+          legalCertification: false,
+          opc: "technical proof receipt only"
+        };
+
+
+        const result = await queryHbceDatabase(
+          `
+            INSERT INTO document_text_chunks (
+              id, tenant_id, workspace_id, human_ipr, runtime_ipr, document_profile_id,
+              file_id, filename, file_hash, chunk_index, char_start, char_end, text_hash,
+              heading_path, section_type, text, metadata, created_at, updated_at
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6,
+              $7, $8, $9, $10, $11, $12, $13,
+              $14, $15, $16, $17::jsonb, $18, $19
+            )
+            ON CONFLICT (id) DO UPDATE SET
+              document_profile_id = EXCLUDED.document_profile_id,
+              text = EXCLUDED.text,
+              metadata = EXCLUDED.metadata,
+              updated_at = EXCLUDED.updated_at
+          `,
+          [
+            chunk.id,
+            context.tenantId,
+            context.workspaceId,
+            context.humanIpr,
+            context.runtimeIpr,
+            documentProfileId,
+            chunk.fileId,
+            chunk.filename,
+            chunk.fileHash,
+            chunk.chunkIndex,
+            chunk.charStart,
+            chunk.charEnd,
+            chunk.textHash,
+            chunk.headingPath,
+            chunk.sectionType,
+            chunk.text,
+            JSON.stringify(metadata),
+            chunk.createdAt,
+            nowIso()
+          ]
+        );
+
+
+        lastSqlHash = result.sqlHash;
+        if (!result.ok) {
+          throw new Error(result.error || "DOCUMENT_TEXT_CHUNK_INSERT_FAILED");
+        }
+
+
+        persistedCount += 1;
+      }
+    }
+
+
+    return {
+      attempted: true,
+      ok: persistedCount === file.documentChunks.length,
+      status: persistedCount === file.documentChunks.length ? "PERSISTED" : "PERSISTENCE_FAILED",
+      table: "document_text_chunks",
+      documentProfileId,
+      fileId: file.id,
+      filename: file.name,
+      fileHash: file.fileHash,
+      chunkCount: file.documentChunks.length,
+      persistedCount,
+      fullDocumentCoverage: file.fullDocumentCoverage,
+      textCoverageStatus: file.textCoverageStatus,
+      error: persistedCount === file.documentChunks.length ? null : "DOCUMENT_TEXT_CHUNK_COUNT_MISMATCH",
+      sqlHash: lastSqlHash,
+      durationMs: Date.now() - startedAt
+    };
+  } catch (error) {
+    return {
+      attempted: true,
+      ok: false,
+      status: "PERSISTENCE_FAILED",
+      table: "document_text_chunks",
+      documentProfileId,
+      fileId: file.id,
+      filename: file.name,
+      fileHash: file.fileHash,
+      chunkCount: file.documentChunks.length,
+      persistedCount: 0,
+      fullDocumentCoverage: file.fullDocumentCoverage,
+      textCoverageStatus: file.textCoverageStatus,
+      error: error instanceof Error ? error.message : "DOCUMENT_TEXT_CHUNK_PERSISTENCE_FAILED",
+      sqlHash: null,
+      durationMs: Date.now() - startedAt
+    };
+  }
+}
+
+
 async function persistDocumentProfilesForSession(
   files: StoredRuntimeFile[],
   context: DocumentProfileContext
@@ -1706,14 +2421,8 @@ async function persistDocumentProfilesForSession(
         sqlHash: readiness.initialization.sqlHash,
         durationMs: readiness.initialization.durationMs,
         profile: null,
-        input: {
-          docFamily: input.docFamily ?? null,
-          volume: input.volume ?? null,
-          title: input.title ?? null,
-          canonicalAxis: input.canonicalAxis ?? null,
-          keyTerms: input.keyTerms ?? [],
-          reusableInPrompt: input.reusableInPrompt !== false
-        }
+        chunks: null,
+        input: buildDocumentProfilePersistenceInputSummary(input, file)
       };
     });
   }
@@ -1746,14 +2455,12 @@ async function persistDocumentProfilesForSession(
         sqlHash: result.sqlHash,
         durationMs: result.durationMs,
         profile: publicProfile,
-        input: {
-          docFamily: input.docFamily ?? null,
-          volume: input.volume ?? null,
-          title: input.title ?? null,
-          canonicalAxis: input.canonicalAxis ?? null,
-          keyTerms: input.keyTerms ?? [],
-          reusableInPrompt: input.reusableInPrompt !== false
-        }
+        chunks: await persistDocumentChunksForFile(
+          file,
+          context,
+          typeof publicProfile?.profileId === "string" ? publicProfile.profileId : null
+        ),
+        input: buildDocumentProfilePersistenceInputSummary(input, file)
       });
     } catch (error) {
       results.push({
@@ -1768,14 +2475,8 @@ async function persistDocumentProfilesForSession(
         sqlHash: null,
         durationMs: 0,
         profile: null,
-        input: {
-          docFamily: input.docFamily ?? null,
-          volume: input.volume ?? null,
-          title: input.title ?? null,
-          canonicalAxis: input.canonicalAxis ?? null,
-          keyTerms: input.keyTerms ?? [],
-          reusableInPrompt: input.reusableInPrompt !== false
-        }
+        chunks: null,
+        input: buildDocumentProfilePersistenceInputSummary(input, file)
       });
     }
   }
@@ -1814,7 +2515,11 @@ function attachDocumentProfileResults(
         typeof result.profile?.profileHash === "string" ? result.profile.profileHash : null,
       documentProfileReason: result.ok
         ? "Document profile persisted in the cybernetic document registry."
-        : result.error || "Document profile persistence did not complete."
+        : result.error || "Document profile persistence did not complete.",
+      documentChunksPersisted: result.chunks?.ok ?? false,
+      documentChunksPersistedCount: result.chunks?.persistedCount ?? 0,
+      documentChunkPersistenceStatus: result.chunks?.status ?? null,
+      documentChunkPersistenceReason: result.chunks?.error ?? null
     };
   });
 }
@@ -1828,9 +2533,8 @@ function normalizeSingleFile(
   const name = normalizeFileName(file.name, index);
   const mimeType = normalizeMimeType(file, name);
   const role = normalizeRole(file.role);
-
-
-  const rawText = extractDirectText(file);
+  const directText = extractDirectTextWithSource(file);
+  const rawText = directText.text;
   const normalizedText = safeTrimText(rawText);
   const hasText = normalizedText.trim().length > 0;
   const textLength = normalizedText.length;
@@ -1855,175 +2559,132 @@ function normalizeSingleFile(
     const pdfExtraction = extractPdfText(file);
     const pdfText = safeTrimText(pdfExtraction.text);
     const pdfTextLength = pdfText.length;
+    const pdfSourceKind: TextSourceKind =
+      pdfExtraction.source === "DIRECT_TEXT"
+        ? "PDF_DIRECT_TEXT"
+        : pdfExtraction.source === "PDF_BINARY"
+          ? "PDF_BINARY"
+          : pdfExtraction.source === "PDF_BASE64"
+            ? "PDF_BASE64"
+            : pdfExtraction.source === "PDF_DATA_URL"
+              ? "PDF_DATA_URL"
+              : "NONE";
 
 
     if (pdfText.trim()) {
-      return {
+      return buildStoredRuntimeFileBase({
         id,
         name,
         mimeType,
-        type: mimeType,
-        size: declaredSize,
+        declaredSize,
         text: pdfText,
-        content: pdfText,
         role,
-        textLength: pdfTextLength,
-        fileHash: buildHash(pdfText),
         status: "PDF_INGESTION_READY",
         mode: "PDF_TEXT",
-        reason: `${pdfExtraction.reason} Source=${pdfExtraction.source}. legalCertification=false. OPC=technical proof receipt only.`,
-        createdAt: timestamp,
-        updatedAt: timestamp
-      };
+        textSourceKind: pdfSourceKind,
+        reason: `${pdfExtraction.reason} Source=${pdfExtraction.source}.`,
+        timestamp
+      });
     }
 
 
     if (pdfExtraction.failed) {
-      return {
+      return buildStoredRuntimeFileBase({
         id,
         name,
         mimeType,
-        type: mimeType,
-        size: declaredSize,
+        declaredSize,
         text: "",
-        content: "",
         role,
-        textLength: 0,
-        fileHash: buildHash({
-          name,
-          mimeType,
-          size: declaredSize,
-          pdfIngestionFail: true,
-          source: pdfExtraction.source
-        }),
         status: "PDF_INGESTION_FAIL",
         mode: "REFERENCE_ONLY",
-        reason: `${pdfExtraction.reason} legalCertification=false. OPC=technical proof receipt only.`,
-        createdAt: timestamp,
-        updatedAt: timestamp
-      };
+        textSourceKind: "NONE",
+        reason: pdfExtraction.reason,
+        timestamp
+      });
     }
 
 
-    return {
+    return buildStoredRuntimeFileBase({
       id,
       name,
       mimeType,
-      type: mimeType,
-      size: declaredSize,
+      declaredSize,
       text: "",
-      content: "",
       role,
-      textLength: 0,
-      fileHash: buildHash({
-        name,
-        mimeType,
-        size: declaredSize,
-        pdfMetadataOnly: true
-      }),
       status: "PDF_METADATA_ONLY",
       mode: "REFERENCE_ONLY",
-      reason: `${pdfExtraction.reason} legalCertification=false. OPC=technical proof receipt only.`,
-      createdAt: timestamp,
-      updatedAt: timestamp
-    };
+      textSourceKind: "NONE",
+      reason: pdfExtraction.reason,
+      timestamp
+    });
   }
 
 
   if (hasText && isTextMimeType(mimeType)) {
-    return {
+    return buildStoredRuntimeFileBase({
       id,
       name,
       mimeType,
-      type: mimeType,
-      size: declaredSize,
+      declaredSize,
       text: normalizedText,
-      content: normalizedText,
       role,
-      textLength,
-      fileHash: buildHash(normalizedText),
       status: "TEXT_READY",
       mode: "TEXT",
-      reason:
-        "File contains readable text and can be used as prompt context. legalCertification=false. OPC=technical proof receipt only.",
-      createdAt: timestamp,
-      updatedAt: timestamp
-    };
+      textSourceKind: directText.source,
+      reason: "File contains readable text and can be used as prompt context.",
+      timestamp
+    });
   }
 
 
   if (hasText && !isReferenceOnlyMimeType(mimeType)) {
-    return {
+    return buildStoredRuntimeFileBase({
       id,
       name,
       mimeType,
-      type: mimeType,
-      size: declaredSize,
+      declaredSize,
       text: normalizedText,
-      content: normalizedText,
       role,
-      textLength,
-      fileHash: buildHash(normalizedText),
       status: "TEXT_READY",
       mode: "TEXT",
-      reason:
-        "File contains extracted text. MIME type is not explicitly text, but safe extracted text is available. legalCertification=false. OPC=technical proof receipt only.",
-      createdAt: timestamp,
-      updatedAt: timestamp
-    };
+      textSourceKind: directText.source,
+      reason: "File contains extracted text. MIME type is not explicitly text, but safe extracted text is available.",
+      timestamp
+    });
   }
 
 
   if (isReferenceOnlyMimeType(mimeType)) {
-    return {
+    return buildStoredRuntimeFileBase({
       id,
       name,
       mimeType,
-      type: mimeType,
-      size: declaredSize,
+      declaredSize,
       text: "",
-      content: "",
       role,
-      textLength: 0,
-      fileHash: buildHash({
-        name,
-        mimeType,
-        size: declaredSize,
-        referenceOnly: true
-      }),
       status: "REFERENCE_ONLY",
       mode: "REFERENCE_ONLY",
-      reason:
-        "File is active only as a reference. It was not converted into readable prompt text. legalCertification=false. OPC=technical proof receipt only.",
-      createdAt: timestamp,
-      updatedAt: timestamp
-    };
+      textSourceKind: "NONE",
+      reason: "File is active only as a reference. It was not converted into readable prompt text.",
+      timestamp
+    });
   }
 
 
-  return {
+  return buildStoredRuntimeFileBase({
     id,
     name,
     mimeType,
-    type: mimeType,
-    size: declaredSize,
+    declaredSize,
     text: "",
-    content: "",
     role,
-    textLength: 0,
-    fileHash: buildHash({
-      name,
-      mimeType,
-      size: declaredSize,
-      rejected: true
-    }),
     status: "REJECTED",
     mode: "REJECTED",
-    reason:
-      "File has no readable text and its MIME type is not supported as a safe reference-only file. legalCertification=false. OPC=technical proof receipt only.",
-    createdAt: timestamp,
-    updatedAt: timestamp
-  };
+    textSourceKind: "NONE",
+    reason: "File has no readable text and its MIME type is not supported as a safe reference-only file.",
+    timestamp
+  });
 }
 
 
@@ -2125,7 +2786,7 @@ function mergeFiles(
 }
 
 
-function summarizeFiles(files: StoredRuntimeFile[], includeText: boolean) {
+function summarizeFiles(files: StoredRuntimeFile[], includeText: boolean, includeChunks = false) {
   return files.map((file) => ({
     id: file.id,
     name: file.name,
@@ -2134,6 +2795,29 @@ function summarizeFiles(files: StoredRuntimeFile[], includeText: boolean) {
     size: file.size,
     role: file.role,
     textLength: file.textLength,
+    fullTextLength: file.fullTextLength,
+    promptTextLength: file.promptTextLength,
+    textSourceKind: file.textSourceKind,
+    textCoverageStatus: file.textCoverageStatus,
+    fullDocumentCoverage: file.fullDocumentCoverage,
+    fullDocumentCoverageReason: file.fullDocumentCoverageReason,
+    longDocumentMode: file.longDocumentMode,
+    documentChunkCount: file.documentChunkCount,
+    documentChunksPersisted: file.documentChunksPersisted ?? null,
+    documentChunksPersistedCount: file.documentChunksPersistedCount ?? null,
+    documentChunkPersistenceStatus: file.documentChunkPersistenceStatus ?? null,
+    documentOutline: {
+      outlineStatus: file.documentOutline.outlineStatus,
+      partsDetected: file.documentOutline.partsDetected,
+      chaptersDetected: file.documentOutline.chaptersDetected,
+      appendicesDetected: file.documentOutline.appendicesDetected,
+      firstSectionDetected: file.documentOutline.firstSectionDetected,
+      lastSectionDetected: file.documentOutline.lastSectionDetected,
+      lastAppendixDetected: file.documentOutline.lastAppendixDetected,
+      boundaryDetected: file.documentOutline.boundaryDetected,
+      conclusionDetected: file.documentOutline.conclusionDetected,
+      entries: file.documentOutline.entries
+    },
     fileHash: file.fileHash,
     status: file.status,
     mode: file.mode,
@@ -2145,7 +2829,19 @@ function summarizeFiles(files: StoredRuntimeFile[], includeText: boolean) {
     createdAt: file.createdAt,
     updatedAt: file.updatedAt,
     text: includeText ? file.text : undefined,
-    content: includeText ? file.content : undefined
+    content: includeText ? file.content : undefined,
+    documentChunks: includeChunks
+      ? file.documentChunks.map((chunk) => ({
+          id: chunk.id,
+          chunkIndex: chunk.chunkIndex,
+          charStart: chunk.charStart,
+          charEnd: chunk.charEnd,
+          textHash: chunk.textHash,
+          headingPath: chunk.headingPath,
+          sectionType: chunk.sectionType,
+          text: includeText ? chunk.text : undefined
+        }))
+      : undefined
   }));
 }
 
@@ -2169,6 +2865,15 @@ function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
   const promptReadyCount = files.filter((file) =>
     isPromptTextStatus(file.status)
   ).length;
+  const fullDocumentCoverageCount = files.filter((file) => file.fullDocumentCoverage).length;
+  const partialDocumentCoverageCount = files.filter(
+    (file) => isPromptTextStatus(file.status) && !file.fullDocumentCoverage
+  ).length;
+  const totalDocumentChunks = files.reduce((sum, file) => sum + file.documentChunkCount, 0);
+  const persistedDocumentChunks = files.reduce(
+    (sum, file) => sum + (file.documentChunksPersistedCount ?? 0),
+    0
+  );
 
 
   return {
@@ -2182,12 +2887,18 @@ function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
     referenceOnlyCount,
     rejectedCount,
     totalTextLength,
+    fullDocumentCoverageCount,
+    partialDocumentCoverageCount,
+    totalDocumentChunks,
+    persistedDocumentChunks,
     maxFilesPerSession: MAX_FILES_PER_SESSION,
     maxTextCharsPerFile: MAX_TEXT_CHARS_PER_FILE,
     maxTotalTextCharsPerSession: MAX_TOTAL_TEXT_CHARS_PER_SESSION,
     routeVersion: FILE_ROUTE_REVISION,
+    longDocumentEngine: "LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0",
     documentRegistry: "DOCUMENT_PROFILES",
-    cyberneticMethod: "FILE_UPLOAD_TO_DOCUMENT_PROFILE_TO_DYNAMIC_RECALL",
+    documentTextChunks: "document_text_chunks",
+    cyberneticMethod: "FILE_UPLOAD_TO_FULL_TEXT_CHUNKS_TO_DOCUMENT_PROFILE_TO_DYNAMIC_RECALL",
     legalCertification: false,
     opc: "technical proof receipt only"
   };
@@ -2272,6 +2983,16 @@ export async function POST(req: NextRequest) {
         title: profile.input.title,
         canonicalAxis: profile.input.canonicalAxis,
         reusableInPrompt: profile.input.reusableInPrompt,
+        textCoverageStatus: profile.input.textCoverageStatus,
+        fullDocumentCoverage: profile.input.fullDocumentCoverage,
+        chunkCount: profile.input.chunkCount,
+        outlineStatus: profile.input.outlineStatus,
+        partsDetected: profile.input.partsDetected,
+        chaptersDetected: profile.input.chaptersDetected,
+        appendicesDetected: profile.input.appendicesDetected,
+        chunksPersisted: profile.chunks?.ok ?? false,
+        chunksPersistedCount: profile.chunks?.persistedCount ?? 0,
+        chunkPersistenceStatus: profile.chunks?.status ?? null,
         alienCodeV4ProfileDetected:
           profile.input.docFamily === "CORPUS_ESOTEROLOGIA_ERMETICA" &&
           profile.input.volume === "V4" &&
@@ -2280,8 +3001,16 @@ export async function POST(req: NextRequest) {
         error: profile.error
       }))
     },
+    documentTextChunks: {
+      table: "document_text_chunks",
+      attempted: documentProfiles.some((profile) => profile.chunks?.attempted),
+      persistedCount: documentProfiles.reduce((sum, profile) => sum + (profile.chunks?.persistedCount ?? 0), 0),
+      expectedCount: documentProfiles.reduce((sum, profile) => sum + (profile.chunks?.chunkCount ?? 0), 0),
+      failedCount: documentProfiles.filter((profile) => profile.chunks && !profile.chunks.ok).length,
+      statuses: documentProfiles.map((profile) => profile.chunks).filter(Boolean)
+    },
     summary: buildSessionSummary(sessionId, nextFiles),
-    files: summarizeFiles(nextFiles, false),
+    files: summarizeFiles(nextFiles, false, false),
     documentProfiles,
     legalCertification: false,
     opc: "technical proof receipt only"
@@ -2297,6 +3026,7 @@ export async function GET(req: NextRequest) {
   const sessionId = normalizeSessionId(url.searchParams.get("sessionId"));
   const includeText = url.searchParams.get("includeText") !== "false";
   const includeProfiles = url.searchParams.get("includeProfiles") !== "false";
+  const includeChunks = url.searchParams.get("includeChunks") === "true";
   const humanIpr = url.searchParams.get("humanIpr") || HBCE_SELF_PILOT_HUMAN_IPR;
   const tenantId = url.searchParams.get("tenantId") || HBCE_SELF_PILOT_TENANT_ID;
   const workspaceId = url.searchParams.get("workspaceId") || HBCE_SELF_PILOT_WORKSPACE_ID;
@@ -2338,7 +3068,7 @@ export async function GET(req: NextRequest) {
     routeVersion: FILE_ROUTE_REVISION,
     sessionId,
     summary: buildSessionSummary(sessionId, files),
-    files: summarizeFiles(files, includeText),
+    files: summarizeFiles(files, includeText, includeChunks),
     documentProfiles,
     legalCertification: false,
     opc: "technical proof receipt only"
