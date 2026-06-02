@@ -21,7 +21,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2";
 
 
 type FileStatus =
@@ -3014,6 +3014,282 @@ function summarizeFiles(files: StoredRuntimeFile[], includeText: boolean, includ
 }
 
 
+
+
+type DatabaseObjectDiagnostic = {
+  requestedName: string;
+  available: boolean;
+  status: "AVAILABLE" | "NOT_FOUND" | "QUERY_FAILED";
+  resolvedName: string | null;
+  error: string | null;
+  sqlHash: string | null;
+  durationMs: number;
+};
+
+
+type FilesRouteDiagnosticContext = {
+  sessionId: string;
+  files: StoredRuntimeFile[];
+  humanIpr: string;
+  tenantId: string;
+  workspaceId: string;
+};
+
+
+function isAffirmativeSearchParam(value: string | null): boolean {
+  if (!value) {
+    return false;
+  }
+
+
+  const normalized = value.trim().toLowerCase();
+
+
+  return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
+}
+
+
+function getLatestRuntimeFile(files: StoredRuntimeFile[]): StoredRuntimeFile | null {
+  return files.length > 0 ? files[files.length - 1] ?? null : null;
+}
+
+
+function buildDiagnosticFileSnapshot(file: StoredRuntimeFile | null) {
+  if (!file) {
+    return null;
+  }
+
+
+  return {
+    fileId: file.id,
+    filename: file.name,
+    mimeType: file.mimeType,
+    size: file.size,
+    status: file.status,
+    mode: file.mode,
+    textLength: file.textLength,
+    fullTextLength: file.fullTextLength,
+    promptTextLength: file.promptTextLength,
+    sourceFileHash: file.sourceFileHash,
+    normalizedTextHash: file.normalizedTextHash,
+    runtimePromptTextHash: file.runtimePromptTextHash,
+    sourceByteLength: file.sourceByteLength,
+    normalizedTextLength: file.normalizedTextLength,
+    fileHash: file.fileHash,
+    textSourceKind: file.textSourceKind,
+    textCoverageStatus: file.textCoverageStatus,
+    fullDocumentCoverage: file.fullDocumentCoverage,
+    fullDocumentCoverageReason: file.fullDocumentCoverageReason,
+    longDocumentMode: file.longDocumentMode,
+    documentProfileId: file.documentProfileId ?? null,
+    documentProfileStatus: file.documentProfileStatus ?? null,
+    documentProfileHash: file.documentProfileHash ?? null,
+    documentProfileReason: file.documentProfileReason ?? null,
+    documentChunkCount: file.documentChunkCount,
+    documentChunksPersisted: file.documentChunksPersisted ?? null,
+    documentChunksPersistedCount: file.documentChunksPersistedCount ?? null,
+    documentChunkPersistenceStatus: file.documentChunkPersistenceStatus ?? null,
+    documentChunkPersistenceReason: file.documentChunkPersistenceReason ?? null,
+    outlineStatus: file.documentOutline.outlineStatus,
+    majorSectionsDetected: file.documentOutline.partsDetected,
+    subsectionsDetected: file.documentOutline.chaptersDetected,
+    appendicesDetected: file.documentOutline.appendicesDetected,
+    glossaryEntriesDetected: countCorpusGlossaryEntries(file.text),
+    firstSectionDetected: file.documentOutline.firstSectionDetected,
+    lastSectionDetected: file.documentOutline.lastSectionDetected,
+    lastAppendixDetected: file.documentOutline.lastAppendixDetected,
+    boundaryDetected: file.documentOutline.boundaryDetected,
+    conclusionDetected: file.documentOutline.conclusionDetected,
+    createdAt: file.createdAt,
+    updatedAt: file.updatedAt,
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
+
+function countCorpusGlossaryEntries(text: string): number {
+  const lines = text.split("\n");
+  let count = 0;
+  let inGlossary = false;
+
+
+  for (const rawLine of lines) {
+    const line = normalizeHeadingLabel(rawLine);
+
+
+    if (/^GLOSSARIO CANONICO DEL CORPUS$/i.test(line) || /^N\.\s*\|\s*A\s*\|\s*B\s*\|/i.test(line)) {
+      inGlossary = true;
+      continue;
+    }
+
+
+    if (inGlossary && /^15\.2\s+Protocollo di citazione interna del glossario/i.test(line)) {
+      break;
+    }
+
+
+    if (inGlossary && /^\d+\.\d+\s+/.test(line)) {
+      count += 1;
+    }
+  }
+
+
+  return count;
+}
+
+
+async function checkDatabaseObjectAvailability(requestedName: string): Promise<DatabaseObjectDiagnostic> {
+  const sql = "SELECT to_regclass($1) AS object_name";
+  const startedAt = Date.now();
+
+
+  try {
+    const result = await queryHbceDatabase(sql, [requestedName]);
+    const row = result.rows[0] as Record<string, unknown> | undefined;
+    const resolvedName = typeof row?.object_name === "string" ? row.object_name : null;
+
+
+    return {
+      requestedName,
+      available: result.ok && Boolean(resolvedName),
+      status: !result.ok ? "QUERY_FAILED" : resolvedName ? "AVAILABLE" : "NOT_FOUND",
+      resolvedName,
+      error: result.error,
+      sqlHash: result.sqlHash,
+      durationMs: Date.now() - startedAt
+    };
+  } catch (error) {
+    return {
+      requestedName,
+      available: false,
+      status: "QUERY_FAILED",
+      resolvedName: null,
+      error: error instanceof Error ? error.message : "DATABASE_OBJECT_DIAGNOSTIC_FAILED",
+      sqlHash: buildHash(sql),
+      durationMs: Date.now() - startedAt
+    };
+  }
+}
+
+
+async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContext) {
+  const latestFile = getLatestRuntimeFile(context.files);
+  const readiness = await ensureHbceDatabaseReady().catch((error) => ({
+    ok: false,
+    description: {
+      status: "DATABASE_READY_CHECK_FAILED",
+      configured: false,
+      available: false
+    },
+    initialization: {
+      ok: false,
+      error: error instanceof Error ? error.message : "DATABASE_READY_CHECK_FAILED",
+      sqlHash: null,
+      durationMs: 0
+    }
+  }));
+  const documentProfilesTable = await checkDatabaseObjectAvailability("public.document_profiles");
+  const documentTextChunksTable = await checkDatabaseObjectAvailability("public.document_text_chunks");
+  const documentTextChunksProfileIndex = await checkDatabaseObjectAvailability("public.idx_document_text_chunks_profile");
+  const documentTextChunksFileIndex = await checkDatabaseObjectAvailability("public.idx_document_text_chunks_file");
+  const runtimeChunkStoreCount = Array.from(getDocumentChunkStore().values()).reduce((sum, chunks) => sum + chunks.length, 0);
+  const totalDocumentChunks = context.files.reduce((sum, file) => sum + file.documentChunkCount, 0);
+  const persistedDocumentChunks = context.files.reduce((sum, file) => sum + (file.documentChunksPersistedCount ?? 0), 0);
+  const missingCriticalFields: string[] = [];
+
+
+  if (!latestFile) {
+    missingCriticalFields.push("latestFile");
+  }
+
+
+  if (latestFile && !latestFile.documentProfileId) {
+    missingCriticalFields.push("latestFile.documentProfileId");
+  }
+
+
+  if (latestFile && latestFile.documentChunkCount > 0 && !latestFile.documentChunksPersisted) {
+    missingCriticalFields.push("latestFile.documentChunksPersisted");
+  }
+
+
+  if (latestFile && !latestFile.sourceFileHash) {
+    missingCriticalFields.push("latestFile.sourceFileHash");
+  }
+
+
+  if (latestFile && !latestFile.normalizedTextHash) {
+    missingCriticalFields.push("latestFile.normalizedTextHash");
+  }
+
+
+  if (latestFile && !latestFile.runtimePromptTextHash) {
+    missingCriticalFields.push("latestFile.runtimePromptTextHash");
+  }
+
+
+  const failReasons = [
+    !readiness.ok ? "DATABASE_NOT_READY" : null,
+    !documentProfilesTable.available ? "DOCUMENT_PROFILES_TABLE_NOT_AVAILABLE" : null,
+    !documentTextChunksTable.available ? "DOCUMENT_TEXT_CHUNKS_TABLE_NOT_AVAILABLE" : null,
+    latestFile && latestFile.fullDocumentCoverage !== true ? "LATEST_FILE_FULL_DOCUMENT_COVERAGE_FALSE" : null,
+    latestFile && latestFile.longDocumentMode === "CHUNKED_FULL_TEXT" && latestFile.documentChunkCount <= 0 ? "LATEST_FILE_CHUNKS_NOT_BUILT" : null,
+    latestFile && latestFile.documentChunkCount > 0 && latestFile.documentChunksPersisted !== true ? "LATEST_FILE_CHUNKS_NOT_PERSISTED" : null,
+    missingCriticalFields.length > 0 ? `MISSING_CRITICAL_FIELDS:${missingCriticalFields.join(",")}` : null
+  ].filter(Boolean) as string[];
+
+
+  return {
+    status: "FILES_ROUTE_DIAGNOSTIC_READY",
+    routeAlive: true,
+    endpoint: "HBCE_FILES_INGESTION",
+    fileRouteRevision: FILE_ROUTE_REVISION,
+    routeVersion: FILE_ROUTE_REVISION,
+    selfDiagnosticRevision: "FILES_ROUTE_SELF_DIAGNOSTIC_ENDPOINT-v6_2",
+    sessionId: context.sessionId,
+    activeFileCount: context.files.length,
+    activeFilesVisibleCount: context.files.length,
+    includeChunksSupported: true,
+    includeProfilesSupported: true,
+    includeDiagnosticsSupported: true,
+    sourceFileHashSupported: true,
+    normalizedTextHashSupported: true,
+    runtimePromptTextHashSupported: true,
+    documentOutlineSupported: true,
+    canonicalOutlineDetectorActive: true,
+    longDocumentChunkingSupported: true,
+    runtimeChunkStoreCount,
+    totalDocumentChunks,
+    persistedDocumentChunks,
+    database: {
+      configured: Boolean(readiness.description.configured),
+      available: Boolean(readiness.ok && readiness.description.available),
+      status: readiness.description.status,
+      initializationOk: readiness.initialization.ok,
+      initializationError: readiness.initialization.error,
+      initializationSqlHash: readiness.initialization.sqlHash,
+      initializationDurationMs: readiness.initialization.durationMs
+    },
+    tables: {
+      documentProfiles: documentProfilesTable,
+      documentTextChunks: documentTextChunksTable
+    },
+    indexes: {
+      documentTextChunksProfile: documentTextChunksProfileIndex,
+      documentTextChunksFile: documentTextChunksFileIndex
+    },
+    latestFile: buildDiagnosticFileSnapshot(latestFile),
+    files: context.files.map((file) => buildDiagnosticFileSnapshot(file)),
+    failClosed: failReasons.length > 0,
+    failReason: failReasons.length > 0 ? failReasons.join("|") : "NONE",
+    memorySaveAllowed: false,
+    noIprSaveAllowedDuringDiagnostic: true,
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
 function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
   const textReadyCount = files.filter((file) => file.status === "TEXT_READY").length;
   const pdfReadyCount = files.filter(
@@ -3063,7 +3339,7 @@ function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
     maxTextCharsPerFile: MAX_TEXT_CHARS_PER_FILE,
     maxTotalTextCharsPerSession: MAX_TOTAL_TEXT_CHARS_PER_SESSION,
     routeVersion: FILE_ROUTE_REVISION,
-    longDocumentEngine: "LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_1",
+    longDocumentEngine: "LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_2_SELF_DIAGNOSTIC_ENDPOINT",
     documentRegistry: "DOCUMENT_PROFILES",
     documentTextChunks: "document_text_chunks",
     cyberneticMethod: "FILE_UPLOAD_TO_FULL_TEXT_CHUNKS_TO_DOCUMENT_PROFILE_TO_DYNAMIC_RECALL",
@@ -3127,6 +3403,15 @@ export async function POST(req: NextRequest) {
   store.set(sessionId, nextFiles);
 
 
+  const selfDiagnostic = await buildFilesRouteSelfDiagnostic({
+    sessionId,
+    files: nextFiles,
+    humanIpr: context.humanIpr,
+    tenantId: context.tenantId,
+    workspaceId: context.workspaceId
+  });
+
+
   return NextResponse.json({
     ok: true,
     endpoint: "HBCE_FILES_INGESTION",
@@ -3181,6 +3466,9 @@ export async function POST(req: NextRequest) {
     summary: buildSessionSummary(sessionId, nextFiles),
     files: summarizeFiles(nextFiles, false, false),
     documentProfiles,
+    selfDiagnostic,
+    diagnostic: selfDiagnostic,
+    filesRouteDiagnostic: selfDiagnostic,
     legalCertification: false,
     opc: "technical proof receipt only"
   });
@@ -3196,6 +3484,10 @@ export async function GET(req: NextRequest) {
   const includeText = url.searchParams.get("includeText") !== "false";
   const includeProfiles = url.searchParams.get("includeProfiles") !== "false";
   const includeChunks = url.searchParams.get("includeChunks") === "true";
+  const includeDiagnostics =
+    isAffirmativeSearchParam(url.searchParams.get("diagnostic")) ||
+    isAffirmativeSearchParam(url.searchParams.get("includeDiagnostics")) ||
+    isAffirmativeSearchParam(url.searchParams.get("selfDiagnostic"));
   const humanIpr = url.searchParams.get("humanIpr") || HBCE_SELF_PILOT_HUMAN_IPR;
   const tenantId = url.searchParams.get("tenantId") || HBCE_SELF_PILOT_TENANT_ID;
   const workspaceId = url.searchParams.get("workspaceId") || HBCE_SELF_PILOT_WORKSPACE_ID;
@@ -3229,6 +3521,15 @@ export async function GET(req: NextRequest) {
         profiles: []
       }))
     : null;
+  const selfDiagnostic = includeDiagnostics
+    ? await buildFilesRouteSelfDiagnostic({
+        sessionId,
+        files,
+        humanIpr,
+        tenantId,
+        workspaceId
+      })
+    : null;
 
 
   return NextResponse.json({
@@ -3239,6 +3540,9 @@ export async function GET(req: NextRequest) {
     summary: buildSessionSummary(sessionId, files),
     files: summarizeFiles(files, includeText, includeChunks),
     documentProfiles,
+    selfDiagnostic,
+    diagnostic: selfDiagnostic,
+    filesRouteDiagnostic: selfDiagnostic,
     legalCertification: false,
     opc: "technical proof receipt only"
   });
