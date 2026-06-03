@@ -72,7 +72,7 @@ type HbceB2gTechnicalStackModule =
   | "AIQ_JOKER_POLICY_TRUTH_BUS"
   | "UFO_INTERCEPT_COLLISION_COLLIMATION_RUNTIME"
   | "UFO_OPERATIONAL_MODULE_REGISTRY"
-  | "CQO_RND_THEORETICAL_FOUNDATION";
+  | "CQO_OPPONIBLE_QUANTUM_CYBERNETICS";
 
 type HbceB2gTechnicalStackConfidence =
   | "NONE"
@@ -345,20 +345,26 @@ const HBCE_B2G_TECHNICAL_STACK_DEFINITIONS: readonly ModuleDefinition[] = [
     ]
   },
   {
-    module: "CQO_RND_THEORETICAL_FOUNDATION",
-    documentKind: HBCE_RND_THEORETICAL_FOUNDATION,
+    module: "CQO_OPPONIBLE_QUANTUM_CYBERNETICS",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
     volume: "N/A",
-    title: "Cybernetica Quantistica Opponibile – R&D Theoretical Foundation",
-    shortTitle: "Cybernetica Quantistica Opponibile",
-    canonicalAxis: "R&D · Cybernetic Theory · Opposability · Auditability · EVT · OPC",
+    title: "Cybernetica Quantistica Opponibile",
+    shortTitle: "CQO Opponible Quantum Cybernetics",
+    canonicalAxis: "Psi · Lambda · kappa · Tau · Sigma · Omega · Chi_tau · D · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
     summary:
-      "Fondamento teorico R&D dello stack tecnico HBCE/JOKER-C2, usato come whitepaper e base dottrinale non primaria per le API.",
+      "Modulo tecnico B2G per cybernetica quantistica opponibile: modella intenzione, informazione, struttura, misura certificabile, feedback e memoria adattiva attraverso Psi, Lambda, kappa, Tau, Sigma, Omega, Chi_tau e D.",
     keyTerms: [
       "Cybernetica Quantistica Opponibile",
       "CQO",
-      "R&D",
+      "Psi",
+      "Lambda",
+      "kappa",
+      "Tau",
+      "Sigma",
+      "Omega",
+      "Chi_tau",
+      "D",
       "opponibilità",
-      "auditability",
       "EVT",
       "OPC"
     ],
@@ -366,15 +372,22 @@ const HBCE_B2G_TECHNICAL_STACK_DEFINITIONS: readonly ModuleDefinition[] = [
       "cybernetica quantistica opponibile",
       "cibernetica quantistica opponibile",
       "cqo",
+      "cqo_opponible_quantum_cybernetics",
       "quantistica opponibile"
     ],
     secondarySignals: [
-      "opponibilità",
-      "opponibile",
-      "ricerca",
-      "r&d",
-      "whitepaper",
-      "audit",
+      "psi",
+      "lambda",
+      "kappa",
+      "tau",
+      "sigma",
+      "omega",
+      "chi_tau",
+      "qubytron",
+      "misurazione opponibile",
+      "retroazione cibernetica",
+      "loop quantico-informazionale",
+      "e(t)",
       "evt",
       "opc"
     ]
@@ -1070,39 +1083,60 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
     ]
   },
 
-  CQO_RND_THEORETICAL_FOUNDATION: {
-    module: "CQO_RND_THEORETICAL_FOUNDATION",
-    documentKind: HBCE_RND_THEORETICAL_FOUNDATION,
-    title: "Cybernetica Quantistica Opponibile – R&D Theoretical Foundation",
-    shortTitle: "Cybernetica Quantistica Opponibile",
-    canonicalAxis: "R&D · Cybernetic Theory · Opposability · Auditability · EVT · OPC",
+  CQO_OPPONIBLE_QUANTUM_CYBERNETICS: {
+    module: "CQO_OPPONIBLE_QUANTUM_CYBERNETICS",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    title: "Cybernetica Quantistica Opponibile",
+    shortTitle: "CQO Opponible Quantum Cybernetics",
+    canonicalAxis: "Psi · Lambda · kappa · Tau · Sigma · Omega · Chi_tau · D · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
     technicalMemorySummary:
-      "Cybernetica Quantistica Opponibile is the R&D theoretical foundation for the AI JOKER-C2 B2G technical stack. It should be stored as research context and documentation support, not as a primary executable API route.",
+      "CQO is the AI JOKER-C2 B2G opponible quantum cybernetics module. It models intention, information, structure and certified measurement through Psi, Lambda, kappa and Tau, then connects feedback, memory, friction and systemic deviation through Sigma, Omega, Chi_tau and D. Its function is to convert cybernetic coherence into auditable EVT/OPC technical proof receipts with legalCertification=false.",
     runtimeInputs: [
-      "researchContext",
-      "theoreticalClaim",
-      "operationalMapping",
-      "traceRequirement",
+      "psiIntentionVector",
+      "lambdaInformationCoherence",
+      "kappaStructuralState",
+      "tauMeasurementWindow",
+      "sigmaFeedbackField",
+      "omegaAdaptiveMemory",
+      "chiTauFriction",
+      "systemicDeviationD",
+      "humanIpr",
       "tenantId",
       "workspaceId"
     ],
     runtimeOutputs: [
-      "researchSummary",
-      "operationalImplication",
-      "documentationAnchor",
+      "cqoTrajectoryState",
+      "coherenceScoreLambda",
+      "tauOpponibilityMeasure",
+      "sigmaFeedbackResult",
+      "omegaAdaptationRecord",
+      "chiTauFrictionAssessment",
+      "deviationReportD",
       "evtCandidate",
       "opcTechnicalProofReceipt"
     ],
     operationalRules: [
-      "Use as R&D context, not as a primary runtime actuator.",
-      "Translate theory into executable modules only after explicit engineering mapping.",
-      "Keep legalCertification=false.",
-      "Use OPC as technical proof receipt only."
+      "Use CQO as a technical governance module for cybernetic coherence and opponible measurement.",
+      "Keep legalCertification=false unless later integrated with qualified trust services.",
+      "Use OPC as technical proof receipt only.",
+      "Do not route CQO into CORPUS/QSTATE collapse."
     ],
     futureGithubModules: [
       {
-        path: "docs/rd/cybernetic-quantum-opponibility.md",
-        role: "R&D documentation and theoretical foundation for the B2G stack."
+        path: "lib/cqo-opponible-quantum-cybernetics.ts",
+        role: "CQO cybernetic coherence and opponible measurement module."
+      },
+      {
+        path: "app/api/v1/cqo/trajectory/check/route.ts",
+        route: "/api/v1/cqo/trajectory/check",
+        method: "POST",
+        role: "API endpoint for CQO trajectory and coherence checks."
+      },
+      {
+        path: "app/api/v1/cqo/opponibility/record/route.ts",
+        route: "/api/v1/cqo/opponibility/record",
+        method: "POST",
+        role: "API endpoint for CQO opponible measurement records."
       }
     ]
   }
@@ -1536,7 +1570,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
@@ -1804,9 +1838,9 @@ type CanonicalCorpusVolumeProfile = {
   keyTerms: string[];
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1";
 const QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION = "QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
-const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8";
+const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1";
 const QPCCF_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
 const QPCCF_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
 const QPCCF_MODULE = "QPCCF_PREDICTIVE_STABILITY_ENGINE";
