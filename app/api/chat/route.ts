@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -844,6 +844,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const rawFullDocumentCoverageAuditRequested = isFullDocumentCoverageAuditQuestion(message);
   const iprCanonicalDocumentMemorySaveRequested = isIprCanonicalDocumentMemorySaveRequest(message);
   const b2gTechnicalProfileMemoryRequested = isB2gTechnicalProfileMemoryRequest(message, files);
+  const recordStatusOnlyRequested = isRecordStatusOnlyQuestion(message);
   const fullDocumentCoverageAuditRequested =
     rawFullDocumentCoverageAuditRequested && !iprCanonicalDocumentMemorySaveRequested;
   const runtimeStatusTableRequested =
@@ -917,28 +918,32 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       !memoryChainRouteRequested &&
       hardNoSavePersistenceRequested);
   const runtimeMemoryWriteSuppressed =
-    fullDocumentCoverageAuditRequested || hardNoSavePersistenceRequested;
+    fullDocumentCoverageAuditRequested || hardNoSavePersistenceRequested || recordStatusOnlyRequested;
   const semanticMemoryRouteSuppressed =
     runtimeMemoryWriteSuppressed ||
     iprCanonicalDocumentMemorySaveRequested ||
     memoryChainRouteRequested ||
     shouldSuppressEsoterologicalSemanticMemoryRoute(message);
   const trainingDeleteVerificationRequested =
+    !recordStatusOnlyRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     isTrainingDeleteVerificationQuestion(message);
   const trainingSoftDeleteApplicationRequested =
+    !recordStatusOnlyRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
     isTrainingSoftDeleteApplicationQuestion(message);
   const trainingReelaborationRequested =
+    !recordStatusOnlyRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
     !trainingSoftDeleteApplicationRequested &&
     isTrainingReelaborationQuestion(message);
   const trainingBehaviorRequested =
+    !recordStatusOnlyRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
@@ -946,6 +951,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !trainingReelaborationRequested &&
     isTrainingBehaviorQuestion(message);
   const trainingMemoryRecallRequested =
+    !recordStatusOnlyRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
@@ -971,6 +977,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     trainingBehaviorRequested ||
     trainingMemoryRecallRequested;
   const esoterologicalSemanticMemoryRequested =
+    !recordStatusOnlyRequested &&
     !runtimeMemoryBlockDiagnosticRequested &&
     !matrixStrategicSynthesisRequested &&
     !iprCanonicalDocumentMemorySaveRequested &&
@@ -980,6 +987,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !semanticMemoryRouteSuppressed &&
     isEsoterologicalSemanticMemoryQuestion(message);
   const memoryRegistrationRequested =
+    !recordStatusOnlyRequested &&
     !runtimeMemoryBlockDiagnosticRequested &&
     !iprCanonicalDocumentMemorySaveRequested &&
     !noSavePersistenceRequested &&
@@ -988,6 +996,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !esoterologicalSemanticMemoryRequested &&
     isMemoryRegistrationQuestion(message);
   const memoryRecoveryRequested =
+    !recordStatusOnlyRequested &&
     !runtimeMemoryBlockDiagnosticRequested &&
     !iprCanonicalDocumentMemorySaveRequested &&
     !noSavePersistenceRequested &&
@@ -996,6 +1005,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !esoterologicalSemanticMemoryRequested &&
     isMemoryRecoveryQuestion(message);
   const apiSdkB2GPresentationRequested =
+    !recordStatusOnlyRequested &&
     !runtimeMemoryBlockDiagnosticRequested &&
     !matrixStrategicSynthesisRequested &&
     !iprCanonicalDocumentMemorySaveRequested &&
@@ -1008,7 +1018,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !runtimeMemoryBlockDiagnosticRequested &&
     !iprCanonicalDocumentMemorySaveRequested &&
     !noSavePersistenceRequested &&
-    (memoryChainRouteRequested ||
+    (recordStatusOnlyRequested ||
+      memoryChainRouteRequested ||
       trainingRouteRequested ||
       (!esoterologicalSemanticMemoryRequested && isIprMemoryRecallQuestion(message)));
 
@@ -1044,7 +1055,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     promptMaxChars: noSavePersistenceRequested ? 0 : 7000
   });
   const documentProfileRecall: DocumentProfileRecall | null =
-    documentMemoryRecallRequested || iprCanonicalDocumentMemorySaveRequested || b2gTechnicalProfileMemoryRequested
+    documentMemoryRecallRequested ||
+    iprCanonicalDocumentMemorySaveRequested ||
+    b2gTechnicalProfileMemoryRequested ||
+    recordStatusOnlyRequested
     ? await resolveDocumentProfileRecall({
         handoff,
         saasContext,
@@ -1095,6 +1109,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     fullDocumentCoverageAuditRequested,
     iprCanonicalDocumentMemorySaveRequested,
     b2gTechnicalProfileMemoryRequested,
+    recordStatusOnlyRequested,
     matrixStrategicSynthesisRequested,
     apiSdkB2GPresentationRequested,
     iprRecallRequested,
@@ -1163,6 +1178,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (recordStatusOnlyRequested) {
+    answer = buildIprRecordStatusOnlyAnswer({
+      recall: iprRecall,
+      documentProfileRecall,
+      message,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (b2gTechnicalProfileMemoryRequested) {
@@ -1647,7 +1674,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  const finalAnswerBase = b2gTechnicalProfileMemoryRequested
+  const finalAnswerBase = recordStatusOnlyRequested
+    ? safeAnswer
+    : b2gTechnicalProfileMemoryRequested
     ? buildB2gTechnicalProfileMemoryReadyAnswer({
         message,
         files,
@@ -3020,7 +3049,7 @@ LIMIT $5
         humanIpr,
         args.saasContext.tenantId || null,
         args.saasContext.workspaceId || null,
-        strictRequestedMemoryOnly ? requestedMemoryIds : null,
+        strictRequestedMemoryOnly ? toPostgresTextArrayLiteral(requestedMemoryIds) : null,
         effectiveDbLimit
       ]
     );
@@ -3137,6 +3166,27 @@ LIMIT $5
 function extractRequestedIprMemoryIds(message: string): string[] {
   const matches = message.match(/IPR-MEM-\d{14}-[A-Z0-9]+/gi) || [];
   return Array.from(new Set(matches.map((item) => item.trim().toUpperCase())));
+}
+
+function toPostgresTextArrayLiteral(values: string[]): string {
+  return "{" + values
+    .map((value) => "\"" + value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"")
+    .join(",") + "}";
+}
+
+function isRecordStatusOnlyQuestion(message: string): boolean {
+  const normalized = normalizeText(message);
+  const raw = message.toLowerCase();
+  const hasMemoryId = /IPR-MEM-\d{14}-[A-Z0-9]+/i.test(message);
+  const asksRecordStatus =
+    raw.includes("record_status_only") ||
+    raw.includes("ipr_record_status_verify") ||
+    raw.includes("record-status") ||
+    normalized.includes("record status") ||
+    normalized.includes("recordstatus") ||
+    normalized.includes("record_status");
+
+  return hasMemoryId && asksRecordStatus;
 }
 
 
@@ -4526,6 +4576,135 @@ function buildIprTrainingSoftDeleteApplicationAnswer(args: {
     "MATRIX: governance della continuità, della pulizia recall e della responsabilità operativa.",
     "",
     "10. Boundary",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+
+
+function selectRecordStatusDocumentProfileMetadata(
+  documentProfileRecall: DocumentProfileRecall | null,
+  message: string,
+  primary: IprRecallInjectionItem | null
+): JsonObject | null {
+  const candidates = documentProfileRecallCandidateItems(documentProfileRecall);
+
+  if (!candidates.length) {
+    return null;
+  }
+
+  const requestedProfileIds = new Set(extractRequestedDocumentProfileIds(message).map((id) => normalizeText(id)));
+  const requestedMemoryIds = new Set(extractRequestedIprMemoryIds(message).map((id) => normalizeText(id)));
+  const primaryMemoryId = normalizeText(primary?.memoryId || "");
+
+  return candidates.find((candidate) => {
+    const candidateProfileId = normalizeText(
+      stringPath(candidate, "profileId", "") || stringPath(candidate, "documentProfileId", "")
+    );
+    const candidateMemoryId = normalizeText(
+      stringPath(candidate, "memoryId", "") ||
+        stringPath(candidate, "sourceMemoryId", "") ||
+        stringPath(candidate, "iprMemoryId", "") ||
+        stringPath(candidate, "documentMetadata.memoryId", "")
+    );
+
+    return (
+      (candidateProfileId && requestedProfileIds.has(candidateProfileId)) ||
+      (candidateMemoryId && requestedMemoryIds.has(candidateMemoryId)) ||
+      (primaryMemoryId && candidateMemoryId === primaryMemoryId)
+    );
+  }) || candidates[0] || null;
+}
+
+function buildIprRecordStatusOnlyAnswer(args: {
+  recall: IprRecallInjection;
+  documentProfileRecall: DocumentProfileRecall | null;
+  message: string;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const requestedMemoryIds = extractRequestedIprMemoryIds(args.message);
+  const primary = args.recall.items[0] || null;
+  const profile = selectRecordStatusDocumentProfileMetadata(args.documentProfileRecall, args.message, primary);
+  const linkedProfileCount = documentProfileRecallLinkedProfileCount(args.documentProfileRecall);
+  const profileId = documentProfileMetadataString(profile, ["profileId", "documentProfileId", "documentMetadata.profileId"], "NO_DOCUMENT_PROFILE_ID");
+  const filename = documentProfileMetadataString(profile, ["filename", "sourceDocument", "documentMetadata.filename", "documentMetadata.sourceDocument"], "NO_FILENAME_IN_DOCUMENT_PROFILE");
+  const fileHash = documentProfileMetadataString(profile, ["fileHash", "sourceFileHash", "documentMetadata.fileHash", "documentMetadata.sourceFileHash"], "NO_FILE_HASH_IN_DOCUMENT_PROFILE");
+  const docFamily = documentProfileMetadataString(profile, ["docFamily", "canonicalDocFamily", "documentMetadata.docFamily", "documentMetadata.canonicalDocFamily"], "NO_DOC_FAMILY_IN_DOCUMENT_PROFILE");
+  const documentKind = documentProfileMetadataString(profile, ["documentKind", "canonicalDocumentKind", "documentMetadata.documentKind", "documentMetadata.canonicalDocumentKind"], "NO_DOCUMENT_KIND_IN_DOCUMENT_PROFILE");
+  const moduleName = documentProfileMetadataString(profile, ["module", "canonicalModule", "documentModule", "documentMetadata.module", "documentMetadata.canonicalModule"], "NO_MODULE_IN_DOCUMENT_PROFILE");
+  const volume = documentProfileMetadataString(profile, ["volume", "documentVolume", "documentMetadata.volume"], "N/A");
+  const title = documentProfileMetadataString(profile, ["title", "documentTitle", "documentMetadata.title"], primary?.memoryTitle || "NO_TITLE_IN_DOCUMENT_PROFILE");
+  const canonicalAxis = documentProfileMetadataString(profile, ["canonicalAxis", "axis", "documentMetadata.canonicalAxis"], "NO_CANONICAL_AXIS_IN_DOCUMENT_PROFILE");
+  const b2gReady =
+    docFamily === QPCCF_B2G_DOC_FAMILY &&
+    (moduleName === QPCCF_B2G_MODULE || normalizeText(title).includes("qpccf"));
+  const recordReady = Boolean(primary) && (linkedProfileCount > 0 || profile !== null);
+  const failReason = recordReady
+    ? "NONE"
+    : [
+        primary ? "" : "MEMORY_ID_NOT_FOUND",
+        profile || linkedProfileCount > 0 ? "" : "DOCUMENT_PROFILE_NOT_LINKED"
+      ].filter(Boolean).join("|") || "UNKNOWN_RECORD_STATUS_FAILURE";
+
+  return [
+    recordReady ? "IPR_RECORD_STATUS_READY" : "IPR_RECORD_STATUS_FAIL",
+    "",
+    "recordStatusOnly=true",
+    "semanticMemoryCreated=false",
+    "semanticMemoryRouteSuppressed=true",
+    "runtimeMemoryWriteSuppressed=true",
+    `recallStatus=${args.recall.status}`,
+    `recallInjected=${String(args.recall.injected)}`,
+    args.recall.error ? `recallError=${args.recall.error}` : "recallError=NONE",
+    `requestedMemoryIds=${requestedMemoryIds.join(", ") || "NO_REQUESTED_MEMORY_IDS"}`,
+    `memoryIds=${args.recall.memoryIds.join(", ") || "NO_MEMORY_IDS"}`,
+    "",
+    `memoryId=${primary?.memoryId || requestedMemoryIds[0] || "NO_MEMORY_ID"}`,
+    `sourceSavedChatId=${primary?.sourceSavedChatId || "NO_SAVED_CHAT_IN_RECALL_RECORD"}`,
+    `sourceThreadId=${primary?.sourceThreadId || primary?.sessionId || args.recall.sessionId}`,
+    `EVT=${primary?.lastEvtId || "NO_EVT_IN_RECALL_RECORD"}`,
+    `OPC=${primary?.lastOpcProofId || "NO_OPC_IN_RECALL_RECORD"}`,
+    `recordHash=${primary?.lastOpcChainHash || "NO_RECORD_HASH_IN_RECALL_RECORD"}`,
+    `status=${args.recall.status}`,
+    `memoryStatus=${primary?.memoryStatus || "NO_MEMORY_STATUS"}`,
+    `promptEligible=${String(Boolean(primary))}`,
+    `reusableInPrompt=${String(Boolean(primary))}`,
+    `classification=${primary?.classification || "NO_CLASSIFICATION"}`,
+    `quality=${primary?.quality || "NO_QUALITY"}`,
+    "",
+    `documentRegistry.status=${profile || linkedProfileCount > 0 ? "AVAILABLE" : "NO_LINKED_PROFILE"}`,
+    `linkedProfileCount=${String(linkedProfileCount)}`,
+    `documentProfileId=${profileId}`,
+    `filename=${filename}`,
+    `fileHash=${fileHash}`,
+    `docFamily=${docFamily}`,
+    `documentKind=${documentKind}`,
+    `module=${moduleName}`,
+    `volume=${volume}`,
+    `title=${title}`,
+    `canonicalAxis=${canonicalAxis}`,
+    "",
+    `b2gTechnicalMemory.status=${b2gReady ? "B2G_TECHNICAL_PROFILE_MEMORY_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_NOT_CONFIRMED"}`,
+    `b2gTechnicalMemory.readyForIprSave=${String(b2gReady && recordReady)}`,
+    "b2gTechnicalMemory.memoryType=B2G_TECHNICAL_PROFILE_MEMORY",
+    "b2gTechnicalMemory.memoryMode=TECHNICAL_SYNTHESIS_ONLY",
+    "noQuantumStates=true",
+    "noQstateOutput=true",
+    "noCorpusCollapse=true",
+    "noSemanticEsoterologicalMemory=true",
+    "noDcttAxisForB2gTechnicalModules=true",
+    "",
+    `failReason=${failReason}`,
+    `derivedFromHumanIpr=${args.handoff.humanIpr || "NO_HUMAN_IPR"}`,
+    `humanIpr=${args.handoff.humanIpr || "NO_HUMAN_IPR"}`,
+    `runtimeIpr=${RUNTIME_IPR}`,
+    `tenantId=${args.saasContext.tenantId}`,
+    `workspaceId=${args.saasContext.workspaceId}`,
     "legalCertification=false",
     "OPC=technical proof receipt only"
   ].join("\n");
