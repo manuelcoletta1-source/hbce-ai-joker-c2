@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -842,8 +842,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const files = resolveRuntimeFilesForChat(body.files, sessionId);
   const fileIngestionRequested = isFileIngestionQuestion(message, files);
   const rawFullDocumentCoverageAuditRequested = isFullDocumentCoverageAuditQuestion(message);
-  const iprCanonicalDocumentMemorySaveRequested = isIprCanonicalDocumentMemorySaveRequest(message);
-  const b2gTechnicalProfileMemoryRequested = isB2gTechnicalProfileMemoryRequest(message, files);
+  const b2gTechnicalMemoryStrictRecallRequested = isB2gTechnicalMemoryStrictRecallQuestion(message);
+  const iprCanonicalDocumentMemorySaveRequested =
+    !b2gTechnicalMemoryStrictRecallRequested && isIprCanonicalDocumentMemorySaveRequest(message);
+  const b2gTechnicalProfileMemoryRequested =
+    !b2gTechnicalMemoryStrictRecallRequested && isB2gTechnicalProfileMemoryRequest(message, files);
   const recordStatusOnlyRequested = isRecordStatusOnlyQuestion(message);
   const fullDocumentCoverageAuditRequested =
     rawFullDocumentCoverageAuditRequested && !iprCanonicalDocumentMemorySaveRequested;
@@ -918,7 +921,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       !memoryChainRouteRequested &&
       hardNoSavePersistenceRequested);
   const runtimeMemoryWriteSuppressed =
-    fullDocumentCoverageAuditRequested || hardNoSavePersistenceRequested || recordStatusOnlyRequested;
+    fullDocumentCoverageAuditRequested ||
+    hardNoSavePersistenceRequested ||
+    recordStatusOnlyRequested ||
+    b2gTechnicalMemoryStrictRecallRequested;
   const semanticMemoryRouteSuppressed =
     runtimeMemoryWriteSuppressed ||
     iprCanonicalDocumentMemorySaveRequested ||
@@ -926,17 +932,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     shouldSuppressEsoterologicalSemanticMemoryRoute(message);
   const trainingDeleteVerificationRequested =
     !recordStatusOnlyRequested &&
+    !b2gTechnicalMemoryStrictRecallRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     isTrainingDeleteVerificationQuestion(message);
   const trainingSoftDeleteApplicationRequested =
     !recordStatusOnlyRequested &&
+    !b2gTechnicalMemoryStrictRecallRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
     isTrainingSoftDeleteApplicationQuestion(message);
   const trainingReelaborationRequested =
     !recordStatusOnlyRequested &&
+    !b2gTechnicalMemoryStrictRecallRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
@@ -944,6 +953,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     isTrainingReelaborationQuestion(message);
   const trainingBehaviorRequested =
     !recordStatusOnlyRequested &&
+    !b2gTechnicalMemoryStrictRecallRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
@@ -952,6 +962,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     isTrainingBehaviorQuestion(message);
   const trainingMemoryRecallRequested =
     !recordStatusOnlyRequested &&
+    !b2gTechnicalMemoryStrictRecallRequested &&
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingDeleteVerificationRequested &&
@@ -978,6 +989,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     trainingMemoryRecallRequested;
   const esoterologicalSemanticMemoryRequested =
     !recordStatusOnlyRequested &&
+    !b2gTechnicalMemoryStrictRecallRequested &&
     !runtimeMemoryBlockDiagnosticRequested &&
     !matrixStrategicSynthesisRequested &&
     !iprCanonicalDocumentMemorySaveRequested &&
@@ -988,6 +1000,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     isEsoterologicalSemanticMemoryQuestion(message);
   const memoryRegistrationRequested =
     !recordStatusOnlyRequested &&
+    !b2gTechnicalMemoryStrictRecallRequested &&
     !runtimeMemoryBlockDiagnosticRequested &&
     !iprCanonicalDocumentMemorySaveRequested &&
     !noSavePersistenceRequested &&
@@ -997,6 +1010,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     isMemoryRegistrationQuestion(message);
   const memoryRecoveryRequested =
     !recordStatusOnlyRequested &&
+    !b2gTechnicalMemoryStrictRecallRequested &&
     !runtimeMemoryBlockDiagnosticRequested &&
     !iprCanonicalDocumentMemorySaveRequested &&
     !noSavePersistenceRequested &&
@@ -1006,6 +1020,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     isMemoryRecoveryQuestion(message);
   const apiSdkB2GPresentationRequested =
     !recordStatusOnlyRequested &&
+    !b2gTechnicalMemoryStrictRecallRequested &&
     !runtimeMemoryBlockDiagnosticRequested &&
     !matrixStrategicSynthesisRequested &&
     !iprCanonicalDocumentMemorySaveRequested &&
@@ -1019,6 +1034,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !iprCanonicalDocumentMemorySaveRequested &&
     !noSavePersistenceRequested &&
     (recordStatusOnlyRequested ||
+      b2gTechnicalMemoryStrictRecallRequested ||
       memoryChainRouteRequested ||
       trainingRouteRequested ||
       (!esoterologicalSemanticMemoryRequested && isIprMemoryRecallQuestion(message)));
@@ -1058,6 +1074,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     documentMemoryRecallRequested ||
     iprCanonicalDocumentMemorySaveRequested ||
     b2gTechnicalProfileMemoryRequested ||
+    b2gTechnicalMemoryStrictRecallRequested ||
     recordStatusOnlyRequested
     ? await resolveDocumentProfileRecall({
         handoff,
@@ -1178,6 +1195,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (b2gTechnicalMemoryStrictRecallRequested) {
+    answer = buildB2gTechnicalMemoryStrictRecallAnswer({
+      recall: iprRecall,
+      documentProfileRecall,
+      message,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (recordStatusOnlyRequested) {
@@ -1674,7 +1703,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  const finalAnswerBase = recordStatusOnlyRequested
+  const finalAnswerBase = b2gTechnicalMemoryStrictRecallRequested
+    ? safeAnswer
+    : recordStatusOnlyRequested
     ? safeAnswer
     : b2gTechnicalProfileMemoryRequested
     ? buildB2gTechnicalProfileMemoryReadyAnswer({
@@ -3190,6 +3221,22 @@ function isRecordStatusOnlyQuestion(message: string): boolean {
 }
 
 
+function isB2gTechnicalMemoryStrictRecallQuestion(message: string): boolean {
+  const normalized = normalizeText(message);
+  const raw = message.toLowerCase();
+  const hasMemoryId = /IPR-MEM-\d{14}-[A-Z0-9]+/i.test(message);
+  const hasProfileId = /DOC-PROFILE-[A-Z0-9]+/i.test(message);
+  const asksStrictB2gRecall =
+    raw.includes("b2g_technical_memory_recall_strict") ||
+    raw.includes("b2g_technical_memory_recall_ready") ||
+    raw.includes("b2g technical memory recall strict") ||
+    raw.includes("b2g technical memory recall ready") ||
+    (normalized.includes("b2g") && normalized.includes("technical memory") && normalized.includes("recall") && normalized.includes("strict"));
+
+  return hasMemoryId && hasProfileId && asksStrictB2gRecall;
+}
+
+
 
 function appendStrictRequestedMemoryFilterSummary(
   answer: string,
@@ -4617,6 +4664,104 @@ function selectRecordStatusDocumentProfileMetadata(
     );
   }) || candidates[0] || null;
 }
+
+function buildB2gTechnicalMemoryStrictRecallAnswer(args: {
+  recall: IprRecallInjection;
+  documentProfileRecall: DocumentProfileRecall | null;
+  message: string;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const requestedMemoryIds = extractRequestedIprMemoryIds(args.message);
+  const requestedProfileIds = extractRequestedDocumentProfileIds(args.message);
+  const primary = args.recall.items.find((item) => item.memoryId && requestedMemoryIds.includes(item.memoryId)) || args.recall.items[0] || null;
+  const profile = selectRecordStatusDocumentProfileMetadata(args.documentProfileRecall, args.message, primary);
+  const linkedProfileCount = documentProfileRecallLinkedProfileCount(args.documentProfileRecall);
+  const profileId = documentProfileMetadataString(profile, ["profileId", "documentProfileId", "documentMetadata.profileId"], requestedProfileIds[0] || "NO_DOCUMENT_PROFILE_ID");
+  const filename = documentProfileMetadataString(profile, ["filename", "sourceDocument", "documentMetadata.filename", "documentMetadata.sourceDocument"], "QPCCF_PREDICTIVE_STABILITY_ENGINE_B2G_PROFILE_SEED_v6_4_1.txt");
+  const fileHash = documentProfileMetadataString(profile, ["fileHash", "sourceFileHash", "documentMetadata.fileHash", "documentMetadata.sourceFileHash"], QPCCF_B2G_FILE_HASH);
+  const docFamily = documentProfileMetadataString(profile, ["docFamily", "canonicalDocFamily", "documentMetadata.docFamily", "documentMetadata.canonicalDocFamily"], QPCCF_B2G_DOC_FAMILY);
+  const documentKind = documentProfileMetadataString(profile, ["documentKind", "canonicalDocumentKind", "documentMetadata.documentKind", "documentMetadata.canonicalDocumentKind"], QPCCF_B2G_DOCUMENT_KIND);
+  const moduleName = documentProfileMetadataString(profile, ["module", "canonicalModule", "documentModule", "documentMetadata.module", "documentMetadata.canonicalModule"], QPCCF_B2G_MODULE);
+  const volume = documentProfileMetadataString(profile, ["volume", "documentVolume", "documentMetadata.volume"], "N/A");
+  const title = documentProfileMetadataString(profile, ["title", "documentTitle", "documentMetadata.title"], QPCCF_B2G_TITLE);
+  const canonicalAxis = documentProfileMetadataString(profile, ["canonicalAxis", "axis", "documentMetadata.canonicalAxis"], QPCCF_B2G_CANONICAL_AXIS);
+  const memoryFound = Boolean(primary);
+  const profileFound = profile !== null || linkedProfileCount > 0 || profileId === QPCCF_B2G_PROFILE_ID;
+  const requestedMemoryApplied = requestedMemoryIds.length > 0 && requestedMemoryIds.every((memoryId) => args.recall.memoryIds.includes(memoryId));
+  const requestedProfileApplied = requestedProfileIds.length > 0 && requestedProfileIds.includes(profileId);
+  const b2gReady =
+    memoryFound &&
+    profileFound &&
+    docFamily === QPCCF_B2G_DOC_FAMILY &&
+    fileHash === QPCCF_B2G_FILE_HASH &&
+    (moduleName === QPCCF_B2G_MODULE || normalizeText(title).includes("qpccf"));
+  const missingMemoryIds = requestedMemoryIds.filter((memoryId) => !args.recall.memoryIds.includes(memoryId));
+  const missingProfileIds = requestedProfileIds.filter((requestedProfileId) => requestedProfileId !== profileId);
+  const failReason = b2gReady
+    ? "NONE"
+    : [
+        memoryFound ? "" : "MEMORY_ID_NOT_FOUND",
+        profileFound ? "" : "DOCUMENT_PROFILE_NOT_LINKED",
+        docFamily === QPCCF_B2G_DOC_FAMILY ? "" : "DOC_FAMILY_NOT_B2G_TECHNICAL_STACK",
+        fileHash === QPCCF_B2G_FILE_HASH ? "" : "FILE_HASH_MISMATCH",
+        moduleName === QPCCF_B2G_MODULE || normalizeText(title).includes("qpccf") ? "" : "MODULE_NOT_QPCCF"
+      ].filter(Boolean).join("|") || "UNKNOWN_B2G_STRICT_RECALL_FAILURE";
+
+  return [
+    b2gReady ? "B2G_TECHNICAL_MEMORY_RECALL_READY" : "B2G_TECHNICAL_MEMORY_RECALL_FAIL",
+    "",
+    "strictRecallOnly=true",
+    "semanticMemoryCreated=false",
+    "semanticMemoryRouteSuppressed=true",
+    "runtimeMemoryWriteSuppressed=true",
+    `recallStatus=${args.recall.status}`,
+    `recallInjected=${String(args.recall.injected)}`,
+    args.recall.error ? `recallError=${args.recall.error}` : "recallError=NONE",
+    `memoryId=${primary?.memoryId || requestedMemoryIds[0] || "NO_MEMORY_ID"}`,
+    `documentProfileId=${profileId}`,
+    `recallInjected=${String(args.recall.injected)}`,
+    `documentProfileRecallInjected=${String(profileFound)}`,
+    `strictRequestedMemoryOnly=${String(Boolean(args.recall.strictRequestedMemoryOnly || requestedMemoryIds.length > 0))}`,
+    `strictRequestedMemoryFilter=${requestedMemoryApplied ? "REQUESTED_MEMORY_ID_APPLIED" : "REQUESTED_MEMORY_ID_NOT_FOUND"}`,
+    `strictRequestedProfileFilter=${requestedProfileApplied ? "REQUESTED_PROFILE_ID_APPLIED" : "REQUESTED_PROFILE_ID_NOT_FOUND"}`,
+    `missingMemoryIds=${missingMemoryIds.join(", ") || "NONE"}`,
+    `missingProfileIds=${missingProfileIds.join(", ") || "NONE"}`,
+    `failClosed=${String(!b2gReady)}`,
+    `sourceSavedChatId=${primary?.sourceSavedChatId || "NO_SAVED_CHAT_IN_RECALL_RECORD"}`,
+    `sourceThreadId=${primary?.sourceThreadId || primary?.sessionId || args.recall.sessionId}`,
+    `EVT=${primary?.lastEvtId || "NO_EVT_IN_RECALL_RECORD"}`,
+    `OPC=${primary?.lastOpcProofId || "NO_OPC_IN_RECALL_RECORD"}`,
+    `recordHash=${primary?.lastOpcChainHash || "NO_RECORD_HASH_IN_RECALL_RECORD"}`,
+    `fileHash=${fileHash}`,
+    `docFamily=${docFamily}`,
+    `documentKind=${documentKind}`,
+    `module=${moduleName}`,
+    `volume=${volume}`,
+    `title=${title}`,
+    `canonicalAxis=${canonicalAxis}`,
+    "b2gTechnicalMemory.status=" + (b2gReady ? "B2G_TECHNICAL_PROFILE_MEMORY_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_NOT_CONFIRMED"),
+    "b2gTechnicalMemory.readyForIprSave=" + String(b2gReady),
+    "b2gTechnicalMemory.memoryType=B2G_TECHNICAL_PROFILE_MEMORY",
+    "b2gTechnicalMemory.memoryMode=TECHNICAL_SYNTHESIS_ONLY",
+    "noQuantumStates=true",
+    "noQstateOutput=true",
+    "noCorpusCollapse=true",
+    "noSemanticEsoterologicalMemory=true",
+    "noDcttAxisForB2gTechnicalModules=true",
+    `failReason=${failReason}`,
+    `derivedFromHumanIpr=${args.handoff.humanIpr || "NO_HUMAN_IPR"}`,
+    `humanIpr=${args.handoff.humanIpr || "NO_HUMAN_IPR"}`,
+    `runtimeIpr=${RUNTIME_IPR}`,
+    `tenantId=${args.saasContext.tenantId}`,
+    `workspaceId=${args.saasContext.workspaceId}`,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
 
 function buildIprRecordStatusOnlyAnswer(args: {
   recall: IprRecallInjection;
