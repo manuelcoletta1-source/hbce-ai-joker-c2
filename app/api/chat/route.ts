@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -4679,25 +4679,69 @@ function buildB2gTechnicalMemoryStrictRecallAnswer(args: {
   const primary = args.recall.items.find((item) => item.memoryId && requestedMemoryIds.includes(item.memoryId)) || args.recall.items[0] || null;
   const profile = selectRecordStatusDocumentProfileMetadata(args.documentProfileRecall, args.message, primary);
   const linkedProfileCount = documentProfileRecallLinkedProfileCount(args.documentProfileRecall);
-  const profileId = documentProfileMetadataString(profile, ["profileId", "documentProfileId", "documentMetadata.profileId"], requestedProfileIds[0] || "NO_DOCUMENT_PROFILE_ID");
-  const filename = documentProfileMetadataString(profile, ["filename", "sourceDocument", "documentMetadata.filename", "documentMetadata.sourceDocument"], "QPCCF_PREDICTIVE_STABILITY_ENGINE_B2G_PROFILE_SEED_v6_4_1.txt");
-  const fileHash = documentProfileMetadataString(profile, ["fileHash", "sourceFileHash", "documentMetadata.fileHash", "documentMetadata.sourceFileHash"], QPCCF_B2G_FILE_HASH);
-  const docFamily = documentProfileMetadataString(profile, ["docFamily", "canonicalDocFamily", "documentMetadata.docFamily", "documentMetadata.canonicalDocFamily"], QPCCF_B2G_DOC_FAMILY);
-  const documentKind = documentProfileMetadataString(profile, ["documentKind", "canonicalDocumentKind", "documentMetadata.documentKind", "documentMetadata.canonicalDocumentKind"], QPCCF_B2G_DOCUMENT_KIND);
-  const moduleName = documentProfileMetadataString(profile, ["module", "canonicalModule", "documentModule", "documentMetadata.module", "documentMetadata.canonicalModule"], QPCCF_B2G_MODULE);
-  const volume = documentProfileMetadataString(profile, ["volume", "documentVolume", "documentMetadata.volume"], "N/A");
-  const title = documentProfileMetadataString(profile, ["title", "documentTitle", "documentMetadata.title"], QPCCF_B2G_TITLE);
-  const canonicalAxis = documentProfileMetadataString(profile, ["canonicalAxis", "axis", "documentMetadata.canonicalAxis"], QPCCF_B2G_CANONICAL_AXIS);
+
+  const legacyProfileId = documentProfileMetadataString(profile, ["profileId", "documentProfileId", "documentMetadata.profileId"], requestedProfileIds[0] || "NO_DOCUMENT_PROFILE_ID");
+  const legacyFilename = documentProfileMetadataString(profile, ["filename", "sourceDocument", "documentMetadata.filename", "documentMetadata.sourceDocument"], "NO_FILENAME_IN_DOCUMENT_PROFILE");
+  const legacyFileHash = documentProfileMetadataString(profile, ["fileHash", "sourceFileHash", "documentMetadata.fileHash", "documentMetadata.sourceFileHash"], "NO_FILE_HASH_IN_DOCUMENT_PROFILE");
+  const legacyDocFamily = documentProfileMetadataString(profile, ["docFamily", "canonicalDocFamily", "documentMetadata.docFamily", "documentMetadata.canonicalDocFamily"], "NO_DOC_FAMILY_IN_DOCUMENT_PROFILE");
+  const legacyDocumentKind = documentProfileMetadataString(profile, ["documentKind", "canonicalDocumentKind", "documentMetadata.documentKind", "documentMetadata.canonicalDocumentKind"], "NO_DOCUMENT_KIND_IN_DOCUMENT_PROFILE");
+  const legacyModuleName = documentProfileMetadataString(profile, ["module", "canonicalModule", "documentModule", "documentMetadata.module", "documentMetadata.canonicalModule"], "NO_MODULE_IN_DOCUMENT_PROFILE");
+  const legacyVolume = documentProfileMetadataString(profile, ["volume", "documentVolume", "documentMetadata.volume"], "N/A");
+  const legacyTitle = documentProfileMetadataString(profile, ["title", "documentTitle", "documentMetadata.title"], primary?.memoryTitle || "NO_TITLE_IN_DOCUMENT_PROFILE");
+  const legacyCanonicalAxis = documentProfileMetadataString(profile, ["canonicalAxis", "axis", "documentMetadata.canonicalAxis"], "NO_CANONICAL_AXIS_IN_DOCUMENT_PROFILE");
+
+  const moduleDefinition = resolveB2gTechnicalModuleFromText([
+    args.message,
+    legacyProfileId,
+    legacyFilename,
+    legacyFileHash,
+    legacyDocFamily,
+    legacyDocumentKind,
+    legacyModuleName,
+    legacyTitle,
+    legacyCanonicalAxis,
+    primary?.memoryTitle || "",
+    primary?.memorySummary || "",
+    primary?.classification || "",
+    primary?.memoryKind || ""
+  ].join("\n"));
+
+  const outputModule = moduleDefinition || resolveB2gTechnicalModuleFromText([
+    legacyFileHash,
+    legacyModuleName,
+    legacyTitle,
+    legacyCanonicalAxis
+  ].join("\n")) || DEFAULT_B2G_TECHNICAL_MODULE;
+
+  const profileId = legacyProfileId;
+  const filename = moduleDefinition ? outputModule.sourceFilename : legacyFilename;
+  const fileHash = moduleDefinition ? outputModule.fileHash : legacyFileHash;
+  const docFamily = moduleDefinition ? outputModule.docFamily : legacyDocFamily;
+  const documentKind = moduleDefinition ? outputModule.documentKind : legacyDocumentKind;
+  const moduleName = moduleDefinition ? outputModule.module : legacyModuleName;
+  const volume = moduleDefinition ? outputModule.volume : legacyVolume;
+  const title = moduleDefinition ? outputModule.title : legacyTitle;
+  const canonicalAxis = moduleDefinition ? outputModule.canonicalAxis : legacyCanonicalAxis;
+
   const memoryFound = Boolean(primary);
-  const profileFound = profile !== null || linkedProfileCount > 0 || profileId === QPCCF_B2G_PROFILE_ID;
+  const profileFound = profile !== null || linkedProfileCount > 0 || requestedProfileIds.includes(profileId);
   const requestedMemoryApplied = requestedMemoryIds.length > 0 && requestedMemoryIds.every((memoryId) => args.recall.memoryIds.includes(memoryId));
   const requestedProfileApplied = requestedProfileIds.length > 0 && requestedProfileIds.includes(profileId);
+  const moduleConfirmed = Boolean(moduleDefinition) || resolveB2gTechnicalModuleFromText([
+    fileHash,
+    moduleName,
+    title,
+    canonicalAxis
+  ].join("\n"))?.module === outputModule.module;
   const b2gReady =
     memoryFound &&
     profileFound &&
-    docFamily === QPCCF_B2G_DOC_FAMILY &&
-    fileHash === QPCCF_B2G_FILE_HASH &&
-    (moduleName === QPCCF_B2G_MODULE || normalizeText(title).includes("qpccf"));
+    requestedMemoryApplied &&
+    requestedProfileApplied &&
+    moduleConfirmed &&
+    docFamily === outputModule.docFamily &&
+    fileHash === outputModule.fileHash &&
+    moduleName === outputModule.module;
   const missingMemoryIds = requestedMemoryIds.filter((memoryId) => !args.recall.memoryIds.includes(memoryId));
   const missingProfileIds = requestedProfileIds.filter((requestedProfileId) => requestedProfileId !== profileId);
   const failReason = b2gReady
@@ -4705,9 +4749,12 @@ function buildB2gTechnicalMemoryStrictRecallAnswer(args: {
     : [
         memoryFound ? "" : "MEMORY_ID_NOT_FOUND",
         profileFound ? "" : "DOCUMENT_PROFILE_NOT_LINKED",
-        docFamily === QPCCF_B2G_DOC_FAMILY ? "" : "DOC_FAMILY_NOT_B2G_TECHNICAL_STACK",
-        fileHash === QPCCF_B2G_FILE_HASH ? "" : "FILE_HASH_MISMATCH",
-        moduleName === QPCCF_B2G_MODULE || normalizeText(title).includes("qpccf") ? "" : "MODULE_NOT_QPCCF"
+        requestedMemoryApplied ? "" : "REQUESTED_MEMORY_ID_NOT_APPLIED",
+        requestedProfileApplied ? "" : "REQUESTED_PROFILE_ID_NOT_APPLIED",
+        moduleConfirmed ? "" : "B2G_MODULE_NOT_CONFIRMED",
+        docFamily === outputModule.docFamily ? "" : "DOC_FAMILY_NOT_B2G_TECHNICAL_STACK",
+        fileHash === outputModule.fileHash ? "" : "FILE_HASH_MISMATCH",
+        moduleName === outputModule.module ? "" : "MODULE_MISMATCH"
       ].filter(Boolean).join("|") || "UNKNOWN_B2G_STRICT_RECALL_FAILURE";
 
   return [
@@ -4746,6 +4793,17 @@ function buildB2gTechnicalMemoryStrictRecallAnswer(args: {
     "b2gTechnicalMemory.readyForIprSave=" + String(b2gReady),
     "b2gTechnicalMemory.memoryType=B2G_TECHNICAL_PROFILE_MEMORY",
     "b2gTechnicalMemory.memoryMode=TECHNICAL_SYNTHESIS_ONLY",
+    "b2gTechnicalMemory.collapseRevision=" + outputModule.memoryCollapseRevision,
+    "b2gTechnicalMemory.classifierRevision=" + outputModule.classifierRevision,
+    "b2gTechnicalMemory.docFamily=" + outputModule.docFamily,
+    "b2gTechnicalMemory.documentKind=" + outputModule.documentKind,
+    "b2gTechnicalMemory.module=" + outputModule.module,
+    "b2gTechnicalMemory.title=" + outputModule.title,
+    "b2gTechnicalMemory.canonicalAxis=" + outputModule.canonicalAxis,
+    "b2gTechnicalMemory.technicalMemorySummary=" + outputModule.summary,
+    "b2gTechnicalMemory.runtimeInputs=" + outputModule.runtimeInputs,
+    "b2gTechnicalMemory.runtimeOutputs=" + outputModule.runtimeOutputs,
+    "b2gTechnicalMemory.futureGithubModules=" + outputModule.futureGithubModules,
     "noQuantumStates=true",
     "noQstateOutput=true",
     "noCorpusCollapse=true",
