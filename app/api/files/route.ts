@@ -15,25 +15,1528 @@ import {
   HBCE_SELF_PILOT_TENANT_ID,
   HBCE_SELF_PILOT_WORKSPACE_ID
 } from "@/lib/ipr-database-schema";
-import {
-  HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION,
-  classifyHbceB2gTechnicalStackDocument,
-  buildHbceB2gTechnicalStackProfileMetadata,
-  type HbceB2gTechnicalStackClassification
-} from "@/lib/hbce-b2g-technical-stack-classifier";
-import {
-  HBCE_B2G_TECHNICAL_MEMORY_COLLAPSE_REVISION,
-  HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY,
-  buildHbceB2gTechnicalMemoryCollapse,
-  toPublicHbceB2gTechnicalMemoryPayload
-} from "@/lib/hbce-b2g-technical-memory-collapse";
+
+
+/* --------------------------------------------------------------------------
+ * INLINE HBCE B2G TECHNICAL STACK CLASSIFIER + TECHNICAL MEMORY COLLAPSE
+ * Single-file deploy variant: no extra modified lib files required.
+ * -------------------------------------------------------------------------- */
+
+/**
+ * HBCE B2G Technical Stack Classifier
+ * ------------------------------------------------------------
+ * Pure metadata classifier for AI JOKER-C2 SaaS B2G technical modules.
+ *
+ * Purpose:
+ * - Classify QPCCF / CQD / AIQ JOKER / UFO-INTERCEPT / MODULO UFO / CQO
+ *   before generic Corpus, MATRIX or HBCE operational fallbacks.
+ * - Keep QPCCF out of CORPUS, V1, FOUNDATIONAL_VOLUME and generic MATRIX buckets.
+ * - Provide deterministic metadata usable by app/api/files/route.ts.
+ *
+ * Boundary:
+ * - This module does not persist memory.
+ * - This module does not generate EVT/OPC.
+ * - This module does not claim legal certification.
+ */
+
+const HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION =
+  "HBCE-B2G-TECHNICAL-STACK-CLASSIFIER-v1_0_0";
+
+const HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY =
+  "HBCE_JOKER_C2_B2G_TECHNICAL_STACK" as const;
+
+const HBCE_TECHNICAL_GOVERNANCE_MODULE =
+  "TECHNICAL_GOVERNANCE_MODULE" as const;
+
+const HBCE_TECHNICAL_GOVERNANCE_MODULE_SET =
+  "TECHNICAL_GOVERNANCE_MODULE_SET" as const;
+
+const HBCE_RND_THEORETICAL_FOUNDATION =
+  "RND_THEORETICAL_FOUNDATION" as const;
+
+const HBCE_B2G_LEGAL_CERTIFICATION = false as const;
+
+const HBCE_B2G_OPC_BOUNDARY = "technical proof receipt only" as const;
+
+type HbceB2gTechnicalStackDocFamily =
+  typeof HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY;
+
+type HbceB2gTechnicalStackDocumentKind =
+  | typeof HBCE_TECHNICAL_GOVERNANCE_MODULE
+  | typeof HBCE_TECHNICAL_GOVERNANCE_MODULE_SET
+  | typeof HBCE_RND_THEORETICAL_FOUNDATION;
+
+type HbceB2gTechnicalStackModule =
+  | "QPCCF_PREDICTIVE_STABILITY_ENGINE"
+  | "CQD_EVIDENCE_RECORD_ENGINE"
+  | "AIQ_JOKER_POLICY_TRUTH_BUS"
+  | "UFO_INTERCEPT_COLLISION_COLLIMATION_RUNTIME"
+  | "UFO_OPERATIONAL_MODULE_REGISTRY"
+  | "CQO_RND_THEORETICAL_FOUNDATION";
+
+type HbceB2gTechnicalStackConfidence =
+  | "NONE"
+  | "LOW"
+  | "MEDIUM"
+  | "HIGH"
+  | "CANONICAL";
+
+interface HbceB2gTechnicalStackClassifierInput {
+  filename?: string | null;
+  sourceFilename?: string | null;
+  title?: string | null;
+  header?: string | null;
+  text?: string | null;
+  mimeType?: string | null;
+}
+
+interface HbceB2gTechnicalStackClassification {
+  matched: boolean;
+  classifierRevision: string;
+  confidence: HbceB2gTechnicalStackConfidence;
+  score: number;
+  module: HbceB2gTechnicalStackModule | null;
+  docFamily: HbceB2gTechnicalStackDocFamily | null;
+  documentKind: HbceB2gTechnicalStackDocumentKind | null;
+  volume: "N/A" | "SET" | null;
+  title: string | null;
+  shortTitle: string | null;
+  canonicalAxis: string | null;
+  summary: string | null;
+  keyTerms: string[];
+  matchedSignals: string[];
+  negativeGuards: {
+    notCorpus: boolean;
+    notMatrixDocument: boolean;
+    notFoundationalVolume: boolean;
+    notV1: boolean;
+  };
+  legalCertification: false;
+  opcBoundary: typeof HBCE_B2G_OPC_BOUNDARY;
+  metadataLockApplied: boolean;
+  metadataOverrideSource: "HBCE_B2G_TECHNICAL_STACK_CLASSIFIER" | "NONE";
+  failReason: "NONE" | "NO_B2G_TECHNICAL_STACK_MATCH";
+}
+
+interface ModuleDefinition {
+  module: HbceB2gTechnicalStackModule;
+  documentKind: HbceB2gTechnicalStackDocumentKind;
+  volume: "N/A" | "SET";
+  title: string;
+  shortTitle: string;
+  canonicalAxis: string;
+  summary: string;
+  keyTerms: string[];
+  primarySignals: string[];
+  secondarySignals: string[];
+  antiSignals?: string[];
+}
+
+/**
+ * Classifier definitions.
+ * Order matters: QPCCF is first because generic MATRIX/HBCE fallbacks elsewhere
+ * can otherwise steal the document when the text contains broad governance terms.
+ */
+const HBCE_B2G_TECHNICAL_STACK_DEFINITIONS: readonly ModuleDefinition[] = [
+  {
+    module: "QPCCF_PREDICTIVE_STABILITY_ENGINE",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    volume: "N/A",
+    title:
+      "UNI/QPCCF – Intercettazione predittiva delle collisioni e collimazione dei sistemi complessi",
+    shortTitle: "QPCCF Predictive Stability Engine",
+    canonicalAxis:
+      "Lambda · delta · partial_t_Lambda · u(t) · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
+    summary:
+      "Modulo tecnico B2G per stabilità predittiva, rilevazione delle collisioni dinamiche e collimazione dei sistemi complessi tramite Lambda, delta, partial_t_Lambda e u(t).",
+    keyTerms: [
+      "QPCCF",
+      "Lambda",
+      "delta",
+      "partial_t_Lambda",
+      "u(t)",
+      "collisione dinamica",
+      "collimazione",
+      "stabilità predittiva",
+      "Digital Twin",
+      "LBM",
+      "CFD",
+      "EVT",
+      "OPC"
+    ],
+    primarySignals: [
+      "qpccf",
+      "uni/qpccf",
+      "intercettazione predittiva",
+      "intercettazione predittiva delle collisioni",
+      "collimazione dei sistemi complessi",
+      "modello lambda",
+      "modello λ",
+      "predictive stability engine"
+    ],
+    secondarySignals: [
+      "\\lambda(t)",
+      "λ(t)",
+      "lambda(t)",
+      "1+\\delta(t)",
+      "1+δ(t)",
+      "delta(t)",
+      "\\partial_t\\lambda",
+      "∂tλ",
+      "partial_t_lambda",
+      "u(t)",
+      "\\widehat{\\lambda}",
+      "stabilità operativa",
+      "collisione",
+      "|\\delta(t)| > 0.003",
+      "|δ(t)| > 0.003",
+      "|\\lambda(t)-1|\\le 0.003",
+      "|λ(t)-1|≤0.003",
+      "digital twin",
+      "lattice boltzmann",
+      "lbm",
+      "cfd"
+    ]
+  },
+  {
+    module: "CQD_EVIDENCE_RECORD_ENGINE",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    volume: "N/A",
+    title: "CQD – Crocefissione Quantistica del Dato",
+    shortTitle: "CQD Evidence Record Engine",
+    canonicalAxis: "T · I · E · L · Hash · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
+    summary:
+      "Modulo tecnico B2G per impacchettamento della prova tecnica del dato, record evidence e verifica auditabile tramite hash, evento e ricevuta tecnica.",
+    keyTerms: [
+      "CQD",
+      "Crocefissione Quantistica del Dato",
+      "evidence record",
+      "hash",
+      "EVT",
+      "OPC",
+      "technical proof receipt"
+    ],
+    primarySignals: [
+      "cqd",
+      "crocefissione quantistica del dato",
+      "croceffissione quantistica del dato",
+      "quantistica del dato",
+      "evidence record"
+    ],
+    secondarySignals: [
+      "technical proof receipt",
+      "hash",
+      "input hash",
+      "output hash",
+      "event hash",
+      "opponibile",
+      "audit",
+      "evt",
+      "opc"
+    ]
+  },
+  {
+    module: "AIQ_JOKER_POLICY_TRUTH_BUS",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    volume: "N/A",
+    title: "AIQ JOKER – Policy Truth Bus",
+    shortTitle: "AIQ JOKER Policy Truth Bus",
+    canonicalAxis: "H · S · Q · A · Chi_tau · Policy · Fail-Closed · AI_JOKER_C2",
+    summary:
+      "Modulo tecnico B2G per policy bus, verità computabile, controllo fail-closed e valutazione della coerenza operativa delle richieste AI.",
+    keyTerms: [
+      "AIQ JOKER",
+      "policy bus",
+      "truth runtime",
+      "fail-closed",
+      "governance",
+      "AI JOKER-C2"
+    ],
+    primarySignals: [
+      "aiq joker",
+      "🜏 aiq joker",
+      "policy truth bus",
+      "truth runtime",
+      "joker policy"
+    ],
+    secondarySignals: [
+      "m = h",
+      "χτ",
+      "chi_tau",
+      "fail-closed",
+      "policy",
+      "truth",
+      "runtime",
+      "governance"
+    ]
+  },
+  {
+    module: "UFO_INTERCEPT_COLLISION_COLLIMATION_RUNTIME",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    volume: "N/A",
+    title: "UFO–INTERCEPT ΦΩ – Collision / Collimation Runtime",
+    shortTitle: "UFO-INTERCEPT Collision Collimation Runtime",
+    canonicalAxis: "Anomaly · Intercept · Collision · Collimation · EVT · OPC",
+    summary:
+      "Modulo tecnico B2G per intercettazione di anomalie, collisioni operative e ritorno controllato verso uno stato stabile.",
+    keyTerms: [
+      "UFO-INTERCEPT",
+      "anomaly intercept",
+      "collision",
+      "collimation",
+      "runtime",
+      "EVT",
+      "OPC"
+    ],
+    primarySignals: [
+      "ufo-intercept",
+      "ufo–intercept",
+      "ufo intercept",
+      "intercept φ",
+      "intercept φω",
+      "collision collimation runtime"
+    ],
+    secondarySignals: [
+      "anomalia",
+      "anomaly",
+      "intercettazione",
+      "collisione",
+      "collimazione",
+      "runtime",
+      "evt",
+      "opc"
+    ]
+  },
+  {
+    module: "UFO_OPERATIONAL_MODULE_REGISTRY",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE_SET,
+    volume: "SET",
+    title: "MODULO UFO ΦΩ – Operational Module Registry",
+    shortTitle: "UFO Operational Module Registry",
+    canonicalAxis: "Module Registry · Operational Profiles · B2G Use Cases · EVT · OPC",
+    summary:
+      "Registro modulare operativo per profili B2G, domini di applicazione e configurazione dei moduli UFO nel runtime JOKER-C2.",
+    keyTerms: [
+      "MODULO UFO",
+      "module registry",
+      "B2G",
+      "operational profiles",
+      "UFO-A",
+      "UFO-C",
+      "UFO-E",
+      "UFO-S"
+    ],
+    primarySignals: [
+      "modulo ufo",
+      "ufo φ",
+      "ufo φω",
+      "operational module registry",
+      "module registry"
+    ],
+    secondarySignals: [
+      "ufo-a",
+      "ufo-c",
+      "ufo-e",
+      "ufo-s",
+      "moduli",
+      "registry",
+      "use-case",
+      "b2g"
+    ]
+  },
+  {
+    module: "CQO_RND_THEORETICAL_FOUNDATION",
+    documentKind: HBCE_RND_THEORETICAL_FOUNDATION,
+    volume: "N/A",
+    title: "Cybernetica Quantistica Opponibile – R&D Theoretical Foundation",
+    shortTitle: "Cybernetica Quantistica Opponibile",
+    canonicalAxis: "R&D · Cybernetic Theory · Opposability · Auditability · EVT · OPC",
+    summary:
+      "Fondamento teorico R&D dello stack tecnico HBCE/JOKER-C2, usato come whitepaper e base dottrinale non primaria per le API.",
+    keyTerms: [
+      "Cybernetica Quantistica Opponibile",
+      "CQO",
+      "R&D",
+      "opponibilità",
+      "auditability",
+      "EVT",
+      "OPC"
+    ],
+    primarySignals: [
+      "cybernetica quantistica opponibile",
+      "cibernetica quantistica opponibile",
+      "cqo",
+      "quantistica opponibile"
+    ],
+    secondarySignals: [
+      "opponibilità",
+      "opponibile",
+      "ricerca",
+      "r&d",
+      "whitepaper",
+      "audit",
+      "evt",
+      "opc"
+    ]
+  }
+] as const;
+
+function normalizeHbceClassifierText(value: unknown): string {
+  return String(value ?? "")
+    .normalize("NFC")
+    .replace(/\u0000/g, " ")
+    .replace(/[’‘`´]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[–—−]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function buildHbceClassifierHaystack(
+  input: HbceB2gTechnicalStackClassifierInput
+): string {
+  return normalizeHbceClassifierText(
+    [
+      input.filename,
+      input.sourceFilename,
+      input.title,
+      input.header,
+      input.text,
+      input.mimeType
+    ]
+      .filter(Boolean)
+      .join("\n")
+  );
+}
+
+function collectMatchedSignals(haystack: string, signals: readonly string[]): string[] {
+  const matches: string[] = [];
+
+  for (const signal of signals) {
+    const normalizedSignal = normalizeHbceClassifierText(signal);
+    if (normalizedSignal && haystack.includes(normalizedSignal)) {
+      matches.push(signal);
+    }
+  }
+
+  return Array.from(new Set(matches));
+}
+
+function scoreDefinition(
+  haystack: string,
+  definition: ModuleDefinition
+): { score: number; matchedSignals: string[] } {
+  const primaryMatches = collectMatchedSignals(haystack, definition.primarySignals);
+  const secondaryMatches = collectMatchedSignals(haystack, definition.secondarySignals);
+  const antiMatches = collectMatchedSignals(haystack, definition.antiSignals ?? []);
+
+  const score = primaryMatches.length * 10 + secondaryMatches.length * 3 - antiMatches.length * 12;
+
+  return {
+    score,
+    matchedSignals: [...primaryMatches, ...secondaryMatches]
+  };
+}
+
+function confidenceFromScore(score: number): HbceB2gTechnicalStackConfidence {
+  if (score >= 25) return "CANONICAL";
+  if (score >= 16) return "HIGH";
+  if (score >= 9) return "MEDIUM";
+  if (score >= 4) return "LOW";
+  return "NONE";
+}
+
+function classifyHbceB2gTechnicalStackDocument(
+  input: HbceB2gTechnicalStackClassifierInput
+): HbceB2gTechnicalStackClassification {
+  const haystack = buildHbceClassifierHaystack(input);
+
+  let bestDefinition: ModuleDefinition | null = null;
+  let bestScore = 0;
+  let bestSignals: string[] = [];
+
+  for (const definition of HBCE_B2G_TECHNICAL_STACK_DEFINITIONS) {
+    const candidate = scoreDefinition(haystack, definition);
+
+    if (candidate.score > bestScore) {
+      bestDefinition = definition;
+      bestScore = candidate.score;
+      bestSignals = candidate.matchedSignals;
+    }
+  }
+
+  const confidence = confidenceFromScore(bestScore);
+  const matched = Boolean(bestDefinition && bestScore >= 9);
+
+  if (!matched || !bestDefinition) {
+    return {
+      matched: false,
+      classifierRevision: HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION,
+      confidence: "NONE",
+      score: bestScore,
+      module: null,
+      docFamily: null,
+      documentKind: null,
+      volume: null,
+      title: null,
+      shortTitle: null,
+      canonicalAxis: null,
+      summary: null,
+      keyTerms: [],
+      matchedSignals: bestSignals,
+      negativeGuards: {
+        notCorpus: true,
+        notMatrixDocument: false,
+        notFoundationalVolume: false,
+        notV1: false
+      },
+      legalCertification: HBCE_B2G_LEGAL_CERTIFICATION,
+      opcBoundary: HBCE_B2G_OPC_BOUNDARY,
+      metadataLockApplied: false,
+      metadataOverrideSource: "NONE",
+      failReason: "NO_B2G_TECHNICAL_STACK_MATCH"
+    };
+  }
+
+  return {
+    matched: true,
+    classifierRevision: HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION,
+    confidence,
+    score: bestScore,
+    module: bestDefinition.module,
+    docFamily: HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY,
+    documentKind: bestDefinition.documentKind,
+    volume: bestDefinition.volume,
+    title: bestDefinition.title,
+    shortTitle: bestDefinition.shortTitle,
+    canonicalAxis: bestDefinition.canonicalAxis,
+    summary: bestDefinition.summary,
+    keyTerms: [...bestDefinition.keyTerms],
+    matchedSignals: bestSignals,
+    negativeGuards: {
+      notCorpus: true,
+      notMatrixDocument: bestDefinition.module === "QPCCF_PREDICTIVE_STABILITY_ENGINE",
+      notFoundationalVolume: bestDefinition.module === "QPCCF_PREDICTIVE_STABILITY_ENGINE",
+      notV1: bestDefinition.module === "QPCCF_PREDICTIVE_STABILITY_ENGINE"
+    },
+    legalCertification: HBCE_B2G_LEGAL_CERTIFICATION,
+    opcBoundary: HBCE_B2G_OPC_BOUNDARY,
+    metadataLockApplied: true,
+    metadataOverrideSource: "HBCE_B2G_TECHNICAL_STACK_CLASSIFIER",
+    failReason: "NONE"
+  };
+}
+
+function isHbceB2gTechnicalStackDocument(
+  input: HbceB2gTechnicalStackClassifierInput
+): boolean {
+  return classifyHbceB2gTechnicalStackDocument(input).matched;
+}
+
+function isQpccfPredictiveStabilityDocument(
+  input: HbceB2gTechnicalStackClassifierInput
+): boolean {
+  const classification = classifyHbceB2gTechnicalStackDocument(input);
+  return classification.module === "QPCCF_PREDICTIVE_STABILITY_ENGINE";
+}
+
+function buildHbceB2gTechnicalStackProfileMetadata(
+  input: HbceB2gTechnicalStackClassifierInput
+): Record<string, unknown> | null {
+  const classification = classifyHbceB2gTechnicalStackDocument(input);
+
+  if (!classification.matched) {
+    return null;
+  }
+
+  return {
+    classifierRevision: classification.classifierRevision,
+    docFamily: classification.docFamily,
+    documentKind: classification.documentKind,
+    module: classification.module,
+    volume: classification.volume,
+    title: classification.title,
+    shortTitle: classification.shortTitle,
+    canonicalAxis: classification.canonicalAxis,
+    summary: classification.summary,
+    keyTerms: classification.keyTerms,
+    matchedSignals: classification.matchedSignals,
+    confidence: classification.confidence,
+    score: classification.score,
+    metadataLockApplied: classification.metadataLockApplied,
+    metadataOverrideSource: classification.metadataOverrideSource,
+    negativeGuards: classification.negativeGuards,
+    legalCertification: classification.legalCertification,
+    opcBoundary: classification.opcBoundary
+  };
+}
+
+/**
+ * Convenience helper for route-level precedence:
+ * call this before generic Corpus / Matrix / HBCE fallback inference.
+ */
+function maybeApplyHbceB2gTechnicalStackMetadata<T extends Record<string, unknown>>(
+  baseProfile: T,
+  input: HbceB2gTechnicalStackClassifierInput
+): T & Record<string, unknown> {
+  const metadata = buildHbceB2gTechnicalStackProfileMetadata(input);
+
+  if (!metadata) {
+    return baseProfile;
+  }
+
+  return {
+    ...baseProfile,
+    ...metadata,
+    profileStatus: baseProfile.profileStatus ?? "ACTIVE",
+    quality: baseProfile.quality ?? "CANONICAL",
+    reusableInPrompt: baseProfile.reusableInPrompt ?? true
+  };
+}
+
+/**
+ * Fail-closed guard for QPCCF contamination detection.
+ * Useful in tests after classification.
+ */
+function assertQpccfMetadataIsNotContaminated(
+  metadata: Record<string, unknown>
+): { ok: boolean; failReason: "NONE" | "QPCCF_METADATA_CONTAMINATED" } {
+  const module = String(metadata.module ?? "");
+  const docFamily = String(metadata.docFamily ?? "");
+  const title = String(metadata.title ?? "");
+  const volume = String(metadata.volume ?? "");
+  const documentKind = String(metadata.documentKind ?? "");
+
+  const isQpccf = module === "QPCCF_PREDICTIVE_STABILITY_ENGINE";
+
+  if (!isQpccf) {
+    return { ok: true, failReason: "NONE" };
+  }
+
+  const contaminated =
+    docFamily !== HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY ||
+    volume !== "N/A" ||
+    title === "MATRIX" ||
+    title === "HBCE JOKER-C2 CLEAN RUNTIME TEXT" ||
+    documentKind === "FOUNDATIONAL_VOLUME";
+
+  return contaminated
+    ? { ok: false, failReason: "QPCCF_METADATA_CONTAMINATED" }
+    : { ok: true, failReason: "NONE" };
+}
+
+
+/**
+ * HBCE B2G Technical Memory Collapse
+ * ------------------------------------------------------------
+ * Pure technical-memory collapse module for AI JOKER-C2 SaaS B2G profiles.
+ *
+ * Purpose:
+ * - Convert a verified HBCE B2G technical document profile into a deterministic
+ *   IPR-ready technical memory payload.
+ * - Avoid the CORPUS quantum-state template entirely.
+ * - Produce technicalMemorySummary, runtimeInputs, runtimeOutputs and
+ *   futureGithubModules for later Save Chat -> IPR.
+ *
+ * Boundary:
+ * - No quantumStates.
+ * - No QSTATE.
+ * - No CORPUS memory collapse.
+ * - No raw-text persistence.
+ * - No legal certification.
+ * - OPC remains a technical proof receipt only.
+ */
+
+const HBCE_B2G_TECHNICAL_MEMORY_COLLAPSE_REVISION =
+  "HBCE-B2G-TECHNICAL-MEMORY-COLLAPSE-v1_0_0";
+
+const HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY =
+  "B2G_TECHNICAL_PROFILE_MEMORY_READY" as const;
+
+const HBCE_B2G_TECHNICAL_MEMORY_FAIL =
+  "B2G_TECHNICAL_PROFILE_MEMORY_FAIL" as const;
+
+type HbceB2gTechnicalMemoryStatus =
+  | typeof HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY
+  | typeof HBCE_B2G_TECHNICAL_MEMORY_FAIL;
+
+type HbceB2gTechnicalMemoryFailReason =
+  | "NONE"
+  | "DOCUMENT_PROFILE_MISSING"
+  | "DOCUMENT_PROFILE_NOT_B2G_TECHNICAL_STACK"
+  | "DOCUMENT_PROFILE_MODULE_MISSING"
+  | "DOCUMENT_PROFILE_CONTAMINATED_WITH_CORPUS"
+  | "DOCUMENT_PROFILE_CONTAMINATED_WITH_QSTATES"
+  | "DOCUMENT_PROFILE_CONTAMINATED_WITH_DCTT"
+  | "DOCUMENT_KIND_NOT_TECHNICAL"
+  | "CLASSIFIER_NO_MATCH"
+  | "UNSUPPORTED_TECHNICAL_MODULE";
+
+interface HbceB2gTechnicalProfileInput extends HbceB2gTechnicalStackClassifierInput {
+  documentProfileId?: string | null;
+  documentProfileStatus?: string | null;
+  fileHash?: string | null;
+  docFamily?: string | null;
+  documentKind?: string | null;
+  module?: string | null;
+  volume?: string | null;
+  canonicalAxis?: string | null;
+  fullDocumentCoverage?: boolean | null;
+  documentChunksPersisted?: boolean | null;
+  documentChunksPersistedCount?: number | null;
+  textCoverageStatus?: string | null;
+  truncationDetected?: boolean | null;
+  derivedFromHumanIpr?: string | null;
+  humanIpr?: string | null;
+  runtimeIpr?: string | null;
+  tenantId?: string | null;
+  workspaceId?: string | null;
+  evtId?: string | null;
+  opcId?: string | null;
+  auditId?: string | null;
+  usageId?: string | null;
+}
+
+interface HbceB2gFutureGithubModule {
+  path: string;
+  role: string;
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  route?: string;
+}
+
+interface HbceB2gTechnicalMemoryPayload {
+  status: HbceB2gTechnicalMemoryStatus;
+  readyForIprSave: boolean;
+
+  memoryType: "B2G_TECHNICAL_PROFILE_MEMORY";
+  memoryMode: "TECHNICAL_SYNTHESIS_ONLY";
+  collapseRevision: string;
+  classifierRevision: string;
+
+  sourceDocument: string | null;
+  documentProfileId: string | null;
+  documentProfileStatus: string | null;
+  fileHash: string | null;
+
+  docFamily: typeof HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY | null;
+  documentKind: HbceB2gTechnicalStackDocumentKind | null;
+  module: HbceB2gTechnicalStackModule | null;
+  volume: "N/A" | "SET" | null;
+  title: string | null;
+  shortTitle: string | null;
+  canonicalAxis: string | null;
+
+  technicalMemorySummary: string | null;
+  runtimeInputs: string[];
+  runtimeOutputs: string[];
+  operationalRules: string[];
+  futureGithubModules: HbceB2gFutureGithubModule[];
+
+  classification: {
+    matched: boolean;
+    confidence: string;
+    score: number;
+    matchedSignals: string[];
+    metadataLockApplied: boolean;
+    metadataOverrideSource: string;
+  };
+
+  guards: {
+    noRawTextPersistence: boolean;
+    noQuantumStates: boolean;
+    noQstateOutput: boolean;
+    noCorpusCollapse: boolean;
+    noSemanticEsoterologicalMemory: boolean;
+    noDcttAxisForB2gTechnicalModules: boolean;
+    legalCertification: false;
+    opcBoundary: typeof HBCE_B2G_OPC_BOUNDARY;
+  };
+
+  coverage: {
+    textCoverageStatus: string | null;
+    fullDocumentCoverage: boolean | null;
+    documentChunksPersisted: boolean | null;
+    documentChunksPersistedCount: number | null;
+    truncationDetected: boolean | null;
+  };
+
+  identity: {
+    derivedFromHumanIpr: string | null;
+    humanIpr: string | null;
+    runtimeIpr: string | null;
+    tenantId: string | null;
+    workspaceId: string | null;
+  };
+
+  trace: {
+    evtId: string | null;
+    opcId: string | null;
+    auditId: string | null;
+    usageId: string | null;
+  };
+
+  savePolicy: {
+    saveRaw: false;
+    saveTechnicalSynthesis: true;
+    saveQuantumStates: false;
+    saveFinalTechnicalMemoryOnly: true;
+    reusableInPrompt: true;
+    legalCertification: false;
+    opc: typeof HBCE_B2G_OPC_BOUNDARY;
+  };
+
+  failReason: HbceB2gTechnicalMemoryFailReason;
+}
+
+interface HbceB2gTechnicalMemoryDefinition {
+  module: HbceB2gTechnicalStackModule;
+  documentKind: HbceB2gTechnicalStackDocumentKind;
+  title: string;
+  shortTitle: string;
+  canonicalAxis: string;
+  technicalMemorySummary: string;
+  runtimeInputs: string[];
+  runtimeOutputs: string[];
+  operationalRules: string[];
+  futureGithubModules: HbceB2gFutureGithubModule[];
+}
+
+const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
+  HbceB2gTechnicalStackModule,
+  HbceB2gTechnicalMemoryDefinition
+> = {
+  QPCCF_PREDICTIVE_STABILITY_ENGINE: {
+    module: "QPCCF_PREDICTIVE_STABILITY_ENGINE",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    title:
+      "UNI/QPCCF – Intercettazione predittiva delle collisioni e collimazione dei sistemi complessi",
+    shortTitle: "QPCCF Predictive Stability Engine",
+    canonicalAxis:
+      "Lambda · delta · partial_t_Lambda · u(t) · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
+    technicalMemorySummary:
+      "QPCCF is the AI JOKER-C2 B2G predictive stability engine. It models system equilibrium through Lambda, detects deviations through delta, anticipates instability through partial_t_Lambda and applies u(t) as a corrective collimation signal. Its operational purpose is to intercept dynamic collisions before collapse, stabilize complex systems and emit audit-ready EVT/OPC technical proof receipts without claiming legal certification.",
+    runtimeInputs: [
+      "systemStateSnapshot",
+      "lambdaBaseline",
+      "lambdaObserved",
+      "deltaThreshold",
+      "partialTLambdaWindow",
+      "telemetrySeries",
+      "domainContext",
+      "operatorPolicy",
+      "humanIpr",
+      "tenantId",
+      "workspaceId"
+    ],
+    runtimeOutputs: [
+      "lambdaScore",
+      "deltaDeviation",
+      "partialTLambdaTrend",
+      "collisionRiskLevel",
+      "collimationSignalUT",
+      "recommendedCorrection",
+      "stabilityDecision",
+      "evtCandidate",
+      "opcTechnicalProofReceipt"
+    ],
+    operationalRules: [
+      "Fail closed when Lambda baseline is missing.",
+      "Fail closed when delta cannot be computed.",
+      "Do not emit stability approval when partial_t_Lambda is unstable above threshold.",
+      "Use u(t) only as a technical correction signal, not as legal authorization.",
+      "Persist only technical synthesis, not raw telemetry, unless a separate explicit data policy allows it.",
+      "Every material stability decision must be traceable through EVT and OPC technical proof receipt."
+    ],
+    futureGithubModules: [
+      {
+        path: "lib/b2g-stability-engine.ts",
+        role: "Core QPCCF Lambda/delta/partial_t_Lambda/u(t) computation engine."
+      },
+      {
+        path: "app/api/v1/stability/check/route.ts",
+        route: "/api/v1/stability/check",
+        method: "POST",
+        role: "API endpoint for technical stability check."
+      },
+      {
+        path: "app/api/v1/collision/predict/route.ts",
+        route: "/api/v1/collision/predict",
+        method: "POST",
+        role: "API endpoint for predictive collision risk estimation."
+      },
+      {
+        path: "app/api/v1/collimation/apply/route.ts",
+        route: "/api/v1/collimation/apply",
+        method: "POST",
+        role: "API endpoint for applying or simulating u(t) collimation correction."
+      }
+    ]
+  },
+
+  CQD_EVIDENCE_RECORD_ENGINE: {
+    module: "CQD_EVIDENCE_RECORD_ENGINE",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    title: "CQD – Crocefissione Quantistica del Dato",
+    shortTitle: "CQD Evidence Record Engine",
+    canonicalAxis: "T · I · E · L · Hash · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
+    technicalMemorySummary:
+      "CQD is the AI JOKER-C2 B2G evidence record engine. It packages a technical data event into an auditable record composed of trace, identity, event, linkage and hash material. CQD prepares a technical proof receipt through EVT and OPC and remains outside legal certification unless integrated later with qualified trust services.",
+    runtimeInputs: [
+      "sourcePayloadHash",
+      "operationContext",
+      "actorBinding",
+      "policyDecision",
+      "eventTimestamp",
+      "tenantId",
+      "workspaceId",
+      "humanIpr"
+    ],
+    runtimeOutputs: [
+      "cqdRecordId",
+      "inputHash",
+      "eventHash",
+      "linkageHash",
+      "evtCandidate",
+      "opcTechnicalProofReceipt",
+      "auditBundle"
+    ],
+    operationalRules: [
+      "Never store raw sensitive payloads by default.",
+      "Hash all relevant evidence material before persistence.",
+      "Bind each evidence record to human IPR, tenant and workspace.",
+      "Expose legalCertification=false unless a qualified trust layer is explicitly attached.",
+      "Emit OPC as technical proof receipt only."
+    ],
+    futureGithubModules: [
+      {
+        path: "lib/cqd-evidence-record.ts",
+        role: "CQD evidence pack and technical record builder."
+      },
+      {
+        path: "app/api/v1/evidence/cqd/route.ts",
+        route: "/api/v1/evidence/cqd",
+        method: "POST",
+        role: "API endpoint for CQD technical evidence record generation."
+      }
+    ]
+  },
+
+  AIQ_JOKER_POLICY_TRUTH_BUS: {
+    module: "AIQ_JOKER_POLICY_TRUTH_BUS",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    title: "AIQ JOKER – Policy Truth Bus",
+    shortTitle: "AIQ JOKER Policy Truth Bus",
+    canonicalAxis: "H · S · Q · A · Chi_tau · Policy · Fail-Closed · AI_JOKER_C2",
+    technicalMemorySummary:
+      "AIQ JOKER is the AI JOKER-C2 policy/truth bus. It evaluates whether a runtime request is structurally coherent, policy-admissible, traceable and safe to execute. Its function is not to generate content but to gate execution through fail-closed policy logic and computable truth constraints.",
+    runtimeInputs: [
+      "requestIntent",
+      "actorBinding",
+      "policyContext",
+      "safetyConstraints",
+      "traceRequirements",
+      "modelRoutingContext",
+      "tenantId",
+      "workspaceId"
+    ],
+    runtimeOutputs: [
+      "policyDecision",
+      "truthBusDecision",
+      "allowDenyReason",
+      "failClosedReason",
+      "requiredTrace",
+      "evtCandidate",
+      "opcTechnicalProofReceipt"
+    ],
+    operationalRules: [
+      "Fail closed when identity binding is absent.",
+      "Fail closed when policy context is ambiguous.",
+      "Do not route to model execution until policy gate is resolved.",
+      "Separate truth-bus decision from generated content.",
+      "Every denial must be explainable at technical audit level."
+    ],
+    futureGithubModules: [
+      {
+        path: "lib/policy-truth-bus.ts",
+        role: "AIQ JOKER policy/truth bus and fail-closed decision gate."
+      },
+      {
+        path: "app/api/v1/policy/check/route.ts",
+        route: "/api/v1/policy/check",
+        method: "POST",
+        role: "API endpoint for policy/truth-bus runtime checks."
+      }
+    ]
+  },
+
+  UFO_INTERCEPT_COLLISION_COLLIMATION_RUNTIME: {
+    module: "UFO_INTERCEPT_COLLISION_COLLIMATION_RUNTIME",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    title: "UFO–INTERCEPT ΦΩ – Collision / Collimation Runtime",
+    shortTitle: "UFO-INTERCEPT Collision Collimation Runtime",
+    canonicalAxis: "Anomaly · Intercept · Collision · Collimation · EVT · OPC",
+    technicalMemorySummary:
+      "UFO-INTERCEPT is the anomaly and collision interception runtime for AI JOKER-C2 B2G. It detects operational anomalies, identifies collision patterns and prepares a controlled collimation path that can reduce instability while leaving EVT/OPC technical trace.",
+    runtimeInputs: [
+      "anomalySignals",
+      "collisionVector",
+      "systemBoundary",
+      "stabilityContext",
+      "operatorConstraints",
+      "tenantId",
+      "workspaceId",
+      "humanIpr"
+    ],
+    runtimeOutputs: [
+      "anomalyClass",
+      "collisionPrediction",
+      "interceptDecision",
+      "collimationPlan",
+      "residualRisk",
+      "evtCandidate",
+      "opcTechnicalProofReceipt"
+    ],
+    operationalRules: [
+      "Do not correct an anomaly without preserving its technical trace.",
+      "Fail closed when system boundary is unknown.",
+      "Separate anomaly detection from intervention decision.",
+      "Use collimation only within explicit operational constraints.",
+      "Report residual risk after any proposed correction."
+    ],
+    futureGithubModules: [
+      {
+        path: "lib/collision-intercept-runtime.ts",
+        role: "UFO-INTERCEPT anomaly, collision and collimation runtime."
+      },
+      {
+        path: "app/api/v1/collision/predict/route.ts",
+        route: "/api/v1/collision/predict",
+        method: "POST",
+        role: "API endpoint for collision prediction."
+      },
+      {
+        path: "app/api/v1/collimation/apply/route.ts",
+        route: "/api/v1/collimation/apply",
+        method: "POST",
+        role: "API endpoint for controlled collimation application."
+      }
+    ]
+  },
+
+  UFO_OPERATIONAL_MODULE_REGISTRY: {
+    module: "UFO_OPERATIONAL_MODULE_REGISTRY",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE_SET,
+    title: "MODULO UFO ΦΩ – Operational Module Registry",
+    shortTitle: "UFO Operational Module Registry",
+    canonicalAxis: "Module Registry · Operational Profiles · B2G Use Cases · EVT · OPC",
+    technicalMemorySummary:
+      "MODULO UFO is the operational module registry for AI JOKER-C2 B2G. It organizes technical modules, their runtime roles, use-case classes, activation boundaries and audit requirements so that the SaaS can expose modular capabilities without losing governance.",
+    runtimeInputs: [
+      "moduleDefinition",
+      "moduleScope",
+      "activationPolicy",
+      "tenantId",
+      "workspaceId",
+      "operatorRole",
+      "traceRequirement"
+    ],
+    runtimeOutputs: [
+      "moduleId",
+      "moduleRegistryRecord",
+      "activationStatus",
+      "modulePolicy",
+      "evtCandidate",
+      "opcTechnicalProofReceipt"
+    ],
+    operationalRules: [
+      "Every module must have an explicit activation boundary.",
+      "Every module must declare input and output contracts.",
+      "Every module must declare whether it blocks, simulates or executes.",
+      "Registry entries must remain audit-ready and tenant-scoped.",
+      "Module registration is technical governance, not legal certification."
+    ],
+    futureGithubModules: [
+      {
+        path: "lib/operational-module-registry.ts",
+        role: "B2G operational module registry and activation metadata."
+      },
+      {
+        path: "app/api/v1/modules/register/route.ts",
+        route: "/api/v1/modules/register",
+        method: "POST",
+        role: "API endpoint for registering governed runtime modules."
+      }
+    ]
+  },
+
+  CQO_RND_THEORETICAL_FOUNDATION: {
+    module: "CQO_RND_THEORETICAL_FOUNDATION",
+    documentKind: HBCE_RND_THEORETICAL_FOUNDATION,
+    title: "Cybernetica Quantistica Opponibile – R&D Theoretical Foundation",
+    shortTitle: "Cybernetica Quantistica Opponibile",
+    canonicalAxis: "R&D · Cybernetic Theory · Opposability · Auditability · EVT · OPC",
+    technicalMemorySummary:
+      "Cybernetica Quantistica Opponibile is the R&D theoretical foundation for the AI JOKER-C2 B2G technical stack. It should be stored as research context and documentation support, not as a primary executable API route.",
+    runtimeInputs: [
+      "researchContext",
+      "theoreticalClaim",
+      "operationalMapping",
+      "traceRequirement",
+      "tenantId",
+      "workspaceId"
+    ],
+    runtimeOutputs: [
+      "researchSummary",
+      "operationalImplication",
+      "documentationAnchor",
+      "evtCandidate",
+      "opcTechnicalProofReceipt"
+    ],
+    operationalRules: [
+      "Use as R&D context, not as a primary runtime actuator.",
+      "Translate theory into executable modules only after explicit engineering mapping.",
+      "Keep legalCertification=false.",
+      "Use OPC as technical proof receipt only."
+    ],
+    futureGithubModules: [
+      {
+        path: "docs/rd/cybernetic-quantum-opponibility.md",
+        role: "R&D documentation and theoretical foundation for the B2G stack."
+      }
+    ]
+  }
+};
+
+function cleanString(value: unknown): string | null {
+  const text = String(value ?? "").trim();
+  return text.length > 0 ? text : null;
+}
+
+function upperIncludes(value: unknown, needle: string): boolean {
+  return String(value ?? "").toUpperCase().includes(needle.toUpperCase());
+}
+
+function hasCorpusContamination(input: HbceB2gTechnicalProfileInput): boolean {
+  const haystack = [
+    input.docFamily,
+    input.documentKind,
+    input.module,
+    input.volume,
+    input.title,
+    input.canonicalAxis,
+    input.header,
+    input.text
+  ].join("\n");
+
+  return (
+    upperIncludes(haystack, "CORPUS_ESOTEROLOGIA_ERMETICA") ||
+    upperIncludes(haystack, "CORPUS ESOTEROLOGIA ERMETICA") ||
+    upperIncludes(haystack, "GLOSSARIO CANONICO") ||
+    upperIncludes(haystack, "FONDAZIONE DISCIPLINARE")
+  );
+}
+
+function hasQstateContamination(input: HbceB2gTechnicalProfileInput): boolean {
+  const haystack = [input.header, input.text].join("\n");
+  return upperIncludes(haystack, "QSTATE") || upperIncludes(haystack, "QUANTUMSTATES");
+}
+
+function hasDcttContamination(input: HbceB2gTechnicalProfileInput): boolean {
+  const haystack = [input.canonicalAxis, input.header, input.text].join("\n");
+  return upperIncludes(haystack, "DECISIONE · COSTO · TRACCIA · TEMPO");
+}
+
+function moduleFromInputOrClassification(
+  input: HbceB2gTechnicalProfileInput,
+  classification: HbceB2gTechnicalStackClassification
+): HbceB2gTechnicalStackModule | null {
+  const explicitModule = cleanString(input.module);
+
+  if (explicitModule && explicitModule in B2G_TECHNICAL_MEMORY_DEFINITIONS) {
+    return explicitModule as HbceB2gTechnicalStackModule;
+  }
+
+  if (classification.module && classification.module in B2G_TECHNICAL_MEMORY_DEFINITIONS) {
+    return classification.module;
+  }
+
+  return null;
+}
+
+function kindFromDefinition(
+  definition: HbceB2gTechnicalMemoryDefinition | null
+): HbceB2gTechnicalStackDocumentKind | null {
+  return definition?.documentKind ?? null;
+}
+
+function selectProfileDocumentKind(
+  input: HbceB2gTechnicalProfileInput,
+  definition: HbceB2gTechnicalMemoryDefinition | null
+): HbceB2gTechnicalStackDocumentKind | null {
+  const explicitKind = cleanString(input.documentKind);
+
+  if (
+    explicitKind === HBCE_TECHNICAL_GOVERNANCE_MODULE ||
+    explicitKind === HBCE_TECHNICAL_GOVERNANCE_MODULE_SET ||
+    explicitKind === HBCE_RND_THEORETICAL_FOUNDATION
+  ) {
+    return explicitKind;
+  }
+
+  return kindFromDefinition(definition);
+}
+
+function isSupportedTechnicalKind(kind: HbceB2gTechnicalStackDocumentKind | null): boolean {
+  return (
+    kind === HBCE_TECHNICAL_GOVERNANCE_MODULE ||
+    kind === HBCE_TECHNICAL_GOVERNANCE_MODULE_SET ||
+    kind === HBCE_RND_THEORETICAL_FOUNDATION
+  );
+}
+
+function buildBaseFailurePayload(
+  input: HbceB2gTechnicalProfileInput,
+  classification: HbceB2gTechnicalStackClassification,
+  failReason: HbceB2gTechnicalMemoryFailReason
+): HbceB2gTechnicalMemoryPayload {
+  const module = moduleFromInputOrClassification(input, classification);
+  const definition = module ? B2G_TECHNICAL_MEMORY_DEFINITIONS[module] : null;
+  const documentKind = selectProfileDocumentKind(input, definition);
+
+  return {
+    status: HBCE_B2G_TECHNICAL_MEMORY_FAIL,
+    readyForIprSave: false,
+
+    memoryType: "B2G_TECHNICAL_PROFILE_MEMORY",
+    memoryMode: "TECHNICAL_SYNTHESIS_ONLY",
+    collapseRevision: HBCE_B2G_TECHNICAL_MEMORY_COLLAPSE_REVISION,
+    classifierRevision: HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION,
+
+    sourceDocument: cleanString(input.filename ?? input.sourceFilename),
+    documentProfileId: cleanString(input.documentProfileId),
+    documentProfileStatus: cleanString(input.documentProfileStatus),
+    fileHash: cleanString(input.fileHash),
+
+    docFamily:
+      input.docFamily === HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY
+        ? HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY
+        : null,
+    documentKind,
+    module,
+    volume: null,
+    title: cleanString(input.title) ?? definition?.title ?? null,
+    shortTitle: definition?.shortTitle ?? null,
+    canonicalAxis: cleanString(input.canonicalAxis) ?? definition?.canonicalAxis ?? null,
+
+    technicalMemorySummary: null,
+    runtimeInputs: [],
+    runtimeOutputs: [],
+    operationalRules: [],
+    futureGithubModules: [],
+
+    classification: {
+      matched: classification.matched,
+      confidence: classification.confidence,
+      score: classification.score,
+      matchedSignals: classification.matchedSignals,
+      metadataLockApplied: classification.metadataLockApplied,
+      metadataOverrideSource: classification.metadataOverrideSource
+    },
+
+    guards: {
+      noRawTextPersistence: true,
+      noQuantumStates: true,
+      noQstateOutput: true,
+      noCorpusCollapse: true,
+      noSemanticEsoterologicalMemory: true,
+      noDcttAxisForB2gTechnicalModules: true,
+      legalCertification: false,
+      opcBoundary: HBCE_B2G_OPC_BOUNDARY
+    },
+
+    coverage: {
+      textCoverageStatus: cleanString(input.textCoverageStatus),
+      fullDocumentCoverage: input.fullDocumentCoverage ?? null,
+      documentChunksPersisted: input.documentChunksPersisted ?? null,
+      documentChunksPersistedCount: input.documentChunksPersistedCount ?? null,
+      truncationDetected: input.truncationDetected ?? null
+    },
+
+    identity: {
+      derivedFromHumanIpr: cleanString(input.derivedFromHumanIpr),
+      humanIpr: cleanString(input.humanIpr),
+      runtimeIpr: cleanString(input.runtimeIpr),
+      tenantId: cleanString(input.tenantId),
+      workspaceId: cleanString(input.workspaceId)
+    },
+
+    trace: {
+      evtId: cleanString(input.evtId),
+      opcId: cleanString(input.opcId),
+      auditId: cleanString(input.auditId),
+      usageId: cleanString(input.usageId)
+    },
+
+    savePolicy: {
+      saveRaw: false,
+      saveTechnicalSynthesis: true,
+      saveQuantumStates: false,
+      saveFinalTechnicalMemoryOnly: true,
+      reusableInPrompt: true,
+      legalCertification: false,
+      opc: HBCE_B2G_OPC_BOUNDARY
+    },
+
+    failReason
+  };
+}
+
+function buildHbceB2gTechnicalMemoryCollapse(
+  input: HbceB2gTechnicalProfileInput
+): HbceB2gTechnicalMemoryPayload {
+  const classification = classifyHbceB2gTechnicalStackDocument(input);
+
+  if (!cleanString(input.documentProfileId)) {
+    return buildBaseFailurePayload(input, classification, "DOCUMENT_PROFILE_MISSING");
+  }
+
+  if (input.docFamily !== HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY) {
+    return buildBaseFailurePayload(
+      input,
+      classification,
+      "DOCUMENT_PROFILE_NOT_B2G_TECHNICAL_STACK"
+    );
+  }
+
+  const module = moduleFromInputOrClassification(input, classification);
+
+  if (!module) {
+    return buildBaseFailurePayload(input, classification, "DOCUMENT_PROFILE_MODULE_MISSING");
+  }
+
+  const definition = B2G_TECHNICAL_MEMORY_DEFINITIONS[module];
+
+  if (!definition) {
+    return buildBaseFailurePayload(input, classification, "UNSUPPORTED_TECHNICAL_MODULE");
+  }
+
+  const documentKind = selectProfileDocumentKind(input, definition);
+
+  if (!isSupportedTechnicalKind(documentKind)) {
+    return buildBaseFailurePayload(input, classification, "DOCUMENT_KIND_NOT_TECHNICAL");
+  }
+
+  if (!classification.matched) {
+    return buildBaseFailurePayload(input, classification, "CLASSIFIER_NO_MATCH");
+  }
+
+  if (hasQstateContamination(input)) {
+    return buildBaseFailurePayload(
+      input,
+      classification,
+      "DOCUMENT_PROFILE_CONTAMINATED_WITH_QSTATES"
+    );
+  }
+
+  if (hasCorpusContamination(input)) {
+    return buildBaseFailurePayload(
+      input,
+      classification,
+      "DOCUMENT_PROFILE_CONTAMINATED_WITH_CORPUS"
+    );
+  }
+
+  if (hasDcttContamination(input)) {
+    return buildBaseFailurePayload(
+      input,
+      classification,
+      "DOCUMENT_PROFILE_CONTAMINATED_WITH_DCTT"
+    );
+  }
+
+  return {
+    status: HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY,
+    readyForIprSave: true,
+
+    memoryType: "B2G_TECHNICAL_PROFILE_MEMORY",
+    memoryMode: "TECHNICAL_SYNTHESIS_ONLY",
+    collapseRevision: HBCE_B2G_TECHNICAL_MEMORY_COLLAPSE_REVISION,
+    classifierRevision: HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION,
+
+    sourceDocument: cleanString(input.filename ?? input.sourceFilename),
+    documentProfileId: cleanString(input.documentProfileId),
+    documentProfileStatus: cleanString(input.documentProfileStatus),
+    fileHash: cleanString(input.fileHash),
+
+    docFamily: HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY,
+    documentKind,
+    module,
+    volume: definition.module === "UFO_OPERATIONAL_MODULE_REGISTRY" ? "SET" : "N/A",
+    title: definition.title,
+    shortTitle: definition.shortTitle,
+    canonicalAxis: definition.canonicalAxis,
+
+    technicalMemorySummary: definition.technicalMemorySummary,
+    runtimeInputs: [...definition.runtimeInputs],
+    runtimeOutputs: [...definition.runtimeOutputs],
+    operationalRules: [...definition.operationalRules],
+    futureGithubModules: [...definition.futureGithubModules],
+
+    classification: {
+      matched: classification.matched,
+      confidence: classification.confidence,
+      score: classification.score,
+      matchedSignals: classification.matchedSignals,
+      metadataLockApplied: classification.metadataLockApplied,
+      metadataOverrideSource: classification.metadataOverrideSource
+    },
+
+    guards: {
+      noRawTextPersistence: true,
+      noQuantumStates: true,
+      noQstateOutput: true,
+      noCorpusCollapse: true,
+      noSemanticEsoterologicalMemory: true,
+      noDcttAxisForB2gTechnicalModules: true,
+      legalCertification: false,
+      opcBoundary: HBCE_B2G_OPC_BOUNDARY
+    },
+
+    coverage: {
+      textCoverageStatus: cleanString(input.textCoverageStatus),
+      fullDocumentCoverage: input.fullDocumentCoverage ?? null,
+      documentChunksPersisted: input.documentChunksPersisted ?? null,
+      documentChunksPersistedCount: input.documentChunksPersistedCount ?? null,
+      truncationDetected: input.truncationDetected ?? null
+    },
+
+    identity: {
+      derivedFromHumanIpr: cleanString(input.derivedFromHumanIpr),
+      humanIpr: cleanString(input.humanIpr),
+      runtimeIpr: cleanString(input.runtimeIpr),
+      tenantId: cleanString(input.tenantId),
+      workspaceId: cleanString(input.workspaceId)
+    },
+
+    trace: {
+      evtId: cleanString(input.evtId),
+      opcId: cleanString(input.opcId),
+      auditId: cleanString(input.auditId),
+      usageId: cleanString(input.usageId)
+    },
+
+    savePolicy: {
+      saveRaw: false,
+      saveTechnicalSynthesis: true,
+      saveQuantumStates: false,
+      saveFinalTechnicalMemoryOnly: true,
+      reusableInPrompt: true,
+      legalCertification: false,
+      opc: HBCE_B2G_OPC_BOUNDARY
+    },
+
+    failReason: "NONE"
+  };
+}
+
+function buildQpccfTechnicalMemoryCollapse(
+  input: Omit<HbceB2gTechnicalProfileInput, "module" | "docFamily">
+): HbceB2gTechnicalMemoryPayload {
+  return buildHbceB2gTechnicalMemoryCollapse({
+    ...input,
+    docFamily: HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY,
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    module: "QPCCF_PREDICTIVE_STABILITY_ENGINE"
+  });
+}
+
+function isHbceB2gTechnicalMemoryReady(
+  payload: HbceB2gTechnicalMemoryPayload
+): boolean {
+  return (
+    payload.status === HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY &&
+    payload.readyForIprSave === true &&
+    payload.failReason === "NONE" &&
+    payload.guards.noQuantumStates === true &&
+    payload.guards.noCorpusCollapse === true &&
+    payload.savePolicy.saveRaw === false &&
+    payload.savePolicy.saveTechnicalSynthesis === true
+  );
+}
+
+function listHbceB2gTechnicalMemorySupportedModules(): Array<{
+  module: HbceB2gTechnicalStackModule;
+  documentKind: HbceB2gTechnicalStackDocumentKind;
+  title: string;
+  futureGithubModules: HbceB2gFutureGithubModule[];
+}> {
+  return HBCE_B2G_TECHNICAL_STACK_DEFINITIONS.map((definition) => {
+    const memoryDefinition = B2G_TECHNICAL_MEMORY_DEFINITIONS[definition.module];
+
+    return {
+      module: definition.module,
+      documentKind: memoryDefinition.documentKind,
+      title: memoryDefinition.title,
+      futureGithubModules: [...memoryDefinition.futureGithubModules]
+    };
+  });
+}
+
+/**
+ * Safe public projection for UI/API responses.
+ * This intentionally excludes raw text and never emits quantumStates.
+ */
+function toPublicHbceB2gTechnicalMemoryPayload(
+  payload: HbceB2gTechnicalMemoryPayload
+): Record<string, unknown> {
+  return {
+    status: payload.status,
+    readyForIprSave: payload.readyForIprSave,
+    memoryType: payload.memoryType,
+    memoryMode: payload.memoryMode,
+    collapseRevision: payload.collapseRevision,
+    classifierRevision: payload.classifierRevision,
+    sourceDocument: payload.sourceDocument,
+    documentProfileId: payload.documentProfileId,
+    documentProfileStatus: payload.documentProfileStatus,
+    fileHash: payload.fileHash,
+    docFamily: payload.docFamily,
+    documentKind: payload.documentKind,
+    module: payload.module,
+    volume: payload.volume,
+    title: payload.title,
+    shortTitle: payload.shortTitle,
+    canonicalAxis: payload.canonicalAxis,
+    technicalMemorySummary: payload.technicalMemorySummary,
+    runtimeInputs: payload.runtimeInputs,
+    runtimeOutputs: payload.runtimeOutputs,
+    operationalRules: payload.operationalRules,
+    futureGithubModules: payload.futureGithubModules,
+    classification: payload.classification,
+    guards: payload.guards,
+    coverage: payload.coverage,
+    identity: payload.identity,
+    trace: payload.trace,
+    savePolicy: payload.savePolicy,
+    failReason: payload.failReason,
+    legalCertification: false,
+    opc: HBCE_B2G_OPC_BOUNDARY
+  };
+}
+
+
+/* --------------------------------------------------------------------------
+ * END INLINE HBCE B2G TECHNICAL STACK BLOCK
+ * -------------------------------------------------------------------------- */
+
 
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_1-SINGLE_FILE";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
@@ -228,6 +1731,12 @@ type StoredRuntimeFile = {
   documentProfileStatus?: DocumentProfilePersistenceStatus | null;
   documentProfileHash?: string | null;
   documentProfileReason?: string | null;
+  b2gTechnicalMemory?: Record<string, unknown> | null;
+  b2gTechnicalMemoryStatus?: string | null;
+  b2gTechnicalMemoryReady?: boolean | null;
+  b2gTechnicalMemoryReadyForIprSave?: boolean | null;
+  b2gTechnicalMemoryFailReason?: string | null;
+  b2gTechnicalMemoryCollapseRevision?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -295,7 +1804,7 @@ type CanonicalCorpusVolumeProfile = {
   keyTerms: string[];
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE";
 const QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION = "QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
 const QPCCF_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
 const QPCCF_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
@@ -2512,6 +4021,62 @@ function buildB2gTechnicalMemoryCollapseForFile(
 }
 
 
+function readTechnicalMemoryString(
+  technicalMemory: Record<string, unknown> | null | undefined,
+  key: string
+): string | null {
+  const value = technicalMemory?.[key];
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+
+
+function readTechnicalMemoryGuardBoolean(
+  technicalMemory: Record<string, unknown> | null | undefined,
+  key: string
+): boolean | null {
+  const guards = technicalMemory?.guards;
+
+  if (!guards || typeof guards !== "object") {
+    return null;
+  }
+
+  const value = (guards as Record<string, unknown>)[key];
+  return typeof value === "boolean" ? value : null;
+}
+
+
+function buildB2gTechnicalMemoryPromptBridge(
+  technicalMemory: Record<string, unknown> | null | undefined
+): string | null {
+  if (!technicalMemory) {
+    return null;
+  }
+
+  const status = readTechnicalMemoryString(technicalMemory, "status");
+  const module = readTechnicalMemoryString(technicalMemory, "module");
+  const docFamily = readTechnicalMemoryString(technicalMemory, "docFamily");
+  const documentKind = readTechnicalMemoryString(technicalMemory, "documentKind");
+  const failReason = readTechnicalMemoryString(technicalMemory, "failReason");
+
+  if (!status) {
+    return null;
+  }
+
+  return [
+    "B2G_TECHNICAL_PROFILE_MEMORY_READY",
+    `status=${status}`,
+    `docFamily=${docFamily ?? "UNKNOWN"}`,
+    `documentKind=${documentKind ?? "UNKNOWN"}`,
+    `module=${module ?? "UNKNOWN"}`,
+    `noQuantumStates=${readTechnicalMemoryGuardBoolean(technicalMemory, "noQuantumStates") === true}`,
+    `noCorpusCollapse=${readTechnicalMemoryGuardBoolean(technicalMemory, "noCorpusCollapse") === true}`,
+    `failReason=${failReason ?? "UNKNOWN"}`,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
 function applyB2gTechnicalMemoryCollapseToInput(
   input: DocumentProfileDatabaseInput,
   technicalMemory: Record<string, unknown> | null
@@ -3413,7 +4978,14 @@ function attachDocumentProfileResults(
       documentChunkDerivedFromHumanIpr: result.chunks?.derivedFromHumanIpr ?? null,
       documentChunkDatabaseVerified: result.chunks?.databaseVerified ?? null,
       documentChunkVerificationCount: result.chunks?.verificationCount ?? null,
-      documentChunkVerificationSqlHash: result.chunks?.verificationSqlHash ?? null
+      documentChunkVerificationSqlHash: result.chunks?.verificationSqlHash ?? null,
+      b2gTechnicalMemory: result.technicalMemory,
+      b2gTechnicalMemoryStatus: readTechnicalMemoryString(result.technicalMemory, "status"),
+      b2gTechnicalMemoryReady:
+        result.technicalMemory?.status === HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY,
+      b2gTechnicalMemoryReadyForIprSave: result.technicalMemory?.readyForIprSave === true,
+      b2gTechnicalMemoryFailReason: readTechnicalMemoryString(result.technicalMemory, "failReason"),
+      b2gTechnicalMemoryCollapseRevision: HBCE_B2G_TECHNICAL_MEMORY_COLLAPSE_REVISION
     };
   });
 }
@@ -3732,6 +5304,26 @@ function summarizeFiles(files: StoredRuntimeFile[], includeText: boolean, includ
     documentProfileStatus: file.documentProfileStatus ?? null,
     documentProfileHash: file.documentProfileHash ?? null,
     documentProfileReason: file.documentProfileReason ?? null,
+    b2gTechnicalMemory: file.b2gTechnicalMemory ?? null,
+    b2gTechnicalMemoryStatus: file.b2gTechnicalMemoryStatus ?? null,
+    b2gTechnicalMemoryReady: file.b2gTechnicalMemoryReady === true,
+    b2gTechnicalMemoryReadyForIprSave: file.b2gTechnicalMemoryReadyForIprSave === true,
+    b2gTechnicalMemoryFailReason: file.b2gTechnicalMemoryFailReason ?? null,
+    b2gTechnicalMemoryCollapseRevision: file.b2gTechnicalMemoryCollapseRevision ?? null,
+    b2gTechnicalMemoryPromptBridge: buildB2gTechnicalMemoryPromptBridge(file.b2gTechnicalMemory),
+    b2gTechnicalMemoryGuards: {
+      noQuantumStates: readTechnicalMemoryGuardBoolean(file.b2gTechnicalMemory, "noQuantumStates"),
+      noQstateOutput: readTechnicalMemoryGuardBoolean(file.b2gTechnicalMemory, "noQstateOutput"),
+      noCorpusCollapse: readTechnicalMemoryGuardBoolean(file.b2gTechnicalMemory, "noCorpusCollapse"),
+      noSemanticEsoterologicalMemory: readTechnicalMemoryGuardBoolean(
+        file.b2gTechnicalMemory,
+        "noSemanticEsoterologicalMemory"
+      ),
+      noDcttAxisForB2gTechnicalModules: readTechnicalMemoryGuardBoolean(
+        file.b2gTechnicalMemory,
+        "noDcttAxisForB2gTechnicalModules"
+      )
+    },
     createdAt: file.createdAt,
     updatedAt: file.updatedAt,
     text: includeText ? file.text : undefined,
@@ -3824,6 +5416,26 @@ function buildDiagnosticFileSnapshot(file: StoredRuntimeFile | null) {
     documentProfileStatus: file.documentProfileStatus ?? null,
     documentProfileHash: file.documentProfileHash ?? null,
     documentProfileReason: file.documentProfileReason ?? null,
+    b2gTechnicalMemory: file.b2gTechnicalMemory ?? null,
+    b2gTechnicalMemoryStatus: file.b2gTechnicalMemoryStatus ?? null,
+    b2gTechnicalMemoryReady: file.b2gTechnicalMemoryReady === true,
+    b2gTechnicalMemoryReadyForIprSave: file.b2gTechnicalMemoryReadyForIprSave === true,
+    b2gTechnicalMemoryFailReason: file.b2gTechnicalMemoryFailReason ?? null,
+    b2gTechnicalMemoryCollapseRevision: file.b2gTechnicalMemoryCollapseRevision ?? null,
+    b2gTechnicalMemoryPromptBridge: buildB2gTechnicalMemoryPromptBridge(file.b2gTechnicalMemory),
+    b2gTechnicalMemoryGuards: {
+      noQuantumStates: readTechnicalMemoryGuardBoolean(file.b2gTechnicalMemory, "noQuantumStates"),
+      noQstateOutput: readTechnicalMemoryGuardBoolean(file.b2gTechnicalMemory, "noQstateOutput"),
+      noCorpusCollapse: readTechnicalMemoryGuardBoolean(file.b2gTechnicalMemory, "noCorpusCollapse"),
+      noSemanticEsoterologicalMemory: readTechnicalMemoryGuardBoolean(
+        file.b2gTechnicalMemory,
+        "noSemanticEsoterologicalMemory"
+      ),
+      noDcttAxisForB2gTechnicalModules: readTechnicalMemoryGuardBoolean(
+        file.b2gTechnicalMemory,
+        "noDcttAxisForB2gTechnicalModules"
+      )
+    },
     documentChunkCount: file.documentChunkCount,
     documentChunksPersisted: file.documentChunksPersisted ?? null,
     documentChunksPersistedCount: file.documentChunksPersistedCount ?? null,
@@ -4290,6 +5902,10 @@ function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
     (sum, file) => sum + (file.documentChunksPersistedCount ?? 0),
     0
   );
+  const b2gTechnicalMemoryCount = files.filter((file) => Boolean(file.b2gTechnicalMemory)).length;
+  const b2gTechnicalMemoryReadyCount = files.filter(
+    (file) => file.b2gTechnicalMemoryStatus === HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY
+  ).length;
 
 
   return {
@@ -4307,6 +5923,9 @@ function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
     partialDocumentCoverageCount,
     totalDocumentChunks,
     persistedDocumentChunks,
+    b2gTechnicalMemoryCount,
+    b2gTechnicalMemoryReadyCount,
+    b2gTechnicalMemoryCollapseRevision: HBCE_B2G_TECHNICAL_MEMORY_COLLAPSE_REVISION,
     maxFilesPerSession: MAX_FILES_PER_SESSION,
     maxTextCharsPerFile: MAX_TEXT_CHARS_PER_FILE,
     maxTotalTextCharsPerSession: MAX_TOTAL_TEXT_CHARS_PER_SESSION,
@@ -4469,12 +6088,20 @@ export async function POST(req: NextRequest) {
           Boolean(profile.technicalMemory) &&
           profile.technicalMemory?.status !== HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY
       ).length,
+      runtimeFileBridgeCount: nextFiles.filter((file) => Boolean(file.b2gTechnicalMemory)).length,
+      runtimeFileBridgeReadyCount: nextFiles.filter(
+        (file) => file.b2gTechnicalMemoryStatus === HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY
+      ).length,
       collapseRevision: HBCE_B2G_TECHNICAL_MEMORY_COLLAPSE_REVISION,
+      payloadExposureRevision: "B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7",
       noQuantumStates: true,
       noCorpusCollapse: true,
       legalCertification: false,
       opc: "technical proof receipt only"
     },
+    b2gTechnicalMemoryPromptBridge: nextFiles
+      .map((file) => buildB2gTechnicalMemoryPromptBridge(file.b2gTechnicalMemory))
+      .filter((bridge): bridge is string => Boolean(bridge)),
     selfDiagnostic,
     diagnostic: selfDiagnostic,
     filesRouteDiagnostic: selfDiagnostic,
@@ -4567,6 +6194,12 @@ export async function GET(req: NextRequest) {
             })
             .filter((technicalMemory): technicalMemory is Record<string, unknown> => Boolean(technicalMemory))
         : [],
+    runtimeFileB2gTechnicalMemories: files
+      .map((file) => file.b2gTechnicalMemory)
+      .filter((technicalMemory): technicalMemory is Record<string, unknown> => Boolean(technicalMemory)),
+    b2gTechnicalMemoryPromptBridge: files
+      .map((file) => buildB2gTechnicalMemoryPromptBridge(file.b2gTechnicalMemory))
+      .filter((bridge): bridge is string => Boolean(bridge)),
     selfDiagnostic,
     diagnostic: selfDiagnostic,
     filesRouteDiagnostic: selfDiagnostic,
