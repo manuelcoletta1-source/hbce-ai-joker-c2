@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -6401,6 +6401,13 @@ const AIQ_B2G_MODULE = "AIQ_JOKER_POLICY_TRUTH_BUS";
 const AIQ_B2G_TITLE = "AIQ JOKER – Policy Truth Bus";
 const AIQ_B2G_CANONICAL_AXIS = "H · S · Q · A · Chi_tau · Policy · Fail-Closed · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK";
 
+const CQO_B2G_FILE_HASH = "sha256:a8f0a01a323a21c31e16b5a81789f98851286b169bd9616edc74111278fe02db";
+const CQO_B2G_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
+const CQO_B2G_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
+const CQO_B2G_MODULE = "CQO_OPPONIBLE_QUANTUM_CYBERNETICS";
+const CQO_B2G_TITLE = "Cybernetica Quantistica Opponibile";
+const CQO_B2G_CANONICAL_AXIS = "Psi · Lambda · kappa · Tau · Sigma · Omega · Chi_tau · D · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK";
+
 interface B2gTechnicalModuleDefinition {
   key: string;
   fileHash: string;
@@ -6461,6 +6468,45 @@ const B2G_TECHNICAL_MODULE_DEFINITIONS: B2gTechnicalModuleDefinition[] = [
       "qes",
       "policy/check",
       "manifest/verify"
+    ]
+  },
+  {
+    key: "CQO",
+    fileHash: CQO_B2G_FILE_HASH,
+    docFamily: CQO_B2G_DOC_FAMILY,
+    documentKind: CQO_B2G_DOCUMENT_KIND,
+    module: CQO_B2G_MODULE,
+    volume: "N/A",
+    title: CQO_B2G_TITLE,
+    canonicalAxis: CQO_B2G_CANONICAL_AXIS,
+    memoryCollapseRevision: QPCCF_B2G_MEMORY_COLLAPSE_REVISION,
+    classifierRevision: QPCCF_B2G_CLASSIFIER_REVISION,
+    minPersistedChunks: 1,
+    sourceFilename: "CQO_CYBERNETICA_QUANTISTICA_OPPONIBILE_CLEAN_RUNTIME_FOR_JOKER_C2.txt",
+    summary: "CQO is the AI JOKER-C2 B2G opponible quantum cybernetics module. It models intention, information, structure and certified measurement through Psi, Lambda, kappa and Tau, then connects feedback, memory, friction and systemic deviation through Sigma, Omega, Chi_tau and D. Its function is to convert cybernetic coherence into auditable EVT/OPC technical proof receipts with legalCertification=false.",
+    runtimeInputs: "psiIntentionVector, lambdaInformationCoherence, kappaStructuralState, tauMeasurementWindow, sigmaFeedbackField, omegaAdaptiveMemory, chiTauFriction, systemicDeviationD, humanIpr, tenantId, workspaceId",
+    runtimeOutputs: "cqoTrajectoryState, coherenceScoreLambda, tauOpponibilityMeasure, sigmaFeedbackResult, omegaAdaptationRecord, chiTauFrictionAssessment, deviationReportD, evtCandidate, opcTechnicalProofReceipt",
+    futureGithubModules: "lib/cqo-opponible-quantum-cybernetics.ts; app/api/v1/cqo/trajectory/check/route.ts; app/api/v1/cqo/coherence/measure/route.ts; app/api/v1/cqo/opponibility/record/route.ts",
+    signals: [
+      "cqo",
+      "cqo_opponible_quantum_cybernetics",
+      "cybernetica quantistica opponibile",
+      "cibernetica quantistica opponibile",
+      "opponible quantum cybernetics",
+      "psi · lambda · kappa · tau",
+      "psi",
+      "lambda",
+      "kappa",
+      "tau",
+      "sigma",
+      "omega",
+      "chi_tau",
+      "qubytron",
+      "e(t) =",
+      "e(t)",
+      "misurazione opponibile",
+      "loop quantico-informazionale",
+      "retroazione cibernetica"
     ]
   },
   {
@@ -6656,6 +6702,11 @@ function isB2gTechnicalProfileMemoryRequest(message: string, files: PublicFileSn
     normalized.includes("aiq_joker_policy_truth_bus") ||
     normalized.includes("policy truth bus") ||
     normalized.includes("truth bus") ||
+    normalized.includes("cqo technical profile") ||
+    normalized.includes("cqo_technical_profile") ||
+    normalized.includes("cqo_opponible_quantum_cybernetics") ||
+    normalized.includes("cybernetica quantistica opponibile") ||
+    normalized.includes("cibernetica quantistica opponibile") ||
     normalized.includes("cqd technical profile") ||
     normalized.includes("cqd_technical_profile") ||
     normalized.includes("cqd_evidence_record_engine") ||
@@ -6713,6 +6764,10 @@ function b2gPrimaryStatusForModule(moduleDefinition: B2gTechnicalModuleDefinitio
 
   if (moduleDefinition.key === "CQD") {
     return ready ? "CQD_TECHNICAL_PROFILE_INGESTION_READY" : "CQD_TECHNICAL_PROFILE_INGESTION_FAIL";
+  }
+
+  if (moduleDefinition.key === "CQO") {
+    return ready ? "CQO_TECHNICAL_PROFILE_INGESTION_READY" : "CQO_TECHNICAL_PROFILE_INGESTION_FAIL";
   }
 
   return ready ? "B2G_TECHNICAL_PROFILE_MEMORY_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_FAIL";
