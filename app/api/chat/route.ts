@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -843,10 +843,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const fileIngestionRequested = isFileIngestionQuestion(message, files);
   const rawFullDocumentCoverageAuditRequested = isFullDocumentCoverageAuditQuestion(message);
   const b2gTechnicalMemoryStrictRecallRequested = isB2gTechnicalMemoryStrictRecallQuestion(message);
+  const matrixEuropaVolumeIFileDetected =
+    !b2gTechnicalMemoryStrictRecallRequested && hasMatrixEuropaVolumeISignal(message, files);
+  const matrixOperationalDocumentProfileRequested =
+    matrixEuropaVolumeIFileDetected ||
+    (!b2gTechnicalMemoryStrictRecallRequested && isMatrixOperationalDocumentProfileRequest(message, files));
   const iprCanonicalDocumentMemorySaveRequested =
-    !b2gTechnicalMemoryStrictRecallRequested && isIprCanonicalDocumentMemorySaveRequest(message);
+    !b2gTechnicalMemoryStrictRecallRequested &&
+    !matrixEuropaVolumeIFileDetected &&
+    !matrixOperationalDocumentProfileRequested &&
+    isIprCanonicalDocumentMemorySaveRequest(message);
   const b2gTechnicalProfileMemoryRequested =
-    !b2gTechnicalMemoryStrictRecallRequested && isB2gTechnicalProfileMemoryRequest(message, files);
+    !b2gTechnicalMemoryStrictRecallRequested &&
+    !matrixEuropaVolumeIFileDetected &&
+    !matrixOperationalDocumentProfileRequested &&
+    isB2gTechnicalProfileMemoryRequest(message, files);
   const recordStatusOnlyRequested = isRecordStatusOnlyQuestion(message);
   const fullDocumentCoverageAuditRequested =
     rawFullDocumentCoverageAuditRequested && !iprCanonicalDocumentMemorySaveRequested;
@@ -865,7 +876,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     isMatrixIVStrategicSynthesisQuestion(message);
   const documentMemoryRecallRequested =
     !iprCanonicalDocumentMemorySaveRequested &&
-    (fullDocumentCoverageAuditRequested ||
+    (matrixOperationalDocumentProfileRequested ||
+      fullDocumentCoverageAuditRequested ||
       (!runtimeMemoryBlockDiagnosticRequested &&
         !matrixStrategicSynthesisRequested &&
         isCyberneticDocumentMemoryRecallQuestion(message)));
@@ -1214,6 +1226,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       recall: iprRecall,
       documentProfileRecall,
       message,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (matrixOperationalDocumentProfileRequested) {
+    answer = buildMatrixOperationalDocumentProfilePreparationAnswer({
+      message,
+      files,
+      documentProfileRecall,
       handoff,
       memory,
       policy,
@@ -1707,6 +1731,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     ? safeAnswer
     : recordStatusOnlyRequested
     ? safeAnswer
+    : matrixOperationalDocumentProfileRequested
+    ? buildMatrixOperationalDocumentProfileReadyAnswer({
+        message,
+        files,
+        documentProfileRecall,
+        handoff,
+        memory,
+        policy,
+        saasContext,
+        evt,
+        opc,
+        auditAndUsage,
+        persistenceBridge
+      })
     : b2gTechnicalProfileMemoryRequested
     ? buildB2gTechnicalProfileMemoryReadyAnswer({
         message,
@@ -5662,6 +5700,37 @@ type FilenameVolumeMetadataLock = {
 function resolveFilenameVolumeMetadataLock(file: PublicFileSnapshot, text: string): FilenameVolumeMetadataLock | null {
   const normalizedFilename = normalizeText(file.name || "");
   const normalizedHeader = normalizeText(`${file.name}\n${text.slice(0, 16000)}`);
+  const normalizedHash = normalizeText(file.fileHash || file.hash || "");
+
+  if (
+    normalizedFilename.includes("matrix_europa_volume_i") ||
+    normalizedFilename.includes("matrix europa volume i") ||
+    normalizedFilename.includes("a1.a1.matrix europa") ||
+    normalizedFilename.includes("a1 a1 matrix europa") ||
+    normalizedHash.includes("c70a753074f89b4309105270e17f6a10aa5aa0018a9e86a8504d5c5e249d0caa") ||
+    (
+      normalizedHeader.includes("hbce matrix document runtime profile") &&
+      normalizedHeader.includes("docfamily=hbce_operational_document") &&
+      normalizedHeader.includes("documentkind=matrix_operational_volume") &&
+      normalizedHeader.includes("matrixvolume=v1")
+    ) ||
+    (
+      normalizedHeader.includes("matrix europa") &&
+      normalizedHeader.includes("volume fondativo del ciclo matrix") &&
+      normalizedHeader.includes("operativita senza prova strutturale")
+    )
+  ) {
+    return {
+      matched: true,
+      reason: "FILENAME_LOCK_MATRIX_EUROPA_VOLUME_I_OPERATIONAL_DOCUMENT",
+      docFamily: MATRIX_EUROPA_VOLUME_I_DOC_FAMILY,
+      volume: MATRIX_EUROPA_VOLUME_I_VOLUME,
+      title: MATRIX_EUROPA_VOLUME_I_TITLE,
+      documentKind: MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND,
+      canonicalAxis: MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS
+    };
+  }
+
   const hasCorpusSignal =
     normalizedHeader.includes("corpus esoterologia ermetica") ||
     normalizedFilename.includes("corpus") ||
@@ -7169,6 +7238,326 @@ function buildB2gTechnicalProfileMemoryReadyAnswer(args: {
   ].join("\n");
 }
 
+
+
+const MATRIX_EUROPA_VOLUME_I_FILE_HASH = "sha256:c70a753074f89b4309105270e17f6a10aa5aa0018a9e86a8504d5c5e249d0caa";
+const MATRIX_EUROPA_VOLUME_I_DOC_FAMILY = "HBCE_OPERATIONAL_DOCUMENT";
+const MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND = "MATRIX_OPERATIONAL_VOLUME";
+const MATRIX_EUROPA_VOLUME_I_MODULE = "MATRIX_EUROPA_VOLUME_I";
+const MATRIX_EUROPA_VOLUME_I_VOLUME = "V1";
+const MATRIX_EUROPA_VOLUME_I_TITLE = "MATRIX EUROPA";
+const MATRIX_EUROPA_VOLUME_I_CLASSIFICATION = "MATRIX_VOLUME_I_FOUNDATIONAL_PARADIGM";
+const MATRIX_EUROPA_VOLUME_I_QUALITY = "CANONICAL";
+const MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS = "IPR · TRAC · HBCE · JOKER-C2 · Matrix Europa · Torino_Bruxelles · EU_Federation · Operational_Verifiability";
+const MATRIX_EUROPA_VOLUME_I_OPERATIONAL_TRACE_AXIS = "Identity · Continuity · Governance · Execution · Verification · Fail_Closed · Cross_Border · TRAC_0001_0007 · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
+
+function resolveMatrixOperationalDocumentSignalText(message: string, files: PublicFileSnapshot[]): string {
+  const fileText = files
+    .map((file) => [file.name, file.fileHash, file.hash, file.documentProfileId, getPromptTextForFile(file).slice(0, 26000)].join("\n"))
+    .join("\n");
+
+  return normalizeText([message, fileText].join("\n"));
+}
+
+function hasMatrixEuropaVolumeISignal(message: string, files: PublicFileSnapshot[]): boolean {
+  const normalized = resolveMatrixOperationalDocumentSignalText(message, files);
+
+  if (!normalized) {
+    return false;
+  }
+
+  const explicitIdentity =
+    normalized.includes("matrix_europa_volume_i") ||
+    normalized.includes("matrix europa volume i") ||
+    normalized.includes("matrix europa") ||
+    normalized.includes("a1 a1 matrix europa") ||
+    normalized.includes("matrix_operational_document_profile") ||
+    normalized.includes("matrix_operational_document_profile_ready") ||
+    normalized.includes("matrix_volume_i_foundational_paradigm") ||
+    normalized.includes("hbce matrix document runtime profile") ||
+    normalized.includes("c70a753074f89b4309105270e17f6a10aa5aa0018a9e86a8504d5c5e249d0caa");
+
+  const architectureSignals =
+    normalized.includes("operativita senza prova strutturale") ||
+    normalized.includes("operatività senza prova strutturale") ||
+    normalized.includes("identity continuity governance execution verification") ||
+    normalized.includes("ipr trac hbce joker-c2") ||
+    normalized.includes("ipr · trac · hbce · joker-c2") ||
+    normalized.includes("trac-0001") ||
+    normalized.includes("trac_0001_0007") ||
+    normalized.includes("torino bruxelles") ||
+    normalized.includes("torino—bruxelles") ||
+    normalized.includes("torino — bruxelles");
+
+  const matrixV1Signals =
+    normalized.includes("volume fondativo del ciclo matrix") ||
+    normalized.includes("volume i del ciclo matrix") ||
+    normalized.includes("volume i → paradigma") ||
+    normalized.includes("matrix europa definisce un infrastruttura federata europea") ||
+    normalized.includes("matrix europa definisce una infrastruttura federata europea");
+
+  return explicitIdentity && (architectureSignals || matrixV1Signals);
+}
+
+function isMatrixOperationalDocumentProfileRequest(message: string, files: PublicFileSnapshot[]): boolean {
+  if (!message.trim() || files.length === 0) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const requestSignal =
+    normalized.includes("matrix_operational_document_profile") ||
+    normalized.includes("operational document profile ingestion") ||
+    normalized.includes("matrix operational document") ||
+    normalized.includes("matrix_europa_volume_i") ||
+    normalized.includes("matrix europa volume i") ||
+    normalized.includes("prefermatrixoperationaldocumentmemory") ||
+    normalized.includes("do_not_use_b2g_technical_stack") ||
+    normalized.includes("do_not_create_semantic_memory");
+
+  return requestSignal && hasMatrixEuropaVolumeISignal(message, files);
+}
+
+function matrixOperationalDocumentReadyFromDiagnostic(diagnostic: FullDocumentCoverageAuditDiagnostic): boolean {
+  const documentProfileIdAvailable = diagnostic.documentProfileId !== "NO_DOCUMENT_PROFILE_ID" && diagnostic.documentProfileId.trim().length > 0;
+  const documentProfileStatusAvailable = diagnostic.documentProfileStatus !== "NO_DOCUMENT_PROFILE_STATUS" && diagnostic.documentProfileStatus.trim().length > 0;
+  const chunksReady =
+    diagnostic.documentChunksPersisted === true &&
+    diagnostic.documentChunksPersistedCount >= Math.max(1, diagnostic.documentChunkCount);
+
+  return (
+    diagnostic.fullDocumentCoverage === true &&
+    diagnostic.textCoverageStatus === "TEXT_READY_FULL" &&
+    chunksReady &&
+    diagnostic.truncationDetected === false &&
+    documentProfileIdAvailable &&
+    documentProfileStatusAvailable &&
+    diagnostic.documentProfileRecallInjected === true &&
+    diagnostic.linkedProfileCount > 0
+  );
+}
+
+function matrixOperationalDocumentFailReason(diagnostic: FullDocumentCoverageAuditDiagnostic, ready: boolean): string {
+  if (ready) {
+    return "NONE";
+  }
+
+  const reasons: string[] = [];
+
+  if (diagnostic.fullDocumentCoverage !== true) {
+    reasons.push("FULL_DOCUMENT_COVERAGE_FALSE");
+  }
+
+  if (diagnostic.textCoverageStatus !== "TEXT_READY_FULL") {
+    reasons.push("TEXT_COVERAGE_STATUS_NOT_FULL");
+  }
+
+  if (diagnostic.documentChunksPersisted !== true) {
+    reasons.push("DOCUMENT_CHUNKS_NOT_PERSISTED");
+  }
+
+  if (diagnostic.documentChunksPersistedCount < Math.max(1, diagnostic.documentChunkCount)) {
+    reasons.push("DOCUMENT_CHUNKS_PERSISTED_COUNT_INSUFFICIENT");
+  }
+
+  if (diagnostic.truncationDetected === true) {
+    reasons.push("TRUNCATION_OR_PARTIAL_COVERAGE_DETECTED");
+  }
+
+  if (diagnostic.documentProfileId === "NO_DOCUMENT_PROFILE_ID" || !diagnostic.documentProfileId.trim()) {
+    reasons.push("DOCUMENT_PROFILE_ID_MISSING");
+  }
+
+  if (diagnostic.documentProfileStatus === "NO_DOCUMENT_PROFILE_STATUS" || !diagnostic.documentProfileStatus.trim()) {
+    reasons.push("DOCUMENT_PROFILE_STATUS_MISSING");
+  }
+
+  if (diagnostic.documentProfileRecallInjected !== true) {
+    reasons.push("DOCUMENT_PROFILE_RECALL_NOT_INJECTED");
+  }
+
+  if (diagnostic.linkedProfileCount < 1) {
+    reasons.push("LINKED_PROFILE_COUNT_ZERO");
+  }
+
+  if (diagnostic.hashMatchesExpected === false) {
+    reasons.push("RUNTIME_FILE_HASH_DOES_NOT_MATCH_EXPECTED_SOURCE_HASH");
+  }
+
+  return reasons.join("|") || diagnostic.failReason || "MATRIX_OPERATIONAL_DOCUMENT_PROFILE_NOT_READY";
+}
+
+function buildMatrixOperationalDocumentProfilePreparationAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const diagnostic = buildFullDocumentCoverageAuditDiagnostic({
+    message: args.message,
+    files: args.files,
+    documentProfileRecall: args.documentProfileRecall,
+    documentMemoryRecallRequested: true
+  });
+  const ready = matrixOperationalDocumentReadyFromDiagnostic(diagnostic);
+  const failReason = matrixOperationalDocumentFailReason(diagnostic, ready);
+
+  return [
+    ready ? "MATRIX_OPERATIONAL_DOCUMENT_PROFILE_READY" : "MATRIX_OPERATIONAL_DOCUMENT_PROFILE_FAIL",
+    "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
+    "activeFilename=" + diagnostic.activeFilename,
+    "sourceDocument=" + diagnostic.activeFilename,
+    "runtimeFileHash=" + diagnostic.runtimeFileHash,
+    "fileHash=" + diagnostic.runtimeFileHash,
+    "hashMatchesExpected=" + String(diagnostic.hashMatchesExpected === null ? "NOT_CHECKED" : diagnostic.hashMatchesExpected),
+    "textCoverageStatus=" + diagnostic.textCoverageStatus,
+    "fullDocumentCoverage=" + String(diagnostic.fullDocumentCoverage),
+    "longDocumentMode=" + diagnostic.longDocumentMode,
+    "documentChunkCount=" + String(diagnostic.documentChunkCount),
+    "documentChunksPersisted=" + String(diagnostic.documentChunksPersisted),
+    "documentChunksPersistedCount=" + String(diagnostic.documentChunksPersistedCount),
+    "documentProfileId=" + diagnostic.documentProfileId,
+    "documentProfileStatus=" + diagnostic.documentProfileStatus,
+    "docFamily=" + MATRIX_EUROPA_VOLUME_I_DOC_FAMILY,
+    "documentKind=" + MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND,
+    "matrixCycle=MATRIX",
+    "matrixVolume=" + MATRIX_EUROPA_VOLUME_I_VOLUME,
+    "module=" + MATRIX_EUROPA_VOLUME_I_MODULE,
+    "volume=" + MATRIX_EUROPA_VOLUME_I_VOLUME,
+    "title=" + MATRIX_EUROPA_VOLUME_I_TITLE,
+    "classification=" + MATRIX_EUROPA_VOLUME_I_CLASSIFICATION,
+    "quality=" + MATRIX_EUROPA_VOLUME_I_QUALITY,
+    "canonicalAxis=" + MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS,
+    "operationalTraceAxis=" + MATRIX_EUROPA_VOLUME_I_OPERATIONAL_TRACE_AXIS,
+    "documentMemory.status=" + (ready ? "MATRIX_OPERATIONAL_DOCUMENT_MEMORY_READY" : "MATRIX_OPERATIONAL_DOCUMENT_MEMORY_FAIL"),
+    "documentMemory.readyForIprSave=" + String(ready),
+    "documentMemory.memoryType=MATRIX_OPERATIONAL_DOCUMENT_MEMORY",
+    "documentMemory.memoryMode=FULL_DOCUMENT_OPERATIONAL_SYNTHESIS",
+    "documentMemory.docFamily=" + MATRIX_EUROPA_VOLUME_I_DOC_FAMILY,
+    "documentMemory.documentKind=" + MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND,
+    "documentMemory.module=" + MATRIX_EUROPA_VOLUME_I_MODULE,
+    "documentMemory.title=" + MATRIX_EUROPA_VOLUME_I_TITLE,
+    "documentMemory.volume=" + MATRIX_EUROPA_VOLUME_I_VOLUME,
+    "documentMemory.canonicalAxis=" + MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS,
+    "guards.doNotClassifyAsB2GTechnicalModule=true",
+    "guards.doNotClassifyAsCorpusEsoterologico=true",
+    "guards.doNotClassifyAsQState=true",
+    "guards.doNotUseQuantumStateOutput=true",
+    "guards.doNotCreateSemanticEsoterologicalMemory=true",
+    "guards.preferMatrixOperationalDocumentMemory=true",
+    "guards.fullDocumentCoverageRequired=true",
+    "guards.orderedRecall=true",
+    "guards.failClosedOnMissingProfile=true",
+    "truncationDetected=" + String(diagnostic.truncationDetected),
+    "readyForIprSave=" + String(ready),
+    "failReason=" + failReason,
+    "derivedFromHumanIpr=" + args.handoff.humanIpr,
+    "humanIpr=" + args.handoff.humanIpr,
+    "runtimeIpr=" + RUNTIME_IPR,
+    "tenantId=" + args.saasContext.tenantId,
+    "workspaceId=" + args.saasContext.workspaceId,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+function buildMatrixOperationalDocumentProfileReadyAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
+}): string {
+  const diagnostic = buildFullDocumentCoverageAuditDiagnostic({
+    message: args.message,
+    files: args.files,
+    documentProfileRecall: args.documentProfileRecall,
+    documentMemoryRecallRequested: true
+  });
+  const ready = matrixOperationalDocumentReadyFromDiagnostic(diagnostic);
+  const failReason = matrixOperationalDocumentFailReason(diagnostic, ready);
+
+  return [
+    ready ? "MATRIX_OPERATIONAL_DOCUMENT_PROFILE_READY" : "MATRIX_OPERATIONAL_DOCUMENT_PROFILE_FAIL",
+    "",
+    "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
+    "activeFilename=" + diagnostic.activeFilename,
+    "sourceDocument=" + diagnostic.activeFilename,
+    "runtimeFileHash=" + diagnostic.runtimeFileHash,
+    "fileHash=" + diagnostic.runtimeFileHash,
+    "hashMatchesExpected=" + String(diagnostic.hashMatchesExpected === null ? "NOT_CHECKED" : diagnostic.hashMatchesExpected),
+    "textCoverageStatus=" + diagnostic.textCoverageStatus,
+    "fullDocumentCoverage=" + String(diagnostic.fullDocumentCoverage),
+    "longDocumentMode=" + diagnostic.longDocumentMode,
+    "documentChunkCount=" + String(diagnostic.documentChunkCount),
+    "documentChunksPersisted=" + String(diagnostic.documentChunksPersisted),
+    "documentChunksPersistedCount=" + String(diagnostic.documentChunksPersistedCount),
+    "",
+    "documentProfileId=" + diagnostic.documentProfileId,
+    "documentProfileStatus=" + diagnostic.documentProfileStatus,
+    "docFamily=" + MATRIX_EUROPA_VOLUME_I_DOC_FAMILY,
+    "documentKind=" + MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND,
+    "matrixCycle=MATRIX",
+    "matrixVolume=" + MATRIX_EUROPA_VOLUME_I_VOLUME,
+    "module=" + MATRIX_EUROPA_VOLUME_I_MODULE,
+    "volume=" + MATRIX_EUROPA_VOLUME_I_VOLUME,
+    "title=" + MATRIX_EUROPA_VOLUME_I_TITLE,
+    "classification=" + MATRIX_EUROPA_VOLUME_I_CLASSIFICATION,
+    "quality=" + MATRIX_EUROPA_VOLUME_I_QUALITY,
+    "canonicalAxis=" + MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS,
+    "operationalTraceAxis=" + MATRIX_EUROPA_VOLUME_I_OPERATIONAL_TRACE_AXIS,
+    "",
+    "documentMemory.status=" + (ready ? "MATRIX_OPERATIONAL_DOCUMENT_MEMORY_READY" : "MATRIX_OPERATIONAL_DOCUMENT_MEMORY_FAIL"),
+    "documentMemory.readyForIprSave=" + String(ready),
+    "documentMemory.memoryType=MATRIX_OPERATIONAL_DOCUMENT_MEMORY",
+    "documentMemory.memoryMode=FULL_DOCUMENT_OPERATIONAL_SYNTHESIS",
+    "documentMemory.docFamily=" + MATRIX_EUROPA_VOLUME_I_DOC_FAMILY,
+    "documentMemory.documentKind=" + MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND,
+    "documentMemory.module=" + MATRIX_EUROPA_VOLUME_I_MODULE,
+    "documentMemory.title=" + MATRIX_EUROPA_VOLUME_I_TITLE,
+    "documentMemory.volume=" + MATRIX_EUROPA_VOLUME_I_VOLUME,
+    "documentMemory.canonicalAxis=" + MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS,
+    "documentMemory.operationalSummary=Matrix Europa Volume I is the foundational operational document for the MATRIX cycle. It defines the European federated infrastructure for verifiable operational continuity, persistent operational identity, computable governance and constrained execution through IPR, TRAC, HBCE and JOKER-C2.",
+    "documentMemory.runtimeInputs=identityEvents, operationalSequences, tracEvents, hbcePolicies, jokerC2ExecutionRequests, euNodeContext, tenantId, workspaceId, humanIpr",
+    "documentMemory.runtimeOutputs=matrixOperationalProfile, tracContinuityModel, euFederationBlueprint, governanceExecutionChain, evtCandidate, opcTechnicalProofReceipt",
+    "documentMemory.futureGithubModules=lib/matrix-europa-volume-i.ts; app/api/v1/matrix/europa/v1/profile/route.ts; app/api/v1/matrix/trac/standard/route.ts; app/api/v1/matrix/federation/node/route.ts; app/api/v1/matrix/operational-document/recall/route.ts",
+    "",
+    "guards.doNotClassifyAsB2GTechnicalModule=true",
+    "guards.doNotClassifyAsCorpusEsoterologico=true",
+    "guards.doNotClassifyAsQState=true",
+    "guards.doNotUseQuantumStateOutput=true",
+    "guards.doNotCreateSemanticEsoterologicalMemory=true",
+    "guards.preferMatrixOperationalDocumentMemory=true",
+    "guards.fullDocumentCoverageRequired=true",
+    "guards.orderedRecall=true",
+    "guards.failClosedOnMissingProfile=true",
+    "",
+    "truncationDetected=" + String(diagnostic.truncationDetected),
+    "readyForIprSave=" + String(ready),
+    "failReason=" + failReason,
+    "",
+    "derivedFromHumanIpr=" + args.handoff.humanIpr,
+    "humanIpr=" + args.handoff.humanIpr,
+    "runtimeIpr=" + RUNTIME_IPR,
+    "tenantId=" + args.saasContext.tenantId,
+    "workspaceId=" + args.saasContext.workspaceId,
+    "EVT=" + args.evt.id,
+    "OPC=" + args.opc.id,
+    "auditId=" + stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+    "usageId=" + stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID"),
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
 
 function isIprCanonicalDocumentMemorySaveRequest(message: string): boolean {
   if (!message.trim()) {
