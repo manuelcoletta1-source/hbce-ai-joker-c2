@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -6394,6 +6394,13 @@ const CQD_B2G_MODULE = "CQD_EVIDENCE_RECORD_ENGINE";
 const CQD_B2G_TITLE = "Crocifissione Quantistica del Dato: un modello di fissazione multidimensionale dell’informazione per sistemi autonomi opponibili";
 const CQD_B2G_CANONICAL_AXIS = "T_axis · I_axis · E_axis · L_axis · CQD_VALID · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK";
 
+const AIQ_B2G_FILE_HASH = "sha256:1e2ea5152d9b7bf2ee193528b12e63c5904cc9695b1f0afcfcb90bf8ce5a6772";
+const AIQ_B2G_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
+const AIQ_B2G_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
+const AIQ_B2G_MODULE = "AIQ_JOKER_POLICY_TRUTH_BUS";
+const AIQ_B2G_TITLE = "AIQ JOKER – Policy Truth Bus";
+const AIQ_B2G_CANONICAL_AXIS = "H · S · Q · A · Chi_tau · Policy · Fail-Closed · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK";
+
 interface B2gTechnicalModuleDefinition {
   key: string;
   fileHash: string;
@@ -6415,6 +6422,47 @@ interface B2gTechnicalModuleDefinition {
 }
 
 const B2G_TECHNICAL_MODULE_DEFINITIONS: B2gTechnicalModuleDefinition[] = [
+  {
+    key: "AIQ",
+    fileHash: AIQ_B2G_FILE_HASH,
+    docFamily: AIQ_B2G_DOC_FAMILY,
+    documentKind: AIQ_B2G_DOCUMENT_KIND,
+    module: AIQ_B2G_MODULE,
+    volume: "N/A",
+    title: AIQ_B2G_TITLE,
+    canonicalAxis: AIQ_B2G_CANONICAL_AXIS,
+    memoryCollapseRevision: QPCCF_B2G_MEMORY_COLLAPSE_REVISION,
+    classifierRevision: QPCCF_B2G_CLASSIFIER_REVISION,
+    minPersistedChunks: 1,
+    sourceFilename: "AIQ_JOKER_POLICY_TRUTH_BUS_CLEAN_RUNTIME_FOR_JOKER_C2.txt",
+    summary: "AIQ JOKER Policy Truth Bus is the AI JOKER-C2 B2G truth-policy orchestration module. It evaluates whether an event can become an opposable truth record through H integrity, S qualified signature, Q coherence, A multi-ledger anchoring and Chi_tau fail-closed policy. Its function is to transform AI/runtime decisions into auditable Policy Truth Bus events with EVT/OPC technical proof receipts and legalCertification=false.",
+    runtimeInputs: "payloadD, hashH, qesSignatureS, coherenceQ, anchorSetA, chiTauPolicyScore, policyContext, humanIpr, tenantId, workspaceId",
+    runtimeOutputs: "truthBusDecision, mState, hIntegrityProof, sSignatureProof, qCoherenceScore, aAnchorReceipt, chiTauDecision, policyVerdict, evtCandidate, opcTechnicalProofReceipt",
+    futureGithubModules: "lib/aiq-policy-truth-bus.ts; app/api/v1/aiq/policy/check/route.ts; app/api/v1/aiq/truth/verify/route.ts; app/api/v1/aiq/truth/anchor/route.ts; app/api/v1/aiq/manifest/verify/route.ts",
+    signals: [
+      "aiq",
+      "aiq_joker",
+      "aiq joker",
+      "aiq_joker_policy_truth_bus",
+      "policy truth bus",
+      "truth bus",
+      "verita automatizzata",
+      "verità automatizzata",
+      "truth-as-a-service",
+      "truth as a service",
+      "m = h ∧ s ∧ q ∧ a ∧ χτ",
+      "m = h ∧ s ∧ q ∧ a ∧ chi_tau",
+      "h · s · q · a · chi_tau",
+      "chi_tau",
+      "χτ",
+      "fail-closed",
+      "etica computazionale",
+      "tsa",
+      "qes",
+      "policy/check",
+      "manifest/verify"
+    ]
+  },
   {
     key: "CQD",
     fileHash: CQD_B2G_FILE_HASH,
@@ -6509,12 +6557,42 @@ function resolveB2gTechnicalModuleFromText(text: string): B2gTechnicalModuleDefi
     return null;
   }
 
-  return B2G_TECHNICAL_MODULE_DEFINITIONS.find((moduleDefinition) => {
-    return b2gModuleSignalText(moduleDefinition)
+  const explicitModule = B2G_TECHNICAL_MODULE_DEFINITIONS.find((moduleDefinition) => {
+    const moduleName = normalizeText(moduleDefinition.module);
+    const title = normalizeText(moduleDefinition.title);
+    const filename = normalizeText(moduleDefinition.sourceFilename);
+    return (
+      normalized.includes(`module=${moduleName}`) ||
+      normalized.includes(`module =${moduleName}`) ||
+      normalized.includes(`module = ${moduleName}`) ||
+      normalized.includes(`expectedmodule=${moduleName}`) ||
+      normalized.includes(`requestedmodule=${moduleName}`) ||
+      normalized.includes(moduleDefinition.fileHash) ||
+      normalized.includes(filename) ||
+      normalized.includes(`title=${title}`) ||
+      normalized.includes(`title = ${title}`)
+    );
+  });
+
+  if (explicitModule) {
+    return explicitModule;
+  }
+
+  let best: { moduleDefinition: B2gTechnicalModuleDefinition; score: number } | null = null;
+
+  for (const moduleDefinition of B2G_TECHNICAL_MODULE_DEFINITIONS) {
+    const signals = b2gModuleSignalText(moduleDefinition)
       .split("\n")
-      .filter(Boolean)
-      .some((signal) => normalized.includes(signal));
-  }) || null;
+      .map((signal) => signal.trim())
+      .filter(Boolean);
+    const score = signals.reduce((total, signal) => total + (normalized.includes(signal) ? 1 : 0), 0);
+
+    if (score > 0 && (!best || score > best.score)) {
+      best = { moduleDefinition, score };
+    }
+  }
+
+  return best?.moduleDefinition || null;
 }
 
 function resolveB2gTechnicalModuleFromDiagnostic(
@@ -6573,6 +6651,11 @@ function isB2gTechnicalProfileMemoryRequest(message: string, files: PublicFileSn
     normalized.includes("b2g_technical_profile_memory_ready") ||
     normalized.includes("technical profile ingestion") ||
     normalized.includes("technical_profile_ingestion") ||
+    normalized.includes("aiq technical profile") ||
+    normalized.includes("aiq_technical_profile") ||
+    normalized.includes("aiq_joker_policy_truth_bus") ||
+    normalized.includes("policy truth bus") ||
+    normalized.includes("truth bus") ||
     normalized.includes("cqd technical profile") ||
     normalized.includes("cqd_technical_profile") ||
     normalized.includes("cqd_evidence_record_engine") ||
@@ -6624,6 +6707,10 @@ function buildQpccfB2gTechnicalMemorySummary(): string {
 }
 
 function b2gPrimaryStatusForModule(moduleDefinition: B2gTechnicalModuleDefinition, ready: boolean): string {
+  if (moduleDefinition.key === "AIQ") {
+    return ready ? "AIQ_TECHNICAL_PROFILE_INGESTION_READY" : "AIQ_TECHNICAL_PROFILE_INGESTION_FAIL";
+  }
+
   if (moduleDefinition.key === "CQD") {
     return ready ? "CQD_TECHNICAL_PROFILE_INGESTION_READY" : "CQD_TECHNICAL_PROFILE_INGESTION_FAIL";
   }
@@ -6642,9 +6729,7 @@ function buildQpccfB2gTechnicalProfileMemoryPreparationAnswer(args: {
   const ready = b2gTechnicalReadyFromDiagnostic(args.diagnostic, moduleDefinition);
 
   return [
-    moduleDefinition.key === "CQD"
-      ? ready ? "CQD_TECHNICAL_PROFILE_INGESTION_READY" : "CQD_TECHNICAL_PROFILE_INGESTION_BLOCKED"
-      : ready ? "B2G_TECHNICAL_PROFILE_MEMORY_PREP_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_PREP_BLOCKED",
+    b2gPrimaryStatusForModule(moduleDefinition, ready),
     "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
     "activeFilename=" + args.diagnostic.activeFilename,
     "runtimeFileHash=" + args.diagnostic.runtimeFileHash,
@@ -6699,9 +6784,7 @@ function buildB2gTechnicalProfileMemoryPreparationAnswer(args: {
   const ready = b2gTechnicalReadyFromDiagnostic(diagnostic, moduleDefinition);
 
   return [
-    moduleDefinition.key === "CQD"
-      ? ready ? "CQD_TECHNICAL_PROFILE_INGESTION_READY" : "CQD_TECHNICAL_PROFILE_INGESTION_BLOCKED"
-      : ready ? "B2G_TECHNICAL_PROFILE_MEMORY_PREP_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_PREP_BLOCKED",
+    b2gPrimaryStatusForModule(moduleDefinition, ready),
     "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
     "activeFilename=" + diagnostic.activeFilename,
     "runtimeFileHash=" + diagnostic.runtimeFileHash,
