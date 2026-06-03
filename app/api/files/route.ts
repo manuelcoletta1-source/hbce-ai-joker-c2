@@ -204,7 +204,7 @@ const HBCE_B2G_TECHNICAL_STACK_DEFINITIONS: readonly ModuleDefinition[] = [
     volume: "N/A",
     title: "CQD – Crocefissione Quantistica del Dato",
     shortTitle: "CQD Evidence Record Engine",
-    canonicalAxis: "T · I · E · L · Hash · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
+    canonicalAxis: "T_axis · I_axis · E_axis · L_axis · CQD_VALID · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
     summary:
       "Modulo tecnico B2G per impacchettamento della prova tecnica del dato, record evidence e verifica auditabile tramite hash, evento e ricevuta tecnica.",
     keyTerms: [
@@ -241,7 +241,7 @@ const HBCE_B2G_TECHNICAL_STACK_DEFINITIONS: readonly ModuleDefinition[] = [
     volume: "N/A",
     title: "AIQ JOKER – Policy Truth Bus",
     shortTitle: "AIQ JOKER Policy Truth Bus",
-    canonicalAxis: "H · S · Q · A · Chi_tau · Policy · Fail-Closed · AI_JOKER_C2",
+    canonicalAxis: "H · S · Q · A · Chi_tau · Policy · Fail-Closed · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
     summary:
       "Modulo tecnico B2G per policy bus, verità computabile, controllo fail-closed e valutazione della coerenza operativa delle richieste AI.",
     keyTerms: [
@@ -879,7 +879,7 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
     documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
     title: "CQD – Crocefissione Quantistica del Dato",
     shortTitle: "CQD Evidence Record Engine",
-    canonicalAxis: "T · I · E · L · Hash · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
+    canonicalAxis: "T_axis · I_axis · E_axis · L_axis · CQD_VALID · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
     technicalMemorySummary:
       "CQD is the AI JOKER-C2 B2G evidence record engine. It packages a technical data event into an auditable record composed of trace, identity, event, linkage and hash material. CQD prepares a technical proof receipt through EVT and OPC and remains outside legal certification unless integrated later with qualified trust services.",
     runtimeInputs: [
@@ -927,7 +927,7 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
     documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
     title: "AIQ JOKER – Policy Truth Bus",
     shortTitle: "AIQ JOKER Policy Truth Bus",
-    canonicalAxis: "H · S · Q · A · Chi_tau · Policy · Fail-Closed · AI_JOKER_C2",
+    canonicalAxis: "H · S · Q · A · Chi_tau · Policy · Fail-Closed · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
     technicalMemorySummary:
       "AIQ JOKER is the AI JOKER-C2 policy/truth bus. It evaluates whether a runtime request is structurally coherent, policy-admissible, traceable and safe to execute. Its function is not to generate content but to gate execution through fail-closed policy logic and computable truth constraints.",
     runtimeInputs: [
@@ -1536,7 +1536,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
@@ -1804,8 +1804,9 @@ type CanonicalCorpusVolumeProfile = {
   keyTerms: string[];
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8";
 const QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION = "QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
+const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8";
 const QPCCF_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
 const QPCCF_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
 const QPCCF_MODULE = "QPCCF_PREDICTIVE_STABILITY_ENGINE";
@@ -3280,6 +3281,23 @@ function buildQpccfSearchCorpus(file: StoredRuntimeFile): string {
 }
 
 
+function getB2gTechnicalStackDefinitionForModule(
+  module: HbceB2gTechnicalStackModule | null | undefined
+): ModuleDefinition | null {
+  if (!module) {
+    return null;
+  }
+
+  return HBCE_B2G_TECHNICAL_STACK_DEFINITIONS.find((definition) => definition.module === module) ?? null;
+}
+
+
+function getB2gTechnicalStackDefinitionForFile(file: StoredRuntimeFile): ModuleDefinition | null {
+  const classification = getHbceB2gTechnicalStackClassification(file);
+  return getB2gTechnicalStackDefinitionForModule(classification?.module);
+}
+
+
 function isQpccfTechnicalStackDocument(file: StoredRuntimeFile): boolean {
   return classifyHbceB2gTechnicalStackFile(file).module === QPCCF_MODULE;
 }
@@ -3287,6 +3305,61 @@ function isQpccfTechnicalStackDocument(file: StoredRuntimeFile): boolean {
 
 function qpccfTechnicalStackSummary(): string {
   return "Profilo documento UNI/QPCCF del Technical Governance Stack HBCE/JOKER-C2 B2G: modulo QPCCF Predictive Stability Engine per identificare, quantificare e correggere deviazioni dinamiche di sistemi complessi tramite Lambda, delta, partial_t_Lambda e u(t), producendo stabilità predittiva, audit tecnico e integrazione con EVT, OPC e MATRIX. legalCertification=false; OPC=technical proof receipt only.";
+}
+
+
+function b2gTechnicalStackSummaryForDefinition(definition: ModuleDefinition): string {
+  return `Profilo documento ${definition.title} del Technical Governance Stack HBCE/JOKER-C2 B2G: modulo ${definition.module}. ${definition.summary} legalCertification=false; OPC=technical proof receipt only.`;
+}
+
+
+function buildB2gTechnicalStackMetadata(file: StoredRuntimeFile): Record<string, unknown> {
+  const classification = classifyHbceB2gTechnicalStackFile(file);
+  const definition = getB2gTechnicalStackDefinitionForModule(classification.module);
+  const title = definition?.title ?? classification.title ?? inferDocumentTitle(file) ?? file.name;
+  const module = definition?.module ?? classification.module;
+  const canonicalAxis = definition?.canonicalAxis ?? classification.canonicalAxis ?? null;
+  const volume = definition?.volume ?? classification.volume ?? "N/A";
+  const documentKind = definition?.documentKind ?? classification.documentKind ?? HBCE_TECHNICAL_GOVERNANCE_MODULE;
+  const expectedProfile = buildHbceB2gTechnicalStackProfileMetadata({
+    filename: file.name,
+    sourceFilename: file.name,
+    title,
+    header: file.text.slice(0, 12000),
+    text: file.text.slice(0, 60000),
+    mimeType: file.mimeType
+  }) ?? {};
+
+  return {
+    ...expectedProfile,
+    b2gTechnicalStackProfileLockApplied: true,
+    b2gTechnicalStackProfileLockRevision: B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION,
+    b2gTechnicalStackClassifierRevision: HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION,
+    b2gTechnicalStackClassifierMatched: classification.matched,
+    b2gTechnicalStackClassifierConfidence: classification.confidence,
+    b2gTechnicalStackClassifierScore: classification.score,
+    b2gTechnicalStackClassifierSignals: classification.matchedSignals,
+    b2gExpectedDocFamily: HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY,
+    b2gExpectedDocumentKind: documentKind,
+    b2gExpectedModule: module,
+    b2gExpectedVolume: volume,
+    b2gExpectedTitle: title,
+    b2gExpectedCanonicalAxis: canonicalAxis,
+    b2gRuntimeFileHash: `sha256:${file.fileHash}`,
+    canonicalProfileApplied: true,
+    canonicalProfileRevision: B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION,
+    canonicalVolume: volume,
+    canonicalTitle: title,
+    canonicalDocumentKind: documentKind,
+    technicalStackModule: module,
+    technicalStackModuleTitle: title,
+    technicalStackCanonicalAxis: canonicalAxis,
+    contaminationWithCorpus: false,
+    contaminationWithMatrix: false,
+    contaminationWithV1: false,
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
 }
 
 
@@ -3443,8 +3516,11 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
 
 
-  if (isQpccfTechnicalStackDocument(file)) {
-    return QPCCF_DOC_FAMILY;
+  const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
+
+
+  if (b2gTechnicalStackClassification?.docFamily) {
+    return b2gTechnicalStackClassification.docFamily;
   }
 
 
@@ -3632,8 +3708,11 @@ function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 20000)}`);
 
 
-  if (isQpccfTechnicalStackDocument(file)) {
-    return QPCCF_CANONICAL_AXIS;
+  const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
+
+
+  if (b2gTechnicalStackClassification?.canonicalAxis) {
+    return b2gTechnicalStackClassification.canonicalAxis;
   }
 
 
@@ -3888,14 +3967,8 @@ function buildDocumentProfileInput(
       b2gTechnicalStackMetadataLockConfidence: b2gTechnicalStackClassification?.confidence ?? null,
       b2gTechnicalStackMetadataLockScore: b2gTechnicalStackClassification?.score ?? null,
       b2gTechnicalStackMetadataLockSignals: b2gTechnicalStackClassification?.matchedSignals ?? [],
-      b2gTechnicalStackExpectedProfile: b2gTechnicalStackClassification ? buildHbceB2gTechnicalStackProfileMetadata({
-        filename: file.name,
-        sourceFilename: file.name,
-        title,
-        header: file.text.slice(0, 12000),
-        text: file.text.slice(0, 60000),
-        mimeType: file.mimeType
-      }) : null,
+      b2gTechnicalStackExpectedProfile: b2gTechnicalStackClassification ? buildB2gTechnicalStackMetadata(file) : null,
+      b2gTechnicalStackProfileLockRevision: b2gTechnicalStackClassification ? B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION : null,
       qpccfTechnicalStackMetadataLockApplied: qpccfTechnicalStackProfile,
       qpccfTechnicalStackMetadataLockRevision: qpccfTechnicalStackProfile ? QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION : null,
       qpccfExpectedProfile: qpccfTechnicalStackProfile ? buildQpccfTechnicalStackMetadata(file) : null,
@@ -4199,11 +4272,115 @@ function isQpccfFilenameOrMetadataForRead(profile: Record<string, unknown>): boo
   const metadataModule = `${metadata.technicalStackModule ?? metadata.qpccfExpectedModule ?? ""}`;
   const normalized = normalizeSearchText(`${filename}\n${title}\n${docFamily}\n${metadataTitle}\n${metadataModule}`);
 
-  return (
+  return HBCE_B2G_TECHNICAL_STACK_DEFINITIONS.some((definition) => {
+    const module = normalizeSearchText(definition.module);
+    const title = normalizeSearchText(definition.title);
+    const shortTitle = normalizeSearchText(definition.shortTitle);
+
+    return normalized.includes(module) || normalized.includes(title) || normalized.includes(shortTitle);
+  }) ||
     normalized.includes("qpccf") ||
     normalized.includes("predictive stability engine") ||
-    includesAll(normalized, ["intercettazione predittiva", "collisioni", "collimazione"])
-  );
+    normalized.includes("cqd evidence record engine") ||
+    normalized.includes("crocefissione quantistica del dato") ||
+    normalized.includes("croceffissione quantistica del dato") ||
+    normalized.includes("aiq joker") ||
+    normalized.includes("policy truth bus") ||
+    includesAll(normalized, ["intercettazione predittiva", "collisioni", "collimazione"]);
+}
+
+
+function resolveB2gDefinitionFromPublicProfileForRead(profile: Record<string, unknown>): ModuleDefinition | null {
+  const existingMetadata =
+    profile.documentMetadata && typeof profile.documentMetadata === "object"
+      ? profile.documentMetadata as Record<string, unknown>
+      : {};
+  const filename = `${profile.filename ?? profile.fileName ?? ""}`;
+  const title = `${profile.title ?? existingMetadata.canonicalTitle ?? existingMetadata.b2gExpectedTitle ?? ""}`;
+  const module = `${existingMetadata.technicalStackModule ?? existingMetadata.b2gExpectedModule ?? ""}`;
+  const normalized = normalizeSearchText(`${filename}\n${title}\n${module}`);
+
+  return HBCE_B2G_TECHNICAL_STACK_DEFINITIONS.find((definition) => {
+    return normalized.includes(normalizeSearchText(definition.module)) ||
+      normalized.includes(normalizeSearchText(definition.title)) ||
+      normalized.includes(normalizeSearchText(definition.shortTitle));
+  }) ?? null;
+}
+
+
+function canonicalizeB2gPublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
+  const existingMetadata =
+    profile.documentMetadata && typeof profile.documentMetadata === "object"
+      ? profile.documentMetadata as Record<string, unknown>
+      : {};
+  const definition = resolveB2gDefinitionFromPublicProfileForRead(profile) ?? getB2gTechnicalStackDefinitionForModule(QPCCF_MODULE);
+
+  if (!definition) {
+    return profile;
+  }
+
+  const syntheticFile: StoredRuntimeFile = {
+    id: `${profile.fileId ?? "READ_PROFILE"}`,
+    name: `${profile.filename ?? profile.fileName ?? definition.shortTitle}`,
+    mimeType: `${profile.mimeType ?? "text/plain"}`,
+    type: `${profile.type ?? "text/plain"}`,
+    size: typeof profile.size === "number" ? profile.size : 0,
+    text: `${definition.title}\n${definition.module}\n${definition.canonicalAxis}\n${definition.summary}`,
+    content: `${definition.title}\n${definition.module}\n${definition.canonicalAxis}\n${definition.summary}`,
+    role: `${profile.role ?? "document"}`,
+    textLength: typeof profile.textLength === "number" ? profile.textLength : 0,
+    fullTextLength: typeof profile.fullTextLength === "number" ? profile.fullTextLength : 0,
+    promptTextLength: typeof profile.promptTextLength === "number" ? profile.promptTextLength : 0,
+    sourceFileHash: `${profile.fileHash ?? ""}`,
+    normalizedTextHash: `${profile.fileHash ?? ""}`,
+    runtimePromptTextHash: `${profile.fileHash ?? ""}`,
+    sourceByteLength: typeof profile.size === "number" ? profile.size : 0,
+    normalizedTextLength: typeof profile.textLength === "number" ? profile.textLength : 0,
+    textSourceKind: "TEXT",
+    textCoverageStatus: "TEXT_READY_FULL",
+    fullDocumentCoverage: true,
+    fullDocumentCoverageReason: "B2G_TECHNICAL_STACK_READ_GUARD",
+    longDocumentMode: "CHUNKED_FULL_TEXT",
+    documentOutline: {
+      outlineStatus: "READY",
+      partsDetected: 0,
+      chaptersDetected: 0,
+      appendicesDetected: 0,
+      firstSectionDetected: null,
+      lastSectionDetected: null,
+      lastAppendixDetected: null,
+      boundaryDetected: false,
+      conclusionDetected: false,
+      entries: []
+    },
+    documentChunkCount: typeof existingMetadata.documentChunkCount === "number" ? existingMetadata.documentChunkCount : 0,
+    documentChunks: [],
+    fileHash: `${profile.fileHash ?? ""}`.replace(/^sha256:/, ""),
+    status: "TEXT_READY",
+    mode: "TEXT",
+    reason: "B2G_TECHNICAL_STACK_READ_GUARD",
+    createdAt: `${profile.createdAt ?? nowIso()}`,
+    updatedAt: `${profile.updatedAt ?? nowIso()}`
+  };
+
+  return {
+    ...profile,
+    docFamily: HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY,
+    volume: definition.volume,
+    title: definition.title,
+    canonicalAxis: definition.canonicalAxis,
+    summary: b2gTechnicalStackSummaryForDefinition(definition),
+    keyTerms: Array.from(new Set(definition.keyTerms)).slice(0, 32),
+    documentMetadata: {
+      ...existingMetadata,
+      ...buildB2gTechnicalStackMetadata(syntheticFile),
+      canonicalProfileReadGuardApplied: true,
+      b2gTechnicalStackReadGuardApplied: true,
+      b2gTechnicalStackProfileLockRevision: B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION,
+      legalCertification: false,
+      opc: "technical proof receipt only"
+    }
+  } as T;
 }
 
 
@@ -4277,7 +4454,7 @@ function canonicalizeQpccfPublicDocumentProfileForRead<T extends Record<string, 
 
 function canonicalizePublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
   if (isQpccfFilenameOrMetadataForRead(profile)) {
-    return canonicalizeQpccfPublicDocumentProfileForRead(profile);
+    return canonicalizeB2gPublicDocumentProfileForRead(profile);
   }
 
   const filename = profile.filename ?? profile.fileName;
