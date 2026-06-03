@@ -70,6 +70,7 @@ type HbceB2gTechnicalStackModule =
   | "QPCCF_PREDICTIVE_STABILITY_ENGINE"
   | "CQD_EVIDENCE_RECORD_ENGINE"
   | "AIQ_JOKER_POLICY_TRUTH_BUS"
+  | "LAMBDA_FLOW_EQUILIBRIUM_FACTOR"
   | "UFO_INTERCEPT_COLLISION_COLLIMATION_RUNTIME"
   | "UFO_OPERATIONAL_MODULE_REGISTRY"
   | "CQO_OPPONIBLE_QUANTUM_CYBERNETICS";
@@ -325,6 +326,81 @@ const HBCE_B2G_TECHNICAL_STACK_DEFINITIONS: readonly ModuleDefinition[] = [
       "qes",
       "fail-closed",
       "2909e088cfede19e1d29a2613bec5d00c2e7918235101a525c9d31fd59fab66e"
+    ]
+  },
+  {
+    module: "LAMBDA_FLOW_EQUILIBRIUM_FACTOR",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    volume: "N/A",
+    title: "Fattore di Equilibrio dei Flussi Lambda",
+    shortTitle: "Lambda Flow Equilibrium Factor",
+    canonicalAxis: "E · I · V · Chi_tau · Lambda · kappa · Sigma · eta · VALID_OMEGA · UTC_IT · TSA_INRIM · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
+    summary:
+      "Modulo tecnico B2G per misurare l'equilibrio dei flussi energetico, informativo, economico ed etico attraverso Lambda, kappa, Sigma, eta e Chi_tau. Stabilisce la finestra VALID OMEGA e supporta decisioni fail-closed con EVT/OPC.",
+    keyTerms: [
+      "Fattore di Equilibrio dei Flussi Lambda",
+      "LAMBDA_FLOW_EQUILIBRIUM_FACTOR",
+      "Flow Equilibrium Factor",
+      "Lambda",
+      "E",
+      "I",
+      "V",
+      "Chi_tau",
+      "kappa",
+      "Sigma",
+      "eta",
+      "VALID OMEGA",
+      "UTC(IT)",
+      "TSA INRiM",
+      "FAIL-CLOSED",
+      "EVT",
+      "OPC"
+    ],
+    primarySignals: [
+      "lambda_flow_equilibrium_factor",
+      "lambda_flow_equilibrium_factor_clean_runtime_for_joker_c2",
+      "fattore di equilibrio dei flussi",
+      "fattore di equilibrio dei flussi lambda",
+      "flow equilibrium factor",
+      "grandezza lambda",
+      "grandezza λ",
+      "lambda = f(e,i,v",
+      "λ è il parametro sintetico di equilibrio sistemico",
+      "lambda_{\phiomega} = 1.000",
+      "λ = 1.000 ± 0.003"
+    ],
+    secondarySignals: [
+      "valid omega",
+      "valid_omega",
+      "lambda ∈ [0.997, 1.003]",
+      "λ ∈ [0.997, 1.003]",
+      "[0.997, 1.003]",
+      "kappa",
+      "κ ≥ 0.997",
+      "sigma",
+      "Σ ≥ 0.995",
+      "eta",
+      "η",
+      "chi_tau",
+      "χτ ≤ 0.60",
+      "e · i · v",
+      "flussi energetico",
+      "informativo",
+      "economico",
+      "etico",
+      "secondo legale qubitronico",
+      "slq",
+      "tsa inrim",
+      "utc(it)",
+      "fail-closed",
+      "53ec41522bafda9e62a5e885be3d4e554f57ffe0abc84a22da161e38adec29da"
+    ],
+    antiSignals: [
+      "cybernetica quantistica opponibile",
+      "cqo_opponible_quantum_cybernetics",
+      "ufo_intercept_collision_collimation_runtime",
+      "aiq_joker_policy_truth_bus",
+      "cqd_evidence_record_engine"
     ]
   },
   {
@@ -1068,6 +1144,70 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
     ]
   },
 
+  LAMBDA_FLOW_EQUILIBRIUM_FACTOR: {
+    module: "LAMBDA_FLOW_EQUILIBRIUM_FACTOR",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    title: "Fattore di Equilibrio dei Flussi Lambda",
+    shortTitle: "Lambda Flow Equilibrium Factor",
+    canonicalAxis: "E · I · V · Chi_tau · Lambda · kappa · Sigma · eta · VALID_OMEGA · UTC_IT · TSA_INRIM · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
+    technicalMemorySummary:
+      "The Lambda Flow Equilibrium Factor is the AI JOKER-C2 B2G equilibrium scalar for energetic, informational, economic and ethical flows. It evaluates whether a system remains inside the opponible window Lambda 1.000 plus or minus 0.003, binds kappa, Sigma, eta and Chi_tau into a technical governance check, and supports fail-closed EVT/OPC proof receipts with legalCertification=false.",
+    runtimeInputs: [
+      "energyFlowE",
+      "informationIntegrityI",
+      "economicValueV",
+      "chiTauEthicalTension",
+      "kappaPhysicalCoherence",
+      "sigmaChainIntegrity",
+      "etaEnergeticLegalEfficiency",
+      "utcItTimestamp",
+      "tenantId",
+      "workspaceId",
+      "humanIpr"
+    ],
+    runtimeOutputs: [
+      "lambdaEquilibriumScore",
+      "validOmegaStatus",
+      "flowBalanceReport",
+      "anomalyDirection",
+      "failClosedDecision",
+      "recalibrationHint",
+      "evtCandidate",
+      "opcTechnicalProofReceipt"
+    ],
+    operationalRules: [
+      "Evaluate Lambda only from declared technical flow inputs.",
+      "Treat Lambda outside [0.997, 1.003] as non-nominal governance state.",
+      "Fail closed when UTC(IT), TSA-INRIM or Sigma evidence is unavailable.",
+      "Do not convert Lambda status into legal certification.",
+      "Expose legalCertification=false and OPC as technical proof receipt only."
+    ],
+    futureGithubModules: [
+      {
+        path: "lib/lambda-flow-equilibrium-factor.ts",
+        role: "Lambda flow equilibrium scalar and VALID OMEGA evaluation module."
+      },
+      {
+        path: "app/api/v1/lambda/equilibrium/check/route.ts",
+        route: "/api/v1/lambda/equilibrium/check",
+        method: "POST",
+        role: "API endpoint for Lambda equilibrium checks."
+      },
+      {
+        path: "app/api/v1/lambda/valid-omega/route.ts",
+        route: "/api/v1/lambda/valid-omega",
+        method: "POST",
+        role: "API endpoint for VALID OMEGA status evaluation."
+      },
+      {
+        path: "app/api/v1/lambda/fail-closed/route.ts",
+        route: "/api/v1/lambda/fail-closed",
+        method: "POST",
+        role: "API endpoint for Lambda fail-closed governance transitions."
+      }
+    ]
+  },
+
   UFO_OPERATIONAL_MODULE_REGISTRY: {
     module: "UFO_OPERATIONAL_MODULE_REGISTRY",
     documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE_SET,
@@ -1601,7 +1741,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2-LAMBDA_PROFILE_LOCK-v6_8_3";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
@@ -1869,9 +2009,9 @@ type CanonicalCorpusVolumeProfile = {
   keyTerms: string[];
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3";
 const QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION = "QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
-const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2";
+const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3";
 const QPCCF_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
 const QPCCF_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
 const QPCCF_MODULE = "QPCCF_PREDICTIVE_STABILITY_ENGINE";
