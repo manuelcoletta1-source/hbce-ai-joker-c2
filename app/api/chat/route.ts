@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -6408,6 +6408,14 @@ const CQO_B2G_MODULE = "CQO_OPPONIBLE_QUANTUM_CYBERNETICS";
 const CQO_B2G_TITLE = "Cybernetica Quantistica Opponibile";
 const CQO_B2G_CANONICAL_AXIS = "Psi · Lambda · kappa · Tau · Sigma · Omega · Chi_tau · D · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK";
 
+
+const LAMBDA_FLOW_B2G_FILE_HASH = "sha256:53ec41522bafda9e62a5e885be3d4e554f57ffe0abc84a22da161e38adec29da";
+const LAMBDA_FLOW_B2G_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
+const LAMBDA_FLOW_B2G_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
+const LAMBDA_FLOW_B2G_MODULE = "LAMBDA_FLOW_EQUILIBRIUM_FACTOR";
+const LAMBDA_FLOW_B2G_TITLE = "Fattore di Equilibrio dei Flussi Lambda";
+const LAMBDA_FLOW_B2G_CANONICAL_AXIS = "E · I · V · Chi_tau · Lambda · kappa · Sigma · eta · VALID_OMEGA · UTC_IT · TSA_INRIM · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK";
+
 const UFO_INTERCEPT_B2G_FILE_HASH = "sha256:2909e088cfede19e1d29a2613bec5d00c2e7918235101a525c9d31fd59fab66e";
 const UFO_INTERCEPT_B2G_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
 const UFO_INTERCEPT_B2G_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
@@ -6514,6 +6522,58 @@ const B2G_TECHNICAL_MODULE_DEFINITIONS: B2gTechnicalModuleDefinition[] = [
       "misurazione opponibile",
       "loop quantico-informazionale",
       "retroazione cibernetica"
+    ]
+  },
+  {
+    key: "LAMBDA_FLOW",
+    fileHash: LAMBDA_FLOW_B2G_FILE_HASH,
+    docFamily: LAMBDA_FLOW_B2G_DOC_FAMILY,
+    documentKind: LAMBDA_FLOW_B2G_DOCUMENT_KIND,
+    module: LAMBDA_FLOW_B2G_MODULE,
+    volume: "N/A",
+    title: LAMBDA_FLOW_B2G_TITLE,
+    canonicalAxis: LAMBDA_FLOW_B2G_CANONICAL_AXIS,
+    memoryCollapseRevision: QPCCF_B2G_MEMORY_COLLAPSE_REVISION,
+    classifierRevision: QPCCF_B2G_CLASSIFIER_REVISION,
+    minPersistedChunks: 1,
+    sourceFilename: "LAMBDA_FLOW_EQUILIBRIUM_FACTOR_CLEAN_RUNTIME_FOR_JOKER_C2.txt",
+    summary: "The Lambda Flow Equilibrium Factor is the AI JOKER-C2 B2G equilibrium scalar for energetic, informational, economic and ethical flows. It evaluates whether a system remains inside the opponible window Lambda 1.000 plus or minus 0.003, binds kappa, Sigma, eta and Chi_tau into a technical governance check, and supports fail-closed EVT/OPC proof receipts with legalCertification=false.",
+    runtimeInputs: "energyFlowE, informationIntegrityI, economicValueV, chiTauEthicalTension, kappaPhysicalCoherence, sigmaChainIntegrity, etaEnergeticLegalEfficiency, utcItTimestamp, humanIpr, tenantId, workspaceId",
+    runtimeOutputs: "lambdaEquilibriumScore, validOmegaStatus, flowBalanceReport, anomalyDirection, failClosedDecision, recalibrationHint, evtCandidate, opcTechnicalProofReceipt",
+    futureGithubModules: "lib/lambda-flow-equilibrium-factor.ts; app/api/v1/lambda/equilibrium/check/route.ts; app/api/v1/lambda/valid-omega/route.ts; app/api/v1/lambda/fail-closed/route.ts; app/api/v1/lambda/flow-report/route.ts",
+    signals: [
+      "lambda_flow_equilibrium_factor",
+      "lambda flow equilibrium factor",
+      "fattore di equilibrio dei flussi",
+      "fattore di equilibrio dei flussi lambda",
+      "flow equilibrium factor",
+      "lambdaflowequilibrium",
+      "lambda_flow_equilibrium_factor_clean_runtime_for_joker_c2",
+      "e · i · v · chi_tau · lambda",
+      "e · i · v · χτ · lambda",
+      "lambda = f(e,i,v,chi_tau,t)",
+      "lambda = f(e,i,v,χτ,t)",
+      "Λ = f(E,I,V,\chi_\tau,t)",
+      "lambda_phiomega = 1.000",
+      "lambda_{phiomega} = 1.000",
+      "lambda ∈ [0.997, 1.003]",
+      "\lambda \in [0.997, 1.003]",
+      "valid omega",
+      "valid_omega",
+      "kappa · sigma · eta",
+      "κ ≥ 0.997",
+      "sigma ≥ 0.995",
+      "Σ ≥ 0.995",
+      "eta ≥ 0.92",
+      "χτ ≤ 0.60",
+      "chi_tau ≤ 0.60",
+      "tensione etica residua",
+      "flussi energetico informativo economico etico",
+      "secondo legale qubitronico",
+      "slq",
+      "tsa inrim",
+      "utc(it)",
+      "fail-closed"
     ]
   },
   {
@@ -6759,6 +6819,12 @@ function isB2gTechnicalProfileMemoryRequest(message: string, files: PublicFileSn
     normalized.includes("cqo_opponible_quantum_cybernetics") ||
     normalized.includes("cybernetica quantistica opponibile") ||
     normalized.includes("cibernetica quantistica opponibile") ||
+    normalized.includes("lambda_flow_equilibrium_factor") ||
+    normalized.includes("lambda flow equilibrium") ||
+    normalized.includes("fattore di equilibrio dei flussi") ||
+    normalized.includes("lambda_flow_equilibrium_profile") ||
+    normalized.includes("valid_omega") ||
+    normalized.includes("valid omega") ||
     normalized.includes("ufo_intercept_collision_collimation_runtime") ||
     normalized.includes("ufo-intercept") ||
     normalized.includes("ufo–intercept") ||
@@ -6826,6 +6892,10 @@ function b2gPrimaryStatusForModule(moduleDefinition: B2gTechnicalModuleDefinitio
 
   if (moduleDefinition.key === "CQO") {
     return ready ? "CQO_TECHNICAL_PROFILE_INGESTION_READY" : "CQO_TECHNICAL_PROFILE_INGESTION_FAIL";
+  }
+
+  if (moduleDefinition.key === "LAMBDA_FLOW") {
+    return ready ? "LAMBDA_FLOW_EQUILIBRIUM_PROFILE_READY" : "LAMBDA_FLOW_EQUILIBRIUM_PROFILE_FAIL";
   }
 
   if (moduleDefinition.key === "UFO_INTERCEPT") {
