@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -5703,6 +5703,35 @@ function resolveFilenameVolumeMetadataLock(file: PublicFileSnapshot, text: strin
   const normalizedHash = normalizeText(file.fileHash || file.hash || "");
 
   if (
+    normalizedFilename.includes("matrix_hbce_joker_c2_ipr_volume_ii") ||
+    normalizedFilename.includes("matrix hbce joker c2 ipr volume ii") ||
+    normalizedFilename.includes("b2.b2.matrix hbce") ||
+    normalizedFilename.includes("b2 b2 matrix hbce") ||
+    normalizedHash.includes("1eb611d9b6d8845c1723c4bd75d35b4b881dda4a7212663bda9a84e0ba8afad8") ||
+    (
+      normalizedHeader.includes("hbce matrix document runtime profile") &&
+      normalizedHeader.includes("docfamily=hbce_operational_document") &&
+      normalizedHeader.includes("documentkind=matrix_operational_volume") &&
+      normalizedHeader.includes("matrixvolume=v2")
+    ) ||
+    (
+      normalizedHeader.includes("matrix hbce") &&
+      normalizedHeader.includes("volume del controllo operativo") &&
+      normalizedHeader.includes("execution infrastructure")
+    )
+  ) {
+    return {
+      matched: true,
+      reason: "FILENAME_LOCK_MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_OPERATIONAL_DOCUMENT",
+      docFamily: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_DOC_FAMILY,
+      volume: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_VOLUME,
+      title: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_TITLE,
+      documentKind: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_DOCUMENT_KIND,
+      canonicalAxis: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_CANONICAL_AXIS
+    };
+  }
+
+  if (
     normalizedFilename.includes("matrix_europa_volume_i") ||
     normalizedFilename.includes("matrix europa volume i") ||
     normalizedFilename.includes("a1.a1.matrix europa") ||
@@ -7250,6 +7279,96 @@ const MATRIX_EUROPA_VOLUME_I_CLASSIFICATION = "MATRIX_VOLUME_I_FOUNDATIONAL_PARA
 const MATRIX_EUROPA_VOLUME_I_QUALITY = "CANONICAL";
 const MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS = "IPR · TRAC · HBCE · JOKER-C2 · Matrix Europa · Torino_Bruxelles · EU_Federation · Operational_Verifiability";
 const MATRIX_EUROPA_VOLUME_I_OPERATIONAL_TRACE_AXIS = "Identity · Continuity · Governance · Execution · Verification · Fail_Closed · Cross_Border · TRAC_0001_0007 · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
+const MATRIX_EUROPA_VOLUME_I_OPERATIONAL_SUMMARY = "Matrix Europa Volume I is the foundational operational document for the MATRIX cycle. It defines the European federated infrastructure for verifiable operational continuity, persistent operational identity, computable governance and constrained execution through IPR, TRAC, HBCE and JOKER-C2.";
+const MATRIX_EUROPA_VOLUME_I_RUNTIME_INPUTS = "identityEvents, operationalSequences, tracEvents, hbcePolicies, jokerC2ExecutionRequests, euNodeContext, tenantId, workspaceId, humanIpr";
+const MATRIX_EUROPA_VOLUME_I_RUNTIME_OUTPUTS = "matrixOperationalProfile, tracContinuityModel, euFederationBlueprint, governanceExecutionChain, evtCandidate, opcTechnicalProofReceipt";
+const MATRIX_EUROPA_VOLUME_I_FUTURE_GITHUB_MODULES = "lib/matrix-europa-volume-i.ts; app/api/v1/matrix/europa/v1/profile/route.ts; app/api/v1/matrix/trac/standard/route.ts; app/api/v1/matrix/federation/node/route.ts; app/api/v1/matrix/operational-document/recall/route.ts";
+
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_FILE_HASH = "sha256:1eb611d9b6d8845c1723c4bd75d35b4b881dda4a7212663bda9a84e0ba8afad8";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_DOC_FAMILY = "HBCE_OPERATIONAL_DOCUMENT";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_DOCUMENT_KIND = "MATRIX_OPERATIONAL_VOLUME";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_MODULE = "MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_VOLUME = "V2";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_TITLE = "MATRIX HBCE / JOKER-C2 / IPR";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_CLASSIFICATION = "MATRIX_VOLUME_II_OPERATIONAL_CONTROL";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_QUALITY = "CANONICAL";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_CANONICAL_AXIS = "IPR · HBCE · JOKER-C2 · TRAC · ExecutionInfrastructure · Fail_Closed · AI_Control · Evidence · EU_Operational_Control";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_OPERATIONAL_TRACE_AXIS = "Identity · Intent · Policy · Risk · Decision · Execution · Evidence · Verification · Continuity · Fail_Closed · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_OPERATIONAL_SUMMARY = "MATRIX HBCE / JOKER-C2 / IPR Volume II is the operational control document of the MATRIX cycle. It turns MATRIX Europa's paradigm into a bound runtime architecture for identity validation, policy enforcement, risk assessment, decision gating, controlled execution, evidence generation and verifiable continuity across European AI and critical infrastructure systems.";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_RUNTIME_INPUTS = "identityEvents, intentSignals, policyRules, riskSignals, decisionGateRequests, executionRequests, evidenceEvents, verificationRequests, tenantId, workspaceId, humanIpr";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_RUNTIME_OUTPUTS = "matrixOperationalControlProfile, executionInfrastructureBlueprint, jokerC2StateMachineProfile, failClosedDecisionChain, evtEvidenceCandidate, opcTechnicalProofReceipt, euOperationalControlReadiness";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_FUTURE_GITHUB_MODULES = "lib/matrix-hbce-joker-c2-ipr-volume-ii.ts; app/api/v1/matrix/hbce-joker-c2-ipr/v2/profile/route.ts; app/api/v1/matrix/execution-infrastructure/route.ts; app/api/v1/matrix/fail-closed-decision-gate/route.ts; app/api/v1/matrix/operational-control/recall/route.ts";
+
+type MatrixOperationalDocumentRuntimeProfile = {
+  fileHash: string;
+  docFamily: string;
+  documentKind: string;
+  module: string;
+  volume: string;
+  title: string;
+  classification: string;
+  quality: string;
+  canonicalAxis: string;
+  operationalTraceAxis: string;
+  operationalSummary: string;
+  runtimeInputs: string;
+  runtimeOutputs: string;
+  futureGithubModules: string;
+};
+
+const MATRIX_EUROPA_VOLUME_I_RUNTIME_PROFILE: MatrixOperationalDocumentRuntimeProfile = {
+  fileHash: MATRIX_EUROPA_VOLUME_I_FILE_HASH,
+  docFamily: MATRIX_EUROPA_VOLUME_I_DOC_FAMILY,
+  documentKind: MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND,
+  module: MATRIX_EUROPA_VOLUME_I_MODULE,
+  volume: MATRIX_EUROPA_VOLUME_I_VOLUME,
+  title: MATRIX_EUROPA_VOLUME_I_TITLE,
+  classification: MATRIX_EUROPA_VOLUME_I_CLASSIFICATION,
+  quality: MATRIX_EUROPA_VOLUME_I_QUALITY,
+  canonicalAxis: MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS,
+  operationalTraceAxis: MATRIX_EUROPA_VOLUME_I_OPERATIONAL_TRACE_AXIS,
+  operationalSummary: MATRIX_EUROPA_VOLUME_I_OPERATIONAL_SUMMARY,
+  runtimeInputs: MATRIX_EUROPA_VOLUME_I_RUNTIME_INPUTS,
+  runtimeOutputs: MATRIX_EUROPA_VOLUME_I_RUNTIME_OUTPUTS,
+  futureGithubModules: MATRIX_EUROPA_VOLUME_I_FUTURE_GITHUB_MODULES
+};
+
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_RUNTIME_PROFILE: MatrixOperationalDocumentRuntimeProfile = {
+  fileHash: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_FILE_HASH,
+  docFamily: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_DOC_FAMILY,
+  documentKind: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_DOCUMENT_KIND,
+  module: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_MODULE,
+  volume: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_VOLUME,
+  title: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_TITLE,
+  classification: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_CLASSIFICATION,
+  quality: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_QUALITY,
+  canonicalAxis: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_CANONICAL_AXIS,
+  operationalTraceAxis: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_OPERATIONAL_TRACE_AXIS,
+  operationalSummary: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_OPERATIONAL_SUMMARY,
+  runtimeInputs: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_RUNTIME_INPUTS,
+  runtimeOutputs: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_RUNTIME_OUTPUTS,
+  futureGithubModules: MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_FUTURE_GITHUB_MODULES
+};
+
+function resolveMatrixOperationalDocumentRuntimeProfile(message: string, files: PublicFileSnapshot[]): MatrixOperationalDocumentRuntimeProfile {
+  const normalized = resolveMatrixOperationalDocumentSignalText(message, files);
+
+  const v2Signal =
+    normalized.includes("matrix_hbce_joker_c2_ipr_volume_ii") ||
+    normalized.includes("matrix hbce joker-c2 ipr volume ii") ||
+    normalized.includes("matrix hbce / joker-c2 / ipr") ||
+    normalized.includes("b2.b2.matrix hbce") ||
+    normalized.includes("volume ii del ciclo matrix") ||
+    normalized.includes("volume del controllo operativo") ||
+    normalized.includes("matrixvolume=v2") ||
+    normalized.includes("matrix_volume_ii_operational_control") ||
+    normalized.includes("execution infrastructure") ||
+    normalized.includes("executioninfrastructure") ||
+    normalized.includes("identity intent policy risk decision execution evidence verification continuity") ||
+    normalized.includes("1eb611d9b6d8845c1723c4bd75d35b4b881dda4a7212663bda9a84e0ba8afad8");
+
+  return v2Signal ? MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_RUNTIME_PROFILE : MATRIX_EUROPA_VOLUME_I_RUNTIME_PROFILE;
+}
 
 function resolveMatrixOperationalDocumentSignalText(message: string, files: PublicFileSnapshot[]): string {
   const fileText = files
@@ -7269,13 +7388,21 @@ function hasMatrixEuropaVolumeISignal(message: string, files: PublicFileSnapshot
   const explicitIdentity =
     normalized.includes("matrix_europa_volume_i") ||
     normalized.includes("matrix europa volume i") ||
+    normalized.includes("matrix_hbce_joker_c2_ipr_volume_ii") ||
+    normalized.includes("matrix hbce joker-c2 ipr volume ii") ||
+    normalized.includes("matrix hbce / joker-c2 / ipr") ||
+    normalized.includes("b2 b2 matrix hbce") ||
+    normalized.includes("volume ii del ciclo matrix") ||
+    normalized.includes("volume del controllo operativo") ||
     normalized.includes("matrix europa") ||
     normalized.includes("a1 a1 matrix europa") ||
     normalized.includes("matrix_operational_document_profile") ||
     normalized.includes("matrix_operational_document_profile_ready") ||
     normalized.includes("matrix_volume_i_foundational_paradigm") ||
+    normalized.includes("matrix_volume_ii_operational_control") ||
     normalized.includes("hbce matrix document runtime profile") ||
-    normalized.includes("c70a753074f89b4309105270e17f6a10aa5aa0018a9e86a8504d5c5e249d0caa");
+    normalized.includes("c70a753074f89b4309105270e17f6a10aa5aa0018a9e86a8504d5c5e249d0caa") ||
+    normalized.includes("1eb611d9b6d8845c1723c4bd75d35b4b881dda4a7212663bda9a84e0ba8afad8");
 
   const architectureSignals =
     normalized.includes("operativita senza prova strutturale") ||
@@ -7283,6 +7410,10 @@ function hasMatrixEuropaVolumeISignal(message: string, files: PublicFileSnapshot
     normalized.includes("identity continuity governance execution verification") ||
     normalized.includes("ipr trac hbce joker-c2") ||
     normalized.includes("ipr · trac · hbce · joker-c2") ||
+    normalized.includes("ipr hbce joker-c2 trac") ||
+    normalized.includes("ipr · hbce · joker-c2 · trac") ||
+    normalized.includes("execution infrastructure") ||
+    normalized.includes("identity intent policy risk decision execution evidence verification continuity") ||
     normalized.includes("trac-0001") ||
     normalized.includes("trac_0001_0007") ||
     normalized.includes("torino bruxelles") ||
@@ -7311,6 +7442,9 @@ function isMatrixOperationalDocumentProfileRequest(message: string, files: Publi
     normalized.includes("matrix operational document") ||
     normalized.includes("matrix_europa_volume_i") ||
     normalized.includes("matrix europa volume i") ||
+    normalized.includes("matrix_hbce_joker_c2_ipr_volume_ii") ||
+    normalized.includes("matrix hbce joker-c2 ipr volume ii") ||
+    normalized.includes("matrix hbce / joker-c2 / ipr") ||
     normalized.includes("prefermatrixoperationaldocumentmemory") ||
     normalized.includes("do_not_use_b2g_technical_stack") ||
     normalized.includes("do_not_create_semantic_memory");
@@ -7404,6 +7538,7 @@ function buildMatrixOperationalDocumentProfilePreparationAnswer(args: {
   });
   const ready = matrixOperationalDocumentReadyFromDiagnostic(diagnostic);
   const failReason = matrixOperationalDocumentFailReason(diagnostic, ready);
+  const matrixProfile = resolveMatrixOperationalDocumentRuntimeProfile(args.message, args.files);
 
   return [
     ready ? "MATRIX_OPERATIONAL_DOCUMENT_PROFILE_READY" : "MATRIX_OPERATIONAL_DOCUMENT_PROFILE_FAIL",
@@ -7421,27 +7556,27 @@ function buildMatrixOperationalDocumentProfilePreparationAnswer(args: {
     "documentChunksPersistedCount=" + String(diagnostic.documentChunksPersistedCount),
     "documentProfileId=" + diagnostic.documentProfileId,
     "documentProfileStatus=" + diagnostic.documentProfileStatus,
-    "docFamily=" + MATRIX_EUROPA_VOLUME_I_DOC_FAMILY,
-    "documentKind=" + MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND,
+    "docFamily=" + matrixProfile.docFamily,
+    "documentKind=" + matrixProfile.documentKind,
     "matrixCycle=MATRIX",
-    "matrixVolume=" + MATRIX_EUROPA_VOLUME_I_VOLUME,
-    "module=" + MATRIX_EUROPA_VOLUME_I_MODULE,
-    "volume=" + MATRIX_EUROPA_VOLUME_I_VOLUME,
-    "title=" + MATRIX_EUROPA_VOLUME_I_TITLE,
-    "classification=" + MATRIX_EUROPA_VOLUME_I_CLASSIFICATION,
-    "quality=" + MATRIX_EUROPA_VOLUME_I_QUALITY,
-    "canonicalAxis=" + MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS,
-    "operationalTraceAxis=" + MATRIX_EUROPA_VOLUME_I_OPERATIONAL_TRACE_AXIS,
+    "matrixVolume=" + matrixProfile.volume,
+    "module=" + matrixProfile.module,
+    "volume=" + matrixProfile.volume,
+    "title=" + matrixProfile.title,
+    "classification=" + matrixProfile.classification,
+    "quality=" + matrixProfile.quality,
+    "canonicalAxis=" + matrixProfile.canonicalAxis,
+    "operationalTraceAxis=" + matrixProfile.operationalTraceAxis,
     "documentMemory.status=" + (ready ? "MATRIX_OPERATIONAL_DOCUMENT_MEMORY_READY" : "MATRIX_OPERATIONAL_DOCUMENT_MEMORY_FAIL"),
     "documentMemory.readyForIprSave=" + String(ready),
     "documentMemory.memoryType=MATRIX_OPERATIONAL_DOCUMENT_MEMORY",
     "documentMemory.memoryMode=FULL_DOCUMENT_OPERATIONAL_SYNTHESIS",
-    "documentMemory.docFamily=" + MATRIX_EUROPA_VOLUME_I_DOC_FAMILY,
-    "documentMemory.documentKind=" + MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND,
-    "documentMemory.module=" + MATRIX_EUROPA_VOLUME_I_MODULE,
-    "documentMemory.title=" + MATRIX_EUROPA_VOLUME_I_TITLE,
-    "documentMemory.volume=" + MATRIX_EUROPA_VOLUME_I_VOLUME,
-    "documentMemory.canonicalAxis=" + MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS,
+    "documentMemory.docFamily=" + matrixProfile.docFamily,
+    "documentMemory.documentKind=" + matrixProfile.documentKind,
+    "documentMemory.module=" + matrixProfile.module,
+    "documentMemory.title=" + matrixProfile.title,
+    "documentMemory.volume=" + matrixProfile.volume,
+    "documentMemory.canonicalAxis=" + matrixProfile.canonicalAxis,
     "guards.doNotClassifyAsB2GTechnicalModule=true",
     "guards.doNotClassifyAsCorpusEsoterologico=true",
     "guards.doNotClassifyAsQState=true",
@@ -7485,6 +7620,7 @@ function buildMatrixOperationalDocumentProfileReadyAnswer(args: {
   });
   const ready = matrixOperationalDocumentReadyFromDiagnostic(diagnostic);
   const failReason = matrixOperationalDocumentFailReason(diagnostic, ready);
+  const matrixProfile = resolveMatrixOperationalDocumentRuntimeProfile(args.message, args.files);
 
   return [
     ready ? "MATRIX_OPERATIONAL_DOCUMENT_PROFILE_READY" : "MATRIX_OPERATIONAL_DOCUMENT_PROFILE_FAIL",
@@ -7504,32 +7640,32 @@ function buildMatrixOperationalDocumentProfileReadyAnswer(args: {
     "",
     "documentProfileId=" + diagnostic.documentProfileId,
     "documentProfileStatus=" + diagnostic.documentProfileStatus,
-    "docFamily=" + MATRIX_EUROPA_VOLUME_I_DOC_FAMILY,
-    "documentKind=" + MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND,
+    "docFamily=" + matrixProfile.docFamily,
+    "documentKind=" + matrixProfile.documentKind,
     "matrixCycle=MATRIX",
-    "matrixVolume=" + MATRIX_EUROPA_VOLUME_I_VOLUME,
-    "module=" + MATRIX_EUROPA_VOLUME_I_MODULE,
-    "volume=" + MATRIX_EUROPA_VOLUME_I_VOLUME,
-    "title=" + MATRIX_EUROPA_VOLUME_I_TITLE,
-    "classification=" + MATRIX_EUROPA_VOLUME_I_CLASSIFICATION,
-    "quality=" + MATRIX_EUROPA_VOLUME_I_QUALITY,
-    "canonicalAxis=" + MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS,
-    "operationalTraceAxis=" + MATRIX_EUROPA_VOLUME_I_OPERATIONAL_TRACE_AXIS,
+    "matrixVolume=" + matrixProfile.volume,
+    "module=" + matrixProfile.module,
+    "volume=" + matrixProfile.volume,
+    "title=" + matrixProfile.title,
+    "classification=" + matrixProfile.classification,
+    "quality=" + matrixProfile.quality,
+    "canonicalAxis=" + matrixProfile.canonicalAxis,
+    "operationalTraceAxis=" + matrixProfile.operationalTraceAxis,
     "",
     "documentMemory.status=" + (ready ? "MATRIX_OPERATIONAL_DOCUMENT_MEMORY_READY" : "MATRIX_OPERATIONAL_DOCUMENT_MEMORY_FAIL"),
     "documentMemory.readyForIprSave=" + String(ready),
     "documentMemory.memoryType=MATRIX_OPERATIONAL_DOCUMENT_MEMORY",
     "documentMemory.memoryMode=FULL_DOCUMENT_OPERATIONAL_SYNTHESIS",
-    "documentMemory.docFamily=" + MATRIX_EUROPA_VOLUME_I_DOC_FAMILY,
-    "documentMemory.documentKind=" + MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND,
-    "documentMemory.module=" + MATRIX_EUROPA_VOLUME_I_MODULE,
-    "documentMemory.title=" + MATRIX_EUROPA_VOLUME_I_TITLE,
-    "documentMemory.volume=" + MATRIX_EUROPA_VOLUME_I_VOLUME,
-    "documentMemory.canonicalAxis=" + MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS,
-    "documentMemory.operationalSummary=Matrix Europa Volume I is the foundational operational document for the MATRIX cycle. It defines the European federated infrastructure for verifiable operational continuity, persistent operational identity, computable governance and constrained execution through IPR, TRAC, HBCE and JOKER-C2.",
-    "documentMemory.runtimeInputs=identityEvents, operationalSequences, tracEvents, hbcePolicies, jokerC2ExecutionRequests, euNodeContext, tenantId, workspaceId, humanIpr",
-    "documentMemory.runtimeOutputs=matrixOperationalProfile, tracContinuityModel, euFederationBlueprint, governanceExecutionChain, evtCandidate, opcTechnicalProofReceipt",
-    "documentMemory.futureGithubModules=lib/matrix-europa-volume-i.ts; app/api/v1/matrix/europa/v1/profile/route.ts; app/api/v1/matrix/trac/standard/route.ts; app/api/v1/matrix/federation/node/route.ts; app/api/v1/matrix/operational-document/recall/route.ts",
+    "documentMemory.docFamily=" + matrixProfile.docFamily,
+    "documentMemory.documentKind=" + matrixProfile.documentKind,
+    "documentMemory.module=" + matrixProfile.module,
+    "documentMemory.title=" + matrixProfile.title,
+    "documentMemory.volume=" + matrixProfile.volume,
+    "documentMemory.canonicalAxis=" + matrixProfile.canonicalAxis,
+    "documentMemory.operationalSummary=" + matrixProfile.operationalSummary,
+    "documentMemory.runtimeInputs=" + matrixProfile.runtimeInputs,
+    "documentMemory.runtimeOutputs=" + matrixProfile.runtimeOutputs,
+    "documentMemory.futureGithubModules=" + matrixProfile.futureGithubModules,
     "",
     "guards.doNotClassifyAsB2GTechnicalModule=true",
     "guards.doNotClassifyAsCorpusEsoterologico=true",
