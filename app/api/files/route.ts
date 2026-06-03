@@ -21,7 +21,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
@@ -282,7 +282,33 @@ type CanonicalCorpusVolumeProfile = {
   keyTerms: string[];
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
+const QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION = "QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
+const QPCCF_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
+const QPCCF_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
+const QPCCF_MODULE = "QPCCF_PREDICTIVE_STABILITY_ENGINE";
+const QPCCF_VOLUME = "N/A";
+const QPCCF_TITLE = "UNI/QPCCF – Intercettazione predittiva delle collisioni e collimazione dei sistemi complessi";
+const QPCCF_CANONICAL_AXIS = "Lambda · delta · partial_t_Lambda · u(t) · EVT · OPC · MATRIX";
+const QPCCF_EXPECTED_SOURCE_HASH = "sha256:cf30e54ce29f4f51b4370990d8229b183320b857deb628e1abb505149c03731c";
+const QPCCF_KEY_TERMS = [
+  "QPCCF",
+  "Predictive Stability Engine",
+  "Lambda",
+  "delta",
+  "partial_t_Lambda",
+  "u(t)",
+  "Intercettazione predittiva",
+  "Collisioni",
+  "Collimazione",
+  "Stabilità predittiva",
+  "Digital Twin",
+  "LBM",
+  "CFD",
+  "EVT",
+  "OPC",
+  "MATRIX"
+];
 
 const CANONICAL_CORPUS_VOLUME_PROFILES: Record<CanonicalCorpusVolumeProfile["volume"], CanonicalCorpusVolumeProfile> = {
   V1: {
@@ -1727,6 +1753,58 @@ function includesAll(normalized: string, terms: string[]): boolean {
 }
 
 
+function buildQpccfSearchCorpus(file: StoredRuntimeFile): string {
+  return normalizeSearchText(`${file.name}\n${file.text.slice(0, 50000)}`);
+}
+
+
+function isQpccfTechnicalStackDocument(file: StoredRuntimeFile): boolean {
+  const normalizedName = normalizeSearchText(file.name);
+  const normalized = buildQpccfSearchCorpus(file);
+
+  return (
+    normalizedName.includes("qpccf") ||
+    normalized.includes("uni qpccf") ||
+    includesAll(normalized, ["intercettazione predittiva", "collisioni", "collimazione"]) ||
+    includesAll(normalized, ["modello lambda coletta", "collimazione"]) ||
+    includesAll(normalized, ["lambda t", "delta t", "partial t lambda", "u t"]) ||
+    includesAll(normalized, ["qpccf", "lambda", "u t"])
+  );
+}
+
+
+function qpccfTechnicalStackSummary(): string {
+  return "Profilo documento UNI/QPCCF del Technical Governance Stack HBCE/JOKER-C2 B2G: modulo QPCCF Predictive Stability Engine per identificare, quantificare e correggere deviazioni dinamiche di sistemi complessi tramite Lambda, delta, partial_t_Lambda e u(t), producendo stabilità predittiva, audit tecnico e integrazione con EVT, OPC e MATRIX. legalCertification=false; OPC=technical proof receipt only.";
+}
+
+
+function buildQpccfTechnicalStackMetadata(file: StoredRuntimeFile): Record<string, unknown> {
+  return {
+    qpccfTechnicalStackMetadataLockApplied: true,
+    qpccfTechnicalStackMetadataLockRevision: QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION,
+    qpccfExpectedDocFamily: QPCCF_DOC_FAMILY,
+    qpccfExpectedDocumentKind: QPCCF_DOCUMENT_KIND,
+    qpccfExpectedModule: QPCCF_MODULE,
+    qpccfExpectedVolume: QPCCF_VOLUME,
+    qpccfExpectedTitle: QPCCF_TITLE,
+    qpccfExpectedCanonicalAxis: QPCCF_CANONICAL_AXIS,
+    qpccfExpectedSourceHash: QPCCF_EXPECTED_SOURCE_HASH,
+    qpccfRuntimeFileHash: `sha256:${file.fileHash}`,
+    qpccfHashMatchesExpected: `sha256:${file.fileHash}` === QPCCF_EXPECTED_SOURCE_HASH,
+    canonicalProfileApplied: true,
+    canonicalProfileRevision: QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION,
+    canonicalVolume: QPCCF_VOLUME,
+    canonicalTitle: QPCCF_TITLE,
+    canonicalDocumentKind: QPCCF_DOCUMENT_KIND,
+    technicalStackModule: QPCCF_MODULE,
+    contaminationWithCorpus: false,
+    contaminationWithV1: false,
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
+
 
 function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCorpusVolumeProfile | null {
   const normalizedName = normalizeSearchText(file.name);
@@ -1816,6 +1894,11 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
 
 
+  if (isQpccfTechnicalStackDocument(file)) {
+    return QPCCF_DOC_FAMILY;
+  }
+
+
   if (canonicalCorpusProfile) {
     return "CORPUS_ESOTEROLOGIA_ERMETICA";
   }
@@ -1869,6 +1952,11 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 function inferDocumentVolume(file: StoredRuntimeFile): string | null {
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (isQpccfTechnicalStackDocument(file)) {
+    return QPCCF_VOLUME;
+  }
 
 
   if (canonicalCorpusProfile) {
@@ -1937,6 +2025,11 @@ function inferDocumentTitle(file: StoredRuntimeFile): string | null {
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
 
 
+  if (isQpccfTechnicalStackDocument(file)) {
+    return QPCCF_TITLE;
+  }
+
+
   if (canonicalCorpusProfile) {
     return canonicalCorpusProfile.title;
   }
@@ -1988,6 +2081,11 @@ function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 20000)}`);
 
 
+  if (isQpccfTechnicalStackDocument(file)) {
+    return QPCCF_CANONICAL_AXIS;
+  }
+
+
   if (includesAll(normalized, ["decisione", "costo", "traccia", "tempo"])) {
     return CANONICAL_AXIS_DCTT;
   }
@@ -2004,6 +2102,11 @@ function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
 
 function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (isQpccfTechnicalStackDocument(file)) {
+    return Array.from(new Set(QPCCF_KEY_TERMS)).slice(0, 32);
+  }
 
 
   if (canonicalCorpusProfile) {
@@ -2032,6 +2135,13 @@ function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
 
 function buildDocumentSummary(file: StoredRuntimeFile): string {
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (isQpccfTechnicalStackDocument(file)) {
+    return qpccfTechnicalStackSummary();
+  }
+
+
   const family = inferDocumentFamily(file);
   const volume = inferDocumentVolume(file);
   const title = inferDocumentTitle(file);
@@ -2179,6 +2289,7 @@ function buildDocumentProfileInput(
   context: DocumentProfileContext
 ): DocumentProfileDatabaseInput {
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+  const qpccfTechnicalStackProfile = isQpccfTechnicalStackDocument(file);
   const docFamily = inferDocumentFamily(file);
   const volume = inferDocumentVolume(file);
   const title = inferDocumentTitle(file);
@@ -2212,10 +2323,14 @@ function buildDocumentProfileInput(
     documentMetadata: {
       routeVersion: FILE_ROUTE_REVISION,
       canonicalProfileRevision: DOCUMENT_PROFILE_CANONICAL_FIX_REVISION,
-      canonicalProfileApplied: Boolean(canonicalCorpusProfile),
-      canonicalVolume: canonicalCorpusProfile?.volume ?? null,
-      canonicalTitle: canonicalCorpusProfile?.title ?? null,
-      canonicalDocumentKind: canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null,
+      canonicalProfileApplied: Boolean(canonicalCorpusProfile) || qpccfTechnicalStackProfile,
+      canonicalVolume: qpccfTechnicalStackProfile ? QPCCF_VOLUME : canonicalCorpusProfile?.volume ?? null,
+      canonicalTitle: qpccfTechnicalStackProfile ? QPCCF_TITLE : canonicalCorpusProfile?.title ?? null,
+      canonicalDocumentKind: qpccfTechnicalStackProfile ? QPCCF_DOCUMENT_KIND : canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null,
+      technicalStackModule: qpccfTechnicalStackProfile ? QPCCF_MODULE : null,
+      qpccfTechnicalStackMetadataLockApplied: qpccfTechnicalStackProfile,
+      qpccfTechnicalStackMetadataLockRevision: qpccfTechnicalStackProfile ? QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION : null,
+      qpccfExpectedProfile: qpccfTechnicalStackProfile ? buildQpccfTechnicalStackMetadata(file) : null,
       alienCodeV4GuardApplied: canonicalCorpusProfile?.volume === "V4",
       portaleV5GuardApplied: canonicalCorpusProfile?.volume === "V5",
       alienCodeV4ExpectedProfile:
@@ -2333,7 +2448,98 @@ function canonicalCorpusProfileFromFilenameForRead(value: unknown): CanonicalCor
   return null;
 }
 
+function isQpccfFilenameOrMetadataForRead(profile: Record<string, unknown>): boolean {
+  const filename = `${profile.filename ?? profile.fileName ?? ""}`;
+  const title = `${profile.title ?? ""}`;
+  const docFamily = `${profile.docFamily ?? ""}`;
+  const metadata = profile.documentMetadata && typeof profile.documentMetadata === "object"
+    ? profile.documentMetadata as Record<string, unknown>
+    : {};
+  const metadataTitle = `${metadata.canonicalTitle ?? metadata.qpccfExpectedTitle ?? ""}`;
+  const metadataModule = `${metadata.technicalStackModule ?? metadata.qpccfExpectedModule ?? ""}`;
+  const normalized = normalizeSearchText(`${filename}\n${title}\n${docFamily}\n${metadataTitle}\n${metadataModule}`);
+
+  return (
+    normalized.includes("qpccf") ||
+    normalized.includes("predictive stability engine") ||
+    includesAll(normalized, ["intercettazione predittiva", "collisioni", "collimazione"])
+  );
+}
+
+
+function canonicalizeQpccfPublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
+  const existingMetadata =
+    profile.documentMetadata && typeof profile.documentMetadata === "object"
+      ? profile.documentMetadata as Record<string, unknown>
+      : {};
+
+  return {
+    ...profile,
+    docFamily: QPCCF_DOC_FAMILY,
+    volume: QPCCF_VOLUME,
+    title: QPCCF_TITLE,
+    canonicalAxis: QPCCF_CANONICAL_AXIS,
+    summary: qpccfTechnicalStackSummary(),
+    keyTerms: Array.from(new Set(QPCCF_KEY_TERMS)).slice(0, 32),
+    documentMetadata: {
+      ...existingMetadata,
+      ...buildQpccfTechnicalStackMetadata({
+        id: `${profile.fileId ?? "READ_PROFILE"}`,
+        name: `${profile.filename ?? profile.fileName ?? "QPCCF"}`,
+        mimeType: `${profile.mimeType ?? "text/plain"}`,
+        type: `${profile.type ?? "text/plain"}`,
+        size: typeof profile.size === "number" ? profile.size : 0,
+        text: "",
+        content: "",
+        role: `${profile.role ?? "document"}`,
+        textLength: typeof profile.textLength === "number" ? profile.textLength : 0,
+        fullTextLength: typeof profile.fullTextLength === "number" ? profile.fullTextLength : 0,
+        promptTextLength: typeof profile.promptTextLength === "number" ? profile.promptTextLength : 0,
+        sourceFileHash: `${profile.fileHash ?? ""}`,
+        normalizedTextHash: `${profile.fileHash ?? ""}`,
+        runtimePromptTextHash: `${profile.fileHash ?? ""}`,
+        sourceByteLength: typeof profile.size === "number" ? profile.size : 0,
+        normalizedTextLength: typeof profile.textLength === "number" ? profile.textLength : 0,
+        textSourceKind: "TEXT",
+        textCoverageStatus: "TEXT_READY_FULL",
+        fullDocumentCoverage: true,
+        fullDocumentCoverageReason: "QPCCF_READ_GUARD",
+        longDocumentMode: "CHUNKED_FULL_TEXT",
+        documentOutline: {
+          outlineStatus: "READY",
+          partsDetected: 0,
+          chaptersDetected: 0,
+          appendicesDetected: 0,
+          firstSectionDetected: null,
+          lastSectionDetected: null,
+          lastAppendixDetected: null,
+          boundaryDetected: false,
+          conclusionDetected: false,
+          entries: []
+        },
+        documentChunkCount: typeof existingMetadata.documentChunkCount === "number" ? existingMetadata.documentChunkCount : 0,
+        documentChunks: [],
+        fileHash: `${profile.fileHash ?? ""}`.replace(/^sha256:/, ""),
+        status: "TEXT_READY",
+        mode: "TEXT",
+        reason: "QPCCF_READ_GUARD",
+        createdAt: `${profile.createdAt ?? nowIso()}`,
+        updatedAt: `${profile.updatedAt ?? nowIso()}`
+      }),
+      canonicalProfileReadGuardApplied: true,
+      qpccfTechnicalStackReadGuardApplied: true,
+      legalCertification: false,
+      opc: "technical proof receipt only"
+    }
+  } as T;
+}
+
+
 function canonicalizePublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
+  if (isQpccfFilenameOrMetadataForRead(profile)) {
+    return canonicalizeQpccfPublicDocumentProfileForRead(profile);
+  }
+
   const filename = profile.filename ?? profile.fileName;
   const canonicalProfile = canonicalCorpusProfileFromFilenameForRead(filename);
 
