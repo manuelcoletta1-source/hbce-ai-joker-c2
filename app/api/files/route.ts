@@ -15,13 +15,19 @@ import {
   HBCE_SELF_PILOT_TENANT_ID,
   HBCE_SELF_PILOT_WORKSPACE_ID
 } from "@/lib/ipr-database-schema";
+import {
+  HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION,
+  classifyHbceB2gTechnicalStackDocument,
+  buildHbceB2gTechnicalStackProfileMetadata,
+  type HbceB2gTechnicalStackClassification
+} from "@/lib/hbce-b2g-technical-stack-classifier";
 
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
@@ -282,14 +288,14 @@ type CanonicalCorpusVolumeProfile = {
   keyTerms: string[];
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5";
 const QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION = "QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
 const QPCCF_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
 const QPCCF_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
 const QPCCF_MODULE = "QPCCF_PREDICTIVE_STABILITY_ENGINE";
 const QPCCF_VOLUME = "N/A";
 const QPCCF_TITLE = "UNI/QPCCF – Intercettazione predittiva delle collisioni e collimazione dei sistemi complessi";
-const QPCCF_CANONICAL_AXIS = "Lambda · delta · partial_t_Lambda · u(t) · EVT · OPC · MATRIX";
+const QPCCF_CANONICAL_AXIS = "Lambda · delta · partial_t_Lambda · u(t) · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK";
 const QPCCF_EXPECTED_SOURCE_HASH = "sha256:cf30e54ce29f4f51b4370990d8229b183320b857deb628e1abb505149c03731c";
 const QPCCF_KEY_TERMS = [
   "QPCCF",
@@ -1759,17 +1765,7 @@ function buildQpccfSearchCorpus(file: StoredRuntimeFile): string {
 
 
 function isQpccfTechnicalStackDocument(file: StoredRuntimeFile): boolean {
-  const normalizedName = normalizeSearchText(file.name);
-  const normalized = buildQpccfSearchCorpus(file);
-
-  return (
-    normalizedName.includes("qpccf") ||
-    normalized.includes("uni qpccf") ||
-    includesAll(normalized, ["intercettazione predittiva", "collisioni", "collimazione"]) ||
-    includesAll(normalized, ["modello lambda coletta", "collimazione"]) ||
-    includesAll(normalized, ["lambda t", "delta t", "partial t lambda", "u t"]) ||
-    includesAll(normalized, ["qpccf", "lambda", "u t"])
-  );
+  return classifyHbceB2gTechnicalStackFile(file).module === QPCCF_MODULE;
 }
 
 
@@ -1779,7 +1775,23 @@ function qpccfTechnicalStackSummary(): string {
 
 
 function buildQpccfTechnicalStackMetadata(file: StoredRuntimeFile): Record<string, unknown> {
+  const libClassification = classifyHbceB2gTechnicalStackFile(file);
+  const libMetadata = buildHbceB2gTechnicalStackProfileMetadata({
+    filename: file.name,
+    sourceFilename: file.name,
+    title: QPCCF_TITLE,
+    header: file.text.slice(0, 12000),
+    text: file.text.slice(0, 60000),
+    mimeType: file.mimeType
+  }) ?? {};
+
   return {
+    ...libMetadata,
+    b2gTechnicalStackClassifierRevision: HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION,
+    b2gTechnicalStackClassifierMatched: libClassification.matched,
+    b2gTechnicalStackClassifierConfidence: libClassification.confidence,
+    b2gTechnicalStackClassifierScore: libClassification.score,
+    b2gTechnicalStackClassifierSignals: libClassification.matchedSignals,
     qpccfTechnicalStackMetadataLockApplied: true,
     qpccfTechnicalStackMetadataLockRevision: QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION,
     qpccfExpectedDocFamily: QPCCF_DOC_FAMILY,
@@ -1798,10 +1810,31 @@ function buildQpccfTechnicalStackMetadata(file: StoredRuntimeFile): Record<strin
     canonicalDocumentKind: QPCCF_DOCUMENT_KIND,
     technicalStackModule: QPCCF_MODULE,
     contaminationWithCorpus: false,
+    contaminationWithMatrix: false,
     contaminationWithV1: false,
     legalCertification: false,
     opc: "technical proof receipt only"
   };
+}
+
+function classifyHbceB2gTechnicalStackFile(file: StoredRuntimeFile): HbceB2gTechnicalStackClassification {
+  return classifyHbceB2gTechnicalStackDocument({
+    filename: file.name,
+    sourceFilename: file.name,
+    title: extractFirstNonEmptyLines(file.text, 3).join(" | "),
+    header: file.text.slice(0, 12000),
+    text: file.text.slice(0, 60000),
+    mimeType: file.mimeType
+  });
+}
+
+function getHbceB2gTechnicalStackClassification(file: StoredRuntimeFile): HbceB2gTechnicalStackClassification | null {
+  const classification = classifyHbceB2gTechnicalStackFile(file);
+  return classification.matched ? classification : null;
+}
+
+function isHbceB2gTechnicalStackFile(file: StoredRuntimeFile): boolean {
+  return Boolean(getHbceB2gTechnicalStackClassification(file));
 }
 
 
@@ -1951,11 +1984,12 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 
 function inferDocumentVolume(file: StoredRuntimeFile): string | null {
+  const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
 
 
-  if (isQpccfTechnicalStackDocument(file)) {
-    return QPCCF_VOLUME;
+  if (b2gTechnicalStackClassification?.volume) {
+    return b2gTechnicalStackClassification.volume;
   }
 
 
@@ -2022,11 +2056,12 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 function inferDocumentTitle(file: StoredRuntimeFile): string | null {
+  const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
 
 
-  if (isQpccfTechnicalStackDocument(file)) {
-    return QPCCF_TITLE;
+  if (b2gTechnicalStackClassification?.title) {
+    return b2gTechnicalStackClassification.title;
   }
 
 
@@ -2101,11 +2136,12 @@ function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
 
 
 function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
+  const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
 
 
-  if (isQpccfTechnicalStackDocument(file)) {
-    return Array.from(new Set(QPCCF_KEY_TERMS)).slice(0, 32);
+  if (b2gTechnicalStackClassification) {
+    return Array.from(new Set(b2gTechnicalStackClassification.keyTerms)).slice(0, 32);
   }
 
 
@@ -2134,11 +2170,12 @@ function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
 
 
 function buildDocumentSummary(file: StoredRuntimeFile): string {
+  const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
 
 
-  if (isQpccfTechnicalStackDocument(file)) {
-    return qpccfTechnicalStackSummary();
+  if (b2gTechnicalStackClassification?.summary) {
+    return b2gTechnicalStackClassification.summary;
   }
 
 
@@ -2289,7 +2326,9 @@ function buildDocumentProfileInput(
   context: DocumentProfileContext
 ): DocumentProfileDatabaseInput {
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
-  const qpccfTechnicalStackProfile = isQpccfTechnicalStackDocument(file);
+  const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
+  const qpccfTechnicalStackProfile = b2gTechnicalStackClassification?.module === QPCCF_MODULE;
+  const b2gTechnicalStackProfile = Boolean(b2gTechnicalStackClassification);
   const docFamily = inferDocumentFamily(file);
   const volume = inferDocumentVolume(file);
   const title = inferDocumentTitle(file);
@@ -2323,11 +2362,24 @@ function buildDocumentProfileInput(
     documentMetadata: {
       routeVersion: FILE_ROUTE_REVISION,
       canonicalProfileRevision: DOCUMENT_PROFILE_CANONICAL_FIX_REVISION,
-      canonicalProfileApplied: Boolean(canonicalCorpusProfile) || qpccfTechnicalStackProfile,
-      canonicalVolume: qpccfTechnicalStackProfile ? QPCCF_VOLUME : canonicalCorpusProfile?.volume ?? null,
-      canonicalTitle: qpccfTechnicalStackProfile ? QPCCF_TITLE : canonicalCorpusProfile?.title ?? null,
-      canonicalDocumentKind: qpccfTechnicalStackProfile ? QPCCF_DOCUMENT_KIND : canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null,
-      technicalStackModule: qpccfTechnicalStackProfile ? QPCCF_MODULE : null,
+      canonicalProfileApplied: Boolean(canonicalCorpusProfile) || b2gTechnicalStackProfile,
+      canonicalVolume: b2gTechnicalStackClassification?.volume ?? canonicalCorpusProfile?.volume ?? null,
+      canonicalTitle: b2gTechnicalStackClassification?.title ?? canonicalCorpusProfile?.title ?? null,
+      canonicalDocumentKind: b2gTechnicalStackClassification?.documentKind ?? (canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null),
+      technicalStackModule: b2gTechnicalStackClassification?.module ?? null,
+      b2gTechnicalStackClassifierRevision: b2gTechnicalStackClassification ? HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION : null,
+      b2gTechnicalStackMetadataLockApplied: b2gTechnicalStackProfile,
+      b2gTechnicalStackMetadataLockConfidence: b2gTechnicalStackClassification?.confidence ?? null,
+      b2gTechnicalStackMetadataLockScore: b2gTechnicalStackClassification?.score ?? null,
+      b2gTechnicalStackMetadataLockSignals: b2gTechnicalStackClassification?.matchedSignals ?? [],
+      b2gTechnicalStackExpectedProfile: b2gTechnicalStackClassification ? buildHbceB2gTechnicalStackProfileMetadata({
+        filename: file.name,
+        sourceFilename: file.name,
+        title,
+        header: file.text.slice(0, 12000),
+        text: file.text.slice(0, 60000),
+        mimeType: file.mimeType
+      }) : null,
       qpccfTechnicalStackMetadataLockApplied: qpccfTechnicalStackProfile,
       qpccfTechnicalStackMetadataLockRevision: qpccfTechnicalStackProfile ? QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION : null,
       qpccfExpectedProfile: qpccfTechnicalStackProfile ? buildQpccfTechnicalStackMetadata(file) : null,
