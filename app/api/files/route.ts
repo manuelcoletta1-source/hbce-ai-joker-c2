@@ -71,6 +71,7 @@ type HbceB2gTechnicalStackModule =
   | "CQD_EVIDENCE_RECORD_ENGINE"
   | "AIQ_JOKER_POLICY_TRUTH_BUS"
   | "LAMBDA_FLOW_EQUILIBRIUM_FACTOR"
+  | "PEI_INSTITUTIONAL_EQUILIBRIUM_PROTOCOL"
   | "UFO_INTERCEPT_COLLISION_COLLIMATION_RUNTIME"
   | "UFO_OPERATIONAL_MODULE_REGISTRY"
   | "CQO_OPPONIBLE_QUANTUM_CYBERNETICS";
@@ -200,6 +201,75 @@ const HBCE_B2G_TECHNICAL_STACK_DEFINITIONS: readonly ModuleDefinition[] = [
     ]
   },
   {
+    module: "PEI_INSTITUTIONAL_EQUILIBRIUM_PROTOCOL",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    volume: "N/A",
+    title: "PEI — Protocollo di Equilibrio Istituzionale",
+    shortTitle: "PEI Institutional Equilibrium Protocol",
+    canonicalAxis: "Lambda · CQD · PEI · BCEH · EquilibriumThresholds · TransitionRules · Mode_0_Halt · Mode_1_Recovery · Mode_2_Operational · Mode_3_Expansion · CQD_transition · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
+    summary:
+      "Modulo tecnico B2G per governare gli stati operativi di sistemi opponibili usando Lambda come vincolo di equilibrio e CQD come prova causale. Definisce Halt, Recovery, Operational ed Expansion come stati eseguibili e auditabili.",
+    keyTerms: [
+      "PEI",
+      "Protocollo di Equilibrio Istituzionale",
+      "PEI_INSTITUTIONAL_EQUILIBRIUM_PROTOCOL",
+      "Lambda",
+      "CQD",
+      "BCEH",
+      "EquilibriumThresholds",
+      "TransitionRules",
+      "Mode 0 Halt",
+      "Mode 1 Recovery",
+      "Mode 2 Operational",
+      "Mode 3 Expansion",
+      "CQD_transition",
+      "EVT",
+      "OPC"
+    ],
+    primarySignals: [
+      "pei_institutional_equilibrium_protocol",
+      "pei_institutional_equilibrium_protocol_clean_runtime_for_joker_c2",
+      "pei — protocollo di equilibrio istituzionale",
+      "pei - protocollo di equilibrio istituzionale",
+      "protocollo di equilibrio istituzionale",
+      "protocol for opponible equilibrium",
+      "opponible equilibrium protocol",
+      "l'algoritmo di governo",
+      "algoritmo di governo che decide quando un sistema opponibile può agire",
+      "lambda come vincolo fisico e cqd come prova causale",
+      "lambda determina la possibilità di azione",
+      "cqd determina la storia opponibile dell’azione",
+      "617ed2940ed80eb4598fb03832b7a245e581606f9bc6559aedd9685c027840e4"
+    ],
+    secondarySignals: [
+      "pei definisce",
+      "dS/dt = F",
+      "cqd_transition",
+      "mode 0 — halt",
+      "mode 1 — recovery",
+      "mode 2 — operativo coerente",
+      "mode 3 — espansione",
+      "mode_0_halt",
+      "mode_1_recovery",
+      "mode_2_operational",
+      "mode_3_expansion",
+      "lambda_min",
+      "lambda_critica",
+      "lambda_expansion",
+      "λ_min",
+      "λ_critica",
+      "λ_espansione",
+      "bceh può espandere",
+      "equilibriumthresholds",
+      "transitionrules",
+      "autoregolazione fisica",
+      "legge di moto del sistema"
+    ],
+    antiSignals: [
+      "crocifissione quantistica del dato: un modello di fissazione multidimensionale"
+    ]
+  },
+  {
     module: "CQD_EVIDENCE_RECORD_ENGINE",
     documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
     volume: "N/A",
@@ -234,6 +304,15 @@ const HBCE_B2G_TECHNICAL_STACK_DEFINITIONS: readonly ModuleDefinition[] = [
       "audit",
       "evt",
       "opc"
+    ],
+    antiSignals: [
+      "pei_institutional_equilibrium_protocol",
+      "protocollo di equilibrio istituzionale",
+      "protocol for opponible equilibrium",
+      "mode 0 — halt",
+      "mode 1 — recovery",
+      "mode 2 — operativo coerente",
+      "mode 3 — espansione"
     ]
   },
   {
@@ -979,6 +1058,72 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
         route: "/api/v1/collimation/apply",
         method: "POST",
         role: "API endpoint for applying or simulating u(t) collimation correction."
+      }
+    ]
+  },
+
+  PEI_INSTITUTIONAL_EQUILIBRIUM_PROTOCOL: {
+    module: "PEI_INSTITUTIONAL_EQUILIBRIUM_PROTOCOL",
+    documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
+    title: "PEI — Protocollo di Equilibrio Istituzionale",
+    shortTitle: "PEI Institutional Equilibrium Protocol",
+    canonicalAxis: "Lambda · CQD · PEI · BCEH · EquilibriumThresholds · TransitionRules · Mode_0_Halt · Mode_1_Recovery · Mode_2_Operational · Mode_3_Expansion · CQD_transition · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
+    technicalMemorySummary:
+      "PEI is the AI JOKER-C2 B2G institutional equilibrium protocol. It governs when an opponible autonomous or institutional system may act, recover, halt or expand by using Lambda as the equilibrium constraint and CQD as the causal evidence record. Its function is to convert Lambda/CQD state transitions into auditable governance modes and EVT/OPC technical proof receipts with legalCertification=false.",
+    runtimeInputs: [
+      "lambdaCurrentValue",
+      "lambdaMinimumThreshold",
+      "lambdaCriticalThreshold",
+      "lambdaExpansionThreshold",
+      "cqdEvidenceRecord",
+      "systemStateS",
+      "institutionalContext",
+      "actionRequest",
+      "tenantId",
+      "workspaceId",
+      "humanIpr"
+    ],
+    runtimeOutputs: [
+      "peiDecision",
+      "operationalMode",
+      "allowedToAct",
+      "haltRecoveryExpansionState",
+      "cqdTransitionRecord",
+      "institutionalResponsibilityScope",
+      "evtCandidate",
+      "opcTechnicalProofReceipt"
+    ],
+    operationalRules: [
+      "Resolve institutional action only from Lambda thresholds and CQD evidence context.",
+      "Mode 0 Halt applies when Lambda is below or equal to the critical threshold.",
+      "Mode 1 Recovery applies when Lambda is below the minimum threshold but above the critical threshold.",
+      "Mode 2 Operational applies when Lambda is greater than or equal to the minimum threshold.",
+      "Mode 3 Expansion applies only when Lambda is greater than or equal to the expansion threshold.",
+      "Every state transition must emit CQD_transition and EVT/OPC technical proof receipt.",
+      "Expose legalCertification=false and OPC as technical proof receipt only."
+    ],
+    futureGithubModules: [
+      {
+        path: "lib/pei-institutional-equilibrium-protocol.ts",
+        role: "PEI institutional equilibrium protocol and Lambda/CQD governance mode resolver."
+      },
+      {
+        path: "app/api/v1/pei/equilibrium/check/route.ts",
+        route: "/api/v1/pei/equilibrium/check",
+        method: "POST",
+        role: "API endpoint for PEI equilibrium admissibility checks."
+      },
+      {
+        path: "app/api/v1/pei/mode/resolve/route.ts",
+        route: "/api/v1/pei/mode/resolve",
+        method: "POST",
+        role: "API endpoint for resolving Halt, Recovery, Operational and Expansion modes."
+      },
+      {
+        path: "app/api/v1/pei/transition/record/route.ts",
+        route: "/api/v1/pei/transition/record",
+        method: "POST",
+        role: "API endpoint for CQD_transition event registration."
       }
     ]
   },
@@ -1741,7 +1886,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2-LAMBDA_PROFILE_LOCK-v6_8_3";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2-LAMBDA_PROFILE_LOCK-v6_8_3-PEI_PROFILE_LOCK-v6_8_4";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
@@ -2009,9 +2154,9 @@ type CanonicalCorpusVolumeProfile = {
   keyTerms: string[];
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4";
 const QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION = "QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
-const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3";
+const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4";
 const QPCCF_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
 const QPCCF_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
 const QPCCF_MODULE = "QPCCF_PREDICTIVE_STABILITY_ENGINE";
