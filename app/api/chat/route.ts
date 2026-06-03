@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -6329,30 +6329,172 @@ const QPCCF_B2G_CANONICAL_AXIS = "Lambda · delta · partial_t_Lambda · u(t) ·
 const QPCCF_B2G_MEMORY_COLLAPSE_REVISION = "HBCE-B2G-TECHNICAL-MEMORY-COLLAPSE-v1_0_0";
 const QPCCF_B2G_CLASSIFIER_REVISION = "HBCE-B2G-TECHNICAL-STACK-CLASSIFIER-v1_0_0";
 
-function hasQpccfB2gSignal(message: string, files: PublicFileSnapshot[]): boolean {
-  const normalized = normalizeText(message);
-  const fileText = files
-    .map((file) => [file.name, file.fileHash, file.hash, file.documentProfileId, getPromptTextForFile(file).slice(0, 12000)].join("\n"))
-    .join("\n");
-  const normalizedFiles = normalizeText(fileText);
+const CQD_B2G_FILE_HASH = "sha256:df365419543e9418440088649c67646432c4481b58142dd32ef3a25dec03f3ab";
+const CQD_B2G_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
+const CQD_B2G_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
+const CQD_B2G_MODULE = "CQD_EVIDENCE_RECORD_ENGINE";
+const CQD_B2G_TITLE = "Crocifissione Quantistica del Dato: un modello di fissazione multidimensionale dell’informazione per sistemi autonomi opponibili";
+const CQD_B2G_CANONICAL_AXIS = "T_axis · I_axis · E_axis · L_axis · CQD_VALID · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK";
 
-  return (
-    normalized.includes("qpccf") ||
-    normalized.includes("b2g_technical_profile_memory") ||
-    normalized.includes("b2g technical memory") ||
-    normalized.includes("b2g_technical_memory") ||
-    normalized.includes("technical_profile_memory_ready") ||
-    normalized.includes("b2g_technical_profile_memory_ready") ||
-    normalized.includes("b2g technical memory bridge") ||
-    normalized.includes("b2g technical memory payload") ||
-    normalized.includes("hbce_joker_c2_b2g_technical_stack") ||
-    normalized.includes("qpccf_predictive_stability_engine") ||
-    normalizedFiles.includes("qpccf") ||
-    normalizedFiles.includes("qpccf_predictive_stability_engine") ||
-    normalizedFiles.includes("hbce_joker_c2_b2g_technical_stack") ||
-    normalizedFiles.includes(normalizeText(QPCCF_B2G_PROFILE_ID)) ||
-    normalizedFiles.includes(normalizeText(QPCCF_B2G_FILE_HASH))
-  );
+interface B2gTechnicalModuleDefinition {
+  key: string;
+  fileHash: string;
+  docFamily: string;
+  documentKind: string;
+  module: string;
+  volume: string;
+  title: string;
+  canonicalAxis: string;
+  memoryCollapseRevision: string;
+  classifierRevision: string;
+  minPersistedChunks: number;
+  sourceFilename: string;
+  summary: string;
+  runtimeInputs: string;
+  runtimeOutputs: string;
+  futureGithubModules: string;
+  signals: string[];
+}
+
+const B2G_TECHNICAL_MODULE_DEFINITIONS: B2gTechnicalModuleDefinition[] = [
+  {
+    key: "CQD",
+    fileHash: CQD_B2G_FILE_HASH,
+    docFamily: CQD_B2G_DOC_FAMILY,
+    documentKind: CQD_B2G_DOCUMENT_KIND,
+    module: CQD_B2G_MODULE,
+    volume: "N/A",
+    title: CQD_B2G_TITLE,
+    canonicalAxis: CQD_B2G_CANONICAL_AXIS,
+    memoryCollapseRevision: QPCCF_B2G_MEMORY_COLLAPSE_REVISION,
+    classifierRevision: QPCCF_B2G_CLASSIFIER_REVISION,
+    minPersistedChunks: 1,
+    sourceFilename: "CROCEFFISIONE_QUANTISTICA_DEL_DATO_CLEAN_RUNTIME_FOR_JOKER_C2.txt",
+    summary: "CQD is the AI JOKER-C2 B2G evidence record engine. It fixes an information event along four independent axes — T_axis for opponible physical time, I_axis for source identity, E_axis for energetic-informational context and L_axis for multi-ledger anchoring. Its function is to transform a digital log into a context-bound historical event whose generative conditions can be audited without claiming semantic truth, with EVT/OPC technical proof receipts and legalCertification=false.",
+    runtimeInputs: "payloadD, normalizedData, hashD, tAxisTimeSource, iAxisSubjectIpr, eAxisSystemState, lAxisAnchorSet, humanIpr, tenantId, workspaceId",
+    runtimeOutputs: "cqdRecord, cqdValid, tAxisProof, iAxisProof, eAxisProfile, lAxisAnchors, cqdValidationResult, evtCandidate, opcTechnicalProofReceipt",
+    futureGithubModules: "lib/cqd-evidence-record-engine.ts; app/api/v1/cqd/record/route.ts; app/api/v1/cqd/verify/route.ts; app/api/v1/evidence/anchor/route.ts",
+    signals: [
+      "cqd",
+      "cqd_evidence_record_engine",
+      "croceffissione_quantistica_del_dato",
+      "crocifissione quantistica del dato",
+      "crocifissione_quantistica_del_dato",
+      "t_axis",
+      "i_axis",
+      "e_axis",
+      "l_axis",
+      "cqd_valid",
+      "evento opponibile",
+      "fissazione multidimensionale",
+      "stato energetico-informazionale"
+    ]
+  },
+  {
+    key: "QPCCF",
+    fileHash: QPCCF_B2G_FILE_HASH,
+    docFamily: QPCCF_B2G_DOC_FAMILY,
+    documentKind: QPCCF_B2G_DOCUMENT_KIND,
+    module: QPCCF_B2G_MODULE,
+    volume: "N/A",
+    title: QPCCF_B2G_TITLE,
+    canonicalAxis: QPCCF_B2G_CANONICAL_AXIS,
+    memoryCollapseRevision: QPCCF_B2G_MEMORY_COLLAPSE_REVISION,
+    classifierRevision: QPCCF_B2G_CLASSIFIER_REVISION,
+    minPersistedChunks: 2,
+    sourceFilename: "QPCCF_PREDICTIVE_STABILITY_ENGINE_B2G_PROFILE_SEED_v6_4_1.txt",
+    summary: "QPCCF is the AI JOKER-C2 B2G predictive stability engine. It models operational equilibrium through Lambda, measures deviation through delta, estimates future instability through partial_t_Lambda and emits u(t) as a technical collimation signal. Its function is to detect collision risk before collapse, support stabilization of complex physical, digital and cybernetic systems, and produce EVT/OPC technical proof receipts with legalCertification=false.",
+    runtimeInputs: "systemStateSnapshot, lambdaBaseline, lambdaObserved, deltaThreshold, partialTLambdaWindow, telemetrySeries, domainContext, operatorPolicy, humanIpr, tenantId, workspaceId",
+    runtimeOutputs: "lambdaScore, deltaDeviation, partialTLambdaTrend, collisionRiskLevel, collimationSignalUT, recommendedCorrection, stabilityDecision, evtCandidate, opcTechnicalProofReceipt",
+    futureGithubModules: "lib/b2g-stability-engine.ts; app/api/v1/stability/check/route.ts; app/api/v1/collision/predict/route.ts; app/api/v1/collimation/apply/route.ts",
+    signals: [
+      "qpccf",
+      "qpccf_predictive_stability_engine",
+      "uni/qpccf",
+      "lambda · delta · partial_t_lambda",
+      "partial_t_lambda",
+      "collimazione",
+      "u(t)",
+      "collisioni",
+      "predictive stability engine"
+    ]
+  }
+];
+
+const DEFAULT_B2G_TECHNICAL_MODULE = B2G_TECHNICAL_MODULE_DEFINITIONS[1];
+
+function tryStringifyForB2gSignal(value: unknown): string {
+  try {
+    return JSON.stringify(value) || "";
+  } catch {
+    return "";
+  }
+}
+
+function b2gModuleSignalText(moduleDefinition: B2gTechnicalModuleDefinition): string {
+  return normalizeText([
+    moduleDefinition.key,
+    moduleDefinition.fileHash,
+    moduleDefinition.docFamily,
+    moduleDefinition.documentKind,
+    moduleDefinition.module,
+    moduleDefinition.title,
+    moduleDefinition.canonicalAxis,
+    moduleDefinition.sourceFilename,
+    ...moduleDefinition.signals
+  ].join("\n"));
+}
+
+function resolveB2gTechnicalModuleFromText(text: string): B2gTechnicalModuleDefinition | null {
+  const normalized = normalizeText(text);
+  if (!normalized) {
+    return null;
+  }
+
+  return B2G_TECHNICAL_MODULE_DEFINITIONS.find((moduleDefinition) => {
+    return b2gModuleSignalText(moduleDefinition)
+      .split("\n")
+      .filter(Boolean)
+      .some((signal) => normalized.includes(signal));
+  }) || null;
+}
+
+function resolveB2gTechnicalModuleFromDiagnostic(
+  diagnostic: FullDocumentCoverageAuditDiagnostic,
+  files: PublicFileSnapshot[],
+  message: string
+): B2gTechnicalModuleDefinition | null {
+  const activeFile = files.find((file) => file.name === diagnostic.activeFilename) || files[0] || null;
+  const activeText = activeFile ? getPromptTextForFile(activeFile).slice(0, 16000) : "";
+
+  return resolveB2gTechnicalModuleFromText([
+    message,
+    diagnostic.activeFilename,
+    diagnostic.runtimeFileHash,
+    diagnostic.documentProfileId,
+    diagnostic.docFamily,
+    diagnostic.documentKind,
+    diagnostic.title,
+    diagnostic.canonicalAxis,
+    activeText
+  ].join("\n"));
+}
+
+function resolveB2gTechnicalModuleFromProfileFields(fields: string[]): B2gTechnicalModuleDefinition | null {
+  return resolveB2gTechnicalModuleFromText(fields.join("\n"));
+}
+
+function hasB2gTechnicalStackSignal(message: string, files: PublicFileSnapshot[]): boolean {
+  const fileText = files
+    .map((file) => [file.name, file.fileHash, file.hash, file.documentProfileId, getPromptTextForFile(file).slice(0, 16000)].join("\n"))
+    .join("\n");
+
+  return Boolean(resolveB2gTechnicalModuleFromText([message, fileText].join("\n"))) ||
+    normalizeText([message, fileText].join("\n")).includes("hbce_joker_c2_b2g_technical_stack");
+}
+
+function hasQpccfB2gSignal(message: string, files: PublicFileSnapshot[]): boolean {
+  return hasB2gTechnicalStackSignal(message, files);
 }
 
 function isB2gTechnicalProfileMemoryRequest(message: string, files: PublicFileSnapshot[]): boolean {
@@ -6371,6 +6513,11 @@ function isB2gTechnicalProfileMemoryRequest(message: string, files: PublicFileSn
     normalized.includes("b2g_tecnica") ||
     normalized.includes("technical_profile_memory_ready") ||
     normalized.includes("b2g_technical_profile_memory_ready") ||
+    normalized.includes("technical profile ingestion") ||
+    normalized.includes("technical_profile_ingestion") ||
+    normalized.includes("cqd technical profile") ||
+    normalized.includes("cqd_technical_profile") ||
+    normalized.includes("cqd_evidence_record_engine") ||
     normalized.includes("qpccf technical stack") ||
     normalized.includes("qpccf_predictive_stability_engine") ||
     normalized.includes("noquantumstates") ||
@@ -6387,49 +6534,43 @@ function isB2gTechnicalProfileMemoryRequest(message: string, files: PublicFileSn
     normalized.includes("no qstate") ||
     normalized.includes("no corpus");
 
-  return hasQpccfB2gSignal(message, files) && (hasB2gRequestSignal || rejectsCanonicalCorpusRoute);
+  return hasB2gTechnicalStackSignal(message, files) && (hasB2gRequestSignal || rejectsCanonicalCorpusRoute);
 }
 
 function isQpccfB2gDiagnostic(diagnostic: FullDocumentCoverageAuditDiagnostic, files: PublicFileSnapshot[], message: string): boolean {
-  const activeFile = files.find((file) => file.name === diagnostic.activeFilename) || files[0];
-  const activeText = activeFile ? getPromptTextForFile(activeFile).slice(0, 12000) : "";
-  const combined = normalizeText([
-    message,
-    diagnostic.activeFilename,
-    diagnostic.runtimeFileHash,
-    diagnostic.documentProfileId,
-    diagnostic.docFamily,
-    diagnostic.documentKind,
-    diagnostic.title,
-    diagnostic.canonicalAxis,
-    activeText
-  ].join("\n"));
-
-  return (
-    combined.includes("qpccf") ||
-    combined.includes("qpccf_predictive_stability_engine") ||
-    combined.includes("uni/qpccf") ||
-    combined.includes(normalizeText(QPCCF_B2G_PROFILE_ID)) ||
-    combined.includes(normalizeText(QPCCF_B2G_FILE_HASH)) ||
-    combined.includes("lambda · delta · partial_t_lambda") ||
-    combined.includes("hbce_joker_c2_b2g_technical_stack")
-  );
+  return Boolean(resolveB2gTechnicalModuleFromDiagnostic(diagnostic, files, message));
 }
 
-function qpccfB2gReadyFromDiagnostic(diagnostic: FullDocumentCoverageAuditDiagnostic): boolean {
+function b2gTechnicalReadyFromDiagnostic(
+  diagnostic: FullDocumentCoverageAuditDiagnostic,
+  moduleDefinition: B2gTechnicalModuleDefinition
+): boolean {
   return (
     diagnostic.fullDocumentCoverage === true &&
     diagnostic.textCoverageStatus === "TEXT_READY_FULL" &&
     diagnostic.documentChunksPersisted === true &&
-    diagnostic.documentChunksPersistedCount >= 2 &&
+    diagnostic.documentChunksPersistedCount >= moduleDefinition.minPersistedChunks &&
     diagnostic.truncationDetected === false &&
     diagnostic.documentProfileId !== "NO_DOCUMENT_PROFILE_ID" &&
     diagnostic.documentProfileId.trim().length > 0
   );
 }
 
+function qpccfB2gReadyFromDiagnostic(diagnostic: FullDocumentCoverageAuditDiagnostic): boolean {
+  const moduleDefinition = resolveB2gTechnicalModuleFromDiagnostic(diagnostic, [], "") || DEFAULT_B2G_TECHNICAL_MODULE;
+  return b2gTechnicalReadyFromDiagnostic(diagnostic, moduleDefinition);
+}
+
 function buildQpccfB2gTechnicalMemorySummary(): string {
-  return "QPCCF is the AI JOKER-C2 B2G predictive stability engine. It models operational equilibrium through Lambda, measures deviation through delta, estimates future instability through partial_t_Lambda and emits u(t) as a technical collimation signal. Its function is to detect collision risk before collapse, support stabilization of complex physical, digital and cybernetic systems, and produce EVT/OPC technical proof receipts with legalCertification=false.";
+  return DEFAULT_B2G_TECHNICAL_MODULE.summary;
+}
+
+function b2gPrimaryStatusForModule(moduleDefinition: B2gTechnicalModuleDefinition, ready: boolean): string {
+  if (moduleDefinition.key === "CQD") {
+    return ready ? "CQD_TECHNICAL_PROFILE_INGESTION_READY" : "CQD_TECHNICAL_PROFILE_INGESTION_FAIL";
+  }
+
+  return ready ? "B2G_TECHNICAL_PROFILE_MEMORY_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_FAIL";
 }
 
 function buildQpccfB2gTechnicalProfileMemoryPreparationAnswer(args: {
@@ -6439,10 +6580,13 @@ function buildQpccfB2gTechnicalProfileMemoryPreparationAnswer(args: {
   policy: PolicyEvaluation;
   saasContext: SaasRuntimeContext;
 }): string {
-  const ready = qpccfB2gReadyFromDiagnostic(args.diagnostic);
+  const moduleDefinition = resolveB2gTechnicalModuleFromDiagnostic(args.diagnostic, [], "") || DEFAULT_B2G_TECHNICAL_MODULE;
+  const ready = b2gTechnicalReadyFromDiagnostic(args.diagnostic, moduleDefinition);
 
   return [
-    ready ? "B2G_TECHNICAL_PROFILE_MEMORY_PREP_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_PREP_BLOCKED",
+    moduleDefinition.key === "CQD"
+      ? ready ? "CQD_TECHNICAL_PROFILE_INGESTION_READY" : "CQD_TECHNICAL_PROFILE_INGESTION_BLOCKED"
+      : ready ? "B2G_TECHNICAL_PROFILE_MEMORY_PREP_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_PREP_BLOCKED",
     "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
     "activeFilename=" + args.diagnostic.activeFilename,
     "runtimeFileHash=" + args.diagnostic.runtimeFileHash,
@@ -6452,12 +6596,12 @@ function buildQpccfB2gTechnicalProfileMemoryPreparationAnswer(args: {
     "documentChunksPersistedCount=" + String(args.diagnostic.documentChunksPersistedCount),
     "documentProfileId=" + args.diagnostic.documentProfileId,
     "documentProfileStatus=" + args.diagnostic.documentProfileStatus,
-    "docFamily=" + QPCCF_B2G_DOC_FAMILY,
-    "documentKind=" + QPCCF_B2G_DOCUMENT_KIND,
-    "module=" + QPCCF_B2G_MODULE,
-    "volume=N/A",
-    "title=" + QPCCF_B2G_TITLE,
-    "canonicalAxis=" + QPCCF_B2G_CANONICAL_AXIS,
+    "docFamily=" + moduleDefinition.docFamily,
+    "documentKind=" + moduleDefinition.documentKind,
+    "module=" + moduleDefinition.module,
+    "volume=" + moduleDefinition.volume,
+    "title=" + moduleDefinition.title,
+    "canonicalAxis=" + moduleDefinition.canonicalAxis,
     "b2gTechnicalMemory.status=" + (ready ? "B2G_TECHNICAL_PROFILE_MEMORY_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_FAIL"),
     "b2gTechnicalMemory.readyForIprSave=" + String(ready),
     "b2gTechnicalMemory.guards.noQuantumStates=true",
@@ -6493,13 +6637,47 @@ function buildB2gTechnicalProfileMemoryPreparationAnswer(args: {
     documentMemoryRecallRequested: true
   });
 
-  return buildQpccfB2gTechnicalProfileMemoryPreparationAnswer({
-    diagnostic,
-    handoff: args.handoff,
-    memory: args.memory,
-    policy: args.policy,
-    saasContext: args.saasContext
-  });
+  const moduleDefinition = resolveB2gTechnicalModuleFromDiagnostic(diagnostic, args.files, args.message) || DEFAULT_B2G_TECHNICAL_MODULE;
+  const ready = b2gTechnicalReadyFromDiagnostic(diagnostic, moduleDefinition);
+
+  return [
+    moduleDefinition.key === "CQD"
+      ? ready ? "CQD_TECHNICAL_PROFILE_INGESTION_READY" : "CQD_TECHNICAL_PROFILE_INGESTION_BLOCKED"
+      : ready ? "B2G_TECHNICAL_PROFILE_MEMORY_PREP_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_PREP_BLOCKED",
+    "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
+    "activeFilename=" + diagnostic.activeFilename,
+    "runtimeFileHash=" + diagnostic.runtimeFileHash,
+    "textCoverageStatus=" + diagnostic.textCoverageStatus,
+    "fullDocumentCoverage=" + String(diagnostic.fullDocumentCoverage),
+    "longDocumentMode=" + diagnostic.longDocumentMode,
+    "documentChunkCount=" + String(diagnostic.documentChunkCount),
+    "documentChunksPersisted=" + String(diagnostic.documentChunksPersisted),
+    "documentChunksPersistedCount=" + String(diagnostic.documentChunksPersistedCount),
+    "documentProfileId=" + diagnostic.documentProfileId,
+    "documentProfileStatus=" + diagnostic.documentProfileStatus,
+    "docFamily=" + moduleDefinition.docFamily,
+    "documentKind=" + moduleDefinition.documentKind,
+    "module=" + moduleDefinition.module,
+    "volume=" + moduleDefinition.volume,
+    "title=" + moduleDefinition.title,
+    "canonicalAxis=" + moduleDefinition.canonicalAxis,
+    "b2gTechnicalMemory.status=" + (ready ? "B2G_TECHNICAL_PROFILE_MEMORY_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_FAIL"),
+    "b2gTechnicalMemory.readyForIprSave=" + String(ready),
+    "b2gTechnicalMemory.guards.noQuantumStates=true",
+    "b2gTechnicalMemory.guards.noQstateOutput=true",
+    "b2gTechnicalMemory.guards.noCorpusCollapse=true",
+    "b2gTechnicalMemory.guards.noSemanticEsoterologicalMemory=true",
+    "b2gTechnicalMemory.guards.noDcttAxisForB2gTechnicalModules=true",
+    "readyForIprSave=" + String(ready),
+    "failReason=" + (ready ? "NONE" : diagnostic.failReason),
+    "Human IPR=" + args.handoff.humanIpr,
+    "Tenant=" + args.saasContext.tenantId,
+    "Workspace=" + args.saasContext.workspaceId,
+    "Memory scope=" + args.memory.scope,
+    "Policy=" + args.policy.decision + " / " + args.policy.operationDecision,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
 }
 
 function buildB2gTechnicalProfileMemoryReadyAnswer(args: {
@@ -6521,17 +6699,20 @@ function buildB2gTechnicalProfileMemoryReadyAnswer(args: {
     documentProfileRecall: args.documentProfileRecall,
     documentMemoryRecallRequested: true
   });
-  const isQpccf = isQpccfB2gDiagnostic(diagnostic, args.files, args.message);
-  const ready = isQpccf && qpccfB2gReadyFromDiagnostic(diagnostic);
-  const status = ready ? "B2G_TECHNICAL_PROFILE_MEMORY_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_FAIL";
+  const moduleDefinition = resolveB2gTechnicalModuleFromDiagnostic(diagnostic, args.files, args.message);
+  const ready = Boolean(moduleDefinition) && b2gTechnicalReadyFromDiagnostic(diagnostic, moduleDefinition);
+  const primaryStatus = moduleDefinition
+    ? b2gPrimaryStatusForModule(moduleDefinition, ready)
+    : "B2G_TECHNICAL_PROFILE_MEMORY_FAIL";
   const failReason = ready
     ? "NONE"
-    : isQpccf
+    : moduleDefinition
       ? diagnostic.failReason
-      : "DOCUMENT_PROFILE_NOT_QPCCF_B2G_TECHNICAL_STACK";
+      : "DOCUMENT_PROFILE_NOT_SUPPORTED_B2G_TECHNICAL_MODULE";
+  const outputModule = moduleDefinition || DEFAULT_B2G_TECHNICAL_MODULE;
 
   return [
-    status,
+    primaryStatus,
     "",
     "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
     "activeFilename=" + diagnostic.activeFilename,
@@ -6548,28 +6729,28 @@ function buildB2gTechnicalProfileMemoryReadyAnswer(args: {
     "",
     "documentProfileId=" + diagnostic.documentProfileId,
     "documentProfileStatus=" + diagnostic.documentProfileStatus,
-    "docFamily=" + QPCCF_B2G_DOC_FAMILY,
-    "documentKind=" + QPCCF_B2G_DOCUMENT_KIND,
-    "module=" + QPCCF_B2G_MODULE,
-    "volume=N/A",
-    "title=" + QPCCF_B2G_TITLE,
-    "canonicalAxis=" + QPCCF_B2G_CANONICAL_AXIS,
+    "docFamily=" + outputModule.docFamily,
+    "documentKind=" + outputModule.documentKind,
+    "module=" + outputModule.module,
+    "volume=" + outputModule.volume,
+    "title=" + outputModule.title,
+    "canonicalAxis=" + outputModule.canonicalAxis,
     "",
-    "b2gTechnicalMemory.status=" + status,
+    "b2gTechnicalMemory.status=" + (ready ? "B2G_TECHNICAL_PROFILE_MEMORY_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_FAIL"),
     "b2gTechnicalMemory.readyForIprSave=" + String(ready),
     "b2gTechnicalMemory.memoryType=B2G_TECHNICAL_PROFILE_MEMORY",
     "b2gTechnicalMemory.memoryMode=TECHNICAL_SYNTHESIS_ONLY",
-    "b2gTechnicalMemory.collapseRevision=" + QPCCF_B2G_MEMORY_COLLAPSE_REVISION,
-    "b2gTechnicalMemory.classifierRevision=" + QPCCF_B2G_CLASSIFIER_REVISION,
-    "b2gTechnicalMemory.docFamily=" + QPCCF_B2G_DOC_FAMILY,
-    "b2gTechnicalMemory.documentKind=" + QPCCF_B2G_DOCUMENT_KIND,
-    "b2gTechnicalMemory.module=" + QPCCF_B2G_MODULE,
-    "b2gTechnicalMemory.title=" + QPCCF_B2G_TITLE,
-    "b2gTechnicalMemory.canonicalAxis=" + QPCCF_B2G_CANONICAL_AXIS,
-    "b2gTechnicalMemory.technicalMemorySummary=" + buildQpccfB2gTechnicalMemorySummary(),
-    "b2gTechnicalMemory.runtimeInputs=systemStateSnapshot, lambdaBaseline, lambdaObserved, deltaThreshold, partialTLambdaWindow, telemetrySeries, domainContext, operatorPolicy, humanIpr, tenantId, workspaceId",
-    "b2gTechnicalMemory.runtimeOutputs=lambdaScore, deltaDeviation, partialTLambdaTrend, collisionRiskLevel, collimationSignalUT, recommendedCorrection, stabilityDecision, evtCandidate, opcTechnicalProofReceipt",
-    "b2gTechnicalMemory.futureGithubModules=lib/b2g-stability-engine.ts; app/api/v1/stability/check/route.ts; app/api/v1/collision/predict/route.ts; app/api/v1/collimation/apply/route.ts",
+    "b2gTechnicalMemory.collapseRevision=" + outputModule.memoryCollapseRevision,
+    "b2gTechnicalMemory.classifierRevision=" + outputModule.classifierRevision,
+    "b2gTechnicalMemory.docFamily=" + outputModule.docFamily,
+    "b2gTechnicalMemory.documentKind=" + outputModule.documentKind,
+    "b2gTechnicalMemory.module=" + outputModule.module,
+    "b2gTechnicalMemory.title=" + outputModule.title,
+    "b2gTechnicalMemory.canonicalAxis=" + outputModule.canonicalAxis,
+    "b2gTechnicalMemory.technicalMemorySummary=" + outputModule.summary,
+    "b2gTechnicalMemory.runtimeInputs=" + outputModule.runtimeInputs,
+    "b2gTechnicalMemory.runtimeOutputs=" + outputModule.runtimeOutputs,
+    "b2gTechnicalMemory.futureGithubModules=" + outputModule.futureGithubModules,
     "",
     "b2gTechnicalMemory.guards.noQuantumStates=true",
     "b2gTechnicalMemory.guards.noQstateOutput=true",
