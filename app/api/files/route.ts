@@ -274,37 +274,57 @@ const HBCE_B2G_TECHNICAL_STACK_DEFINITIONS: readonly ModuleDefinition[] = [
     module: "UFO_INTERCEPT_COLLISION_COLLIMATION_RUNTIME",
     documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
     volume: "N/A",
-    title: "UFO–INTERCEPT ΦΩ – Collision / Collimation Runtime",
-    shortTitle: "UFO-INTERCEPT Collision Collimation Runtime",
-    canonicalAxis: "Anomaly · Intercept · Collision · Collimation · EVT · OPC",
+    title: "UFO–INTERCEPT ΦΩ",
+    shortTitle: "UFO-INTERCEPT PhiOmega",
+    canonicalAxis: "Lambda · partial_t_Lambda · u(t) · UTC_IT · SSO · Sigma_Chain · QES · TSA_INRIM · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
     summary:
-      "Modulo tecnico B2G per intercettazione di anomalie, collisioni operative e ritorno controllato verso uno stato stabile.",
+      "Modulo tecnico B2G per intercettazione di collisioni Lambda, collimazione u(t), previsione partial_t_Lambda, sincronizzazione UTC(IT), QES, TSA-INRIM, Sigma-Chain e fail-closed opponibile.",
     keyTerms: [
-      "UFO-INTERCEPT",
-      "anomaly intercept",
-      "collision",
-      "collimation",
-      "runtime",
+      "UFO–INTERCEPT ΦΩ",
+      "UFO_INTERCEPT_COLLISION_COLLIMATION_RUNTIME",
+      "collisione quantistica",
+      "collimazione quantistica",
+      "Lambda",
+      "partial_t_Lambda",
+      "u(t)",
+      "UTC(IT)",
+      "SSO",
+      "QES",
+      "TSA INRiM",
+      "Sigma-Chain",
+      "FAIL-CLOSED",
       "EVT",
       "OPC"
     ],
     primarySignals: [
+      "ufo_intercept_collision_collimation_runtime",
+      "ufo_intercept_phiomega_clean_runtime_for_joker_c2",
       "ufo-intercept",
       "ufo–intercept",
       "ufo intercept",
-      "intercept φ",
-      "intercept φω",
-      "collision collimation runtime"
+      "ufo–intercept φω",
+      "ufo-intercept φω",
+      "modulo di intercettazione quantistica opponibile",
+      "collisione quantistica",
+      "collimazione quantistica"
     ],
     secondarySignals: [
-      "anomalia",
-      "anomaly",
-      "intercettazione",
-      "collisione",
-      "collimazione",
-      "runtime",
-      "evt",
-      "opc"
+      "lambda outside [0.997, 1.003]",
+      "λ ∉ [0.997, 1.003]",
+      "u(t): lambda -> 1.000",
+      "u(t): λ → 1.000",
+      "partial_t_lambda",
+      "∂tλ",
+      "utc(it)",
+      "sso <= 1 s",
+      "sso ≤ 1 s",
+      "sigma-chain",
+      "σ-chain",
+      "tsa inrim",
+      "tsa-inrim",
+      "qes",
+      "fail-closed",
+      "2909e088cfede19e1d29a2613bec5d00c2e7918235101a525c9d31fd59fab66e"
     ]
   },
   {
@@ -986,53 +1006,64 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
   UFO_INTERCEPT_COLLISION_COLLIMATION_RUNTIME: {
     module: "UFO_INTERCEPT_COLLISION_COLLIMATION_RUNTIME",
     documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
-    title: "UFO–INTERCEPT ΦΩ – Collision / Collimation Runtime",
-    shortTitle: "UFO-INTERCEPT Collision Collimation Runtime",
-    canonicalAxis: "Anomaly · Intercept · Collision · Collimation · EVT · OPC",
+    title: "UFO–INTERCEPT ΦΩ",
+    shortTitle: "UFO-INTERCEPT PhiOmega",
+    canonicalAxis: "Lambda · partial_t_Lambda · u(t) · UTC_IT · SSO · Sigma_Chain · QES · TSA_INRIM · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK",
     technicalMemorySummary:
-      "UFO-INTERCEPT is the anomaly and collision interception runtime for AI JOKER-C2 B2G. It detects operational anomalies, identifies collision patterns and prepares a controlled collimation path that can reduce instability while leaving EVT/OPC technical trace.",
+      "UFO–INTERCEPT ΦΩ is the AI JOKER-C2 B2G collision interception and collimation runtime. It detects Lambda deviations outside the opponible window, computes the correction signal u(t) toward Lambda 1.000, and emits certified partial_t_Lambda predictions synchronized to UTC(IT), QES, TSA-INRIM and Sigma-Chain evidence with legalCertification=false.",
     runtimeInputs: [
-      "anomalySignals",
-      "collisionVector",
-      "systemBoundary",
-      "stabilityContext",
-      "operatorConstraints",
+      "lambdaObserved",
+      "partialTLambda",
+      "criticalThreshold",
+      "ssoCycleWindow",
+      "utcItTimestamp",
+      "qesSignatureContext",
+      "tsaInrimToken",
+      "sigmaChainState",
       "tenantId",
       "workspaceId",
       "humanIpr"
     ],
     runtimeOutputs: [
-      "anomalyClass",
-      "collisionPrediction",
-      "interceptDecision",
-      "collimationPlan",
-      "residualRisk",
+      "ufoInterceptRecord",
+      "collisionDetected",
+      "lambdaDeviationReport",
+      "collimationSignalUT",
+      "lambdaAfterCorrection",
+      "opponiblePrediction",
+      "sigmaChainHeader",
       "evtCandidate",
       "opcTechnicalProofReceipt"
     ],
     operationalRules: [
-      "Do not correct an anomaly without preserving its technical trace.",
-      "Fail closed when system boundary is unknown.",
-      "Separate anomaly detection from intervention decision.",
-      "Use collimation only within explicit operational constraints.",
-      "Report residual risk after any proposed correction."
+      "Detect Lambda deviations before emitting a correction path.",
+      "Fail closed when UTC(IT), QES or TSA-INRIM evidence is absent.",
+      "Preserve Sigma-Chain trace before and after collimation.",
+      "Do not emit a non-opponible prediction.",
+      "Expose legalCertification=false and OPC as technical proof receipt only."
     ],
     futureGithubModules: [
       {
-        path: "lib/collision-intercept-runtime.ts",
-        role: "UFO-INTERCEPT anomaly, collision and collimation runtime."
+        path: "lib/ufo-intercept-collision-collimation-runtime.ts",
+        role: "UFO–INTERCEPT Lambda collision detection, u(t) collimation and UTC(IT) prediction runtime."
       },
       {
-        path: "app/api/v1/collision/predict/route.ts",
-        route: "/api/v1/collision/predict",
+        path: "app/api/v1/ufo/intercept/route.ts",
+        route: "/api/v1/ufo/intercept",
         method: "POST",
-        role: "API endpoint for collision prediction."
+        role: "API endpoint for Lambda collision interception."
       },
       {
-        path: "app/api/v1/collimation/apply/route.ts",
-        route: "/api/v1/collimation/apply",
+        path: "app/api/v1/ufo/collimation/route.ts",
+        route: "/api/v1/ufo/collimation",
         method: "POST",
-        role: "API endpoint for controlled collimation application."
+        role: "API endpoint for u(t) collimation."
+      },
+      {
+        path: "app/api/v1/ufo/prediction/verify/route.ts",
+        route: "/api/v1/ufo/prediction/verify",
+        method: "POST",
+        role: "API endpoint for UTC(IT) opponible prediction verification."
       }
     ]
   },
@@ -1570,7 +1601,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
@@ -1838,9 +1869,9 @@ type CanonicalCorpusVolumeProfile = {
   keyTerms: string[];
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2";
 const QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION = "QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
-const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1";
+const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2";
 const QPCCF_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
 const QPCCF_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
 const QPCCF_MODULE = "QPCCF_PREDICTIVE_STABILITY_ENGINE";
