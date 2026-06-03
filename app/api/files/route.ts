@@ -5925,7 +5925,6 @@ function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
     persistedDocumentChunks,
     b2gTechnicalMemoryCount,
     b2gTechnicalMemoryReadyCount,
-    b2gTechnicalMemoryCollapseRevision: HBCE_B2G_TECHNICAL_MEMORY_COLLAPSE_REVISION,
     maxFilesPerSession: MAX_FILES_PER_SESSION,
     maxTextCharsPerFile: MAX_TEXT_CHARS_PER_FILE,
     maxTotalTextCharsPerSession: MAX_TOTAL_TEXT_CHARS_PER_SESSION,
