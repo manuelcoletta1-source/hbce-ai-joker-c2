@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -6416,6 +6416,13 @@ const LAMBDA_FLOW_B2G_MODULE = "LAMBDA_FLOW_EQUILIBRIUM_FACTOR";
 const LAMBDA_FLOW_B2G_TITLE = "Fattore di Equilibrio dei Flussi Lambda";
 const LAMBDA_FLOW_B2G_CANONICAL_AXIS = "E · I · V · Chi_tau · Lambda · kappa · Sigma · eta · VALID_OMEGA · UTC_IT · TSA_INRIM · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK";
 
+const PEI_B2G_FILE_HASH = "sha256:617ed2940ed80eb4598fb03832b7a245e581606f9bc6559aedd9685c027840e4";
+const PEI_B2G_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
+const PEI_B2G_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
+const PEI_B2G_MODULE = "PEI_INSTITUTIONAL_EQUILIBRIUM_PROTOCOL";
+const PEI_B2G_TITLE = "PEI — Protocollo di Equilibrio Istituzionale";
+const PEI_B2G_CANONICAL_AXIS = "Lambda · CQD · PEI · BCEH · EquilibriumThresholds · TransitionRules · Mode_0_Halt · Mode_1_Recovery · Mode_2_Operational · Mode_3_Expansion · CQD_transition · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK";
+
 const UFO_INTERCEPT_B2G_FILE_HASH = "sha256:2909e088cfede19e1d29a2613bec5d00c2e7918235101a525c9d31fd59fab66e";
 const UFO_INTERCEPT_B2G_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
 const UFO_INTERCEPT_B2G_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
@@ -6574,6 +6581,55 @@ const B2G_TECHNICAL_MODULE_DEFINITIONS: B2gTechnicalModuleDefinition[] = [
       "tsa inrim",
       "utc(it)",
       "fail-closed"
+    ]
+  },
+  {
+    key: "PEI",
+    fileHash: PEI_B2G_FILE_HASH,
+    docFamily: PEI_B2G_DOC_FAMILY,
+    documentKind: PEI_B2G_DOCUMENT_KIND,
+    module: PEI_B2G_MODULE,
+    volume: "N/A",
+    title: PEI_B2G_TITLE,
+    canonicalAxis: PEI_B2G_CANONICAL_AXIS,
+    memoryCollapseRevision: QPCCF_B2G_MEMORY_COLLAPSE_REVISION,
+    classifierRevision: QPCCF_B2G_CLASSIFIER_REVISION,
+    minPersistedChunks: 1,
+    sourceFilename: "PEI_INSTITUTIONAL_EQUILIBRIUM_PROTOCOL_CLEAN_RUNTIME_FOR_JOKER_C2.txt",
+    summary: "PEI is the AI JOKER-C2 B2G institutional equilibrium protocol. It governs when an opponible autonomous or institutional system may act, recover, halt or expand by using Lambda as the equilibrium constraint and CQD as the causal evidence record. Its function is to convert Lambda/CQD state transitions into auditable governance modes and EVT/OPC technical proof receipts with legalCertification=false.",
+    runtimeInputs: "lambdaCurrentValue, lambdaMinimumThreshold, lambdaCriticalThreshold, lambdaExpansionThreshold, cqdEvidenceRecord, systemStateS, institutionalContext, actionRequest, humanIpr, tenantId, workspaceId",
+    runtimeOutputs: "peiDecision, operationalMode, allowedToAct, haltRecoveryExpansionState, cqdTransitionRecord, institutionalResponsibilityScope, evtCandidate, opcTechnicalProofReceipt",
+    futureGithubModules: "lib/pei-institutional-equilibrium-protocol.ts; app/api/v1/pei/equilibrium/check/route.ts; app/api/v1/pei/mode/resolve/route.ts; app/api/v1/pei/transition/record/route.ts; app/api/v1/pei/institutional-action/route.ts",
+    signals: [
+      "pei_institutional_equilibrium_protocol",
+      "pei institutional equilibrium protocol",
+      "pei — protocollo di equilibrio istituzionale",
+      "pei - protocollo di equilibrio istituzionale",
+      "protocollo di equilibrio istituzionale",
+      "pei_institutional_equilibrium_protocol_clean_runtime_for_joker_c2",
+      "protocol for opponible equilibrium",
+      "opponible equilibrium protocol",
+      "l'algoritmo di governo",
+      "algoritmo di governo che decide quando un sistema opponibile può agire",
+      "lambda come vincolo fisico e cqd come prova causale",
+      "lambda determina la possibilità di azione",
+      "cqd determina la storia opponibile dell’azione",
+      "cqd_transition",
+      "mode 0 — halt",
+      "mode 1 — recovery",
+      "mode 2 — operativo coerente",
+      "mode 3 — espansione",
+      "mode_0_halt",
+      "mode_1_recovery",
+      "mode_2_operational",
+      "mode_3_expansion",
+      "lambda_min",
+      "lambda_critica",
+      "lambda_expansion",
+      "bceh può espandere",
+      "equilibriumthresholds",
+      "transitionrules",
+      "617ed2940ed80eb4598fb03832b7a245e581606f9bc6559aedd9685c027840e4"
     ]
   },
   {
@@ -6823,6 +6879,11 @@ function isB2gTechnicalProfileMemoryRequest(message: string, files: PublicFileSn
     normalized.includes("lambda flow equilibrium") ||
     normalized.includes("fattore di equilibrio dei flussi") ||
     normalized.includes("lambda_flow_equilibrium_profile") ||
+    normalized.includes("pei_institutional_equilibrium_protocol") ||
+    normalized.includes("pei institutional equilibrium") ||
+    normalized.includes("protocollo di equilibrio istituzionale") ||
+    normalized.includes("pei_institutional_equilibrium_profile") ||
+    normalized.includes("opponible equilibrium protocol") ||
     normalized.includes("valid_omega") ||
     normalized.includes("valid omega") ||
     normalized.includes("ufo_intercept_collision_collimation_runtime") ||
@@ -6896,6 +6957,10 @@ function b2gPrimaryStatusForModule(moduleDefinition: B2gTechnicalModuleDefinitio
 
   if (moduleDefinition.key === "LAMBDA_FLOW") {
     return ready ? "LAMBDA_FLOW_EQUILIBRIUM_PROFILE_READY" : "LAMBDA_FLOW_EQUILIBRIUM_PROFILE_FAIL";
+  }
+
+  if (moduleDefinition.key === "PEI") {
+    return ready ? "PEI_INSTITUTIONAL_EQUILIBRIUM_PROFILE_READY" : "PEI_INSTITUTIONAL_EQUILIBRIUM_PROFILE_FAIL";
   }
 
   if (moduleDefinition.key === "UFO_INTERCEPT") {
