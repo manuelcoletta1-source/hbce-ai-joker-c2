@@ -1886,7 +1886,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2-LAMBDA_PROFILE_LOCK-v6_8_3-PEI_PROFILE_LOCK-v6_8_4";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2-LAMBDA_PROFILE_LOCK-v6_8_3-PEI_PROFILE_LOCK-v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK-v6_8_5-MATRIX_PROFILE_COLUMN_LOCK-v6_8_6";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
@@ -2154,9 +2154,9 @@ type CanonicalCorpusVolumeProfile = {
   keyTerms: string[];
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6";
 const QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION = "QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
-const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4";
+const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6";
 const QPCCF_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
 const QPCCF_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
 const QPCCF_MODULE = "QPCCF_PREDICTIVE_STABILITY_ENGINE";
@@ -3599,6 +3599,145 @@ function normalizeContextString(value: unknown, fallback: string): string {
 }
 
 
+
+const MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_REVISION = "MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6";
+const MATRIX_EUROPA_VOLUME_I_SOURCE_HASH = "sha256:54efce7b7d7b430df7be0c3128fe1a7bbf30823beae3677bf25ff904839539d7";
+const MATRIX_EUROPA_VOLUME_I_RUNTIME_HASH = "sha256:c70a753074f89b4309105270e17f6a10aa5aa0018a9e86a8504d5c5e249d0caa";
+const MATRIX_EUROPA_VOLUME_I_DOC_FAMILY = "HBCE_OPERATIONAL_DOCUMENT";
+const MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND = "MATRIX_OPERATIONAL_VOLUME";
+const MATRIX_EUROPA_VOLUME_I_MODULE = "MATRIX_EUROPA_VOLUME_I";
+const MATRIX_EUROPA_VOLUME_I_VOLUME = "V1";
+const MATRIX_EUROPA_VOLUME_I_TITLE = "MATRIX EUROPA";
+const MATRIX_EUROPA_VOLUME_I_CLASSIFICATION = "MATRIX_VOLUME_I_FOUNDATIONAL_PARADIGM";
+const MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS = "IPR · TRAC · HBCE · JOKER-C2 · Matrix Europa · Torino_Bruxelles · EU_Federation · Operational_Verifiability";
+const MATRIX_EUROPA_VOLUME_I_OPERATIONAL_TRACE_AXIS = "Identity · Continuity · Governance · Execution · Verification · Fail_Closed · Cross_Border · TRAC_0001_0007 · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
+
+interface MatrixOperationalDocumentProfile {
+  docFamily: string;
+  documentKind: string;
+  module: string;
+  volume: string;
+  title: string;
+  classification: string;
+  canonicalAxis: string;
+  operationalTraceAxis: string;
+  summary: string;
+  keyTerms: string[];
+}
+
+function inferMatrixEuropaVolumeIProfile(file: StoredRuntimeFile): MatrixOperationalDocumentProfile | null {
+  const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 80000)}`);
+
+  const explicitFile =
+    normalized.includes("matrix_europa_volume_i_clean_runtime_for_joker_c2") ||
+    normalized.includes("a1 a1 matrix europa") ||
+    normalized.includes("matrix europa volume i") ||
+    normalized.includes("hbce matrix document runtime profile");
+
+  const headerLock =
+    normalized.includes("document_classification") &&
+    normalized.includes("docfamily=hbce_operational_document") &&
+    normalized.includes("documentkind=matrix_operational_volume") &&
+    normalized.includes("matrixvolume=v1") &&
+    normalized.includes("title=matrix europa");
+
+  const contentIdentity =
+    normalized.includes("volume fondativo del ciclo matrix") &&
+    normalized.includes("operativita senza prova strutturale") &&
+    normalized.includes("ipr") &&
+    normalized.includes("trac") &&
+    normalized.includes("hbce") &&
+    normalized.includes("joker-c2");
+
+  const standardIdentity =
+    normalized.includes("trac-0001") &&
+    normalized.includes("trac-0007") &&
+    normalized.includes("identity continuity governance execution verification");
+
+  if (!(explicitFile || headerLock || contentIdentity || standardIdentity)) {
+    return null;
+  }
+
+  return {
+    docFamily: MATRIX_EUROPA_VOLUME_I_DOC_FAMILY,
+    documentKind: MATRIX_EUROPA_VOLUME_I_DOCUMENT_KIND,
+    module: MATRIX_EUROPA_VOLUME_I_MODULE,
+    volume: MATRIX_EUROPA_VOLUME_I_VOLUME,
+    title: MATRIX_EUROPA_VOLUME_I_TITLE,
+    classification: MATRIX_EUROPA_VOLUME_I_CLASSIFICATION,
+    canonicalAxis: MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS,
+    operationalTraceAxis: MATRIX_EUROPA_VOLUME_I_OPERATIONAL_TRACE_AXIS,
+    summary:
+      "Profilo documento MATRIX EUROPA Volume I: volume fondativo del ciclo MATRIX. Definisce il paradigma europeo di continuità operativa verificabile attraverso IPR, TRAC, HBCE e JOKER-C2, trasformando identità, sequenza, governance ed esecuzione in infrastruttura federata europea verificabile. legalCertification=false; OPC=technical proof receipt only.",
+    keyTerms: [
+      "MATRIX EUROPA",
+      "MATRIX Volume I",
+      "TRAC",
+      "IPR",
+      "HBCE",
+      "JOKER-C2",
+      "Torino — Bruxelles",
+      "Operational Verifiability",
+      "Identity",
+      "Continuity",
+      "Governance",
+      "Execution",
+      "Verification",
+      "TRAC-0001",
+      "TRAC-0002",
+      "TRAC-0003",
+      "TRAC-0004",
+      "TRAC-0005",
+      "TRAC-0006",
+      "TRAC-0007",
+      "EU Federation",
+      "Fail-Closed",
+      "Cross-Border"
+    ]
+  };
+}
+
+function buildMatrixEuropaVolumeIMetadata(file: StoredRuntimeFile): Record<string, unknown> | null {
+  const profile = inferMatrixEuropaVolumeIProfile(file);
+
+  if (!profile) {
+    return null;
+  }
+
+  return {
+    matrixOperationalDocumentProfileLockApplied: true,
+    matrixOperationalDocumentProfileLockRevision: MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_REVISION,
+    matrixExpectedDocFamily: profile.docFamily,
+    matrixExpectedDocumentKind: profile.documentKind,
+    matrixExpectedModule: profile.module,
+    matrixExpectedVolume: profile.volume,
+    matrixExpectedTitle: profile.title,
+    matrixExpectedClassification: profile.classification,
+    matrixExpectedCanonicalAxis: profile.canonicalAxis,
+    matrixExpectedOperationalTraceAxis: profile.operationalTraceAxis,
+    matrixSourceSha256: MATRIX_EUROPA_VOLUME_I_SOURCE_HASH,
+    matrixRuntimeSha256: MATRIX_EUROPA_VOLUME_I_RUNTIME_HASH,
+    matrixRuntimeFileHash: `sha256:${file.fileHash}`,
+    matrixHashMatchesExpected: `sha256:${file.fileHash}` === MATRIX_EUROPA_VOLUME_I_RUNTIME_HASH,
+    canonicalProfileApplied: true,
+    canonicalProfileRevision: MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_REVISION,
+    canonicalVolume: profile.volume,
+    canonicalTitle: profile.title,
+    canonicalDocumentKind: profile.documentKind,
+    canonicalModule: profile.module,
+    docFamily: profile.docFamily,
+    documentKind: profile.documentKind,
+    module: profile.module,
+    classification: profile.classification,
+    operationalTraceAxis: profile.operationalTraceAxis,
+    contaminationWithB2gTechnicalStack: false,
+    contaminationWithCorpus: false,
+    contaminationWithQState: false,
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
 function buildDocumentProfileContext(body: FilesBody, sessionId: string): DocumentProfileContext {
   return {
     sessionId,
@@ -3768,6 +3907,10 @@ function classifyHbceB2gTechnicalStackFile(file: StoredRuntimeFile): HbceB2gTech
 }
 
 function getHbceB2gTechnicalStackClassification(file: StoredRuntimeFile): HbceB2gTechnicalStackClassification | null {
+  if (inferMatrixEuropaVolumeIProfile(file)) {
+    return null;
+  }
+
   const classification = classifyHbceB2gTechnicalStackFile(file);
   return classification.matched ? classification : null;
 }
@@ -3864,6 +4007,12 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
 function inferDocumentFamily(file: StoredRuntimeFile): string | null {
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 12000)}`);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+  const matrixOperationalProfile = inferMatrixEuropaVolumeIProfile(file);
+
+
+  if (matrixOperationalProfile) {
+    return matrixOperationalProfile.docFamily;
+  }
 
 
   const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
@@ -3926,8 +4075,14 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 
 function inferDocumentVolume(file: StoredRuntimeFile): string | null {
+  const matrixOperationalProfile = inferMatrixEuropaVolumeIProfile(file);
   const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (matrixOperationalProfile) {
+    return matrixOperationalProfile.volume;
+  }
 
 
   if (b2gTechnicalStackClassification?.volume) {
@@ -3998,8 +4153,14 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 function inferDocumentTitle(file: StoredRuntimeFile): string | null {
+  const matrixOperationalProfile = inferMatrixEuropaVolumeIProfile(file);
   const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (matrixOperationalProfile) {
+    return matrixOperationalProfile.title;
+  }
 
 
   if (b2gTechnicalStackClassification?.title) {
@@ -4056,6 +4217,12 @@ function inferDocumentTitle(file: StoredRuntimeFile): string | null {
 
 function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 20000)}`);
+  const matrixOperationalProfile = inferMatrixEuropaVolumeIProfile(file);
+
+
+  if (matrixOperationalProfile) {
+    return matrixOperationalProfile.canonicalAxis;
+  }
 
 
   const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
@@ -4081,8 +4248,14 @@ function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
 
 
 function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
+  const matrixOperationalProfile = inferMatrixEuropaVolumeIProfile(file);
   const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (matrixOperationalProfile) {
+    return Array.from(new Set(matrixOperationalProfile.keyTerms)).slice(0, 32);
+  }
 
 
   if (b2gTechnicalStackClassification) {
@@ -4115,8 +4288,14 @@ function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
 
 
 function buildDocumentSummary(file: StoredRuntimeFile): string {
+  const matrixOperationalProfile = inferMatrixEuropaVolumeIProfile(file);
   const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (matrixOperationalProfile) {
+    return matrixOperationalProfile.summary;
+  }
 
 
   if (b2gTechnicalStackClassification?.summary) {
@@ -4271,14 +4450,16 @@ function buildDocumentProfileInput(
   context: DocumentProfileContext
 ): DocumentProfileDatabaseInput {
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
-  const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
+  const matrixOperationalProfile = inferMatrixEuropaVolumeIProfile(file);
+  const b2gTechnicalStackClassification = matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const qpccfTechnicalStackProfile = b2gTechnicalStackClassification?.module === QPCCF_MODULE;
   const b2gTechnicalStackProfile = Boolean(b2gTechnicalStackClassification);
-  const docFamily = inferDocumentFamily(file);
-  const volume = inferDocumentVolume(file);
-  const title = inferDocumentTitle(file);
-  const canonicalAxis = inferCanonicalAxis(file);
-  const keyTerms = collectDocumentKeyTerms(file);
+  const matrixOperationalDocumentProfile = Boolean(matrixOperationalProfile);
+  const docFamily = matrixOperationalProfile?.docFamily ?? inferDocumentFamily(file);
+  const volume = matrixOperationalProfile?.volume ?? inferDocumentVolume(file);
+  const title = matrixOperationalProfile?.title ?? inferDocumentTitle(file);
+  const canonicalAxis = matrixOperationalProfile?.canonicalAxis ?? inferCanonicalAxis(file);
+  const keyTerms = matrixOperationalProfile?.keyTerms ?? collectDocumentKeyTerms(file);
   const reusableInPrompt = isPromptTextStatus(file.status);
 
 
@@ -4301,17 +4482,21 @@ function buildDocumentProfileInput(
     title,
     subtitle: null,
     canonicalAxis,
-    summary: buildDocumentSummary(file),
+    summary: matrixOperationalProfile?.summary ?? buildDocumentSummary(file),
     keyTerms,
     semanticTerms: keyTerms.map((term) => ({ term, source: "AUTO_PROFILE" })),
     documentMetadata: {
       routeVersion: FILE_ROUTE_REVISION,
       canonicalProfileRevision: DOCUMENT_PROFILE_CANONICAL_FIX_REVISION,
-      canonicalProfileApplied: Boolean(canonicalCorpusProfile) || b2gTechnicalStackProfile,
-      canonicalVolume: b2gTechnicalStackClassification?.volume ?? canonicalCorpusProfile?.volume ?? null,
-      canonicalTitle: b2gTechnicalStackClassification?.title ?? canonicalCorpusProfile?.title ?? null,
-      canonicalDocumentKind: b2gTechnicalStackClassification?.documentKind ?? (canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null),
+      canonicalProfileApplied: Boolean(canonicalCorpusProfile) || b2gTechnicalStackProfile || matrixOperationalDocumentProfile,
+      canonicalVolume: matrixOperationalProfile?.volume ?? b2gTechnicalStackClassification?.volume ?? canonicalCorpusProfile?.volume ?? null,
+      canonicalTitle: matrixOperationalProfile?.title ?? b2gTechnicalStackClassification?.title ?? canonicalCorpusProfile?.title ?? null,
+      canonicalDocumentKind: matrixOperationalProfile?.documentKind ?? b2gTechnicalStackClassification?.documentKind ?? (canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null),
+      canonicalModule: matrixOperationalProfile?.module ?? null,
       technicalStackModule: b2gTechnicalStackClassification?.module ?? null,
+      matrixOperationalDocumentProfileLockApplied: matrixOperationalDocumentProfile,
+      matrixOperationalDocumentProfileLockRevision: matrixOperationalDocumentProfile ? MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_REVISION : null,
+      matrixOperationalDocumentExpectedProfile: matrixOperationalProfile ? buildMatrixEuropaVolumeIMetadata(file) : null,
       b2gTechnicalStackClassifierRevision: b2gTechnicalStackClassification ? HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION : null,
       b2gTechnicalStackMetadataLockApplied: b2gTechnicalStackProfile,
       b2gTechnicalStackMetadataLockConfidence: b2gTechnicalStackClassification?.confidence ?? null,
@@ -4403,6 +4588,10 @@ function buildB2gTechnicalMemoryCollapseForFile(
   documentProfileStatus: DocumentProfilePersistenceStatus | "PERSISTED" | null,
   chunks: DocumentChunkPersistenceResult | null
 ): Record<string, unknown> | null {
+  if (inferMatrixEuropaVolumeIProfile(file)) {
+    return null;
+  }
+
   const classification = getHbceB2gTechnicalStackClassification(file);
 
   if (!classification) {
