@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -5239,7 +5239,177 @@ function normalizeRuntimeDocumentOutline(object: JsonObject, text: string): Publ
   };
 }
 
+type FilenameVolumeMetadataLock = {
+  matched: boolean;
+  reason: string;
+  docFamily: string;
+  volume: string;
+  title: string;
+  documentKind: string;
+  canonicalAxis: string;
+};
+
+function resolveFilenameVolumeMetadataLock(file: PublicFileSnapshot, text: string): FilenameVolumeMetadataLock | null {
+  const normalizedFilename = normalizeText(file.name || "");
+  const normalizedHeader = normalizeText(`${file.name}\n${text.slice(0, 16000)}`);
+  const hasCorpusSignal =
+    normalizedHeader.includes("corpus esoterologia ermetica") ||
+    normalizedFilename.includes("corpus") ||
+    normalizedFilename.includes("matrix") ||
+    normalizedFilename.includes("lex hermeticum") ||
+    normalizedFilename.includes("alien code") ||
+    normalizedFilename.includes("codice alieno") ||
+    normalizedFilename.includes("apokalypsis");
+
+  const canonicalAxis = normalizedHeader.includes("decisione") &&
+    normalizedHeader.includes("costo") &&
+    normalizedHeader.includes("traccia") &&
+    normalizedHeader.includes("tempo")
+      ? "Decisione · Costo · Traccia · Tempo"
+      : "Decisione · Costo · Traccia · Tempo";
+
+  if (
+    normalizedFilename.includes("c3.c3") ||
+    normalizedFilename.includes("c3 c3") ||
+    normalizedFilename.includes("volume iii") ||
+    normalizedFilename.includes("volume 3") ||
+    normalizedFilename.includes("_v3") ||
+    normalizedFilename.includes(" v3")
+  ) {
+    if (normalizedFilename.includes("matrix torino") || normalizedHeader.includes("matrix torino")) {
+      return {
+        matched: true,
+        reason: "FILENAME_LOCK_C3_C3_VOLUME_III_MATRIX_TORINO_BRUXELLES",
+        docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
+        volume: "V3",
+        title: "MATRIX TORINO–BRUXELLES",
+        documentKind: "CANONICAL_CORPUS_VOLUME",
+        canonicalAxis
+      };
+    }
+
+    if (normalizedFilename.includes("lex hermeticum") || normalizedHeader.includes("lex hermeticum")) {
+      return {
+        matched: true,
+        reason: "FILENAME_LOCK_VOLUME_III_LEX_HERMETICUM",
+        docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
+        volume: "V3",
+        title: "LEX HERMETICUM",
+        documentKind: "CANONICAL_CORPUS_VOLUME",
+        canonicalAxis
+      };
+    }
+
+    if (hasCorpusSignal) {
+      return {
+        matched: true,
+        reason: "FILENAME_LOCK_VOLUME_III_CANONICAL_CORPUS",
+        docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
+        volume: "V3",
+        title: normalizedFilename.includes("matrix") ? "MATRIX TORINO–BRUXELLES" : "VOLUME III",
+        documentKind: "CANONICAL_CORPUS_VOLUME",
+        canonicalAxis
+      };
+    }
+  }
+
+  if (
+    normalizedFilename.includes("2b.2b") ||
+    normalizedFilename.includes("2b 2b") ||
+    normalizedFilename.includes("volume ii") ||
+    normalizedFilename.includes("volume 2") ||
+    normalizedFilename.includes("_v2") ||
+    normalizedFilename.includes(" v2")
+  ) {
+    if (normalizedFilename.includes("matrix") || normalizedHeader.includes("matrix")) {
+      return {
+        matched: true,
+        reason: "FILENAME_LOCK_2B_2B_VOLUME_II_MATRIX",
+        docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
+        volume: "V2",
+        title: "MATRIX / 05-04-2026",
+        documentKind: "CANONICAL_CORPUS_VOLUME",
+        canonicalAxis
+      };
+    }
+  }
+
+  if (
+    normalizedFilename.includes("1a.1a") ||
+    normalizedFilename.includes("1a 1a") ||
+    normalizedFilename.includes("volume i") ||
+    normalizedFilename.includes("volume 1") ||
+    normalizedFilename.includes("_v1") ||
+    normalizedFilename.includes(" v1")
+  ) {
+    if (normalizedFilename.includes("esoterologia") || normalizedHeader.includes("esoterologia")) {
+      return {
+        matched: true,
+        reason: "FILENAME_LOCK_1A_1A_VOLUME_I_ESOTEROLOGIA",
+        docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
+        volume: "V1",
+        title: "ESOTEROLOGIA",
+        documentKind: "FOUNDATIONAL_VOLUME",
+        canonicalAxis
+      };
+    }
+  }
+
+  if (
+    normalizedFilename.includes("4d.4d") ||
+    normalizedFilename.includes("4d 4d") ||
+    normalizedFilename.includes("volume iv") ||
+    normalizedFilename.includes("volume 4") ||
+    normalizedFilename.includes("_v4") ||
+    normalizedFilename.includes(" v4")
+  ) {
+    if (
+      normalizedFilename.includes("alien code") ||
+      normalizedFilename.includes("codice alieno") ||
+      normalizedHeader.includes("alien code") ||
+      normalizedHeader.includes("codice alieno")
+    ) {
+      return {
+        matched: true,
+        reason: "FILENAME_LOCK_VOLUME_IV_ALIEN_CODE",
+        docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
+        volume: "V4",
+        title: "ALIEN CODE",
+        documentKind: "CANONICAL_CORPUS_VOLUME",
+        canonicalAxis
+      };
+    }
+  }
+
+  if (
+    normalizedFilename.includes("5e.5e") ||
+    normalizedFilename.includes("5e 5e") ||
+    normalizedFilename.includes("volume v") ||
+    normalizedFilename.includes("volume 5") ||
+    normalizedFilename.includes("_v5") ||
+    normalizedFilename.includes(" v5")
+  ) {
+    return {
+      matched: true,
+      reason: "FILENAME_LOCK_VOLUME_V_CANONICAL_CORPUS",
+      docFamily: "CORPUS_ESOTEROLOGIA_ERMETICA",
+      volume: "V5",
+      title: normalizedFilename.includes("portale") ? "IL PORTALE DELL’ANTICRISTO" : "VOLUME V",
+      documentKind: "CANONICAL_CORPUS_VOLUME",
+      canonicalAxis
+    };
+  }
+
+  return null;
+}
+
 function inferDocFamilyFromAuditFile(file: PublicFileSnapshot, text: string): string {
+  const filenameLock = resolveFilenameVolumeMetadataLock(file, text);
+
+  if (filenameLock) {
+    return filenameLock.docFamily;
+  }
+
   const normalized = normalizeText(`${file.name}\n${text.slice(0, 20000)}`);
 
   if (normalized.includes("corpus esoterologia ermetica")) {
@@ -5258,35 +5428,64 @@ function inferDocFamilyFromAuditFile(file: PublicFileSnapshot, text: string): st
 }
 
 function inferVolumeFromAuditFile(file: PublicFileSnapshot, text: string): string {
+  const filenameLock = resolveFilenameVolumeMetadataLock(file, text);
+
+  if (filenameLock) {
+    return filenameLock.volume;
+  }
+
   const normalized = normalizeText(`${file.name}\n${text.slice(0, 20000)}`);
 
-  if (normalized.includes("volume i") || normalized.includes("_v1") || normalized.includes(" v1")) {
-    return "V1";
-  }
-
-  if (normalized.includes("volume ii") || normalized.includes("_v2") || normalized.includes(" v2")) {
-    return "V2";
-  }
-
-  if (normalized.includes("volume iii") || normalized.includes("_v3") || normalized.includes(" v3")) {
+  if (normalized.includes("volume iii") || normalized.includes("volume 3") || normalized.includes("_v3") || normalized.includes(" v3")) {
     return "V3";
   }
 
-  if (normalized.includes("volume iv") || normalized.includes("_v4") || normalized.includes(" v4")) {
+  if (normalized.includes("volume ii") || normalized.includes("volume 2") || normalized.includes("_v2") || normalized.includes(" v2")) {
+    return "V2";
+  }
+
+  if (normalized.includes("volume iv") || normalized.includes("volume 4") || normalized.includes("_v4") || normalized.includes(" v4")) {
     return "V4";
   }
 
-  if (normalized.includes("volume v") || normalized.includes("_v5") || normalized.includes(" v5")) {
+  if (normalized.includes("volume v") || normalized.includes("volume 5") || normalized.includes("_v5") || normalized.includes(" v5")) {
     return "V5";
+  }
+
+  if (normalized.includes("volume i") || normalized.includes("volume 1") || normalized.includes("_v1") || normalized.includes(" v1")) {
+    return "V1";
   }
 
   return "UNKNOWN";
 }
 
 function inferTitleFromAuditFile(file: PublicFileSnapshot, text: string): string {
+  const filenameLock = resolveFilenameVolumeMetadataLock(file, text);
+
+  if (filenameLock) {
+    return filenameLock.title;
+  }
+
+  const normalizedFilename = normalizeText(file.name || "");
   const normalized = normalizeText(`${file.name}\n${text.slice(0, 12000)}`);
 
-  if (normalized.includes("esoterologia")) {
+  if (normalizedFilename.includes("matrix torino") || normalized.includes("matrix torino")) {
+    return "MATRIX TORINO–BRUXELLES";
+  }
+
+  if (normalizedFilename.includes("matrix") && (normalizedFilename.includes("05-04-2026") || normalizedFilename.includes("05 04 2026"))) {
+    return "MATRIX / 05-04-2026";
+  }
+
+  if (normalizedFilename.includes("lex hermeticum") || normalized.includes("lex hermeticum")) {
+    return "LEX HERMETICUM";
+  }
+
+  if (normalizedFilename.includes("alien code") || normalizedFilename.includes("codice alieno")) {
+    return "ALIEN CODE";
+  }
+
+  if (normalizedFilename.includes("esoterologia") || normalized.includes("esoterologia")) {
     return "ESOTEROLOGIA";
   }
 
@@ -5302,6 +5501,12 @@ function inferTitleFromAuditFile(file: PublicFileSnapshot, text: string): string
 }
 
 function inferCanonicalAxisFromAuditFile(file: PublicFileSnapshot, text: string): string {
+  const filenameLock = resolveFilenameVolumeMetadataLock(file, text);
+
+  if (filenameLock) {
+    return filenameLock.canonicalAxis;
+  }
+
   const normalized = normalizeText(`${file.name}\n${text.slice(0, 40000)}`);
 
   if (
@@ -5409,7 +5614,12 @@ function selectDocumentProfileRecallMetadata(
     const candidateProfileId = normalizeText(
       stringPath(candidate, "profileId", "") || stringPath(candidate, "documentProfileId", "")
     );
-    const candidateFilename = normalizeText(stringPath(candidate, "filename", "") || stringPath(candidate, "sourceDocument", ""));
+    const candidateFilename = normalizeText(
+      stringPath(candidate, "filename", "") ||
+        stringPath(candidate, "sourceDocument", "") ||
+        stringPath(candidate, "documentMetadata.filename", "") ||
+        stringPath(candidate, "documentMetadata.sourceDocument", "")
+    );
     const candidateFileHash = normalizeText(
       stringPath(candidate, "fileHash", "") ||
         stringPath(candidate, "documentMetadata.fileHash", "") ||
@@ -5423,7 +5633,7 @@ function selectDocumentProfileRecallMetadata(
     );
   });
 
-  return exactMatch || candidates[0] || null;
+  return exactMatch || null;
 }
 
 function documentProfileMetadataString(
@@ -5572,27 +5782,32 @@ function buildFullDocumentCoverageAuditDiagnostic(args: {
     "NO_DOCUMENT_PROFILE_STATUS";
 
   const profileMetadata = selectDocumentProfileRecallMetadata(args.documentProfileRecall, file, documentProfileId);
-  const docFamily = documentProfileMetadataString(
+  const filenameMetadataLock = resolveFilenameVolumeMetadataLock(file, text);
+  const docFamily = filenameMetadataLock?.docFamily || documentProfileMetadataString(
     profileMetadata,
     ["docFamily", "documentMetadata.docFamily"],
     inferDocFamilyFromAuditFile(file, text)
   );
-  const volume = documentProfileMetadataString(
+  const volume = filenameMetadataLock?.volume || documentProfileMetadataString(
     profileMetadata,
     ["volume", "canonicalVolume", "documentMetadata.canonicalVolume"],
     inferVolumeFromAuditFile(file, text)
   );
-  const title = documentProfileMetadataString(
+  const title = filenameMetadataLock?.title || documentProfileMetadataString(
     profileMetadata,
     ["title", "canonicalTitle", "documentMetadata.canonicalTitle"],
     inferTitleFromAuditFile(file, text)
   );
-  const canonicalAxis = documentProfileMetadataString(
+  const canonicalAxis = filenameMetadataLock?.canonicalAxis || documentProfileMetadataString(
     profileMetadata,
     ["canonicalAxis", "documentMetadata.canonicalAxis"],
     inferCanonicalAxisFromAuditFile(file, text)
   );
-  const documentKind = inferDocumentKindFromProfileOrFile(profileMetadata, volume);
+  const documentKind = filenameMetadataLock?.documentKind || inferDocumentKindFromProfileOrFile(profileMetadata, volume);
+  const documentProfileIdAvailable = documentProfileId !== "NO_DOCUMENT_PROFILE_ID" && documentProfileId.trim().length > 0;
+  const documentProfileStatusAvailable = documentProfileStatus !== "NO_DOCUMENT_PROFILE_STATUS" && documentProfileStatus.trim().length > 0;
+  const requestedDocumentProfileRecallReady = !args.documentMemoryRecallRequested ||
+    (documentProfileIdAvailable && documentProfileStatusAvailable && documentProfileRecallInjected && linkedProfileCount > 0);
 
   const ready =
     fullDocumentCoverage &&
@@ -5601,7 +5816,8 @@ function buildFullDocumentCoverageAuditDiagnostic(args: {
     documentChunksPersisted &&
     documentChunksPersistedCount >= Math.max(1, documentChunkCount) &&
     outlineStatus === "READY" &&
-    !truncationDetected;
+    !truncationDetected &&
+    requestedDocumentProfileRecallReady;
 
   const failReasons: string[] = [];
 
@@ -5631,6 +5847,22 @@ function buildFullDocumentCoverageAuditDiagnostic(args: {
 
   if (expectedSourceHash !== "NOT_PROVIDED" && hashMatchesExpected !== true) {
     failReasons.push("RUNTIME_FILE_HASH_DOES_NOT_MATCH_EXPECTED_SOURCE_HASH");
+  }
+
+  if (args.documentMemoryRecallRequested && !documentProfileIdAvailable) {
+    failReasons.push("DOCUMENT_PROFILE_ID_MISSING");
+  }
+
+  if (args.documentMemoryRecallRequested && !documentProfileStatusAvailable) {
+    failReasons.push("DOCUMENT_PROFILE_STATUS_MISSING");
+  }
+
+  if (args.documentMemoryRecallRequested && !documentProfileRecallInjected) {
+    failReasons.push("DOCUMENT_PROFILE_RECALL_NOT_INJECTED");
+  }
+
+  if (args.documentMemoryRecallRequested && linkedProfileCount < 1) {
+    failReasons.push("LINKED_PROFILE_COUNT_ZERO");
   }
 
   return {
@@ -5795,12 +6027,25 @@ function isIprCanonicalDocumentMemorySaveRequest(message: string): boolean {
     normalized.includes("document chunks persisted") ||
     normalized.includes("clean_runtime") ||
     normalized.includes("clean runtime") ||
+    normalized.includes("corpus volume iii") ||
+    normalized.includes("corpus volume 3") ||
+    normalized.includes("volume iii") ||
+    normalized.includes("volume 3") ||
+    normalized.includes("c3.c3") ||
+    normalized.includes("matrix torino") ||
+    normalized.includes("corpus volume ii") ||
+    normalized.includes("corpus volume 2") ||
+    normalized.includes("volume ii") ||
+    normalized.includes("volume 2") ||
     normalized.includes("corpus volume i") ||
     normalized.includes("corpus volume 1") ||
     normalized.includes("volume i") ||
     normalized.includes("esoterologia");
 
   const sourceDocumentSignals =
+    normalized.includes("c3.c3.matrix torino") ||
+    normalized.includes("matrix torino") ||
+    normalized.includes("2b.2b.matrix") ||
     normalized.includes("1a.1a.corpus_esoterologia_ermetica_clean_runtime.txt") ||
     normalized.includes("corpus esoterologia ermetica") ||
     normalized.includes("docfamily") ||
@@ -5951,7 +6196,7 @@ function buildQuantumMemoryCollapseSnapshot(args: {
 
   return {
     enabled: true,
-    revision: "IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2",
+    revision: "IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3",
     status: readyForIprSave ? "QUANTUM_MEMORY_COLLAPSE_READY" : "QUANTUM_MEMORY_COLLAPSE_BLOCKED",
     readyForIprSave,
     semanticMemoryRouteSuppressed: true,
