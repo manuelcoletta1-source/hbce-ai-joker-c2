@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -843,6 +843,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const fileIngestionRequested = isFileIngestionQuestion(message, files);
   const rawFullDocumentCoverageAuditRequested = isFullDocumentCoverageAuditQuestion(message);
   const iprCanonicalDocumentMemorySaveRequested = isIprCanonicalDocumentMemorySaveRequest(message);
+  const b2gTechnicalProfileMemoryRequested = isB2gTechnicalProfileMemoryRequest(message, files);
   const fullDocumentCoverageAuditRequested =
     rawFullDocumentCoverageAuditRequested && !iprCanonicalDocumentMemorySaveRequested;
   const runtimeStatusTableRequested =
@@ -1043,7 +1044,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     promptMaxChars: noSavePersistenceRequested ? 0 : 7000
   });
   const documentProfileRecall: DocumentProfileRecall | null =
-    documentMemoryRecallRequested || iprCanonicalDocumentMemorySaveRequested
+    documentMemoryRecallRequested || iprCanonicalDocumentMemorySaveRequested || b2gTechnicalProfileMemoryRequested
     ? await resolveDocumentProfileRecall({
         handoff,
         saasContext,
@@ -1093,6 +1094,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     runtimeMemoryBlockDiagnosticRequested,
     fullDocumentCoverageAuditRequested,
     iprCanonicalDocumentMemorySaveRequested,
+    b2gTechnicalProfileMemoryRequested,
     matrixStrategicSynthesisRequested,
     apiSdkB2GPresentationRequested,
     iprRecallRequested,
@@ -1161,6 +1163,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (b2gTechnicalProfileMemoryRequested) {
+    answer = buildB2gTechnicalProfileMemoryPreparationAnswer({
+      message,
+      files,
+      documentProfileRecall,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (iprCanonicalDocumentMemorySaveRequested) {
@@ -1633,7 +1647,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  const finalAnswerBase = iprCanonicalDocumentMemorySaveRequested
+  const finalAnswerBase = b2gTechnicalProfileMemoryRequested
+    ? buildB2gTechnicalProfileMemoryReadyAnswer({
+        message,
+        files,
+        documentProfileRecall,
+        handoff,
+        memory,
+        policy,
+        saasContext,
+        evt,
+        opc,
+        auditAndUsage,
+        persistenceBridge
+      })
+    : iprCanonicalDocumentMemorySaveRequested
     ? buildIprCanonicalDocumentMemoryReadyAnswer({
         message,
         files,
@@ -5965,6 +5993,283 @@ function buildFullDocumentCoverageAuditAnswer(args: {
   ].join("\n");
 }
 
+
+
+const QPCCF_B2G_PROFILE_ID = "DOC-PROFILE-A0F499AA3864C715";
+const QPCCF_B2G_FILE_HASH = "sha256:518c17c573bbf379f35580cf27459e7b06c2c0fee236e3166e1c8d3e6be3ed94";
+const QPCCF_B2G_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
+const QPCCF_B2G_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
+const QPCCF_B2G_MODULE = "QPCCF_PREDICTIVE_STABILITY_ENGINE";
+const QPCCF_B2G_TITLE = "UNI/QPCCF – Intercettazione predittiva delle collisioni e collimazione dei sistemi complessi";
+const QPCCF_B2G_CANONICAL_AXIS = "Lambda · delta · partial_t_Lambda · u(t) · EVT · OPC · AI_JOKER_C2_TECHNICAL_STACK";
+const QPCCF_B2G_MEMORY_COLLAPSE_REVISION = "HBCE-B2G-TECHNICAL-MEMORY-COLLAPSE-v1_0_0";
+const QPCCF_B2G_CLASSIFIER_REVISION = "HBCE-B2G-TECHNICAL-STACK-CLASSIFIER-v1_0_0";
+
+function hasQpccfB2gSignal(message: string, files: PublicFileSnapshot[]): boolean {
+  const normalized = normalizeText(message);
+  const fileText = files
+    .map((file) => [file.name, file.fileHash, file.hash, file.documentProfileId, getPromptTextForFile(file).slice(0, 12000)].join("\n"))
+    .join("\n");
+  const normalizedFiles = normalizeText(fileText);
+
+  return (
+    normalized.includes("qpccf") ||
+    normalized.includes("b2g_technical_profile_memory") ||
+    normalized.includes("b2g technical memory") ||
+    normalized.includes("b2g_technical_memory") ||
+    normalized.includes("technical_profile_memory_ready") ||
+    normalized.includes("b2g_technical_profile_memory_ready") ||
+    normalized.includes("b2g technical memory bridge") ||
+    normalized.includes("b2g technical memory payload") ||
+    normalized.includes("hbce_joker_c2_b2g_technical_stack") ||
+    normalized.includes("qpccf_predictive_stability_engine") ||
+    normalizedFiles.includes("qpccf") ||
+    normalizedFiles.includes("qpccf_predictive_stability_engine") ||
+    normalizedFiles.includes("hbce_joker_c2_b2g_technical_stack") ||
+    normalizedFiles.includes(normalizeText(QPCCF_B2G_PROFILE_ID)) ||
+    normalizedFiles.includes(normalizeText(QPCCF_B2G_FILE_HASH))
+  );
+}
+
+function isB2gTechnicalProfileMemoryRequest(message: string, files: PublicFileSnapshot[]): boolean {
+  if (!message.trim() || files.length === 0) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const hasB2gRequestSignal =
+    normalized.includes("b2g technical memory") ||
+    normalized.includes("b2g_technical_memory") ||
+    normalized.includes("b2g technical profile memory") ||
+    normalized.includes("b2g_technical_profile_memory") ||
+    normalized.includes("b2g technical memory bridge") ||
+    normalized.includes("b2g technical memory payload") ||
+    normalized.includes("b2g_tecnica") ||
+    normalized.includes("technical_profile_memory_ready") ||
+    normalized.includes("b2g_technical_profile_memory_ready") ||
+    normalized.includes("qpccf technical stack") ||
+    normalized.includes("qpccf_predictive_stability_engine") ||
+    normalized.includes("noquantumstates") ||
+    normalized.includes("no corpus collapse") ||
+    normalized.includes("nocorpuscollapse");
+
+  const rejectsCanonicalCorpusRoute =
+    normalized.includes("non usare ipr_canonical_document_memory_ready") ||
+    normalized.includes("non usare quantum_memory_collapse_ready") ||
+    normalized.includes("non usare quantumstates") ||
+    normalized.includes("non usare qstate") ||
+    normalized.includes("non usare corpus") ||
+    normalized.includes("no quantumstates") ||
+    normalized.includes("no qstate") ||
+    normalized.includes("no corpus");
+
+  return hasQpccfB2gSignal(message, files) && (hasB2gRequestSignal || rejectsCanonicalCorpusRoute);
+}
+
+function isQpccfB2gDiagnostic(diagnostic: FullDocumentCoverageAuditDiagnostic, files: PublicFileSnapshot[], message: string): boolean {
+  const activeFile = files.find((file) => file.name === diagnostic.activeFilename) || files[0];
+  const activeText = activeFile ? getPromptTextForFile(activeFile).slice(0, 12000) : "";
+  const combined = normalizeText([
+    message,
+    diagnostic.activeFilename,
+    diagnostic.runtimeFileHash,
+    diagnostic.documentProfileId,
+    diagnostic.docFamily,
+    diagnostic.documentKind,
+    diagnostic.title,
+    diagnostic.canonicalAxis,
+    activeText
+  ].join("\n"));
+
+  return (
+    combined.includes("qpccf") ||
+    combined.includes("qpccf_predictive_stability_engine") ||
+    combined.includes("uni/qpccf") ||
+    combined.includes(normalizeText(QPCCF_B2G_PROFILE_ID)) ||
+    combined.includes(normalizeText(QPCCF_B2G_FILE_HASH)) ||
+    combined.includes("lambda · delta · partial_t_lambda") ||
+    combined.includes("hbce_joker_c2_b2g_technical_stack")
+  );
+}
+
+function qpccfB2gReadyFromDiagnostic(diagnostic: FullDocumentCoverageAuditDiagnostic): boolean {
+  return (
+    diagnostic.fullDocumentCoverage === true &&
+    diagnostic.textCoverageStatus === "TEXT_READY_FULL" &&
+    diagnostic.documentChunksPersisted === true &&
+    diagnostic.documentChunksPersistedCount >= 2 &&
+    diagnostic.truncationDetected === false &&
+    diagnostic.documentProfileId !== "NO_DOCUMENT_PROFILE_ID" &&
+    diagnostic.documentProfileId.trim().length > 0
+  );
+}
+
+function buildQpccfB2gTechnicalMemorySummary(): string {
+  return "QPCCF is the AI JOKER-C2 B2G predictive stability engine. It models operational equilibrium through Lambda, measures deviation through delta, estimates future instability through partial_t_Lambda and emits u(t) as a technical collimation signal. Its function is to detect collision risk before collapse, support stabilization of complex physical, digital and cybernetic systems, and produce EVT/OPC technical proof receipts with legalCertification=false.";
+}
+
+function buildQpccfB2gTechnicalProfileMemoryPreparationAnswer(args: {
+  diagnostic: FullDocumentCoverageAuditDiagnostic;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const ready = qpccfB2gReadyFromDiagnostic(args.diagnostic);
+
+  return [
+    ready ? "B2G_TECHNICAL_PROFILE_MEMORY_PREP_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_PREP_BLOCKED",
+    "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
+    "activeFilename=" + args.diagnostic.activeFilename,
+    "runtimeFileHash=" + args.diagnostic.runtimeFileHash,
+    "textCoverageStatus=" + args.diagnostic.textCoverageStatus,
+    "fullDocumentCoverage=" + String(args.diagnostic.fullDocumentCoverage),
+    "documentChunksPersisted=" + String(args.diagnostic.documentChunksPersisted),
+    "documentChunksPersistedCount=" + String(args.diagnostic.documentChunksPersistedCount),
+    "documentProfileId=" + args.diagnostic.documentProfileId,
+    "documentProfileStatus=" + args.diagnostic.documentProfileStatus,
+    "docFamily=" + QPCCF_B2G_DOC_FAMILY,
+    "documentKind=" + QPCCF_B2G_DOCUMENT_KIND,
+    "module=" + QPCCF_B2G_MODULE,
+    "volume=N/A",
+    "title=" + QPCCF_B2G_TITLE,
+    "canonicalAxis=" + QPCCF_B2G_CANONICAL_AXIS,
+    "b2gTechnicalMemory.status=" + (ready ? "B2G_TECHNICAL_PROFILE_MEMORY_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_FAIL"),
+    "b2gTechnicalMemory.readyForIprSave=" + String(ready),
+    "b2gTechnicalMemory.guards.noQuantumStates=true",
+    "b2gTechnicalMemory.guards.noQstateOutput=true",
+    "b2gTechnicalMemory.guards.noCorpusCollapse=true",
+    "b2gTechnicalMemory.guards.noSemanticEsoterologicalMemory=true",
+    "b2gTechnicalMemory.guards.noDcttAxisForB2gTechnicalModules=true",
+    "readyForIprSave=" + String(ready),
+    "failReason=" + (ready ? "NONE" : args.diagnostic.failReason),
+    "Human IPR=" + args.handoff.humanIpr,
+    "Tenant=" + args.saasContext.tenantId,
+    "Workspace=" + args.saasContext.workspaceId,
+    "Memory scope=" + args.memory.scope,
+    "Policy=" + args.policy.decision + " / " + args.policy.operationDecision,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+function buildB2gTechnicalProfileMemoryPreparationAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const diagnostic = buildFullDocumentCoverageAuditDiagnostic({
+    message: args.message,
+    files: args.files,
+    documentProfileRecall: args.documentProfileRecall,
+    documentMemoryRecallRequested: true
+  });
+
+  return buildQpccfB2gTechnicalProfileMemoryPreparationAnswer({
+    diagnostic,
+    handoff: args.handoff,
+    memory: args.memory,
+    policy: args.policy,
+    saasContext: args.saasContext
+  });
+}
+
+function buildB2gTechnicalProfileMemoryReadyAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
+}): string {
+  const diagnostic = buildFullDocumentCoverageAuditDiagnostic({
+    message: args.message,
+    files: args.files,
+    documentProfileRecall: args.documentProfileRecall,
+    documentMemoryRecallRequested: true
+  });
+  const isQpccf = isQpccfB2gDiagnostic(diagnostic, args.files, args.message);
+  const ready = isQpccf && qpccfB2gReadyFromDiagnostic(diagnostic);
+  const status = ready ? "B2G_TECHNICAL_PROFILE_MEMORY_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_FAIL";
+  const failReason = ready
+    ? "NONE"
+    : isQpccf
+      ? diagnostic.failReason
+      : "DOCUMENT_PROFILE_NOT_QPCCF_B2G_TECHNICAL_STACK";
+
+  return [
+    status,
+    "",
+    "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
+    "activeFilename=" + diagnostic.activeFilename,
+    "sourceDocument=" + diagnostic.activeFilename,
+    "runtimeFileHash=" + diagnostic.runtimeFileHash,
+    "fileHash=" + diagnostic.runtimeFileHash,
+    "hashMatchesExpected=" + String(diagnostic.hashMatchesExpected === null ? "NOT_CHECKED" : diagnostic.hashMatchesExpected),
+    "textCoverageStatus=" + diagnostic.textCoverageStatus,
+    "fullDocumentCoverage=" + String(diagnostic.fullDocumentCoverage),
+    "longDocumentMode=" + diagnostic.longDocumentMode,
+    "documentChunkCount=" + String(diagnostic.documentChunkCount),
+    "documentChunksPersisted=" + String(diagnostic.documentChunksPersisted),
+    "documentChunksPersistedCount=" + String(diagnostic.documentChunksPersistedCount),
+    "",
+    "documentProfileId=" + diagnostic.documentProfileId,
+    "documentProfileStatus=" + diagnostic.documentProfileStatus,
+    "docFamily=" + QPCCF_B2G_DOC_FAMILY,
+    "documentKind=" + QPCCF_B2G_DOCUMENT_KIND,
+    "module=" + QPCCF_B2G_MODULE,
+    "volume=N/A",
+    "title=" + QPCCF_B2G_TITLE,
+    "canonicalAxis=" + QPCCF_B2G_CANONICAL_AXIS,
+    "",
+    "b2gTechnicalMemory.status=" + status,
+    "b2gTechnicalMemory.readyForIprSave=" + String(ready),
+    "b2gTechnicalMemory.memoryType=B2G_TECHNICAL_PROFILE_MEMORY",
+    "b2gTechnicalMemory.memoryMode=TECHNICAL_SYNTHESIS_ONLY",
+    "b2gTechnicalMemory.collapseRevision=" + QPCCF_B2G_MEMORY_COLLAPSE_REVISION,
+    "b2gTechnicalMemory.classifierRevision=" + QPCCF_B2G_CLASSIFIER_REVISION,
+    "b2gTechnicalMemory.docFamily=" + QPCCF_B2G_DOC_FAMILY,
+    "b2gTechnicalMemory.documentKind=" + QPCCF_B2G_DOCUMENT_KIND,
+    "b2gTechnicalMemory.module=" + QPCCF_B2G_MODULE,
+    "b2gTechnicalMemory.title=" + QPCCF_B2G_TITLE,
+    "b2gTechnicalMemory.canonicalAxis=" + QPCCF_B2G_CANONICAL_AXIS,
+    "b2gTechnicalMemory.technicalMemorySummary=" + buildQpccfB2gTechnicalMemorySummary(),
+    "b2gTechnicalMemory.runtimeInputs=systemStateSnapshot, lambdaBaseline, lambdaObserved, deltaThreshold, partialTLambdaWindow, telemetrySeries, domainContext, operatorPolicy, humanIpr, tenantId, workspaceId",
+    "b2gTechnicalMemory.runtimeOutputs=lambdaScore, deltaDeviation, partialTLambdaTrend, collisionRiskLevel, collimationSignalUT, recommendedCorrection, stabilityDecision, evtCandidate, opcTechnicalProofReceipt",
+    "b2gTechnicalMemory.futureGithubModules=lib/b2g-stability-engine.ts; app/api/v1/stability/check/route.ts; app/api/v1/collision/predict/route.ts; app/api/v1/collimation/apply/route.ts",
+    "",
+    "b2gTechnicalMemory.guards.noQuantumStates=true",
+    "b2gTechnicalMemory.guards.noQstateOutput=true",
+    "b2gTechnicalMemory.guards.noCorpusCollapse=true",
+    "b2gTechnicalMemory.guards.noSemanticEsoterologicalMemory=true",
+    "b2gTechnicalMemory.guards.noDcttAxisForB2gTechnicalModules=true",
+    "",
+    "truncationDetected=" + String(diagnostic.truncationDetected),
+    "readyForIprSave=" + String(ready),
+    "failReason=" + failReason,
+    "",
+    "derivedFromHumanIpr=" + args.handoff.humanIpr,
+    "humanIpr=" + args.handoff.humanIpr,
+    "runtimeIpr=" + RUNTIME_IPR,
+    "tenantId=" + args.saasContext.tenantId,
+    "workspaceId=" + args.saasContext.workspaceId,
+    "EVT=" + args.evt.id,
+    "OPC=" + args.opc.id,
+    "auditId=" + stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+    "usageId=" + stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID"),
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
 
 
 function isIprCanonicalDocumentMemorySaveRequest(message: string): boolean {
