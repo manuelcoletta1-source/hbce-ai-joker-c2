@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -841,9 +841,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const message = normalizeUserMessage(body, incomingMessages);
   const files = resolveRuntimeFilesForChat(body.files, sessionId);
   const fileIngestionRequested = isFileIngestionQuestion(message, files);
-  const fullDocumentCoverageAuditRequested = isFullDocumentCoverageAuditQuestion(message);
-  const iprCanonicalDocumentMemorySaveRequested =
-    !fullDocumentCoverageAuditRequested && isIprCanonicalDocumentMemorySaveRequest(message);
+  const rawFullDocumentCoverageAuditRequested = isFullDocumentCoverageAuditQuestion(message);
+  const iprCanonicalDocumentMemorySaveRequested = isIprCanonicalDocumentMemorySaveRequest(message);
+  const fullDocumentCoverageAuditRequested =
+    rawFullDocumentCoverageAuditRequested && !iprCanonicalDocumentMemorySaveRequested;
   const runtimeStatusTableRequested =
     !fullDocumentCoverageAuditRequested && isRuntimeStatusTableQuestion(message);
   const runtimeDiagnosticsRequested =
@@ -858,10 +859,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !runtimeMemoryBlockDiagnosticRequested &&
     isMatrixIVStrategicSynthesisQuestion(message);
   const documentMemoryRecallRequested =
-    fullDocumentCoverageAuditRequested ||
-    (!runtimeMemoryBlockDiagnosticRequested &&
-      !matrixStrategicSynthesisRequested &&
-      isCyberneticDocumentMemoryRecallQuestion(message));
+    !iprCanonicalDocumentMemorySaveRequested &&
+    (fullDocumentCoverageAuditRequested ||
+      (!runtimeMemoryBlockDiagnosticRequested &&
+        !matrixStrategicSynthesisRequested &&
+        isCyberneticDocumentMemoryRecallQuestion(message)));
   const selfPilotProjectScopeBridgeRequested =
     isSelfPilotProjectScopeBridgeQuestion({
       message,
@@ -1161,6 +1163,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
+  } else if (iprCanonicalDocumentMemorySaveRequested) {
+    answer = buildIprCanonicalDocumentMemoryPreparationAnswer({
+      message,
+      files,
+      documentProfileRecall,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
   } else if (fullDocumentCoverageAuditRequested) {
     answer = buildFullDocumentCoverageAuditAnswer({
       message,
@@ -1319,18 +1333,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   } else if (trainingMemoryRecallRequested) {
     answer = buildIprTrainingMemoryRecallAnswer({
       recall: iprRecall,
-      handoff,
-      memory,
-      policy,
-      saasContext
-    });
-    providerState = "COMPLETED";
-    providerName = "LOCAL";
-  } else if (iprCanonicalDocumentMemorySaveRequested) {
-    answer = buildIprCanonicalDocumentMemoryPreparationAnswer({
-      message,
-      files,
-      documentProfileRecall,
       handoff,
       memory,
       policy,
@@ -5949,7 +5951,7 @@ function buildQuantumMemoryCollapseSnapshot(args: {
 
   return {
     enabled: true,
-    revision: "IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1",
+    revision: "IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2",
     status: readyForIprSave ? "QUANTUM_MEMORY_COLLAPSE_READY" : "QUANTUM_MEMORY_COLLAPSE_BLOCKED",
     readyForIprSave,
     semanticMemoryRouteSuppressed: true,
