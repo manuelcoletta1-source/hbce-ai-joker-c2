@@ -1536,7 +1536,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_1-SINGLE_FILE";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
@@ -4077,6 +4077,36 @@ function buildB2gTechnicalMemoryPromptBridge(
 }
 
 
+function injectB2gTechnicalMemoryPromptBridgeIntoRuntimeFile(
+  file: StoredRuntimeFile,
+  technicalMemory: Record<string, unknown> | null | undefined
+): StoredRuntimeFile {
+  const bridge = buildB2gTechnicalMemoryPromptBridge(technicalMemory);
+
+  if (!bridge) {
+    return file;
+  }
+
+  const bridgeBlock = [
+    "=== HBCE B2G TECHNICAL MEMORY PROMPT BRIDGE ===",
+    bridge,
+    "=== END HBCE B2G TECHNICAL MEMORY PROMPT BRIDGE ==="
+  ].join("\n");
+
+  const contentAlreadyBridged = file.content.includes("HBCE B2G TECHNICAL MEMORY PROMPT BRIDGE");
+  const nextContent = contentAlreadyBridged
+    ? file.content
+    : [bridgeBlock, "", "--- SOURCE DOCUMENT TEXT ---", file.content].join("\n");
+
+  return {
+    ...file,
+    content: nextContent,
+    promptTextLength: nextContent.length,
+    runtimePromptTextHash: buildHash(nextContent),
+    reason: `${file.reason} B2GTechnicalMemoryPromptBridge=${bridge.replace(/\n/g, " | ")}.`
+  };
+}
+
 function applyB2gTechnicalMemoryCollapseToInput(
   input: DocumentProfileDatabaseInput,
   technicalMemory: Record<string, unknown> | null
@@ -4958,7 +4988,7 @@ function attachDocumentProfileResults(
     }
 
 
-    return {
+    const nextFile: StoredRuntimeFile = {
       ...file,
       documentProfileId:
         typeof result.profile?.profileId === "string" ? result.profile.profileId : null,
@@ -4987,6 +5017,8 @@ function attachDocumentProfileResults(
       b2gTechnicalMemoryFailReason: readTechnicalMemoryString(result.technicalMemory, "failReason"),
       b2gTechnicalMemoryCollapseRevision: HBCE_B2G_TECHNICAL_MEMORY_COLLAPSE_REVISION
     };
+
+    return injectB2gTechnicalMemoryPromptBridgeIntoRuntimeFile(nextFile, result.technicalMemory);
   });
 }
 
@@ -6092,7 +6124,7 @@ export async function POST(req: NextRequest) {
         (file) => file.b2gTechnicalMemoryStatus === HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY
       ).length,
       collapseRevision: HBCE_B2G_TECHNICAL_MEMORY_COLLAPSE_REVISION,
-      payloadExposureRevision: "B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7",
+      payloadExposureRevision: "B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3",
       noQuantumStates: true,
       noCorpusCollapse: true,
       legalCertification: false,
