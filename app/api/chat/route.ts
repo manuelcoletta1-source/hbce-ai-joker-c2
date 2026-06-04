@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -7359,6 +7359,21 @@ const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_RUNTIME_INPUTS = "identityEvents, territo
 const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_RUNTIME_OUTPUTS = "matrixTerritorialDistributionProfile, piemonteRegionalDensificationBlueprint, italianRegionalNetworkReadiness, nationalCoordinationChain, territorialReplicationProtocol, tracTerritorialEvidenceCandidate, opcTechnicalProofReceipt, euFederationRelayReadiness";
 const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_FUTURE_GITHUB_MODULES = "lib/matrix-piemonte-italia-volume-iv.ts; app/api/v1/matrix/piemonte-italia/v4/profile/route.ts; app/api/v1/matrix/territorial-distribution/route.ts; app/api/v1/matrix/regional-replication/route.ts; app/api/v1/matrix/national-coordination/recall/route.ts";
 
+const MATRIX_ITALIA_EUROPA_VOLUME_V_FILE_HASH = "sha256:e14c3b1f2ac1b0e1f79d4103814a0863e28156201ce6c7de88a40e2ae7b94368";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_DOC_FAMILY = "HBCE_OPERATIONAL_DOCUMENT";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_DOCUMENT_KIND = "MATRIX_OPERATIONAL_VOLUME";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_MODULE = "MATRIX_ITALIA_EUROPA_VOLUME_V";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_VOLUME = "V5";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_TITLE = "MATRIX ITALIA–EUROPA";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_CLASSIFICATION = "MATRIX_VOLUME_V_ENERGY_BASE";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_QUALITY = "CANONICAL";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_CANONICAL_AXIS = "IPR · HBCE · JOKER-C2 · TRAC · EnergyBase · Italia_Europa · DistributedEnergyNodes · Resilience · StrategicAutonomy · EU_Energy_Federation";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_OPERATIONAL_TRACE_AXIS = "Identity · Energy · Node · Cluster · Industry · Policy · Runtime_Control · Resilience · Evidence · Verification · Continuity · Energy_Point · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_OPERATIONAL_SUMMARY = "MATRIX ITALIA–EUROPA Volume V is the energy base document of the MATRIX cycle. It converts the activated, controlled and territorially distributed MATRIX system into materially continuous European infrastructure through distributed energy nodes, industrial clusters, SMR-ready modular production, HBCE runtime control, strategic autonomy, EU energy federation and the ΦΩ operational civilization layer.";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_RUNTIME_INPUTS = "identityEvents, energySignals, distributedEnergyNodeRequests, industrialClusterRequests, smrReadinessSignals, runtimeControlPolicies, resilienceSignals, strategicAutonomyRequests, euEnergyFederationRequests, phiOmegaOperationalEvents, tenantId, workspaceId, humanIpr";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_RUNTIME_OUTPUTS = "matrixEnergyBaseProfile, energyContinuityBlueprint, distributedEnergyNodeReadiness, industrialClusterEnergyChain, smrModularProductionReadiness, hbceRuntimeEnergyControlProfile, strategicAutonomyEvidenceCandidate, opcTechnicalProofReceipt, euEnergyFederationReadiness, phiOmegaCivilizationLayerProfile";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_FUTURE_GITHUB_MODULES = "lib/matrix-italia-europa-volume-v.ts; app/api/v1/matrix/italia-europa/v5/profile/route.ts; app/api/v1/matrix/energy-base/route.ts; app/api/v1/matrix/distributed-energy-nodes/route.ts; app/api/v1/matrix/eu-energy-federation/recall/route.ts";
+
 type MatrixOperationalDocumentRuntimeProfile = {
   fileHash: string;
   docFamily: string;
@@ -7444,8 +7459,59 @@ const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_RUNTIME_PROFILE: MatrixOperationalDocumen
   futureGithubModules: MATRIX_PIEMONTE_ITALIA_VOLUME_IV_FUTURE_GITHUB_MODULES
 };
 
+const MATRIX_ITALIA_EUROPA_VOLUME_V_RUNTIME_PROFILE: MatrixOperationalDocumentRuntimeProfile = {
+  fileHash: MATRIX_ITALIA_EUROPA_VOLUME_V_FILE_HASH,
+  docFamily: MATRIX_ITALIA_EUROPA_VOLUME_V_DOC_FAMILY,
+  documentKind: MATRIX_ITALIA_EUROPA_VOLUME_V_DOCUMENT_KIND,
+  module: MATRIX_ITALIA_EUROPA_VOLUME_V_MODULE,
+  volume: MATRIX_ITALIA_EUROPA_VOLUME_V_VOLUME,
+  title: MATRIX_ITALIA_EUROPA_VOLUME_V_TITLE,
+  classification: MATRIX_ITALIA_EUROPA_VOLUME_V_CLASSIFICATION,
+  quality: MATRIX_ITALIA_EUROPA_VOLUME_V_QUALITY,
+  canonicalAxis: MATRIX_ITALIA_EUROPA_VOLUME_V_CANONICAL_AXIS,
+  operationalTraceAxis: MATRIX_ITALIA_EUROPA_VOLUME_V_OPERATIONAL_TRACE_AXIS,
+  operationalSummary: MATRIX_ITALIA_EUROPA_VOLUME_V_OPERATIONAL_SUMMARY,
+  runtimeInputs: MATRIX_ITALIA_EUROPA_VOLUME_V_RUNTIME_INPUTS,
+  runtimeOutputs: MATRIX_ITALIA_EUROPA_VOLUME_V_RUNTIME_OUTPUTS,
+  futureGithubModules: MATRIX_ITALIA_EUROPA_VOLUME_V_FUTURE_GITHUB_MODULES
+};
+
 function resolveMatrixOperationalDocumentRuntimeProfile(message: string, files: PublicFileSnapshot[]): MatrixOperationalDocumentRuntimeProfile {
   const normalized = resolveMatrixOperationalDocumentSignalText(message, files);
+
+
+  const v5Signal =
+    normalized.includes("matrix_italia_europa_volume_v") ||
+    normalized.includes("matrix italia europa volume v") ||
+    normalized.includes("matrix italia–europa") ||
+    normalized.includes("matrix italia-europa") ||
+    normalized.includes("e5.e5.matrix italia") ||
+    normalized.includes("e5 e5 matrix italia") ||
+    normalized.includes("volume v del ciclo matrix") ||
+    normalized.includes("volume della base energetica") ||
+    normalized.includes("matrixvolume=v5") ||
+    normalized.includes("matrix_volume_v_energy_base") ||
+    normalized.includes("energy base") ||
+    normalized.includes("energybase") ||
+    normalized.includes("energy point") ||
+    normalized.includes("base energetica") ||
+    normalized.includes("nodo energetico") ||
+    normalized.includes("rete energetica europea") ||
+    normalized.includes("distributed energy nodes") ||
+    normalized.includes("strategic autonomy") ||
+    normalized.includes("autonomia strategica") ||
+    normalized.includes("eu energy federation") ||
+    normalized.includes("smr") ||
+    normalized.includes("ufo-reactor") ||
+    normalized.includes("phiomega") ||
+    normalized.includes("φω") ||
+    normalized.includes("rfc-hbce") ||
+    normalized.includes("roadmap europea 2026 2036") ||
+    normalized.includes("e14c3b1f2ac1b0e1f79d4103814a0863e28156201ce6c7de88a40e2ae7b94368");
+
+  if (v5Signal) {
+    return MATRIX_ITALIA_EUROPA_VOLUME_V_RUNTIME_PROFILE;
+  }
 
   const v4Signal =
     normalized.includes("matrix_piemonte_italia_volume_iv") ||
@@ -7547,6 +7613,20 @@ function hasMatrixEuropaVolumeISignal(message: string, files: PublicFileSnapshot
   }
 
   const explicitIdentity =
+    normalized.includes("matrix_italia_europa_volume_v") ||
+    normalized.includes("matrix italia europa volume v") ||
+    normalized.includes("matrix italia–europa") ||
+    normalized.includes("matrix italia-europa") ||
+    normalized.includes("e5.e5.matrix italia") ||
+    normalized.includes("volume v del ciclo matrix") ||
+    normalized.includes("volume della base energetica") ||
+    normalized.includes("matrixvolume=v5") ||
+    normalized.includes("matrix_volume_v_energy_base") ||
+    normalized.includes("e14c3b1f2ac1b0e1f79d4103814a0863e28156201ce6c7de88a40e2ae7b94368") ||
+    normalized.includes("matrix_italia_europa_volume_v") ||
+    normalized.includes("matrix italia europa volume v") ||
+    normalized.includes("matrix italia–europa") ||
+    normalized.includes("matrix italia-europa") ||
     normalized.includes("matrix_europa_volume_i") ||
     normalized.includes("matrix europa volume i") ||
     normalized.includes("matrix_piemonte_italia_volume_iv") ||
@@ -7586,6 +7666,20 @@ function hasMatrixEuropaVolumeISignal(message: string, files: PublicFileSnapshot
     normalized.includes("1eb611d9b6d8845c1723c4bd75d35b4b881dda4a7212663bda9a84e0ba8afad8");
 
   const architectureSignals =
+    normalized.includes("energy base") ||
+    normalized.includes("energybase") ||
+    normalized.includes("base energetica") ||
+    normalized.includes("nodo energetico") ||
+    normalized.includes("rete energetica europea") ||
+    normalized.includes("distributed energy nodes") ||
+    normalized.includes("strategic autonomy") ||
+    normalized.includes("autonomia strategica") ||
+    normalized.includes("smr") ||
+    normalized.includes("ufo-reactor") ||
+    normalized.includes("phiomega") ||
+    normalized.includes("φω") ||
+    normalized.includes("rfc-hbce") ||
+    normalized.includes("energy point") ||
     normalized.includes("operativita senza prova strutturale") ||
     normalized.includes("operatività senza prova strutturale") ||
     normalized.includes("identity continuity governance execution verification") ||
