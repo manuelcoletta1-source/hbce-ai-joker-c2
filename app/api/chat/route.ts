@@ -634,11 +634,12 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19" as const;
+const HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX_REVISION = "HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20" as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_RECALL_SUMMARY =
   "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed." as const;
 
@@ -7338,6 +7339,7 @@ function buildB2gTechnicalProfileMemoryPreparationAnswer(args: {
     b2gPrimaryStatusForModule(moduleDefinition, ready),
     "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
     "hbceAiEcosystemVolumeIIProfileGuardRevision=" + HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD_REVISION,
+    "hbceAiEcosystemVolumeIIPreSaveReadyFixRevision=" + HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX_REVISION,
     "activeFilename=" + diagnostic.activeFilename,
     "runtimeFileHash=" + diagnostic.runtimeFileHash,
     "textCoverageStatus=" + diagnostic.textCoverageStatus,
@@ -7409,6 +7411,7 @@ function buildB2gTechnicalProfileMemoryReadyAnswer(args: {
     "",
     "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
     "hbceAiEcosystemVolumeIIProfileGuardRevision=" + HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD_REVISION,
+    "hbceAiEcosystemVolumeIIPreSaveReadyFixRevision=" + HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX_REVISION,
     "activeFilename=" + diagnostic.activeFilename,
     "sourceDocument=" + diagnostic.activeFilename,
     "runtimeFileHash=" + diagnostic.runtimeFileHash,
@@ -7852,9 +7855,10 @@ function resolveHbceAiEcosystemDocumentRuntimeProfile(message: string, files: Pu
   return HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_PROFILE;
 }
 
-function hbceAiEcosystemDocumentReadyFromDiagnostic(diagnostic: FullDocumentCoverageAuditDiagnostic): boolean {
+function hbceAiEcosystemDocumentBasePreSaveReadyFromDiagnostic(diagnostic: FullDocumentCoverageAuditDiagnostic): boolean {
   const documentProfileIdAvailable = diagnostic.documentProfileId !== "NO_DOCUMENT_PROFILE_ID" && diagnostic.documentProfileId.trim().length > 0;
-  const documentProfileStatusAvailable = diagnostic.documentProfileStatus !== "NO_DOCUMENT_PROFILE_STATUS" && diagnostic.documentProfileStatus.trim().length > 0;
+  const normalizedProfileStatus = diagnostic.documentProfileStatus.trim().toUpperCase();
+  const documentProfileStatusPreSaveAllowed = normalizedProfileStatus === "ACTIVE" || normalizedProfileStatus === "PERSISTED";
   const chunksReady =
     diagnostic.documentChunksPersisted === true &&
     diagnostic.documentChunksPersistedCount >= Math.max(1, diagnostic.documentChunkCount);
@@ -7865,18 +7869,57 @@ function hbceAiEcosystemDocumentReadyFromDiagnostic(diagnostic: FullDocumentCove
     chunksReady &&
     diagnostic.truncationDetected === false &&
     documentProfileIdAvailable &&
-    documentProfileStatusAvailable &&
-    diagnostic.documentProfileRecallInjected === true &&
-    diagnostic.linkedProfileCount > 0
+    documentProfileStatusPreSaveAllowed &&
+    diagnostic.hashMatchesExpected !== false
   );
 }
 
-function hbceAiEcosystemDocumentFailReason(diagnostic: FullDocumentCoverageAuditDiagnostic, ready: boolean): string {
+function hbceAiEcosystemVolumeIIPreSaveReadyFromDiagnostic(
+  diagnostic: FullDocumentCoverageAuditDiagnostic,
+  hbceProfile: HbceAiEcosystemDocumentRuntimeProfile
+): boolean {
+  const runtimeProfileIsV2 =
+    hbceProfile.docFamily === HBCE_AI_ECOSYSTEM_VOLUME_II_DOC_FAMILY &&
+    hbceProfile.documentKind === HBCE_AI_ECOSYSTEM_VOLUME_II_DOCUMENT_KIND &&
+    hbceProfile.volume === HBCE_AI_ECOSYSTEM_VOLUME_II_VOLUME &&
+    hbceProfile.module === HBCE_AI_ECOSYSTEM_VOLUME_II_MODULE &&
+    hbceProfile.classification === HBCE_AI_ECOSYSTEM_VOLUME_II_CLASSIFICATION;
+  const diagnosticIsV2 =
+    diagnostic.runtimeFileHash === HBCE_AI_ECOSYSTEM_VOLUME_II_FILE_HASH ||
+    diagnostic.activeFilename === HBCE_AI_ECOSYSTEM_VOLUME_II_CANONICAL_FILENAME ||
+    diagnostic.activeFilename === HBCE_AI_ECOSYSTEM_VOLUME_II_ORIGINAL_FILENAME ||
+    (diagnostic.docFamily === HBCE_AI_ECOSYSTEM_VOLUME_II_DOC_FAMILY &&
+      diagnostic.volume === HBCE_AI_ECOSYSTEM_VOLUME_II_VOLUME &&
+      diagnostic.documentKind === HBCE_AI_ECOSYSTEM_VOLUME_II_DOCUMENT_KIND);
+
+  return runtimeProfileIsV2 && diagnosticIsV2 && hbceAiEcosystemDocumentBasePreSaveReadyFromDiagnostic(diagnostic);
+}
+
+function hbceAiEcosystemDocumentReadyFromDiagnostic(
+  diagnostic: FullDocumentCoverageAuditDiagnostic,
+  hbceProfile: HbceAiEcosystemDocumentRuntimeProfile
+): boolean {
+  const strictRecallReady = hbceAiEcosystemDocumentBasePreSaveReadyFromDiagnostic(diagnostic) &&
+    diagnostic.documentProfileRecallInjected === true &&
+    diagnostic.linkedProfileCount > 0;
+
+  return strictRecallReady || hbceAiEcosystemVolumeIIPreSaveReadyFromDiagnostic(diagnostic, hbceProfile);
+}
+
+function hbceAiEcosystemDocumentFailReason(
+  diagnostic: FullDocumentCoverageAuditDiagnostic,
+  ready: boolean,
+  hbceProfile: HbceAiEcosystemDocumentRuntimeProfile
+): string {
   if (ready) {
     return "NONE";
   }
 
   const reasons: string[] = [];
+  const volumeIIPreSaveCandidate =
+    hbceProfile.volume === HBCE_AI_ECOSYSTEM_VOLUME_II_VOLUME &&
+    hbceProfile.module === HBCE_AI_ECOSYSTEM_VOLUME_II_MODULE &&
+    hbceProfile.classification === HBCE_AI_ECOSYSTEM_VOLUME_II_CLASSIFICATION;
 
   if (!diagnostic.fullDocumentCoverage) {
     reasons.push("FULL_DOCUMENT_COVERAGE_FALSE");
@@ -7888,6 +7931,10 @@ function hbceAiEcosystemDocumentFailReason(diagnostic: FullDocumentCoverageAudit
 
   if (!diagnostic.documentChunksPersisted) {
     reasons.push("DOCUMENT_CHUNKS_NOT_PERSISTED");
+  }
+
+  if (diagnostic.documentChunksPersistedCount < Math.max(1, diagnostic.documentChunkCount)) {
+    reasons.push("DOCUMENT_CHUNKS_PERSISTED_COUNT_INSUFFICIENT");
   }
 
   if (diagnostic.truncationDetected) {
@@ -7902,11 +7949,11 @@ function hbceAiEcosystemDocumentFailReason(diagnostic: FullDocumentCoverageAudit
     reasons.push("DOCUMENT_PROFILE_STATUS_MISSING");
   }
 
-  if (diagnostic.documentProfileRecallInjected !== true) {
+  if (!volumeIIPreSaveCandidate && diagnostic.documentProfileRecallInjected !== true) {
     reasons.push("DOCUMENT_PROFILE_RECALL_NOT_INJECTED");
   }
 
-  if (diagnostic.linkedProfileCount < 1) {
+  if (!volumeIIPreSaveCandidate && diagnostic.linkedProfileCount < 1) {
     reasons.push("LINKED_PROFILE_COUNT_ZERO");
   }
 
@@ -7932,9 +7979,9 @@ function buildHbceAiEcosystemDocumentProfilePreparationAnswer(args: {
     documentProfileRecall: args.documentProfileRecall,
     documentMemoryRecallRequested: true
   });
-  const ready = hbceAiEcosystemDocumentReadyFromDiagnostic(diagnostic);
-  const failReason = hbceAiEcosystemDocumentFailReason(diagnostic, ready);
   const hbceProfile = resolveHbceAiEcosystemDocumentRuntimeProfile(args.message, args.files);
+  const ready = hbceAiEcosystemDocumentReadyFromDiagnostic(diagnostic, hbceProfile);
+  const failReason = hbceAiEcosystemDocumentFailReason(diagnostic, ready, hbceProfile);
 
   return [
     ready ? "HBCE_AI_ECOSYSTEM_DOCUMENT_PROFILE_READY" : "HBCE_AI_ECOSYSTEM_DOCUMENT_PROFILE_FAIL",
@@ -7992,6 +8039,8 @@ function buildHbceAiEcosystemDocumentProfilePreparationAnswer(args: {
     "guards.fullDocumentCoverageRequired=true",
     "guards.orderedRecall=true",
     "guards.failClosedOnMissingProfile=true",
+    "guards.volumeIIPreSaveDoesNotRequireLinkedProfile=" + String(hbceProfile.volume === HBCE_AI_ECOSYSTEM_VOLUME_II_VOLUME),
+    "guards.volumeIIPreSaveDoesNotRequireRecallInjection=" + String(hbceProfile.volume === HBCE_AI_ECOSYSTEM_VOLUME_II_VOLUME),
     "truncationDetected=" + String(diagnostic.truncationDetected),
     "readyForIprSave=" + String(ready),
     "failReason=" + failReason,
@@ -8024,9 +8073,9 @@ function buildHbceAiEcosystemDocumentProfileReadyAnswer(args: {
     documentProfileRecall: args.documentProfileRecall,
     documentMemoryRecallRequested: true
   });
-  const ready = hbceAiEcosystemDocumentReadyFromDiagnostic(diagnostic);
-  const failReason = hbceAiEcosystemDocumentFailReason(diagnostic, ready);
   const hbceProfile = resolveHbceAiEcosystemDocumentRuntimeProfile(args.message, args.files);
+  const ready = hbceAiEcosystemDocumentReadyFromDiagnostic(diagnostic, hbceProfile);
+  const failReason = hbceAiEcosystemDocumentFailReason(diagnostic, ready, hbceProfile);
 
   return [
     ready ? "HBCE_AI_ECOSYSTEM_DOCUMENT_PROFILE_READY" : "HBCE_AI_ECOSYSTEM_DOCUMENT_PROFILE_FAIL",
@@ -8092,6 +8141,8 @@ function buildHbceAiEcosystemDocumentProfileReadyAnswer(args: {
     "guards.fullDocumentCoverageRequired=true",
     "guards.orderedRecall=true",
     "guards.failClosedOnMissingProfile=true",
+    "guards.volumeIIPreSaveDoesNotRequireLinkedProfile=" + String(hbceProfile.volume === HBCE_AI_ECOSYSTEM_VOLUME_II_VOLUME),
+    "guards.volumeIIPreSaveDoesNotRequireRecallInjection=" + String(hbceProfile.volume === HBCE_AI_ECOSYSTEM_VOLUME_II_VOLUME),
     "",
     "truncationDetected=" + String(diagnostic.truncationDetected),
     "readyForIprSave=" + String(ready),
