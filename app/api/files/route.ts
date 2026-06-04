@@ -1886,7 +1886,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2-LAMBDA_PROFILE_LOCK-v6_8_3-PEI_PROFILE_LOCK-v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK-v6_8_5-MATRIX_PROFILE_COLUMN_LOCK-v6_8_6-MATRIX_VOLUME_II_PROFILE_LOCK-v6_8_7-MATRIX_VOLUME_III_PROFILE_LOCK-v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK-v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK-v6_8_9_2";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2-LAMBDA_PROFILE_LOCK-v6_8_3-PEI_PROFILE_LOCK-v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK-v6_8_5-MATRIX_PROFILE_COLUMN_LOCK-v6_8_6-MATRIX_VOLUME_II_PROFILE_LOCK-v6_8_7-MATRIX_VOLUME_III_PROFILE_LOCK-v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK-v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK-v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK-v6_8_9_3";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
@@ -2157,9 +2157,9 @@ type CanonicalCorpusVolumeProfile = {
   runtimeSha256?: string;
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION = "QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
-const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2";
+const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const QPCCF_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
 const QPCCF_DOCUMENT_KIND = "TECHNICAL_GOVERNANCE_MODULE";
 const QPCCF_MODULE = "QPCCF_PREDICTIVE_STABILITY_ENGINE";
@@ -3603,7 +3603,172 @@ function normalizeContextString(value: unknown, fallback: string): string {
 
 
 
-const MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_REVISION = "MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2";
+
+const HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_REVISION = "HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_SOURCE_HASH = "sha256:87e7e379819b6394f456030ac9c20db9dd0ad2a71413072481ef27bc90fae553";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_HASH = "sha256:4bf137f71a58bf85202b118c20645420f5a34ff2cde42e7482ed49e2a4261a57";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_DOC_FAMILY = "HBCE_AI_ECOSYSTEM";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_DOCUMENT_KIND = "HBCE_AI_ECOSYSTEM_VOLUME";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_ECOSYSTEM_CYCLE = "HBCE_ECOSISTEMA_AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_MODULE = "HBCE_ECOSISTEMA_AI_VOLUME_I";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_VOLUME = "V1";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_TITLE = "HBCE ECOSISTEMA AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_CLASSIFICATION = "HBCE_AI_ECOSYSTEM_FOUNDATIONAL_VOLUME";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_AXIS = "AI · HBCE · IPR · EVT · OPC · MATRIX · JOKER-C2 · Governance · Audit · Responsibility";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_OPERATIONAL_TRACE_AXIS = "Identity · Governance · AI_Model · Risk · Policy · Event · Proof · Audit · Responsibility · Continuity · Fail_Closed · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
+
+interface HbceAiEcosystemDocumentProfile {
+  docFamily: string;
+  documentKind: string;
+  ecosystemCycle: string;
+  module: string;
+  volume: string;
+  title: string;
+  classification: string;
+  canonicalAxis: string;
+  operationalTraceAxis: string;
+  summary: string;
+  keyTerms: string[];
+  profileLockRevision: string;
+  sourceSha256: string;
+  runtimeSha256: string;
+  runtimeSha256Aliases?: string[];
+}
+
+function inferHbceAiEcosystemVolumeIProfile(file: StoredRuntimeFile): HbceAiEcosystemDocumentProfile | null {
+  const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 180000)}`);
+
+  const explicitFile =
+    normalized.includes("hbce_ecosistema_ai_volume_i_clean_runtime_for_joker_c2") ||
+    normalized.includes("1 hbce ecosistema ai") ||
+    normalized.includes("hbce ecosistema ai volume i") ||
+    normalized.includes("hbce ecosistema ai") ||
+    normalized.includes("hbce ecosystem ai");
+
+  const headerLock =
+    normalized.includes("docfamily=hbce_ai_ecosystem") ||
+    normalized.includes("documentkind=hbce_ai_ecosystem_volume") ||
+    normalized.includes("ecosystemvolume=v1") ||
+    normalized.includes("module=hbce_ecosistema_ai_volume_i") ||
+    normalized.includes("classification=hbce_ai_ecosystem_foundational_volume");
+
+  const contentIdentity =
+    normalized.includes("architettura operativa per intelligenze artificiali verificabili responsabili e governate") ||
+    normalized.includes("volume fondativo della collana") ||
+    normalized.includes("hbce non e un altra ai") ||
+    normalized.includes("hbce non e un altra ai") ||
+    normalized.includes("ai genera hbce governa") ||
+    normalized.includes("ipr identifica evt traccia opc prova matrix organizza");
+
+  const governanceIdentity =
+    normalized.includes("governance operativa") &&
+    normalized.includes("identita operativa") &&
+    normalized.includes("evento verificabile") &&
+    normalized.includes("prova operativa");
+
+  const runtimeHashLock = normalized.includes("4bf137f71a58bf85202b118c20645420f5a34ff2cde42e7482ed49e2a4261a57");
+
+  if (!(explicitFile || headerLock || contentIdentity || governanceIdentity || runtimeHashLock)) {
+    return null;
+  }
+
+  return {
+    docFamily: HBCE_AI_ECOSYSTEM_VOLUME_I_DOC_FAMILY,
+    documentKind: HBCE_AI_ECOSYSTEM_VOLUME_I_DOCUMENT_KIND,
+    ecosystemCycle: HBCE_AI_ECOSYSTEM_VOLUME_I_ECOSYSTEM_CYCLE,
+    module: HBCE_AI_ECOSYSTEM_VOLUME_I_MODULE,
+    volume: HBCE_AI_ECOSYSTEM_VOLUME_I_VOLUME,
+    title: HBCE_AI_ECOSYSTEM_VOLUME_I_TITLE,
+    classification: HBCE_AI_ECOSYSTEM_VOLUME_I_CLASSIFICATION,
+    canonicalAxis: HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_AXIS,
+    operationalTraceAxis: HBCE_AI_ECOSYSTEM_VOLUME_I_OPERATIONAL_TRACE_AXIS,
+    summary:
+      "Profilo documento HBCE ECOSISTEMA AI Volume I: volume fondativo della collana HBCE ECOSISTEMA AI. Definisce HBCE non come un'altra AI, ma come ecosistema operativo di governance dell'intelligenza artificiale attraverso IPR, EVT, OPC, MATRIX, AI JOKER-C2, audit, responsabilità, limiti fail-closed e continuità verificabile. legalCertification=false; OPC=technical proof receipt only.",
+    keyTerms: [
+      "HBCE ECOSISTEMA AI",
+      "HBCE AI Ecosystem",
+      "Volume I",
+      "AI governance",
+      "Governance operativa",
+      "Intelligenza artificiale governata",
+      "AI verificabile",
+      "IPR",
+      "Identity Primary Record",
+      "Identità operativa",
+      "EVT",
+      "Evento verificabile",
+      "OPC",
+      "Prova operativa",
+      "MATRIX",
+      "AI JOKER-C2",
+      "Audit",
+      "Responsabilità verificabile",
+      "Fail-closed",
+      "B2B",
+      "B2G",
+      "AI Act",
+      "Compliance",
+      "Document Memory",
+      "Runtime governance"
+    ],
+    profileLockRevision: HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_REVISION,
+    sourceSha256: HBCE_AI_ECOSYSTEM_VOLUME_I_SOURCE_HASH,
+    runtimeSha256: HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_HASH,
+    runtimeSha256Aliases: [HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_HASH]
+  };
+}
+
+function hbceAiEcosystemRuntimeSha256MatchesProfile(file: StoredRuntimeFile, profile: HbceAiEcosystemDocumentProfile): boolean {
+  const actual = `sha256:${file.fileHash}`;
+  const accepted = new Set([profile.runtimeSha256, ...(profile.runtimeSha256Aliases ?? [])]);
+  return accepted.has(actual);
+}
+
+function buildHbceAiEcosystemVolumeIMetadata(file: StoredRuntimeFile): Record<string, unknown> | null {
+  const profile = inferHbceAiEcosystemVolumeIProfile(file);
+
+  if (!profile) {
+    return null;
+  }
+
+  return {
+    hbceAiEcosystemDocumentProfileLockApplied: true,
+    hbceAiEcosystemDocumentProfileLockRevision: profile.profileLockRevision,
+    hbceAiEcosystemExpectedDocFamily: profile.docFamily,
+    hbceAiEcosystemExpectedDocumentKind: profile.documentKind,
+    hbceAiEcosystemExpectedCycle: profile.ecosystemCycle,
+    hbceAiEcosystemExpectedModule: profile.module,
+    hbceAiEcosystemExpectedVolume: profile.volume,
+    hbceAiEcosystemExpectedTitle: profile.title,
+    hbceAiEcosystemExpectedClassification: profile.classification,
+    hbceAiEcosystemExpectedCanonicalAxis: profile.canonicalAxis,
+    hbceAiEcosystemExpectedOperationalTraceAxis: profile.operationalTraceAxis,
+    hbceAiEcosystemSourceSha256: profile.sourceSha256,
+    hbceAiEcosystemRuntimeSha256: profile.runtimeSha256,
+    hbceAiEcosystemRuntimeSha256Aliases: profile.runtimeSha256Aliases ?? [profile.runtimeSha256],
+    hbceAiEcosystemRuntimeFileHash: `sha256:${file.fileHash}`,
+    hbceAiEcosystemHashMatchesExpected: hbceAiEcosystemRuntimeSha256MatchesProfile(file, profile),
+    canonicalProfileApplied: true,
+    canonicalProfileRevision: profile.profileLockRevision,
+    canonicalVolume: profile.volume,
+    canonicalTitle: profile.title,
+    canonicalDocumentKind: profile.documentKind,
+    canonicalModule: profile.module,
+    docFamily: profile.docFamily,
+    documentKind: profile.documentKind,
+    module: profile.module,
+    classification: profile.classification,
+    operationalTraceAxis: profile.operationalTraceAxis,
+    contaminationWithMatrixOperationalVolume: false,
+    contaminationWithB2gTechnicalStack: false,
+    contaminationWithCorpus: false,
+    contaminationWithQState: false,
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
+const MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_REVISION = "MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const MATRIX_EUROPA_VOLUME_I_SOURCE_HASH = "sha256:54efce7b7d7b430df7be0c3128fe1a7bbf30823beae3677bf25ff904839539d7";
 const MATRIX_EUROPA_VOLUME_I_RUNTIME_HASH = "sha256:c70a753074f89b4309105270e17f6a10aa5aa0018a9e86a8504d5c5e249d0caa";
 const MATRIX_EUROPA_VOLUME_I_DOC_FAMILY = "HBCE_OPERATIONAL_DOCUMENT";
@@ -3615,7 +3780,7 @@ const MATRIX_EUROPA_VOLUME_I_CLASSIFICATION = "MATRIX_VOLUME_I_FOUNDATIONAL_PARA
 const MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS = "IPR · TRAC · HBCE · JOKER-C2 · Matrix Europa · Torino_Bruxelles · EU_Federation · Operational_Verifiability";
 const MATRIX_EUROPA_VOLUME_I_OPERATIONAL_TRACE_AXIS = "Identity · Continuity · Governance · Execution · Verification · Fail_Closed · Cross_Border · TRAC_0001_0007 · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
 
-const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_PROFILE_LOCK_REVISION = "MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2";
+const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_PROFILE_LOCK_REVISION = "MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_SOURCE_HASH = "sha256:b23937daff59ddc5917e0e6c9c7cc809ef1e52a46cf6da24a65e4579864a915f";
 const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_RUNTIME_HASH = "sha256:1eb611d9b6d8845c1723c4bd75d35b4b881dda4a7212663bda9a84e0ba8afad8";
 const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_DOC_FAMILY = "HBCE_OPERATIONAL_DOCUMENT";
@@ -3627,7 +3792,7 @@ const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_CLASSIFICATION = "MATRIX_VOLUME_II_OPER
 const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_CANONICAL_AXIS = "IPR · HBCE · JOKER-C2 · TRAC · ExecutionInfrastructure · Fail_Closed · AI_Control · Evidence · EU_Operational_Control";
 const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_OPERATIONAL_TRACE_AXIS = "Identity · Intent · Policy · Risk · Decision · Execution · Evidence · Verification · Continuity · Fail_Closed · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
 
-const MATRIX_TORINO_BRUXELLES_VOLUME_III_PROFILE_LOCK_REVISION = "MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2";
+const MATRIX_TORINO_BRUXELLES_VOLUME_III_PROFILE_LOCK_REVISION = "MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const MATRIX_TORINO_BRUXELLES_VOLUME_III_SOURCE_HASH = "sha256:778cb7be58821824cfcc9fcc42a2a9f85c62336ce09c484dfcdcd7f0c26bc628";
 const MATRIX_TORINO_BRUXELLES_VOLUME_III_RUNTIME_HASH = "sha256:7eb53665cce1503025b602fce62a603c502c5ca5a87fa4e1b9c64990e2d12c62";
 const MATRIX_TORINO_BRUXELLES_VOLUME_III_DOC_FAMILY = "HBCE_OPERATIONAL_DOCUMENT";
@@ -3639,7 +3804,7 @@ const MATRIX_TORINO_BRUXELLES_VOLUME_III_CLASSIFICATION = "MATRIX_VOLUME_III_OPE
 const MATRIX_TORINO_BRUXELLES_VOLUME_III_CANONICAL_AXIS = "IPR · HBCE · JOKER-C2 · TRAC · ActivationInfrastructure · Torino_Bruxelles · Fail_Closed · Evidence · EU_Operational_Activation";
 const MATRIX_TORINO_BRUXELLES_VOLUME_III_OPERATIONAL_TRACE_AXIS = "Identity · Intent · Policy · Risk · Decision · Execution · Evidence · Verification · Continuity · Activation_Point · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
 
-const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_PROFILE_LOCK_REVISION = "MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2";
+const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_PROFILE_LOCK_REVISION = "MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_SOURCE_HASH = "sha256:331e4b5c833eee52846c5dae33fa5b62296493b2d791bf4a54cbb2f49768e749";
 const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_RUNTIME_HASH = "sha256:d8f22b1773baad074b5e30560812d075e23d374493358a76a50decf0f68a7809";
 const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_RUNTIME_HASH_ALTERNATE = "sha256:eeca36f70747fbccfc725d09288aac711e6fbe93a8949e02e6dc341d6c3d8d6b";
@@ -3652,7 +3817,7 @@ const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_CLASSIFICATION = "MATRIX_VOLUME_IV_TERRIT
 const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_CANONICAL_AXIS = "IPR · HBCE · JOKER-C2 · TRAC · TerritorialDistribution · Piemonte_Italia · RegionalNodes · NationalCoordination · EU_Federation";
 const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_OPERATIONAL_TRACE_AXIS = "Identity · Territory · Region · Node · Policy · Replication · Coordination · Evidence · Verification · Continuity · Distribution_Point · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
 
-const MATRIX_ITALIA_EUROPA_VOLUME_V_PROFILE_LOCK_REVISION = "MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2";
+const MATRIX_ITALIA_EUROPA_VOLUME_V_PROFILE_LOCK_REVISION = "MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const MATRIX_ITALIA_EUROPA_VOLUME_V_SOURCE_HASH = "sha256:29060ed1a3da38f81d69c508dab06085c97f2086493767fd5b90425f3875afc5";
 const MATRIX_ITALIA_EUROPA_VOLUME_V_RUNTIME_HASH = "sha256:e14c3b1f2ac1b0e1f79d4103814a0863e28156201ce6c7de88a40e2ae7b94368";
 const MATRIX_ITALIA_EUROPA_VOLUME_V_DOC_FAMILY = "HBCE_OPERATIONAL_DOCUMENT";
@@ -4422,7 +4587,13 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
 function inferDocumentFamily(file: StoredRuntimeFile): string | null {
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 12000)}`);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
-  const matrixOperationalProfile = inferMatrixOperationalDocumentProfile(file);
+  const hbceAiEcosystemProfile = inferHbceAiEcosystemVolumeIProfile(file);
+  const matrixOperationalProfile = hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+
+
+  if (hbceAiEcosystemProfile) {
+    return hbceAiEcosystemProfile.docFamily;
+  }
 
 
   if (matrixOperationalProfile) {
@@ -4490,9 +4661,15 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 
 function inferDocumentVolume(file: StoredRuntimeFile): string | null {
-  const matrixOperationalProfile = inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
+  const hbceAiEcosystemProfile = inferHbceAiEcosystemVolumeIProfile(file);
+  const matrixOperationalProfile = hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = hbceAiEcosystemProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (hbceAiEcosystemProfile) {
+    return hbceAiEcosystemProfile.volume;
+  }
 
 
   if (matrixOperationalProfile) {
@@ -4568,9 +4745,15 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 function inferDocumentTitle(file: StoredRuntimeFile): string | null {
-  const matrixOperationalProfile = inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
+  const hbceAiEcosystemProfile = inferHbceAiEcosystemVolumeIProfile(file);
+  const matrixOperationalProfile = hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = hbceAiEcosystemProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (hbceAiEcosystemProfile) {
+    return hbceAiEcosystemProfile.title;
+  }
 
 
   if (matrixOperationalProfile) {
@@ -4865,16 +5048,18 @@ function buildDocumentProfileInput(
   context: DocumentProfileContext
 ): DocumentProfileDatabaseInput {
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
-  const matrixOperationalProfile = inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
+  const hbceAiEcosystemProfile = inferHbceAiEcosystemVolumeIProfile(file);
+  const matrixOperationalProfile = hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = matrixOperationalProfile || hbceAiEcosystemProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const qpccfTechnicalStackProfile = b2gTechnicalStackClassification?.module === QPCCF_MODULE;
   const b2gTechnicalStackProfile = Boolean(b2gTechnicalStackClassification);
+  const hbceAiEcosystemDocumentProfile = Boolean(hbceAiEcosystemProfile);
   const matrixOperationalDocumentProfile = Boolean(matrixOperationalProfile);
-  const docFamily = matrixOperationalProfile?.docFamily ?? inferDocumentFamily(file);
-  const volume = matrixOperationalProfile?.volume ?? inferDocumentVolume(file);
-  const title = matrixOperationalProfile?.title ?? inferDocumentTitle(file);
-  const canonicalAxis = matrixOperationalProfile?.canonicalAxis ?? inferCanonicalAxis(file);
-  const keyTerms = matrixOperationalProfile?.keyTerms ?? collectDocumentKeyTerms(file);
+  const docFamily = hbceAiEcosystemProfile?.docFamily ?? matrixOperationalProfile?.docFamily ?? inferDocumentFamily(file);
+  const volume = hbceAiEcosystemProfile?.volume ?? matrixOperationalProfile?.volume ?? inferDocumentVolume(file);
+  const title = hbceAiEcosystemProfile?.title ?? matrixOperationalProfile?.title ?? inferDocumentTitle(file);
+  const canonicalAxis = hbceAiEcosystemProfile?.canonicalAxis ?? matrixOperationalProfile?.canonicalAxis ?? inferCanonicalAxis(file);
+  const keyTerms = hbceAiEcosystemProfile?.keyTerms ?? matrixOperationalProfile?.keyTerms ?? collectDocumentKeyTerms(file);
   const reusableInPrompt = isPromptTextStatus(file.status);
 
 
@@ -4903,11 +5088,14 @@ function buildDocumentProfileInput(
     documentMetadata: {
       routeVersion: FILE_ROUTE_REVISION,
       canonicalProfileRevision: DOCUMENT_PROFILE_CANONICAL_FIX_REVISION,
-      canonicalProfileApplied: Boolean(canonicalCorpusProfile) || b2gTechnicalStackProfile || matrixOperationalDocumentProfile,
-      canonicalVolume: matrixOperationalProfile?.volume ?? b2gTechnicalStackClassification?.volume ?? canonicalCorpusProfile?.volume ?? null,
-      canonicalTitle: matrixOperationalProfile?.title ?? b2gTechnicalStackClassification?.title ?? canonicalCorpusProfile?.title ?? null,
-      canonicalDocumentKind: matrixOperationalProfile?.documentKind ?? b2gTechnicalStackClassification?.documentKind ?? (canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null),
-      canonicalModule: matrixOperationalProfile?.module ?? null,
+      canonicalProfileApplied: Boolean(canonicalCorpusProfile) || b2gTechnicalStackProfile || matrixOperationalDocumentProfile || hbceAiEcosystemDocumentProfile,
+      canonicalVolume: hbceAiEcosystemProfile?.volume ?? matrixOperationalProfile?.volume ?? b2gTechnicalStackClassification?.volume ?? canonicalCorpusProfile?.volume ?? null,
+      canonicalTitle: hbceAiEcosystemProfile?.title ?? matrixOperationalProfile?.title ?? b2gTechnicalStackClassification?.title ?? canonicalCorpusProfile?.title ?? null,
+      canonicalDocumentKind: hbceAiEcosystemProfile?.documentKind ?? matrixOperationalProfile?.documentKind ?? b2gTechnicalStackClassification?.documentKind ?? (canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null),
+      canonicalModule: hbceAiEcosystemProfile?.module ?? matrixOperationalProfile?.module ?? null,
+      hbceAiEcosystemDocumentProfileLockApplied: hbceAiEcosystemDocumentProfile,
+      hbceAiEcosystemDocumentProfileLockRevision: hbceAiEcosystemProfile?.profileLockRevision ?? null,
+      hbceAiEcosystemDocumentExpectedProfile: hbceAiEcosystemProfile ? buildHbceAiEcosystemVolumeIMetadata(file) : null,
       technicalStackModule: b2gTechnicalStackClassification?.module ?? null,
       matrixOperationalDocumentProfileLockApplied: matrixOperationalDocumentProfile,
       matrixOperationalDocumentProfileLockRevision: matrixOperationalProfile?.profileLockRevision ?? null,
