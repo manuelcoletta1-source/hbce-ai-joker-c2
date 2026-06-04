@@ -360,6 +360,42 @@ type PublicDocumentRegistrySnapshot = {
 };
 
 
+type JokerC2BranchDashboardItem = {
+  key: string;
+  label: string;
+  status: string;
+  detail: string;
+  active: boolean;
+  profileCount: string;
+  linkedProfileCount: string;
+  memoryId: string;
+  profileId: string;
+};
+
+
+type JokerC2BranchDashboardSnapshot = {
+  revision: string;
+  activeBranchKey: string;
+  activeBranchLabel: string;
+  activeSource: string;
+  readyCount: string;
+  totalCount: string;
+  items: JokerC2BranchDashboardItem[];
+};
+
+
+type DocumentProfileDashboardOverlay = {
+  branchKey: string;
+  title: string;
+  volume: string;
+  summary: string;
+  canonicalAxis: string;
+  keyTerms: string[];
+  semanticTerms: string[];
+  signals: string[];
+};
+
+
 type IprSessionResponse = {
   ok?: boolean;
   authenticated?: boolean;
@@ -445,8 +481,9 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.2-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.3-BRANCH_MAP_ACTIVE_RECALL_DASHBOARD";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
+const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v2.3";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -511,6 +548,60 @@ const HBCE_SELF_PILOT_MEMORY_AUTHORITY = "SELF_PILOT_MEMORY_SCOPE_BRIDGE";
 
 
 const HANDOFF_STORAGE_KEY = "hbce_ipr_handoff";
+
+
+const HBCE_AI_ECOSYSTEM_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverlay[] = [
+  {
+    branchKey: "HBCE_AI_ECOSYSTEM_VOLUME_V",
+    title: "HBCE ECOSISTEMA AI",
+    volume: "V5",
+    summary: "HBCE ECOSISTEMA AI Volume V definisce la rete federata dell’intelligenza artificiale: il passaggio da sistema governato interno a infrastruttura federata esterna, fondata su nodi HBCE, registri federati, Trust Fabric, Trust-State, cross-registry verification, interoperabilità tra sistemi AI, AI supply chain, federazione pubblico-privata, revoca, quarantena, sovranità digitale, continuità operativa e standard HBCE-F.",
+    canonicalAxis: "Nodo · Registro · Fiducia · Interoperabilità · Federazione · Sovranità · Continuità",
+    keyTerms: ["HBCE ECOSISTEMA AI", "Volume V", "Rete federata", "Nodo", "Registro", "Trust Fabric", "Trust-State", "HBCE-F"],
+    semanticTerms: ["HBCE AI Ecosystem", "Federazione", "Sovranità digitale", "Continuità operativa", "Cross-registry verification", "AI supply chain"],
+    signals: ["DOC-PROFILE-973154390367A735", "IPR-MEM-20260604162417-C5AB96FD", "sha256:d4c582cd0afa691423774c5c0fa531eda3b1923f3ec34ade398735e8abd58eab", "HBCE_ECOSISTEMA_AI_VOLUME_V_CLEAN_RUNTIME_FOR_JOKER_C2", "LA RETE FEDERATA DELL’INTELLIGENZA ARTIFICIALE"]
+  },
+  {
+    branchKey: "HBCE_AI_ECOSYSTEM_VOLUME_IV",
+    title: "HBCE ECOSISTEMA AI",
+    volume: "V4",
+    summary: "HBCE ECOSISTEMA AI Volume IV definisce il livello tecnico-probatorio dell’ecosistema HBCE: Ufficio Operativo dell’Intelligenza Artificiale, EVT/OPC, hash, audit trail, fascicolo operativo, anomalie, incident review, Evidence Pack e boundary di non certificazione pubblica automatica.",
+    canonicalAxis: "Pratica · Operatore · Input · Evento · Hash · OPC · Verifica · Archivio · Responsabilità",
+    keyTerms: ["HBCE ECOSISTEMA AI", "Volume IV", "Ufficio Operativo", "EVT", "OPC", "Evidence Pack"],
+    semanticTerms: ["Operational office", "Evidence chain", "Incident review", "Audit trail"],
+    signals: ["DOC-PROFILE-9BB76910F2A96526", "IPR-MEM-20260604154950-F111F7E2", "sha256:ac5e69982ef0b29d9639e48d4a791f0f0ac9aeeea2602994ca34d846633eaab2", "HBCE_ECOSISTEMA_AI_VOLUME_IV_CLEAN_RUNTIME_FOR_JOKER_C2"]
+  },
+  {
+    branchKey: "HBCE_AI_ECOSYSTEM_VOLUME_III",
+    title: "HBCE ECOSISTEMA AI",
+    volume: "V3",
+    summary: "HBCE ECOSISTEMA AI Volume III definisce industrializzazione, audit operativo e adozione dello standard HBCE: fascicolo operativo AI, pilot, mercato, responsabilità verificabile e continuità verso adozione organizzativa.",
+    canonicalAxis: "Adoption · Industrialization · Audit · Fascicolo operativo AI · HBCE-M · HBCE-L · IPR AI Audit Trail · Pilot · Market · Standard · EVT · OPC",
+    keyTerms: ["HBCE ECOSISTEMA AI", "Volume III", "Industrializzazione", "Audit", "Adozione", "Pilot"],
+    semanticTerms: ["Market", "Standard", "Fascicolo operativo AI", "IPR AI Audit Trail"],
+    signals: ["DOC-PROFILE-5F5E13FD403BE684", "IPR-MEM-20260604145636-F91B2203", "sha256:b32bcc740955ec6a2c98b292ed5f44332e111605e9f5d015834d73406c80e8c1", "HBCE_ECOSISTEMA_AI_VOLUME_III_CLEAN_RUNTIME_FOR_JOKER_C2"]
+  },
+  {
+    branchKey: "HBCE_AI_ECOSYSTEM_VOLUME_II",
+    title: "HBCE ECOSISTEMA AI",
+    volume: "V2",
+    summary: "HBCE ECOSISTEMA AI Volume II formalizza il protocollo operativo IPR per identità, memoria, continuità, audit e governance della risposta AI in ambiente HBCE/JOKER-C2.",
+    canonicalAxis: "IPR · Identità · Memoria · Continuità · Governance · Audit · EVT · OPC · AI JOKER-C2",
+    keyTerms: ["HBCE ECOSISTEMA AI", "Volume II", "IPR", "Memoria", "Continuità", "Governance"],
+    semanticTerms: ["Identity Primary Record", "AI governance", "Operational continuity", "Audit"],
+    signals: ["DOC-PROFILE-995E764E5A3E6E40", "IPR-MEM-20260604142520-C4EA1D92", "HBCE_ECOSISTEMA_AI_VOLUME_II_CLEAN_RUNTIME_FOR_JOKER_C2"]
+  },
+  {
+    branchKey: "HBCE_AI_ECOSYSTEM_VOLUME_I",
+    title: "HBCE ECOSISTEMA AI",
+    volume: "V1",
+    summary: "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, AI JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed.",
+    canonicalAxis: "AI · HBCE · IPR · EVT · OPC · MATRIX · JOKER-C2 · Governance · Audit · Responsibility",
+    keyTerms: ["HBCE ECOSISTEMA AI", "Volume I", "AI governance", "IPR", "EVT", "OPC", "MATRIX"],
+    semanticTerms: ["Governed AI", "Responsibility", "Fail-closed", "Audit", "Document Memory"],
+    signals: ["DOC-PROFILE-8602A2F8D2E2494D", "1A.HBCE_ECOSISTEMA_AI_PULITO", "HBCE_ECOSISTEMA_AI_VOLUME_I"]
+  }
+];
 
 
 const LEGACY_HANDOFF_STORAGE_KEYS = [
@@ -1534,6 +1625,7 @@ function getPublicDocumentRegistrySnapshot(
     sources
       .flatMap((source) => collectDocumentProfileRecordsFromPayload(source))
       .map(normalizePublicDocumentProfileSnapshot)
+      .map(applyJokerC2DocumentProfileDashboardOverlay)
   ).slice(0, 20);
   const linkedMemoryCount = profiles.filter((profile) => !isBlankRuntimeValue(profile.memoryId)).length;
   const reusableCount = profiles.filter((profile) => profile.reusableInPrompt === "true").length;
@@ -1730,6 +1822,126 @@ function normalizeSearchText(value: string): string {
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+
+function buildDocumentProfileDashboardSignal(profile: PublicDocumentProfileSnapshot): string {
+  return normalizeSearchText([profile.profileId, profile.fileId, profile.filename, profile.fileHash, profile.docFamily, profile.volume, profile.title, profile.canonicalAxis, profile.summary, profile.memoryId, profile.sourceSavedChatId, profile.lastEvtId, profile.lastOpcProofId, profile.canonicalDocumentKind, profile.keyTerms.join(" "), profile.semanticTerms.join(" ")].join(" "));
+}
+
+
+function profileMatchesDashboardOverlay(profile: PublicDocumentProfileSnapshot, overlay: DocumentProfileDashboardOverlay): boolean {
+  const signal = buildDocumentProfileDashboardSignal(profile);
+  return overlay.signals.some((item) => signal.includes(normalizeSearchText(item)));
+}
+
+
+function applyJokerC2DocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnapshot): PublicDocumentProfileSnapshot {
+  const overlay = HBCE_AI_ECOSYSTEM_VOLUME_DASHBOARD_OVERLAYS.find((item) => profileMatchesDashboardOverlay(profile, item));
+  if (!overlay) return profile;
+  return { ...profile, title: overlay.title, volume: overlay.volume, summary: overlay.summary, canonicalAxis: overlay.canonicalAxis, keyTerms: overlay.keyTerms, semanticTerms: overlay.semanticTerms };
+}
+
+
+function getJokerC2BranchKeyForProfile(profile: PublicDocumentProfileSnapshot): string {
+  const signal = buildDocumentProfileDashboardSignal(profile);
+  const explicitHbceOverlay = HBCE_AI_ECOSYSTEM_VOLUME_DASHBOARD_OVERLAYS.find((overlay) => profileMatchesDashboardOverlay(profile, overlay));
+  if (explicitHbceOverlay) return explicitHbceOverlay.branchKey;
+  if (signal.includes("hbce_ai_ecosystem") || signal.includes("hbce ecosistema ai")) {
+    const volume = profile.volume.toUpperCase();
+    if (["V1", "V2", "V3", "V4", "V5"].includes(volume)) return `HBCE_AI_ECOSYSTEM_VOLUME_${volume.replace("V", "")}`;
+    return "HBCE_AI_ECOSYSTEM";
+  }
+  if (signal.includes("matrix europa") || signal.includes("matrix volume i") || signal.includes("matrix_i")) return "MATRIX_VOLUME_I";
+  if (signal.includes("matrix hbce") || signal.includes("matrix volume ii") || signal.includes("matrix_ii")) return "MATRIX_VOLUME_II";
+  if (signal.includes("matrix torino") || signal.includes("matrix volume iii") || signal.includes("matrix_iii")) return "MATRIX_VOLUME_III";
+  if (signal.includes("matrix piemonte") || signal.includes("matrix volume iv") || signal.includes("matrix_iv")) return "MATRIX_VOLUME_IV";
+  if (signal.includes("matrix italia") || signal.includes("matrix volume v") || signal.includes("matrix_v")) return "MATRIX_VOLUME_V";
+  if (signal.includes("matrix")) return "MATRIX";
+  if (signal.includes("hbce_joker_c2_b2g_technical_stack") || signal.includes("qpccf") || signal.includes("aiq") || signal.includes("cqo") || signal.includes("ufo_intercept") || signal.includes("lambda") || signal.includes("pei")) return "B2G_TECHNICAL_STACK";
+  if (signal.includes("corpus esoterologia") || signal.includes("glossario canonico") || signal.includes("cod 1") || signal.includes("alien code")) return "CORPUS_SEMANTIC_MEMORY";
+  if (signal.includes("use_volume") || signal.includes("united states of europe") || signal.includes("emergenza europea")) return "USE_EUROPEAN_FEDERATION";
+  if (signal.includes("apokalypsis") || signal.includes("apocalipsis")) return "APOKALYPSIS_EDITORIAL_SYSTEM";
+  return "DOCUMENT_REGISTRY";
+}
+
+
+function countProfilesForBranch(profiles: PublicDocumentProfileSnapshot[], branchKey: string): number {
+  if (branchKey === "MATRIX_I_V") return profiles.filter((profile) => getJokerC2BranchKeyForProfile(profile).startsWith("MATRIX")).length;
+  if (branchKey === "HBCE_AI_ECOSYSTEM_I_V") return profiles.filter((profile) => getJokerC2BranchKeyForProfile(profile).startsWith("HBCE_AI_ECOSYSTEM")).length;
+  return profiles.filter((profile) => getJokerC2BranchKeyForProfile(profile) === branchKey).length;
+}
+
+
+function countLinkedProfilesForBranch(profiles: PublicDocumentProfileSnapshot[], branchKey: string): number {
+  return profiles.filter((profile) => {
+    const profileBranch = getJokerC2BranchKeyForProfile(profile);
+    const branchMatches = branchKey === "MATRIX_I_V" ? profileBranch.startsWith("MATRIX") : branchKey === "HBCE_AI_ECOSYSTEM_I_V" ? profileBranch.startsWith("HBCE_AI_ECOSYSTEM") : profileBranch === branchKey;
+    return branchMatches && isLinkedDocumentProfile(profile);
+  }).length;
+}
+
+
+function volumeSetForBranch(profiles: PublicDocumentProfileSnapshot[], branchPrefix: string): Set<string> {
+  const volumes = new Set<string>();
+  for (const profile of profiles) {
+    const branchKey = getJokerC2BranchKeyForProfile(profile);
+    if (branchKey.startsWith(branchPrefix) && ["V1", "V2", "V3", "V4", "V5"].includes(profile.volume.toUpperCase())) volumes.add(profile.volume.toUpperCase());
+  }
+  return volumes;
+}
+
+
+function inferActiveJokerC2BranchKey(input: { selectedProfile: PublicDocumentProfileSnapshot | null; activeFileLinkedProfile: PublicDocumentProfileSnapshot | null; profiles: PublicDocumentProfileSnapshot[]; localFiles: RuntimeFile[]; chain: CyberneticMemoryChainState; }): { key: string; source: string } {
+  if (input.selectedProfile) return { key: getJokerC2BranchKeyForProfile(input.selectedProfile), source: "SELECTED_IPR_CHAIN_PROFILE" };
+  if (input.activeFileLinkedProfile) return { key: getJokerC2BranchKeyForProfile(input.activeFileLinkedProfile), source: "ACTIVE_FILE_LINKED_PROFILE" };
+  const chainProfile = input.profiles.find((profile) => profile.memoryId === input.chain.memoryId || profile.profileId === input.chain.documentProfileId);
+  if (chainProfile) return { key: getJokerC2BranchKeyForProfile(chainProfile), source: "CYBERNETIC_MEMORY_CHAIN" };
+  const firstLocalFile = input.localFiles.find((file) => file.status.includes("READY"));
+  if (firstLocalFile) {
+    const fileSignal = normalizeSearchText([firstLocalFile.name, firstLocalFile.fileHash ?? "", firstLocalFile.reason].join(" "));
+    if (fileSignal.includes("hbce_ecosistema_ai_volume_v")) return { key: "HBCE_AI_ECOSYSTEM_VOLUME_V", source: "LOCAL_FILE_CONTEXT" };
+    if (fileSignal.includes("hbce_ecosistema_ai_volume_iv")) return { key: "HBCE_AI_ECOSYSTEM_VOLUME_IV", source: "LOCAL_FILE_CONTEXT" };
+    if (fileSignal.includes("hbce_ecosistema_ai_volume_iii")) return { key: "HBCE_AI_ECOSYSTEM_VOLUME_III", source: "LOCAL_FILE_CONTEXT" };
+    if (fileSignal.includes("hbce_ecosistema_ai_volume_ii")) return { key: "HBCE_AI_ECOSYSTEM_VOLUME_II", source: "LOCAL_FILE_CONTEXT" };
+    if (fileSignal.includes("hbce_ecosistema_ai_volume_i") || fileSignal.includes("1a.hbce_ecosistema_ai")) return { key: "HBCE_AI_ECOSYSTEM_VOLUME_I", source: "LOCAL_FILE_CONTEXT" };
+    if (fileSignal.includes("matrix")) return { key: "MATRIX", source: "LOCAL_FILE_CONTEXT" };
+    if (fileSignal.includes("use_")) return { key: "USE_EUROPEAN_FEDERATION", source: "LOCAL_FILE_CONTEXT" };
+    if (fileSignal.includes("apokalypsis")) return { key: "APOKALYPSIS_EDITORIAL_SYSTEM", source: "LOCAL_FILE_CONTEXT" };
+  }
+  return { key: "NONE", source: "NO_ACTIVE_BRANCH" };
+}
+
+
+function buildJokerC2BranchDashboardSnapshot(input: { profiles: PublicDocumentProfileSnapshot[]; documentRegistry: PublicDocumentRegistrySnapshot; semanticMemory: PublicSemanticMemorySnapshot; runtimeStatus: RuntimeStatus; selectedProfile: PublicDocumentProfileSnapshot | null; activeFileLinkedProfile: PublicDocumentProfileSnapshot | null; localFiles: RuntimeFile[]; chain: CyberneticMemoryChainState; humanIpr: string; }): JokerC2BranchDashboardSnapshot {
+  const matrixVolumes = volumeSetForBranch(input.profiles, "MATRIX");
+  const hbceAiVolumes = volumeSetForBranch(input.profiles, "HBCE_AI_ECOSYSTEM");
+  const activeBranch = inferActiveJokerC2BranchKey({ selectedProfile: input.selectedProfile, activeFileLinkedProfile: input.activeFileLinkedProfile, profiles: input.profiles, localFiles: input.localFiles, chain: input.chain });
+  const branchDefinitions = [
+    { key: "IDENTITY_IPR", label: "Identity / IPR", status: !isNegativeRuntimeValue(input.humanIpr) ? "READY" : "BLOCKED", detail: input.humanIpr },
+    { key: "EVT_OPC", label: "EVT / OPC", status: !isBlankRuntimeValue(input.runtimeStatus.opc) || !isBlankRuntimeValue(input.runtimeStatus.responseEvt) ? "READY" : "WAITING", detail: `${input.runtimeStatus.responseEvt} · ${input.runtimeStatus.opc}` },
+    { key: "DOCUMENT_REGISTRY", label: "Document registry", status: input.documentRegistry.available ? "READY" : "WAITING", detail: `${input.documentRegistry.profileCount} profiles · ${input.documentRegistry.linkedMemoryCount} linked` },
+    { key: "STRICT_RECALL", label: "Strict recall", status: "READY", detail: "STRICT_REQUESTED_MEMORY_ONLY" },
+    { key: "NO_SAVE_GUARD", label: "No-save guard", status: "READY", detail: "WRITE_SUPPRESSED_WHEN_REQUESTED" },
+    { key: "METADATA_REPAIR", label: "Metadata repair", status: "READY", detail: "HBCE AI v5.5 repair layer" },
+    { key: "MATRIX_I_V", label: "MATRIX I–V", status: matrixVolumes.size >= 5 ? "READY" : matrixVolumes.size > 0 ? "PARTIAL_READY" : "WAITING", detail: `volumes=${Array.from(matrixVolumes).sort().join(",") || "none"}` },
+    { key: "HBCE_AI_ECOSYSTEM_I_V", label: "HBCE AI Ecosystem I–V", status: hbceAiVolumes.size >= 5 ? "READY" : hbceAiVolumes.size > 0 ? "PARTIAL_READY" : "WAITING", detail: `volumes=${Array.from(hbceAiVolumes).sort().join(",") || "none"}` },
+    { key: "B2G_TECHNICAL_STACK", label: "B2G technical stack", status: countProfilesForBranch(input.profiles, "B2G_TECHNICAL_STACK") > 0 ? "READY" : "WAITING", detail: "QPCCF · AIQ · CQO · UFO · LAMBDA · PEI" },
+    { key: "CORPUS_SEMANTIC_MEMORY", label: "Corpus semantic memory", status: input.semanticMemory.available ? "SEPARATED_READY" : "SEPARATED", detail: "Glossario · COD 1 · Corpus guard" },
+    { key: "USE_EUROPEAN_FEDERATION", label: "U.S.E. I–V", status: countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") > 0 ? "PARTIAL_READY" : "PENDING_NEXT_BRANCH", detail: "United States of Europe branch" },
+    { key: "APOKALYPSIS_EDITORIAL_SYSTEM", label: "APOKALYPSIS I–V", status: countProfilesForBranch(input.profiles, "APOKALYPSIS_EDITORIAL_SYSTEM") > 0 ? "PARTIAL_READY" : "PENDING_NEXT_BRANCH", detail: "Editorial/apocalyptic branch" }
+  ];
+  const items = branchDefinitions.map((branch) => ({
+    ...branch,
+    active: activeBranch.key === branch.key || (branch.key === "MATRIX_I_V" && activeBranch.key.startsWith("MATRIX")) || (branch.key === "HBCE_AI_ECOSYSTEM_I_V" && activeBranch.key.startsWith("HBCE_AI_ECOSYSTEM")),
+    profileCount: String(countProfilesForBranch(input.profiles, branch.key)),
+    linkedProfileCount: String(countLinkedProfilesForBranch(input.profiles, branch.key)),
+    memoryId: input.chain.memoryId,
+    profileId: input.chain.documentProfileId
+  }));
+  const activeDefinition = items.find((item) => item.active);
+  const readyCount = items.filter((item) => ["READY", "SEPARATED_READY", "PARTIAL_READY"].includes(item.status)).length;
+  return { revision: JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION, activeBranchKey: activeDefinition?.key ?? activeBranch.key, activeBranchLabel: activeDefinition?.label ?? activeBranch.key, activeSource: activeBranch.source, readyCount: String(readyCount), totalCount: String(items.length), items };
 }
 
 
@@ -4191,6 +4403,39 @@ function DocumentRegistryCard({
 }
 
 
+function JokerC2BranchMapCard({ snapshot }: { snapshot: JokerC2BranchDashboardSnapshot }) {
+  return (
+    <section className="joker-branch-map-card" translate="no">
+      <div className="joker-semantic-head">
+        <div>
+          <span className="joker-kicker">JOKER-C2 Branch Map</span>
+          <h3>Runtime branches · active recall</h3>
+        </div>
+        <div className="joker-semantic-pills">
+          <StatusPill label="Revision" value={snapshot.revision} />
+          <StatusPill label="Ready" value={`${snapshot.readyCount}/${snapshot.totalCount}`} />
+          <StatusPill label="Active" value={snapshot.activeBranchLabel} />
+        </div>
+      </div>
+      <div className="joker-branch-active-strip">
+        <span>ACTIVE_RECALL_BRANCH</span>
+        <strong>{snapshot.activeBranchLabel}</strong>
+        <em>{snapshot.activeSource}</em>
+      </div>
+      <div className="joker-branch-grid" aria-label="JOKER-C2 runtime branch map">
+        {snapshot.items.map((item) => (
+          <article key={item.key} className={["joker-branch-item", item.active ? "is-active" : ""].filter(Boolean).join(" ")}>
+            <div className="joker-branch-item-head"><strong>{item.label}</strong><StatusPill value={item.active ? "ACTIVE_RECALL_BRANCH" : item.status} /></div>
+            <p title={item.detail}>{compact(item.detail, 118)}</p>
+            <div className="joker-branch-meta"><span>profiles {item.profileCount}</span><span>linked {item.linkedProfileCount}</span>{item.active ? <span>{compact(item.profileId, 32)}</span> : null}</div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
 function SemanticMemoryCard({
   snapshot,
   compactMode = false
@@ -4881,6 +5126,19 @@ export default function InterfacePage() {
     ],
     "RUNTIME_ONLY"
   );
+
+
+  const jokerC2BranchDashboard = buildJokerC2BranchDashboardSnapshot({
+    profiles: dashboardDocumentRegistry.profiles,
+    documentRegistry: dashboardDocumentRegistry,
+    semanticMemory: dashboardSemanticMemory,
+    runtimeStatus: dashboardStatus,
+    selectedProfile: selectedCanonicalDocumentProfile,
+    activeFileLinkedProfile: activeFileAlreadyLinkedProfile,
+    localFiles: files,
+    chain: cyberneticMemoryChain,
+    humanIpr
+  });
 
 
   const memoryAuthority = firstUsableRuntimeValue(
@@ -6657,6 +6915,11 @@ export default function InterfacePage() {
           <MetricCard label="Runtime age" value={dashboardStatus.runtimeAge} />
           <MetricCard label="B2G readiness" value={dashboardStatus.b2gReadiness} />
         </div>
+      </section>
+
+
+      <section className="joker-branch-map-shell">
+        <JokerC2BranchMapCard snapshot={jokerC2BranchDashboard} />
       </section>
 
 
@@ -8927,6 +9190,21 @@ export default function InterfacePage() {
         }
 
 
+        .joker-branch-map-shell { padding: 0 22px 22px; }
+        .joker-branch-map-card { border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 28px; padding: 18px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.86)), radial-gradient(circle at 10% 0%, rgba(34, 211, 238, 0.14), transparent 36%); box-shadow: 0 24px 70px rgba(2, 6, 23, 0.32); }
+        .joker-branch-active-strip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; margin-top: 14px; padding: 12px 14px; border: 1px solid rgba(34, 211, 238, 0.38); border-radius: 18px; background: rgba(8, 47, 73, 0.28); }
+        .joker-branch-active-strip span, .joker-branch-active-strip em { color: #8fb2cb; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+        .joker-branch-active-strip strong { min-width: 0; color: #e0f2fe; font-size: 15px; }
+        .joker-branch-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+        .joker-branch-item { display: grid; gap: 9px; min-height: 128px; padding: 14px; border: 1px solid rgba(71, 85, 105, 0.58); border-radius: 18px; background: rgba(15, 23, 42, 0.72); }
+        .joker-branch-item.is-active { border-color: rgba(34, 211, 238, 0.78); background: radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.16), transparent 48%), rgba(8, 47, 73, 0.48); box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.16), 0 18px 40px rgba(8, 145, 178, 0.12); }
+        .joker-branch-item-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+        .joker-branch-item-head strong { color: #f8fafc; font-size: 13px; line-height: 1.25; }
+        .joker-branch-item p { margin: 0; color: #9db1c8; font-size: 12px; line-height: 1.45; }
+        .joker-branch-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+        .joker-branch-meta span { border: 1px solid rgba(71, 85, 105, 0.55); border-radius: 999px; padding: 4px 8px; color: #a7bbd3; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+
+
         .joker-document-profile-list {
           margin-top: 12px;
           display: grid;
@@ -8990,6 +9268,11 @@ export default function InterfacePage() {
           .joker-hero,
           .joker-dashboard {
             grid-template-columns: 1fr;
+          }
+
+
+          .joker-branch-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
 
