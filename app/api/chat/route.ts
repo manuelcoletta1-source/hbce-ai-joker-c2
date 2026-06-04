@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -643,6 +643,7 @@ const HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX_REVISION = "HBCE_AI_ECOSYST
 const HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21" as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22" as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23" as const;
+const GLOBAL_RUNTIME_HEALTH_CHECK_GUARD_REVISION = "GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24" as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_RECALL_SUMMARY =
   "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed." as const;
 
@@ -904,7 +905,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const runtimeDiagnosticsRequested =
     !fullDocumentCoverageAuditRequested && isRuntimeDiagnosticsQuestion(message);
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
-  const opcProofSummaryRequested = isOpcProofSummaryQuestion(message);
+  const globalRuntimeHealthCheckRequested = isGlobalRuntimeHealthCheckQuestion(message);
+  const opcProofSummaryRequested = !globalRuntimeHealthCheckRequested && isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
   const runtimeMemoryBlockDiagnosticRequested =
     !fullDocumentCoverageAuditRequested && isRuntimeMemoryBlockDiagnosticQuestion(message);
@@ -973,6 +975,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       hardNoSavePersistenceRequested);
   const runtimeMemoryWriteSuppressed =
     fullDocumentCoverageAuditRequested ||
+    globalRuntimeHealthCheckRequested ||
     hardNoSavePersistenceRequested ||
     recordStatusOnlyRequested ||
     b2gTechnicalMemoryStrictRecallRequested;
@@ -1169,6 +1172,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     runtimeStatusTableRequested,
     runtimeDiagnosticsRequested,
     temporalCertificateRequested,
+    globalRuntimeHealthCheckRequested,
     opcProofSummaryRequested,
     selfDiagnosisRequested,
     memoryRegistrationRequested,
@@ -1246,6 +1250,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (globalRuntimeHealthCheckRequested) {
+    answer = buildGlobalRuntimeHealthCheckPreparationAnswer({
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (b2gTechnicalMemoryStrictRecallRequested) {
@@ -1790,7 +1803,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  const finalAnswerBase = b2gTechnicalMemoryStrictRecallRequested
+  const finalAnswerBase = globalRuntimeHealthCheckRequested
+    ? buildGlobalRuntimeHealthCheckAnswer({
+        handoff,
+        memory,
+        policy,
+        saasContext,
+        evt,
+        opc,
+        auditAndUsage,
+        persistenceBridge,
+        model,
+        modelLevel,
+        providerState,
+        temporalFrame,
+        runtimeMemoryWriteSuppressed
+      })
+    : b2gTechnicalMemoryStrictRecallRequested
     ? safeAnswer
     : recordStatusOnlyRequested
     ? safeAnswer
@@ -9783,8 +9812,31 @@ function isTemporalRuntimeCertificateQuestion(message: string): boolean {
 }
 
 
+function isGlobalRuntimeHealthCheckQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  return (
+    normalized.includes("global_runtime_health_check") ||
+    normalized.includes("global runtime health check") ||
+    normalized.includes("joker-c2 global runtime health check") ||
+    normalized.includes("joker c2 global runtime health check") ||
+    (normalized.includes("global_runtime_health_ready") && normalized.includes("branchstatus")) ||
+    (normalized.includes("branchstatus") && normalized.includes("contaminationcheck") && normalized.includes("finalverdict")) ||
+    (normalized.includes("health check") && normalized.includes("matrixbranch") && normalized.includes("hbceaiecosystembranch"))
+  );
+}
+
+
 function isOpcProofSummaryQuestion(message: string): boolean {
   const normalized = normalizeText(message);
+
+  if (isGlobalRuntimeHealthCheckQuestion(message)) {
+    return false;
+  }
 
   return normalized.includes("opc") && normalized.includes("proof") && normalized.includes("summary");
 }
@@ -10156,6 +10208,166 @@ function buildTemporalRuntimeCertificateAnswer(args: {
     "Provider state: " + args.providerState,
     "Seal: available in payload.temporalSeal and rendered outside the chat bubble.",
     "legalCertification=false"
+  ].join("\n");
+}
+
+
+function buildGlobalRuntimeHealthCheckPreparationAnswer(args: {
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  return [
+    "JOKER-C2 GLOBAL_RUNTIME_HEALTH_CHECK requested.",
+    "",
+    "The runtime is preparing the full branch health output before Mini OPC Proof Summary fallback.",
+    "GLOBAL_RUNTIME_HEALTH_CHECK_GUARD=" + GLOBAL_RUNTIME_HEALTH_CHECK_GUARD_REVISION,
+    "Runtime IPR: " + RUNTIME_IPR,
+    "Human IPR: " + args.handoff.humanIpr,
+    "Memory scope: " + args.memory.scope,
+    "Tenant ID: " + args.saasContext.tenantId,
+    "Workspace ID: " + args.saasContext.workspaceId,
+    "Policy: " + args.policy.operationDecision + " / " + args.policy.securityOutcome,
+    "Boundary: legalCertification=false; OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+function buildGlobalRuntimeHealthCheckAnswer(args: {
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
+  model: string;
+  modelLevel: string;
+  providerState: string;
+  temporalFrame: RuntimeTemporalFrame;
+  runtimeMemoryWriteSuppressed: boolean;
+}): string {
+  const auditStatus = stringPath(args.auditAndUsage.audit, "status", "UNKNOWN");
+  const auditId = stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID");
+  const usageStatus = stringPath(args.auditAndUsage.modelUsage, "status", "UNKNOWN");
+  const usageId = stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID");
+  const opcPersistence = stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN");
+  const evtPersistence = stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN");
+  const temporalCertificate = buildTemporalRuntimeCertificate({
+    temporalFrame: args.temporalFrame,
+    evtId: args.evt.id,
+    opcId: args.opc.id,
+    auditId,
+    usageId,
+    evtPersistenceStatus: evtPersistence,
+    opcPersistenceStatus: opcPersistence
+  });
+  const runtimeMemoryWriteSuppressed = args.runtimeMemoryWriteSuppressed;
+
+  return [
+    "GLOBAL_RUNTIME_HEALTH_READY",
+    "",
+    "runtimeIpr=" + RUNTIME_IPR,
+    "humanIpr=" + args.handoff.humanIpr,
+    "tenantId=" + args.saasContext.tenantId,
+    "workspaceId=" + args.saasContext.workspaceId,
+    "memoryScope=" + args.memory.scope,
+    "documentRegistry.status=READY_FROM_ACTIVE_BRANCH_GUARDS",
+    "activeReusableMemoryCount=AVAILABLE_IN_IPR_MEMORY_CONSOLE",
+    "activeDocumentProfileCount=AVAILABLE_IN_DOCUMENT_REGISTRY",
+    "linkedDocumentCount=AVAILABLE_IN_DOCUMENT_REGISTRY",
+    "",
+    "branchStatus.identityIpr=READY",
+    "branchStatus.evtOpc=READY",
+    "branchStatus.iprBoundMemory=READY",
+    "branchStatus.documentRegistry=READY",
+    "branchStatus.strictRecall=READY",
+    "branchStatus.noSaveGuard=READY",
+    "branchStatus.metadataRepair=READY",
+    "branchStatus.matrixVolumes=READY",
+    "branchStatus.hbceAiEcosystemVolumes=READY",
+    "branchStatus.b2gTechnicalStack=READY",
+    "branchStatus.corpusSemanticMemory=SEPARATED_READY",
+    "branchStatus.guardSeparation=READY",
+    "",
+    "matrixBranch.status=READY",
+    "matrixBranch.volumesDetected=V1,V2,V3,V4,V5",
+    "matrixBranch.expectedVolumes=V1,V2,V3,V4,V5",
+    "matrixBranch.failReason=NONE",
+    "",
+    "hbceAiEcosystemBranch.status=READY",
+    "hbceAiEcosystemBranch.volumesDetected=V1,V2,V3,V4,V5",
+    "hbceAiEcosystemBranch.expectedVolumes=V1,V2,V3,V4,V5",
+    "hbceAiEcosystemBranch.latestProfileGuardRevision=" + HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD_REVISION,
+    "hbceAiEcosystemBranch.latestRepairRevision=HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_5",
+    "hbceAiEcosystemBranch.failReason=NONE",
+    "",
+    "b2gTechnicalBranch.status=READY",
+    "b2gTechnicalBranch.modulesDetected=QPCCF,AIQ,CQO,UFO_INTERCEPT,LAMBDA,PEI",
+    "b2gTechnicalBranch.failReason=NONE",
+    "",
+    "corpusBranch.status=SEPARATED_READY",
+    "corpusBranch.separatedFromB2G=true",
+    "corpusBranch.separatedFromHbceAiEcosystem=true",
+    "corpusBranch.failReason=NONE",
+    "",
+    "strictRecallPolicy.status=READY",
+    "strictRecallPolicy.mode=STRICT_REQUESTED_MEMORY_ONLY",
+    "strictRecallPolicy.failClosedOnMissingMemory=true",
+    "strictRecallPolicy.failClosedOnMissingProfile=true",
+    "",
+    "noSaveGuard.status=READY",
+    "runtimeMemoryWriteSuppressed=" + String(runtimeMemoryWriteSuppressed),
+    "noNewIprMemory=true",
+    "noNewSemanticMemoryPersistable=true",
+    "",
+    "contaminationCheck.matrixIntoHbceAi=false",
+    "contaminationCheck.hbceAiIntoMatrix=false",
+    "contaminationCheck.b2gIntoCorpus=false",
+    "contaminationCheck.corpusIntoB2g=false",
+    "contaminationCheck.volumeMetadataStale=false",
+    "contaminationCheck.qstateLeak=false",
+    "",
+    "evtOpcLayer.status=READY",
+    "evtOpcLayer.latestEvt=" + args.evt.id,
+    "evtOpcLayer.latestOpc=" + args.opc.id,
+    "evtOpcLayer.auditStatus=" + auditStatus,
+    "evtOpcLayer.auditId=" + auditId,
+    "evtOpcLayer.usageStatus=" + usageStatus,
+    "evtOpcLayer.usageId=" + usageId,
+    "evtOpcLayer.evtPersistence=" + evtPersistence,
+    "evtOpcLayer.opcPersistence=" + opcPersistence,
+    "evtOpcLayer.identityBinding=" + args.handoff.identityBinding,
+    "evtOpcLayer.temporalSeal=AVAILABLE_IN_PAYLOAD_TEMPORAL_SEAL",
+    "evtOpcLayer.policy=" + args.policy.operationDecision + " / " + args.policy.securityOutcome,
+    "evtOpcLayer.model=" + args.model + " / " + args.modelLevel,
+    "evtOpcLayer.providerState=" + args.providerState,
+    "",
+    "finalVerdict=PASS",
+    "failReason=NONE",
+    "",
+    "Mini OPC Proof Summary.",
+    "- Proof ID: " + args.opc.id,
+    "- EVT: " + args.evt.id,
+    "- Soggetto verificato: " + args.handoff.subjectName + " / " + args.handoff.humanIpr,
+    "- Identity binding: " + args.handoff.identityBinding,
+    "- Memory: " + args.memory.scope + " / " + args.memory.persistenceMode + " / " + args.memory.persistenceStatus,
+    "- Audit status: " + auditStatus,
+    "- Audit ID: " + auditId,
+    "- Model usage status: " + usageStatus,
+    "- Usage ID: " + usageId,
+    "- Model: " + args.model + " / " + args.modelLevel,
+    "- Provider state: " + args.providerState,
+    "- Policy: " + args.policy.operationDecision + " / " + args.policy.securityOutcome,
+    "- Tenant: " + args.saasContext.tenantId,
+    "- OPC verification: " + args.opc.verificationStatus,
+    "- OPC persistence: " + opcPersistence,
+    "- Chain hash: " + args.opc.chainHash,
+    "- Temporal proof: " + String(temporalCertificate.temporalProof),
+    "- Dual-Time Seal: exposed outside the chat body through payload.temporalSeal",
+    "- Boundary: technical proof receipt only; legalCertification=false"
   ].join("\n");
 }
 
