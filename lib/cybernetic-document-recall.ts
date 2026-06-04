@@ -6,10 +6,10 @@ import {
 import type { DocumentProfileDatabaseRow } from "@/lib/ipr-database";
 
 export const CYBERNETIC_DOCUMENT_RECALL_ENGINE_REVISION =
-  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_1";
+  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_2";
 
 const HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR_REVISION =
-  "HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_1";
+  "HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_2";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_ID = "DOC-PROFILE-8602A2F8D2E2494D";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_MEMORY_ID = "IPR-MEM-20260604124905-E968EDC7";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH =
@@ -20,6 +20,73 @@ const HBCE_AI_ECOSYSTEM_VOLUME_I_SUBTITLE =
   "Architettura operativa per intelligenze artificiali verificabili, responsabili e governate";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY =
   "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, AI JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed.";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_AXIS =
+  "AI · HBCE · IPR · EVT · OPC · MATRIX · JOKER-C2 · Governance · Audit · Responsibility";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_KEY_TERMS = [
+  "HBCE ECOSISTEMA AI",
+  "HBCE AI Ecosystem",
+  "Volume I",
+  "AI governance",
+  "Governance operativa",
+  "Intelligenza artificiale governata",
+  "AI verificabile",
+  "IPR",
+  "Identity Primary Record",
+  "Identità operativa",
+  "EVT",
+  "Evento verificabile",
+  "OPC",
+  "Prova operativa",
+  "MATRIX",
+  "AI JOKER-C2",
+  "Audit",
+  "Responsabilità verificabile",
+  "Fail-closed",
+  "B2B",
+  "B2G",
+  "AI Act",
+  "Compliance",
+  "Document Memory",
+  "Runtime governance"
+];
+const HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_ID = "DOC-PROFILE-995E764E5A3E6E40";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_MEMORY_ID = "IPR-MEM-20260604142520-C4EA1D92";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_FILE_HASH =
+  "sha256:f966e296f48109c595ac4e39b97467338b354b8bf62f29dbef4b3107f2a1699e";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_FILENAME = "HBCE_ECOSISTEMA_AI_VOLUME_II_CLEAN_RUNTIME_FOR_JOKER_C2.txt";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_TITLE = "HBCE ECOSISTEMA AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_SUBTITLE =
+  "IPR — Protocollo di Identità Operativa per Sistemi AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_CANONICAL_AXIS =
+  "IPR · Identity Primary Record · Identità operativa · EVT · OPC · Audit · Registro · Verifica · Derivazione · Continuità";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_CANONICAL_SUMMARY =
+  "HBCE ECOSISTEMA AI Volume II definisce l’IPR come protocollo di identità operativa per sistemi AI, descrivendo struttura, record, payload, hash, timestamp, stati, derivazioni, validazione, minimizzazione dati, registro, ricevuta, verifica, ciclo di vita e continuità auditabile.";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_KEY_TERMS = [
+  "HBCE ECOSISTEMA AI",
+  "HBCE AI Ecosystem",
+  "Volume II",
+  "IPR",
+  "Identity Primary Record",
+  "Protocollo IPR",
+  "Identità operativa",
+  "Record IPR",
+  "Payload",
+  "Hash",
+  "Timestamp",
+  "Stati operativi",
+  "Derivazione IPR",
+  "Validazione",
+  "Minimizzazione dati",
+  "Registro IPR",
+  "Ricevuta IPR",
+  "Verification Gateway",
+  "Ciclo di vita",
+  "Audit",
+  "EVT",
+  "OPC",
+  "AI JOKER-C2",
+  "Continuità auditabile"
+];
 
 export type CyberneticDocumentFileSnapshot = {
   name?: string | null;
@@ -305,7 +372,36 @@ function isMatrixVolumeVContaminatedSummary(value: string | null): boolean {
   );
 }
 
+function isHbceAiEcosystemVolumeIIProfileRecord(publicProfile: Record<string, unknown>): boolean {
+  const profileId = stringFromValue(publicProfile.profileId).toUpperCase();
+  const memoryId = stringFromValue(publicProfile.memoryId).toUpperCase();
+  const fileHash = stringFromValue(publicProfile.fileHash).trim().toLowerCase();
+  const filename = normalizeComparableDocumentValue(publicProfile.filename);
+  const docFamily = stringFromValue(publicProfile.docFamily).trim().toUpperCase();
+  const volume = stringFromValue(publicProfile.volume).trim().toUpperCase();
+  const ecosystemVolume = stringFromValue(publicProfile.ecosystemVolume).trim().toUpperCase();
+  const module = stringFromValue(publicProfile.module).trim().toUpperCase();
+  const subtitle = normalizeComparableDocumentValue(publicProfile.subtitle);
+  const summary = normalizeComparableDocumentValue(publicProfile.summary);
+
+  return (
+    profileId === HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_ID ||
+    memoryId === HBCE_AI_ECOSYSTEM_VOLUME_II_MEMORY_ID ||
+    fileHash === HBCE_AI_ECOSYSTEM_VOLUME_II_FILE_HASH ||
+    filename === normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_II_FILENAME) ||
+    module === "HBCE_ECOSISTEMA_AI_VOLUME_II" ||
+    (docFamily === "HBCE_AI_ECOSYSTEM" && (volume === "V2" || ecosystemVolume === "V2")) ||
+    subtitle === normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_II_SUBTITLE) ||
+    summary.includes("volume ii definisce") ||
+    summary.includes("protocollo di identita operativa")
+  );
+}
+
 function isHbceAiEcosystemVolumeIProfileRecord(publicProfile: Record<string, unknown>): boolean {
+  if (isHbceAiEcosystemVolumeIIProfileRecord(publicProfile)) {
+    return false;
+  }
+
   const profileId = stringFromValue(publicProfile.profileId).toUpperCase();
   const memoryId = stringFromValue(publicProfile.memoryId).toUpperCase();
   const fileHash = stringFromValue(publicProfile.fileHash).trim().toLowerCase();
@@ -324,34 +420,94 @@ function isHbceAiEcosystemVolumeIProfileRecord(publicProfile: Record<string, unk
   );
 }
 
-function withHbceAiEcosystemVolumeISummaryHardRepair(
-  publicProfile: Record<string, unknown>
-): Record<string, unknown> {
-  if (!isHbceAiEcosystemVolumeIProfileRecord(publicProfile)) {
-    return publicProfile;
-  }
+function isHbceAiEcosystemVolumeIOrIIProfileRecord(publicProfile: Record<string, unknown>): boolean {
+  return (
+    isHbceAiEcosystemVolumeIIProfileRecord(publicProfile) ||
+    isHbceAiEcosystemVolumeIProfileRecord(publicProfile)
+  );
+}
 
+function withHbceAiEcosystemCanonicalProfileRepair(
+  publicProfile: Record<string, unknown>,
+  args: {
+    volume: "V1" | "V2";
+    title: string;
+    subtitle: string;
+    canonicalAxis: string;
+    canonicalSummary: string;
+    keyTerms: string[];
+  }
+): Record<string, unknown> {
   const previousSummary = documentProfileString(publicProfile, "summary");
+  const previousVolume = documentProfileString(publicProfile, "volume");
+  const previousEcosystemVolume = documentProfileString(publicProfile, "ecosystemVolume");
   const previousSubtitle = documentProfileString(publicProfile, "subtitle");
+  const previousCanonicalAxis = documentProfileString(publicProfile, "canonicalAxis");
   const previousSummaryContaminationDetected = isMatrixVolumeVContaminatedSummary(previousSummary);
-  const summaryRepairApplied = previousSummary !== HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY;
+  const summaryRepairApplied =
+    previousSummary !== args.canonicalSummary ||
+    previousVolume !== args.volume ||
+    previousEcosystemVolume !== args.volume ||
+    previousSubtitle !== args.subtitle ||
+    previousCanonicalAxis !== args.canonicalAxis;
 
   return {
     ...publicProfile,
-    title: documentProfileString(publicProfile, "title") || HBCE_AI_ECOSYSTEM_VOLUME_I_TITLE,
-    subtitle: previousSubtitle || HBCE_AI_ECOSYSTEM_VOLUME_I_SUBTITLE,
-    summary: HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY,
+    docFamily: "HBCE_AI_ECOSYSTEM",
+    documentKind: "HBCE_AI_ECOSYSTEM_VOLUME",
+    ecosystemCycle: "HBCE_ECOSISTEMA_AI",
+    ecosystemVolume: args.volume,
+    volume: args.volume,
+    title: args.title,
+    subtitle: args.subtitle,
+    canonicalAxis: args.canonicalAxis,
+    summary: args.canonicalSummary,
+    keyTerms: args.keyTerms,
+    semanticTerms: args.keyTerms,
     hbceAiEcosystemProfileSummaryHardRepairApplied: summaryRepairApplied,
     hbceAiEcosystemProfileSummaryHardRepairRevision: HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR_REVISION,
+    hbceAiEcosystemProfileSummaryHardRepairVolume: args.volume,
     preRepairSummary: previousSummary || "NO_PRE_REPAIR_SUMMARY",
+    preRepairVolume: previousVolume || "NO_PRE_REPAIR_VOLUME",
+    preRepairEcosystemVolume: previousEcosystemVolume || "NO_PRE_REPAIR_ECOSYSTEM_VOLUME",
+    preRepairSubtitle: previousSubtitle || "NO_PRE_REPAIR_SUBTITLE",
+    preRepairCanonicalAxis: previousCanonicalAxis || "NO_PRE_REPAIR_CANONICAL_AXIS",
     preRepairSummaryContaminationDetected: previousSummaryContaminationDetected,
     preRepairMatrixV5SummaryDetected: previousSummaryContaminationDetected,
     summaryContaminationDetected: false,
     matrixV5SummaryDetected: false,
     hbceAiEcosystemSummaryDetected: true,
-    expectedSummary: HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY,
-    actualSummary: HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY
+    expectedSummary: args.canonicalSummary,
+    actualSummary: args.canonicalSummary
   };
+}
+
+function withHbceAiEcosystemProfileSummaryHardRepair(
+  publicProfile: Record<string, unknown>
+): Record<string, unknown> {
+  if (isHbceAiEcosystemVolumeIIProfileRecord(publicProfile)) {
+    return withHbceAiEcosystemCanonicalProfileRepair(publicProfile, {
+      volume: "V2",
+      title: HBCE_AI_ECOSYSTEM_VOLUME_II_TITLE,
+      subtitle: HBCE_AI_ECOSYSTEM_VOLUME_II_SUBTITLE,
+      canonicalAxis: HBCE_AI_ECOSYSTEM_VOLUME_II_CANONICAL_AXIS,
+      canonicalSummary: HBCE_AI_ECOSYSTEM_VOLUME_II_CANONICAL_SUMMARY,
+      keyTerms: HBCE_AI_ECOSYSTEM_VOLUME_II_KEY_TERMS
+    });
+  }
+
+  if (isHbceAiEcosystemVolumeIProfileRecord(publicProfile)) {
+    return withHbceAiEcosystemCanonicalProfileRepair(publicProfile, {
+      volume: "V1",
+      title: HBCE_AI_ECOSYSTEM_VOLUME_I_TITLE,
+      subtitle: HBCE_AI_ECOSYSTEM_VOLUME_I_SUBTITLE,
+      canonicalAxis: HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_AXIS,
+      canonicalSummary: HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY,
+      keyTerms: HBCE_AI_ECOSYSTEM_VOLUME_I_KEY_TERMS
+    });
+  }
+
+  return publicProfile;
 }
 
 function booleanFromPublicProfile(value: unknown): boolean {
@@ -367,19 +523,24 @@ function booleanFromPublicProfile(value: unknown): boolean {
 }
 
 function hbceAiEcosystemProfileSummaryHardRepairLines(item: CyberneticDocumentProfileRecallItem): string[] {
-  if (!isHbceAiEcosystemVolumeIProfileRecord(item.publicProfile || {})) {
+  if (!isHbceAiEcosystemVolumeIOrIIProfileRecord(item.publicProfile || {})) {
     return [];
   }
 
   return [
     `summaryRepairRevision: ${stringFromValue(item.publicProfile.hbceAiEcosystemProfileSummaryHardRepairRevision) || HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR_REVISION}`,
     `summaryRepairApplied: ${String(booleanFromPublicProfile(item.publicProfile.hbceAiEcosystemProfileSummaryHardRepairApplied))}`,
+    `summaryRepairVolume: ${stringFromValue(item.publicProfile.hbceAiEcosystemProfileSummaryHardRepairVolume) || item.volume || "UNKNOWN_VOLUME"}`,
+    `preRepairVolume: ${stringFromValue(item.publicProfile.preRepairVolume) || "NO_PRE_REPAIR_VOLUME"}`,
+    `preRepairEcosystemVolume: ${stringFromValue(item.publicProfile.preRepairEcosystemVolume) || "NO_PRE_REPAIR_ECOSYSTEM_VOLUME"}`,
+    `preRepairSubtitle: ${stringFromValue(item.publicProfile.preRepairSubtitle) || "NO_PRE_REPAIR_SUBTITLE"}`,
+    `preRepairCanonicalAxis: ${stringFromValue(item.publicProfile.preRepairCanonicalAxis) || "NO_PRE_REPAIR_CANONICAL_AXIS"}`,
     `preRepairSummaryContaminationDetected: ${String(booleanFromPublicProfile(item.publicProfile.preRepairSummaryContaminationDetected))}`,
     `preRepairMatrixV5SummaryDetected: ${String(booleanFromPublicProfile(item.publicProfile.preRepairMatrixV5SummaryDetected))}`,
     `summaryContaminationDetected: ${String(booleanFromPublicProfile(item.publicProfile.summaryContaminationDetected))}`,
     `matrixV5SummaryDetected: ${String(booleanFromPublicProfile(item.publicProfile.matrixV5SummaryDetected))}`,
     `hbceAiEcosystemSummaryDetected: ${String(booleanFromPublicProfile(item.publicProfile.hbceAiEcosystemSummaryDetected))}`,
-    `expectedSummary: ${stringFromValue(item.publicProfile.expectedSummary) || HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY}`,
+    `expectedSummary: ${stringFromValue(item.publicProfile.expectedSummary) || item.summary || "NO_EXPECTED_SUMMARY"}`,
     `actualSummary: ${stringFromValue(item.publicProfile.actualSummary) || item.summary || "NO_ACTUAL_SUMMARY"}`
   ];
 }
@@ -917,7 +1078,7 @@ function isActiveReusableDocumentProfileRecallItem(item: CyberneticDocumentProfi
 
 function normalizeDocumentProfileRow(row: DocumentProfileDatabaseRow): CyberneticDocumentProfileRecallItem {
   const rawPublicProfile = toPublicDocumentProfile(row) as Record<string, unknown>;
-  const publicProfile = withHbceAiEcosystemVolumeISummaryHardRepair(rawPublicProfile);
+  const publicProfile = withHbceAiEcosystemProfileSummaryHardRepair(rawPublicProfile);
 
   return {
     profileId: documentProfileString(publicProfile, "profileId"),
