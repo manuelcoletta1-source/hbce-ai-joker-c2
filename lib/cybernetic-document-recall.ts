@@ -6,10 +6,10 @@ import {
 import type { DocumentProfileDatabaseRow } from "@/lib/ipr-database";
 
 export const CYBERNETIC_DOCUMENT_RECALL_ENGINE_REVISION =
-  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_3";
+  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_4";
 
 const HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR_REVISION =
-  "HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_3";
+  "HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_4";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_ID = "DOC-PROFILE-8602A2F8D2E2494D";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_MEMORY_ID = "IPR-MEM-20260604124905-E968EDC7";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH =
@@ -124,6 +124,50 @@ const HBCE_AI_ECOSYSTEM_VOLUME_III_KEY_TERMS = [
   "OPC",
   "AI JOKER-C2",
   "Verificabilità"
+];
+const HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_ID = "DOC-PROFILE-9BB76910F2A96526";
+const HBCE_AI_ECOSYSTEM_VOLUME_IV_MEMORY_ID = "IPR-MEM-20260604154950-F111F7E2";
+const HBCE_AI_ECOSYSTEM_VOLUME_IV_FILE_HASH =
+  "sha256:ac5e69982ef0b29d9639e48d4a791f0f0ac9aeeea2602994ca34d846633eaab2";
+const HBCE_AI_ECOSYSTEM_VOLUME_IV_FILENAME = "HBCE_ECOSISTEMA_AI_VOLUME_IV_CLEAN_RUNTIME_FOR_JOKER_C2.txt";
+const HBCE_AI_ECOSYSTEM_VOLUME_IV_TITLE = "HBCE ECOSISTEMA AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_IV_MODULE = "HBCE_ECOSISTEMA_AI_VOLUME_IV";
+const HBCE_AI_ECOSYSTEM_VOLUME_IV_CLASSIFICATION =
+  "HBCE_AI_ECOSYSTEM_OPERATIONAL_OFFICE_EVIDENCE_CHAIN_VOLUME";
+const HBCE_AI_ECOSYSTEM_VOLUME_IV_SUBTITLE =
+  "L’Ufficio Operativo dell’Intelligenza Artificiale";
+const HBCE_AI_ECOSYSTEM_VOLUME_IV_CANONICAL_AXIS =
+  "Pratica · Operatore · Input · Evento · Hash · OPC · Verifica · Archivio · Responsabilità";
+const HBCE_AI_ECOSYSTEM_VOLUME_IV_OPERATIONAL_TRACE_AXIS =
+  "Practice · Operator · Input · Event · Hash · EVT · OPC · Verification · Archive · Evidence · Anomaly · Incident Review · Responsibility";
+const HBCE_AI_ECOSYSTEM_VOLUME_IV_CANONICAL_SUMMARY =
+  "HBCE ECOSISTEMA AI Volume IV definisce il livello tecnico-probatorio dell’ecosistema HBCE: l’Ufficio Operativo dell’Intelligenza Artificiale, la trasformazione della risposta AI in pratica verificabile, la catena EVT/OPC, gli hash, l’audit trail, il fascicolo operativo, le anomalie, l’incident review, la minimizzazione della prova, la sicurezza LLM, l’Evidence Pack e i limiti di non certificazione pubblica automatica.";
+const HBCE_AI_ECOSYSTEM_VOLUME_IV_KEY_TERMS = [
+  "HBCE ECOSISTEMA AI",
+  "HBCE AI Ecosystem",
+  "Volume IV",
+  "Ufficio Operativo dell’Intelligenza Artificiale",
+  "Pratica verificabile",
+  "Operatore HBCE",
+  "EVT",
+  "Event Verifiable Trace",
+  "OPC",
+  "Operational Proof & Compliance",
+  "Catena EVT/OPC",
+  "Hash",
+  "Audit trail",
+  "Fascicolo operativo",
+  "Anomalie",
+  "Incident review",
+  "Evidence Pack",
+  "Minimizzazione della prova",
+  "Sicurezza LLM",
+  "Prompt injection",
+  "Data disclosure",
+  "Retention",
+  "Access control",
+  "Responsabilità tecnica",
+  "Non certificazione pubblica automatica"
 ];
 
 export type CyberneticDocumentFileSnapshot = {
@@ -410,7 +454,44 @@ function isMatrixVolumeVContaminatedSummary(value: string | null): boolean {
   );
 }
 
+function isHbceAiEcosystemVolumeIVProfileRecord(publicProfile: Record<string, unknown>): boolean {
+  const profileId = stringFromValue(publicProfile.profileId).toUpperCase();
+  const memoryId = stringFromValue(publicProfile.memoryId).toUpperCase();
+  const fileHash = stringFromValue(publicProfile.fileHash).trim().toLowerCase();
+  const filename = normalizeComparableDocumentValue(publicProfile.filename);
+  const docFamily = stringFromValue(publicProfile.docFamily).trim().toUpperCase();
+  const volume = stringFromValue(publicProfile.volume).trim().toUpperCase();
+  const ecosystemVolume = stringFromValue(publicProfile.ecosystemVolume).trim().toUpperCase();
+  const module = stringFromValue(publicProfile.module).trim().toUpperCase();
+  const subtitle = normalizeComparableDocumentValue(publicProfile.subtitle);
+  const canonicalAxis = normalizeComparableDocumentValue(publicProfile.canonicalAxis);
+  const summary = normalizeComparableDocumentValue(publicProfile.summary);
+
+  return (
+    profileId === HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_ID ||
+    memoryId === HBCE_AI_ECOSYSTEM_VOLUME_IV_MEMORY_ID ||
+    fileHash === HBCE_AI_ECOSYSTEM_VOLUME_IV_FILE_HASH ||
+    filename === normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_IV_FILENAME) ||
+    module === "HBCE_ECOSISTEMA_AI_VOLUME_IV" ||
+    (docFamily === "HBCE_AI_ECOSYSTEM" && (volume === "V4" || ecosystemVolume === "V4")) ||
+    subtitle === normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_IV_SUBTITLE) ||
+    canonicalAxis === normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_IV_CANONICAL_AXIS) ||
+    summary.includes("volume iv definisce") ||
+    summary.includes("livello tecnico-probatorio") ||
+    summary.includes("ufficio operativo dell’intelligenza artificiale") ||
+    summary.includes("ufficio operativo dell'intelligenza artificiale") ||
+    summary.includes("catena evt/opc") ||
+    summary.includes("evidence pack") ||
+    summary.includes("incident review") ||
+    summary.includes("non certificazione pubblica automatica")
+  );
+}
+
 function isHbceAiEcosystemVolumeIIIProfileRecord(publicProfile: Record<string, unknown>): boolean {
+  if (isHbceAiEcosystemVolumeIVProfileRecord(publicProfile)) {
+    return false;
+  }
+
   const profileId = stringFromValue(publicProfile.profileId).toUpperCase();
   const memoryId = stringFromValue(publicProfile.memoryId).toUpperCase();
   const fileHash = stringFromValue(publicProfile.fileHash).trim().toLowerCase();
@@ -494,8 +575,9 @@ function isHbceAiEcosystemVolumeIProfileRecord(publicProfile: Record<string, unk
   );
 }
 
-function isHbceAiEcosystemVolumeIOrIIOrIIIProfileRecord(publicProfile: Record<string, unknown>): boolean {
+function isHbceAiEcosystemVolumeIOrIIOrIIIOrIVProfileRecord(publicProfile: Record<string, unknown>): boolean {
   return (
+    isHbceAiEcosystemVolumeIVProfileRecord(publicProfile) ||
     isHbceAiEcosystemVolumeIIIProfileRecord(publicProfile) ||
     isHbceAiEcosystemVolumeIIProfileRecord(publicProfile) ||
     isHbceAiEcosystemVolumeIProfileRecord(publicProfile)
@@ -505,12 +587,15 @@ function isHbceAiEcosystemVolumeIOrIIOrIIIProfileRecord(publicProfile: Record<st
 function withHbceAiEcosystemCanonicalProfileRepair(
   publicProfile: Record<string, unknown>,
   args: {
-    volume: "V1" | "V2" | "V3";
+    volume: "V1" | "V2" | "V3" | "V4";
     title: string;
     subtitle: string;
     canonicalAxis: string;
     canonicalSummary: string;
     keyTerms: string[];
+    module?: string;
+    classification?: string;
+    operationalTraceAxis?: string;
   }
 ): Record<string, unknown> {
   const previousSummary = documentProfileString(publicProfile, "summary");
@@ -533,9 +618,12 @@ function withHbceAiEcosystemCanonicalProfileRepair(
     ecosystemCycle: "HBCE_ECOSISTEMA_AI",
     ecosystemVolume: args.volume,
     volume: args.volume,
+    module: args.module || publicProfile.module,
     title: args.title,
     subtitle: args.subtitle,
+    classification: args.classification || publicProfile.classification,
     canonicalAxis: args.canonicalAxis,
+    operationalTraceAxis: args.operationalTraceAxis || publicProfile.operationalTraceAxis,
     summary: args.canonicalSummary,
     keyTerms: args.keyTerms,
     semanticTerms: args.keyTerms,
@@ -560,6 +648,20 @@ function withHbceAiEcosystemCanonicalProfileRepair(
 function withHbceAiEcosystemProfileSummaryHardRepair(
   publicProfile: Record<string, unknown>
 ): Record<string, unknown> {
+  if (isHbceAiEcosystemVolumeIVProfileRecord(publicProfile)) {
+    return withHbceAiEcosystemCanonicalProfileRepair(publicProfile, {
+      volume: "V4",
+      title: HBCE_AI_ECOSYSTEM_VOLUME_IV_TITLE,
+      subtitle: HBCE_AI_ECOSYSTEM_VOLUME_IV_SUBTITLE,
+      canonicalAxis: HBCE_AI_ECOSYSTEM_VOLUME_IV_CANONICAL_AXIS,
+      canonicalSummary: HBCE_AI_ECOSYSTEM_VOLUME_IV_CANONICAL_SUMMARY,
+      keyTerms: HBCE_AI_ECOSYSTEM_VOLUME_IV_KEY_TERMS,
+      module: HBCE_AI_ECOSYSTEM_VOLUME_IV_MODULE,
+      classification: HBCE_AI_ECOSYSTEM_VOLUME_IV_CLASSIFICATION,
+      operationalTraceAxis: HBCE_AI_ECOSYSTEM_VOLUME_IV_OPERATIONAL_TRACE_AXIS
+    });
+  }
+
   if (isHbceAiEcosystemVolumeIIIProfileRecord(publicProfile)) {
     return withHbceAiEcosystemCanonicalProfileRepair(publicProfile, {
       volume: "V3",
@@ -609,7 +711,7 @@ function booleanFromPublicProfile(value: unknown): boolean {
 }
 
 function hbceAiEcosystemProfileSummaryHardRepairLines(item: CyberneticDocumentProfileRecallItem): string[] {
-  if (!isHbceAiEcosystemVolumeIOrIIOrIIIProfileRecord(item.publicProfile || {})) {
+  if (!isHbceAiEcosystemVolumeIOrIIOrIIIOrIVProfileRecord(item.publicProfile || {})) {
     return [];
   }
 
