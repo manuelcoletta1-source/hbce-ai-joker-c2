@@ -6,10 +6,10 @@ import {
 import type { DocumentProfileDatabaseRow } from "@/lib/ipr-database";
 
 export const CYBERNETIC_DOCUMENT_RECALL_ENGINE_REVISION =
-  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_4";
+  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_5";
 
 const HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR_REVISION =
-  "HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_4";
+  "HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_5";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_ID = "DOC-PROFILE-8602A2F8D2E2494D";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_MEMORY_ID = "IPR-MEM-20260604124905-E968EDC7";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH =
@@ -168,6 +168,51 @@ const HBCE_AI_ECOSYSTEM_VOLUME_IV_KEY_TERMS = [
   "Access control",
   "Responsabilità tecnica",
   "Non certificazione pubblica automatica"
+];
+
+const HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_ID = "DOC-PROFILE-973154390367A735";
+const HBCE_AI_ECOSYSTEM_VOLUME_V_MEMORY_ID = "IPR-MEM-20260604162417-C5AB96FD";
+const HBCE_AI_ECOSYSTEM_VOLUME_V_FILE_HASH =
+  "sha256:d4c582cd0afa691423774c5c0fa531eda3b1923f3ec34ade398735e8abd58eab";
+const HBCE_AI_ECOSYSTEM_VOLUME_V_FILENAME = "HBCE_ECOSISTEMA_AI_VOLUME_V_CLEAN_RUNTIME_FOR_JOKER_C2.txt";
+const HBCE_AI_ECOSYSTEM_VOLUME_V_TITLE = "HBCE ECOSISTEMA AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_V_MODULE = "HBCE_ECOSISTEMA_AI_VOLUME_V";
+const HBCE_AI_ECOSYSTEM_VOLUME_V_CLASSIFICATION =
+  "HBCE_AI_ECOSYSTEM_FEDERATED_AI_NETWORK_VOLUME";
+const HBCE_AI_ECOSYSTEM_VOLUME_V_SUBTITLE =
+  "LA RETE FEDERATA DELL’INTELLIGENZA ARTIFICIALE";
+const HBCE_AI_ECOSYSTEM_VOLUME_V_CANONICAL_AXIS =
+  "Nodo · Registro · Fiducia · Interoperabilità · Federazione · Sovranità · Continuità";
+const HBCE_AI_ECOSYSTEM_VOLUME_V_OPERATIONAL_TRACE_AXIS =
+  "Node · Registry · Trust · Interoperability · Federation · Sovereignty · Continuity · Trust-State · Cross-Registry Verification · Revocation · HBCE-F";
+const HBCE_AI_ECOSYSTEM_VOLUME_V_CANONICAL_SUMMARY =
+  "HBCE ECOSISTEMA AI Volume V definisce la rete federata dell’intelligenza artificiale: il passaggio da sistema governato interno a infrastruttura federata esterna, fondata su nodi HBCE, registri federati, Trust Fabric, Trust-State, cross-registry verification, interoperabilità tra sistemi AI, AI supply chain, federazione pubblico-privata, revoca, quarantena, sovranità digitale, continuità operativa e standard HBCE-F.";
+const HBCE_AI_ECOSYSTEM_VOLUME_V_KEY_TERMS = [
+  "HBCE ECOSISTEMA AI",
+  "HBCE AI Ecosystem",
+  "Volume V",
+  "Rete federata dell’intelligenza artificiale",
+  "Nodo",
+  "Registro",
+  "Fiducia",
+  "Interoperabilità",
+  "Federazione",
+  "Sovranità",
+  "Continuità",
+  "HBCE-F",
+  "Trust Fabric",
+  "Trust-State",
+  "Cross-registry verification",
+  "Registri federati",
+  "Nodi HBCE",
+  "AI interoperability",
+  "AI supply chain",
+  "Public-private federation",
+  "Revoca",
+  "Quarantena",
+  "Sovranità digitale",
+  "Operational continuity",
+  "Standard operativo europeo"
 ];
 
 export type CyberneticDocumentFileSnapshot = {
@@ -454,7 +499,45 @@ function isMatrixVolumeVContaminatedSummary(value: string | null): boolean {
   );
 }
 
+function isHbceAiEcosystemVolumeVProfileRecord(publicProfile: Record<string, unknown>): boolean {
+  const profileId = stringFromValue(publicProfile.profileId).toUpperCase();
+  const memoryId = stringFromValue(publicProfile.memoryId).toUpperCase();
+  const fileHash = stringFromValue(publicProfile.fileHash).trim().toLowerCase();
+  const filename = normalizeComparableDocumentValue(publicProfile.filename);
+  const docFamily = stringFromValue(publicProfile.docFamily).trim().toUpperCase();
+  const volume = stringFromValue(publicProfile.volume).trim().toUpperCase();
+  const ecosystemVolume = stringFromValue(publicProfile.ecosystemVolume).trim().toUpperCase();
+  const module = stringFromValue(publicProfile.module).trim().toUpperCase();
+  const subtitle = normalizeComparableDocumentValue(publicProfile.subtitle);
+  const canonicalAxis = normalizeComparableDocumentValue(publicProfile.canonicalAxis);
+  const summary = normalizeComparableDocumentValue(publicProfile.summary);
+
+  return (
+    profileId === HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_ID ||
+    memoryId === HBCE_AI_ECOSYSTEM_VOLUME_V_MEMORY_ID ||
+    fileHash === HBCE_AI_ECOSYSTEM_VOLUME_V_FILE_HASH ||
+    filename === normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_V_FILENAME) ||
+    module === "HBCE_ECOSISTEMA_AI_VOLUME_V" ||
+    (docFamily === "HBCE_AI_ECOSYSTEM" && (volume === "V5" || ecosystemVolume === "V5")) ||
+    subtitle === normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_V_SUBTITLE) ||
+    canonicalAxis === normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_V_CANONICAL_AXIS) ||
+    summary.includes("volume v definisce") ||
+    summary.includes("rete federata dell’intelligenza artificiale") ||
+    summary.includes("rete federata dell'intelligenza artificiale") ||
+    summary.includes("infrastruttura federata esterna") ||
+    summary.includes("trust fabric") ||
+    summary.includes("trust-state") ||
+    summary.includes("cross-registry verification") ||
+    summary.includes("ai supply chain") ||
+    summary.includes("hbce-f")
+  );
+}
+
 function isHbceAiEcosystemVolumeIVProfileRecord(publicProfile: Record<string, unknown>): boolean {
+  if (isHbceAiEcosystemVolumeVProfileRecord(publicProfile)) {
+    return false;
+  }
+
   const profileId = stringFromValue(publicProfile.profileId).toUpperCase();
   const memoryId = stringFromValue(publicProfile.memoryId).toUpperCase();
   const fileHash = stringFromValue(publicProfile.fileHash).trim().toLowerCase();
@@ -488,7 +571,10 @@ function isHbceAiEcosystemVolumeIVProfileRecord(publicProfile: Record<string, un
 }
 
 function isHbceAiEcosystemVolumeIIIProfileRecord(publicProfile: Record<string, unknown>): boolean {
-  if (isHbceAiEcosystemVolumeIVProfileRecord(publicProfile)) {
+  if (
+    isHbceAiEcosystemVolumeVProfileRecord(publicProfile) ||
+    isHbceAiEcosystemVolumeIVProfileRecord(publicProfile)
+  ) {
     return false;
   }
 
@@ -551,6 +637,8 @@ function isHbceAiEcosystemVolumeIIProfileRecord(publicProfile: Record<string, un
 
 function isHbceAiEcosystemVolumeIProfileRecord(publicProfile: Record<string, unknown>): boolean {
   if (
+    isHbceAiEcosystemVolumeVProfileRecord(publicProfile) ||
+    isHbceAiEcosystemVolumeIVProfileRecord(publicProfile) ||
     isHbceAiEcosystemVolumeIIIProfileRecord(publicProfile) ||
     isHbceAiEcosystemVolumeIIProfileRecord(publicProfile)
   ) {
@@ -575,8 +663,9 @@ function isHbceAiEcosystemVolumeIProfileRecord(publicProfile: Record<string, unk
   );
 }
 
-function isHbceAiEcosystemVolumeIOrIIOrIIIOrIVProfileRecord(publicProfile: Record<string, unknown>): boolean {
+function isHbceAiEcosystemVolumeIOrIIOrIIIOrIVOrVProfileRecord(publicProfile: Record<string, unknown>): boolean {
   return (
+    isHbceAiEcosystemVolumeVProfileRecord(publicProfile) ||
     isHbceAiEcosystemVolumeIVProfileRecord(publicProfile) ||
     isHbceAiEcosystemVolumeIIIProfileRecord(publicProfile) ||
     isHbceAiEcosystemVolumeIIProfileRecord(publicProfile) ||
@@ -587,7 +676,7 @@ function isHbceAiEcosystemVolumeIOrIIOrIIIOrIVProfileRecord(publicProfile: Recor
 function withHbceAiEcosystemCanonicalProfileRepair(
   publicProfile: Record<string, unknown>,
   args: {
-    volume: "V1" | "V2" | "V3" | "V4";
+    volume: "V1" | "V2" | "V3" | "V4" | "V5";
     title: string;
     subtitle: string;
     canonicalAxis: string;
@@ -648,6 +737,20 @@ function withHbceAiEcosystemCanonicalProfileRepair(
 function withHbceAiEcosystemProfileSummaryHardRepair(
   publicProfile: Record<string, unknown>
 ): Record<string, unknown> {
+  if (isHbceAiEcosystemVolumeVProfileRecord(publicProfile)) {
+    return withHbceAiEcosystemCanonicalProfileRepair(publicProfile, {
+      volume: "V5",
+      title: HBCE_AI_ECOSYSTEM_VOLUME_V_TITLE,
+      subtitle: HBCE_AI_ECOSYSTEM_VOLUME_V_SUBTITLE,
+      canonicalAxis: HBCE_AI_ECOSYSTEM_VOLUME_V_CANONICAL_AXIS,
+      canonicalSummary: HBCE_AI_ECOSYSTEM_VOLUME_V_CANONICAL_SUMMARY,
+      keyTerms: HBCE_AI_ECOSYSTEM_VOLUME_V_KEY_TERMS,
+      module: HBCE_AI_ECOSYSTEM_VOLUME_V_MODULE,
+      classification: HBCE_AI_ECOSYSTEM_VOLUME_V_CLASSIFICATION,
+      operationalTraceAxis: HBCE_AI_ECOSYSTEM_VOLUME_V_OPERATIONAL_TRACE_AXIS
+    });
+  }
+
   if (isHbceAiEcosystemVolumeIVProfileRecord(publicProfile)) {
     return withHbceAiEcosystemCanonicalProfileRepair(publicProfile, {
       volume: "V4",
@@ -711,7 +814,7 @@ function booleanFromPublicProfile(value: unknown): boolean {
 }
 
 function hbceAiEcosystemProfileSummaryHardRepairLines(item: CyberneticDocumentProfileRecallItem): string[] {
-  if (!isHbceAiEcosystemVolumeIOrIIOrIIIOrIVProfileRecord(item.publicProfile || {})) {
+  if (!isHbceAiEcosystemVolumeIOrIIOrIIIOrIVOrVProfileRecord(item.publicProfile || {})) {
     return [];
   }
 
