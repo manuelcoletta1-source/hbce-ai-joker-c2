@@ -634,10 +634,11 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
+const HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19" as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_RECALL_SUMMARY =
   "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed." as const;
 
@@ -849,19 +850,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const rawFullDocumentCoverageAuditRequested = isFullDocumentCoverageAuditQuestion(message);
   const b2gTechnicalMemoryStrictRecallRequested = isB2gTechnicalMemoryStrictRecallQuestion(message);
   const strictCyberneticDocumentMemoryRecallRequested = isCyberneticDocumentMemoryRecallQuestion(message);
-  const hbceAiEcosystemVolumeIFileDetected =
+  const hbceAiEcosystemVolumeFileDetected =
     !b2gTechnicalMemoryStrictRecallRequested &&
     !strictCyberneticDocumentMemoryRecallRequested &&
     files.length > 0 &&
-    hasHbceAiEcosystemVolumeISignal(message, files);
+    hasHbceAiEcosystemAnyVolumeSignal(message, files);
   const hbceAiEcosystemDocumentProfileRequested =
     !strictCyberneticDocumentMemoryRecallRequested &&
-    (hbceAiEcosystemVolumeIFileDetected ||
+    (hbceAiEcosystemVolumeFileDetected ||
       (!b2gTechnicalMemoryStrictRecallRequested && isHbceAiEcosystemDocumentProfileRequest(message, files)));
   const hbceAiEcosystemProfileLinkedMemorySaveRequested =
     !b2gTechnicalMemoryStrictRecallRequested &&
     !strictCyberneticDocumentMemoryRecallRequested &&
-    isHbceAiEcosystemProfileLinkedMemorySaveRequest(message);
+    !hbceAiEcosystemDocumentProfileRequested &&
+    isHbceAiEcosystemProfileLinkedMemorySaveRequest(message, files);
   const matrixEuropaVolumeIFileDetected =
     !b2gTechnicalMemoryStrictRecallRequested &&
     !strictCyberneticDocumentMemoryRecallRequested &&
@@ -7335,6 +7337,7 @@ function buildB2gTechnicalProfileMemoryPreparationAnswer(args: {
   return [
     b2gPrimaryStatusForModule(moduleDefinition, ready),
     "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
+    "hbceAiEcosystemVolumeIIProfileGuardRevision=" + HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD_REVISION,
     "activeFilename=" + diagnostic.activeFilename,
     "runtimeFileHash=" + diagnostic.runtimeFileHash,
     "textCoverageStatus=" + diagnostic.textCoverageStatus,
@@ -7405,6 +7408,7 @@ function buildB2gTechnicalProfileMemoryReadyAnswer(args: {
     primaryStatus,
     "",
     "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
+    "hbceAiEcosystemVolumeIIProfileGuardRevision=" + HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD_REVISION,
     "activeFilename=" + diagnostic.activeFilename,
     "sourceDocument=" + diagnostic.activeFilename,
     "runtimeFileHash=" + diagnostic.runtimeFileHash,
@@ -7488,6 +7492,27 @@ const HBCE_AI_ECOSYSTEM_VOLUME_I_OPERATIONAL_SUMMARY = "HBCE ECOSISTEMA AI Volum
 const HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_INPUTS = "identityEvents, aiInteractionRequests, governancePolicies, riskSignals, modelSelectionEvents, auditSignals, documentProfileRequests, tenantId, workspaceId, humanIpr";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_OUTPUTS = "hbceAiEcosystemProfile, aiGovernanceChain, iprIdentityBinding, evtTraceRecordCandidate, opcTechnicalProofReceipt, matrixCoordinationProfile, jokerC2RuntimeGovernanceProfile, auditReadinessProfile";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_FUTURE_GITHUB_MODULES = "lib/hbce-ai-ecosystem-volume-i.ts; app/api/v1/hbce-ai-ecosystem/v1/profile/route.ts; app/api/v1/hbce-ai-ecosystem/governance/route.ts; app/api/v1/hbce-ai-ecosystem/document-memory/route.ts; app/api/v1/hbce-ai-ecosystem/recall/route.ts";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_SUMMARY = "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, AI JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed.";
+
+const HBCE_AI_ECOSYSTEM_VOLUME_II_FILE_HASH = "sha256:f966e296f48109c595ac4e39b97467338b354b8bf62f29dbef4b3107f2a1699e";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_CANONICAL_FILENAME = "HBCE_ECOSISTEMA_AI_VOLUME_II_CLEAN_RUNTIME_FOR_JOKER_C2.txt";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_ORIGINAL_FILENAME = "2B.HBCE ECOSISTEMA AI — Volume II.txt";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_DOC_FAMILY = "HBCE_AI_ECOSYSTEM";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_DOCUMENT_KIND = "HBCE_AI_ECOSYSTEM_VOLUME";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_ECOSYSTEM_CYCLE = "HBCE_ECOSISTEMA_AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_MODULE = "HBCE_ECOSISTEMA_AI_VOLUME_II";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_VOLUME = "V2";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_TITLE = "HBCE ECOSISTEMA AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_SUBTITLE = "IPR — Protocollo di Identità Operativa per Sistemi AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_CLASSIFICATION = "HBCE_AI_ECOSYSTEM_IPR_PROTOCOL_VOLUME";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_QUALITY = "CANONICAL";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_CANONICAL_AXIS = "IPR · Identity Primary Record · Identità operativa · EVT · OPC · Audit · Registro · Verifica · Derivazione · Continuità";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_OPERATIONAL_TRACE_AXIS = "Identity · Record · Payload · Hash · Timestamp · State · Derivation · Registry · Receipt · Verification · Lifecycle · Continuity · Audit · EVT · OPC";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_SUMMARY = "HBCE ECOSISTEMA AI Volume II definisce l’IPR come protocollo di identità operativa per sistemi AI, descrivendo struttura, record, payload, hash, timestamp, stati, derivazioni, validazione, minimizzazione dati, registro, ricevuta, verifica, ciclo di vita e continuità auditabile.";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_OPERATIONAL_SUMMARY = "HBCE ECOSISTEMA AI Volume II is the IPR protocol volume of the HBCE AI Ecosystem cycle. It defines Identity Primary Record as the operational identity protocol for AI systems through records, payloads, hashes, timestamps, lifecycle states, derivation, validation, registry, receipts, verification, auditability and operational continuity.";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_RUNTIME_INPUTS = "identitySubjects, identityRecords, payloads, hashes, timestamps, lifecycleStates, derivationRequests, validationRequests, registryQueries, receiptRequests, auditSignals, tenantId, workspaceId, humanIpr";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_RUNTIME_OUTPUTS = "iprOperationalIdentityProfile, iprRecordCandidate, identityDerivationMap, evtIdentityBindingCandidate, opcIdentityProofReceipt, registryVerificationProfile, auditContinuityProfile";
+const HBCE_AI_ECOSYSTEM_VOLUME_II_FUTURE_GITHUB_MODULES = "lib/hbce-ai-ecosystem-volume-ii-ipr.ts; app/api/v1/hbce-ai-ecosystem/v2/ipr/profile/route.ts; app/api/v1/hbce-ai-ecosystem/ipr/registry/route.ts; app/api/v1/hbce-ai-ecosystem/ipr/verify/route.ts; app/api/v1/hbce-ai-ecosystem/ipr/recall/route.ts";
 
 type HbceAiEcosystemDocumentRuntimeProfile = {
   fileHash: string;
@@ -7502,6 +7527,7 @@ type HbceAiEcosystemDocumentRuntimeProfile = {
   quality: string;
   canonicalAxis: string;
   operationalTraceAxis: string;
+  summary: string;
   operationalSummary: string;
   runtimeInputs: string;
   runtimeOutputs: string;
@@ -7521,10 +7547,31 @@ const HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_PROFILE: HbceAiEcosystemDocumentRuntime
   quality: HBCE_AI_ECOSYSTEM_VOLUME_I_QUALITY,
   canonicalAxis: HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_AXIS,
   operationalTraceAxis: HBCE_AI_ECOSYSTEM_VOLUME_I_OPERATIONAL_TRACE_AXIS,
+  summary: HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_SUMMARY,
   operationalSummary: HBCE_AI_ECOSYSTEM_VOLUME_I_OPERATIONAL_SUMMARY,
   runtimeInputs: HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_INPUTS,
   runtimeOutputs: HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_OUTPUTS,
   futureGithubModules: HBCE_AI_ECOSYSTEM_VOLUME_I_FUTURE_GITHUB_MODULES
+};
+
+const HBCE_AI_ECOSYSTEM_VOLUME_II_RUNTIME_PROFILE: HbceAiEcosystemDocumentRuntimeProfile = {
+  fileHash: HBCE_AI_ECOSYSTEM_VOLUME_II_FILE_HASH,
+  docFamily: HBCE_AI_ECOSYSTEM_VOLUME_II_DOC_FAMILY,
+  documentKind: HBCE_AI_ECOSYSTEM_VOLUME_II_DOCUMENT_KIND,
+  ecosystemCycle: HBCE_AI_ECOSYSTEM_VOLUME_II_ECOSYSTEM_CYCLE,
+  module: HBCE_AI_ECOSYSTEM_VOLUME_II_MODULE,
+  volume: HBCE_AI_ECOSYSTEM_VOLUME_II_VOLUME,
+  title: HBCE_AI_ECOSYSTEM_VOLUME_II_TITLE,
+  subtitle: HBCE_AI_ECOSYSTEM_VOLUME_II_SUBTITLE,
+  classification: HBCE_AI_ECOSYSTEM_VOLUME_II_CLASSIFICATION,
+  quality: HBCE_AI_ECOSYSTEM_VOLUME_II_QUALITY,
+  canonicalAxis: HBCE_AI_ECOSYSTEM_VOLUME_II_CANONICAL_AXIS,
+  operationalTraceAxis: HBCE_AI_ECOSYSTEM_VOLUME_II_OPERATIONAL_TRACE_AXIS,
+  summary: HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_SUMMARY,
+  operationalSummary: HBCE_AI_ECOSYSTEM_VOLUME_II_OPERATIONAL_SUMMARY,
+  runtimeInputs: HBCE_AI_ECOSYSTEM_VOLUME_II_RUNTIME_INPUTS,
+  runtimeOutputs: HBCE_AI_ECOSYSTEM_VOLUME_II_RUNTIME_OUTPUTS,
+  futureGithubModules: HBCE_AI_ECOSYSTEM_VOLUME_II_FUTURE_GITHUB_MODULES
 };
 
 function resolveHbceAiEcosystemDocumentSignalText(message: string, files: PublicFileSnapshot[]): string {
@@ -7542,9 +7589,16 @@ function hasHbceAiEcosystemVolumeISignal(message: string, files: PublicFileSnaps
     return false;
   }
 
+  if (hasHbceAiEcosystemVolumeIISignal(message, files)) {
+    return false;
+  }
+
   const explicitIdentity =
     normalized.includes("hbce_ecosistema_ai_volume_i") ||
     normalized.includes("hbce ecosistema ai volume i") ||
+    normalized.includes("hbce_ecosistema_ai_volume_ii") ||
+    normalized.includes("hbce ecosistema ai volume ii") ||
+    normalized.includes("hbce_ai_ecosystem_ipr_protocol_volume") ||
     normalized.includes("hbce ecosistema ai") ||
     normalized.includes("1 hbce ecosistema ai") ||
     normalized.includes("hbce_ai_ecosystem") ||
@@ -7582,6 +7636,55 @@ function hasHbceAiEcosystemVolumeISignal(message: string, files: PublicFileSnaps
   return explicitIdentity && architectureSignals;
 }
 
+function hasHbceAiEcosystemVolumeIISignal(message: string, files: PublicFileSnapshot[]): boolean {
+  const normalized = resolveHbceAiEcosystemDocumentSignalText(message, files);
+
+  if (!normalized) {
+    return false;
+  }
+
+  const explicitIdentity =
+    normalized.includes("hbce_ecosistema_ai_volume_ii") ||
+    normalized.includes("hbce ecosistema ai volume ii") ||
+    normalized.includes("hbce ecosistema ai — volume ii") ||
+    normalized.includes("hbce ecosistema ai - volume ii") ||
+    normalized.includes("2b.hbce ecosistema ai") ||
+    normalized.includes("2b.hbce_ecosistema_ai") ||
+    normalized.includes("hbce_ecosistema_ai_volume_ii_clean_runtime_for_joker_c2.txt") ||
+    normalized.includes("f966e296f48109c595ac4e39b97467338b354b8bf62f29dbef4b3107f2a1699e") ||
+    normalized.includes("ecosystemvolume=v2") ||
+    normalized.includes("volume=v2") ||
+    normalized.includes("hbce_ecosistema_ai_volume_ii") ||
+    normalized.includes("hbce_ai_ecosystem_ipr_protocol_volume") ||
+    normalized.includes("ipr protocollo di identita operativa") ||
+    normalized.includes("ipr protocollo di identità operativa");
+
+  const protocolSignals =
+    normalized.includes("identity primary record") ||
+    normalized.includes("identita operativa") ||
+    normalized.includes("identità operativa") ||
+    normalized.includes("protocollo ipr") ||
+    normalized.includes("protocollo di identita operativa") ||
+    normalized.includes("protocollo di identità operativa") ||
+    normalized.includes("record ipr") ||
+    normalized.includes("payload") ||
+    normalized.includes("timestamp") ||
+    normalized.includes("derivazione") ||
+    normalized.includes("validazione") ||
+    normalized.includes("registro") ||
+    normalized.includes("ricevuta") ||
+    normalized.includes("verifica") ||
+    normalized.includes("ciclo di vita") ||
+    normalized.includes("continuita auditabile") ||
+    normalized.includes("continuità auditabile");
+
+  return explicitIdentity && protocolSignals;
+}
+
+function hasHbceAiEcosystemAnyVolumeSignal(message: string, files: PublicFileSnapshot[]): boolean {
+  return hasHbceAiEcosystemVolumeIISignal(message, files) || hasHbceAiEcosystemVolumeISignal(message, files);
+}
+
 function isHbceAiEcosystemDocumentProfileRequest(message: string, files: PublicFileSnapshot[]): boolean {
   if (!message.trim() || files.length === 0) {
     return false;
@@ -7601,15 +7704,19 @@ function isHbceAiEcosystemDocumentProfileRequest(message: string, files: PublicF
     normalized.includes("do_not_use_ipr_canonical_document_memory_branch") ||
     normalized.includes("do_not_create_semantic_memory");
 
-  return requestSignal && hasHbceAiEcosystemVolumeISignal(message, files);
+  return requestSignal && hasHbceAiEcosystemAnyVolumeSignal(message, files);
 }
 
-function isHbceAiEcosystemProfileLinkedMemorySaveRequest(message: string): boolean {
+function isHbceAiEcosystemProfileLinkedMemorySaveRequest(message: string, files: PublicFileSnapshot[]): boolean {
   if (!message.trim()) {
     return false;
   }
 
   const normalized = normalizeText(message);
+
+  if (hasHbceAiEcosystemVolumeIISignal(message, files)) {
+    return false;
+  }
 
   const explicitTarget =
     normalized.includes("hbce_ai_ecosystem_document_memory_card_ready") ||
@@ -7737,7 +7844,11 @@ function buildHbceAiEcosystemProfileLinkedMemoryCardAnswer(args: {
   ].join("\n");
 }
 
-function resolveHbceAiEcosystemDocumentRuntimeProfile(_message: string, _files: PublicFileSnapshot[]): HbceAiEcosystemDocumentRuntimeProfile {
+function resolveHbceAiEcosystemDocumentRuntimeProfile(message: string, files: PublicFileSnapshot[]): HbceAiEcosystemDocumentRuntimeProfile {
+  if (hasHbceAiEcosystemVolumeIISignal(message, files)) {
+    return HBCE_AI_ECOSYSTEM_VOLUME_II_RUNTIME_PROFILE;
+  }
+
   return HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_PROFILE;
 }
 
@@ -7853,6 +7964,7 @@ function buildHbceAiEcosystemDocumentProfilePreparationAnswer(args: {
     "quality=" + hbceProfile.quality,
     "canonicalAxis=" + hbceProfile.canonicalAxis,
     "operationalTraceAxis=" + hbceProfile.operationalTraceAxis,
+    "summary=" + hbceProfile.summary,
     "documentMemory.status=" + (ready ? "HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY_READY" : "HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY_FAIL"),
     "documentMemory.readyForIprSave=" + String(ready),
     "documentMemory.memoryType=HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY",
@@ -7946,6 +8058,7 @@ function buildHbceAiEcosystemDocumentProfileReadyAnswer(args: {
     "quality=" + hbceProfile.quality,
     "canonicalAxis=" + hbceProfile.canonicalAxis,
     "operationalTraceAxis=" + hbceProfile.operationalTraceAxis,
+    "summary=" + hbceProfile.summary,
     "",
     "documentMemory.status=" + (ready ? "HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY_READY" : "HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY_FAIL"),
     "documentMemory.readyForIprSave=" + String(ready),
