@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -644,6 +644,7 @@ const HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_V
 const HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22" as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23" as const;
 const GLOBAL_RUNTIME_HEALTH_CHECK_GUARD_REVISION = "GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24" as const;
+const USE_VOLUME_I_PROFILE_GUARD_REVISION = "USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25" as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_RECALL_SUMMARY =
   "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed." as const;
 
@@ -855,23 +856,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const rawFullDocumentCoverageAuditRequested = isFullDocumentCoverageAuditQuestion(message);
   const b2gTechnicalMemoryStrictRecallRequested = isB2gTechnicalMemoryStrictRecallQuestion(message);
   const strictCyberneticDocumentMemoryRecallRequested = isCyberneticDocumentMemoryRecallQuestion(message);
+  const useEuropeanFederationVolumeIFileDetected =
+    !b2gTechnicalMemoryStrictRecallRequested &&
+    !strictCyberneticDocumentMemoryRecallRequested &&
+    files.length > 0 &&
+    hasUseVolumeISignal(message, files);
+  const useEuropeanFederationDocumentProfileRequested =
+    !strictCyberneticDocumentMemoryRecallRequested &&
+    (useEuropeanFederationVolumeIFileDetected ||
+      (!b2gTechnicalMemoryStrictRecallRequested && isUseEuropeanFederationDocumentProfileRequest(message, files)));
   const hbceAiEcosystemVolumeFileDetected =
     !b2gTechnicalMemoryStrictRecallRequested &&
     !strictCyberneticDocumentMemoryRecallRequested &&
+    !useEuropeanFederationDocumentProfileRequested &&
     files.length > 0 &&
     hasHbceAiEcosystemAnyVolumeSignal(message, files);
   const hbceAiEcosystemDocumentProfileRequested =
     !strictCyberneticDocumentMemoryRecallRequested &&
+    !useEuropeanFederationDocumentProfileRequested &&
     (hbceAiEcosystemVolumeFileDetected ||
       (!b2gTechnicalMemoryStrictRecallRequested && isHbceAiEcosystemDocumentProfileRequest(message, files)));
   const hbceAiEcosystemProfileLinkedMemorySaveRequested =
     !b2gTechnicalMemoryStrictRecallRequested &&
     !strictCyberneticDocumentMemoryRecallRequested &&
+    !useEuropeanFederationDocumentProfileRequested &&
     !hbceAiEcosystemDocumentProfileRequested &&
     isHbceAiEcosystemProfileLinkedMemorySaveRequest(message, files);
   const matrixEuropaVolumeIFileDetected =
     !b2gTechnicalMemoryStrictRecallRequested &&
     !strictCyberneticDocumentMemoryRecallRequested &&
+    !useEuropeanFederationDocumentProfileRequested &&
     !hbceAiEcosystemDocumentProfileRequested &&
     files.length > 0 &&
     hasMatrixEuropaVolumeISignal(message, files);
@@ -879,10 +893,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     matrixEuropaVolumeIFileDetected ||
     (!b2gTechnicalMemoryStrictRecallRequested &&
       !strictCyberneticDocumentMemoryRecallRequested &&
+      !useEuropeanFederationDocumentProfileRequested &&
       !hbceAiEcosystemDocumentProfileRequested &&
       isMatrixOperationalDocumentProfileRequest(message, files));
   const iprCanonicalDocumentMemorySaveRequested =
     !b2gTechnicalMemoryStrictRecallRequested &&
+    !useEuropeanFederationDocumentProfileRequested &&
     !hbceAiEcosystemProfileLinkedMemorySaveRequested &&
     !hbceAiEcosystemDocumentProfileRequested &&
     !matrixEuropaVolumeIFileDetected &&
@@ -891,6 +907,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const b2gTechnicalProfileMemoryRequested =
     !b2gTechnicalMemoryStrictRecallRequested &&
     !strictCyberneticDocumentMemoryRecallRequested &&
+    !useEuropeanFederationDocumentProfileRequested &&
     !hbceAiEcosystemDocumentProfileRequested &&
     !matrixEuropaVolumeIFileDetected &&
     !matrixOperationalDocumentProfileRequested &&
@@ -898,6 +915,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const recordStatusOnlyRequested = isRecordStatusOnlyQuestion(message);
   const fullDocumentCoverageAuditRequested =
     rawFullDocumentCoverageAuditRequested &&
+    !useEuropeanFederationDocumentProfileRequested &&
     !hbceAiEcosystemDocumentProfileRequested &&
     !iprCanonicalDocumentMemorySaveRequested;
   const runtimeStatusTableRequested =
@@ -916,7 +934,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     isMatrixIVStrategicSynthesisQuestion(message);
   const documentMemoryRecallRequested =
     !iprCanonicalDocumentMemorySaveRequested &&
-    (hbceAiEcosystemDocumentProfileRequested ||
+    (useEuropeanFederationDocumentProfileRequested ||
+      hbceAiEcosystemDocumentProfileRequested ||
       matrixOperationalDocumentProfileRequested ||
       fullDocumentCoverageAuditRequested ||
       (!runtimeMemoryBlockDiagnosticRequested &&
@@ -1278,6 +1297,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       recall: iprRecall,
       documentProfileRecall,
       message,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (useEuropeanFederationDocumentProfileRequested) {
+    answer = buildUseEuropeanFederationDocumentProfilePreparationAnswer({
+      message,
+      files,
+      documentProfileRecall,
       handoff,
       memory,
       policy,
@@ -1823,6 +1854,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     ? safeAnswer
     : recordStatusOnlyRequested
     ? safeAnswer
+    : useEuropeanFederationDocumentProfileRequested
+    ? buildUseEuropeanFederationDocumentProfileReadyAnswer({
+        message,
+        files,
+        documentProfileRecall,
+        handoff,
+        memory,
+        policy,
+        saasContext,
+        evt,
+        opc,
+        auditAndUsage,
+        persistenceBridge
+      })
     : hbceAiEcosystemProfileLinkedMemorySaveRequested
     ? buildHbceAiEcosystemProfileLinkedMemoryCardAnswer({
         message,
@@ -7728,6 +7773,410 @@ const HBCE_AI_ECOSYSTEM_VOLUME_III_RUNTIME_PROFILE: HbceAiEcosystemDocumentRunti
   runtimeOutputs: HBCE_AI_ECOSYSTEM_VOLUME_III_RUNTIME_OUTPUTS,
   futureGithubModules: HBCE_AI_ECOSYSTEM_VOLUME_III_FUTURE_GITHUB_MODULES
 };
+
+
+const USE_VOLUME_I_FILE_HASH = "sha256:c3f9bad057dcab6baeaa232e447697d10e28c3417d873072ec5e473756826ebf";
+const USE_VOLUME_I_CANONICAL_FILENAME = "USE_VOLUME_I_EMERGENZA_EUROPEA_CLEAN_RUNTIME_FOR_JOKER_C2.txt";
+const USE_VOLUME_I_SOURCE_FILENAME = "USE_Volume_I_Emergenza_Europea_v1_3_uniformato_fonti.pdf";
+const USE_VOLUME_I_DOC_FAMILY = "USE_EUROPEAN_FEDERATION";
+const USE_VOLUME_I_DOCUMENT_KIND = "USE_VOLUME";
+const USE_VOLUME_I_CYCLE = "UNITED_STATES_OF_EUROPE";
+const USE_VOLUME_I_MODULE = "USE_EMERGENZA_EUROPEA_VOLUME_I";
+const USE_VOLUME_I_VOLUME = "V1";
+const USE_VOLUME_I_TITLE = "U.S.E. - Emergenza Europea";
+const USE_VOLUME_I_SUBTITLE = "Protezione civile, sicurezza operativa e continuità istituzionale dagli enti regionali alla federazione europea";
+const USE_VOLUME_I_CLASSIFICATION = "USE_EUROPEAN_EMERGENCY_CIVIL_PROTECTION_VOLUME";
+const USE_VOLUME_I_QUALITY = "CANONICAL";
+const USE_VOLUME_I_CANONICAL_AXIS = "Emergenza · Coordinamento · Verifica · Continuità · Federazione";
+const USE_VOLUME_I_OPERATIONAL_TRACE_AXIS = "Territory · Region · State · European Union · International Cooperation · Civil Protection · Critical Infrastructure · Operational Identity · Responsibility · Audit · Institutional Continuity · EVT · OPC";
+const USE_VOLUME_I_SUMMARY = "U.S.E. Volume I definisce l’emergenza europea come fondamento operativo degli Stati Uniti d’Europa: la protezione civile federata, la sicurezza civile, la continuità istituzionale, la protezione delle infrastrutture critiche, la cybersecurity, l’energia, la sanità e MATRIX come architettura di coordinamento verificabile tra territorio, Regione, Stato, Unione Europea e livello internazionale.";
+const USE_VOLUME_I_OPERATIONAL_SUMMARY = "U.S.E. Volume I is the European emergency and civil protection volume of the United States of Europe cycle. It defines emergency, coordination, verification, institutional continuity and federation as the operational chain through which civil protection becomes the first concrete act of a verifiable European federation.";
+const USE_VOLUME_I_RUNTIME_INPUTS = "emergencySignals, civilProtectionRequests, regionalCoordinationEvents, stateContinuityEvents, euCivilProtectionMechanismSignals, criticalInfrastructureAlerts, cybersecurityCrisisSignals, healthEmergencySignals, energyContinuitySignals, auditSignals, tenantId, workspaceId, humanIpr";
+const USE_VOLUME_I_RUNTIME_OUTPUTS = "useEmergencyProfile, federatedCivilProtectionReadiness, europeanEmergencyCoordinationChain, operationalIdentityBinding, evtTraceRecordCandidate, opcTechnicalProofReceipt, continuityInstitutionalProfile, criticalInfrastructureProtectionProfile, auditReadinessProfile";
+const USE_VOLUME_I_FUTURE_GITHUB_MODULES = "lib/use-european-federation-volume-i.ts; app/api/v1/use/volume-i/profile/route.ts; app/api/v1/use/emergency/civil-protection/route.ts; app/api/v1/use/document-memory/route.ts; app/api/v1/use/recall/route.ts";
+
+type UseEuropeanFederationDocumentRuntimeProfile = {
+  fileHash: string;
+  docFamily: string;
+  documentKind: string;
+  useCycle: string;
+  useVolume: string;
+  module: string;
+  volume: string;
+  title: string;
+  subtitle: string;
+  classification: string;
+  quality: string;
+  canonicalAxis: string;
+  operationalTraceAxis: string;
+  summary: string;
+  operationalSummary: string;
+  runtimeInputs: string;
+  runtimeOutputs: string;
+  futureGithubModules: string;
+};
+
+const USE_VOLUME_I_RUNTIME_PROFILE: UseEuropeanFederationDocumentRuntimeProfile = {
+  fileHash: USE_VOLUME_I_FILE_HASH,
+  docFamily: USE_VOLUME_I_DOC_FAMILY,
+  documentKind: USE_VOLUME_I_DOCUMENT_KIND,
+  useCycle: USE_VOLUME_I_CYCLE,
+  useVolume: USE_VOLUME_I_VOLUME,
+  module: USE_VOLUME_I_MODULE,
+  volume: USE_VOLUME_I_VOLUME,
+  title: USE_VOLUME_I_TITLE,
+  subtitle: USE_VOLUME_I_SUBTITLE,
+  classification: USE_VOLUME_I_CLASSIFICATION,
+  quality: USE_VOLUME_I_QUALITY,
+  canonicalAxis: USE_VOLUME_I_CANONICAL_AXIS,
+  operationalTraceAxis: USE_VOLUME_I_OPERATIONAL_TRACE_AXIS,
+  summary: USE_VOLUME_I_SUMMARY,
+  operationalSummary: USE_VOLUME_I_OPERATIONAL_SUMMARY,
+  runtimeInputs: USE_VOLUME_I_RUNTIME_INPUTS,
+  runtimeOutputs: USE_VOLUME_I_RUNTIME_OUTPUTS,
+  futureGithubModules: USE_VOLUME_I_FUTURE_GITHUB_MODULES
+};
+
+function resolveUseEuropeanFederationDocumentSignalText(message: string, files: PublicFileSnapshot[]): string {
+  const fileText = files
+    .map((file) => [file.name, file.fileHash, file.hash, file.documentProfileId, getPromptTextForFile(file).slice(0, 36000)].join("\n"))
+    .join("\n");
+
+  return normalizeText([message, fileText].join("\n"));
+}
+
+function hasUseVolumeISignal(message: string, files: PublicFileSnapshot[]): boolean {
+  const normalized = resolveUseEuropeanFederationDocumentSignalText(message, files);
+
+  if (!normalized) {
+    return false;
+  }
+
+  const explicitIdentity =
+    normalized.includes("use_volume_i") ||
+    normalized.includes("use volume i") ||
+    normalized.includes("u.s.e. - emergenza europea") ||
+    normalized.includes("u.s.e. emergenza europea") ||
+    normalized.includes("united states of europe") ||
+    normalized.includes("use_volume_i_emergenza_europea_clean_runtime_for_joker_c2.txt") ||
+    normalized.includes("use_volume_i_emergenza_europea") ||
+    normalized.includes("use_emergenza_europea_volume_i") ||
+    normalized.includes("use_european_federation") ||
+    normalized.includes("united_states_of_europe") ||
+    normalized.includes("c3f9bad057dcab6baeaa232e447697d10e28c3417d873072ec5e473756826ebf") ||
+    normalized.includes("use_european_emergency_civil_protection_volume") ||
+    normalized.includes("emergenza coordinamento verifica continuita federazione") ||
+    normalized.includes("emergenza coordinamento verifica continuità federazione");
+
+  const useSignals =
+    normalized.includes("protezione civile") ||
+    normalized.includes("civil protection") ||
+    normalized.includes("emergenza europea") ||
+    normalized.includes("federazione europea") ||
+    normalized.includes("stati uniti d europa") ||
+    normalized.includes("stati uniti d’europa") ||
+    normalized.includes("continuita istituzionale") ||
+    normalized.includes("continuità istituzionale") ||
+    normalized.includes("sicurezza civile") ||
+    normalized.includes("infrastrutture critiche") ||
+    normalized.includes("meccanismo unionale di protezione civile") ||
+    normalized.includes("resceu") ||
+    normalized.includes("preparedness union") ||
+    normalized.includes("regione stato unione europea") ||
+    normalized.includes("territory region state european union");
+
+  return explicitIdentity && useSignals;
+}
+
+function isUseEuropeanFederationDocumentProfileRequest(message: string, files: PublicFileSnapshot[]): boolean {
+  if (!message.trim() || files.length === 0) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const requestSignal =
+    normalized.includes("use_document_profile") ||
+    normalized.includes("use_document_profile_ready") ||
+    normalized.includes("use_volume_i") ||
+    normalized.includes("use volume i") ||
+    normalized.includes("use_european_federation") ||
+    normalized.includes("united states of europe") ||
+    normalized.includes("preferusedocumentmemory") ||
+    normalized.includes("preferuseeuropeanfederationdocumentmemory") ||
+    normalized.includes("do_not_classify_as_hbce_ai_ecosystem") ||
+    normalized.includes("do not classify as hbce ai ecosystem") ||
+    normalized.includes("do_not_classify_as_matrix") ||
+    normalized.includes("non deve uscire docfamily=hbce_ai_ecosystem") ||
+    normalized.includes("non deve uscire docfamily=matrix");
+
+  return requestSignal && hasUseVolumeISignal(message, files);
+}
+
+function resolveUseEuropeanFederationDocumentRuntimeProfile(_message: string, _files: PublicFileSnapshot[]): UseEuropeanFederationDocumentRuntimeProfile {
+  return USE_VOLUME_I_RUNTIME_PROFILE;
+}
+
+function useEuropeanFederationDocumentBasePreSaveReadyFromDiagnostic(diagnostic: FullDocumentCoverageAuditDiagnostic): boolean {
+  const documentProfileIdAvailable = diagnostic.documentProfileId !== "NO_DOCUMENT_PROFILE_ID" && diagnostic.documentProfileId.trim().length > 0;
+  const normalizedProfileStatus = diagnostic.documentProfileStatus.trim().toUpperCase();
+  const documentProfileStatusPreSaveAllowed = normalizedProfileStatus === "ACTIVE" || normalizedProfileStatus === "PERSISTED";
+  const chunksReady =
+    diagnostic.documentChunksPersisted === true &&
+    diagnostic.documentChunksPersistedCount >= Math.max(1, diagnostic.documentChunkCount);
+
+  return (
+    diagnostic.fullDocumentCoverage === true &&
+    diagnostic.textCoverageStatus === "TEXT_READY_FULL" &&
+    chunksReady &&
+    diagnostic.truncationDetected === false &&
+    documentProfileIdAvailable &&
+    documentProfileStatusPreSaveAllowed &&
+    diagnostic.hashMatchesExpected !== false
+  );
+}
+
+function useEuropeanFederationDocumentReadyFromDiagnostic(
+  diagnostic: FullDocumentCoverageAuditDiagnostic,
+  useProfile: UseEuropeanFederationDocumentRuntimeProfile
+): boolean {
+  const runtimeProfileIsUseV1 =
+    useProfile.docFamily === USE_VOLUME_I_DOC_FAMILY &&
+    useProfile.documentKind === USE_VOLUME_I_DOCUMENT_KIND &&
+    useProfile.useCycle === USE_VOLUME_I_CYCLE &&
+    useProfile.volume === USE_VOLUME_I_VOLUME &&
+    useProfile.module === USE_VOLUME_I_MODULE &&
+    useProfile.classification === USE_VOLUME_I_CLASSIFICATION;
+  const diagnosticIsUseV1 =
+    diagnostic.runtimeFileHash === USE_VOLUME_I_FILE_HASH ||
+    diagnostic.activeFilename === USE_VOLUME_I_CANONICAL_FILENAME ||
+    diagnostic.activeFilename === USE_VOLUME_I_SOURCE_FILENAME ||
+    (diagnostic.docFamily === USE_VOLUME_I_DOC_FAMILY &&
+      diagnostic.volume === USE_VOLUME_I_VOLUME &&
+      diagnostic.documentKind === USE_VOLUME_I_DOCUMENT_KIND);
+
+  return runtimeProfileIsUseV1 && diagnosticIsUseV1 && useEuropeanFederationDocumentBasePreSaveReadyFromDiagnostic(diagnostic);
+}
+
+function useEuropeanFederationDocumentFailReason(
+  diagnostic: FullDocumentCoverageAuditDiagnostic,
+  ready: boolean,
+  useProfile: UseEuropeanFederationDocumentRuntimeProfile
+): string {
+  if (ready) {
+    return "NONE";
+  }
+
+  const reasons: string[] = [];
+  const usePreSaveCandidate =
+    useProfile.docFamily === USE_VOLUME_I_DOC_FAMILY &&
+    useProfile.documentKind === USE_VOLUME_I_DOCUMENT_KIND &&
+    useProfile.useCycle === USE_VOLUME_I_CYCLE &&
+    useProfile.volume === USE_VOLUME_I_VOLUME &&
+    useProfile.module === USE_VOLUME_I_MODULE &&
+    useProfile.classification === USE_VOLUME_I_CLASSIFICATION;
+
+  if (!diagnostic.fullDocumentCoverage) {
+    reasons.push("FULL_DOCUMENT_COVERAGE_FALSE");
+  }
+
+  if (diagnostic.textCoverageStatus !== "TEXT_READY_FULL") {
+    reasons.push("TEXT_COVERAGE_STATUS_NOT_FULL");
+  }
+
+  if (!diagnostic.documentChunksPersisted) {
+    reasons.push("DOCUMENT_CHUNKS_NOT_PERSISTED");
+  }
+
+  if (diagnostic.documentChunksPersistedCount < Math.max(1, diagnostic.documentChunkCount)) {
+    reasons.push("DOCUMENT_CHUNKS_PERSISTED_COUNT_INSUFFICIENT");
+  }
+
+  if (diagnostic.truncationDetected) {
+    reasons.push("TRUNCATION_OR_PARTIAL_COVERAGE_DETECTED");
+  }
+
+  if (diagnostic.documentProfileId === "NO_DOCUMENT_PROFILE_ID" || !diagnostic.documentProfileId.trim()) {
+    reasons.push("DOCUMENT_PROFILE_ID_MISSING");
+  }
+
+  if (diagnostic.documentProfileStatus === "NO_DOCUMENT_PROFILE_STATUS" || !diagnostic.documentProfileStatus.trim()) {
+    reasons.push("DOCUMENT_PROFILE_STATUS_MISSING");
+  }
+
+  if (diagnostic.hashMatchesExpected === false) {
+    reasons.push("RUNTIME_FILE_HASH_DOES_NOT_MATCH_EXPECTED_SOURCE_HASH");
+  }
+
+  if (!usePreSaveCandidate) {
+    reasons.push("USE_VOLUME_I_RUNTIME_PROFILE_NOT_SELECTED");
+  }
+
+  return reasons.join("|") || "UNKNOWN";
+}
+
+function buildUseEuropeanFederationDocumentProfilePreparationAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const diagnostic = buildFullDocumentCoverageAuditDiagnostic({
+    message: args.message,
+    files: args.files,
+    documentProfileRecall: args.documentProfileRecall,
+    documentMemoryRecallRequested: true
+  });
+  const useProfile = resolveUseEuropeanFederationDocumentRuntimeProfile(args.message, args.files);
+  const ready = useEuropeanFederationDocumentReadyFromDiagnostic(diagnostic, useProfile);
+  const failReason = useEuropeanFederationDocumentFailReason(diagnostic, ready, useProfile);
+
+  return buildUseEuropeanFederationDocumentProfileAnswerLines({
+    diagnostic,
+    useProfile,
+    ready,
+    failReason,
+    handoff: args.handoff,
+    saasContext: args.saasContext
+  }).join("\n");
+}
+
+function buildUseEuropeanFederationDocumentProfileReadyAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
+}): string {
+  const diagnostic = buildFullDocumentCoverageAuditDiagnostic({
+    message: args.message,
+    files: args.files,
+    documentProfileRecall: args.documentProfileRecall,
+    documentMemoryRecallRequested: true
+  });
+  const useProfile = resolveUseEuropeanFederationDocumentRuntimeProfile(args.message, args.files);
+  const ready = useEuropeanFederationDocumentReadyFromDiagnostic(diagnostic, useProfile);
+  const failReason = useEuropeanFederationDocumentFailReason(diagnostic, ready, useProfile);
+
+  return buildUseEuropeanFederationDocumentProfileAnswerLines({
+    diagnostic,
+    useProfile,
+    ready,
+    failReason,
+    handoff: args.handoff,
+    saasContext: args.saasContext,
+    evt: args.evt,
+    opc: args.opc,
+    auditAndUsage: args.auditAndUsage
+  }).join("\n");
+}
+
+function buildUseEuropeanFederationDocumentProfileAnswerLines(args: {
+  diagnostic: FullDocumentCoverageAuditDiagnostic;
+  useProfile: UseEuropeanFederationDocumentRuntimeProfile;
+  ready: boolean;
+  failReason: string;
+  handoff: HandoffResolution;
+  saasContext: SaasRuntimeContext;
+  evt?: EvtRecord;
+  opc?: OpcProofRecord;
+  auditAndUsage?: { audit: JsonObject; modelUsage: JsonObject };
+}): string[] {
+  const lines = [
+    args.ready ? "USE_DOCUMENT_PROFILE_READY" : "USE_DOCUMENT_PROFILE_FAIL",
+    "",
+    "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
+    "useVolumeIProfileGuardRevision=" + USE_VOLUME_I_PROFILE_GUARD_REVISION,
+    "activeFilename=" + args.diagnostic.activeFilename,
+    "sourceDocument=" + args.diagnostic.activeFilename,
+    "runtimeFileHash=" + args.diagnostic.runtimeFileHash,
+    "fileHash=" + args.diagnostic.runtimeFileHash,
+    "hashMatchesExpected=" + String(args.diagnostic.hashMatchesExpected === null ? "NOT_CHECKED" : args.diagnostic.hashMatchesExpected),
+    "textCoverageStatus=" + args.diagnostic.textCoverageStatus,
+    "fullDocumentCoverage=" + String(args.diagnostic.fullDocumentCoverage),
+    "longDocumentMode=" + args.diagnostic.longDocumentMode,
+    "documentChunkCount=" + String(args.diagnostic.documentChunkCount),
+    "documentChunksPersisted=" + String(args.diagnostic.documentChunksPersisted),
+    "documentChunksPersistedCount=" + String(args.diagnostic.documentChunksPersistedCount),
+    "",
+    "documentProfileId=" + args.diagnostic.documentProfileId,
+    "documentProfileStatus=" + args.diagnostic.documentProfileStatus,
+    "docFamily=" + args.useProfile.docFamily,
+    "documentKind=" + args.useProfile.documentKind,
+    "useCycle=" + args.useProfile.useCycle,
+    "useVolume=" + args.useProfile.useVolume,
+    "module=" + args.useProfile.module,
+    "volume=" + args.useProfile.volume,
+    "title=" + args.useProfile.title,
+    "subtitle=" + args.useProfile.subtitle,
+    "classification=" + args.useProfile.classification,
+    "quality=" + args.useProfile.quality,
+    "canonicalAxis=" + args.useProfile.canonicalAxis,
+    "operationalTraceAxis=" + args.useProfile.operationalTraceAxis,
+    "summary=" + args.useProfile.summary,
+    "",
+    "documentMemory.status=" + (args.ready ? "USE_DOCUMENT_MEMORY_READY" : "USE_DOCUMENT_MEMORY_FAIL"),
+    "documentMemory.readyForIprSave=" + String(args.ready),
+    "documentMemory.memoryType=USE_EUROPEAN_FEDERATION_DOCUMENT_MEMORY",
+    "documentMemory.memoryMode=FULL_DOCUMENT_OPERATIONAL_SYNTHESIS",
+    "documentMemory.docFamily=" + args.useProfile.docFamily,
+    "documentMemory.documentKind=" + args.useProfile.documentKind,
+    "documentMemory.useCycle=" + args.useProfile.useCycle,
+    "documentMemory.useVolume=" + args.useProfile.useVolume,
+    "documentMemory.module=" + args.useProfile.module,
+    "documentMemory.title=" + args.useProfile.title,
+    "documentMemory.volume=" + args.useProfile.volume,
+    "documentMemory.canonicalAxis=" + args.useProfile.canonicalAxis,
+    "documentMemory.operationalSummary=" + args.useProfile.operationalSummary,
+    "documentMemory.runtimeInputs=" + args.useProfile.runtimeInputs,
+    "documentMemory.runtimeOutputs=" + args.useProfile.runtimeOutputs,
+    "documentMemory.futureGithubModules=" + args.useProfile.futureGithubModules,
+    "",
+    "guards.doNotClassifyAsMatrixVolume=true",
+    "guards.doNotClassifyAsHbceAiEcosystem=true",
+    "guards.doNotClassifyAsB2GTechnicalModule=true",
+    "guards.doNotClassifyAsCorpusEsoterologico=true",
+    "guards.doNotClassifyAsApokalypsis=true",
+    "guards.doNotClassifyAsQState=true",
+    "guards.doNotUseQuantumStateOutput=true",
+    "guards.doNotCreateSemanticEsoterologicalMemory=true",
+    "guards.preferUseDocumentMemory=true",
+    "guards.fullDocumentCoverageRequired=true",
+    "guards.volumeIPreSaveDoesNotRequireLinkedProfile=true",
+    "guards.volumeIPreSaveDoesNotRequireRecallInjection=true",
+    "",
+    "truncationDetected=" + String(args.diagnostic.truncationDetected),
+    "readyForIprSave=" + String(args.ready),
+    "failReason=" + args.failReason,
+    "",
+    "derivedFromHumanIpr=" + args.handoff.humanIpr,
+    "humanIpr=" + args.handoff.humanIpr,
+    "runtimeIpr=" + RUNTIME_IPR,
+    "tenantId=" + args.saasContext.tenantId,
+    "workspaceId=" + args.saasContext.workspaceId
+  ];
+
+  if (args.evt && args.opc && args.auditAndUsage) {
+    lines.push(
+      "EVT=" + args.evt.id,
+      "OPC=" + args.opc.id,
+      "auditId=" + stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+      "usageId=" + stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID")
+    );
+  }
+
+  lines.push("legalCertification=false", "OPC=technical proof receipt only");
+
+  return lines;
+}
 
 function resolveHbceAiEcosystemDocumentSignalText(message: string, files: PublicFileSnapshot[]): string {
   const fileText = files
