@@ -634,9 +634,10 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
+const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_RECALL_SUMMARY =
   "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed." as const;
 
@@ -857,6 +858,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !strictCyberneticDocumentMemoryRecallRequested &&
     (hbceAiEcosystemVolumeIFileDetected ||
       (!b2gTechnicalMemoryStrictRecallRequested && isHbceAiEcosystemDocumentProfileRequest(message, files)));
+  const hbceAiEcosystemProfileLinkedMemorySaveRequested =
+    !b2gTechnicalMemoryStrictRecallRequested &&
+    !strictCyberneticDocumentMemoryRecallRequested &&
+    isHbceAiEcosystemProfileLinkedMemorySaveRequest(message);
   const matrixEuropaVolumeIFileDetected =
     !b2gTechnicalMemoryStrictRecallRequested &&
     !strictCyberneticDocumentMemoryRecallRequested &&
@@ -871,6 +876,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       isMatrixOperationalDocumentProfileRequest(message, files));
   const iprCanonicalDocumentMemorySaveRequested =
     !b2gTechnicalMemoryStrictRecallRequested &&
+    !hbceAiEcosystemProfileLinkedMemorySaveRequested &&
     !hbceAiEcosystemDocumentProfileRequested &&
     !matrixEuropaVolumeIFileDetected &&
     !matrixOperationalDocumentProfileRequested &&
@@ -1252,6 +1258,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     answer = buildIprRecordStatusOnlyAnswer({
       recall: iprRecall,
       documentProfileRecall,
+      message,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (hbceAiEcosystemProfileLinkedMemorySaveRequested) {
+    answer = buildHbceAiEcosystemProfileLinkedMemoryCardAnswer({
       message,
       handoff,
       memory,
@@ -1772,6 +1788,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     ? safeAnswer
     : recordStatusOnlyRequested
     ? safeAnswer
+    : hbceAiEcosystemProfileLinkedMemorySaveRequested
+    ? buildHbceAiEcosystemProfileLinkedMemoryCardAnswer({
+        message,
+        handoff,
+        memory,
+        policy,
+        saasContext,
+        evt,
+        opc,
+        auditAndUsage
+      })
     : hbceAiEcosystemDocumentProfileRequested
     ? buildHbceAiEcosystemDocumentProfileReadyAnswer({
         message,
@@ -7442,7 +7469,10 @@ function buildB2gTechnicalProfileMemoryReadyAnswer(args: {
 
 
 
-const HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH = "sha256:4bf137f71a58bf85202b118c20645420f5a34ff2cde42e7482ed49e2a4261a57";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH = "sha256:8c439b38f884a7bc5e1ace66575dff4968f7d7929701487eac81f13fb3eda79a";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_LEGACY_FILE_HASH = "sha256:4bf137f71a58bf85202b118c20645420f5a34ff2cde42e7482ed49e2a4261a57";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_DOCUMENT_PROFILE_ID = "DOC-PROFILE-8602A2F8D2E2494D";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_FILENAME = "1A.HBCE_ECOSISTEMA_AI_PULITO.txt";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_DOC_FAMILY = "HBCE_AI_ECOSYSTEM";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_DOCUMENT_KIND = "HBCE_AI_ECOSYSTEM_VOLUME";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_ECOSYSTEM_CYCLE = "HBCE_ECOSISTEMA_AI";
@@ -7522,7 +7552,10 @@ function hasHbceAiEcosystemVolumeISignal(message: string, files: PublicFileSnaps
     normalized.includes("hbce_ai_ecosystem_document_profile") ||
     normalized.includes("hbce_ai_ecosystem_foundational_volume") ||
     normalized.includes("architettura operativa per intelligenze artificiali verificabili responsabili e governate") ||
-    normalized.includes("4bf137f71a58bf85202b118c20645420f5a34ff2cde42e7482ed49e2a4261a57");
+    normalized.includes("4bf137f71a58bf85202b118c20645420f5a34ff2cde42e7482ed49e2a4261a57") ||
+    normalized.includes("8c439b38f884a7bc5e1ace66575dff4968f7d7929701487eac81f13fb3eda79a") ||
+    normalized.includes("doc-profile-8602a2f8d2e2494d") ||
+    normalized.includes("1a.hbce_ecosistema_ai_pulito.txt");
 
   const architectureSignals =
     normalized.includes("ai genera hbce governa ipr identifica evt traccia opc prova matrix") ||
@@ -7569,6 +7602,139 @@ function isHbceAiEcosystemDocumentProfileRequest(message: string, files: PublicF
     normalized.includes("do_not_create_semantic_memory");
 
   return requestSignal && hasHbceAiEcosystemVolumeISignal(message, files);
+}
+
+function isHbceAiEcosystemProfileLinkedMemorySaveRequest(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  const explicitTarget =
+    normalized.includes("hbce_ai_ecosystem_document_memory_card_ready") ||
+    normalized.includes("document memory card") ||
+    normalized.includes("memory card documentale") ||
+    normalized.includes("scheda memoria documentale") ||
+    normalized.includes("document_profile_linked_memory_card") ||
+    normalized.includes("profile linked memory") ||
+    normalized.includes("profilo documentale gia persistito") ||
+    normalized.includes("profilo documentale già persistito") ||
+    normalized.includes("usa esclusivamente questi dati gia validati") ||
+    normalized.includes("usa esclusivamente questi dati già validati");
+
+  const hbceVolumeSignal =
+    normalized.includes("hbce_ai_ecosystem_document_memory") ||
+    normalized.includes("hbce_ai_ecosystem") ||
+    normalized.includes("hbce ecosistema ai volume i") ||
+    normalized.includes("hbce_ecosistema_ai_volume_i") ||
+    normalized.includes("hbce_ecosistema_ai_volume_i") ||
+    normalized.includes("hbce_ecosistema_ai_pulito") ||
+    normalized.includes("hbce ecosistema ai");
+
+  const profileSignal =
+    normalized.includes(normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_I_DOCUMENT_PROFILE_ID)) ||
+    normalized.includes(normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH)) ||
+    normalized.includes("documentprofileid") ||
+    normalized.includes("doc-profile-");
+
+  const saveIntent =
+    normalized.includes("readyforiprsave=true") ||
+    normalized.includes("save chat") ||
+    normalized.includes("salva") ||
+    normalized.includes("salvataggio") ||
+    normalized.includes("memoria documentale") ||
+    normalized.includes("ipr");
+
+  const rejectTrainingOnly =
+    normalized.includes("training_behavior_ready") &&
+    !hbceVolumeSignal &&
+    !profileSignal;
+
+  return !rejectTrainingOnly && hbceVolumeSignal && profileSignal && (explicitTarget || saveIntent);
+}
+
+function buildHbceAiEcosystemProfileLinkedMemoryCardAnswer(args: {
+  message: string;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+  evt?: EvtRecord;
+  opc?: OpcProofRecord;
+  auditAndUsage?: { audit: JsonObject; modelUsage: JsonObject };
+}): string {
+  const hbceProfile = HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_PROFILE;
+  const policyAllowed = args.policy.decision !== "BLOCK";
+  const humanIprBound = args.handoff.humanIpr === HBCE_SELF_PILOT_HUMAN_IPR || args.handoff.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
+  const readyForIprSave = policyAllowed && humanIprBound;
+  const failReason = readyForIprSave ? "NONE" : !policyAllowed ? "POLICY_BLOCKED" : "HUMAN_IPR_NOT_BOUND";
+
+  return [
+    readyForIprSave ? "HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY_CARD_READY" : "HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY_CARD_BLOCKED",
+    "",
+    "routeRevision=" + CHAT_ROUTE_REVISION,
+    "memorySaveGuardRevision=" + HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION,
+    "activeFileRequired=false",
+    "activeFileBypass=DOCUMENT_PROFILE_LINKED_MEMORY_CARD",
+    "quantumCollapseBypassed=true",
+    "qstateBypassed=true",
+    "trainingBehaviorBypassed=true",
+    "",
+    "memoryType=HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY",
+    "memoryMode=DOCUMENT_PROFILE_LINKED_MEMORY_CARD",
+    "documentProfileId=" + HBCE_AI_ECOSYSTEM_VOLUME_I_DOCUMENT_PROFILE_ID,
+    "filename=" + HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_FILENAME,
+    "fileHash=" + HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH,
+    "textCoverageStatus=TEXT_READY_FULL",
+    "fullDocumentCoverage=true",
+    "longDocumentMode=CHUNKED_FULL_TEXT",
+    "documentChunkCount=8",
+    "documentChunksPersisted=true",
+    "documentChunksPersistedCount=8",
+    "documentProfileStatus=PERSISTED",
+    "",
+    "docFamily=" + hbceProfile.docFamily,
+    "documentKind=" + hbceProfile.documentKind,
+    "ecosystemCycle=" + hbceProfile.ecosystemCycle,
+    "ecosystemVolume=" + hbceProfile.volume,
+    "volume=" + hbceProfile.volume,
+    "module=" + hbceProfile.module,
+    "title=" + hbceProfile.title,
+    "subtitle=" + hbceProfile.subtitle,
+    "classification=" + hbceProfile.classification,
+    "quality=" + hbceProfile.quality,
+    "canonicalAxis=" + hbceProfile.canonicalAxis,
+    "operationalTraceAxis=" + hbceProfile.operationalTraceAxis,
+    "summary=HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, AI JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed.",
+    "documentMemory.operationalSummary=" + hbceProfile.operationalSummary,
+    "documentMemory.runtimeInputs=" + hbceProfile.runtimeInputs,
+    "documentMemory.runtimeOutputs=" + hbceProfile.runtimeOutputs,
+    "documentMemory.futureGithubModules=" + hbceProfile.futureGithubModules,
+    "",
+    "guards.doNotRequireActiveFile=true",
+    "guards.doNotUseIprCanonicalQuantumBranch=true",
+    "guards.doNotUseQState=true",
+    "guards.doNotUseCorpusEsoterologia=true",
+    "guards.doNotUseMatrixOperationalVolume=true",
+    "guards.doNotUseB2GTechnicalStack=true",
+    "guards.doNotUseTrainingBehaviorMemory=true",
+    "guards.profileLinkedMemorySave=true",
+    "",
+    "derivedFromHumanIpr=" + args.handoff.humanIpr,
+    "humanIpr=" + args.handoff.humanIpr,
+    "runtimeIpr=" + RUNTIME_IPR,
+    "tenantId=" + args.saasContext.tenantId,
+    "workspaceId=" + args.saasContext.workspaceId,
+    args.evt ? "EVT=" + args.evt.id : "EVT=CREATED_AFTER_SAVE_CHAT_IPR",
+    args.opc ? "OPC=" + args.opc.id : "OPC=CREATED_AFTER_SAVE_CHAT_IPR",
+    args.auditAndUsage ? "auditId=" + stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID") : "auditId=CREATED_AFTER_SAVE_CHAT_IPR",
+    args.auditAndUsage ? "usageId=" + stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID") : "usageId=CREATED_AFTER_SAVE_CHAT_IPR",
+    "readyForIprSave=" + String(readyForIprSave),
+    "failReason=" + failReason,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
 }
 
 function resolveHbceAiEcosystemDocumentRuntimeProfile(_message: string, _files: PublicFileSnapshot[]): HbceAiEcosystemDocumentRuntimeProfile {
