@@ -393,6 +393,8 @@ type DocumentProfileDashboardOverlay = {
   keyTerms: string[];
   semanticTerms: string[];
   signals: string[];
+  docFamily?: string;
+  canonicalDocumentKind?: string;
 };
 
 
@@ -481,9 +483,9 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.3-BRANCH_MAP_ACTIVE_RECALL_DASHBOARD";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.4-USE_VOLUME_I_DASHBOARD_OVERLAY";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
-const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v2.3";
+const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v2.4-USE_VOLUME_I_DASHBOARD_OVERLAY";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -602,6 +604,28 @@ const HBCE_AI_ECOSYSTEM_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverl
     signals: ["DOC-PROFILE-8602A2F8D2E2494D", "1A.HBCE_ECOSISTEMA_AI_PULITO", "HBCE_ECOSISTEMA_AI_VOLUME_I"]
   }
 ];
+
+const USE_EUROPEAN_FEDERATION_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverlay[] = [
+  {
+    branchKey: "USE_EUROPEAN_FEDERATION",
+    title: "U.S.E. - Emergenza Europea",
+    volume: "V1",
+    docFamily: "USE_EUROPEAN_FEDERATION",
+    canonicalDocumentKind: "USE_VOLUME",
+    summary: "U.S.E. Volume I definisce l’emergenza europea come fondamento operativo degli Stati Uniti d’Europa: la protezione civile federata, la sicurezza civile, la continuità istituzionale, la protezione delle infrastrutture critiche, la cybersecurity, l’energia, la sanità e MATRIX come architettura di coordinamento verificabile tra territorio, Regione, Stato, Unione Europea e livello internazionale.",
+    canonicalAxis: "Emergenza · Coordinamento · Verifica · Continuità · Federazione",
+    keyTerms: ["U.S.E.", "United States of Europe", "Volume I", "Emergenza Europea", "Protezione civile federata", "Sicurezza civile", "Continuità istituzionale", "Federazione operativa europea", "MATRIX", "IPR", "EVT", "OPC"],
+    semanticTerms: ["U.S.E.", "United States of Europe", "Emergenza", "Coordinamento", "Verifica", "Continuità", "Federazione", "Regione", "Stato", "Unione Europea", "Cooperazione internazionale", "Infrastrutture critiche", "Cybersecurity", "Energia", "Sanità"],
+    signals: ["DOC-PROFILE-64123DA2E40C78D7", "IPR-MEM-20260604183547-CC615C10", "sha256:c3f9bad057dcab6baeaa232e447697d10e28c3417d873072ec5e473756826ebf", "USE_VOLUME_I_EMERGENZA_EUROPEA_CLEAN_RUNTIME_FOR_JOKER_C2", "USE_EMERGENZA_EUROPEA_VOLUME_I", "U.S.E. - Emergenza Europea"]
+  }
+];
+
+
+const JOKER_C2_DOCUMENT_PROFILE_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverlay[] = [
+  ...USE_EUROPEAN_FEDERATION_VOLUME_DASHBOARD_OVERLAYS,
+  ...HBCE_AI_ECOSYSTEM_VOLUME_DASHBOARD_OVERLAYS
+];
+
 
 
 const LEGACY_HANDOFF_STORAGE_KEYS = [
@@ -1837,16 +1861,26 @@ function profileMatchesDashboardOverlay(profile: PublicDocumentProfileSnapshot, 
 
 
 function applyJokerC2DocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnapshot): PublicDocumentProfileSnapshot {
-  const overlay = HBCE_AI_ECOSYSTEM_VOLUME_DASHBOARD_OVERLAYS.find((item) => profileMatchesDashboardOverlay(profile, item));
+  const overlay = JOKER_C2_DOCUMENT_PROFILE_DASHBOARD_OVERLAYS.find((item) => profileMatchesDashboardOverlay(profile, item));
   if (!overlay) return profile;
-  return { ...profile, title: overlay.title, volume: overlay.volume, summary: overlay.summary, canonicalAxis: overlay.canonicalAxis, keyTerms: overlay.keyTerms, semanticTerms: overlay.semanticTerms };
+  return {
+    ...profile,
+    title: overlay.title,
+    volume: overlay.volume,
+    docFamily: overlay.docFamily ?? profile.docFamily,
+    canonicalDocumentKind: overlay.canonicalDocumentKind ?? profile.canonicalDocumentKind,
+    summary: overlay.summary,
+    canonicalAxis: overlay.canonicalAxis,
+    keyTerms: overlay.keyTerms,
+    semanticTerms: overlay.semanticTerms
+  };
 }
 
 
 function getJokerC2BranchKeyForProfile(profile: PublicDocumentProfileSnapshot): string {
   const signal = buildDocumentProfileDashboardSignal(profile);
-  const explicitHbceOverlay = HBCE_AI_ECOSYSTEM_VOLUME_DASHBOARD_OVERLAYS.find((overlay) => profileMatchesDashboardOverlay(profile, overlay));
-  if (explicitHbceOverlay) return explicitHbceOverlay.branchKey;
+  const explicitDashboardOverlay = JOKER_C2_DOCUMENT_PROFILE_DASHBOARD_OVERLAYS.find((overlay) => profileMatchesDashboardOverlay(profile, overlay));
+  if (explicitDashboardOverlay) return explicitDashboardOverlay.branchKey;
   if (signal.includes("hbce_ai_ecosystem") || signal.includes("hbce ecosistema ai")) {
     const volume = profile.volume.toUpperCase();
     if (["V1", "V2", "V3", "V4", "V5"].includes(volume)) return `HBCE_AI_ECOSYSTEM_VOLUME_${volume.replace("V", "")}`;
@@ -1928,7 +1962,7 @@ function buildJokerC2BranchDashboardSnapshot(input: { profiles: PublicDocumentPr
     { key: "HBCE_AI_ECOSYSTEM_I_V", label: "HBCE AI Ecosystem I–V", status: hbceAiVolumes.size >= 5 ? "READY" : hbceAiVolumes.size > 0 ? "PARTIAL_READY" : "WAITING", detail: `volumes=${Array.from(hbceAiVolumes).sort().join(",") || "none"}` },
     { key: "B2G_TECHNICAL_STACK", label: "B2G technical stack", status: countProfilesForBranch(input.profiles, "B2G_TECHNICAL_STACK") > 0 ? "READY" : "WAITING", detail: "QPCCF · AIQ · CQO · UFO · LAMBDA · PEI" },
     { key: "CORPUS_SEMANTIC_MEMORY", label: "Corpus semantic memory", status: input.semanticMemory.available ? "SEPARATED_READY" : "SEPARATED", detail: "Glossario · COD 1 · Corpus guard" },
-    { key: "USE_EUROPEAN_FEDERATION", label: "U.S.E. I–V", status: countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") > 0 ? "PARTIAL_READY" : "PENDING_NEXT_BRANCH", detail: "United States of Europe branch" },
+    { key: "USE_EUROPEAN_FEDERATION", label: "U.S.E. I–V", status: countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") > 0 ? "PARTIAL_READY" : "PENDING_NEXT_BRANCH", detail: countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") > 0 ? "Volume I active · Emergency/Civil Protection" : "United States of Europe branch" },
     { key: "APOKALYPSIS_EDITORIAL_SYSTEM", label: "APOKALYPSIS I–V", status: countProfilesForBranch(input.profiles, "APOKALYPSIS_EDITORIAL_SYSTEM") > 0 ? "PARTIAL_READY" : "PENDING_NEXT_BRANCH", detail: "Editorial/apocalyptic branch" }
   ];
   const items = branchDefinitions.map((branch) => ({
