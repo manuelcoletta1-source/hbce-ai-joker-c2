@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const CHAT_SELF_PILOT_HANDOFF_BRIDGE_ENABLED = process.env.HBCE_CHAT_SELF_PILOT_HANDOFF_BRIDGE !== "false";
 
@@ -843,24 +843,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const fileIngestionRequested = isFileIngestionQuestion(message, files);
   const rawFullDocumentCoverageAuditRequested = isFullDocumentCoverageAuditQuestion(message);
   const b2gTechnicalMemoryStrictRecallRequested = isB2gTechnicalMemoryStrictRecallQuestion(message);
+  const hbceAiEcosystemVolumeIFileDetected =
+    !b2gTechnicalMemoryStrictRecallRequested && hasHbceAiEcosystemVolumeISignal(message, files);
+  const hbceAiEcosystemDocumentProfileRequested =
+    hbceAiEcosystemVolumeIFileDetected ||
+    (!b2gTechnicalMemoryStrictRecallRequested && isHbceAiEcosystemDocumentProfileRequest(message, files));
   const matrixEuropaVolumeIFileDetected =
-    !b2gTechnicalMemoryStrictRecallRequested && hasMatrixEuropaVolumeISignal(message, files);
+    !b2gTechnicalMemoryStrictRecallRequested &&
+    !hbceAiEcosystemDocumentProfileRequested &&
+    hasMatrixEuropaVolumeISignal(message, files);
   const matrixOperationalDocumentProfileRequested =
     matrixEuropaVolumeIFileDetected ||
-    (!b2gTechnicalMemoryStrictRecallRequested && isMatrixOperationalDocumentProfileRequest(message, files));
+    (!b2gTechnicalMemoryStrictRecallRequested &&
+      !hbceAiEcosystemDocumentProfileRequested &&
+      isMatrixOperationalDocumentProfileRequest(message, files));
   const iprCanonicalDocumentMemorySaveRequested =
     !b2gTechnicalMemoryStrictRecallRequested &&
+    !hbceAiEcosystemDocumentProfileRequested &&
     !matrixEuropaVolumeIFileDetected &&
     !matrixOperationalDocumentProfileRequested &&
     isIprCanonicalDocumentMemorySaveRequest(message);
   const b2gTechnicalProfileMemoryRequested =
     !b2gTechnicalMemoryStrictRecallRequested &&
+    !hbceAiEcosystemDocumentProfileRequested &&
     !matrixEuropaVolumeIFileDetected &&
     !matrixOperationalDocumentProfileRequested &&
     isB2gTechnicalProfileMemoryRequest(message, files);
   const recordStatusOnlyRequested = isRecordStatusOnlyQuestion(message);
   const fullDocumentCoverageAuditRequested =
-    rawFullDocumentCoverageAuditRequested && !iprCanonicalDocumentMemorySaveRequested;
+    rawFullDocumentCoverageAuditRequested &&
+    !hbceAiEcosystemDocumentProfileRequested &&
+    !iprCanonicalDocumentMemorySaveRequested;
   const runtimeStatusTableRequested =
     !fullDocumentCoverageAuditRequested && isRuntimeStatusTableQuestion(message);
   const runtimeDiagnosticsRequested =
@@ -876,7 +889,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     isMatrixIVStrategicSynthesisQuestion(message);
   const documentMemoryRecallRequested =
     !iprCanonicalDocumentMemorySaveRequested &&
-    (matrixOperationalDocumentProfileRequested ||
+    (hbceAiEcosystemDocumentProfileRequested ||
+      matrixOperationalDocumentProfileRequested ||
       fullDocumentCoverageAuditRequested ||
       (!runtimeMemoryBlockDiagnosticRequested &&
         !matrixStrategicSynthesisRequested &&
@@ -1226,6 +1240,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       recall: iprRecall,
       documentProfileRecall,
       message,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (hbceAiEcosystemDocumentProfileRequested) {
+    answer = buildHbceAiEcosystemDocumentProfilePreparationAnswer({
+      message,
+      files,
+      documentProfileRecall,
       handoff,
       memory,
       policy,
@@ -1731,6 +1757,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     ? safeAnswer
     : recordStatusOnlyRequested
     ? safeAnswer
+    : hbceAiEcosystemDocumentProfileRequested
+    ? buildHbceAiEcosystemDocumentProfileReadyAnswer({
+        message,
+        files,
+        documentProfileRecall,
+        handoff,
+        memory,
+        policy,
+        saasContext,
+        evt,
+        opc,
+        auditAndUsage,
+        persistenceBridge
+      })
     : matrixOperationalDocumentProfileRequested
     ? buildMatrixOperationalDocumentProfileReadyAnswer({
         message,
@@ -7297,6 +7337,397 @@ function buildB2gTechnicalProfileMemoryReadyAnswer(args: {
 }
 
 
+
+
+const HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH = "sha256:4bf137f71a58bf85202b118c20645420f5a34ff2cde42e7482ed49e2a4261a57";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_DOC_FAMILY = "HBCE_AI_ECOSYSTEM";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_DOCUMENT_KIND = "HBCE_AI_ECOSYSTEM_VOLUME";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_ECOSYSTEM_CYCLE = "HBCE_ECOSISTEMA_AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_MODULE = "HBCE_ECOSISTEMA_AI_VOLUME_I";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_VOLUME = "V1";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_TITLE = "HBCE ECOSISTEMA AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_SUBTITLE = "Architettura operativa per intelligenze artificiali verificabili, responsabili e governate";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_CLASSIFICATION = "HBCE_AI_ECOSYSTEM_FOUNDATIONAL_VOLUME";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_QUALITY = "CANONICAL";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_AXIS = "AI · HBCE · IPR · EVT · OPC · MATRIX · JOKER-C2 · Governance · Audit · Responsibility";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_OPERATIONAL_TRACE_AXIS = "Identity · Governance · AI_Model · Risk · Policy · Event · Proof · Audit · Responsibility · Continuity · Fail_Closed · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_OPERATIONAL_SUMMARY = "HBCE ECOSISTEMA AI Volume I is the foundational volume of the HBCE AI Ecosystem cycle. It defines HBCE not as another AI model, but as an operational governance ecosystem for artificial intelligence through IPR identity, EVT event traceability, OPC proof, MATRIX coordination, AI JOKER-C2 runtime execution, audit, responsibility and fail-closed control.";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_INPUTS = "identityEvents, aiInteractionRequests, governancePolicies, riskSignals, modelSelectionEvents, auditSignals, documentProfileRequests, tenantId, workspaceId, humanIpr";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_OUTPUTS = "hbceAiEcosystemProfile, aiGovernanceChain, iprIdentityBinding, evtTraceRecordCandidate, opcTechnicalProofReceipt, matrixCoordinationProfile, jokerC2RuntimeGovernanceProfile, auditReadinessProfile";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_FUTURE_GITHUB_MODULES = "lib/hbce-ai-ecosystem-volume-i.ts; app/api/v1/hbce-ai-ecosystem/v1/profile/route.ts; app/api/v1/hbce-ai-ecosystem/governance/route.ts; app/api/v1/hbce-ai-ecosystem/document-memory/route.ts; app/api/v1/hbce-ai-ecosystem/recall/route.ts";
+
+type HbceAiEcosystemDocumentRuntimeProfile = {
+  fileHash: string;
+  docFamily: string;
+  documentKind: string;
+  ecosystemCycle: string;
+  module: string;
+  volume: string;
+  title: string;
+  subtitle: string;
+  classification: string;
+  quality: string;
+  canonicalAxis: string;
+  operationalTraceAxis: string;
+  operationalSummary: string;
+  runtimeInputs: string;
+  runtimeOutputs: string;
+  futureGithubModules: string;
+};
+
+const HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_PROFILE: HbceAiEcosystemDocumentRuntimeProfile = {
+  fileHash: HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH,
+  docFamily: HBCE_AI_ECOSYSTEM_VOLUME_I_DOC_FAMILY,
+  documentKind: HBCE_AI_ECOSYSTEM_VOLUME_I_DOCUMENT_KIND,
+  ecosystemCycle: HBCE_AI_ECOSYSTEM_VOLUME_I_ECOSYSTEM_CYCLE,
+  module: HBCE_AI_ECOSYSTEM_VOLUME_I_MODULE,
+  volume: HBCE_AI_ECOSYSTEM_VOLUME_I_VOLUME,
+  title: HBCE_AI_ECOSYSTEM_VOLUME_I_TITLE,
+  subtitle: HBCE_AI_ECOSYSTEM_VOLUME_I_SUBTITLE,
+  classification: HBCE_AI_ECOSYSTEM_VOLUME_I_CLASSIFICATION,
+  quality: HBCE_AI_ECOSYSTEM_VOLUME_I_QUALITY,
+  canonicalAxis: HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_AXIS,
+  operationalTraceAxis: HBCE_AI_ECOSYSTEM_VOLUME_I_OPERATIONAL_TRACE_AXIS,
+  operationalSummary: HBCE_AI_ECOSYSTEM_VOLUME_I_OPERATIONAL_SUMMARY,
+  runtimeInputs: HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_INPUTS,
+  runtimeOutputs: HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_OUTPUTS,
+  futureGithubModules: HBCE_AI_ECOSYSTEM_VOLUME_I_FUTURE_GITHUB_MODULES
+};
+
+function resolveHbceAiEcosystemDocumentSignalText(message: string, files: PublicFileSnapshot[]): string {
+  const fileText = files
+    .map((file) => [file.name, file.fileHash, file.hash, file.documentProfileId, getPromptTextForFile(file).slice(0, 36000)].join("\n"))
+    .join("\n");
+
+  return normalizeText([message, fileText].join("\n"));
+}
+
+function hasHbceAiEcosystemVolumeISignal(message: string, files: PublicFileSnapshot[]): boolean {
+  const normalized = resolveHbceAiEcosystemDocumentSignalText(message, files);
+
+  if (!normalized) {
+    return false;
+  }
+
+  const explicitIdentity =
+    normalized.includes("hbce_ecosistema_ai_volume_i") ||
+    normalized.includes("hbce ecosistema ai volume i") ||
+    normalized.includes("hbce ecosistema ai") ||
+    normalized.includes("1 hbce ecosistema ai") ||
+    normalized.includes("hbce_ai_ecosystem") ||
+    normalized.includes("hbce ecosystem ai") ||
+    normalized.includes("hbce_ai_ecosystem_document_profile") ||
+    normalized.includes("hbce_ai_ecosystem_foundational_volume") ||
+    normalized.includes("architettura operativa per intelligenze artificiali verificabili responsabili e governate") ||
+    normalized.includes("4bf137f71a58bf85202b118c20645420f5a34ff2cde42e7482ed49e2a4261a57");
+
+  const architectureSignals =
+    normalized.includes("ai genera hbce governa ipr identifica evt traccia opc prova matrix") ||
+    normalized.includes("ai genera hbce governa") ||
+    normalized.includes("ipr identifica evt traccia opc prova") ||
+    normalized.includes("ai joker-c2 esegue") ||
+    normalized.includes("ai joker c2 esegue") ||
+    normalized.includes("identita operativa") ||
+    normalized.includes("identità operativa") ||
+    normalized.includes("evento verificabile") ||
+    normalized.includes("prova operativa") ||
+    normalized.includes("governance operativa") ||
+    normalized.includes("ai verificabile") ||
+    normalized.includes("intelligenze artificiali verificabili") ||
+    normalized.includes("responsabilita verificabile") ||
+    normalized.includes("responsabilità verificabile") ||
+    normalized.includes("fail-closed") ||
+    normalized.includes("fail closed") ||
+    normalized.includes("ai act") ||
+    normalized.includes("audit") ||
+    normalized.includes("openc") ||
+    normalized.includes("opc");
+
+  return explicitIdentity && architectureSignals;
+}
+
+function isHbceAiEcosystemDocumentProfileRequest(message: string, files: PublicFileSnapshot[]): boolean {
+  if (!message.trim() || files.length === 0) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const requestSignal =
+    normalized.includes("hbce_ai_ecosystem_document_profile") ||
+    normalized.includes("hbce_ai_ecosystem_document_profile_ready") ||
+    normalized.includes("hbce_ai_ecosystem_document_profile_fail") ||
+    normalized.includes("hbce_ecosistema_ai_volume_i") ||
+    normalized.includes("hbce ecosistema ai volume i") ||
+    normalized.includes("hbce ecosistema ai") ||
+    normalized.includes("preferhbceaiecosystemdocumentmemory") ||
+    normalized.includes("hbce ai ecosystem") ||
+    normalized.includes("do_not_use_matrix_volume_i") ||
+    normalized.includes("do_not_use_ipr_canonical_document_memory_branch") ||
+    normalized.includes("do_not_create_semantic_memory");
+
+  return requestSignal && hasHbceAiEcosystemVolumeISignal(message, files);
+}
+
+function resolveHbceAiEcosystemDocumentRuntimeProfile(_message: string, _files: PublicFileSnapshot[]): HbceAiEcosystemDocumentRuntimeProfile {
+  return HBCE_AI_ECOSYSTEM_VOLUME_I_RUNTIME_PROFILE;
+}
+
+function hbceAiEcosystemDocumentReadyFromDiagnostic(diagnostic: FullDocumentCoverageAuditDiagnostic): boolean {
+  const documentProfileIdAvailable = diagnostic.documentProfileId !== "NO_DOCUMENT_PROFILE_ID" && diagnostic.documentProfileId.trim().length > 0;
+  const documentProfileStatusAvailable = diagnostic.documentProfileStatus !== "NO_DOCUMENT_PROFILE_STATUS" && diagnostic.documentProfileStatus.trim().length > 0;
+  const chunksReady =
+    diagnostic.documentChunksPersisted === true &&
+    diagnostic.documentChunksPersistedCount >= Math.max(1, diagnostic.documentChunkCount);
+
+  return (
+    diagnostic.fullDocumentCoverage === true &&
+    diagnostic.textCoverageStatus === "TEXT_READY_FULL" &&
+    chunksReady &&
+    diagnostic.truncationDetected === false &&
+    documentProfileIdAvailable &&
+    documentProfileStatusAvailable &&
+    diagnostic.documentProfileRecallInjected === true &&
+    diagnostic.linkedProfileCount > 0
+  );
+}
+
+function hbceAiEcosystemDocumentFailReason(diagnostic: FullDocumentCoverageAuditDiagnostic, ready: boolean): string {
+  if (ready) {
+    return "NONE";
+  }
+
+  const reasons: string[] = [];
+
+  if (!diagnostic.fullDocumentCoverage) {
+    reasons.push("FULL_DOCUMENT_COVERAGE_FALSE");
+  }
+
+  if (diagnostic.textCoverageStatus !== "TEXT_READY_FULL") {
+    reasons.push("TEXT_COVERAGE_STATUS_NOT_FULL");
+  }
+
+  if (!diagnostic.documentChunksPersisted) {
+    reasons.push("DOCUMENT_CHUNKS_NOT_PERSISTED");
+  }
+
+  if (diagnostic.truncationDetected) {
+    reasons.push("TRUNCATION_OR_PARTIAL_COVERAGE_DETECTED");
+  }
+
+  if (diagnostic.documentProfileId === "NO_DOCUMENT_PROFILE_ID" || !diagnostic.documentProfileId.trim()) {
+    reasons.push("DOCUMENT_PROFILE_ID_MISSING");
+  }
+
+  if (diagnostic.documentProfileStatus === "NO_DOCUMENT_PROFILE_STATUS" || !diagnostic.documentProfileStatus.trim()) {
+    reasons.push("DOCUMENT_PROFILE_STATUS_MISSING");
+  }
+
+  if (diagnostic.documentProfileRecallInjected !== true) {
+    reasons.push("DOCUMENT_PROFILE_RECALL_NOT_INJECTED");
+  }
+
+  if (diagnostic.linkedProfileCount < 1) {
+    reasons.push("LINKED_PROFILE_COUNT_ZERO");
+  }
+
+  if (diagnostic.hashMatchesExpected === false) {
+    reasons.push("RUNTIME_FILE_HASH_DOES_NOT_MATCH_EXPECTED_SOURCE_HASH");
+  }
+
+  return reasons.join("|") || diagnostic.failReason || "HBCE_AI_ECOSYSTEM_DOCUMENT_PROFILE_NOT_READY";
+}
+
+function buildHbceAiEcosystemDocumentProfilePreparationAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const diagnostic = buildFullDocumentCoverageAuditDiagnostic({
+    message: args.message,
+    files: args.files,
+    documentProfileRecall: args.documentProfileRecall,
+    documentMemoryRecallRequested: true
+  });
+  const ready = hbceAiEcosystemDocumentReadyFromDiagnostic(diagnostic);
+  const failReason = hbceAiEcosystemDocumentFailReason(diagnostic, ready);
+  const hbceProfile = resolveHbceAiEcosystemDocumentRuntimeProfile(args.message, args.files);
+
+  return [
+    ready ? "HBCE_AI_ECOSYSTEM_DOCUMENT_PROFILE_READY" : "HBCE_AI_ECOSYSTEM_DOCUMENT_PROFILE_FAIL",
+    "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
+    "activeFilename=" + diagnostic.activeFilename,
+    "sourceDocument=" + diagnostic.activeFilename,
+    "runtimeFileHash=" + diagnostic.runtimeFileHash,
+    "fileHash=" + diagnostic.runtimeFileHash,
+    "hashMatchesExpected=" + String(diagnostic.hashMatchesExpected === null ? "NOT_CHECKED" : diagnostic.hashMatchesExpected),
+    "textCoverageStatus=" + diagnostic.textCoverageStatus,
+    "fullDocumentCoverage=" + String(diagnostic.fullDocumentCoverage),
+    "longDocumentMode=" + diagnostic.longDocumentMode,
+    "documentChunkCount=" + String(diagnostic.documentChunkCount),
+    "documentChunksPersisted=" + String(diagnostic.documentChunksPersisted),
+    "documentChunksPersistedCount=" + String(diagnostic.documentChunksPersistedCount),
+    "documentProfileId=" + diagnostic.documentProfileId,
+    "documentProfileStatus=" + diagnostic.documentProfileStatus,
+    "docFamily=" + hbceProfile.docFamily,
+    "documentKind=" + hbceProfile.documentKind,
+    "ecosystemCycle=" + hbceProfile.ecosystemCycle,
+    "ecosystemVolume=" + hbceProfile.volume,
+    "module=" + hbceProfile.module,
+    "volume=" + hbceProfile.volume,
+    "title=" + hbceProfile.title,
+    "subtitle=" + hbceProfile.subtitle,
+    "classification=" + hbceProfile.classification,
+    "quality=" + hbceProfile.quality,
+    "canonicalAxis=" + hbceProfile.canonicalAxis,
+    "operationalTraceAxis=" + hbceProfile.operationalTraceAxis,
+    "documentMemory.status=" + (ready ? "HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY_READY" : "HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY_FAIL"),
+    "documentMemory.readyForIprSave=" + String(ready),
+    "documentMemory.memoryType=HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY",
+    "documentMemory.memoryMode=FULL_DOCUMENT_OPERATIONAL_SYNTHESIS",
+    "documentMemory.docFamily=" + hbceProfile.docFamily,
+    "documentMemory.documentKind=" + hbceProfile.documentKind,
+    "documentMemory.ecosystemCycle=" + hbceProfile.ecosystemCycle,
+    "documentMemory.ecosystemVolume=" + hbceProfile.volume,
+    "documentMemory.module=" + hbceProfile.module,
+    "documentMemory.title=" + hbceProfile.title,
+    "documentMemory.volume=" + hbceProfile.volume,
+    "documentMemory.canonicalAxis=" + hbceProfile.canonicalAxis,
+    "guards.doNotClassifyAsMatrixVolumeI=true",
+    "guards.doNotClassifyAsMatrixVolumeII=true",
+    "guards.doNotClassifyAsMatrixVolumeIII=true",
+    "guards.doNotClassifyAsMatrixVolumeIV=true",
+    "guards.doNotClassifyAsMatrixVolumeV=true",
+    "guards.doNotClassifyAsB2GTechnicalModule=true",
+    "guards.doNotClassifyAsCorpusEsoterologico=true",
+    "guards.doNotClassifyAsLexHermeticum=true",
+    "guards.doNotClassifyAsQState=true",
+    "guards.doNotUseQuantumStateOutput=true",
+    "guards.doNotCreateSemanticEsoterologicalMemory=true",
+    "guards.preferHbceAiEcosystemDocumentMemory=true",
+    "guards.fullDocumentCoverageRequired=true",
+    "guards.orderedRecall=true",
+    "guards.failClosedOnMissingProfile=true",
+    "truncationDetected=" + String(diagnostic.truncationDetected),
+    "readyForIprSave=" + String(ready),
+    "failReason=" + failReason,
+    "derivedFromHumanIpr=" + args.handoff.humanIpr,
+    "humanIpr=" + args.handoff.humanIpr,
+    "runtimeIpr=" + RUNTIME_IPR,
+    "tenantId=" + args.saasContext.tenantId,
+    "workspaceId=" + args.saasContext.workspaceId,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+function buildHbceAiEcosystemDocumentProfileReadyAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  documentProfileRecall: DocumentProfileRecall | null;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
+}): string {
+  const diagnostic = buildFullDocumentCoverageAuditDiagnostic({
+    message: args.message,
+    files: args.files,
+    documentProfileRecall: args.documentProfileRecall,
+    documentMemoryRecallRequested: true
+  });
+  const ready = hbceAiEcosystemDocumentReadyFromDiagnostic(diagnostic);
+  const failReason = hbceAiEcosystemDocumentFailReason(diagnostic, ready);
+  const hbceProfile = resolveHbceAiEcosystemDocumentRuntimeProfile(args.message, args.files);
+
+  return [
+    ready ? "HBCE_AI_ECOSYSTEM_DOCUMENT_PROFILE_READY" : "HBCE_AI_ECOSYSTEM_DOCUMENT_PROFILE_FAIL",
+    "",
+    "FILE_ROUTE_REVISION=" + CHAT_ROUTE_REVISION,
+    "activeFilename=" + diagnostic.activeFilename,
+    "sourceDocument=" + diagnostic.activeFilename,
+    "runtimeFileHash=" + diagnostic.runtimeFileHash,
+    "fileHash=" + diagnostic.runtimeFileHash,
+    "hashMatchesExpected=" + String(diagnostic.hashMatchesExpected === null ? "NOT_CHECKED" : diagnostic.hashMatchesExpected),
+    "textCoverageStatus=" + diagnostic.textCoverageStatus,
+    "fullDocumentCoverage=" + String(diagnostic.fullDocumentCoverage),
+    "longDocumentMode=" + diagnostic.longDocumentMode,
+    "documentChunkCount=" + String(diagnostic.documentChunkCount),
+    "documentChunksPersisted=" + String(diagnostic.documentChunksPersisted),
+    "documentChunksPersistedCount=" + String(diagnostic.documentChunksPersistedCount),
+    "",
+    "documentProfileId=" + diagnostic.documentProfileId,
+    "documentProfileStatus=" + diagnostic.documentProfileStatus,
+    "docFamily=" + hbceProfile.docFamily,
+    "documentKind=" + hbceProfile.documentKind,
+    "ecosystemCycle=" + hbceProfile.ecosystemCycle,
+    "ecosystemVolume=" + hbceProfile.volume,
+    "module=" + hbceProfile.module,
+    "volume=" + hbceProfile.volume,
+    "title=" + hbceProfile.title,
+    "subtitle=" + hbceProfile.subtitle,
+    "classification=" + hbceProfile.classification,
+    "quality=" + hbceProfile.quality,
+    "canonicalAxis=" + hbceProfile.canonicalAxis,
+    "operationalTraceAxis=" + hbceProfile.operationalTraceAxis,
+    "",
+    "documentMemory.status=" + (ready ? "HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY_READY" : "HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY_FAIL"),
+    "documentMemory.readyForIprSave=" + String(ready),
+    "documentMemory.memoryType=HBCE_AI_ECOSYSTEM_DOCUMENT_MEMORY",
+    "documentMemory.memoryMode=FULL_DOCUMENT_OPERATIONAL_SYNTHESIS",
+    "documentMemory.docFamily=" + hbceProfile.docFamily,
+    "documentMemory.documentKind=" + hbceProfile.documentKind,
+    "documentMemory.ecosystemCycle=" + hbceProfile.ecosystemCycle,
+    "documentMemory.ecosystemVolume=" + hbceProfile.volume,
+    "documentMemory.module=" + hbceProfile.module,
+    "documentMemory.title=" + hbceProfile.title,
+    "documentMemory.volume=" + hbceProfile.volume,
+    "documentMemory.canonicalAxis=" + hbceProfile.canonicalAxis,
+    "documentMemory.operationalSummary=" + hbceProfile.operationalSummary,
+    "documentMemory.runtimeInputs=" + hbceProfile.runtimeInputs,
+    "documentMemory.runtimeOutputs=" + hbceProfile.runtimeOutputs,
+    "documentMemory.futureGithubModules=" + hbceProfile.futureGithubModules,
+    "",
+    "guards.doNotClassifyAsMatrixVolumeI=true",
+    "guards.doNotClassifyAsMatrixVolumeII=true",
+    "guards.doNotClassifyAsMatrixVolumeIII=true",
+    "guards.doNotClassifyAsMatrixVolumeIV=true",
+    "guards.doNotClassifyAsMatrixVolumeV=true",
+    "guards.doNotClassifyAsB2GTechnicalModule=true",
+    "guards.doNotClassifyAsCorpusEsoterologico=true",
+    "guards.doNotClassifyAsLexHermeticum=true",
+    "guards.doNotClassifyAsQState=true",
+    "guards.doNotUseQuantumStateOutput=true",
+    "guards.doNotCreateSemanticEsoterologicalMemory=true",
+    "guards.preferHbceAiEcosystemDocumentMemory=true",
+    "guards.fullDocumentCoverageRequired=true",
+    "guards.orderedRecall=true",
+    "guards.failClosedOnMissingProfile=true",
+    "",
+    "truncationDetected=" + String(diagnostic.truncationDetected),
+    "readyForIprSave=" + String(ready),
+    "failReason=" + failReason,
+    "",
+    "derivedFromHumanIpr=" + args.handoff.humanIpr,
+    "humanIpr=" + args.handoff.humanIpr,
+    "runtimeIpr=" + RUNTIME_IPR,
+    "tenantId=" + args.saasContext.tenantId,
+    "workspaceId=" + args.saasContext.workspaceId,
+    "EVT=" + args.evt.id,
+    "OPC=" + args.opc.id,
+    "auditId=" + stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+    "usageId=" + stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID"),
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
 
 const MATRIX_EUROPA_VOLUME_I_FILE_HASH = "sha256:c70a753074f89b4309105270e17f6a10aa5aa0018a9e86a8504d5c5e249d0caa";
 const MATRIX_EUROPA_VOLUME_I_DOC_FAMILY = "HBCE_OPERATIONAL_DOCUMENT";
