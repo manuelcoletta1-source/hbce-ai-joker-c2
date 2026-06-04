@@ -6,10 +6,10 @@ import {
 import type { DocumentProfileDatabaseRow } from "@/lib/ipr-database";
 
 export const CYBERNETIC_DOCUMENT_RECALL_ENGINE_REVISION =
-  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_2";
+  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_3";
 
 const HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR_REVISION =
-  "HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_2";
+  "HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_3";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_ID = "DOC-PROFILE-8602A2F8D2E2494D";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_MEMORY_ID = "IPR-MEM-20260604124905-E968EDC7";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH =
@@ -86,6 +86,44 @@ const HBCE_AI_ECOSYSTEM_VOLUME_II_KEY_TERMS = [
   "OPC",
   "AI JOKER-C2",
   "Continuità auditabile"
+];
+const HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_ID = "DOC-PROFILE-5F5E13FD403BE684";
+const HBCE_AI_ECOSYSTEM_VOLUME_III_MEMORY_ID = "IPR-MEM-20260604145636-F91B2203";
+const HBCE_AI_ECOSYSTEM_VOLUME_III_FILE_HASH =
+  "sha256:b32bcc740955ec6a2c98b292ed5f44332e111605e9f5d015834d73406c80e8c1";
+const HBCE_AI_ECOSYSTEM_VOLUME_III_FILENAME = "HBCE_ECOSISTEMA_AI_VOLUME_III_CLEAN_RUNTIME_FOR_JOKER_C2.txt";
+const HBCE_AI_ECOSYSTEM_VOLUME_III_TITLE = "HBCE ECOSISTEMA AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_III_SUBTITLE =
+  "Industrializzazione, audit operativo e adozione dello standard HBCE";
+const HBCE_AI_ECOSYSTEM_VOLUME_III_CANONICAL_AXIS =
+  "Adoption · Industrialization · Audit · Fascicolo operativo AI · HBCE-M · HBCE-L · IPR AI Audit Trail · Pilot · Market · Standard · EVT · OPC";
+const HBCE_AI_ECOSYSTEM_VOLUME_III_CANONICAL_SUMMARY =
+  "HBCE ECOSISTEMA AI Volume III definisce il passaggio da architettura a sistema adottabile, industrializzabile e misurabile, introducendo fascicolo operativo AI, audit-by-design, metriche HBCE, livelli HBCE-L, prodotto IPR AI Audit Trail, onboarding, pilot, documentazione organizzativa, casi d’uso e roadmap verso standard operativo replicabile.";
+const HBCE_AI_ECOSYSTEM_VOLUME_III_KEY_TERMS = [
+  "HBCE ECOSISTEMA AI",
+  "HBCE AI Ecosystem",
+  "Volume III",
+  "Industrializzazione",
+  "Adozione",
+  "Audit operativo",
+  "Audit-by-design",
+  "Fascicolo operativo AI",
+  "HBCE-M",
+  "HBCE-L",
+  "IPR AI Audit Trail",
+  "Metriche HBCE",
+  "Pilot",
+  "Onboarding",
+  "Mercato",
+  "Standard operativo",
+  "RACI",
+  "Documentazione organizzativa",
+  "Casi d’uso",
+  "Roadmap",
+  "EVT",
+  "OPC",
+  "AI JOKER-C2",
+  "Verificabilità"
 ];
 
 export type CyberneticDocumentFileSnapshot = {
@@ -372,7 +410,40 @@ function isMatrixVolumeVContaminatedSummary(value: string | null): boolean {
   );
 }
 
+function isHbceAiEcosystemVolumeIIIProfileRecord(publicProfile: Record<string, unknown>): boolean {
+  const profileId = stringFromValue(publicProfile.profileId).toUpperCase();
+  const memoryId = stringFromValue(publicProfile.memoryId).toUpperCase();
+  const fileHash = stringFromValue(publicProfile.fileHash).trim().toLowerCase();
+  const filename = normalizeComparableDocumentValue(publicProfile.filename);
+  const docFamily = stringFromValue(publicProfile.docFamily).trim().toUpperCase();
+  const volume = stringFromValue(publicProfile.volume).trim().toUpperCase();
+  const ecosystemVolume = stringFromValue(publicProfile.ecosystemVolume).trim().toUpperCase();
+  const module = stringFromValue(publicProfile.module).trim().toUpperCase();
+  const subtitle = normalizeComparableDocumentValue(publicProfile.subtitle);
+  const summary = normalizeComparableDocumentValue(publicProfile.summary);
+
+  return (
+    profileId === HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_ID ||
+    memoryId === HBCE_AI_ECOSYSTEM_VOLUME_III_MEMORY_ID ||
+    fileHash === HBCE_AI_ECOSYSTEM_VOLUME_III_FILE_HASH ||
+    filename === normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_III_FILENAME) ||
+    module === "HBCE_ECOSISTEMA_AI_VOLUME_III" ||
+    (docFamily === "HBCE_AI_ECOSYSTEM" && (volume === "V3" || ecosystemVolume === "V3")) ||
+    subtitle === normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_III_SUBTITLE) ||
+    summary.includes("volume iii definisce") ||
+    summary.includes("fascicolo operativo ai") ||
+    summary.includes("ipr ai audit trail") ||
+    summary.includes("audit-by-design") ||
+    summary.includes("sistema adottabile") ||
+    summary.includes("standard operativo replicabile")
+  );
+}
+
 function isHbceAiEcosystemVolumeIIProfileRecord(publicProfile: Record<string, unknown>): boolean {
+  if (isHbceAiEcosystemVolumeIIIProfileRecord(publicProfile)) {
+    return false;
+  }
+
   const profileId = stringFromValue(publicProfile.profileId).toUpperCase();
   const memoryId = stringFromValue(publicProfile.memoryId).toUpperCase();
   const fileHash = stringFromValue(publicProfile.fileHash).trim().toLowerCase();
@@ -398,7 +469,10 @@ function isHbceAiEcosystemVolumeIIProfileRecord(publicProfile: Record<string, un
 }
 
 function isHbceAiEcosystemVolumeIProfileRecord(publicProfile: Record<string, unknown>): boolean {
-  if (isHbceAiEcosystemVolumeIIProfileRecord(publicProfile)) {
+  if (
+    isHbceAiEcosystemVolumeIIIProfileRecord(publicProfile) ||
+    isHbceAiEcosystemVolumeIIProfileRecord(publicProfile)
+  ) {
     return false;
   }
 
@@ -420,8 +494,9 @@ function isHbceAiEcosystemVolumeIProfileRecord(publicProfile: Record<string, unk
   );
 }
 
-function isHbceAiEcosystemVolumeIOrIIProfileRecord(publicProfile: Record<string, unknown>): boolean {
+function isHbceAiEcosystemVolumeIOrIIOrIIIProfileRecord(publicProfile: Record<string, unknown>): boolean {
   return (
+    isHbceAiEcosystemVolumeIIIProfileRecord(publicProfile) ||
     isHbceAiEcosystemVolumeIIProfileRecord(publicProfile) ||
     isHbceAiEcosystemVolumeIProfileRecord(publicProfile)
   );
@@ -430,7 +505,7 @@ function isHbceAiEcosystemVolumeIOrIIProfileRecord(publicProfile: Record<string,
 function withHbceAiEcosystemCanonicalProfileRepair(
   publicProfile: Record<string, unknown>,
   args: {
-    volume: "V1" | "V2";
+    volume: "V1" | "V2" | "V3";
     title: string;
     subtitle: string;
     canonicalAxis: string;
@@ -485,6 +560,17 @@ function withHbceAiEcosystemCanonicalProfileRepair(
 function withHbceAiEcosystemProfileSummaryHardRepair(
   publicProfile: Record<string, unknown>
 ): Record<string, unknown> {
+  if (isHbceAiEcosystemVolumeIIIProfileRecord(publicProfile)) {
+    return withHbceAiEcosystemCanonicalProfileRepair(publicProfile, {
+      volume: "V3",
+      title: HBCE_AI_ECOSYSTEM_VOLUME_III_TITLE,
+      subtitle: HBCE_AI_ECOSYSTEM_VOLUME_III_SUBTITLE,
+      canonicalAxis: HBCE_AI_ECOSYSTEM_VOLUME_III_CANONICAL_AXIS,
+      canonicalSummary: HBCE_AI_ECOSYSTEM_VOLUME_III_CANONICAL_SUMMARY,
+      keyTerms: HBCE_AI_ECOSYSTEM_VOLUME_III_KEY_TERMS
+    });
+  }
+
   if (isHbceAiEcosystemVolumeIIProfileRecord(publicProfile)) {
     return withHbceAiEcosystemCanonicalProfileRepair(publicProfile, {
       volume: "V2",
@@ -523,7 +609,7 @@ function booleanFromPublicProfile(value: unknown): boolean {
 }
 
 function hbceAiEcosystemProfileSummaryHardRepairLines(item: CyberneticDocumentProfileRecallItem): string[] {
-  if (!isHbceAiEcosystemVolumeIOrIIProfileRecord(item.publicProfile || {})) {
+  if (!isHbceAiEcosystemVolumeIOrIIOrIIIProfileRecord(item.publicProfile || {})) {
     return [];
   }
 
@@ -2167,4 +2253,3 @@ export function buildCyberneticDocumentMemoryRecallAnswer(args: CyberneticDocume
     "OPC=technical proof receipt only"
   ].join("\n");
 }
-
