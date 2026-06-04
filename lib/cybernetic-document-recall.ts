@@ -6,7 +6,20 @@ import {
 import type { DocumentProfileDatabaseRow } from "@/lib/ipr-database";
 
 export const CYBERNETIC_DOCUMENT_RECALL_ENGINE_REVISION =
-  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY";
+  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_1";
+
+const HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR_REVISION =
+  "HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_1";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_ID = "DOC-PROFILE-8602A2F8D2E2494D";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_MEMORY_ID = "IPR-MEM-20260604124905-E968EDC7";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH =
+  "sha256:8c439b38f884a7bc5e1ace66575dff4968f7d7929701487eac81f13fb3eda79a";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_FILENAME = "1A.HBCE_ECOSISTEMA_AI_PULITO.txt";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_TITLE = "HBCE ECOSISTEMA AI";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_SUBTITLE =
+  "Architettura operativa per intelligenze artificiali verificabili, responsabili e governate";
+const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY =
+  "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, AI JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed.";
 
 export type CyberneticDocumentFileSnapshot = {
   name?: string | null;
@@ -268,6 +281,107 @@ function normalizeDocumentScopeId(value: unknown): string | null {
 function normalizeDocumentFamily(value: unknown): string | null {
   const normalized = normalizeNullableText(value);
   return normalized ? normalized.trim().toUpperCase() : null;
+}
+
+function normalizeComparableDocumentValue(value: unknown): string {
+  return normalizeText(stringFromValue(value));
+}
+
+function isMatrixVolumeVContaminatedSummary(value: string | null): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = normalizeText(value);
+  return (
+    normalized.includes("matrix italia") ||
+    normalized.includes("volume v") ||
+    normalized.includes("base energetica") ||
+    normalized.includes("smr") ||
+    normalized.includes("rete energetica europea") ||
+    normalized.includes("layer φω") ||
+    normalized.includes("layer phi") ||
+    normalized.includes("nodi energetici")
+  );
+}
+
+function isHbceAiEcosystemVolumeIProfileRecord(publicProfile: Record<string, unknown>): boolean {
+  const profileId = stringFromValue(publicProfile.profileId).toUpperCase();
+  const memoryId = stringFromValue(publicProfile.memoryId).toUpperCase();
+  const fileHash = stringFromValue(publicProfile.fileHash).trim().toLowerCase();
+  const filename = normalizeComparableDocumentValue(publicProfile.filename);
+  const docFamily = stringFromValue(publicProfile.docFamily).trim().toUpperCase();
+  const volume = stringFromValue(publicProfile.volume).trim().toUpperCase();
+  const title = normalizeComparableDocumentValue(publicProfile.title);
+
+  return (
+    profileId === HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_ID ||
+    memoryId === HBCE_AI_ECOSYSTEM_VOLUME_I_MEMORY_ID ||
+    fileHash === HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH ||
+    filename === normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_I_FILENAME) ||
+    (docFamily === "HBCE_AI_ECOSYSTEM" && volume === "V1") ||
+    (title === normalizeText(HBCE_AI_ECOSYSTEM_VOLUME_I_TITLE) && volume === "V1")
+  );
+}
+
+function withHbceAiEcosystemVolumeISummaryHardRepair(
+  publicProfile: Record<string, unknown>
+): Record<string, unknown> {
+  if (!isHbceAiEcosystemVolumeIProfileRecord(publicProfile)) {
+    return publicProfile;
+  }
+
+  const previousSummary = documentProfileString(publicProfile, "summary");
+  const previousSubtitle = documentProfileString(publicProfile, "subtitle");
+  const previousSummaryContaminationDetected = isMatrixVolumeVContaminatedSummary(previousSummary);
+  const summaryRepairApplied = previousSummary !== HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY;
+
+  return {
+    ...publicProfile,
+    title: documentProfileString(publicProfile, "title") || HBCE_AI_ECOSYSTEM_VOLUME_I_TITLE,
+    subtitle: previousSubtitle || HBCE_AI_ECOSYSTEM_VOLUME_I_SUBTITLE,
+    summary: HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY,
+    hbceAiEcosystemProfileSummaryHardRepairApplied: summaryRepairApplied,
+    hbceAiEcosystemProfileSummaryHardRepairRevision: HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR_REVISION,
+    preRepairSummary: previousSummary || "NO_PRE_REPAIR_SUMMARY",
+    preRepairSummaryContaminationDetected: previousSummaryContaminationDetected,
+    preRepairMatrixV5SummaryDetected: previousSummaryContaminationDetected,
+    summaryContaminationDetected: false,
+    matrixV5SummaryDetected: false,
+    hbceAiEcosystemSummaryDetected: true,
+    expectedSummary: HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY,
+    actualSummary: HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY
+  };
+}
+
+function booleanFromPublicProfile(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    return normalizeText(value) === "true";
+  }
+
+  return false;
+}
+
+function hbceAiEcosystemProfileSummaryHardRepairLines(item: CyberneticDocumentProfileRecallItem): string[] {
+  if (!isHbceAiEcosystemVolumeIProfileRecord(item.publicProfile || {})) {
+    return [];
+  }
+
+  return [
+    `summaryRepairRevision: ${stringFromValue(item.publicProfile.hbceAiEcosystemProfileSummaryHardRepairRevision) || HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR_REVISION}`,
+    `summaryRepairApplied: ${String(booleanFromPublicProfile(item.publicProfile.hbceAiEcosystemProfileSummaryHardRepairApplied))}`,
+    `preRepairSummaryContaminationDetected: ${String(booleanFromPublicProfile(item.publicProfile.preRepairSummaryContaminationDetected))}`,
+    `preRepairMatrixV5SummaryDetected: ${String(booleanFromPublicProfile(item.publicProfile.preRepairMatrixV5SummaryDetected))}`,
+    `summaryContaminationDetected: ${String(booleanFromPublicProfile(item.publicProfile.summaryContaminationDetected))}`,
+    `matrixV5SummaryDetected: ${String(booleanFromPublicProfile(item.publicProfile.matrixV5SummaryDetected))}`,
+    `hbceAiEcosystemSummaryDetected: ${String(booleanFromPublicProfile(item.publicProfile.hbceAiEcosystemSummaryDetected))}`,
+    `expectedSummary: ${stringFromValue(item.publicProfile.expectedSummary) || HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_SUMMARY}`,
+    `actualSummary: ${stringFromValue(item.publicProfile.actualSummary) || item.summary || "NO_ACTUAL_SUMMARY"}`
+  ];
 }
 
 function boundedPositiveInteger(value: unknown, fallback: number, min: number, max: number): number {
@@ -802,7 +916,8 @@ function isActiveReusableDocumentProfileRecallItem(item: CyberneticDocumentProfi
 }
 
 function normalizeDocumentProfileRow(row: DocumentProfileDatabaseRow): CyberneticDocumentProfileRecallItem {
-  const publicProfile = toPublicDocumentProfile(row) as Record<string, unknown>;
+  const rawPublicProfile = toPublicDocumentProfile(row) as Record<string, unknown>;
+  const publicProfile = withHbceAiEcosystemVolumeISummaryHardRepair(rawPublicProfile);
 
   return {
     profileId: documentProfileString(publicProfile, "profileId"),
@@ -935,6 +1050,10 @@ function buildDocumentProfilePromptBlock(items: CyberneticDocumentProfileRecallI
     lines.push(`title: ${item.title || "UNKNOWN_TITLE"}`);
     lines.push(`canonicalAxis: ${item.canonicalAxis || "NO_CANONICAL_AXIS"}`);
     lines.push(`summary: ${item.summary || "NO_SUMMARY"}`);
+    const summaryRepairLines = hbceAiEcosystemProfileSummaryHardRepairLines(item);
+    if (summaryRepairLines.length) {
+      lines.push(...summaryRepairLines);
+    }
     lines.push(`keyTerms: ${item.keyTerms.join(", ") || "NO_KEY_TERMS"}`);
     lines.push(`quality: ${item.quality || "UNKNOWN"}`);
     lines.push(`recallScore: ${String(item.recallScore ?? "NO_RECALL_SCORE")}`);
@@ -1679,6 +1798,11 @@ function buildCyberneticMultiDocumentMemoryRecallAnswer(args: CyberneticDocument
     sections.push(`volume: ${documentProfile.volume || "UNKNOWN_VOLUME"}`);
     sections.push(`title: ${documentProfile.title || "UNKNOWN_TITLE"}`);
     sections.push(`canonicalAxis: ${documentProfile.canonicalAxis || "NO_CANONICAL_AXIS"}`);
+    sections.push(`summary: ${documentProfile.summary || "NO_DOCUMENT_PROFILE_SUMMARY"}`);
+    const summaryRepairLines = hbceAiEcosystemProfileSummaryHardRepairLines(documentProfile);
+    if (summaryRepairLines.length) {
+      sections.push(...summaryRepairLines);
+    }
     sections.push(`textStatus: ${documentProfile.textStatus || "UNKNOWN_TEXT_STATUS"}`);
     sections.push(`textLength: ${String(documentProfile.textLength ?? "UNKNOWN_TEXT_LENGTH")}`);
     sections.push(`quality: ${documentProfile.quality || "UNKNOWN"}`);
@@ -1845,6 +1969,7 @@ export function buildCyberneticDocumentMemoryRecallAnswer(args: CyberneticDocume
     documentProfile.subtitle ? `subtitle: ${documentProfile.subtitle}` : "subtitle: none",
     `canonicalAxis: ${documentProfile.canonicalAxis || "NO_CANONICAL_AXIS"}`,
     `summary: ${documentProfile.summary || "NO_DOCUMENT_PROFILE_SUMMARY"}`,
+    ...hbceAiEcosystemProfileSummaryHardRepairLines(documentProfile),
     `keyTerms: ${documentProfile.keyTerms.join(", ") || "NO_KEY_TERMS"}`,
     `semanticTerms: ${serializeDocumentSemanticTerms(documentProfile.semanticTerms)}`,
     "",
