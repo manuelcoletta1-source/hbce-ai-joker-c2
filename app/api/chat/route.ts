@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_GUARD-v9_10_7_31";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -650,6 +650,7 @@ const USE_VOLUME_III_PROFILE_GUARD_REVISION = "USE_VOLUME_III_PROFILE_GUARD-v9_1
 const USE_VOLUME_III_PROFILE_PERSISTENCE_BRIDGE_REVISION = "USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28" as const;
 const USE_VOLUME_IV_PROFILE_GUARD_REVISION = "USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29" as const;
 const USE_VOLUME_V_PROFILE_GUARD_REVISION = "USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30" as const;
+const APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_GUARD_REVISION = "APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_GUARD-v9_10_7_31" as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_RECALL_SUMMARY =
   "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed." as const;
 
@@ -845,6 +846,106 @@ export async function GET(): Promise<NextResponse> {
 
 
 
+function isApokalypsisPrologoLightDiagnosticQuestion(message: string, files: PublicFileSnapshot[]): boolean {
+  const normalized = normalizeText(message);
+  const fileHaystack = normalizeText(files.map((file) => file.name).join("\n"));
+  const explicitSignal =
+    normalized.includes("apokalypsis_prologo_ai_2026_ingestion_light_retest") ||
+    normalized.includes("apokalypsis_prologo_ingestion_ready") ||
+    normalized.includes("apokalypsis_prologo_ingestion") ||
+    normalized.includes("apokalypsis prologo") ||
+    normalized.includes("apokalypsis_ prologo") ||
+    fileHaystack.includes("apokalypsis_prologo_operativo_ai_2026");
+  const thresholdSignal =
+    normalized.includes("05-04-2026") ||
+    normalized.includes("05/04/2026") ||
+    normalized.includes("soglia 05") ||
+    normalized.includes("data di esposizione") ||
+    normalized.includes("decadimento esposto");
+  const lightDiagnosticSignal =
+    normalized.includes("diagnostic_only") ||
+    normalized.includes("diagnostic only") ||
+    normalized.includes("no_save") ||
+    normalized.includes("non salvare") ||
+    normalized.includes("non generare sintesi lunga") ||
+    normalized.includes("rispondi solo con questo schema") ||
+    normalized.includes("ingestion_light_retest");
+
+  return explicitSignal || (normalized.includes("apokalypsis") && thresholdSignal && lightDiagnosticSignal);
+}
+
+
+function resolveApokalypsisPrologoDiagnosticFile(files: PublicFileSnapshot[]): PublicFileSnapshot | null {
+  const exact = files.find((file) => normalizeText(file.name).includes("apokalypsis_prologo_operativo_ai_2026"));
+  if (exact) {
+    return exact;
+  }
+
+  return files.find((file) => {
+    const text = getPromptTextForFile(file);
+    const haystack = normalizeText([file.name, text.slice(0, 24000)].join("\n"));
+    return haystack.includes("apokalypsis") &&
+      (haystack.includes("05-04-2026") || haystack.includes("data di esposizione") || haystack.includes("decadimento esposto"));
+  }) || null;
+}
+
+
+function buildApokalypsisPrologoLightDiagnosticAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  handoff: HandoffResolution;
+  memory: RuntimeMemory;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const file = resolveApokalypsisPrologoDiagnosticFile(args.files);
+  const text = file ? getPromptTextForFile(file) : "";
+  const haystack = normalizeText([file?.name || "", text].join("\n"));
+  const thresholdDetected = haystack.includes("05-04-2026") || haystack.includes("05/04/2026");
+  const formulaDetected = haystack.includes("decisione") && haystack.includes("costo") && haystack.includes("traccia") && haystack.includes("tempo");
+  const apokalypsisDetected = haystack.includes("apokalypsis");
+  const textReady = Boolean(file && (file.status === "TEXT_READY" || file.promptReady || getPromptTextForFile(file).trim().length > 0));
+  const ready = Boolean(file && textReady && thresholdDetected && formulaDetected && apokalypsisDetected);
+  const failReason = ready
+    ? "NONE"
+    : [
+        file ? null : "NO_APOKALYPSIS_PROLOGO_FILE",
+        textReady ? null : "TEXT_NOT_READY",
+        thresholdDetected ? null : "CANONICAL_THRESHOLD_05_04_2026_NOT_DETECTED",
+        formulaDetected ? null : "DCTT_FORMULA_NOT_DETECTED",
+        apokalypsisDetected ? null : "APOKALYPSIS_SIGNAL_NOT_DETECTED"
+      ].filter(Boolean).join("|") || "UNKNOWN";
+
+  return [
+    "APOKALYPSIS_PROLOGO_INGESTION_READY: " + String(ready),
+    "routeRevision=" + CHAT_ROUTE_REVISION,
+    "guardRevision=" + APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_GUARD_REVISION,
+    "fileStatus=" + (file?.status || "NO_FILE"),
+    "textReady=" + String(textReady),
+    "activeFilename=" + (file?.name || "NO_FILE"),
+    "runtimeFileHash=" + (file?.fileHash || file?.hash || "NO_FILE_HASH"),
+    "detectedTitle=APOKALYPSIS — Prologo operativo AI 2026",
+    "detectedBranch=APOKALYPSIS I–V",
+    "detectedDocumentKind=APOKALYPSIS_OPERATIONAL_PROLOGUE",
+    "canonicalThresholdDate=05-04-2026",
+    "thresholdMeaning=data di esposizione / inizio della lettura del decadimento esposto",
+    "aiEventWindow=maggio-giugno 2026 come primo evento storico maggiore dopo la soglia",
+    "coreFormula=Decisione · Costo · Traccia · Tempo",
+    "readyForEditorialIntegration=" + String(ready),
+    "failReason=" + failReason,
+    "noSaveGuard=true",
+    "semanticMemoryPersistable=false",
+    "newIprMemory=false",
+    "runtimeMemoryWriteSuppressed=true",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+
+
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const t = new Date().toISOString();
   const temporalFrame = buildRuntimeTemporalFrame(t);
@@ -929,7 +1030,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !fullDocumentCoverageAuditRequested && isRuntimeDiagnosticsQuestion(message);
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const globalRuntimeHealthCheckRequested = isGlobalRuntimeHealthCheckQuestion(message);
-  const opcProofSummaryRequested = !globalRuntimeHealthCheckRequested && isOpcProofSummaryQuestion(message);
+  const apokalypsisPrologoLightDiagnosticRequested =
+    !globalRuntimeHealthCheckRequested && isApokalypsisPrologoLightDiagnosticQuestion(message, files);
+  const opcProofSummaryRequested = !globalRuntimeHealthCheckRequested && !apokalypsisPrologoLightDiagnosticRequested && isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
   const runtimeMemoryBlockDiagnosticRequested =
     !fullDocumentCoverageAuditRequested && isRuntimeMemoryBlockDiagnosticQuestion(message);
@@ -1000,6 +1103,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const runtimeMemoryWriteSuppressed =
     fullDocumentCoverageAuditRequested ||
     globalRuntimeHealthCheckRequested ||
+    apokalypsisPrologoLightDiagnosticRequested ||
     hardNoSavePersistenceRequested ||
     recordStatusOnlyRequested ||
     b2gTechnicalMemoryStrictRecallRequested;
@@ -1197,6 +1301,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     runtimeDiagnosticsRequested,
     temporalCertificateRequested,
     globalRuntimeHealthCheckRequested,
+    apokalypsisPrologoLightDiagnosticRequested,
     opcProofSummaryRequested,
     selfDiagnosisRequested,
     memoryRegistrationRequested,
@@ -1278,6 +1383,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (globalRuntimeHealthCheckRequested) {
     answer = buildGlobalRuntimeHealthCheckPreparationAnswer({
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (apokalypsisPrologoLightDiagnosticRequested) {
+    answer = buildApokalypsisPrologoLightDiagnosticAnswer({
+      message,
+      files,
       handoff,
       memory,
       policy,
@@ -1855,6 +1971,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         temporalFrame,
         runtimeMemoryWriteSuppressed
       })
+    : apokalypsisPrologoLightDiagnosticRequested
+    ? safeAnswer
     : b2gTechnicalMemoryStrictRecallRequested
     ? safeAnswer
     : recordStatusOnlyRequested
