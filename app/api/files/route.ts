@@ -1886,7 +1886,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2-LAMBDA_PROFILE_LOCK-v6_8_3-PEI_PROFILE_LOCK-v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK-v6_8_5-MATRIX_PROFILE_COLUMN_LOCK-v6_8_6-MATRIX_VOLUME_II_PROFILE_LOCK-v6_8_7-MATRIX_VOLUME_III_PROFILE_LOCK-v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK-v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK-v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK-v6_8_9_3";
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2-LAMBDA_PROFILE_LOCK-v6_8_3-PEI_PROFILE_LOCK-v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK-v6_8_5-MATRIX_PROFILE_COLUMN_LOCK-v6_8_6-MATRIX_VOLUME_II_PROFILE_LOCK-v6_8_7-MATRIX_VOLUME_III_PROFILE_LOCK-v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK-v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK-v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK-v6_8_9_3-APOKALYPSIS_VOLUME_I_PROFILE_LOCK-v6_8_9_4";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
@@ -2157,7 +2157,7 @@ type CanonicalCorpusVolumeProfile = {
   runtimeSha256?: string;
 };
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3-APOKALYPSIS_VOLUME_I_PROFILE_LOCK_v6_8_9_4";
 const QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION = "QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
 const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const QPCCF_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
@@ -3768,6 +3768,285 @@ function buildHbceAiEcosystemVolumeIMetadata(file: StoredRuntimeFile): Record<st
   };
 }
 
+
+const APOKALYPSIS_VOLUME_I_PROFILE_LOCK_REVISION = "APOKALYPSIS_VOLUME_I_PROFILE_LOCK_v6_8_9_4";
+const APOKALYPSIS_VOLUME_I_FILE_HASH = "sha256:5c62c3287a39c0148422958d0b9511b0ee775c42e66ac8f25d9f26479407bab2";
+const APOKALYPSIS_VOLUME_I_RUNTIME_HASH = "sha256:eedecd5987887c21b3d33414686b805efcb7379667ea922d1fe06b76578977c8";
+const APOKALYPSIS_VOLUME_I_DOC_FAMILY = "APOKALYPSIS";
+const APOKALYPSIS_VOLUME_I_DOCUMENT_KIND = "APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026";
+const APOKALYPSIS_VOLUME_I_BRANCH = "APOKALYPSIS I–V";
+const APOKALYPSIS_VOLUME_I_MODULE = "APOKALYPSIS_VOLUME_I_V6_STRUCTURE_FIX_LOCK";
+const APOKALYPSIS_VOLUME_I_VOLUME = "V1";
+const APOKALYPSIS_VOLUME_I_TITLE = "APOKALYPSIS — Volume I";
+const APOKALYPSIS_VOLUME_I_FULL_TITLE = "APOKALYPSIS — Inizio del decadimento del sistema culturale, politico, sociale ed economico";
+const APOKALYPSIS_VOLUME_I_CLASSIFICATION = "APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026";
+const APOKALYPSIS_VOLUME_I_CANONICAL_THRESHOLD_DATE = "05-04-2026";
+const APOKALYPSIS_VOLUME_I_CANONICAL_AXIS = CANONICAL_AXIS_DCTT;
+const APOKALYPSIS_VOLUME_I_OPERATIONAL_TRACE_AXIS = "Decisione · Costo · Traccia · Tempo · Soglia 05-04-2026 · AI_2026 · EVENT_LOCK · ECONOMIC_LOCK · LOCAL_WORK_LOCK · SAAS_ECONOMIC_LOCK · EVT · OPC";
+
+interface ApokalypsisVolumeIDocumentProfile {
+  docFamily: string;
+  documentKind: string;
+  branch: string;
+  module: string;
+  volume: string;
+  title: string;
+  fullTitle: string;
+  classification: string;
+  canonicalThresholdDate: string;
+  canonicalAxis: string;
+  operationalTraceAxis: string;
+  summary: string;
+  keyTerms: string[];
+  profileLockRevision: string;
+  fileSha256: string;
+  runtimeSha256: string;
+  runtimeSha256Aliases: string[];
+}
+
+function apokalypsisVolumeIHashMatchesProfile(file: StoredRuntimeFile, profile: ApokalypsisVolumeIDocumentProfile): boolean {
+  const actual = `sha256:${file.fileHash}`;
+  const accepted = new Set([profile.fileSha256, profile.runtimeSha256, ...(profile.runtimeSha256Aliases ?? [])]);
+  return accepted.has(actual);
+}
+
+function inferApokalypsisVolumeIProfile(file: StoredRuntimeFile): ApokalypsisVolumeIDocumentProfile | null {
+  const normalizedName = normalizeSearchText(file.name);
+  const normalizedHead = normalizeSearchText(`${file.name}\n${file.text.slice(0, 24000)}`);
+  const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 180000)}`);
+  const runtimeHash = `sha256:${file.fileHash}`;
+
+  const explicitFile =
+    normalizedName.includes("apokalypsis volume i completo aggiornato ai 2026") ||
+    normalizedName.includes("apokalypsis volume i") && normalizedName.includes("structure fix lock") ||
+    normalizedName.includes("apokalypsis volume i") && normalizedName.includes("economic saas lock");
+
+  const hashLock =
+    runtimeHash === APOKALYPSIS_VOLUME_I_FILE_HASH ||
+    runtimeHash === APOKALYPSIS_VOLUME_I_RUNTIME_HASH ||
+    normalized.includes(APOKALYPSIS_VOLUME_I_FILE_HASH.replace("sha256:", "")) ||
+    normalized.includes(APOKALYPSIS_VOLUME_I_RUNTIME_HASH.replace("sha256:", ""));
+
+  const headerLock =
+    normalizedHead.includes("edizione completa aggiornata ai 2026") &&
+    normalizedHead.includes("conferma storica del decadimento") &&
+    normalizedHead.includes("data canonica di esposizione 05 04 2026");
+
+  const completeVolumeIdentity =
+    normalized.includes("il presente file ricostruisce apokalypsis volume i come volume completo aggiornato") ||
+    normalized.includes("questo file non e un prologo") ||
+    normalized.includes("apokalypsis volume i completo aggiornato");
+
+  const economicIdentity =
+    normalized.includes("inizio del decadimento del sistema culturale politico sociale ed economico") ||
+    normalized.includes("sistema culturale politico sociale ed economico");
+
+  const ai2026Identity =
+    normalized.includes("apertura storica integrativa ai 2026") ||
+    normalized.includes("primo allarme storico sull intelligenza artificiale") ||
+    normalized.includes("maggio giugno 2026 conferma quella soglia");
+
+  const structureLock =
+    normalized.includes("structure fix lock") ||
+    normalized.includes("saas economic lock") ||
+    normalized.includes("event lock") && normalized.includes("economic lock") && normalized.includes("local work lock") && normalized.includes("saas economic lock");
+
+  const prologueOnly =
+    normalizedName.includes("prologo") &&
+    !normalizedName.includes("volume i completo aggiornato") &&
+    !completeVolumeIdentity;
+
+  if (prologueOnly) {
+    return null;
+  }
+
+  if (!(hashLock || explicitFile || headerLock || completeVolumeIdentity || (economicIdentity && ai2026Identity && structureLock))) {
+    return null;
+  }
+
+  return {
+    docFamily: APOKALYPSIS_VOLUME_I_DOC_FAMILY,
+    documentKind: APOKALYPSIS_VOLUME_I_DOCUMENT_KIND,
+    branch: APOKALYPSIS_VOLUME_I_BRANCH,
+    module: APOKALYPSIS_VOLUME_I_MODULE,
+    volume: APOKALYPSIS_VOLUME_I_VOLUME,
+    title: APOKALYPSIS_VOLUME_I_TITLE,
+    fullTitle: APOKALYPSIS_VOLUME_I_FULL_TITLE,
+    classification: APOKALYPSIS_VOLUME_I_CLASSIFICATION,
+    canonicalThresholdDate: APOKALYPSIS_VOLUME_I_CANONICAL_THRESHOLD_DATE,
+    canonicalAxis: APOKALYPSIS_VOLUME_I_CANONICAL_AXIS,
+    operationalTraceAxis: APOKALYPSIS_VOLUME_I_OPERATIONAL_TRACE_AXIS,
+    summary:
+      "Profilo documento APOKALYPSIS Volume I v6 STRUCTURE_FIX_LOCK: volume completo aggiornato AI 2026, non prologo. Fissa la soglia canonica 05-04-2026, legge il decadimento del sistema culturale, politico, sociale ed economico, integra gli eventi AI maggio-giugno 2026 come conferma storica maggiore e mantiene la quaterna Decisione · Costo · Traccia · Tempo. Include EVENT_LOCK, ECONOMIC_LOCK, LOCAL_WORK_LOCK e SAAS_ECONOMIC_LOCK. legalCertification=false; OPC=technical proof receipt only.",
+    keyTerms: [
+      "APOKALYPSIS",
+      "APOKALYPSIS Volume I",
+      "Volume I",
+      "Volume I completo aggiornato AI 2026",
+      "STRUCTURE_FIX_LOCK",
+      "05-04-2026",
+      "Decisione",
+      "Costo",
+      "Traccia",
+      "Tempo",
+      "Apertura storica integrativa AI 2026",
+      "EVENT_LOCK",
+      "ECONOMIC_LOCK",
+      "LOCAL_WORK_LOCK",
+      "SAAS_ECONOMIC_LOCK",
+      "AI JOKER-C2",
+      "SaaS economico",
+      "HERMETICUM B.C.E. S.r.l.",
+      "decadimento esposto",
+      "sistema culturale politico sociale economico",
+      "maggio-giugno 2026",
+      "appendice A.6",
+      "IPR",
+      "EVT",
+      "OPC"
+    ],
+    profileLockRevision: APOKALYPSIS_VOLUME_I_PROFILE_LOCK_REVISION,
+    fileSha256: APOKALYPSIS_VOLUME_I_FILE_HASH,
+    runtimeSha256: APOKALYPSIS_VOLUME_I_RUNTIME_HASH,
+    runtimeSha256Aliases: [APOKALYPSIS_VOLUME_I_FILE_HASH, APOKALYPSIS_VOLUME_I_RUNTIME_HASH]
+  };
+}
+
+function buildApokalypsisVolumeIMetadata(file: StoredRuntimeFile): Record<string, unknown> | null {
+  const profile = inferApokalypsisVolumeIProfile(file);
+
+  if (!profile) {
+    return null;
+  }
+
+  return {
+    apokalypsisDocumentProfileLockApplied: true,
+    apokalypsisDocumentProfileLockRevision: profile.profileLockRevision,
+    apokalypsisExpectedDocFamily: profile.docFamily,
+    apokalypsisExpectedDocumentKind: profile.documentKind,
+    apokalypsisExpectedBranch: profile.branch,
+    apokalypsisExpectedModule: profile.module,
+    apokalypsisExpectedVolume: profile.volume,
+    apokalypsisExpectedTitle: profile.title,
+    apokalypsisExpectedFullTitle: profile.fullTitle,
+    apokalypsisExpectedClassification: profile.classification,
+    apokalypsisCanonicalThresholdDate: profile.canonicalThresholdDate,
+    apokalypsisExpectedCanonicalAxis: profile.canonicalAxis,
+    apokalypsisExpectedOperationalTraceAxis: profile.operationalTraceAxis,
+    apokalypsisFileSha256: profile.fileSha256,
+    apokalypsisRuntimeSha256: profile.runtimeSha256,
+    apokalypsisRuntimeSha256Aliases: profile.runtimeSha256Aliases,
+    apokalypsisRuntimeFileHash: `sha256:${file.fileHash}`,
+    apokalypsisHashMatchesExpected: apokalypsisVolumeIHashMatchesProfile(file, profile),
+    canonicalProfileApplied: true,
+    canonicalProfileRevision: profile.profileLockRevision,
+    canonicalVolume: profile.volume,
+    canonicalTitle: profile.title,
+    canonicalDocumentKind: profile.documentKind,
+    canonicalModule: profile.module,
+    docFamily: profile.docFamily,
+    documentKind: profile.documentKind,
+    module: profile.module,
+    branch: profile.branch,
+    classification: profile.classification,
+    canonicalThresholdDate: profile.canonicalThresholdDate,
+    operationalTraceAxis: profile.operationalTraceAxis,
+    contaminationWithB2gTechnicalStack: false,
+    contaminationWithLambdaProfile: false,
+    contaminationWithAIQProfile: false,
+    contaminationWithMatrixOperationalVolume: false,
+    contaminationWithCorpus: false,
+    contaminationWithQState: false,
+    noPrologueClassification: true,
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
+function isApokalypsisVolumeIProfileForRead(profile: Record<string, unknown>): boolean {
+  const existingMetadata =
+    profile.documentMetadata && typeof profile.documentMetadata === "object"
+      ? profile.documentMetadata as Record<string, unknown>
+      : {};
+  const filename = `${profile.filename ?? profile.fileName ?? ""}`;
+  const fileHash = `${profile.fileHash ?? existingMetadata.fileHash ?? ""}`;
+  const title = `${profile.title ?? existingMetadata.canonicalTitle ?? ""}`;
+  const metadataKind = `${existingMetadata.canonicalDocumentKind ?? existingMetadata.documentKind ?? existingMetadata.apokalypsisExpectedDocumentKind ?? ""}`;
+  const normalized = normalizeSearchText(`${filename}\n${fileHash}\n${title}\n${metadataKind}`);
+
+  return (
+    normalized.includes("apokalypsis volume i completo aggiornato ai 2026") ||
+    normalized.includes("apokalypsis volume i") && normalized.includes("structure fix lock") ||
+    normalized.includes(APOKALYPSIS_VOLUME_I_FILE_HASH.replace("sha256:", "")) ||
+    normalized.includes(APOKALYPSIS_VOLUME_I_RUNTIME_HASH.replace("sha256:", "")) ||
+    normalized.includes("apokalypsis volume i complete updated ai 2026")
+  );
+}
+
+function canonicalizeApokalypsisPublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
+  const existingMetadata =
+    profile.documentMetadata && typeof profile.documentMetadata === "object"
+      ? profile.documentMetadata as Record<string, unknown>
+      : {};
+
+  return {
+    ...profile,
+    docFamily: APOKALYPSIS_VOLUME_I_DOC_FAMILY,
+    volume: APOKALYPSIS_VOLUME_I_VOLUME,
+    title: APOKALYPSIS_VOLUME_I_TITLE,
+    canonicalAxis: APOKALYPSIS_VOLUME_I_CANONICAL_AXIS,
+    summary:
+      "Profilo documento APOKALYPSIS Volume I v6 STRUCTURE_FIX_LOCK: volume completo aggiornato AI 2026, non prologo. Soglia 05-04-2026, decadimento del sistema culturale, politico, sociale ed economico, conferma storica AI maggio-giugno 2026, asse Decisione · Costo · Traccia · Tempo. legalCertification=false; OPC=technical proof receipt only.",
+    keyTerms: Array.from(new Set([
+      "APOKALYPSIS",
+      "APOKALYPSIS Volume I",
+      "Volume I",
+      "STRUCTURE_FIX_LOCK",
+      "05-04-2026",
+      "Decisione",
+      "Costo",
+      "Traccia",
+      "Tempo",
+      "EVENT_LOCK",
+      "ECONOMIC_LOCK",
+      "LOCAL_WORK_LOCK",
+      "SAAS_ECONOMIC_LOCK",
+      "AI JOKER-C2",
+      "IPR",
+      "EVT",
+      "OPC"
+    ])).slice(0, 32),
+    documentMetadata: {
+      ...existingMetadata,
+      apokalypsisDocumentProfileReadGuardApplied: true,
+      apokalypsisDocumentProfileLockApplied: true,
+      apokalypsisDocumentProfileLockRevision: APOKALYPSIS_VOLUME_I_PROFILE_LOCK_REVISION,
+      canonicalProfileReadGuardApplied: true,
+      canonicalProfileApplied: true,
+      canonicalProfileRevision: APOKALYPSIS_VOLUME_I_PROFILE_LOCK_REVISION,
+      canonicalVolume: APOKALYPSIS_VOLUME_I_VOLUME,
+      canonicalTitle: APOKALYPSIS_VOLUME_I_TITLE,
+      canonicalDocumentKind: APOKALYPSIS_VOLUME_I_DOCUMENT_KIND,
+      canonicalModule: APOKALYPSIS_VOLUME_I_MODULE,
+      docFamily: APOKALYPSIS_VOLUME_I_DOC_FAMILY,
+      documentKind: APOKALYPSIS_VOLUME_I_DOCUMENT_KIND,
+      module: APOKALYPSIS_VOLUME_I_MODULE,
+      branch: APOKALYPSIS_VOLUME_I_BRANCH,
+      classification: APOKALYPSIS_VOLUME_I_CLASSIFICATION,
+      canonicalThresholdDate: APOKALYPSIS_VOLUME_I_CANONICAL_THRESHOLD_DATE,
+      operationalTraceAxis: APOKALYPSIS_VOLUME_I_OPERATIONAL_TRACE_AXIS,
+      apokalypsisFileSha256: APOKALYPSIS_VOLUME_I_FILE_HASH,
+      apokalypsisRuntimeSha256: APOKALYPSIS_VOLUME_I_RUNTIME_HASH,
+      contaminationWithB2gTechnicalStack: false,
+      contaminationWithLambdaProfile: false,
+      b2gTechnicalStackReadGuardApplied: false,
+      b2gTechnicalStackMetadataLockApplied: false,
+      legalCertification: false,
+      opc: "technical proof receipt only"
+    }
+  } as T;
+}
+
 const MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_REVISION = "MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const MATRIX_EUROPA_VOLUME_I_SOURCE_HASH = "sha256:54efce7b7d7b430df7be0c3128fe1a7bbf30823beae3677bf25ff904839539d7";
 const MATRIX_EUROPA_VOLUME_I_RUNTIME_HASH = "sha256:c70a753074f89b4309105270e17f6a10aa5aa0018a9e86a8504d5c5e249d0caa";
@@ -4487,7 +4766,7 @@ function classifyHbceB2gTechnicalStackFile(file: StoredRuntimeFile): HbceB2gTech
 }
 
 function getHbceB2gTechnicalStackClassification(file: StoredRuntimeFile): HbceB2gTechnicalStackClassification | null {
-  if (inferMatrixOperationalDocumentProfile(file)) {
+  if (inferApokalypsisVolumeIProfile(file) || inferMatrixOperationalDocumentProfile(file)) {
     return null;
   }
 
@@ -4587,8 +4866,14 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
 function inferDocumentFamily(file: StoredRuntimeFile): string | null {
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 12000)}`);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
-  const hbceAiEcosystemProfile = inferHbceAiEcosystemVolumeIProfile(file);
-  const matrixOperationalProfile = hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const apokalypsisVolumeIProfile = inferApokalypsisVolumeIProfile(file);
+  const hbceAiEcosystemProfile = apokalypsisVolumeIProfile ? null : inferHbceAiEcosystemVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeIProfile || hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+
+
+  if (apokalypsisVolumeIProfile) {
+    return apokalypsisVolumeIProfile.docFamily;
+  }
 
 
   if (hbceAiEcosystemProfile) {
@@ -4661,10 +4946,16 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 
 function inferDocumentVolume(file: StoredRuntimeFile): string | null {
-  const hbceAiEcosystemProfile = inferHbceAiEcosystemVolumeIProfile(file);
-  const matrixOperationalProfile = hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = hbceAiEcosystemProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
+  const apokalypsisVolumeIProfile = inferApokalypsisVolumeIProfile(file);
+  const hbceAiEcosystemProfile = apokalypsisVolumeIProfile ? null : inferHbceAiEcosystemVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeIProfile || hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = apokalypsisVolumeIProfile || hbceAiEcosystemProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (apokalypsisVolumeIProfile) {
+    return apokalypsisVolumeIProfile.volume;
+  }
 
 
   if (hbceAiEcosystemProfile) {
@@ -4745,10 +5036,16 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 function inferDocumentTitle(file: StoredRuntimeFile): string | null {
-  const hbceAiEcosystemProfile = inferHbceAiEcosystemVolumeIProfile(file);
-  const matrixOperationalProfile = hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = hbceAiEcosystemProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
+  const apokalypsisVolumeIProfile = inferApokalypsisVolumeIProfile(file);
+  const hbceAiEcosystemProfile = apokalypsisVolumeIProfile ? null : inferHbceAiEcosystemVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeIProfile || hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = apokalypsisVolumeIProfile || hbceAiEcosystemProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (apokalypsisVolumeIProfile) {
+    return apokalypsisVolumeIProfile.title;
+  }
 
 
   if (hbceAiEcosystemProfile) {
@@ -4846,9 +5143,15 @@ function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
 
 
 function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
-  const matrixOperationalProfile = inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
+  const apokalypsisVolumeIProfile = inferApokalypsisVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeIProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = apokalypsisVolumeIProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (apokalypsisVolumeIProfile) {
+    return Array.from(new Set(apokalypsisVolumeIProfile.keyTerms)).slice(0, 32);
+  }
 
 
   if (matrixOperationalProfile) {
@@ -4886,9 +5189,15 @@ function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
 
 
 function buildDocumentSummary(file: StoredRuntimeFile): string {
-  const matrixOperationalProfile = inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
+  const apokalypsisVolumeIProfile = inferApokalypsisVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeIProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = apokalypsisVolumeIProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+  if (apokalypsisVolumeIProfile) {
+    return apokalypsisVolumeIProfile.summary;
+  }
 
 
   if (matrixOperationalProfile) {
@@ -5048,18 +5357,20 @@ function buildDocumentProfileInput(
   context: DocumentProfileContext
 ): DocumentProfileDatabaseInput {
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
-  const hbceAiEcosystemProfile = inferHbceAiEcosystemVolumeIProfile(file);
-  const matrixOperationalProfile = hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = matrixOperationalProfile || hbceAiEcosystemProfile ? null : getHbceB2gTechnicalStackClassification(file);
+  const apokalypsisVolumeIProfile = inferApokalypsisVolumeIProfile(file);
+  const hbceAiEcosystemProfile = apokalypsisVolumeIProfile ? null : inferHbceAiEcosystemVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeIProfile || hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = apokalypsisVolumeIProfile || matrixOperationalProfile || hbceAiEcosystemProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const qpccfTechnicalStackProfile = b2gTechnicalStackClassification?.module === QPCCF_MODULE;
   const b2gTechnicalStackProfile = Boolean(b2gTechnicalStackClassification);
+  const apokalypsisVolumeIDocumentProfile = Boolean(apokalypsisVolumeIProfile);
   const hbceAiEcosystemDocumentProfile = Boolean(hbceAiEcosystemProfile);
   const matrixOperationalDocumentProfile = Boolean(matrixOperationalProfile);
-  const docFamily = hbceAiEcosystemProfile?.docFamily ?? matrixOperationalProfile?.docFamily ?? inferDocumentFamily(file);
-  const volume = hbceAiEcosystemProfile?.volume ?? matrixOperationalProfile?.volume ?? inferDocumentVolume(file);
-  const title = hbceAiEcosystemProfile?.title ?? matrixOperationalProfile?.title ?? inferDocumentTitle(file);
-  const canonicalAxis = hbceAiEcosystemProfile?.canonicalAxis ?? matrixOperationalProfile?.canonicalAxis ?? inferCanonicalAxis(file);
-  const keyTerms = hbceAiEcosystemProfile?.keyTerms ?? matrixOperationalProfile?.keyTerms ?? collectDocumentKeyTerms(file);
+  const docFamily = apokalypsisVolumeIProfile?.docFamily ?? hbceAiEcosystemProfile?.docFamily ?? matrixOperationalProfile?.docFamily ?? inferDocumentFamily(file);
+  const volume = apokalypsisVolumeIProfile?.volume ?? hbceAiEcosystemProfile?.volume ?? matrixOperationalProfile?.volume ?? inferDocumentVolume(file);
+  const title = apokalypsisVolumeIProfile?.title ?? hbceAiEcosystemProfile?.title ?? matrixOperationalProfile?.title ?? inferDocumentTitle(file);
+  const canonicalAxis = apokalypsisVolumeIProfile?.canonicalAxis ?? hbceAiEcosystemProfile?.canonicalAxis ?? matrixOperationalProfile?.canonicalAxis ?? inferCanonicalAxis(file);
+  const keyTerms = apokalypsisVolumeIProfile?.keyTerms ?? hbceAiEcosystemProfile?.keyTerms ?? matrixOperationalProfile?.keyTerms ?? collectDocumentKeyTerms(file);
   const reusableInPrompt = isPromptTextStatus(file.status);
 
 
@@ -5082,17 +5393,20 @@ function buildDocumentProfileInput(
     title,
     subtitle: null,
     canonicalAxis,
-    summary: matrixOperationalProfile?.summary ?? buildDocumentSummary(file),
+    summary: apokalypsisVolumeIProfile?.summary ?? matrixOperationalProfile?.summary ?? buildDocumentSummary(file),
     keyTerms,
     semanticTerms: keyTerms.map((term) => ({ term, source: "AUTO_PROFILE" })),
     documentMetadata: {
       routeVersion: FILE_ROUTE_REVISION,
       canonicalProfileRevision: DOCUMENT_PROFILE_CANONICAL_FIX_REVISION,
-      canonicalProfileApplied: Boolean(canonicalCorpusProfile) || b2gTechnicalStackProfile || matrixOperationalDocumentProfile || hbceAiEcosystemDocumentProfile,
-      canonicalVolume: hbceAiEcosystemProfile?.volume ?? matrixOperationalProfile?.volume ?? b2gTechnicalStackClassification?.volume ?? canonicalCorpusProfile?.volume ?? null,
-      canonicalTitle: hbceAiEcosystemProfile?.title ?? matrixOperationalProfile?.title ?? b2gTechnicalStackClassification?.title ?? canonicalCorpusProfile?.title ?? null,
-      canonicalDocumentKind: hbceAiEcosystemProfile?.documentKind ?? matrixOperationalProfile?.documentKind ?? b2gTechnicalStackClassification?.documentKind ?? (canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null),
-      canonicalModule: hbceAiEcosystemProfile?.module ?? matrixOperationalProfile?.module ?? null,
+      canonicalProfileApplied: Boolean(canonicalCorpusProfile) || apokalypsisVolumeIDocumentProfile || b2gTechnicalStackProfile || matrixOperationalDocumentProfile || hbceAiEcosystemDocumentProfile,
+      canonicalVolume: apokalypsisVolumeIProfile?.volume ?? hbceAiEcosystemProfile?.volume ?? matrixOperationalProfile?.volume ?? b2gTechnicalStackClassification?.volume ?? canonicalCorpusProfile?.volume ?? null,
+      canonicalTitle: apokalypsisVolumeIProfile?.title ?? hbceAiEcosystemProfile?.title ?? matrixOperationalProfile?.title ?? b2gTechnicalStackClassification?.title ?? canonicalCorpusProfile?.title ?? null,
+      canonicalDocumentKind: apokalypsisVolumeIProfile?.documentKind ?? hbceAiEcosystemProfile?.documentKind ?? matrixOperationalProfile?.documentKind ?? b2gTechnicalStackClassification?.documentKind ?? (canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null),
+      canonicalModule: apokalypsisVolumeIProfile?.module ?? hbceAiEcosystemProfile?.module ?? matrixOperationalProfile?.module ?? null,
+      apokalypsisDocumentProfileLockApplied: apokalypsisVolumeIDocumentProfile,
+      apokalypsisDocumentProfileLockRevision: apokalypsisVolumeIProfile?.profileLockRevision ?? null,
+      apokalypsisDocumentExpectedProfile: apokalypsisVolumeIProfile ? buildApokalypsisVolumeIMetadata(file) : null,
       hbceAiEcosystemDocumentProfileLockApplied: hbceAiEcosystemDocumentProfile,
       hbceAiEcosystemDocumentProfileLockRevision: hbceAiEcosystemProfile?.profileLockRevision ?? null,
       hbceAiEcosystemDocumentExpectedProfile: hbceAiEcosystemProfile ? buildHbceAiEcosystemVolumeIMetadata(file) : null,
@@ -5191,7 +5505,7 @@ function buildB2gTechnicalMemoryCollapseForFile(
   documentProfileStatus: DocumentProfilePersistenceStatus | "PERSISTED" | null,
   chunks: DocumentChunkPersistenceResult | null
 ): Record<string, unknown> | null {
-  if (inferMatrixOperationalDocumentProfile(file)) {
+  if (inferApokalypsisVolumeIProfile(file) || inferMatrixOperationalDocumentProfile(file)) {
     return null;
   }
 
@@ -5595,6 +5909,10 @@ function canonicalizeQpccfPublicDocumentProfileForRead<T extends Record<string, 
 
 
 function canonicalizePublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
+  if (isApokalypsisVolumeIProfileForRead(profile)) {
+    return canonicalizeApokalypsisPublicDocumentProfileForRead(profile);
+  }
+
   if (isQpccfFilenameOrMetadataForRead(profile)) {
     return canonicalizeB2gPublicDocumentProfileForRead(profile);
   }
