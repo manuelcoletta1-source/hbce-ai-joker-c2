@@ -483,9 +483,9 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.5-USE_VOLUME_II_DASHBOARD_OVERLAY";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.6-USE_VOLUME_III_DASHBOARD_OVERLAY";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
-const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v2.5-USE_VOLUME_II_DASHBOARD_OVERLAY";
+const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v2.6-USE_VOLUME_III_DASHBOARD_OVERLAY";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -606,6 +606,18 @@ const HBCE_AI_ECOSYSTEM_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverl
 ];
 
 const USE_EUROPEAN_FEDERATION_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverlay[] = [
+  {
+    branchKey: "USE_EUROPEAN_FEDERATION",
+    title: "U.S.E. - Voto Digitale Federato",
+    volume: "V3",
+    docFamily: "USE_EUROPEAN_FEDERATION",
+    canonicalDocumentKind: "USE_VOLUME",
+    summary: "U.S.E. Volume III definisce il Voto Digitale Federato come infrastruttura democratica multilivello degli Stati Uniti d’Europa: referendum territoriali, regionali, nazionali ed europei, cittadino deliberante, quesiti pubblici, segretezza della scelta, verifica del processo, audit pubblico, fail-closed democratico e decisione pubblica federata.",
+    canonicalAxis: "Cittadino · Quesito · Voto · Verifica · Decisione pubblica federata",
+    keyTerms: ["U.S.E.", "United States of Europe", "Volume III", "Voto Digitale Federato", "Referendum multilivello", "Rete politica federata", "Cittadino deliberante", "Sovranità popolare europea", "Leggi concrete", "Quesiti pubblici", "Decisioni territoriali", "Decisioni regionali", "Decisioni nazionali", "Decisioni europee", "Identità operativa democratica", "Segretezza della scelta", "Audit pubblico", "Integrità democratica", "Fail-closed democratico", "Continuità istituzionale", "MATRIX", "IPR", "EVT", "OPC", "Decisione pubblica federata"],
+    semanticTerms: ["U.S.E.", "United States of Europe", "Volume III", "Voto Digitale Federato", "Referendum multilivello", "Rete politica federata", "Cittadino deliberante", "Sovranità popolare europea", "Identità operativa democratica", "Segretezza della scelta", "Audit pubblico", "Integrità democratica", "Fail-closed democratico", "Decisione pubblica federata"],
+    signals: ["DOC-PROFILE-46788B076362ED33", "IPR-MEM-20260605104016-EB512DC1", "IPR-MEM-20260605104006-AA167B11", "sha256:465e629f8ad45ad9aae3ea0d88f4e9e7146e554befcfe809cb609e9d810aa0d7", "USE_VOLUME_III_VOTO_DIGITALE_FEDERATO_CLEAN_RUNTIME_FOR_JOKER_C2", "USE_VOTO_DIGITALE_FEDERATO_VOLUME_III", "U.S.E. - Voto Digitale Federato"]
+  },
   {
     branchKey: "USE_EUROPEAN_FEDERATION",
     title: "U.S.E. - Federazione Operativa Europea",
@@ -1906,7 +1918,7 @@ function getJokerC2BranchKeyForProfile(profile: PublicDocumentProfileSnapshot): 
   if (signal.includes("matrix")) return "MATRIX";
   if (signal.includes("hbce_joker_c2_b2g_technical_stack") || signal.includes("qpccf") || signal.includes("aiq") || signal.includes("cqo") || signal.includes("ufo_intercept") || signal.includes("lambda") || signal.includes("pei")) return "B2G_TECHNICAL_STACK";
   if (signal.includes("corpus esoterologia") || signal.includes("glossario canonico") || signal.includes("cod 1") || signal.includes("alien code")) return "CORPUS_SEMANTIC_MEMORY";
-  if (signal.includes("use_volume") || signal.includes("united states of europe") || signal.includes("emergenza europea") || signal.includes("federazione operativa europea") || signal.includes("federazione_operativa_europea")) return "USE_EUROPEAN_FEDERATION";
+  if (signal.includes("use_volume") || signal.includes("united states of europe") || signal.includes("emergenza europea") || signal.includes("federazione operativa europea") || signal.includes("federazione_operativa_europea") || signal.includes("voto digitale federato") || signal.includes("voto_digitale_federato") || signal.includes("referendum multilivello")) return "USE_EUROPEAN_FEDERATION";
   if (signal.includes("apokalypsis") || signal.includes("apocalipsis")) return "APOKALYPSIS_EDITORIAL_SYSTEM";
   return "DOCUMENT_REGISTRY";
 }
