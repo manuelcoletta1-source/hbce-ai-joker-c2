@@ -169,6 +169,7 @@ type RuntimeStatus = {
   previousEvt: string;
   previousOpc: string;
   b2gReadiness: string;
+  saasRuntimeContext: string;
 };
 
 
@@ -483,9 +484,9 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.1-USE_I_V_BRANCH_READY";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.2-SAAS_B2G_CONTEXT_SPLIT";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
-const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v3.1-USE_I_V_BRANCH_READY";
+const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v3.2-SAAS_B2G_CONTEXT_SPLIT";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -2093,6 +2094,7 @@ function buildJokerC2BranchDashboardSnapshot(input: { profiles: PublicDocumentPr
   const branchDefinitions = [
     { key: "IDENTITY_IPR", label: "Identity / IPR", status: !isNegativeRuntimeValue(input.humanIpr) ? "READY" : "BLOCKED", detail: input.humanIpr },
     { key: "EVT_OPC", label: "EVT / OPC", status: !isBlankRuntimeValue(input.runtimeStatus.opc) || !isBlankRuntimeValue(input.runtimeStatus.responseEvt) ? "READY" : "WAITING", detail: `${input.runtimeStatus.responseEvt} · ${input.runtimeStatus.opc}` },
+    { key: "SAAS_RUNTIME_CONTEXT", label: "SaaS runtime context", status: input.runtimeStatus.saasRuntimeContext, detail: input.runtimeStatus.saasRuntimeContext === "WAITING_FOR_ACTIVE_RESPONSE" ? "New chat / health view: waiting for response EVT · OPC · audit · usage. Document branch readiness is separate." : `B2G=${input.runtimeStatus.b2gReadiness} · EVT=${input.runtimeStatus.responseEvt} · OPC=${input.runtimeStatus.opc}` },
     { key: "DOCUMENT_REGISTRY", label: "Document registry", status: input.documentRegistry.available ? "READY" : "WAITING", detail: `${input.documentRegistry.profileCount} profiles · ${input.documentRegistry.linkedMemoryCount} linked` },
     { key: "STRICT_RECALL", label: "Strict recall", status: "READY", detail: "STRICT_REQUESTED_MEMORY_ONLY" },
     { key: "NO_SAVE_GUARD", label: "No-save guard", status: "READY", detail: "WRITE_SUPPRESSED_WHEN_REQUESTED" },
@@ -3337,6 +3339,39 @@ function deriveB2GReadiness(status: Pick<RuntimeStatus,
   return "NOT_READY";
 }
 
+function deriveSaasRuntimeContext(status: Pick<RuntimeStatus,
+  | "humanIpr"
+  | "responseEvt"
+  | "opc"
+  | "auditId"
+  | "modelUsageId"
+  | "tenantId"
+  | "workspaceId"
+  | "runtimeBirth"
+  | "databaseConfigured"
+  | "databaseAvailable"
+  | "openAI"
+  | "b2gReadiness"
+>): "ACTIVE_RESPONSE_READY" | "ACTIVE_RESPONSE_PARTIAL" | "WAITING_FOR_ACTIVE_RESPONSE" | "RUNTIME_CONTEXT_NOT_READY" {
+  const hasActiveResponse =
+    !isBlankRuntimeValue(status.responseEvt) ||
+    !isBlankRuntimeValue(status.opc) ||
+    !isBlankRuntimeValue(status.auditId) ||
+    !isBlankRuntimeValue(status.modelUsageId);
+  const hasSelfPilotIdentity =
+    !isNegativeRuntimeValue(status.humanIpr) &&
+    !isNegativeRuntimeValue(status.tenantId) &&
+    !isNegativeRuntimeValue(status.workspaceId);
+  const hasRuntimeSubstrate =
+    status.runtimeBirth === JOKER_C2_BIRTH_ANCHOR_LOCAL &&
+    (status.databaseConfigured.toUpperCase().includes("TRUE") || status.databaseAvailable.toUpperCase().includes("TRUE") || status.openAI.toUpperCase().includes("TRUE"));
+
+  if (hasActiveResponse && status.b2gReadiness === "READY") return "ACTIVE_RESPONSE_READY";
+  if (hasActiveResponse) return "ACTIVE_RESPONSE_PARTIAL";
+  if (hasSelfPilotIdentity || hasRuntimeSubstrate) return "WAITING_FOR_ACTIVE_RESPONSE";
+  return "RUNTIME_CONTEXT_NOT_READY";
+}
+
 function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus {
   const source = payload ?? {};
 
@@ -4024,12 +4059,16 @@ function getRuntimeStatus(payload: JsonRecord | null | undefined): RuntimeStatus
       ],
       "-"
     ),
-    b2gReadiness: "PARTIAL_READY"
+    b2gReadiness: "PARTIAL_READY",
+    saasRuntimeContext: "WAITING_FOR_ACTIVE_RESPONSE"
   };
 
+  const b2gReadiness = deriveB2GReadiness(status);
+  const statusWithB2G = { ...status, b2gReadiness };
+
   return {
-    ...status,
-    b2gReadiness: deriveB2GReadiness(status)
+    ...statusWithB2G,
+    saasRuntimeContext: deriveSaasRuntimeContext(statusWithB2G)
   };
 }
 
@@ -4048,7 +4087,7 @@ function getStatusClass(value: string): string {
   }
 
 
-  if (normalized === "READY" || normalized === "PASS_2026_ONLY") {
+  if (normalized === "READY" || normalized === "PASS_2026_ONLY" || normalized === "ACTIVE_RESPONSE_READY") {
     return "is-good";
   }
 
@@ -4068,6 +4107,9 @@ function getStatusClass(value: string): string {
 
   if (
     normalized.includes("LIMITED") ||
+    normalized.includes("WAITING") ||
+    normalized.includes("RUNTIME_CONTEXT") ||
+    normalized.includes("ACTIVE_RESPONSE_PARTIAL") ||
     normalized.includes("PENDING") ||
     normalized.includes("PROCESS_MEMORY") ||
     normalized.includes("RUNTIME_ONLY") ||
@@ -4924,6 +4966,7 @@ function MessageBubble({
             <StatusPill label="Birth" value={status.runtimeBirth} />
             <StatusPill label="Age" value={status.runtimeAge} />
             <StatusPill label="B2G" value={status.b2gReadiness} />
+            <StatusPill label="SaaS ctx" value={status.saasRuntimeContext} />
             <StatusPill label="Human IPR" value={status.humanIpr} />
             <StatusPill label="Subject" value={status.subject} />
             <StatusPill label="MATRIX" value={status.matrix} />
@@ -5022,7 +5065,8 @@ function MessageBubble({
                   <MetricCard label="Account" value={status.accountId} />
                   <MetricCard label="Memory ID" value={status.memoryId} />
                   <MetricCard label="Registered event" value={status.registeredEventName} />
-                  <MetricCard label="B2G readiness" value={status.b2gReadiness} />
+                  <MetricCard label="B2G active response readiness" value={status.b2gReadiness} />
+                  <MetricCard label="SaaS runtime context" value={status.saasRuntimeContext} />
                   {semanticMemory.available ? (
                     <>
                       <MetricCard label="Semantic memory" value={semanticMemory.memoryId} />
@@ -6884,6 +6928,8 @@ export default function InterfacePage() {
 
 
   const saasRows = [
+    { label: "Runtime context", value: dashboardStatus.saasRuntimeContext },
+    { label: "B2G active response readiness", value: dashboardStatus.b2gReadiness },
     { label: "Release", value: dashboardStatus.saasRelease },
     { label: "Tier", value: saasTier },
     { label: "Core status", value: dashboardStatus.saasCoreStatus },
@@ -6918,7 +6964,8 @@ export default function InterfacePage() {
     { label: "Memory key hash", value: dashboardStatus.memoryKeyHash },
     { label: "Previous EVT", value: dashboardStatus.previousEvt },
     { label: "Previous OPC", value: dashboardStatus.previousOpc },
-    { label: "B2G readiness", value: dashboardStatus.b2gReadiness }
+    { label: "SaaS runtime context", value: dashboardStatus.saasRuntimeContext },
+    { label: "B2G active response readiness", value: dashboardStatus.b2gReadiness }
   ];
 
 
@@ -7009,7 +7056,7 @@ export default function InterfacePage() {
           <StatusPill label="Audit" value={dashboardStatus.auditStatus} />
           <StatusPill label="Usage" value={dashboardStatus.modelUsageStatus} />
           <StatusPill label="Birth" value={dashboardStatus.runtimeBirth} />
-          <StatusPill label="B2G" value={dashboardStatus.b2gReadiness} />
+          <StatusPill label="SaaS ctx" value={dashboardStatus.saasRuntimeContext} />
         </div>
 
 
@@ -7088,7 +7135,8 @@ export default function InterfacePage() {
           <MetricCard label="AI JOKER-C2 lifetime" value={liveTemporal.lifeHuman} />
           <MetricCard label="Birth anchor" value={`${JOKER_C2_BIRTH_ANCHOR_LOCAL} ${JOKER_C2_BIRTH_ANCHOR_TIMEZONE}`} />
           <MetricCard label="Runtime age" value={dashboardStatus.runtimeAge} />
-          <MetricCard label="B2G readiness" value={dashboardStatus.b2gReadiness} />
+          <MetricCard label="SaaS runtime context" value={dashboardStatus.saasRuntimeContext} />
+          <MetricCard label="B2G active response readiness" value={dashboardStatus.b2gReadiness} />
         </div>
       </section>
 
@@ -7356,12 +7404,12 @@ export default function InterfacePage() {
               <span className="joker-kicker">Registered Event</span>
               <h2>SaaS B2G memory registry</h2>
             </div>
-            <StatusPill value={dashboardStatus.b2gReadiness} />
+            <StatusPill value={dashboardStatus.saasRuntimeContext} />
           </div>
 
 
           <p>
-            Questo blocco verifica se l’evento nominato, la memoria persistente, EVT, OPC, audit e usage stanno convergendo nello stesso contesto SaaS. Cioè la parte in cui smettiamo di collezionare ID e iniziamo a usarli.
+            Questo blocco ora separa il contesto SaaS runtime dalla readiness documentale: senza una risposta attiva con EVT, OPC, audit e usage resta WAITING_FOR_ACTIVE_RESPONSE, mentre le branch documentali già chiuse restano READY.
           </p>
 
 
