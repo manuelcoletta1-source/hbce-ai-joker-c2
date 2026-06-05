@@ -483,9 +483,9 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.0-USE_VOLUME_V_DASHBOARD_OVERLAY";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.1-USE_I_V_BRANCH_READY";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
-const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v3.0-USE_VOLUME_V_DASHBOARD_OVERLAY";
+const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v3.1-USE_I_V_BRANCH_READY";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -2086,6 +2086,9 @@ function inferActiveJokerC2BranchKey(input: { selectedProfile: PublicDocumentPro
 function buildJokerC2BranchDashboardSnapshot(input: { profiles: PublicDocumentProfileSnapshot[]; documentRegistry: PublicDocumentRegistrySnapshot; semanticMemory: PublicSemanticMemorySnapshot; runtimeStatus: RuntimeStatus; selectedProfile: PublicDocumentProfileSnapshot | null; activeFileLinkedProfile: PublicDocumentProfileSnapshot | null; localFiles: RuntimeFile[]; chain: CyberneticMemoryChainState; humanIpr: string; }): JokerC2BranchDashboardSnapshot {
   const matrixVolumes = volumeSetForBranch(input.profiles, "MATRIX");
   const hbceAiVolumes = volumeSetForBranch(input.profiles, "HBCE_AI_ECOSYSTEM");
+  const useEuropeanFederationVolumes = volumeSetForBranch(input.profiles, "USE_EUROPEAN_FEDERATION");
+  const useEuropeanFederationVolumeList = Array.from(useEuropeanFederationVolumes).sort();
+  const useEuropeanFederationProfileCount = countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION");
   const activeBranch = inferActiveJokerC2BranchKey({ selectedProfile: input.selectedProfile, activeFileLinkedProfile: input.activeFileLinkedProfile, profiles: input.profiles, localFiles: input.localFiles, chain: input.chain });
   const branchDefinitions = [
     { key: "IDENTITY_IPR", label: "Identity / IPR", status: !isNegativeRuntimeValue(input.humanIpr) ? "READY" : "BLOCKED", detail: input.humanIpr },
@@ -2098,7 +2101,7 @@ function buildJokerC2BranchDashboardSnapshot(input: { profiles: PublicDocumentPr
     { key: "HBCE_AI_ECOSYSTEM_I_V", label: "HBCE AI Ecosystem I–V", status: hbceAiVolumes.size >= 5 ? "READY" : hbceAiVolumes.size > 0 ? "PARTIAL_READY" : "WAITING", detail: `volumes=${Array.from(hbceAiVolumes).sort().join(",") || "none"}` },
     { key: "B2G_TECHNICAL_STACK", label: "B2G technical stack", status: countProfilesForBranch(input.profiles, "B2G_TECHNICAL_STACK") > 0 ? "READY" : "WAITING", detail: "QPCCF · AIQ · CQO · UFO · LAMBDA · PEI" },
     { key: "CORPUS_SEMANTIC_MEMORY", label: "Corpus semantic memory", status: input.semanticMemory.available ? "SEPARATED_READY" : "SEPARATED", detail: "Glossario · COD 1 · Corpus guard" },
-    { key: "USE_EUROPEAN_FEDERATION", label: "U.S.E. I–V", status: countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") >= 2 ? "PARTIAL_READY" : countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") > 0 ? "PARTIAL_READY" : "PENDING_NEXT_BRANCH", detail: countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") >= 2 ? "Volumes I–II active · Emergency + Operational Federation" : countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") > 0 ? "Volume I active · Emergency/Civil Protection" : "United States of Europe branch" },
+    { key: "USE_EUROPEAN_FEDERATION", label: "U.S.E. I–V", status: useEuropeanFederationVolumes.size >= 5 ? "READY" : useEuropeanFederationProfileCount > 0 ? "PARTIAL_READY" : "PENDING_NEXT_BRANCH", detail: useEuropeanFederationVolumes.size >= 5 ? "Volumes I–V active · Emergency · Federation · Vote · Digital Sovereignty · Operational Constitution" : useEuropeanFederationProfileCount > 0 ? `volumes=${useEuropeanFederationVolumeList.join(",") || "none"}` : "United States of Europe branch" },
     { key: "APOKALYPSIS_EDITORIAL_SYSTEM", label: "APOKALYPSIS I–V", status: countProfilesForBranch(input.profiles, "APOKALYPSIS_EDITORIAL_SYSTEM") > 0 ? "PARTIAL_READY" : "PENDING_NEXT_BRANCH", detail: "Editorial/apocalyptic branch" }
   ];
   const items = branchDefinitions.map((branch) => ({
