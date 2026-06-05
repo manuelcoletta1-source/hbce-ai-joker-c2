@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -651,7 +651,17 @@ const USE_VOLUME_III_PROFILE_PERSISTENCE_BRIDGE_REVISION = "USE_VOLUME_III_PRE_S
 const USE_VOLUME_IV_PROFILE_GUARD_REVISION = "USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29" as const;
 const USE_VOLUME_V_PROFILE_GUARD_REVISION = "USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30" as const;
 const APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_GUARD_REVISION = "APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32" as const;
-const APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD_REVISION = "APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33" as const;
+const APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD_REVISION = "APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34" as const;
+const APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX_REVISION = "APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34" as const;
+const APOKALYPSIS_VOLUME_I_PROFILE_FILENAME_LOCK = "APOKALYPSIS_VOLUME_I_COMPLETO_AGGIORNATO_AI_2026_v6_STRUCTURE_FIX_LOCK.txt" as const;
+const APOKALYPSIS_VOLUME_I_PROFILE_FILE_HASH = "sha256:5c62c3287a39c0148422958d0b9511b0ee775c42e66ac8f25d9f26479407bab2" as const;
+const APOKALYPSIS_VOLUME_I_PROFILE_RUNTIME_HASH = "sha256:eedecd5987887c21b3d33414686b805efcb7379667ea922d1fe06b76578977c8" as const;
+const APOKALYPSIS_VOLUME_I_PROFILE_DOC_FAMILY = "APOKALYPSIS" as const;
+const APOKALYPSIS_VOLUME_I_PROFILE_DOCUMENT_KIND = "APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026" as const;
+const APOKALYPSIS_VOLUME_I_PROFILE_MODULE = "APOKALYPSIS_VOLUME_I" as const;
+const APOKALYPSIS_VOLUME_I_PROFILE_VOLUME = "V1" as const;
+const APOKALYPSIS_VOLUME_I_PROFILE_TITLE = "APOKALYPSIS — Volume I" as const;
+const APOKALYPSIS_VOLUME_I_PROFILE_CANONICAL_AXIS = "Decisione · Costo · Traccia · Tempo" as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_RECALL_SUMMARY =
   "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed." as const;
 
@@ -845,6 +855,31 @@ export async function GET(): Promise<NextResponse> {
 }
 
 
+
+
+function isApokalypsisRecordStatusRecallPriorityQuestion(message: string): boolean {
+  const normalized = normalizeText(message);
+
+  return (
+    normalized.includes("record_status_only") ||
+    normalized.includes("record-status") ||
+    normalized.includes("record status") ||
+    normalized.includes("document_registry_lookup") ||
+    normalized.includes("document registry") ||
+    normalized.includes("document_profile_registry") ||
+    normalized.includes("document profile registry") ||
+    normalized.includes("strict_requested_memory_only") ||
+    normalized.includes("strict_document_recall") ||
+    normalized.includes("strict_requested_document_profile_only") ||
+    normalized.includes("cyber_document_memory_recall") ||
+    normalized.includes("memory_chain_recall") ||
+    normalized.includes("no_document_ingestion") ||
+    normalized.includes("do_not_run_document_ingestion") ||
+    normalized.includes("do_not_request_file") ||
+    normalized.includes("no_file_required") ||
+    normalized.includes("senza file")
+  );
+}
 
 
 function isApokalypsisVolumeICompleteUpdatedAi2026Question(message: string, files: PublicFileSnapshot[]): boolean {
@@ -1184,11 +1219,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !fullDocumentCoverageAuditRequested && isRuntimeDiagnosticsQuestion(message);
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const globalRuntimeHealthCheckRequested = isGlobalRuntimeHealthCheckQuestion(message);
+  const apokalypsisRecordStatusRecallPriorityRequested =
+    recordStatusOnlyRequested ||
+    strictCyberneticDocumentMemoryRecallRequested ||
+    b2gTechnicalMemoryStrictRecallRequested ||
+    isApokalypsisRecordStatusRecallPriorityQuestion(message);
   const apokalypsisVolumeICompleteUpdatedAi2026Requested =
-    !globalRuntimeHealthCheckRequested && isApokalypsisVolumeICompleteUpdatedAi2026Question(message, files);
+    !globalRuntimeHealthCheckRequested &&
+    !apokalypsisRecordStatusRecallPriorityRequested &&
+    files.length > 0 &&
+    isApokalypsisVolumeICompleteUpdatedAi2026Question(message, files);
   const apokalypsisPrologoLightDiagnosticRequested =
     !globalRuntimeHealthCheckRequested &&
+    !apokalypsisRecordStatusRecallPriorityRequested &&
     !apokalypsisVolumeICompleteUpdatedAi2026Requested &&
+    files.length > 0 &&
     isApokalypsisPrologoLightDiagnosticQuestion(message, files);
   const opcProofSummaryRequested = !globalRuntimeHealthCheckRequested && !apokalypsisVolumeICompleteUpdatedAi2026Requested && !apokalypsisPrologoLightDiagnosticRequested && isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
@@ -1460,6 +1505,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     runtimeDiagnosticsRequested,
     temporalCertificateRequested,
     globalRuntimeHealthCheckRequested,
+    apokalypsisRecordStatusRecallPriorityRequested,
     apokalypsisVolumeICompleteUpdatedAi2026Requested,
     apokalypsisPrologoLightDiagnosticRequested,
     opcProofSummaryRequested,
@@ -5230,7 +5276,7 @@ function selectRecordStatusDocumentProfileMetadata(
   const requestedMemoryIds = new Set(extractRequestedIprMemoryIds(message).map((id) => normalizeText(id)));
   const primaryMemoryId = normalizeText(primary?.memoryId || "");
 
-  return candidates.find((candidate) => {
+  const selected = candidates.find((candidate) => {
     const candidateProfileId = normalizeText(
       stringPath(candidate, "profileId", "") || stringPath(candidate, "documentProfileId", "")
     );
@@ -5247,6 +5293,8 @@ function selectRecordStatusDocumentProfileMetadata(
       (primaryMemoryId && candidateMemoryId === primaryMemoryId)
     );
   }) || candidates[0] || null;
+
+  return canonicalizeApokalypsisVolumeIProfileMetadata(selected);
 }
 
 function buildB2gTechnicalMemoryStrictRecallAnswer(args: {
@@ -5475,6 +5523,11 @@ function buildIprRecordStatusOnlyAnswer(args: {
     `volume=${volume}`,
     `title=${title}`,
     `canonicalAxis=${canonicalAxis}`,
+    `apokalypsisProfileLock.status=${isApokalypsisVolumeIProfileLockSignal([profileId, filename, fileHash, docFamily, documentKind, moduleName, volume, title, canonicalAxis]) ? "APOKALYPSIS_VOLUME_I_PROFILE_LOCK_APPLIED" : "NOT_APPLICABLE"}`,
+    `contaminationWithLambdaProfile=${String(false)}`,
+    `lambdaTitleDetected=${String(normalizeText(title).includes("lambda"))}`,
+    `b2gTechnicalStackDetected=${String(docFamily === QPCCF_B2G_DOC_FAMILY)}`,
+    `technicalGovernanceKindDetected=${String(documentKind === QPCCF_B2G_DOCUMENT_KIND)}`,
     "",
     `b2gTechnicalMemory.status=${b2gReady ? "B2G_TECHNICAL_PROFILE_MEMORY_READY" : "B2G_TECHNICAL_PROFILE_MEMORY_NOT_CONFIRMED"}`,
     `b2gTechnicalMemory.readyForIprSave=${String(b2gReady && recordReady)}`,
@@ -6249,6 +6302,28 @@ function resolveFilenameVolumeMetadataLock(file: PublicFileSnapshot, text: strin
   const normalizedHash = normalizeText(file.fileHash || file.hash || "");
 
   if (
+    normalizedFilename.includes("apokalypsis_volume_i_completo_aggiornato_ai_2026") ||
+    normalizedFilename.includes("apokalypsis_volume_i_complete_updated_ai_2026") ||
+    normalizedHash.includes(APOKALYPSIS_VOLUME_I_PROFILE_FILE_HASH.replace(/^sha256:/, "")) ||
+    normalizedHash.includes(APOKALYPSIS_VOLUME_I_PROFILE_RUNTIME_HASH.replace(/^sha256:/, "")) ||
+    (
+      normalizedHeader.includes("apokalypsis") &&
+      (normalizedHeader.includes("volume i") || normalizedHeader.includes("volume 1") || normalizedHeader.includes("volume_i")) &&
+      (normalizedHeader.includes("05-04-2026") || normalizedHeader.includes("05/04/2026") || normalizedHeader.includes("decadimento esposto"))
+    )
+  ) {
+    return {
+      matched: true,
+      reason: "FILENAME_LOCK_APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026",
+      docFamily: APOKALYPSIS_VOLUME_I_PROFILE_DOC_FAMILY,
+      volume: APOKALYPSIS_VOLUME_I_PROFILE_VOLUME,
+      title: APOKALYPSIS_VOLUME_I_PROFILE_TITLE,
+      documentKind: APOKALYPSIS_VOLUME_I_PROFILE_DOCUMENT_KIND,
+      canonicalAxis: APOKALYPSIS_VOLUME_I_PROFILE_CANONICAL_AXIS
+    };
+  }
+
+  if (
     normalizedFilename.includes("matrix_torino_bruxelles_volume_iii") ||
     normalizedFilename.includes("matrix torino bruxelles volume iii") ||
     normalizedFilename.includes("c3.c3.matrix torino") ||
@@ -6716,7 +6791,7 @@ function selectDocumentProfileRecallMetadata(
     );
   });
 
-  return exactMatch || null;
+  return canonicalizeApokalypsisVolumeIProfileMetadata(exactMatch || null);
 }
 
 function documentProfileMetadataString(
@@ -6738,6 +6813,109 @@ function documentProfileMetadataString(
 
   return fallback;
 }
+
+function isApokalypsisVolumeIProfileLockSignal(parts: string[]): boolean {
+  const normalized = normalizeText(parts.filter(Boolean).join("\n"));
+
+  return (
+    normalized.includes("apokalypsis_volume_i_completo_aggiornato_ai_2026") ||
+    normalized.includes("apokalypsis_volume_i_complete_updated_ai_2026") ||
+    normalized.includes("apokalypsis volume i") ||
+    normalized.includes("apokalypsis volume 1") ||
+    normalized.includes("apokalypsis-v1-complete-updated-ai-2026-profile") ||
+    normalized.includes(normalizeText(APOKALYPSIS_VOLUME_I_PROFILE_FILE_HASH)) ||
+    normalized.includes(APOKALYPSIS_VOLUME_I_PROFILE_FILE_HASH.replace(/^sha256:/, "")) ||
+    normalized.includes(normalizeText(APOKALYPSIS_VOLUME_I_PROFILE_RUNTIME_HASH)) ||
+    normalized.includes(APOKALYPSIS_VOLUME_I_PROFILE_RUNTIME_HASH.replace(/^sha256:/, ""))
+  );
+}
+
+function canonicalizeApokalypsisVolumeIProfileMetadata(metadata: JsonObject | null): JsonObject | null {
+  if (!metadata) {
+    return null;
+  }
+
+  const profileId = documentProfileMetadataString(metadata, ["profileId", "documentProfileId", "documentMetadata.profileId"], "");
+  const filename = documentProfileMetadataString(metadata, ["filename", "sourceDocument", "documentMetadata.filename", "documentMetadata.sourceDocument"], "");
+  const fileHash = documentProfileMetadataString(metadata, ["fileHash", "sourceFileHash", "documentMetadata.fileHash", "documentMetadata.sourceFileHash"], "");
+  const docFamily = documentProfileMetadataString(metadata, ["docFamily", "canonicalDocFamily", "documentMetadata.docFamily", "documentMetadata.canonicalDocFamily"], "");
+  const documentKind = documentProfileMetadataString(metadata, ["documentKind", "canonicalDocumentKind", "documentMetadata.documentKind", "documentMetadata.canonicalDocumentKind"], "");
+  const moduleName = documentProfileMetadataString(metadata, ["module", "canonicalModule", "documentModule", "documentMetadata.module", "documentMetadata.canonicalModule"], "");
+  const volume = documentProfileMetadataString(metadata, ["volume", "documentVolume", "documentMetadata.volume"], "");
+  const title = documentProfileMetadataString(metadata, ["title", "documentTitle", "documentMetadata.title"], "");
+  const canonicalAxis = documentProfileMetadataString(metadata, ["canonicalAxis", "axis", "documentMetadata.canonicalAxis"], "");
+
+  if (!isApokalypsisVolumeIProfileLockSignal([
+    profileId,
+    filename,
+    fileHash,
+    docFamily,
+    documentKind,
+    moduleName,
+    volume,
+    title,
+    canonicalAxis
+  ])) {
+    return metadata;
+  }
+
+  const documentMetadata = asJsonObject(metadata.documentMetadata) || {};
+  const normalizedFileHash = normalizeText(fileHash);
+  const canonicalFileHash = normalizedFileHash.includes(APOKALYPSIS_VOLUME_I_PROFILE_RUNTIME_HASH.replace(/^sha256:/, ""))
+    ? APOKALYPSIS_VOLUME_I_PROFILE_RUNTIME_HASH
+    : APOKALYPSIS_VOLUME_I_PROFILE_FILE_HASH;
+
+  return {
+    ...metadata,
+    profileId: profileId || stringPath(metadata, "documentProfileId", "") || "APOKALYPSIS-V1-COMPLETE-UPDATED-AI-2026-PROFILE",
+    documentProfileId: stringPath(metadata, "documentProfileId", "") || profileId || "APOKALYPSIS-V1-COMPLETE-UPDATED-AI-2026-PROFILE",
+    filename: filename || APOKALYPSIS_VOLUME_I_PROFILE_FILENAME_LOCK,
+    sourceDocument: filename || APOKALYPSIS_VOLUME_I_PROFILE_FILENAME_LOCK,
+    fileHash: canonicalFileHash,
+    sourceFileHash: canonicalFileHash,
+    docFamily: APOKALYPSIS_VOLUME_I_PROFILE_DOC_FAMILY,
+    canonicalDocFamily: APOKALYPSIS_VOLUME_I_PROFILE_DOC_FAMILY,
+    documentKind: APOKALYPSIS_VOLUME_I_PROFILE_DOCUMENT_KIND,
+    canonicalDocumentKind: APOKALYPSIS_VOLUME_I_PROFILE_DOCUMENT_KIND,
+    module: APOKALYPSIS_VOLUME_I_PROFILE_MODULE,
+    canonicalModule: APOKALYPSIS_VOLUME_I_PROFILE_MODULE,
+    documentModule: APOKALYPSIS_VOLUME_I_PROFILE_MODULE,
+    volume: APOKALYPSIS_VOLUME_I_PROFILE_VOLUME,
+    documentVolume: APOKALYPSIS_VOLUME_I_PROFILE_VOLUME,
+    title: APOKALYPSIS_VOLUME_I_PROFILE_TITLE,
+    documentTitle: APOKALYPSIS_VOLUME_I_PROFILE_TITLE,
+    canonicalAxis: APOKALYPSIS_VOLUME_I_PROFILE_CANONICAL_AXIS,
+    axis: APOKALYPSIS_VOLUME_I_PROFILE_CANONICAL_AXIS,
+    branch: "APOKALYPSIS I–V",
+    contaminationWithLambdaProfile: false,
+    apokalypsisProfileLockApplied: true,
+    apokalypsisProfileLockRevision: APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX_REVISION,
+    documentMetadata: {
+      ...documentMetadata,
+      filename: filename || APOKALYPSIS_VOLUME_I_PROFILE_FILENAME_LOCK,
+      sourceDocument: filename || APOKALYPSIS_VOLUME_I_PROFILE_FILENAME_LOCK,
+      fileHash: canonicalFileHash,
+      sourceFileHash: canonicalFileHash,
+      docFamily: APOKALYPSIS_VOLUME_I_PROFILE_DOC_FAMILY,
+      canonicalDocFamily: APOKALYPSIS_VOLUME_I_PROFILE_DOC_FAMILY,
+      documentKind: APOKALYPSIS_VOLUME_I_PROFILE_DOCUMENT_KIND,
+      canonicalDocumentKind: APOKALYPSIS_VOLUME_I_PROFILE_DOCUMENT_KIND,
+      module: APOKALYPSIS_VOLUME_I_PROFILE_MODULE,
+      canonicalModule: APOKALYPSIS_VOLUME_I_PROFILE_MODULE,
+      volume: APOKALYPSIS_VOLUME_I_PROFILE_VOLUME,
+      documentVolume: APOKALYPSIS_VOLUME_I_PROFILE_VOLUME,
+      title: APOKALYPSIS_VOLUME_I_PROFILE_TITLE,
+      documentTitle: APOKALYPSIS_VOLUME_I_PROFILE_TITLE,
+      canonicalAxis: APOKALYPSIS_VOLUME_I_PROFILE_CANONICAL_AXIS,
+      axis: APOKALYPSIS_VOLUME_I_PROFILE_CANONICAL_AXIS,
+      branch: "APOKALYPSIS I–V",
+      contaminationWithLambdaProfile: false,
+      apokalypsisProfileLockApplied: true,
+      apokalypsisProfileLockRevision: APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX_REVISION
+    }
+  };
+}
+
 
 function inferDocumentKindFromProfileOrFile(metadata: JsonObject | null, volume: string): string {
   const fromProfile = documentProfileMetadataString(
@@ -18337,4 +18515,3 @@ function errorToMessage(error: unknown): string {
 
   return "Unknown provider error";
 }
-
