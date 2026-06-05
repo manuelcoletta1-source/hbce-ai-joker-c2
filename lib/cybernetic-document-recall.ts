@@ -6,12 +6,14 @@ import {
 import type { DocumentProfileDatabaseRow } from "@/lib/ipr-database";
 
 export const CYBERNETIC_DOCUMENT_RECALL_ENGINE_REVISION =
-  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_5-USE_PROFILE_SUMMARY_HARD_REPAIR-v5_6";
+  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_5-USE_PROFILE_SUMMARY_HARD_REPAIR-v5_6-USE_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR-v5_7";
 
 const HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR_REVISION =
   "HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_5";
 const USE_EUROPEAN_FEDERATION_PROFILE_SUMMARY_HARD_REPAIR_REVISION =
-  "USE_PROFILE_SUMMARY_HARD_REPAIR-v5_6";
+  "USE_PROFILE_SUMMARY_HARD_REPAIR-v5_6-USE_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR-v5_7";
+const USE_EUROPEAN_FEDERATION_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR_REVISION =
+  "USE_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR-v5_7";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_ID = "DOC-PROFILE-8602A2F8D2E2494D";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_MEMORY_ID = "IPR-MEM-20260604124905-E968EDC7";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH =
@@ -262,6 +264,53 @@ const USE_VOLUME_I_KEY_TERMS = [
   "EVT",
   "OPC",
   "Audit",
+  "Fail-closed"
+];
+
+const USE_VOLUME_II_PROFILE_ID = "DOC-PROFILE-DCB2F7C8BEAE4EE8";
+const USE_VOLUME_II_MEMORY_ID = "IPR-MEM-20260605074421-0EC12CFA";
+const USE_VOLUME_II_FILE_HASH =
+  "sha256:aca5b87333b0d550d67a7eb61f83d46a5419c453b3a5e3d4362b1804ab816063";
+const USE_VOLUME_II_FILENAME = "USE_VOLUME_II_FEDERAZIONE_OPERATIVA_EUROPEA_CLEAN_RUNTIME_FOR_JOKER_C2.txt";
+const USE_VOLUME_II_TITLE = "U.S.E. - Federazione Operativa Europea";
+const USE_VOLUME_II_SUBTITLE =
+  "Dal mercato unico al sistema federato di esecuzione istituzionale";
+const USE_VOLUME_II_MODULE = "USE_FEDERAZIONE_OPERATIVA_EUROPEA_VOLUME_II";
+const USE_VOLUME_II_CLASSIFICATION = "USE_EUROPEAN_OPERATIONAL_FEDERATION_VOLUME";
+const USE_VOLUME_II_CANONICAL_AXIS =
+  "Regolazione · Decisione · Esecuzione · Verifica · Continuità federale";
+const USE_VOLUME_II_OPERATIONAL_TRACE_AXIS =
+  "Decisione federale · esecuzione istituzionale · responsabilità multilivello · interoperabilità · audit pubblico · continuità amministrativa · identità operativa europea · Regione · Stato · Unione Europea · cittadino · MATRIX · IPR · EVT · OPC · fail-closed";
+const USE_VOLUME_II_CANONICAL_SUMMARY =
+  "U.S.E. Volume II definisce la Federazione Operativa Europea come passaggio dall’Europa regolatoria a un sistema federato capace di decisione, esecuzione, verifica e continuità: identità operativa europea, catena decisionale federata, esecuzione multilivello, eventi verificabili, MATRIX come protocollo federale, audit pubblico, fail-closed istituzionale e domini concreti di esecuzione federale.";
+const USE_VOLUME_II_OPERATIONAL_MEMORY_SUMMARY =
+  "U.S.E. Volume II è il volume Federazione Operativa Europea del ciclo United States of Europe. Trasforma la necessità federale emersa nell’emergenza in architettura istituzionale permanente fondata su decisione federale, esecuzione multilivello, verifica, audit pubblico, fail-closed e continuità federale.";
+const USE_VOLUME_II_KEY_TERMS = [
+  "U.S.E.",
+  "United States of Europe",
+  "Volume II",
+  "Federazione Operativa Europea",
+  "Europa regolatoria",
+  "Regolazione",
+  "Decisione",
+  "Esecuzione",
+  "Verifica",
+  "Continuità federale",
+  "Decisione federale",
+  "Esecuzione istituzionale",
+  "Responsabilità multilivello",
+  "Interoperabilità",
+  "Audit pubblico",
+  "Continuità amministrativa",
+  "Identità operativa europea",
+  "Regione",
+  "Stato",
+  "Unione Europea",
+  "Cittadino federale",
+  "MATRIX",
+  "IPR",
+  "EVT",
+  "OPC",
   "Fail-closed"
 ];
 
@@ -587,6 +636,44 @@ function isUseEuropeanFederationVolumeIProfileRecord(publicProfile: Record<strin
   );
 }
 
+function isUseEuropeanFederationVolumeIIProfileRecord(publicProfile: Record<string, unknown>): boolean {
+  const profileId = stringFromValue(publicProfile.profileId).toUpperCase();
+  const memoryId = stringFromValue(publicProfile.memoryId).toUpperCase();
+  const fileHash = stringFromValue(publicProfile.fileHash).trim().toLowerCase();
+  const filename = normalizeComparableDocumentValue(publicProfile.filename);
+  const docFamily = stringFromValue(publicProfile.docFamily).trim().toUpperCase();
+  const documentKind = stringFromValue(publicProfile.documentKind).trim().toUpperCase();
+  const useCycle = stringFromValue(publicProfile.useCycle).trim().toUpperCase();
+  const useVolume = stringFromValue(publicProfile.useVolume).trim().toUpperCase();
+  const volume = stringFromValue(publicProfile.volume).trim().toUpperCase();
+  const module = stringFromValue(publicProfile.module).trim().toUpperCase();
+  const title = normalizeComparableDocumentValue(publicProfile.title);
+  const subtitle = normalizeComparableDocumentValue(publicProfile.subtitle);
+  const classification = stringFromValue(publicProfile.classification).trim().toUpperCase();
+  const canonicalAxis = normalizeComparableDocumentValue(publicProfile.canonicalAxis);
+  const summary = normalizeComparableDocumentValue(publicProfile.summary);
+
+  return (
+    profileId === USE_VOLUME_II_PROFILE_ID ||
+    memoryId === USE_VOLUME_II_MEMORY_ID ||
+    fileHash === USE_VOLUME_II_FILE_HASH ||
+    filename === normalizeText(USE_VOLUME_II_FILENAME) ||
+    module === USE_VOLUME_II_MODULE ||
+    classification === USE_VOLUME_II_CLASSIFICATION ||
+    (docFamily === "USE_EUROPEAN_FEDERATION" && documentKind === "USE_VOLUME" && (volume === "V2" || useVolume === "V2")) ||
+    (useCycle === "UNITED_STATES_OF_EUROPE" && (volume === "V2" || useVolume === "V2")) ||
+    title === normalizeText(USE_VOLUME_II_TITLE) ||
+    subtitle === normalizeText(USE_VOLUME_II_SUBTITLE) ||
+    canonicalAxis === normalizeText(USE_VOLUME_II_CANONICAL_AXIS) ||
+    summary.includes("u.s.e. volume ii") ||
+    summary.includes("federazione operativa europea") ||
+    summary.includes("europa regolatoria") ||
+    summary.includes("decisione, esecuzione, verifica") ||
+    summary.includes("continuita federale") ||
+    summary.includes("regolazione, decisione, esecuzione")
+  );
+}
+
 function isNoActiveFileMemorySummary(value: string | null): boolean {
   if (!value) {
     return false;
@@ -662,9 +749,73 @@ function withUseEuropeanFederationVolumeICanonicalProfileRepair(
   };
 }
 
+function withUseEuropeanFederationVolumeIICanonicalProfileRepair(
+  publicProfile: Record<string, unknown>
+): Record<string, unknown> {
+  const previousDocFamily = documentProfileString(publicProfile, "docFamily");
+  const previousDocumentKind = documentProfileString(publicProfile, "documentKind");
+  const previousTitle = documentProfileString(publicProfile, "title");
+  const previousVolume = documentProfileString(publicProfile, "volume");
+  const previousUseVolume = documentProfileString(publicProfile, "useVolume");
+  const previousSubtitle = documentProfileString(publicProfile, "subtitle");
+  const previousCanonicalAxis = documentProfileString(publicProfile, "canonicalAxis");
+  const previousSummary = documentProfileString(publicProfile, "summary");
+  const previousSummaryBlocked = isNoActiveFileMemorySummary(previousSummary);
+  const repairApplied =
+    previousDocFamily !== "USE_EUROPEAN_FEDERATION" ||
+    previousDocumentKind !== "USE_VOLUME" ||
+    previousTitle !== USE_VOLUME_II_TITLE ||
+    previousVolume !== "V2" ||
+    previousUseVolume !== "V2" ||
+    previousSubtitle !== USE_VOLUME_II_SUBTITLE ||
+    previousCanonicalAxis !== USE_VOLUME_II_CANONICAL_AXIS ||
+    previousSummary !== USE_VOLUME_II_CANONICAL_SUMMARY ||
+    previousSummaryBlocked;
+
+  return {
+    ...publicProfile,
+    docFamily: "USE_EUROPEAN_FEDERATION",
+    documentKind: "USE_VOLUME",
+    useCycle: "UNITED_STATES_OF_EUROPE",
+    useVolume: "V2",
+    volume: "V2",
+    module: USE_VOLUME_II_MODULE,
+    title: USE_VOLUME_II_TITLE,
+    subtitle: USE_VOLUME_II_SUBTITLE,
+    classification: USE_VOLUME_II_CLASSIFICATION,
+    quality: "CANONICAL",
+    canonicalAxis: USE_VOLUME_II_CANONICAL_AXIS,
+    operationalTraceAxis: USE_VOLUME_II_OPERATIONAL_TRACE_AXIS,
+    summary: USE_VOLUME_II_CANONICAL_SUMMARY,
+    keyTerms: USE_VOLUME_II_KEY_TERMS,
+    semanticTerms: USE_VOLUME_II_KEY_TERMS,
+    useEuropeanFederationProfileSummaryHardRepairApplied: repairApplied,
+    useEuropeanFederationProfileSummaryHardRepairRevision: USE_EUROPEAN_FEDERATION_PROFILE_SUMMARY_HARD_REPAIR_REVISION,
+    useEuropeanFederationProfileSummaryHardRepairVolume: "V2",
+    useEuropeanFederationVolumeIIProfileSummaryHardRepairRevision: USE_EUROPEAN_FEDERATION_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR_REVISION,
+    preRepairDocFamily: previousDocFamily || "NO_PRE_REPAIR_DOC_FAMILY",
+    preRepairDocumentKind: previousDocumentKind || "NO_PRE_REPAIR_DOCUMENT_KIND",
+    preRepairTitle: previousTitle || "NO_PRE_REPAIR_TITLE",
+    preRepairVolume: previousVolume || "NO_PRE_REPAIR_VOLUME",
+    preRepairUseVolume: previousUseVolume || "NO_PRE_REPAIR_USE_VOLUME",
+    preRepairSubtitle: previousSubtitle || "NO_PRE_REPAIR_SUBTITLE",
+    preRepairCanonicalAxis: previousCanonicalAxis || "NO_PRE_REPAIR_CANONICAL_AXIS",
+    preRepairSummary: previousSummary || "NO_PRE_REPAIR_SUMMARY",
+    preRepairNoActiveFileSummaryDetected: previousSummaryBlocked,
+    useProfileSummaryDetected: true,
+    summaryContaminationDetected: false,
+    expectedSummary: USE_VOLUME_II_CANONICAL_SUMMARY,
+    actualSummary: USE_VOLUME_II_CANONICAL_SUMMARY
+  };
+}
+
 function withUseEuropeanFederationProfileSummaryHardRepair(
   publicProfile: Record<string, unknown>
 ): Record<string, unknown> {
+  if (isUseEuropeanFederationVolumeIIProfileRecord(publicProfile)) {
+    return withUseEuropeanFederationVolumeIICanonicalProfileRepair(publicProfile);
+  }
+
   if (isUseEuropeanFederationVolumeIProfileRecord(publicProfile)) {
     return withUseEuropeanFederationVolumeICanonicalProfileRepair(publicProfile);
   }
@@ -673,7 +824,10 @@ function withUseEuropeanFederationProfileSummaryHardRepair(
 }
 
 function useEuropeanFederationProfileSummaryHardRepairLines(item: CyberneticDocumentProfileRecallItem): string[] {
-  if (!isUseEuropeanFederationVolumeIProfileRecord(item.publicProfile || {})) {
+  if (
+    !isUseEuropeanFederationVolumeIProfileRecord(item.publicProfile || {}) &&
+    !isUseEuropeanFederationVolumeIIProfileRecord(item.publicProfile || {})
+  ) {
     return [];
   }
 
@@ -693,7 +847,10 @@ function useEuropeanFederationProfileSummaryHardRepairLines(item: CyberneticDocu
 }
 
 function isHbceAiEcosystemVolumeVProfileRecord(publicProfile: Record<string, unknown>): boolean {
-  if (isUseEuropeanFederationVolumeIProfileRecord(publicProfile)) {
+  if (
+    isUseEuropeanFederationVolumeIProfileRecord(publicProfile) ||
+    isUseEuropeanFederationVolumeIIProfileRecord(publicProfile)
+  ) {
     return false;
   }
 
@@ -861,7 +1018,10 @@ function isHbceAiEcosystemVolumeIProfileRecord(publicProfile: Record<string, unk
 }
 
 function isHbceAiEcosystemVolumeIOrIIOrIIIOrIVOrVProfileRecord(publicProfile: Record<string, unknown>): boolean {
-  if (isUseEuropeanFederationVolumeIProfileRecord(publicProfile)) {
+  if (
+    isUseEuropeanFederationVolumeIProfileRecord(publicProfile) ||
+    isUseEuropeanFederationVolumeIIProfileRecord(publicProfile)
+  ) {
     return false;
   }
 
@@ -938,7 +1098,10 @@ function withHbceAiEcosystemCanonicalProfileRepair(
 function withHbceAiEcosystemProfileSummaryHardRepair(
   publicProfile: Record<string, unknown>
 ): Record<string, unknown> {
-  if (isUseEuropeanFederationVolumeIProfileRecord(publicProfile)) {
+  if (
+    isUseEuropeanFederationVolumeIProfileRecord(publicProfile) ||
+    isUseEuropeanFederationVolumeIIProfileRecord(publicProfile)
+  ) {
     return publicProfile;
   }
 
@@ -2655,10 +2818,12 @@ export function buildCyberneticDocumentMemoryRecallAnswer(args: CyberneticDocume
     `strictDocumentProfileFilter: ${requestedProfileIds.length > 0 ? "REQUESTED_PROFILE_ID_APPLIED" : "NO_REQUESTED_PROFILE_ID"}`,
     "",
     "6. Sintesi operativa della memoria",
-    isUseEuropeanFederationVolumeIProfileRecord(documentProfile.publicProfile || {}) &&
-    isNoActiveFileMemorySummary(memoryForStatus?.memorySummary || null)
-      ? USE_VOLUME_I_OPERATIONAL_MEMORY_SUMMARY
-      : memoryForStatus?.memorySummary || memoryForStatus?.memoryTitle || documentProfile.summary || "Sintesi memoria documentale non disponibile nel record pubblico.",
+    isUseEuropeanFederationVolumeIIProfileRecord(documentProfile.publicProfile || {})
+      ? USE_VOLUME_II_OPERATIONAL_MEMORY_SUMMARY
+      : isUseEuropeanFederationVolumeIProfileRecord(documentProfile.publicProfile || {}) &&
+          isNoActiveFileMemorySummary(memoryForStatus?.memorySummary || null)
+        ? USE_VOLUME_I_OPERATIONAL_MEMORY_SUMMARY
+        : memoryForStatus?.memorySummary || memoryForStatus?.memoryTitle || documentProfile.summary || "Sintesi memoria documentale non disponibile nel record pubblico.",
     "",
     "7. Collegamento HBCE",
     `Human IPR: ${args.handoff.humanIpr || "NO_HUMAN_IPR"}`,
