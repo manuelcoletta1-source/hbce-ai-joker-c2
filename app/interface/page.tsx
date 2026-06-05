@@ -483,9 +483,9 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.6-USE_VOLUME_III_DASHBOARD_OVERLAY";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.7-USE_VOLUME_III_DASHBOARD_HARD_RENDER_OVERLAY";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
-const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v2.6-USE_VOLUME_III_DASHBOARD_OVERLAY";
+const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v2.7-USE_VOLUME_III_DASHBOARD_HARD_RENDER_OVERLAY";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -1884,9 +1884,31 @@ function profileMatchesDashboardOverlay(profile: PublicDocumentProfileSnapshot, 
 }
 
 
-function applyJokerC2DocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnapshot): PublicDocumentProfileSnapshot {
-  const overlay = JOKER_C2_DOCUMENT_PROFILE_DASHBOARD_OVERLAYS.find((item) => profileMatchesDashboardOverlay(profile, item));
-  if (!overlay) return profile;
+function getUseVolumeIIIDashboardHardOverlay(profile: PublicDocumentProfileSnapshot): DocumentProfileDashboardOverlay | null {
+  const profileId = profile.profileId.trim();
+  const memoryId = profile.memoryId.trim();
+  const fileHash = profile.fileHash.trim();
+  const filename = profile.filename.trim();
+
+
+  const isUseVolumeIIIProfile =
+    profileId === "DOC-PROFILE-46788B076362ED33" ||
+    memoryId === "IPR-MEM-20260605104016-EB512DC1" ||
+    memoryId === "IPR-MEM-20260605104006-AA167B11" ||
+    fileHash === "sha256:465e629f8ad45ad9aae3ea0d88f4e9e7146e554befcfe809cb609e9d810aa0d7" ||
+    filename.includes("USE_VOLUME_III_VOTO_DIGITALE_FEDERATO_CLEAN_RUNTIME_FOR_JOKER_C2");
+
+
+  if (!isUseVolumeIIIProfile) {
+    return null;
+  }
+
+
+  return USE_EUROPEAN_FEDERATION_VOLUME_DASHBOARD_OVERLAYS[0] ?? null;
+}
+
+
+function applyDocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnapshot, overlay: DocumentProfileDashboardOverlay): PublicDocumentProfileSnapshot {
   return {
     ...profile,
     title: overlay.title,
@@ -1898,6 +1920,17 @@ function applyJokerC2DocumentProfileDashboardOverlay(profile: PublicDocumentProf
     keyTerms: overlay.keyTerms,
     semanticTerms: overlay.semanticTerms
   };
+}
+
+
+function applyJokerC2DocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnapshot): PublicDocumentProfileSnapshot {
+  const hardOverlay = getUseVolumeIIIDashboardHardOverlay(profile);
+  if (hardOverlay) return applyDocumentProfileDashboardOverlay(profile, hardOverlay);
+
+
+  const overlay = JOKER_C2_DOCUMENT_PROFILE_DASHBOARD_OVERLAYS.find((item) => profileMatchesDashboardOverlay(profile, item));
+  if (!overlay) return profile;
+  return applyDocumentProfileDashboardOverlay(profile, overlay);
 }
 
 
@@ -5025,7 +5058,9 @@ export default function InterfacePage() {
   const dashboardSemanticMemory = getPublicSemanticMemorySnapshot(dashboardPayload);
   const dashboardFileIngestion = getPublicFileIngestionSnapshot(dashboardPayload);
   const dashboardDocumentRegistry = getPublicDocumentRegistrySnapshot(dashboardPayload, fileRegistryPayload);
-  const linkedDocumentProfiles = dashboardDocumentRegistry.profiles.filter(isLinkedDocumentProfile);
+  const linkedDocumentProfiles = dashboardDocumentRegistry.profiles
+    .map(applyJokerC2DocumentProfileDashboardOverlay)
+    .filter(isLinkedDocumentProfile);
   const selectedCanonicalDocumentProfile =
     linkedDocumentProfiles.find((profile) => profile.memoryId === cyberneticMemoryChain.memoryId) ??
     linkedDocumentProfiles.find((profile) => profile.profileId === cyberneticMemoryChain.documentProfileId) ??
@@ -7470,32 +7505,35 @@ export default function InterfacePage() {
 
             {linkedDocumentProfiles.length > 0 ? (
               <div className="joker-memory-list">
-                {linkedDocumentProfiles.slice(0, 6).map((profile, index) => (
-                  <article key={`document-profile-chain-${profile.profileId}-${index}`} className="joker-memory-item is-document-profile">
-                    <div className="joker-memory-item-head">
-                      <strong title={profile.title}>{compact(profile.title, 72)}</strong>
-                      <span>{compact(profile.volume, 20)}</span>
-                    </div>
-                    <p>{compact(profile.summary, 220)}</p>
-                    <div className="joker-memory-meta">
-                      <span title={profile.profileId}>Profile {compact(profile.profileId, 28)}</span>
-                      <span title={profile.memoryId}>Memory {compact(profile.memoryId, 28)}</span>
-                      <span>{profile.canonicalDocumentKind}</span>
-                      <span>Linked docs 1</span>
-                    </div>
-                    <div className="joker-memory-meta">
-                      <span title={profile.filename}>{compact(profile.filename, 36)}</span>
-                      <span>{profile.quality}</span>
-                      <span>Reusable {profile.reusableInPrompt}</span>
-                      <span>Glossary guard {profile.glossaryGuardApplied}</span>
-                    </div>
-                    <div className="joker-memory-actions">
-                      <button type="button" onClick={() => selectDocumentProfileForCyberneticChain(profile)} disabled={!canUseIprMemory}>Usa profilo nella catena</button>
-                      <button type="button" onClick={() => void copyRuntimeId("IPR-MEM", profile.memoryId)} disabled={!isLinkedDocumentProfile(profile)}>Copy IPR-MEM</button>
-                      <button type="button" onClick={() => void copyRuntimeId("DOC-PROFILE", profile.profileId)} disabled={isBlankRuntimeValue(profile.profileId)}>Copy DOC-PROFILE</button>
-                    </div>
-                  </article>
-                ))}
+                {linkedDocumentProfiles.slice(0, 6).map((profile, index) => {
+                  const displayProfile = applyJokerC2DocumentProfileDashboardOverlay(profile);
+                  return (
+                    <article key={`document-profile-chain-${displayProfile.profileId}-${index}`} className="joker-memory-item is-document-profile">
+                      <div className="joker-memory-item-head">
+                        <strong title={displayProfile.title}>{compact(displayProfile.title, 72)}</strong>
+                        <span>{compact(displayProfile.volume, 20)}</span>
+                      </div>
+                      <p>{compact(displayProfile.summary, 220)}</p>
+                      <div className="joker-memory-meta">
+                        <span title={displayProfile.profileId}>Profile {compact(displayProfile.profileId, 28)}</span>
+                        <span title={displayProfile.memoryId}>Memory {compact(displayProfile.memoryId, 28)}</span>
+                        <span>{displayProfile.canonicalDocumentKind}</span>
+                        <span>Linked docs 1</span>
+                      </div>
+                      <div className="joker-memory-meta">
+                        <span title={displayProfile.filename}>{compact(displayProfile.filename, 36)}</span>
+                        <span>{displayProfile.quality}</span>
+                        <span>Reusable {displayProfile.reusableInPrompt}</span>
+                        <span>Glossary guard {displayProfile.glossaryGuardApplied}</span>
+                      </div>
+                      <div className="joker-memory-actions">
+                        <button type="button" onClick={() => selectDocumentProfileForCyberneticChain(displayProfile)} disabled={!canUseIprMemory}>Usa profilo nella catena</button>
+                        <button type="button" onClick={() => void copyRuntimeId("IPR-MEM", displayProfile.memoryId)} disabled={!isLinkedDocumentProfile(displayProfile)}>Copy IPR-MEM</button>
+                        <button type="button" onClick={() => void copyRuntimeId("DOC-PROFILE", displayProfile.profileId)} disabled={isBlankRuntimeValue(displayProfile.profileId)}>Copy DOC-PROFILE</button>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             ) : (
               <div className="joker-empty-mini">
