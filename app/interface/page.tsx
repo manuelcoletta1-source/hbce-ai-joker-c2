@@ -483,9 +483,9 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.7-USE_VOLUME_III_DASHBOARD_HARD_RENDER_OVERLAY";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.8-USE_VOLUME_IV_DASHBOARD_HARD_RENDER_OVERLAY";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
-const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v2.7-USE_VOLUME_III_DASHBOARD_HARD_RENDER_OVERLAY";
+const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v2.8-USE_VOLUME_IV_DASHBOARD_HARD_RENDER_OVERLAY";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -606,6 +606,18 @@ const HBCE_AI_ECOSYSTEM_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverl
 ];
 
 const USE_EUROPEAN_FEDERATION_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverlay[] = [
+  {
+    branchKey: "USE_EUROPEAN_FEDERATION",
+    title: "U.S.E. - Sovranità Digitale Europea",
+    volume: "V4",
+    docFamily: "USE_EUROPEAN_FEDERATION",
+    canonicalDocumentKind: "USE_VOLUME",
+    summary: "U.S.E. Volume IV definisce la Sovranità Digitale Europea come condizione materiale della Federazione Operativa Europea e della democrazia federata: dati controllabili, identità protetta, AI governabile, cybersecurity federata, cloud europeo, energia resiliente, infrastrutture critiche, stack HBCE dimostrativo, audit, continuità istituzionale e fail-closed.",
+    canonicalAxis: "Dati · Identità · Infrastruttura · Sicurezza · Sovranità digitale",
+    keyTerms: ["U.S.E.", "United States of Europe", "Volume IV", "Sovranità Digitale Europea", "Dati controllabili", "Identità protetta", "AI governabile", "Cybersecurity federata", "Cloud europeo", "Energia resiliente", "Infrastrutture critiche", "Industria strategica", "Stack HBCE", "MATRIX", "UNEBDO", "MetaExchange", "OPC", "IOspace", "CyberGlobal", "NeuroLoop", "Fail-closed", "Continuità istituzionale", "Autonomia europea"],
+    semanticTerms: ["U.S.E.", "United States of Europe", "Volume IV", "Digital sovereignty", "European digital sovereignty", "AI governance", "Cybersecurity", "Cloud", "Energy", "Critical infrastructures", "HBCE stack", "Audit", "Fail-closed", "Institutional continuity"],
+    signals: ["DOC-PROFILE-3ADB6D0995C0F0C9", "IPR-MEM-20260605115145-7E74253D", "sha256:4512fbc2fbf7e45e5b6f842fbcc6f33f88158be8c52ac10ac86a69dffc7af34d", "sha256:f5ffb57bdb550f5477db26d5f66eaa4bc4dd8591699aec720c425a09aff51584", "USE_VOLUME_IV_SOVRANITA_DIGITALE_EUROPEA_CLEAN_RUNTIME_FOR_JOKER_C2", "USE_SOVRANITA_DIGITALE_EUROPEA_VOLUME_IV", "U.S.E. - Sovranità Digitale Europea", "Sovranità Digitale Europea"]
+  },
   {
     branchKey: "USE_EUROPEAN_FEDERATION",
     title: "U.S.E. - Voto Digitale Federato",
@@ -1884,6 +1896,30 @@ function profileMatchesDashboardOverlay(profile: PublicDocumentProfileSnapshot, 
 }
 
 
+function getUseVolumeIVDashboardHardOverlay(profile: PublicDocumentProfileSnapshot): DocumentProfileDashboardOverlay | null {
+  const profileId = profile.profileId.trim();
+  const memoryId = profile.memoryId.trim();
+  const fileHash = profile.fileHash.trim();
+  const filename = profile.filename.trim();
+
+
+  const isUseVolumeIVProfile =
+    profileId === "DOC-PROFILE-3ADB6D0995C0F0C9" ||
+    memoryId === "IPR-MEM-20260605115145-7E74253D" ||
+    fileHash === "sha256:4512fbc2fbf7e45e5b6f842fbcc6f33f88158be8c52ac10ac86a69dffc7af34d" ||
+    fileHash === "sha256:f5ffb57bdb550f5477db26d5f66eaa4bc4dd8591699aec720c425a09aff51584" ||
+    filename.includes("USE_VOLUME_IV_SOVRANITA_DIGITALE_EUROPEA_CLEAN_RUNTIME_FOR_JOKER_C2");
+
+
+  if (!isUseVolumeIVProfile) {
+    return null;
+  }
+
+
+  return USE_EUROPEAN_FEDERATION_VOLUME_DASHBOARD_OVERLAYS.find((overlay) => overlay.volume === "V4") ?? null;
+}
+
+
 function getUseVolumeIIIDashboardHardOverlay(profile: PublicDocumentProfileSnapshot): DocumentProfileDashboardOverlay | null {
   const profileId = profile.profileId.trim();
   const memoryId = profile.memoryId.trim();
@@ -1924,6 +1960,10 @@ function applyDocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnap
 
 
 function applyJokerC2DocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnapshot): PublicDocumentProfileSnapshot {
+  const useVolumeIVHardOverlay = getUseVolumeIVDashboardHardOverlay(profile);
+  if (useVolumeIVHardOverlay) return applyDocumentProfileDashboardOverlay(profile, useVolumeIVHardOverlay);
+
+
   const hardOverlay = getUseVolumeIIIDashboardHardOverlay(profile);
   if (hardOverlay) return applyDocumentProfileDashboardOverlay(profile, hardOverlay);
 
