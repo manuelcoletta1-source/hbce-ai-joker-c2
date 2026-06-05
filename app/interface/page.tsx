@@ -483,9 +483,9 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.9-USE_VOLUME_DASHBOARD_OVERLAY_ORDER_FIX";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.0-USE_VOLUME_V_DASHBOARD_OVERLAY";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
-const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v2.9-USE_VOLUME_DASHBOARD_OVERLAY_ORDER_FIX";
+const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v3.0-USE_VOLUME_V_DASHBOARD_OVERLAY";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -606,6 +606,18 @@ const HBCE_AI_ECOSYSTEM_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverl
 ];
 
 const USE_EUROPEAN_FEDERATION_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverlay[] = [
+  {
+    branchKey: "USE_EUROPEAN_FEDERATION",
+    title: "U.S.E. - Costituzione Operativa Europea",
+    volume: "V5",
+    docFamily: "USE_EUROPEAN_FEDERATION",
+    canonicalDocumentKind: "USE_VOLUME",
+    summary: "U.S.E. Volume V definisce la Costituzione Operativa Europea come chiusura del ciclo United States of Europe: emergenza, federazione, voto e sovranità digitale vengono trasformati in protocollo federale verificabile per proteggere, decidere, votare, eseguire, verificare e continuare come federazione operativa.",
+    canonicalAxis: "Emergenza · Federazione · Voto · Sovranità digitale · Costituzione operativa",
+    keyTerms: ["U.S.E.", "United States of Europe", "Volume V", "Costituzione Operativa Europea", "Protocollo federale verificabile", "Identità operativa", "Voto digitale federato", "Sovranità digitale", "Protezione civile", "Sicurezza civile", "AI governata", "Cybersecurity", "Energia", "Infrastrutture critiche", "MATRIX", "HBCE", "Audit pubblico", "Fail-closed", "Continuità istituzionale"],
+    semanticTerms: ["U.S.E.", "United States of Europe", "Volume V", "Operational constitution", "European operational constitution", "Verifiable federal protocol", "Federated identity", "Federated digital vote", "Digital sovereignty", "Public audit", "Fail-closed", "Institutional continuity"],
+    signals: ["DOC-PROFILE-B5297AA7385C6AB1", "IPR-MEM-20260605125852-732DB35A", "sha256:64a072215a794cb17b988d0384103cc5a27e538bde542ca9011cff7e357a4309", "USE_VOLUME_V_COSTITUZIONE_OPERATIVA_EUROPEA_CLEAN_RUNTIME_FOR_JOKER_C2", "USE_COSTITUZIONE_OPERATIVA_EUROPEA_VOLUME_V", "U.S.E. - Costituzione Operativa Europea", "Costituzione Operativa Europea", "Protocollo federale verificabile"]
+  },
   {
     branchKey: "USE_EUROPEAN_FEDERATION",
     title: "U.S.E. - Sovranità Digitale Europea",
@@ -1896,6 +1908,29 @@ function profileMatchesDashboardOverlay(profile: PublicDocumentProfileSnapshot, 
 }
 
 
+function getUseVolumeVDashboardHardOverlay(profile: PublicDocumentProfileSnapshot): DocumentProfileDashboardOverlay | null {
+  const profileId = profile.profileId.trim();
+  const memoryId = profile.memoryId.trim();
+  const fileHash = profile.fileHash.trim();
+  const filename = profile.filename.trim();
+
+
+  const isUseVolumeVProfile =
+    profileId === "DOC-PROFILE-B5297AA7385C6AB1" ||
+    memoryId === "IPR-MEM-20260605125852-732DB35A" ||
+    fileHash === "sha256:64a072215a794cb17b988d0384103cc5a27e538bde542ca9011cff7e357a4309" ||
+    filename.includes("USE_VOLUME_V_COSTITUZIONE_OPERATIVA_EUROPEA_CLEAN_RUNTIME_FOR_JOKER_C2");
+
+
+  if (!isUseVolumeVProfile) {
+    return null;
+  }
+
+
+  return USE_EUROPEAN_FEDERATION_VOLUME_DASHBOARD_OVERLAYS.find((overlay) => overlay.volume === "V5") ?? null;
+}
+
+
 function getUseVolumeIVDashboardHardOverlay(profile: PublicDocumentProfileSnapshot): DocumentProfileDashboardOverlay | null {
   const profileId = profile.profileId.trim();
   const memoryId = profile.memoryId.trim();
@@ -1960,6 +1995,10 @@ function applyDocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnap
 
 
 function applyJokerC2DocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnapshot): PublicDocumentProfileSnapshot {
+  const useVolumeVHardOverlay = getUseVolumeVDashboardHardOverlay(profile);
+  if (useVolumeVHardOverlay) return applyDocumentProfileDashboardOverlay(profile, useVolumeVHardOverlay);
+
+
   const useVolumeIVHardOverlay = getUseVolumeIVDashboardHardOverlay(profile);
   if (useVolumeIVHardOverlay) return applyDocumentProfileDashboardOverlay(profile, useVolumeIVHardOverlay);
 
