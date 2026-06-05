@@ -483,9 +483,9 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.4-USE_VOLUME_I_DASHBOARD_OVERLAY";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v2.5-USE_VOLUME_II_DASHBOARD_OVERLAY";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
-const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v2.4-USE_VOLUME_I_DASHBOARD_OVERLAY";
+const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v2.5-USE_VOLUME_II_DASHBOARD_OVERLAY";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -606,6 +606,18 @@ const HBCE_AI_ECOSYSTEM_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverl
 ];
 
 const USE_EUROPEAN_FEDERATION_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverlay[] = [
+  {
+    branchKey: "USE_EUROPEAN_FEDERATION",
+    title: "U.S.E. - Federazione Operativa Europea",
+    volume: "V2",
+    docFamily: "USE_EUROPEAN_FEDERATION",
+    canonicalDocumentKind: "USE_VOLUME",
+    summary: "U.S.E. Volume II definisce la Federazione Operativa Europea come passaggio dall’Europa regolatoria a un sistema federato capace di decisione, esecuzione, verifica e continuità: identità operativa europea, catena decisionale federata, esecuzione multilivello, eventi verificabili, MATRIX come protocollo federale, audit pubblico, fail-closed istituzionale e domini concreti di esecuzione federale.",
+    canonicalAxis: "Regolazione · Decisione · Esecuzione · Verifica · Continuità federale",
+    keyTerms: ["U.S.E.", "United States of Europe", "Volume II", "Federazione Operativa Europea", "Decisione federale", "Esecuzione istituzionale", "Audit pubblico", "Continuità federale", "MATRIX", "IPR", "EVT", "OPC"],
+    semanticTerms: ["U.S.E.", "United States of Europe", "Federazione Operativa Europea", "Regolazione", "Decisione", "Esecuzione", "Verifica", "Continuità federale", "Identità operativa europea", "Responsabilità multilivello", "Interoperabilità", "Fail-closed"],
+    signals: ["DOC-PROFILE-DCB2F7C8BEAE4EE8", "IPR-MEM-20260605074421-0EC12CFA", "sha256:aca5b87333b0d550d67a7eb61f83d46a5419c453b3a5e3d4362b1804ab816063", "USE_VOLUME_II_FEDERAZIONE_OPERATIVA_EUROPEA_CLEAN_RUNTIME_FOR_JOKER_C2", "USE_FEDERAZIONE_OPERATIVA_EUROPEA_VOLUME_II", "U.S.E. - Federazione Operativa Europea"]
+  },
   {
     branchKey: "USE_EUROPEAN_FEDERATION",
     title: "U.S.E. - Emergenza Europea",
@@ -1894,7 +1906,7 @@ function getJokerC2BranchKeyForProfile(profile: PublicDocumentProfileSnapshot): 
   if (signal.includes("matrix")) return "MATRIX";
   if (signal.includes("hbce_joker_c2_b2g_technical_stack") || signal.includes("qpccf") || signal.includes("aiq") || signal.includes("cqo") || signal.includes("ufo_intercept") || signal.includes("lambda") || signal.includes("pei")) return "B2G_TECHNICAL_STACK";
   if (signal.includes("corpus esoterologia") || signal.includes("glossario canonico") || signal.includes("cod 1") || signal.includes("alien code")) return "CORPUS_SEMANTIC_MEMORY";
-  if (signal.includes("use_volume") || signal.includes("united states of europe") || signal.includes("emergenza europea")) return "USE_EUROPEAN_FEDERATION";
+  if (signal.includes("use_volume") || signal.includes("united states of europe") || signal.includes("emergenza europea") || signal.includes("federazione operativa europea") || signal.includes("federazione_operativa_europea")) return "USE_EUROPEAN_FEDERATION";
   if (signal.includes("apokalypsis") || signal.includes("apocalipsis")) return "APOKALYPSIS_EDITORIAL_SYSTEM";
   return "DOCUMENT_REGISTRY";
 }
@@ -1962,7 +1974,7 @@ function buildJokerC2BranchDashboardSnapshot(input: { profiles: PublicDocumentPr
     { key: "HBCE_AI_ECOSYSTEM_I_V", label: "HBCE AI Ecosystem I–V", status: hbceAiVolumes.size >= 5 ? "READY" : hbceAiVolumes.size > 0 ? "PARTIAL_READY" : "WAITING", detail: `volumes=${Array.from(hbceAiVolumes).sort().join(",") || "none"}` },
     { key: "B2G_TECHNICAL_STACK", label: "B2G technical stack", status: countProfilesForBranch(input.profiles, "B2G_TECHNICAL_STACK") > 0 ? "READY" : "WAITING", detail: "QPCCF · AIQ · CQO · UFO · LAMBDA · PEI" },
     { key: "CORPUS_SEMANTIC_MEMORY", label: "Corpus semantic memory", status: input.semanticMemory.available ? "SEPARATED_READY" : "SEPARATED", detail: "Glossario · COD 1 · Corpus guard" },
-    { key: "USE_EUROPEAN_FEDERATION", label: "U.S.E. I–V", status: countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") > 0 ? "PARTIAL_READY" : "PENDING_NEXT_BRANCH", detail: countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") > 0 ? "Volume I active · Emergency/Civil Protection" : "United States of Europe branch" },
+    { key: "USE_EUROPEAN_FEDERATION", label: "U.S.E. I–V", status: countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") >= 2 ? "PARTIAL_READY" : countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") > 0 ? "PARTIAL_READY" : "PENDING_NEXT_BRANCH", detail: countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") >= 2 ? "Volumes I–II active · Emergency + Operational Federation" : countProfilesForBranch(input.profiles, "USE_EUROPEAN_FEDERATION") > 0 ? "Volume I active · Emergency/Civil Protection" : "United States of Europe branch" },
     { key: "APOKALYPSIS_EDITORIAL_SYSTEM", label: "APOKALYPSIS I–V", status: countProfilesForBranch(input.profiles, "APOKALYPSIS_EDITORIAL_SYSTEM") > 0 ? "PARTIAL_READY" : "PENDING_NEXT_BRANCH", detail: "Editorial/apocalyptic branch" }
   ];
   const items = branchDefinitions.map((branch) => ({
