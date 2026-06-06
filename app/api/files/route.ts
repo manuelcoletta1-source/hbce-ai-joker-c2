@@ -3,6 +3,8 @@ import { inflateSync } from "node:zlib";
 import { NextRequest, NextResponse } from "next/server";
 
 
+
+
 import {
   ensureHbceDatabaseReady,
   listDocumentProfilesFromDatabase,
@@ -20,10 +22,16 @@ import {
 
 
 
+
+
+
+
 /* --------------------------------------------------------------------------
  * INLINE HBCE B2G TECHNICAL STACK CLASSIFIER + TECHNICAL MEMORY COLLAPSE
  * Single-file deploy variant: no extra modified lib files required.
  * -------------------------------------------------------------------------- */
+
+
 
 
 /**
@@ -44,40 +52,60 @@ import {
  */
 
 
+
+
 const HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION =
   "HBCE-B2G-TECHNICAL-STACK-CLASSIFIER-v1_0_0";
+
+
 
 
 const HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY =
   "HBCE_JOKER_C2_B2G_TECHNICAL_STACK" as const;
 
 
+
+
 const HBCE_TECHNICAL_GOVERNANCE_MODULE =
   "TECHNICAL_GOVERNANCE_MODULE" as const;
+
+
 
 
 const HBCE_TECHNICAL_GOVERNANCE_MODULE_SET =
   "TECHNICAL_GOVERNANCE_MODULE_SET" as const;
 
 
+
+
 const HBCE_RND_THEORETICAL_FOUNDATION =
   "RND_THEORETICAL_FOUNDATION" as const;
+
+
 
 
 const HBCE_B2G_LEGAL_CERTIFICATION = false as const;
 
 
+
+
 const HBCE_B2G_OPC_BOUNDARY = "technical proof receipt only" as const;
+
+
 
 
 type HbceB2gTechnicalStackDocFamily =
   typeof HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY;
 
 
+
+
 type HbceB2gTechnicalStackDocumentKind =
   | typeof HBCE_TECHNICAL_GOVERNANCE_MODULE
   | typeof HBCE_TECHNICAL_GOVERNANCE_MODULE_SET
   | typeof HBCE_RND_THEORETICAL_FOUNDATION;
+
+
 
 
 type HbceB2gTechnicalStackModule =
@@ -91,12 +119,16 @@ type HbceB2gTechnicalStackModule =
   | "CQO_OPPONIBLE_QUANTUM_CYBERNETICS";
 
 
+
+
 type HbceB2gTechnicalStackConfidence =
   | "NONE"
   | "LOW"
   | "MEDIUM"
   | "HIGH"
   | "CANONICAL";
+
+
 
 
 interface HbceB2gTechnicalStackClassifierInput {
@@ -107,6 +139,8 @@ interface HbceB2gTechnicalStackClassifierInput {
   text?: string | null;
   mimeType?: string | null;
 }
+
+
 
 
 interface HbceB2gTechnicalStackClassification {
@@ -138,6 +172,8 @@ interface HbceB2gTechnicalStackClassification {
 }
 
 
+
+
 interface ModuleDefinition {
   module: HbceB2gTechnicalStackModule;
   documentKind: HbceB2gTechnicalStackDocumentKind;
@@ -151,6 +187,8 @@ interface ModuleDefinition {
   secondarySignals: string[];
   antiSignals?: string[];
 }
+
+
 
 
 /**
@@ -589,6 +627,8 @@ const HBCE_B2G_TECHNICAL_STACK_DEFINITIONS: readonly ModuleDefinition[] = [
 ] as const;
 
 
+
+
 function normalizeHbceClassifierText(value: unknown): string {
   return String(value ?? "")
     .normalize("NFC")
@@ -600,6 +640,8 @@ function normalizeHbceClassifierText(value: unknown): string {
     .trim()
     .toLowerCase();
 }
+
+
 
 
 function buildHbceClassifierHaystack(
@@ -620,8 +662,12 @@ function buildHbceClassifierHaystack(
 }
 
 
+
+
 function collectMatchedSignals(haystack: string, signals: readonly string[]): string[] {
   const matches: string[] = [];
+
+
 
 
   for (const signal of signals) {
@@ -632,8 +678,12 @@ function collectMatchedSignals(haystack: string, signals: readonly string[]): st
   }
 
 
+
+
   return Array.from(new Set(matches));
 }
+
+
 
 
 function scoreDefinition(
@@ -645,7 +695,11 @@ function scoreDefinition(
   const antiMatches = collectMatchedSignals(haystack, definition.antiSignals ?? []);
 
 
+
+
   const score = primaryMatches.length * 10 + secondaryMatches.length * 3 - antiMatches.length * 12;
+
+
 
 
   return {
@@ -653,6 +707,8 @@ function scoreDefinition(
     matchedSignals: [...primaryMatches, ...secondaryMatches]
   };
 }
+
+
 
 
 function confidenceFromScore(score: number): HbceB2gTechnicalStackConfidence {
@@ -664,10 +720,14 @@ function confidenceFromScore(score: number): HbceB2gTechnicalStackConfidence {
 }
 
 
+
+
 function classifyHbceB2gTechnicalStackDocument(
   input: HbceB2gTechnicalStackClassifierInput
 ): HbceB2gTechnicalStackClassification {
   const haystack = buildHbceClassifierHaystack(input);
+
+
 
 
   let bestDefinition: ModuleDefinition | null = null;
@@ -675,8 +735,12 @@ function classifyHbceB2gTechnicalStackDocument(
   let bestSignals: string[] = [];
 
 
+
+
   for (const definition of HBCE_B2G_TECHNICAL_STACK_DEFINITIONS) {
     const candidate = scoreDefinition(haystack, definition);
+
+
 
 
     if (candidate.score > bestScore) {
@@ -687,8 +751,12 @@ function classifyHbceB2gTechnicalStackDocument(
   }
 
 
+
+
   const confidence = confidenceFromScore(bestScore);
   const matched = Boolean(bestDefinition && bestScore >= 9);
+
+
 
 
   if (!matched || !bestDefinition) {
@@ -722,6 +790,8 @@ function classifyHbceB2gTechnicalStackDocument(
   }
 
 
+
+
   return {
     matched: true,
     classifierRevision: HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION,
@@ -752,11 +822,15 @@ function classifyHbceB2gTechnicalStackDocument(
 }
 
 
+
+
 function isHbceB2gTechnicalStackDocument(
   input: HbceB2gTechnicalStackClassifierInput
 ): boolean {
   return classifyHbceB2gTechnicalStackDocument(input).matched;
 }
+
+
 
 
 function isQpccfPredictiveStabilityDocument(
@@ -767,15 +841,21 @@ function isQpccfPredictiveStabilityDocument(
 }
 
 
+
+
 function buildHbceB2gTechnicalStackProfileMetadata(
   input: HbceB2gTechnicalStackClassifierInput
 ): Record<string, unknown> | null {
   const classification = classifyHbceB2gTechnicalStackDocument(input);
 
 
+
+
   if (!classification.matched) {
     return null;
   }
+
+
 
 
   return {
@@ -801,6 +881,8 @@ function buildHbceB2gTechnicalStackProfileMetadata(
 }
 
 
+
+
 /**
  * Convenience helper for route-level precedence:
  * call this before generic Corpus / Matrix / HBCE fallback inference.
@@ -812,9 +894,13 @@ function maybeApplyHbceB2gTechnicalStackMetadata<T extends Record<string, unknow
   const metadata = buildHbceB2gTechnicalStackProfileMetadata(input);
 
 
+
+
   if (!metadata) {
     return baseProfile;
   }
+
+
 
 
   return {
@@ -825,6 +911,8 @@ function maybeApplyHbceB2gTechnicalStackMetadata<T extends Record<string, unknow
     reusableInPrompt: baseProfile.reusableInPrompt ?? true
   };
 }
+
+
 
 
 /**
@@ -841,12 +929,18 @@ function assertQpccfMetadataIsNotContaminated(
   const documentKind = String(metadata.documentKind ?? "");
 
 
+
+
   const isQpccf = module === "QPCCF_PREDICTIVE_STABILITY_ENGINE";
+
+
 
 
   if (!isQpccf) {
     return { ok: true, failReason: "NONE" };
   }
+
+
 
 
   const contaminated =
@@ -857,10 +951,16 @@ function assertQpccfMetadataIsNotContaminated(
     documentKind === "FOUNDATIONAL_VOLUME";
 
 
+
+
   return contaminated
     ? { ok: false, failReason: "QPCCF_METADATA_CONTAMINATED" }
     : { ok: true, failReason: "NONE" };
 }
+
+
+
+
 
 
 
@@ -887,21 +987,31 @@ function assertQpccfMetadataIsNotContaminated(
  */
 
 
+
+
 const HBCE_B2G_TECHNICAL_MEMORY_COLLAPSE_REVISION =
   "HBCE-B2G-TECHNICAL-MEMORY-COLLAPSE-v1_0_0";
+
+
 
 
 const HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY =
   "B2G_TECHNICAL_PROFILE_MEMORY_READY" as const;
 
 
+
+
 const HBCE_B2G_TECHNICAL_MEMORY_FAIL =
   "B2G_TECHNICAL_PROFILE_MEMORY_FAIL" as const;
+
+
 
 
 type HbceB2gTechnicalMemoryStatus =
   | typeof HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY
   | typeof HBCE_B2G_TECHNICAL_MEMORY_FAIL;
+
+
 
 
 type HbceB2gTechnicalMemoryFailReason =
@@ -915,6 +1025,8 @@ type HbceB2gTechnicalMemoryFailReason =
   | "DOCUMENT_KIND_NOT_TECHNICAL"
   | "CLASSIFIER_NO_MATCH"
   | "UNSUPPORTED_TECHNICAL_MODULE";
+
+
 
 
 interface HbceB2gTechnicalProfileInput extends HbceB2gTechnicalStackClassifierInput {
@@ -943,6 +1055,8 @@ interface HbceB2gTechnicalProfileInput extends HbceB2gTechnicalStackClassifierIn
 }
 
 
+
+
 interface HbceB2gFutureGithubModule {
   path: string;
   role: string;
@@ -951,9 +1065,13 @@ interface HbceB2gFutureGithubModule {
 }
 
 
+
+
 interface HbceB2gTechnicalMemoryPayload {
   status: HbceB2gTechnicalMemoryStatus;
   readyForIprSave: boolean;
+
+
 
 
   memoryType: "B2G_TECHNICAL_PROFILE_MEMORY";
@@ -962,10 +1080,14 @@ interface HbceB2gTechnicalMemoryPayload {
   classifierRevision: string;
 
 
+
+
   sourceDocument: string | null;
   documentProfileId: string | null;
   documentProfileStatus: string | null;
   fileHash: string | null;
+
+
 
 
   docFamily: typeof HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY | null;
@@ -977,11 +1099,15 @@ interface HbceB2gTechnicalMemoryPayload {
   canonicalAxis: string | null;
 
 
+
+
   technicalMemorySummary: string | null;
   runtimeInputs: string[];
   runtimeOutputs: string[];
   operationalRules: string[];
   futureGithubModules: HbceB2gFutureGithubModule[];
+
+
 
 
   classification: {
@@ -992,6 +1118,8 @@ interface HbceB2gTechnicalMemoryPayload {
     metadataLockApplied: boolean;
     metadataOverrideSource: string;
   };
+
+
 
 
   guards: {
@@ -1006,6 +1134,8 @@ interface HbceB2gTechnicalMemoryPayload {
   };
 
 
+
+
   coverage: {
     textCoverageStatus: string | null;
     fullDocumentCoverage: boolean | null;
@@ -1013,6 +1143,8 @@ interface HbceB2gTechnicalMemoryPayload {
     documentChunksPersistedCount: number | null;
     truncationDetected: boolean | null;
   };
+
+
 
 
   identity: {
@@ -1024,12 +1156,16 @@ interface HbceB2gTechnicalMemoryPayload {
   };
 
 
+
+
   trace: {
     evtId: string | null;
     opcId: string | null;
     auditId: string | null;
     usageId: string | null;
   };
+
+
 
 
   savePolicy: {
@@ -1043,8 +1179,12 @@ interface HbceB2gTechnicalMemoryPayload {
   };
 
 
+
+
   failReason: HbceB2gTechnicalMemoryFailReason;
 }
+
+
 
 
 interface HbceB2gTechnicalMemoryDefinition {
@@ -1059,6 +1199,8 @@ interface HbceB2gTechnicalMemoryDefinition {
   operationalRules: string[];
   futureGithubModules: HbceB2gFutureGithubModule[];
 }
+
+
 
 
 const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
@@ -1134,6 +1276,8 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
   },
 
 
+
+
   PEI_INSTITUTIONAL_EQUILIBRIUM_PROTOCOL: {
     module: "PEI_INSTITUTIONAL_EQUILIBRIUM_PROTOCOL",
     documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
@@ -1201,6 +1345,8 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
   },
 
 
+
+
   CQD_EVIDENCE_RECORD_ENGINE: {
     module: "CQD_EVIDENCE_RECORD_ENGINE",
     documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
@@ -1250,6 +1396,8 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
   },
 
 
+
+
   AIQ_JOKER_POLICY_TRUTH_BUS: {
     module: "AIQ_JOKER_POLICY_TRUTH_BUS",
     documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
@@ -1297,6 +1445,8 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
       }
     ]
   },
+
+
 
 
   UFO_INTERCEPT_COLLISION_COLLIMATION_RUNTIME: {
@@ -1365,6 +1515,8 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
   },
 
 
+
+
   LAMBDA_FLOW_EQUILIBRIUM_FACTOR: {
     module: "LAMBDA_FLOW_EQUILIBRIUM_FACTOR",
     documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE,
@@ -1430,6 +1582,8 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
   },
 
 
+
+
   UFO_OPERATIONAL_MODULE_REGISTRY: {
     module: "UFO_OPERATIONAL_MODULE_REGISTRY",
     documentKind: HBCE_TECHNICAL_GOVERNANCE_MODULE_SET,
@@ -1475,6 +1629,8 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
       }
     ]
   },
+
+
 
 
   CQO_OPPONIBLE_QUANTUM_CYBERNETICS: {
@@ -1537,15 +1693,21 @@ const B2G_TECHNICAL_MEMORY_DEFINITIONS: Record<
 };
 
 
+
+
 function cleanString(value: unknown): string | null {
   const text = String(value ?? "").trim();
   return text.length > 0 ? text : null;
 }
 
 
+
+
 function upperIncludes(value: unknown, needle: string): boolean {
   return String(value ?? "").toUpperCase().includes(needle.toUpperCase());
 }
+
+
 
 
 function hasCorpusContamination(input: HbceB2gTechnicalProfileInput): boolean {
@@ -1561,6 +1723,8 @@ function hasCorpusContamination(input: HbceB2gTechnicalProfileInput): boolean {
   ].join("\n");
 
 
+
+
   return (
     upperIncludes(haystack, "CORPUS_ESOTEROLOGIA_ERMETICA") ||
     upperIncludes(haystack, "CORPUS ESOTEROLOGIA ERMETICA") ||
@@ -1570,16 +1734,22 @@ function hasCorpusContamination(input: HbceB2gTechnicalProfileInput): boolean {
 }
 
 
+
+
 function hasQstateContamination(input: HbceB2gTechnicalProfileInput): boolean {
   const haystack = [input.header, input.text].join("\n");
   return upperIncludes(haystack, "QSTATE") || upperIncludes(haystack, "QUANTUMSTATES");
 }
 
 
+
+
 function hasDcttContamination(input: HbceB2gTechnicalProfileInput): boolean {
   const haystack = [input.canonicalAxis, input.header, input.text].join("\n");
   return upperIncludes(haystack, "DECISIONE · COSTO · TRACCIA · TEMPO");
 }
+
+
 
 
 function moduleFromInputOrClassification(
@@ -1589,9 +1759,13 @@ function moduleFromInputOrClassification(
   const explicitModule = cleanString(input.module);
 
 
+
+
   if (explicitModule && explicitModule in B2G_TECHNICAL_MEMORY_DEFINITIONS) {
     return explicitModule as HbceB2gTechnicalStackModule;
   }
+
+
 
 
   if (classification.module && classification.module in B2G_TECHNICAL_MEMORY_DEFINITIONS) {
@@ -1599,8 +1773,12 @@ function moduleFromInputOrClassification(
   }
 
 
+
+
   return null;
 }
+
+
 
 
 function kindFromDefinition(
@@ -1610,11 +1788,15 @@ function kindFromDefinition(
 }
 
 
+
+
 function selectProfileDocumentKind(
   input: HbceB2gTechnicalProfileInput,
   definition: HbceB2gTechnicalMemoryDefinition | null
 ): HbceB2gTechnicalStackDocumentKind | null {
   const explicitKind = cleanString(input.documentKind);
+
+
 
 
   if (
@@ -1626,8 +1808,12 @@ function selectProfileDocumentKind(
   }
 
 
+
+
   return kindFromDefinition(definition);
 }
+
+
 
 
 function isSupportedTechnicalKind(kind: HbceB2gTechnicalStackDocumentKind | null): boolean {
@@ -1637,6 +1823,8 @@ function isSupportedTechnicalKind(kind: HbceB2gTechnicalStackDocumentKind | null
     kind === HBCE_RND_THEORETICAL_FOUNDATION
   );
 }
+
+
 
 
 function buildBaseFailurePayload(
@@ -1649,9 +1837,13 @@ function buildBaseFailurePayload(
   const documentKind = selectProfileDocumentKind(input, definition);
 
 
+
+
   return {
     status: HBCE_B2G_TECHNICAL_MEMORY_FAIL,
     readyForIprSave: false,
+
+
 
 
     memoryType: "B2G_TECHNICAL_PROFILE_MEMORY",
@@ -1660,10 +1852,14 @@ function buildBaseFailurePayload(
     classifierRevision: HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION,
 
 
+
+
     sourceDocument: cleanString(input.filename ?? input.sourceFilename),
     documentProfileId: cleanString(input.documentProfileId),
     documentProfileStatus: cleanString(input.documentProfileStatus),
     fileHash: cleanString(input.fileHash),
+
+
 
 
     docFamily:
@@ -1678,11 +1874,15 @@ function buildBaseFailurePayload(
     canonicalAxis: cleanString(input.canonicalAxis) ?? definition?.canonicalAxis ?? null,
 
 
+
+
     technicalMemorySummary: null,
     runtimeInputs: [],
     runtimeOutputs: [],
     operationalRules: [],
     futureGithubModules: [],
+
+
 
 
     classification: {
@@ -1693,6 +1893,8 @@ function buildBaseFailurePayload(
       metadataLockApplied: classification.metadataLockApplied,
       metadataOverrideSource: classification.metadataOverrideSource
     },
+
+
 
 
     guards: {
@@ -1707,6 +1909,8 @@ function buildBaseFailurePayload(
     },
 
 
+
+
     coverage: {
       textCoverageStatus: cleanString(input.textCoverageStatus),
       fullDocumentCoverage: input.fullDocumentCoverage ?? null,
@@ -1714,6 +1918,8 @@ function buildBaseFailurePayload(
       documentChunksPersistedCount: input.documentChunksPersistedCount ?? null,
       truncationDetected: input.truncationDetected ?? null
     },
+
+
 
 
     identity: {
@@ -1725,12 +1931,16 @@ function buildBaseFailurePayload(
     },
 
 
+
+
     trace: {
       evtId: cleanString(input.evtId),
       opcId: cleanString(input.opcId),
       auditId: cleanString(input.auditId),
       usageId: cleanString(input.usageId)
     },
+
+
 
 
     savePolicy: {
@@ -1744,9 +1954,13 @@ function buildBaseFailurePayload(
     },
 
 
+
+
     failReason
   };
 }
+
+
 
 
 function buildHbceB2gTechnicalMemoryCollapse(
@@ -1755,9 +1969,13 @@ function buildHbceB2gTechnicalMemoryCollapse(
   const classification = classifyHbceB2gTechnicalStackDocument(input);
 
 
+
+
   if (!cleanString(input.documentProfileId)) {
     return buildBaseFailurePayload(input, classification, "DOCUMENT_PROFILE_MISSING");
   }
+
+
 
 
   if (input.docFamily !== HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY) {
@@ -1769,7 +1987,11 @@ function buildHbceB2gTechnicalMemoryCollapse(
   }
 
 
+
+
   const module = moduleFromInputOrClassification(input, classification);
+
+
 
 
   if (!module) {
@@ -1777,7 +1999,11 @@ function buildHbceB2gTechnicalMemoryCollapse(
   }
 
 
+
+
   const definition = B2G_TECHNICAL_MEMORY_DEFINITIONS[module];
+
+
 
 
   if (!definition) {
@@ -1785,7 +2011,11 @@ function buildHbceB2gTechnicalMemoryCollapse(
   }
 
 
+
+
   const documentKind = selectProfileDocumentKind(input, definition);
+
+
 
 
   if (!isSupportedTechnicalKind(documentKind)) {
@@ -1793,9 +2023,13 @@ function buildHbceB2gTechnicalMemoryCollapse(
   }
 
 
+
+
   if (!classification.matched) {
     return buildBaseFailurePayload(input, classification, "CLASSIFIER_NO_MATCH");
   }
+
+
 
 
   if (hasQstateContamination(input)) {
@@ -1807,6 +2041,8 @@ function buildHbceB2gTechnicalMemoryCollapse(
   }
 
 
+
+
   if (hasCorpusContamination(input)) {
     return buildBaseFailurePayload(
       input,
@@ -1814,6 +2050,8 @@ function buildHbceB2gTechnicalMemoryCollapse(
       "DOCUMENT_PROFILE_CONTAMINATED_WITH_CORPUS"
     );
   }
+
+
 
 
   if (hasDcttContamination(input)) {
@@ -1825,9 +2063,13 @@ function buildHbceB2gTechnicalMemoryCollapse(
   }
 
 
+
+
   return {
     status: HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY,
     readyForIprSave: true,
+
+
 
 
     memoryType: "B2G_TECHNICAL_PROFILE_MEMORY",
@@ -1836,10 +2078,14 @@ function buildHbceB2gTechnicalMemoryCollapse(
     classifierRevision: HBCE_B2G_TECHNICAL_STACK_CLASSIFIER_REVISION,
 
 
+
+
     sourceDocument: cleanString(input.filename ?? input.sourceFilename),
     documentProfileId: cleanString(input.documentProfileId),
     documentProfileStatus: cleanString(input.documentProfileStatus),
     fileHash: cleanString(input.fileHash),
+
+
 
 
     docFamily: HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY,
@@ -1851,11 +2097,15 @@ function buildHbceB2gTechnicalMemoryCollapse(
     canonicalAxis: definition.canonicalAxis,
 
 
+
+
     technicalMemorySummary: definition.technicalMemorySummary,
     runtimeInputs: [...definition.runtimeInputs],
     runtimeOutputs: [...definition.runtimeOutputs],
     operationalRules: [...definition.operationalRules],
     futureGithubModules: [...definition.futureGithubModules],
+
+
 
 
     classification: {
@@ -1866,6 +2116,8 @@ function buildHbceB2gTechnicalMemoryCollapse(
       metadataLockApplied: classification.metadataLockApplied,
       metadataOverrideSource: classification.metadataOverrideSource
     },
+
+
 
 
     guards: {
@@ -1880,6 +2132,8 @@ function buildHbceB2gTechnicalMemoryCollapse(
     },
 
 
+
+
     coverage: {
       textCoverageStatus: cleanString(input.textCoverageStatus),
       fullDocumentCoverage: input.fullDocumentCoverage ?? null,
@@ -1887,6 +2141,8 @@ function buildHbceB2gTechnicalMemoryCollapse(
       documentChunksPersistedCount: input.documentChunksPersistedCount ?? null,
       truncationDetected: input.truncationDetected ?? null
     },
+
+
 
 
     identity: {
@@ -1898,12 +2154,16 @@ function buildHbceB2gTechnicalMemoryCollapse(
     },
 
 
+
+
     trace: {
       evtId: cleanString(input.evtId),
       opcId: cleanString(input.opcId),
       auditId: cleanString(input.auditId),
       usageId: cleanString(input.usageId)
     },
+
+
 
 
     savePolicy: {
@@ -1917,9 +2177,13 @@ function buildHbceB2gTechnicalMemoryCollapse(
     },
 
 
+
+
     failReason: "NONE"
   };
 }
+
+
 
 
 function buildQpccfTechnicalMemoryCollapse(
@@ -1932,6 +2196,8 @@ function buildQpccfTechnicalMemoryCollapse(
     module: "QPCCF_PREDICTIVE_STABILITY_ENGINE"
   });
 }
+
+
 
 
 function isHbceB2gTechnicalMemoryReady(
@@ -1949,6 +2215,8 @@ function isHbceB2gTechnicalMemoryReady(
 }
 
 
+
+
 function listHbceB2gTechnicalMemorySupportedModules(): Array<{
   module: HbceB2gTechnicalStackModule;
   documentKind: HbceB2gTechnicalStackDocumentKind;
@@ -1959,6 +2227,8 @@ function listHbceB2gTechnicalMemorySupportedModules(): Array<{
     const memoryDefinition = B2G_TECHNICAL_MEMORY_DEFINITIONS[definition.module];
 
 
+
+
     return {
       module: definition.module,
       documentKind: memoryDefinition.documentKind,
@@ -1967,6 +2237,8 @@ function listHbceB2gTechnicalMemorySupportedModules(): Array<{
     };
   });
 }
+
+
 
 
 /**
@@ -2014,9 +2286,19 @@ function toPublicHbceB2gTechnicalMemoryPayload(
 
 
 
+
+
+
+
 /* --------------------------------------------------------------------------
  * END INLINE HBCE B2G TECHNICAL STACK BLOCK
  * -------------------------------------------------------------------------- */
+
+
+
+
+
+
 
 
 
@@ -2029,10 +2311,18 @@ export const dynamic = "force-dynamic";
 
 
 
-const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2-LAMBDA_PROFILE_LOCK-v6_8_3-PEI_PROFILE_LOCK-v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK-v6_8_5-MATRIX_PROFILE_COLUMN_LOCK-v6_8_6-MATRIX_VOLUME_II_PROFILE_LOCK-v6_8_7-MATRIX_VOLUME_III_PROFILE_LOCK-v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK-v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK-v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK-v6_8_9_3-APOKALYPSIS_VOLUME_I_PROFILE_LOCK-v6_8_9_4-APOKALYPSIS_VOLUME_IV_PROFILE_LOCK-v6_8_9_5";
+
+
+
+
+const FILE_ROUTE_REVISION = "HBCE-API-FILES-DOCUMENT-PROFILE-REGISTRY-v2-DOCUMENT_PROFILE_CANONICAL_FIX-v3-ALIEN_CODE_V4_PROFILE_FIX-v4-PORTALE_V5_EMPTY_RESPONSE_GUARD-v5_1-LONG_DOCUMENT_FULL_INGESTION_ENGINE-v6_0-LONG_DOCUMENT_PERSISTENT_CHUNKS-v6_1-SELF_DIAGNOSTIC_ENDPOINT-v6_2-LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3-QPCCF_TECHNICAL_STACK_METADATA_LOCK-v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB-v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE-v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE-v6_7_3-SINGLE_FILE-RUNTIME_BRIDGE_INJECTION-B2G_TECHNICAL_STACK_PROFILE_LOCK-v6_8-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK-v6_8_1-UFO_INTERCEPT_PROFILE_LOCK-v6_8_2-LAMBDA_PROFILE_LOCK-v6_8_3-PEI_PROFILE_LOCK-v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK-v6_8_5-MATRIX_PROFILE_COLUMN_LOCK-v6_8_6-MATRIX_VOLUME_II_PROFILE_LOCK-v6_8_7-MATRIX_VOLUME_III_PROFILE_LOCK-v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK-v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK-v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK-v6_8_9_3-APOKALYPSIS_VOLUME_I_PROFILE_LOCK-v6_8_9_4-APOKALYPSIS_VOLUME_IV_PROFILE_LOCK-v6_8_9_5-APOKALYPSIS_VOLUME_V_PROFILE_LOCK-v6_8_9_6";
 const DOCUMENT_CHUNK_DATABASE_PERSISTENCE_REVISION = "LONG_DOCUMENT_CHUNK_DATABASE_PERSISTENCE_HARDENING-v6_3_3";
 const DOCUMENT_CHUNK_PERSISTENCE_SCOPE = "HUMAN_IPR_TENANT_WORKSPACE_PROFILE_FILE_ID_FILE_HASH_CHUNK";
 const DOCUMENT_CHUNK_DEPLOY_PROOF_REVISION = "FILES_ROUTE_DEPLOY_PROOF_AND_CHUNK_DB_DIAGNOSTIC-v6_3_3";
+
+
+
+
 
 
 
@@ -2048,11 +2338,19 @@ type FileStatus =
 
 
 
+
+
+
+
 type FileMode =
   | "TEXT"
   | "PDF_TEXT"
   | "REFERENCE_ONLY"
   | "REJECTED";
+
+
+
+
 
 
 
@@ -2070,6 +2368,10 @@ type TextSourceKind =
 
 
 
+
+
+
+
 type TextCoverageStatus =
   | "TEXT_READY_FULL"
   | "TEXT_READY_PARTIAL"
@@ -2080,12 +2382,20 @@ type TextCoverageStatus =
 
 
 
+
+
+
+
 type LongDocumentMode =
   | "INLINE_TEXT"
   | "CHUNKED_FULL_TEXT"
   | "PREVIEW_ONLY"
   | "REFERENCE_ONLY"
   | "REJECTED";
+
+
+
+
 
 
 
@@ -2102,6 +2412,10 @@ type DocumentOutlineEntry = {
 
 
 
+
+
+
+
 type DocumentOutlineSummary = {
   outlineStatus: "READY" | "EMPTY";
   partsDetected: number;
@@ -2114,6 +2428,10 @@ type DocumentOutlineSummary = {
   conclusionDetected: boolean;
   entries: DocumentOutlineEntry[];
 };
+
+
+
+
 
 
 
@@ -2137,11 +2455,19 @@ type LongDocumentChunk = {
 
 
 
+
+
+
+
 type DocumentChunkPersistenceStatus =
   | "PERSISTED"
   | "DATABASE_NOT_READY"
   | "PERSISTENCE_FAILED"
   | "SKIPPED";
+
+
+
+
 
 
 
@@ -2176,11 +2502,19 @@ type DocumentChunkPersistenceResult = {
 
 
 
+
+
+
+
 type DocumentProfilePersistenceStatus =
   | "PERSISTED"
   | "DATABASE_NOT_READY"
   | "PERSISTENCE_FAILED"
   | "SKIPPED";
+
+
+
+
 
 
 
@@ -2202,6 +2536,10 @@ type RuntimeFile = {
   };
   role?: string;
 };
+
+
+
+
 
 
 
@@ -2263,6 +2601,10 @@ type StoredRuntimeFile = {
 
 
 
+
+
+
+
 type FilesBody = {
   sessionId?: string;
   threadId?: string;
@@ -2275,6 +2617,8 @@ type FilesBody = {
   replace?: boolean;
   clear?: boolean;
 };
+
+
 
 
 type DocumentProfilePersistenceResult = {
@@ -2309,6 +2653,8 @@ type DocumentProfilePersistenceResult = {
 };
 
 
+
+
 type DocumentProfileContext = {
   sessionId: string;
   threadId?: string | null;
@@ -2318,6 +2664,10 @@ type DocumentProfileContext = {
   workspaceId: string;
   sourceKind: string;
 };
+
+
+
+
 
 
 
@@ -2333,7 +2683,9 @@ type CanonicalCorpusVolumeProfile = {
 };
 
 
-const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3-APOKALYPSIS_VOLUME_I_PROFILE_LOCK_v6_8_9_4-APOKALYPSIS_VOLUME_IV_PROFILE_LOCK_v6_8_9_5";
+
+
+const DOCUMENT_PROFILE_CANONICAL_FIX_REVISION = "DOCUMENT_PROFILE_PORTALE_V5_EMPTY_RESPONSE_GUARD_v5_1-QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4-B2G_TECHNICAL_STACK_CLASSIFIER_LIB_v6_5-B2G_TECHNICAL_MEMORY_COLLAPSE_v6_6-B2G_TECHNICAL_MEMORY_PAYLOAD_EXPOSURE_v6_7_1_SINGLE_FILE-B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3-APOKALYPSIS_VOLUME_I_PROFILE_LOCK_v6_8_9_4-APOKALYPSIS_VOLUME_IV_PROFILE_LOCK_v6_8_9_5-APOKALYPSIS_VOLUME_V_PROFILE_LOCK_v6_8_9_6";
 const QPCCF_TECHNICAL_STACK_METADATA_LOCK_REVISION = "QPCCF_TECHNICAL_STACK_METADATA_LOCK_v6_4";
 const B2G_TECHNICAL_STACK_PROFILE_LOCK_REVISION = "B2G_TECHNICAL_STACK_PROFILE_LOCK_v6_8_1-B2G_TECHNICAL_STACK_CQO_PROFILE_LOCK_v6_8_1-UFO_INTERCEPT_PROFILE_LOCK_v6_8_2-LAMBDA_PROFILE_LOCK_v6_8_3-PEI_PROFILE_LOCK_v6_8_4-MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const QPCCF_DOC_FAMILY = "HBCE_JOKER_C2_B2G_TECHNICAL_STACK";
@@ -2361,6 +2713,8 @@ const QPCCF_KEY_TERMS = [
   "OPC",
   "MATRIX"
 ];
+
+
 
 
 const CANONICAL_CORPUS_VOLUME_PROFILES: Record<CanonicalCorpusVolumeProfile["volume"], CanonicalCorpusVolumeProfile> = {
@@ -2499,8 +2853,16 @@ const CANONICAL_CORPUS_VOLUME_PROFILES: Record<CanonicalCorpusVolumeProfile["vol
 
 
 
+
+
+
+
 type FileStore = Map<string, StoredRuntimeFile[]>;
 type DocumentChunkStore = Map<string, LongDocumentChunk[]>;
+
+
+
+
 
 
 
@@ -2516,10 +2878,18 @@ type PdfExtractionResult = {
 
 
 
+
+
+
+
 declare global {
   var __HBCE_JOKER_C2_FILE_STORE__: FileStore | undefined;
   var __HBCE_JOKER_C2_DOCUMENT_CHUNK_STORE__: DocumentChunkStore | undefined;
 }
+
+
+
+
 
 
 
@@ -2536,7 +2906,15 @@ const FULL_DOCUMENT_OUTLINE_MAX_ENTRIES = 256;
 
 
 
+
+
+
+
 const TEXT_MIME_PREFIXES = ["text/"];
+
+
+
+
 
 
 
@@ -2560,6 +2938,10 @@ const TEXT_MIME_TYPES = new Set([
 
 
 
+
+
+
+
 const PDF_MIME_TYPES = new Set([
   "application/pdf",
   "application/x-pdf",
@@ -2568,6 +2950,10 @@ const PDF_MIME_TYPES = new Set([
   "text/pdf",
   "text/x-pdf"
 ]);
+
+
+
+
 
 
 
@@ -2589,7 +2975,13 @@ const REFERENCE_ONLY_MIME_TYPES = new Set([
 
 
 
+
+
+
+
 const CANONICAL_AXIS_DCTT = "Decisione · Costo · Traccia · Tempo";
+
+
 
 
 const DOCUMENT_KEY_TERM_CANDIDATES = [
@@ -2631,11 +3023,19 @@ const DOCUMENT_KEY_TERM_CANDIDATES = [
   "Apostasia globale",
   "1110 giorni",
   "Irreintegrabilità",
+  "Paradogma Alieno",
+  "Alien Artifact",
+  "Emersione del Paradogma Alieno",
+  "Terminal volume",
   "IPR",
   "EVT",
   "OPC",
   "MATRIX"
 ];
+
+
+
+
 
 
 
@@ -2648,8 +3048,16 @@ function getFileStore(): FileStore {
 
 
 
+
+
+
+
   return globalThis.__HBCE_JOKER_C2_FILE_STORE__;
 }
+
+
+
+
 
 
 
@@ -2662,8 +3070,16 @@ function getDocumentChunkStore(): DocumentChunkStore {
 
 
 
+
+
+
+
   return globalThis.__HBCE_JOKER_C2_DOCUMENT_CHUNK_STORE__;
 }
+
+
+
+
 
 
 
@@ -2671,6 +3087,10 @@ function getDocumentChunkStore(): DocumentChunkStore {
 function nowIso(): string {
   return new Date().toISOString();
 }
+
+
+
+
 
 
 
@@ -2683,8 +3103,16 @@ function normalizeSessionId(value: unknown): string {
 
 
 
+
+
+
+
   return `JOKER-SESSION-${Date.now()}`;
 }
+
+
+
+
 
 
 
@@ -2697,14 +3125,26 @@ function normalizeFileName(value: unknown, index: number): string {
 
 
 
+
+
+
+
   return value.trim().slice(0, MAX_FILE_NAME_LENGTH);
 }
 
 
 
 
+
+
+
+
 function inferMimeTypeFromName(name: string): string | null {
   const normalizedName = name.toLowerCase();
+
+
+
+
 
 
 
@@ -2716,9 +3156,17 @@ function inferMimeTypeFromName(name: string): string | null {
 
 
 
+
+
+
+
   if (normalizedName.endsWith(".txt")) {
     return "text/plain";
   }
+
+
+
+
 
 
 
@@ -2730,9 +3178,17 @@ function inferMimeTypeFromName(name: string): string | null {
 
 
 
+
+
+
+
   if (normalizedName.endsWith(".json")) {
     return "application/json";
   }
+
+
+
+
 
 
 
@@ -2744,9 +3200,17 @@ function inferMimeTypeFromName(name: string): string | null {
 
 
 
+
+
+
+
   if (normalizedName.endsWith(".xml")) {
     return "application/xml";
   }
+
+
+
+
 
 
 
@@ -2758,9 +3222,17 @@ function inferMimeTypeFromName(name: string): string | null {
 
 
 
+
+
+
+
   if (normalizedName.endsWith(".ts")) {
     return "application/typescript";
   }
+
+
+
+
 
 
 
@@ -2772,9 +3244,17 @@ function inferMimeTypeFromName(name: string): string | null {
 
 
 
+
+
+
+
   if (normalizedName.endsWith(".js")) {
     return "application/javascript";
   }
+
+
+
+
 
 
 
@@ -2786,8 +3266,16 @@ function inferMimeTypeFromName(name: string): string | null {
 
 
 
+
+
+
+
   return null;
 }
+
+
+
+
 
 
 
@@ -2798,9 +3286,17 @@ function normalizeMimeType(file: RuntimeFile, fileName: string): string {
 
 
 
+
+
+
+
   if (inferredFromName) {
     return inferredFromName;
   }
+
+
+
+
 
 
 
@@ -2815,8 +3311,16 @@ function normalizeMimeType(file: RuntimeFile, fileName: string): string {
 
 
 
+
+
+
+
   return mimeType.toLowerCase();
 }
+
+
+
+
 
 
 
@@ -2829,8 +3333,16 @@ function normalizeRole(value: unknown): string {
 
 
 
+
+
+
+
   return "context";
 }
+
+
+
+
 
 
 
@@ -2842,8 +3354,16 @@ function buildHash(value: unknown): string {
 
 
 
+
+
+
+
   return `sha256:${createHash("sha256").update(normalized).digest("hex")}`;
 }
+
+
+
+
 
 
 
@@ -2856,8 +3376,16 @@ function isTextMimeType(mimeType: string): boolean {
 
 
 
+
+
+
+
   return TEXT_MIME_PREFIXES.some((prefix) => mimeType.startsWith(prefix));
 }
+
+
+
+
 
 
 
@@ -2869,6 +3397,10 @@ function isPdfMimeType(mimeType: string, name: string): boolean {
 
 
 
+
+
+
+
 function isReferenceOnlyMimeType(mimeType: string): boolean {
   return REFERENCE_ONLY_MIME_TYPES.has(mimeType);
 }
@@ -2876,9 +3408,17 @@ function isReferenceOnlyMimeType(mimeType: string): boolean {
 
 
 
+
+
+
+
 function isPromptTextStatus(status: FileStatus): boolean {
   return status === "TEXT_READY" || status === "PDF_INGESTION_READY";
 }
+
+
+
+
 
 
 
@@ -2893,9 +3433,17 @@ function safeTrimText(value: string): string {
 
 
 
+
+
+
+
 function looksLikeDataUrl(value: string): boolean {
   return /^data:[^;]+;base64,/i.test(value.trim());
 }
+
+
+
+
 
 
 
@@ -2906,14 +3454,26 @@ function looksLikePdfBinaryString(value: string): boolean {
 
 
 
+
+
+
+
   return trimmed.startsWith("%PDF") || trimmed.includes("%PDF-");
 }
 
 
 
 
+
+
+
+
 function looksLikeBase64(value: string): boolean {
   const normalized = value.trim();
+
+
+
+
 
 
 
@@ -2925,9 +3485,17 @@ function looksLikeBase64(value: string): boolean {
 
 
 
+
+
+
+
   if (normalized.includes("\n") || normalized.includes("\r")) {
     return false;
   }
+
+
+
+
 
 
 
@@ -2938,8 +3506,16 @@ function looksLikeBase64(value: string): boolean {
 
 
 
+
+
+
+
 function looksLikeReadableExtractedText(value: string): boolean {
   const normalized = value.trim();
+
+
+
+
 
 
 
@@ -2951,9 +3527,17 @@ function looksLikeReadableExtractedText(value: string): boolean {
 
 
 
+
+
+
+
   if (looksLikeDataUrl(normalized) || looksLikePdfBinaryString(normalized)) {
     return false;
   }
+
+
+
+
 
 
 
@@ -2967,8 +3551,16 @@ function looksLikeReadableExtractedText(value: string): boolean {
 
 
 
+
+
+
+
       return code === 9 || code === 10 || code === 13 || (code >= 32 && code < 127);
     }).length;
+
+
+
+
 
 
 
@@ -2978,8 +3570,16 @@ function looksLikeReadableExtractedText(value: string): boolean {
 
 
 
+
+
+
+
   return sampleLength > 0 && printableCharacters / sampleLength > 0.75;
 }
+
+
+
+
 
 
 
@@ -2992,9 +3592,17 @@ function extractDirectTextWithSource(file: RuntimeFile): { text: string; source:
 
 
 
+
+
+
+
   if (typeof file.content === "string") {
     return { text: file.content, source: "CONTENT" };
   }
+
+
+
+
 
 
 
@@ -3006,8 +3614,16 @@ function extractDirectTextWithSource(file: RuntimeFile): { text: string; source:
 
 
 
+
+
+
+
   return { text: "", source: "NONE" };
 }
+
+
+
+
 
 
 
@@ -3019,8 +3635,16 @@ function extractDirectText(file: RuntimeFile): string {
 
 
 
+
+
+
+
 function getDataUrlBase64(value: string): string | null {
   const match = value.trim().match(/^data:[^;]+;base64,(?<payload>.+)$/is);
+
+
+
+
 
 
 
@@ -3031,8 +3655,16 @@ function getDataUrlBase64(value: string): string | null {
 
 
 
+
+
+
+
 function decodeBase64ToBuffer(value: string): Buffer | null {
   const normalized = value.trim();
+
+
+
+
 
 
 
@@ -3044,12 +3676,20 @@ function decodeBase64ToBuffer(value: string): Buffer | null {
 
 
 
+
+
+
+
   try {
     return Buffer.from(normalized, "base64");
   } catch {
     return null;
   }
 }
+
+
+
+
 
 
 
@@ -3068,6 +3708,10 @@ function decodeRuntimeFileBuffer(file: RuntimeFile): {
 
 
 
+
+
+
+
   if (Array.isArray(file.buffer?.data) && file.buffer.data.length > 0) {
     return {
       buffer: Buffer.from(file.buffer.data),
@@ -3078,8 +3722,16 @@ function decodeRuntimeFileBuffer(file: RuntimeFile): {
 
 
 
+
+
+
+
   if (typeof file.dataUrl === "string" && file.dataUrl.trim()) {
     const payload = getDataUrlBase64(file.dataUrl);
+
+
+
+
 
 
 
@@ -3095,6 +3747,10 @@ function decodeRuntimeFileBuffer(file: RuntimeFile): {
 
 
 
+
+
+
+
   if (typeof file.base64 === "string" && file.base64.trim()) {
     return {
       buffer: decodeBase64ToBuffer(file.base64),
@@ -3105,13 +3761,25 @@ function decodeRuntimeFileBuffer(file: RuntimeFile): {
 
 
 
+
+
+
+
   const directText = extractDirectText(file);
+
+
+
+
 
 
 
 
   if (typeof directText === "string" && directText.trim()) {
     const dataUrlPayload = getDataUrlBase64(directText);
+
+
+
+
 
 
 
@@ -3126,12 +3794,20 @@ function decodeRuntimeFileBuffer(file: RuntimeFile): {
 
 
 
+
+
+
+
     if (looksLikePdfBinaryString(directText)) {
       return {
         buffer: Buffer.from(directText, "latin1"),
         source: "PDF_BINARY"
       };
     }
+
+
+
+
 
 
 
@@ -3147,11 +3823,19 @@ function decodeRuntimeFileBuffer(file: RuntimeFile): {
 
 
 
+
+
+
+
   return {
     buffer: null,
     source: "NONE"
   };
 }
+
+
+
+
 
 
 
@@ -3162,8 +3846,16 @@ function decodePdfLiteralString(value: string): string {
 
 
 
+
+
+
+
   for (let index = 0; index < value.length; index += 1) {
     const char = value[index];
+
+
+
+
 
 
 
@@ -3176,7 +3868,15 @@ function decodePdfLiteralString(value: string): string {
 
 
 
+
+
+
+
     const next = value[index + 1];
+
+
+
+
 
 
 
@@ -3184,6 +3884,10 @@ function decodePdfLiteralString(value: string): string {
     if (!next) {
       continue;
     }
+
+
+
+
 
 
 
@@ -3197,11 +3901,19 @@ function decodePdfLiteralString(value: string): string {
 
 
 
+
+
+
+
     if (next === "r") {
       result += "\r";
       index += 1;
       continue;
     }
+
+
+
+
 
 
 
@@ -3215,11 +3927,19 @@ function decodePdfLiteralString(value: string): string {
 
 
 
+
+
+
+
     if (next === "b") {
       result += "\b";
       index += 1;
       continue;
     }
+
+
+
+
 
 
 
@@ -3233,6 +3953,10 @@ function decodePdfLiteralString(value: string): string {
 
 
 
+
+
+
+
     if (next === "(" || next === ")" || next === "\\") {
       result += next;
       index += 1;
@@ -3242,9 +3966,17 @@ function decodePdfLiteralString(value: string): string {
 
 
 
+
+
+
+
     if (/[0-7]/.test(next)) {
       let octal = next;
       let offset = 2;
+
+
+
+
 
 
 
@@ -3261,10 +3993,18 @@ function decodePdfLiteralString(value: string): string {
 
 
 
+
+
+
+
       result += String.fromCharCode(Number.parseInt(octal, 8));
       index += octal.length;
       continue;
     }
+
+
+
+
 
 
 
@@ -3276,8 +4016,16 @@ function decodePdfLiteralString(value: string): string {
 
 
 
+
+
+
+
   return result;
 }
+
+
+
+
 
 
 
@@ -3288,8 +4036,16 @@ function decodeUtf16Be(buffer: Buffer): string {
 
 
 
+
+
+
+
   for (let index = 0; index + 1 < buffer.length; index += 2) {
     const code = buffer[index] * 256 + buffer[index + 1];
+
+
+
+
 
 
 
@@ -3302,14 +4058,26 @@ function decodeUtf16Be(buffer: Buffer): string {
 
 
 
+
+
+
+
   return chars.join("");
 }
 
 
 
 
+
+
+
+
 function decodePdfHexString(value: string): string {
   const clean = value.replace(/\s+/g, "");
+
+
+
+
 
 
 
@@ -3321,13 +4089,25 @@ function decodePdfHexString(value: string): string {
 
 
 
+
+
+
+
   const padded = clean.length % 2 === 0 ? clean : `${clean}0`;
+
+
+
+
 
 
 
 
   try {
     const buffer = Buffer.from(padded, "hex");
+
+
+
+
 
 
 
@@ -3339,7 +4119,15 @@ function decodePdfHexString(value: string): string {
 
 
 
+
+
+
+
     const utf8 = buffer.toString("utf8");
+
+
+
+
 
 
 
@@ -3347,6 +4135,10 @@ function decodePdfHexString(value: string): string {
     if (looksLikeReadableExtractedText(utf8)) {
       return utf8;
     }
+
+
+
+
 
 
 
@@ -3360,6 +4152,10 @@ function decodePdfHexString(value: string): string {
 
 
 
+
+
+
+
 function extractLiteralStringsFromPdfExpression(value: string): string[] {
   const strings: string[] = [];
   const literalRegex = /\((?:\\.|[^\\()])*\)/g;
@@ -3368,8 +4164,16 @@ function extractLiteralStringsFromPdfExpression(value: string): string[] {
 
 
 
+
+
+
+
   for (const match of value.matchAll(literalRegex)) {
     const literal = match[0];
+
+
+
+
 
 
 
@@ -3381,8 +4185,16 @@ function extractLiteralStringsFromPdfExpression(value: string): string[] {
 
 
 
+
+
+
+
     strings.push(decodePdfLiteralString(literal.slice(1, -1)));
   }
+
+
+
+
 
 
 
@@ -3395,14 +4207,26 @@ function extractLiteralStringsFromPdfExpression(value: string): string[] {
 
 
 
+
+
+
+
     strings.push(decodePdfHexString(match[1]));
   }
 
 
 
 
+
+
+
+
   return strings;
 }
+
+
+
+
 
 
 
@@ -3416,8 +4240,16 @@ function extractPdfTextOperators(source: string): string {
 
 
 
+
+
+
+
   for (const match of source.matchAll(tjRegex)) {
     const expression = match[1];
+
+
+
+
 
 
 
@@ -3429,7 +4261,15 @@ function extractPdfTextOperators(source: string): string {
 
 
 
+
+
+
+
     const extracted = extractLiteralStringsFromPdfExpression(expression).join("");
+
+
+
+
 
 
 
@@ -3438,6 +4278,10 @@ function extractPdfTextOperators(source: string): string {
       parts.push(extracted);
     }
   }
+
+
+
+
 
 
 
@@ -3448,9 +4292,17 @@ function extractPdfTextOperators(source: string): string {
 
 
 
+
+
+
+
     if (!expression) {
       continue;
     }
+
+
+
+
 
 
 
@@ -3460,10 +4312,18 @@ function extractPdfTextOperators(source: string): string {
 
 
 
+
+
+
+
     if (extracted.trim()) {
       parts.push(extracted);
     }
   }
+
+
+
+
 
 
 
@@ -3474,6 +4334,10 @@ function extractPdfTextOperators(source: string): string {
 
 
 
+
+
+
+
     if (!expression) {
       continue;
     }
@@ -3481,7 +4345,15 @@ function extractPdfTextOperators(source: string): string {
 
 
 
+
+
+
+
     const extracted = extractLiteralStringsFromPdfExpression(expression).join("");
+
+
+
+
 
 
 
@@ -3494,8 +4366,16 @@ function extractPdfTextOperators(source: string): string {
 
 
 
+
+
+
+
   return parts.join("\n");
 }
+
+
+
+
 
 
 
@@ -3507,6 +4387,10 @@ function extractPdfStreams(source: string): string[] {
 
 
 
+
+
+
+
   for (const match of source.matchAll(streamRegex)) {
     const dictionary = match[1] || "";
     const streamContent = match[2] || "";
@@ -3514,9 +4398,17 @@ function extractPdfStreams(source: string): string[] {
 
 
 
+
+
+
+
     if (!streamContent) {
       continue;
     }
+
+
+
+
 
 
 
@@ -3529,8 +4421,16 @@ function extractPdfStreams(source: string): string[] {
 
 
 
+
+
+
+
     try {
       const inflated = inflateSync(Buffer.from(streamContent, "latin1"));
+
+
+
+
 
 
 
@@ -3545,8 +4445,16 @@ function extractPdfStreams(source: string): string[] {
 
 
 
+
+
+
+
   return streams;
 }
+
+
+
+
 
 
 
@@ -3566,10 +4474,18 @@ function normalizeExtractedPdfText(value: string): string {
 
 
 
+
+
+
+
 function extractTextFromPdfBuffer(buffer: Buffer): string {
   if (!buffer || buffer.length === 0) {
     return "";
   }
+
+
+
+
 
 
 
@@ -3581,8 +4497,16 @@ function extractTextFromPdfBuffer(buffer: Buffer): string {
 
 
 
+
+
+
+
   for (const source of sources) {
     const extracted = extractPdfTextOperators(source);
+
+
+
+
 
 
 
@@ -3595,14 +4519,26 @@ function extractTextFromPdfBuffer(buffer: Buffer): string {
 
 
 
+
+
+
+
   return normalizeExtractedPdfText(extractedParts.join("\n"));
 }
 
 
 
 
+
+
+
+
 function extractPdfText(file: RuntimeFile): PdfExtractionResult {
   const directText = extractDirectText(file);
+
+
+
+
 
 
 
@@ -3621,7 +4557,15 @@ function extractPdfText(file: RuntimeFile): PdfExtractionResult {
 
 
 
+
+
+
+
   const decoded = decodeRuntimeFileBuffer(file);
+
+
+
+
 
 
 
@@ -3640,8 +4584,16 @@ function extractPdfText(file: RuntimeFile): PdfExtractionResult {
 
 
 
+
+
+
+
   const hasPdfHeader = decoded.buffer.subarray(0, 8).toString("latin1").includes("%PDF");
   const extractedText = extractTextFromPdfBuffer(decoded.buffer);
+
+
+
+
 
 
 
@@ -3657,6 +4609,10 @@ function extractPdfText(file: RuntimeFile): PdfExtractionResult {
         : "PDF-like payload was parsed and readable text was extracted for prompt context."
     };
   }
+
+
+
+
 
 
 
@@ -3679,6 +4635,14 @@ function extractPdfText(file: RuntimeFile): PdfExtractionResult {
 
 
 
+
+
+
+
+
+
+
+
 function normalizeHeadingLabel(value: string): string {
   return value.replace(/\s+/g, " ").trim().slice(0, 240);
 }
@@ -3686,9 +4650,17 @@ function normalizeHeadingLabel(value: string): string {
 
 
 
+
+
+
+
 function normalizeOutlineSearchText(value: string): string {
   return normalizeSearchText(value);
 }
+
+
+
+
 
 
 
@@ -3703,6 +4675,10 @@ function findCorpusBodyStartLine(lines: string[]): number {
 
 
 
+
+
+
+
   if (firstBodyMajor >= 0) {
     return firstBodyMajor;
   }
@@ -3710,8 +4686,16 @@ function findCorpusBodyStartLine(lines: string[]): number {
 
 
 
+
+
+
+
   return premessaIndex >= 0 ? premessaIndex : 0;
 }
+
+
+
+
 
 
 
@@ -3723,9 +4707,17 @@ function isInsideGlossaryTable(lines: string[], index: number): boolean {
 
 
 
+
+
+
+
     if (/^GLOSSARIO CANONICO DEL CORPUS$/i.test(line) || /^N\.\s*\|\s*A\s*\|\s*B\s*\|/i.test(line)) {
       return true;
     }
+
+
+
+
 
 
 
@@ -3738,14 +4730,26 @@ function isInsideGlossaryTable(lines: string[], index: number): boolean {
 
 
 
+
+
+
+
   return false;
 }
 
 
 
 
+
+
+
+
 function classifyOutlineLine(line: string, lines: string[] = [], index = 0): DocumentOutlineEntry["sectionType"] | null {
   const normalized = normalizeHeadingLabel(line);
+
+
+
+
 
 
 
@@ -3757,9 +4761,17 @@ function classifyOutlineLine(line: string, lines: string[] = [], index = 0): Doc
 
 
 
+
+
+
+
   if (/^boundary operativo$/i.test(normalized)) {
     return "BOUNDARY";
   }
+
+
+
+
 
 
 
@@ -3771,9 +4783,17 @@ function classifyOutlineLine(line: string, lines: string[] = [], index = 0): Doc
 
 
 
+
+
+
+
   if (/^\d{1,2}\.\s+[A-ZÀ-Ú][A-ZÀ-Ú0-9\s·,–—\-’']+$/u.test(normalized)) {
     return "MAJOR_SECTION";
   }
+
+
+
+
 
 
 
@@ -3786,8 +4806,16 @@ function classifyOutlineLine(line: string, lines: string[] = [], index = 0): Doc
 
 
 
+
+
+
+
     return normalized.startsWith("15.") ? "APPENDIX" : "SUBSECTION";
   }
+
+
+
+
 
 
 
@@ -3799,9 +4827,17 @@ function classifyOutlineLine(line: string, lines: string[] = [], index = 0): Doc
 
 
 
+
+
+
+
   if (/^a\.\d+\b/i.test(normalized)) {
     return "APPENDIX";
   }
+
+
+
+
 
 
 
@@ -3813,6 +4849,10 @@ function classifyOutlineLine(line: string, lines: string[] = [], index = 0): Doc
 
 
 
+
+
+
+
   if (/^hbce ecosistema ai$/i.test(normalized)) {
     return "TITLE";
   }
@@ -3820,8 +4860,16 @@ function classifyOutlineLine(line: string, lines: string[] = [], index = 0): Doc
 
 
 
+
+
+
+
   return null;
 }
+
+
+
+
 
 
 
@@ -3839,11 +4887,19 @@ function extractDocumentOutline(text: string): DocumentOutlineSummary {
 
 
 
+
+
+
+
   for (let localIndex = 0; localIndex < lines.length; localIndex += 1) {
     const rawLine = lines[localIndex] ?? "";
     const label = normalizeHeadingLabel(rawLine);
     const absoluteLineIndex = bodyStartLine + localIndex;
     const sectionType = classifyOutlineLine(label, allLines, absoluteLineIndex);
+
+
+
+
 
 
 
@@ -3857,6 +4913,10 @@ function extractDocumentOutline(text: string): DocumentOutlineSummary {
 
 
 
+
+
+
+
       if (sectionType === "CHAPTER" || sectionType === "SUBSECTION") {
         currentChapter = label;
       }
@@ -3864,9 +4924,17 @@ function extractDocumentOutline(text: string): DocumentOutlineSummary {
 
 
 
+
+
+
+
       const headingPath = [currentPart, currentChapter, sectionType === "APPENDIX" ? label : null]
         .filter(Boolean)
         .join(" / ") || label;
+
+
+
+
 
 
 
@@ -3884,8 +4952,16 @@ function extractDocumentOutline(text: string): DocumentOutlineSummary {
 
 
 
+
+
+
+
     charCursor += rawLine.length + 1;
   }
+
+
+
+
 
 
 
@@ -3898,6 +4974,10 @@ function extractDocumentOutline(text: string): DocumentOutlineSummary {
   const conclusionDetected = entries.some((entry) => entry.sectionType === "CONCLUSION") || /Formula canonica finale/i.test(text);
   const mainSectionEntries = majorSections.length > 0 ? majorSections : partSections;
   const lastMainSection = mainSectionEntries[mainSectionEntries.length - 1] ?? entries[entries.length - 1] ?? null;
+
+
+
+
 
 
 
@@ -3919,8 +4999,16 @@ function extractDocumentOutline(text: string): DocumentOutlineSummary {
 
 
 
+
+
+
+
 function findHeadingForChunk(outline: DocumentOutlineSummary, charStart: number): { headingPath: string | null; sectionType: string | null } {
   let selected: DocumentOutlineEntry | null = null;
+
+
+
+
 
 
 
@@ -3934,8 +5022,16 @@ function findHeadingForChunk(outline: DocumentOutlineSummary, charStart: number)
 
 
 
+
+
+
+
     break;
   }
+
+
+
+
 
 
 
@@ -3949,8 +5045,16 @@ function findHeadingForChunk(outline: DocumentOutlineSummary, charStart: number)
 
 
 
+
+
+
+
 function buildLongDocumentChunks(file: Pick<StoredRuntimeFile, "id" | "name" | "fileHash" | "text" | "documentOutline">): LongDocumentChunk[] {
   const text = file.text;
+
+
+
+
 
 
 
@@ -3962,6 +5066,10 @@ function buildLongDocumentChunks(file: Pick<StoredRuntimeFile, "id" | "name" | "
 
 
 
+
+
+
+
   const chunks: LongDocumentChunk[] = [];
   let charStart = 0;
   const createdAt = nowIso();
@@ -3969,8 +5077,16 @@ function buildLongDocumentChunks(file: Pick<StoredRuntimeFile, "id" | "name" | "
 
 
 
+
+
+
+
   while (charStart < text.length) {
     let charEnd = Math.min(text.length, charStart + LONG_DOCUMENT_CHUNK_TARGET_CHARS);
+
+
+
+
 
 
 
@@ -3983,6 +5099,10 @@ function buildLongDocumentChunks(file: Pick<StoredRuntimeFile, "id" | "name" | "
 
 
 
+
+
+
+
       if (breakPoint > charStart) {
         charEnd = breakPoint;
       }
@@ -3991,7 +5111,15 @@ function buildLongDocumentChunks(file: Pick<StoredRuntimeFile, "id" | "name" | "
 
 
 
+
+
+
+
     const chunkText = text.slice(charStart, charEnd).trim();
+
+
+
+
 
 
 
@@ -4007,6 +5135,10 @@ function buildLongDocumentChunks(file: Pick<StoredRuntimeFile, "id" | "name" | "
         charEnd,
         textHash
       }).replace("sha256:", "docchunk-").slice(0, 48);
+
+
+
+
 
 
 
@@ -4031,9 +5163,17 @@ function buildLongDocumentChunks(file: Pick<StoredRuntimeFile, "id" | "name" | "
 
 
 
+
+
+
+
     if (charEnd >= text.length) {
       break;
     }
+
+
+
+
 
 
 
@@ -4044,8 +5184,16 @@ function buildLongDocumentChunks(file: Pick<StoredRuntimeFile, "id" | "name" | "
 
 
 
+
+
+
+
   return chunks;
 }
+
+
+
+
 
 
 
@@ -4068,6 +5216,10 @@ function classifyTextCoverage(source: TextSourceKind, textLength: number): {
 
 
 
+
+
+
+
   if (source === "PREVIEW") {
     return {
       textCoverageStatus: "TEXT_PREVIEW_ONLY",
@@ -4080,6 +5232,10 @@ function classifyTextCoverage(source: TextSourceKind, textLength: number): {
 
 
 
+
+
+
+
   return {
     textCoverageStatus: "TEXT_READY_FULL",
     fullDocumentCoverage: true,
@@ -4087,6 +5243,10 @@ function classifyTextCoverage(source: TextSourceKind, textLength: number): {
     longDocumentMode: textLength > LONG_DOCUMENT_CHUNK_TARGET_CHARS ? "CHUNKED_FULL_TEXT" : "INLINE_TEXT"
   };
 }
+
+
+
+
 
 
 
@@ -4122,6 +5282,10 @@ function buildStoredRuntimeFileBase(args: {
     documentOutline
   };
   const documentChunks = isPromptTextStatus(args.status) ? buildLongDocumentChunks(provisionalFile) : [];
+
+
+
+
 
 
 
@@ -4163,6 +5327,10 @@ function buildStoredRuntimeFileBase(args: {
 
 
 
+
+
+
+
 function normalizeSearchText(value: string): string {
   return value
     .toLowerCase()
@@ -4176,6 +5344,10 @@ function normalizeSearchText(value: string): string {
 
 
 
+
+
+
+
 function normalizeContextString(value: unknown, fallback: string): string {
   if (typeof value === "string" && value.trim()) {
     return value.trim();
@@ -4184,8 +5356,20 @@ function normalizeContextString(value: unknown, fallback: string): string {
 
 
 
+
+
+
+
   return fallback;
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -4208,6 +5392,8 @@ const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_AXIS = "AI · HBCE · IPR · EVT · O
 const HBCE_AI_ECOSYSTEM_VOLUME_I_OPERATIONAL_TRACE_AXIS = "Identity · Governance · AI_Model · Risk · Policy · Event · Proof · Audit · Responsibility · Continuity · Fail_Closed · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
 
 
+
+
 interface HbceAiEcosystemDocumentProfile {
   docFamily: string;
   documentKind: string;
@@ -4227,8 +5413,12 @@ interface HbceAiEcosystemDocumentProfile {
 }
 
 
+
+
 function inferHbceAiEcosystemVolumeIProfile(file: StoredRuntimeFile): HbceAiEcosystemDocumentProfile | null {
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 180000)}`);
+
+
 
 
   const explicitFile =
@@ -4239,12 +5429,16 @@ function inferHbceAiEcosystemVolumeIProfile(file: StoredRuntimeFile): HbceAiEcos
     normalized.includes("hbce ecosystem ai");
 
 
+
+
   const headerLock =
     normalized.includes("docfamily=hbce_ai_ecosystem") ||
     normalized.includes("documentkind=hbce_ai_ecosystem_volume") ||
     normalized.includes("ecosystemvolume=v1") ||
     normalized.includes("module=hbce_ecosistema_ai_volume_i") ||
     normalized.includes("classification=hbce_ai_ecosystem_foundational_volume");
+
+
 
 
   const contentIdentity =
@@ -4256,6 +5450,8 @@ function inferHbceAiEcosystemVolumeIProfile(file: StoredRuntimeFile): HbceAiEcos
     normalized.includes("ipr identifica evt traccia opc prova matrix organizza");
 
 
+
+
   const governanceIdentity =
     normalized.includes("governance operativa") &&
     normalized.includes("identita operativa") &&
@@ -4263,12 +5459,18 @@ function inferHbceAiEcosystemVolumeIProfile(file: StoredRuntimeFile): HbceAiEcos
     normalized.includes("prova operativa");
 
 
+
+
   const runtimeHashLock = normalized.includes("4bf137f71a58bf85202b118c20645420f5a34ff2cde42e7482ed49e2a4261a57");
+
+
 
 
   if (!(explicitFile || headerLock || contentIdentity || governanceIdentity || runtimeHashLock)) {
     return null;
   }
+
+
 
 
   return {
@@ -4318,6 +5520,8 @@ function inferHbceAiEcosystemVolumeIProfile(file: StoredRuntimeFile): HbceAiEcos
 }
 
 
+
+
 function hbceAiEcosystemRuntimeSha256MatchesProfile(file: StoredRuntimeFile, profile: HbceAiEcosystemDocumentProfile): boolean {
   const actual = `sha256:${file.fileHash}`;
   const accepted = new Set([profile.runtimeSha256, ...(profile.runtimeSha256Aliases ?? [])]);
@@ -4325,13 +5529,19 @@ function hbceAiEcosystemRuntimeSha256MatchesProfile(file: StoredRuntimeFile, pro
 }
 
 
+
+
 function buildHbceAiEcosystemVolumeIMetadata(file: StoredRuntimeFile): Record<string, unknown> | null {
   const profile = inferHbceAiEcosystemVolumeIProfile(file);
+
+
 
 
   if (!profile) {
     return null;
   }
+
+
 
 
   return {
@@ -4374,6 +5584,10 @@ function buildHbceAiEcosystemVolumeIMetadata(file: StoredRuntimeFile): Record<st
 
 
 
+
+
+
+
 const APOKALYPSIS_VOLUME_I_PROFILE_LOCK_REVISION = "APOKALYPSIS_VOLUME_I_PROFILE_LOCK_v6_8_9_4";
 const APOKALYPSIS_VOLUME_I_FILE_HASH = "sha256:5c62c3287a39c0148422958d0b9511b0ee775c42e66ac8f25d9f26479407bab2";
 const APOKALYPSIS_VOLUME_I_RUNTIME_HASH = "sha256:eedecd5987887c21b3d33414686b805efcb7379667ea922d1fe06b76578977c8";
@@ -4388,6 +5602,8 @@ const APOKALYPSIS_VOLUME_I_CLASSIFICATION = "APOKALYPSIS_VOLUME_I_COMPLETE_UPDAT
 const APOKALYPSIS_VOLUME_I_CANONICAL_THRESHOLD_DATE = "05-04-2026";
 const APOKALYPSIS_VOLUME_I_CANONICAL_AXIS = CANONICAL_AXIS_DCTT;
 const APOKALYPSIS_VOLUME_I_OPERATIONAL_TRACE_AXIS = "Decisione · Costo · Traccia · Tempo · Soglia 05-04-2026 · AI_2026 · EVENT_LOCK · ECONOMIC_LOCK · LOCAL_WORK_LOCK · SAAS_ECONOMIC_LOCK · EVT · OPC";
+
+
 
 
 interface ApokalypsisVolumeIDocumentProfile {
@@ -4411,11 +5627,15 @@ interface ApokalypsisVolumeIDocumentProfile {
 }
 
 
+
+
 function apokalypsisVolumeIHashMatchesProfile(file: StoredRuntimeFile, profile: ApokalypsisVolumeIDocumentProfile): boolean {
   const actual = `sha256:${file.fileHash}`;
   const accepted = new Set([profile.fileSha256, profile.runtimeSha256, ...(profile.runtimeSha256Aliases ?? [])]);
   return accepted.has(actual);
 }
+
+
 
 
 function inferApokalypsisVolumeIProfile(file: StoredRuntimeFile): ApokalypsisVolumeIDocumentProfile | null {
@@ -4425,10 +5645,14 @@ function inferApokalypsisVolumeIProfile(file: StoredRuntimeFile): ApokalypsisVol
   const runtimeHash = `sha256:${file.fileHash}`;
 
 
+
+
   const explicitFile =
     normalizedName.includes("apokalypsis volume i completo aggiornato ai 2026") ||
     normalizedName.includes("apokalypsis volume i") && normalizedName.includes("structure fix lock") ||
     normalizedName.includes("apokalypsis volume i") && normalizedName.includes("economic saas lock");
+
+
 
 
   const hashLock =
@@ -4438,10 +5662,14 @@ function inferApokalypsisVolumeIProfile(file: StoredRuntimeFile): ApokalypsisVol
     normalized.includes(APOKALYPSIS_VOLUME_I_RUNTIME_HASH.replace("sha256:", ""));
 
 
+
+
   const headerLock =
     normalizedHead.includes("edizione completa aggiornata ai 2026") &&
     normalizedHead.includes("conferma storica del decadimento") &&
     normalizedHead.includes("data canonica di esposizione 05 04 2026");
+
+
 
 
   const completeVolumeIdentity =
@@ -4450,9 +5678,13 @@ function inferApokalypsisVolumeIProfile(file: StoredRuntimeFile): ApokalypsisVol
     normalized.includes("apokalypsis volume i completo aggiornato");
 
 
+
+
   const economicIdentity =
     normalized.includes("inizio del decadimento del sistema culturale politico sociale ed economico") ||
     normalized.includes("sistema culturale politico sociale ed economico");
+
+
 
 
   const ai2026Identity =
@@ -4461,10 +5693,14 @@ function inferApokalypsisVolumeIProfile(file: StoredRuntimeFile): ApokalypsisVol
     normalized.includes("maggio giugno 2026 conferma quella soglia");
 
 
+
+
   const structureLock =
     normalized.includes("structure fix lock") ||
     normalized.includes("saas economic lock") ||
     normalized.includes("event lock") && normalized.includes("economic lock") && normalized.includes("local work lock") && normalized.includes("saas economic lock");
+
+
 
 
   const prologueOnly =
@@ -4473,14 +5709,20 @@ function inferApokalypsisVolumeIProfile(file: StoredRuntimeFile): ApokalypsisVol
     !completeVolumeIdentity;
 
 
+
+
   if (prologueOnly) {
     return null;
   }
 
 
+
+
   if (!(hashLock || explicitFile || headerLock || completeVolumeIdentity || (economicIdentity && ai2026Identity && structureLock))) {
     return null;
   }
+
+
 
 
   return {
@@ -4532,13 +5774,19 @@ function inferApokalypsisVolumeIProfile(file: StoredRuntimeFile): ApokalypsisVol
 }
 
 
+
+
 function buildApokalypsisVolumeIMetadata(file: StoredRuntimeFile): Record<string, unknown> | null {
   const profile = inferApokalypsisVolumeIProfile(file);
+
+
 
 
   if (!profile) {
     return null;
   }
+
+
 
 
   return {
@@ -4586,6 +5834,8 @@ function buildApokalypsisVolumeIMetadata(file: StoredRuntimeFile): Record<string
 }
 
 
+
+
 function isApokalypsisVolumeIProfileForRead(profile: Record<string, unknown>): boolean {
   const existingMetadata =
     profile.documentMetadata && typeof profile.documentMetadata === "object"
@@ -4598,6 +5848,8 @@ function isApokalypsisVolumeIProfileForRead(profile: Record<string, unknown>): b
   const normalized = normalizeSearchText(`${filename}\n${fileHash}\n${title}\n${metadataKind}`);
 
 
+
+
   return (
     normalized.includes("apokalypsis volume i completo aggiornato ai 2026") ||
     normalized.includes("apokalypsis volume i") && normalized.includes("structure fix lock") ||
@@ -4608,11 +5860,15 @@ function isApokalypsisVolumeIProfileForRead(profile: Record<string, unknown>): b
 }
 
 
+
+
 function canonicalizeApokalypsisPublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
   const existingMetadata =
     profile.documentMetadata && typeof profile.documentMetadata === "object"
       ? profile.documentMetadata as Record<string, unknown>
       : {};
+
+
 
 
   return {
@@ -4674,6 +5930,391 @@ function canonicalizeApokalypsisPublicDocumentProfileForRead<T extends Record<st
 }
 
 
+
+
+
+
+const APOKALYPSIS_VOLUME_V_PROFILE_LOCK_REVISION = "APOKALYPSIS_VOLUME_V_PROFILE_LOCK_v6_8_9_6";
+const APOKALYPSIS_VOLUME_V_FILE_HASH = "sha256:c4c550a76ff531de7e44c026ec5a1d6f6a96f3ceaa1a0a932bd9f558b46d616a";
+const APOKALYPSIS_VOLUME_V_RUNTIME_HASH = "sha256:c4c550a76ff531de7e44c026ec5a1d6f6a96f3ceaa1a0a932bd9f558b46d616a";
+const APOKALYPSIS_VOLUME_V_DOC_FAMILY = "APOKALYPSIS";
+const APOKALYPSIS_VOLUME_V_DOCUMENT_KIND = "APOKALYPSIS_VOLUME_V_COMPLETE_EDITORIAL_REVISED_2026";
+const APOKALYPSIS_VOLUME_V_BRANCH = "APOKALYPSIS I–V";
+const APOKALYPSIS_VOLUME_V_MODULE = "APOKALYPSIS_VOLUME_V";
+const APOKALYPSIS_VOLUME_V_VOLUME = "V5";
+const APOKALYPSIS_VOLUME_V_TITLE = "APOKALYPSIS — Volume V";
+const APOKALYPSIS_VOLUME_V_SUBTITLE = "Emersione del Paradogma Alieno";
+const APOKALYPSIS_VOLUME_V_CLASSIFICATION = "APOKALYPSIS_VOLUME_V_COMPLETE_EDITORIAL_REVISED_2026";
+const APOKALYPSIS_VOLUME_V_CANONICAL_THRESHOLD_DATE = "05-04-2026";
+const APOKALYPSIS_VOLUME_V_CANONICAL_AXIS = CANONICAL_AXIS_DCTT;
+const APOKALYPSIS_VOLUME_V_CORE_AXIS = "Rottura cognitiva irreversibile → incompatibilità strutturale → Alien Artifact → soglia dell'oltre-sistema → Paradogma Alieno";
+const APOKALYPSIS_VOLUME_V_PROFILE_LOCK = "APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_LOCK";
+const APOKALYPSIS_VOLUME_V_NEXT_VOLUMES = "NONE — terminal volume of APOKALYPSIS I–V";
+const APOKALYPSIS_VOLUME_V_OPERATIONAL_TRACE_AXIS = "Decisione · Costo · Traccia · Tempo · Rottura cognitiva irreversibile · Incompatibilità strutturale · Alien Artifact · Soglia oltre-sistema · Paradogma Alieno · Terminal Volume · EVT · OPC";
+const APOKALYPSIS_VOLUME_V_CANONICAL_MEMORY_ID = "IPR-MEM-20260606164824-C2D9E3D6";
+const APOKALYPSIS_VOLUME_V_CANONICAL_SAVED_CHAT_ID = "IPR-CHAT-SAVE-20260606164824-B5EE0FDE";
+const APOKALYPSIS_VOLUME_V_CANONICAL_EVT_ID = "EVT-20260606164308-19F7B251";
+const APOKALYPSIS_VOLUME_V_CANONICAL_OPC_ID = "OPC-20260606164308-7D3C18E5";
+const APOKALYPSIS_VOLUME_V_CONTAMINATED_PROFILE_ID = "DOC-PROFILE-FD959CE1DB7BEB4B";
+const APOKALYPSIS_VOLUME_V_FILENAME = "APOKALYPSIS_VOLUME_V_COMPLETO_AGGIORNATO_AI_2026_v1_PARADOGMA_ALIENO_LOCK.txt";
+
+interface ApokalypsisVolumeVDocumentProfile {
+  docFamily: string;
+  documentKind: string;
+  branch: string;
+  module: string;
+  volume: string;
+  title: string;
+  subtitle: string;
+  classification: string;
+  canonicalThresholdDate: string;
+  canonicalAxis: string;
+  coreAxisVolumeV: string;
+  profileLock: string;
+  nextVolumes: string;
+  operationalTraceAxis: string;
+  summary: string;
+  keyTerms: string[];
+  profileLockRevision: string;
+  fileSha256: string;
+  runtimeSha256: string;
+  runtimeSha256Aliases: string[];
+  canonicalMemoryId: string;
+  canonicalSavedChatId: string;
+  canonicalEvtId: string;
+  canonicalOpcId: string;
+  contaminatedProfileId: string;
+}
+
+function normalizeSha256Candidates(value: unknown): string[] {
+  const raw = String(value ?? "").trim();
+
+  if (!raw) {
+    return [];
+  }
+
+  const withoutPrefix = raw.replace(/^sha256:/i, "");
+  return Array.from(new Set([raw, withoutPrefix, `sha256:${withoutPrefix}`]));
+}
+
+function apokalypsisVolumeVHashMatchesProfile(file: StoredRuntimeFile, profile: ApokalypsisVolumeVDocumentProfile): boolean {
+  const actualCandidates = normalizeSha256Candidates(file.fileHash);
+  const accepted = new Set([
+    profile.fileSha256,
+    profile.runtimeSha256,
+    ...profile.runtimeSha256Aliases,
+    ...normalizeSha256Candidates(profile.fileSha256),
+    ...normalizeSha256Candidates(profile.runtimeSha256)
+  ]);
+
+  return actualCandidates.some((candidate) => accepted.has(candidate));
+}
+
+function inferApokalypsisVolumeVProfile(file: StoredRuntimeFile): ApokalypsisVolumeVDocumentProfile | null {
+  const normalizedName = normalizeSearchText(file.name);
+  const normalizedHead = normalizeSearchText(`${file.name}\n${file.text.slice(0, 40000)}`);
+  const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 260000)}`);
+  const runtimeHashCandidates = normalizeSha256Candidates(file.fileHash);
+  const apokalypsisVolumeVHash = APOKALYPSIS_VOLUME_V_FILE_HASH.replace("sha256:", "");
+
+  const explicitFile =
+    normalizedName.includes("apokalypsis volume v completo aggiornato ai 2026") ||
+    normalizedName.includes("apokalypsis volume v") && normalizedName.includes("paradogma alieno lock") ||
+    normalizedName.includes("volume v") && normalizedName.includes("paradogma alieno") ||
+    normalizedName.includes(normalizeSearchText(APOKALYPSIS_VOLUME_V_FILENAME));
+
+  const hashLock =
+    runtimeHashCandidates.includes(APOKALYPSIS_VOLUME_V_FILE_HASH) ||
+    runtimeHashCandidates.includes(APOKALYPSIS_VOLUME_V_RUNTIME_HASH) ||
+    runtimeHashCandidates.includes(apokalypsisVolumeVHash) ||
+    normalized.includes(apokalypsisVolumeVHash);
+
+  const metadataLock =
+    normalizedHead.includes("docfamily apokalypsis") &&
+    normalizedHead.includes("documentkind apokalypsis volume v complete editorial revised 2026") &&
+    normalizedHead.includes("module apokalypsis volume v") &&
+    normalizedHead.includes("volume v5");
+
+  const profileLockSignal =
+    normalizedHead.includes("profilelock apokalypsis volume v paradogma alieno lock") ||
+    normalized.includes("apokalypsis volume v paradogma alieno lock") ||
+    normalized.includes("paradogma alieno lock");
+
+  const contentIdentity =
+    normalized.includes("emersione del paradogma alieno") ||
+    normalized.includes("paradogma alieno") && normalized.includes("alien artifact") && normalized.includes("volume v");
+
+  const coreAxisIdentity =
+    normalized.includes("rottura cognitiva irreversibile incompatibilita strutturale alien artifact soglia dell oltre sistema paradogma alieno") ||
+    normalized.includes("rottura cognitiva irreversibile") &&
+      normalized.includes("incompatibilita strutturale") &&
+      normalized.includes("alien artifact") &&
+      normalized.includes("paradogma alieno");
+
+  const terminalVolumeIdentity =
+    normalized.includes("terminal volume") ||
+    normalized.includes("volume terminale") ||
+    normalized.includes("nextvolumes none") ||
+    normalized.includes("none terminal volume of apokalypsis i v") ||
+    normalized.includes("next volumes none");
+
+  const v4OnlyWithoutV5Lock =
+    normalizedName.includes("volume iv") &&
+    !explicitFile &&
+    !hashLock &&
+    !profileLockSignal &&
+    !metadataLock &&
+    !terminalVolumeIdentity;
+
+  if (v4OnlyWithoutV5Lock) {
+    return null;
+  }
+
+  if (!(explicitFile || hashLock || metadataLock || profileLockSignal || contentIdentity || coreAxisIdentity || terminalVolumeIdentity)) {
+    return null;
+  }
+
+  return {
+    docFamily: APOKALYPSIS_VOLUME_V_DOC_FAMILY,
+    documentKind: APOKALYPSIS_VOLUME_V_DOCUMENT_KIND,
+    branch: APOKALYPSIS_VOLUME_V_BRANCH,
+    module: APOKALYPSIS_VOLUME_V_MODULE,
+    volume: APOKALYPSIS_VOLUME_V_VOLUME,
+    title: APOKALYPSIS_VOLUME_V_TITLE,
+    subtitle: APOKALYPSIS_VOLUME_V_SUBTITLE,
+    classification: APOKALYPSIS_VOLUME_V_CLASSIFICATION,
+    canonicalThresholdDate: APOKALYPSIS_VOLUME_V_CANONICAL_THRESHOLD_DATE,
+    canonicalAxis: APOKALYPSIS_VOLUME_V_CANONICAL_AXIS,
+    coreAxisVolumeV: APOKALYPSIS_VOLUME_V_CORE_AXIS,
+    profileLock: APOKALYPSIS_VOLUME_V_PROFILE_LOCK,
+    nextVolumes: APOKALYPSIS_VOLUME_V_NEXT_VOLUMES,
+    operationalTraceAxis: APOKALYPSIS_VOLUME_V_OPERATIONAL_TRACE_AXIS,
+    summary:
+      "Profilo documento APOKALYPSIS Volume V: volume terminale completo editoriale revisionato 2026. Fissa l'emersione del Paradogma Alieno come esito della rottura cognitiva irreversibile, dell'incompatibilità strutturale e dell'Alien Artifact sulla soglia dell'oltre-sistema. Nessun volume successivo: terminal volume of APOKALYPSIS I–V. Asse Decisione · Costo · Traccia · Tempo. legalCertification=false; OPC=technical proof receipt only.",
+    keyTerms: [
+      "APOKALYPSIS",
+      "APOKALYPSIS Volume V",
+      "Volume V",
+      "Emersione del Paradogma Alieno",
+      "Paradogma Alieno",
+      "Alien Artifact",
+      "Rottura cognitiva irreversibile",
+      "Incompatibilità strutturale",
+      "Soglia dell'oltre-sistema",
+      "Irreintegrabilità",
+      "Terminal volume",
+      "Next volumes NONE",
+      "APOKALYPSIS I–V",
+      "05-04-2026",
+      "Decisione",
+      "Costo",
+      "Traccia",
+      "Tempo",
+      "IPR",
+      "EVT",
+      "OPC",
+      "technical proof receipt only"
+    ],
+    profileLockRevision: APOKALYPSIS_VOLUME_V_PROFILE_LOCK_REVISION,
+    fileSha256: APOKALYPSIS_VOLUME_V_FILE_HASH,
+    runtimeSha256: APOKALYPSIS_VOLUME_V_RUNTIME_HASH,
+    runtimeSha256Aliases: [APOKALYPSIS_VOLUME_V_FILE_HASH, APOKALYPSIS_VOLUME_V_RUNTIME_HASH],
+    canonicalMemoryId: APOKALYPSIS_VOLUME_V_CANONICAL_MEMORY_ID,
+    canonicalSavedChatId: APOKALYPSIS_VOLUME_V_CANONICAL_SAVED_CHAT_ID,
+    canonicalEvtId: APOKALYPSIS_VOLUME_V_CANONICAL_EVT_ID,
+    canonicalOpcId: APOKALYPSIS_VOLUME_V_CANONICAL_OPC_ID,
+    contaminatedProfileId: APOKALYPSIS_VOLUME_V_CONTAMINATED_PROFILE_ID
+  };
+}
+
+function buildApokalypsisVolumeVMetadata(file: StoredRuntimeFile): Record<string, unknown> | null {
+  const profile = inferApokalypsisVolumeVProfile(file);
+
+  if (!profile) {
+    return null;
+  }
+
+  return {
+    apokalypsisDocumentProfileLockApplied: true,
+    apokalypsisDocumentProfileLockRevision: profile.profileLockRevision,
+    apokalypsisVolumeVDocumentProfileLockApplied: true,
+    apokalypsisVolumeVDocumentProfileLockRevision: profile.profileLockRevision,
+    apokalypsisExpectedDocFamily: profile.docFamily,
+    apokalypsisExpectedDocumentKind: profile.documentKind,
+    apokalypsisExpectedBranch: profile.branch,
+    apokalypsisExpectedModule: profile.module,
+    apokalypsisExpectedVolume: profile.volume,
+    apokalypsisExpectedTitle: profile.title,
+    apokalypsisExpectedSubtitle: profile.subtitle,
+    apokalypsisExpectedClassification: profile.classification,
+    apokalypsisCanonicalThresholdDate: profile.canonicalThresholdDate,
+    apokalypsisExpectedCanonicalAxis: profile.canonicalAxis,
+    apokalypsisExpectedCoreAxis: profile.coreAxisVolumeV,
+    apokalypsisExpectedProfileLock: profile.profileLock,
+    apokalypsisExpectedNextVolumes: profile.nextVolumes,
+    apokalypsisExpectedOperationalTraceAxis: profile.operationalTraceAxis,
+    apokalypsisFileSha256: profile.fileSha256,
+    apokalypsisRuntimeSha256: profile.runtimeSha256,
+    apokalypsisRuntimeSha256Aliases: profile.runtimeSha256Aliases,
+    apokalypsisRuntimeFileHash: `sha256:${String(file.fileHash ?? "").replace(/^sha256:/, "")}`,
+    apokalypsisHashMatchesExpected: apokalypsisVolumeVHashMatchesProfile(file, profile),
+    apokalypsisCanonicalMemoryId: profile.canonicalMemoryId,
+    apokalypsisCanonicalSavedChatId: profile.canonicalSavedChatId,
+    apokalypsisCanonicalEvtId: profile.canonicalEvtId,
+    apokalypsisCanonicalOpcId: profile.canonicalOpcId,
+    contaminatedProfileReadRepairTarget: profile.contaminatedProfileId,
+    canonicalProfileApplied: true,
+    canonicalProfileRevision: profile.profileLockRevision,
+    canonicalVolume: profile.volume,
+    canonicalTitle: profile.title,
+    canonicalDocumentKind: profile.documentKind,
+    canonicalModule: profile.module,
+    docFamily: profile.docFamily,
+    documentKind: profile.documentKind,
+    module: profile.module,
+    branch: profile.branch,
+    classification: profile.classification,
+    canonicalThresholdDate: profile.canonicalThresholdDate,
+    coreAxisVolumeV: profile.coreAxisVolumeV,
+    profileLock: profile.profileLock,
+    nextVolumes: profile.nextVolumes,
+    operationalTraceAxis: profile.operationalTraceAxis,
+    contaminationWithVolumeIVProfile: false,
+    contaminationWithB2gTechnicalStack: false,
+    contaminationWithLambdaProfile: false,
+    contaminationWithAIQProfile: false,
+    contaminationWithMatrixOperationalVolume: false,
+    contaminationWithCorpus: false,
+    contaminationWithQState: false,
+    noTechnicalGovernanceClassification: true,
+    legalCertification: false,
+    opc: "technical proof receipt only"
+  };
+}
+
+function isApokalypsisVolumeVProfileForRead(profile: Record<string, unknown>): boolean {
+  const existingMetadata =
+    profile.documentMetadata && typeof profile.documentMetadata === "object"
+      ? profile.documentMetadata as Record<string, unknown>
+      : {};
+  const profileId = `${profile.profileId ?? profile.documentProfileId ?? existingMetadata.profileId ?? existingMetadata.documentProfileId ?? ""}`;
+  const memoryId = `${profile.memoryId ?? profile.sourceMemoryId ?? profile.iprMemoryId ?? existingMetadata.memoryId ?? existingMetadata.sourceMemoryId ?? existingMetadata.iprMemoryId ?? existingMetadata.apokalypsisCanonicalMemoryId ?? ""}`;
+  const filename = `${profile.filename ?? profile.fileName ?? existingMetadata.filename ?? ""}`;
+  const fileHash = `${profile.fileHash ?? existingMetadata.fileHash ?? existingMetadata.apokalypsisRuntimeFileHash ?? existingMetadata.apokalypsisFileSha256 ?? ""}`;
+  const title = `${profile.title ?? existingMetadata.canonicalTitle ?? existingMetadata.apokalypsisExpectedTitle ?? ""}`;
+  const subtitle = `${profile.subtitle ?? existingMetadata.subtitle ?? existingMetadata.apokalypsisExpectedSubtitle ?? ""}`;
+  const metadataKind = `${existingMetadata.canonicalDocumentKind ?? existingMetadata.documentKind ?? existingMetadata.apokalypsisExpectedDocumentKind ?? ""}`;
+  const metadataModule = `${existingMetadata.canonicalModule ?? existingMetadata.module ?? existingMetadata.apokalypsisExpectedModule ?? ""}`;
+  const metadataLock = `${existingMetadata.profileLock ?? existingMetadata.apokalypsisExpectedProfileLock ?? existingMetadata.apokalypsisVolumeVDocumentProfileLockRevision ?? ""}`;
+  const coreAxis = `${existingMetadata.coreAxisVolumeV ?? existingMetadata.apokalypsisExpectedCoreAxis ?? ""}`;
+  const nextVolumes = `${existingMetadata.nextVolumes ?? existingMetadata.apokalypsisExpectedNextVolumes ?? ""}`;
+  const normalized = normalizeSearchText(`${profileId}\n${memoryId}\n${filename}\n${fileHash}\n${title}\n${subtitle}\n${metadataKind}\n${metadataModule}\n${metadataLock}\n${coreAxis}\n${nextVolumes}`);
+  const apokalypsisVolumeVHash = APOKALYPSIS_VOLUME_V_FILE_HASH.replace("sha256:", "");
+
+  return (
+    profileId === APOKALYPSIS_VOLUME_V_CONTAMINATED_PROFILE_ID ||
+    memoryId === APOKALYPSIS_VOLUME_V_CANONICAL_MEMORY_ID ||
+    normalized.includes(normalizeSearchText(APOKALYPSIS_VOLUME_V_FILENAME)) ||
+    normalized.includes(apokalypsisVolumeVHash) ||
+    normalized.includes("apokalypsis volume v complete editorial revised 2026") ||
+    normalized.includes("apokalypsis volume v completo aggiornato ai 2026") ||
+    normalized.includes("module apokalypsis volume v") ||
+    normalized.includes("apokalypsis volume v paradogma alieno lock") ||
+    normalized.includes("emersione del paradogma alieno") ||
+    normalized.includes("rottura cognitiva irreversibile incompatibilita strutturale alien artifact") ||
+    normalized.includes("nextvolumes none") ||
+    normalized.includes("none terminal volume of apokalypsis i v")
+  );
+}
+
+function canonicalizeApokalypsisVolumeVPublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
+  const existingMetadata =
+    profile.documentMetadata && typeof profile.documentMetadata === "object"
+      ? profile.documentMetadata as Record<string, unknown>
+      : {};
+
+  return {
+    ...profile,
+    docFamily: APOKALYPSIS_VOLUME_V_DOC_FAMILY,
+    volume: APOKALYPSIS_VOLUME_V_VOLUME,
+    title: APOKALYPSIS_VOLUME_V_TITLE,
+    subtitle: APOKALYPSIS_VOLUME_V_SUBTITLE,
+    canonicalAxis: APOKALYPSIS_VOLUME_V_CANONICAL_AXIS,
+    summary:
+      "Profilo documento APOKALYPSIS Volume V: volume terminale completo editoriale revisionato 2026. Emersione del Paradogma Alieno, Alien Artifact, incompatibilità strutturale e soglia dell'oltre-sistema. Asse Decisione · Costo · Traccia · Tempo. nextVolumes=NONE. legalCertification=false; OPC=technical proof receipt only.",
+    keyTerms: Array.from(new Set([
+      "APOKALYPSIS",
+      "APOKALYPSIS Volume V",
+      "Volume V",
+      "Emersione del Paradogma Alieno",
+      "Paradogma Alieno",
+      "Alien Artifact",
+      "Rottura cognitiva irreversibile",
+      "Incompatibilità strutturale",
+      "Soglia dell'oltre-sistema",
+      "Irreintegrabilità",
+      "Terminal volume",
+      "Next volumes NONE",
+      "05-04-2026",
+      "Decisione",
+      "Costo",
+      "Traccia",
+      "Tempo",
+      "IPR",
+      "EVT",
+      "OPC"
+    ])).slice(0, 32),
+    memoryId: typeof profile.memoryId === "string" && profile.memoryId.trim() ? profile.memoryId : APOKALYPSIS_VOLUME_V_CANONICAL_MEMORY_ID,
+    sourceMemoryId: typeof profile.sourceMemoryId === "string" && profile.sourceMemoryId.trim() ? profile.sourceMemoryId : APOKALYPSIS_VOLUME_V_CANONICAL_MEMORY_ID,
+    sourceSavedChatId: typeof profile.sourceSavedChatId === "string" && profile.sourceSavedChatId.trim() ? profile.sourceSavedChatId : APOKALYPSIS_VOLUME_V_CANONICAL_SAVED_CHAT_ID,
+    evtId: typeof profile.evtId === "string" && profile.evtId.trim() ? profile.evtId : APOKALYPSIS_VOLUME_V_CANONICAL_EVT_ID,
+    opcId: typeof profile.opcId === "string" && profile.opcId.trim() ? profile.opcId : APOKALYPSIS_VOLUME_V_CANONICAL_OPC_ID,
+    documentMetadata: {
+      ...existingMetadata,
+      apokalypsisDocumentProfileReadGuardApplied: true,
+      apokalypsisDocumentProfileLockApplied: true,
+      apokalypsisDocumentProfileLockRevision: APOKALYPSIS_VOLUME_V_PROFILE_LOCK_REVISION,
+      apokalypsisVolumeVDocumentProfileLockApplied: true,
+      apokalypsisVolumeVDocumentProfileLockRevision: APOKALYPSIS_VOLUME_V_PROFILE_LOCK_REVISION,
+      canonicalProfileReadGuardApplied: true,
+      canonicalProfileApplied: true,
+      canonicalProfileRevision: APOKALYPSIS_VOLUME_V_PROFILE_LOCK_REVISION,
+      canonicalVolume: APOKALYPSIS_VOLUME_V_VOLUME,
+      canonicalTitle: APOKALYPSIS_VOLUME_V_TITLE,
+      canonicalDocumentKind: APOKALYPSIS_VOLUME_V_DOCUMENT_KIND,
+      canonicalModule: APOKALYPSIS_VOLUME_V_MODULE,
+      docFamily: APOKALYPSIS_VOLUME_V_DOC_FAMILY,
+      documentKind: APOKALYPSIS_VOLUME_V_DOCUMENT_KIND,
+      module: APOKALYPSIS_VOLUME_V_MODULE,
+      branch: APOKALYPSIS_VOLUME_V_BRANCH,
+      classification: APOKALYPSIS_VOLUME_V_CLASSIFICATION,
+      canonicalThresholdDate: APOKALYPSIS_VOLUME_V_CANONICAL_THRESHOLD_DATE,
+      coreAxisVolumeV: APOKALYPSIS_VOLUME_V_CORE_AXIS,
+      profileLock: APOKALYPSIS_VOLUME_V_PROFILE_LOCK,
+      nextVolumes: APOKALYPSIS_VOLUME_V_NEXT_VOLUMES,
+      operationalTraceAxis: APOKALYPSIS_VOLUME_V_OPERATIONAL_TRACE_AXIS,
+      apokalypsisFileSha256: APOKALYPSIS_VOLUME_V_FILE_HASH,
+      apokalypsisRuntimeSha256: APOKALYPSIS_VOLUME_V_RUNTIME_HASH,
+      apokalypsisRuntimeSha256Aliases: [APOKALYPSIS_VOLUME_V_FILE_HASH, APOKALYPSIS_VOLUME_V_RUNTIME_HASH],
+      apokalypsisCanonicalMemoryId: APOKALYPSIS_VOLUME_V_CANONICAL_MEMORY_ID,
+      apokalypsisCanonicalSavedChatId: APOKALYPSIS_VOLUME_V_CANONICAL_SAVED_CHAT_ID,
+      apokalypsisCanonicalEvtId: APOKALYPSIS_VOLUME_V_CANONICAL_EVT_ID,
+      apokalypsisCanonicalOpcId: APOKALYPSIS_VOLUME_V_CANONICAL_OPC_ID,
+      contaminatedProfileReadRepairApplied: true,
+      contaminatedProfileReadRepairTarget: APOKALYPSIS_VOLUME_V_CONTAMINATED_PROFILE_ID,
+      contaminationWithVolumeIVProfile: false,
+      contaminationWithB2gTechnicalStack: false,
+      contaminationWithLambdaProfile: false,
+      b2gTechnicalStackReadGuardApplied: false,
+      b2gTechnicalStackMetadataLockApplied: false,
+      technicalStackModule: null,
+      legalCertification: false,
+      opc: "technical proof receipt only"
+    }
+  } as T;
+}
+
+
 const APOKALYPSIS_VOLUME_IV_PROFILE_LOCK_REVISION = "APOKALYPSIS_VOLUME_IV_PROFILE_LOCK_v6_8_9_5";
 const APOKALYPSIS_VOLUME_IV_FILE_HASH = "sha256:acb444286ffe936ad7c76dffcb6b47d21d59401d284508ae7bc5dd8a465adc8c";
 const APOKALYPSIS_VOLUME_IV_RUNTIME_HASH = "sha256:acb444286ffe936ad7c76dffcb6b47d21d59401d284508ae7bc5dd8a465adc8c";
@@ -4690,6 +6331,8 @@ const APOKALYPSIS_VOLUME_IV_CANONICAL_AXIS = CANONICAL_AXIS_DCTT;
 const APOKALYPSIS_VOLUME_IV_CORE_AXIS = "Riconconicità → non riassorbimento → separazione → incompatibilità → rottura cognitiva";
 const APOKALYPSIS_VOLUME_IV_PROFILE_LOCK = "APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_LOCK";
 const APOKALYPSIS_VOLUME_IV_OPERATIONAL_TRACE_AXIS = "Decisione · Costo · Traccia · Tempo · Riconconicità · Non riassorbimento · Separazione · Incompatibilità · Rottura cognitiva · EVT · OPC";
+
+
 
 
 interface ApokalypsisVolumeIVDocumentProfile {
@@ -4715,6 +6358,8 @@ interface ApokalypsisVolumeIVDocumentProfile {
 }
 
 
+
+
 function apokalypsisVolumeIVHashMatchesProfile(file: StoredRuntimeFile, profile: ApokalypsisVolumeIVDocumentProfile): boolean {
   const actual = `sha256:${file.fileHash}`;
   const accepted = new Set([profile.fileSha256, profile.runtimeSha256, ...(profile.runtimeSha256Aliases ?? [])]);
@@ -4722,17 +6367,28 @@ function apokalypsisVolumeIVHashMatchesProfile(file: StoredRuntimeFile, profile:
 }
 
 
+
+
 function inferApokalypsisVolumeIVProfile(file: StoredRuntimeFile): ApokalypsisVolumeIVDocumentProfile | null {
+  if (inferApokalypsisVolumeVProfile(file)) {
+    return null;
+  }
+
+
   const normalizedName = normalizeSearchText(file.name);
   const normalizedHead = normalizeSearchText(`${file.name}\n${file.text.slice(0, 32000)}`);
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 220000)}`);
   const runtimeHash = `sha256:${file.fileHash}`;
 
 
+
+
   const explicitFile =
     normalizedName.includes("apokalypsis volume iv completo aggiornato ai 2026") ||
     normalizedName.includes("apokalypsis volume iv") && normalizedName.includes("cognitive rupture lock") ||
     normalizedName.includes("volume iv") && normalizedName.includes("rottura cognitiva");
+
+
 
 
   const hashLock =
@@ -4742,6 +6398,8 @@ function inferApokalypsisVolumeIVProfile(file: StoredRuntimeFile): ApokalypsisVo
     normalized.includes(APOKALYPSIS_VOLUME_IV_RUNTIME_HASH.replace("sha256:", ""));
 
 
+
+
   const metadataLock =
     normalizedHead.includes("docfamily apokalypsis") &&
     normalizedHead.includes("documentkind apokalypsis volume iv complete editorial revised 2026") &&
@@ -4749,9 +6407,13 @@ function inferApokalypsisVolumeIVProfile(file: StoredRuntimeFile): ApokalypsisVo
     normalizedHead.includes("volume v4");
 
 
+
+
   const profileLockSignal =
     normalizedHead.includes("profilelock apokalypsis volume iv cognitive rupture lock") ||
     normalized.includes("apokalypsis volume iv cognitive rupture lock");
+
+
 
 
   const contentIdentity =
@@ -4762,14 +6424,20 @@ function inferApokalypsisVolumeIVProfile(file: StoredRuntimeFile): ApokalypsisVo
     normalized.includes("volume iv");
 
 
+
+
   const coreAxisIdentity =
     normalized.includes("riconconicita non riassorbimento separazione incompatibilita rottura cognitiva") ||
     normalized.includes("riconconicita non riassorbita effetto rottura cognitiva tra individuo e sistema");
 
 
+
+
   if (!(explicitFile || hashLock || metadataLock || profileLockSignal || contentIdentity || coreAxisIdentity)) {
     return null;
   }
+
+
 
 
   return {
@@ -4820,13 +6488,19 @@ function inferApokalypsisVolumeIVProfile(file: StoredRuntimeFile): ApokalypsisVo
 }
 
 
+
+
 function buildApokalypsisVolumeIVMetadata(file: StoredRuntimeFile): Record<string, unknown> | null {
   const profile = inferApokalypsisVolumeIVProfile(file);
+
+
 
 
   if (!profile) {
     return null;
   }
+
+
 
 
   return {
@@ -4880,7 +6554,14 @@ function buildApokalypsisVolumeIVMetadata(file: StoredRuntimeFile): Record<strin
 }
 
 
+
+
 function isApokalypsisVolumeIVProfileForRead(profile: Record<string, unknown>): boolean {
+  if (isApokalypsisVolumeVProfileForRead(profile)) {
+    return false;
+  }
+
+
   const existingMetadata =
     profile.documentMetadata && typeof profile.documentMetadata === "object"
       ? profile.documentMetadata as Record<string, unknown>
@@ -4892,6 +6573,8 @@ function isApokalypsisVolumeIVProfileForRead(profile: Record<string, unknown>): 
   const metadataModule = `${existingMetadata.canonicalModule ?? existingMetadata.module ?? existingMetadata.apokalypsisExpectedModule ?? ""}`;
   const metadataLock = `${existingMetadata.profileLock ?? existingMetadata.apokalypsisExpectedProfileLock ?? existingMetadata.apokalypsisVolumeIVDocumentProfileLockRevision ?? ""}`;
   const normalized = normalizeSearchText(`${filename}\n${fileHash}\n${title}\n${metadataKind}\n${metadataModule}\n${metadataLock}`);
+
+
 
 
   return (
@@ -4906,11 +6589,15 @@ function isApokalypsisVolumeIVProfileForRead(profile: Record<string, unknown>): 
 }
 
 
+
+
 function canonicalizeApokalypsisVolumeIVPublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
   const existingMetadata =
     profile.documentMetadata && typeof profile.documentMetadata === "object"
       ? profile.documentMetadata as Record<string, unknown>
       : {};
+
+
 
 
   return {
@@ -4982,6 +6669,8 @@ function canonicalizeApokalypsisVolumeIVPublicDocumentProfileForRead<T extends R
 }
 
 
+
+
 const MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_REVISION = "MATRIX_EUROPA_VOLUME_I_PROFILE_LOCK_v6_8_5_MATRIX_PROFILE_COLUMN_LOCK_v6_8_6_MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const MATRIX_EUROPA_VOLUME_I_SOURCE_HASH = "sha256:54efce7b7d7b430df7be0c3128fe1a7bbf30823beae3677bf25ff904839539d7";
 const MATRIX_EUROPA_VOLUME_I_RUNTIME_HASH = "sha256:c70a753074f89b4309105270e17f6a10aa5aa0018a9e86a8504d5c5e249d0caa";
@@ -4993,6 +6682,8 @@ const MATRIX_EUROPA_VOLUME_I_TITLE = "MATRIX EUROPA";
 const MATRIX_EUROPA_VOLUME_I_CLASSIFICATION = "MATRIX_VOLUME_I_FOUNDATIONAL_PARADIGM";
 const MATRIX_EUROPA_VOLUME_I_CANONICAL_AXIS = "IPR · TRAC · HBCE · JOKER-C2 · Matrix Europa · Torino_Bruxelles · EU_Federation · Operational_Verifiability";
 const MATRIX_EUROPA_VOLUME_I_OPERATIONAL_TRACE_AXIS = "Identity · Continuity · Governance · Execution · Verification · Fail_Closed · Cross_Border · TRAC_0001_0007 · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
+
+
 
 
 const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_PROFILE_LOCK_REVISION = "MATRIX_VOLUME_II_PROFILE_LOCK_v6_8_7-BUILD_FIX_v6_8_7_1-MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
@@ -5008,6 +6699,8 @@ const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_CANONICAL_AXIS = "IPR · HBCE · JOKER-
 const MATRIX_HBCE_JOKER_C2_IPR_VOLUME_II_OPERATIONAL_TRACE_AXIS = "Identity · Intent · Policy · Risk · Decision · Execution · Evidence · Verification · Continuity · Fail_Closed · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
 
 
+
+
 const MATRIX_TORINO_BRUXELLES_VOLUME_III_PROFILE_LOCK_REVISION = "MATRIX_VOLUME_III_PROFILE_LOCK_v6_8_8-MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const MATRIX_TORINO_BRUXELLES_VOLUME_III_SOURCE_HASH = "sha256:778cb7be58821824cfcc9fcc42a2a9f85c62336ce09c484dfcdcd7f0c26bc628";
 const MATRIX_TORINO_BRUXELLES_VOLUME_III_RUNTIME_HASH = "sha256:7eb53665cce1503025b602fce62a603c502c5ca5a87fa4e1b9c64990e2d12c62";
@@ -5019,6 +6712,8 @@ const MATRIX_TORINO_BRUXELLES_VOLUME_III_TITLE = "MATRIX TORINO–BRUXELLES";
 const MATRIX_TORINO_BRUXELLES_VOLUME_III_CLASSIFICATION = "MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION";
 const MATRIX_TORINO_BRUXELLES_VOLUME_III_CANONICAL_AXIS = "IPR · HBCE · JOKER-C2 · TRAC · ActivationInfrastructure · Torino_Bruxelles · Fail_Closed · Evidence · EU_Operational_Activation";
 const MATRIX_TORINO_BRUXELLES_VOLUME_III_OPERATIONAL_TRACE_AXIS = "Identity · Intent · Policy · Risk · Decision · Execution · Evidence · Verification · Continuity · Activation_Point · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
+
+
 
 
 const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_PROFILE_LOCK_REVISION = "MATRIX_VOLUME_IV_PROFILE_LOCK_v6_8_9-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE_v6_8_9_1-MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
@@ -5035,6 +6730,8 @@ const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_CANONICAL_AXIS = "IPR · HBCE · JOKER-C2
 const MATRIX_PIEMONTE_ITALIA_VOLUME_IV_OPERATIONAL_TRACE_AXIS = "Identity · Territory · Region · Node · Policy · Replication · Coordination · Evidence · Verification · Continuity · Distribution_Point · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
 
 
+
+
 const MATRIX_ITALIA_EUROPA_VOLUME_V_PROFILE_LOCK_REVISION = "MATRIX_VOLUME_V_ENERGY_BASE_PROFILE_LOCK_v6_8_9_2-HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_LOCK_v6_8_9_3";
 const MATRIX_ITALIA_EUROPA_VOLUME_V_SOURCE_HASH = "sha256:29060ed1a3da38f81d69c508dab06085c97f2086493767fd5b90425f3875afc5";
 const MATRIX_ITALIA_EUROPA_VOLUME_V_RUNTIME_HASH = "sha256:e14c3b1f2ac1b0e1f79d4103814a0863e28156201ce6c7de88a40e2ae7b94368";
@@ -5046,6 +6743,8 @@ const MATRIX_ITALIA_EUROPA_VOLUME_V_TITLE = "MATRIX ITALIA–EUROPA";
 const MATRIX_ITALIA_EUROPA_VOLUME_V_CLASSIFICATION = "MATRIX_VOLUME_V_ENERGY_BASE";
 const MATRIX_ITALIA_EUROPA_VOLUME_V_CANONICAL_AXIS = "IPR · HBCE · JOKER-C2 · TRAC · EnergyBase · Italia_Europa · DistributedEnergyNodes · Resilience · StrategicAutonomy · EU_Energy_Federation";
 const MATRIX_ITALIA_EUROPA_VOLUME_V_OPERATIONAL_TRACE_AXIS = "Identity · Energy · Node · Cluster · Industry · Policy · Runtime_Control · Resilience · Evidence · Verification · Continuity · Energy_Point · EVT · OPC · AI_JOKER_C2_OPERATIONAL_STACK";
+
+
 
 
 interface MatrixOperationalDocumentProfile {
@@ -5068,9 +6767,15 @@ interface MatrixOperationalDocumentProfile {
 
 
 
+
+
+
+
 function inferMatrixItaliaEuropaVolumeVProfile(file: StoredRuntimeFile): MatrixOperationalDocumentProfile | null {
   const normalized = normalizeSearchText(`${file.name}
 ${file.text.slice(0, 160000)}`);
+
+
 
 
   const explicitFile =
@@ -5081,12 +6786,16 @@ ${file.text.slice(0, 160000)}`);
     normalized.includes("matrix italia europa");
 
 
+
+
   const headerLock =
     normalized.includes("document_classification") &&
     normalized.includes("docfamily=hbce_operational_document") &&
     normalized.includes("documentkind=matrix_operational_volume") &&
     normalized.includes("matrixvolume=v5") &&
     normalized.includes("title=matrix italia europa");
+
+
 
 
   const contentIdentity =
@@ -5096,11 +6805,15 @@ ${file.text.slice(0, 160000)}`);
     normalized.includes("autonomia strategica");
 
 
+
+
   const energyIdentity =
     normalized.includes("nodo energetico") &&
     normalized.includes("rete energetica europea") &&
     normalized.includes("smr") &&
     normalized.includes("resilienza sistemica");
+
+
 
 
   const phiOmegaIdentity =
@@ -5110,12 +6823,18 @@ ${file.text.slice(0, 160000)}`);
     normalized.includes("equilibrio sistemico");
 
 
+
+
   const runtimeHashLock = normalized.includes("e14c3b1f2ac1b0e1f79d4103814a0863e28156201ce6c7de88a40e2ae7b94368");
+
+
 
 
   if (!(explicitFile || headerLock || contentIdentity || energyIdentity || phiOmegaIdentity || runtimeHashLock)) {
     return null;
   }
+
+
 
 
   return {
@@ -5169,9 +6888,13 @@ ${file.text.slice(0, 160000)}`);
 }
 
 
+
+
 function inferMatrixPiemonteItaliaVolumeIVProfile(file: StoredRuntimeFile): MatrixOperationalDocumentProfile | null {
   const normalized = normalizeSearchText(`${file.name}
 ${file.text.slice(0, 120000)}`);
+
+
 
 
   const explicitFile =
@@ -5182,6 +6905,8 @@ ${file.text.slice(0, 120000)}`);
     normalized.includes("matrix piemonte italia");
 
 
+
+
   const headerLock =
     normalized.includes("document_classification") &&
     normalized.includes("docfamily=hbce_operational_document") &&
@@ -5190,12 +6915,16 @@ ${file.text.slice(0, 120000)}`);
     normalized.includes("title=matrix piemonte italia");
 
 
+
+
   const contentIdentity =
     normalized.includes("volume della distribuzione territoriale") &&
     normalized.includes("piemonte") &&
     normalized.includes("italia") &&
     normalized.includes("distribuzione territoriale") &&
     normalized.includes("coordinamento nazionale");
+
+
 
 
   const territorialIdentity =
@@ -5207,14 +6936,20 @@ ${file.text.slice(0, 120000)}`);
     normalized.includes("trac territoriale");
 
 
+
+
   const runtimeHashLock =
     normalized.includes("d8f22b1773baad074b5e30560812d075e23d374493358a76a50decf0f68a7809") ||
     normalized.includes("eeca36f70747fbccfc725d09288aac711e6fbe93a8949e02e6dc341d6c3d8d6b");
 
 
+
+
   if (!(explicitFile || headerLock || contentIdentity || territorialIdentity || runtimeHashLock)) {
     return null;
   }
+
+
 
 
   return {
@@ -5262,9 +6997,13 @@ ${file.text.slice(0, 120000)}`);
 }
 
 
+
+
 function inferMatrixTorinoBruxellesVolumeIIIProfile(file: StoredRuntimeFile): MatrixOperationalDocumentProfile | null {
   const normalized = normalizeSearchText(`${file.name}
 ${file.text.slice(0, 120000)}`);
+
+
 
 
   const explicitFile =
@@ -5275,12 +7014,16 @@ ${file.text.slice(0, 120000)}`);
     normalized.includes("matrix torino bruxelles");
 
 
+
+
   const headerLock =
     normalized.includes("document_classification") &&
     normalized.includes("docfamily=hbce_operational_document") &&
     normalized.includes("documentkind=matrix_operational_volume") &&
     normalized.includes("matrixvolume=v3") &&
     normalized.includes("title=matrix torino bruxelles");
+
+
 
 
   const contentIdentity =
@@ -5291,6 +7034,8 @@ ${file.text.slice(0, 120000)}`);
     normalized.includes("bruxelles");
 
 
+
+
   const activationProtocolIdentity =
     normalized.includes("cap-eu") &&
     normalized.includes("trac-0000") &&
@@ -5299,12 +7044,18 @@ ${file.text.slice(0, 120000)}`);
     normalized.includes("trac-0003");
 
 
+
+
   const runtimeHashLock = normalized.includes("7eb53665cce1503025b602fce62a603c502c5ca5a87fa4e1b9c64990e2d12c62");
+
+
 
 
   if (!(explicitFile || headerLock || contentIdentity || activationProtocolIdentity || runtimeHashLock)) {
     return null;
   }
+
+
 
 
   return {
@@ -5356,9 +7107,13 @@ ${file.text.slice(0, 120000)}`);
 }
 
 
+
+
 function inferMatrixHbceJokerC2IprVolumeIIProfile(file: StoredRuntimeFile): MatrixOperationalDocumentProfile | null {
   const normalized = normalizeSearchText(`${file.name}
 ${file.text.slice(0, 100000)}`);
+
+
 
 
   const explicitFile =
@@ -5366,6 +7121,8 @@ ${file.text.slice(0, 100000)}`);
     normalized.includes("b2 b2 matrix hbce") ||
     normalized.includes("matrix hbce joker-c2 ipr volume ii") ||
     normalized.includes("matrix hbce / joker-c2 / ipr");
+
+
 
 
   const headerLock =
@@ -5376,11 +7133,15 @@ ${file.text.slice(0, 100000)}`);
     normalized.includes("title=matrix hbce / joker-c2 / ipr");
 
 
+
+
   const contentIdentity =
     normalized.includes("volume del controllo operativo") &&
     normalized.includes("execution infrastructure") &&
     normalized.includes("identity intent policy risk decision execution evidence verification continuity") &&
     normalized.includes("fail-closed");
+
+
 
 
   const stackIdentity =
@@ -5391,9 +7152,13 @@ ${file.text.slice(0, 100000)}`);
     normalized.includes("joker-c2");
 
 
+
+
   if (!(explicitFile || headerLock || contentIdentity || stackIdentity)) {
     return null;
   }
+
+
 
 
   return {
@@ -5439,8 +7204,12 @@ ${file.text.slice(0, 100000)}`);
 }
 
 
+
+
 function inferMatrixEuropaVolumeIProfile(file: StoredRuntimeFile): MatrixOperationalDocumentProfile | null {
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 80000)}`);
+
+
 
 
   const explicitFile =
@@ -5450,12 +7219,16 @@ function inferMatrixEuropaVolumeIProfile(file: StoredRuntimeFile): MatrixOperati
     normalized.includes("hbce matrix document runtime profile");
 
 
+
+
   const headerLock =
     normalized.includes("document_classification") &&
     normalized.includes("docfamily=hbce_operational_document") &&
     normalized.includes("documentkind=matrix_operational_volume") &&
     normalized.includes("matrixvolume=v1") &&
     normalized.includes("title=matrix europa");
+
+
 
 
   const contentIdentity =
@@ -5467,15 +7240,21 @@ function inferMatrixEuropaVolumeIProfile(file: StoredRuntimeFile): MatrixOperati
     normalized.includes("joker-c2");
 
 
+
+
   const standardIdentity =
     normalized.includes("trac-0001") &&
     normalized.includes("trac-0007") &&
     normalized.includes("identity continuity governance execution verification");
 
 
+
+
   if (!(explicitFile || headerLock || contentIdentity || standardIdentity)) {
     return null;
   }
+
+
 
 
   return {
@@ -5523,6 +7302,10 @@ function inferMatrixEuropaVolumeIProfile(file: StoredRuntimeFile): MatrixOperati
 
 
 
+
+
+
+
 function inferMatrixOperationalDocumentProfile(file: StoredRuntimeFile): MatrixOperationalDocumentProfile | null {
   return inferMatrixItaliaEuropaVolumeVProfile(file) ??
     inferMatrixPiemonteItaliaVolumeIVProfile(file) ??
@@ -5532,6 +7315,8 @@ function inferMatrixOperationalDocumentProfile(file: StoredRuntimeFile): MatrixO
 }
 
 
+
+
 function matrixRuntimeSha256MatchesProfile(file: StoredRuntimeFile, profile: MatrixOperationalDocumentProfile): boolean {
   const actual = `sha256:${file.fileHash}`;
   const accepted = new Set([profile.runtimeSha256, ...(profile.runtimeSha256Aliases ?? [])]);
@@ -5539,13 +7324,19 @@ function matrixRuntimeSha256MatchesProfile(file: StoredRuntimeFile, profile: Mat
 }
 
 
+
+
 function buildMatrixEuropaVolumeIMetadata(file: StoredRuntimeFile): Record<string, unknown> | null {
   const profile = inferMatrixOperationalDocumentProfile(file);
+
+
 
 
   if (!profile) {
     return null;
   }
+
+
 
 
   return {
@@ -5584,6 +7375,8 @@ function buildMatrixEuropaVolumeIMetadata(file: StoredRuntimeFile): Record<strin
 }
 
 
+
+
 function buildDocumentProfileContext(body: FilesBody, sessionId: string): DocumentProfileContext {
   return {
     sessionId,
@@ -5599,6 +7392,10 @@ function buildDocumentProfileContext(body: FilesBody, sessionId: string): Docume
 
 
 
+
+
+
+
 function extractFirstNonEmptyLines(text: string, limit: number): string[] {
   return text
     .split("\n")
@@ -5610,6 +7407,10 @@ function extractFirstNonEmptyLines(text: string, limit: number): string[] {
 
 
 
+
+
+
+
 function includesAll(normalized: string, terms: string[]): boolean {
   return terms.every((term) => normalized.includes(normalizeSearchText(term)));
 }
@@ -5617,9 +7418,17 @@ function includesAll(normalized: string, terms: string[]): boolean {
 
 
 
+
+
+
+
 function buildQpccfSearchCorpus(file: StoredRuntimeFile): string {
   return normalizeSearchText(`${file.name}\n${file.text.slice(0, 50000)}`);
 }
+
+
+
+
 
 
 
@@ -5632,8 +7441,14 @@ function getB2gTechnicalStackDefinitionForModule(
   }
 
 
+
+
   return HBCE_B2G_TECHNICAL_STACK_DEFINITIONS.find((definition) => definition.module === module) ?? null;
 }
+
+
+
+
 
 
 
@@ -5646,9 +7461,17 @@ function getB2gTechnicalStackDefinitionForFile(file: StoredRuntimeFile): ModuleD
 
 
 
+
+
+
+
 function isQpccfTechnicalStackDocument(file: StoredRuntimeFile): boolean {
   return classifyHbceB2gTechnicalStackFile(file).module === QPCCF_MODULE;
 }
+
+
+
+
 
 
 
@@ -5660,9 +7483,17 @@ function qpccfTechnicalStackSummary(): string {
 
 
 
+
+
+
+
 function b2gTechnicalStackSummaryForDefinition(definition: ModuleDefinition): string {
   return `Profilo documento ${definition.title} del Technical Governance Stack HBCE/JOKER-C2 B2G: modulo ${definition.module}. ${definition.summary} legalCertification=false; OPC=technical proof receipt only.`;
 }
+
+
+
+
 
 
 
@@ -5683,6 +7514,8 @@ function buildB2gTechnicalStackMetadata(file: StoredRuntimeFile): Record<string,
     text: file.text.slice(0, 60000),
     mimeType: file.mimeType
   }) ?? {};
+
+
 
 
   return {
@@ -5720,6 +7553,10 @@ function buildB2gTechnicalStackMetadata(file: StoredRuntimeFile): Record<string,
 
 
 
+
+
+
+
 function buildQpccfTechnicalStackMetadata(file: StoredRuntimeFile): Record<string, unknown> {
   const libClassification = classifyHbceB2gTechnicalStackFile(file);
   const libMetadata = buildHbceB2gTechnicalStackProfileMetadata({
@@ -5730,6 +7567,8 @@ function buildQpccfTechnicalStackMetadata(file: StoredRuntimeFile): Record<strin
     text: file.text.slice(0, 60000),
     mimeType: file.mimeType
   }) ?? {};
+
+
 
 
   return {
@@ -5765,6 +7604,8 @@ function buildQpccfTechnicalStackMetadata(file: StoredRuntimeFile): Record<strin
 }
 
 
+
+
 function classifyHbceB2gTechnicalStackFile(file: StoredRuntimeFile): HbceB2gTechnicalStackClassification {
   return classifyHbceB2gTechnicalStackDocument({
     filename: file.name,
@@ -5777,10 +7618,14 @@ function classifyHbceB2gTechnicalStackFile(file: StoredRuntimeFile): HbceB2gTech
 }
 
 
+
+
 function getHbceB2gTechnicalStackClassification(file: StoredRuntimeFile): HbceB2gTechnicalStackClassification | null {
-  if (inferApokalypsisVolumeIVProfile(file) || inferApokalypsisVolumeIProfile(file) || inferMatrixOperationalDocumentProfile(file)) {
+  if (inferApokalypsisVolumeVProfile(file) || inferApokalypsisVolumeIVProfile(file) || inferApokalypsisVolumeIProfile(file) || inferMatrixOperationalDocumentProfile(file)) {
     return null;
   }
+
+
 
 
   const classification = classifyHbceB2gTechnicalStackFile(file);
@@ -5788,9 +7633,17 @@ function getHbceB2gTechnicalStackClassification(file: StoredRuntimeFile): HbceB2
 }
 
 
+
+
 function isHbceB2gTechnicalStackFile(file: StoredRuntimeFile): boolean {
   return Boolean(getHbceB2gTechnicalStackClassification(file));
 }
+
+
+
+
+
+
 
 
 
@@ -5803,9 +7656,13 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 30000)}`);
 
 
+
+
   const explicitV5ByFilename =
     normalizedName.includes("5e 5e il portale dell anticristo") ||
     includesAll(normalizedName, ["portale", "anticristo"]);
+
+
 
 
   const explicitV5ByHeader =
@@ -5814,6 +7671,8 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
     includesAll(normalizedHead, ["apocalisse", "regime di esposizione"]) ||
     includesAll(normalizedHead, ["anticristo", "configurazione di rottura"]) ||
     includesAll(normalizedHead, ["portale", "soglia operativa"]);
+
+
 
 
   // V5 must be resolved before the V4 semantic guard. Volume V can quote or reuse
@@ -5830,10 +7689,14 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
   }
 
 
+
+
   const explicitV4ByFilename =
     normalizedName.includes("4d 4d alien code") ||
     includesAll(normalizedName, ["alien code", "tracciabilita rascensionale"]) ||
     includesAll(normalizedName, ["codice alieno", "tracciabilita rascensionale"]);
+
+
 
 
   const explicitV4ByHeader =
@@ -5842,6 +7705,8 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
     includesAll(normalizedHead, ["codice alieno", "volume iv"]) ||
     includesAll(normalizedHead, ["framework operativo", "tracciabilita rascensionale"]) ||
     includesAll(normalizedHead, ["alien code", "accoppiamento organismo sistema"]);
+
+
 
 
   if (
@@ -5857,6 +7722,8 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
   }
 
 
+
+
   if (
     normalizedName.includes("3c 3c lex hermeticum") ||
     normalized.includes("lex hermeticum") ||
@@ -5864,6 +7731,10 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
   ) {
     return CANONICAL_CORPUS_VOLUME_PROFILES.V3;
   }
+
+
+
+
 
 
 
@@ -5879,6 +7750,10 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
 
 
 
+
+
+
+
   if (
     normalizedName.includes("1a 1a corpus esoterologia ermetica") ||
     includesAll(normalizedName, ["corpus esoterologia ermetica"]) ||
@@ -5890,17 +7765,35 @@ function inferCanonicalCorpusVolumeProfile(file: StoredRuntimeFile): CanonicalCo
 
 
 
+
+
+
+
   return null;
 }
+
+
 
 
 function inferDocumentFamily(file: StoredRuntimeFile): string | null {
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 12000)}`);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
-  const apokalypsisVolumeIVProfile = inferApokalypsisVolumeIVProfile(file);
-  const apokalypsisVolumeIProfile = apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
-  const hbceAiEcosystemProfile = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferHbceAiEcosystemVolumeIProfile(file);
-  const matrixOperationalProfile = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const apokalypsisVolumeVProfile = inferApokalypsisVolumeVProfile(file);
+  const apokalypsisVolumeIVProfile = apokalypsisVolumeVProfile ? null : inferApokalypsisVolumeIVProfile(file);
+  const apokalypsisVolumeIProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
+  const hbceAiEcosystemProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferHbceAiEcosystemVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+
+
+
+
+
+
+
+
+  if (apokalypsisVolumeVProfile) {
+    return apokalypsisVolumeVProfile.docFamily;
+  }
 
 
 
@@ -5910,9 +7803,15 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
   }
 
 
+
+
   if (apokalypsisVolumeIProfile) {
     return apokalypsisVolumeIProfile.docFamily;
   }
+
+
+
+
 
 
 
@@ -5924,6 +7823,10 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   if (matrixOperationalProfile) {
     return matrixOperationalProfile.docFamily;
   }
@@ -5931,7 +7834,15 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
+
+
+
+
 
 
 
@@ -5943,6 +7854,10 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   if (canonicalCorpusProfile) {
     return "CORPUS_ESOTEROLOGIA_ERMETICA";
   }
@@ -5950,9 +7865,17 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   if (normalized.includes("apokalypsis")) {
     return "APOKALYPSIS";
   }
+
+
+
+
 
 
 
@@ -5971,6 +7894,10 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   if (
     normalized.includes("corpus esoterologia ermetica") ||
     normalized.includes("esoterologia") ||
@@ -5980,6 +7907,10 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
   ) {
     return "CORPUS_ESOTEROLOGIA_ERMETICA";
   }
+
+
+
+
 
 
 
@@ -5995,9 +7926,17 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   if (normalized.includes("hermeticum") || normalized.includes("hbce")) {
     return "HBCE_OPERATIONAL_DOCUMENT";
   }
+
+
+
+
 
 
 
@@ -6008,13 +7947,29 @@ function inferDocumentFamily(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
 function inferDocumentVolume(file: StoredRuntimeFile): string | null {
-  const apokalypsisVolumeIVProfile = inferApokalypsisVolumeIVProfile(file);
-  const apokalypsisVolumeIProfile = apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
-  const hbceAiEcosystemProfile = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferHbceAiEcosystemVolumeIProfile(file);
-  const matrixOperationalProfile = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || hbceAiEcosystemProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
+  const apokalypsisVolumeVProfile = inferApokalypsisVolumeVProfile(file);
+  const apokalypsisVolumeIVProfile = apokalypsisVolumeVProfile ? null : inferApokalypsisVolumeIVProfile(file);
+  const apokalypsisVolumeIProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
+  const hbceAiEcosystemProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferHbceAiEcosystemVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || hbceAiEcosystemProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+
+
+
+
+
+
+  if (apokalypsisVolumeVProfile) {
+    return apokalypsisVolumeVProfile.volume;
+  }
 
 
 
@@ -6024,9 +7979,15 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
   }
 
 
+
+
   if (apokalypsisVolumeIProfile) {
     return apokalypsisVolumeIProfile.volume;
   }
+
+
+
+
 
 
 
@@ -6038,9 +7999,17 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   if (matrixOperationalProfile) {
     return matrixOperationalProfile.volume;
   }
+
+
+
+
 
 
 
@@ -6052,6 +8021,10 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   if (canonicalCorpusProfile) {
     return canonicalCorpusProfile.volume;
   }
@@ -6059,9 +8032,17 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   const raw = `${file.name}\n${file.text.slice(0, 16000)}`;
   const normalized = normalizeSearchText(raw);
   const directMatch = raw.match(/\bVolume\s+(I{1,3}|IV|V|VI{0,3}|IX|X|1|2|3|4|5|6|7|8|9|10)\b/i);
+
+
+
+
 
 
 
@@ -6084,8 +8065,16 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
     return romanMap[token] || `V${token}`;
   }
+
+
+
+
 
 
 
@@ -6097,6 +8086,10 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   if (normalized.includes("1a 1a corpus") || includesAll(normalized, ["corpus", "volume", "i"])) {
     return "V1";
   }
@@ -6104,7 +8097,15 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   const filenameVolume = file.name.match(/(?:^|[_\-\s])(?:vol(?:ume)?[_\-\s]*)?(\d{1,2}|I{1,3}|IV|V)(?:[_\-\s]|\.)/i);
+
+
+
+
 
 
 
@@ -6122,8 +8123,16 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
     return romanMap[token] || `V${token}`;
   }
+
+
+
+
 
 
 
@@ -6134,13 +8143,29 @@ function inferDocumentVolume(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
 function inferDocumentTitle(file: StoredRuntimeFile): string | null {
-  const apokalypsisVolumeIVProfile = inferApokalypsisVolumeIVProfile(file);
-  const apokalypsisVolumeIProfile = apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
-  const hbceAiEcosystemProfile = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferHbceAiEcosystemVolumeIProfile(file);
-  const matrixOperationalProfile = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || hbceAiEcosystemProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
+  const apokalypsisVolumeVProfile = inferApokalypsisVolumeVProfile(file);
+  const apokalypsisVolumeIVProfile = apokalypsisVolumeVProfile ? null : inferApokalypsisVolumeIVProfile(file);
+  const apokalypsisVolumeIProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
+  const hbceAiEcosystemProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferHbceAiEcosystemVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || hbceAiEcosystemProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+
+
+
+
+
+
+  if (apokalypsisVolumeVProfile) {
+    return apokalypsisVolumeVProfile.title;
+  }
 
 
 
@@ -6150,9 +8175,15 @@ function inferDocumentTitle(file: StoredRuntimeFile): string | null {
   }
 
 
+
+
   if (apokalypsisVolumeIProfile) {
     return apokalypsisVolumeIProfile.title;
   }
+
+
+
+
 
 
 
@@ -6164,9 +8195,17 @@ function inferDocumentTitle(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   if (matrixOperationalProfile) {
     return matrixOperationalProfile.title;
   }
+
+
+
+
 
 
 
@@ -6178,6 +8217,10 @@ function inferDocumentTitle(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   if (canonicalCorpusProfile) {
     return canonicalCorpusProfile.title;
   }
@@ -6185,8 +8228,16 @@ function inferDocumentTitle(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 12000)}`);
   const lines = extractFirstNonEmptyLines(file.text, 10);
+
+
+
+
 
 
 
@@ -6198,9 +8249,17 @@ function inferDocumentTitle(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   if (normalized.includes("corpus esoterologia ermetica") && normalized.includes("esoterologia")) {
     return "ESOTEROLOGIA";
   }
+
+
+
+
 
 
 
@@ -6211,8 +8270,16 @@ function inferDocumentTitle(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
     return volume ? `APOKALYPSIS ${volume}` : "APOKALYPSIS";
   }
+
+
+
+
 
 
 
@@ -6223,8 +8290,16 @@ function inferDocumentTitle(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
     return volume ? `U.S.E. ${volume}` : "U.S.E.";
   }
+
+
+
+
 
 
 
@@ -6235,8 +8310,16 @@ function inferDocumentTitle(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
     return normalizedLine.length >= 4 && normalizedLine.length <= 120;
   });
+
+
+
+
 
 
 
@@ -6247,11 +8330,27 @@ function inferDocumentTitle(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
 function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 20000)}`);
-  const apokalypsisVolumeIVProfile = inferApokalypsisVolumeIVProfile(file);
-  const apokalypsisVolumeIProfile = apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
-  const matrixOperationalProfile = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const apokalypsisVolumeVProfile = inferApokalypsisVolumeVProfile(file);
+  const apokalypsisVolumeIVProfile = apokalypsisVolumeVProfile ? null : inferApokalypsisVolumeIVProfile(file);
+  const apokalypsisVolumeIProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferMatrixOperationalDocumentProfile(file);
+
+
+
+
+
+
+
+
+  if (apokalypsisVolumeVProfile) {
+    return apokalypsisVolumeVProfile.canonicalAxis;
+  }
 
 
 
@@ -6261,9 +8360,13 @@ function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
   }
 
 
+
+
   if (apokalypsisVolumeIProfile) {
     return apokalypsisVolumeIProfile.canonicalAxis;
   }
+
+
 
 
   if (matrixOperationalProfile) {
@@ -6273,7 +8376,15 @@ function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   const b2gTechnicalStackClassification = getHbceB2gTechnicalStackClassification(file);
+
+
+
+
 
 
 
@@ -6285,9 +8396,17 @@ function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   if (includesAll(normalized, ["decisione", "costo", "traccia", "tempo"])) {
     return CANONICAL_AXIS_DCTT;
   }
+
+
+
+
 
 
 
@@ -6299,18 +8418,38 @@ function inferCanonicalAxis(file: StoredRuntimeFile): string | null {
 
 
 
+
+
+
+
   return null;
 }
 
 
 
 
+
+
+
+
 function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
-  const apokalypsisVolumeIVProfile = inferApokalypsisVolumeIVProfile(file);
-  const apokalypsisVolumeIProfile = apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
-  const matrixOperationalProfile = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
+  const apokalypsisVolumeVProfile = inferApokalypsisVolumeVProfile(file);
+  const apokalypsisVolumeIVProfile = apokalypsisVolumeVProfile ? null : inferApokalypsisVolumeIVProfile(file);
+  const apokalypsisVolumeIProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+
+
+
+
+
+
+  if (apokalypsisVolumeVProfile) {
+    return Array.from(new Set(apokalypsisVolumeVProfile.keyTerms)).slice(0, 32);
+  }
 
 
 
@@ -6320,9 +8459,15 @@ function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
   }
 
 
+
+
   if (apokalypsisVolumeIProfile) {
     return Array.from(new Set(apokalypsisVolumeIProfile.keyTerms)).slice(0, 32);
   }
+
+
+
+
 
 
 
@@ -6334,9 +8479,17 @@ function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
 
 
 
+
+
+
+
   if (b2gTechnicalStackClassification) {
     return Array.from(new Set(b2gTechnicalStackClassification.keyTerms)).slice(0, 32);
   }
+
+
+
+
 
 
 
@@ -6348,10 +8501,18 @@ function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
 
 
 
+
+
+
+
   const normalized = normalizeSearchText(`${file.name}\n${file.text.slice(0, 30000)}`);
   const terms = DOCUMENT_KEY_TERM_CANDIDATES.filter((term) => {
     return normalized.includes(normalizeSearchText(term));
   });
+
+
+
+
 
 
 
@@ -6367,18 +8528,38 @@ function collectDocumentKeyTerms(file: StoredRuntimeFile): string[] {
 
 
 
+
+
+
+
   return Array.from(new Set(terms)).slice(0, 32);
 }
 
 
 
 
+
+
+
+
 function buildDocumentSummary(file: StoredRuntimeFile): string {
-  const apokalypsisVolumeIVProfile = inferApokalypsisVolumeIVProfile(file);
-  const apokalypsisVolumeIProfile = apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
-  const matrixOperationalProfile = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
+  const apokalypsisVolumeVProfile = inferApokalypsisVolumeVProfile(file);
+  const apokalypsisVolumeIVProfile = apokalypsisVolumeVProfile ? null : inferApokalypsisVolumeIVProfile(file);
+  const apokalypsisVolumeIProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || matrixOperationalProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
+
+
+
+
+
+
+
+
+  if (apokalypsisVolumeVProfile) {
+    return apokalypsisVolumeVProfile.summary;
+  }
 
 
 
@@ -6388,9 +8569,15 @@ function buildDocumentSummary(file: StoredRuntimeFile): string {
   }
 
 
+
+
   if (apokalypsisVolumeIProfile) {
     return apokalypsisVolumeIProfile.summary;
   }
+
+
+
+
 
 
 
@@ -6402,9 +8589,17 @@ function buildDocumentSummary(file: StoredRuntimeFile): string {
 
 
 
+
+
+
+
   if (b2gTechnicalStackClassification?.summary) {
     return b2gTechnicalStackClassification.summary;
   }
+
+
+
+
 
 
 
@@ -6417,9 +8612,17 @@ function buildDocumentSummary(file: StoredRuntimeFile): string {
 
 
 
+
+
+
+
   if (!isPromptTextStatus(file.status)) {
     return `Documento registrato come ${file.status}. Il file resta tracciabile per hash e metadati, ma non contiene testo pronto per il prompt.`;
   }
+
+
+
+
 
 
 
@@ -6431,9 +8634,17 @@ function buildDocumentSummary(file: StoredRuntimeFile): string {
 
 
 
+
+
+
+
   if (title === "MATRIX / 05-04-2026") {
     return "Profilo documento MATRIX / 05-04-2026: Volume II del CORPUS ESOTEROLOGIA ERMETICA. Trasferisce la griglia Decisione · Costo · Traccia · Tempo nel dominio istituzionale, leggendo istituzioni, Stato, esecuzione, fiscalità, debito, sicurezza, forza, conflitto, decadimento e ordine globale come sequenze operative distribuite.";
   }
+
+
+
+
 
 
 
@@ -6445,7 +8656,15 @@ function buildDocumentSummary(file: StoredRuntimeFile): string {
 
 
 
+
+
+
+
   const extracted = extractFirstNonEmptyLines(file.text, 4).join(" ").slice(0, 700);
+
+
+
+
 
 
 
@@ -6461,10 +8680,18 @@ function buildDocumentSummary(file: StoredRuntimeFile): string {
 
 
 
+
+
+
+
 function describeDocumentChunkPersistenceReason(chunks: DocumentChunkPersistenceResult | null | undefined): string | null {
   if (!chunks) {
     return null;
   }
+
+
+
+
 
 
 
@@ -6476,9 +8703,17 @@ function describeDocumentChunkPersistenceReason(chunks: DocumentChunkPersistence
 
 
 
+
+
+
+
   if (chunks.ok && chunks.databaseVerified && chunks.persistedCount === chunks.chunkCount) {
     return "DATABASE_VERIFIED";
   }
+
+
+
+
 
 
 
@@ -6490,6 +8725,10 @@ function describeDocumentChunkPersistenceReason(chunks: DocumentChunkPersistence
 
 
 
+
+
+
+
   if (chunks.databaseVerified && chunks.persistedCount !== chunks.chunkCount) {
     return "DATABASE_COUNT_MISMATCH";
   }
@@ -6497,8 +8736,16 @@ function describeDocumentChunkPersistenceReason(chunks: DocumentChunkPersistence
 
 
 
+
+
+
+
   return chunks.error || "DOCUMENT_CHUNK_PERSISTENCE_FAILED";
 }
+
+
+
+
 
 
 
@@ -6530,6 +8777,10 @@ function buildDocumentChunkPersistenceProofMetadata(chunks: DocumentChunkPersist
 
 
 
+
+
+
+
 function applyDocumentChunkPersistenceProofToInput(
   input: DocumentProfileDatabaseInput,
   chunks: DocumentChunkPersistenceResult | null
@@ -6538,6 +8789,10 @@ function applyDocumentChunkPersistenceProofToInput(
     input.documentMetadata && typeof input.documentMetadata === "object"
       ? input.documentMetadata as Record<string, unknown>
       : {};
+
+
+
+
 
 
 
@@ -6556,6 +8811,10 @@ function applyDocumentChunkPersistenceProofToInput(
 
 
 
+
+
+
+
 function withDocumentChunkPersistenceProof<T extends Record<string, unknown> | null>(
   profile: T,
   chunks: DocumentChunkPersistenceResult | null
@@ -6567,10 +8826,18 @@ function withDocumentChunkPersistenceProof<T extends Record<string, unknown> | n
 
 
 
+
+
+
+
   const existingMetadata =
     profile.documentMetadata && typeof profile.documentMetadata === "object"
       ? profile.documentMetadata as Record<string, unknown>
       : {};
+
+
+
+
 
 
 
@@ -6589,28 +8856,38 @@ function withDocumentChunkPersistenceProof<T extends Record<string, unknown> | n
 
 
 
+
+
+
+
 function buildDocumentProfileInput(
   file: StoredRuntimeFile,
   context: DocumentProfileContext
 ): DocumentProfileDatabaseInput {
   const canonicalCorpusProfile = inferCanonicalCorpusVolumeProfile(file);
-  const apokalypsisVolumeIVProfile = inferApokalypsisVolumeIVProfile(file);
-  const apokalypsisVolumeIProfile = apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
-  const hbceAiEcosystemProfile = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferHbceAiEcosystemVolumeIProfile(file);
-  const matrixOperationalProfile = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
-  const b2gTechnicalStackClassification = apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || matrixOperationalProfile || hbceAiEcosystemProfile ? null : getHbceB2gTechnicalStackClassification(file);
+  const apokalypsisVolumeVProfile = inferApokalypsisVolumeVProfile(file);
+  const apokalypsisVolumeIVProfile = apokalypsisVolumeVProfile ? null : inferApokalypsisVolumeIVProfile(file);
+  const apokalypsisVolumeIProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile ? null : inferApokalypsisVolumeIProfile(file);
+  const hbceAiEcosystemProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile ? null : inferHbceAiEcosystemVolumeIProfile(file);
+  const matrixOperationalProfile = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || hbceAiEcosystemProfile ? null : inferMatrixOperationalDocumentProfile(file);
+  const b2gTechnicalStackClassification = apokalypsisVolumeVProfile || apokalypsisVolumeIVProfile || apokalypsisVolumeIProfile || matrixOperationalProfile || hbceAiEcosystemProfile ? null : getHbceB2gTechnicalStackClassification(file);
   const qpccfTechnicalStackProfile = b2gTechnicalStackClassification?.module === QPCCF_MODULE;
   const b2gTechnicalStackProfile = Boolean(b2gTechnicalStackClassification);
+  const apokalypsisVolumeVDocumentProfile = Boolean(apokalypsisVolumeVProfile);
   const apokalypsisVolumeIVDocumentProfile = Boolean(apokalypsisVolumeIVProfile);
   const apokalypsisVolumeIDocumentProfile = Boolean(apokalypsisVolumeIProfile);
   const hbceAiEcosystemDocumentProfile = Boolean(hbceAiEcosystemProfile);
   const matrixOperationalDocumentProfile = Boolean(matrixOperationalProfile);
-  const docFamily = apokalypsisVolumeIVProfile?.docFamily ?? apokalypsisVolumeIProfile?.docFamily ?? hbceAiEcosystemProfile?.docFamily ?? matrixOperationalProfile?.docFamily ?? inferDocumentFamily(file);
-  const volume = apokalypsisVolumeIVProfile?.volume ?? apokalypsisVolumeIProfile?.volume ?? hbceAiEcosystemProfile?.volume ?? matrixOperationalProfile?.volume ?? inferDocumentVolume(file);
-  const title = apokalypsisVolumeIVProfile?.title ?? apokalypsisVolumeIProfile?.title ?? hbceAiEcosystemProfile?.title ?? matrixOperationalProfile?.title ?? inferDocumentTitle(file);
-  const canonicalAxis = apokalypsisVolumeIVProfile?.canonicalAxis ?? apokalypsisVolumeIProfile?.canonicalAxis ?? hbceAiEcosystemProfile?.canonicalAxis ?? matrixOperationalProfile?.canonicalAxis ?? inferCanonicalAxis(file);
-  const keyTerms = apokalypsisVolumeIVProfile?.keyTerms ?? apokalypsisVolumeIProfile?.keyTerms ?? hbceAiEcosystemProfile?.keyTerms ?? matrixOperationalProfile?.keyTerms ?? collectDocumentKeyTerms(file);
+  const docFamily = apokalypsisVolumeVProfile?.docFamily ?? apokalypsisVolumeIVProfile?.docFamily ?? apokalypsisVolumeIProfile?.docFamily ?? hbceAiEcosystemProfile?.docFamily ?? matrixOperationalProfile?.docFamily ?? inferDocumentFamily(file);
+  const volume = apokalypsisVolumeVProfile?.volume ?? apokalypsisVolumeIVProfile?.volume ?? apokalypsisVolumeIProfile?.volume ?? hbceAiEcosystemProfile?.volume ?? matrixOperationalProfile?.volume ?? inferDocumentVolume(file);
+  const title = apokalypsisVolumeVProfile?.title ?? apokalypsisVolumeIVProfile?.title ?? apokalypsisVolumeIProfile?.title ?? hbceAiEcosystemProfile?.title ?? matrixOperationalProfile?.title ?? inferDocumentTitle(file);
+  const canonicalAxis = apokalypsisVolumeVProfile?.canonicalAxis ?? apokalypsisVolumeIVProfile?.canonicalAxis ?? apokalypsisVolumeIProfile?.canonicalAxis ?? hbceAiEcosystemProfile?.canonicalAxis ?? matrixOperationalProfile?.canonicalAxis ?? inferCanonicalAxis(file);
+  const keyTerms = apokalypsisVolumeVProfile?.keyTerms ?? apokalypsisVolumeIVProfile?.keyTerms ?? apokalypsisVolumeIProfile?.keyTerms ?? hbceAiEcosystemProfile?.keyTerms ?? matrixOperationalProfile?.keyTerms ?? collectDocumentKeyTerms(file);
   const reusableInPrompt = isPromptTextStatus(file.status);
+
+
+
+
 
 
 
@@ -6632,22 +8909,25 @@ function buildDocumentProfileInput(
     docFamily,
     volume,
     title,
-    subtitle: apokalypsisVolumeIVProfile?.subtitle ?? null,
+    subtitle: apokalypsisVolumeVProfile?.subtitle ?? apokalypsisVolumeIVProfile?.subtitle ?? null,
     canonicalAxis,
-    summary: apokalypsisVolumeIVProfile?.summary ?? apokalypsisVolumeIProfile?.summary ?? matrixOperationalProfile?.summary ?? buildDocumentSummary(file),
+    summary: apokalypsisVolumeVProfile?.summary ?? apokalypsisVolumeIVProfile?.summary ?? apokalypsisVolumeIProfile?.summary ?? matrixOperationalProfile?.summary ?? buildDocumentSummary(file),
     keyTerms,
     semanticTerms: keyTerms.map((term) => ({ term, source: "AUTO_PROFILE" })),
     documentMetadata: {
       routeVersion: FILE_ROUTE_REVISION,
       canonicalProfileRevision: DOCUMENT_PROFILE_CANONICAL_FIX_REVISION,
-      canonicalProfileApplied: Boolean(canonicalCorpusProfile) || apokalypsisVolumeIVDocumentProfile || apokalypsisVolumeIDocumentProfile || b2gTechnicalStackProfile || matrixOperationalDocumentProfile || hbceAiEcosystemDocumentProfile,
-      canonicalVolume: apokalypsisVolumeIVProfile?.volume ?? apokalypsisVolumeIProfile?.volume ?? hbceAiEcosystemProfile?.volume ?? matrixOperationalProfile?.volume ?? b2gTechnicalStackClassification?.volume ?? canonicalCorpusProfile?.volume ?? null,
-      canonicalTitle: apokalypsisVolumeIVProfile?.title ?? apokalypsisVolumeIProfile?.title ?? hbceAiEcosystemProfile?.title ?? matrixOperationalProfile?.title ?? b2gTechnicalStackClassification?.title ?? canonicalCorpusProfile?.title ?? null,
-      canonicalDocumentKind: apokalypsisVolumeIVProfile?.documentKind ?? apokalypsisVolumeIProfile?.documentKind ?? hbceAiEcosystemProfile?.documentKind ?? matrixOperationalProfile?.documentKind ?? b2gTechnicalStackClassification?.documentKind ?? (canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null),
-      canonicalModule: apokalypsisVolumeIVProfile?.module ?? apokalypsisVolumeIProfile?.module ?? hbceAiEcosystemProfile?.module ?? matrixOperationalProfile?.module ?? null,
-      apokalypsisDocumentProfileLockApplied: apokalypsisVolumeIVDocumentProfile || apokalypsisVolumeIDocumentProfile,
-      apokalypsisDocumentProfileLockRevision: apokalypsisVolumeIVProfile?.profileLockRevision ?? apokalypsisVolumeIProfile?.profileLockRevision ?? null,
-      apokalypsisDocumentExpectedProfile: apokalypsisVolumeIVProfile ? buildApokalypsisVolumeIVMetadata(file) : apokalypsisVolumeIProfile ? buildApokalypsisVolumeIMetadata(file) : null,
+      canonicalProfileApplied: Boolean(canonicalCorpusProfile) || apokalypsisVolumeVDocumentProfile || apokalypsisVolumeIVDocumentProfile || apokalypsisVolumeIDocumentProfile || b2gTechnicalStackProfile || matrixOperationalDocumentProfile || hbceAiEcosystemDocumentProfile,
+      canonicalVolume: apokalypsisVolumeVProfile?.volume ?? apokalypsisVolumeIVProfile?.volume ?? apokalypsisVolumeIProfile?.volume ?? hbceAiEcosystemProfile?.volume ?? matrixOperationalProfile?.volume ?? b2gTechnicalStackClassification?.volume ?? canonicalCorpusProfile?.volume ?? null,
+      canonicalTitle: apokalypsisVolumeVProfile?.title ?? apokalypsisVolumeIVProfile?.title ?? apokalypsisVolumeIProfile?.title ?? hbceAiEcosystemProfile?.title ?? matrixOperationalProfile?.title ?? b2gTechnicalStackClassification?.title ?? canonicalCorpusProfile?.title ?? null,
+      canonicalDocumentKind: apokalypsisVolumeVProfile?.documentKind ?? apokalypsisVolumeIVProfile?.documentKind ?? apokalypsisVolumeIProfile?.documentKind ?? hbceAiEcosystemProfile?.documentKind ?? matrixOperationalProfile?.documentKind ?? b2gTechnicalStackClassification?.documentKind ?? (canonicalCorpusProfile ? "CANONICAL_CORPUS_VOLUME" : null),
+      canonicalModule: apokalypsisVolumeVProfile?.module ?? apokalypsisVolumeIVProfile?.module ?? apokalypsisVolumeIProfile?.module ?? hbceAiEcosystemProfile?.module ?? matrixOperationalProfile?.module ?? null,
+      apokalypsisDocumentProfileLockApplied: apokalypsisVolumeVDocumentProfile || apokalypsisVolumeIVDocumentProfile || apokalypsisVolumeIDocumentProfile,
+      apokalypsisDocumentProfileLockRevision: apokalypsisVolumeVProfile?.profileLockRevision ?? apokalypsisVolumeIVProfile?.profileLockRevision ?? apokalypsisVolumeIProfile?.profileLockRevision ?? null,
+      apokalypsisDocumentExpectedProfile: apokalypsisVolumeVProfile ? buildApokalypsisVolumeVMetadata(file) : apokalypsisVolumeIVProfile ? buildApokalypsisVolumeIVMetadata(file) : apokalypsisVolumeIProfile ? buildApokalypsisVolumeIMetadata(file) : null,
+      apokalypsisVolumeVDocumentProfileLockApplied: apokalypsisVolumeVDocumentProfile,
+      apokalypsisVolumeVDocumentProfileLockRevision: apokalypsisVolumeVProfile?.profileLockRevision ?? null,
+      apokalypsisVolumeVDocumentExpectedProfile: apokalypsisVolumeVProfile ? buildApokalypsisVolumeVMetadata(file) : null,
       apokalypsisVolumeIVDocumentProfileLockApplied: apokalypsisVolumeIVDocumentProfile,
       apokalypsisVolumeIVDocumentProfileLockRevision: apokalypsisVolumeIVProfile?.profileLockRevision ?? null,
       apokalypsisVolumeIVDocumentExpectedProfile: apokalypsisVolumeIVProfile ? buildApokalypsisVolumeIVMetadata(file) : null,
@@ -6745,6 +9025,12 @@ function buildDocumentProfileInput(
 
 
 
+
+
+
+
+
+
 function buildB2gTechnicalMemoryCollapseForFile(
   file: StoredRuntimeFile,
   context: DocumentProfileContext,
@@ -6752,17 +9038,23 @@ function buildB2gTechnicalMemoryCollapseForFile(
   documentProfileStatus: DocumentProfilePersistenceStatus | "PERSISTED" | null,
   chunks: DocumentChunkPersistenceResult | null
 ): Record<string, unknown> | null {
-  if (inferApokalypsisVolumeIVProfile(file) || inferApokalypsisVolumeIProfile(file) || inferMatrixOperationalDocumentProfile(file)) {
+  if (inferApokalypsisVolumeVProfile(file) || inferApokalypsisVolumeIVProfile(file) || inferApokalypsisVolumeIProfile(file) || inferMatrixOperationalDocumentProfile(file)) {
     return null;
   }
+
+
 
 
   const classification = getHbceB2gTechnicalStackClassification(file);
 
 
+
+
   if (!classification) {
     return null;
   }
+
+
 
 
   const payload = buildHbceB2gTechnicalMemoryCollapse({
@@ -6797,8 +9089,14 @@ function buildB2gTechnicalMemoryCollapseForFile(
   });
 
 
+
+
   return toPublicHbceB2gTechnicalMemoryPayload(payload);
 }
+
+
+
+
 
 
 
@@ -6814,6 +9112,10 @@ function readTechnicalMemoryString(
 
 
 
+
+
+
+
 function readTechnicalMemoryGuardBoolean(
   technicalMemory: Record<string, unknown> | null | undefined,
   key: string
@@ -6821,14 +9123,22 @@ function readTechnicalMemoryGuardBoolean(
   const guards = technicalMemory?.guards;
 
 
+
+
   if (!guards || typeof guards !== "object") {
     return null;
   }
 
 
+
+
   const value = (guards as Record<string, unknown>)[key];
   return typeof value === "boolean" ? value : null;
 }
+
+
+
+
 
 
 
@@ -6841,6 +9151,8 @@ function buildB2gTechnicalMemoryPromptBridge(
   }
 
 
+
+
   const status = readTechnicalMemoryString(technicalMemory, "status");
   const module = readTechnicalMemoryString(technicalMemory, "module");
   const docFamily = readTechnicalMemoryString(technicalMemory, "docFamily");
@@ -6848,9 +9160,13 @@ function buildB2gTechnicalMemoryPromptBridge(
   const failReason = readTechnicalMemoryString(technicalMemory, "failReason");
 
 
+
+
   if (!status) {
     return null;
   }
+
+
 
 
   return [
@@ -6870,6 +9186,10 @@ function buildB2gTechnicalMemoryPromptBridge(
 
 
 
+
+
+
+
 function injectB2gTechnicalMemoryPromptBridgeIntoRuntimeFile(
   file: StoredRuntimeFile,
   technicalMemory: Record<string, unknown> | null | undefined
@@ -6877,9 +9197,13 @@ function injectB2gTechnicalMemoryPromptBridgeIntoRuntimeFile(
   const bridge = buildB2gTechnicalMemoryPromptBridge(technicalMemory);
 
 
+
+
   if (!bridge) {
     return file;
   }
+
+
 
 
   const bridgeBlock = [
@@ -6889,10 +9213,14 @@ function injectB2gTechnicalMemoryPromptBridgeIntoRuntimeFile(
   ].join("\n");
 
 
+
+
   const contentAlreadyBridged = file.content.includes("HBCE B2G TECHNICAL MEMORY PROMPT BRIDGE");
   const nextContent = contentAlreadyBridged
     ? file.content
     : [bridgeBlock, "", "--- SOURCE DOCUMENT TEXT ---", file.content].join("\n");
+
+
 
 
   return {
@@ -6905,6 +9233,8 @@ function injectB2gTechnicalMemoryPromptBridgeIntoRuntimeFile(
 }
 
 
+
+
 function applyB2gTechnicalMemoryCollapseToInput(
   input: DocumentProfileDatabaseInput,
   technicalMemory: Record<string, unknown> | null
@@ -6914,10 +9244,14 @@ function applyB2gTechnicalMemoryCollapseToInput(
   }
 
 
+
+
   const existingMetadata =
     input.documentMetadata && typeof input.documentMetadata === "object"
       ? input.documentMetadata as Record<string, unknown>
       : {};
+
+
 
 
   return {
@@ -6946,6 +9280,10 @@ function applyB2gTechnicalMemoryCollapseToInput(
 
 
 
+
+
+
+
 function buildDocumentProfilePersistenceInputSummary(input: DocumentProfileDatabaseInput, file: StoredRuntimeFile) {
   return {
     docFamily: input.docFamily ?? null,
@@ -6967,13 +9305,21 @@ function buildDocumentProfilePersistenceInputSummary(input: DocumentProfileDatab
 
 
 
+
+
+
+
 function canonicalCorpusProfileFromFilenameForRead(value: unknown): CanonicalCorpusVolumeProfile | null {
   if (typeof value !== "string" || !value.trim()) {
     return null;
   }
 
 
+
+
   const normalizedName = normalizeSearchText(value);
+
+
 
 
   if (
@@ -6982,6 +9328,8 @@ function canonicalCorpusProfileFromFilenameForRead(value: unknown): CanonicalCor
   ) {
     return CANONICAL_CORPUS_VOLUME_PROFILES.V5;
   }
+
+
 
 
   if (
@@ -6993,8 +9341,12 @@ function canonicalCorpusProfileFromFilenameForRead(value: unknown): CanonicalCor
   }
 
 
+
+
   return null;
 }
+
+
 
 
 function isQpccfFilenameOrMetadataForRead(profile: Record<string, unknown>): boolean {
@@ -7009,10 +9361,14 @@ function isQpccfFilenameOrMetadataForRead(profile: Record<string, unknown>): boo
   const normalized = normalizeSearchText(`${filename}\n${title}\n${docFamily}\n${metadataTitle}\n${metadataModule}`);
 
 
+
+
   return HBCE_B2G_TECHNICAL_STACK_DEFINITIONS.some((definition) => {
     const module = normalizeSearchText(definition.module);
     const title = normalizeSearchText(definition.title);
     const shortTitle = normalizeSearchText(definition.shortTitle);
+
+
 
 
     return normalized.includes(module) || normalized.includes(title) || normalized.includes(shortTitle);
@@ -7030,6 +9386,10 @@ function isQpccfFilenameOrMetadataForRead(profile: Record<string, unknown>): boo
 
 
 
+
+
+
+
 function resolveB2gDefinitionFromPublicProfileForRead(profile: Record<string, unknown>): ModuleDefinition | null {
   const existingMetadata =
     profile.documentMetadata && typeof profile.documentMetadata === "object"
@@ -7039,6 +9399,8 @@ function resolveB2gDefinitionFromPublicProfileForRead(profile: Record<string, un
   const title = `${profile.title ?? existingMetadata.canonicalTitle ?? existingMetadata.b2gExpectedTitle ?? ""}`;
   const module = `${existingMetadata.technicalStackModule ?? existingMetadata.b2gExpectedModule ?? ""}`;
   const normalized = normalizeSearchText(`${filename}\n${title}\n${module}`);
+
+
 
 
   return HBCE_B2G_TECHNICAL_STACK_DEFINITIONS.find((definition) => {
@@ -7051,6 +9413,10 @@ function resolveB2gDefinitionFromPublicProfileForRead(profile: Record<string, un
 
 
 
+
+
+
+
 function canonicalizeB2gPublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
   const existingMetadata =
     profile.documentMetadata && typeof profile.documentMetadata === "object"
@@ -7059,9 +9425,13 @@ function canonicalizeB2gPublicDocumentProfileForRead<T extends Record<string, un
   const definition = resolveB2gDefinitionFromPublicProfileForRead(profile) ?? getB2gTechnicalStackDefinitionForModule(QPCCF_MODULE);
 
 
+
+
   if (!definition) {
     return profile;
   }
+
+
 
 
   const syntheticFile: StoredRuntimeFile = {
@@ -7109,6 +9479,8 @@ function canonicalizeB2gPublicDocumentProfileForRead<T extends Record<string, un
   };
 
 
+
+
   return {
     ...profile,
     docFamily: HBCE_B2G_TECHNICAL_STACK_DOC_FAMILY,
@@ -7132,11 +9504,17 @@ function canonicalizeB2gPublicDocumentProfileForRead<T extends Record<string, un
 
 
 
+
+
+
+
 function canonicalizeQpccfPublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
   const existingMetadata =
     profile.documentMetadata && typeof profile.documentMetadata === "object"
       ? profile.documentMetadata as Record<string, unknown>
       : {};
+
+
 
 
   return {
@@ -7203,10 +9581,23 @@ function canonicalizeQpccfPublicDocumentProfileForRead<T extends Record<string, 
 
 
 
+
+
+
+
 function canonicalizePublicDocumentProfileForRead<T extends Record<string, unknown>>(profile: T): T {
+  if (isApokalypsisVolumeVProfileForRead(profile)) {
+    return canonicalizeApokalypsisVolumeVPublicDocumentProfileForRead(profile);
+  }
+
+
+
+
   if (isApokalypsisVolumeIVProfileForRead(profile)) {
     return canonicalizeApokalypsisVolumeIVPublicDocumentProfileForRead(profile);
   }
+
+
 
 
   if (isApokalypsisVolumeIProfileForRead(profile)) {
@@ -7214,13 +9605,19 @@ function canonicalizePublicDocumentProfileForRead<T extends Record<string, unkno
   }
 
 
+
+
   if (isQpccfFilenameOrMetadataForRead(profile)) {
     return canonicalizeB2gPublicDocumentProfileForRead(profile);
   }
 
 
+
+
   const filename = profile.filename ?? profile.fileName;
   const canonicalProfile = canonicalCorpusProfileFromFilenameForRead(filename);
+
+
 
 
   if (!canonicalProfile) {
@@ -7228,10 +9625,14 @@ function canonicalizePublicDocumentProfileForRead<T extends Record<string, unkno
   }
 
 
+
+
   const existingMetadata =
     profile.documentMetadata && typeof profile.documentMetadata === "object"
       ? profile.documentMetadata as Record<string, unknown>
       : {};
+
+
 
 
   return {
@@ -7261,6 +9662,10 @@ function canonicalizePublicDocumentProfileForRead<T extends Record<string, unkno
 
 
 
+
+
+
+
 type DocumentTextChunkTableStep = {
   name: string;
   ok: boolean;
@@ -7272,14 +9677,26 @@ type DocumentTextChunkTableStep = {
 
 
 
+
+
+
+
 async function runDocumentTextChunkSchemaStep(name: string, sql: string): Promise<DocumentTextChunkTableStep> {
   const startedAt = Date.now();
 
 
 
 
+
+
+
+
   try {
     const result = await queryHbceDatabase(sql);
+
+
+
+
 
 
 
@@ -7305,9 +9722,17 @@ async function runDocumentTextChunkSchemaStep(name: string, sql: string): Promis
 
 
 
+
+
+
+
 async function ensureDocumentTextChunksTable(): Promise<{ ok: boolean; error: string | null; sqlHash: string | null; durationMs: number }> {
   const startedAt = Date.now();
   const steps: DocumentTextChunkTableStep[] = [];
+
+
+
+
 
 
 
@@ -7381,9 +9806,17 @@ async function ensureDocumentTextChunksTable(): Promise<{ ok: boolean; error: st
 
 
 
+
+
+
+
   for (const [name, sql] of schemaStatements) {
     const step = await runDocumentTextChunkSchemaStep(name, sql);
     steps.push(step);
+
+
+
+
 
 
 
@@ -7401,6 +9834,10 @@ async function ensureDocumentTextChunksTable(): Promise<{ ok: boolean; error: st
 
 
 
+
+
+
+
   return {
     ok: true,
     error: null,
@@ -7408,6 +9845,10 @@ async function ensureDocumentTextChunksTable(): Promise<{ ok: boolean; error: st
     durationMs: Date.now() - startedAt
   };
 }
+
+
+
+
 
 
 
@@ -7430,6 +9871,10 @@ async function countPersistedDocumentChunksForFile(
 
 
 
+
+
+
+
   try {
     const result = await queryHbceDatabase(sql, [
       context.tenantId,
@@ -7441,6 +9886,10 @@ async function countPersistedDocumentChunksForFile(
     const row = result.rows[0] as Record<string, unknown> | undefined;
     const rawCount = row?.count;
     const count = typeof rawCount === "number" ? rawCount : Number(rawCount || 0);
+
+
+
+
 
 
 
@@ -7466,6 +9915,10 @@ async function countPersistedDocumentChunksForFile(
 
 
 
+
+
+
+
 async function persistDocumentChunksForFile(
   file: StoredRuntimeFile,
   context: DocumentProfileContext,
@@ -7476,7 +9929,15 @@ async function persistDocumentChunksForFile(
 
 
 
+
+
+
+
   storeRuntimeDocumentChunks(file, documentProfileId);
+
+
+
+
 
 
 
@@ -7513,7 +9974,15 @@ async function persistDocumentChunksForFile(
 
 
 
+
+
+
+
   const table = await ensureDocumentTextChunksTable();
+
+
+
+
 
 
 
@@ -7550,6 +10019,10 @@ async function persistDocumentChunksForFile(
 
 
 
+
+
+
+
   try {
     const deleteResult = await queryHbceDatabase(
       `DELETE FROM document_text_chunks
@@ -7564,9 +10037,17 @@ async function persistDocumentChunksForFile(
 
 
 
+
+
+
+
     if (!deleteResult.ok) {
       throw new Error(deleteResult.error || "DOCUMENT_TEXT_CHUNKS_DELETE_FAILED");
     }
+
+
+
+
 
 
 
@@ -7577,8 +10058,16 @@ async function persistDocumentChunksForFile(
 
 
 
+
+
+
+
     for (let index = 0; index < file.documentChunks.length; index += LONG_DOCUMENT_CHUNK_INSERT_BATCH_SIZE) {
       const batch = file.documentChunks.slice(index, index + LONG_DOCUMENT_CHUNK_INSERT_BATCH_SIZE);
+
+
+
+
 
 
 
@@ -7627,6 +10116,10 @@ async function persistDocumentChunksForFile(
 
 
 
+
+
+
+
         const result = await queryHbceDatabase(
           `
             INSERT INTO document_text_chunks (
@@ -7665,10 +10158,18 @@ async function persistDocumentChunksForFile(
 
 
 
+
+
+
+
         lastSqlHash = result.sqlHash;
         if (!result.ok) {
           throw new Error(result.error || "DOCUMENT_TEXT_CHUNK_INSERT_FAILED");
         }
+
+
+
+
 
 
 
@@ -7680,8 +10181,16 @@ async function persistDocumentChunksForFile(
 
 
 
+
+
+
+
     const verified = await countPersistedDocumentChunksForFile(file, context);
     lastSqlHash = verified.sqlHash || lastSqlHash;
+
+
+
+
 
 
 
@@ -7718,8 +10227,16 @@ async function persistDocumentChunksForFile(
 
 
 
+
+
+
+
     const persistedCount = verified.count;
     const ok = persistedCount === file.documentChunks.length;
+
+
+
+
 
 
 
@@ -7783,6 +10300,10 @@ async function persistDocumentChunksForFile(
 
 
 
+
+
+
+
 function buildDeterministicDocumentProfileId(file: StoredRuntimeFile, context: DocumentProfileContext): string {
   return buildHash({
     tenantId: context.tenantId,
@@ -7793,6 +10314,10 @@ function buildDeterministicDocumentProfileId(file: StoredRuntimeFile, context: D
     filename: file.name
   }).replace("sha256:", "DOC-PROFILE-").slice(0, 28).toUpperCase();
 }
+
+
+
+
 
 
 
@@ -7816,6 +10341,10 @@ function extractPersistedDocumentProfileId(
 
 
 
+
+
+
+
   for (const candidate of candidates) {
     if (typeof candidate === "string" && candidate.trim()) {
       return candidate.trim();
@@ -7825,8 +10354,16 @@ function extractPersistedDocumentProfileId(
 
 
 
+
+
+
+
   return buildDeterministicDocumentProfileId(file, context);
 }
+
+
+
+
 
 
 
@@ -7842,12 +10379,20 @@ function withResolvedPublicProfileId<T extends Record<string, unknown> | null>(
 
 
 
+
+
+
+
   return {
     ...profile,
     profileId,
     documentProfileId: profile.documentProfileId ?? profileId
   } as T;
 }
+
+
+
+
 
 
 
@@ -7863,8 +10408,16 @@ function storeRuntimeDocumentChunks(file: StoredRuntimeFile, documentProfileId: 
 
 
 
+
+
+
+
   store.set(key, chunks);
 }
+
+
+
+
 
 
 
@@ -7880,7 +10433,15 @@ async function persistDocumentProfilesForSession(
 
 
 
+
+
+
+
   const readiness = await ensureHbceDatabaseReady();
+
+
+
+
 
 
 
@@ -7888,6 +10449,10 @@ async function persistDocumentProfilesForSession(
   if (!readiness.ok) {
     return files.map((file) => {
       const input = buildDocumentProfileInput(file, context);
+
+
+
+
 
 
 
@@ -7914,13 +10479,25 @@ async function persistDocumentProfilesForSession(
 
 
 
+
+
+
+
   const results: DocumentProfilePersistenceResult[] = [];
+
+
+
+
 
 
 
 
   for (const file of files) {
     const input = buildDocumentProfileInput(file, context);
+
+
+
+
 
 
 
@@ -7955,6 +10532,10 @@ async function persistDocumentProfilesForSession(
       );
       const profileOk = result.ok && result.rowCount > 0;
       const proofOk = proofResult.ok && proofResult.rowCount > 0;
+
+
+
+
 
 
 
@@ -7998,8 +10579,16 @@ async function persistDocumentProfilesForSession(
 
 
 
+
+
+
+
   return results;
 }
+
+
+
+
 
 
 
@@ -8013,8 +10602,16 @@ function attachDocumentProfileResults(
 
 
 
+
+
+
+
   return files.map((file) => {
     const result = byFileId.get(file.id);
+
+
+
+
 
 
 
@@ -8026,6 +10623,10 @@ function attachDocumentProfileResults(
         documentProfileReason: "No document profile persistence result was produced for this file."
       };
     }
+
+
+
+
 
 
 
@@ -8061,9 +10662,15 @@ function attachDocumentProfileResults(
     };
 
 
+
+
     return injectB2gTechnicalMemoryPromptBridgeIntoRuntimeFile(nextFile, result.technicalMemory);
   });
 }
+
+
+
+
 
 
 
@@ -8085,10 +10692,18 @@ function normalizeSingleFile(
 
 
 
+
+
+
+
   const declaredSize =
     typeof file.size === "number" && Number.isFinite(file.size)
       ? Math.max(0, Math.floor(file.size))
       : textLength;
+
+
+
+
 
 
 
@@ -8101,7 +10716,15 @@ function normalizeSingleFile(
 
 
 
+
+
+
+
   const id = buildHash(baseId).replace("sha256:", "file-").slice(0, 48);
+
+
+
+
 
 
 
@@ -8120,6 +10743,10 @@ function normalizeSingleFile(
             : pdfExtraction.source === "PDF_DATA_URL"
               ? "PDF_DATA_URL"
               : "NONE";
+
+
+
+
 
 
 
@@ -8143,6 +10770,10 @@ function normalizeSingleFile(
 
 
 
+
+
+
+
     if (pdfExtraction.failed) {
       return buildStoredRuntimeFileBase({
         id,
@@ -8162,6 +10793,10 @@ function normalizeSingleFile(
 
 
 
+
+
+
+
     return buildStoredRuntimeFileBase({
       id,
       name,
@@ -8176,6 +10811,10 @@ function normalizeSingleFile(
       timestamp
     });
   }
+
+
+
+
 
 
 
@@ -8199,6 +10838,10 @@ function normalizeSingleFile(
 
 
 
+
+
+
+
   if (hasText && !isReferenceOnlyMimeType(mimeType)) {
     return buildStoredRuntimeFileBase({
       id,
@@ -8214,6 +10857,10 @@ function normalizeSingleFile(
       timestamp
     });
   }
+
+
+
+
 
 
 
@@ -8237,6 +10884,10 @@ function normalizeSingleFile(
 
 
 
+
+
+
+
   return buildStoredRuntimeFileBase({
     id,
     name,
@@ -8255,10 +10906,18 @@ function normalizeSingleFile(
 
 
 
+
+
+
+
 function normalizeFiles(files: unknown): StoredRuntimeFile[] {
   if (!Array.isArray(files)) {
     return [];
   }
+
+
+
+
 
 
 
@@ -8271,6 +10930,10 @@ function normalizeFiles(files: unknown): StoredRuntimeFile[] {
 
 
 
+
+
+
+
 function dedupeFiles(files: StoredRuntimeFile[]): StoredRuntimeFile[] {
   const seen = new Set<string>();
   const result: StoredRuntimeFile[] = [];
@@ -8278,8 +10941,16 @@ function dedupeFiles(files: StoredRuntimeFile[]): StoredRuntimeFile[] {
 
 
 
+
+
+
+
   for (const file of files) {
     const key = `${file.id}:${file.fileHash}`;
+
+
+
+
 
 
 
@@ -8291,6 +10962,10 @@ function dedupeFiles(files: StoredRuntimeFile[]): StoredRuntimeFile[] {
 
 
 
+
+
+
+
     seen.add(key);
     result.push(file);
   }
@@ -8298,8 +10973,16 @@ function dedupeFiles(files: StoredRuntimeFile[]): StoredRuntimeFile[] {
 
 
 
+
+
+
+
   return result;
 }
+
+
+
+
 
 
 
@@ -8312,8 +10995,16 @@ function enforceSessionLimits(files: StoredRuntimeFile[]): StoredRuntimeFile[] {
 
 
 
+
+
+
+
   for (let index = latestFiles.length - 1; index >= 0; index -= 1) {
     const file = latestFiles[index];
+
+
+
+
 
 
 
@@ -8321,6 +11012,10 @@ function enforceSessionLimits(files: StoredRuntimeFile[]): StoredRuntimeFile[] {
     if (!file) {
       continue;
     }
+
+
+
+
 
 
 
@@ -8333,11 +11028,19 @@ function enforceSessionLimits(files: StoredRuntimeFile[]): StoredRuntimeFile[] {
 
 
 
+
+
+
+
     if (totalTextLength + file.textLength > MAX_TOTAL_TEXT_CHARS_PER_SESSION) {
       const downgradedStatus: FileStatus =
         file.status === "PDF_INGESTION_READY"
           ? "PDF_METADATA_ONLY"
           : "REFERENCE_ONLY";
+
+
+
+
 
 
 
@@ -8359,6 +11062,10 @@ function enforceSessionLimits(files: StoredRuntimeFile[]): StoredRuntimeFile[] {
 
 
 
+
+
+
+
     totalTextLength += file.textLength;
     result.unshift(file);
   }
@@ -8366,8 +11073,16 @@ function enforceSessionLimits(files: StoredRuntimeFile[]): StoredRuntimeFile[] {
 
 
 
+
+
+
+
   return result;
 }
+
+
+
+
 
 
 
@@ -8381,8 +11096,16 @@ function mergeFiles(
 
 
 
+
+
+
+
   return enforceSessionLimits(merged);
 }
+
+
+
+
 
 
 
@@ -8485,6 +11208,14 @@ function summarizeFiles(files: StoredRuntimeFile[], includeText: boolean, includ
 
 
 
+
+
+
+
+
+
+
+
 type DatabaseObjectDiagnostic = {
   requestedName: string;
   available: boolean;
@@ -8494,6 +11225,10 @@ type DatabaseObjectDiagnostic = {
   sqlHash: string | null;
   durationMs: number;
 };
+
+
+
+
 
 
 
@@ -8510,10 +11245,18 @@ type FilesRouteDiagnosticContext = {
 
 
 
+
+
+
+
 function isAffirmativeSearchParam(value: string | null): boolean {
   if (!value) {
     return false;
   }
+
+
+
+
 
 
 
@@ -8523,8 +11266,16 @@ function isAffirmativeSearchParam(value: string | null): boolean {
 
 
 
+
+
+
+
   return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
 }
+
+
+
+
 
 
 
@@ -8536,10 +11287,18 @@ function getLatestRuntimeFile(files: StoredRuntimeFile[]): StoredRuntimeFile | n
 
 
 
+
+
+
+
 function buildDiagnosticFileSnapshot(file: StoredRuntimeFile | null) {
   if (!file) {
     return null;
   }
+
+
+
+
 
 
 
@@ -8621,6 +11380,10 @@ function buildDiagnosticFileSnapshot(file: StoredRuntimeFile | null) {
 
 
 
+
+
+
+
 function countCorpusGlossaryEntries(text: string): number {
   const lines = text.split("\n");
   let count = 0;
@@ -8629,8 +11392,16 @@ function countCorpusGlossaryEntries(text: string): number {
 
 
 
+
+
+
+
   for (const rawLine of lines) {
     const line = normalizeHeadingLabel(rawLine);
+
+
+
+
 
 
 
@@ -8643,9 +11414,17 @@ function countCorpusGlossaryEntries(text: string): number {
 
 
 
+
+
+
+
     if (inGlossary && /^15\.2\s+Protocollo di citazione interna del glossario/i.test(line)) {
       break;
     }
+
+
+
+
 
 
 
@@ -8658,8 +11437,16 @@ function countCorpusGlossaryEntries(text: string): number {
 
 
 
+
+
+
+
   return count;
 }
+
+
+
+
 
 
 
@@ -8671,10 +11458,18 @@ async function checkDatabaseObjectAvailability(requestedName: string): Promise<D
 
 
 
+
+
+
+
   try {
     const result = await queryHbceDatabase(sql, [requestedName]);
     const row = result.rows[0] as Record<string, unknown> | undefined;
     const resolvedName = typeof row?.object_name === "string" ? row.object_name : null;
+
+
+
+
 
 
 
@@ -8704,14 +11499,26 @@ async function checkDatabaseObjectAvailability(requestedName: string): Promise<D
 
 
 
+
+
+
+
 function readRecordString(record: Record<string, unknown>, key: string): string | null {
   const value = record[key];
 
 
 
 
+
+
+
+
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
+
+
+
+
 
 
 
@@ -8723,8 +11530,16 @@ function readRecordNumber(record: Record<string, unknown>, key: string): number 
 
 
 
+
+
+
+
   return Number.isFinite(numeric) ? numeric : null;
 }
+
+
+
+
 
 
 
@@ -8737,8 +11552,16 @@ function readProfileMetadata(profile: Record<string, unknown> | null | undefined
 
 
 
+
+
+
+
   return profile.documentMetadata as Record<string, unknown>;
 }
+
+
+
+
 
 
 
@@ -8753,8 +11576,16 @@ function chooseLatestCanonicalDocumentProfile(
 
 
 
+
+
+
+
   const canonicalFullTextProfiles = profiles.filter((profile) => {
     const metadata = readProfileMetadata(profile);
+
+
+
+
 
 
 
@@ -8769,8 +11600,16 @@ function chooseLatestCanonicalDocumentProfile(
 
 
 
+
+
+
+
   return canonicalFullTextProfiles[0] ?? profiles[0] ?? null;
 }
+
+
+
+
 
 
 
@@ -8780,6 +11619,10 @@ async function countPersistedDocumentChunksForProfile(
   context: FilesRouteDiagnosticContext
 ): Promise<{ ok: boolean; count: number; error: string | null; sqlHash: string | null; durationMs: number }> {
   const startedAt = Date.now();
+
+
+
+
 
 
 
@@ -8797,12 +11640,20 @@ async function countPersistedDocumentChunksForProfile(
 
 
 
+
+
+
+
   const profileId = readRecordString(profile, "profileId") || readRecordString(profile, "documentProfileId");
   const fileId = readRecordString(profile, "fileId");
   const fileHash = readRecordString(profile, "fileHash");
   const humanIpr = readRecordString(profile, "humanIpr") || context.humanIpr;
   const tenantId = readRecordString(profile, "tenantId") || context.tenantId;
   const workspaceId = readRecordString(profile, "workspaceId") || context.workspaceId;
+
+
+
+
 
 
 
@@ -8820,6 +11671,10 @@ async function countPersistedDocumentChunksForProfile(
 
 
 
+
+
+
+
     return {
       ok: false,
       count: 0,
@@ -8828,6 +11683,10 @@ async function countPersistedDocumentChunksForProfile(
       durationMs: Date.now() - startedAt
     };
   }
+
+
+
+
 
 
 
@@ -8846,10 +11705,18 @@ async function countPersistedDocumentChunksForProfile(
 
 
 
+
+
+
+
   try {
     const result = await queryHbceDatabase(sql, [tenantId, workspaceId, humanIpr, profileId, fileId, fileHash]);
     const row = result.rows[0] as Record<string, unknown> | undefined;
     const count = Number(row?.count ?? 0);
+
+
+
+
 
 
 
@@ -8873,6 +11740,8 @@ async function countPersistedDocumentChunksForProfile(
 }
 
 
+
+
 function buildDiagnosticDocumentProfileSnapshot(
   profile: Record<string, unknown> | null,
   persistedCount: number | null = null
@@ -8884,6 +11753,10 @@ function buildDiagnosticDocumentProfileSnapshot(
 
 
 
+
+
+
+
   const metadata = readProfileMetadata(profile);
   const expectedCount = readRecordNumber(metadata, "documentChunkCount") ?? readRecordNumber(profile, "documentChunkCount") ?? 0;
   const metadataPersistedCount = readRecordNumber(metadata, "documentChunksPersistedCount");
@@ -8891,6 +11764,10 @@ function buildDiagnosticDocumentProfileSnapshot(
   const metadataPersisted = metadata.documentChunksPersisted === true;
   const countMatchesExpected = expectedCount > 0 && effectivePersistedCount === expectedCount;
   const databaseVerified = metadata.documentChunkDatabaseVerified === true && countMatchesExpected;
+
+
+
+
 
 
 
@@ -8937,6 +11814,10 @@ function buildDiagnosticDocumentProfileSnapshot(
 
 
 
+
+
+
+
 async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContext) {
   const latestFile = getLatestRuntimeFile(context.files);
   const readiness = await ensureHbceDatabaseReady().catch((error) => ({
@@ -8974,9 +11855,17 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
 
 
 
+
+
+
+
   if (!latestFile && !latestDocumentProfileSnapshot) {
     missingCriticalFields.push("latestFile|latestDocumentProfile");
   }
+
+
+
+
 
 
 
@@ -8988,9 +11877,17 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
 
 
 
+
+
+
+
   if (latestFile && latestFile.documentChunkCount > 0 && !latestFile.documentChunksPersisted) {
     missingCriticalFields.push("latestFile.documentChunksPersisted");
   }
+
+
+
+
 
 
 
@@ -9002,6 +11899,10 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
 
 
 
+
+
+
+
   if (latestFile && !latestFile.normalizedTextHash) {
     missingCriticalFields.push("latestFile.normalizedTextHash");
   }
@@ -9009,9 +11910,17 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
 
 
 
+
+
+
+
   if (latestFile && !latestFile.runtimePromptTextHash) {
     missingCriticalFields.push("latestFile.runtimePromptTextHash");
   }
+
+
+
+
 
 
 
@@ -9028,6 +11937,10 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
     latestDocumentProfile && !latestDocumentProfileChunkCount.ok ? "LATEST_DOCUMENT_PROFILE_CHUNK_COUNT_QUERY_FAILED" : null,
     missingCriticalFields.length > 0 ? `MISSING_CRITICAL_FIELDS:${missingCriticalFields.join(",")}` : null
   ].filter(Boolean) as string[];
+
+
+
+
 
 
 
@@ -9105,6 +12018,8 @@ async function buildFilesRouteSelfDiagnostic(context: FilesRouteDiagnosticContex
 }
 
 
+
+
 function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
   const textReadyCount = files.filter((file) => file.status === "TEXT_READY").length;
   const pdfReadyCount = files.filter(
@@ -9137,6 +12052,10 @@ function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
   const b2gTechnicalMemoryReadyCount = files.filter(
     (file) => file.b2gTechnicalMemoryStatus === HBCE_B2G_TECHNICAL_MEMORY_STATUS_READY
   ).length;
+
+
+
+
 
 
 
@@ -9176,8 +12095,16 @@ function buildSessionSummary(sessionId: string, files: StoredRuntimeFile[]) {
 
 
 
+
+
+
+
 export async function POST(req: NextRequest) {
   let body: FilesBody;
+
+
+
+
 
 
 
@@ -9199,14 +12126,26 @@ export async function POST(req: NextRequest) {
 
 
 
+
+
+
+
   const store = getFileStore();
   const sessionId = normalizeSessionId(body.sessionId);
 
 
 
 
+
+
+
+
   if (body.clear) {
     store.delete(sessionId);
+
+
+
+
 
 
 
@@ -9229,6 +12168,10 @@ export async function POST(req: NextRequest) {
 
 
 
+
+
+
+
   const incomingFiles = normalizeFiles(body.files);
   const existingFiles = body.replace ? [] : store.get(sessionId) || [];
   const mergedFiles = mergeFiles(existingFiles, incomingFiles);
@@ -9239,7 +12182,15 @@ export async function POST(req: NextRequest) {
 
 
 
+
+
+
+
   store.set(sessionId, nextFiles);
+
+
+
+
 
 
 
@@ -9254,6 +12205,10 @@ export async function POST(req: NextRequest) {
       .map((profile) => profile.profile)
       .filter((profile): profile is Record<string, unknown> => Boolean(profile))
   });
+
+
+
+
 
 
 
@@ -9363,9 +12318,17 @@ export async function POST(req: NextRequest) {
 
 
 
+
+
+
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const store = getFileStore();
+
+
+
+
 
 
 
@@ -9381,6 +12344,10 @@ export async function GET(req: NextRequest) {
   const humanIpr = url.searchParams.get("humanIpr") || HBCE_SELF_PILOT_HUMAN_IPR;
   const tenantId = url.searchParams.get("tenantId") || HBCE_SELF_PILOT_TENANT_ID;
   const workspaceId = url.searchParams.get("workspaceId") || HBCE_SELF_PILOT_WORKSPACE_ID;
+
+
+
+
 
 
 
@@ -9430,6 +12397,10 @@ export async function GET(req: NextRequest) {
 
 
 
+
+
+
+
   return NextResponse.json({
     ok: true,
     endpoint: "HBCE_FILES_INGESTION",
@@ -9469,9 +12440,17 @@ export async function GET(req: NextRequest) {
 
 
 
+
+
+
+
 export async function DELETE(req: NextRequest) {
   const url = new URL(req.url);
   const store = getFileStore();
+
+
+
+
 
 
 
@@ -9482,8 +12461,16 @@ export async function DELETE(req: NextRequest) {
 
 
 
+
+
+
+
   if (!fileId) {
     store.delete(sessionId);
+
+
+
+
 
 
 
@@ -9506,13 +12493,25 @@ export async function DELETE(req: NextRequest) {
 
 
 
+
+
+
+
   const files = store.get(sessionId) || [];
   const nextFiles = files.filter((file) => file.id !== fileId);
 
 
 
 
+
+
+
+
   store.set(sessionId, nextFiles);
+
+
+
+
 
 
 
