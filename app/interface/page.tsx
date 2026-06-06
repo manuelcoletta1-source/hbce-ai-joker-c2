@@ -484,9 +484,9 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.3-APOKALYPSIS_VOLUME_II_DASHBOARD_OVERLAY";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.4-APOKALYPSIS_VOLUME_III_DASHBOARD_OVERLAY";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
-const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v3.3-APOKALYPSIS_VOLUME_II_DASHBOARD_OVERLAY";
+const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v3.4-APOKALYPSIS_VOLUME_III_DASHBOARD_OVERLAY";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -671,6 +671,18 @@ const USE_EUROPEAN_FEDERATION_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboar
 
 
 const APOKALYPSIS_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverlay[] = [
+  {
+    branchKey: "APOKALYPSIS_EDITORIAL_SYSTEM",
+    title: "APOKALYPSIS — Volume III",
+    volume: "V3",
+    docFamily: "APOKALYPSIS",
+    canonicalDocumentKind: "APOKALYPSIS_VOLUME_III_COMPLETE_EDITORIAL_REVISED_2026",
+    summary: "APOKALYPSIS Volume III definisce l’effetto della riconconicità cognitiva nel sistema: dopo il costo della dislocazione cognitiva, la coscienza recupera il criterio, espone il sistema, incrina la continuità dislocata e apre una mutazione storica iniziale sotto Decisione · Costo · Traccia · Tempo.",
+    canonicalAxis: "Decisione · Costo · Traccia · Tempo",
+    keyTerms: ["APOKALYPSIS", "Volume III", "Riconconicità cognitiva", "Effetto della riconconicità cognitiva nel sistema", "Dislocazione riconosciuta", "Criterio recuperato", "Sistema esposto", "Continuità incrinata", "Mutazione storica iniziale", "05-04-2026", "IPR", "EVT", "OPC"],
+    semanticTerms: ["APOKALYPSIS", "Volume III", "Riconconicità cognitiva", "Dislocazione riconosciuta", "Criterio recuperato", "Sistema esposto", "Continuità incrinata", "Mutazione storica iniziale", "Decisione", "Costo", "Traccia", "Tempo"],
+    signals: ["DOC-PROFILE-CF32FE0480831461", "IPR-MEM-20260606113933-C92D2CD6", "sha256:8cb38c3797a03eac5859f193b276a862774b173d095a6626f022babe9bbc7dfe", "APOKALYPSIS_VOLUME_III_COMPLETO_AGGIORNATO_AI_2026_v1_RICONCONICITA_SYSTEMIC_EFFECT_LOCK", "APOKALYPSIS_VOLUME_III_RICONCONICITA_SYSTEMIC_EFFECT_LOCK", "APOKALYPSIS_VOLUME_III_COMPLETE_EDITORIAL_REVISED_2026", "Effetto della riconconicità cognitiva nel sistema"]
+  },
   {
     branchKey: "APOKALYPSIS_EDITORIAL_SYSTEM",
     title: "APOKALYPSIS — Volume II",
@@ -1938,6 +1950,33 @@ function profileMatchesDashboardOverlay(profile: PublicDocumentProfileSnapshot, 
 }
 
 
+function getApokalypsisVolumeIIIDashboardHardOverlay(profile: PublicDocumentProfileSnapshot): DocumentProfileDashboardOverlay | null {
+  const profileId = profile.profileId.trim();
+  const memoryId = profile.memoryId.trim();
+  const fileHash = profile.fileHash.trim();
+  const filename = profile.filename.trim();
+  const title = profile.title.trim();
+  const docFamily = profile.docFamily.trim();
+
+
+  const isApokalypsisVolumeIIIProfile =
+    profileId === "DOC-PROFILE-CF32FE0480831461" ||
+    memoryId === "IPR-MEM-20260606113933-C92D2CD6" ||
+    fileHash === "sha256:8cb38c3797a03eac5859f193b276a862774b173d095a6626f022babe9bbc7dfe" ||
+    filename.includes("APOKALYPSIS_VOLUME_III_COMPLETO_AGGIORNATO_AI_2026_v1_RICONCONICITA_SYSTEMIC_EFFECT_LOCK") ||
+    title.includes("APOKALYPSIS — Volume III") ||
+    docFamily === "APOKALYPSIS" && profile.volume.trim().toUpperCase() === "V3";
+
+
+  if (!isApokalypsisVolumeIIIProfile) {
+    return null;
+  }
+
+
+  return APOKALYPSIS_VOLUME_DASHBOARD_OVERLAYS.find((overlay) => overlay.volume === "V3") ?? null;
+}
+
+
 function getApokalypsisVolumeIIDashboardHardOverlay(profile: PublicDocumentProfileSnapshot): DocumentProfileDashboardOverlay | null {
   const profileId = profile.profileId.trim();
   const memoryId = profile.memoryId.trim();
@@ -2075,6 +2114,10 @@ function applyDocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnap
 
 
 function applyJokerC2DocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnapshot): PublicDocumentProfileSnapshot {
+  const apokalypsisVolumeIIIHardOverlay = getApokalypsisVolumeIIIDashboardHardOverlay(profile);
+  if (apokalypsisVolumeIIIHardOverlay) return applyDocumentProfileDashboardOverlay(profile, apokalypsisVolumeIIIHardOverlay);
+
+
   const apokalypsisVolumeIIHardOverlay = getApokalypsisVolumeIIDashboardHardOverlay(profile);
   if (apokalypsisVolumeIIHardOverlay) return applyDocumentProfileDashboardOverlay(profile, apokalypsisVolumeIIHardOverlay);
 
@@ -2102,6 +2145,10 @@ function applyJokerC2DocumentProfileDashboardOverlay(profile: PublicDocumentProf
 
 
 function getJokerC2BranchKeyForProfile(profile: PublicDocumentProfileSnapshot): string {
+  const apokalypsisVolumeIIIHardOverlay = getApokalypsisVolumeIIIDashboardHardOverlay(profile);
+  if (apokalypsisVolumeIIIHardOverlay) return apokalypsisVolumeIIIHardOverlay.branchKey;
+
+
   const apokalypsisVolumeIIHardOverlay = getApokalypsisVolumeIIDashboardHardOverlay(profile);
   if (apokalypsisVolumeIIHardOverlay) return apokalypsisVolumeIIHardOverlay.branchKey;
 
