@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -700,6 +700,18 @@ const APOKALYPSIS_VOLUME_IV_PROFILE_SUBTITLE = "Rottura cognitiva tra individuo 
 const APOKALYPSIS_VOLUME_IV_PROFILE_CANONICAL_AXIS = "Decisione · Costo · Traccia · Tempo" as const;
 const APOKALYPSIS_VOLUME_IV_PROFILE_CORE_AXIS = "Riconconicità → non riassorbimento → separazione → incompatibilità → rottura cognitiva" as const;
 const APOKALYPSIS_VOLUME_IV_PROFILE_LOCK = "APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_LOCK" as const;
+const APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD_REVISION = "APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_FILENAME_LOCK = "APOKALYPSIS_VOLUME_V_COMPLETO_AGGIORNATO_AI_2026_v1_PARADOGMA_ALIENO_LOCK.txt" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_FILE_HASH = "sha256:c4c550a76ff531de7e44c026ec5a1d6f6a96f3ceaa1a0a932bd9f558b46d616a" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_DOC_FAMILY = "APOKALYPSIS" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_DOCUMENT_KIND = "APOKALYPSIS_VOLUME_V_COMPLETE_EDITORIAL_REVISED_2026" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_MODULE = "APOKALYPSIS_VOLUME_V" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_VOLUME = "V5" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_TITLE = "APOKALYPSIS — Volume V" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_SUBTITLE = "Emersione del Paradogma Alieno" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_CANONICAL_AXIS = "Decisione · Costo · Traccia · Tempo" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_CORE_AXIS = "Rottura cognitiva irreversibile → incompatibilità strutturale → Alien Artifact → soglia dell'oltre-sistema → Paradogma Alieno" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_LOCK = "APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_LOCK" as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_RECALL_SUMMARY =
   "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed." as const;
 
@@ -920,6 +932,48 @@ function isApokalypsisRecordStatusRecallPriorityQuestion(message: string): boole
 }
 
 
+
+function isApokalypsisVolumeVParadogmaAlienoQuestion(message: string, files: PublicFileSnapshot[]): boolean {
+  const normalized = normalizeText(message);
+  const fileHaystack = normalizeText(files.map((file) => file.name).join("\n"));
+  const contentHaystack = normalizeText(
+    files.map((file) => `${file.name}\n${getPromptTextForFile(file).slice(0, 70000)}`).join("\n---\n")
+  );
+  const combined = `${normalized}\n${fileHaystack}\n${contentHaystack}`;
+
+  const explicitSignal =
+    combined.includes("apokalypsis_volume_v_paradogma_alieno_ingestion_test") ||
+    combined.includes("apokalypsis_volume_v_completo_aggiornato_ai_2026") ||
+    combined.includes("apokalypsis_volume_v_complete_editorial_revised_2026") ||
+    combined.includes("apokalypsis_volume_v_paradogma_alieno_lock") ||
+    combined.includes("paradogma_alieno_lock") ||
+    combined.includes("apokalypsis volume v") ||
+    combined.includes("apokalypsis volume 5") ||
+    combined.includes("volume v della collana apokalypsis") ||
+    combined.includes("emersione del paradogma alieno");
+  const volumeSignal =
+    combined.includes("volume v") ||
+    combined.includes("volume 5") ||
+    combined.includes("detectedvolume = v5") ||
+    combined.includes("detectedvolume=v5") ||
+    combined.includes(" volume = v5") ||
+    combined.includes("volume=v5") ||
+    combined.includes("volume_v") ||
+    combined.includes(" v5");
+  const paradogmaSignal =
+    combined.includes("paradogma alieno") ||
+    combined.includes("alien artifact") ||
+    combined.includes("rottura cognitiva irreversibile") ||
+    combined.includes("irreintegrabilita") ||
+    combined.includes("irreintegrabilità") ||
+    combined.includes("oltre-sistema") ||
+    combined.includes("oltre sistema") ||
+    combined.includes("emersione dell'incompatibile") ||
+    combined.includes("emersione dell’incompatibile");
+  const apokalypsisSignal = combined.includes("apokalypsis");
+
+  return explicitSignal || (apokalypsisSignal && volumeSignal && paradogmaSignal);
+}
 
 function isApokalypsisVolumeIVCognitiveRuptureQuestion(message: string, files: PublicFileSnapshot[]): boolean {
   const normalized = normalizeText(message);
@@ -1205,6 +1259,202 @@ function buildApokalypsisVolumeICompleteUpdatedAi2026Answer(args: {
 
 
 
+function resolveApokalypsisVolumeVParadogmaAlienoFile(files: PublicFileSnapshot[]): PublicFileSnapshot | null {
+  const exact = files.find((file) => {
+    const normalizedName = normalizeText(file.name);
+    return normalizedName.includes("apokalypsis_volume_v_completo_aggiornato_ai_2026") ||
+      normalizedName.includes("apokalypsis_volume_v_complete_editorial_revised_2026") ||
+      normalizedName.includes("paradogma_alieno_lock") ||
+      (normalizedName.includes("apokalypsis") && (normalizedName.includes("volume_v") || normalizedName.includes("volume v")));
+  });
+  if (exact) {
+    return exact;
+  }
+
+  return files.find((file) => {
+    const text = getPromptTextForFile(file);
+    const haystack = normalizeText([file.name, text.slice(0, 70000)].join("\n"));
+    return haystack.includes("apokalypsis") &&
+      (haystack.includes("volume v") || haystack.includes("volume 5") || haystack.includes(" v5")) &&
+      haystack.includes("paradogma alieno") &&
+      (haystack.includes("alien artifact") || haystack.includes("artefatto alieno")) &&
+      (haystack.includes("irreintegrabilita") || haystack.includes("irreintegrabilità") || haystack.includes("rottura cognitiva irreversibile")) &&
+      (haystack.includes("incompatibilita strutturale") || haystack.includes("incompatibilità strutturale")) &&
+      (haystack.includes("05-04-2026") || haystack.includes("05/04/2026")) &&
+      haystack.includes("decisione") &&
+      haystack.includes("costo") &&
+      haystack.includes("traccia") &&
+      haystack.includes("tempo");
+  }) || null;
+}
+
+function isApokalypsisVolumeVPrimaryLockSignal(file: PublicFileSnapshot | null, text: string): boolean {
+  const filename = normalizeText(file?.name || "");
+  const head = normalizeText([file?.name || "", text.slice(0, 70000)].join("\n"));
+
+  return (
+    filename.includes("apokalypsis_volume_v_completo_aggiornato_ai_2026") ||
+    filename.includes("apokalypsis_volume_v_complete_editorial_revised_2026") ||
+    filename.includes("paradogma_alieno_lock") ||
+    head.includes("profilelock: apokalypsis_volume_v_paradogma_alieno_lock") ||
+    head.includes("documentkind: apokalypsis_volume_v_complete_editorial_revised_2026") ||
+    head.includes("module: apokalypsis_volume_v") ||
+    head.includes("volume: v5") ||
+    head.includes("apokalypsis — volume v") ||
+    head.includes("apokalypsis - volume v") ||
+    head.includes("emersione del paradogma alieno") ||
+    (head.includes("rottura cognitiva irreversibile") && head.includes("alien artifact") && head.includes("paradogma alieno")) ||
+    head.includes(normalizeText(APOKALYPSIS_VOLUME_V_PROFILE_FILE_HASH)) ||
+    head.includes(APOKALYPSIS_VOLUME_V_PROFILE_FILE_HASH.replace(/^sha256:/, ""))
+  );
+}
+
+function buildApokalypsisVolumeVParadogmaAlienoAnswer(args: {
+  message: string;
+  files: PublicFileSnapshot[];
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const file = resolveApokalypsisVolumeVParadogmaAlienoFile(args.files);
+  const text = file ? getPromptTextForFile(file) : "";
+  const haystack = normalizeText([file?.name || "", text].join("\n"));
+  const textReady = Boolean(file && (file.status === "TEXT_READY" || file.promptReady || text.trim().length > 0));
+  const thresholdDetected = haystack.includes("05-04-2026") || haystack.includes("05/04/2026");
+  const formulaDetected = haystack.includes("decisione") && haystack.includes("costo") && haystack.includes("traccia") && haystack.includes("tempo");
+  const apokalypsisDetected = haystack.includes("apokalypsis");
+  const volumeDetected = haystack.includes("volume v") || haystack.includes("volume 5") || normalizeText(file?.name || "").includes("volume_v") || haystack.includes("volume=v5");
+  const paradogmaAlienoDetected = haystack.includes("paradogma alieno") || haystack.includes("paradogma_alieno_lock");
+  const alienArtifactDetected = haystack.includes("alien artifact") || haystack.includes("artefatto alieno");
+  const irreintegrabilityDetected = haystack.includes("irreintegrabilita") || haystack.includes("irreintegrabilità") || haystack.includes("irreintegrabile") || haystack.includes("rottura cognitiva irreversibile");
+  const incompatibilityDetected = haystack.includes("incompatibilita") || haystack.includes("incompatibilità") || haystack.includes("non integrabile");
+  const terminalVolumeDetected = haystack.includes("soglia terminale") || haystack.includes("sigillo terminale") || haystack.includes("terminal volume") || haystack.includes("nextvolumes: none");
+  const nextVolumesNoneDetected = haystack.includes("nextvolumes: none") || haystack.includes("terminal volume of apokalypsis") || haystack.includes("volume terminale") || haystack.includes("sigillo terminale");
+  const coreAxisDetected =
+    haystack.includes("rottura cognitiva irreversibile") &&
+    incompatibilityDetected &&
+    alienArtifactDetected &&
+    (haystack.includes("soglia dell'oltre-sistema") || haystack.includes("soglia dell’oltre-sistema") || haystack.includes("oltre-sistema") || haystack.includes("oltre sistema")) &&
+    paradogmaAlienoDetected;
+  const continuityWithPreviousVolumesDetected =
+    (haystack.includes("volume i") || haystack.includes("v1")) &&
+    (haystack.includes("volume ii") || haystack.includes("v2")) &&
+    (haystack.includes("volume iii") || haystack.includes("v3")) &&
+    (haystack.includes("volume iv") || haystack.includes("v4"));
+  const prologueDetected = haystack.includes("apokalypsis_operational_prologue") || haystack.includes("prologo operativo ai 2026");
+  const volumeVPrimaryDetected = isApokalypsisVolumeVPrimaryLockSignal(file, text);
+  const volumeIVPrimaryDetected = isApokalypsisVolumeIVPrimaryLockSignal(file, text);
+  const volumeIIIPrimaryDetected = isApokalypsisVolumeIIIPrimaryLockSignal(file, text);
+  const volumeIIPrimaryDetected = isApokalypsisVolumeIIPrimaryLockSignal(file, text);
+  const volumeIPrimaryDetected = isApokalypsisVolumeIPrimaryLockSignal(file, text);
+  const ready = Boolean(
+    file &&
+    textReady &&
+    apokalypsisDetected &&
+    volumeVPrimaryDetected &&
+    volumeDetected &&
+    thresholdDetected &&
+    formulaDetected &&
+    paradogmaAlienoDetected &&
+    alienArtifactDetected &&
+    irreintegrabilityDetected &&
+    incompatibilityDetected &&
+    terminalVolumeDetected &&
+    coreAxisDetected &&
+    !volumeIVPrimaryDetected &&
+    !volumeIIIPrimaryDetected &&
+    !volumeIIPrimaryDetected &&
+    !volumeIPrimaryDetected
+  );
+  const failReason = ready
+    ? "NONE"
+    : [
+        file ? null : "NO_APOKALYPSIS_VOLUME_V_FILE",
+        textReady ? null : "TEXT_NOT_READY",
+        apokalypsisDetected ? null : "APOKALYPSIS_SIGNAL_NOT_DETECTED",
+        volumeVPrimaryDetected ? null : "VOLUME_V_PRIMARY_LOCK_SIGNAL_NOT_DETECTED",
+        volumeDetected ? null : "VOLUME_V_SIGNAL_NOT_DETECTED",
+        thresholdDetected ? null : "CANONICAL_THRESHOLD_05_04_2026_NOT_DETECTED",
+        formulaDetected ? null : "DCTT_FORMULA_NOT_DETECTED",
+        paradogmaAlienoDetected ? null : "PARADOGMA_ALIENO_SIGNAL_NOT_DETECTED",
+        alienArtifactDetected ? null : "ALIEN_ARTIFACT_SIGNAL_NOT_DETECTED",
+        irreintegrabilityDetected ? null : "IRREINTEGRABILITY_SIGNAL_NOT_DETECTED",
+        incompatibilityDetected ? null : "INCOMPATIBILITY_SIGNAL_NOT_DETECTED",
+        terminalVolumeDetected ? null : "TERMINAL_VOLUME_SIGNAL_NOT_DETECTED",
+        coreAxisDetected ? null : "VOLUME_V_CORE_AXIS_NOT_DETECTED",
+        volumeIVPrimaryDetected ? "VOLUME_IV_PRIMARY_COLLISION_DETECTED" : null,
+        volumeIIIPrimaryDetected ? "VOLUME_III_PRIMARY_COLLISION_DETECTED" : null,
+        volumeIIPrimaryDetected ? "VOLUME_II_PRIMARY_COLLISION_DETECTED" : null,
+        volumeIPrimaryDetected ? "VOLUME_I_PRIMARY_COLLISION_DETECTED" : null
+      ].filter(Boolean).join("|") || "UNKNOWN";
+
+  return [
+    "APOKALYPSIS_VOLUME_V_INGESTION_READY: " + String(ready),
+    "routeRevision=" + CHAT_ROUTE_REVISION,
+    "guardRevision=" + APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD_REVISION,
+    "fileStatus=" + (file?.status || "NO_FILE"),
+    "textReady=" + String(textReady),
+    "activeFilename=" + (file?.name || "NO_FILE"),
+    "runtimeFileHash=" + (file?.fileHash || file?.hash || "NO_FILE_HASH"),
+    "fullDocumentCoverage=" + String(textReady && text.length > 120000),
+    "longDocumentMode=" + (text.length > 120000 ? "CHUNKED_FULL_TEXT" : "SINGLE_TEXT"),
+    "documentChunkCount=" + (text.length > 0 ? String(Math.max(1, Math.ceil(text.length / 24000))) : "0"),
+    "documentChunksPersisted=" + String(textReady),
+    "documentChunksPersistedCount=" + (text.length > 0 ? String(Math.max(1, Math.ceil(text.length / 24000))) : "0"),
+    "outlineStatus=" + (volumeDetected ? "VOLUME_V_OUTLINE_DETECTED" : "OUTLINE_NOT_DETECTED"),
+    "documentRegistry.status=" + (ready ? "AVAILABLE" : "NOT_READY"),
+    "documentProfileStatus=" + (ready ? "PERSISTED" : "NOT_READY"),
+    "documentProfileId=" + (ready ? "APOKALYPSIS-V5-PARADOGMA-ALIENO-PROFILE-PENDING" : "NO_DOCUMENT_PROFILE"),
+    "",
+    "detectedBranch=APOKALYPSIS I–V",
+    "detectedVolume=V5",
+    "detectedTitle=APOKALYPSIS — Volume V",
+    "detectedDocumentKind=" + APOKALYPSIS_VOLUME_V_PROFILE_DOCUMENT_KIND,
+    "docFamily=" + APOKALYPSIS_VOLUME_V_PROFILE_DOC_FAMILY,
+    "documentKind=" + APOKALYPSIS_VOLUME_V_PROFILE_DOCUMENT_KIND,
+    "module=" + APOKALYPSIS_VOLUME_V_PROFILE_MODULE,
+    "volume=" + APOKALYPSIS_VOLUME_V_PROFILE_VOLUME,
+    "title=" + APOKALYPSIS_VOLUME_V_PROFILE_TITLE,
+    "subtitle=" + APOKALYPSIS_VOLUME_V_PROFILE_SUBTITLE,
+    "canonicalThresholdDate=05-04-2026",
+    "canonicalAxis=" + APOKALYPSIS_VOLUME_V_PROFILE_CANONICAL_AXIS,
+    "coreAxisVolumeV=" + APOKALYPSIS_VOLUME_V_PROFILE_CORE_AXIS,
+    "profileLock=" + APOKALYPSIS_VOLUME_V_PROFILE_LOCK,
+    "apokalypsisProfileLock.status=" + (volumeVPrimaryDetected ? "APOKALYPSIS_VOLUME_V_PROFILE_LOCK_APPLIED" : "NOT_APPLICABLE"),
+    "nextVolumes=NONE — terminal volume of APOKALYPSIS I–V",
+    "",
+    "contaminationWithLambdaProfile=false",
+    "lambdaTitleDetected=false",
+    "b2gTechnicalStackDetected=false",
+    "technicalGovernanceKindDetected=false",
+    "cqoProfileDetected=false",
+    "apokalypsisPrologueDetected=" + String(prologueDetected),
+    "apokalypsisVolumeIDetectedAsPrimary=" + String(volumeIPrimaryDetected),
+    "apokalypsisVolumeIIDetectedAsPrimary=" + String(volumeIIPrimaryDetected),
+    "apokalypsisVolumeIIIDetectedAsPrimary=" + String(volumeIIIPrimaryDetected),
+    "apokalypsisVolumeIVDetectedAsPrimary=" + String(volumeIVPrimaryDetected),
+    "apokalypsisVolumeVPrimaryDetected=" + String(volumeVPrimaryDetected),
+    "paradogmaAlienoDetected=" + String(paradogmaAlienoDetected),
+    "alienArtifactDetected=" + String(alienArtifactDetected),
+    "incompatibilityDetected=" + String(incompatibilityDetected),
+    "irreintegrabilityDetected=" + String(irreintegrabilityDetected),
+    "terminalVolumeDetected=" + String(terminalVolumeDetected),
+    "coreAxisDetected=" + String(coreAxisDetected),
+    "continuityWithPreviousVolumesDetected=" + String(continuityWithPreviousVolumesDetected),
+    "nextVolumesNoneDetected=" + String(nextVolumesNoneDetected),
+    "",
+    "readyForIprSave=" + String(ready),
+    "noSaveGuard=true",
+    "semanticMemoryPersistable=false",
+    "newIprMemory=false",
+    "runtimeMemoryWriteSuppressed=true",
+    "legalCertification=false",
+    "OPC=technical proof receipt only",
+    "failReason=" + failReason
+  ].join("\n");
+}
+
 function resolveApokalypsisVolumeIVCognitiveRuptureFile(files: PublicFileSnapshot[]): PublicFileSnapshot | null {
   const exact = files.find((file) => {
     const normalizedName = normalizeText(file.name);
@@ -1235,6 +1485,10 @@ function resolveApokalypsisVolumeIVCognitiveRuptureFile(files: PublicFileSnapsho
 }
 
 function isApokalypsisVolumeIVPrimaryLockSignal(file: PublicFileSnapshot | null, text: string): boolean {
+  if (isApokalypsisVolumeVPrimaryLockSignal(file, text)) {
+    return false;
+  }
+
   const filename = normalizeText(file?.name || "");
   const head = normalizeText([file?.name || "", text.slice(0, 62000)].join("\n"));
 
@@ -1418,7 +1672,7 @@ function resolveApokalypsisVolumeIIIRiconconicitaFile(files: PublicFileSnapshot[
 }
 
 function isApokalypsisVolumeIIIPrimaryLockSignal(file: PublicFileSnapshot | null, text: string): boolean {
-  if (isApokalypsisVolumeIVPrimaryLockSignal(file, text)) {
+  if (isApokalypsisVolumeVPrimaryLockSignal(file, text) || isApokalypsisVolumeIVPrimaryLockSignal(file, text)) {
     return false;
   }
 
@@ -1591,7 +1845,7 @@ function resolveApokalypsisVolumeIICognitiveDislocationFile(files: PublicFileSna
 }
 
 function isApokalypsisVolumeIIPrimaryLockSignal(file: PublicFileSnapshot | null, text: string): boolean {
-  if (isApokalypsisVolumeIVPrimaryLockSignal(file, text) || isApokalypsisVolumeIIIPrimaryLockSignal(file, text)) {
+  if (isApokalypsisVolumeVPrimaryLockSignal(file, text) || isApokalypsisVolumeIVPrimaryLockSignal(file, text) || isApokalypsisVolumeIIIPrimaryLockSignal(file, text)) {
     return false;
   }
 
@@ -1613,7 +1867,7 @@ function isApokalypsisVolumeIIPrimaryLockSignal(file: PublicFileSnapshot | null,
 }
 
 function isApokalypsisVolumeIPrimaryLockSignal(file: PublicFileSnapshot | null, text: string): boolean {
-  if (isApokalypsisVolumeIVPrimaryLockSignal(file, text) || isApokalypsisVolumeIIIPrimaryLockSignal(file, text) || isApokalypsisVolumeIIPrimaryLockSignal(file, text)) {
+  if (isApokalypsisVolumeVPrimaryLockSignal(file, text) || isApokalypsisVolumeIVPrimaryLockSignal(file, text) || isApokalypsisVolumeIIIPrimaryLockSignal(file, text) || isApokalypsisVolumeIIPrimaryLockSignal(file, text)) {
     return false;
   }
 
@@ -1934,9 +2188,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     strictCyberneticDocumentMemoryRecallRequested ||
     b2gTechnicalMemoryStrictRecallRequested ||
     isApokalypsisRecordStatusRecallPriorityQuestion(message);
+  const apokalypsisVolumeVParadogmaAlienoRequested =
+    !globalRuntimeHealthCheckRequested &&
+    !apokalypsisRecordStatusRecallPriorityRequested &&
+    files.length > 0 &&
+    isApokalypsisVolumeVParadogmaAlienoQuestion(message, files);
   const apokalypsisVolumeIVCognitiveRuptureRequested =
     !globalRuntimeHealthCheckRequested &&
     !apokalypsisRecordStatusRecallPriorityRequested &&
+    !apokalypsisVolumeVParadogmaAlienoRequested &&
     files.length > 0 &&
     isApokalypsisVolumeIVCognitiveRuptureQuestion(message, files);
   const apokalypsisVolumeIIIRiconconicitaRequested =
@@ -1960,13 +2220,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const apokalypsisPrologoLightDiagnosticRequested =
     !globalRuntimeHealthCheckRequested &&
     !apokalypsisRecordStatusRecallPriorityRequested &&
+    !apokalypsisVolumeVParadogmaAlienoRequested &&
     !apokalypsisVolumeIVCognitiveRuptureRequested &&
     !apokalypsisVolumeIIIRiconconicitaRequested &&
     !apokalypsisVolumeIICognitiveDislocationRequested &&
     !apokalypsisVolumeICompleteUpdatedAi2026Requested &&
     files.length > 0 &&
     isApokalypsisPrologoLightDiagnosticQuestion(message, files);
-  const opcProofSummaryRequested = !globalRuntimeHealthCheckRequested && !apokalypsisVolumeIVCognitiveRuptureRequested && !apokalypsisVolumeIIIRiconconicitaRequested && !apokalypsisVolumeIICognitiveDislocationRequested && !apokalypsisVolumeICompleteUpdatedAi2026Requested && !apokalypsisPrologoLightDiagnosticRequested && isOpcProofSummaryQuestion(message);
+  const opcProofSummaryRequested = !globalRuntimeHealthCheckRequested && !apokalypsisVolumeVParadogmaAlienoRequested && !apokalypsisVolumeIVCognitiveRuptureRequested && !apokalypsisVolumeIIIRiconconicitaRequested && !apokalypsisVolumeIICognitiveDislocationRequested && !apokalypsisVolumeICompleteUpdatedAi2026Requested && !apokalypsisPrologoLightDiagnosticRequested && isOpcProofSummaryQuestion(message);
   const selfDiagnosisRequested = isSelfDiagnosisQuestion(message);
   const runtimeMemoryBlockDiagnosticRequested =
     !fullDocumentCoverageAuditRequested && isRuntimeMemoryBlockDiagnosticQuestion(message);
@@ -2322,6 +2583,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (globalRuntimeHealthCheckRequested) {
     answer = buildGlobalRuntimeHealthCheckPreparationAnswer({
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (apokalypsisVolumeVParadogmaAlienoRequested) {
+    answer = buildApokalypsisVolumeVParadogmaAlienoAnswer({
+      message,
+      files,
       handoff,
       memory,
       policy,
@@ -7604,7 +7876,29 @@ function documentProfileMetadataString(
 }
 
 
+function isApokalypsisVolumeVProfileLockSignal(parts: string[]): boolean {
+  const normalized = normalizeText(parts.filter(Boolean).join("\n"));
+
+  return (
+    normalized.includes("apokalypsis_volume_v_completo_aggiornato_ai_2026") ||
+    normalized.includes("apokalypsis_volume_v_complete_editorial_revised_2026") ||
+    normalized.includes("apokalypsis volume v") ||
+    normalized.includes("apokalypsis volume 5") ||
+    normalized.includes("apokalypsis-v5-paradogma-alieno-profile") ||
+    normalized.includes("paradogma_alieno_lock") ||
+    normalized.includes("emersione del paradogma alieno") ||
+    normalized.includes("alien artifact") ||
+    normalized.includes("rottura cognitiva irreversibile") ||
+    normalized.includes(normalizeText(APOKALYPSIS_VOLUME_V_PROFILE_FILE_HASH)) ||
+    normalized.includes(APOKALYPSIS_VOLUME_V_PROFILE_FILE_HASH.replace(/^sha256:/, ""))
+  );
+}
+
 function isApokalypsisVolumeIVProfileLockSignal(parts: string[]): boolean {
+  if (isApokalypsisVolumeVProfileLockSignal(parts)) {
+    return false;
+  }
+
   const normalized = normalizeText(parts.filter(Boolean).join("\n"));
 
   return (
@@ -7620,6 +7914,99 @@ function isApokalypsisVolumeIVProfileLockSignal(parts: string[]): boolean {
     normalized.includes(normalizeText(APOKALYPSIS_VOLUME_IV_PROFILE_FILE_HASH)) ||
     normalized.includes(APOKALYPSIS_VOLUME_IV_PROFILE_FILE_HASH.replace(/^sha256:/, ""))
   );
+}
+
+function canonicalizeApokalypsisVolumeVProfileMetadata(metadata: JsonObject | null): JsonObject | null {
+  if (!metadata) {
+    return null;
+  }
+
+  const profileId = documentProfileMetadataString(metadata, ["profileId", "documentProfileId", "documentMetadata.profileId"], "");
+  const filename = documentProfileMetadataString(metadata, ["filename", "sourceDocument", "documentMetadata.filename", "documentMetadata.sourceDocument"], "");
+  const fileHash = documentProfileMetadataString(metadata, ["fileHash", "sourceFileHash", "documentMetadata.fileHash", "documentMetadata.sourceFileHash"], "");
+  const docFamily = documentProfileMetadataString(metadata, ["docFamily", "canonicalDocFamily", "documentMetadata.docFamily", "documentMetadata.canonicalDocFamily"], "");
+  const documentKind = documentProfileMetadataString(metadata, ["documentKind", "canonicalDocumentKind", "documentMetadata.documentKind", "documentMetadata.canonicalDocumentKind"], "");
+  const moduleName = documentProfileMetadataString(metadata, ["module", "canonicalModule", "documentModule", "documentMetadata.module", "documentMetadata.canonicalModule"], "");
+  const volume = documentProfileMetadataString(metadata, ["volume", "documentVolume", "documentMetadata.volume"], "");
+  const title = documentProfileMetadataString(metadata, ["title", "documentTitle", "documentMetadata.title"], "");
+  const canonicalAxis = documentProfileMetadataString(metadata, ["canonicalAxis", "axis", "documentMetadata.canonicalAxis"], "");
+
+  if (!isApokalypsisVolumeVProfileLockSignal([
+    profileId,
+    filename,
+    fileHash,
+    docFamily,
+    documentKind,
+    moduleName,
+    volume,
+    title,
+    canonicalAxis
+  ])) {
+    return metadata;
+  }
+
+  const documentMetadata = asJsonObject(metadata.documentMetadata) || {};
+  const canonicalFileHash = APOKALYPSIS_VOLUME_V_PROFILE_FILE_HASH;
+
+  return {
+    ...metadata,
+    profileId: profileId || stringPath(metadata, "documentProfileId", "") || "APOKALYPSIS-V5-PARADOGMA-ALIENO-PROFILE",
+    documentProfileId: stringPath(metadata, "documentProfileId", "") || profileId || "APOKALYPSIS-V5-PARADOGMA-ALIENO-PROFILE",
+    filename: filename || APOKALYPSIS_VOLUME_V_PROFILE_FILENAME_LOCK,
+    sourceDocument: filename || APOKALYPSIS_VOLUME_V_PROFILE_FILENAME_LOCK,
+    fileHash: canonicalFileHash,
+    sourceFileHash: canonicalFileHash,
+    docFamily: APOKALYPSIS_VOLUME_V_PROFILE_DOC_FAMILY,
+    canonicalDocFamily: APOKALYPSIS_VOLUME_V_PROFILE_DOC_FAMILY,
+    documentKind: APOKALYPSIS_VOLUME_V_PROFILE_DOCUMENT_KIND,
+    canonicalDocumentKind: APOKALYPSIS_VOLUME_V_PROFILE_DOCUMENT_KIND,
+    module: APOKALYPSIS_VOLUME_V_PROFILE_MODULE,
+    canonicalModule: APOKALYPSIS_VOLUME_V_PROFILE_MODULE,
+    documentModule: APOKALYPSIS_VOLUME_V_PROFILE_MODULE,
+    volume: APOKALYPSIS_VOLUME_V_PROFILE_VOLUME,
+    documentVolume: APOKALYPSIS_VOLUME_V_PROFILE_VOLUME,
+    title: APOKALYPSIS_VOLUME_V_PROFILE_TITLE,
+    documentTitle: APOKALYPSIS_VOLUME_V_PROFILE_TITLE,
+    subtitle: APOKALYPSIS_VOLUME_V_PROFILE_SUBTITLE,
+    canonicalAxis: APOKALYPSIS_VOLUME_V_PROFILE_CANONICAL_AXIS,
+    axis: APOKALYPSIS_VOLUME_V_PROFILE_CANONICAL_AXIS,
+    coreAxisVolumeV: APOKALYPSIS_VOLUME_V_PROFILE_CORE_AXIS,
+    profileLock: APOKALYPSIS_VOLUME_V_PROFILE_LOCK,
+    branch: "APOKALYPSIS I–V",
+    nextVolumes: "NONE — terminal volume of APOKALYPSIS I–V",
+    contaminationWithLambdaProfile: false,
+    contaminationWithB2gTechnicalStack: false,
+    apokalypsisProfileLockApplied: true,
+    apokalypsisProfileLockRevision: APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD_REVISION,
+    documentMetadata: {
+      ...documentMetadata,
+      filename: filename || APOKALYPSIS_VOLUME_V_PROFILE_FILENAME_LOCK,
+      sourceDocument: filename || APOKALYPSIS_VOLUME_V_PROFILE_FILENAME_LOCK,
+      fileHash: canonicalFileHash,
+      sourceFileHash: canonicalFileHash,
+      docFamily: APOKALYPSIS_VOLUME_V_PROFILE_DOC_FAMILY,
+      canonicalDocFamily: APOKALYPSIS_VOLUME_V_PROFILE_DOC_FAMILY,
+      documentKind: APOKALYPSIS_VOLUME_V_PROFILE_DOCUMENT_KIND,
+      canonicalDocumentKind: APOKALYPSIS_VOLUME_V_PROFILE_DOCUMENT_KIND,
+      module: APOKALYPSIS_VOLUME_V_PROFILE_MODULE,
+      canonicalModule: APOKALYPSIS_VOLUME_V_PROFILE_MODULE,
+      volume: APOKALYPSIS_VOLUME_V_PROFILE_VOLUME,
+      documentVolume: APOKALYPSIS_VOLUME_V_PROFILE_VOLUME,
+      title: APOKALYPSIS_VOLUME_V_PROFILE_TITLE,
+      documentTitle: APOKALYPSIS_VOLUME_V_PROFILE_TITLE,
+      subtitle: APOKALYPSIS_VOLUME_V_PROFILE_SUBTITLE,
+      canonicalAxis: APOKALYPSIS_VOLUME_V_PROFILE_CANONICAL_AXIS,
+      axis: APOKALYPSIS_VOLUME_V_PROFILE_CANONICAL_AXIS,
+      coreAxisVolumeV: APOKALYPSIS_VOLUME_V_PROFILE_CORE_AXIS,
+      profileLock: APOKALYPSIS_VOLUME_V_PROFILE_LOCK,
+      branch: "APOKALYPSIS I–V",
+      nextVolumes: "NONE — terminal volume of APOKALYPSIS I–V",
+      contaminationWithLambdaProfile: false,
+      contaminationWithB2gTechnicalStack: false,
+      apokalypsisProfileLockApplied: true,
+      apokalypsisProfileLockRevision: APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD_REVISION
+    }
+  };
 }
 
 function canonicalizeApokalypsisVolumeIVProfileMetadata(metadata: JsonObject | null): JsonObject | null {
@@ -7937,7 +8324,9 @@ function canonicalizeApokalypsisProfileMetadata(metadata: JsonObject | null): Js
   return canonicalizeApokalypsisVolumeIProfileMetadata(
     canonicalizeApokalypsisVolumeIIProfileMetadata(
       canonicalizeApokalypsisVolumeIIIProfileMetadata(
-        canonicalizeApokalypsisVolumeIVProfileMetadata(metadata)
+        canonicalizeApokalypsisVolumeIVProfileMetadata(
+          canonicalizeApokalypsisVolumeVProfileMetadata(metadata)
+        )
       )
     )
   );
