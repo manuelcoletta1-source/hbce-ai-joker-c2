@@ -484,9 +484,9 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.2-SAAS_B2G_CONTEXT_SPLIT";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.3-APOKALYPSIS_VOLUME_II_DASHBOARD_OVERLAY";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
-const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v3.2-SAAS_B2G_CONTEXT_SPLIT";
+const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v3.3-APOKALYPSIS_VOLUME_II_DASHBOARD_OVERLAY";
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -670,7 +670,36 @@ const USE_EUROPEAN_FEDERATION_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboar
 ];
 
 
+const APOKALYPSIS_VOLUME_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverlay[] = [
+  {
+    branchKey: "APOKALYPSIS_EDITORIAL_SYSTEM",
+    title: "APOKALYPSIS — Volume II",
+    volume: "V2",
+    docFamily: "APOKALYPSIS",
+    canonicalDocumentKind: "APOKALYPSIS_VOLUME_II_COMPLETE_EDITORIAL_REVISED_2026",
+    summary: "APOKALYPSIS Volume II definisce il costo della dislocazione cognitiva: il sistema non continua soltanto fuori dal soggetto, ma dentro la coscienza che riceve un fondamento esternalizzato, interiorizza il costo e apre la soglia della riconconicità cognitiva sotto Decisione · Costo · Traccia · Tempo.",
+    canonicalAxis: "Decisione · Costo · Traccia · Tempo",
+    keyTerms: ["APOKALYPSIS", "Volume II", "Dislocazione cognitiva", "Costo della dislocazione cognitiva", "Fondamento esternalizzato", "Coscienza dislocata", "Riconconicità cognitiva", "05-04-2026", "IPR", "EVT", "OPC"],
+    semanticTerms: ["APOKALYPSIS", "Volume II", "Dislocazione cognitiva", "Fondamento esternalizzato", "Costo interiore", "Continuità del sistema", "Riconconicità cognitiva", "Decisione", "Costo", "Traccia", "Tempo"],
+    signals: ["DOC-PROFILE-985C1E92AF4FFCA2", "IPR-MEM-20260606081927-6CA777D8", "sha256:e07fd54d846b93c140fde2a17158165ed2c3f68434294255d0d31cd62d133a03", "APOKALYPSIS_VOLUME_II_COMPLETO_AGGIORNATO_AI_2026_v1_COGNITIVE_DISLOCATION_LOCK", "APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_LOCK", "APOKALYPSIS_VOLUME_II_COMPLETE_EDITORIAL_REVISED_2026", "Il costo della dislocazione cognitiva"]
+  },
+  {
+    branchKey: "APOKALYPSIS_EDITORIAL_SYSTEM",
+    title: "APOKALYPSIS — Volume I",
+    volume: "V1",
+    docFamily: "APOKALYPSIS",
+    canonicalDocumentKind: "APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026",
+    summary: "APOKALYPSIS Volume I v6 definisce l’inizio del decadimento del sistema culturale, politico, sociale ed economico, con soglia 05-04-2026 e asse Decisione · Costo · Traccia · Tempo.",
+    canonicalAxis: "Decisione · Costo · Traccia · Tempo",
+    keyTerms: ["APOKALYPSIS", "Volume I", "Decadimento", "Sistema culturale", "Sistema politico", "Sistema sociale", "Sistema economico", "05-04-2026", "IPR", "EVT", "OPC"],
+    semanticTerms: ["APOKALYPSIS", "Volume I", "Decadimento del sistema", "Soglia", "Decisione", "Costo", "Traccia", "Tempo"],
+    signals: ["DOC-PROFILE-22F308F434FE3C5C", "IPR-MEM-20260605180825-A07A7A75", "sha256:5c62c3287a39c0148422958d0b9511b0ee775c42e66ac8f25d9f26479407bab2", "APOKALYPSIS_VOLUME_I_COMPLETO_AGGIORNATO_AI_2026_v6_STRUCTURE_FIX_LOCK", "APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026"]
+  }
+];
+
+
 const JOKER_C2_DOCUMENT_PROFILE_DASHBOARD_OVERLAYS: DocumentProfileDashboardOverlay[] = [
+  ...APOKALYPSIS_VOLUME_DASHBOARD_OVERLAYS,
   ...USE_EUROPEAN_FEDERATION_VOLUME_DASHBOARD_OVERLAYS,
   ...HBCE_AI_ECOSYSTEM_VOLUME_DASHBOARD_OVERLAYS
 ];
@@ -1909,6 +1938,56 @@ function profileMatchesDashboardOverlay(profile: PublicDocumentProfileSnapshot, 
 }
 
 
+function getApokalypsisVolumeIIDashboardHardOverlay(profile: PublicDocumentProfileSnapshot): DocumentProfileDashboardOverlay | null {
+  const profileId = profile.profileId.trim();
+  const memoryId = profile.memoryId.trim();
+  const fileHash = profile.fileHash.trim();
+  const filename = profile.filename.trim();
+  const title = profile.title.trim();
+  const docFamily = profile.docFamily.trim();
+
+
+  const isApokalypsisVolumeIIProfile =
+    profileId === "DOC-PROFILE-985C1E92AF4FFCA2" ||
+    memoryId === "IPR-MEM-20260606081927-6CA777D8" ||
+    fileHash === "sha256:e07fd54d846b93c140fde2a17158165ed2c3f68434294255d0d31cd62d133a03" ||
+    filename.includes("APOKALYPSIS_VOLUME_II_COMPLETO_AGGIORNATO_AI_2026_v1_COGNITIVE_DISLOCATION_LOCK") ||
+    title.includes("APOKALYPSIS — Volume II") ||
+    docFamily === "APOKALYPSIS" && profile.volume.trim().toUpperCase() === "V2";
+
+
+  if (!isApokalypsisVolumeIIProfile) {
+    return null;
+  }
+
+
+  return APOKALYPSIS_VOLUME_DASHBOARD_OVERLAYS.find((overlay) => overlay.volume === "V2") ?? null;
+}
+
+
+function getApokalypsisVolumeIDashboardHardOverlay(profile: PublicDocumentProfileSnapshot): DocumentProfileDashboardOverlay | null {
+  const profileId = profile.profileId.trim();
+  const memoryId = profile.memoryId.trim();
+  const fileHash = profile.fileHash.trim();
+  const filename = profile.filename.trim();
+
+
+  const isApokalypsisVolumeIProfile =
+    profileId === "DOC-PROFILE-22F308F434FE3C5C" ||
+    memoryId === "IPR-MEM-20260605180825-A07A7A75" ||
+    fileHash === "sha256:5c62c3287a39c0148422958d0b9511b0ee775c42e66ac8f25d9f26479407bab2" ||
+    filename.includes("APOKALYPSIS_VOLUME_I_COMPLETO_AGGIORNATO_AI_2026_v6_STRUCTURE_FIX_LOCK");
+
+
+  if (!isApokalypsisVolumeIProfile) {
+    return null;
+  }
+
+
+  return APOKALYPSIS_VOLUME_DASHBOARD_OVERLAYS.find((overlay) => overlay.volume === "V1") ?? null;
+}
+
+
 function getUseVolumeVDashboardHardOverlay(profile: PublicDocumentProfileSnapshot): DocumentProfileDashboardOverlay | null {
   const profileId = profile.profileId.trim();
   const memoryId = profile.memoryId.trim();
@@ -1996,6 +2075,14 @@ function applyDocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnap
 
 
 function applyJokerC2DocumentProfileDashboardOverlay(profile: PublicDocumentProfileSnapshot): PublicDocumentProfileSnapshot {
+  const apokalypsisVolumeIIHardOverlay = getApokalypsisVolumeIIDashboardHardOverlay(profile);
+  if (apokalypsisVolumeIIHardOverlay) return applyDocumentProfileDashboardOverlay(profile, apokalypsisVolumeIIHardOverlay);
+
+
+  const apokalypsisVolumeIHardOverlay = getApokalypsisVolumeIDashboardHardOverlay(profile);
+  if (apokalypsisVolumeIHardOverlay) return applyDocumentProfileDashboardOverlay(profile, apokalypsisVolumeIHardOverlay);
+
+
   const useVolumeVHardOverlay = getUseVolumeVDashboardHardOverlay(profile);
   if (useVolumeVHardOverlay) return applyDocumentProfileDashboardOverlay(profile, useVolumeVHardOverlay);
 
@@ -2015,6 +2102,14 @@ function applyJokerC2DocumentProfileDashboardOverlay(profile: PublicDocumentProf
 
 
 function getJokerC2BranchKeyForProfile(profile: PublicDocumentProfileSnapshot): string {
+  const apokalypsisVolumeIIHardOverlay = getApokalypsisVolumeIIDashboardHardOverlay(profile);
+  if (apokalypsisVolumeIIHardOverlay) return apokalypsisVolumeIIHardOverlay.branchKey;
+
+
+  const apokalypsisVolumeIHardOverlay = getApokalypsisVolumeIDashboardHardOverlay(profile);
+  if (apokalypsisVolumeIHardOverlay) return apokalypsisVolumeIHardOverlay.branchKey;
+
+
   const signal = buildDocumentProfileDashboardSignal(profile);
   const explicitDashboardOverlay = JOKER_C2_DOCUMENT_PROFILE_DASHBOARD_OVERLAYS.find((overlay) => profileMatchesDashboardOverlay(profile, overlay));
   if (explicitDashboardOverlay) return explicitDashboardOverlay.branchKey;
@@ -2056,8 +2151,10 @@ function countLinkedProfilesForBranch(profiles: PublicDocumentProfileSnapshot[],
 function volumeSetForBranch(profiles: PublicDocumentProfileSnapshot[], branchPrefix: string): Set<string> {
   const volumes = new Set<string>();
   for (const profile of profiles) {
-    const branchKey = getJokerC2BranchKeyForProfile(profile);
-    if (branchKey.startsWith(branchPrefix) && ["V1", "V2", "V3", "V4", "V5"].includes(profile.volume.toUpperCase())) volumes.add(profile.volume.toUpperCase());
+    const dashboardProfile = applyJokerC2DocumentProfileDashboardOverlay(profile);
+    const branchKey = getJokerC2BranchKeyForProfile(dashboardProfile);
+    const dashboardVolume = dashboardProfile.volume.toUpperCase();
+    if (branchKey.startsWith(branchPrefix) && ["V1", "V2", "V3", "V4", "V5"].includes(dashboardVolume)) volumes.add(dashboardVolume);
   }
   return volumes;
 }
