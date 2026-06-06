@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -663,6 +663,7 @@ const APOKALYPSIS_VOLUME_I_PROFILE_VOLUME = "V1" as const;
 const APOKALYPSIS_VOLUME_I_PROFILE_TITLE = "APOKALYPSIS — Volume I" as const;
 const APOKALYPSIS_VOLUME_I_PROFILE_CANONICAL_AXIS = "Decisione · Costo · Traccia · Tempo" as const;
 const APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD_REVISION = "APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35" as const;
+const APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX_REVISION = "APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36" as const;
 const APOKALYPSIS_VOLUME_II_PROFILE_FILENAME_LOCK = "APOKALYPSIS_VOLUME_II_COMPLETO_AGGIORNATO_AI_2026_v1_COGNITIVE_DISLOCATION_LOCK.txt" as const;
 const APOKALYPSIS_VOLUME_II_PROFILE_FILE_HASH = "sha256:e07fd54d846b93c140fde2a17158165ed2c3f68434294255d0d31cd62d133a03" as const;
 const APOKALYPSIS_VOLUME_II_PROFILE_DOC_FAMILY = "APOKALYPSIS" as const;
@@ -1112,6 +1113,46 @@ function resolveApokalypsisVolumeIICognitiveDislocationFile(files: PublicFileSna
   }) || null;
 }
 
+function isApokalypsisVolumeIIPrimaryLockSignal(file: PublicFileSnapshot | null, text: string): boolean {
+  const filename = normalizeText(file?.name || "");
+  const head = normalizeText([file?.name || "", text.slice(0, 52000)].join("\n"));
+
+  return (
+    filename.includes("apokalypsis_volume_ii_completo_aggiornato_ai_2026") ||
+    filename.includes("apokalypsis_volume_ii_complete_editorial_revised_2026") ||
+    filename.includes("cognitive_dislocation_lock") ||
+    head.includes("profilelock: apokalypsis_volume_ii_cognitive_dislocation_lock") ||
+    head.includes("documentkind: apokalypsis_volume_ii_complete_editorial_revised_2026") ||
+    head.includes("module: apokalypsis_volume_ii") ||
+    head.includes("volume: v2") ||
+    head.includes("apokalypsis — volume ii") ||
+    head.includes("apokalypsis - volume ii") ||
+    head.includes("il costo della dislocazione cognitiva")
+  );
+}
+
+function isApokalypsisVolumeIPrimaryLockSignal(file: PublicFileSnapshot | null, text: string): boolean {
+  if (isApokalypsisVolumeIIPrimaryLockSignal(file, text)) {
+    return false;
+  }
+
+  const filename = normalizeText(file?.name || "");
+  const head = normalizeText([file?.name || "", text.slice(0, 52000)].join("\n"));
+
+  return (
+    filename.includes("apokalypsis_volume_i_completo_aggiornato_ai_2026") ||
+    filename.includes("apokalypsis_volume_i_complete_updated_ai_2026") ||
+    filename.includes("v6_structure_fix_lock") ||
+    head.includes("profilelock: apokalypsis_volume_i_complete_updated_ai_2026") ||
+    head.includes("documentkind: apokalypsis_volume_i_complete_updated_ai_2026") ||
+    head.includes("module: apokalypsis_volume_i") ||
+    head.includes("volume: v1") ||
+    head.includes("apokalypsis — volume i") ||
+    head.includes("apokalypsis - volume i") ||
+    head.includes("inizio del decadimento del sistema culturale")
+  );
+}
+
 function buildApokalypsisVolumeIICognitiveDislocationAnswer(args: {
   message: string;
   files: PublicFileSnapshot[];
@@ -1136,11 +1177,13 @@ function buildApokalypsisVolumeIICognitiveDislocationAnswer(args: {
     (haystack.includes("riconconicita cognitiva") || haystack.includes("riconconicità cognitiva"));
   const appendixA6Detected = haystack.includes("a.6 continuita operativa") || haystack.includes("a.6 continuità operativa") || haystack.includes("appendice a.6");
   const prologueDetected = haystack.includes("apokalypsis_operational_prologue") || haystack.includes("prologo operativo ai 2026");
-  const volumeIPrimaryDetected = normalizeText(file?.name || "").includes("volume_i") || normalizeText(file?.name || "").includes("volume i completo aggiornato");
+  const volumeIIPrimaryDetected = isApokalypsisVolumeIIPrimaryLockSignal(file, text);
+  const volumeIPrimaryDetected = isApokalypsisVolumeIPrimaryLockSignal(file, text);
   const ready = Boolean(
     file &&
     textReady &&
     apokalypsisDetected &&
+    volumeIIPrimaryDetected &&
     volumeDetected &&
     thresholdDetected &&
     formulaDetected &&
@@ -1153,6 +1196,7 @@ function buildApokalypsisVolumeIICognitiveDislocationAnswer(args: {
         file ? null : "NO_APOKALYPSIS_VOLUME_II_FILE",
         textReady ? null : "TEXT_NOT_READY",
         apokalypsisDetected ? null : "APOKALYPSIS_SIGNAL_NOT_DETECTED",
+        volumeIIPrimaryDetected ? null : "VOLUME_II_PRIMARY_LOCK_SIGNAL_NOT_DETECTED",
         volumeDetected ? null : "VOLUME_II_SIGNAL_NOT_DETECTED",
         thresholdDetected ? null : "CANONICAL_THRESHOLD_05_04_2026_NOT_DETECTED",
         formulaDetected ? null : "DCTT_FORMULA_NOT_DETECTED",
@@ -1163,7 +1207,7 @@ function buildApokalypsisVolumeIICognitiveDislocationAnswer(args: {
   return [
     "APOKALYPSIS_VOLUME_II_INGESTION_READY: " + String(ready),
     "routeRevision=" + CHAT_ROUTE_REVISION,
-    "guardRevision=" + APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD_REVISION,
+    "guardRevision=" + APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD_REVISION + "-" + APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX_REVISION,
     "fileStatus=" + (file?.status || "NO_FILE"),
     "textReady=" + String(textReady),
     "activeFilename=" + (file?.name || "NO_FILE"),
@@ -1198,6 +1242,7 @@ function buildApokalypsisVolumeIICognitiveDislocationAnswer(args: {
     "b2gTechnicalStackDetected=false",
     "technicalGovernanceKindDetected=false",
     "apokalypsisPrologueDetected=" + String(prologueDetected),
+    "apokalypsisVolumeIIPrimaryDetected=" + String(volumeIIPrimaryDetected),
     "apokalypsisVolumeIDetectedAsPrimary=" + String(volumeIPrimaryDetected),
     "appendixA6Detected=" + String(appendixA6Detected),
     "coreAxisDetected=" + String(coreAxisDetected),
