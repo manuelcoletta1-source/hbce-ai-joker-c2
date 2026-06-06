@@ -6,7 +6,7 @@ import {
 import type { DocumentProfileDatabaseRow } from "@/lib/ipr-database";
 
 export const CYBERNETIC_DOCUMENT_RECALL_ENGINE_REVISION =
-  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_5-USE_PROFILE_SUMMARY_HARD_REPAIR-v5_6-USE_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR-v5_7-USE_VOLUME_III_PROFILE_SUMMARY_HARD_REPAIR-v5_8-USE_VOLUME_IV_PROFILE_SUMMARY_HARD_REPAIR-v5_9-USE_VOLUME_V_PROFILE_SUMMARY_HARD_REPAIR-v5_10";
+  "HBCE-CYBERNETIC-DOCUMENT-RECALL-ENGINE-v5-STRICT_REQUESTED_MEMORY_ONLY-HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_5-USE_PROFILE_SUMMARY_HARD_REPAIR-v5_6-USE_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR-v5_7-USE_VOLUME_III_PROFILE_SUMMARY_HARD_REPAIR-v5_8-USE_VOLUME_IV_PROFILE_SUMMARY_HARD_REPAIR-v5_9-USE_VOLUME_V_PROFILE_SUMMARY_HARD_REPAIR-v5_10-APOKALYPSIS_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR-v5_11";
 
 const HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR_REVISION =
   "HBCE_AI_ECOSYSTEM_PROFILE_SUMMARY_HARD_REPAIR-v5_5";
@@ -20,6 +20,49 @@ const USE_EUROPEAN_FEDERATION_VOLUME_IV_PROFILE_SUMMARY_HARD_REPAIR_REVISION =
   "USE_VOLUME_IV_PROFILE_SUMMARY_HARD_REPAIR-v5_9";
 const USE_EUROPEAN_FEDERATION_VOLUME_V_PROFILE_SUMMARY_HARD_REPAIR_REVISION =
   "USE_VOLUME_V_PROFILE_SUMMARY_HARD_REPAIR-v5_10";
+const APOKALYPSIS_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR_REVISION =
+  "APOKALYPSIS_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR-v5_11";
+const APOKALYPSIS_VOLUME_II_PROFILE_ID = "DOC-PROFILE-985C1E92AF4FFCA2";
+const APOKALYPSIS_VOLUME_II_MEMORY_ID = "IPR-MEM-20260606081927-6CA777D8";
+const APOKALYPSIS_VOLUME_II_FILE_HASH =
+  "sha256:e07fd54d846b93c140fde2a17158165ed2c3f68434294255d0d31cd62d133a03";
+const APOKALYPSIS_VOLUME_II_FILENAME =
+  "APOKALYPSIS_VOLUME_II_COMPLETO_AGGIORNATO_AI_2026_v1_COGNITIVE_DISLOCATION_LOCK.txt";
+const APOKALYPSIS_VOLUME_II_DOCUMENT_KIND =
+  "APOKALYPSIS_VOLUME_II_COMPLETE_EDITORIAL_REVISED_2026";
+const APOKALYPSIS_VOLUME_II_MODULE = "APOKALYPSIS_VOLUME_II";
+const APOKALYPSIS_VOLUME_II_VOLUME = "V2";
+const APOKALYPSIS_VOLUME_II_TITLE = "APOKALYPSIS — Volume II";
+const APOKALYPSIS_VOLUME_II_SUBTITLE = "Il costo della dislocazione cognitiva";
+const APOKALYPSIS_VOLUME_II_CANONICAL_THRESHOLD_DATE = "05-04-2026";
+const APOKALYPSIS_VOLUME_II_CANONICAL_AXIS = "Decisione · Costo · Traccia · Tempo";
+const APOKALYPSIS_VOLUME_II_CORE_AXIS =
+  "Dislocazione cognitiva → fondamento esternalizzato → costo interiore → continuità del sistema → riconconicità cognitiva";
+const APOKALYPSIS_VOLUME_II_PROFILE_LOCK = "APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_LOCK";
+const APOKALYPSIS_VOLUME_II_CANONICAL_SUMMARY =
+  "APOKALYPSIS Volume II definisce il costo della dislocazione cognitiva: il sistema non continua soltanto fuori dal soggetto, ma dentro la coscienza che riceve un fondamento esternalizzato, interiorizza il costo, lascia traccia nel linguaggio, nella paura, nel lavoro e nella società, e apre la soglia della riconconicità cognitiva sotto Decisione · Costo · Traccia · Tempo.";
+const APOKALYPSIS_VOLUME_II_OPERATIONAL_MEMORY_SUMMARY =
+  "APOKALYPSIS Volume II è il volume della dislocazione cognitiva: collega il decadimento esterno del Volume I alla continuità interna del sistema nella coscienza, correggendo il profilo documentale su APOKALYPSIS/V2 quando filename, hash, memoryId o documentProfileId identificano il lock COGNITIVE_DISLOCATION.";
+const APOKALYPSIS_VOLUME_II_KEY_TERMS = [
+  "APOKALYPSIS",
+  "Volume II",
+  "Dislocazione cognitiva",
+  "Costo della dislocazione cognitiva",
+  "Fondamento esternalizzato",
+  "Coscienza dislocata",
+  "Costo interiore",
+  "Continuità del sistema",
+  "Riconconicità cognitiva",
+  "Decisione",
+  "Costo",
+  "Traccia",
+  "Tempo",
+  "05-04-2026",
+  "IPR",
+  "EVT",
+  "OPC",
+  "JOKER-C2"
+];
 const HBCE_AI_ECOSYSTEM_VOLUME_I_PROFILE_ID = "DOC-PROFILE-8602A2F8D2E2494D";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_MEMORY_ID = "IPR-MEM-20260604124905-E968EDC7";
 const HBCE_AI_ECOSYSTEM_VOLUME_I_FILE_HASH =
@@ -531,10 +574,14 @@ export type CyberneticDocumentProfileRecallItem = {
   filename: string | null;
   fileHash: string | null;
   docFamily: string | null;
+  documentKind: string | null;
+  module: string | null;
   volume: string | null;
   title: string | null;
   subtitle: string | null;
   canonicalAxis: string | null;
+  coreAxis: string | null;
+  profileLock: string | null;
   summary: string | null;
   keyTerms: string[];
   semanticTerms: unknown[];
@@ -742,6 +789,160 @@ function isMatrixVolumeVContaminatedSummary(value: string | null): boolean {
     normalized.includes("layer phi") ||
     normalized.includes("nodi energetici")
   );
+}
+
+
+function isApokalypsisVolumeIIProfileRecord(publicProfile: Record<string, unknown>): boolean {
+  const profileId = stringFromValue(publicProfile.profileId).toUpperCase();
+  const memoryId = stringFromValue(publicProfile.memoryId).toUpperCase();
+  const fileHash = stringFromValue(publicProfile.fileHash).trim().toLowerCase();
+  const filename = normalizeComparableDocumentValue(publicProfile.filename);
+  const title = normalizeComparableDocumentValue(publicProfile.title);
+  const docFamily = stringFromValue(publicProfile.docFamily).trim().toUpperCase();
+  const documentKind = stringFromValue(publicProfile.documentKind).trim().toUpperCase();
+  const module = stringFromValue(publicProfile.module).trim().toUpperCase();
+  const volume = stringFromValue(publicProfile.volume).trim().toUpperCase();
+  const profileLock = stringFromValue(publicProfile.profileLock).trim().toUpperCase();
+  const canonicalAxis = normalizeComparableDocumentValue(publicProfile.canonicalAxis);
+  const summary = normalizeComparableDocumentValue(publicProfile.summary);
+  const keyTerms = normalizeComparableDocumentValue(publicProfile.keyTerms);
+  const semanticTerms = normalizeComparableDocumentValue(publicProfile.semanticTerms);
+  const expectedFilename = normalizeComparableDocumentValue(APOKALYPSIS_VOLUME_II_FILENAME);
+
+  return (
+    profileId === APOKALYPSIS_VOLUME_II_PROFILE_ID ||
+    memoryId === APOKALYPSIS_VOLUME_II_MEMORY_ID ||
+    fileHash === APOKALYPSIS_VOLUME_II_FILE_HASH ||
+    filename === expectedFilename ||
+    filename.includes(expectedFilename) ||
+    documentKind === APOKALYPSIS_VOLUME_II_DOCUMENT_KIND ||
+    module === APOKALYPSIS_VOLUME_II_MODULE ||
+    profileLock === APOKALYPSIS_VOLUME_II_PROFILE_LOCK ||
+    (docFamily === "APOKALYPSIS" && volume === "V2") ||
+    (title.includes("apokalypsis") && title.includes("volume ii")) ||
+    summary.includes("dislocazione cognitiva") ||
+    canonicalAxis === normalizeComparableDocumentValue(APOKALYPSIS_VOLUME_II_CANONICAL_AXIS) ||
+    keyTerms.includes("dislocazione cognitiva") ||
+    semanticTerms.includes("dislocazione cognitiva")
+  );
+}
+
+function withApokalypsisVolumeIICanonicalProfileRepair(
+  publicProfile: Record<string, unknown>
+): Record<string, unknown> {
+  const previousDocFamily = documentProfileString(publicProfile, "docFamily");
+  const previousDocumentKind = documentProfileString(publicProfile, "documentKind");
+  const previousModule = documentProfileString(publicProfile, "module");
+  const previousTitle = documentProfileString(publicProfile, "title");
+  const previousVolume = documentProfileString(publicProfile, "volume");
+  const previousSubtitle = documentProfileString(publicProfile, "subtitle");
+  const previousCanonicalAxis = documentProfileString(publicProfile, "canonicalAxis");
+  const previousSummary = documentProfileString(publicProfile, "summary");
+  const previousProfileLock = documentProfileString(publicProfile, "profileLock");
+  const previousTitleNormalized = normalizeComparableDocumentValue(previousTitle);
+  const previousDocFamilyNormalized = stringFromValue(previousDocFamily).trim().toUpperCase();
+  const previousDocumentKindNormalized = stringFromValue(previousDocumentKind).trim().toUpperCase();
+  const previousModuleNormalized = stringFromValue(previousModule).trim().toUpperCase();
+  const cqoMetadataDetected =
+    previousTitleNormalized.includes("cybernetica quantistica opponibile") ||
+    previousModuleNormalized === "CQO_OPPONIBLE_QUANTUM_CYBERNETICS" ||
+    normalizeComparableDocumentValue(previousSummary).includes("cybernetica quantistica opponibile");
+  const b2gTechnicalStackDetected =
+    previousDocFamilyNormalized === "HBCE_JOKER_C2_B2G_TECHNICAL_STACK" ||
+    previousDocumentKindNormalized === "TECHNICAL_GOVERNANCE_MODULE" ||
+    previousModuleNormalized === "CQO_OPPONIBLE_QUANTUM_CYBERNETICS";
+  const repairApplied =
+    previousDocFamily !== "APOKALYPSIS" ||
+    previousDocumentKind !== APOKALYPSIS_VOLUME_II_DOCUMENT_KIND ||
+    previousModule !== APOKALYPSIS_VOLUME_II_MODULE ||
+    previousTitle !== APOKALYPSIS_VOLUME_II_TITLE ||
+    previousVolume !== APOKALYPSIS_VOLUME_II_VOLUME ||
+    previousSubtitle !== APOKALYPSIS_VOLUME_II_SUBTITLE ||
+    previousCanonicalAxis !== APOKALYPSIS_VOLUME_II_CANONICAL_AXIS ||
+    previousProfileLock !== APOKALYPSIS_VOLUME_II_PROFILE_LOCK ||
+    previousSummary !== APOKALYPSIS_VOLUME_II_CANONICAL_SUMMARY;
+
+  return {
+    ...publicProfile,
+    docFamily: "APOKALYPSIS",
+    documentKind: APOKALYPSIS_VOLUME_II_DOCUMENT_KIND,
+    apokalypsisCycle: "APOKALYPSIS_I_V",
+    apokalypsisVolume: APOKALYPSIS_VOLUME_II_VOLUME,
+    volume: APOKALYPSIS_VOLUME_II_VOLUME,
+    module: APOKALYPSIS_VOLUME_II_MODULE,
+    title: APOKALYPSIS_VOLUME_II_TITLE,
+    subtitle: APOKALYPSIS_VOLUME_II_SUBTITLE,
+    classification: "APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_DOCUMENT_MEMORY",
+    canonicalThresholdDate: APOKALYPSIS_VOLUME_II_CANONICAL_THRESHOLD_DATE,
+    canonicalAxis: APOKALYPSIS_VOLUME_II_CANONICAL_AXIS,
+    coreAxisVolumeII: APOKALYPSIS_VOLUME_II_CORE_AXIS,
+    coreAxis: APOKALYPSIS_VOLUME_II_CORE_AXIS,
+    profileLock: APOKALYPSIS_VOLUME_II_PROFILE_LOCK,
+    summary: APOKALYPSIS_VOLUME_II_CANONICAL_SUMMARY,
+    keyTerms: APOKALYPSIS_VOLUME_II_KEY_TERMS,
+    semanticTerms: APOKALYPSIS_VOLUME_II_KEY_TERMS,
+    quality: "CANONICAL",
+    apokalypsisProfileSummaryHardRepairApplied: repairApplied,
+    apokalypsisProfileSummaryHardRepairRevision: APOKALYPSIS_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR_REVISION,
+    apokalypsisProfileSummaryHardRepairVolume: APOKALYPSIS_VOLUME_II_VOLUME,
+    apokalypsisVolumeIIProfileSummaryHardRepairRevision: APOKALYPSIS_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR_REVISION,
+    apokalypsisVolumeIIPrimaryDetected: true,
+    apokalypsisVolumeIDetectedAsPrimary: false,
+    cqoMetadataDetected,
+    cqoProfileDetected: cqoMetadataDetected,
+    b2gTechnicalStackDetected,
+    technicalGovernanceKindDetected: previousDocumentKindNormalized === "TECHNICAL_GOVERNANCE_MODULE",
+    contaminationWithLambdaProfile: false,
+    summaryContaminationDetected: false,
+    apokalypsisProfileSummaryDetected: true,
+    preRepairDocFamily: previousDocFamily || "NO_PRE_REPAIR_DOC_FAMILY",
+    preRepairDocumentKind: previousDocumentKind || "NO_PRE_REPAIR_DOCUMENT_KIND",
+    preRepairModule: previousModule || "NO_PRE_REPAIR_MODULE",
+    preRepairTitle: previousTitle || "NO_PRE_REPAIR_TITLE",
+    preRepairVolume: previousVolume || "NO_PRE_REPAIR_VOLUME",
+    preRepairSubtitle: previousSubtitle || "NO_PRE_REPAIR_SUBTITLE",
+    preRepairCanonicalAxis: previousCanonicalAxis || "NO_PRE_REPAIR_CANONICAL_AXIS",
+    preRepairProfileLock: previousProfileLock || "NO_PRE_REPAIR_PROFILE_LOCK",
+    preRepairSummary: previousSummary || "NO_PRE_REPAIR_SUMMARY",
+    expectedSummary: APOKALYPSIS_VOLUME_II_CANONICAL_SUMMARY,
+    actualSummary: APOKALYPSIS_VOLUME_II_CANONICAL_SUMMARY
+  };
+}
+
+function withApokalypsisProfileSummaryHardRepair(
+  publicProfile: Record<string, unknown>
+): Record<string, unknown> {
+  if (isApokalypsisVolumeIIProfileRecord(publicProfile)) {
+    return withApokalypsisVolumeIICanonicalProfileRepair(publicProfile);
+  }
+
+  return publicProfile;
+}
+
+function apokalypsisProfileSummaryHardRepairLines(item: CyberneticDocumentProfileRecallItem): string[] {
+  if (!isApokalypsisVolumeIIProfileRecord(item.publicProfile || {})) {
+    return [];
+  }
+
+  return [
+    `apokalypsisSummaryRepairRevision: ${stringFromValue(item.publicProfile.apokalypsisProfileSummaryHardRepairRevision) || APOKALYPSIS_VOLUME_II_PROFILE_SUMMARY_HARD_REPAIR_REVISION}`,
+    `apokalypsisSummaryRepairApplied: ${String(booleanFromPublicProfile(item.publicProfile.apokalypsisProfileSummaryHardRepairApplied))}`,
+    `apokalypsisSummaryRepairVolume: ${stringFromValue(item.publicProfile.apokalypsisProfileSummaryHardRepairVolume) || item.volume || "UNKNOWN_VOLUME"}`,
+    `apokalypsisVolumeIIPrimaryDetected: ${String(booleanFromPublicProfile(item.publicProfile.apokalypsisVolumeIIPrimaryDetected))}`,
+    `apokalypsisVolumeIDetectedAsPrimary: ${String(booleanFromPublicProfile(item.publicProfile.apokalypsisVolumeIDetectedAsPrimary))}`,
+    `cqoMetadataDetected: ${String(booleanFromPublicProfile(item.publicProfile.cqoMetadataDetected))}`,
+    `cqoProfileDetected: ${String(booleanFromPublicProfile(item.publicProfile.cqoProfileDetected))}`,
+    `b2gTechnicalStackDetected: ${String(booleanFromPublicProfile(item.publicProfile.b2gTechnicalStackDetected))}`,
+    `technicalGovernanceKindDetected: ${String(booleanFromPublicProfile(item.publicProfile.technicalGovernanceKindDetected))}`,
+    `preRepairDocFamily: ${stringFromValue(item.publicProfile.preRepairDocFamily) || "NO_PRE_REPAIR_DOC_FAMILY"}`,
+    `preRepairDocumentKind: ${stringFromValue(item.publicProfile.preRepairDocumentKind) || "NO_PRE_REPAIR_DOCUMENT_KIND"}`,
+    `preRepairModule: ${stringFromValue(item.publicProfile.preRepairModule) || "NO_PRE_REPAIR_MODULE"}`,
+    `preRepairTitle: ${stringFromValue(item.publicProfile.preRepairTitle) || "NO_PRE_REPAIR_TITLE"}`,
+    `preRepairVolume: ${stringFromValue(item.publicProfile.preRepairVolume) || "NO_PRE_REPAIR_VOLUME"}`,
+    `preRepairCanonicalAxis: ${stringFromValue(item.publicProfile.preRepairCanonicalAxis) || "NO_PRE_REPAIR_CANONICAL_AXIS"}`,
+    `preRepairProfileLock: ${stringFromValue(item.publicProfile.preRepairProfileLock) || "NO_PRE_REPAIR_PROFILE_LOCK"}`,
+    `apokalypsisProfileSummaryDetected: ${String(booleanFromPublicProfile(item.publicProfile.apokalypsisProfileSummaryDetected))}`
+  ];
 }
 
 function isUseEuropeanFederationVolumeVProfileRecord(publicProfile: Record<string, unknown>): boolean {
@@ -2212,7 +2413,8 @@ function isActiveReusableDocumentProfileRecallItem(item: CyberneticDocumentProfi
 function normalizeDocumentProfileRow(row: DocumentProfileDatabaseRow): CyberneticDocumentProfileRecallItem {
   const rawPublicProfile = toPublicDocumentProfile(row) as Record<string, unknown>;
   const useRepairedPublicProfile = withUseEuropeanFederationProfileSummaryHardRepair(rawPublicProfile);
-  const publicProfile = withHbceAiEcosystemProfileSummaryHardRepair(useRepairedPublicProfile);
+  const hbceAiEcosystemRepairedPublicProfile = withHbceAiEcosystemProfileSummaryHardRepair(useRepairedPublicProfile);
+  const publicProfile = withApokalypsisProfileSummaryHardRepair(hbceAiEcosystemRepairedPublicProfile);
 
   return {
     profileId: documentProfileString(publicProfile, "profileId"),
@@ -2221,10 +2423,14 @@ function normalizeDocumentProfileRow(row: DocumentProfileDatabaseRow): Cyberneti
     filename: documentProfileString(publicProfile, "filename"),
     fileHash: documentProfileString(publicProfile, "fileHash"),
     docFamily: documentProfileString(publicProfile, "docFamily"),
+    documentKind: documentProfileString(publicProfile, "documentKind"),
+    module: documentProfileString(publicProfile, "module"),
     volume: documentProfileString(publicProfile, "volume"),
     title: documentProfileString(publicProfile, "title"),
     subtitle: documentProfileString(publicProfile, "subtitle"),
     canonicalAxis: documentProfileString(publicProfile, "canonicalAxis"),
+    coreAxis: documentProfileString(publicProfile, "coreAxis") || documentProfileString(publicProfile, "coreAxisVolumeII"),
+    profileLock: documentProfileString(publicProfile, "profileLock"),
     summary: documentProfileString(publicProfile, "summary"),
     keyTerms: documentProfileStringArray(publicProfile.keyTerms),
     semanticTerms: Array.isArray(publicProfile.semanticTerms) ? publicProfile.semanticTerms : [],
@@ -3094,10 +3300,18 @@ function buildCyberneticMultiDocumentMemoryRecallAnswer(args: CyberneticDocument
     sections.push(`fileHash: ${documentProfile.fileHash || "NO_FILE_HASH"}`);
     sections.push(`fileId: ${documentProfile.fileId || "NO_FILE_ID"}`);
     sections.push(`docFamily: ${documentProfile.docFamily || "UNKNOWN_DOC_FAMILY"}`);
+    sections.push(`documentKind: ${documentProfile.documentKind || stringFromValue(documentProfile.publicProfile.documentKind) || "UNKNOWN_DOCUMENT_KIND"}`);
+    sections.push(`module: ${documentProfile.module || stringFromValue(documentProfile.publicProfile.module) || "UNKNOWN_MODULE"}`);
     sections.push(`volume: ${documentProfile.volume || "UNKNOWN_VOLUME"}`);
     sections.push(`title: ${documentProfile.title || "UNKNOWN_TITLE"}`);
     sections.push(`canonicalAxis: ${documentProfile.canonicalAxis || "NO_CANONICAL_AXIS"}`);
+    sections.push(`coreAxis: ${documentProfile.coreAxis || stringFromValue(documentProfile.publicProfile.coreAxisVolumeII) || "NO_CORE_AXIS"}`);
+    sections.push(`profileLock: ${documentProfile.profileLock || stringFromValue(documentProfile.publicProfile.profileLock) || "NO_PROFILE_LOCK"}`);
     sections.push(`summary: ${documentProfile.summary || "NO_DOCUMENT_PROFILE_SUMMARY"}`);
+    const apokalypsisRepairLines = apokalypsisProfileSummaryHardRepairLines(documentProfile);
+    if (apokalypsisRepairLines.length) {
+      sections.push(...apokalypsisRepairLines);
+    }
     const summaryRepairLines = hbceAiEcosystemProfileSummaryHardRepairLines(documentProfile);
     if (summaryRepairLines.length) {
       sections.push(...summaryRepairLines);
@@ -3263,11 +3477,16 @@ export function buildCyberneticDocumentMemoryRecallAnswer(args: CyberneticDocume
     "",
     "4. Profilo documento",
     `docFamily: ${documentProfile.docFamily || "UNKNOWN_DOC_FAMILY"}`,
+    `documentKind: ${documentProfile.documentKind || stringFromValue(documentProfile.publicProfile.documentKind) || "UNKNOWN_DOCUMENT_KIND"}`,
+    `module: ${documentProfile.module || stringFromValue(documentProfile.publicProfile.module) || "UNKNOWN_MODULE"}`,
     `volume: ${documentProfile.volume || "UNKNOWN_VOLUME"}`,
     `title: ${documentProfile.title || "UNKNOWN_TITLE"}`,
     documentProfile.subtitle ? `subtitle: ${documentProfile.subtitle}` : "subtitle: none",
     `canonicalAxis: ${documentProfile.canonicalAxis || "NO_CANONICAL_AXIS"}`,
+    `coreAxis: ${documentProfile.coreAxis || stringFromValue(documentProfile.publicProfile.coreAxisVolumeII) || "NO_CORE_AXIS"}`,
+    `profileLock: ${documentProfile.profileLock || stringFromValue(documentProfile.publicProfile.profileLock) || "NO_PROFILE_LOCK"}`,
     `summary: ${documentProfile.summary || "NO_DOCUMENT_PROFILE_SUMMARY"}`,
+    ...apokalypsisProfileSummaryHardRepairLines(documentProfile),
     ...useEuropeanFederationProfileSummaryHardRepairLines(documentProfile),
     ...hbceAiEcosystemProfileSummaryHardRepairLines(documentProfile),
     `keyTerms: ${documentProfile.keyTerms.join(", ") || "NO_KEY_TERMS"}`,
@@ -3292,7 +3511,9 @@ export function buildCyberneticDocumentMemoryRecallAnswer(args: CyberneticDocume
     `strictDocumentProfileFilter: ${requestedProfileIds.length > 0 ? "REQUESTED_PROFILE_ID_APPLIED" : "NO_REQUESTED_PROFILE_ID"}`,
     "",
     "6. Sintesi operativa della memoria",
-    isUseEuropeanFederationVolumeVProfileRecord(documentProfile.publicProfile || {})
+    isApokalypsisVolumeIIProfileRecord(documentProfile.publicProfile || {})
+      ? APOKALYPSIS_VOLUME_II_OPERATIONAL_MEMORY_SUMMARY
+      : isUseEuropeanFederationVolumeVProfileRecord(documentProfile.publicProfile || {})
       ? USE_VOLUME_V_OPERATIONAL_MEMORY_SUMMARY
       : isUseEuropeanFederationVolumeIVProfileRecord(documentProfile.publicProfile || {})
         ? USE_VOLUME_IV_OPERATIONAL_MEMORY_SUMMARY
