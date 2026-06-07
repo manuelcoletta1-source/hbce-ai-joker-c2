@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 
-export const SOURCE_INTELLIGENCE_REVISION = "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.1" as const;
+export const SOURCE_INTELLIGENCE_REVISION = "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.2-PDF_CONTENT_MODE_GUARD" as const;
+export const SOURCE_INTELLIGENCE_CONTENT_MODE_REVISION = "PDF_BINARY_HASH_ONLY_TEXT_EXTRACTION_REQUIRED-v0.1" as const;
 export const SOURCE_INTELLIGENCE_POLICY_REVISION = "SOURCE_ALLOWLIST_HASH_EGRESS_GUARD-v0.1" as const;
 export const SOURCE_INTELLIGENCE_MYTHOS_SOURCE_SET_ID = "ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK" as const;
 export const SOURCE_INTELLIGENCE_BOUNDARY = "technical source receipt only" as const;
@@ -8,6 +9,18 @@ export const SOURCE_INTELLIGENCE_BOUNDARY = "technical source receipt only" as c
 export type SourceTrustTier = "PRIMARY" | "INSTITUTIONAL" | "GOVERNMENT" | "TECHNICAL_STANDARD" | "UNKNOWN";
 export type SourceFetchStatus = "FETCH_READY" | "FETCH_BLOCKED" | "FETCH_FAILED" | "FETCH_SKIPPED";
 export type SourceVerificationStatus = "SOURCE_VERIFIED" | "SOURCE_REJECTED" | "SOURCE_UNVERIFIED";
+export type SourceContentMode =
+  | "HTML_TEXT_READY"
+  | "PLAIN_TEXT_READY"
+  | "PDF_BINARY_HASH_ONLY"
+  | "UNSUPPORTED_BINARY_HASH_ONLY"
+  | "NOT_FETCHED";
+export type SourceTextExtractionStatus =
+  | "TEXT_READY"
+  | "PDF_TEXT_EXTRACTION_REQUIRED"
+  | "TEXT_EXTRACTION_SKIPPED_BINARY"
+  | "NOT_FETCHED";
+export type SourceHashMode = "SHA256_ON_FETCHED_TEXT" | "SHA256_ON_BINARY_BODY" | "SHA256_ON_STATUS_RECEIPT";
 
 export type SourceCatalogEntry = {
   sourceId: string;
@@ -31,6 +44,11 @@ export type SourceProfile = SourceCatalogEntry & {
   statusCode: number | null;
   textLength: number;
   textPreview: string;
+  binaryLength: number;
+  contentMode: SourceContentMode;
+  textExtractionStatus: SourceTextExtractionStatus;
+  semanticTextReady: boolean;
+  sourceHashMode: SourceHashMode;
   promptInjectionRisk: "NONE_DETECTED" | "POSSIBLE_INJECTION_SIGNALS";
   promptInjectionSignals: string[];
   rawTextPersistence: false;
@@ -50,6 +68,10 @@ export type SourceVerificationReceipt = {
   allowlisted: boolean;
   denied: boolean;
   promptInjectionRisk: SourceProfile["promptInjectionRisk"];
+  contentMode: SourceProfile["contentMode"];
+  textExtractionStatus: SourceProfile["textExtractionStatus"];
+  semanticTextReady: SourceProfile["semanticTextReady"];
+  sourceHashMode: SourceProfile["sourceHashMode"];
   legalCertification: false;
   opcBoundary: typeof SOURCE_INTELLIGENCE_BOUNDARY;
 };
@@ -186,6 +208,11 @@ export function sha256Text(value: string): string {
   return "sha256:" + createHash("sha256").update(value, "utf8").digest("hex");
 }
 
+export function sha256Bytes(value: ArrayBuffer | Uint8Array): string {
+  const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
+  return "sha256:" + createHash("sha256").update(bytes).digest("hex");
+}
+
 export function normalizeSourceText(value: unknown): string {
   return String(value ?? "")
     .normalize("NFKC")
@@ -293,6 +320,43 @@ export function stripHtmlToText(input: string): string {
     .trim();
 }
 
+
+export function isPdfSource(contentType: string, url?: string): boolean {
+  const normalizedContentType = normalizeSourceText(contentType).toLowerCase();
+  const normalizedUrl = normalizeSourceText(url || "").toLowerCase();
+  return normalizedContentType.includes("application/pdf") || normalizedUrl.endsWith(".pdf");
+}
+
+export function isHtmlSource(contentType: string): boolean {
+  const normalizedContentType = normalizeSourceText(contentType).toLowerCase();
+  return normalizedContentType.includes("text/html") || normalizedContentType.includes("application/xhtml+xml");
+}
+
+export function isPlainTextSource(contentType: string): boolean {
+  const normalizedContentType = normalizeSourceText(contentType).toLowerCase();
+  return normalizedContentType.startsWith("text/") || normalizedContentType.includes("application/json");
+}
+
+export function decodeUtf8Bytes(bytes: Uint8Array): string {
+  return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+}
+
+export function buildPdfBinaryHashOnlyPreview(input: {
+  contentType: string;
+  binaryLength: number;
+  sourceHash: string;
+}): string {
+  return [
+    "PDF_BINARY_HASH_ONLY",
+    "textExtractionStatus=PDF_TEXT_EXTRACTION_REQUIRED",
+    "semanticTextReady=false",
+    "contentType=" + input.contentType,
+    "binaryLength=" + String(input.binaryLength),
+    "sourceHash=" + input.sourceHash,
+    "note=PDF body was fetched and hashed as binary; semantic text extraction was not performed in this layer."
+  ].join(" | ");
+}
+
 export function detectPromptInjectionSignals(text: string): string[] {
   const normalized = text.toLowerCase();
   const signals: string[] = [];
@@ -347,6 +411,11 @@ export async function fetchSourceProfile(input: {
       statusCode: null,
       textLength: 0,
       textPreview: "",
+      binaryLength: 0,
+      contentMode: "NOT_FETCHED",
+      textExtractionStatus: "NOT_FETCHED",
+      semanticTextReady: false,
+      sourceHashMode: "SHA256_ON_STATUS_RECEIPT",
       promptInjectionRisk: "NONE_DETECTED",
       promptInjectionSignals: [],
       rawTextPersistence: false,
@@ -367,20 +436,63 @@ export async function fetchSourceProfile(input: {
       }
     });
     const contentType = response.headers.get("content-type") || "UNKNOWN";
-    const raw = await response.text();
-    const text = contentType.includes("html") ? stripHtmlToText(raw) : normalizeSourceText(raw);
-    const limited = text.slice(0, Math.min(Math.max(input.maxTextChars || 200000, 1000), 500000));
+    const bodyBytes = new Uint8Array(await response.arrayBuffer());
+    const binaryLength = bodyBytes.byteLength;
+    const maxTextChars = Math.min(Math.max(input.maxTextChars || 200000, 1000), 500000);
+
+    if (isPdfSource(contentType, parsed.toString())) {
+      const sourceHash = sha256Bytes(bodyBytes);
+      return {
+        ...fallbackEntry,
+        fetchedAt: now,
+        fetchStatus: response.ok ? "FETCH_READY" : "FETCH_FAILED",
+        verificationStatus: response.ok ? "SOURCE_VERIFIED" : "SOURCE_UNVERIFIED",
+        sourceHash,
+        contentType,
+        statusCode: response.status,
+        textLength: 0,
+        textPreview: buildPdfBinaryHashOnlyPreview({ contentType, binaryLength, sourceHash }),
+        binaryLength,
+        contentMode: "PDF_BINARY_HASH_ONLY",
+        textExtractionStatus: "PDF_TEXT_EXTRACTION_REQUIRED",
+        semanticTextReady: false,
+        sourceHashMode: "SHA256_ON_BINARY_BODY",
+        promptInjectionRisk: "NONE_DETECTED",
+        promptInjectionSignals: [],
+        rawTextPersistence: false,
+        legalCertification: false,
+        opcBoundary: SOURCE_INTELLIGENCE_BOUNDARY
+      };
+    }
+
+    const decoded = decodeUtf8Bytes(bodyBytes);
+    const text = isHtmlSource(contentType) ? stripHtmlToText(decoded) : normalizeSourceText(decoded);
+    const limited = text.slice(0, maxTextChars);
     const signals = detectPromptInjectionSignals(limited);
+    const contentMode: SourceContentMode = isHtmlSource(contentType)
+      ? "HTML_TEXT_READY"
+      : isPlainTextSource(contentType)
+        ? "PLAIN_TEXT_READY"
+        : "UNSUPPORTED_BINARY_HASH_ONLY";
+    const textExtractionStatus: SourceTextExtractionStatus = contentMode === "UNSUPPORTED_BINARY_HASH_ONLY"
+      ? "TEXT_EXTRACTION_SKIPPED_BINARY"
+      : "TEXT_READY";
+    const semanticTextReady = response.ok && textExtractionStatus === "TEXT_READY" && limited.length > 0;
     return {
       ...fallbackEntry,
       fetchedAt: now,
       fetchStatus: response.ok ? "FETCH_READY" : "FETCH_FAILED",
       verificationStatus: response.ok ? "SOURCE_VERIFIED" : "SOURCE_UNVERIFIED",
-      sourceHash: sha256Text(limited),
+      sourceHash: contentMode === "UNSUPPORTED_BINARY_HASH_ONLY" ? sha256Bytes(bodyBytes) : sha256Text(limited),
       contentType,
       statusCode: response.status,
-      textLength: limited.length,
-      textPreview: limited.slice(0, 1200),
+      textLength: contentMode === "UNSUPPORTED_BINARY_HASH_ONLY" ? 0 : limited.length,
+      textPreview: contentMode === "UNSUPPORTED_BINARY_HASH_ONLY" ? "UNSUPPORTED_BINARY_HASH_ONLY | textExtractionStatus=TEXT_EXTRACTION_SKIPPED_BINARY | semanticTextReady=false" : limited.slice(0, 1200),
+      binaryLength,
+      contentMode,
+      textExtractionStatus,
+      semanticTextReady,
+      sourceHashMode: contentMode === "UNSUPPORTED_BINARY_HASH_ONLY" ? "SHA256_ON_BINARY_BODY" : "SHA256_ON_FETCHED_TEXT",
       promptInjectionRisk: signals.length ? "POSSIBLE_INJECTION_SIGNALS" : "NONE_DETECTED",
       promptInjectionSignals: signals,
       rawTextPersistence: false,
@@ -398,6 +510,11 @@ export async function fetchSourceProfile(input: {
       statusCode: null,
       textLength: 0,
       textPreview: "",
+      binaryLength: 0,
+      contentMode: "NOT_FETCHED",
+      textExtractionStatus: "NOT_FETCHED",
+      semanticTextReady: false,
+      sourceHashMode: "SHA256_ON_STATUS_RECEIPT",
       promptInjectionRisk: "NONE_DETECTED",
       promptInjectionSignals: [],
       rawTextPersistence: false,
@@ -423,6 +540,10 @@ export function buildSourceVerificationReceipt(profile: SourceProfile): SourceVe
     allowlisted: !denied,
     denied,
     promptInjectionRisk: profile.promptInjectionRisk,
+    contentMode: profile.contentMode,
+    textExtractionStatus: profile.textExtractionStatus,
+    semanticTextReady: profile.semanticTextReady,
+    sourceHashMode: profile.sourceHashMode,
     legalCertification: false,
     opcBoundary: SOURCE_INTELLIGENCE_BOUNDARY
   };
@@ -436,6 +557,8 @@ export function buildSourceContextBlock(profiles: SourceProfile[]): string {
     "sourceSet=" + (profiles[0]?.sourceSet || SOURCE_INTELLIGENCE_MYTHOS_SOURCE_SET_ID),
     "sourcesVerified=" + String(verified.length),
     "sourcesTotal=" + String(profiles.length),
+    "sourcesSemanticTextReady=" + String(profiles.filter((profile) => profile.semanticTextReady).length),
+    "pdfBinaryHashOnlySources=" + String(profiles.filter((profile) => profile.contentMode === "PDF_BINARY_HASH_ONLY").length),
     "rawTextPersistence=false",
     "promptInjectionScreening=READY",
     "allowlistApplied=true",
@@ -445,6 +568,10 @@ export function buildSourceContextBlock(profiles: SourceProfile[]): string {
         "source." + String(index + 1) + ".domain=" + profile.domain,
         "source." + String(index + 1) + ".status=" + profile.verificationStatus,
         "source." + String(index + 1) + ".hash=" + profile.sourceHash,
+        "source." + String(index + 1) + ".hashMode=" + profile.sourceHashMode,
+        "source." + String(index + 1) + ".contentMode=" + profile.contentMode,
+        "source." + String(index + 1) + ".textExtractionStatus=" + profile.textExtractionStatus,
+        "source." + String(index + 1) + ".semanticTextReady=" + String(profile.semanticTextReady),
         "source." + String(index + 1) + ".title=" + profile.title
       ].join("\n")
     ),
@@ -464,7 +591,10 @@ export function buildMythosStaticTestReport(): string {
     "denylistDomains=" + SOURCE_DENYLIST_DOMAINS.join(","),
     "fetchMode=SERVER_SIDE_CONTROLLED",
     "egressPolicy=ALLOWLIST_ONLY",
-    "hashingMode=SHA256_ON_FETCHED_TEXT",
+    "hashingMode=SHA256_ON_FETCHED_TEXT_OR_BINARY_BODY_BY_CONTENT_MODE",
+    "contentModeGuard=" + SOURCE_INTELLIGENCE_CONTENT_MODE_REVISION,
+    "pdfBinaryHashOnly=READY",
+    "pdfTextExtractionStatus=PDF_TEXT_EXTRACTION_REQUIRED",
     "rawTextPersistence=false",
     "sourceProfilesPersistable=true",
     "promptInjectionScreening=READY",
