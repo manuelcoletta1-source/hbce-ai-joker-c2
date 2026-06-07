@@ -1,0 +1,221 @@
+import { NextRequest, NextResponse } from "next/server";
+
+const API_VERSION = "v1" as const;
+const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-AUDIT-LOOKUP-CONTRACT-v1.0" as const;
+const PRODUCT_NAME = "HBCE IPR Operational Identity & Proof Layer" as const;
+const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1" as const;
+const DEFAULT_HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1" as const;
+const DEFAULT_RUNTIME_IPR = "IPR-AI-0001" as const;
+const DEFAULT_TENANT = "HBCE-TENANT-SELF-PILOT" as const;
+const DEFAULT_WORKSPACE = "HBCE-WORKSPACE-RND" as const;
+
+const LEGAL_CERTIFICATION = false as const;
+const OPC_BOUNDARY = "technical proof receipt only" as const;
+const AUDIT_BOUNDARY = "technical audit receipt only" as const;
+const IPR_CARD_BOUNDARY =
+  "IPR Card is an internal operational identity certificate, not an official public identity document" as const;
+
+type RouteContext = {
+  params: Promise<{ auditId: string }> | { auditId: string };
+};
+
+function utcNow(): string {
+  return new Date().toISOString();
+}
+
+function normalizeText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeAuditId(value: unknown): string | null {
+  const normalized = normalizeText(value);
+  if (!normalized) return null;
+  return normalized.slice(0, 160);
+}
+
+function buildDualTimeSeal(nowIso: string) {
+  return {
+    mode: "DUAL_TIME_SEAL",
+    canonicalTimezone: "Europe/Rome",
+    localLabel: "Torino / Italia / Europa · UTC+2",
+    utc: nowIso,
+    source: "SERVER_RUNTIME_CLOCK",
+    legalCertification: LEGAL_CERTIFICATION
+  };
+}
+
+function buildBoundary() {
+  return {
+    legalCertification: LEGAL_CERTIFICATION,
+    opcBoundary: OPC_BOUNDARY,
+    auditBoundary: AUDIT_BOUNDARY,
+    iprCardBoundary: IPR_CARD_BOUNDARY,
+    publicIdentityDocument: false,
+    rawTextPersistence: false,
+    rawAuditLogExposure: false,
+    piiExposure: false,
+    secretsExposure: false,
+    promptExposure: false,
+    completionExposure: false,
+    automaticIprMemoryWrite: false,
+    sourceProfileSaveMode: "EXPLICIT_OPERATOR_SAVE_ONLY",
+    noNewIprMemory: true,
+    noNewSemanticMemoryPersistable: true
+  };
+}
+
+function buildRuntimeContext(nowIso: string) {
+  return {
+    access: "ACCESS_GRANTED",
+    runtime: RUNTIME_NAME,
+    product: PRODUCT_NAME,
+    apiVersion: API_VERSION,
+    routeRevision: ROUTE_REVISION,
+    humanIpr: DEFAULT_HUMAN_IPR,
+    runtimeIpr: DEFAULT_RUNTIME_IPR,
+    tenant: DEFAULT_TENANT,
+    workspace: DEFAULT_WORKSPACE,
+    memory: "DATABASE_PERSISTENT",
+    memoryScope: "IPR_BOUND",
+    policy: "ALLOW",
+    createdAt: nowIso,
+    temporalSeal: buildDualTimeSeal(nowIso),
+    boundary: buildBoundary()
+  };
+}
+
+function buildAuditContract(auditId: string, nowIso: string) {
+  return {
+    status: "AUDIT_RECEIPT_CONTRACT_READY",
+    contractStatus: "HBCE_IPR_RUNTIME_AUDIT_LOOKUP_CONTRACT_READY",
+    routeRevision: ROUTE_REVISION,
+    product: PRODUCT_NAME,
+    apiVersion: API_VERSION,
+    requestedAuditId: auditId,
+    auditId,
+    auditLayer: "HBCE_RUNTIME_AUDIT_LOG",
+    auditPurpose: "technical runtime accountability trace",
+    lookupMode: "CONTRACT_RECEIPT_ONLY",
+    persistenceMode: "NO_DATABASE_LOOKUP_IN_THIS_ROUTE",
+    auditKnownByThisRoute: false,
+    auditLoadedFromDatabase: false,
+    auditMaterialLoaded: false,
+    rawAuditLogLoaded: false,
+    rawAuditLogReturned: false,
+    piiReturned: false,
+    secretsReturned: false,
+    promptReturned: false,
+    completionReturned: false,
+    databaseReadPerformed: false,
+    databaseWritePerformed: false,
+    evtCreated: false,
+    opcCreated: false,
+    auditCreated: false,
+    usageCreated: false,
+    legalCertification: LEGAL_CERTIFICATION,
+    opcBoundary: OPC_BOUNDARY,
+    auditBoundary: AUDIT_BOUNDARY,
+    iprCardBoundary: IPR_CARD_BOUNDARY,
+    responseType: "PUBLIC_AUDIT_LOOKUP_CONTRACT",
+    note:
+      "This v1 route exposes the public audit lookup contract only. It does not load raw audit logs, proof material, prompts, completions, PII or secrets from the database.",
+    recommendedNextStep:
+      "Bind this public contract to the internal runtime-audit-log persistence layer only after access control, redaction policy and tenant-scoped lookup are enforced.",
+    createdAt: nowIso,
+    temporalSeal: buildDualTimeSeal(nowIso),
+    boundary: buildBoundary()
+  };
+}
+
+function buildContractIndex(nowIso: string) {
+  return {
+    status: "HBCE_IPR_RUNTIME_AUDIT_ENDPOINT_READY",
+    product: PRODUCT_NAME,
+    apiVersion: API_VERSION,
+    routeRevision: ROUTE_REVISION,
+    endpoint: "GET /api/v1/audit/{auditId}",
+    purpose: "Public technical audit receipt lookup contract for governed JOKER-C2 runtime interactions.",
+    pathParameter: {
+      auditId: {
+        type: "string",
+        required: true,
+        example: "AUDIT-20260607183000-ABCDEF12",
+        description: "Technical audit receipt identifier generated by the governed runtime."
+      }
+    },
+    publicSurface: {
+      method: "GET",
+      path: "/api/v1/audit/{auditId}",
+      returns: "audit contract receipt only",
+      doesNotReturn: [
+        "raw audit log",
+        "prompt text",
+        "completion text",
+        "PII",
+        "secrets",
+        "database row",
+        "legal certification"
+      ]
+    },
+    runtimeContext: buildRuntimeContext(nowIso),
+    boundary: buildBoundary(),
+    createdAt: nowIso
+  };
+}
+
+function jsonResponse(payload: unknown, init?: ResponseInit) {
+  return NextResponse.json(payload, {
+    status: init?.status ?? 200,
+    headers: {
+      "Cache-Control": "no-store",
+      "X-HBCE-API-Version": API_VERSION,
+      "X-HBCE-Route-Revision": ROUTE_REVISION,
+      "X-HBCE-Legal-Certification": "false",
+      "X-HBCE-OPC-Boundary": OPC_BOUNDARY,
+      "X-HBCE-Audit-Boundary": AUDIT_BOUNDARY,
+      ...(init?.headers ?? {})
+    }
+  });
+}
+
+export async function GET(_request: NextRequest, context: RouteContext) {
+  const nowIso = utcNow();
+  const params = await Promise.resolve(context.params);
+  const auditId = normalizeAuditId(params?.auditId);
+
+  if (!auditId) {
+    return jsonResponse(
+      {
+        status: "AUDIT_LOOKUP_FAIL",
+        failReason: "MISSING_AUDIT_ID",
+        product: PRODUCT_NAME,
+        apiVersion: API_VERSION,
+        routeRevision: ROUTE_REVISION,
+        contract: buildContractIndex(nowIso),
+        legalCertification: LEGAL_CERTIFICATION,
+        opcBoundary: OPC_BOUNDARY,
+        auditBoundary: AUDIT_BOUNDARY,
+        boundary: buildBoundary(),
+        createdAt: nowIso
+      },
+      { status: 400 }
+    );
+  }
+
+  return jsonResponse({
+    ok: true,
+    status: "AUDIT_LOOKUP_CONTRACT_READY",
+    product: PRODUCT_NAME,
+    apiVersion: API_VERSION,
+    routeRevision: ROUTE_REVISION,
+    audit: buildAuditContract(auditId, nowIso),
+    runtimeContext: buildRuntimeContext(nowIso),
+    legalCertification: LEGAL_CERTIFICATION,
+    opcBoundary: OPC_BOUNDARY,
+    auditBoundary: AUDIT_BOUNDARY,
+    boundary: buildBoundary(),
+    createdAt: nowIso
+  });
+}
