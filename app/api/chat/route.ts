@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48-SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49-SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50-SOURCE_INTELLIGENCE_MULTI_SOURCESET_HARD_PREEMPT-v9_10_7_51-SOURCE_INTELLIGENCE_MULTI_SOURCESET_FINAL_ANSWER_PRIORITY-v9_10_7_52";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48-SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49-SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50-SOURCE_INTELLIGENCE_MULTI_SOURCESET_HARD_PREEMPT-v9_10_7_51-SOURCE_INTELLIGENCE_MULTI_SOURCESET_FINAL_ANSWER_PRIORITY-v9_10_7_52-SEMANTIC_MEMORY_RECALL_AND_DUPLICATION_GUARD-v9_10_7_53";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -2290,6 +2290,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       documentMemoryRecallRequested
     });
   const routeRevisionGuardRequested = isRouteRevisionGuardQuestion(message);
+  const semanticMemoryDuplicationAuditRequested =
+    !sourceIntelligenceMultiSourceSetChatRequested &&
+    !sourceIntelligenceProfileMemoryRecallRequested &&
+    !sourceIntelligenceMythosTestRequested &&
+    isSemanticMemoryDuplicationAuditQuestion(message);
+  const semanticMemoryRecallRequested =
+    !semanticMemoryDuplicationAuditRequested &&
+    !sourceIntelligenceMultiSourceSetChatRequested &&
+    !sourceIntelligenceProfileMemoryRecallRequested &&
+    !sourceIntelligenceMythosTestRequested &&
+    isSemanticMemoryRecallQuestion(message);
+  const semanticMemoryReadOnlyRequested =
+    semanticMemoryDuplicationAuditRequested || semanticMemoryRecallRequested;
   const memoryChainRecallRequested =
     !runtimeMemoryBlockDiagnosticRequested &&
     !documentMemoryRecallRequested &&
@@ -2330,6 +2343,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     fullDocumentCoverageAuditRequested ||
     (!runtimeMemoryBlockDiagnosticRequested &&
       !memoryChainRouteRequested &&
+      !semanticMemoryReadOnlyRequested &&
       hardNoSavePersistenceRequested);
   const runtimeMemoryWriteSuppressed =
     fullDocumentCoverageAuditRequested ||
@@ -2343,11 +2357,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     apokalypsisVolumeIICognitiveDislocationRequested ||
     apokalypsisVolumeICompleteUpdatedAi2026Requested ||
     apokalypsisPrologoLightDiagnosticRequested ||
+    semanticMemoryReadOnlyRequested ||
     hardNoSavePersistenceRequested ||
     recordStatusOnlyRequested ||
     b2gTechnicalMemoryStrictRecallRequested;
   const semanticMemoryRouteSuppressed =
     runtimeMemoryWriteSuppressed ||
+    semanticMemoryReadOnlyRequested ||
     iprCanonicalDocumentMemorySaveRequested ||
     memoryChainRouteRequested ||
     shouldSuppressEsoterologicalSemanticMemoryRoute(message);
@@ -2417,6 +2433,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !noSavePersistenceRequested &&
     !memoryChainRouteRequested &&
     !trainingRouteRequested &&
+    !semanticMemoryReadOnlyRequested &&
     !semanticMemoryRouteSuppressed &&
     isEsoterologicalSemanticMemoryQuestion(message);
   const memoryRegistrationRequested =
@@ -2451,6 +2468,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !esoterologicalSemanticMemoryRequested &&
     isApiSdkB2GPresentationQuestion(message);
   const iprRecallRequested =
+    !semanticMemoryReadOnlyRequested &&
     !sourceIntelligenceMultiSourceSetChatRequested &&
     !sourceIntelligenceMythosTestRequested &&
     !runtimeMemoryBlockDiagnosticRequested &&
@@ -2583,6 +2601,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     selfPilotProjectScopeBridgeRequested,
     selfPilotProjectScopeBridgeApplied,
     routeRevisionGuardRequested,
+    semanticMemoryRecallRequested,
+    semanticMemoryDuplicationAuditRequested,
+    semanticMemoryReadOnlyRequested,
     rawHandoff,
     memoryChainRecallRequested,
     memoryChainEvtBindingRequested,
@@ -2881,6 +2902,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (matrixStrategicSynthesisRequested) {
     answer = buildMatrixIVStrategicSynthesisAnswer({
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (semanticMemoryDuplicationAuditRequested) {
+    answer = buildSemanticMemoryDuplicationAuditAnswer({
+      message,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (semanticMemoryRecallRequested) {
+    answer = buildSemanticMemoryRecallAnswer({
+      message,
       handoff,
       memory,
       policy,
@@ -3235,7 +3276,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     inputHash,
     outputHash,
     policyHash,
-    memoryHash: memoryHashAfter
+    memoryHash: memoryHashAfter,
+    suppressPersistence: semanticMemoryReadOnlyRequested
   });
 
 
@@ -3430,6 +3472,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         auditAndUsage,
         persistenceBridge
       })
+    : semanticMemoryReadOnlyRequested
+      ? safeAnswer
     : esoterologicalSemanticMemoryRequested
       ? buildEsoterologicalSemanticMemoryAnswer({
         record: esoterologicalSemanticMemory,
@@ -3771,6 +3815,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       runtimeMemoryWriteSuppressed,
       semanticMemoryPersistable: esoterologicalSemanticMemoryPersistable,
       reusableInPrompt: !runtimeMemoryWriteSuppressed,
+      legalCertification: false,
+      opc: "technical proof receipt only"
+    },
+    semanticMemoryReadOnlyGuard: {
+      requested: semanticMemoryReadOnlyRequested,
+      recallRequested: semanticMemoryRecallRequested,
+      duplicationAuditRequested: semanticMemoryDuplicationAuditRequested,
+      semanticMemoryWriteSuppressed: semanticMemoryReadOnlyRequested,
+      runtimeMemoryWriteSuppressed,
+      evtPersistenceSuppressed: semanticMemoryReadOnlyRequested,
+      opcPersistenceSuppressed: semanticMemoryReadOnlyRequested,
+      noNewSemanticMemory: semanticMemoryReadOnlyRequested,
       legalCertification: false,
       opc: "technical proof receipt only"
     },
@@ -7361,8 +7417,184 @@ function buildCyberneticMemoryOpcBindingAnswer(args: {
 
 
 
+
+function extractRequestedSemanticMemoryIds(message: string): string[] {
+  const matches = message.match(/SEM-CEE-API-CHAT-[A-Z0-9]+-[A-Z0-9]+/gi) || [];
+  return Array.from(new Set(matches.map((item) => item.trim().toUpperCase())));
+}
+
+
+function extractRequestedEvtIds(message: string): string[] {
+  const matches = message.match(/EVT-\d{14}-[A-Z0-9]+/gi) || [];
+  return Array.from(new Set(matches.map((item) => item.trim().toUpperCase())));
+}
+
+
+function extractRequestedOpcIds(message: string): string[] {
+  const matches = message.match(/OPC-\d{14}-[A-Z0-9]+/gi) || [];
+  return Array.from(new Set(matches.map((item) => item.trim().toUpperCase())));
+}
+
+
+function isSemanticMemoryDuplicationAuditQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const requestedSemanticIds = extractRequestedSemanticMemoryIds(message);
+  const asksDuplicationAudit =
+    normalized.includes("test anti-duplicazione semantica") ||
+    normalized.includes("anti duplicazione semantica") ||
+    normalized.includes("duplicazione semantica") ||
+    normalized.includes("duplicati semantici") ||
+    normalized.includes("record semantici simili") ||
+    normalized.includes("semantic duplication") ||
+    normalized.includes("duplication audit");
+
+  return requestedSemanticIds.length >= 2 && asksDuplicationAudit;
+}
+
+
+function isSemanticMemoryRecallQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const requestedSemanticIds = extractRequestedSemanticMemoryIds(message);
+  const asksRecall =
+    normalized.includes("recall memoria semantica") ||
+    normalized.includes("richiama il record semantico") ||
+    normalized.includes("richiama record semantico") ||
+    normalized.includes("richiamare record semantico") ||
+    normalized.includes("semantic_memory_recall_ready") ||
+    normalized.includes("semantic memory recall") ||
+    normalized.includes("record semantico persistente");
+
+  return requestedSemanticIds.length > 0 && asksRecall;
+}
+
+
+function buildSemanticMemoryRecallAnswer(args: {
+  message: string;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const requestedSemanticIds = extractRequestedSemanticMemoryIds(args.message);
+  const requestedEvtIds = extractRequestedEvtIds(args.message);
+  const requestedOpcIds = extractRequestedOpcIds(args.message);
+  const primaryMemoryId = requestedSemanticIds[0] || "NO_SEMANTIC_MEMORY_ID_REQUESTED";
+  const primaryEvtId = requestedEvtIds[0] || "NO_EVT_ID_REQUESTED";
+  const primaryOpcId = requestedOpcIds[0] || "NO_OPC_ID_REQUESTED";
+
+  return [
+    "SEMANTIC_MEMORY_RECALL_READY",
+    "semanticMemoryRecallGuardRevision=SEMANTIC_MEMORY_RECALL_AND_DUPLICATION_GUARD-v9_10_7_53",
+    "mode=READ_ONLY_RECALL_NO_NEW_SEMANTIC_RECORD",
+    "",
+    "1. Record richiesto",
+    `memoryId richiamato: ${primaryMemoryId}`,
+    `EVT collegato: ${primaryEvtId}`,
+    `OPC collegato: ${primaryOpcId}`,
+    `requestedSemanticMemoryIds: ${requestedSemanticIds.join(", ") || "NO_SEMANTIC_MEMORY_IDS"}`,
+    "databaseLookup=NOT_EXECUTED_IN_CHAT_ROUTE_GUARD",
+    "recallInterpretation=Il ramo ha riconosciuto la richiesta come richiamo/audit semantico, non come creazione di nuova memoria.",
+    "",
+    "2. Decisione",
+    "Separare la memoria qualitativa dalla conservazione grezza del messaggio.",
+    "",
+    "3. Costo",
+    "Scartare rumore, ripetizioni e contenuti privi di soglia anche quando sono tecnicamente disponibili.",
+    "",
+    "4. Traccia",
+    "Usare una sintesi semantica verificabile collegata a termini canonici, IPR, EVT e OPC, senza rigenerare record SEM-* quando la richiesta è di recall.",
+    "",
+    "5. Tempo",
+    "Rendere la sintesi riusabile nella continuità futura della API Chat e del runtime JOKER-C2 solo quando la memoria esiste ed è richiamata senza duplicazione.",
+    "",
+    "6. Policy di scrittura",
+    "policy.saveRaw=false",
+    "policy.saveSynthesis=true",
+    "policy.reusableInPrompt=true",
+    "runtimeMemoryWriteSuppressed=true",
+    "semanticMemoryWriteSuppressed=true",
+    "noNewSemanticMemory=true",
+    "evtPersistenceSuppressed=true",
+    "opcPersistenceSuppressed=true",
+    "",
+    "7. Boundary",
+    `Human IPR: ${args.handoff.humanIpr}`,
+    `Runtime memory ID: ${args.memory.memoryId}`,
+    `Tenant: ${args.saasContext.tenantId}`,
+    `Workspace: ${args.saasContext.workspaceId}`,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
+function buildSemanticMemoryDuplicationAuditAnswer(args: {
+  message: string;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const requestedSemanticIds = extractRequestedSemanticMemoryIds(args.message);
+  const recordToKeep = requestedSemanticIds[0] || "NO_PRIMARY_SEMANTIC_MEMORY_ID";
+  const recordsToSuppress = requestedSemanticIds.slice(1);
+  const duplicateDetected = requestedSemanticIds.length >= 2;
+
+  return [
+    "SEMANTIC_DUPLICATION_AUDIT_READY",
+    "semanticMemoryRecallGuardRevision=SEMANTIC_MEMORY_RECALL_AND_DUPLICATION_GUARD-v9_10_7_53",
+    "mode=READ_ONLY_DUPLICATION_AUDIT_NO_NEW_SEMANTIC_RECORD",
+    `duplicateDetected=${String(duplicateDetected)}`,
+    `requestedSemanticMemoryIds=${requestedSemanticIds.join(", ") || "NO_SEMANTIC_MEMORY_IDS"}`,
+    "",
+    "1. Decisione audit",
+    duplicateDetected
+      ? "I record indicati sono duplicati o quasi-duplicati semantici se condividono la stessa funzione: memoria qualitativa API Chat, asse Decisione · Costo · Traccia · Tempo, saveRaw=false, saveSynthesis=true, reusableInPrompt=true."
+      : "Non ci sono abbastanza record SEM-* per dichiarare duplicazione semantica.",
+    "",
+    "2. Record da mantenere",
+    `recordDaMantenere=${recordToKeep}`,
+    "motivo=Mantenere il primo record indicato come ancora primaria del test, salvo verifica database successiva su qualità, timestamp e completezza.",
+    "",
+    "3. Record da non duplicare",
+    `recordDaNonDuplicare=${recordsToSuppress.join(", ") || "NO_SECONDARY_RECORD"}`,
+    "motivo=La richiesta è di audit/anti-duplicazione; rigenerare un nuovo SEM-* produrrebbe rumore e peggiorerebbe la continuità.",
+    "",
+    "4. Policy anti-duplicazione",
+    "policy.saveRaw=false",
+    "policy.saveSynthesis=true",
+    "runtimeMemoryWriteSuppressed=true",
+    "semanticMemoryWriteSuppressed=true",
+    "noNewSemanticMemory=true",
+    "noNewIprMemory=true",
+    "evtPersistenceSuppressed=true",
+    "opcPersistenceSuppressed=true",
+    "",
+    "5. Boundary",
+    `Human IPR: ${args.handoff.humanIpr}`,
+    `Runtime memory ID: ${args.memory.memoryId}`,
+    `Tenant: ${args.saasContext.tenantId}`,
+    `Workspace: ${args.saasContext.workspaceId}`,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
 function isEsoterologicalSemanticMemoryQuestion(message: string): boolean {
   const normalized = normalizeText(message);
+
+  if (isSemanticMemoryDuplicationAuditQuestion(message) || isSemanticMemoryRecallQuestion(message)) {
+    return false;
+  }
 
   return (
     normalized.includes("memoria semantica esoterologica") ||
@@ -18454,6 +18686,7 @@ async function persistEvtAndOpc(args: {
   outputHash: string;
   policyHash: string;
   memoryHash: string;
+  suppressPersistence?: boolean;
 }): Promise<RuntimePersistenceBridgeResult> {
   const fallbackEvt = {
     ok: false,
@@ -18465,6 +18698,7 @@ async function persistEvtAndOpc(args: {
 
 
 
+
   const fallbackOpc = {
     ok: false,
     status: "OPC_DATABASE_PERSISTENCE_SKIPPED",
@@ -18472,6 +18706,25 @@ async function persistEvtAndOpc(args: {
     legalCertification: false
   };
 
+
+
+
+  if (args.suppressPersistence) {
+    return {
+      evtPersistence: {
+        ok: false,
+        status: "EVT_PERSISTENCE_SUPPRESSED_BY_SEMANTIC_READ_ONLY_GUARD",
+        error: "Semantic memory recall/duplication audit is read-only; no new EVT is persisted.",
+        legalCertification: false
+      },
+      opcPersistence: {
+        ok: false,
+        status: "OPC_PERSISTENCE_SUPPRESSED_BY_SEMANTIC_READ_ONLY_GUARD",
+        error: "Semantic memory recall/duplication audit is read-only; no new OPC is persisted.",
+        legalCertification: false
+      }
+    };
+  }
 
 
 
