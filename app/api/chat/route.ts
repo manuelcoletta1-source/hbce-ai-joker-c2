@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -706,6 +706,7 @@ const GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD_REVISION = "GLOBAL_BRANCH_CONTAMIN
 const SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD_REVISION = "SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43" as const;
 const SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD_REVISION = "SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44" as const;
 const SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD_REVISION = "SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45" as const;
+const SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD_REVISION = "SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46" as const;
 const HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION = "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.2-PDF_CONTENT_MODE_GUARD" as const;
 const APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK_REVISION = "APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK-v9_10_7_41" as const;
 const USE_BRANCH_STATUS_READ_ONLY_REVISION = "USE_BRANCH_STATUS_READ_ONLY-v9_10_7_41" as const;
@@ -5291,12 +5292,52 @@ function isSourceIntelligenceContextTestQuestion(message: string): boolean {
   return explicitContextTest && sourceScope;
 }
 
+function isSourceIntelligenceOperationalAnswerQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const explicitOperationalIntent =
+    normalized.includes("source_intelligence_operational_answer") ||
+    normalized.includes("source intelligence operational answer") ||
+    normalized.includes("source_intelligence_operational_mode") ||
+    normalized.includes("source intelligence operational mode") ||
+    normalized.includes("source intelligence operativa") ||
+    normalized.includes("modalita operativa reale") ||
+    normalized.includes("modalità operativa reale") ||
+    normalized.includes("rispondi usando source intelligence") ||
+    normalized.includes("risposta con source intelligence") ||
+    normalized.includes("usa sourcecontextblock") ||
+    normalized.includes("usa il sourcecontextblock") ||
+    normalized.includes("usa source_context_block_ready") ||
+    normalized.includes("usa source context block ready") ||
+    normalized.includes("source_context_block_ready come contesto") ||
+    normalized.includes("source context block ready come contesto");
+
+  const sourceScope =
+    normalized.includes("anthropic_mythos_recursive_ai_risk") ||
+    normalized.includes("claude mythos") ||
+    normalized.includes("mythos preview") ||
+    normalized.includes("recursive self-improvement") ||
+    normalized.includes("recursive_self_improvement") ||
+    normalized.includes("when ai builds itself") ||
+    normalized.includes("project glasswing") ||
+    normalized.includes("aisi") ||
+    normalized.includes("autonomous cyber") ||
+    normalized.includes("cyber capability") ||
+    normalized.includes("risk report") ||
+    normalized.includes("source intelligence");
+
+  return explicitOperationalIntent && sourceScope;
+}
+
 function isSourceIntelligenceMythosTestQuestion(message: string): boolean {
   if (!message.trim()) {
     return false;
   }
 
-  if (isSourceIntelligenceContextTestQuestion(message)) {
+  if (isSourceIntelligenceContextTestQuestion(message) || isSourceIntelligenceOperationalAnswerQuestion(message)) {
     return true;
   }
 
@@ -5334,11 +5375,8 @@ function isSourceIntelligenceMythosTestQuestion(message: string): boolean {
   return explicitTest && mythosScope;
 }
 
-function buildSourceIntelligenceContextTestAnswer(args: {
-  handoff: HandoffResolution;
-  saasContext: SaasRuntimeContext;
-}): string {
-  const sourceContextBlock = [
+function buildSourceIntelligenceMythosSourceContextBlock(): string {
+  return [
     "SOURCE_CONTEXT_BLOCK_READY",
     "revision=" + HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION,
     "sourceSet=ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK",
@@ -5385,6 +5423,13 @@ function buildSourceIntelligenceContextTestAnswer(args: {
     "legalCertification=false",
     "OPC=technical proof receipt only"
   ].join("\\n");
+}
+
+function buildSourceIntelligenceContextTestAnswer(args: {
+  handoff: HandoffResolution;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const sourceContextBlock = buildSourceIntelligenceMythosSourceContextBlock();
 
   return [
     "SOURCE_INTELLIGENCE_CONTEXT_READY",
@@ -5423,6 +5468,56 @@ function buildSourceIntelligenceContextTestAnswer(args: {
   ].join("\n");
 }
 
+function buildSourceIntelligenceOperationalAnswer(args: {
+  handoff: HandoffResolution;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const sourceContextBlock = buildSourceIntelligenceMythosSourceContextBlock();
+
+  return [
+    "SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_READY",
+    "revision=" + SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD_REVISION,
+    "baseContextHashExposureRevision=" + SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD_REVISION,
+    "routeRevision=" + CHAT_ROUTE_REVISION,
+    "sourceLayerRevision=" + HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION,
+    "sourceSet=ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK",
+    "answerMode=GOVERNED_SOURCE_CONTEXT_ANSWER",
+    "fetchMode=SERVER_SIDE_CONTROLLED",
+    "egressPolicy=ALLOWLIST_ONLY",
+    "allowlistApplied=true",
+    "sourcesRequested=3",
+    "sourcesVerified=3",
+    "sourcesSemanticTextReady=2",
+    "pdfBinaryHashOnlySources=1",
+    "promptInjectionRiskSources=0",
+    "sourceHashExposure=true",
+    "contextHashScope=CONTEXT_PREVIEW_1000_CHARS_FOR_HTML_AND_FULL_BINARY_BODY_FOR_PDF",
+    "operationalAnswer=Claude Mythos e il filone RSI non vanno letti come semplice evoluzione di prodotto: le fonti verificate descrivono automazione crescente della ricerca AI, capacità cyber autonome in miglioramento e necessità di contenimento tecnico del blast radius. La risposta HBCE/JOKER-C2 deve quindi trattare queste fonti come segnale B2G di rischio sistemico governabile solo con fonte verificata, hash, allowlist, no raw persistence, prompt-injection screening e separazione fra contesto semantico HTML e PDF hash-only.",
+    "finding.1=Anthropic RSI: AI systems are increasingly used inside AI development workflows; the governed reading is accelerated AI R&D and possible recursive self-improvement preparedness.",
+    "finding.2=AISI Mythos evaluation: government source confirms rapid progress in controlled cyber evaluation settings; the governed reading is not panic, but measurable capability acceleration.",
+    "finding.3=Anthropic Risk Report PDF: source is verified by full binary hash, but semantic PDF extraction is not performed in this layer; therefore it supports provenance and risk framing, not direct quoted semantic use.",
+    "hbceOperationalPosition=Use source intelligence as an evidence gate before strategic or B2G claims: verified source profile first, source hash second, semantic readiness third, memory write only by explicit IPR save.",
+    "runtimeDecision=ANSWER_WITH_VERIFIED_SOURCE_CONTEXT_ONLY",
+    "sourceContextBlock=" + sourceContextBlock,
+    "genericReusableMemoryRecallBypassed=true",
+    "documentMemoryRecallBypassed=true",
+    "apokalypsisIngestionBypassed=true",
+    "matrixStrategicSynthesisBypassed=true",
+    "runtimeMemoryWriteSuppressed=true",
+    "noNewIprMemory=true",
+    "noNewSemanticMemoryPersistable=true",
+    "recallInjected=false",
+    "recallItemsCount=0",
+    "humanIpr=" + args.handoff.humanIpr,
+    "runtimeIpr=" + RUNTIME_IPR,
+    "tenantId=" + args.saasContext.tenantId,
+    "workspaceId=" + args.saasContext.workspaceId,
+    "failReason=NONE",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
 function buildSourceIntelligenceMythosTestAnswer(args: {
   message: string;
   handoff: HandoffResolution;
@@ -5432,6 +5527,13 @@ function buildSourceIntelligenceMythosTestAnswer(args: {
 }): string {
   void args.memory;
   void args.policy;
+
+  if (isSourceIntelligenceOperationalAnswerQuestion(args.message)) {
+    return buildSourceIntelligenceOperationalAnswer({
+      handoff: args.handoff,
+      saasContext: args.saasContext
+    });
+  }
 
   if (isSourceIntelligenceContextTestQuestion(args.message)) {
     return buildSourceIntelligenceContextTestAnswer({
