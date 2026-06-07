@@ -1,12 +1,18 @@
 import { createHash, randomUUID } from "node:crypto";
 
-export const SOURCE_INTELLIGENCE_REVISION = "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.2-PDF_CONTENT_MODE_GUARD" as const;
+export const SOURCE_INTELLIGENCE_REVISION = "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.3-SOURCESET_REGISTRY" as const;
 export const SOURCE_INTELLIGENCE_CONTENT_MODE_REVISION = "PDF_BINARY_HASH_ONLY_TEXT_EXTRACTION_REQUIRED-v0.1" as const;
+export const SOURCE_INTELLIGENCE_SOURCESET_REGISTRY_REVISION = "SOURCESET_REGISTRY_MULTI_DOMAIN_B2G-v0.3" as const;
 export const SOURCE_INTELLIGENCE_POLICY_REVISION = "SOURCE_ALLOWLIST_HASH_EGRESS_GUARD-v0.1" as const;
-export const SOURCE_INTELLIGENCE_MYTHOS_SOURCE_SET_ID = "ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK" as const;
+export const SOURCE_SET_ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK = "ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK" as const;
+export const SOURCE_SET_EU_AI_GOVERNANCE_REGULATORY_STACK = "EU_AI_GOVERNANCE_REGULATORY_STACK" as const;
+export const SOURCE_SET_ENISA_CYBER_THREAT_LANDSCAPE = "ENISA_CYBER_THREAT_LANDSCAPE" as const;
+export const SOURCE_SET_ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK = "ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK" as const;
+export const SOURCE_SET_OPENAI_AGENTIC_SYSTEMS_SECURITY = "OPENAI_AGENTIC_SYSTEMS_SECURITY" as const;
+export const SOURCE_INTELLIGENCE_MYTHOS_SOURCE_SET_ID = SOURCE_SET_ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK;
 export const SOURCE_INTELLIGENCE_BOUNDARY = "technical source receipt only" as const;
 
-export type SourceTrustTier = "PRIMARY" | "INSTITUTIONAL" | "GOVERNMENT" | "TECHNICAL_STANDARD" | "UNKNOWN";
+export type SourceTrustTier = "PRIMARY" | "INSTITUTIONAL" | "GOVERNMENT" | "TECHNICAL_STANDARD" | "REGULATORY" | "UNKNOWN";
 export type SourceFetchStatus = "FETCH_READY" | "FETCH_BLOCKED" | "FETCH_FAILED" | "FETCH_SKIPPED";
 export type SourceVerificationStatus = "SOURCE_VERIFIED" | "SOURCE_REJECTED" | "SOURCE_UNVERIFIED";
 export type SourceContentMode =
@@ -21,6 +27,13 @@ export type SourceTextExtractionStatus =
   | "TEXT_EXTRACTION_SKIPPED_BINARY"
   | "NOT_FETCHED";
 export type SourceHashMode = "SHA256_ON_FETCHED_TEXT" | "SHA256_ON_BINARY_BODY" | "SHA256_ON_STATUS_RECEIPT";
+export type SourceSetOperationalDomain =
+  | "AI_FRONTIER_RISK"
+  | "EU_AI_REGULATION"
+  | "EU_CYBER_THREAT_INTELLIGENCE"
+  | "FINANCIAL_SYSTEM_AI_CYBER_RISK"
+  | "AGENTIC_AI_SECURITY";
+export type SourceSetRegistryStatus = "ACTIVE" | "SEED_READY" | "PLANNED";
 
 export type SourceCatalogEntry = {
   sourceId: string;
@@ -33,6 +46,22 @@ export type SourceCatalogEntry = {
   topicTags: string[];
   canonicalClaim: string;
   relevance: number;
+};
+
+export type SourceSetRegistryEntry = {
+  sourceSet: string;
+  label: string;
+  operationalDomain: SourceSetOperationalDomain;
+  status: SourceSetRegistryStatus;
+  defaultSourceIds: string[];
+  expectedMinimumSources: number;
+  riskPosture: string;
+  primaryUse: string;
+  memoryProfileType: string;
+  failClosedOnMissingSource: boolean;
+  rawTextPersistence: false;
+  legalCertification: false;
+  opcBoundary: typeof SOURCE_INTELLIGENCE_BOUNDARY;
 };
 
 export type SourceProfile = SourceCatalogEntry & {
@@ -91,14 +120,21 @@ export type SourceSearchResult = {
 export const SOURCE_ALLOWLIST_DOMAINS = [
   "anthropic.com",
   "red.anthropic.com",
+  "openai.com",
+  "cdn.openai.com",
+  "deploymentsafety.openai.com",
   "aisi.gov.uk",
   "ncsc.gov.uk",
   "mitre.org",
   "cisa.gov",
   "enisa.europa.eu",
   "ec.europa.eu",
+  "data.europa.eu",
+  "eur-lex.europa.eu",
   "europarl.europa.eu",
   "consilium.europa.eu",
+  "commission.europa.eu",
+  "digital-strategy.ec.europa.eu",
   "ecb.europa.eu"
 ] as const;
 
@@ -110,7 +146,7 @@ export const SOURCE_DENYLIST_DOMAINS = [
   "metadata.google.internal"
 ] as const;
 
-export const MYTHOS_SOURCE_CATALOG: SourceCatalogEntry[] = [
+export const SOURCE_CATALOG_ENTRIES: SourceCatalogEntry[] = [
   {
     sourceId: "SRC-ANTHROPIC-RSI-2026",
     sourceSet: SOURCE_INTELLIGENCE_MYTHOS_SOURCE_SET_ID,
@@ -201,6 +237,244 @@ export const MYTHOS_SOURCE_CATALOG: SourceCatalogEntry[] = [
     canonicalClaim:
       "Anthropic's risk report treats automation of AI R&D as a pathway to extreme acceleration and broad risk.",
     relevance: 88
+  },
+  {
+    sourceId: "SRC-EU-AI-ACT-COMMISSION-2024",
+    sourceSet: SOURCE_SET_EU_AI_GOVERNANCE_REGULATORY_STACK,
+    title: "AI Act enters into force",
+    url: "https://commission.europa.eu/news-and-media/news/ai-act-enters-force-2024-08-01_en",
+    domain: "commission.europa.eu",
+    publisher: "European Commission",
+    trustTier: "REGULATORY",
+    topicTags: ["AI Act", "European Union", "risk-based regulation", "governance"],
+    canonicalClaim:
+      "The European Commission frames the AI Act as the EU legal framework for responsible AI development and deployment.",
+    relevance: 100
+  },
+  {
+    sourceId: "SRC-EU-AI-ACT-EURLEX-2024-1689",
+    sourceSet: SOURCE_SET_EU_AI_GOVERNANCE_REGULATORY_STACK,
+    title: "Regulation (EU) 2024/1689 Artificial Intelligence Act",
+    url: "https://eur-lex.europa.eu/eli/reg/2024/1689/oj/eng",
+    domain: "eur-lex.europa.eu",
+    publisher: "EUR-Lex",
+    trustTier: "REGULATORY",
+    topicTags: ["Regulation 2024/1689", "AI Act", "official journal", "compliance"],
+    canonicalClaim:
+      "EUR-Lex hosts the official text of Regulation (EU) 2024/1689 laying down harmonised rules on artificial intelligence.",
+    relevance: 100
+  },
+  {
+    sourceId: "SRC-EU-AI-OFFICE-2026",
+    sourceSet: SOURCE_SET_EU_AI_GOVERNANCE_REGULATORY_STACK,
+    title: "European AI Office",
+    url: "https://digital-strategy.ec.europa.eu/en/policies/ai-office",
+    domain: "digital-strategy.ec.europa.eu",
+    publisher: "European Commission",
+    trustTier: "REGULATORY",
+    topicTags: ["European AI Office", "GPAI", "AI Act implementation", "governance bodies"],
+    canonicalClaim:
+      "The European AI Office supports AI Act implementation, especially for general-purpose AI governance and enforcement.",
+    relevance: 96
+  },
+  {
+    sourceId: "SRC-ENISA-THREAT-LANDSCAPE-2025-PDF",
+    sourceSet: SOURCE_SET_ENISA_CYBER_THREAT_LANDSCAPE,
+    title: "ENISA Threat Landscape 2025",
+    url: "https://www.enisa.europa.eu/sites/default/files/2025-11/ENISA%20Threat%20Landscape%202025.pdf",
+    domain: "enisa.europa.eu",
+    publisher: "ENISA",
+    trustTier: "GOVERNMENT",
+    topicTags: ["threat landscape", "EU cyber threats", "ransomware", "vulnerability exploitation"],
+    canonicalClaim:
+      "ENISA Threat Landscape 2025 provides an EU-focused cyber threat ecosystem assessment based on selected incidents.",
+    relevance: 100
+  },
+  {
+    sourceId: "SRC-ENISA-THREAT-LANDSCAPE-TOPIC",
+    sourceSet: SOURCE_SET_ENISA_CYBER_THREAT_LANDSCAPE,
+    title: "Threat Landscape",
+    url: "https://www.enisa.europa.eu/topics/cyber-threats/threat-landscape",
+    domain: "enisa.europa.eu",
+    publisher: "ENISA",
+    trustTier: "GOVERNMENT",
+    topicTags: ["cyber threats", "threat landscape", "EU situational awareness"],
+    canonicalClaim:
+      "ENISA maintains the EU threat landscape topic page for cyber threat publications and situational awareness.",
+    relevance: 94
+  },
+  {
+    sourceId: "SRC-ECB-AI-OPERATIONAL-RESILIENCE-2026",
+    sourceSet: SOURCE_SET_ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK,
+    title: "Strengthening operational resilience for the age of AI",
+    url: "https://www.ecb.europa.eu/press/key/date/2026/html/ecb.sp260603~5b8e67f237.en.html",
+    domain: "ecb.europa.eu",
+    publisher: "European Central Bank",
+    trustTier: "GOVERNMENT",
+    topicTags: ["operational resilience", "AI", "banks", "cyber stress test", "supervision"],
+    canonicalClaim:
+      "The ECB links AI-era operational resilience with cyber stress testing and banking-sector supervisory expectations.",
+    relevance: 100
+  },
+  {
+    sourceId: "SRC-ECB-FINANCIAL-STABILITY-AI-2026",
+    sourceSet: SOURCE_SET_ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK,
+    title: "Financial stability in the age of artificial intelligence",
+    url: "https://www.ecb.europa.eu/press/research-publications/resbull/2026/html/ecb.rb260521~4d8b12940b.en.html",
+    domain: "ecb.europa.eu",
+    publisher: "European Central Bank",
+    trustTier: "GOVERNMENT",
+    topicTags: ["financial stability", "AI in finance", "algorithmic architecture", "systemic risk"],
+    canonicalClaim:
+      "The ECB Research Bulletin treats AI adoption in finance as relevant to market structure and financial-stability analysis.",
+    relevance: 96
+  },
+  {
+    sourceId: "SRC-ECB-EUROSYSTEM-CYBER-RESILIENCE-STRATEGY-2024",
+    sourceSet: SOURCE_SET_ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK,
+    title: "Eurosystem Cyber Resilience Strategy",
+    url: "https://www.ecb.europa.eu/paym/pol/shared/pdf/eurosystem_cyber_resilience_strategy_short.pdf",
+    domain: "ecb.europa.eu",
+    publisher: "European Central Bank",
+    trustTier: "GOVERNMENT",
+    topicTags: ["cyber resilience", "TIBER-EU", "financial market infrastructures", "Eurosystem"],
+    canonicalClaim:
+      "The Eurosystem cyber resilience strategy positions cyber resilience as a layered capability for financial entities and infrastructures.",
+    relevance: 92
+  },
+  {
+    sourceId: "SRC-OPENAI-PREPAREDNESS-FRAMEWORK-2025",
+    sourceSet: SOURCE_SET_OPENAI_AGENTIC_SYSTEMS_SECURITY,
+    title: "Our updated Preparedness Framework",
+    url: "https://openai.com/index/updating-our-preparedness-framework/",
+    domain: "openai.com",
+    publisher: "OpenAI",
+    trustTier: "PRIMARY",
+    topicTags: ["Preparedness Framework", "frontier capability risk", "safeguards", "deployment safety"],
+    canonicalClaim:
+      "OpenAI describes its Preparedness Framework as a method for measuring and protecting against severe harm from frontier AI capabilities.",
+    relevance: 100
+  },
+  {
+    sourceId: "SRC-OPENAI-PREPAREDNESS-FRAMEWORK-V2-PDF-2025",
+    sourceSet: SOURCE_SET_OPENAI_AGENTIC_SYSTEMS_SECURITY,
+    title: "Preparedness Framework v2",
+    url: "https://cdn.openai.com/pdf/18a02b5d-6b67-4cec-ab64-68cdfbddebcd/preparedness-framework-v2.pdf",
+    domain: "cdn.openai.com",
+    publisher: "OpenAI",
+    trustTier: "PRIMARY",
+    topicTags: ["Preparedness Framework v2", "frontier models", "safety advisory group", "risk thresholds"],
+    canonicalClaim:
+      "OpenAI's Preparedness Framework v2 describes governance for identifying and mitigating severe capability risks from frontier models.",
+    relevance: 98
+  },
+  {
+    sourceId: "SRC-OPENAI-AGENTIC-AI-GOVERNANCE-PRACTICES",
+    sourceSet: SOURCE_SET_OPENAI_AGENTIC_SYSTEMS_SECURITY,
+    title: "Practices for Governing Agentic AI Systems",
+    url: "https://cdn.openai.com/papers/practices-for-governing-agentic-ai-systems.pdf",
+    domain: "cdn.openai.com",
+    publisher: "OpenAI",
+    trustTier: "PRIMARY",
+    topicTags: ["agentic AI", "governance practices", "harm prevention", "accountability"],
+    canonicalClaim:
+      "OpenAI-associated agentic AI governance practices frame agentic systems as requiring identifiable actors, controls and accountability baselines.",
+    relevance: 94
+  },
+  {
+    sourceId: "SRC-OPENAI-CHATGPT-AGENT-SYSTEM-CARD-2025",
+    sourceSet: SOURCE_SET_OPENAI_AGENTIC_SYSTEMS_SECURITY,
+    title: "ChatGPT Agent System Card",
+    url: "https://deploymentsafety.openai.com/chatgpt-agent",
+    domain: "deploymentsafety.openai.com",
+    publisher: "OpenAI Deployment Safety",
+    trustTier: "PRIMARY",
+    topicTags: ["agent system card", "deployment safety", "agentic systems", "preparedness"],
+    canonicalClaim:
+      "OpenAI's ChatGPT Agent system card presents deployment-safety context for an agentic AI system.",
+    relevance: 90
+  }
+];
+
+export const MYTHOS_SOURCE_CATALOG: SourceCatalogEntry[] = SOURCE_CATALOG_ENTRIES.filter(
+  (entry) => entry.sourceSet === SOURCE_INTELLIGENCE_MYTHOS_SOURCE_SET_ID
+);
+
+export const SOURCE_SET_REGISTRY: SourceSetRegistryEntry[] = [
+  {
+    sourceSet: SOURCE_SET_ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK,
+    label: "Anthropic Mythos / RSI / autonomous cyber risk",
+    operationalDomain: "AI_FRONTIER_RISK",
+    status: "ACTIVE",
+    defaultSourceIds: ["SRC-ANTHROPIC-RSI-2026", "SRC-AISI-MYTHOS-EVAL-2026", "SRC-ANTHROPIC-RISK-REPORT-2026"],
+    expectedMinimumSources: 3,
+    riskPosture: "CYBER_AUTONOMY_ACCELERATION_SIGNAL",
+    primaryUse: "B2G evaluation of recursive self-improvement, autonomous cyber capability and containment posture.",
+    memoryProfileType: "SOURCE_INTELLIGENCE_OPERATIONAL_PROFILE",
+    failClosedOnMissingSource: true,
+    rawTextPersistence: false,
+    legalCertification: false,
+    opcBoundary: SOURCE_INTELLIGENCE_BOUNDARY
+  },
+  {
+    sourceSet: SOURCE_SET_EU_AI_GOVERNANCE_REGULATORY_STACK,
+    label: "EU AI Governance Regulatory Stack",
+    operationalDomain: "EU_AI_REGULATION",
+    status: "SEED_READY",
+    defaultSourceIds: ["SRC-EU-AI-ACT-COMMISSION-2024", "SRC-EU-AI-ACT-EURLEX-2024-1689", "SRC-EU-AI-OFFICE-2026"],
+    expectedMinimumSources: 3,
+    riskPosture: "EU_AI_REGULATORY_IMPLEMENTATION_SIGNAL",
+    primaryUse: "Regulatory grounding for EU AI Act, AI Office and GPAI governance claims.",
+    memoryProfileType: "SOURCE_INTELLIGENCE_REGULATORY_PROFILE",
+    failClosedOnMissingSource: true,
+    rawTextPersistence: false,
+    legalCertification: false,
+    opcBoundary: SOURCE_INTELLIGENCE_BOUNDARY
+  },
+  {
+    sourceSet: SOURCE_SET_ENISA_CYBER_THREAT_LANDSCAPE,
+    label: "ENISA Cyber Threat Landscape",
+    operationalDomain: "EU_CYBER_THREAT_INTELLIGENCE",
+    status: "SEED_READY",
+    defaultSourceIds: ["SRC-ENISA-THREAT-LANDSCAPE-2025-PDF", "SRC-ENISA-THREAT-LANDSCAPE-TOPIC"],
+    expectedMinimumSources: 2,
+    riskPosture: "EU_CYBER_THREAT_LANDSCAPE_SIGNAL",
+    primaryUse: "EU cyber threat monitoring, public-sector cyber risk and institutional threat framing.",
+    memoryProfileType: "SOURCE_INTELLIGENCE_THREAT_LANDSCAPE_PROFILE",
+    failClosedOnMissingSource: true,
+    rawTextPersistence: false,
+    legalCertification: false,
+    opcBoundary: SOURCE_INTELLIGENCE_BOUNDARY
+  },
+  {
+    sourceSet: SOURCE_SET_ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK,
+    label: "ECB Financial System AI / Cyber Risk",
+    operationalDomain: "FINANCIAL_SYSTEM_AI_CYBER_RISK",
+    status: "SEED_READY",
+    defaultSourceIds: ["SRC-ECB-AI-OPERATIONAL-RESILIENCE-2026", "SRC-ECB-FINANCIAL-STABILITY-AI-2026", "SRC-ECB-EUROSYSTEM-CYBER-RESILIENCE-STRATEGY-2024"],
+    expectedMinimumSources: 3,
+    riskPosture: "FINANCIAL_SYSTEM_AI_CYBER_RESILIENCE_SIGNAL",
+    primaryUse: "B2G grounding for banking resilience, AI-era financial-stability risk and cyber resilience strategy.",
+    memoryProfileType: "SOURCE_INTELLIGENCE_FINANCIAL_SYSTEM_RISK_PROFILE",
+    failClosedOnMissingSource: true,
+    rawTextPersistence: false,
+    legalCertification: false,
+    opcBoundary: SOURCE_INTELLIGENCE_BOUNDARY
+  },
+  {
+    sourceSet: SOURCE_SET_OPENAI_AGENTIC_SYSTEMS_SECURITY,
+    label: "OpenAI Agentic Systems Security",
+    operationalDomain: "AGENTIC_AI_SECURITY",
+    status: "SEED_READY",
+    defaultSourceIds: ["SRC-OPENAI-PREPAREDNESS-FRAMEWORK-2025", "SRC-OPENAI-PREPAREDNESS-FRAMEWORK-V2-PDF-2025", "SRC-OPENAI-CHATGPT-AGENT-SYSTEM-CARD-2025"],
+    expectedMinimumSources: 3,
+    riskPosture: "AGENTIC_AI_DEPLOYMENT_SAFETY_SIGNAL",
+    primaryUse: "Source-grounded analysis of frontier model preparedness, agentic system deployment safety and governance practices.",
+    memoryProfileType: "SOURCE_INTELLIGENCE_AGENTIC_SECURITY_PROFILE",
+    failClosedOnMissingSource: true,
+    rawTextPersistence: false,
+    legalCertification: false,
+    opcBoundary: SOURCE_INTELLIGENCE_BOUNDARY
   }
 ];
 
@@ -251,14 +525,37 @@ export function isAllowedSourceUrl(input: string): boolean {
   return Boolean(url && isAllowedSourceDomain(url.hostname));
 }
 
+export function normalizeSourceSetId(input?: string): string {
+  const normalized = normalizeSourceText(input || SOURCE_INTELLIGENCE_MYTHOS_SOURCE_SET_ID).toUpperCase();
+  return normalized || SOURCE_INTELLIGENCE_MYTHOS_SOURCE_SET_ID;
+}
+
+export function listSourceSetRegistry(): SourceSetRegistryEntry[] {
+  return SOURCE_SET_REGISTRY.slice();
+}
+
+export function getSourceSetRegistryEntry(sourceSet?: string): SourceSetRegistryEntry | null {
+  const normalized = normalizeSourceSetId(sourceSet);
+  return SOURCE_SET_REGISTRY.find((entry) => entry.sourceSet === normalized) || null;
+}
+
+export function getDefaultSourceIdsForSourceSet(sourceSet?: string): string[] {
+  return getSourceSetRegistryEntry(sourceSet)?.defaultSourceIds.slice() || [];
+}
+
+export function getSourcesBySet(sourceSet?: string): SourceCatalogEntry[] {
+  const normalized = normalizeSourceSetId(sourceSet);
+  return SOURCE_CATALOG_ENTRIES.filter((entry) => entry.sourceSet === normalized);
+}
+
 export function findCatalogEntryById(sourceId: string): SourceCatalogEntry | null {
   const normalized = normalizeSourceText(sourceId).toLowerCase();
-  return MYTHOS_SOURCE_CATALOG.find((entry) => entry.sourceId.toLowerCase() === normalized) || null;
+  return SOURCE_CATALOG_ENTRIES.find((entry) => entry.sourceId.toLowerCase() === normalized) || null;
 }
 
 export function findCatalogEntryByUrl(url: string): SourceCatalogEntry | null {
   const normalized = normalizeSourceText(url).toLowerCase().replace(/\/$/, "");
-  return MYTHOS_SOURCE_CATALOG.find((entry) => entry.url.toLowerCase().replace(/\/$/, "") === normalized) || null;
+  return SOURCE_CATALOG_ENTRIES.find((entry) => entry.url.toLowerCase().replace(/\/$/, "") === normalized) || null;
 }
 
 export function searchSourceCatalog(input: {
@@ -269,11 +566,11 @@ export function searchSourceCatalog(input: {
 }): SourceSearchResult {
   const query = normalizeSourceText(input.query || "");
   const normalizedQuery = query.toLowerCase();
-  const sourceSet = normalizeSourceText(input.sourceSet || SOURCE_INTELLIGENCE_MYTHOS_SOURCE_SET_ID);
+  const sourceSet = normalizeSourceSetId(input.sourceSet);
   const allowedDomainFilter = new Set((input.domains || []).map(normalizeDomain).filter(Boolean));
   const limit = Math.min(Math.max(Number(input.limit || 8), 1), 20);
 
-  const scored = MYTHOS_SOURCE_CATALOG
+  const scored = SOURCE_CATALOG_ENTRIES
     .filter((entry) => !sourceSet || entry.sourceSet === sourceSet)
     .filter((entry) => allowedDomainFilter.size === 0 || allowedDomainFilter.has(entry.domain))
     .filter((entry) => isAllowedSourceDomain(entry.domain))
@@ -580,10 +877,74 @@ export function buildSourceContextBlock(profiles: SourceProfile[]): string {
   ].join("\n");
 }
 
+export function buildSourceSetRegistryReport(): string {
+  return [
+    "SOURCESET_REGISTRY_READY",
+    "revision=" + SOURCE_INTELLIGENCE_REVISION,
+    "registryRevision=" + SOURCE_INTELLIGENCE_SOURCESET_REGISTRY_REVISION,
+    "sourceSets=" + String(SOURCE_SET_REGISTRY.length),
+    "catalogSources=" + String(SOURCE_CATALOG_ENTRIES.length),
+    "allowlistDomains=" + SOURCE_ALLOWLIST_DOMAINS.join(","),
+    "rawTextPersistence=false",
+    ...SOURCE_SET_REGISTRY.map((sourceSet, index) =>
+      [
+        "sourceSet." + String(index + 1) + ".id=" + sourceSet.sourceSet,
+        "sourceSet." + String(index + 1) + ".label=" + sourceSet.label,
+        "sourceSet." + String(index + 1) + ".status=" + sourceSet.status,
+        "sourceSet." + String(index + 1) + ".operationalDomain=" + sourceSet.operationalDomain,
+        "sourceSet." + String(index + 1) + ".defaultSources=" + sourceSet.defaultSourceIds.join(","),
+        "sourceSet." + String(index + 1) + ".riskPosture=" + sourceSet.riskPosture,
+        "sourceSet." + String(index + 1) + ".memoryProfileType=" + sourceSet.memoryProfileType
+      ].join("\n")
+    ),
+    "legalCertification=false",
+    "OPC=technical source receipt only"
+  ].join("\n");
+}
+
+export function buildSourceSetStaticTestReport(sourceSet?: string): string {
+  const registryEntry = getSourceSetRegistryEntry(sourceSet);
+  const resolvedSourceSet = registryEntry?.sourceSet || normalizeSourceSetId(sourceSet);
+  const sources = getSourcesBySet(resolvedSourceSet);
+  const status = registryEntry && sources.length >= registryEntry.expectedMinimumSources
+    ? "SOURCESET_STATIC_TEST_READY"
+    : "SOURCESET_STATIC_TEST_INCOMPLETE";
+  return [
+    status,
+    "revision=" + SOURCE_INTELLIGENCE_REVISION,
+    "registryRevision=" + SOURCE_INTELLIGENCE_SOURCESET_REGISTRY_REVISION,
+    "sourceSet=" + resolvedSourceSet,
+    "sourceSetRegistered=" + String(Boolean(registryEntry)),
+    "sourceSetStatus=" + (registryEntry?.status || "PLANNED"),
+    "operationalDomain=" + (registryEntry?.operationalDomain || "UNKNOWN"),
+    "riskPosture=" + (registryEntry?.riskPosture || "UNKNOWN"),
+    "sourcesExpectedMinimum=" + String(registryEntry?.expectedMinimumSources || 0),
+    "catalogSources=" + String(sources.length),
+    "defaultSourceIds=" + (registryEntry?.defaultSourceIds.join(",") || ""),
+    "fetchMode=SERVER_SIDE_CONTROLLED",
+    "egressPolicy=ALLOWLIST_ONLY",
+    "rawTextPersistence=false",
+    "promptInjectionScreening=READY",
+    "failClosedOnMissingSource=" + String(Boolean(registryEntry?.failClosedOnMissingSource)),
+    ...sources.map((source, index) =>
+      [
+        "source." + String(index + 1) + ".id=" + source.sourceId,
+        "source." + String(index + 1) + ".domain=" + source.domain,
+        "source." + String(index + 1) + ".trustTier=" + source.trustTier,
+        "source." + String(index + 1) + ".title=" + source.title,
+        "source." + String(index + 1) + ".url=" + source.url
+      ].join("\n")
+    ),
+    "legalCertification=false",
+    "OPC=technical source receipt only"
+  ].join("\n");
+}
+
 export function buildMythosStaticTestReport(): string {
   return [
     "SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_READY",
     "revision=" + SOURCE_INTELLIGENCE_REVISION,
+    "registryRevision=" + SOURCE_INTELLIGENCE_SOURCESET_REGISTRY_REVISION,
     "sourceSet=" + SOURCE_INTELLIGENCE_MYTHOS_SOURCE_SET_ID,
     "sourcesExpected=7",
     "catalogSources=" + String(MYTHOS_SOURCE_CATALOG.length),
