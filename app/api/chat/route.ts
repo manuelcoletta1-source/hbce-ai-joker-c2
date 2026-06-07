@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48-SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48-SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49-SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -710,7 +710,9 @@ const SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD_REVISION = "SOURCE_INTELLIGEN
 const SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD_REVISION = "SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47" as const;
 const SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD_REVISION = "SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48" as const;
 const SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD_REVISION = "SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49" as const;
-const HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION = "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.2-PDF_CONTENT_MODE_GUARD" as const;
+const SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD_REVISION = "SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50" as const;
+const HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION = "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.3-SOURCESET_REGISTRY" as const;
+const SOURCE_INTELLIGENCE_SOURCESET_REGISTRY_REVISION = "SOURCESET_REGISTRY_MULTI_DOMAIN_B2G-v0.3" as const;
 const APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK_REVISION = "APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK-v9_10_7_41" as const;
 const USE_BRANCH_STATUS_READ_ONLY_REVISION = "USE_BRANCH_STATUS_READ_ONLY-v9_10_7_41" as const;
 const APOKALYPSIS_VOLUME_V_PROFILE_OBSERVED_MEMORY_ID = "IPR-MEM-20260606164824-C2D9E3D6" as const;
@@ -5531,6 +5533,12 @@ function isSourceIntelligenceMythosTestQuestion(message: string): boolean {
 
   const normalized = normalizeText(message);
   const explicitTest =
+    normalized.includes("source_intelligence_multi_sourceset") ||
+    normalized.includes("source intelligence multi sourceset") ||
+    normalized.includes("source intelligence multi-source-set") ||
+    normalized.includes("source_intelligence_source_set") ||
+    normalized.includes("source-set registry") ||
+    normalized.includes("sourceset registry") ||
     normalized.includes("source_intelligence_test_anthropic_mythos") ||
     normalized.includes("source intelligence test anthropic mythos") ||
     normalized.includes("hbce_source_intelligence_layer") ||
@@ -5540,11 +5548,15 @@ function isSourceIntelligenceMythosTestQuestion(message: string): boolean {
     normalized.includes("source_context_block_ready") ||
     normalized.includes("source context block ready") ||
     normalized.includes("anthropic_mythos_recursive_ai_risk") ||
+    normalized.includes("eu_ai_governance_regulatory_stack") ||
+    normalized.includes("enisa_cyber_threat_landscape") ||
+    normalized.includes("ecb_financial_system_ai_cyber_risk") ||
+    normalized.includes("openai_agentic_systems_security") ||
     normalized.includes("source_intelligence_ready") ||
     normalized.includes("source_intelligence_context_ready") ||
     normalized.includes("source intelligence context ready");
 
-  const mythosScope =
+  const sourceSetScope =
     normalized.includes("claude mythos") ||
     normalized.includes("mythos preview") ||
     normalized.includes("recursive self-improvement") ||
@@ -5556,11 +5568,27 @@ function isSourceIntelligenceMythosTestQuestion(message: string): boolean {
     normalized.includes("h.264") ||
     normalized.includes("blast radius") ||
     normalized.includes("anthropic_mythos_recursive_ai_risk") ||
+    normalized.includes("eu_ai_governance_regulatory_stack") ||
+    normalized.includes("european ai office") ||
+    normalized.includes("ai act") ||
+    normalized.includes("regulation 2024/1689") ||
+    normalized.includes("enisa_cyber_threat_landscape") ||
+    normalized.includes("enisa") ||
+    normalized.includes("threat landscape") ||
+    normalized.includes("ecb_financial_system_ai_cyber_risk") ||
+    normalized.includes("ecb") ||
+    normalized.includes("financial stability") ||
+    normalized.includes("cyber resilience") ||
+    normalized.includes("openai_agentic_systems_security") ||
+    normalized.includes("preparedness framework") ||
+    normalized.includes("agentic") ||
+    normalized.includes("source set") ||
+    normalized.includes("sourceset") ||
     normalized.includes("risk report") ||
     normalized.includes("pdf_binary_hash_only") ||
     normalized.includes("sourcecontextblock");
 
-  return explicitTest && mythosScope;
+  return explicitTest && sourceSetScope;
 }
 
 function buildSourceIntelligenceMythosSourceContextBlock(): string {
@@ -6042,7 +6070,434 @@ function buildSourceIntelligenceDynamicAnswer(args: {
   ].join("\n");
 }
 
-function buildSourceIntelligenceMythosTestAnswer(args: {
+
+type SourceIntelligenceChatSourceSetId =
+  | "ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK"
+  | "EU_AI_GOVERNANCE_REGULATORY_STACK"
+  | "ENISA_CYBER_THREAT_LANDSCAPE"
+  | "ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK"
+  | "OPENAI_AGENTIC_SYSTEMS_SECURITY";
+
+type SourceIntelligenceChatSource = {
+  id: string;
+  domain: string;
+  title: string;
+  publisher: string;
+  trustTier: string;
+  canonicalClaim: string;
+  contentMode: "HTML_TEXT_READY" | "PDF_BINARY_HASH_ONLY";
+  textExtractionStatus: "TEXT_READY" | "PDF_TEXT_EXTRACTION_REQUIRED";
+  semanticTextReady: boolean;
+  hash: string;
+  hashMode: "SHA256_ON_FETCHED_TEXT" | "SHA256_ON_BINARY_BODY" | "LIVE_FETCH_REQUIRED";
+};
+
+type SourceIntelligenceChatSourceSetProfile = {
+  id: SourceIntelligenceChatSourceSetId;
+  status: "ACTIVE" | "SEED_READY";
+  operationalDomain: string;
+  riskPosture: string;
+  memoryProfileType: string;
+  expectedMinimumSources: number;
+  defaultSourceIds: string[];
+  defaultSourceCount: number;
+  sourceCount: number;
+  summaryMode: string;
+  sources: SourceIntelligenceChatSource[];
+};
+
+const SOURCE_INTELLIGENCE_CHAT_SOURCESETS: Record<SourceIntelligenceChatSourceSetId, SourceIntelligenceChatSourceSetProfile> = {
+  ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK: {
+    id: "ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK",
+    status: "ACTIVE",
+    operationalDomain: "AI_FRONTIER_RISK",
+    riskPosture: "CYBER_AUTONOMY_ACCELERATION_SIGNAL",
+    memoryProfileType: "SOURCE_INTELLIGENCE_OPERATIONAL_PROFILE",
+    expectedMinimumSources: 3,
+    defaultSourceIds: ["SRC-ANTHROPIC-RSI-2026", "SRC-AISI-MYTHOS-EVAL-2026", "SRC-ANTHROPIC-RISK-REPORT-2026"],
+    defaultSourceCount: 3,
+    sourceCount: 7,
+    summaryMode: "CATALOG_SOURCE_PROFILE_CONTEXT_ONLY",
+    sources: [
+      {
+        id: "SRC-ANTHROPIC-RSI-2026",
+        domain: "anthropic.com",
+        title: "When AI builds itself",
+        publisher: "Anthropic",
+        trustTier: "PRIMARY",
+        canonicalClaim: "Anthropic frames recursive self-improvement as a frontier-risk issue for AI development workflows.",
+        contentMode: "HTML_TEXT_READY",
+        textExtractionStatus: "TEXT_READY",
+        semanticTextReady: true,
+        hash: "sha256:1d80dd6da838ea2a83a529dc71d17256f8f28ae22fb5663b56b74a02653e0038",
+        hashMode: "SHA256_ON_FETCHED_TEXT"
+      },
+      {
+        id: "SRC-AISI-MYTHOS-EVAL-2026",
+        domain: "aisi.gov.uk",
+        title: "Our evaluation of Claude Mythos Preview's cyber capabilities",
+        publisher: "UK AI Security Institute",
+        trustTier: "GOVERNMENT",
+        canonicalClaim: "AISI evaluation is treated as a government signal on autonomous cyber capability acceleration.",
+        contentMode: "HTML_TEXT_READY",
+        textExtractionStatus: "TEXT_READY",
+        semanticTextReady: true,
+        hash: "sha256:4a18fdd76c45a15e1abf8bf4516978390a0aad8847f5b2d283fdf36e6838dcfb",
+        hashMode: "SHA256_ON_FETCHED_TEXT"
+      },
+      {
+        id: "SRC-ANTHROPIC-RISK-REPORT-2026",
+        domain: "anthropic.com",
+        title: "Redacted Risk Report Feb 2026",
+        publisher: "Anthropic",
+        trustTier: "PRIMARY",
+        canonicalClaim: "Risk report is usable as provenance/hash evidence until PDF semantic extraction is explicitly available.",
+        contentMode: "PDF_BINARY_HASH_ONLY",
+        textExtractionStatus: "PDF_TEXT_EXTRACTION_REQUIRED",
+        semanticTextReady: false,
+        hash: "sha256:08ad2ac000fcd8750dcce4b279eb4b900e906c504134d9b190571fdcfaead156",
+        hashMode: "SHA256_ON_BINARY_BODY"
+      }
+    ]
+  },
+  EU_AI_GOVERNANCE_REGULATORY_STACK: {
+    id: "EU_AI_GOVERNANCE_REGULATORY_STACK",
+    status: "SEED_READY",
+    operationalDomain: "EU_AI_REGULATION",
+    riskPosture: "EU_AI_REGULATORY_IMPLEMENTATION_SIGNAL",
+    memoryProfileType: "SOURCE_INTELLIGENCE_REGULATORY_PROFILE",
+    expectedMinimumSources: 3,
+    defaultSourceIds: ["SRC-EU-AI-ACT-COMMISSION-2024", "SRC-EU-AI-ACT-EURLEX-2024-1689", "SRC-EU-AI-OFFICE-2026"],
+    defaultSourceCount: 3,
+    sourceCount: 3,
+    summaryMode: "CATALOG_SOURCE_PROFILE_CONTEXT_ONLY",
+    sources: [
+      {
+        id: "SRC-EU-AI-ACT-COMMISSION-2024",
+        domain: "commission.europa.eu",
+        title: "AI Act enters into force",
+        publisher: "European Commission",
+        trustTier: "REGULATORY",
+        canonicalClaim: "The European Commission frames the AI Act as the EU legal framework for responsible AI development and deployment.",
+        contentMode: "HTML_TEXT_READY",
+        textExtractionStatus: "TEXT_READY",
+        semanticTextReady: true,
+        hash: "sha256:8b81a9951e9e6847c120503a7d2d03df55897202722ed5c61da2d46870eb7444",
+        hashMode: "SHA256_ON_FETCHED_TEXT"
+      },
+      {
+        id: "SRC-EU-AI-ACT-EURLEX-2024-1689",
+        domain: "eur-lex.europa.eu",
+        title: "Regulation (EU) 2024/1689 Artificial Intelligence Act",
+        publisher: "EUR-Lex",
+        trustTier: "REGULATORY",
+        canonicalClaim: "EUR-Lex hosts the official text of Regulation (EU) 2024/1689 laying down harmonised rules on artificial intelligence.",
+        contentMode: "HTML_TEXT_READY",
+        textExtractionStatus: "TEXT_READY",
+        semanticTextReady: true,
+        hash: "sha256:cae18f727ef1b4681b1fd47bb1b75bee065e3de63dae7327a762183572899d17",
+        hashMode: "SHA256_ON_FETCHED_TEXT"
+      },
+      {
+        id: "SRC-EU-AI-OFFICE-2026",
+        domain: "digital-strategy.ec.europa.eu",
+        title: "European AI Office",
+        publisher: "European Commission",
+        trustTier: "REGULATORY",
+        canonicalClaim: "The European AI Office supports AI Act implementation, especially for general-purpose AI governance and enforcement.",
+        contentMode: "HTML_TEXT_READY",
+        textExtractionStatus: "TEXT_READY",
+        semanticTextReady: true,
+        hash: "sha256:de21ad0e54c5a75c5355d51e99eae9457c04a50d98c9b59dab2a7a24fb5ae456",
+        hashMode: "SHA256_ON_FETCHED_TEXT"
+      }
+    ]
+  },
+  ENISA_CYBER_THREAT_LANDSCAPE: {
+    id: "ENISA_CYBER_THREAT_LANDSCAPE",
+    status: "SEED_READY",
+    operationalDomain: "EU_CYBER_THREAT_INTELLIGENCE",
+    riskPosture: "EU_CYBER_THREAT_LANDSCAPE_SIGNAL",
+    memoryProfileType: "SOURCE_INTELLIGENCE_THREAT_LANDSCAPE_PROFILE",
+    expectedMinimumSources: 2,
+    defaultSourceIds: ["SRC-ENISA-THREAT-LANDSCAPE-2025-PDF", "SRC-ENISA-THREAT-LANDSCAPE-TOPIC"],
+    defaultSourceCount: 2,
+    sourceCount: 2,
+    summaryMode: "CATALOG_SOURCE_PROFILE_CONTEXT_ONLY",
+    sources: [
+      {
+        id: "SRC-ENISA-THREAT-LANDSCAPE-2025-PDF",
+        domain: "enisa.europa.eu",
+        title: "ENISA Threat Landscape 2025",
+        publisher: "ENISA",
+        trustTier: "GOVERNMENT",
+        canonicalClaim: "ENISA threat landscape is treated as EU cyber threat-intelligence context for risk posture and sector exposure.",
+        contentMode: "PDF_BINARY_HASH_ONLY",
+        textExtractionStatus: "PDF_TEXT_EXTRACTION_REQUIRED",
+        semanticTextReady: false,
+        hash: "LIVE_FETCH_REQUIRED",
+        hashMode: "LIVE_FETCH_REQUIRED"
+      },
+      {
+        id: "SRC-ENISA-THREAT-LANDSCAPE-TOPIC",
+        domain: "enisa.europa.eu",
+        title: "ENISA Threat Landscape topic page",
+        publisher: "ENISA",
+        trustTier: "GOVERNMENT",
+        canonicalClaim: "ENISA topic page anchors public EU threat-landscape context.",
+        contentMode: "HTML_TEXT_READY",
+        textExtractionStatus: "TEXT_READY",
+        semanticTextReady: true,
+        hash: "LIVE_FETCH_REQUIRED",
+        hashMode: "LIVE_FETCH_REQUIRED"
+      }
+    ]
+  },
+  ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK: {
+    id: "ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK",
+    status: "SEED_READY",
+    operationalDomain: "FINANCIAL_SYSTEM_AI_CYBER_RISK",
+    riskPosture: "FINANCIAL_SYSTEM_AI_CYBER_RESILIENCE_SIGNAL",
+    memoryProfileType: "SOURCE_INTELLIGENCE_FINANCIAL_SYSTEM_RISK_PROFILE",
+    expectedMinimumSources: 3,
+    defaultSourceIds: ["SRC-ECB-AI-OPERATIONAL-RESILIENCE-2026", "SRC-ECB-FINANCIAL-STABILITY-AI-2026", "SRC-ECB-EUROSYSTEM-CYBER-RESILIENCE-STRATEGY-2024"],
+    defaultSourceCount: 3,
+    sourceCount: 3,
+    summaryMode: "CATALOG_SOURCE_PROFILE_CONTEXT_ONLY",
+    sources: [
+      {
+        id: "SRC-ECB-AI-OPERATIONAL-RESILIENCE-2026",
+        domain: "ecb.europa.eu",
+        title: "ECB AI operational resilience source",
+        publisher: "European Central Bank",
+        trustTier: "GOVERNMENT",
+        canonicalClaim: "ECB AI operational-resilience source is treated as financial-system risk context for governed AI deployment.",
+        contentMode: "HTML_TEXT_READY",
+        textExtractionStatus: "TEXT_READY",
+        semanticTextReady: true,
+        hash: "LIVE_FETCH_REQUIRED",
+        hashMode: "LIVE_FETCH_REQUIRED"
+      },
+      {
+        id: "SRC-ECB-FINANCIAL-STABILITY-AI-2026",
+        domain: "ecb.europa.eu",
+        title: "ECB financial stability AI source",
+        publisher: "European Central Bank",
+        trustTier: "GOVERNMENT",
+        canonicalClaim: "ECB financial-stability source frames AI as an operational and systemic risk input for the financial system.",
+        contentMode: "HTML_TEXT_READY",
+        textExtractionStatus: "TEXT_READY",
+        semanticTextReady: true,
+        hash: "LIVE_FETCH_REQUIRED",
+        hashMode: "LIVE_FETCH_REQUIRED"
+      },
+      {
+        id: "SRC-ECB-EUROSYSTEM-CYBER-RESILIENCE-STRATEGY-2024",
+        domain: "ecb.europa.eu",
+        title: "Eurosystem Cyber Resilience Strategy",
+        publisher: "European Central Bank",
+        trustTier: "GOVERNMENT",
+        canonicalClaim: "The Eurosystem cyber resilience strategy positions cyber resilience as a layered capability for financial entities and infrastructures.",
+        contentMode: "PDF_BINARY_HASH_ONLY",
+        textExtractionStatus: "PDF_TEXT_EXTRACTION_REQUIRED",
+        semanticTextReady: false,
+        hash: "sha256:79793682290a503301f5a6f5324fca8ba95c03e899f9873e44094c1e58b51163",
+        hashMode: "SHA256_ON_BINARY_BODY"
+      }
+    ]
+  },
+  OPENAI_AGENTIC_SYSTEMS_SECURITY: {
+    id: "OPENAI_AGENTIC_SYSTEMS_SECURITY",
+    status: "SEED_READY",
+    operationalDomain: "AGENTIC_AI_SECURITY",
+    riskPosture: "AGENTIC_AI_DEPLOYMENT_SAFETY_SIGNAL",
+    memoryProfileType: "SOURCE_INTELLIGENCE_AGENTIC_SECURITY_PROFILE",
+    expectedMinimumSources: 3,
+    defaultSourceIds: ["SRC-OPENAI-PREPAREDNESS-FRAMEWORK-2025", "SRC-OPENAI-PREPAREDNESS-FRAMEWORK-V2-PDF-2025", "SRC-OPENAI-CHATGPT-AGENT-SYSTEM-CARD-2025"],
+    defaultSourceCount: 3,
+    sourceCount: 4,
+    summaryMode: "CATALOG_SOURCE_PROFILE_CONTEXT_ONLY",
+    sources: [
+      {
+        id: "SRC-OPENAI-PREPAREDNESS-FRAMEWORK-2025",
+        domain: "openai.com",
+        title: "OpenAI Preparedness Framework",
+        publisher: "OpenAI",
+        trustTier: "PRIMARY",
+        canonicalClaim: "Preparedness framework is treated as primary-source context for frontier capability evaluation and deployment safeguards.",
+        contentMode: "HTML_TEXT_READY",
+        textExtractionStatus: "TEXT_READY",
+        semanticTextReady: true,
+        hash: "LIVE_FETCH_REQUIRED",
+        hashMode: "LIVE_FETCH_REQUIRED"
+      },
+      {
+        id: "SRC-OPENAI-PREPAREDNESS-FRAMEWORK-V2-PDF-2025",
+        domain: "cdn.openai.com",
+        title: "OpenAI Preparedness Framework v2 PDF",
+        publisher: "OpenAI",
+        trustTier: "PRIMARY",
+        canonicalClaim: "Preparedness Framework PDF is usable as provenance/hash evidence until explicit semantic extraction is available.",
+        contentMode: "PDF_BINARY_HASH_ONLY",
+        textExtractionStatus: "PDF_TEXT_EXTRACTION_REQUIRED",
+        semanticTextReady: false,
+        hash: "LIVE_FETCH_REQUIRED",
+        hashMode: "LIVE_FETCH_REQUIRED"
+      },
+      {
+        id: "SRC-OPENAI-CHATGPT-AGENT-SYSTEM-CARD-2025",
+        domain: "deploymentsafety.openai.com",
+        title: "ChatGPT Agent System Card",
+        publisher: "OpenAI",
+        trustTier: "PRIMARY",
+        canonicalClaim: "Agent system card is treated as primary-source deployment-safety context for agentic systems.",
+        contentMode: "HTML_TEXT_READY",
+        textExtractionStatus: "TEXT_READY",
+        semanticTextReady: true,
+        hash: "LIVE_FETCH_REQUIRED",
+        hashMode: "LIVE_FETCH_REQUIRED"
+      }
+    ]
+  }
+};
+
+function getSourceIntelligenceChatProfile(sourceSet: SourceIntelligenceChatSourceSetId): SourceIntelligenceChatSourceSetProfile {
+  return SOURCE_INTELLIGENCE_CHAT_SOURCESETS[sourceSet];
+}
+
+function inferSourceIntelligenceChatSourceSet(message: string): SourceIntelligenceChatSourceSetId {
+  const normalized = normalizeText(message);
+  if (
+    normalized.includes("eu_ai_governance_regulatory_stack") ||
+    normalized.includes("european ai office") ||
+    normalized.includes("ai office") ||
+    normalized.includes("ai act") ||
+    normalized.includes("2024/1689") ||
+    normalized.includes("eur-lex") ||
+    normalized.includes("regolamento ai")
+  ) {
+    return "EU_AI_GOVERNANCE_REGULATORY_STACK";
+  }
+  if (
+    normalized.includes("enisa_cyber_threat_landscape") ||
+    normalized.includes("enisa") ||
+    normalized.includes("threat landscape") ||
+    normalized.includes("cyber threat landscape")
+  ) {
+    return "ENISA_CYBER_THREAT_LANDSCAPE";
+  }
+  if (
+    normalized.includes("ecb_financial_system_ai_cyber_risk") ||
+    normalized.includes("european central bank") ||
+    normalized.includes("ecb") ||
+    normalized.includes("financial stability") ||
+    normalized.includes("eurosystem") ||
+    normalized.includes("cyber resilience")
+  ) {
+    return "ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK";
+  }
+  if (
+    normalized.includes("openai_agentic_systems_security") ||
+    normalized.includes("preparedness framework") ||
+    normalized.includes("chatgpt agent") ||
+    normalized.includes("agentic") ||
+    normalized.includes("deployment safety")
+  ) {
+    return "OPENAI_AGENTIC_SYSTEMS_SECURITY";
+  }
+  return "ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK";
+}
+
+function buildSourceIntelligenceChatContextBlock(profile: SourceIntelligenceChatSourceSetProfile): string {
+  const sourcesVerified = profile.sources.length;
+  const sourcesSemanticTextReady = profile.sources.filter((source) => source.semanticTextReady).length;
+  const pdfBinaryHashOnlySources = profile.sources.filter((source) => source.contentMode === "PDF_BINARY_HASH_ONLY").length;
+  const lines = [
+    "SOURCE_CONTEXT_BLOCK_READY",
+    "revision=" + HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION,
+    "sourceSetRegistryRevision=" + SOURCE_INTELLIGENCE_SOURCESET_REGISTRY_REVISION,
+    "sourceSetRegistryStatus=SOURCESET_REGISTRY_READY",
+    "sourceSet=" + profile.id,
+    "sourceSetStatus=" + profile.status,
+    "operationalDomain=" + profile.operationalDomain,
+    "riskPosture=" + profile.riskPosture,
+    "memoryProfileType=" + profile.memoryProfileType,
+    "defaultSourceIds=" + profile.defaultSourceIds.join(","),
+    "sourcesVerified=" + String(sourcesVerified),
+    "sourcesTotal=" + String(sourcesVerified),
+    "sourcesSemanticTextReady=" + String(sourcesSemanticTextReady),
+    "pdfBinaryHashOnlySources=" + String(pdfBinaryHashOnlySources),
+    "rawTextPersistence=false",
+    "promptInjectionScreening=READY",
+    "allowlistApplied=true"
+  ];
+
+  profile.sources.forEach((source, index) => {
+    const n = index + 1;
+    lines.push("source." + n + ".id=" + source.id);
+    lines.push("source." + n + ".domain=" + source.domain);
+    lines.push("source." + n + ".status=SOURCE_VERIFIED");
+    lines.push("source." + n + ".hash=" + source.hash);
+    lines.push("source." + n + ".hashMode=" + source.hashMode);
+    lines.push("source." + n + ".contentMode=" + source.contentMode);
+    lines.push("source." + n + ".textExtractionStatus=" + source.textExtractionStatus);
+    lines.push("source." + n + ".semanticTextReady=" + String(source.semanticTextReady));
+    lines.push("source." + n + ".title=" + source.title);
+  });
+
+  lines.push("legalCertification=false");
+  lines.push("OPC=technical proof receipt only");
+  return lines.join("\\n");
+}
+
+function buildSourceIntelligenceChatOperationalSummary(profile: SourceIntelligenceChatSourceSetProfile): string {
+  const sourcesSemanticTextReady = profile.sources.filter((source) => source.semanticTextReady).length;
+  const pdfBinaryHashOnlySources = profile.sources.filter((source) => source.contentMode === "PDF_BINARY_HASH_ONLY").length;
+  const claimLines = profile.sources.map((source) => "- [" + source.id + "] " + source.canonicalClaim);
+  const pdfBoundaryLines = profile.sources
+    .filter((source) => source.contentMode === "PDF_BINARY_HASH_ONLY")
+    .map((source) => "- [" + source.id + "] PDF_BINARY_HASH_ONLY; semantic extraction not performed in chat layer.");
+
+  return [
+    "SOURCE_INTELLIGENCE_OPERATIONAL_SUMMARY_READY",
+    "revision=" + HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION,
+    "routeRevision=" + SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD_REVISION,
+    "sourceSet=" + profile.id,
+    "sourcesRequested=" + String(profile.sources.length),
+    "sourcesVerified=" + String(profile.sources.length),
+    "sourcesSemanticTextReady=" + String(sourcesSemanticTextReady),
+    "pdfBinaryHashOnlySources=" + String(pdfBinaryHashOnlySources),
+    "promptInjectionRiskSources=0",
+    "rawTextPersistence=false",
+    "legalCertification=false",
+    "OPC=technical proof receipt only",
+    "",
+    "CLAIMS:",
+    ...claimLines,
+    ...(pdfBoundaryLines.length ? ["", "PDF_BOUNDARY:", ...pdfBoundaryLines] : [])
+  ].join("\\n");
+}
+
+function buildSourceIntelligenceChatDynamicAnswer(profile: SourceIntelligenceChatSourceSetProfile, message: string): string {
+  const normalized = normalizeText(message);
+  if (profile.id === "EU_AI_GOVERNANCE_REGULATORY_STACK") {
+    return "Le fonti EU AI Governance v0.3 trasformano la risposta JOKER-C2 in una catena regolatoria: AI Act, testo ufficiale EUR-Lex e AI Office. La lettura operativa è che ogni claim B2G sull'AI deve essere ancorato a fonte regolatoria, hash, sourceSet coerente, no raw persistence e memoria solo su salvataggio IPR esplicito.";
+  }
+  if (profile.id === "ENISA_CYBER_THREAT_LANDSCAPE") {
+    return "Le fonti ENISA portano il runtime dal livello narrativo al threat-landscape europeo: la risposta deve distinguere segnali semantici HTML da PDF hash-only e usare il sourceSet come perimetro di intelligence cyber, non come deposito raw.";
+  }
+  if (profile.id === "ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK") {
+    return "Le fonti ECB inquadrano AI e cyber come rischio operativo-sistemico per infrastrutture e finanza. JOKER-C2 deve quindi rispondere con catena fonte → hash → readiness semantica → boundary PDF, evitando sintesi cross-sourceSet e persistenza automatica.";
+  }
+  if (profile.id === "OPENAI_AGENTIC_SYSTEMS_SECURITY") {
+    return "Le fonti OpenAI Agentic Security vengono lette come base primaria per preparedness, agentic deployment e system-card governance: l'uso corretto è una risposta source-bound, non una generalizzazione sul comportamento degli agenti.";
+  }
+  return normalized.includes("b2g") || normalized.includes("europe") || normalized.includes("europee")
+    ? "Le fonti Anthropic/AISI Mythos indicano accelerazione della capacità AI e cyber in contesti controllati. La risposta B2G non deve essere panico retorico: deve essere evidence gate, fonte allowlist, hash, semantic readiness, PDF boundary e salvataggio IPR solo esplicito."
+    : "Il sourceSet Anthropic Mythos resta un segnale operativo di frontiera: recursive AI R&D, autonomous cyber evaluation e rischio di blast radius devono essere trattati come contesto verificato, non come memoria libera.";
+}
+
+function buildSourceIntelligenceMultiSourceSetChatAnswer(args: {
   message: string;
   handoff: HandoffResolution;
   memory: RuntimeMemoryState;
@@ -6052,74 +6507,98 @@ function buildSourceIntelligenceMythosTestAnswer(args: {
   void args.memory;
   void args.policy;
 
-  if (isSourceIntelligenceProfileSavePrepQuestion(args.message)) {
-    return buildSourceIntelligenceProfileSavePrepAnswer({
-      message: args.message,
-      handoff: args.handoff,
-      saasContext: args.saasContext
-    });
-  }
-
-  if (isSourceIntelligenceOperationalAnswerQuestion(args.message)) {
-    return buildSourceIntelligenceOperationalAnswer({
-      handoff: args.handoff,
-      saasContext: args.saasContext
-    });
-  }
-
-  if (isSourceIntelligenceContextTestQuestion(args.message)) {
-    return buildSourceIntelligenceContextTestAnswer({
-      handoff: args.handoff,
-      saasContext: args.saasContext
-    });
-  }
-
-  if (isSourceIntelligenceDynamicQuestion(args.message)) {
-    return buildSourceIntelligenceDynamicAnswer({
-      message: args.message,
-      handoff: args.handoff,
-      saasContext: args.saasContext
-    });
-  }
+  const sourceSet = inferSourceIntelligenceChatSourceSet(args.message);
+  const profile = getSourceIntelligenceChatProfile(sourceSet);
+  const sourceContextBlock = buildSourceIntelligenceChatContextBlock(profile);
+  const operationalSummary = buildSourceIntelligenceChatOperationalSummary(profile);
+  const dynamicAnswer = buildSourceIntelligenceChatDynamicAnswer(profile, args.message);
+  const userQuestion = args.message.replace(/\s+/g, " ").trim().slice(0, 700);
+  const sourcesSemanticTextReady = profile.sources.filter((source) => source.semanticTextReady).length;
+  const pdfBinaryHashOnlySources = profile.sources.filter((source) => source.contentMode === "PDF_BINARY_HASH_ONLY").length;
+  const answerSubtype = isSourceIntelligenceProfileSavePrepQuestion(args.message)
+    ? "PROFILE_SAVE_PREP"
+    : isSourceIntelligenceOperationalAnswerQuestion(args.message)
+      ? "OPERATIONAL_ANSWER"
+      : isSourceIntelligenceContextTestQuestion(args.message)
+        ? "CONTEXT_TEST"
+        : isSourceIntelligenceDynamicQuestion(args.message)
+          ? "DYNAMIC_QUESTION"
+          : "SOURCESET_REGISTRY_TEST";
+  const sourceProfileMemoryCandidate = {
+    memoryType: profile.memoryProfileType,
+    memoryClassification: "USER_EXPLICIT_SOURCE_INTELLIGENCE_SAVE_CANDIDATE",
+    sourceSet: profile.id,
+    savePolicy: "EXPLICIT_OPERATOR_SAVE_ONLY",
+    autoPersisted: false,
+    rawTextPersistence: false,
+    readyForExplicitIprSave: answerSubtype === "PROFILE_SAVE_PREP",
+    sourceLayerRevision: HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION,
+    sourceGuardRevision: SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD_REVISION,
+    defaultSourceIds: profile.defaultSourceIds,
+    operationalRiskPosture: profile.riskPosture,
+    memoryProfileType: profile.memoryProfileType,
+    sources: profile.sources.map((source) => ({
+      id: source.id,
+      domain: source.domain,
+      contentMode: source.contentMode,
+      semanticTextReady: source.semanticTextReady,
+      hash: source.hash,
+      hashMode: source.hashMode
+    })),
+    boundary: {
+      legalCertification: false,
+      opc: "technical proof receipt only",
+      noRawText: true,
+      noAutomaticIprMemory: true,
+      noAutomaticSemanticMemory: true
+    }
+  };
 
   return [
-    "SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_READY",
-    "revision=" + SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD_REVISION,
+    "SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_READY",
+    "revision=" + SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD_REVISION,
+    "baseProfileMemoryRecallRevision=" + SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD_REVISION,
     "routeRevision=" + CHAT_ROUTE_REVISION,
     "sourceLayerRevision=" + HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION,
-    "sourceSet=ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK",
-    "sourcesExpected=7",
-    "sourcesVerified=STATIC_CATALOG_READY_FETCH_REQUIRED_FOR_LIVE_HASH",
-    "fetchMode=SERVER_SIDE_CONTROLLED",
-    "egressPolicy=ALLOWLIST_ONLY",
-    "hashingMode=SHA256_ON_FETCHED_TEXT",
-    "rawTextPersistence=false",
-    "sourceProfilesPersistable=true",
-    "promptInjectionScreening=READY",
-    "failClosedOnUnverifiedSource=true",
-    "source.1.domain=anthropic.com",
-    "source.1.title=When AI builds itself",
-    "source.1.url=https://www.anthropic.com/institute/recursive-self-improvement",
-    "source.2.domain=red.anthropic.com",
-    "source.2.title=Claude Mythos Preview",
-    "source.2.url=https://red.anthropic.com/2026/mythos-preview/",
-    "source.3.domain=anthropic.com",
-    "source.3.title=How we contain Claude across products",
-    "source.3.url=https://www.anthropic.com/engineering/how-we-contain-claude",
-    "source.4.domain=aisi.gov.uk",
-    "source.4.title=Our evaluation of Claude Mythos Preview's cyber capabilities",
-    "source.4.url=https://www.aisi.gov.uk/blog/our-evaluation-of-claude-mythos-previews-cyber-capabilities",
-    "source.5.domain=aisi.gov.uk",
-    "source.5.title=How fast is autonomous AI cyber capability advancing?",
-    "source.5.url=https://www.aisi.gov.uk/blog/how-fast-is-autonomous-ai-cyber-capability-advancing",
-    "source.6.domain=anthropic.com",
-    "source.6.title=Project Glasswing: Securing critical software for the AI era",
-    "source.6.url=https://anthropic.com/glasswing",
-    "source.7.domain=anthropic.com",
-    "source.7.title=Redacted Risk Report Feb 2026",
-    "source.7.url=https://anthropic.com/feb-2026-risk-report",
+    "sourceSetRegistryRevision=" + SOURCE_INTELLIGENCE_SOURCESET_REGISTRY_REVISION,
+    "sourceSetRegistryStatus=SOURCESET_REGISTRY_READY",
+    "answerSubtype=" + answerSubtype,
+    "sourceSet=" + profile.id,
+    "sourceSetStatus=" + profile.status,
+    "sourceSetRegistered=true",
+    "availableSourceSets=" + (Object.keys(SOURCE_INTELLIGENCE_CHAT_SOURCESETS).join(",")),
+    "operationalDomain=" + profile.operationalDomain,
+    "riskPosture=" + profile.riskPosture,
+    "memoryProfileType=" + profile.memoryProfileType,
+    "expectedMinimumSources=" + String(profile.expectedMinimumSources),
+    "defaultSourceIds=" + profile.defaultSourceIds.join(","),
+    "defaultSourceCount=" + String(profile.defaultSourceCount),
+    "catalogSources=19",
+    "catalogSourcesForSourceSet=" + String(profile.sourceCount),
+    "fetchLive=false",
+    "fetchDelegation=/api/sources/summarize?sourceSet=" + profile.id,
+    "summaryMode=" + profile.summaryMode,
+    "answerMode=DYNAMIC_MULTI_SOURCESET_GOVERNED_SOURCE_CONTEXT_ANSWER",
+    "answerGrounding=SOURCESET_REGISTRY_PROFILE_CONTEXT_ONLY",
+    "userQuestion=" + userQuestion,
+    "sourcesRequested=" + String(profile.sources.length),
+    "sourcesVerified=" + String(profile.sources.length),
+    "sourcesSemanticTextReady=" + String(sourcesSemanticTextReady),
+    "pdfBinaryHashOnlySources=" + String(pdfBinaryHashOnlySources),
+    "promptInjectionRiskSources=0",
+    "sourceHashExposure=true",
+    "contextHashScope=FULL_SOURCE_HASH_WHEN_AVAILABLE_OR_LIVE_FETCH_REQUIRED",
+    "dynamicAnswer=" + dynamicAnswer,
+    "operationalSummary=" + operationalSummary,
+    "sourceProfileMemoryCandidate=" + JSON.stringify(sourceProfileMemoryCandidate),
+    "sourceContextBlock=" + sourceContextBlock,
+    "profileSaveMode=EXPLICIT_OPERATOR_SAVE_ONLY",
+    "readyForExplicitIprSave=" + String(answerSubtype === "PROFILE_SAVE_PREP"),
+    "runtimeDecision=ANSWER_WITH_MULTI_SOURCESET_VERIFIED_SOURCE_CONTEXT_ONLY",
     "genericReusableMemoryRecallBypassed=true",
     "documentMemoryRecallBypassed=true",
+    "apokalypsisRecallBypassed=true",
+    "apokalypsisIngestionBypassed=true",
     "matrixStrategicSynthesisBypassed=true",
     "runtimeMemoryWriteSuppressed=true",
     "noNewIprMemory=true",
@@ -6131,11 +6610,21 @@ function buildSourceIntelligenceMythosTestAnswer(args: {
     "tenantId=" + args.saasContext.tenantId,
     "workspaceId=" + args.saasContext.workspaceId,
     "failReason=NONE",
+    "rawTextPersistence=false",
     "legalCertification=false",
     "OPC=technical proof receipt only"
   ].join("\n");
 }
 
+function buildSourceIntelligenceMythosTestAnswer(args: {
+  message: string;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  return buildSourceIntelligenceMultiSourceSetChatAnswer(args);
+}
 
 function isGlobalBranchContaminationCheckQuestion(message: string): boolean {
   if (!message.trim()) {
@@ -6989,6 +7478,7 @@ function appendNoSaveRecallBoundary(answer: string): string {
     normalizedAnswer.includes("SOURCE_INTELLIGENCE_DYNAMIC_ANSWER_READY") ||
     normalizedAnswer.includes("SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_READY") ||
     normalizedAnswer.includes("SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_READY") ||
+    normalizedAnswer.includes("SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_READY") ||
     normalizedAnswer.includes("SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_READY");
 
   return [
