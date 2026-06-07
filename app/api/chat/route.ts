@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -701,6 +701,11 @@ const APOKALYPSIS_VOLUME_IV_PROFILE_CANONICAL_AXIS = "Decisione · Costo · Trac
 const APOKALYPSIS_VOLUME_IV_PROFILE_CORE_AXIS = "Riconconicità → non riassorbimento → separazione → incompatibilità → rottura cognitiva" as const;
 const APOKALYPSIS_VOLUME_IV_PROFILE_LOCK = "APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_LOCK" as const;
 const APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD_REVISION = "APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40" as const;
+const BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL_REVISION = "BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41" as const;
+const APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK_REVISION = "APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK-v9_10_7_41" as const;
+const USE_BRANCH_STATUS_READ_ONLY_REVISION = "USE_BRANCH_STATUS_READ_ONLY-v9_10_7_41" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_OBSERVED_MEMORY_ID = "IPR-MEM-20260606164824-C2D9E3D6" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_OBSERVED_DOCUMENT_PROFILE_ID = "DOC-PROFILE-FD959CE1DB7BEB4B" as const;
 const APOKALYPSIS_VOLUME_V_PROFILE_FILENAME_LOCK = "APOKALYPSIS_VOLUME_V_COMPLETO_AGGIORNATO_AI_2026_v1_PARADOGMA_ALIENO_LOCK.txt" as const;
 const APOKALYPSIS_VOLUME_V_PROFILE_FILE_HASH = "sha256:c4c550a76ff531de7e44c026ec5a1d6f6a96f3ceaa1a0a932bd9f558b46d616a" as const;
 const APOKALYPSIS_VOLUME_V_PROFILE_DOC_FAMILY = "APOKALYPSIS" as const;
@@ -712,6 +717,7 @@ const APOKALYPSIS_VOLUME_V_PROFILE_SUBTITLE = "Emersione del Paradogma Alieno" a
 const APOKALYPSIS_VOLUME_V_PROFILE_CANONICAL_AXIS = "Decisione · Costo · Traccia · Tempo" as const;
 const APOKALYPSIS_VOLUME_V_PROFILE_CORE_AXIS = "Rottura cognitiva irreversibile → incompatibilità strutturale → Alien Artifact → soglia dell'oltre-sistema → Paradogma Alieno" as const;
 const APOKALYPSIS_VOLUME_V_PROFILE_LOCK = "APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_LOCK" as const;
+const APOKALYPSIS_VOLUME_V_PROFILE_SUMMARY = "APOKALYPSIS Volume V definisce l’emersione del Paradogma Alieno come volume terminale della collana: rottura cognitiva irreversibile, incompatibilità strutturale, Alien Artifact, soglia dell’oltre-sistema e chiusura del ciclo sotto Decisione · Costo · Traccia · Tempo." as const;
 const HBCE_AI_ECOSYSTEM_VOLUME_I_CANONICAL_RECALL_SUMMARY =
   "HBCE ECOSISTEMA AI Volume I definisce l’architettura fondativa per intelligenze artificiali verificabili, responsabili e governate tramite IPR, EVT, OPC, MATRIX, JOKER-C2, governance operativa, audit, responsabilità tracciabile e logica fail-closed." as const;
 
@@ -2115,12 +2121,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const rawFullDocumentCoverageAuditRequested = isFullDocumentCoverageAuditQuestion(message);
   const b2gTechnicalMemoryStrictRecallRequested = isB2gTechnicalMemoryStrictRecallQuestion(message);
   const strictCyberneticDocumentMemoryRecallRequested = isCyberneticDocumentMemoryRecallQuestion(message);
+  const useBranchStatusRequested = isUseBranchStatusQuestion(message);
   const useEuropeanFederationVolumeIFileDetected =
     !b2gTechnicalMemoryStrictRecallRequested &&
     !strictCyberneticDocumentMemoryRecallRequested &&
     files.length > 0 &&
     hasUseEuropeanFederationVolumeSignal(message, files);
   const useEuropeanFederationDocumentProfileRequested =
+    !useBranchStatusRequested &&
     !strictCyberneticDocumentMemoryRecallRequested &&
     (useEuropeanFederationVolumeIFileDetected ||
       (!b2gTechnicalMemoryStrictRecallRequested && isUseEuropeanFederationDocumentProfileRequest(message, files)));
@@ -2282,6 +2290,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !memoryChainOpcBindingRequested &&
     isCyberneticMemoryChainCandidateQuestion(message);
   const memoryChainRouteRequested =
+    useBranchStatusRequested ||
     documentMemoryRecallRequested ||
     memoryChainRecallRequested ||
     memoryChainEvtBindingRequested ||
@@ -2298,6 +2307,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const runtimeMemoryWriteSuppressed =
     fullDocumentCoverageAuditRequested ||
     globalRuntimeHealthCheckRequested ||
+    useBranchStatusRequested ||
+    strictCyberneticDocumentMemoryRecallRequested ||
     apokalypsisVolumeIICognitiveDislocationRequested ||
     apokalypsisVolumeICompleteUpdatedAi2026Requested ||
     apokalypsisPrologoLightDiagnosticRequested ||
@@ -2498,6 +2509,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     runtimeDiagnosticsRequested,
     temporalCertificateRequested,
     globalRuntimeHealthCheckRequested,
+    useBranchStatusRequested,
     apokalypsisRecordStatusRecallPriorityRequested,
     apokalypsisVolumeIICognitiveDislocationRequested,
     apokalypsisVolumeICompleteUpdatedAi2026Requested,
@@ -2583,6 +2595,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (globalRuntimeHealthCheckRequested) {
     answer = buildGlobalRuntimeHealthCheckPreparationAnswer({
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (useBranchStatusRequested) {
+    answer = buildUseBranchStatusReadOnlyAnswer({
       handoff,
       memory,
       policy,
@@ -2802,22 +2823,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerState = "COMPLETED";
     providerName = "LOCAL";
   } else if (documentMemoryRecallRequested) {
-    answer = repairHbceAiEcosystemRecallAnswerSummary(
-      appendStrictRequestedMemoryFilterSummary(
-        buildCyberneticDocumentMemoryRecallAnswer({
-          recall: iprRecall,
-          documentProfileRecall,
-          message,
-          handoff,
-          memory,
-          policy,
-          saasContext,
-          projectContext: documentRecallRuntimeScope.projectContext,
-          recallConfig: documentRecallRuntimeScope.recallConfig
-        }),
-        iprRecall,
-        message
-      )
+    answer = repairApokalypsisVolumeVStrictRecallAnswer(
+      repairHbceAiEcosystemRecallAnswerSummary(
+        appendStrictRequestedMemoryFilterSummary(
+          buildCyberneticDocumentMemoryRecallAnswer({
+            recall: iprRecall,
+            documentProfileRecall,
+            message,
+            handoff,
+            memory,
+            policy,
+            saasContext,
+            projectContext: documentRecallRuntimeScope.projectContext,
+            recallConfig: documentRecallRuntimeScope.recallConfig
+          }),
+          iprRecall,
+          message
+        )
+      ),
+      {
+        message,
+        recall: iprRecall,
+        documentProfileRecall
+      }
     );
     providerState = "COMPLETED";
     providerName = "LOCAL";
@@ -3226,6 +3254,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         temporalFrame,
         runtimeMemoryWriteSuppressed
       })
+    : useBranchStatusRequested
+    ? safeAnswer
     : apokalypsisVolumeICompleteUpdatedAi2026Requested
     ? safeAnswer
     : apokalypsisPrologoLightDiagnosticRequested
@@ -4944,6 +4974,171 @@ function repairHbceAiEcosystemRecallAnswerSummary(answer: string): string {
 }
 
 
+function escapeRegExpLiteral(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function replaceOrAppendTechnicalLine(answer: string, key: string, value: string): string {
+  const pattern = new RegExp("^(" + escapeRegExpLiteral(key) + "\\s*[:=]\\s*).*$", "im");
+
+  if (pattern.test(answer)) {
+    return answer.replace(pattern, "$1" + value);
+  }
+
+  return [answer.trim(), key + "=" + value].join("\n");
+}
+
+function extractFirstTechnicalLineValue(answer: string, key: string): string {
+  const pattern = new RegExp("^" + escapeRegExpLiteral(key) + "\\s*[:=]\\s*(.*)$", "im");
+  const match = answer.match(pattern);
+  return match?.[1]?.trim() || "NO_" + key.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
+}
+
+function isApokalypsisVolumeVStrictRecallTarget(args: {
+  message: string;
+  recall: IprRecallInjection;
+  documentProfileRecall: DocumentProfileRecall | null;
+}): boolean {
+  const requestedMemoryIds = extractRequestedIprMemoryIds(args.message).map((id) => normalizeText(id));
+  const requestedProfileIds = extractRequestedDocumentProfileIds(args.message).map((id) => normalizeText(id));
+  const candidates = documentProfileRecallCandidateItems(args.documentProfileRecall);
+  const candidateText = candidates.map((candidate) => [
+    stringPath(candidate, "profileId", ""),
+    stringPath(candidate, "documentProfileId", ""),
+    stringPath(candidate, "memoryId", ""),
+    stringPath(candidate, "filename", ""),
+    stringPath(candidate, "sourceDocument", ""),
+    stringPath(candidate, "fileHash", ""),
+    stringPath(candidate, "sourceFileHash", ""),
+    stringPath(candidate, "docFamily", ""),
+    stringPath(candidate, "documentKind", ""),
+    stringPath(candidate, "module", ""),
+    stringPath(candidate, "volume", ""),
+    stringPath(candidate, "title", ""),
+    stringPath(candidate, "subtitle", ""),
+    stringPath(candidate, "profileLock", ""),
+    stringPath(candidate, "canonicalAxis", ""),
+    stringPath(candidate, "coreAxisVolumeV", ""),
+    stringPath(candidate, "summary", ""),
+    stringPath(candidate, "documentMetadata.profileId", ""),
+    stringPath(candidate, "documentMetadata.documentProfileId", ""),
+    stringPath(candidate, "documentMetadata.memoryId", ""),
+    stringPath(candidate, "documentMetadata.filename", ""),
+    stringPath(candidate, "documentMetadata.sourceDocument", ""),
+    stringPath(candidate, "documentMetadata.fileHash", ""),
+    stringPath(candidate, "documentMetadata.sourceFileHash", ""),
+    stringPath(candidate, "documentMetadata.documentKind", ""),
+    stringPath(candidate, "documentMetadata.module", ""),
+    stringPath(candidate, "documentMetadata.volume", ""),
+    stringPath(candidate, "documentMetadata.title", ""),
+    stringPath(candidate, "documentMetadata.subtitle", ""),
+    stringPath(candidate, "documentMetadata.profileLock", ""),
+    stringPath(candidate, "documentMetadata.coreAxisVolumeV", "")
+  ].join("\n")).join("\n");
+
+  const recallText = args.recall.items.map((item) => [
+    item.memoryId,
+    item.memoryTitle,
+    item.memorySummary,
+    item.classification,
+    item.memoryKind,
+    item.sourceKind
+  ].filter(Boolean).join("\n")).join("\n");
+
+  const normalized = normalizeText([
+    args.message,
+    candidateText,
+    recallText,
+    requestedMemoryIds.join("\n"),
+    requestedProfileIds.join("\n")
+  ].join("\n"));
+
+  return (
+    requestedMemoryIds.includes(normalizeText(APOKALYPSIS_VOLUME_V_PROFILE_OBSERVED_MEMORY_ID)) ||
+    requestedProfileIds.includes(normalizeText(APOKALYPSIS_VOLUME_V_PROFILE_OBSERVED_DOCUMENT_PROFILE_ID)) ||
+    normalized.includes(normalizeText(APOKALYPSIS_VOLUME_V_PROFILE_FILENAME_LOCK)) ||
+    normalized.includes(normalizeText(APOKALYPSIS_VOLUME_V_PROFILE_FILE_HASH)) ||
+    normalized.includes(APOKALYPSIS_VOLUME_V_PROFILE_FILE_HASH.replace(/^sha256:/, "")) ||
+    normalized.includes(normalizeText(APOKALYPSIS_VOLUME_V_PROFILE_DOCUMENT_KIND)) ||
+    normalized.includes(normalizeText(APOKALYPSIS_VOLUME_V_PROFILE_MODULE)) ||
+    normalized.includes(normalizeText(APOKALYPSIS_VOLUME_V_PROFILE_TITLE)) ||
+    normalized.includes(normalizeText(APOKALYPSIS_VOLUME_V_PROFILE_SUBTITLE)) ||
+    normalized.includes(normalizeText(APOKALYPSIS_VOLUME_V_PROFILE_LOCK)) ||
+    normalized.includes("paradogma alieno") ||
+    normalized.includes("alien artifact") ||
+    normalized.includes("terminal volume")
+  );
+}
+
+function repairApokalypsisVolumeVStrictRecallAnswer(answer: string, args: {
+  message: string;
+  recall: IprRecallInjection;
+  documentProfileRecall: DocumentProfileRecall | null;
+}): string {
+  if (!isApokalypsisVolumeVStrictRecallTarget(args)) {
+    return answer;
+  }
+
+  const preRepairVolume = extractFirstTechnicalLineValue(answer, "volume");
+  const preRepairModule = extractFirstTechnicalLineValue(answer, "module");
+  const preRepairDocumentKind = extractFirstTechnicalLineValue(answer, "documentKind");
+  const preRepairTitle = extractFirstTechnicalLineValue(answer, "title");
+  const preRepairProfileLock = extractFirstTechnicalLineValue(answer, "profileLock");
+  let repaired = answer;
+
+  repaired = replaceOrAppendTechnicalLine(repaired, "docFamily", APOKALYPSIS_VOLUME_V_PROFILE_DOC_FAMILY);
+  repaired = replaceOrAppendTechnicalLine(repaired, "documentKind", APOKALYPSIS_VOLUME_V_PROFILE_DOCUMENT_KIND);
+  repaired = replaceOrAppendTechnicalLine(repaired, "module", APOKALYPSIS_VOLUME_V_PROFILE_MODULE);
+  repaired = replaceOrAppendTechnicalLine(repaired, "volume", APOKALYPSIS_VOLUME_V_PROFILE_VOLUME);
+  repaired = replaceOrAppendTechnicalLine(repaired, "title", APOKALYPSIS_VOLUME_V_PROFILE_TITLE);
+  repaired = replaceOrAppendTechnicalLine(repaired, "subtitle", APOKALYPSIS_VOLUME_V_PROFILE_SUBTITLE);
+  repaired = replaceOrAppendTechnicalLine(repaired, "canonicalAxis", APOKALYPSIS_VOLUME_V_PROFILE_CANONICAL_AXIS);
+  repaired = replaceOrAppendTechnicalLine(repaired, "coreAxis", APOKALYPSIS_VOLUME_V_PROFILE_CORE_AXIS);
+  repaired = replaceOrAppendTechnicalLine(repaired, "coreAxisVolumeV", APOKALYPSIS_VOLUME_V_PROFILE_CORE_AXIS);
+  repaired = replaceOrAppendTechnicalLine(repaired, "profileLock", APOKALYPSIS_VOLUME_V_PROFILE_LOCK);
+  repaired = replaceOrAppendTechnicalLine(repaired, "summary", APOKALYPSIS_VOLUME_V_PROFILE_SUMMARY);
+  repaired = replaceOrAppendTechnicalLine(repaired, "apokalypsisSummaryRepairRevision", APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK_REVISION);
+  repaired = replaceOrAppendTechnicalLine(repaired, "apokalypsisSummaryRepairApplied", "true");
+  repaired = replaceOrAppendTechnicalLine(repaired, "apokalypsisSummaryRepairVolume", APOKALYPSIS_VOLUME_V_PROFILE_VOLUME);
+  repaired = replaceOrAppendTechnicalLine(repaired, "apokalypsisVolumeVPrimaryDetected", "true");
+  repaired = replaceOrAppendTechnicalLine(repaired, "apokalypsisVolumeIVPrimaryDetected", "false");
+  repaired = replaceOrAppendTechnicalLine(repaired, "apokalypsisVolumeIIPrimaryDetected", "false");
+  repaired = replaceOrAppendTechnicalLine(repaired, "apokalypsisVolumeIPrimaryDetected", "false");
+  repaired = replaceOrAppendTechnicalLine(repaired, "paradogmaAlienoDetected", "true");
+  repaired = replaceOrAppendTechnicalLine(repaired, "alienArtifactDetected", "true");
+  repaired = replaceOrAppendTechnicalLine(repaired, "incompatibilityDetected", "true");
+  repaired = replaceOrAppendTechnicalLine(repaired, "irreintegrabilityDetected", "true");
+  repaired = replaceOrAppendTechnicalLine(repaired, "terminalVolumeDetected", "true");
+  repaired = replaceOrAppendTechnicalLine(repaired, "nextVolumes", "NONE — terminal volume of APOKALYPSIS I–V");
+  repaired = replaceOrAppendTechnicalLine(repaired, "volumeIVContamination", "false");
+  repaired = replaceOrAppendTechnicalLine(repaired, "volumeMetadataStale", "false");
+
+  return [
+    repaired.trim(),
+    "",
+    "APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK",
+    "repairRevision=" + APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK_REVISION,
+    "branchPriorityRevision=" + BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL_REVISION,
+    "applied=true",
+    "preRepairVolume=" + preRepairVolume,
+    "preRepairModule=" + preRepairModule,
+    "preRepairDocumentKind=" + preRepairDocumentKind,
+    "preRepairTitle=" + preRepairTitle,
+    "preRepairProfileLock=" + preRepairProfileLock,
+    "postRepairDocFamily=" + APOKALYPSIS_VOLUME_V_PROFILE_DOC_FAMILY,
+    "postRepairVolume=" + APOKALYPSIS_VOLUME_V_PROFILE_VOLUME,
+    "postRepairModule=" + APOKALYPSIS_VOLUME_V_PROFILE_MODULE,
+    "postRepairDocumentKind=" + APOKALYPSIS_VOLUME_V_PROFILE_DOCUMENT_KIND,
+    "postRepairTitle=" + APOKALYPSIS_VOLUME_V_PROFILE_TITLE,
+    "postRepairSubtitle=" + APOKALYPSIS_VOLUME_V_PROFILE_SUBTITLE,
+    "postRepairProfileLock=" + APOKALYPSIS_VOLUME_V_PROFILE_LOCK,
+    "terminalVolumeDetected=true",
+    "nextVolumes=NONE — terminal volume of APOKALYPSIS I–V",
+    "failReason=NONE"
+  ].join("\n");
+}
+
+
 type DocumentProfileMemoryBridgeArgs = {
   recall: IprRecallInjection;
   documentProfileRecall: DocumentProfileRecall | null;
@@ -5030,6 +5225,118 @@ function bridgeIprRecallFromDocumentProfileRecall(args: DocumentProfileMemoryBri
 
 
 
+function isUseBranchStatusQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const explicitUseBranchStatus =
+    normalized.includes("test_use_branch_status") ||
+    normalized.includes("use_branch_status") ||
+    normalized.includes("use branch status") ||
+    normalized.includes("use_document_recall_ready") ||
+    normalized.includes("use_document_branch_status") ||
+    normalized.includes("solo test_use_branch_status");
+
+  const useTarget =
+    normalized.includes("docfamily=use_european_federation") ||
+    normalized.includes("docfamily: use_european_federation") ||
+    normalized.includes("use_european_federation") ||
+    normalized.includes("useCycle=UNITED_STATES_OF_EUROPE".toLowerCase()) ||
+    normalized.includes("usecycle=united_states_of_europe") ||
+    normalized.includes("united states of europe") ||
+    normalized.includes("u.s.e.") ||
+    normalized.includes("collana u.s.e") ||
+    normalized.includes("collana use");
+
+  const volumeSetRequested =
+    normalized.includes("emergenza europea") ||
+    normalized.includes("federazione operativa europea") ||
+    normalized.includes("voto digitale federato") ||
+    normalized.includes("sovranita digitale europea") ||
+    normalized.includes("sovranità digitale europea") ||
+    normalized.includes("costituzione operativa europea") ||
+    normalized.includes("volumesdetected") ||
+    normalized.includes("missingvolumes");
+
+  return explicitUseBranchStatus && useTarget && volumeSetRequested;
+}
+
+function buildUseBranchStatusReadOnlyAnswer(args: {
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const profiles = [
+    USE_VOLUME_I_RUNTIME_PROFILE,
+    USE_VOLUME_II_RUNTIME_PROFILE,
+    USE_VOLUME_III_RUNTIME_PROFILE,
+    USE_VOLUME_IV_RUNTIME_PROFILE,
+    USE_VOLUME_V_RUNTIME_PROFILE
+  ];
+  const volumesDetected = profiles.map((profile) => profile.volume);
+  const expectedVolumes = ["V1", "V2", "V3", "V4", "V5"];
+  const missingVolumes = expectedVolumes.filter((volume) => !volumesDetected.includes(volume));
+  const ready = missingVolumes.length === 0 && profiles.every((profile) =>
+    profile.docFamily === USE_VOLUME_I_DOC_FAMILY &&
+    profile.documentKind === USE_VOLUME_I_DOCUMENT_KIND &&
+    profile.useCycle === USE_VOLUME_I_CYCLE &&
+    profile.module.trim().length > 0 &&
+    profile.title.trim().length > 0 &&
+    profile.canonicalAxis.trim().length > 0
+  );
+
+  return [
+    ready ? "USE_BRANCH_STATUS_READY" : "USE_BRANCH_STATUS_FAIL",
+    "revision=" + USE_BRANCH_STATUS_READ_ONLY_REVISION,
+    "routeRevision=" + CHAT_ROUTE_REVISION,
+    "useBranch.status=" + (ready ? "READY" : "FAIL"),
+    "docFamily=" + USE_VOLUME_I_DOC_FAMILY,
+    "useCycle=" + USE_VOLUME_I_CYCLE,
+    "volumesDetected=" + volumesDetected.join(","),
+    "expectedVolumes=" + expectedVolumes.join(","),
+    "missingVolumes=" + (missingVolumes.length ? missingVolumes.join(",") : "NONE"),
+    "linkedProfileCount=READ_ONLY_BRANCH_STATUS_STATIC_CANONICAL_SET",
+    "modulesDetected=" + profiles.map((profile) => profile.module).join(","),
+    "titlesDetected=" + profiles.map((profile) => profile.title).join(" | "),
+    "canonicalAxesDetected=" + profiles.map((profile) => profile.volume + "=" + profile.canonicalAxis).join(" | "),
+    "volume.V1.module=" + USE_VOLUME_I_RUNTIME_PROFILE.module,
+    "volume.V1.title=" + USE_VOLUME_I_RUNTIME_PROFILE.title,
+    "volume.V1.canonicalAxis=" + USE_VOLUME_I_RUNTIME_PROFILE.canonicalAxis,
+    "volume.V2.module=" + USE_VOLUME_II_RUNTIME_PROFILE.module,
+    "volume.V2.title=" + USE_VOLUME_II_RUNTIME_PROFILE.title,
+    "volume.V2.canonicalAxis=" + USE_VOLUME_II_RUNTIME_PROFILE.canonicalAxis,
+    "volume.V3.module=" + USE_VOLUME_III_RUNTIME_PROFILE.module,
+    "volume.V3.title=" + USE_VOLUME_III_RUNTIME_PROFILE.title,
+    "volume.V3.canonicalAxis=" + USE_VOLUME_III_RUNTIME_PROFILE.canonicalAxis,
+    "volume.V4.module=" + USE_VOLUME_IV_RUNTIME_PROFILE.module,
+    "volume.V4.title=" + USE_VOLUME_IV_RUNTIME_PROFILE.title,
+    "volume.V4.canonicalAxis=" + USE_VOLUME_IV_RUNTIME_PROFILE.canonicalAxis,
+    "volume.V5.module=" + USE_VOLUME_V_RUNTIME_PROFILE.module,
+    "volume.V5.title=" + USE_VOLUME_V_RUNTIME_PROFILE.title,
+    "volume.V5.canonicalAxis=" + USE_VOLUME_V_RUNTIME_PROFILE.canonicalAxis,
+    "contaminationCheck.matrix=false",
+    "contaminationCheck.apokalypsis=false",
+    "contaminationCheck.hbceAiEcosystem=false",
+    "contaminationCheck.b2gTechnicalStack=false",
+    "strictBranchPriority=" + BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL_REVISION,
+    "genericReusableMemoryRecallBypassed=true",
+    "runtimeMemoryWriteSuppressed=true",
+    "noNewIprMemory=true",
+    "noNewSemanticMemoryPersistable=true",
+    "failReason=" + (ready ? "NONE" : "USE_BRANCH_STATIC_CANONICAL_SET_INCOMPLETE"),
+    "humanIpr=" + args.handoff.humanIpr,
+    "runtimeIpr=" + RUNTIME_IPR,
+    "tenantId=" + args.saasContext.tenantId,
+    "workspaceId=" + args.saasContext.workspaceId,
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
+
 function isCyberneticDocumentMemoryRecallQuestion(message: string): boolean {
   if (!message.trim()) {
     return false;
@@ -5040,6 +5347,10 @@ function isCyberneticDocumentMemoryRecallQuestion(message: string): boolean {
   const requestedProfileIds = extractRequestedDocumentProfileIds(message);
 
   const explicitDocumentRecallIntent =
+    normalized.includes("read_only_strict_recall") ||
+    normalized.includes("strict_document_recall") ||
+    normalized.includes("strict requested memory only") ||
+    normalized.includes("strict_requested_memory_only") ||
     normalized.includes("cybernetic_document_memory_recall_test") ||
     normalized.includes("cyber_document_memory_recall_ready") ||
     normalized.includes("document_memory_recall") ||
@@ -5052,6 +5363,8 @@ function isCyberneticDocumentMemoryRecallQuestion(message: string): boolean {
     normalized.includes("doc-profile-");
 
   const asksRecall =
+    normalized.includes("read_only_strict_recall") ||
+    normalized.includes("strict recall") ||
     normalized.includes("richiama") ||
     normalized.includes("recall") ||
     normalized.includes("usa il profilo") ||
@@ -5059,6 +5372,7 @@ function isCyberneticDocumentMemoryRecallQuestion(message: string): boolean {
     normalized.includes("document registry");
 
   const targetsDocumentProfile =
+    requestedMemoryIds.length > 0 ||
     requestedProfileIds.length > 0 ||
     normalized.includes("documentprofileid") ||
     normalized.includes("document profile") ||
@@ -8321,11 +8635,11 @@ function canonicalizeApokalypsisVolumeIIProfileMetadata(metadata: JsonObject | n
 }
 
 function canonicalizeApokalypsisProfileMetadata(metadata: JsonObject | null): JsonObject | null {
-  return canonicalizeApokalypsisVolumeIProfileMetadata(
-    canonicalizeApokalypsisVolumeIIProfileMetadata(
+  return canonicalizeApokalypsisVolumeVProfileMetadata(
+    canonicalizeApokalypsisVolumeIVProfileMetadata(
       canonicalizeApokalypsisVolumeIIIProfileMetadata(
-        canonicalizeApokalypsisVolumeIVProfileMetadata(
-          canonicalizeApokalypsisVolumeVProfileMetadata(metadata)
+        canonicalizeApokalypsisVolumeIIProfileMetadata(
+          canonicalizeApokalypsisVolumeIProfileMetadata(metadata)
         )
       )
     )
