@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -708,6 +708,7 @@ const SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD_REVISION = "SOURCE_INTELLIGENCE_CON
 const SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD_REVISION = "SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45" as const;
 const SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD_REVISION = "SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46" as const;
 const SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD_REVISION = "SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47" as const;
+const SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD_REVISION = "SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48" as const;
 const HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION = "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.2-PDF_CONTENT_MODE_GUARD" as const;
 const APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK_REVISION = "APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK-v9_10_7_41" as const;
 const USE_BRANCH_STATUS_READ_ONLY_REVISION = "USE_BRANCH_STATUS_READ_ONLY-v9_10_7_41" as const;
@@ -5333,6 +5334,53 @@ function isSourceIntelligenceOperationalAnswerQuestion(message: string): boolean
   return explicitOperationalIntent && sourceScope;
 }
 
+
+function isSourceIntelligenceProfileSavePrepQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const explicitSavePrepIntent =
+    normalized.includes("source_intelligence_profile_save_prep") ||
+    normalized.includes("source intelligence profile save prep") ||
+    normalized.includes("source_intelligence_profile_save_prep_guard") ||
+    normalized.includes("readyforexplicitiprsave") ||
+    normalized.includes("ready for explicit ipr save") ||
+    normalized.includes("prepara profilo salvabile") ||
+    normalized.includes("prepara memoria ipr") ||
+    normalized.includes("profilo fonte") ||
+    normalized.includes("verdetto operativo") ||
+    normalized.includes("salvabile solo su comando esplicito") ||
+    normalized.includes("explicit operator save only") ||
+    normalized.includes("save prep");
+
+  const sourceScope =
+    normalized.includes("source intelligence") ||
+    normalized.includes("source_intelligence") ||
+    normalized.includes("anthropic_mythos_recursive_ai_risk") ||
+    normalized.includes("claude mythos") ||
+    normalized.includes("mythos preview") ||
+    normalized.includes("recursive self-improvement") ||
+    normalized.includes("recursive_self_improvement") ||
+    normalized.includes("autonomous cyber") ||
+    normalized.includes("cyber autonomo") ||
+    normalized.includes("aisi") ||
+    normalized.includes("risk report");
+
+  const persistenceBoundary =
+    normalized.includes("non salvare automaticamente") ||
+    normalized.includes("non creare memoria automaticamente") ||
+    normalized.includes("do_not_auto_persist") ||
+    normalized.includes("explicit save") ||
+    normalized.includes("salvataggio esplicito") ||
+    normalized.includes("save chat") ||
+    normalized.includes("ipr save") ||
+    normalized.includes("senza file");
+
+  return explicitSavePrepIntent && sourceScope && persistenceBoundary;
+}
+
 function isSourceIntelligenceDynamicQuestion(message: string): boolean {
   if (!message.trim()) {
     return false;
@@ -5402,6 +5450,7 @@ function isSourceIntelligenceMythosTestQuestion(message: string): boolean {
   }
 
   if (
+    isSourceIntelligenceProfileSavePrepQuestion(message) ||
     isSourceIntelligenceContextTestQuestion(message) ||
     isSourceIntelligenceOperationalAnswerQuestion(message) ||
     isSourceIntelligenceDynamicQuestion(message)
@@ -5586,6 +5635,113 @@ function buildSourceIntelligenceOperationalAnswer(args: {
   ].join("\n");
 }
 
+
+function buildSourceIntelligenceProfileSavePrepAnswer(args: {
+  message: string;
+  handoff: HandoffResolution;
+  saasContext: SaasRuntimeContext;
+}): string {
+  const sourceContextBlock = buildSourceIntelligenceMythosSourceContextBlock();
+  const userQuestion = args.message.replace(/\s+/g, " ").trim().slice(0, 700);
+  const sourceProfileMemoryCandidate = {
+    memoryType: "SOURCE_INTELLIGENCE_OPERATIONAL_PROFILE",
+    memoryClassification: "USER_EXPLICIT_SOURCE_INTELLIGENCE_SAVE_CANDIDATE",
+    sourceSet: "ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK",
+    savePolicy: "EXPLICIT_OPERATOR_SAVE_ONLY",
+    autoPersisted: false,
+    rawTextPersistence: false,
+    readyForExplicitIprSave: true,
+    sourceLayerRevision: HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION,
+    sourceGuardRevision: SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD_REVISION,
+    sources: [
+      {
+        id: "SRC-ANTHROPIC-RSI-2026",
+        domain: "anthropic.com",
+        contentMode: "HTML_TEXT_READY",
+        semanticTextReady: true,
+        hash: "sha256:1d80dd6da838ea2a83a529dc71d17256f8f28ae22fb5663b56b74a02653e0038",
+        hashScope: "CONTEXT_PREVIEW_1000_CHARS",
+        fullSourceHashStatus: "LIVE_FETCH_ENDPOINT_REQUIRED"
+      },
+      {
+        id: "SRC-AISI-MYTHOS-EVAL-2026",
+        domain: "aisi.gov.uk",
+        contentMode: "HTML_TEXT_READY",
+        semanticTextReady: true,
+        hash: "sha256:d9fa001a2d5567ee1b8daa67b9b039578075f5aa38715e7401ce1d729d161b09",
+        hashScope: "CONTEXT_PREVIEW_1000_CHARS",
+        fullSourceHashStatus: "LIVE_FETCH_ENDPOINT_REQUIRED"
+      },
+      {
+        id: "SRC-ANTHROPIC-RISK-REPORT-2026",
+        domain: "anthropic.com",
+        contentMode: "PDF_BINARY_HASH_ONLY",
+        semanticTextReady: false,
+        hash: "sha256:08ad2ac000fcd8750dcce4b279eb4b900e906c504134d9b190571fdcfaead156",
+        hashScope: "FULL_BINARY_BODY",
+        fullSourceHashStatus: "READY"
+      }
+    ],
+    operationalRiskPosture: "CYBER_AUTONOMY_ACCELERATION_SIGNAL",
+    runtimeDecision: "PREPARE_SOURCE_INTELLIGENCE_PROFILE_FOR_EXPLICIT_IPR_SAVE_ONLY",
+    boundary: {
+      legalCertification: false,
+      opc: "technical proof receipt only",
+      noRawText: true,
+      noAutomaticIprMemory: true,
+      noAutomaticSemanticMemory: true
+    }
+  };
+
+  return [
+    "SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_READY",
+    "revision=" + SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD_REVISION,
+    "baseDynamicQuestionRevision=" + SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD_REVISION,
+    "routeRevision=" + CHAT_ROUTE_REVISION,
+    "sourceLayerRevision=" + HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION,
+    "sourceSet=ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK",
+    "profileSaveMode=EXPLICIT_OPERATOR_SAVE_ONLY",
+    "autoPersisted=false",
+    "readyForExplicitIprSave=true",
+    "preparedMemoryType=SOURCE_INTELLIGENCE_OPERATIONAL_PROFILE",
+    "preparedMemoryClassification=USER_EXPLICIT_SOURCE_INTELLIGENCE_SAVE_CANDIDATE",
+    "userQuestion=" + userQuestion,
+    "sourcesRequested=3",
+    "sourcesVerified=3",
+    "sourcesSemanticTextReady=2",
+    "pdfBinaryHashOnlySources=1",
+    "promptInjectionRiskSources=0",
+    "sourceHashExposure=true",
+    "contextHashScope=CONTEXT_PREVIEW_1000_CHARS_FOR_HTML_AND_FULL_BINARY_BODY_FOR_PDF",
+    "operationalRiskPosture=CYBER_AUTONOMY_ACCELERATION_SIGNAL",
+    "runtimeDecision=PREPARE_SOURCE_INTELLIGENCE_PROFILE_FOR_EXPLICIT_IPR_SAVE_ONLY",
+    "saveInstruction=USE_SAVE_CHAT_BUTTON_OR_EXPLICIT_IPR_SAVE_COMMAND_ONLY",
+    "rawTextPersistence=false",
+    "semanticMemoryPersistable=false",
+    "semanticMemoryReusableInPrompt=false",
+    "runtimeMemoryWriteSuppressed=true",
+    "noNewIprMemory=true",
+    "noNewSemanticMemoryPersistable=true",
+    "autoSaveBlocked=true",
+    "explicitSaveRequired=true",
+    "sourceProfileMemoryCandidate=" + JSON.stringify(sourceProfileMemoryCandidate),
+    "sourceContextBlock=" + sourceContextBlock,
+    "genericReusableMemoryRecallBypassed=true",
+    "documentMemoryRecallBypassed=true",
+    "apokalypsisIngestionBypassed=true",
+    "matrixStrategicSynthesisBypassed=true",
+    "recallInjected=false",
+    "recallItemsCount=0",
+    "humanIpr=" + args.handoff.humanIpr,
+    "runtimeIpr=" + RUNTIME_IPR,
+    "tenantId=" + args.saasContext.tenantId,
+    "workspaceId=" + args.saasContext.workspaceId,
+    "failReason=NONE",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
+}
+
 function buildSourceIntelligenceDynamicAnswer(args: {
   message: string;
   handoff: HandoffResolution;
@@ -5673,6 +5829,14 @@ function buildSourceIntelligenceMythosTestAnswer(args: {
 }): string {
   void args.memory;
   void args.policy;
+
+  if (isSourceIntelligenceProfileSavePrepQuestion(args.message)) {
+    return buildSourceIntelligenceProfileSavePrepAnswer({
+      message: args.message,
+      handoff: args.handoff,
+      saasContext: args.saasContext
+    });
+  }
 
   if (isSourceIntelligenceOperationalAnswerQuestion(args.message)) {
     return buildSourceIntelligenceOperationalAnswer({
@@ -6601,6 +6765,7 @@ function appendNoSaveRecallBoundary(answer: string): string {
     normalizedAnswer.includes("SOURCE_INTELLIGENCE_CONTEXT_READY") ||
     normalizedAnswer.includes("SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_READY") ||
     normalizedAnswer.includes("SOURCE_INTELLIGENCE_DYNAMIC_ANSWER_READY") ||
+    normalizedAnswer.includes("SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_READY") ||
     normalizedAnswer.includes("SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_READY");
 
   return [
