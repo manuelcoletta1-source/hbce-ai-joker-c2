@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48-SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49-SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48-SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49-SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50-SOURCE_INTELLIGENCE_MULTI_SOURCESET_HARD_PREEMPT-v9_10_7_51";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -710,7 +710,7 @@ const SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD_REVISION = "SOURCE_INTELLIGEN
 const SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD_REVISION = "SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47" as const;
 const SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD_REVISION = "SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48" as const;
 const SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD_REVISION = "SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49" as const;
-const SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD_REVISION = "SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50" as const;
+const SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD_REVISION = "SOURCE_INTELLIGENCE_MULTI_SOURCESET_HARD_PREEMPT-v9_10_7_51" as const;
 const HBCE_SOURCE_INTELLIGENCE_LAYER_REVISION = "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.3-SOURCESET_REGISTRY" as const;
 const SOURCE_INTELLIGENCE_SOURCESET_REGISTRY_REVISION = "SOURCESET_REGISTRY_MULTI_DOMAIN_B2G-v0.3" as const;
 const APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK_REVISION = "APOKALYPSIS_VOLUME_V_STRICT_RECALL_LOCK-v9_10_7_41" as const;
@@ -2203,9 +2203,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const globalRuntimeHealthCheckRequested = isGlobalRuntimeHealthCheckQuestion(message);
   const globalBranchContaminationCheckRequested = isGlobalBranchContaminationCheckQuestion(message);
-  const sourceIntelligenceProfileMemoryRecallRequested = isSourceIntelligenceProfileMemoryRecallQuestion(message);
+  const sourceIntelligenceMultiSourceSetChatRequested = isSourceIntelligenceMultiSourceSetChatQuestion(message);
+  const sourceIntelligenceProfileMemoryRecallRequested =
+    !sourceIntelligenceMultiSourceSetChatRequested && isSourceIntelligenceProfileMemoryRecallQuestion(message);
   const sourceIntelligenceMythosTestRequested =
-    !sourceIntelligenceProfileMemoryRecallRequested && isSourceIntelligenceMythosTestQuestion(message);
+    !sourceIntelligenceMultiSourceSetChatRequested &&
+    !sourceIntelligenceProfileMemoryRecallRequested &&
+    isSourceIntelligenceMythosTestQuestion(message);
   const apokalypsisRecordStatusRecallPriorityRequested =
     recordStatusOnlyRequested ||
     strictCyberneticDocumentMemoryRecallRequested ||
@@ -2258,6 +2262,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !fullDocumentCoverageAuditRequested &&
     !runtimeMemoryBlockDiagnosticRequested &&
     !globalBranchContaminationCheckRequested &&
+    !sourceIntelligenceMultiSourceSetChatRequested &&
     !sourceIntelligenceProfileMemoryRecallRequested &&
     !sourceIntelligenceMythosTestRequested &&
     isMatrixIVStrategicSynthesisQuestion(message);
@@ -2308,6 +2313,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !memoryChainOpcBindingRequested &&
     isCyberneticMemoryChainCandidateQuestion(message);
   const memoryChainRouteRequested =
+    sourceIntelligenceMultiSourceSetChatRequested ||
     sourceIntelligenceProfileMemoryRecallRequested ||
     sourceIntelligenceMythosTestRequested ||
     globalBranchContaminationCheckRequested ||
@@ -2328,6 +2334,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const runtimeMemoryWriteSuppressed =
     fullDocumentCoverageAuditRequested ||
     globalRuntimeHealthCheckRequested ||
+    sourceIntelligenceMultiSourceSetChatRequested ||
     sourceIntelligenceProfileMemoryRecallRequested ||
     sourceIntelligenceMythosTestRequested ||
     globalBranchContaminationCheckRequested ||
@@ -2444,6 +2451,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !esoterologicalSemanticMemoryRequested &&
     isApiSdkB2GPresentationQuestion(message);
   const iprRecallRequested =
+    !sourceIntelligenceMultiSourceSetChatRequested &&
     !sourceIntelligenceMythosTestRequested &&
     !runtimeMemoryBlockDiagnosticRequested &&
     !iprCanonicalDocumentMemorySaveRequested &&
@@ -2484,12 +2492,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     message,
     limit: sourceIntelligenceProfileMemoryRecallRequested
       ? 1
-      : sourceIntelligenceMythosTestRequested || noSavePersistenceRequested
+      : sourceIntelligenceMultiSourceSetChatRequested || sourceIntelligenceMythosTestRequested || noSavePersistenceRequested
         ? 0
         : 6,
     promptMaxChars: sourceIntelligenceProfileMemoryRecallRequested
       ? 7000
-      : sourceIntelligenceMythosTestRequested || noSavePersistenceRequested
+      : sourceIntelligenceMultiSourceSetChatRequested || sourceIntelligenceMythosTestRequested || noSavePersistenceRequested
         ? 0
         : 7000
   });
@@ -2543,6 +2551,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     temporalCertificateRequested,
     globalRuntimeHealthCheckRequested,
     globalBranchContaminationCheckRequested,
+    sourceIntelligenceMultiSourceSetChatRequested,
     sourceIntelligenceProfileMemoryRecallRequested,
     sourceIntelligenceMythosTestRequested,
     useBranchStatusRequested,
@@ -2640,6 +2649,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (globalBranchContaminationCheckRequested) {
     answer = buildGlobalBranchContaminationCheckAnswer({
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (sourceIntelligenceMultiSourceSetChatRequested) {
+    answer = buildSourceIntelligenceMultiSourceSetChatAnswer({
+      message,
       handoff,
       memory,
       policy,
@@ -5515,6 +5534,57 @@ function isSourceIntelligenceDynamicQuestion(message: string): boolean {
     normalized.includes("senza file");
 
   return sourceIntelligenceIntent && mythosRiskScope && dynamicQuestionIntent && noPersistenceBoundary;
+}
+
+function isSourceIntelligenceMultiSourceSetChatQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const explicitMultiSourceSetTest =
+    normalized.includes("source_intelligence_multi_sourceset_test") ||
+    normalized.includes("source intelligence multi sourceset test") ||
+    normalized.includes("source intelligence multi-source-set test") ||
+    normalized.includes("source_intelligence_multi_sourceset_chat") ||
+    normalized.includes("source_intelligence_multi_sourceset_chat_ready") ||
+    normalized.includes("source_intelligence_multi_sourceset") ||
+    normalized.includes("source intelligence multi sourceset") ||
+    normalized.includes("source intelligence multi-source-set") ||
+    normalized.includes("source-set registry") ||
+    normalized.includes("sourceset registry") ||
+    normalized.includes("sourceset=") ||
+    normalized.includes("source set=");
+
+  const registryScope =
+    normalized.includes("eu_ai_governance_regulatory_stack") ||
+    normalized.includes("anthropic_mythos_recursive_ai_risk") ||
+    normalized.includes("enisa_cyber_threat_landscape") ||
+    normalized.includes("ecb_financial_system_ai_cyber_risk") ||
+    normalized.includes("openai_agentic_systems_security") ||
+    normalized.includes("hbce_source_intelligence_layer-v0.3") ||
+    normalized.includes("sourceset_registry_multi_domain_b2g") ||
+    normalized.includes("source intelligence registry") ||
+    normalized.includes("source intelligence layer") ||
+    normalized.includes("/api/sources/summarize") ||
+    normalized.includes("/api/sources/search") ||
+    normalized.includes("/api/sources/fetch") ||
+    normalized.includes("/api/sources/verify") ||
+    normalized.includes("/api/sources/register");
+
+  const diagnosticBoundary =
+    normalized.includes("no_save") ||
+    normalized.includes("diagnostic_only") ||
+    normalized.includes("senza file") ||
+    normalized.includes("senza creare memoria") ||
+    normalized.includes("senza memoria semantica") ||
+    normalized.includes("non creare memoria") ||
+    normalized.includes("raw text persistence") ||
+    normalized.includes("rawtextpersistence") ||
+    normalized.includes("no raw persistence") ||
+    normalized.includes("source_intelligence_multi_sourceset_chat_ready");
+
+  return explicitMultiSourceSetTest && registryScope && diagnosticBoundary;
 }
 
 function isSourceIntelligenceMythosTestQuestion(message: string): boolean {
