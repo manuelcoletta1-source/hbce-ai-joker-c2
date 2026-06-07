@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const ROUTE_REVISION =
-  "HBCE-IPR-RUNTIME-API-v1-SOURCE_INTELLIGENCE-CONTRACT-v1.0";
+  "HBCE-IPR-RUNTIME-API-v1-SOURCE_INTELLIGENCE-CONTRACT-v1.0.1-TYPE_FIX";
 const API_VERSION = "v1";
 const PRODUCT_NAME = "HBCE IPR Operational Identity & Proof Layer";
 const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1";
@@ -234,16 +234,18 @@ function buildResponse(request: NextRequest): SourceIntelligenceResponse {
   const requestedSourceSet = normalizeSourceSet(requestUrl.searchParams.get("sourceSet"));
   const selectedSourceSet = findSourceSet(requestedSourceSet);
 
-  const selectedOrAll = selectedSourceSet ? [selectedSourceSet] : SOURCE_SET_CATALOG;
-  const defaultSourceCount = selectedOrAll.reduce(
+  const selectedOrAll: readonly SourceSetCatalogEntry[] = selectedSourceSet
+    ? [selectedSourceSet]
+    : SOURCE_SET_CATALOG;
+  const defaultSourceCount = selectedOrAll.reduce<number>(
     (total, sourceSet) => total + sourceSet.defaultSourceCount,
     0
   );
-  const sourcesSemanticTextReady = selectedOrAll.reduce(
+  const sourcesSemanticTextReady = selectedOrAll.reduce<number>(
     (total, sourceSet) => total + sourceSet.sourcesSemanticTextReady,
     0
   );
-  const pdfBinaryHashOnlySources = selectedOrAll.reduce(
+  const pdfBinaryHashOnlySources = selectedOrAll.reduce<number>(
     (total, sourceSet) => total + sourceSet.pdfBinaryHashOnlySources,
     0
   );
