@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const API_VERSION = "v1" as const;
-const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-AUDIT-LOOKUP-CONTRACT-v1.0" as const;
+const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-AUDIT-LOOKUP-CONTRACT-v1.0.1-NEXT15_DYNAMIC_PARAMS_FIX" as const;
 const PRODUCT_NAME = "HBCE IPR Operational Identity & Proof Layer" as const;
 const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1" as const;
 const DEFAULT_HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1" as const;
@@ -14,10 +14,6 @@ const OPC_BOUNDARY = "technical proof receipt only" as const;
 const AUDIT_BOUNDARY = "technical audit receipt only" as const;
 const IPR_CARD_BOUNDARY =
   "IPR Card is an internal operational identity certificate, not an official public identity document" as const;
-
-type RouteContext = {
-  params: Promise<{ auditId: string }> | { auditId: string };
-};
 
 function utcNow(): string {
   return new Date().toISOString();
@@ -180,10 +176,13 @@ function jsonResponse(payload: unknown, init?: ResponseInit) {
   });
 }
 
-export async function GET(_request: NextRequest, context: RouteContext) {
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ auditId: string }> }
+) {
   const nowIso = utcNow();
-  const params = await Promise.resolve(context.params);
-  const auditId = normalizeAuditId(params?.auditId);
+  const resolvedParams = await params;
+  const auditId = normalizeAuditId(resolvedParams?.auditId);
 
   if (!auditId) {
     return jsonResponse(
