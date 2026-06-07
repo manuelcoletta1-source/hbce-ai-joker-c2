@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const API_REVISION = "HBCE-IPR-RUNTIME-API-v1-OPENAPI-CONTRACT-v1.1-SURFACE_ALIGNMENT" as const;
+const API_REVISION = "HBCE-IPR-RUNTIME-API-v1-OPENAPI-CONTRACT-v1.1.1-SYNTAX_FIX" as const;
 const API_VERSION = "v1" as const;
 const PRODUCT_NAME = "HBCE IPR Operational Identity & Proof Layer" as const;
 const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1" as const;
@@ -938,8 +938,7 @@ const openApiDocument = {
             $ref: "#/components/schemas/Boundary"
           }
         }
-      }
-    },
+      },
       SourceIntelligenceResponse: {
         type: "object",
         properties: {
