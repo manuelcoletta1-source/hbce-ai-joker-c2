@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48-SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49-SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50-SOURCE_INTELLIGENCE_MULTI_SOURCESET_HARD_PREEMPT-v9_10_7_51-SOURCE_INTELLIGENCE_MULTI_SOURCESET_FINAL_ANSWER_PRIORITY-v9_10_7_52-SEMANTIC_MEMORY_RECALL_AND_DUPLICATION_GUARD-v9_10_7_53-SELECTIVE_LEARNING_DECISION_GUARD-v9_10_7_54-SEMANTIC_AUTHORIZED_CREATION_BYPASS-v9_10_7_55";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48-SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49-SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50-SOURCE_INTELLIGENCE_MULTI_SOURCESET_HARD_PREEMPT-v9_10_7_51-SOURCE_INTELLIGENCE_MULTI_SOURCESET_FINAL_ANSWER_PRIORITY-v9_10_7_52-SEMANTIC_MEMORY_RECALL_AND_DUPLICATION_GUARD-v9_10_7_53-SELECTIVE_LEARNING_DECISION_GUARD-v9_10_7_54-SEMANTIC_AUTHORIZED_CREATION_BYPASS-v9_10_7_55-SELECTIVE_AUTHORIZED_SEMANTIC_CREATION_GUARD-v9_10_7_56";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -2301,6 +2301,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !sourceIntelligenceProfileMemoryRecallRequested &&
     !sourceIntelligenceMythosTestRequested &&
     isSemanticMemoryRecallQuestion(message);
+  const selectiveAuthorizedSemanticCreationRequested =
+    !semanticMemoryDuplicationAuditRequested &&
+    !semanticMemoryRecallRequested &&
+    !sourceIntelligenceMultiSourceSetChatRequested &&
+    !sourceIntelligenceProfileMemoryRecallRequested &&
+    !sourceIntelligenceMythosTestRequested &&
+    isSelectiveAuthorizedSemanticCreationQuestion(message);
   const selectiveLearningDecisionRequested =
     !semanticMemoryDuplicationAuditRequested &&
     !semanticMemoryRecallRequested &&
@@ -3493,18 +3500,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     : semanticMemoryReadOnlyRequested
       ? safeAnswer
     : esoterologicalSemanticMemoryRequested
-      ? buildEsoterologicalSemanticMemoryAnswer({
-        record: esoterologicalSemanticMemory,
-        persistable: esoterologicalSemanticMemoryPersistable,
-        handoff,
-        memory,
-        policy,
-        saasContext,
-        evt,
-        opc,
-        auditAndUsage,
-        persistenceBridge
-      })
+      ? selectiveAuthorizedSemanticCreationRequested
+        ? buildSelectiveAuthorizedSemanticMemoryAnswer({
+            record: esoterologicalSemanticMemory,
+            persistable: esoterologicalSemanticMemoryPersistable,
+            handoff,
+            memory,
+            policy,
+            saasContext,
+            evt,
+            opc,
+            auditAndUsage,
+            persistenceBridge
+          })
+        : buildEsoterologicalSemanticMemoryAnswer({
+            record: esoterologicalSemanticMemory,
+            persistable: esoterologicalSemanticMemoryPersistable,
+            handoff,
+            memory,
+            policy,
+            saasContext,
+            evt,
+            opc,
+            auditAndUsage,
+            persistenceBridge
+          })
     : memoryRegistrationRequested
       ? buildMemoryRegistrationFinalAnswer({
           registeredEvent: registeredEventForPayload,
@@ -7526,6 +7546,32 @@ function isExplicitAuthorizedSemanticMemoryCreationQuestion(message: string): bo
 }
 
 
+function isSelectiveAuthorizedSemanticCreationQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+  const asksSelectiveAuthorizedCreation =
+    normalized.includes("test conversione selettiva autorizzata") ||
+    normalized.includes("conversione selettiva autorizzata") ||
+    normalized.includes("selective authorized semantic creation") ||
+    normalized.includes("crea un nuovo record semantico autorizzato");
+
+  const carriesSelectivePayload =
+    normalized.includes("excludeditem=b") ||
+    normalized.includes("escludi:") ||
+    normalized.includes("save_canonical") ||
+    normalized.includes("save_correction") ||
+    normalized.includes("correctionapplied=opc_not_legal_certification") ||
+    normalized.includes("opc_not_legal_certification") ||
+    normalized.includes("/api/v1") ||
+    normalized.includes("primo contratto pubblico b2b/b2g");
+
+  return isExplicitAuthorizedSemanticMemoryCreationQuestion(message) && asksSelectiveAuthorizedCreation && carriesSelectivePayload;
+}
+
+
 function isSelectiveLearningDecisionQuestion(message: string): boolean {
   if (!message.trim()) {
     return false;
@@ -7986,6 +8032,122 @@ function buildEsoterologicalSemanticMemoryPreparationAnswer(
   ].join("\n");
 }
 
+
+
+function buildSelectiveAuthorizedSemanticMemoryAnswer(args: {
+  record: EsoterologicalSemanticMemoryRecord;
+  persistable: boolean;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+  evt: EvtRecord;
+  opc: OpcProofRecord;
+  auditAndUsage: { audit: JsonObject; modelUsage: JsonObject };
+  persistenceBridge: RuntimePersistenceBridgeResult;
+}): string {
+  const activatedTerms = args.record.corpus.activatedTerms.map((term) => ({
+    n: term.n,
+    term: term.term,
+    score: term.score,
+    matchedSignals: term.matchedSignals
+  }));
+
+  const selectiveConversion = {
+    guardRevision: "SELECTIVE_AUTHORIZED_SEMANTIC_CREATION_GUARD-v9_10_7_56",
+    mode: "AUTHORIZED_SELECTIVE_SEMANTIC_RECORD_CREATION",
+    canonicalItems: ["A", "C", "E", "F"],
+    correctiveItem: "D",
+    excludedItem: "B",
+    excludedReason: "Temporary personal state without stable operational threshold.",
+    correctionApplied: "OPC_NOT_LEGAL_CERTIFICATION",
+    correctedBoundary: "OPC=technical proof receipt only; legalCertification=false",
+    sourceClassification: {
+      A: "SAVE_CANONICAL — continuity through IPR-bound memory, document memory, semantic memory, EVT, OPC and governed recall.",
+      B: "DO_NOT_SAVE — temporary personal state excluded from canonical memory.",
+      C: "SAVE_CANONICAL — qualitative memory stores verifiable synthesis, not raw text.",
+      D: "SAVE_CORRECTION — OPC is not official legal certification; it is a technical proof receipt only.",
+      E: "SAVE_CANONICAL — duplicated semantic records must be audited before generating new SEM-* memory.",
+      F: "SAVE_CANONICAL — /api/v1 exposes the first public B2B/B2G contract of HBCE IPR Runtime API."
+    }
+  };
+
+  const syntheticRecord = {
+    memoryId: args.record.memoryId,
+    ipr: args.record.ipr,
+    source: args.record.source,
+    semantic: {
+      ...args.record.semantic,
+      selectiveAuthorizedSynthesis:
+        "AI JOKER-C2 mantiene continuità tramite memoria IPR-bound, memoria documentale, memoria semantica, EVT, OPC e recall governato. La memoria qualitativa salva sintesi verificabili, non testo grezzo. I duplicati SEM-* vanno auditati prima di generare nuova memoria. /api/v1 è superficie pubblica B2B/B2G del runtime HBCE. L'elemento B è escluso perché temporaneo. La formulazione OPC viene corretta: non certificazione legale ufficiale, ma technical proof receipt only; legalCertification=false."
+    },
+    corpus: {
+      activatedTerms,
+      primaryAxis: args.record.corpus.primaryAxis,
+      volumeRefs: args.record.corpus.volumeRefs
+    },
+    selectiveConversion,
+    alienCode: args.record.alienCode,
+    rascensional: args.record.rascensional,
+    policy: args.record.policy,
+    runtime: {
+      entity: RUNTIME_ENTITY,
+      access: args.handoff.accessDecision,
+      matrix: args.handoff.matrixState,
+      memory: args.memory.scope,
+      persistenceMode: args.memory.persistenceMode,
+      persistenceStatus: args.memory.persistenceStatus,
+      tenantId: args.saasContext.tenantId,
+      workspaceId: args.saasContext.workspaceId,
+      policyDecision: args.policy.decision,
+      operationDecision: args.policy.operationDecision,
+      evtPersistenceStatus: stringPath(args.persistenceBridge.evtPersistence, "status", "UNKNOWN"),
+      opcPersistenceStatus: stringPath(args.persistenceBridge.opcPersistence, "status", "UNKNOWN"),
+      auditId: stringPath(args.auditAndUsage.audit, "auditId", "NO_AUDIT_ID"),
+      usageId: stringPath(args.auditAndUsage.modelUsage, "usageId", "NO_USAGE_ID"),
+      legalCertification: false
+    }
+  };
+
+  return [
+    "MEMORIA SEMANTICA ESOTEROLOGICA API CHAT — record generato.",
+    "selectiveAuthorizedSemanticCreationGuardRevision=SELECTIVE_AUTHORIZED_SEMANTIC_CREATION_GUARD-v9_10_7_56",
+    "mode=AUTHORIZED_SELECTIVE_SEMANTIC_RECORD_CREATION",
+    "canonicalItems=A,C,E,F",
+    "correctiveItem=D",
+    "excludedItem=B",
+    "correctionApplied=OPC_NOT_LEGAL_CERTIFICATION",
+    "correctedBoundary=OPC=technical proof receipt only; legalCertification=false",
+    "apiV1PublicContract=HBCE IPR Runtime API v1 public B2B/B2G contract surface",
+    "semanticContinuity=IPR_BOUND_MEMORY + DOCUMENT_MEMORY + SEMANTIC_MEMORY + EVT + OPC + GOVERNED_RECALL",
+    "antiDuplicationRule=audit duplicated SEM-* records before generating new semantic memory",
+    "excludedReason=B is a temporary personal state and is not stored as canonical memory.",
+    "",
+    "Formula canonica:",
+    getCanonicalSemanticMemoryFormula(),
+    "",
+    "Definizione:",
+    getCanonicalSemanticMemoryDefinition(),
+    "",
+    "activatedTerms:",
+    JSON.stringify(activatedTerms, null, 2),
+    "",
+    "semantic.quality: " + args.record.semantic.quality,
+    "rascensional.continuityGain: " + args.record.rascensional.continuityGain,
+    "rascensional.thresholdDetected: " + String(args.record.rascensional.thresholdDetected),
+    "alienCode.couplingState: " + args.record.alienCode.couplingState,
+    "policy.saveRaw: " + String(args.record.policy.saveRaw),
+    "policy.saveSynthesis: " + String(args.record.policy.saveSynthesis),
+    "policy.reusableInPrompt: " + String(args.record.policy.reusableInPrompt),
+    "persistable: " + String(args.persistable),
+    "EVT: " + args.evt.id,
+    "OPC: " + args.opc.id,
+    "Boundary: OPC is a technical proof receipt only; legalCertification=false",
+    "",
+    "record semantico sintetico JSON:",
+    JSON.stringify(syntheticRecord, null, 2)
+  ].join("\n");
+}
 
 
 function buildEsoterologicalSemanticMemoryAnswer(args: {
