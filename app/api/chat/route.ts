@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48-SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49-SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50-SOURCE_INTELLIGENCE_MULTI_SOURCESET_HARD_PREEMPT-v9_10_7_51-SOURCE_INTELLIGENCE_MULTI_SOURCESET_FINAL_ANSWER_PRIORITY-v9_10_7_52-SEMANTIC_MEMORY_RECALL_AND_DUPLICATION_GUARD-v9_10_7_53-SELECTIVE_LEARNING_DECISION_GUARD-v9_10_7_54-SEMANTIC_AUTHORIZED_CREATION_BYPASS-v9_10_7_55-SELECTIVE_AUTHORIZED_SEMANTIC_CREATION_GUARD-v9_10_7_56-SEMANTIC_MEMORY_GOVERNANCE_REGRESSION_GUARD-v9_10_7_57-API_V1_CHAT_BRIDGE_REGRESSION_GUARD-v9_10_7_58-GLOBAL_FINAL_REGRESSION_AUDIT_GUARD-v9_10_7_59-API_V1_PUBLIC_SURFACE_SELF_TEST_ALIAS_GUARD-v9_10_7_61-API_V1_PUBLIC_SURFACE_SELF_TEST_PRODUCT_PREEMPT-v9_10_7_62-API_V1_SOURCE_INTELLIGENCE_CONTRACT_GUARD-v9_10_7_63-API_V1_OPENAPI_CONTRACT_GUARD-v9_10_7_64-API_V1_HEALTH_CONTRACT_GUARD-v9_10_7_65-API_V1_CAPABILITIES_CONTRACT_GUARD-v9_10_7_66-API_V1_ROOT_DISCOVERY_CONTRACT_GUARD-v9_10_7_67-API_V1_IPR_SESSION_CONTRACT_GUARD-v9_10_7_68-API_V1_IPR_SESSION_LOOKUP_CONTRACT_GUARD-v9_10_7_69-API_V1_FILES_CONTRACT_GUARD-v9_10_7_70-API_V1_OPERATIONS_CONTRACT_GUARD-v9_10_7_71-API_V1_OPERATION_LOOKUP_CONTRACT_GUARD-v9_10_7_72-API_V1_EVENTS_CONTRACT_GUARD-v9_10_7_73-API_V1_OPC_LOOKUP_CONTRACT_GUARD-v9_10_7_74-API_V1_AUDIT_LOOKUP_CONTRACT_GUARD-v9_10_7_75";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48-SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49-SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50-SOURCE_INTELLIGENCE_MULTI_SOURCESET_HARD_PREEMPT-v9_10_7_51-SOURCE_INTELLIGENCE_MULTI_SOURCESET_FINAL_ANSWER_PRIORITY-v9_10_7_52-SEMANTIC_MEMORY_RECALL_AND_DUPLICATION_GUARD-v9_10_7_53-SELECTIVE_LEARNING_DECISION_GUARD-v9_10_7_54-SEMANTIC_AUTHORIZED_CREATION_BYPASS-v9_10_7_55-SELECTIVE_AUTHORIZED_SEMANTIC_CREATION_GUARD-v9_10_7_56-SEMANTIC_MEMORY_GOVERNANCE_REGRESSION_GUARD-v9_10_7_57-API_V1_CHAT_BRIDGE_REGRESSION_GUARD-v9_10_7_58-GLOBAL_FINAL_REGRESSION_AUDIT_GUARD-v9_10_7_59-API_V1_PUBLIC_SURFACE_SELF_TEST_ALIAS_GUARD-v9_10_7_61-API_V1_PUBLIC_SURFACE_SELF_TEST_PRODUCT_PREEMPT-v9_10_7_62-API_V1_SOURCE_INTELLIGENCE_CONTRACT_GUARD-v9_10_7_63-API_V1_OPENAPI_CONTRACT_GUARD-v9_10_7_64-API_V1_HEALTH_CONTRACT_GUARD-v9_10_7_65-API_V1_CAPABILITIES_CONTRACT_GUARD-v9_10_7_66-API_V1_ROOT_DISCOVERY_CONTRACT_GUARD-v9_10_7_67-API_V1_IPR_SESSION_CONTRACT_GUARD-v9_10_7_68-API_V1_IPR_SESSION_LOOKUP_CONTRACT_GUARD-v9_10_7_69-API_V1_FILES_CONTRACT_GUARD-v9_10_7_70-API_V1_OPERATIONS_CONTRACT_GUARD-v9_10_7_71-API_V1_OPERATION_LOOKUP_CONTRACT_GUARD-v9_10_7_72-API_V1_EVENTS_CONTRACT_GUARD-v9_10_7_73-API_V1_OPC_LOOKUP_CONTRACT_GUARD-v9_10_7_74-API_V1_AUDIT_LOOKUP_CONTRACT_GUARD-v9_10_7_75-API_V1_MODEL_USAGE_LOOKUP_CONTRACT_GUARD-v9_10_7_76";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -2266,6 +2266,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     isApiV1AuditLookupContractQuestion(message);
+  const apiV1ModelUsageLookupContractRequested =
+    !globalFinalRegressionAuditRequested &&
+    !apiV1RootDiscoveryContractRequested &&
+    !apiV1IprSessionLookupContractRequested &&
+    !apiV1IprSessionContractRequested &&
+    !apiV1FilesContractRequested &&
+    !apiV1OperationLookupContractRequested &&
+    !apiV1OperationsContractRequested &&
+    !apiV1EventsContractRequested &&
+    !apiV1OpcLookupContractRequested &&
+    !apiV1AuditLookupContractRequested &&
+    isApiV1ModelUsageLookupContractQuestion(message);
   const apiV1HealthContractRequested =
     !globalFinalRegressionAuditRequested &&
     !apiV1RootDiscoveryContractRequested &&
@@ -2277,6 +2289,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     isApiV1HealthContractQuestion(message);
   const apiV1CapabilitiesContractRequested =
     !globalFinalRegressionAuditRequested &&
@@ -2289,6 +2302,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     isApiV1CapabilitiesContractQuestion(message);
   const apiV1OpenApiContractRequested =
@@ -2302,6 +2316,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     isApiV1OpenApiContractQuestion(message);
@@ -2316,6 +2331,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2331,6 +2347,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2347,6 +2364,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2363,6 +2381,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2379,6 +2398,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2477,6 +2497,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2496,6 +2517,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2515,6 +2537,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2536,6 +2559,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2558,6 +2582,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2580,6 +2605,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2650,6 +2676,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     apiV1EventsContractRequested ||
     apiV1OpcLookupContractRequested ||
           apiV1AuditLookupContractRequested ||
+          apiV1ModelUsageLookupContractRequested ||
     apiV1HealthContractRequested ||
     apiV1CapabilitiesContractRequested ||
     apiV1OpenApiContractRequested ||
@@ -2749,6 +2776,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1SourceIntelligenceContractRequested &&
     !apiV1ChatBridgeRegressionRequested &&
@@ -2793,6 +2821,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2813,6 +2842,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     !apiV1EventsContractRequested &&
     !apiV1OpcLookupContractRequested &&
     !apiV1AuditLookupContractRequested &&
+    !apiV1ModelUsageLookupContractRequested &&
     !apiV1HealthContractRequested &&
     !apiV1CapabilitiesContractRequested &&
     !apiV1OpenApiContractRequested &&
@@ -2866,6 +2896,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           apiV1EventsContractRequested ||
           apiV1OpcLookupContractRequested ||
           apiV1AuditLookupContractRequested ||
+          apiV1ModelUsageLookupContractRequested ||
           apiV1SourceIntelligenceContractRequested ||
           sourceIntelligenceMultiSourceSetChatRequested ||
           sourceIntelligenceMythosTestRequested ||
@@ -2882,6 +2913,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           apiV1EventsContractRequested ||
           apiV1OpcLookupContractRequested ||
           apiV1AuditLookupContractRequested ||
+          apiV1ModelUsageLookupContractRequested ||
           apiV1SourceIntelligenceContractRequested ||
           sourceIntelligenceMultiSourceSetChatRequested ||
           sourceIntelligenceMythosTestRequested ||
@@ -3140,6 +3172,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (apiV1AuditLookupContractRequested) {
     answer = buildApiV1AuditLookupContractAnswer({
+      message,
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (apiV1ModelUsageLookupContractRequested) {
+    answer = buildApiV1ModelUsageLookupContractAnswer({
       message,
       handoff,
       memory,
@@ -4083,6 +4125,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           apiV1EventsContractRequested ||
           apiV1OpcLookupContractRequested ||
           apiV1AuditLookupContractRequested ||
+          apiV1ModelUsageLookupContractRequested ||
           apiV1SourceIntelligenceContractRequested ||
           sourceIntelligenceMultiSourceSetChatRequested ||
           sourceIntelligenceProfileMemoryRecallRequested ||
@@ -9027,6 +9070,187 @@ function buildApiV1AuditLookupContractAnswer(args: {
     "policyDecisionField=PUBLIC_CONTRACT_DESCRIPTOR_ONLY",
     "auditTimestampField=PUBLIC_CONTRACT_DESCRIPTOR_ONLY",
     "usageReferenceField=PUBLIC_CONTRACT_DESCRIPTOR_ONLY",
+    "legalCertificationFalseField=PUBLIC_CONTRACT_DESCRIPTOR_ONLY",
+    "",
+    "3. Policy memoria",
+    "automaticIprMemory=false",
+    "automaticSemanticMemory=false",
+    "semanticMemoryCreated=false",
+    "semanticMemoryPersistable=false",
+    "semanticMemoryReusableInPrompt=false",
+    "noNewSemanticMemory=true",
+    "noNewSemanticMemoryPersistable=true",
+    "noNewIprMemory=true",
+    "runtimeMemoryWriteSuppressed=true",
+    "policy.saveRaw=false",
+    "policy.saveSynthesis=false",
+    "policy.reusableInPrompt=false",
+    "",
+    "4. Esecuzione rami bloccata",
+    "sourceLiveFetchTriggered=false",
+    "sourceIntelligenceBranchExecuted=false",
+    "sourceProfileSaveTriggered=false",
+    "apiV1ChatBridgeBranchExecuted=false",
+    "semanticGeneratorExecuted=false",
+    "documentIngestionTriggered=false",
+    "documentRecallTriggered=false",
+    "saveChatTriggered=false",
+    "",
+    "5. Runtime context",
+    "Human IPR: " + args.handoff.humanIpr,
+    "Runtime IPR: " + RUNTIME_IPR,
+    "Identity binding: " + args.handoff.identityBinding,
+    "Runtime memory ID: " + args.memory.memoryId,
+    "Memory scope: " + args.memory.scope,
+    "Tenant: " + args.saasContext.tenantId,
+    "Workspace: " + args.saasContext.workspaceId,
+    "Policy: " + args.policy.decision + " / " + args.policy.operationDecision,
+    "failReason=NONE",
+    "",
+    "6. Boundary",
+    "legalCertification=false",
+    "OPC=technical proof receipt only",
+    "IPR=operational identity/proof layer only",
+    "EVT=technical event trace only",
+    "HBCE/JOKER-C2=runtime governance and audit-ready infrastructure, not public authority, not legal certifier"
+  ].join("\n");
+}
+
+
+function isApiV1ModelUsageLookupContractQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  const explicitModelUsageLookupIntent =
+    normalized.includes("test api v1 model usage lookup contract") ||
+    normalized.includes("api v1 model usage lookup contract") ||
+    normalized.includes("hbce_api_v1_model_usage_lookup_contract_ready") ||
+    normalized.includes("api_v1_model_usage_lookup_contract") ||
+    normalized.includes("model usage lookup contract") ||
+    normalized.includes("modelusagelookupcontract=pass") ||
+    normalized.includes("lookup model usage") ||
+    normalized.includes("lookup pubblico model usage") ||
+    normalized.includes("contratto pubblico di lookup model usage") ||
+    normalized.includes("contratto pubblico lookup model usage") ||
+    normalized.includes("lookup model-usage") ||
+    normalized.includes("usage lookup contract") ||
+    normalized.includes("model usage") ||
+    normalized.includes("lookupmode=contract_descriptor_only");
+
+  const dynamicModelUsageLookupEndpoint =
+    /\/api\/v1\/model-usage\/[a-z0-9_{}:-]+/.test(normalized) ||
+    /\/v1\/model-usage\/[a-z0-9_{}:-]+/.test(normalized);
+
+  const targetsModelUsageLookupEndpoint =
+    normalized.includes("endpoint=/api/v1/model-usage/{usageid}") ||
+    normalized.includes("endpoint=/v1/model-usage/{usageid}") ||
+    normalized.includes("get /api/v1/model-usage/{usageid}") ||
+    normalized.includes("get /v1/model-usage/{usageid}") ||
+    normalized.includes("/api/v1/model-usage/{usageid}") ||
+    normalized.includes("/v1/model-usage/{usageid}") ||
+    dynamicModelUsageLookupEndpoint;
+
+  const explicitlyGetModelUsageLookup =
+    normalized.includes("method=get") ||
+    normalized.includes("method: get") ||
+    normalized.includes("get /api/v1/model-usage") ||
+    normalized.includes("get /v1/model-usage");
+
+  const contractOnlyBoundary =
+    normalized.includes("contract-only") ||
+    normalized.includes("contract only") ||
+    normalized.includes("contractmode=public_api_surface") ||
+    normalized.includes("publiccontract=true") ||
+    normalized.includes("publicsurface=hbce_ipr_runtime_api_v1") ||
+    normalized.includes("contratto pubblico") ||
+    normalized.includes("superficie pubblica");
+
+  const modelUsageLookupFields =
+    normalized.includes("modelusagelookupcontract=pass") ||
+    normalized.includes("lookupmode=contract_descriptor_only") ||
+    normalized.includes("includesusageidparam=true") ||
+    normalized.includes("usage id") ||
+    normalized.includes("usageidparam") ||
+    normalized.includes("includeshumaniprfield=true") ||
+    normalized.includes("includesruntimeiprfield=true") ||
+    normalized.includes("includesmodelfield=true") ||
+    normalized.includes("model field") ||
+    normalized.includes("model usage field") ||
+    normalized.includes("includestokenusagefield=true") ||
+    normalized.includes("token usage") ||
+    normalized.includes("includescostoraccountingfield=true") ||
+    normalized.includes("cost or accounting") ||
+    normalized.includes("accounting field") ||
+    normalized.includes("includesauditreferencefield=true") ||
+    normalized.includes("audit reference") ||
+    normalized.includes("auditreferencefield");
+
+  const blocksOperationalBranches =
+    normalized.includes("senza eseguire /api/chat") ||
+    normalized.includes("senza creare memoria semantica") ||
+    normalized.includes("senza memoria") ||
+    normalized.includes("senza source intelligence operativo") ||
+    normalized.includes("senza ingestion") ||
+    normalized.includes("senza recall") ||
+    normalized.includes("sourceintelligencebranchexecuted=false") ||
+    normalized.includes("apiv1chatbridgebranchexecuted=false") ||
+    normalized.includes("semanticgeneratorexecuted=false") ||
+    normalized.includes("documentingestiontriggered=false") ||
+    normalized.includes("documentrecalltriggered=false") ||
+    normalized.includes("senza file");
+
+  return targetsModelUsageLookupEndpoint && explicitModelUsageLookupIntent && explicitlyGetModelUsageLookup && contractOnlyBoundary && modelUsageLookupFields && blocksOperationalBranches;
+}
+
+function buildApiV1ModelUsageLookupContractAnswer(args: {
+  message: string;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  void args.message;
+
+  return [
+    "HBCE_API_V1_MODEL_USAGE_LOOKUP_CONTRACT_READY",
+    "apiV1ModelUsageLookupContractRevision=API_V1_MODEL_USAGE_LOOKUP_CONTRACT_GUARD-v9_10_7_76",
+    "mode=PUBLIC_API_V1_MODEL_USAGE_LOOKUP_CONTRACT_ONLY_NO_BRANCH_EXECUTION",
+    "endpoint=/api/v1/model-usage/{usageId}",
+    "method=GET",
+    "apiVersion=v1",
+    "publicContract=true",
+    "target=B2B/B2G",
+    "contractMode=PUBLIC_API_SURFACE",
+    "modelUsageLookupContract=PASS",
+    "lookupMode=CONTRACT_DESCRIPTOR_ONLY",
+    "includesUsageIdParam=true",
+    "includesHumanIprField=true",
+    "includesRuntimeIprField=true",
+    "includesModelField=true",
+    "includesTokenUsageField=true",
+    "includesCostOrAccountingField=true",
+    "includesAuditReferenceField=true",
+    "finalVerdict=PASS",
+    "",
+    "1. Model usage lookup contract",
+    "GET /api/v1/model-usage/{usageId} = PASS",
+    "contractPurpose=Expose public model usage lookup contract without executing /api/chat, Source Intelligence, semantic memory, document ingestion or document recall.",
+    "publicSurface=HBCE_IPR_RUNTIME_API_V1",
+    "modelUsageLookupSurface=PUBLIC_MODEL_USAGE_LOOKUP_DESCRIPTOR_ONLY",
+    "lookupMode=CONTRACT_DESCRIPTOR_ONLY",
+    "operationalExecution=false",
+    "",
+    "2. Model usage lookup contract fields",
+    "usageIdParam=PUBLIC_CONTRACT_DESCRIPTOR_ONLY",
+    "humanIprField=PUBLIC_CONTRACT_DESCRIPTOR_ONLY",
+    "runtimeIprField=PUBLIC_CONTRACT_DESCRIPTOR_ONLY",
+    "modelField=PUBLIC_CONTRACT_DESCRIPTOR_ONLY",
+    "tokenUsageField=PUBLIC_CONTRACT_DESCRIPTOR_ONLY",
+    "costOrAccountingField=PUBLIC_CONTRACT_DESCRIPTOR_ONLY",
+    "auditReferenceField=PUBLIC_CONTRACT_DESCRIPTOR_ONLY",
     "legalCertificationFalseField=PUBLIC_CONTRACT_DESCRIPTOR_ONLY",
     "",
     "3. Policy memoria",
