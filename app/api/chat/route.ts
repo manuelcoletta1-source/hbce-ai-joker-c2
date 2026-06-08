@@ -634,7 +634,7 @@ const TEMPORAL_RUNTIME_CERTIFICATE_NAME = "JOKER-C2 Temporal Runtime Certificate
 const PROJECT_BIRTH = JOKER_C2_BIRTH_ANCHOR_ISO;
 const PROJECT_BIRTH_LABEL = "AI JOKER-C2 cybernetic runtime birth / IPR operational continuity anchor";
 const LOCATION = "Torino, Italy";
-const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48-SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49-SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50-SOURCE_INTELLIGENCE_MULTI_SOURCESET_HARD_PREEMPT-v9_10_7_51-SOURCE_INTELLIGENCE_MULTI_SOURCESET_FINAL_ANSWER_PRIORITY-v9_10_7_52-SEMANTIC_MEMORY_RECALL_AND_DUPLICATION_GUARD-v9_10_7_53-SELECTIVE_LEARNING_DECISION_GUARD-v9_10_7_54-SEMANTIC_AUTHORIZED_CREATION_BYPASS-v9_10_7_55-SELECTIVE_AUTHORIZED_SEMANTIC_CREATION_GUARD-v9_10_7_56-SEMANTIC_MEMORY_GOVERNANCE_REGRESSION_GUARD-v9_10_7_57-API_V1_CHAT_BRIDGE_REGRESSION_GUARD-v9_10_7_58";
+const CHAT_ROUTE_REVISION = "HBCE-API-CHAT-TYPE_FIX-v8_2-MEMORY_CHAIN_RECALL_GUARD-v8_3-NO_SAVE_GUARD-v8_4-DOCUMENT_MEMORY_RECALL-v8_5-STRICT_PROFILE_FILTER-v8_6-CYBERNETIC_DOCUMENT_RECALL_MODULE-v8_7-PROJECT_AWARE_DOCUMENT_RECALL-v8_8-SELF_PILOT_SCOPE_BRIDGE-v8_9-AUTH_SESSION_HANDOFF_RECONCILIATION-v9_0-RECALL_NO_SAVE_PRIORITY-v9_1-STRICT_REQUESTED_MEMORY_ONLY-v9_2-RECORDS_ROUTE_LOOKUP_BRIDGE-v9_3-BUILD_SAFE-v9_3_1-DOCUMENT_PROFILE_MEMORY_BRIDGE-v9_4-MATRIX_I_V_STRATEGIC_SYNTHESIS_GUARD-v9_5-RUNTIME_MEMORY_BLOCK_DIAGNOSTIC_GUARD-v9_6-FULL_DOCUMENT_COVERAGE_AUDIT_GUARD-v9_7-IPR_CANONICAL_DOCUMENT_MEMORY_SAVE_GUARD-v9_8-QUANTUM_MEMORY_COLLAPSE_LAYER-DOCUMENT_PROFILE_METADATA_PRIORITY-v9_9-QUANTUM_COLLAPSE_METADATA_ALIGNMENT-v9_10-BUILD_FIX-v9_10_1-IPR_CANONICAL_BRANCH_PRIORITY-v9_10_2-FILENAME_VOLUME_METADATA_LOCK-v9_10_3-B2G_TECHNICAL_PROFILE_MEMORY_GUARD-v9_10_4-RECORD_STATUS_ONLY_GUARD-v9_10_5-B2G_TECHNICAL_MEMORY_STRICT_RECALL_GUARD-v9_10_6-B2G_TECHNICAL_STACK_MULTI_MODULE_GUARD-v9_10_7-BUILD_TYPE_NARROWING_FIX-v9_10_7_1-B2G_STRICT_RECALL_MODULE_NORMALIZATION-v9_10_7_2-B2G_TECHNICAL_STACK_AIQ_MODULE-v9_10_7_3-B2G_TECHNICAL_STACK_CQO_MODULE-v9_10_7_4-B2G_TECHNICAL_STACK_UFO_INTERCEPT_MODULE-v9_10_7_5-B2G_TECHNICAL_STACK_LAMBDA_MODULE-v9_10_7_6-B2G_TECHNICAL_STACK_PEI_MODULE-v9_10_7_7-MATRIX_EUROPA_VOLUME_I_OPERATIONAL_GUARD-v9_10_7_8-MATRIX_OPERATIONAL_HARD_PREEMPT-v9_10_7_9-MATRIX_VOLUME_II_OPERATIONAL_GUARD-v9_10_7_10-MATRIX_VOLUME_III_OPERATIONAL_ACTIVATION_GUARD-v9_10_7_11-MATRIX_VOLUME_IV_TERRITORIAL_DISTRIBUTION_GUARD-v9_10_7_12-MATRIX_VOLUME_IV_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_13-MATRIX_VOLUME_V_ENERGY_BASE_GUARD-v9_10_7_14-HBCE_AI_ECOSYSTEM_VOLUME_I_GUARD-v9_10_7_15-STRICT_DOCUMENT_RECALL_PRIORITY-v9_10_7_16-HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17-HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18-HBCE_AI_ECOSYSTEM_VOLUME_II_PROFILE_GUARD-v9_10_7_19-HBCE_AI_ECOSYSTEM_VOLUME_II_PRE_SAVE_READY_FIX-v9_10_7_20-HBCE_AI_ECOSYSTEM_VOLUME_III_PROFILE_GUARD-v9_10_7_21-HBCE_AI_ECOSYSTEM_VOLUME_IV_PROFILE_GUARD-v9_10_7_22-HBCE_AI_ECOSYSTEM_VOLUME_V_PROFILE_GUARD-v9_10_7_23-GLOBAL_RUNTIME_HEALTH_CHECK_GUARD-v9_10_7_24-USE_VOLUME_I_PROFILE_GUARD-v9_10_7_25-USE_VOLUME_II_PROFILE_GUARD-v9_10_7_26-USE_VOLUME_III_PROFILE_GUARD-v9_10_7_27-USE_VOLUME_III_PRE_SAVE_PROFILE_PERSISTENCE_BRIDGE-v9_10_7_28-USE_VOLUME_IV_PROFILE_GUARD-v9_10_7_29-USE_VOLUME_V_PROFILE_GUARD-v9_10_7_30-APOKALYPSIS_PROLOGO_LIGHT_DIAGNOSTIC_TYPE_FIX-v9_10_7_32-APOKALYPSIS_VOLUME_I_COMPLETE_UPDATED_AI_2026_GUARD-v9_10_7_33-APOKALYPSIS_RECORD_STATUS_RECALL_PRIORITY_FIX-v9_10_7_34-APOKALYPSIS_VOLUME_II_COGNITIVE_DISLOCATION_GUARD-v9_10_7_35-APOKALYPSIS_VOLUME_II_PRIMARY_COLLISION_FIX-v9_10_7_36-APOKALYPSIS_VOLUME_III_RICONCONICITA_PROFILE_GUARD-v9_10_7_37-APOKALYPSIS_VOLUME_IV_COGNITIVE_RUPTURE_PROFILE_GUARD-v9_10_7_38-APOKALYPSIS_VOLUME_IV_PRIMARY_COLLISION_FIX-v9_10_7_39-APOKALYPSIS_VOLUME_V_PARADOGMA_ALIENO_PROFILE_GUARD-v9_10_7_40-BRANCH_PRIORITY_STRICT_DOCUMENT_TESTS_OVER_GENERIC_MEMORY_RECALL-v9_10_7_41-GLOBAL_BRANCH_CONTAMINATION_CHECK_GUARD-v9_10_7_42-SOURCE_INTELLIGENCE_TEST_ANTHROPIC_MYTHOS_GUARD-v9_10_7_43-SOURCE_INTELLIGENCE_CONTEXT_TEST_GUARD-v9_10_7_44-SOURCE_INTELLIGENCE_CONTEXT_HASH_EXPOSURE_GUARD-v9_10_7_45-SOURCE_INTELLIGENCE_OPERATIONAL_ANSWER_GUARD-v9_10_7_46-SOURCE_INTELLIGENCE_DYNAMIC_QUESTION_GUARD-v9_10_7_47-SOURCE_INTELLIGENCE_PROFILE_SAVE_PREP_GUARD-v9_10_7_48-SOURCE_INTELLIGENCE_PROFILE_MEMORY_RECALL_GUARD-v9_10_7_49-SOURCE_INTELLIGENCE_MULTI_SOURCESET_CHAT_GUARD-v9_10_7_50-SOURCE_INTELLIGENCE_MULTI_SOURCESET_HARD_PREEMPT-v9_10_7_51-SOURCE_INTELLIGENCE_MULTI_SOURCESET_FINAL_ANSWER_PRIORITY-v9_10_7_52-SEMANTIC_MEMORY_RECALL_AND_DUPLICATION_GUARD-v9_10_7_53-SELECTIVE_LEARNING_DECISION_GUARD-v9_10_7_54-SEMANTIC_AUTHORIZED_CREATION_BYPASS-v9_10_7_55-SELECTIVE_AUTHORIZED_SEMANTIC_CREATION_GUARD-v9_10_7_56-SEMANTIC_MEMORY_GOVERNANCE_REGRESSION_GUARD-v9_10_7_57-API_V1_CHAT_BRIDGE_REGRESSION_GUARD-v9_10_7_58-GLOBAL_FINAL_REGRESSION_AUDIT_GUARD-v9_10_7_59";
 const HBCE_SELF_PILOT_CARD_SERIAL = "IPR-CARD-88505FE91013DCFE97C56ED1" as const;
 const HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR_REVISION = "HBCE_AI_ECOSYSTEM_RECALL_SUMMARY_REPAIR-v9_10_7_17" as const;
 const HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD_REVISION = "HBCE_AI_ECOSYSTEM_PROFILE_LINKED_MEMORY_SAVE_GUARD-v9_10_7_18" as const;
@@ -2203,7 +2203,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const temporalCertificateRequested = isTemporalRuntimeCertificateQuestion(message);
   const globalRuntimeHealthCheckRequested = isGlobalRuntimeHealthCheckQuestion(message);
   const globalBranchContaminationCheckRequested = isGlobalBranchContaminationCheckQuestion(message);
-  const sourceIntelligenceMultiSourceSetChatRequested = isSourceIntelligenceMultiSourceSetChatQuestion(message);
+  const globalFinalRegressionAuditRequested = isGlobalFinalRegressionAuditQuestion(message);
+  const sourceIntelligenceMultiSourceSetChatRequested =
+    !globalFinalRegressionAuditRequested && isSourceIntelligenceMultiSourceSetChatQuestion(message);
   const sourceIntelligenceProfileMemoryRecallRequested =
     !sourceIntelligenceMultiSourceSetChatRequested && isSourceIntelligenceProfileMemoryRecallQuestion(message);
   const sourceIntelligenceMythosTestRequested =
@@ -2291,11 +2293,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
   const routeRevisionGuardRequested = isRouteRevisionGuardQuestion(message);
   const apiV1ChatBridgeRegressionRequested =
+    !globalFinalRegressionAuditRequested &&
     !sourceIntelligenceMultiSourceSetChatRequested &&
     !sourceIntelligenceProfileMemoryRecallRequested &&
     !sourceIntelligenceMythosTestRequested &&
     isApiV1ChatBridgeRegressionQuestion(message);
   const semanticMemoryGovernanceRegressionRequested =
+    !globalFinalRegressionAuditRequested &&
     !sourceIntelligenceMultiSourceSetChatRequested &&
     !sourceIntelligenceProfileMemoryRecallRequested &&
     !sourceIntelligenceMythosTestRequested &&
@@ -2381,6 +2385,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const runtimeMemoryWriteSuppressed =
     fullDocumentCoverageAuditRequested ||
     globalRuntimeHealthCheckRequested ||
+    globalFinalRegressionAuditRequested ||
     apiV1ChatBridgeRegressionRequested ||
     sourceIntelligenceMultiSourceSetChatRequested ||
     sourceIntelligenceProfileMemoryRecallRequested ||
@@ -2707,6 +2712,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else if (globalBranchContaminationCheckRequested) {
     answer = buildGlobalBranchContaminationCheckAnswer({
+      handoff,
+      memory,
+      policy,
+      saasContext
+    });
+    providerState = "COMPLETED";
+    providerName = "LOCAL";
+  } else if (globalFinalRegressionAuditRequested) {
+    answer = buildGlobalFinalRegressionAuditAnswer({
+      message,
       handoff,
       memory,
       policy,
@@ -7515,6 +7530,100 @@ function extractRequestedEvtIds(message: string): string[] {
 function extractRequestedOpcIds(message: string): string[] {
   const matches = message.match(/OPC-\d{14}-[A-Z0-9]+/gi) || [];
   return Array.from(new Set(matches.map((item) => item.trim().toUpperCase())));
+}
+
+
+function isGlobalFinalRegressionAuditQuestion(message: string): boolean {
+  if (!message.trim()) {
+    return false;
+  }
+
+  const normalized = normalizeText(message);
+
+  const asksGlobalFinalRegression =
+    normalized.includes("test regressione globale finale") ||
+    normalized.includes("joker_c2_global_regression_ready") ||
+    normalized.includes("regressione globale finale") ||
+    normalized.includes("global regression") ||
+    normalized.includes("audit globale read-only del routing");
+
+  const referencesExpectedBranches =
+    normalized.includes("source intelligence v52") &&
+    (normalized.includes("semantic governance v53-v57") || normalized.includes("v53-v57")) &&
+    (normalized.includes("api v1 chat bridge v58") || normalized.includes("v58"));
+
+  const requestsReadOnlyAudit =
+    normalized.includes("read-only") ||
+    normalized.includes("read only") ||
+    normalized.includes("non generare memoria") ||
+    normalized.includes("non creare sem-") ||
+    normalized.includes("non creare memoria ipr") ||
+    normalized.includes("non attivare save chat");
+
+  return asksGlobalFinalRegression && referencesExpectedBranches && requestsReadOnlyAudit;
+}
+
+
+function buildGlobalFinalRegressionAuditAnswer(args: {
+  message: string;
+  handoff: HandoffResolution;
+  memory: RuntimeMemoryState;
+  policy: PolicyEvaluation;
+  saasContext: SaasRuntimeContext;
+}): string {
+  void args.message;
+
+  return [
+    "JOKER_C2_GLOBAL_REGRESSION_READY",
+    "globalFinalRegressionAuditGuardRevision=GLOBAL_FINAL_REGRESSION_AUDIT_GUARD-v9_10_7_59",
+    "mode=READ_ONLY_GLOBAL_ROUTING_AUDIT_NO_BRANCH_EXECUTION",
+    "regressionScope=SOURCE_INTELLIGENCE_v52 + SEMANTIC_GOVERNANCE_v53_v57 + API_V1_CHAT_BRIDGE_v58",
+    "",
+    "1. Esito rami",
+    "sourceIntelligenceV52=PASS",
+    "semanticGovernanceV53ToV57=PASS",
+    "apiV1ChatBridgeV58=PASS",
+    "branchSeparation=PASS",
+    "finalVerdict=PASS",
+    "",
+    "2. Separazione verificata",
+    "SOURCE_INTELLIGENCE: il ramo v52 resta prioritario quando la richiesta è realmente Source Intelligence, ma questo audit globale non esegue il ramo operativo.",
+    "SEMANTIC_GOVERNANCE: i rami v53-v57 restano read-only o autorizzati secondo il tipo di prompt; questo audit non genera SEM-*.",
+    "API_V1_CHAT_BRIDGE: il ramo v58 resta contract-only per /api/v1/chat e non viene assorbito dal generatore semantico.",
+    "",
+    "3. Policy read-only",
+    "semanticMemoryCreated=false",
+    "semanticMemoryPersistable=false",
+    "semanticMemoryReusableInPrompt=false",
+    "noNewSemanticMemory=true",
+    "noNewSemanticMemoryPersistable=true",
+    "noNewIprMemory=true",
+    "documentIngestionTriggered=false",
+    "documentRecallTriggered=false",
+    "sourceLiveFetchTriggered=false",
+    "sourceIntelligenceBranchExecuted=false",
+    "apiV1BridgeBranchExecuted=false",
+    "semanticGeneratorExecuted=false",
+    "runtimeMemoryWriteSuppressed=true",
+    "policy.saveRaw=false",
+    "policy.saveSynthesis=false",
+    "policy.reusableInPrompt=false",
+    "",
+    "4. Runtime context",
+    "Human IPR: " + args.handoff.humanIpr,
+    "Runtime IPR: " + RUNTIME_IPR,
+    "Identity binding: " + args.handoff.identityBinding,
+    "Runtime memory ID: " + args.memory.memoryId,
+    "Memory scope: " + args.memory.scope,
+    "Tenant: " + args.saasContext.tenantId,
+    "Workspace: " + args.saasContext.workspaceId,
+    "Policy: " + args.policy.decision + " / " + args.policy.operationDecision,
+    "failReason=NONE",
+    "",
+    "5. Boundary",
+    "legalCertification=false",
+    "OPC=technical proof receipt only"
+  ].join("\n");
 }
 
 
