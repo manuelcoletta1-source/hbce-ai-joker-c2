@@ -385,6 +385,49 @@ type JokerC2BranchDashboardSnapshot = {
 };
 
 
+type SourceIntelligenceEndpointSnapshot = {
+  key: string;
+  label: string;
+  path: string;
+  status: string;
+  detail: string;
+};
+
+
+type SourceIntelligenceSourceSetSnapshot = {
+  id: string;
+  label: string;
+  status: string;
+  operationalDomain: string;
+  riskPosture: string;
+  memoryProfileType: string;
+  defaultSourceCount: string;
+};
+
+
+type SourceIntelligenceDashboardSnapshot = {
+  revision: string;
+  layerRevision: string;
+  registryRevision: string;
+  routeRevision: string;
+  status: string;
+  registryStatus: string;
+  sourceSets: string;
+  sourceSetsActive: string;
+  catalogSources: string;
+  healthStatus: string;
+  healthError: string;
+  chatGuard: string;
+  pdfBoundary: string;
+  rawTextPersistence: string;
+  memoryProfilePolicy: string;
+  legalCertification: string;
+  opcBoundary: string;
+  endpoints: SourceIntelligenceEndpointSnapshot[];
+  sourceSetItems: SourceIntelligenceSourceSetSnapshot[];
+};
+
+
 type DocumentProfileDashboardOverlay = {
   branchKey: string;
   title: string;
@@ -484,32 +527,79 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.4.1-APOKALYPSIS_STABLE_SOURCE_INTELLIGENCE_STATIC_OVERLAY";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.5-SOURCE_INTELLIGENCE_DASHBOARD_OVERLAY";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
 const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v3.4-APOKALYPSIS_VOLUME_III_DASHBOARD_OVERLAY";
-const SOURCE_INTELLIGENCE_DASHBOARD_REVISION = "HBCE-INTERFACE-SOURCE_INTELLIGENCE_DASHBOARD-v3.4.1-STATIC_OVERLAY_SAFE";
-const SOURCE_INTELLIGENCE_CHAT_GUARD_REVISION = "SOURCE_INTELLIGENCE_MULTI_SOURCESET_FINAL_ANSWER_PRIORITY-v9_10_7_52";
+
+
+const SOURCE_INTELLIGENCE_DASHBOARD_REVISION = "HBCE-INTERFACE-SOURCE_INTELLIGENCE_DASHBOARD-v3.5-SOURCESET_REGISTRY_VISIBILITY";
 const SOURCE_INTELLIGENCE_LAYER_REVISION = "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.3-SOURCESET_REGISTRY";
 const SOURCE_INTELLIGENCE_REGISTRY_REVISION = "SOURCESET_REGISTRY_MULTI_DOMAIN_B2G-v0.3";
+const SOURCE_INTELLIGENCE_REGISTRY_STATUS = "SOURCESET_REGISTRY_READY";
+const SOURCE_INTELLIGENCE_LAST_CHAT_GUARD = "SOURCE_INTELLIGENCE_MULTI_SOURCESET_FINAL_ANSWER_PRIORITY-v9_10_7_52";
+const SOURCE_INTELLIGENCE_CATALOG_SOURCE_COUNT = "19";
+const SOURCE_INTELLIGENCE_SOURCESET_COUNT = "5";
+const SOURCE_INTELLIGENCE_MEMORY_PROFILE_POLICY = "EXPLICIT_OPERATOR_SAVE_ONLY";
 
-const SOURCE_INTELLIGENCE_SOURCESETS = [
-  "EU AI Governance",
-  "ECB AI/Cyber Risk",
-  "ENISA Threat Landscape",
-  "OpenAI Agentic Security",
-  "Anthropic Mythos"
+
+const SOURCE_INTELLIGENCE_ENDPOINTS: SourceIntelligenceEndpointSnapshot[] = [
+  { key: "health", label: "Health", path: "/api/sources/health", status: "PASS", detail: "Registry exposure · SOURCESET_REGISTRY_READY" },
+  { key: "search", label: "Search", path: "/api/sources/search", status: "PASS", detail: "sourceSet filter · unknown sourceSet blocked" },
+  { key: "fetch", label: "Fetch", path: "/api/sources/fetch", status: "PASS", detail: "allowlist · PDF hash-only · mismatch fail-closed" },
+  { key: "verify", label: "Verify", path: "/api/sources/verify", status: "PASS", detail: "hash verification · local URL rejected" },
+  { key: "register", label: "Register", path: "/api/sources/register", status: "PASS", detail: "profile-only registration · no raw text persistence" },
+  { key: "summarize", label: "Summarize", path: "/api/sources/summarize", status: "PASS", detail: "sourceSet-aware summarize · mixed sets blocked" },
+  { key: "chat", label: "Chat", path: "/api/chat", status: "PASS", detail: "multi-sourceSet final answer priority · diagnostics bypassed" }
 ];
 
-const SOURCE_INTELLIGENCE_ENDPOINTS = [
-  "health",
-  "search",
-  "fetch",
-  "verify",
-  "register",
-  "summarize",
-  "chat multi-sourceSet"
-];
 
+const SOURCE_INTELLIGENCE_SOURCESETS: SourceIntelligenceSourceSetSnapshot[] = [
+  {
+    id: "EU_AI_GOVERNANCE_REGULATORY_STACK",
+    label: "EU AI Governance",
+    status: "ACTIVE",
+    operationalDomain: "EU_AI_REGULATORY_IMPLEMENTATION",
+    riskPosture: "EU_AI_REGULATORY_IMPLEMENTATION_SIGNAL",
+    memoryProfileType: "SOURCE_INTELLIGENCE_REGULATORY_PROFILE",
+    defaultSourceCount: "3"
+  },
+  {
+    id: "ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK",
+    label: "ECB AI/Cyber Risk",
+    status: "ACTIVE",
+    operationalDomain: "FINANCIAL_SYSTEM_AI_CYBER_RESILIENCE",
+    riskPosture: "FINANCIAL_SYSTEM_AI_CYBER_RESILIENCE_SIGNAL",
+    memoryProfileType: "SOURCE_INTELLIGENCE_FINANCIAL_SYSTEM_RISK_PROFILE",
+    defaultSourceCount: "3"
+  },
+  {
+    id: "ENISA_CYBER_THREAT_LANDSCAPE",
+    label: "ENISA Threat Landscape",
+    status: "ACTIVE",
+    operationalDomain: "EU_CYBER_THREAT_LANDSCAPE",
+    riskPosture: "EU_CYBER_THREAT_LANDSCAPE_SIGNAL",
+    memoryProfileType: "SOURCE_INTELLIGENCE_THREAT_LANDSCAPE_PROFILE",
+    defaultSourceCount: "2"
+  },
+  {
+    id: "OPENAI_AGENTIC_SYSTEMS_SECURITY",
+    label: "OpenAI Agentic Security",
+    status: "ACTIVE",
+    operationalDomain: "AGENTIC_AI_DEPLOYMENT_SECURITY",
+    riskPosture: "AGENTIC_AI_DEPLOYMENT_SAFETY_SIGNAL",
+    memoryProfileType: "SOURCE_INTELLIGENCE_AGENTIC_SECURITY_PROFILE",
+    defaultSourceCount: "3"
+  },
+  {
+    id: "ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK",
+    label: "Anthropic Mythos",
+    status: "ACTIVE",
+    operationalDomain: "AI_FRONTIER_RISK",
+    riskPosture: "CYBER_AUTONOMY_ACCELERATION_SIGNAL",
+    memoryProfileType: "SOURCE_INTELLIGENCE_OPERATIONAL_PROFILE",
+    defaultSourceCount: "3"
+  }
+];
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -4818,76 +4908,105 @@ function JokerC2BranchMapCard({ snapshot }: { snapshot: JokerC2BranchDashboardSn
 }
 
 
-function SourceIntelligenceDashboardCard() {
-  const sourceIntelligenceRows = [
-    { label: "Layer", value: SOURCE_INTELLIGENCE_LAYER_REVISION },
-    { label: "Registry", value: "SOURCESET_REGISTRY_READY" },
-    { label: "Registry revision", value: SOURCE_INTELLIGENCE_REGISTRY_REVISION },
-    { label: "SourceSets", value: "5/5" },
-    { label: "Catalog sources", value: "19" },
-    { label: "Endpoints", value: "7/7 PASS" },
-    { label: "Chat guard", value: SOURCE_INTELLIGENCE_CHAT_GUARD_REVISION },
-    { label: "PDF boundary", value: "PDF_BINARY_HASH_ONLY" },
-    { label: "Raw text persistence", value: "false" },
-    { label: "Memory policy", value: "EXPLICIT_OPERATOR_SAVE_ONLY" },
-    { label: "legalCertification", value: "false" },
-    { label: "OPC", value: "technical source receipt only" }
+function SourceIntelligenceDashboardCard({ snapshot }: { snapshot: SourceIntelligenceDashboardSnapshot }) {
+  const boundaryRows = [
+    { label: "PDF boundary", value: snapshot.pdfBoundary },
+    { label: "Raw text persistence", value: snapshot.rawTextPersistence },
+    { label: "Memory profile policy", value: snapshot.memoryProfilePolicy },
+    { label: "legalCertification", value: snapshot.legalCertification },
+    { label: "OPC boundary", value: snapshot.opcBoundary },
+    { label: "Health mode", value: snapshot.healthStatus },
+    { label: "Health error", value: snapshot.healthError },
+    { label: "Route", value: snapshot.routeRevision }
   ];
 
+
   return (
-    <section className="joker-branch-map-card" translate="no" aria-label="Source Intelligence v0.3 dashboard">
+    <section className="joker-source-intelligence-card" translate="no">
       <div className="joker-semantic-head">
         <div>
           <span className="joker-kicker">Source Intelligence v0.3</span>
           <h3>Governed B2G source-bound intelligence layer</h3>
         </div>
         <div className="joker-semantic-pills">
-          <StatusPill label="Registry" value="SOURCESET_REGISTRY_READY" />
-          <StatusPill label="SourceSets" value="5/5" />
-          <StatusPill label="Catalog" value="19" />
-          <StatusPill label="Endpoints" value="7/7 PASS" />
+          <StatusPill label="Status" value={snapshot.status} />
+          <StatusPill label="Registry" value={snapshot.registryStatus} />
+          <StatusPill label="SourceSets" value={`${snapshot.sourceSetsActive}/${snapshot.sourceSets}`} />
+          <StatusPill label="Catalog" value={snapshot.catalogSources} />
         </div>
       </div>
 
-      <div className="joker-branch-active-strip">
+
+      <div className="joker-source-intelligence-guard">
         <span>LAST_VALIDATED_CHAT_GUARD</span>
-        <strong>{SOURCE_INTELLIGENCE_CHAT_GUARD_REVISION}</strong>
-        <em>rawTextPersistence=false · EXPLICIT_OPERATOR_SAVE_ONLY · OPC=technical source receipt only</em>
+        <strong>{snapshot.chatGuard}</strong>
+        <em>{snapshot.layerRevision}</em>
       </div>
 
-      <div className="joker-semantic-grid">
-        <MetricCard label="Layer" value="v0.3 READY" />
-        <MetricCard label="Registry" value="READY" />
-        <MetricCard label="SourceSets" value="5" />
-        <MetricCard label="Catalog sources" value="19" />
-        <MetricCard label="Health/search/fetch/verify/register/summarize/chat" value="PASS" />
-        <MetricCard label="PDF boundary" value="HASH_ONLY" />
-        <MetricCard label="Raw persistence" value="false" />
-        <MetricCard label="IPR save" value="EXPLICIT_ONLY" />
+
+      <div className="joker-source-intelligence-metrics">
+        <MetricCard label="Registry status" value={snapshot.registryStatus} />
+        <MetricCard label="SourceSets active" value={`${snapshot.sourceSetsActive}/${snapshot.sourceSets}`} />
+        <MetricCard label="Catalog sources" value={snapshot.catalogSources} />
+        <MetricCard label="Endpoint chain" value="7/7 PASS" />
+        <MetricCard label="PDF boundary" value={snapshot.pdfBoundary} />
+        <MetricCard label="IPR save policy" value={snapshot.memoryProfilePolicy} />
       </div>
 
-      <div className="joker-branch-grid" aria-label="Source Intelligence source sets">
-        {SOURCE_INTELLIGENCE_SOURCESETS.map((sourceSet) => (
-          <article key={sourceSet} className="joker-branch-item is-active">
-            <div className="joker-branch-item-head"><strong>{sourceSet}</strong><StatusPill value="PASS" /></div>
-            <p>SourceSet governato, allowlisted, hash-bound, utilizzabile per intelligence cyber/AI risk B2G.</p>
-            <div className="joker-branch-meta"><span>registry v0.3</span><span>source-bound</span><span>fail-closed</span></div>
-          </article>
-        ))}
-      </div>
 
-      <div className="joker-file-ingestion-list" aria-label="Source Intelligence endpoint validation">
-        <strong>Endpoint validation</strong>
-        {SOURCE_INTELLIGENCE_ENDPOINTS.map((endpoint) => (
-          <div key={endpoint} className="joker-file-ingestion-row">
-            <span>{endpoint}</span>
-            <StatusPill value="PASS" />
-            <em>validated in Source Intelligence v0.3 runtime/API line</em>
+      <div className="joker-source-intelligence-split">
+        <div className="joker-source-intelligence-block">
+          <div className="joker-source-intelligence-block-head">
+            <strong>Validated endpoints</strong>
+            <StatusPill value="7/7 PASS" />
           </div>
-        ))}
+          <div className="joker-source-endpoint-list">
+            {snapshot.endpoints.map((endpoint) => (
+              <div key={endpoint.key} className="joker-source-endpoint-row">
+                <div>
+                  <strong>{endpoint.label}</strong>
+                  <span>{endpoint.path}</span>
+                </div>
+                <StatusPill value={endpoint.status} />
+                <em>{endpoint.detail}</em>
+              </div>
+            ))}
+          </div>
+        </div>
+
+
+        <div className="joker-source-intelligence-block">
+          <div className="joker-source-intelligence-block-head">
+            <strong>Active sourceSets</strong>
+            <StatusPill value="5/5 ACTIVE" />
+          </div>
+          <div className="joker-source-set-grid">
+            {snapshot.sourceSetItems.map((sourceSet) => (
+              <article key={sourceSet.id} className="joker-source-set-item">
+                <div className="joker-source-set-head">
+                  <strong>{sourceSet.label}</strong>
+                  <StatusPill value={sourceSet.status} />
+                </div>
+                <p title={sourceSet.id}>{compact(sourceSet.id, 72)}</p>
+                <div className="joker-branch-meta">
+                  <span title={sourceSet.riskPosture}>{compact(sourceSet.riskPosture, 42)}</span>
+                  <span title={sourceSet.memoryProfileType}>{compact(sourceSet.memoryProfileType, 42)}</span>
+                  <span>defaults {sourceSet.defaultSourceCount}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <InfoList items={sourceIntelligenceRows} />
+
+      <div className="joker-source-intelligence-boundary">
+        <div>
+          <span>BOUNDARY</span>
+          <strong>no raw text persistence · explicit operator save only · technical receipt only</strong>
+        </div>
+        <InfoList items={boundaryRows} />
+      </div>
     </section>
   );
 }
@@ -5349,6 +5468,8 @@ export default function InterfacePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [files, setFiles] = useState<RuntimeFile[]>([]);
   const [fileRegistryPayload, setFileRegistryPayload] = useState<JsonRecord | null>(null);
+  const [sourceIntelligenceHealth, setSourceIntelligenceHealth] = useState<JsonRecord | null>(null);
+  const [sourceIntelligenceHealthError, setSourceIntelligenceHealthError] = useState<string | null>(null);
   const [continuityRef, setContinuityRef] = useState<string | null>(null);
 
 
@@ -5602,6 +5723,12 @@ export default function InterfacePage() {
   });
 
 
+  const sourceIntelligenceDashboard = buildSourceIntelligenceDashboardSnapshot(
+    sourceIntelligenceHealth,
+    sourceIntelligenceHealthError
+  );
+
+
   const memoryAuthority = firstUsableRuntimeValue(
     [
       lastAssistantPayload ? dashboardStatus.authority : "",
@@ -5716,6 +5843,7 @@ export default function InterfacePage() {
     refreshIprHandoff();
     void checkIprSession();
     void checkRuntime();
+    void checkSourceIntelligenceHealth();
   }, []);
 
 
@@ -5991,6 +6119,35 @@ export default function InterfacePage() {
       setError(err instanceof Error ? err.message : "HEALTH_CHECK_FAILED");
     } finally {
       setIsChecking(false);
+    }
+  }
+
+
+  async function checkSourceIntelligenceHealth() {
+    try {
+      const response = await fetch("/api/sources/health", {
+        method: "GET",
+        cache: "no-store",
+        credentials: "include",
+        headers: {
+          Accept: "application/json"
+        }
+      });
+
+
+      const payload = await readJsonResponse<JsonRecord>(response);
+
+
+      if (!response.ok || payload.ok === false) {
+        throw new Error(text(payload.error, `HTTP_${response.status}`));
+      }
+
+
+      setSourceIntelligenceHealth(payload);
+      setSourceIntelligenceHealthError(null);
+    } catch (err) {
+      setSourceIntelligenceHealth(null);
+      setSourceIntelligenceHealthError(err instanceof Error ? err.message : "SOURCE_INTELLIGENCE_HEALTH_CHECK_FAILED");
     }
   }
 
@@ -7169,6 +7326,22 @@ export default function InterfacePage() {
   ];
 
 
+  const sourceIntelligenceRows = [
+    { label: "Layer", value: sourceIntelligenceDashboard.layerRevision },
+    { label: "Registry", value: sourceIntelligenceDashboard.registryStatus },
+    { label: "Registry revision", value: sourceIntelligenceDashboard.registryRevision },
+    { label: "SourceSets", value: `${sourceIntelligenceDashboard.sourceSetsActive}/${sourceIntelligenceDashboard.sourceSets}` },
+    { label: "Catalog sources", value: sourceIntelligenceDashboard.catalogSources },
+    { label: "Endpoints", value: "7/7 PASS" },
+    { label: "Chat guard", value: sourceIntelligenceDashboard.chatGuard },
+    { label: "PDF boundary", value: sourceIntelligenceDashboard.pdfBoundary },
+    { label: "Raw text persistence", value: sourceIntelligenceDashboard.rawTextPersistence },
+    { label: "Memory policy", value: sourceIntelligenceDashboard.memoryProfilePolicy },
+    { label: "legalCertification", value: sourceIntelligenceDashboard.legalCertification },
+    { label: "OPC", value: sourceIntelligenceDashboard.opcBoundary }
+  ];
+
+
   const saasRows = [
     { label: "Runtime context", value: dashboardStatus.saasRuntimeContext },
     { label: "B2G active response readiness", value: dashboardStatus.b2gReadiness },
@@ -7292,7 +7465,7 @@ export default function InterfacePage() {
           <StatusPill label="MATRIX" value={matrixState} />
           <StatusPill label="Memory" value={memoryScope} />
           <StatusPill label="Docs" value={dashboardDocumentRegistry.available ? dashboardDocumentRegistry.status : "NO_DOC_REGISTRY"} />
-          <StatusPill label="Source Intel" value="SOURCESET_REGISTRY_READY" />
+          <StatusPill label="Source Intel" value={sourceIntelligenceDashboard.registryStatus} />
           {dashboardSemanticMemory.available ? (
             <StatusPill label="Semantic" value={dashboardSemanticMemory.quality} />
           ) : null}
@@ -7367,10 +7540,9 @@ export default function InterfacePage() {
           <MetricCard label="Semantic quality" value={dashboardSemanticMemory.available ? dashboardSemanticMemory.quality : "NOT_AVAILABLE"} />
           <MetricCard label="File context" value={dashboardFileIngestion.available ? dashboardFileIngestion.status : files.length > 0 ? "LOCAL_FILES_READY" : "NOT_AVAILABLE"} />
           <MetricCard label="Document profiles" value={dashboardDocumentRegistry.profileCount} />
+          <MetricCard label="Source Intelligence" value={sourceIntelligenceDashboard.registryStatus} />
+          <MetricCard label="SourceSets" value={`${sourceIntelligenceDashboard.sourceSetsActive}/${sourceIntelligenceDashboard.sourceSets}`} />
           <MetricCard label="Linked document memory" value={dashboardDocumentRegistry.linkedMemoryCount} />
-          <MetricCard label="Source Intelligence" value="v0.3 READY" />
-          <MetricCard label="SourceSets" value="5/5" />
-          <MetricCard label="Catalog sources" value="19" />
           <MetricCard label="Coupling state" value={dashboardSemanticMemory.available ? dashboardSemanticMemory.couplingState : "NOT_AVAILABLE"} />
           <MetricCard label="Response EVT" value={dashboardStatus.responseEvt} />
           <MetricCard label="OPC" value={dashboardStatus.opc} />
@@ -7392,8 +7564,8 @@ export default function InterfacePage() {
       </section>
 
 
-      <section className="joker-branch-map-shell">
-        <SourceIntelligenceDashboardCard />
+      <section className="joker-source-intelligence-shell">
+        <SourceIntelligenceDashboardCard snapshot={sourceIntelligenceDashboard} />
       </section>
 
 
@@ -7586,6 +7758,26 @@ export default function InterfacePage() {
 
 
           <InfoList items={temporalRows} />
+        </div>
+
+
+        <div className="joker-panel is-active">
+          <div className="joker-panel-head">
+            <div>
+              <span className="joker-kicker">Source Intelligence</span>
+              <h2>v0.3 sourceSet registry</h2>
+            </div>
+            <StatusPill value={sourceIntelligenceDashboard.registryStatus} />
+          </div>
+
+
+          <p>
+            Layer B2G per intelligence cyber, governance AI e rischio operativo con fonti governate,
+            sourceSet allowlisted, hash fonte, PDF hash-only e salvataggio profilo fonte solo su azione esplicita dell’operatore.
+          </p>
+
+
+          <InfoList items={sourceIntelligenceRows} />
         </div>
 
 
@@ -9495,7 +9687,8 @@ export default function InterfacePage() {
 
         .joker-semantic-card,
         .joker-file-ingestion-card,
-        .joker-document-registry-card {
+        .joker-document-registry-card,
+        .joker-source-intelligence-card {
           margin-top: 14px;
           padding: 14px;
           border: 1px solid rgba(34, 211, 238, 0.24);
@@ -9667,6 +9860,29 @@ export default function InterfacePage() {
         }
 
 
+        .joker-source-intelligence-shell { padding: 0 22px 22px; }
+        .joker-source-intelligence-card { border-color: rgba(20, 184, 166, 0.32); border-radius: 28px; padding: 18px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.86)), radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.14), transparent 36%); box-shadow: 0 24px 70px rgba(2, 6, 23, 0.32); }
+        .joker-source-intelligence-guard { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; margin-top: 14px; padding: 12px 14px; border: 1px solid rgba(45, 212, 191, 0.34); border-radius: 18px; background: rgba(15, 118, 110, 0.18); }
+        .joker-source-intelligence-guard span, .joker-source-intelligence-guard em { color: #99f6e4; font-size: 11px; font-weight: 850; letter-spacing: 0.08em; text-transform: uppercase; }
+        .joker-source-intelligence-guard strong { min-width: 0; color: #f0fdfa; font-size: 14px; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+        .joker-source-intelligence-metrics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+        .joker-source-intelligence-split { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 14px; margin-top: 14px; }
+        .joker-source-intelligence-block { min-width: 0; padding: 14px; border: 1px solid rgba(71, 85, 105, 0.58); border-radius: 20px; background: rgba(2, 6, 23, 0.34); }
+        .joker-source-intelligence-block-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .joker-source-intelligence-block-head strong { color: #ccfbf1; font-size: 12px; font-weight: 950; letter-spacing: 0.08em; text-transform: uppercase; }
+        .joker-source-endpoint-list { display: grid; gap: 8px; margin-top: 12px; }
+        .joker-source-endpoint-row { display: grid; grid-template-columns: minmax(120px, 0.78fr) auto minmax(170px, 1.1fr); gap: 8px; align-items: center; padding: 9px; border: 1px solid rgba(148, 163, 184, 0.14); border-radius: 14px; background: rgba(15, 23, 42, 0.52); }
+        .joker-source-endpoint-row strong { display: block; color: #f8fafc; font-size: 12px; }
+        .joker-source-endpoint-row span { display: block; margin-top: 3px; color: #94a3b8; font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+        .joker-source-endpoint-row em { color: #9db1c8; font-size: 11px; font-style: normal; line-height: 1.4; }
+        .joker-source-set-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+        .joker-source-set-item { display: grid; gap: 9px; min-height: 126px; padding: 12px; border: 1px solid rgba(71, 85, 105, 0.58); border-radius: 18px; background: rgba(15, 23, 42, 0.72); }
+        .joker-source-set-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+        .joker-source-set-head strong { color: #f8fafc; font-size: 13px; line-height: 1.25; }
+        .joker-source-set-item p { margin: 0; color: #9db1c8; font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
+        .joker-source-intelligence-boundary { margin-top: 14px; padding: 12px; border: 1px solid rgba(45, 212, 191, 0.22); border-radius: 18px; background: rgba(2, 6, 23, 0.28); }
+        .joker-source-intelligence-boundary > div:first-child span { display: block; color: #5eead4; font-size: 10px; font-weight: 950; letter-spacing: 0.1em; text-transform: uppercase; }
+        .joker-source-intelligence-boundary > div:first-child strong { display: block; margin-top: 5px; color: #e2e8f0; font-size: 13px; line-height: 1.45; }
         .joker-branch-map-shell { padding: 0 22px 22px; }
         .joker-branch-map-card { border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 28px; padding: 18px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.86)), radial-gradient(circle at 10% 0%, rgba(34, 211, 238, 0.14), transparent 36%); box-shadow: 0 24px 70px rgba(2, 6, 23, 0.32); }
         .joker-branch-active-strip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; margin-top: 14px; padding: 12px 14px; border: 1px solid rgba(34, 211, 238, 0.38); border-radius: 18px; background: rgba(8, 47, 73, 0.28); }
@@ -9748,8 +9964,14 @@ export default function InterfacePage() {
           }
 
 
-          .joker-branch-grid {
+          .joker-branch-grid,
+          .joker-source-intelligence-metrics {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+
+          .joker-source-intelligence-split {
+            grid-template-columns: 1fr;
           }
 
 
@@ -9784,7 +10006,15 @@ export default function InterfacePage() {
           .joker-semantic-grid,
           .joker-semantic-axis,
           .joker-semantic-card.is-compact .joker-semantic-grid,
-          .joker-memory-grid {
+          .joker-memory-grid,
+          .joker-source-intelligence-metrics,
+          .joker-source-set-grid {
+            grid-template-columns: 1fr;
+          }
+
+
+          .joker-source-intelligence-guard,
+          .joker-source-endpoint-row {
             grid-template-columns: 1fr;
           }
         }
