@@ -428,6 +428,39 @@ type SourceIntelligenceDashboardSnapshot = {
 };
 
 
+type ApiV1PublicEndpointSnapshot = {
+  key: string;
+  method: "GET" | "POST";
+  path: string;
+  status: string;
+  detail: string;
+};
+
+
+type ApiV1PublicSurfaceSnapshot = {
+  revision: string;
+  product: string;
+  runtime: string;
+  publicSurface: string;
+  gatewayBasePath: string;
+  runtimeBasePath: string;
+  status: string;
+  endpointCount: string;
+  endpointCoverage: string;
+  contractMode: string;
+  contractOnlyExecution: string;
+  semanticMemoryCreated: string;
+  runtimeMemoryWriteSuppressed: string;
+  sourceLiveFetchTriggered: string;
+  documentIngestionTriggered: string;
+  documentRecallTriggered: string;
+  legalCertification: string;
+  opcBoundary: string;
+  docsPath: string;
+  endpoints: ApiV1PublicEndpointSnapshot[];
+};
+
+
 type DocumentProfileDashboardOverlay = {
   branchKey: string;
   title: string;
@@ -527,12 +560,12 @@ const EMPTY_CYBERNETIC_MEMORY_CHAIN: CyberneticMemoryChainState = {
 
 
 const JOKER_SIGIL = "🜏";
-const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.5-SOURCE_INTELLIGENCE_DASHBOARD_OVERLAY";
+const INTERFACE_REVISION = "HBCE-JOKER-C2-INTERFACE-CYBERNETIC-MEMORY-CHAIN-v3.6.1-API_V1_PRODUCT_SURFACE_CARD_BUILD_FIX";
 const DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE_REVISION = "HBCE-INTERFACE-DOCUMENT_OBJECT_ACTIVE_FILES_BRIDGE-v2.2";
 const JOKER_C2_BRANCH_MAP_DASHBOARD_REVISION = "HBCE-INTERFACE-JOKER_C2_BRANCH_MAP_ACTIVE_RECALL_DASHBOARD-v3.4-APOKALYPSIS_VOLUME_III_DASHBOARD_OVERLAY";
 
 
-const SOURCE_INTELLIGENCE_DASHBOARD_REVISION = "HBCE-INTERFACE-SOURCE_INTELLIGENCE_DASHBOARD-v3.5-SOURCESET_REGISTRY_VISIBILITY";
+const SOURCE_INTELLIGENCE_DASHBOARD_REVISION = "HBCE-INTERFACE-SOURCE_INTELLIGENCE_DASHBOARD-v3.5.1-SOURCESET_REGISTRY_VISIBILITY_BUILD_FIX";
 const SOURCE_INTELLIGENCE_LAYER_REVISION = "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.3-SOURCESET_REGISTRY";
 const SOURCE_INTELLIGENCE_REGISTRY_REVISION = "SOURCESET_REGISTRY_MULTI_DOMAIN_B2G-v0.3";
 const SOURCE_INTELLIGENCE_REGISTRY_STATUS = "SOURCESET_REGISTRY_READY";
@@ -540,6 +573,56 @@ const SOURCE_INTELLIGENCE_LAST_CHAT_GUARD = "SOURCE_INTELLIGENCE_MULTI_SOURCESET
 const SOURCE_INTELLIGENCE_CATALOG_SOURCE_COUNT = "19";
 const SOURCE_INTELLIGENCE_SOURCESET_COUNT = "5";
 const SOURCE_INTELLIGENCE_MEMORY_PROFILE_POLICY = "EXPLICIT_OPERATOR_SAVE_ONLY";
+
+
+const API_V1_PUBLIC_SURFACE_DASHBOARD_REVISION = "HBCE-IPR-RUNTIME-API-v1-PUBLIC_SURFACE_REGRESSION-v76";
+const API_V1_PUBLIC_SURFACE_STATUS = "16/16 PASS";
+const API_V1_PUBLIC_SURFACE_PRODUCT = "HBCE IPR Runtime API v1";
+const API_V1_PUBLIC_SURFACE_DOCS_PATH = "docs/product/hbce-ipr-runtime-api-v1";
+
+
+const API_V1_PUBLIC_ENDPOINTS: ApiV1PublicEndpointSnapshot[] = [
+  { key: "root", method: "GET", path: "/api/v1", status: "PASS", detail: "Root discovery contract descriptor" },
+  { key: "health", method: "GET", path: "/api/v1/health", status: "PASS", detail: "Runtime health descriptor" },
+  { key: "capabilities", method: "GET", path: "/api/v1/capabilities", status: "PASS", detail: "Capability discovery contract" },
+  { key: "ipr-session-create", method: "POST", path: "/api/v1/ipr/session", status: "PASS", detail: "IPR-bound session creation descriptor" },
+  { key: "ipr-session-lookup", method: "GET", path: "/api/v1/ipr/session/{sessionId}", status: "PASS", detail: "IPR session lookup descriptor" },
+  { key: "chat", method: "POST", path: "/api/v1/chat", status: "PASS", detail: "Governed AI chat bridge contract" },
+  { key: "files", method: "POST", path: "/api/v1/files", status: "PASS", detail: "File descriptor / controlled ingestion contract" },
+  { key: "operations-create", method: "POST", path: "/api/v1/operations", status: "PASS", detail: "Asynchronous operation creation contract" },
+  { key: "operations-lookup", method: "GET", path: "/api/v1/operations/{operationId}", status: "PASS", detail: "Operation lookup contract" },
+  { key: "events", method: "GET", path: "/api/v1/events", status: "PASS", detail: "Event ledger descriptor" },
+  { key: "opc", method: "GET", path: "/api/v1/opc/{opcId}", status: "PASS", detail: "OPC technical proof receipt lookup" },
+  { key: "audit", method: "GET", path: "/api/v1/audit/{auditId}", status: "PASS", detail: "Runtime audit lookup contract" },
+  { key: "model-usage", method: "GET", path: "/api/v1/model-usage/{usageId}", status: "PASS", detail: "Model usage / accounting lookup contract" },
+  { key: "openapi", method: "GET", path: "/api/v1/openapi", status: "PASS", detail: "OpenAPI 3.1 public contract" },
+  { key: "self-test", method: "GET", path: "/api/v1/self-test", status: "PASS", detail: "Public API self-test matrix" },
+  { key: "source-intelligence", method: "GET", path: "/api/v1/source-intelligence", status: "PASS", detail: "Source Intelligence descriptor" }
+];
+
+
+const API_V1_PUBLIC_SURFACE_DASHBOARD: ApiV1PublicSurfaceSnapshot = {
+  revision: API_V1_PUBLIC_SURFACE_DASHBOARD_REVISION,
+  product: API_V1_PUBLIC_SURFACE_PRODUCT,
+  runtime: "JOKER-C2 SaaS Core v0.1",
+  publicSurface: "HBCE_IPR_RUNTIME_API_V1",
+  gatewayBasePath: "/v1",
+  runtimeBasePath: "/api/v1",
+  status: API_V1_PUBLIC_SURFACE_STATUS,
+  endpointCount: "16",
+  endpointCoverage: "16/16 PASS",
+  contractMode: "PUBLIC_API_SURFACE",
+  contractOnlyExecution: "PASS",
+  semanticMemoryCreated: "false",
+  runtimeMemoryWriteSuppressed: "true",
+  sourceLiveFetchTriggered: "false",
+  documentIngestionTriggered: "false",
+  documentRecallTriggered: "false",
+  legalCertification: "false",
+  opcBoundary: "technical proof receipt only",
+  docsPath: API_V1_PUBLIC_SURFACE_DOCS_PATH,
+  endpoints: API_V1_PUBLIC_ENDPOINTS
+};
 
 
 const SOURCE_INTELLIGENCE_ENDPOINTS: SourceIntelligenceEndpointSnapshot[] = [
@@ -600,6 +683,128 @@ const SOURCE_INTELLIGENCE_SOURCESETS: SourceIntelligenceSourceSetSnapshot[] = [
     defaultSourceCount: "3"
   }
 ];
+
+
+function buildSourceIntelligenceDashboardSnapshot(
+  health: JsonRecord | null,
+  healthError: string | null
+): SourceIntelligenceDashboardSnapshot {
+  const registryReport = firstRecord(health, [
+    ["sourceSetRegistry"],
+    ["sourceSetRegistryReport"],
+    ["registry"],
+    ["sourceRegistry"]
+  ]);
+
+  const liveStatus = firstDisplayValue(
+    [
+      first(health, [["status"], ["healthStatus"], ["sourceIntelligenceStatus"]], ""),
+      health ? "LIVE_HEALTH_READY" : "STATIC_VALIDATION_VISIBLE"
+    ],
+    "STATIC_VALIDATION_VISIBLE"
+  );
+
+  const liveRegistryStatus = firstDisplayValue(
+    [
+      first(health, [["sourceSetRegistryStatus"], ["registryStatus"], ["sourceSetRegistry", "status"], ["sourceSetRegistryReport", "status"]], ""),
+      registryReport ? first(registryReport, [["status"], ["registryStatus"]], "") : "",
+      SOURCE_INTELLIGENCE_REGISTRY_STATUS
+    ],
+    SOURCE_INTELLIGENCE_REGISTRY_STATUS
+  );
+
+  const liveLayerRevision = firstDisplayValue(
+    [
+      first(health, [["revision"], ["sourceLayerRevision"], ["layerRevision"]], ""),
+      SOURCE_INTELLIGENCE_LAYER_REVISION
+    ],
+    SOURCE_INTELLIGENCE_LAYER_REVISION
+  );
+
+  const liveRegistryRevision = firstDisplayValue(
+    [
+      first(health, [["sourceSetRegistryRevision"], ["registryRevision"], ["sourceSetRegistry", "revision"], ["sourceSetRegistryReport", "revision"]], ""),
+      registryReport ? first(registryReport, [["revision"], ["registryRevision"]], "") : "",
+      SOURCE_INTELLIGENCE_REGISTRY_REVISION
+    ],
+    SOURCE_INTELLIGENCE_REGISTRY_REVISION
+  );
+
+  const liveRouteRevision = firstDisplayValue(
+    [
+      first(health, [["routeRevision"], ["healthRouteRevision"]], ""),
+      SOURCE_INTELLIGENCE_DASHBOARD_REVISION
+    ],
+    SOURCE_INTELLIGENCE_DASHBOARD_REVISION
+  );
+
+  const liveSourceSetCount = firstDisplayValue(
+    [
+      first(health, [["sourceSets"], ["sourceSetCount"], ["sourceSetRegistry", "sourceSets"], ["sourceSetRegistryReport", "sourceSets"]], ""),
+      registryReport ? first(registryReport, [["sourceSets"], ["sourceSetCount"]], "") : "",
+      SOURCE_INTELLIGENCE_SOURCESET_COUNT
+    ],
+    SOURCE_INTELLIGENCE_SOURCESET_COUNT
+  );
+
+  const liveCatalogSources = firstDisplayValue(
+    [
+      first(health, [["catalogSources"], ["catalogSourceCount"], ["sourceCatalogCount"], ["sourceSetRegistry", "catalogSources"], ["sourceSetRegistryReport", "catalogSources"]], ""),
+      registryReport ? first(registryReport, [["catalogSources"], ["catalogSourceCount"]], "") : "",
+      SOURCE_INTELLIGENCE_CATALOG_SOURCE_COUNT
+    ],
+    SOURCE_INTELLIGENCE_CATALOG_SOURCE_COUNT
+  );
+
+  const sourceSetItemsFromHealth = firstArray(health, [
+    ["sourceSetsList"],
+    ["sourceSetItems"],
+    ["sourceSetRegistry", "items"],
+    ["sourceSetRegistryReport", "items"]
+  ])
+    .map((item): SourceIntelligenceSourceSetSnapshot | null => {
+      if (!isRecord(item)) return null;
+      const id = first(item, [["id"], ["sourceSet"], ["sourceSetId"]], "");
+      if (!id) return null;
+      const staticItem = SOURCE_INTELLIGENCE_SOURCESETS.find((entry) => entry.id === id);
+      return {
+        id,
+        label: firstDisplayValue([first(item, [["label"], ["name"]], ""), staticItem?.label ?? id], id),
+        status: firstDisplayValue([first(item, [["status"], ["sourceSetStatus"]], ""), staticItem?.status ?? "READY"], "READY"),
+        operationalDomain: firstDisplayValue([first(item, [["operationalDomain"], ["domain"]], ""), staticItem?.operationalDomain ?? "-"], "-"),
+        riskPosture: firstDisplayValue([first(item, [["riskPosture"]], ""), staticItem?.riskPosture ?? "-"], "-"),
+        memoryProfileType: firstDisplayValue([first(item, [["memoryProfileType"]], ""), staticItem?.memoryProfileType ?? SOURCE_INTELLIGENCE_MEMORY_PROFILE_POLICY], SOURCE_INTELLIGENCE_MEMORY_PROFILE_POLICY),
+        defaultSourceCount: firstDisplayValue([first(item, [["defaultSourceCount"], ["defaultSources"]], ""), staticItem?.defaultSourceCount ?? "-"], "-")
+      };
+    })
+    .filter((item): item is SourceIntelligenceSourceSetSnapshot => item !== null);
+
+  const sourceSetItems = sourceSetItemsFromHealth.length > 0 ? sourceSetItemsFromHealth : SOURCE_INTELLIGENCE_SOURCESETS;
+  const visibleSourceSetsActive = String(sourceSetItems.length || SOURCE_INTELLIGENCE_SOURCESET_COUNT);
+
+  return {
+    revision: SOURCE_INTELLIGENCE_DASHBOARD_REVISION,
+    layerRevision: liveLayerRevision,
+    registryRevision: liveRegistryRevision,
+    routeRevision: liveRouteRevision,
+    status: liveStatus,
+    registryStatus: liveRegistryStatus,
+    sourceSets: liveSourceSetCount,
+    sourceSetsActive: visibleSourceSetsActive,
+    catalogSources: liveCatalogSources,
+    healthStatus: health ? "LIVE_HEALTH_READY" : "STATIC_VALIDATION_VISIBLE",
+    healthError: healthError ? compact(healthError, 96) : "NONE",
+    chatGuard: SOURCE_INTELLIGENCE_LAST_CHAT_GUARD,
+    pdfBoundary: "PDF_BINARY_HASH_ONLY",
+    rawTextPersistence: "false",
+    memoryProfilePolicy: SOURCE_INTELLIGENCE_MEMORY_PROFILE_POLICY,
+    legalCertification: "false",
+    opcBoundary: "technical source receipt only",
+    endpoints: SOURCE_INTELLIGENCE_ENDPOINTS,
+    sourceSetItems
+  };
+}
+
 
 
 type JokerTemporalRuntimeSnapshot = {
@@ -4908,6 +5113,106 @@ function JokerC2BranchMapCard({ snapshot }: { snapshot: JokerC2BranchDashboardSn
 }
 
 
+
+function ApiV1PublicSurfaceDashboardCard({ snapshot }: { snapshot: ApiV1PublicSurfaceSnapshot }) {
+  const boundaryRows = [
+    { label: "Product", value: snapshot.product },
+    { label: "Runtime", value: snapshot.runtime },
+    { label: "Public surface", value: snapshot.publicSurface },
+    { label: "Gateway path", value: snapshot.gatewayBasePath },
+    { label: "Runtime path", value: snapshot.runtimeBasePath },
+    { label: "Contract mode", value: snapshot.contractMode },
+    { label: "Docs", value: snapshot.docsPath },
+    { label: "legalCertification", value: snapshot.legalCertification },
+    { label: "OPC boundary", value: snapshot.opcBoundary }
+  ];
+
+
+  const guardRows = [
+    { label: "Contract-only", value: snapshot.contractOnlyExecution },
+    { label: "Semantic memory created", value: snapshot.semanticMemoryCreated },
+    { label: "Runtime write suppressed", value: snapshot.runtimeMemoryWriteSuppressed },
+    { label: "Source live fetch", value: snapshot.sourceLiveFetchTriggered },
+    { label: "Document ingestion", value: snapshot.documentIngestionTriggered },
+    { label: "Document recall", value: snapshot.documentRecallTriggered }
+  ];
+
+
+  return (
+    <section className="joker-source-intelligence-card" translate="no">
+      <div className="joker-semantic-head">
+        <div>
+          <span className="joker-kicker">HBCE IPR Runtime API v1</span>
+          <h3>Public API surface · contract-only regression</h3>
+        </div>
+        <div className="joker-semantic-pills">
+          <StatusPill label="Status" value={snapshot.status} />
+          <StatusPill label="Endpoints" value={snapshot.endpointCoverage} />
+          <StatusPill label="Boundary" value={`legalCertification=${snapshot.legalCertification}`} />
+        </div>
+      </div>
+
+
+      <div className="joker-source-intelligence-guard">
+        <span>PRODUCT_DOCS_PATH</span>
+        <strong>{snapshot.docsPath}</strong>
+        <em>{snapshot.revision}</em>
+      </div>
+
+
+      <div className="joker-source-intelligence-metrics">
+        <MetricCard label="Public surface" value={snapshot.publicSurface} />
+        <MetricCard label="Endpoint count" value={snapshot.endpointCount} />
+        <MetricCard label="Coverage" value={snapshot.endpointCoverage} />
+        <MetricCard label="Contract-only" value={snapshot.contractOnlyExecution} />
+        <MetricCard label="No semantic memory" value={snapshot.semanticMemoryCreated === "false" ? "PASS" : "FAIL"} />
+        <MetricCard label="No branch execution" value={snapshot.sourceLiveFetchTriggered === "false" && snapshot.documentIngestionTriggered === "false" && snapshot.documentRecallTriggered === "false" ? "PASS" : "FAIL"} />
+      </div>
+
+
+      <div className="joker-source-intelligence-split">
+        <div className="joker-source-intelligence-block">
+          <div className="joker-source-intelligence-block-head">
+            <strong>Validated API v1 endpoints</strong>
+            <StatusPill value={snapshot.endpointCoverage} />
+          </div>
+          <div className="joker-source-endpoint-list">
+            {snapshot.endpoints.map((endpoint) => (
+              <div key={endpoint.key} className="joker-source-endpoint-row">
+                <div>
+                  <strong>{endpoint.method}</strong>
+                  <span>{endpoint.path}</span>
+                </div>
+                <StatusPill value={endpoint.status} />
+                <em>{endpoint.detail}</em>
+              </div>
+            ))}
+          </div>
+        </div>
+
+
+        <div className="joker-source-intelligence-block">
+          <div className="joker-source-intelligence-block-head">
+            <strong>Contract-only guard state</strong>
+            <StatusPill value="PASS" />
+          </div>
+          <InfoList items={guardRows} />
+        </div>
+      </div>
+
+
+      <div className="joker-source-intelligence-boundary">
+        <div>
+          <span>BOUNDARY</span>
+          <strong>Operational identity/proof layer · technical proof receipt only · legalCertification=false</strong>
+        </div>
+        <InfoList items={boundaryRows} />
+      </div>
+    </section>
+  );
+}
+
+
 function SourceIntelligenceDashboardCard({ snapshot }: { snapshot: SourceIntelligenceDashboardSnapshot }) {
   const boundaryRows = [
     { label: "PDF boundary", value: snapshot.pdfBoundary },
@@ -7541,6 +7846,8 @@ export default function InterfacePage() {
           <MetricCard label="File context" value={dashboardFileIngestion.available ? dashboardFileIngestion.status : files.length > 0 ? "LOCAL_FILES_READY" : "NOT_AVAILABLE"} />
           <MetricCard label="Document profiles" value={dashboardDocumentRegistry.profileCount} />
           <MetricCard label="Source Intelligence" value={sourceIntelligenceDashboard.registryStatus} />
+          <MetricCard label="API v1 public surface" value={API_V1_PUBLIC_SURFACE_DASHBOARD.status} />
+          <MetricCard label="API v1 endpoints" value={API_V1_PUBLIC_SURFACE_DASHBOARD.endpointCoverage} />
           <MetricCard label="SourceSets" value={`${sourceIntelligenceDashboard.sourceSetsActive}/${sourceIntelligenceDashboard.sourceSets}`} />
           <MetricCard label="Linked document memory" value={dashboardDocumentRegistry.linkedMemoryCount} />
           <MetricCard label="Coupling state" value={dashboardSemanticMemory.available ? dashboardSemanticMemory.couplingState : "NOT_AVAILABLE"} />
@@ -7566,6 +7873,11 @@ export default function InterfacePage() {
 
       <section className="joker-source-intelligence-shell">
         <SourceIntelligenceDashboardCard snapshot={sourceIntelligenceDashboard} />
+      </section>
+
+
+      <section className="joker-source-intelligence-shell">
+        <ApiV1PublicSurfaceDashboardCard snapshot={API_V1_PUBLIC_SURFACE_DASHBOARD} />
       </section>
 
 
