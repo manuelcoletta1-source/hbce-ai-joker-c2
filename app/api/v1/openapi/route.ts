@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const API_REVISION = "HBCE-IPR-RUNTIME-API-v1-OPENAPI-CONTRACT-v1.1.1-SYNTAX_FIX" as const;
+const API_REVISION = "HBCE-IPR-RUNTIME-API-v1-OPENAPI-CONTRACT-v1.0" as const;
 const API_VERSION = "v1" as const;
 const PRODUCT_NAME = "HBCE IPR Operational Identity & Proof Layer" as const;
 const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1" as const;
@@ -80,7 +80,7 @@ const openApiDocument = {
     version: "1.0.0",
     summary: PRODUCT_NAME,
     description:
-      "Public v1 contract layer for JOKER-C2 SaaS Core v0.1. It exposes operational IPR identity, governed AI interaction, file intake, asynchronous operations, EVT event tracing, OPC technical proof receipts, audit receipts, model usage receipts, Source Intelligence v0.3 registry metadata, self-test diagnostics and B2B/B2G demo playbooks. OPC is a technical proof receipt only; legalCertification=false.",
+      "Public v1 contract layer for JOKER-C2 SaaS Core v0.1. It exposes operational IPR identity, governed AI interaction, EVT event tracing, OPC technical proof receipts, audit receipts, model usage receipts and Source Intelligence contract metadata. OPC is a technical proof receipt only; legalCertification=false.",
     contact: {
       name: "HERMETICUM B.C.E. S.r.l.",
       url: "https://hermeticum.example"
@@ -117,40 +117,9 @@ const openApiDocument = {
     {
       name: "Proof Receipts",
       description: "EVT, OPC, audit and model-usage receipt contracts"
-    },
-    {
-      name: "Source Intelligence",
-      description: "SourceSet registry and B2G source intelligence contract metadata"
-    },
-    {
-      name: "Diagnostics",
-      description: "Static contract matrix and API surface diagnostics"
-    },
-    {
-      name: "Demo",
-      description: "Static B2B/B2G demo playbooks"
     }
   ],
   paths: {
-    "/": {
-      get: {
-        tags: ["Runtime"],
-        operationId: "getHbceIprRuntimeApiDiscovery",
-        summary: "Return HBCE IPR Runtime API v1 discovery metadata",
-        responses: {
-          "200": {
-            description: "API v1 discovery document",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/DiscoveryResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/health": {
       get: {
         tags: ["Runtime"],
@@ -227,35 +196,6 @@ const openApiDocument = {
           },
           "400": {
             description: "Invalid session request"
-          }
-        }
-      }
-    },
-    "/ipr/session/{sessionId}": {
-      get: {
-        tags: ["IPR Session"],
-        operationId: "getIprSessionLookupReceipt",
-        summary: "Return a contract-only IPR session lookup receipt",
-        parameters: [
-          {
-            name: "sessionId",
-            in: "path",
-            required: true,
-            schema: {
-              type: "string"
-            }
-          }
-        ],
-        responses: {
-          "200": {
-            description: "IPR session lookup contract receipt",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/IprSessionLookupResponse"
-                }
-              }
-            }
           }
         }
       }
@@ -517,83 +457,6 @@ const openApiDocument = {
         }
       }
     },
-    "/source-intelligence": {
-      get: {
-        tags: ["Source Intelligence"],
-        operationId: "getSourceIntelligenceRegistry",
-        summary: "Return Source Intelligence v0.3 registry metadata",
-        parameters: [
-          {
-            name: "sourceSet",
-            in: "query",
-            required: false,
-            schema: {
-              type: "string",
-              enum: [
-                "EU_AI_GOVERNANCE_REGULATORY_STACK",
-                "ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK",
-                "ENISA_CYBER_THREAT_LANDSCAPE",
-                "OPENAI_AGENTIC_SYSTEMS_SECURITY",
-                "ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK"
-              ]
-            }
-          }
-        ],
-        responses: {
-          "200": {
-            description: "Source Intelligence registry overview or sourceSet detail",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/SourceIntelligenceResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            description: "Unknown sourceSet"
-          }
-        }
-      }
-    },
-    "/self-test": {
-      get: {
-        tags: ["Diagnostics"],
-        operationId: "getApiV1SelfTestMatrix",
-        summary: "Return static self-test matrix for the v1 public surface",
-        responses: {
-          "200": {
-            description: "Static contract matrix; no HTTP fetch, no DB lookup, no runtime mutation",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/SelfTestResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/demo/ipr-ai-audit-trail": {
-      get: {
-        tags: ["Demo"],
-        operationId: "getIprAiAuditTrailDemo",
-        summary: "Return static IPR AI Audit Trail demo playbook",
-        responses: {
-          "200": {
-            description: "Static B2B/B2G audit trail demo playbook",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/IprAiAuditTrailDemoResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/openapi": {
       get: {
         tags: ["Runtime"],
@@ -648,32 +511,6 @@ const openApiDocument = {
           }
         },
         required: ["humanIpr", "runtimeIpr", "tenant", "workspace", "access", "policy", "memory", "memoryScope"]
-      },
-      DiscoveryResponse: {
-        type: "object",
-        properties: {
-          status: {
-            type: "string",
-            enum: ["HBCE_IPR_RUNTIME_API_DISCOVERY_READY"]
-          },
-          endpointCount: {
-            type: "integer"
-          },
-          product: {
-            type: "string",
-            enum: [PRODUCT_NAME]
-          },
-          runtime: {
-            type: "string",
-            enum: [RUNTIME_NAME]
-          },
-          openapi: {
-            type: "object"
-          },
-          boundary: {
-            $ref: "#/components/schemas/Boundary"
-          }
-        }
       },
       HealthResponse: {
         type: "object",
@@ -756,30 +593,6 @@ const openApiDocument = {
           sessionStatus: {
             type: "string",
             enum: ["ACCESS_GRANTED"]
-          },
-          boundary: {
-            $ref: "#/components/schemas/Boundary"
-          }
-        }
-      },
-      IprSessionLookupResponse: {
-        type: "object",
-        properties: {
-          status: {
-            type: "string",
-            enum: ["HBCE_IPR_SESSION_LOOKUP_READY"]
-          },
-          lookupMode: {
-            type: "string",
-            enum: ["CONTRACT_RECEIPT_ONLY"]
-          },
-          sessionKnownByThisRoute: {
-            type: "boolean",
-            enum: [false]
-          },
-          sessionLoadedFromDatabase: {
-            type: "boolean",
-            enum: [false]
           },
           boundary: {
             $ref: "#/components/schemas/Boundary"
@@ -938,96 +751,6 @@ const openApiDocument = {
             $ref: "#/components/schemas/Boundary"
           }
         }
-      },
-      SourceIntelligenceResponse: {
-        type: "object",
-        properties: {
-          status: {
-            type: "string",
-            enum: ["HBCE_SOURCE_INTELLIGENCE_REGISTRY_READY", "HBCE_SOURCE_INTELLIGENCE_SOURCESET_READY"]
-          },
-          sourceLayerRevision: {
-            type: "string",
-            enum: ["HBCE_SOURCE_INTELLIGENCE_LAYER-v0.3-SOURCESET_REGISTRY"]
-          },
-          sourceSets: {
-            type: "integer",
-            enum: [5]
-          },
-          catalogSources: {
-            type: "integer",
-            enum: [19]
-          },
-          rawTextPersistence: {
-            type: "boolean",
-            enum: [false]
-          },
-          sourceProfileSaveMode: {
-            type: "string",
-            enum: ["EXPLICIT_OPERATOR_SAVE_ONLY"]
-          },
-          boundary: {
-            $ref: "#/components/schemas/Boundary"
-          }
-        }
-      },
-      SelfTestResponse: {
-        type: "object",
-        properties: {
-          status: {
-            type: "string",
-            enum: ["HBCE_IPR_RUNTIME_API_SELF_TEST_READY"]
-          },
-          mode: {
-            type: "string",
-            enum: ["STATIC_CONTRACT_MATRIX_ONLY"]
-          },
-          performsHttpFetch: {
-            type: "boolean",
-            enum: [false]
-          },
-          performsDatabaseLookup: {
-            type: "boolean",
-            enum: [false]
-          },
-          performsRuntimeMutation: {
-            type: "boolean",
-            enum: [false]
-          },
-          performsMemoryWrite: {
-            type: "boolean",
-            enum: [false]
-          },
-          boundary: {
-            $ref: "#/components/schemas/Boundary"
-          }
-        }
-      },
-      IprAiAuditTrailDemoResponse: {
-        type: "object",
-        properties: {
-          status: {
-            type: "string",
-            enum: ["HBCE_IPR_AI_AUDIT_TRAIL_DEMO_READY"]
-          },
-          mode: {
-            type: "string",
-            enum: ["STATIC_DEMO_PLAYBOOK_ONLY"]
-          },
-          executionMode: {
-            type: "string",
-            enum: ["NO_RUNTIME_EXECUTION_IN_THIS_ROUTE"]
-          },
-          demoFlow: {
-            type: "array",
-            items: {
-              type: "object"
-            }
-          },
-          boundary: {
-            $ref: "#/components/schemas/Boundary"
-          }
-        }
       }
     },
     securitySchemes: {
@@ -1057,40 +780,11 @@ const openApiDocument = {
       memoryScope: "IPR_BOUND",
       policy: "ALLOW"
     },
-    publicSurface: {
-      endpointCount: 19,
-      contractOnlyEndpoints: [
-        "/api/v1",
-        "/api/v1/health",
-        "/api/v1/capabilities",
-        "/api/v1/ipr/session",
-        "/api/v1/ipr/session/{sessionId}",
-        "/api/v1/chat",
-        "/api/v1/files",
-        "/api/v1/operations",
-        "/api/v1/operations/{operationId}",
-        "/api/v1/events",
-        "/api/v1/opc/{opcId}",
-        "/api/v1/audit/{auditId}",
-        "/api/v1/model-usage/{usageId}",
-        "/api/v1/source-intelligence",
-        "/api/v1/openapi",
-        "/api/v1/self-test",
-        "/api/v1/demo/ipr-ai-audit-trail"
-      ]
-    },
     sourceIntelligence: {
       revision: "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.3-SOURCESET_REGISTRY",
       sourceSetRegistry: "SOURCESET_REGISTRY_MULTI_DOMAIN_B2G-v0.3",
       sourceSets: 5,
       catalogSources: 19,
-      sourceSetsRegistered: [
-        "EU_AI_GOVERNANCE_REGULATORY_STACK",
-        "ECB_FINANCIAL_SYSTEM_AI_CYBER_RISK",
-        "ENISA_CYBER_THREAT_LANDSCAPE",
-        "OPENAI_AGENTIC_SYSTEMS_SECURITY",
-        "ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK"
-      ],
       rawTextPersistence: false,
       sourceProfileSaveMode: "EXPLICIT_OPERATOR_SAVE_ONLY"
     },
@@ -1113,14 +807,6 @@ export async function GET(): Promise<NextResponse> {
     legalCertification: LEGAL_CERTIFICATION,
     opcBoundary: OPC_BOUNDARY,
     iprCardBoundary: IPR_CARD_BOUNDARY,
-    surfaceAlignment: {
-      status: "ALIGNED_WITH_V1_PUBLIC_SURFACE_AFTER_SOURCE_INTELLIGENCE_DEMO_SELF_TEST",
-      includesDiscoveryRoot: true,
-      includesSessionLookup: true,
-      includesSourceIntelligence: true,
-      includesSelfTest: true,
-      includesAuditTrailDemo: true
-    },
     openapi: openApiDocument
   });
 }
