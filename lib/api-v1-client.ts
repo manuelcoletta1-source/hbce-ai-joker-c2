@@ -1,5 +1,5 @@
 export const HBCE_API_V1_CLIENT_REVISION =
-  "HBCE-IPR-RUNTIME-API-v1-CLIENT-INTERNAL-v0.1" as const;
+  "HBCE-IPR-RUNTIME-API-v1-CLIENT-INTERNAL-v0.1.1-TYPED_ERROR_RESPONSE_FIX" as const;
 
 export const HBCE_DEFAULT_API_V1_BASE_URL =
   "https://hbce-ai-joker-c2.vercel.app" as const;
@@ -12,7 +12,7 @@ export type HbceJson =
   | HbceJson[]
   | { [key: string]: HbceJson };
 
-export type HbceJsonObject = Record<string, HbceJson>;
+export type HbceJsonObject = { [key: string]: HbceJson };
 
 export type HbceApiV1ClientConfig = {
   baseUrl?: string;
@@ -28,13 +28,13 @@ export type HbceApiV1RequestOptions = {
   query?: Record<string, string | number | boolean | null | undefined>;
 };
 
-export type HbceApiV1Response<T = HbceJson> = {
+export type HbceApiV1Response<TBody = unknown> = {
   ok: boolean;
   status: number;
   statusText: string;
   url: string;
   headers: Record<string, string>;
-  data: T | null;
+  data: TBody | null;
   text: string;
 };
 
@@ -97,11 +97,11 @@ export type HbceSourceIntelligenceQuery = {
   mode?: string;
 };
 
-export class HbceApiV1Error extends Error {
+export class HbceApiV1Error<TBody = unknown> extends Error {
   public readonly status: number;
-  public readonly response: HbceApiV1Response;
+  public readonly response: HbceApiV1Response<TBody>;
 
-  constructor(message: string, response: HbceApiV1Response) {
+  constructor(message: string, response: HbceApiV1Response<TBody>) {
     super(message);
     this.name = "HbceApiV1Error";
     this.status = response.status;
@@ -151,32 +151,28 @@ function headersToObject(headers: Headers): Record<string, string> {
   return out;
 }
 
-function maybeJson(text: string): HbceJson | null {
+function maybeJson(text: string): unknown | null {
   if (!text.trim()) return null;
 
   try {
-    return JSON.parse(text) as HbceJson;
+    return JSON.parse(text) as unknown;
   } catch {
     return null;
   }
 }
 
-function withTimeout(signal: AbortSignal | undefined, timeoutMs: number) {
+function withTimeout(timeoutMs: number) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  if (signal) {
-    if (signal.aborted) {
-      controller.abort();
-    } else {
-      signal.addEventListener("abort", () => controller.abort(), { once: true });
-    }
-  }
 
   return {
     signal: controller.signal,
     clear: () => clearTimeout(timeout)
   };
+}
+
+function asJsonObject<TInput extends object>(input: TInput): HbceJsonObject {
+  return input as unknown as HbceJsonObject;
 }
 
 export class HbceApiV1Client {
@@ -196,13 +192,13 @@ export class HbceApiV1Client {
     this.fetchImpl = config.fetchImpl ?? fetch;
   }
 
-  async request<T = HbceJson>(
+  async request<TBody = unknown>(
     method: "GET" | "POST",
     path: string,
     body?: HbceJsonObject,
     options: HbceApiV1RequestOptions = {}
-  ): Promise<HbceApiV1Response<T>> {
-    const timeout = withTimeout(undefined, options.timeoutMs ?? this.timeoutMs);
+  ): Promise<HbceApiV1Response<TBody>> {
+    const timeout = withTimeout(options.timeoutMs ?? this.timeoutMs);
     const url = buildUrl(this.baseUrl, path, options.query);
 
     const headers: Record<string, string> = {
@@ -229,7 +225,7 @@ export class HbceApiV1Client {
       });
 
       const text = await response.text();
-      const parsed = maybeJson(text) as T | null;
+      const parsed = maybeJson(text) as TBody | null;
 
       return {
         ok: response.ok,
@@ -245,24 +241,24 @@ export class HbceApiV1Client {
     }
   }
 
-  async get<T = HbceJson>(
+  async get<TBody = unknown>(
     path: string,
     options?: HbceApiV1RequestOptions
-  ): Promise<HbceApiV1Response<T>> {
-    return this.request<T>("GET", path, undefined, options);
+  ): Promise<HbceApiV1Response<TBody>> {
+    return this.request<TBody>("GET", path, undefined, options);
   }
 
-  async post<T = HbceJson>(
+  async post<TBody = unknown>(
     path: string,
     body: HbceJsonObject,
     options?: HbceApiV1RequestOptions
-  ): Promise<HbceApiV1Response<T>> {
-    return this.request<T>("POST", path, body, options);
+  ): Promise<HbceApiV1Response<TBody>> {
+    return this.request<TBody>("POST", path, body, options);
   }
 
-  async expectOk<T = HbceJson>(
-    responsePromise: Promise<HbceApiV1Response<T>>
-  ): Promise<HbceApiV1Response<T>> {
+  async expectOk<TBody = unknown>(
+    responsePromise: Promise<HbceApiV1Response<TBody>>
+  ): Promise<HbceApiV1Response<TBody>> {
     const response = await responsePromise;
 
     if (!response.ok) {
@@ -273,6 +269,10 @@ export class HbceApiV1Client {
     }
 
     return response;
+  }
+
+  root(options?: HbceApiV1RequestOptions) {
+    return this.get("/api/v1", options);
   }
 
   health(options?: HbceApiV1RequestOptions) {
@@ -291,16 +291,12 @@ export class HbceApiV1Client {
     return this.get("/api/v1/openapi", options);
   }
 
-  root(options?: HbceApiV1RequestOptions) {
-    return this.get("/api/v1", options);
-  }
-
   sessionContract(options?: HbceApiV1RequestOptions) {
     return this.get("/api/v1/ipr/session", options);
   }
 
   createSession(input: HbceApiV1SessionInput, options?: HbceApiV1RequestOptions) {
-    return this.post("/api/v1/ipr/session", input as HbceJsonObject, options);
+    return this.post("/api/v1/ipr/session", asJsonObject(input), options);
   }
 
   getSession(sessionId: string, options?: HbceApiV1RequestOptions) {
@@ -312,7 +308,7 @@ export class HbceApiV1Client {
   }
 
   chat(input: HbceApiV1ChatInput, options?: HbceApiV1RequestOptions) {
-    return this.post("/api/v1/chat", input as HbceJsonObject, options);
+    return this.post("/api/v1/chat", asJsonObject(input), options);
   }
 
   filesContract(options?: HbceApiV1RequestOptions) {
@@ -320,7 +316,7 @@ export class HbceApiV1Client {
   }
 
   files(input: HbceApiV1FilesInput, options?: HbceApiV1RequestOptions) {
-    return this.post("/api/v1/files", input as HbceJsonObject, options);
+    return this.post("/api/v1/files", asJsonObject(input), options);
   }
 
   operationsContract(options?: HbceApiV1RequestOptions) {
@@ -328,7 +324,7 @@ export class HbceApiV1Client {
   }
 
   createOperation(input: HbceApiV1OperationInput, options?: HbceApiV1RequestOptions) {
-    return this.post("/api/v1/operations", input as HbceJsonObject, options);
+    return this.post("/api/v1/operations", asJsonObject(input), options);
   }
 
   getOperation(operationId: string, options?: HbceApiV1RequestOptions) {
@@ -351,7 +347,10 @@ export class HbceApiV1Client {
     return this.get(`/api/v1/model-usage/${encodeURIComponent(usageId)}`, options);
   }
 
-  sourceIntelligence(query?: HbceSourceIntelligenceQuery, options?: HbceApiV1RequestOptions) {
+  sourceIntelligence(
+    query?: HbceSourceIntelligenceQuery,
+    options?: HbceApiV1RequestOptions
+  ) {
     return this.get("/api/v1/source-intelligence", {
       ...options,
       query: {
