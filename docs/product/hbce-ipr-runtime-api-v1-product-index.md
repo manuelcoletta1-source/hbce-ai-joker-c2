@@ -29,6 +29,7 @@ which documents are commercial / partner-facing
 which documents define security boundaries
 which documents define pilot workflow
 which documents define source/file handling
+which documents define rate limit, quota and Anti-Abuso API controls
 which documents preserve legalCertification=false and OPC technical boundary
 ```
 
@@ -58,6 +59,14 @@ optionalWarnings=0
 checks=14
 ```
 
+Anti-Abuso API baseline:
+
+```txt
+ANTI_ABUSO_API_DOCUMENTATION_READY
+API_V1_RATE_LIMIT_QUOTA_SMOKE_TEST_DOCUMENTED
+RATE_LIMIT_EXCEEDED
+```
+
 Current package state:
 
 ```txt
@@ -69,6 +78,7 @@ quickstart = PASS
 product index = PASS
 security checklist = PASS
 rate limit / quota policy = PASS
+Anti-Abuso API = PASS
 partner onboarding = PASS
 B2B / B2G partner pitch = PASS
 curl examples = PASS
@@ -79,7 +89,7 @@ source intelligence workflow = PASS
 Operational summary:
 
 ```txt
-HBCE IPR Runtime API v1 is now documented as a controlled B2B / B2G pilot-ready product package with runtime API surface, smoke validation, integration guide, pilot package, quickstart, product index, security checklist, rate limit/quota policy, partner onboarding, partner pitch, cURL examples, files workflow and source intelligence workflow.
+HBCE IPR Runtime API v1 is now documented as a controlled B2B / B2G pilot-ready product package with runtime API surface, smoke validation, integration guide, pilot package, quickstart, product index, security checklist, rate limit/quota policy, Anti-Abuso API documentation, partner onboarding, partner pitch, cURL examples, files workflow and source intelligence workflow.
 ```
 
 Yes, it is now an actual documentation package rather than a folder of markdown fossils. Civilization advances one grep at a time.
@@ -111,6 +121,7 @@ docs/product/hbce-ipr-runtime-api-v1-b2b-b2g-partner-pitch.md
 ```txt
 docs/product/hbce-ipr-runtime-api-v1-security-checklist.md
 docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota.md
+docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md
 ```
 
 ### 3.4 Practical examples and workflows
@@ -121,10 +132,11 @@ docs/product/hbce-ipr-runtime-api-v1-files-workflow.md
 docs/product/hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
 ```
 
-### 3.5 Executable smoke test
+### 3.5 Executable smoke tests
 
 ```txt
 scripts/test-api-v1-client-smoke.mjs
+scripts/test-api-v1-rate-limit-quota.mjs
 ```
 
 ---
@@ -139,12 +151,13 @@ Recommended reading order for a new technical partner:
 3. hbce-ipr-runtime-api-v1-pilot-package.md
 4. hbce-ipr-runtime-api-v1-security-checklist.md
 5. hbce-ipr-runtime-api-v1-rate-limit-quota.md
-6. hbce-ipr-runtime-api-v1-partner-onboarding.md
-7. hbce-ipr-runtime-api-v1-curl-examples.md
-8. hbce-ipr-runtime-api-v1-integration-guide.md
-9. hbce-ipr-runtime-api-v1-client-smoke-test.md
-10. hbce-ipr-runtime-api-v1-files-workflow.md
-11. hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
+6. hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md
+7. hbce-ipr-runtime-api-v1-partner-onboarding.md
+8. hbce-ipr-runtime-api-v1-curl-examples.md
+9. hbce-ipr-runtime-api-v1-integration-guide.md
+10. hbce-ipr-runtime-api-v1-client-smoke-test.md
+11. hbce-ipr-runtime-api-v1-files-workflow.md
+12. hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
 ```
 
 Recommended reading order for internal operators:
@@ -154,12 +167,13 @@ Recommended reading order for internal operators:
 2. hbce-ipr-runtime-api-v1-client-smoke-test.md
 3. hbce-ipr-runtime-api-v1-security-checklist.md
 4. hbce-ipr-runtime-api-v1-rate-limit-quota.md
-5. hbce-ipr-runtime-api-v1-partner-onboarding.md
-6. hbce-ipr-runtime-api-v1-curl-examples.md
-7. hbce-ipr-runtime-api-v1-files-workflow.md
-8. hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
-9. hbce-ipr-runtime-api-v1-pilot-package.md
-10. hbce-ipr-runtime-api-v1-b2b-b2g-partner-pitch.md
+5. hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md
+6. hbce-ipr-runtime-api-v1-partner-onboarding.md
+7. hbce-ipr-runtime-api-v1-curl-examples.md
+8. hbce-ipr-runtime-api-v1-files-workflow.md
+9. hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
+10. hbce-ipr-runtime-api-v1-pilot-package.md
+11. hbce-ipr-runtime-api-v1-b2b-b2g-partner-pitch.md
 ```
 
 Recommended reading order for B2G / institutional evaluators:
@@ -168,10 +182,12 @@ Recommended reading order for B2G / institutional evaluators:
 1. hbce-ipr-runtime-api-v1-b2b-b2g-partner-pitch.md
 2. hbce-ipr-runtime-api-v1-pilot-package.md
 3. hbce-ipr-runtime-api-v1-security-checklist.md
-4. hbce-ipr-runtime-api-v1-integration-guide.md
-5. hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
-6. hbce-ipr-runtime-api-v1-files-workflow.md
-7. hbce-ipr-runtime-api-v1-client-smoke-test.md
+4. hbce-ipr-runtime-api-v1-rate-limit-quota.md
+5. hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md
+6. hbce-ipr-runtime-api-v1-integration-guide.md
+7. hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
+8. hbce-ipr-runtime-api-v1-files-workflow.md
+9. hbce-ipr-runtime-api-v1-client-smoke-test.md
 ```
 
 ---
@@ -565,7 +581,58 @@ PASS
 
 ---
 
-### 6.9 Partner onboarding
+### 6.9 Anti-Abuso API smoke test
+
+Path:
+
+```txt
+docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md
+```
+
+Purpose:
+
+```txt
+Documents Anti-Abuso API as the first operational protection layer of HBCE IPR Runtime API v1 against automatic abuse, excessive traffic and uncontrolled resource consumption.
+```
+
+Use when:
+
+```txt
+A partner, security reviewer, internal operator or B2B/B2G evaluator needs to understand how rate limit, quota and fail-closed behavior support SaaS control, runtime protection, cost governance and abuse reduction.
+```
+
+Canonical markers:
+
+```txt
+ANTI_ABUSO_API_DOCUMENTATION_READY
+API_V1_RATE_LIMIT_QUOTA_SMOKE_TEST_DOCUMENTED
+RATE_LIMIT_EXCEEDED
+```
+
+Linked script:
+
+```txt
+scripts/test-api-v1-rate-limit-quota.mjs
+```
+
+Boundary:
+
+```txt
+legalCertification=false
+OPC=technical proof receipt only
+```
+
+Status:
+
+```txt
+Anti-Abuso API = documented
+rate limit / quota smoke test = documented
+PASS
+```
+
+---
+
+### 6.10 Partner onboarding
 
 Path:
 
@@ -620,7 +687,7 @@ PASS
 
 ---
 
-### 6.10 B2B / B2G partner pitch
+### 6.11 B2B / B2G partner pitch
 
 Path:
 
@@ -662,7 +729,7 @@ PASS
 
 ---
 
-### 6.11 cURL examples
+### 6.12 cURL examples
 
 Path:
 
@@ -712,7 +779,7 @@ PASS
 
 ---
 
-### 6.12 Files workflow
+### 6.13 Files workflow
 
 Path:
 
@@ -763,7 +830,7 @@ PASS
 
 ---
 
-### 6.13 Source Intelligence workflow
+### 6.14 Source Intelligence workflow
 
 Path:
 
@@ -829,6 +896,7 @@ PASS
 | Product index | `hbce-ipr-runtime-api-v1-product-index.md` | PASS |
 | Security | `hbce-ipr-runtime-api-v1-security-checklist.md` | PASS |
 | Rate limit / quota | `hbce-ipr-runtime-api-v1-rate-limit-quota.md` | PASS |
+| Anti-Abuso API | `hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md` | PASS |
 | Partner onboarding | `hbce-ipr-runtime-api-v1-partner-onboarding.md` | PASS |
 | B2B / B2G pitch | `hbce-ipr-runtime-api-v1-b2b-b2g-partner-pitch.md` | PASS |
 | cURL examples | `hbce-ipr-runtime-api-v1-curl-examples.md` | PASS |
@@ -847,6 +915,7 @@ docs/product/hbce-ipr-runtime-api-v1-quickstart.md
 docs/product/hbce-ipr-runtime-api-v1-pilot-package.md
 docs/product/hbce-ipr-runtime-api-v1-security-checklist.md
 docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota.md
+docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md
 docs/product/hbce-ipr-runtime-api-v1-partner-onboarding.md
 docs/product/hbce-ipr-runtime-api-v1-curl-examples.md
 ```
@@ -870,6 +939,8 @@ For B2G / institutional review, send:
 docs/product/hbce-ipr-runtime-api-v1-b2b-b2g-partner-pitch.md
 docs/product/hbce-ipr-runtime-api-v1-pilot-package.md
 docs/product/hbce-ipr-runtime-api-v1-security-checklist.md
+docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota.md
+docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md
 docs/product/hbce-ipr-runtime-api-v1-integration-guide.md
 docs/product/hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
 docs/product/hbce-ipr-runtime-api-v1-files-workflow.md
@@ -883,6 +954,7 @@ institutional AI governance evaluation
 technical auditability
 controlled source intelligence
 controlled file workflow
+API abuse control
 proof boundary review
 pilot-readiness review
 ```
@@ -898,20 +970,23 @@ docs/product/hbce-ipr-runtime-api-v1-quickstart.md
 docs/product/hbce-ipr-runtime-api-v1-curl-examples.md
 docs/product/hbce-ipr-runtime-api-v1-integration-guide.md
 docs/product/hbce-ipr-runtime-api-v1-client-smoke-test.md
+docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md
 docs/product/hbce-ipr-runtime-api-v1-files-workflow.md
 docs/product/hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
 ```
 
-Executable script:
+Executable scripts:
 
 ```txt
 scripts/test-api-v1-client-smoke.mjs
+scripts/test-api-v1-rate-limit-quota.mjs
 ```
 
-Expected result:
+Expected results:
 
 ```txt
 API_V1_CLIENT_SMOKE_TEST_PASS
+API_V1_RATE_LIMIT_QUOTA_SMOKE_TEST_PASS
 ```
 
 ---
@@ -923,6 +998,7 @@ For security review, send:
 ```txt
 docs/product/hbce-ipr-runtime-api-v1-security-checklist.md
 docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota.md
+docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md
 docs/product/hbce-ipr-runtime-api-v1-client-smoke-test.md
 docs/product/hbce-ipr-runtime-api-v1-files-workflow.md
 docs/product/hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
@@ -936,6 +1012,7 @@ fail-closed authentication
 tenant/workspace isolation
 IPR session binding
 rate limits / quota
+Anti-Abuso API
 file input controls
 source-set controls
 prompt-injection posture
@@ -961,12 +1038,13 @@ Optional add-ons:
 ```txt
 docs/product/hbce-ipr-runtime-api-v1-quickstart.md
 docs/product/hbce-ipr-runtime-api-v1-security-checklist.md
+docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md
 ```
 
 Message:
 
 ```txt
-HBCE IPR Runtime API v1 is available as a controlled partner pilot package for identity-bound AI execution, event traceability, OPC technical proof receipts and audit-oriented API lookup.
+HBCE IPR Runtime API v1 is available as a controlled partner pilot package for identity-bound AI execution, event traceability, OPC technical proof receipts, audit-oriented API lookup and Anti-Abuso API controls.
 ```
 
 Boundary:
@@ -983,13 +1061,13 @@ OPC=technical proof receipt only
 Public-facing statement:
 
 ```txt
-HBCE IPR Runtime API v1 provides a governed API layer for identity-bound AI runtime execution, connecting IPR session, JOKER-C2 chat execution, EVT event tracing, OPC technical proof receipts and audit-oriented lookup routes within a controlled B2B / B2G pilot package.
+HBCE IPR Runtime API v1 provides a governed API layer for identity-bound AI runtime execution, connecting IPR session, JOKER-C2 chat execution, EVT event tracing, OPC technical proof receipts, audit-oriented lookup routes and Anti-Abuso API controls within a controlled B2B / B2G pilot package.
 ```
 
 Shorter:
 
 ```txt
-HBCE IPR Runtime API v1 turns AI execution into a governed, traceable and technically receipted runtime event.
+HBCE IPR Runtime API v1 turns AI execution into a governed, traceable and technically receipted runtime event with controlled API consumption.
 ```
 
 Boundary statement:
@@ -1014,6 +1092,8 @@ a legal evidence platform by default
 a court-proof certification service by default
 an unrestricted browsing or scraping API
 an unrestricted document memory system
+an unlimited API consumption channel
+an anti-abuse certification authority
 ```
 
 Correct claim:
@@ -1033,6 +1113,9 @@ controlled B2B / B2G pilot-ready governed runtime API
 | Source OPC proof | `technical source receipt only` |
 | Raw text persistence | `rawTextPersistence=false` by default |
 | Chat without key | fail-closed |
+| Rate limit / quota | governed API consumption |
+| Anti-Abuso API | documented first operational anti-abuse layer |
+| Excessive traffic | `RATE_LIMIT_EXCEEDED` |
 | Source fetch | catalog-first, source-set scoped |
 | File input | controlled, classified, hash-bound |
 | Secrets | never upload, never print |
@@ -1043,7 +1126,7 @@ controlled B2B / B2G pilot-ready governed runtime API
 
 ## 16. Smoke test anchor
 
-The smoke test remains the operational validation anchor.
+The client smoke test remains the operational validation anchor.
 
 Script:
 
@@ -1084,6 +1167,21 @@ Accepted skip:
 SKIPPED model usage lookup because usageId=NONE
 ```
 
+Anti-Abuso API smoke test anchor:
+
+```txt
+scripts/test-api-v1-rate-limit-quota.mjs
+```
+
+Expected markers:
+
+```txt
+API_V1_RATE_LIMIT_QUOTA_SMOKE_TEST_PASS
+RATE_LIMIT_EXCEEDED
+ANTI_ABUSO_API_DOCUMENTATION_READY
+API_V1_RATE_LIMIT_QUOTA_SMOKE_TEST_DOCUMENTED
+```
+
 ---
 
 ## 17. Product maturity interpretation
@@ -1096,6 +1194,7 @@ partner-ready
 documentation-ready
 security-baseline-ready
 quota-policy-ready
+Anti-Abuso API documented
 workflow-documented
 source-intelligence-documented
 files-workflow-documented
@@ -1110,6 +1209,8 @@ public authority recognition
 unrestricted enterprise deployment
 unbounded data ingestion
 unrestricted source fetch
+unlimited API usage
+anti-abuse legal certification
 ```
 
 This distinction matters. Overclaiming is how decent systems get turned into procurement confetti.
@@ -1121,8 +1222,7 @@ This distinction matters. Overclaiming is how decent systems get turned into pro
 After this updated index, next technical steps may include:
 
 ```txt
-implement runtime rate limit enforcement if not already enforced
-create rate limit smoke test script
+verify Anti-Abuso API index update on Linux
 create source intelligence route smoke test script
 create files workflow smoke test script
 create OpenAPI examples update
@@ -1130,6 +1230,7 @@ create Postman collection
 create partner email package
 create public one-page PDF
 create API v1 changelog
+move from documentation package to runtime enforcement improvements where needed
 ```
 
 Recommended order:
@@ -1159,6 +1260,7 @@ technical docs = ready
 workflow docs = ready
 security baseline = ready
 quota policy = ready
+Anti-Abuso API documentation = ready
 smoke validation = PASS
 ```
 
