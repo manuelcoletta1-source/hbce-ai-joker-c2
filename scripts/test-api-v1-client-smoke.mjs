@@ -114,7 +114,7 @@ async function main() {
   await checkChatWithKey();
 
   await optionalLookup("operations lookup", "/api/v1/operations", created.evtId || created.opcId);
-  await optionalLookup("events lookup", "/api/v1/events", created.evtId);
+  await optionalEventLookup("events lookup", created.evtId);
   await optionalLookup("opc lookup", "/api/v1/opc", created.opcId);
   await optionalLookup("audit lookup", "/api/v1/audit", created.auditId);
   await optionalLookup("model usage lookup", "/api/v1/model-usage", created.usageId);
@@ -213,7 +213,9 @@ async function checkChatWithoutKey() {
 async function checkSessionCreate() {
   const payload = {
     tenantId: TENANT_ID,
+    tenant: TENANT_ID,
     workspaceId: WORKSPACE_ID,
+    workspace: WORKSPACE_ID,
     operatorIprId: OPERATOR_IPR_ID,
     operatorIpr: OPERATOR_IPR_ID,
     humanIprId: OPERATOR_IPR_ID,
@@ -267,13 +269,16 @@ async function checkChatWithKey() {
   });
 
   created.evtId = pickFirstString(response.json, [
+    "responseEvt",
     "evtId",
     "eventId",
-    "responseEvt",
-    "data.evtId",
+    "lastEvtId",
     "data.responseEvt",
+    "data.evtId",
+    "data.eventId",
     "audit.evtId",
   ]);
+
   created.opcId = pickFirstString(response.json, [
     "opcId",
     "opc.id",
@@ -281,12 +286,14 @@ async function checkChatWithKey() {
     "data.opc.id",
     "proof.opcId",
   ]);
+
   created.auditId = pickFirstString(response.json, [
     "auditId",
     "audit.id",
     "data.auditId",
     "data.audit.id",
   ]);
+
   created.usageId = pickFirstString(response.json, [
     "usageId",
     "modelUsageId",
@@ -336,6 +343,34 @@ async function optionalLookup(name, path, lookupId) {
   });
 }
 
+async function optionalEventLookup(name, eventId) {
+  if (!eventId) {
+    record({
+      name,
+      critical: false,
+      ok: true,
+      status: "SKIPPED",
+      detail: "no event id returned by chat response",
+    });
+    return;
+  }
+
+  const queryPath = `/api/v1/events?eventId=${encodeURIComponent(eventId)}`;
+  const response = await request("GET", queryPath, { auth: true });
+  const ok = response.status >= 200 && response.status < 300;
+
+  record({
+    name,
+    critical: false,
+    ok,
+    status: ok ? "PASS" : "WARN",
+    httpStatus: response.status,
+    detail: ok
+      ? "events contract lookup envelope returned successfully"
+      : summarizeResponse(response, ["status", "failReason", "EVT_LOOKUP"]),
+  });
+}
+
 function buildChatBody({ sessionId }) {
   return {
     message: "HBCE API v1 client smoke test. Return only a minimal readiness confirmation.",
@@ -347,7 +382,9 @@ function buildChatBody({ sessionId }) {
       },
     ],
     tenantId: TENANT_ID,
+    tenant: TENANT_ID,
     workspaceId: WORKSPACE_ID,
+    workspace: WORKSPACE_ID,
     operatorIprId: OPERATOR_IPR_ID,
     operatorIpr: OPERATOR_IPR_ID,
     humanIprId: OPERATOR_IPR_ID,
