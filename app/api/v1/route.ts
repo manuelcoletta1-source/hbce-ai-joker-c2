@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 const API_VERSION = "v1" as const;
-const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-CHAT_BRIDGE_AUTH_GATE_PRIORITY-v0.2" as const;
+const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-CHAT_BRIDGE_AUTH_GATE_PRIORITY-v77_1" as const;
 const PRODUCT_NAME = "HBCE IPR Operational Identity & Proof Layer" as const;
 const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1" as const;
 
@@ -23,6 +23,7 @@ const MAX_SESSION_ID_LENGTH = 220;
 const INTERNAL_CHAT_TIMEOUT_MS = 55_000;
 const API_KEY_HEADER = "x-hbce-api-key" as const;
 const AUTHORIZATION_HEADER = "authorization" as const;
+const AUTH_GATE_REVISION = "API_V1_CHAT_AUTH_GATE_PRIORITY_v77_1" as const;
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -71,6 +72,12 @@ type V1ChatContractPayload = {
   purpose: "Execute a governed AI interaction through JOKER-C2 with IPR, EVT, OPC, audit and usage visibility.";
   minimumInput: string[];
   outputIncludes: string[];
+  authGate: {
+    revision: typeof AUTH_GATE_REVISION;
+    required: true;
+    checkedBeforeJsonBody: true;
+    acceptedHeaders: [typeof API_KEY_HEADER, "Authorization: Bearer <token>"];
+  };
   internalRuntimeBridge: {
     target: typeof INTERNAL_CHAT_PATH;
     mode: "SERVER_SIDE_BRIDGE_TO_EXISTING_JOKER_C2_CHAT_RUNTIME";
@@ -169,6 +176,12 @@ type V1ChatFailPayload = {
     | "INTERNAL_CHAT_RUNTIME_FAIL";
   message: string;
   expected?: Record<string, string>;
+  authGate?: {
+    revision: typeof AUTH_GATE_REVISION;
+    required: true;
+    checkedBeforeJsonBody: true;
+    acceptedHeaders: [typeof API_KEY_HEADER, "Authorization: Bearer <token>"];
+  };
   bridge?: {
     internalEndpoint: typeof INTERNAL_CHAT_PATH;
     internalStatus?: number;
@@ -241,6 +254,7 @@ function jsonResponse<TPayload>(payload: TPayload, init?: ResponseInit) {
       "X-HBCE-Product": PRODUCT_NAME,
       "X-HBCE-API-Version": API_VERSION,
       "X-HBCE-Route-Revision": ROUTE_REVISION,
+      "X-HBCE-Auth-Gate-Revision": AUTH_GATE_REVISION,
       "X-HBCE-Legal-Certification": "false",
       "X-HBCE-OPC-Boundary": OPC_BOUNDARY,
       ...(init?.headers ?? {})
@@ -263,6 +277,12 @@ function fail(
     failReason,
     message,
     ...(extra?.expected ? { expected: extra.expected } : {}),
+    authGate: {
+      revision: AUTH_GATE_REVISION,
+      required: true,
+      checkedBeforeJsonBody: true,
+      acceptedHeaders: [API_KEY_HEADER, "Authorization: Bearer <token>"]
+    },
     ...(extra?.bridge ? { bridge: extra.bridge } : {}),
     policy: buildFailPolicy(),
     legalCertification: LEGAL_CERTIFICATION,
@@ -287,13 +307,13 @@ function extractProvidedApiKey(request: NextRequest): string | null {
   return bearerMatch ? normalizeString(bearerMatch[1]) : null;
 }
 
-function validatePilotApiKey(request: NextRequest) {
+function validatePilotApiKey(request: NextRequest): ReturnType<typeof fail> | null {
   const providedApiKey = extractProvidedApiKey(request);
 
   if (!providedApiKey) {
     return fail(
       "MISSING_API_KEY",
-      "Missing required HBCE API key for /api/v1/chat pilot access.",
+      "Missing required HBCE API key for /api/v1/chat pilot access. Auth gate is checked before JSON body and session validation.",
       {
         status: 401,
         headers: {
@@ -490,6 +510,12 @@ export async function GET() {
       "risk",
       "legalCertification:false"
     ],
+    authGate: {
+      revision: AUTH_GATE_REVISION,
+      required: true,
+      checkedBeforeJsonBody: true,
+      acceptedHeaders: [API_KEY_HEADER, "Authorization: Bearer <token>"]
+    },
     internalRuntimeBridge: {
       target: INTERNAL_CHAT_PATH,
       mode: "SERVER_SIDE_BRIDGE_TO_EXISTING_JOKER_C2_CHAT_RUNTIME",
