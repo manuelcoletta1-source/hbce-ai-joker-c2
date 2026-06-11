@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 const API_VERSION = "v1" as const;
-const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-CHAT_BRIDGE_AUTH_GATE_PRIORITY-v77_1" as const;
+const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-CHAT_BRIDGE_AUTH_GATE_PRIORITY-v77_2" as const;
 const PRODUCT_NAME = "HBCE IPR Operational Identity & Proof Layer" as const;
 const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1" as const;
 
@@ -23,7 +23,7 @@ const MAX_SESSION_ID_LENGTH = 220;
 const INTERNAL_CHAT_TIMEOUT_MS = 55_000;
 const API_KEY_HEADER = "x-hbce-api-key" as const;
 const AUTHORIZATION_HEADER = "authorization" as const;
-const AUTH_GATE_REVISION = "API_V1_CHAT_AUTH_GATE_PRIORITY_v77_1" as const;
+const AUTH_GATE_REVISION = "API_V1_CHAT_AUTH_GATE_PRIORITY_v77_2" as const;
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
