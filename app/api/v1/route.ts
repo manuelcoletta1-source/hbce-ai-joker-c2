@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 const API_VERSION = "v1" as const;
-const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-CHAT_BRIDGE_AUTH_GATE_PRIORITY-v77_2" as const;
+const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-CHAT_BRIDGE_AUTH_GATE_PRIORITY-v77_3" as const;
 const PRODUCT_NAME = "HBCE IPR Operational Identity & Proof Layer" as const;
 const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1" as const;
 
@@ -23,7 +23,8 @@ const MAX_SESSION_ID_LENGTH = 220;
 const INTERNAL_CHAT_TIMEOUT_MS = 55_000;
 const API_KEY_HEADER = "x-hbce-api-key" as const;
 const AUTHORIZATION_HEADER = "authorization" as const;
-const AUTH_GATE_REVISION = "API_V1_CHAT_AUTH_GATE_PRIORITY_v77_2" as const;
+const AUTH_GATE_REVISION = "API_V1_CHAT_AUTH_GATE_PRIORITY_v77_3" as const;
+const DEPLOY_SENTINEL = "API_V1_CHAT_ROUTE_DEPLOY_SENTINEL_v77_3_20260611" as const;
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -67,6 +68,7 @@ type V1ChatContractPayload = {
   product: typeof PRODUCT_NAME;
   apiVersion: typeof API_VERSION;
   routeRevision: typeof ROUTE_REVISION;
+  deploySentinel: typeof DEPLOY_SENTINEL;
   endpoint: "/api/v1/chat";
   method: "POST";
   purpose: "Execute a governed AI interaction through JOKER-C2 with IPR, EVT, OPC, audit and usage visibility.";
@@ -101,6 +103,7 @@ type V1ChatReadyPayload = {
   product: typeof PRODUCT_NAME;
   apiVersion: typeof API_VERSION;
   routeRevision: typeof ROUTE_REVISION;
+  deploySentinel: typeof DEPLOY_SENTINEL;
   answer: unknown;
   responseEvt: unknown;
   opcId: unknown;
@@ -155,6 +158,7 @@ type V1ChatFailPayload = {
   product: typeof PRODUCT_NAME;
   apiVersion: typeof API_VERSION;
   routeRevision: typeof ROUTE_REVISION;
+  deploySentinel: typeof DEPLOY_SENTINEL;
   failReason:
     | "MISSING_API_KEY"
     | "API_KEY_NOT_CONFIGURED"
@@ -255,6 +259,7 @@ function jsonResponse<TPayload>(payload: TPayload, init?: ResponseInit) {
       "X-HBCE-API-Version": API_VERSION,
       "X-HBCE-Route-Revision": ROUTE_REVISION,
       "X-HBCE-Auth-Gate-Revision": AUTH_GATE_REVISION,
+      "X-HBCE-Deploy-Sentinel": DEPLOY_SENTINEL,
       "X-HBCE-Legal-Certification": "false",
       "X-HBCE-OPC-Boundary": OPC_BOUNDARY,
       ...(init?.headers ?? {})
@@ -274,6 +279,7 @@ function fail(
     product: PRODUCT_NAME,
     apiVersion: API_VERSION,
     routeRevision: ROUTE_REVISION,
+    deploySentinel: DEPLOY_SENTINEL,
     failReason,
     message,
     ...(extra?.expected ? { expected: extra.expected } : {}),
@@ -493,6 +499,7 @@ export async function GET() {
     product: PRODUCT_NAME,
     apiVersion: API_VERSION,
     routeRevision: ROUTE_REVISION,
+    deploySentinel: DEPLOY_SENTINEL,
     endpoint: "/api/v1/chat",
     method: "POST",
     purpose:
@@ -671,6 +678,7 @@ export async function POST(request: NextRequest) {
     product: PRODUCT_NAME,
     apiVersion: API_VERSION,
     routeRevision: ROUTE_REVISION,
+    deploySentinel: DEPLOY_SENTINEL,
     answer: extractAnswer(bridgeResult.payload),
     responseEvt,
     opcId,
