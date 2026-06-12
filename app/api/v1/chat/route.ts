@@ -1,10 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { buildHbceApiAuthErrorBody, validateHbceApiCredential } from "@/lib/api-auth";
+import { buildHbceRateLimitQuotaErrorBody, validateHbceRateLimitQuota } from "@/lib/rate-limit-quota";
 
 const API_VERSION = "v1" as const;
-const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-CHAT_BRIDGE_AUTH_GATE_PRIORITY-v77_3" as const;
-const AUTH_GATE_REVISION = "API_V1_CHAT_AUTH_GATE_PRIORITY_v77_3" as const;
-const DEPLOY_SENTINEL = "API_V1_CHAT_ROUTE_DEPLOY_SENTINEL_v77_3_20260611" as const;
+const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-CHAT_RUNTIME_ENFORCEMENT_GATES-v77_4" as const;
+const AUTH_GATE_REVISION = "API_V1_CHAT_RUNTIME_ENFORCEMENT_GATES_v77_4" as const;
+const DEPLOY_SENTINEL = "API_V1_CHAT_ROUTE_DEPLOY_SENTINEL_v77_4_20260612" as const;
 const PRODUCT_NAME = "HBCE IPR Operational Identity & Proof Layer" as const;
 const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1" as const;
 
@@ -25,6 +27,10 @@ const MAX_SESSION_ID_LENGTH = 220;
 const INTERNAL_CHAT_TIMEOUT_MS = 55_000;
 const API_KEY_HEADER = "x-hbce-api-key" as const;
 const AUTHORIZATION_HEADER = "authorization" as const;
+
+const RUNTIME_ENFORCEMENT_REVISION = "API_V1_CHAT_RUNTIME_ENFORCEMENT_GATES_v1" as const;
+type V1RuntimeEnforcementMode = "STATIC_PILOT_COMPAT" | "DATABASE_ENFORCED";
+const RUNTIME_ENFORCEMENT_MODE_ENV = "HBCE_API_V1_CHAT_RUNTIME_ENFORCEMENT_MODE" as const;
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -61,6 +67,50 @@ type V1PolicySnapshot = {
   requestedSemanticPersistenceSuppression: true;
   sourceIntelligenceRawTextPersistence: false;
 };
+
+
+type V1RuntimeEnforcementSnapshot = {
+  revision: typeof RUNTIME_ENFORCEMENT_REVISION;
+  mode: V1RuntimeEnforcementMode;
+  staticPilotApiKey: "PASS" | "SKIPPED_DATABASE_ENFORCED";
+  apiAuth: "NOT_REQUESTED" | "API_AUTH_GRANTED";
+  rateLimitQuota: "NOT_REQUESTED" | "RATE_LIMIT_QUOTA_GRANTED";
+  failClosed: boolean;
+  credentialId: string | null;
+  rateLimitProfileId: string | null;
+  quotaStatus: string | null;
+  boundary: {
+    legalCertification: false;
+    staticPilotCompatibility: boolean;
+    databaseCredentialAuth: "DISABLED_IN_STATIC_PILOT_COMPAT" | "ENFORCED";
+    rateLimitQuota: "DISABLED_IN_STATIC_PILOT_COMPAT" | "ENFORCED";
+  };
+};
+
+type V1RuntimeEnforcementFailureSnapshot = {
+  revision: typeof RUNTIME_ENFORCEMENT_REVISION;
+  mode: V1RuntimeEnforcementMode;
+  failClosed: true;
+  apiAuth: unknown;
+  rateLimitQuota: unknown;
+  boundary: {
+    legalCertification: false;
+    staticPilotCompatibility: boolean;
+    databaseCredentialAuth: "ENFORCED";
+    rateLimitQuota: "NOT_REACHED" | "ENFORCED";
+  };
+};
+
+type V1RuntimeEnforcementResult =
+  | {
+      ok: true;
+      snapshot: V1RuntimeEnforcementSnapshot;
+      headers: Record<string, string>;
+    }
+  | {
+      ok: false;
+      response: NextResponse;
+    };
 
 type V1ChatContractPayload = {
   ok: true;
@@ -114,6 +164,7 @@ type V1ChatReadyPayload = {
     requestedSemanticPersistenceSuppression: true;
     note: "The /v1 wrapper requests no automatic IPR/semantic memory creation. Explicit operator save remains a separate governed action.";
   };
+  enforcement?: V1RuntimeEnforcementSnapshot | V1RuntimeEnforcementFailureSnapshot;
   policy: V1PolicySnapshot;
   risk: {
     posture: "GOVERNED_RUNTIME_BRIDGE";
@@ -154,6 +205,8 @@ type V1ChatFailPayload = {
     | "MISSING_API_KEY"
     | "API_KEY_NOT_CONFIGURED"
     | "INVALID_API_KEY"
+    | "API_AUTH_DENIED"
+    | "RATE_LIMIT_QUOTA_DENIED"
     | "INVALID_JSON_BODY"
     | "MISSING_SESSION_ID"
     | "INVALID_SESSION_ID"
@@ -177,6 +230,7 @@ type V1ChatFailPayload = {
     internalOk?: boolean;
     internalPayload?: unknown;
   };
+  enforcement?: V1RuntimeEnforcementSnapshot | V1RuntimeEnforcementFailureSnapshot;
   policy: V1PolicySnapshot;
   legalCertification: false;
   boundary: V1BoundarySnapshot;
@@ -272,6 +326,200 @@ function fail(
   };
 
   return jsonResponse(payload, init);
+}
+
+
+function resolveRuntimeEnforcementMode(): V1RuntimeEnforcementMode {
+  const rawMode = normalizeString(process.env[RUNTIME_ENFORCEMENT_MODE_ENV])?.toUpperCase();
+  return rawMode === "DATABASE_ENFORCED" ? "DATABASE_ENFORCED" : "STATIC_PILOT_COMPAT";
+}
+
+function getRequestIp(request: NextRequest): string | null {
+  const forwardedFor = normalizeString(request.headers.get("x-forwarded-for"));
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() || null;
+  }
+  return normalizeString(request.headers.get("x-real-ip"));
+}
+
+function getRequestUserAgent(request: NextRequest): string | null {
+  return normalizeString(request.headers.get("user-agent"));
+}
+
+function buildStaticPilotRuntimeEnforcementSnapshot(): V1RuntimeEnforcementSnapshot {
+  return {
+    revision: RUNTIME_ENFORCEMENT_REVISION,
+    mode: "STATIC_PILOT_COMPAT",
+    staticPilotApiKey: "PASS",
+    apiAuth: "NOT_REQUESTED",
+    rateLimitQuota: "NOT_REQUESTED",
+    failClosed: true,
+    credentialId: null,
+    rateLimitProfileId: null,
+    quotaStatus: null,
+    boundary: {
+      legalCertification: LEGAL_CERTIFICATION,
+      staticPilotCompatibility: true,
+      databaseCredentialAuth: "DISABLED_IN_STATIC_PILOT_COMPAT",
+      rateLimitQuota: "DISABLED_IN_STATIC_PILOT_COMPAT"
+    }
+  };
+}
+
+function failWithRuntimeEnforcement(
+  failReason: Extract<V1ChatFailPayload["failReason"], "API_AUTH_DENIED" | "RATE_LIMIT_QUOTA_DENIED">,
+  message: string,
+  init: ResponseInit,
+  enforcement: V1RuntimeEnforcementFailureSnapshot
+) {
+  const payload: V1ChatFailPayload = {
+    ok: false,
+    status: "HBCE_IPR_RUNTIME_CHAT_FAIL",
+    product: PRODUCT_NAME,
+    apiVersion: API_VERSION,
+    routeRevision: ROUTE_REVISION,
+    failReason,
+    message,
+    enforcement,
+    policy: buildFailPolicy(),
+    legalCertification: LEGAL_CERTIFICATION,
+    boundary: buildBoundary()
+  };
+
+  return jsonResponse(payload, init);
+}
+
+async function validateRuntimeEnforcementGates(
+  request: NextRequest,
+  input: {
+    sessionId: string;
+    tenant: string;
+    workspace: string;
+    idempotencyKey: string | null;
+  }
+): Promise<V1RuntimeEnforcementResult> {
+  const mode = resolveRuntimeEnforcementMode();
+
+  if (mode === "STATIC_PILOT_COMPAT") {
+    return {
+      ok: true,
+      snapshot: buildStaticPilotRuntimeEnforcementSnapshot(),
+      headers: {}
+    };
+  }
+
+  const authResult = await validateHbceApiCredential({
+    headers: request.headers,
+    endpoint: "/api/v1/chat",
+    method: "POST",
+    tenantId: input.tenant,
+    workspaceId: input.workspace,
+    requestIp: getRequestIp(request),
+    userAgent: getRequestUserAgent(request)
+  });
+
+  if (!authResult.ok) {
+    const authBody = buildHbceApiAuthErrorBody(authResult);
+    return {
+      ok: false,
+      response: failWithRuntimeEnforcement(
+        "API_AUTH_DENIED",
+        authResult.message,
+        {
+          status: authResult.httpStatus,
+          headers:
+            authResult.httpStatus === 401
+              ? {
+                  "WWW-Authenticate":
+                    'Bearer realm="HBCE API v1 chat", error="invalid_token"'
+                }
+              : {}
+        },
+        {
+          revision: RUNTIME_ENFORCEMENT_REVISION,
+          mode,
+          failClosed: true,
+          apiAuth: authBody,
+          rateLimitQuota: null,
+          boundary: {
+            legalCertification: LEGAL_CERTIFICATION,
+            staticPilotCompatibility: false,
+            databaseCredentialAuth: "ENFORCED",
+            rateLimitQuota: "NOT_REACHED"
+          }
+        }
+      )
+    };
+  }
+
+  const quotaResult = await validateHbceRateLimitQuota({
+    tenantId: authResult.credential.tenantId || input.tenant,
+    workspaceId: authResult.credential.workspaceId || input.workspace,
+    credentialId: authResult.credential.credentialId,
+    profileId: authResult.credential.rateLimitProfileId,
+    endpoint: "/api/v1/chat",
+    method: "POST",
+    requestId: input.idempotencyKey ?? input.sessionId
+  });
+
+  if (!quotaResult.ok) {
+    const quotaBody = buildHbceRateLimitQuotaErrorBody(quotaResult);
+    return {
+      ok: false,
+      response: failWithRuntimeEnforcement(
+        "RATE_LIMIT_QUOTA_DENIED",
+        quotaResult.message,
+        {
+          status: quotaResult.httpStatus,
+          headers: quotaResult.headers
+        },
+        {
+          revision: RUNTIME_ENFORCEMENT_REVISION,
+          mode,
+          failClosed: true,
+          apiAuth: {
+            ok: true,
+            status: authResult.status,
+            revision: authResult.revision,
+            credentialId: authResult.credential.credentialId,
+            tenantId: authResult.credential.tenantId,
+            workspaceId: authResult.credential.workspaceId,
+            policy: authResult.policy,
+            legalCertification: false
+          },
+          rateLimitQuota: quotaBody,
+          boundary: {
+            legalCertification: LEGAL_CERTIFICATION,
+            staticPilotCompatibility: false,
+            databaseCredentialAuth: "ENFORCED",
+            rateLimitQuota: "ENFORCED"
+          }
+        }
+      )
+    };
+  }
+
+  return {
+    ok: true,
+    snapshot: {
+      revision: RUNTIME_ENFORCEMENT_REVISION,
+      mode,
+      staticPilotApiKey: "SKIPPED_DATABASE_ENFORCED",
+      apiAuth: "API_AUTH_GRANTED",
+      rateLimitQuota: "RATE_LIMIT_QUOTA_GRANTED",
+      failClosed: true,
+      credentialId: authResult.credential.credentialId,
+      rateLimitProfileId: authResult.credential.rateLimitProfileId,
+      quotaStatus: quotaResult.quotaStatus,
+      boundary: {
+        legalCertification: LEGAL_CERTIFICATION,
+        staticPilotCompatibility: false,
+        databaseCredentialAuth: "ENFORCED",
+        rateLimitQuota: "ENFORCED"
+      }
+    },
+    headers: quotaResult.headers
+  };
 }
 
 function extractProvidedApiKey(request: NextRequest): string | null {
@@ -509,13 +757,17 @@ export async function GET() {
     generatedAt: utcNowIso()
   };
 
-  return jsonResponse(payload);
+  return jsonResponse(payload, { headers: runtimeEnforcement.headers });
 }
 
 export async function POST(request: NextRequest) {
-  const apiKeyFailure = validatePilotApiKey(request);
-  if (apiKeyFailure) {
-    return apiKeyFailure;
+  const runtimeEnforcementMode = resolveRuntimeEnforcementMode();
+
+  if (runtimeEnforcementMode === "STATIC_PILOT_COMPAT") {
+    const apiKeyFailure = validatePilotApiKey(request);
+    if (apiKeyFailure) {
+      return apiKeyFailure;
+    }
   }
 
   const body = await readJsonBody(request);
@@ -583,6 +835,17 @@ export async function POST(request: NextRequest) {
   const idempotencyKey = normalizeString(body.idempotencyKey);
   if (idempotencyKey && idempotencyKey.length > MAX_IDEMPOTENCY_KEY_LENGTH) {
     return fail("INVALID_IDEMPOTENCY_KEY", `idempotencyKey exceeds ${MAX_IDEMPOTENCY_KEY_LENGTH} characters.`, { status: 400 });
+  }
+
+  const runtimeEnforcement = await validateRuntimeEnforcementGates(request, {
+    sessionId,
+    tenant,
+    workspace,
+    idempotencyKey
+  });
+
+  if (!runtimeEnforcement.ok) {
+    return runtimeEnforcement.response;
   }
 
   const internalPayload = buildInternalChatPayload({
@@ -666,6 +929,7 @@ export async function POST(request: NextRequest) {
       note:
         "The /v1 wrapper requests no automatic IPR/semantic memory creation. Explicit operator save remains a separate governed action."
     },
+    enforcement: runtimeEnforcement.snapshot,
     policy: buildAllowPolicy(),
     risk: {
       posture: "GOVERNED_RUNTIME_BRIDGE",
