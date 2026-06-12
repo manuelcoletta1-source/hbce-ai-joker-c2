@@ -1,6 +1,3 @@
-cd /home/manuelcoletta1/github/hbce-ai-joker-c2 || exit 1
-
-cat > scripts/test-api-v1-source-intelligence.mjs <<'EOF'
 #!/usr/bin/env node
 
 /**
@@ -168,7 +165,10 @@ async function testGet() {
   const body = await readBody(response);
 
   if (response.status === 404) {
-    fail("GET /api/v1/source-intelligence", "ROUTE_NOT_FOUND", { status: response.status, url });
+    fail("GET /api/v1/source-intelligence", "ROUTE_NOT_FOUND", {
+      status: response.status,
+      url,
+    });
     return;
   }
 
@@ -189,9 +189,12 @@ async function testGet() {
     return;
   }
 
-  pass("GET /api/v1/source-intelligence", { status: response.status });
+  pass("GET /api/v1/source-intelligence", {
+    status: response.status,
+  });
 
   const serialized = JSON.stringify(body.json);
+
   if (
     serialized.includes("SOURCE_INTELLIGENCE") ||
     serialized.includes("sourceIntelligence") ||
@@ -244,7 +247,10 @@ async function testPost() {
   const body = await readBody(response);
 
   if (response.status === 404) {
-    fail("POST /api/v1/source-intelligence", "ROUTE_NOT_FOUND", { status: response.status, url });
+    fail("POST /api/v1/source-intelligence", "ROUTE_NOT_FOUND", {
+      status: response.status,
+      url,
+    });
     return;
   }
 
@@ -308,7 +314,9 @@ function printAndExit() {
 }
 
 async function main() {
-  pass("node runtime", { node: process.version });
+  pass("node runtime", {
+    node: process.version,
+  });
 
   pass("bounded source intelligence posture", {
     fetchLive: false,
@@ -337,27 +345,6 @@ main().catch((error) => {
       2,
     ),
   );
+
   process.exitCode = 1;
 });
-EOF
-
-echo
-echo "=== VERIFY CLEAN SOURCE INTELLIGENCE SCRIPT ==="
-
-wc -l scripts/test-api-v1-source-intelligence.mjs
-head -5 scripts/test-api-v1-source-intelligence.mjs
-
-grep -n "API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_PASS" scripts/test-api-v1-source-intelligence.mjs
-grep -n "API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_FAIL" scripts/test-api-v1-source-intelligence.mjs
-grep -n "technical source receipt only" scripts/test-api-v1-source-intelligence.mjs
-grep -n "rawTextPersistence" scripts/test-api-v1-source-intelligence.mjs
-grep -n "legalCertification" scripts/test-api-v1-source-intelligence.mjs
-grep -n "/api/v1/source-intelligence" scripts/test-api-v1-source-intelligence.mjs
-
-echo
-echo "=== NODE CHECK ==="
-node --check scripts/test-api-v1-source-intelligence.mjs
-
-echo
-echo "=== GIT STATUS ==="
-git status -sb
