@@ -1440,3 +1440,39 @@ Status:
 
 SaaS B2G admin dashboard roadmap = READY
 SaaS B2G admin dashboard roadmap = READY FOR UP-MESE PLANNING
+
+---
+
+## 25. SaaS B2G runtime enforcement roadmap
+
+Path:
+
+docs/product/hbce-joker-c2-saas-b2g-runtime-enforcement-roadmap.md
+
+Purpose:
+
+Defines the SaaS B2G runtime enforcement roadmap for HBCE/JOKER-C2, including authentication enforcement, API key lifecycle enforcement, tenant/workspace boundaries, IPR session enforcement, route permissions, rate limits, quotas, Source Intelligence enforcement, files workflow enforcement, memory persistence policy, no-save policy, EVT/OPC/audit enforcement, model usage accountability, defensive-only cyber posture, admin action controls, pilot enforcement and UP-MESE enforcement.
+
+Canonical markers:
+
+SAAS_B2G_RUNTIME_ENFORCEMENT_ROADMAP_READY
+HBCE_JOKER_C2_SAAS_B2G_RUNTIME_ENFORCEMENT_READY
+HBCE_JOKER_C2_SAAS_B2G_ADMIN_DASHBOARD_READY
+HBCE_JOKER_C2_SAAS_B2G_SECURITY_COMPLIANCE_READY
+HBCE_JOKER_C2_SAAS_B2G_PILOT_PACKAGE_READY
+HBCE_JOKER_C2_SAAS_B2G_PRODUCT_ARCHITECTURE_READY
+HBCE_IPR_RUNTIME_API_V1_FOUNDATION_CONFIRMED
+SOURCE_INTELLIGENCE_PACKAGE_CLOSED_PASS
+API_V1_PACKAGE_CLOSURE_RELEASE_NOTE_READY
+legalCertification=false
+rawTextPersistence=false
+technical proof receipt only
+MISSING_API_KEY
+FAIL_CLOSED
+DEFENSIVE_ONLY_CYBER
+RUNTIME_ENFORCEMENT_FAIL_CLOSED
+
+Status:
+
+SaaS B2G runtime enforcement roadmap = READY
+SaaS B2G runtime enforcement roadmap = READY FOR UP-MESE PLANNING
