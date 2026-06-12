@@ -4,12 +4,20 @@
  *
  * Purpose:
  * - validate GET /api/v1/source-intelligence and POST /api/v1/source-intelligence;
- * - preserve source-set, catalog-first, fetchLive=false, rawTextPersistence=false boundaries;
+ * - preserve source-set, catalog-first, fetchLive=false and rawTextPersistence=false boundaries;
  * - verify legalCertification=false and technical source receipt only boundary;
- * - optionally link source context into POST /api/v1/chat;
- * - avoid printing API keys, bearer tokens, cookies or private identifiers.
+ * - optionally link Source Intelligence context into POST /api/v1/chat;
+ * - optionally lookup EVT / OPC / audit / model usage when chat returns IDs;
+ * - avoid printing API keys, bearer tokens, cookies, session IDs or private identifiers.
  *
  * Node.js 18+ required for native fetch.
+ *
+ * Default posture:
+ * - fetchLive=false
+ * - chatLink=false
+ * - rawTextPersistence=false
+ * - legalCertification=false
+ * - OPC=technical source receipt only
  */
 
 const DEFAULT_BASE_URL = "https://hbce-ai-joker-c2.vercel.app";
@@ -25,6 +33,12 @@ const PASS_MARKER = "API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_PASS";
 const FAIL_MARKER = "API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_FAIL";
 const READY_MARKER = "SOURCE_INTELLIGENCE_WORKFLOW_READY";
 const LIMIT_MARKER = "RATE_LIMIT_EXCEEDED";
+
+const ROUTE_SOURCE_GET = "GET /api/v1/source-intelligence";
+const ROUTE_SOURCE_POST = "POST /api/v1/source-intelligence";
+const ROUTE_CHAT_POST = "POST /api/v1/chat";
+const ROUTE_SESSION_POST = "POST /api/v1/ipr/session";
+const ROUTE_EVENTS_LOOKUP = "GET /api/v1/events?eventId";
 
 const env = process.env;
 
@@ -68,6 +82,7 @@ const CHAT_LINK =
   env.HBCE_API_V1_SOURCE_CHAT_LINK === "true";
 
 const results = [];
+
 const captured = {
   sessionId: "",
   contextBlockId: "",
@@ -87,9 +102,17 @@ async function main() {
   banner();
   checkNodeRuntime();
 
-  await checkPublic("root discovery", "/api/v1", ["HBCE", "API", "v1"]);
-  await checkPublic("health", "/api/v1/health", ["status", "revision", "legalCertification"]);
-  await checkPublic("capabilities", "/api/v1/capabilities", ["capabilities", "legalCertification", "OPC"]);
+  await checkPublicContract("root discovery", "/api/v1", ["HBCE", "API", "v1"]);
+  await checkPublicContract("health", "/api/v1/health", [
+    "status",
+    "revision",
+    "legalCertification",
+  ]);
+  await checkPublicContract("capabilities", "/api/v1/capabilities", [
+    "capabilities",
+    "legalCertification",
+    "OPC",
+  ]);
 
   await checkSourceIntelligenceWithoutKey();
 
@@ -101,9 +124,11 @@ async function main() {
       status: STRICT_AUTH ? "FAIL" : "SKIPPED",
       detail: STRICT_AUTH
         ? "API key missing and HBCE_API_V1_STRICT_AUTH is enabled"
-        : "API key missing; authenticated source intelligence checks skipped",
+        : "API key missing; authenticated Source Intelligence checks skipped",
     });
-    return finish();
+
+    finish();
+    return;
   }
 
   await createIprSession();
@@ -131,7 +156,7 @@ async function main() {
 }
 
 function banner() {
-  console.log("HBCE / JOKER-C2 API v1 source intelligence smoke test");
+  console.log("HBCE / JOKER-C2 API v1 Source Intelligence smoke test");
   console.log("--------------------------------------------------------");
   console.log(`baseUrl=${BASE_URL}`);
   console.log(`apiKey=${API_KEY ? "SET" : "MISSING"}`);
@@ -143,12 +168,16 @@ function banner() {
   console.log(`chatLink=${CHAT_LINK ? "true" : "false"}`);
   console.log(`timeoutMs=${TIMEOUT_MS}`);
   console.log(`strictAuth=${STRICT_AUTH ? "true" : "false"}`);
+  console.log(`route=${ROUTE_SOURCE_GET}`);
+  console.log(`route=${ROUTE_SOURCE_POST}`);
+  console.log(`route=${ROUTE_CHAT_POST}`);
+  console.log(`route=${ROUTE_EVENTS_LOOKUP}`);
   console.log("secretPrinting=false");
   console.log("legalCertification=false");
   console.log("rawTextPersistence=false");
   console.log("opcBoundary=technical source receipt only");
   console.log("promptInjectionRisk=CHECK_REQUIRED");
-  console.log("expectedLimitStatus=RATE_LIMIT_EXCEEDED");
+  console.log(`expectedLimitStatus=${LIMIT_MARKER}`);
   console.log("");
 }
 
@@ -165,7 +194,7 @@ function checkNodeRuntime() {
   });
 }
 
-async function checkPublic(name, path, hints) {
+async function checkPublicContract(name, path, hints) {
   const response = await request("GET", path, { auth: false });
   const ok = response.status === 200 && Boolean(response.text) && hasAnyHint(response, hints);
 
@@ -236,7 +265,7 @@ async function createIprSession() {
   const ok = response.status >= 200 && response.status < 300 && response.jsonReady;
 
   record({
-    name: "ipr session create",
+    name: ROUTE_SESSION_POST,
     critical: true,
     ok,
     status: ok ? "PASS" : "FAIL",
@@ -269,13 +298,13 @@ async function checkSourceIntelligenceGet() {
     hasSourceBoundary(response);
 
   record({
-    name: "GET /api/v1/source-intelligence",
+    name: ROUTE_SOURCE_GET,
     critical: true,
     ok,
     status: ok ? "PASS" : isRateLimited(response) ? "SKIPPED" : "FAIL",
     httpStatus: response.status,
     detail: isRateLimited(response)
-      ? "RATE_LIMIT_EXCEEDED returned; request blocked under quota policy"
+      ? `${LIMIT_MARKER} returned; request blocked under quota policy`
       : summarize(response, [
           "SOURCE_INTELLIGENCE",
           "sourceSet",
@@ -301,13 +330,13 @@ async function checkSourceIntelligencePost() {
     hasSourceBoundary(response);
 
   record({
-    name: "POST /api/v1/source-intelligence",
+    name: ROUTE_SOURCE_POST,
     critical: true,
     ok,
     status: ok ? "PASS" : isRateLimited(response) ? "SKIPPED" : "FAIL",
     httpStatus: response.status,
     detail: isRateLimited(response)
-      ? "RATE_LIMIT_EXCEEDED returned; request blocked under quota policy"
+      ? `${LIMIT_MARKER} returned; request blocked under quota policy`
       : summarize(response, [
           "SOURCE_INTELLIGENCE",
           "sourceSet",
@@ -327,24 +356,51 @@ async function checkChatWithSourceContext() {
     body: chatBody(),
   });
 
-  captured.evtId = pick(response.json, ["evtId", "eventId", "responseEvt", "data.evtId", "data.responseEvt"]);
-  captured.opcId = pick(response.json, ["opcId", "opc.id", "data.opcId", "data.opc.id", "proof.opcId"]);
-  captured.auditId = pick(response.json, ["auditId", "audit.id", "data.auditId", "data.audit.id"]);
-  captured.usageId = pick(response.json, ["usageId", "modelUsageId", "data.usageId", "data.modelUsageId"]);
+  captured.evtId = pick(response.json, [
+    "evtId",
+    "eventId",
+    "responseEvt",
+    "data.evtId",
+    "data.responseEvt",
+  ]);
+  captured.opcId = pick(response.json, [
+    "opcId",
+    "opc.id",
+    "data.opcId",
+    "data.opc.id",
+    "proof.opcId",
+  ]);
+  captured.auditId = pick(response.json, [
+    "auditId",
+    "audit.id",
+    "data.auditId",
+    "data.audit.id",
+  ]);
+  captured.usageId = pick(response.json, [
+    "usageId",
+    "modelUsageId",
+    "data.usageId",
+    "data.modelUsageId",
+  ]);
 
   const ok =
     response.status === 200 &&
     response.jsonReady &&
-    hasAnyHint(response, ["legalCertification", "technical source receipt only", "technical proof receipt only", "OPC"]);
+    hasAnyHint(response, [
+      "legalCertification",
+      "technical source receipt only",
+      "technical proof receipt only",
+      "OPC",
+    ]);
 
   record({
-    name: "POST /api/v1/chat with source context",
+    name: ROUTE_CHAT_POST,
     critical: true,
     ok,
     status: ok ? "PASS" : isRateLimited(response) ? "SKIPPED" : "FAIL",
     httpStatus: response.status,
     detail: isRateLimited(response)
-      ? "RATE_LIMIT_EXCEEDED returned; chat context request blocked under quota policy"
+      ? `${LIMIT_MARKER} returned; chat context request blocked under quota policy`
       : summarize(response, ["legalCertification", "OPC", "technical source receipt only"]),
   });
 }
@@ -508,10 +564,15 @@ async function request(method, path, options = {}) {
 
 function parseJson(text, contentType) {
   const trimmed = (text || "").trim();
-  if (!trimmed) return null;
+
+  if (!trimmed) {
+    return null;
+  }
+
   if (!contentType.includes("json") && !trimmed.startsWith("{") && !trimmed.startsWith("[")) {
     return null;
   }
+
   try {
     return JSON.parse(trimmed);
   } catch {
@@ -521,9 +582,11 @@ function parseJson(text, contentType) {
 
 function record(result) {
   results.push(result);
+
   const marker = result.status.padEnd(7, " ");
   const critical = result.critical ? "critical" : "optional";
   const http = typeof result.httpStatus === "number" ? ` http=${result.httpStatus}` : "";
+
   console.log(`${marker} ${result.name} [${critical}]${http} :: ${result.detail || ""}`);
 }
 
@@ -539,13 +602,24 @@ function finish() {
   console.log(`sourceSet=${SOURCE_SET}`);
   console.log(`sourceId=${SOURCE_ID}`);
   console.log(`fetchLive=${FETCH_LIVE ? "true" : "false"}`);
-  console.log("expectedLimitStatus=RATE_LIMIT_EXCEEDED");
+  console.log(`expectedLimitStatus=${LIMIT_MARKER}`);
   console.log("legalCertification=false");
   console.log("rawTextPersistence=false");
   console.log("opcBoundary=technical source receipt only");
   console.log("promptInjectionRisk=CHECK_REQUIRED");
+  console.log(ROUTE_SOURCE_GET);
+  console.log(ROUTE_SOURCE_POST);
+  console.log(ROUTE_CHAT_POST);
+  console.log(ROUTE_EVENTS_LOOKUP);
 
-  if (captured.contextBlockId || captured.summaryHash || captured.evtId || captured.opcId || captured.auditId || captured.usageId) {
+  if (
+    captured.contextBlockId ||
+    captured.summaryHash ||
+    captured.evtId ||
+    captured.opcId ||
+    captured.auditId ||
+    captured.usageId
+  ) {
     console.log("capturedIds=true");
     console.log(`sourceContextBlockId=${captured.contextBlockId ? "SET" : "NONE"}`);
     console.log(`sourceSummaryHash=${captured.summaryHash ? "SET" : "NONE"}`);
@@ -567,7 +641,9 @@ function finish() {
 }
 
 function captureSourceContext(response) {
-  if (!response || !response.jsonReady) return;
+  if (!response || !response.jsonReady) {
+    return;
+  }
 
   captured.contextBlockId =
     captured.contextBlockId ||
@@ -598,6 +674,7 @@ function captureSourceContext(response) {
 
 function hasSourceBoundary(response) {
   const text = responseText(response);
+
   const sourceOk =
     text.includes("sourceSet") ||
     text.includes(SOURCE_SET) ||
@@ -615,25 +692,45 @@ function hasSourceBoundary(response) {
 }
 
 function isRateLimited(response) {
-  if (response.status === 429) return true;
+  if (response.status === 429) {
+    return true;
+  }
+
   const text = responseText(response);
   return text.includes("RATE_LIMIT_EXCEEDED") || text.includes("TOO_MANY_REQUESTS");
 }
 
 function summarize(response, hints = []) {
-  const status = pick(response.json, ["status", "runtimeStatus", "routeRevision", "revision", "failReason", "error"]);
-  const boundary = pick(response.json, ["legalCertification", "rawTextPersistence", "opcBoundary", "boundary.opc"]);
+  const status = pick(response.json, [
+    "status",
+    "runtimeStatus",
+    "routeRevision",
+    "revision",
+    "failReason",
+    "error",
+  ]);
+  const boundary = pick(response.json, [
+    "legalCertification",
+    "rawTextPersistence",
+    "opcBoundary",
+    "boundary.opc",
+  ]);
   const preview = response.jsonReady
     ? stablePreview(redactSecrets(response.json))
     : String(response.text || "").slice(0, 260).replace(/\s+/g, " ");
+
   const hintText = hints.length ? ` hints=${hints.join("|")}` : "";
   const statusText = status ? ` statusHint=${status}` : "";
   const boundaryText = boundary !== "" ? ` boundary=${boundary}` : "";
+
   return `${statusText}${boundaryText}${hintText} preview=${preview}`.trim();
 }
 
 function hasAnyHint(response, hints = []) {
-  if (!hints.length) return true;
+  if (!hints.length) {
+    return true;
+  }
+
   const text = responseText(response);
   return hints.some((hint) => text.includes(hint));
 }
@@ -645,24 +742,43 @@ function responseText(response) {
 function pick(source, paths) {
   for (const path of paths) {
     const value = getPath(source, path);
-    if (typeof value === "string" && value.trim()) return value.trim();
-    if (typeof value === "boolean") return String(value);
-    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+
+    if (typeof value === "boolean") {
+      return String(value);
+    }
+
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
   }
+
   return "";
 }
 
 function getPath(source, path) {
-  if (!source || typeof source !== "object") return undefined;
+  if (!source || typeof source !== "object") {
+    return undefined;
+  }
+
   let cursor = source;
+
   for (const part of path.split(".")) {
     if (Array.isArray(cursor) && /^\d+$/.test(part)) {
       cursor = cursor[Number.parseInt(part, 10)];
       continue;
     }
-    if (!cursor || typeof cursor !== "object" || !(part in cursor)) return undefined;
+
+    if (!cursor || typeof cursor !== "object" || !(part in cursor)) {
+      return undefined;
+    }
+
     cursor = cursor[part];
   }
+
   return cursor;
 }
 
@@ -675,10 +791,16 @@ function stablePreview(value) {
 }
 
 function redactSecrets(value) {
-  if (Array.isArray(value)) return value.map(redactSecrets);
-  if (!value || typeof value !== "object") return value;
+  if (Array.isArray(value)) {
+    return value.map(redactSecrets);
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
 
   const redacted = {};
+
   for (const [key, item] of Object.entries(value)) {
     if (/key|token|secret|authorization|cookie|password/i.test(key)) {
       redacted[key] = item ? "[REDACTED]" : item;
@@ -686,6 +808,7 @@ function redactSecrets(value) {
       redacted[key] = redactSecrets(item);
     }
   }
+
   return redacted;
 }
 
@@ -695,6 +818,7 @@ function cleanBaseUrl(raw) {
     candidate.startsWith("http://") || candidate.startsWith("https://")
       ? candidate
       : `https://${candidate}`;
+
   return withProtocol.replace(/\/+$/, "");
 }
 
@@ -704,8 +828,14 @@ function positiveInteger(raw, fallback) {
 }
 
 function safeErrorMessage(error) {
-  if (!error) return "UNKNOWN_ERROR";
-  if (error.name === "AbortError") return `REQUEST_TIMEOUT_AFTER_${TIMEOUT_MS}MS`;
+  if (!error) {
+    return "UNKNOWN_ERROR";
+  }
+
+  if (error.name === "AbortError") {
+    return `REQUEST_TIMEOUT_AFTER_${TIMEOUT_MS}MS`;
+  }
+
   const raw = String(error.message || error);
   return API_KEY ? raw.replaceAll(API_KEY, "[REDACTED]") : raw;
 }
