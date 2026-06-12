@@ -1,21 +1,22 @@
-HBCE IPR Runtime API v1 — Source Intelligence Smoke Test Report
-
-Product: HBCE IPR Operational Identity & Proof Layer
-Runtime: AI JOKER-C2 SaaS Core v0.1
-API version: "v1"
-Repository: "hbce-ai-joker-c2"
-Document type: Source Intelligence smoke test report
-Report status: "source intelligence smoke test report = ready"
-Script: "scripts/test-api-v1-source-intelligence.mjs"
-Production base URL: "https://hbce-ai-joker-c2.vercel.app"
-Boundary: "legalCertification=false"
-Raw text boundary: "rawTextPersistence=false"
-OPC boundary: technical source receipt only
+# HBCE IPR Runtime API v1 — Source Intelligence Smoke Test Report
+**Product:** HBCE IPR Operational Identity & Proof Layer  
+**Runtime:** AI JOKER-C2 SaaS Core v0.1  
+**API version:** `v1`  
+**Repository:** `hbce-ai-joker-c2`  
+**Document type:** Source Intelligence smoke test report  
+**Report status:** `source intelligence smoke test report = ready`  
+**Script:** `scripts/test-api-v1-source-intelligence.mjs`  
+**Production base URL:** "https://hbce-ai-joker-c2.vercel.app"  
+**Boundary:** `legalCertification=false`  
+**Raw text boundary:** `rawTextPersistence=false`  
+**OPC boundary:** technical source receipt only  
 
 ---
 
-1. Purpose
 
+---
+
+## 1. Purpose
 This document records the API v1 Source Intelligence smoke test posture for HBCE / JOKER-C2.
 
 It documents the tested script, the expected markers, the production boundary checks and the runtime Source Intelligence readiness signals.
@@ -26,8 +27,10 @@ The smoke test validates that Source Intelligence can be treated as a governed B
 
 ---
 
-2. Tested script
 
+---
+
+## 2. Tested script
 Canonical script path:
 
 scripts/test-api-v1-source-intelligence.mjs
@@ -60,8 +63,10 @@ technical source receipt only
 
 ---
 
-3. Script validation result
 
+---
+
+## 3. Script validation result
 Local Linux validation confirmed:
 
 scripts/test-api-v1-source-intelligence.mjs
@@ -95,8 +100,10 @@ API v1 source intelligence smoke test script = PASS
 
 ---
 
-4. Production verification result
 
+---
+
+## 4. Production verification result
 Production verification was executed against:
 
 https://hbce-ai-joker-c2.vercel.app
@@ -117,8 +124,10 @@ da3bc8c Resolve API v1 product index and source intelligence script divergence
 
 ---
 
-5. Production endpoints checked
 
+---
+
+## 5. Production endpoints checked
 The following production endpoints were checked:
 
 GET /api/v1/health
@@ -139,8 +148,10 @@ This is a required API v1 pilot boundary.
 
 ---
 
-6. Health endpoint result
 
+---
+
+## 6. Health endpoint result
 Production endpoint:
 
 GET /api/v1/health
@@ -174,8 +185,10 @@ GET /api/v1/health = PASS
 
 ---
 
-7. Capabilities endpoint result
 
+---
+
+## 7. Capabilities endpoint result
 Production endpoint:
 
 GET /api/v1/capabilities
@@ -212,8 +225,10 @@ GET /api/v1/capabilities = PASS
 
 ---
 
-8. Available source sets
 
+---
+
+## 8. Available source sets
 Production capabilities exposed the following Source Intelligence source sets:
 
 ANTHROPIC_MYTHOS_RECURSIVE_AI_RISK
@@ -231,8 +246,10 @@ Source-set execution is not unrestricted browsing.
 
 ---
 
-9. Root discovery result
 
+---
+
+## 9. Root discovery result
 Production endpoint:
 
 GET /api/v1
@@ -251,7 +268,7 @@ required=true
 checkedBeforeJsonBody=true
 acceptedHeaders=x-hbce-api-key or Authorization: Bearer <token>
 
-Boundary:
+**Boundary:**   
 
 legalCertification=false
 opc=technical proof receipt only
@@ -265,8 +282,10 @@ GET /api/v1 = PASS
 
 ---
 
-10. No-key chat boundary
 
+---
+
+## 10. No-key chat boundary
 Production endpoint:
 
 POST /api/v1/chat
@@ -302,8 +321,10 @@ This confirms that the API v1 chat surface rejects unauthenticated execution bef
 
 ---
 
-11. Source Intelligence security posture
 
+---
+
+## 11. Source Intelligence security posture
 The Source Intelligence workflow is validated under the following constraints:
 
 allowlistOnly=true
@@ -323,8 +344,10 @@ It preserves technical proof boundaries.
 
 ---
 
-12. Script default behavior
 
+---
+
+## 12. Script default behavior
 The smoke test script defaults to safe mode.
 
 Default fetch behavior:
@@ -349,8 +372,10 @@ The script can validate contract readiness without triggering uncontrolled live 
 
 ---
 
-13. Optional live source fetch
 
+---
+
+## 13. Optional live source fetch
 Live source fetch is controlled by:
 
 HBCE_API_V1_SOURCE_FETCH_LIVE=1
@@ -368,8 +393,10 @@ Live source fetch must not be treated as unrestricted browsing.
 
 ---
 
-14. Optional chat linkage
 
+---
+
+## 14. Optional chat linkage
 Source context linkage into chat is controlled by:
 
 HBCE_API_V1_SOURCE_CHAT_LINK=1
@@ -390,8 +417,10 @@ technical source receipt only
 
 ---
 
-15. Expected PASS output
 
+---
+
+## 15. Expected PASS output
 A full successful smoke test should include:
 
 API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_PASS
@@ -407,8 +436,10 @@ API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_FAIL
 
 ---
 
-16. Expected failure boundaries
 
+---
+
+## 16. Expected failure boundaries
 Valid fail-closed conditions include:
 
 MISSING_API_KEY
@@ -424,8 +455,10 @@ They may be correct boundary enforcement when the request violates the API v1 pi
 
 ---
 
-17. Product package integration
 
+---
+
+## 17. Product package integration
 This report belongs to the API v1 product package together with:
 
 docs/product/hbce-ipr-runtime-api-v1-product-index.md
@@ -448,8 +481,10 @@ hbce-ipr-runtime-api-v1-source-intelligence-smoke-test.md
 
 ---
 
-18. Non-claims
 
+---
+
+## 18. Non-claims
 This report does not claim that Source Intelligence is:
 
 unrestricted browsing
@@ -467,8 +502,10 @@ Source Intelligence is a governed, source-set bound, allowlisted, audit-oriented
 
 ---
 
-19. Final verdict
 
+---
+
+## 19. Final verdict
 source intelligence smoke test report = ready
 
 Operational status:
