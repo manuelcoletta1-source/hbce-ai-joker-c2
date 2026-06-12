@@ -4,9 +4,9 @@ Product: HBCE/JOKER-C2 SaaS B2G
 Runtime: AI JOKER-C2 SaaS Core v0.1
 Foundation: HBCE IPR Runtime API v1
 Document type: SaaS B2G UP-MESE checkpoint
-Checkpoint status: ready for final package verification
-Checkpoint date: 2026-06-19
-Roadmap cycle: 2026-06-12 / 2026-06-19
+Checkpoint status: prepared on 2026-06-12; ready for final verification on 2026-06-19
+Target checkpoint date: 2026-06-19
+Planned roadmap cycle: 2026-06-12 / 2026-06-19
 Boundary: legalCertification=false
 OPC boundary: technical proof receipt only
 Raw text boundary: rawTextPersistence=false by default
@@ -45,7 +45,7 @@ The UP-MESE checkpoint is the closing document for the SaaS B2G readiness cycle.
 
 Short definition:
 
-UP-MESE Checkpoint = final technical verification layer that confirms the SaaS B2G product package exists, is indexed, is marker-complete, is GitHub-traceable and preserves legalCertification=false, rawTextPersistence=false, DEFENSIVE_ONLY_CYBER and FAIL_CLOSED posture.
+UP-MESE Checkpoint = prepared technical verification layer that confirms the SaaS B2G product package exists, is indexed, is marker-complete, is GitHub-traceable and preserves legalCertification=false, rawTextPersistence=false, DEFENSIVE_ONLY_CYBER and FAIL_CLOSED posture.
 
 The checkpoint validates the package structure.
 
@@ -703,7 +703,7 @@ UPMESE_CHECKPOINT_FAIL_CLOSED
 
 Final package state after this checkpoint:
 
-SaaS B2G UP-MESE cycle = CLOSED PASS
+SaaS B2G UP-MESE cycle = READY FOR 2026-06-19 FINAL AUDIT
 
 Covered period:
 
@@ -804,4 +804,4 @@ UPMESE_CHECKPOINT_FAIL_CLOSED
 
 Final verdict:
 
-HBCE/JOKER-C2 SaaS B2G UP-MESE checkpoint = READY
+HBCE/JOKER-C2 SaaS B2G UP-MESE checkpoint = PREPARED FOR FINAL AUDIT
