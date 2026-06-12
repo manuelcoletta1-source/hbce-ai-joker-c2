@@ -1476,3 +1476,40 @@ Status:
 
 SaaS B2G runtime enforcement roadmap = READY
 SaaS B2G runtime enforcement roadmap = READY FOR UP-MESE PLANNING
+
+---
+
+## 26. SaaS B2G UPMESE package
+
+Path:
+
+docs/product/hbce-joker-c2-saas-b2g-upmese-package.md
+
+Purpose:
+
+Defines the SaaS B2G UP-MESE package for HBCE/JOKER-C2, consolidating API v1 package closure, Source Intelligence closure, product blueprint, pilot offer, security/compliance pack, admin dashboard roadmap, runtime enforcement roadmap, product index continuity, technical proof boundary, fail-closed posture and 2026-06-19 checkpoint preparation.
+
+Canonical markers:
+
+SAAS_B2G_UPMESE_PACKAGE_READY
+HBCE_JOKER_C2_SAAS_B2G_UPMESE_READY
+HBCE_JOKER_C2_SAAS_B2G_RUNTIME_ENFORCEMENT_READY
+HBCE_JOKER_C2_SAAS_B2G_ADMIN_DASHBOARD_READY
+HBCE_JOKER_C2_SAAS_B2G_SECURITY_COMPLIANCE_READY
+HBCE_JOKER_C2_SAAS_B2G_PILOT_PACKAGE_READY
+HBCE_JOKER_C2_SAAS_B2G_PRODUCT_ARCHITECTURE_READY
+HBCE_IPR_RUNTIME_API_V1_FOUNDATION_CONFIRMED
+SOURCE_INTELLIGENCE_PACKAGE_CLOSED_PASS
+API_V1_PACKAGE_CLOSURE_RELEASE_NOTE_READY
+legalCertification=false
+rawTextPersistence=false
+technical proof receipt only
+MISSING_API_KEY
+FAIL_CLOSED
+DEFENSIVE_ONLY_CYBER
+UPMESE_PACKAGE_FAIL_CLOSED
+
+Status:
+
+SaaS B2G UPMESE package = READY
+SaaS B2G UPMESE package = READY FOR 2026-06-19 CHECKPOINT
