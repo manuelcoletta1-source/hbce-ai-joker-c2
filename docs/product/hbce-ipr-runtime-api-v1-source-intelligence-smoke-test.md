@@ -430,12 +430,21 @@ This report belongs to the API v1 product package together with:
 
 docs/product/hbce-ipr-runtime-api-v1-product-index.md
 docs/product/hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
+docs/product/hbce-ipr-runtime-api-v1-source-intelligence-smoke-test.md
 docs/product/hbce-ipr-runtime-api-v1-security-checklist.md
 docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota.md
 docs/product/hbce-ipr-runtime-api-v1-client-smoke-test.md
 scripts/test-api-v1-source-intelligence.mjs
 
 The product index must reference this report after creation.
+
+Index integration target:
+
+docs/product/hbce-ipr-runtime-api-v1-product-index.md
+
+Expected index marker:
+
+hbce-ipr-runtime-api-v1-source-intelligence-smoke-test.md
 
 ---
 
