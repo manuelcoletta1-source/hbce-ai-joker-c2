@@ -1405,3 +1405,38 @@ Status:
 
 SaaS B2G security and compliance pack = READY
 SaaS B2G security boundary = READY FOR UP-MESE PLANNING
+
+---
+
+## 24. SaaS B2G admin dashboard roadmap
+
+Path:
+
+docs/product/hbce-joker-c2-saas-b2g-admin-dashboard-roadmap.md
+
+Purpose:
+
+Defines the SaaS B2G admin dashboard roadmap for HBCE/JOKER-C2, including overview, runtime health, tenant/workspace state, API keys, IPR sessions, chat runtime, Source Intelligence, files workflow, EVT/OPC/audit, model usage, rate limits, security/compliance, pilot readiness and UP-MESE readiness.
+
+Canonical markers:
+
+SAAS_B2G_ADMIN_DASHBOARD_ROADMAP_READY
+HBCE_JOKER_C2_SAAS_B2G_ADMIN_DASHBOARD_READY
+HBCE_JOKER_C2_SAAS_B2G_SECURITY_COMPLIANCE_READY
+HBCE_JOKER_C2_SAAS_B2G_PILOT_PACKAGE_READY
+HBCE_JOKER_C2_SAAS_B2G_PRODUCT_ARCHITECTURE_READY
+HBCE_IPR_RUNTIME_API_V1_FOUNDATION_CONFIRMED
+SOURCE_INTELLIGENCE_PACKAGE_CLOSED_PASS
+API_V1_PACKAGE_CLOSURE_RELEASE_NOTE_READY
+legalCertification=false
+rawTextPersistence=false
+technical proof receipt only
+MISSING_API_KEY
+FAIL_CLOSED
+DEFENSIVE_ONLY_CYBER
+ADMIN_DASHBOARD_FAIL_CLOSED
+
+Status:
+
+SaaS B2G admin dashboard roadmap = READY
+SaaS B2G admin dashboard roadmap = READY FOR UP-MESE PLANNING
