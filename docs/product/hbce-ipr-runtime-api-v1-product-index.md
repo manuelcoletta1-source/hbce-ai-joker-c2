@@ -1340,3 +1340,34 @@ Status:
 
 SaaS B2G product blueprint = READY
 SaaS B2G product architecture = READY FOR UP-MESE PLANNING
+
+---
+
+## 22. SaaS B2G pilot offer
+
+Path:
+
+docs/product/hbce-joker-c2-saas-b2g-pilot-offer.md
+
+Purpose:
+
+Defines the controlled SaaS B2G pilot offer for HBCE/JOKER-C2, including pilot scope, target users, duration, roles, included API v1 modules, use cases, quotas, deliverables, success criteria, failure conditions, commercial framing, pricing model boundary, risk statement, closure report and UP-MESE roadmap connection.
+
+Canonical markers:
+
+SAAS_B2G_PILOT_OFFER_READY
+HBCE_JOKER_C2_SAAS_B2G_PILOT_PACKAGE_READY
+HBCE_JOKER_C2_SAAS_B2G_PRODUCT_ARCHITECTURE_READY
+HBCE_IPR_RUNTIME_API_V1_FOUNDATION_CONFIRMED
+SOURCE_INTELLIGENCE_PACKAGE_CLOSED_PASS
+API_V1_PACKAGE_CLOSURE_RELEASE_NOTE_READY
+legalCertification=false
+rawTextPersistence=false
+technical proof receipt only
+MISSING_API_KEY
+FAIL_CLOSED
+
+Status:
+
+SaaS B2G pilot offer = READY
+SaaS B2G pilot package = READY FOR UP-MESE PLANNING
