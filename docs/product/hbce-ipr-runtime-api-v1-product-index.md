@@ -1513,3 +1513,41 @@ Status:
 
 SaaS B2G UPMESE package = READY
 SaaS B2G UPMESE package = READY FOR 2026-06-19 CHECKPOINT
+
+---
+
+## 27. SaaS B2G UPMESE checkpoint
+
+Path:
+
+docs/product/hbce-joker-c2-saas-b2g-upmese-checkpoint.md
+
+Purpose:
+
+Defines the SaaS B2G UP-MESE checkpoint for HBCE/JOKER-C2, closing the 2026-06-12 / 2026-06-19 roadmap cycle by confirming API v1 package closure, Source Intelligence closure, product blueprint, pilot offer, security/compliance pack, admin dashboard roadmap, runtime enforcement roadmap, UPMESE package, product index continuity, fail-closed posture and technical proof boundaries.
+
+Canonical markers:
+
+SAAS_B2G_UPMESE_CHECKPOINT_READY
+HBCE_JOKER_C2_SAAS_B2G_UPMESE_CHECKPOINT_READY
+HBCE_JOKER_C2_SAAS_B2G_UPMESE_READY
+HBCE_JOKER_C2_SAAS_B2G_RUNTIME_ENFORCEMENT_READY
+HBCE_JOKER_C2_SAAS_B2G_ADMIN_DASHBOARD_READY
+HBCE_JOKER_C2_SAAS_B2G_SECURITY_COMPLIANCE_READY
+HBCE_JOKER_C2_SAAS_B2G_PILOT_PACKAGE_READY
+HBCE_JOKER_C2_SAAS_B2G_PRODUCT_ARCHITECTURE_READY
+HBCE_IPR_RUNTIME_API_V1_FOUNDATION_CONFIRMED
+SOURCE_INTELLIGENCE_PACKAGE_CLOSED_PASS
+API_V1_PACKAGE_CLOSURE_RELEASE_NOTE_READY
+legalCertification=false
+rawTextPersistence=false
+technical proof receipt only
+MISSING_API_KEY
+FAIL_CLOSED
+DEFENSIVE_ONLY_CYBER
+UPMESE_CHECKPOINT_FAIL_CLOSED
+
+Status:
+
+SaaS B2G UPMESE checkpoint = READY
+SaaS B2G UP-MESE cycle 2026-06-12 / 2026-06-19 = CLOSED PASS
