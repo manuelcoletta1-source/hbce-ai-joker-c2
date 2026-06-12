@@ -1,4 +1,4 @@
-HBCE IPR Runtime API v1 — Source Intelligence Release Note
+# HBCE IPR Runtime API v1 — Source Intelligence Release Note
 
 Product: HBCE IPR Operational Identity & Proof Layer
 Runtime: AI JOKER-C2 SaaS Core v0.1
