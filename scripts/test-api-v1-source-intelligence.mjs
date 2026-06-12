@@ -1,34 +1,29 @@
 cd /home/manuelcoletta1/github/hbce-ai-joker-c2 || exit 1
 
-git pull --ff-only origin main
-
 cat > scripts/test-api-v1-source-intelligence.mjs <<'EOF'
 #!/usr/bin/env node
 
 /**
  * HBCE IPR Runtime API v1 — Source Intelligence Smoke Test
  *
- * Purpose:
- * - Validate the API v1 Source Intelligence route surface.
- * - Check catalog/discovery behavior through GET /api/v1/source-intelligence.
- * - Optionally probe POST /api/v1/source-intelligence with fetchLive=false.
- * - Preserve product boundaries:
- *   legalCertification=false
- *   technical source receipt only
- *   rawTextPersistence=false
+ * Bounded smoke test for:
+ * - GET  /api/v1/source-intelligence
+ * - POST /api/v1/source-intelligence with fetchLive=false
  *
- * This script is intentionally bounded.
- * It must not perform unrestricted crawling, scraping or live source fetching.
+ * Product boundaries:
+ * - legalCertification=false
+ * - OPC=technical source receipt only
+ * - rawTextPersistence=false
  */
 
 const DEFAULT_BASE_URL = "http://localhost:3000";
 
-const baseUrl = normalizeBaseUrl(
+const baseUrl = String(
   process.env.HBCE_API_V1_BASE_URL ||
     process.env.HBCE_API_BASE_URL ||
     process.env.API_BASE_URL ||
     DEFAULT_BASE_URL,
-);
+).replace(/\/+$/, "");
 
 const apiKey =
   process.env.HBCE_API_KEY ||
@@ -50,70 +45,51 @@ const probePost =
   String(process.env.HBCE_API_V1_SOURCE_INTELLIGENCE_POST || "true").toLowerCase() !==
   "false";
 
-const state = {
-  baseUrl,
+const result = {
+  status: "API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_PENDING",
   route: "/api/v1/source-intelligence",
+  baseUrl,
+  sourceSet,
+  sourceId,
+  fetchLive: false,
+  rawTextPersistence: false,
+  legalCertification: false,
+  opcBoundary: "technical source receipt only",
   criticalFailures: [],
   optionalWarnings: [],
   checks: [],
-  boundary: {
-    legalCertification: false,
-    opcBoundary: "technical source receipt only",
-    rawTextPersistence: false,
-  },
 };
 
-function normalizeBaseUrl(value) {
-  return String(value || DEFAULT_BASE_URL).replace(/\/+$/, "");
+function pass(name, details = {}) {
+  result.checks.push({ name, status: "PASS", ...details });
 }
 
-function markPass(name, details = {}) {
-  state.checks.push({
-    name,
-    status: "PASS",
-    ...details,
-  });
+function skip(name, reason) {
+  result.checks.push({ name, status: "SKIP", reason });
 }
 
-function markSkip(name, reason) {
-  state.checks.push({
-    name,
-    status: "SKIP",
-    reason,
-  });
+function fail(name, reason, details = {}) {
+  result.criticalFailures.push({ name, reason, ...details });
 }
 
-function markFail(name, reason, details = {}) {
-  state.criticalFailures.push({
-    name,
-    reason,
-    ...details,
-  });
+function warn(name, reason, details = {}) {
+  result.optionalWarnings.push({ name, reason, ...details });
 }
 
-function markWarning(name, reason, details = {}) {
-  state.optionalWarnings.push({
-    name,
-    reason,
-    ...details,
-  });
-}
-
-function headers(extra = {}) {
-  const result = {
+function requestHeaders() {
+  const headers = {
     Accept: "application/json",
     "Content-Type": "application/json",
-    ...extra,
   };
 
   if (apiKey) {
-    result.Authorization = `Bearer ${apiKey}`;
+    headers.Authorization = `Bearer ${apiKey}`;
   }
 
-  return result;
+  return headers;
 }
 
-async function readJsonSafe(response) {
+async function readBody(response) {
   const text = await response.text();
 
   if (!text) {
@@ -142,88 +118,70 @@ async function readJsonSafe(response) {
   }
 }
 
-function assertBoundaryObject(payload, context) {
+function checkBoundaries(payload, context) {
   const serialized = JSON.stringify(payload);
 
   if (serialized.includes('"legalCertification":true')) {
-    markFail(`${context}: legalCertification boundary`, "LEGAL_CERTIFICATION_TRUE_DETECTED");
-    return;
+    fail(`${context}: legalCertification boundary`, "LEGAL_CERTIFICATION_TRUE_DETECTED");
+  } else if (serialized.includes("legalCertification")) {
+    pass(`${context}: legalCertification boundary`);
+  } else {
+    warn(`${context}: legalCertification boundary`, "LEGAL_CERTIFICATION_MARKER_NOT_EXPLICIT");
   }
 
-  if (serialized.includes("legalCertification")) {
-    markPass(`${context}: legalCertification boundary present or preserved`);
+  if (serialized.includes('"rawTextPersistence":true')) {
+    fail(`${context}: rawTextPersistence boundary`, "RAW_TEXT_PERSISTENCE_TRUE_DETECTED");
+  } else if (serialized.includes("rawTextPersistence")) {
+    pass(`${context}: rawTextPersistence boundary`);
   } else {
-    markWarning(
-      `${context}: legalCertification marker`,
-      "LEGAL_CERTIFICATION_MARKER_NOT_EXPLICIT_IN_RESPONSE",
-    );
+    warn(`${context}: rawTextPersistence boundary`, "RAW_TEXT_PERSISTENCE_MARKER_NOT_EXPLICIT");
   }
 
   if (
     serialized.includes("technical source receipt only") ||
     serialized.includes("technical proof receipt only")
   ) {
-    markPass(`${context}: OPC/source technical boundary present`);
+    pass(`${context}: technical source boundary`);
   } else {
-    markWarning(
-      `${context}: OPC/source technical boundary`,
-      "TECHNICAL_SOURCE_RECEIPT_MARKER_NOT_EXPLICIT_IN_RESPONSE",
-    );
-  }
-
-  if (serialized.includes('"rawTextPersistence":true')) {
-    markFail(`${context}: rawTextPersistence boundary`, "RAW_TEXT_PERSISTENCE_TRUE_DETECTED");
-    return;
-  }
-
-  if (serialized.includes("rawTextPersistence")) {
-    markPass(`${context}: rawTextPersistence boundary present or preserved`);
-  } else {
-    markWarning(
-      `${context}: rawTextPersistence marker`,
-      "RAW_TEXT_PERSISTENCE_MARKER_NOT_EXPLICIT_IN_RESPONSE",
-    );
+    warn(`${context}: technical source boundary`, "TECHNICAL_SOURCE_RECEIPT_MARKER_NOT_EXPLICIT");
   }
 }
 
-async function testGetSourceIntelligence() {
+async function testGet() {
   const url = `${baseUrl}/api/v1/source-intelligence`;
 
   let response;
+
   try {
     response = await fetch(url, {
       method: "GET",
-      headers: headers(),
+      headers: requestHeaders(),
     });
   } catch (error) {
-    markFail("GET /api/v1/source-intelligence", "NETWORK_ERROR", {
+    fail("GET /api/v1/source-intelligence", "NETWORK_ERROR", {
       message: error instanceof Error ? error.message : String(error),
       url,
     });
     return;
   }
 
-  const body = await readJsonSafe(response);
+  const body = await readBody(response);
 
   if (response.status === 404) {
-    markFail("GET /api/v1/source-intelligence", "ROUTE_NOT_FOUND", {
-      status: response.status,
-      url,
-    });
+    fail("GET /api/v1/source-intelligence", "ROUTE_NOT_FOUND", { status: response.status, url });
     return;
   }
 
   if (response.status >= 500) {
-    markFail("GET /api/v1/source-intelligence", "SERVER_ERROR", {
+    fail("GET /api/v1/source-intelligence", "SERVER_ERROR", {
       status: response.status,
-      url,
-      body: body.text.slice(0, 500),
+      bodyPreview: body.text.slice(0, 500),
     });
     return;
   }
 
   if (!body.ok) {
-    markFail("GET /api/v1/source-intelligence", "NON_JSON_RESPONSE", {
+    fail("GET /api/v1/source-intelligence", "NON_JSON_RESPONSE", {
       status: response.status,
       parseError: body.parseError,
       bodyPreview: body.text.slice(0, 500),
@@ -231,13 +189,9 @@ async function testGetSourceIntelligence() {
     return;
   }
 
-  markPass("GET /api/v1/source-intelligence", {
-    status: response.status,
-    url,
-  });
+  pass("GET /api/v1/source-intelligence", { status: response.status });
 
   const serialized = JSON.stringify(body.json);
-
   if (
     serialized.includes("SOURCE_INTELLIGENCE") ||
     serialized.includes("sourceIntelligence") ||
@@ -245,17 +199,17 @@ async function testGetSourceIntelligence() {
     serialized.includes("catalog") ||
     serialized.includes("sources")
   ) {
-    markPass("GET source intelligence payload signal");
+    pass("GET source intelligence payload signal");
   } else {
-    markWarning("GET source intelligence payload signal", "EXPECTED_SOURCE_SIGNAL_NOT_FOUND");
+    warn("GET source intelligence payload signal", "EXPECTED_SOURCE_SIGNAL_NOT_FOUND");
   }
 
-  assertBoundaryObject(body.json, "GET /api/v1/source-intelligence");
+  checkBoundaries(body.json, "GET /api/v1/source-intelligence");
 }
 
-async function testPostSourceIntelligence() {
+async function testPost() {
   if (!probePost) {
-    markSkip("POST /api/v1/source-intelligence", "POST_PROBE_DISABLED");
+    skip("POST /api/v1/source-intelligence", "POST_PROBE_DISABLED");
     return;
   }
 
@@ -272,32 +226,30 @@ async function testPostSourceIntelligence() {
   };
 
   let response;
+
   try {
     response = await fetch(url, {
       method: "POST",
-      headers: headers(),
+      headers: requestHeaders(),
       body: JSON.stringify(payload),
     });
   } catch (error) {
-    markFail("POST /api/v1/source-intelligence", "NETWORK_ERROR", {
+    fail("POST /api/v1/source-intelligence", "NETWORK_ERROR", {
       message: error instanceof Error ? error.message : String(error),
       url,
     });
     return;
   }
 
-  const body = await readJsonSafe(response);
+  const body = await readBody(response);
 
   if (response.status === 404) {
-    markFail("POST /api/v1/source-intelligence", "ROUTE_NOT_FOUND", {
-      status: response.status,
-      url,
-    });
+    fail("POST /api/v1/source-intelligence", "ROUTE_NOT_FOUND", { status: response.status, url });
     return;
   }
 
   if (response.status === 401 || response.status === 403) {
-    markPass("POST /api/v1/source-intelligence auth boundary", {
+    pass("POST /api/v1/source-intelligence auth boundary", {
       status: response.status,
       note: "Route is protected or requires authorized access.",
     });
@@ -305,7 +257,7 @@ async function testPostSourceIntelligence() {
   }
 
   if (response.status === 400 || response.status === 422) {
-    markWarning("POST /api/v1/source-intelligence schema boundary", {
+    warn("POST /api/v1/source-intelligence schema boundary", {
       status: response.status,
       note: "Route exists but rejected the bounded smoke payload.",
       bodyPreview: body.text.slice(0, 500),
@@ -314,7 +266,7 @@ async function testPostSourceIntelligence() {
   }
 
   if (response.status >= 500) {
-    markFail("POST /api/v1/source-intelligence", "SERVER_ERROR", {
+    fail("POST /api/v1/source-intelligence", "SERVER_ERROR", {
       status: response.status,
       bodyPreview: body.text.slice(0, 500),
     });
@@ -322,7 +274,7 @@ async function testPostSourceIntelligence() {
   }
 
   if (!body.ok) {
-    markFail("POST /api/v1/source-intelligence", "NON_JSON_RESPONSE", {
+    fail("POST /api/v1/source-intelligence", "NON_JSON_RESPONSE", {
       status: response.status,
       parseError: body.parseError,
       bodyPreview: body.text.slice(0, 500),
@@ -330,60 +282,45 @@ async function testPostSourceIntelligence() {
     return;
   }
 
-  markPass("POST /api/v1/source-intelligence", {
+  pass("POST /api/v1/source-intelligence", {
     status: response.status,
-    url,
     fetchLive: false,
   });
 
-  assertBoundaryObject(body.json, "POST /api/v1/source-intelligence");
+  checkBoundaries(body.json, "POST /api/v1/source-intelligence");
 }
 
-function printSummary() {
-  const result = {
-    status:
-      state.criticalFailures.length === 0
-        ? "API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_PASS"
-        : "API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_FAIL",
-    route: state.route,
-    baseUrl: state.baseUrl,
-    sourceSet,
-    sourceId,
-    fetchLive: false,
-    rawTextPersistence: false,
-    legalCertification: false,
-    opcBoundary: "technical source receipt only",
-    criticalFailures: state.criticalFailures.length,
-    optionalWarnings: state.optionalWarnings.length,
-    checks: state.checks.length,
-    checkResults: state.checks,
-    warnings: state.optionalWarnings,
-    failures: state.criticalFailures,
-  };
+function printAndExit() {
+  result.status =
+    result.criticalFailures.length === 0
+      ? "API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_PASS"
+      : "API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_FAIL";
+
+  result.criticalFailureCount = result.criticalFailures.length;
+  result.optionalWarningCount = result.optionalWarnings.length;
+  result.checkCount = result.checks.length;
 
   console.log(JSON.stringify(result, null, 2));
 
-  if (state.criticalFailures.length > 0) {
+  if (result.criticalFailures.length > 0) {
     process.exitCode = 1;
   }
 }
 
 async function main() {
-  markPass("node runtime", {
-    node: process.version,
-  });
+  pass("node runtime", { node: process.version });
 
-  markPass("bounded source intelligence posture", {
+  pass("bounded source intelligence posture", {
     fetchLive: false,
     rawTextPersistence: false,
     legalCertification: false,
     opcBoundary: "technical source receipt only",
   });
 
-  await testGetSourceIntelligence();
-  await testPostSourceIntelligence();
+  await testGet();
+  await testPost();
 
-  printSummary();
+  printAndExit();
 }
 
 main().catch((error) => {
@@ -405,12 +342,10 @@ main().catch((error) => {
 EOF
 
 echo
-echo "=== CHECK SOURCE INTELLIGENCE SMOKE SCRIPT ==="
+echo "=== VERIFY CLEAN SOURCE INTELLIGENCE SCRIPT ==="
 
-test -f scripts/test-api-v1-source-intelligence.mjs || {
-  echo "FAIL: script mancante"
-  exit 1
-}
+wc -l scripts/test-api-v1-source-intelligence.mjs
+head -5 scripts/test-api-v1-source-intelligence.mjs
 
 grep -n "API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_PASS" scripts/test-api-v1-source-intelligence.mjs
 grep -n "API_V1_SOURCE_INTELLIGENCE_SMOKE_TEST_FAIL" scripts/test-api-v1-source-intelligence.mjs
@@ -420,16 +355,9 @@ grep -n "legalCertification" scripts/test-api-v1-source-intelligence.mjs
 grep -n "/api/v1/source-intelligence" scripts/test-api-v1-source-intelligence.mjs
 
 echo
-echo "=== NODE CHECK SOURCE INTELLIGENCE SCRIPT ==="
+echo "=== NODE CHECK ==="
 node --check scripts/test-api-v1-source-intelligence.mjs
 
 echo
 echo "=== GIT STATUS ==="
 git status -sb
-
-echo
-echo "=== DIFF SOURCE INTELLIGENCE SCRIPT ==="
-git diff -- scripts/test-api-v1-source-intelligence.mjs | sed -n '1,260p'
-
-echo
-echo "=== SOURCE INTELLIGENCE SMOKE SCRIPT READY ==="
