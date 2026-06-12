@@ -757,7 +757,7 @@ export async function GET() {
     generatedAt: utcNowIso()
   };
 
-  return jsonResponse(payload, { headers: runtimeEnforcement.headers });
+  return jsonResponse(payload);
 }
 
 export async function POST(request: NextRequest) {
@@ -960,5 +960,5 @@ export async function POST(request: NextRequest) {
     rawRuntimeResponse: bridgeResult.payload
   };
 
-  return jsonResponse(payload);
+  return jsonResponse(payload, { headers: runtimeEnforcement.headers });
 }
