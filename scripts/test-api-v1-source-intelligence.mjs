@@ -58,19 +58,35 @@ const result = {
 };
 
 function pass(name, details = {}) {
-  result.checks.push({ name, status: "PASS", ...details });
+  result.checks.push({
+    name,
+    status: "PASS",
+    ...details,
+  });
 }
 
 function skip(name, reason) {
-  result.checks.push({ name, status: "SKIP", reason });
+  result.checks.push({
+    name,
+    status: "SKIP",
+    reason,
+  });
 }
 
 function fail(name, reason, details = {}) {
-  result.criticalFailures.push({ name, reason, ...details });
+  result.criticalFailures.push({
+    name,
+    reason,
+    ...details,
+  });
 }
 
 function warn(name, reason, details = {}) {
-  result.optionalWarnings.push({ name, reason, ...details });
+  result.optionalWarnings.push({
+    name,
+    reason,
+    ...details,
+  });
 }
 
 function requestHeaders() {
