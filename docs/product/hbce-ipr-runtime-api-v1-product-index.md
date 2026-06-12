@@ -1371,3 +1371,37 @@ Status:
 
 SaaS B2G pilot offer = READY
 SaaS B2G pilot package = READY FOR UP-MESE PLANNING
+
+---
+
+## 23. SaaS B2G security and compliance pack
+
+Path:
+
+docs/product/hbce-joker-c2-saas-b2g-security-compliance-pack.md
+
+Purpose:
+
+Defines the SaaS B2G security and compliance technical boundary pack for HBCE/JOKER-C2, including authentication, API key lifecycle, tenant/workspace separation, rate limits, rawTextPersistence=false policy, Source Intelligence controls, files workflow controls, EVT/OPC/audit boundaries, memory persistence policy, anti-abuse posture, DEFENSIVE_ONLY_CYBER and fail-closed criteria.
+
+Canonical markers:
+
+SAAS_B2G_SECURITY_COMPLIANCE_PACK_READY
+HBCE_JOKER_C2_SAAS_B2G_SECURITY_COMPLIANCE_READY
+HBCE_JOKER_C2_SAAS_B2G_PILOT_PACKAGE_READY
+HBCE_JOKER_C2_SAAS_B2G_PRODUCT_ARCHITECTURE_READY
+HBCE_IPR_RUNTIME_API_V1_FOUNDATION_CONFIRMED
+SOURCE_INTELLIGENCE_PACKAGE_CLOSED_PASS
+API_V1_PACKAGE_CLOSURE_RELEASE_NOTE_READY
+legalCertification=false
+rawTextPersistence=false
+technical proof receipt only
+MISSING_API_KEY
+FAIL_CLOSED
+SECURITY_COMPLIANCE_FAIL_CLOSED
+DEFENSIVE_ONLY_CYBER
+
+Status:
+
+SaaS B2G security and compliance pack = READY
+SaaS B2G security boundary = READY FOR UP-MESE PLANNING
