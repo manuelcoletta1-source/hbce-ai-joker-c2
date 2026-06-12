@@ -130,6 +130,7 @@ docs/product/hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md
 docs/product/hbce-ipr-runtime-api-v1-curl-examples.md
 docs/product/hbce-ipr-runtime-api-v1-files-workflow.md
 docs/product/hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
+docs/product/hbce-ipr-runtime-api-v1-source-intelligence-smoke-test.md
 ```
 
 ### 3.5 Executable smoke tests
@@ -158,6 +159,7 @@ Recommended reading order for a new technical partner:
 10. hbce-ipr-runtime-api-v1-client-smoke-test.md
 11. hbce-ipr-runtime-api-v1-files-workflow.md
 12. hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
+13. hbce-ipr-runtime-api-v1-source-intelligence-smoke-test.md
 ```
 
 Recommended reading order for internal operators:
@@ -172,8 +174,9 @@ Recommended reading order for internal operators:
 7. hbce-ipr-runtime-api-v1-curl-examples.md
 8. hbce-ipr-runtime-api-v1-files-workflow.md
 9. hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
-10. hbce-ipr-runtime-api-v1-pilot-package.md
-11. hbce-ipr-runtime-api-v1-b2b-b2g-partner-pitch.md
+10. hbce-ipr-runtime-api-v1-source-intelligence-smoke-test.md
+11. hbce-ipr-runtime-api-v1-pilot-package.md
+12. hbce-ipr-runtime-api-v1-b2b-b2g-partner-pitch.md
 ```
 
 Recommended reading order for B2G / institutional evaluators:
@@ -186,8 +189,9 @@ Recommended reading order for B2G / institutional evaluators:
 5. hbce-ipr-runtime-api-v1-rate-limit-quota-smoke-test.md
 6. hbce-ipr-runtime-api-v1-integration-guide.md
 7. hbce-ipr-runtime-api-v1-source-intelligence-workflow.md
-8. hbce-ipr-runtime-api-v1-files-workflow.md
-9. hbce-ipr-runtime-api-v1-client-smoke-test.md
+8. hbce-ipr-runtime-api-v1-source-intelligence-smoke-test.md
+9. hbce-ipr-runtime-api-v1-files-workflow.md
+10. hbce-ipr-runtime-api-v1-client-smoke-test.md
 ```
 
 ---
@@ -902,6 +906,7 @@ PASS
 | cURL examples | `hbce-ipr-runtime-api-v1-curl-examples.md` | PASS |
 | Files workflow | `hbce-ipr-runtime-api-v1-files-workflow.md` | PASS |
 | Source Intelligence workflow | `hbce-ipr-runtime-api-v1-source-intelligence-workflow.md` | PASS |
+| Source Intelligence smoke test report | `hbce-ipr-runtime-api-v1-source-intelligence-smoke-test.md` | PASS |
 
 ---
 
@@ -1197,6 +1202,7 @@ quota-policy-ready
 Anti-Abuso API documented
 workflow-documented
 source-intelligence-documented
+source-intelligence-smoke-test-report-ready
 files-workflow-documented
 ```
 
