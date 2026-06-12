@@ -1310,3 +1310,33 @@ API v1 package closure release note = ready
 API v1 package = closed pass
 package closure release note = PASS
 API v1 package closure = PASS
+
+---
+
+## 21. SaaS B2G product blueprint
+
+Path:
+
+docs/product/hbce-joker-c2-saas-b2g-product-blueprint.md
+
+Purpose:
+
+Defines the transition from HBCE IPR Runtime API v1 pilot-ready package to HBCE/JOKER-C2 SaaS B2G product architecture, including product definition, B2G problem, tenant/workspace model, API key lifecycle, Source Intelligence, files workflow, EVT/OPC/audit proof chain, dashboard requirements, security boundaries, runtime enforcement roadmap and UP-MESE path.
+
+Canonical markers:
+
+SAAS_B2G_PRODUCT_BLUEPRINT_READY
+HBCE_JOKER_C2_SAAS_B2G_PRODUCT_ARCHITECTURE_READY
+HBCE_IPR_RUNTIME_API_V1_FOUNDATION_CONFIRMED
+SOURCE_INTELLIGENCE_PACKAGE_CLOSED_PASS
+API_V1_PACKAGE_CLOSURE_RELEASE_NOTE_READY
+legalCertification=false
+rawTextPersistence=false
+technical proof receipt only
+MISSING_API_KEY
+FAIL_CLOSED
+
+Status:
+
+SaaS B2G product blueprint = READY
+SaaS B2G product architecture = READY FOR UP-MESE PLANNING
