@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "1.0.0",
+  "registry": {
+    "id": "HBCE-SOURCE-REGISTRY",
+    "version": "1.0.0",
+    "status": "ACTIVE",
+    "description": "Canonical registry of all information sources recognized by AI JOKER-C2."
+  },
+  "sourceClasses": [
+    "PRIMARY_EXTERNAL",
+    "SECONDARY_EXTERNAL",
+    "OFFICIAL_INSTITUTIONAL",
+    "SCIENTIFIC_PRIMARY",
+    "LEGAL_PRIMARY",
+    "PROJECT_INTERNAL",
+    "THEORETICAL_INTERNAL",
+    "USER_PROVIDED",
+    "UNVERIFIED",
+    "RESTRICTED_HASH_ONLY"
+  ],
+  "authorityDomains": [
+    "HBCE_INTERNAL_INTERPRETATION",
+    "SRSC_FRAMEWORK",
+    "DCTT_ANALYSIS",
+    "IPR",
+    "EVT",
+    "OPC",
+    "SOFTWARE_ARCHITECTURE",
+    "SYSTEM_GOVERNANCE",
+    "SCIENTIFIC_REFERENCE",
+    "LEGAL_REFERENCE"
+  ],
+  "sources": [
+    {
+      "sourceId": "HBCE-SRSC-V17.1",
+      "title": "Simulazione del Reale Specifico della Coscienza",
+      "version": "17.1",
+      "sourceClass": "THEORETICAL_INTERNAL",
+      "authorityDomain": "SRSC_FRAMEWORK",
+      "epistemicStatus": "PHENOMENOLOGICAL_OPERATIONAL_FRAMEWORK",
+      "factAuthority": false,
+      "interpretiveAuthority": true,
+      "status": "ACTIVE"
+    },
+    {
+      "sourceId": "HBCE-DCTT",
+      "title": "Decisione Costo Traccia Tempo",
+      "version": "1.0",
+      "sourceClass": "PROJECT_INTERNAL",
+      "authorityDomain": "DCTT_ANALYSIS",
+      "epistemicStatus": "OPERATIONAL_PROTOCOL",
+      "factAuthority": false,
+      "interpretiveAuthority": true,
+      "status": "ACTIVE"
+    },
+    {
+      "sourceId": "HBCE-IPR",
+      "title": "Identity Proof Runtime",
+      "version": "3.0",
+      "sourceClass": "PROJECT_INTERNAL",
+      "authorityDomain": "IPR",
+      "epistemicStatus": "IDENTITY_PROTOCOL",
+      "status": "ACTIVE"
+    },
+    {
+      "sourceId": "HBCE-EVT",
+      "title": "Event Trace",
+      "version": "1.0",
+      "sourceClass": "PROJECT_INTERNAL",
+      "authorityDomain": "EVT",
+      "epistemicStatus": "TRACE_PROTOCOL",
+      "status": "ACTIVE"
+    },
+    {
+      "sourceId": "HBCE-OPC",
+      "title": "Operational Proof & Compliance",
+      "version": "1.0",
+      "sourceClass": "PROJECT_INTERNAL",
+      "authorityDomain": "OPC",
+      "epistemicStatus": "PROOF_PROTOCOL",
+      "status": "ACTIVE"
+    }
+  ],
+  "rules": {
+    "claimRequiresSource": true,
+    "unknownSourceAllowed": false,
+    "allowMultipleSourcesPerClaim": true,
+    "preserveSourceVersion": true,
+    "preserveContentHash": true,
+    "humanAuthorizationRequiredForRegistryChanges": true
+  }
+}
