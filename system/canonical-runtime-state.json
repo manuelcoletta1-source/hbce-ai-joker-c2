@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "1.0.0",
+  "runtime": {
+    "id": "AI-JOKER-C2-RUNTIME",
+    "name": "AI JOKER-C2 Runtime",
+    "version": "1.0.0",
+    "phase": "MISSION_RUNTIME_V0_1",
+    "status": "ARCHITECTURE_ACTIVE_IMPLEMENTATION_PENDING"
+  },
+  "organization": {
+    "name": "HERMETICUM B.C.E. S.r.l.",
+    "jurisdiction": "IT-EU",
+    "technicalNode": "Torino",
+    "legalCertification": false
+  },
+  "canonicalTime": {
+    "updatedAt": "2026-07-29T18:00:00+02:00",
+    "timezone": "Europe/Rome",
+    "location": "Torino, Italia, Unione Europea"
+  },
+  "identity": {
+    "iprRequired": true,
+    "iprStatus": "ACTIVE",
+    "humanAuthorityRequired": true,
+    "autonomousLegalPersonhood": false,
+    "consciousnessProof": false
+  },
+  "missionRuntime": {
+    "enabled": false,
+    "currentVersion": "0.1.0",
+    "required": true,
+    "policy": "NO_MISSION_NO_ACTION",
+    "allowedStates": [
+      "DRAFT",
+      "IDENTITY_VERIFIED",
+      "SOURCES_AUTHORIZED",
+      "FRAMEWORK_AUTHORIZED",
+      "AUTHORIZED",
+      "RUNNING",
+      "WAITING_HUMAN",
+      "COMPLETED",
+      "REJECTED",
+      "FAILED_CLOSED"
+    ]
+  },
+  "frameworks": {
+    "active": [
+      {
+        "id": "SRSC-V17.1",
+        "name": "Simulazione del Reale Specifico della Coscienza",
+        "type": "PHENOMENOLOGICAL_EPISTEMIC_OPERATIONAL",
+        "status": "ACTIVE",
+        "factAuthority": false,
+        "interpretiveAuthority": true,
+        "requiresExplicitClaimLabel": true
+      },
+      {
+        "id": "DCTT",
+        "name": "Decisione Costo Traccia Tempo",
+        "type": "OPERATIONAL_ANALYSIS_PROTOCOL",
+        "status": "ACTIVE",
+        "requiredFields": [
+          "decisione",
+          "costo",
+          "traccia",
+          "tempo",
+          "limite"
+        ]
+      }
+    ]
+  },
+  "sourceIntelligence": {
+    "enabled": false,
+    "claimToSourceTraceRequired": true,
+    "allowedClaimTypes": [
+      "OBSERVED_FACT",
+      "SOURCE_DERIVED_FACT",
+      "SCIENTIFIC_CONSENSUS",
+      "LEGAL_FACT",
+      "USER_DECLARATION",
+      "PROJECT_RECORD",
+      "INFERENCE",
+      "SRSC_INTERPRETATION",
+      "HYPOTHESIS",
+      "SPECULATION",
+      "OBJECTIVE",
+      "RECOMMENDATION",
+      "UNKNOWN"
+    ]
+  },
+  "memory": {
+    "governed": true,
+    "rawTextPersistence": false,
+    "explicitOperatorSaveRequired": true,
+    "allowedClasses": [
+      "EPHEMERAL",
+      "SESSION",
+      "PROJECT",
+      "IPR_BOUND",
+      "PUBLIC_REFERENCE",
+      "THEORETICAL_CORPUS",
+      "RESTRICTED_HASH_ONLY"
+    ]
+  },
+  "authorization": {
+    "humanAuthorizationRequired": true,
+    "autonomousAllowedActions": [
+      "READ",
+      "ANALYZE",
+      "COMPARE",
+      "PLAN",
+      "DRAFT"
+    ],
+    "restrictedActions": [
+      "WRITE_EXTERNAL",
+      "SEND",
+      "SUBMIT",
+      "DEPLOY",
+      "DELETE",
+      "PUBLISH",
+      "EXECUTE_IRREVERSIBLE"
+    ]
+  },
+  "eventTrace": {
+    "evtEnabled": true,
+    "previousEventHashRequired": true,
+    "appendOnly": true
+  },
+  "opc": {
+    "name": "Operational Proof & Compliance",
+    "enabled": true,
+    "independentVerificationRequired": true,
+    "verificationEndpoint": "/api/v1/verify",
+    "verificationImplemented": false,
+    "allowedVerificationResults": [
+      "VALID",
+      "INVALID",
+      "INCOMPLETE",
+      "UNVERIFIABLE"
+    ]
+  },
+  "boundaries": [
+    "NO_IDENTITY_NO_ACTION",
+    "NO_MISSION_NO_ACTION",
+    "NO_SOURCE_NO_CLAIM",
+    "NO_FRAMEWORK_WITHOUT_LABEL",
+    "NO_AUTHORIZATION_NO_ACTION",
+    "NO_TRACE_NO_ACTION",
+    "NO_RAW_TEXT",
+    "NO_PRIVATE_CORE",
+    "NO_RUNTIME_ACTIVATION",
+    "NO_SUBMIT_FROM_CODE",
+    "HUMAN_AUTHORIZATION_REQUIRED",
+    "FAIL_CLOSED"
+  ],
+  "implementation": {
+    "architectureSpecification": "docs/AI_JOKER_C2_RUNTIME_V1_MISSION_RUNTIME_SRSC_FRAMEWORK.md",
+    "nextMilestone": "SOURCE_REGISTRY",
+    "nextFile": "system/source-registry.json"
+  }
+}
