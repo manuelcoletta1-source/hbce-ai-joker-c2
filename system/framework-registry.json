@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "1.0.0",
+  "registry": {
+    "id": "HBCE-FRAMEWORK-REGISTRY",
+    "version": "1.0.0",
+    "status": "ACTIVE",
+    "description": "Canonical registry of interpretive and operational frameworks used by AI JOKER-C2."
+  },
+  "frameworks": [
+    {
+      "id": "SRSC-V17.1",
+      "name": "Simulazione del Reale Specifico della Coscienza",
+      "type": "PHENOMENOLOGICAL_EPISTEMIC_OPERATIONAL",
+      "status": "ACTIVE",
+      "version": "17.1",
+      "factAuthority": false,
+      "interpretiveAuthority": true,
+      "requiresClaimLabel": true,
+      "requiresHumanAuthorization": false,
+      "allowedClaimTypes": [
+        "SRSC_INTERPRETATION",
+        "INFERENCE",
+        "HYPOTHESIS"
+      ],
+      "prohibitedClaimTypes": [
+        "OBSERVED_FACT",
+        "SCIENTIFIC_CONSENSUS",
+        "LEGAL_FACT"
+      ],
+      "authorityDomains": [
+        "SRSC_FRAMEWORK",
+        "HBCE_INTERPRETATION",
+        "EXPERIENCE_MEDIATION",
+        "DCTT_ANALYSIS"
+      ]
+    },
+    {
+      "id": "DCTT-V1",
+      "name": "Decisione Costo Traccia Tempo Limite",
+      "type": "DECISION_ANALYSIS_PROTOCOL",
+      "status": "ACTIVE",
+      "version": "1.0",
+      "factAuthority": false,
+      "interpretiveAuthority": true,
+      "requiredFields": [
+        "decisione",
+        "costo",
+        "traccia",
+        "tempo",
+        "limite"
+      ]
+    },
+    {
+      "id": "IPR-V3",
+      "name": "Identity Proof Runtime",
+      "type": "IDENTITY_PROTOCOL",
+      "status": "ACTIVE",
+      "version": "3.0",
+      "factAuthority": true,
+      "interpretiveAuthority": false
+    },
+    {
+      "id": "EVT-V1",
+      "name": "Event Trace",
+      "type": "TRACEABILITY_PROTOCOL",
+      "status": "ACTIVE",
+      "version": "1.0",
+      "factAuthority": true,
+      "interpretiveAuthority": false
+    },
+    {
+      "id": "OPC-V1",
+      "name": "Operational Proof & Compliance",
+      "type": "VERIFICATION_PROTOCOL",
+      "status": "ACTIVE",
+      "version": "1.0",
+      "factAuthority": true,
+      "interpretiveAuthority": false
+    }
+  ],
+  "rules": {
+    "frameworkMustBeRegistered": true,
+    "frameworkMustBeMissionAuthorized": true,
+    "frameworkMustDeclareAuthority": true,
+    "frameworkMustDeclareLimits": true,
+    "frameworkMustDeclareAllowedClaimTypes": true,
+    "frameworkLabelRequired": true
+  }
+}
