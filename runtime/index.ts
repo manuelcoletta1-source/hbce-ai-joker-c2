@@ -2,16 +2,21 @@
  * HERMETICUM B.C.E.
  * AI JOKER-C2
  *
- * Runtime Public API
- *
- * Canonical export surface for the
- * HBCE runtime subsystem.
+ * Canonical public exports for the complete runtime.
  */
 
-export * from "./research-evolution-lifecycle";
+export * from "./research";
 
-export * from "./research-evolution-adapters";
+export * from "./conversation";
 
-export * from "./create-research-evolution-runtime";
+export * from "./ipr";
 
-export * from "./bootstrap-research-runtime";
+export * from "./evt";
+
+export * from "./opc";
+
+export * from "./audit";
+
+export * from "./model-usage";
+
+export * from "./create-joker-runtime";
