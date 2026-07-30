@@ -42,7 +42,7 @@ type ExistingTableRow = {
   table_name?: unknown;
 };
 
-const REVISION = "HBCE-RUNTIME-DIAGNOSTICS-v1_0";
+const REVISION = "HBCE-RUNTIME-DIAGNOSTICS-v1_1";
 const PRODUCT = "HBCE IPR Operational Identity & Proof Layer";
 const API_VERSION = "v1";
 const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1";
@@ -209,32 +209,54 @@ async function inspectDatabaseSchema(): Promise<DiagnosticCheck> {
   try {
     const canonicalTables = getHbceDatabaseTableNames();
 
+    /*
+     * Do not pass the canonical table list as a PostgreSQL array parameter.
+     *
+     * queryHbceDatabase serializes complex values for the Neon HTTP driver.
+     * A JavaScript string[] may therefore arrive as JSON text instead of a
+     * native PostgreSQL text[] value, causing:
+     *
+     * malformed array literal: "[...]"
+     *
+     * Reading the schema table names and comparing them locally is:
+     * - deterministic;
+     * - read-only;
+     * - independent from array serialization;
+     * - safe because no user-controlled SQL is introduced.
+     */
     const result = await queryHbceDatabase<ExistingTableRow>(
       `
         SELECT table_name
         FROM information_schema.tables
         WHERE table_schema = current_schema()
-          AND table_name = ANY($1::text[])
+          AND table_type = 'BASE TABLE'
         ORDER BY table_name ASC
       `,
-      [canonicalTables],
     );
 
-    const existingTables = result.rows
+    const allExistingTables = result.rows
       .map((row) => stringOrNull(row.table_name))
       .filter((value): value is string => Boolean(value));
 
-    const existingTableSet = new Set(existingTables);
+    const allExistingTableSet = new Set(allExistingTables);
+
+    const existingCanonicalTables = canonicalTables.filter((tableName) =>
+      allExistingTableSet.has(tableName),
+    );
 
     const missingTables = canonicalTables.filter(
-      (tableName) => !existingTableSet.has(tableName),
+      (tableName) => !allExistingTableSet.has(tableName),
+    );
+
+    const additionalTables = allExistingTables.filter(
+      (tableName) => !canonicalTables.includes(tableName),
     );
 
     let status: DiagnosticStatus = "FAIL";
 
     if (result.ok && missingTables.length === 0) {
       status = "PASS";
-    } else if (result.ok && existingTables.length > 0) {
+    } else if (result.ok && existingCanonicalTables.length > 0) {
       status = "WARN";
     }
 
@@ -247,10 +269,13 @@ async function inspectDatabaseSchema(): Promise<DiagnosticCheck> {
       details: {
         expectedSchemaVersion: HBCE_DATABASE_SCHEMA_VERSION,
         expectedTableCount: canonicalTables.length,
-        existingTableCount: existingTables.length,
+        databaseTableCount: allExistingTables.length,
+        existingCanonicalTableCount: existingCanonicalTables.length,
         missingTableCount: missingTables.length,
-        existingTables,
+        additionalTableCount: additionalTables.length,
+        existingCanonicalTables,
         missingTables,
+        additionalTables,
         queryStatus: result.status,
         queryDurationMs: result.durationMs,
         sqlHash: result.sqlHash,
@@ -345,6 +370,7 @@ function inspectRuntimeEnvironment(request: NextRequest): DiagnosticCheck {
   try {
     const origin = getRequestOrigin(request);
     const nodeVersion = process.version;
+
     const runtimeEnvironment =
       process.env.VERCEL_ENV ??
       process.env.NODE_ENV ??
@@ -472,11 +498,32 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       error: "DATABASE_SCHEMA_CHECK_SKIPPED",
     });
   } else {
-    [databaseConnectionCheck, databaseSchemaCheck] =
-      await Promise.all([
-        inspectDatabaseConnection(),
-        inspectDatabaseSchema(),
-      ]);
+    /*
+     * Execute sequentially.
+     *
+     * The first request may wake a suspended Neon compute instance.
+     * Running both checks in parallel can duplicate the cold-start delay.
+     * Once the connection check completes, the schema query can reuse the
+     * active database compute path.
+     */
+    databaseConnectionCheck = await inspectDatabaseConnection();
+
+    if (databaseConnectionCheck.status === "FAIL") {
+      databaseSchemaCheck = createCheck({
+        id: "DATABASE_SCHEMA",
+        label: "Canonical HBCE database schema",
+        required: true,
+        status: "FAIL",
+        durationMs: 0,
+        details: {
+          skipped: true,
+          reason: "DATABASE_CONNECTION_FAILED",
+        },
+        error: "DATABASE_SCHEMA_CHECK_SKIPPED",
+      });
+    } else {
+      databaseSchemaCheck = await inspectDatabaseSchema();
+    }
   }
 
   const checks: DiagnosticCheck[] = [
