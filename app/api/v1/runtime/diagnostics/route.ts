@@ -210,19 +210,14 @@ async function inspectDatabaseSchema(): Promise<DiagnosticCheck> {
     const canonicalTables = getHbceDatabaseTableNames();
 
     /*
-     * Do not pass the canonical table list as a PostgreSQL array parameter.
+     * Non passiamo la lista delle tabelle come array PostgreSQL.
      *
-     * queryHbceDatabase serializes complex values for the Neon HTTP driver.
-     * A JavaScript string[] may therefore arrive as JSON text instead of a
-     * native PostgreSQL text[] value, causing:
+     * Il wrapper queryHbceDatabase può serializzare gli array JavaScript
+     * come JSON testuale. PostgreSQL, invece, per un text[] si aspetta
+     * una sintassi array nativa.
      *
-     * malformed array literal: "[...]"
-     *
-     * Reading the schema table names and comparing them locally is:
-     * - deterministic;
-     * - read-only;
-     * - independent from array serialization;
-     * - safe because no user-controlled SQL is introduced.
+     * Leggiamo quindi tutte le tabelle dello schema corrente e facciamo
+     * il confronto localmente in TypeScript.
      */
     const result = await queryHbceDatabase<ExistingTableRow>(
       `
@@ -238,7 +233,8 @@ async function inspectDatabaseSchema(): Promise<DiagnosticCheck> {
       .map((row) => stringOrNull(row.table_name))
       .filter((value): value is string => Boolean(value));
 
-    const allExistingTableSet = new Set(allExistingTables);
+    const allExistingTableSet = new Set<string>(allExistingTables);
+    const canonicalTableSet = new Set<string>(canonicalTables);
 
     const existingCanonicalTables = canonicalTables.filter((tableName) =>
       allExistingTableSet.has(tableName),
@@ -249,7 +245,7 @@ async function inspectDatabaseSchema(): Promise<DiagnosticCheck> {
     );
 
     const additionalTables = allExistingTables.filter(
-      (tableName) => !canonicalTables.includes(tableName),
+      (tableName) => !canonicalTableSet.has(tableName),
     );
 
     let status: DiagnosticStatus = "FAIL";
@@ -305,7 +301,7 @@ function inspectSchemaContract(): DiagnosticCheck {
     const schema = getHbceDatabaseSchemaDefinition();
     const canonicalTables = getHbceDatabaseTableNames();
 
-    const uniqueTables = new Set(canonicalTables);
+    const uniqueTables = new Set<string>(canonicalTables);
 
     const hasValidVersion =
       typeof schema.version === "string" &&
@@ -499,12 +495,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
   } else {
     /*
-     * Execute sequentially.
+     * Esecuzione sequenziale.
      *
-     * The first request may wake a suspended Neon compute instance.
-     * Running both checks in parallel can duplicate the cold-start delay.
-     * Once the connection check completes, the schema query can reuse the
-     * active database compute path.
+     * La prima richiesta può riattivare un'istanza Neon sospesa.
+     * Eseguire le query in parallelo può duplicare il ritardo di cold start.
      */
     databaseConnectionCheck = await inspectDatabaseConnection();
 
