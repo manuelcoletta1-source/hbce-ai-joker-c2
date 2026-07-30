@@ -2,37 +2,18 @@
  * HERMETICUM B.C.E.
  * AI JOKER-C2
  *
- * Platform Lifecycle
+ * Canonical Platform Lifecycle
  *
- * Provides deterministic and immutable lifecycle transitions
- * for the canonical platform boundary.
+ * Produces immutable platform snapshots while preserving every
+ * required JokerPlatform property, including capabilities.
  */
-
-import {
-    restartApplication,
-    startApplication,
-    stopApplication,
-    type JokerApplication,
-} from "../app";
 
 import {
     type JokerPlatform,
     type PlatformStatus,
 } from "./create-platform";
 
-import {
-    inspectPlatformHealth,
-} from "./platform-health";
-
-export type PlatformLifecycleAction =
-    | "start"
-    | "stop"
-    | "restart";
-
 export interface PlatformLifecycleTransition {
-
-    readonly action:
-        PlatformLifecycleAction;
 
     readonly previousStatus:
         PlatformStatus;
@@ -42,6 +23,9 @@ export interface PlatformLifecycleTransition {
 
     readonly platform:
         JokerPlatform;
+
+    readonly changed:
+        boolean;
 
     readonly transitionedAt:
         Date;
@@ -92,107 +76,114 @@ function cloneValidDate(
 
 }
 
-function createPlatformSnapshot(
-    source: JokerPlatform,
-    application: JokerApplication,
+function requirePlatformStatus(
     status: PlatformStatus,
-    transitionedAt: Date,
+): PlatformStatus {
+
+    if (
+        status !== "operational"
+        && status !== "degraded"
+        && status !== "unavailable"
+    ) {
+
+        throw new Error(
+            `Unsupported platform status "${String(status)}".`,
+        );
+
+    }
+
+    return status;
+
+}
+
+function isTransitionAllowed(
+    currentStatus: PlatformStatus,
+    nextStatus: PlatformStatus,
+): boolean {
+
+    if (
+        currentStatus === nextStatus
+    ) {
+
+        return true;
+
+    }
+
+    if (
+        currentStatus === "operational"
+    ) {
+
+        return (
+            nextStatus === "degraded"
+            || nextStatus === "unavailable"
+        );
+
+    }
+
+    if (
+        currentStatus === "degraded"
+    ) {
+
+        return (
+            nextStatus === "operational"
+            || nextStatus === "unavailable"
+        );
+
+    }
+
+    return (
+        currentStatus === "unavailable"
+        && nextStatus === "operational"
+    );
+
+}
+
+function createPlatformSnapshot(
+    platform: JokerPlatform,
+    status: PlatformStatus,
 ): JokerPlatform {
 
-    const provisionalPlatform:
-        JokerPlatform =
-        Object.freeze({
+    const currentPlatform =
+        requirePlatform(
+            platform,
+        );
 
-            name:
-                source.name,
-
-            version:
-                source.version,
-
+    const nextStatus =
+        requirePlatformStatus(
             status,
-
-            application,
-
-            health:
-                source.health,
-
-            createdAt:
-                new Date(
-                    source.createdAt.getTime(),
-                ),
-
-        });
-
-    const health =
-        inspectPlatformHealth(
-            provisionalPlatform,
-            transitionedAt,
         );
 
     return Object.freeze({
 
-        ...provisionalPlatform,
+        name:
+            currentPlatform.name,
 
-        health:
-            Object.freeze({
+        version:
+            currentPlatform.version,
 
-                status:
-                    health.status === "healthy"
-                        ? "healthy"
-                        : health.status,
+        status:
+            nextStatus,
 
-                applicationStatus:
-                    health.applicationStatus,
+        application:
+            currentPlatform.application,
 
-                runtimeStatus:
-                    application
-                        .runtimeBootstrap
-                        .health
-                        .status,
+        capabilities:
+            Object.freeze([
+                ...currentPlatform.capabilities,
+            ]),
 
-                operational:
-                    health.operational,
-
-                checkedAt:
-                    new Date(
-                        health.checkedAt.getTime(),
-                    ),
-
-            }),
-
-    });
-
-}
-
-function createTransition(
-    action: PlatformLifecycleAction,
-    previousStatus: PlatformStatus,
-    platform: JokerPlatform,
-    transitionedAt: Date,
-): PlatformLifecycleTransition {
-
-    return Object.freeze({
-
-        action,
-
-        previousStatus,
-
-        nextStatus:
-            platform.status,
-
-        platform,
-
-        transitionedAt:
+        createdAt:
             new Date(
-                transitionedAt.getTime(),
+                currentPlatform.createdAt.getTime(),
             ),
 
     });
 
 }
 
-export function stopPlatform(
+export function transitionPlatformStatus(
     platform: JokerPlatform,
+    nextStatus: PlatformStatus,
     transitionedAt: Date = new Date(),
 ): PlatformLifecycleTransition {
 
@@ -201,129 +192,99 @@ export function stopPlatform(
             platform,
         );
 
+    const normalizedNextStatus =
+        requirePlatformStatus(
+            nextStatus,
+        );
+
     const normalizedTransitionedAt =
         cloneValidDate(
             transitionedAt,
-            "Platform stop timestamp",
+            "Platform lifecycle transition timestamp",
         );
 
     if (
-        currentPlatform.status === "unavailable"
+        !isTransitionAllowed(
+            currentPlatform.status,
+            normalizedNextStatus,
+        )
     ) {
 
         throw new Error(
-            "Platform is already unavailable.",
+            `Cannot transition platform from "${currentPlatform.status}" to "${normalizedNextStatus}".`,
         );
 
     }
 
-    const applicationTransition =
-        stopApplication(
-            currentPlatform.application,
-            normalizedTransitionedAt,
-        );
+    const changed =
+        currentPlatform.status
+        !== normalizedNextStatus;
 
-    const stoppedPlatform =
-        createPlatformSnapshot(
-            currentPlatform,
-            applicationTransition.application,
-            "unavailable",
-            normalizedTransitionedAt,
-        );
+    const nextPlatform =
+        changed
+            ? createPlatformSnapshot(
+                currentPlatform,
+                normalizedNextStatus,
+            )
+            : currentPlatform;
 
-    return createTransition(
-        "stop",
-        currentPlatform.status,
-        stoppedPlatform,
-        normalizedTransitionedAt,
-    );
+    return Object.freeze({
+
+        previousStatus:
+            currentPlatform.status,
+
+        nextStatus:
+            normalizedNextStatus,
+
+        platform:
+            nextPlatform,
+
+        changed,
+
+        transitionedAt:
+            new Date(
+                normalizedTransitionedAt.getTime(),
+            ),
+
+    });
 
 }
 
-export function startPlatform(
+export function markPlatformOperational(
     platform: JokerPlatform,
     transitionedAt: Date = new Date(),
 ): PlatformLifecycleTransition {
 
-    const currentPlatform =
-        requirePlatform(
-            platform,
-        );
-
-    const normalizedTransitionedAt =
-        cloneValidDate(
-            transitionedAt,
-            "Platform start timestamp",
-        );
-
-    if (
-        currentPlatform.status === "operational"
-    ) {
-
-        throw new Error(
-            "Platform is already operational.",
-        );
-
-    }
-
-    const applicationTransition =
-        startApplication(
-            currentPlatform.application,
-            normalizedTransitionedAt,
-        );
-
-    const startedPlatform =
-        createPlatformSnapshot(
-            currentPlatform,
-            applicationTransition.application,
-            "operational",
-            normalizedTransitionedAt,
-        );
-
-    return createTransition(
-        "start",
-        currentPlatform.status,
-        startedPlatform,
-        normalizedTransitionedAt,
+    return transitionPlatformStatus(
+        platform,
+        "operational",
+        transitionedAt,
     );
 
 }
 
-export function restartPlatform(
+export function markPlatformDegraded(
     platform: JokerPlatform,
     transitionedAt: Date = new Date(),
 ): PlatformLifecycleTransition {
 
-    const currentPlatform =
-        requirePlatform(
-            platform,
-        );
+    return transitionPlatformStatus(
+        platform,
+        "degraded",
+        transitionedAt,
+    );
 
-    const normalizedTransitionedAt =
-        cloneValidDate(
-            transitionedAt,
-            "Platform restart timestamp",
-        );
+}
 
-    const applicationTransition =
-        restartApplication(
-            currentPlatform.application,
-            normalizedTransitionedAt,
-        );
+export function markPlatformUnavailable(
+    platform: JokerPlatform,
+    transitionedAt: Date = new Date(),
+): PlatformLifecycleTransition {
 
-    const restartedPlatform =
-        createPlatformSnapshot(
-            currentPlatform,
-            applicationTransition.application,
-            "operational",
-            normalizedTransitionedAt,
-        );
-
-    return createTransition(
-        "restart",
-        currentPlatform.status,
-        restartedPlatform,
-        normalizedTransitionedAt,
+    return transitionPlatformStatus(
+        platform,
+        "unavailable",
+        transitionedAt,
     );
 
 }
