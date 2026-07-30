@@ -1,148 +1,445 @@
-/**
- * AI JOKER-C2
- * Mission Runtime Self-Test Endpoint
- * HERMETICUM B.C.E.
- */
+import { NextRequest, NextResponse } from "next/server";
 
-import { NextResponse } from "next/server";
+const API_VERSION = "v1" as const;
 
-import {
-  RUNTIME_BOUNDARIES,
-  RUNTIME_FRAMEWORK,
-  RUNTIME_NAME,
-  RUNTIME_STATUS,
-  RUNTIME_VERSION,
-  runtimeInfo
-} from "@/lib/runtime";
+const ROUTE_REVISION =
+  "HBCE-API-V1-RUNTIME-OPERATIONAL-SELF-TEST-v1_0" as const;
 
-import { runtimeHealth } from "@/lib/runtime/bootstrap";
+const PRODUCT_NAME =
+  "HBCE IPR Operational Identity & Proof Layer" as const;
+
+const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1" as const;
+
+const LEGAL_CERTIFICATION = false as const;
+
+const OPC_BOUNDARY = "technical proof receipt only" as const;
+
+const REQUEST_TIMEOUT_MS = 8_000;
+
+type OperationalStatus = "PASS" | "DEGRADED" | "FAIL";
+
+type CheckStatus = "PASS" | "FAIL";
+
+type CheckDefinition = {
+  id: string;
+  label: string;
+  method: "GET";
+  path: string;
+  required: boolean;
+  expectedSignals: readonly string[];
+};
+
+type OperationalCheck = {
+  id: string;
+  label: string;
+  method: "GET";
+  path: string;
+  required: boolean;
+  status: CheckStatus;
+  httpStatus: number | null;
+  durationMs: number;
+  contentType: string | null;
+  matchedSignal: string | null;
+  error: string | null;
+};
+
+type RuntimeOperationalSelfTestResponse = {
+  ok: boolean;
+  status:
+    | "HBCE_RUNTIME_OPERATIONAL_SELF_TEST_PASS"
+    | "HBCE_RUNTIME_OPERATIONAL_SELF_TEST_DEGRADED"
+    | "HBCE_RUNTIME_OPERATIONAL_SELF_TEST_FAIL";
+  operationalStatus: OperationalStatus;
+  revision: typeof ROUTE_REVISION;
+  generatedAt: string;
+  product: typeof PRODUCT_NAME;
+  apiVersion: typeof API_VERSION;
+  runtime: typeof RUNTIME_NAME;
+  deployment: {
+    origin: string;
+    runtimeEnvironment: string;
+    vercelEnvironment: string | null;
+    vercelRegion: string | null;
+    nodeVersion: string;
+  };
+  summary: {
+    totalChecks: number;
+    passedChecks: number;
+    failedChecks: number;
+    requiredChecks: number;
+    requiredPassed: number;
+    requiredFailed: number;
+    optionalFailed: number;
+    durationMs: number;
+  };
+  checks: OperationalCheck[];
+  interpretation: {
+    contractSurfaceReachable: boolean;
+    runtimeHealthReachable: boolean;
+    capabilitiesReachable: boolean;
+    openApiReachable: boolean;
+    staticSelfTestReachable: boolean;
+    databaseDirectlyTested: false;
+    memoryWritePerformed: false;
+    modelCallPerformed: false;
+    evtCreated: false;
+    opcCreated: false;
+    auditCreated: false;
+    runtimeMutationPerformed: false;
+  };
+  boundary: {
+    legalCertification: false;
+    opcBoundary: typeof OPC_BOUNDARY;
+    readOnly: true;
+    performsInternalHttpChecks: true;
+    performsDatabaseMutation: false;
+    performsMemoryWrite: false;
+    performsModelCall: false;
+    createsOperationalReceipt: false;
+    replacesHumanReview: false;
+  };
+};
+
+const CHECKS: readonly CheckDefinition[] = [
+  {
+    id: "API_DISCOVERY",
+    label: "API v1 discovery surface",
+    method: "GET",
+    path: "/api/v1",
+    required: true,
+    expectedSignals: [
+      "HBCE_IPR_RUNTIME_API_DISCOVERY_READY",
+      "HBCE",
+      "\"ok\":true"
+    ]
+  },
+  {
+    id: "RUNTIME_HEALTH",
+    label: "Runtime health endpoint",
+    method: "GET",
+    path: "/api/v1/health",
+    required: true,
+    expectedSignals: [
+      "HBCE_IPR_RUNTIME_API_READY",
+      "READY",
+      "\"ok\":true"
+    ]
+  },
+  {
+    id: "CAPABILITIES",
+    label: "Runtime capabilities endpoint",
+    method: "GET",
+    path: "/api/v1/capabilities",
+    required: true,
+    expectedSignals: [
+      "HBCE_IPR_RUNTIME_CAPABILITIES_READY",
+      "capabilities",
+      "\"ok\":true"
+    ]
+  },
+  {
+    id: "OPENAPI",
+    label: "OpenAPI contract endpoint",
+    method: "GET",
+    path: "/api/v1/openapi",
+    required: false,
+    expectedSignals: [
+      "HBCE_IPR_RUNTIME_OPENAPI_READY",
+      "openapi",
+      "\"ok\":true"
+    ]
+  },
+  {
+    id: "STATIC_SELF_TEST",
+    label: "Static API contract self-test",
+    method: "GET",
+    path: "/api/v1/self-test",
+    required: true,
+    expectedSignals: [
+      "HBCE_IPR_RUNTIME_API_SELF_TEST_READY",
+      "STATIC_CONTRACT_MATRIX_ONLY",
+      "\"ok\":true"
+    ]
+  }
+] as const;
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-interface SelfTestCheck {
-  id: string;
-  passed: boolean;
-  expected: unknown;
-  actual: unknown;
-}
+const nowIso = (): string => new Date().toISOString();
 
-export async function GET(): Promise<NextResponse> {
-  try {
-    const info = runtimeInfo();
-    const health = runtimeHealth();
+const elapsedMs = (startedAt: number): number =>
+  Math.max(0, Date.now() - startedAt);
 
-    const checks: SelfTestCheck[] = [
-      {
-        id: "RUNTIME_NAME_MATCH",
-        passed: info.name === RUNTIME_NAME,
-        expected: RUNTIME_NAME,
-        actual: info.name
-      },
-      {
-        id: "RUNTIME_VERSION_MATCH",
-        passed: info.version === RUNTIME_VERSION,
-        expected: RUNTIME_VERSION,
-        actual: info.version
-      },
-      {
-        id: "RUNTIME_STATUS_ACTIVE",
-        passed:
-          info.status === RUNTIME_STATUS &&
-          health.status === RUNTIME_STATUS,
-        expected: RUNTIME_STATUS,
-        actual: {
-          info: info.status,
-          health: health.status
-        }
-      },
-      {
-        id: "FRAMEWORK_MATCH",
-        passed:
-          info.framework === RUNTIME_FRAMEWORK &&
-          health.framework === RUNTIME_FRAMEWORK,
-        expected: RUNTIME_FRAMEWORK,
-        actual: {
-          info: info.framework,
-          health: health.framework
-        }
-      },
-      {
-        id: "RUNTIME_INITIALIZED",
-        passed: health.initialized === true,
-        expected: true,
-        actual: health.initialized
-      },
-      {
-        id: "FAIL_CLOSED_ENABLED",
-        passed:
-          health.failClosed === true &&
-          RUNTIME_BOUNDARIES.includes("FAIL_CLOSED"),
-        expected: true,
-        actual: {
-          health: health.failClosed,
-          boundaryPresent: RUNTIME_BOUNDARIES.includes("FAIL_CLOSED")
-        }
-      },
-      {
-        id: "BOUNDARIES_REGISTERED",
-        passed:
-          Array.isArray(info.boundaries) &&
-          info.boundaries.length === RUNTIME_BOUNDARIES.length,
-        expected: RUNTIME_BOUNDARIES.length,
-        actual: info.boundaries.length
-      }
-    ];
-
-    const failedChecks = checks.filter((check) => !check.passed);
-    const passed = failedChecks.length === 0;
-
-    return NextResponse.json(
-      {
-        ok: passed,
-        selfTest: {
-          passed,
-          totalChecks: checks.length,
-          passedChecks: checks.length - failedChecks.length,
-          failedChecks: failedChecks.length,
-          checks
-        },
-        runtime: {
-          name: RUNTIME_NAME,
-          version: RUNTIME_VERSION,
-          framework: RUNTIME_FRAMEWORK,
-          status: passed ? RUNTIME_STATUS : "FAILED_CLOSED"
-        },
-        timestamp: new Date().toISOString()
-      },
-      {
-        status: passed ? 200 : 503,
-        headers: {
-          "Cache-Control": "no-store"
-        }
-      }
-    );
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "RUNTIME_SELF_TEST_FAILED";
-
-    return NextResponse.json(
-      {
-        ok: false,
-        selfTest: {
-          passed: false,
-          failClosed: true
-        },
-        error: message,
-        timestamp: new Date().toISOString()
-      },
-      {
-        status: 503,
-        headers: {
-          "Cache-Control": "no-store"
-        }
-      }
-    );
+const normalizeError = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
   }
+
+  return String(error);
+};
+
+const getRequestOrigin = (request: NextRequest): string => {
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const host = forwardedHost ?? request.headers.get("host");
+
+  const forwardedProtocol = request.headers.get("x-forwarded-proto");
+
+  const protocol =
+    forwardedProtocol ??
+    (host?.includes("localhost") || host?.startsWith("127.0.0.1")
+      ? "http"
+      : "https");
+
+  if (host) {
+    return `${protocol}://${host}`;
+  }
+
+  return request.nextUrl.origin;
+};
+
+const findExpectedSignal = (
+  body: string,
+  expectedSignals: readonly string[]
+): string | null => {
+  const normalizedBody = body.toLowerCase();
+
+  for (const signal of expectedSignals) {
+    if (normalizedBody.includes(signal.toLowerCase())) {
+      return signal;
+    }
+  }
+
+  return null;
+};
+
+const runCheck = async (
+  origin: string,
+  definition: CheckDefinition
+): Promise<OperationalCheck> => {
+  const startedAt = Date.now();
+  const controller = new AbortController();
+
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${origin}${definition.path}`, {
+      method: definition.method,
+      cache: "no-store",
+      redirect: "manual",
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        "X-HBCE-Internal-Self-Test": ROUTE_REVISION
+      }
+    });
+
+    const contentType = response.headers.get("content-type");
+    const body = await response.text();
+
+    const matchedSignal = findExpectedSignal(
+      body,
+      definition.expectedSignals
+    );
+
+    const status: CheckStatus =
+      response.ok && matchedSignal !== null ? "PASS" : "FAIL";
+
+    return {
+      id: definition.id,
+      label: definition.label,
+      method: definition.method,
+      path: definition.path,
+      required: definition.required,
+      status,
+      httpStatus: response.status,
+      durationMs: elapsedMs(startedAt),
+      contentType,
+      matchedSignal,
+      error:
+        status === "PASS"
+          ? null
+          : response.ok
+            ? "Endpoint responded but no expected readiness signal was found."
+            : `Endpoint returned HTTP ${response.status}.`
+    };
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error && error.name === "AbortError"
+        ? `Request timed out after ${REQUEST_TIMEOUT_MS} ms.`
+        : normalizeError(error);
+
+    return {
+      id: definition.id,
+      label: definition.label,
+      method: definition.method,
+      path: definition.path,
+      required: definition.required,
+      status: "FAIL",
+      httpStatus: null,
+      durationMs: elapsedMs(startedAt),
+      contentType: null,
+      matchedSignal: null,
+      error: errorMessage
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const resolveOperationalStatus = (
+  requiredFailed: number,
+  optionalFailed: number
+): OperationalStatus => {
+  if (requiredFailed > 0) {
+    return "FAIL";
+  }
+
+  if (optionalFailed > 0) {
+    return "DEGRADED";
+  }
+
+  return "PASS";
+};
+
+const resolveResponseStatus = (
+  operationalStatus: OperationalStatus
+): RuntimeOperationalSelfTestResponse["status"] => {
+  switch (operationalStatus) {
+    case "PASS":
+      return "HBCE_RUNTIME_OPERATIONAL_SELF_TEST_PASS";
+
+    case "DEGRADED":
+      return "HBCE_RUNTIME_OPERATIONAL_SELF_TEST_DEGRADED";
+
+    case "FAIL":
+      return "HBCE_RUNTIME_OPERATIONAL_SELF_TEST_FAIL";
+  }
+};
+
+const getCheckPassed = (
+  checks: OperationalCheck[],
+  id: string
+): boolean =>
+  checks.some((check) => check.id === id && check.status === "PASS");
+
+export async function GET(
+  request: NextRequest
+): Promise<NextResponse<RuntimeOperationalSelfTestResponse>> {
+  const testStartedAt = Date.now();
+  const origin = getRequestOrigin(request);
+
+  const checks = await Promise.all(
+    CHECKS.map((definition) => runCheck(origin, definition))
+  );
+
+  const passedChecks = checks.filter(
+    (check) => check.status === "PASS"
+  ).length;
+
+  const failedChecks = checks.length - passedChecks;
+
+  const requiredChecks = checks.filter(
+    (check) => check.required
+  ).length;
+
+  const requiredPassed = checks.filter(
+    (check) => check.required && check.status === "PASS"
+  ).length;
+
+  const requiredFailed = requiredChecks - requiredPassed;
+
+  const optionalFailed = checks.filter(
+    (check) => !check.required && check.status === "FAIL"
+  ).length;
+
+  const operationalStatus = resolveOperationalStatus(
+    requiredFailed,
+    optionalFailed
+  );
+
+  const responseStatus = resolveResponseStatus(operationalStatus);
+
+  const responseBody: RuntimeOperationalSelfTestResponse = {
+    ok: operationalStatus !== "FAIL",
+    status: responseStatus,
+    operationalStatus,
+    revision: ROUTE_REVISION,
+    generatedAt: nowIso(),
+    product: PRODUCT_NAME,
+    apiVersion: API_VERSION,
+    runtime: RUNTIME_NAME,
+    deployment: {
+      origin,
+      runtimeEnvironment: process.env.NODE_ENV ?? "unknown",
+      vercelEnvironment: process.env.VERCEL_ENV ?? null,
+      vercelRegion: process.env.VERCEL_REGION ?? null,
+      nodeVersion: process.version
+    },
+    summary: {
+      totalChecks: checks.length,
+      passedChecks,
+      failedChecks,
+      requiredChecks,
+      requiredPassed,
+      requiredFailed,
+      optionalFailed,
+      durationMs: elapsedMs(testStartedAt)
+    },
+    checks,
+    interpretation: {
+      contractSurfaceReachable: getCheckPassed(
+        checks,
+        "API_DISCOVERY"
+      ),
+      runtimeHealthReachable: getCheckPassed(
+        checks,
+        "RUNTIME_HEALTH"
+      ),
+      capabilitiesReachable: getCheckPassed(
+        checks,
+        "CAPABILITIES"
+      ),
+      openApiReachable: getCheckPassed(checks, "OPENAPI"),
+      staticSelfTestReachable: getCheckPassed(
+        checks,
+        "STATIC_SELF_TEST"
+      ),
+      databaseDirectlyTested: false,
+      memoryWritePerformed: false,
+      modelCallPerformed: false,
+      evtCreated: false,
+      opcCreated: false,
+      auditCreated: false,
+      runtimeMutationPerformed: false
+    },
+    boundary: {
+      legalCertification: LEGAL_CERTIFICATION,
+      opcBoundary: OPC_BOUNDARY,
+      readOnly: true,
+      performsInternalHttpChecks: true,
+      performsDatabaseMutation: false,
+      performsMemoryWrite: false,
+      performsModelCall: false,
+      createsOperationalReceipt: false,
+      replacesHumanReview: false
+    }
+  };
+
+  const httpStatus =
+    operationalStatus === "FAIL" ? 503 : 200;
+
+  return NextResponse.json(responseBody, {
+    status: httpStatus,
+    headers: {
+      "Cache-Control": "no-store, max-age=0",
+      "X-HBCE-API-Version": API_VERSION,
+      "X-HBCE-Route-Revision": ROUTE_REVISION,
+      "X-HBCE-Operational-Status": operationalStatus,
+      "X-HBCE-Legal-Certification": "false",
+      "X-HBCE-OPC-Boundary": OPC_BOUNDARY
+    }
+  });
 }
