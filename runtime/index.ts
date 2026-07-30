@@ -2,21 +2,15 @@
  * HERMETICUM B.C.E.
  * AI JOKER-C2
  *
- * Canonical public exports for the complete runtime.
+ * Canonical Runtime Public API
+ *
+ * This entry point exposes only modules that physically belong
+ * to the runtime directory and provide a valid TypeScript module.
+ *
+ * Domain layers such as research, conversation, IPR, EVT, OPC,
+ * audit and model usage are not re-exported from this directory.
+ * They remain independent architectural boundaries.
  */
 
-export * from "./research";
-
-export * from "./conversation";
-
-export * from "./ipr";
-
-export * from "./evt";
-
-export * from "./opc";
-
-export * from "./audit";
-
-export * from "./model-usage";
-
 export * from "./create-joker-runtime";
+export * from "./bootstrap";
