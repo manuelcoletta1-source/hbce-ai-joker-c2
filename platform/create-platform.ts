@@ -4,14 +4,13 @@
  *
  * Canonical Platform Composition
  *
- * Creates the immutable platform boundary around
- * the complete AI JOKER-C2 application layer.
+ * Creates the immutable platform boundary built on top of the
+ * canonical application layer.
  */
 
 import {
     createApplication,
     inspectApplicationHealth,
-    type ApplicationHealth,
     type CreateApplicationOptions,
     type JokerApplication,
 } from "../app";
@@ -26,27 +25,52 @@ export interface JokerPlatform {
     readonly name:
         "HERMETICUM B.C.E. AI JOKER-C2 PLATFORM";
 
-    readonly version: string;
+    readonly version:
+        string;
 
-    readonly status: PlatformStatus;
+    readonly status:
+        PlatformStatus;
 
-    readonly application: JokerApplication;
+    readonly application:
+        JokerApplication;
 
-    readonly health: ApplicationHealth;
+    readonly capabilities:
+        readonly string[];
 
-    readonly createdAt: Date;
+    readonly createdAt:
+        Date;
 
 }
 
 export interface CreatePlatformOptions {
 
-    readonly version?: string;
+    readonly version?:
+        string;
 
-    readonly createdAt?: Date;
+    readonly createdAt?:
+        Date;
 
-    readonly application?: CreateApplicationOptions;
+    readonly application?:
+        JokerApplication;
+
+    readonly applicationOptions?:
+        CreateApplicationOptions;
+
+    readonly capabilities?:
+        readonly string[];
 
 }
+
+const DEFAULT_PLATFORM_VERSION =
+    "1.0.0";
+
+const DEFAULT_PLATFORM_CAPABILITIES =
+    Object.freeze([
+        "application",
+        "runtime",
+        "health",
+        "lifecycle",
+    ] as const);
 
 function requireNonEmptyString(
     value: string,
@@ -56,10 +80,12 @@ function requireNonEmptyString(
     const normalized =
         value.trim();
 
-    if (normalized.length === 0) {
+    if (
+        normalized.length === 0
+    ) {
 
         throw new Error(
-            `${fieldName} must be a non-empty string.`,
+            `${fieldName} must not be empty.`,
         );
 
     }
@@ -92,23 +118,57 @@ function cloneValidDate(
 
 }
 
+function normalizeCapabilities(
+    capabilities:
+        readonly string[],
+): readonly string[] {
+
+    const normalized =
+        capabilities.map(
+            (
+                capability,
+                index,
+            ) =>
+                requireNonEmptyString(
+                    capability,
+                    `Platform capability at index ${index}`,
+                ),
+        );
+
+    return Object.freeze(
+        [...new Set(normalized)],
+    );
+
+}
+
 function resolvePlatformStatus(
-    health: ApplicationHealth,
+    application: JokerApplication,
+    checkedAt: Date,
 ): PlatformStatus {
 
-    if (health.status === "healthy") {
+    const applicationHealth =
+        inspectApplicationHealth(
+            application,
+            checkedAt,
+        );
 
-        return "operational";
+    if (
+        applicationHealth.status === "unavailable"
+    ) {
+
+        return "unavailable";
 
     }
 
-    if (health.status === "degraded") {
+    if (
+        applicationHealth.status === "degraded"
+    ) {
 
         return "degraded";
 
     }
 
-    return "unavailable";
+    return "operational";
 
 }
 
@@ -116,47 +176,60 @@ export function createPlatform(
     options: CreatePlatformOptions = {},
 ): JokerPlatform {
 
-    const version =
-        requireNonEmptyString(
-            options.version
-                ?? "1.0.0",
-            "Platform version",
+    if (
+        options.application !== undefined
+        && options.applicationOptions !== undefined
+    ) {
+
+        throw new Error(
+            "Provide either application or applicationOptions, not both.",
         );
+
+    }
 
     const createdAt =
         cloneValidDate(
             options.createdAt
-                ?? new Date(),
+            ?? new Date(),
             "Platform creation timestamp",
         );
 
-    const application =
-        createApplication({
+    const version =
+        requireNonEmptyString(
+            options.version
+            ?? DEFAULT_PLATFORM_VERSION,
+            "Platform version",
+        );
 
-            ...options.application,
+    const application =
+        options.application
+        ?? createApplication({
+
+            ...options.applicationOptions,
 
             createdAt:
-                options.application?.createdAt
+                options.applicationOptions
+                    ?.createdAt
                 ?? createdAt,
 
         });
 
-    const health =
-        inspectApplicationHealth(
-            application,
-            createdAt,
+    const capabilities =
+        normalizeCapabilities(
+            options.capabilities
+            ?? DEFAULT_PLATFORM_CAPABILITIES,
         );
 
     const status =
         resolvePlatformStatus(
-            health,
+            application,
+            createdAt,
         );
 
     return Object.freeze({
 
         name:
-            "HERMETICUM B.C.E. AI JOKER-C2 PLATFORM"
-            as const,
+            "HERMETICUM B.C.E. AI JOKER-C2 PLATFORM",
 
         version,
 
@@ -164,7 +237,7 @@ export function createPlatform(
 
         application,
 
-        health,
+        capabilities,
 
         createdAt:
             new Date(
