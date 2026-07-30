@@ -2,21 +2,14 @@
  * HERMETICUM B.C.E.
  * AI JOKER-C2
  *
- * Canonical Public API
+ * Canonical Root Public API
  *
- * Single entry point for the entire runtime.
+ * This file exposes only architectural layers that currently
+ * provide a valid public entry point.
+ *
+ * New layers must be exported here only after their own
+ * index.ts file has been created and validated.
  */
 
-export * from "./research";
-export * from "./conversation";
-export * from "./ipr";
-export * from "./evt";
-export * from "./opc";
-export * from "./audit";
-export * from "./model-usage";
-
-export * from "./runtime";
-
 export * from "./app";
-
 export * from "./platform";
