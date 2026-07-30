@@ -4,8 +4,17 @@
  *
  * Canonical Platform Lifecycle
  *
- * Produces immutable platform snapshots while preserving every
- * required JokerPlatform property, including capabilities.
+ * Provides immutable and deterministic lifecycle operations for
+ * the canonical JokerPlatform boundary.
+ *
+ * Every lifecycle operation preserves all required platform fields:
+ *
+ * - name
+ * - version
+ * - status
+ * - application
+ * - capabilities
+ * - createdAt
  */
 
 import {
@@ -13,7 +22,18 @@ import {
     type PlatformStatus,
 } from "./create-platform";
 
+export type PlatformLifecycleAction =
+    | "start"
+    | "stop"
+    | "restart"
+    | "mark-operational"
+    | "mark-degraded"
+    | "mark-unavailable";
+
 export interface PlatformLifecycleTransition {
+
+    readonly action:
+        PlatformLifecycleAction;
 
     readonly previousStatus:
         PlatformStatus;
@@ -32,6 +52,9 @@ export interface PlatformLifecycleTransition {
 
 }
 
+export type PlatformLifecycleResult =
+    PlatformLifecycleTransition;
+
 function requirePlatform(
     platform: JokerPlatform,
 ): JokerPlatform {
@@ -48,7 +71,52 @@ function requirePlatform(
 
     }
 
+    if (
+        !Array.isArray(
+            platform.capabilities,
+        )
+    ) {
+
+        throw new Error(
+            "Platform capabilities are required.",
+        );
+
+    }
+
+    if (
+        !(platform.createdAt instanceof Date)
+        || Number.isNaN(
+            platform.createdAt.getTime(),
+        )
+    ) {
+
+        throw new Error(
+            "Platform creation timestamp must be a valid date.",
+        );
+
+    }
+
     return platform;
+
+}
+
+function requirePlatformStatus(
+    status: PlatformStatus,
+): PlatformStatus {
+
+    if (
+        status !== "operational"
+        && status !== "degraded"
+        && status !== "unavailable"
+    ) {
+
+        throw new Error(
+            `Unsupported platform status "${String(status)}".`,
+        );
+
+    }
+
+    return status;
 
 }
 
@@ -76,23 +144,13 @@ function cloneValidDate(
 
 }
 
-function requirePlatformStatus(
-    status: PlatformStatus,
-): PlatformStatus {
+function cloneCapabilities(
+    capabilities: readonly string[],
+): readonly string[] {
 
-    if (
-        status !== "operational"
-        && status !== "degraded"
-        && status !== "unavailable"
-    ) {
-
-        throw new Error(
-            `Unsupported platform status "${String(status)}".`,
-        );
-
-    }
-
-    return status;
+    return Object.freeze([
+        ...capabilities,
+    ]);
 
 }
 
@@ -109,32 +167,36 @@ function isTransitionAllowed(
 
     }
 
-    if (
-        currentStatus === "operational"
+    switch (
+        currentStatus
     ) {
 
-        return (
-            nextStatus === "degraded"
-            || nextStatus === "unavailable"
-        );
+        case "operational":
+
+            return (
+                nextStatus === "degraded"
+                || nextStatus === "unavailable"
+            );
+
+        case "degraded":
+
+            return (
+                nextStatus === "operational"
+                || nextStatus === "unavailable"
+            );
+
+        case "unavailable":
+
+            return (
+                nextStatus === "operational"
+                || nextStatus === "degraded"
+            );
+
+        default:
+
+            return false;
 
     }
-
-    if (
-        currentStatus === "degraded"
-    ) {
-
-        return (
-            nextStatus === "operational"
-            || nextStatus === "unavailable"
-        );
-
-    }
-
-    return (
-        currentStatus === "unavailable"
-        && nextStatus === "operational"
-    );
 
 }
 
@@ -148,7 +210,7 @@ function createPlatformSnapshot(
             platform,
         );
 
-    const nextStatus =
+    const normalizedStatus =
         requirePlatformStatus(
             status,
         );
@@ -162,29 +224,32 @@ function createPlatformSnapshot(
             currentPlatform.version,
 
         status:
-            nextStatus,
+            normalizedStatus,
 
         application:
             currentPlatform.application,
 
         capabilities:
-            Object.freeze([
-                ...currentPlatform.capabilities,
-            ]),
+            cloneCapabilities(
+                currentPlatform.capabilities,
+            ),
 
         createdAt:
             new Date(
-                currentPlatform.createdAt.getTime(),
+                currentPlatform
+                    .createdAt
+                    .getTime(),
             ),
 
     });
 
 }
 
-export function transitionPlatformStatus(
+function createTransition(
     platform: JokerPlatform,
+    action: PlatformLifecycleAction,
     nextStatus: PlatformStatus,
-    transitionedAt: Date = new Date(),
+    transitionedAt: Date,
 ): PlatformLifecycleTransition {
 
     const currentPlatform =
@@ -230,6 +295,8 @@ export function transitionPlatformStatus(
 
     return Object.freeze({
 
+        action,
+
         previousStatus:
             currentPlatform.status,
 
@@ -250,13 +317,114 @@ export function transitionPlatformStatus(
 
 }
 
+export function transitionPlatformStatus(
+    platform: JokerPlatform,
+    nextStatus: PlatformStatus,
+    transitionedAt: Date = new Date(),
+): PlatformLifecycleTransition {
+
+    const action:
+        PlatformLifecycleAction =
+        nextStatus === "operational"
+            ? "mark-operational"
+            : nextStatus === "degraded"
+                ? "mark-degraded"
+                : "mark-unavailable";
+
+    return createTransition(
+        platform,
+        action,
+        nextStatus,
+        transitionedAt,
+    );
+
+}
+
+export function startPlatform(
+    platform: JokerPlatform,
+    transitionedAt: Date = new Date(),
+): PlatformLifecycleTransition {
+
+    return createTransition(
+        platform,
+        "start",
+        "operational",
+        transitionedAt,
+    );
+
+}
+
+export function stopPlatform(
+    platform: JokerPlatform,
+    transitionedAt: Date = new Date(),
+): PlatformLifecycleTransition {
+
+    return createTransition(
+        platform,
+        "stop",
+        "unavailable",
+        transitionedAt,
+    );
+
+}
+
+export function restartPlatform(
+    platform: JokerPlatform,
+    transitionedAt: Date = new Date(),
+): PlatformLifecycleTransition {
+
+    const currentPlatform =
+        requirePlatform(
+            platform,
+        );
+
+    const normalizedTransitionedAt =
+        cloneValidDate(
+            transitionedAt,
+            "Platform restart timestamp",
+        );
+
+    const restartedPlatform =
+        createPlatformSnapshot(
+            currentPlatform,
+            "operational",
+        );
+
+    return Object.freeze({
+
+        action:
+            "restart",
+
+        previousStatus:
+            currentPlatform.status,
+
+        nextStatus:
+            "operational",
+
+        platform:
+            restartedPlatform,
+
+        changed:
+            currentPlatform.status
+            !== "operational",
+
+        transitionedAt:
+            new Date(
+                normalizedTransitionedAt.getTime(),
+            ),
+
+    });
+
+}
+
 export function markPlatformOperational(
     platform: JokerPlatform,
     transitionedAt: Date = new Date(),
 ): PlatformLifecycleTransition {
 
-    return transitionPlatformStatus(
+    return createTransition(
         platform,
+        "mark-operational",
         "operational",
         transitionedAt,
     );
@@ -268,8 +436,9 @@ export function markPlatformDegraded(
     transitionedAt: Date = new Date(),
 ): PlatformLifecycleTransition {
 
-    return transitionPlatformStatus(
+    return createTransition(
         platform,
+        "mark-degraded",
         "degraded",
         transitionedAt,
     );
@@ -281,8 +450,9 @@ export function markPlatformUnavailable(
     transitionedAt: Date = new Date(),
 ): PlatformLifecycleTransition {
 
-    return transitionPlatformStatus(
+    return createTransition(
         platform,
+        "mark-unavailable",
         "unavailable",
         transitionedAt,
     );
