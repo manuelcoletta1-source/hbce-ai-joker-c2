@@ -52,11 +52,15 @@ type MemoryRecordRow = {
   updated_at?: unknown;
 };
 
+type DeletedMemoryRow = {
+  memory_id?: unknown;
+};
+
 type CountRow = {
   record_count?: unknown;
 };
 
-const REVISION = "HBCE-RUNTIME-MEMORY-SELF-TEST-v1_1";
+const REVISION = "HBCE-RUNTIME-MEMORY-SELF-TEST-v1_2";
 
 const PRODUCT = "HBCE IPR Operational Identity & Proof Layer";
 const API_VERSION = "v1";
@@ -103,6 +107,14 @@ function valueAsString(value: unknown): string | null {
     return value;
   }
 
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      return null;
+    }
+
+    return value.toISOString();
+  }
+
   if (typeof value === "number" || typeof value === "boolean") {
     return String(value);
   }
@@ -131,6 +143,10 @@ function valueAsNumber(value: unknown): number | null {
     return value;
   }
 
+  if (typeof value === "bigint") {
+    return Number(value);
+  }
+
   if (typeof value === "string") {
     const parsed = Number(value);
 
@@ -142,9 +158,25 @@ function valueAsNumber(value: unknown): number | null {
   return null;
 }
 
+function isValidTimestamp(value: unknown): boolean {
+  if (value instanceof Date) {
+    return !Number.isNaN(value.getTime());
+  }
+
+  if (typeof value === "string") {
+    return !Number.isNaN(Date.parse(value));
+  }
+
+  return false;
+}
+
 function stableJson(value: unknown): string {
   if (value === null || typeof value !== "object") {
     return JSON.stringify(value);
+  }
+
+  if (value instanceof Date) {
+    return JSON.stringify(value.toISOString());
   }
 
   if (Array.isArray(value)) {
@@ -183,6 +215,23 @@ function createCheck(input: {
     details: input.details ?? {},
     error: input.error ?? null,
   };
+}
+
+function createSkippedCheck(
+  id: string,
+  label: string,
+  reason: string,
+): SelfTestCheck {
+  return createCheck({
+    id,
+    label,
+    status: "SKIPPED",
+    durationMs: 0,
+    details: {
+      reason,
+    },
+    error: `${id}_SKIPPED`,
+  });
 }
 
 function getRequestOrigin(request: NextRequest): string {
@@ -252,10 +301,11 @@ async function cleanupTestRecord(
 
   try {
     const deleteResult =
-      await queryHbceDatabase(
+      await queryHbceDatabase<DeletedMemoryRow>(
         `
           DELETE FROM memory_records
           WHERE memory_id = $1
+          RETURNING memory_id
         `,
         [memoryId],
       );
@@ -278,18 +328,32 @@ async function cleanupTestRecord(
       });
     }
 
+    const deletedMemoryId =
+      valueAsString(
+        deleteResult.rows[0]?.memory_id,
+      );
+
+    const deleted =
+      deleteResult.rowCount === 1 &&
+      deletedMemoryId === memoryId;
+
     return createCheck({
       id: "MEMORY_DELETE",
       label: "Delete temporary memory record",
-      status: "PASS",
+      status: deleted ? "PASS" : "FAIL",
       durationMs: elapsedMs(startedAt),
       details: {
         memoryId,
+        deletedMemoryId,
         deletedRowCount: deleteResult.rowCount,
         queryStatus: deleteResult.status,
         queryDurationMs: deleteResult.durationMs,
         sqlHash: deleteResult.sqlHash,
       },
+      error:
+        deleted
+          ? null
+          : "MEMORY_DELETE_NOT_CONFIRMED",
     });
   } catch (error) {
     return createCheck({
@@ -303,23 +367,6 @@ async function cleanupTestRecord(
       error: normalizeError(error),
     });
   }
-}
-
-function createSkippedCheck(
-  id: string,
-  label: string,
-  reason: string,
-): SelfTestCheck {
-  return createCheck({
-    id,
-    label,
-    status: "SKIPPED",
-    durationMs: 0,
-    details: {
-      reason,
-    },
-    error: `${id}_SKIPPED`,
-  });
 }
 
 export async function POST(
@@ -814,12 +861,14 @@ export async function POST(
               row.deleted_at === null,
 
             createdAt:
-              valueAsString(row.created_at) !==
-              null,
+              isValidTimestamp(
+                row.created_at,
+              ),
 
             updatedAt:
-              valueAsString(row.updated_at) !==
-              null,
+              isValidTimestamp(
+                row.updated_at,
+              ),
           };
 
           const failedComparisons =
@@ -855,6 +904,14 @@ export async function POST(
                 storedChainHash:
                   valueAsString(
                     row.memory_chain_hash,
+                  ),
+                storedCreatedAt:
+                  valueAsString(
+                    row.created_at,
+                  ),
+                storedUpdatedAt:
+                  valueAsString(
+                    row.updated_at,
                   ),
               },
               error:
