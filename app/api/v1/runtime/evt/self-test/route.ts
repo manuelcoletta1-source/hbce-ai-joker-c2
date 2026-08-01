@@ -24,6 +24,12 @@ type SelfTestCheck = {
   error: string | null;
 };
 
+type DatabaseQueryValue =
+  | string
+  | number
+  | boolean
+  | null;
+
 type SchemaColumnRow = {
   column_name?: unknown;
   data_type?: unknown;
@@ -47,39 +53,71 @@ type ColumnDefinition = {
 };
 
 type CandidateValue = {
-  value: unknown;
-  cast?: "jsonb" | "timestamp" | "bigint";
+  value: DatabaseQueryValue;
+  expected: unknown;
+  sqlCast?: "jsonb" | "timestamptz" | "bigint";
 };
 
-const REVISION = "HBCE-RUNTIME-EVT-SELF-TEST-v1_1";
+type SchemaInspectionResult = {
+  check: SelfTestCheck;
+  columns: ColumnDefinition[];
+};
 
-const PRODUCT = "HBCE IPR Operational Identity & Proof Layer";
+const REVISION = "HBCE-RUNTIME-EVT-SELF-TEST-v1_2";
+
+const PRODUCT =
+  "HBCE IPR Operational Identity & Proof Layer";
+
 const API_VERSION = "v1";
-const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1";
 
-const TEST_RUNTIME_IPR = "IPR-AI-0001";
-const TEST_HUMAN_IPR = "IPR-HBCE-EVT-SELF-TEST";
+const RUNTIME_NAME =
+  "AI_JOKER_C2_SAAS_CORE_v0_1";
 
-const TEST_TENANT = "HBCE-TENANT-SELF-PILOT";
-const TEST_WORKSPACE = "HBCE-WORKSPACE-RND";
-const TEST_SUBSCRIPTION = "HBCE-SUBSCRIPTION-SELF-PILOT";
+const TEST_RUNTIME_IPR =
+  "IPR-AI-0001";
 
-const TEST_EVENT_TYPE = "AUDIT_LOG_RECORD";
-const TEST_EVENT_KIND = "RUNTIME_SELF_TEST";
-const TEST_EVENT_FAMILY = "UP-EVT";
-const TEST_CYCLE = "UP-CANONICO";
+const TEST_HUMAN_IPR =
+  "IPR-HBCE-EVT-SELF-TEST";
 
-const BIRTH_ANCHOR_LOCAL = "2026-01-19T15:30:00+01:00";
-const BIRTH_ANCHOR_UTC = "2026-01-19T14:30:00.000Z";
+const TEST_TENANT =
+  "HBCE-TENANT-SELF-PILOT";
 
-const SAFE_COLUMN_NAME = /^[a-z_][a-z0-9_]*$/;
+const TEST_WORKSPACE =
+  "HBCE-WORKSPACE-RND";
+
+const TEST_SUBSCRIPTION =
+  "HBCE-SUBSCRIPTION-SELF-PILOT";
+
+const TEST_EVENT_TYPE =
+  "AUDIT_LOG_RECORD";
+
+const TEST_EVENT_KIND =
+  "RUNTIME_SELF_TEST";
+
+const TEST_EVENT_FAMILY =
+  "UP-EVT";
+
+const TEST_CYCLE =
+  "UP-CANONICO";
+
+const BIRTH_ANCHOR_LOCAL =
+  "2026-01-19T15:30:00+01:00";
+
+const BIRTH_ANCHOR_UTC =
+  "2026-01-19T14:30:00.000Z";
+
+const SAFE_IDENTIFIER =
+  /^[a-z_][a-z0-9_]*$/;
 
 function nowMs(): number {
   return Date.now();
 }
 
 function elapsedMs(startedAt: number): number {
-  return Math.max(0, Date.now() - startedAt);
+  return Math.max(
+    0,
+    Date.now() - startedAt,
+  );
 }
 
 function normalizeError(error: unknown): string {
@@ -98,7 +136,9 @@ function normalizeError(error: unknown): string {
   }
 }
 
-function valueAsString(value: unknown): string | null {
+function valueAsString(
+  value: unknown,
+): string | null {
   if (typeof value === "string") {
     return value;
   }
@@ -122,24 +162,39 @@ function valueAsString(value: unknown): string | null {
   return null;
 }
 
-function valueAsBoolean(value: unknown): boolean | null {
+function valueAsBoolean(
+  value: unknown,
+): boolean | null {
   if (typeof value === "boolean") {
     return value;
   }
 
-  if (value === true || value === "true" || value === 1 || value === "1") {
+  if (
+    value === "true" ||
+    value === 1 ||
+    value === "1"
+  ) {
     return true;
   }
 
-  if (value === false || value === "false" || value === 0 || value === "0") {
+  if (
+    value === "false" ||
+    value === 0 ||
+    value === "0"
+  ) {
     return false;
   }
 
   return null;
 }
 
-function valueAsNumber(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
+function valueAsNumber(
+  value: unknown,
+): number | null {
+  if (
+    typeof value === "number" &&
+    Number.isFinite(value)
+  ) {
     return value;
   }
 
@@ -158,48 +213,79 @@ function valueAsNumber(value: unknown): number | null {
   return null;
 }
 
-function stableJson(value: unknown): string {
-  if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
-  }
-
+function isValidTimestamp(
+  value: unknown,
+): boolean {
   if (value instanceof Date) {
-    return JSON.stringify(value.toISOString());
-  }
-
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableJson(item)).join(",")}]`;
-  }
-
-  const record = value as Record<string, unknown>;
-  const keys = Object.keys(record).sort();
-
-  return `{${keys
-    .map((key) => `${JSON.stringify(key)}:${stableJson(record[key])}`)
-    .join(",")}}`;
-}
-
-function sha256(value: string): string {
-  return `sha256:${createHash("sha256")
-    .update(value, "utf8")
-    .digest("hex")}`;
-}
-
-function isValidTimestamp(value: unknown): boolean {
-  if (value instanceof Date) {
-    return !Number.isNaN(value.getTime());
+    return !Number.isNaN(
+      value.getTime(),
+    );
   }
 
   if (typeof value === "string") {
-    return !Number.isNaN(Date.parse(value));
+    return !Number.isNaN(
+      Date.parse(value),
+    );
   }
 
   return false;
 }
 
-function quoteIdentifier(identifier: string): string {
-  if (!SAFE_COLUMN_NAME.test(identifier)) {
-    throw new Error(`UNSAFE_SQL_IDENTIFIER:${identifier}`);
+function stableJson(
+  value: unknown,
+): string {
+  if (
+    value === null ||
+    typeof value !== "object"
+  ) {
+    return JSON.stringify(value);
+  }
+
+  if (value instanceof Date) {
+    return JSON.stringify(
+      value.toISOString(),
+    );
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value
+      .map((item) => stableJson(item))
+      .join(",")}]`;
+  }
+
+  const record =
+    value as Record<string, unknown>;
+
+  const keys =
+    Object.keys(record).sort();
+
+  return `{${keys
+    .map(
+      (key) =>
+        `${JSON.stringify(
+          key,
+        )}:${stableJson(record[key])}`,
+    )
+    .join(",")}}`;
+}
+
+function sha256(
+  value: string,
+): string {
+  return `sha256:${createHash("sha256")
+    .update(value, "utf8")
+    .digest("hex")}`;
+}
+
+function quoteIdentifier(
+  identifier: string,
+): string {
+  if (
+    !SAFE_IDENTIFIER.test(identifier)
+  ) {
+    throw new Error(
+      `UNSAFE_SQL_IDENTIFIER:${identifier}`,
+    );
   }
 
   return `"${identifier}"`;
@@ -217,7 +303,8 @@ function createCheck(input: {
   return {
     id: input.id,
     label: input.label,
-    required: input.required ?? true,
+    required:
+      input.required ?? true,
     status: input.status,
     durationMs: input.durationMs,
     details: input.details ?? {},
@@ -242,13 +329,27 @@ function createSkippedCheck(
   });
 }
 
-function getRequestOrigin(request: NextRequest): string {
-  const forwardedProto = request.headers.get("x-forwarded-proto");
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const host = forwardedHost ?? request.headers.get("host");
+function getRequestOrigin(
+  request: NextRequest,
+): string {
+  const forwardedProto =
+    request.headers.get(
+      "x-forwarded-proto",
+    );
+
+  const forwardedHost =
+    request.headers.get(
+      "x-forwarded-host",
+    );
+
+  const host =
+    forwardedHost ??
+    request.headers.get("host");
 
   if (host) {
-    return `${forwardedProto ?? "https"}://${host}`;
+    return `${
+      forwardedProto ?? "https"
+    }://${host}`;
   }
 
   return request.nextUrl.origin;
@@ -258,32 +359,80 @@ function buildSummary(
   checks: SelfTestCheck[],
   durationMs: number,
 ): Record<string, number> {
-  const requiredChecks = checks.filter((check) => check.required);
+  const requiredChecks =
+    checks.filter(
+      (check) => check.required,
+    );
 
   return {
-    totalChecks: checks.length,
-    passedChecks: checks.filter((check) => check.status === "PASS").length,
-    failedChecks: checks.filter((check) => check.status === "FAIL").length,
-    skippedChecks: checks.filter((check) => check.status === "SKIPPED").length,
-    requiredChecks: requiredChecks.length,
-    requiredPassed: requiredChecks.filter(
-      (check) => check.status === "PASS",
-    ).length,
-    requiredFailed: requiredChecks.filter(
-      (check) => check.status !== "PASS",
-    ).length,
+    totalChecks:
+      checks.length,
+
+    passedChecks:
+      checks.filter(
+        (check) =>
+          check.status === "PASS",
+      ).length,
+
+    failedChecks:
+      checks.filter(
+        (check) =>
+          check.status === "FAIL",
+      ).length,
+
+    skippedChecks:
+      checks.filter(
+        (check) =>
+          check.status === "SKIPPED",
+      ).length,
+
+    requiredChecks:
+      requiredChecks.length,
+
+    requiredPassed:
+      requiredChecks.filter(
+        (check) =>
+          check.status === "PASS",
+      ).length,
+
+    requiredFailed:
+      requiredChecks.filter(
+        (check) =>
+          check.status !== "PASS",
+      ).length,
+
     durationMs,
   };
 }
 
-function normalizeColumnDefinition(row: SchemaColumnRow): ColumnDefinition | null {
-  const name = valueAsString(row.column_name);
-  const dataType = valueAsString(row.data_type);
-  const udtName = valueAsString(row.udt_name);
-  const nullableRaw = valueAsString(row.is_nullable);
-  const defaultValue = valueAsString(row.column_default);
+function normalizeColumn(
+  row: SchemaColumnRow,
+): ColumnDefinition | null {
+  const name =
+    valueAsString(row.column_name);
 
-  if (!name || !dataType || !udtName || !SAFE_COLUMN_NAME.test(name)) {
+  const dataType =
+    valueAsString(row.data_type);
+
+  const udtName =
+    valueAsString(row.udt_name);
+
+  const nullable =
+    valueAsString(
+      row.is_nullable,
+    ) === "YES";
+
+  const defaultValue =
+    valueAsString(
+      row.column_default,
+    );
+
+  if (
+    !name ||
+    !dataType ||
+    !udtName ||
+    !SAFE_IDENTIFIER.test(name)
+  ) {
     return null;
   }
 
@@ -291,296 +440,218 @@ function normalizeColumnDefinition(row: SchemaColumnRow): ColumnDefinition | nul
     name,
     dataType,
     udtName,
-    nullable: nullableRaw === "YES",
+    nullable,
     defaultValue,
   };
 }
 
-function valuesMatch(expected: unknown, stored: unknown): boolean {
+function buildSqlParameter(
+  index: number,
+  candidate: CandidateValue,
+): string {
+  if (
+    candidate.sqlCast === "jsonb"
+  ) {
+    return `$${index}::jsonb`;
+  }
+
+  if (
+    candidate.sqlCast ===
+    "timestamptz"
+  ) {
+    return `$${index}::timestamptz`;
+  }
+
+  if (
+    candidate.sqlCast === "bigint"
+  ) {
+    return `$${index}::bigint`;
+  }
+
+  return `$${index}`;
+}
+
+function valuesMatch(
+  expected: unknown,
+  stored: unknown,
+): boolean {
   if (expected === null) {
     return stored === null;
   }
 
-  if (typeof expected === "boolean") {
-    return valueAsBoolean(stored) === expected;
+  if (
+    typeof expected === "boolean"
+  ) {
+    return (
+      valueAsBoolean(stored) ===
+      expected
+    );
   }
 
-  if (typeof expected === "number") {
-    return valueAsNumber(stored) === expected;
+  if (
+    typeof expected === "number"
+  ) {
+    return (
+      valueAsNumber(stored) ===
+      expected
+    );
   }
 
-  if (typeof expected === "object") {
+  if (
+    typeof expected === "object"
+  ) {
     return (
       stored !== null &&
       typeof stored === "object" &&
-      stableJson(stored) === stableJson(expected)
+      stableJson(stored) ===
+        stableJson(expected)
     );
   }
 
-  return valueAsString(stored) === String(expected);
+  return (
+    valueAsString(stored) ===
+    String(expected)
+  );
 }
 
-function createCandidateValues(input: {
-  evtId: string;
-  sessionId: string;
-  threadId: string;
-  generatedAt: string;
-  jokerLifeSeconds: number;
-  eventHash: string;
-  chainHash: string;
-  publicHash: string;
-  fullHash: string;
-  inputHash: string;
-  outputHash: string;
-  policyHash: string;
-  payload: Record<string, unknown>;
-  eventPayload: Record<string, unknown>;
-  trace: Record<string, unknown>;
-  temporalCertificate: Record<string, unknown>;
-  operationalContext: Record<string, unknown>;
-  anchors: Record<string, unknown>;
-}): Record<string, CandidateValue> {
-  const {
-    evtId,
-    sessionId,
-    threadId,
-    generatedAt,
-    jokerLifeSeconds,
-    eventHash,
-    chainHash,
-    publicHash,
-    fullHash,
-    inputHash,
-    outputHash,
-    policyHash,
-    payload,
-    eventPayload,
-    trace,
-    temporalCertificate,
-    operationalContext,
-    anchors,
-  } = input;
-
-  return {
-    evt_id: { value: evtId },
-    event_id: { value: evtId },
-
-    prev_evt_id: { value: null },
-    prev_event_id: { value: null },
-
-    tenant: { value: TEST_TENANT },
-    tenant_id: { value: TEST_TENANT },
-
-    workspace: { value: TEST_WORKSPACE },
-    workspace_id: { value: TEST_WORKSPACE },
-
-    subscription: { value: TEST_SUBSCRIPTION },
-    subscription_id: { value: TEST_SUBSCRIPTION },
-
-    human_ipr: { value: TEST_HUMAN_IPR },
-    subject_ipr: { value: TEST_HUMAN_IPR },
-    runtime_ipr: { value: TEST_RUNTIME_IPR },
-
-    session_id: { value: sessionId },
-    thread_id: { value: threadId },
-
-    event_kind: { value: TEST_EVENT_KIND },
-    event_type: { value: TEST_EVENT_TYPE },
-    kind: { value: "EVT_TECHNICAL_SELF_TEST" },
-
-    event_family: { value: TEST_EVENT_FAMILY },
-    cycle: { value: TEST_CYCLE },
-
-    runtime_state: { value: "READY" },
-    state: { value: "VERIFIED" },
-
-    runtime_decision: { value: "ALLOW" },
-    decision: { value: "ALLOW" },
-    policy_decision: { value: "ALLOW" },
-    risk_level: { value: "LOW" },
-
-    memory_scope: { value: "RUNTIME_ONLY" },
-    context_class: { value: "TECHNICAL_DIAGNOSTIC" },
-    intent_class: { value: "RUNTIME_SELF_TEST" },
-    project_domain: { value: "HBCE_RUNTIME" },
-    hbce_module: { value: "EVT" },
-
-    evt_hash: { value: eventHash },
-    event_hash: { value: eventHash },
-    hash: { value: eventHash },
-
-    public_hash: { value: publicHash },
-    full_hash: { value: fullHash },
-    chain_hash: { value: chainHash },
-
-    input_hash: { value: inputHash },
-    output_hash: { value: outputHash },
-    policy_hash: { value: policyHash },
-
-    response_utc: {
-      value: generatedAt,
-      cast: "timestamp",
-    },
-
-    birth_anchor_local: { value: BIRTH_ANCHOR_LOCAL },
-
-    birth_anchor_utc: {
-      value: BIRTH_ANCHOR_UTC,
-      cast: "timestamp",
-    },
-
-    joker_lifetime: {
-      value: `${jokerLifeSeconds} seconds`,
-    },
-
-    joker_life_seconds: {
-      value: jokerLifeSeconds,
-      cast: "bigint",
-    },
-
-    temporal_certificate: {
-      value: temporalCertificate,
-      cast: "jsonb",
-    },
-
-    operational_context: {
-      value: operationalContext,
-      cast: "jsonb",
-    },
-
-    anchors: {
-      value: anchors,
-      cast: "jsonb",
-    },
-
-    trace: {
-      value: trace,
-      cast: "jsonb",
-    },
-
-    payload: {
-      value: payload,
-      cast: "jsonb",
-    },
-
-    event_payload: {
-      value: eventPayload,
-      cast: "jsonb",
-    },
-
-    legal_certification: {
-      value: false,
-    },
-  };
-}
-
-function buildParameterExpression(
-  parameterIndex: number,
-  candidate: CandidateValue,
-): string {
-  if (candidate.cast === "jsonb") {
-    return `$${parameterIndex}::jsonb`;
-  }
-
-  if (candidate.cast === "timestamp") {
-    return `$${parameterIndex}::timestamptz`;
-  }
-
-  if (candidate.cast === "bigint") {
-    return `$${parameterIndex}::bigint`;
-  }
-
-  return `$${parameterIndex}`;
-}
-
-async function inspectEventSchema(): Promise<{
-  check: SelfTestCheck;
-  columns: ColumnDefinition[];
-}> {
+async function inspectEventSchema():
+Promise<SchemaInspectionResult> {
   const startedAt = nowMs();
 
   try {
-    const result = await queryHbceDatabase<SchemaColumnRow>(
-      `
-        SELECT
-          column_name,
-          data_type,
-          udt_name,
-          is_nullable,
-          column_default
-        FROM information_schema.columns
-        WHERE table_schema = current_schema()
-          AND table_name = 'evt_records'
-        ORDER BY ordinal_position
-      `,
-    );
+    const result =
+      await queryHbceDatabase<SchemaColumnRow>(
+        `
+          SELECT
+            column_name,
+            data_type,
+            udt_name,
+            is_nullable,
+            column_default
+          FROM information_schema.columns
+          WHERE table_schema = current_schema()
+            AND table_name = 'evt_records'
+          ORDER BY ordinal_position
+        `,
+      );
 
-    const columns = result.rows
-      .map(normalizeColumnDefinition)
-      .filter((column): column is ColumnDefinition => column !== null);
+    const columns =
+      result.rows
+        .map(normalizeColumn)
+        .filter(
+          (
+            column,
+          ): column is ColumnDefinition =>
+            column !== null,
+        );
 
-    const passed = result.ok && columns.length > 0;
+    const passed =
+      result.ok &&
+      columns.length > 0;
 
     return {
       columns,
+
       check: createCheck({
         id: "EVT_SCHEMA",
-        label: "Inspect canonical EVT table schema",
-        status: passed ? "PASS" : "FAIL",
-        durationMs: elapsedMs(startedAt),
+        label:
+          "Inspect canonical EVT table schema",
+        status:
+          passed ? "PASS" : "FAIL",
+        durationMs:
+          elapsedMs(startedAt),
         details: {
-          table: "evt_records",
-          columnCount: columns.length,
-          columns: columns.map((column) => ({
-            name: column.name,
-            dataType: column.dataType,
-            nullable: column.nullable,
-            hasDefault: column.defaultValue !== null,
-          })),
-          queryStatus: result.status,
-          queryDurationMs: result.durationMs,
-          sqlHash: result.sqlHash,
+          table:
+            "evt_records",
+
+          columnCount:
+            columns.length,
+
+          columns:
+            columns.map(
+              (column) => ({
+                name:
+                  column.name,
+
+                dataType:
+                  column.dataType,
+
+                udtName:
+                  column.udtName,
+
+                nullable:
+                  column.nullable,
+
+                hasDefault:
+                  column.defaultValue !==
+                  null,
+              }),
+            ),
+
+          queryStatus:
+            result.status,
+
+          queryDurationMs:
+            result.durationMs,
+
+          sqlHash:
+            result.sqlHash,
         },
         error:
           result.error ??
-          (passed ? null : "EVT_SCHEMA_NOT_AVAILABLE"),
+          (
+            passed
+              ? null
+              : "EVT_SCHEMA_NOT_AVAILABLE"
+          ),
       }),
     };
   } catch (error) {
     return {
       columns: [],
+
       check: createCheck({
         id: "EVT_SCHEMA",
-        label: "Inspect canonical EVT table schema",
+        label:
+          "Inspect canonical EVT table schema",
         status: "FAIL",
-        durationMs: elapsedMs(startedAt),
-        error: normalizeError(error),
+        durationMs:
+          elapsedMs(startedAt),
+        error:
+          normalizeError(error),
       }),
     };
   }
 }
 
-async function cleanupTestEvent(
+async function deleteTestEvent(
   identifierColumn: string,
   evtId: string,
 ): Promise<SelfTestCheck> {
   const startedAt = nowMs();
 
   try {
-    const quotedIdentifier = quoteIdentifier(identifierColumn);
+    const identifier =
+      quoteIdentifier(
+        identifierColumn,
+      );
 
-    const result = await queryHbceDatabase<GenericDatabaseRow>(
-      `
-        DELETE FROM evt_records
-        WHERE ${quotedIdentifier} = $1
-        RETURNING ${quotedIdentifier}
-      `,
-      [evtId],
-    );
+    const result =
+      await queryHbceDatabase<GenericDatabaseRow>(
+        `
+          DELETE FROM evt_records
+          WHERE ${identifier} = $1
+          RETURNING ${identifier}
+        `,
+        [evtId],
+      );
 
-    const deletedId = valueAsString(
-      result.rows[0]?.[identifierColumn],
-    );
+    const deletedId =
+      valueAsString(
+        result.rows[0]?.[
+          identifierColumn
+        ],
+      );
 
     const deleted =
       result.ok &&
@@ -589,55 +660,414 @@ async function cleanupTestEvent(
 
     return createCheck({
       id: "EVT_DELETE",
-      label: "Delete temporary EVT record",
-      status: deleted ? "PASS" : "FAIL",
-      durationMs: elapsedMs(startedAt),
+      label:
+        "Delete temporary EVT record",
+      status:
+        deleted ? "PASS" : "FAIL",
+      durationMs:
+        elapsedMs(startedAt),
       details: {
         evtId,
         identifierColumn,
         deletedId,
-        deletedRowCount: result.rowCount,
-        queryStatus: result.status,
-        queryDurationMs: result.durationMs,
-        sqlHash: result.sqlHash,
+        deletedRowCount:
+          result.rowCount,
+        queryStatus:
+          result.status,
+        queryDurationMs:
+          result.durationMs,
+        sqlHash:
+          result.sqlHash,
       },
       error:
         result.error ??
-        (deleted ? null : "EVT_DELETE_NOT_CONFIRMED"),
+        (
+          deleted
+            ? null
+            : "EVT_DELETE_NOT_CONFIRMED"
+        ),
     });
   } catch (error) {
     return createCheck({
       id: "EVT_DELETE",
-      label: "Delete temporary EVT record",
+      label:
+        "Delete temporary EVT record",
       status: "FAIL",
-      durationMs: elapsedMs(startedAt),
+      durationMs:
+        elapsedMs(startedAt),
       details: {
         evtId,
         identifierColumn,
       },
-      error: normalizeError(error),
+      error:
+        normalizeError(error),
     });
   }
+}
+
+function createCandidateValues(input: {
+  evtId: string;
+  sessionId: string;
+  threadId: string;
+  generatedAt: string;
+  jokerLifeSeconds: number;
+  payload: Record<string, unknown>;
+  eventPayload: Record<string, unknown>;
+  trace: Record<string, unknown>;
+  temporalCertificate:
+    Record<string, unknown>;
+  operationalContext:
+    Record<string, unknown>;
+  anchors: Record<string, unknown>;
+  eventHash: string;
+  chainHash: string;
+  publicHash: string;
+  fullHash: string;
+  inputHash: string;
+  outputHash: string;
+  policyHash: string;
+}): Record<
+  string,
+  CandidateValue
+> {
+  const {
+    evtId,
+    sessionId,
+    threadId,
+    generatedAt,
+    jokerLifeSeconds,
+    payload,
+    eventPayload,
+    trace,
+    temporalCertificate,
+    operationalContext,
+    anchors,
+    eventHash,
+    chainHash,
+    publicHash,
+    fullHash,
+    inputHash,
+    outputHash,
+    policyHash,
+  } = input;
+
+  const jsonCandidate = (
+    value: Record<string, unknown>,
+  ): CandidateValue => ({
+    value: stableJson(value),
+    expected: value,
+    sqlCast: "jsonb",
+  });
+
+  return {
+    evt_id: {
+      value: evtId,
+      expected: evtId,
+    },
+
+    event_id: {
+      value: evtId,
+      expected: evtId,
+    },
+
+    prev_evt_id: {
+      value: null,
+      expected: null,
+    },
+
+    prev_event_id: {
+      value: null,
+      expected: null,
+    },
+
+    tenant: {
+      value: TEST_TENANT,
+      expected: TEST_TENANT,
+    },
+
+    tenant_id: {
+      value: TEST_TENANT,
+      expected: TEST_TENANT,
+    },
+
+    workspace: {
+      value: TEST_WORKSPACE,
+      expected: TEST_WORKSPACE,
+    },
+
+    workspace_id: {
+      value: TEST_WORKSPACE,
+      expected: TEST_WORKSPACE,
+    },
+
+    subscription: {
+      value: TEST_SUBSCRIPTION,
+      expected:
+        TEST_SUBSCRIPTION,
+    },
+
+    subscription_id: {
+      value: TEST_SUBSCRIPTION,
+      expected:
+        TEST_SUBSCRIPTION,
+    },
+
+    human_ipr: {
+      value: TEST_HUMAN_IPR,
+      expected:
+        TEST_HUMAN_IPR,
+    },
+
+    subject_ipr: {
+      value: TEST_HUMAN_IPR,
+      expected:
+        TEST_HUMAN_IPR,
+    },
+
+    runtime_ipr: {
+      value: TEST_RUNTIME_IPR,
+      expected:
+        TEST_RUNTIME_IPR,
+    },
+
+    session_id: {
+      value: sessionId,
+      expected: sessionId,
+    },
+
+    thread_id: {
+      value: threadId,
+      expected: threadId,
+    },
+
+    event_kind: {
+      value: TEST_EVENT_KIND,
+      expected:
+        TEST_EVENT_KIND,
+    },
+
+    event_type: {
+      value: TEST_EVENT_TYPE,
+      expected:
+        TEST_EVENT_TYPE,
+    },
+
+    kind: {
+      value:
+        "EVT_TECHNICAL_SELF_TEST",
+      expected:
+        "EVT_TECHNICAL_SELF_TEST",
+    },
+
+    event_family: {
+      value:
+        TEST_EVENT_FAMILY,
+      expected:
+        TEST_EVENT_FAMILY,
+    },
+
+    cycle: {
+      value: TEST_CYCLE,
+      expected: TEST_CYCLE,
+    },
+
+    runtime_state: {
+      value: "READY",
+      expected: "READY",
+    },
+
+    state: {
+      value: "VERIFIED",
+      expected: "VERIFIED",
+    },
+
+    runtime_decision: {
+      value: "ALLOW",
+      expected: "ALLOW",
+    },
+
+    decision: {
+      value: "ALLOW",
+      expected: "ALLOW",
+    },
+
+    policy_decision: {
+      value: "ALLOW",
+      expected: "ALLOW",
+    },
+
+    risk_level: {
+      value: "LOW",
+      expected: "LOW",
+    },
+
+    memory_scope: {
+      value: "RUNTIME_ONLY",
+      expected:
+        "RUNTIME_ONLY",
+    },
+
+    context_class: {
+      value:
+        "TECHNICAL_DIAGNOSTIC",
+      expected:
+        "TECHNICAL_DIAGNOSTIC",
+    },
+
+    intent_class: {
+      value:
+        "RUNTIME_SELF_TEST",
+      expected:
+        "RUNTIME_SELF_TEST",
+    },
+
+    project_domain: {
+      value: "HBCE_RUNTIME",
+      expected:
+        "HBCE_RUNTIME",
+    },
+
+    hbce_module: {
+      value: "EVT",
+      expected: "EVT",
+    },
+
+    evt_hash: {
+      value: eventHash,
+      expected: eventHash,
+    },
+
+    event_hash: {
+      value: eventHash,
+      expected: eventHash,
+    },
+
+    hash: {
+      value: eventHash,
+      expected: eventHash,
+    },
+
+    public_hash: {
+      value: publicHash,
+      expected: publicHash,
+    },
+
+    full_hash: {
+      value: fullHash,
+      expected: fullHash,
+    },
+
+    chain_hash: {
+      value: chainHash,
+      expected: chainHash,
+    },
+
+    input_hash: {
+      value: inputHash,
+      expected: inputHash,
+    },
+
+    output_hash: {
+      value: outputHash,
+      expected: outputHash,
+    },
+
+    policy_hash: {
+      value: policyHash,
+      expected: policyHash,
+    },
+
+    response_utc: {
+      value: generatedAt,
+      expected: generatedAt,
+      sqlCast: "timestamptz",
+    },
+
+    birth_anchor_local: {
+      value:
+        BIRTH_ANCHOR_LOCAL,
+      expected:
+        BIRTH_ANCHOR_LOCAL,
+    },
+
+    birth_anchor_utc: {
+      value:
+        BIRTH_ANCHOR_UTC,
+      expected:
+        BIRTH_ANCHOR_UTC,
+      sqlCast: "timestamptz",
+    },
+
+    joker_lifetime: {
+      value:
+        `${jokerLifeSeconds} seconds`,
+      expected:
+        `${jokerLifeSeconds} seconds`,
+    },
+
+    joker_life_seconds: {
+      value:
+        jokerLifeSeconds,
+      expected:
+        jokerLifeSeconds,
+      sqlCast: "bigint",
+    },
+
+    temporal_certificate:
+      jsonCandidate(
+        temporalCertificate,
+      ),
+
+    operational_context:
+      jsonCandidate(
+        operationalContext,
+      ),
+
+    anchors:
+      jsonCandidate(anchors),
+
+    trace:
+      jsonCandidate(trace),
+
+    payload:
+      jsonCandidate(payload),
+
+    event_payload:
+      jsonCandidate(
+        eventPayload,
+      ),
+
+    legal_certification: {
+      value: false,
+      expected: false,
+    },
+  };
 }
 
 export async function POST(
   request: NextRequest,
 ): Promise<NextResponse> {
   const startedAt = nowMs();
-  const generatedAt = new Date().toISOString();
 
-  const checks: SelfTestCheck[] = [];
+  const generatedAt =
+    new Date().toISOString();
 
-  const compactTimestamp = generatedAt
-    .replace(/\D/g, "")
-    .slice(0, 14);
+  const checks:
+    SelfTestCheck[] = [];
 
-  const eventSuffix = randomUUID()
-    .replace(/-/g, "")
-    .slice(0, 8)
-    .toUpperCase();
+  const compactTimestamp =
+    generatedAt
+      .replace(/\D/g, "")
+      .slice(0, 14);
 
-  const evtId = `EVT-${compactTimestamp}-${eventSuffix}`;
+  const suffix =
+    randomUUID()
+      .replace(/-/g, "")
+      .slice(0, 8)
+      .toUpperCase();
+
+  const evtId =
+    `EVT-${compactTimestamp}-${suffix}`;
 
   const sessionId =
     `HBCE-EVT-SELF-TEST-SESSION-${randomUUID()}`;
@@ -645,118 +1075,209 @@ export async function POST(
   const threadId =
     `HBCE-EVT-SELF-TEST-THREAD-${randomUUID()}`;
 
-  const jokerLifeSeconds = Math.max(
-    0,
-    Math.floor(
-      (
-        new Date(generatedAt).getTime() -
-        new Date(BIRTH_ANCHOR_UTC).getTime()
-      ) / 1000,
-    ),
-  );
+  const jokerLifeSeconds =
+    Math.max(
+      0,
+      Math.floor(
+        (
+          new Date(
+            generatedAt,
+          ).getTime() -
+          new Date(
+            BIRTH_ANCHOR_UTC,
+          ).getTime()
+        ) / 1000,
+      ),
+    );
 
   const payload = {
-    testType: "HBCE_RUNTIME_EVT_TRANSACTION",
-    revision: REVISION,
+    testType:
+      "HBCE_RUNTIME_EVT_TRANSACTION",
+
+    revision:
+      REVISION,
+
     evtId,
     sessionId,
     threadId,
     generatedAt,
-    humanIpr: TEST_HUMAN_IPR,
-    runtimeIpr: TEST_RUNTIME_IPR,
-    temporary: true,
-    legalCertification: false,
+
+    humanIpr:
+      TEST_HUMAN_IPR,
+
+    runtimeIpr:
+      TEST_RUNTIME_IPR,
+
+    temporary:
+      true,
+
+    legalCertification:
+      false,
   };
 
-  const inputHash = sha256(
-    stableJson({
-      command: "HBCE_RUNTIME_EVT_SELF_TEST",
-      evtId,
-      sessionId,
-      generatedAt,
-    }),
-  );
+  const inputHash =
+    sha256(
+      stableJson({
+        command:
+          "HBCE_RUNTIME_EVT_SELF_TEST",
+        evtId,
+        sessionId,
+        generatedAt,
+      }),
+    );
 
-  const outputHash = sha256(
-    stableJson({
-      result: "TEMPORARY_EVT_CREATED",
-      expectedCleanup: true,
-    }),
-  );
+  const outputHash =
+    sha256(
+      stableJson({
+        result:
+          "TEMPORARY_EVT_CREATED",
+        expectedCleanup:
+          true,
+      }),
+    );
 
-  const policyHash = sha256(
-    stableJson({
-      decision: "ALLOW",
-      riskLevel: "LOW",
-      legalCertification: false,
-    }),
-  );
+  const policyHash =
+    sha256(
+      stableJson({
+        decision:
+          "ALLOW",
+        riskLevel:
+          "LOW",
+        legalCertification:
+          false,
+      }),
+    );
 
   const eventPayload = {
-    eventId: evtId,
-    eventType: TEST_EVENT_TYPE,
-    subjectIpr: TEST_HUMAN_IPR,
-    runtimeIpr: TEST_RUNTIME_IPR,
-    tenant: TEST_TENANT,
-    workspace: TEST_WORKSPACE,
-    createdAt: generatedAt,
+    eventId:
+      evtId,
+
+    eventType:
+      TEST_EVENT_TYPE,
+
+    subjectIpr:
+      TEST_HUMAN_IPR,
+
+    runtimeIpr:
+      TEST_RUNTIME_IPR,
+
+    tenant:
+      TEST_TENANT,
+
+    workspace:
+      TEST_WORKSPACE,
+
+    createdAt:
+      generatedAt,
+
     inputHash,
     outputHash,
     policyHash,
-    legalCertification: false,
-    opcBoundary: "technical proof receipt only",
+
+    legalCertification:
+      false,
+
+    opcBoundary:
+      "technical proof receipt only",
   };
 
-  const eventHash = sha256(stableJson(eventPayload));
+  const eventHash =
+    sha256(
+      stableJson(
+        eventPayload,
+      ),
+    );
 
-  const chainHash = sha256(
-    stableJson({
-      previousEventId: null,
-      previousEventHash: null,
-      eventId: evtId,
-      eventHash,
-    }),
-  );
+  const chainHash =
+    sha256(
+      stableJson({
+        previousEventId:
+          null,
 
-  const publicHash = sha256(
-    stableJson({
-      eventId: evtId,
-      eventType: TEST_EVENT_TYPE,
-      eventHash,
-    }),
-  );
+        previousEventHash:
+          null,
 
-  const fullHash = sha256(
-    stableJson({
-      eventPayload,
-      chainHash,
-      publicHash,
-    }),
-  );
+        eventId:
+          evtId,
+
+        eventHash,
+      }),
+    );
+
+  const publicHash =
+    sha256(
+      stableJson({
+        eventId:
+          evtId,
+
+        eventType:
+          TEST_EVENT_TYPE,
+
+        eventHash,
+      }),
+    );
+
+  const fullHash =
+    sha256(
+      stableJson({
+        eventPayload,
+        chainHash,
+        publicHash,
+      }),
+    );
 
   const temporalCertificate = {
-    status: "DUAL_TIME_SEAL_READY",
-    generatedAtUtc: generatedAt,
-    locality: "Torino / Italia / Europa",
-    runtimeBirth: BIRTH_ANCHOR_LOCAL,
-    timezone: "Europe/Rome",
-    legalCertification: false,
+    status:
+      "DUAL_TIME_SEAL_READY",
+
+    generatedAtUtc:
+      generatedAt,
+
+    locality:
+      "Torino / Italia / Europa",
+
+    runtimeBirth:
+      BIRTH_ANCHOR_LOCAL,
+
+    timezone:
+      "Europe/Rome",
+
+    legalCertification:
+      false,
   };
 
   const operationalContext = {
-    test: "EVT_TRANSACTION_SELF_TEST",
-    revision: REVISION,
-    mode: "TEMPORARY_DATABASE_TRANSACTION",
-    createsOpc: false,
-    createsAudit: false,
-    createsMemory: false,
+    test:
+      "EVT_TRANSACTION_SELF_TEST",
+
+    revision:
+      REVISION,
+
+    mode:
+      "TEMPORARY_DATABASE_TRANSACTION",
+
+    createsOpc:
+      false,
+
+    createsAudit:
+      false,
+
+    createsMemory:
+      false,
   };
 
   const anchors = {
-    previousEvtId: null,
-    previousEventId: null,
-    opcProofId: null,
-    auditId: null,
+    previousEvtId:
+      null,
+
+    previousEventId:
+      null,
+
+    opcProofId:
+      null,
+
+    auditId:
+      null,
   };
 
   const trace = {
@@ -769,53 +1290,87 @@ export async function POST(
     fullHash,
   };
 
-  const candidateValues = createCandidateValues({
-    evtId,
-    sessionId,
-    threadId,
-    generatedAt,
-    jokerLifeSeconds,
-    eventHash,
-    chainHash,
-    publicHash,
-    fullHash,
-    inputHash,
-    outputHash,
-    policyHash,
-    payload,
-    eventPayload,
-    trace,
-    temporalCertificate,
-    operationalContext,
-    anchors,
-  });
+  const candidates =
+    createCandidateValues({
+      evtId,
+      sessionId,
+      threadId,
+      generatedAt,
+      jokerLifeSeconds,
+      payload,
+      eventPayload,
+      trace,
+      temporalCertificate,
+      operationalContext,
+      anchors,
+      eventHash,
+      chainHash,
+      publicHash,
+      fullHash,
+      inputHash,
+      outputHash,
+      policyHash,
+    });
 
-  let identifierColumn: string | null = null;
-  let recordInserted = false;
+  let identifierColumn:
+    string | null = null;
+
+  let recordMayExist =
+    false;
 
   try {
-    const configurationStartedAt = nowMs();
+    const configurationStartedAt =
+      nowMs();
 
-    const configured = isHbceDatabaseConfigured();
-    const databaseDescription = describeDefaultHbceDatabase();
+    const configured =
+      isHbceDatabaseConfigured();
+
+    const databaseDescription =
+      describeDefaultHbceDatabase();
 
     checks.push(
       createCheck({
-        id: "DATABASE_CONFIGURATION",
-        label: "HBCE database configuration",
-        status: configured ? "PASS" : "FAIL",
-        durationMs: elapsedMs(configurationStartedAt),
+        id:
+          "DATABASE_CONFIGURATION",
+
+        label:
+          "HBCE database configuration",
+
+        status:
+          configured
+            ? "PASS"
+            : "FAIL",
+
+        durationMs:
+          elapsedMs(
+            configurationStartedAt,
+          ),
+
         details: {
           configured,
-          available: databaseDescription.available,
-          kind: databaseDescription.kind,
-          driver: databaseDescription.driver,
-          mode: databaseDescription.mode,
+
+          available:
+            databaseDescription.available,
+
+          kind:
+            databaseDescription.kind,
+
+          driver:
+            databaseDescription.driver,
+
+          mode:
+            databaseDescription.mode,
+
           databaseUrlPresent:
             databaseDescription.databaseUrlPresent,
-          schemaVersion: databaseDescription.schemaVersion,
-          persistenceMode: databaseDescription.persistenceMode,
+
+          schemaVersion:
+            databaseDescription.schemaVersion,
+
+          persistenceMode:
+            databaseDescription.persistenceMode,
         },
+
         error:
           configured
             ? null
@@ -830,26 +1385,31 @@ export async function POST(
           "Inspect canonical EVT table schema",
           "DATABASE_NOT_CONFIGURED",
         ),
+
         createSkippedCheck(
           "EVT_INSERT",
           "Insert temporary EVT record",
           "DATABASE_NOT_CONFIGURED",
         ),
+
         createSkippedCheck(
           "EVT_READ",
           "Read temporary EVT record",
           "DATABASE_NOT_CONFIGURED",
         ),
+
         createSkippedCheck(
           "EVT_VERIFY",
           "Verify EVT integrity",
           "DATABASE_NOT_CONFIGURED",
         ),
+
         createSkippedCheck(
           "EVT_DELETE",
           "Delete temporary EVT record",
           "DATABASE_NOT_CONFIGURED",
         ),
+
         createSkippedCheck(
           "EVT_CLEANUP_VERIFY",
           "Verify temporary EVT cleanup",
@@ -857,53 +1417,82 @@ export async function POST(
         ),
       );
     } else {
-      const schemaInspection = await inspectEventSchema();
+      const schema =
+        await inspectEventSchema();
 
-      checks.push(schemaInspection.check);
-
-      const schemaColumns = schemaInspection.columns;
-      const schemaColumnNames = new Set(
-        schemaColumns.map((column) => column.name),
+      checks.push(
+        schema.check,
       );
 
+      const columnNames =
+        new Set(
+          schema.columns.map(
+            (column) =>
+              column.name,
+          ),
+        );
+
       identifierColumn =
-        schemaColumnNames.has("evt_id")
+        columnNames.has(
+          "evt_id",
+        )
           ? "evt_id"
-          : schemaColumnNames.has("event_id")
+          : columnNames.has(
+                "event_id",
+              )
             ? "event_id"
             : null;
 
-      const unsupportedRequiredColumns = schemaColumns.filter(
-        (column) =>
-          !column.nullable &&
-          column.defaultValue === null &&
-          !(column.name in candidateValues),
-      );
+      const unsupportedRequired =
+        schema.columns.filter(
+          (column) =>
+            !column.nullable &&
+            column.defaultValue ===
+              null &&
+            !(column.name in candidates),
+        );
 
       if (
-        schemaInspection.check.status !== "PASS" ||
+        schema.check.status !==
+          "PASS" ||
         !identifierColumn ||
-        unsupportedRequiredColumns.length > 0
+        unsupportedRequired.length >
+          0
       ) {
         checks.push(
           createCheck({
-            id: "EVT_INSERT",
-            label: "Insert temporary EVT record",
-            status: "FAIL",
-            durationMs: 0,
+            id:
+              "EVT_INSERT",
+
+            label:
+              "Insert temporary EVT record",
+
+            status:
+              "FAIL",
+
+            durationMs:
+              0,
+
             details: {
               identifierColumn,
+
               unsupportedRequiredColumns:
-                unsupportedRequiredColumns.map(
-                  (column) => column.name,
+                unsupportedRequired.map(
+                  (column) =>
+                    column.name,
                 ),
             },
+
             error:
               !identifierColumn
                 ? "EVT_IDENTIFIER_COLUMN_NOT_FOUND"
-                : unsupportedRequiredColumns.length > 0
-                  ? `EVT_REQUIRED_COLUMNS_UNSUPPORTED:${unsupportedRequiredColumns
-                      .map((column) => column.name)
+                : unsupportedRequired.length >
+                    0
+                  ? `EVT_REQUIRED_COLUMNS_UNSUPPORTED:${unsupportedRequired
+                      .map(
+                        (column) =>
+                          column.name,
+                      )
                       .join(",")}`
                   : "EVT_SCHEMA_INSPECTION_FAILED",
           }),
@@ -915,16 +1504,19 @@ export async function POST(
             "Read temporary EVT record",
             "EVT_INSERT_NOT_ATTEMPTED",
           ),
+
           createSkippedCheck(
             "EVT_VERIFY",
             "Verify EVT integrity",
             "EVT_INSERT_NOT_ATTEMPTED",
           ),
+
           createSkippedCheck(
             "EVT_DELETE",
             "Delete temporary EVT record",
             "EVT_INSERT_NOT_ATTEMPTED",
           ),
+
           createSkippedCheck(
             "EVT_CLEANUP_VERIFY",
             "Verify temporary EVT cleanup",
@@ -932,42 +1524,56 @@ export async function POST(
           ),
         );
       } else {
-        const selectedColumns = schemaColumns
-          .filter((column) => column.name in candidateValues)
-          .map((column) => column.name);
-
-        const parameters: unknown[] = [];
-
-        const parameterExpressions = selectedColumns.map(
-          (columnName) => {
-            const candidate = candidateValues[columnName];
-
-            parameters.push(
-              candidate.cast === "jsonb"
-                ? stableJson(candidate.value)
-                : candidate.value,
+        const selectedColumns =
+          schema.columns
+            .filter(
+              (column) =>
+                column.name in
+                candidates,
+            )
+            .map(
+              (column) =>
+                column.name,
             );
 
-            return buildParameterExpression(
-              parameters.length,
-              candidate,
-            );
-          },
-        );
+        const parameters:
+          DatabaseQueryValue[] = [];
 
-        const insertStartedAt = nowMs();
+        const expressions =
+          selectedColumns.map(
+            (columnName) => {
+              const candidate =
+                candidates[
+                  columnName
+                ];
+
+              parameters.push(
+                candidate.value,
+              );
+
+              return buildSqlParameter(
+                parameters.length,
+                candidate,
+              );
+            },
+          );
 
         const insertSql = `
           INSERT INTO evt_records (
             ${selectedColumns
-              .map(quoteIdentifier)
+              .map(
+                quoteIdentifier,
+              )
               .join(", ")}
           )
           VALUES (
-            ${parameterExpressions.join(", ")}
+            ${expressions.join(", ")}
           )
           RETURNING *
         `;
+
+        const insertStartedAt =
+          nowMs();
 
         const insertResult =
           await queryHbceDatabase<GenericDatabaseRow>(
@@ -975,58 +1581,84 @@ export async function POST(
             parameters,
           );
 
-        recordInserted =
+        const inserted =
           insertResult.ok &&
-          insertResult.rowCount === 1;
+          insertResult.rowCount ===
+            1;
+
+        recordMayExist =
+          inserted;
 
         checks.push(
           createCheck({
-            id: "EVT_INSERT",
-            label: "Insert temporary EVT record",
+            id:
+              "EVT_INSERT",
+
+            label:
+              "Insert temporary EVT record",
+
             status:
-              recordInserted
+              inserted
                 ? "PASS"
                 : "FAIL",
-            durationMs: elapsedMs(insertStartedAt),
+
+            durationMs:
+              elapsedMs(
+                insertStartedAt,
+              ),
+
             details: {
               evtId,
               identifierColumn,
+
               selectedColumnCount:
                 selectedColumns.length,
+
               selectedColumns,
-              rowCount: insertResult.rowCount,
-              queryStatus: insertResult.status,
+
+              rowCount:
+                insertResult.rowCount,
+
+              queryStatus:
+                insertResult.status,
+
               queryDurationMs:
                 insertResult.durationMs,
-              sqlHash: insertResult.sqlHash,
+
+              sqlHash:
+                insertResult.sqlHash,
             },
+
             error:
               insertResult.error ??
               (
-                recordInserted
+                inserted
                   ? null
                   : "EVT_INSERT_FAILED"
               ),
           }),
         );
 
-        if (!recordInserted) {
+        if (!inserted) {
           checks.push(
             createSkippedCheck(
               "EVT_READ",
               "Read temporary EVT record",
               "EVT_INSERT_FAILED",
             ),
+
             createSkippedCheck(
               "EVT_VERIFY",
               "Verify EVT integrity",
               "EVT_INSERT_FAILED",
             ),
+
             createSkippedCheck(
               "EVT_DELETE",
               "Delete temporary EVT record",
               "EVT_INSERT_FAILED",
             ),
+
             createSkippedCheck(
               "EVT_CLEANUP_VERIFY",
               "Verify temporary EVT cleanup",
@@ -1034,47 +1666,69 @@ export async function POST(
             ),
           );
         } else {
-          const quotedIdentifier =
-            quoteIdentifier(identifierColumn);
+          const identifier =
+            quoteIdentifier(
+              identifierColumn,
+            );
 
-          const readStartedAt = nowMs();
+          const readStartedAt =
+            nowMs();
 
           const readResult =
             await queryHbceDatabase<GenericDatabaseRow>(
               `
                 SELECT *
                 FROM evt_records
-                WHERE ${quotedIdentifier} = $1
+                WHERE ${identifier} = $1
                 LIMIT 1
               `,
               [evtId],
             );
 
-          const row = readResult.rows[0];
+          const row =
+            readResult.rows[0];
 
           const readSucceeded =
             readResult.ok &&
-            readResult.rowCount === 1 &&
+            readResult.rowCount ===
+              1 &&
             Boolean(row);
 
           checks.push(
             createCheck({
-              id: "EVT_READ",
-              label: "Read temporary EVT record",
+              id:
+                "EVT_READ",
+
+              label:
+                "Read temporary EVT record",
+
               status:
                 readSucceeded
                   ? "PASS"
                   : "FAIL",
-              durationMs: elapsedMs(readStartedAt),
+
+              durationMs:
+                elapsedMs(
+                  readStartedAt,
+                ),
+
               details: {
                 evtId,
                 identifierColumn,
-                rowCount: readResult.rowCount,
-                queryStatus: readResult.status,
+
+                rowCount:
+                  readResult.rowCount,
+
+                queryStatus:
+                  readResult.status,
+
                 queryDurationMs:
                   readResult.durationMs,
-                sqlHash: readResult.sqlHash,
+
+                sqlHash:
+                  readResult.sqlHash,
               },
+
               error:
                 readResult.error ??
                 (
@@ -1085,7 +1739,9 @@ export async function POST(
             }),
           );
 
-          if (!readSucceeded) {
+          if (
+            !readSucceeded
+          ) {
             checks.push(
               createSkippedCheck(
                 "EVT_VERIFY",
@@ -1094,32 +1750,56 @@ export async function POST(
               ),
             );
           } else {
-            const verifyStartedAt = nowMs();
+            const verifyStartedAt =
+              nowMs();
 
-            const comparisons: Record<string, boolean> = {};
+            const comparisons:
+              Record<
+                string,
+                boolean
+              > = {};
 
-            for (const columnName of selectedColumns) {
+            for (
+              const columnName of
+              selectedColumns
+            ) {
               const candidate =
-                candidateValues[columnName];
+                candidates[
+                  columnName
+                ];
 
-              comparisons[columnName] =
-                valuesMatch(
-                  candidate.value,
-                  row[columnName],
+              comparisons[
+                columnName
+              ] = valuesMatch(
+                candidate.expected,
+                row[columnName],
+              );
+            }
+
+            if (
+              "created_at" in
+              row
+            ) {
+              comparisons.created_at =
+                isValidTimestamp(
+                  row.created_at,
                 );
             }
 
-            if ("created_at" in row) {
-              comparisons.created_at =
-                isValidTimestamp(row.created_at);
-            }
-
-            if ("response_utc" in row) {
+            if (
+              "response_utc" in
+              row
+            ) {
               comparisons.response_utc =
-                isValidTimestamp(row.response_utc);
+                isValidTimestamp(
+                  row.response_utc,
+                );
             }
 
-            if ("legal_certification" in row) {
+            if (
+              "legal_certification" in
+              row
+            ) {
               comparisons.legal_certification =
                 valueAsBoolean(
                   row.legal_certification,
@@ -1127,104 +1807,154 @@ export async function POST(
             }
 
             const failedComparisons =
-              Object.entries(comparisons)
-                .filter(([, passed]) => !passed)
-                .map(([name]) => name);
+              Object.entries(
+                comparisons,
+              )
+                .filter(
+                  (
+                    [, passed],
+                  ) => !passed,
+                )
+                .map(
+                  ([name]) =>
+                    name,
+                );
 
-            const integrityVerified =
-              failedComparisons.length === 0;
+            const verified =
+              failedComparisons.length ===
+              0;
 
             checks.push(
               createCheck({
-                id: "EVT_VERIFY",
-                label: "Verify EVT integrity",
+                id:
+                  "EVT_VERIFY",
+
+                label:
+                  "Verify EVT integrity",
+
                 status:
-                  integrityVerified
+                  verified
                     ? "PASS"
                     : "FAIL",
+
                 durationMs:
-                  elapsedMs(verifyStartedAt),
+                  elapsedMs(
+                    verifyStartedAt,
+                  ),
+
                 details: {
                   evtId,
                   comparisons,
                   failedComparisons,
-                  expectedEventHash: eventHash,
+
+                  expectedEventHash:
+                    eventHash,
+
                   storedEventHash:
                     valueAsString(
                       row.event_hash ??
-                      row.evt_hash ??
-                      row.hash,
+                        row.evt_hash ??
+                        row.hash,
                     ),
-                  expectedChainHash: chainHash,
+
+                  expectedChainHash:
+                    chainHash,
+
                   storedChainHash:
                     valueAsString(
                       row.chain_hash,
                     ),
+
                   storedCreatedAt:
                     valueAsString(
                       row.created_at,
                     ),
+
                   storedResponseUtc:
                     valueAsString(
                       row.response_utc,
                     ),
                 },
+
                 error:
-                  integrityVerified
+                  verified
                     ? null
-                    : `EVT_INTEGRITY_MISMATCH:${failedComparisons.join(",")}`,
+                    : `EVT_INTEGRITY_MISMATCH:${failedComparisons.join(
+                        ",",
+                      )}`,
               }),
             );
           }
 
           const deleteCheck =
-            await cleanupTestEvent(
+            await deleteTestEvent(
               identifierColumn,
               evtId,
             );
 
-          checks.push(deleteCheck);
+          checks.push(
+            deleteCheck,
+          );
 
-          const cleanupStartedAt = nowMs();
+          const cleanupStartedAt =
+            nowMs();
 
           const cleanupResult =
             await queryHbceDatabase<CountRow>(
               `
-                SELECT COUNT(*)::int AS record_count
+                SELECT
+                  COUNT(*)::int AS record_count
                 FROM evt_records
-                WHERE ${quotedIdentifier} = $1
+                WHERE ${identifier} = $1
               `,
               [evtId],
             );
 
           const remainingRecords =
             valueAsNumber(
-              cleanupResult.rows[0]?.record_count,
+              cleanupResult
+                .rows[0]
+                ?.record_count,
             ) ?? -1;
 
           const cleanupVerified =
             cleanupResult.ok &&
-            remainingRecords === 0;
+            remainingRecords ===
+              0;
 
           checks.push(
             createCheck({
-              id: "EVT_CLEANUP_VERIFY",
-              label: "Verify temporary EVT cleanup",
+              id:
+                "EVT_CLEANUP_VERIFY",
+
+              label:
+                "Verify temporary EVT cleanup",
+
               status:
                 cleanupVerified
                   ? "PASS"
                   : "FAIL",
+
               durationMs:
-                elapsedMs(cleanupStartedAt),
+                elapsedMs(
+                  cleanupStartedAt,
+                ),
+
               details: {
                 evtId,
                 identifierColumn,
                 remainingRecords,
-                queryStatus: cleanupResult.status,
+
+                queryStatus:
+                  cleanupResult.status,
+
                 queryDurationMs:
                   cleanupResult.durationMs,
-                sqlHash: cleanupResult.sqlHash,
+
+                sqlHash:
+                  cleanupResult.sqlHash,
               },
+
               error:
                 cleanupResult.error ??
                 (
@@ -1235,7 +1965,7 @@ export async function POST(
             }),
           );
 
-          recordInserted =
+          recordMayExist =
             !cleanupVerified;
         }
       }
@@ -1243,28 +1973,42 @@ export async function POST(
   } catch (error) {
     checks.push(
       createCheck({
-        id: "UNHANDLED_RUNTIME_ERROR",
+        id:
+          "UNHANDLED_RUNTIME_ERROR",
+
         label:
           "Unhandled EVT self-test runtime error",
-        status: "FAIL",
-        durationMs: elapsedMs(startedAt),
+
+        status:
+          "FAIL",
+
+        durationMs:
+          elapsedMs(startedAt),
+
         details: {
           evtId,
           identifierColumn,
         },
-        error: normalizeError(error),
+
+        error:
+          normalizeError(error),
       }),
     );
   } finally {
-    if (recordInserted && identifierColumn) {
+    if (
+      recordMayExist &&
+      identifierColumn
+    ) {
       try {
-        const quotedIdentifier =
-          quoteIdentifier(identifierColumn);
+        const identifier =
+          quoteIdentifier(
+            identifierColumn,
+          );
 
         await queryHbceDatabase(
           `
             DELETE FROM evt_records
-            WHERE ${quotedIdentifier} = $1
+            WHERE ${identifier} = $1
           `,
           [evtId],
         );
@@ -1274,45 +2018,69 @@ export async function POST(
     }
   }
 
-  const requiredFailed = checks.some(
-    (check) =>
-      check.required &&
-      check.status !== "PASS",
-  );
+  const requiredFailed =
+    checks.some(
+      (check) =>
+        check.required &&
+        check.status !==
+          "PASS",
+    );
 
-  const ok = !requiredFailed;
+  const ok =
+    !requiredFailed;
 
-  const status = ok
-    ? "HBCE_RUNTIME_EVT_PASS"
-    : "HBCE_RUNTIME_EVT_FAIL";
+  const status =
+    ok
+      ? "HBCE_RUNTIME_EVT_PASS"
+      : "HBCE_RUNTIME_EVT_FAIL";
 
-  const durationMs = elapsedMs(startedAt);
+  const durationMs =
+    elapsedMs(startedAt);
 
   return NextResponse.json(
     {
       ok,
       status,
+
       operationalStatus:
         ok ? "PASS" : "FAIL",
-      revision: REVISION,
+
+      revision:
+        REVISION,
+
       generatedAt,
-      product: PRODUCT,
-      apiVersion: API_VERSION,
-      runtime: RUNTIME_NAME,
+
+      product:
+        PRODUCT,
+
+      apiVersion:
+        API_VERSION,
+
+      runtime:
+        RUNTIME_NAME,
 
       deployment: {
-        origin: getRequestOrigin(request),
+        origin:
+          getRequestOrigin(
+            request,
+          ),
+
         runtimeEnvironment:
           process.env.VERCEL_ENV ??
           process.env.NODE_ENV ??
           "unknown",
+
         vercelEnvironment:
-          process.env.VERCEL_ENV ?? null,
+          process.env.VERCEL_ENV ??
+          null,
+
         vercelRegion:
           process.env.VERCEL_REGION ??
           process.env.AWS_REGION ??
           null,
-        nodeVersion: process.version,
+
+        nodeVersion:
+          process.version,
       },
 
       testRecord: {
@@ -1320,10 +2088,19 @@ export async function POST(
         identifierColumn,
         sessionId,
         threadId,
-        eventType: TEST_EVENT_TYPE,
-        eventKind: TEST_EVENT_KIND,
-        humanIpr: TEST_HUMAN_IPR,
-        runtimeIpr: TEST_RUNTIME_IPR,
+
+        eventType:
+          TEST_EVENT_TYPE,
+
+        eventKind:
+          TEST_EVENT_KIND,
+
+        humanIpr:
+          TEST_HUMAN_IPR,
+
+        runtimeIpr:
+          TEST_RUNTIME_IPR,
+
         eventHash,
         chainHash,
         publicHash,
@@ -1331,14 +2108,19 @@ export async function POST(
         inputHash,
         outputHash,
         policyHash,
-        temporary: true,
-        retained: recordInserted,
+
+        temporary:
+          true,
+
+        retained:
+          recordMayExist,
       },
 
-      summary: buildSummary(
-        checks,
-        durationMs,
-      ),
+      summary:
+        buildSummary(
+          checks,
+          durationMs,
+        ),
 
       checks,
 
@@ -1348,75 +2130,125 @@ export async function POST(
             (check) =>
               check.id ===
               "DATABASE_CONFIGURATION",
-          )?.status === "PASS",
+          )?.status ===
+          "PASS",
 
         evtSchemaResolved:
           checks.find(
             (check) =>
-              check.id === "EVT_SCHEMA",
-          )?.status === "PASS",
+              check.id ===
+              "EVT_SCHEMA",
+          )?.status ===
+          "PASS",
 
         evtWriteSucceeded:
           checks.find(
             (check) =>
-              check.id === "EVT_INSERT",
-          )?.status === "PASS",
+              check.id ===
+              "EVT_INSERT",
+          )?.status ===
+          "PASS",
 
         evtReadSucceeded:
           checks.find(
             (check) =>
-              check.id === "EVT_READ",
-          )?.status === "PASS",
+              check.id ===
+              "EVT_READ",
+          )?.status ===
+          "PASS",
 
         evtIntegrityVerified:
           checks.find(
             (check) =>
-              check.id === "EVT_VERIFY",
-          )?.status === "PASS",
+              check.id ===
+              "EVT_VERIFY",
+          )?.status ===
+          "PASS",
 
         temporaryEvtDeleted:
           checks.find(
             (check) =>
-              check.id === "EVT_DELETE",
-          )?.status === "PASS",
+              check.id ===
+              "EVT_DELETE",
+          )?.status ===
+          "PASS",
 
         cleanupVerified:
           checks.find(
             (check) =>
               check.id ===
               "EVT_CLEANUP_VERIFY",
-          )?.status === "PASS",
+          )?.status ===
+          "PASS",
       },
 
       boundary: {
-        legalCertification: false,
-        technicalRuntimeTestOnly: true,
-        requiresExplicitPost: true,
-        schemaAware: true,
-        usesWhitelistedColumnsOnly: true,
-        performsDatabaseRead: true,
-        performsDatabaseMutation: true,
-        performsTemporaryEvtWrite: true,
-        performsTemporaryEvtDelete: true,
-        persistsTestEvt: false,
-        createsOpc: false,
-        createsAuditRecord: false,
-        createsMemory: false,
-        performsModelCall: false,
-        replacesHumanReview: false,
+        legalCertification:
+          false,
+
+        technicalRuntimeTestOnly:
+          true,
+
+        requiresExplicitPost:
+          true,
+
+        schemaAware:
+          true,
+
+        usesWhitelistedColumnsOnly:
+          true,
+
+        performsDatabaseRead:
+          true,
+
+        performsDatabaseMutation:
+          true,
+
+        performsTemporaryEvtWrite:
+          true,
+
+        performsTemporaryEvtDelete:
+          true,
+
+        persistsTestEvt:
+          false,
+
+        createsOpc:
+          false,
+
+        createsAuditRecord:
+          false,
+
+        createsMemory:
+          false,
+
+        performsModelCall:
+          false,
+
+        replacesHumanReview:
+          false,
       },
     },
     {
-      status: ok ? 200 : 503,
+      status:
+        ok ? 200 : 503,
+
       headers: {
         "Cache-Control":
           "no-store, no-cache, must-revalidate, proxy-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
+
+        Pragma:
+          "no-cache",
+
+        Expires:
+          "0",
+
         "X-HBCE-EVT-Test-Revision":
           REVISION,
+
         "X-HBCE-EVT-Test-Status":
           ok ? "PASS" : "FAIL",
+
         "X-HBCE-Legal-Certification":
           "false",
       },
@@ -1430,43 +2262,85 @@ export async function GET(
   return NextResponse.json(
     {
       ok: true,
+
       status:
         "HBCE_RUNTIME_EVT_SELF_TEST_READY",
-      revision: REVISION,
+
+      revision:
+        REVISION,
+
       endpoint:
-        `${getRequestOrigin(request)}/api/v1/runtime/evt/self-test`,
-      executionMethod: "POST",
+        `${getRequestOrigin(
+          request,
+        )}/api/v1/runtime/evt/self-test`,
+
+      executionMethod:
+        "POST",
+
       description:
         "Esegue l'ispezione dello schema reale di evt_records e un ciclo temporaneo di inserimento, lettura, verifica, eliminazione e controllo della pulizia.",
+
       strategy: {
-        schemaAware: true,
-        dynamicColumnSelection: true,
-        whitelistOnly: true,
-        unsupportedRequiredColumnsFailClosed: true,
+        schemaAware:
+          true,
+
+        dynamicColumnSelection:
+          true,
+
+        whitelistOnly:
+          true,
+
+        typedDatabaseParameters:
+          true,
+
+        unsupportedRequiredColumnsFailClosed:
+          true,
+
         identifierPriority: [
           "evt_id",
           "event_id",
         ],
       },
+
       warning:
         "GET non esegue il test perché POST effettua mutazioni temporanee sul database.",
+
       boundary: {
-        legalCertification: false,
-        getPerformsDatabaseMutation: false,
-        postPerformsTemporaryDatabaseMutation: true,
-        persistsTestEvt: false,
-        createsOpc: false,
-        createsAuditRecord: false,
-        createsMemory: false,
-        performsModelCall: false,
+        legalCertification:
+          false,
+
+        getPerformsDatabaseMutation:
+          false,
+
+        postPerformsTemporaryDatabaseMutation:
+          true,
+
+        persistsTestEvt:
+          false,
+
+        createsOpc:
+          false,
+
+        createsAuditRecord:
+          false,
+
+        createsMemory:
+          false,
+
+        performsModelCall:
+          false,
       },
     },
     {
       status: 200,
+
       headers: {
-        "Cache-Control": "no-store",
+        "Cache-Control":
+          "no-store",
+
         "X-HBCE-EVT-Test-Revision":
           REVISION,
+
         "X-HBCE-Legal-Certification":
           "false",
       },
