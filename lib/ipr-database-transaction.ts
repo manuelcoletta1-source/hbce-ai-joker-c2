@@ -265,18 +265,39 @@ async function configureTransactionSession(
     );
 
   await client.query(
-    "SET LOCAL statement_timeout = $1",
-    [statementTimeoutMs],
+    `
+      SELECT
+        set_config(
+          'statement_timeout',
+          $1,
+          true
+        )
+    `,
+    [String(statementTimeoutMs)],
   );
 
   await client.query(
-    "SET LOCAL lock_timeout = $1",
-    [lockTimeoutMs],
+    `
+      SELECT
+        set_config(
+          'lock_timeout',
+          $1,
+          true
+        )
+    `,
+    [String(lockTimeoutMs)],
   );
 
   await client.query(
-    "SET LOCAL idle_in_transaction_session_timeout = $1",
-    [idleTimeoutMs],
+    `
+      SELECT
+        set_config(
+          'idle_in_transaction_session_timeout',
+          $1,
+          true
+        )
+    `,
+    [String(idleTimeoutMs)],
   );
 }
 
