@@ -55,7 +55,7 @@ type ScenarioIds = {
 };
 
 const REVISION =
-  "HBCE-RUNTIME-MULTI-STATEMENT-TRANSACTION-SELF-TEST-v1_0";
+  "HBCE-RUNTIME-MULTI-STATEMENT-TRANSACTION-SELF-TEST-v1_1";
 
 const PRODUCT =
   "HBCE IPR Operational Identity & Proof Layer";
@@ -828,7 +828,6 @@ async function insertOpc(
         $24::jsonb,
         $25::jsonb,
         $26::jsonb,
-        $27::jsonb,
         $27::jsonb,
         false
       )
