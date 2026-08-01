@@ -1,263 +1,600 @@
 import { createHash } from "node:crypto";
+
 import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const ROUTE_REVISION =
+  "HBCE-IPR-RUNTIME-API-v1-MODEL_USAGE_LOOKUP_CONTRACT-v1.0";
 
 const API_VERSION = "v1";
-const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-OPC_LOOKUP_CONTRACT-v1.0";
-const PRODUCT_NAME = "HBCE IPR Operational Identity & Proof Layer";
-const PRODUCT_FAMILY = "HBCE_IPR_RUNTIME_API";
-const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1";
-const HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1";
-const RUNTIME_IPR = "IPR-AI-0001";
-const TENANT = "HBCE-TENANT-SELF-PILOT";
-const WORKSPACE = "HBCE-WORKSPACE-RND";
-const LEGAL_CERTIFICATION = false;
-const OPC_BOUNDARY = "technical proof receipt only";
-const IPR_CARD_BOUNDARY =
-  "IPR Card is an internal operational identity certificate, not an official public identity document.";
+const PRODUCT_NAME =
+  "HBCE IPR Operational Identity & Proof Layer";
+const RUNTIME_NAME =
+  "AI_JOKER_C2_SAAS_CORE_v0_1";
 
-type RouteParams = {
+const DEFAULT_HUMAN_IPR =
+  "IPR-88505FE91013DCFE97C56ED1";
+const DEFAULT_RUNTIME_IPR =
+  "IPR-AI-0001";
+const DEFAULT_TENANT =
+  "HBCE-TENANT-SELF-PILOT";
+const DEFAULT_WORKSPACE =
+  "HBCE-WORKSPACE-RND";
+
+const LEGAL_CERTIFICATION = false;
+
+const MODEL_USAGE_BOUNDARY =
+  "Model Usage records are technical-operational telemetry records. They do not constitute billing certification, legal certification, model ownership evidence or provider attestation.";
+
+const OPC_BOUNDARY =
+  "technical proof receipt only";
+
+type RouteContext = {
   params: Promise<{
-    opcId?: string;
+    usageId: string;
   }>;
 };
 
-type BoundarySnapshot = {
-  legalCertification: false;
-  opcBoundary: string;
-  iprCardBoundary: string;
-  rawTextPersistence: false;
-  automaticIprMemoryWrite: false;
-  sourceProfileSaveMode: "EXPLICIT_OPERATOR_SAVE_ONLY";
-  runtimeMemoryWriteSuppressed: true;
-  semanticPersistenceSuppressed: true;
-  noNewIprMemory: true;
-  noNewSemanticMemoryPersistable: true;
-  databaseReadPerformed: false;
-  databaseWritePerformed: false;
-  externalCertificationPerformed: false;
+type ModelUsageQuery = {
+  usageId: string;
+  humanIpr: string;
+  runtimeIpr: string;
+  tenant: string;
+  workspace: string;
 };
 
-type OpcContractReceipt = {
-  id: string;
-  normalizedOpcId: string;
-  requestedAt: string;
-  routeRevision: string;
-  apiVersion: string;
-  product: string;
-  productFamily: string;
-  runtime: string;
-  status: "OPC_RECEIPT_CONTRACT_READY" | "OPC_ID_INVALID";
-  lookupMode: "CONTRACT_RECEIPT_ONLY";
-  persistenceMode: "NO_DATABASE_LOOKUP_IN_THIS_ROUTE";
-  opcKnownByThisRoute: false;
-  opcLoadedFromDatabase: false;
-  proofMaterialLoaded: false;
-  chainHashLoaded: false;
+type ModelUsageContractReceipt = {
+  usageId: string;
+  provider: string;
+  providerState: string;
+  model: string;
+  modelLevel: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+  evtId: string | null;
+  auditId: string | null;
+  threadId: string | null;
+  createdAt: string;
+  usageHash: string;
   legalCertification: false;
-  opcBoundary: string;
-  technicalReceiptHash: string;
-  links: {
-    self: string;
-    apiHealth: string;
-    apiCapabilities: string;
-    eventLedger: string;
-    operations: string;
-  };
 };
 
-function nowIso(): string {
+function isoNow(): string {
   return new Date().toISOString();
 }
 
-function normalizeIdentifier(value: unknown): string {
-  if (typeof value !== "string") {
-    return "";
-  }
-
-  return value.trim().slice(0, 160);
-}
-
-function isValidOpcId(value: string): boolean {
-  if (!value) {
-    return false;
-  }
-
-  return /^[A-Za-z0-9:_./-]{3,160}$/.test(value);
-}
-
 function sha256(value: string): string {
-  return `sha256:${createHash("sha256").update(value, "utf8").digest("hex")}`;
+  return `sha256:${createHash("sha256")
+    .update(value, "utf8")
+    .digest("hex")}`;
 }
 
-function buildBoundarySnapshot(): BoundarySnapshot {
+function safeString(value: string | null): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  return trimmed.length > 0
+    ? trimmed
+    : null;
+}
+
+function normalizeUsageId(value: string): string {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return "USAGE-ID-NOT-PROVIDED";
+  }
+
+  return normalized.slice(0, 256);
+}
+
+function normalizeQuery(
+  request: NextRequest,
+  usageId: string,
+): ModelUsageQuery {
+  const searchParams =
+    request.nextUrl.searchParams;
+
   return {
-    legalCertification: LEGAL_CERTIFICATION,
-    opcBoundary: OPC_BOUNDARY,
-    iprCardBoundary: IPR_CARD_BOUNDARY,
-    rawTextPersistence: false,
-    automaticIprMemoryWrite: false,
-    sourceProfileSaveMode: "EXPLICIT_OPERATOR_SAVE_ONLY",
-    runtimeMemoryWriteSuppressed: true,
-    semanticPersistenceSuppressed: true,
-    noNewIprMemory: true,
-    noNewSemanticMemoryPersistable: true,
-    databaseReadPerformed: false,
-    databaseWritePerformed: false,
-    externalCertificationPerformed: false
+    usageId:
+      normalizeUsageId(usageId),
+
+    humanIpr:
+      safeString(
+        searchParams.get("humanIpr"),
+      ) ?? DEFAULT_HUMAN_IPR,
+
+    runtimeIpr:
+      safeString(
+        searchParams.get("runtimeIpr"),
+      ) ?? DEFAULT_RUNTIME_IPR,
+
+    tenant:
+      safeString(
+        searchParams.get("tenant"),
+      ) ?? DEFAULT_TENANT,
+
+    workspace:
+      safeString(
+        searchParams.get("workspace"),
+      ) ?? DEFAULT_WORKSPACE,
   };
 }
 
-function buildReceiptHash(input: {
-  opcId: string;
-  requestedAt: string;
-  status: string;
-}): string {
-  return sha256(
-    JSON.stringify({
-      routeRevision: ROUTE_REVISION,
-      apiVersion: API_VERSION,
-      product: PRODUCT_NAME,
-      runtime: RUNTIME_NAME,
-      opcId: input.opcId,
-      status: input.status,
-      requestedAt: input.requestedAt,
-      legalCertification: LEGAL_CERTIFICATION,
-      opcBoundary: OPC_BOUNDARY,
-      persistenceMode: "NO_DATABASE_LOOKUP_IN_THIS_ROUTE"
-    })
-  );
-}
-
-function buildOpcReceipt(opcId: string, requestUrl: URL): OpcContractReceipt {
-  const requestedAt = nowIso();
-  const valid = isValidOpcId(opcId);
-  const status: OpcContractReceipt["status"] = valid
-    ? "OPC_RECEIPT_CONTRACT_READY"
-    : "OPC_ID_INVALID";
-
+function buildIdentity(
+  query: ModelUsageQuery,
+) {
   return {
-    id: `OPC-V1-LOOKUP-${createHash("sha256").update(`${opcId}:${requestedAt}`).digest("hex").slice(0, 12).toUpperCase()}`,
-    normalizedOpcId: opcId,
-    requestedAt,
-    routeRevision: ROUTE_REVISION,
-    apiVersion: API_VERSION,
-    product: PRODUCT_NAME,
-    productFamily: PRODUCT_FAMILY,
-    runtime: RUNTIME_NAME,
-    status,
-    lookupMode: "CONTRACT_RECEIPT_ONLY",
-    persistenceMode: "NO_DATABASE_LOOKUP_IN_THIS_ROUTE",
-    opcKnownByThisRoute: false,
-    opcLoadedFromDatabase: false,
-    proofMaterialLoaded: false,
-    chainHashLoaded: false,
-    legalCertification: LEGAL_CERTIFICATION,
-    opcBoundary: OPC_BOUNDARY,
-    technicalReceiptHash: buildReceiptHash({ opcId, requestedAt, status }),
-    links: {
-      self: requestUrl.pathname,
-      apiHealth: "/api/v1/health",
-      apiCapabilities: "/api/v1/capabilities",
-      eventLedger: "/api/v1/events",
-      operations: "/api/v1/operations"
-    }
+    humanIpr:
+      query.humanIpr,
+
+    runtimeIpr:
+      query.runtimeIpr,
+
+    tenant:
+      query.tenant,
+
+    workspace:
+      query.workspace,
+
+    access:
+      "ACCESS_GRANTED",
+
+    identityBinding:
+      "IPR_OPERATIONAL_IDENTITY_BOUND",
+
+    authority:
+      "SERVER_RUNTIME_VALIDATED",
   };
 }
 
-function buildContract(requestUrl: URL) {
+function buildModelUsageContract() {
   return {
-    status: "HBCE_IPR_RUNTIME_OPC_LOOKUP_CONTRACT_READY",
-    apiVersion: API_VERSION,
-    routeRevision: ROUTE_REVISION,
-    product: PRODUCT_NAME,
-    productFamily: PRODUCT_FAMILY,
-    runtime: RUNTIME_NAME,
-    method: "GET",
-    endpoint: "/api/v1/opc/{opcId}",
-    receivedPath: requestUrl.pathname,
+    status:
+      "MODEL_USAGE_CONTRACT_READY",
+
+    ledger:
+      "MODEL_USAGE",
+
     purpose:
-      "Public v1 lookup contract for OPC technical proof receipts produced by governed HBCE/JOKER-C2 runtime operations.",
-    input: {
-      pathParams: {
-        opcId: {
-          type: "string",
-          required: true,
-          example: "OPC-20260607183000-ABCDEF12",
-          validation: "3-160 characters; A-Z, a-z, 0-9, colon, underscore, dot, slash, hyphen"
-        }
-      }
+      "Model Usage records technical information about a governed AI execution, including provider, model, execution state, token telemetry when available, linked EVT and linked audit references.",
+
+    usageIdFormat:
+      "USAGE-<YYYYMMDDHHMMSS>-<8_HEX> or USAGE-V1-<DOMAIN>-<HASH>",
+
+    minimumFields: {
+      usageId:
+        "string",
+
+      provider:
+        "string",
+
+      providerState:
+        "string",
+
+      model:
+        "string",
+
+      modelLevel:
+        "string",
+
+      inputTokens:
+        "number | null",
+
+      outputTokens:
+        "number | null",
+
+      totalTokens:
+        "number | null",
+
+      createdAt:
+        "ISO-8601 UTC timestamp",
+
+      usageHash:
+        "sha256:<hex>",
+
+      legalCertification:
+        false,
     },
-    output: {
-      receiptStatus: ["OPC_RECEIPT_CONTRACT_READY", "OPC_ID_INVALID"],
-      includes: [
-        "normalizedOpcId",
-        "lookupMode",
-        "persistenceMode",
-        "technicalReceiptHash",
-        "boundary",
-        "runtimeContext",
-        "links"
-      ]
+
+    optionalRelations: {
+      evtId:
+        "May reference the EVT generated by the same governed execution.",
+
+      auditId:
+        "May reference the audit record generated by the same governed execution.",
+
+      threadId:
+        "May reference the governed conversation thread.",
+
+      tenant:
+        "May identify the SaaS tenant boundary.",
+
+      workspace:
+        "May identify the SaaS workspace boundary.",
     },
-    runtimeContext: {
-      humanIpr: HUMAN_IPR,
-      runtimeIpr: RUNTIME_IPR,
-      tenant: TENANT,
-      workspace: WORKSPACE,
-      access: "ACCESS_GRANTED",
-      policy: "ALLOW"
+
+    tokenSemantics: {
+      unavailable:
+        "Token values may be null when the provider does not return usage telemetry.",
+
+      zero:
+        "Zero is a valid explicit token count and is distinct from telemetry not being available.",
+
+      total:
+        "When available, totalTokens should equal inputTokens plus outputTokens.",
     },
-    boundary: buildBoundarySnapshot(),
-    integrationNotes: [
-      "This route does not certify the OPC receipt legally.",
-      "This route does not read the OPC proof database.",
-      "Database-backed proof retrieval can be added later behind the same public v1 contract.",
-      "OPC remains a technical proof receipt only unless an external legal certification process is explicitly integrated."
-    ]
   };
 }
 
-export async function GET(request: NextRequest, context: RouteParams) {
-  const requestUrl = new URL(request.url);
-  const params = await context.params;
-  const opcId = normalizeIdentifier(params.opcId);
-  const receipt = buildOpcReceipt(opcId, requestUrl);
-  const valid = receipt.status === "OPC_RECEIPT_CONTRACT_READY";
+function buildLookupEnvelope(
+  query: ModelUsageQuery,
+  generatedAt: string,
+) {
+  const requestHash =
+    sha256(
+      JSON.stringify({
+        endpoint:
+          "GET /api/v1/model-usage/[usageId]",
+
+        usageId:
+          query.usageId,
+
+        humanIpr:
+          query.humanIpr,
+
+        runtimeIpr:
+          query.runtimeIpr,
+
+        tenant:
+          query.tenant,
+
+        workspace:
+          query.workspace,
+
+        generatedAt,
+      }),
+    );
+
+  return {
+    status:
+      "MODEL_USAGE_LOOKUP_NOT_PERSISTED_BY_THIS_ROUTE",
+
+    lookupMode:
+      "CONTRACT_RECEIPT_ONLY",
+
+    persistenceMode:
+      "NO_DATABASE_LOOKUP_IN_THIS_ROUTE",
+
+    requestedUsageId:
+      query.usageId,
+
+    usageKnownByThisRoute:
+      false,
+
+    databaseReadPerformed:
+      false,
+
+    databaseWritePerformed:
+      false,
+
+    modelCallPerformed:
+      false,
+
+    evtCreated:
+      false,
+
+    opcCreated:
+      false,
+
+    auditCreated:
+      false,
+
+    memoryCreated:
+      false,
+
+    requestHash,
+
+    record:
+      null,
+
+    note:
+      "The internal model_usage ledger owns persisted usage records. This public route currently exposes the stable external contract and safe lookup envelope only.",
+  };
+}
+
+function buildSampleRecord(
+  query: ModelUsageQuery,
+  generatedAt: string,
+): ModelUsageContractReceipt {
+  const sample = {
+    usageId:
+      "USAGE-V1-SAMPLE-GOVERNED-MODEL-EXECUTION",
+
+    provider:
+      "OPENAI",
+
+    providerState:
+      "COMPLETED",
+
+    model:
+      "gpt-5.5",
+
+    modelLevel:
+      "STANDARD",
+
+    inputTokens:
+      128,
+
+    outputTokens:
+      64,
+
+    totalTokens:
+      192,
+
+    evtId:
+      "EVT-V1-SAMPLE-GOVERNED-MODEL-EXECUTION",
+
+    auditId:
+      "AUDIT-V1-SAMPLE-GOVERNED-MODEL-EXECUTION",
+
+    threadId:
+      "THREAD-V1-SAMPLE-GOVERNED-MODEL-EXECUTION",
+
+    createdAt:
+      generatedAt,
+
+    legalCertification:
+      false as const,
+  };
+
+  return {
+    ...sample,
+
+    usageHash:
+      sha256(
+        JSON.stringify({
+          ...sample,
+          humanIpr:
+            query.humanIpr,
+          runtimeIpr:
+            query.runtimeIpr,
+          tenant:
+            query.tenant,
+          workspace:
+            query.workspace,
+        }),
+      ),
+  };
+}
+
+function buildPublicSurface() {
+  return {
+    currentEndpoint:
+      "GET /api/v1/model-usage/{usageId}",
+
+    publicEquivalent:
+      "GET /v1/model-usage/{usageId}",
+
+    relatedEndpoints: [
+      "GET /v1/health",
+      "GET /v1/capabilities",
+      "POST /v1/ipr/session",
+      "POST /v1/chat",
+      "POST /v1/operations",
+      "GET /v1/operations/{operationId}",
+      "GET /v1/events",
+      "GET /v1/opc/{opcId}",
+      "GET /v1/audit/{auditId}",
+      "GET /v1/model-usage/{usageId}",
+    ],
+
+    pathParameters: {
+      usageId:
+        "Required Model Usage identifier.",
+    },
+
+    queryParameters: {
+      humanIpr:
+        "Optional operational subject IPR.",
+
+      runtimeIpr:
+        "Optional runtime IPR.",
+
+      tenant:
+        "Optional SaaS tenant identifier.",
+
+      workspace:
+        "Optional SaaS workspace identifier.",
+    },
+  };
+}
+
+function buildTemporalSeal(
+  generatedAt: string,
+) {
+  return {
+    status:
+      "DUAL_TIME_SEAL_READY",
+
+    generatedAtUtc:
+      generatedAt,
+
+    locality:
+      "Torino / Italia / Europa",
+
+    runtimeBirth:
+      "2026-01-19T15:30:00+01:00",
+
+    timezone:
+      "Europe/Rome",
+
+    qualifiedTimestamp:
+      false,
+
+    legalCertification:
+      false,
+  };
+}
+
+function buildBoundary() {
+  return {
+    legalCertification:
+      LEGAL_CERTIFICATION,
+
+    modelUsageBoundary:
+      MODEL_USAGE_BOUNDARY,
+
+    opcBoundary:
+      OPC_BOUNDARY,
+
+    readOnly:
+      true,
+
+    contractOnly:
+      true,
+
+    databaseReadPerformed:
+      false,
+
+    databaseWritePerformed:
+      false,
+
+    performsModelCall:
+      false,
+
+    exposesProviderSecret:
+      false,
+
+    exposesRawPrompt:
+      false,
+
+    exposesRawOutput:
+      false,
+
+    exposesApiKey:
+      false,
+
+    createsEvt:
+      false,
+
+    createsOpc:
+      false,
+
+    createsAudit:
+      false,
+
+    createsMemory:
+      false,
+
+    replacesProviderBilling:
+      false,
+
+    replacesHumanReview:
+      false,
+  };
+}
+
+export async function GET(
+  request: NextRequest,
+  context: RouteContext,
+): Promise<NextResponse> {
+  const generatedAt =
+    isoNow();
+
+  const params =
+    await context.params;
+
+  const query =
+    normalizeQuery(
+      request,
+      params.usageId,
+    );
 
   return NextResponse.json(
     {
-      ok: valid,
-      status: receipt.status,
-      contractStatus: "HBCE_IPR_RUNTIME_OPC_LOOKUP_CONTRACT_READY",
-      apiVersion: API_VERSION,
-      routeRevision: ROUTE_REVISION,
-      product: PRODUCT_NAME,
-      productFamily: PRODUCT_FAMILY,
-      runtime: RUNTIME_NAME,
-      opc: receipt,
-      runtimeContext: {
-        humanIpr: HUMAN_IPR,
-        runtimeIpr: RUNTIME_IPR,
-        tenant: TENANT,
-        workspace: WORKSPACE,
-        access: "ACCESS_GRANTED",
-        policy: "ALLOW"
-      },
-      boundary: buildBoundarySnapshot(),
-      contract: buildContract(requestUrl)
+      ok:
+        true,
+
+      status:
+        "HBCE_IPR_RUNTIME_MODEL_USAGE_CONTRACT_READY",
+
+      revision:
+        ROUTE_REVISION,
+
+      generatedAt,
+
+      product:
+        PRODUCT_NAME,
+
+      apiVersion:
+        API_VERSION,
+
+      runtime:
+        RUNTIME_NAME,
+
+      identity:
+        buildIdentity(query),
+
+      modelUsage:
+        buildModelUsageContract(),
+
+      lookup:
+        buildLookupEnvelope(
+          query,
+          generatedAt,
+        ),
+
+      sampleRecordShape:
+        buildSampleRecord(
+          query,
+          generatedAt,
+        ),
+
+      temporalSeal:
+        buildTemporalSeal(
+          generatedAt,
+        ),
+
+      publicSurface:
+        buildPublicSurface(),
+
+      boundary:
+        buildBoundary(),
     },
     {
-      status: valid ? 200 : 400,
+      status:
+        200,
+
       headers: {
-        "Cache-Control": "no-store",
-        "X-HBCE-API-Version": API_VERSION,
-        "X-HBCE-Route-Revision": ROUTE_REVISION,
-        "X-HBCE-Legal-Certification": "false",
-        "X-HBCE-OPC-Boundary": OPC_BOUNDARY
-      }
-    }
+        "Cache-Control":
+          "no-store, no-cache, must-revalidate, proxy-revalidate",
+
+        Pragma:
+          "no-cache",
+
+        Expires:
+          "0",
+
+        "X-HBCE-API-Version":
+          API_VERSION,
+
+        "X-HBCE-Route-Revision":
+          ROUTE_REVISION,
+
+        "X-HBCE-Legal-Certification":
+          "false",
+
+        "X-HBCE-Model-Usage-Mode":
+          "CONTRACT_RECEIPT_ONLY",
+      },
+    },
   );
 }
