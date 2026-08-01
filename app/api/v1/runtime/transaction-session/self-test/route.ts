@@ -16,9 +16,11 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const revalidate = 0;
-export const maxDuration = 300;
 
-type CheckStatus = "PASS" | "FAIL" | "SKIPPED";
+type CheckStatus =
+  | "PASS"
+  | "FAIL"
+  | "SKIPPED";
 
 type Check = {
   id: string;
@@ -30,7 +32,8 @@ type Check = {
   error: string | null;
 };
 
-type GenericRow = Record<string, unknown>;
+type GenericRow =
+  Record<string, unknown>;
 
 type CountRow = {
   memory_count?: unknown;
@@ -49,74 +52,50 @@ type ScenarioIds = {
   usageId: string;
   sessionId: string;
   threadId: string;
-  requestId: string;
-};
-
-type OpenAIUsage = {
-  inputTokens: number | null;
-  outputTokens: number | null;
-  totalTokens: number | null;
-};
-
-type GovernedModelExecution = {
-  provider: "OPENAI";
-  providerState: "COMPLETED";
-  responseId: string;
-  model: string;
-  outputText: string;
-  outputHash: string;
-  outputLength: number;
-  usage: OpenAIUsage;
-  requestStartedAt: string;
-  responseReceivedAt: string;
-  durationMs: number;
-};
-
-type OpenAIResponseBody = {
-  id?: unknown;
-  model?: unknown;
-  status?: unknown;
-  output_text?: unknown;
-  output?: unknown;
-  usage?: unknown;
-  error?: unknown;
 };
 
 const REVISION =
-  "HBCE-RUNTIME-GOVERNED-REAL-MODEL-TRANSACTION-SELF-TEST-v1_0";
+  "HBCE-RUNTIME-MULTI-STATEMENT-TRANSACTION-SELF-TEST-v1_1";
 
 const PRODUCT =
   "HBCE IPR Operational Identity & Proof Layer";
 
 const API_VERSION = "v1";
-const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1";
+
+const RUNTIME_NAME =
+  "AI_JOKER_C2_SAAS_CORE_v0_1";
 
 const HUMAN_IPR =
-  "IPR-HBCE-REAL-MODEL-TRANSACTION-SELF-TEST";
+  "IPR-HBCE-MULTI-STATEMENT-SELF-TEST";
 
-const RUNTIME_IPR = "IPR-AI-0001";
+const RUNTIME_IPR =
+  "IPR-AI-0001";
 
-const MODEL_LEVEL = "STANDARD";
-const PROVIDER = "OPENAI";
+const TENANT_ID =
+  "HBCE-TENANT-SELF-PILOT";
 
-const COMMIT_PROMPT =
-  "Return exactly this token and nothing else: HBCE_MODEL_COMMIT_OK";
+const WORKSPACE_ID =
+  "HBCE-WORKSPACE-RND";
 
-const ROLLBACK_PROMPT =
-  "Return exactly this token and nothing else: HBCE_MODEL_ROLLBACK_OK";
-
-const COMMIT_EXPECTED = "HBCE_MODEL_COMMIT_OK";
-const ROLLBACK_EXPECTED = "HBCE_MODEL_ROLLBACK_OK";
+const SUBSCRIPTION_ID =
+  "HBCE-SUBSCRIPTION-SELF-PILOT";
 
 function nowMs(): number {
   return Date.now();
 }
 
-function elapsedMs(startedAt: number): number {
-  return Math.max(0, Date.now() - startedAt);
+function elapsedMs(
+  startedAt: number,
+): number {
+  return Math.max(
+    0,
+    Date.now() - startedAt,
+  );
 }
 
-function normalizeError(error: unknown): string {
+function normalizeError(
+  error: unknown,
+): string {
   if (error instanceof Error) {
     return error.message;
   }
@@ -132,13 +111,19 @@ function normalizeError(error: unknown): string {
   }
 }
 
-function asString(value: unknown): string | null {
+function asString(
+  value: unknown,
+): string | null {
   if (typeof value === "string") {
     return value;
   }
 
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return value.toISOString();
+  if (value instanceof Date) {
+    return Number.isNaN(
+      value.getTime(),
+    )
+      ? null
+      : value.toISOString();
   }
 
   if (
@@ -152,50 +137,95 @@ function asString(value: unknown): string | null {
   return null;
 }
 
-function asNumber(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
+function asNumber(
+  value: unknown,
+): number | null {
+  if (
+    typeof value === "number" &&
+    Number.isFinite(value)
+  ) {
     return value;
   }
 
-  if (typeof value === "bigint") {
+  if (
+    typeof value === "bigint"
+  ) {
     return Number(value);
   }
 
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
+  if (
+    typeof value === "string"
+  ) {
+    const parsed =
+      Number(value);
+
+    return Number.isFinite(
+      parsed,
+    )
+      ? parsed
+      : null;
   }
 
   return null;
 }
 
-function stableJson(value: unknown): string {
-  if (value === null || typeof value !== "object") {
+function stableJson(
+  value: unknown,
+): string {
+  if (
+    value === null ||
+    typeof value !== "object"
+  ) {
     return JSON.stringify(value);
   }
 
-  if (value instanceof Date) {
-    return JSON.stringify(value.toISOString());
+  if (
+    value instanceof Date
+  ) {
+    return JSON.stringify(
+      value.toISOString(),
+    );
   }
 
-  if (Array.isArray(value)) {
-    return `[${value.map(stableJson).join(",")}]`;
+  if (
+    Array.isArray(value)
+  ) {
+    return `[${value
+      .map(stableJson)
+      .join(",")}]`;
   }
 
-  const record = value as Record<string, unknown>;
+  const record =
+    value as Record<
+      string,
+      unknown
+    >;
 
-  return `{${Object.keys(record)
+  return `{${Object.keys(
+    record,
+  )
     .sort()
     .map(
       (key) =>
-        `${JSON.stringify(key)}:${stableJson(record[key])}`,
+        `${JSON.stringify(
+          key,
+        )}:${stableJson(
+          record[key],
+        )}`,
     )
     .join(",")}}`;
 }
 
-function sha256(value: string): string {
-  return `sha256:${createHash("sha256")
-    .update(value, "utf8")
+function sha256(
+  value: string,
+): string {
+  return `sha256:${createHash(
+    "sha256",
+  )
+    .update(
+      value,
+      "utf8",
+    )
     .digest("hex")}`;
 }
 
@@ -205,17 +235,28 @@ function createCheck(input: {
   required?: boolean;
   status: CheckStatus;
   durationMs: number;
-  details?: Record<string, unknown>;
+  details?: Record<
+    string,
+    unknown
+  >;
   error?: string | null;
 }): Check {
   return {
     id: input.id,
     label: input.label,
-    required: input.required ?? true,
-    status: input.status,
-    durationMs: input.durationMs,
-    details: input.details ?? {},
-    error: input.error ?? null,
+    required:
+      input.required ??
+      true,
+    status:
+      input.status,
+    durationMs:
+      input.durationMs,
+    details:
+      input.details ??
+      {},
+    error:
+      input.error ??
+      null,
   };
 }
 
@@ -229,326 +270,208 @@ function skipped(
     label,
     status: "SKIPPED",
     durationMs: 0,
-    details: { reason },
-    error: `${id}_SKIPPED`,
+    details: {
+      reason,
+    },
+    error:
+      `${id}_SKIPPED`,
   });
 }
 
-function getOrigin(request: NextRequest): string {
-  const proto = request.headers.get("x-forwarded-proto");
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const host = forwardedHost ?? request.headers.get("host");
+function getOrigin(
+  request: NextRequest,
+): string {
+  const proto =
+    request.headers.get(
+      "x-forwarded-proto",
+    );
+
+  const forwardedHost =
+    request.headers.get(
+      "x-forwarded-host",
+    );
+
+  const host =
+    forwardedHost ??
+    request.headers.get(
+      "host",
+    );
 
   return host
     ? `${proto ?? "https"}://${host}`
     : request.nextUrl.origin;
 }
 
-function createIds(
-  mode: "COMMIT" | "ROLLBACK",
-  generatedAt: string,
-): ScenarioIds {
-  const timestamp = generatedAt
-    .replace(/\D/g, "")
-    .slice(0, 14);
-
-  const suffix = randomUUID()
-    .replace(/-/g, "")
-    .slice(0, 8)
-    .toUpperCase();
+function buildSummary(
+  checks: Check[],
+  durationMs: number,
+) {
+  const required =
+    checks.filter(
+      (check) =>
+        check.required,
+    );
 
   return {
-    operationId:
-      `HBCE-MODEL-${mode}-${timestamp}-${suffix}`,
+    totalChecks:
+      checks.length,
 
-    memoryId:
-      `MEM-MODEL-${mode}-${timestamp}-${suffix}`,
-
-    evtId:
-      `EVT-MODEL-${mode}-${timestamp}-${suffix}`,
-
-    proofId:
-      `OPC-MODEL-${mode}-${timestamp}-${suffix}`,
-
-    auditId:
-      `AUDIT-MODEL-${mode}-${timestamp}-${suffix}`,
-
-    usageId:
-      `USAGE-MODEL-${mode}-${timestamp}-${suffix}`,
-
-    sessionId:
-      `HBCE-MODEL-${mode}-SESSION-${randomUUID()}`,
-
-    threadId:
-      `HBCE-MODEL-${mode}-THREAD-${randomUUID()}`,
-
-    requestId:
-      `HBCE-MODEL-${mode}-REQUEST-${randomUUID()}`,
-  };
-}
-
-function buildSummary(checks: Check[], durationMs: number) {
-  const required = checks.filter((check) => check.required);
-
-  return {
-    totalChecks: checks.length,
     passedChecks:
-      checks.filter((check) => check.status === "PASS").length,
+      checks.filter(
+        (check) =>
+          check.status ===
+          "PASS",
+      ).length,
+
     failedChecks:
-      checks.filter((check) => check.status === "FAIL").length,
+      checks.filter(
+        (check) =>
+          check.status ===
+          "FAIL",
+      ).length,
+
     skippedChecks:
-      checks.filter((check) => check.status === "SKIPPED").length,
-    requiredChecks: required.length,
+      checks.filter(
+        (check) =>
+          check.status ===
+          "SKIPPED",
+      ).length,
+
+    requiredChecks:
+      required.length,
+
     requiredPassed:
-      required.filter((check) => check.status === "PASS").length,
+      required.filter(
+        (check) =>
+          check.status ===
+          "PASS",
+      ).length,
+
     requiredFailed:
-      required.filter((check) => check.status !== "PASS").length,
+      required.filter(
+        (check) =>
+          check.status !==
+          "PASS",
+      ).length,
+
     durationMs,
   };
 }
 
-function extractOutputText(body: OpenAIResponseBody): string {
-  if (typeof body.output_text === "string") {
-    return body.output_text.trim();
-  }
+function createIds(
+  prefix: "COMMIT" | "ROLLBACK",
+  generatedAt: string,
+): ScenarioIds {
+  const timestamp =
+    generatedAt
+      .replace(/\D/g, "")
+      .slice(0, 14);
 
-  if (!Array.isArray(body.output)) {
-    return "";
-  }
-
-  const fragments: string[] = [];
-
-  for (const item of body.output) {
-    if (!item || typeof item !== "object") {
-      continue;
-    }
-
-    const content = (item as { content?: unknown }).content;
-
-    if (!Array.isArray(content)) {
-      continue;
-    }
-
-    for (const part of content) {
-      if (!part || typeof part !== "object") {
-        continue;
-      }
-
-      const text = (part as { text?: unknown }).text;
-
-      if (typeof text === "string") {
-        fragments.push(text);
-      }
-    }
-  }
-
-  return fragments.join("").trim();
-}
-
-function extractUsage(body: OpenAIResponseBody): OpenAIUsage {
-  const usage =
-    body.usage && typeof body.usage === "object"
-      ? (body.usage as Record<string, unknown>)
-      : {};
-
-  const inputTokens =
-    asNumber(usage.input_tokens) ??
-    asNumber(usage.prompt_tokens);
-
-  const outputTokens =
-    asNumber(usage.output_tokens) ??
-    asNumber(usage.completion_tokens);
-
-  const totalTokens =
-    asNumber(usage.total_tokens) ??
-    (
-      inputTokens !== null &&
-      outputTokens !== null
-        ? inputTokens + outputTokens
-        : null
-    );
+  const suffix =
+    randomUUID()
+      .replace(/-/g, "")
+      .slice(0, 8)
+      .toUpperCase();
 
   return {
-    inputTokens,
-    outputTokens,
-    totalTokens,
+    operationId:
+      `HBCE-${prefix}-${timestamp}-${suffix}`,
+
+    memoryId:
+      `MEM-${prefix}-${timestamp}-${suffix}`,
+
+    evtId:
+      `EVT-${prefix}-${timestamp}-${suffix}`,
+
+    proofId:
+      `OPC-${prefix}-${timestamp}-${suffix}`,
+
+    auditId:
+      `AUDIT-${prefix}-${timestamp}-${suffix}`,
+
+    usageId:
+      `USAGE-${prefix}-${timestamp}-${suffix}`,
+
+    sessionId:
+      `HBCE-${prefix}-SESSION-${randomUUID()}`,
+
+    threadId:
+      `HBCE-${prefix}-THREAD-${randomUUID()}`,
   };
-}
-
-function resolveOpenAIModel(): string {
-  return (
-    process.env.HBCE_OPENAI_MODEL ??
-    process.env.OPENAI_MODEL ??
-    "gpt-5-nano"
-  );
-}
-
-function requireOpenAIKey(): string {
-  const key = process.env.OPENAI_API_KEY;
-
-  if (!key) {
-    throw new Error("OPENAI_API_KEY_NOT_CONFIGURED");
-  }
-
-  return key;
-}
-
-async function executeRealModel(
-  prompt: string,
-  expectedOutput: string,
-): Promise<GovernedModelExecution> {
-  const apiKey = requireOpenAIKey();
-  const model = resolveOpenAIModel();
-
-  const startedAtMs = nowMs();
-  const requestStartedAt = new Date().toISOString();
-
-  const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    120_000,
-  );
-
-  try {
-    const response = await fetch(
-      "https://api.openai.com/v1/responses",
-      {
-        method: "POST",
-
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          model,
-          input: prompt,
-          store: false,
-          max_output_tokens: 32,
-        }),
-
-        signal: controller.signal,
-        cache: "no-store",
-      },
-    );
-
-    const body =
-      (await response.json()) as OpenAIResponseBody;
-
-    if (!response.ok) {
-      const providerError =
-        body.error && typeof body.error === "object"
-          ? stableJson(body.error)
-          : `HTTP_${response.status}`;
-
-      throw new Error(
-        `OPENAI_RESPONSE_FAILED:${providerError}`,
-      );
-    }
-
-    const outputText = extractOutputText(body);
-    const responseId = asString(body.id);
-    const returnedModel = asString(body.model) ?? model;
-
-    if (!responseId) {
-      throw new Error("OPENAI_RESPONSE_ID_MISSING");
-    }
-
-    if (outputText !== expectedOutput) {
-      throw new Error(
-        `OPENAI_OUTPUT_VALIDATION_FAILED:${sha256(outputText)}`,
-      );
-    }
-
-    return {
-      provider: "OPENAI",
-      providerState: "COMPLETED",
-      responseId,
-      model: returnedModel,
-      outputText,
-      outputHash: sha256(outputText),
-      outputLength: outputText.length,
-      usage: extractUsage(body),
-      requestStartedAt,
-      responseReceivedAt: new Date().toISOString(),
-      durationMs: elapsedMs(startedAtMs),
-    };
-  } finally {
-    clearTimeout(timeout);
-  }
 }
 
 function buildHashes(
   ids: ScenarioIds,
   generatedAt: string,
-  execution: GovernedModelExecution,
-  promptHash: string,
 ) {
-  const policyHash = sha256(
-    stableJson({
-      decision: "ALLOW",
-      riskLevel: "LOW",
-      modelExecutionRequired: true,
-      legalCertification: false,
-      revision: REVISION,
-    }),
-  );
+  const memoryHash =
+    sha256(
+      stableJson({
+        operationId:
+          ids.operationId,
+        memoryId:
+          ids.memoryId,
+        generatedAt,
+      }),
+    );
 
-  const memoryHash = sha256(
-    stableJson({
-      operationId: ids.operationId,
-      responseId: execution.responseId,
-      promptHash,
-      outputHash: execution.outputHash,
-      generatedAt,
-    }),
-  );
+  const eventHash =
+    sha256(
+      stableJson({
+        operationId:
+          ids.operationId,
+        evtId:
+          ids.evtId,
+        memoryId:
+          ids.memoryId,
+        memoryHash,
+        generatedAt,
+      }),
+    );
 
-  const eventHash = sha256(
-    stableJson({
-      evtId: ids.evtId,
-      memoryId: ids.memoryId,
-      memoryHash,
-      responseId: execution.responseId,
-      outputHash: execution.outputHash,
-      policyHash,
-    }),
-  );
+  const proofHash =
+    sha256(
+      stableJson({
+        operationId:
+          ids.operationId,
+        proofId:
+          ids.proofId,
+        evtId:
+          ids.evtId,
+        eventHash,
+        generatedAt,
+      }),
+    );
 
-  const proofHash = sha256(
-    stableJson({
-      proofId: ids.proofId,
-      evtId: ids.evtId,
-      eventHash,
-      memoryHash,
-      outputHash: execution.outputHash,
-    }),
-  );
+  const auditHash =
+    sha256(
+      stableJson({
+        operationId:
+          ids.operationId,
+        auditId:
+          ids.auditId,
+        proofId:
+          ids.proofId,
+        proofHash,
+        generatedAt,
+      }),
+    );
 
-  const auditHash = sha256(
-    stableJson({
-      auditId: ids.auditId,
-      evtId: ids.evtId,
-      proofId: ids.proofId,
-      proofHash,
-      responseId: execution.responseId,
-    }),
-  );
-
-  const usageHash = sha256(
-    stableJson({
-      usageId: ids.usageId,
-      responseId: execution.responseId,
-      model: execution.model,
-      usage: execution.usage,
-      auditId: ids.auditId,
-    }),
-  );
+  const usageHash =
+    sha256(
+      stableJson({
+        operationId:
+          ids.operationId,
+        usageId:
+          ids.usageId,
+        auditId:
+          ids.auditId,
+        auditHash,
+        generatedAt,
+      }),
+    );
 
   return {
-    promptHash,
-    outputHash: execution.outputHash,
-    policyHash,
     memoryHash,
     eventHash,
     proofHash,
@@ -561,8 +484,7 @@ async function insertMemory(
   tx: HbceTransactionContext,
   ids: ScenarioIds,
   generatedAt: string,
-  hashes: ReturnType<typeof buildHashes>,
-  execution: GovernedModelExecution,
+  memoryHash: string,
 ): Promise<void> {
   await tx.query(
     `
@@ -606,9 +528,9 @@ async function insertMemory(
         'DATABASE_PERSISTENT',
         'RUNTIME_MEMORY',
         'ACTIVE',
-        'REAL_MODEL_EXECUTION',
-        'HBCE Governed Real Model Transaction Self-Test',
-        'Hash-only technical memory record for a governed model execution.',
+        'RUNTIME_MEMORY',
+        'HBCE Multi-Statement Transaction Self-Test',
+        'Temporary root record for persistent-session transaction testing.',
         false,
         true,
         false,
@@ -625,32 +547,34 @@ async function insertMemory(
     `,
     [
       ids.memoryId,
-      sha256(`memory-key:${ids.memoryId}`),
+      sha256(
+        `memory-key:${ids.memoryId}`,
+      ),
       HUMAN_IPR,
       RUNTIME_IPR,
       ids.sessionId,
       ids.threadId,
-      hashes.memoryHash,
+      memoryHash,
       sha256(
         stableJson({
-          previousHash: null,
-          memoryHash: hashes.memoryHash,
-          operationId: ids.operationId,
+          previousHash:
+            null,
+          memoryHash,
+          operationId:
+            ids.operationId,
         }),
       ),
       generatedAt,
       stableJson({
-        operationId: ids.operationId,
-        provider: execution.provider,
-        providerResponseId: execution.responseId,
-        model: execution.model,
-        promptHash: hashes.promptHash,
-        outputHash: hashes.outputHash,
-        outputLength: execution.outputLength,
-        rawPromptPersisted: false,
-        rawOutputPersisted: false,
-        reusableInPrompt: false,
-        legalCertification: false,
+        operationId:
+          ids.operationId,
+        memoryId:
+          ids.memoryId,
+        generatedAt,
+        transactionMode:
+          "MULTI_STATEMENT",
+        legalCertification:
+          false,
       }),
     ],
   );
@@ -659,14 +583,18 @@ async function insertMemory(
 async function insertEvt(
   tx: HbceTransactionContext,
   ids: ScenarioIds,
-  hashes: ReturnType<typeof buildHashes>,
-  execution: GovernedModelExecution,
+  generatedAt: string,
+  memoryHash: string,
+  eventHash: string,
 ): Promise<void> {
   await tx.query(
     `
       INSERT INTO evt_records (
         evt_id,
         event_id,
+        tenant_id,
+        workspace_id,
+        subscription_id,
         human_ipr,
         subject_ipr,
         runtime_ipr,
@@ -692,9 +620,7 @@ async function insertEvt(
         evt_hash,
         event_hash,
         hash,
-        input_hash,
-        output_hash,
-        policy_hash,
+        chain_hash,
         memory_hash,
         response_utc,
         operational_context,
@@ -708,13 +634,16 @@ async function insertEvt(
         $1,
         $1,
         $2,
-        $2,
         $3,
         $4,
         $5,
+        $5,
         $6,
-        'REAL_MODEL_EXECUTION',
-        'GOVERNED_REAL_MODEL_RESPONSE',
+        $7,
+        $8,
+        $9,
+        'RUNTIME_SELF_TEST',
+        'MULTI_STATEMENT_TRANSACTION',
         'EVT_TECHNICAL_SELF_TEST',
         'UP-EVT',
         'UP-CANONICO',
@@ -726,67 +655,73 @@ async function insertEvt(
         'LOW',
         'RUNTIME_ONLY',
         'TECHNICAL_DIAGNOSTIC',
-        'REAL_MODEL_SELF_TEST',
+        'RUNTIME_SELF_TEST',
         'HBCE_RUNTIME',
         'EVT',
-        $7,
-        $7,
-        $7,
-        $8,
-        $9,
+        $10,
+        $10,
         $10,
         $11,
-        $12::timestamptz,
-        $13::jsonb,
+        $12,
+        $13::timestamptz,
         $14::jsonb,
         $15::jsonb,
         $16::jsonb,
-        $16::jsonb,
+        $17::jsonb,
+        $17::jsonb,
         false
       )
     `,
     [
       ids.evtId,
+      TENANT_ID,
+      WORKSPACE_ID,
+      SUBSCRIPTION_ID,
       HUMAN_IPR,
       RUNTIME_IPR,
       ids.sessionId,
       ids.threadId,
       ids.memoryId,
-      hashes.eventHash,
-      hashes.promptHash,
-      hashes.outputHash,
-      hashes.policyHash,
-      hashes.memoryHash,
-      execution.responseReceivedAt,
+      eventHash,
+      sha256(
+        stableJson({
+          previousEvent:
+            null,
+          eventHash,
+          operationId:
+            ids.operationId,
+        }),
+      ),
+      memoryHash,
+      generatedAt,
       stableJson({
-        operationId: ids.operationId,
-        provider: execution.provider,
-        providerResponseId: execution.responseId,
-        model: execution.model,
-        modelCallPerformed: true,
+        operationId:
+          ids.operationId,
+        transactionMode:
+          "MULTI_STATEMENT",
       }),
       stableJson({
-        memoryId: ids.memoryId,
-        proofId: ids.proofId,
-        auditId: ids.auditId,
-        usageId: ids.usageId,
+        memoryId:
+          ids.memoryId,
+        proofId:
+          ids.proofId,
+        auditId:
+          ids.auditId,
+        usageId:
+          ids.usageId,
       }),
       stableJson({
-        inputHash: hashes.promptHash,
-        outputHash: hashes.outputHash,
-        policyHash: hashes.policyHash,
-        memoryHash: hashes.memoryHash,
-        eventHash: hashes.eventHash,
+        memoryHash,
+        eventHash,
       }),
       stableJson({
-        operationId: ids.operationId,
-        evtId: ids.evtId,
-        providerResponseId: execution.responseId,
-        promptHash: hashes.promptHash,
-        outputHash: hashes.outputHash,
-        rawPromptPersisted: false,
-        rawOutputPersisted: false,
-        legalCertification: false,
+        operationId:
+          ids.operationId,
+        evtId:
+          ids.evtId,
+        memoryId:
+          ids.memoryId,
+        eventHash,
       }),
     ],
   );
@@ -795,8 +730,10 @@ async function insertEvt(
 async function insertOpc(
   tx: HbceTransactionContext,
   ids: ScenarioIds,
-  hashes: ReturnType<typeof buildHashes>,
-  execution: GovernedModelExecution,
+  generatedAt: string,
+  memoryHash: string,
+  eventHash: string,
+  proofHash: string,
 ): Promise<void> {
   await tx.query(
     `
@@ -805,6 +742,9 @@ async function insertOpc(
         id,
         evt_id,
         event_id,
+        tenant_id,
+        workspace_id,
+        subscription_id,
         human_ipr,
         subject_ipr,
         runtime_ipr,
@@ -816,12 +756,10 @@ async function insertOpc(
         receipt_type,
         persistence_mode,
         persistence_status,
-        input_hash,
-        output_hash,
-        decision_hash,
         event_hash,
         evt_hash,
         memory_hash,
+        previous_proof_hash,
         chain_hash,
         audit_status,
         verification_status,
@@ -852,22 +790,23 @@ async function insertOpc(
         $2,
         $2,
         $3,
-        $3,
         $4,
         $5,
         $6,
+        $6,
         $7,
-        'RUNTIME_SELF_TEST',
-        'GOVERNED_REAL_MODEL_EXECUTION',
-        'OPC_TECHNICAL_PROOF_RECEIPT',
-        'DATABASE_PERSISTENT',
-        'PERSISTED',
         $8,
         $9,
         $10,
+        'RUNTIME_SELF_TEST',
+        'MULTI_STATEMENT_TRANSACTION',
+        'OPC_TECHNICAL_PROOF_RECEIPT',
+        'DATABASE_PERSISTENT',
+        'PERSISTED',
         $11,
         $11,
         $12,
+        NULL,
         $13,
         'NOT_CREATED',
         'VERIFIABLE',
@@ -896,82 +835,104 @@ async function insertOpc(
     [
       ids.proofId,
       ids.evtId,
+      TENANT_ID,
+      WORKSPACE_ID,
+      SUBSCRIPTION_ID,
       HUMAN_IPR,
       RUNTIME_IPR,
       ids.sessionId,
       ids.threadId,
       ids.memoryId,
-      hashes.promptHash,
-      hashes.outputHash,
-      hashes.policyHash,
-      hashes.eventHash,
-      hashes.memoryHash,
-      hashes.proofHash,
+      eventHash,
+      memoryHash,
+      sha256(
+        stableJson({
+          proofHash,
+          eventHash,
+          memoryHash,
+          operationId:
+            ids.operationId,
+        }),
+      ),
       REVISION,
-      execution.responseReceivedAt,
+      generatedAt,
       stableJson({
-        operationId: ids.operationId,
-        providerResponseId: execution.responseId,
-        modelCallPerformed: true,
+        operationId:
+          ids.operationId,
+        transactionMode:
+          "MULTI_STATEMENT",
       }),
       stableJson({
-        humanIpr: HUMAN_IPR,
-        runtimeIpr: RUNTIME_IPR,
+        humanIpr:
+          HUMAN_IPR,
+        runtimeIpr:
+          RUNTIME_IPR,
       }),
       stableJson({
-        provider: execution.provider,
-        model: execution.model,
-        providerResponseId: execution.responseId,
+        runtime:
+          RUNTIME_NAME,
+        revision:
+          REVISION,
       }),
       stableJson({
-        evtId: ids.evtId,
-        eventHash: hashes.eventHash,
+        evtId:
+          ids.evtId,
+        eventHash,
       }),
       stableJson({
-        memoryId: ids.memoryId,
-        memoryHash: hashes.memoryHash,
+        memoryId:
+          ids.memoryId,
+        memoryHash,
       }),
       stableJson({
-        runtime: RUNTIME_NAME,
-        state: "READY",
-        decision: "ALLOW",
+        state:
+          "READY",
+        decision:
+          "ALLOW",
       }),
       stableJson({
-        proofId: ids.proofId,
-        proofHash: hashes.proofHash,
-        verification: "VERIFIABLE",
+        proofId:
+          ids.proofId,
+        proofHash,
+        evtId:
+          ids.evtId,
       }),
       stableJson({
-        auditId: ids.auditId,
-        status: "NOT_CREATED",
+        auditId:
+          ids.auditId,
+        status:
+          "NOT_CREATED",
       }),
       stableJson({
-        providerResponseId: execution.responseId,
-        outputHash: hashes.outputHash,
-        responseValidated: true,
+        status:
+          "VERIFIABLE",
+        proofHash,
       }),
       stableJson({
-        legalCertification: false,
-        opcBoundary: "technical proof receipt only",
-        rawPromptPersisted: false,
-        rawOutputPersisted: false,
+        legalCertification:
+          false,
+        opcBoundary:
+          "technical proof receipt only",
       }),
       stableJson({
-        operationId: ids.operationId,
-        proofId: ids.proofId,
-        evtId: ids.evtId,
-        memoryId: ids.memoryId,
-        providerResponseId: execution.responseId,
-        proofHash: hashes.proofHash,
+        operationId:
+          ids.operationId,
+        proofId:
+          ids.proofId,
+        proofHash,
+        evtId:
+          ids.evtId,
+        memoryId:
+          ids.memoryId,
       }),
       stableJson({
-        operationId: ids.operationId,
-        providerResponseId: execution.responseId,
-        promptHash: hashes.promptHash,
-        outputHash: hashes.outputHash,
-        eventHash: hashes.eventHash,
-        memoryHash: hashes.memoryHash,
-        proofHash: hashes.proofHash,
+        operationId:
+          ids.operationId,
+        proofId:
+          ids.proofId,
+        proofHash,
+        eventHash,
+        memoryHash,
       }),
     ],
   );
@@ -980,8 +941,11 @@ async function insertOpc(
 async function insertAudit(
   tx: HbceTransactionContext,
   ids: ScenarioIds,
-  hashes: ReturnType<typeof buildHashes>,
-  execution: GovernedModelExecution,
+  generatedAt: string,
+  memoryHash: string,
+  eventHash: string,
+  proofHash: string,
+  auditHash: string,
 ): Promise<void> {
   await tx.query(
     `
@@ -989,6 +953,9 @@ async function insertAudit(
         audit_id,
         source,
         request_id,
+        tenant_id,
+        workspace_id,
+        subscription_id,
         human_ipr,
         runtime_ipr,
         session_id,
@@ -1007,25 +974,16 @@ async function insertAudit(
         runtime_decision,
         audit_state,
         risk_level,
-        data_class,
-        context_class,
         project_domain,
         hbce_module,
         access_decision,
         blocked,
         allowed,
         fail_closed,
-        human_oversight,
-        memory_scope,
-        memory_authority,
         persistence_mode,
         evt_required,
         opc_required,
         audit_required,
-        input_hash,
-        output_hash,
-        decision_hash,
-        policy_hash,
         response_utc,
         audit_hash,
         reason,
@@ -1042,80 +1000,71 @@ async function insertAudit(
         $6,
         $7,
         $8,
-        $8,
         $9,
         $10,
-        $10,
+        $11,
         $11,
         $12,
-        $12,
         $13,
-        'GOVERNED_REAL_MODEL_EXECUTION',
+        $13,
+        $14,
+        $15,
+        $15,
+        $16,
+        'RUNTIME_SELF_TEST',
         'READY',
         'ALLOW',
         'PERSISTED',
         'LOW',
-        'PUBLIC_OR_SYNTHETIC',
-        'TECHNICAL_DIAGNOSTIC',
         'HBCE_RUNTIME',
         'AUDIT',
         'ALLOW',
         false,
         true,
         false,
-        'NOT_REQUIRED',
-        'RUNTIME_ONLY',
-        'SESSION_RUNTIME_ONLY',
         'DATABASE_PERSISTENT',
         true,
         true,
         true,
-        $14,
-        $15,
-        $16,
-        $17,
-        $18::timestamptz,
-        $19,
-        'HBCE governed real model execution self-test',
-        $20::jsonb,
-        $20::jsonb,
+        $17::timestamptz,
+        $18,
+        'HBCE multi-statement transaction self-test',
+        $19::jsonb,
+        $19::jsonb,
         false
       )
     `,
     [
       ids.auditId,
       REVISION,
-      ids.requestId,
+      ids.operationId,
+      TENANT_ID,
+      WORKSPACE_ID,
+      SUBSCRIPTION_ID,
       HUMAN_IPR,
       RUNTIME_IPR,
       ids.sessionId,
       ids.threadId,
       ids.evtId,
-      hashes.eventHash,
+      eventHash,
       ids.proofId,
-      hashes.proofHash,
+      proofHash,
       ids.memoryId,
-      hashes.memoryHash,
-      hashes.promptHash,
-      hashes.outputHash,
-      hashes.policyHash,
-      hashes.policyHash,
-      execution.responseReceivedAt,
-      hashes.auditHash,
+      memoryHash,
+      generatedAt,
+      auditHash,
       stableJson({
-        operationId: ids.operationId,
-        provider: execution.provider,
-        providerResponseId: execution.responseId,
-        model: execution.model,
-        promptHash: hashes.promptHash,
-        outputHash: hashes.outputHash,
-        eventHash: hashes.eventHash,
-        proofHash: hashes.proofHash,
-        memoryHash: hashes.memoryHash,
-        auditHash: hashes.auditHash,
-        rawPromptPersisted: false,
-        rawOutputPersisted: false,
-        legalCertification: false,
+        operationId:
+          ids.operationId,
+        auditId:
+          ids.auditId,
+        evtId:
+          ids.evtId,
+        proofId:
+          ids.proofId,
+        memoryId:
+          ids.memoryId,
+        auditHash,
       }),
     ],
   );
@@ -1124,8 +1073,11 @@ async function insertAudit(
 async function insertUsage(
   tx: HbceTransactionContext,
   ids: ScenarioIds,
-  hashes: ReturnType<typeof buildHashes>,
-  execution: GovernedModelExecution,
+  generatedAt: string,
+  eventHash: string,
+  proofHash: string,
+  auditHash: string,
+  usageHash: string,
 ): Promise<void> {
   await tx.query(
     `
@@ -1133,6 +1085,9 @@ async function insertUsage(
         usage_id,
         source,
         provider,
+        tenant_id,
+        workspace_id,
+        subscription_id,
         human_ipr,
         runtime_ipr,
         session_id,
@@ -1164,6 +1119,12 @@ async function insertUsage(
         input_tokens,
         output_tokens,
         total_tokens,
+        cached_input_tokens,
+        reasoning_tokens,
+        estimated_cost_units,
+        estimated_cost_minor,
+        currency,
+        accounting_mode,
         blocked,
         allowed,
         fail_closed,
@@ -1178,6 +1139,7 @@ async function insertUsage(
       VALUES (
         $1,
         $2,
+        'LOCAL',
         $3,
         $4,
         $5,
@@ -1185,17 +1147,19 @@ async function insertUsage(
         $7,
         $8,
         $9,
-        $9,
         $10,
         $11,
         $11,
         $12,
         $13,
-        $14,
+        $13,
         $14,
         $15,
-        'REAL_MODEL_SELF_TEST',
-        'REAL_MODEL_SELF_TEST',
+        'hbce-multi-statement-self-test',
+        'hbce-multi-statement-self-test',
+        'STANDARD',
+        'TECHNICAL_SELF_TEST',
+        'TECHNICAL_SELF_TEST',
         'IPR',
         'LOW',
         'ALLOW',
@@ -1207,58 +1171,66 @@ async function insertUsage(
         true,
         true,
         true,
-        $16,
-        $17,
-        $18,
+        128,
+        64,
+        192,
+        0,
+        0,
+        0,
+        0,
+        'EUR',
+        'TECHNICAL_SELF_TEST',
         false,
         true,
         false,
         'DATABASE_PERSISTENT',
-        $19::timestamptz,
-        $20,
-        'HBCE governed real model execution self-test',
-        $21::jsonb,
-        $21::jsonb,
+        $16::timestamptz,
+        $17,
+        'HBCE multi-statement transaction self-test',
+        $18::jsonb,
+        $18::jsonb,
         false
       )
     `,
     [
       ids.usageId,
       REVISION,
-      execution.provider,
+      TENANT_ID,
+      WORKSPACE_ID,
+      SUBSCRIPTION_ID,
       HUMAN_IPR,
       RUNTIME_IPR,
       ids.sessionId,
       ids.threadId,
-      ids.requestId,
+      ids.operationId,
       ids.evtId,
-      hashes.eventHash,
+      eventHash,
       ids.proofId,
-      hashes.proofHash,
+      proofHash,
       ids.auditId,
-      execution.model,
-      MODEL_LEVEL,
-      execution.usage.inputTokens,
-      execution.usage.outputTokens,
-      execution.usage.totalTokens,
-      execution.responseReceivedAt,
-      hashes.usageHash,
+      generatedAt,
+      usageHash,
       stableJson({
-        operationId: ids.operationId,
-        provider: execution.provider,
-        providerState: execution.providerState,
-        providerResponseId: execution.responseId,
-        model: execution.model,
-        modelLevel: MODEL_LEVEL,
-        inputTokens: execution.usage.inputTokens,
-        outputTokens: execution.usage.outputTokens,
-        totalTokens: execution.usage.totalTokens,
-        promptHash: hashes.promptHash,
-        outputHash: hashes.outputHash,
-        usageHash: hashes.usageHash,
-        rawPromptPersisted: false,
-        rawOutputPersisted: false,
-        legalCertification: false,
+        operationId:
+          ids.operationId,
+        usageId:
+          ids.usageId,
+        evtId:
+          ids.evtId,
+        proofId:
+          ids.proofId,
+        auditId:
+          ids.auditId,
+        eventHash,
+        proofHash,
+        auditHash,
+        usageHash,
+        inputTokens:
+          128,
+        outputTokens:
+          64,
+        totalTokens:
+          192,
       }),
     ],
   );
@@ -1268,109 +1240,331 @@ async function verifyInsideTransaction(
   tx: HbceTransactionContext,
   ids: ScenarioIds,
 ): Promise<{
-  counts: Record<string, number>;
+  counts: Record<
+    string,
+    number
+  >;
   linked: boolean;
 }> {
-  const result = await tx.query<GenericRow>(
-    `
-      SELECT
-        (
-          SELECT COUNT(*)::int
-          FROM memory_records
-          WHERE memory_id = $1
-        ) AS memory_count,
+  const result =
+    await tx.query<GenericRow>(
+      `
+        SELECT
+          (
+            SELECT COUNT(*)::int
+            FROM memory_records
+            WHERE memory_id = $1
+          ) AS memory_count,
 
-        (
-          SELECT COUNT(*)::int
-          FROM evt_records
-          WHERE evt_id = $2
-            AND memory_id = $1
-        ) AS evt_count,
+          (
+            SELECT COUNT(*)::int
+            FROM evt_records
+            WHERE evt_id = $2
+              AND memory_id = $1
+          ) AS evt_count,
 
-        (
-          SELECT COUNT(*)::int
-          FROM opc_proofs
-          WHERE proof_id = $3
-            AND evt_id = $2
-            AND memory_id = $1
-        ) AS opc_count,
+          (
+            SELECT COUNT(*)::int
+            FROM opc_proofs
+            WHERE proof_id = $3
+              AND evt_id = $2
+              AND memory_id = $1
+          ) AS opc_count,
 
-        (
-          SELECT COUNT(*)::int
-          FROM runtime_audit_logs
-          WHERE audit_id = $4
-            AND evt_id = $2
-            AND opc_proof_id = $3
-            AND memory_id = $1
-        ) AS audit_count,
+          (
+            SELECT COUNT(*)::int
+            FROM runtime_audit_logs
+            WHERE audit_id = $4
+              AND evt_id = $2
+              AND opc_proof_id = $3
+              AND memory_id = $1
+          ) AS audit_count,
 
-        (
-          SELECT COUNT(*)::int
-          FROM model_usage
-          WHERE usage_id = $5
-            AND evt_id = $2
-            AND opc_proof_id = $3
-            AND audit_id = $4
-        ) AS usage_count
-    `,
-    [
-      ids.memoryId,
-      ids.evtId,
-      ids.proofId,
-      ids.auditId,
-      ids.usageId,
-    ],
-  );
+          (
+            SELECT COUNT(*)::int
+            FROM model_usage
+            WHERE usage_id = $5
+              AND evt_id = $2
+              AND opc_proof_id = $3
+              AND audit_id = $4
+          ) AS usage_count
+      `,
+      [
+        ids.memoryId,
+        ids.evtId,
+        ids.proofId,
+        ids.auditId,
+        ids.usageId,
+      ],
+    );
 
-  const row = result.rows[0] ?? {};
+  const row =
+    result.rows[0] ??
+    {};
 
   const counts = {
-    memory: asNumber(row.memory_count) ?? -1,
-    evt: asNumber(row.evt_count) ?? -1,
-    opc: asNumber(row.opc_count) ?? -1,
-    audit: asNumber(row.audit_count) ?? -1,
-    usage: asNumber(row.usage_count) ?? -1,
+    memory:
+      asNumber(
+        row.memory_count,
+      ) ?? -1,
+
+    evt:
+      asNumber(
+        row.evt_count,
+      ) ?? -1,
+
+    opc:
+      asNumber(
+        row.opc_count,
+      ) ?? -1,
+
+    audit:
+      asNumber(
+        row.audit_count,
+      ) ?? -1,
+
+    usage:
+      asNumber(
+        row.usage_count,
+      ) ?? -1,
   };
 
   return {
     counts,
+
     linked:
-      Object.values(counts).every((count) => count === 1),
+      Object.values(
+        counts,
+      ).every(
+        (count) =>
+          count === 1,
+      ),
   };
 }
 
-async function executeLedgerChain(
+async function countOutsideTransaction(
+  ids: ScenarioIds,
+): Promise<{
+  counts: Record<
+    string,
+    number
+  >;
+  total: number;
+}> {
+  const result =
+    await queryHbceDatabase<CountRow>(
+      `
+        SELECT
+          (
+            SELECT COUNT(*)::int
+            FROM memory_records
+            WHERE memory_id = $1
+          ) AS memory_count,
+
+          (
+            SELECT COUNT(*)::int
+            FROM evt_records
+            WHERE evt_id = $2
+          ) AS evt_count,
+
+          (
+            SELECT COUNT(*)::int
+            FROM opc_proofs
+            WHERE proof_id = $3
+          ) AS opc_count,
+
+          (
+            SELECT COUNT(*)::int
+            FROM runtime_audit_logs
+            WHERE audit_id = $4
+          ) AS audit_count,
+
+          (
+            SELECT COUNT(*)::int
+            FROM model_usage
+            WHERE usage_id = $5
+          ) AS usage_count
+      `,
+      [
+        ids.memoryId,
+        ids.evtId,
+        ids.proofId,
+        ids.auditId,
+        ids.usageId,
+      ],
+    );
+
+  const row =
+    result.rows[0] ??
+    {};
+
+  const counts = {
+    memory:
+      asNumber(
+        row.memory_count,
+      ) ?? -1,
+
+    evt:
+      asNumber(
+        row.evt_count,
+      ) ?? -1,
+
+    opc:
+      asNumber(
+        row.opc_count,
+      ) ?? -1,
+
+    audit:
+      asNumber(
+        row.audit_count,
+      ) ?? -1,
+
+    usage:
+      asNumber(
+        row.usage_count,
+      ) ?? -1,
+  };
+
+  return {
+    counts,
+
+    total:
+      Object.values(
+        counts,
+      ).reduce(
+        (
+          sum,
+          count,
+        ) =>
+          sum + count,
+        0,
+      ),
+  };
+}
+
+async function cleanupCommittedDataset(
+  ids: ScenarioIds,
+): Promise<void> {
+  await withHbceDatabaseTransaction(
+    async (tx) => {
+      await tx.query(
+        `
+          DELETE FROM model_usage
+          WHERE usage_id = $1
+        `,
+        [ids.usageId],
+      );
+
+      await tx.query(
+        `
+          DELETE FROM runtime_audit_logs
+          WHERE audit_id = $1
+        `,
+        [ids.auditId],
+      );
+
+      await tx.query(
+        `
+          DELETE FROM opc_proofs
+          WHERE proof_id = $1
+        `,
+        [ids.proofId],
+      );
+
+      await tx.query(
+        `
+          DELETE FROM evt_records
+          WHERE evt_id = $1
+        `,
+        [ids.evtId],
+      );
+
+      await tx.query(
+        `
+          DELETE FROM memory_records
+          WHERE memory_id = $1
+        `,
+        [ids.memoryId],
+      );
+    },
+  );
+}
+
+async function executeFullChain(
   tx: HbceTransactionContext,
   ids: ScenarioIds,
   generatedAt: string,
-  prompt: string,
-  execution: GovernedModelExecution,
 ): Promise<{
   queryCount: number;
   verification: {
-    counts: Record<string, number>;
+    counts: Record<
+      string,
+      number
+    >;
     linked: boolean;
   };
 }> {
-  const hashes = buildHashes(
+  const hashes =
+    buildHashes(
+      ids,
+      generatedAt,
+    );
+
+  await insertMemory(
+    tx,
     ids,
     generatedAt,
-    execution,
-    sha256(prompt),
+    hashes.memoryHash,
   );
 
-  await insertMemory(tx, ids, generatedAt, hashes, execution);
-  await insertEvt(tx, ids, hashes, execution);
-  await insertOpc(tx, ids, hashes, execution);
-  await insertAudit(tx, ids, hashes, execution);
-  await insertUsage(tx, ids, hashes, execution);
+  await insertEvt(
+    tx,
+    ids,
+    generatedAt,
+    hashes.memoryHash,
+    hashes.eventHash,
+  );
+
+  await insertOpc(
+    tx,
+    ids,
+    generatedAt,
+    hashes.memoryHash,
+    hashes.eventHash,
+    hashes.proofHash,
+  );
+
+  await insertAudit(
+    tx,
+    ids,
+    generatedAt,
+    hashes.memoryHash,
+    hashes.eventHash,
+    hashes.proofHash,
+    hashes.auditHash,
+  );
+
+  await insertUsage(
+    tx,
+    ids,
+    generatedAt,
+    hashes.eventHash,
+    hashes.proofHash,
+    hashes.auditHash,
+    hashes.usageHash,
+  );
 
   const verification =
-    await verifyInsideTransaction(tx, ids);
+    await verifyInsideTransaction(
+      tx,
+      ids,
+    );
 
-  if (!verification.linked) {
+  if (
+    !verification.linked
+  ) {
     throw new Error(
-      "HBCE_REAL_MODEL_LEDGER_LINK_VERIFICATION_FAILED",
+      "HBCE_MULTI_STATEMENT_LINK_VERIFICATION_FAILED",
     );
   }
 
@@ -1380,576 +1574,487 @@ async function executeLedgerChain(
   };
 }
 
-async function countOutsideTransaction(
-  ids: ScenarioIds,
-): Promise<{
-  counts: Record<string, number>;
-  total: number;
-}> {
-  const result = await queryHbceDatabase<CountRow>(
-    `
-      SELECT
-        (
-          SELECT COUNT(*)::int
-          FROM memory_records
-          WHERE memory_id = $1
-        ) AS memory_count,
-
-        (
-          SELECT COUNT(*)::int
-          FROM evt_records
-          WHERE evt_id = $2
-        ) AS evt_count,
-
-        (
-          SELECT COUNT(*)::int
-          FROM opc_proofs
-          WHERE proof_id = $3
-        ) AS opc_count,
-
-        (
-          SELECT COUNT(*)::int
-          FROM runtime_audit_logs
-          WHERE audit_id = $4
-        ) AS audit_count,
-
-        (
-          SELECT COUNT(*)::int
-          FROM model_usage
-          WHERE usage_id = $5
-        ) AS usage_count
-    `,
-    [
-      ids.memoryId,
-      ids.evtId,
-      ids.proofId,
-      ids.auditId,
-      ids.usageId,
-    ],
-  );
-
-  const row = result.rows[0] ?? {};
-
-  const counts = {
-    memory: asNumber(row.memory_count) ?? -1,
-    evt: asNumber(row.evt_count) ?? -1,
-    opc: asNumber(row.opc_count) ?? -1,
-    audit: asNumber(row.audit_count) ?? -1,
-    usage: asNumber(row.usage_count) ?? -1,
-  };
-
-  return {
-    counts,
-    total:
-      Object.values(counts).reduce(
-        (sum, count) => sum + count,
-        0,
-      ),
-  };
-}
-
-async function cleanupCommittedDataset(
-  ids: ScenarioIds,
-): Promise<void> {
-  const outcome = await withHbceDatabaseTransaction(
-    async (tx) => {
-      await tx.query(
-        "DELETE FROM model_usage WHERE usage_id = $1",
-        [ids.usageId],
-      );
-
-      await tx.query(
-        "DELETE FROM runtime_audit_logs WHERE audit_id = $1",
-        [ids.auditId],
-      );
-
-      await tx.query(
-        "DELETE FROM opc_proofs WHERE proof_id = $1",
-        [ids.proofId],
-      );
-
-      await tx.query(
-        "DELETE FROM evt_records WHERE evt_id = $1",
-        [ids.evtId],
-      );
-
-      await tx.query(
-        "DELETE FROM memory_records WHERE memory_id = $1",
-        [ids.memoryId],
-      );
-    },
-    {
-      isolationLevel: "SERIALIZABLE",
-      statementTimeoutMs: 120_000,
-    },
-  );
-
-  if (!outcome.ok) {
-    throw new Error(
-      `HBCE_REAL_MODEL_CLEANUP_FAILED:${outcome.error}`,
-    );
-  }
-}
-
 export async function POST(
   request: NextRequest,
 ): Promise<NextResponse> {
-  const startedAt = nowMs();
-  const generatedAt = new Date().toISOString();
+  const startedAt =
+    nowMs();
 
-  const checks: Check[] = [];
+  const generatedAt =
+    new Date().toISOString();
 
-  const commitIds = createIds("COMMIT", generatedAt);
-  const rollbackIds = createIds("ROLLBACK", generatedAt);
+  const checks:
+    Check[] = [];
 
-  const transactionConfigured =
+  const commitIds =
+    createIds(
+      "COMMIT",
+      generatedAt,
+    );
+
+  const rollbackIds =
+    createIds(
+      "ROLLBACK",
+      generatedAt,
+    );
+
+  const configured =
     isHbceTransactionDatabaseConfigured();
 
-  const openAIConfigured =
-    Boolean(process.env.OPENAI_API_KEY);
+  const description =
+    describeHbceTransactionDatabase();
 
   checks.push(
     createCheck({
-      id: "RUNTIME_CONFIGURATION",
-      label: "Transaction and OpenAI runtime configuration",
+      id:
+        "TRANSACTION_DATABASE_CONFIGURATION",
+
+      label:
+        "Persistent transaction database configuration",
+
       status:
-        transactionConfigured && openAIConfigured
+        configured
           ? "PASS"
           : "FAIL",
-      durationMs: 0,
-      details: {
-        transaction:
-          describeHbceTransactionDatabase(),
-        openAIConfigured,
-        model: resolveOpenAIModel(),
-        rawPromptPersistence: false,
-        rawOutputPersistence: false,
-      },
+
+      durationMs:
+        0,
+
+      details:
+        description,
+
       error:
-        !transactionConfigured
-          ? "TRANSACTION_DATABASE_NOT_CONFIGURED"
-          : !openAIConfigured
-            ? "OPENAI_API_KEY_NOT_CONFIGURED"
-            : null,
+        configured
+          ? null
+          : "TRANSACTION_DATABASE_NOT_CONFIGURED",
     }),
   );
 
-  if (!transactionConfigured || !openAIConfigured) {
+  if (!configured) {
     checks.push(
       skipped(
-        "REAL_MODEL_COMMIT_CALL",
-        "Execute real model call for commit scenario",
-        "RUNTIME_NOT_CONFIGURED",
+        "MULTI_STATEMENT_COMMIT",
+        "Execute multi-statement transaction and commit",
+        "TRANSACTION_DATABASE_NOT_CONFIGURED",
       ),
+
       skipped(
-        "REAL_MODEL_COMMIT_TRANSACTION",
-        "Commit governed model execution ledger chain",
-        "RUNTIME_NOT_CONFIGURED",
+        "COMMIT_VISIBILITY_VERIFY",
+        "Verify committed records outside transaction",
+        "TRANSACTION_DATABASE_NOT_CONFIGURED",
       ),
+
       skipped(
-        "REAL_MODEL_COMMIT_VERIFY",
-        "Verify committed governed model execution",
-        "RUNTIME_NOT_CONFIGURED",
+        "COMMIT_DATASET_CLEANUP",
+        "Remove committed test dataset",
+        "TRANSACTION_DATABASE_NOT_CONFIGURED",
       ),
+
       skipped(
-        "REAL_MODEL_COMMIT_CLEANUP",
-        "Remove committed governed model execution",
-        "RUNTIME_NOT_CONFIGURED",
+        "MULTI_STATEMENT_ROLLBACK",
+        "Execute multi-statement transaction and rollback",
+        "TRANSACTION_DATABASE_NOT_CONFIGURED",
       ),
+
       skipped(
-        "REAL_MODEL_ROLLBACK_CALL",
-        "Execute real model call for rollback scenario",
-        "RUNTIME_NOT_CONFIGURED",
-      ),
-      skipped(
-        "REAL_MODEL_ROLLBACK_TRANSACTION",
-        "Rollback governed model execution after controlled failure",
-        "RUNTIME_NOT_CONFIGURED",
-      ),
-      skipped(
-        "REAL_MODEL_ROLLBACK_VERIFY",
-        "Verify rollback left zero ledger records",
-        "RUNTIME_NOT_CONFIGURED",
+        "ROLLBACK_VISIBILITY_VERIFY",
+        "Verify rolled-back records are absent",
+        "TRANSACTION_DATABASE_NOT_CONFIGURED",
       ),
     );
   } else {
-    let commitExecution: GovernedModelExecution | null = null;
+    const commitStartedAt =
+      nowMs();
 
-    const commitCallStartedAt = nowMs();
-
-    try {
-      commitExecution = await executeRealModel(
-        COMMIT_PROMPT,
-        COMMIT_EXPECTED,
-      );
-
-      checks.push(
-        createCheck({
-          id: "REAL_MODEL_COMMIT_CALL",
-          label: "Execute real model call for commit scenario",
-          status: "PASS",
-          durationMs: elapsedMs(commitCallStartedAt),
-          details: {
-            provider: commitExecution.provider,
-            providerState: commitExecution.providerState,
-            responseId: commitExecution.responseId,
-            model: commitExecution.model,
-            outputHash: commitExecution.outputHash,
-            outputLength: commitExecution.outputLength,
-            usage: commitExecution.usage,
-            providerDurationMs: commitExecution.durationMs,
-            outputValidated: true,
-            rawPromptPersisted: false,
-            rawOutputPersisted: false,
-          },
-        }),
-      );
-    } catch (error) {
-      checks.push(
-        createCheck({
-          id: "REAL_MODEL_COMMIT_CALL",
-          label: "Execute real model call for commit scenario",
-          status: "FAIL",
-          durationMs: elapsedMs(commitCallStartedAt),
-          details: {
-            provider: PROVIDER,
-            model: resolveOpenAIModel(),
-          },
-          error: normalizeError(error),
-        }),
-      );
-    }
-
-    if (!commitExecution) {
-      checks.push(
-        skipped(
-          "REAL_MODEL_COMMIT_TRANSACTION",
-          "Commit governed model execution ledger chain",
-          "REAL_MODEL_CALL_FAILED",
-        ),
-        skipped(
-          "REAL_MODEL_COMMIT_VERIFY",
-          "Verify committed governed model execution",
-          "REAL_MODEL_CALL_FAILED",
-        ),
-        skipped(
-          "REAL_MODEL_COMMIT_CLEANUP",
-          "Remove committed governed model execution",
-          "REAL_MODEL_CALL_FAILED",
-        ),
-      );
-    } else {
-      const commitTransactionStartedAt = nowMs();
-
-      const commitOutcome = await withHbceDatabaseTransaction(
+    const commitOutcome =
+      await withHbceDatabaseTransaction(
         async (tx) =>
-          executeLedgerChain(
+          executeFullChain(
             tx,
             commitIds,
             generatedAt,
-            COMMIT_PROMPT,
-            commitExecution!,
           ),
         {
-          isolationLevel: "SERIALIZABLE",
-          statementTimeoutMs: 120_000,
-          lockTimeoutMs: 15_000,
-          idleInTransactionSessionTimeoutMs: 120_000,
+          isolationLevel:
+            "SERIALIZABLE",
+
+          statementTimeoutMs:
+            120_000,
+
+          lockTimeoutMs:
+            15_000,
+
+          idleInTransactionSessionTimeoutMs:
+            120_000,
         },
       );
 
-      const commitPassed =
-        commitOutcome.ok &&
-        commitOutcome.state === "COMMITTED" &&
-        commitOutcome.value.verification.linked;
+    const commitPassed =
+      commitOutcome.ok &&
+      commitOutcome.state ===
+        "COMMITTED" &&
+      commitOutcome.value
+        .verification.linked;
 
-      checks.push(
-        createCheck({
-          id: "REAL_MODEL_COMMIT_TRANSACTION",
-          label: "Commit governed model execution ledger chain",
-          status: commitPassed ? "PASS" : "FAIL",
-          durationMs: elapsedMs(commitTransactionStartedAt),
-          details: {
-            operationId: commitIds.operationId,
-            transactionId: commitOutcome.transactionId,
-            state: commitOutcome.state,
-            providerResponseId: commitExecution.responseId,
-            queryCount:
-              commitOutcome.ok
-                ? commitOutcome.value.queryCount
-                : null,
-            insideTransactionVerification:
-              commitOutcome.ok
-                ? commitOutcome.value.verification
-                : null,
-            rollbackError:
-              commitOutcome.ok
-                ? null
-                : commitOutcome.rollbackError,
-          },
+    checks.push(
+      createCheck({
+        id:
+          "MULTI_STATEMENT_COMMIT",
+
+        label:
+          "Execute multi-statement transaction and commit",
+
+        status:
+          commitPassed
+            ? "PASS"
+            : "FAIL",
+
+        durationMs:
+          elapsedMs(
+            commitStartedAt,
+          ),
+
+        details: {
+          operationId:
+            commitIds.operationId,
+
+          transactionId:
+            commitOutcome.transactionId,
+
+          state:
+            commitOutcome.state,
+
+          durationMs:
+            commitOutcome.durationMs,
+
+          queryCount:
+            commitOutcome.ok
+              ? commitOutcome.value
+                  .queryCount
+              : null,
+
+          insideTransactionVerification:
+            commitOutcome.ok
+              ? commitOutcome.value
+                  .verification
+              : null,
+
           error:
-            commitPassed
+            commitOutcome.ok
               ? null
-              : commitOutcome.ok
-                ? "REAL_MODEL_COMMIT_NOT_CONFIRMED"
-                : commitOutcome.error,
-        }),
-      );
+              : commitOutcome.error,
 
-      const commitVerifyStartedAt = nowMs();
-      const committedCounts =
-        await countOutsideTransaction(commitIds);
-
-      const commitVisible =
-        committedCounts.total === 5 &&
-        Object.values(committedCounts.counts).every(
-          (count) => count === 1,
-        );
-
-      checks.push(
-        createCheck({
-          id: "REAL_MODEL_COMMIT_VERIFY",
-          label: "Verify committed governed model execution",
-          status: commitVisible ? "PASS" : "FAIL",
-          durationMs: elapsedMs(commitVerifyStartedAt),
-          details: {
-            operationId: commitIds.operationId,
-            providerResponseId: commitExecution.responseId,
-            counts: committedCounts.counts,
-            total: committedCounts.total,
-            expectedTotal: 5,
-          },
-          error:
-            commitVisible
+          rollbackError:
+            commitOutcome.ok
               ? null
-              : "REAL_MODEL_COMMITTED_RECORDS_NOT_VISIBLE",
-        }),
+              : commitOutcome.rollbackError,
+        },
+
+        error:
+          commitPassed
+            ? null
+            : commitOutcome.ok
+              ? "MULTI_STATEMENT_COMMIT_NOT_CONFIRMED"
+              : commitOutcome.error,
+      }),
+    );
+
+    const commitVisibilityStartedAt =
+      nowMs();
+
+    const committedCounts =
+      await countOutsideTransaction(
+        commitIds,
       );
 
-      const cleanupStartedAt = nowMs();
-
-      try {
-        await cleanupCommittedDataset(commitIds);
-
-        const remaining =
-          await countOutsideTransaction(commitIds);
-
-        checks.push(
-          createCheck({
-            id: "REAL_MODEL_COMMIT_CLEANUP",
-            label: "Remove committed governed model execution",
-            status:
-              remaining.total === 0 ? "PASS" : "FAIL",
-            durationMs: elapsedMs(cleanupStartedAt),
-            details: {
-              operationId: commitIds.operationId,
-              remaining: remaining.counts,
-              remainingTotal: remaining.total,
-            },
-            error:
-              remaining.total === 0
-                ? null
-                : "REAL_MODEL_COMMIT_CLEANUP_INCOMPLETE",
-          }),
-        );
-      } catch (error) {
-        checks.push(
-          createCheck({
-            id: "REAL_MODEL_COMMIT_CLEANUP",
-            label: "Remove committed governed model execution",
-            status: "FAIL",
-            durationMs: elapsedMs(cleanupStartedAt),
-            details: {
-              operationId: commitIds.operationId,
-            },
-            error: normalizeError(error),
-          }),
-        );
-      }
-    }
-
-    let rollbackExecution: GovernedModelExecution | null = null;
-
-    const rollbackCallStartedAt = nowMs();
-
-    try {
-      rollbackExecution = await executeRealModel(
-        ROLLBACK_PROMPT,
-        ROLLBACK_EXPECTED,
+    const commitVisible =
+      committedCounts.total ===
+        5 &&
+      Object.values(
+        committedCounts.counts,
+      ).every(
+        (count) =>
+          count === 1,
       );
 
-      checks.push(
-        createCheck({
-          id: "REAL_MODEL_ROLLBACK_CALL",
-          label: "Execute real model call for rollback scenario",
-          status: "PASS",
-          durationMs: elapsedMs(rollbackCallStartedAt),
-          details: {
-            provider: rollbackExecution.provider,
-            providerState: rollbackExecution.providerState,
-            responseId: rollbackExecution.responseId,
-            model: rollbackExecution.model,
-            outputHash: rollbackExecution.outputHash,
-            outputLength: rollbackExecution.outputLength,
-            usage: rollbackExecution.usage,
-            providerDurationMs: rollbackExecution.durationMs,
-            outputValidated: true,
-            rawPromptPersisted: false,
-            rawOutputPersisted: false,
-          },
-        }),
-      );
-    } catch (error) {
-      checks.push(
-        createCheck({
-          id: "REAL_MODEL_ROLLBACK_CALL",
-          label: "Execute real model call for rollback scenario",
-          status: "FAIL",
-          durationMs: elapsedMs(rollbackCallStartedAt),
-          details: {
-            provider: PROVIDER,
-            model: resolveOpenAIModel(),
-          },
-          error: normalizeError(error),
-        }),
-      );
-    }
+    checks.push(
+      createCheck({
+        id:
+          "COMMIT_VISIBILITY_VERIFY",
 
-    if (!rollbackExecution) {
-      checks.push(
-        skipped(
-          "REAL_MODEL_ROLLBACK_TRANSACTION",
-          "Rollback governed model execution after controlled failure",
-          "REAL_MODEL_CALL_FAILED",
-        ),
-        skipped(
-          "REAL_MODEL_ROLLBACK_VERIFY",
-          "Verify rollback left zero ledger records",
-          "REAL_MODEL_CALL_FAILED",
-        ),
-      );
-    } else {
-      const rollbackTransactionStartedAt = nowMs();
+        label:
+          "Verify committed records outside transaction",
 
-      const rollbackOutcome =
-        await withHbceDatabaseTransaction(
-          async (tx) => {
-            const chain = await executeLedgerChain(
+        status:
+          commitVisible
+            ? "PASS"
+            : "FAIL",
+
+        durationMs:
+          elapsedMs(
+            commitVisibilityStartedAt,
+          ),
+
+        details: {
+          operationId:
+            commitIds.operationId,
+
+          counts:
+            committedCounts.counts,
+
+          total:
+            committedCounts.total,
+
+          expectedTotal:
+            5,
+        },
+
+        error:
+          commitVisible
+            ? null
+            : "COMMITTED_RECORDS_NOT_VISIBLE",
+      }),
+    );
+
+    const cleanupStartedAt =
+      nowMs();
+
+    await cleanupCommittedDataset(
+      commitIds,
+    );
+
+    const postCleanup =
+      await countOutsideTransaction(
+        commitIds,
+      );
+
+    const cleanupPassed =
+      postCleanup.total ===
+      0;
+
+    checks.push(
+      createCheck({
+        id:
+          "COMMIT_DATASET_CLEANUP",
+
+        label:
+          "Remove committed test dataset",
+
+        status:
+          cleanupPassed
+            ? "PASS"
+            : "FAIL",
+
+        durationMs:
+          elapsedMs(
+            cleanupStartedAt,
+          ),
+
+        details: {
+          operationId:
+            commitIds.operationId,
+
+          remaining:
+            postCleanup.counts,
+
+          remainingTotal:
+            postCleanup.total,
+        },
+
+        error:
+          cleanupPassed
+            ? null
+            : "COMMITTED_DATASET_CLEANUP_FAILED",
+      }),
+    );
+
+    const rollbackStartedAt =
+      nowMs();
+
+    const rollbackOutcome =
+      await withHbceDatabaseTransaction(
+        async (tx) => {
+          const chain =
+            await executeFullChain(
               tx,
               rollbackIds,
               generatedAt,
-              ROLLBACK_PROMPT,
-              rollbackExecution!,
             );
 
-            if (!chain.verification.linked) {
-              throw new Error(
-                "REAL_MODEL_ROLLBACK_LINK_VERIFICATION_FAILED",
-              );
-            }
-
+          if (
+            !chain.verification
+              .linked
+          ) {
             throw new Error(
-              "HBCE_CONTROLLED_FAILURE_AFTER_REAL_MODEL_AND_FIVE_LEDGER_WRITES",
+              "ROLLBACK_SCENARIO_LINK_VERIFICATION_FAILED",
             );
-          },
-          {
-            isolationLevel: "SERIALIZABLE",
-            statementTimeoutMs: 120_000,
-            lockTimeoutMs: 15_000,
-            idleInTransactionSessionTimeoutMs: 120_000,
-          },
-        );
+          }
 
-      const rollbackPassed =
-        !rollbackOutcome.ok &&
-        rollbackOutcome.state === "ROLLED_BACK" &&
-        rollbackOutcome.error ===
-          "HBCE_CONTROLLED_FAILURE_AFTER_REAL_MODEL_AND_FIVE_LEDGER_WRITES" &&
-        rollbackOutcome.rollbackError === null;
+          throw new Error(
+            "HBCE_CONTROLLED_FAILURE_AFTER_FIVE_LEDGER_WRITES",
+          );
+        },
+        {
+          isolationLevel:
+            "SERIALIZABLE",
 
-      checks.push(
-        createCheck({
-          id: "REAL_MODEL_ROLLBACK_TRANSACTION",
-          label:
-            "Rollback governed model execution after controlled failure",
-          status: rollbackPassed ? "PASS" : "FAIL",
-          durationMs: elapsedMs(rollbackTransactionStartedAt),
-          details: {
-            operationId: rollbackIds.operationId,
-            transactionId: rollbackOutcome.transactionId,
-            state: rollbackOutcome.state,
-            providerResponseId: rollbackExecution.responseId,
-            expectedError:
-              "HBCE_CONTROLLED_FAILURE_AFTER_REAL_MODEL_AND_FIVE_LEDGER_WRITES",
-            actualError:
-              rollbackOutcome.ok
-                ? null
-                : rollbackOutcome.error,
-            rollbackError:
-              rollbackOutcome.ok
-                ? null
-                : rollbackOutcome.rollbackError,
-            explicitCleanupUsed: false,
-            failurePoint:
-              "AFTER_REAL_MODEL_RESPONSE_FIVE_LEDGER_WRITES_AND_LINK_VERIFICATION",
-          },
-          error:
-            rollbackPassed
-              ? null
-              : rollbackOutcome.ok
-                ? "EXPECTED_REAL_MODEL_ROLLBACK_DID_NOT_OCCUR"
-                : rollbackOutcome.error,
-        }),
+          statementTimeoutMs:
+            120_000,
+
+          lockTimeoutMs:
+            15_000,
+
+          idleInTransactionSessionTimeoutMs:
+            120_000,
+        },
       );
 
-      const rollbackVerifyStartedAt = nowMs();
-      const rolledBackCounts =
-        await countOutsideTransaction(rollbackIds);
+    const rollbackTriggered =
+      !rollbackOutcome.ok &&
+      rollbackOutcome.state ===
+        "ROLLED_BACK" &&
+      rollbackOutcome.error ===
+        "HBCE_CONTROLLED_FAILURE_AFTER_FIVE_LEDGER_WRITES" &&
+      rollbackOutcome.rollbackError ===
+        null;
 
-      const rollbackInvisible =
-        rolledBackCounts.total === 0 &&
-        Object.values(rolledBackCounts.counts).every(
-          (count) => count === 0,
-        );
+    checks.push(
+      createCheck({
+        id:
+          "MULTI_STATEMENT_ROLLBACK",
 
-      checks.push(
-        createCheck({
-          id: "REAL_MODEL_ROLLBACK_VERIFY",
-          label: "Verify rollback left zero ledger records",
-          status: rollbackInvisible ? "PASS" : "FAIL",
-          durationMs: elapsedMs(rollbackVerifyStartedAt),
-          details: {
-            operationId: rollbackIds.operationId,
-            providerResponseId: rollbackExecution.responseId,
-            counts: rolledBackCounts.counts,
-            total: rolledBackCounts.total,
-            expectedTotal: 0,
-            explicitCleanupUsed: false,
-          },
-          error:
-            rollbackInvisible
+        label:
+          "Execute multi-statement transaction and rollback",
+
+        status:
+          rollbackTriggered
+            ? "PASS"
+            : "FAIL",
+
+        durationMs:
+          elapsedMs(
+            rollbackStartedAt,
+          ),
+
+        details: {
+          operationId:
+            rollbackIds.operationId,
+
+          transactionId:
+            rollbackOutcome.transactionId,
+
+          state:
+            rollbackOutcome.state,
+
+          expectedError:
+            "HBCE_CONTROLLED_FAILURE_AFTER_FIVE_LEDGER_WRITES",
+
+          actualError:
+            rollbackOutcome.ok
               ? null
-              : "REAL_MODEL_ROLLBACK_LEFT_RESIDUAL_RECORDS",
-        }),
+              : rollbackOutcome.error,
+
+          rollbackError:
+            rollbackOutcome.ok
+              ? null
+              : rollbackOutcome.rollbackError,
+
+          explicitCleanupUsed:
+            false,
+
+          failurePoint:
+            "AFTER_FIVE_INSERTS_AND_IN_TRANSACTION_LINK_VERIFICATION",
+        },
+
+        error:
+          rollbackTriggered
+            ? null
+            : rollbackOutcome.ok
+              ? "EXPECTED_ROLLBACK_DID_NOT_OCCUR"
+              : rollbackOutcome.error,
+      }),
+    );
+
+    const rollbackVisibilityStartedAt =
+      nowMs();
+
+    const rolledBackCounts =
+      await countOutsideTransaction(
+        rollbackIds,
       );
-    }
+
+    const rollbackInvisible =
+      rolledBackCounts.total ===
+        0 &&
+      Object.values(
+        rolledBackCounts.counts,
+      ).every(
+        (count) =>
+          count === 0,
+      );
+
+    checks.push(
+      createCheck({
+        id:
+          "ROLLBACK_VISIBILITY_VERIFY",
+
+        label:
+          "Verify rolled-back records are absent",
+
+        status:
+          rollbackInvisible
+            ? "PASS"
+            : "FAIL",
+
+        durationMs:
+          elapsedMs(
+            rollbackVisibilityStartedAt,
+          ),
+
+        details: {
+          operationId:
+            rollbackIds.operationId,
+
+          counts:
+            rolledBackCounts.counts,
+
+          total:
+            rolledBackCounts.total,
+
+          expectedTotal:
+            0,
+
+          explicitCleanupUsed:
+            false,
+        },
+
+        error:
+          rollbackInvisible
+            ? null
+            : "ROLLED_BACK_RECORDS_REMAIN",
+      }),
+    );
   }
 
   const ok =
     !checks.some(
       (check) =>
         check.required &&
-        check.status !== "PASS",
+        check.status !==
+          "PASS",
     );
+
+  const durationMs =
+    elapsedMs(startedAt);
 
   const firstFailure =
     checks.find(
       (check) =>
         check.required &&
-        check.status !== "PASS",
-    ) ?? null;
-
-  const durationMs = elapsedMs(startedAt);
+        check.status !==
+          "PASS",
+    ) ??
+    null;
 
   return NextResponse.json(
     {
@@ -1957,184 +2062,246 @@ export async function POST(
 
       status:
         ok
-          ? "HBCE_RUNTIME_GOVERNED_REAL_MODEL_TRANSACTION_PASS"
-          : "HBCE_RUNTIME_GOVERNED_REAL_MODEL_TRANSACTION_FAIL",
+          ? "HBCE_RUNTIME_MULTI_STATEMENT_TRANSACTION_PASS"
+          : "HBCE_RUNTIME_MULTI_STATEMENT_TRANSACTION_FAIL",
 
-      operationalStatus: ok ? "PASS" : "FAIL",
+      operationalStatus:
+        ok
+          ? "PASS"
+          : "FAIL",
 
-      revision: REVISION,
+      revision:
+        REVISION,
+
       generatedAt,
-      product: PRODUCT,
-      apiVersion: API_VERSION,
-      runtime: RUNTIME_NAME,
+
+      product:
+        PRODUCT,
+
+      apiVersion:
+        API_VERSION,
+
+      runtime:
+        RUNTIME_NAME,
 
       deployment: {
-        origin: getOrigin(request),
+        origin:
+          getOrigin(
+            request,
+          ),
 
         runtimeEnvironment:
-          process.env.VERCEL_ENV ??
-          process.env.NODE_ENV ??
+          process.env
+            .VERCEL_ENV ??
+          process.env
+            .NODE_ENV ??
           "unknown",
 
         vercelEnvironment:
-          process.env.VERCEL_ENV ?? null,
-
-        vercelRegion:
-          process.env.VERCEL_REGION ??
-          process.env.AWS_REGION ??
+          process.env
+            .VERCEL_ENV ??
           null,
 
-        nodeVersion: process.version,
+        vercelRegion:
+          process.env
+            .VERCEL_REGION ??
+          process.env
+            .AWS_REGION ??
+          null,
+
+        nodeVersion:
+          process.version,
       },
 
       scenarios: {
         commit: {
-          operationId: commitIds.operationId,
-          identifiers: commitIds,
-          expectedModelOutputHash: sha256(COMMIT_EXPECTED),
+          operationId:
+            commitIds.operationId,
+
+          identifiers:
+            commitIds,
+
           flow: [
-            "POLICY_ALLOW",
-            "REAL_OPENAI_RESPONSES_API_CALL",
-            "OUTPUT_VALIDATION",
             "BEGIN SERIALIZABLE",
             "INSERT MEMORY",
             "INSERT EVT",
             "INSERT OPC",
             "INSERT AUDIT",
             "INSERT MODEL USAGE",
-            "VERIFY LINKS",
+            "VERIFY LINKS INSIDE TRANSACTION",
             "COMMIT",
-            "VERIFY EXTERNAL VISIBILITY",
-            "CLEANUP",
+            "VERIFY VISIBILITY OUTSIDE TRANSACTION",
+            "CLEANUP IN SECOND TRANSACTION",
           ],
         },
 
         rollback: {
-          operationId: rollbackIds.operationId,
-          identifiers: rollbackIds,
-          expectedModelOutputHash: sha256(ROLLBACK_EXPECTED),
+          operationId:
+            rollbackIds.operationId,
+
+          identifiers:
+            rollbackIds,
+
           flow: [
-            "POLICY_ALLOW",
-            "REAL_OPENAI_RESPONSES_API_CALL",
-            "OUTPUT_VALIDATION",
             "BEGIN SERIALIZABLE",
             "INSERT MEMORY",
             "INSERT EVT",
             "INSERT OPC",
             "INSERT AUDIT",
             "INSERT MODEL USAGE",
-            "VERIFY LINKS",
-            "CONTROLLED_FAILURE",
+            "VERIFY LINKS INSIDE TRANSACTION",
+            "INJECT CONTROLLED FAILURE",
             "ROLLBACK",
-            "VERIFY_ZERO_RECORDS",
+            "VERIFY ZERO RECORDS OUTSIDE TRANSACTION",
           ],
         },
 
         firstFailure:
           firstFailure
             ? {
-                id: firstFailure.id,
-                error: firstFailure.error,
+                id:
+                  firstFailure.id,
+
+                error:
+                  firstFailure.error,
               }
             : null,
       },
 
-      summary: buildSummary(checks, durationMs),
+      summary:
+        buildSummary(
+          checks,
+          durationMs,
+        ),
 
       checks,
 
       interpretation: {
-        transactionRuntimeConfigured:
-          checks.find(
-            (check) => check.id === "RUNTIME_CONFIGURATION",
-          )?.status === "PASS",
-
-        realCommitModelCallSucceeded:
-          checks.find(
-            (check) => check.id === "REAL_MODEL_COMMIT_CALL",
-          )?.status === "PASS",
-
-        realModelExecutionCommitted:
+        persistentSessionAvailable:
           checks.find(
             (check) =>
-              check.id === "REAL_MODEL_COMMIT_TRANSACTION",
-          )?.status === "PASS",
+              check.id ===
+              "TRANSACTION_DATABASE_CONFIGURATION",
+          )?.status ===
+          "PASS",
 
-        committedModelExecutionVisible:
+        multiStatementCommitSucceeded:
           checks.find(
-            (check) => check.id === "REAL_MODEL_COMMIT_VERIFY",
-          )?.status === "PASS",
+            (check) =>
+              check.id ===
+              "MULTI_STATEMENT_COMMIT",
+          )?.status ===
+          "PASS",
 
-        committedModelExecutionRemoved:
+        committedRecordsVisible:
           checks.find(
-            (check) => check.id === "REAL_MODEL_COMMIT_CLEANUP",
-          )?.status === "PASS",
+            (check) =>
+              check.id ===
+              "COMMIT_VISIBILITY_VERIFY",
+          )?.status ===
+          "PASS",
 
-        realRollbackModelCallSucceeded:
+        committedDatasetRemoved:
           checks.find(
-            (check) => check.id === "REAL_MODEL_ROLLBACK_CALL",
-          )?.status === "PASS",
+            (check) =>
+              check.id ===
+              "COMMIT_DATASET_CLEANUP",
+          )?.status ===
+          "PASS",
 
         controlledFailureTriggeredRollback:
           checks.find(
             (check) =>
-              check.id === "REAL_MODEL_ROLLBACK_TRANSACTION",
-          )?.status === "PASS",
+              check.id ===
+              "MULTI_STATEMENT_ROLLBACK",
+          )?.status ===
+          "PASS",
 
         rollbackLeftZeroRecords:
           checks.find(
             (check) =>
-              check.id === "REAL_MODEL_ROLLBACK_VERIFY",
-          )?.status === "PASS",
+              check.id ===
+              "ROLLBACK_VISIBILITY_VERIFY",
+          )?.status ===
+          "PASS",
 
-        governedRealModelTransactionPassed: ok,
+        multiStatementTransactionPassed:
+          ok,
       },
 
       boundary: {
-        legalCertification: false,
-        technicalRuntimeTestOnly: true,
-        provider: PROVIDER,
-        api: "OPENAI_RESPONSES_API",
-        realModelCallPerformed: true,
-        modelSelectedFromEnvironment: true,
-        requestStore: false,
-        rawPromptPersisted: false,
-        rawOutputPersisted: false,
-        hashOnlyOperationalEvidence: true,
-        usesPersistentPoolSession: true,
-        usesBeginCommitRollback: true,
-        isolationLevel: "SERIALIZABLE",
-        commitScenarioUsesExplicitCleanup: true,
-        rollbackScenarioUsesExplicitCleanup: false,
+        legalCertification:
+          false,
+
+        technicalRuntimeTestOnly:
+          true,
+
+        driver:
+          "@neondatabase/serverless Pool",
+
+        connectionMode:
+          "PERSISTENT_POOLED_SESSION",
+
+        isolationLevel:
+          "SERIALIZABLE",
+
+        usesBeginCommitRollback:
+          true,
+
+        statementsPerScenario:
+          6,
+
+        commitScenarioUsesExplicitCleanup:
+          true,
+
+        rollbackScenarioUsesExplicitCleanup:
+          false,
+
         rollbackMechanism:
           "POSTGRESQL_MULTI_STATEMENT_TRANSACTION_ROLLBACK",
-        modelCallInsideDatabaseTransaction: false,
-        reasonModelCallOutsideTransaction:
-          "Avoid holding PostgreSQL locks during external network latency. The validated provider response becomes the governed input to the database transaction.",
-        createsPersistentBusinessData: false,
-        replacesProviderAttestation: false,
-        replacesHumanReview: false,
+
+        verifiesVisibilityOutsideTransaction:
+          true,
+
+        performsRealModelCall:
+          false,
+
+        createsPersistentBusinessData:
+          false,
+
+        replacesHumanReview:
+          false,
+
         note:
-          "Level 5 verifies two real OpenAI model executions. A validated response is committed with linked Memory, EVT, OPC, Audit and Model Usage records in the success scenario. A second validated response is followed by five linked ledger writes and an intentional runtime failure; PostgreSQL rollback must leave zero records without explicit cleanup.",
+          "Level 4 proves that separate SQL statements execute on one pooled PostgreSQL session under BEGIN/COMMIT or BEGIN/ROLLBACK. The rollback scenario injects a controlled application error after five ledger inserts and an in-transaction link verification, then confirms zero records from a separate database query.",
       },
     },
     {
-      status: ok ? 200 : 503,
+      status:
+        ok
+          ? 200
+          : 503,
 
       headers: {
         "Cache-Control":
           "no-store, no-cache, must-revalidate, proxy-revalidate",
 
-        Pragma: "no-cache",
-        Expires: "0",
+        Pragma:
+          "no-cache",
 
-        "X-HBCE-Real-Model-Transaction-Revision":
+        Expires:
+          "0",
+
+        "X-HBCE-Multi-Statement-Test-Revision":
           REVISION,
 
-        "X-HBCE-Real-Model-Transaction-Status":
-          ok ? "PASS" : "FAIL",
+        "X-HBCE-Multi-Statement-Test-Status":
+          ok
+            ? "PASS"
+            : "FAIL",
 
-        "X-HBCE-Legal-Certification": "false",
+        "X-HBCE-Legal-Certification":
+          "false",
       },
     },
   );
@@ -2148,69 +2315,101 @@ export async function GET(
       ok: true,
 
       status:
-        "HBCE_RUNTIME_GOVERNED_REAL_MODEL_TRANSACTION_SELF_TEST_READY",
+        "HBCE_RUNTIME_MULTI_STATEMENT_TRANSACTION_SELF_TEST_READY",
 
-      revision: REVISION,
+      revision:
+        REVISION,
 
       endpoint:
-        `${getOrigin(request)}/api/v1/runtime/model-transaction/self-test`,
+        `${getOrigin(
+          request,
+        )}/api/v1/runtime/transaction-session/self-test`,
 
-      executionMethod: "POST",
+      executionMethod:
+        "POST",
 
       description:
-        "Esegue due chiamate reali alla OpenAI Responses API. La prima viene validata e registrata in una transazione cross-ledger con COMMIT. La seconda viene validata, scritta nei cinque ledger e poi annullata tramite errore controllato e ROLLBACK.",
-
-      requiredEnvironment: {
-        OPENAI_API_KEY: "required",
-        HBCE_OPENAI_MODEL:
-          "optional; fallback OPENAI_MODEL then gpt-5-nano",
-        DATABASE_URL:
-          "required through the persistent HBCE transaction helper",
-      },
+        "Verifica una transazione PostgreSQL multi-statement su connessione persistente: scenario BEGIN/COMMIT con visibilità esterna e scenario BEGIN/fault/ROLLBACK con zero residui.",
 
       scenarios: [
         {
-          id: "REAL_MODEL_COMMIT",
-          expected:
-            "Real provider response validated; five linked ledger records committed, externally verified and removed.",
+          id:
+            "MULTI_STATEMENT_COMMIT",
+
+          flow: [
+            "BEGIN SERIALIZABLE",
+            "INSERT MEMORY",
+            "INSERT EVT",
+            "INSERT OPC",
+            "INSERT AUDIT",
+            "INSERT MODEL USAGE",
+            "VERIFY LINKS",
+            "COMMIT",
+            "VERIFY EXTERNAL VISIBILITY",
+          ],
         },
 
         {
-          id: "REAL_MODEL_ROLLBACK",
-          expected:
-            "Real provider response validated; five linked ledger records written inside BEGIN; controlled failure triggers ROLLBACK; zero records remain without explicit cleanup.",
+          id:
+            "MULTI_STATEMENT_ROLLBACK",
+
+          flow: [
+            "BEGIN SERIALIZABLE",
+            "INSERT MEMORY",
+            "INSERT EVT",
+            "INSERT OPC",
+            "INSERT AUDIT",
+            "INSERT MODEL USAGE",
+            "VERIFY LINKS",
+            "CONTROLLED FAILURE",
+            "ROLLBACK",
+            "VERIFY ZERO RECORDS",
+          ],
         },
       ],
 
       warning:
-        "POST performs two billable real model calls and temporary database writes. GET performs neither.",
+        "GET non esegue il test. POST usa una connessione PostgreSQL persistente e scritture temporanee sui cinque ledger.",
 
       boundary: {
-        legalCertification: false,
-        technicalRuntimeTestOnly: true,
-        provider: PROVIDER,
-        api: "OPENAI_RESPONSES_API",
-        requestStore: false,
-        rawPromptPersisted: false,
-        rawOutputPersisted: false,
-        hashOnlyOperationalEvidence: true,
-        modelCallInsideDatabaseTransaction: false,
-        usesBeginCommitRollback: true,
-        isolationLevel: "SERIALIZABLE",
-        performsTwoRealModelCalls: true,
-        createsPersistentBusinessData: false,
+        legalCertification:
+          false,
+
+        technicalRuntimeTestOnly:
+          true,
+
+        usesPersistentPoolSession:
+          true,
+
+        usesBeginCommitRollback:
+          true,
+
+        isolationLevel:
+          "SERIALIZABLE",
+
+        rollbackScenarioUsesExplicitCleanup:
+          false,
+
+        performsRealModelCall:
+          false,
+
+        createsPersistentBusinessData:
+          false,
       },
     },
     {
-      status: 200,
+      status:
+        200,
 
       headers: {
-        "Cache-Control": "no-store",
+        "Cache-Control":
+          "no-store",
 
-        "X-HBCE-Real-Model-Transaction-Revision":
+        "X-HBCE-Multi-Statement-Test-Revision":
           REVISION,
 
-        "X-HBCE-Legal-Certification": "false",
+        "X-HBCE-Legal-Certification":
+          "false",
       },
     },
   );
