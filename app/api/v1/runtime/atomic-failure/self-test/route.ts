@@ -28,7 +28,7 @@ type Check = {
 type GenericRow = Record<string, unknown>;
 
 const REVISION =
-  "HBCE-RUNTIME-ATOMIC-FAILURE-INJECTION-SELF-TEST-v1_0";
+  "HBCE-RUNTIME-ATOMIC-FAILURE-INJECTION-SELF-TEST-v1_1";
 
 const PRODUCT =
   "HBCE IPR Operational Identity & Proof Layer";
@@ -578,7 +578,6 @@ function atomicInsertSql(
         $33::jsonb,
         $34::jsonb,
         $35::jsonb,
-        $36::jsonb,
         $36::jsonb,
         false
       FROM evt_insert
