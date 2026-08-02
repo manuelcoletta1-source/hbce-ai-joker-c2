@@ -80,10 +80,11 @@ type OpenAIResponseBody = {
   output?: unknown;
   usage?: unknown;
   error?: unknown;
+  incomplete_details?: unknown;
 };
 
 const REVISION =
-  "HBCE-RUNTIME-GOVERNED-REAL-MODEL-TRANSACTION-SELF-TEST-v1_0";
+  "HBCE-RUNTIME-GOVERNED-REAL-MODEL-TRANSACTION-SELF-TEST-v1_1";
 
 const PRODUCT =
   "HBCE IPR Operational Identity & Proof Layer";
@@ -424,7 +425,9 @@ async function executeRealModel(
           model,
           input: prompt,
           store: false,
-          max_output_tokens: 32,
+          reasoning: { effort: "minimal" },
+          text: { verbosity: "low" },
+          max_output_tokens: 256,
         }),
 
         signal: controller.signal,
@@ -452,6 +455,24 @@ async function executeRealModel(
 
     if (!responseId) {
       throw new Error("OPENAI_RESPONSE_ID_MISSING");
+    }
+
+    const providerStatus = asString(body.status);
+
+    if (providerStatus && providerStatus !== "completed") {
+      throw new Error(
+        `OPENAI_RESPONSE_NOT_COMPLETED:${providerStatus}:${sha256(
+          stableJson(body.incomplete_details ?? null),
+        )}`,
+      );
+    }
+
+    if (outputText.length === 0) {
+      throw new Error(
+        `OPENAI_OUTPUT_EMPTY:${providerStatus ?? "unknown"}:${sha256(
+          stableJson(body.output ?? null),
+        )}`,
+      );
     }
 
     if (outputText !== expectedOutput) {
