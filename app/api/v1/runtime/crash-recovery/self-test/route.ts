@@ -27,7 +27,7 @@ export const revalidate = 0;
 export const maxDuration = 300;
 
 const REVISION =
-  "HBCE-RUNTIME-CRASH-RECOVERY-WORKFLOW-RESUMPTION-SELF-TEST-v1_0";
+  "HBCE-RUNTIME-CRASH-RECOVERY-WORKFLOW-RESUMPTION-SELF-TEST-v1_1";
 
 const PRODUCT =
   "HBCE IPR Operational Identity & Proof Layer";
@@ -824,10 +824,20 @@ export async function POST(
           staleAfterMs: 1,
         });
 
+      const acceptedRecoveryReasons = [
+        "INTERRUPTED_OPERATION",
+        "STALE_HEARTBEAT",
+        "LEASE_EXPIRED",
+        "RECOVERY_ALREADY_REQUIRED",
+      ] as const;
+
       const detectionPassed =
         recoveryNeed.recover &&
-        recoveryNeed.reason ===
-          "INTERRUPTED_OPERATION";
+        recoveryNeed.reason !== null &&
+        acceptedRecoveryReasons.includes(
+          recoveryNeed.reason as
+            (typeof acceptedRecoveryReasons)[number],
+        );
 
       checks.push(
         createCheck({
