@@ -582,10 +582,10 @@ async function persistTransition(
           checkpoint = $3,
           recovery_status = $4,
 
-          lease_owner = $5,
-          lease_token = $6,
+          lease_owner = $5::text,
+          lease_token = $6::text,
           lease_acquired_at = CASE
-            WHEN $5 IS NULL THEN NULL
+            WHEN $5::text IS NULL THEN NULL
             ELSE COALESCE(lease_acquired_at, $7::timestamptz)
           END,
           lease_expires_at = $8::timestamptz,
