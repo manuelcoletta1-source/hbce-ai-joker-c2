@@ -247,7 +247,7 @@ function toDatabaseParameters(
       }
 
       if (Buffer.isBuffer(value)) {
-        return value;
+        return value.toString("base64");
       }
 
       return JSON.stringify(value);
