@@ -224,21 +224,35 @@ function requireIsoTimestamp(
 function toDatabaseParameters(
   values: unknown[],
 ): HbceDatabaseQueryValue[] {
-  return values.map((value) => {
-    if (
-      value === null ||
-      typeof value === "string" ||
-      typeof value === "number" ||
-      typeof value === "boolean" ||
-      typeof value === "bigint" ||
-      value instanceof Date ||
-      Buffer.isBuffer(value)
-    ) {
-      return value;
-    }
+  return values.map(
+    (value): HbceDatabaseQueryValue => {
+      if (value === null) {
+        return null;
+      }
 
-    return JSON.stringify(value);
-  });
+      if (
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean"
+      ) {
+        return value;
+      }
+
+      if (typeof value === "bigint") {
+        return value.toString();
+      }
+
+      if (value instanceof Date) {
+        return value;
+      }
+
+      if (Buffer.isBuffer(value)) {
+        return value;
+      }
+
+      return JSON.stringify(value);
+    },
+  );
 }
 
 function mapRuntimeOperationRow(
