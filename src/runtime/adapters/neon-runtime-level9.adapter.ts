@@ -142,6 +142,11 @@ interface TableRow {
 
 const LEASE_DURATION_MS = 60_000;
 
+const HBCE_LEVEL_9_HUMAN_IPR = "IPR-3";
+const HBCE_LEVEL_9_RUNTIME_IPR = "IPR-AI-0001";
+const HBCE_LEVEL_9_WORKFLOW_KIND =
+  "HBCE_RUNTIME_LEVEL_9_EXTERNAL_EFFECT_IDEMPOTENCY_SELF_TEST";
+
 function asDate(value: Date | string): Date {
   return value instanceof Date ? value : new Date(value);
 }
@@ -374,9 +379,16 @@ export class NeonRuntimeLevel9Adapter
     maxAttempts: number;
     legalCertification: false;
   }): Promise<RuntimeLevel9OperationRecord> {
+    const sessionId =
+      `HBCE-L9-SESSION-${input.operationId}`;
+
     const statePayload = {
       operationId: input.operationId,
       idempotencyKey: input.idempotencyKey,
+      humanIpr: HBCE_LEVEL_9_HUMAN_IPR,
+      runtimeIpr: HBCE_LEVEL_9_RUNTIME_IPR,
+      sessionId,
+      workflowKind: HBCE_LEVEL_9_WORKFLOW_KIND,
       operationStatus: "NEW",
       checkpoint: "NEW",
       recoveryStatus: "NOT_REQUIRED",
@@ -386,11 +398,17 @@ export class NeonRuntimeLevel9Adapter
       legalCertification: false,
     };
 
-    const stateHash = sha256(canonicalize(statePayload));
+    const stateHash = sha256(
+      canonicalize(statePayload),
+    );
+
     const chainHash = sha256(
       canonicalize({
         previousChainHash: "GENESIS",
         stateHash,
+        operationId: input.operationId,
+        humanIpr: HBCE_LEVEL_9_HUMAN_IPR,
+        runtimeIpr: HBCE_LEVEL_9_RUNTIME_IPR,
       }),
     );
 
@@ -399,6 +417,10 @@ export class NeonRuntimeLevel9Adapter
         INSERT INTO runtime_operations (
           operation_id,
           idempotency_key,
+          human_ipr,
+          runtime_ipr,
+          session_id,
+          workflow_kind,
           operation_status,
           checkpoint,
           recovery_status,
@@ -407,19 +429,31 @@ export class NeonRuntimeLevel9Adapter
           max_attempts,
           state_hash,
           chain_hash,
+          state_payload,
+          checkpoint_payload,
+          recovery_payload,
+          trace_payload,
           legal_certification
         )
         VALUES (
           $1,
           $2,
+          $3,
+          $4,
+          $5,
+          $6,
           'NEW',
           'NEW',
           'NOT_REQUIRED',
           0,
           0,
-          $3,
-          $4,
-          $5,
+          $7,
+          $8,
+          $9,
+          $10::jsonb,
+          '{}'::jsonb,
+          '{}'::jsonb,
+          $11::jsonb,
           FALSE
         )
         RETURNING *
@@ -427,14 +461,29 @@ export class NeonRuntimeLevel9Adapter
       [
         input.operationId,
         input.idempotencyKey,
+        HBCE_LEVEL_9_HUMAN_IPR,
+        HBCE_LEVEL_9_RUNTIME_IPR,
+        sessionId,
+        HBCE_LEVEL_9_WORKFLOW_KIND,
         input.maxAttempts,
         stateHash,
         chainHash,
+        JSON.stringify(statePayload),
+        JSON.stringify({
+          artifact:
+            "HBCE-RUNTIME-EXTERNAL-EFFECT-IDEMPOTENCY-SELF-TEST-v1_0",
+          level: "HBCE_RUNTIME_LEVEL_9",
+          technicalRuntimeTestOnly: true,
+          legalCertification: false,
+        }),
       ],
     );
 
     return mapOperation(
-      requireSingleRow(result, "DURABLE_OPERATION_CREATE_FAILED"),
+      requireSingleRow(
+        result,
+        "DURABLE_OPERATION_CREATE_FAILED",
+      ),
     );
   }
 
