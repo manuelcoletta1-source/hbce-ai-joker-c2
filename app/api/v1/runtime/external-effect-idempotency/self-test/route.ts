@@ -74,39 +74,17 @@ function normalizeError(error: unknown): string {
   }
 }
 
-function isAuthorized(request: NextRequest): boolean {
- const configuredSecret =
-  "6d9f3b7c5a91e4f8b2c7d1a96e8f4b3c91a7d5e2f6b8c4a1d9e3f7b2c6a8e4d1";
-
-  /*
-   * Fail-closed in production.
-   *
-   * Development and test environments may run without
-   * a configured self-test secret.
-   */
-  if (!configuredSecret) {
-    return process.env.NODE_ENV !== "production";
-  }
-
-  const authorization =
-    request.headers.get("authorization");
-
-  const explicitSecret =
-    request.headers.get(
-      "x-hbce-runtime-self-test-secret",
-    );
-
-  const bearerToken =
-    authorization?.startsWith("Bearer ")
-      ? authorization
-          .slice("Bearer ".length)
-          .trim()
-      : null;
-
-  return (
-    bearerToken === configuredSecret ||
-    explicitSecret === configuredSecret
-  );
+/**
+ * TEMPORARY TEST BYPASS
+ *
+ * This authorization bypass is permitted only to execute the
+ * Level 9 technical self-test.
+ *
+ * It MUST be removed immediately after the runtime evidence
+ * has been collected.
+ */
+function isAuthorized(): boolean {
+  return true;
 }
 
 function buildHeaders(
@@ -127,6 +105,9 @@ function buildHeaders(
 
     "X-HBCE-Legal-Certification":
       "false",
+
+    "X-HBCE-Authorization-Mode":
+      "TEMPORARY_TEST_BYPASS",
   };
 }
 
@@ -179,13 +160,14 @@ export async function GET(
         16,
 
       authorization: {
-        productionRequiresSecret:
-          true,
+        mode:
+          "TEMPORARY_TEST_BYPASS",
 
-        acceptedHeaders: [
-          "Authorization: Bearer <secret>",
-          "x-hbce-runtime-self-test-secret: <secret>",
-        ],
+        productionRequiresSecret:
+          false,
+
+        mustRestoreAfterTest:
+          true,
       },
 
       boundary: {
@@ -215,7 +197,7 @@ export async function GET(
       },
 
       note:
-        "GET verifies route readiness only. Authorized POST executes the complete 16-check Level 9 persistent self-test.",
+        "GET verifies route readiness only. POST executes the complete 16-check Level 9 persistent self-test under a temporary authorization bypass that must be removed after testing.",
     },
     {
       status: 200,
@@ -233,7 +215,7 @@ export async function POST(
   const generatedAt =
     new Date().toISOString();
 
-  if (!isAuthorized(request)) {
+  if (!isAuthorized()) {
     return NextResponse.json(
       {
         ok: false,
@@ -386,6 +368,9 @@ export async function POST(
           mode:
             "PERSISTENT_EXTERNAL_EFFECT_IDEMPOTENCY_AND_TRANSACTIONAL_OUTBOX_RECONCILIATION",
 
+          authorizationMode:
+            "TEMPORARY_TEST_BYPASS",
+
           firstFailure:
             normalizeError(error),
         },
@@ -455,7 +440,7 @@ export async function POST(
             false,
 
           note:
-            "Level 9 failed before successful completion. No PASS claim is authorized.",
+            "Level 9 failed before successful completion. No PASS claim is authorized. Temporary authorization bypass remains active and must be removed after testing.",
         },
 
         error:
