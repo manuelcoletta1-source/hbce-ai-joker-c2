@@ -543,6 +543,17 @@ export class NeonRuntimeLevel9Adapter
     incrementAttempt?: boolean;
     completedAt?: Date | null;
   }): Promise<RuntimeLevel9OperationRecord> {
+    const requestedOperationStatus = String(input.operationStatus);
+
+    const persistedOperationStatus =
+      (
+        requestedOperationStatus === "LEDGER_COMPLETED" ||
+        requestedOperationStatus === "OPC_PENDING" ||
+        requestedOperationStatus === "OPC_COMPLETED"
+      )
+        ? ("LEDGER_COMMITTED" as RuntimeLevel9OperationStatus)
+        : input.operationStatus;
+
     const current = await this.findOperation(input.operationId);
 
     if (!current) {
@@ -561,7 +572,8 @@ export class NeonRuntimeLevel9Adapter
 
     const statePayload = {
       operationId: current.operationId,
-      operationStatus: input.operationStatus,
+      operationStatus: persistedOperationStatus,
+      requestedOperationStatus,
       checkpoint: input.checkpoint,
       recoveryStatus: nextRecoveryStatus,
       attemptCount: nextAttemptCount,
@@ -611,7 +623,7 @@ export class NeonRuntimeLevel9Adapter
       `,
       [
         input.operationId,
-        input.operationStatus,
+        persistedOperationStatus,
         input.checkpoint,
         nextRecoveryStatus,
         nextAttemptCount,
