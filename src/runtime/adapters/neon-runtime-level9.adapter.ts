@@ -596,6 +596,12 @@ export class NeonRuntimeLevel9Adapter
           attempt_count = $5,
           interruption_reason = $6,
           completion_reason = $7,
+          interrupted_at =
+            CASE
+              WHEN $2 IN ('INTERRUPTED', 'RECOVERY_REQUIRED')
+              THEN NOW()
+              ELSE interrupted_at
+            END,
           completed_at = $8,
           state_hash = $9,
           chain_hash = $10,
