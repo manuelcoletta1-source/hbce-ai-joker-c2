@@ -5,7 +5,7 @@
  * Canonical Module Definitions
  *
  * Revision:
- * AIJC2-OPERATIONAL-MODULE-DEFINITIONS-v1_0
+ * AIJC2-OPERATIONAL-MODULE-DEFINITIONS-v1_1
  *
  * Purpose:
  * - expose the canonical set of operational module definitions;
@@ -33,8 +33,13 @@ import {
   repositoryIntelligenceModule,
 } from "./mod-001-repository-intelligence";
 
+import {
+  MOD_002_REPOSITORY_SEMANTIC_INTELLIGENCE_ID,
+  repositorySemanticIntelligenceModule,
+} from "./mod-002-repository-semantic-intelligence";
+
 export const OPERATIONAL_MODULE_DEFINITIONS_REVISION =
-  "AIJC2-OPERATIONAL-MODULE-DEFINITIONS-v1_0" as const;
+  "AIJC2-OPERATIONAL-MODULE-DEFINITIONS-v1_1" as const;
 
 /**
  * Canonical deterministic module list.
@@ -47,6 +52,7 @@ export const operationalModuleDefinitions:
   readonly OperationalModuleDefinition[] =
   Object.freeze([
     repositoryIntelligenceModule,
+    repositorySemanticIntelligenceModule,
   ]);
 
 /**
@@ -188,6 +194,9 @@ export function getOperationalModuleDefinitionSummary():
 export {
   MOD_001_REPOSITORY_INTELLIGENCE_ID,
   repositoryIntelligenceModule,
+
+  MOD_002_REPOSITORY_SEMANTIC_INTELLIGENCE_ID,
+  repositorySemanticIntelligenceModule,
 };
 
 export const OPERATIONAL_MODULE_DEFINITIONS_BOUNDARY =
