@@ -1141,6 +1141,21 @@ export function analyseRepositorySnapshot(
   snapshot: Mod001RepositorySnapshot,
 ): Mod001RepositoryAnalysisResult {
   validateSnapshot(snapshot);
+  const repositoryScan = scanRepository({
+    repositoryId: snapshot.repositoryId,
+    repositoryName: snapshot.repositoryName,
+    branch: snapshot.branch ?? "UNKNOWN",
+    commitSha: snapshot.commitSha ?? "UNKNOWN",
+    files: snapshot.files.map((file) => ({
+      path: file.path,
+      extension: "",
+      directory: "",
+      sizeBytes: file.sizeBytes ?? 0,
+      inspected: file.inspected,
+      hash: file.hash ?? undefined,
+    })),
+  });
+
 
   const posture =
     calculateRepositoryPosture(snapshot);
@@ -1158,7 +1173,16 @@ export function analyseRepositorySnapshot(
   const nextMutation =
     selectAtomicMutation(
       snapshot,
-      posture,
+      repositoryScanSummary: Object.freeze({
+      totalFiles: repositoryScan.statistics.totalFiles,
+      directories: repositoryScan.statistics.directories,
+      sourceFiles: repositoryScan.statistics.sourceFiles,
+      moduleFiles: repositoryScan.statistics.moduleFiles,
+      runtimeFiles: repositoryScan.statistics.runtimeFiles,
+      testFiles: repositoryScan.statistics.testFiles,
+    }),
+
+    posture,
       findings,
     );
 
@@ -1216,6 +1240,15 @@ export function analyseRepositorySnapshot(
         normalizeOptionalString(
           snapshot.objective,
         ),
+    }),
+
+    repositoryScanSummary: Object.freeze({
+      totalFiles: repositoryScan.statistics.totalFiles,
+      directories: repositoryScan.statistics.directories,
+      sourceFiles: repositoryScan.statistics.sourceFiles,
+      moduleFiles: repositoryScan.statistics.moduleFiles,
+      runtimeFiles: repositoryScan.statistics.runtimeFiles,
+      testFiles: repositoryScan.statistics.testFiles,
     }),
 
     posture,
