@@ -28,6 +28,8 @@
  * legalCertification=false
  */
 
+import { scanRepository } from "./repository-scanner";
+
 export const MOD_001_ENGINE_REVISION =
   "AIJC2-MOD-001-REPOSITORY-INTELLIGENCE-ENGINE-v1_0" as const;
 
@@ -263,6 +265,15 @@ export interface Mod001RepositoryAnalysisResult {
   objective: {
     supplied: boolean;
     value: string | null;
+  };
+
+  repositoryScanSummary: {
+    totalFiles: number;
+    directories: number;
+    sourceFiles: number;
+    moduleFiles: number;
+    runtimeFiles: number;
+    testFiles: number;
   };
 
   posture: Mod001RepositoryPosture;
@@ -1173,16 +1184,7 @@ export function analyseRepositorySnapshot(
   const nextMutation =
     selectAtomicMutation(
       snapshot,
-      repositoryScanSummary: Object.freeze({
-      totalFiles: repositoryScan.statistics.totalFiles,
-      directories: repositoryScan.statistics.directories,
-      sourceFiles: repositoryScan.statistics.sourceFiles,
-      moduleFiles: repositoryScan.statistics.moduleFiles,
-      runtimeFiles: repositoryScan.statistics.runtimeFiles,
-      testFiles: repositoryScan.statistics.testFiles,
-    }),
-
-    posture,
+      posture,
       findings,
     );
 
