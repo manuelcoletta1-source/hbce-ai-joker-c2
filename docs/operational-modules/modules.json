@@ -1,0 +1,77 @@
+{
+  "version": "1.0.0",
+  "product": "AI_JOKER_C2_SAAS_CORE_v0_1",
+  "library": "Operational Module Library",
+  "legalCertification": false,
+  "modules": [
+    {
+      "id": "MOD-001",
+      "name": "Repository Intelligence",
+      "version": "1.0.0",
+      "status": "ACTIVE",
+      "category": "CORE_ENGINEERING",
+      "entry": "docs/operational-modules/MOD-001-repository-intelligence.md",
+      "executionModel": "docs/operational-modules/MODULE_EXECUTION_MODEL.md",
+      "description": "Analisi, comprensione ed evoluzione controllata di repository software.",
+      "evt": "EVT-AIJC2-MOD-001-REPOSITORY-INTELLIGENCE-v1_0",
+      "unebdo": "UNEBDO-AIJC2-UPGRADE-MOD-001-v1_0",
+      "opc": "OPC-AIJC2-MOD-001-v1_0",
+      "matrix": true,
+      "enabled": true
+    },
+    {
+      "id": "MOD-002",
+      "name": "Document Intelligence",
+      "status": "PLANNED",
+      "enabled": false
+    },
+    {
+      "id": "MOD-003",
+      "name": "Source Intelligence",
+      "status": "PLANNED",
+      "enabled": false
+    },
+    {
+      "id": "MOD-004",
+      "name": "API Intelligence",
+      "status": "PLANNED",
+      "enabled": false
+    },
+    {
+      "id": "MOD-005",
+      "name": "Architecture Intelligence",
+      "status": "PLANNED",
+      "enabled": false
+    },
+    {
+      "id": "MOD-006",
+      "name": "IPR Intelligence",
+      "status": "PLANNED",
+      "enabled": false
+    },
+    {
+      "id": "MOD-007",
+      "name": "EVT Intelligence",
+      "status": "PLANNED",
+      "enabled": false
+    },
+    {
+      "id": "MOD-008",
+      "name": "UNEBDO Intelligence",
+      "status": "PLANNED",
+      "enabled": false
+    },
+    {
+      "id": "MOD-009",
+      "name": "OPC Intelligence",
+      "status": "PLANNED",
+      "enabled": false
+    },
+    {
+      "id": "MOD-010",
+      "name": "MATRIX Intelligence",
+      "status": "PLANNED",
+      "enabled": false
+    }
+  ]
+}
