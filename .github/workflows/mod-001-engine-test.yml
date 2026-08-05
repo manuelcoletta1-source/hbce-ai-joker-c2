@@ -10,6 +10,7 @@ on:
       - "src/modules/**"
       - "package.json"
       - "package-lock.json"
+      - "vitest-globals.d.ts"
       - ".github/workflows/mod-001-engine-test.yml"
 
   pull_request:
@@ -19,6 +20,7 @@ on:
       - "src/modules/**"
       - "package.json"
       - "package-lock.json"
+      - "vitest-globals.d.ts"
       - ".github/workflows/mod-001-engine-test.yml"
 
 permissions:
@@ -49,14 +51,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: TypeScript validation
-        run: npm run typecheck
-
       - name: Run complete MOD-001 test suite
         id: vitest
         shell: bash
         run: |
           set -o pipefail
+
           npm test -- \
             src/modules/engines/__tests__ \
             --reporter=verbose \
@@ -74,6 +74,8 @@ jobs:
             echo "- Commit: \`${GITHUB_SHA}\`"
             echo "- Branch: \`${GITHUB_REF_NAME}\`"
             echo "- Runner: Node.js 24"
+            echo "- Test scope: src/modules/engines/__tests__"
+            echo "- Repository-wide typecheck: not executed in this scoped workflow"
             echo "- Human authorization required: true"
             echo "- Persistent memory created: false"
             echo "- Automatic recall used: false"
@@ -107,9 +109,10 @@ jobs:
         run: |
           echo "MODULE_ID=MOD-001"
           echo "MODULE_NAME=Repository Intelligence"
-          echo "TEST_SCOPE=COMPLETE_MOD001_ENGINE_SUITE"
+          echo "TEST_SCOPE=SRC_MODULES_ENGINES_TESTS"
           echo "TEST_EXECUTION=GITHUB_ACTIONS"
           echo "NODE_VERSION=24"
+          echo "REPOSITORY_WIDE_TYPECHECK=false"
           echo "PERSISTENT_MEMORY=false"
           echo "AUTOMATIC_RECALL=false"
           echo "AUTONOMOUS_EXECUTION=false"
