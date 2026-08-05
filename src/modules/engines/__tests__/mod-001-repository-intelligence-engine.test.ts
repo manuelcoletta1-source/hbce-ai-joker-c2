@@ -1,3 +1,23 @@
+/**
+ * HERMETICUM B.C.E. S.r.l.
+ *
+ * AI JOKER-C2
+ * MOD-001 Repository Intelligence Engine
+ *
+ * Deterministic Tests
+ *
+ * Revision:
+ * AIJC2-MOD001-REPOSITORY-INTELLIGENCE-ENGINE-TEST-v1_1
+ *
+ * legalCertification=false
+ */
+
+import {
+  describe,
+  expect,
+  test,
+} from "vitest";
+
 import {
   analyseRepositorySnapshot,
   MOD_001_ENGINE_MODULE_ID,
@@ -38,14 +58,15 @@ function createBaseSnapshot(
         "Node.js",
       ],
 
-      databases: [],
+      databases:
+        [],
 
       packageManagers: [
         "npm",
       ],
 
       testFrameworks: [
-        "Jest",
+        "Vitest",
       ],
 
       deploymentTargets: [
@@ -117,7 +138,7 @@ function createBaseSnapshot(
 
     tests: {
       command:
-        "npm test -- mod-001-repository-intelligence-engine.test.ts",
+        "npm run test:mod001",
 
       executed:
         true,
@@ -417,10 +438,9 @@ describe(
                   imports:
                     [],
 
-                  exports:
-                    [
-                      "analyseRepositorySnapshot",
-                    ],
+                  exports: [
+                    "analyseRepositorySnapshot",
+                  ],
 
                   inspected:
                     true,
@@ -442,10 +462,9 @@ describe(
                   summary:
                     "Engine tests.",
 
-                  imports:
-                    [
-                      "../mod-001-repository-intelligence-engine",
-                    ],
+                  imports: [
+                    "../mod-001-repository-intelligence-engine",
+                  ],
 
                   exports:
                     [],
@@ -619,7 +638,7 @@ describe(
     );
 
     test(
-      "detects duplicate paths in the supplied repository snapshot",
+      "rejects duplicate paths through the canonical repository scanner",
       () => {
         const repeatedFile = {
           path:
@@ -640,32 +659,27 @@ describe(
           imports:
             [],
 
-          exports:
-            [
-              "analyseRepositorySnapshot",
-            ],
+          exports: [
+            "analyseRepositorySnapshot",
+          ],
 
           inspected:
             true,
         };
 
-        const result =
-          analyseRepositorySnapshot(
-            createBaseSnapshot({
-              files: [
-                repeatedFile,
-                repeatedFile,
-              ],
-            }),
-          );
-
         expect(
-          result.findings.some(
-            (finding) =>
-              finding.findingId ===
-              "MOD001-FINDING-DUPLICATE-PATHS",
-          ),
-        ).toBe(true);
+          () =>
+            analyseRepositorySnapshot(
+              createBaseSnapshot({
+                files: [
+                  repeatedFile,
+                  repeatedFile,
+                ],
+              }),
+            ),
+        ).toThrow(
+          "Duplicate repository file path: src/modules/engines/mod-001-repository-intelligence-engine.ts",
+        );
       },
     );
 
