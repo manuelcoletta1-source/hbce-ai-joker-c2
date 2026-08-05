@@ -7,15 +7,16 @@
  * Semantic Intelligence Orchestrator
  *
  * Revision:
- * AIJC2-MOD002-REPOSITORY-SEMANTIC-INTELLIGENCE-ORCHESTRATOR-v1_1
+ * AIJC2-MOD002-REPOSITORY-SEMANTIC-INTELLIGENCE-ORCHESTRATOR-v1_2
  *
  * Purpose:
  * - coordinate the deterministic MOD-002 semantic pipeline;
  * - execute the semantic classifier;
  * - build semantic relations;
  * - derive repository capabilities;
- * - enrich components and domains with relation and capability identifiers;
- * - rebuild the semantic summary and MATRIX interpretation;
+ * - derive semantic findings;
+ * - enrich components and domains;
+ * - rebuild semantic summary and MATRIX interpretation;
  * - preserve epistemic, governance and human-authorization boundaries.
  *
  * Current pipeline:
@@ -23,6 +24,7 @@
  *   -> Semantic Classifier
  *   -> Semantic Relation Engine
  *   -> Repository Capability Engine
+ *   -> Repository Finding Engine
  *   -> Semantic Output Enrichment
  *
  * Explicit exclusions:
@@ -56,19 +58,26 @@ import {
 } from "./repository-capability-engine";
 
 import {
+  buildRepositoryFindings,
+  REPOSITORY_FINDING_ENGINE_REVISION,
+} from "./repository-finding-engine";
+
+import {
   normalizeRepositorySemanticConfidence,
   type RepositorySemanticCapability,
   type RepositorySemanticComponent,
   type RepositorySemanticDomainMap,
+  type RepositorySemanticFinding,
   type RepositorySemanticInput,
   type RepositorySemanticMatrixInterpretation,
   type RepositorySemanticOutput,
+  type RepositorySemanticRecommendation,
   type RepositorySemanticRelation,
   type RepositorySemanticSummary,
 } from "./repository-semantic-intelligence.types";
 
 export const REPOSITORY_SEMANTIC_INTELLIGENCE_ORCHESTRATOR_REVISION =
-  "AIJC2-MOD002-REPOSITORY-SEMANTIC-INTELLIGENCE-ORCHESTRATOR-v1_1" as const;
+  "AIJC2-MOD002-REPOSITORY-SEMANTIC-INTELLIGENCE-ORCHESTRATOR-v1_2" as const;
 
 export interface RepositorySemanticOrchestratorOutput
   extends RepositorySemanticOutput {
@@ -85,17 +94,21 @@ export interface RepositorySemanticOrchestratorOutput
     capabilityEngineRevision:
       typeof REPOSITORY_CAPABILITY_ENGINE_REVISION;
 
+    findingEngineRevision:
+      typeof REPOSITORY_FINDING_ENGINE_REVISION;
+
     stages: readonly [
       "SEMANTIC_CLASSIFICATION",
       "SEMANTIC_RELATION_CONSTRUCTION",
       "CAPABILITY_CLASSIFICATION",
+      "SEMANTIC_FINDING_CONSTRUCTION",
       "SEMANTIC_OUTPUT_ENRICHMENT",
     ];
 
-    completedStages: 4;
+    completedStages: 5;
 
     capabilityEngineExecuted: true;
-    findingEngineExecuted: false;
+    findingEngineExecuted: true;
     recommendationEngineExecuted: false;
 
     deterministic: true;
@@ -227,6 +240,8 @@ function enrichDomains(
     readonly RepositorySemanticRelation[],
   capabilities:
     readonly RepositorySemanticCapability[],
+  findings:
+    readonly RepositorySemanticFinding[],
 ): readonly RepositorySemanticDomainMap[] {
   const componentById =
     new Map(
@@ -241,7 +256,7 @@ function enrichDomains(
   return Object.freeze(
     domains.map(
       (domain) => {
-        const domainRelationIds =
+        const relationIds =
           relations
             .filter(
               (relation) => {
@@ -268,7 +283,7 @@ function enrichDomains(
                 relation.relationId,
             );
 
-        const domainCapabilityIds =
+        const capabilityIds =
           capabilities
             .filter(
               (capability) =>
@@ -280,6 +295,18 @@ function enrichDomains(
                 capability.capabilityId,
             );
 
+        const findingIds =
+          findings
+            .filter(
+              (finding) =>
+                finding.domain ===
+                domain.name,
+            )
+            .map(
+              (finding) =>
+                finding.findingId,
+            );
+
         return Object.freeze({
           ...domain,
 
@@ -287,7 +314,7 @@ function enrichDomains(
             Object.freeze(
               [
                 ...new Set(
-                  domainRelationIds,
+                  relationIds,
                 ),
               ].sort(),
             ),
@@ -296,7 +323,16 @@ function enrichDomains(
             Object.freeze(
               [
                 ...new Set(
-                  domainCapabilityIds,
+                  capabilityIds,
+                ),
+              ].sort(),
+            ),
+
+          findingIds:
+            Object.freeze(
+              [
+                ...new Set(
+                  findingIds,
                 ),
               ].sort(),
             ),
@@ -359,6 +395,8 @@ function rebuildSummary(
     readonly RepositorySemanticRelation[],
   capabilities:
     readonly RepositorySemanticCapability[],
+  findings:
+    readonly RepositorySemanticFinding[],
 ): RepositorySemanticSummary {
   return Object.freeze({
     ...previous,
@@ -375,6 +413,9 @@ function rebuildSummary(
     totalRelations:
       relations.length,
 
+    totalFindings:
+      findings.length,
+
     classifiedComponents:
       components.filter(
         (component) =>
@@ -383,10 +424,10 @@ function rebuildSummary(
       ).length,
 
     orphanedComponents:
-      components.filter(
-        (component) =>
-          component.status ===
-          "ORPHANED",
+      findings.filter(
+        (finding) =>
+          finding.title ===
+          "Component has no observed semantic relations",
       ).length,
 
     ambiguousComponents:
@@ -407,6 +448,80 @@ function rebuildSummary(
   });
 }
 
+function selectRecommendation(
+  findings:
+    readonly RepositorySemanticFinding[],
+): RepositorySemanticRecommendation | null {
+  const severityWeight = {
+    CRITICAL:
+      1,
+
+    HIGH:
+      2,
+
+    MEDIUM:
+      3,
+
+    LOW:
+      4,
+
+    INFO:
+      5,
+  } as const;
+
+  const selected =
+    [...findings].sort(
+      (
+        left,
+        right,
+      ) =>
+        severityWeight[
+          left.severity
+        ] -
+          severityWeight[
+            right.severity
+          ] ||
+        left.findingId.localeCompare(
+          right.findingId,
+        ),
+    )[0];
+
+  if (!selected) {
+    return null;
+  }
+
+  return Object.freeze({
+    recommendationId:
+      "SEM-RECOMMENDATION-001",
+
+    priority:
+      1,
+
+    title:
+      selected.title,
+
+    description:
+      selected.recommendation ??
+      selected.description,
+
+    targetComponentIds:
+      Object.freeze([
+        ...selected.componentIds,
+      ]),
+
+    sourceFindingIds:
+      Object.freeze([
+        selected.findingId,
+      ]),
+
+    executableAutomatically:
+      false,
+
+    humanAuthorizationRequired:
+      true,
+  });
+}
+
 function rebuildMatrixInterpretation(
   previous:
     RepositorySemanticMatrixInterpretation,
@@ -416,6 +531,10 @@ function rebuildMatrixInterpretation(
     readonly RepositorySemanticRelation[],
   capabilities:
     readonly RepositorySemanticCapability[],
+  findings:
+    readonly RepositorySemanticFinding[],
+  recommendation:
+    RepositorySemanticRecommendation | null,
 ): RepositorySemanticMatrixInterpretation {
   const relatedComponentIds =
     new Set<string>();
@@ -501,11 +620,38 @@ function rebuildMatrixInterpretation(
         .sort(),
     );
 
+  const ambiguousDomains =
+    Object.freeze(
+      [
+        ...new Set(
+          components
+            .filter(
+              (component) =>
+                component.status ===
+                  "AMBIGUOUS" ||
+                component.status ===
+                  "NOT_VERIFIABLE",
+            )
+            .map(
+              (component) =>
+                component.domain,
+            ),
+        ),
+      ].sort(),
+    );
+
   let nextPriority =
+    recommendation?.title ??
     previous.nextPriority;
 
   if (!nextPriority) {
     if (
+      findings.length > 0
+    ) {
+      nextPriority =
+        findings[0]?.title ??
+        null;
+    } else if (
       capabilities.length === 0
     ) {
       nextPriority =
@@ -537,6 +683,8 @@ function rebuildMatrixInterpretation(
     declaredCapabilities,
 
     isolatedCapabilities,
+
+    ambiguousDomains,
 
     nextPriority,
   });
@@ -593,14 +741,16 @@ function validateClassifierOutput(
 /**
  * Executes the currently implemented MOD-002 semantic pipeline.
  *
- * Version v1.1 coordinates:
+ * Version v1.2 coordinates:
  * 1. deterministic semantic classification;
  * 2. deterministic semantic relation construction;
  * 3. deterministic repository capability classification;
- * 4. semantic output enrichment.
+ * 4. deterministic semantic finding construction;
+ * 5. semantic output enrichment.
  *
- * Dedicated finding and recommendation engines remain explicitly
- * unavailable until their implementations and tests exist.
+ * A dedicated recommendation engine remains explicitly unavailable.
+ * The orchestrator selects at most one temporary recommendation from
+ * the ordered findings until that engine is implemented and tested.
  */
 export function executeRepositorySemanticIntelligence(
   input:
@@ -642,12 +792,32 @@ export function executeRepositorySemanticIntelligence(
       capabilities,
     );
 
+  const findingEngine =
+    buildRepositoryFindings({
+      components,
+
+      capabilities,
+
+      relations,
+    });
+
+  const findings =
+    findingEngine.findings;
+
+  const recommendation =
+    input.humanAuthorization
+      ? selectRecommendation(
+          findings,
+        )
+      : null;
+
   const domains =
     enrichDomains(
       classified.domains,
       components,
       relations,
       capabilities,
+      findings,
     );
 
   const summary =
@@ -657,6 +827,7 @@ export function executeRepositorySemanticIntelligence(
       domains,
       relations,
       capabilities,
+      findings,
     );
 
   const matrixInterpretation =
@@ -665,10 +836,12 @@ export function executeRepositorySemanticIntelligence(
       components,
       relations,
       capabilities,
+      findings,
+      recommendation,
     );
 
   const hasBlockingFinding =
-    classified.findings.some(
+    findings.some(
       (finding) =>
         finding.severity ===
           "CRITICAL" ||
@@ -701,6 +874,10 @@ export function executeRepositorySemanticIntelligence(
     capabilities,
 
     relations,
+
+    findings,
+
+    recommendation,
 
     matrixInterpretation,
 
@@ -759,22 +936,26 @@ export function executeRepositorySemanticIntelligence(
         capabilityEngineRevision:
           REPOSITORY_CAPABILITY_ENGINE_REVISION,
 
+        findingEngineRevision:
+          REPOSITORY_FINDING_ENGINE_REVISION,
+
         stages:
           Object.freeze([
             "SEMANTIC_CLASSIFICATION",
             "SEMANTIC_RELATION_CONSTRUCTION",
             "CAPABILITY_CLASSIFICATION",
+            "SEMANTIC_FINDING_CONSTRUCTION",
             "SEMANTIC_OUTPUT_ENRICHMENT",
           ] as const),
 
         completedStages:
-          4,
+          5,
 
         capabilityEngineExecuted:
           true,
 
         findingEngineExecuted:
-          false,
+          true,
 
         recommendationEngineExecuted:
           false,
@@ -806,10 +987,13 @@ export const REPOSITORY_SEMANTIC_INTELLIGENCE_ORCHESTRATOR_BOUNDARY =
       true,
 
     findingEngineIntegrated:
-      false,
+      true,
 
     recommendationEngineIntegrated:
       false,
+
+    temporarySingleRecommendationSelection:
+      true,
 
     explicitInputRequired:
       true,
