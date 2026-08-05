@@ -1,4 +1,4 @@
-name: MOD-001 Repository Intelligence Engine Test
+name: MOD-001 Repository Intelligence Tests
 
 on:
   workflow_dispatch:
@@ -9,6 +9,7 @@ on:
     paths:
       - "src/modules/**"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/mod-001-engine-test.yml"
 
   pull_request:
@@ -17,22 +18,23 @@ on:
     paths:
       - "src/modules/**"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/mod-001-engine-test.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: mod-001-engine-test-${{ github.ref }}
+  group: mod-001-tests-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  mod-001-engine-test:
-    name: Test MOD-001 Engine
+  mod-001-tests:
+    name: Test MOD-001 Complete Suite
 
     runs-on: ubuntu-latest
 
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -41,22 +43,76 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
 
       - name: Install dependencies
         run: npm install
 
-      - name: Run MOD-001 engine tests
-        run: npm run test:mod001
+      - name: TypeScript validation
+        run: npm run typecheck
 
-      - name: Record technical boundary
+      - name: Run complete MOD-001 test suite
+        id: vitest
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test -- \
+            src/modules/engines/__tests__ \
+            --reporter=verbose \
+            2>&1 | tee mod-001-vitest-output.log
+
+      - name: Publish test evidence summary
         if: always()
+        shell: bash
+        run: |
+          {
+            echo "# MOD-001 Repository Intelligence Test Evidence"
+            echo
+            echo "- Module: MOD-001"
+            echo "- Runtime: AI_JOKER_C2_SAAS_CORE_v0_1"
+            echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- Branch: \`${GITHUB_REF_NAME}\`"
+            echo "- Runner: Node.js 24"
+            echo "- Human authorization required: true"
+            echo "- Persistent memory created: false"
+            echo "- Automatic recall used: false"
+            echo "- Legal certification: false"
+            echo
+            echo "## Complete Vitest output"
+            echo
+            echo '```text'
+
+            if [ -f mod-001-vitest-output.log ]; then
+              cat mod-001-vitest-output.log
+            else
+              echo "Vitest output file was not generated."
+            fi
+
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Vitest diagnostic log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mod-001-vitest-diagnostic-${{ github.run_number }}
+          path: mod-001-vitest-output.log
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Record HBCE technical boundary
+        if: always()
+        shell: bash
         run: |
           echo "MODULE_ID=MOD-001"
-          echo "MODULE_NAME=Repository Intelligence Engine"
+          echo "MODULE_NAME=Repository Intelligence"
+          echo "TEST_SCOPE=COMPLETE_MOD001_ENGINE_SUITE"
           echo "TEST_EXECUTION=GITHUB_ACTIONS"
+          echo "NODE_VERSION=24"
           echo "PERSISTENT_MEMORY=false"
           echo "AUTOMATIC_RECALL=false"
+          echo "AUTONOMOUS_EXECUTION=false"
           echo "HUMAN_AUTHORIZATION_REQUIRED=true"
+          echo "OPC=TECHNICAL_PROOF_RECEIPT_ONLY"
           echo "LEGAL_CERTIFICATION=false"
