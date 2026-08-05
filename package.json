@@ -11,7 +11,10 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run build"
+    "test": "vitest run --globals",
+    "test:watch": "vitest --globals",
+    "test:mod001": "vitest run --globals src/modules/engines/__tests__/mod-001-repository-intelligence-engine.test.ts",
+    "check": "npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -26,6 +29,7 @@
   "devDependencies": {
     "@types/node": "^20.17.0",
     "@types/react": "^18.3.12",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.10"
   }
 }
