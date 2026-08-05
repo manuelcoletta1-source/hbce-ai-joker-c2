@@ -1,0 +1,62 @@
+name: MOD-001 Repository Intelligence Engine Test
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+    paths:
+      - "src/modules/**"
+      - "package.json"
+      - ".github/workflows/mod-001-engine-test.yml"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/modules/**"
+      - "package.json"
+      - ".github/workflows/mod-001-engine-test.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mod-001-engine-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mod-001-engine-test:
+    name: Test MOD-001 Engine
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run MOD-001 engine tests
+        run: npm run test:mod001
+
+      - name: Record technical boundary
+        if: always()
+        run: |
+          echo "MODULE_ID=MOD-001"
+          echo "MODULE_NAME=Repository Intelligence Engine"
+          echo "TEST_EXECUTION=GITHUB_ACTIONS"
+          echo "PERSISTENT_MEMORY=false"
+          echo "AUTOMATIC_RECALL=false"
+          echo "HUMAN_AUTHORIZATION_REQUIRED=true"
+          echo "LEGAL_CERTIFICATION=false"
