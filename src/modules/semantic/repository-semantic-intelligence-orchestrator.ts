@@ -7,21 +7,23 @@
  * Semantic Intelligence Orchestrator
  *
  * Revision:
- * AIJC2-MOD002-REPOSITORY-SEMANTIC-INTELLIGENCE-ORCHESTRATOR-v1_0
+ * AIJC2-MOD002-REPOSITORY-SEMANTIC-INTELLIGENCE-ORCHESTRATOR-v1_1
  *
  * Purpose:
  * - coordinate the deterministic MOD-002 semantic pipeline;
  * - execute the semantic classifier;
  * - build semantic relations;
- * - enrich components and domains with relation identifiers;
- * - rebuild the semantic summary;
+ * - derive repository capabilities;
+ * - enrich components and domains with relation and capability identifiers;
+ * - rebuild the semantic summary and MATRIX interpretation;
  * - preserve epistemic, governance and human-authorization boundaries.
  *
  * Current pipeline:
  * RepositorySemanticInput
  *   -> Semantic Classifier
  *   -> Semantic Relation Engine
- *   -> Relation-enriched Semantic Output
+ *   -> Repository Capability Engine
+ *   -> Semantic Output Enrichment
  *
  * Explicit exclusions:
  * - no filesystem access;
@@ -49,7 +51,13 @@ import {
 } from "./repository-semantic-relation-engine";
 
 import {
+  buildRepositoryCapabilities,
+  REPOSITORY_CAPABILITY_ENGINE_REVISION,
+} from "./repository-capability-engine";
+
+import {
   normalizeRepositorySemanticConfidence,
+  type RepositorySemanticCapability,
   type RepositorySemanticComponent,
   type RepositorySemanticDomainMap,
   type RepositorySemanticInput,
@@ -60,7 +68,7 @@ import {
 } from "./repository-semantic-intelligence.types";
 
 export const REPOSITORY_SEMANTIC_INTELLIGENCE_ORCHESTRATOR_REVISION =
-  "AIJC2-MOD002-REPOSITORY-SEMANTIC-INTELLIGENCE-ORCHESTRATOR-v1_0" as const;
+  "AIJC2-MOD002-REPOSITORY-SEMANTIC-INTELLIGENCE-ORCHESTRATOR-v1_1" as const;
 
 export interface RepositorySemanticOrchestratorOutput
   extends RepositorySemanticOutput {
@@ -74,15 +82,19 @@ export interface RepositorySemanticOrchestratorOutput
     relationEngineRevision:
       typeof REPOSITORY_SEMANTIC_RELATION_ENGINE_REVISION;
 
+    capabilityEngineRevision:
+      typeof REPOSITORY_CAPABILITY_ENGINE_REVISION;
+
     stages: readonly [
       "SEMANTIC_CLASSIFICATION",
       "SEMANTIC_RELATION_CONSTRUCTION",
+      "CAPABILITY_CLASSIFICATION",
       "SEMANTIC_OUTPUT_ENRICHMENT",
     ];
 
-    completedStages: 3;
+    completedStages: 4;
 
-    capabilityEngineExecuted: false;
+    capabilityEngineExecuted: true;
     findingEngineExecuted: false;
     recommendationEngineExecuted: false;
 
@@ -95,7 +107,10 @@ export interface RepositorySemanticOrchestratorOutput
 export class RepositorySemanticOrchestratorError extends Error {
   readonly code: string;
 
-  constructor(code: string, message: string) {
+  constructor(
+    code: string,
+    message: string,
+  ) {
     super(message);
 
     this.name =
@@ -106,13 +121,18 @@ export class RepositorySemanticOrchestratorError extends Error {
   }
 }
 
-function enrichComponentsWithRelations(
+function enrichComponents(
   components:
     readonly RepositorySemanticComponent[],
   relations:
     readonly RepositorySemanticRelation[],
+  capabilities:
+    readonly RepositorySemanticCapability[],
 ): readonly RepositorySemanticComponent[] {
   const relationIdsByComponent =
+    new Map<string, string[]>();
+
+  const capabilityIdsByComponent =
     new Map<string, string[]>();
 
   for (const relation of relations) {
@@ -145,6 +165,27 @@ function enrichComponentsWithRelations(
     );
   }
 
+  for (const capability of capabilities) {
+    for (
+      const componentId
+      of capability.componentIds
+    ) {
+      const current =
+        capabilityIdsByComponent.get(
+          componentId,
+        ) ?? [];
+
+      current.push(
+        capability.capabilityId,
+      );
+
+      capabilityIdsByComponent.set(
+        componentId,
+        current,
+      );
+    }
+  }
+
   return Object.freeze(
     components.map(
       (component) =>
@@ -161,18 +202,31 @@ function enrichComponentsWithRelations(
                 ),
               ].sort(),
             ),
+
+          capabilityIds:
+            Object.freeze(
+              [
+                ...new Set(
+                  capabilityIdsByComponent.get(
+                    component.componentId,
+                  ) ?? [],
+                ),
+              ].sort(),
+            ),
         }),
     ),
   );
 }
 
-function enrichDomainsWithRelations(
+function enrichDomains(
   domains:
     readonly RepositorySemanticDomainMap[],
   components:
     readonly RepositorySemanticComponent[],
   relations:
     readonly RepositorySemanticRelation[],
+  capabilities:
+    readonly RepositorySemanticCapability[],
 ): readonly RepositorySemanticDomainMap[] {
   const componentById =
     new Map(
@@ -214,6 +268,18 @@ function enrichDomainsWithRelations(
                 relation.relationId,
             );
 
+        const domainCapabilityIds =
+          capabilities
+            .filter(
+              (capability) =>
+                capability.domain ===
+                domain.name,
+            )
+            .map(
+              (capability) =>
+                capability.capabilityId,
+            );
+
         return Object.freeze({
           ...domain,
 
@@ -222,6 +288,15 @@ function enrichDomainsWithRelations(
               [
                 ...new Set(
                   domainRelationIds,
+                ),
+              ].sort(),
+            ),
+
+          capabilityIds:
+            Object.freeze(
+              [
+                ...new Set(
+                  domainCapabilityIds,
                 ),
               ].sort(),
             ),
@@ -236,6 +311,8 @@ function calculateAverageConfidence(
     readonly RepositorySemanticComponent[],
   relations:
     readonly RepositorySemanticRelation[],
+  capabilities:
+    readonly RepositorySemanticCapability[],
 ): number {
   const values = [
     ...components.map(
@@ -246,6 +323,11 @@ function calculateAverageConfidence(
     ...relations.map(
       (relation) =>
         relation.confidence,
+    ),
+
+    ...capabilities.map(
+      (capability) =>
+        capability.confidence,
     ),
   ];
 
@@ -275,6 +357,8 @@ function rebuildSummary(
     readonly RepositorySemanticDomainMap[],
   relations:
     readonly RepositorySemanticRelation[],
+  capabilities:
+    readonly RepositorySemanticCapability[],
 ): RepositorySemanticSummary {
   return Object.freeze({
     ...previous,
@@ -284,6 +368,9 @@ function rebuildSummary(
 
     totalDomains:
       domains.length,
+
+    totalCapabilities:
+      capabilities.length,
 
     totalRelations:
       relations.length,
@@ -315,6 +402,7 @@ function rebuildSummary(
       calculateAverageConfidence(
         components,
         relations,
+        capabilities,
       ),
   });
 }
@@ -326,6 +414,8 @@ function rebuildMatrixInterpretation(
     readonly RepositorySemanticComponent[],
   relations:
     readonly RepositorySemanticRelation[],
+  capabilities:
+    readonly RepositorySemanticCapability[],
 ): RepositorySemanticMatrixInterpretation {
   const relatedComponentIds =
     new Set<string>();
@@ -340,37 +430,115 @@ function rebuildMatrixInterpretation(
     );
   }
 
-  const isolatedCapabilities =
+  const verifiedCapabilities =
     Object.freeze(
-      components
+      capabilities
         .filter(
-          (component) =>
-            component.capabilityIds
-              .length > 0 &&
-            !relatedComponentIds.has(
-              component.componentId,
-            ),
+          (capability) =>
+            capability.state ===
+            "VERIFIED",
         )
-        .flatMap(
-          (component) =>
-            component.capabilityIds,
+        .map(
+          (capability) =>
+            capability.capabilityId,
         )
         .sort(),
     );
 
+  const implementedCapabilities =
+    Object.freeze(
+      capabilities
+        .filter(
+          (capability) =>
+            capability.state ===
+              "IMPLEMENTED" ||
+            capability.state ===
+              "TESTED" ||
+            capability.state ===
+              "EXPOSED" ||
+            capability.state ===
+              "INTEGRATED",
+        )
+        .map(
+          (capability) =>
+            capability.capabilityId,
+        )
+        .sort(),
+    );
+
+  const declaredCapabilities =
+    Object.freeze(
+      capabilities
+        .filter(
+          (capability) =>
+            capability.state ===
+            "DECLARED",
+        )
+        .map(
+          (capability) =>
+            capability.capabilityId,
+        )
+        .sort(),
+    );
+
+  const isolatedCapabilities =
+    Object.freeze(
+      capabilities
+        .filter(
+          (capability) =>
+            capability.componentIds
+              .every(
+                (componentId) =>
+                  !relatedComponentIds.has(
+                    componentId,
+                  ),
+              ),
+        )
+        .map(
+          (capability) =>
+            capability.capabilityId,
+        )
+        .sort(),
+    );
+
+  let nextPriority =
+    previous.nextPriority;
+
+  if (!nextPriority) {
+    if (
+      capabilities.length === 0
+    ) {
+      nextPriority =
+        "Supply implementation, endpoint, test or documentation evidence to derive repository capabilities.";
+    } else if (
+      isolatedCapabilities.length > 0
+    ) {
+      nextPriority =
+        "Verify the integration of isolated repository capabilities.";
+    } else if (
+      relations.length === 0 &&
+      components.length > 1
+    ) {
+      nextPriority =
+        "Verify semantic relations between classified components.";
+    } else {
+      nextPriority =
+        null;
+    }
+  }
+
   return Object.freeze({
     ...previous,
 
+    verifiedCapabilities,
+
+    implementedCapabilities,
+
+    declaredCapabilities,
+
     isolatedCapabilities,
 
-    nextPriority:
-      previous.nextPriority ??
-      (
-        relations.length === 0 &&
-        components.length > 1
-          ? "Verify semantic relations between classified components."
-          : null
-      ),
+    nextPriority,
   });
 }
 
@@ -425,13 +593,14 @@ function validateClassifierOutput(
 /**
  * Executes the currently implemented MOD-002 semantic pipeline.
  *
- * Version v1.0 coordinates:
+ * Version v1.1 coordinates:
  * 1. deterministic semantic classification;
  * 2. deterministic semantic relation construction;
- * 3. semantic output enrichment.
+ * 3. deterministic repository capability classification;
+ * 4. semantic output enrichment.
  *
- * Capability, finding and recommendation engines remain explicitly
- * unavailable until their dedicated implementations and tests exist.
+ * Dedicated finding and recommendation engines remain explicitly
+ * unavailable until their implementations and tests exist.
  */
 export function executeRepositorySemanticIntelligence(
   input:
@@ -451,17 +620,34 @@ export function executeRepositorySemanticIntelligence(
       classified.components,
     );
 
+  const capabilityEngine =
+    buildRepositoryCapabilities({
+      components:
+        classified.components,
+
+      componentInputs:
+        input.components,
+
+      evidence:
+        input.evidence,
+    });
+
+  const capabilities =
+    capabilityEngine.capabilities;
+
   const components =
-    enrichComponentsWithRelations(
+    enrichComponents(
       classified.components,
       relations,
+      capabilities,
     );
 
   const domains =
-    enrichDomainsWithRelations(
+    enrichDomains(
       classified.domains,
       components,
       relations,
+      capabilities,
     );
 
   const summary =
@@ -470,6 +656,7 @@ export function executeRepositorySemanticIntelligence(
       components,
       domains,
       relations,
+      capabilities,
     );
 
   const matrixInterpretation =
@@ -477,6 +664,7 @@ export function executeRepositorySemanticIntelligence(
       classified.matrixInterpretation,
       components,
       relations,
+      capabilities,
     );
 
   const hasBlockingFinding =
@@ -509,6 +697,8 @@ export function executeRepositorySemanticIntelligence(
     domains,
 
     components,
+
+    capabilities,
 
     relations,
 
@@ -566,18 +756,22 @@ export function executeRepositorySemanticIntelligence(
         relationEngineRevision:
           REPOSITORY_SEMANTIC_RELATION_ENGINE_REVISION,
 
+        capabilityEngineRevision:
+          REPOSITORY_CAPABILITY_ENGINE_REVISION,
+
         stages:
           Object.freeze([
             "SEMANTIC_CLASSIFICATION",
             "SEMANTIC_RELATION_CONSTRUCTION",
+            "CAPABILITY_CLASSIFICATION",
             "SEMANTIC_OUTPUT_ENRICHMENT",
           ] as const),
 
         completedStages:
-          3,
+          4,
 
         capabilityEngineExecuted:
-          false,
+          true,
 
         findingEngineExecuted:
           false,
@@ -609,7 +803,7 @@ export const REPOSITORY_SEMANTIC_INTELLIGENCE_ORCHESTRATOR_BOUNDARY =
       true,
 
     capabilityEngineIntegrated:
-      false,
+      true,
 
     findingEngineIntegrated:
       false,
