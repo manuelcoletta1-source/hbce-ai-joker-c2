@@ -875,6 +875,18 @@ function buildMissingEvidence(
   return [...missing];
 }
 
+function isBlockingFinding(
+  finding: Mod001RepositoryFinding,
+): boolean {
+  return (
+    finding.severity === "CRITICAL" ||
+    (
+      finding.severity === "HIGH" &&
+      finding.category === "GOVERNANCE"
+    )
+  );
+}
+
 function selectAtomicMutation(
   snapshot: Mod001RepositorySnapshot,
   posture: Mod001RepositoryPosture,
@@ -882,12 +894,7 @@ function selectAtomicMutation(
 ): Mod001AtomicMutationRecommendation {
   const blockingFinding =
     findings.find(
-      (finding) =>
-        finding.severity === "CRITICAL" ||
-        (
-          finding.severity === "HIGH" &&
-          finding.category === "GOVERNANCE"
-        ),
+      isBlockingFinding,
     );
 
   if (!snapshot.humanAuthorization) {
@@ -1155,15 +1162,14 @@ export function analyseRepositorySnapshot(
       findings,
     );
 
-  const ok =
-    nextMutation.allowed ||
-    (
-      findings.every(
-        (finding) =>
-          finding.severity !== "CRITICAL",
-      ) &&
-      posture.overallConfidence >= 55
+  const blockingFinding =
+    findings.find(
+      isBlockingFinding,
     );
+
+  const ok =
+    blockingFinding === undefined &&
+    posture.overallConfidence >= 55;
 
   return Object.freeze({
     ok,
