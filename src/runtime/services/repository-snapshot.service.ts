@@ -2,25 +2,26 @@
  * HERMETICUM B.C.E. S.r.l.
  *
  * AI JOKER-C2
- * Milestone 21 — Real Repository Analysis
+ * Milestone 22 — Governed Source Inspection
  *
  * Repository Snapshot Runtime Service
  *
  * Revision:
- * AIJC2-RUNTIME-REPOSITORY-SNAPSHOT-SERVICE-v1_0
+ * AIJC2-RUNTIME-REPOSITORY-SNAPSHOT-SERVICE-v1_1
  *
  * Purpose:
  * - expose one governed runtime boundary for real GitHub repository analysis;
  * - create a normalized read-only repository snapshot;
- * - execute MOD-001 Repository Intelligence on the normalized snapshot;
- * - return the provider evidence and structural intelligence projection;
+ * - optionally inspect explicitly authorized source files;
+ * - merge inspected file evidence into the normalized snapshot;
+ * - execute MOD-001 Repository Intelligence on the enriched snapshot;
  * - preserve fail-closed, human-authorization and legal boundaries.
  *
  * Explicit exclusions:
  * - no GitHub write operations;
- * - no raw source-content retrieval;
+ * - no raw source-content persistence;
  * - no source-code execution;
- * - no AST parsing;
+ * - no AST execution;
  * - no autonomous repository mutation;
  * - no commit, push, merge or deploy;
  * - no persistent memory creation;
@@ -39,6 +40,19 @@ import {
 } from "../../modules/providers/github-repository-snapshot-provider";
 
 import {
+  GITHUB_SOURCE_INSPECTION_PROVIDER_REVISION,
+  GitHubSourceInspectionProviderError,
+  inspectGitHubSources,
+  type GitHubSourceInspectionCandidate,
+  type GitHubSourceInspectionProviderOutput,
+} from "../../modules/providers/github-source-inspection-provider";
+
+import type {
+  RepositoryScannerFile,
+  RepositoryScannerInput,
+} from "../../modules/engines/repository-scanner.types";
+
+import {
   executeRepositoryIntelligenceService,
   REPOSITORY_INTELLIGENCE_SERVICE_MODULE_ID,
   REPOSITORY_INTELLIGENCE_SERVICE_REVISION,
@@ -49,10 +63,24 @@ import {
 } from "./repository-intelligence.service";
 
 export const REPOSITORY_SNAPSHOT_SERVICE_REVISION =
-  "AIJC2-RUNTIME-REPOSITORY-SNAPSHOT-SERVICE-v1_0" as const;
+  "AIJC2-RUNTIME-REPOSITORY-SNAPSHOT-SERVICE-v1_1" as const;
 
 export const REPOSITORY_SNAPSHOT_SERVICE_RUNTIME =
   REPOSITORY_INTELLIGENCE_SERVICE_RUNTIME;
+
+export interface RepositorySnapshotSourceInspectionRequest {
+  enabled: boolean;
+
+  authorizedPaths: readonly string[];
+
+  maximumFiles?: number;
+
+  maximumFileBytes?: number;
+
+  maximumTotalBytes?: number;
+
+  allowedExtensions?: readonly string[];
+}
 
 export interface RepositorySnapshotServiceRequest {
   identity:
@@ -73,6 +101,9 @@ export interface RepositorySnapshotServiceRequest {
 
     excludedPathPrefixes?: readonly string[];
   };
+
+  sourceInspection?:
+    RepositorySnapshotSourceInspectionRequest;
 
   mission: string;
 
@@ -107,6 +138,9 @@ export interface RepositorySnapshotServiceProjection {
 
   providerRevision:
     typeof GITHUB_REPOSITORY_SNAPSHOT_PROVIDER_REVISION;
+
+  sourceInspectionProviderRevision:
+    typeof GITHUB_SOURCE_INSPECTION_PROVIDER_REVISION;
 
   repositoryIntelligenceServiceRevision:
     typeof REPOSITORY_INTELLIGENCE_SERVICE_REVISION;
@@ -146,7 +180,29 @@ export interface RepositorySnapshotServiceProjection {
 
     uninspectedFiles: number;
 
-    rawContentRetrieved: false;
+    rawContentRetrieved: boolean;
+
+    rawContentPersisted: false;
+  };
+
+  sourceInspection: {
+    requested: boolean;
+
+    executed: boolean;
+
+    authorizedPaths: number;
+
+    inspectedFiles: number;
+
+    skippedFiles: number;
+
+    inspectedBytes: number;
+
+    rawContentRetrieved: boolean;
+
+    rawContentPersisted: false;
+
+    sourceExecuted: false;
   };
 
   structural:
@@ -155,13 +211,19 @@ export interface RepositorySnapshotServiceProjection {
   governance: {
     deterministicNormalization: true;
 
+    deterministicInspectionMerge: true;
+
     failClosed: true;
 
     evidenceBased: true;
 
     readOnlyGitHubAccess: true;
 
-    rawContentRetrieved: false;
+    explicitSourceAuthorizationRequired: true;
+
+    rawContentRetrieved: boolean;
+
+    rawContentPersisted: false;
 
     sourceExecution: false;
 
@@ -263,6 +325,19 @@ function normalizeOptionalString(
     : null;
 }
 
+function normalizePath(
+  value: unknown,
+): string {
+  return normalizeRequiredString(
+    value,
+    "sourceInspection.authorizedPaths",
+  )
+    .replaceAll("\\", "/")
+    .replace(/^\.\/+/, "")
+    .replace(/\/{2,}/g, "/")
+    .replace(/\/$/, "");
+}
+
 function validateIdentity(
   identity:
     RepositoryIntelligenceServiceIdentity,
@@ -308,6 +383,58 @@ function validateIdentity(
         "identity.sessionId",
       ),
   });
+}
+
+function validateSourceInspectionRequest(
+  sourceInspection:
+    RepositorySnapshotSourceInspectionRequest | undefined,
+): void {
+  if (
+    sourceInspection === undefined
+  ) {
+    return;
+  }
+
+  if (
+    typeof sourceInspection !== "object" ||
+    sourceInspection === null
+  ) {
+    throw new RepositorySnapshotServiceError(
+      "REPOSITORY_SNAPSHOT_SERVICE_INVALID_SOURCE_INSPECTION",
+      "sourceInspection must be an object",
+    );
+  }
+
+  if (
+    typeof sourceInspection.enabled !==
+    "boolean"
+  ) {
+    throw new RepositorySnapshotServiceError(
+      "REPOSITORY_SNAPSHOT_SERVICE_INVALID_SOURCE_INSPECTION_FLAG",
+      "sourceInspection.enabled must be a boolean",
+    );
+  }
+
+  if (
+    !Array.isArray(
+      sourceInspection.authorizedPaths,
+    )
+  ) {
+    throw new RepositorySnapshotServiceError(
+      "REPOSITORY_SNAPSHOT_SERVICE_AUTHORIZED_PATHS_REQUIRED",
+      "sourceInspection.authorizedPaths must be an array",
+    );
+  }
+
+  if (
+    sourceInspection.enabled &&
+    sourceInspection.authorizedPaths.length === 0
+  ) {
+    throw new RepositorySnapshotServiceError(
+      "REPOSITORY_SNAPSHOT_SERVICE_AUTHORIZED_PATHS_REQUIRED",
+      "At least one authorized path is required when source inspection is enabled",
+    );
+  }
 }
 
 function validateRequest(
@@ -361,6 +488,10 @@ function validateRequest(
       "github input is required",
     );
   }
+
+  validateSourceInspectionRequest(
+    request.sourceInspection,
+  );
 
   return Object.freeze({
     identity:
@@ -446,6 +577,125 @@ function buildProviderInput(
   });
 }
 
+function buildInspectionCandidates(
+  snapshot:
+    RepositoryScannerInput,
+): readonly GitHubSourceInspectionCandidate[] {
+  return Object.freeze(
+    snapshot.files.map(
+      (file) =>
+        Object.freeze({
+          path:
+            file.path,
+
+          sha:
+            file.hash,
+
+          sizeBytes:
+            file.sizeBytes,
+
+          extension:
+            file.extension,
+
+          directory:
+            file.directory,
+        }),
+    ),
+  );
+}
+
+function buildAuthorizedPaths(
+  sourceInspection:
+    RepositorySnapshotSourceInspectionRequest | undefined,
+): readonly string[] {
+  if (
+    !sourceInspection?.enabled
+  ) {
+    return Object.freeze([]);
+  }
+
+  return Object.freeze(
+    [
+      ...new Set(
+        sourceInspection.authorizedPaths.map(
+          (path) =>
+            normalizePath(
+              path,
+            ),
+        ),
+      ),
+    ].sort(),
+  );
+}
+
+function mergeInspectedFiles(
+  snapshot:
+    RepositoryScannerInput,
+  inspection:
+    GitHubSourceInspectionProviderOutput | null,
+): RepositoryScannerInput {
+  if (
+    !inspection
+  ) {
+    return snapshot;
+  }
+
+  const inspectedByPath =
+    new Map<string, RepositoryScannerFile>(
+      inspection.scannerFiles.map(
+        (file) => [
+          file.path,
+          file,
+        ],
+      ),
+    );
+
+  const mergedFiles =
+    Object.freeze(
+      snapshot.files.map(
+        (file) => {
+          const inspected =
+            inspectedByPath.get(
+              file.path,
+            );
+
+          if (
+            !inspected
+          ) {
+            return file;
+          }
+
+          if (
+            inspected.hash !==
+            file.hash
+          ) {
+            throw new RepositorySnapshotServiceError(
+              "REPOSITORY_SNAPSHOT_SERVICE_INSPECTION_HASH_MISMATCH",
+              `Inspected file hash mismatch for ${file.path}`,
+            );
+          }
+
+          return Object.freeze({
+            ...file,
+
+            sizeBytes:
+              inspected.sizeBytes,
+
+            inspected:
+              true,
+          });
+        },
+      ),
+    );
+
+  return Object.freeze({
+    ...snapshot,
+
+    files:
+      mergedFiles,
+  });
+}
+
 function validateStructuralProjection(
   structural:
     RepositoryIntelligenceServiceProjection,
@@ -511,6 +761,23 @@ function mapProviderError(
   );
 }
 
+function mapInspectionError(
+  error:
+    GitHubSourceInspectionProviderError,
+): RepositorySnapshotServiceError {
+  return new RepositorySnapshotServiceError(
+    "REPOSITORY_SNAPSHOT_SERVICE_SOURCE_INSPECTION_FAILURE",
+    error.message,
+    {
+      causeCode:
+        error.code,
+
+      httpStatus:
+        error.httpStatus,
+    },
+  );
+}
+
 function mapStructuralError(
   error:
     RepositoryIntelligenceServiceError,
@@ -529,15 +796,12 @@ function mapStructuralError(
 }
 
 /**
- * Creates a real repository snapshot from GitHub and executes MOD-001.
+ * Creates a real GitHub repository snapshot, optionally inspects only
+ * explicitly authorized source paths, merges verified inspection state,
+ * and executes MOD-001 on the enriched snapshot.
  *
- * The provider intentionally marks every GitHub tree file as
- * inspected=false because raw source contents are not retrieved.
- *
- * As a result, MOD-001 may return a fail-closed structural projection
- * when the requested operation requires inspected source evidence.
- * That state is preserved and exposed honestly rather than converted
- * into a fabricated successful analysis.
+ * Raw source text exists only inside the inspection provider request and
+ * is neither returned nor persisted by this service.
  */
 export async function executeRepositorySnapshotService(
   request:
@@ -583,6 +847,89 @@ export async function executeRepositorySnapshotService(
     );
   }
 
+  const sourceInspectionRequested =
+    request.sourceInspection?.enabled ===
+    true;
+
+  const authorizedPaths =
+    buildAuthorizedPaths(
+      request.sourceInspection,
+    );
+
+  let inspectionOutput:
+    GitHubSourceInspectionProviderOutput | null =
+    null;
+
+  if (
+    sourceInspectionRequested
+  ) {
+    try {
+      inspectionOutput =
+        await inspectGitHubSources({
+          owner:
+            providerOutput.metadata.owner,
+
+          repository:
+            providerOutput.metadata.repository,
+
+          commitSha:
+            providerOutput.snapshot.commitSha,
+
+          candidates:
+            buildInspectionCandidates(
+              providerOutput.snapshot,
+            ),
+
+          authorizedPaths,
+
+          token:
+            normalizeOptionalString(
+              request.github.token,
+            ),
+
+          maximumFiles:
+            request.sourceInspection?.maximumFiles,
+
+          maximumFileBytes:
+            request.sourceInspection?.maximumFileBytes,
+
+          maximumTotalBytes:
+            request.sourceInspection?.maximumTotalBytes,
+
+          allowedExtensions:
+            request.sourceInspection?.allowedExtensions,
+
+          humanAuthorization:
+            true,
+
+          legalCertification:
+            false,
+        });
+    } catch (error) {
+      if (
+        error instanceof
+        GitHubSourceInspectionProviderError
+      ) {
+        throw mapInspectionError(
+          error,
+        );
+      }
+
+      throw new RepositorySnapshotServiceError(
+        "REPOSITORY_SNAPSHOT_SERVICE_UNKNOWN_SOURCE_INSPECTION_FAILURE",
+        error instanceof Error
+          ? error.message
+          : "Unknown GitHub source inspection failure",
+      );
+    }
+  }
+
+  const enrichedSnapshot =
+    mergeInspectedFiles(
+      providerOutput.snapshot,
+      inspectionOutput,
+    );
+
   let structural:
     RepositoryIntelligenceServiceProjection;
 
@@ -593,7 +940,7 @@ export async function executeRepositorySnapshotService(
           validated.identity,
 
         repository:
-          providerOutput.snapshot,
+          enrichedSnapshot,
 
         mission:
           validated.mission,
@@ -630,10 +977,10 @@ export async function executeRepositorySnapshotService(
   );
 
   const totalFiles =
-    providerOutput.snapshot.files.length;
+    enrichedSnapshot.files.length;
 
   const inspectedFiles =
-    providerOutput.snapshot.files.filter(
+    enrichedSnapshot.files.filter(
       (file) =>
         file.inspected ===
         true,
@@ -642,6 +989,11 @@ export async function executeRepositorySnapshotService(
   const uninspectedFiles =
     totalFiles -
     inspectedFiles;
+
+  const rawContentRetrieved =
+    inspectionOutput?.governance
+      .rawContentRetrieved ===
+    true;
 
   const ok =
     structural.result
@@ -667,6 +1019,9 @@ export async function executeRepositorySnapshotService(
 
     providerRevision:
       GITHUB_REPOSITORY_SNAPSHOT_PROVIDER_REVISION,
+
+    sourceInspectionProviderRevision:
+      GITHUB_SOURCE_INSPECTION_PROVIDER_REVISION,
 
     repositoryIntelligenceServiceRevision:
       REPOSITORY_INTELLIGENCE_SERVICE_REVISION,
@@ -695,20 +1050,16 @@ export async function executeRepositorySnapshotService(
           providerOutput.metadata.owner,
 
         repositoryId:
-          providerOutput.snapshot
-            .repositoryId,
+          enrichedSnapshot.repositoryId,
 
         repositoryName:
-          providerOutput.snapshot
-            .repositoryName,
+          enrichedSnapshot.repositoryName,
 
         branch:
-          providerOutput.snapshot
-            .branch,
+          enrichedSnapshot.branch,
 
         commitSha:
-          providerOutput.snapshot
-            .commitSha,
+          enrichedSnapshot.commitSha,
       }),
 
     snapshot:
@@ -722,7 +1073,45 @@ export async function executeRepositorySnapshotService(
 
         uninspectedFiles,
 
-        rawContentRetrieved:
+        rawContentRetrieved,
+
+        rawContentPersisted:
+          false,
+      }),
+
+    sourceInspection:
+      Object.freeze({
+        requested:
+          sourceInspectionRequested,
+
+        executed:
+          inspectionOutput !==
+          null,
+
+        authorizedPaths:
+          authorizedPaths.length,
+
+        inspectedFiles:
+          inspectionOutput?.summary
+            .inspectedFiles ??
+          0,
+
+        skippedFiles:
+          inspectionOutput?.summary
+            .skippedFiles ??
+          0,
+
+        inspectedBytes:
+          inspectionOutput?.summary
+            .inspectedBytes ??
+          0,
+
+        rawContentRetrieved,
+
+        rawContentPersisted:
+          false,
+
+        sourceExecuted:
           false,
       }),
 
@@ -731,6 +1120,9 @@ export async function executeRepositorySnapshotService(
     governance:
       Object.freeze({
         deterministicNormalization:
+          true,
+
+        deterministicInspectionMerge:
           true,
 
         failClosed:
@@ -742,7 +1134,12 @@ export async function executeRepositorySnapshotService(
         readOnlyGitHubAccess:
           true,
 
-        rawContentRetrieved:
+        explicitSourceAuthorizationRequired:
+          true,
+
+        rawContentRetrieved,
+
+        rawContentPersisted:
           false,
 
         sourceExecution:
@@ -798,6 +1195,9 @@ export const REPOSITORY_SNAPSHOT_SERVICE_BOUNDARY =
     explicitMissionRequired:
       true,
 
+    explicitSourceAuthorizationRequired:
+      true,
+
     identityBindingRequired:
       true,
 
@@ -826,7 +1226,19 @@ export const REPOSITORY_SNAPSHOT_SERVICE_BOUNDARY =
       true,
 
     rawContentRetrieval:
+      true,
+
+    rawContentReturn:
       false,
+
+    rawContentPersistence:
+      false,
+
+    sourceInspectionOptional:
+      true,
+
+    inspectedFileMerge:
+      true,
 
     mod001Integrated:
       true,
@@ -837,7 +1249,7 @@ export const REPOSITORY_SNAPSHOT_SERVICE_BOUNDARY =
     sourceExecution:
       false,
 
-    astParsing:
+    astExecution:
       false,
 
     automaticRepositoryDiscovery:
