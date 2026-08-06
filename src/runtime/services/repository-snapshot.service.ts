@@ -581,26 +581,40 @@ function buildInspectionCandidates(
   snapshot:
     RepositoryScannerInput,
 ): readonly GitHubSourceInspectionCandidate[] {
+  const candidates:
+    GitHubSourceInspectionCandidate[] =
+    [];
+
+  for (const file of snapshot.files) {
+    if (
+      typeof file.hash !== "string" ||
+      file.hash.trim().length === 0
+    ) {
+      continue;
+    }
+
+    candidates.push(
+      Object.freeze({
+        path:
+          file.path,
+
+        sha:
+          file.hash,
+
+        sizeBytes:
+          file.sizeBytes,
+
+        extension:
+          file.extension,
+
+        directory:
+          file.directory,
+      }),
+    );
+  }
+
   return Object.freeze(
-    snapshot.files.map(
-      (file) =>
-        Object.freeze({
-          path:
-            file.path,
-
-          sha:
-            file.hash,
-
-          sizeBytes:
-            file.sizeBytes,
-
-          extension:
-            file.extension,
-
-          directory:
-            file.directory,
-        }),
-    ),
+    candidates,
   );
 }
 
