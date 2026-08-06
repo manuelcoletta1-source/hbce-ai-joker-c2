@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 
-import { RuntimeScientificMethodDashboard } from "../../components/repository-intelligence/runtime-scientific-method-dashboard";
+import { RuntimeScientificMethodDashboard } from "../../src/components/repository-intelligence/runtime-scientific-method-dashboard";
 
 import {
   mapRuntimeScientificMethodResponse,
-} from "../../runtime/orchestration/runtime-scientific-method.mapper";
+} from "../../src/runtime/orchestration/runtime-scientific-method.mapper";
 
 export default function RepositoryIntelligencePage() {
   const [result, setResult] =
