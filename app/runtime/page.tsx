@@ -23,7 +23,6 @@
  */
 
 import {
-  FormEvent,
   useMemo,
   useState,
 } from "react";
@@ -627,8 +626,7 @@ export default function RuntimePage() {
 
   async function runScheduler(
     event:
-      FormEvent,
-  ) {
+      ) {
     event.preventDefault();
 
     setLoading(true);
@@ -907,10 +905,7 @@ export default function RuntimePage() {
           </p>
         </section>
 
-        <form
-          onSubmit={
-            runScheduler
-          }
+        <div
           style={{
             border:
               "1px solid rgba(255,255,255,0.12)",
@@ -991,7 +986,10 @@ export default function RuntimePage() {
             </label>
 
             <button
-              type="submit"
+              type="button"
+              onClick={() => {
+                void runScheduler();
+              }}
               disabled={
                 loading
               }
@@ -1011,8 +1009,8 @@ export default function RuntimePage() {
               }}
             >
               {loading
-                ? "Running..."
-                : "Run Scheduler"}
+                ? "Esecuzione..."
+                : "Esegui Scheduler"}
             </button>
 
             <button
@@ -1020,9 +1018,9 @@ export default function RuntimePage() {
               disabled={
                 loading
               }
-              onClick={
-                runBrainDirectly
-              }
+              onClick={() => {
+                void runBrainDirectly();
+              }}
               style={{
                 minHeight:
                   44,
@@ -1038,10 +1036,12 @@ export default function RuntimePage() {
                   700,
               }}
             >
-              Run Brain Directly
+              {loading
+                ? "Esecuzione..."
+                : "Esegui Brain direttamente"}
             </button>
           </div>
-        </form>
+        </div>
 
         {error ? (
           <div
