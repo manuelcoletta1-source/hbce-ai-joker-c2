@@ -40,7 +40,7 @@ export const dynamic =
 export const runtime =
   "nodejs";
 
-export const RUNTIME_STATE_API_REVISION =
+const RUNTIME_STATE_API_REVISION =
   "AIJC2-RUNTIME-STATE-API-v1_0" as const;
 
 interface RuntimeStateApiRequestBody {
