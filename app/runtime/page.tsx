@@ -624,11 +624,7 @@ export default function RuntimePage() {
       [response],
     );
 
-  async function runScheduler(
-    event:
-      ) {
-    event.preventDefault();
-
+  async function runScheduler() {
     setLoading(true);
     setError(null);
 
@@ -987,12 +983,12 @@ export default function RuntimePage() {
 
             <button
               type="button"
-              onClick={() => {
-                void runScheduler();
-              }}
               disabled={
                 loading
               }
+              onClick={() => {
+                void runScheduler();
+              }}
               style={{
                 minHeight:
                   44,
