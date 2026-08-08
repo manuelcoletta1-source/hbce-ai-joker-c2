@@ -29,7 +29,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const REVISION =
-  "HBCE-RUNTIME-OPERATIONS-PERSISTENT-CONTINUITY-SELF-TEST-v1_0" as const;
+  "HBCE-RUNTIME-OPERATIONS-PERSISTENT-CONTINUITY-SELF-TEST-v1_1" as const;
 
 const MANUAL_AUTHORIZATION_HEADER =
   "x-hbce-ledger-self-test-token" as const;
@@ -42,6 +42,9 @@ const REQUIRED_FINAL_SEQUENCE =
 
 const HERMETICUM_SIGIL =
   "🜏" as const;
+
+const HERMETICUM_SIGIL_CODEPOINT =
+  "U+1F70F" as const;
 
 type Check = {
   id: string;
@@ -110,6 +113,14 @@ function commonHeaders(
 
     "X-HBCE-Qualified-Electronic-Signature":
       "false",
+
+    /*
+     * HTTP header values must remain ByteString/ASCII-safe in the
+     * Fetch/Next.js Headers implementation. The canonical 🜏 marker
+     * remains in JSON and persisted data; headers expose its code point.
+     */
+    "X-HBCE-Hermeticum-Sigil-Codepoint":
+      HERMETICUM_SIGIL_CODEPOINT,
   };
 }
 
@@ -510,109 +521,245 @@ function verifyPersistentChain(
 }
 
 export async function GET() {
-  const latest =
-    await getLatestRuntimeOperationsLedgerEntry()
-      .catch(
-        () =>
-          null,
-      );
+  try {
+    const latest =
+      await getLatestRuntimeOperationsLedgerEntry();
 
-  return NextResponse.json(
-    {
-      ok: true,
+    const observedLatestSequence =
+      latest?.entry
+        .sequence ?? null;
 
-      status:
-        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_READY",
+    const eligible =
+      observedLatestSequence ===
+      REQUIRED_START_SEQUENCE;
 
-      operationalStatus:
-        "READY",
+    const completed =
+      observedLatestSequence !== null &&
+      observedLatestSequence >=
+        REQUIRED_FINAL_SEQUENCE;
 
-      revision:
-        REVISION,
+    const continuityState =
+      completed
+        ? "COMPLETE"
+        : eligible
+          ? "ELIGIBLE"
+          : "MISSING_GENESIS";
 
-      method:
-        "POST",
+    const status =
+      completed
+        ? "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_COMPLETE"
+        : eligible
+          ? "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_READY"
+          : "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_PRECONDITION_FAIL_CLOSED";
 
-      sideEffects:
-        false,
+    const operationalStatus =
+      completed
+        ? "PASS"
+        : eligible
+          ? "READY"
+          : "FAIL_CLOSED";
 
-      message:
-        "POST performs exactly one manually authorized persistent append and is accepted only when the current ledger tip is sequence 1.",
+    const message =
+      completed
+        ? "Sequence 2 already exists. The continuity proof is complete and POST is no longer eligible."
+        : eligible
+          ? "POST performs exactly one manually authorized persistent append and is accepted only when the current ledger tip is sequence 1."
+          : "Genesis sequence 1 is required before the Sequence 2 continuity proof can be authorized.";
 
-      precondition: {
-        requiredCurrentSequence:
-          REQUIRED_START_SEQUENCE,
+    return NextResponse.json(
+      {
+        ok:
+          completed ||
+          eligible,
 
-        requiredResultSequence:
-          REQUIRED_FINAL_SEQUENCE,
+        status,
 
-        observedLatestSequence:
-          latest?.entry
-            .sequence ?? null,
+        operationalStatus,
 
-        eligible:
-          latest?.entry
-            .sequence ===
-          REQUIRED_START_SEQUENCE,
-      },
+        revision:
+          REVISION,
 
-      requirements: {
-        environmentVariable:
-          "HBCE_LEDGER_SELF_TEST_TOKEN",
+        method:
+          "POST",
 
-        requestHeader:
-          MANUAL_AUTHORIZATION_HEADER,
-
-        minimumTokenLength:
-          16,
-      },
-
-      governance: {
-        persistenceExecuted:
-          false,
-
-        persistenceAttempted:
-          false,
-
-        appendOnly:
+        readOnly:
           true,
 
-        hashOnlyEvidence:
-          true,
-
-        humanAuthorizationRequired:
-          true,
-
-        autonomousAuthorization:
+        sideEffects:
           false,
 
-        runtimeActivation:
-          false,
+        message,
 
-        noSubmitFromCode:
-          true,
+        continuityState,
 
-        legalCertification:
-          false,
+        precondition: {
+          requiredCurrentSequence:
+            REQUIRED_START_SEQUENCE,
 
-        qualifiedElectronicSignature:
-          false,
+          requiredResultSequence:
+            REQUIRED_FINAL_SEQUENCE,
+
+          observedLatestSequence,
+
+          eligible,
+
+          completed,
+        },
+
+        requirements: {
+          environmentVariable:
+            "HBCE_LEDGER_SELF_TEST_TOKEN",
+
+          requestHeader:
+            MANUAL_AUTHORIZATION_HEADER,
+
+          minimumTokenLength:
+            16,
+
+          authorizationRequiredOnlyWhenEligible:
+            true,
+        },
+
+        identity: {
+          hermeticumSigil:
+            HERMETICUM_SIGIL,
+
+          hermeticumSigilCodepoint:
+            HERMETICUM_SIGIL_CODEPOINT,
+        },
+
+        governance: {
+          persistenceExecuted:
+            false,
+
+          persistenceAttempted:
+            false,
+
+          appendOnly:
+            true,
+
+          hashOnlyEvidence:
+            true,
+
+          humanAuthorizationRequired:
+            true,
+
+          autonomousAuthorization:
+            false,
+
+          runtimeActivation:
+            false,
+
+          noSubmitFromCode:
+            true,
+
+          legalCertification:
+            false,
+
+          qualifiedElectronicSignature:
+            false,
+        },
       },
-    },
-    {
-      status:
-        200,
+      {
+        status:
+          completed ||
+          eligible
+            ? 200
+            : 409,
 
-      headers: {
-        ...commonHeaders(
-          "false",
-        ),
+        headers: {
+          ...commonHeaders(
+            "false",
+          ),
 
-        "X-HBCE-Authorization":
-          "HUMAN_AUTHORIZATION_REQUIRED",
+          "X-HBCE-Authorization":
+            eligible
+              ? "HUMAN_AUTHORIZATION_REQUIRED"
+              : completed
+                ? "NOT_REQUIRED_CONTINUITY_COMPLETE"
+                : "PRECONDITION_NOT_MET",
+
+          "X-HBCE-Continuity-State":
+            continuityState,
+        },
       },
-    },
-  );
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        ok: false,
+
+        status:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_READ_FAIL_CLOSED",
+
+        operationalStatus:
+          "FAIL_CLOSED",
+
+        revision:
+          REVISION,
+
+        readOnly:
+          true,
+
+        sideEffects:
+          false,
+
+        error: {
+          name:
+            error instanceof Error
+              ? error.name
+              : "UnknownError",
+
+          message:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        },
+
+        governance: {
+          persistenceExecuted:
+            false,
+
+          persistenceAttempted:
+            false,
+
+          humanAuthorizationRequired:
+            true,
+
+          autonomousAuthorization:
+            false,
+
+          runtimeActivation:
+            false,
+
+          noSubmitFromCode:
+            true,
+
+          legalCertification:
+            false,
+
+          qualifiedElectronicSignature:
+            false,
+        },
+      },
+      {
+        status:
+          500,
+
+        headers: {
+          ...commonHeaders(
+            "false",
+          ),
+
+          "X-HBCE-Authorization":
+            "NOT_EVALUATED",
+
+          "X-HBCE-Continuity-State":
+            "FAIL_CLOSED",
+        },
+      },
+    );
+  }
 }
 
 export async function POST(
@@ -1452,6 +1599,9 @@ export async function POST(
             hermeticumSigil:
               HERMETICUM_SIGIL,
 
+            hermeticumSigilCodepoint:
+              HERMETICUM_SIGIL_CODEPOINT,
+
             previousEntrySha256:
               rereadSequence2.entry
                 .chain
@@ -1608,8 +1758,6 @@ export async function POST(
               .chain
               .chainRootSha256,
 
-          "X-HBCE-Hermeticum-Sigil":
-            HERMETICUM_SIGIL,
         },
       },
     );
