@@ -9,6 +9,10 @@ import {
   buildRuntimeOperationsEvidence,
 } from "@/src/runtime/operations/runtime-operations-evidence";
 
+import {
+  buildRuntimeOperationsOpcEnvelope,
+} from "@/src/runtime/operations/runtime-operations-opc-envelope";
+
 type Check = {
   id: string;
   description: string;
@@ -297,7 +301,7 @@ export async function GET() {
     operationalStatus,
 
     revision:
-      "HBCE-RUNTIME-OPERATIONS-SELF-TEST-v1_1",
+      "HBCE-RUNTIME-OPERATIONS-SELF-TEST-v1_2",
 
     generatedAt,
 
@@ -366,10 +370,17 @@ export async function GET() {
       baseBody,
     );
 
+  const opcEvtEnvelope =
+    buildRuntimeOperationsOpcEnvelope({
+      evidence: evidenceReceipt,
+    });
+
   const body = {
     ...baseBody,
 
     evidenceReceipt,
+
+    opcEvtEnvelope,
   };
 
   return NextResponse.json(
@@ -385,7 +396,7 @@ export async function GET() {
           "no-store, no-cache, must-revalidate",
 
         "X-HBCE-Revision":
-          "HBCE-RUNTIME-OPERATIONS-SELF-TEST-v1_1",
+          "HBCE-RUNTIME-OPERATIONS-SELF-TEST-v1_2",
 
         "X-HBCE-Evidence-Revision":
           evidenceReceipt.revision,
@@ -393,6 +404,17 @@ export async function GET() {
         "X-HBCE-Evidence-SHA256":
           evidenceReceipt.integrity
             .sha256,
+
+        "X-HBCE-OPC-EVT-Revision":
+          opcEvtEnvelope.revision,
+
+        "X-HBCE-Envelope-SHA256":
+          opcEvtEnvelope.integrity
+            .envelopeSha256,
+
+        "X-HBCE-Internal-Seal":
+          opcEvtEnvelope.internalSeal
+            .value,
 
         "X-HBCE-Authorization":
           "HUMAN_AUTHORIZATION_REQUIRED",
