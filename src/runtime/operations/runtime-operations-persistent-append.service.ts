@@ -1,406 +1,1196 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import {
   buildRuntimeOperationsEvidence,
   type RuntimeOperationsEvidenceInput,
-} from "@/src/runtime/operations/runtime-operations-evidence";
+} from "./runtime-operations-evidence";
 
 import {
   buildRuntimeOperationsOpcEnvelope,
-} from "@/src/runtime/operations/runtime-operations-opc-envelope";
+} from "./runtime-operations-opc-envelope";
 
 import {
   verifyRuntimeOperationsOpcEnvelope,
-} from "@/src/runtime/operations/runtime-operations-opc-verifier";
+} from "./runtime-operations-opc-verifier";
 
 import {
   appendVerifiedRuntimeOperationsLedgerEntry,
   getLatestRuntimeOperationsLedgerEntry,
   getRuntimeOperationsLedgerEntryBySequence,
   listRuntimeOperationsLedgerEntries,
-} from "@/src/runtime/operations/runtime-operations-ledger-repository";
+  type RuntimeOperationsLedgerRepositoryRecord,
+} from "./runtime-operations-ledger-repository";
 
 import {
   verifyRuntimeOperationsLedgerEntry,
   type RuntimeOperationsLedgerEntry,
-} from "@/src/runtime/operations/runtime-operations-ledger";
+} from "./runtime-operations-ledger";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const RUNTIME_OPERATIONS_PERSISTENT_APPEND_SERVICE_REVISION =
+  "HBCE-RUNTIME-OPERATIONS-PERSISTENT-APPEND-SERVICE-v1_0" as const;
 
-const REVISION =
-  "HBCE-RUNTIME-OPERATIONS-PERSISTENT-CONTINUITY-SELF-TEST-v1_1" as const;
+const CANONICAL_RUNTIME_IPR =
+  "IPR-AI-0001" as const;
 
-const MANUAL_AUTHORIZATION_HEADER =
-  "x-hbce-ledger-self-test-token" as const;
+const CANONICAL_HUMAN_AUTHORITY_IPR =
+  "IPR-3" as const;
 
-const REQUIRED_START_SEQUENCE =
-  1 as const;
-
-const REQUIRED_FINAL_SEQUENCE =
-  2 as const;
+const CANONICAL_ORGANIZATION =
+  "HERMETICUM B.C.E. S.r.l." as const;
 
 const HERMETICUM_SIGIL =
   "🜏" as const;
 
-const HERMETICUM_SIGIL_CODEPOINT =
-  "U+1F70F" as const;
+const DEFAULT_PAGE_SIZE =
+  500;
 
-type Check = {
-  id: string;
-  description: string;
-  passed: boolean;
-  expected: unknown;
-  actual: unknown;
+const MAX_PAGE_SIZE =
+  1000;
+
+const DEFAULT_MAX_VERIFICATION_ENTRIES =
+  10_000;
+
+export type RuntimeOperationsPersistentAppendStage =
+  | "AUTHORIZATION"
+  | "SOURCE_PRECONDITION"
+  | "TIP_READ"
+  | "TIP_VERIFICATION"
+  | "EVIDENCE_BUILD"
+  | "OPC_BUILD"
+  | "OPC_VERIFICATION"
+  | "PERSISTENCE_APPEND"
+  | "PERSISTENCE_REREAD"
+  | "APPENDED_ENTRY_VERIFICATION"
+  | "FULL_CHAIN_READ"
+  | "FULL_CHAIN_VERIFICATION";
+
+export type RuntimeOperationsPersistentAppendAuthorization = {
+  humanAuthorized: boolean;
+
+  authorizationRef: string;
+
+  runtimeIpr: string;
+
+  humanAuthorityIpr: string;
+
+  organization: string;
 };
 
-type ChainVerificationEntry = {
+export type RuntimeOperationsPersistentAppendExpectedTip = {
   sequence: number;
-  verified: boolean;
-  failedChecks: number;
-  sequenceContinuity: boolean;
-  previousHashBinding: boolean;
+
   entrySha256: string;
-  previousEntrySha256: string | null;
-  chainRootSha256: string;
 };
 
-function check(
-  id: string,
-  description: string,
-  expected: unknown,
-  actual: unknown,
-): Check {
-  return {
-    id,
-    description,
-    passed: Object.is(
-      expected,
-      actual,
-    ),
-    expected,
-    actual,
+export type RuntimeOperationsPersistentAppendRequest = {
+  sourceInput:
+    RuntimeOperationsEvidenceInput;
+
+  authorization:
+    RuntimeOperationsPersistentAppendAuthorization;
+
+  /**
+   * Optional optimistic precondition.
+   *
+   * It prevents an append when the tip already differs at service
+   * preflight time. The database/repository remains authoritative for
+   * concurrent append serialization.
+   */
+  expectedTip?:
+    RuntimeOperationsPersistentAppendExpectedTip;
+
+  verification?: {
+    pageSize?: number;
+
+    maximumEntries?: number;
   };
+};
+
+export type RuntimeOperationsPersistentChainVerificationEntry = {
+  sequence: number;
+
+  verified: boolean;
+
+  cryptographicVerificationPassed:
+    boolean;
+
+  sequenceContinuity:
+    boolean;
+
+  previousHashBinding:
+    boolean;
+
+  failedChecks: number;
+
+  entrySha256: string;
+
+  previousEntrySha256:
+    string | null;
+
+  chainRootSha256:
+    string;
+};
+
+export type RuntimeOperationsPersistentChainVerificationResult = {
+  verifierMode:
+    "PERSISTENT_DATABASE_FULL_CHAIN";
+
+  verified:
+    boolean;
+
+  entryCount:
+    number;
+
+  genesisSequence:
+    number | null;
+
+  latestSequence:
+    number | null;
+
+  sequenceContinuityVerified:
+    boolean;
+
+  previousHashBindingsVerified:
+    boolean;
+
+  allEntriesCryptographicallyVerified:
+    boolean;
+
+  tipCoverageVerified:
+    boolean;
+
+  totalFailedChecks:
+    number;
+
+  entries:
+    RuntimeOperationsPersistentChainVerificationEntry[];
+};
+
+export type RuntimeOperationsPersistentAppendResult = {
+  ok: true;
+
+  status:
+    "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_PASS";
+
+  operationalStatus:
+    "PASS";
+
+  revision:
+    typeof RUNTIME_OPERATIONS_PERSISTENT_APPEND_SERVICE_REVISION;
+
+  identity: {
+    runtimeIpr:
+      typeof CANONICAL_RUNTIME_IPR;
+
+    humanAuthorityIpr:
+      typeof CANONICAL_HUMAN_AUTHORITY_IPR;
+
+    organization:
+      typeof CANONICAL_ORGANIZATION;
+
+    hermeticumSigil:
+      typeof HERMETICUM_SIGIL;
+  };
+
+  authorization: {
+    humanAuthorized:
+      true;
+
+    authorizationRef:
+      string;
+
+    rawCredentialPersisted:
+      false;
+  };
+
+  preflight: {
+    sequence:
+      number;
+
+    entrySha256:
+      string;
+
+    chainRootSha256:
+      string;
+
+    expectedTipProvided:
+      boolean;
+
+    expectedTipMatched:
+      boolean;
+  };
+
+  evidence: {
+    revision:
+      string;
+
+    sha256:
+      string;
+
+    allRequiredChecksPassed:
+      true;
+  };
+
+  opcEvt: {
+    revision:
+      string;
+
+    envelopeSha256:
+      string;
+
+    internalSeal:
+      string;
+
+    verified:
+      true;
+
+    failedChecks:
+      0;
+  };
+
+  persistence: {
+    attempted:
+      true;
+
+    confirmed:
+      true;
+
+    table:
+      string;
+
+    recordedAt:
+      string;
+
+    sequence:
+      number;
+  };
+
+  append: {
+    expectedNextSequence:
+      number;
+
+    sequence:
+      number;
+
+    previousEntrySha256:
+      string | null;
+
+    entrySha256:
+      string;
+
+    chainRootSha256:
+      string;
+
+    linkedToRepositoryTipAtAppend:
+      boolean;
+
+    concurrentTipAdvanceObserved:
+      boolean;
+  };
+
+  verification: {
+    rereadMatched:
+      true;
+
+    appendedEntryVerified:
+      true;
+
+    appendedEntryFailedChecks:
+      0;
+
+    fullChain:
+      RuntimeOperationsPersistentChainVerificationResult;
+  };
+
+  governance: {
+    appendOnly:
+      true;
+
+    hashOnlyEvidence:
+      true;
+
+    humanAuthorizationRequired:
+      true;
+
+    autonomousAuthorization:
+      false;
+
+    runtimeActivation:
+      false;
+
+    noSubmitFromCode:
+      true;
+
+    legalCertification:
+      false;
+
+    qualifiedElectronicSignature:
+      false;
+  };
+};
+
+export class RuntimeOperationsPersistentAppendError
+  extends Error {
+  readonly code: string;
+
+  readonly stage:
+    RuntimeOperationsPersistentAppendStage;
+
+  readonly persistenceAttempted:
+    boolean;
+
+  readonly persistenceConfirmed:
+    boolean;
+
+  readonly persistedSequence:
+    number | null;
+
+  readonly causeValue:
+    unknown;
+
+  constructor(input: {
+    code: string;
+
+    stage:
+      RuntimeOperationsPersistentAppendStage;
+
+    message: string;
+
+    persistenceAttempted?:
+      boolean;
+
+    persistenceConfirmed?:
+      boolean;
+
+    persistedSequence?:
+      number | null;
+
+    causeValue?:
+      unknown;
+  }) {
+    super(
+      input.message,
+    );
+
+    this.name =
+      "RuntimeOperationsPersistentAppendError";
+
+    this.code =
+      input.code;
+
+    this.stage =
+      input.stage;
+
+    this.persistenceAttempted =
+      input.persistenceAttempted ??
+      false;
+
+    this.persistenceConfirmed =
+      input.persistenceConfirmed ??
+      false;
+
+    this.persistedSequence =
+      input.persistedSequence ??
+      null;
+
+    this.causeValue =
+      input.causeValue;
+  }
 }
 
-function commonHeaders(
-  persistence:
-    | "false"
-    | "true"
-    | "FAIL_CLOSED",
-) {
-  return {
-    "Cache-Control":
-      "no-store, no-cache, must-revalidate",
+function fail(input: {
+  code: string;
 
-    "X-HBCE-Revision":
-      REVISION,
+  stage:
+    RuntimeOperationsPersistentAppendStage;
 
-    "X-HBCE-Persistence":
-      persistence,
+  message: string;
 
-    "X-HBCE-Runtime-Activation":
-      "false",
+  persistenceAttempted?:
+    boolean;
 
-    "X-HBCE-Autonomous-Authorization":
-      "false",
+  persistenceConfirmed?:
+    boolean;
 
-    "X-HBCE-No-Submit-From-Code":
-      "true",
+  persistedSequence?:
+    number | null;
 
-    "X-HBCE-Legal-Certification":
-      "false",
-
-    "X-HBCE-Qualified-Electronic-Signature":
-      "false",
-
-    /*
-     * HTTP header values must remain ByteString/ASCII-safe in the
-     * Fetch/Next.js Headers implementation. The canonical 🜏 marker
-     * remains in JSON and persisted data; headers expose its code point.
-     */
-    "X-HBCE-Hermeticum-Sigil-Codepoint":
-      HERMETICUM_SIGIL_CODEPOINT,
-  };
+  causeValue?:
+    unknown;
+}): never {
+  throw new RuntimeOperationsPersistentAppendError(
+    input,
+  );
 }
 
-function getExpectedManualToken():
-  string | null {
-  const value =
-    process.env
-      .HBCE_LEDGER_SELF_TEST_TOKEN;
+function isSha256(
+  value: string,
+): boolean {
+  return /^[0-9a-f]{64}$/.test(
+    value,
+  );
+}
 
+function assertNonEmpty(
+  value: string,
+  field: string,
+  stage:
+    RuntimeOperationsPersistentAppendStage,
+): void {
   if (
     typeof value !== "string" ||
-    value.length < 16
+    value.trim().length === 0
   ) {
-    return null;
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_INVALID_STRING",
+
+      stage,
+
+      message:
+        `${field} must be a non-empty string.`,
+
+      causeValue:
+        value,
+    });
+  }
+}
+
+function assertPositiveSafeInteger(
+  value: number,
+  field: string,
+  stage:
+    RuntimeOperationsPersistentAppendStage,
+): void {
+  if (
+    !Number.isSafeInteger(
+      value,
+    ) ||
+    value < 1
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_INVALID_INTEGER",
+
+      stage,
+
+      message:
+        `${field} must be a positive safe integer.`,
+
+      causeValue:
+        value,
+    });
+  }
+}
+
+function normalizePageSize(
+  value: number | undefined,
+): number {
+  const normalized =
+    value ??
+    DEFAULT_PAGE_SIZE;
+
+  if (
+    !Number.isSafeInteger(
+      normalized,
+    ) ||
+    normalized < 1 ||
+    normalized >
+      MAX_PAGE_SIZE
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_INVALID_PAGE_SIZE",
+
+      stage:
+        "FULL_CHAIN_READ",
+
+      message:
+        `verification.pageSize must be an integer between 1 and ${MAX_PAGE_SIZE}.`,
+
+      causeValue:
+        value,
+    });
   }
 
-  return value;
+  return normalized;
 }
 
-function unauthorized(
-  reason: string,
-) {
-  return NextResponse.json(
-    {
-      ok: false,
+function normalizeMaximumEntries(
+  value: number | undefined,
+): number {
+  const normalized =
+    value ??
+    DEFAULT_MAX_VERIFICATION_ENTRIES;
 
-      status:
-        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_UNAUTHORIZED",
+  if (
+    !Number.isSafeInteger(
+      normalized,
+    ) ||
+    normalized < 1
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_INVALID_MAXIMUM_ENTRIES",
 
-      operationalStatus:
-        "FAIL_CLOSED",
+      stage:
+        "FULL_CHAIN_READ",
 
-      revision:
-        REVISION,
+      message:
+        "verification.maximumEntries must be a positive safe integer.",
 
-      reason,
+      causeValue:
+        value,
+    });
+  }
 
-      governance: {
-        persistenceExecuted:
-          false,
+  return normalized;
+}
 
-        persistenceAttempted:
-          false,
+function assertAuthorization(
+  authorization:
+    RuntimeOperationsPersistentAppendAuthorization,
+): void {
+  if (
+    authorization
+      .humanAuthorized !==
+    true
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_HUMAN_AUTHORIZATION_REQUIRED",
 
-        humanAuthorizationRequired:
-          true,
+      stage:
+        "AUTHORIZATION",
 
-        autonomousAuthorization:
-          false,
+      message:
+        "Persistent append requires explicit human authorization.",
+    });
+  }
 
-        runtimeActivation:
-          false,
-
-        noSubmitFromCode:
-          true,
-
-        legalCertification:
-          false,
-
-        qualifiedElectronicSignature:
-          false,
-      },
-    },
-    {
-      status:
-        401,
-
-      headers: {
-        ...commonHeaders(
-          "false",
-        ),
-
-        "X-HBCE-Authorization":
-          "REJECTED",
-      },
-    },
+  assertNonEmpty(
+    authorization
+      .authorizationRef,
+    "authorization.authorizationRef",
+    "AUTHORIZATION",
   );
-}
 
-function preconditionFailClosed(
-  generatedAt: string,
-  reason: string,
-  details?: unknown,
-) {
-  return NextResponse.json(
-    {
-      ok: false,
+  if (
+    authorization
+      .runtimeIpr !==
+    CANONICAL_RUNTIME_IPR
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_RUNTIME_IPR_MISMATCH",
 
-      status:
-        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_PRECONDITION_FAIL_CLOSED",
+      stage:
+        "AUTHORIZATION",
 
-      operationalStatus:
-        "FAIL_CLOSED",
+      message:
+        "Authorization Runtime IPR is not canonical.",
 
-      revision:
-        REVISION,
-
-      generatedAt,
-
-      reason,
-
-      details:
-        details ?? null,
-
-      governance: {
-        persistenceExecuted:
-          false,
-
-        persistenceAttempted:
-          false,
-
-        appendOnly:
-          true,
-
-        hashOnlyEvidence:
-          true,
-
-        humanAuthorizationRequired:
-          true,
-
-        autonomousAuthorization:
-          false,
-
-        runtimeActivation:
-          false,
-
-        noSubmitFromCode:
-          true,
-
-        legalCertification:
-          false,
-
-        qualifiedElectronicSignature:
-          false,
-      },
-    },
-    {
-      status:
-        409,
-
-      headers: {
-        ...commonHeaders(
-          "false",
-        ),
-
-        "X-HBCE-Authorization":
-          "MANUAL_AUTHORIZATION_ACCEPTED",
-
-        "X-HBCE-Continuity-Precondition":
-          "REJECTED",
-      },
-    },
-  );
-}
-
-function buildContinuitySourceInput(
-  generatedAt: string,
-  genesisEntrySha256: string,
-  genesisChainRootSha256: string,
-): RuntimeOperationsEvidenceInput {
-  return {
-    ok: true,
-
-    status:
-      "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SOURCE_PASS",
-
-    operationalStatus:
-      "PASS",
-
-    revision:
-      REVISION,
-
-    generatedAt,
-
-    product:
-      "HBCE IPR Operational Identity & Proof Layer",
-
-    runtime:
-      "AI_JOKER_C2_SAAS_CORE_v0_1",
-
-    execution: {
-      mode:
-        "MANUALLY_AUTHORIZED_PERSISTENT_LEDGER_SEQUENCE_2_CONTINUITY_PROOF",
-
-      persistence:
-        true,
-
-      externalEffects:
-        true,
-
-      runtimeActivation:
-        false,
-
-      autonomousExecution:
-        false,
-
-      submission:
-        false,
-    },
-
-    summary: {
-      totalChecks:
-        1,
-
-      passedChecks:
-        1,
-
-      failedChecks:
-        0,
-
-      requiredChecks:
-        1,
-
-      requiredPassed:
-        1,
-
-      requiredFailed:
-        0,
-    },
-
-    checks: [
-      {
-        id:
-          "CONTINUITY-SOURCE-001",
-
-        description:
-          "Sequence 2 continuity source is manually authorized and canonical",
-
-        passed:
-          true,
-
+      causeValue: {
         expected:
-          `SEQUENCE_1_TO_SEQUENCE_2:${genesisEntrySha256}:${genesisChainRootSha256}`,
+          CANONICAL_RUNTIME_IPR,
 
         actual:
-          `SEQUENCE_1_TO_SEQUENCE_2:${genesisEntrySha256}:${genesisChainRootSha256}`,
+          authorization
+            .runtimeIpr,
       },
-    ],
+    });
+  }
 
-    governance: {
-      humanAuthorizationRequired:
-        true,
+  if (
+    authorization
+      .humanAuthorityIpr !==
+    CANONICAL_HUMAN_AUTHORITY_IPR
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_HUMAN_IPR_MISMATCH",
 
-      autonomousAuthorization:
-        false,
+      stage:
+        "AUTHORIZATION",
 
-      runtimeActivationFromSelfTest:
-        false,
+      message:
+        "Authorization human authority IPR is not canonical.",
 
-      noSubmitFromCode:
-        true,
+      causeValue: {
+        expected:
+          CANONICAL_HUMAN_AUTHORITY_IPR,
 
-      failClosed:
-        false,
+        actual:
+          authorization
+            .humanAuthorityIpr,
+      },
+    });
+  }
 
-      legalCertification:
-        false,
-    },
-  };
+  if (
+    authorization
+      .organization !==
+    CANONICAL_ORGANIZATION
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_ORGANIZATION_MISMATCH",
+
+      stage:
+        "AUTHORIZATION",
+
+      message:
+        "Authorization organization is not canonical.",
+
+      causeValue: {
+        expected:
+          CANONICAL_ORGANIZATION,
+
+        actual:
+          authorization
+            .organization,
+      },
+    });
+  }
 }
 
-function verifyPersistentChain(
-  entries: RuntimeOperationsLedgerEntry[],
-): {
-  verified: boolean;
-  totalFailedChecks: number;
-  sequenceContinuityVerified: boolean;
-  previousHashBindingsVerified: boolean;
-  entries: ChainVerificationEntry[];
-} {
+function assertSourcePreconditions(
+  sourceInput:
+    RuntimeOperationsEvidenceInput,
+): void {
+  if (
+    sourceInput.ok !==
+    true
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_SOURCE_NOT_OK",
+
+      stage:
+        "SOURCE_PRECONDITION",
+
+      message:
+        "Only source inputs with ok=true may enter persistent append.",
+    });
+  }
+
+  if (
+    sourceInput
+      .operationalStatus !==
+    "PASS"
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_SOURCE_NOT_PASS",
+
+      stage:
+        "SOURCE_PRECONDITION",
+
+      message:
+        "Only source inputs with operationalStatus=PASS may enter persistent append.",
+
+      causeValue:
+        sourceInput
+          .operationalStatus,
+    });
+  }
+
+  if (
+    sourceInput.summary
+      .failedChecks !==
+      0 ||
+    sourceInput.summary
+      .requiredFailed !==
+      0
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_SOURCE_CHECKS_FAILED",
+
+      stage:
+        "SOURCE_PRECONDITION",
+
+      message:
+        "Source input contains failed checks.",
+
+      causeValue: {
+        failedChecks:
+          sourceInput
+            .summary
+            .failedChecks,
+
+        requiredFailed:
+          sourceInput
+            .summary
+            .requiredFailed,
+      },
+    });
+  }
+
+  if (
+    sourceInput.governance
+      .humanAuthorizationRequired !==
+    true
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_SOURCE_HUMAN_AUTHORIZATION_NOT_REQUIRED",
+
+      stage:
+        "SOURCE_PRECONDITION",
+
+      message:
+        "Source governance must require human authorization.",
+    });
+  }
+
+  if (
+    sourceInput.governance
+      .autonomousAuthorization !==
+    false
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_SOURCE_AUTONOMOUS_AUTHORIZATION_ENABLED",
+
+      stage:
+        "SOURCE_PRECONDITION",
+
+      message:
+        "Source governance must keep autonomous authorization disabled.",
+    });
+  }
+
+  if (
+    sourceInput.governance
+      .runtimeActivationFromSelfTest !==
+    false
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_SOURCE_RUNTIME_ACTIVATION_ENABLED",
+
+      stage:
+        "SOURCE_PRECONDITION",
+
+      message:
+        "Source governance must keep runtime activation disabled.",
+    });
+  }
+
+  if (
+    sourceInput.governance
+      .noSubmitFromCode !==
+    true
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_SOURCE_SUBMIT_GUARD_DISABLED",
+
+      stage:
+        "SOURCE_PRECONDITION",
+
+      message:
+        "Source governance must keep NO_SUBMIT_FROM_CODE enabled.",
+    });
+  }
+
+  if (
+    sourceInput.governance
+      .legalCertification !==
+    false
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_SOURCE_LEGAL_CERTIFICATION_ENABLED",
+
+      stage:
+        "SOURCE_PRECONDITION",
+
+      message:
+        "Source governance must keep legalCertification=false.",
+    });
+  }
+}
+
+function assertExpectedTip(
+  expected:
+    RuntimeOperationsPersistentAppendExpectedTip | undefined,
+  latest:
+    RuntimeOperationsLedgerRepositoryRecord,
+): boolean {
+  if (!expected) {
+    return true;
+  }
+
+  assertPositiveSafeInteger(
+    expected.sequence,
+    "expectedTip.sequence",
+    "TIP_READ",
+  );
+
+  if (
+    !isSha256(
+      expected.entrySha256,
+    )
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_EXPECTED_TIP_INVALID_SHA256",
+
+      stage:
+        "TIP_READ",
+
+      message:
+        "expectedTip.entrySha256 must be a lowercase SHA-256 hex string.",
+
+      causeValue:
+        expected.entrySha256,
+    });
+  }
+
+  const matched =
+    expected.sequence ===
+      latest.entry.sequence &&
+    expected.entrySha256 ===
+      latest.entry.chain
+        .entrySha256;
+
+  if (!matched) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_EXPECTED_TIP_MISMATCH",
+
+      stage:
+        "TIP_READ",
+
+      message:
+        "Persistent ledger tip does not match the caller precondition.",
+
+      causeValue: {
+        expected,
+
+        actual: {
+          sequence:
+            latest.entry
+              .sequence,
+
+          entrySha256:
+            latest.entry
+              .chain
+              .entrySha256,
+        },
+      },
+    });
+  }
+
+  return true;
+}
+
+async function verifyCurrentTip(
+  latest:
+    RuntimeOperationsLedgerRepositoryRecord,
+): Promise<void> {
+  const sequence =
+    latest.entry
+      .sequence;
+
+  const previousRecord =
+    sequence === 1
+      ? null
+      : await getRuntimeOperationsLedgerEntryBySequence(
+          sequence - 1,
+        );
+
+  if (
+    sequence > 1 &&
+    !previousRecord
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_PREVIOUS_TIP_ENTRY_MISSING",
+
+      stage:
+        "TIP_VERIFICATION",
+
+      message:
+        "Previous persistent ledger entry is missing before append.",
+
+      causeValue: {
+        sequence,
+
+        expectedPreviousSequence:
+          sequence - 1,
+      },
+    });
+  }
+
+  const verification =
+    verifyRuntimeOperationsLedgerEntry({
+      entry:
+        latest.entry,
+
+      previousEntry:
+        previousRecord
+          ?.entry ?? null,
+    });
+
+  if (
+    verification.verified !==
+      true ||
+    verification.summary
+      .failedChecks !==
+      0
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_CURRENT_TIP_INVALID",
+
+      stage:
+        "TIP_VERIFICATION",
+
+      message:
+        "Current persistent ledger tip failed independent verification.",
+
+      causeValue: {
+        sequence,
+
+        verified:
+          verification
+            .verified,
+
+        failedChecks:
+          verification
+            .summary
+            .failedChecks,
+      },
+    });
+  }
+}
+
+function assertCanonicalEnvelope(
+  envelope:
+    ReturnType<
+      typeof buildRuntimeOperationsOpcEnvelope
+    >,
+): void {
+  if (
+    envelope.identity
+      .runtimeIpr !==
+    CANONICAL_RUNTIME_IPR ||
+    envelope.identity
+      .humanAuthorityIpr !==
+    CANONICAL_HUMAN_AUTHORITY_IPR ||
+    envelope.identity
+      .organization !==
+    CANONICAL_ORGANIZATION
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_ENVELOPE_IDENTITY_MISMATCH",
+
+      stage:
+        "OPC_BUILD",
+
+      message:
+        "OPC/EVT envelope identity is not canonical.",
+
+      causeValue:
+        envelope.identity,
+    });
+  }
+
+  if (
+    envelope.governance
+      .humanAuthorizationRequired !==
+      true ||
+    envelope.governance
+      .autonomousAuthorization !==
+      false ||
+    envelope.governance
+      .runtimeActivation !==
+      false ||
+    envelope.governance
+      .legalCertification !==
+      false ||
+    envelope.internalSeal
+      .qualifiedElectronicSignature !==
+      false
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_ENVELOPE_GOVERNANCE_MISMATCH",
+
+      stage:
+        "OPC_BUILD",
+
+      message:
+        "OPC/EVT envelope governance invariants are not canonical.",
+
+      causeValue: {
+        governance:
+          envelope.governance,
+
+        qualifiedElectronicSignature:
+          envelope.internalSeal
+            .qualifiedElectronicSignature,
+      },
+    });
+  }
+}
+
+async function readFullPersistentChain(input: {
+  expectedLatestSequence:
+    number;
+
+  pageSize:
+    number;
+
+  maximumEntries:
+    number;
+}): Promise<
+  RuntimeOperationsLedgerRepositoryRecord[]
+> {
+  if (
+    input.expectedLatestSequence >
+    input.maximumEntries
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_CHAIN_LIMIT_EXCEEDED",
+
+      stage:
+        "FULL_CHAIN_READ",
+
+      message:
+        "Persistent ledger exceeds the configured full-chain verification limit.",
+
+      causeValue: {
+        expectedLatestSequence:
+          input.expectedLatestSequence,
+
+        maximumEntries:
+          input.maximumEntries,
+      },
+    });
+  }
+
+  const records:
+    RuntimeOperationsLedgerRepositoryRecord[] =
+    [];
+
+  let afterSequence =
+    0;
+
+  while (
+    afterSequence <
+    input.expectedLatestSequence
+  ) {
+    const remaining =
+      input.expectedLatestSequence -
+      afterSequence;
+
+    const limit =
+      Math.min(
+        input.pageSize,
+        remaining,
+      );
+
+    const page =
+      await listRuntimeOperationsLedgerEntries({
+        limit,
+
+        afterSequence,
+      });
+
+    if (
+      page.length ===
+      0
+    ) {
+      break;
+    }
+
+    records.push(
+      ...page,
+    );
+
+    if (
+      records.length >
+      input.maximumEntries
+    ) {
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_CHAIN_LIMIT_EXCEEDED",
+
+        stage:
+          "FULL_CHAIN_READ",
+
+        message:
+          "Persistent ledger read exceeded the configured full-chain verification limit.",
+
+        causeValue: {
+          recordsRead:
+            records.length,
+
+          maximumEntries:
+            input.maximumEntries,
+        },
+      });
+    }
+
+    const last =
+      page[
+        page.length - 1
+      ];
+
+    if (!last) {
+      break;
+    }
+
+    if (
+      last.entry
+        .sequence <=
+      afterSequence
+    ) {
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_CHAIN_PAGINATION_STALLED",
+
+        stage:
+          "FULL_CHAIN_READ",
+
+        message:
+          "Persistent ledger pagination did not advance.",
+
+        causeValue: {
+          afterSequence,
+
+          observedSequence:
+            last.entry
+              .sequence,
+        },
+      });
+    }
+
+    afterSequence =
+      last.entry
+        .sequence;
+  }
+
+  return records;
+}
+
+export function verifyRuntimeOperationsPersistentChain(
+  entries:
+    RuntimeOperationsLedgerEntry[],
+  expectedLatestSequence?:
+    number,
+): RuntimeOperationsPersistentChainVerificationResult {
   const details:
-    ChainVerificationEntry[] =
+    RuntimeOperationsPersistentChainVerificationEntry[] =
     [];
 
   let previousEntry:
     RuntimeOperationsLedgerEntry | null =
     null;
-
-  let totalFailedChecks =
-    0;
 
   let sequenceContinuityVerified =
     true;
@@ -408,8 +1198,11 @@ function verifyPersistentChain(
   let previousHashBindingsVerified =
     true;
 
-  let allEntriesVerified =
+  let allEntriesCryptographicallyVerified =
     true;
+
+  let totalFailedChecks =
+    0;
 
   for (
     let index = 0;
@@ -443,47 +1236,62 @@ function verifyPersistentChain(
         previousEntry,
       });
 
-    const entryVerified =
+    const cryptographicVerificationPassed =
       verification.verified ===
         true &&
       verification.summary
-        .failedChecks === 0 &&
-      sequenceContinuity &&
-      previousHashBinding;
+        .failedChecks === 0;
 
-    totalFailedChecks +=
-      verification.summary
-        .failedChecks;
+    let structuralFailures =
+      0;
 
     if (!sequenceContinuity) {
       sequenceContinuityVerified =
         false;
+
+      structuralFailures +=
+        1;
     }
 
     if (!previousHashBinding) {
       previousHashBindingsVerified =
         false;
+
+      structuralFailures +=
+        1;
     }
 
-    if (!entryVerified) {
-      allEntriesVerified =
+    if (
+      !cryptographicVerificationPassed
+    ) {
+      allEntriesCryptographicallyVerified =
         false;
     }
+
+    const failedChecks =
+      verification.summary
+        .failedChecks +
+      structuralFailures;
+
+    totalFailedChecks +=
+      failedChecks;
 
     details.push({
       sequence:
         entry.sequence,
 
       verified:
-        entryVerified,
+        cryptographicVerificationPassed &&
+        sequenceContinuity &&
+        previousHashBinding,
 
-      failedChecks:
-        verification.summary
-          .failedChecks,
+      cryptographicVerificationPassed,
 
       sequenceContinuity,
 
       previousHashBinding,
+
+      failedChecks,
 
       entrySha256:
         entry.chain
@@ -502,611 +1310,244 @@ function verifyPersistentChain(
       entry;
   }
 
-  return {
-    verified:
-      allEntriesVerified &&
-      totalFailedChecks === 0 &&
-      sequenceContinuityVerified &&
-      previousHashBindingsVerified,
+  const genesisSequence =
+    entries[0]
+      ?.sequence ?? null;
 
-    totalFailedChecks,
+  const latestSequence =
+    entries[
+      entries.length - 1
+    ]?.sequence ?? null;
+
+  const tipCoverageVerified =
+    expectedLatestSequence ===
+      undefined
+      ? true
+      : latestSequence ===
+          expectedLatestSequence &&
+        entries.length ===
+          expectedLatestSequence;
+
+  if (
+    !tipCoverageVerified
+  ) {
+    totalFailedChecks +=
+      1;
+  }
+
+  return {
+    verifierMode:
+      "PERSISTENT_DATABASE_FULL_CHAIN",
+
+    verified:
+      entries.length > 0 &&
+      genesisSequence === 1 &&
+      sequenceContinuityVerified &&
+      previousHashBindingsVerified &&
+      allEntriesCryptographicallyVerified &&
+      tipCoverageVerified &&
+      totalFailedChecks === 0,
+
+    entryCount:
+      entries.length,
+
+    genesisSequence,
+
+    latestSequence,
 
     sequenceContinuityVerified,
 
     previousHashBindingsVerified,
+
+    allEntriesCryptographicallyVerified,
+
+    tipCoverageVerified,
+
+    totalFailedChecks,
 
     entries:
       details,
   };
 }
 
-export async function GET() {
-  try {
-    const latest =
-      await getLatestRuntimeOperationsLedgerEntry();
-
-    const observedLatestSequence =
-      latest?.entry
-        .sequence ?? null;
-
-    const eligible =
-      observedLatestSequence ===
-      REQUIRED_START_SEQUENCE;
-
-    const completed =
-      observedLatestSequence !== null &&
-      observedLatestSequence >=
-        REQUIRED_FINAL_SEQUENCE;
-
-    const continuityState =
-      completed
-        ? "COMPLETE"
-        : eligible
-          ? "ELIGIBLE"
-          : "MISSING_GENESIS";
-
-    const status =
-      completed
-        ? "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_COMPLETE"
-        : eligible
-          ? "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_READY"
-          : "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_PRECONDITION_FAIL_CLOSED";
-
-    const operationalStatus =
-      completed
-        ? "PASS"
-        : eligible
-          ? "READY"
-          : "FAIL_CLOSED";
-
-    const message =
-      completed
-        ? "Sequence 2 already exists. The continuity proof is complete and POST is no longer eligible."
-        : eligible
-          ? "POST performs exactly one manually authorized persistent append and is accepted only when the current ledger tip is sequence 1."
-          : "Genesis sequence 1 is required before the Sequence 2 continuity proof can be authorized.";
-
-    return NextResponse.json(
-      {
-        ok:
-          completed ||
-          eligible,
-
-        status,
-
-        operationalStatus,
-
-        revision:
-          REVISION,
-
-        method:
-          "POST",
-
-        readOnly:
-          true,
-
-        sideEffects:
-          false,
-
-        message,
-
-        continuityState,
-
-        precondition: {
-          requiredCurrentSequence:
-            REQUIRED_START_SEQUENCE,
-
-          requiredResultSequence:
-            REQUIRED_FINAL_SEQUENCE,
-
-          observedLatestSequence,
-
-          eligible,
-
-          completed,
-        },
-
-        requirements: {
-          environmentVariable:
-            "HBCE_LEDGER_SELF_TEST_TOKEN",
-
-          requestHeader:
-            MANUAL_AUTHORIZATION_HEADER,
-
-          minimumTokenLength:
-            16,
-
-          authorizationRequiredOnlyWhenEligible:
-            true,
-        },
-
-        identity: {
-          hermeticumSigil:
-            HERMETICUM_SIGIL,
-
-          hermeticumSigilCodepoint:
-            HERMETICUM_SIGIL_CODEPOINT,
-        },
-
-        governance: {
-          persistenceExecuted:
-            false,
-
-          persistenceAttempted:
-            false,
-
-          appendOnly:
-            true,
-
-          hashOnlyEvidence:
-            true,
-
-          humanAuthorizationRequired:
-            true,
-
-          autonomousAuthorization:
-            false,
-
-          runtimeActivation:
-            false,
-
-          noSubmitFromCode:
-            true,
-
-          legalCertification:
-            false,
-
-          qualifiedElectronicSignature:
-            false,
-        },
-      },
-      {
-        status:
-          completed ||
-          eligible
-            ? 200
-            : 409,
-
-        headers: {
-          ...commonHeaders(
-            "false",
-          ),
-
-          "X-HBCE-Authorization":
-            eligible
-              ? "HUMAN_AUTHORIZATION_REQUIRED"
-              : completed
-                ? "NOT_REQUIRED_CONTINUITY_COMPLETE"
-                : "PRECONDITION_NOT_MET",
-
-          "X-HBCE-Continuity-State":
-            continuityState,
-        },
-      },
-    );
-  } catch (error) {
-    return NextResponse.json(
-      {
-        ok: false,
-
-        status:
-          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_READ_FAIL_CLOSED",
-
-        operationalStatus:
-          "FAIL_CLOSED",
-
-        revision:
-          REVISION,
-
-        readOnly:
-          true,
-
-        sideEffects:
-          false,
-
-        error: {
-          name:
-            error instanceof Error
-              ? error.name
-              : "UnknownError",
-
-          message:
-            error instanceof Error
-              ? error.message
-              : String(error),
-        },
-
-        governance: {
-          persistenceExecuted:
-            false,
-
-          persistenceAttempted:
-            false,
-
-          humanAuthorizationRequired:
-            true,
-
-          autonomousAuthorization:
-            false,
-
-          runtimeActivation:
-            false,
-
-          noSubmitFromCode:
-            true,
-
-          legalCertification:
-            false,
-
-          qualifiedElectronicSignature:
-            false,
-        },
-      },
-      {
-        status:
-          500,
-
-        headers: {
-          ...commonHeaders(
-            "false",
-          ),
-
-          "X-HBCE-Authorization":
-            "NOT_EVALUATED",
-
-          "X-HBCE-Continuity-State":
-            "FAIL_CLOSED",
-        },
-      },
-    );
-  }
-}
-
-export async function POST(
-  request: NextRequest,
-) {
-  const expectedToken =
-    getExpectedManualToken();
-
-  if (!expectedToken) {
-    return unauthorized(
-      "HBCE_LEDGER_SELF_TEST_TOKEN is missing or shorter than 16 characters.",
-    );
-  }
-
-  const suppliedToken =
-    request.headers.get(
-      MANUAL_AUTHORIZATION_HEADER,
-    );
-
-  if (
-    suppliedToken !==
-    expectedToken
-  ) {
-    return unauthorized(
-      "Manual continuity authorization token is invalid.",
-    );
-  }
-
-  const generatedAt =
-    new Date().toISOString();
-
-  const checks:
-    Check[] =
-    [];
-
+export async function appendRuntimeOperationsPersistentEvidence(
+  request:
+    RuntimeOperationsPersistentAppendRequest,
+): Promise<
+  RuntimeOperationsPersistentAppendResult
+> {
   let persistenceAttempted =
     false;
 
   let persistenceConfirmed =
     false;
 
+  let persistedSequence:
+    number | null =
+    null;
+
   try {
     /*
-     * 1. Preflight.
+     * 1. Authorization is explicit and external to this service.
      *
-     * This endpoint is intentionally one-shot.
-     * It may create Sequence 2 only when the current persistent tip
-     * is exactly Sequence 1.
+     * This service never validates or stores raw credentials/tokens.
+     * The caller must resolve the human authorization before invoking it.
+     */
+    assertAuthorization(
+      request.authorization,
+    );
+
+    /*
+     * 2. Only already-passing, governance-compatible source input enters
+     * the persistence pipeline.
+     */
+    assertSourcePreconditions(
+      request.sourceInput,
+    );
+
+    const pageSize =
+      normalizePageSize(
+        request.verification
+          ?.pageSize,
+      );
+
+    const maximumEntries =
+      normalizeMaximumEntries(
+        request.verification
+          ?.maximumEntries,
+      );
+
+    /*
+     * 3. Read and independently verify the current persistent tip.
+     *
+     * The service is intentionally a continuation service. Genesis has
+     * its own bootstrap path and must already exist.
      */
     const latestBefore =
       await getLatestRuntimeOperationsLedgerEntry();
 
-    checks.push(
-      check(
-        "CONT-001",
-        "Persistent ledger has an existing tip",
-        true,
-        latestBefore !== null,
-      ),
-    );
-
     if (!latestBefore) {
-      return preconditionFailClosed(
-        generatedAt,
-        "Persistent ledger is empty. Genesis sequence 1 must exist before continuity proof.",
-      );
-    }
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_GENESIS_REQUIRED",
 
-    checks.push(
-      check(
-        "CONT-002",
-        "Current persistent tip is exactly sequence 1",
-        REQUIRED_START_SEQUENCE,
-        latestBefore.entry
-          .sequence,
-      ),
-    );
+        stage:
+          "TIP_READ",
 
-    if (
-      latestBefore.entry
-        .sequence !==
-      REQUIRED_START_SEQUENCE
-    ) {
-      return preconditionFailClosed(
-        generatedAt,
-        "Continuity proof is one-shot and requires the current persistent tip to be sequence 1.",
-        {
-          requiredCurrentSequence:
-            REQUIRED_START_SEQUENCE,
-
-          observedCurrentSequence:
-            latestBefore.entry
-              .sequence,
-
-          persistenceExecuted:
-            false,
-
-          instruction:
-            "Do not retry this endpoint after sequence 2 already exists.",
-        },
-      );
-    }
-
-    const genesis =
-      latestBefore.entry;
-
-    checks.push(
-      check(
-        "CONT-003",
-        "Genesis previous-entry SHA-256 is null",
-        null,
-        genesis.chain
-          .previousEntrySha256,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-004",
-        "Genesis Runtime IPR is canonical",
-        "IPR-AI-0001",
-        genesis.identity
-          .runtimeIpr,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-005",
-        "Genesis human authority IPR is canonical",
-        "IPR-3",
-        genesis.identity
-          .humanAuthorityIpr,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-006",
-        "Genesis organization is canonical",
-        "HERMETICUM B.C.E. S.r.l.",
-        genesis.identity
-          .organization,
-      ),
-    );
-
-    const genesisVerification =
-      verifyRuntimeOperationsLedgerEntry({
-        entry:
-          genesis,
-
-        previousEntry:
-          null,
+        message:
+          "Persistent append service requires an existing ledger Genesis entry.",
       });
-
-    checks.push(
-      check(
-        "CONT-007",
-        "Genesis independently verifies before append",
-        true,
-        genesisVerification
-          .verified,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-008",
-        "Genesis verification has zero failures",
-        0,
-        genesisVerification
-          .summary
-          .failedChecks,
-      ),
-    );
-
-    if (
-      !genesisVerification
-        .verified
-    ) {
-      return preconditionFailClosed(
-        generatedAt,
-        "Genesis entry failed independent verification before continuity append.",
-        {
-          sequence:
-            genesis.sequence,
-
-          failedChecks:
-            genesisVerification
-              .summary
-              .failedChecks,
-        },
-      );
     }
+
+    const expectedTipMatched =
+      assertExpectedTip(
+        request.expectedTip,
+        latestBefore,
+      );
+
+    await verifyCurrentTip(
+      latestBefore,
+    );
 
     /*
-     * 2. Build a fresh evidence receipt for the continuity event.
-     *
-     * generatedAt and the explicit Genesis bindings make this
-     * continuity event cryptographically distinct from Sequence 1.
+     * 4. Build hash-only evidence and OPC/EVT envelope.
      */
-    const sourceInput =
-      buildContinuitySourceInput(
-        generatedAt,
-        genesis.chain
-          .entrySha256,
-        genesis.chain
-          .chainRootSha256,
-      );
-
-    checks.push(
-      check(
-        "CONT-009",
-        "Continuity source requires human authorization",
-        true,
-        sourceInput.governance
-          .humanAuthorizationRequired,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-010",
-        "Continuity source disables autonomous authorization",
-        false,
-        sourceInput.governance
-          .autonomousAuthorization,
-      ),
-    );
-
     const evidence =
       buildRuntimeOperationsEvidence(
-        sourceInput,
+        request.sourceInput,
       );
 
-    checks.push(
-      check(
-        "CONT-011",
-        "Continuity evidence verification passes",
-        true,
-        evidence.verification
-          .allRequiredChecksPassed,
-      ),
-    );
+    if (
+      evidence.verification
+        .allRequiredChecksPassed !==
+      true
+    ) {
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_EVIDENCE_VERIFICATION_FAILED",
+
+        stage:
+          "EVIDENCE_BUILD",
+
+        message:
+          "Runtime Operations evidence did not pass all required checks.",
+
+        causeValue: {
+          evidenceRevision:
+            evidence.revision,
+
+          evidenceSha256:
+            evidence.integrity
+              .sha256,
+
+          allRequiredChecksPassed:
+            evidence.verification
+              .allRequiredChecksPassed,
+        },
+      });
+    }
 
     const envelope =
       buildRuntimeOperationsOpcEnvelope({
         evidence,
       });
 
-    checks.push(
-      check(
-        "CONT-012",
-        "Continuity envelope binds canonical Runtime IPR",
-        "IPR-AI-0001",
-        envelope.identity
-          .runtimeIpr,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-013",
-        "Continuity envelope binds canonical human authority IPR",
-        "IPR-3",
-        envelope.identity
-          .humanAuthorityIpr,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-014",
-        "Continuity envelope binds canonical organization",
-        "HERMETICUM B.C.E. S.r.l.",
-        envelope.identity
-          .organization,
-      ),
+    assertCanonicalEnvelope(
+      envelope,
     );
 
     const opcVerification =
       verifyRuntimeOperationsOpcEnvelope({
-        sourceInput,
+        sourceInput:
+          request.sourceInput,
+
         evidence,
+
         envelope,
       });
 
-    checks.push(
-      check(
-        "CONT-015",
-        "Continuity OPC/EVT independent verification passes",
-        true,
-        opcVerification
-          .verified,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-016",
-        "Continuity OPC/EVT verification has zero failures",
-        0,
-        opcVerification
-          .summary
-          .failedChecks,
-      ),
-    );
-
     if (
-      !opcVerification
-        .verified
+      opcVerification.verified !==
+        true ||
+      opcVerification
+        .operationalStatus !==
+        "PASS" ||
+      opcVerification.summary
+        .failedChecks !==
+        0
     ) {
-      throw new Error(
-        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_OPC_VERIFICATION_FAILED",
-      );
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_OPC_VERIFICATION_FAILED",
+
+        stage:
+          "OPC_VERIFICATION",
+
+        message:
+          "OPC/EVT envelope failed independent verification.",
+
+        causeValue: {
+          verified:
+            opcVerification
+              .verified,
+
+          operationalStatus:
+            opcVerification
+              .operationalStatus,
+
+          failedChecks:
+            opcVerification
+              .summary
+              .failedChecks,
+        },
+      });
     }
 
-    checks.push(
-      check(
-        "CONT-017",
-        "Continuity evidence SHA-256 differs from Genesis evidence",
-        true,
-        evidence.integrity
-          .sha256 !==
-          genesis.source
-            .evidenceSha256,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-018",
-        "Continuity envelope SHA-256 differs from Genesis envelope",
-        true,
-        envelope.integrity
-          .envelopeSha256 !==
-          genesis.source
-            .envelopeSha256,
-      ),
-    );
-
     /*
-     * 3. Real external effect.
+     * 5. Single persistence attempt.
      *
-     * No retry occurs in this function.
-     * Concurrent competing requests are resolved by the database
-     * append lock + sequence continuity trigger.
+     * No retry is performed here. The repository/database controls the
+     * authoritative append order and rejects invalid continuity.
      */
     persistenceAttempted =
       true;
@@ -1114,6 +1555,7 @@ export async function POST(
     const persisted =
       await appendVerifiedRuntimeOperationsLedgerEntry({
         envelope,
+
         verification:
           opcVerification,
       });
@@ -1121,747 +1563,535 @@ export async function POST(
     persistenceConfirmed =
       true;
 
-    checks.push(
-      check(
-        "CONT-019",
-        "Persisted continuity sequence is exactly 2",
-        REQUIRED_FINAL_SEQUENCE,
-        persisted.entry
-          .sequence,
-      ),
-    );
+    persistedSequence =
+      persisted.entry
+        .sequence;
 
-    checks.push(
-      check(
-        "CONT-020",
-        "Sequence 2 previous-entry SHA-256 binds Genesis entry SHA-256",
-        genesis.chain
-          .entrySha256,
-        persisted.entry
-          .chain
-          .previousEntrySha256,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-021",
-        "Sequence 2 entry SHA-256 differs from Genesis entry SHA-256",
-        true,
-        persisted.entry
-          .chain
-          .entrySha256 !==
-          genesis.chain
-            .entrySha256,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-022",
-        "Sequence 2 chain root differs from Genesis chain root",
-        true,
-        persisted.entry
-          .chain
-          .chainRootSha256 !==
-          genesis.chain
-            .chainRootSha256,
-      ),
-    );
+    const expectedNextSequence =
+      latestBefore.entry
+        .sequence + 1;
 
     /*
-     * 4. Independent reread.
+     * A concurrent valid append may advance the repository tip between
+     * service preflight and repository append. That does not invalidate
+     * a cryptographically valid append, but it is surfaced explicitly.
      */
-    const rereadSequence2 =
-      await getRuntimeOperationsLedgerEntryBySequence(
-        REQUIRED_FINAL_SEQUENCE,
-      );
-
-    checks.push(
-      check(
-        "CONT-023",
-        "Sequence 2 can be independently reread",
-        true,
-        rereadSequence2 !== null,
-      ),
-    );
-
-    if (!rereadSequence2) {
-      throw new Error(
-        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SEQUENCE_2_REREAD_MISSING",
-      );
-    }
-
-    const rereadGenesis =
-      await getRuntimeOperationsLedgerEntryBySequence(
-        REQUIRED_START_SEQUENCE,
-      );
-
-    checks.push(
-      check(
-        "CONT-024",
-        "Genesis can be independently reread after Sequence 2 append",
-        true,
-        rereadGenesis !== null,
-      ),
-    );
-
-    if (!rereadGenesis) {
-      throw new Error(
-        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_GENESIS_REREAD_MISSING",
-      );
-    }
-
-    checks.push(
-      check(
-        "CONT-025",
-        "Reread Sequence 2 entry SHA-256 matches persisted result",
-        persisted.entry
-          .chain
-          .entrySha256,
-        rereadSequence2.entry
-          .chain
-          .entrySha256,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-026",
-        "Reread Sequence 2 previous hash still binds Genesis",
-        rereadGenesis.entry
-          .chain
-          .entrySha256,
-        rereadSequence2.entry
-          .chain
-          .previousEntrySha256,
-      ),
-    );
-
-    const sequence2Verification =
-      verifyRuntimeOperationsLedgerEntry({
-        entry:
-          rereadSequence2.entry,
-
-        previousEntry:
-          rereadGenesis.entry,
-      });
-
-    checks.push(
-      check(
-        "CONT-027",
-        "Sequence 2 independently verifies against Genesis",
-        true,
-        sequence2Verification
-          .verified,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-028",
-        "Sequence 2 verification has zero failures",
-        0,
-        sequence2Verification
-          .summary
-          .failedChecks,
-      ),
-    );
+    const concurrentTipAdvanceObserved =
+      persisted.entry
+        .sequence !==
+      expectedNextSequence;
 
     /*
-     * 5. Full persistent two-entry chain verification.
+     * 6. Independent reread of the exact persisted sequence.
      */
-    const records =
-      await listRuntimeOperationsLedgerEntries({
-        limit:
-          1000,
-
-        afterSequence:
-          0,
-      });
-
-    checks.push(
-      check(
-        "CONT-029",
-        "Persistent ledger contains exactly two entries after continuity proof",
-        REQUIRED_FINAL_SEQUENCE,
-        records.length,
-      ),
-    );
-
-    const latestAfter =
-      await getLatestRuntimeOperationsLedgerEntry();
-
-    checks.push(
-      check(
-        "CONT-030",
-        "Persistent ledger has a tip after continuity append",
-        true,
-        latestAfter !== null,
-      ),
-    );
-
-    if (!latestAfter) {
-      throw new Error(
-        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_LATEST_ENTRY_MISSING",
+    const reread =
+      await getRuntimeOperationsLedgerEntryBySequence(
+        persisted.entry
+          .sequence,
       );
+
+    if (!reread) {
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_REREAD_MISSING",
+
+        stage:
+          "PERSISTENCE_REREAD",
+
+        message:
+          "Persisted ledger entry could not be reread.",
+
+        persistenceAttempted,
+        persistenceConfirmed,
+        persistedSequence,
+      });
     }
 
-    checks.push(
-      check(
-        "CONT-031",
-        "Persistent ledger tip is exactly sequence 2",
-        REQUIRED_FINAL_SEQUENCE,
-        latestAfter.entry
-          .sequence,
-      ),
-    );
-
-    const chainEntries =
-      records.map(
-        (record) =>
-          record.entry,
-      );
-
-    const chainVerification =
-      verifyPersistentChain(
-        chainEntries,
-      );
-
-    checks.push(
-      check(
-        "CONT-032",
-        "Full persistent two-entry chain verifies",
-        true,
-        chainVerification
-          .verified,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-033",
-        "Full persistent chain has zero cryptographic verification failures",
-        0,
-        chainVerification
-          .totalFailedChecks,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-034",
-        "Persistent chain sequence continuity is verified",
-        true,
-        chainVerification
-          .sequenceContinuityVerified,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-035",
-        "Persistent chain previous-hash bindings are verified",
-        true,
-        chainVerification
-          .previousHashBindingsVerified,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-036",
-        "Sequence 2 preserves append-only governance",
-        true,
-        rereadSequence2.entry
-          .governance
-          .appendOnly,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-037",
-        "Sequence 2 preserves hash-only evidence governance",
-        true,
-        rereadSequence2.entry
-          .governance
-          .hashOnlyEvidence,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-038",
-        "Sequence 2 preserves mandatory human authorization",
-        true,
-        rereadSequence2.entry
-          .governance
-          .humanAuthorizationRequired,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-039",
-        "Sequence 2 keeps autonomous authorization disabled",
-        false,
-        rereadSequence2.entry
-          .governance
-          .autonomousAuthorization,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-040",
-        "Sequence 2 keeps runtime activation disabled",
-        false,
-        rereadSequence2.entry
-          .governance
-          .runtimeActivation,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-041",
-        "Sequence 2 keeps NO_SUBMIT_FROM_CODE enabled",
-        true,
-        rereadSequence2.entry
-          .governance
-          .noSubmitFromCode,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-042",
-        "Sequence 2 keeps legal certification disabled",
-        false,
-        rereadSequence2.entry
-          .governance
-          .legalCertification,
-      ),
-    );
-
-    checks.push(
-      check(
-        "CONT-043",
-        "Sequence 2 keeps qualified electronic signature claim disabled",
-        false,
-        rereadSequence2.entry
-          .governance
-          .qualifiedElectronicSignature,
-      ),
-    );
-
-    const passedChecks =
-      checks.filter(
-        (item) =>
-          item.passed,
-      ).length;
-
-    const failedChecks =
-      checks.length -
-      passedChecks;
-
-    const completePass =
-      failedChecks === 0 &&
-      persistenceConfirmed &&
-      latestAfter.entry
-        .sequence ===
-        REQUIRED_FINAL_SEQUENCE &&
-      chainVerification
-        .verified;
-
-    return NextResponse.json(
-      {
-        ok:
-          completePass,
-
-        status:
-          completePass
-            ? "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_PASS"
-            : "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_FAIL",
-
-        operationalStatus:
-          completePass
-            ? "PASS"
-            : "FAIL_CLOSED",
-
-        revision:
-          REVISION,
-
-        generatedAt,
-
-        product:
-          "HBCE IPR Operational Identity & Proof Layer",
-
-        runtime:
-          "AI_JOKER_C2_SAAS_CORE_v0_1",
-
-        execution: {
-          mode:
-            "MANUALLY_AUTHORIZED_PERSISTENT_LEDGER_SEQUENCE_2_CONTINUITY_PROOF",
-
-          persistence:
-            true,
-
-          externalEffects:
-            true,
-
-          manualAuthorization:
-            true,
-
-          runtimeActivation:
-            false,
-
-          autonomousExecution:
-            false,
-
-          submission:
-            false,
-        },
-
-        summary: {
-          totalChecks:
-            checks.length,
-
-          passedChecks,
-
-          failedChecks,
-
-          requiredChecks:
-            checks.length,
-
-          requiredPassed:
-            passedChecks,
-
-          requiredFailed:
-            failedChecks,
-        },
-
-        checks,
-
-        evidence: {
-          revision:
-            evidence.revision,
-
-          sha256:
-            evidence.integrity
-              .sha256,
-
-          verified:
-            evidence.verification
-              .allRequiredChecksPassed,
-        },
-
-        opcEvt: {
-          revision:
-            envelope.revision,
-
-          envelopeSha256:
-            envelope.integrity
-              .envelopeSha256,
-
-          internalSeal:
-            envelope.internalSeal
-              .value,
-
-          verified:
-            opcVerification
-              .verified,
-        },
-
-        continuity: {
-          genesis: {
-            sequence:
-              rereadGenesis.entry
-                .sequence,
-
-            entrySha256:
-              rereadGenesis.entry
-                .chain
-                .entrySha256,
-
-            chainRootSha256:
-              rereadGenesis.entry
-                .chain
-                .chainRootSha256,
-          },
-
-          sequence2: {
-            sequence:
-              rereadSequence2.entry
-                .sequence,
-
-            hermeticumSigil:
-              HERMETICUM_SIGIL,
-
-            hermeticumSigilCodepoint:
-              HERMETICUM_SIGIL_CODEPOINT,
-
-            previousEntrySha256:
-              rereadSequence2.entry
-                .chain
-                .previousEntrySha256,
-
-            entrySha256:
-              rereadSequence2.entry
-                .chain
-                .entrySha256,
-
-            chainRootSha256:
-              rereadSequence2.entry
-                .chain
-                .chainRootSha256,
-
-            independentlyVerified:
-              sequence2Verification
-                .verified,
-          },
-
-          fullChain: {
-            entryCount:
-              records.length,
-
-            genesisSequence:
-              records[0]?.entry
-                .sequence ?? null,
-
-            latestSequence:
-              latestAfter.entry
-                .sequence,
-
-            sequenceContinuityVerified:
-              chainVerification
-                .sequenceContinuityVerified,
-
-            previousHashBindingsVerified:
-              chainVerification
-                .previousHashBindingsVerified,
-
-            completeChainPassed:
-              chainVerification
-                .verified,
-
-            totalFailedChecks:
-              chainVerification
-                .totalFailedChecks,
-
-            entries:
-              chainVerification
-                .entries,
-          },
-        },
-
-        persistence: {
-          table:
-            persisted.persistence
-              .table,
-
-          recordedAt:
-            persisted.persistence
-              .recordedAt,
-
-          persistenceAttempted,
-
-          persistenceConfirmed,
-
-          reread:
-            true,
-        },
-
-        governance: {
-          failClosed:
-            !completePass,
-
-          persistenceExecuted:
-            persistenceConfirmed,
-
-          appendOnly:
-            true,
-
-          hashOnlyEvidence:
-            true,
-
-          humanAuthorizationRequired:
-            true,
-
-          autonomousAuthorization:
-            false,
-
-          runtimeActivation:
-            false,
-
-          externalEffects:
-            true,
-
-          noSubmitFromCode:
-            true,
-
-          legalCertification:
-            false,
-
-          qualifiedElectronicSignature:
-            false,
-        },
-      },
-      {
-        status:
-          completePass
-            ? 200
-            : 500,
-
-        headers: {
-          ...commonHeaders(
-            persistenceConfirmed
-              ? "true"
-              : "FAIL_CLOSED",
-          ),
-
-          "X-HBCE-Authorization":
-            "MANUAL_AUTHORIZATION_ACCEPTED",
-
-          "X-HBCE-Continuity":
-            completePass
-              ? "SEQUENCE_1_TO_2_PASS"
-              : "FAIL_CLOSED",
-
-          "X-HBCE-Persistence-Sequence":
-            String(
-              rereadSequence2.entry
-                .sequence,
-            ),
-
-          "X-HBCE-Evidence-SHA256":
-            evidence.integrity
-              .sha256,
-
-          "X-HBCE-Envelope-SHA256":
-            envelope.integrity
-              .envelopeSha256,
-
-          "X-HBCE-Ledger-Entry-SHA256":
-            rereadSequence2.entry
+    const rereadMatched =
+      reread.entry
+        .chain
+        .entrySha256 ===
+        persisted.entry
+          .chain
+          .entrySha256 &&
+      reread.entry
+        .source
+        .evidenceSha256 ===
+        evidence.integrity
+          .sha256 &&
+      reread.entry
+        .source
+        .envelopeSha256 ===
+        envelope.integrity
+          .envelopeSha256;
+
+    if (!rereadMatched) {
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_REREAD_MISMATCH",
+
+        stage:
+          "PERSISTENCE_REREAD",
+
+        message:
+          "Reread ledger entry does not match the persisted cryptographic identifiers.",
+
+        persistenceAttempted,
+        persistenceConfirmed,
+        persistedSequence,
+
+        causeValue: {
+          persistedEntrySha256:
+            persisted.entry
               .chain
               .entrySha256,
 
-          "X-HBCE-Previous-Entry-SHA256":
-            rereadSequence2.entry
+          rereadEntrySha256:
+            reread.entry
               .chain
-              .previousEntrySha256 ?? "",
+              .entrySha256,
 
-          "X-HBCE-Chain-Root-SHA256":
-            rereadSequence2.entry
-              .chain
-              .chainRootSha256,
+          evidenceSha256Expected:
+            evidence.integrity
+              .sha256,
 
+          evidenceSha256Actual:
+            reread.entry
+              .source
+              .evidenceSha256,
+
+          envelopeSha256Expected:
+            envelope.integrity
+              .envelopeSha256,
+
+          envelopeSha256Actual:
+            reread.entry
+              .source
+              .envelopeSha256,
         },
-      },
-    );
-  } catch (error) {
-    const passedChecks =
-      checks.filter(
-        (item) =>
-          item.passed,
-      ).length;
+      });
+    }
 
-    const failedChecks =
-      checks.length -
-      passedChecks;
+    /*
+     * Resolve the actual previous entry used by the persisted sequence.
+     * This also correctly handles a legitimate concurrent append that
+     * advanced the tip before this service's repository write.
+     */
+    const previousRecord =
+      reread.entry
+        .sequence === 1
+        ? null
+        : await getRuntimeOperationsLedgerEntryBySequence(
+            reread.entry
+              .sequence - 1,
+          );
+
+    if (
+      reread.entry
+        .sequence > 1 &&
+      !previousRecord
+    ) {
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_PREVIOUS_ENTRY_MISSING_AFTER_PERSISTENCE",
+
+        stage:
+          "APPENDED_ENTRY_VERIFICATION",
+
+        message:
+          "Previous ledger entry required to verify the appended record is missing.",
+
+        persistenceAttempted,
+        persistenceConfirmed,
+        persistedSequence,
+      });
+    }
+
+    const appendedVerification =
+      verifyRuntimeOperationsLedgerEntry({
+        entry:
+          reread.entry,
+
+        previousEntry:
+          previousRecord
+            ?.entry ?? null,
+      });
+
+    if (
+      appendedVerification
+        .verified !== true ||
+      appendedVerification
+        .summary
+        .failedChecks !== 0
+    ) {
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_POST_PERSISTENCE_VERIFICATION_FAILED",
+
+        stage:
+          "APPENDED_ENTRY_VERIFICATION",
+
+        message:
+          "Persisted ledger entry failed independent verification.",
+
+        persistenceAttempted,
+        persistenceConfirmed,
+        persistedSequence,
+
+        causeValue: {
+          verified:
+            appendedVerification
+              .verified,
+
+          failedChecks:
+            appendedVerification
+              .summary
+              .failedChecks,
+        },
+      });
+    }
+
+    const linkedToRepositoryTipAtAppend =
+      reread.entry
+        .chain
+        .previousEntrySha256 ===
+      previousRecord
+        ?.entry.chain
+          .entrySha256;
+
+    if (
+      reread.entry
+        .sequence > 1 &&
+      !linkedToRepositoryTipAtAppend
+    ) {
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_PREVIOUS_HASH_BINDING_FAILED",
+
+        stage:
+          "APPENDED_ENTRY_VERIFICATION",
+
+        message:
+          "Persisted entry does not bind the immediately previous ledger entry.",
+
+        persistenceAttempted,
+        persistenceConfirmed,
+        persistedSequence,
+      });
+    }
+
+    /*
+     * 7. Read and verify the complete current chain, not just the new
+     * entry. The latest tip may have advanced again due to another valid
+     * writer; the service verifies through the observed current tip.
+     */
+    const latestAfter =
+      await getLatestRuntimeOperationsLedgerEntry();
+
+    if (!latestAfter) {
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_LATEST_AFTER_MISSING",
+
+        stage:
+          "FULL_CHAIN_READ",
+
+        message:
+          "Persistent ledger tip disappeared after append.",
+
+        persistenceAttempted,
+        persistenceConfirmed,
+        persistedSequence,
+      });
+    }
+
+    if (
+      latestAfter.entry
+        .sequence <
+      reread.entry
+        .sequence
+    ) {
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_TIP_REGRESSION",
+
+        stage:
+          "FULL_CHAIN_READ",
+
+        message:
+          "Persistent ledger tip regressed after append.",
+
+        persistenceAttempted,
+        persistenceConfirmed,
+        persistedSequence,
+
+        causeValue: {
+          persistedSequence:
+            reread.entry
+              .sequence,
+
+          observedLatestSequence:
+            latestAfter.entry
+              .sequence,
+        },
+      });
+    }
+
+    const records =
+      await readFullPersistentChain({
+        expectedLatestSequence:
+          latestAfter.entry
+            .sequence,
+
+        pageSize,
+
+        maximumEntries,
+      });
+
+    const fullChain =
+      verifyRuntimeOperationsPersistentChain(
+        records.map(
+          (record) =>
+            record.entry,
+        ),
+
+        latestAfter.entry
+          .sequence,
+      );
+
+    if (!fullChain.verified) {
+      fail({
+        code:
+          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_FULL_CHAIN_VERIFICATION_FAILED",
+
+        stage:
+          "FULL_CHAIN_VERIFICATION",
+
+        message:
+          "Persistent ledger full-chain verification failed after append.",
+
+        persistenceAttempted,
+        persistenceConfirmed,
+        persistedSequence,
+
+        causeValue:
+          fullChain,
+      });
+    }
+
+    return {
+      ok:
+        true,
+
+      status:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_PASS",
+
+      operationalStatus:
+        "PASS",
+
+      revision:
+        RUNTIME_OPERATIONS_PERSISTENT_APPEND_SERVICE_REVISION,
+
+      identity: {
+        runtimeIpr:
+          CANONICAL_RUNTIME_IPR,
+
+        humanAuthorityIpr:
+          CANONICAL_HUMAN_AUTHORITY_IPR,
+
+        organization:
+          CANONICAL_ORGANIZATION,
+
+        hermeticumSigil:
+          HERMETICUM_SIGIL,
+      },
+
+      authorization: {
+        humanAuthorized:
+          true,
+
+        authorizationRef:
+          request.authorization
+            .authorizationRef,
+
+        rawCredentialPersisted:
+          false,
+      },
+
+      preflight: {
+        sequence:
+          latestBefore.entry
+            .sequence,
+
+        entrySha256:
+          latestBefore.entry
+            .chain
+            .entrySha256,
+
+        chainRootSha256:
+          latestBefore.entry
+            .chain
+            .chainRootSha256,
+
+        expectedTipProvided:
+          request.expectedTip !==
+          undefined,
+
+        expectedTipMatched,
+      },
+
+      evidence: {
+        revision:
+          evidence.revision,
+
+        sha256:
+          evidence.integrity
+            .sha256,
+
+        allRequiredChecksPassed:
+          true,
+      },
+
+      opcEvt: {
+        revision:
+          envelope.revision,
+
+        envelopeSha256:
+          envelope.integrity
+            .envelopeSha256,
+
+        internalSeal:
+          envelope.internalSeal
+            .value,
+
+        verified:
+          true,
+
+        failedChecks:
+          0,
+      },
+
+      persistence: {
+        attempted:
+          true,
+
+        confirmed:
+          true,
+
+        table:
+          persisted.persistence
+            .table,
+
+        recordedAt:
+          persisted.persistence
+            .recordedAt,
+
+        sequence:
+          reread.entry
+            .sequence,
+      },
+
+      append: {
+        expectedNextSequence,
+
+        sequence:
+          reread.entry
+            .sequence,
+
+        previousEntrySha256:
+          reread.entry
+            .chain
+            .previousEntrySha256,
+
+        entrySha256:
+          reread.entry
+            .chain
+            .entrySha256,
+
+        chainRootSha256:
+          reread.entry
+            .chain
+            .chainRootSha256,
+
+        linkedToRepositoryTipAtAppend,
+
+        concurrentTipAdvanceObserved,
+      },
+
+      verification: {
+        rereadMatched:
+          true,
+
+        appendedEntryVerified:
+          true,
+
+        appendedEntryFailedChecks:
+          0,
+
+        fullChain,
+      },
+
+      governance: {
+        appendOnly:
+          true,
+
+        hashOnlyEvidence:
+          true,
+
+        humanAuthorizationRequired:
+          true,
+
+        autonomousAuthorization:
+          false,
+
+        runtimeActivation:
+          false,
+
+        noSubmitFromCode:
+          true,
+
+        legalCertification:
+          false,
+
+        qualifiedElectronicSignature:
+          false,
+      },
+    };
+  } catch (error) {
+    if (
+      error instanceof
+      RuntimeOperationsPersistentAppendError
+    ) {
+      throw error;
+    }
 
     const message =
       error instanceof Error
         ? error.message
         : String(error);
 
-    return NextResponse.json(
-      {
-        ok: false,
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_UNEXPECTED_FAILURE",
 
-        status:
-          "HBCE_RUNTIME_OPERATIONS_PERSISTENT_CONTINUITY_SELF_TEST_FAIL",
+      stage:
+        persistenceConfirmed
+          ? "FULL_CHAIN_VERIFICATION"
+          : persistenceAttempted
+            ? "PERSISTENCE_APPEND"
+            : "SOURCE_PRECONDITION",
 
-        operationalStatus:
-          "FAIL_CLOSED",
+      message:
+        `Persistent append failed closed: ${message}`,
 
-        revision:
-          REVISION,
+      persistenceAttempted,
 
-        generatedAt,
+      persistenceConfirmed,
 
-        error: {
-          name:
-            error instanceof Error
-              ? error.name
-              : "UnknownError",
+      persistedSequence,
 
-          message,
-        },
-
-        summary: {
-          totalChecks:
-            checks.length,
-
-          passedChecks,
-
-          failedChecks:
-            failedChecks + 1,
-        },
-
-        checks,
-
-        governance: {
-          failClosed:
-            true,
-
-          persistenceAttempted,
-
-          persistenceConfirmed,
-
-          persistenceMayHaveOccurred:
-            persistenceAttempted &&
-            !persistenceConfirmed,
-
-          humanAuthorizationRequired:
-            true,
-
-          autonomousAuthorization:
-            false,
-
-          runtimeActivation:
-            false,
-
-          noSubmitFromCode:
-            true,
-
-          legalCertification:
-            false,
-
-          qualifiedElectronicSignature:
-            false,
-        },
-      },
-      {
-        status:
-          500,
-
-        headers: {
-          ...commonHeaders(
-            persistenceAttempted
-              ? "FAIL_CLOSED"
-              : "false",
-          ),
-
-          "X-HBCE-Authorization":
-            "MANUAL_AUTHORIZATION_ACCEPTED",
-
-          "X-HBCE-Continuity":
-            "FAIL_CLOSED",
-        },
-      },
-    );
+      causeValue:
+        error,
+    });
   }
 }
