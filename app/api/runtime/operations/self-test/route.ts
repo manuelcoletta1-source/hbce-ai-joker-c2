@@ -5,6 +5,10 @@ import {
   classifyRuntimeOperationTone,
 } from "@/src/runtime/operations/runtime-operations-projection";
 
+import {
+  buildRuntimeOperationsEvidence,
+} from "@/src/runtime/operations/runtime-operations-evidence";
+
 type Check = {
   id: string;
   description: string;
@@ -29,6 +33,9 @@ function check(
 }
 
 export async function GET() {
+  const generatedAt =
+    new Date().toISOString();
+
   const checks: Check[] = [];
 
   checks.push(
@@ -45,7 +52,9 @@ export async function GET() {
       "OPS-002",
       "REVIEW_REQUIRED classification",
       "REVIEW",
-      classifyRuntimeOperationTone("REVIEW_REQUIRED"),
+      classifyRuntimeOperationTone(
+        "REVIEW_REQUIRED",
+      ),
     ),
   );
 
@@ -54,7 +63,9 @@ export async function GET() {
       "OPS-003",
       "BLOCKED classification",
       "BLOCKED",
-      classifyRuntimeOperationTone("BLOCKED"),
+      classifyRuntimeOperationTone(
+        "BLOCKED",
+      ),
     ),
   );
 
@@ -81,7 +92,9 @@ export async function GET() {
       "OPS-006",
       "EXECUTED classification",
       "EXECUTED",
-      classifyRuntimeOperationTone("EXECUTED"),
+      classifyRuntimeOperationTone(
+        "EXECUTED",
+      ),
     ),
   );
 
@@ -197,7 +210,8 @@ export async function GET() {
       "OPS-013",
       "Blocked state activates fail-closed governance",
       true,
-      blockedProjection.governance.failClosed,
+      blockedProjection.governance
+        .failClosed,
     ),
   );
 
@@ -245,7 +259,8 @@ export async function GET() {
       "OPS-015",
       "Unavailable authoritative source produces FAIL_CLOSED",
       "FAIL_CLOSED",
-      unavailableProjection.operationalStatus,
+      unavailableProjection
+        .operationalStatus,
     ),
   );
 
@@ -259,7 +274,9 @@ export async function GET() {
   );
 
   const passedChecks =
-    checks.filter((item) => item.passed).length;
+    checks.filter(
+      (item) => item.passed,
+    ).length;
 
   const failedChecks =
     checks.length - passedChecks;
@@ -269,7 +286,7 @@ export async function GET() {
       ? "PASS"
       : "FAIL";
 
-  const body = {
+  const baseBody = {
     ok: failedChecks === 0,
 
     status:
@@ -280,9 +297,9 @@ export async function GET() {
     operationalStatus,
 
     revision:
-      "HBCE-RUNTIME-OPERATIONS-SELF-TEST-v1_0",
+      "HBCE-RUNTIME-OPERATIONS-SELF-TEST-v1_1",
 
-    generatedAt: new Date().toISOString(),
+    generatedAt,
 
     product:
       "HBCE IPR Operational Identity & Proof Layer",
@@ -304,37 +321,78 @@ export async function GET() {
     },
 
     summary: {
-      totalChecks: checks.length,
+      totalChecks:
+        checks.length,
+
       passedChecks,
+
       failedChecks,
-      requiredChecks: checks.length,
-      requiredPassed: passedChecks,
-      requiredFailed: failedChecks,
+
+      requiredChecks:
+        checks.length,
+
+      requiredPassed:
+        passedChecks,
+
+      requiredFailed:
+        failedChecks,
     },
 
     checks,
 
     governance: {
-      humanAuthorizationRequired: true,
-      autonomousAuthorization: false,
-      runtimeActivationFromSelfTest: false,
-      noSubmitFromCode: true,
-      failClosed: failedChecks > 0,
-      legalCertification: false,
+      humanAuthorizationRequired:
+        true,
+
+      autonomousAuthorization:
+        false,
+
+      runtimeActivationFromSelfTest:
+        false,
+
+      noSubmitFromCode:
+        true,
+
+      failClosed:
+        failedChecks > 0,
+
+      legalCertification:
+        false,
     },
+  };
+
+  const evidenceReceipt =
+    buildRuntimeOperationsEvidence(
+      baseBody,
+    );
+
+  const body = {
+    ...baseBody,
+
+    evidenceReceipt,
   };
 
   return NextResponse.json(
     body,
     {
-      status: failedChecks === 0 ? 200 : 500,
+      status:
+        failedChecks === 0
+          ? 200
+          : 500,
 
       headers: {
         "Cache-Control":
           "no-store, no-cache, must-revalidate",
 
         "X-HBCE-Revision":
-          "HBCE-RUNTIME-OPERATIONS-SELF-TEST-v1_0",
+          "HBCE-RUNTIME-OPERATIONS-SELF-TEST-v1_1",
+
+        "X-HBCE-Evidence-Revision":
+          evidenceReceipt.revision,
+
+        "X-HBCE-Evidence-SHA256":
+          evidenceReceipt.integrity
+            .sha256,
 
         "X-HBCE-Authorization":
           "HUMAN_AUTHORIZATION_REQUIRED",
