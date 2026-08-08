@@ -13,6 +13,10 @@ import {
   buildRuntimeOperationsOpcEnvelope,
 } from "@/src/runtime/operations/runtime-operations-opc-envelope";
 
+import {
+  verifyRuntimeOperationsOpcEnvelope,
+} from "@/src/runtime/operations/runtime-operations-opc-verifier";
+
 type Check = {
   id: string;
   description: string;
@@ -37,8 +41,7 @@ function check(
 }
 
 export async function GET() {
-  const generatedAt =
-    new Date().toISOString();
+  const generatedAt = new Date().toISOString();
 
   const checks: Check[] = [];
 
@@ -78,7 +81,9 @@ export async function GET() {
       "OPS-004",
       "FAIL classification",
       "FAIL",
-      classifyRuntimeOperationTone("FAIL"),
+      classifyRuntimeOperationTone(
+        "FAIL",
+      ),
     ),
   );
 
@@ -87,7 +92,9 @@ export async function GET() {
       "OPS-005",
       "DUE classification",
       "DUE",
-      classifyRuntimeOperationTone("DUE"),
+      classifyRuntimeOperationTone(
+        "DUE",
+      ),
     ),
   );
 
@@ -285,23 +292,34 @@ export async function GET() {
   const failedChecks =
     checks.length - passedChecks;
 
+  const selfTestPassed =
+    failedChecks === 0;
+
   const operationalStatus =
-    failedChecks === 0
+    selfTestPassed
       ? "PASS"
       : "FAIL";
 
+  /*
+   * This object is the canonical source payload
+   * used to generate the evidence receipt.
+   *
+   * It deliberately exists before OPC/EVT
+   * verification so the verifier can independently
+   * recompute every derived integrity value.
+   */
   const baseBody = {
-    ok: failedChecks === 0,
+    ok: selfTestPassed,
 
     status:
-      failedChecks === 0
+      selfTestPassed
         ? "HBCE_RUNTIME_OPERATIONS_SELF_TEST_PASS"
         : "HBCE_RUNTIME_OPERATIONS_SELF_TEST_FAIL",
 
     operationalStatus,
 
     revision:
-      "HBCE-RUNTIME-OPERATIONS-SELF-TEST-v1_2",
+      "HBCE-RUNTIME-OPERATIONS-SELF-TEST-v1_3",
 
     generatedAt,
 
@@ -365,29 +383,176 @@ export async function GET() {
     },
   };
 
+  /*
+   * Layer 1:
+   * Canonical evidence receipt.
+   */
   const evidenceReceipt =
     buildRuntimeOperationsEvidence(
       baseBody,
     );
 
+  /*
+   * Layer 2:
+   * IPR-bound OPC / EVT envelope.
+   */
   const opcEvtEnvelope =
     buildRuntimeOperationsOpcEnvelope({
-      evidence: evidenceReceipt,
+      evidence:
+        evidenceReceipt,
     });
+
+  /*
+   * Layer 3:
+   * Independent recomputation and verification.
+   *
+   * The verifier does not trust the hashes already
+   * contained inside the generated objects.
+   * It recalculates:
+   *
+   * - evidence SHA-256
+   * - envelope SHA-256
+   * - internal hash-bound seal
+   * - IPR identity binding
+   * - EVT binding
+   * - OPC evidence reference
+   * - governance invariants
+   */
+  const opcVerification =
+    verifyRuntimeOperationsOpcEnvelope({
+      sourceInput:
+        baseBody,
+
+      evidence:
+        evidenceReceipt,
+
+      envelope:
+        opcEvtEnvelope,
+    });
+
+  /*
+   * Overall endpoint state is stricter than
+   * the functional self-test alone.
+   *
+   * Functional PASS without integrity PASS
+   * is not accepted.
+   */
+  const overallPass =
+    selfTestPassed &&
+    opcVerification.verified;
+
+  const totalChainChecks =
+    checks.length +
+    opcVerification.summary
+      .totalChecks;
+
+  const totalChainPassed =
+    passedChecks +
+    opcVerification.summary
+      .passedChecks;
+
+  const totalChainFailed =
+    failedChecks +
+    opcVerification.summary
+      .failedChecks;
 
   const body = {
     ...baseBody,
 
+    /*
+     * Override the public result with the complete
+     * chain state.
+     */
+    ok:
+      overallPass,
+
+    status:
+      overallPass
+        ? "HBCE_RUNTIME_OPERATIONS_SELF_TEST_PASS"
+        : "HBCE_RUNTIME_OPERATIONS_SELF_TEST_FAIL",
+
     evidenceReceipt,
 
     opcEvtEnvelope,
+
+    opcVerification,
+
+    chainSummary: {
+      totalChecks:
+        totalChainChecks,
+
+      passedChecks:
+        totalChainPassed,
+
+      failedChecks:
+        totalChainFailed,
+
+      functionalChecks: {
+        total:
+          checks.length,
+
+        passed:
+          passedChecks,
+
+        failed:
+          failedChecks,
+      },
+
+      integrityChecks: {
+        total:
+          opcVerification.summary
+            .totalChecks,
+
+        passed:
+          opcVerification.summary
+            .passedChecks,
+
+        failed:
+          opcVerification.summary
+            .failedChecks,
+      },
+
+      selfTestPassed,
+
+      opcVerificationPassed:
+        opcVerification.verified,
+
+      completeChainPassed:
+        overallPass,
+    },
+
+    chainGovernance: {
+      failClosed:
+        !overallPass,
+
+      humanAuthorizationRequired:
+        true,
+
+      autonomousAuthorization:
+        false,
+
+      runtimeActivation:
+        false,
+
+      externalEffects:
+        false,
+
+      noSubmitFromCode:
+        true,
+
+      legalCertification:
+        false,
+
+      qualifiedElectronicSignature:
+        false,
+    },
   };
 
   return NextResponse.json(
     body,
     {
       status:
-        failedChecks === 0
+        overallPass
           ? 200
           : 500,
 
@@ -395,8 +560,14 @@ export async function GET() {
         "Cache-Control":
           "no-store, no-cache, must-revalidate",
 
+        Pragma:
+          "no-cache",
+
+        Expires:
+          "0",
+
         "X-HBCE-Revision":
-          "HBCE-RUNTIME-OPERATIONS-SELF-TEST-v1_2",
+          "HBCE-RUNTIME-OPERATIONS-SELF-TEST-v1_3",
 
         "X-HBCE-Evidence-Revision":
           evidenceReceipt.revision,
@@ -416,10 +587,45 @@ export async function GET() {
           opcEvtEnvelope.internalSeal
             .value,
 
+        "X-HBCE-OPC-Verifier-Revision":
+          opcVerification.revision,
+
+        "X-HBCE-OPC-Verification":
+          opcVerification.verified
+            ? "PASS"
+            : "FAIL_CLOSED",
+
+        "X-HBCE-Chain-Checks":
+          String(
+            totalChainChecks,
+          ),
+
+        "X-HBCE-Chain-Passed":
+          String(
+            totalChainPassed,
+          ),
+
+        "X-HBCE-Chain-Failed":
+          String(
+            totalChainFailed,
+          ),
+
         "X-HBCE-Authorization":
           "HUMAN_AUTHORIZATION_REQUIRED",
 
+        "X-HBCE-Autonomous-Authorization":
+          "false",
+
+        "X-HBCE-Runtime-Activation":
+          "false",
+
+        "X-HBCE-No-Submit-From-Code":
+          "true",
+
         "X-HBCE-Legal-Certification":
+          "false",
+
+        "X-HBCE-Qualified-Electronic-Signature":
           "false",
       },
     },
