@@ -2,20 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type JsonObject = Record<string, unknown>;
-
-type EndpointState = {
-  endpoint: string;
-  label: string;
-  loading: boolean;
-  ok: boolean;
-  httpStatus: number | null;
-  data: unknown;
-  error: string | null;
-  fetchedAt: string | null;
-};
-
-type SignalTone =
+type RuntimeOperationTone =
   | "PASS"
   | "ACTIVE"
   | "EXECUTED"
@@ -26,239 +13,98 @@ type SignalTone =
   | "FAIL"
   | "UNKNOWN";
 
-type RuntimeSignal = {
+type RuntimeOperationSignal = {
   key: string;
   value: string;
-  tone: SignalTone;
+  tone: RuntimeOperationTone;
   source: string;
 };
 
-const ENDPOINTS = [
-  {
-    label: "Runtime Brain",
-    endpoint: "/api/runtime/brain",
-  },
-  {
-    label: "Runtime Scheduler",
-    endpoint: "/api/runtime/scheduler",
-  },
-] as const;
+type RuntimeOperationsResponse = {
+  ok: boolean;
+  status:
+    | "HBCE_RUNTIME_OPERATIONS_PASS"
+    | "HBCE_RUNTIME_OPERATIONS_REVIEW_REQUIRED"
+    | "HBCE_RUNTIME_OPERATIONS_BLOCKED"
+    | "HBCE_RUNTIME_OPERATIONS_FAIL_CLOSED";
 
-function isJsonObject(value: unknown): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+  operationalStatus:
+    | "PASS"
+    | "REVIEW_REQUIRED"
+    | "BLOCKED"
+    | "FAIL_CLOSED";
 
-function stringifyValue(value: unknown): string {
-  if (typeof value === "string") {
-    return value;
-  }
+  revision: string;
+  generatedAt: string;
+  product: string;
+  runtime: string;
 
-  if (
-    typeof value === "number" ||
-    typeof value === "boolean" ||
-    typeof value === "bigint"
-  ) {
-    return String(value);
-  }
+  projection: {
+    revision: string;
 
-  if (value === null) {
-    return "null";
-  }
+    operationalStatus:
+      | "PASS"
+      | "REVIEW_REQUIRED"
+      | "BLOCKED"
+      | "FAIL_CLOSED";
 
-  if (value === undefined) {
-    return "undefined";
-  }
+    signals: RuntimeOperationSignal[];
 
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return "[unserializable]";
-  }
-}
-
-function classifyTone(value: string): SignalTone {
-  const normalized = value.toUpperCase();
-
-  if (
-    normalized.includes("FAIL") ||
-    normalized.includes("ERROR") ||
-    normalized.includes("REJECTED")
-  ) {
-    return "FAIL";
-  }
-
-  if (
-    normalized.includes("BLOCKED") ||
-    normalized.includes("DENIED") ||
-    normalized.includes("NO_ACTION")
-  ) {
-    return "BLOCKED";
-  }
-
-  if (
-    normalized.includes("REVIEW") ||
-    normalized.includes("MANUAL") ||
-    normalized.includes("AUTHORIZATION_REQUIRED")
-  ) {
-    return "REVIEW";
-  }
-
-  if (normalized.includes("DUE")) {
-    return "DUE";
-  }
-
-  if (normalized.includes("EXECUTED")) {
-    return "EXECUTED";
-  }
-
-  if (
-    normalized.includes("PASS") ||
-    normalized.includes("VALID") ||
-    normalized.includes("VERIFIED")
-  ) {
-    return "PASS";
-  }
-
-  if (
-    normalized.includes("ACTIVE") ||
-    normalized.includes("ENABLED") ||
-    normalized.includes("BOUND")
-  ) {
-    return "ACTIVE";
-  }
-
-  if (
-    normalized.includes("READY") ||
-    normalized.includes("COMPLETED") ||
-    normalized.includes("AVAILABLE")
-  ) {
-    return "READY";
-  }
-
-  return "UNKNOWN";
-}
-
-function collectSignals(
-  value: unknown,
-  source: string,
-  prefix = "",
-  depth = 0,
-): RuntimeSignal[] {
-  if (depth > 5) {
-    return [];
-  }
-
-  if (Array.isArray(value)) {
-    return value.flatMap((item, index) =>
-      collectSignals(
-        item,
-        source,
-        prefix ? `${prefix}.${index}` : String(index),
-        depth + 1,
-      ),
-    );
-  }
-
-  if (isJsonObject(value)) {
-    return Object.entries(value).flatMap(([key, child]) => {
-      const path = prefix ? `${prefix}.${key}` : key;
-
-      if (
-        child === null ||
-        typeof child === "string" ||
-        typeof child === "number" ||
-        typeof child === "boolean"
-      ) {
-        const text = stringifyValue(child);
-
-        const interestingKey =
-          /status|state|decision|mode|action|authorization|execution|operational|verification|legalCertification|runtime|scheduler|runner|cycle|review|ready|due|blocked|result/i.test(
-            key,
-          );
-
-        const interestingValue =
-          /PASS|FAIL|ACTIVE|BLOCKED|READY|DUE|REVIEW|EXECUTED|MANUAL|NO_ACTION|VERIFIED|COMPLETED|DENIED|REQUIRED/i.test(
-            text,
-          );
-
-        if (!interestingKey && !interestingValue) {
-          return [];
-        }
-
-        return [
-          {
-            key: path,
-            value: text,
-            tone: classifyTone(text),
-            source,
-          },
-        ];
-      }
-
-      return collectSignals(child, source, path, depth + 1);
-    });
-  }
-
-  return [];
-}
-
-async function fetchEndpoint(
-  label: string,
-  endpoint: string,
-): Promise<EndpointState> {
-  try {
-    const response = await fetch(endpoint, {
-      method: "GET",
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
-    });
-
-    const text = await response.text();
-
-    let data: unknown = null;
-
-    if (text.length > 0) {
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = {
-          raw: text,
-        };
-      }
-    }
-
-    return {
-      endpoint,
-      label,
-      loading: false,
-      ok: response.ok,
-      httpStatus: response.status,
-      data,
-      error: response.ok
-        ? null
-        : `HTTP ${response.status} ${response.statusText}`,
-      fetchedAt: new Date().toISOString(),
+    summary: {
+      totalSignals: number;
+      pass: number;
+      active: number;
+      executed: number;
+      ready: number;
+      due: number;
+      review: number;
+      blocked: number;
+      failed: number;
+      unknown: number;
     };
-  } catch (error) {
-    return {
-      endpoint,
-      label,
-      loading: false,
-      ok: false,
-      httpStatus: null,
-      data: null,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unknown runtime endpoint failure.",
-      fetchedAt: new Date().toISOString(),
-    };
-  }
-}
 
-function toneStyle(tone: SignalTone): React.CSSProperties {
+    governance: {
+      failClosed: boolean;
+      humanAuthorizationRequired: true;
+      autonomousAuthorization: false;
+      legalCertification: false;
+    };
+  };
+
+  sources: {
+    brain: {
+      available: boolean;
+      httpStatus: number;
+      error: string | null;
+    };
+
+    scheduler: {
+      available: boolean;
+      httpStatus: number;
+      error: string | null;
+    };
+  };
+
+  governance: {
+    humanAuthorizationRequired: true;
+    autonomousAuthorization: false;
+    runtimeActivationFromApi: false;
+    noSubmitFromCode: true;
+    failClosed: boolean;
+    legalCertification: false;
+  };
+};
+
+type LoadState = {
+  loading: boolean;
+  response: RuntimeOperationsResponse | null;
+  httpStatus: number | null;
+  error: string | null;
+};
+
+function toneStyle(
+  tone: RuntimeOperationTone,
+): React.CSSProperties {
   switch (tone) {
     case "PASS":
     case "ACTIVE":
@@ -296,137 +142,154 @@ function toneStyle(tone: SignalTone): React.CSSProperties {
   }
 }
 
-function EndpointPanel({ state }: { state: EndpointState }) {
+function statusStyle(
+  status:
+    | "PASS"
+    | "REVIEW_REQUIRED"
+    | "BLOCKED"
+    | "FAIL_CLOSED",
+): React.CSSProperties {
+  switch (status) {
+    case "PASS":
+      return {
+        borderColor: "#166534",
+        background: "rgba(22, 101, 52, 0.18)",
+        color: "#bbf7d0",
+      };
+
+    case "REVIEW_REQUIRED":
+      return {
+        borderColor: "#854d0e",
+        background: "rgba(133, 77, 14, 0.18)",
+        color: "#fde68a",
+      };
+
+    case "BLOCKED":
+      return {
+        borderColor: "#7f1d1d",
+        background: "rgba(127, 29, 29, 0.18)",
+        color: "#fecaca",
+      };
+
+    case "FAIL_CLOSED":
+      return {
+        borderColor: "#991b1b",
+        background: "rgba(153, 27, 27, 0.25)",
+        color: "#fecaca",
+      };
+  }
+}
+
+async function loadOperations(): Promise<{
+  httpStatus: number;
+  data: RuntimeOperationsResponse;
+}> {
+  const response = await fetch(
+    "/api/runtime/operations",
+    {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+      },
+    },
+  );
+
+  const data =
+    (await response.json()) as RuntimeOperationsResponse;
+
+  return {
+    httpStatus: response.status,
+    data,
+  };
+}
+
+function MetricCard({
+  title,
+  value,
+  detail,
+}: {
+  title: string;
+  value: string | number;
+  detail: string;
+}) {
   return (
-    <section
+    <div
       style={{
         border: "1px solid #252b36",
         borderRadius: 12,
-        overflow: "hidden",
+        padding: 18,
         background: "#0c1118",
       }}
     >
       <div
         style={{
-          display: "flex",
-          gap: 12,
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 18px",
-          borderBottom: "1px solid #252b36",
+          color: "#8995a7",
+          fontSize: 12,
+          textTransform: "uppercase",
+          letterSpacing: "0.09em",
         }}
       >
-        <div>
-          <div
-            style={{
-              fontSize: 15,
-              fontWeight: 700,
-            }}
-          >
-            {state.label}
-          </div>
-
-          <code
-            style={{
-              display: "block",
-              marginTop: 5,
-              color: "#8995a7",
-              fontSize: 12,
-            }}
-          >
-            {state.endpoint}
-          </code>
-        </div>
-
-        <span
-          style={{
-            border: `1px solid ${
-              state.loading
-                ? "#475569"
-                : state.ok
-                  ? "#166534"
-                  : "#991b1b"
-            }`,
-            borderRadius: 999,
-            padding: "5px 9px",
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.06em",
-          }}
-        >
-          {state.loading
-            ? "LOADING"
-            : state.ok
-              ? "AVAILABLE"
-              : "UNAVAILABLE"}
-        </span>
+        {title}
       </div>
 
-      <div style={{ padding: 18 }}>
-        {state.error ? (
-          <div
-            style={{
-              border: "1px solid #7f1d1d",
-              borderRadius: 8,
-              padding: 12,
-              color: "#fecaca",
-              background: "rgba(127, 29, 29, 0.15)",
-            }}
-          >
-            {state.error}
-          </div>
-        ) : null}
-
-        <pre
-          style={{
-            margin: state.error ? "14px 0 0" : 0,
-            padding: 14,
-            borderRadius: 8,
-            background: "#070a0f",
-            border: "1px solid #1f2937",
-            color: "#cbd5e1",
-            overflowX: "auto",
-            fontSize: 12,
-            lineHeight: 1.55,
-            maxHeight: 420,
-          }}
-        >
-          {state.loading
-            ? "Waiting for runtime state..."
-            : JSON.stringify(state.data, null, 2)}
-        </pre>
+      <div
+        style={{
+          marginTop: 8,
+          fontSize: 28,
+          fontWeight: 800,
+        }}
+      >
+        {value}
       </div>
-    </section>
+
+      <div
+        style={{
+          marginTop: 5,
+          color: "#8995a7",
+          fontSize: 12,
+        }}
+      >
+        {detail}
+      </div>
+    </div>
   );
 }
 
 export default function RuntimeOperationsPage() {
-  const [states, setStates] = useState<EndpointState[]>(
-    ENDPOINTS.map(({ endpoint, label }) => ({
-      endpoint,
-      label,
-      loading: true,
-      ok: false,
-      httpStatus: null,
-      data: null,
-      error: null,
-      fetchedAt: null,
-    })),
-  );
+  const [state, setState] = useState<LoadState>({
+    loading: true,
+    response: null,
+    httpStatus: null,
+    error: null,
+  });
 
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing] =
+    useState(false);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
 
     try {
-      const nextStates = await Promise.all(
-        ENDPOINTS.map(({ endpoint, label }) =>
-          fetchEndpoint(label, endpoint),
-        ),
-      );
+      const result =
+        await loadOperations();
 
-      setStates(nextStates);
+      setState({
+        loading: false,
+        response: result.data,
+        httpStatus: result.httpStatus,
+        error: null,
+      });
+    } catch (error) {
+      setState({
+        loading: false,
+        response: null,
+        httpStatus: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown operations API failure.",
+      });
     } finally {
       setRefreshing(false);
     }
@@ -436,47 +299,24 @@ export default function RuntimeOperationsPage() {
     void refresh();
   }, [refresh]);
 
-  const signals = useMemo(() => {
-    const collected = states.flatMap((state) =>
-      collectSignals(state.data, state.label),
-    );
+  const response = state.response;
 
-    const unique = new Map<string, RuntimeSignal>();
+  const signals =
+    response?.projection.signals ?? [];
 
-    for (const signal of collected) {
-      unique.set(
-        `${signal.source}:${signal.key}:${signal.value}`,
-        signal,
-      );
+  const summary =
+    response?.projection.summary;
+
+  const availableSources = useMemo(() => {
+    if (!response) {
+      return 0;
     }
 
-    return Array.from(unique.values()).slice(0, 40);
-  }, [states]);
-
-  const availableCount = states.filter((state) => state.ok).length;
-  const unavailableCount = states.length - availableCount;
-
-  const failClosed =
-    unavailableCount > 0 ||
-    signals.some(
-      (signal) =>
-        signal.tone === "BLOCKED" ||
-        signal.tone === "FAIL" ||
-        signal.tone === "REVIEW",
-    );
-
-  const legalCertificationSignals = signals.filter((signal) =>
-    signal.key.toLowerCase().includes("legalcertification"),
-  );
-
-  const legalCertification =
-    legalCertificationSignals.length > 0
-      ? legalCertificationSignals.every(
-          (signal) => signal.value.toLowerCase() === "false",
-        )
-        ? false
-        : null
-      : false;
+    return [
+      response.sources.brain.available,
+      response.sources.scheduler.available,
+    ].filter(Boolean).length;
+  }, [response]);
 
   return (
     <main
@@ -514,7 +354,8 @@ export default function RuntimeOperationsPage() {
           <h1
             style={{
               margin: 0,
-              fontSize: "clamp(28px, 5vw, 46px)",
+              fontSize:
+                "clamp(28px, 5vw, 46px)",
               lineHeight: 1.05,
               letterSpacing: "-0.035em",
             }}
@@ -531,12 +372,60 @@ export default function RuntimeOperationsPage() {
               lineHeight: 1.65,
             }}
           >
-            Read-only operational projection of the governed runtime.
-            This surface observes runtime state and governance signals.
-            It does not grant authorization, activate autonomous execution,
-            or convert technical proof into legal certification.
+            Governed operational projection
+            produced by the authoritative
+            runtime operations API.
+            This surface observes state.
+            It does not grant authorization,
+            activate autonomous execution,
+            or produce legal certification.
           </p>
         </header>
+
+        {state.error ? (
+          <section
+            style={{
+              border: "1px solid #991b1b",
+              borderRadius: 12,
+              padding: 18,
+              marginBottom: 24,
+              background:
+                "rgba(153, 27, 27, 0.18)",
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 800,
+                color: "#fecaca",
+              }}
+            >
+              OPERATIONS API UNAVAILABLE
+            </div>
+
+            <div
+              style={{
+                marginTop: 8,
+                color: "#fca5a5",
+                fontSize: 13,
+              }}
+            >
+              {state.error}
+            </div>
+
+            <div
+              style={{
+                marginTop: 10,
+                color: "#94a3b8",
+                fontSize: 12,
+              }}
+            >
+              Governance defaults to
+              FAIL-CLOSED when the
+              authoritative operational
+              projection cannot be read.
+            </div>
+          </section>
+        ) : null}
 
         <section
           style={{
@@ -547,166 +436,205 @@ export default function RuntimeOperationsPage() {
             marginBottom: 24,
           }}
         >
-          <div
-            style={{
-              border: "1px solid #252b36",
-              borderRadius: 12,
-              padding: 18,
-              background: "#0c1118",
-            }}
-          >
-            <div
-              style={{
-                color: "#8995a7",
-                fontSize: 12,
-                textTransform: "uppercase",
-                letterSpacing: "0.09em",
-              }}
-            >
-              Runtime APIs
-            </div>
+          <MetricCard
+            title="Operational Status"
+            value={
+              response?.operationalStatus ??
+              (state.loading
+                ? "LOADING"
+                : "FAIL_CLOSED")
+            }
+            detail="authoritative aggregated state"
+          />
 
-            <div
-              style={{
-                marginTop: 8,
-                fontSize: 28,
-                fontWeight: 800,
-              }}
-            >
-              {availableCount}/{states.length}
-            </div>
+          <MetricCard
+            title="Runtime Sources"
+            value={`${availableSources}/2`}
+            detail="Brain + Scheduler"
+          />
 
-            <div
-              style={{
-                marginTop: 5,
-                color: "#8995a7",
-                fontSize: 12,
-              }}
-            >
-              operational endpoints available
-            </div>
-          </div>
+          <MetricCard
+            title="Signals"
+            value={
+              summary?.totalSignals ?? 0
+            }
+            detail="normalized operational signals"
+          />
 
-          <div
-            style={{
-              border: "1px solid #252b36",
-              borderRadius: 12,
-              padding: 18,
-              background: "#0c1118",
-            }}
-          >
-            <div
-              style={{
-                color: "#8995a7",
-                fontSize: 12,
-                textTransform: "uppercase",
-                letterSpacing: "0.09em",
-              }}
-            >
-              Governance
-            </div>
-
-            <div
-              style={{
-                marginTop: 8,
-                fontSize: 24,
-                fontWeight: 800,
-              }}
-            >
-              {failClosed ? "FAIL-CLOSED" : "OBSERVING"}
-            </div>
-
-            <div
-              style={{
-                marginTop: 5,
-                color: "#8995a7",
-                fontSize: 12,
-              }}
-            >
-              no implicit authorization
-            </div>
-          </div>
-
-          <div
-            style={{
-              border: "1px solid #252b36",
-              borderRadius: 12,
-              padding: 18,
-              background: "#0c1118",
-            }}
-          >
-            <div
-              style={{
-                color: "#8995a7",
-                fontSize: 12,
-                textTransform: "uppercase",
-                letterSpacing: "0.09em",
-              }}
-            >
-              Signals
-            </div>
-
-            <div
-              style={{
-                marginTop: 8,
-                fontSize: 28,
-                fontWeight: 800,
-              }}
-            >
-              {signals.length}
-            </div>
-
-            <div
-              style={{
-                marginTop: 5,
-                color: "#8995a7",
-                fontSize: 12,
-              }}
-            >
-              runtime signals projected
-            </div>
-          </div>
-
-          <div
-            style={{
-              border: "1px solid #252b36",
-              borderRadius: 12,
-              padding: 18,
-              background: "#0c1118",
-            }}
-          >
-            <div
-              style={{
-                color: "#8995a7",
-                fontSize: 12,
-                textTransform: "uppercase",
-                letterSpacing: "0.09em",
-              }}
-            >
-              Legal Certification
-            </div>
-
-            <div
-              style={{
-                marginTop: 8,
-                fontSize: 28,
-                fontWeight: 800,
-              }}
-            >
-              {legalCertification === false ? "FALSE" : "UNKNOWN"}
-            </div>
-
-            <div
-              style={{
-                marginTop: 5,
-                color: "#8995a7",
-                fontSize: 12,
-              }}
-            >
-              OPC remains technical proof
-            </div>
-          </div>
+          <MetricCard
+            title="Legal Certification"
+            value="FALSE"
+            detail="technical proof only"
+          />
         </section>
+
+        {response ? (
+          <section
+            style={{
+              border: "1px solid #252b36",
+              borderRadius: 12,
+              background: "#0c1118",
+              marginBottom: 24,
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "16px 18px",
+                borderBottom:
+                  "1px solid #252b36",
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "center",
+                gap: 16,
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontWeight: 800,
+                  }}
+                >
+                  Runtime Governance State
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 4,
+                    color: "#8995a7",
+                    fontSize: 12,
+                  }}
+                >
+                  {response.revision}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <span
+                  style={{
+                    border: "1px solid",
+                    borderRadius: 999,
+                    padding: "7px 11px",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: "0.05em",
+                    ...statusStyle(
+                      response.operationalStatus,
+                    ),
+                  }}
+                >
+                  {
+                    response.operationalStatus
+                  }
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    void refresh()
+                  }
+                  disabled={refreshing}
+                  style={{
+                    border:
+                      "1px solid #394252",
+                    borderRadius: 8,
+                    background: refreshing
+                      ? "#111827"
+                      : "#161d27",
+                    color: "#e5e7eb",
+                    padding: "9px 13px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: refreshing
+                      ? "default"
+                      : "pointer",
+                  }}
+                >
+                  {refreshing
+                    ? "Refreshing..."
+                    : "Refresh state"}
+                </button>
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: 18,
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fit, minmax(230px, 1fr))",
+                gap: 10,
+              }}
+            >
+              <MetricCard
+                title="PASS"
+                value={summary?.pass ?? 0}
+                detail="verified signals"
+              />
+
+              <MetricCard
+                title="ACTIVE"
+                value={summary?.active ?? 0}
+                detail="active runtime state"
+              />
+
+              <MetricCard
+                title="EXECUTED"
+                value={
+                  summary?.executed ?? 0
+                }
+                detail="executed state records"
+              />
+
+              <MetricCard
+                title="DUE"
+                value={summary?.due ?? 0}
+                detail="pending operational timing"
+              />
+
+              <MetricCard
+                title="REVIEW"
+                value={
+                  summary?.review ?? 0
+                }
+                detail="human review required"
+              />
+
+              <MetricCard
+                title="BLOCKED"
+                value={
+                  summary?.blocked ?? 0
+                }
+                detail="governance blocked"
+              />
+
+              <MetricCard
+                title="FAILED"
+                value={
+                  summary?.failed ?? 0
+                }
+                detail="runtime failure signals"
+              />
+
+              <MetricCard
+                title="UNKNOWN"
+                value={
+                  summary?.unknown ?? 0
+                }
+                detail="unclassified signals"
+              />
+            </div>
+          </section>
+        ) : null}
 
         <section
           style={{
@@ -720,50 +648,28 @@ export default function RuntimeOperationsPage() {
           <div
             style={{
               padding: "16px 18px",
-              borderBottom: "1px solid #252b36",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 16,
+              borderBottom:
+                "1px solid #252b36",
             }}
           >
-            <div>
-              <div
-                style={{
-                  fontWeight: 800,
-                }}
-              >
-                Operational Signals
-              </div>
-
-              <div
-                style={{
-                  marginTop: 4,
-                  color: "#8995a7",
-                  fontSize: 12,
-                }}
-              >
-                State extracted from authoritative runtime API responses.
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => void refresh()}
-              disabled={refreshing}
+            <div
               style={{
-                border: "1px solid #394252",
-                borderRadius: 8,
-                background: refreshing ? "#111827" : "#161d27",
-                color: "#e5e7eb",
-                padding: "9px 13px",
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: refreshing ? "default" : "pointer",
+                fontWeight: 800,
               }}
             >
-              {refreshing ? "Refreshing..." : "Refresh state"}
-            </button>
+              Operational Signals
+            </div>
+
+            <div
+              style={{
+                marginTop: 4,
+                color: "#8995a7",
+                fontSize: 12,
+              }}
+            >
+              Normalized by
+              runtime-operations-projection.
+            </div>
           </div>
 
           <div
@@ -771,14 +677,24 @@ export default function RuntimeOperationsPage() {
               padding: 18,
             }}
           >
-            {signals.length === 0 ? (
+            {state.loading ? (
+              <div
+                style={{
+                  color: "#8995a7",
+                }}
+              >
+                Loading operational
+                projection...
+              </div>
+            ) : signals.length === 0 ? (
               <div
                 style={{
                   color: "#8995a7",
                   fontSize: 14,
                 }}
               >
-                No runtime signals available.
+                No operational signals
+                available.
               </div>
             ) : (
               <div
@@ -789,107 +705,226 @@ export default function RuntimeOperationsPage() {
                   gap: 10,
                 }}
               >
-                {signals.map((signal) => (
-                  <article
-                    key={`${signal.source}:${signal.key}:${signal.value}`}
-                    style={{
-                      border: "1px solid",
-                      borderRadius: 9,
-                      padding: 12,
-                      ...toneStyle(signal.tone),
-                    }}
-                  >
-                    <div
+                {signals.map(
+                  (signal, index) => (
+                    <article
+                      key={`${signal.source}:${signal.key}:${signal.value}:${index}`}
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 10,
-                        alignItems: "flex-start",
+                        border:
+                          "1px solid",
+                        borderRadius: 9,
+                        padding: 12,
+                        ...toneStyle(
+                          signal.tone,
+                        ),
                       }}
                     >
-                      <code
+                      <div
                         style={{
-                          fontSize: 11,
-                          color: "#a7b2c1",
-                          overflowWrap: "anywhere",
+                          display: "flex",
+                          justifyContent:
+                            "space-between",
+                          gap: 10,
+                          alignItems:
+                            "flex-start",
                         }}
                       >
-                        {signal.key}
-                      </code>
+                        <code
+                          style={{
+                            fontSize: 11,
+                            color:
+                              "#a7b2c1",
+                            overflowWrap:
+                              "anywhere",
+                          }}
+                        >
+                          {signal.key}
+                        </code>
 
-                      <span
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 800,
+                            letterSpacing:
+                              "0.06em",
+                          }}
+                        >
+                          {signal.tone}
+                        </span>
+                      </div>
+
+                      <div
                         style={{
+                          marginTop: 9,
+                          fontSize: 14,
+                          fontWeight: 750,
+                          overflowWrap:
+                            "anywhere",
+                        }}
+                      >
+                        {signal.value}
+                      </div>
+
+                      <div
+                        style={{
+                          marginTop: 8,
+                          color:
+                            "#8995a7",
                           fontSize: 10,
-                          fontWeight: 800,
-                          letterSpacing: "0.06em",
                         }}
                       >
-                        {signal.tone}
-                      </span>
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: 9,
-                        fontSize: 14,
-                        fontWeight: 750,
-                        overflowWrap: "anywhere",
-                      }}
-                    >
-                      {signal.value}
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: 8,
-                        color: "#8995a7",
-                        fontSize: 10,
-                      }}
-                    >
-                      {signal.source}
-                    </div>
-                  </article>
-                ))}
+                        {signal.source}
+                      </div>
+                    </article>
+                  ),
+                )}
               </div>
             )}
           </div>
         </section>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(360px, 1fr))",
-            gap: 16,
-          }}
-        >
-          {states.map((state) => (
-            <EndpointPanel
-              key={state.endpoint}
-              state={state}
-            />
-          ))}
-        </div>
+        {response ? (
+          <section
+            style={{
+              border: "1px solid #252b36",
+              borderRadius: 12,
+              background: "#0c1118",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "16px 18px",
+                borderBottom:
+                  "1px solid #252b36",
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 800,
+                }}
+              >
+                Source Integrity
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: 18,
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fit, minmax(260px, 1fr))",
+                gap: 12,
+              }}
+            >
+              {(
+                [
+                  [
+                    "Runtime Brain",
+                    response.sources.brain,
+                  ],
+                  [
+                    "Runtime Scheduler",
+                    response.sources.scheduler,
+                  ],
+                ] as const
+              ).map(([name, source]) => (
+                <div
+                  key={name}
+                  style={{
+                    border:
+                      "1px solid #252b36",
+                    borderRadius: 9,
+                    padding: 14,
+                    background:
+                      "#070a0f",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 750,
+                    }}
+                  >
+                    {name}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 10,
+                      fontSize: 12,
+                      color:
+                        source.available
+                          ? "#86efac"
+                          : "#fca5a5",
+                    }}
+                  >
+                    {source.available
+                      ? "AVAILABLE"
+                      : "UNAVAILABLE"}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 6,
+                      color: "#8995a7",
+                      fontSize: 11,
+                    }}
+                  >
+                    HTTP{" "}
+                    {source.httpStatus}
+                  </div>
+
+                  {source.error ? (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        color:
+                          "#fca5a5",
+                        fontSize: 11,
+                      }}
+                    >
+                      {source.error}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <footer
           style={{
             marginTop: 28,
             paddingTop: 20,
-            borderTop: "1px solid #252b36",
+            borderTop:
+              "1px solid #252b36",
             color: "#798597",
             fontSize: 12,
             lineHeight: 1.7,
           }}
         >
-          <strong style={{ color: "#aab4c3" }}>
+          <strong
+            style={{
+              color: "#aab4c3",
+            }}
+          >
             Governance boundary
           </strong>
+
           <br />
-          IPR identifies · EVT traces · OPC proves · HBCE governs ·
-          MATRIX organizes · AI JOKER-C2 executes.
+
+          IPR identifies · EVT traces ·
+          OPC proves · HBCE governs ·
+          MATRIX organizes · AI JOKER-C2
+          executes.
+
           <br />
-          Human authorization remains external to this read-only
-          operational surface.
+
+          HUMAN_AUTHORIZATION_REQUIRED ·
+          NO_RUNTIME_ACTIVATION ·
+          NO_SUBMIT_FROM_CODE ·
+          FAIL_CLOSED ·
+          LEGAL_CERTIFICATION=false
         </footer>
       </div>
     </main>
