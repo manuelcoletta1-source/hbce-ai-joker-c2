@@ -1,3 +1,5 @@
+mport { createHash } from "node:crypto";
+
 import {
   buildRuntimeOperationsEvidence,
   type RuntimeOperationsEvidenceInput,
@@ -14,6 +16,7 @@ import {
 import {
   appendVerifiedRuntimeOperationsLedgerEntry,
   getLatestRuntimeOperationsLedgerEntry,
+  getRuntimeOperationsLedgerEntryByOperationIdSha256,
   getRuntimeOperationsLedgerEntryBySequence,
   listRuntimeOperationsLedgerEntries,
   type RuntimeOperationsLedgerRepositoryRecord,
@@ -25,7 +28,7 @@ import {
 } from "./runtime-operations-ledger";
 
 export const RUNTIME_OPERATIONS_PERSISTENT_APPEND_SERVICE_REVISION =
-  "HBCE-RUNTIME-OPERATIONS-PERSISTENT-APPEND-SERVICE-v1_0" as const;
+  "HBCE-RUNTIME-OPERATIONS-PERSISTENT-APPEND-SERVICE-v1_1" as const;
 
 const CANONICAL_RUNTIME_IPR =
   "IPR-AI-0001" as const;
@@ -51,6 +54,7 @@ const DEFAULT_MAX_VERIFICATION_ENTRIES =
 export type RuntimeOperationsPersistentAppendStage =
   | "AUTHORIZATION"
   | "SOURCE_PRECONDITION"
+  | "IDEMPOTENCY"
   | "TIP_READ"
   | "TIP_VERIFICATION"
   | "EVIDENCE_BUILD"
@@ -64,19 +68,14 @@ export type RuntimeOperationsPersistentAppendStage =
 
 export type RuntimeOperationsPersistentAppendAuthorization = {
   humanAuthorized: boolean;
-
   authorizationRef: string;
-
   runtimeIpr: string;
-
   humanAuthorityIpr: string;
-
   organization: string;
 };
 
 export type RuntimeOperationsPersistentAppendExpectedTip = {
   sequence: number;
-
   entrySha256: string;
 };
 
@@ -86,6 +85,19 @@ export type RuntimeOperationsPersistentAppendRequest = {
 
   authorization:
     RuntimeOperationsPersistentAppendAuthorization;
+
+  /**
+   * Stable logical operation identifier.
+   *
+   * New production callers MUST provide this value. It is hashed with
+   * SHA-256 inside the service and the raw identifier is never persisted.
+   *
+   * The property remains optional only during the one-file-at-a-time
+   * migration window so already-deployed completed self-test callers keep
+   * compiling until their boundary is upgraded.
+   */
+  operationId?:
+    string;
 
   /**
    * Optional optimistic precondition.
@@ -99,34 +111,20 @@ export type RuntimeOperationsPersistentAppendRequest = {
 
   verification?: {
     pageSize?: number;
-
     maximumEntries?: number;
   };
 };
 
 export type RuntimeOperationsPersistentChainVerificationEntry = {
   sequence: number;
-
   verified: boolean;
-
-  cryptographicVerificationPassed:
-    boolean;
-
-  sequenceContinuity:
-    boolean;
-
-  previousHashBinding:
-    boolean;
-
+  cryptographicVerificationPassed: boolean;
+  sequenceContinuity: boolean;
+  previousHashBinding: boolean;
   failedChecks: number;
-
   entrySha256: string;
-
-  previousEntrySha256:
-    string | null;
-
-  chainRootSha256:
-    string;
+  previousEntrySha256: string | null;
+  chainRootSha256: string;
 };
 
 export type RuntimeOperationsPersistentChainVerificationResult = {
@@ -248,7 +246,7 @@ export type RuntimeOperationsPersistentAppendResult = {
 
   persistence: {
     attempted:
-      true;
+      boolean;
 
     confirmed:
       true;
@@ -261,6 +259,35 @@ export type RuntimeOperationsPersistentAppendResult = {
 
     sequence:
       number;
+
+    operationIdSha256:
+      string | null;
+
+    inserted:
+      boolean;
+
+    idempotentReplay:
+      boolean;
+  };
+
+  idempotency: {
+    enabled:
+      boolean;
+
+    operationIdSha256:
+      string | null;
+
+    inserted:
+      boolean;
+
+    replayed:
+      boolean;
+
+    legacyKeyless:
+      boolean;
+
+    rawOperationIdPersisted:
+      false;
   };
 
   append: {
@@ -348,21 +375,15 @@ export class RuntimeOperationsPersistentAppendError
 
   constructor(input: {
     code: string;
-
     stage:
       RuntimeOperationsPersistentAppendStage;
-
     message: string;
-
     persistenceAttempted?:
       boolean;
-
     persistenceConfirmed?:
       boolean;
-
     persistedSequence?:
       number | null;
-
     causeValue?:
       unknown;
   }) {
@@ -398,21 +419,15 @@ export class RuntimeOperationsPersistentAppendError
 
 function fail(input: {
   code: string;
-
   stage:
     RuntimeOperationsPersistentAppendStage;
-
   message: string;
-
   persistenceAttempted?:
     boolean;
-
   persistenceConfirmed?:
     boolean;
-
   persistedSequence?:
     number | null;
-
   causeValue?:
     unknown;
 }): never {
@@ -427,6 +442,89 @@ function isSha256(
   return /^[0-9a-f]{64}$/.test(
     value,
   );
+}
+
+function normalizeOperationId(
+  operationId:
+    string | undefined,
+): {
+  operationId:
+    string | null;
+
+  operationIdSha256:
+    string | null;
+} {
+  if (
+    operationId === undefined
+  ) {
+    return {
+      operationId:
+        null,
+
+      operationIdSha256:
+        null,
+    };
+  }
+
+  if (
+    typeof operationId !==
+      "string" ||
+    operationId.length < 1 ||
+    operationId.length > 512 ||
+    operationId.trim() !==
+      operationId ||
+    /[\u0000-\u001f\u007f]/.test(
+      operationId,
+    )
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_INVALID_OPERATION_ID",
+
+      stage:
+        "IDEMPOTENCY",
+
+      message:
+        "operationId must be a stable non-empty 1..512 character identifier without leading/trailing whitespace or control characters.",
+
+      causeValue:
+        operationId,
+    });
+  }
+
+  const operationIdSha256 =
+    createHash(
+      "sha256",
+    )
+      .update(
+        operationId,
+        "utf8",
+      )
+      .digest(
+        "hex",
+      );
+
+  if (
+    !isSha256(
+      operationIdSha256,
+    )
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_OPERATION_ID_HASH_FAILURE",
+
+      stage:
+        "IDEMPOTENCY",
+
+      message:
+        "operationId SHA-256 derivation failed closed.",
+    });
+  }
+
+  return {
+    operationId,
+    operationIdSha256,
+  };
 }
 
 function assertNonEmpty(
@@ -1157,8 +1255,8 @@ async function readFullPersistentChain(input: {
         stage:
           "FULL_CHAIN_READ",
 
-        message:
-          "Persistent ledger pagination did not advance.",
+      message:
+        "Persistent ledger pagination did not advance.",
 
         causeValue: {
           afterSequence,
@@ -1370,6 +1468,508 @@ export function verifyRuntimeOperationsPersistentChain(
   };
 }
 
+async function buildIdempotentReplayResult(input: {
+  request:
+    RuntimeOperationsPersistentAppendRequest;
+
+  existing:
+    RuntimeOperationsLedgerRepositoryRecord;
+
+  operationIdSha256:
+    string;
+
+  pageSize:
+    number;
+
+  maximumEntries:
+    number;
+}): Promise<
+  RuntimeOperationsPersistentAppendResult
+> {
+  /*
+   * The stable logical operation id is authoritative for replay.
+   * generatedAt is intentionally not compared because a retry may be
+   * reconstructed later. Source revision must remain compatible.
+   */
+  if (
+    input.request.sourceInput
+      .revision !==
+      input.existing.entry
+        .source
+        .sourceRevision
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_OPERATION_ID_SOURCE_REVISION_CONFLICT",
+
+      stage:
+        "IDEMPOTENCY",
+
+      message:
+        "The operationId is already bound to a different source revision.",
+
+      persistenceAttempted:
+        false,
+
+      persistenceConfirmed:
+        true,
+
+      persistedSequence:
+        input.existing.entry
+          .sequence,
+
+      causeValue: {
+        operationIdSha256:
+          input.operationIdSha256,
+
+        persistedSourceRevision:
+          input.existing.entry
+            .source
+            .sourceRevision,
+
+        attemptedSourceRevision:
+          input.request
+            .sourceInput
+            .revision,
+      },
+    });
+  }
+
+  const previousRecord =
+    input.existing.entry
+      .sequence === 1
+      ? null
+      : await getRuntimeOperationsLedgerEntryBySequence(
+          input.existing.entry
+            .sequence - 1,
+        );
+
+  if (
+    input.existing.entry
+      .sequence > 1 &&
+    !previousRecord
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_IDEMPOTENT_REPLAY_PREVIOUS_ENTRY_MISSING",
+
+      stage:
+        "APPENDED_ENTRY_VERIFICATION",
+
+      message:
+        "Previous ledger entry required to verify idempotent replay is missing.",
+
+      persistenceAttempted:
+        false,
+
+      persistenceConfirmed:
+        true,
+
+      persistedSequence:
+        input.existing.entry
+          .sequence,
+    });
+  }
+
+  const appendedVerification =
+    verifyRuntimeOperationsLedgerEntry({
+      entry:
+        input.existing.entry,
+
+      previousEntry:
+        previousRecord
+          ?.entry ?? null,
+    });
+
+  if (
+    appendedVerification
+      .verified !== true ||
+    appendedVerification
+      .summary
+      .failedChecks !== 0
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_IDEMPOTENT_REPLAY_ENTRY_INVALID",
+
+      stage:
+        "APPENDED_ENTRY_VERIFICATION",
+
+      message:
+        "Persisted idempotent replay entry failed independent verification.",
+
+      persistenceAttempted:
+        false,
+
+      persistenceConfirmed:
+        true,
+
+      persistedSequence:
+        input.existing.entry
+          .sequence,
+
+      causeValue:
+        appendedVerification,
+    });
+  }
+
+  const linkedToRepositoryTipAtAppend =
+    input.existing.entry
+      .sequence === 1
+      ? input.existing.entry
+          .chain
+          .previousEntrySha256 ===
+        null
+      : input.existing.entry
+          .chain
+          .previousEntrySha256 ===
+        previousRecord
+          ?.entry.chain
+            .entrySha256;
+
+  if (
+    !linkedToRepositoryTipAtAppend
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_IDEMPOTENT_REPLAY_PREVIOUS_HASH_BINDING_FAILED",
+
+      stage:
+        "APPENDED_ENTRY_VERIFICATION",
+
+      message:
+        "Persisted idempotent replay entry does not bind its immediately previous entry.",
+
+      persistenceAttempted:
+        false,
+
+      persistenceConfirmed:
+        true,
+
+      persistedSequence:
+        input.existing.entry
+          .sequence,
+    });
+  }
+
+  const latestAfter =
+    await getLatestRuntimeOperationsLedgerEntry();
+
+  if (!latestAfter) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_IDEMPOTENT_REPLAY_LATEST_MISSING",
+
+      stage:
+        "FULL_CHAIN_READ",
+
+      message:
+        "Persistent ledger tip is missing during idempotent replay verification.",
+
+      persistenceAttempted:
+        false,
+
+      persistenceConfirmed:
+        true,
+
+      persistedSequence:
+        input.existing.entry
+          .sequence,
+    });
+  }
+
+  const records =
+    await readFullPersistentChain({
+      expectedLatestSequence:
+        latestAfter.entry
+          .sequence,
+
+      pageSize:
+        input.pageSize,
+
+      maximumEntries:
+        input.maximumEntries,
+    });
+
+  const fullChain =
+    verifyRuntimeOperationsPersistentChain(
+      records.map(
+        (record) =>
+          record.entry,
+      ),
+
+      latestAfter.entry
+        .sequence,
+    );
+
+  if (!fullChain.verified) {
+    fail({
+      code:
+        "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_IDEMPOTENT_REPLAY_FULL_CHAIN_INVALID",
+
+      stage:
+        "FULL_CHAIN_VERIFICATION",
+
+      message:
+        "Persistent full-chain verification failed during idempotent replay.",
+
+      persistenceAttempted:
+        false,
+
+      persistenceConfirmed:
+        true,
+
+      persistedSequence:
+        input.existing.entry
+          .sequence,
+
+      causeValue:
+        fullChain,
+    });
+  }
+
+  const expectedTipProvided =
+    input.request
+      .expectedTip !==
+    undefined;
+
+  const expectedTipMatched =
+    !input.request
+      .expectedTip ||
+    (
+      input.request
+        .expectedTip
+        .sequence ===
+        latestAfter.entry
+          .sequence &&
+      input.request
+        .expectedTip
+        .entrySha256 ===
+        latestAfter.entry
+          .chain
+          .entrySha256
+    );
+
+  return {
+    ok:
+      true,
+
+    status:
+      "HBCE_RUNTIME_OPERATIONS_PERSISTENT_APPEND_PASS",
+
+    operationalStatus:
+      "PASS",
+
+    revision:
+      RUNTIME_OPERATIONS_PERSISTENT_APPEND_SERVICE_REVISION,
+
+    identity: {
+      runtimeIpr:
+        CANONICAL_RUNTIME_IPR,
+
+      humanAuthorityIpr:
+        CANONICAL_HUMAN_AUTHORITY_IPR,
+
+      organization:
+        CANONICAL_ORGANIZATION,
+
+      hermeticumSigil:
+        HERMETICUM_SIGIL,
+    },
+
+    authorization: {
+      humanAuthorized:
+        true,
+
+      authorizationRef:
+        input.request
+          .authorization
+          .authorizationRef,
+
+      rawCredentialPersisted:
+        false,
+    },
+
+    preflight: {
+      sequence:
+        latestAfter.entry
+          .sequence,
+
+      entrySha256:
+        latestAfter.entry
+          .chain
+          .entrySha256,
+
+      chainRootSha256:
+        latestAfter.entry
+          .chain
+          .chainRootSha256,
+
+      expectedTipProvided,
+
+      expectedTipMatched,
+    },
+
+    evidence: {
+      revision:
+        input.existing.entry
+          .source
+          .evidenceRevision,
+
+      sha256:
+        input.existing.entry
+          .source
+          .evidenceSha256,
+
+      allRequiredChecksPassed:
+        true,
+    },
+
+    opcEvt: {
+      revision:
+        input.existing.entry
+          .source
+          .envelopeRevision,
+
+      envelopeSha256:
+        input.existing.entry
+          .source
+          .envelopeSha256,
+
+      internalSeal:
+        input.existing.entry
+          .source
+          .internalSeal,
+
+      verified:
+        true,
+
+      failedChecks:
+        0,
+    },
+
+    persistence: {
+      attempted:
+        false,
+
+      confirmed:
+        true,
+
+      table:
+        input.existing
+          .persistence
+          .table,
+
+      recordedAt:
+        input.existing
+          .persistence
+          .recordedAt,
+
+      sequence:
+        input.existing.entry
+          .sequence,
+
+      operationIdSha256:
+        input.operationIdSha256,
+
+      inserted:
+        false,
+
+      idempotentReplay:
+        true,
+    },
+
+    idempotency: {
+      enabled:
+        true,
+
+      operationIdSha256:
+        input.operationIdSha256,
+
+      inserted:
+        false,
+
+      replayed:
+        true,
+
+      legacyKeyless:
+        false,
+
+      rawOperationIdPersisted:
+        false,
+    },
+
+    append: {
+      expectedNextSequence:
+        input.existing.entry
+          .sequence,
+
+      sequence:
+        input.existing.entry
+          .sequence,
+
+      previousEntrySha256:
+        input.existing.entry
+          .chain
+          .previousEntrySha256,
+
+      entrySha256:
+        input.existing.entry
+          .chain
+          .entrySha256,
+
+      chainRootSha256:
+        input.existing.entry
+          .chain
+          .chainRootSha256,
+
+      linkedToRepositoryTipAtAppend,
+
+      concurrentTipAdvanceObserved:
+        false,
+    },
+
+    verification: {
+      rereadMatched:
+        true,
+
+      appendedEntryVerified:
+        true,
+
+      appendedEntryFailedChecks:
+        0,
+
+      fullChain,
+    },
+
+    governance: {
+      appendOnly:
+        true,
+
+      hashOnlyEvidence:
+        true,
+
+      humanAuthorizationRequired:
+        true,
+
+      autonomousAuthorization:
+        false,
+
+      runtimeActivation:
+        false,
+
+      noSubmitFromCode:
+        true,
+
+      legalCertification:
+        false,
+
+      qualifiedElectronicSignature:
+        false,
+    },
+  };
+}
+
 export async function appendRuntimeOperationsPersistentEvidence(
   request:
     RuntimeOperationsPersistentAppendRequest,
@@ -1417,8 +2017,43 @@ export async function appendRuntimeOperationsPersistentEvidence(
           ?.maximumEntries,
       );
 
+    const {
+      operationIdSha256,
+    } =
+      normalizeOperationId(
+        request.operationId,
+      );
+
     /*
-     * 3. Read and independently verify the current persistent tip.
+     * 3. Operation-level idempotency preflight.
+     *
+     * If the stable logical operation already exists, return the
+     * independently verified persisted entry without building a fresh
+     * generatedAt-dependent Evidence / OPC payload and without attempting
+     * a second database append.
+     */
+    if (
+      operationIdSha256 !==
+      null
+    ) {
+      const existing =
+        await getRuntimeOperationsLedgerEntryByOperationIdSha256(
+          operationIdSha256,
+        );
+
+      if (existing) {
+        return await buildIdempotentReplayResult({
+          request,
+          existing,
+          operationIdSha256,
+          pageSize,
+          maximumEntries,
+        });
+      }
+    }
+
+    /*
+     * 4. Read and independently verify the current persistent tip.
      *
      * The service is intentionally a continuation service. Genesis has
      * its own bootstrap path and must already exist.
@@ -1450,7 +2085,7 @@ export async function appendRuntimeOperationsPersistentEvidence(
     );
 
     /*
-     * 4. Build hash-only evidence and OPC/EVT envelope.
+     * 5. Build hash-only evidence and OPC/EVT envelope.
      */
     const evidence =
       buildRuntimeOperationsEvidence(
@@ -1544,10 +2179,11 @@ export async function appendRuntimeOperationsPersistentEvidence(
     }
 
     /*
-     * 5. Single persistence attempt.
+     * 6. Single persistence call.
      *
-     * No retry is performed here. The repository/database controls the
-     * authoritative append order and rejects invalid continuity.
+     * The repository/database owns append serialization and operation-id
+     * uniqueness. Sequential retries are filtered before this point; a
+     * same-operation concurrent winner may also be returned by repository.
      */
     persistenceAttempted =
       true;
@@ -1558,6 +2194,8 @@ export async function appendRuntimeOperationsPersistentEvidence(
 
         verification:
           opcVerification,
+
+        operationIdSha256,
       });
 
     persistenceConfirmed =
@@ -1571,18 +2209,13 @@ export async function appendRuntimeOperationsPersistentEvidence(
       latestBefore.entry
         .sequence + 1;
 
-    /*
-     * A concurrent valid append may advance the repository tip between
-     * service preflight and repository append. That does not invalidate
-     * a cryptographically valid append, but it is surfaced explicitly.
-     */
     const concurrentTipAdvanceObserved =
       persisted.entry
         .sequence !==
       expectedNextSequence;
 
     /*
-     * 6. Independent reread of the exact persisted sequence.
+     * 7. Independent reread of the exact persisted/resolved sequence.
      */
     const reread =
       await getRuntimeOperationsLedgerEntryBySequence(
@@ -1672,11 +2305,6 @@ export async function appendRuntimeOperationsPersistentEvidence(
       });
     }
 
-    /*
-     * Resolve the actual previous entry used by the persisted sequence.
-     * This also correctly handles a legitimate concurrent append that
-     * advanced the tip before this service's repository write.
-     */
     const previousRecord =
       reread.entry
         .sequence === 1
@@ -1753,15 +2381,19 @@ export async function appendRuntimeOperationsPersistentEvidence(
 
     const linkedToRepositoryTipAtAppend =
       reread.entry
-        .chain
-        .previousEntrySha256 ===
-      previousRecord
-        ?.entry.chain
-          .entrySha256;
+        .sequence === 1
+        ? reread.entry
+            .chain
+            .previousEntrySha256 ===
+          null
+        : reread.entry
+            .chain
+            .previousEntrySha256 ===
+          previousRecord
+            ?.entry.chain
+              .entrySha256;
 
     if (
-      reread.entry
-        .sequence > 1 &&
       !linkedToRepositoryTipAtAppend
     ) {
       fail({
@@ -1781,9 +2413,7 @@ export async function appendRuntimeOperationsPersistentEvidence(
     }
 
     /*
-     * 7. Read and verify the complete current chain, not just the new
-     * entry. The latest tip may have advanced again due to another valid
-     * writer; the service verifies through the observed current tip.
+     * 8. Read and verify the complete current chain.
      */
     const latestAfter =
       await getLatestRuntimeOperationsLedgerEntry();
@@ -1989,6 +2619,41 @@ export async function appendRuntimeOperationsPersistentEvidence(
         sequence:
           reread.entry
             .sequence,
+
+        operationIdSha256:
+          persisted.persistence
+            .operationIdSha256,
+
+        inserted:
+          persisted.persistence
+            .inserted,
+
+        idempotentReplay:
+          persisted.persistence
+            .idempotentReplay,
+      },
+
+      idempotency: {
+        enabled:
+          operationIdSha256 !==
+          null,
+
+        operationIdSha256,
+
+        inserted:
+          persisted.persistence
+            .inserted,
+
+        replayed:
+          persisted.persistence
+            .idempotentReplay,
+
+        legacyKeyless:
+          operationIdSha256 ===
+          null,
+
+        rawOperationIdPersisted:
+          false,
       },
 
       append: {
