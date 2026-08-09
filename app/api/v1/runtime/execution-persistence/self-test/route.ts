@@ -14,6 +14,14 @@ import type {
 } from "@/lib/runtime/bootstrap";
 
 import {
+  IPR_AUTH_COOKIE_NAME,
+} from "@/lib/ipr-auth";
+
+import {
+  resolveRuntimePersistentHumanAuthorization,
+} from "@/src/runtime/authorization/runtime-persistent-human-authorization.service";
+
+import {
   executeRuntimeAndPersist,
   RuntimeExecutionPersistenceError,
 } from "@/src/runtime/orchestration/runtime-execution-persistence.service";
@@ -31,7 +39,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const REVISION =
-  "HBCE-RUNTIME-EXECUTION-PERSISTENCE-SELF-TEST-v1_0" as const;
+  "HBCE-RUNTIME-EXECUTION-PERSISTENCE-SELF-TEST-v1_1" as const;
 
 const MANUAL_AUTHORIZATION_HEADER =
   "x-hbce-ledger-self-test-token" as const;
@@ -448,26 +456,13 @@ function buildRuntimeInput(
   };
 }
 
-function buildAuthorization(
-  authorizationRef: string,
-) {
-  return {
-    humanAuthorized:
-      true,
-
-    authorizationRef,
-
-    runtimeIpr:
-      RUNTIME_IPR,
-
-    humanAuthorityIpr:
-      HUMAN_AUTHORITY_IPR,
-
-    organization:
-      ORGANIZATION,
-  };
-}
-
+/*
+ * Persistent runtime authorization MUST NOT be synthesized here.
+ *
+ * The raw HBCE IPR session token exists only at the HTTP boundary.
+ * Canonical persistent authorization is derived through strict
+ * PostgreSQL-backed verification.
+ */
 async function countRowsByOperationHash(
   operationIdSha256: string,
 ): Promise<number> {
@@ -640,6 +635,12 @@ export async function GET() {
 
           minimumTokenLength:
             16,
+
+          sessionCookie:
+            IPR_AUTH_COOKIE_NAME,
+
+          persistentHumanAuthorizationMode:
+            "DATABASE_PERSISTENT_STRICT",
         },
 
         identity: {
@@ -782,6 +783,26 @@ export async function POST(
     );
   }
 
+  /*
+   * The manual self-test token authorizes execution of the diagnostic only.
+   *
+   * It does NOT establish biological identity and does NOT authorize
+   * persistent runtime writes.
+   *
+   * Persistent authorization derives from the authenticated HBCE IPR
+   * HttpOnly session cookie and strict database verification.
+   */
+  const sessionToken =
+    request.cookies.get(
+      IPR_AUTH_COOKIE_NAME,
+    )?.value ?? "";
+
+  if (!sessionToken) {
+    return unauthorized(
+      "Authenticated HBCE IPR session cookie is required for persistent runtime authorization.",
+    );
+  }
+
   const generatedAt =
     new Date().toISOString();
 
@@ -792,7 +813,51 @@ export async function POST(
   let persistenceAttempted =
     false;
 
+  let persistentHumanAuthorizationAccepted =
+    false;
+
   try {
+    const persistentHumanAuthorization =
+      await resolveRuntimePersistentHumanAuthorization({
+        sessionToken,
+      });
+
+    persistentHumanAuthorizationAccepted =
+      true;
+
+    checks.push(
+      check(
+        "EXEC-PERSIST-AUTH-001",
+        "Persistent human authorization derives from strict database persistence",
+        "DATABASE_PERSISTENT_STRICT",
+        persistentHumanAuthorization
+          .proof
+          .persistenceMode,
+      ),
+    );
+
+    checks.push(
+      check(
+        "EXEC-PERSIST-AUTH-002",
+        "Persistent human authorization uses no process fallback",
+        false,
+        persistentHumanAuthorization
+          .proof
+          .processFallbackUsed,
+      ),
+    );
+
+    checks.push(
+      check(
+        "EXEC-PERSIST-AUTH-003",
+        "SELF_PILOT is forbidden for canonical persistent authorization",
+        false,
+        persistentHumanAuthorization
+          .proof
+          .selfPilotAccepted,
+      ),
+    );
+
     const latestBefore =
       await getLatestRuntimeOperationsLedgerEntry();
 
@@ -850,9 +915,8 @@ export async function POST(
         runtimeInput,
 
         authorization:
-          buildAuthorization(
-            `HBCE-MANUAL-AUTH-RUNTIME-EXECUTION-FIRST-${generatedAt}`,
-          ),
+          persistentHumanAuthorization
+            .authorization,
 
         expectedTip: {
           sequence:
@@ -981,9 +1045,8 @@ export async function POST(
         runtimeInput,
 
         authorization:
-          buildAuthorization(
-            `HBCE-MANUAL-AUTH-RUNTIME-EXECUTION-REPLAY-${generatedAt}`,
-          ),
+          persistentHumanAuthorization
+            .authorization,
 
         verification: {
           pageSize:
@@ -1121,9 +1184,8 @@ export async function POST(
           ),
 
         authorization:
-          buildAuthorization(
-            `HBCE-MANUAL-AUTH-RUNTIME-EXECUTION-BLOCKED-${generatedAt}`,
-          ),
+          persistentHumanAuthorization
+            .authorization,
 
         verification: {
           pageSize:
@@ -1509,7 +1571,7 @@ export async function POST(
           ),
 
           "X-HBCE-Authorization":
-            "MANUAL_AUTHORIZATION_ACCEPTED",
+            "PERSISTENT_HUMAN_AUTHORIZATION_ACCEPTED",
 
           "X-HBCE-Convergence":
             completePass
@@ -1637,7 +1699,9 @@ export async function POST(
           ),
 
           "X-HBCE-Authorization":
-            "MANUAL_AUTHORIZATION_ACCEPTED",
+            persistentHumanAuthorizationAccepted
+              ? "PERSISTENT_HUMAN_AUTHORIZATION_ACCEPTED"
+              : "PERSISTENT_HUMAN_AUTHORIZATION_REJECTED",
 
           "X-HBCE-Convergence":
             "FAIL_CLOSED",
