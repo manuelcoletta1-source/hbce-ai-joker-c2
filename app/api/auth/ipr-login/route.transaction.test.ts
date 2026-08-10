@@ -708,5 +708,223 @@ describe(
         );
       }
     );
+
+    it(
+      "persists canonical session and verifies it from the cookie token",
+      async () => {
+        mockWithHbceDatabaseTransaction
+          .mockImplementation(
+            async () => {
+              await getProcessIprAccountStore()
+                .upsertProfileAsync({
+                  humanIpr:
+                    "IPR-3",
+                  certificateId:
+                    "CERTIFICATE-09-OPERATIONAL-TEST",
+                  accountId:
+                    "ACCOUNT-IPR-3-SESSION-TEST",
+                  source:
+                    "HBCE_CANONICAL_IPR_BOOTSTRAP"
+                });
+
+              return {
+                ok: true,
+                transactionId:
+                  "HBCE-TX-TEST-SESSION-PERSISTENCE",
+                state:
+                  "COMMITTED",
+                startedAt:
+                  "2026-08-10T16:45:00.000Z",
+                completedAt:
+                  "2026-08-10T16:45:00.001Z",
+                durationMs:
+                  1,
+                value: {
+                  humanIpr:
+                    "IPR-3",
+                  accountId:
+                    "ACCOUNT-IPR-3-SESSION-TEST",
+                  certificateId:
+                    "CERTIFICATE-09-OPERATIONAL-TEST"
+                }
+              };
+            }
+          );
+
+        const request =
+          new NextRequest(
+            "http://localhost/api/auth/ipr-login",
+            {
+              method:
+                "POST",
+              headers: {
+                "content-type":
+                  "application/json",
+                "x-hbce-ipr-bootstrap-secret":
+                  "Expected-Canonical-Secret-2026"
+              },
+              body: JSON.stringify({
+                mode:
+                  "BOOTSTRAP_CANONICAL",
+                humanIpr:
+                  "IPR-3",
+                password:
+                  "C4n0nical!ZetaFlux27",
+                deviceLabel:
+                  "HBCE canonical session persistence test"
+              })
+            }
+          );
+
+        const response =
+          await POST(request);
+
+        const payload =
+          await response.json();
+
+        expect(response.status).toBe(
+          200
+        );
+
+        expect(payload).toMatchObject({
+          ok:
+            true,
+          authenticated:
+            true,
+          humanIpr:
+            "IPR-3",
+          runtimeIpr:
+            "IPR-AI-0001",
+          session: {
+            humanIpr:
+              "IPR-3",
+            runtimeIpr:
+              "IPR-AI-0001",
+            status:
+              "ACTIVE",
+            deviceLabel:
+              "HBCE canonical session persistence test",
+            legalCertification:
+              false
+          }
+        });
+
+        expect(
+          payload.session
+        ).not.toHaveProperty(
+          "tokenHash"
+        );
+
+        const setCookie =
+          response.headers.get(
+            "set-cookie"
+          );
+
+        expect(setCookie).toBeTruthy();
+
+        const cookiePair =
+          setCookie!.split(";")[0];
+
+        const separatorIndex =
+          cookiePair.indexOf("=");
+
+        expect(
+          separatorIndex
+        ).toBeGreaterThan(0);
+
+        const rawSessionToken =
+          cookiePair.slice(
+            separatorIndex + 1
+          );
+
+        expect(
+          rawSessionToken
+        ).toMatch(
+          /^IPRSESS_[A-F0-9]{64}$/
+        );
+
+        expect(
+          JSON.stringify(payload)
+        ).not.toContain(
+          rawSessionToken
+        );
+
+        const verification =
+          await getProcessIprAuthStore()
+            .verifySessionTokenAsync(
+              rawSessionToken
+            );
+
+        expect(
+          verification
+        ).toMatchObject({
+          ok:
+            true,
+          authenticated:
+            true,
+          reason:
+            "SESSION_ACTIVE",
+          session: {
+            sessionId:
+              payload.session.sessionId,
+            humanIpr:
+              "IPR-3",
+            runtimeIpr:
+              "IPR-AI-0001",
+            status:
+              "ACTIVE",
+            deviceLabel:
+              "HBCE canonical session persistence test",
+            legalCertification:
+              false,
+            sessionPayload: {
+              mode:
+                "BOOTSTRAP_CANONICAL",
+              accountId:
+                "ACCOUNT-IPR-3-SESSION-TEST",
+              semanticMemoryScope:
+                "IPR_BOUND",
+              matrixState:
+                "MATRIX_ACTIVE",
+              canonicalHumanAuthority:
+                true,
+              legalCertification:
+                false
+            }
+          }
+        });
+
+        expect(
+          verification.session
+        ).not.toBeNull();
+
+        if (
+          !verification.ok ||
+          !verification.session
+        ) {
+          throw new Error(
+            "HBCE_TEST_SESSION_VERIFICATION_FAILED"
+          );
+        }
+
+        expect(
+          verification.session.tokenHash
+        ).not.toBe(
+          rawSessionToken
+        );
+
+        expect(
+          verification.session.tokenHash
+        ).toEqual(
+          expect.any(String)
+        );
+
+        expect(
+          verification.session.lastSeenAt
+        ).toEqual(
+          expect.any(String)
+        );
+      }
+    );
   }
 );
