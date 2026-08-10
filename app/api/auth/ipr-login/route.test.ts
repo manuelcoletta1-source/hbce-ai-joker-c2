@@ -186,4 +186,42 @@ describe("POST /api/auth/ipr-login canonical bootstrap", () => {
       legalCertification: false
     });
   });
+
+  it("fails closed when requested canonical subject does not match", async () => {
+    process.env[BOOTSTRAP_ENABLED_ENV] = "true";
+    process.env[BOOTSTRAP_SECRET_ENV] =
+      "Expected-Canonical-Secret-2026";
+    process.env[CANONICAL_HUMAN_IPR_ENV] = "IPR-3";
+
+    const request = new NextRequest(
+      "http://localhost/api/auth/ipr-login",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-hbce-ipr-bootstrap-secret":
+            "Expected-Canonical-Secret-2026"
+        },
+        body: JSON.stringify({
+          mode: "BOOTSTRAP_CANONICAL",
+          humanIpr: "IPR-999",
+          password: "Canonical-Test-Password-Only-2026!"
+        })
+      }
+    );
+
+    const response = await POST(request);
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+
+    expect(payload).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason: "IPR_CANONICAL_BOOTSTRAP_SUBJECT_MISMATCH",
+      legalCertification: false
+    });
+  });
+
+
 });
