@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 
 import { getProcessIprAuthStore } from "@/lib/ipr-session-store";
+import { getProcessIprAccountStore } from "@/lib/ipr-account-store";
 
 import { POST } from "./route";
 
@@ -85,6 +86,7 @@ afterEach(() => {
   }
 
   getProcessIprAuthStore().clear();
+  getProcessIprAccountStore().clear();
 });
 
 describe("POST /api/auth/ipr-login canonical bootstrap", () => {
@@ -402,6 +404,68 @@ describe("POST /api/auth/ipr-login canonical bootstrap", () => {
       reason: "IPR_CANONICAL_BOOTSTRAP_ALREADY_COMPLETED",
       detail:
         "A persistent credential already exists for the canonical Human IPR. Bootstrap will not overwrite it.",
+      legalCertification: false
+    });
+  });
+
+  it("fails closed when canonical profile already exists without credential", async () => {
+    process.env[AUTH_STORE_KIND_ENV] =
+      "PROCESS_AUTH_STORE_MVP";
+    process.env[ACCOUNT_STORE_KIND_ENV] =
+      "PROCESS_ACCOUNT_STORE_MVP";
+    process.env[BOOTSTRAP_ENABLED_ENV] = "true";
+    process.env[BOOTSTRAP_SECRET_ENV] =
+      "Expected-Canonical-Secret-2026";
+    process.env[CANONICAL_HUMAN_IPR_ENV] = "IPR-3";
+    process.env[CERTIFICATE_ID_ENV] =
+      "CERTIFICATE-09-OPERATIONAL-TEST";
+
+    const authStore = getProcessIprAuthStore();
+    const accountStore = getProcessIprAccountStore();
+
+    authStore.clear();
+    accountStore.clear();
+
+    await accountStore.upsertProfileAsync({
+      humanIpr: "IPR-3",
+      certificateId:
+        "CERTIFICATE-09-OPERATIONAL-TEST",
+      source: "HBCE_TEST_EXISTING_PROFILE",
+      profilePayload: {
+        source: "HBCE_TEST_EXISTING_PROFILE",
+        legalCertification: false
+      }
+    });
+
+    const request = new NextRequest(
+      "http://localhost/api/auth/ipr-login",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-hbce-ipr-bootstrap-secret":
+            "Expected-Canonical-Secret-2026"
+        },
+        body: JSON.stringify({
+          mode: "BOOTSTRAP_CANONICAL",
+          humanIpr: "IPR-3",
+          password: "C4n0nical!ZetaFlux27"
+        })
+      }
+    );
+
+    const response = await POST(request);
+    const payload = await response.json();
+
+    expect(response.status).toBe(409);
+
+    expect(payload).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason:
+        "IPR_CANONICAL_BOOTSTRAP_PROFILE_ALREADY_EXISTS",
+      detail:
+        "A persistent canonical Human IPR profile already exists without a bootstrap credential. Manual reconciliation is required.",
       legalCertification: false
     });
   });
