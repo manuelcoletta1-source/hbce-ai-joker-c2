@@ -1087,5 +1087,166 @@ describe(
         }
       }
     );
+
+    it(
+      "emits secure canonical session cookie in production",
+      async () => {
+        const originalNodeEnv =
+          process.env.NODE_ENV;
+
+        try {
+          process.env.NODE_ENV =
+            "production";
+
+          mockWithHbceDatabaseTransaction
+            .mockImplementation(
+              async () => {
+                await getProcessIprAccountStore()
+                  .upsertProfileAsync({
+                    humanIpr:
+                      "IPR-3",
+                    certificateId:
+                      "CERTIFICATE-09-OPERATIONAL-TEST",
+                    accountId:
+                      "ACCOUNT-IPR-3-COOKIE-PROD-TEST",
+                    source:
+                      "HBCE_CANONICAL_IPR_BOOTSTRAP"
+                  });
+
+                return {
+                  ok:
+                    true,
+                  transactionId:
+                    "HBCE-TX-TEST-COOKIE-PRODUCTION",
+                  state:
+                    "COMMITTED",
+                  startedAt:
+                    "2026-08-10T18:15:00.000Z",
+                  completedAt:
+                    "2026-08-10T18:15:00.001Z",
+                  durationMs:
+                    1,
+                  value: {
+                    humanIpr:
+                      "IPR-3",
+                    accountId:
+                      "ACCOUNT-IPR-3-COOKIE-PROD-TEST",
+                    certificateId:
+                      "CERTIFICATE-09-OPERATIONAL-TEST"
+                  }
+                };
+              }
+            );
+
+          const request =
+            new NextRequest(
+              "https://hbce.example/api/auth/ipr-login",
+              {
+                method:
+                  "POST",
+                headers: {
+                  "content-type":
+                    "application/json",
+                  "x-hbce-ipr-bootstrap-secret":
+                    "Expected-Canonical-Secret-2026"
+                },
+                body: JSON.stringify({
+                  mode:
+                    "BOOTSTRAP_CANONICAL",
+                  humanIpr:
+                    "IPR-3",
+                  password:
+                    "C4n0nical!ZetaFlux27",
+                  deviceLabel:
+                    "HBCE canonical production cookie test"
+                })
+              }
+            );
+
+          const response =
+            await POST(request);
+
+          const payload =
+            await response.json();
+
+          expect(
+            response.status
+          ).toBe(
+            200
+          );
+
+          expect(payload).toMatchObject({
+            ok:
+              true,
+            authenticated:
+              true
+          });
+
+          const setCookie =
+            response.headers.get(
+              "set-cookie"
+            );
+
+          expect(
+            setCookie
+          ).toBeTruthy();
+
+          expect(
+            setCookie
+          ).toMatch(
+            /^hbce_ipr_session=IPRSESS_[A-F0-9]{64};/
+          );
+
+          const attributes =
+            setCookie!
+              .split(";")
+              .slice(1)
+              .map(
+                (part) =>
+                  part.trim().toLowerCase()
+              );
+
+          expect(
+            attributes
+          ).toContain(
+            "httponly"
+          );
+
+          expect(
+            attributes
+          ).toContain(
+            "secure"
+          );
+
+          expect(
+            attributes
+          ).toContain(
+            "samesite=lax"
+          );
+
+          expect(
+            attributes
+          ).toContain(
+            "path=/"
+          );
+
+          expect(
+            attributes
+          ).toContain(
+            "max-age=604800"
+          );
+        } finally {
+          if (
+            typeof originalNodeEnv ===
+            "string"
+          ) {
+            process.env.NODE_ENV =
+              originalNodeEnv;
+          } else {
+            delete process.env.NODE_ENV;
+          }
+        }
+      }
+    );
   }
 );
