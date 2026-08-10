@@ -370,5 +370,77 @@ describe(
         });
       }
     );
+
+    it(
+      "fails closed when committed profile cannot be read back",
+      async () => {
+        mockWithHbceDatabaseTransaction
+          .mockResolvedValue({
+            ok: true,
+            transactionId:
+              "HBCE-TX-TEST-READBACK-FAILURE",
+            state: "COMMITTED",
+            startedAt:
+              "2026-08-10T14:42:00.000Z",
+            completedAt:
+              "2026-08-10T14:42:00.001Z",
+            durationMs: 1,
+            value: {
+              humanIpr:
+                "IPR-3",
+              accountId:
+                "ACCOUNT-IPR-3-TEST",
+              certificateId:
+                "CERTIFICATE-09-OPERATIONAL-TEST"
+            }
+          });
+
+        const request =
+          new NextRequest(
+            "http://localhost/api/auth/ipr-login",
+            {
+              method: "POST",
+              headers: {
+                "content-type":
+                  "application/json",
+                "x-hbce-ipr-bootstrap-secret":
+                  "Expected-Canonical-Secret-2026"
+              },
+              body: JSON.stringify({
+                mode:
+                  "BOOTSTRAP_CANONICAL",
+                humanIpr:
+                  "IPR-3",
+                password:
+                  "C4n0nical!ZetaFlux27"
+              })
+            }
+          );
+
+        const response =
+          await POST(request);
+
+        const payload =
+          await response.json();
+
+        expect(
+          mockWithHbceDatabaseTransaction
+        ).toHaveBeenCalledTimes(1);
+
+        expect(response.status).toBe(
+          500
+        );
+
+        expect(payload).toMatchObject({
+          ok: false,
+          authenticated: false,
+          reason:
+            "IPR_CANONICAL_BOOTSTRAP_PROFILE_READBACK_FAILED",
+          detail:
+            "Canonical bootstrap committed, but the persistent account profile could not be read back.",
+          legalCertification: false
+        });
+      }
+    );
   }
 );
