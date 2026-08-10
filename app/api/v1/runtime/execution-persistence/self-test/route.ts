@@ -18,6 +18,7 @@ import {
 } from "@/lib/ipr-auth";
 
 import {
+  RuntimePersistentHumanAuthorizationError,
   resolveRuntimePersistentHumanAuthorization,
 } from "@/src/runtime/authorization/runtime-persistent-human-authorization.service";
 
@@ -39,7 +40,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const REVISION =
-  "HBCE-RUNTIME-EXECUTION-PERSISTENCE-SELF-TEST-v1_1" as const;
+  "HBCE-RUNTIME-EXECUTION-PERSISTENCE-SELF-TEST-v1_2" as const;
 
 const MANUAL_AUTHORIZATION_HEADER =
   "x-hbce-ledger-self-test-token" as const;
@@ -1595,6 +1596,10 @@ export async function POST(
       },
     );
   } catch (error) {
+    const authorizationError =
+      error instanceof
+      RuntimePersistentHumanAuthorizationError;
+
     const orchestrationError =
       error instanceof
       RuntimeExecutionPersistenceError;
@@ -1602,6 +1607,43 @@ export async function POST(
     const persistenceError =
       error instanceof
       RuntimeOperationsPersistentAppendError;
+
+    const authorizationInfrastructureFailure =
+      authorizationError &&
+      (
+        error.code ===
+          "HBCE_RUNTIME_AUTH_DATABASE_NOT_CONFIGURED" ||
+        error.code ===
+          "HBCE_RUNTIME_AUTH_CANONICAL_SUBJECT_NOT_CONFIGURED" ||
+        error.code ===
+          "HBCE_RUNTIME_AUTH_SESSION_DATABASE_QUERY_FAILED" ||
+        error.code ===
+          "HBCE_RUNTIME_AUTH_PROFILE_DATABASE_QUERY_FAILED"
+      );
+
+    const authorizationUnauthenticated =
+      authorizationError &&
+      (
+        error.code ===
+          "HBCE_RUNTIME_AUTH_SESSION_TOKEN_REQUIRED" ||
+        error.code ===
+          "HBCE_RUNTIME_AUTH_SESSION_NOT_FOUND" ||
+        error.code ===
+          "HBCE_RUNTIME_AUTH_SESSION_NOT_ACTIVE" ||
+        error.code ===
+          "HBCE_RUNTIME_AUTH_SESSION_REVOKED" ||
+        error.code ===
+          "HBCE_RUNTIME_AUTH_SESSION_EXPIRED"
+      );
+
+    const responseStatus =
+      authorizationInfrastructureFailure
+        ? 500
+        : authorizationUnauthenticated
+          ? 401
+          : authorizationError
+            ? 403
+            : 500;
 
     return NextResponse.json(
       {
@@ -1632,18 +1674,22 @@ export async function POST(
                 ),
 
           code:
-            orchestrationError
+            authorizationError
               ? error.code
-              : persistenceError
+              : orchestrationError
                 ? error.code
-                : "HBCE_RUNTIME_EXECUTION_PERSISTENCE_SELF_TEST_UNEXPECTED_FAILURE",
+                : persistenceError
+                  ? error.code
+                  : "HBCE_RUNTIME_EXECUTION_PERSISTENCE_SELF_TEST_UNEXPECTED_FAILURE",
 
           stage:
-            orchestrationError
+            authorizationError
               ? error.stage
-              : persistenceError
+              : orchestrationError
                 ? error.stage
-                : "UNKNOWN",
+                : persistenceError
+                  ? error.stage
+                  : "UNKNOWN",
         },
 
         persistence: {
@@ -1691,11 +1737,13 @@ export async function POST(
       },
       {
         status:
-          500,
+          responseStatus,
 
         headers: {
           ...commonHeaders(
-            "FAIL_CLOSED",
+            authorizationError
+              ? "false"
+              : "FAIL_CLOSED",
           ),
 
           "X-HBCE-Authorization":
