@@ -277,4 +277,44 @@ describe("POST /api/auth/ipr-login canonical bootstrap", () => {
     });
   });
 
+  it("fails closed when canonical bootstrap password violates policy", async () => {
+    process.env[BOOTSTRAP_ENABLED_ENV] = "true";
+    process.env[BOOTSTRAP_SECRET_ENV] =
+      "Expected-Canonical-Secret-2026";
+    process.env[CANONICAL_HUMAN_IPR_ENV] = "IPR-3";
+    process.env[CERTIFICATE_ID_ENV] =
+      "CERTIFICATE-09-OPERATIONAL-TEST";
+
+    const request = new NextRequest(
+      "http://localhost/api/auth/ipr-login",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-hbce-ipr-bootstrap-secret":
+            "Expected-Canonical-Secret-2026"
+        },
+        body: JSON.stringify({
+          mode: "BOOTSTRAP_CANONICAL",
+          humanIpr: "IPR-3",
+          password: "short"
+        })
+      }
+    );
+
+    const response = await POST(request);
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+
+    expect(payload).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason: "IPR_PASSWORD_POLICY_FAILED",
+      detail:
+        "The supplied password does not satisfy the HBCE IPR password policy.",
+      legalCertification: false
+    });
+  });
+
 });
