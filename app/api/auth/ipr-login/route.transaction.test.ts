@@ -298,5 +298,77 @@ describe(
         });
       }
     );
+
+    it(
+      "maps generic transaction failure to 500",
+      async () => {
+        mockWithHbceDatabaseTransaction
+          .mockResolvedValue({
+            ok: false,
+            transactionId:
+              "HBCE-TX-TEST-GENERIC-FAILURE",
+            state: "FAILED",
+            startedAt:
+              "2026-08-10T13:32:00.000Z",
+            completedAt:
+              "2026-08-10T13:32:00.001Z",
+            durationMs: 1,
+            error:
+              "HBCE_TEST_DATABASE_FAILURE",
+            rollbackError:
+              "HBCE_TEST_ROLLBACK_FAILURE"
+          });
+
+        const request =
+          new NextRequest(
+            "http://localhost/api/auth/ipr-login",
+            {
+              method: "POST",
+              headers: {
+                "content-type":
+                  "application/json",
+                "x-hbce-ipr-bootstrap-secret":
+                  "Expected-Canonical-Secret-2026"
+              },
+              body: JSON.stringify({
+                mode:
+                  "BOOTSTRAP_CANONICAL",
+                humanIpr:
+                  "IPR-3",
+                password:
+                  "C4n0nical!ZetaFlux27"
+              })
+            }
+          );
+
+        const response =
+          await POST(request);
+
+        const payload =
+          await response.json();
+
+        expect(
+          mockWithHbceDatabaseTransaction
+        ).toHaveBeenCalledTimes(1);
+
+        expect(response.status).toBe(
+          500
+        );
+
+        expect(payload).toMatchObject({
+          ok: false,
+          authenticated: false,
+          reason:
+            "IPR_CANONICAL_BOOTSTRAP_TRANSACTION_FAILED",
+          detail:
+            "Canonical Human IPR bootstrap persistence failed and was not committed.",
+          legalCertification: false,
+          transactionState:
+            "FAILED",
+          rollbackErrorPresent:
+            true
+        });
+      }
+    );
   }
 );
