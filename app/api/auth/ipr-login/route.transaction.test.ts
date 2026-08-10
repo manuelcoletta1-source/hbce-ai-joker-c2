@@ -580,5 +580,133 @@ describe(
         ).toBeTruthy();
       }
     );
+
+    it(
+      "persists and projects canonical login touch after bootstrap",
+      async () => {
+        mockWithHbceDatabaseTransaction
+          .mockImplementation(
+            async () => {
+              const profile =
+                await getProcessIprAccountStore()
+                  .upsertProfileAsync({
+                    humanIpr:
+                      "IPR-3",
+                    certificateId:
+                      "CERTIFICATE-09-OPERATIONAL-TEST",
+                    accountId:
+                      "ACCOUNT-IPR-3-TOUCH-TEST",
+                    source:
+                      "HBCE_CANONICAL_IPR_BOOTSTRAP"
+                  });
+
+              expect(
+                profile.lastLoginAt
+              ).toBeNull();
+
+              return {
+                ok: true,
+                transactionId:
+                  "HBCE-TX-TEST-TOUCH-LOGIN",
+                state:
+                  "COMMITTED",
+                startedAt:
+                  "2026-08-10T16:26:00.000Z",
+                completedAt:
+                  "2026-08-10T16:26:00.001Z",
+                durationMs:
+                  1,
+                value: {
+                  humanIpr:
+                    "IPR-3",
+                  accountId:
+                    "ACCOUNT-IPR-3-TOUCH-TEST",
+                  certificateId:
+                    "CERTIFICATE-09-OPERATIONAL-TEST"
+                }
+              };
+            }
+          );
+
+        const request =
+          new NextRequest(
+            "http://localhost/api/auth/ipr-login",
+            {
+              method: "POST",
+              headers: {
+                "content-type":
+                  "application/json",
+                "x-hbce-ipr-bootstrap-secret":
+                  "Expected-Canonical-Secret-2026"
+              },
+              body: JSON.stringify({
+                mode:
+                  "BOOTSTRAP_CANONICAL",
+                humanIpr:
+                  "IPR-3",
+                password:
+                  "C4n0nical!ZetaFlux27",
+                deviceLabel:
+                  "HBCE canonical touch-login test"
+              })
+            }
+          );
+
+        const response =
+          await POST(request);
+
+        const payload =
+          await response.json();
+
+        expect(response.status).toBe(
+          200
+        );
+
+        expect(payload).toMatchObject({
+          ok: true,
+          authenticated: true,
+          accountProfile: {
+            humanIpr:
+              "IPR-3",
+            accountId:
+              "ACCOUNT-IPR-3-TOUCH-TEST"
+          }
+        });
+
+        const persistedProfile =
+          await getProcessIprAccountStore()
+            .getProfileAsync(
+              "IPR-3"
+            );
+
+        expect(
+          persistedProfile
+        ).not.toBeNull();
+
+        expect(
+          persistedProfile?.lastLoginAt
+        ).toEqual(
+          expect.any(String)
+        );
+
+        expect(
+          persistedProfile?.updatedAt
+        ).toBe(
+          persistedProfile?.lastLoginAt
+        );
+
+        expect(
+          payload.accountProfile.lastLoginAt
+        ).toBe(
+          persistedProfile?.lastLoginAt
+        );
+
+        expect(
+          payload.accountProfile.updatedAt
+        ).toBe(
+          persistedProfile?.updatedAt
+        );
+      }
+    );
   }
 );
