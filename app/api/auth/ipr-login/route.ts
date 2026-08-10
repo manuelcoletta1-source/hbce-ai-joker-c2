@@ -32,6 +32,10 @@ import {
   toPublicIprAccountProfile
 } from "@/lib/ipr-account-store";
 
+import {
+  withHbceDatabaseTransaction
+} from "@/lib/ipr-database-transaction";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -81,6 +85,42 @@ const PASSWORD_KEY_LENGTH = 64;
 
 const ROUTE_BOUNDARY =
   "This route creates and verifies HBCE IPR account access for JOKER-C2. It stores password hashes and session token hashes only. It does not store plaintext passwords, does not issue official identity, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale or eIDAS qualified trust services, and does not create legal certification.";
+
+const CANONICAL_BOOTSTRAP_MODE = "BOOTSTRAP_CANONICAL";
+const CANONICAL_BOOTSTRAP_SECRET_HEADER =
+  "x-hbce-ipr-bootstrap-secret";
+const DEFAULT_CANONICAL_HUMAN_IPR = "IPR-3";
+const DEFAULT_CANONICAL_BOOTSTRAP_ENTITY = "Manuel Coletta";
+const DEFAULT_CANONICAL_BOOTSTRAP_CERTIFICATE_KIND =
+  "CERTIFICATE_09_OPERATIONAL";
+
+function readBootstrapEnv(name: string): string {
+  const value = process.env[name];
+
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function isCanonicalBootstrapEnabled(): boolean {
+  return (
+    readBootstrapEnv("HBCE_IPR_CANONICAL_BOOTSTRAP_ENABLED").toLowerCase() ===
+    "true"
+  );
+}
+
+function bootstrapSecretsEqual(
+  suppliedSecret: string,
+  expectedSecret: string
+): boolean {
+  const suppliedHash = createHash("sha256")
+    .update(suppliedSecret, "utf8")
+    .digest();
+
+  const expectedHash = createHash("sha256")
+    .update(expectedSecret, "utf8")
+    .digest();
+
+  return timingSafeEqual(suppliedHash, expectedHash);
+}
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -614,6 +654,481 @@ async function createAuthenticatedSession(input: {
   };
 }
 
+async function handleCanonicalBootstrap(
+  req: NextRequest,
+  body: JsonRecord,
+  humanIpr: string,
+  password: string
+) {
+  if (!isCanonicalBootstrapEnabled()) {
+    return buildErrorResponse(
+      403,
+      "IPR_CANONICAL_BOOTSTRAP_DISABLED",
+      "Canonical Human IPR bootstrap is disabled."
+    );
+  }
+
+  const expectedSecret = readBootstrapEnv(
+    "HBCE_IPR_CANONICAL_BOOTSTRAP_SECRET"
+  );
+
+  if (!expectedSecret) {
+    return buildErrorResponse(
+      503,
+      "IPR_CANONICAL_BOOTSTRAP_NOT_CONFIGURED",
+      "Canonical Human IPR bootstrap secret is not configured."
+    );
+  }
+
+  const suppliedSecret =
+    req.headers.get(CANONICAL_BOOTSTRAP_SECRET_HEADER)?.trim() || "";
+
+  if (
+    !suppliedSecret ||
+    !bootstrapSecretsEqual(suppliedSecret, expectedSecret)
+  ) {
+    return buildErrorResponse(
+      403,
+      "IPR_CANONICAL_BOOTSTRAP_SECRET_INVALID",
+      "Canonical Human IPR bootstrap authorization failed."
+    );
+  }
+
+  const canonicalHumanIpr = normalizeHumanIpr(
+    readBootstrapEnv("HBCE_RUNTIME_CANONICAL_HUMAN_SUBJECT_IPR") ||
+      DEFAULT_CANONICAL_HUMAN_IPR
+  );
+
+  if (canonicalHumanIpr !== DEFAULT_CANONICAL_HUMAN_IPR) {
+    return buildErrorResponse(
+      503,
+      "IPR_CANONICAL_BOOTSTRAP_AUTHORITY_MISCONFIGURED",
+      "Canonical runtime Human IPR must resolve to IPR-3."
+    );
+  }
+
+  if (humanIpr !== canonicalHumanIpr) {
+    return buildErrorResponse(
+      403,
+      "IPR_CANONICAL_BOOTSTRAP_SUBJECT_MISMATCH",
+      "Canonical bootstrap is restricted to the configured Human authority IPR."
+    );
+  }
+
+  const certificateId = readBootstrapEnv(
+    "HBCE_IPR_CANONICAL_BOOTSTRAP_CERTIFICATE_ID"
+  );
+
+  if (!certificateId) {
+    return buildErrorResponse(
+      503,
+      "IPR_CANONICAL_BOOTSTRAP_CERTIFICATE_NOT_CONFIGURED",
+      "Canonical bootstrap requires an explicit server-side operational certificate ID."
+    );
+  }
+
+  const passwordPolicy = normalizePolicyResult(
+    evaluateIprPasswordPolicy(password)
+  );
+
+  if (!passwordPolicy.ok) {
+    return buildErrorResponse(
+      400,
+      "IPR_PASSWORD_POLICY_FAILED",
+      "The supplied password does not satisfy the HBCE IPR password policy.",
+      {
+        passwordPolicy
+      }
+    );
+  }
+
+  const authStore = getDefaultIprAuthStore();
+  const accountStore = getDefaultIprAccountStore();
+
+  const existingCredential =
+    await authStore.getCredentialAsync(humanIpr);
+
+  if (existingCredential) {
+    return buildErrorResponse(
+      409,
+      "IPR_CANONICAL_BOOTSTRAP_ALREADY_COMPLETED",
+      "A persistent credential already exists for the canonical Human IPR. Bootstrap will not overwrite it."
+    );
+  }
+
+  const existingProfile =
+    await accountStore.getProfileAsync(humanIpr);
+
+  if (existingProfile) {
+    return buildErrorResponse(
+      409,
+      "IPR_CANONICAL_BOOTSTRAP_PROFILE_ALREADY_EXISTS",
+      "A persistent canonical Human IPR profile already exists without a bootstrap credential. Manual reconciliation is required."
+    );
+  }
+
+  const passwordHash = hashPasswordLocally(password);
+  const timestamp = nowIso();
+
+  const certificateKind =
+    readBootstrapEnv(
+      "HBCE_IPR_CANONICAL_BOOTSTRAP_CERTIFICATE_KIND"
+    ) || DEFAULT_CANONICAL_BOOTSTRAP_CERTIFICATE_KIND;
+
+  const certificateHash =
+    readBootstrapEnv(
+      "HBCE_IPR_CANONICAL_BOOTSTRAP_CERTIFICATE_HASH"
+    ) || null;
+
+  const cardSerial =
+    readBootstrapEnv(
+      "HBCE_IPR_CANONICAL_BOOTSTRAP_CARD_SERIAL"
+    ) || null;
+
+  const entity =
+    readBootstrapEnv("HBCE_IPR_CANONICAL_BOOTSTRAP_ENTITY") ||
+    DEFAULT_CANONICAL_BOOTSTRAP_ENTITY;
+
+  const tenantId =
+    readBootstrapEnv("HBCE_IPR_CANONICAL_BOOTSTRAP_TENANT_ID") ||
+    null;
+
+  const workspaceId =
+    readBootstrapEnv("HBCE_IPR_CANONICAL_BOOTSTRAP_WORKSPACE_ID") ||
+    null;
+
+  const accountId =
+    readBootstrapEnv("HBCE_IPR_CANONICAL_BOOTSTRAP_ACCOUNT_ID") ||
+    `IPR-ACCOUNT-${createHash("sha256")
+      .update(humanIpr, "utf8")
+      .digest("hex")
+      .slice(0, 24)
+      .toUpperCase()}`;
+
+  const credentialPayload = {
+    source: "HBCE_CANONICAL_IPR_BOOTSTRAP",
+    origin: getRequestOrigin(req),
+    createdAt: timestamp,
+    algorithm: PASSWORD_ALGORITHM,
+    bootstrapMode: CANONICAL_BOOTSTRAP_MODE,
+    canonicalHumanAuthority: true,
+    oneTimeBootstrap: true,
+    legalCertification: false
+  };
+
+  const profilePayload = {
+    source: "HBCE_CANONICAL_IPR_BOOTSTRAP",
+    origin: getRequestOrigin(req),
+    bootstrap: {
+      mode: CANONICAL_BOOTSTRAP_MODE,
+      canonicalHumanAuthority: true,
+      serverAuthorized: true,
+      oneTimeBootstrap: true,
+      createdAt: timestamp
+    },
+    legalCertification: false
+  };
+
+  const transaction = await withHbceDatabaseTransaction(
+    async ({ query }) => {
+      await query(
+        `
+INSERT INTO ipr_subjects (
+  human_ipr,
+  entity,
+  subject_kind,
+  status,
+  created_at,
+  updated_at,
+  last_seen_at,
+  metadata,
+  legal_certification
+)
+VALUES (
+  $1,
+  $2,
+  'BIOLOGICAL_SUBJECT',
+  'ACTIVE',
+  now(),
+  now(),
+  now(),
+  $3::jsonb,
+  false
+)
+ON CONFLICT (human_ipr) DO UPDATE SET
+  entity = EXCLUDED.entity,
+  subject_kind = 'BIOLOGICAL_SUBJECT',
+  status = 'ACTIVE',
+  updated_at = now(),
+  last_seen_at = now(),
+  metadata = ipr_subjects.metadata || EXCLUDED.metadata,
+  legal_certification = false
+        `.trim(),
+        [
+          humanIpr,
+          entity,
+          JSON.stringify({
+            source: "HBCE_CANONICAL_IPR_BOOTSTRAP",
+            persistenceMode: "DATABASE_PERSISTENT",
+            canonicalHumanAuthority: true,
+            legalCertification: false
+          })
+        ]
+      );
+
+      const credentialInsert = await query(
+        `
+INSERT INTO ipr_auth_credentials (
+  human_ipr,
+  password_algorithm,
+  password_hash,
+  password_salt,
+  password_key_length,
+  password_created_at,
+  password_updated_at,
+  password_last_verified_at,
+  failed_attempts,
+  locked_until,
+  credential_payload,
+  legal_certification
+)
+VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  now(),
+  now(),
+  NULL,
+  0,
+  NULL,
+  $6::jsonb,
+  false
+)
+ON CONFLICT (human_ipr) DO NOTHING
+RETURNING human_ipr
+        `.trim(),
+        [
+          humanIpr,
+          passwordHash.passwordAlgorithm,
+          passwordHash.passwordHash,
+          passwordHash.passwordSalt,
+          passwordHash.passwordKeyLength,
+          JSON.stringify(credentialPayload)
+        ]
+      );
+
+      if (credentialInsert.rows.length !== 1) {
+        throw new Error(
+          "IPR_CANONICAL_BOOTSTRAP_ALREADY_COMPLETED"
+        );
+      }
+
+      const profileInsert = await query(
+        `
+INSERT INTO ipr_account_profiles (
+  human_ipr,
+  tenant_id,
+  workspace_id,
+  account_id,
+  entity,
+  subject_kind,
+  certificate_id,
+  certificate_kind,
+  certificate_status,
+  certificate_scope,
+  card_serial,
+  certificate_hash,
+  access_decision,
+  access_scope,
+  identity_binding,
+  matrix_state,
+  semantic_memory_scope,
+  source,
+  handoff_hash,
+  profile_hash,
+  created_at,
+  updated_at,
+  last_login_at,
+  profile_payload,
+  legal_certification
+)
+VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  'BIOLOGICAL_SUBJECT',
+  $6,
+  $7,
+  'ACTIVE',
+  $8::jsonb,
+  $9,
+  $10,
+  'ACCESS_GRANTED',
+  $11,
+  'IPR_VERIFIED_BIOLOGICAL_SUBJECT',
+  'MATRIX_ACTIVE',
+  'IPR_BOUND',
+  'HBCE_CANONICAL_IPR_BOOTSTRAP',
+  NULL,
+  NULL,
+  now(),
+  now(),
+  NULL,
+  $12::jsonb,
+  false
+)
+ON CONFLICT (human_ipr) DO NOTHING
+RETURNING human_ipr
+        `.trim(),
+        [
+          humanIpr,
+          tenantId,
+          workspaceId,
+          accountId,
+          entity,
+          certificateId,
+          certificateKind,
+          JSON.stringify([DEFAULT_ACCESS_SCOPE]),
+          cardSerial,
+          certificateHash,
+          DEFAULT_ACCESS_SCOPE,
+          JSON.stringify(profilePayload)
+        ]
+      );
+
+      if (profileInsert.rows.length !== 1) {
+        throw new Error(
+          "IPR_CANONICAL_BOOTSTRAP_PROFILE_ALREADY_EXISTS"
+        );
+      }
+
+      return {
+        humanIpr,
+        accountId,
+        certificateId
+      };
+    },
+    {
+      isolationLevel: "SERIALIZABLE",
+      readOnly: false,
+      statementTimeoutMs: 30000,
+      lockTimeoutMs: 10000,
+      idleInTransactionSessionTimeoutMs: 30000
+    }
+  );
+
+  if (!transaction.ok) {
+    if (
+      transaction.error ===
+      "IPR_CANONICAL_BOOTSTRAP_ALREADY_COMPLETED"
+    ) {
+      return buildErrorResponse(
+        409,
+        "IPR_CANONICAL_BOOTSTRAP_ALREADY_COMPLETED",
+        "A persistent credential already exists for the canonical Human IPR. Bootstrap did not modify it."
+      );
+    }
+
+    if (
+      transaction.error ===
+      "IPR_CANONICAL_BOOTSTRAP_PROFILE_ALREADY_EXISTS"
+    ) {
+      return buildErrorResponse(
+        409,
+        "IPR_CANONICAL_BOOTSTRAP_PROFILE_ALREADY_EXISTS",
+        "A persistent canonical Human IPR profile already exists. The bootstrap transaction was rolled back."
+      );
+    }
+
+    return buildErrorResponse(
+      500,
+      "IPR_CANONICAL_BOOTSTRAP_TRANSACTION_FAILED",
+      "Canonical Human IPR bootstrap persistence failed and was not committed.",
+      {
+        transactionState: transaction.state,
+        rollbackErrorPresent: Boolean(transaction.rollbackError)
+      }
+    );
+  }
+
+  const accountProfile =
+    await accountStore.getProfileAsync(humanIpr);
+
+  if (!accountProfile) {
+    return buildErrorResponse(
+      500,
+      "IPR_CANONICAL_BOOTSTRAP_PROFILE_READBACK_FAILED",
+      "Canonical bootstrap committed, but the persistent account profile could not be read back."
+    );
+  }
+
+  const touchedProfile =
+    (await accountStore.touchLoginAsync(humanIpr)) || accountProfile;
+
+  const session = await createAuthenticatedSession({
+    req,
+    humanIpr,
+    runtimeIpr: DEFAULT_RUNTIME_IPR,
+    deviceLabel: firstString(
+      body,
+      [["deviceLabel"], ["device_label"]],
+      "HBCE canonical IPR bootstrap device"
+    ),
+    sessionPayload: {
+      mode: CANONICAL_BOOTSTRAP_MODE,
+      accountId: touchedProfile.accountId,
+      profileHash: touchedProfile.profileHash,
+      semanticMemoryScope: touchedProfile.semanticMemoryScope,
+      matrixState: touchedProfile.matrixState,
+      canonicalHumanAuthority: true,
+      legalCertification: false
+    }
+  });
+
+  const response = NextResponse.json(
+    {
+      ok: true,
+      authenticated: true,
+      mode: CANONICAL_BOOTSTRAP_MODE,
+      bootstrapStatus: "CANONICAL_HUMAN_IPR_BOOTSTRAP_COMPLETED",
+      humanIpr,
+      runtimeIpr: DEFAULT_RUNTIME_IPR,
+      session: getPublicSessionFromStoredSession(session.storedSession),
+      accountProfile: toPublicIprAccountProfile(touchedProfile),
+      access: {
+        decision: "ACCESS_GRANTED",
+        scope: touchedProfile.accessScope,
+        identityBinding: touchedProfile.identityBinding,
+        source: "HBCE_CANONICAL_IPR_BOOTSTRAP"
+      },
+      memory: {
+        expectedScope: touchedProfile.semanticMemoryScope,
+        expectedAuthority: "SERVER_RUNTIME_VALIDATED",
+        persistenceMode: "DATABASE_PERSISTENT"
+      },
+      matrix: {
+        expectedState: touchedProfile.matrixState
+      },
+      bootstrap: {
+        oneTime: true,
+        canonicalHumanAuthority: true,
+        disableAfterCompletion: true
+      },
+      boundary: buildBoundary(),
+      legalCertification: false
+    },
+    { status: 200 }
+  );
+
+  setSessionCookie(response, session.rawSessionToken);
+
+  return response;
+}
+
 async function handleSetPassword(
   req: NextRequest,
   body: JsonRecord,
@@ -882,6 +1397,11 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await readJson(req);
+  const requestedMode = firstString(
+    body,
+    [["mode"]],
+    ""
+  ).trim().toUpperCase();
   const mode = normalizeMode(body.mode);
   const humanIprRaw = firstString(
     body,
@@ -921,6 +1441,15 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    if (requestedMode === CANONICAL_BOOTSTRAP_MODE) {
+      return await handleCanonicalBootstrap(
+        req,
+        body,
+        humanIpr,
+        password
+      );
+    }
+
     if (mode === "SET_PASSWORD") {
       return await handleSetPassword(req, body, humanIpr, password);
     }
