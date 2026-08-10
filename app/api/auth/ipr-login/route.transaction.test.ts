@@ -231,5 +231,72 @@ describe(
         });
       }
     );
+
+    it(
+      "maps canonical profile race conflict to 409",
+      async () => {
+        mockWithHbceDatabaseTransaction
+          .mockResolvedValue({
+            ok: false,
+            transactionId:
+              "HBCE-TX-TEST-PROFILE-RACE",
+            state: "ROLLED_BACK",
+            startedAt:
+              "2026-08-10T13:27:00.000Z",
+            completedAt:
+              "2026-08-10T13:27:00.001Z",
+            durationMs: 1,
+            error:
+              "IPR_CANONICAL_BOOTSTRAP_PROFILE_ALREADY_EXISTS",
+            rollbackError: null
+          });
+
+        const request =
+          new NextRequest(
+            "http://localhost/api/auth/ipr-login",
+            {
+              method: "POST",
+              headers: {
+                "content-type":
+                  "application/json",
+                "x-hbce-ipr-bootstrap-secret":
+                  "Expected-Canonical-Secret-2026"
+              },
+              body: JSON.stringify({
+                mode:
+                  "BOOTSTRAP_CANONICAL",
+                humanIpr:
+                  "IPR-3",
+                password:
+                  "C4n0nical!ZetaFlux27"
+              })
+            }
+          );
+
+        const response =
+          await POST(request);
+
+        const payload =
+          await response.json();
+
+        expect(
+          mockWithHbceDatabaseTransaction
+        ).toHaveBeenCalledTimes(1);
+
+        expect(response.status).toBe(
+          409
+        );
+
+        expect(payload).toMatchObject({
+          ok: false,
+          authenticated: false,
+          reason:
+            "IPR_CANONICAL_BOOTSTRAP_PROFILE_ALREADY_EXISTS",
+          detail:
+            "A persistent canonical Human IPR profile already exists. The bootstrap transaction was rolled back.",
+          legalCertification: false
+        });
+      }
+    );
   }
 );
