@@ -18,8 +18,14 @@ const CANONICAL_HUMAN_IPR_ENV =
 const originalBootstrapSecret =
   process.env[BOOTSTRAP_SECRET_ENV];
 
+const CERTIFICATE_ID_ENV =
+  "HBCE_IPR_CANONICAL_BOOTSTRAP_CERTIFICATE_ID";
+
 const originalCanonicalHumanIpr =
   process.env[CANONICAL_HUMAN_IPR_ENV];
+
+const originalCertificateId =
+  process.env[CERTIFICATE_ID_ENV];
 
 afterEach(() => {
   if (typeof originalBootstrapEnabled === "string") {
@@ -41,6 +47,13 @@ afterEach(() => {
       originalCanonicalHumanIpr;
   } else {
     delete process.env[CANONICAL_HUMAN_IPR_ENV];
+  }
+
+  if (typeof originalCertificateId === "string") {
+    process.env[CERTIFICATE_ID_ENV] =
+      originalCertificateId;
+  } else {
+    delete process.env[CERTIFICATE_ID_ENV];
   }
 });
 
@@ -223,5 +236,45 @@ describe("POST /api/auth/ipr-login canonical bootstrap", () => {
     });
   });
 
+
+  it("fails closed when canonical certificate ID is not configured", async () => {
+    process.env[BOOTSTRAP_ENABLED_ENV] = "true";
+    process.env[BOOTSTRAP_SECRET_ENV] =
+      "Expected-Canonical-Secret-2026";
+    process.env[CANONICAL_HUMAN_IPR_ENV] = "IPR-3";
+    delete process.env[CERTIFICATE_ID_ENV];
+
+    const request = new NextRequest(
+      "http://localhost/api/auth/ipr-login",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-hbce-ipr-bootstrap-secret":
+            "Expected-Canonical-Secret-2026"
+        },
+        body: JSON.stringify({
+          mode: "BOOTSTRAP_CANONICAL",
+          humanIpr: "IPR-3",
+          password: "Canonical-Test-Password-Only-2026!"
+        })
+      }
+    );
+
+    const response = await POST(request);
+    const payload = await response.json();
+
+    expect(response.status).toBe(503);
+
+    expect(payload).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason:
+        "IPR_CANONICAL_BOOTSTRAP_CERTIFICATE_NOT_CONFIGURED",
+      detail:
+        "Canonical bootstrap requires an explicit server-side operational certificate ID.",
+      legalCertification: false
+    });
+  });
 
 });
