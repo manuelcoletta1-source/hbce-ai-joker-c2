@@ -1,13 +1,27 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 
+import { getProcessIprAuthStore } from "@/lib/ipr-session-store";
+
 import { POST } from "./route";
+
+const AUTH_STORE_KIND_ENV =
+  "IPR_AUTH_STORE_KIND";
+
+const ACCOUNT_STORE_KIND_ENV =
+  "IPR_ACCOUNT_STORE_KIND";
 
 const BOOTSTRAP_ENABLED_ENV =
   "HBCE_IPR_CANONICAL_BOOTSTRAP_ENABLED";
 
 const BOOTSTRAP_SECRET_ENV =
   "HBCE_IPR_CANONICAL_BOOTSTRAP_SECRET";
+
+const originalAuthStoreKind =
+  process.env[AUTH_STORE_KIND_ENV];
+
+const originalAccountStoreKind =
+  process.env[ACCOUNT_STORE_KIND_ENV];
 
 const originalBootstrapEnabled =
   process.env[BOOTSTRAP_ENABLED_ENV];
@@ -55,6 +69,22 @@ afterEach(() => {
   } else {
     delete process.env[CERTIFICATE_ID_ENV];
   }
+
+  if (typeof originalAuthStoreKind === "string") {
+    process.env[AUTH_STORE_KIND_ENV] =
+      originalAuthStoreKind;
+  } else {
+    delete process.env[AUTH_STORE_KIND_ENV];
+  }
+
+  if (typeof originalAccountStoreKind === "string") {
+    process.env[ACCOUNT_STORE_KIND_ENV] =
+      originalAccountStoreKind;
+  } else {
+    delete process.env[ACCOUNT_STORE_KIND_ENV];
+  }
+
+  getProcessIprAuthStore().clear();
 });
 
 describe("POST /api/auth/ipr-login canonical bootstrap", () => {
@@ -313,6 +343,65 @@ describe("POST /api/auth/ipr-login canonical bootstrap", () => {
       reason: "IPR_PASSWORD_POLICY_FAILED",
       detail:
         "The supplied password does not satisfy the HBCE IPR password policy.",
+      legalCertification: false
+    });
+  });
+
+  it("fails closed when canonical credential already exists", async () => {
+    process.env[AUTH_STORE_KIND_ENV] =
+      "PROCESS_AUTH_STORE_MVP";
+    process.env[ACCOUNT_STORE_KIND_ENV] =
+      "PROCESS_ACCOUNT_STORE_MVP";
+    process.env[BOOTSTRAP_ENABLED_ENV] = "true";
+    process.env[BOOTSTRAP_SECRET_ENV] =
+      "Expected-Canonical-Secret-2026";
+    process.env[CANONICAL_HUMAN_IPR_ENV] = "IPR-3";
+    process.env[CERTIFICATE_ID_ENV] =
+      "CERTIFICATE-09-OPERATIONAL-TEST";
+
+    const authStore = getProcessIprAuthStore();
+
+    authStore.clear();
+
+    await authStore.setCredentialAsync({
+      humanIpr: "IPR-3",
+      passwordAlgorithm: "test-existing-credential-v1",
+      passwordHash: "existing-hash",
+      passwordSalt: "existing-salt",
+      passwordKeyLength: 64,
+      credentialPayload: {
+        source: "HBCE_TEST_EXISTING_CREDENTIAL"
+      }
+    });
+
+    const request = new NextRequest(
+      "http://localhost/api/auth/ipr-login",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-hbce-ipr-bootstrap-secret":
+            "Expected-Canonical-Secret-2026"
+        },
+        body: JSON.stringify({
+          mode: "BOOTSTRAP_CANONICAL",
+          humanIpr: "IPR-3",
+          password: "C4n0nical!ZetaFlux27"
+        })
+      }
+    );
+
+    const response = await POST(request);
+    const payload = await response.json();
+
+    expect(response.status).toBe(409);
+
+    expect(payload).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason: "IPR_CANONICAL_BOOTSTRAP_ALREADY_COMPLETED",
+      detail:
+        "A persistent credential already exists for the canonical Human IPR. Bootstrap will not overwrite it.",
       legalCertification: false
     });
   });
