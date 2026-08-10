@@ -244,5 +244,77 @@ describe(
         );
       }
     );
+
+    it(
+      "commits a successful active transaction",
+      async () => {
+        const result =
+          await withHbceDatabaseTransaction(
+            async ({ query }) => {
+              await query(
+                "INSERT INTO hbce_test(value) VALUES ($1)",
+                ["gamma"]
+              );
+
+              return {
+                status:
+                  "HBCE_TEST_COMMIT_VALUE"
+              };
+            },
+            {
+              isolationLevel:
+                "SERIALIZABLE",
+              readOnly: false,
+              statementTimeoutMs:
+                30000,
+              lockTimeoutMs:
+                10000,
+              idleInTransactionSessionTimeoutMs:
+                30000
+            }
+          );
+
+        expect(result).toMatchObject({
+          ok: true,
+          state: "COMMITTED",
+          value: {
+            status:
+              "HBCE_TEST_COMMIT_VALUE"
+          }
+        });
+
+        expect(
+          mockPoolConnect
+        ).toHaveBeenCalledTimes(1);
+
+        expect(
+          mockClientRelease
+        ).toHaveBeenCalledTimes(1);
+
+        const sqlCalls =
+          mockClientQuery.mock.calls.map(
+            ([sql]) =>
+              String(sql)
+                .replace(/\s+/g, " ")
+                .trim()
+          );
+
+        expect(sqlCalls[0]).toBe(
+          "BEGIN ISOLATION LEVEL SERIALIZABLE READ WRITE NOT DEFERRABLE"
+        );
+
+        expect(sqlCalls).toContain(
+          "INSERT INTO hbce_test(value) VALUES ($1)"
+        );
+
+        expect(
+          sqlCalls.at(-1)
+        ).toBe("COMMIT");
+
+        expect(sqlCalls).not.toContain(
+          "ROLLBACK"
+        );
+      }
+    );
   }
 );
