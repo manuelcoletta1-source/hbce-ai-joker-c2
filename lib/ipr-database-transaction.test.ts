@@ -161,5 +161,88 @@ describe(
         );
       }
     );
+
+    it(
+      "reports FAILED when rollback itself fails",
+      async () => {
+        mockClientQuery.mockImplementation(
+          async (sql: unknown) => {
+            const normalizedSql =
+              String(sql)
+                .replace(/\s+/g, " ")
+                .trim();
+
+            if (
+              normalizedSql ===
+              "ROLLBACK"
+            ) {
+              throw new Error(
+                "HBCE_TEST_ROLLBACK_FAILURE"
+              );
+            }
+
+            return emptyQueryResult();
+          }
+        );
+
+        const result =
+          await withHbceDatabaseTransaction(
+            async ({ query }) => {
+              await query(
+                "INSERT INTO hbce_test(value) VALUES ($1)",
+                ["beta"]
+              );
+
+              throw new Error(
+                "HBCE_TEST_PRIMARY_FAILURE"
+              );
+            },
+            {
+              isolationLevel:
+                "SERIALIZABLE",
+              readOnly: false,
+              statementTimeoutMs:
+                30000,
+              lockTimeoutMs:
+                10000,
+              idleInTransactionSessionTimeoutMs:
+                30000
+            }
+          );
+
+        expect(result).toMatchObject({
+          ok: false,
+          state: "FAILED",
+          error:
+            "HBCE_TEST_PRIMARY_FAILURE",
+          rollbackError:
+            "HBCE_TEST_ROLLBACK_FAILURE"
+        });
+
+        expect(
+          mockPoolConnect
+        ).toHaveBeenCalledTimes(1);
+
+        expect(
+          mockClientRelease
+        ).toHaveBeenCalledTimes(1);
+
+        const sqlCalls =
+          mockClientQuery.mock.calls.map(
+            ([sql]) =>
+              String(sql)
+                .replace(/\s+/g, " ")
+                .trim()
+          );
+
+        expect(sqlCalls).toContain(
+          "ROLLBACK"
+        );
+
+        expect(sqlCalls).not.toContain(
+          "COMMIT"
+        );
+      }
+    );
   }
 );
