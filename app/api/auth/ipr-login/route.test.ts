@@ -6,8 +6,14 @@ import { POST } from "./route";
 const BOOTSTRAP_ENABLED_ENV =
   "HBCE_IPR_CANONICAL_BOOTSTRAP_ENABLED";
 
+const BOOTSTRAP_SECRET_ENV =
+  "HBCE_IPR_CANONICAL_BOOTSTRAP_SECRET";
+
 const originalBootstrapEnabled =
   process.env[BOOTSTRAP_ENABLED_ENV];
+
+const originalBootstrapSecret =
+  process.env[BOOTSTRAP_SECRET_ENV];
 
 afterEach(() => {
   if (typeof originalBootstrapEnabled === "string") {
@@ -15,6 +21,13 @@ afterEach(() => {
       originalBootstrapEnabled;
   } else {
     delete process.env[BOOTSTRAP_ENABLED_ENV];
+  }
+
+  if (typeof originalBootstrapSecret === "string") {
+    process.env[BOOTSTRAP_SECRET_ENV] =
+      originalBootstrapSecret;
+  } else {
+    delete process.env[BOOTSTRAP_SECRET_ENV];
   }
 });
 
@@ -47,6 +60,40 @@ describe("POST /api/auth/ipr-login canonical bootstrap", () => {
       authenticated: false,
       reason: "IPR_CANONICAL_BOOTSTRAP_DISABLED",
       detail: "Canonical Human IPR bootstrap is disabled.",
+      legalCertification: false
+    });
+  });
+
+  it("fails closed when bootstrap secret is not configured", async () => {
+    process.env[BOOTSTRAP_ENABLED_ENV] = "true";
+    delete process.env[BOOTSTRAP_SECRET_ENV];
+
+    const request = new NextRequest(
+      "http://localhost/api/auth/ipr-login",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          mode: "BOOTSTRAP_CANONICAL",
+          humanIpr: "IPR-3",
+          password: "Canonical-Test-Password-Only-2026!"
+        })
+      }
+    );
+
+    const response = await POST(request);
+    const payload = await response.json();
+
+    expect(response.status).toBe(503);
+
+    expect(payload).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason: "IPR_CANONICAL_BOOTSTRAP_NOT_CONFIGURED",
+      detail:
+        "Canonical Human IPR bootstrap secret is not configured.",
       legalCertification: false
     });
   });
