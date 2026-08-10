@@ -1248,5 +1248,351 @@ describe(
         }
       }
     );
+
+    it(
+      "completes the full canonical bootstrap application contract",
+      async () => {
+        const originalNodeEnv =
+          process.env.NODE_ENV;
+
+        try {
+          process.env.NODE_ENV =
+            "test";
+
+          mockWithHbceDatabaseTransaction
+            .mockImplementation(
+              async () => {
+                await getProcessIprAccountStore()
+                  .upsertProfileAsync({
+                    humanIpr:
+                      "IPR-3",
+                    certificateId:
+                      "CERTIFICATE-09-OPERATIONAL-TEST",
+                    accountId:
+                      "ACCOUNT-IPR-3-FULL-CONTRACT",
+                    source:
+                      "HBCE_CANONICAL_IPR_BOOTSTRAP"
+                  });
+
+                return {
+                  ok:
+                    true,
+                  transactionId:
+                    "HBCE-TX-FULL-CANONICAL-CONTRACT",
+                  state:
+                    "COMMITTED",
+                  startedAt:
+                    "2026-08-10T18:25:00.000Z",
+                  completedAt:
+                    "2026-08-10T18:25:00.001Z",
+                  durationMs:
+                    1,
+                  value: {
+                    humanIpr:
+                      "IPR-3",
+                    accountId:
+                      "ACCOUNT-IPR-3-FULL-CONTRACT",
+                    certificateId:
+                      "CERTIFICATE-09-OPERATIONAL-TEST"
+                  }
+                };
+              }
+            );
+
+          const request =
+            new NextRequest(
+              "http://localhost/api/auth/ipr-login",
+              {
+                method:
+                  "POST",
+                headers: {
+                  "content-type":
+                    "application/json",
+                  "x-hbce-ipr-bootstrap-secret":
+                    "Expected-Canonical-Secret-2026"
+                },
+                body: JSON.stringify({
+                  mode:
+                    "BOOTSTRAP_CANONICAL",
+                  humanIpr:
+                    "IPR-3",
+                  password:
+                    "C4n0nical!ZetaFlux27",
+                  deviceLabel:
+                    "HBCE full canonical contract test"
+                })
+              }
+            );
+
+          const response =
+            await POST(request);
+
+          const payload =
+            await response.json();
+
+          expect(
+            mockWithHbceDatabaseTransaction
+          ).toHaveBeenCalledTimes(
+            1
+          );
+
+          const [
+            operation,
+            transactionOptions
+          ] =
+            mockWithHbceDatabaseTransaction
+              .mock.calls[0];
+
+          expect(
+            typeof operation
+          ).toBe(
+            "function"
+          );
+
+          expect(
+            transactionOptions
+          ).toMatchObject({
+            isolationLevel:
+              "SERIALIZABLE",
+            readOnly:
+              false,
+            statementTimeoutMs:
+              30000,
+            lockTimeoutMs:
+              10000,
+            idleInTransactionSessionTimeoutMs:
+              30000
+          });
+
+          expect(
+            response.status
+          ).toBe(
+            200
+          );
+
+          expect(payload).toMatchObject({
+            ok:
+              true,
+            authenticated:
+              true,
+            mode:
+              "BOOTSTRAP_CANONICAL",
+            bootstrapStatus:
+              "CANONICAL_HUMAN_IPR_BOOTSTRAP_COMPLETED",
+            humanIpr:
+              "IPR-3",
+            runtimeIpr:
+              "IPR-AI-0001",
+            accountProfile: {
+              humanIpr:
+                "IPR-3",
+              accountId:
+                "ACCOUNT-IPR-3-FULL-CONTRACT",
+              certificateId:
+                "CERTIFICATE-09-OPERATIONAL-TEST",
+              accessDecision:
+                "ACCESS_GRANTED",
+              identityBinding:
+                "IPR_VERIFIED_BIOLOGICAL_SUBJECT",
+              matrixState:
+                "MATRIX_ACTIVE",
+              semanticMemoryScope:
+                "IPR_BOUND",
+              source:
+                "HBCE_CANONICAL_IPR_BOOTSTRAP",
+              legalCertification:
+                false
+            },
+            session: {
+              humanIpr:
+                "IPR-3",
+              runtimeIpr:
+                "IPR-AI-0001",
+              status:
+                "ACTIVE",
+              deviceLabel:
+                "HBCE full canonical contract test",
+              legalCertification:
+                false
+            },
+            access: {
+              decision:
+                "ACCESS_GRANTED",
+              identityBinding:
+                "IPR_VERIFIED_BIOLOGICAL_SUBJECT",
+              source:
+                "HBCE_CANONICAL_IPR_BOOTSTRAP"
+            },
+            memory: {
+              expectedScope:
+                "IPR_BOUND",
+              expectedAuthority:
+                "SERVER_RUNTIME_VALIDATED",
+              persistenceMode:
+                "DATABASE_PERSISTENT"
+            },
+            matrix: {
+              expectedState:
+                "MATRIX_ACTIVE"
+            },
+            bootstrap: {
+              oneTime:
+                true,
+              canonicalHumanAuthority:
+                true,
+              disableAfterCompletion:
+                true
+            },
+            legalCertification:
+              false
+          });
+
+          expect(
+            payload.accountProfile.lastLoginAt
+          ).toEqual(
+            expect.any(String)
+          );
+
+          expect(
+            payload.accountProfile.updatedAt
+          ).toBe(
+            payload.accountProfile.lastLoginAt
+          );
+
+          expect(
+            payload.session
+          ).not.toHaveProperty(
+            "tokenHash"
+          );
+
+          const persistedProfile =
+            await getProcessIprAccountStore()
+              .getProfileAsync(
+                "IPR-3"
+              );
+
+          expect(
+            persistedProfile
+          ).not.toBeNull();
+
+          expect(
+            persistedProfile?.accountId
+          ).toBe(
+            "ACCOUNT-IPR-3-FULL-CONTRACT"
+          );
+
+          expect(
+            persistedProfile?.lastLoginAt
+          ).toBe(
+            payload.accountProfile.lastLoginAt
+          );
+
+          const setCookie =
+            response.headers.get(
+              "set-cookie"
+            );
+
+          expect(
+            setCookie
+          ).toBeTruthy();
+
+          expect(
+            setCookie
+          ).toMatch(
+            /^hbce_ipr_session=IPRSESS_[A-F0-9]{64};/
+          );
+
+          const cookiePair =
+            setCookie!.split(";")[0];
+
+          const rawSessionToken =
+            cookiePair.slice(
+              cookiePair.indexOf("=") + 1
+            );
+
+          expect(
+            JSON.stringify(payload)
+          ).not.toContain(
+            rawSessionToken
+          );
+
+          const verification =
+            await getProcessIprAuthStore()
+              .verifySessionTokenAsync(
+                rawSessionToken
+              );
+
+          expect(
+            verification
+          ).toMatchObject({
+            ok:
+              true,
+            authenticated:
+              true,
+            reason:
+              "SESSION_ACTIVE",
+            session: {
+              sessionId:
+                payload.session.sessionId,
+              humanIpr:
+                "IPR-3",
+              runtimeIpr:
+                "IPR-AI-0001",
+              status:
+                "ACTIVE",
+              deviceLabel:
+                "HBCE full canonical contract test",
+              legalCertification:
+                false,
+              sessionPayload: {
+                mode:
+                  "BOOTSTRAP_CANONICAL",
+                accountId:
+                  "ACCOUNT-IPR-3-FULL-CONTRACT",
+                semanticMemoryScope:
+                  "IPR_BOUND",
+                matrixState:
+                  "MATRIX_ACTIVE",
+                canonicalHumanAuthority:
+                  true,
+                legalCertification:
+                  false
+              }
+            }
+          });
+
+          if (
+            !verification.ok ||
+            !verification.session
+          ) {
+            throw new Error(
+              "HBCE_FULL_CANONICAL_SESSION_VERIFICATION_FAILED"
+            );
+          }
+
+          expect(
+            verification.session.tokenHash
+          ).not.toBe(
+            rawSessionToken
+          );
+
+          expect(
+            verification.session.lastSeenAt
+          ).toEqual(
+            expect.any(String)
+          );
+        } finally {
+          if (
+            typeof originalNodeEnv ===
+            "string"
+          ) {
+            process.env.NODE_ENV =
+              originalNodeEnv;
+          } else {
+            delete process.env.NODE_ENV;
+          }
+        }
+      }
+    );
   }
 );
