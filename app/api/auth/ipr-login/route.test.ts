@@ -12,8 +12,14 @@ const BOOTSTRAP_SECRET_ENV =
 const originalBootstrapEnabled =
   process.env[BOOTSTRAP_ENABLED_ENV];
 
+const CANONICAL_HUMAN_IPR_ENV =
+  "HBCE_RUNTIME_CANONICAL_HUMAN_SUBJECT_IPR";
+
 const originalBootstrapSecret =
   process.env[BOOTSTRAP_SECRET_ENV];
+
+const originalCanonicalHumanIpr =
+  process.env[CANONICAL_HUMAN_IPR_ENV];
 
 afterEach(() => {
   if (typeof originalBootstrapEnabled === "string") {
@@ -28,6 +34,13 @@ afterEach(() => {
       originalBootstrapSecret;
   } else {
     delete process.env[BOOTSTRAP_SECRET_ENV];
+  }
+
+  if (typeof originalCanonicalHumanIpr === "string") {
+    process.env[CANONICAL_HUMAN_IPR_ENV] =
+      originalCanonicalHumanIpr;
+  } else {
+    delete process.env[CANONICAL_HUMAN_IPR_ENV];
   }
 });
 
@@ -131,6 +144,45 @@ describe("POST /api/auth/ipr-login canonical bootstrap", () => {
       reason: "IPR_CANONICAL_BOOTSTRAP_SECRET_INVALID",
       detail:
         "Canonical Human IPR bootstrap authorization failed.",
+      legalCertification: false
+    });
+  });
+
+  it("fails closed when canonical runtime authority is misconfigured", async () => {
+    process.env[BOOTSTRAP_ENABLED_ENV] = "true";
+    process.env[BOOTSTRAP_SECRET_ENV] =
+      "Expected-Canonical-Secret-2026";
+    process.env[CANONICAL_HUMAN_IPR_ENV] = "IPR-999";
+
+    const request = new NextRequest(
+      "http://localhost/api/auth/ipr-login",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-hbce-ipr-bootstrap-secret":
+            "Expected-Canonical-Secret-2026"
+        },
+        body: JSON.stringify({
+          mode: "BOOTSTRAP_CANONICAL",
+          humanIpr: "IPR-3",
+          password: "Canonical-Test-Password-Only-2026!"
+        })
+      }
+    );
+
+    const response = await POST(request);
+    const payload = await response.json();
+
+    expect(response.status).toBe(503);
+
+    expect(payload).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason:
+        "IPR_CANONICAL_BOOTSTRAP_AUTHORITY_MISCONFIGURED",
+      detail:
+        "Canonical runtime Human IPR must resolve to IPR-3.",
       legalCertification: false
     });
   });
