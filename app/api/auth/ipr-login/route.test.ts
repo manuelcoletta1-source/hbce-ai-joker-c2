@@ -97,4 +97,41 @@ describe("POST /api/auth/ipr-login canonical bootstrap", () => {
       legalCertification: false
     });
   });
+
+  it("fails closed when bootstrap secret is invalid", async () => {
+    process.env[BOOTSTRAP_ENABLED_ENV] = "true";
+    process.env[BOOTSTRAP_SECRET_ENV] =
+      "Expected-Canonical-Secret-2026";
+
+    const request = new NextRequest(
+      "http://localhost/api/auth/ipr-login",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-hbce-ipr-bootstrap-secret":
+            "Wrong-Canonical-Secret-2026"
+        },
+        body: JSON.stringify({
+          mode: "BOOTSTRAP_CANONICAL",
+          humanIpr: "IPR-3",
+          password: "Canonical-Test-Password-Only-2026!"
+        })
+      }
+    );
+
+    const response = await POST(request);
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+
+    expect(payload).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason: "IPR_CANONICAL_BOOTSTRAP_SECRET_INVALID",
+      detail:
+        "Canonical Human IPR bootstrap authorization failed.",
+      legalCertification: false
+    });
+  });
 });
