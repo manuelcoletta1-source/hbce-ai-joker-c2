@@ -1,8 +1,8 @@
-export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.8";
+export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.9";
 
 
 export const HBCE_DATABASE_SCHEMA_BOUNDARY =
-  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, explicit IPR chat memory saves, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.8 introduces the JOKER-C2 Temporal Runtime Certificate, preserves memory_registered_events for named SaaS B2G event recall, adds ipr_chat_memory_saves for explicit user-authorized Save this chat to IPR workflows and adds tolerant ALTER TABLE migrations for existing SaaS database tables and preserves the canonical HBCE internal self-pilot SaaS seed for tenant, workspace, subscription, IPR subject, membership and account profile continuity. The temporal certificate is a technical runtime frame built from UTC response time, the canonical local birth anchor and AI JOKER-C2 lifetime; it is not a qualified timestamp or legal certification. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
+  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, explicit IPR chat memory saves, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.9 extends the existing HBCE-IPR-DB-v1.8 contract with tolerant tenant_id and workspace_id compatibility columns for pre-existing ipr_account_profiles tables, while preserving the Temporal Runtime Certificate, memory_registered_events, explicit ipr_chat_memory_saves and the canonical HBCE internal self-pilot continuity already present in the preceding schema. The temporal certificate is a technical runtime frame built from UTC response time, the canonical local birth anchor and AI JOKER-C2 lifetime; it is not a qualified timestamp or legal certification. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
 
 
 export const HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY =
@@ -376,6 +376,17 @@ CREATE TABLE IF NOT EXISTS ipr_account_profiles (
   CONSTRAINT ipr_account_profiles_legal_certification_false
     CHECK (legal_certification = false)
 );
+`.trim(),
+
+
+  `
+ALTER TABLE IF EXISTS ipr_account_profiles
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE IF EXISTS ipr_account_profiles
+  ADD COLUMN IF NOT EXISTS workspace_id TEXT;
 `.trim(),
 
 
@@ -3441,8 +3452,8 @@ INSERT INTO hbce_schema_migrations (
   legal_certification
 )
 VALUES (
-  'HBCE-IPR-DB-v1.8',
-  'HBCE SaaS Core v0.1 persistent database schema with temporal runtime certificate, explicit IPR chat memory saves, registered memory events and canonical internal self-pilot seed for HERMETICUM B.C.E. tenant, R&D workspace, IPR subscription, Manuel Coletta IPR account profile, workspace membership, IPR subject, chat continuity, explicit IPR chat memory saves, memory, memory registered events, EVT, OPC, runtime audit logs, model usage and MATRIX Transformative Memory. Runtime persistence tables remain tolerant of MVP-stage nullable relational references and preserve reconstruction data in JSONB payloads.',
+  'HBCE-IPR-DB-v1.9',
+  'HBCE-IPR-DB-v1.9 compatibility migration extending the existing HBCE-IPR-DB-v1.8 SaaS Core schema with nullable tenant_id and workspace_id columns for pre-existing ipr_account_profiles tables. Existing Temporal Runtime Certificate, explicit IPR chat memory saves, registered memory events, internal self-pilot continuity, EVT, OPC, runtime audit, model usage and MATRIX Transformative Memory semantics are preserved unchanged. Runtime persistence remains tolerant of MVP-stage nullable relational references and reconstruction data remains preserved in JSONB payloads.',
   jsonb_build_object(
     'projectBirthDate', '2026-01-19',
     'temporalCertificateName', '${HBCE_JOKER_C2_TEMPORAL_CERTIFICATE_NAME}',
@@ -3607,7 +3618,7 @@ export function getHbceDatabaseSaasCoreContext() {
     },
     legalCertification: false,
     statement:
-      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, chat continuity, explicit IPR chat memory saves, memory, registered memory events, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. HBCE-IPR-DB-v1.8 also exposes the JOKER-C2 Temporal Runtime Certificate for UTC response time, canonical local birth anchor and AI JOKER-C2 lifetime. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. Explicit Save this chat to IPR is modeled outside /api/chat through ipr_chat_memory_saves, with tolerant migration support for already-existing chat_threads, chat_messages, memory_records and memory_registered_events tables, allowing /api/chat to answer while memory save operations remain auditable, consent-based and IPR-bound. HBCE-IPR-DB-v1.8 seeds the internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
+      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, chat continuity, explicit IPR chat memory saves, memory, registered memory events, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. HBCE-IPR-DB-v1.9 preserves the JOKER-C2 Temporal Runtime Certificate already present in HBCE-IPR-DB-v1.8 and adds tolerant tenant_id and workspace_id compatibility for pre-existing ipr_account_profiles tables. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. Explicit Save this chat to IPR is modeled outside /api/chat through ipr_chat_memory_saves, with tolerant migration support for already-existing chat_threads, chat_messages, memory_records and memory_registered_events tables, allowing /api/chat to answer while memory save operations remain auditable, consent-based and IPR-bound. HBCE-IPR-DB-v1.9 preserves the existing internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
   };
 }
 
