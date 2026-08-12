@@ -28,7 +28,7 @@ export const revalidate = 0;
 export const maxDuration = 300;
 
 const REVISION =
-  "HBCE-RUNTIME-LEVEL-10-D001-DELIVERY-PERSISTENCE-SELF-TEST-v1_0" as const;
+  "HBCE-RUNTIME-LEVEL-10-D001-DELIVERY-PERSISTENCE-SELF-TEST-v1_1" as const;
 
 const PRODUCT =
   "HBCE IPR Operational Identity & Proof Layer" as const;
@@ -104,6 +104,137 @@ function getDatabaseUrl():
   }
 
   return databaseUrl;
+}
+
+type DatabaseEndpointIdentity = {
+  sourceEnvironmentKey:
+    | "DATABASE_URL"
+    | "POSTGRES_URL"
+    | "NEON_DATABASE_URL"
+    | "NONE";
+
+  databaseHostClass:
+    | "NEON"
+    | "POSTGRES_COMPATIBLE"
+    | "UNKNOWN";
+
+  neonEndpointId:
+    string | null;
+};
+
+function getDatabaseEndpointIdentity():
+  DatabaseEndpointIdentity {
+  const candidates = [
+    [
+      "DATABASE_URL",
+      process.env.DATABASE_URL,
+    ],
+    [
+      "POSTGRES_URL",
+      process.env.POSTGRES_URL,
+    ],
+    [
+      "NEON_DATABASE_URL",
+      process.env.NEON_DATABASE_URL,
+    ],
+  ] as const;
+
+  const selected =
+    candidates.find(
+      ([, value]) =>
+        typeof value === "string" &&
+        value.length > 0,
+    );
+
+  if (!selected) {
+    return {
+      sourceEnvironmentKey:
+        "NONE",
+
+      databaseHostClass:
+        "UNKNOWN",
+
+      neonEndpointId:
+        null,
+    };
+  }
+
+  const [
+    sourceEnvironmentKey,
+    rawDatabaseUrl,
+  ] = selected;
+
+  if (
+    typeof rawDatabaseUrl !== "string" ||
+    rawDatabaseUrl.length === 0
+  ) {
+    return {
+      sourceEnvironmentKey,
+
+      databaseHostClass:
+        "UNKNOWN",
+
+      neonEndpointId:
+        null,
+    };
+  }
+
+  const databaseUrl =
+    rawDatabaseUrl;
+
+  try {
+    const parsed =
+      new URL(
+        databaseUrl,
+      );
+
+    const hostname =
+      parsed.hostname
+        .toLowerCase();
+
+    const isNeon =
+      hostname.endsWith(
+        ".neon.tech",
+      );
+
+    const firstLabel =
+      hostname
+        .split(".")[0] ??
+      "";
+
+    const normalizedEndpointId =
+      firstLabel.replace(
+        /-pooler$/i,
+        "",
+      );
+
+    return {
+      sourceEnvironmentKey,
+
+      databaseHostClass:
+        isNeon
+          ? "NEON"
+          : "POSTGRES_COMPATIBLE",
+
+      neonEndpointId:
+        isNeon &&
+        normalizedEndpointId.startsWith(
+          "ep-",
+        )
+          ? normalizedEndpointId
+          : null,
+    };
+  } catch {
+    return {
+      sourceEnvironmentKey,
+
+      databaseHostClass:
+        "UNKNOWN",
+
+      neonEndpointId:
+        null,
+    };
+  }
 }
 
 function getExpectedManualToken():
@@ -422,6 +553,9 @@ export async function GET(
 
       selfTestExecuted:
         false,
+
+      databaseIdentity:
+        getDatabaseEndpointIdentity(),
 
       authorization: {
         humanAuthorizationRequired:
