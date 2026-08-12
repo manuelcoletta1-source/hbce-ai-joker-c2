@@ -28,7 +28,7 @@ export const revalidate = 0;
 export const maxDuration = 300;
 
 const REVISION =
-  "HBCE-RUNTIME-LEVEL-10-D001-DELIVERY-PERSISTENCE-SELF-TEST-v1_2" as const;
+  "HBCE-RUNTIME-LEVEL-10-D001-DELIVERY-PERSISTENCE-SELF-TEST-v1_3" as const;
 
 const PRODUCT =
   "HBCE IPR Operational Identity & Proof Layer" as const;
@@ -596,6 +596,168 @@ export async function GET(
     );
   }
 
+  const postgresUrl =
+    process.env.POSTGRES_URL;
+
+  let postgresUrlDiagnostic:
+    Record<string, unknown> = {
+      configured:
+        false,
+    };
+
+  if (
+    typeof postgresUrl === "string" &&
+    postgresUrl.length > 0
+  ) {
+    let safeIdentity:
+      Record<string, unknown>;
+
+    try {
+      const parsed =
+        new URL(
+          postgresUrl,
+        );
+
+      const hostname =
+        parsed.hostname.toLowerCase();
+
+      const firstLabel =
+        hostname.split(".")[0] ?? "";
+
+      const pooled =
+        firstLabel.endsWith(
+          "-pooler",
+        );
+
+      const neonEndpointId =
+        (
+          pooled
+            ? firstLabel.slice(
+                0,
+                -7,
+              )
+            : firstLabel
+        ).startsWith("ep-")
+          ? (
+              pooled
+                ? firstLabel.slice(
+                    0,
+                    -7,
+                  )
+                : firstLabel
+            )
+          : null;
+
+      safeIdentity = {
+        configured:
+          true,
+
+        pooled,
+
+        databaseHostClass:
+          hostname.endsWith(
+            ".neon.tech",
+          )
+            ? "NEON"
+            : "POSTGRES_COMPATIBLE",
+
+        neonEndpointId,
+      };
+    } catch {
+      safeIdentity = {
+        configured:
+          true,
+
+        pooled:
+          null,
+
+        databaseHostClass:
+          "UNKNOWN",
+
+        neonEndpointId:
+          null,
+      };
+    }
+
+    const postgresDiagnosticPool =
+      createPool(
+        postgresUrl,
+      );
+
+    try {
+      const result =
+        await postgresDiagnosticPool.query<{
+          database_name:
+            string;
+          database_user:
+            string;
+          database_schema:
+            string | null;
+          search_path:
+            string;
+          runtime_operations:
+            string | null;
+          runtime_deliveries:
+            string | null;
+          runtime_delivery_attempts:
+            string | null;
+        }>(
+          `
+            SELECT
+              current_database()
+                AS database_name,
+
+              current_user
+                AS database_user,
+
+              current_schema()
+                AS database_schema,
+
+              current_setting('search_path')
+                AS search_path,
+
+              to_regclass(
+                'public.runtime_operations'
+              )::text
+                AS runtime_operations,
+
+              to_regclass(
+                'public.runtime_deliveries'
+              )::text
+                AS runtime_deliveries,
+
+              to_regclass(
+                'public.runtime_delivery_attempts'
+              )::text
+                AS runtime_delivery_attempts
+          `,
+        );
+
+      postgresUrlDiagnostic = {
+        ...safeIdentity,
+
+        session:
+          result.rows[0] ?? null,
+      };
+    } catch (error) {
+      postgresUrlDiagnostic = {
+        ...safeIdentity,
+
+        status:
+          "QUERY_FAILED",
+
+        error:
+          normalizeError(
+            error,
+          ),
+      };
+    } finally {
+      await safeEnd(
+        postgresDiagnosticPool,
+      );
+    }
+  }
+
   return NextResponse.json(
     {
       ok:
@@ -631,6 +793,8 @@ export async function GET(
         getDatabaseEndpointIdentity(),
 
       databaseSessionIdentity,
+
+      postgresUrlDiagnostic,
 
       authorization: {
         humanAuthorizationRequired:
