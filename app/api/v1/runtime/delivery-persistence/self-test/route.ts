@@ -28,7 +28,7 @@ export const revalidate = 0;
 export const maxDuration = 300;
 
 const REVISION =
-  "HBCE-RUNTIME-LEVEL-10-D001-DELIVERY-PERSISTENCE-SELF-TEST-v1_1" as const;
+  "HBCE-RUNTIME-LEVEL-10-D001-DELIVERY-PERSISTENCE-SELF-TEST-v1_2" as const;
 
 const PRODUCT =
   "HBCE IPR Operational Identity & Proof Layer" as const;
@@ -523,6 +523,79 @@ function getOrigin(
 export async function GET(
   request: NextRequest,
 ): Promise<NextResponse> {
+  const databaseUrl =
+    getDatabaseUrl();
+
+  const diagnosticPool =
+    createPool(
+      databaseUrl,
+    );
+
+  let databaseSessionIdentity:
+    Record<string, unknown>;
+
+  try {
+    const result =
+      await diagnosticPool.query<{
+        database_name:
+          string;
+        database_user:
+          string;
+        database_schema:
+          string | null;
+        search_path:
+          string;
+        unqualified_deliveries:
+          string | null;
+        public_deliveries:
+          string | null;
+        unqualified_attempts:
+          string | null;
+        public_attempts:
+          string | null;
+      }>(
+        `
+          SELECT
+            current_database()
+              AS database_name,
+            current_user
+              AS database_user,
+            current_schema()
+              AS database_schema,
+            current_setting('search_path')
+              AS search_path,
+            to_regclass('runtime_deliveries')::text
+              AS unqualified_deliveries,
+            to_regclass('public.runtime_deliveries')::text
+              AS public_deliveries,
+            to_regclass('runtime_delivery_attempts')::text
+              AS unqualified_attempts,
+            to_regclass('public.runtime_delivery_attempts')::text
+              AS public_attempts
+        `,
+      );
+
+    databaseSessionIdentity =
+      result.rows[0] ?? {
+        status:
+          "NO_ROW",
+      };
+  } catch (error) {
+    databaseSessionIdentity = {
+      status:
+        "QUERY_FAILED",
+
+      error:
+        normalizeError(
+          error,
+        ),
+    };
+  } finally {
+    await safeEnd(
+      diagnosticPool,
+    );
+  }
+
   return NextResponse.json(
     {
       ok:
@@ -556,6 +629,8 @@ export async function GET(
 
       databaseIdentity:
         getDatabaseEndpointIdentity(),
+
+      databaseSessionIdentity,
 
       authorization: {
         humanAuthorizationRequired:
