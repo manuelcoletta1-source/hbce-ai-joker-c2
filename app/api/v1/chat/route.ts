@@ -21,7 +21,7 @@ import {
 const API_VERSION = "v1" as const;
 
 const ROUTE_REVISION =
-  "HBCE-IPR-RUNTIME-API-v1-CHAT_OPERATIONAL_MODULE_CONTEXT-v78_0" as const;
+  "HBCE-IPR-RUNTIME-API-v1-CHAT_OPERATIONAL_MODULE_CONTEXT-v78_1" as const;
 
 const AUTH_GATE_REVISION =
   "API_V1_CHAT_RUNTIME_ENFORCEMENT_GATES_v77_4" as const;
@@ -1310,6 +1310,60 @@ async function callInternalChat(
         request.nextUrl.origin,
       );
 
+    const internalHeaders:
+      Record<string, string> = {
+        "Content-Type":
+          "application/json",
+
+        Accept:
+          "application/json",
+
+        "X-HBCE-API-Version":
+          API_VERSION,
+
+        "X-HBCE-Route-Revision":
+          ROUTE_REVISION,
+
+        "X-HBCE-Legal-Certification":
+          "false",
+
+        "X-HBCE-OPC-Boundary":
+          OPC_BOUNDARY,
+      };
+
+    /*
+     * Same-origin Vercel Deployment Protection continuity.
+     *
+     * The public /api/v1/chat route has already crossed the
+     * deployment protection boundary. The server-side bridge to
+     * /api/chat must preserve that same protection context.
+     *
+     * HBCE_API_KEY and Authorization are intentionally NOT
+     * forwarded. Product API authentication remains separate
+     * from Vercel deployment authentication.
+     */
+    const incomingCookie =
+      request.headers.get(
+        "cookie",
+      );
+
+    if (incomingCookie) {
+      internalHeaders.Cookie =
+        incomingCookie;
+    }
+
+    const protectionBypass =
+      request.headers.get(
+        "x-vercel-protection-bypass",
+      );
+
+    if (protectionBypass) {
+      internalHeaders[
+        "x-vercel-protection-bypass"
+      ] =
+        protectionBypass;
+    }
+
     const response =
       await fetch(
         targetUrl,
@@ -1317,25 +1371,8 @@ async function callInternalChat(
           method:
             "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            Accept:
-              "application/json",
-
-            "X-HBCE-API-Version":
-              API_VERSION,
-
-            "X-HBCE-Route-Revision":
-              ROUTE_REVISION,
-
-            "X-HBCE-Legal-Certification":
-              "false",
-
-            "X-HBCE-OPC-Boundary":
-              OPC_BOUNDARY,
-          },
+          headers:
+            internalHeaders,
 
           body:
             JSON.stringify(payload),
