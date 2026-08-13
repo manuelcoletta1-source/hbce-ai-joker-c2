@@ -4866,7 +4866,23 @@ async function completeWithOpenAI(args: {
 
 
 
-  const client = new OpenAI({ apiKey });
+  const client = new OpenAI({
+    apiKey,
+
+    /*
+     * Provider execution budget.
+     *
+     * /api/v1/chat aborts the internal bridge at 55 seconds and
+     * /api/chat has maxDuration=60.
+     *
+     * Keep the cognitive provider inside a smaller bounded window
+     * so timeout/error handling can still generate EVT, OPC, Audit,
+     * Usage and the governed fallback response before the outer
+     * runtime budget expires.
+     */
+    timeout: 30_000,
+    maxRetries: 0
+  });
 
 
 
