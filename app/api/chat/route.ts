@@ -2117,6 +2117,7 @@ function buildApokalypsisPrologoLightDiagnosticAnswer(args: {
 
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const requestStartedAtMs = Date.now();
   const t = new Date().toISOString();
   const temporalFrame = buildRuntimeTemporalFrame(t);
   const body = await readJsonBody(request);
@@ -3853,6 +3854,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
+  const proofPersistenceStartedAtMs = Date.now();
+
   const persistenceBridge = await persistEvtAndOpc({
     t,
     sessionId,
@@ -3872,6 +3875,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryHash: memoryHashAfter,
     suppressPersistence: semanticMemoryReadOnlyRequested
   });
+
+  const evtOpcPersistenceElapsedMs =
+    Date.now() - proofPersistenceStartedAtMs;
+  const auditUsageStartedAtMs = Date.now();
 
 
 
@@ -3895,6 +3902,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     memoryHash: memoryHashAfter,
     providerState
   });
+
+  const auditUsageElapsedMs =
+    Date.now() - auditUsageStartedAtMs;
+  const proofPersistenceElapsedMs =
+    Date.now() - proofPersistenceStartedAtMs;
+  const preProofElapsedMs =
+    proofPersistenceStartedAtMs - requestStartedAtMs;
+
+  console.log(
+    "HBCE_A002_PHASE_TIMING",
+    JSON.stringify({
+      preProofElapsedMs,
+      evtOpcPersistenceElapsedMs,
+      auditUsageElapsedMs,
+      proofPersistenceElapsedMs,
+      elapsedThroughProofMs: Date.now() - requestStartedAtMs,
+      providerName,
+      providerState,
+      evtPersistenceStatus:
+        persistenceBridge.evtPersistence.status ?? "UNKNOWN",
+      opcPersistenceStatus:
+        persistenceBridge.opcPersistence.status ?? "UNKNOWN",
+      auditStatus:
+        auditAndUsage.audit.status ?? "UNKNOWN",
+      usageStatus:
+        auditAndUsage.modelUsage.status ?? "UNKNOWN",
+      legalCertification: false
+    })
+  );
 
 
 
