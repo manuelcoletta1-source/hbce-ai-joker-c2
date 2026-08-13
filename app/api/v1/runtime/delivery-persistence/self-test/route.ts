@@ -28,7 +28,7 @@ export const revalidate = 0;
 export const maxDuration = 300;
 
 const REVISION =
-  "HBCE-RUNTIME-LEVEL-10-D001-DELIVERY-PERSISTENCE-SELF-TEST-v1_3" as const;
+  "HBCE-RUNTIME-LEVEL-10-D001-DELIVERY-PERSISTENCE-SELF-TEST-v1_4" as const;
 
 const PRODUCT =
   "HBCE IPR Operational Identity & Proof Layer" as const;
@@ -90,8 +90,8 @@ function normalizeError(
 function getDatabaseUrl():
   string {
   const databaseUrl =
-    process.env.DATABASE_URL ??
     process.env.POSTGRES_URL ??
+    process.env.DATABASE_URL ??
     process.env.NEON_DATABASE_URL;
 
   if (
@@ -126,12 +126,12 @@ function getDatabaseEndpointIdentity():
   DatabaseEndpointIdentity {
   const candidates = [
     [
-      "DATABASE_URL",
-      process.env.DATABASE_URL,
-    ],
-    [
       "POSTGRES_URL",
       process.env.POSTGRES_URL,
+    ],
+    [
+      "DATABASE_URL",
+      process.env.DATABASE_URL,
     ],
     [
       "NEON_DATABASE_URL",
