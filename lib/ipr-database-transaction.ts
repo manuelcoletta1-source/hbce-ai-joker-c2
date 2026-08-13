@@ -113,8 +113,8 @@ function normalizeError(
 
 function requireDatabaseUrl(): string {
   const databaseUrl =
-    process.env.DATABASE_URL ??
     process.env.POSTGRES_URL ??
+    process.env.DATABASE_URL ??
     process.env.NEON_DATABASE_URL ??
     null;
 
@@ -303,8 +303,8 @@ async function configureTransactionSession(
 
 export function isHbceTransactionDatabaseConfigured(): boolean {
   return Boolean(
-    process.env.DATABASE_URL ??
     process.env.POSTGRES_URL ??
+    process.env.DATABASE_URL ??
     process.env.NEON_DATABASE_URL,
   );
 }
