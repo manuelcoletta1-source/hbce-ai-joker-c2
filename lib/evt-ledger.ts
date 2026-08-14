@@ -2048,6 +2048,18 @@ export async function persistEventToDatabase(
 
 
     if (!result.ok) {
+      console.error(
+        "HBCE_A003_EVT_WRITE_ERROR",
+        JSON.stringify({
+          table: EVT_LEDGER_DATABASE_TABLE,
+          error: result.error || "EVT_DATABASE_WRITE_FAILED",
+          humanIprPresent: Boolean(fields.humanIpr),
+          runtimeIprPresent: Boolean(fields.runtimeIpr),
+          threadIdPresent: Boolean(fields.threadId),
+          legalCertification: false
+        })
+      );
+
       return {
         ok: false,
         status: "DATABASE_WRITE_FAILED",
