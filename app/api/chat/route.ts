@@ -22440,13 +22440,42 @@ async function persistEvtAndOpc(args: {
 
   try {
     const runtimeEvent = buildEvtDatabaseRuntimeEvent(args);
+
+    const evtPersistenceStartedAtMs = Date.now();
     const evtPersistence = await persistEventToDatabase(runtimeEvent);
+    const evtPersistenceElapsedMs =
+      Date.now() - evtPersistenceStartedAtMs;
 
 
 
 
     const opcDatabaseRecord = buildOpcDatabaseProofRecord(args);
+
+    const opcPersistenceStartedAtMs = Date.now();
     const opcPersistence = await persistOpcProofRecordToDatabase(opcDatabaseRecord);
+    const opcPersistenceElapsedMs =
+      Date.now() - opcPersistenceStartedAtMs;
+
+    console.log(
+      "HBCE_A002_PERSISTENCE_TIMING",
+      JSON.stringify({
+        evtPersistenceElapsedMs,
+        opcPersistenceElapsedMs,
+        evtPersistenceStatus:
+          typeof evtPersistence === "object" &&
+          evtPersistence !== null &&
+          "status" in evtPersistence
+            ? String(evtPersistence.status)
+            : "UNKNOWN",
+        opcPersistenceStatus:
+          typeof opcPersistence === "object" &&
+          opcPersistence !== null &&
+          "status" in opcPersistence
+            ? String(opcPersistence.status)
+            : "UNKNOWN",
+        legalCertification: false
+      })
+    );
 
 
 
