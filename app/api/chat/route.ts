@@ -2118,6 +2118,18 @@ function buildApokalypsisPrologoLightDiagnosticAnswer(args: {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestStartedAtMs = Date.now();
+
+  /*
+   * A002-I002 provider envelope timing.
+   *
+   * Diagnostic only:
+   * - no raw prompt
+   * - no raw memory
+   * - no raw provider response
+   * - no behavior change
+   */
+  let providerEnvelopeStartedAtMs: number | null = null;
+  let providerEnvelopeCompletedAtMs: number | null = null;
   const t = new Date().toISOString();
   const temporalFrame = buildRuntimeTemporalFrame(t);
   const body = await readJsonBody(request);
@@ -3721,6 +3733,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerName = "LOCAL";
   } else {
     try {
+      providerEnvelopeStartedAtMs = Date.now();
+
       const completion = await completeWithOpenAI({
         message,
         history: incomingMessages,
@@ -3733,6 +3747,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         model
       });
 
+      providerEnvelopeCompletedAtMs = Date.now();
+
 
 
 
@@ -3742,6 +3758,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       providerState = "COMPLETED";
       providerName = "OPENAI";
     } catch (error) {
+      providerEnvelopeCompletedAtMs = Date.now();
       providerError = errorToMessage(error);
       answer = buildProviderErrorAnswer(message, handoff, policy, providerError);
       providerState = "PROVIDER_ERROR";
@@ -3914,6 +3931,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     "HBCE_A002_PHASE_TIMING",
     JSON.stringify({
       preProofElapsedMs,
+      localPreProviderElapsedMs:
+        providerEnvelopeStartedAtMs === null
+          ? null
+          : providerEnvelopeStartedAtMs - requestStartedAtMs,
+      providerEnvelopeElapsedMs:
+        providerEnvelopeStartedAtMs === null ||
+        providerEnvelopeCompletedAtMs === null
+          ? null
+          : providerEnvelopeCompletedAtMs - providerEnvelopeStartedAtMs,
+      postProviderPreProofElapsedMs:
+        providerEnvelopeCompletedAtMs === null
+          ? null
+          : proofPersistenceStartedAtMs - providerEnvelopeCompletedAtMs,
       evtOpcPersistenceElapsedMs,
       auditUsageElapsedMs,
       proofPersistenceElapsedMs,
@@ -4880,6 +4910,7 @@ async function completeWithOpenAI(args: {
   iprRecall: IprRecallInjection;
   model: string;
 }): Promise<ProviderCompletionResult> {
+  const providerFunctionStartedAtMs = Date.now();
   const apiKey = process.env.OPENAI_API_KEY?.trim();
 
 
@@ -4965,17 +4996,41 @@ async function completeWithOpenAI(args: {
 
 
 
+  const openAIRequestStartedAtMs = Date.now();
+
   const completion = await client.chat.completions.create({
     model: args.model,
     messages,
     temperature: 0.35
   });
 
+  const openAIRequestCompletedAtMs = Date.now();
+
 
 
 
   const content = completion.choices[0]?.message?.content?.trim();
   const finishReason = completion.choices[0]?.finish_reason ?? null;
+
+  const providerResponseParsedAtMs = Date.now();
+
+  console.log(
+    "HBCE_A002_OPENAI_TIMING",
+    JSON.stringify({
+      providerPreparationElapsedMs:
+        openAIRequestStartedAtMs - providerFunctionStartedAtMs,
+      openAIRequestElapsedMs:
+        openAIRequestCompletedAtMs - openAIRequestStartedAtMs,
+      providerResponseParseElapsedMs:
+        providerResponseParsedAtMs - openAIRequestCompletedAtMs,
+      providerMeasuredThroughParseElapsedMs:
+        providerResponseParsedAtMs - providerFunctionStartedAtMs,
+      model: args.model,
+      finishReason,
+      contentPresent: Boolean(content),
+      legalCertification: false
+    })
+  );
 
 
 
