@@ -2375,16 +2375,45 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
     }
 
 
-    if (shouldAutoApplySchema() && shouldInitializeBeforeQuery(normalizedSql)) {
-      await this.initializeSchema();
+    const autoSchemaApply =
+      shouldAutoApplySchema() &&
+      shouldInitializeBeforeQuery(normalizedSql);
+
+    let schemaInitializationElapsedMs = 0;
+    let schemaInitializationStatus = "SKIPPED";
+
+    if (autoSchemaApply) {
+      const schemaInitializationStartedAtMs = Date.now();
+      const schemaInitialization = await this.initializeSchema();
+      schemaInitializationElapsedMs =
+        Date.now() - schemaInitializationStartedAtMs;
+      schemaInitializationStatus = schemaInitialization.status;
     }
 
 
     try {
       const sql = this.getSql();
+
+      const databaseQueryStartedAtMs = Date.now();
       const result = await sql.query(
         normalizedSql,
         serializeQueryParams(params)
+      );
+      const databaseQueryElapsedMs =
+        Date.now() - databaseQueryStartedAtMs;
+
+      console.log(
+        "HBCE_A002_DATABASE_QUERY_TIMING",
+        JSON.stringify({
+          autoSchemaApply,
+          schemaInitializationElapsedMs,
+          schemaInitializationStatus,
+          databaseQueryElapsedMs,
+          queryKind:
+            normalizedSql.trimStart().split(/\\s+/, 1)[0]?.toUpperCase() ||
+            "UNKNOWN",
+          legalCertification: false
+        })
       );
       const rows = normalizeRows<Row>(result);
 
