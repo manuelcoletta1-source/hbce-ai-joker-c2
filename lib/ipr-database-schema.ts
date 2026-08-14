@@ -1047,6 +1047,12 @@ ALTER TABLE evt_records
 
 
   `
+ALTER TABLE evt_records
+  DROP CONSTRAINT IF EXISTS evt_records_human_ipr_fkey;
+`.trim(),
+
+
+  `
 ALTER TABLE opc_proofs
   DROP CONSTRAINT IF EXISTS opc_proofs_evt_id_fkey;
 `.trim(),
