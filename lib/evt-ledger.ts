@@ -1969,7 +1969,12 @@ export async function persistEventToDatabase(
 
 
   try {
+    const evtDatabasePersistenceStartedAtMs = Date.now();
+
+    const evtColumnsStartedAtMs = Date.now();
     const available = await getEvtDatabaseColumns();
+    const evtColumnsElapsedMs =
+      Date.now() - evtColumnsStartedAtMs;
 
 
     if (available.size === 0) {
@@ -1989,10 +1994,13 @@ export async function persistEventToDatabase(
     }
 
 
+    const evtThreadPreconditionStartedAtMs = Date.now();
     threadPrecondition = await ensureEvtThreadParentRecord({
       availableEvtColumns: available,
       fields
     });
+    const evtThreadPreconditionElapsedMs =
+      Date.now() - evtThreadPreconditionStartedAtMs;
 
 
     if (!threadPrecondition.ok) {
@@ -2017,9 +2025,25 @@ export async function persistEventToDatabase(
     const statement = buildEvtInsertStatement({ columns: columnValues });
 
 
+    const evtInsertStartedAtMs = Date.now();
     const result = await queryHbceDatabase<EvtDatabaseRow>(
       statement.sql,
       statement.params
+    );
+    const evtInsertElapsedMs =
+      Date.now() - evtInsertStartedAtMs;
+
+    console.log(
+      "HBCE_A002_EVT_TIMING",
+      JSON.stringify({
+        evtColumnsElapsedMs,
+        evtThreadPreconditionElapsedMs,
+        evtInsertElapsedMs,
+        evtDatabasePersistenceElapsedMs:
+          Date.now() - evtDatabasePersistenceStartedAtMs,
+        evtInsertOk: result.ok,
+        legalCertification: false
+      })
     );
 
 
