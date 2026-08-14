@@ -1845,10 +1845,10 @@ function shouldAutoApplySchema(): boolean {
   const raw =
     process.env.HBCE_DATABASE_AUTO_SCHEMA ||
     process.env.JOKER_DATABASE_AUTO_SCHEMA ||
-    "true";
+    "false";
 
 
-  return raw.trim().toLowerCase() !== "false";
+  return raw.trim().toLowerCase() === "true";
 }
 
 
