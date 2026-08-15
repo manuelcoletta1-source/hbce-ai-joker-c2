@@ -2787,6 +2787,32 @@ ALTER TABLE matrix_transformative_memory
 
 
   `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS workspace_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS event_family TEXT DEFAULT 'UP-EVT';
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS workspace_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS persistence_mode TEXT DEFAULT 'DATABASE_READY';
+`.trim(),
+
+  `
+ALTER TABLE matrix_transformative_memory
+  ADD COLUMN IF NOT EXISTS workspace_id TEXT;
+`.trim(),
+
+
+  `
 CREATE INDEX IF NOT EXISTS idx_saas_tenants_slug
   ON saas_tenants(tenant_slug);
 `.trim(),
