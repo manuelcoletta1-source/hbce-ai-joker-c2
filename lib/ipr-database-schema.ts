@@ -2797,6 +2797,11 @@ ALTER TABLE evt_records
 `.trim(),
 
   `
+ALTER TABLE evt_records
+  ADD COLUMN IF NOT EXISTS cycle TEXT DEFAULT 'UP-CANONICO';
+`.trim(),
+
+  `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS workspace_id TEXT;
 `.trim(),
@@ -2804,6 +2809,11 @@ ALTER TABLE opc_proofs
   `
 ALTER TABLE opc_proofs
   ADD COLUMN IF NOT EXISTS persistence_mode TEXT DEFAULT 'DATABASE_READY';
+`.trim(),
+
+  `
+ALTER TABLE opc_proofs
+  ADD COLUMN IF NOT EXISTS persistence_status TEXT DEFAULT 'DATABASE_CONTRACT_READY';
 `.trim(),
 
   `
