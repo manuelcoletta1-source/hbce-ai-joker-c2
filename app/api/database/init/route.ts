@@ -186,34 +186,22 @@ function buildNotConfiguredResponse() {
 }
 
 export async function GET() {
-  const configured = isHbceDatabaseConfigured();
-  const description = describeDefaultHbceDatabase();
-
   return NextResponse.json(
     {
-      ok: true,
-      action: "HBCE_DATABASE_INIT_INFO",
-      database: {
-        configured,
-        description
-      },
-      schema: {
-        version: HBCE_DATABASE_SCHEMA_VERSION,
-        tables: HBCE_DATABASE_SCHEMA_TABLES
-      },
-      usage: {
-        method: "POST",
-        path: "/api/database/init",
-        effect:
-          "Initializes the HBCE persistent database schema if DATABASE_URL or POSTGRES_URL is configured."
-      },
-      boundary: {
-        ...getHbceDatabaseBoundary(),
-        endpointBoundary: DATABASE_INIT_BOUNDARY
-      },
+      ok: false,
+      action: "HBCE_DATABASE_INIT",
+      reason: "METHOD_NOT_ALLOWED",
+      allowedMethods: [
+        "POST"
+      ],
       legalCertification: false
     },
-    { status: 200 }
+    {
+      status: 405,
+      headers: {
+        Allow: "POST"
+      }
+    }
   );
 }
 
