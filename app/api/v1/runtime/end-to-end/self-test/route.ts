@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import {
+  IPR_AUTH_COOKIE_NAME
+} from "@/lib/ipr-auth";
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const revalidate = 0;
@@ -164,6 +168,7 @@ async function executeCheck(input: {
   method: "GET" | "POST";
   path: string;
   expectedStatus: string;
+  sessionCookie: string;
 }): Promise<EndToEndCheck> {
   const startedAt = nowMs();
 
@@ -186,6 +191,11 @@ async function executeCheck(input: {
             Accept: "application/json",
             "Content-Type": "application/json",
             "X-HBCE-End-To-End-Test": REVISION,
+            ...(input.sessionCookie
+              ? {
+                  Cookie: `${IPR_AUTH_COOKIE_NAME}=${input.sessionCookie}`,
+                }
+              : {}),
           },
           body:
             input.method === "POST"
@@ -314,6 +324,9 @@ export async function POST(
   const origin =
     getRequestOrigin(request);
 
+  const sessionCookie =
+    request.cookies.get(IPR_AUTH_COOKIE_NAME)?.value || "";
+
   const checks:
     EndToEndCheck[] = [];
 
@@ -337,6 +350,7 @@ export async function POST(
         path: definition.path,
         expectedStatus:
           definition.expectedStatus,
+        sessionCookie,
       }),
     );
   }

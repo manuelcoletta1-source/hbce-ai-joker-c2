@@ -6400,7 +6400,7 @@ export default function InterfacePage() {
 
 
     try {
-      const response = await fetch("/api/health", {
+      const response = await fetch("/api/v1/runtime/interface-health", {
         method: "GET",
         cache: "no-store",
         credentials: "include",

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import {
+  resolveIprAccountSessionFromRequestAsync
+} from "@/lib/ipr-auth-session-resolver";
+
+import {
   describeDefaultHbceDatabase,
   getHbceDatabaseBoundary,
   isHbceDatabaseConfigured,
@@ -455,6 +459,25 @@ function buildSummary(checks: DiagnosticCheck[], durationMs: number) {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const sessionResolution =
+    await resolveIprAccountSessionFromRequestAsync(request);
+
+  if (!sessionResolution.authenticated) {
+    return NextResponse.json(
+      {
+        ok: false,
+        reason: "AUTHENTICATION_REQUIRED",
+        legalCertification: false
+      },
+      {
+        status: 401,
+        headers: {
+          "Cache-Control": "no-store, max-age=0"
+        }
+      }
+    );
+  }
+
   const startedAt = nowMs();
   const generatedAt = new Date().toISOString();
 
