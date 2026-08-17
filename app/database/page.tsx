@@ -25,7 +25,7 @@ const INITIAL_PANEL_STATE: ApiPanelState = {
 };
 
 const PAGE_BOUNDARY =
-  "This R&D database console checks and initializes the HBCE persistent database schema. It must be protected, restricted or removed before production exposure. It does not create legal certification, official identity issuance, public authority validation, eIDAS qualified trust service output or qualified timestamping.";
+  "This R&D database console provides read-only HBCE persistent database health visibility. Browser-based schema initialization is not exposed by this page. It does not create legal certification, official identity issuance, public authority validation, eIDAS qualified trust service output or qualified timestamping.";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -119,18 +119,12 @@ function buildSummary(payload: unknown): string[] {
 export default function HbceDatabasePage() {
   const [healthState, setHealthState] =
     useState<ApiPanelState>(INITIAL_PANEL_STATE);
-  const [initState, setInitState] =
-    useState<ApiPanelState>(INITIAL_PANEL_STATE);
 
   const healthSummary = useMemo(
     () => buildSummary(healthState.payload),
     [healthState.payload]
   );
 
-  const initSummary = useMemo(
-    () => buildSummary(initState.payload),
-    [initState.payload]
-  );
 
   const requestJson = useCallback(
     async (
@@ -190,14 +184,6 @@ export default function HbceDatabasePage() {
       "GET",
       "/api/database/health",
       setHealthState
-    );
-  }, [requestJson]);
-
-  const runSchemaInitialization = useCallback(() => {
-    void requestJson(
-      "POST",
-      "/api/database/init",
-      setInitState
     );
   }, [requestJson]);
 
@@ -262,7 +248,7 @@ export default function HbceDatabasePage() {
               lineHeight: 1.6
             }}
           >
-            R&amp;D console for checking and initializing the persistent
+            R&amp;D read-only console for checking the persistent
             HBCE/IPR database used by AI JOKER-C2 account sessions, chat
             continuity, memory records, EVT records, OPC proof receipts and
             MATRIX Transformative Memory.
@@ -377,101 +363,7 @@ export default function HbceDatabasePage() {
             </ul>
           </article>
 
-          <article
-            style={{
-              border: "1px solid rgba(148,163,184,0.28)",
-              borderRadius: "18px",
-              padding: "20px",
-              background: "rgba(15,23,42,0.72)",
-              boxShadow: "0 18px 60px rgba(0,0,0,0.28)"
-            }}
-          >
-            <h2
-              style={{
-                marginTop: 0,
-                marginBottom: "10px",
-                fontSize: "22px"
-              }}
-            >
-              Initialize HBCE schema
-            </h2>
 
-            <p
-              style={{
-                marginTop: 0,
-                color: "#cbd5e1",
-                lineHeight: 1.55
-              }}
-            >
-              Creates the HBCE-IPR-DB-v1 tables if they do not already exist.
-              The operation is idempotent and keeps legalCertification false.
-            </p>
-
-            <button
-              type="button"
-              onClick={runSchemaInitialization}
-              disabled={initState.status === "LOADING"}
-              style={{
-                cursor:
-                  initState.status === "LOADING"
-                    ? "not-allowed"
-                    : "pointer",
-                border: "1px solid rgba(255,255,255,0.22)",
-                borderRadius: "999px",
-                padding: "10px 16px",
-                background: "#38bdf8",
-                color: "#020617",
-                fontWeight: 800
-              }}
-            >
-              {initState.status === "LOADING"
-                ? "Initializing..."
-                : "Initialize HBCE Database"}
-            </button>
-
-            <div
-              style={{
-                marginTop: "16px",
-                color: "#e2e8f0",
-                fontSize: "14px",
-                lineHeight: 1.6
-              }}
-            >
-              <strong>Status:</strong> {getStatusLabel(initState)}
-              {initState.httpStatus ? (
-                <>
-                  <br />
-                  <strong>HTTP:</strong> {initState.httpStatus}
-                </>
-              ) : null}
-              {initState.receivedAt ? (
-                <>
-                  <br />
-                  <strong>Received:</strong> {initState.receivedAt}
-                </>
-              ) : null}
-              {initState.error ? (
-                <>
-                  <br />
-                  <strong>Error:</strong> {initState.error}
-                </>
-              ) : null}
-            </div>
-
-            <ul
-              style={{
-                margin: "14px 0 0",
-                paddingLeft: "18px",
-                color: "#cbd5e1",
-                fontSize: "14px",
-                lineHeight: 1.6
-              }}
-            >
-              {initSummary.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </article>
         </section>
 
         <section
@@ -552,46 +444,7 @@ export default function HbceDatabasePage() {
             </pre>
           </details>
 
-          <details
-            style={{
-              border: "1px solid rgba(148,163,184,0.22)",
-              borderRadius: "18px",
-              padding: "18px",
-              background: "rgba(2,6,23,0.78)"
-            }}
-          >
-            <summary
-              style={{
-                cursor: "pointer",
-                fontWeight: 800,
-                marginBottom: "12px"
-              }}
-            >
-              Initialization response
-            </summary>
 
-            <pre
-              style={{
-                overflowX: "auto",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-                margin: 0,
-                padding: "16px",
-                borderRadius: "14px",
-                background: "#020617",
-                color: "#dbeafe",
-                fontSize: "13px",
-                lineHeight: 1.5
-              }}
-            >
-              {stringifyPayload(
-                initState.payload || {
-                  status: initState.status,
-                  error: initState.error
-                }
-              )}
-            </pre>
-          </details>
         </section>
       </section>
     </main>

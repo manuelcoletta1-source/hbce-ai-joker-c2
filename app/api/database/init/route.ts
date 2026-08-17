@@ -9,22 +9,14 @@ import {
 } from "next/server";
 
 import {
-  describeDefaultHbceDatabase,
   ensureHbceDatabaseReady,
-  getHbceDatabaseBoundary,
   isHbceDatabaseConfigured
 } from "@/lib/ipr-database";
 
-import {
-  HBCE_DATABASE_SCHEMA_TABLES,
-  HBCE_DATABASE_SCHEMA_VERSION
-} from "@/lib/ipr-database-schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const DATABASE_INIT_BOUNDARY =
-  "This endpoint initializes the HBCE persistent database schema for R&D deployment. POST requires dedicated database-independent bootstrap-secret authorization before database configuration or schema mutation is evaluated. It does not create legal certification, public authority validation, eIDAS qualified trust service output or official identity issuance.";
 
 const DATABASE_INIT_SECRET_HEADER =
   "x-hbce-database-init-secret";
@@ -69,47 +61,17 @@ function databaseInitSecretsEqual(
   );
 }
 
-function buildDatabaseInitAuthorizationFailure(
-  reason:
-    | "DATABASE_INIT_SECRET_NOT_CONFIGURED"
-    | "DATABASE_INIT_SECRET_MISSING"
-    | "DATABASE_INIT_SECRET_INVALID",
-  status: 401 | 403 | 503
-) {
+function buildDatabaseInitAuthorizationFailure() {
   return NextResponse.json(
     {
       ok: false,
-      action:
-        "HBCE_DATABASE_INIT",
+      action: "HBCE_DATABASE_INIT",
       initialized: false,
-      reason,
-      authorization: {
-        required: true,
-        mode:
-          "DATABASE_INDEPENDENT_BOOTSTRAP_SECRET",
-        requiredHeader:
-          DATABASE_INIT_SECRET_HEADER,
-        requiredEnvironmentVariable:
-          DATABASE_INIT_SECRET_ENV,
-        decision:
-          "FAIL_CLOSED"
-      },
-      boundary: {
-        ...getHbceDatabaseBoundary(),
-        endpointBoundary:
-          DATABASE_INIT_BOUNDARY
-      },
+      reason: "DATABASE_INIT_NOT_AVAILABLE",
       legalCertification: false
     },
     {
-      status,
-      headers:
-        status === 401
-          ? {
-              "WWW-Authenticate":
-                'HBCE-Database-Init realm="HBCE database initialization"'
-            }
-          : undefined
+      status: 403
     }
   );
 }
@@ -121,10 +83,7 @@ function validateDatabaseInitAuthorization(
     readDatabaseInitSecretEnv();
 
   if (!expectedSecret) {
-    return buildDatabaseInitAuthorizationFailure(
-      "DATABASE_INIT_SECRET_NOT_CONFIGURED",
-      503
-    );
+    return buildDatabaseInitAuthorizationFailure();
   }
 
   const suppliedSecret =
@@ -135,10 +94,7 @@ function validateDatabaseInitAuthorization(
       ?.trim() || "";
 
   if (!suppliedSecret) {
-    return buildDatabaseInitAuthorizationFailure(
-      "DATABASE_INIT_SECRET_MISSING",
-      401
-    );
+    return buildDatabaseInitAuthorizationFailure();
   }
 
   if (
@@ -147,10 +103,7 @@ function validateDatabaseInitAuthorization(
       expectedSecret
     )
   ) {
-    return buildDatabaseInitAuthorizationFailure(
-      "DATABASE_INIT_SECRET_INVALID",
-      403
-    );
+    return buildDatabaseInitAuthorizationFailure();
   }
 
   return null;
@@ -162,26 +115,12 @@ function buildNotConfiguredResponse() {
       ok: false,
       action: "HBCE_DATABASE_INIT",
       initialized: false,
-      reason: "DATABASE_NOT_CONFIGURED",
-      database: {
-        configured: false,
-        available: false,
-        requiredEnvironmentVariable: "DATABASE_URL",
-        acceptedFallbackEnvironmentVariable: "POSTGRES_URL"
-      },
-      schema: {
-        version: HBCE_DATABASE_SCHEMA_VERSION,
-        tables: HBCE_DATABASE_SCHEMA_TABLES
-      },
-      boundary: {
-        ...getHbceDatabaseBoundary(),
-        endpointBoundary: DATABASE_INIT_BOUNDARY
-      },
-      instruction:
-        "Connect a Neon/Postgres database to the Vercel project and expose DATABASE_URL before running schema initialization.",
+      reason: "DATABASE_INIT_NOT_AVAILABLE",
       legalCertification: false
     },
-    { status: 503 }
+    {
+      status: 503
+    }
   );
 }
 
@@ -229,45 +168,24 @@ export async function POST(
         ok: result.ok,
         action: "HBCE_DATABASE_INIT",
         initialized: result.ok,
-        database: {
-          description: result.description,
-          initialization: result.initialization
-        },
-        schema: {
-          version: result.schema.version,
-          persistenceMode: result.schema.persistenceMode,
-          tables: result.schema.tables
-        },
-        boundary: {
-          ...getHbceDatabaseBoundary(),
-          endpointBoundary: DATABASE_INIT_BOUNDARY
-        },
         legalCertification: false
       },
-      { status: result.ok ? 200 : 503 }
+      {
+        status: result.ok ? 200 : 503
+      }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         ok: false,
         action: "HBCE_DATABASE_INIT",
         initialized: false,
-        reason: "DATABASE_INITIALIZATION_EXCEPTION",
-        error: error instanceof Error ? error.message : "UNKNOWN_DATABASE_INIT_ERROR",
-        database: {
-          description: describeDefaultHbceDatabase()
-        },
-        schema: {
-          version: HBCE_DATABASE_SCHEMA_VERSION,
-          tables: HBCE_DATABASE_SCHEMA_TABLES
-        },
-        boundary: {
-          ...getHbceDatabaseBoundary(),
-          endpointBoundary: DATABASE_INIT_BOUNDARY
-        },
+        reason: "DATABASE_INIT_FAILED",
         legalCertification: false
       },
-      { status: 500 }
+      {
+        status: 500
+      }
     );
   }
 }
