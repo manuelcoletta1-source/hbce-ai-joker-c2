@@ -3,12 +3,7 @@ import { NextResponse } from "next/server";
 const API_REVISION = "HBCE-IPR-RUNTIME-API-v1-OPENAPI-CONTRACT-v1.0" as const;
 const API_VERSION = "v1" as const;
 const PRODUCT_NAME = "HBCE IPR Operational Identity & Proof Layer" as const;
-const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1" as const;
 
-const HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1" as const;
-const RUNTIME_IPR = "IPR-AI-0001" as const;
-const TENANT = "HBCE-TENANT-SELF-PILOT" as const;
-const WORKSPACE = "HBCE-WORKSPACE-RND" as const;
 
 const LEGAL_CERTIFICATION = false as const;
 const OPC_BOUNDARY = "technical proof receipt only" as const;
@@ -80,7 +75,7 @@ const openApiDocument = {
     version: "1.0.0",
     summary: PRODUCT_NAME,
     description:
-      "Public v1 contract layer for JOKER-C2 SaaS Core v0.1. It exposes operational IPR identity, governed AI interaction, EVT event tracing, OPC technical proof receipts, audit receipts, model usage receipts and Source Intelligence contract metadata. OPC is a technical proof receipt only; legalCertification=false.",
+      "Public HBCE IPR Runtime API v1 contract. It documents operational identity, governed interaction, technical traceability and proof-receipt interfaces.",
     contact: {
       name: "HERMETICUM B.C.E. S.r.l.",
       url: "https://hermeticum.example"
@@ -473,45 +468,6 @@ const openApiDocument = {
   components: {
     schemas: {
       Boundary: boundarySchema,
-      RuntimeContext: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          humanIpr: {
-            type: "string",
-            enum: [HUMAN_IPR]
-          },
-          runtimeIpr: {
-            type: "string",
-            enum: [RUNTIME_IPR]
-          },
-          tenant: {
-            type: "string",
-            enum: [TENANT]
-          },
-          workspace: {
-            type: "string",
-            enum: [WORKSPACE]
-          },
-          access: {
-            type: "string",
-            enum: ["ACCESS_GRANTED"]
-          },
-          policy: {
-            type: "string",
-            enum: ["ALLOW"]
-          },
-          memory: {
-            type: "string",
-            enum: ["DATABASE_PERSISTENT"]
-          },
-          memoryScope: {
-            type: "string",
-            enum: ["IPR_BOUND"]
-          }
-        },
-        required: ["humanIpr", "runtimeIpr", "tenant", "workspace", "access", "policy", "memory", "memoryScope"]
-      },
       HealthResponse: {
         type: "object",
         properties: {
@@ -529,7 +485,6 @@ const openApiDocument = {
           },
           runtime: {
             type: "string",
-            enum: [RUNTIME_NAME]
           },
           boundary: {
             $ref: "#/components/schemas/Boundary"
@@ -560,19 +515,15 @@ const openApiDocument = {
         properties: {
           humanIpr: {
             type: "string",
-            enum: [HUMAN_IPR]
           },
           runtimeIpr: {
             type: "string",
-            enum: [RUNTIME_IPR]
           },
           tenant: {
             type: "string",
-            enum: [TENANT]
           },
           workspace: {
             type: "string",
-            enum: [WORKSPACE]
           },
           sessionIntent: {
             type: "string"
@@ -608,7 +559,6 @@ const openApiDocument = {
           },
           humanIpr: {
             type: "string",
-            enum: [HUMAN_IPR]
           },
           message: {
             type: "string",
@@ -665,7 +615,6 @@ const openApiDocument = {
           },
           humanIpr: {
             type: "string",
-            enum: [HUMAN_IPR]
           },
           files: {
             type: "array",
@@ -719,7 +668,6 @@ const openApiDocument = {
           },
           subjectIpr: {
             type: "string",
-            enum: [HUMAN_IPR]
           },
           payload: {
             type: "object"
@@ -769,25 +717,6 @@ const openApiDocument = {
   "x-hbce": {
     revision: API_REVISION,
     product: PRODUCT_NAME,
-    runtime: RUNTIME_NAME,
-    runtimeContext: {
-      access: "ACCESS_GRANTED",
-      humanIpr: HUMAN_IPR,
-      runtimeIpr: RUNTIME_IPR,
-      tenant: TENANT,
-      workspace: WORKSPACE,
-      memory: "DATABASE_PERSISTENT",
-      memoryScope: "IPR_BOUND",
-      policy: "ALLOW"
-    },
-    sourceIntelligence: {
-      revision: "HBCE_SOURCE_INTELLIGENCE_LAYER-v0.3-SOURCESET_REGISTRY",
-      sourceSetRegistry: "SOURCESET_REGISTRY_MULTI_DOMAIN_B2G-v0.3",
-      sourceSets: 5,
-      catalogSources: 19,
-      rawTextPersistence: false,
-      sourceProfileSaveMode: "EXPLICIT_OPERATOR_SAVE_ONLY"
-    },
     boundary: {
       legalCertification: LEGAL_CERTIFICATION,
       opcBoundary: OPC_BOUNDARY,
@@ -803,7 +732,6 @@ export async function GET(): Promise<NextResponse> {
     generatedAt: utcNow(),
     apiVersion: API_VERSION,
     product: PRODUCT_NAME,
-    runtime: RUNTIME_NAME,
     legalCertification: LEGAL_CERTIFICATION,
     opcBoundary: OPC_BOUNDARY,
     iprCardBoundary: IPR_CARD_BOUNDARY,

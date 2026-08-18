@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import {
+  resolveIprAccountSessionFromRequestAsync
+} from "@/lib/ipr-auth-session-resolver";
+
+
 const API_VERSION = "v1" as const;
 
 const ROUTE_REVISION =
@@ -171,13 +176,8 @@ const nowIso = (): string => new Date().toISOString();
 const elapsedMs = (startedAt: number): number =>
   Math.max(0, Date.now() - startedAt);
 
-const normalizeError = (error: unknown): string => {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return String(error);
-};
+const normalizeError = (_error: unknown): string =>
+  "RUNTIME_SELF_TEST_CHECK_FAILED";
 
 const getRequestOrigin = (request: NextRequest): string => {
   const forwardedHost = request.headers.get("x-forwarded-host");
@@ -328,6 +328,25 @@ const getCheckPassed = (
 export async function GET(
   request: NextRequest
 ): Promise<NextResponse<RuntimeOperationalSelfTestResponse>> {
+  const sessionResolution =
+    await resolveIprAccountSessionFromRequestAsync(request);
+
+  if (!sessionResolution.authenticated) {
+    return NextResponse.json(
+      {
+        ok: false,
+        reason: "AUTHENTICATION_REQUIRED",
+        legalCertification: false
+      } as unknown as RuntimeOperationalSelfTestResponse,
+      {
+        status: 401,
+        headers: {
+          "Cache-Control": "no-store, max-age=0"
+        }
+      }
+    );
+  }
+
   const testStartedAt = Date.now();
   const origin = getRequestOrigin(request);
 

@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 const API_VERSION = "v1" as const;
 const ROUTE_REVISION = "HBCE-IPR-RUNTIME-API-v1-CHAT_BRIDGE_AUTH_GATE_PRIORITY-v77_3" as const;
+const DISCOVERY_REVISION =
+  "HBCE-IPR-RUNTIME-API-v1-DISCOVERY-PUBLIC-v1_0" as const;
+
 const PRODUCT_NAME = "HBCE IPR Operational Identity & Proof Layer" as const;
 const RUNTIME_NAME = "AI_JOKER_C2_SAAS_CORE_v0_1" as const;
 
@@ -60,41 +63,6 @@ type V1PolicySnapshot = {
   requestedMemoryWriteSuppression: true;
   requestedSemanticPersistenceSuppression: true;
   sourceIntelligenceRawTextPersistence: false;
-};
-
-type V1ChatContractPayload = {
-  ok: true;
-  status: "HBCE_IPR_RUNTIME_CHAT_ENDPOINT_READY";
-  product: typeof PRODUCT_NAME;
-  apiVersion: typeof API_VERSION;
-  routeRevision: typeof ROUTE_REVISION;
-  deploySentinel: typeof DEPLOY_SENTINEL;
-  endpoint: "/api/v1/chat";
-  method: "POST";
-  purpose: "Execute a governed AI interaction through JOKER-C2 with IPR, EVT, OPC, audit and usage visibility.";
-  minimumInput: string[];
-  outputIncludes: string[];
-  authGate: {
-    revision: typeof AUTH_GATE_REVISION;
-    required: true;
-    checkedBeforeJsonBody: true;
-    acceptedHeaders: [typeof API_KEY_HEADER, "Authorization: Bearer <token>"];
-  };
-  internalRuntimeBridge: {
-    target: typeof INTERNAL_CHAT_PATH;
-    mode: "SERVER_SIDE_BRIDGE_TO_EXISTING_JOKER_C2_CHAT_RUNTIME";
-    timeoutMs: typeof INTERNAL_CHAT_TIMEOUT_MS;
-  };
-  runtimeContext: {
-    runtime: typeof RUNTIME_NAME;
-    humanIpr: typeof HBCE_SELF_PILOT_HUMAN_IPR;
-    runtimeIpr: typeof HBCE_SELF_PILOT_RUNTIME_IPR;
-    tenant: typeof HBCE_SELF_PILOT_TENANT_ID;
-    workspace: typeof HBCE_SELF_PILOT_WORKSPACE_ID;
-    access: "CONTRACT_READY";
-  };
-  boundary: V1BoundarySnapshot;
-  generatedAt: string;
 };
 
 type V1ChatReadyPayload = {
@@ -493,54 +461,19 @@ async function callInternalChat(request: NextRequest, payload: unknown) {
 }
 
 export async function GET() {
-  const payload: V1ChatContractPayload = {
+  return jsonResponse({
     ok: true,
-    status: "HBCE_IPR_RUNTIME_CHAT_ENDPOINT_READY",
+    status: "HBCE_IPR_RUNTIME_API_DISCOVERY_READY",
     product: PRODUCT_NAME,
     apiVersion: API_VERSION,
-    routeRevision: ROUTE_REVISION,
-    deploySentinel: DEPLOY_SENTINEL,
-    endpoint: "/api/v1/chat",
-    method: "POST",
-    purpose:
-      "Execute a governed AI interaction through JOKER-C2 with IPR, EVT, OPC, audit and usage visibility.",
-    minimumInput: ["sessionId", "humanIpr", "message"],
-    outputIncludes: [
-      "answer",
-      "responseEvt",
-      "opcId",
-      "auditId",
-      "usageId",
-      "temporalSeal",
-      "memory",
-      "policy",
-      "risk",
-      "legalCertification:false"
-    ],
-    authGate: {
-      revision: AUTH_GATE_REVISION,
-      required: true,
-      checkedBeforeJsonBody: true,
-      acceptedHeaders: [API_KEY_HEADER, "Authorization: Bearer <token>"]
-    },
-    internalRuntimeBridge: {
-      target: INTERNAL_CHAT_PATH,
-      mode: "SERVER_SIDE_BRIDGE_TO_EXISTING_JOKER_C2_CHAT_RUNTIME",
-      timeoutMs: INTERNAL_CHAT_TIMEOUT_MS
-    },
-    runtimeContext: {
-      runtime: RUNTIME_NAME,
-      humanIpr: HBCE_SELF_PILOT_HUMAN_IPR,
-      runtimeIpr: HBCE_SELF_PILOT_RUNTIME_IPR,
-      tenant: HBCE_SELF_PILOT_TENANT_ID,
-      workspace: HBCE_SELF_PILOT_WORKSPACE_ID,
-      access: "CONTRACT_READY"
-    },
-    boundary: buildBoundary(),
-    generatedAt: utcNowIso()
-  };
-
-  return jsonResponse(payload);
+    revision: DISCOVERY_REVISION,
+    generatedAt: utcNowIso(),
+    routes: {
+      health: "/api/v1/health",
+      capabilities: "/api/v1/capabilities",
+      openapi: "/api/v1/openapi"
+    }
+  });
 }
 
 export async function POST(request: NextRequest) {

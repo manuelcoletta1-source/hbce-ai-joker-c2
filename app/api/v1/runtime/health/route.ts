@@ -4,7 +4,11 @@
  * HERMETICUM B.C.E.
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
+import {
+  resolveIprAccountSessionFromRequestAsync
+} from "@/lib/ipr-auth-session-resolver";
 
 import {
   RUNTIME_BOUNDARIES,
@@ -18,7 +22,25 @@ import { runtimeHealth } from "@/lib/runtime/bootstrap";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const sessionResolution =
+    await resolveIprAccountSessionFromRequestAsync(request);
+
+  if (!sessionResolution.authenticated) {
+    return NextResponse.json(
+      {
+        ok: false,
+        reason: "AUTHENTICATION_REQUIRED",
+        legalCertification: false
+      },
+      {
+        status: 401,
+        headers: {
+          "Cache-Control": "no-store, max-age=0"
+        }
+      }
+    );
+  }
   try {
     const health = runtimeHealth();
 
@@ -48,11 +70,8 @@ export async function GET(): Promise<NextResponse> {
         }
       }
     );
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "UNKNOWN_RUNTIME_HEALTH_ERROR";
+  } catch {
+    const message = "RUNTIME_HEALTH_UNAVAILABLE";
 
     return NextResponse.json(
       {

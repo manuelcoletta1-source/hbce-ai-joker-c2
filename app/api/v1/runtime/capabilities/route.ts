@@ -4,7 +4,11 @@
  * HERMETICUM B.C.E.
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
+import {
+  resolveIprAccountSessionFromRequestAsync
+} from "@/lib/ipr-auth-session-resolver";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +40,25 @@ const CAPABILITIES = [
   }
 ] as const;
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const sessionResolution =
+    await resolveIprAccountSessionFromRequestAsync(request);
+
+  if (!sessionResolution.authenticated) {
+    return NextResponse.json(
+      {
+        ok: false,
+        reason: "AUTHENTICATION_REQUIRED",
+        legalCertification: false
+      },
+      {
+        status: 401,
+        headers: {
+          "Cache-Control": "no-store, max-age=0"
+        }
+      }
+    );
+  }
   return NextResponse.json(
     {
       ok: true,
