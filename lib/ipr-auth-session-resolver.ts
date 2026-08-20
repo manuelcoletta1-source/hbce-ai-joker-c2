@@ -615,7 +615,11 @@ function buildRuntimeHandoffFromAccountProfile(
     isValid:
       profile.certificateStatus === "ACTIVE" &&
       profile.accessDecision === "ACCESS_GRANTED" &&
-      normalizeMemoryScope(profile.semanticMemoryScope) === "IPR_BOUND",
+      profile.accessScope === "JOKER_C2_ACCESS" &&
+      profile.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT" &&
+      profile.matrixState === "MATRIX_ACTIVE" &&
+      normalizeMemoryScope(profile.semanticMemoryScope) === "IPR_BOUND" &&
+      profile.certificateScope.includes("JOKER_C2_ACCESS"),
     source: "IPR_ACCOUNT_SESSION",
     authority: "SERVER_RUNTIME_VALIDATED",
     matrixState: profile.matrixState,

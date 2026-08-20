@@ -457,6 +457,21 @@ describe(
                     "CERTIFICATE-09-OPERATIONAL-TEST",
                   accountId:
                     "ACCOUNT-IPR-3-READBACK-TEST",
+                  certificateStatus:
+                    "ACTIVE",
+                  certificateScope: [
+                    "JOKER_C2_ACCESS"
+                  ],
+                  accessDecision:
+                    "ACCESS_GRANTED",
+                  accessScope:
+                    "JOKER_C2_ACCESS",
+                  identityBinding:
+                    "IPR_VERIFIED_BIOLOGICAL_SUBJECT",
+                  matrixState:
+                    "MATRIX_ACTIVE",
+                  semanticMemoryScope:
+                    "IPR_BOUND",
                   source:
                     "HBCE_CANONICAL_IPR_BOOTSTRAP"
                 });
@@ -723,6 +738,21 @@ describe(
                     "CERTIFICATE-09-OPERATIONAL-TEST",
                   accountId:
                     "ACCOUNT-IPR-3-SESSION-TEST",
+                  certificateStatus:
+                    "ACTIVE",
+                  certificateScope: [
+                    "JOKER_C2_ACCESS"
+                  ],
+                  accessDecision:
+                    "ACCESS_GRANTED",
+                  accessScope:
+                    "JOKER_C2_ACCESS",
+                  identityBinding:
+                    "IPR_VERIFIED_BIOLOGICAL_SUBJECT",
+                  matrixState:
+                    "MATRIX_ACTIVE",
+                  semanticMemoryScope:
+                    "IPR_BOUND",
                   source:
                     "HBCE_CANONICAL_IPR_BOOTSTRAP"
                 });
@@ -1270,6 +1300,21 @@ describe(
                       "CERTIFICATE-09-OPERATIONAL-TEST",
                     accountId:
                       "ACCOUNT-IPR-3-FULL-CONTRACT",
+                    certificateStatus:
+                      "ACTIVE",
+                    certificateScope: [
+                      "JOKER_C2_ACCESS"
+                    ],
+                    accessDecision:
+                      "ACCESS_GRANTED",
+                    accessScope:
+                      "JOKER_C2_ACCESS",
+                    identityBinding:
+                      "IPR_VERIFIED_BIOLOGICAL_SUBJECT",
+                    matrixState:
+                      "MATRIX_ACTIVE",
+                    semanticMemoryScope:
+                      "IPR_BOUND",
                     source:
                       "HBCE_CANONICAL_IPR_BOOTSTRAP"
                   });

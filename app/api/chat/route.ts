@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { resolveIprAccountSessionFromRequestAsync } from "@/lib/ipr-auth-session-resolver";
 
 
 
@@ -183,7 +184,13 @@ type PublicFileSnapshot = {
 
 
 
-type HandoffSource = "body" | "query" | "header" | "referer" | "none";
+type HandoffSource =
+  | "server_session"
+  | "body"
+  | "query"
+  | "header"
+  | "referer"
+  | "none";
 
 
 
@@ -204,6 +211,97 @@ type HandoffResolution = {
   semanticMemoryScope: "IPR_BOUND" | "RUNTIME_ONLY";
   reason: string;
 };
+
+
+type ServerAccountSessionResolution = Awaited<
+  ReturnType<typeof resolveIprAccountSessionFromRequestAsync>
+>;
+
+
+function buildServerProvenChatHandoff(
+  resolution: ServerAccountSessionResolution
+): HandoffResolution {
+  const profile = resolution.accountProfile;
+
+  if (
+    !resolution.authenticated ||
+    resolution.access.decision !== "ACCESS_GRANTED" ||
+    !profile
+  ) {
+    return {
+      detected: false,
+      source: "server_session",
+      authority: "SERVER_VALIDATION_REQUIRED",
+      subjectName: "Unverified subject",
+      humanIpr: "NOT_VERIFIED",
+      certificateId: "NO_CERTIFICATE",
+      cardSerial: "NO_CARD",
+      status: "INACTIVE",
+      scope: "NO_SCOPE",
+      accessDecision: "ACCESS_LIMITED",
+      identityBinding: "NOT_VERIFIED",
+      matrixState: "MATRIX_LIMITED",
+      semanticMemoryScope: "RUNTIME_ONLY",
+      reason:
+        "Canonical server-side IPR account session proof is required before chat authority can become effective."
+    };
+  }
+
+  const verifiedIdentity =
+    profile.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT";
+
+  const activeMatrix =
+    profile.matrixState === "MATRIX_ACTIVE";
+
+  const iprBoundMemory =
+    profile.semanticMemoryScope === "IPR_BOUND";
+
+  const activeCertificate =
+    profile.certificateStatus === "ACTIVE";
+
+  if (
+    !verifiedIdentity ||
+    !activeMatrix ||
+    !iprBoundMemory ||
+    !activeCertificate
+  ) {
+    return {
+      detected: false,
+      source: "server_session",
+      authority: "SERVER_VALIDATION_REQUIRED",
+      subjectName: profile.entity || "Unverified subject",
+      humanIpr: resolution.access.humanIpr || "NOT_VERIFIED",
+      certificateId: profile.certificateId || "NO_CERTIFICATE",
+      cardSerial: profile.cardSerial || "NO_CARD",
+      status: profile.certificateStatus || "INACTIVE",
+      scope: resolution.access.scope || profile.accessScope || "NO_SCOPE",
+      accessDecision: "ACCESS_LIMITED",
+      identityBinding: "NOT_VERIFIED",
+      matrixState: "MATRIX_LIMITED",
+      semanticMemoryScope: "RUNTIME_ONLY",
+      reason:
+        "The authenticated server-side account profile does not satisfy the complete chat authority boundary."
+    };
+  }
+
+  return {
+    detected: true,
+    source: "server_session",
+    authority: "SERVER_RUNTIME_VALIDATED",
+    subjectName: profile.entity || "Verified biological subject",
+    humanIpr: resolution.access.humanIpr || profile.humanIpr,
+    certificateId: profile.certificateId,
+    cardSerial: profile.cardSerial || "NO_CARD",
+    status: "ACTIVE",
+    scope: resolution.access.scope || profile.accessScope,
+    accessDecision: "ACCESS_GRANTED",
+    identityBinding: "IPR_VERIFIED_BIOLOGICAL_SUBJECT",
+    matrixState: "MATRIX_ACTIVE",
+    semanticMemoryScope: "IPR_BOUND",
+    reason:
+      "Chat authority was reconstructed exclusively from the canonical server-side HBCE IPR session and account profile. Client body, query, headers, referer metadata and self-pilot bridge signals cannot create authority."
+  };
+}
 
 
 
@@ -2134,6 +2232,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const temporalFrame = buildRuntimeTemporalFrame(t);
   const body = await readJsonBody(request);
 
+  const accountSessionResolution =
+    await resolveIprAccountSessionFromRequestAsync(request);
+
+  if (
+    !accountSessionResolution.authenticated ||
+    accountSessionResolution.access.decision !== "ACCESS_GRANTED" ||
+    !accountSessionResolution.accountProfile
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        authenticated: false,
+        reason: "SERVER_PROVEN_IPR_SESSION_REQUIRED",
+        access: {
+          decision: "AUTHENTICATION_REQUIRED"
+        },
+        legalCertification: false
+      },
+      {
+        status: 401,
+        headers: {
+          "Cache-Control": "no-store"
+        }
+      }
+    );
+  }
+
 
 
 
@@ -2874,19 +2999,80 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  const rawHandoff = resolveHandoff(request, body);
-  const handoff = selfPilotProjectScopeBridgeRequested
-    ? applySelfPilotProjectScopeBridge(rawHandoff, {
-        message,
-        body,
-        documentMemoryRecallRequested,
-        runtimeDiagnosticsRequested,
-        runtimeStatusTableRequested
-      })
-    : rawHandoff;
-  const selfPilotProjectScopeBridgeApplied = rawHandoff !== handoff;
+  const handoff =
+    buildServerProvenChatHandoff(accountSessionResolution);
+
+  const rawHandoff = handoff;
+
+  const selfPilotProjectScopeBridgeApplied = false;
+
   const policy = evaluatePolicy(message, files);
-  const saasContext = await resolveSaasRuntimeContext(body, handoff, sessionId);
+
+  const accountProfile = accountSessionResolution.accountProfile!;
+
+  const requestedSaasContext =
+    resolveSaasRuntimeContextFromBody(body, handoff, sessionId);
+
+  const authorizedTenantId =
+    stringFromValue(accountProfile.tenantId).trim();
+
+  const authorizedWorkspaceId =
+    stringFromValue(accountProfile.workspaceId).trim();
+
+  if (!authorizedTenantId || !authorizedWorkspaceId) {
+    return NextResponse.json(
+      {
+        ok: false,
+        authenticated: true,
+        reason: "SERVER_AUTHORIZED_SCOPE_REQUIRED",
+        access: {
+          decision: "ACCESS_DENIED"
+        },
+        legalCertification: false
+      },
+      {
+        status: 403,
+        headers: {
+          "Cache-Control": "no-store"
+        }
+      }
+    );
+  }
+
+  const tenantMismatch =
+    requestedSaasContext.tenantId !== "NO_TENANT" &&
+    requestedSaasContext.tenantId !== authorizedTenantId;
+
+  const workspaceMismatch =
+    requestedSaasContext.workspaceId !== "NO_WORKSPACE" &&
+    requestedSaasContext.workspaceId !== authorizedWorkspaceId;
+
+  if (tenantMismatch || workspaceMismatch) {
+    return NextResponse.json(
+      {
+        ok: false,
+        authenticated: true,
+        reason: "REQUESTED_SCOPE_NOT_AUTHORIZED",
+        access: {
+          decision: "ACCESS_DENIED"
+        },
+        legalCertification: false
+      },
+      {
+        status: 403,
+        headers: {
+          "Cache-Control": "no-store"
+        }
+      }
+    );
+  }
+
+  const saasContext = await resolveSaasRuntimeContext(
+    body,
+    handoff,
+    sessionId,
+    accountProfile
+  );
   const documentRecallRuntimeScope = resolveCyberneticDocumentRecallRuntimeScope({
     body,
     message,
@@ -23592,62 +23778,51 @@ function firstStringArrayFromSources(
 async function resolveSaasRuntimeContext(
   body: JsonObject,
   handoff: HandoffResolution,
-  sessionId: string
+  sessionId: string,
+  accountProfile: NonNullable<
+    ServerAccountSessionResolution["accountProfile"]
+  >
 ): Promise<SaasRuntimeContext> {
-  const bodyContext = resolveSaasRuntimeContextFromBody(body, handoff, sessionId);
+  const bodyContext =
+    resolveSaasRuntimeContextFromBody(body, handoff, sessionId);
 
-
-
-
-  if (isConcreteSaasContext(bodyContext)) {
-    return {
-      ...bodyContext,
-      source: "BODY"
-    };
-  }
-
-
-
-
-  if (handoff.identityBinding !== "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
-    return bodyContext;
-  }
-
-
-
-
-  const databaseContext = await resolveSaasRuntimeContextFromDatabase(
-    handoff,
-    sessionId,
-    bodyContext
-  );
-
-
-
+  const databaseContext =
+    await resolveSaasRuntimeContextFromDatabase(
+      handoff,
+      sessionId,
+      bodyContext,
+      accountProfile
+    );
 
   if (databaseContext) {
     return databaseContext;
   }
 
+  return {
+    tenantId:
+      stringFromValue(accountProfile.tenantId).trim() ||
+      "NO_TENANT",
 
+    workspaceId:
+      stringFromValue(accountProfile.workspaceId).trim() ||
+      "NO_WORKSPACE",
 
+    subscriptionId:
+      "NO_SUBSCRIPTION",
 
-  if (isCanonicalSelfPilotHandoff(handoff)) {
-    return {
-      tenantId: HBCE_SELF_PILOT_TENANT_ID,
-      workspaceId: HBCE_SELF_PILOT_WORKSPACE_ID,
-      subscriptionId: HBCE_SELF_PILOT_SUBSCRIPTION_ID,
-      accountId: HBCE_SELF_PILOT_ACCOUNT_ID,
-      threadId: bodyContext.threadId,
-      saasTier: normalizeSaasTier(HBCE_SELF_PILOT_SUBSCRIPTION_TIER, handoff),
-      source: "SELF_PILOT_SCHEMA_FALLBACK"
-    };
-  }
+    accountId:
+      stringFromValue(accountProfile.accountId).trim() ||
+      "NO_ACCOUNT",
 
+    threadId:
+      bodyContext.threadId || sessionId,
 
+    saasTier:
+      normalizeSaasTier("", handoff),
 
-
-  return bodyContext;
+    source:
+      "DATABASE_PROFILE"
+  };
 }
 
 
@@ -23753,7 +23928,10 @@ function resolveSaasRuntimeContextFromBody(
 async function resolveSaasRuntimeContextFromDatabase(
   handoff: HandoffResolution,
   sessionId: string,
-  bodyContext: SaasRuntimeContext
+  bodyContext: SaasRuntimeContext,
+  accountProfile: NonNullable<
+    ServerAccountSessionResolution["accountProfile"]
+  >
 ): Promise<SaasRuntimeContext | null> {
   try {
     const result = await queryHbceDatabase<SaasContextDatabaseRow>(
@@ -23796,14 +23974,26 @@ LIMIT 1;
 
 
 
-    const tenantId = stringFromValue(row.tenant_id).trim() || bodyContext.tenantId;
-    const workspaceId = stringFromValue(row.workspace_id).trim() || bodyContext.workspaceId;
-    const accountId = stringFromValue(row.account_id).trim() || bodyContext.accountId;
+    const tenantId =
+      stringFromValue(row.tenant_id).trim() ||
+      stringFromValue(accountProfile.tenantId).trim() ||
+      "NO_TENANT";
+
+    const workspaceId =
+      stringFromValue(row.workspace_id).trim() ||
+      stringFromValue(accountProfile.workspaceId).trim() ||
+      "NO_WORKSPACE";
+
+    const accountId =
+      stringFromValue(row.account_id).trim() ||
+      stringFromValue(accountProfile.accountId).trim() ||
+      "NO_ACCOUNT";
+
     const subscriptionId =
       stringFromValue(row.subscription_id).trim() ||
       (isCanonicalSelfPilotHandoff(handoff)
         ? HBCE_SELF_PILOT_SUBSCRIPTION_ID
-        : bodyContext.subscriptionId);
+        : "NO_SUBSCRIPTION");
     const tier = stringFromValue(row.tier).trim();
 
 

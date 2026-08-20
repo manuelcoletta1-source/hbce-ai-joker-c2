@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { inflateSync } from "node:zlib";
 import { NextRequest, NextResponse } from "next/server";
+import { resolveIprAccountSessionFromRequestAsync } from "@/lib/ipr-auth-session-resolver";
 
 
 
@@ -7377,14 +7378,171 @@ function buildMatrixEuropaVolumeIMetadata(file: StoredRuntimeFile): Record<strin
 
 
 
-function buildDocumentProfileContext(body: FilesBody, sessionId: string): DocumentProfileContext {
+type AuthorizedFileScope = {
+  humanIpr: string;
+  tenantId: string;
+  workspaceId: string;
+};
+
+function normalizeFileAuthorityValue(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+async function resolveAuthorizedFileScope(
+  req: NextRequest,
+  requested: {
+    humanIpr?: unknown;
+    tenantId?: unknown;
+    workspaceId?: unknown;
+  }
+) {
+  const accountSessionResolution =
+    await resolveIprAccountSessionFromRequestAsync(req);
+
+  if (
+    !accountSessionResolution.authenticated ||
+    accountSessionResolution.access.decision !== "ACCESS_GRANTED" ||
+    !accountSessionResolution.accountProfile
+  ) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        {
+          ok: false,
+          status: "FILES_AUTHENTICATION_REQUIRED",
+          error:
+            "A canonical server-proven IPR account session is required before file runtime access.",
+          legalCertification: false,
+          opc: "technical proof receipt only"
+        },
+        {
+          status: 401,
+          headers: {
+            "Cache-Control": "no-store"
+          }
+        }
+      )
+    };
+  }
+
+  const accountProfile = accountSessionResolution.accountProfile;
+
+  const authorizedHumanIpr =
+    normalizeFileAuthorityValue(accountProfile.humanIpr);
+  const authorizedTenantId =
+    normalizeFileAuthorityValue(accountProfile.tenantId);
+  const authorizedWorkspaceId =
+    normalizeFileAuthorityValue(accountProfile.workspaceId);
+
+  if (
+    !authorizedHumanIpr ||
+    !authorizedTenantId ||
+    !authorizedWorkspaceId
+  ) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        {
+          ok: false,
+          status: "FILES_AUTHORIZED_SCOPE_REQUIRED",
+          error:
+            "The authenticated server profile does not provide a complete Human IPR, tenant and workspace authority scope.",
+          legalCertification: false,
+          opc: "technical proof receipt only"
+        },
+        {
+          status: 403,
+          headers: {
+            "Cache-Control": "no-store"
+          }
+        }
+      )
+    };
+  }
+
+  const requestedHumanIpr =
+    normalizeFileAuthorityValue(requested.humanIpr);
+  const requestedTenantId =
+    normalizeFileAuthorityValue(requested.tenantId);
+  const requestedWorkspaceId =
+    normalizeFileAuthorityValue(requested.workspaceId);
+
+  const scopeMismatch =
+    (Boolean(requestedHumanIpr) &&
+      requestedHumanIpr !== authorizedHumanIpr) ||
+    (Boolean(requestedTenantId) &&
+      requestedTenantId !== authorizedTenantId) ||
+    (Boolean(requestedWorkspaceId) &&
+      requestedWorkspaceId !== authorizedWorkspaceId);
+
+  if (scopeMismatch) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        {
+          ok: false,
+          status: "FILES_REQUESTED_SCOPE_NOT_AUTHORIZED",
+          error:
+            "Requested Human IPR, tenant or workspace does not match the authenticated server-side authority scope.",
+          legalCertification: false,
+          opc: "technical proof receipt only"
+        },
+        {
+          status: 403,
+          headers: {
+            "Cache-Control": "no-store"
+          }
+        }
+      )
+    };
+  }
+
+  return {
+    ok: true as const,
+    scope: {
+      humanIpr: authorizedHumanIpr,
+      tenantId: authorizedTenantId,
+      workspaceId: authorizedWorkspaceId
+    } satisfies AuthorizedFileScope
+  };
+}
+
+function buildAuthorizedFileStoreKey(
+  sessionId: string,
+  scope: AuthorizedFileScope
+): string {
+  return `HBCE_FILE_SCOPE_${createHash("sha256")
+    .update(
+      JSON.stringify([
+        scope.humanIpr,
+        scope.tenantId,
+        scope.workspaceId,
+        sessionId
+      ])
+    )
+    .digest("hex")}`;
+}
+
+function buildDocumentProfileContext(
+  body: FilesBody,
+  sessionId: string,
+  authority: AuthorizedFileScope
+): DocumentProfileContext {
   return {
     sessionId,
-    threadId: typeof body.threadId === "string" && body.threadId.trim() ? body.threadId.trim() : sessionId,
-    humanIpr: normalizeContextString(body.humanIpr, HBCE_SELF_PILOT_HUMAN_IPR),
-    runtimeIpr: normalizeContextString(body.runtimeIpr, "IPR-AI-0001"),
-    tenantId: normalizeContextString(body.tenantId, HBCE_SELF_PILOT_TENANT_ID),
-    workspaceId: normalizeContextString(body.workspaceId, HBCE_SELF_PILOT_WORKSPACE_ID),
+    threadId:
+      typeof body.threadId === "string" && body.threadId.trim()
+        ? body.threadId.trim()
+        : sessionId,
+    humanIpr: authority.humanIpr,
+    runtimeIpr: "IPR-AI-0001",
+    tenantId: authority.tenantId,
+    workspaceId: authority.workspaceId,
     sourceKind: normalizeContextString(body.sourceKind, "FILE_UPLOAD")
   };
 }
@@ -12133,6 +12291,21 @@ export async function POST(req: NextRequest) {
   const store = getFileStore();
   const sessionId = normalizeSessionId(body.sessionId);
 
+  const fileAuthority = await resolveAuthorizedFileScope(req, {
+    humanIpr: body.humanIpr,
+    tenantId: body.tenantId,
+    workspaceId: body.workspaceId
+  });
+
+  if (!fileAuthority.ok) {
+    return fileAuthority.response;
+  }
+
+  const storeKey = buildAuthorizedFileStoreKey(
+    sessionId,
+    fileAuthority.scope
+  );
+
 
 
 
@@ -12141,7 +12314,7 @@ export async function POST(req: NextRequest) {
 
 
   if (body.clear) {
-    store.delete(sessionId);
+    store.delete(storeKey);
 
 
 
@@ -12173,9 +12346,13 @@ export async function POST(req: NextRequest) {
 
 
   const incomingFiles = normalizeFiles(body.files);
-  const existingFiles = body.replace ? [] : store.get(sessionId) || [];
+  const existingFiles = body.replace ? [] : store.get(storeKey) || [];
   const mergedFiles = mergeFiles(existingFiles, incomingFiles);
-  const context = buildDocumentProfileContext(body, sessionId);
+  const context = buildDocumentProfileContext(
+    body,
+    sessionId,
+    fileAuthority.scope
+  );
   const documentProfiles = await persistDocumentProfilesForSession(mergedFiles, context);
   const nextFiles = attachDocumentProfileResults(mergedFiles, documentProfiles);
 
@@ -12186,7 +12363,7 @@ export async function POST(req: NextRequest) {
 
 
 
-  store.set(sessionId, nextFiles);
+  store.set(storeKey, nextFiles);
 
 
 
@@ -12341,9 +12518,24 @@ export async function GET(req: NextRequest) {
     isAffirmativeSearchParam(url.searchParams.get("diagnostic")) ||
     isAffirmativeSearchParam(url.searchParams.get("includeDiagnostics")) ||
     isAffirmativeSearchParam(url.searchParams.get("selfDiagnostic"));
-  const humanIpr = url.searchParams.get("humanIpr") || HBCE_SELF_PILOT_HUMAN_IPR;
-  const tenantId = url.searchParams.get("tenantId") || HBCE_SELF_PILOT_TENANT_ID;
-  const workspaceId = url.searchParams.get("workspaceId") || HBCE_SELF_PILOT_WORKSPACE_ID;
+  const fileAuthority = await resolveAuthorizedFileScope(req, {
+    humanIpr: url.searchParams.get("humanIpr"),
+    tenantId: url.searchParams.get("tenantId"),
+    workspaceId: url.searchParams.get("workspaceId")
+  });
+
+  if (!fileAuthority.ok) {
+    return fileAuthority.response;
+  }
+
+  const humanIpr = fileAuthority.scope.humanIpr;
+  const tenantId = fileAuthority.scope.tenantId;
+  const workspaceId = fileAuthority.scope.workspaceId;
+
+  const storeKey = buildAuthorizedFileStoreKey(
+    sessionId,
+    fileAuthority.scope
+  );
 
 
 
@@ -12352,7 +12544,7 @@ export async function GET(req: NextRequest) {
 
 
 
-  const files = store.get(sessionId) || [];
+  const files = store.get(storeKey) || [];
   const documentProfiles = includeProfiles
     ? await listDocumentProfilesFromDatabase({
         humanIpr,
@@ -12458,6 +12650,21 @@ export async function DELETE(req: NextRequest) {
   const sessionId = normalizeSessionId(url.searchParams.get("sessionId"));
   const fileId = url.searchParams.get("fileId");
 
+  const fileAuthority = await resolveAuthorizedFileScope(req, {
+    humanIpr: url.searchParams.get("humanIpr"),
+    tenantId: url.searchParams.get("tenantId"),
+    workspaceId: url.searchParams.get("workspaceId")
+  });
+
+  if (!fileAuthority.ok) {
+    return fileAuthority.response;
+  }
+
+  const storeKey = buildAuthorizedFileStoreKey(
+    sessionId,
+    fileAuthority.scope
+  );
+
 
 
 
@@ -12466,7 +12673,7 @@ export async function DELETE(req: NextRequest) {
 
 
   if (!fileId) {
-    store.delete(sessionId);
+    store.delete(storeKey);
 
 
 
@@ -12497,7 +12704,7 @@ export async function DELETE(req: NextRequest) {
 
 
 
-  const files = store.get(sessionId) || [];
+  const files = store.get(storeKey) || [];
   const nextFiles = files.filter((file) => file.id !== fileId);
 
 
@@ -12507,7 +12714,7 @@ export async function DELETE(req: NextRequest) {
 
 
 
-  store.set(sessionId, nextFiles);
+  store.set(storeKey, nextFiles);
 
 
 

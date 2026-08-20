@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { resolveIprAccountSessionFromRequestAsync } from "@/lib/ipr-auth-session-resolver";
 
 import {
   getIprMemoryRecordStatusFromDatabase,
@@ -8,11 +9,6 @@ import {
   type DocumentProfileDatabaseRow,
   type IprMemoryRecordDatabaseRow
 } from "@/lib/ipr-database";
-import {
-  HBCE_SELF_PILOT_HUMAN_IPR,
-  HBCE_SELF_PILOT_TENANT_ID,
-  HBCE_SELF_PILOT_WORKSPACE_ID
-} from "@/lib/ipr-database-schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -552,23 +548,104 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const useSelfPilotDefaults = parseBooleanFlag(url.searchParams.get("useSelfPilotDefaults"));
+  const requestedHumanIpr =
+    normalizeOptionalFilter(url.searchParams.get("humanIpr"));
+  const requestedTenantId =
+    normalizeOptionalFilter(url.searchParams.get("tenantId"));
+  const requestedWorkspaceId =
+    normalizeOptionalFilter(url.searchParams.get("workspaceId"));
 
-  const humanIpr =
-    normalizeOptionalFilter(url.searchParams.get("humanIpr")) ||
-    (useSelfPilotDefaults ? HBCE_SELF_PILOT_HUMAN_IPR : null);
-  const tenantId =
-    normalizeOptionalFilter(url.searchParams.get("tenantId")) ||
-    (useSelfPilotDefaults ? HBCE_SELF_PILOT_TENANT_ID : null);
-  const workspaceId =
-    normalizeOptionalFilter(url.searchParams.get("workspaceId")) ||
-    (useSelfPilotDefaults ? HBCE_SELF_PILOT_WORKSPACE_ID : null);
+  const accountSessionResolution =
+    await resolveIprAccountSessionFromRequestAsync(req);
+
+  if (
+    !accountSessionResolution.authenticated ||
+    accountSessionResolution.access.decision !== "ACCESS_GRANTED" ||
+    !accountSessionResolution.accountProfile
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        status: "IPR_MEMORY_RECORD_STATUS_AUTHENTICATION_REQUIRED",
+        error:
+          "A canonical server-proven IPR account session is required before memory record status retrieval.",
+        legalCertification: false
+      },
+      {
+        status: 401,
+        headers: {
+          "Cache-Control": "no-store"
+        }
+      }
+    );
+  }
+
+  const accountProfile = accountSessionResolution.accountProfile;
+
+  const authorizedHumanIpr =
+    stringOrNull(accountProfile.humanIpr);
+  const authorizedTenantId =
+    stringOrNull(accountProfile.tenantId);
+  const authorizedWorkspaceId =
+    stringOrNull(accountProfile.workspaceId);
+
+  if (
+    !authorizedHumanIpr ||
+    !authorizedTenantId ||
+    !authorizedWorkspaceId
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        status: "IPR_MEMORY_RECORD_STATUS_AUTHORIZED_SCOPE_REQUIRED",
+        error:
+          "The authenticated server profile does not provide a complete Human IPR, tenant and workspace authority scope.",
+        legalCertification: false
+      },
+      {
+        status: 403,
+        headers: {
+          "Cache-Control": "no-store"
+        }
+      }
+    );
+  }
+
+  const scopeMismatch =
+    (Boolean(requestedHumanIpr) &&
+      requestedHumanIpr !== authorizedHumanIpr) ||
+    (Boolean(requestedTenantId) &&
+      requestedTenantId !== authorizedTenantId) ||
+    (Boolean(requestedWorkspaceId) &&
+      requestedWorkspaceId !== authorizedWorkspaceId);
+
+  if (scopeMismatch) {
+    return NextResponse.json(
+      {
+        ok: false,
+        status: "IPR_MEMORY_RECORD_STATUS_REQUESTED_SCOPE_NOT_AUTHORIZED",
+        error:
+          "Requested Human IPR, tenant or workspace does not match the authenticated server-side authority scope.",
+        legalCertification: false
+      },
+      {
+        status: 403,
+        headers: {
+          "Cache-Control": "no-store"
+        }
+      }
+    );
+  }
+
+  const humanIpr = authorizedHumanIpr;
+  const tenantId = authorizedTenantId;
+  const workspaceId = authorizedWorkspaceId;
 
   const filtersApplied = {
     humanIpr,
     tenantId,
     workspaceId,
-    useSelfPilotDefaults
+    useSelfPilotDefaults: false
   };
 
   try {

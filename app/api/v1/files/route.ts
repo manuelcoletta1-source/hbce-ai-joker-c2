@@ -8,10 +8,7 @@ const PRODUCT = "HBCE IPR Operational Identity & Proof Layer" as const;
 const API_VERSION = "v1" as const;
 const RUNTIME = "AI_JOKER_C2_SAAS_CORE_v0_1" as const;
 
-const HUMAN_IPR = "IPR-88505FE91013DCFE97C56ED1" as const;
 const RUNTIME_IPR = "IPR-AI-0001" as const;
-const TENANT = "HBCE-TENANT-SELF-PILOT" as const;
-const WORKSPACE = "HBCE-WORKSPACE-RND" as const;
 
 const LEGAL_CERTIFICATION = false as const;
 const OPC_BOUNDARY = "technical proof receipt only" as const;
@@ -62,22 +59,24 @@ function boundary() {
     automaticIprMemoryWrite: false,
     sourceProfileSaveMode: "EXPLICIT_OPERATOR_SAVE_ONLY",
     filePersistenceMode: "DESCRIPTOR_ONLY_NO_RAW_FILE_STORAGE",
-    executionMode: "CONTRACT_ONLY_NO_RUNTIME_FILE_INGESTION"
+    executionMode: "CONTRACT_ONLY_NO_RUNTIME_FILE_INGESTION",
+    authorityEvaluation: "NOT_PERFORMED",
+    clientClaimsCreateAuthority: false,
+    authorizationRequiredForRuntimeExecution: true
   };
 }
 
 function runtimeContext() {
   return {
     runtime: RUNTIME,
-    humanIpr: HUMAN_IPR,
     runtimeIpr: RUNTIME_IPR,
-    tenant: TENANT,
-    workspace: WORKSPACE,
-    access: "ACCESS_GRANTED",
-    memory: "DATABASE_PERSISTENT",
-    memoryScope: "IPR_BOUND",
-    policy: "ALLOW",
-    matrix: "MATRIX_ACTIVE",
+    authorityEvaluation: "NOT_PERFORMED_BY_CONTRACT_ENDPOINT",
+    access: "NOT_EVALUATED",
+    memory: "NOT_ACCESSED",
+    memoryScope: "NOT_EVALUATED",
+    policy: "NOT_EVALUATED",
+    matrix: "CONTRACT_METADATA_ONLY",
+    clientClaimsCreateAuthority: false,
     legalCertification: LEGAL_CERTIFICATION
   };
 }
@@ -164,7 +163,7 @@ export async function GET(): Promise<NextResponse> {
     ],
     runtimeContext: runtimeContext(),
     policy: {
-      decision: "ALLOW",
+      decision: "NOT_EVALUATED",
       rawTextPersistence: false,
       automaticIprMemoryWrite: false,
       sourceProfileSaveMode: "EXPLICIT_OPERATOR_SAVE_ONLY",
@@ -240,7 +239,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  if (humanIpr !== HUMAN_IPR) {
+  if (!humanIpr) {
     return jsonResponse(
       {
         ok: false,
@@ -248,16 +247,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         product: PRODUCT,
         apiVersion: API_VERSION,
         routeRevision: ROUTE_REVISION,
-        failReason: humanIpr ? "INVALID_HUMAN_IPR" : "MISSING_HUMAN_IPR",
+        failReason: "MISSING_HUMAN_IPR",
         message:
-          "The supplied humanIpr is missing or not allowed for this self-pilot v1 contract endpoint.",
+          "Missing required requested Human IPR claim. This contract-only endpoint validates descriptor shape but does not authenticate or authorize the supplied identity.",
         expected: {
-          humanIpr: HUMAN_IPR
+          humanIpr: "non-empty requested Human IPR string"
         },
+        authorityEvaluation: "NOT_PERFORMED",
+        clientClaimsCreateAuthority: false,
         legalCertification: LEGAL_CERTIFICATION,
         boundary: boundary()
       },
-      humanIpr ? 403 : 400
+      400
     );
   }
 
@@ -315,13 +316,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         fileIntakeId,
         sessionId,
         humanIpr,
+        humanIprStatus: "UNVERIFIED_CLIENT_CLAIM",
         runtimeIpr: RUNTIME_IPR,
-        tenant: TENANT,
-        workspace: WORKSPACE,
+        authorizedTenant: null,
+        authorizedWorkspace: null,
+        authorityEvaluation: "NOT_PERFORMED",
+        clientClaimsCreateAuthority: false,
         acceptedFileCount: acceptedFiles.length,
         acceptedFiles,
         intakeMode: "DESCRIPTOR_ONLY_NO_RAW_FILE_STORAGE",
-        executionMode: "ACCEPTED_BY_CONTRACT_ONLY",
+        executionMode: "CONTRACT_VALIDATED_NO_AUTHORIZATION_DECISION",
         runtimeFileIngestionPerformed: false,
         databaseWritePerformed: false,
         evtCreated: false,
@@ -338,7 +342,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         chatEndpoint: "/api/v1/chat"
       },
       policy: {
-        decision: "ALLOW",
+        decision: "NOT_EVALUATED",
         memoryScope: "IPR_BOUND",
         rawTextPersistence: false,
         automaticIprMemoryWrite: false,

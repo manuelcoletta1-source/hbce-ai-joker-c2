@@ -184,6 +184,27 @@ function buildMatrixFrame(input?: {
 }
 
 
+function hasCompleteJokerAuthority(profile: {
+  certificateStatus: string;
+  certificateScope: string[];
+  accessDecision: string;
+  accessScope: string;
+  identityBinding: string;
+  matrixState: string;
+  semanticMemoryScope: string;
+}): boolean {
+  return (
+    profile.certificateStatus === "ACTIVE" &&
+    profile.accessDecision === "ACCESS_GRANTED" &&
+    profile.accessScope === "JOKER_C2_ACCESS" &&
+    profile.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT" &&
+    profile.matrixState === "MATRIX_ACTIVE" &&
+    profile.semanticMemoryScope === "IPR_BOUND" &&
+    profile.certificateScope.includes("JOKER_C2_ACCESS")
+  );
+}
+
+
 function buildAccessFrame(input: {
   decision: string;
   source: AuthSessionSource;
@@ -331,6 +352,8 @@ export async function GET(req: NextRequest) {
   const touchedProfile =
     (await accountStore.touchLoginAsync(session.humanIpr)) || accountProfile;
 
+  const authorized = hasCompleteJokerAuthority(touchedProfile);
+
 
   const publicSession = getPublicSessionFromStoredSession(session);
   const publicAccountProfile = toPublicIprAccountProfile(touchedProfile);
@@ -347,23 +370,34 @@ export async function GET(req: NextRequest) {
         detail:
           "The HBCE IPR account session is active and the server-side IPR account profile has been resolved."
       }),
+      authorized,
       session: publicSession,
       accountProfile: publicAccountProfile,
       reconstructedIprHandoff,
       access: buildAccessFrame({
-        decision: "ACCESS_GRANTED",
+        decision: authorized
+          ? "ACCESS_GRANTED"
+          : "AUTHENTICATION_REQUIRED",
         source: "IPR_ACCOUNT_SESSION",
-        scope: touchedProfile.accessScope,
+        scope: authorized
+          ? touchedProfile.accessScope
+          : "NO_ACCESS_SCOPE",
         identityBinding: touchedProfile.identityBinding
       }),
       memory: buildMemoryFrame({
-        expectedScope: touchedProfile.semanticMemoryScope,
-        expectedAuthority: "SERVER_RUNTIME_VALIDATED",
+        expectedScope: authorized
+          ? touchedProfile.semanticMemoryScope
+          : "RUNTIME_ONLY",
+        expectedAuthority: authorized
+          ? "SERVER_RUNTIME_VALIDATED"
+          : "SESSION_RUNTIME_ONLY",
         persistenceMode: SAAS_TARGET_PERSISTENCE
       }),
       matrix: buildMatrixFrame({
-        expectedState: touchedProfile.matrixState,
-        active: touchedProfile.matrixState === "MATRIX_ACTIVE"
+        expectedState: authorized
+          ? touchedProfile.matrixState
+          : "MATRIX_LIMITED",
+        active: authorized
       })
     },
     { status: 200 }

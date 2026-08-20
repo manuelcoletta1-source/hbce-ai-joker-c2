@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveIprAccountSessionFromRequestAsync } from "@/lib/ipr-auth-session-resolver";
 
 import {
   ensureHbceDatabaseReady,
@@ -6,10 +7,7 @@ import {
 } from "@/lib/ipr-database";
 import {
   HBCE_DATABASE_PERSISTENCE_MODE,
-  HBCE_DATABASE_SCHEMA_VERSION,
-  HBCE_SELF_PILOT_HUMAN_IPR,
-  HBCE_SELF_PILOT_TENANT_ID,
-  HBCE_SELF_PILOT_WORKSPACE_ID
+  HBCE_DATABASE_SCHEMA_VERSION
 } from "@/lib/ipr-database-schema";
 
 export const runtime = "nodejs";
@@ -226,18 +224,15 @@ function resolveContext(request: NextRequest, input: DeleteRecordInput): DeleteR
     humanIpr: coalesceString(
       input.humanIpr,
       readHeaderString(request, "x-hbce-human-ipr"),
-      readHeaderString(request, "x-ipr-human"),
-      strictIdentity ? null : HBCE_SELF_PILOT_HUMAN_IPR
+      readHeaderString(request, "x-ipr-human")
     ),
     tenantId: coalesceString(
       input.tenantId,
-      readHeaderString(request, "x-hbce-tenant-id"),
-      strictIdentity ? null : HBCE_SELF_PILOT_TENANT_ID
+      readHeaderString(request, "x-hbce-tenant-id")
     ),
     workspaceId: coalesceString(
       input.workspaceId,
-      readHeaderString(request, "x-hbce-workspace-id"),
-      strictIdentity ? null : HBCE_SELF_PILOT_WORKSPACE_ID
+      readHeaderString(request, "x-hbce-workspace-id")
     ),
     confirmDeleteFromIpr: coalesceBoolean(false, input.confirmDeleteFromIpr),
     deleteMode: normalizeDeleteMode(input.deleteMode),
@@ -450,7 +445,83 @@ RETURNING registered_event_id, memory_id, event_status
 
 async function buildDeleteRecordPayload(request: NextRequest) {
   const input = await readInputFromRequest(request);
-  const context = resolveContext(request, input);
+  const requestedContext = resolveContext(request, input);
+
+  const accountSessionResolution =
+    await resolveIprAccountSessionFromRequestAsync(request);
+
+  if (
+    !accountSessionResolution.authenticated ||
+    accountSessionResolution.access.decision !== "ACCESS_GRANTED" ||
+    !accountSessionResolution.accountProfile
+  ) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "IPR_MEMORY_AUTHENTICATION_REQUIRED",
+        error:
+          "A canonical server-proven IPR account session is required before memory deletion.",
+        legalCertification: false
+      },
+      { status: 401 }
+    );
+  }
+
+  const accountProfile = accountSessionResolution.accountProfile;
+
+  const authorizedHumanIpr = coalesceString(accountProfile.humanIpr);
+  const authorizedTenantId = coalesceString(accountProfile.tenantId);
+  const authorizedWorkspaceId = coalesceString(accountProfile.workspaceId);
+
+  if (
+    !authorizedHumanIpr ||
+    !authorizedTenantId ||
+    !authorizedWorkspaceId
+  ) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "IPR_MEMORY_AUTHORIZED_SCOPE_REQUIRED",
+        error:
+          "The authenticated server profile does not provide a complete Human IPR, tenant and workspace authority scope.",
+        legalCertification: false
+      },
+      { status: 403 }
+    );
+  }
+
+  const humanIprMismatch =
+    Boolean(requestedContext.humanIpr) &&
+    requestedContext.humanIpr !== authorizedHumanIpr;
+
+  const tenantMismatch =
+    Boolean(requestedContext.tenantId) &&
+    requestedContext.tenantId !== authorizedTenantId;
+
+  const workspaceMismatch =
+    Boolean(requestedContext.workspaceId) &&
+    requestedContext.workspaceId !== authorizedWorkspaceId;
+
+  if (humanIprMismatch || tenantMismatch || workspaceMismatch) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "IPR_MEMORY_REQUESTED_SCOPE_NOT_AUTHORIZED",
+        error:
+          "Requested Human IPR, tenant or workspace does not match the authenticated server-side authority scope.",
+        legalCertification: false
+      },
+      { status: 403 }
+    );
+  }
+
+  const context: DeleteRecordContext = {
+    ...requestedContext,
+    humanIpr: authorizedHumanIpr,
+    tenantId: authorizedTenantId,
+    workspaceId: authorizedWorkspaceId,
+    strictIdentity: true
+  };
 
   if (!context.memoryId) {
     return jsonResponse(

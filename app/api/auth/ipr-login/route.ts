@@ -484,7 +484,7 @@ function evaluateMinimalIprHandoff(
   const accessScope = firstString(
     handoff,
     [["access", "scope"], ["accessScope"], ["scope"]],
-    DEFAULT_ACCESS_SCOPE
+    ""
   );
 
   const certificateScope = stringArray(
@@ -509,7 +509,7 @@ function evaluateMinimalIprHandoff(
   const accessDecision = firstString(
     handoff,
     [["access", "decision"], ["accessDecision"], ["decision"]],
-    "ACCESS_GRANTED"
+    "AUTHENTICATION_REQUIRED"
   ).toUpperCase();
 
   if (accessDecision !== "ACCESS_GRANTED") {
@@ -528,7 +528,7 @@ function evaluateMinimalIprHandoff(
       ["identityBinding"],
       ["identity_binding"]
     ],
-    "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
+    "NO_AUTHENTICATED_IPR_SESSION"
   ).toUpperCase();
 
   if (identityBinding !== "IPR_VERIFIED_BIOLOGICAL_SUBJECT") {
@@ -582,7 +582,7 @@ function evaluateMinimalIprHandoff(
   const matrixState = firstString(
     handoff,
     [["matrix", "state"], ["matrixState"], ["matrix"]],
-    "MATRIX_ACTIVE"
+    "MATRIX_LIMITED"
   ).toUpperCase();
 
   const semanticMemoryScope = firstString(
@@ -593,7 +593,7 @@ function evaluateMinimalIprHandoff(
       ["semanticMemoryScope"],
       ["semantic_memory_scope"]
     ],
-    "IPR_BOUND"
+    "RUNTIME_ONLY"
   ).toUpperCase();
 
   const handoffHash =
@@ -610,8 +610,7 @@ function evaluateMinimalIprHandoff(
     certificateId,
     certificateKind,
     certificateStatus,
-    certificateScope:
-      certificateScope.length > 0 ? certificateScope : [DEFAULT_ACCESS_SCOPE],
+    certificateScope,
     cardSerial: cardSerial || null,
     certificateHash: certificateHash || null,
     accessDecision,
@@ -625,6 +624,27 @@ function evaluateMinimalIprHandoff(
     source
   };
 }
+
+function hasCompleteJokerAuthority(profile: {
+  certificateStatus: string;
+  certificateScope: string[];
+  accessDecision: string;
+  accessScope: string;
+  identityBinding: string;
+  matrixState: string;
+  semanticMemoryScope: string;
+}): boolean {
+  return (
+    profile.certificateStatus === "ACTIVE" &&
+    profile.accessDecision === "ACCESS_GRANTED" &&
+    profile.accessScope === "JOKER_C2_ACCESS" &&
+    profile.identityBinding === "IPR_VERIFIED_BIOLOGICAL_SUBJECT" &&
+    profile.matrixState === "MATRIX_ACTIVE" &&
+    profile.semanticMemoryScope === "IPR_BOUND" &&
+    profile.certificateScope.includes("JOKER_C2_ACCESS")
+  );
+}
+
 
 async function createAuthenticatedSession(input: {
   req: NextRequest;
@@ -1069,6 +1089,8 @@ RETURNING human_ipr
   const touchedProfile =
     (await accountStore.touchLoginAsync(humanIpr)) || accountProfile;
 
+  const authorized = hasCompleteJokerAuthority(touchedProfile);
+
   const session = await createAuthenticatedSession({
     req,
     humanIpr,
@@ -1082,8 +1104,13 @@ RETURNING human_ipr
       mode: CANONICAL_BOOTSTRAP_MODE,
       accountId: touchedProfile.accountId,
       profileHash: touchedProfile.profileHash,
-      semanticMemoryScope: touchedProfile.semanticMemoryScope,
-      matrixState: touchedProfile.matrixState,
+      semanticMemoryScope: authorized
+        ? touchedProfile.semanticMemoryScope
+        : "RUNTIME_ONLY",
+      matrixState: authorized
+        ? touchedProfile.matrixState
+        : "MATRIX_LIMITED",
+      authorized,
       canonicalHumanAuthority: true,
       legalCertification: false
     }
@@ -1093,6 +1120,7 @@ RETURNING human_ipr
     {
       ok: true,
       authenticated: true,
+      authorized,
       mode: CANONICAL_BOOTSTRAP_MODE,
       bootstrapStatus: "CANONICAL_HUMAN_IPR_BOOTSTRAP_COMPLETED",
       humanIpr,
@@ -1100,18 +1128,29 @@ RETURNING human_ipr
       session: getPublicSessionFromStoredSession(session.storedSession),
       accountProfile: toPublicIprAccountProfile(touchedProfile),
       access: {
-        decision: "ACCESS_GRANTED",
-        scope: touchedProfile.accessScope,
+        decision: authorized
+          ? "ACCESS_GRANTED"
+          : "AUTHENTICATION_REQUIRED",
+        scope: authorized
+          ? touchedProfile.accessScope
+          : "NO_ACCESS_SCOPE",
         identityBinding: touchedProfile.identityBinding,
         source: "HBCE_CANONICAL_IPR_BOOTSTRAP"
       },
       memory: {
-        expectedScope: touchedProfile.semanticMemoryScope,
-        expectedAuthority: "SERVER_RUNTIME_VALIDATED",
+        expectedScope: authorized
+          ? touchedProfile.semanticMemoryScope
+          : "RUNTIME_ONLY",
+        expectedAuthority: authorized
+          ? "SERVER_RUNTIME_VALIDATED"
+          : "SESSION_RUNTIME_ONLY",
         persistenceMode: "DATABASE_PERSISTENT"
       },
       matrix: {
-        expectedState: touchedProfile.matrixState
+        expectedState: authorized
+          ? touchedProfile.matrixState
+          : "MATRIX_LIMITED",
+        active: authorized
       },
       bootstrap: {
         oneTime: true,
@@ -1206,6 +1245,8 @@ async function handleSetPassword(
   const touchedProfile =
     (await accountStore.touchLoginAsync(humanIpr)) || accountProfile;
 
+  const authorized = hasCompleteJokerAuthority(touchedProfile);
+
   const session = await createAuthenticatedSession({
     req,
     humanIpr,
@@ -1219,8 +1260,13 @@ async function handleSetPassword(
       mode: "SET_PASSWORD",
       accountId: touchedProfile.accountId,
       profileHash: touchedProfile.profileHash,
-      semanticMemoryScope: touchedProfile.semanticMemoryScope,
-      matrixState: touchedProfile.matrixState,
+      semanticMemoryScope: authorized
+        ? touchedProfile.semanticMemoryScope
+        : "RUNTIME_ONLY",
+      matrixState: authorized
+        ? touchedProfile.matrixState
+        : "MATRIX_LIMITED",
+      authorized,
       legalCertification: false
     }
   });
@@ -1229,24 +1275,36 @@ async function handleSetPassword(
     {
       ok: true,
       authenticated: true,
+      authorized,
       mode: "SET_PASSWORD",
       humanIpr,
       runtimeIpr: DEFAULT_RUNTIME_IPR,
       session: getPublicSessionFromStoredSession(session.storedSession),
       accountProfile: toPublicIprAccountProfile(touchedProfile),
       access: {
-        decision: "ACCESS_GRANTED",
-        scope: touchedProfile.accessScope,
+        decision: authorized
+          ? "ACCESS_GRANTED"
+          : "AUTHENTICATION_REQUIRED",
+        scope: authorized
+          ? touchedProfile.accessScope
+          : "NO_ACCESS_SCOPE",
         identityBinding: touchedProfile.identityBinding,
         source: "IPR_ACCOUNT_SESSION_CREATED"
       },
       memory: {
-        expectedScope: touchedProfile.semanticMemoryScope,
-        expectedAuthority: "SERVER_RUNTIME_VALIDATED",
+        expectedScope: authorized
+          ? touchedProfile.semanticMemoryScope
+          : "RUNTIME_ONLY",
+        expectedAuthority: authorized
+          ? "SERVER_RUNTIME_VALIDATED"
+          : "SESSION_RUNTIME_ONLY",
         persistenceMode: "DATABASE_PERSISTENT"
       },
       matrix: {
-        expectedState: touchedProfile.matrixState
+        expectedState: authorized
+          ? touchedProfile.matrixState
+          : "MATRIX_LIMITED",
+        active: authorized
       },
       stores: {
         auth: describeDefaultIprAuthStore(),
@@ -1310,6 +1368,8 @@ async function handleLogin(
   const touchedProfile =
     (await accountStore.touchLoginAsync(humanIpr)) || accountProfile;
 
+  const authorized = hasCompleteJokerAuthority(touchedProfile);
+
   const session = await createAuthenticatedSession({
     req,
     humanIpr,
@@ -1323,8 +1383,13 @@ async function handleLogin(
       mode: "LOGIN",
       accountId: touchedProfile.accountId,
       profileHash: touchedProfile.profileHash,
-      semanticMemoryScope: touchedProfile.semanticMemoryScope,
-      matrixState: touchedProfile.matrixState,
+      semanticMemoryScope: authorized
+        ? touchedProfile.semanticMemoryScope
+        : "RUNTIME_ONLY",
+      matrixState: authorized
+        ? touchedProfile.matrixState
+        : "MATRIX_LIMITED",
+      authorized,
       legalCertification: false
     }
   });
@@ -1333,24 +1398,36 @@ async function handleLogin(
     {
       ok: true,
       authenticated: true,
+      authorized,
       mode: "LOGIN",
       humanIpr,
       runtimeIpr: DEFAULT_RUNTIME_IPR,
       session: getPublicSessionFromStoredSession(session.storedSession),
       accountProfile: toPublicIprAccountProfile(touchedProfile),
       access: {
-        decision: "ACCESS_GRANTED",
-        scope: touchedProfile.accessScope,
+        decision: authorized
+          ? "ACCESS_GRANTED"
+          : "AUTHENTICATION_REQUIRED",
+        scope: authorized
+          ? touchedProfile.accessScope
+          : "NO_ACCESS_SCOPE",
         identityBinding: touchedProfile.identityBinding,
         source: "IPR_ACCOUNT_SESSION_CREATED"
       },
       memory: {
-        expectedScope: touchedProfile.semanticMemoryScope,
-        expectedAuthority: "SERVER_RUNTIME_VALIDATED",
+        expectedScope: authorized
+          ? touchedProfile.semanticMemoryScope
+          : "RUNTIME_ONLY",
+        expectedAuthority: authorized
+          ? "SERVER_RUNTIME_VALIDATED"
+          : "SESSION_RUNTIME_ONLY",
         persistenceMode: "DATABASE_PERSISTENT"
       },
       matrix: {
-        expectedState: touchedProfile.matrixState
+        expectedState: authorized
+          ? touchedProfile.matrixState
+          : "MATRIX_LIMITED",
+        active: authorized
       },
       stores: {
         auth: describeDefaultIprAuthStore(),

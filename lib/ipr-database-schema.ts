@@ -356,16 +356,16 @@ CREATE TABLE IF NOT EXISTS ipr_account_profiles (
   subject_kind TEXT NOT NULL DEFAULT 'BIOLOGICAL_SUBJECT',
   certificate_id TEXT NOT NULL,
   certificate_kind TEXT NOT NULL DEFAULT 'CERTIFICATE_09_OPERATIONAL',
-  certificate_status TEXT NOT NULL DEFAULT 'ACTIVE',
+  certificate_status TEXT NOT NULL DEFAULT 'UNKNOWN',
   certificate_scope JSONB NOT NULL DEFAULT '[]'::jsonb,
   card_serial TEXT,
   certificate_hash TEXT,
-  access_decision TEXT NOT NULL DEFAULT 'ACCESS_GRANTED',
-  access_scope TEXT NOT NULL DEFAULT 'JOKER_C2_ACCESS',
-  identity_binding TEXT NOT NULL DEFAULT 'IPR_VERIFIED_BIOLOGICAL_SUBJECT',
-  matrix_state TEXT NOT NULL DEFAULT 'MATRIX_ACTIVE',
-  semantic_memory_scope TEXT NOT NULL DEFAULT 'IPR_BOUND',
-  source TEXT NOT NULL DEFAULT 'HBCE_IPR_HANDOFF',
+  access_decision TEXT NOT NULL DEFAULT 'AUTHENTICATION_REQUIRED',
+  access_scope TEXT NOT NULL DEFAULT 'NO_ACCESS_SCOPE',
+  identity_binding TEXT NOT NULL DEFAULT 'NO_AUTHENTICATED_IPR_SESSION',
+  matrix_state TEXT NOT NULL DEFAULT 'MATRIX_LIMITED',
+  semantic_memory_scope TEXT NOT NULL DEFAULT 'RUNTIME_ONLY',
+  source TEXT NOT NULL DEFAULT 'UNVERIFIED_PROFILE_INPUT',
   handoff_hash TEXT,
   profile_hash TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -387,6 +387,17 @@ ALTER TABLE IF EXISTS ipr_account_profiles
   `
 ALTER TABLE IF EXISTS ipr_account_profiles
   ADD COLUMN IF NOT EXISTS workspace_id TEXT;
+`.trim(),
+
+  `
+ALTER TABLE IF EXISTS ipr_account_profiles
+  ALTER COLUMN certificate_status SET DEFAULT 'UNKNOWN',
+  ALTER COLUMN access_decision SET DEFAULT 'AUTHENTICATION_REQUIRED',
+  ALTER COLUMN access_scope SET DEFAULT 'NO_ACCESS_SCOPE',
+  ALTER COLUMN identity_binding SET DEFAULT 'NO_AUTHENTICATED_IPR_SESSION',
+  ALTER COLUMN matrix_state SET DEFAULT 'MATRIX_LIMITED',
+  ALTER COLUMN semantic_memory_scope SET DEFAULT 'RUNTIME_ONLY',
+  ALTER COLUMN source SET DEFAULT 'UNVERIFIED_PROFILE_INPUT';
 `.trim(),
 
 

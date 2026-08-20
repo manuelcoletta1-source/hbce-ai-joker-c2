@@ -516,11 +516,9 @@ function normalizeOptionalId(value: string | null | undefined): string | null {
 }
 
 function normalizeCertificateScope(value: string[] | undefined): string[] {
-  const scope = Array.isArray(value)
+  return Array.isArray(value)
     ? value.map((item) => item.trim()).filter(Boolean)
     : [];
-
-  return scope.length > 0 ? scope : [DEFAULT_ACCESS_SCOPE];
 }
 
 function assertDatabaseConfigured(): void {
@@ -542,11 +540,11 @@ function getEnvString(name: string, fallback: string): string {
 function isCanonicalProfileRecoveryEnabled(): boolean {
   const raw = process.env.IPR_ACCOUNT_CANONICAL_RECOVERY_ENABLED;
 
-  if (typeof raw === "string" && raw.trim()) {
-    return raw.trim().toLowerCase() !== "false";
+  if (typeof raw !== "string" || !raw.trim()) {
+    return false;
   }
 
-  return true;
+  return raw.trim().toLowerCase() === "true";
 }
 
 function getCanonicalRecoveryHumanIpr(): string {
@@ -655,17 +653,22 @@ function buildProfile(input: IprAccountProfileUpsertInput): IprAccountProfile {
     subjectKind: input.subjectKind || "BIOLOGICAL_SUBJECT",
     certificateId: input.certificateId,
     certificateKind: input.certificateKind || DEFAULT_CERTIFICATE_KIND,
-    certificateStatus: input.certificateStatus || "ACTIVE",
+    certificateStatus: input.certificateStatus || "UNKNOWN",
     certificateScope,
     cardSerial: input.cardSerial || null,
     certificateHash: input.certificateHash || null,
-    accessDecision: input.accessDecision || "ACCESS_GRANTED",
-    accessScope: input.accessScope || DEFAULT_ACCESS_SCOPE,
+    accessDecision:
+      input.accessDecision || "AUTHENTICATION_REQUIRED",
+    accessScope:
+      input.accessScope || "NO_ACCESS_SCOPE",
     identityBinding:
-      input.identityBinding || "IPR_VERIFIED_BIOLOGICAL_SUBJECT",
-    matrixState: input.matrixState || "MATRIX_ACTIVE",
-    semanticMemoryScope: input.semanticMemoryScope || "IPR_BOUND",
-    source: input.source || "HBCE_IPR_HANDOFF",
+      input.identityBinding || "NO_AUTHENTICATED_IPR_SESSION",
+    matrixState:
+      input.matrixState || "MATRIX_LIMITED",
+    semanticMemoryScope:
+      input.semanticMemoryScope || "RUNTIME_ONLY",
+    source:
+      input.source || "UNVERIFIED_PROFILE_INPUT",
     handoffHash: input.handoffHash || null,
     profilePayload
   };
@@ -1070,18 +1073,12 @@ class DatabasePersistentIprAccountStore implements IprAccountStoreAdapter {
     return this.processFallback.upsertProfile(recoveryInput);
   }
 
-  private getProfileFromProcessOrRecovery(humanIpr: string): IprAccountProfile | null {
-    const existing = this.processFallback.getProfile(humanIpr);
-
-    if (existing) {
-      return existing;
-    }
-
-    return this.recoverCanonicalProfile(humanIpr);
+  private getProfileFromProcessFallback(humanIpr: string): IprAccountProfile | null {
+    return this.processFallback.getProfile(humanIpr);
   }
 
   getProfile(humanIpr: string): IprAccountProfile | null {
-    return this.getProfileFromProcessOrRecovery(humanIpr);
+    return this.getProfileFromProcessFallback(humanIpr);
   }
 
   getProfileByHumanIpr(humanIpr: string): IprAccountProfile | null {
@@ -1089,51 +1086,15 @@ class DatabasePersistentIprAccountStore implements IprAccountStoreAdapter {
   }
 
   getProfileByAccountId(accountId: string): IprAccountProfile | null {
-    const fromProcess = this.processFallback.getProfileByAccountId(accountId);
-
-    if (fromProcess) {
-      return fromProcess;
-    }
-
-    const recovery = this.recoverCanonicalProfile(getCanonicalRecoveryHumanIpr());
-
-    if (recovery?.accountId === normalizeLookupValue(accountId)) {
-      return recovery;
-    }
-
-    return null;
+    return this.processFallback.getProfileByAccountId(accountId);
   }
 
   getProfileByCertificateId(certificateId: string): IprAccountProfile | null {
-    const fromProcess = this.processFallback.getProfileByCertificateId(certificateId);
-
-    if (fromProcess) {
-      return fromProcess;
-    }
-
-    const recovery = this.recoverCanonicalProfile(getCanonicalRecoveryHumanIpr());
-
-    if (recovery?.certificateId === normalizeLookupValue(certificateId)) {
-      return recovery;
-    }
-
-    return null;
+    return this.processFallback.getProfileByCertificateId(certificateId);
   }
 
   getProfileByCardSerial(cardSerial: string): IprAccountProfile | null {
-    const fromProcess = this.processFallback.getProfileByCardSerial(cardSerial);
-
-    if (fromProcess) {
-      return fromProcess;
-    }
-
-    const recovery = this.recoverCanonicalProfile(getCanonicalRecoveryHumanIpr());
-
-    if (recovery?.cardSerial === normalizeLookupValue(cardSerial)) {
-      return recovery;
-    }
-
-    return null;
+    return this.processFallback.getProfileByCardSerial(cardSerial);
   }
 
   upsertProfile(input: IprAccountProfileUpsertInput): IprAccountProfile {
@@ -1141,7 +1102,7 @@ class DatabasePersistentIprAccountStore implements IprAccountStoreAdapter {
   }
 
   touchLogin(humanIpr: string): IprAccountProfile | null {
-    const existing = this.getProfileFromProcessOrRecovery(humanIpr);
+    const existing = this.getProfileFromProcessFallback(humanIpr);
 
     if (!existing) {
       return null;
@@ -1301,7 +1262,7 @@ LIMIT 1
       return profile;
     }
 
-    return this.getProfileFromProcessOrRecovery(humanIpr);
+    return this.getProfileFromProcessFallback(humanIpr);
   }
 
   async getProfileByHumanIprAsync(

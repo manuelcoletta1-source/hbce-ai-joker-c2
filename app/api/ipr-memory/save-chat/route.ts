@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { resolveIprAccountSessionFromRequestAsync } from "@/lib/ipr-auth-session-resolver";
 
 
 import {
@@ -1900,36 +1901,31 @@ function resolveContext(request: NextRequest, input: SaveChatRouteInput): SaveCh
   const humanIpr = coalesceString(
     input.humanIpr,
     readHeaderString(request, "x-hbce-human-ipr"),
-    readHeaderString(request, "x-ipr-human"),
-    strictIdentity ? null : HBCE_SELF_PILOT_HUMAN_IPR
+    readHeaderString(request, "x-ipr-human")
   );
 
 
   const tenantId = coalesceString(
     input.tenantId,
-    readHeaderString(request, "x-hbce-tenant-id"),
-    strictIdentity ? null : HBCE_SELF_PILOT_TENANT_ID
+    readHeaderString(request, "x-hbce-tenant-id")
   );
 
 
   const workspaceId = coalesceString(
     input.workspaceId,
-    readHeaderString(request, "x-hbce-workspace-id"),
-    strictIdentity ? null : HBCE_SELF_PILOT_WORKSPACE_ID
+    readHeaderString(request, "x-hbce-workspace-id")
   );
 
 
   const subscriptionId = coalesceString(
     input.subscriptionId,
-    readHeaderString(request, "x-hbce-subscription-id"),
-    strictIdentity ? null : HBCE_SELF_PILOT_SUBSCRIPTION_ID
+    readHeaderString(request, "x-hbce-subscription-id")
   );
 
 
   const accountId = coalesceString(
     input.accountId,
-    readHeaderString(request, "x-hbce-account-id"),
-    strictIdentity ? null : HBCE_SELF_PILOT_ACCOUNT_ID
+    readHeaderString(request, "x-hbce-account-id")
   );
 
 
@@ -2163,9 +2159,164 @@ async function persistProvidedMessages(context: SaveChatRouteContext) {
 }
 
 
+async function resolveServerAuthorizedSubscriptionId(
+  tenantId: string,
+  workspaceId: string
+): Promise<{ ok: boolean; subscriptionId: string | null }> {
+  try {
+    const result = await queryHbceDatabase<Record<string, unknown>>(
+      `
+SELECT subscription_id
+FROM subscriptions
+WHERE tenant_id = $1
+  AND workspace_id = $2
+  AND status = 'ACTIVE'
+ORDER BY
+  CASE WHEN tier = 'IPR' THEN 0 ELSE 1 END,
+  created_at DESC NULLS LAST
+LIMIT 1;
+`.trim(),
+      [tenantId, workspaceId]
+    );
+
+    if (!result.ok) {
+      return { ok: false, subscriptionId: null };
+    }
+
+    const value = result.rows[0]?.subscription_id;
+
+    return {
+      ok: true,
+      subscriptionId:
+        typeof value === "string" && value.trim()
+          ? value.trim()
+          : null
+    };
+  } catch {
+    return { ok: false, subscriptionId: null };
+  }
+}
+
+
 async function buildSavePayload(request: NextRequest) {
   const input = await readInputFromRequest(request);
-  const context = resolveContext(request, input);
+  const requestedContext = resolveContext(request, input);
+
+  const accountSessionResolution =
+    await resolveIprAccountSessionFromRequestAsync(request);
+
+  if (
+    !accountSessionResolution.authenticated ||
+    accountSessionResolution.access.decision !== "ACCESS_GRANTED" ||
+    !accountSessionResolution.accountProfile
+  ) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "IPR_MEMORY_SAVE_AUTHENTICATION_REQUIRED",
+        error:
+          "A canonical server-proven IPR account session is required before persistent memory save.",
+        legalCertification: false
+      },
+      { status: 401 }
+    );
+  }
+
+  const accountProfile = accountSessionResolution.accountProfile;
+
+  const authorizedHumanIpr = coalesceString(accountProfile.humanIpr);
+  const authorizedTenantId = coalesceString(accountProfile.tenantId);
+  const authorizedWorkspaceId = coalesceString(accountProfile.workspaceId);
+  const authorizedAccountId = coalesceString(accountProfile.accountId);
+
+  if (
+    !authorizedHumanIpr ||
+    !authorizedTenantId ||
+    !authorizedWorkspaceId ||
+    !authorizedAccountId
+  ) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "IPR_MEMORY_SAVE_AUTHORIZED_SCOPE_REQUIRED",
+        error:
+          "The authenticated server profile does not provide a complete identity and workspace authority scope.",
+        legalCertification: false
+      },
+      { status: 403 }
+    );
+  }
+
+  const identityScopeMismatch =
+    (Boolean(requestedContext.humanIpr) &&
+      requestedContext.humanIpr !== authorizedHumanIpr) ||
+    (Boolean(requestedContext.tenantId) &&
+      requestedContext.tenantId !== authorizedTenantId) ||
+    (Boolean(requestedContext.workspaceId) &&
+      requestedContext.workspaceId !== authorizedWorkspaceId) ||
+    (Boolean(requestedContext.accountId) &&
+      requestedContext.accountId !== authorizedAccountId);
+
+  if (identityScopeMismatch) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "IPR_MEMORY_SAVE_REQUESTED_SCOPE_NOT_AUTHORIZED",
+        error:
+          "Requested identity, tenant, workspace or account does not match the authenticated server-side authority scope.",
+        legalCertification: false
+      },
+      { status: 403 }
+    );
+  }
+
+  const subscriptionResolution =
+    await resolveServerAuthorizedSubscriptionId(
+      authorizedTenantId,
+      authorizedWorkspaceId
+    );
+
+  if (!subscriptionResolution.ok) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "IPR_MEMORY_SAVE_SUBSCRIPTION_AUTHORITY_UNAVAILABLE",
+        error:
+          "The server could not verify the active subscription authority.",
+        legalCertification: false
+      },
+      { status: 503 }
+    );
+  }
+
+  const authorizedSubscriptionId =
+    subscriptionResolution.subscriptionId;
+
+  if (
+    requestedContext.subscriptionId &&
+    requestedContext.subscriptionId !== authorizedSubscriptionId
+  ) {
+    return jsonResponse(
+      {
+        ok: false,
+        status: "IPR_MEMORY_SAVE_SUBSCRIPTION_NOT_AUTHORIZED",
+        error:
+          "Requested subscription does not match the server-authorized active subscription.",
+        legalCertification: false
+      },
+      { status: 403 }
+    );
+  }
+
+  const context: SaveChatRouteContext = {
+    ...requestedContext,
+    humanIpr: authorizedHumanIpr,
+    tenantId: authorizedTenantId,
+    workspaceId: authorizedWorkspaceId,
+    accountId: authorizedAccountId,
+    subscriptionId: authorizedSubscriptionId,
+    strictIdentity: true
+  };
 
 
   if (!context.confirmSaveToIpr) {
