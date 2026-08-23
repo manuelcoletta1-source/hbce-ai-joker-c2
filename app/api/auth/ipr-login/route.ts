@@ -626,6 +626,8 @@ function evaluateMinimalIprHandoff(
 }
 
 function hasCompleteJokerAuthority(profile: {
+  tenantId: string | null;
+  workspaceId: string | null;
   certificateStatus: string;
   certificateScope: string[];
   accessDecision: string;
@@ -634,7 +636,19 @@ function hasCompleteJokerAuthority(profile: {
   matrixState: string;
   semanticMemoryScope: string;
 }): boolean {
+  const tenantId =
+    typeof profile.tenantId === "string"
+      ? profile.tenantId.trim()
+      : "";
+
+  const workspaceId =
+    typeof profile.workspaceId === "string"
+      ? profile.workspaceId.trim()
+      : "";
+
   return (
+    Boolean(tenantId) &&
+    Boolean(workspaceId) &&
     profile.certificateStatus === "ACTIVE" &&
     profile.accessDecision === "ACCESS_GRANTED" &&
     profile.accessScope === "JOKER_C2_ACCESS" &&
@@ -816,6 +830,14 @@ async function handleCanonicalBootstrap(
   const workspaceId =
     readBootstrapEnv("HBCE_IPR_CANONICAL_BOOTSTRAP_WORKSPACE_ID") ||
     null;
+
+  if (!tenantId || !workspaceId) {
+    return buildErrorResponse(
+      503,
+      "IPR_CANONICAL_BOOTSTRAP_SCOPE_NOT_CONFIGURED",
+      "Canonical bootstrap requires explicit server-side tenant and workspace identifiers."
+    );
+  }
 
   const accountId =
     readBootstrapEnv("HBCE_IPR_CANONICAL_BOOTSTRAP_ACCOUNT_ID") ||

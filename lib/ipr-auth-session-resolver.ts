@@ -101,6 +101,8 @@ export type IprAccountProfileLookupDiagnostic = {
 export type IprAccountSessionResolution = {
   ok: true;
   authenticated: boolean;
+  sessionAuthenticated: boolean;
+  runtimeAuthorized: boolean;
   reason: IprAccountSessionResolutionReason;
   mode: IprAccountSessionResolutionMode;
   cookieName: string;
@@ -611,8 +613,20 @@ function buildRuntimeOnlyHandoff(reason: string): IprBoundMemoryHandoffEvaluatio
 function buildRuntimeHandoffFromAccountProfile(
   profile: IprAccountProfile
 ): IprBoundMemoryHandoffEvaluation {
+  const tenantId =
+    typeof profile.tenantId === "string"
+      ? profile.tenantId.trim()
+      : "";
+
+  const workspaceId =
+    typeof profile.workspaceId === "string"
+      ? profile.workspaceId.trim()
+      : "";
+
   return {
     isValid:
+      Boolean(tenantId) &&
+      Boolean(workspaceId) &&
       profile.certificateStatus === "ACTIVE" &&
       profile.accessDecision === "ACCESS_GRANTED" &&
       profile.accessScope === "JOKER_C2_ACCESS" &&
@@ -658,6 +672,9 @@ function buildUnauthenticatedResolution(input: {
   return {
     ok: true,
     authenticated: false,
+    sessionAuthenticated:
+      input.reason === "IPR_ACCOUNT_PROFILE_NOT_FOUND" && Boolean(input.session),
+    runtimeAuthorized: false,
     reason: input.reason,
     mode,
     cookieName: IPR_AUTH_COOKIE_NAME,
@@ -720,6 +737,8 @@ function buildAuthenticatedResolution(input: {
   return {
     ok: true,
     authenticated: runtimeHandoff.isValid,
+    sessionAuthenticated: true,
+    runtimeAuthorized: runtimeHandoff.isValid,
     reason: "SESSION_ACTIVE",
     mode: input.mode,
     cookieName: IPR_AUTH_COOKIE_NAME,

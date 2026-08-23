@@ -71,14 +71,14 @@ type SessionHealthPayload = {
 
 type SessionReadyPayload = {
   ok: true;
-  status: "HBCE_IPR_SESSION_READY";
+  status: "HBCE_IPR_SESSION_CONTRACT_CREATED";
   product: typeof PRODUCT_NAME;
   apiVersion: typeof API_VERSION;
   routeRevision: typeof ROUTE_REVISION;
   session: {
     sessionId: string;
-    sessionStatus: "ACCESS_GRANTED";
-    identityBinding: "IPR_OPERATIONAL_IDENTITY_BOUND";
+    sessionStatus: "AUTHORIZATION_NOT_EVALUATED";
+    identityBinding: "UNVERIFIED_CLIENT_CLAIM";
     humanIpr: string;
     runtimeIpr: string;
     tenant: string;
@@ -92,10 +92,10 @@ type SessionReadyPayload = {
   };
   runtimeContext: {
     runtime: typeof RUNTIME_NAME;
-    memory: "DATABASE_PERSISTENT";
-    memoryScope: "IPR_BOUND";
-    policy: "ALLOW";
-    modelRouting: "JOKER_C2_GOVERNED_RUNTIME";
+    memory: "RUNTIME_ONLY";
+    memoryScope: "RUNTIME_ONLY";
+    policy: "NOT_EVALUATED";
+    modelRouting: "NOT_AUTHORIZED_BY_THIS_ROUTE";
     sourceIntelligence: "SOURCE_INTELLIGENCE_v0_3_AVAILABLE";
   };
   next: {
@@ -338,14 +338,14 @@ export async function POST(request: NextRequest) {
 
   const payload: SessionReadyPayload = {
     ok: true,
-    status: "HBCE_IPR_SESSION_READY",
+    status: "HBCE_IPR_SESSION_CONTRACT_CREATED",
     product: PRODUCT_NAME,
     apiVersion: API_VERSION,
     routeRevision: ROUTE_REVISION,
     session: {
       sessionId,
-      sessionStatus: "ACCESS_GRANTED",
-      identityBinding: "IPR_OPERATIONAL_IDENTITY_BOUND",
+      sessionStatus: "AUTHORIZATION_NOT_EVALUATED",
+      identityBinding: "UNVERIFIED_CLIENT_CLAIM",
       humanIpr,
       runtimeIpr,
       tenant,
@@ -359,10 +359,10 @@ export async function POST(request: NextRequest) {
     },
     runtimeContext: {
       runtime: RUNTIME_NAME,
-      memory: "DATABASE_PERSISTENT",
-      memoryScope: "IPR_BOUND",
-      policy: "ALLOW",
-      modelRouting: "JOKER_C2_GOVERNED_RUNTIME",
+      memory: "RUNTIME_ONLY",
+      memoryScope: "RUNTIME_ONLY",
+      policy: "NOT_EVALUATED",
+      modelRouting: "NOT_AUTHORIZED_BY_THIS_ROUTE",
       sourceIntelligence: "SOURCE_INTELLIGENCE_v0_3_AVAILABLE"
     },
     next: {
@@ -376,7 +376,7 @@ export async function POST(request: NextRequest) {
       utcCreatedAt: now.toISOString(),
       note: "Dual-Time Seal is represented by UTC timestamp plus declared Europe/Rome operational locale."
     },
-    policy: buildConstraintSnapshot("ALLOW"),
+    policy: buildConstraintSnapshot("FAIL_CLOSED"),
     trace: {
       evtCreated: false,
       opcCreated: false,

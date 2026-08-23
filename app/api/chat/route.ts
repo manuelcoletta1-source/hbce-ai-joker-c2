@@ -224,7 +224,7 @@ function buildServerProvenChatHandoff(
   const profile = resolution.accountProfile;
 
   if (
-    !resolution.authenticated ||
+    !resolution.runtimeAuthorized ||
     resolution.access.decision !== "ACCESS_GRANTED" ||
     !profile
   ) {
@@ -2236,7 +2236,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     await resolveIprAccountSessionFromRequestAsync(request);
 
   if (
-    !accountSessionResolution.authenticated ||
+    !accountSessionResolution.runtimeAuthorized ||
     accountSessionResolution.access.decision !== "ACCESS_GRANTED" ||
     !accountSessionResolution.accountProfile
   ) {
@@ -23548,48 +23548,18 @@ function resolveCyberneticDocumentRecallRuntimeScope(args: {
     maxDocumentCount: Math.max(bodyMaxDocumentCount || 0, requestedDocumentCount, 1),
     promptMaxChars: bodyPromptMaxChars || (requestedDocumentCount > 1 ? 18000 : 7000),
     allowedDocFamilies,
-    requireVerifiedIpr: firstBooleanFromSources([args.body], [
-      "documentRecall.requireVerifiedIpr",
-      "documentRecall.require_verified_ipr",
-      "cyberneticDocumentRecall.requireVerifiedIpr",
-      "cyberneticDocumentRecall.require_verified_ipr"
-    ], true),
-    requireTenantScope: firstBooleanFromSources([args.body], [
-      "documentRecall.requireTenantScope",
-      "documentRecall.require_tenant_scope",
-      "cyberneticDocumentRecall.requireTenantScope",
-      "cyberneticDocumentRecall.require_tenant_scope"
-    ], true),
-    requireWorkspaceScope: firstBooleanFromSources([args.body], [
-      "documentRecall.requireWorkspaceScope",
-      "documentRecall.require_workspace_scope",
-      "cyberneticDocumentRecall.requireWorkspaceScope",
-      "cyberneticDocumentRecall.require_workspace_scope"
-    ], true),
+    requireVerifiedIpr: true,
+    requireTenantScope: true,
+    requireWorkspaceScope: true,
     requireProjectScope: firstBooleanFromSources([args.body], [
       "documentRecall.requireProjectScope",
       "documentRecall.require_project_scope",
       "cyberneticDocumentRecall.requireProjectScope",
       "cyberneticDocumentRecall.require_project_scope"
     ], false),
-    allowCrossTenantRecall: firstBooleanFromSources([args.body], [
-      "documentRecall.allowCrossTenantRecall",
-      "documentRecall.allow_cross_tenant_recall",
-      "cyberneticDocumentRecall.allowCrossTenantRecall",
-      "cyberneticDocumentRecall.allow_cross_tenant_recall"
-    ], false),
-    allowCrossWorkspaceRecall: firstBooleanFromSources([args.body], [
-      "documentRecall.allowCrossWorkspaceRecall",
-      "documentRecall.allow_cross_workspace_recall",
-      "cyberneticDocumentRecall.allowCrossWorkspaceRecall",
-      "cyberneticDocumentRecall.allow_cross_workspace_recall"
-    ], false),
-    allowCrossProjectRecall: firstBooleanFromSources([args.body], [
-      "documentRecall.allowCrossProjectRecall",
-      "documentRecall.allow_cross_project_recall",
-      "cyberneticDocumentRecall.allowCrossProjectRecall",
-      "cyberneticDocumentRecall.allow_cross_project_recall"
-    ], false),
+    allowCrossTenantRecall: false,
+    allowCrossWorkspaceRecall: false,
+    allowCrossProjectRecall: false,
     failClosedOnMissingRequestedIds: firstBooleanFromSources([args.body], [
       "documentRecall.failClosedOnMissingRequestedIds",
       "documentRecall.fail_closed_on_missing_requested_ids",

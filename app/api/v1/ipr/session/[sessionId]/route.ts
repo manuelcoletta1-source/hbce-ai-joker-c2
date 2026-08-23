@@ -34,14 +34,14 @@ type BoundarySnapshot = {
 };
 
 type RuntimeContextSnapshot = {
-  access: "ACCESS_GRANTED";
+  access: "AUTHORIZATION_NOT_EVALUATED";
   humanIpr: string;
   runtimeIpr: string;
   tenant: string;
   workspace: string;
-  memory: "DATABASE_PERSISTENT";
-  memoryScope: "IPR_BOUND";
-  policy: "ALLOW";
+  memory: "RUNTIME_ONLY";
+  memoryScope: "RUNTIME_ONLY";
+  policy: "NOT_EVALUATED";
 };
 
 type SessionLookupResponse = {
@@ -70,9 +70,9 @@ type SessionLookupResponse = {
     sessionStatus:
       | "SESSION_LOOKUP_CONTRACT_ONLY"
       | "SESSION_ID_REQUIRED";
-    access: "ACCESS_GRANTED" | "ACCESS_NOT_EVALUATED";
+    access: "AUTHORIZATION_NOT_EVALUATED" | "ACCESS_NOT_EVALUATED";
     identityBinding:
-      | "IPR_OPERATIONAL_IDENTITY_BOUND"
+      | "UNVERIFIED_CLIENT_CLAIM"
       | "NOT_EVALUATED_BY_THIS_ROUTE";
     ttlSeconds: number | null;
     ttlEvaluatedByThisRoute: false;
@@ -133,14 +133,14 @@ function buildBoundary(): BoundarySnapshot {
 
 function buildRuntimeContext(): RuntimeContextSnapshot {
   return {
-    access: "ACCESS_GRANTED",
+    access: "AUTHORIZATION_NOT_EVALUATED",
     humanIpr: HBCE_SELF_PILOT_HUMAN_IPR,
     runtimeIpr: HBCE_RUNTIME_IPR,
     tenant: HBCE_TENANT,
     workspace: HBCE_WORKSPACE,
-    memory: "DATABASE_PERSISTENT",
-    memoryScope: "IPR_BOUND",
-    policy: "ALLOW"
+    memory: "RUNTIME_ONLY",
+    memoryScope: "RUNTIME_ONLY",
+    policy: "NOT_EVALUATED"
   };
 }
 
@@ -173,9 +173,9 @@ function buildResponse(sessionId: string | null): SessionLookupResponse {
       sessionStatus: hasSessionId
         ? "SESSION_LOOKUP_CONTRACT_ONLY"
         : "SESSION_ID_REQUIRED",
-      access: hasSessionId ? "ACCESS_GRANTED" : "ACCESS_NOT_EVALUATED",
+      access: hasSessionId ? "AUTHORIZATION_NOT_EVALUATED" : "ACCESS_NOT_EVALUATED",
       identityBinding: hasSessionId
-        ? "IPR_OPERATIONAL_IDENTITY_BOUND"
+        ? "UNVERIFIED_CLIENT_CLAIM"
         : "NOT_EVALUATED_BY_THIS_ROUTE",
       ttlSeconds: hasSessionId ? 900 : null,
       ttlEvaluatedByThisRoute: false,

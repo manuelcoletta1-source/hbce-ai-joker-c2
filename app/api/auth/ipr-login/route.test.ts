@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 
 import { getProcessIprAuthStore } from "@/lib/ipr-session-store";
@@ -36,11 +36,31 @@ const originalBootstrapSecret =
 const CERTIFICATE_ID_ENV =
   "HBCE_IPR_CANONICAL_BOOTSTRAP_CERTIFICATE_ID";
 
+const TENANT_ID_ENV =
+  "HBCE_IPR_CANONICAL_BOOTSTRAP_TENANT_ID";
+
+const WORKSPACE_ID_ENV =
+  "HBCE_IPR_CANONICAL_BOOTSTRAP_WORKSPACE_ID";
+
 const originalCanonicalHumanIpr =
   process.env[CANONICAL_HUMAN_IPR_ENV];
 
 const originalCertificateId =
   process.env[CERTIFICATE_ID_ENV];
+
+const originalTenantId =
+  process.env[TENANT_ID_ENV];
+
+const originalWorkspaceId =
+  process.env[WORKSPACE_ID_ENV];
+
+beforeEach(() => {
+  process.env[TENANT_ID_ENV] =
+    "HBCE-TENANT-TEST";
+
+  process.env[WORKSPACE_ID_ENV] =
+    "HBCE-WORKSPACE-TEST";
+});
 
 afterEach(() => {
   if (typeof originalBootstrapEnabled === "string") {
@@ -69,6 +89,20 @@ afterEach(() => {
       originalCertificateId;
   } else {
     delete process.env[CERTIFICATE_ID_ENV];
+  }
+
+  if (typeof originalTenantId === "string") {
+    process.env[TENANT_ID_ENV] =
+      originalTenantId;
+  } else {
+    delete process.env[TENANT_ID_ENV];
+  }
+
+  if (typeof originalWorkspaceId === "string") {
+    process.env[WORKSPACE_ID_ENV] =
+      originalWorkspaceId;
+  } else {
+    delete process.env[WORKSPACE_ID_ENV];
   }
 
   if (typeof originalAuthStoreKind === "string") {

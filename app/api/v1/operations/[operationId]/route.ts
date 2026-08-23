@@ -12,10 +12,10 @@ const HBCE_RUNTIME = {
   humanIpr: "IPR-88505FE91013DCFE97C56ED1",
   tenant: "HBCE-TENANT-SELF-PILOT",
   workspace: "HBCE-WORKSPACE-RND",
-  access: "ACCESS_GRANTED",
-  policy: "ALLOW",
-  memory: "DATABASE_PERSISTENT",
-  memoryScope: "IPR_BOUND"
+  access: "AUTHORIZATION_NOT_EVALUATED",
+  policy: "NOT_EVALUATED",
+  memory: "RUNTIME_ONLY",
+  memoryScope: "RUNTIME_ONLY"
 } as const;
 
 const HBCE_BOUNDARY = {
@@ -66,8 +66,12 @@ type OperationLookupResponse = {
   };
   identifiers: typeof HBCE_RUNTIME;
   technicalReceipt: {
-    lookupEvt: string;
-    lookupOpc: string;
+    lookupReference: string;
+    lookupEvt: null;
+    lookupOpc: null;
+    evtCreated: false;
+    opcCreated: false;
+    receiptScope: "CONTRACT_RESPONSE_RECEIPT_ONLY";
     lookupHash: string;
     lookupHashMode: "SHA256_ON_OPERATION_LOOKUP_PAYLOAD";
     createdAt: string;
@@ -133,8 +137,12 @@ function buildLookupReceipt(operationId: string) {
   const suffix = shortHash(`${operationId}:${createdAt}:${lookupHash}`);
 
   return {
-    lookupEvt: `EVT-V1-OPERATION-LOOKUP-${suffix}`,
-    lookupOpc: `OPC-V1-OPERATION-LOOKUP-${suffix}`,
+    lookupReference: `REF-V1-OPERATION-LOOKUP-${suffix}`,
+    lookupEvt: null,
+    lookupOpc: null,
+    evtCreated: false as const,
+    opcCreated: false as const,
+    receiptScope: "CONTRACT_RESPONSE_RECEIPT_ONLY" as const,
     lookupHash,
     lookupHashMode: "SHA256_ON_OPERATION_LOOKUP_PAYLOAD" as const,
     createdAt,
@@ -173,7 +181,6 @@ function buildOperationLookupResponse(
       expectedProducerEndpoint: "/api/v1/operations",
       expectedRuntimeExecutionEndpoints: [
         "/api/v1/chat",
-        "/api/v1/operations",
         "/api/chat",
         "/api/sources/summarize"
       ]
@@ -188,7 +195,7 @@ function buildOperationLookupResponse(
       usage: [
         "Poll an operationId returned by POST /api/v1/operations.",
         "Expose a stable B2B/B2G API surface before enabling persistent operation records.",
-        "Preserve the legal and technical boundary of OPC as a technical proof receipt only."
+        "Preserve the boundary that this contract lookup creates no EVT or OPC proof receipt."
       ],
       responseSemantics: [
         "A valid operationId format returns a lookup receipt, not a legal certification.",

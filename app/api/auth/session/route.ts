@@ -185,6 +185,8 @@ function buildMatrixFrame(input?: {
 
 
 function hasCompleteJokerAuthority(profile: {
+  tenantId: string | null;
+  workspaceId: string | null;
   certificateStatus: string;
   certificateScope: string[];
   accessDecision: string;
@@ -193,7 +195,19 @@ function hasCompleteJokerAuthority(profile: {
   matrixState: string;
   semanticMemoryScope: string;
 }): boolean {
+  const tenantId =
+    typeof profile.tenantId === "string"
+      ? profile.tenantId.trim()
+      : "";
+
+  const workspaceId =
+    typeof profile.workspaceId === "string"
+      ? profile.workspaceId.trim()
+      : "";
+
   return (
+    Boolean(tenantId) &&
+    Boolean(workspaceId) &&
     profile.certificateStatus === "ACTIVE" &&
     profile.accessDecision === "ACCESS_GRANTED" &&
     profile.accessScope === "JOKER_C2_ACCESS" &&
@@ -224,6 +238,7 @@ function buildAccessFrame(input: {
 function buildBaseResponse(input: {
   ok: boolean;
   authenticated: boolean;
+  sessionAuthenticated: boolean;
   reason: SessionRouteReason;
   detail?: string;
 }) {
@@ -231,6 +246,7 @@ function buildBaseResponse(input: {
     routeRevision: AUTH_SESSION_ROUTE_REVISION,
     ok: input.ok,
     authenticated: input.authenticated,
+    sessionAuthenticated: input.sessionAuthenticated,
     reason: input.reason,
     detail: input.detail,
     cookieName: IPR_AUTH_COOKIE_NAME,
@@ -254,6 +270,7 @@ function buildUnauthenticatedResponse(
       ...buildBaseResponse({
         ok: false,
         authenticated: false,
+        sessionAuthenticated: false,
         reason,
         detail:
           detail ||
@@ -277,6 +294,7 @@ function buildProfileMissingResponse(session: IprAuthStoredSession) {
       ...buildBaseResponse({
         ok: false,
         authenticated: false,
+        sessionAuthenticated: true,
         reason: "IPR_ACCOUNT_PROFILE_NOT_FOUND",
         detail:
           "The HBCE IPR session is valid, but the persistent IPR account profile was not found. Run SET_PASSWORD again with a valid HBCE IPR handoff to rebuild the account profile."
@@ -366,6 +384,7 @@ export async function GET(req: NextRequest) {
       ...buildBaseResponse({
         ok: true,
         authenticated: true,
+        sessionAuthenticated: true,
         reason: "SESSION_ACTIVE",
         detail:
           "The HBCE IPR account session is active and the server-side IPR account profile has been resolved."

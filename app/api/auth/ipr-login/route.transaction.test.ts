@@ -52,6 +52,12 @@ const CANONICAL_HUMAN_IPR_ENV =
 const CERTIFICATE_ID_ENV =
   "HBCE_IPR_CANONICAL_BOOTSTRAP_CERTIFICATE_ID";
 
+const TENANT_ID_ENV =
+  "HBCE_IPR_CANONICAL_BOOTSTRAP_TENANT_ID";
+
+const WORKSPACE_ID_ENV =
+  "HBCE_IPR_CANONICAL_BOOTSTRAP_WORKSPACE_ID";
+
 const originalEnv = {
   authStoreKind:
     process.env[AUTH_STORE_KIND_ENV],
@@ -64,7 +70,11 @@ const originalEnv = {
   canonicalHumanIpr:
     process.env[CANONICAL_HUMAN_IPR_ENV],
   certificateId:
-    process.env[CERTIFICATE_ID_ENV]
+    process.env[CERTIFICATE_ID_ENV],
+  tenantId:
+    process.env[TENANT_ID_ENV],
+  workspaceId:
+    process.env[WORKSPACE_ID_ENV]
 };
 
 function restoreEnv(
@@ -96,6 +106,12 @@ beforeEach(() => {
 
   process.env[CERTIFICATE_ID_ENV] =
     "CERTIFICATE-09-OPERATIONAL-TEST";
+
+  process.env[TENANT_ID_ENV] =
+    "HBCE-TENANT-TEST";
+
+  process.env[WORKSPACE_ID_ENV] =
+    "HBCE-WORKSPACE-TEST";
 
   getProcessIprAuthStore().clear();
   getProcessIprAccountStore().clear();
@@ -133,6 +149,16 @@ afterEach(() => {
   restoreEnv(
     CERTIFICATE_ID_ENV,
     originalEnv.certificateId
+  );
+
+  restoreEnv(
+    TENANT_ID_ENV,
+    originalEnv.tenantId
+  );
+
+  restoreEnv(
+    WORKSPACE_ID_ENV,
+    originalEnv.workspaceId
   );
 
   getProcessIprAuthStore().clear();
@@ -457,6 +483,10 @@ describe(
                     "CERTIFICATE-09-OPERATIONAL-TEST",
                   accountId:
                     "ACCOUNT-IPR-3-READBACK-TEST",
+                  tenantId:
+                    "HBCE-TENANT-TEST",
+                  workspaceId:
+                    "HBCE-WORKSPACE-TEST",
                   certificateStatus:
                     "ACTIVE",
                   certificateScope: [
@@ -738,6 +768,10 @@ describe(
                     "CERTIFICATE-09-OPERATIONAL-TEST",
                   accountId:
                     "ACCOUNT-IPR-3-SESSION-TEST",
+                  tenantId:
+                    "HBCE-TENANT-TEST",
+                  workspaceId:
+                    "HBCE-WORKSPACE-TEST",
                   certificateStatus:
                     "ACTIVE",
                   certificateScope: [
@@ -1300,6 +1334,10 @@ describe(
                       "CERTIFICATE-09-OPERATIONAL-TEST",
                     accountId:
                       "ACCOUNT-IPR-3-FULL-CONTRACT",
+                    tenantId:
+                      "HBCE-TENANT-TEST",
+                    workspaceId:
+                      "HBCE-WORKSPACE-TEST",
                     certificateStatus:
                       "ACTIVE",
                     certificateScope: [
@@ -1641,3 +1679,165 @@ describe(
     );
   }
 );
+
+describe("canonical bootstrap scope fail-closed", () => {
+  it("fails closed before transaction when canonical tenant scope is missing", async () => {
+    process.env[AUTH_STORE_KIND_ENV] =
+      "PROCESS_AUTH_STORE_MVP";
+
+    process.env[ACCOUNT_STORE_KIND_ENV] =
+      "PROCESS_ACCOUNT_STORE_MVP";
+
+    process.env[BOOTSTRAP_ENABLED_ENV] =
+      "true";
+
+    process.env[BOOTSTRAP_SECRET_ENV] =
+      "Expected-Canonical-Secret-2026";
+
+    process.env[CANONICAL_HUMAN_IPR_ENV] =
+      "IPR-3";
+
+    process.env[CERTIFICATE_ID_ENV] =
+      "CERTIFICATE-09-OPERATIONAL-TEST";
+
+    delete process.env[TENANT_ID_ENV];
+
+    process.env[WORKSPACE_ID_ENV] =
+      "HBCE-WORKSPACE-TEST";
+
+    const authStore =
+      getProcessIprAuthStore();
+
+    const accountStore =
+      getProcessIprAccountStore();
+
+    authStore.clear();
+    accountStore.clear();
+
+    mockWithHbceDatabaseTransaction.mockClear();
+
+    const request = new NextRequest(
+      "http://localhost/api/auth/ipr-login",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-hbce-ipr-bootstrap-secret":
+            "Expected-Canonical-Secret-2026"
+        },
+        body: JSON.stringify({
+          mode: "BOOTSTRAP_CANONICAL",
+          humanIpr: "IPR-3",
+          password: "C4n0nical!ZetaFlux27"
+        })
+      }
+    );
+
+    const response = await POST(request);
+    const payload = await response.json();
+
+    expect(response.status).toBe(503);
+
+    expect(payload).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason:
+        "IPR_CANONICAL_BOOTSTRAP_SCOPE_NOT_CONFIGURED",
+      detail:
+        "Canonical bootstrap requires explicit server-side tenant and workspace identifiers.",
+      legalCertification: false
+    });
+
+    expect(
+      mockWithHbceDatabaseTransaction
+    ).not.toHaveBeenCalled();
+
+    expect(
+      await authStore.getCredentialAsync("IPR-3")
+    ).toBeNull();
+
+    expect(
+      await accountStore.getProfileAsync("IPR-3")
+    ).toBeNull();
+  });
+
+  it("fails closed before transaction when canonical workspace scope is missing", async () => {
+    process.env[AUTH_STORE_KIND_ENV] =
+      "PROCESS_AUTH_STORE_MVP";
+
+    process.env[ACCOUNT_STORE_KIND_ENV] =
+      "PROCESS_ACCOUNT_STORE_MVP";
+
+    process.env[BOOTSTRAP_ENABLED_ENV] =
+      "true";
+
+    process.env[BOOTSTRAP_SECRET_ENV] =
+      "Expected-Canonical-Secret-2026";
+
+    process.env[CANONICAL_HUMAN_IPR_ENV] =
+      "IPR-3";
+
+    process.env[CERTIFICATE_ID_ENV] =
+      "CERTIFICATE-09-OPERATIONAL-TEST";
+
+    process.env[TENANT_ID_ENV] =
+      "HBCE-TENANT-TEST";
+
+    delete process.env[WORKSPACE_ID_ENV];
+
+    const authStore =
+      getProcessIprAuthStore();
+
+    const accountStore =
+      getProcessIprAccountStore();
+
+    authStore.clear();
+    accountStore.clear();
+
+    mockWithHbceDatabaseTransaction.mockClear();
+
+    const request = new NextRequest(
+      "http://localhost/api/auth/ipr-login",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-hbce-ipr-bootstrap-secret":
+            "Expected-Canonical-Secret-2026"
+        },
+        body: JSON.stringify({
+          mode: "BOOTSTRAP_CANONICAL",
+          humanIpr: "IPR-3",
+          password: "C4n0nical!ZetaFlux27"
+        })
+      }
+    );
+
+    const response = await POST(request);
+    const payload = await response.json();
+
+    expect(response.status).toBe(503);
+
+    expect(payload).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason:
+        "IPR_CANONICAL_BOOTSTRAP_SCOPE_NOT_CONFIGURED",
+      detail:
+        "Canonical bootstrap requires explicit server-side tenant and workspace identifiers.",
+      legalCertification: false
+    });
+
+    expect(
+      mockWithHbceDatabaseTransaction
+    ).not.toHaveBeenCalled();
+
+    expect(
+      await authStore.getCredentialAsync("IPR-3")
+    ).toBeNull();
+
+    expect(
+      await accountStore.getProfileAsync("IPR-3")
+    ).toBeNull();
+  });
+});

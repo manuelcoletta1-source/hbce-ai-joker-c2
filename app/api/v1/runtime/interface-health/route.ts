@@ -712,7 +712,7 @@ export async function GET(request: NextRequest) {
   const sessionResolution =
     await resolveIprAccountSessionFromRequestAsync(request);
 
-  if (!sessionResolution.authenticated) {
+  if (!sessionResolution.runtimeAuthorized) {
     return NextResponse.json(
       {
         ok: false,

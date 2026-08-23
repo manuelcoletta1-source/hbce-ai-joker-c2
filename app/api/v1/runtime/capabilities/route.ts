@@ -44,7 +44,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const sessionResolution =
     await resolveIprAccountSessionFromRequestAsync(request);
 
-  if (!sessionResolution.authenticated) {
+  if (!sessionResolution.runtimeAuthorized) {
     return NextResponse.json(
       {
         ok: false,

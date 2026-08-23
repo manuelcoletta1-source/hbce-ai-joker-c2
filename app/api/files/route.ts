@@ -7405,7 +7405,7 @@ async function resolveAuthorizedFileScope(
     await resolveIprAccountSessionFromRequestAsync(req);
 
   if (
-    !accountSessionResolution.authenticated ||
+    !accountSessionResolution.runtimeAuthorized ||
     accountSessionResolution.access.decision !== "ACCESS_GRANTED" ||
     !accountSessionResolution.accountProfile
   ) {

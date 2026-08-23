@@ -309,7 +309,7 @@ const openApiDocument = {
         },
         responses: {
           "200": {
-            description: "Operation accepted by contract only",
+            description: "Operation contract validated; authorization and execution are not performed by this endpoint",
             content: {
               "application/json": {
                 schema: {
@@ -539,11 +539,11 @@ const openApiDocument = {
         properties: {
           status: {
             type: "string",
-            enum: ["HBCE_IPR_SESSION_READY"]
+            enum: ["HBCE_IPR_SESSION_CONTRACT_CREATED"]
           },
           sessionStatus: {
             type: "string",
-            enum: ["ACCESS_GRANTED"]
+            enum: ["AUTHORIZATION_NOT_EVALUATED"]
           },
           boundary: {
             $ref: "#/components/schemas/Boundary"
@@ -686,11 +686,11 @@ const openApiDocument = {
         properties: {
           status: {
             type: "string",
-            enum: ["HBCE_OPERATION_ACCEPTED"]
+            enum: ["HBCE_OPERATION_CONTRACT_VALIDATED"]
           },
           operationStatus: {
             type: "string",
-            enum: ["ACCEPTED_CONTRACT_ONLY"]
+            enum: ["CONTRACT_VALIDATED_NO_AUTHORIZATION_DECISION"]
           },
           operationId: {
             type: "string"

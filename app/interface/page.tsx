@@ -1,6 +1,8 @@
 "use client";
 
 
+import { deriveUiSessionAuthority, deriveUiSessionAuthorityFrame } from "@/lib/ipr-ui-session-authority";
+
 import {
   type ChangeEvent,
   type FormEvent,
@@ -478,6 +480,8 @@ type DocumentProfileDashboardOverlay = {
 type IprSessionResponse = {
   ok?: boolean;
   authenticated?: boolean;
+  sessionAuthenticated?: boolean;
+  authorized?: boolean;
   reason?: string;
   detail?: string;
   error?: string;
@@ -3661,14 +3665,10 @@ function buildEnrichedIprHandoff(input: {
     certificateScope: input.scope,
     certificate_scope: input.scope,
     verified_subject_certificate_scope: input.scope,
-    accessDecision: hasIdentity ? "ACCESS_GRANTED" : input.accessDecision,
-    access_decision: hasIdentity ? "ACCESS_GRANTED" : input.accessDecision,
-    identityBinding: hasIdentity
-      ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
-      : input.identityBinding,
-    identity_binding: hasIdentity
-      ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
-      : input.identityBinding,
+    accessDecision: input.accessDecision,
+    access_decision: input.accessDecision,
+    identityBinding: input.identityBinding,
+    identity_binding: input.identityBinding,
     subject: {
       ...(isRecord(base.subject) ? base.subject : {}),
       entity: input.subject,
@@ -3720,11 +3720,9 @@ function buildEnrichedIprHandoff(input: {
     },
     access: {
       ...(isRecord(base.access) ? base.access : {}),
-      decision: hasIdentity ? "ACCESS_GRANTED" : input.accessDecision,
-      accessDecision: hasIdentity ? "ACCESS_GRANTED" : input.accessDecision,
-      identityBinding: hasIdentity
-        ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
-        : input.identityBinding,
+      decision: input.accessDecision,
+      accessDecision: input.accessDecision,
+      identityBinding: input.identityBinding,
       scope: input.scope
     },
     legalCertification: false
@@ -5844,7 +5842,14 @@ export default function InterfacePage() {
 
   const effectiveHandoff = sessionHandoff || iprHandoff;
   const effectiveHandoffSource = sessionHandoff ? "accountSession" : iprHandoffSource;
-  const hasAccountSession = iprSession?.authenticated === true;
+  const {
+    hasSessionPresence,
+    hasResolvedAccountSession: hasAccountSession,
+    hasServerAuthorizedSession
+  } = deriveUiSessionAuthority(iprSession);
+
+  const sessionAuthorityFrame =
+    deriveUiSessionAuthorityFrame(iprSession);
 
 
   const dashboardPayload = lastAssistantPayload || health;
@@ -5889,8 +5894,7 @@ export default function InterfacePage() {
       lastAssistantPayload ? dashboardStatus.humanIpr : "",
       sessionHumanIpr,
       handoffHumanIpr,
-      hasAccountSession ? CANONICAL_MANUEL_HUMAN_IPR : "",
-      HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED ? CANONICAL_MANUEL_HUMAN_IPR : "",
+       HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED ? CANONICAL_MANUEL_HUMAN_IPR : "",
       dashboardStatus.humanIpr
     ],
     "NOT_VERIFIED"
@@ -5960,7 +5964,7 @@ export default function InterfacePage() {
 
 
   const accountIdentityReady =
-    hasAccountSession &&
+    hasServerAuthorizedSession &&
     !isNegativeRuntimeValue(humanIpr) &&
     !isNegativeRuntimeValue(certificateId) &&
     isActiveCertificateStatus(certificateStatus) &&
@@ -5969,11 +5973,16 @@ export default function InterfacePage() {
 
   const accessDecision = firstUsableRuntimeValue(
     [
-      lastAssistantPayload ? dashboardStatus.accessDecision : "",
-      accountIdentityReady ? "ACCESS_GRANTED_ACCOUNT_SESSION" : "",
-      selfPilotMemoryScopeBridgeReady ? HBCE_SELF_PILOT_ACCESS_DECISION : "",
-      first(iprSession, [["access", "decision"], ["access", "accessDecision"]], ""),
-      dashboardStatus.accessDecision
+      sessionAuthorityFrame?.accessDecision ?? "",
+      !sessionAuthorityFrame && lastAssistantPayload
+        ? dashboardStatus.accessDecision
+        : "",
+      !sessionAuthorityFrame && selfPilotMemoryScopeBridgeReady
+        ? HBCE_SELF_PILOT_ACCESS_DECISION
+        : "",
+      !sessionAuthorityFrame
+        ? dashboardStatus.accessDecision
+        : ""
     ],
     "SERVER_VALIDATION_REQUIRED"
   );
@@ -5981,11 +5990,16 @@ export default function InterfacePage() {
 
   const identityBinding = firstUsableRuntimeValue(
     [
-      lastAssistantPayload ? dashboardStatus.identityBinding : "",
-      accountIdentityReady ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT" : "",
-      selfPilotMemoryScopeBridgeReady ? HBCE_SELF_PILOT_IDENTITY_BINDING : "",
-      first(iprSession, [["access", "identityBinding"], ["access", "identity_binding"]], ""),
-      dashboardStatus.identityBinding
+      sessionAuthorityFrame?.identityBinding ?? "",
+      !sessionAuthorityFrame && lastAssistantPayload
+        ? dashboardStatus.identityBinding
+        : "",
+      !sessionAuthorityFrame && selfPilotMemoryScopeBridgeReady
+        ? HBCE_SELF_PILOT_IDENTITY_BINDING
+        : "",
+      !sessionAuthorityFrame
+        ? dashboardStatus.identityBinding
+        : ""
     ],
     "NOT_VERIFIED"
   );
@@ -5993,11 +6007,16 @@ export default function InterfacePage() {
 
   const matrixState = firstUsableRuntimeValue(
     [
-      lastAssistantPayload ? dashboardStatus.matrix : "",
-      accountIdentityReady ? "MATRIX_ACCOUNT_SESSION_READY" : "",
-      selfPilotMemoryScopeBridgeReady ? HBCE_SELF_PILOT_MATRIX_STATE : "",
-      first(iprSession, [["matrix", "state"], ["access", "matrixState"]], ""),
-      dashboardStatus.matrix
+      sessionAuthorityFrame?.matrixState ?? "",
+      !sessionAuthorityFrame && lastAssistantPayload
+        ? dashboardStatus.matrix
+        : "",
+      !sessionAuthorityFrame && selfPilotMemoryScopeBridgeReady
+        ? HBCE_SELF_PILOT_MATRIX_STATE
+        : "",
+      !sessionAuthorityFrame
+        ? dashboardStatus.matrix
+        : ""
     ],
     "MATRIX_LIMITED"
   );
@@ -6005,11 +6024,16 @@ export default function InterfacePage() {
 
   const memoryScope = firstUsableRuntimeValue(
     [
-      lastAssistantPayload ? dashboardStatus.memory : "",
-      accountIdentityReady ? "IPR_BOUND_ACCOUNT_SESSION_READY" : "",
-      selfPilotMemoryScopeBridgeReady ? HBCE_SELF_PILOT_MEMORY_SCOPE : "",
-      first(iprSession, [["memory", "scope"], ["access", "semanticMemoryScope"]], ""),
-      dashboardStatus.memory
+      sessionAuthorityFrame?.memoryScope ?? "",
+      !sessionAuthorityFrame && lastAssistantPayload
+        ? dashboardStatus.memory
+        : "",
+      !sessionAuthorityFrame && selfPilotMemoryScopeBridgeReady
+        ? HBCE_SELF_PILOT_MEMORY_SCOPE
+        : "",
+      !sessionAuthorityFrame
+        ? dashboardStatus.memory
+        : ""
     ],
     "RUNTIME_ONLY"
   );
@@ -6036,13 +6060,18 @@ export default function InterfacePage() {
 
   const memoryAuthority = firstUsableRuntimeValue(
     [
-      lastAssistantPayload ? dashboardStatus.authority : "",
-      accountIdentityReady ? "SERVER_ACCOUNT_SESSION_VALIDATED" : "",
-      selfPilotMemoryScopeBridgeReady ? HBCE_SELF_PILOT_MEMORY_AUTHORITY : "",
-      first(iprSession, [["memory", "authority"]], ""),
-      dashboardStatus.authority
+      sessionAuthorityFrame?.memoryAuthority ?? "",
+      !sessionAuthorityFrame && lastAssistantPayload
+        ? dashboardStatus.authority
+        : "",
+      !sessionAuthorityFrame && selfPilotMemoryScopeBridgeReady
+        ? HBCE_SELF_PILOT_MEMORY_AUTHORITY
+        : "",
+      !sessionAuthorityFrame
+        ? dashboardStatus.authority
+        : ""
     ],
-    "RUNTIME_HEALTH_CHECK"
+    "SESSION_RUNTIME_ONLY"
   );
 
 
@@ -6234,6 +6263,13 @@ export default function InterfacePage() {
   async function resolveRequestIdentityContext(): Promise<{
     iprHandoff: JsonRecord | null;
     iprAccountSession: JsonRecord | null;
+    authorityFrame: {
+      accessDecision: string;
+      identityBinding: string;
+      matrixState: string;
+      memoryScope: string;
+      memoryAuthority: string;
+    };
   }> {
     const browserHandoffResult = loadIprHandoffFromBrowser();
 
@@ -6250,7 +6286,7 @@ export default function InterfacePage() {
     setIprSessionError(sessionSnapshot.error);
 
 
-    const activeSession = sessionSnapshot.payload ?? iprSession;
+    const activeSession = sessionSnapshot.payload;
 
 
     const activeSessionHandoff = isRecord(activeSession?.reconstructedIprHandoff)
@@ -6267,16 +6303,23 @@ export default function InterfacePage() {
       iprHandoff;
 
 
-    const activeHasAccountSession =
-      activeSession?.authenticated === true || hasAccountSession;
+    const {
+      hasServerAuthorizedSession:
+        activeHasServerAuthorizedSession
+    } = deriveUiSessionAuthority(
+      activeSession
+    );
 
+    const activeSessionAuthorityFrame =
+      deriveUiSessionAuthorityFrame(
+        activeSession
+      );
 
     const requestHumanIpr = firstUsableRuntimeValue(
       [
         getSessionHumanIpr(activeSession),
         getHandoffSubjectIpr(activeBaseHandoff),
-        activeHasAccountSession ? CANONICAL_MANUEL_HUMAN_IPR : "",
-        humanIpr
+         humanIpr
       ],
       "NOT_VERIFIED"
     );
@@ -6325,32 +6368,29 @@ export default function InterfacePage() {
     );
 
 
-    const requestIdentityReady =
-      activeHasAccountSession &&
-      !isNegativeRuntimeValue(requestHumanIpr) &&
-      !isNegativeRuntimeValue(requestCertificateId) &&
-      isActiveCertificateStatus(requestCertificateStatus) &&
-      hasJokerC2Scope(requestScope);
+    const requestAccessDecision =
+      activeSessionAuthorityFrame?.accessDecision ??
+      "SERVER_VALIDATION_REQUIRED";
 
 
-    const requestAccessDecision = firstUsableRuntimeValue(
-      [
-        requestIdentityReady ? "ACCESS_GRANTED_ACCOUNT_SESSION" : "",
-        first(activeSession, [["access", "decision"], ["access", "accessDecision"]], ""),
-        accessDecision
-      ],
-      "SERVER_VALIDATION_REQUIRED"
-    );
+    const requestIdentityBinding =
+      activeSessionAuthorityFrame?.identityBinding ??
+      "NOT_VERIFIED";
 
 
-    const requestIdentityBinding = firstUsableRuntimeValue(
-      [
-        requestIdentityReady ? "IPR_VERIFIED_BIOLOGICAL_SUBJECT" : "",
-        first(activeSession, [["access", "identityBinding"], ["access", "identity_binding"]], ""),
-        identityBinding
-      ],
-      "NOT_VERIFIED"
-    );
+    const requestMatrixState =
+      activeSessionAuthorityFrame?.matrixState ??
+      "MATRIX_LIMITED";
+
+
+    const requestMemoryScope =
+      activeSessionAuthorityFrame?.memoryScope ??
+      "RUNTIME_ONLY";
+
+
+    const requestMemoryAuthority =
+      activeSessionAuthorityFrame?.memoryAuthority ??
+      "SESSION_RUNTIME_ONLY";
 
 
     const requestHandoff = buildEnrichedIprHandoff({
@@ -6373,7 +6413,8 @@ export default function InterfacePage() {
 
 
     const requestAccountSession =
-      activeSession?.authenticated === true
+      activeSession !== null &&
+      activeHasServerAuthorizedSession
         ? {
             source: "IPR_ACCOUNT_SESSION",
             session: activeSession.session,
@@ -6389,7 +6430,14 @@ export default function InterfacePage() {
 
     return {
       iprHandoff: requestHandoff,
-      iprAccountSession: requestAccountSession
+      iprAccountSession: requestAccountSession,
+      authorityFrame: {
+        accessDecision: requestAccessDecision,
+        identityBinding: requestIdentityBinding,
+        matrixState: requestMatrixState,
+        memoryScope: requestMemoryScope,
+        memoryAuthority: requestMemoryAuthority
+      }
     };
   }
 
@@ -6470,31 +6518,6 @@ export default function InterfacePage() {
       certificateId,
       certificateStatus,
       scope,
-      accessDecision,
-      identityBinding,
-      matrixState,
-      memoryScope,
-      memoryAuthority,
-      iprHandoff: enrichedIprHandoff,
-      identityTransport: {
-        source: selfPilotMemoryScopeBridgeApplied
-          ? "SELF_PILOT_MEMORY_SCOPE_BRIDGE"
-          : hasAccountSession
-            ? "IPR_ACCOUNT_SESSION"
-            : enrichedIprHandoff
-              ? "IPR_HANDOFF"
-              : "NO_IPR_CONTEXT",
-        interfaceRevision: INTERFACE_REVISION,
-        legalCertification: false
-      },
-      selfPilotMemoryScopeBridge: {
-        enabled: HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED,
-        applied: selfPilotMemoryScopeBridgeApplied,
-        reason: selfPilotMemoryScopeBridgeApplied
-          ? "UI_SELF_PILOT_MEMORY_SCOPE_READY"
-          : "SERVER_OR_HANDOFF_SCOPE",
-        legalCertification: false
-      },
       interfaceRevision: INTERFACE_REVISION,
       strictIdentity: true,
       legalCertification: false
@@ -6883,28 +6906,6 @@ export default function InterfacePage() {
           certificateId,
           certificateStatus,
           scope,
-          accessDecision,
-          identityBinding,
-          matrixState,
-          memoryScope,
-          memoryAuthority,
-          iprHandoff: enrichedIprHandoff,
-          identityTransport: {
-            source: selfPilotMemoryScopeBridgeApplied
-              ? "SELF_PILOT_MEMORY_SCOPE_BRIDGE"
-              : hasAccountSession
-                ? "IPR_ACCOUNT_SESSION"
-                : enrichedIprHandoff
-                  ? "IPR_HANDOFF"
-                  : "NO_IPR_CONTEXT",
-            interfaceRevision: INTERFACE_REVISION,
-            legalCertification: false
-          },
-          selfPilotMemoryScopeBridge: {
-            enabled: HBCE_SELF_PILOT_MEMORY_SCOPE_BRIDGE_ENABLED,
-            applied: selfPilotMemoryScopeBridgeApplied,
-            legalCertification: false
-          },
           interfaceRevision: INTERFACE_REVISION,
           sessionId,
           threadId: activeThreadId,
@@ -7365,21 +7366,6 @@ export default function InterfacePage() {
       const requestIdentity = await resolveRequestIdentityContext();
 
 
-      const fallbackAccountSession =
-        iprSession?.authenticated === true
-          ? {
-              source: "IPR_ACCOUNT_SESSION",
-              session: iprSession.session,
-              accountProfile: iprSession.accountProfile,
-              reconstructedIprHandoff: iprSession.reconstructedIprHandoff,
-              access: iprSession.access,
-              memory: iprSession.memory,
-              matrix: iprSession.matrix,
-              legalCertification: false
-            }
-          : null;
-
-
       const activeDocumentObjectFiles = buildDocumentObjectActiveFilesPayload(
         files,
         dashboardDocumentRegistry,
@@ -7423,10 +7409,14 @@ export default function InterfacePage() {
           certificateId,
           certificateStatus,
           scope,
-          accessDecision,
-          identityBinding,
-          matrixState,
-          memoryScope,
+          accessDecision:
+            requestIdentity.authorityFrame.accessDecision,
+          identityBinding:
+            requestIdentity.authorityFrame.identityBinding,
+          matrixState:
+            requestIdentity.authorityFrame.matrixState,
+          memoryScope:
+            requestIdentity.authorityFrame.memoryScope,
           interfaceRevision: INTERFACE_REVISION,
           cyberneticMemoryRecallRequest: cyberneticRecallRequestActive,
           requestedMemoryIds: requestedMemoryIdsForChat,
@@ -7437,8 +7427,8 @@ export default function InterfacePage() {
             applied: selfPilotMemoryScopeBridgeApplied,
             legalCertification: false
           },
-          iprHandoff: requestIdentity.iprHandoff ?? enrichedIprHandoff,
-          iprAccountSession: requestIdentity.iprAccountSession ?? fallbackAccountSession,
+          iprHandoff: requestIdentity.iprHandoff,
+          iprAccountSession: requestIdentity.iprAccountSession,
           identityTransport: {
             source: requestIdentity.iprAccountSession
               ? "IPR_ACCOUNT_SESSION_FRESH"
@@ -7885,7 +7875,7 @@ export default function InterfacePage() {
         <div
           className={[
             "joker-panel",
-            effectiveHandoff || hasAccountSession ? "is-active" : "",
+            effectiveHandoff || hasSessionPresence ? "is-active" : "",
             iprHandoffError || iprSessionError ? "is-error" : ""
           ]
             .filter(Boolean)
@@ -7903,8 +7893,8 @@ export default function InterfacePage() {
           <p>
             {accountIdentityReady
               ? "Server-side IPR account session detected. Identity frame is ready for authoritative validation during POST /api/chat."
-              : hasAccountSession
-                ? "Server-side IPR account session detected, but the interface still needs a complete Human IPR, ACTIVE certificate and JOKER_C2_ACCESS scope frame."
+              : hasSessionPresence
+                ? "Server-side IPR session detected, but runtime authority is not available until the persistent account profile and server authorization are complete."
                 : effectiveHandoff
                   ? "Client-side IPR handoff detected. Authoritative validation happens during POST /api/chat."
                   : "No biological IPR handoff or account session detected. Runtime remains limited until server-side validation."}

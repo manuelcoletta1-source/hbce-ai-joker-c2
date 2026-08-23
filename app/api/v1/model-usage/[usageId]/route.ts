@@ -145,13 +145,25 @@ function buildIdentity(
       query.workspace,
 
     access:
-      "ACCESS_GRANTED",
+      "NOT_EVALUATED",
 
     identityBinding:
-      "IPR_OPERATIONAL_IDENTITY_BOUND",
+      "UNVERIFIED_CLIENT_CLAIM",
 
     authority:
-      "SERVER_RUNTIME_VALIDATED",
+      "NOT_EVALUATED",
+
+    authorityEvaluation:
+      "NOT_PERFORMED_BY_CONTRACT_ENDPOINT",
+
+    clientClaimsCreateAuthority:
+      false,
+
+    requestedScopeOnly:
+      true,
+
+    legalCertification:
+      false,
   };
 }
 

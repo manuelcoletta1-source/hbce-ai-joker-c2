@@ -2215,7 +2215,7 @@ function applyCyberneticDocumentRecallIsolation(args: {
       item,
       expected: tenantId,
       aliases: ["tenantId", "tenant_id", "tenant"],
-      requireValue: false
+      requireValue: args.config.requireTenantScope
     })) {
       isolation.rejectedByTenant += 1;
       continue;
@@ -2225,7 +2225,7 @@ function applyCyberneticDocumentRecallIsolation(args: {
       item,
       expected: workspaceId,
       aliases: ["workspaceId", "workspace_id", "workspace"],
-      requireValue: false
+      requireValue: args.config.requireWorkspaceScope
     })) {
       isolation.rejectedByWorkspace += 1;
       continue;
@@ -2504,33 +2504,59 @@ function documentProfileScopeConflicts(args: {
   tenantId: string | null;
   workspaceId: string | null;
 }): boolean {
-  const expectedTenantId = normalizeDocumentScopeId(args.tenantId);
-  const expectedWorkspaceId = normalizeDocumentScopeId(args.workspaceId);
-  const expectedHumanIpr = normalizeDocumentScopeId(args.humanIpr);
+  const expectedTenantId =
+    normalizeDocumentScopeId(args.tenantId);
 
-  if (expectedTenantId && hasConflictingScopeValue({
+  const expectedWorkspaceId =
+    normalizeDocumentScopeId(args.workspaceId);
+
+  const expectedHumanIpr =
+    normalizeDocumentScopeId(args.humanIpr);
+
+  if (
+    !expectedHumanIpr
+    || !expectedTenantId
+    || !expectedWorkspaceId
+  ) {
+    return true;
+  }
+
+  if (hasConflictingScopeValue({
     item: args.item,
     expected: expectedTenantId,
-    aliases: ["tenantId", "tenant_id", "tenant"],
-    requireValue: false
+    aliases: [
+      "tenantId",
+      "tenant_id",
+      "tenant"
+    ],
+    requireValue: true
   })) {
     return true;
   }
 
-  if (expectedWorkspaceId && hasConflictingScopeValue({
+  if (hasConflictingScopeValue({
     item: args.item,
     expected: expectedWorkspaceId,
-    aliases: ["workspaceId", "workspace_id", "workspace"],
-    requireValue: false
+    aliases: [
+      "workspaceId",
+      "workspace_id",
+      "workspace"
+    ],
+    requireValue: true
   })) {
     return true;
   }
 
-  if (expectedHumanIpr && hasConflictingScopeValue({
+  if (hasConflictingScopeValue({
     item: args.item,
     expected: expectedHumanIpr,
-    aliases: ["humanIpr", "human_ipr", "ipr", "subjectIpr"],
-    requireValue: false
+    aliases: [
+      "humanIpr",
+      "human_ipr",
+      "ipr",
+      "subjectIpr"
+    ],
+    requireValue: true
   })) {
     return true;
   }
@@ -2847,30 +2873,32 @@ async function queryDocumentProfilesByLinkedDirectMatch(args: {
     return [];
   }
 
+  const scopedHumanIpr =
+    normalizeDocumentScopeId(args.humanIpr);
+
+  const scopedTenantId =
+    normalizeDocumentScopeId(args.tenantId);
+
+  const scopedWorkspaceId =
+    normalizeDocumentScopeId(args.workspaceId);
+
+  if (
+    !scopedHumanIpr
+    || !scopedTenantId
+    || !scopedWorkspaceId
+  ) {
+    return [];
+  }
+
   const scopeAttempts: Array<{
     humanIpr: string | null;
     tenantId: string | null;
     workspaceId: string | null;
   }> = [
     {
-      humanIpr: args.humanIpr,
-      tenantId: args.tenantId,
-      workspaceId: args.workspaceId
-    },
-    {
-      humanIpr: null,
-      tenantId: args.tenantId,
-      workspaceId: args.workspaceId
-    },
-    {
-      humanIpr: args.humanIpr,
-      tenantId: null,
-      workspaceId: null
-    },
-    {
-      humanIpr: null,
-      tenantId: null,
-      workspaceId: null
+      humanIpr: scopedHumanIpr,
+      tenantId: scopedTenantId,
+      workspaceId: scopedWorkspaceId
     }
   ];
 
@@ -3106,6 +3134,33 @@ export async function resolveCyberneticDocumentProfileRecall(args: {
     isolation: emptyCyberneticDocumentRecallIsolationReport(),
     legalCertification: false
   };
+
+  if (
+    (
+      config.requireTenantScope
+      && !normalizeDocumentScopeId(
+        args.saasContext.tenantId
+      )
+    )
+    || (
+      config.requireWorkspaceScope
+      && !normalizeDocumentScopeId(
+        args.saasContext.workspaceId
+      )
+    )
+  ) {
+    return {
+      ...base,
+      injected: false,
+      status: "DOCUMENT_PROFILE_RECALL_QUERY_FAILED",
+      items: [],
+      profileIds: [],
+      memoryIds: [],
+      promptBlock: "",
+      error:
+        "Tenant and workspace scope are required before document profile recall can be evaluated."
+    };
+  }
 
   if (config.requireVerifiedIpr && (!humanIpr || args.handoff.identityBinding !== "IPR_VERIFIED_BIOLOGICAL_SUBJECT")) {
     return {

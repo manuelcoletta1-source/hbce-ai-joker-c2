@@ -224,7 +224,7 @@ async function buildRecentPayload(request: NextRequest) {
     await resolveIprAccountSessionFromRequestAsync(request);
 
   if (
-    !accountSessionResolution.authenticated ||
+    !accountSessionResolution.runtimeAuthorized ||
     accountSessionResolution.access.decision !== "ACCESS_GRANTED" ||
     !accountSessionResolution.accountProfile
   ) {

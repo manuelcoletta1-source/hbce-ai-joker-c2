@@ -197,7 +197,7 @@ function buildContract() {
         "legalCertification"
       ],
       statusValues: [
-        "HBCE_OPERATION_ACCEPTED",
+        "HBCE_OPERATION_CONTRACT_VALIDATED",
         "HBCE_OPERATION_REJECTED",
         "HBCE_OPERATION_CONTRACT_READY"
       ],
@@ -214,12 +214,12 @@ function buildContract() {
       noThirdPartyAudit: true
     },
     runtimeContext: {
-      access: "ACCESS_GRANTED",
-      memory: "DATABASE_PERSISTENT",
-      memoryScope: "IPR_BOUND",
+      access: "AUTHORIZATION_NOT_EVALUATED",
+      memory: "RUNTIME_ONLY",
+      memoryScope: "RUNTIME_ONLY",
       tenant: DEFAULT_TENANT,
       workspace: DEFAULT_WORKSPACE,
-      policy: "ALLOW"
+      policy: "NOT_EVALUATED"
     }
   };
 }
@@ -363,18 +363,18 @@ function buildAcceptedResponse(normalized: NormalizedOperationRequest, warnings:
   const operationId = normalized.idempotencyKey
     ? `OPR-${shortHash(`${normalized.idempotencyKey}:${normalized.subjectIpr}:${normalized.operationType}`)}`
     : `OPR-${operationSuffix}`;
-  const responseEvt = `EVT-V1-OPERATION-${operationSuffix.slice(0, 8)}`;
-  const opcId = `OPC-V1-OPERATION-${operationSuffix.slice(8, 16)}`;
+  const responseReference =
+    `REF-V1-OPERATION-${operationSuffix.slice(0, 16)}`;
 
   return {
     ok: true,
-    status: "HBCE_OPERATION_ACCEPTED",
+    status: "HBCE_OPERATION_CONTRACT_VALIDATED",
     product: PRODUCT_NAME,
     apiVersion: API_VERSION,
     routeRevision: ROUTE_REVISION,
     operationId,
     operationType: normalized.operationType as SupportedOperationType,
-    operationStatus: "ACCEPTED_CONTRACT_ONLY",
+    operationStatus: "CONTRACT_VALIDATED_NO_AUTHORIZATION_DECISION",
     executionStatus: "NOT_EXECUTED_BY_THIS_ROUTE",
     createdAt: now,
     updatedAt: now,
@@ -389,7 +389,7 @@ function buildAcceptedResponse(normalized: NormalizedOperationRequest, warnings:
       subjectIpr: normalized.subjectIpr,
       humanIpr: normalized.humanIpr,
       runtimeIpr: normalized.runtimeIpr,
-      identityBinding: "IPR_OPERATIONAL_IDENTITY_BOUND",
+      identityBinding: "UNVERIFIED_CLIENT_CLAIM",
       sessionId: normalized.sessionId,
       tenant: normalized.tenant,
       workspace: normalized.workspace
@@ -410,10 +410,13 @@ function buildAcceptedResponse(normalized: NormalizedOperationRequest, warnings:
       }
     },
     governance: {
-      access: "ACCESS_GRANTED",
-      policy: "ALLOW",
+      access: "AUTHORIZATION_NOT_EVALUATED",
+      policy: "NOT_EVALUATED",
+      authorityEvaluation: "NOT_PERFORMED_BY_CONTRACT_ENDPOINT",
+      requestedScopeOnly: true,
+      clientClaimsCreateAuthority: false,
       failClosed: true,
-      memoryScope: "IPR_BOUND",
+      memoryScope: "RUNTIME_ONLY",
       runtimeMemoryWriteSuppressed: true,
       semanticPersistenceSuppressed: true,
       noNewIprMemory: true,
@@ -421,15 +424,20 @@ function buildAcceptedResponse(normalized: NormalizedOperationRequest, warnings:
       sourceProfileSaveMode: "EXPLICIT_OPERATOR_SAVE_ONLY"
     },
     proof: {
-      responseEvt,
-      opcId,
+      responseReference,
+      responseEvt: null,
+      opcId: null,
+      evtCreated: false,
+      opcCreated: false,
+      technicalReceiptCreated: false,
+      contractResponseReceiptCreated: true,
       opcBoundary: OPC_BOUNDARY,
-      technicalReceiptCreated: true,
       legalCertification: LEGAL_CERTIFICATION,
       auditId: null,
       usageId: null,
       receiptHash: operationHash,
-      proofScope: "V1_OPERATION_ACCEPTANCE_RECEIPT_ONLY"
+      receiptScope: "CONTRACT_RESPONSE_RECEIPT_ONLY",
+      proofScope: "NO_EVT_NO_OPC_CREATED"
     },
     temporalSeal: buildTemporalSeal(now),
     validation: {
@@ -512,14 +520,14 @@ export async function POST(request: NextRequest) {
   const response = buildAcceptedResponse(normalized, validation.warnings);
 
   return NextResponse.json(response, {
-    status: 202,
+    status: 200,
     headers: {
       "Cache-Control": "no-store",
       "X-HBCE-API-Version": API_VERSION,
       "X-HBCE-Route-Revision": ROUTE_REVISION,
       "X-HBCE-Legal-Certification": "false",
       "X-HBCE-OPC-Boundary": OPC_BOUNDARY,
-      "X-HBCE-Policy-Decision": "ALLOW",
+      "X-HBCE-Policy-Decision": "NOT_EVALUATED",
       "X-HBCE-Operation-Id": response.operationId
     }
   });
