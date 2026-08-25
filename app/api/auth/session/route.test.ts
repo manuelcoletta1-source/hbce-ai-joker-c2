@@ -203,8 +203,6 @@ describe(
         await getProcessIprAccountStore()
           .upsertProfileAsync({
             humanIpr: "IPR-3",
-            runtimeIpr:
-              undefined,
             certificateId:
               "CERTIFICATE-A013-M036",
             accountId:

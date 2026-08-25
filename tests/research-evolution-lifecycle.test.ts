@@ -16,7 +16,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 
 import {
   completeResearchMission,
@@ -262,6 +262,9 @@ describe(
         assert.deepEqual(
           result.record.evidenceChain,
           {
+            previousBerId:
+              undefined,
+
             eventId: "EVT-BER-TEST-0001",
 
             unebdoAnchorId:

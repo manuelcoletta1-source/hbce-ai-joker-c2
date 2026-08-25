@@ -5,12 +5,16 @@
  * Platform Composition Tests
  */
 
-import test from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 
 import {
     createPlatform,
 } from "./create-platform";
+
+import {
+    inspectApplicationHealth,
+} from "../app";
 
 test(
     "createPlatform builds an operational platform",
@@ -34,8 +38,14 @@ test(
             "operational",
         );
 
+        const health =
+            inspectApplicationHealth(
+                platform.application,
+                platform.createdAt,
+            );
+
         assert.equal(
-            platform.health.status,
+            health.status,
             "healthy",
         );
 
@@ -119,8 +129,14 @@ test(
             timestamp.getTime(),
         );
 
+        const health =
+            inspectApplicationHealth(
+                platform.application,
+                platform.createdAt,
+            );
+
         assert.equal(
-            platform.health.checkedAt.getTime(),
+            health.checkedAt.getTime(),
             timestamp.getTime(),
         );
 
@@ -146,9 +162,15 @@ test(
             true,
         );
 
+        const health =
+            inspectApplicationHealth(
+                platform.application,
+                platform.createdAt,
+            );
+
         assert.equal(
             Object.isFrozen(
-                platform.health,
+                health,
             ),
             true,
         );
@@ -168,7 +190,7 @@ test(
                         "   ",
 
                 }),
-            /non-empty string/,
+            /Platform version must not be empty\./,
         );
 
     },
@@ -204,8 +226,14 @@ test(
             "operational",
         );
 
+        const health =
+            inspectApplicationHealth(
+                platform.application,
+                platform.createdAt,
+            );
+
         assert.equal(
-            platform.health.status,
+            health.status,
             "healthy",
         );
 

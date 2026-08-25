@@ -65,7 +65,7 @@ function createRepositorySnapshot(
       "AIJC2-RUNTIME-REPOSITORY-SNAPSHOT-SERVICE-v1_1",
 
     runtime:
-      "AI_JOKER_C2",
+      "AI_JOKER_C2_SAAS_CORE_v0_1",
 
     moduleId:
       "MOD-001",
@@ -129,6 +129,12 @@ function createRepositorySnapshot(
 
     snapshot: {
       metadata: {
+        providerRevision:
+          "AIJC2-GITHUB-REPOSITORY-SNAPSHOT-PROVIDER-v1_0",
+
+        apiVersion:
+          "2026-03-10",
+
         owner:
           "manuelcoletta1-source",
 
@@ -141,9 +147,36 @@ function createRepositorySnapshot(
         commitSha:
           "0123456789abcdef0123456789abcdef01234567",
 
-        repositoryId:
-          "HBCE-AI-JOKER-C2",
-      } as RepositorySnapshotServiceProjection["snapshot"]["metadata"],
+        treeSha:
+          "abcdef0123456789abcdef0123456789abcdef01",
+
+        totalTreeEntries:
+          totalFiles,
+
+        totalFiles:
+          totalFiles,
+
+        excludedFiles:
+          0,
+
+        authenticated:
+          false,
+
+        recursive:
+          true,
+
+        truncated:
+          false,
+
+        rawContentRetrieved:
+          false,
+
+        sourceExecution:
+          false,
+
+        legalCertification:
+          false,
+      },
 
       totalFiles,
 
@@ -202,7 +235,7 @@ function createRepositorySnapshot(
         "AIJC2-MOD001-REPOSITORY-ORCHESTRATOR-v1_0",
 
       runtime:
-        "AI_JOKER_C2",
+        "AI_JOKER_C2_SAAS_CORE_v0_1",
 
       identity: {
         humanIpr:
@@ -337,7 +370,7 @@ function createRepositorySnapshot(
                 "RUNTIME",
                 "API",
                 "MODULE",
-                "TEST",
+                "TESTING",
               ]),
 
             entrypointCount:

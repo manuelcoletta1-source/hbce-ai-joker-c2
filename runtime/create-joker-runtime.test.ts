@@ -4,20 +4,23 @@
  *
  * Canonical Runtime Composition Test
  *
- * Verifies that the complete JOKER-C2 runtime
- * is assembled with every required domain module.
+ * Verifies the public JOKER-C2 runtime composition boundary.
+ * Domain implementations are represented through immutable
+ * JokerRuntimeModule descriptors rather than fixed properties
+ * on the composition root.
  */
 
-import test from "node:test";
+import { test } from "vitest";
 
 import assert from "node:assert/strict";
 
 import {
     createJokerRuntime,
+    type JokerRuntimeModule,
 } from "./create-joker-runtime";
 
 test(
-    "createJokerRuntime assembles every canonical runtime module",
+    "createJokerRuntime exposes the canonical public composition boundary",
     () => {
 
         const runtime =
@@ -28,69 +31,199 @@ test(
             "JOKER-C2 runtime must be created.",
         );
 
-        assert.ok(
-            runtime.research,
-            "Research Runtime must be available.",
+        assert.equal(
+            runtime.name,
+            "HERMETICUM B.C.E. AI JOKER-C2 RUNTIME",
+        );
+
+        assert.equal(
+            runtime.version,
+            "1.0.0",
+        );
+
+        assert.equal(
+            runtime.status,
+            "ready",
+        );
+
+        assert.deepEqual(
+            runtime.modules,
+            [],
+        );
+
+        assert.deepEqual(
+            runtime.capabilities,
+            [
+                "mission-runtime",
+                "deterministic-execution",
+                "fail-closed",
+                "audit-first",
+                "source-intelligence",
+                "traceability",
+                "llm-agnostic",
+            ],
         );
 
         assert.ok(
-            runtime.conversation,
-            "Conversation Runtime must be available.",
-        );
-
-        assert.ok(
-            runtime.ipr,
-            "IPR Runtime must be available.",
-        );
-
-        assert.ok(
-            runtime.evt,
-            "EVT Runtime must be available.",
-        );
-
-        assert.ok(
-            runtime.opc,
-            "OPC Runtime must be available.",
-        );
-
-        assert.ok(
-            runtime.audit,
-            "Audit Runtime must be available.",
-        );
-
-        assert.ok(
-            runtime.modelUsage,
-            "Model Usage Runtime must be available.",
+            runtime.createdAt instanceof Date,
         );
 
     },
 );
 
 test(
-    "createJokerRuntime returns an immutable composition root",
+    "createJokerRuntime composes immutable registered runtime modules",
     () => {
 
+        const researchModule:
+            JokerRuntimeModule = {
+
+                name:
+                    "RESEARCH_RUNTIME",
+
+                status:
+                    "active",
+
+                capabilities: [
+                    "scientific-method",
+                    "experiment-cycle",
+                ],
+
+            };
+
+        const auditModule:
+            JokerRuntimeModule = {
+
+                name:
+                    "AUDIT_RUNTIME",
+
+                status:
+                    "degraded",
+
+                capabilities: [
+                    "traceability",
+                    "audit-ledger",
+                ],
+
+            };
+
         const runtime =
-            createJokerRuntime();
+            createJokerRuntime({
+
+                modules: [
+                    researchModule,
+                    auditModule,
+                ],
+
+                capabilities: [
+                    "runtime-governance",
+                ],
+
+            });
+
+        assert.equal(
+            runtime.status,
+            "degraded",
+        );
+
+        assert.equal(
+            runtime.modules.length,
+            2,
+        );
+
+        assert.equal(
+            runtime.modules[0]?.name,
+            "RESEARCH_RUNTIME",
+        );
+
+        assert.equal(
+            runtime.modules[1]?.name,
+            "AUDIT_RUNTIME",
+        );
+
+        assert.deepEqual(
+            runtime.capabilities,
+            [
+                "runtime-governance",
+                "scientific-method",
+                "experiment-cycle",
+                "traceability",
+                "audit-ledger",
+            ],
+        );
 
         assert.equal(
             Object.isFrozen(runtime),
             true,
-            "JOKER-C2 runtime composition must be frozen.",
+        );
+
+        assert.equal(
+            Object.isFrozen(
+                runtime.modules,
+            ),
+            true,
+        );
+
+        assert.equal(
+            Object.isFrozen(
+                runtime.modules[0],
+            ),
+            true,
+        );
+
+        assert.equal(
+            Object.isFrozen(
+                runtime.modules[1],
+            ),
+            true,
+        );
+
+        assert.equal(
+            Object.isFrozen(
+                runtime.capabilities,
+            ),
+            true,
         );
 
     },
 );
 
 test(
-    "createJokerRuntime creates isolated runtime instances",
+    "createJokerRuntime creates isolated runtime compositions",
     () => {
 
+        const module:
+            JokerRuntimeModule = {
+
+                name:
+                    "IPR_RUNTIME",
+
+                status:
+                    "active",
+
+                capabilities: [
+                    "ipr-boundary",
+                ],
+
+            };
+
         const firstRuntime =
-            createJokerRuntime();
+            createJokerRuntime({
+
+                modules: [
+                    module,
+                ],
+
+            });
 
         const secondRuntime =
-            createJokerRuntime();
+            createJokerRuntime({
+
+                modules: [
+                    module,
+                ],
+
+            });
 
         assert.notStrictEqual(
             firstRuntime,
@@ -99,45 +232,37 @@ test(
         );
 
         assert.notStrictEqual(
-            firstRuntime.research,
-            secondRuntime.research,
-            "Research runtimes must be isolated.",
+            firstRuntime.modules,
+            secondRuntime.modules,
+            "Runtime module collections must be isolated.",
         );
 
         assert.notStrictEqual(
-            firstRuntime.conversation,
-            secondRuntime.conversation,
-            "Conversation runtimes must be isolated.",
+            firstRuntime.modules[0],
+            secondRuntime.modules[0],
+            "Normalized runtime modules must be isolated.",
         );
 
         assert.notStrictEqual(
-            firstRuntime.ipr,
-            secondRuntime.ipr,
-            "IPR runtimes must be isolated.",
+            firstRuntime.capabilities,
+            secondRuntime.capabilities,
+            "Runtime capability collections must be isolated.",
         );
 
         assert.notStrictEqual(
-            firstRuntime.evt,
-            secondRuntime.evt,
-            "EVT runtimes must be isolated.",
+            firstRuntime.createdAt,
+            secondRuntime.createdAt,
+            "Runtime timestamps must not share Date instances.",
         );
 
-        assert.notStrictEqual(
-            firstRuntime.opc,
-            secondRuntime.opc,
-            "OPC runtimes must be isolated.",
+        assert.deepEqual(
+            firstRuntime.modules,
+            secondRuntime.modules,
         );
 
-        assert.notStrictEqual(
-            firstRuntime.audit,
-            secondRuntime.audit,
-            "Audit runtimes must be isolated.",
-        );
-
-        assert.notStrictEqual(
-            firstRuntime.modelUsage,
-            secondRuntime.modelUsage,
-            "Model Usage runtimes must be isolated.",
+        assert.deepEqual(
+            firstRuntime.capabilities,
+            secondRuntime.capabilities,
         );
 
     },

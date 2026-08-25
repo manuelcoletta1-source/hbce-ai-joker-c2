@@ -994,12 +994,12 @@ describe(
     it(
       "emits canonical session cookie with non-production security contract",
       async () => {
-        const originalNodeEnv =
-          process.env.NODE_ENV;
+        vi.stubEnv(
+          "NODE_ENV",
+          "test"
+        );
 
         try {
-          process.env.NODE_ENV =
-            "test";
 
           mockWithHbceDatabaseTransaction
             .mockImplementation(
@@ -1139,15 +1139,7 @@ describe(
             "secure"
           );
         } finally {
-          if (
-            typeof originalNodeEnv ===
-            "string"
-          ) {
-            process.env.NODE_ENV =
-              originalNodeEnv;
-          } else {
-            delete process.env.NODE_ENV;
-          }
+          vi.unstubAllEnvs();
         }
       }
     );
@@ -1155,12 +1147,12 @@ describe(
     it(
       "emits secure canonical session cookie in production",
       async () => {
-        const originalNodeEnv =
-          process.env.NODE_ENV;
+        vi.stubEnv(
+          "NODE_ENV",
+          "production"
+        );
 
         try {
-          process.env.NODE_ENV =
-            "production";
 
           mockWithHbceDatabaseTransaction
             .mockImplementation(
@@ -1300,15 +1292,7 @@ describe(
             "max-age=604800"
           );
         } finally {
-          if (
-            typeof originalNodeEnv ===
-            "string"
-          ) {
-            process.env.NODE_ENV =
-              originalNodeEnv;
-          } else {
-            delete process.env.NODE_ENV;
-          }
+          vi.unstubAllEnvs();
         }
       }
     );
@@ -1316,12 +1300,12 @@ describe(
     it(
       "completes the full canonical bootstrap application contract",
       async () => {
-        const originalNodeEnv =
-          process.env.NODE_ENV;
+        vi.stubEnv(
+          "NODE_ENV",
+          "test"
+        );
 
         try {
-          process.env.NODE_ENV =
-            "test";
 
           mockWithHbceDatabaseTransaction
             .mockImplementation(
@@ -1665,15 +1649,7 @@ describe(
             expect.any(String)
           );
         } finally {
-          if (
-            typeof originalNodeEnv ===
-            "string"
-          ) {
-            process.env.NODE_ENV =
-              originalNodeEnv;
-          } else {
-            delete process.env.NODE_ENV;
-          }
+          vi.unstubAllEnvs();
         }
       }
     );

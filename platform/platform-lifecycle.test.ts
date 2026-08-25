@@ -5,7 +5,7 @@
  * Platform Lifecycle Tests
  */
 
-import test from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 
 import {
@@ -57,18 +57,18 @@ test(
         );
 
         assert.equal(
+            transition.changed,
+            true,
+        );
+
+        assert.strictEqual(
+            transition.platform.application,
+            platform.application,
+        );
+
+        assert.equal(
             transition.platform.application.status,
-            "stopped",
-        );
-
-        assert.equal(
-            transition.platform.health.status,
-            "unavailable",
-        );
-
-        assert.equal(
-            transition.platform.health.operational,
-            false,
+            "ready",
         );
 
         assert.equal(
@@ -123,18 +123,18 @@ test(
         );
 
         assert.equal(
+            transition.changed,
+            true,
+        );
+
+        assert.strictEqual(
+            transition.platform.application,
+            stopped.platform.application,
+        );
+
+        assert.equal(
             transition.platform.application.status,
             "ready",
-        );
-
-        assert.equal(
-            transition.platform.health.status,
-            "healthy",
-        );
-
-        assert.equal(
-            transition.platform.health.operational,
-            true,
         );
 
         assert.equal(
@@ -146,7 +146,7 @@ test(
 );
 
 test(
-    "restartPlatform creates a fresh operational application and runtime",
+    "restartPlatform creates a fresh platform snapshot while preserving application runtime",
     () => {
 
         const platform =
@@ -194,13 +194,8 @@ test(
         );
 
         assert.equal(
-            transition.platform.application.status,
-            "ready",
-        );
-
-        assert.equal(
-            transition.platform.health.status,
-            "healthy",
+            transition.changed,
+            false,
         );
 
         assert.notStrictEqual(
@@ -208,32 +203,23 @@ test(
             platform,
         );
 
-        assert.notStrictEqual(
+        assert.strictEqual(
             transition.platform.application,
             platform.application,
         );
 
-        assert.notStrictEqual(
+        assert.strictEqual(
             transition.platform.application.runtimeBootstrap,
             platform.application.runtimeBootstrap,
         );
 
         assert.equal(
-            transition
-                .platform
-                .application
-                .createdAt
-                .getTime(),
-            transitionedAt.getTime(),
+            transition.platform.createdAt.getTime(),
+            platform.createdAt.getTime(),
         );
 
         assert.equal(
-            transition
-                .platform
-                .application
-                .runtimeBootstrap
-                .bootstrappedAt
-                .getTime(),
+            transition.transitionedAt.getTime(),
             transitionedAt.getTime(),
         );
 
@@ -263,23 +249,28 @@ test(
         );
 
         assert.equal(
+            transition.nextStatus,
+            "operational",
+        );
+
+        assert.equal(
             transition.platform.status,
             "operational",
         );
 
         assert.equal(
-            transition.platform.application.status,
-            "ready",
-        );
-
-        assert.equal(
-            transition.platform.health.status,
-            "healthy",
-        );
-
-        assert.equal(
-            transition.platform.health.operational,
+            transition.changed,
             true,
+        );
+
+        assert.notStrictEqual(
+            transition.platform,
+            stopped.platform,
+        );
+
+        assert.strictEqual(
+            transition.platform.application,
+            stopped.platform.application,
         );
 
     },
@@ -363,7 +354,7 @@ test(
 
         assert.equal(
             Object.isFrozen(
-                transition.platform.health,
+                transition.platform.capabilities,
             ),
             true,
         );
@@ -372,7 +363,7 @@ test(
 );
 
 test(
-    "stopPlatform rejects an already unavailable platform",
+    "stopPlatform is idempotent for an already unavailable platform",
     () => {
 
         const platform =
@@ -383,30 +374,74 @@ test(
                 platform,
             );
 
-        assert.throws(
-            () =>
-                stopPlatform(
-                    stopped.platform,
-                ),
-            /already unavailable/,
+        const repeated =
+            stopPlatform(
+                stopped.platform,
+            );
+
+        assert.equal(
+            repeated.action,
+            "stop",
+        );
+
+        assert.equal(
+            repeated.previousStatus,
+            "unavailable",
+        );
+
+        assert.equal(
+            repeated.nextStatus,
+            "unavailable",
+        );
+
+        assert.equal(
+            repeated.changed,
+            false,
+        );
+
+        assert.strictEqual(
+            repeated.platform,
+            stopped.platform,
         );
 
     },
 );
 
 test(
-    "startPlatform rejects an already operational platform",
+    "startPlatform is idempotent for an already operational platform",
     () => {
 
         const platform =
             createPlatform();
 
-        assert.throws(
-            () =>
-                startPlatform(
-                    platform,
-                ),
-            /already operational/,
+        const repeated =
+            startPlatform(
+                platform,
+            );
+
+        assert.equal(
+            repeated.action,
+            "start",
+        );
+
+        assert.equal(
+            repeated.previousStatus,
+            "operational",
+        );
+
+        assert.equal(
+            repeated.nextStatus,
+            "operational",
+        );
+
+        assert.equal(
+            repeated.changed,
+            false,
+        );
+
+        assert.strictEqual(
+            repeated.platform,
+            platform,
         );
 
     },

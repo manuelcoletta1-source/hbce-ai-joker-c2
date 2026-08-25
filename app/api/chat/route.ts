@@ -2214,6 +2214,581 @@ function buildApokalypsisPrologoLightDiagnosticAnswer(args: {
 
 
 
+
+type ChatDispatchRoute =
+  | "POLICY_BLOCK"
+  | "BRANCH_00"
+  | "BRANCH_01"
+  | "BRANCH_02"
+  | "BRANCH_03"
+  | "BRANCH_04"
+  | "BRANCH_05"
+  | "BRANCH_06"
+  | "BRANCH_07"
+  | "BRANCH_08"
+  | "BRANCH_09"
+  | "BRANCH_10"
+  | "BRANCH_11"
+  | "BRANCH_12"
+  | "BRANCH_13"
+  | "BRANCH_14"
+  | "BRANCH_15"
+  | "BRANCH_16"
+  | "BRANCH_17"
+  | "BRANCH_18"
+  | "BRANCH_19"
+  | "BRANCH_20"
+  | "BRANCH_21"
+  | "BRANCH_22"
+  | "BRANCH_23"
+  | "BRANCH_24"
+  | "BRANCH_25"
+  | "BRANCH_26"
+  | "BRANCH_27"
+  | "BRANCH_28"
+  | "BRANCH_29"
+  | "BRANCH_30"
+  | "BRANCH_31"
+  | "BRANCH_32"
+  | "BRANCH_33"
+  | "BRANCH_34"
+  | "BRANCH_35"
+  | "BRANCH_36"
+  | "BRANCH_37"
+  | "BRANCH_38"
+  | "BRANCH_39"
+  | "BRANCH_40"
+  | "BRANCH_41"
+  | "BRANCH_42"
+  | "BRANCH_43"
+  | "BRANCH_44"
+  | "BRANCH_45"
+  | "BRANCH_46"
+  | "BRANCH_47"
+  | "BRANCH_48"
+  | "BRANCH_49"
+  | "BRANCH_50"
+  | "BRANCH_51"
+  | "BRANCH_52"
+  | "BRANCH_53"
+  | "BRANCH_54"
+  | "BRANCH_55"
+  | "BRANCH_56"
+  | "BRANCH_57"
+  | "BRANCH_58"
+  | "BRANCH_59"
+  | "BRANCH_60"
+  | "BRANCH_61"
+  | "BRANCH_62"
+  | "BRANCH_63"
+  | "BRANCH_64"
+  | "BRANCH_65"
+  | "BRANCH_66"
+  | "BRANCH_67"
+  | "BRANCH_68"
+  | "OPENAI_PROVIDER";
+
+type ChatDispatchSelectorInput = {
+  policy: Pick<
+    PolicyEvaluation,
+    "decision" | "securityOutcome"
+  >;
+  message: string;
+  openAIConfigured: boolean;
+  globalRuntimeHealthCheckRequested: boolean;
+  globalBranchContaminationCheckRequested: boolean;
+  globalFinalRegressionAuditRequested: boolean;
+  apiV1RootDiscoveryContractRequested: boolean;
+  apiV1IprSessionLookupContractRequested: boolean;
+  apiV1IprSessionContractRequested: boolean;
+  apiV1FilesContractRequested: boolean;
+  apiV1OperationLookupContractRequested: boolean;
+  apiV1OperationsContractRequested: boolean;
+  apiV1EventsContractRequested: boolean;
+  apiV1OpcLookupContractRequested: boolean;
+  apiV1AuditLookupContractRequested: boolean;
+  apiV1ModelUsageLookupContractRequested: boolean;
+  apiV1HealthContractRequested: boolean;
+  apiV1CapabilitiesContractRequested: boolean;
+  apiV1OpenApiContractRequested: boolean;
+  apiV1PublicSurfaceSelfTestRequested: boolean;
+  apiV1SourceIntelligenceContractRequested: boolean;
+  sourceIntelligenceMultiSourceSetChatRequested: boolean;
+  sourceIntelligenceProfileMemoryRecallRequested: boolean;
+  sourceIntelligenceMythosTestRequested: boolean;
+  useBranchStatusRequested: boolean;
+  apokalypsisVolumeVParadogmaAlienoRequested: boolean;
+  apokalypsisVolumeIVCognitiveRuptureRequested: boolean;
+  apokalypsisVolumeIIIRiconconicitaRequested: boolean;
+  apokalypsisVolumeIICognitiveDislocationRequested: boolean;
+  apokalypsisVolumeICompleteUpdatedAi2026Requested: boolean;
+  apokalypsisPrologoLightDiagnosticRequested: boolean;
+  b2gTechnicalMemoryStrictRecallRequested: boolean;
+  recordStatusOnlyRequested: boolean;
+  useEuropeanFederationDocumentProfileRequested: boolean;
+  hbceAiEcosystemProfileLinkedMemorySaveRequested: boolean;
+  hbceAiEcosystemDocumentProfileRequested: boolean;
+  matrixOperationalDocumentProfileRequested: boolean;
+  b2gTechnicalProfileMemoryRequested: boolean;
+  iprCanonicalDocumentMemorySaveRequested: boolean;
+  fullDocumentCoverageAuditRequested: boolean;
+  runtimeMemoryBlockDiagnosticRequested: boolean;
+  matrixStrategicSynthesisRequested: boolean;
+  apiV1ChatBridgeRegressionRequested: boolean;
+  semanticMemoryGovernanceRegressionRequested: boolean;
+  semanticMemoryDuplicationAuditRequested: boolean;
+  semanticMemoryRecallRequested: boolean;
+  selectiveLearningDecisionRequested: boolean;
+  noSavePersistenceRequested: boolean;
+  fileIngestionRequested: boolean;
+  documentMemoryRecallRequested: boolean;
+  memoryChainRecallRequested: boolean;
+  memoryChainEvtBindingRequested: boolean;
+  memoryChainOpcBindingRequested: boolean;
+  memoryChainCandidateRequested: boolean;
+  trainingDeleteVerificationRequested: boolean;
+  trainingSoftDeleteApplicationRequested: boolean;
+  trainingReelaborationRequested: boolean;
+  trainingBehaviorRequested: boolean;
+  trainingMemoryRecallRequested: boolean;
+  esoterologicalSemanticMemoryRequested: boolean;
+  memoryRegistrationRequested: boolean;
+  memoryRecoveryRequested: boolean;
+  iprRecallRequested: boolean;
+  apiSdkB2GPresentationRequested: boolean;
+  runtimeStatusTableRequested: boolean;
+  runtimeDiagnosticsRequested: boolean;
+  temporalCertificateRequested: boolean;
+  opcProofSummaryRequested: boolean;
+  selfDiagnosisRequested: boolean;
+};
+
+function resolveChatDispatchRoute(
+  input: ChatDispatchSelectorInput
+): ChatDispatchRoute {
+  if (
+    input.policy.decision === "BLOCK"
+  ) {
+    return "POLICY_BLOCK";
+  }
+
+  if (
+    input.policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION"
+  ) {
+    return "BRANCH_00";
+  }
+
+  if (
+    input.globalRuntimeHealthCheckRequested
+  ) {
+    return "BRANCH_01";
+  }
+
+  if (
+    input.globalBranchContaminationCheckRequested
+  ) {
+    return "BRANCH_02";
+  }
+
+  if (
+    input.globalFinalRegressionAuditRequested
+  ) {
+    return "BRANCH_03";
+  }
+
+  if (
+    input.apiV1RootDiscoveryContractRequested
+  ) {
+    return "BRANCH_04";
+  }
+
+  if (
+    input.apiV1IprSessionLookupContractRequested
+  ) {
+    return "BRANCH_05";
+  }
+
+  if (
+    input.apiV1IprSessionContractRequested
+  ) {
+    return "BRANCH_06";
+  }
+
+  if (
+    input.apiV1FilesContractRequested
+  ) {
+    return "BRANCH_07";
+  }
+
+  if (
+    input.apiV1OperationLookupContractRequested
+  ) {
+    return "BRANCH_08";
+  }
+
+  if (
+    input.apiV1OperationsContractRequested
+  ) {
+    return "BRANCH_09";
+  }
+
+  if (
+    input.apiV1EventsContractRequested
+  ) {
+    return "BRANCH_10";
+  }
+
+  if (
+    input.apiV1OpcLookupContractRequested
+  ) {
+    return "BRANCH_11";
+  }
+
+  if (
+    input.apiV1AuditLookupContractRequested
+  ) {
+    return "BRANCH_12";
+  }
+
+  if (
+    input.apiV1ModelUsageLookupContractRequested
+  ) {
+    return "BRANCH_13";
+  }
+
+  if (
+    input.apiV1HealthContractRequested
+  ) {
+    return "BRANCH_14";
+  }
+
+  if (
+    input.apiV1CapabilitiesContractRequested
+  ) {
+    return "BRANCH_15";
+  }
+
+  if (
+    input.apiV1OpenApiContractRequested
+  ) {
+    return "BRANCH_16";
+  }
+
+  if (
+    input.apiV1PublicSurfaceSelfTestRequested
+  ) {
+    return "BRANCH_17";
+  }
+
+  if (
+    input.apiV1SourceIntelligenceContractRequested
+  ) {
+    return "BRANCH_18";
+  }
+
+  if (
+    input.sourceIntelligenceMultiSourceSetChatRequested
+  ) {
+    return "BRANCH_19";
+  }
+
+  if (
+    input.sourceIntelligenceProfileMemoryRecallRequested
+  ) {
+    return "BRANCH_20";
+  }
+
+  if (
+    input.sourceIntelligenceMythosTestRequested
+  ) {
+    return "BRANCH_21";
+  }
+
+  if (
+    input.useBranchStatusRequested
+  ) {
+    return "BRANCH_22";
+  }
+
+  if (
+    input.apokalypsisVolumeVParadogmaAlienoRequested
+  ) {
+    return "BRANCH_23";
+  }
+
+  if (
+    input.apokalypsisVolumeIVCognitiveRuptureRequested
+  ) {
+    return "BRANCH_24";
+  }
+
+  if (
+    input.apokalypsisVolumeIIIRiconconicitaRequested
+  ) {
+    return "BRANCH_25";
+  }
+
+  if (
+    input.apokalypsisVolumeIICognitiveDislocationRequested
+  ) {
+    return "BRANCH_26";
+  }
+
+  if (
+    input.apokalypsisVolumeICompleteUpdatedAi2026Requested
+  ) {
+    return "BRANCH_27";
+  }
+
+  if (
+    input.apokalypsisPrologoLightDiagnosticRequested
+  ) {
+    return "BRANCH_28";
+  }
+
+  if (
+    input.b2gTechnicalMemoryStrictRecallRequested
+  ) {
+    return "BRANCH_29";
+  }
+
+  if (
+    input.recordStatusOnlyRequested
+  ) {
+    return "BRANCH_30";
+  }
+
+  if (
+    input.useEuropeanFederationDocumentProfileRequested
+  ) {
+    return "BRANCH_31";
+  }
+
+  if (
+    input.hbceAiEcosystemProfileLinkedMemorySaveRequested
+  ) {
+    return "BRANCH_32";
+  }
+
+  if (
+    input.hbceAiEcosystemDocumentProfileRequested
+  ) {
+    return "BRANCH_33";
+  }
+
+  if (
+    input.matrixOperationalDocumentProfileRequested
+  ) {
+    return "BRANCH_34";
+  }
+
+  if (
+    input.b2gTechnicalProfileMemoryRequested
+  ) {
+    return "BRANCH_35";
+  }
+
+  if (
+    input.iprCanonicalDocumentMemorySaveRequested
+  ) {
+    return "BRANCH_36";
+  }
+
+  if (
+    input.fullDocumentCoverageAuditRequested
+  ) {
+    return "BRANCH_37";
+  }
+
+  if (
+    input.runtimeMemoryBlockDiagnosticRequested
+  ) {
+    return "BRANCH_38";
+  }
+
+  if (
+    input.matrixStrategicSynthesisRequested
+  ) {
+    return "BRANCH_39";
+  }
+
+  if (
+    input.apiV1ChatBridgeRegressionRequested
+  ) {
+    return "BRANCH_40";
+  }
+
+  if (
+    input.semanticMemoryGovernanceRegressionRequested
+  ) {
+    return "BRANCH_41";
+  }
+
+  if (
+    input.semanticMemoryDuplicationAuditRequested
+  ) {
+    return "BRANCH_42";
+  }
+
+  if (
+    input.semanticMemoryRecallRequested
+  ) {
+    return "BRANCH_43";
+  }
+
+  if (
+    input.selectiveLearningDecisionRequested
+  ) {
+    return "BRANCH_44";
+  }
+
+  if (
+    input.noSavePersistenceRequested
+  ) {
+    return "BRANCH_45";
+  }
+
+  if (
+    input.fileIngestionRequested
+  ) {
+    return "BRANCH_46";
+  }
+
+  if (
+    input.documentMemoryRecallRequested
+  ) {
+    return "BRANCH_47";
+  }
+
+  if (
+    input.memoryChainRecallRequested
+  ) {
+    return "BRANCH_48";
+  }
+
+  if (
+    input.memoryChainEvtBindingRequested
+  ) {
+    return "BRANCH_49";
+  }
+
+  if (
+    input.memoryChainOpcBindingRequested
+  ) {
+    return "BRANCH_50";
+  }
+
+  if (
+    input.memoryChainCandidateRequested
+  ) {
+    return "BRANCH_51";
+  }
+
+  if (
+    input.trainingDeleteVerificationRequested
+  ) {
+    return "BRANCH_52";
+  }
+
+  if (
+    input.trainingSoftDeleteApplicationRequested
+  ) {
+    return "BRANCH_53";
+  }
+
+  if (
+    input.trainingReelaborationRequested
+  ) {
+    return "BRANCH_54";
+  }
+
+  if (
+    input.trainingBehaviorRequested
+  ) {
+    return "BRANCH_55";
+  }
+
+  if (
+    input.trainingMemoryRecallRequested
+  ) {
+    return "BRANCH_56";
+  }
+
+  if (
+    input.esoterologicalSemanticMemoryRequested
+  ) {
+    return "BRANCH_57";
+  }
+
+  if (
+    input.memoryRegistrationRequested
+  ) {
+    return "BRANCH_58";
+  }
+
+  if (
+    input.memoryRecoveryRequested
+  ) {
+    return "BRANCH_59";
+  }
+
+  if (
+    input.iprRecallRequested
+  ) {
+    return "BRANCH_60";
+  }
+
+  if (
+    input.apiSdkB2GPresentationRequested
+  ) {
+    return "BRANCH_61";
+  }
+
+  if (
+    isAiClassicComparisonQuestion(input.message)
+  ) {
+    return "BRANCH_62";
+  }
+
+  if (
+    isB2GInstitutionalRuntimeQuestion(input.message)
+  ) {
+    return "BRANCH_63";
+  }
+
+  if (
+    isLegalBoundaryQuestion(input.message)
+  ) {
+    return "BRANCH_64";
+  }
+
+  if (
+    input.runtimeStatusTableRequested || input.runtimeDiagnosticsRequested || input.temporalCertificateRequested || input.opcProofSummaryRequested || input.selfDiagnosisRequested
+  ) {
+    return "BRANCH_65";
+  }
+
+  if (
+    isMatrixGovernanceQuestion(input.message)
+  ) {
+    return "BRANCH_66";
+  }
+
+  if (
+    isIdentityRecognitionQuestion(input.message)
+  ) {
+    return "BRANCH_67";
+  }
+
+  if (
+    !input.openAIConfigured
+  ) {
+    return "BRANCH_68";
+  }
+
+  return "OPENAI_PROVIDER";
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestStartedAtMs = Date.now();
 
@@ -3243,6 +3818,79 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
+  const chatDispatchRoute =
+    resolveChatDispatchRoute({
+      policy,
+      message,
+      openAIConfigured,
+      globalRuntimeHealthCheckRequested,
+      globalBranchContaminationCheckRequested,
+      globalFinalRegressionAuditRequested,
+      apiV1RootDiscoveryContractRequested,
+      apiV1IprSessionLookupContractRequested,
+      apiV1IprSessionContractRequested,
+      apiV1FilesContractRequested,
+      apiV1OperationLookupContractRequested,
+      apiV1OperationsContractRequested,
+      apiV1EventsContractRequested,
+      apiV1OpcLookupContractRequested,
+      apiV1AuditLookupContractRequested,
+      apiV1ModelUsageLookupContractRequested,
+      apiV1HealthContractRequested,
+      apiV1CapabilitiesContractRequested,
+      apiV1OpenApiContractRequested,
+      apiV1PublicSurfaceSelfTestRequested,
+      apiV1SourceIntelligenceContractRequested,
+      sourceIntelligenceMultiSourceSetChatRequested,
+      sourceIntelligenceProfileMemoryRecallRequested,
+      sourceIntelligenceMythosTestRequested,
+      useBranchStatusRequested,
+      apokalypsisVolumeVParadogmaAlienoRequested,
+      apokalypsisVolumeIVCognitiveRuptureRequested,
+      apokalypsisVolumeIIIRiconconicitaRequested,
+      apokalypsisVolumeIICognitiveDislocationRequested,
+      apokalypsisVolumeICompleteUpdatedAi2026Requested,
+      apokalypsisPrologoLightDiagnosticRequested,
+      b2gTechnicalMemoryStrictRecallRequested,
+      recordStatusOnlyRequested,
+      useEuropeanFederationDocumentProfileRequested,
+      hbceAiEcosystemProfileLinkedMemorySaveRequested,
+      hbceAiEcosystemDocumentProfileRequested,
+      matrixOperationalDocumentProfileRequested,
+      b2gTechnicalProfileMemoryRequested,
+      iprCanonicalDocumentMemorySaveRequested,
+      fullDocumentCoverageAuditRequested,
+      runtimeMemoryBlockDiagnosticRequested,
+      matrixStrategicSynthesisRequested,
+      apiV1ChatBridgeRegressionRequested,
+      semanticMemoryGovernanceRegressionRequested,
+      semanticMemoryDuplicationAuditRequested,
+      semanticMemoryRecallRequested,
+      selectiveLearningDecisionRequested,
+      noSavePersistenceRequested,
+      fileIngestionRequested,
+      documentMemoryRecallRequested,
+      memoryChainRecallRequested,
+      memoryChainEvtBindingRequested,
+      memoryChainOpcBindingRequested,
+      memoryChainCandidateRequested,
+      trainingDeleteVerificationRequested,
+      trainingSoftDeleteApplicationRequested,
+      trainingReelaborationRequested,
+      trainingBehaviorRequested,
+      trainingMemoryRecallRequested,
+      esoterologicalSemanticMemoryRequested,
+      memoryRegistrationRequested,
+      memoryRecoveryRequested,
+      iprRecallRequested,
+      apiSdkB2GPresentationRequested,
+      runtimeStatusTableRequested,
+      runtimeDiagnosticsRequested,
+      temporalCertificateRequested,
+      opcProofSummaryRequested,
+      selfDiagnosisRequested,
+    });
+
   let answer = "";
   let providerState: "COMPLETED" | "LOCAL_FALLBACK" | "PROVIDER_ERROR" = "COMPLETED";
   let providerError: string | null = null;
@@ -3253,15 +3901,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 
 
-  if (policy.decision === "BLOCK") {
+  switch (chatDispatchRoute) {
+    case "POLICY_BLOCK": {
     answer = buildBlockedAnswer(policy);
     providerState = "LOCAL_FALLBACK";
     providerName = "LOCAL";
-  } else if (policy.securityOutcome === "REQUEST_REFUSED_WITHIN_GRANTED_SESSION") {
+      break;
+    }
+    case "BRANCH_00": {
     answer = buildSecurityRefusalAnswer(handoff, policy, memory, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (globalRuntimeHealthCheckRequested) {
+      break;
+    }
+    case "BRANCH_01": {
     answer = buildGlobalRuntimeHealthCheckPreparationAnswer({
       handoff,
       memory,
@@ -3270,7 +3923,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (globalBranchContaminationCheckRequested) {
+      break;
+    }
+    case "BRANCH_02": {
     answer = buildGlobalBranchContaminationCheckAnswer({
       handoff,
       memory,
@@ -3279,7 +3934,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (globalFinalRegressionAuditRequested) {
+      break;
+    }
+    case "BRANCH_03": {
     answer = buildGlobalFinalRegressionAuditAnswer({
       message,
       handoff,
@@ -3289,7 +3946,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1RootDiscoveryContractRequested) {
+      break;
+    }
+    case "BRANCH_04": {
     answer = buildApiV1RootDiscoveryContractAnswer({
       message,
       handoff,
@@ -3299,7 +3958,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1IprSessionLookupContractRequested) {
+      break;
+    }
+    case "BRANCH_05": {
     answer = buildApiV1IprSessionLookupContractAnswer({
       message,
       handoff,
@@ -3309,7 +3970,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1IprSessionContractRequested) {
+      break;
+    }
+    case "BRANCH_06": {
     answer = buildApiV1IprSessionContractAnswer({
       message,
       handoff,
@@ -3319,7 +3982,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1FilesContractRequested) {
+      break;
+    }
+    case "BRANCH_07": {
     answer = buildApiV1FilesContractAnswer({
       message,
       handoff,
@@ -3329,7 +3994,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1OperationLookupContractRequested) {
+      break;
+    }
+    case "BRANCH_08": {
     answer = buildApiV1OperationLookupContractAnswer({
       message,
       handoff,
@@ -3339,7 +4006,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1OperationsContractRequested) {
+      break;
+    }
+    case "BRANCH_09": {
     answer = buildApiV1OperationsContractAnswer({
       message,
       handoff,
@@ -3349,7 +4018,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1EventsContractRequested) {
+      break;
+    }
+    case "BRANCH_10": {
     answer = buildApiV1EventsContractAnswer({
       message,
       handoff,
@@ -3359,7 +4030,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1OpcLookupContractRequested) {
+      break;
+    }
+    case "BRANCH_11": {
     answer = buildApiV1OpcLookupContractAnswer({
       message,
       handoff,
@@ -3369,7 +4042,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1AuditLookupContractRequested) {
+      break;
+    }
+    case "BRANCH_12": {
     answer = buildApiV1AuditLookupContractAnswer({
       message,
       handoff,
@@ -3379,7 +4054,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1ModelUsageLookupContractRequested) {
+      break;
+    }
+    case "BRANCH_13": {
     answer = buildApiV1ModelUsageLookupContractAnswer({
       message,
       handoff,
@@ -3389,7 +4066,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1HealthContractRequested) {
+      break;
+    }
+    case "BRANCH_14": {
     answer = buildApiV1HealthContractAnswer({
       message,
       handoff,
@@ -3399,7 +4078,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1CapabilitiesContractRequested) {
+      break;
+    }
+    case "BRANCH_15": {
     answer = buildApiV1CapabilitiesContractAnswer({
       message,
       handoff,
@@ -3409,7 +4090,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1OpenApiContractRequested) {
+      break;
+    }
+    case "BRANCH_16": {
     answer = buildApiV1OpenApiContractAnswer({
       message,
       handoff,
@@ -3419,7 +4102,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1PublicSurfaceSelfTestRequested) {
+      break;
+    }
+    case "BRANCH_17": {
     answer = buildApiV1PublicSurfaceSelfTestAnswer({
       message,
       handoff,
@@ -3429,7 +4114,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1SourceIntelligenceContractRequested) {
+      break;
+    }
+    case "BRANCH_18": {
     answer = buildApiV1SourceIntelligenceContractAnswer({
       message,
       handoff,
@@ -3439,7 +4126,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (sourceIntelligenceMultiSourceSetChatRequested) {
+      break;
+    }
+    case "BRANCH_19": {
     answer = buildSourceIntelligenceMultiSourceSetChatAnswer({
       message,
       handoff,
@@ -3449,7 +4138,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (sourceIntelligenceProfileMemoryRecallRequested) {
+      break;
+    }
+    case "BRANCH_20": {
     answer = buildSourceIntelligenceProfileMemoryRecallAnswer({
       message,
       recall: iprRecall,
@@ -3460,7 +4151,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (sourceIntelligenceMythosTestRequested) {
+      break;
+    }
+    case "BRANCH_21": {
     answer = buildSourceIntelligenceMythosTestAnswer({
       message,
       handoff,
@@ -3470,7 +4163,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (useBranchStatusRequested) {
+      break;
+    }
+    case "BRANCH_22": {
     answer = buildUseBranchStatusReadOnlyAnswer({
       handoff,
       memory,
@@ -3479,7 +4174,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apokalypsisVolumeVParadogmaAlienoRequested) {
+      break;
+    }
+    case "BRANCH_23": {
     answer = buildApokalypsisVolumeVParadogmaAlienoAnswer({
       message,
       files,
@@ -3490,7 +4187,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apokalypsisVolumeIVCognitiveRuptureRequested) {
+      break;
+    }
+    case "BRANCH_24": {
     answer = buildApokalypsisVolumeIVCognitiveRuptureAnswer({
       message,
       files,
@@ -3501,7 +4200,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apokalypsisVolumeIIIRiconconicitaRequested) {
+      break;
+    }
+    case "BRANCH_25": {
     answer = buildApokalypsisVolumeIIIRiconconicitaAnswer({
       message,
       files,
@@ -3512,7 +4213,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apokalypsisVolumeIICognitiveDislocationRequested) {
+      break;
+    }
+    case "BRANCH_26": {
     answer = buildApokalypsisVolumeIICognitiveDislocationAnswer({
       message,
       files,
@@ -3523,7 +4226,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apokalypsisVolumeICompleteUpdatedAi2026Requested) {
+      break;
+    }
+    case "BRANCH_27": {
     answer = buildApokalypsisVolumeICompleteUpdatedAi2026Answer({
       message,
       files,
@@ -3534,7 +4239,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apokalypsisPrologoLightDiagnosticRequested) {
+      break;
+    }
+    case "BRANCH_28": {
     answer = buildApokalypsisPrologoLightDiagnosticAnswer({
       message,
       files,
@@ -3545,7 +4252,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (b2gTechnicalMemoryStrictRecallRequested) {
+      break;
+    }
+    case "BRANCH_29": {
     answer = buildB2gTechnicalMemoryStrictRecallAnswer({
       recall: iprRecall,
       documentProfileRecall,
@@ -3557,7 +4266,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (recordStatusOnlyRequested) {
+      break;
+    }
+    case "BRANCH_30": {
     answer = buildIprRecordStatusOnlyAnswer({
       recall: iprRecall,
       documentProfileRecall,
@@ -3569,7 +4280,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (useEuropeanFederationDocumentProfileRequested) {
+      break;
+    }
+    case "BRANCH_31": {
     answer = buildUseEuropeanFederationDocumentProfilePreparationAnswer({
       message,
       files,
@@ -3581,7 +4294,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (hbceAiEcosystemProfileLinkedMemorySaveRequested) {
+      break;
+    }
+    case "BRANCH_32": {
     answer = buildHbceAiEcosystemProfileLinkedMemoryCardAnswer({
       message,
       handoff,
@@ -3591,7 +4306,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (hbceAiEcosystemDocumentProfileRequested) {
+      break;
+    }
+    case "BRANCH_33": {
     answer = buildHbceAiEcosystemDocumentProfilePreparationAnswer({
       message,
       files,
@@ -3603,7 +4320,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (matrixOperationalDocumentProfileRequested) {
+      break;
+    }
+    case "BRANCH_34": {
     answer = buildMatrixOperationalDocumentProfilePreparationAnswer({
       message,
       files,
@@ -3615,7 +4334,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (b2gTechnicalProfileMemoryRequested) {
+      break;
+    }
+    case "BRANCH_35": {
     answer = buildB2gTechnicalProfileMemoryPreparationAnswer({
       message,
       files,
@@ -3627,7 +4348,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (iprCanonicalDocumentMemorySaveRequested) {
+      break;
+    }
+    case "BRANCH_36": {
     answer = buildIprCanonicalDocumentMemoryPreparationAnswer({
       message,
       files,
@@ -3639,7 +4362,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (fullDocumentCoverageAuditRequested) {
+      break;
+    }
+    case "BRANCH_37": {
     answer = buildFullDocumentCoverageAuditAnswer({
       message,
       files,
@@ -3652,7 +4377,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (runtimeMemoryBlockDiagnosticRequested) {
+      break;
+    }
+    case "BRANCH_38": {
     answer = buildRuntimeMemoryBlockDiagnosticAnswer({
       handoff,
       memory,
@@ -3662,7 +4389,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (matrixStrategicSynthesisRequested) {
+      break;
+    }
+    case "BRANCH_39": {
     answer = buildMatrixIVStrategicSynthesisAnswer({
       handoff,
       memory,
@@ -3671,7 +4400,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiV1ChatBridgeRegressionRequested) {
+      break;
+    }
+    case "BRANCH_40": {
     answer = buildApiV1ChatBridgeRegressionAnswer({
       message,
       handoff,
@@ -3681,7 +4412,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (semanticMemoryGovernanceRegressionRequested) {
+      break;
+    }
+    case "BRANCH_41": {
     answer = buildSemanticMemoryGovernanceRegressionAnswer({
       message,
       handoff,
@@ -3691,7 +4424,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (semanticMemoryDuplicationAuditRequested) {
+      break;
+    }
+    case "BRANCH_42": {
     answer = buildSemanticMemoryDuplicationAuditAnswer({
       message,
       handoff,
@@ -3701,7 +4436,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (semanticMemoryRecallRequested) {
+      break;
+    }
+    case "BRANCH_43": {
     answer = buildSemanticMemoryRecallAnswer({
       message,
       handoff,
@@ -3711,7 +4448,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (selectiveLearningDecisionRequested) {
+      break;
+    }
+    case "BRANCH_44": {
     answer = buildSelectiveLearningDecisionAnswer({
       message,
       handoff,
@@ -3721,7 +4460,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (noSavePersistenceRequested) {
+      break;
+    }
+    case "BRANCH_45": {
     answer = buildNoSaveGuardAnswer({
       handoff,
       memory,
@@ -3730,7 +4471,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (fileIngestionRequested) {
+      break;
+    }
+    case "BRANCH_46": {
     answer = buildFileIngestionAnswer({
       files,
       handoff,
@@ -3740,7 +4483,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (documentMemoryRecallRequested) {
+      break;
+    }
+    case "BRANCH_47": {
     answer = repairApokalypsisVolumeVStrictRecallAnswer(
       repairHbceAiEcosystemRecallAnswerSummary(
         appendStrictRequestedMemoryFilterSummary(
@@ -3767,7 +4512,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (memoryChainRecallRequested) {
+      break;
+    }
+    case "BRANCH_48": {
     answer = appendStrictRequestedMemoryFilterSummary(
       buildCyberneticMemoryChainRecallAnswer({
         recall: iprRecall,
@@ -3782,7 +4529,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (memoryChainEvtBindingRequested) {
+      break;
+    }
+    case "BRANCH_49": {
     answer = buildCyberneticMemoryEvtBindingAnswer({
       recall: iprRecall,
       message,
@@ -3793,7 +4542,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (memoryChainOpcBindingRequested) {
+      break;
+    }
+    case "BRANCH_50": {
     answer = buildCyberneticMemoryOpcBindingAnswer({
       recall: iprRecall,
       message,
@@ -3804,7 +4555,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (memoryChainCandidateRequested) {
+      break;
+    }
+    case "BRANCH_51": {
     answer = buildCyberneticMemoryCandidateAnswer({
       handoff,
       memory,
@@ -3813,7 +4566,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (trainingDeleteVerificationRequested) {
+      break;
+    }
+    case "BRANCH_52": {
     answer = buildIprTrainingDeleteVerificationAnswer({
       recall: iprRecall,
       handoff,
@@ -3823,7 +4578,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (trainingSoftDeleteApplicationRequested) {
+      break;
+    }
+    case "BRANCH_53": {
     answer = buildIprTrainingSoftDeleteApplicationAnswer({
       recall: iprRecall,
       handoff,
@@ -3833,7 +4590,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (trainingReelaborationRequested) {
+      break;
+    }
+    case "BRANCH_54": {
     answer = buildIprTrainingReelaborationAnswer({
       recall: iprRecall,
       handoff,
@@ -3843,7 +4602,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (trainingBehaviorRequested) {
+      break;
+    }
+    case "BRANCH_55": {
     answer = buildIprTrainingBehaviorAnswer({
       recall: iprRecall,
       handoff,
@@ -3853,7 +4614,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (trainingMemoryRecallRequested) {
+      break;
+    }
+    case "BRANCH_56": {
     answer = buildIprTrainingMemoryRecallAnswer({
       recall: iprRecall,
       handoff,
@@ -3863,19 +4626,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (esoterologicalSemanticMemoryRequested) {
+      break;
+    }
+    case "BRANCH_57": {
     answer = buildEsoterologicalSemanticMemoryPreparationAnswer(message, handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (memoryRegistrationRequested) {
+      break;
+    }
+    case "BRANCH_58": {
     answer = buildMemoryRegistrationPreparationAnswer(registeredEventCandidate, handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (memoryRecoveryRequested) {
+      break;
+    }
+    case "BRANCH_59": {
     answer = buildMemoryRecoveryAnswer(memory);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (iprRecallRequested) {
+      break;
+    }
+    case "BRANCH_60": {
     answer = buildIprMemoryRecallAnswer({
       recall: iprRecall,
       handoff,
@@ -3885,39 +4656,57 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (apiSdkB2GPresentationRequested) {
+      break;
+    }
+    case "BRANCH_61": {
     answer = buildApiSdkB2GPresentationAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (isAiClassicComparisonQuestion(message)) {
+      break;
+    }
+    case "BRANCH_62": {
     answer = buildAiClassicComparisonAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (isB2GInstitutionalRuntimeQuestion(message)) {
+      break;
+    }
+    case "BRANCH_63": {
     answer = buildB2GInstitutionalAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (isLegalBoundaryQuestion(message)) {
+      break;
+    }
+    case "BRANCH_64": {
     answer = buildLegalBoundaryAnswer(handoff, policy, memory, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (runtimeStatusTableRequested || runtimeDiagnosticsRequested || temporalCertificateRequested || opcProofSummaryRequested || selfDiagnosisRequested) {
+      break;
+    }
+    case "BRANCH_65": {
     answer = buildRuntimeDiagnosticsPreparationAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (isMatrixGovernanceQuestion(message)) {
+      break;
+    }
+    case "BRANCH_66": {
     answer = buildMatrixGovernanceAnswer();
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (isIdentityRecognitionQuestion(message)) {
+      break;
+    }
+    case "BRANCH_67": {
     answer = buildIdentityRecognitionAnswer(handoff, memory, policy, saasContext);
     providerState = "COMPLETED";
     providerName = "LOCAL";
-  } else if (!openAIConfigured) {
+      break;
+    }
+    case "BRANCH_68": {
     answer = buildLocalFallbackAnswer(message, handoff, policy, memory, saasContext);
     providerState = "LOCAL_FALLBACK";
     providerName = "LOCAL";
-  } else {
+      break;
+    }
+    case "OPENAI_PROVIDER": {
     try {
       providerEnvelopeStartedAtMs = Date.now();
 
@@ -3950,10 +4739,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       providerState = "PROVIDER_ERROR";
       providerName = "OPENAI";
     }
+      break;
+    }
   }
-
-
-
 
   const safeAnswer = normalizeAssistantAnswer(answer, message, handoff, policy);
   const outputHash = sha256(safeAnswer);

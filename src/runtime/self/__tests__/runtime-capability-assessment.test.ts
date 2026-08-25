@@ -143,55 +143,43 @@ function createRuntimeSelfState(
     },
 
     capabilityAnalysis: {
-      revision:
-        "TEST-CAPABILITY-ANALYSIS",
-
       totalCapabilities:
         2,
 
-      averageScore:
-        62,
-
-      operationalCapabilities:
+      activeCapabilities:
         1,
 
       degradedCapabilities:
         1,
 
-      blockedCapabilities:
+      disabledCapabilities:
         0,
+
+      plannedCapabilities:
+        0,
+
+      averageScore:
+        62,
 
       gaps:
         Object.freeze([
           Object.freeze({
-            id:
-              "CAPABILITY-GAP-001",
-
             capabilityId:
               "REPOSITORY-SEMANTIC-ANALYSIS",
 
-            title:
-              "Semantic analysis is incomplete",
+            capabilityName:
+              "Repository semantic analysis",
+
+            reason:
+              "DEGRADED",
 
             description:
               "MOD-002 is not yet receiving all inspected repository files.",
-
-            score:
-              45,
 
             severity:
               "HIGH",
           }),
         ]),
-
-      recommendations:
-        Object.freeze([]),
-
-      operationalStatus:
-        "DEGRADED",
-
-      legalCertification:
-        false,
     },
 
     operationalStatus:
@@ -330,35 +318,26 @@ describe(
               runtimeSelfState:
                 createRuntimeSelfState({
                   capabilityAnalysis: {
-                    revision:
-                      "TEST-CAPABILITY-ANALYSIS",
-
                     totalCapabilities:
                       0,
 
-                    averageScore:
-                      0,
-
-                    operationalCapabilities:
+                    activeCapabilities:
                       0,
 
                     degradedCapabilities:
                       0,
 
-                    blockedCapabilities:
+                    disabledCapabilities:
+                      0,
+
+                    plannedCapabilities:
+                      0,
+
+                    averageScore:
                       0,
 
                     gaps:
                       Object.freeze([]),
-
-                    recommendations:
-                      Object.freeze([]),
-
-                    operationalStatus:
-                      "BLOCKED",
-
-                    legalCertification:
-                      false,
                   },
                 }),
             }),
@@ -498,35 +477,26 @@ describe(
                 runtimeSelfState:
                   createRuntimeSelfState({
                     capabilityAnalysis: {
-                      revision:
-                        "TEST-CAPABILITY-ANALYSIS",
-
                       totalCapabilities:
                         1,
 
-                      averageScore:
-                        101,
-
-                      operationalCapabilities:
+                      activeCapabilities:
                         0,
 
                       degradedCapabilities:
                         1,
 
-                      blockedCapabilities:
+                      disabledCapabilities:
                         0,
+
+                      plannedCapabilities:
+                        0,
+
+                      averageScore:
+                        101,
 
                       gaps:
                         Object.freeze([]),
-
-                      recommendations:
-                        Object.freeze([]),
-
-                      operationalStatus:
-                        "DEGRADED",
-
-                      legalCertification:
-                        false,
                     },
                   }),
               }),

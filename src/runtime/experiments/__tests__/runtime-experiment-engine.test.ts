@@ -381,8 +381,10 @@ describe(
         ).toBeUndefined();
 
         expect(
-          result.plan.reasons,
-        ).toBeUndefined();
+          result.reasons,
+        ).toEqual([
+          "Experiment plan requires operator authorization.",
+        ]);
       },
     );
 
