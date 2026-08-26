@@ -1,8 +1,8 @@
-export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.10";
+export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.11";
 
 
 export const HBCE_DATABASE_SCHEMA_BOUNDARY =
-  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, explicit IPR chat memory saves, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.10 extends the existing HBCE-IPR-DB-v1.9 contract with durable minimized onboarding projection receipts and transport nonce consumption records for server-to-server replay protection. Raw onboarding nonces, raw service credentials and raw biological identity material are not persisted by this schema extension. Existing Temporal Runtime Certificate, account profile, memory, EVT, OPC, runtime audit, model usage, MATRIX and internal self-pilot semantics remain unchanged. The temporal certificate is a technical runtime frame built from UTC response time, the canonical local birth anchor and AI JOKER-C2 lifetime; it is not a qualified timestamp or legal certification. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
+  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, explicit IPR chat memory saves, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.11 preserves the HBCE-IPR-DB-v1.10 replay contract and adds append-only pre-profile policy records for explicit server-side onboarding authorization context. Only minimized operational scope and deterministic hashes are persisted; raw Human IPR, raw onboarding nonces, raw service credentials, raw issuer authorization references, biometric material and document content remain outside this policy record. The policy record cannot create sessions, authorize runtime execution, bypass replay validation or directly persist an account profile. Existing Temporal Runtime Certificate, account profile, memory, EVT, OPC, runtime audit, model usage, MATRIX and internal self-pilot semantics remain unchanged. The temporal certificate is a technical runtime frame built from UTC response time, the canonical local birth anchor and AI JOKER-C2 lifetime; it is not a qualified timestamp or legal certification. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
 
 
 export const HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY =
@@ -122,6 +122,7 @@ export const HBCE_DATABASE_SCHEMA_TABLES = [
   "ipr_account_profiles",
   "ipr_onboarding_projection_receipts",
   "ipr_onboarding_projection_nonces",
+  "ipr_onboarding_pre_profile_policy_records",
   "chat_threads",
   "chat_messages",
   "ipr_chat_memory_saves",
@@ -495,6 +496,235 @@ CREATE INDEX IF NOT EXISTS idx_ipr_onboarding_projection_nonces_projection_key
   ON ipr_onboarding_projection_nonces(
     projection_key
   );
+`.trim(),
+
+
+  `
+CREATE TABLE IF NOT EXISTS ipr_onboarding_pre_profile_policy_records (
+  policy_record_id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  human_ipr_hash TEXT NOT NULL,
+  projection_key TEXT NOT NULL,
+  payload_hash TEXT NOT NULL,
+
+  decision TEXT NOT NULL DEFAULT 'DENY',
+
+  allow_joker_c2_access BOOLEAN NOT NULL DEFAULT false,
+  verified_biological_subject BOOLEAN NOT NULL DEFAULT false,
+  matrix_active BOOLEAN NOT NULL DEFAULT false,
+  ipr_bound_memory BOOLEAN NOT NULL DEFAULT false,
+
+  issuer_kind TEXT NOT NULL,
+  issuer_credential_id_hash TEXT NOT NULL,
+  issuer_authorization_ref_hash TEXT NOT NULL,
+
+  issued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  not_before TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ,
+
+  supersedes_policy_record_id TEXT,
+  revokes_policy_record_id TEXT,
+
+  legal_certification BOOLEAN NOT NULL DEFAULT false,
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_record_id_sha256
+    CHECK (policy_record_id ~ '^[0-9a-f]{64}$'),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_human_ipr_hash_sha256
+    CHECK (human_ipr_hash ~ '^[0-9a-f]{64}$'),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_projection_key_sha256
+    CHECK (projection_key ~ '^[0-9a-f]{64}$'),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_payload_hash_sha256
+    CHECK (payload_hash ~ '^[0-9a-f]{64}$'),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_issuer_credential_hash_sha256
+    CHECK (issuer_credential_id_hash ~ '^[0-9a-f]{64}$'),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_issuer_authorization_hash_sha256
+    CHECK (issuer_authorization_ref_hash ~ '^[0-9a-f]{64}$'),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_supersedes_hash_sha256
+    CHECK (
+      supersedes_policy_record_id IS NULL
+      OR supersedes_policy_record_id ~ '^[0-9a-f]{64}$'
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_revokes_hash_sha256
+    CHECK (
+      revokes_policy_record_id IS NULL
+      OR revokes_policy_record_id ~ '^[0-9a-f]{64}$'
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_scope_non_empty
+    CHECK (
+      btrim(tenant_id) <> ''
+      AND btrim(workspace_id) <> ''
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_issuer_kind_non_empty
+    CHECK (btrim(issuer_kind) <> ''),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_decision_valid
+    CHECK (
+      decision IN (
+        'GRANT',
+        'DENY',
+        'REVOKE'
+      )
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_grant_all_flags_true
+    CHECK (
+      decision <> 'GRANT'
+      OR (
+        allow_joker_c2_access = true
+        AND verified_biological_subject = true
+        AND matrix_active = true
+        AND ipr_bound_memory = true
+      )
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_non_grant_flags_false
+    CHECK (
+      decision = 'GRANT'
+      OR (
+        allow_joker_c2_access = false
+        AND verified_biological_subject = false
+        AND matrix_active = false
+        AND ipr_bound_memory = false
+      )
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_grant_expiry_required
+    CHECK (
+      decision <> 'GRANT'
+      OR expires_at IS NOT NULL
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_validity_window
+    CHECK (
+      expires_at IS NULL
+      OR expires_at > COALESCE(not_before, issued_at)
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_revoke_reference_required
+    CHECK (
+      decision <> 'REVOKE'
+      OR revokes_policy_record_id IS NOT NULL
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_non_revoke_reference_forbidden
+    CHECK (
+      decision = 'REVOKE'
+      OR revokes_policy_record_id IS NULL
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_genealogy_exclusive
+    CHECK (
+      NOT (
+        supersedes_policy_record_id IS NOT NULL
+        AND revokes_policy_record_id IS NOT NULL
+      )
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_no_self_supersession
+    CHECK (
+      supersedes_policy_record_id IS NULL
+      OR supersedes_policy_record_id <> policy_record_id
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_no_self_revocation
+    CHECK (
+      revokes_policy_record_id IS NULL
+      OR revokes_policy_record_id <> policy_record_id
+    ),
+
+  CONSTRAINT ipr_onboarding_pre_profile_policy_legal_certification_false
+    CHECK (legal_certification = false)
+);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_ipr_onboarding_pre_profile_policy_subject_scope
+  ON ipr_onboarding_pre_profile_policy_records(
+    tenant_id,
+    workspace_id,
+    human_ipr_hash,
+    issued_at DESC
+  );
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_ipr_onboarding_pre_profile_policy_projection
+  ON ipr_onboarding_pre_profile_policy_records(
+    projection_key,
+    payload_hash,
+    issued_at DESC
+  );
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_ipr_onboarding_pre_profile_policy_revokes
+  ON ipr_onboarding_pre_profile_policy_records(
+    revokes_policy_record_id
+  );
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS idx_ipr_onboarding_pre_profile_policy_supersedes
+  ON ipr_onboarding_pre_profile_policy_records(
+    supersedes_policy_record_id
+  );
+`.trim(),
+
+
+  `
+CREATE OR REPLACE FUNCTION
+  hbce_reject_ipr_onboarding_pre_profile_policy_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION
+    'HBCE_APPEND_ONLY_PRE_PROFILE_POLICY_MUTATION_FORBIDDEN'
+    USING ERRCODE = '55000';
+
+  RETURN NULL;
+END;
+$$;
+`.trim(),
+
+
+  `
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_trigger
+    WHERE tgname =
+      'trg_ipr_onboarding_pre_profile_policy_append_only'
+      AND tgrelid =
+        'ipr_onboarding_pre_profile_policy_records'::regclass
+  ) THEN
+
+    CREATE TRIGGER
+      trg_ipr_onboarding_pre_profile_policy_append_only
+    BEFORE UPDATE OR DELETE
+    ON ipr_onboarding_pre_profile_policy_records
+    FOR EACH ROW
+    EXECUTE FUNCTION
+      hbce_reject_ipr_onboarding_pre_profile_policy_mutation();
+
+  END IF;
+END;
+$$;
 `.trim(),
 
 
@@ -3663,6 +3893,43 @@ VALUES (
   false
 )
 ON CONFLICT (version) DO NOTHING;
+`.trim(),
+
+
+  `
+INSERT INTO hbce_schema_migrations (
+  version,
+  description,
+  schema_payload,
+  legal_certification
+)
+VALUES (
+  'HBCE-IPR-DB-v1.11',
+  'HBCE-IPR-DB-v1.11 additive migration extending HBCE-IPR-DB-v1.10 with append-only minimized pre-profile policy records. Policy records bind tenant/workspace scope, replay projection evidence and explicit hashed issuer authorization context before account-profile candidate construction. GRANT is complete and time-bounded; DENY and REVOKE carry no authority flags. Raw Human IPR, raw onboarding nonces, raw service credentials, raw authorization references, biometric material and document content are not persisted. Policy records cannot create sessions, authorize runtime execution, bypass replay validation or directly persist account profiles. legalCertification remains false.',
+  jsonb_build_object(
+    'migrationFrom', 'HBCE-IPR-DB-v1.10',
+    'migrationTo', 'HBCE-IPR-DB-v1.11',
+    'migrationKind', 'ADDITIVE',
+    'policyTable', 'ipr_onboarding_pre_profile_policy_records',
+    'policyRecordMutability', 'APPEND_ONLY',
+    'defaultDecision', 'DENY',
+    'grantSemantics', 'ALL_FLAGS_TRUE_AND_TIME_BOUND',
+    'nonGrantSemantics', 'ALL_FLAGS_FALSE',
+    'revocationSemantics', 'NEW_RECORD_REFERENCES_PRIOR_RECORD',
+    'requiredIssuerScope', 'internal:ipr-policy:issue',
+    'policyRecordAuthority', 'SERVER_POLICY_CONTEXT_CANDIDATE_ONLY',
+    'sessionCreationAuthority', false,
+    'runtimeAuthorizationAuthority', false,
+    'profileDirectWriteAuthority', false,
+    'replayBypassAuthority', false,
+    'legalCertification', false,
+    'tables', jsonb_build_array(
+      'ipr_onboarding_pre_profile_policy_records'
+    )
+  ),
+  false
+)
+ON CONFLICT (version) DO NOTHING;
 `.trim()
 ];
 
@@ -3770,7 +4037,7 @@ export function getHbceDatabaseSaasCoreContext() {
     },
     legalCertification: false,
     statement:
-      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, chat continuity, explicit IPR chat memory saves, memory, registered memory events, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. HBCE-IPR-DB-v1.10 preserves the JOKER-C2 Temporal Runtime Certificate and all HBCE-IPR-DB-v1.9 account-profile compatibility while adding durable minimized onboarding projection receipt and nonce consumption tables for replay-safe server-to-server ingress. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. Explicit Save this chat to IPR is modeled outside /api/chat through ipr_chat_memory_saves, with tolerant migration support for already-existing chat_threads, chat_messages, memory_records and memory_registered_events tables, allowing /api/chat to answer while memory save operations remain auditable, consent-based and IPR-bound. HBCE-IPR-DB-v1.9 preserves the existing internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
+      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, chat continuity, explicit IPR chat memory saves, memory, registered memory events, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. HBCE-IPR-DB-v1.11 preserves the JOKER-C2 Temporal Runtime Certificate, the HBCE-IPR-DB-v1.10 replay-safe onboarding contract and all prior account-profile compatibility while adding append-only minimized pre-profile policy records for explicit server-side authorization context. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. Explicit Save this chat to IPR is modeled outside /api/chat through ipr_chat_memory_saves, with tolerant migration support for already-existing chat_threads, chat_messages, memory_records and memory_registered_events tables, allowing /api/chat to answer while memory save operations remain auditable, consent-based and IPR-bound. HBCE-IPR-DB-v1.9 preserves the existing internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
   };
 }
 
