@@ -2,6 +2,10 @@ import { createHash } from "node:crypto";
 
 import { normalizeHumanIpr } from "./ipr-auth";
 
+import type {
+  HbceTransactionContext
+} from "./ipr-database-transaction";
+
 import {
   describeDefaultHbceDatabase,
   isHbceDatabaseConfigured,
@@ -723,6 +727,283 @@ function profileFromRow(row: IprAccountProfileRow): IprAccountProfile {
     legalCertification: false
   };
 }
+
+
+export const IPR_ACCOUNT_TRANSACTIONAL_PERSISTENCE_BOUNDARY =
+  "Transaction-scoped IPR account persistence writes the subject and account profile through a caller-owned HBCE database transaction. It does not authenticate a subject, create a session, grant runtime authority or mutate the process fallback. The caller may synchronize volatile fallback state only after the enclosing transaction has committed successfully.";
+
+export type IprAccountTransactionalPersistenceResult = {
+  profile: IprAccountProfile;
+  transactionScoped: true;
+  subjectPersisted: true;
+  profilePersisted: true;
+  processFallbackMutated: false;
+  sessionCreated: false;
+  runtimeAuthorized: false;
+  legalCertification: false;
+};
+
+export async function persistIprAccountProfileInTransaction(input: {
+  transaction: Pick<HbceTransactionContext, "query">;
+  profileInput: IprAccountProfileUpsertInput;
+}): Promise<IprAccountTransactionalPersistenceResult> {
+  const profile =
+    buildProfile(
+      input.profileInput
+    );
+
+  await input.transaction.query(
+    `
+INSERT INTO ipr_subjects (
+  human_ipr,
+  entity,
+  subject_kind,
+  status,
+  created_at,
+  updated_at,
+  last_seen_at,
+  profile_hash,
+  metadata,
+  legal_certification
+)
+VALUES (
+  $1,
+  $2,
+  $3,
+  'ACTIVE',
+  now(),
+  now(),
+  now(),
+  $4,
+  $5::jsonb,
+  false
+)
+ON CONFLICT (human_ipr) DO UPDATE SET
+  entity = EXCLUDED.entity,
+  subject_kind = EXCLUDED.subject_kind,
+  status = 'ACTIVE',
+  updated_at = now(),
+  last_seen_at = now(),
+  profile_hash = EXCLUDED.profile_hash,
+  metadata = ipr_subjects.metadata || EXCLUDED.metadata,
+  legal_certification = false
+    `.trim(),
+    [
+      profile.humanIpr,
+      profile.entity,
+      profile.subjectKind,
+      profile.profileHash,
+      JSON.stringify({
+        source:
+          "IPR_ACCOUNT_TRANSACTIONAL_PERSISTENCE",
+        persistenceMode:
+          "DATABASE_PERSISTENT",
+        tenantId:
+          profile.tenantId,
+        workspaceId:
+          profile.workspaceId,
+        legalCertification:
+          false
+      })
+    ]
+  );
+
+  const profileResult =
+    await input.transaction.query<IprAccountProfileRow>(
+      `
+INSERT INTO ipr_account_profiles (
+  human_ipr,
+  tenant_id,
+  workspace_id,
+  account_id,
+  entity,
+  subject_kind,
+  certificate_id,
+  certificate_kind,
+  certificate_status,
+  certificate_scope,
+  card_serial,
+  certificate_hash,
+  access_decision,
+  access_scope,
+  identity_binding,
+  matrix_state,
+  semantic_memory_scope,
+  source,
+  handoff_hash,
+  profile_hash,
+  created_at,
+  updated_at,
+  last_login_at,
+  profile_payload,
+  legal_certification
+)
+VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9,
+  $10::jsonb,
+  $11,
+  $12,
+  $13,
+  $14,
+  $15,
+  $16,
+  $17,
+  $18,
+  $19,
+  $20,
+  now(),
+  now(),
+  NULL,
+  $21::jsonb,
+  false
+)
+ON CONFLICT (human_ipr) DO UPDATE SET
+  tenant_id = EXCLUDED.tenant_id,
+  workspace_id = EXCLUDED.workspace_id,
+  account_id = EXCLUDED.account_id,
+  entity = EXCLUDED.entity,
+  subject_kind = EXCLUDED.subject_kind,
+  certificate_id = EXCLUDED.certificate_id,
+  certificate_kind = EXCLUDED.certificate_kind,
+  certificate_status = EXCLUDED.certificate_status,
+  certificate_scope = EXCLUDED.certificate_scope,
+  card_serial = EXCLUDED.card_serial,
+  certificate_hash = EXCLUDED.certificate_hash,
+  access_decision = EXCLUDED.access_decision,
+  access_scope = EXCLUDED.access_scope,
+  identity_binding = EXCLUDED.identity_binding,
+  matrix_state = EXCLUDED.matrix_state,
+  semantic_memory_scope = EXCLUDED.semantic_memory_scope,
+  source = EXCLUDED.source,
+  handoff_hash = EXCLUDED.handoff_hash,
+  profile_hash = EXCLUDED.profile_hash,
+  updated_at = now(),
+  profile_payload = EXCLUDED.profile_payload,
+  legal_certification = false
+RETURNING
+  human_ipr,
+  tenant_id,
+  workspace_id,
+  account_id,
+  entity,
+  subject_kind,
+  certificate_id,
+  certificate_kind,
+  certificate_status,
+  certificate_scope,
+  card_serial,
+  certificate_hash,
+  access_decision,
+  access_scope,
+  identity_binding,
+  matrix_state,
+  semantic_memory_scope,
+  source,
+  handoff_hash,
+  profile_hash,
+  created_at,
+  updated_at,
+  last_login_at,
+  profile_payload,
+  legal_certification
+      `.trim(),
+      [
+        profile.humanIpr,
+        profile.tenantId,
+        profile.workspaceId,
+        profile.accountId,
+        profile.entity,
+        profile.subjectKind,
+        profile.certificateId,
+        profile.certificateKind,
+        profile.certificateStatus,
+        JSON.stringify(
+          profile.certificateScope
+        ),
+        profile.cardSerial,
+        profile.certificateHash,
+        profile.accessDecision,
+        profile.accessScope,
+        profile.identityBinding,
+        profile.matrixState,
+        profile.semanticMemoryScope,
+        profile.source,
+        profile.handoffHash,
+        profile.profileHash,
+        jsonParam(
+          profile.profilePayload
+        )
+      ]
+    );
+
+  const row =
+    profileResult.rows[0];
+
+  if (!row) {
+    throw new Error(
+      "IPR_ACCOUNT_TRANSACTIONAL_PROFILE_WRITE_MISSING"
+    );
+  }
+
+  if (
+    row.legal_certification !==
+    false
+  ) {
+    throw new Error(
+      "IPR_ACCOUNT_TRANSACTIONAL_LEGAL_CERTIFICATION_FORBIDDEN"
+    );
+  }
+
+  const storedProfile =
+    profileFromRow(
+      row
+    );
+
+  if (
+    storedProfile.humanIpr !==
+      profile.humanIpr ||
+    storedProfile.accountId !==
+      profile.accountId ||
+    storedProfile.tenantId !==
+      profile.tenantId ||
+    storedProfile.workspaceId !==
+      profile.workspaceId ||
+    storedProfile.profileHash !==
+      profile.profileHash
+  ) {
+    throw new Error(
+      "IPR_ACCOUNT_TRANSACTIONAL_PROFILE_MISMATCH"
+    );
+  }
+
+  return {
+    profile:
+      storedProfile,
+    transactionScoped:
+      true,
+    subjectPersisted:
+      true,
+    profilePersisted:
+      true,
+    processFallbackMutated:
+      false,
+    sessionCreated:
+      false,
+    runtimeAuthorized:
+      false,
+    legalCertification:
+      false
+  };
+}
+
 
 function buildDescription(input: {
   name: string;
