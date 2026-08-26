@@ -69,6 +69,11 @@ export type HbceDatabaseDescription = {
 };
 
 
+export type HbceDatabaseQueryExecutionOptions = {
+  autoSchema: "AUTO_SCHEMA_COMPATIBLE" | "NO_AUTO_SCHEMA";
+};
+
+
 export type HbceDatabaseAdapter = {
   describe(): HbceDatabaseDescription;
 
@@ -78,7 +83,8 @@ export type HbceDatabaseAdapter = {
 
   query<Row extends HbceDatabaseQueryRow = HbceDatabaseQueryRow>(
     sql: string,
-    params?: HbceDatabaseQueryValue[]
+    params?: HbceDatabaseQueryValue[],
+    options?: HbceDatabaseQueryExecutionOptions
   ): Promise<HbceDatabaseQueryResult<Row>>;
 };
 
@@ -1973,7 +1979,11 @@ class DisabledHbceDatabaseAdapter implements HbceDatabaseAdapter {
 
 
   async query<Row extends HbceDatabaseQueryRow = HbceDatabaseQueryRow>(
-    sql: string
+    sql: string,
+    _params: HbceDatabaseQueryValue[] = [],
+    _options: HbceDatabaseQueryExecutionOptions = {
+      autoSchema: "AUTO_SCHEMA_COMPATIBLE"
+    }
   ): Promise<HbceDatabaseQueryResult<Row>> {
     const startedAt = nowMs();
 
@@ -2356,7 +2366,10 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
 
   async query<Row extends HbceDatabaseQueryRow = HbceDatabaseQueryRow>(
     sqlText: string,
-    params: HbceDatabaseQueryValue[] = []
+    params: HbceDatabaseQueryValue[] = [],
+    options: HbceDatabaseQueryExecutionOptions = {
+      autoSchema: "AUTO_SCHEMA_COMPATIBLE"
+    }
   ): Promise<HbceDatabaseQueryResult<Row>> {
     const startedAt = nowMs();
     const normalizedSql = sqlText.trim();
@@ -2375,7 +2388,11 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
     }
 
 
+    const autoSchemaAllowed =
+      options.autoSchema === "AUTO_SCHEMA_COMPATIBLE";
+
     const autoSchemaApply =
+      autoSchemaAllowed &&
       shouldAutoApplySchema() &&
       shouldInitializeBeforeQuery(normalizedSql);
 
@@ -2405,6 +2422,7 @@ class NeonHttpHbceDatabaseAdapter implements HbceDatabaseAdapter {
       console.log(
         "HBCE_A002_DATABASE_QUERY_TIMING",
         JSON.stringify({
+          autoSchemaMode: options.autoSchema,
           autoSchemaApply,
           schemaInitializationElapsedMs,
           schemaInitializationStatus,
@@ -2508,7 +2526,29 @@ export async function queryHbceDatabase<
   sql: string,
   params: HbceDatabaseQueryValue[] = []
 ): Promise<HbceDatabaseQueryResult<Row>> {
-  return getDefaultHbceDatabase().query<Row>(sql, params);
+  return getDefaultHbceDatabase().query<Row>(
+    sql,
+    params,
+    {
+      autoSchema: "AUTO_SCHEMA_COMPATIBLE"
+    }
+  );
+}
+
+
+export async function queryHbceDatabaseWithoutSchemaInitialization<
+  Row extends HbceDatabaseQueryRow = HbceDatabaseQueryRow
+>(
+  sql: string,
+  params: HbceDatabaseQueryValue[] = []
+): Promise<HbceDatabaseQueryResult<Row>> {
+  return getDefaultHbceDatabase().query<Row>(
+    sql,
+    params,
+    {
+      autoSchema: "NO_AUTO_SCHEMA"
+    }
+  );
 }
 
 
