@@ -1,8 +1,8 @@
-export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.11";
+export const HBCE_DATABASE_SCHEMA_VERSION = "HBCE-IPR-DB-v1.12";
 
 
 export const HBCE_DATABASE_SCHEMA_BOUNDARY =
-  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, explicit IPR chat memory saves, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.11 preserves the HBCE-IPR-DB-v1.10 replay contract and adds append-only pre-profile policy records for explicit server-side onboarding authorization context. Only minimized operational scope and deterministic hashes are persisted; raw Human IPR, raw onboarding nonces, raw service credentials, raw issuer authorization references, biometric material and document content remain outside this policy record. The policy record cannot create sessions, authorize runtime execution, bypass replay validation or directly persist an account profile. Existing Temporal Runtime Certificate, account profile, memory, EVT, OPC, runtime audit, model usage, MATRIX and internal self-pilot semantics remain unchanged. The temporal certificate is a technical runtime frame built from UTC response time, the canonical local birth anchor and AI JOKER-C2 lifetime; it is not a qualified timestamp or legal certification. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
+  "HBCE database persistence stores operational identity, SaaS tenants, workspaces, memberships, subscriptions, sessions, chat continuity, explicit IPR chat memory saves, IPR-bound memory, EVT records, OPC technical proof receipts, runtime audit logs, model usage logs and MATRIX Transformative Memory for runtime audit. Runtime persistence tables are intentionally tolerant during SaaS Core v0.1: tenant, workspace, subscription, session, EVT, OPC, audit and memory references may be null or payload-only until the full relational ledger is active. HBCE-IPR-DB-v1.12 preserves the HBCE-IPR-DB-v1.11 pre-profile authorization contract and adds persistent minimized authentication rate-limit buckets for distributed anti-abuse governance. Only minimized operational scope and deterministic hashes are persisted; raw Human IPR, raw onboarding nonces, raw service credentials, raw issuer authorization references, biometric material and document content remain outside this policy record. The policy record cannot create sessions, authorize runtime execution, bypass replay validation or directly persist an account profile. Existing Temporal Runtime Certificate, account profile, memory, EVT, OPC, runtime audit, model usage, MATRIX and internal self-pilot semantics remain unchanged. The temporal certificate is a technical runtime frame built from UTC response time, the canonical local birth anchor and AI JOKER-C2 lifetime; it is not a qualified timestamp or legal certification. This database layer does not create legal certification, does not replace official identity documents, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale, eIDAS qualified trust services, qualified timestamping or public authority validation.";
 
 
 export const HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY =
@@ -118,6 +118,7 @@ export const HBCE_DATABASE_SCHEMA_TABLES = [
   "saas_workspace_memberships",
   "subscriptions",
   "ipr_auth_credentials",
+  "ipr_auth_rate_limit_buckets",
   "ipr_sessions",
   "ipr_account_profiles",
   "ipr_onboarding_projection_receipts",
@@ -321,6 +322,50 @@ CREATE TABLE IF NOT EXISTS ipr_auth_credentials (
     CHECK (password_key_length > 0),
   CONSTRAINT ipr_auth_credentials_legal_certification_false
     CHECK (legal_certification = false)
+);
+`.trim(),
+
+
+  `
+CREATE TABLE IF NOT EXISTS ipr_auth_rate_limit_buckets (
+  bucket_key_hash TEXT PRIMARY KEY,
+  bucket_kind TEXT NOT NULL,
+  failed_attempts INTEGER NOT NULL DEFAULT 0,
+  window_started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_failed_at TIMESTAMPTZ,
+  blocked_until TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  bucket_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  legal_certification BOOLEAN NOT NULL DEFAULT false,
+  CONSTRAINT ipr_auth_rate_limit_bucket_kind_valid
+    CHECK (bucket_kind IN ('IP', 'IPR_IP')),
+  CONSTRAINT ipr_auth_rate_limit_failed_attempts_non_negative
+    CHECK (failed_attempts >= 0),
+  CONSTRAINT ipr_auth_rate_limit_block_after_window
+    CHECK (
+      blocked_until IS NULL OR
+      blocked_until > window_started_at
+    ),
+  CONSTRAINT ipr_auth_rate_limit_legal_certification_false
+    CHECK (legal_certification = false)
+);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS
+  ipr_auth_rate_limit_buckets_blocked_until_idx
+ON ipr_auth_rate_limit_buckets (blocked_until);
+`.trim(),
+
+
+  `
+CREATE INDEX IF NOT EXISTS
+  ipr_auth_rate_limit_buckets_kind_updated_idx
+ON ipr_auth_rate_limit_buckets (
+  bucket_kind,
+  updated_at
 );
 `.trim(),
 
@@ -3930,6 +3975,45 @@ VALUES (
   false
 )
 ON CONFLICT (version) DO NOTHING;
+`.trim(),
+
+
+  `
+INSERT INTO hbce_schema_migrations (
+  version,
+  description,
+  schema_payload,
+  legal_certification
+)
+VALUES (
+  'HBCE-IPR-DB-v1.12',
+  'HBCE-IPR-DB-v1.12 additive migration extending HBCE-IPR-DB-v1.11 with persistent minimized authentication rate-limit buckets for distributed anti-abuse governance. The rate-limit layer persists opaque server-derived bucket hashes, counters and temporal block state only. Raw IP addresses, raw user-agent strings and duplicated raw Human IPR values are excluded. Rate-limit state cannot create sessions, grant runtime authority, bypass credential verification or create legal certification.',
+  jsonb_build_object(
+    'migrationFrom', 'HBCE-IPR-DB-v1.11',
+    'migrationTo', 'HBCE-IPR-DB-v1.12',
+    'migrationKind', 'ADDITIVE',
+    'rateLimitTable',
+      'ipr_auth_rate_limit_buckets',
+    'bucketKinds', jsonb_build_array(
+      'IP',
+      'IPR_IP'
+    ),
+    'bucketKeyAuthority',
+      'SERVER_DERIVED_OPAQUE_HASH_ONLY',
+    'rawIpPersisted', false,
+    'rawHumanIprPersisted', false,
+    'rawUserAgentPersisted', false,
+    'sessionCreationAuthority', false,
+    'runtimeAuthorizationAuthority', false,
+    'credentialBypassAuthority', false,
+    'legalCertification', false,
+    'tables', jsonb_build_array(
+      'ipr_auth_rate_limit_buckets'
+    )
+  ),
+  false
+)
+ON CONFLICT (version) DO NOTHING;
 `.trim()
 ];
 
@@ -4037,7 +4121,7 @@ export function getHbceDatabaseSaasCoreContext() {
     },
     legalCertification: false,
     statement:
-      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, chat continuity, explicit IPR chat memory saves, memory, registered memory events, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. HBCE-IPR-DB-v1.11 preserves the JOKER-C2 Temporal Runtime Certificate, the HBCE-IPR-DB-v1.10 replay-safe onboarding contract and all prior account-profile compatibility while adding append-only minimized pre-profile policy records for explicit server-side authorization context. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. Explicit Save this chat to IPR is modeled outside /api/chat through ipr_chat_memory_saves, with tolerant migration support for already-existing chat_threads, chat_messages, memory_records and memory_registered_events tables, allowing /api/chat to answer while memory save operations remain auditable, consent-based and IPR-bound. HBCE-IPR-DB-v1.9 preserves the existing internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
+      "HBCE SaaS Core v0.1 requires DATABASE_PERSISTENT storage for account, subscription, chat continuity, explicit IPR chat memory saves, memory, registered memory events, EVT, OPC, runtime audit, model usage, tenant and workspace continuity. HBCE-IPR-DB-v1.12 preserves the JOKER-C2 Temporal Runtime Certificate, the HBCE-IPR-DB-v1.11 pre-profile authorization contract and all prior account-profile compatibility while adding persistent minimized authentication rate-limit buckets for distributed anti-abuse governance. Runtime persistence tables are tolerant during MVP/SaaS transition and preserve full reconstruction data in JSONB payloads. Explicit Save this chat to IPR is modeled outside /api/chat through ipr_chat_memory_saves, with tolerant migration support for already-existing chat_threads, chat_messages, memory_records and memory_registered_events tables, allowing /api/chat to answer while memory save operations remain auditable, consent-based and IPR-bound. HBCE-IPR-DB-v1.9 preserves the existing internal HERMETICUM B.C.E. self-pilot tenant, workspace, subscription and IPR account profile."
   };
 }
 
