@@ -9,6 +9,10 @@ import {
 } from "@/lib/ipr-database-physical-proof";
 
 import {
+  inspectIprAuthRateLimitPhysicalSchema
+} from "@/lib/ipr-auth-rate-limit-physical-proof";
+
+import {
   describeDefaultHbceDatabase,
   getHbceDatabaseBoundary,
   isHbceDatabaseConfigured,
@@ -497,6 +501,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const diagnosticModeSupported =
     diagnosticMode === null ||
     diagnosticMode === "physical-schema-proof" ||
+    diagnosticMode === "auth-rate-limit-physical-schema-proof" ||
     diagnosticMode === "auth-login-governance-proof";
 
   if (!diagnosticModeSupported) {
@@ -506,6 +511,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         reason: "UNSUPPORTED_DIAGNOSTIC_MODE",
         supportedModes: [
           "physical-schema-proof",
+          "auth-rate-limit-physical-schema-proof",
           "auth-login-governance-proof"
         ],
         legalCertification: false
@@ -590,6 +596,93 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           Expires: "0",
           "X-HBCE-Diagnostics-Mode":
             "physical-schema-proof",
+          "X-HBCE-Operational-Status":
+            proof.ok ? "PASS" : "FAIL"
+        }
+      }
+    );
+  }
+
+  if (
+    diagnosticMode ===
+    "auth-rate-limit-physical-schema-proof"
+  ) {
+    /*
+     * C5X physical schema proof.
+     *
+     * Read-only and strict NO_AUTO_SCHEMA.
+     * It proves only the physical persistence contract for
+     * authentication rate-limit buckets introduced by
+     * HBCE-IPR-DB-v1.12.
+     *
+     * It does not expose bucket hashes, IP addresses,
+     * Human IPR values or user-agent data.
+     *
+     * It does not mutate schema or data and cannot create
+     * sessions, authorize runtime execution or bypass
+     * credential verification.
+     */
+    if (request.method !== "GET") {
+      return NextResponse.json(
+        {
+          ok: false,
+          reason:
+            "AUTH_RATE_LIMIT_PHYSICAL_SCHEMA_PROOF_GET_REQUIRED",
+          legalCertification: false
+        },
+        {
+          status: 405,
+          headers: {
+            Allow: "GET",
+            "Cache-Control":
+              "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0"
+          }
+        }
+      );
+    }
+
+    const proof =
+      await inspectIprAuthRateLimitPhysicalSchema();
+
+    return NextResponse.json(
+      {
+        ok: proof.ok,
+        status: proof.status,
+        mode:
+          "AUTH_RATE_LIMIT_PHYSICAL_SCHEMA_PROOF",
+        revision: proof.revision,
+        generatedAt: proof.checkedAt,
+        product: PRODUCT,
+        apiVersion: API_VERSION,
+        runtime: RUNTIME_NAME,
+        proof,
+        boundary: {
+          authority:
+            "AUTH_RATE_LIMIT_PHYSICAL_SCHEMA_EVIDENCE_ONLY",
+          selectorAuthority: "NONE",
+          performsDatabaseRead: true,
+          performsDatabaseMutation: false,
+          performsSchemaMutation: false,
+          sessionCreated: false,
+          runtimeAuthorizationChanged: false,
+          credentialBypass: false,
+          rawIpRead: false,
+          rawHumanIprRead: false,
+          rawUserAgentRead: false,
+          legalCertification: false
+        }
+      },
+      {
+        status: proof.ok ? 200 : 503,
+        headers: {
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+          "X-HBCE-Diagnostics-Mode":
+            "auth-rate-limit-physical-schema-proof",
           "X-HBCE-Operational-Status":
             proof.ok ? "PASS" : "FAIL"
         }
