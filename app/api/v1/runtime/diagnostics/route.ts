@@ -13,6 +13,7 @@ import {
   getHbceDatabaseBoundary,
   isHbceDatabaseConfigured,
   queryHbceDatabase,
+  queryHbceDatabaseWithoutSchemaInitialization,
 } from "@/lib/ipr-database";
 
 import {
@@ -48,6 +49,14 @@ type DatabaseIdentityRow = {
 
 type ExistingTableRow = {
   table_name?: unknown;
+};
+
+type AuthLoginGovernanceRow = {
+  human_ipr?: unknown;
+  failed_attempts?: unknown;
+  locked_until?: unknown;
+  password_last_verified_at?: unknown;
+  legal_certification?: unknown;
 };
 
 const REVISION = "HBCE-RUNTIME-DIAGNOSTICS-v1_1";
@@ -485,15 +494,20 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const diagnosticMode =
     request.nextUrl.searchParams.get("mode");
 
-  if (
-    diagnosticMode !== null &&
-    diagnosticMode !== "physical-schema-proof"
-  ) {
+  const diagnosticModeSupported =
+    diagnosticMode === null ||
+    diagnosticMode === "physical-schema-proof" ||
+    diagnosticMode === "auth-login-governance-proof";
+
+  if (!diagnosticModeSupported) {
     return NextResponse.json(
       {
         ok: false,
         reason: "UNSUPPORTED_DIAGNOSTIC_MODE",
-        supportedMode: "physical-schema-proof",
+        supportedModes: [
+          "physical-schema-proof",
+          "auth-login-governance-proof"
+        ],
         legalCertification: false
       },
       {
@@ -578,6 +592,159 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             "physical-schema-proof",
           "X-HBCE-Operational-Status":
             proof.ok ? "PASS" : "FAIL"
+        }
+      }
+    );
+  }
+
+  if (diagnosticMode === "auth-login-governance-proof") {
+    const humanIpr =
+      sessionResolution.session?.humanIpr ||
+      sessionResolution.access.humanIpr ||
+      "";
+
+    if (!humanIpr) {
+      return NextResponse.json(
+        {
+          ok: false,
+          reason: "AUTHENTICATED_HUMAN_IPR_UNRESOLVED",
+          legalCertification: false
+        },
+        {
+          status: 409,
+          headers: {
+            "Cache-Control":
+              "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0"
+          }
+        }
+      );
+    }
+
+    const result =
+      await queryHbceDatabaseWithoutSchemaInitialization<AuthLoginGovernanceRow>(
+        `
+SELECT
+  human_ipr,
+  failed_attempts,
+  locked_until,
+  password_last_verified_at,
+  legal_certification
+FROM ipr_auth_credentials
+WHERE human_ipr = $1
+LIMIT 1
+        `.trim(),
+        [humanIpr]
+      );
+
+    if (!result.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          status: "FAIL",
+          mode: "AUTH_LOGIN_GOVERNANCE_PROOF",
+          reason: "AUTH_LOGIN_GOVERNANCE_QUERY_FAILED",
+          queryStatus: result.status,
+          sqlHash: result.sqlHash,
+          legalCertification: false
+        },
+        {
+          status: 503,
+          headers: {
+            "Cache-Control":
+              "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0"
+          }
+        }
+      );
+    }
+
+    const row = result.rows[0];
+
+    if (!row) {
+      return NextResponse.json(
+        {
+          ok: false,
+          status: "FAIL",
+          mode: "AUTH_LOGIN_GOVERNANCE_PROOF",
+          reason: "AUTH_LOGIN_CREDENTIAL_ROW_NOT_FOUND",
+          humanIpr,
+          legalCertification: false
+        },
+        {
+          status: 409,
+          headers: {
+            "Cache-Control":
+              "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0"
+          }
+        }
+      );
+    }
+
+    const failedAttempts =
+      Number(row.failed_attempts || 0);
+
+    const lockedUntil =
+      stringOrNull(row.locked_until);
+
+    const passwordLastVerifiedAt =
+      stringOrNull(row.password_last_verified_at);
+
+    const lockedUntilMs =
+      lockedUntil
+        ? Date.parse(lockedUntil)
+        : Number.NaN;
+
+    const currentlyLocked =
+      Number.isFinite(lockedUntilMs) &&
+      lockedUntilMs > Date.now();
+
+    return NextResponse.json(
+      {
+        ok: true,
+        status: "PASS",
+        mode: "AUTH_LOGIN_GOVERNANCE_PROOF",
+        revision:
+          "HBCE-AUTH-LOGIN-GOVERNANCE-PROOF-v1_0",
+        generatedAt: new Date().toISOString(),
+        humanIpr,
+        proof: {
+          failedAttempts,
+          lockedUntil,
+          currentlyLocked,
+          passwordLastVerifiedAt,
+          databaseReadOnly: true,
+          autoSchema: "NO_AUTO_SCHEMA",
+          legalCertification: false
+        },
+        boundary: {
+          authority:
+            "AUTHENTICATED_SESSION_BOUND_IPR_ONLY",
+          clientHumanIprAccepted: false,
+          performsDatabaseRead: true,
+          performsDatabaseMutation: false,
+          performsSchemaMutation: false,
+          credentialSecretsExposed: false,
+          sessionCreated: false,
+          runtimeAuthorizationChanged: false,
+          legalCertification: false
+        },
+        legalCertification: false
+      },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+          "X-HBCE-Diagnostics-Mode":
+            "auth-login-governance-proof",
+          "X-HBCE-Operational-Status": "PASS"
         }
       }
     );
