@@ -5,6 +5,10 @@ import {
 } from "@/lib/ipr-auth-session-resolver";
 
 import {
+  inspectIprDatabasePhysicalSchema
+} from "@/lib/ipr-database-physical-proof";
+
+import {
   describeDefaultHbceDatabase,
   getHbceDatabaseBoundary,
   isHbceDatabaseConfigured,
@@ -473,6 +477,107 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         status: 401,
         headers: {
           "Cache-Control": "no-store, max-age=0"
+        }
+      }
+    );
+  }
+
+  const diagnosticMode =
+    request.nextUrl.searchParams.get("mode");
+
+  if (
+    diagnosticMode !== null &&
+    diagnosticMode !== "physical-schema-proof"
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        reason: "UNSUPPORTED_DIAGNOSTIC_MODE",
+        supportedMode: "physical-schema-proof",
+        legalCertification: false
+      },
+      {
+        status: 400,
+        headers: {
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0"
+        }
+      }
+    );
+  }
+
+  if (diagnosticMode === "physical-schema-proof") {
+    /*
+     * Il selettore sceglie esclusivamente quale diagnostica
+     * autenticata eseguire.
+     *
+     * Non attribuisce identità, sessione, capability o
+     * autorità runtime.
+     *
+     * Questo ramo deve terminare prima del percorso legacy,
+     * così nessuna query AUTO_SCHEMA_COMPATIBLE viene eseguita
+     * prima della prova fisica strict NO_AUTO_SCHEMA.
+     */
+    if (request.method !== "GET") {
+      return NextResponse.json(
+        {
+          ok: false,
+          reason:
+            "PHYSICAL_SCHEMA_PROOF_GET_REQUIRED",
+          legalCertification: false
+        },
+        {
+          status: 405,
+          headers: {
+            Allow: "GET",
+            "Cache-Control":
+              "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0"
+          }
+        }
+      );
+    }
+
+    const proof =
+      await inspectIprDatabasePhysicalSchema();
+
+    return NextResponse.json(
+      {
+        ok: proof.ok,
+        status: proof.status,
+        mode: "PHYSICAL_SCHEMA_PROOF",
+        revision: proof.revision,
+        generatedAt: proof.checkedAt,
+        product: PRODUCT,
+        apiVersion: API_VERSION,
+        runtime: RUNTIME_NAME,
+        proof,
+        boundary: {
+          authority:
+            "PHYSICAL_SCHEMA_EVIDENCE_ONLY",
+          selectorAuthority: "NONE",
+          performsDatabaseRead: true,
+          performsDatabaseMutation: false,
+          performsSchemaMutation: false,
+          sessionCreated: false,
+          runtimeAuthorizationChanged: false,
+          legalCertification: false
+        }
+      },
+      {
+        status: proof.ok ? 200 : 503,
+        headers: {
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+          "X-HBCE-Diagnostics-Mode":
+            "physical-schema-proof",
+          "X-HBCE-Operational-Status":
+            proof.ok ? "PASS" : "FAIL"
         }
       }
     );
