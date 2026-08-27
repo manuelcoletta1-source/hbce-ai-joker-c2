@@ -628,8 +628,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 SELECT
   human_ipr,
   failed_attempts,
-  locked_until,
-  password_last_verified_at,
+  locked_until::text AS locked_until,
+  password_last_verified_at::text AS password_last_verified_at,
   legal_certification
 FROM ipr_auth_credentials
 WHERE human_ipr = $1
